@@ -1,0 +1,115 @@
+#!/usr/bin/env python3
+import argparse
+import csv
+import json
+import re
+from html import escape
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+SLUG = "social-values-surveydata"
+RAW = ROOT / "data" / SLUG / "raw.csv"
+META = ROOT / "data" / SLUG / "meta.json"
+TOKENS = ROOT / "design-tokens.json"
+VIZ = ROOT / "viz" / SLUG / "index.html"
+GALLERY = ROOT / "index.html"
+SOURCE_URL = "https://data.gov.sg/datasets/d_05fffefe9045d234eb140d7db0acdeb9/view"
+AGE_ORDER = ["16-19", "20-24", "25-34", "35-44", "45-54", "55-64", "65-75"]
+COLUMNS = [
+    "age_group", "weighted_n", "connection_mean", "future_mean",
+    "connection_share_8_10", "future_share_8_10",
+]
+
+
+def score(value):
+    return float(value.split(" ", 1)[0])
+
+
+def aggregate(source_rows):
+    rows = []
+    for age in AGE_ORDER:
+        group = [row for row in source_rows if row["age_2"].startswith(age)]
+        weights = [float(row["weight"]) for row in group]
+        weighted_n = sum(weights)
+        values = []
+        for field in ("outcome_connection", "outcome_future"):
+            scores = [score(row[field]) for row in group]
+            values.extend([
+                sum(value * weight for value, weight in zip(scores, weights)) / weighted_n,
+                sum(weight for value, weight in zip(scores, weights) if value >= 8) / weighted_n,
+            ])
+        rows.append([
+            age, round(weighted_n, 3), round(values[0], 3), round(values[2], 3),
+            round(values[1], 4), round(values[3], 4),
+        ])
+    return rows
+
+
+def render(rows, meta, tokens):
+    colors = tokens["colors"]
+    payload = json.dumps(rows, separators=(",", ":")).replace("</", "<\\/")
+    return f'''<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:,"><meta name="description" content="Older Singapore residents report stronger connection to the country but less interest in shaping its future, widening the gap from 0.09 to 1.07 points."><title>Connection rises as appetite to shape the future falls</title><style>
+:root{{--bg:{colors['background']};--fg:{colors['foreground']};--muted:{colors['secondary']};--surface:{colors['surface']};--border:{colors['border']};--focus:{colors['focus']};--connection:{colors['selected']};--future:{colors['mark']};--sans:{tokens['font_sans']};--mono:{tokens['font_mono']};color-scheme:light}}*{{box-sizing:border-box}}body{{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 var(--sans)}}main,footer{{width:min(100% - 2rem,{tokens['content_width']});margin:auto}}main{{padding:clamp(2rem,6vw,4rem) 0 1.5rem}}h1{{max-width:22ch;margin:0 0 .8rem;font-size:clamp(2rem,6vw,4.25rem);line-height:1.04;letter-spacing:-.04em}}.method,.caveat{{max-width:72ch;color:var(--muted)}}.chart{{position:relative;margin-top:1.75rem;border-top:1px solid var(--border);padding-top:1rem}}svg{{display:block;width:100%;height:auto;min-height:31rem;overflow:visible}}.grid{{stroke:var(--border)}}.link{{stroke:var(--border);stroke-width:5;stroke-linecap:round}}.connection{{fill:var(--connection)}}.future{{fill:var(--future)}}.mark{{cursor:pointer;stroke:var(--bg);stroke-width:3}}.mark:focus{{outline:none;stroke:var(--focus);stroke-width:5}}.axis,.label,.value{{fill:var(--muted);font:13px var(--mono)}}.label{{fill:var(--fg);font-weight:600}}.value{{font-size:12px}}.legend{{display:flex;gap:1.25rem;flex-wrap:wrap;color:var(--muted);font:13px var(--mono)}}.legend i{{display:inline-block;width:.7rem;height:.7rem;margin-right:.35rem;border-radius:50%;background:var(--connection)}}.legend .future-key{{background:var(--future)}}.tip{{position:absolute;z-index:2;max-width:20rem;padding:.7rem .8rem;border:1px solid var(--border);border-radius:{tokens['radius']};background:var(--bg);box-shadow:0 .4rem 1.4rem #0002;pointer-events:none;font-size:.85rem}}.tip strong,.tip span{{display:block}}.tip span{{color:var(--muted)}}.caveat{{margin-top:1.5rem;font-size:.9rem}}footer{{padding:1.5rem 0 2.5rem;border-top:1px solid var(--border);color:var(--muted);font-size:.8rem}}@media(max-width:650px){{svg{{min-height:26rem}}.value{{display:none}}}}
+</style></head><body><main><h1>Older residents feel more connected, but less interested in shaping Singapore’s future.</h1><p class="method">Weighted mean scores on two 0–10 questions. The gap grows from 0.09 points among ages 16–19 to 1.07 among ages 65–75. Hover, tap, or focus a point for its mean, weighted sample, and share scoring 8–10.</p><section class="chart" aria-label="Connection and future-shaping scores by age group"><svg id="chart" viewBox="0 0 960 520" role="img"><title>Connection and desire to shape Singapore's future by age group</title><desc>Seven dumbbells compare weighted mean connection with weighted mean desire to shape the future. The gap is widest for ages 65 to 75.</desc></svg><div class="legend" aria-hidden="true"><span><i></i>Connection to Singapore</span><span><i class="future-key"></i>Desire to shape its future</span></div><div id="tip" class="tip" hidden></div></section><p class="caveat"><strong>Read as association, not cause.</strong> This cross-sectional survey cannot separate age from cohort, retirement, income, or questionnaire effects.</p></main><footer>Source: <a href="{escape(meta['source_url'])}">Singapore Social Values Survey</a>. Retrieved {meta['fetched']}.</footer><script>
+const columns={json.dumps(COLUMNS)},rows={payload},svg=document.querySelector("#chart"),tip=document.querySelector("#tip"),NS="http://www.w3.org/2000/svg",W=960,H=520,M={{t:48,r:70,b:50,l:105}},lo=6.5,hi=8.5,x=v=>M.l+(v-lo)/(hi-lo)*(W-M.l-M.r),y=i=>M.t+i*(H-M.t-M.b)/(rows.length-1),add=(name,attrs,parent=svg)=>{{const node=document.createElementNS(NS,name);for(const [key,value] of Object.entries(attrs))node.setAttribute(key,value);parent.append(node);return node}},text=(value,xv,yv,klass,anchor="middle")=>{{const node=add("text",{{x:xv,y:yv,class:klass,"text-anchor":anchor}});node.textContent=value;return node}};
+for(let value=lo;value<=hi;value+=.5){{add("line",{{x1:x(value),x2:x(value),y1:M.t-20,y2:H-M.b+12,class:"grid"}});text(value.toFixed(1),x(value),H-M.b+34,"axis")}}text("Weighted mean score",M.l,M.t-29,"axis","start");
+function line(tag,value){{const node=document.createElement(tag);node.textContent=value;tip.append(node)}}function show(event,row,kind){{tip.replaceChildren();line("strong",`${{row[0]}} · ${{kind}}`);const mean=kind==="Connection"?row[2]:row[3],share=kind==="Connection"?row[4]:row[5];line("span",`${{mean.toFixed(2)}} mean · ${{(share*100).toFixed(1)}}% scored 8–10`);line("span",`${{row[1].toFixed(1)}} weighted respondents`);tip.hidden=false;const box=document.querySelector(".chart").getBoundingClientRect(),point=event.target.getBoundingClientRect();tip.style.left=`${{Math.min(Math.max(0,point.left-box.left+14),box.width-tip.offsetWidth)}}px`;tip.style.top=`${{Math.max(0,point.top-box.top-tip.offsetHeight-8)}}px`}}function hide(){{tip.hidden=true}}
+rows.forEach((row,index)=>{{const yy=y(index);text(row[0],M.l-18,yy+5,"label","end");add("line",{{x1:x(row[3]),x2:x(row[2]),y1:yy,y2:yy,class:"link"}});[[2,"Connection","connection"],[3,"Future shaping","future"]].forEach(([field,kind,klass])=>{{const node=add("circle",{{cx:x(row[field]),cy:yy,r:9,class:`mark ${{klass}}`,tabindex:"0",role:"button","aria-label":`${{row[0]}}, ${{kind}}, mean ${{row[field].toFixed(2)}}`}});node.addEventListener("pointerenter",event=>show(event,row,kind));node.addEventListener("pointerleave",hide);node.addEventListener("focus",event=>show(event,row,kind));node.addEventListener("blur",hide);node.addEventListener("click",event=>show(event,row,kind))}});text(`${{row[3].toFixed(2)}}`,x(row[3])-14,yy-14,"value","end");text(`${{row[2].toFixed(2)}}`,x(row[2])+14,yy-14,"value","start")}});
+const result=value=>({{content:[{{type:"text",text:JSON.stringify(value)}}]}}),mc=(typeof document!=="undefined"&&document.modelContext)||(typeof navigator!=="undefined"&&navigator.modelContext);mc?.registerTool({{name:"get_data",description:"Return the seven weighted age-group aggregates shown in the chart.",inputSchema:{{type:"object",properties:{{}},additionalProperties:false}},annotations:{{readOnlyHint:true}},async execute(){{return result({{columns,rows,total:rows.length,truncated:false,next_steps:["Use query with an age_group to retrieve one row."]}})}}}});mc?.registerTool({{name:"get_metadata",description:"Return the chart claim, source, method, fields, and caveat.",inputSchema:{{type:"object",properties:{{}},additionalProperties:false}},annotations:{{readOnlyHint:true}},async execute(){{return result({{title:"Connection rises as appetite to shape the future falls",claim:"Older Singapore residents feel more connected to the country, but less interested in shaping its future.",source:{json.dumps(meta['source_url'])},fetched:{json.dumps(meta['fetched'])},method:"Weighted age-group means and weighted shares scoring 8–10 on two 0–10 outcomes.",columns,caveat:"Cross-sectional association cannot separate age, cohort, retirement, income, or questionnaire effects.",total:rows.length,truncated:false,next_steps:["Use get_data for all aggregates or query for one age group."]}})}}}});mc?.registerTool({{name:"query",description:"Return the aggregate for one age group, or all groups when no filter is supplied.",inputSchema:{{type:"object",properties:{{filter:{{type:"object",properties:{{age_group:{{type:"string",enum:{json.dumps(AGE_ORDER)}}}}},additionalProperties:false}}}},additionalProperties:false}},annotations:{{readOnlyHint:true}},async execute(input={{}}){{const age=input.filter?.age_group,matches=age?rows.filter(row=>row[0]===age):rows;return result({{columns,rows:matches,total:matches.length,truncated:false,next_steps:matches.length?["All matching age aggregates returned."]:["Use one of the seven age_group labels from get_data."]}})}}}});
+</script></body></html>\n'''
+
+
+def render_gallery():
+    cards = []
+    for page in sorted((ROOT / "viz").glob("*/index.html")):
+        html = page.read_text()
+        title = re.search(r"<title>(.*?)</title>", html, re.S)
+        summary = re.search(r'<meta name="description" content="(.*?)">', html, re.S)
+        if not title or not summary:
+            continue
+        slug = page.parent.name
+        meta = json.loads((ROOT / "data" / slug / "meta.json").read_text())
+        cards.append(f'<article><h2><a href="viz/{slug}/index.html">{escape(title.group(1))}</a></h2><p>{escape(summary.group(1))}</p><small>Source date: {escape(meta["fetched"])}</small></article>')
+    return f'''<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="data:,"><title>Visuals</title><style>body{{max-width:45rem;margin:3rem auto;padding:0 1rem;font:16px/1.6 system-ui;color:#1d1d1f}}a{{color:inherit;text-underline-offset:.18em}}article{{padding:1.5rem 0;border-top:1px solid #d2d2d7}}h1,h2{{line-height:1.2}}</style></head><body><main><h1>Visuals</h1><p>Standalone, source-backed data visualizations.</p>{''.join(cards)}</main></body></html>\n'''
+
+
+def verify(source_rows, rows, meta):
+    assert len(source_rows) == 3076 and len(source_rows[0]) == 120
+    assert set(AGE_ORDER) == {row["age_2"].split(" years", 1)[0] for row in source_rows}
+    assert all(row["outcome_connection"] and row["outcome_future"] and row["weight"] for row in source_rows)
+    assert len(rows) == 7 and all(len(row) == len(COLUMNS) for row in rows)
+    assert round(rows[0][2] - rows[0][3], 2) == 0.09
+    assert round(rows[-1][2] - rows[-1][3], 2) == 1.07
+    assert rows[-1][2] > rows[0][2] and rows[-1][3] < rows[0][3]
+    assert meta == {"slug": SLUG, "source_url": SOURCE_URL, "fetched": "2026-09-27", "key_file_used": False}
+    html = VIZ.read_text()
+    assert html.count("<h1>") == 1 and html.count("<svg") == 1 and html.count("<section") == 1
+    assert html.count("<script") == 1 and "<script src=" not in html
+    assert not re.search(r'''(?:src|href)=["']https?://''', html.replace(f'href="{SOURCE_URL}"', ""))
+    assert html.count("mc?.registerTool") == 3 and html.count("readOnlyHint:true") == 3
+    assert all(f'name:"{name}"' in html for name in ("get_data", "get_metadata", "query"))
+    assert "pointerenter" in html and 'addEventListener("focus"' in html and 'addEventListener("click"' in html
+    assert "cross-sectional survey cannot separate age from cohort, retirement, income, or questionnaire effects" in html
+    assert f'href="viz/{SLUG}/index.html"' in GALLERY.read_text()
+    print("verified: 3,076 source rows, 7 weighted age aggregates, gaps 0.09 and 1.07, one inline SVG, 3 read-only tools, zero external assets")
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--verify", action="store_true")
+    args = parser.parse_args()
+    with RAW.open(newline="", encoding="utf-8-sig") as source:
+        source_rows = list(csv.DictReader(source))
+    meta = json.loads(META.read_text())
+    rows = aggregate(source_rows)
+    if not args.verify:
+        VIZ.parent.mkdir(parents=True, exist_ok=True)
+        VIZ.write_text(render(rows, meta, json.loads(TOKENS.read_text())))
+        GALLERY.write_text(render_gallery())
+    verify(source_rows, rows, meta)
+
+
+if __name__ == "__main__":
+    main()
