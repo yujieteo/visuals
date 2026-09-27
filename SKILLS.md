@@ -1,6 +1,6 @@
 ---
 name: generate-visualization
-description: Generate or refresh a self-contained D3 visualization from a local data file, website, or API response.
+description: Generate or refresh one story-first, dependency-free visualization from a local data file, website, or API response.
 ---
 
 # Generate visualization
@@ -14,15 +14,16 @@ description: Generate or refresh a self-contained D3 visualization from a local 
 
 ## Workflow
 
-1. Derive a kebab-case slug from the source. Ask only when no clear slug exists.
+1. Derive a kebab-case slug from the source. Use `visualization` as the fallback. Never ask for a slug.
 2. Fetch or read the source. Read credentials at runtime and never persist them.
 3. Save the unchanged source and `meta.json` under `data/<slug>/`.
-4. Use a compact CSV string for flat data and minimal JSON for hierarchical data.
-5. Read `design-tokens.json`. Choose the chart from the data shape.
-6. Generate `viz/<slug>/index.html` with inline CSS and JavaScript. The only external asset may be one pinned D3 CDN script.
-7. Register read-only `get_data`, `get_metadata`, and `query` tools when `modelContext` exists. Keep the page functional without it.
-8. Regenerate the root gallery by scanning `viz/*/index.html` for each page title and summary.
-9. Run the generator twice, then its verification mode. Validate JSON, run `git diff --check`, and inspect all untracked files.
-10. Commit only after every check passes. Report the commit, changed files, checks, source date, and limitations.
+4. Survey every field before choosing a story. Record its role, cardinality, null rate, and samples. For non-trivial free text, also record lengths, term frequencies, entropy, and near-duplicates. Treat qualifying text as a primary subject. Otherwise use entropy, concentration, and cardinality surprises.
+5. Internally enumerate two to four candidates. Each names its question, fields, and representation. Select by surprise, then write one disputable sentence about the data before choosing the representation.
+6. Run exactly one critique. Ask, "Is this the most interesting thing in the data, or just the easiest thing to visualize?" If it fails, select one other candidate, then commit. Never abstain.
+7. Read `design-tokens.json`. Generate `viz/<slug>/index.html` with exactly one visible key message and one interactive visualization. Inline all CSS, data, and JavaScript. Use no external assets, dependencies, CDN links, or build step. Use compact row arrays, CSV, or TSV for flat data and minimal JSON for hierarchical data. Every interaction must reveal more of the selected story.
+8. Register read-only `get_data`, `get_metadata`, and `query` tools when `modelContext` exists. Keep the page functional without it.
+9. Regenerate the root gallery by scanning `viz/*/index.html` for each page title and summary.
+10. Run the generator twice, then its verification mode. Validate JSON, run `git diff --check`, and inspect all untracked files.
+11. Commit only after every check passes. Report the commit, changed files, checks, source date, and limitations.
 
-Stop if the source, slug, credentials, or requested publication target cannot be resolved safely.
+Stop if the source, required credentials, or requested publication target cannot be resolved safely.
