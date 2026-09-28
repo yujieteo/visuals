@@ -1,0 +1,33 @@
+name: Verify visualizations
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # Every builder accepts --verify, which checks the committed data and
+      # generated HTML without writing any files. Run without --verify only
+      # when intentionally regenerating a page.
+      - name: Verify visualizations
+        run: |
+          python3 scripts/build.py --verify
+          python3 scripts/build_ges.py --verify
+          python3 scripts/build_manchester_city_finances.py --verify
+          python3 scripts/build_singapore_covid_governance_hindsight.py --verify
+          python3 scripts/build_social_values.py --verify
+          python3 scripts/build_stock_cases.py --verify
