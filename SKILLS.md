@@ -15,7 +15,7 @@ description: Generate or refresh one story-first, dependency-free visualization 
 ## Repository layout
 
 - `data/<slug>/` - the unchanged source (`raw.csv` or `raw.json`) plus `meta.json`.
-- `scripts/build*.py` - the builder and verifier for one visualization or family. `scripts/build_stock_cases.py` owns four stock slugs.
+- `scripts/build*.py` - the builder and verifier for one visualization or family. `scripts/fetch_haze.py` refreshes `data/haze-singapore/raw.json` from the public data.gov.sg API. `scripts/build_stock_cases.py` owns four stock slugs.
 - `viz/<slug>/index.html` - the generated page.
 - `index.html` - the generated root gallery.
 - `design-tokens.json` - shared colors, spacing, radius, and fonts.
@@ -25,7 +25,7 @@ description: Generate or refresh one story-first, dependency-free visualization 
 
 - Treat `viz/<slug>/index.html` and the root `index.html` as generated artifacts. Never hand-edit them.
 - Change the source data, `design-tokens.json`, or the builder, then regenerate.
-- `scripts/build.py`, `scripts/build_ges.py`, `scripts/build_manchester_city_finances.py`, `scripts/build_singapore_covid_governance_hindsight.py`, and `scripts/build_social_values.py` rebuild the gallery from every `viz/*/index.html`. `scripts/build_stock_cases.py` writes a gallery holding its own four cards.
+- `scripts/build.py`, `scripts/build_ges.py`, `scripts/build_haze_singapore.py`, `scripts/build_manchester_city_finances.py`, `scripts/build_singapore_covid_governance_hindsight.py`, and `scripts/build_social_values.py` rebuild the gallery from every `viz/*/index.html`. `scripts/build_stock_cases.py` writes a gallery holding its own four cards.
 - `convex-payoffs` and `fpl-expected-goals` have no committed builder; their page and data were authored directly.
 
 ## Workflow
@@ -51,10 +51,11 @@ Every builder accepts `--verify`, which re-reads the committed data, rebuilds th
 ```sh
 python3 scripts/build.py --verify
 python3 scripts/build_ges.py --verify
+python3 scripts/build_haze_singapore.py --verify
 python3 scripts/build_manchester_city_finances.py --verify
 python3 scripts/build_singapore_covid_governance_hindsight.py --verify
 python3 scripts/build_social_values.py --verify
 python3 scripts/build_stock_cases.py --verify
 ```
 
-`.github/workflows/verify.yml` runs all six commands on every push and pull request. Add a new builder to that workflow when you add one to `scripts/`.
+`.github/workflows/verify.yml` runs all seven commands on every push and pull request. Add a new builder to that workflow when you add one to `scripts/`.
