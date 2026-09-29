@@ -9,6 +9,7 @@ import statistics
 from collections import Counter, defaultdict
 from html import escape, unescape
 from pathlib import Path
+from gallery import render_gallery
 
 ROOT = Path(__file__).resolve().parents[1]
 SLUG = "tourist-attractions"
@@ -136,21 +137,6 @@ mc?.registerTool({{name:"query",description:"Filter attractions by text, boundin
 mc?.registerTool({{name:"get_marketing_terms",description:"Return the ranked marketing terms with document and regional counts.",inputSchema:{{type:"object",properties:{{limit:{{type:"integer",minimum:1,maximum:{TERM_LIMIT}}}}},additionalProperties:false}},annotations:{{readOnlyHint:true}},async execute(input={{}}){{const limit=Math.min(Math.max(Number(input.limit)||{TERM_LIMIT},1),{TERM_LIMIT}),result=terms.slice(0,limit);return toolResult({{total:terms.length,returned:result.length,truncated:terms.length>result.length,csv:d3.csvFormat(result,{json.dumps(TERM_FIELDS)}),next_steps:terms.length>result.length?[`Increase limit up to ${{terms.length}} for more terms.`]:["All ranked terms returned."]}})}}}});
 </script></body></html>
 '''
-
-
-def render_gallery():
-    cards = []
-    for page in sorted((ROOT / "viz").glob("*/index.html")):
-        html = page.read_text()
-        title = re.search(r"<title>(.*?)</title>", html, re.S)
-        summary = re.search(r'<meta name="description" content="(.*?)">', html, re.S)
-        if not title or not summary:
-            continue
-        slug = page.parent.name
-        meta = json.loads((ROOT / "data" / slug / "meta.json").read_text())
-        cards.append(f'<article><h2><a href="viz/{slug}/index.html">{escape(title.group(1))}</a></h2><p>{escape(summary.group(1))}</p><small>Source date: {escape(meta["fetched"])}</small></article>')
-    return f'''<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="data:,"><title>Visuals</title><style>body{{max-width:45rem;margin:3rem auto;padding:0 1rem;font:16px/1.6 system-ui;color:#1d1d1f}}a{{color:inherit;text-underline-offset:.18em}}article{{padding:1.5rem 0;border-top:1px solid #d2d2d7}}h1,h2{{line-height:1.2}}small{{font-size:.875rem}}h2 a{{display:inline-block;padding:.5rem 0}}</style></head><body><main><h1>Visuals</h1><p>Standalone, source-backed data visualizations.</p>{''.join(cards)}</main></body></html>\n'''
 
 
 def verify(raw, meta, rows, term_rows, median_lon, median_lat):
