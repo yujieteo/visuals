@@ -59,8 +59,7 @@ by the verifier suite.
 hand-edit them: change the data, `design-tokens.json`, or the builder, then
 regenerate. The root gallery is rebuilt from `viz/*/index.html` by the shared
 `render_gallery()` in `scripts/gallery.py`, which every builder imports. The
-builders are the source of
-truth for page content.
+builders are the source of truth for page content.
 
 ## Generation
 
