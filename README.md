@@ -23,6 +23,7 @@ standalone HTML file with its CSS, data, and JavaScript inlined.
 | --- | --- | --- |
 | `airbnb` | `scripts/build_stock_cases.py` | Airbnb cash conversion |
 | `arm` | `scripts/build_stock_cases.py` | Arm cash conversion |
+| `breeden-litzenberger-density` | `scripts/build_breeden_litzenberger_density.py` | The risk-neutral density is the curvature of the call-price curve |
 | `convex-payoffs` | *(none committed)* | Find a convex 15-minute bet |
 | `energy-email-productivity` | `scripts/build_energy_email_productivity.py` | Your energy dips mid-afternoon; your inbox doesn't |
 | `fpl-expected-goals` | *(none committed)* | How much of the early FPL points are repeatable? |
@@ -44,7 +45,8 @@ by the verifier suite.
 `viz/<slug>/index.html` and the root `index.html` gallery are generated. Do not
 hand-edit them: change the data, `design-tokens.json`, or the builder, then
 regenerate. The root gallery is rebuilt from `viz/*/index.html` by
-`scripts/build.py`, `scripts/build_ges.py`, `scripts/build_haze_singapore.py`,
+`scripts/build.py`, `scripts/build_breeden_litzenberger_density.py`,
+`scripts/build_ges.py`, `scripts/build_haze_singapore.py`,
 `scripts/build_manchester_city_finances.py`,
 `scripts/build_singapore_covid_governance_hindsight.py`,
 `scripts/build_social_values.py`, and `scripts/build_energy_email_productivity.py`;
@@ -59,6 +61,7 @@ Running a builder writes its visualization page and refreshes the root gallery:
 
 ```sh
 python3 scripts/build_stock_cases.py          # 4 stock pages + gallery
+python3 scripts/build_breeden_litzenberger_density.py  # breeden-litzenberger-density
 python3 scripts/build_ges.py                  # graduate-employment-survey
 python3 scripts/fetch_haze.py                 # optional: refresh haze-singapore raw data
 python3 scripts/build_haze_singapore.py       # haze-singapore
@@ -80,6 +83,7 @@ rebuilds the in-memory model, and asserts the committed HTML and metadata match.
 
 ```sh
 python3 scripts/build.py --verify
+python3 scripts/build_breeden_litzenberger_density.py --verify
 python3 scripts/build_ges.py --verify
 python3 scripts/build_haze_singapore.py --verify
 python3 scripts/build_manchester_city_finances.py --verify
