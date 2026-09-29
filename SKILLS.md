@@ -55,7 +55,8 @@ python3 scripts/build_haze_singapore.py --verify
 python3 scripts/build_manchester_city_finances.py --verify
 python3 scripts/build_singapore_covid_governance_hindsight.py --verify
 python3 scripts/build_social_values.py --verify
+python3 scripts/build_energy_email_productivity.py --verify
 python3 scripts/build_stock_cases.py --verify
 ```
 
-`.github/workflows/verify.yml` runs all seven commands on every push and pull request. Add a new builder to that workflow when you add one to `scripts/`.
+`.github/workflows/verify.yml` runs all eight commands on every push and pull request. Add a new builder to that workflow when you add one to `scripts/`.
