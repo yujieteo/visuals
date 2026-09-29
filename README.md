@@ -4,6 +4,16 @@ Self-contained, source-backed data visualizations. Each page tells one focused
 story from a dataset committed under `data/`, and every page is a single
 standalone HTML file with its CSS, data, and JavaScript inlined.
 
+## Quick start
+
+Python 3 standard library only; there is nothing to install. Open `index.html`
+(the gallery) or any `viz/<slug>/index.html` directly in a browser, then:
+
+```sh
+# verify every builder against the committed data and pages (writes nothing)
+for s in scripts/build*.py; do python3 "$s" --verify || break; done
+```
+
 ## Repository layout
 
 | Path | Role |
@@ -14,7 +24,9 @@ standalone HTML file with its CSS, data, and JavaScript inlined.
 | `viz/<slug>/index.html` | Generated standalone visualization page. |
 | `index.html` | Generated root gallery that links the visualization pages. |
 | `design-tokens.json` | Shared colors, spacing, radius, and fonts used by the builders. |
-| `SKILLS.md` | Agent workflow for generating or refreshing a visualization. |
+| `SKILLS.md` | Agent router: maps task types to the focused sub-skills below. |
+| `.agents/skills/visuals-*/SKILL.md` | Sub-skills loaded on demand: new visualization, refresh data, page conventions, verify and CI. |
+| `CONTRIBUTING.md` | Human contributor guide. |
 | `.github/workflows/verify.yml` | CI that runs every verifier on push and pull requests. |
 
 ## Visualizations
@@ -72,8 +84,9 @@ python3 scripts/build_energy_email_productivity.py
 python3 scripts/build.py                      # tourist-attractions
 ```
 
-See `SKILLS.md` for the full story-first workflow used to create a new
-visualization.
+See `CONTRIBUTING.md` for adding a visualization. Agents start at `SKILLS.md`,
+which routes to the story-first workflow in
+`.agents/skills/visuals-new-visualization/SKILL.md`.
 
 ## Verification
 
