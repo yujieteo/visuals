@@ -61,9 +61,8 @@ regenerate. The root gallery is rebuilt from `viz/*/index.html` by
 `scripts/build_ges.py`, `scripts/build_haze_singapore.py`,
 `scripts/build_manchester_city_finances.py`,
 `scripts/build_singapore_covid_governance_hindsight.py`,
-`scripts/build_social_values.py`, and `scripts/build_energy_email_productivity.py`;
-`scripts/build_stock_cases.py` writes a
-gallery containing its own four stock cards. The builders are the source of
+`scripts/build_social_values.py`, `scripts/build_energy_email_productivity.py`,
+and `scripts/build_stock_cases.py`. The builders are the source of
 truth for page content.
 
 ## Generation

@@ -2,6 +2,7 @@
 """Build four compact, source-backed stock fundamentals visualizations."""
 import argparse
 import json
+import re
 from html import escape
 from pathlib import Path
 
@@ -84,9 +85,16 @@ const result=text=>({{content:[{{type:'text',text}}]}}),mc=(document.modelContex
 
 def gallery():
     cards = []
-    for slug, case in CASES.items():
-        cards.append(f'<article><h2><a href="viz/{slug}/index.html">{escape(case["title"])}</a></h2><p>{escape(case["headline"])}</p></article>')
-    return '<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Visuals</title><style>body{max-width:45rem;margin:3rem auto;padding:0 1rem;font:16px/1.6 system-ui;color:#1d1d1f}article{border-top:1px solid #d2d2d7;padding:1rem 0}a{color:inherit}h2 a{display:inline-block;padding:.5rem 0}</style><main><h1>Visuals</h1>' + ''.join(cards) + '</main></html>\n'
+    for page in sorted((ROOT / "viz").glob("*/index.html")):
+        html = page.read_text()
+        title = re.search(r"<title>(.*?)</title>", html, re.S)
+        summary = re.search(r'<meta name="description" content="(.*?)">', html, re.S)
+        if not title or not summary:
+            continue
+        slug = page.parent.name
+        meta = json.loads((ROOT / "data" / slug / "meta.json").read_text())
+        cards.append(f'<article><h2><a href="viz/{slug}/index.html">{escape(title.group(1))}</a></h2><p>{escape(summary.group(1))}</p><small>Source date: {escape(meta["fetched"])}</small></article>')
+    return f'''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:,"><title>Visuals</title><style>body{{max-width:45rem;margin:3rem auto;padding:0 1rem;font:16px/1.6 system-ui;color:#1d1d1f}}a{{color:inherit;text-underline-offset:.18em}}article{{padding:1.5rem 0;border-top:1px solid #d2d2d7}}h1,h2{{line-height:1.2}}small{{font-size:.875rem}}h2 a{{display:inline-block;padding:.5rem 0}}</style></head><body><main><h1>Visuals</h1><p>Standalone, source-backed data visualizations.</p>{''.join(cards)}</main></body></html>\n'''
 
 
 def write(fetched):
@@ -110,7 +118,8 @@ def verify():
         assert "<script src=" not in html and html.count("mc?.registerTool") == 3 and html.count("readOnlyHint:true") == 3
         assert all(f'name:\'{tool}\'' in html for tool in ("get_data", "get_metadata", "query"))
         assert "data-metric" in html and "SWOT" in html and "not investment advice" in html
-    assert all(f'viz/{slug}/index.html' in (ROOT / "index.html").read_text() for slug in CASES)
+    index = (ROOT / "index.html").read_text()
+    assert all(f'viz/{page.parent.name}/index.html' in index for page in (ROOT / "viz").glob("*/index.html"))
     print("verified: 4 cases, 4 audited annual rows each, 1 interactive SVG and 3 read-only tools per page")
 
 
