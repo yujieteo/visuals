@@ -47,6 +47,7 @@ for s in scripts/build*.py; do python3 "$s" --verify || break; done
 | `singapore-covid-governance-hindsight` | `scripts/build_singapore_covid_governance_hindsight.py` | What did 2020 Singapore analyses say? |
 | `social-values-surveydata` | `scripts/build_social_values.py` | Connection rises as appetite to shape the future falls |
 | `tourist-attractions` | `scripts/build.py` | How Singapore attractions are marketed |
+| `vgc-protect-fakeout-pivot-trainer` | `scripts/build_vgc_protect_fakeout_pivot_trainer.py` | Win the turn: Protect, Fake Out and pivots |
 
 `convex-payoffs` and `fpl-expected-goals` were authored directly (page and data
 committed together) and have no builder in `scripts/`, so they are not covered
@@ -62,7 +63,7 @@ regenerate. The root gallery is rebuilt from `viz/*/index.html` by
 `scripts/build_manchester_city_finances.py`,
 `scripts/build_singapore_covid_governance_hindsight.py`,
 `scripts/build_social_values.py`, `scripts/build_energy_email_productivity.py`,
-and `scripts/build_stock_cases.py`. The builders are the source of
+`scripts/build_vgc_protect_fakeout_pivot_trainer.py`, and `scripts/build_stock_cases.py`. The builders are the source of
 truth for page content.
 
 ## Generation
@@ -80,6 +81,7 @@ python3 scripts/build_manchester_city_finances.py
 python3 scripts/build_singapore_covid_governance_hindsight.py
 python3 scripts/build_social_values.py
 python3 scripts/build_energy_email_productivity.py
+python3 scripts/build_vgc_protect_fakeout_pivot_trainer.py
 python3 scripts/build.py                      # tourist-attractions
 ```
 
@@ -102,6 +104,7 @@ python3 scripts/build_manchester_city_finances.py --verify
 python3 scripts/build_singapore_covid_governance_hindsight.py --verify
 python3 scripts/build_social_values.py --verify
 python3 scripts/build_energy_email_productivity.py --verify
+python3 scripts/build_vgc_protect_fakeout_pivot_trainer.py --verify
 python3 scripts/build_stock_cases.py --verify
 ```
 
