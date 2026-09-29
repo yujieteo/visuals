@@ -9,6 +9,7 @@ import statistics
 from collections import Counter, defaultdict
 from html import escape, unescape
 from pathlib import Path
+from gallery import render_gallery
 
 ROOT = Path(__file__).resolve().parents[1]
 SLUG = "tourist-attractions"
@@ -138,21 +139,6 @@ mc?.registerTool({{name:"get_marketing_terms",description:"Return the ranked mar
 '''
 
 
-def render_gallery():
-    cards = []
-    for page in sorted((ROOT / "viz").glob("*/index.html")):
-        html = page.read_text()
-        title = re.search(r"<title>(.*?)</title>", html, re.S)
-        summary = re.search(r'<meta name="description" content="(.*?)">', html, re.S)
-        if not title or not summary:
-            continue
-        slug = page.parent.name
-        meta = json.loads((ROOT / "data" / slug / "meta.json").read_text())
-        cards.append(f'<article><h2><a href="viz/{slug}/index.html">{escape(title.group(1))}</a></h2><p>{escape(summary.group(1))}</p><small>Source date: {escape(meta["fetched"])}</small></article>')
-    return f'''<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="data:,"><title>Visuals</title><style>body{{max-width:45rem;margin:3rem auto;padding:0 1rem;font:16px/1.6 system-ui;color:#1d1d1f}}a{{color:inherit;text-underline-offset:.18em}}article{{padding:1.5rem 0;border-top:1px solid #d2d2d7}}h1,h2{{line-height:1.2}}small{{font-size:.875rem}}h2 a{{display:inline-block;padding:.5rem 0}}</style></head><body><main><h1>Visuals</h1><p>Standalone, source-backed data visualizations.</p>{''.join(cards)}</main></body></html>\n'''
-
-
 def verify(raw, meta, rows, term_rows, median_lon, median_lat):
     features = raw.get("features", [])
     assert raw.get("type") == "FeatureCollection" and len(features) == EXPECTED_COUNT
@@ -190,7 +176,7 @@ def verify(raw, meta, rows, term_rows, median_lon, median_lat):
     assert 'id="cloud"' in html and 'id="marketing-summary"' in html and '.attr("class","term")' in html and '.attr("class","region-label")' in html
     assert "mc?.registerTool" in html and f'href="viz/{SLUG}/index.html"' in gallery
     assert meta["key_file_used"] is None and re.fullmatch(r"\d{4}-\d{2}-\d{2}", meta["fetched"])
-    tracked_text = "\n".join(path.read_text(errors="ignore") for path in ROOT.rglob("*") if path.is_file() and ".git" not in path.parts)
+    tracked_text = "\n".join(path.read_text(errors="ignore") for path in ROOT.rglob("*") if path.is_file() and ".git" not in path.parts and "__pycache__" not in path.parts)
     assert not re.search(r"/(?:Users|home)/[^/\s]+/", tracked_text)
     assert Counter((row["longitude"], row["latitude"]) for row in rows).most_common(1)[0][1] > 1 and any(float(row["offset_x"]) or float(row["offset_y"]) for row in rows)
     print("verified: 109 points, 106 descriptions, 40 ranked terms, exact coordinates and term sets, museum 14 (5/6/2/1), heritage 12, 2 compact CSVs, 4 read-only tools")

@@ -2,9 +2,9 @@
 import argparse
 import csv
 import json
-import re
 from html import escape
 from pathlib import Path
+from gallery import render_gallery
 
 ROOT = Path(__file__).resolve().parents[1]
 SLUG = "manchester-city-finances"
@@ -30,18 +30,6 @@ const result=value=>({{content:[{{type:'text',text:JSON.stringify(value)}}]}}),m
 </script></body></html>\n'''
 
 
-def gallery():
-    cards = []
-    for page in sorted((ROOT / 'viz').glob('*/index.html')):
-        content = page.read_text(encoding='utf-8')
-        title = re.search(r'<title>(.*?)</title>', content, re.S)
-        summary = re.search(r'<meta name="description" content="(.*?)">', content, re.S)
-        if title and summary:
-            slug = page.parent.name
-            cards.append(f'<article><h2><a href="viz/{slug}/index.html">{escape(title.group(1))}</a></h2><p>{escape(summary.group(1))}</p><small>Source date: {escape(json.loads((ROOT / "data" / slug / "meta.json").read_text())["fetched"])}</small></article>')
-    return f'<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="data:,"><title>Visuals</title><style>body{{max-width:45rem;margin:3rem auto;padding:0 1rem;font:16px/1.6 system-ui;color:#1d1d1f}}a{{color:inherit;text-underline-offset:.18em}}article{{padding:1.5rem 0;border-top:1px solid #d2d2d7}}h1,h2{{line-height:1.2}}small{{font-size:.875rem}}h2 a{{display:inline-block;padding:.5rem 0}}</style></head><body><main><h1>Visuals</h1><p>Standalone, source-backed data visualizations.</p>{"".join(cards)}</main></body></html>\n'
-
-
 def verify(rows):
     assert len(rows) == 9 and {row['id'] for row in rows} >= {'cas-2020', 'fy2024', 'fy2025'}
     assert rows[-2]['revenue_gbp_m'] == '715.0' and rows[-1]['profit_gbp_m'] == '-9.9'
@@ -61,7 +49,7 @@ def main():
     if not args.verify:
         VIZ.parent.mkdir(parents=True, exist_ok=True)
         VIZ.write_text(render(rows, json.loads(META.read_text()), json.loads((ROOT / 'design-tokens.json').read_text())), encoding='utf-8')
-        GALLERY.write_text(gallery(), encoding='utf-8')
+        GALLERY.write_text(render_gallery(), encoding='utf-8')
     verify(rows)
 
 

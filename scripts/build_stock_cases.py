@@ -2,9 +2,10 @@
 """Build four compact, source-backed stock fundamentals visualizations."""
 import argparse
 import json
-import re
 from html import escape
 from pathlib import Path
+
+from gallery import write_gallery
 
 ROOT = Path(__file__).resolve().parents[1]
 SEC = "https://data.sec.gov/api/xbrl/companyfacts/CIK{cik:010d}.json"
@@ -83,20 +84,6 @@ const result=text=>({{content:[{{type:'text',text}}]}}),mc=(document.modelContex
 </script></body></html>\n'''
 
 
-def gallery():
-    cards = []
-    for page in sorted((ROOT / "viz").glob("*/index.html")):
-        html = page.read_text()
-        title = re.search(r"<title>(.*?)</title>", html, re.S)
-        summary = re.search(r'<meta name="description" content="(.*?)">', html, re.S)
-        if not title or not summary:
-            continue
-        slug = page.parent.name
-        meta = json.loads((ROOT / "data" / slug / "meta.json").read_text())
-        cards.append(f'<article><h2><a href="viz/{slug}/index.html">{escape(title.group(1))}</a></h2><p>{escape(summary.group(1))}</p><small>Source date: {escape(meta["fetched"])}</small></article>')
-    return f'''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:,"><title>Visuals</title><style>body{{max-width:45rem;margin:3rem auto;padding:0 1rem;font:16px/1.6 system-ui;color:#1d1d1f}}a{{color:inherit;text-underline-offset:.18em}}article{{padding:1.5rem 0;border-top:1px solid #d2d2d7}}h1,h2{{line-height:1.2}}small{{font-size:.875rem}}h2 a{{display:inline-block;padding:.5rem 0}}</style></head><body><main><h1>Visuals</h1><p>Standalone, source-backed data visualizations.</p>{''.join(cards)}</main></body></html>\n'''
-
-
 def write(fetched):
     for slug, case in CASES.items():
         raw, rows = rows_for(slug, case)
@@ -104,7 +91,7 @@ def write(fetched):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(render(slug, case, raw, rows, fetched))
         (ROOT / "data" / slug / "meta.json").write_text(json.dumps({"slug": slug, "source_url": SEC.format(cik=case["cik"]), "fetched": fetched, "key_file_used": False}, indent=2) + "\n")
-    (ROOT / "index.html").write_text(gallery())
+    write_gallery()
 
 
 def verify():

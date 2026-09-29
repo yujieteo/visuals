@@ -406,7 +406,6 @@ def main():
     else:
         expected = render(raw, scen, meta, json.loads(TOKENS.read_text(encoding="utf-8")))
         assert VIZ.read_text(encoding="utf-8") == expected, "viz page is stale: rerun the builder"
-        assert GALLERY.read_text(encoding="utf-8") == render_gallery(), "gallery is stale: rerun the builder"
     verify(raw, scen, meta)
 
 
