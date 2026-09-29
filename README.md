@@ -47,6 +47,7 @@ for s in scripts/build*.py; do python3 "$s" --verify || break; done
 | `panw` | `scripts/build_stock_cases.py` | Palo Alto Networks cash conversion |
 | `singapore-covid-governance-hindsight` | `scripts/build_singapore_covid_governance_hindsight.py` | What did 2020 Singapore analyses say? |
 | `social-values-surveydata` | `scripts/build_social_values.py` | Connection rises as appetite to shape the future falls |
+| `tampines-food-map` | `scripts/build_tampines_food_map.py` | Where to eat in Tampines hub: top 20 places, reviews and calories |
 | `tourist-attractions` | `scripts/build.py` | How Singapore attractions are marketed |
 | `vgc-protect-fakeout-pivot-trainer` | `scripts/build_vgc_protect_fakeout_pivot_trainer.py` | Win the turn: Protect, Fake Out and pivots |
 
@@ -78,6 +79,7 @@ python3 scripts/build_singapore_covid_governance_hindsight.py
 python3 scripts/build_social_values.py
 python3 scripts/build_energy_email_productivity.py
 python3 scripts/build_vgc_protect_fakeout_pivot_trainer.py
+python3 scripts/build_tampines_food_map.py        # tampines-food-map
 python3 scripts/build.py                      # tourist-attractions
 ```
 
@@ -101,6 +103,7 @@ python3 scripts/build_singapore_covid_governance_hindsight.py --verify
 python3 scripts/build_social_values.py --verify
 python3 scripts/build_energy_email_productivity.py --verify
 python3 scripts/build_vgc_protect_fakeout_pivot_trainer.py --verify
+python3 scripts/build_tampines_food_map.py --verify
 python3 scripts/build_stock_cases.py --verify
 ```
 
