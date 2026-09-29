@@ -25,7 +25,7 @@ description: Generate or refresh one story-first, dependency-free visualization 
 
 - Treat `viz/<slug>/index.html` and the root `index.html` as generated artifacts. Never hand-edit them.
 - Change the source data, `design-tokens.json`, or the builder, then regenerate.
-- `scripts/build.py`, `scripts/build_ges.py`, `scripts/build_haze_singapore.py`, `scripts/build_manchester_city_finances.py`, `scripts/build_singapore_covid_governance_hindsight.py`, and `scripts/build_social_values.py` rebuild the gallery from every `viz/*/index.html`. `scripts/build_stock_cases.py` writes a gallery holding its own four cards.
+- `scripts/build.py`, `scripts/build_ges.py`, `scripts/build_haze_singapore.py`, `scripts/build_manchester_city_finances.py`, `scripts/build_singapore_covid_governance_hindsight.py`, `scripts/build_social_values.py`, and `scripts/build_energy_email_productivity.py` rebuild the gallery from every `viz/*/index.html`. `scripts/build_stock_cases.py` writes a gallery holding its own four cards.
 - `convex-payoffs` and `fpl-expected-goals` have no committed builder; their page and data were authored directly.
 
 ## Workflow
