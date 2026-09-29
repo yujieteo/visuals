@@ -24,6 +24,7 @@ standalone HTML file with its CSS, data, and JavaScript inlined.
 | `airbnb` | `scripts/build_stock_cases.py` | Airbnb cash conversion |
 | `arm` | `scripts/build_stock_cases.py` | Arm cash conversion |
 | `convex-payoffs` | *(none committed)* | Find a convex 15-minute bet |
+| `energy-email-productivity` | `scripts/build_energy_email_productivity.py` | Your energy dips mid-afternoon; your inbox doesn't |
 | `fpl-expected-goals` | *(none committed)* | How much of the early FPL points are repeatable? |
 | `graduate-employment-survey` | `scripts/build_ges.py` | The computing salary premium widened |
 | `haze-singapore` | `scripts/build_haze_singapore.py` | Where and when Singapore's air turned hazy |
@@ -45,8 +46,9 @@ hand-edit them: change the data, `design-tokens.json`, or the builder, then
 regenerate. The root gallery is rebuilt from `viz/*/index.html` by
 `scripts/build.py`, `scripts/build_ges.py`, `scripts/build_haze_singapore.py`,
 `scripts/build_manchester_city_finances.py`,
-`scripts/build_singapore_covid_governance_hindsight.py`, and
-`scripts/build_social_values.py`; `scripts/build_stock_cases.py` writes a
+`scripts/build_singapore_covid_governance_hindsight.py`,
+`scripts/build_social_values.py`, and `scripts/build_energy_email_productivity.py`;
+`scripts/build_stock_cases.py` writes a
 gallery containing its own four stock cards. The builders are the source of
 truth for page content.
 
@@ -63,6 +65,7 @@ python3 scripts/build_haze_singapore.py       # haze-singapore
 python3 scripts/build_manchester_city_finances.py
 python3 scripts/build_singapore_covid_governance_hindsight.py
 python3 scripts/build_social_values.py
+python3 scripts/build_energy_email_productivity.py
 python3 scripts/build.py                      # tourist-attractions
 ```
 
@@ -82,10 +85,11 @@ python3 scripts/build_haze_singapore.py --verify
 python3 scripts/build_manchester_city_finances.py --verify
 python3 scripts/build_singapore_covid_governance_hindsight.py --verify
 python3 scripts/build_social_values.py --verify
+python3 scripts/build_energy_email_productivity.py --verify
 python3 scripts/build_stock_cases.py --verify
 ```
 
 Each verifier checks the story's invariants, the embedded data tables, the
 read-only tool registrations, and (where applicable) that the page has no
-external assets. `.github/workflows/verify.yml` runs all seven commands on every
+external assets. `.github/workflows/verify.yml` runs all eight commands on every
 push and pull request.
