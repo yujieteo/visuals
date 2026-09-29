@@ -21,6 +21,7 @@ for s in scripts/build*.py; do python3 "$s" --verify || break; done
 | `data/<slug>/raw.csv` or `raw.json` | The unchanged source data for one visualization. |
 | `data/<slug>/meta.json` | Source label or URL, ISO fetch date, and whether a key file was used. |
 | `scripts/build*.py` | Dependency-free Python builders and verifiers. |
+| `scripts/gallery.py` | Shared helper that rebuilds the root gallery from every `viz/*/index.html`. |
 | `viz/<slug>/index.html` | Generated standalone visualization page. |
 | `index.html` | Generated root gallery that links the visualization pages. |
 | `design-tokens.json` | Shared colors, spacing, radius, and fonts used by the builders. |
@@ -56,14 +57,9 @@ by the verifier suite.
 
 `viz/<slug>/index.html` and the root `index.html` gallery are generated. Do not
 hand-edit them: change the data, `design-tokens.json`, or the builder, then
-regenerate. The root gallery is rebuilt from `viz/*/index.html` by
-`scripts/build.py`, `scripts/build_breeden_litzenberger_density.py`,
-`scripts/build_ges.py`, `scripts/build_haze_singapore.py`,
-`scripts/build_manchester_city_finances.py`,
-`scripts/build_singapore_covid_governance_hindsight.py`,
-`scripts/build_social_values.py`, `scripts/build_energy_email_productivity.py`,
-and `scripts/build_stock_cases.py`. The builders are the source of
-truth for page content.
+regenerate. The root gallery is rebuilt from `viz/*/index.html` by the shared
+`render_gallery()` in `scripts/gallery.py`, which every builder imports. The
+builders are the source of truth for page content.
 
 ## Generation
 

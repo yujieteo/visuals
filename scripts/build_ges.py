@@ -7,6 +7,7 @@ import re
 import statistics
 from html import escape
 from pathlib import Path
+from gallery import render_gallery
 
 ROOT = Path(__file__).resolve().parents[1]
 SLUG = "graduate-employment-survey"
@@ -81,21 +82,6 @@ svg.addEventListener("click",event=>{{const box=svg.getBoundingClientRect(),scal
 addEventListener("resize",()=>{{if(Math.abs(svg.getBoundingClientRect().width-W)>1)draw()}});draw();
 const result=value=>({{content:[{{type:"text",text:JSON.stringify(value)}}]}}),mc=(typeof document!=="undefined"&&document.modelContext)||(typeof navigator!=="undefined"&&navigator.modelContext);mc?.registerTool({{name:"get_data",description:"Return the plotted salary-premium rows.",inputSchema:{{type:"object",properties:{{}},additionalProperties:false}},annotations:{{readOnlyHint:true}},async execute(){{return result({{columns:["year","university","degree","gross_monthly_median","year_premium_percent","computing_title"],rows,total:rows.length,truncated:false}})}}}});mc?.registerTool({{name:"get_metadata",description:"Return the chart claim, method, and annual computing medians.",inputSchema:{{type:"object",properties:{{}},additionalProperties:false}},annotations:{{readOnlyHint:true}},async execute(){{return result({{claim:"A computing title moved from -0.6% in 2013 to +36.4% in 2024.",measure:"gross monthly median relative to each survey year's dataset median",computing_title_rule:"degree contains computing, case-insensitive",medians,truncated:false}})}}}});mc?.registerTool({{name:"query",description:"Filter plotted rows by year or computing-title membership.",inputSchema:{{type:"object",properties:{{year:{{type:"integer"}},computing_title:{{type:"boolean"}}}},additionalProperties:false}},annotations:{{readOnlyHint:true}},async execute(input={{}}){{const matches=rows.filter(d=>(input.year===undefined||d[0]===input.year)&&(input.computing_title===undefined||d[5]===input.computing_title));return result({{columns:["year","university","degree","gross_monthly_median","year_premium_percent","computing_title"],rows:matches,total:matches.length,truncated:false}})}}}});
 </script></body></html>\n'''
-
-
-def render_gallery():
-    cards = []
-    for page in sorted((ROOT / "viz").glob("*/index.html")):
-        html = page.read_text()
-        title = re.search(r"<title>(.*?)</title>", html, re.S)
-        summary = re.search(r'<meta name="description" content="(.*?)">', html, re.S)
-        if not title or not summary:
-            continue
-        slug = page.parent.name
-        meta = json.loads((ROOT / "data" / slug / "meta.json").read_text())
-        cards.append(f'<article><h2><a href="viz/{slug}/index.html">{escape(title.group(1))}</a></h2><p>{escape(summary.group(1))}</p><small>Source date: {escape(meta["fetched"])}</small></article>')
-    return f'''<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="data:,"><title>Visuals</title><style>body{{max-width:45rem;margin:3rem auto;padding:0 1rem;font:16px/1.6 system-ui;color:#1d1d1f}}a{{color:inherit;text-underline-offset:.18em}}article{{padding:1.5rem 0;border-top:1px solid #d2d2d7}}h1,h2{{line-height:1.2}}small{{font-size:.875rem}}h2 a{{display:inline-block;padding:.5rem 0}}</style></head><body><main><h1>Visuals</h1><p>Standalone, source-backed data visualizations.</p>{''.join(cards)}</main></body></html>\n'''
 
 
 def verify(rows, points, computing_medians, meta):

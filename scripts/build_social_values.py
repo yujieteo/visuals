@@ -5,6 +5,7 @@ import json
 import re
 from html import escape
 from pathlib import Path
+from gallery import render_gallery
 
 ROOT = Path(__file__).resolve().parents[1]
 SLUG = "social-values-surveydata"
@@ -61,21 +62,6 @@ rows.forEach((row,index)=>{{const yy=y(index);text(row[0],M.l-(narrow?12:18),yy+
 svg.addEventListener("click",event=>{{if(!event.target.classList.contains("mark"))hide()}});addEventListener("resize",()=>{{if(Math.abs(svg.getBoundingClientRect().width-W)>1)draw()}});draw();
 const result=value=>({{content:[{{type:"text",text:JSON.stringify(value)}}]}}),mc=(typeof document!=="undefined"&&document.modelContext)||(typeof navigator!=="undefined"&&navigator.modelContext);mc?.registerTool({{name:"get_data",description:"Return the seven weighted age-group aggregates shown in the chart.",inputSchema:{{type:"object",properties:{{}},additionalProperties:false}},annotations:{{readOnlyHint:true}},async execute(){{return result({{columns,rows,total:rows.length,truncated:false,next_steps:["Use query with an age_group to retrieve one row."]}})}}}});mc?.registerTool({{name:"get_metadata",description:"Return the chart claim, source, method, fields, and caveat.",inputSchema:{{type:"object",properties:{{}},additionalProperties:false}},annotations:{{readOnlyHint:true}},async execute(){{return result({{title:"Connection rises as appetite to shape the future falls",claim:"Older Singapore residents feel more connected to the country, but less interested in shaping its future.",source:{json.dumps(meta['source_url'])},fetched:{json.dumps(meta['fetched'])},method:"Weighted age-group means and weighted shares scoring 8–10 on two 0–10 outcomes.",columns,caveat:"Cross-sectional association cannot separate age, cohort, retirement, income, or questionnaire effects.",total:rows.length,truncated:false,next_steps:["Use get_data for all aggregates or query for one age group."]}})}}}});mc?.registerTool({{name:"query",description:"Return the aggregate for one age group, or all groups when no filter is supplied.",inputSchema:{{type:"object",properties:{{filter:{{type:"object",properties:{{age_group:{{type:"string",enum:{json.dumps(AGE_ORDER)}}}}},additionalProperties:false}}}},additionalProperties:false}},annotations:{{readOnlyHint:true}},async execute(input={{}}){{const age=input.filter?.age_group,matches=age?rows.filter(row=>row[0]===age):rows;return result({{columns,rows:matches,total:matches.length,truncated:false,next_steps:matches.length?["All matching age aggregates returned."]:["Use one of the seven age_group labels from get_data."]}})}}}});
 </script></body></html>\n'''
-
-
-def render_gallery():
-    cards = []
-    for page in sorted((ROOT / "viz").glob("*/index.html")):
-        html = page.read_text()
-        title = re.search(r"<title>(.*?)</title>", html, re.S)
-        summary = re.search(r'<meta name="description" content="(.*?)">', html, re.S)
-        if not title or not summary:
-            continue
-        slug = page.parent.name
-        meta = json.loads((ROOT / "data" / slug / "meta.json").read_text())
-        cards.append(f'<article><h2><a href="viz/{slug}/index.html">{escape(title.group(1))}</a></h2><p>{escape(summary.group(1))}</p><small>Source date: {escape(meta["fetched"])}</small></article>')
-    return f'''<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="data:,"><title>Visuals</title><style>body{{max-width:45rem;margin:3rem auto;padding:0 1rem;font:16px/1.6 system-ui;color:#1d1d1f}}a{{color:inherit;text-underline-offset:.18em}}article{{padding:1.5rem 0;border-top:1px solid #d2d2d7}}h1,h2{{line-height:1.2}}small{{font-size:.875rem}}h2 a{{display:inline-block;padding:.5rem 0}}</style></head><body><main><h1>Visuals</h1><p>Standalone, source-backed data visualizations.</p>{''.join(cards)}</main></body></html>\n'''
 
 
 def verify(source_rows, rows, meta):
