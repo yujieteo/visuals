@@ -60,4 +60,4 @@ python3 scripts/build_energy_email_productivity.py --verify
 python3 scripts/build_stock_cases.py --verify
 ```
 
-`.github/workflows/verify.yml` runs all eight commands on every push and pull request. Add a new builder to that workflow when you add one to `scripts/`.
+`.github/workflows/verify.yml` runs every command above on every push and pull request. Add a new builder to that workflow when you add one to `scripts/`.

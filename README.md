@@ -95,5 +95,5 @@ python3 scripts/build_stock_cases.py --verify
 
 Each verifier checks the story's invariants, the embedded data tables, the
 read-only tool registrations, and (where applicable) that the page has no
-external assets. `.github/workflows/verify.yml` runs all eight commands on every
+external assets. `.github/workflows/verify.yml` runs every command above on every
 push and pull request.
