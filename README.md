@@ -38,7 +38,9 @@ for s in scripts/build*.py; do python3 "$s" --verify || break; done
 | `arm` | `scripts/build_stock_cases.py` | Arm cash conversion |
 | `breeden-litzenberger-density` | `scripts/build_breeden_litzenberger_density.py` | The risk-neutral density is the curvature of the call-price curve |
 | `convex-payoffs` | *(none committed)* | Find a convex 15-minute bet |
+| `convexity-action-engine` | `scripts/build_convexity_action_engine.py` | Search everyday actions, screen for ruin, compare payoff shape and opportunity cost |
 | `energy-email-productivity` | `scripts/build_energy_email_productivity.py` | Your energy dips mid-afternoon; your inbox doesn't |
+| `everyday-actions` | `scripts/build_everyday_actions.py` | Compare activity frequency and experienced affect, with a source for every plotted value |
 | `fpl-expected-goals` | *(none committed)* | How much of the early FPL points are repeatable? |
 | `graduate-employment-survey` | `scripts/build_ges.py` | The computing salary premium widened |
 | `haze-singapore` | `scripts/build_haze_singapore.py` | Where and when Singapore's air turned hazy |
@@ -78,6 +80,8 @@ python3 scripts/build_manchester_city_finances.py
 python3 scripts/build_singapore_covid_governance_hindsight.py
 python3 scripts/build_social_values.py
 python3 scripts/build_energy_email_productivity.py
+python3 scripts/build_convexity_action_engine.py
+python3 scripts/build_everyday_actions.py
 python3 scripts/build_vgc_protect_fakeout_pivot_trainer.py
 python3 scripts/build_tampines_food_map.py        # tampines-food-map
 python3 scripts/build.py                      # tourist-attractions
@@ -102,12 +106,41 @@ python3 scripts/build_manchester_city_finances.py --verify
 python3 scripts/build_singapore_covid_governance_hindsight.py --verify
 python3 scripts/build_social_values.py --verify
 python3 scripts/build_energy_email_productivity.py --verify
+python3 scripts/build_convexity_action_engine.py --verify
+python3 scripts/build_everyday_actions.py --verify
 python3 scripts/build_vgc_protect_fakeout_pivot_trainer.py --verify
 python3 scripts/build_tampines_food_map.py --verify
 python3 scripts/build_stock_cases.py --verify
 ```
 
-Each verifier checks the story's invariants, the embedded data tables, the
-read-only tool registrations, and (where applicable) that the page has no
-external assets. `.github/workflows/verify.yml` runs every command above on every
-push and pull request.
+The copied action visualizations also retain their source regression tests:
+
+```sh
+python3 -m unittest discover -s tests -p 'test_*.py'
+node --test tests/convexity-action-engine.test.mjs tests/everyday-actions.test.mjs
+```
+
+## Action visualization provenance
+
+`convexity-action-engine` and `everyday-actions` were copied from the committed
+[yujieteo/site sources at 92159781](https://github.com/yujieteo/site/tree/92159781b66f340d77d34973c02461615cdb8578/visuals).
+The originals remain in that repository. Source inputs and derived CSV/JSON
+are unchanged; the builders now use this repository's `data/` and `viz/`
+layout and refresh the shared gallery. Everyday actions uses a maintainable
+HTML template in `scripts/templates/` with the dataset inserted at build time.
+The copies retain their original styling, including the engine's design-token
+snapshot and everyday actions' dark theme, rather than changing their UI.
+
+The engine's `data/convexity-action-engine/author.py` regenerates `raw.json`
+using its ontology, ATUS aggregates, and the DRM table and evidence shared with
+`data/everyday-actions/`. Both `derive_atus.py` scripts are retained for optional
+microdata rederivation; normal builds and tests need no network or credentials.
+Metadata dates describe the source visualization, not a new survey or fetch.
+Source regression tests were adapted only for the new layout and standalone
+publication (there is no site deployment copy to test here).
+
+Each verifier checks the story's invariants, the embedded data tables, and
+(where applicable) that the page has no external assets. The Node tests run each
+action page's emitted scripts and check its read-only tool registrations.
+`.github/workflows/verify.yml` runs every command above on every push and pull
+request.
