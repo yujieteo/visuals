@@ -210,7 +210,7 @@
         const [v] = centreVerts([[[0, 0], [d.b, 0], [d.b, d.tf], [d.tw, d.tf], [d.tw, d.h], [x, d.h], [x, d.h - d.tf], [0, d.h - d.tf]]]);
         return polygonShape(v, r, this.corners());
       },
-      resize: (d, sx, sy) => ({ ...d, b: d.b * sx, h: d.h * sy }),
+      resize: (d, sx, sy) => ({ ...d, b: (sx * (2 * d.b - d.tw) + d.tw) / 2, h: d.h * sy }),
     },
     cross: {
       label: "Cross", family: "built-up", phase: 2,
@@ -227,7 +227,92 @@
       },
       resize: (d, sx, sy) => ({ ...d, b: d.b * sx, h: d.h * sy }),
     },
+
+    /* ---------- phase 3: cold-formed thin-walled shapes (outer dimensions, wall t, inside bend radius ri) ---------- */
+    cfangle: {
+      label: "Cold-formed angle", family: "cold-formed", phase: 3,
+      dims: [{ key: "b", label: "Horizontal leg b", default: 80 }, { key: "h", label: "Vertical leg h", default: 80 },
+        { key: "t", label: "Wall t", default: 3 }, { key: "ri", label: "Inside bend radius ri", default: 3, min: 0 }],
+      corners: () => [],
+      defaultRadii: () => [],
+      build(d) {
+        const { b, h, t, ri } = d;
+        const R = ri + t;
+        need(b > t && h > t, "Wall t must be less than both legs.");
+        return coldFormed([[0, 0, R], [b, 0, 0], [b, t, 0], [t, t, ri], [t, h, 0], [0, h, 0]]);
+      },
+      resize: (d, sx, sy) => ({ ...d, b: d.b * sx, h: d.h * sy }),
+    },
+    cfchannel: {
+      label: "Cold-formed channel", family: "cold-formed", phase: 3,
+      dims: [{ key: "h", label: "Depth h", default: 200 }, { key: "b", label: "Flange width b", default: 75 },
+        { key: "c", label: "Lip c (0 = plain)", default: 20, min: 0 }, { key: "t", label: "Wall t", default: 2 },
+        { key: "ri", label: "Inside bend radius ri", default: 3, min: 0 }],
+      corners: () => [],
+      defaultRadii: () => [],
+      build(d) {
+        const { h, b, c, t, ri } = d;
+        const R = ri + t;
+        need(2 * t < h && t < b, "Wall t must be less than the flange width and half the depth.");
+        need(c === 0 || (c > t && 2 * c < h), "Lip c must be 0 (plain) or more than t and less than half the depth.");
+        // Web on the left, flanges to the right, lips turned inwards.
+        const pts = c > 0
+          ? [[b, c, 0], [b, 0, R], [0, 0, R], [0, h, R], [b, h, R], [b, h - c, 0], [b - t, h - c, 0], [b - t, h - t, ri], [t, h - t, ri], [t, t, ri], [b - t, t, ri], [b - t, c, 0]]
+          : [[b, 0, 0], [0, 0, R], [0, h, R], [b, h, 0], [b, h - t, 0], [t, h - t, ri], [t, t, ri], [b, t, 0]];
+        return coldFormed(pts);
+      },
+      resize: (d, sx, sy) => ({ ...d, b: d.b * sx, h: d.h * sy }),
+    },
+    cfzed: {
+      label: "Cold-formed Z", family: "cold-formed", phase: 3,
+      dims: [{ key: "h", label: "Depth h", default: 200 }, { key: "b", label: "Flange width b", default: 70 },
+        { key: "c", label: "Lip c (0 = plain)", default: 20, min: 0 }, { key: "t", label: "Wall t", default: 2 },
+        { key: "ri", label: "Inside bend radius ri", default: 3, min: 0 }],
+      corners: () => [],
+      defaultRadii: () => [],
+      build(d) {
+        const { h, b, c, t, ri } = d;
+        const R = ri + t;
+        need(2 * t < h && t < b, "Wall t must be less than the flange width and half the depth.");
+        need(c === 0 || (c > t && 2 * c < h), "Lip c must be 0 (plain) or more than t and less than half the depth.");
+        // Web from x = 0 to t; the bottom flange runs right, the top flange left; lips turn towards the web's mid-height.
+        const L = t - b; // outer face of the top flange's free end
+        const pts = c > 0
+          ? [[b, c, 0], [b, 0, R], [0, 0, R], [0, h - t, ri], [L + t, h - t, ri], [L + t, h - c, 0], [L, h - c, 0], [L, h, R], [t, h, R], [t, t, ri], [b - t, t, ri], [b - t, c, 0]]
+          : [[b, 0, 0], [0, 0, R], [0, h - t, ri], [L, h - t, 0], [L, h, 0], [t, h, R], [t, t, ri], [b, t, 0]];
+        return coldFormed(pts);
+      },
+      resize: (d, sx, sy) => ({ ...d, b: (sx * (2 * d.b - d.t) + d.t) / 2, h: d.h * sy }),
+    },
+    cfhat: {
+      label: "Cold-formed top hat", family: "cold-formed", phase: 3,
+      dims: [{ key: "h", label: "Height h", default: 60 }, { key: "b", label: "Crown width b", default: 60 },
+        { key: "f", label: "Flange overhang f", default: 25 }, { key: "t", label: "Wall t", default: 1.5 },
+        { key: "ri", label: "Inside bend radius ri", default: 2, min: 0 }],
+      corners: () => [],
+      defaultRadii: () => [],
+      build(d) {
+        const { h, b, f, t, ri } = d;
+        const R = ri + t;
+        need(2 * t < b && t < h, "Wall t must be less than the height and half the crown width.");
+        need(f > t, "Flange overhang f must be more than t.");
+        // Crown on top from x = 0 to b; webs down to flanges that run outwards by f beyond the crown.
+        return coldFormed([[-f, 0, 0], [t, 0, R], [t, h - t, ri], [b - t, h - t, ri], [b - t, 0, R], [b + f, 0, 0], [b + f, t, 0],
+          [b, t, ri], [b, h, R], [0, h, R], [0, t, ri], [-f, t, 0]]);
+      },
+      resize: (d, sx, sy) => ({ ...d, b: d.b * sx, f: d.f * sx, h: d.h * sy }),
+    },
   };
+
+  /* A uniform-thickness cold-formed strip from its outline [x, y, radius] (either orientation):
+     each bend has an outside radius ri + t and an inside radius ri about the same centre. */
+  function coldFormed(pts) {
+    let v = pts.map(([x, y]) => [x, y]), r = pts.map((p) => p[2]);
+    if (G.signedArea(v) < 0) { v = v.reverse(); r = r.reverse(); }
+    [v] = centreVerts([v]);
+    const { contour } = G.filletedPolygon(v, r, "Bend");
+    return { contours: [contour], corners: [] };
+  }
 
   /* Default dims for a shape. */
   const defaults = (id) => Object.fromEntries(SHAPES[id].dims.map((f) => [f.key, f.default]));

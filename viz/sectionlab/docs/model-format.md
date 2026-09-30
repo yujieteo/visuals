@@ -56,6 +56,10 @@ plastic:
 | `tee` | b, h, tf, tw (flange on top) | stem bottom left, stem bottom right, right root, right flange tip, right outer, left outer, left flange tip, left root |
 | `zed` | b, h, tf, tw (bottom flange right, top flange left) | bottom back, bottom toe, bottom flange tip, bottom root, top back, top toe, top flange tip, top root |
 | `cross` | b, h, tb (horizontal bar), th (vertical bar) | right end bottom, right end top, top-right root, top end right, top end left, top-left root, left end top, left end bottom, bottom-left root, bottom end left, bottom end right, bottom-right root |
+| `cfangle` | b, h, t, ri (cold-formed; heel bottom-left) | none: bends are ri inside and ri + t outside |
+| `cfchannel` | h, b, c (lip; 0 = plain), t, ri (web left, lips turned in) | none |
+| `cfzed` | h, b, c (lip; 0 = plain), t, ri (bottom flange right, top flange left) | none |
+| `cfhat` | h, b (crown), f (flange overhang beyond the crown), t, ri | none |
 
 ## Rules
 

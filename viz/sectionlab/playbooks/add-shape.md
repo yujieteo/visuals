@@ -7,6 +7,9 @@ the fixtures. The engine, exports and page pick it up without other changes.
    `phase`, `dims` (`key`, `label`, `default`, and `min`, `max`, `integer` where they
    apply), `corners(d)`, `defaultRadii(d)`, `build(d, radii)` and `resize(d, sx, sy)`
    (plus `locked: true` if resizing must keep the aspect ratio).
+   - `resize` must return dims whose built bounding box is exactly `sx` times as wide
+     and `sy` times as tall, keeping wall thicknesses and radii; where the width is not
+     `b` (a Z is 2b − t wide), solve for the new dims. `tests/shapes.test.mjs` checks it.
    - Build the outline counter-clockwise with its bounding box centred on the origin.
      A straight-sided outline is `G.filletedPolygon(vertices, radii)`: it rounds
      convex and concave corners alike, so root fillets and toe radii come free.

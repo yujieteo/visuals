@@ -365,13 +365,15 @@ function resizeFromEdge(p, d, at, st, free) {
     p.radii = d.radii.map((r) => tidy(r * k));
   }
   // Keep the opposite edge where it was.
-  const nb = { w: sx * (b.x1 - b.x0), h: sy * (b.y1 - b.y0) };
+  const g = partGeom(p);
+  if (!g) return;
+  const nb = boxOf(g.contours);
   if (horizontal) {
-    p.x = tidy(d.edge === "e" ? fixed + nb.w / 2 : fixed - nb.w / 2);
-    if (shape.locked) p.y = tidy((b.y0 + b.y1) / 2);
+    p.x = tidy(p.x + fixed - (d.edge === "e" ? nb.x0 : nb.x1));
+    if (shape.locked) p.y = tidy(p.y + (b.y0 + b.y1 - nb.y0 - nb.y1) / 2);
   } else {
-    p.y = tidy(d.edge === "n" ? fixed + nb.h / 2 : fixed - nb.h / 2);
-    if (shape.locked) p.x = tidy((b.x0 + b.x1) / 2);
+    p.y = tidy(p.y + fixed - (d.edge === "n" ? nb.y0 : nb.y1));
+    if (shape.locked) p.x = tidy(p.x + (b.x0 + b.x1 - nb.x0 - nb.x1) / 2);
   }
 }
 

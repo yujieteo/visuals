@@ -30,6 +30,7 @@ largest relative error. The stated accuracies are:
 | rectangular hollow, sharp or mixed corners | 6% | Bredt–Batho, t ≤ 0.1 min(b, h) |
 | rectangular hollow, rounded uniform wall | 3.5% | Bredt–Batho, t ≤ 0.1 min(b, h), inner radius = outer − t |
 | I, channel, Z, tee, angle, cross with sharp corners | 6% | Vlasov thin-walled open section, J = (1/3) Σ L t³ on the mid-lines, walls ≤ 0.15 min(b, h), thicker wall ≤ 1.4 × thinner |
+| cold-formed angle, channel, Z, top hat | 5% | Vlasov thin-walled open section with a uniform wall, J = L t³/3 on the developed mid-line, t ≤ 0.1 min(b, h) |
 
 For exact formulas the 0.01% bound is the reference's own accuracy, not the
 formula's. Bredt–Batho underestimates J; its error grows with t / b and is largest

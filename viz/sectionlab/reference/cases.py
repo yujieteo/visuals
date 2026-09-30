@@ -334,9 +334,48 @@ def built_up_case():
     return {"id": "built-up", "plastic": True, "model": model("Built-up girder with rolled parts", parts, axis="minor", solve="fixed-axis"), "expect": []}
 
 
+# ---------- phase 3: cold-formed thin-walled shapes ----------
+
+def developed(shape, d):
+    """Developed mid-line length: the sharp mid-line path less (2 − π/2)(ri + t/2) per 90° bend."""
+    t, ri = d["t"], d["ri"]
+    cut = (2 - pi / 2) * (ri + t / 2)
+    if shape == "cfangle":
+        return d["b"] + d["h"] - t - cut
+    if shape in ("cfchannel", "cfzed"):
+        if d["c"] > 0:
+            return d["h"] - t + 2 * (d["b"] - t) + 2 * (d["c"] - t / 2) - 4 * cut
+        return d["h"] - t + 2 * (d["b"] - t / 2) - 2 * cut
+    return 2 * (d["f"] + t / 2) + 2 * (d["h"] - t) + d["b"] - t - 4 * cut
+
+
+def cold_case(cid, shape, d, title, extra=(), plastic=True, **kw):
+    L = developed(shape, d)
+    return {
+        "id": cid, "plastic": plastic,
+        "model": model(title, [part("p", shape, d, [])], **kw),
+        "expect": [e("A", L * d["t"], "t × developed mid-line length (concentric bends)"),
+                   e("J", L * d["t"] ** 3 / 3, "L t³/3, thin-walled uniform strip"), *extra],
+    }
+
+
+CASES_PHASE3 = [
+    # Mode (a): the unequal angle is not symmetric about its major axis, and the Python plastic reference solves mode (a).
+    cold_case("cf-angle", "cfangle", {"b": 80.0, "h": 60.0, "t": 3.0, "ri": 3.0}, "Cold-formed angle 80 x 60 x 3", axis="major", solve="fixed-axis"),
+    cold_case("cf-lipped-channel", "cfchannel", {"h": 200.0, "b": 75.0, "c": 20.0, "t": 2.0, "ri": 3.0}, "Lipped channel 200 x 75 x 20 x 2"),
+    cold_case("cf-plain-channel", "cfchannel", {"h": 150.0, "b": 50.0, "c": 0.0, "t": 2.5, "ri": 4.0}, "Plain channel 150 x 50 x 2.5",
+              extra=(e("cy", 0.0, "symmetric about mid-depth"),)),
+    cold_case("cf-lipped-zed", "cfzed", {"h": 200.0, "b": 70.0, "c": 20.0, "t": 2.0, "ri": 3.0}, "Lipped Z 200 x 70 x 20 x 2",
+              extra=(e("cx", 0.0, "point symmetry about the web centre"), e("cy", 0.0, "point symmetry")), solve="fixed-axis"),
+    cold_case("cf-hat", "cfhat", {"h": 60.0, "b": 60.0, "f": 25.0, "t": 1.5, "ri": 2.0}, "Top hat 60 x 60 x 1.5",
+              extra=(e("cx", 0.0, "symmetric about the crown centre"),)),
+]
+
+
 CASES = [
     rect_case(), rect_turned_case(), rect_axial_case(), circle_case(), chs_case(), semicircle_case(), triangle_case(),
     equilateral_case(), rounded_rect_case(), rhs_sharp_case(), rhs_rounded_case(), tee_hole_case(), composite_case(),
     angle_case(), angle_zero_cross_case(), mixed_case(), polygon_case(),
     ishape_case(), ishape_rolled_case(), channel_case(), rolled_angle_case(), tee_case(), zed_case(), cross_case(), built_up_case(),
+    *CASES_PHASE3,
 ]

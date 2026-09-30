@@ -369,9 +369,64 @@ def shape_geometry(shape, d, radii):
         b, h, tb, th = d["b"], d["h"], d["tb"], d["th"]
         xl, xr, yb, yt = (b - th) / 2, (b + th) / 2, (h - tb) / 2, (h + tb) / 2
         outline = [(b, yb), (b, yt), (xr, yt), (xr, h), (xl, h), (xl, yt), (0, yt), (0, yb), (xl, yb), (xl, 0), (xr, 0), (xr, yb)]
+    elif shape in ("cfangle", "cfchannel", "cfzed", "cfhat"):
+        return cold_formed(shape, d)
     else:
         raise ValueError(f"reference has no geometry for shape {shape!r}")
     pieces, contour = fillet(centred([(float(x), float(y)) for x, y in outline]), radii)
+    return pieces, [contour]
+
+
+def cold_formed(shape, d):
+    """Phase 3: a uniform strip of wall t whose every bend has inside radius ri and outside radius ri + t.
+
+    Built here from the strip's centre-line path (independently of the engine's outline): the outline is
+    the path offset by ±t/2, square at the free ends, and each bend becomes an outside fillet ri + t and
+    an inside fillet ri about the same centre.
+    """
+    t, ri = d["t"], d["ri"]
+    h, b = d.get("h"), d.get("b")
+    c = d.get("c", 0.0)
+    m = t / 2
+    if shape == "cfangle":
+        path = [(b, m), (m, m), (m, h)]
+    elif shape == "cfchannel":
+        path = ([(b - m, c), (b - m, m)] if c > 0 else [(b, m)]) + [(m, m), (m, h - m)] + ([(b - m, h - m), (b - m, h - c)] if c > 0 else [(b, h - m)])
+    elif shape == "cfzed":
+        left = t - b
+        path = ([(b - m, c), (b - m, m)] if c > 0 else [(b, m)]) + [(m, m), (m, h - m)] + ([(left + m, h - m), (left + m, h - c)] if c > 0 else [(left, h - m)])
+    else:  # cfhat
+        f = d["f"]
+        path = [(-f, m), (m, m), (m, h - m), (b - m, h - m), (b - m, m), (b + f, m)]
+    # Offset the open path to both sides; at interior vertices the offset lines meet at the corner points.
+    def unit(p, q):
+        L = math.hypot(q[0] - p[0], q[1] - p[1])
+        return ((q[0] - p[0]) / L, (q[1] - p[1]) / L)
+    left_side, right_side, radii_l, radii_r = [], [], [], []
+    n = len(path)
+    for i, p in enumerate(path):
+        if i == 0 or i == n - 1:
+            u = unit(path[0], path[1]) if i == 0 else unit(path[-2], path[-1])
+            nl = (-u[1], u[0])
+            left_side.append((p[0] + m * nl[0], p[1] + m * nl[1]))
+            right_side.append((p[0] - m * nl[0], p[1] - m * nl[1]))
+            radii_l.append(0.0)
+            radii_r.append(0.0)
+            continue
+        u1, u2 = unit(path[i - 1], p), unit(p, path[i + 1])
+        n1, n2 = (-u1[1], u1[0]), (-u2[1], u2[0])
+        # Right-angle bends: the offset corner is p + m (n1 + n2) on the left and p − m (n1 + n2) on the right.
+        left_side.append((p[0] + m * (n1[0] + n2[0]), p[1] + m * (n1[1] + n2[1])))
+        right_side.append((p[0] - m * (n1[0] + n2[0]), p[1] - m * (n1[1] + n2[1])))
+        turn_left = u1[0] * u2[1] - u1[1] * u2[0] > 0
+        radii_l.append(ri if turn_left else ri + t)   # the left side is inside a left turn
+        radii_r.append(ri + t if turn_left else ri)
+    outline = right_side + left_side[::-1]
+    radii = radii_r + radii_l[::-1]
+    area = 0.5 * sum(outline[i - 1][0] * outline[i][1] - outline[i][0] * outline[i - 1][1] for i in range(len(outline)))
+    if area < 0:
+        outline, radii = outline[::-1], radii[::-1]
+    pieces, contour = fillet(centred(outline), radii)
     return pieces, [contour]
 
 

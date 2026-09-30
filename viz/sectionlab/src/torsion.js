@@ -21,6 +21,9 @@
  *   cross (sharp corners)       wall mid-lines, for walls up to 0.15 of the smaller outside
  *                               dimension with the thicker wall at most 1.4 times the thinner;
  *                               root fillets make it n/a
+ *   cold-formed angle, channel, Vlasov thin-walled open section with a uniform wall:
+ *   Z, top hat                  J = L t³/3 over the developed mid-line (bends included),
+ *                               for t up to 0.1 of the smaller of b and h
  */
 (function (root, factory) {
   if (typeof module === "object" && module.exports) module.exports = factory();
@@ -58,6 +61,23 @@
       case "angle": return c(d.b + d.h - d.t, d.t);
       case "cross": return c(d.b, d.tb) + c(d.h - d.tb, d.th);
       default: throw new RangeError(`No mid-line model for ${shape}.`);
+    }
+  }
+
+  /* Largest wall, as a fraction of the smaller of b and h, for cold-formed shapes. */
+  const COLD_MAX_T_RATIO = 0.1;
+
+  /* Developed mid-line length of a cold-formed strip: the sharp mid-line path, less (2 − π/2) r_m for
+     every 90° bend of mid-line radius r_m = ri + t/2 (an arc replaces the two tangent lengths). */
+  function developedLength(shape, d) {
+    const { t, ri } = d, m = t / 2, cut = (2 - Math.PI / 2) * (ri + m);
+    const lipped = d.c > 0;
+    switch (shape) {
+      case "cfangle": return d.b - m + d.h - m - cut;
+      case "cfchannel": case "cfzed":
+        return lipped ? d.h - t + 2 * (d.b - t) + 2 * (d.c - m) - 4 * cut : d.h - t + 2 * (d.b - m) - 2 * cut;
+      case "cfhat": return 2 * (d.f + m) + 2 * (d.h - t) + (d.b - t) - 4 * cut;
+      default: throw new RangeError(`No developed length for ${shape}.`);
     }
   }
 
@@ -109,6 +129,10 @@
         if (Math.max(...walls) / Math.min(...walls) > OPEN_MAX_WALL_RATIO) return { reason: `The thin-walled formula is used only when the thicker wall is at most ${OPEN_MAX_WALL_RATIO} times the thinner.` };
         return { id: "open-thin-wall", method: "Vlasov thin-walled open section", J: openMidline(shape, d), text: "J = (1/3) Σ L t³ over the wall mid-lines" };
       }
+      case "cfangle": case "cfchannel": case "cfzed": case "cfhat": {
+        if (d.t > COLD_MAX_T_RATIO * Math.min(d.b, d.h)) return { reason: `The thin-walled formula is used only for walls up to ${COLD_MAX_T_RATIO} of the smaller of b and h.` };
+        return { id: "cold-formed-thin-wall", method: "Vlasov thin-walled open section (uniform wall)", J: (developedLength(shape, d) * d.t ** 3) / 3, text: "J = L t³ / 3, L the developed mid-line length including the bends" };
+      }
       default:
         return { reason: "No verified torsion formula for this shape." };
     }
@@ -129,5 +153,5 @@
 
   const pct = (x) => `${+(x * 100).toPrecision(2)}%`;
 
-  return { BREDT_MAX_T_RATIO, OPEN_MAX_T_RATIO, OPEN_MAX_WALL_RATIO, rectangleSeries, openMidline, formula, torsion };
+  return { BREDT_MAX_T_RATIO, OPEN_MAX_T_RATIO, OPEN_MAX_WALL_RATIO, COLD_MAX_T_RATIO, rectangleSeries, openMidline, developedLength, formula, torsion };
 });

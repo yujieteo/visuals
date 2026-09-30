@@ -36,6 +36,7 @@ STATED = {
     "rect": (1e-4, "Saint-Venant series", "series summed to convergence; the stated bound is the reference's own accuracy"),
     "rhs-bredt-sharp": (0.06, "Bredt–Batho (thin wall)", "sharp or mixed corners, t ≤ 0.1 of the smaller outside dimension; the formula underestimates J"),
     "open-thin-wall": (0.06, "Vlasov thin-walled open section", "sharp-cornered I, channel, Z, tee, angle and cross sections with walls up to 0.15 of the smaller outside dimension and the thicker wall at most 1.4 times the thinner; the formula overestimates J for the I, channel, Z, tee and angle and underestimates it for the cross"),
+    "cold-formed-thin-wall": (0.05, "Vlasov thin-walled open section (uniform wall)", "cold-formed angle, plain and lipped channel and Z, and top hat with t ≤ 0.1 of the smaller of b and h and any inside bend radius; the formula overestimates J"),
     "rhs-bredt-rounded": (0.035, "Bredt–Batho (thin wall)", "uniform rounded corners (inner radius = outer − t), t ≤ 0.1 of the smaller outside dimension; the formula underestimates J"),
 }
 
@@ -84,6 +85,19 @@ def cases():
         open_cases += [(shape, {"b": 140.0, "h": 140.0, thick: 21.0, thin: 15.0}), (shape, {"b": 140.0, "h": 140.0, thick: 15.0, thin: 21.0})]
     corners = {"ishape": 12, "channel": 8, "zed": 8, "tee": 8, "angle": 6, "cross": 12}
     out += [(s, d, [0.0] * corners[s]) for s, d in open_cases]
+    # Cold-formed strips: typical gauges, and walls at 0.1 of the smaller outer dimension with sharp to generous bends.
+    cold_cases = [
+        ("cfangle", {"b": 80.0, "h": 80.0, "t": 3.0, "ri": 3.0}), ("cfangle", {"b": 50.0, "h": 30.0, "t": 3.0, "ri": 0.0}),
+        ("cfangle", {"b": 40.0, "h": 40.0, "t": 4.0, "ri": 16.0}), ("cfangle", {"b": 40.0, "h": 40.0, "t": 4.0, "ri": 0.0}),
+        ("cfchannel", {"h": 200.0, "b": 75.0, "c": 20.0, "t": 2.0, "ri": 3.0}), ("cfchannel", {"h": 200.0, "b": 75.0, "c": 0.0, "t": 2.0, "ri": 3.0}),
+        ("cfchannel", {"h": 40.0, "b": 40.0, "c": 0.0, "t": 4.0, "ri": 4.0}), ("cfchannel", {"h": 60.0, "b": 40.0, "c": 9.0, "t": 4.0, "ri": 1.0}),
+        ("cfchannel", {"h": 40.0, "b": 40.0, "c": 12.0, "t": 4.0, "ri": 2.0}),
+        ("cfzed", {"h": 200.0, "b": 70.0, "c": 20.0, "t": 2.0, "ri": 3.0}), ("cfzed", {"h": 40.0, "b": 40.0, "c": 9.0, "t": 4.0, "ri": 1.0}),
+        ("cfzed", {"h": 40.0, "b": 40.0, "c": 0.0, "t": 4.0, "ri": 8.0}),
+        ("cfhat", {"h": 60.0, "b": 60.0, "f": 25.0, "t": 1.5, "ri": 2.0}), ("cfhat", {"h": 40.0, "b": 40.0, "f": 6.0, "t": 4.0, "ri": 0.0}),
+        ("cfhat", {"h": 40.0, "b": 40.0, "f": 12.0, "t": 4.0, "ri": 4.0}), ("cfhat", {"h": 40.0, "b": 80.0, "f": 8.0, "t": 4.0, "ri": 2.0}),
+    ]
+    out += [(s, d, []) for s, d in cold_cases]
     return out
 
 

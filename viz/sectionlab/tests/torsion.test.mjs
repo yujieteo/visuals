@@ -12,7 +12,7 @@ test("the Saint-Venant series tends to the thin-strip and square limits", () => 
 });
 
 test("every formula is recorded, checked on cases and within its stated accuracy", () => {
-  const ids = ["circle", "chs", "semicircle", "triangle-equilateral", "rect", "rhs-bredt-sharp", "rhs-bredt-rounded", "open-thin-wall"];
+  const ids = ["circle", "chs", "semicircle", "triangle-equilateral", "rect", "rhs-bredt-sharp", "rhs-bredt-rounded", "open-thin-wall", "cold-formed-thin-wall"];
   assert.deepEqual(Object.keys(ACCURACY.formulas).sort(), ids.sort());
   for (const [id, a] of Object.entries(ACCURACY.formulas)) {
     assert.equal(a.pass, a.measured <= a.stated, id);
@@ -95,4 +95,28 @@ test("a sharp rolled shape on its own reports J with the open-section accuracy; 
   assert.equal(sharp.stated, ACCURACY.formulas["open-thin-wall"].stated);
   const rolled = compute(FIXTURES.cases.find((c) => c.id === "ishape-rolled").model, { plastic: false }).torsion;
   assert.equal(rolled.available, false);
+});
+
+test("cold-formed strips: J = L t³/3 with L the developed mid-line, equal to area / t, within the wall domain", () => {
+  for (const shape of ["cfangle", "cfchannel", "cfzed", "cfhat"]) {
+    for (const lip of [undefined, 0]) {
+      const d = { ...L.shapes.defaults(shape) };
+      if (lip === 0) { if (!("c" in d)) continue; d.c = 0; }
+      const A = L.geometry.area(L.shapes.SHAPES[shape].build(d, []).contours);
+      near(T.developedLength(shape, d) * d.t, A, 1e-12, { msg: `${shape} developed length × t = area` });
+      const f = T.formula(shape, d, []);
+      assert.equal(f.id, "cold-formed-thin-wall", shape);
+      near(f.J, (A * d.t ** 2) / 3, 1e-12, { msg: `${shape} J` });
+    }
+  }
+  assert.match(T.formula("cfangle", { b: 40, h: 30, t: 3.5, ri: 2 }, []).reason, /walls up to 0.1/);
+  assert.equal(T.formula("cfangle", { b: 40, h: 30, t: 3, ri: 2 }, []).id, "cold-formed-thin-wall");
+});
+
+test("cold-formed shapes reject impossible dimensions with a named reason", () => {
+  const S = L.shapes.SHAPES;
+  assert.throws(() => S.cfchannel.build({ h: 100, b: 40, c: 2, t: 3, ri: 2 }, []), /Lip c must be 0/);
+  assert.throws(() => S.cfchannel.build({ h: 100, b: 40, c: 60, t: 3, ri: 2 }, []), /Lip c must be 0/);
+  assert.throws(() => S.cfangle.build({ b: 20, h: 20, t: 3, ri: 20 }, []), /too large/);
+  assert.throws(() => S.cfhat.build({ h: 40, b: 40, f: 2, t: 3, ri: 2 }, []), /overhang f/);
 });

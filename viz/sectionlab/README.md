@@ -23,6 +23,8 @@ Units are mm, MPa (N/mm²), N and N·mm throughout.
 - **Catalogue.** Phase 1: solid rectangle, circle, semicircle, triangle, trapezoid and
   regular polygon; rectangular and circular hollow sections. Phase 2: parallel-flange I/H,
   channel, angle, tee, Z and cross sections, with root fillets and toe radii as corner radii.
+  Phase 3: cold-formed angle, plain or lipped channel and Z, and top hat, each given by its
+  outer dimensions, wall t and inside bend radius.
 - **Section properties.** Area, centroid, I_x, I_y, I_xy, principal values and
   angle, S_x±, S_y±, r_x, r_y, polar I_p and r_p, and first moments Q_x and Q_y,
   about the centroid. Composites use modular ratios n = E / E_base with a selectable
