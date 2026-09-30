@@ -25,8 +25,10 @@ for (const c of fixtures.cases) {
   const r = B.solve(c.model);
   const xs = [...new Set([0, r.model.length, ...r.model.supports.map((s) => s.x),
     ...r.model.loads.flatMap((l) => (l.kind === "dist" ? [l.x1, l.x2] : [l.x]))])];
-  out[c.id] = { reactions: r.reactions, points: xs.map((x) => B.at(r, x)), bdf: B.exportBdf(c.model) };
+  const units = Object.fromEntries(Object.keys(B.UNIT_SYSTEMS).map((u) => [u, B.exportBdf(c.model, { units: u })]));
+  out[c.id] = { reactions: r.reactions, points: xs.map((x) => B.at(r, x)), bdf: B.exportBdf(c.model), units };
 }
+out["@units"] = B.UNIT_SYSTEMS;
 process.stdout.write(JSON.stringify(out));
 """
 
@@ -150,6 +152,33 @@ class BeamDiagTest(unittest.TestCase):
             scale_v = max(abs(float(original.v(x))) for x in xs)
             for x in xs:
                 self.assertAlmostEqual(float(original.v(x)), float(from_deck.v(x)), delta=1e-8 * scale_v + 1e-15)
+
+    def test_nastran_deck_in_every_unit_convention_encodes_the_same_beam(self):
+        systems = self.js["@units"]
+        self.assertEqual(sorted(systems), ["N-m", "N-mm", "kN-m", "kip-in", "lbf-in"])
+        for case in FIXTURES["cases"]:
+            model = case["model"]
+            original = reference.Beam(model)
+            for uid, u in systems.items():
+                with self.subTest(case=case["id"], units=uid):
+                    text = self.js[case["id"]]["units"][uid]
+                    self.assertIn(f"$ Units {u['ascii']}.", text)
+                    got = reference.model_from_bdf(text)["model"]
+                    f = u["factor"]
+                    # The deck's numbers are the model in this convention.
+                    self.assertAlmostEqual(got["length"] * f["length"] / model["length"], 1, places=12)
+                    self.assertAlmostEqual(got["material"]["E"] * f["stress"] / model["material"]["E"], 1, places=12)
+                    self.assertAlmostEqual(got["section"]["I"] * f["inertia"] / model["section"]["I"], 1, places=12)
+                    # Solved in its own units, then converted to SI, it gives the original reactions and deflections.
+                    beam = reference.Beam(got)
+                    scale = max(abs(float(r["Fy"])) for r in original.reactions)
+                    for a, b in zip(original.reactions, beam.reactions):
+                        self.assertAlmostEqual(float(a["Fy"]), float(b["Fy"]) * f["force"], delta=1e-8 * scale)
+                        self.assertAlmostEqual(float(a["Mz"]), float(b["Mz"]) * f["moment"], delta=1e-8 * scale * float(original.L))
+                    xs = reference.sample_points(model)
+                    scale_v = max(abs(float(original.v(x))) for x in xs)
+                    for x in xs:
+                        self.assertAlmostEqual(float(original.v(x)), float(beam.v(x / f["length"])) * f["length"], delta=1e-8 * scale_v + 1e-15)
 
     def test_bdf_reader_rejects_what_it_cannot_represent(self):
         deck = self.js["simply-supported-udl"]["bdf"]

@@ -343,3 +343,118 @@ test("the deflection extreme is found where the slope vanishes, not just at a sa
   close(ex.v.x, L / 2, L, "at midspan", 1e-9);
   close(ex.M.value, -q * L * L / 8, 1, "M max", 1e-12);
 });
+
+/* ---------- unit conventions ---------- */
+
+const SYSTEMS = Object.values(B.UNIT_SYSTEMS);
+const QUANTITIES = ["length", "force", "moment", "distributed", "stress", "area", "inertia", "rigidity", "angle"];
+const toSystem = (model, u) => B.scaleModel(B.validate(model), u);
+const fromSystem = (model, u) => B.scaleModel(model, u, B.fromUnits);
+
+test("every unit convention is consistent: stress is force per length squared and derived units follow", () => {
+  assert.deepEqual(SYSTEMS.map((u) => u.id), ["kN-m", "N-m", "N-mm", "lbf-in", "kip-in"]);
+  assert.ok(B.UNIT_SYSTEMS[B.DEFAULT_UNITS]);
+  for (const u of SYSTEMS) {
+    const { length: l, force: f } = u.factor, rel = (a, b) => Math.abs(a - b) / Math.abs(b);
+    assert.ok(rel(u.factor.stress, f / l ** 2) < 1e-15, `${u.id} stress`);
+    assert.ok(rel(u.factor.moment, f * l) < 1e-15 && rel(u.factor.distributed, f / l) < 1e-15, `${u.id} moment, distributed`);
+    assert.ok(rel(u.factor.inertia, l ** 4) < 1e-15 && rel(u.factor.rigidity, f * l * l) < 1e-15, `${u.id} inertia, rigidity`);
+    assert.equal(u.factor.angle, 1);
+    for (const q of QUANTITIES) assert.ok(u.symbol[q], `${u.id} names ${q}`);
+    assert.match(u.ascii, /^[\x20-\x7e]+$/, "NASTRAN comment text is ASCII");
+  }
+  assert.equal(B.UNIT_SYSTEMS["lbf-in"].factor.force, 4.4482216152605);
+  assert.equal(B.UNIT_SYSTEMS["lbf-in"].factor.length, 0.0254);
+  assert.equal(B.toUnits(1, "stress", "N-mm"), 1e-6);
+  assert.throws(() => B.toUnits(1, "force", "furlong"), /Unknown unit convention/);
+});
+
+test("converting into a convention and back is exact to rounding, also through the page's 10-digit fields", () => {
+  const values = [0, 1, -1, 0.1, 6, -12345.678, 2e11, 6.6667e-5, 3e-9, 1e-12, 7.3e14, Math.PI];
+  for (const u of SYSTEMS) for (const q of QUANTITIES) for (const x of values) {
+    const back = B.fromUnits(B.toUnits(x, q, u), q, u);
+    assert.ok(Math.abs(back - x) <= 4 * Number.EPSILON * Math.abs(x), `${u.id} ${q} ${x} → ${back}`);
+    // A field shows toPrecision(10); reading it back stays within that rounding.
+    const shown = +B.toUnits(x, q, u).toPrecision(10), typed = B.fromUnits(shown, q, u);
+    assert.ok(Math.abs(typed - x) <= 5e-10 * Math.abs(x), `${u.id} ${q} ${x} via field`);
+    // Through every other convention and back again, as a user switching units would.
+    let y = x;
+    for (const w of SYSTEMS) y = B.fromUnits(B.toUnits(y, q, w), q, w);
+    assert.ok(Math.abs(y - x) <= 16 * Number.EPSILON * Math.abs(x), `${q} ${x} through all`);
+  }
+  const model = fixtures.cases.find((c) => c.id === "fixed-pinned-pinned-mixed").model, v = B.validate(model);
+  for (const u of SYSTEMS) {
+    const back = fromSystem(toSystem(model, u), u);
+    assert.equal(back.supports.length, v.supports.length);
+    assert.ok(Math.abs(back.material.E - v.material.E) <= 4 * Number.EPSILON * v.material.E);
+    back.loads.forEach((l, i) => {
+      for (const k of ["x", "F", "C", "x1", "x2", "q1", "q2"]) if (k in l) assert.ok(Math.abs(l[k] - v.loads[i][k]) <= 4 * Number.EPSILON * Math.abs(v.loads[i][k]), `${u.id} load ${i} ${k}`);
+    });
+  }
+});
+
+test("the same beam entered in each convention gives the same results, and the right numbers in that convention", () => {
+  // A propped continuous beam with every load kind, entered through each convention's numbers.
+  const model = fixtures.cases.find((c) => c.id === "fixed-pinned-pinned-mixed").model;
+  const si = B.solve(model), exSI = B.extremes(si), F = Math.abs(exSI.V.value), M = Math.abs(exSI.M.value), v = Math.abs(exSI.v.value);
+  for (const u of SYSTEMS) {
+    const entered = toSystem(model, u); // what a user would type in this convention
+    const r = B.solve(fromSystem(entered, u));
+    r.reactions.forEach((rr, i) => {
+      close(rr.Fy, si.reactions[i].Fy, F, `${u.id} reaction ${i}`, 1e-12);
+      close(rr.Mz, si.reactions[i].Mz, M, `${u.id} support moment ${i}`, 1e-12);
+    });
+    for (const x of [0, 1, 4.25, 7.5, model.length]) {
+      const a = B.at(si, x), b = B.at(r, B.fromUnits(B.toUnits(x, "length", u), "length", u));
+      close(b.Mright, a.Mright, M, `${u.id} M(${x})`, 1e-12);
+      close(b.Vright, a.Vright, F, `${u.id} V(${x})`, 1e-12);
+      close(b.v, a.v, v, `${u.id} v(${x})`, 1e-12);
+    }
+  }
+  // A US-customary beam in its own numbers: 240 in simply supported span, 50 lbf/in down,
+  // E = 29 000 ksi, I = 100 in⁴. Closed forms: M = wL²/8, v = 5wL⁴/(384 EI), σ = M c / I.
+  for (const [id, w, E] of [["lbf-in", -50, 29e6], ["kip-in", -0.05, 29e3]]) {
+    const L = 240, I = 100;
+    const beam = fromSystem({ length: L, divisions: 4, material: { E, nu: 0.3 }, section: { A: 10, I, Iy: I, J: 2 * I, c: 6 },
+      supports: [{ kind: "pin", x: 0 }, { kind: "pin", x: L }], loads: [{ kind: "dist", x1: 0, x2: L, q1: w, q2: w }] }, id);
+    const r = B.solve(beam), ex = B.extremes(r), to = (x, q) => B.toUnits(x, q, id);
+    close(to(ex.M.value, "moment"), -w * L * L / 8, 1, `${id} M max`, 1e-12);
+    close(to(ex.v.value, "length"), 5 * w * L ** 4 / (384 * E * I), 1, `${id} v max`, 1e-12);
+    close(to(r.reactions[0].Fy, "force"), -w * L / 2, 1, `${id} reaction`, 1e-12);
+    close(to(Math.abs(ex.M.value) * r.model.section.c / r.model.section.I, "stress"), -w * L * L / 8 * 6 / I, 1, `${id} stress`, 1e-12);
+  }
+});
+
+test("the NASTRAN deck states its unit convention and writes every number in it", () => {
+  const model = fixtures.cases.find((c) => c.id === "fixed-pinned-pinned-mixed").model;
+  assert.equal(B.exportBdf(model), B.exportBdf(model, { units: "N-m" }), "SI N, m, Pa stays the default");
+  for (const u of SYSTEMS) {
+    const deck = B.exportBdf(model, { units: u.id }), lines = deck.split("\n");
+    assert.ok(lines.includes(`$ Units ${u.ascii}. Beam on X, loads in Y (+ up), moments about Z (+ CCW).`), u.id);
+    assert.match(lines[0], new RegExp(`^\\$ Beam, L = [\\d.]+ ${u.symbol.length}:`));
+    assert.match(deck, /^[\x00-\x7e]*$/, "deck is ASCII");
+    // Numbers match the convention: read E, A and I back from MAT1 and PBAR (small or large field).
+    const cards = {};
+    for (let i = 0; i < lines.length; i++) {
+      const name = lines[i].slice(0, 8).trim();
+      if (!["MAT1", "MAT1*", "PBAR", "PBAR*"].includes(name)) continue;
+      const w = name.endsWith("*") ? 16 : 8, per = w === 16 ? 4 : 8, text = [lines[i]];
+      while (lines[i + 1] && lines[i + 1][0] === "*") text.push(lines[++i]);
+      cards[name.replace("*", "")] = text.flatMap((t) => Array.from({ length: per }, (_, k) => t.slice(8 + k * w, 8 + (k + 1) * w).trim()));
+    }
+    const real = (s) => Number(s.replace(/([0-9.])([+-]\d+)$/, "$1E$2"));
+    const rel = (a, b) => Math.abs(a - b) / Math.abs(b);
+    assert.ok(rel(real(cards.MAT1[1]), B.toUnits(model.material.E, "stress", u)) < 1e-9, `${u.id} E ${cards.MAT1[1]}`);
+    assert.ok(rel(real(cards.PBAR[2]), B.toUnits(model.section.A, "area", u)) < 1e-9, `${u.id} A ${cards.PBAR[2]}`);
+    assert.ok(rel(real(cards.PBAR[3]), B.toUnits(model.section.I, "inertia", u)) < 1e-9, `${u.id} I ${cards.PBAR[3]}`);
+  }
+  assert.ok(B.exportBdf(model, { units: "N-mm" }).includes("MAT1    1       200000.         0.3"));
+  assert.throws(() => B.exportBdf(model, { units: "cubits" }), /Unknown unit convention/);
+});
+
+test("error messages give lengths in the chosen convention", () => {
+  const good = fixtures.cases[0].model;
+  assert.throws(() => B.solve({ ...good, supports: [{ kind: "pin", x: 0 }, { kind: "pin", x: 7 }] }, { units: "N-mm" }), /between 0 and 6000 mm/);
+  assert.throws(() => B.solve({ ...good, length: 1e5 }, { units: "lbf-in" }), /between 0.0393701 in and 393701 in/);
+  assert.throws(() => B.solve({ ...good, supports: [{ kind: "pin", x: 0 }, { kind: "pin", x: 0 }] }, { units: "kN-m" }), /x = 0 m/);
+});

@@ -15,6 +15,11 @@ Models are not saved automatically; reloading starts from the first example.
   material (presets, or your own E and ν).
 - Read the reactions, shear force diagram, bending moment diagram, deflection,
   extremes, bending stress and an equilibrium check.
+- Choose the units: SI N, mm, MPa (the default); SI kN, m, kPa; SI N, m, Pa;
+  US customary lbf, in, psi; or US customary kip, in, ksi. Each is a
+  consistent system used for every input, result, diagram label and the
+  NASTRAN deck. The beam is solved in SI whichever you pick, so switching
+  converts the values already entered and never changes the results.
 - Download the same model as an MSC Nastran SOL 101 bulk data deck (`.bdf`) to
   run in NASTRAN yourself. “Elements per segment” sets only the export mesh,
   with no upper cap; it does not change the browser solution or plot sampling.
@@ -63,7 +68,10 @@ MSC Nastran write an `.xdb` results database. Reals are written in as few
 characters as keep them exact (`2.E11`, `0.3`, `-10000.`); a group of cards
 with a value that needs more than eight characters, such as a third-point
 GRID, switches to large field, where a real that still does not fit exactly
-is rounded to as many significant digits as fit in its 16 characters. Run it
+is rounded to as many significant digits as fit in its 16 characters. The
+numbers are in the unit convention chosen on the page, which the second comment
+line names (for example `$ Units N, mm, MPa (N/mm2).`), so results NASTRAN
+writes come back in those units too. Run it
 with a licensed solver, for example `nastran beamdiag.bdf`.
 
 The deck is checked here by reading it back and re-solving it. It has not been

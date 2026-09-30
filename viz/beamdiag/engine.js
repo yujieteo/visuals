@@ -1,6 +1,8 @@
 /* BEAMDIAG engine: linear-elastic Euler–Bernoulli beam, direct stiffness method.
  *
- * Units are SI throughout: m, N, N/m, N·m, Pa, m², m⁴.
+ * Units are SI throughout: m, N, N/m, N·m, Pa, m², m⁴. UNIT_SYSTEMS lists the
+ * consistent unit conventions a caller may enter and read values in; toUnits and
+ * fromUnits convert at that edge, and the solver itself never sees anything but SI.
  * Axes: x along the beam from its left end, +y up. Rotations and couples are
  * counter-clockwise positive (+z out of the page).
  * Loads: point force Fy (+ up), couple Mz (+ CCW), linearly varying distributed
@@ -40,6 +42,52 @@
   }
   const fail = (message, field) => { throw new ModelError(message, field); };
 
+  /* ---------- unit conventions ---------- */
+
+  /* Consistent unit systems: each gives the SI size of one unit of length, force and stress, and
+     stress is always force per length squared, so E·I/L³ and every other product stays in the
+     system without extra factors. Other quantities are derived from length and force.
+     `ascii` names the system in NASTRAN comments, which should stay plain ASCII. */
+  const LBF = 4.4482216152605, INCH = 0.0254; // exact by definition
+  const UNIT_SYSTEMS = Object.freeze(Object.fromEntries([
+    { id: "kN-m", label: "SI: kN, m, kPa", length: [1, "m"], force: [1e3, "kN"], stress: [1e3, "kPa"], ascii: "kN, m, kPa (kN/m2)" },
+    { id: "N-m", label: "SI: N, m, Pa", length: [1, "m"], force: [1, "N"], stress: [1, "Pa"], ascii: "N, m, Pa (N/m2)" },
+    { id: "N-mm", label: "SI: N, mm, MPa", length: [1e-3, "mm"], force: [1, "N"], stress: [1e6, "MPa"], ascii: "N, mm, MPa (N/mm2)" },
+    { id: "lbf-in", label: "US customary: lbf, in, psi", length: [INCH, "in"], force: [LBF, "lbf"], stress: [LBF / INCH ** 2, "psi"], ascii: "lbf, in, psi (lbf/in2)" },
+    { id: "kip-in", label: "US customary: kip, in, ksi", length: [INCH, "in"], force: [1e3 * LBF, "kip"], stress: [1e3 * LBF / INCH ** 2, "ksi"], ascii: "kip, in, ksi (kip/in2)" },
+  ].map((u) => {
+    const [l, L] = u.length, [f, F] = u.force, [p, P] = u.stress;
+    const factor = { length: l, force: f, stress: p, moment: f * l, distributed: f / l, area: l * l, inertia: l ** 4, rigidity: f * l * l, angle: 1 };
+    const symbol = { length: L, force: F, stress: P, moment: `${F}·${L}`, distributed: `${F}/${L}`, area: `${L}²`, inertia: `${L}⁴`, rigidity: `${F}·${L}²`, angle: "rad" };
+    return [u.id, Object.freeze({ id: u.id, label: u.label, ascii: u.ascii, factor: Object.freeze(factor), symbol: Object.freeze(symbol) })];
+  })));
+  const DEFAULT_UNITS = "N-mm";
+  const SI = UNIT_SYSTEMS["N-m"];
+
+  function unitSystem(units) {
+    const u = typeof units === "string" ? UNIT_SYSTEMS[units] : units;
+    if (!u || !UNIT_SYSTEMS[u.id]) fail(`Unknown unit convention ${JSON.stringify(units && units.id || units)}; choose one of ${Object.keys(UNIT_SYSTEMS).join(", ")}.`, "units");
+    return u;
+  }
+  /* SI value → number in `units`, and back. */
+  const toUnits = (value, quantity, units) => value / unitSystem(units).factor[quantity];
+  const fromUnits = (value, quantity, units) => value * unitSystem(units).factor[quantity];
+
+  /* Re-express a validated SI model in `units` (both directions via `convert`). */
+  function scaleModel(model, units, convert = toUnits) {
+    const u = unitSystem(units), c = (v, q) => (v == null ? v : convert(v, q, u)), x = (v) => c(v, "length");
+    const { section: s } = model;
+    return {
+      ...model, length: x(model.length),
+      material: { ...model.material, E: c(model.material.E, "stress") },
+      section: { ...s, A: c(s.A, "area"), I: c(s.I, "inertia"), Iy: c(s.Iy, "inertia"), J: c(s.J, "inertia"), c: x(s.c) },
+      supports: model.supports.map((sp) => ({ ...sp, x: x(sp.x) })),
+      loads: model.loads.map((l) => (l.kind === "point" ? { ...l, x: x(l.x), F: c(l.F, "force") }
+        : l.kind === "moment" ? { ...l, x: x(l.x), C: c(l.C, "moment") }
+          : { ...l, x1: x(l.x1), x2: x(l.x2), q1: c(l.q1, "distributed"), q2: c(l.q2, "distributed") })),
+    };
+  }
+
   function number(value, label, field, { positive = false, min = -Infinity, max = Infinity } = {}) {
     if (typeof value !== "number" || !Number.isFinite(value)) fail(`${label} must be a finite number.`, field);
     if (positive && !(value > 0)) fail(`${label} must be greater than zero.`, field);
@@ -47,14 +95,16 @@
     return value;
   }
 
-  /* Check and normalise a model; throws ModelError naming the offending field. */
-  function validate(input) {
+  /* Check and normalise an SI model; throws ModelError naming the offending field.
+     `units` only sets how lengths are written in the messages. */
+  function validate(input, { units = SI } = {}) {
     if (!input || typeof input !== "object") fail("A beam model is required.");
+    const len = lengthText(units);
     const L = number(input.length, "Beam length", "length", { positive: true });
-    if (L < 1e-3 || L > 1e4) fail("Beam length must be between 1 mm and 10 km.", "length");
+    if (L < 1e-3 || L > 1e4) fail(`Beam length must be between ${len(1e-3)} and ${len(1e4)}.`, "length");
     const at = (value, label, field) => {
       number(value, label, field);
-      if (value < 0 || value > L) fail(`${label} must lie on the beam, between 0 and ${fmt(L)} m.`, field);
+      if (value < 0 || value > L) fail(`${label} must lie on the beam, between 0 and ${len(L)}.`, field);
       return value;
     };
     const material = input.material || {};
@@ -80,7 +130,7 @@
     });
     const sorted = [...supports].sort((a, b) => a.x - b.x);
     for (let i = 1; i < sorted.length; i++)
-      if (sorted[i].x === sorted[i - 1].x) fail(`Two supports share the position x = ${fmt(sorted[i].x)} m.`, "supports");
+      if (sorted[i].x === sorted[i - 1].x) fail(`Two supports share the position x = ${len(sorted[i].x)}.`, "supports");
     // With only pins and fixed supports the structure is stable exactly when it
     // has a fixed support or two separate pins; anything less can move rigidly.
     if (!supports.some((s) => s.kind === "fixed") && supports.length < 2)
@@ -103,17 +153,19 @@
           return fail(`${label} must be a point force, a couple or a distributed load.`, `loads.${i}.kind`);
       }
     });
-    return { length: L, material: { E, nu }, section: { A, I, Iy, J, c }, supports, loads, divisions };
+    const model = { length: L, material: { E, nu }, section: { A, I, Iy, J, c }, supports, loads, divisions };
+    events(model, units);
+    return model;
   }
 
   /* Positions where something happens: ends, supports, point actions, load ends. */
-  function events(model) {
+  function events(model, units = SI) {
     const xs = [0, model.length, ...model.supports.map((s) => s.x)];
     for (const l of model.loads) xs.push(...(l.kind === "dist" ? [l.x1, l.x2] : [l.x]));
     const unique = [...new Set(xs)].sort((a, b) => a - b);
     for (let i = 1; i < unique.length; i++)
       if (unique[i] - unique[i - 1] < 1e-6 * model.length)
-        fail(`Positions ${fmt(unique[i - 1])} m and ${fmt(unique[i])} m are too close together; make them equal or separate them.`, "loads");
+        fail(`Positions ${lengthText(units)(unique[i - 1])} and ${lengthText(units)(unique[i])} are too close together; make them equal or separate them.`, "loads");
     return unique;
   }
 
@@ -175,8 +227,8 @@
   const GAUSS5 = [[-0.9061798459386640, 0.2369268850561891], [-0.5384693101056831, 0.4786286704993665], [0, 0.5688888888888889],
     [0.5384693101056831, 0.4786286704993665], [0.9061798459386640, 0.2369268850561891]];
 
-  function solve(input) {
-    const model = validate(input), EI = model.material.E * model.section.I;
+  function solve(input, { units = SI } = {}) {
+    const model = validate(input, { units }), EI = model.material.E * model.section.I;
     // Stiffness stations: the ends and every support. Loads between them enter as consistent nodal loads.
     const stations = [...new Set([0, model.length, ...model.supports.map((s) => s.x)])].sort((a, b) => a - b);
     const n = stations.length * 2, K = banded(n), f = Array(n).fill(0);
@@ -506,16 +558,18 @@
   const count = (n, noun) => `${n} ${noun}${n === 1 ? "" : "s"}`;
 
   /* Build a NASTRAN deck that encodes exactly the model the browser solved. */
-  function exportBdf(input, { title = "BEAMDIAG LINEAR STATIC" } = {}) {
-    const model = validate(input), nodes = mesh(model);
+  /* The input is SI, like every other function here; the deck's numbers are written in `units`. */
+  function exportBdf(input, { title = "BEAMDIAG LINEAR STATIC", units = SI } = {}) {
+    // Fifteen digits drop the last-bit noise a conversion leaves (5e-3 m² is 5000 mm², not 5000.000000000001).
+    const u = unitSystem(units), model = scaleModel(validate(input, { units: u }), u, (v, q) => +toUnits(v, q, u).toPrecision(15)), nodes = mesh(model);
     const hasLoad = model.loads.some((l) => (l.kind === "point" && l.F !== 0) || (l.kind === "moment" && l.C !== 0) || (l.kind === "dist" && (l.q1 !== 0 || l.q2 !== 0)));
     if (!hasLoad) fail("Add a non-zero load before exporting a NASTRAN deck.", "loads");
     const ids = new Map(nodes.map((x, i) => [x, i + 1])), gid = (x) => ids.get(x);
     const safeTitle = String(title).replace(/[^A-Za-z0-9 _.,()+\-]/g, " ").slice(0, 60).trim() || "BEAMDIAG";
     const { material: mat, section: sec } = model, SPC = 1, LOAD = 2;
     const lines = [
-      `$ Beam, L = ${fmt(model.length)} m: ${count(nodes.length, "grid")}, ${count(nodes.length - 1, "CBAR")}, ${count(model.supports.length, "support")}, ${count(model.loads.length, "load")}`,
-      "$ Units N, m, Pa. Beam on X, loads in Y (+ up), moments about Z (+ CCW).",
+      `$ Beam, L = ${fmt(model.length)} ${u.symbol.length}: ${count(nodes.length, "grid")}, ${count(nodes.length - 1, "CBAR")}, ${count(model.supports.length, "support")}, ${count(model.loads.length, "load")}`,
+      `$ Units ${u.ascii}. Beam on X, loads in Y (+ up), moments about Z (+ CCW).`,
       "SOL 101",
       "CEND",
       `TITLE = ${safeTitle}`,
@@ -583,6 +637,7 @@
   function fmt(x) {
     return Number.isInteger(x) ? String(x) : String(+x.toPrecision(6));
   }
+  const lengthText = (units) => { const u = unitSystem(units); return (x) => `${fmt(toUnits(x, "length", u))} ${u.symbol.length}`; };
 
-  return { SUPPORT_KINDS, ModelError, sectionProperties, indeterminacy, validate, mesh, solve, internal, deflection, at, diagram, extremes, exportBdf, smallEntry, largeEntry, exactReal, nastranReal };
+  return { SUPPORT_KINDS, UNIT_SYSTEMS, DEFAULT_UNITS, toUnits, fromUnits, scaleModel, ModelError, sectionProperties, indeterminacy, validate, mesh, solve, internal, deflection, at, diagram, extremes, exportBdf, smallEntry, largeEntry, exactReal, nastranReal };
 });

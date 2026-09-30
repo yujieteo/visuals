@@ -120,7 +120,7 @@ code{font:.875em var(--mono)}
   <p class="lede">Build a straight beam, place pinned and fixed supports and loads, and read its reactions, shear force, bending moment and deflection. Statically indeterminate beams such as fixed–fixed spans are solved by the stiffness method. Everything is calculated on this page, and the same model downloads as a NASTRAN deck.</p>
 </header>
 
-<div class="toolbar" role="group" aria-label="Start from">
+<div class="toolbar" role="group" aria-label="Start from, and units">
   <div class="group">
     <label class="label" for="preset">Example</label>
     <select id="preset"></select>
@@ -131,6 +131,10 @@ code{font:.875em var(--mono)}
     <button class="btn" type="button" data-ends="fixed,fixed">Fixed–fixed</button>
     <button class="btn" type="button" data-ends="fixed,pin">Fixed–pin</button>
     <button class="btn" type="button" data-ends="fixed,">Cantilever</button>
+  </div>
+  <div class="group">
+    <label class="label" for="units">Units</label>
+    <select id="units" title="Consistent unit convention for every input, result, diagram and the NASTRAN deck"></select>
   </div>
 </div>
 <p id="preset-note" class="note"></p>
@@ -149,7 +153,7 @@ code{font:.875em var(--mono)}
     <div class="card">
       <h3>Beam</h3>
       <div class="row">
-        <label class="f"><span>Length L (m)</span><input id="length" type="number" step="0.1" min="0.001" data-field="length"></label>
+        <label class="f"><span>Length L (<span data-unit="length">mm</span>)</span><input id="length" type="number" step="0.1" min="0.001" data-field="length"></label>
         <label class="f"><span>Elements per segment</span><input id="divisions" type="number" step="1" min="1" data-field="divisions"></label>
       </div>
     </div>
@@ -178,7 +182,7 @@ code{font:.875em var(--mono)}
       <h3>Material</h3>
       <label class="f"><span>Preset</span><select id="material"></select></label>
       <div class="row">
-        <label class="f"><span>Young's modulus E (GPa)</span><input id="E" type="number" step="1" data-field="material.E"></label>
+        <label class="f"><span>Young's modulus E (<span data-unit="stress">MPa</span>)</span><input id="E" type="number" step="1" data-field="material.E"></label>
         <label class="f"><span>Poisson's ratio ν</span><input id="nu" type="number" step="0.01" data-field="material.nu"></label>
       </div>
     </div>
@@ -189,14 +193,14 @@ code{font:.875em var(--mono)}
   <h2 id="values-h">Values at supports and loads</h2>
   <p class="muted small">Where a point force or couple acts, the diagram jumps: both the value just to the left (x⁻) and just to the right (x⁺) are listed.</p>
   <div class="table-wrap"><table>
-    <thead><tr><th class="num" scope="col">x (m)</th><th scope="col">What is here</th><th class="num" scope="col">V x⁻ (kN)</th><th class="num" scope="col">V x⁺ (kN)</th><th class="num" scope="col">M x⁻ (kN·m)</th><th class="num" scope="col">M x⁺ (kN·m)</th><th class="num" scope="col">v (mm)</th><th class="num" scope="col">θ (mrad)</th></tr></thead>
+    <thead><tr><th class="num" scope="col">x (<span data-unit="length">mm</span>)</th><th scope="col">What is here</th><th class="num" scope="col">V x⁻ (<span data-unit="force">N</span>)</th><th class="num" scope="col">V x⁺ (<span data-unit="force">N</span>)</th><th class="num" scope="col">M x⁻ (<span data-unit="moment">N·mm</span>)</th><th class="num" scope="col">M x⁺ (<span data-unit="moment">N·mm</span>)</th><th class="num" scope="col">v (<span data-unit="length">mm</span>)</th><th class="num" scope="col">θ (<span data-unit="angle">rad</span>)</th></tr></thead>
     <tbody id="table"></tbody>
   </table></div>
 </section>
 
 <section id="nastran" aria-labelledby="nastran-h">
   <h2 id="nastran-h">NASTRAN deck</h2>
-  <p>Download this beam as an MSC Nastran SOL 101 linear static bulk data file (<code>.bdf</code>). It encodes the same supports, loads, section and material the page solved, in SI units.</p>
+  <p>Download this beam as an MSC Nastran SOL 101 linear static bulk data file (<code>.bdf</code>). It encodes the same supports, loads, section and material the page solved, with every number in the units chosen above (<span data-unit="system">SI: N, mm, MPa</span>); a <code>$ Units</code> comment at the top of the deck names them.</p>
   <div class="export">
     <label class="f"><span>File name</span><input id="bdf-name" type="text" value="beamdiag.bdf" autocomplete="off" spellcheck="false"></label>
     <button class="btn primary" type="button" id="download">Download .bdf</button>
@@ -223,12 +227,14 @@ code{font:.875em var(--mono)}
 </main>
 
 <script>
-const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","summary":"Build a straight beam with pinned and fixed supports, point forces, couples and distributed loads; see reactions, shear force, bending moment and deflection solved in the browser by the stiffness method, including statically indeterminate beams, and download the same model as an MSC Nastran SOL 101 bulk data deck.","units":{"internal":"SI: m, N, N/m, N·m, Pa, m², m⁴","inputs":{"length":"m","force":"kN","couple":"kN·m","distributed":"kN/m","E":"GPa","dimension":"mm","area":"mm²","second_moment":"mm⁴"},"outputs":{"shear":"kN","moment":"kN·m","deflection":"mm","slope":"mrad","stress":"MPa"}},"conventions":["x runs along the beam from its left end; +y is up.","Point forces and distributed loads are positive upward: enter downward loads as negative numbers.","Couples, rotations and support moments are positive counter-clockwise.","Shear V(x) is the sum of the upward forces to the left of the section.","Bending moment M(x) is positive when it sags the beam (tension on the bottom fibre); dM/dx = V and dV/dx = q.","At a point force V jumps by the force; at a couple C, M jumps by −C. Both one-sided values are reported."],"assumptions":["Linear elastic, small displacement, static loading.","Euler–Bernoulli bending: plane sections stay plane and shear deformation is neglected.","Uniform prismatic section and one material along the whole beam.","Loads act in the plane of bending through the shear centre; no axial load, torsion, temperature or dynamics.","A pin restrains deflection; a fixed support restrains deflection and slope. Supports are rigid."],"method":"Direct stiffness method with two-node Hermite beam elements between the supports and the beam ends. Point forces, couples and distributed loads inside each element enter as consistent nodal loads, which are the exact fixed-end actions for Euler–Bernoulli beams, so nodal deflections and reactions are exact and statically indeterminate supports need no special handling. Load points stay out of the stiffness matrix, so closely spaced loads do not degrade its conditioning, and there is no cap on the number of supports or loads. Shear and moment are then recovered exactly by statics from the loads and reactions, and deflection between nodes by integrating M/EI. Results are checked against an independent exact-arithmetic Python solver (Macaulay integration with compatibility conditions) on shared fixtures.","materials":[{"id":"steel","label":"Structural steel","E":200000000000.0,"nu":0.3},{"id":"aluminium","label":"Aluminium alloy","E":69000000000.0,"nu":0.33},{"id":"concrete","label":"Concrete (uncracked, C30/37)","E":33000000000.0,"nu":0.2},{"id":"timber","label":"Softwood timber (C24, along grain)","E":11000000000.0,"nu":0.3}],"sections":[{"id":"rect","label":"Solid rectangle b × h"},{"id":"circle","label":"Solid circle, diameter d"},{"id":"tube","label":"Circular tube D × t"},{"id":"custom","label":"Custom A and I"}],"presets":[{"id":"pin-pin-udl","label":"Pinned–pinned, uniform load","note":"Statically determinate: reactions from equilibrium alone.","length":6,"supports":[{"kind":"pin","x":0},{"kind":"pin","x":6}],"loads":[{"kind":"dist","x1":0,"x2":6,"q1":-10000.0,"q2":-10000.0}],"material":"steel","section":{"shape":"rect","b":0.1,"h":0.2}},{"id":"fixed-fixed-udl","label":"Fixed–fixed, uniform load","note":"Indeterminate to degree 2: end moments wL²/12 hog, mid-span wL²/24 sags.","length":6,"supports":[{"kind":"fixed","x":0},{"kind":"fixed","x":6}],"loads":[{"kind":"dist","x1":0,"x2":6,"q1":-10000.0,"q2":-10000.0}],"material":"steel","section":{"shape":"rect","b":0.1,"h":0.2}},{"id":"fixed-fixed-point","label":"Fixed–fixed, off-centre point load","note":"End moments Pab²/L² and Pa²b/L² are unequal, so the reactions are too.","length":6,"supports":[{"kind":"fixed","x":0},{"kind":"fixed","x":6}],"loads":[{"kind":"point","x":2,"F":-40000.0}],"material":"steel","section":{"shape":"rect","b":0.1,"h":0.2}},{"id":"pin-pin-mixed","label":"Pinned–pinned, point load and couple","note":"The couple makes the moment diagram jump; the point load makes the shear jump.","length":8,"supports":[{"kind":"pin","x":0},{"kind":"pin","x":8}],"loads":[{"kind":"point","x":3,"F":-20000.0},{"kind":"moment","x":5.5,"C":15000.0}],"material":"steel","section":{"shape":"rect","b":0.1,"h":0.2}},{"id":"propped-cantilever","label":"Propped cantilever (fixed–pinned)","note":"Indeterminate to degree 1: the prop carries 3wL/8.","length":6,"supports":[{"kind":"fixed","x":0},{"kind":"pin","x":6}],"loads":[{"kind":"dist","x1":0,"x2":6,"q1":-10000.0,"q2":-10000.0}],"material":"steel","section":{"shape":"rect","b":0.1,"h":0.2}},{"id":"cantilever","label":"Cantilever, tip load","note":"Statically determinate: the whole load returns through the fixed end.","length":3,"supports":[{"kind":"fixed","x":0}],"loads":[{"kind":"point","x":3,"F":-5000.0}],"material":"steel","section":{"shape":"rect","b":0.1,"h":0.2}},{"id":"continuous","label":"Two-span continuous beam","note":"Indeterminate to degree 1: the middle support carries 5wL/4 and hogs by wL²/8.","length":8,"supports":[{"kind":"pin","x":0},{"kind":"pin","x":4},{"kind":"pin","x":8}],"loads":[{"kind":"dist","x1":0,"x2":8,"q1":-10000.0,"q2":-10000.0}],"material":"steel","section":{"shape":"rect","b":0.1,"h":0.2}}],"nastran":{"dialect":"MSC Nastran, SOL 101 linear statics, small-field fixed-format bulk data (large field only for a card group whose values need more than eight characters to stay exact)","cards":[{"card":"GRID","use":"One grid per node along basic X; GRDSET sets PS=345 on every grid, permanently removing out-of-plane translation and rotations."},{"card":"CBAR","use":"One bar per element, orientation vector X1,X2,X3 = 0,1,0 (element y = basic +Y)."},{"card":"PBAR","use":"A, I1 (in-plane I), I2, J; K1/K2 blank = zero shear flexibility, matching Euler–Bernoulli."},{"card":"MAT1","use":"E and ν; G left blank so NASTRAN derives it."},{"card":"SPC1","use":"Set 1: one card for the pins (components 12) and one for the fixed supports (126), each listing its support grids."},{"card":"FORCE / MOMENT","use":"Load set 2: point forces along basic Y and couples about basic Z at grids."},{"card":"PLOAD1","use":"Load set 2: TYPE=FY, SCALE=FR from 0 to 1 on each element under a distributed load, with the intensities at its ends."},{"card":"PARAM,POST,0","use":"Asks MSC Nastran to write the Patran results database (.xdb) alongside the run."}],"run":["Save the deck, e.g. beam.bdf, on a machine with a licensed MSC Nastran installation.","Run: nastran beam.bdf","PARAM,POST,0 makes the run write beam.xdb next to beam.f06; open it in Patran (or another .xdb reader) to post-process.","Compare DISPLACEMENT T2 (deflection, m) and R3 (slope, rad), and SPCFORCES T2 (reaction, N) and R3 (support moment, N·m), with this page. These are in basic coordinates and use the same signs."],"status":"The deck is generated from the same model the page solves and is checked by reading it back and re-solving it with the independent Python reference. This page does not run NASTRAN and does not produce an .xdb file itself."},"sources":[{"id":"cbar","title":"MSC Nastran Quick Reference Guide: CBAR","url":"https://nexus.hexagon.com/documentationcenter/en-US/bundle/MSC_Nastran_2024.1/page/Nastran_Combined_Book/qrg/bulkc1/TOC.CBAR.xhtml"},{"id":"pbar","title":"MSC Nastran Quick Reference Guide: PBAR","url":"https://nexus.hexagon.com/documentationcenter/en-US/bundle/MSC_Nastran_2024.1/page/Nastran_Combined_Book/qrg/bulkp/TOC.PBAR.xhtml"},{"id":"pload1","title":"MSC Nastran Quick Reference Guide: PLOAD1","url":"https://nexus.hexagon.com/documentationcenter/en-US/bundle/MSC_Nastran_2023.1/page/Nastran_Combined_Book/qrg/bulkp/TOC.PLOAD1.xhtml"},{"id":"post","title":"MSC Nastran Quick Reference Guide: parameter POST","url":"https://nexus.hexagon.com/documentationcenter/en-US/bundle/MSC_Nastran_2024.2/page/Nastran_Combined_Book/qrg/parameters/TOC.POST.xhtml"},{"id":"code","title":"Source, fixtures and the Python reference solver","url":"https://github.com/yujieteo/site/tree/main/visuals/beamdiag"}]};
+const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","summary":"Build a straight beam with pinned and fixed supports, point forces, couples and distributed loads; see reactions, shear force, bending moment and deflection solved in the browser by the stiffness method, including statically indeterminate beams, and download the same model as an MSC Nastran SOL 101 bulk data deck.","units":{"internal":"SI: m, N, N/m, N·m, Pa, m², m⁴","conventions":"Inputs, results, diagrams and the NASTRAN deck use one consistent unit convention chosen on the page: SI N, mm, MPa (the default); SI kN, m, kPa; SI N, m, Pa; US customary lbf, in, psi; or US customary kip, in, ksi. Values are converted only where they are typed or shown, so the solved beam is the same in every convention and switching re-expresses the values already entered. Slopes are in radians.","tools":"The page tools take and return SI; export_nastran_bdf writes the deck in the page's convention unless given another."},"conventions":["x runs along the beam from its left end; +y is up.","Point forces and distributed loads are positive upward: enter downward loads as negative numbers.","Couples, rotations and support moments are positive counter-clockwise.","Shear V(x) is the sum of the upward forces to the left of the section.","Bending moment M(x) is positive when it sags the beam (tension on the bottom fibre); dM/dx = V and dV/dx = q.","At a point force V jumps by the force; at a couple C, M jumps by −C. Both one-sided values are reported."],"assumptions":["Linear elastic, small displacement, static loading.","Euler–Bernoulli bending: plane sections stay plane and shear deformation is neglected.","Uniform prismatic section and one material along the whole beam.","Loads act in the plane of bending through the shear centre; no axial load, torsion, temperature or dynamics.","A pin restrains deflection; a fixed support restrains deflection and slope. Supports are rigid."],"method":"Direct stiffness method with two-node Hermite beam elements between the supports and the beam ends. Point forces, couples and distributed loads inside each element enter as consistent nodal loads, which are the exact fixed-end actions for Euler–Bernoulli beams, so nodal deflections and reactions are exact and statically indeterminate supports need no special handling. Load points stay out of the stiffness matrix, so closely spaced loads do not degrade its conditioning, and there is no cap on the number of supports or loads. Shear and moment are then recovered exactly by statics from the loads and reactions, and deflection between nodes by integrating M/EI. Results are checked against an independent exact-arithmetic Python solver (Macaulay integration with compatibility conditions) on shared fixtures.","materials":[{"id":"steel","label":"Structural steel","E":200000000000.0,"nu":0.3},{"id":"aluminium","label":"Aluminium alloy","E":69000000000.0,"nu":0.33},{"id":"concrete","label":"Concrete (uncracked, C30/37)","E":33000000000.0,"nu":0.2},{"id":"timber","label":"Softwood timber (C24, along grain)","E":11000000000.0,"nu":0.3}],"sections":[{"id":"rect","label":"Solid rectangle b × h"},{"id":"circle","label":"Solid circle, diameter d"},{"id":"tube","label":"Circular tube D × t"},{"id":"custom","label":"Custom A and I"}],"presets":[{"id":"pin-pin-udl","label":"Pinned–pinned, uniform load","note":"Statically determinate: reactions from equilibrium alone.","length":6,"supports":[{"kind":"pin","x":0},{"kind":"pin","x":6}],"loads":[{"kind":"dist","x1":0,"x2":6,"q1":-10000.0,"q2":-10000.0}],"material":"steel","section":{"shape":"rect","b":0.1,"h":0.2}},{"id":"fixed-fixed-udl","label":"Fixed–fixed, uniform load","note":"Indeterminate to degree 2: end moments wL²/12 hog, mid-span wL²/24 sags.","length":6,"supports":[{"kind":"fixed","x":0},{"kind":"fixed","x":6}],"loads":[{"kind":"dist","x1":0,"x2":6,"q1":-10000.0,"q2":-10000.0}],"material":"steel","section":{"shape":"rect","b":0.1,"h":0.2}},{"id":"fixed-fixed-point","label":"Fixed–fixed, off-centre point load","note":"End moments Pab²/L² and Pa²b/L² are unequal, so the reactions are too.","length":6,"supports":[{"kind":"fixed","x":0},{"kind":"fixed","x":6}],"loads":[{"kind":"point","x":2,"F":-40000.0}],"material":"steel","section":{"shape":"rect","b":0.1,"h":0.2}},{"id":"pin-pin-mixed","label":"Pinned–pinned, point load and couple","note":"The couple makes the moment diagram jump; the point load makes the shear jump.","length":8,"supports":[{"kind":"pin","x":0},{"kind":"pin","x":8}],"loads":[{"kind":"point","x":3,"F":-20000.0},{"kind":"moment","x":5.5,"C":15000.0}],"material":"steel","section":{"shape":"rect","b":0.1,"h":0.2}},{"id":"propped-cantilever","label":"Propped cantilever (fixed–pinned)","note":"Indeterminate to degree 1: the prop carries 3wL/8.","length":6,"supports":[{"kind":"fixed","x":0},{"kind":"pin","x":6}],"loads":[{"kind":"dist","x1":0,"x2":6,"q1":-10000.0,"q2":-10000.0}],"material":"steel","section":{"shape":"rect","b":0.1,"h":0.2}},{"id":"cantilever","label":"Cantilever, tip load","note":"Statically determinate: the whole load returns through the fixed end.","length":3,"supports":[{"kind":"fixed","x":0}],"loads":[{"kind":"point","x":3,"F":-5000.0}],"material":"steel","section":{"shape":"rect","b":0.1,"h":0.2}},{"id":"continuous","label":"Two-span continuous beam","note":"Indeterminate to degree 1: the middle support carries 5wL/4 and hogs by wL²/8.","length":8,"supports":[{"kind":"pin","x":0},{"kind":"pin","x":4},{"kind":"pin","x":8}],"loads":[{"kind":"dist","x1":0,"x2":8,"q1":-10000.0,"q2":-10000.0}],"material":"steel","section":{"shape":"rect","b":0.1,"h":0.2}}],"nastran":{"dialect":"MSC Nastran, SOL 101 linear statics, small-field fixed-format bulk data (large field only for a card group whose values need more than eight characters to stay exact)","cards":[{"card":"GRID","use":"One grid per node along basic X; GRDSET sets PS=345 on every grid, permanently removing out-of-plane translation and rotations."},{"card":"CBAR","use":"One bar per element, orientation vector X1,X2,X3 = 0,1,0 (element y = basic +Y)."},{"card":"PBAR","use":"A, I1 (in-plane I), I2, J; K1/K2 blank = zero shear flexibility, matching Euler–Bernoulli."},{"card":"MAT1","use":"E and ν; G left blank so NASTRAN derives it."},{"card":"SPC1","use":"Set 1: one card for the pins (components 12) and one for the fixed supports (126), each listing its support grids."},{"card":"FORCE / MOMENT","use":"Load set 2: point forces along basic Y and couples about basic Z at grids."},{"card":"PLOAD1","use":"Load set 2: TYPE=FY, SCALE=FR from 0 to 1 on each element under a distributed load, with the intensities at its ends."},{"card":"PARAM,POST,0","use":"Asks MSC Nastran to write the Patran results database (.xdb) alongside the run."}],"run":["Save the deck, e.g. beam.bdf, on a machine with a licensed MSC Nastran installation.","Run: nastran beam.bdf","PARAM,POST,0 makes the run write beam.xdb next to beam.f06; open it in Patran (or another .xdb reader) to post-process.","Compare DISPLACEMENT T2 (deflection) and R3 (slope, rad), and SPCFORCES T2 (reaction) and R3 (support moment), with this page in the same unit convention; the deck's $ Units comment names it. These are in basic coordinates and use the same signs."],"status":"The deck is generated from the same model the page solves and is checked by reading it back and re-solving it with the independent Python reference. This page does not run NASTRAN and does not produce an .xdb file itself."},"sources":[{"id":"cbar","title":"MSC Nastran Quick Reference Guide: CBAR","url":"https://nexus.hexagon.com/documentationcenter/en-US/bundle/MSC_Nastran_2024.1/page/Nastran_Combined_Book/qrg/bulkc1/TOC.CBAR.xhtml"},{"id":"pbar","title":"MSC Nastran Quick Reference Guide: PBAR","url":"https://nexus.hexagon.com/documentationcenter/en-US/bundle/MSC_Nastran_2024.1/page/Nastran_Combined_Book/qrg/bulkp/TOC.PBAR.xhtml"},{"id":"pload1","title":"MSC Nastran Quick Reference Guide: PLOAD1","url":"https://nexus.hexagon.com/documentationcenter/en-US/bundle/MSC_Nastran_2023.1/page/Nastran_Combined_Book/qrg/bulkp/TOC.PLOAD1.xhtml"},{"id":"post","title":"MSC Nastran Quick Reference Guide: parameter POST","url":"https://nexus.hexagon.com/documentationcenter/en-US/bundle/MSC_Nastran_2024.2/page/Nastran_Combined_Book/qrg/parameters/TOC.POST.xhtml"},{"id":"code","title":"Source, fixtures and the Python reference solver","url":"https://github.com/yujieteo/site/tree/main/visuals/beamdiag"}]};
 </script>
 <script>
 /* BEAMDIAG engine: linear-elastic Euler–Bernoulli beam, direct stiffness method.
  *
- * Units are SI throughout: m, N, N/m, N·m, Pa, m², m⁴.
+ * Units are SI throughout: m, N, N/m, N·m, Pa, m², m⁴. UNIT_SYSTEMS lists the
+ * consistent unit conventions a caller may enter and read values in; toUnits and
+ * fromUnits convert at that edge, and the solver itself never sees anything but SI.
  * Axes: x along the beam from its left end, +y up. Rotations and couples are
  * counter-clockwise positive (+z out of the page).
  * Loads: point force Fy (+ up), couple Mz (+ CCW), linearly varying distributed
@@ -268,6 +274,52 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
   }
   const fail = (message, field) => { throw new ModelError(message, field); };
 
+  /* ---------- unit conventions ---------- */
+
+  /* Consistent unit systems: each gives the SI size of one unit of length, force and stress, and
+     stress is always force per length squared, so E·I/L³ and every other product stays in the
+     system without extra factors. Other quantities are derived from length and force.
+     `ascii` names the system in NASTRAN comments, which should stay plain ASCII. */
+  const LBF = 4.4482216152605, INCH = 0.0254; // exact by definition
+  const UNIT_SYSTEMS = Object.freeze(Object.fromEntries([
+    { id: "kN-m", label: "SI: kN, m, kPa", length: [1, "m"], force: [1e3, "kN"], stress: [1e3, "kPa"], ascii: "kN, m, kPa (kN/m2)" },
+    { id: "N-m", label: "SI: N, m, Pa", length: [1, "m"], force: [1, "N"], stress: [1, "Pa"], ascii: "N, m, Pa (N/m2)" },
+    { id: "N-mm", label: "SI: N, mm, MPa", length: [1e-3, "mm"], force: [1, "N"], stress: [1e6, "MPa"], ascii: "N, mm, MPa (N/mm2)" },
+    { id: "lbf-in", label: "US customary: lbf, in, psi", length: [INCH, "in"], force: [LBF, "lbf"], stress: [LBF / INCH ** 2, "psi"], ascii: "lbf, in, psi (lbf/in2)" },
+    { id: "kip-in", label: "US customary: kip, in, ksi", length: [INCH, "in"], force: [1e3 * LBF, "kip"], stress: [1e3 * LBF / INCH ** 2, "ksi"], ascii: "kip, in, ksi (kip/in2)" },
+  ].map((u) => {
+    const [l, L] = u.length, [f, F] = u.force, [p, P] = u.stress;
+    const factor = { length: l, force: f, stress: p, moment: f * l, distributed: f / l, area: l * l, inertia: l ** 4, rigidity: f * l * l, angle: 1 };
+    const symbol = { length: L, force: F, stress: P, moment: `${F}·${L}`, distributed: `${F}/${L}`, area: `${L}²`, inertia: `${L}⁴`, rigidity: `${F}·${L}²`, angle: "rad" };
+    return [u.id, Object.freeze({ id: u.id, label: u.label, ascii: u.ascii, factor: Object.freeze(factor), symbol: Object.freeze(symbol) })];
+  })));
+  const DEFAULT_UNITS = "N-mm";
+  const SI = UNIT_SYSTEMS["N-m"];
+
+  function unitSystem(units) {
+    const u = typeof units === "string" ? UNIT_SYSTEMS[units] : units;
+    if (!u || !UNIT_SYSTEMS[u.id]) fail(`Unknown unit convention ${JSON.stringify(units && units.id || units)}; choose one of ${Object.keys(UNIT_SYSTEMS).join(", ")}.`, "units");
+    return u;
+  }
+  /* SI value → number in `units`, and back. */
+  const toUnits = (value, quantity, units) => value / unitSystem(units).factor[quantity];
+  const fromUnits = (value, quantity, units) => value * unitSystem(units).factor[quantity];
+
+  /* Re-express a validated SI model in `units` (both directions via `convert`). */
+  function scaleModel(model, units, convert = toUnits) {
+    const u = unitSystem(units), c = (v, q) => (v == null ? v : convert(v, q, u)), x = (v) => c(v, "length");
+    const { section: s } = model;
+    return {
+      ...model, length: x(model.length),
+      material: { ...model.material, E: c(model.material.E, "stress") },
+      section: { ...s, A: c(s.A, "area"), I: c(s.I, "inertia"), Iy: c(s.Iy, "inertia"), J: c(s.J, "inertia"), c: x(s.c) },
+      supports: model.supports.map((sp) => ({ ...sp, x: x(sp.x) })),
+      loads: model.loads.map((l) => (l.kind === "point" ? { ...l, x: x(l.x), F: c(l.F, "force") }
+        : l.kind === "moment" ? { ...l, x: x(l.x), C: c(l.C, "moment") }
+          : { ...l, x1: x(l.x1), x2: x(l.x2), q1: c(l.q1, "distributed"), q2: c(l.q2, "distributed") })),
+    };
+  }
+
   function number(value, label, field, { positive = false, min = -Infinity, max = Infinity } = {}) {
     if (typeof value !== "number" || !Number.isFinite(value)) fail(`${label} must be a finite number.`, field);
     if (positive && !(value > 0)) fail(`${label} must be greater than zero.`, field);
@@ -275,14 +327,16 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
     return value;
   }
 
-  /* Check and normalise a model; throws ModelError naming the offending field. */
-  function validate(input) {
+  /* Check and normalise an SI model; throws ModelError naming the offending field.
+     `units` only sets how lengths are written in the messages. */
+  function validate(input, { units = SI } = {}) {
     if (!input || typeof input !== "object") fail("A beam model is required.");
+    const len = lengthText(units);
     const L = number(input.length, "Beam length", "length", { positive: true });
-    if (L < 1e-3 || L > 1e4) fail("Beam length must be between 1 mm and 10 km.", "length");
+    if (L < 1e-3 || L > 1e4) fail(`Beam length must be between ${len(1e-3)} and ${len(1e4)}.`, "length");
     const at = (value, label, field) => {
       number(value, label, field);
-      if (value < 0 || value > L) fail(`${label} must lie on the beam, between 0 and ${fmt(L)} m.`, field);
+      if (value < 0 || value > L) fail(`${label} must lie on the beam, between 0 and ${len(L)}.`, field);
       return value;
     };
     const material = input.material || {};
@@ -308,7 +362,7 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
     });
     const sorted = [...supports].sort((a, b) => a.x - b.x);
     for (let i = 1; i < sorted.length; i++)
-      if (sorted[i].x === sorted[i - 1].x) fail(`Two supports share the position x = ${fmt(sorted[i].x)} m.`, "supports");
+      if (sorted[i].x === sorted[i - 1].x) fail(`Two supports share the position x = ${len(sorted[i].x)}.`, "supports");
     // With only pins and fixed supports the structure is stable exactly when it
     // has a fixed support or two separate pins; anything less can move rigidly.
     if (!supports.some((s) => s.kind === "fixed") && supports.length < 2)
@@ -331,17 +385,19 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
           return fail(`${label} must be a point force, a couple or a distributed load.`, `loads.${i}.kind`);
       }
     });
-    return { length: L, material: { E, nu }, section: { A, I, Iy, J, c }, supports, loads, divisions };
+    const model = { length: L, material: { E, nu }, section: { A, I, Iy, J, c }, supports, loads, divisions };
+    events(model, units);
+    return model;
   }
 
   /* Positions where something happens: ends, supports, point actions, load ends. */
-  function events(model) {
+  function events(model, units = SI) {
     const xs = [0, model.length, ...model.supports.map((s) => s.x)];
     for (const l of model.loads) xs.push(...(l.kind === "dist" ? [l.x1, l.x2] : [l.x]));
     const unique = [...new Set(xs)].sort((a, b) => a - b);
     for (let i = 1; i < unique.length; i++)
       if (unique[i] - unique[i - 1] < 1e-6 * model.length)
-        fail(`Positions ${fmt(unique[i - 1])} m and ${fmt(unique[i])} m are too close together; make them equal or separate them.`, "loads");
+        fail(`Positions ${lengthText(units)(unique[i - 1])} and ${lengthText(units)(unique[i])} are too close together; make them equal or separate them.`, "loads");
     return unique;
   }
 
@@ -403,8 +459,8 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
   const GAUSS5 = [[-0.9061798459386640, 0.2369268850561891], [-0.5384693101056831, 0.4786286704993665], [0, 0.5688888888888889],
     [0.5384693101056831, 0.4786286704993665], [0.9061798459386640, 0.2369268850561891]];
 
-  function solve(input) {
-    const model = validate(input), EI = model.material.E * model.section.I;
+  function solve(input, { units = SI } = {}) {
+    const model = validate(input, { units }), EI = model.material.E * model.section.I;
     // Stiffness stations: the ends and every support. Loads between them enter as consistent nodal loads.
     const stations = [...new Set([0, model.length, ...model.supports.map((s) => s.x)])].sort((a, b) => a - b);
     const n = stations.length * 2, K = banded(n), f = Array(n).fill(0);
@@ -734,16 +790,18 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
   const count = (n, noun) => `${n} ${noun}${n === 1 ? "" : "s"}`;
 
   /* Build a NASTRAN deck that encodes exactly the model the browser solved. */
-  function exportBdf(input, { title = "BEAMDIAG LINEAR STATIC" } = {}) {
-    const model = validate(input), nodes = mesh(model);
+  /* The input is SI, like every other function here; the deck's numbers are written in `units`. */
+  function exportBdf(input, { title = "BEAMDIAG LINEAR STATIC", units = SI } = {}) {
+    // Fifteen digits drop the last-bit noise a conversion leaves (5e-3 m² is 5000 mm², not 5000.000000000001).
+    const u = unitSystem(units), model = scaleModel(validate(input, { units: u }), u, (v, q) => +toUnits(v, q, u).toPrecision(15)), nodes = mesh(model);
     const hasLoad = model.loads.some((l) => (l.kind === "point" && l.F !== 0) || (l.kind === "moment" && l.C !== 0) || (l.kind === "dist" && (l.q1 !== 0 || l.q2 !== 0)));
     if (!hasLoad) fail("Add a non-zero load before exporting a NASTRAN deck.", "loads");
     const ids = new Map(nodes.map((x, i) => [x, i + 1])), gid = (x) => ids.get(x);
     const safeTitle = String(title).replace(/[^A-Za-z0-9 _.,()+\-]/g, " ").slice(0, 60).trim() || "BEAMDIAG";
     const { material: mat, section: sec } = model, SPC = 1, LOAD = 2;
     const lines = [
-      `$ Beam, L = ${fmt(model.length)} m: ${count(nodes.length, "grid")}, ${count(nodes.length - 1, "CBAR")}, ${count(model.supports.length, "support")}, ${count(model.loads.length, "load")}`,
-      "$ Units N, m, Pa. Beam on X, loads in Y (+ up), moments about Z (+ CCW).",
+      `$ Beam, L = ${fmt(model.length)} ${u.symbol.length}: ${count(nodes.length, "grid")}, ${count(nodes.length - 1, "CBAR")}, ${count(model.supports.length, "support")}, ${count(model.loads.length, "load")}`,
+      `$ Units ${u.ascii}. Beam on X, loads in Y (+ up), moments about Z (+ CCW).`,
       "SOL 101",
       "CEND",
       `TITLE = ${safeTitle}`,
@@ -811,8 +869,9 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
   function fmt(x) {
     return Number.isInteger(x) ? String(x) : String(+x.toPrecision(6));
   }
+  const lengthText = (units) => { const u = unitSystem(units); return (x) => `${fmt(toUnits(x, "length", u))} ${u.symbol.length}`; };
 
-  return { SUPPORT_KINDS, ModelError, sectionProperties, indeterminacy, validate, mesh, solve, internal, deflection, at, diagram, extremes, exportBdf, smallEntry, largeEntry, exactReal, nastranReal };
+  return { SUPPORT_KINDS, UNIT_SYSTEMS, DEFAULT_UNITS, toUnits, fromUnits, scaleModel, ModelError, sectionProperties, indeterminacy, validate, mesh, solve, internal, deflection, at, diagram, extremes, exportBdf, smallEntry, largeEntry, exactReal, nastranReal };
 });
 
 </script>
@@ -822,33 +881,63 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
 const B = BeamDiag;
 const $ = (id) => document.getElementById(id);
 const SVGNS = "http://www.w3.org/2000/svg";
-const kN = 1e3, GPa = 1e9, mm = 1e-3;
 
 /* ---------- number formatting ---------- */
+/* Each unit convention puts values on a different scale (a deflection is 0.004 m or 4 mm),
+   so very large and very small magnitudes switch to powers of ten. */
+const plain = (x, n) => String(+x.toPrecision(n)).replace("-", "−");
+const pow10 = (x, n) => {
+  const [m, e] = x.toExponential(n - 1).split("e");
+  return `${plain(+m, n)}×10${e.replace("+", "").replace("-", "⁻").replace(/\d/g, (c) => "⁰¹²³⁴⁵⁶⁷⁸⁹"[c])}`;
+};
 const nf = (x, digits = 3) => {
   if (!Number.isFinite(x)) return "—";
-  if (Math.abs(x) < 1e-9) x = 0;
   const a = Math.abs(x);
+  if (a === 0) return "0";
+  if (a >= 1e7 || a < 1e-3) return pow10(x, 4);
+  if (a < 1) return plain(x, 4);
   const d = a >= 1000 ? 0 : a >= 100 ? 1 : a >= 10 ? 2 : digits;
   return x.toLocaleString("en-GB", { minimumFractionDigits: d, maximumFractionDigits: d }).replace("-", "−");
 };
-const sig = (x, n = 4) => (Number.isFinite(x) ? String(+x.toPrecision(n)).replace("-", "−") : "—");
+const sig = (x, n = 4) => {
+  if (!Number.isFinite(x)) return "—";
+  const a = Math.abs(x);
+  return a === 0 || (a >= 1e-4 && a < 1e7) ? plain(x, n) : pow10(x, n);
+};
 const tidy = (x) => (Number.isFinite(x) ? +x.toPrecision(10) : "");
 const sci = (x) => {
   if (!Number.isFinite(x)) return "—";
-  const e = Math.floor(Math.log10(Math.abs(x)));
-  return e >= -2 && e < 6 ? sig(x, 4) : `${sig(x / 10 ** e, 4)}×10${String(e).replace("-", "⁻").replace(/\d/g, (c) => "⁰¹²³⁴⁵⁶⁷⁸⁹"[c])}`;
+  const a = Math.abs(x);
+  return a === 0 || (a >= 1e-2 && a < 1e6) ? plain(x, 4) : pow10(x, 4);
 };
 
 // Figure labels: plain digits below `big`, otherwise n significant figures × a power of ten, so a
-// label stays a few characters long at any load magnitude.
-const pow10 = (x, n) => {
-  let e = Math.floor(Math.log10(Math.abs(x))), m = +(x / 10 ** e).toPrecision(n);
-  if (Math.abs(m) >= 10) { e++; m = +(m / 10).toPrecision(n); }
-  return `${String(m).replace("-", "−")}×10${String(e).replace("-", "⁻").replace(/\d/g, (c) => "⁰¹²³⁴⁵⁶⁷⁸⁹"[c])}`;
-};
+// label stays a few characters long at any load magnitude in any unit convention.
 const short = (x, n = 3, big = 1e6) => (Number.isFinite(x) && Math.abs(x) >= big ? pow10(x, n) : sig(x, n));
 const shortNf = (x, digits) => (Number.isFinite(x) && Math.abs(x) >= 1e6 ? pow10(x, 4) : nf(x, digits));
+
+/* ---------- unit convention ---------- */
+/* The state and the solver stay in SI (N, m, Pa). Values are converted only where they are
+   typed or shown, so changing the convention re-expresses what was entered and never changes
+   the beam or its results. */
+let units = B.UNIT_SYSTEMS[B.DEFAULT_UNITS];
+const show = (si, quantity) => B.toUnits(si, quantity, units);
+/* Typed lengths drop conversion noise (2300 mm is 2.3 m, not 2.3000000000000003 m). */
+const take = (value, quantity) => { const si = B.fromUnits(value, quantity, units); return quantity === "length" ? +si.toPrecision(15) : si; };
+/* A typed position (or length) lands exactly on any other position on the beam within 1e-9·L of it:
+   fields show 10 significant figures, so typing back a shown value must give the position it shows. */
+function takeX(value, obj, key) {
+  const x = take(value, "length"), L = key === "length" ? x : state.length;
+  const at = key === "length" ? [0] : [0, L];
+  for (const o of [...state.supports, ...state.loads]) for (const k of ["x", "x1", "x2"]) if (k in o && !(o === obj && k === key)) at.push(o[k]);
+  return at.find((p) => Math.abs(p - x) <= 1e-9 * L) ?? x;
+}
+const sym = (quantity) => units.symbol[quantity];
+/* A default in SI, rounded to one significant figure in the current convention (−10 kN is −2000 lbf). */
+const round1 = (si, quantity) => take(+show(si, quantity).toPrecision(1), quantity);
+function relabel() {
+  for (const e of document.querySelectorAll("[data-unit]")) e.textContent = e.dataset.unit === "system" ? units.label : sym(e.dataset.unit);
+}
 
 /* ---------- state (SI units) ---------- */
 let state, attachmentLength, result = null, cursor = null, active = null;
@@ -914,7 +1003,7 @@ function buildSupports() {
     sel.value = s.kind;
     sel.addEventListener("change", () => { s.kind = sel.value; update({ keepForm: true }); });
     kind.append(ks, sel);
-    fields.append(kind, numInput({ label: "x (m)", value: s.x, field: `supports.${i}.x`, onInput: (v) => { s.x = v; } }));
+    fields.append(kind, numInput({ label: `x (${sym("length")})`, value: show(s.x, "length"), field: `supports.${i}.x`, onInput: (v) => { s.x = takeX(v, s, "x"); } }));
     li.append(fields, removeButton(`Remove support ${i + 1}`, () => { state.supports.splice(i, 1); update(); }));
     list.append(li);
   });
@@ -937,16 +1026,16 @@ function buildLoads() {
     fields.append(tag);
     const f = `loads.${i}`;
     if (l.kind === "point") {
-      fields.append(numInput({ label: "x (m)", value: l.x, field: `${f}.x`, onInput: (v) => { l.x = v; } }),
-        numInput({ label: "F (kN)", value: l.F / kN, field: `${f}.F`, onInput: (v) => { l.F = v * kN; } }));
+      fields.append(numInput({ label: `x (${sym("length")})`, value: show(l.x, "length"), field: `${f}.x`, onInput: (v) => { l.x = takeX(v, l, "x"); } }),
+        numInput({ label: `F (${sym("force")})`, value: show(l.F, "force"), field: `${f}.F`, onInput: (v) => { l.F = take(v, "force"); } }));
     } else if (l.kind === "moment") {
-      fields.append(numInput({ label: "x (m)", value: l.x, field: `${f}.x`, onInput: (v) => { l.x = v; } }),
-        numInput({ label: "C (kN·m)", value: l.C / kN, field: `${f}.C`, onInput: (v) => { l.C = v * kN; } }));
+      fields.append(numInput({ label: `x (${sym("length")})`, value: show(l.x, "length"), field: `${f}.x`, onInput: (v) => { l.x = takeX(v, l, "x"); } }),
+        numInput({ label: `C (${sym("moment")})`, value: show(l.C, "moment"), field: `${f}.C`, onInput: (v) => { l.C = take(v, "moment"); } }));
     } else {
-      fields.append(numInput({ label: "from x₁ (m)", value: l.x1, field: `${f}.x1`, onInput: (v) => { l.x1 = v; } }),
-        numInput({ label: "to x₂ (m)", value: l.x2, field: `${f}.x2`, onInput: (v) => { l.x2 = v; } }),
-        numInput({ label: "q₁ (kN/m)", value: l.q1 / kN, field: `${f}.q1`, onInput: (v) => { l.q1 = v * kN; } }),
-        numInput({ label: "q₂ (kN/m)", value: l.q2 / kN, field: `${f}.q2`, onInput: (v) => { l.q2 = v * kN; } }));
+      fields.append(numInput({ label: `from x₁ (${sym("length")})`, value: show(l.x1, "length"), field: `${f}.x1`, onInput: (v) => { l.x1 = takeX(v, l, "x1"); } }),
+        numInput({ label: `to x₂ (${sym("length")})`, value: show(l.x2, "length"), field: `${f}.x2`, onInput: (v) => { l.x2 = takeX(v, l, "x2"); } }),
+        numInput({ label: `q₁ (${sym("distributed")})`, value: show(l.q1, "distributed"), field: `${f}.q1`, onInput: (v) => { l.q1 = take(v, "distributed"); } }),
+        numInput({ label: `q₂ (${sym("distributed")})`, value: show(l.q2, "distributed"), field: `${f}.q2`, onInput: (v) => { l.q2 = take(v, "distributed"); } }));
     }
     li.append(fields, removeButton(`Remove load ${i + 1}, ${LOAD_NAMES[l.kind]}`, () => { state.loads.splice(i, 1); update(); }));
     list.append(li);
@@ -954,10 +1043,10 @@ function buildLoads() {
 }
 
 const SECTION_FIELDS = {
-  rect: [["b", "Width b (mm)", mm], ["h", "Depth h (mm)", mm]],
-  circle: [["d", "Diameter d (mm)", mm]],
-  tube: [["d", "Outside D (mm)", mm], ["t", "Wall t (mm)", mm]],
-  custom: [["A", "Area A (mm²)", mm * mm], ["I", "I, in plane (mm⁴)", mm ** 4], ["c", "Fibre c (mm, optional)", mm], ["Iy", "Iy, out of plane (mm⁴)", mm ** 4], ["J", "Torsion J (mm⁴)", mm ** 4]],
+  rect: [["b", "Width b", "length"], ["h", "Depth h", "length"]],
+  circle: [["d", "Diameter d", "length"]],
+  tube: [["d", "Outside D", "length"], ["t", "Wall t", "length"]],
+  custom: [["A", "Area A", "area"], ["I", "I, in plane", "inertia"], ["c", "Fibre c", "length", ", optional"], ["Iy", "Iy, out of plane", "inertia"], ["J", "Torsion J", "inertia"]],
 };
 const SECTION_DEFAULTS = { rect: { b: 0.1, h: 0.2 }, circle: { d: 0.15 }, tube: { d: 0.1683, t: 0.008 }, custom: { A: 5.0e-3, I: 8.0e-5, c: 0.15, Iy: 8.0e-5, J: 1.6e-4 } };
 
@@ -969,9 +1058,9 @@ function buildSection() {
   for (let i = 0; i < fields.length; i += 2) {
     const row = document.createElement("div");
     row.className = "row";
-    for (const [key, label, unit] of fields.slice(i, i + 2)) {
-      row.append(numInput({ label, value: state.section[key] == null ? NaN : state.section[key] / unit, field: `section.${key}`,
-        onInput: (v) => { if (key === "c" && Number.isNaN(v)) delete state.section.c; else state.section[key] = v * unit; } }));
+    for (const [key, label, quantity, note = ""] of fields.slice(i, i + 2)) {
+      row.append(numInput({ label: `${label} (${sym(quantity)}${note})`, value: state.section[key] == null ? NaN : show(state.section[key], quantity), field: `section.${key}`,
+        onInput: (v) => { if (key === "c" && Number.isNaN(v)) delete state.section.c; else state.section[key] = take(v, quantity); } }));
     }
     box.append(row);
   }
@@ -979,12 +1068,14 @@ function buildSection() {
 
 function buildMaterial() {
   $("material").value = state.material.id;
-  $("E").value = tidy(state.material.E / GPa);
+  $("E").value = tidy(show(state.material.E, "stress"));
   $("nu").value = tidy(state.material.nu);
 }
 
 function buildForm() {
-  $("length").value = tidy(state.length);
+  $("units").value = units.id;
+  relabel();
+  $("length").value = tidy(show(state.length, "length"));
   $("divisions").value = state.divisions;
   buildSupports(); buildLoads(); buildSection(); buildMaterial();
   const p = D.presets.find((x) => x.id === state.preset);
@@ -1009,6 +1100,9 @@ function updateSoon() {
   pending = setTimeout(() => update({ keepForm: true }), 150);
 }
 
+/* Whether a solved beam's diagrams stay finite when converted to the current convention. */
+const showable = (r) => [["V", "force"], ["M", "moment"], ["v", "length"]].every(([k, q]) => Number.isFinite(show(r.extremes[k].value, q)));
+
 function update({ keepForm = false } = {}) {
   clearTimeout(pending);
   pending = null;
@@ -1017,12 +1111,16 @@ function update({ keepForm = false } = {}) {
   else if (state.preset) { state.preset = null; $("preset").value = ""; $("preset-note").textContent = ""; }
   let error = null;
   try {
-    result = B.solve(modelOf(state));
-    result.extremes = B.extremes(result);
+    const next = B.solve(modelOf(state), { units });
+    next.extremes = B.extremes(next);
+    if (!showable(next)) throw new B.ModelError(`The results are too large to show in ${units.label}; choose a convention with larger units.`);
+    result = next;
   } catch (e) {
     if (!(e instanceof B.ModelError)) throw e;
     error = e;
   }
+  // A beam solved in one convention can overflow when shown in another (10³⁰⁶ N·m is Infinity in N·mm).
+  if (result && !showable(result)) { result = null; layout = null; }
   const box = $("error");
   if (error) {
     box.hidden = false;
@@ -1050,7 +1148,7 @@ function renderSectionDerived() {
   try {
     const s = B.sectionProperties(state.section);
     const EI = state.material.E * s.I;
-    out.textContent = `A = ${sci(s.A / mm ** 2)} mm² · I = ${sci(s.I / mm ** 4)} mm⁴` + (s.c ? ` · c = ${sig(s.c / mm)} mm` : "") + (Number.isFinite(EI) ? ` · EI = ${sci(EI / kN)} kN·m²` : "");
+    out.textContent = `A = ${sci(show(s.A, "area"))} ${sym("area")} · I = ${sci(show(s.I, "inertia"))} ${sym("inertia")}` + (s.c ? ` · c = ${sig(show(s.c, "length"))} ${sym("length")}` : "") + (Number.isFinite(EI) ? ` · EI = ${sci(show(EI, "rigidity"))} ${sym("rigidity")}` : "");
   } catch { out.textContent = ""; }
 }
 
@@ -1100,9 +1198,9 @@ function render() {
   const L = result.model.length;
   const panels = [
     { key: "beam", h: narrow ? 150 : 170 },
-    { key: "V", title: "SHEAR FORCE V (kN)", h: narrow ? 130 : 160, color: "var(--shear)", get: (p) => p.V / kN, unit: "kN" },
-    { key: "M", title: "BENDING MOMENT M (kN·m) · SAGGING +", h: narrow ? 130 : 160, color: "var(--moment)", get: (p) => p.M / kN, unit: "kN·m" },
-    { key: "v", title: "DEFLECTION v (mm)", h: narrow ? 110 : 130, color: "var(--fg)", get: (p) => p.v / mm, unit: "mm" },
+    { key: "V", title: `SHEAR FORCE V (${sym("force")})`, h: narrow ? 130 : 160, color: "var(--shear)", get: (p) => show(p.V, "force"), unit: sym("force") },
+    { key: "M", title: `BENDING MOMENT M (${sym("moment")}) · SAGGING +`, h: narrow ? 130 : 160, color: "var(--moment)", get: (p) => show(p.M, "moment"), unit: sym("moment") },
+    { key: "v", title: `DEFLECTION v (${sym("length")})`, h: narrow ? 110 : 130, color: "var(--fg)", get: (p) => show(p.v, "length"), unit: sym("length") },
   ];
   let y = 0;
   for (const p of panels) { p.top = y + (p.key === "beam" ? 0 : 22); p.bottom = p.top + p.h - (p.key === "beam" ? 0 : 22); y += p.h + 10; }
@@ -1116,7 +1214,7 @@ function render() {
   layout = { X, ml, mr, W, L, panels, svg };
 
   drawBeam(svg, panels[0], X);
-  const plot = el("g", { class: "plotarea", tabindex: 0, role: "slider", "aria-label": "Section position along the beam", "aria-valuemin": 0, "aria-valuemax": tidy(L) }, svg);
+  const plot = el("g", { class: "plotarea", tabindex: 0, role: "slider", "aria-label": "Section position along the beam", "aria-valuemin": 0, "aria-valuemax": tidy(show(L, "length")) }, svg);
   for (const p of panels.slice(1)) drawDiagram(plot, p, pts, X, W, ml, mr, titleX);
   el("rect", { class: "frame", x: ml - 4, y: panels[1].top - 20, width: W - ml - mr + 8, height: panels[3].bottom - panels[1].top + 24, fill: "none", stroke: "none", rx: 6 }, plot);
   const cur = el("line", { class: "cursor", x1: 0, x2: 0, y1: panels[0].top + 8, y2: panels[3].bottom }, svg);
@@ -1154,7 +1252,8 @@ function drawBeam(svg, panel, X) {
       el("line", { x1: px, x2: px, y1: top, y2: yb - 8, stroke: "var(--fg)", "stroke-width": 1 }, g);
       arrowHead(px, d > 0 ? yb - 7 : top, d, "var(--fg)", 3);
     }
-    const label = l.q1 === l.q2 ? `${short(l.q1 / kN)} kN/m` : `${short(l.q1 / kN)} → ${short(l.q2 / kN)} kN/m`;
+    const q = (v) => short(show(v, "distributed"));
+    const label = l.q1 === l.q2 ? `${q(l.q1)} ${sym("distributed")}` : `${q(l.q1)} → ${q(l.q2)} ${sym("distributed")}`;
     text(g, (x1 + x2) / 2, Math.min(topAt(l.x1), topAt(l.x2)) - 6, label, { class: "val", "text-anchor": "middle" });
   });
   // Beam
@@ -1165,7 +1264,7 @@ function drawBeam(svg, panel, X) {
   const labelled = new Set();
   let freeFrom = -Infinity;
   for (const r of reactions) {
-    const x = X(r.x), w = 7 * ([...shortNf(Math.abs(r.Fy) / kN, 2)].length + 5);
+    const x = X(r.x), w = 7 * ([...shortNf(show(Math.abs(r.Fy), "force"), 2)].length + [...sym("force")].length + 3);
     const anchor = r.x <= 0.08 * L ? "start" : r.x >= 0.92 * L ? "end" : "middle";
     const left = anchor === "start" ? x : anchor === "end" ? x - w : x - w / 2;
     if (left >= freeFrom) { labelled.add(r.x); freeFrom = left + w + 6; }
@@ -1173,7 +1272,7 @@ function drawBeam(svg, panel, X) {
   state.supports.forEach((s, i) => {
     if (!Number.isFinite(s.x)) return;
     const x = X(s.x);
-    const h = el("g", { class: "handle", tabindex: 0, role: "slider", "data-key": `s${i}`, "aria-label": `${s.kind === "pin" ? "Pin" : "Fixed"} support ${i + 1}, position`, "aria-valuemin": 0, "aria-valuemax": tidy(L), "aria-valuenow": tidy(s.x), "aria-valuetext": `${sig(s.x)} metres` }, g);
+    const h = el("g", { class: "handle", tabindex: 0, role: "slider", "data-key": `s${i}`, "aria-label": `${s.kind === "pin" ? "Pin" : "Fixed"} support ${i + 1}, position`, "aria-valuemin": 0, "aria-valuemax": tidy(show(L, "length")), "aria-valuenow": tidy(show(s.x, "length")), "aria-valuetext": `${sig(show(s.x, "length"))} ${sym("length")}` }, g);
     if (s.kind === "pin") {
       el("path", { d: `M${x},${yb + 4} l-10,16 h20 z`, fill: "var(--bg)", stroke: "var(--fg)", "stroke-width": 1.5 }, h);
       el("line", { x1: x - 14, x2: x + 14, y1: yb + 23, y2: yb + 23, stroke: "var(--fg)", "stroke-width": 1.5 }, h);
@@ -1200,9 +1299,9 @@ function drawBeam(svg, panel, X) {
     if (r && labelled.has(r.x)) {
       const up = r.Fy >= 0, ya = yb + 34, len = 20;
       const anchor = s.x <= 0.08 * L ? "start" : s.x >= 0.92 * L ? "end" : "middle";
-      text(g, x + (anchor === "start" ? -2 : anchor === "end" ? 2 : 0), ya + len + 14, `${shortNf(Math.abs(r.Fy) / kN, 2)} kN ${up ? "↑" : "↓"}`, { class: "val react", "text-anchor": anchor });
+      text(g, x + (anchor === "start" ? -2 : anchor === "end" ? 2 : 0), ya + len + 14, `${shortNf(show(Math.abs(r.Fy), "force"), 2)} ${sym("force")} ${up ? "↑" : "↓"}`, { class: "val react", "text-anchor": anchor });
       if (s.kind === "fixed" && Math.abs(r.Mz) > 1e-9 * (Math.abs(r.Fy) + 1)) {
-        text(g, x + (anchor === "start" ? -2 : anchor === "end" ? 2 : 0), ya + len + 28, `${shortNf(Math.abs(r.Mz) / kN, 2)} kN·m ${r.Mz > 0 ? "↺" : "↻"}`, { class: "val react", "text-anchor": anchor });
+        text(g, x + (anchor === "start" ? -2 : anchor === "end" ? 2 : 0), ya + len + 28, `${shortNf(show(Math.abs(r.Mz), "moment"), 2)} ${sym("moment")} ${r.Mz > 0 ? "↺" : "↻"}`, { class: "val react", "text-anchor": anchor });
       }
     }
   });
@@ -1210,7 +1309,7 @@ function drawBeam(svg, panel, X) {
   state.loads.forEach((l, i) => {
     if (l.kind === "dist" || !Number.isFinite(l.x)) return;
     const x = X(l.x);
-    const h = el("g", { class: "handle", tabindex: 0, role: "slider", "data-key": `l${i}`, "aria-label": `Load ${i + 1}, ${LOAD_NAMES[l.kind]}, position`, "aria-valuemin": 0, "aria-valuemax": tidy(L), "aria-valuenow": tidy(l.x), "aria-valuetext": `${sig(l.x)} metres` }, g);
+    const h = el("g", { class: "handle", tabindex: 0, role: "slider", "data-key": `l${i}`, "aria-label": `Load ${i + 1}, ${LOAD_NAMES[l.kind]}, position`, "aria-valuemin": 0, "aria-valuemax": tidy(show(L, "length")), "aria-valuenow": tidy(show(l.x, "length")), "aria-valuetext": `${sig(show(l.x, "length"))} ${sym("length")}` }, g);
     const anchor = l.x <= 0.08 * L ? "start" : l.x >= 0.92 * L ? "end" : "middle";
     if (l.kind === "point") {
       // Capped: while an edit is unsolved, F can exceed the largest force of the solved model.
@@ -1218,7 +1317,7 @@ function drawBeam(svg, panel, X) {
       const y0 = yb - 6 - len, y1 = yb - 6;
       el("line", { x1: x, x2: x, y1: down ? y0 : y1 - 1, y2: down ? y1 - 7 : y0 + 7, stroke: "var(--fg)", "stroke-width": 2 }, h);
       arrowHead(x, down ? y1 : y0, down ? 1 : -1, "var(--fg)", 5);
-      text(h, x, y0 - 6, `${short(Math.abs(l.F) / kN)} kN ${down ? "↓" : "↑"}`, { class: "val", "text-anchor": anchor });
+      text(h, x, y0 - 6, `${short(show(Math.abs(l.F), "force"))} ${sym("force")} ${down ? "↓" : "↑"}`, { class: "val", "text-anchor": anchor });
       el("rect", { class: "ring", x: x - 14, y: y0 - 4, width: 28, height: len + 6, rx: 6 }, h);
       el("rect", { class: "hit", x: x - 16, y: y0 - 20, width: 32, height: len + 22 }, h);
     } else {
@@ -1226,7 +1325,7 @@ function drawBeam(svg, panel, X) {
       el("path", { d: `M${x + r},${yb} A${r},${r} 0 1 ${ccw ? 0 : 1} ${x - r},${yb}`, fill: "none", stroke: "var(--fg)", "stroke-width": 2 }, h);
       const tipX = x - r, tipY = yb;
       el("path", { d: `M${tipX},${tipY + 1} l-5,-8 h10 z`, fill: "var(--fg)", transform: ccw ? "" : `rotate(180 ${tipX} ${tipY})` }, h);
-      text(h, x, yb - r - 8, `${short(Math.abs(l.C) / kN)} kN·m ${ccw ? "↺" : "↻"}`, { class: "val", "text-anchor": anchor });
+      text(h, x, yb - r - 8, `${short(show(Math.abs(l.C), "moment"))} ${sym("moment")} ${ccw ? "↺" : "↻"}`, { class: "val", "text-anchor": anchor });
       el("rect", { class: "ring", x: x - r - 5, y: yb - r - 5, width: 2 * r + 10, height: r + 12, rx: 6 }, h);
       el("rect", { class: "hit", x: x - r - 6, y: yb - r - 22, width: 2 * r + 12, height: r + 30 }, h);
     }
@@ -1253,7 +1352,7 @@ function drawDiagram(g, panel, pts, X, W, ml, mr, titleX) {
   // Label the extremes.
   const ex = result.extremes[panel.key];
   if (ex && Math.abs(ex.value) > 0) {
-    const v = panel.key === "v" ? ex.value / mm : ex.value / kN;
+    const v = panel.get({ [panel.key]: ex.value });
     const x = X(ex.x), yv = Y(v);
     el("circle", { cx: x, cy: yv, r: 3.5, fill: panel.color, stroke: "var(--bg)", "stroke-width": 2 }, g);
     const anchor = x < ml + 60 ? "start" : x > W - mr - 60 ? "end" : "middle";
@@ -1275,8 +1374,8 @@ function eventsOf() {
   add(0, "left end"); add(m.length, "right end");
   m.supports.forEach((s) => add(s.x, s.kind === "pin" ? "pin support" : "fixed support"));
   m.loads.forEach((l) => {
-    if (l.kind === "point") add(l.x, `${sig(l.F / kN, 3)} kN force`);
-    if (l.kind === "moment") add(l.x, `${sig(l.C / kN, 3)} kN·m couple`);
+    if (l.kind === "point") add(l.x, `${sig(show(l.F, "force"), 3)} ${sym("force")} force`);
+    if (l.kind === "moment") add(l.x, `${sig(show(l.C, "moment"), 3)} ${sym("moment")} couple`);
     if (l.kind === "dist") { add(l.x1, "distributed load starts"); add(l.x2, "distributed load ends"); }
   });
   return [...map.entries()].sort((a, b) => a[0] - b[0]).map(([x, what]) => ({ x, what: [...new Set(what)] }));
@@ -1294,12 +1393,13 @@ function setCursor(x) {
   const jumpM = Math.abs(a.Mleft - a.Mright) > 1e-9 * (Math.abs(a.Mleft) + Math.abs(a.Mright) + 1);
   const V = cursor <= 0 ? a.Vright : cursor >= L ? a.Vleft : a.Vright;
   const M = cursor <= 0 ? a.Mright : cursor >= L ? a.Mleft : a.Mright;
+  const f = (v, key, quantity) => shortNf(show(clean(v, key), quantity));
   const parts = [
-    ["x", `${nf(cursor, 3)} m`],
-    ["V", jumpV ? `${shortNf(a.Vleft / kN)} → ${shortNf(a.Vright / kN)} kN` : `${shortNf(V / kN)} kN`],
-    ["M", jumpM ? `${shortNf(a.Mleft / kN)} → ${shortNf(a.Mright / kN)} kN·m` : `${shortNf(M / kN)} kN·m`],
-    ["v", `${shortNf(a.v / mm)} mm`],
-    ["θ", `${shortNf(a.theta * 1e3)} mrad`],
+    ["x", `${shortNf(show(cursor, "length"), 3)} ${sym("length")}`],
+    ["V", `${jumpV ? `${f(a.Vleft, "V", "force")} → ${f(a.Vright, "V", "force")}` : f(V, "V", "force")} ${sym("force")}`],
+    ["M", `${jumpM ? `${f(a.Mleft, "M", "moment")} → ${f(a.Mright, "M", "moment")}` : f(M, "M", "moment")} ${sym("moment")}`],
+    ["v", `${f(a.v, "v", "length")} ${sym("length")}`],
+    ["θ", `${f(a.theta, "theta", "angle")} ${sym("angle")}`],
   ];
   const out = $("readout");
   out.replaceChildren();
@@ -1309,8 +1409,16 @@ function setCursor(x) {
     const b = document.createElement("b"); b.textContent = v;
     s.append(kk, b); out.append(s);
   }
-  layout.plot.setAttribute("aria-valuenow", tidy(cursor));
+  layout.plot.setAttribute("aria-valuenow", tidy(show(cursor, "length")));
   layout.plot.setAttribute("aria-valuetext", parts.map(([k, v]) => `${k} ${v}`).join(", "));
+}
+
+/* A position along the beam in the current length unit. */
+const at = (x) => `${sig(show(x, "length"))} ${sym("length")}`;
+/* Round-off far below the largest value of the same quantity on this beam reads as zero. */
+function clean(value, key) {
+  const ex = result.extremes, scale = key === "theta" ? Math.abs(ex.v.value) / result.model.length : Math.abs(ex[key].value);
+  return Math.abs(value) <= 1e-10 * scale ? 0 : value;
 }
 
 function renderStats() {
@@ -1318,11 +1426,11 @@ function renderStats() {
   const deg = B.indeterminacy(m.supports);
   const items = [
     [deg > 0 ? `Indeterminate, degree ${deg}` : "Determinate", deg > 0 ? "more reactions than equilibrium can find: solved with compatibility" : "reactions follow from equilibrium alone"],
-    [`${sig(ex.V.value / kN, 4)} kN`, `largest shear, at x = ${sig(ex.V.x)} m`],
-    [`${sig(ex.M.value / kN, 4)} kN·m`, `largest moment (${ex.M.value >= 0 ? "sagging" : "hogging"}), at x = ${sig(ex.M.x)} m`],
-    [`${sig(ex.v.value / mm, 4)} mm`, `largest deflection, at x = ${sig(ex.v.x)} m (L/${Math.abs(ex.v.value) > 0 ? Math.round(m.length / Math.abs(ex.v.value)) : "∞"})`],
+    [`${sig(show(ex.V.value, "force"), 4)} ${sym("force")}`, `largest shear, at x = ${at(ex.V.x)}`],
+    [`${sig(show(ex.M.value, "moment"), 4)} ${sym("moment")}`, `largest moment (${ex.M.value >= 0 ? "sagging" : "hogging"}), at x = ${at(ex.M.x)}`],
+    [`${sig(show(ex.v.value, "length"), 4)} ${sym("length")}`, `largest deflection, at x = ${at(ex.v.x)} (L/${Math.abs(ex.v.value) > 0 ? Math.round(m.length / Math.abs(ex.v.value)) : "∞"})`],
   ];
-  if (m.section.c) items.push([`${sig(Math.abs(ex.M.value) * m.section.c / m.section.I / 1e6, 4)} MPa`, "peak bending stress |M|·c / I"]);
+  if (m.section.c) items.push([`${sig(show(Math.abs(ex.M.value) * m.section.c / m.section.I, "stress"), 4)} ${sym("stress")}`, "peak bending stress |M|·c / I"]);
   const eq = result.equilibrium;
   const resid = Math.max(Math.abs(eq.Fy) / Math.max(eq.scaleF, 1e-300), Math.abs(eq.Mz) / Math.max(eq.scaleM, 1e-300));
   items.push([resid < 1e-9 ? "Balanced" : `Residual ${sci(resid)}`, `ΣF and ΣM of loads and reactions, relative error ${sci(resid)}`]);
@@ -1339,7 +1447,7 @@ function renderStats() {
   result.reactions.forEach((r) => {
     const li = document.createElement("li");
     li.append(document.createElement("i"));
-    li.append(document.createTextNode(`${r.kind === "pin" ? "Pin" : "Fixed"} at ${sig(r.x)} m: ${shortNf(r.Fy / kN)} kN` + (r.kind === "fixed" ? `, ${shortNf(r.Mz / kN)} kN·m` : "")));
+    li.append(document.createTextNode(`${r.kind === "pin" ? "Pin" : "Fixed"} at ${at(r.x)}: ${shortNf(show(r.Fy, "force"))} ${sym("force")}` + (r.kind === "fixed" ? `, ${shortNf(show(r.Mz, "moment"))} ${sym("moment")}` : "")));
     rl.append(li);
   });
 }
@@ -1350,11 +1458,12 @@ function renderTable() {
   for (const e of eventsOf()) {
     const a = B.at(result, e.x), L = result.model.length;
     const tr = document.createElement("tr");
+    const f = (v, key, quantity) => nf(show(clean(v, key), quantity));
     const cells = [
-      [nf(e.x), true], [e.what.join(", "), false],
-      [e.x > 0 ? nf(a.Vleft / kN) : "—", true], [e.x < L ? nf(a.Vright / kN) : "—", true],
-      [e.x > 0 ? nf(a.Mleft / kN) : "—", true], [e.x < L ? nf(a.Mright / kN) : "—", true],
-      [nf(a.v / mm), true], [nf(a.theta * 1e3), true],
+      [nf(show(e.x, "length")), true], [e.what.join(", "), false],
+      [e.x > 0 ? f(a.Vleft, "V", "force") : "—", true], [e.x < L ? f(a.Vright, "V", "force") : "—", true],
+      [e.x > 0 ? f(a.Mleft, "M", "moment") : "—", true], [e.x < L ? f(a.Mright, "M", "moment") : "—", true],
+      [f(a.v, "v", "length"), true], [f(a.theta, "theta", "angle"), true],
     ];
     for (const [v, num] of cells) { const td = document.createElement("td"); if (num) td.className = "num"; td.textContent = v; tr.append(td); }
     tb.append(tr);
@@ -1367,7 +1476,7 @@ function deck() {
   if (pending !== null) update({ keepForm: true });
   if (deckText === null) {
     try {
-      deckText = B.exportBdf(modelOf(state));
+      deckText = B.exportBdf(modelOf(state), { units });
     } catch (e) {
       if (!(e instanceof B.ModelError)) throw e;
       deckText = "";
@@ -1383,11 +1492,12 @@ function resetDeck() {
 }
 
 /* ---------- interaction ---------- */
+/* Steps and snapping work in the current length unit, so a dragged support lands on 24 in, not 0.6 m. */
 function stepFor(L) {
-  const raw = L / 100, p = 10 ** Math.floor(Math.log10(raw));
-  return [1, 2, 5, 10].map((m) => m * p).find((s) => s >= raw);
+  const raw = show(L, "length") / 100, p = 10 ** Math.floor(Math.log10(raw));
+  return take([1, 2, 5, 10].map((m) => m * p).find((s) => s >= raw), "length");
 }
-const snap = (x, step) => +(Math.round(x / step) * step).toPrecision(12);
+const snap = (x, step) => { const s = show(step, "length"); return take(+(Math.round(show(x, "length") / s) * s).toPrecision(12), "length"); };
 
 function moveHandle(key, x) {
   const L = state.length;
@@ -1397,7 +1507,7 @@ function moveHandle(key, x) {
   if (!target) return;
   target.x = x;
   const input = document.querySelector(`[data-field="${key[0] === "s" ? "supports" : "loads"}.${i}.x"]`);
-  if (input) input.value = tidy(x);
+  if (input) input.value = tidy(show(x, "length"));
   update({ keepForm: true });
 }
 
@@ -1440,7 +1550,7 @@ function wire() {
       const next = { ArrowLeft: cur - step, ArrowDown: cur - step, ArrowRight: cur + step, ArrowUp: cur + step, Home: 0, End: L }[ev.key];
       if (next === undefined) return;
       ev.preventDefault();
-      moveHandle(key, snap(next, step));
+      moveHandle(key, ev.key === "Home" || ev.key === "End" ? next : snap(next, step));
       return;
     }
     if (ev.target.classList && ev.target.classList.contains("plotarea") && result) {
@@ -1480,13 +1590,13 @@ function wire() {
     });
   }
   $("length").addEventListener("input", () => {
-    const v = $("length").value === "" ? NaN : Number($("length").value);
+    const v = $("length").value === "" ? NaN : takeX(Number($("length").value), state, "length");
     const old = attachmentLength;
     state.length = v;
     // Keep supports and loads at the right end attached to it.
     if (Number.isFinite(v) && v > 0) {
       attachmentLength = v;
-      const set = (field, x) => { const input = document.querySelector(`[data-field="${field}"]`); if (input) input.value = tidy(x); };
+      const set = (field, x) => { const input = document.querySelector(`[data-field="${field}"]`); if (input) input.value = tidy(show(x, "length")); };
       state.supports.forEach((s, i) => { if (s.x === old) { s.x = v; set(`supports.${i}.x`, v); } });
       state.loads.forEach((l, i) => {
         if (l.x === old) { l.x = v; set(`loads.${i}.x`, v); }
@@ -1514,9 +1624,10 @@ function wire() {
   for (const b of document.querySelectorAll("[data-add]")) {
     b.addEventListener("click", () => {
       const L = state.length, k = b.dataset.add;
-      state.loads.push(k === "point" ? { kind: "point", x: +(L / 2).toPrecision(10), F: -10 * kN }
-        : k === "moment" ? { kind: "moment", x: +(L / 2).toPrecision(10), C: 10 * kN }
-          : { kind: "dist", x1: 0, x2: L, q1: -5 * kN, q2: -5 * kN });
+      const q = round1(-5e3, "distributed");
+      state.loads.push(k === "point" ? { kind: "point", x: +(L / 2).toPrecision(10), F: round1(-10e3, "force") }
+        : k === "moment" ? { kind: "moment", x: +(L / 2).toPrecision(10), C: round1(10e3, "moment") }
+          : { kind: "dist", x1: 0, x2: L, q1: q, q2: q });
       update();
       const inputs = document.querySelectorAll("#loads .item:last-child input");
       if (inputs.length) inputs[0].focus();
@@ -1529,24 +1640,38 @@ function wire() {
     update();
     shape.focus();
   });
+  const unitSel = $("units");
+  for (const u of Object.values(B.UNIT_SYSTEMS)) unitSel.add(new Option(u.label, u.id));
+  unitSel.addEventListener("change", () => {
+    if (pending !== null) update({ keepForm: true });
+    units = B.UNIT_SYSTEMS[unitSel.value] || units;
+    materialOptions();
+    update();
+    unitSel.focus();
+  });
   const mat = $("material");
-  for (const m of D.materials) mat.add(new Option(`${m.label} (E ${sig(m.E / GPa)} GPa)`, m.id));
-  mat.add(new Option("Custom", "custom"));
+  const materialOptions = () => {
+    mat.replaceChildren();
+    for (const m of D.materials) mat.add(new Option(`${m.label} (E ${sig(show(m.E, "stress"))} ${sym("stress")})`, m.id));
+    mat.add(new Option("Custom", "custom"));
+    mat.value = state.material.id;
+  };
+  materialOptions();
   mat.addEventListener("change", () => {
     const m = D.materials.find((x) => x.id === mat.value);
     if (m) state.material = { id: m.id, E: m.E, nu: m.nu }; else state.material.id = "custom";
     update(); mat.focus();
   });
+  // E typed in psi only matches a preset to rounding, so presets are recognised within 1e-9.
   const matInput = () => {
-    state.material.E = $("E").value === "" ? NaN : Number($("E").value) * GPa;
-    state.material.nu = $("nu").value === "" ? NaN : Number($("nu").value);
-    const m = D.materials.find((x) => x.E === state.material.E && x.nu === state.material.nu);
+    const E = state.material.E;
+    const m = D.materials.find((x) => Math.abs(x.E - E) <= 1e-9 * x.E && x.nu === state.material.nu);
     state.material.id = m ? m.id : "custom";
     $("material").value = state.material.id;
     updateSoon();
   };
-  $("E").addEventListener("input", matInput);
-  $("nu").addEventListener("input", matInput);
+  $("E").addEventListener("input", () => { state.material.E = $("E").value === "" ? NaN : take(Number($("E").value), "stress"); matInput(); });
+  $("nu").addEventListener("input", () => { state.material.nu = $("nu").value === "" ? NaN : Number($("nu").value); matInput(); });
 
   $("deck-details").addEventListener("toggle", () => { if ($("deck-details").open) $("deck").textContent = deck(); });
   $("download").addEventListener("click", () => {
@@ -1617,10 +1742,10 @@ function registerTools() {
     },
     required: ["length", "supports", "loads", "material", "section"],
   };
-  mc.registerTool({ name: "get_metadata", description: "Return the method, units, sign conventions, assumptions, example beams, NASTRAN export notes and sources for this beam solver.", inputSchema: { type: "object", properties: {}, additionalProperties: false }, annotations: { readOnlyHint: true }, async execute() { return result_({ title: D.title, method: D.method, units: D.units, conventions: D.conventions, assumptions: D.assumptions, presets: D.presets.map((p) => ({ id: p.id, label: p.label, note: p.note })), nastran: D.nastran, sources: D.sources }); } });
+  mc.registerTool({ name: "get_metadata", description: "Return the method, units, sign conventions, assumptions, example beams, NASTRAN export notes and sources for this beam solver.", inputSchema: { type: "object", properties: {}, additionalProperties: false }, annotations: { readOnlyHint: true }, async execute() { return result_({ title: D.title, method: D.method, units: D.units, unitConventions: Object.values(B.UNIT_SYSTEMS), pageUnits: units.id, conventions: D.conventions, assumptions: D.assumptions, presets: D.presets.map((p) => ({ id: p.id, label: p.label, note: p.note })), nastran: D.nastran, sources: D.sources }); } });
   mc.registerTool({ name: "get_current_beam", description: "Return the beam currently on the page (SI units) with its reactions, extremes and values at every support and load.", inputSchema: { type: "object", properties: {}, additionalProperties: false }, annotations: { readOnlyHint: true }, async execute() { try { const r = B.solve(modelOf(state)); return result_({ model: r.model, ...summary(r) }); } catch (e) { return result_({ error: e.message }); } } });
   mc.registerTool({ name: "solve_beam", description: "Solve a beam given in SI units (supports pin or fixed; loads point, moment or dist) and return reactions, extremes and values at supports and loads. Does not change the page.", inputSchema: modelSchema, annotations: { readOnlyHint: true }, async execute(i) { try { return result_(summary(B.solve(i))); } catch (e) { return result_({ error: e.message, field: e.field || null }); } } });
-  mc.registerTool({ name: "export_nastran_bdf", description: "Return the MSC Nastran SOL 101 bulk data deck (.bdf text) for a beam given in SI units, or for the page's beam when no model is given.", inputSchema: { type: "object", properties: { model: modelSchema }, additionalProperties: false }, annotations: { readOnlyHint: true }, async execute(i) { try { return result_({ bdf: B.exportBdf(i && i.model ? i.model : modelOf(state)) }); } catch (e) { return result_({ error: e.message }); } } });
+  mc.registerTool({ name: "export_nastran_bdf", description: "Return the MSC Nastran SOL 101 bulk data deck (.bdf text) for a beam given in SI units, or for the page's beam when no model is given. The deck's numbers are written in `units` (default: the page's unit convention).", inputSchema: { type: "object", properties: { model: modelSchema, units: { type: "string", enum: Object.keys(B.UNIT_SYSTEMS), description: "Consistent unit convention for the deck's numbers" } }, additionalProperties: false }, annotations: { readOnlyHint: true }, async execute(i) { try { return result_({ bdf: B.exportBdf(i && i.model ? i.model : modelOf(state), { units: (i && i.units) || units.id }) }); } catch (e) { return result_({ error: e.message }); } } });
 }
 
 /* ---------- start ---------- */

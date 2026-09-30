@@ -120,7 +120,7 @@ code{font:.875em var(--mono)}
   <p class="lede">Build a straight beam, place pinned and fixed supports and loads, and read its reactions, shear force, bending moment and deflection. Statically indeterminate beams such as fixed–fixed spans are solved by the stiffness method. Everything is calculated on this page, and the same model downloads as a NASTRAN deck.</p>
 </header>
 
-<div class="toolbar" role="group" aria-label="Start from">
+<div class="toolbar" role="group" aria-label="Start from, and units">
   <div class="group">
     <label class="label" for="preset">Example</label>
     <select id="preset"></select>
@@ -131,6 +131,10 @@ code{font:.875em var(--mono)}
     <button class="btn" type="button" data-ends="fixed,fixed">Fixed–fixed</button>
     <button class="btn" type="button" data-ends="fixed,pin">Fixed–pin</button>
     <button class="btn" type="button" data-ends="fixed,">Cantilever</button>
+  </div>
+  <div class="group">
+    <label class="label" for="units">Units</label>
+    <select id="units" title="Consistent unit convention for every input, result, diagram and the NASTRAN deck"></select>
   </div>
 </div>
 <p id="preset-note" class="note"></p>
@@ -149,7 +153,7 @@ code{font:.875em var(--mono)}
     <div class="card">
       <h3>Beam</h3>
       <div class="row">
-        <label class="f"><span>Length L (m)</span><input id="length" type="number" step="0.1" min="0.001" data-field="length"></label>
+        <label class="f"><span>Length L (<span data-unit="length">mm</span>)</span><input id="length" type="number" step="0.1" min="0.001" data-field="length"></label>
         <label class="f"><span>Elements per segment</span><input id="divisions" type="number" step="1" min="1" data-field="divisions"></label>
       </div>
     </div>
@@ -178,7 +182,7 @@ code{font:.875em var(--mono)}
       <h3>Material</h3>
       <label class="f"><span>Preset</span><select id="material"></select></label>
       <div class="row">
-        <label class="f"><span>Young's modulus E (GPa)</span><input id="E" type="number" step="1" data-field="material.E"></label>
+        <label class="f"><span>Young's modulus E (<span data-unit="stress">MPa</span>)</span><input id="E" type="number" step="1" data-field="material.E"></label>
         <label class="f"><span>Poisson's ratio ν</span><input id="nu" type="number" step="0.01" data-field="material.nu"></label>
       </div>
     </div>
@@ -189,14 +193,14 @@ code{font:.875em var(--mono)}
   <h2 id="values-h">Values at supports and loads</h2>
   <p class="muted small">Where a point force or couple acts, the diagram jumps: both the value just to the left (x⁻) and just to the right (x⁺) are listed.</p>
   <div class="table-wrap"><table>
-    <thead><tr><th class="num" scope="col">x (m)</th><th scope="col">What is here</th><th class="num" scope="col">V x⁻ (kN)</th><th class="num" scope="col">V x⁺ (kN)</th><th class="num" scope="col">M x⁻ (kN·m)</th><th class="num" scope="col">M x⁺ (kN·m)</th><th class="num" scope="col">v (mm)</th><th class="num" scope="col">θ (mrad)</th></tr></thead>
+    <thead><tr><th class="num" scope="col">x (<span data-unit="length">mm</span>)</th><th scope="col">What is here</th><th class="num" scope="col">V x⁻ (<span data-unit="force">N</span>)</th><th class="num" scope="col">V x⁺ (<span data-unit="force">N</span>)</th><th class="num" scope="col">M x⁻ (<span data-unit="moment">N·mm</span>)</th><th class="num" scope="col">M x⁺ (<span data-unit="moment">N·mm</span>)</th><th class="num" scope="col">v (<span data-unit="length">mm</span>)</th><th class="num" scope="col">θ (<span data-unit="angle">rad</span>)</th></tr></thead>
     <tbody id="table"></tbody>
   </table></div>
 </section>
 
 <section id="nastran" aria-labelledby="nastran-h">
   <h2 id="nastran-h">NASTRAN deck</h2>
-  <p>Download this beam as an MSC Nastran SOL 101 linear static bulk data file (<code>.bdf</code>). It encodes the same supports, loads, section and material the page solved, in SI units.</p>
+  <p>Download this beam as an MSC Nastran SOL 101 linear static bulk data file (<code>.bdf</code>). It encodes the same supports, loads, section and material the page solved, with every number in the units chosen above (<span data-unit="system">SI: N, mm, MPa</span>); a <code>$ Units</code> comment at the top of the deck names them.</p>
   <div class="export">
     <label class="f"><span>File name</span><input id="bdf-name" type="text" value="beamdiag.bdf" autocomplete="off" spellcheck="false"></label>
     <button class="btn primary" type="button" id="download">Download .bdf</button>
@@ -234,33 +238,63 @@ const D = /*@DATA@*/;
 const B = BeamDiag;
 const $ = (id) => document.getElementById(id);
 const SVGNS = "http://www.w3.org/2000/svg";
-const kN = 1e3, GPa = 1e9, mm = 1e-3;
 
 /* ---------- number formatting ---------- */
+/* Each unit convention puts values on a different scale (a deflection is 0.004 m or 4 mm),
+   so very large and very small magnitudes switch to powers of ten. */
+const plain = (x, n) => String(+x.toPrecision(n)).replace("-", "−");
+const pow10 = (x, n) => {
+  const [m, e] = x.toExponential(n - 1).split("e");
+  return `${plain(+m, n)}×10${e.replace("+", "").replace("-", "⁻").replace(/\d/g, (c) => "⁰¹²³⁴⁵⁶⁷⁸⁹"[c])}`;
+};
 const nf = (x, digits = 3) => {
   if (!Number.isFinite(x)) return "—";
-  if (Math.abs(x) < 1e-9) x = 0;
   const a = Math.abs(x);
+  if (a === 0) return "0";
+  if (a >= 1e7 || a < 1e-3) return pow10(x, 4);
+  if (a < 1) return plain(x, 4);
   const d = a >= 1000 ? 0 : a >= 100 ? 1 : a >= 10 ? 2 : digits;
   return x.toLocaleString("en-GB", { minimumFractionDigits: d, maximumFractionDigits: d }).replace("-", "−");
 };
-const sig = (x, n = 4) => (Number.isFinite(x) ? String(+x.toPrecision(n)).replace("-", "−") : "—");
+const sig = (x, n = 4) => {
+  if (!Number.isFinite(x)) return "—";
+  const a = Math.abs(x);
+  return a === 0 || (a >= 1e-4 && a < 1e7) ? plain(x, n) : pow10(x, n);
+};
 const tidy = (x) => (Number.isFinite(x) ? +x.toPrecision(10) : "");
 const sci = (x) => {
   if (!Number.isFinite(x)) return "—";
-  const e = Math.floor(Math.log10(Math.abs(x)));
-  return e >= -2 && e < 6 ? sig(x, 4) : `${sig(x / 10 ** e, 4)}×10${String(e).replace("-", "⁻").replace(/\d/g, (c) => "⁰¹²³⁴⁵⁶⁷⁸⁹"[c])}`;
+  const a = Math.abs(x);
+  return a === 0 || (a >= 1e-2 && a < 1e6) ? plain(x, 4) : pow10(x, 4);
 };
 
 // Figure labels: plain digits below `big`, otherwise n significant figures × a power of ten, so a
-// label stays a few characters long at any load magnitude.
-const pow10 = (x, n) => {
-  let e = Math.floor(Math.log10(Math.abs(x))), m = +(x / 10 ** e).toPrecision(n);
-  if (Math.abs(m) >= 10) { e++; m = +(m / 10).toPrecision(n); }
-  return `${String(m).replace("-", "−")}×10${String(e).replace("-", "⁻").replace(/\d/g, (c) => "⁰¹²³⁴⁵⁶⁷⁸⁹"[c])}`;
-};
+// label stays a few characters long at any load magnitude in any unit convention.
 const short = (x, n = 3, big = 1e6) => (Number.isFinite(x) && Math.abs(x) >= big ? pow10(x, n) : sig(x, n));
 const shortNf = (x, digits) => (Number.isFinite(x) && Math.abs(x) >= 1e6 ? pow10(x, 4) : nf(x, digits));
+
+/* ---------- unit convention ---------- */
+/* The state and the solver stay in SI (N, m, Pa). Values are converted only where they are
+   typed or shown, so changing the convention re-expresses what was entered and never changes
+   the beam or its results. */
+let units = B.UNIT_SYSTEMS[B.DEFAULT_UNITS];
+const show = (si, quantity) => B.toUnits(si, quantity, units);
+/* Typed lengths drop conversion noise (2300 mm is 2.3 m, not 2.3000000000000003 m). */
+const take = (value, quantity) => { const si = B.fromUnits(value, quantity, units); return quantity === "length" ? +si.toPrecision(15) : si; };
+/* A typed position (or length) lands exactly on any other position on the beam within 1e-9·L of it:
+   fields show 10 significant figures, so typing back a shown value must give the position it shows. */
+function takeX(value, obj, key) {
+  const x = take(value, "length"), L = key === "length" ? x : state.length;
+  const at = key === "length" ? [0] : [0, L];
+  for (const o of [...state.supports, ...state.loads]) for (const k of ["x", "x1", "x2"]) if (k in o && !(o === obj && k === key)) at.push(o[k]);
+  return at.find((p) => Math.abs(p - x) <= 1e-9 * L) ?? x;
+}
+const sym = (quantity) => units.symbol[quantity];
+/* A default in SI, rounded to one significant figure in the current convention (−10 kN is −2000 lbf). */
+const round1 = (si, quantity) => take(+show(si, quantity).toPrecision(1), quantity);
+function relabel() {
+  for (const e of document.querySelectorAll("[data-unit]")) e.textContent = e.dataset.unit === "system" ? units.label : sym(e.dataset.unit);
+}
 
 /* ---------- state (SI units) ---------- */
 let state, attachmentLength, result = null, cursor = null, active = null;
@@ -326,7 +360,7 @@ function buildSupports() {
     sel.value = s.kind;
     sel.addEventListener("change", () => { s.kind = sel.value; update({ keepForm: true }); });
     kind.append(ks, sel);
-    fields.append(kind, numInput({ label: "x (m)", value: s.x, field: `supports.${i}.x`, onInput: (v) => { s.x = v; } }));
+    fields.append(kind, numInput({ label: `x (${sym("length")})`, value: show(s.x, "length"), field: `supports.${i}.x`, onInput: (v) => { s.x = takeX(v, s, "x"); } }));
     li.append(fields, removeButton(`Remove support ${i + 1}`, () => { state.supports.splice(i, 1); update(); }));
     list.append(li);
   });
@@ -349,16 +383,16 @@ function buildLoads() {
     fields.append(tag);
     const f = `loads.${i}`;
     if (l.kind === "point") {
-      fields.append(numInput({ label: "x (m)", value: l.x, field: `${f}.x`, onInput: (v) => { l.x = v; } }),
-        numInput({ label: "F (kN)", value: l.F / kN, field: `${f}.F`, onInput: (v) => { l.F = v * kN; } }));
+      fields.append(numInput({ label: `x (${sym("length")})`, value: show(l.x, "length"), field: `${f}.x`, onInput: (v) => { l.x = takeX(v, l, "x"); } }),
+        numInput({ label: `F (${sym("force")})`, value: show(l.F, "force"), field: `${f}.F`, onInput: (v) => { l.F = take(v, "force"); } }));
     } else if (l.kind === "moment") {
-      fields.append(numInput({ label: "x (m)", value: l.x, field: `${f}.x`, onInput: (v) => { l.x = v; } }),
-        numInput({ label: "C (kN·m)", value: l.C / kN, field: `${f}.C`, onInput: (v) => { l.C = v * kN; } }));
+      fields.append(numInput({ label: `x (${sym("length")})`, value: show(l.x, "length"), field: `${f}.x`, onInput: (v) => { l.x = takeX(v, l, "x"); } }),
+        numInput({ label: `C (${sym("moment")})`, value: show(l.C, "moment"), field: `${f}.C`, onInput: (v) => { l.C = take(v, "moment"); } }));
     } else {
-      fields.append(numInput({ label: "from x₁ (m)", value: l.x1, field: `${f}.x1`, onInput: (v) => { l.x1 = v; } }),
-        numInput({ label: "to x₂ (m)", value: l.x2, field: `${f}.x2`, onInput: (v) => { l.x2 = v; } }),
-        numInput({ label: "q₁ (kN/m)", value: l.q1 / kN, field: `${f}.q1`, onInput: (v) => { l.q1 = v * kN; } }),
-        numInput({ label: "q₂ (kN/m)", value: l.q2 / kN, field: `${f}.q2`, onInput: (v) => { l.q2 = v * kN; } }));
+      fields.append(numInput({ label: `from x₁ (${sym("length")})`, value: show(l.x1, "length"), field: `${f}.x1`, onInput: (v) => { l.x1 = takeX(v, l, "x1"); } }),
+        numInput({ label: `to x₂ (${sym("length")})`, value: show(l.x2, "length"), field: `${f}.x2`, onInput: (v) => { l.x2 = takeX(v, l, "x2"); } }),
+        numInput({ label: `q₁ (${sym("distributed")})`, value: show(l.q1, "distributed"), field: `${f}.q1`, onInput: (v) => { l.q1 = take(v, "distributed"); } }),
+        numInput({ label: `q₂ (${sym("distributed")})`, value: show(l.q2, "distributed"), field: `${f}.q2`, onInput: (v) => { l.q2 = take(v, "distributed"); } }));
     }
     li.append(fields, removeButton(`Remove load ${i + 1}, ${LOAD_NAMES[l.kind]}`, () => { state.loads.splice(i, 1); update(); }));
     list.append(li);
@@ -366,10 +400,10 @@ function buildLoads() {
 }
 
 const SECTION_FIELDS = {
-  rect: [["b", "Width b (mm)", mm], ["h", "Depth h (mm)", mm]],
-  circle: [["d", "Diameter d (mm)", mm]],
-  tube: [["d", "Outside D (mm)", mm], ["t", "Wall t (mm)", mm]],
-  custom: [["A", "Area A (mm²)", mm * mm], ["I", "I, in plane (mm⁴)", mm ** 4], ["c", "Fibre c (mm, optional)", mm], ["Iy", "Iy, out of plane (mm⁴)", mm ** 4], ["J", "Torsion J (mm⁴)", mm ** 4]],
+  rect: [["b", "Width b", "length"], ["h", "Depth h", "length"]],
+  circle: [["d", "Diameter d", "length"]],
+  tube: [["d", "Outside D", "length"], ["t", "Wall t", "length"]],
+  custom: [["A", "Area A", "area"], ["I", "I, in plane", "inertia"], ["c", "Fibre c", "length", ", optional"], ["Iy", "Iy, out of plane", "inertia"], ["J", "Torsion J", "inertia"]],
 };
 const SECTION_DEFAULTS = { rect: { b: 0.1, h: 0.2 }, circle: { d: 0.15 }, tube: { d: 0.1683, t: 0.008 }, custom: { A: 5.0e-3, I: 8.0e-5, c: 0.15, Iy: 8.0e-5, J: 1.6e-4 } };
 
@@ -381,9 +415,9 @@ function buildSection() {
   for (let i = 0; i < fields.length; i += 2) {
     const row = document.createElement("div");
     row.className = "row";
-    for (const [key, label, unit] of fields.slice(i, i + 2)) {
-      row.append(numInput({ label, value: state.section[key] == null ? NaN : state.section[key] / unit, field: `section.${key}`,
-        onInput: (v) => { if (key === "c" && Number.isNaN(v)) delete state.section.c; else state.section[key] = v * unit; } }));
+    for (const [key, label, quantity, note = ""] of fields.slice(i, i + 2)) {
+      row.append(numInput({ label: `${label} (${sym(quantity)}${note})`, value: state.section[key] == null ? NaN : show(state.section[key], quantity), field: `section.${key}`,
+        onInput: (v) => { if (key === "c" && Number.isNaN(v)) delete state.section.c; else state.section[key] = take(v, quantity); } }));
     }
     box.append(row);
   }
@@ -391,12 +425,14 @@ function buildSection() {
 
 function buildMaterial() {
   $("material").value = state.material.id;
-  $("E").value = tidy(state.material.E / GPa);
+  $("E").value = tidy(show(state.material.E, "stress"));
   $("nu").value = tidy(state.material.nu);
 }
 
 function buildForm() {
-  $("length").value = tidy(state.length);
+  $("units").value = units.id;
+  relabel();
+  $("length").value = tidy(show(state.length, "length"));
   $("divisions").value = state.divisions;
   buildSupports(); buildLoads(); buildSection(); buildMaterial();
   const p = D.presets.find((x) => x.id === state.preset);
@@ -421,6 +457,9 @@ function updateSoon() {
   pending = setTimeout(() => update({ keepForm: true }), 150);
 }
 
+/* Whether a solved beam's diagrams stay finite when converted to the current convention. */
+const showable = (r) => [["V", "force"], ["M", "moment"], ["v", "length"]].every(([k, q]) => Number.isFinite(show(r.extremes[k].value, q)));
+
 function update({ keepForm = false } = {}) {
   clearTimeout(pending);
   pending = null;
@@ -429,12 +468,16 @@ function update({ keepForm = false } = {}) {
   else if (state.preset) { state.preset = null; $("preset").value = ""; $("preset-note").textContent = ""; }
   let error = null;
   try {
-    result = B.solve(modelOf(state));
-    result.extremes = B.extremes(result);
+    const next = B.solve(modelOf(state), { units });
+    next.extremes = B.extremes(next);
+    if (!showable(next)) throw new B.ModelError(`The results are too large to show in ${units.label}; choose a convention with larger units.`);
+    result = next;
   } catch (e) {
     if (!(e instanceof B.ModelError)) throw e;
     error = e;
   }
+  // A beam solved in one convention can overflow when shown in another (10³⁰⁶ N·m is Infinity in N·mm).
+  if (result && !showable(result)) { result = null; layout = null; }
   const box = $("error");
   if (error) {
     box.hidden = false;
@@ -462,7 +505,7 @@ function renderSectionDerived() {
   try {
     const s = B.sectionProperties(state.section);
     const EI = state.material.E * s.I;
-    out.textContent = `A = ${sci(s.A / mm ** 2)} mm² · I = ${sci(s.I / mm ** 4)} mm⁴` + (s.c ? ` · c = ${sig(s.c / mm)} mm` : "") + (Number.isFinite(EI) ? ` · EI = ${sci(EI / kN)} kN·m²` : "");
+    out.textContent = `A = ${sci(show(s.A, "area"))} ${sym("area")} · I = ${sci(show(s.I, "inertia"))} ${sym("inertia")}` + (s.c ? ` · c = ${sig(show(s.c, "length"))} ${sym("length")}` : "") + (Number.isFinite(EI) ? ` · EI = ${sci(show(EI, "rigidity"))} ${sym("rigidity")}` : "");
   } catch { out.textContent = ""; }
 }
 
@@ -512,9 +555,9 @@ function render() {
   const L = result.model.length;
   const panels = [
     { key: "beam", h: narrow ? 150 : 170 },
-    { key: "V", title: "SHEAR FORCE V (kN)", h: narrow ? 130 : 160, color: "var(--shear)", get: (p) => p.V / kN, unit: "kN" },
-    { key: "M", title: "BENDING MOMENT M (kN·m) · SAGGING +", h: narrow ? 130 : 160, color: "var(--moment)", get: (p) => p.M / kN, unit: "kN·m" },
-    { key: "v", title: "DEFLECTION v (mm)", h: narrow ? 110 : 130, color: "var(--fg)", get: (p) => p.v / mm, unit: "mm" },
+    { key: "V", title: `SHEAR FORCE V (${sym("force")})`, h: narrow ? 130 : 160, color: "var(--shear)", get: (p) => show(p.V, "force"), unit: sym("force") },
+    { key: "M", title: `BENDING MOMENT M (${sym("moment")}) · SAGGING +`, h: narrow ? 130 : 160, color: "var(--moment)", get: (p) => show(p.M, "moment"), unit: sym("moment") },
+    { key: "v", title: `DEFLECTION v (${sym("length")})`, h: narrow ? 110 : 130, color: "var(--fg)", get: (p) => show(p.v, "length"), unit: sym("length") },
   ];
   let y = 0;
   for (const p of panels) { p.top = y + (p.key === "beam" ? 0 : 22); p.bottom = p.top + p.h - (p.key === "beam" ? 0 : 22); y += p.h + 10; }
@@ -528,7 +571,7 @@ function render() {
   layout = { X, ml, mr, W, L, panels, svg };
 
   drawBeam(svg, panels[0], X);
-  const plot = el("g", { class: "plotarea", tabindex: 0, role: "slider", "aria-label": "Section position along the beam", "aria-valuemin": 0, "aria-valuemax": tidy(L) }, svg);
+  const plot = el("g", { class: "plotarea", tabindex: 0, role: "slider", "aria-label": "Section position along the beam", "aria-valuemin": 0, "aria-valuemax": tidy(show(L, "length")) }, svg);
   for (const p of panels.slice(1)) drawDiagram(plot, p, pts, X, W, ml, mr, titleX);
   el("rect", { class: "frame", x: ml - 4, y: panels[1].top - 20, width: W - ml - mr + 8, height: panels[3].bottom - panels[1].top + 24, fill: "none", stroke: "none", rx: 6 }, plot);
   const cur = el("line", { class: "cursor", x1: 0, x2: 0, y1: panels[0].top + 8, y2: panels[3].bottom }, svg);
@@ -566,7 +609,8 @@ function drawBeam(svg, panel, X) {
       el("line", { x1: px, x2: px, y1: top, y2: yb - 8, stroke: "var(--fg)", "stroke-width": 1 }, g);
       arrowHead(px, d > 0 ? yb - 7 : top, d, "var(--fg)", 3);
     }
-    const label = l.q1 === l.q2 ? `${short(l.q1 / kN)} kN/m` : `${short(l.q1 / kN)} → ${short(l.q2 / kN)} kN/m`;
+    const q = (v) => short(show(v, "distributed"));
+    const label = l.q1 === l.q2 ? `${q(l.q1)} ${sym("distributed")}` : `${q(l.q1)} → ${q(l.q2)} ${sym("distributed")}`;
     text(g, (x1 + x2) / 2, Math.min(topAt(l.x1), topAt(l.x2)) - 6, label, { class: "val", "text-anchor": "middle" });
   });
   // Beam
@@ -577,7 +621,7 @@ function drawBeam(svg, panel, X) {
   const labelled = new Set();
   let freeFrom = -Infinity;
   for (const r of reactions) {
-    const x = X(r.x), w = 7 * ([...shortNf(Math.abs(r.Fy) / kN, 2)].length + 5);
+    const x = X(r.x), w = 7 * ([...shortNf(show(Math.abs(r.Fy), "force"), 2)].length + [...sym("force")].length + 3);
     const anchor = r.x <= 0.08 * L ? "start" : r.x >= 0.92 * L ? "end" : "middle";
     const left = anchor === "start" ? x : anchor === "end" ? x - w : x - w / 2;
     if (left >= freeFrom) { labelled.add(r.x); freeFrom = left + w + 6; }
@@ -585,7 +629,7 @@ function drawBeam(svg, panel, X) {
   state.supports.forEach((s, i) => {
     if (!Number.isFinite(s.x)) return;
     const x = X(s.x);
-    const h = el("g", { class: "handle", tabindex: 0, role: "slider", "data-key": `s${i}`, "aria-label": `${s.kind === "pin" ? "Pin" : "Fixed"} support ${i + 1}, position`, "aria-valuemin": 0, "aria-valuemax": tidy(L), "aria-valuenow": tidy(s.x), "aria-valuetext": `${sig(s.x)} metres` }, g);
+    const h = el("g", { class: "handle", tabindex: 0, role: "slider", "data-key": `s${i}`, "aria-label": `${s.kind === "pin" ? "Pin" : "Fixed"} support ${i + 1}, position`, "aria-valuemin": 0, "aria-valuemax": tidy(show(L, "length")), "aria-valuenow": tidy(show(s.x, "length")), "aria-valuetext": `${sig(show(s.x, "length"))} ${sym("length")}` }, g);
     if (s.kind === "pin") {
       el("path", { d: `M${x},${yb + 4} l-10,16 h20 z`, fill: "var(--bg)", stroke: "var(--fg)", "stroke-width": 1.5 }, h);
       el("line", { x1: x - 14, x2: x + 14, y1: yb + 23, y2: yb + 23, stroke: "var(--fg)", "stroke-width": 1.5 }, h);
@@ -612,9 +656,9 @@ function drawBeam(svg, panel, X) {
     if (r && labelled.has(r.x)) {
       const up = r.Fy >= 0, ya = yb + 34, len = 20;
       const anchor = s.x <= 0.08 * L ? "start" : s.x >= 0.92 * L ? "end" : "middle";
-      text(g, x + (anchor === "start" ? -2 : anchor === "end" ? 2 : 0), ya + len + 14, `${shortNf(Math.abs(r.Fy) / kN, 2)} kN ${up ? "↑" : "↓"}`, { class: "val react", "text-anchor": anchor });
+      text(g, x + (anchor === "start" ? -2 : anchor === "end" ? 2 : 0), ya + len + 14, `${shortNf(show(Math.abs(r.Fy), "force"), 2)} ${sym("force")} ${up ? "↑" : "↓"}`, { class: "val react", "text-anchor": anchor });
       if (s.kind === "fixed" && Math.abs(r.Mz) > 1e-9 * (Math.abs(r.Fy) + 1)) {
-        text(g, x + (anchor === "start" ? -2 : anchor === "end" ? 2 : 0), ya + len + 28, `${shortNf(Math.abs(r.Mz) / kN, 2)} kN·m ${r.Mz > 0 ? "↺" : "↻"}`, { class: "val react", "text-anchor": anchor });
+        text(g, x + (anchor === "start" ? -2 : anchor === "end" ? 2 : 0), ya + len + 28, `${shortNf(show(Math.abs(r.Mz), "moment"), 2)} ${sym("moment")} ${r.Mz > 0 ? "↺" : "↻"}`, { class: "val react", "text-anchor": anchor });
       }
     }
   });
@@ -622,7 +666,7 @@ function drawBeam(svg, panel, X) {
   state.loads.forEach((l, i) => {
     if (l.kind === "dist" || !Number.isFinite(l.x)) return;
     const x = X(l.x);
-    const h = el("g", { class: "handle", tabindex: 0, role: "slider", "data-key": `l${i}`, "aria-label": `Load ${i + 1}, ${LOAD_NAMES[l.kind]}, position`, "aria-valuemin": 0, "aria-valuemax": tidy(L), "aria-valuenow": tidy(l.x), "aria-valuetext": `${sig(l.x)} metres` }, g);
+    const h = el("g", { class: "handle", tabindex: 0, role: "slider", "data-key": `l${i}`, "aria-label": `Load ${i + 1}, ${LOAD_NAMES[l.kind]}, position`, "aria-valuemin": 0, "aria-valuemax": tidy(show(L, "length")), "aria-valuenow": tidy(show(l.x, "length")), "aria-valuetext": `${sig(show(l.x, "length"))} ${sym("length")}` }, g);
     const anchor = l.x <= 0.08 * L ? "start" : l.x >= 0.92 * L ? "end" : "middle";
     if (l.kind === "point") {
       // Capped: while an edit is unsolved, F can exceed the largest force of the solved model.
@@ -630,7 +674,7 @@ function drawBeam(svg, panel, X) {
       const y0 = yb - 6 - len, y1 = yb - 6;
       el("line", { x1: x, x2: x, y1: down ? y0 : y1 - 1, y2: down ? y1 - 7 : y0 + 7, stroke: "var(--fg)", "stroke-width": 2 }, h);
       arrowHead(x, down ? y1 : y0, down ? 1 : -1, "var(--fg)", 5);
-      text(h, x, y0 - 6, `${short(Math.abs(l.F) / kN)} kN ${down ? "↓" : "↑"}`, { class: "val", "text-anchor": anchor });
+      text(h, x, y0 - 6, `${short(show(Math.abs(l.F), "force"))} ${sym("force")} ${down ? "↓" : "↑"}`, { class: "val", "text-anchor": anchor });
       el("rect", { class: "ring", x: x - 14, y: y0 - 4, width: 28, height: len + 6, rx: 6 }, h);
       el("rect", { class: "hit", x: x - 16, y: y0 - 20, width: 32, height: len + 22 }, h);
     } else {
@@ -638,7 +682,7 @@ function drawBeam(svg, panel, X) {
       el("path", { d: `M${x + r},${yb} A${r},${r} 0 1 ${ccw ? 0 : 1} ${x - r},${yb}`, fill: "none", stroke: "var(--fg)", "stroke-width": 2 }, h);
       const tipX = x - r, tipY = yb;
       el("path", { d: `M${tipX},${tipY + 1} l-5,-8 h10 z`, fill: "var(--fg)", transform: ccw ? "" : `rotate(180 ${tipX} ${tipY})` }, h);
-      text(h, x, yb - r - 8, `${short(Math.abs(l.C) / kN)} kN·m ${ccw ? "↺" : "↻"}`, { class: "val", "text-anchor": anchor });
+      text(h, x, yb - r - 8, `${short(show(Math.abs(l.C), "moment"))} ${sym("moment")} ${ccw ? "↺" : "↻"}`, { class: "val", "text-anchor": anchor });
       el("rect", { class: "ring", x: x - r - 5, y: yb - r - 5, width: 2 * r + 10, height: r + 12, rx: 6 }, h);
       el("rect", { class: "hit", x: x - r - 6, y: yb - r - 22, width: 2 * r + 12, height: r + 30 }, h);
     }
@@ -665,7 +709,7 @@ function drawDiagram(g, panel, pts, X, W, ml, mr, titleX) {
   // Label the extremes.
   const ex = result.extremes[panel.key];
   if (ex && Math.abs(ex.value) > 0) {
-    const v = panel.key === "v" ? ex.value / mm : ex.value / kN;
+    const v = panel.get({ [panel.key]: ex.value });
     const x = X(ex.x), yv = Y(v);
     el("circle", { cx: x, cy: yv, r: 3.5, fill: panel.color, stroke: "var(--bg)", "stroke-width": 2 }, g);
     const anchor = x < ml + 60 ? "start" : x > W - mr - 60 ? "end" : "middle";
@@ -687,8 +731,8 @@ function eventsOf() {
   add(0, "left end"); add(m.length, "right end");
   m.supports.forEach((s) => add(s.x, s.kind === "pin" ? "pin support" : "fixed support"));
   m.loads.forEach((l) => {
-    if (l.kind === "point") add(l.x, `${sig(l.F / kN, 3)} kN force`);
-    if (l.kind === "moment") add(l.x, `${sig(l.C / kN, 3)} kN·m couple`);
+    if (l.kind === "point") add(l.x, `${sig(show(l.F, "force"), 3)} ${sym("force")} force`);
+    if (l.kind === "moment") add(l.x, `${sig(show(l.C, "moment"), 3)} ${sym("moment")} couple`);
     if (l.kind === "dist") { add(l.x1, "distributed load starts"); add(l.x2, "distributed load ends"); }
   });
   return [...map.entries()].sort((a, b) => a[0] - b[0]).map(([x, what]) => ({ x, what: [...new Set(what)] }));
@@ -706,12 +750,13 @@ function setCursor(x) {
   const jumpM = Math.abs(a.Mleft - a.Mright) > 1e-9 * (Math.abs(a.Mleft) + Math.abs(a.Mright) + 1);
   const V = cursor <= 0 ? a.Vright : cursor >= L ? a.Vleft : a.Vright;
   const M = cursor <= 0 ? a.Mright : cursor >= L ? a.Mleft : a.Mright;
+  const f = (v, key, quantity) => shortNf(show(clean(v, key), quantity));
   const parts = [
-    ["x", `${nf(cursor, 3)} m`],
-    ["V", jumpV ? `${shortNf(a.Vleft / kN)} → ${shortNf(a.Vright / kN)} kN` : `${shortNf(V / kN)} kN`],
-    ["M", jumpM ? `${shortNf(a.Mleft / kN)} → ${shortNf(a.Mright / kN)} kN·m` : `${shortNf(M / kN)} kN·m`],
-    ["v", `${shortNf(a.v / mm)} mm`],
-    ["θ", `${shortNf(a.theta * 1e3)} mrad`],
+    ["x", `${shortNf(show(cursor, "length"), 3)} ${sym("length")}`],
+    ["V", `${jumpV ? `${f(a.Vleft, "V", "force")} → ${f(a.Vright, "V", "force")}` : f(V, "V", "force")} ${sym("force")}`],
+    ["M", `${jumpM ? `${f(a.Mleft, "M", "moment")} → ${f(a.Mright, "M", "moment")}` : f(M, "M", "moment")} ${sym("moment")}`],
+    ["v", `${f(a.v, "v", "length")} ${sym("length")}`],
+    ["θ", `${f(a.theta, "theta", "angle")} ${sym("angle")}`],
   ];
   const out = $("readout");
   out.replaceChildren();
@@ -721,8 +766,16 @@ function setCursor(x) {
     const b = document.createElement("b"); b.textContent = v;
     s.append(kk, b); out.append(s);
   }
-  layout.plot.setAttribute("aria-valuenow", tidy(cursor));
+  layout.plot.setAttribute("aria-valuenow", tidy(show(cursor, "length")));
   layout.plot.setAttribute("aria-valuetext", parts.map(([k, v]) => `${k} ${v}`).join(", "));
+}
+
+/* A position along the beam in the current length unit. */
+const at = (x) => `${sig(show(x, "length"))} ${sym("length")}`;
+/* Round-off far below the largest value of the same quantity on this beam reads as zero. */
+function clean(value, key) {
+  const ex = result.extremes, scale = key === "theta" ? Math.abs(ex.v.value) / result.model.length : Math.abs(ex[key].value);
+  return Math.abs(value) <= 1e-10 * scale ? 0 : value;
 }
 
 function renderStats() {
@@ -730,11 +783,11 @@ function renderStats() {
   const deg = B.indeterminacy(m.supports);
   const items = [
     [deg > 0 ? `Indeterminate, degree ${deg}` : "Determinate", deg > 0 ? "more reactions than equilibrium can find: solved with compatibility" : "reactions follow from equilibrium alone"],
-    [`${sig(ex.V.value / kN, 4)} kN`, `largest shear, at x = ${sig(ex.V.x)} m`],
-    [`${sig(ex.M.value / kN, 4)} kN·m`, `largest moment (${ex.M.value >= 0 ? "sagging" : "hogging"}), at x = ${sig(ex.M.x)} m`],
-    [`${sig(ex.v.value / mm, 4)} mm`, `largest deflection, at x = ${sig(ex.v.x)} m (L/${Math.abs(ex.v.value) > 0 ? Math.round(m.length / Math.abs(ex.v.value)) : "∞"})`],
+    [`${sig(show(ex.V.value, "force"), 4)} ${sym("force")}`, `largest shear, at x = ${at(ex.V.x)}`],
+    [`${sig(show(ex.M.value, "moment"), 4)} ${sym("moment")}`, `largest moment (${ex.M.value >= 0 ? "sagging" : "hogging"}), at x = ${at(ex.M.x)}`],
+    [`${sig(show(ex.v.value, "length"), 4)} ${sym("length")}`, `largest deflection, at x = ${at(ex.v.x)} (L/${Math.abs(ex.v.value) > 0 ? Math.round(m.length / Math.abs(ex.v.value)) : "∞"})`],
   ];
-  if (m.section.c) items.push([`${sig(Math.abs(ex.M.value) * m.section.c / m.section.I / 1e6, 4)} MPa`, "peak bending stress |M|·c / I"]);
+  if (m.section.c) items.push([`${sig(show(Math.abs(ex.M.value) * m.section.c / m.section.I, "stress"), 4)} ${sym("stress")}`, "peak bending stress |M|·c / I"]);
   const eq = result.equilibrium;
   const resid = Math.max(Math.abs(eq.Fy) / Math.max(eq.scaleF, 1e-300), Math.abs(eq.Mz) / Math.max(eq.scaleM, 1e-300));
   items.push([resid < 1e-9 ? "Balanced" : `Residual ${sci(resid)}`, `ΣF and ΣM of loads and reactions, relative error ${sci(resid)}`]);
@@ -751,7 +804,7 @@ function renderStats() {
   result.reactions.forEach((r) => {
     const li = document.createElement("li");
     li.append(document.createElement("i"));
-    li.append(document.createTextNode(`${r.kind === "pin" ? "Pin" : "Fixed"} at ${sig(r.x)} m: ${shortNf(r.Fy / kN)} kN` + (r.kind === "fixed" ? `, ${shortNf(r.Mz / kN)} kN·m` : "")));
+    li.append(document.createTextNode(`${r.kind === "pin" ? "Pin" : "Fixed"} at ${at(r.x)}: ${shortNf(show(r.Fy, "force"))} ${sym("force")}` + (r.kind === "fixed" ? `, ${shortNf(show(r.Mz, "moment"))} ${sym("moment")}` : "")));
     rl.append(li);
   });
 }
@@ -762,11 +815,12 @@ function renderTable() {
   for (const e of eventsOf()) {
     const a = B.at(result, e.x), L = result.model.length;
     const tr = document.createElement("tr");
+    const f = (v, key, quantity) => nf(show(clean(v, key), quantity));
     const cells = [
-      [nf(e.x), true], [e.what.join(", "), false],
-      [e.x > 0 ? nf(a.Vleft / kN) : "—", true], [e.x < L ? nf(a.Vright / kN) : "—", true],
-      [e.x > 0 ? nf(a.Mleft / kN) : "—", true], [e.x < L ? nf(a.Mright / kN) : "—", true],
-      [nf(a.v / mm), true], [nf(a.theta * 1e3), true],
+      [nf(show(e.x, "length")), true], [e.what.join(", "), false],
+      [e.x > 0 ? f(a.Vleft, "V", "force") : "—", true], [e.x < L ? f(a.Vright, "V", "force") : "—", true],
+      [e.x > 0 ? f(a.Mleft, "M", "moment") : "—", true], [e.x < L ? f(a.Mright, "M", "moment") : "—", true],
+      [f(a.v, "v", "length"), true], [f(a.theta, "theta", "angle"), true],
     ];
     for (const [v, num] of cells) { const td = document.createElement("td"); if (num) td.className = "num"; td.textContent = v; tr.append(td); }
     tb.append(tr);
@@ -779,7 +833,7 @@ function deck() {
   if (pending !== null) update({ keepForm: true });
   if (deckText === null) {
     try {
-      deckText = B.exportBdf(modelOf(state));
+      deckText = B.exportBdf(modelOf(state), { units });
     } catch (e) {
       if (!(e instanceof B.ModelError)) throw e;
       deckText = "";
@@ -795,11 +849,12 @@ function resetDeck() {
 }
 
 /* ---------- interaction ---------- */
+/* Steps and snapping work in the current length unit, so a dragged support lands on 24 in, not 0.6 m. */
 function stepFor(L) {
-  const raw = L / 100, p = 10 ** Math.floor(Math.log10(raw));
-  return [1, 2, 5, 10].map((m) => m * p).find((s) => s >= raw);
+  const raw = show(L, "length") / 100, p = 10 ** Math.floor(Math.log10(raw));
+  return take([1, 2, 5, 10].map((m) => m * p).find((s) => s >= raw), "length");
 }
-const snap = (x, step) => +(Math.round(x / step) * step).toPrecision(12);
+const snap = (x, step) => { const s = show(step, "length"); return take(+(Math.round(show(x, "length") / s) * s).toPrecision(12), "length"); };
 
 function moveHandle(key, x) {
   const L = state.length;
@@ -809,7 +864,7 @@ function moveHandle(key, x) {
   if (!target) return;
   target.x = x;
   const input = document.querySelector(`[data-field="${key[0] === "s" ? "supports" : "loads"}.${i}.x"]`);
-  if (input) input.value = tidy(x);
+  if (input) input.value = tidy(show(x, "length"));
   update({ keepForm: true });
 }
 
@@ -852,7 +907,7 @@ function wire() {
       const next = { ArrowLeft: cur - step, ArrowDown: cur - step, ArrowRight: cur + step, ArrowUp: cur + step, Home: 0, End: L }[ev.key];
       if (next === undefined) return;
       ev.preventDefault();
-      moveHandle(key, snap(next, step));
+      moveHandle(key, ev.key === "Home" || ev.key === "End" ? next : snap(next, step));
       return;
     }
     if (ev.target.classList && ev.target.classList.contains("plotarea") && result) {
@@ -892,13 +947,13 @@ function wire() {
     });
   }
   $("length").addEventListener("input", () => {
-    const v = $("length").value === "" ? NaN : Number($("length").value);
+    const v = $("length").value === "" ? NaN : takeX(Number($("length").value), state, "length");
     const old = attachmentLength;
     state.length = v;
     // Keep supports and loads at the right end attached to it.
     if (Number.isFinite(v) && v > 0) {
       attachmentLength = v;
-      const set = (field, x) => { const input = document.querySelector(`[data-field="${field}"]`); if (input) input.value = tidy(x); };
+      const set = (field, x) => { const input = document.querySelector(`[data-field="${field}"]`); if (input) input.value = tidy(show(x, "length")); };
       state.supports.forEach((s, i) => { if (s.x === old) { s.x = v; set(`supports.${i}.x`, v); } });
       state.loads.forEach((l, i) => {
         if (l.x === old) { l.x = v; set(`loads.${i}.x`, v); }
@@ -926,9 +981,10 @@ function wire() {
   for (const b of document.querySelectorAll("[data-add]")) {
     b.addEventListener("click", () => {
       const L = state.length, k = b.dataset.add;
-      state.loads.push(k === "point" ? { kind: "point", x: +(L / 2).toPrecision(10), F: -10 * kN }
-        : k === "moment" ? { kind: "moment", x: +(L / 2).toPrecision(10), C: 10 * kN }
-          : { kind: "dist", x1: 0, x2: L, q1: -5 * kN, q2: -5 * kN });
+      const q = round1(-5e3, "distributed");
+      state.loads.push(k === "point" ? { kind: "point", x: +(L / 2).toPrecision(10), F: round1(-10e3, "force") }
+        : k === "moment" ? { kind: "moment", x: +(L / 2).toPrecision(10), C: round1(10e3, "moment") }
+          : { kind: "dist", x1: 0, x2: L, q1: q, q2: q });
       update();
       const inputs = document.querySelectorAll("#loads .item:last-child input");
       if (inputs.length) inputs[0].focus();
@@ -941,24 +997,38 @@ function wire() {
     update();
     shape.focus();
   });
+  const unitSel = $("units");
+  for (const u of Object.values(B.UNIT_SYSTEMS)) unitSel.add(new Option(u.label, u.id));
+  unitSel.addEventListener("change", () => {
+    if (pending !== null) update({ keepForm: true });
+    units = B.UNIT_SYSTEMS[unitSel.value] || units;
+    materialOptions();
+    update();
+    unitSel.focus();
+  });
   const mat = $("material");
-  for (const m of D.materials) mat.add(new Option(`${m.label} (E ${sig(m.E / GPa)} GPa)`, m.id));
-  mat.add(new Option("Custom", "custom"));
+  const materialOptions = () => {
+    mat.replaceChildren();
+    for (const m of D.materials) mat.add(new Option(`${m.label} (E ${sig(show(m.E, "stress"))} ${sym("stress")})`, m.id));
+    mat.add(new Option("Custom", "custom"));
+    mat.value = state.material.id;
+  };
+  materialOptions();
   mat.addEventListener("change", () => {
     const m = D.materials.find((x) => x.id === mat.value);
     if (m) state.material = { id: m.id, E: m.E, nu: m.nu }; else state.material.id = "custom";
     update(); mat.focus();
   });
+  // E typed in psi only matches a preset to rounding, so presets are recognised within 1e-9.
   const matInput = () => {
-    state.material.E = $("E").value === "" ? NaN : Number($("E").value) * GPa;
-    state.material.nu = $("nu").value === "" ? NaN : Number($("nu").value);
-    const m = D.materials.find((x) => x.E === state.material.E && x.nu === state.material.nu);
+    const E = state.material.E;
+    const m = D.materials.find((x) => Math.abs(x.E - E) <= 1e-9 * x.E && x.nu === state.material.nu);
     state.material.id = m ? m.id : "custom";
     $("material").value = state.material.id;
     updateSoon();
   };
-  $("E").addEventListener("input", matInput);
-  $("nu").addEventListener("input", matInput);
+  $("E").addEventListener("input", () => { state.material.E = $("E").value === "" ? NaN : take(Number($("E").value), "stress"); matInput(); });
+  $("nu").addEventListener("input", () => { state.material.nu = $("nu").value === "" ? NaN : Number($("nu").value); matInput(); });
 
   $("deck-details").addEventListener("toggle", () => { if ($("deck-details").open) $("deck").textContent = deck(); });
   $("download").addEventListener("click", () => {
@@ -1029,10 +1099,10 @@ function registerTools() {
     },
     required: ["length", "supports", "loads", "material", "section"],
   };
-  mc.registerTool({ name: "get_metadata", description: "Return the method, units, sign conventions, assumptions, example beams, NASTRAN export notes and sources for this beam solver.", inputSchema: { type: "object", properties: {}, additionalProperties: false }, annotations: { readOnlyHint: true }, async execute() { return result_({ title: D.title, method: D.method, units: D.units, conventions: D.conventions, assumptions: D.assumptions, presets: D.presets.map((p) => ({ id: p.id, label: p.label, note: p.note })), nastran: D.nastran, sources: D.sources }); } });
+  mc.registerTool({ name: "get_metadata", description: "Return the method, units, sign conventions, assumptions, example beams, NASTRAN export notes and sources for this beam solver.", inputSchema: { type: "object", properties: {}, additionalProperties: false }, annotations: { readOnlyHint: true }, async execute() { return result_({ title: D.title, method: D.method, units: D.units, unitConventions: Object.values(B.UNIT_SYSTEMS), pageUnits: units.id, conventions: D.conventions, assumptions: D.assumptions, presets: D.presets.map((p) => ({ id: p.id, label: p.label, note: p.note })), nastran: D.nastran, sources: D.sources }); } });
   mc.registerTool({ name: "get_current_beam", description: "Return the beam currently on the page (SI units) with its reactions, extremes and values at every support and load.", inputSchema: { type: "object", properties: {}, additionalProperties: false }, annotations: { readOnlyHint: true }, async execute() { try { const r = B.solve(modelOf(state)); return result_({ model: r.model, ...summary(r) }); } catch (e) { return result_({ error: e.message }); } } });
   mc.registerTool({ name: "solve_beam", description: "Solve a beam given in SI units (supports pin or fixed; loads point, moment or dist) and return reactions, extremes and values at supports and loads. Does not change the page.", inputSchema: modelSchema, annotations: { readOnlyHint: true }, async execute(i) { try { return result_(summary(B.solve(i))); } catch (e) { return result_({ error: e.message, field: e.field || null }); } } });
-  mc.registerTool({ name: "export_nastran_bdf", description: "Return the MSC Nastran SOL 101 bulk data deck (.bdf text) for a beam given in SI units, or for the page's beam when no model is given.", inputSchema: { type: "object", properties: { model: modelSchema }, additionalProperties: false }, annotations: { readOnlyHint: true }, async execute(i) { try { return result_({ bdf: B.exportBdf(i && i.model ? i.model : modelOf(state)) }); } catch (e) { return result_({ error: e.message }); } } });
+  mc.registerTool({ name: "export_nastran_bdf", description: "Return the MSC Nastran SOL 101 bulk data deck (.bdf text) for a beam given in SI units, or for the page's beam when no model is given. The deck's numbers are written in `units` (default: the page's unit convention).", inputSchema: { type: "object", properties: { model: modelSchema, units: { type: "string", enum: Object.keys(B.UNIT_SYSTEMS), description: "Consistent unit convention for the deck's numbers" } }, additionalProperties: false }, annotations: { readOnlyHint: true }, async execute(i) { try { return result_({ bdf: B.exportBdf(i && i.model ? i.model : modelOf(state), { units: (i && i.units) || units.id }) }); } catch (e) { return result_({ error: e.message }); } } });
 }
 
 /* ---------- start ---------- */
