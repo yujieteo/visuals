@@ -58,7 +58,7 @@ class Element {
   focus() {}
 }
 
-async function page() {
+async function page({ runTimers = false } = {}) {
   const nodes = new Map(), tools = new Map(), buttons = ["point", "moment"].map((kind) => {
     const b = new Element("button"); b.dataset.add = kind; return b;
   });
@@ -85,7 +85,7 @@ async function page() {
     Option: class extends Element { constructor(label, value) { super("option"); this.value = value; } },
     location: { get hash() { reads++; return "#m=obsolete-model"; } },
     history: { replaceState() { writes++; } },
-    setTimeout: () => 1, clearTimeout() {},
+    setTimeout: (fn) => { if (runTimers) fn(); return 1; }, clearTimeout() {},
   });
   const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
   for (const match of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)) vm.runInContext(match[1], context);
@@ -145,5 +145,176 @@ test("rendered short-span diagrams contain their extreme markers within the plot
     const lo = Math.min(...ys), hi = Math.max(...ys);
     assert.ok(hi - lo > 20, `${color} diagram must not be flat`);
     assert.ok(marker.attrs.cy >= lo - 0.01 && marker.attrs.cy <= hi + 0.01, `${color} marker lies within the curve's range`);
+  }
+});
+
+// Parses a figure label number: plain ("−2.5", "30.00", "2.5e+21") or a power of ten ("−2.5×10¹²").
+const labelNumber = (str) => {
+  const m = str.replace(/,/g, "").replace(/−/g, "-").match(/^(-?[\d.]+(?:e[-+]\d+)?)(?:×10([⁻⁰¹²³⁴⁵⁶⁷⁸⁹]+))?/);
+  const e = m[2] ? Number([...m[2]].map((c) => (c === "⁻" ? "-" : "⁰¹²³⁴⁵⁶⁷⁸⁹".indexOf(c))).join("")) : 0;
+  return Number(m[1]) * 10 ** e;
+};
+
+async function extremeBeam(magnitude, width) {
+  const p = await page({ runTimers: true });
+  p.document.getElementById("plots").clientWidth = width;
+  for (const b of p.buttons) b.dispatch("click");
+  const field = (name, value) => {
+    const e = p.document.querySelector(`[data-field="${name}"]`);
+    e.value = String(value); e.dispatch("input");
+  };
+  field("loads.1.x", 2);
+  field("loads.2.x", 4);
+  field("loads.0.q1", -magnitude);
+  field("loads.0.q2", -magnitude / 2);
+  field("loads.1.F", -3 * magnitude);
+  field("loads.2.C", magnitude);
+  const svg = p.document.getElementById("plots").children[0];
+  return { p, svg, W: svg.attrs.width, H: svg.attrs.height };
+}
+
+function drawn(svg) {
+  const out = [];
+  const visit = (e) => {
+    if (/\b(hit|ring)\b/.test(e.attrs?.class || "")) return;
+    out.push(e);
+    for (const c of e.children || []) visit(c);
+  };
+  visit(svg);
+  return out;
+}
+
+for (const width of [700, 360]) {
+  test(`extreme loads keep every diagram, arrow and label inside the ${width}px figure`, async () => {
+    for (const magnitude of [1e9, 1e12, 1e15, 1e300]) {
+      const { p, svg, W, H } = await extremeBeam(magnitude, width);
+      const beam = (await p.current()).model;
+      assert.equal(beam.loads[1].F, -3 * magnitude * 1e3, "the typed load is kept exactly");
+      for (const e of drawn(svg)) {
+        const where = `${magnitude}: ${e.tag} ${e.textContent ?? e.attrs.d ?? ""}`;
+        if (e.tag === "text") {
+          // Overestimates the rendered width: 7px per character at the 11–11.5px label sizes.
+          const w = 7 * [...e.textContent].length, x = e.attrs.x, anchor = e.attrs["text-anchor"] || "start";
+          const left = anchor === "end" ? x - w : anchor === "middle" ? x - w / 2 : x;
+          assert.ok(left >= 0 && left + w <= W, `${where} fits horizontally (${left}..${left + w} of ${W})`);
+          assert.ok(e.attrs.y - 12 >= 0 && e.attrs.y <= H, `${where} fits vertically`);
+        }
+        for (const [k, limit] of [["x1", W], ["x2", W], ["cx", W], ["y1", H], ["y2", H], ["cy", H]]) {
+          if (k in e.attrs) assert.ok(e.attrs[k] >= 0 && e.attrs[k] <= limit, `${where} ${k}=${e.attrs[k]}`);
+        }
+        if (e.tag === "path") {
+          let x = 0, y = 0;
+          for (const [, cmd, args] of e.attrs.d.matchAll(/([MLlhA])([^MLlhAZz]*)/g)) {
+            const n = args.trim().split(/[\s,]+/).map(Number);
+            if (cmd === "M" || cmd === "L") [x, y] = n;
+            else if (cmd === "l") { x += n[0]; y += n[1]; }
+            else if (cmd === "h") x += n[0];
+            else [x, y] = n.slice(-2);
+            assert.ok(x >= 0 && x <= W && y >= 0 && y <= H, `${where} point ${x},${y}`);
+          }
+        }
+      }
+    }
+  });
+}
+
+test("extreme-load diagrams fill their panels and label ticks and extremes exactly", async () => {
+  for (const magnitude of [1e9, 1e15, 1e300]) {
+    const { p, svg } = await extremeBeam(magnitude, 700);
+    const result = (await p.current()).extremes;
+    const plot = svg.children.find((e) => e.attrs?.class === "plotarea");
+    const axes = plot.children.filter((e) => e.attrs?.class === "axis");
+    const curves = ["var(--shear)", "var(--moment)", "var(--fg)"].map((color) =>
+      plot.children.find((e) => e.tag === "path" && e.attrs.stroke === color));
+    axes.forEach((axis, i) => {
+      const grid = axis.children.filter((e) => e.tag === "line").slice(0, -1);
+      const labels = axis.children.filter((e) => e.tag === "text").map((e) => labelNumber(e.textContent));
+      assert.equal(grid.length, labels.length);
+      // Tick labels are exact: evenly spaced values at evenly spaced grid lines, zero on the zero line.
+      const step = labels[1] - labels[0], px = grid[1].attrs.y1 - grid[0].attrs.y1;
+      labels.forEach((v, j) => {
+        assert.ok(Math.abs(v - labels[0] - j * step) <= 1e-9 * Math.abs(step), `tick ${j} of axis ${i}`);
+        assert.ok(Math.abs(grid[j].attrs.y1 - grid[0].attrs.y1 - j * px) < 1e-6);
+      });
+      const zero = axis.children.at(-1).attrs.y1;
+      assert.ok(Math.abs(grid[0].attrs.y1 + (0 - labels[0]) / step * px - zero) < 1e-6, `zero line of axis ${i}`);
+      const ys = [...curves[i].attrs.d.matchAll(/[ML][-\d.]+,([-\d.]+)/g)].map((m) => Number(m[1]));
+      assert.ok(Math.max(...ys) - Math.min(...ys) > 40, `curve ${i} at ${magnitude} is scaled to its panel, not flat`);
+      const gy = grid.map((g) => g.attrs.y1);
+      assert.ok(Math.min(...ys) >= Math.min(...gy) - Math.abs(px) && Math.max(...ys) <= Math.max(...gy) + Math.abs(px),
+        `curve ${i} stays within a tick step of its outer grid lines`);
+    });
+    const extremeLabels = plot.children.filter((e) => e.tag === "text" && e.attrs.class === "val").map((e) => e.textContent);
+    for (const [key, scale] of [["shear", 1e3], ["moment", 1e3], ["deflection", 1e-3]]) {
+      const expected = result[key].value / scale;
+      assert.ok(extremeLabels.some((s) => Math.abs(labelNumber(s) - expected) <= 5e-4 * Math.abs(expected)),
+        `${key} extreme ${expected} is labelled (${extremeLabels})`);
+    }
+  }
+});
+
+test("the cursor readout stays compact at 1e300 kN on a 360px figure", async () => {
+  const { p } = await extremeBeam(1e300, 360);
+  const readout = p.document.getElementById("readout");
+  const values = Object.fromEntries(readout.children.map((s) => [s.children[0].textContent.trim(), s.children[1].textContent]));
+  for (const [k, v] of Object.entries(values)) {
+    // Overestimates the rendered width: 9px per character at the .875rem readout size; each entry wraps on its own.
+    assert.ok(9 * [...`${k} ${v}`].length <= 360, `readout ${k} "${v}" fits its 360px container`);
+  }
+  assert.match(values.V, /×10[²³][⁰¹²³⁴⁵⁶⁷⁸⁹]{2} kN$/);
+  assert.match(values.M, /×10[²³][⁰¹²³⁴⁵⁶⁷⁸⁹]{2} kN·m$/);
+  assert.match(values.v, /×10[⁰¹²³⁴⁵⁶⁷⁸⁹]+ mm$/);
+  assert.match(values.θ, /×10[⁰¹²³⁴⁵⁶⁷⁸⁹]+ mrad$/);
+});
+
+test("support-reaction boxes stay compact at 1e300 kN on a 360px figure", async () => {
+  const { p } = await extremeBeam(1e300, 360);
+  const boxes = p.document.getElementById("reactions").children.map((li) => li.children.map((c) => c.textContent || "").join(""));
+  assert.ok(boxes.length > 0);
+  for (const text of boxes) {
+    // Same overestimate as the readout: 9px per character at .875rem, plus the swatch and padding.
+    assert.ok(9 * [...text].length + 40 <= 360, `reaction "${text}" fits its 360px container`);
+    assert.match(text, /×10[²³][⁰¹²³⁴⁵⁶⁷⁸⁹]{2} kN(, −?[\d.]+×10[⁰¹²³⁴⁵⁶⁷⁸⁹]+ kN·m)?$/);
+  }
+});
+
+test("support-reaction boxes keep plain digits under normal loads", async () => {
+  const p = await page();
+  const boxes = p.document.getElementById("reactions").children.map((li) => li.children.map((c) => c.textContent || "").join(""));
+  assert.ok(boxes.length > 0);
+  for (const text of boxes) assert.match(text, /: −?[\d,.]+ kN(, −?[\d,.]+ kN·m)?$/);
+});
+
+test("the cursor readout keeps plain digits under normal loads", async () => {
+  const p = await page();
+  const readout = p.document.getElementById("readout");
+  for (const s of readout.children) assert.match(s.children[1].textContent, /^−?[\d,.]+( → −?[\d,.]+)? (m|kN|kN·m|mm|mrad)$/);
+});
+
+test("normal loads keep the usual margin and plain-digit labels", async () => {
+  const p = await page();
+  const svg = p.document.getElementById("plots").children[0];
+  const plot = svg.children.find((e) => e.attrs?.class === "plotarea");
+  const axes = plot.children.filter((e) => e.attrs?.class === "axis");
+  for (const axis of axes) {
+    assert.equal(axis.children[0].attrs.x1, 64);
+    for (const t of axis.children.filter((e) => e.tag === "text")) assert.match(t.textContent, /^−?[\d.]+$/);
+  }
+  const texts = drawn(svg).filter((e) => e.tag === "text").map((e) => e.textContent);
+  assert.ok(texts.includes("−10 kN/m"));
+  assert.ok(texts.includes("30.00 kN ↑"));
+  assert.ok(texts.includes("45 kN·m"));
+});
+
+test("a point force larger than the last solved model keeps its arrow on the figure", async () => {
+  const p = await page({ runTimers: true });
+  p.buttons[0].dispatch("click");
+  const e = p.document.querySelector('[data-field="loads.1.F"]');
+  for (const value of [1e306, 1e300]) {
+    e.value = String(value); e.dispatch("input");
+    const svg = p.document.getElementById("plots").children[0];
+    for (const line of drawn(svg).filter((n) => n.tag === "line")) {
+      assert.ok(line.attrs.y1 >= 0 && line.attrs.y2 >= 0, `line at ${value} starts on the figure`);
+    }
   }
 });

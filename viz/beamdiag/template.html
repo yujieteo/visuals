@@ -252,6 +252,16 @@ const sci = (x) => {
   return e >= -2 && e < 6 ? sig(x, 4) : `${sig(x / 10 ** e, 4)}×10${String(e).replace("-", "⁻").replace(/\d/g, (c) => "⁰¹²³⁴⁵⁶⁷⁸⁹"[c])}`;
 };
 
+// Figure labels: plain digits below `big`, otherwise n significant figures × a power of ten, so a
+// label stays a few characters long at any load magnitude.
+const pow10 = (x, n) => {
+  let e = Math.floor(Math.log10(Math.abs(x))), m = +(x / 10 ** e).toPrecision(n);
+  if (Math.abs(m) >= 10) { e++; m = +(m / 10).toPrecision(n); }
+  return `${String(m).replace("-", "−")}×10${String(e).replace("-", "⁻").replace(/\d/g, (c) => "⁰¹²³⁴⁵⁶⁷⁸⁹"[c])}`;
+};
+const short = (x, n = 3, big = 1e6) => (Number.isFinite(x) && Math.abs(x) >= big ? pow10(x, n) : sig(x, n));
+const shortNf = (x, digits) => (Number.isFinite(x) && Math.abs(x) >= 1e6 ? pow10(x, 4) : nf(x, digits));
+
 /* ---------- state (SI units) ---------- */
 let state, attachmentLength, result = null, cursor = null, active = null;
 
@@ -466,11 +476,30 @@ const text = (parent, x, y, str, attrs = {}) => { const t = el("text", { x, y, .
 
 function niceTicks(lo, hi, count = 4) {
   if (lo === hi) { lo -= 1; hi += 1; }
-  const raw = (hi - lo) / count, p = 10 ** Math.floor(Math.log10(raw));
+  const raw = hi / count - lo / count, p = 10 ** Math.floor(Math.log10(raw));
   const step = [1, 2, 2.5, 5, 10].map((m) => m * p).find((s) => s >= raw);
   const ticks = [];
   for (let t = Math.ceil(lo / step) * step; t <= hi + step * 1e-9; t += step) ticks.push(Math.abs(t) < step * 1e-9 ? 0 : t);
   return ticks;
+}
+
+// Tick labels on one axis share a format: plain below 10⁵, otherwise a power of ten.
+function tickLabels(ticks) {
+  const big = Math.max(...ticks.map(Math.abs)) >= 1e5;
+  return ticks.map((t) => (t === 0 ? "0" : big ? pow10(t, 3) : sig(t, 3)));
+}
+// Width of an 11px monospace axis label, rounded up.
+const labelWidth = (str) => 7 * [...str].length;
+
+function axisOf(panel, pts, narrow) {
+  const values = pts.map(panel.get);
+  let lo = Math.min(0, ...values), hi = Math.max(0, ...values);
+  if (!(hi - lo >= 1e-9)) { lo = -1; hi = 1; }
+  // Halved before subtracting so the span of loads near the double limit cannot overflow.
+  const pad = (hi / 2 - lo / 2) * 0.4;
+  lo -= pad; hi += pad;
+  const ticks = niceTicks(lo, hi, narrow ? 3 : 4);
+  return { lo, hi, ticks, labels: tickLabels(ticks) };
 }
 
 let layout = null;
@@ -479,9 +508,8 @@ function render() {
   const host = $("plots");
   const W = Math.max(300, host.clientWidth || 700);
   const narrow = W < 520;
-  const ml = narrow ? 48 : 64, mr = narrow ? 14 : 24;
+  const mr = narrow ? 14 : 24, titleX = 4;
   const L = result.model.length;
-  const X = (x) => ml + (x / L) * (W - ml - mr);
   const panels = [
     { key: "beam", h: narrow ? 150 : 170 },
     { key: "V", title: "SHEAR FORCE V (kN)", h: narrow ? 130 : 160, color: "var(--shear)", get: (p) => p.V / kN, unit: "kN" },
@@ -491,13 +519,17 @@ function render() {
   let y = 0;
   for (const p of panels) { p.top = y + (p.key === "beam" ? 0 : 22); p.bottom = p.top + p.h - (p.key === "beam" ? 0 : 22); y += p.h + 10; }
   const H = y;
+  const pts = B.diagram(result);
+  for (const p of panels.slice(1)) p.axis = axisOf(p, pts, narrow);
+  // Widen the left margin only when a tick label would not fit the usual one.
+  const ml = Math.max(narrow ? 48 : 64, 12 + Math.max(...panels.slice(1).flatMap((p) => p.axis.labels.map(labelWidth))));
+  const X = (x) => ml + (x / L) * (W - ml - mr);
   const svg = el("svg", { width: W, height: H, viewBox: `0 0 ${W} ${H}`, role: "group", "aria-label": "Beam, shear force, bending moment and deflection diagrams" });
   layout = { X, ml, mr, W, L, panels, svg };
 
   drawBeam(svg, panels[0], X);
-  const pts = B.diagram(result);
   const plot = el("g", { class: "plotarea", tabindex: 0, role: "slider", "aria-label": "Section position along the beam", "aria-valuemin": 0, "aria-valuemax": tidy(L) }, svg);
-  for (const p of panels.slice(1)) drawDiagram(plot, p, pts, X, W, ml, mr, narrow);
+  for (const p of panels.slice(1)) drawDiagram(plot, p, pts, X, W, ml, mr, titleX);
   el("rect", { class: "frame", x: ml - 4, y: panels[1].top - 20, width: W - ml - mr + 8, height: panels[3].bottom - panels[1].top + 24, fill: "none", stroke: "none", rx: 6 }, plot);
   const cur = el("line", { class: "cursor", x1: 0, x2: 0, y1: panels[0].top + 8, y2: panels[3].bottom }, svg);
   layout.cursorLine = cur;
@@ -534,7 +566,7 @@ function drawBeam(svg, panel, X) {
       el("line", { x1: px, x2: px, y1: top, y2: yb - 8, stroke: "var(--fg)", "stroke-width": 1 }, g);
       arrowHead(px, d > 0 ? yb - 7 : top, d, "var(--fg)", 3);
     }
-    const label = l.q1 === l.q2 ? `${sig(l.q1 / kN, 3)} kN/m` : `${sig(l.q1 / kN, 3)} → ${sig(l.q2 / kN, 3)} kN/m`;
+    const label = l.q1 === l.q2 ? `${short(l.q1 / kN)} kN/m` : `${short(l.q1 / kN)} → ${short(l.q2 / kN)} kN/m`;
     text(g, (x1 + x2) / 2, Math.min(topAt(l.x1), topAt(l.x2)) - 6, label, { class: "val", "text-anchor": "middle" });
   });
   // Beam
@@ -545,7 +577,7 @@ function drawBeam(svg, panel, X) {
   const labelled = new Set();
   let freeFrom = -Infinity;
   for (const r of reactions) {
-    const x = X(r.x), w = 7 * (nf(Math.abs(r.Fy) / kN, 2).length + 5);
+    const x = X(r.x), w = 7 * ([...shortNf(Math.abs(r.Fy) / kN, 2)].length + 5);
     const anchor = r.x <= 0.08 * L ? "start" : r.x >= 0.92 * L ? "end" : "middle";
     const left = anchor === "start" ? x : anchor === "end" ? x - w : x - w / 2;
     if (left >= freeFrom) { labelled.add(r.x); freeFrom = left + w + 6; }
@@ -580,9 +612,9 @@ function drawBeam(svg, panel, X) {
     if (r && labelled.has(r.x)) {
       const up = r.Fy >= 0, ya = yb + 34, len = 20;
       const anchor = s.x <= 0.08 * L ? "start" : s.x >= 0.92 * L ? "end" : "middle";
-      text(g, x + (anchor === "start" ? -2 : anchor === "end" ? 2 : 0), ya + len + 14, `${nf(Math.abs(r.Fy) / kN, 2)} kN ${up ? "↑" : "↓"}`, { class: "val react", "text-anchor": anchor });
+      text(g, x + (anchor === "start" ? -2 : anchor === "end" ? 2 : 0), ya + len + 14, `${shortNf(Math.abs(r.Fy) / kN, 2)} kN ${up ? "↑" : "↓"}`, { class: "val react", "text-anchor": anchor });
       if (s.kind === "fixed" && Math.abs(r.Mz) > 1e-9 * (Math.abs(r.Fy) + 1)) {
-        text(g, x + (anchor === "start" ? -2 : anchor === "end" ? 2 : 0), ya + len + 28, `${nf(Math.abs(r.Mz) / kN, 2)} kN·m ${r.Mz > 0 ? "↺" : "↻"}`, { class: "val react", "text-anchor": anchor });
+        text(g, x + (anchor === "start" ? -2 : anchor === "end" ? 2 : 0), ya + len + 28, `${shortNf(Math.abs(r.Mz) / kN, 2)} kN·m ${r.Mz > 0 ? "↺" : "↻"}`, { class: "val react", "text-anchor": anchor });
       }
     }
   });
@@ -593,11 +625,12 @@ function drawBeam(svg, panel, X) {
     const h = el("g", { class: "handle", tabindex: 0, role: "slider", "data-key": `l${i}`, "aria-label": `Load ${i + 1}, ${LOAD_NAMES[l.kind]}, position`, "aria-valuemin": 0, "aria-valuemax": tidy(L), "aria-valuenow": tidy(l.x), "aria-valuetext": `${sig(l.x)} metres` }, g);
     const anchor = l.x <= 0.08 * L ? "start" : l.x >= 0.92 * L ? "end" : "middle";
     if (l.kind === "point") {
-      const len = 18 + 30 * Math.abs(l.F) / Fmax, down = l.F <= 0;
+      // Capped: while an edit is unsolved, F can exceed the largest force of the solved model.
+      const len = 18 + 30 * Math.min(1, Math.abs(l.F) / Fmax || 0), down = l.F <= 0;
       const y0 = yb - 6 - len, y1 = yb - 6;
       el("line", { x1: x, x2: x, y1: down ? y0 : y1 - 1, y2: down ? y1 - 7 : y0 + 7, stroke: "var(--fg)", "stroke-width": 2 }, h);
       arrowHead(x, down ? y1 : y0, down ? 1 : -1, "var(--fg)", 5);
-      text(h, x, y0 - 6, `${sig(Math.abs(l.F) / kN, 3)} kN ${down ? "↓" : "↑"}`, { class: "val", "text-anchor": anchor });
+      text(h, x, y0 - 6, `${short(Math.abs(l.F) / kN)} kN ${down ? "↓" : "↑"}`, { class: "val", "text-anchor": anchor });
       el("rect", { class: "ring", x: x - 14, y: y0 - 4, width: 28, height: len + 6, rx: 6 }, h);
       el("rect", { class: "hit", x: x - 16, y: y0 - 20, width: 32, height: len + 22 }, h);
     } else {
@@ -605,28 +638,24 @@ function drawBeam(svg, panel, X) {
       el("path", { d: `M${x + r},${yb} A${r},${r} 0 1 ${ccw ? 0 : 1} ${x - r},${yb}`, fill: "none", stroke: "var(--fg)", "stroke-width": 2 }, h);
       const tipX = x - r, tipY = yb;
       el("path", { d: `M${tipX},${tipY + 1} l-5,-8 h10 z`, fill: "var(--fg)", transform: ccw ? "" : `rotate(180 ${tipX} ${tipY})` }, h);
-      text(h, x, yb - r - 8, `${sig(Math.abs(l.C) / kN, 3)} kN·m ${ccw ? "↺" : "↻"}`, { class: "val", "text-anchor": anchor });
+      text(h, x, yb - r - 8, `${short(Math.abs(l.C) / kN)} kN·m ${ccw ? "↺" : "↻"}`, { class: "val", "text-anchor": anchor });
       el("rect", { class: "ring", x: x - r - 5, y: yb - r - 5, width: 2 * r + 10, height: r + 12, rx: 6 }, h);
       el("rect", { class: "hit", x: x - r - 6, y: yb - r - 22, width: 2 * r + 12, height: r + 30 }, h);
     }
   });
 }
 
-function drawDiagram(g, panel, pts, X, W, ml, mr, narrow) {
-  const values = pts.map(panel.get);
-  let lo = Math.min(0, ...values), hi = Math.max(0, ...values);
-  if (hi - lo < 1e-9) { lo = -1; hi = 1; }
-  const pad = (hi - lo) * 0.2;
-  lo -= pad; hi += pad;
+function drawDiagram(g, panel, pts, X, W, ml, mr, titleX) {
+  const { lo, hi, ticks, labels } = panel.axis;
   const top = panel.top, bot = panel.bottom;
-  const Y = (v) => bot - (v - lo) / (hi - lo) * (bot - top);
+  const Y = (v) => bot - (v / 2 - lo / 2) / (hi / 2 - lo / 2) * (bot - top);
   panel.Y = Y;
-  text(g, ml - (narrow ? 44 : 60), top - 8, panel.title, { class: "title" });
+  text(g, titleX, top - 8, panel.title, { class: "title" });
   const axis = el("g", { class: "axis" }, g);
-  for (const t of niceTicks(lo, hi, narrow ? 3 : 4)) {
+  ticks.forEach((t, i) => {
     el("line", { x1: ml, x2: W - mr, y1: Y(t), y2: Y(t), stroke: "var(--grid)", "stroke-width": 1 }, axis);
-    text(axis, ml - 6, Y(t) + 4, sig(t, 3), { "text-anchor": "end" });
-  }
+    text(axis, ml - 6, Y(t) + 4, labels[i], { "text-anchor": "end" });
+  });
   el("line", { x1: ml, x2: W - mr, y1: Y(0), y2: Y(0), stroke: "var(--faint)", "stroke-width": 1 }, axis);
   const path = pts.map((p, i) => `${i ? "L" : "M"}${X(p.x).toFixed(2)},${Y(panel.get(p)).toFixed(2)}`).join("");
   if (panel.key !== "v") {
@@ -640,7 +669,7 @@ function drawDiagram(g, panel, pts, X, W, ml, mr, narrow) {
     const x = X(ex.x), yv = Y(v);
     el("circle", { cx: x, cy: yv, r: 3.5, fill: panel.color, stroke: "var(--bg)", "stroke-width": 2 }, g);
     const anchor = x < ml + 60 ? "start" : x > W - mr - 60 ? "end" : "middle";
-    text(g, x + (anchor === "start" ? 6 : anchor === "end" ? -6 : 0), v >= 0 ? yv - 8 : yv + 16, `${sig(v, 4)} ${panel.unit}`, { class: "val", "text-anchor": anchor });
+    text(g, x + (anchor === "start" ? 6 : anchor === "end" ? -6 : 0), v >= 0 ? yv - 8 : yv + 16, `${short(v, 4)} ${panel.unit}`, { class: "val", "text-anchor": anchor });
   }
 }
 
@@ -679,10 +708,10 @@ function setCursor(x) {
   const M = cursor <= 0 ? a.Mright : cursor >= L ? a.Mleft : a.Mright;
   const parts = [
     ["x", `${nf(cursor, 3)} m`],
-    ["V", jumpV ? `${nf(a.Vleft / kN)} → ${nf(a.Vright / kN)} kN` : `${nf(V / kN)} kN`],
-    ["M", jumpM ? `${nf(a.Mleft / kN)} → ${nf(a.Mright / kN)} kN·m` : `${nf(M / kN)} kN·m`],
-    ["v", `${nf(a.v / mm)} mm`],
-    ["θ", `${nf(a.theta * 1e3)} mrad`],
+    ["V", jumpV ? `${shortNf(a.Vleft / kN)} → ${shortNf(a.Vright / kN)} kN` : `${shortNf(V / kN)} kN`],
+    ["M", jumpM ? `${shortNf(a.Mleft / kN)} → ${shortNf(a.Mright / kN)} kN·m` : `${shortNf(M / kN)} kN·m`],
+    ["v", `${shortNf(a.v / mm)} mm`],
+    ["θ", `${shortNf(a.theta * 1e3)} mrad`],
   ];
   const out = $("readout");
   out.replaceChildren();
@@ -722,7 +751,7 @@ function renderStats() {
   result.reactions.forEach((r) => {
     const li = document.createElement("li");
     li.append(document.createElement("i"));
-    li.append(document.createTextNode(`${r.kind === "pin" ? "Pin" : "Fixed"} at ${sig(r.x)} m: ${nf(r.Fy / kN)} kN` + (r.kind === "fixed" ? `, ${nf(r.Mz / kN)} kN·m` : "")));
+    li.append(document.createTextNode(`${r.kind === "pin" ? "Pin" : "Fixed"} at ${sig(r.x)} m: ${shortNf(r.Fy / kN)} kN` + (r.kind === "fixed" ? `, ${shortNf(r.Mz / kN)} kN·m` : "")));
     rl.append(li);
   });
 }
