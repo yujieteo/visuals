@@ -1,0 +1,1021 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" href="data:,">
+<meta name="description" content="Build a beam with pinned and fixed supports and point, couple and distributed loads; get reactions, shear force, bending moment and deflection diagrams solved in your browser, including statically indeterminate beams, and download the model as an MSC Nastran deck.">
+<title>Beam diagram creator</title>
+<style>
+:root{--bg:#fff;--fg:#1d1d1f;--muted:#6e6e73;--faint:#a1a1a6;--surface:#f5f5f7;--border:#d2d2d7;--grid:#e8e8ed;--focus:#0071e3;--shadow:rgb(0 0 0/.16);--shear:#2a78d6;--moment:#eb6834;--react:#1baf7a;--bad:#c4261d;--sans:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;--mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;--r:.5rem;color-scheme:light dark}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--faint:#6e6e73;--surface:#2c2c2e;--border:#48484a;--grid:#333336;--focus:#2997ff;--shadow:rgb(0 0 0/.6);--shear:#3987e5;--moment:#d95926;--react:#199e70;--bad:#ff6961}}
+:root[data-theme="dark"]{--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--faint:#6e6e73;--surface:#2c2c2e;--border:#48484a;--grid:#333336;--focus:#2997ff;--shadow:rgb(0 0 0/.6);--shear:#3987e5;--moment:#d95926;--react:#199e70;--bad:#ff6961;color-scheme:dark}
+:root[data-theme="light"]{color-scheme:light}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 var(--sans);letter-spacing:-.011em;-webkit-font-smoothing:antialiased}
+main{width:min(100% - 2rem,76rem);margin:auto;padding:clamp(1.25rem,5vw,3rem) 0 3rem}
+a{color:inherit;text-underline-offset:.18em}
+h1{font-size:clamp(2rem,6vw,3.25rem);line-height:1.04;letter-spacing:-.045em;margin:.35rem 0 .8rem;max-width:18ch}
+h2{font-size:1.4rem;letter-spacing:-.02em;margin:0 0 .35rem;line-height:1.2}
+h3{font-size:.8rem;font:600 .72rem/1.4 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 .4rem}
+p{margin:.5rem 0;max-width:68ch}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.eyebrow{font:600 .75rem/1.4 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0;display:flex;flex-wrap:wrap;gap:.25rem .9rem}
+.eyebrow a{text-decoration:none}
+.eyebrow a:hover{text-decoration:underline}
+.lede{font-size:1.125rem;max-width:62ch}
+.muted{color:var(--muted)}
+.small{font-size:.875rem}
+section{margin-top:clamp(2.5rem,7vw,4rem);padding-top:1.25rem;border-top:1px solid var(--border)}
+.btn{display:inline-flex;align-items:center;gap:.35rem;border:1px solid var(--border);background:var(--bg);border-radius:999px;padding:.25rem .8rem;min-height:2.25rem;font-size:.875rem;white-space:nowrap}
+@media (hover:hover){.btn:hover{background:var(--surface)}}
+.btn[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.btn.primary{background:var(--fg);color:var(--bg);border-color:var(--fg);font-weight:600}
+.btn.icon{padding:0;width:2.25rem;justify-content:center;border-radius:var(--r)}
+/* Toolbar */
+.toolbar{display:flex;flex-wrap:wrap;gap:.5rem 1rem;align-items:center;margin:1.25rem 0 .75rem;padding:.6rem 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.toolbar .group{display:flex;flex-wrap:wrap;gap:.35rem;align-items:center;min-width:0}
+.label{font:600 .7rem var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-right:.2rem}
+select,input[type="number"],input[type="text"]{border:1px solid var(--border);background:var(--bg);border-radius:var(--r);padding:.3rem .5rem;min-height:2.25rem;font-size:.875rem;min-width:0;width:100%}
+input[type="number"]{font-variant-numeric:tabular-nums}
+[aria-invalid="true"]{border-color:var(--bad);box-shadow:0 0 0 1px var(--bad)}
+.toolbar select{width:auto;max-width:100%}
+/* Layout */
+.app{display:grid;gap:1.25rem 1.75rem;grid-template-columns:minmax(0,1fr) minmax(0,21rem);align-items:start}
+@media (max-width:60rem){.app{grid-template-columns:minmax(0,1fr)}}
+.figure{margin:0;min-width:0}
+#plots{position:relative;touch-action:pan-y;user-select:none;-webkit-user-select:none}
+#plots svg{display:block;width:100%;overflow:visible}
+#plots.stale svg{opacity:.35}
+#plots .axis text,#plots .tick{font:11px var(--mono);fill:var(--muted)}
+#plots .title{font:600 11px var(--mono);letter-spacing:.06em;fill:var(--muted)}
+#plots .val{font:600 11.5px var(--sans);fill:var(--fg);font-variant-numeric:tabular-nums}
+#plots .val.react{fill:var(--fg)}
+#plots .handle{cursor:grab}
+#plots .handle:focus{outline:none}
+#plots .ring{fill:none;stroke:none}
+#plots .handle:focus-visible .ring,#plots .handle.active .ring{stroke:var(--focus);stroke-width:2;fill:none}
+#plots .hit{fill:transparent}
+#plots .cursor{stroke:var(--fg);stroke-width:1;stroke-dasharray:3 3;opacity:.6}
+#plots .plotarea{outline:none}
+#plots .plotarea:focus-visible .frame{stroke:var(--focus);stroke-width:2}
+.readout{display:flex;flex-wrap:wrap;gap:.15rem 1rem;font-size:.875rem;margin:.5rem 0 0;min-height:2.8em;font-variant-numeric:tabular-nums}
+.readout b{font-weight:650}
+.readout .k{color:var(--muted)}
+.hint{font-size:.8125rem;color:var(--muted);margin:.25rem 0 0}
+.error{border:1px solid var(--bad);border-radius:var(--r);padding:.55rem .8rem;margin:0 0 .75rem;font-size:.9375rem}
+.error[hidden]{display:none}
+.error b{color:var(--bad)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(10rem,1fr));gap:.6rem 1.25rem;margin:1.25rem 0 0;padding:0;list-style:none}
+.stats li{border-top:1px solid var(--border);padding-top:.4rem;min-width:0}
+.stats b{display:block;font-size:1.35rem;letter-spacing:-.03em;line-height:1.2;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.stats span{font-size:.8125rem;color:var(--muted)}
+.reactions{list-style:none;margin:.75rem 0 0;padding:0;display:flex;flex-wrap:wrap;gap:.4rem .6rem;font-size:.875rem}
+.reactions li{border:1px solid var(--border);border-radius:var(--r);padding:.25rem .6rem;font-variant-numeric:tabular-nums}
+.reactions li i{display:inline-block;width:.9rem;height:2px;background:var(--react);vertical-align:middle;margin-right:.35rem}
+/* Editor panel */
+.panel{display:flex;flex-direction:column;gap:1rem;min-width:0}
+.card{border:1px solid var(--border);border-radius:calc(var(--r) * 1.5);padding:.85rem;min-width:0}
+.row{display:grid;gap:.4rem;grid-template-columns:repeat(2,minmax(0,1fr));align-items:end}
+.row+.row{margin-top:.5rem}
+.row.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+label.f{display:flex;flex-direction:column;gap:.15rem;font-size:.75rem;color:var(--muted);min-width:0}
+label.f span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.items{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.5rem}
+/* Any number of supports and loads: long lists scroll inside their panel instead of stretching the page. */
+.items{max-height:28rem;overflow-y:auto;overscroll-behavior:contain}
+.item{border-top:1px solid var(--grid);padding-top:.5rem;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.4rem;align-items:end}
+.item:first-child{border-top:0;padding-top:0}
+.item .fields{display:grid;gap:.4rem;grid-template-columns:repeat(auto-fit,minmax(5.2rem,1fr));min-width:0}
+.item .tag{grid-column:1/-1;font:600 .72rem var(--mono);color:var(--fg);letter-spacing:.03em}
+.adds{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.6rem}
+.derived{font-size:.8125rem;color:var(--muted);margin:.5rem 0 0;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.note{font-size:.875rem;color:var(--muted);margin:.25rem 0 0}
+/* Tables and text */
+.table-wrap{overflow-x:auto;margin-top:.5rem;border:1px solid var(--border);border-radius:var(--r)}
+table{border-collapse:collapse;width:100%;font-size:.8125rem;min-width:40rem}
+th,td{text-align:left;padding:.4rem .6rem;border-bottom:1px solid var(--grid);vertical-align:top}
+th{font-weight:600;background:var(--surface)}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+.method ol,.method ul{padding-left:1.2rem;max-width:74ch}
+.method li{margin:.35rem 0}
+.sources li{margin:.3rem 0;overflow-wrap:anywhere}
+pre.deck{font:12px/1.45 var(--mono);background:var(--surface);border-radius:var(--r);padding:.75rem;overflow:auto;max-height:26rem;margin:.5rem 0 0}
+.export{display:flex;flex-wrap:wrap;gap:.5rem;align-items:end;margin-top:.75rem}
+.export label.f{width:min(100%,16rem)}
+details>summary{cursor:pointer;font-weight:600;min-height:2.25rem;display:flex;align-items:center}
+code{font:.875em var(--mono)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media (forced-colors:active){#plots .area{fill:none}}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <p class="eyebrow"><a href="https://github.com/yujieteo/beamdiag">beamdiag</a><span>Structural mechanics</span><span>Runs in your browser</span></p>
+  <h1>Beam diagram creator</h1>
+  <p class="lede">Build a straight beam, place pinned and fixed supports and loads, and read its reactions, shear force, bending moment and deflection. Statically indeterminate beams such as fixed–fixed spans are solved by the stiffness method. Everything is calculated on this page, and the same model downloads as a NASTRAN deck.</p>
+</header>
+
+<div class="toolbar" role="group" aria-label="Start from">
+  <div class="group">
+    <label class="label" for="preset">Example</label>
+    <select id="preset"></select>
+  </div>
+  <div class="group" role="group" aria-label="Support conditions at the two ends">
+    <span class="label">Ends</span>
+    <button class="btn" type="button" data-ends="pin,pin">Pin–pin</button>
+    <button class="btn" type="button" data-ends="fixed,fixed">Fixed–fixed</button>
+    <button class="btn" type="button" data-ends="fixed,pin">Fixed–pin</button>
+    <button class="btn" type="button" data-ends="fixed,">Cantilever</button>
+  </div>
+</div>
+<p id="preset-note" class="note"></p>
+
+<div class="app">
+  <div class="figure">
+    <div id="error" class="error" role="alert" hidden></div>
+    <div id="plots"></div>
+    <p id="readout" class="readout"></p>
+    <p class="hint">Drag a support or a load along the beam, or focus it and use the arrow keys (Shift for finer steps). Move over the diagrams, or focus them and use the arrow keys, to read values; Page Up and Page Down jump between supports and loads.</p>
+    <ul id="stats" class="stats"></ul>
+    <ul id="reactions" class="reactions" aria-label="Support reactions"></ul>
+  </div>
+
+  <div class="panel">
+    <div class="card">
+      <h3>Beam</h3>
+      <div class="row">
+        <label class="f"><span>Length L (m)</span><input id="length" type="number" step="0.1" min="0.001" data-field="length"></label>
+        <label class="f"><span>Elements per segment</span><input id="divisions" type="number" step="1" min="1" data-field="divisions"></label>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Supports</h3>
+      <ul id="supports" class="items"></ul>
+      <div class="adds"><button class="btn" type="button" id="add-support">+ Support</button></div>
+    </div>
+    <div class="card">
+      <h3>Loads</h3>
+      <p class="note">Forces and distributed loads: + up, − down. Couples: + counter-clockwise.</p>
+      <ul id="loads" class="items"></ul>
+      <div class="adds">
+        <button class="btn" type="button" data-add="point">+ Point force</button>
+        <button class="btn" type="button" data-add="dist">+ Distributed</button>
+        <button class="btn" type="button" data-add="moment">+ Couple</button>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Section</h3>
+      <label class="f"><span>Shape</span><select id="shape" data-field="section.shape"></select></label>
+      <div id="section-fields"></div>
+      <p id="section-derived" class="derived"></p>
+    </div>
+    <div class="card">
+      <h3>Material</h3>
+      <label class="f"><span>Preset</span><select id="material"></select></label>
+      <div class="row">
+        <label class="f"><span>Young's modulus E (GPa)</span><input id="E" type="number" step="1" data-field="material.E"></label>
+        <label class="f"><span>Poisson's ratio ν</span><input id="nu" type="number" step="0.01" data-field="material.nu"></label>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section id="values" aria-labelledby="values-h">
+  <h2 id="values-h">Values at supports and loads</h2>
+  <p class="muted small">Where a point force or couple acts, the diagram jumps: both the value just to the left (x⁻) and just to the right (x⁺) are listed.</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th class="num" scope="col">x (m)</th><th scope="col">What is here</th><th class="num" scope="col">V x⁻ (kN)</th><th class="num" scope="col">V x⁺ (kN)</th><th class="num" scope="col">M x⁻ (kN·m)</th><th class="num" scope="col">M x⁺ (kN·m)</th><th class="num" scope="col">v (mm)</th><th class="num" scope="col">θ (mrad)</th></tr></thead>
+    <tbody id="table"></tbody>
+  </table></div>
+</section>
+
+<section id="nastran" aria-labelledby="nastran-h">
+  <h2 id="nastran-h">NASTRAN deck</h2>
+  <p>Download this beam as an MSC Nastran SOL 101 linear static bulk data file (<code>.bdf</code>). It encodes the same supports, loads, section and material the page solved, in SI units.</p>
+  <div class="export">
+    <label class="f"><span>File name</span><input id="bdf-name" type="text" value="beamdiag.bdf" autocomplete="off" spellcheck="false"></label>
+    <button class="btn primary" type="button" id="download">Download .bdf</button>
+    <button class="btn" type="button" id="copy">Copy deck</button>
+    <span id="export-status" class="small muted" role="status"></span>
+  </div>
+  <details id="deck-details"><summary>Show the deck</summary><pre class="deck" id="deck"></pre></details>
+  <h3 style="margin-top:1.25rem">Getting the .xdb results</h3>
+  <ol id="run" class="small"></ol>
+  <p id="nastran-status" class="small muted"></p>
+  <details><summary>What each card does</summary><div class="table-wrap"><table style="min-width:30rem"><thead><tr><th scope="col">Card</th><th scope="col">Use</th></tr></thead><tbody id="cards"></tbody></table></div></details>
+</section>
+
+<section id="method" class="method" aria-labelledby="method-h">
+  <h2 id="method-h">Method, units and signs</h2>
+  <p id="method-text"></p>
+  <h3>Sign conventions</h3>
+  <ul id="conventions"></ul>
+  <h3>Assumptions</h3>
+  <ul id="assumptions"></ul>
+  <h3>Sources</h3>
+  <ul id="sources" class="sources"></ul>
+</section>
+</main>
+
+<script>
+const D = /*@DATA@*/;
+</script>
+<script>
+/*@ENGINE@*/
+</script>
+<script>
+(() => {
+"use strict";
+const B = BeamDiag;
+const $ = (id) => document.getElementById(id);
+const SVGNS = "http://www.w3.org/2000/svg";
+const kN = 1e3, GPa = 1e9, mm = 1e-3;
+
+/* ---------- number formatting ---------- */
+const nf = (x, digits = 3) => {
+  if (!Number.isFinite(x)) return "—";
+  if (Math.abs(x) < 1e-9) x = 0;
+  const a = Math.abs(x);
+  const d = a >= 1000 ? 0 : a >= 100 ? 1 : a >= 10 ? 2 : digits;
+  return x.toLocaleString("en-GB", { minimumFractionDigits: d, maximumFractionDigits: d }).replace("-", "−");
+};
+const sig = (x, n = 4) => (Number.isFinite(x) ? String(+x.toPrecision(n)).replace("-", "−") : "—");
+const tidy = (x) => (Number.isFinite(x) ? +x.toPrecision(10) : "");
+const sci = (x) => {
+  if (!Number.isFinite(x)) return "—";
+  const e = Math.floor(Math.log10(Math.abs(x)));
+  return e >= -2 && e < 6 ? sig(x, 4) : `${sig(x / 10 ** e, 4)}×10${String(e).replace("-", "⁻").replace(/\d/g, (c) => "⁰¹²³⁴⁵⁶⁷⁸⁹"[c])}`;
+};
+
+/* ---------- state (SI units) ---------- */
+let state, attachmentLength, result = null, cursor = null, active = null;
+
+function fromPreset(p) {
+  const m = D.materials.find((x) => x.id === p.material);
+  return {
+    preset: p.id, length: p.length, divisions: 4,
+    supports: p.supports.map((s) => ({ ...s })), loads: p.loads.map((l) => ({ ...l })),
+    material: { id: m.id, E: m.E, nu: m.nu },
+    section: { ...p.section },
+  };
+}
+
+function modelOf(s) {
+  return {
+    length: s.length, divisions: s.divisions,
+    material: { E: s.material.E, nu: s.material.nu },
+    section: B.sectionProperties(s.section),
+    supports: s.supports, loads: s.loads,
+  };
+}
+
+/* ---------- editor panel ---------- */
+function numInput({ label, value, field, step = "any", onInput, min }) {
+  const wrap = document.createElement("label");
+  wrap.className = "f";
+  const span = document.createElement("span");
+  span.textContent = label;
+  const input = document.createElement("input");
+  input.type = "number";
+  input.step = step;
+  if (min != null) input.min = min;
+  input.value = tidy(value);
+  input.dataset.field = field;
+  input.addEventListener("input", () => { onInput(input.value === "" ? NaN : Number(input.value)); updateSoon(); });
+  wrap.append(span, input);
+  return wrap;
+}
+function removeButton(label, onClick) {
+  const b = document.createElement("button");
+  b.type = "button"; b.className = "btn icon"; b.textContent = "×";
+  b.setAttribute("aria-label", label);
+  b.addEventListener("click", onClick);
+  return b;
+}
+const LOAD_NAMES = { point: "Point force", moment: "Couple", dist: "Distributed load" };
+
+function buildSupports() {
+  const list = $("supports");
+  list.replaceChildren();
+  state.supports.forEach((s, i) => {
+    const li = document.createElement("li");
+    li.className = "item";
+    const fields = document.createElement("div");
+    fields.className = "fields";
+    const kind = document.createElement("label");
+    kind.className = "f";
+    const ks = document.createElement("span"); ks.textContent = `Support ${i + 1}`;
+    const sel = document.createElement("select");
+    sel.dataset.field = `supports.${i}.kind`;
+    for (const k of B.SUPPORT_KINDS) { const o = new Option(k === "pin" ? "Pin" : "Fixed", k); sel.add(o); }
+    sel.value = s.kind;
+    sel.addEventListener("change", () => { s.kind = sel.value; update({ keepForm: true }); });
+    kind.append(ks, sel);
+    fields.append(kind, numInput({ label: "x (m)", value: s.x, field: `supports.${i}.x`, onInput: (v) => { s.x = v; } }));
+    li.append(fields, removeButton(`Remove support ${i + 1}`, () => { state.supports.splice(i, 1); update(); }));
+    list.append(li);
+  });
+}
+
+function buildLoads() {
+  const list = $("loads");
+  list.replaceChildren();
+  if (!state.loads.length) {
+    const li = document.createElement("li"); li.className = "note"; li.textContent = "No loads yet."; list.append(li);
+  }
+  state.loads.forEach((l, i) => {
+    const li = document.createElement("li");
+    li.className = "item";
+    const fields = document.createElement("div");
+    fields.className = "fields";
+    const tag = document.createElement("span");
+    tag.className = "tag";
+    tag.textContent = `${i + 1}. ${LOAD_NAMES[l.kind]}`;
+    fields.append(tag);
+    const f = `loads.${i}`;
+    if (l.kind === "point") {
+      fields.append(numInput({ label: "x (m)", value: l.x, field: `${f}.x`, onInput: (v) => { l.x = v; } }),
+        numInput({ label: "F (kN)", value: l.F / kN, field: `${f}.F`, onInput: (v) => { l.F = v * kN; } }));
+    } else if (l.kind === "moment") {
+      fields.append(numInput({ label: "x (m)", value: l.x, field: `${f}.x`, onInput: (v) => { l.x = v; } }),
+        numInput({ label: "C (kN·m)", value: l.C / kN, field: `${f}.C`, onInput: (v) => { l.C = v * kN; } }));
+    } else {
+      fields.append(numInput({ label: "from x₁ (m)", value: l.x1, field: `${f}.x1`, onInput: (v) => { l.x1 = v; } }),
+        numInput({ label: "to x₂ (m)", value: l.x2, field: `${f}.x2`, onInput: (v) => { l.x2 = v; } }),
+        numInput({ label: "q₁ (kN/m)", value: l.q1 / kN, field: `${f}.q1`, onInput: (v) => { l.q1 = v * kN; } }),
+        numInput({ label: "q₂ (kN/m)", value: l.q2 / kN, field: `${f}.q2`, onInput: (v) => { l.q2 = v * kN; } }));
+    }
+    li.append(fields, removeButton(`Remove load ${i + 1}, ${LOAD_NAMES[l.kind]}`, () => { state.loads.splice(i, 1); update(); }));
+    list.append(li);
+  });
+}
+
+const SECTION_FIELDS = {
+  rect: [["b", "Width b (mm)", mm], ["h", "Depth h (mm)", mm]],
+  circle: [["d", "Diameter d (mm)", mm]],
+  tube: [["d", "Outside D (mm)", mm], ["t", "Wall t (mm)", mm]],
+  custom: [["A", "Area A (mm²)", mm * mm], ["I", "I, in plane (mm⁴)", mm ** 4], ["c", "Fibre c (mm, optional)", mm], ["Iy", "Iy, out of plane (mm⁴)", mm ** 4], ["J", "Torsion J (mm⁴)", mm ** 4]],
+};
+const SECTION_DEFAULTS = { rect: { b: 0.1, h: 0.2 }, circle: { d: 0.15 }, tube: { d: 0.1683, t: 0.008 }, custom: { A: 5.0e-3, I: 8.0e-5, c: 0.15, Iy: 8.0e-5, J: 1.6e-4 } };
+
+function buildSection() {
+  $("shape").value = state.section.shape;
+  const box = $("section-fields");
+  box.replaceChildren();
+  const fields = SECTION_FIELDS[state.section.shape] || [];
+  for (let i = 0; i < fields.length; i += 2) {
+    const row = document.createElement("div");
+    row.className = "row";
+    for (const [key, label, unit] of fields.slice(i, i + 2)) {
+      row.append(numInput({ label, value: state.section[key] == null ? NaN : state.section[key] / unit, field: `section.${key}`,
+        onInput: (v) => { if (key === "c" && Number.isNaN(v)) delete state.section.c; else state.section[key] = v * unit; } }));
+    }
+    box.append(row);
+  }
+}
+
+function buildMaterial() {
+  $("material").value = state.material.id;
+  $("E").value = tidy(state.material.E / GPa);
+  $("nu").value = tidy(state.material.nu);
+}
+
+function buildForm() {
+  $("length").value = tidy(state.length);
+  $("divisions").value = state.divisions;
+  buildSupports(); buildLoads(); buildSection(); buildMaterial();
+  const p = D.presets.find((x) => x.id === state.preset);
+  $("preset").value = p ? p.id : "";
+  $("preset-note").textContent = p ? p.note : "";
+}
+
+/* ---------- solving and rendering ---------- */
+function markInvalid(field) {
+  for (const el of document.querySelectorAll("[data-field]")) {
+    const f = el.dataset.field;
+    const bad = field && (f === field || (field === "supports" && f.startsWith("supports.") && f.endsWith(".x")) || (field === "loads" && f.startsWith("loads.") && /\.(x|x1|x2)$/.test(f)));
+    if (bad) el.setAttribute("aria-invalid", "true"); else el.removeAttribute("aria-invalid");
+  }
+}
+
+/* Typing in number fields re-solves once the typing pauses; any direct update cancels the pending one. */
+let pending = null;
+function updateSoon() {
+  clearTimeout(pending);
+  deckText = null;
+  pending = setTimeout(() => update({ keepForm: true }), 150);
+}
+
+function update({ keepForm = false } = {}) {
+  clearTimeout(pending);
+  pending = null;
+  if (Number.isFinite(state.length) && state.length > 0) attachmentLength = state.length;
+  if (!keepForm) buildForm();
+  else if (state.preset) { state.preset = null; $("preset").value = ""; $("preset-note").textContent = ""; }
+  let error = null;
+  try {
+    result = B.solve(modelOf(state));
+    result.extremes = B.extremes(result);
+  } catch (e) {
+    if (!(e instanceof B.ModelError)) throw e;
+    error = e;
+  }
+  const box = $("error");
+  if (error) {
+    box.hidden = false;
+    box.replaceChildren();
+    const b = document.createElement("b"); b.textContent = "Can't solve this beam: ";
+    box.append(b, document.createTextNode(error.message));
+    markInvalid(error.field);
+    $("plots").classList.add("stale");
+  } else {
+    box.hidden = true;
+    markInvalid(null);
+    $("plots").classList.remove("stale");
+  }
+  resetDeck();
+  if (result) {
+    if (cursor == null || cursor > result.model.length) cursor = result.model.length / 2;
+    render();
+    if (!error) { renderStats(); renderTable(); }
+  }
+  renderSectionDerived();
+}
+
+function renderSectionDerived() {
+  const out = $("section-derived");
+  try {
+    const s = B.sectionProperties(state.section);
+    const EI = state.material.E * s.I;
+    out.textContent = `A = ${sci(s.A / mm ** 2)} mm² · I = ${sci(s.I / mm ** 4)} mm⁴` + (s.c ? ` · c = ${sig(s.c / mm)} mm` : "") + (Number.isFinite(EI) ? ` · EI = ${sci(EI / kN)} kN·m²` : "");
+  } catch { out.textContent = ""; }
+}
+
+const el = (name, attrs = {}, parent) => {
+  const n = document.createElementNS(SVGNS, name);
+  for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+  if (parent) parent.append(n);
+  return n;
+};
+const text = (parent, x, y, str, attrs = {}) => { const t = el("text", { x, y, ...attrs }, parent); t.textContent = str; return t; };
+
+function niceTicks(lo, hi, count = 4) {
+  if (lo === hi) { lo -= 1; hi += 1; }
+  const raw = (hi - lo) / count, p = 10 ** Math.floor(Math.log10(raw));
+  const step = [1, 2, 2.5, 5, 10].map((m) => m * p).find((s) => s >= raw);
+  const ticks = [];
+  for (let t = Math.ceil(lo / step) * step; t <= hi + step * 1e-9; t += step) ticks.push(Math.abs(t) < step * 1e-9 ? 0 : t);
+  return ticks;
+}
+
+let layout = null;
+
+function render() {
+  const host = $("plots");
+  const W = Math.max(300, host.clientWidth || 700);
+  const narrow = W < 520;
+  const ml = narrow ? 48 : 64, mr = narrow ? 14 : 24;
+  const L = result.model.length;
+  const X = (x) => ml + (x / L) * (W - ml - mr);
+  const panels = [
+    { key: "beam", h: narrow ? 150 : 170 },
+    { key: "V", title: "SHEAR FORCE V (kN)", h: narrow ? 130 : 160, color: "var(--shear)", get: (p) => p.V / kN, unit: "kN" },
+    { key: "M", title: "BENDING MOMENT M (kN·m) · SAGGING +", h: narrow ? 130 : 160, color: "var(--moment)", get: (p) => p.M / kN, unit: "kN·m" },
+    { key: "v", title: "DEFLECTION v (mm)", h: narrow ? 110 : 130, color: "var(--fg)", get: (p) => p.v / mm, unit: "mm" },
+  ];
+  let y = 0;
+  for (const p of panels) { p.top = y + (p.key === "beam" ? 0 : 22); p.bottom = p.top + p.h - (p.key === "beam" ? 0 : 22); y += p.h + 10; }
+  const H = y;
+  const svg = el("svg", { width: W, height: H, viewBox: `0 0 ${W} ${H}`, role: "group", "aria-label": "Beam, shear force, bending moment and deflection diagrams" });
+  layout = { X, ml, mr, W, L, panels, svg };
+
+  drawBeam(svg, panels[0], X);
+  const pts = B.diagram(result);
+  const plot = el("g", { class: "plotarea", tabindex: 0, role: "slider", "aria-label": "Section position along the beam", "aria-valuemin": 0, "aria-valuemax": tidy(L) }, svg);
+  for (const p of panels.slice(1)) drawDiagram(plot, p, pts, X, W, ml, mr, narrow);
+  el("rect", { class: "frame", x: ml - 4, y: panels[1].top - 20, width: W - ml - mr + 8, height: panels[3].bottom - panels[1].top + 24, fill: "none", stroke: "none", rx: 6 }, plot);
+  const cur = el("line", { class: "cursor", x1: 0, x2: 0, y1: panels[0].top + 8, y2: panels[3].bottom }, svg);
+  layout.cursorLine = cur;
+  layout.plot = plot;
+
+  const focused = document.activeElement && document.activeElement.closest && document.activeElement.closest("#plots [data-key]");
+  const focusKey = focused ? focused.dataset.key : null;
+  const plotFocused = document.activeElement === (host.querySelector(".plotarea"));
+  host.replaceChildren(svg);
+  if (focusKey) { const again = host.querySelector(`[data-key="${focusKey}"]`); if (again) again.focus(); }
+  if (plotFocused) plot.focus();
+  setCursor(cursor);
+}
+
+function drawBeam(svg, panel, X) {
+  const g = el("g", {}, svg);
+  const yb = panel.top + panel.h * 0.5;
+  const model = result.model;
+  const L = model.length;
+  // Distributed loads: arrows scaled to the largest intensity.
+  const qmax = Math.max(1e-12, ...model.loads.filter((l) => l.kind === "dist").flatMap((l) => [Math.abs(l.q1), Math.abs(l.q2)]));
+  const Fmax = Math.max(1e-12, ...model.loads.filter((l) => l.kind === "point").map((l) => Math.abs(l.F)));
+  const arrowHead = (x, yTip, dir, color, size = 5) => el("path", { d: `M${x},${yTip} l${-size},${-dir * size * 1.6} h${2 * size} z`, fill: color }, g);
+  model.loads.forEach((l) => {
+    if (l.kind !== "dist") return;
+    const h = (q) => 10 + 30 * Math.abs(q) / qmax;
+    const x1 = X(l.x1), x2 = X(l.x2), n = Math.max(2, Math.round((x2 - x1) / 22));
+    const topAt = (x) => { const q = l.q1 + (l.q2 - l.q1) * (x - l.x1) / (l.x2 - l.x1); return yb - 7 - h(q); };
+    el("path", { d: `M${x1},${topAt(l.x1)} L${x2},${topAt(l.x2)}`, stroke: "var(--fg)", "stroke-width": 1.5, fill: "none" }, g);
+    for (let j = 0; j <= n; j++) {
+      const xm = l.x1 + (l.x2 - l.x1) * j / n, q = l.q1 + (l.q2 - l.q1) * j / n;
+      if (Math.abs(q) < 1e-9 * qmax) continue;
+      const px = X(xm), top = topAt(xm), d = q < 0 ? 1 : -1;
+      el("line", { x1: px, x2: px, y1: top, y2: yb - 8, stroke: "var(--fg)", "stroke-width": 1 }, g);
+      arrowHead(px, d > 0 ? yb - 7 : top, d, "var(--fg)", 3);
+    }
+    const label = l.q1 === l.q2 ? `${sig(l.q1 / kN, 3)} kN/m` : `${sig(l.q1 / kN, 3)} → ${sig(l.q2 / kN, 3)} kN/m`;
+    text(g, (x1 + x2) / 2, Math.min(topAt(l.x1), topAt(l.x2)) - 6, label, { class: "val", "text-anchor": "middle" });
+  });
+  // Beam
+  el("rect", { x: X(0), y: yb - 4, width: X(L) - X(0), height: 8, rx: 2, fill: "var(--surface)", stroke: "var(--fg)", "stroke-width": 1.5 }, g);
+  // Supports and their reactions. With many close supports, label only those whose text has room;
+  // every reaction is still listed below the figure and in the table.
+  const reactions = result.reactions;
+  const labelled = new Set();
+  let freeFrom = -Infinity;
+  for (const r of reactions) {
+    const x = X(r.x), w = 7 * (nf(Math.abs(r.Fy) / kN, 2).length + 5);
+    const anchor = r.x <= 0.08 * L ? "start" : r.x >= 0.92 * L ? "end" : "middle";
+    const left = anchor === "start" ? x : anchor === "end" ? x - w : x - w / 2;
+    if (left >= freeFrom) { labelled.add(r.x); freeFrom = left + w + 6; }
+  }
+  state.supports.forEach((s, i) => {
+    if (!Number.isFinite(s.x)) return;
+    const x = X(s.x);
+    const h = el("g", { class: "handle", tabindex: 0, role: "slider", "data-key": `s${i}`, "aria-label": `${s.kind === "pin" ? "Pin" : "Fixed"} support ${i + 1}, position`, "aria-valuemin": 0, "aria-valuemax": tidy(L), "aria-valuenow": tidy(s.x), "aria-valuetext": `${sig(s.x)} metres` }, g);
+    if (s.kind === "pin") {
+      el("path", { d: `M${x},${yb + 4} l-10,16 h20 z`, fill: "var(--bg)", stroke: "var(--fg)", "stroke-width": 1.5 }, h);
+      el("line", { x1: x - 14, x2: x + 14, y1: yb + 23, y2: yb + 23, stroke: "var(--fg)", "stroke-width": 1.5 }, h);
+      for (let k = -12; k <= 8; k += 5) el("line", { x1: x + k, x2: x + k + 4, y1: yb + 27, y2: yb + 23, stroke: "var(--fg)", "stroke-width": 1 }, h);
+    } else {
+      const side = s.x <= 0 ? -1 : s.x >= L ? 1 : 0;
+      if (side) {
+        el("line", { x1: x, x2: x, y1: yb - 20, y2: yb + 20, stroke: "var(--fg)", "stroke-width": 2 }, h);
+        for (let k = -20; k < 20; k += 6) el("line", { x1: x, x2: x + side * 6, y1: yb + k + 6, y2: yb + k, stroke: "var(--fg)", "stroke-width": 1 }, h);
+      } else {
+        el("rect", { x: x - 7, y: yb - 12, width: 14, height: 24, fill: "var(--bg)", stroke: "var(--fg)", "stroke-width": 1.5 }, h);
+        el("line", { x1: x - 7, x2: x + 7, y1: yb - 12, y2: yb + 12, stroke: "var(--fg)", "stroke-width": 1 }, h);
+        el("line", { x1: x + 7, x2: x - 7, y1: yb - 12, y2: yb + 12, stroke: "var(--fg)", "stroke-width": 1 }, h);
+      }
+    }
+    el("rect", { class: "ring", x: x - 16, y: yb - 22, width: 32, height: 52, rx: 6, fill: "none", stroke: "none" }, h);
+    el("rect", { class: "hit", x: x - 16, y: yb - 22, width: 32, height: 52 }, h);
+    const r = reactions.find((rr) => rr.x === s.x);
+    if (r) {
+      const up = r.Fy >= 0, ya = yb + 34, len = 20;
+      el("line", { x1: x, x2: x, y1: up ? ya + len : ya, y2: up ? ya : ya + len, stroke: "var(--react)", "stroke-width": 2 }, g);
+      arrowHead(x, up ? ya - 1 : ya + len + 1, up ? -1 : 1, "var(--react)", 4);
+    }
+    if (r && labelled.has(r.x)) {
+      const up = r.Fy >= 0, ya = yb + 34, len = 20;
+      const anchor = s.x <= 0.08 * L ? "start" : s.x >= 0.92 * L ? "end" : "middle";
+      text(g, x + (anchor === "start" ? -2 : anchor === "end" ? 2 : 0), ya + len + 14, `${nf(Math.abs(r.Fy) / kN, 2)} kN ${up ? "↑" : "↓"}`, { class: "val react", "text-anchor": anchor });
+      if (s.kind === "fixed" && Math.abs(r.Mz) > 1e-9 * (Math.abs(r.Fy) + 1)) {
+        text(g, x + (anchor === "start" ? -2 : anchor === "end" ? 2 : 0), ya + len + 28, `${nf(Math.abs(r.Mz) / kN, 2)} kN·m ${r.Mz > 0 ? "↺" : "↻"}`, { class: "val react", "text-anchor": anchor });
+      }
+    }
+  });
+  // Point forces and couples
+  state.loads.forEach((l, i) => {
+    if (l.kind === "dist" || !Number.isFinite(l.x)) return;
+    const x = X(l.x);
+    const h = el("g", { class: "handle", tabindex: 0, role: "slider", "data-key": `l${i}`, "aria-label": `Load ${i + 1}, ${LOAD_NAMES[l.kind]}, position`, "aria-valuemin": 0, "aria-valuemax": tidy(L), "aria-valuenow": tidy(l.x), "aria-valuetext": `${sig(l.x)} metres` }, g);
+    const anchor = l.x <= 0.08 * L ? "start" : l.x >= 0.92 * L ? "end" : "middle";
+    if (l.kind === "point") {
+      const len = 18 + 30 * Math.abs(l.F) / Fmax, down = l.F <= 0;
+      const y0 = yb - 6 - len, y1 = yb - 6;
+      el("line", { x1: x, x2: x, y1: down ? y0 : y1 - 1, y2: down ? y1 - 7 : y0 + 7, stroke: "var(--fg)", "stroke-width": 2 }, h);
+      arrowHead(x, down ? y1 : y0, down ? 1 : -1, "var(--fg)", 5);
+      text(h, x, y0 - 6, `${sig(Math.abs(l.F) / kN, 3)} kN ${down ? "↓" : "↑"}`, { class: "val", "text-anchor": anchor });
+      el("rect", { class: "ring", x: x - 14, y: y0 - 4, width: 28, height: len + 6, rx: 6 }, h);
+      el("rect", { class: "hit", x: x - 16, y: y0 - 20, width: 32, height: len + 22 }, h);
+    } else {
+      const r = 14, ccw = l.C >= 0;
+      el("path", { d: `M${x + r},${yb} A${r},${r} 0 1 ${ccw ? 0 : 1} ${x - r},${yb}`, fill: "none", stroke: "var(--fg)", "stroke-width": 2 }, h);
+      const tipX = x - r, tipY = yb;
+      el("path", { d: `M${tipX},${tipY + 1} l-5,-8 h10 z`, fill: "var(--fg)", transform: ccw ? "" : `rotate(180 ${tipX} ${tipY})` }, h);
+      text(h, x, yb - r - 8, `${sig(Math.abs(l.C) / kN, 3)} kN·m ${ccw ? "↺" : "↻"}`, { class: "val", "text-anchor": anchor });
+      el("rect", { class: "ring", x: x - r - 5, y: yb - r - 5, width: 2 * r + 10, height: r + 12, rx: 6 }, h);
+      el("rect", { class: "hit", x: x - r - 6, y: yb - r - 22, width: 2 * r + 12, height: r + 30 }, h);
+    }
+  });
+}
+
+function drawDiagram(g, panel, pts, X, W, ml, mr, narrow) {
+  const values = pts.map(panel.get);
+  let lo = Math.min(0, ...values), hi = Math.max(0, ...values);
+  if (hi - lo < 1e-9) { lo = -1; hi = 1; }
+  const pad = (hi - lo) * 0.2;
+  lo -= pad; hi += pad;
+  const top = panel.top, bot = panel.bottom;
+  const Y = (v) => bot - (v - lo) / (hi - lo) * (bot - top);
+  panel.Y = Y;
+  text(g, ml - (narrow ? 44 : 60), top - 8, panel.title, { class: "title" });
+  const axis = el("g", { class: "axis" }, g);
+  for (const t of niceTicks(lo, hi, narrow ? 3 : 4)) {
+    el("line", { x1: ml, x2: W - mr, y1: Y(t), y2: Y(t), stroke: "var(--grid)", "stroke-width": 1 }, axis);
+    text(axis, ml - 6, Y(t) + 4, sig(t, 3), { "text-anchor": "end" });
+  }
+  el("line", { x1: ml, x2: W - mr, y1: Y(0), y2: Y(0), stroke: "var(--faint)", "stroke-width": 1 }, axis);
+  const path = pts.map((p, i) => `${i ? "L" : "M"}${X(p.x).toFixed(2)},${Y(panel.get(p)).toFixed(2)}`).join("");
+  if (panel.key !== "v") {
+    el("path", { class: "area", d: `${path}L${X(pts[pts.length - 1].x)},${Y(0)}L${X(pts[0].x)},${Y(0)}Z`, fill: panel.color, "fill-opacity": 0.14 }, g);
+  }
+  el("path", { d: path, fill: "none", stroke: panel.color, "stroke-width": 2, "stroke-linejoin": "round" }, g);
+  // Label the extremes.
+  const ex = result.extremes[panel.key];
+  if (ex && Math.abs(ex.value) > 0) {
+    const v = panel.key === "v" ? ex.value / mm : ex.value / kN;
+    const x = X(ex.x), yv = Y(v);
+    el("circle", { cx: x, cy: yv, r: 3.5, fill: panel.color, stroke: "var(--bg)", "stroke-width": 2 }, g);
+    const anchor = x < ml + 60 ? "start" : x > W - mr - 60 ? "end" : "middle";
+    text(g, x + (anchor === "start" ? 6 : anchor === "end" ? -6 : 0), v >= 0 ? yv - 8 : yv + 16, `${sig(v, 4)} ${panel.unit}`, { class: "val", "text-anchor": anchor });
+  }
+}
+
+function snapEvent(x, px) {
+  if (!layout) return x;
+  const { X } = layout;
+  let best = x, dist = Infinity;
+  for (const e of eventsOf()) { const d = Math.abs(X(e.x) - X(x)); if (d < dist) { dist = d; best = e.x; } }
+  return dist <= px ? best : x;
+}
+
+function eventsOf() {
+  const m = result.model, map = new Map();
+  const add = (x, what) => { const k = x; if (!map.has(k)) map.set(k, []); map.get(k).push(what); };
+  add(0, "left end"); add(m.length, "right end");
+  m.supports.forEach((s) => add(s.x, s.kind === "pin" ? "pin support" : "fixed support"));
+  m.loads.forEach((l) => {
+    if (l.kind === "point") add(l.x, `${sig(l.F / kN, 3)} kN force`);
+    if (l.kind === "moment") add(l.x, `${sig(l.C / kN, 3)} kN·m couple`);
+    if (l.kind === "dist") { add(l.x1, "distributed load starts"); add(l.x2, "distributed load ends"); }
+  });
+  return [...map.entries()].sort((a, b) => a[0] - b[0]).map(([x, what]) => ({ x, what: [...new Set(what)] }));
+}
+
+function setCursor(x) {
+  if (!result || !layout) return;
+  const L = result.model.length;
+  cursor = Math.min(L, Math.max(0, x));
+  const px = layout.X(cursor);
+  layout.cursorLine.setAttribute("x1", px);
+  layout.cursorLine.setAttribute("x2", px);
+  const a = B.at(result, cursor);
+  const jumpV = Math.abs(a.Vleft - a.Vright) > 1e-9 * (Math.abs(a.Vleft) + Math.abs(a.Vright) + 1);
+  const jumpM = Math.abs(a.Mleft - a.Mright) > 1e-9 * (Math.abs(a.Mleft) + Math.abs(a.Mright) + 1);
+  const V = cursor <= 0 ? a.Vright : cursor >= L ? a.Vleft : a.Vright;
+  const M = cursor <= 0 ? a.Mright : cursor >= L ? a.Mleft : a.Mright;
+  const parts = [
+    ["x", `${nf(cursor, 3)} m`],
+    ["V", jumpV ? `${nf(a.Vleft / kN)} → ${nf(a.Vright / kN)} kN` : `${nf(V / kN)} kN`],
+    ["M", jumpM ? `${nf(a.Mleft / kN)} → ${nf(a.Mright / kN)} kN·m` : `${nf(M / kN)} kN·m`],
+    ["v", `${nf(a.v / mm)} mm`],
+    ["θ", `${nf(a.theta * 1e3)} mrad`],
+  ];
+  const out = $("readout");
+  out.replaceChildren();
+  for (const [k, v] of parts) {
+    const s = document.createElement("span");
+    const kk = document.createElement("span"); kk.className = "k"; kk.textContent = `${k} `;
+    const b = document.createElement("b"); b.textContent = v;
+    s.append(kk, b); out.append(s);
+  }
+  layout.plot.setAttribute("aria-valuenow", tidy(cursor));
+  layout.plot.setAttribute("aria-valuetext", parts.map(([k, v]) => `${k} ${v}`).join(", "));
+}
+
+function renderStats() {
+  const ex = result.extremes, m = result.model;
+  const deg = B.indeterminacy(m.supports);
+  const items = [
+    [deg > 0 ? `Indeterminate, degree ${deg}` : "Determinate", deg > 0 ? "more reactions than equilibrium can find: solved with compatibility" : "reactions follow from equilibrium alone"],
+    [`${sig(ex.V.value / kN, 4)} kN`, `largest shear, at x = ${sig(ex.V.x)} m`],
+    [`${sig(ex.M.value / kN, 4)} kN·m`, `largest moment (${ex.M.value >= 0 ? "sagging" : "hogging"}), at x = ${sig(ex.M.x)} m`],
+    [`${sig(ex.v.value / mm, 4)} mm`, `largest deflection, at x = ${sig(ex.v.x)} m (L/${Math.abs(ex.v.value) > 0 ? Math.round(m.length / Math.abs(ex.v.value)) : "∞"})`],
+  ];
+  if (m.section.c) items.push([`${sig(Math.abs(ex.M.value) * m.section.c / m.section.I / 1e6, 4)} MPa`, "peak bending stress |M|·c / I"]);
+  const eq = result.equilibrium;
+  const resid = Math.max(Math.abs(eq.Fy) / Math.max(eq.scaleF, 1e-300), Math.abs(eq.Mz) / Math.max(eq.scaleM, 1e-300));
+  items.push([resid < 1e-9 ? "Balanced" : `Residual ${sci(resid)}`, `ΣF and ΣM of loads and reactions, relative error ${sci(resid)}`]);
+  const ul = $("stats");
+  ul.replaceChildren();
+  for (const [big, small] of items) {
+    const li = document.createElement("li");
+    const b = document.createElement("b"); b.textContent = big;
+    const s = document.createElement("span"); s.textContent = small;
+    li.append(b, s); ul.append(li);
+  }
+  const rl = $("reactions");
+  rl.replaceChildren();
+  result.reactions.forEach((r) => {
+    const li = document.createElement("li");
+    li.append(document.createElement("i"));
+    li.append(document.createTextNode(`${r.kind === "pin" ? "Pin" : "Fixed"} at ${sig(r.x)} m: ${nf(r.Fy / kN)} kN` + (r.kind === "fixed" ? `, ${nf(r.Mz / kN)} kN·m` : "")));
+    rl.append(li);
+  });
+}
+
+function renderTable() {
+  const tb = $("table");
+  tb.replaceChildren();
+  for (const e of eventsOf()) {
+    const a = B.at(result, e.x), L = result.model.length;
+    const tr = document.createElement("tr");
+    const cells = [
+      [nf(e.x), true], [e.what.join(", "), false],
+      [e.x > 0 ? nf(a.Vleft / kN) : "—", true], [e.x < L ? nf(a.Vright / kN) : "—", true],
+      [e.x > 0 ? nf(a.Mleft / kN) : "—", true], [e.x < L ? nf(a.Mright / kN) : "—", true],
+      [nf(a.v / mm), true], [nf(a.theta * 1e3), true],
+    ];
+    for (const [v, num] of cells) { const td = document.createElement("td"); if (num) td.className = "num"; td.textContent = v; tr.append(td); }
+    tb.append(tr);
+  }
+}
+
+/* The deck is built only when it is downloaded, copied or shown: a fine mesh makes it large. */
+let deckText = null;
+function deck() {
+  if (pending !== null) update({ keepForm: true });
+  if (deckText === null) {
+    try {
+      deckText = B.exportBdf(modelOf(state));
+    } catch (e) {
+      if (!(e instanceof B.ModelError)) throw e;
+      deckText = "";
+      $("export-status").textContent = e.message;
+    }
+  }
+  return deckText;
+}
+function resetDeck() {
+  deckText = null;
+  $("export-status").textContent = "";
+  $("deck").textContent = $("deck-details").open ? deck() : "";
+}
+
+/* ---------- interaction ---------- */
+function stepFor(L) {
+  const raw = L / 100, p = 10 ** Math.floor(Math.log10(raw));
+  return [1, 2, 5, 10].map((m) => m * p).find((s) => s >= raw);
+}
+const snap = (x, step) => +(Math.round(x / step) * step).toPrecision(12);
+
+function moveHandle(key, x) {
+  const L = state.length;
+  x = Math.min(L, Math.max(0, x));
+  const i = +key.slice(1);
+  const target = key[0] === "s" ? state.supports[i] : state.loads[i];
+  if (!target) return;
+  target.x = x;
+  const input = document.querySelector(`[data-field="${key[0] === "s" ? "supports" : "loads"}.${i}.x"]`);
+  if (input) input.value = tidy(x);
+  update({ keepForm: true });
+}
+
+function pointerX(ev) {
+  const r = $("plots").getBoundingClientRect();
+  const { ml, mr, W, L } = layout;
+  return ((ev.clientX - r.left) / r.width * W - ml) / (W - ml - mr) * L;
+}
+
+function wire() {
+  const host = $("plots");
+  host.addEventListener("pointerdown", (ev) => {
+    const h = ev.target.closest("[data-key]");
+    if (!h || !layout) return;
+    active = h.dataset.key;
+    h.classList.add("active");
+    host.setPointerCapture(ev.pointerId);
+    ev.preventDefault();
+    h.focus({ preventScroll: true });
+  });
+  host.addEventListener("pointermove", (ev) => {
+    if (!layout) return;
+    if (active) {
+      moveHandle(active, snap(pointerX(ev), stepFor(state.length)));
+      const again = host.querySelector(`[data-key="${active}"]`);
+      if (again) again.classList.add("active");
+      return;
+    }
+    setCursor(snapEvent(pointerX(ev), 6));
+  });
+  const end = () => { if (active) { const h = host.querySelector(`[data-key="${active}"]`); if (h) h.classList.remove("active"); } active = null; };
+  host.addEventListener("pointerup", end);
+  host.addEventListener("pointercancel", end);
+  host.addEventListener("keydown", (ev) => {
+    const h = ev.target.closest("[data-key]");
+    const L = state.length, step = stepFor(L) / (ev.shiftKey ? 10 : 1);
+    if (h) {
+      const key = h.dataset.key, i = +key.slice(1);
+      const cur = (key[0] === "s" ? state.supports[i] : state.loads[i]).x;
+      const next = { ArrowLeft: cur - step, ArrowDown: cur - step, ArrowRight: cur + step, ArrowUp: cur + step, Home: 0, End: L }[ev.key];
+      if (next === undefined) return;
+      ev.preventDefault();
+      moveHandle(key, snap(next, step));
+      return;
+    }
+    if (ev.target.classList && ev.target.classList.contains("plotarea") && result) {
+      const evs = eventsOf().map((e) => e.x);
+      let next;
+      if (ev.key === "ArrowLeft" || ev.key === "ArrowDown") next = snap(cursor - step, step);
+      else if (ev.key === "ArrowRight" || ev.key === "ArrowUp") next = snap(cursor + step, step);
+      else if (ev.key === "Home") next = 0;
+      else if (ev.key === "End") next = result.model.length;
+      else if (ev.key === "PageDown") next = evs.find((x) => x > cursor + 1e-12) ?? result.model.length;
+      else if (ev.key === "PageUp") next = [...evs].reverse().find((x) => x < cursor - 1e-12) ?? 0;
+      if (next === undefined) return;
+      ev.preventDefault();
+      setCursor(next);
+    }
+  });
+  if (typeof ResizeObserver !== "undefined") {
+    let last = 0;
+    new ResizeObserver(() => { const w = host.clientWidth; if (w && w !== last && result) { last = w; render(); } }).observe(host);
+  }
+
+  const presetSel = $("preset");
+  presetSel.add(new Option("Custom", ""));
+  for (const p of D.presets) presetSel.add(new Option(p.label, p.id));
+  presetSel.addEventListener("change", () => {
+    const p = D.presets.find((x) => x.id === presetSel.value);
+    if (p) { state = fromPreset(p); cursor = null; update(); }
+  });
+  for (const b of document.querySelectorAll("[data-ends]")) {
+    b.addEventListener("click", () => {
+      const [left, right] = b.dataset.ends.split(",");
+      const L = state.length;
+      const interior = state.supports.filter((s) => s.x > 0 && s.x < L);
+      state.supports = [{ kind: left, x: 0 }, ...interior, ...(right ? [{ kind: right, x: L }] : [])];
+      state.preset = null;
+      update();
+    });
+  }
+  $("length").addEventListener("input", () => {
+    const v = $("length").value === "" ? NaN : Number($("length").value);
+    const old = attachmentLength;
+    state.length = v;
+    // Keep supports and loads at the right end attached to it.
+    if (Number.isFinite(v) && v > 0) {
+      attachmentLength = v;
+      const set = (field, x) => { const input = document.querySelector(`[data-field="${field}"]`); if (input) input.value = tidy(x); };
+      state.supports.forEach((s, i) => { if (s.x === old) { s.x = v; set(`supports.${i}.x`, v); } });
+      state.loads.forEach((l, i) => {
+        if (l.x === old) { l.x = v; set(`loads.${i}.x`, v); }
+        if (l.x2 === old) { l.x2 = v; set(`loads.${i}.x2`, v); }
+      });
+    }
+    updateSoon();
+  });
+  $("divisions").addEventListener("input", () => { state.divisions = Number($("divisions").value); updateSoon(); });
+  $("add-support").addEventListener("click", () => {
+    const L = state.length, taken = new Set(state.supports.map((s) => s.x));
+    // Try the usual spots first, then the middle of the widest gap between supports and ends.
+    const gap = () => {
+      const xs = [...new Set([0, L, ...taken])].sort((a, b) => a - b);
+      let best = 0;
+      for (let i = 1; i < xs.length; i++) if (xs[i] - xs[i - 1] > xs[best + 1] - xs[best]) best = i - 1;
+      return (xs[best] + xs[best + 1]) / 2;
+    };
+    const x = [L / 2, L / 4, (3 * L) / 4, L, 0].find((v) => !taken.has(v)) ?? gap();
+    state.supports.push({ kind: "pin", x: +x.toPrecision(10) });
+    update();
+    const inputs = document.querySelectorAll("#supports input");
+    if (inputs.length) inputs[inputs.length - 1].focus();
+  });
+  for (const b of document.querySelectorAll("[data-add]")) {
+    b.addEventListener("click", () => {
+      const L = state.length, k = b.dataset.add;
+      state.loads.push(k === "point" ? { kind: "point", x: +(L / 2).toPrecision(10), F: -10 * kN }
+        : k === "moment" ? { kind: "moment", x: +(L / 2).toPrecision(10), C: 10 * kN }
+          : { kind: "dist", x1: 0, x2: L, q1: -5 * kN, q2: -5 * kN });
+      update();
+      const inputs = document.querySelectorAll("#loads .item:last-child input");
+      if (inputs.length) inputs[0].focus();
+    });
+  }
+  const shape = $("shape");
+  for (const s of D.sections) shape.add(new Option(s.label, s.id));
+  shape.addEventListener("change", () => {
+    state.section = { shape: shape.value, ...SECTION_DEFAULTS[shape.value] };
+    update();
+    shape.focus();
+  });
+  const mat = $("material");
+  for (const m of D.materials) mat.add(new Option(`${m.label} (E ${sig(m.E / GPa)} GPa)`, m.id));
+  mat.add(new Option("Custom", "custom"));
+  mat.addEventListener("change", () => {
+    const m = D.materials.find((x) => x.id === mat.value);
+    if (m) state.material = { id: m.id, E: m.E, nu: m.nu }; else state.material.id = "custom";
+    update(); mat.focus();
+  });
+  const matInput = () => {
+    state.material.E = $("E").value === "" ? NaN : Number($("E").value) * GPa;
+    state.material.nu = $("nu").value === "" ? NaN : Number($("nu").value);
+    const m = D.materials.find((x) => x.E === state.material.E && x.nu === state.material.nu);
+    state.material.id = m ? m.id : "custom";
+    $("material").value = state.material.id;
+    updateSoon();
+  };
+  $("E").addEventListener("input", matInput);
+  $("nu").addEventListener("input", matInput);
+
+  $("deck-details").addEventListener("toggle", () => { if ($("deck-details").open) $("deck").textContent = deck(); });
+  $("download").addEventListener("click", () => {
+    const deckText = deck();
+    if (!deckText) return;
+    let name = ($("bdf-name").value || "beamdiag.bdf").replace(/[^A-Za-z0-9._-]/g, "_");
+    if (!/\.bdf$/i.test(name)) name += ".bdf";
+    const url = URL.createObjectURL(new Blob([deckText], { type: "text/plain" }));
+    const a = document.createElement("a");
+    a.href = url; a.download = name;
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    $("export-status").textContent = `Saved ${name}.`;
+  });
+  $("copy").addEventListener("click", async () => {
+    const deckText = deck();
+    if (!deckText) return;
+    try { await navigator.clipboard.writeText(deckText); $("export-status").textContent = "Deck copied."; }
+    catch { $("deck-details").open = true; $("export-status").textContent = "Copy is blocked here; the deck is shown below."; }
+  });
+}
+
+function staticText() {
+  const list = (id, items) => { const ul = $(id); for (const t of items) { const li = document.createElement("li"); li.textContent = t; ul.append(li); } };
+  $("method-text").textContent = D.method;
+  list("conventions", D.conventions);
+  list("assumptions", D.assumptions);
+  list("run", D.nastran.run);
+  $("nastran-status").textContent = D.nastran.status;
+  const cards = $("cards");
+  for (const c of D.nastran.cards) {
+    const tr = document.createElement("tr");
+    const a = document.createElement("td"); const code = document.createElement("code"); code.textContent = c.card; a.append(code);
+    const b = document.createElement("td"); b.textContent = c.use;
+    tr.append(a, b); cards.append(tr);
+  }
+  const src = $("sources");
+  for (const s of D.sources) {
+    const li = document.createElement("li"); const a = document.createElement("a");
+    a.href = s.url; a.textContent = s.title; a.rel = "noopener"; li.append(a); src.append(li);
+  }
+}
+
+/* ---------- WebMCP tools ---------- */
+function registerTools() {
+  const mc = (typeof document !== "undefined" && document.modelContext) || (typeof navigator !== "undefined" && navigator.modelContext);
+  if (!mc) return;
+  const result_ = (obj) => ({ content: [{ type: "text", text: JSON.stringify(obj) }] });
+  const summary = (r) => {
+    const ex = B.extremes(r);
+    return {
+      units: "SI: m, N, N·m; deflection m; slope rad",
+      indeterminacy: B.indeterminacy(r.model.supports),
+      reactions: r.reactions,
+      extremes: { shear: ex.V, moment: ex.M, deflection: ex.v },
+      points: eventsOfModel(r).map((x) => B.at(r, x)),
+    };
+  };
+  const eventsOfModel = (r) => [...new Set([0, r.model.length, ...r.model.supports.map((s) => s.x), ...r.model.loads.flatMap((l) => (l.kind === "dist" ? [l.x1, l.x2] : [l.x]))])].sort((a, b) => a - b);
+  const modelSchema = {
+    type: "object",
+    properties: {
+      length: { type: "number", description: "Beam length, m" },
+      supports: { type: "array", items: { type: "object", properties: { kind: { type: "string", enum: B.SUPPORT_KINDS }, x: { type: "number" } }, required: ["kind", "x"] } },
+      loads: { type: "array", items: { type: "object", description: "point {kind,x,F N}, moment {kind,x,C N·m CCW+}, dist {kind,x1,x2,q1,q2 N/m}; + up" } },
+      material: { type: "object", properties: { E: { type: "number", description: "Pa" }, nu: { type: "number" } } },
+      section: { type: "object", description: "{A m², I m⁴} and optional Iy, J, c" },
+    },
+    required: ["length", "supports", "loads", "material", "section"],
+  };
+  mc.registerTool({ name: "get_metadata", description: "Return the method, units, sign conventions, assumptions, example beams, NASTRAN export notes and sources for this beam solver.", inputSchema: { type: "object", properties: {}, additionalProperties: false }, annotations: { readOnlyHint: true }, async execute() { return result_({ title: D.title, method: D.method, units: D.units, conventions: D.conventions, assumptions: D.assumptions, presets: D.presets.map((p) => ({ id: p.id, label: p.label, note: p.note })), nastran: D.nastran, sources: D.sources }); } });
+  mc.registerTool({ name: "get_current_beam", description: "Return the beam currently on the page (SI units) with its reactions, extremes and values at every support and load.", inputSchema: { type: "object", properties: {}, additionalProperties: false }, annotations: { readOnlyHint: true }, async execute() { try { const r = B.solve(modelOf(state)); return result_({ model: r.model, ...summary(r) }); } catch (e) { return result_({ error: e.message }); } } });
+  mc.registerTool({ name: "solve_beam", description: "Solve a beam given in SI units (supports pin or fixed; loads point, moment or dist) and return reactions, extremes and values at supports and loads. Does not change the page.", inputSchema: modelSchema, annotations: { readOnlyHint: true }, async execute(i) { try { return result_(summary(B.solve(i))); } catch (e) { return result_({ error: e.message, field: e.field || null }); } } });
+  mc.registerTool({ name: "export_nastran_bdf", description: "Return the MSC Nastran SOL 101 bulk data deck (.bdf text) for a beam given in SI units, or for the page's beam when no model is given.", inputSchema: { type: "object", properties: { model: modelSchema }, additionalProperties: false }, annotations: { readOnlyHint: true }, async execute(i) { try { return result_({ bdf: B.exportBdf(i && i.model ? i.model : modelOf(state)) }); } catch (e) { return result_({ error: e.message }); } } });
+}
+
+/* ---------- start ---------- */
+function start() {
+  staticText();
+  state = fromPreset(D.presets[0]);
+  wire();
+  update();
+  registerTools();
+}
+start();
+})();
+</script>
+</body>
+</html>
