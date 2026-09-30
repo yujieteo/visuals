@@ -25,6 +25,39 @@ function load(saved = {}) {
   return context.E;
 }
 
+test("emitted page registers read-only tools that return action data", async () => {
+  const html = await readFile(new URL("../viz/convexity-action-engine/index.html", import.meta.url), "utf8");
+  const tools = new Map();
+  const store = new Map();
+  const context = vm.createContext({
+    Intl,
+    navigator: { modelContext: { registerTool(tool) {
+      assert.equal(tools.has(tool.name), false);
+      tools.set(tool.name, tool);
+    } } },
+    document: { title: "Convexity Action Engine", getElementById: () => null },
+    localStorage: { getItem: (k) => store.get(k) ?? null, setItem: (k, v) => store.set(k, v) },
+  });
+  for (const script of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)) {
+    vm.runInContext(script[1], context);
+  }
+  assert.deepEqual([...tools.keys()].sort(), ["compare_actions", "get_action", "get_metadata", "search_actions"]);
+  for (const tool of tools.values()) assert.equal(tool.annotations.readOnlyHint, true);
+  const call = async (name, input = {}) => JSON.parse((await tools.get(name).execute(input)).content[0].text);
+  const metadata = await call("get_metadata");
+  assert.equal(metadata.canonical_actions, raw.actions.filter((a) => a.cat !== "avoid").length);
+  const search = await call("search_actions", { query: "swim", limit: 1 });
+  assert.equal(search.results.length, 1);
+  const action = await call("get_action", { id: "swim" });
+  assert.equal(action.action.id, "swim");
+  assert.equal((await call("get_action", { id: "nonexistent-action" })).error, "unknown id");
+  const comparison = await call("compare_actions", { ids: ["swim", "do-nothing"] });
+  assert.deepEqual(comparison.actions.map((a) => a.id).sort(), ["do-nothing", "swim"]);
+  assert.ok(["swim", "do-nothing"].includes(comparison.top));
+  assert.equal((await call("compare_actions", { ids: ["swim", "nonexistent-action"] })).error, "need at least two known ids");
+  assert.equal(store.size, 0);
+});
+
 test("toggle states are written as ARIA true/false, other booleans as presence", () => {
   const { attrVal } = load();
   assert.equal(attrVal("aria-pressed", true), "true");

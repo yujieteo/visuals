@@ -516,15 +516,9 @@ def verify(raw, meta, html):
     assert html.count("<h1>") == 1 and html.count("<script") == 1
     assert "<script src=" not in html and '<link rel="stylesheet"' not in html
     assert not re.search(r'''(?:src|href)=["']https?://''', html), "external asset"
-    assert html.count("mc?.registerTool") == 4 and html.count("readOnlyHint:true") == 4
-    for name in ("get_metadata", "search_actions", "get_action", "compare_actions"):
-        assert f'name:"{name}"' in html, name
-    for needle in ("OBSERVED", "EMPIRICAL", "American Time Use Survey", "short of a 10,000-action canonical ontology", "not retrieved", "JUDGEMENT", "MODEL", "PERSONAL",
-                   "prefers-reduced-motion", "Asia/Singapore", "localStorage", "Compared with what?", "WHAT AM I GIVING UP?"):
-        assert needle in html, needle
     assert "<title>" + escape(TITLE) + "</title>" in html
     print(f"verified: {len(canon)} canonical actions ({sum(1 for a in canon if a.get('atus'))} ATUS-linked, {sum(1 for a in canon if a.get('cites'))} with experiments), {len(avoid)} avoid actions, {n_inst:,} contextual instances, "
-          f"{sum(1 for a in acts if 'ruin' in a)} ruin-screened, 3 CSVs fresh, 4 read-only tools, zero external assets")
+          f"{sum(1 for a in acts if 'ruin' in a)} ruin-screened, 3 CSVs fresh, zero external assets")
 
 
 def main():

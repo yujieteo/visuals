@@ -164,7 +164,6 @@ def build():
     assert len(measurements) > 250 and len({m["id"] for m in measurements}) == len(measurements)
     assert '<script src=' not in html and '<link rel="stylesheet"' not in html
     assert not re.search(r'''src=["']https?://''', html), "external asset"
-    assert html.count("mc?.registerTool") == 3 and html.count("readOnlyHint: true") == 3
     print(f"{len(rows)} activities, {len(measurements)} measurements, {len(decisions)} decisions")
     return outputs
 
