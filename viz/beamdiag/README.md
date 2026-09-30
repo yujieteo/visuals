@@ -13,13 +13,21 @@ Models are not saved automatically; reloading starts from the first example.
   supports and loads along the beam or move them with the keyboard.
 - Choose a section (rectangle, circle, tube, or your own A and I) and a
   material (presets, or your own E and ν).
+- Measure x from the left end (the default) or from mid-span, where x runs
+  from −L/2 to +L/2. The choice changes only the positions you type and read,
+  never the solution; switching converts every entry.
 - Read the reactions, shear force diagram, bending moment diagram, deflection,
-  extremes, bending stress and an equilibrium check.
+  extremes, bending stress and an equilibrium check. Every diagram has labelled
+  x and y axes with units.
 - Choose the units: SI N, mm, MPa (the default); SI kN, m, kPa; SI N, m, Pa;
   US customary lbf, in, psi; or US customary kip, in, ksi. Each is a
   consistent system used for every input, result, diagram label and the
   NASTRAN deck. The beam is solved in SI whichever you pick, so switching
   converts the values already entered and never changes the results.
+- Save the diagrams with every result (model, reactions, extremes and their
+  locations, section, material, and the values at each support and load) as a
+  PNG or SVG image, or as a one-page PDF. They are drawn in the page and saved
+  straight to your device, so saving works offline and uploads nothing.
 - Download the same model as an MSC Nastran SOL 101 bulk data deck (`.bdf`) to
   run in NASTRAN yourself. “Elements per segment” sets only the export mesh,
   with no upper cap; it does not change the browser solution or plot sampling.

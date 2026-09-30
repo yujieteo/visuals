@@ -1,8 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
 import { createRequire } from "node:module";
-import vm from "node:vm";
+import { page } from "./page-harness.mjs";
 
 const B = createRequire(import.meta.url)("../engine.js");
 
@@ -41,58 +40,6 @@ test("short-span plot samples contain exact critical points for every axis", () 
     }
   }
 });
-
-class Element {
-  constructor(tag = "div") {
-    this.tag = tag; this.children = []; this.dataset = {}; this.attrs = {}; this.listeners = {};
-    this.value = ""; this.classList = { add() {}, remove() {}, contains() { return false; } };
-  }
-  append(...children) { this.children.push(...children); }
-  replaceChildren(...children) { this.children = children; }
-  add(child) { this.append(child); }
-  setAttribute(key, value) { this.attrs[key] = value; }
-  removeAttribute(key) { delete this.attrs[key]; }
-  addEventListener(type, fn) { (this.listeners[type] ??= []).push(fn); }
-  dispatch(type) { for (const fn of this.listeners[type] || []) fn({ target: this }); }
-  querySelector() { return null; }
-  focus() {}
-}
-
-async function page({ runTimers = false } = {}) {
-  const nodes = new Map(), tools = new Map(), buttons = ["point", "moment"].map((kind) => {
-    const b = new Element("button"); b.dataset.add = kind; return b;
-  });
-  const all = () => {
-    const out = [];
-    const visit = (e) => { out.push(e); for (const c of e.children || []) visit(c); };
-    for (const e of nodes.values()) visit(e);
-    return out;
-  };
-  const document = {
-    getElementById(id) { if (!nodes.has(id)) nodes.set(id, new Element()); return nodes.get(id); },
-    createElement: (tag) => new Element(tag), createElementNS: (_, tag) => new Element(tag),
-    createTextNode: (text) => ({ textContent: text }),
-    querySelector(selector) { const field = selector.match(/^\[data-field="(.+)"\]$/)?.[1]; return all().find((e) => e.dataset?.field === field) || null; },
-    querySelectorAll(selector) {
-      if (selector === "[data-add]") return buttons;
-      if (selector === "[data-field]") return all().filter((e) => e.dataset?.field);
-      return [];
-    },
-    modelContext: { registerTool: (tool) => tools.set(tool.name, tool) },
-  };
-  let reads = 0, writes = 0;
-  const context = vm.createContext({ document, navigator: {}, console,
-    Option: class extends Element { constructor(label, value) { super("option"); this.value = value; } },
-    location: { get hash() { reads++; return "#m=obsolete-model"; } },
-    history: { replaceState() { writes++; } },
-    setTimeout: (fn) => { if (runTimers) fn(); return 1; }, clearTimeout() {},
-  });
-  const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
-  for (const match of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)) vm.runInContext(match[1], context);
-  const input = (id, value) => { const e = document.getElementById(id); e.value = String(value); e.dispatch("input"); };
-  const current = async () => JSON.parse((await tools.get("get_current_beam").execute()).content[0].text);
-  return { document, buttons, tools, input, current, urlAccess: () => ({ reads, writes }) };
-}
 
 test("length edits preserve every right-end attachment through invalid inputs and presets", async () => {
   const p = await page();
