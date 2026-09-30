@@ -117,7 +117,7 @@ The copied action visualizations also retain their source regression tests:
 
 ```sh
 python3 -m unittest discover -s tests -p 'test_*.py'
-node --test tests/convexity-action-engine.test.mjs
+node --test tests/convexity-action-engine.test.mjs tests/everyday-actions.test.mjs
 ```
 
 ## Action visualization provenance
@@ -139,7 +139,8 @@ Metadata dates describe the source visualization, not a new survey or fetch.
 Source regression tests were adapted only for the new layout and standalone
 publication (there is no site deployment copy to test here).
 
-Each verifier checks the story's invariants, the embedded data tables, the
-read-only tool registrations, and (where applicable) that the page has no
-external assets. `.github/workflows/verify.yml` runs every command above on every
-push and pull request.
+Each verifier checks the story's invariants, the embedded data tables, and
+(where applicable) that the page has no external assets. The Node tests run each
+action page's emitted scripts and check its read-only tool registrations.
+`.github/workflows/verify.yml` runs every command above on every push and pull
+request.
