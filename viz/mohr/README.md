@@ -1,0 +1,41 @@
+# Mohr's Circle Visualiser
+
+Teaching tool and calculator for 3D stress and small-strain transformation in
+an isotropic linear-elastic material. `index.html` is one self-contained file
+with no dependencies, no network access and no build step.
+
+It covers the full 3D tensor (principal values and directions by Jacobi
+rotation, the three Mohr circles and the admissible region), 2D circles as
+rotations about x, y, z or a principal axis with a draggable angle, plane
+stress and plane strain, stress- or strain-driven input linked by Hooke's law,
+Tresca, Mohr–Coulomb, Rankine and von Mises checks, a rectangular or delta
+rosette helper, an orbitable 3D element with a cut plane, and JSON and
+Markdown import and export with a copy/paste fallback.
+
+| File | Role |
+| --- | --- |
+| `index.html` | The whole tool. `<script id="mohr-engine">` is the numeric core (units, tensor, plane, failure, io, self-test; no DOM, storage, clock or randomness; `self.Mohr` in the browser). `<script id="mohr-ui">` is the page, the canvases and the WebMCP tools. Edit this file directly. |
+| `raw.json` | Published metadata (`META`) and the default state as exported JSON (`example`); must equal the engine's `META` and `toJSON(defaultState())`. |
+
+The tests are `tests/mohr.test.mjs`, run with Node's built-in runner
+(`node --test`). They extract the engine script from `index.html`, run the
+in-page self-test and the acceptance checks (presets 1, 6 and 7, unit and sign
+round trips, constraints, degenerate states, failure criteria, JSON and
+Markdown round trips, import validation), and boot the page against an inert
+DOM to exercise the WebMCP tools. The page runs the same self-test on every
+load and shows a pass/fail badge. After changing `META` or `defaultState()`,
+regenerate `raw.json` from the engine; the test says when it has drifted.
+
+Conventions: stress is stored in MPa, tension positive; strain is
+dimensionless with tensor shear (ε_xy = γ_xy/2). Display, input and export
+convert. Compression positive negates the whole displayed tensor. Shear
+convention A plots tensor-positive τ downward (a counter-clockwise element
+rotation turns the point counter-clockwise by 2θ); B plots it upward. Factors
+of safety use proportional load scaling.
+
+Exported JSON records values as displayed, in the recorded units and sign
+convention, and holds only the driven side's active input block; the other
+side is recomputed on import. `strain.gxy`, `gyz` and `gzx` are engineering γ
+or tensor ε according to `conventions.strainShear`. Beyond the agreed schema
+the file carries `principalStrain` (principal entry when strain-driven) and
+`view.digits` (significant digits, 3 to 8, default 4).
