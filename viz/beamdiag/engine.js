@@ -431,28 +431,61 @@
     return supports.reduce((n, s) => n + (s.kind === "fixed" ? 2 : 1), 0) - 2;
   }
 
-  /* ---------- NASTRAN bulk data export (MSC Nastran SOL 101, large-field fixed format) ---------- */
+  /* ---------- NASTRAN bulk data export (MSC Nastran SOL 101, fixed-format bulk data) ---------- */
 
-  function nastranReal(x) {
-    if (x === 0) return "0.0";
-    // Up to 10 significant digits, trimmed until it fits a 16-character large field (sign and 3-digit exponents included).
-    for (let digits = 9; ; digits--) {
-      const text = x.toExponential(digits).toUpperCase();
-      if (text.length <= 16) return text.includes(".") ? text : text.replace("E", ".E");
-    }
+  /* A real in the fewest characters that still read back as exactly the same double,
+   * e.g. 6. 0.3 -40000. 2.E11 4.456-4; null when that takes more than `width` characters. */
+  function exactReal(x, width) {
+    if (x === 0) return "0.";
+    const [mant, exp] = Math.abs(x).toExponential().split("e"), e = +exp, sign = x < 0 ? "-" : "";
+    const digits = mant.replace(".", "");
+    let plain;
+    if (e >= digits.length - 1) plain = digits + "0".repeat(e - digits.length + 1) + ".";
+    else if (e >= 0) plain = digits.slice(0, e + 1) + "." + digits.slice(e + 1);
+    else plain = "0." + "0".repeat(-e - 1) + digits;
+    const m = digits[0] + "." + digits.slice(1);
+    const candidates = e >= -3 && e < 6 ? [plain, plain.replace(/^0\./, ".")] : [];
+    candidates.push(`${m}E${e}`, `${m}${e < 0 ? "" : "+"}${e}`);
+    // Prefer a form that leaves a blank column, so neighbouring fields do not run together.
+    const fits = candidates.map((c) => sign + c);
+    return fits.find((c) => c.length < width) ?? fits.find((c) => c.length === width) ?? null;
   }
-  const int = (n) => ({ int: n });
-  const real = (x) => ({ real: x });
-  function field(v) {
-    if (v && typeof v === "object" && "int" in v) return String(v.int);
-    if (v && typeof v === "object" && "real" in v) return nastranReal(v.real);
-    return v == null ? "" : String(v);
+
+  /* A real for a 16-character large field: exact when it fits, otherwise rounded to as many digits as fit. */
+  function nastranReal(x) {
+    for (let digits = 17; ; digits--) {
+      const text = exactReal(digits === 17 ? x : Number(x.toPrecision(digits)), 16);
+      if (text !== null) return text;
+    }
   }
 
   /* Fields are {int}, {real} or a literal string (blank = ""). */
+  const int = (n) => ({ int: n });
+  const real = (x) => ({ real: x });
+  function smallField(v) {
+    if (v && typeof v === "object" && "int" in v) return String(v.int);
+    if (v && typeof v === "object" && "real" in v) return exactReal(v.real, 8);
+    return v == null ? "" : String(v);
+  }
+  function largeField(v) {
+    if (v && typeof v === "object" && "real" in v) return nastranReal(v.real);
+    return smallField(v);
+  }
+  const fitsSmall = (fields) => fields.every((v) => { const s = smallField(v); return s !== null && s.length <= 8; });
+
+  /* One small-field entry: the name, then eight 8-character fields per line; continuations start blank. */
+  function smallEntry(name, fields) {
+    const out = [], values = fields.map(smallField);
+    for (let i = 0; i < Math.max(values.length, 1); i += 8) {
+      const head = i === 0 ? name.padEnd(8) : "".padEnd(8);
+      out.push((head + values.slice(i, i + 8).map((v) => v.padEnd(8)).join("")).trimEnd());
+    }
+    return out;
+  }
+
   /* One large-field entry: NAME* then four 16-character fields per line. */
   function largeEntry(name, fields) {
-    const out = [], values = fields.map(field);
+    const out = [], values = fields.map(largeField);
     for (const v of values) if (v.length > 16) throw new Error(`Field ${v} is wider than 16 characters.`);
     for (let i = 0; i < Math.max(values.length, 1); i += 4) {
       const head = i === 0 ? `${name}*`.padEnd(8) : "*".padEnd(8);
@@ -461,6 +494,17 @@
     return out;
   }
 
+  /* Cards of one type share a format: small field unless some value needs more than
+   * eight characters to stay exact, then large field for the whole group. */
+  function cardGroup(name, rows) {
+    const entry = rows.every(fitsSmall) ? smallEntry : largeEntry;
+    return rows.flatMap((fields) => entry(name, fields));
+  }
+  /* A "$" line naming the columns of a small-field card. */
+  const columns = (...names) => ("$" + names[0].padEnd(7) + names.slice(1).map((n) => n.padEnd(8)).join("")).trimEnd();
+
+  const count = (n, noun) => `${n} ${noun}${n === 1 ? "" : "s"}`;
+
   /* Build a NASTRAN deck that encodes exactly the model the browser solved. */
   function exportBdf(input, { title = "BEAMDIAG LINEAR STATIC" } = {}) {
     const model = validate(input), nodes = mesh(model);
@@ -468,53 +512,71 @@
     if (!hasLoad) fail("Add a non-zero load before exporting a NASTRAN deck.", "loads");
     const ids = new Map(nodes.map((x, i) => [x, i + 1])), gid = (x) => ids.get(x);
     const safeTitle = String(title).replace(/[^A-Za-z0-9 _.,()+\-]/g, " ").slice(0, 60).trim() || "BEAMDIAG";
+    const { material: mat, section: sec } = model, SPC = 1, LOAD = 2;
     const lines = [
-      "$ BEAMDIAG export: MSC Nastran SOL 101 linear static deck.",
-      "$ Units: m, N, Pa (N/m2), N/m, N*m. Planar beam along basic X; loads act in basic Y.",
-      "$ Sign convention: +Y up, rotations and couples +Z (counter-clockwise).",
-      "$ Every GRID permanently constrains 345 (out-of-plane translation and both",
-      "$ out-of-plane rotations); the beam deforms in the X-Y plane only.",
-      "$ Supports: pin = SPC1 12 (UX, UY), fixed = SPC1 126 (UX, UY, RZ).",
-      "$ PBAR I1 is the in-plane second moment (bending in the CBAR x-y plane,",
-      "$ orientation vector +Y). K1/K2 are blank: zero shear flexibility,",
-      "$ matching the Euler-Bernoulli model. I2 and J act only on constrained DOFs.",
-      "$ PARAM,POST,0 asks MSC Nastran to write the results database (.xdb).",
-      `$ Model: L=${nastranReal(model.length)} m, E=${nastranReal(model.material.E)} Pa, I=${nastranReal(model.section.I)} m4, ${model.supports.length} supports, ${model.loads.length} loads.`,
+      `$ Beam, L = ${fmt(model.length)} m: ${count(nodes.length, "grid")}, ${count(nodes.length - 1, "CBAR")}, ${count(model.supports.length, "support")}, ${count(model.loads.length, "load")}`,
+      "$ Units N, m, Pa. Beam on X, loads in Y (+ up), moments about Z (+ CCW).",
       "SOL 101",
       "CEND",
       `TITLE = ${safeTitle}`,
       "ECHO = NONE",
+      "DISPLACEMENT = ALL",
+      "SPCFORCES = ALL",
+      "OLOAD = ALL",
+      "FORCE = ALL",
       "SUBCASE 1",
       "  LABEL = BEAM LOADS",
-      "  SPC = 1",
-      "  LOAD = 2",
-      "  DISPLACEMENT = ALL",
-      "  SPCFORCES = ALL",
-      "  OLOAD = ALL",
-      "  FORCE = ALL",
+      `  SPC = ${SPC}`,
+      `  LOAD = ${LOAD}`,
       "BEGIN BULK",
-      "PARAM,POST,0",
+      "$ Write the .xdb results database",
+      ...smallEntry("PARAM", ["POST", int(0)]),
+      "$",
+      "$ ---- Material and property ----",
+      columns("MAT1", "MID", "E", "G", "NU"),
+      ...cardGroup("MAT1", [[int(1), real(mat.E), "", real(mat.nu)]]),
+      "$ I1 = in-plane I. K1, K2 blank: no shear flexibility (Euler-Bernoulli).",
+      columns("PBAR", "PID", "MID", "A", "I1", "I2", "J"),
+      ...cardGroup("PBAR", [[int(1), int(1), real(sec.A), real(sec.I), real(sec.Iy), real(sec.J)]]),
+      "$",
+      "$ ---- Grid points ----",
+      "$ Planar beam: PS = 345 on every grid leaves only T1, T2 and R3 free.",
+      columns("GRDSET", "", "CP", "", "", "", "CD", "PS"),
+      ...smallEntry("GRDSET", ["", "", "", "", "", "", int(345)]),
+      columns("GRID", "ID", "CP", "X1", "X2", "X3"),
+      ...cardGroup("GRID", nodes.map((x, i) => [int(i + 1), "", real(x), real(0), real(0)])),
+      "$",
+      "$ ---- Elements ----",
+      columns("CBAR", "EID", "PID", "GA", "GB", "X1", "X2", "X3"),
+      ...cardGroup("CBAR", nodes.slice(1).map((_, e) => [int(e + 1), int(1), int(e + 1), int(e + 2), real(0), real(1), real(0)])),
+      "$",
+      "$ ---- Constraints ----",
+      "$ Pin: 12 (T1, T2). Fixed: 126 (T1, T2, R3).",
+      columns("SPC1", "SID", "C", "G1", "G2", "G3", "G4", "G5", "G6"),
     ];
-    lines.push(...largeEntry("MAT1", [int(1), real(model.material.E), "", real(model.material.nu)]));
-    lines.push(...largeEntry("PBAR", [int(1), int(1), real(model.section.A), real(model.section.I), real(model.section.Iy), real(model.section.J)]));
-    nodes.forEach((x, i) => lines.push(...largeEntry("GRID", [int(i + 1), "", real(x), real(0), real(0), "", int(345)])));
-    for (let e = 0; e < nodes.length - 1; e++)
-      lines.push(...largeEntry("CBAR", [int(e + 1), int(1), int(e + 1), int(e + 2), real(0), real(1), real(0)]));
-    for (const s of model.supports) lines.push(...largeEntry("SPC1", [int(1), int(s.kind === "fixed" ? 126 : 12), int(gid(s.x))]));
+    for (const [kind, c] of [["pin", 12], ["fixed", 126]]) {
+      const grids = model.supports.filter((s) => s.kind === kind).map((s) => gid(s.x)).sort((a, b) => a - b);
+      if (grids.length) lines.push(...smallEntry("SPC1", [int(SPC), int(c), ...grids.map(int)]));
+    }
+    lines.push("$", "$ ---- Loads ----");
+    const forces = model.loads.filter((l) => l.kind === "point" && l.F !== 0);
+    if (forces.length) lines.push(columns("FORCE", "SID", "G", "CID", "F", "N1", "N2", "N3"),
+      ...cardGroup("FORCE", forces.map((l) => [int(LOAD), int(gid(l.x)), int(0), real(l.F), real(0), real(1), real(0)])));
+    const moments = model.loads.filter((l) => l.kind === "moment" && l.C !== 0);
+    if (moments.length) lines.push(columns("MOMENT", "SID", "G", "CID", "M", "N1", "N2", "N3"),
+      ...cardGroup("MOMENT", moments.map((l) => [int(LOAD), int(gid(l.x)), int(0), real(l.C), real(0), real(0), real(1)])));
+    // One PLOAD1 per element under each distributed load, with the intensities at the element ends.
+    const ploads = [];
     for (const l of model.loads) {
-      if (l.kind === "point" && l.F !== 0) lines.push(...largeEntry("FORCE", [int(2), int(gid(l.x)), int(0), real(l.F), real(0), real(1), real(0)]));
-      if (l.kind === "moment" && l.C !== 0) lines.push(...largeEntry("MOMENT", [int(2), int(gid(l.x)), int(0), real(l.C), real(0), real(0), real(1)]));
-      if (l.kind === "dist" && (l.q1 !== 0 || l.q2 !== 0)) {
-        // One PLOAD1 per element under the load: fractional positions 0 → 1, intensities at the element ends.
-        for (let e = 0; e < nodes.length - 1; e++) {
-          const a = nodes[e], b = nodes[e + 1];
-          if (a < l.x1 || b > l.x2) continue;
-          const q = (x) => l.q1 + (l.q2 - l.q1) * (x - l.x1) / (l.x2 - l.x1);
-          lines.push(...largeEntry("PLOAD1", [int(2), int(e + 1), "FY", "FR", real(0), real(q(a)), real(1), real(q(b))]));
-        }
+      if (l.kind !== "dist" || (l.q1 === 0 && l.q2 === 0)) continue;
+      const q = (x) => l.q1 + (l.q2 - l.q1) * (x - l.x1) / (l.x2 - l.x1);
+      for (let e = 0; e < nodes.length - 1; e++) {
+        const a = nodes[e], b = nodes[e + 1];
+        if (a >= l.x1 && b <= l.x2) ploads.push([int(LOAD), int(e + 1), "FY", "FR", real(0), real(q(a)), real(1), real(q(b))]);
       }
     }
-    lines.push("ENDDATA", "");
+    if (ploads.length) lines.push(columns("PLOAD1", "SID", "EID", "TYPE", "SCALE", "X1", "P1", "X2", "P2"), ...cardGroup("PLOAD1", ploads));
+    lines.push("$", "ENDDATA", "");
     return lines.join("\n");
   }
 
@@ -522,5 +584,5 @@
     return Number.isInteger(x) ? String(x) : String(+x.toPrecision(6));
   }
 
-  return { SUPPORT_KINDS, ModelError, sectionProperties, indeterminacy, validate, mesh, solve, internal, deflection, at, diagram, extremes, exportBdf, largeEntry, nastranReal };
+  return { SUPPORT_KINDS, ModelError, sectionProperties, indeterminacy, validate, mesh, solve, internal, deflection, at, diagram, extremes, exportBdf, smallEntry, largeEntry, exactReal, nastranReal };
 });

@@ -287,11 +287,13 @@ def model_from_bdf(text):
             case[key] = value
     grids, bars, spc1, forces, moments, ploads = {}, [], [], [], [], []
     mat = prop = None
-    params = {}
+    params, grdset = {}, {"cp": "", "cd": "", "ps": ""}
     for f in entries:
         name = f[0].upper()
         if name == "GRID":
             grids[int(f[1])] = {"cp": f[2], "xyz": tuple(_real(v) for v in f[3:6]), "cd": f[6], "ps": f[7]}
+        elif name == "GRDSET":
+            grdset = {"cp": f[2], "cd": f[6], "ps": f[7]}
         elif name == "CBAR":
             bars.append({"eid": int(f[1]), "pid": int(f[2]), "ga": int(f[3]), "gb": int(f[4]), "v": tuple(_real(v) for v in f[5:8])})
         elif name == "MAT1":
@@ -311,6 +313,11 @@ def model_from_bdf(text):
             params[f[1].upper()] = f[2]
         else:
             raise ValueError(f"unexpected bulk entry {name}")
+
+    # Blank CP, CD and PS fields on a GRID take their values from GRDSET.
+    for g in grids.values():
+        for key in ("cp", "cd", "ps"):
+            g[key] = g[key] or grdset[key]
 
     spc_set, load_set = int(case["SPC"]), int(case["LOAD"])
     if mat is None or prop is None or prop["mid"] != mat["mid"]:

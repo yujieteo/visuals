@@ -223,7 +223,7 @@ code{font:.875em var(--mono)}
 </main>
 
 <script>
-const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","summary":"Build a straight beam with pinned and fixed supports, point forces, couples and distributed loads; see reactions, shear force, bending moment and deflection solved in the browser by the stiffness method, including statically indeterminate beams, and download the same model as an MSC Nastran SOL 101 bulk data deck.","units":{"internal":"SI: m, N, N/m, N·m, Pa, m², m⁴","inputs":{"length":"m","force":"kN","couple":"kN·m","distributed":"kN/m","E":"GPa","dimension":"mm","area":"mm²","second_moment":"mm⁴"},"outputs":{"shear":"kN","moment":"kN·m","deflection":"mm","slope":"mrad","stress":"MPa"}},"conventions":["x runs along the beam from its left end; +y is up.","Point forces and distributed loads are positive upward: enter downward loads as negative numbers.","Couples, rotations and support moments are positive counter-clockwise.","Shear V(x) is the sum of the upward forces to the left of the section.","Bending moment M(x) is positive when it sags the beam (tension on the bottom fibre); dM/dx = V and dV/dx = q.","At a point force V jumps by the force; at a couple C, M jumps by −C. Both one-sided values are reported."],"assumptions":["Linear elastic, small displacement, static loading.","Euler–Bernoulli bending: plane sections stay plane and shear deformation is neglected.","Uniform prismatic section and one material along the whole beam.","Loads act in the plane of bending through the shear centre; no axial load, torsion, temperature or dynamics.","A pin restrains deflection; a fixed support restrains deflection and slope. Supports are rigid."],"method":"Direct stiffness method with two-node Hermite beam elements between the supports and the beam ends. Point forces, couples and distributed loads inside each element enter as consistent nodal loads, which are the exact fixed-end actions for Euler–Bernoulli beams, so nodal deflections and reactions are exact and statically indeterminate supports need no special handling. Load points stay out of the stiffness matrix, so closely spaced loads do not degrade its conditioning, and there is no cap on the number of supports or loads. Shear and moment are then recovered exactly by statics from the loads and reactions, and deflection between nodes by integrating M/EI. Results are checked against an independent exact-arithmetic Python solver (Macaulay integration with compatibility conditions) on shared fixtures.","materials":[{"id":"steel","label":"Structural steel","E":200000000000.0,"nu":0.3},{"id":"aluminium","label":"Aluminium alloy","E":69000000000.0,"nu":0.33},{"id":"concrete","label":"Concrete (uncracked, C30/37)","E":33000000000.0,"nu":0.2},{"id":"timber","label":"Softwood timber (C24, along grain)","E":11000000000.0,"nu":0.3}],"sections":[{"id":"rect","label":"Solid rectangle b × h"},{"id":"circle","label":"Solid circle, diameter d"},{"id":"tube","label":"Circular tube D × t"},{"id":"custom","label":"Custom A and I"}],"presets":[{"id":"pin-pin-udl","label":"Pinned–pinned, uniform load","note":"Statically determinate: reactions from equilibrium alone.","length":6,"supports":[{"kind":"pin","x":0},{"kind":"pin","x":6}],"loads":[{"kind":"dist","x1":0,"x2":6,"q1":-10000.0,"q2":-10000.0}],"material":"steel","section":{"shape":"rect","b":0.1,"h":0.2}},{"id":"fixed-fixed-udl","label":"Fixed–fixed, uniform load","note":"Indeterminate to degree 2: end moments wL²/12 hog, mid-span wL²/24 sags.","length":6,"supports":[{"kind":"fixed","x":0},{"kind":"fixed","x":6}],"loads":[{"kind":"dist","x1":0,"x2":6,"q1":-10000.0,"q2":-10000.0}],"material":"steel","section":{"shape":"rect","b":0.1,"h":0.2}},{"id":"fixed-fixed-point","label":"Fixed–fixed, off-centre point load","note":"End moments Pab²/L² and Pa²b/L² are unequal, so the reactions are too.","length":6,"supports":[{"kind":"fixed","x":0},{"kind":"fixed","x":6}],"loads":[{"kind":"point","x":2,"F":-40000.0}],"material":"steel","section":{"shape":"rect","b":0.1,"h":0.2}},{"id":"pin-pin-mixed","label":"Pinned–pinned, point load and couple","note":"The couple makes the moment diagram jump; the point load makes the shear jump.","length":8,"supports":[{"kind":"pin","x":0},{"kind":"pin","x":8}],"loads":[{"kind":"point","x":3,"F":-20000.0},{"kind":"moment","x":5.5,"C":15000.0}],"material":"steel","section":{"shape":"rect","b":0.1,"h":0.2}},{"id":"propped-cantilever","label":"Propped cantilever (fixed–pinned)","note":"Indeterminate to degree 1: the prop carries 3wL/8.","length":6,"supports":[{"kind":"fixed","x":0},{"kind":"pin","x":6}],"loads":[{"kind":"dist","x1":0,"x2":6,"q1":-10000.0,"q2":-10000.0}],"material":"steel","section":{"shape":"rect","b":0.1,"h":0.2}},{"id":"cantilever","label":"Cantilever, tip load","note":"Statically determinate: the whole load returns through the fixed end.","length":3,"supports":[{"kind":"fixed","x":0}],"loads":[{"kind":"point","x":3,"F":-5000.0}],"material":"steel","section":{"shape":"rect","b":0.1,"h":0.2}},{"id":"continuous","label":"Two-span continuous beam","note":"Indeterminate to degree 1: the middle support carries 5wL/4 and hogs by wL²/8.","length":8,"supports":[{"kind":"pin","x":0},{"kind":"pin","x":4},{"kind":"pin","x":8}],"loads":[{"kind":"dist","x1":0,"x2":8,"q1":-10000.0,"q2":-10000.0}],"material":"steel","section":{"shape":"rect","b":0.1,"h":0.2}}],"nastran":{"dialect":"MSC Nastran, SOL 101 linear statics, large-field fixed-format bulk data","cards":[{"card":"GRID","use":"One grid per node along basic X; PS=345 permanently removes out-of-plane translation and rotations."},{"card":"CBAR","use":"One bar per element, orientation vector X1,X2,X3 = 0,1,0 (element y = basic +Y)."},{"card":"PBAR","use":"A, I1 (in-plane I), I2, J; K1/K2 blank = zero shear flexibility, matching Euler–Bernoulli."},{"card":"MAT1","use":"E and ν; G left blank so NASTRAN derives it."},{"card":"SPC1","use":"Set 1: pin = components 12, fixed = 126 at the support grid."},{"card":"FORCE / MOMENT","use":"Load set 2: point forces along basic Y and couples about basic Z at grids."},{"card":"PLOAD1","use":"Load set 2: TYPE=FY, SCALE=FR from 0 to 1 on each element under a distributed load, with the intensities at its ends."},{"card":"PARAM,POST,0","use":"Asks MSC Nastran to write the Patran results database (.xdb) alongside the run."}],"run":["Save the deck, e.g. beam.bdf, on a machine with a licensed MSC Nastran installation.","Run: nastran beam.bdf","PARAM,POST,0 makes the run write beam.xdb next to beam.f06; open it in Patran (or another .xdb reader) to post-process.","Compare DISPLACEMENT T2 (deflection, m) and R3 (slope, rad), and SPCFORCES T2 (reaction, N) and R3 (support moment, N·m), with this page. These are in basic coordinates and use the same signs."],"status":"The deck is generated from the same model the page solves and is checked by reading it back and re-solving it with the independent Python reference. This page does not run NASTRAN and does not produce an .xdb file itself."},"sources":[{"id":"cbar","title":"MSC Nastran Quick Reference Guide: CBAR","url":"https://nexus.hexagon.com/documentationcenter/en-US/bundle/MSC_Nastran_2024.1/page/Nastran_Combined_Book/qrg/bulkc1/TOC.CBAR.xhtml"},{"id":"pbar","title":"MSC Nastran Quick Reference Guide: PBAR","url":"https://nexus.hexagon.com/documentationcenter/en-US/bundle/MSC_Nastran_2024.1/page/Nastran_Combined_Book/qrg/bulkp/TOC.PBAR.xhtml"},{"id":"pload1","title":"MSC Nastran Quick Reference Guide: PLOAD1","url":"https://nexus.hexagon.com/documentationcenter/en-US/bundle/MSC_Nastran_2023.1/page/Nastran_Combined_Book/qrg/bulkp/TOC.PLOAD1.xhtml"},{"id":"post","title":"MSC Nastran Quick Reference Guide: parameter POST","url":"https://nexus.hexagon.com/documentationcenter/en-US/bundle/MSC_Nastran_2024.2/page/Nastran_Combined_Book/qrg/parameters/TOC.POST.xhtml"},{"id":"code","title":"Source, fixtures and the Python reference solver","url":"https://github.com/yujieteo/site/tree/main/visuals/beamdiag"}]};
+const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","summary":"Build a straight beam with pinned and fixed supports, point forces, couples and distributed loads; see reactions, shear force, bending moment and deflection solved in the browser by the stiffness method, including statically indeterminate beams, and download the same model as an MSC Nastran SOL 101 bulk data deck.","units":{"internal":"SI: m, N, N/m, N·m, Pa, m², m⁴","inputs":{"length":"m","force":"kN","couple":"kN·m","distributed":"kN/m","E":"GPa","dimension":"mm","area":"mm²","second_moment":"mm⁴"},"outputs":{"shear":"kN","moment":"kN·m","deflection":"mm","slope":"mrad","stress":"MPa"}},"conventions":["x runs along the beam from its left end; +y is up.","Point forces and distributed loads are positive upward: enter downward loads as negative numbers.","Couples, rotations and support moments are positive counter-clockwise.","Shear V(x) is the sum of the upward forces to the left of the section.","Bending moment M(x) is positive when it sags the beam (tension on the bottom fibre); dM/dx = V and dV/dx = q.","At a point force V jumps by the force; at a couple C, M jumps by −C. Both one-sided values are reported."],"assumptions":["Linear elastic, small displacement, static loading.","Euler–Bernoulli bending: plane sections stay plane and shear deformation is neglected.","Uniform prismatic section and one material along the whole beam.","Loads act in the plane of bending through the shear centre; no axial load, torsion, temperature or dynamics.","A pin restrains deflection; a fixed support restrains deflection and slope. Supports are rigid."],"method":"Direct stiffness method with two-node Hermite beam elements between the supports and the beam ends. Point forces, couples and distributed loads inside each element enter as consistent nodal loads, which are the exact fixed-end actions for Euler–Bernoulli beams, so nodal deflections and reactions are exact and statically indeterminate supports need no special handling. Load points stay out of the stiffness matrix, so closely spaced loads do not degrade its conditioning, and there is no cap on the number of supports or loads. Shear and moment are then recovered exactly by statics from the loads and reactions, and deflection between nodes by integrating M/EI. Results are checked against an independent exact-arithmetic Python solver (Macaulay integration with compatibility conditions) on shared fixtures.","materials":[{"id":"steel","label":"Structural steel","E":200000000000.0,"nu":0.3},{"id":"aluminium","label":"Aluminium alloy","E":69000000000.0,"nu":0.33},{"id":"concrete","label":"Concrete (uncracked, C30/37)","E":33000000000.0,"nu":0.2},{"id":"timber","label":"Softwood timber (C24, along grain)","E":11000000000.0,"nu":0.3}],"sections":[{"id":"rect","label":"Solid rectangle b × h"},{"id":"circle","label":"Solid circle, diameter d"},{"id":"tube","label":"Circular tube D × t"},{"id":"custom","label":"Custom A and I"}],"presets":[{"id":"pin-pin-udl","label":"Pinned–pinned, uniform load","note":"Statically determinate: reactions from equilibrium alone.","length":6,"supports":[{"kind":"pin","x":0},{"kind":"pin","x":6}],"loads":[{"kind":"dist","x1":0,"x2":6,"q1":-10000.0,"q2":-10000.0}],"material":"steel","section":{"shape":"rect","b":0.1,"h":0.2}},{"id":"fixed-fixed-udl","label":"Fixed–fixed, uniform load","note":"Indeterminate to degree 2: end moments wL²/12 hog, mid-span wL²/24 sags.","length":6,"supports":[{"kind":"fixed","x":0},{"kind":"fixed","x":6}],"loads":[{"kind":"dist","x1":0,"x2":6,"q1":-10000.0,"q2":-10000.0}],"material":"steel","section":{"shape":"rect","b":0.1,"h":0.2}},{"id":"fixed-fixed-point","label":"Fixed–fixed, off-centre point load","note":"End moments Pab²/L² and Pa²b/L² are unequal, so the reactions are too.","length":6,"supports":[{"kind":"fixed","x":0},{"kind":"fixed","x":6}],"loads":[{"kind":"point","x":2,"F":-40000.0}],"material":"steel","section":{"shape":"rect","b":0.1,"h":0.2}},{"id":"pin-pin-mixed","label":"Pinned–pinned, point load and couple","note":"The couple makes the moment diagram jump; the point load makes the shear jump.","length":8,"supports":[{"kind":"pin","x":0},{"kind":"pin","x":8}],"loads":[{"kind":"point","x":3,"F":-20000.0},{"kind":"moment","x":5.5,"C":15000.0}],"material":"steel","section":{"shape":"rect","b":0.1,"h":0.2}},{"id":"propped-cantilever","label":"Propped cantilever (fixed–pinned)","note":"Indeterminate to degree 1: the prop carries 3wL/8.","length":6,"supports":[{"kind":"fixed","x":0},{"kind":"pin","x":6}],"loads":[{"kind":"dist","x1":0,"x2":6,"q1":-10000.0,"q2":-10000.0}],"material":"steel","section":{"shape":"rect","b":0.1,"h":0.2}},{"id":"cantilever","label":"Cantilever, tip load","note":"Statically determinate: the whole load returns through the fixed end.","length":3,"supports":[{"kind":"fixed","x":0}],"loads":[{"kind":"point","x":3,"F":-5000.0}],"material":"steel","section":{"shape":"rect","b":0.1,"h":0.2}},{"id":"continuous","label":"Two-span continuous beam","note":"Indeterminate to degree 1: the middle support carries 5wL/4 and hogs by wL²/8.","length":8,"supports":[{"kind":"pin","x":0},{"kind":"pin","x":4},{"kind":"pin","x":8}],"loads":[{"kind":"dist","x1":0,"x2":8,"q1":-10000.0,"q2":-10000.0}],"material":"steel","section":{"shape":"rect","b":0.1,"h":0.2}}],"nastran":{"dialect":"MSC Nastran, SOL 101 linear statics, small-field fixed-format bulk data (large field only for a card group whose values need more than eight characters to stay exact)","cards":[{"card":"GRID","use":"One grid per node along basic X; GRDSET sets PS=345 on every grid, permanently removing out-of-plane translation and rotations."},{"card":"CBAR","use":"One bar per element, orientation vector X1,X2,X3 = 0,1,0 (element y = basic +Y)."},{"card":"PBAR","use":"A, I1 (in-plane I), I2, J; K1/K2 blank = zero shear flexibility, matching Euler–Bernoulli."},{"card":"MAT1","use":"E and ν; G left blank so NASTRAN derives it."},{"card":"SPC1","use":"Set 1: one card for the pins (components 12) and one for the fixed supports (126), each listing its support grids."},{"card":"FORCE / MOMENT","use":"Load set 2: point forces along basic Y and couples about basic Z at grids."},{"card":"PLOAD1","use":"Load set 2: TYPE=FY, SCALE=FR from 0 to 1 on each element under a distributed load, with the intensities at its ends."},{"card":"PARAM,POST,0","use":"Asks MSC Nastran to write the Patran results database (.xdb) alongside the run."}],"run":["Save the deck, e.g. beam.bdf, on a machine with a licensed MSC Nastran installation.","Run: nastran beam.bdf","PARAM,POST,0 makes the run write beam.xdb next to beam.f06; open it in Patran (or another .xdb reader) to post-process.","Compare DISPLACEMENT T2 (deflection, m) and R3 (slope, rad), and SPCFORCES T2 (reaction, N) and R3 (support moment, N·m), with this page. These are in basic coordinates and use the same signs."],"status":"The deck is generated from the same model the page solves and is checked by reading it back and re-solving it with the independent Python reference. This page does not run NASTRAN and does not produce an .xdb file itself."},"sources":[{"id":"cbar","title":"MSC Nastran Quick Reference Guide: CBAR","url":"https://nexus.hexagon.com/documentationcenter/en-US/bundle/MSC_Nastran_2024.1/page/Nastran_Combined_Book/qrg/bulkc1/TOC.CBAR.xhtml"},{"id":"pbar","title":"MSC Nastran Quick Reference Guide: PBAR","url":"https://nexus.hexagon.com/documentationcenter/en-US/bundle/MSC_Nastran_2024.1/page/Nastran_Combined_Book/qrg/bulkp/TOC.PBAR.xhtml"},{"id":"pload1","title":"MSC Nastran Quick Reference Guide: PLOAD1","url":"https://nexus.hexagon.com/documentationcenter/en-US/bundle/MSC_Nastran_2023.1/page/Nastran_Combined_Book/qrg/bulkp/TOC.PLOAD1.xhtml"},{"id":"post","title":"MSC Nastran Quick Reference Guide: parameter POST","url":"https://nexus.hexagon.com/documentationcenter/en-US/bundle/MSC_Nastran_2024.2/page/Nastran_Combined_Book/qrg/parameters/TOC.POST.xhtml"},{"id":"code","title":"Source, fixtures and the Python reference solver","url":"https://github.com/yujieteo/site/tree/main/visuals/beamdiag"}]};
 </script>
 <script>
 /* BEAMDIAG engine: linear-elastic Euler–Bernoulli beam, direct stiffness method.
@@ -659,28 +659,61 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
     return supports.reduce((n, s) => n + (s.kind === "fixed" ? 2 : 1), 0) - 2;
   }
 
-  /* ---------- NASTRAN bulk data export (MSC Nastran SOL 101, large-field fixed format) ---------- */
+  /* ---------- NASTRAN bulk data export (MSC Nastran SOL 101, fixed-format bulk data) ---------- */
 
-  function nastranReal(x) {
-    if (x === 0) return "0.0";
-    // Up to 10 significant digits, trimmed until it fits a 16-character large field (sign and 3-digit exponents included).
-    for (let digits = 9; ; digits--) {
-      const text = x.toExponential(digits).toUpperCase();
-      if (text.length <= 16) return text.includes(".") ? text : text.replace("E", ".E");
-    }
+  /* A real in the fewest characters that still read back as exactly the same double,
+   * e.g. 6. 0.3 -40000. 2.E11 4.456-4; null when that takes more than `width` characters. */
+  function exactReal(x, width) {
+    if (x === 0) return "0.";
+    const [mant, exp] = Math.abs(x).toExponential().split("e"), e = +exp, sign = x < 0 ? "-" : "";
+    const digits = mant.replace(".", "");
+    let plain;
+    if (e >= digits.length - 1) plain = digits + "0".repeat(e - digits.length + 1) + ".";
+    else if (e >= 0) plain = digits.slice(0, e + 1) + "." + digits.slice(e + 1);
+    else plain = "0." + "0".repeat(-e - 1) + digits;
+    const m = digits[0] + "." + digits.slice(1);
+    const candidates = e >= -3 && e < 6 ? [plain, plain.replace(/^0\./, ".")] : [];
+    candidates.push(`${m}E${e}`, `${m}${e < 0 ? "" : "+"}${e}`);
+    // Prefer a form that leaves a blank column, so neighbouring fields do not run together.
+    const fits = candidates.map((c) => sign + c);
+    return fits.find((c) => c.length < width) ?? fits.find((c) => c.length === width) ?? null;
   }
-  const int = (n) => ({ int: n });
-  const real = (x) => ({ real: x });
-  function field(v) {
-    if (v && typeof v === "object" && "int" in v) return String(v.int);
-    if (v && typeof v === "object" && "real" in v) return nastranReal(v.real);
-    return v == null ? "" : String(v);
+
+  /* A real for a 16-character large field: exact when it fits, otherwise rounded to as many digits as fit. */
+  function nastranReal(x) {
+    for (let digits = 17; ; digits--) {
+      const text = exactReal(digits === 17 ? x : Number(x.toPrecision(digits)), 16);
+      if (text !== null) return text;
+    }
   }
 
   /* Fields are {int}, {real} or a literal string (blank = ""). */
+  const int = (n) => ({ int: n });
+  const real = (x) => ({ real: x });
+  function smallField(v) {
+    if (v && typeof v === "object" && "int" in v) return String(v.int);
+    if (v && typeof v === "object" && "real" in v) return exactReal(v.real, 8);
+    return v == null ? "" : String(v);
+  }
+  function largeField(v) {
+    if (v && typeof v === "object" && "real" in v) return nastranReal(v.real);
+    return smallField(v);
+  }
+  const fitsSmall = (fields) => fields.every((v) => { const s = smallField(v); return s !== null && s.length <= 8; });
+
+  /* One small-field entry: the name, then eight 8-character fields per line; continuations start blank. */
+  function smallEntry(name, fields) {
+    const out = [], values = fields.map(smallField);
+    for (let i = 0; i < Math.max(values.length, 1); i += 8) {
+      const head = i === 0 ? name.padEnd(8) : "".padEnd(8);
+      out.push((head + values.slice(i, i + 8).map((v) => v.padEnd(8)).join("")).trimEnd());
+    }
+    return out;
+  }
+
   /* One large-field entry: NAME* then four 16-character fields per line. */
   function largeEntry(name, fields) {
-    const out = [], values = fields.map(field);
+    const out = [], values = fields.map(largeField);
     for (const v of values) if (v.length > 16) throw new Error(`Field ${v} is wider than 16 characters.`);
     for (let i = 0; i < Math.max(values.length, 1); i += 4) {
       const head = i === 0 ? `${name}*`.padEnd(8) : "*".padEnd(8);
@@ -689,6 +722,17 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
     return out;
   }
 
+  /* Cards of one type share a format: small field unless some value needs more than
+   * eight characters to stay exact, then large field for the whole group. */
+  function cardGroup(name, rows) {
+    const entry = rows.every(fitsSmall) ? smallEntry : largeEntry;
+    return rows.flatMap((fields) => entry(name, fields));
+  }
+  /* A "$" line naming the columns of a small-field card. */
+  const columns = (...names) => ("$" + names[0].padEnd(7) + names.slice(1).map((n) => n.padEnd(8)).join("")).trimEnd();
+
+  const count = (n, noun) => `${n} ${noun}${n === 1 ? "" : "s"}`;
+
   /* Build a NASTRAN deck that encodes exactly the model the browser solved. */
   function exportBdf(input, { title = "BEAMDIAG LINEAR STATIC" } = {}) {
     const model = validate(input), nodes = mesh(model);
@@ -696,53 +740,71 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
     if (!hasLoad) fail("Add a non-zero load before exporting a NASTRAN deck.", "loads");
     const ids = new Map(nodes.map((x, i) => [x, i + 1])), gid = (x) => ids.get(x);
     const safeTitle = String(title).replace(/[^A-Za-z0-9 _.,()+\-]/g, " ").slice(0, 60).trim() || "BEAMDIAG";
+    const { material: mat, section: sec } = model, SPC = 1, LOAD = 2;
     const lines = [
-      "$ BEAMDIAG export: MSC Nastran SOL 101 linear static deck.",
-      "$ Units: m, N, Pa (N/m2), N/m, N*m. Planar beam along basic X; loads act in basic Y.",
-      "$ Sign convention: +Y up, rotations and couples +Z (counter-clockwise).",
-      "$ Every GRID permanently constrains 345 (out-of-plane translation and both",
-      "$ out-of-plane rotations); the beam deforms in the X-Y plane only.",
-      "$ Supports: pin = SPC1 12 (UX, UY), fixed = SPC1 126 (UX, UY, RZ).",
-      "$ PBAR I1 is the in-plane second moment (bending in the CBAR x-y plane,",
-      "$ orientation vector +Y). K1/K2 are blank: zero shear flexibility,",
-      "$ matching the Euler-Bernoulli model. I2 and J act only on constrained DOFs.",
-      "$ PARAM,POST,0 asks MSC Nastran to write the results database (.xdb).",
-      `$ Model: L=${nastranReal(model.length)} m, E=${nastranReal(model.material.E)} Pa, I=${nastranReal(model.section.I)} m4, ${model.supports.length} supports, ${model.loads.length} loads.`,
+      `$ Beam, L = ${fmt(model.length)} m: ${count(nodes.length, "grid")}, ${count(nodes.length - 1, "CBAR")}, ${count(model.supports.length, "support")}, ${count(model.loads.length, "load")}`,
+      "$ Units N, m, Pa. Beam on X, loads in Y (+ up), moments about Z (+ CCW).",
       "SOL 101",
       "CEND",
       `TITLE = ${safeTitle}`,
       "ECHO = NONE",
+      "DISPLACEMENT = ALL",
+      "SPCFORCES = ALL",
+      "OLOAD = ALL",
+      "FORCE = ALL",
       "SUBCASE 1",
       "  LABEL = BEAM LOADS",
-      "  SPC = 1",
-      "  LOAD = 2",
-      "  DISPLACEMENT = ALL",
-      "  SPCFORCES = ALL",
-      "  OLOAD = ALL",
-      "  FORCE = ALL",
+      `  SPC = ${SPC}`,
+      `  LOAD = ${LOAD}`,
       "BEGIN BULK",
-      "PARAM,POST,0",
+      "$ Write the .xdb results database",
+      ...smallEntry("PARAM", ["POST", int(0)]),
+      "$",
+      "$ ---- Material and property ----",
+      columns("MAT1", "MID", "E", "G", "NU"),
+      ...cardGroup("MAT1", [[int(1), real(mat.E), "", real(mat.nu)]]),
+      "$ I1 = in-plane I. K1, K2 blank: no shear flexibility (Euler-Bernoulli).",
+      columns("PBAR", "PID", "MID", "A", "I1", "I2", "J"),
+      ...cardGroup("PBAR", [[int(1), int(1), real(sec.A), real(sec.I), real(sec.Iy), real(sec.J)]]),
+      "$",
+      "$ ---- Grid points ----",
+      "$ Planar beam: PS = 345 on every grid leaves only T1, T2 and R3 free.",
+      columns("GRDSET", "", "CP", "", "", "", "CD", "PS"),
+      ...smallEntry("GRDSET", ["", "", "", "", "", "", int(345)]),
+      columns("GRID", "ID", "CP", "X1", "X2", "X3"),
+      ...cardGroup("GRID", nodes.map((x, i) => [int(i + 1), "", real(x), real(0), real(0)])),
+      "$",
+      "$ ---- Elements ----",
+      columns("CBAR", "EID", "PID", "GA", "GB", "X1", "X2", "X3"),
+      ...cardGroup("CBAR", nodes.slice(1).map((_, e) => [int(e + 1), int(1), int(e + 1), int(e + 2), real(0), real(1), real(0)])),
+      "$",
+      "$ ---- Constraints ----",
+      "$ Pin: 12 (T1, T2). Fixed: 126 (T1, T2, R3).",
+      columns("SPC1", "SID", "C", "G1", "G2", "G3", "G4", "G5", "G6"),
     ];
-    lines.push(...largeEntry("MAT1", [int(1), real(model.material.E), "", real(model.material.nu)]));
-    lines.push(...largeEntry("PBAR", [int(1), int(1), real(model.section.A), real(model.section.I), real(model.section.Iy), real(model.section.J)]));
-    nodes.forEach((x, i) => lines.push(...largeEntry("GRID", [int(i + 1), "", real(x), real(0), real(0), "", int(345)])));
-    for (let e = 0; e < nodes.length - 1; e++)
-      lines.push(...largeEntry("CBAR", [int(e + 1), int(1), int(e + 1), int(e + 2), real(0), real(1), real(0)]));
-    for (const s of model.supports) lines.push(...largeEntry("SPC1", [int(1), int(s.kind === "fixed" ? 126 : 12), int(gid(s.x))]));
+    for (const [kind, c] of [["pin", 12], ["fixed", 126]]) {
+      const grids = model.supports.filter((s) => s.kind === kind).map((s) => gid(s.x)).sort((a, b) => a - b);
+      if (grids.length) lines.push(...smallEntry("SPC1", [int(SPC), int(c), ...grids.map(int)]));
+    }
+    lines.push("$", "$ ---- Loads ----");
+    const forces = model.loads.filter((l) => l.kind === "point" && l.F !== 0);
+    if (forces.length) lines.push(columns("FORCE", "SID", "G", "CID", "F", "N1", "N2", "N3"),
+      ...cardGroup("FORCE", forces.map((l) => [int(LOAD), int(gid(l.x)), int(0), real(l.F), real(0), real(1), real(0)])));
+    const moments = model.loads.filter((l) => l.kind === "moment" && l.C !== 0);
+    if (moments.length) lines.push(columns("MOMENT", "SID", "G", "CID", "M", "N1", "N2", "N3"),
+      ...cardGroup("MOMENT", moments.map((l) => [int(LOAD), int(gid(l.x)), int(0), real(l.C), real(0), real(0), real(1)])));
+    // One PLOAD1 per element under each distributed load, with the intensities at the element ends.
+    const ploads = [];
     for (const l of model.loads) {
-      if (l.kind === "point" && l.F !== 0) lines.push(...largeEntry("FORCE", [int(2), int(gid(l.x)), int(0), real(l.F), real(0), real(1), real(0)]));
-      if (l.kind === "moment" && l.C !== 0) lines.push(...largeEntry("MOMENT", [int(2), int(gid(l.x)), int(0), real(l.C), real(0), real(0), real(1)]));
-      if (l.kind === "dist" && (l.q1 !== 0 || l.q2 !== 0)) {
-        // One PLOAD1 per element under the load: fractional positions 0 → 1, intensities at the element ends.
-        for (let e = 0; e < nodes.length - 1; e++) {
-          const a = nodes[e], b = nodes[e + 1];
-          if (a < l.x1 || b > l.x2) continue;
-          const q = (x) => l.q1 + (l.q2 - l.q1) * (x - l.x1) / (l.x2 - l.x1);
-          lines.push(...largeEntry("PLOAD1", [int(2), int(e + 1), "FY", "FR", real(0), real(q(a)), real(1), real(q(b))]));
-        }
+      if (l.kind !== "dist" || (l.q1 === 0 && l.q2 === 0)) continue;
+      const q = (x) => l.q1 + (l.q2 - l.q1) * (x - l.x1) / (l.x2 - l.x1);
+      for (let e = 0; e < nodes.length - 1; e++) {
+        const a = nodes[e], b = nodes[e + 1];
+        if (a >= l.x1 && b <= l.x2) ploads.push([int(LOAD), int(e + 1), "FY", "FR", real(0), real(q(a)), real(1), real(q(b))]);
       }
     }
-    lines.push("ENDDATA", "");
+    if (ploads.length) lines.push(columns("PLOAD1", "SID", "EID", "TYPE", "SCALE", "X1", "P1", "X2", "P2"), ...cardGroup("PLOAD1", ploads));
+    lines.push("$", "ENDDATA", "");
     return lines.join("\n");
   }
 
@@ -750,7 +812,7 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
     return Number.isInteger(x) ? String(x) : String(+x.toPrecision(6));
   }
 
-  return { SUPPORT_KINDS, ModelError, sectionProperties, indeterminacy, validate, mesh, solve, internal, deflection, at, diagram, extremes, exportBdf, largeEntry, nastranReal };
+  return { SUPPORT_KINDS, ModelError, sectionProperties, indeterminacy, validate, mesh, solve, internal, deflection, at, diagram, extremes, exportBdf, smallEntry, largeEntry, exactReal, nastranReal };
 });
 
 </script>

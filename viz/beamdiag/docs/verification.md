@@ -22,7 +22,7 @@ pull request.
 
 | File | Checks |
 | --- | --- |
-| `tests/beamdiag.test.mjs` | The engine against the closed forms in `fixtures.json` and against `reference.json`; equilibrium and support conditions; V and M jumps at point forces and couples; mesh invariance; solving, plotting and extrema at 10,000 elements per segment within one second; uncapped support, load and mesh counts; unit consistency; error messages for mechanisms and invalid input; section formulas; and the large-field format of the exported deck. |
+| `tests/beamdiag.test.mjs` | The engine against the closed forms in `fixtures.json` and against `reference.json`; equilibrium and support conditions; V and M jumps at point forces and couples; mesh invariance; solving, plotting and extrema at 10,000 elements per segment within one second; uncapped support, load and mesh counts; unit consistency; error messages for mechanisms and invalid input; section formulas; and the fixed-column format of the exported deck. |
 | `tests/review-regressions.test.mjs` | Exact short-span extrema and plot coverage; right-end attachments through transient invalid length inputs and preset changes; local startup and updates without URL model persistence. |
 | `tests/test_beamdiag.py` | `reference.json` is current; `reference.py` matches every closed form and is exactly in equilibrium and compatible; it rejects a mechanism; the engine (run through `node`) agrees with it on every fixture; every exported deck reads back into the same beam and re-solves to the same reactions and deflections; the reader rejects cards it cannot represent; `build.py` reproduces `index.html`; and the page is self-contained. |
 | `tests/test_random_beams.py` | Sixty seeded random beams beyond the textbook layouts: lengths from 0.5 m to 120 m, one to forty pinned or fixed supports at arbitrary millimetre positions (not only the ends, so with overhangs), and up to forty mixed point forces, couples and trapezoidal distributed loads, on a range of E and I. Each is solved by the engine and by `reference.py` and compared at every support and load position to a relative 1e-7, and its exported deck is read back and re-solved. Also a 90 m beam on 46 supports through the same checks, and two loads 2 mm apart on a 5 m propped cantilever. |
@@ -40,7 +40,8 @@ sum of the upward forces left of the section, and the bending moment M(x) is
 positive when sagging. A reaction is the force, and for a fixed support also
 the couple, that the support applies to the beam.
 
-The deck's large-field reals carry about ten significant digits, so a deck
+The deck writes every real exactly when it fits a 16-character large field,
+and otherwise rounds it to as many digits as fit, so a deck
 read back from random beams with supports a few millimetres apart re-solves to
 reactions within a relative 1e-6 of the original rather than exactly.
 

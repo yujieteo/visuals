@@ -154,7 +154,9 @@ class BeamDiagTest(unittest.TestCase):
     def test_bdf_reader_rejects_what_it_cannot_represent(self):
         deck = self.js["simply-supported-udl"]["bdf"]
         with self.assertRaises(ValueError):
-            reference.model_from_bdf(deck.replace("FY              FR", "FZ              FR", 1))
+            reference.model_from_bdf(deck.replace("FY      FR", "FZ      FR", 1))
+        with self.assertRaises(ValueError):
+            reference.model_from_bdf("\n".join(l for l in deck.split("\n") if not l.startswith("GRDSET")))
         with self.assertRaises(ValueError):
             reference.model_from_bdf(deck.replace("BEGIN BULK", "BEGIN BULK\nCBEAM,9,1,1,2,0.,1.,0."))
 

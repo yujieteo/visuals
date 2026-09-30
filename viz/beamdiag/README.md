@@ -53,12 +53,18 @@ conventions, and what is not.
 
 ## NASTRAN
 
-The exported deck is large-field bulk data: every GRID on basic X with
-`PS=345`, CBAR elements with orientation vector +Y sharing one PBAR (`I1` is
-the in-plane I) and MAT1, SPC1 set 1 for the supports (pin `12`, fixed `126`),
-FORCE, MOMENT and PLOAD1 in load set 2, and `PARAM,POST,0` so MSC Nastran
-writes an `.xdb` results database. Run it with a licensed solver, for example
-`nastran beamdiag.bdf`.
+The exported deck is laid out the way it would be written by hand: a short
+case control section, then small-field bulk data grouped under `$` comment
+banners with column headings. Every GRID lies on basic X, with `PS=345` set
+once on GRDSET; CBAR elements with orientation vector +Y share one PBAR (`I1`
+is the in-plane I) and MAT1; SPC1 set 1 holds the supports (pin `12`, fixed
+`126`); FORCE, MOMENT and PLOAD1 are in load set 2; and `PARAM,POST,0` makes
+MSC Nastran write an `.xdb` results database. Reals are written in as few
+characters as keep them exact (`2.E11`, `0.3`, `-10000.`); a group of cards
+with a value that needs more than eight characters, such as a third-point
+GRID, switches to large field, where a real that still does not fit exactly
+is rounded to as many significant digits as fit in its 16 characters. Run it
+with a licensed solver, for example `nastran beamdiag.bdf`.
 
 The deck is checked here by reading it back and re-solving it. It has not been
 run through NASTRAN, and this repository contains no `.xdb`: that file only

@@ -133,7 +133,7 @@ class RandomBeams(unittest.TestCase):
                     self.assertAlmostEqual(p["v"], float(beam.v(x)), delta=tol * scale_v)
 
     def test_exported_deck_rebuilds_the_same_beam(self):
-        # Large-field reals carry about ten significant digits, and supports a few
+        # Reals too long for a 16-character large field are rounded to fit, and supports a few
         # millimetres apart amplify that rounding in the reactions, hence 1e-6.
         for seed, model, js, original in zip(SEEDS, self.models, self.js, self.beams):
             if "error" in js:

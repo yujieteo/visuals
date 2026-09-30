@@ -187,27 +187,95 @@ test("section properties follow the standard formulas", () => {
   assert.equal(B.indeterminacy([{ kind: "fixed" }, { kind: "pin" }]), 1);
 });
 
-test("NASTRAN deck is well-formed large-field bulk data for the solved mesh", () => {
+/* Bulk entries of a deck as {name, large, fields}, joining continuation lines. */
+function bulkEntries(deck) {
+  const lines = deck.split("\n"), out = [];
+  for (const l of lines.slice(lines.indexOf("BEGIN BULK") + 1, lines.indexOf("ENDDATA"))) {
+    if (l.startsWith("$")) continue;
+    const head = l.slice(0, 8).trim();
+    if (head === "" || head === "*") {
+      const e = out.at(-1), width = e.large ? 16 : 8;
+      for (let i = 8; i < 8 + (e.large ? 4 : 8) * width; i += width) e.fields.push(l.slice(i, i + width).trim());
+      continue;
+    }
+    const large = head.endsWith("*"), width = large ? 16 : 8, fields = [];
+    for (let i = 8; i < 8 + (large ? 4 : 8) * width; i += width) fields.push(l.slice(i, i + width).trim());
+    out.push({ name: head.replace("*", ""), large, fields });
+  }
+  return out;
+}
+const named = (entries, name) => entries.filter((e) => e.name === name);
+/* A NASTRAN real as a number, including the exponent-without-E form 1.5-3. */
+const nreal = (text) => Number(text.replace(/(\d|\.)([+-]\d+)$/, "$1E$2"));
+
+test("NASTRAN deck is hand-style fixed-column bulk data for the solved mesh", () => {
   for (const c of fixtures.cases) {
     const deck = B.exportBdf(c.model), nodes = B.mesh(B.validate(c.model));
     const lines = deck.split("\n");
     assert.equal(lines.filter((l) => l === "SOL 101").length, 1);
-    assert.ok(lines.indexOf("CEND") < lines.indexOf("BEGIN BULK"));
-    assert.ok(lines.includes("PARAM,POST,0"));
+    const cend = lines.indexOf("CEND"), begin = lines.indexOf("BEGIN BULK");
+    assert.ok(cend < begin);
+    const caseControl = lines.slice(cend + 1, begin).map((l) => l.trim());
+    for (const card of ["TITLE = BEAMDIAG LINEAR STATIC", "SUBCASE 1", "SPC = 1", "LOAD = 2", "DISPLACEMENT = ALL", "SPCFORCES = ALL"])
+      assert.ok(caseControl.includes(card), card);
     assert.equal(lines.at(-2), "ENDDATA");
-    const bulk = lines.slice(lines.indexOf("BEGIN BULK") + 1, lines.indexOf("ENDDATA"));
+    const bulk = lines.slice(begin + 1, lines.indexOf("ENDDATA"));
+    for (const banner of ["Material and property", "Grid points", "Elements", "Constraints", "Loads"])
+      assert.ok(bulk.includes(`$ ---- ${banner} ----`), banner);
     for (const l of bulk) {
-      if (l.startsWith("$") || l === "PARAM,POST,0") continue;
       assert.ok(l.length <= 72, `line too long: ${l}`);
-      assert.match(l.slice(0, 8), /^([A-Z0-9]+\*|\*)\s*$/);
-      for (let i = 8; i < l.length; i += 16) assert.doesNotMatch(l.slice(i, i + 16).trim(), /\s/);
+      if (l.startsWith("$")) continue;
+      const width = l.slice(0, 8).trim().endsWith("*") || l.startsWith("*") ? 16 : 8;
+      assert.match(l.slice(0, 8), /^([A-Z0-9]*\*?)\s*$/);
+      for (let i = 8; i < l.length; i += width) assert.doesNotMatch(l.slice(i, i + width).trim(), /\s/, l);
     }
-    assert.equal(bulk.filter((l) => l.startsWith("GRID*")).length, nodes.length);
-    assert.equal(bulk.filter((l) => l.startsWith("CBAR*")).length, nodes.length - 1);
-    assert.equal(bulk.filter((l) => l.startsWith("SPC1*")).length, c.model.supports.length);
+    const entries = bulkEntries(deck);
+    // Cards of one type share one format.
+    for (const name of new Set(entries.map((e) => e.name)))
+      assert.equal(new Set(named(entries, name).map((e) => e.large)).size, 1, name);
+    assert.deepEqual(named(entries, "PARAM").map((e) => e.fields.slice(0, 2)), [["POST", "0"]]);
+    assert.equal(named(entries, "GRDSET")[0].fields[6], "345");
+    const grids = named(entries, "GRID");
+    assert.deepEqual(grids.map((e) => +e.fields[0]), nodes.map((_, i) => i + 1));
+    grids.forEach((e, i) => close(nreal(e.fields[2]), nodes[i], c.model.length, `GRID ${i + 1}`, 1e-14));
+    assert.deepEqual(named(entries, "CBAR").map((e) => +e.fields[0]), nodes.slice(1).map((_, i) => i + 1));
+    // One SPC1 per support kind, listing every support grid once.
+    const spc1 = named(entries, "SPC1");
+    assert.ok(spc1.length <= 2);
+    assert.equal(spc1.flatMap((e) => e.fields.slice(2).filter(Boolean)).length, c.model.supports.length);
   }
-  assert.equal(B.nastranReal(-1.2345678901234e-300).length, 16);
-  assert.equal(B.nastranReal(0), "0.0");
+  const lines = B.exportBdf(fixtures.cases.find((c) => c.id === "simply-supported-udl").model).split("\n");
+  for (const card of [
+    "PARAM   POST    0",
+    "MAT1    1       2.E11           0.3",
+    "PBAR    1       1       0.005   8.E-5   8.E-5   1.6E-4",
+    "GRDSET                                                  345",
+    "GRID    2               1.5     0.      0.",
+    "CBAR    1       1       1       2       0.      1.      0.",
+    "SPC1    1       12      1       5",
+    "PLOAD1  2       1       FY      FR      0.      -10000. 1.      -10000.",
+  ]) assert.ok(lines.includes(card), card);
+});
+
+test("reals are written compactly and exactly, falling back to large field", () => {
+  const cases = [[0, "0."], [6, "6."], [0.3, "0.3"], [-40000, "-40000."], [200e9, "2.E11"], [8e-5, "8.E-5"], [0.005, "0.005"], [1.6e-4, "1.6E-4"], [-1.25e-7, "-1.25-7"], [4.456e-4, "4.456-4"]];
+  for (const [x, text] of cases) {
+    assert.equal(B.exactReal(x, 8), text);
+    assert.equal(nreal(text), x);
+  }
+  assert.equal(B.exactReal(1 / 3, 8), null);
+  assert.equal(Number(B.exactReal(0.123456789, 16)), 0.123456789);
+  for (const x of [-1.2345678901234e-300, 1 / 3, 7 / 6, -123456.789012345]) {
+    const text = B.nastranReal(x);
+    assert.ok(text.length <= 16, text);
+    close(nreal(text), x, 0, `rounded ${x}`, 1e-10);
+  }
+  // A mesh in sevenths cannot be written exactly in eight characters, so every GRID goes large field.
+  const deck = B.exportBdf({ ...fixtures.cases[0].model, divisions: 7 });
+  const grids = named(bulkEntries(deck), "GRID");
+  assert.ok(grids.every((e) => e.large));
+  const nodes = B.mesh(B.validate({ ...fixtures.cases[0].model, divisions: 7 }));
+  grids.forEach((e, i) => close(nreal(e.fields[2]), nodes[i], 6, `GRID ${i + 1}`, 1e-14));
 });
 
 test("no cap on supports, loads or elements: 150 supports, 200 loads and a fine mesh solve and export in full", () => {
@@ -229,19 +297,18 @@ test("no cap on supports, loads or elements: 150 supports, 200 loads and a fine 
   const coarse = B.solve({ ...model, divisions: 1 }), Rs = Math.max(...coarse.reactions.map((r) => Math.abs(r.Fy)));
   result.reactions.forEach((r, i) => close(r.Fy, coarse.reactions[i].Fy, Rs, `R at ${r.x}`, 1e-8));
 
-  const bulk = B.exportBdf(model).split("\n");
-  const grids = bulk.filter((l) => l.startsWith("GRID*")).length, spcs = bulk.filter((l) => l.startsWith("SPC1*"));
+  const entries = bulkEntries(B.exportBdf(model)), grids = named(entries, "GRID").length, spcs = named(entries, "SPC1");
   assert.equal(grids, B.mesh(result.model).length);
   assert.ok(grids > 10000);
-  assert.equal(bulk.filter((l) => l.startsWith("CBAR*")).length, grids - 1);
-  assert.equal(spcs.length, S);
-  assert.equal(bulk.filter((l) => l.startsWith("FORCE*")).length, 149);
-  assert.equal(bulk.filter((l) => l.startsWith("MOMENT*")).length, 50);
-  assert.equal(bulk.filter((l) => l.startsWith("PLOAD1*")).length, grids - 1);
+  assert.equal(named(entries, "CBAR").length, grids - 1);
+  assert.equal(named(entries, "FORCE").length, 149);
+  assert.equal(named(entries, "MOMENT").length, 50);
+  assert.equal(named(entries, "PLOAD1").length, grids - 1);
   // Every support lands on its own GRID with the right constrained components.
-  const ids = new Set(spcs.map((l) => l.slice(40, 56).trim()));
-  assert.equal(ids.size, S);
-  assert.equal(spcs.filter((l) => l.slice(24, 40).trim() === "126").length, model.supports.filter((s) => s.kind === "fixed").length);
+  const listed = (c) => spcs.filter((e) => e.fields[1] === c).flatMap((e) => e.fields.slice(2).filter(Boolean));
+  assert.equal(new Set([...listed("12"), ...listed("126")]).size, S);
+  assert.equal(listed("126").length, model.supports.filter((s) => s.kind === "fixed").length);
+  assert.equal(listed("12").length, model.supports.filter((s) => s.kind === "pin").length);
 });
 
 test("a very fine mesh keeps the page responsive: solving, plotting and extremes cost the same at 10000 elements per segment", () => {
