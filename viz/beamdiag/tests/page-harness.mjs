@@ -45,7 +45,7 @@ class Canvas extends Element {
   toBlob(done, type) { done(new Blob([new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])], { type })); }
 }
 
-export async function page({ runTimers = false } = {}) {
+export async function page({ runTimers = false, navigator = {}, saveFails = false } = {}) {
   const nodes = new Map(), tools = new Map(), buttons = ["point", "moment"].map((kind) => {
     const b = new Element("button"); b.dataset.add = kind; return b;
   });
@@ -62,7 +62,7 @@ export async function page({ runTimers = false } = {}) {
     createElement(tag) {
       if (tag === "canvas") { const c = new Canvas(); canvases.push(c); return c; }
       const e = new Element(tag);
-      if (tag === "a") e.click = () => saved.push({ name: e.download, blob: urls.get(e.href) });
+      if (tag === "a") e.click = () => { if (saveFails) throw new Error("downloads are blocked"); saved.push({ name: e.download, blob: urls.get(e.href) }); };
       return e;
     },
     createElementNS: (_, tag) => new Element(tag),
@@ -76,7 +76,7 @@ export async function page({ runTimers = false } = {}) {
     modelContext: { registerTool: (tool) => tools.set(tool.name, tool) },
   };
   let reads = 0, writes = 0;
-  const context = vm.createContext({ document, navigator: {}, console,
+  const context = vm.createContext({ document, navigator, console,
     Option: class extends Element { constructor(label, value) { super("option"); this.value = value; } },
     location: { get hash() { reads++; return "#m=obsolete-model"; } },
     history: { replaceState() { writes++; } },
@@ -105,7 +105,7 @@ export async function page({ runTimers = false } = {}) {
     const status = document.getElementById("figure-status");
     status.textContent = "";
     document.getElementById(id).dispatch("click");
-    for (const until = Date.now() + 20000; Date.now() < until && !/^(Saved|Could not|Fix)/.test(status.textContent);) await new Promise((r) => setImmediate(r));
+    for (const until = Date.now() + 20000; Date.now() < until && !/^(Saved|Copied|Could not|Fix)/.test(status.textContent);) await new Promise((r) => setImmediate(r));
     return status.textContent;
   };
   return { document, buttons, tools, input, type, field, choose, current, save, saved, canvases, urlAccess: () => ({ reads, writes }) };

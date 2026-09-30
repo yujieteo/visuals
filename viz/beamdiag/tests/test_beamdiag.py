@@ -193,7 +193,7 @@ class BeamDiagTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             copy = Path(directory) / "beamdiag"
             copy.mkdir()
-            for name in ("build.py", "raw.json", "engine.js", "template.html"):
+            for name in ("build.py", "raw.json", "engine.js", "beamdswitch.js", "template.html"):
                 shutil.copy(VIZ / name, copy / name)
             subprocess.run([sys.executable, str(copy / "build.py")], check=True, capture_output=True)
             self.assertEqual((copy / "index.html").read_text(encoding="utf-8"), (VIZ / "index.html").read_text(encoding="utf-8"))

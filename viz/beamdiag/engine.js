@@ -634,10 +634,338 @@
     return lines.join("\n");
   }
 
+  /* ---------- number formatting, shared by the page and the beamdswitch report ---------- */
+  /* Each unit convention puts values on a different scale (a deflection is 0.004 m or 4 mm),
+     so very large and very small magnitudes switch to powers of ten. */
+  const plain = (x, n) => String(+x.toPrecision(n)).replace("-", "−");
+  const pow10 = (x, n) => {
+    const [m, e] = x.toExponential(n - 1).split("e");
+    return `${plain(+m, n)}×10${e.replace("+", "").replace("-", "⁻").replace(/\d/g, (c) => "⁰¹²³⁴⁵⁶⁷⁸⁹"[c])}`;
+  };
+  const nf = (x, digits = 3) => {
+    if (!Number.isFinite(x)) return "—";
+    const a = Math.abs(x);
+    if (a === 0) return "0";
+    if (a >= 1e7 || a < 1e-3) return pow10(x, 4);
+    if (a < 1) return plain(x, 4);
+    const d = a >= 1000 ? 0 : a >= 100 ? 1 : a >= 10 ? 2 : digits;
+    return x.toLocaleString("en-GB", { minimumFractionDigits: d, maximumFractionDigits: d }).replace("-", "−");
+  };
+  const sig = (x, n = 4) => {
+    if (!Number.isFinite(x)) return "—";
+    const a = Math.abs(x);
+    return a === 0 || (a >= 1e-4 && a < 1e7) ? plain(x, n) : pow10(x, n);
+  };
+  const sci = (x) => {
+    if (!Number.isFinite(x)) return "—";
+    const a = Math.abs(x);
+    return a === 0 || (a >= 1e-2 && a < 1e6) ? plain(x, 4) : pow10(x, 4);
+  };
+  // Figure labels: plain digits below `big`, otherwise n significant figures × a power of ten, so a
+  // label stays a few characters long at any load magnitude in any unit convention.
+  const short = (x, n = 3, big = 1e6) => (Number.isFinite(x) && Math.abs(x) >= big ? pow10(x, n) : sig(x, n));
+  const shortNf = (x, digits) => (Number.isFinite(x) && Math.abs(x) >= 1e6 ? pow10(x, 4) : nf(x, digits));
+  const format = Object.freeze({ plain, pow10, nf, sig, sci, short, shortNf });
+
+  /* ---------- beamdswitch report ----------
+   * beamReport(result, options) describes a solved beam as a report for the standard beamdswitch
+   * template (beamdswitch.js; templates/beamdswitch-report.md). It reads every number from the
+   * solver's result and writes it with the same formatter the page uses for that value, so the
+   * deck, its narration and the page agree digit for digit. The ::: plot curves are the solver's
+   * own shear, moment and deflection written as Macaulay brackets from its reactions and the loads.
+   * Options: units, origin ("left" or "mid"), title, section { shape, label, dims: [[label, SI
+   * value, quantity]] }, material { label }. */
+
+  /* A position measured from the left end, re-measured from `origin` ("left" or "mid") as the page
+     shows it. Round-off of order 1e-12·L reads as exactly mid-span rather than as 10⁻¹⁴ mm. */
+  function fromOrigin(x, L, origin) {
+    if (origin !== "mid") return x;
+    const s = x - L / 2;
+    return Math.abs(s) <= 1e-12 * L ? 0 : +s.toPrecision(12);
+  }
+
+  /* Relative out-of-balance of loads and reactions, as the page reports it. */
+  const residual = (eq) => Math.max(Math.abs(eq.Fy) / Math.max(eq.scaleF, 1e-300), Math.abs(eq.Mz) / Math.max(eq.scaleM, 1e-300));
+  /* Span over largest deflection, as in "L/360"; "∞" when the beam does not deflect. */
+  const spanRatio = (L, v) => (Math.abs(v) > 0 ? String(Math.round(L / Math.abs(v))) : "∞");
+
+  const SPOKEN_UNITS = {
+    m: ["metre", "metres"], mm: ["millimetre", "millimetres"], in: ["inch", "inches"],
+    N: ["newton", "newtons"], kN: ["kilonewton", "kilonewtons"], lbf: ["pound-force", "pounds-force"], kip: ["kip", "kips"],
+    Pa: ["pascal", "pascals"], kPa: ["kilopascal", "kilopascals"], MPa: ["megapascal", "megapascals"],
+    psi: ["pound per square inch", "pounds per square inch"], ksi: ["kip per square inch", "kips per square inch"],
+  };
+  function spokenUnit(u, quantity, plural = true) {
+    const w = (sym, many) => SPOKEN_UNITS[sym][many ? 1 : 0], L = u.symbol.length, F = u.symbol.force;
+    switch (quantity) {
+      case "moment": return `${w(F, false)} ${w(L, plural)}`;
+      case "distributed": return `${w(F, plural)} per ${w(L, false)}`;
+      case "area": return `square ${w(L, plural)}`;
+      case "inertia": return `${w(L, plural)} to the fourth`;
+      case "rigidity": return `${w(F, false)} square ${w(L, plural)}`;
+      case "angle": return plural ? "radians" : "radian";
+      default: return w(u.symbol[quantity], plural);
+    }
+  }
+  const SUPERSCRIPT = "⁰¹²³⁴⁵⁶⁷⁸⁹";
+  const exponent = (e) => (e.startsWith("⁻") ? "-" : "") + [...e.replace("⁻", "")].map((c) => SUPERSCRIPT.indexOf(c)).join("");
+  /* A number as the page writes it (−1,234 or 1.5×10⁻⁴), read aloud or typeset. */
+  const sayNumber = (t) => t.replace(/^−/, "minus ").replace(/×10([⁻⁰¹²³⁴⁵⁶⁷⁸⁹]+)$/, (_, e) => ` times ten to the ${exponent(e).replace("-", "minus ")}`);
+  const texNumber = (t) => t.replace(/^−/, "-").replace(/,/g, "{,}").replace(/×10([⁻⁰¹²³⁴⁵⁶⁷⁸⁹]+)$/, (_, e) => `\\times 10^{${exponent(e)}}`);
+  const texUnit = (sym) => `\\mathrm{${sym.replace(/·/g, "\\cdot ").replace(/²/g, "^2").replace(/⁴/g, "^4")}}`;
+
+  const NUMBER_WORDS = ["no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"];
+  const SHAPE_NAMES = { rect: "solid rectangle", circle: "solid circle", tube: "circular tube", custom: "custom section" };
+
+  function beamReport(result, { units = DEFAULT_UNITS, origin = "left", title = "", section = {}, material = {} } = {}) {
+    const u = unitSystem(units), m = result.model, L = m.length, ex = result.extremes || extremes(result);
+    const sym = (q) => u.symbol[q], show = (si, q) => toUnits(si, q, u);
+    const mid = origin === "mid";
+    const X = (x) => show(fromOrigin(x, L, origin), "length");
+    const text = (t, q) => `${t} ${sym(q)}`;
+    const say = (t, q) => `${sayNumber(t)} ${spokenUnit(u, q, !/^−?1$/.test(t))}`;
+    const tex = (t, q) => `${texNumber(t)}\\ ${texUnit(sym(q))}`;
+    const v4 = (si, q) => sig(show(si, q), 4);
+    const pos = (x) => text(sig(X(x)), "length"), sayPos = (x) => `x equals ${say(sig(X(x)), "length")}`;
+    const count = (n, one, many) => `${NUMBER_WORDS[n] ?? n} ${n === 1 ? one : many}`;
+    const unitsSpoken = `${spokenUnit(u, "force")}, ${spokenUnit(u, "length")} and ${spokenUnit(u, "stress")}`;
+    const deg = indeterminacy(m.supports), EI = m.material.E * m.section.I, resid = residual(result.equilibrium);
+    const stress = m.section.c ? Math.abs(ex.M.value) * m.section.c / m.section.I : null;
+    const ratio = spanRatio(L, ex.v.value);
+    const kind = (s) => (s.kind === "pin" ? "pinned support" : "fixed support");
+
+    /* ----- set-up ----- */
+    const loadText = (l) => (l.kind === "point" ? `point force ${text(v4(l.F, "force"), "force")} at x = ${pos(l.x)}`
+      : l.kind === "moment" ? `couple ${text(v4(l.C, "moment"), "moment")} at x = ${pos(l.x)}`
+        : `distributed ${l.q1 === l.q2 ? text(v4(l.q1, "distributed"), "distributed") : `${v4(l.q1, "distributed")} → ${text(v4(l.q2, "distributed"), "distributed")}`} from x = ${pos(l.x1)} to ${pos(l.x2)}`);
+    const updown = (v) => (v < 0 ? "downward " : v > 0 ? "upward " : "");
+    const loadSaid = (l) => (l.kind === "point" ? `a ${updown(l.F)}point force of ${say(v4(Math.abs(l.F), "force"), "force")} at ${sayPos(l.x)}`
+      : l.kind === "moment" ? `a ${l.C < 0 ? "clockwise " : l.C > 0 ? "counter-clockwise " : ""}couple of ${say(v4(Math.abs(l.C), "moment"), "moment")} at ${sayPos(l.x)}`
+        : l.q1 === l.q2 ? `a uniform ${updown(l.q1)}load of ${say(v4(Math.abs(l.q1), "distributed"), "distributed")} from ${sayPos(l.x1)} to ${say(sig(X(l.x2)), "length")}`
+          : `a distributed load varying from ${say(v4(l.q1, "distributed"), "distributed")} at ${sayPos(l.x1)} to ${say(v4(l.q2, "distributed"), "distributed")} at ${sayPos(l.x2)}`);
+    const list = (items) => (items.length < 2 ? items.join("") : `${items.slice(0, -1).join(", ")} and ${items.at(-1)}`);
+    const fromWhere = mid ? "mid-span, negative to the left" : "the left end";
+    const beamFrame = {
+      title: `The beam: L = ${text(v4(L, "length"), "length")} on ${count(m.supports.length, "support", "supports")}, with ${count(m.loads.length, "load", "loads")}`,
+      body: [
+        `- Length $L$ = ${text(v4(L, "length"), "length")}; x runs from ${pos(0)} to ${pos(L)}, measured from ${fromWhere}.`,
+        ...m.supports.map((s, i) => `- Support ${i + 1}: ${s.kind === "pin" ? "pin" : "fixed"} at x = ${pos(s.x)}`),
+        ...(m.loads.length ? m.loads.map((l, i) => `- Load ${i + 1}: ${loadText(l)}`) : ["- No loads."]),
+      ].join("\n"),
+      notes: "Forces and distributed loads are positive up; couples, rotations and support moments positive counter-clockwise. V(x) is the sum of the upward forces left of the section, and M(x) is positive when it sags the beam.",
+      narration: [
+        `The beam is ${say(v4(L, "length"), "length")} long, with x measured from ${mid ? "mid-span, so it runs" : "the left end, so it runs"} from ${say(sig(X(0)), "length")} to ${say(sig(X(L)), "length")}.`,
+        `It rests on ${list(m.supports.map((s) => `a ${kind(s)} at ${sayPos(s.x)}`))}.`,
+        m.loads.length ? `It carries ${list(m.loads.map(loadSaid))}.` : "It carries no load.",
+        "Forces are positive upward, couples positive counter-clockwise, and a sagging bending moment is positive.",
+      ].join(" "),
+    };
+    const dims = (section.dims || []).map(([label, value, q]) => `${label} = ${text(v4(value, q), q)}`);
+    const saidDims = (section.dims || []).map(([label, value, q]) => `${label.replace(/,.*$/, "").toLowerCase()} ${say(v4(value, q), q)}`);
+    const props = [`$A$ = ${text(sci(show(m.section.A, "area")), "area")}`, `$I$ = ${text(sci(show(m.section.I, "inertia")), "inertia")}`,
+      ...(m.section.c ? [`$c$ = ${text(sig(show(m.section.c, "length")), "length")}`] : []), `$EI$ = ${text(sci(show(EI, "rigidity")), "rigidity")}`];
+    const sectionFrame = {
+      title: `Section, material and units: EI = ${text(sci(show(EI, "rigidity")), "rigidity")}`,
+      body: [
+        `- Section: ${section.label || "custom"}${dims.length ? `, ${dims.join(", ")}` : ""}`,
+        `- ${props.join(", ")}`,
+        `- Material: ${material.label || "custom"}, $E$ = ${text(v4(m.material.E, "stress"), "stress")}, $\\nu$ = ${sig(m.material.nu)}`,
+        `- Units: ${u.label}, one consistent convention for every input and result.`,
+      ].join("\n"),
+      narration: [
+        `The section is a ${SHAPE_NAMES[section.shape] || "custom section"}${saidDims.length ? `, ${list(saidDims)}` : ""}, with a second moment of area of ${say(sci(show(m.section.I, "inertia")), "inertia")}.`,
+        `The material is ${material.label ? material.label.replace(/\s*\(.*\)$/, "").toLowerCase() : "a custom material"}, with a Young's modulus of ${say(v4(m.material.E, "stress"), "stress")}.`,
+        `So the flexural rigidity E I is ${say(sci(show(EI, "rigidity")), "rigidity")}.`,
+        `Every number in this talk is in ${unitsSpoken}.`,
+      ].join(" "),
+    };
+
+    /* ----- method ----- */
+    const r = m.supports.reduce((n, s) => n + (s.kind === "fixed" ? 2 : 1), 0);
+    const methodFrame = deg > 0 ? {
+      title: `Indeterminate to degree ${deg}: equilibrium needs ${count(deg, "compatibility condition", "compatibility conditions")}`,
+      body: [
+        `$$ n = r - 2 = ${r} - 2 = ${deg} $$`,
+        "",
+        "- Compatibility: $v = 0$ at every support, and $\\theta = 0$ at every fixed support.",
+        "- The direct stiffness method enforces all of them at once:",
+        "$$ \\mathbf{K}\\,\\mathbf{u} = \\mathbf{f} $$",
+        "- It solves for the free deflections and slopes; the reactions are the forces the restrained ones need.",
+      ].join("\n"),
+      notes: "Two-node Hermite beam elements run between the supports and the ends. Loads between them enter as consistent nodal loads, which are the exact fixed-end actions, so the reactions are exact rather than approximate.",
+      narration: [
+        `The supports provide ${count(r, "reaction component", "reaction components")}, but a planar beam gives only two useful equilibrium equations.`,
+        `So the beam is statically indeterminate to degree ${deg}, and we need ${count(deg, "extra equation", "extra equations")} from compatibility.`,
+        "Compatibility says the beam cannot deflect at a support, and cannot rotate at a fixed support.",
+        "The solver imposes every one of these conditions at once with the direct stiffness method, then reads the reactions from the restrained degrees of freedom.",
+      ].join(" "),
+    } : {
+      title: "Statically determinate: equilibrium alone gives the reactions",
+      body: [
+        `$$ n = r - 2 = ${r} - 2 = 0 $$`,
+        "",
+        "$$ \\sum F_y = 0, \\qquad \\sum M = 0 $$",
+        "",
+        "- Two equations, two unknown reaction components.",
+        "- The solver still uses the direct stiffness method, which agrees with equilibrium here.",
+      ].join("\n"),
+      narration: [
+        "The supports provide two reaction components, and a planar beam gives two useful equilibrium equations.",
+        "So the beam is statically determinate: vertical equilibrium and moment equilibrium fix the reactions.",
+        "The solver uses the direct stiffness method for every beam, and for this one it agrees with equilibrium alone.",
+      ].join(" "),
+    };
+    const staticsFrame = {
+      title: "Shear and moment follow from statics, deflection from EI v″ = M",
+      body: [
+        "$$ V(x) = \\sum_{\\text{left of } x} F_y, \\qquad \\frac{dM}{dx} = V, \\qquad \\frac{dV}{dx} = q $$",
+        "",
+        "$$ EI\\,\\frac{d^2 v}{dx^2} = M(x) $$",
+        "",
+        "- Exact at every point force and couple: $V$ jumps by the force, $M$ by minus the couple.",
+      ].join("\n"),
+      narration: [
+        "With the reactions known, the shear force at any section is the sum of the upward forces to its left.",
+        "The bending moment is the integral of the shear.",
+        "Integrating the moment over E I twice gives the slope and the deflection.",
+        "The solver does all of this exactly, so every jump at a point force or a couple is kept.",
+      ].join(" "),
+    };
+
+    /* ----- results ----- */
+    const reactionRows = result.reactions.map((re, i) => `| ${i + 1}, ${re.kind === "pin" ? "pin" : "fixed"} | ${sig(X(re.x))} | ${shortNf(show(re.Fy, "force"))} | ${re.kind === "fixed" ? shortNf(show(re.Mz, "moment")) : "—"} |`);
+    const reactionSaid = (re) => {
+      const F = shortNf(show(Math.abs(re.Fy), "force")), push = re.Fy < 0 ? "pulls down with" : "pushes up with";
+      let s = `The ${kind(re)} at ${sayPos(re.x)} ${push} ${say(F, "force")}`;
+      if (re.kind === "fixed") s += `, and resists with a ${re.Mz < 0 ? "clockwise" : "counter-clockwise"} moment of ${say(shortNf(show(Math.abs(re.Mz), "moment")), "moment")}`;
+      return `${s}.`;
+    };
+    const reactionFrame = {
+      title: `Reactions at the ${count(result.reactions.length, "support", "supports").replace(/^one /, "")}`,
+      body: [
+        `| Support | x (${sym("length")}) | Force (${sym("force")}) | Moment (${sym("moment")}) |`,
+        "| --- | --- | --- | --- |",
+        ...reactionRows,
+        "",
+        "Force positive up; moment positive counter-clockwise.",
+      ].join("\n"),
+      narration: result.reactions.map(reactionSaid).join(" "),
+    };
+
+    // Plots: the solver's V, M and v in the page's units and origin, as Macaulay brackets.
+    const d = scaleModel(m, u), Ld = d.length, o = mid ? Ld / 2 : 0, eps = 1e-9 * Ld;
+    const num = (v) => String(+v.toPrecision(12));
+    const shift = (a) => { const s = a - o; return s === 0 ? "x" : s > 0 ? `x - ${num(s)}` : `x + ${num(-s)}`; };
+    const mac = (a, n) => `max(0, ${shift(a)})^${n}`;
+    const step = (a) => `min(1, max(0, (${shift(a)})/${num(eps)} + 1))`; // 1 from a on: V and M just right of a
+    const sum = (terms) => terms.filter(([c]) => c !== 0).map(([c, t], i) => `${i ? (c < 0 ? " - " : " + ") : c < 0 ? "-" : ""}${num(Math.abs(c))}${t ? `*${t}` : ""}`).join("") || "0";
+    // A point action at the right end only affects the diagram at x = L itself, where the page shows the left limit.
+    const inside = (a) => a < Ld;
+    const reacts = result.reactions.map((re) => ({ x: toUnits(re.x, "length", u), Fy: show(re.Fy, "force"), Mz: show(re.Mz, "moment") })).filter((re) => inside(re.x));
+    const Vt = [], Mt = [], vt = [];
+    const EId = d.material.E * d.section.I, start = result.displacements[0];
+    vt.push([show(start.v, "length"), ""], [start.theta, o ? `(${shift(0)})` : "x"]);
+    for (const re of reacts) {
+      Vt.push([re.Fy, step(re.x)]); Mt.push([re.Fy, mac(re.x, 1)], [-re.Mz, step(re.x)]);
+      vt.push([re.Fy / 6 / EId, mac(re.x, 3)], [-re.Mz / 2 / EId, mac(re.x, 2)]);
+    }
+    for (const l of d.loads) {
+      if (l.kind === "point" && inside(l.x)) { Vt.push([l.F, step(l.x)]); Mt.push([l.F, mac(l.x, 1)]); vt.push([l.F / 6 / EId, mac(l.x, 3)]); }
+      if (l.kind === "moment" && inside(l.x)) { Mt.push([-l.C, step(l.x)]); vt.push([-l.C / 2 / EId, mac(l.x, 2)]); }
+      if (l.kind === "dist") {
+        const s = (l.q2 - l.q1) / (l.x2 - l.x1);
+        for (const [a, q, sign] of [[l.x1, l.q1, 1], [l.x2, l.q2, -1]]) {
+          if (!inside(a)) continue;
+          Vt.push([sign * q, mac(a, 1)], [sign * s / 2, mac(a, 2)]);
+          Mt.push([sign * q / 2, mac(a, 2)], [sign * s / 6, mac(a, 3)]);
+          vt.push([sign * q / 24 / EId, mac(a, 4)], [sign * s / 120 / EId, mac(a, 5)]);
+        }
+      }
+    }
+    const plot = (ylabel, terms) => ({ x: [num(-o), num(Ld - o)], xlabel: `x (${sym("length")}), from ${mid ? "mid-span" : "the left end"}`, ylabel, curves: [sum(terms)] });
+
+    const V = sig(show(ex.V.value, "force"), 4), M = sig(show(ex.M.value, "moment"), 4), vmax = sig(show(ex.v.value, "length"), 4);
+    const sense = ex.M.value >= 0 ? "sagging" : "hogging";
+    const shearFrame = {
+      title: `Largest shear: ${text(V, "force")} at x = ${pos(ex.V.x)}`,
+      plot: plot(`shear force V (${sym("force")})`, Vt),
+      body: `$$ V_{\\text{largest}} = ${tex(V, "force")} \\quad \\text{at } x = ${tex(sig(X(ex.V.x)), "length")} $$`,
+      narration: [
+        "Here is the shear force along the beam.",
+        "It jumps at every support and point force, and slopes wherever a distributed load acts.",
+        `The largest shear is ${say(V, "force")}, at ${sayPos(ex.V.x)}.`,
+      ].join(" "),
+    };
+    const momentFrame = {
+      title: `Largest moment: ${text(M, "moment")}, ${sense}, at x = ${pos(ex.M.x)}`,
+      plot: plot(`bending moment M (${sym("moment")})`, Mt),
+      body: [
+        `$$ M_{\\text{largest}} = ${tex(M, "moment")} \\quad \\text{at } x = ${tex(sig(X(ex.M.x)), "length")} $$`,
+        ...(stress != null ? ["", `$$ \\sigma_{\\max} = \\frac{|M_{\\text{largest}}|\\, c}{I} = ${tex(sig(show(stress, "stress"), 4), "stress")} $$`] : []),
+      ].join("\n"),
+      narration: [
+        "Next, the bending moment.",
+        "It is the running integral of the shear, so it peaks where the shear crosses zero or jumps.",
+        `The largest moment is ${say(M, "moment")}, ${sense}, at ${sayPos(ex.M.x)}.`,
+        ...(stress != null ? [`With the extreme fibre ${say(sig(show(m.section.c, "length")), "length")} from the neutral axis, that is a peak bending stress of ${say(sig(show(stress, "stress"), 4), "stress")}.`] : []),
+      ].join(" "),
+    };
+    const deflectionFrame = {
+      title: `Largest deflection: ${text(vmax, "length")} at x = ${pos(ex.v.x)} (L/${ratio})`,
+      plot: plot(`deflection v (${sym("length")}), + up`, vt),
+      body: [
+        `$$ v_{\\text{largest}} = ${tex(vmax, "length")} \\quad \\text{at } x = ${tex(sig(X(ex.v.x)), "length")} $$`,
+        "",
+        `$$ \\frac{L}{|v_{\\text{largest}}|} = ${ratio === "∞" ? "\\infty" : ratio} $$`,
+      ].join("\n"),
+      narration: [
+        "Finally, the deflected shape, positive upward.",
+        `The largest deflection is ${say(vmax, "length")}, at ${sayPos(ex.v.x)}.`,
+        ratio === "∞" ? "The beam does not deflect." : `That is the span divided by ${ratio}.`,
+      ].join(" "),
+    };
+
+    /* ----- checks and takeaway ----- */
+    const balanced = resid < 1e-9;
+    const checkFrame = {
+      title: balanced ? "Loads and reactions balance" : `Loads and reactions balance to a relative error of ${sci(resid)}`,
+      body: [
+        `- $\\sum F_y$ and $\\sum M$ of the loads and reactions: relative error ${sci(resid)}.`,
+        `- Deflection is zero at every support${m.supports.some((s) => s.kind === "fixed") ? ", and slope is zero at every fixed support" : ""}: these are the conditions the solver imposed.`,
+        `- ${deg > 0 ? `Indeterminate to degree ${deg}: equilibrium and compatibility both hold.` : "Determinate: the reactions follow from equilibrium alone."}`,
+      ].join("\n"),
+      narration: [
+        `Adding up every load and reaction, the forces and moments balance to a relative error of ${sayNumber(sci(resid))}.`,
+        "The beam does not deflect at any support, which is exactly the condition the solver imposed.",
+        deg > 0 ? "So both equilibrium and compatibility hold." : "So the reactions are the ones equilibrium alone would give.",
+      ].join(" "),
+    };
+    const takeawayFrame = {
+      title: "Takeaway",
+      key: `Largest moment ${text(M, "moment")} (${sense}) at x = ${pos(ex.M.x)}; largest deflection ${text(vmax, "length")} at x = ${pos(ex.v.x)}, L/${ratio}.`
+        + (stress != null ? ` Peak bending stress ${text(sig(show(stress, "stress"), 4), "stress")}.` : ""),
+      narration: [
+        `To sum up, the largest bending moment is ${say(M, "moment")}, ${sense}, at ${sayPos(ex.M.x)}.`,
+        `The largest deflection is ${say(vmax, "length")}, at ${sayPos(ex.v.x)}.`,
+        ...(stress != null ? [`The peak bending stress is ${say(sig(show(stress, "stress"), 4), "stress")}.`] : []),
+      ].join(" "),
+    };
+
+    const name = String(title || "").trim();
+    return {
+      meta: { title: name ? `Beam analysis: ${name}` : "Beam analysis", subtitle: "Reactions, shear force, bending moment and deflection" },
+      narration: `Beam analysis${name ? `: ${name}` : ""}. We find the reactions, shear force, bending moment and deflection of this beam, with every number from the solver, in ${unitsSpoken}.`,
+      setup: [beamFrame, sectionFrame],
+      method: [methodFrame, staticsFrame],
+      results: [reactionFrame, shearFrame, momentFrame, deflectionFrame],
+      checks: [checkFrame, takeawayFrame],
+    };
+  }
+
   function fmt(x) {
     return Number.isInteger(x) ? String(x) : String(+x.toPrecision(6));
   }
   const lengthText = (units) => { const u = unitSystem(units); return (x) => `${fmt(toUnits(x, "length", u))} ${u.symbol.length}`; };
 
-  return { SUPPORT_KINDS, UNIT_SYSTEMS, DEFAULT_UNITS, toUnits, fromUnits, scaleModel, ModelError, sectionProperties, indeterminacy, validate, mesh, solve, internal, deflection, at, diagram, extremes, exportBdf, smallEntry, largeEntry, exactReal, nastranReal };
+  return { SUPPORT_KINDS, UNIT_SYSTEMS, DEFAULT_UNITS, toUnits, fromUnits, scaleModel, ModelError, sectionProperties, indeterminacy, validate, mesh, solve, internal, deflection, at, diagram, extremes, exportBdf, smallEntry, largeEntry, exactReal, nastranReal, format, fromOrigin, residual, spanRatio, beamReport };
 });

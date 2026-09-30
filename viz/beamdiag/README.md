@@ -28,6 +28,14 @@ Models are not saved automatically; reloading starts from the first example.
   locations, section, material, and the values at each support and load) as a
   PNG or SVG image, or as a one-page PDF. They are drawn in the page and saved
   straight to your device, so saving works offline and uploads nothing.
+- Save the beam as a narrated talk for
+  [beamdswitch](https://teoyujie.org/visuals/beamdswitch/) with the
+  beamdswitch button: one Markdown deck with the set-up, the method, the
+  results with their plots, and the checks, and spoken narration on every
+  slide. Every number is the solver's, written as the page writes it and read
+  aloud in the chosen units. Open it in beamdswitch (Open, or drop the file) to
+  get slides, a handout, narration and a video. If the browser blocks the
+  download, the deck is copied to the clipboard instead.
 - Download the same model as an MSC Nastran SOL 101 bulk data deck (`.bdf`) to
   run in NASTRAN yourself. “Elements per segment” sets only the export mesh,
   with no upper cap; it does not change the browser solution or plot sampling.
@@ -36,18 +44,20 @@ Models are not saved automatically; reloading starts from the first example.
 
 | Path | Role |
 | --- | --- |
-| `index.html` | The built page: `template.html` with `raw.json` and `engine.js` inlined |
-| `engine.js` | Stiffness-method solver, exact V/M recovery, section properties, NASTRAN SOL 101 exporter. Works in the browser (`BeamDiag`) and in Node (`require`) |
+| `index.html` | The built page: `template.html` with `raw.json`, `engine.js` and `beamdswitch.js` inlined |
+| `engine.js` | Stiffness-method solver, exact V/M recovery, section properties, NASTRAN SOL 101 exporter, number formatting and the beam's beamdswitch report (`beamReport`). Works in the browser (`BeamDiag`) and in Node (`require`) |
+| `beamdswitch.js` | The standard beamdswitch report template: `deck(report)` writes a report as a beamdswitch Markdown deck. Shared by every visualisation; see below |
+| `templates/beamdswitch-report.md` | The template's skeleton, with placeholders |
 | `template.html` | Page markup, styles and UI code |
 | `raw.json` | Presets, materials, conventions, assumptions, NASTRAN notes and sources |
-| `build.py` | Inlines `raw.json` and `engine.js` into `template.html` to write `index.html` |
+| `build.py` | Inlines `raw.json`, `engine.js` and `beamdswitch.js` into `template.html` to write `index.html` |
 | `reference.py` | Independent exact-arithmetic Python solver (Macaulay integration and compatibility) and a reader for the exported decks |
 | `fixtures.json` | Test beams with closed-form expectations |
 | `reference.json` | `reference.py` output on the fixtures, compared with `engine.js` by the tests |
-| `tests/` | Node and Python tests; see [docs/verification.md](docs/verification.md) |
+| `tests/` | Node and Python tests; see [docs/verification.md](docs/verification.md). `tests/fixtures/beamdswitch/` holds a read-only copy of beamdswitch's deck and plot parsers |
 
 ```sh
-python3 build.py              # rebuild index.html after editing template.html, engine.js or raw.json
+python3 build.py              # rebuild index.html after editing template.html, engine.js, beamdswitch.js or raw.json
 python3 reference.py          # rebuild reference.json after editing fixtures.json
 python3 reference.py --check  # fail if reference.json is stale
 ```
@@ -63,6 +73,37 @@ python3 -m unittest discover -s tests -p 'test_*.py' -v
 
 [docs/verification.md](docs/verification.md) lists what is checked, the sign
 conventions, and what is not.
+
+## beamdswitch report template
+
+Every visualisation's narrated report follows one template, so their talks
+read alike. `beamdswitch.js` is that template as a small pure function with no
+dependencies: `Beamdswitch.deck(report)` in the browser, `require("./beamdswitch.js").deck(report)`
+in Node. A report is plain data:
+
+```js
+{
+  meta: { title, subtitle },        // front matter; author, date and voice are optional
+  narration,                        // spoken over the title slide
+  setup: [frame, ...],              // # Set-up: what was modelled, its units and conventions
+  method: [frame, ...],             // # Method: how the tool solved it
+  results: [frame, ...],            // # Results: the numbers, with key equations and plots
+  checks: [frame, ..., { key }],    // # Checks and takeaway: ends on one ::: key
+}
+// frame: { title, body, narration, notes?, key?, plot?: { x: [a, b], xlabel, ylabel, curves: ["expr in x"] } }
+```
+
+`body` is Markdown with LaTeX maths; `narration` is plain spoken prose, one
+caption per sentence, with numbers written out as they should be read. The
+function writes the four sections in order, a `::: narration` on every slide
+(including "Part N." on each section slide), and refuses a report with a
+frame left unnarrated, a narration containing maths or markup, a body line
+that would start a new slide or close a block early, or no closing key.
+[templates/beamdswitch-report.md](templates/beamdswitch-report.md) shows the
+resulting deck with placeholders. A visualisation supplies its own numbers,
+formatted as its page shows them; here `BeamDiag.beamReport(result, options)`
+builds the beam's report from the solver's result, and its `::: plot` curves
+are the solver's shear, moment and deflection written as Macaulay brackets.
 
 ## NASTRAN
 

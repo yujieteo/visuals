@@ -149,9 +149,11 @@ code{font:.875em var(--mono)}
       <label class="f format"><span>Image format</span><select id="image-format"><option value="png">PNG</option><option value="svg">SVG</option></select></label>
       <button class="btn primary" type="button" id="save-image">Save image</button>
       <button class="btn" type="button" id="save-pdf">Save PDF</button>
+      <button class="btn" type="button" id="save-beamdswitch" title="Save a narrated Markdown talk about this beam, to open in beamdswitch">beamdswitch</button>
       <span id="figure-status" class="small muted" role="status"></span>
     </div>
     <p class="hint">The image and the PDF hold the beam, shear force, bending moment and deflection diagrams with every result below them. They are drawn on this page and saved straight to your device: nothing is uploaded.</p>
+    <p class="hint">The beamdswitch button saves this beam as a narrated talk: a Markdown deck with the set-up, method, results and checks, every number as shown here, and a spoken narration on every slide. Open it in <a href="https://teoyujie.org/visuals/beamdswitch/">beamdswitch</a> to get slides, a handout, narration and a video. If saving is blocked, the deck is copied to the clipboard instead.</p>
   </div>
 
   <div class="panel">
@@ -239,6 +241,9 @@ const D = /*@DATA@*/;
 /*@ENGINE@*/
 </script>
 <script>
+/*@BEAMDSWITCH@*/
+</script>
+<script>
 (() => {
 "use strict";
 const B = BeamDiag;
@@ -246,38 +251,10 @@ const $ = (id) => document.getElementById(id);
 const SVGNS = "http://www.w3.org/2000/svg";
 
 /* ---------- number formatting ---------- */
-/* Each unit convention puts values on a different scale (a deflection is 0.004 m or 4 mm),
-   so very large and very small magnitudes switch to powers of ten. */
-const plain = (x, n) => String(+x.toPrecision(n)).replace("-", "−");
-const pow10 = (x, n) => {
-  const [m, e] = x.toExponential(n - 1).split("e");
-  return `${plain(+m, n)}×10${e.replace("+", "").replace("-", "⁻").replace(/\d/g, (c) => "⁰¹²³⁴⁵⁶⁷⁸⁹"[c])}`;
-};
-const nf = (x, digits = 3) => {
-  if (!Number.isFinite(x)) return "—";
-  const a = Math.abs(x);
-  if (a === 0) return "0";
-  if (a >= 1e7 || a < 1e-3) return pow10(x, 4);
-  if (a < 1) return plain(x, 4);
-  const d = a >= 1000 ? 0 : a >= 100 ? 1 : a >= 10 ? 2 : digits;
-  return x.toLocaleString("en-GB", { minimumFractionDigits: d, maximumFractionDigits: d }).replace("-", "−");
-};
-const sig = (x, n = 4) => {
-  if (!Number.isFinite(x)) return "—";
-  const a = Math.abs(x);
-  return a === 0 || (a >= 1e-4 && a < 1e7) ? plain(x, n) : pow10(x, n);
-};
+/* The engine holds the formatters, so the page, its saved figures and the beamdswitch deck write
+   every number the same way. */
+const { plain, pow10, nf, sig, sci, short, shortNf } = B.format;
 const tidy = (x) => (Number.isFinite(x) ? +x.toPrecision(10) : "");
-const sci = (x) => {
-  if (!Number.isFinite(x)) return "—";
-  const a = Math.abs(x);
-  return a === 0 || (a >= 1e-2 && a < 1e6) ? plain(x, 4) : pow10(x, 4);
-};
-
-// Figure labels: plain digits below `big`, otherwise n significant figures × a power of ten, so a
-// label stays a few characters long at any load magnitude in any unit convention.
-const short = (x, n = 3, big = 1e6) => (Number.isFinite(x) && Math.abs(x) >= big ? pow10(x, n) : sig(x, n));
-const shortNf = (x, digits) => (Number.isFinite(x) && Math.abs(x) >= 1e6 ? pow10(x, 4) : nf(x, digits));
 
 /* ---------- unit convention ---------- */
 /* The state and the solver stay in SI (N, m, Pa). Values are converted only where they are
@@ -311,7 +288,7 @@ let state, attachmentLength, result = null, cursor = null, active = null, solveE
    shown and typed move between the two in SI; show and take then convert to the unit convention. */
 let origin = "left";
 const offset = (L = attachmentLength) => (origin === "mid" ? L / 2 : 0);
-const shown = (x, L) => { const o = offset(L); return o ? +(x - o).toPrecision(12) : x; };
+const shown = (x, L = attachmentLength) => B.fromOrigin(x, L, origin);
 const typed = (d, L) => { const o = offset(L); return o ? +(d + o).toPrecision(12) : d; };
 /* A beam position as it is typed and read, in the chosen origin and units. */
 const showX = (x, L) => show(shown(x, L), "length");
@@ -387,7 +364,7 @@ function buildSupports() {
     sel.addEventListener("change", () => { s.kind = sel.value; update({ keepForm: true }); });
     kind.append(ks, sel);
     fields.append(kind, numInput({ label: `x (${sym("length")})`, value: showX(s.x), field: `supports.${i}.x`, onInput: (v) => { s.x = takeX(v, s, "x"); } }));
-    li.append(fields, removeButton(`Remove support ${i + 1}`, () => { state.supports.splice(i, 1); update(); }));
+    li.append(fields, removeButton(`Remove support ${i + 1}`, () => { state.supports.splice(i, 1); state.preset = null; update(); }));
     list.append(li);
   });
 }
@@ -420,7 +397,7 @@ function buildLoads() {
         numInput({ label: `q₁ (${sym("distributed")})`, value: show(l.q1, "distributed"), field: `${f}.q1`, onInput: (v) => { l.q1 = take(v, "distributed"); } }),
         numInput({ label: `q₂ (${sym("distributed")})`, value: show(l.q2, "distributed"), field: `${f}.q2`, onInput: (v) => { l.q2 = take(v, "distributed"); } }));
     }
-    li.append(fields, removeButton(`Remove load ${i + 1}, ${LOAD_NAMES[l.kind]}`, () => { state.loads.splice(i, 1); update(); }));
+    li.append(fields, removeButton(`Remove load ${i + 1}, ${LOAD_NAMES[l.kind]}`, () => { state.loads.splice(i, 1); state.preset = null; update(); }));
     list.append(li);
   });
 }
@@ -881,11 +858,10 @@ function statItems() {
     [deg > 0 ? `Indeterminate, degree ${deg}` : "Determinate", deg > 0 ? "more reactions than equilibrium can find: solved with compatibility" : "reactions follow from equilibrium alone"],
     [`${sig(show(ex.V.value, "force"), 4)} ${sym("force")}`, `largest shear, at x = ${at(ex.V.x)}`],
     [`${sig(show(ex.M.value, "moment"), 4)} ${sym("moment")}`, `largest moment (${ex.M.value >= 0 ? "sagging" : "hogging"}), at x = ${at(ex.M.x)}`],
-    [`${sig(show(ex.v.value, "length"), 4)} ${sym("length")}`, `largest deflection, at x = ${at(ex.v.x)} (L/${Math.abs(ex.v.value) > 0 ? Math.round(m.length / Math.abs(ex.v.value)) : "∞"})`],
+    [`${sig(show(ex.v.value, "length"), 4)} ${sym("length")}`, `largest deflection, at x = ${at(ex.v.x)} (L/${B.spanRatio(m.length, ex.v.value)})`],
   ];
   if (m.section.c) items.push([`${sig(show(Math.abs(ex.M.value) * m.section.c / m.section.I, "stress"), 4)} ${sym("stress")}`, "peak bending stress |M|·c / I"]);
-  const eq = result.equilibrium;
-  const resid = Math.max(Math.abs(eq.Fy) / Math.max(eq.scaleF, 1e-300), Math.abs(eq.Mz) / Math.max(eq.scaleM, 1e-300));
+  const resid = B.residual(result.equilibrium);
   items.push([resid < 1e-9 ? "Balanced" : `Residual ${sci(resid)}`, `ΣF and ΣM of loads and reactions, relative error ${sci(resid)}`]);
   return items;
 }
@@ -1117,6 +1093,33 @@ async function saveFigure(kind) {
   }
 }
 
+/* ---------- beamdswitch deck ----------
+   The report template lives in beamdswitch.js; the engine fills it from the solved beam. */
+function reportDeck() {
+  const shape = D.sections.find((x) => x.id === state.section.shape), mat = D.materials.find((x) => x.id === state.material.id);
+  const preset = D.presets.find((p) => p.id === state.preset);
+  const dims = state.section.shape === "custom" ? [] : (SECTION_FIELDS[state.section.shape] || [])
+    .filter(([key]) => state.section[key] != null).map(([key, label, quantity]) => [label, state.section[key], quantity]);
+  return Beamdswitch.deck(B.beamReport(result, {
+    units, origin, title: preset ? preset.label : "",
+    section: { shape: state.section.shape, label: shape ? shape.label : state.section.shape, dims },
+    material: { label: mat ? mat.label : "" },
+  }));
+}
+async function saveReport() {
+  const status = $("figure-status");
+  if (pending !== null) update({ keepForm: true });
+  if (!result || solveError) { status.textContent = "Fix the beam first: there is no solution to save."; return; }
+  const text = reportDeck(), name = "beamdiag-beamdswitch.md";
+  try {
+    save(new Blob([text], { type: "text/markdown" }), name);
+    status.textContent = `Saved ${name}: open it in beamdswitch.`;
+  } catch {
+    try { await navigator.clipboard.writeText(text); status.textContent = "Copied the beamdswitch deck, as saving is blocked here: paste it into beamdswitch."; }
+    catch { status.textContent = "Could not save or copy the beamdswitch deck here."; }
+  }
+}
+
 /* ---------- interaction ---------- */
 /* Steps and snapping work in the current length unit, so a dragged support lands on 24 in, not 0.6 m. */
 function stepFor(L) {
@@ -1253,6 +1256,7 @@ function wire() {
   });
   $("save-image").addEventListener("click", () => saveFigure($("image-format").value === "svg" ? "svg" : "png"));
   $("save-pdf").addEventListener("click", () => saveFigure("pdf"));
+  $("save-beamdswitch").addEventListener("click", saveReport);
   $("divisions").addEventListener("input", () => { state.divisions = Number($("divisions").value); updateSoon(); });
   $("add-support").addEventListener("click", () => {
     const L = state.length, taken = new Set(state.supports.map((s) => s.x));
@@ -1265,6 +1269,7 @@ function wire() {
     };
     const x = [L / 2, L / 4, (3 * L) / 4, L, 0].find((v) => !taken.has(v)) ?? gap();
     state.supports.push({ kind: "pin", x: +x.toPrecision(10) });
+    state.preset = null;
     update();
     const inputs = document.querySelectorAll("#supports input");
     if (inputs.length) inputs[inputs.length - 1].focus();
@@ -1276,6 +1281,7 @@ function wire() {
       state.loads.push(k === "point" ? { kind: "point", x: +(L / 2).toPrecision(10), F: round1(-10e3, "force") }
         : k === "moment" ? { kind: "moment", x: +(L / 2).toPrecision(10), C: round1(10e3, "moment") }
           : { kind: "dist", x1: 0, x2: L, q1: q, q2: q });
+      state.preset = null;
       update();
       const inputs = document.querySelectorAll("#loads .item:last-child input");
       if (inputs.length) inputs[0].focus();
@@ -1285,6 +1291,7 @@ function wire() {
   for (const s of D.sections) shape.add(new Option(s.label, s.id));
   shape.addEventListener("change", () => {
     state.section = { shape: shape.value, ...SECTION_DEFAULTS[shape.value] };
+    state.preset = null;
     update();
     shape.focus();
   });
@@ -1308,6 +1315,7 @@ function wire() {
   mat.addEventListener("change", () => {
     const m = D.materials.find((x) => x.id === mat.value);
     if (m) state.material = { id: m.id, E: m.E, nu: m.nu }; else state.material.id = "custom";
+    state.preset = null;
     update(); mat.focus();
   });
   // E typed in psi only matches a preset to rounding, so presets are recognised within 1e-9.
