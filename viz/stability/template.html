@@ -1,0 +1,598 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" href="data:,">
+<meta name="description" content="Explore column buckling, second-order beam-columns, flat-plate shear buckling and NACA TN 2661 diagonal tension with source-tagged formulas, SI/US units, Markdown and JSON export, and self-tests. Not for certification. Runs offline in your browser.">
+<title>Structural Stability Visualiser</title>
+<style>
+:root{--bg:#fff;--fg:#1d1d1f;--muted:#6e6e73;--faint:#a1a1a6;--surface:#f5f5f7;--border:#d2d2d7;--grid:#e8e8ed;--focus:#0071e3;--c1:#2a78d6;--c2:#eb6834;--c3:#7a4fd0;--c4:#1a7f4b;--ok:#1a7f4b;--bad:#c4261d;--warn:#9a6700;--nasa:#2a78d6;--classical:#6e6e73;--fit:#9a6700;--sans:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;--mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;--r:.5rem;color-scheme:light dark}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--faint:#6e6e73;--surface:#2c2c2e;--border:#48484a;--grid:#333336;--focus:#2997ff;--c1:#3987e5;--c2:#d95926;--c3:#a07ff0;--c4:#30c07a;--ok:#30c07a;--bad:#ff6961;--warn:#e3b341;--nasa:#3987e5;--classical:#a1a1a6;--fit:#e3b341}}
+:root[data-theme="dark"]{--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--faint:#6e6e73;--surface:#2c2c2e;--border:#48484a;--grid:#333336;--focus:#2997ff;--c1:#3987e5;--c2:#d95926;--c3:#a07ff0;--c4:#30c07a;--ok:#30c07a;--bad:#ff6961;--warn:#e3b341;--nasa:#3987e5;--classical:#a1a1a6;--fit:#e3b341;color-scheme:dark}
+:root[data-theme="light"]{color-scheme:light}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 var(--sans);letter-spacing:-.011em;-webkit-font-smoothing:antialiased}
+main{width:min(100% - 2rem,82rem);margin:auto;padding:clamp(1rem,4vw,2.5rem) 0 3rem}
+a{color:inherit;text-underline-offset:.18em}
+h1{font-size:clamp(2rem,6vw,3.1rem);line-height:1.04;letter-spacing:-.045em;margin:.35rem 0 .8rem;max-width:20ch}
+h2{font-size:1.35rem;letter-spacing:-.02em;margin:0 0 .35rem;line-height:1.2}
+h3{font:600 .72rem/1.4 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:1rem 0 .5rem}
+p{margin:.5rem 0;max-width:72ch}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.banner{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:2px solid var(--warn);padding:.45rem 1rem;font-size:.875rem;text-align:center}
+.banner b{color:var(--warn)}
+.eyebrow{font:600 .75rem/1.4 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0}
+.lede{font-size:1.075rem;max-width:70ch}
+.muted{color:var(--muted)}
+.small{font-size:.875rem}
+section.block{margin-top:clamp(2rem,6vw,3.5rem);padding-top:1.25rem;border-top:1px solid var(--border)}
+.btn{display:inline-flex;align-items:center;gap:.35rem;border:1px solid var(--border);background:var(--bg);border-radius:999px;padding:.25rem .8rem;min-height:2.25rem;font-size:.875rem;white-space:nowrap}
+@media (hover:hover){.btn:hover{background:var(--surface)}}
+.btn[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.toolbar{display:flex;flex-wrap:wrap;gap:.6rem 1.2rem;align-items:center;margin:1rem 0 .75rem;padding:.6rem 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.toolbar .group{display:flex;flex-wrap:wrap;gap:.35rem;align-items:center;min-width:0}
+.label{font:600 .7rem var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-right:.2rem}
+select,input[type="number"],input[type="text"],textarea{border:1px solid var(--border);background:var(--bg);border-radius:var(--r);padding:.3rem .5rem;min-height:2.25rem;font-size:.875rem;min-width:0;width:100%}
+.toolbar select{width:auto;max-width:100%}
+input[type="number"]{font-variant-numeric:tabular-nums}
+input[type="range"]{width:100%}
+[aria-invalid="true"]{border-color:var(--bad);box-shadow:0 0 0 1px var(--bad)}
+.badge{display:inline-flex;align-items:center;gap:.35rem;border-radius:999px;padding:.2rem .7rem;font:600 .8rem var(--mono);border:1px solid currentColor;text-decoration:none}
+.badge.pass{color:var(--ok)}
+.badge.fail{color:var(--bad)}
+.tabs{display:flex;flex-wrap:wrap;gap:.35rem;margin:1rem 0}
+.tabs button{border:1px solid var(--border);background:var(--bg);border-radius:var(--r);padding:.45rem .9rem;font-size:.9375rem;font-weight:600}
+.tabs button[aria-selected="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.material{display:grid;grid-template-columns:repeat(auto-fill,minmax(8.5rem,1fr));gap:.5rem .6rem;margin:.5rem 0 0}
+.layout{display:grid;gap:1.5rem 2rem;grid-template-columns:minmax(0,24rem) minmax(0,1fr);align-items:start}
+@media (max-width:64rem){.layout{grid-template-columns:minmax(0,1fr)}}
+.inputs{display:flex;flex-direction:column;gap:1rem;min-width:0}
+fieldset{border:1px solid var(--border);border-radius:var(--r);padding:.75rem .85rem .9rem;margin:0;min-width:0}
+legend{font:600 .72rem/1.4 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:0 .3rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(7.2rem,1fr));gap:.5rem .6rem}
+.f{display:flex;flex-direction:column;gap:.15rem;min-width:0;font-size:.8125rem}
+.f .n{display:flex;justify-content:space-between;gap:.3rem;min-width:0}
+.f .n b{font-weight:600;overflow-wrap:anywhere}
+.f .n small{color:var(--muted);font:.72rem var(--mono);white-space:nowrap}
+.f .msg{color:var(--bad);font-size:.75rem}
+.f.wide{grid-column:1/-1}
+.check,.f.check{display:flex;flex-direction:row;gap:.45rem;align-items:center;font-size:.875rem}
+.results{min-width:0}
+.error{border:1px solid var(--bad);border-radius:var(--r);padding:.55rem .8rem;margin:0 0 .75rem;font-size:.9375rem}
+.error[hidden]{display:none}
+.error b{color:var(--bad)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(10rem,1fr));gap:.6rem 1.25rem;margin:0 0 1rem;padding:0;list-style:none}
+.stats li{border-top:1px solid var(--border);padding-top:.4rem;min-width:0}
+.stats b{display:block;font-size:1.25rem;letter-spacing:-.03em;line-height:1.2;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.stats span{font-size:.8125rem;color:var(--muted)}
+.stats .neg b{color:var(--bad)}
+.warnings{list-style:none;margin:0 0 1rem;padding:0;display:flex;flex-direction:column;gap:.3rem;font-size:.875rem}
+.warnings li{border-left:3px solid var(--warn);padding:.15rem .6rem}
+.warnings li.none{border-color:var(--ok)}
+.warnings li.none::before{content:none}
+.warnings li::before{content:"Warning · ";font:600 .7rem var(--mono);letter-spacing:.04em;text-transform:uppercase;color:var(--warn)}
+.plots{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,22rem),1fr));gap:1rem;margin:0 0 1rem}
+figure{margin:0;border:1px solid var(--border);border-radius:var(--r);padding:.5rem .6rem .4rem;min-width:0;position:relative}
+figcaption{font:600 .72rem/1.4 var(--mono);letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin:0 0 .25rem}
+svg.plot{width:100%;height:auto;display:block;overflow:visible}
+svg.plot text{font:11px var(--sans);fill:var(--muted)}
+svg.plot .gridline{stroke:var(--grid);stroke-width:1}
+svg.plot .axis{stroke:var(--border);stroke-width:1}
+.legend{display:flex;flex-wrap:wrap;gap:.2rem .8rem;font-size:.75rem;color:var(--muted);margin:.2rem 0 0}
+.legend i{display:inline-block;width:1.1rem;height:0;border-top:2px solid;vertical-align:middle;margin-right:.3rem}
+.legend i.dash{border-top-style:dashed}
+.tip{position:absolute;pointer-events:none;background:var(--fg);color:var(--bg);font:.75rem var(--mono);padding:.2rem .45rem;border-radius:.3rem;white-space:nowrap;transform:translate(-50%,-120%)}
+.tip[hidden]{display:none}
+.tablewrap{overflow-x:auto;max-width:100%}
+table{border-collapse:collapse;width:100%;font-size:.8125rem;font-variant-numeric:tabular-nums}
+th,td{padding:.35rem .5rem;border-bottom:1px solid var(--grid);text-align:right;vertical-align:top}
+th{font:600 .68rem/1.3 var(--mono);letter-spacing:.04em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap}
+th:first-child,td:first-child,td.l,th.l{text-align:left}
+.sources{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.45rem;font-size:.8125rem}
+.sources li{border-left:3px solid var(--classical);padding:.1rem .6rem;overflow-wrap:anywhere}
+.sources li.NASA{border-color:var(--nasa)}
+.sources li.fit{border-color:var(--fit)}
+.tag{display:inline-block;font:600 .65rem var(--mono);letter-spacing:.05em;text-transform:uppercase;border:1px solid currentColor;border-radius:999px;padding:0 .45rem;margin-right:.4rem}
+.tag.NASA{color:var(--nasa)}
+.tag.classical{color:var(--classical)}
+.tag.fit{color:var(--fit)}
+.tests{list-style:none;margin:0;padding:0;font-size:.8125rem;columns:2 26rem;column-gap:2rem}
+.tests li{break-inside:avoid;padding:.15rem 0}
+.tests li.pass b{color:var(--ok)}
+.tests li.fail b{color:var(--bad)}
+.io{display:grid;gap:.6rem;grid-template-columns:minmax(0,1fr)}
+.io .row{display:flex;flex-wrap:wrap;gap:.35rem;align-items:center}
+textarea{min-height:6rem;font:.8rem var(--mono)}
+.status{font-size:.8125rem;color:var(--muted);min-height:1.2em}
+.notes{font-size:.875rem;padding-left:1.1rem}
+.notes li{margin:.25rem 0}
+</style>
+</head>
+<body>
+<div class="banner" role="note"><b>Not for certification.</b> Exploration and preliminary sizing only: no design allowables, no knockdown factors, illustrative material presets.</div>
+<main>
+<p class="eyebrow"><a href="../">Visuals</a> · structural engineering</p>
+<h1>Structural Stability Visualiser</h1>
+<p class="lede" id="lede"></p>
+
+<div class="toolbar">
+  <div class="group"><span class="label">Units</span>
+    <button class="btn" id="u-SI" aria-pressed="true">SI · N mm MPa</button>
+    <button class="btn" id="u-US" aria-pressed="false">US · lbf in ksi</button>
+  </div>
+  <div class="group"><span class="label">Material</span><select id="mat-preset" aria-label="Material preset"></select></div>
+  <div class="group"><a class="badge" id="badge" href="#self-tests">Self-tests…</a> <button class="btn" id="rerun">Run self-test</button></div>
+</div>
+<div class="material" id="material"></div>
+<p class="small muted" id="mat-note"></p>
+
+<div class="tabs" role="tablist" id="tabs"></div>
+
+<div class="layout">
+  <form class="inputs" id="inputs" autocomplete="off" onsubmit="return false"></form>
+  <div class="results" aria-live="polite">
+    <div class="error" id="error" hidden></div>
+    <ul class="stats" id="stats"></ul>
+    <h3>Warnings</h3>
+    <ul class="warnings" id="warnings"></ul>
+    <div class="plots" id="plots"></div>
+    <h3>Results</h3>
+    <div class="tablewrap"><table id="rows"><thead><tr><th class="l">Quantity</th><th>Value</th></tr></thead><tbody></tbody></table></div>
+    <h3>Formula sources</h3>
+    <ul class="sources" id="sources"></ul>
+  </div>
+</div>
+
+<section class="block" id="export">
+  <h2>Export and import</h2>
+  <p class="small muted">Files are canonical SI (N, mm, MPa) whatever units are displayed; <code>displayUnits</code> only restores the unit switch. Import accepts a results or an inputs-only JSON file. Every export carries the not-for-certification notice and the warnings.</p>
+  <div class="io">
+    <div class="row"><span class="label">Current tab</span>
+      <button class="btn" data-exp="md" data-act="download">Markdown report ↓</button><button class="btn" data-exp="md" data-act="copy">Copy</button>
+      <button class="btn" data-exp="results" data-act="download">Results JSON ↓</button><button class="btn" data-exp="results" data-act="copy">Copy</button>
+      <button class="btn" data-exp="inputs" data-act="download">Inputs JSON ↓</button><button class="btn" data-exp="inputs" data-act="copy">Copy</button>
+    </div>
+    <div class="row"><span class="label">Import</span><input type="file" id="file" accept=".json,application/json" aria-label="Import JSON file"></div>
+    <textarea id="paste" aria-label="Paste JSON to import" placeholder="…or paste an exported JSON here and press Import pasted"></textarea>
+    <div class="row"><button class="btn" id="import-paste">Import pasted</button><span class="status" id="io-status" role="status"></span></div>
+  </div>
+</section>
+
+<section class="block" id="fits">
+  <h2>Fits to NASA figures</h2>
+  <p class="small muted" id="fits-note"></p>
+  <div class="tablewrap"><table id="fit-table"><thead><tr><th class="l">Relation</th><th class="l">Figure</th><th>Points</th><th>Max abs error</th><th>Max rel error</th><th class="l">Range</th></tr></thead><tbody></tbody></table></div>
+</section>
+
+<section class="block" id="self-tests">
+  <h2>Self-test</h2>
+  <p class="small muted">Runs on every load: the FE eigenvalue Pcr against π²EI/(KL)² for each K preset, the k = 1 diagonal-tension limit against pure Wagner, the k_s asymptotes, SI/US and file round-trips, and the NACA TN 2661 section 7 worked examples. Tolerances are shown with each check.</p>
+  <ul class="tests" id="tests"></ul>
+</section>
+
+<section class="block" id="refs">
+  <h2>Sources and notes</h2>
+  <ul class="notes" id="policy"></ul>
+  <h3>Reports</h3>
+  <ul class="notes" id="reports"></ul>
+  <h3>Reference notes</h3>
+  <ul class="notes" id="refnotes"></ul>
+  <h3>Out of scope</h3>
+  <p class="small" id="scope"></p>
+</section>
+</main>
+
+<script>
+/*@ENGINE@*/
+</script>
+<script>
+(function () {
+"use strict";
+const D = /*@DATA@*/;
+const S = Stability;
+S.setFigureData(D.figures);
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fmt = S.fmt;
+
+/* ---------- State ---------- */
+const state = { tab: "column", units: "SI", material: S.defaults("column").material, inputs: {} };
+for (const t of S.TABS) { const d = S.defaults(t); delete d.material; state.inputs[t] = d; }
+const current = (tab = state.tab) => ({ ...state.inputs[tab], material: { ...state.material } });
+
+/* ---------- Field definitions ---------- */
+// q: quantity for unit conversion; path: "section.x" for section fields.
+const num = (key, label, q = "none", extra = {}) => ({ key, label, q, type: "number", ...extra });
+const sel = (key, label, options, extra = {}) => ({ key, label, type: "select", options, ...extra });
+const chk = (key, label, extra = {}) => ({ key, label, type: "check", ...extra });
+const sectionFields = [
+  sel("section.shape", "Section", [["tube", "Round tube"], ["rect", "Rectangle"], ["free", "Free A and I"]], { wide: true }),
+  num("section.D", "Outer dia. D", "length", { show: (x) => x.section.shape === "tube" }),
+  num("section.t", "Wall t", "length", { show: (x) => x.section.shape === "tube" }),
+  num("section.b", "Width b", "length", { show: (x) => x.section.shape === "rect" }),
+  num("section.h", "Depth h", "length", { show: (x) => x.section.shape === "rect" }),
+  sel("section.axis", "Axis", [["weak", "Weak (default)"], ["strong", "Strong"]], { show: (x) => x.section.shape === "rect" }),
+  num("section.A", "Area A", "area", { show: (x) => x.section.shape === "free" }),
+  num("section.I", "Second moment I", "inertia", { show: (x) => x.section.shape === "free" }),
+  num("section.c", "Extreme fibre c", "length", { show: (x) => x.section.shape === "free" }),
+];
+const kFields = [
+  sel("kPreset", "End fixity (K)", [...S.K_PRESETS.map((k) => [k.id, `${k.label} (${k.K})`]), ["custom", "Custom K"]], { wide: true }),
+  { key: "K", label: "Effective-length factor K", type: "range", min: 0.3, max: 3, step: 0.01, show: (x) => x.kPreset === "custom", wide: true },
+];
+const FIELDS = {
+  column: [
+    { legend: "Section", fields: sectionFields },
+    { legend: "Length and load", fields: [num("L", "Length L", "length"), ...kFields, num("P", "Applied load P", "force"), chk("tangent", "Show tangent-modulus curve (Ramberg-Osgood)")] },
+  ],
+  beamColumn: [
+    { legend: "Section", fields: sectionFields },
+    { legend: "Member", fields: [num("L", "Length L", "length"), ...kFields] },
+    { legend: "Loads", fields: [num("P", "Axial load P", "force"), num("e", "Eccentricity e", "length"), num("M1", "End moment M1", "moment"), num("M2", "End moment M2", "moment"), num("w", "Lateral load w", "lineLoad"), num("bow", "Initial bow δ0", "length", { hint: "assumption; default L/1000" })] },
+    { legend: "FE cross-check ends", fields: [
+      sel("feMode", "Ends", [["preset", "From the K preset"], ["springs", "End springs"]], { wide: true }),
+      num("krA", "Rot. spring A", "rotSpring", { show: (x) => x.feMode === "springs", hint: "0 = pinned" }),
+      num("krB", "Rot. spring B", "rotSpring", { show: (x) => x.feMode === "springs", hint: "0 = pinned" }),
+      sel("uB", "Translation at B", [["fixed", "Fixed"], ["spring", "Spring"], ["free", "Free (sway)"]], { show: (x) => x.feMode === "springs" }),
+      num("ktB", "Trans. spring B", "transSpring", { show: (x) => x.feMode === "springs" && x.uB === "spring" }),
+    ] },
+  ],
+  shear: [
+    { legend: "Panel", fields: [num("a", "Length a", "length"), num("b", "Width b", "length"), num("t", "Thickness t", "length"),
+      sel("edges", "Edges", [["ss", "Simply supported"], ["clamped", "Clamped"]], { wide: true })] },
+    { legend: "Load and plasticity", fields: [num("tau", "Applied shear τ", "stress"),
+      sel("plasticity", "Plasticity factor (TN 3781)", [["A5", "Eq. (A5), fig. 10"], ["table2", "Table 2 (× 0.83 + 0.17 Et/Es)"]], { wide: true })] },
+  ],
+  diagonal: [
+    { legend: "Web", fields: [num("t", "Web t", "length"), num("he", "Effective depth he", "length"), num("hc", "Clear depth hc", "length"), num("d", "Upright spacing d", "length"), num("dc", "Clear spacing dc", "length"), num("S", "Applied shear S", "force")] },
+    { legend: "Uprights", fields: [sel("upright", "Type", [["double", "Double (symmetric)"], ["single", "Single (one side)"]], { wide: true }),
+      num("AU", "Area AU", "area"), num("rho", "Radius of gyration ρ", "length"), num("tU", "Attached leg tU", "length"), num("hU", "Length hU", "length"),
+      num("e", "Eccentricity e", "length", { show: (x) => x.upright === "single" })] },
+    { legend: "Flanges", fields: [chk("heavyFlanges", "Heavy flanges (εF neglected, as the TN 2661 charts)"),
+      num("AF", "Area AF (one)", "area", { show: (x) => !x.heavyFlanges }), num("tF", "Thickness tF", "length", { show: (x) => x.restraint === "fig12b" }),
+      num("IT", "Tension flange I", "inertia"), num("IC", "Compression flange I", "inertia")] },
+    { legend: "Web edge restraint (TN 2661 eq. 32)", fields: [sel("restraint", "Rh, Rd", [["fig12b", "From fig. 12(b) fit (tU/t, tF/t)"], ["user", "Typed in (1 = SS, 1.62 = clamped)"]], { wide: true }),
+      num("Rh", "Rh (along uprights)", "none", { show: (x) => x.restraint === "user" }), num("Rd", "Rd (along flanges)", "none", { show: (x) => x.restraint === "user" })] },
+  ],
+};
+
+/* ---------- Helpers ---------- */
+const getPath = (o, p) => p.split(".").reduce((a, k) => (a == null ? a : a[k]), o);
+function setPath(o, p, v) { const ks = p.split("."); let a = o; for (const k of ks.slice(0, -1)) a = a[k]; a[ks[ks.length - 1]] = v; }
+const disp = (v, q) => S.toDisplay(v, q, state.units);
+const unit = (q) => S.unitLabel(q, state.units);
+const showVal = (v, q = "none") => (v === null || v === undefined ? "—" : typeof v === "string" ? v : `${fmt(disp(v, q))}${unit(q) ? " " + unit(q) : ""}`);
+
+/* ---------- Static text ---------- */
+function staticText() {
+  $("lede").textContent = D.summary;
+  $("mat-note").textContent = "Material presets are illustrative only, not design allowables; every value is editable. The material is shared by all four tabs. Stress-strain: Ramberg-Osgood with the 0.2 % offset yield (classical).";
+  $("policy").innerHTML = D.source_policy.map((x) => `<li>${esc(x)}</li>`).join("");
+  $("reports").innerHTML = D.sources.map((s) => `<li><b>${esc(s.report)}</b>: ${esc(s.title)}, ${esc(s.authors)} (${s.year})${s.ntrs ? `, <a href="${esc(s.ntrs)}">NTRS</a>` : ""}. Used: ${esc(s.used)}.</li>`).join("");
+  $("refnotes").innerHTML = D.reference_notes.map((x) => `<li>${esc(x)}</li>`).join("");
+  $("scope").textContent = D.not_in_scope.join(" · ");
+  $("fits-note").textContent = D.figures.note + " Relative error is over digitised points with values above 0.2.";
+  const errs = S.fitErrors();
+  const rows = [
+    ["kss(hc/dc)", "TN 2661 fig. 12(a)", errs.kss, "1 to 5"], ["R upper curve", "TN 2661 fig. 12(b)", errs.rUpper, "0 to 3 (solid from 0.6)"],
+    ["R lower curve", "TN 2661 fig. 12(b)", errs.rLower, "0 to 3 (solid from 0.5)"], ["σUmax/σU", "TN 2661 fig. 15", errs.smax, "d/hU 0 to 1"], ["C2(ωd)", "TN 2661 fig. 18", errs.c2, "ωd 0 to 4"],
+  ];
+  $("fit-table").tBodies[0].innerHTML = rows.map(([a, b, e, r]) => `<tr><td class="l">${a}</td><td class="l">${b}</td><td>${e.n}</td><td>${fmt(e.maxAbs)}</td><td>${fmt(100 * e.maxRel)} %</td><td class="l">${r}</td></tr>`).join("");
+  $("tabs").innerHTML = S.TABS.map((t) => `<button role="tab" id="tab-${t}" aria-selected="false" data-tab="${t}">${esc(S.TAB_LABELS[t])}</button>`).join("");
+  $("mat-preset").innerHTML = S.MATERIAL_PRESETS.map((m) => `<option value="${m.id}">${esc(m.label)}</option>`).join("") + `<option value="custom">Custom</option>`;
+}
+
+/* ---------- Material inputs ---------- */
+const MAT = [["E", "E", "stress"], ["Fcy", "Fcy (0.2 % offset)", "stress"], ["nu", "Poisson's ratio ν", "none"], ["n", "Ramberg-Osgood n", "none"]];
+function buildMaterial() {
+  $("material").innerHTML = MAT.map(([k, l, q]) => `<label class="f"><span class="n"><b>${esc(l)}</b><small>${esc(unit(q))}</small></span><input type="number" step="any" data-mat="${k}" value="${fmt(disp(state.material[k], q))}"><span class="msg" data-msg="${k}"></span></label>`).join("");
+  $("mat-preset").value = state.material.preset || "custom";
+}
+
+/* ---------- Tab inputs ---------- */
+function buildInputs() {
+  const x = current();
+  $("inputs").innerHTML = FIELDS[state.tab].map((fs) => `<fieldset><legend>${esc(fs.legend)}</legend><div class="grid">${fs.fields.filter((f) => !f.show || f.show(x)).map((f) => fieldHTML(f, x)).join("")}</div></fieldset>`).join("");
+}
+function fieldHTML(f, x) {
+  const v = getPath(x, f.key), wide = f.wide ? " wide" : "";
+  if (f.type === "select") return `<label class="f${wide}"><span class="n"><b>${esc(f.label)}</b></span><select data-key="${f.key}">${f.options.map(([val, lab]) => `<option value="${val}"${val === v ? " selected" : ""}>${esc(lab)}</option>`).join("")}</select></label>`;
+  if (f.type === "check") return `<label class="check f wide"><input type="checkbox" data-key="${f.key}"${v ? " checked" : ""}> ${esc(f.label)}</label>`;
+  if (f.type === "range") return `<label class="f${wide}"><span class="n"><b>${esc(f.label)}</b><small>${fmt(v)}</small></span><input type="range" data-key="${f.key}" min="${f.min}" max="${f.max}" step="${f.step}" value="${v}"><input type="number" step="any" data-key="${f.key}" value="${fmt(v)}" aria-label="${esc(f.label)}"></label>`;
+  const shown = typeof v === "number" && Number.isFinite(v) ? fmt(disp(v, f.q)) : "";
+  const key = f.key.includes(".") ? f.key.split(".")[1] : f.key;
+  return `<label class="f${wide}"><span class="n"><b>${esc(f.label)}</b><small>${esc(unit(f.q))}</small></span><input type="number" step="any" data-key="${f.key}" data-q="${f.q}" value="${shown}">${f.hint ? `<small class="muted">${esc(f.hint)}</small>` : ""}<span class="msg" data-msg="${key}"></span></label>`;
+}
+function parseNum(s) { const t = String(s).trim(); if (t === "") return null; const v = Number(t); return Number.isFinite(v) ? v : NaN; }
+
+function onInput(ev) {
+  const el = ev.target;
+  if (el.dataset.mat) {
+    const [, , q] = MAT.find((m) => m[0] === el.dataset.mat);
+    const v = parseNum(el.value);
+    state.material[el.dataset.mat] = v === null || Number.isNaN(v) ? v : S.fromDisplay(v, q, state.units);
+    state.material.preset = "custom"; $("mat-preset").value = "custom";
+    refresh(); return;
+  }
+  const key = el.dataset.key;
+  if (!key) return;
+  const inp = state.inputs[state.tab], target = key.startsWith("section.") ? inp.section : inp, k = key.replace("section.", "");
+  let rebuild = false;
+  if (el.type === "checkbox") { target[k] = el.checked; rebuild = true; }
+  else if (el.tagName === "SELECT") {
+    target[k] = el.value; rebuild = true;
+    if (k === "kPreset" && el.value !== "custom") inp.K = S.K_PRESETS.find((p) => p.id === el.value).K;
+  } else if (el.type === "range") { target[k] = Number(el.value); rebuild = ev.type === "change"; syncRange(el); }
+  else {
+    const v = parseNum(el.value), q = el.dataset.q || "none";
+    target[k] = v === null || Number.isNaN(v) ? v : S.fromDisplay(v, q, state.units);
+    if (k === "K") syncRange(el);
+  }
+  if (rebuild) buildInputs();
+  refresh();
+}
+function syncRange(el) {
+  const inp = state.inputs[state.tab];
+  for (const other of $("inputs").querySelectorAll('[data-key="K"]')) if (other !== el) other.value = other.type === "range" ? inp.K : fmt(inp.K);
+  const small = el.closest(".f").querySelector(".n small"); if (small) small.textContent = fmt(inp.K);
+}
+
+/* ---------- Plots (hand-rolled SVG with shared axis and tooltip helpers) ---------- */
+function niceTicks(lo, hi, n = 5) {
+  if (!(hi > lo)) { hi = lo + 1; }
+  const span = hi - lo, step0 = span / n, mag = Math.pow(10, Math.floor(Math.log10(step0)));
+  const step = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => span / s <= n) || 10 * mag;
+  const out = []; for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9 * span; v += step) out.push(+v.toPrecision(12));
+  return out;
+}
+function plot(fig, o) {
+  const W = 460, H = 280, m = { l: 58, r: 14, t: 10, b: 40 };
+  const all = o.series.flatMap((s) => s.points).concat((o.markers || []).map((k) => [k.x, k.y]));
+  const xs = all.map((p) => p[0]).filter(Number.isFinite), ys = all.map((p) => p[1]).filter(Number.isFinite);
+  const logx = !!o.logx;
+  let x0 = o.xmin ?? Math.min(...xs), x1 = o.xmax ?? Math.max(...xs), y0 = o.ymin ?? Math.min(0, ...ys), y1 = o.ymax ?? Math.max(...ys) * 1.05;
+  if (!(x1 > x0)) x1 = x0 + 1; if (!(y1 > y0)) y1 = y0 + 1;
+  const tx = logx ? (v) => Math.log10(v) : (v) => v;
+  const X = (v) => m.l + (tx(v) - tx(x0)) / (tx(x1) - tx(x0)) * (W - m.l - m.r), Y = (v) => H - m.b - (v - y0) / (y1 - y0) * (H - m.t - m.b);
+  const xt = logx ? [0, 1, 2, 3].map((e) => 10 ** e).filter((v) => v >= x0 && v <= x1) : niceTicks(x0, x1), yt = niceTicks(y0, y1);
+  let g = "";
+  for (const v of yt) g += `<line class="gridline" x1="${m.l}" x2="${W - m.r}" y1="${Y(v)}" y2="${Y(v)}"/><text x="${m.l - 6}" y="${Y(v) + 4}" text-anchor="end">${fmt(v)}</text>`;
+  for (const v of xt) g += `<line class="gridline" y1="${m.t}" y2="${H - m.b}" x1="${X(v)}" x2="${X(v)}"/><text x="${X(v)}" y="${H - m.b + 15}" text-anchor="middle">${fmt(v)}</text>`;
+  g += `<line class="axis" x1="${m.l}" x2="${W - m.r}" y1="${H - m.b}" y2="${H - m.b}"/><line class="axis" x1="${m.l}" x2="${m.l}" y1="${m.t}" y2="${H - m.b}"/>`;
+  g += `<text x="${(m.l + W - m.r) / 2}" y="${H - 6}" text-anchor="middle">${esc(o.xLabel)}</text><text transform="translate(12 ${(m.t + H - m.b) / 2}) rotate(-90)" text-anchor="middle">${esc(o.yLabel)}</text>`;
+  const clip = `clip-${fig.id}`;
+  g += `<clipPath id="${clip}"><rect x="${m.l}" y="${m.t}" width="${W - m.l - m.r}" height="${H - m.t - m.b}"/></clipPath><g clip-path="url(#${clip})">`;
+  for (const s of o.series) {
+    const pts = s.points.filter((p) => Number.isFinite(p[0]) && Number.isFinite(p[1]) && (!logx || p[0] > 0));
+    if (!pts.length) continue;
+    g += `<polyline fill="none" stroke="${s.color}" stroke-width="${s.width || 2}"${s.dash ? ' stroke-dasharray="6 4"' : ""} points="${pts.map((p) => `${X(p[0]).toFixed(1)},${Y(p[1]).toFixed(1)}`).join(" ")}"/>`;
+  }
+  for (const k of o.markers || []) if (Number.isFinite(k.x) && Number.isFinite(k.y)) g += `<circle cx="${X(k.x)}" cy="${Y(k.y)}" r="4.5" fill="${k.color || "var(--fg)"}" stroke="var(--bg)" stroke-width="1.5"/>`;
+  g += "</g>";
+  fig.innerHTML = `<figcaption>${esc(o.title)}</figcaption><svg class="plot" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(o.title)}">${g}</svg><div class="legend">${o.series.filter((s) => s.name).map((s) => `<span><i class="${s.dash ? "dash" : ""}" style="border-color:${s.color}"></i>${esc(s.name)}</span>`).join("")}${(o.markers || []).filter((k) => k.label).map((k) => `<span><i style="border-color:${k.color || "var(--fg)"};border-top-width:6px;width:6px;border-radius:3px"></i>${esc(k.label)}</span>`).join("")}</div><div class="tip" hidden></div>`;
+  // Tooltip: nearest plotted point to the cursor.
+  const svg = fig.querySelector("svg"), tip = fig.querySelector(".tip");
+  const cands = o.series.flatMap((s) => s.points.filter((p) => Number.isFinite(p[0]) && Number.isFinite(p[1])).map((p) => ({ p, name: s.name }))).concat((o.markers || []).map((k) => ({ p: [k.x, k.y], name: k.label })));
+  svg.addEventListener("mousemove", (ev) => {
+    const r = svg.getBoundingClientRect(), sx = (ev.clientX - r.left) * W / r.width, sy = (ev.clientY - r.top) * H / r.height;
+    let best = null, bd = 1e9;
+    for (const c of cands) { const d = Math.hypot(X(c.p[0]) - sx, Y(c.p[1]) - sy); if (d < bd) { bd = d; best = c; } }
+    if (!best || bd > 30) { tip.hidden = true; return; }
+    tip.hidden = false; tip.style.left = `${(X(best.p[0]) / W) * r.width + 8}px`; tip.style.top = `${(Y(best.p[1]) / H) * r.height + 26}px`;
+    tip.textContent = `${best.name ? best.name + ": " : ""}${o.xFmt ? o.xFmt(best.p[0]) : fmt(best.p[0])}, ${o.yFmt ? o.yFmt(best.p[1]) : fmt(best.p[1])}`;
+  });
+  svg.addEventListener("mouseleave", () => { tip.hidden = true; });
+}
+function figures(n) { $("plots").innerHTML = Array.from({ length: n }, (_, i) => `<figure id="fig-${i}"></figure>`).join(""); return Array.from({ length: n }, (_, i) => $(`fig-${i}`)); }
+
+/* ---------- Rendering per tab ---------- */
+const C = { a: "var(--c1)", b: "var(--c2)", c: "var(--c3)", d: "var(--c4)", fg: "var(--fg)", muted: "var(--faint)", bad: "var(--bad)" };
+function stat(label, value, neg) { return `<li class="${neg ? "neg" : ""}"><b>${esc(value)}</b><span>${esc(label)}</span></li>`; }
+const ms = (v) => (v === null || v === undefined || !Number.isFinite(v) ? "—" : (v >= 0 ? "+" : "") + fmt(v));
+
+function renderColumn(x, r) {
+  const s = (q) => (v) => showVal(v, q);
+  $("stats").innerHTML = stat("KL/r", fmt(r.lambda)) + stat(`Regime (transition ${fmt(r.lambdaC)})`, r.regime) + stat("σcr", s("stress")(r.sigmaCr)) + stat("Pcr", s("force")(r.Pcr)) + stat("Margin of safety Pcr/P − 1", ms(r.MS), r.MS < 0);
+  const lmax = Math.max(1.6 * r.lambdaC, 1.3 * r.lambda, 50), curve = S.columnCurve(x.material, lmax, 140, x.tangent), q = (v) => disp(v, "stress");
+  const cap = 1.15 * x.material.Fcy;
+  const [f] = figures(1);
+  const series = [
+    { name: "Euler", color: C.a, dash: true, points: curve.map((p) => [p.lambda, q(Math.min(p.euler, cap * 2))]) },
+    { name: "Johnson", color: C.b, dash: true, points: curve.filter((p) => p.lambda <= r.lambdaC * 1.25).map((p) => [p.lambda, q(Math.max(p.johnson, 0))]) },
+    { name: "Governing σcr", color: C.fg, points: curve.map((p) => [p.lambda, q(p.sigmaCr)]) },
+  ];
+  if (x.tangent) series.push({ name: "Tangent modulus (RO)", color: C.c, points: curve.filter((p) => p.tangent !== null).map((p) => [p.lambda, q(p.tangent)]) });
+  plot(f, { title: "Column strength σcr vs slenderness KL/r", xLabel: "KL/r", yLabel: `σcr (${unit("stress")})`, series, ymax: q(cap * 1.05), xmin: 0,
+    markers: [{ x: r.lambdaC, y: q(x.material.Fcy / 2), label: "Transition", color: C.muted }, { x: r.lambda, y: q(r.sigmaCr), label: "Your column σcr", color: C.fg }, { x: r.lambda, y: q(r.sigmaApplied), label: "Applied P/A", color: C.bad }] });
+}
+function renderBeamColumn(x, r) {
+  const c = S.beamColumnCurves(x, 60);
+  $("stats").innerHTML = stat("First-yield load Pfy", r.Pfy ? showVal(r.Pfy, "force") : "—") + stat("Margin of safety Pfy/P − 1", ms(r.MS), r.MS < 0)
+    + stat("Elastic Pe = π²EI/(KL)²", showVal(r.Pe, "force")) + stat("Moment amplification at P", r.atP && r.atP.amplification ? fmt(r.atP.amplification) : "—")
+    + stat("FE Pcr (cross-check)", r.fe.Pcr ? showVal(r.fe.Pcr, "force") : "—");
+  const F = (v) => disp(v, "force"), Lq = (v) => disp(v, "length"), M = (v) => disp(v, "moment"), Sg = (v) => disp(v, "stress");
+  const [f1, f2, f3, f4] = figures(4);
+  const mk = [];
+  if (r.atP) mk.push({ x: Lq(Math.abs(r.atP.ymax)), y: F(x.P), label: "Applied P", color: C.bad });
+  plot(f1, { title: "Load vs maximum deflection", xLabel: `δmax (${unit("length")})`, yLabel: `P (${unit("force")})`, xmin: 0,
+    series: [{ name: "Second order", color: C.a, points: c.pd.map((p) => [Lq(p.ymax), F(p.P)]) }, { name: "Linear theory", color: C.b, dash: true, points: c.pd.map((p) => [Lq(p.ylin), F(p.P)]) },
+      { name: "Pe", color: C.muted, dash: true, points: [[0, F(r.Pe)], [Lq(Math.max(...c.pd.map((p) => p.ymax))), F(r.Pe)]] }], markers: mk, ymax: F(r.Pe * 1.05) });
+  plot(f2, { title: "Deflected shape at applied P", xLabel: `x (${unit("length")})`, yLabel: `y (${unit("length")})`,
+    series: [{ name: "Second order", color: C.a, points: c.shape.map((p) => [Lq(p.x), Lq(p.y)]) }, { name: "Linear", color: C.b, dash: true, points: c.shape.map((p) => [Lq(p.x), Lq(p.yLin)]) }] });
+  plot(f3, { title: "Moment diagram at applied P", xLabel: `x (${unit("length")})`, yLabel: `M (${unit("moment")})`,
+    series: [{ name: "Second order", color: C.a, points: c.shape.map((p) => [Lq(p.x), M(p.M)]) }, { name: "Linear", color: C.b, dash: true, points: c.shape.map((p) => [Lq(p.x), M(p.Mlin)]) }] });
+  const m3 = []; if (r.Pfy) m3.push({ x: F(r.Pfy), y: Sg(x.material.Fcy), label: "Root: first yield", color: C.fg });
+  plot(f4, { title: "Max stress vs axial load", xLabel: `P (${unit("force")})`, yLabel: `σmax (${unit("stress")})`, xmin: 0, ymax: Sg(1.3 * x.material.Fcy),
+    series: [{ name: "σmax = P/A + Mmax/S", color: C.a, points: c.pd.map((p) => [F(p.P), Sg(p.sigmaMax)]) }, { name: "Fcy", color: C.bad, dash: true, points: [[0, Sg(x.material.Fcy)], [F(r.Pe), Sg(x.material.Fcy)]] }], markers: m3 });
+}
+function renderShear(x, r) {
+  $("stats").innerHTML = stat("k_s", fmt(r.ks)) + stat("τcr elastic", showVal(r.tauE, "stress")) + stat("Plasticity η", r.eta ? fmt(r.eta) : "—") + stat("τcr", r.tauCr ? showVal(r.tauCr, "stress") : "—") + stat("Margin of safety τcr/τ − 1", ms(r.MS), r.MS < 0);
+  const [f1, f2] = figures(2), rmax = Math.max(5, r.ratio * 1.1), ks = [];
+  for (let i = 0; i <= 100; i++) { const a = 1 + (rmax - 1) * i / 100; ks.push([a, S.ksClosed("ss", a), S.ksClosed("clamped", a)]); }
+  plot(f1, { title: "k_s vs side ratio (long/short)", xLabel: "a/b", yLabel: "k_s", xmin: 1, ymin: 0,
+    series: [{ name: "Simply supported", color: C.a, points: ks.map((p) => [p[0], p[1]]) }, { name: "Clamped", color: C.b, points: ks.map((p) => [p[0], p[2]]) }],
+    markers: [{ x: r.ratio, y: r.ks, label: "Your panel", color: C.fg }] });
+  const tb = [], short = r.short, mat = x.material;
+  const tbMax = Math.max(2 * x.t / short, 0.02);
+  for (let i = 1; i <= 80; i++) {
+    const v = tbMax * i / 80, te = r.ks * Math.PI ** 2 * mat.E / (12 * (1 - mat.nu ** 2)) * v * v, pl = S.shearPlasticity(mat, te, x.plasticity);
+    tb.push([v, disp(te, "stress"), pl.tau ? disp(pl.tau, "stress") : NaN]);
+  }
+  const ymax = disp(Math.min(Math.max(...tb.map((p) => S.fromDisplay(p[2], "stress", state.units))) * 1.4, mat.Fcy), "stress");
+  plot(f2, { title: "τcr vs t/b", xLabel: "t/b", yLabel: `τcr (${unit("stress")})`, xmin: 0, ymax,
+    series: [{ name: "Elastic", color: C.a, dash: true, points: tb.map((p) => [p[0], p[1]]) }, { name: "With plasticity (TN 3781)", color: C.fg, points: tb.map((p) => [p[0], p[2]]) }],
+    markers: r.tauCr ? [{ x: x.t / short, y: disp(r.tauCr, "stress"), label: "Your panel", color: C.fg }, { x: x.t / short, y: disp(x.tau, "stress"), label: "Applied τ", color: C.bad }] : [] });
+}
+function renderDiagonal(x, r) {
+  const g = r.governing;
+  $("stats").innerHTML = stat("τ/τcr", fmt(r.loading)) + stat("Diagonal-tension factor k", fmt(r.k)) + stat("Angle α", r.alphaDeg ? `${fmt(r.alphaDeg)}°` : "—")
+    + stat("Upright σU", r.sigmaU !== undefined ? showVal(r.sigmaU, "stress") : "—") + stat(g ? `Upright MS (${g.id})` : "Upright MS", ms(g && g.MS), g && g.MS < 0);
+  const c = S.diagonalCurves(x, 80), [f1, f2] = figures(2);
+  plot(f1, { title: "Diagonal-tension factor k vs τ/τcr (eq. 27)", xLabel: "τ/τcr (log)", yLabel: "k", logx: true, xmin: 1, xmax: 200, ymin: 0, ymax: 1.08,
+    series: [{ name: "k = tanh(0.5 log₁₀ τ/τcr)", color: C.a, points: c.kCurve.map((p) => [p.ratio, p.k]) }, { name: "k = 1 (pure Wagner)", color: C.muted, dash: true, points: [[1, 1], [200, 1]] }],
+    markers: r.loading > 1 ? [{ x: Math.min(r.loading, 200), y: r.k, label: "Your web", color: C.fg }] : [] });
+  const F = (v) => disp(v, "force"), Sg = (v) => disp(v, "stress");
+  plot(f2, { title: "Web and upright stress vs applied shear", xLabel: `S (${unit("force")})`, yLabel: `stress (${unit("stress")})`, xmin: 0,
+    series: [{ name: "Web σ1 (IDT)", color: C.a, points: c.web.map((p) => [F(p.S), Sg(p.sigma1)]) }, { name: "Web σ, pure Wagner", color: C.a, dash: true, points: c.web.map((p) => [F(p.S), Sg(p.sigmaPDT)]) },
+      { name: "Nominal τ", color: C.muted, dash: true, points: c.web.map((p) => [F(p.S), Sg(p.tau)]) }, { name: "Upright |σU|", color: C.b, points: c.web.map((p) => [F(p.S), Sg(p.sigmaU)]) }],
+    markers: r.sigma1 ? [{ x: F(x.S), y: Sg(r.sigma1), label: "Applied S", color: C.fg }] : [] });
+}
+const RENDER = { column: renderColumn, beamColumn: renderBeamColumn, shear: renderShear, diagonal: renderDiagonal };
+
+/* ---------- Refresh ---------- */
+let last = { result: null, errors: null };
+function refresh() {
+  const x = current();
+  for (const el of document.querySelectorAll("[data-msg]")) el.textContent = "";
+  for (const el of document.querySelectorAll("[aria-invalid]")) el.removeAttribute("aria-invalid");
+  let r = null;
+  try { r = S.solve(state.tab, x); last = { result: r, errors: null }; }
+  catch (e) {
+    const errs = e.errors || [{ message: e.message }];
+    last = { result: null, errors: errs };
+    $("error").hidden = false;
+    $("error").innerHTML = `<b>Calculation blocked.</b> ${errs.map((q) => esc(q.message)).join("; ")}`;
+    for (const q of errs) for (const el of document.querySelectorAll(`[data-msg="${q.field}"]`)) { el.textContent = q.message; const inp = el.parentElement.querySelector("input,select"); if (inp) inp.setAttribute("aria-invalid", "true"); }
+    for (const id of ["stats", "warnings", "plots", "sources"]) $(id).innerHTML = "";
+    $("rows").tBodies[0].innerHTML = "";
+    return;
+  }
+  $("error").hidden = !r.error && !r.fyMessage;
+  $("error").innerHTML = r.error ? `<b>No result.</b> ${esc(r.error)}` : r.fyMessage ? `<b>First yield:</b> ${esc(r.fyMessage)}` : "";
+  $("warnings").innerHTML = r.warnings.length ? r.warnings.map((w) => `<li>${esc(w)}</li>`).join("") : `<li class="none">None</li>`;
+  $("rows").tBodies[0].innerHTML = S.resultRows(state.tab, r).map((row) => `<tr><td class="l">${esc(row.label)}</td><td>${esc(showVal(row.value, row.q))}</td></tr>`).join("");
+  $("sources").innerHTML = r.sources.map((s) => `<li class="${s.kind}"><span class="tag ${s.kind}">${s.kind === "fit" ? "fit to NASA figure" : esc(s.kind)}</span>${esc(s.text)}</li>`).join("");
+  if (r.error) { $("stats").innerHTML = ""; $("plots").innerHTML = ""; return; }
+  RENDER[state.tab](x, r);
+}
+
+/* ---------- Tabs and units ---------- */
+function setTab(t) {
+  state.tab = t;
+  for (const b of $("tabs").children) b.setAttribute("aria-selected", String(b.dataset.tab === t));
+  buildInputs(); refresh();
+}
+function setUnits(u) {
+  state.units = u;
+  $("u-SI").setAttribute("aria-pressed", String(u === "SI")); $("u-US").setAttribute("aria-pressed", String(u === "US"));
+  buildMaterial(); buildInputs(); refresh();
+}
+
+/* ---------- Export / import ---------- */
+function exportText(kind) {
+  const x = current();
+  if (kind === "md") return { text: S.exportMarkdown(state.tab, x, { displayUnits: state.units }), name: `stability-${state.tab}.md`, type: "text/markdown" };
+  const doc = S.exportJSON(state.tab, x, { displayUnits: state.units, withResults: kind === "results" });
+  return { text: JSON.stringify(doc, null, 2), name: `stability-${state.tab}-${kind}.json`, type: "application/json" };
+}
+function say(msg) { $("io-status").textContent = msg; }
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); return true; }
+  catch (e) {
+    const ta = document.createElement("textarea"); ta.value = text; ta.setAttribute("readonly", ""); ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select(); let ok = false; try { ok = document.execCommand("copy"); } catch (e2) { ok = false; } ta.remove(); return ok;
+  }
+}
+function download({ text, name, type }) {
+  const url = URL.createObjectURL(new Blob([text], { type }));
+  const a = document.createElement("a"); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+function importDoc(text) {
+  try {
+    const r = S.importJSON(text);
+    const inp = { ...r.inputs }; state.material = { ...inp.material }; delete inp.material; state.inputs[r.tab] = inp;
+    setUnits(r.displayUnits); setTab(r.tab);
+    say(`Imported ${S.TAB_LABELS[r.tab]} inputs (displayed in ${r.displayUnits}).`);
+  } catch (e) { say(`Import failed: ${(e.errors || [{ message: e.message }]).map((q) => q.message).join("; ")}`); }
+}
+
+/* ---------- Self-tests ---------- */
+function runSelfTests() {
+  const t = S.selfTests(), passed = t.filter((x) => x.pass).length, b = $("badge");
+  b.className = `badge ${passed === t.length ? "pass" : "fail"}`;
+  b.textContent = passed === t.length ? `✓ Self-test ${passed}/${t.length} pass` : `✗ Self-test ${t.length - passed} of ${t.length} fail`;
+  $("tests").innerHTML = t.map((x) => `<li class="${x.pass ? "pass" : "fail"}"><b>${x.pass ? "PASS" : "FAIL"}</b> ${esc(x.name)} <span class="muted">(${esc(x.detail)}; tolerance ${esc(x.tolerance)})</span></li>`).join("");
+  return t;
+}
+
+/* ---------- Wiring ---------- */
+function wire() {
+  $("inputs").addEventListener("input", onInput);
+  $("inputs").addEventListener("change", (ev) => { if (ev.target.tagName === "SELECT" || ev.target.type === "checkbox" || ev.target.type === "range") onInput(ev); });
+  $("material").addEventListener("input", onInput);
+  $("mat-preset").addEventListener("change", (ev) => {
+    const p = S.MATERIAL_PRESETS.find((m) => m.id === ev.target.value);
+    if (p) state.material = { preset: p.id, E: p.E, Fcy: p.Fcy, nu: p.nu, n: p.n }; else state.material.preset = "custom";
+    buildMaterial(); refresh();
+  });
+  $("tabs").addEventListener("click", (ev) => { const b = ev.target.closest("[data-tab]"); if (b) setTab(b.dataset.tab); });
+  $("u-SI").addEventListener("click", () => setUnits("SI"));
+  $("u-US").addEventListener("click", () => setUnits("US"));
+  $("rerun").addEventListener("click", runSelfTests);
+  for (const b of document.querySelectorAll("[data-exp]")) b.addEventListener("click", async () => {
+    const out = exportText(b.dataset.exp);
+    if (b.dataset.act === "download") { download(out); say(`Downloaded ${out.name}.`); }
+    else say((await copyText(out.text)) ? `Copied ${out.name} to the clipboard.` : "Copy failed: select the text in the paste box instead.");
+    if (b.dataset.act === "copy") $("paste").value = out.text;
+  });
+  $("file").addEventListener("change", (ev) => { const f = ev.target.files[0]; if (!f) return; const rd = new FileReader(); rd.onload = () => importDoc(String(rd.result)); rd.readAsText(f); ev.target.value = ""; });
+  $("import-paste").addEventListener("click", () => importDoc($("paste").value));
+}
+
+/* ---------- WebMCP tools ---------- */
+function registerTools() {
+  const mc = (typeof document !== "undefined" && document.modelContext) || (typeof navigator !== "undefined" && navigator.modelContext);
+  if (!mc) return;
+  const out = (obj) => ({ content: [{ type: "text", text: JSON.stringify(obj) }] });
+  const empty = { type: "object", properties: {}, additionalProperties: false };
+  mc.registerTool({ name: "get_metadata", description: "Return the purpose, disclaimer, units, source policy, report citations, reference notes, scope and figure-fit errors of the structural stability visualiser.", inputSchema: empty, annotations: { readOnlyHint: true },
+    async execute() { return out({ title: D.title, disclaimer: D.disclaimer, units: D.units, tabs: D.tabs, source_policy: D.source_policy, sources: D.sources, reference_notes: D.reference_notes, not_in_scope: D.not_in_scope, formula_sources: S.SOURCES, fit_errors: S.fitErrors() }); } });
+  mc.registerTool({ name: "get_current_analysis", description: "Return the tab shown on the page with its inputs and results in canonical SI (N, mm, MPa), warnings and formula sources, as the Results JSON export.", inputSchema: empty, annotations: { readOnlyHint: true },
+    async execute() { return out(S.exportJSON(state.tab, current(), { displayUnits: state.units })); } });
+  mc.registerTool({ name: "solve_stability", description: "Solve one analysis without changing the page. tab is column, beamColumn, shear or diagonal; inputs are canonical SI (N, mm, MPa) and any field left out takes the tab default. Returns the Results JSON or the blocking errors.",
+    inputSchema: { type: "object", properties: { tab: { type: "string", enum: S.TABS }, inputs: { type: "object", description: "Tab inputs in N, mm, MPa; material {E, Fcy, nu, n}; section {shape, ...} for column and beamColumn" } }, required: ["tab"] },
+    annotations: { readOnlyHint: true },
+    async execute(i) { try { const tab = i && i.tab; if (!S.TABS.includes(tab)) return out({ errors: [{ message: `tab must be one of ${S.TABS.join(", ")}` }] }); return out(S.exportJSON(tab, S.normalise(tab, i.inputs || {}))); } catch (e) { return out({ errors: e.errors || [{ message: e.message }] }); } } });
+  mc.registerTool({ name: "run_self_tests", description: "Run the self-test (FE Pcr vs π²EI/(KL)², the k = 1 limit vs pure Wagner, k_s asymptotes, unit and file round-trips, NACA TN 2661 worked examples) and return each result with its tolerance.", inputSchema: empty, annotations: { readOnlyHint: true },
+    async execute() { const t = S.selfTests(); return out({ passed: t.filter((x) => x.pass).length, total: t.length, results: t }); } });
+}
+
+/* ---------- Start ---------- */
+function start() {
+  staticText();
+  buildMaterial();
+  wire();
+  setTab("column");
+  runSelfTests();
+  registerTools();
+}
+start();
+})();
+</script>
+</body>
+</html>

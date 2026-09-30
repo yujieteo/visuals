@@ -1,0 +1,1598 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" href="data:,">
+<meta name="description" content="Explore column buckling, second-order beam-columns, flat-plate shear buckling and NACA TN 2661 diagonal tension with source-tagged formulas, SI/US units, Markdown and JSON export, and self-tests. Not for certification. Runs offline in your browser.">
+<title>Structural Stability Visualiser</title>
+<style>
+:root{--bg:#fff;--fg:#1d1d1f;--muted:#6e6e73;--faint:#a1a1a6;--surface:#f5f5f7;--border:#d2d2d7;--grid:#e8e8ed;--focus:#0071e3;--c1:#2a78d6;--c2:#eb6834;--c3:#7a4fd0;--c4:#1a7f4b;--ok:#1a7f4b;--bad:#c4261d;--warn:#9a6700;--nasa:#2a78d6;--classical:#6e6e73;--fit:#9a6700;--sans:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;--mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;--r:.5rem;color-scheme:light dark}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--faint:#6e6e73;--surface:#2c2c2e;--border:#48484a;--grid:#333336;--focus:#2997ff;--c1:#3987e5;--c2:#d95926;--c3:#a07ff0;--c4:#30c07a;--ok:#30c07a;--bad:#ff6961;--warn:#e3b341;--nasa:#3987e5;--classical:#a1a1a6;--fit:#e3b341}}
+:root[data-theme="dark"]{--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--faint:#6e6e73;--surface:#2c2c2e;--border:#48484a;--grid:#333336;--focus:#2997ff;--c1:#3987e5;--c2:#d95926;--c3:#a07ff0;--c4:#30c07a;--ok:#30c07a;--bad:#ff6961;--warn:#e3b341;--nasa:#3987e5;--classical:#a1a1a6;--fit:#e3b341;color-scheme:dark}
+:root[data-theme="light"]{color-scheme:light}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 var(--sans);letter-spacing:-.011em;-webkit-font-smoothing:antialiased}
+main{width:min(100% - 2rem,82rem);margin:auto;padding:clamp(1rem,4vw,2.5rem) 0 3rem}
+a{color:inherit;text-underline-offset:.18em}
+h1{font-size:clamp(2rem,6vw,3.1rem);line-height:1.04;letter-spacing:-.045em;margin:.35rem 0 .8rem;max-width:20ch}
+h2{font-size:1.35rem;letter-spacing:-.02em;margin:0 0 .35rem;line-height:1.2}
+h3{font:600 .72rem/1.4 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:1rem 0 .5rem}
+p{margin:.5rem 0;max-width:72ch}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.banner{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:2px solid var(--warn);padding:.45rem 1rem;font-size:.875rem;text-align:center}
+.banner b{color:var(--warn)}
+.eyebrow{font:600 .75rem/1.4 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0}
+.lede{font-size:1.075rem;max-width:70ch}
+.muted{color:var(--muted)}
+.small{font-size:.875rem}
+section.block{margin-top:clamp(2rem,6vw,3.5rem);padding-top:1.25rem;border-top:1px solid var(--border)}
+.btn{display:inline-flex;align-items:center;gap:.35rem;border:1px solid var(--border);background:var(--bg);border-radius:999px;padding:.25rem .8rem;min-height:2.25rem;font-size:.875rem;white-space:nowrap}
+@media (hover:hover){.btn:hover{background:var(--surface)}}
+.btn[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.toolbar{display:flex;flex-wrap:wrap;gap:.6rem 1.2rem;align-items:center;margin:1rem 0 .75rem;padding:.6rem 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.toolbar .group{display:flex;flex-wrap:wrap;gap:.35rem;align-items:center;min-width:0}
+.label{font:600 .7rem var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-right:.2rem}
+select,input[type="number"],input[type="text"],textarea{border:1px solid var(--border);background:var(--bg);border-radius:var(--r);padding:.3rem .5rem;min-height:2.25rem;font-size:.875rem;min-width:0;width:100%}
+.toolbar select{width:auto;max-width:100%}
+input[type="number"]{font-variant-numeric:tabular-nums}
+input[type="range"]{width:100%}
+[aria-invalid="true"]{border-color:var(--bad);box-shadow:0 0 0 1px var(--bad)}
+.badge{display:inline-flex;align-items:center;gap:.35rem;border-radius:999px;padding:.2rem .7rem;font:600 .8rem var(--mono);border:1px solid currentColor;text-decoration:none}
+.badge.pass{color:var(--ok)}
+.badge.fail{color:var(--bad)}
+.tabs{display:flex;flex-wrap:wrap;gap:.35rem;margin:1rem 0}
+.tabs button{border:1px solid var(--border);background:var(--bg);border-radius:var(--r);padding:.45rem .9rem;font-size:.9375rem;font-weight:600}
+.tabs button[aria-selected="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.material{display:grid;grid-template-columns:repeat(auto-fill,minmax(8.5rem,1fr));gap:.5rem .6rem;margin:.5rem 0 0}
+.layout{display:grid;gap:1.5rem 2rem;grid-template-columns:minmax(0,24rem) minmax(0,1fr);align-items:start}
+@media (max-width:64rem){.layout{grid-template-columns:minmax(0,1fr)}}
+.inputs{display:flex;flex-direction:column;gap:1rem;min-width:0}
+fieldset{border:1px solid var(--border);border-radius:var(--r);padding:.75rem .85rem .9rem;margin:0;min-width:0}
+legend{font:600 .72rem/1.4 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:0 .3rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(7.2rem,1fr));gap:.5rem .6rem}
+.f{display:flex;flex-direction:column;gap:.15rem;min-width:0;font-size:.8125rem}
+.f .n{display:flex;justify-content:space-between;gap:.3rem;min-width:0}
+.f .n b{font-weight:600;overflow-wrap:anywhere}
+.f .n small{color:var(--muted);font:.72rem var(--mono);white-space:nowrap}
+.f .msg{color:var(--bad);font-size:.75rem}
+.f.wide{grid-column:1/-1}
+.check,.f.check{display:flex;flex-direction:row;gap:.45rem;align-items:center;font-size:.875rem}
+.results{min-width:0}
+.error{border:1px solid var(--bad);border-radius:var(--r);padding:.55rem .8rem;margin:0 0 .75rem;font-size:.9375rem}
+.error[hidden]{display:none}
+.error b{color:var(--bad)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(10rem,1fr));gap:.6rem 1.25rem;margin:0 0 1rem;padding:0;list-style:none}
+.stats li{border-top:1px solid var(--border);padding-top:.4rem;min-width:0}
+.stats b{display:block;font-size:1.25rem;letter-spacing:-.03em;line-height:1.2;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.stats span{font-size:.8125rem;color:var(--muted)}
+.stats .neg b{color:var(--bad)}
+.warnings{list-style:none;margin:0 0 1rem;padding:0;display:flex;flex-direction:column;gap:.3rem;font-size:.875rem}
+.warnings li{border-left:3px solid var(--warn);padding:.15rem .6rem}
+.warnings li.none{border-color:var(--ok)}
+.warnings li.none::before{content:none}
+.warnings li::before{content:"Warning · ";font:600 .7rem var(--mono);letter-spacing:.04em;text-transform:uppercase;color:var(--warn)}
+.plots{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,22rem),1fr));gap:1rem;margin:0 0 1rem}
+figure{margin:0;border:1px solid var(--border);border-radius:var(--r);padding:.5rem .6rem .4rem;min-width:0;position:relative}
+figcaption{font:600 .72rem/1.4 var(--mono);letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin:0 0 .25rem}
+svg.plot{width:100%;height:auto;display:block;overflow:visible}
+svg.plot text{font:11px var(--sans);fill:var(--muted)}
+svg.plot .gridline{stroke:var(--grid);stroke-width:1}
+svg.plot .axis{stroke:var(--border);stroke-width:1}
+.legend{display:flex;flex-wrap:wrap;gap:.2rem .8rem;font-size:.75rem;color:var(--muted);margin:.2rem 0 0}
+.legend i{display:inline-block;width:1.1rem;height:0;border-top:2px solid;vertical-align:middle;margin-right:.3rem}
+.legend i.dash{border-top-style:dashed}
+.tip{position:absolute;pointer-events:none;background:var(--fg);color:var(--bg);font:.75rem var(--mono);padding:.2rem .45rem;border-radius:.3rem;white-space:nowrap;transform:translate(-50%,-120%)}
+.tip[hidden]{display:none}
+.tablewrap{overflow-x:auto;max-width:100%}
+table{border-collapse:collapse;width:100%;font-size:.8125rem;font-variant-numeric:tabular-nums}
+th,td{padding:.35rem .5rem;border-bottom:1px solid var(--grid);text-align:right;vertical-align:top}
+th{font:600 .68rem/1.3 var(--mono);letter-spacing:.04em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap}
+th:first-child,td:first-child,td.l,th.l{text-align:left}
+.sources{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.45rem;font-size:.8125rem}
+.sources li{border-left:3px solid var(--classical);padding:.1rem .6rem;overflow-wrap:anywhere}
+.sources li.NASA{border-color:var(--nasa)}
+.sources li.fit{border-color:var(--fit)}
+.tag{display:inline-block;font:600 .65rem var(--mono);letter-spacing:.05em;text-transform:uppercase;border:1px solid currentColor;border-radius:999px;padding:0 .45rem;margin-right:.4rem}
+.tag.NASA{color:var(--nasa)}
+.tag.classical{color:var(--classical)}
+.tag.fit{color:var(--fit)}
+.tests{list-style:none;margin:0;padding:0;font-size:.8125rem;columns:2 26rem;column-gap:2rem}
+.tests li{break-inside:avoid;padding:.15rem 0}
+.tests li.pass b{color:var(--ok)}
+.tests li.fail b{color:var(--bad)}
+.io{display:grid;gap:.6rem;grid-template-columns:minmax(0,1fr)}
+.io .row{display:flex;flex-wrap:wrap;gap:.35rem;align-items:center}
+textarea{min-height:6rem;font:.8rem var(--mono)}
+.status{font-size:.8125rem;color:var(--muted);min-height:1.2em}
+.notes{font-size:.875rem;padding-left:1.1rem}
+.notes li{margin:.25rem 0}
+</style>
+</head>
+<body>
+<div class="banner" role="note"><b>Not for certification.</b> Exploration and preliminary sizing only: no design allowables, no knockdown factors, illustrative material presets.</div>
+<main>
+<p class="eyebrow"><a href="../">Visuals</a> · structural engineering</p>
+<h1>Structural Stability Visualiser</h1>
+<p class="lede" id="lede"></p>
+
+<div class="toolbar">
+  <div class="group"><span class="label">Units</span>
+    <button class="btn" id="u-SI" aria-pressed="true">SI · N mm MPa</button>
+    <button class="btn" id="u-US" aria-pressed="false">US · lbf in ksi</button>
+  </div>
+  <div class="group"><span class="label">Material</span><select id="mat-preset" aria-label="Material preset"></select></div>
+  <div class="group"><a class="badge" id="badge" href="#self-tests">Self-tests…</a> <button class="btn" id="rerun">Run self-test</button></div>
+</div>
+<div class="material" id="material"></div>
+<p class="small muted" id="mat-note"></p>
+
+<div class="tabs" role="tablist" id="tabs"></div>
+
+<div class="layout">
+  <form class="inputs" id="inputs" autocomplete="off" onsubmit="return false"></form>
+  <div class="results" aria-live="polite">
+    <div class="error" id="error" hidden></div>
+    <ul class="stats" id="stats"></ul>
+    <h3>Warnings</h3>
+    <ul class="warnings" id="warnings"></ul>
+    <div class="plots" id="plots"></div>
+    <h3>Results</h3>
+    <div class="tablewrap"><table id="rows"><thead><tr><th class="l">Quantity</th><th>Value</th></tr></thead><tbody></tbody></table></div>
+    <h3>Formula sources</h3>
+    <ul class="sources" id="sources"></ul>
+  </div>
+</div>
+
+<section class="block" id="export">
+  <h2>Export and import</h2>
+  <p class="small muted">Files are canonical SI (N, mm, MPa) whatever units are displayed; <code>displayUnits</code> only restores the unit switch. Import accepts a results or an inputs-only JSON file. Every export carries the not-for-certification notice and the warnings.</p>
+  <div class="io">
+    <div class="row"><span class="label">Current tab</span>
+      <button class="btn" data-exp="md" data-act="download">Markdown report ↓</button><button class="btn" data-exp="md" data-act="copy">Copy</button>
+      <button class="btn" data-exp="results" data-act="download">Results JSON ↓</button><button class="btn" data-exp="results" data-act="copy">Copy</button>
+      <button class="btn" data-exp="inputs" data-act="download">Inputs JSON ↓</button><button class="btn" data-exp="inputs" data-act="copy">Copy</button>
+    </div>
+    <div class="row"><span class="label">Import</span><input type="file" id="file" accept=".json,application/json" aria-label="Import JSON file"></div>
+    <textarea id="paste" aria-label="Paste JSON to import" placeholder="…or paste an exported JSON here and press Import pasted"></textarea>
+    <div class="row"><button class="btn" id="import-paste">Import pasted</button><span class="status" id="io-status" role="status"></span></div>
+  </div>
+</section>
+
+<section class="block" id="fits">
+  <h2>Fits to NASA figures</h2>
+  <p class="small muted" id="fits-note"></p>
+  <div class="tablewrap"><table id="fit-table"><thead><tr><th class="l">Relation</th><th class="l">Figure</th><th>Points</th><th>Max abs error</th><th>Max rel error</th><th class="l">Range</th></tr></thead><tbody></tbody></table></div>
+</section>
+
+<section class="block" id="self-tests">
+  <h2>Self-test</h2>
+  <p class="small muted">Runs on every load: the FE eigenvalue Pcr against π²EI/(KL)² for each K preset, the k = 1 diagonal-tension limit against pure Wagner, the k_s asymptotes, SI/US and file round-trips, and the NACA TN 2661 section 7 worked examples. Tolerances are shown with each check.</p>
+  <ul class="tests" id="tests"></ul>
+</section>
+
+<section class="block" id="refs">
+  <h2>Sources and notes</h2>
+  <ul class="notes" id="policy"></ul>
+  <h3>Reports</h3>
+  <ul class="notes" id="reports"></ul>
+  <h3>Reference notes</h3>
+  <ul class="notes" id="refnotes"></ul>
+  <h3>Out of scope</h3>
+  <p class="small" id="scope"></p>
+</section>
+</main>
+
+<script>
+/* STABILITY engine: structural stability visualiser (exploration only).
+ *
+ * Four analyses share one material model and one column-strength function:
+ *   column        Euler, Johnson and an optional tangent-modulus curve
+ *   beamColumn    second-order (secant-type) first-yield load by a bracketed
+ *                 Newton root finder, cross-checked by a small beam FE
+ *                 eigenvalue solve for Pcr
+ *   shear         flat-plate shear buckling, simply supported or clamped
+ *                 edges, with the NACA TN 3781 plasticity-reduction factor
+ *   diagonal      NACA TN 2661 incomplete diagonal tension on plane webs,
+ *                 with pure Wagner diagonal tension (TN 469) as the k = 1 limit
+ *
+ * Every relation carries a source tag (SOURCES): "NASA" where a NASA/NACA
+ * report states it, "classical" where none was found, and "fit" for a closed
+ * form fitted to a report figure, whose digitised points and fit error are in
+ * FIGURE_FITS. A relation whose chart data was not sourced returns
+ * { unavailable: "..." } instead of a number. Nothing is guessed.
+ *
+ * Units are canonical SI in N, mm and MPa (N/mm²) everywhere in this file;
+ * strains and coefficients are dimensionless. Conversion to US units happens
+ * only at the input/output boundary (toDisplay / fromDisplay).
+ *
+ * Everything here is a pure function of its arguments: no DOM, no clock, no
+ * randomness. The page and the Node tests call the same code.
+ */
+(function (root, factory) {
+  const api = factory();
+  if (typeof module === "object" && module.exports) module.exports = api;
+  else root.Stability = api;
+})(typeof self !== "undefined" ? self : this, function () {
+  "use strict";
+
+  const PI = Math.PI;
+  const SCHEMA_VERSION = 1;
+  const DISCLAIMER = "Not for certification. Exploration and preliminary sizing only: no design allowables, no knockdown factors, illustrative material presets. Check every result independently.";
+
+  /* ---------- Units ---------- */
+
+  // Size of one display unit in canonical units (N, mm, MPa).
+  const IN = 25.4, LBF = 4.4482216152605, KSI = 6.89475729316836;
+  const QUANTITIES = {
+    length: { SI: ["mm", 1], US: ["in", IN] },
+    area: { SI: ["mm²", 1], US: ["in²", IN * IN] },
+    inertia: { SI: ["mm⁴", 1], US: ["in⁴", IN ** 4] },
+    force: { SI: ["N", 1], US: ["lbf", LBF] },
+    stress: { SI: ["MPa", 1], US: ["ksi", KSI] },
+    lineLoad: { SI: ["N/mm", 1], US: ["lbf/in", LBF / IN] },
+    moment: { SI: ["N·mm", 1], US: ["lbf·in", LBF * IN] },
+    rotSpring: { SI: ["N·mm/rad", 1], US: ["lbf·in/rad", LBF * IN] },
+    transSpring: { SI: ["N/mm", 1], US: ["lbf/in", LBF / IN] },
+    none: { SI: ["", 1], US: ["", 1] },
+  };
+  const unitLabel = (q, system) => QUANTITIES[q][system][0];
+  const toDisplay = (value, q, system) => value / QUANTITIES[q][system][1];
+  const fromDisplay = (value, q, system) => value * QUANTITIES[q][system][1];
+
+  /* ---------- Sources ---------- */
+
+  const TN2661 = "NACA TN 2661 (Kuhn, Peterson and Levin, 1952), NTRS 19930083335";
+  const TN3781 = "NACA TN 3781 (Gerard and Becker, 1957), NTRS 19930084505";
+  const TN469 = "NACA TN 469 (Kuhn, 1933), NTRS 19930081248";
+  // kind: "NASA" | "classical" | "fit". Every formula panel and export lists these.
+  const SOURCES = {
+    ro: { kind: "classical", text: "Ramberg-Osgood curve with the 0.2 % offset yield: ε = σ/E + 0.002 (σ/Fcy)^n" },
+    euler: { kind: "classical", text: "Euler: σcr = π²E / (KL/r)²" },
+    johnson: { kind: "classical", text: "Johnson parabola: σcr = Fcy [1 − Fcy (KL/r)² / (4π²E)]; transition (KL/r)c = π √(2E/Fcy)" },
+    tangent: { kind: "classical", text: "Tangent modulus (Engesser-Shanley): σcr = π²Et(σcr) / (KL/r)², Et from the Ramberg-Osgood curve" },
+    secant: { kind: "classical", text: "Second-order pin-ended beam-column of length KL (secant form σmax = P/A [1 + (e c / r²) sec((KL/2r) √(P/EA))], extended by superposition to unequal end moments, uniform lateral load and a sinusoidal initial bow); first yield σmax = P/A + Mmax/S = Fcy" },
+    fe: { kind: "classical", text: "Euler-Bernoulli beam finite elements with consistent geometric stiffness; (Ke − P Kg) φ = 0 solved by Cholesky reduction and a cyclic Jacobi eigen routine" },
+    ks: { kind: "classical", text: "Shear-buckling coefficient, long side a, short side b: simply supported ks = 5.34 + 4.00 (b/a)², clamped ks = 8.98 + 5.60 (b/a)² (Timoshenko and Gere, Theory of Elastic Stability, 2nd ed., 1961, §9.7; exact values tabulated there). τcr,e = ks π²E / (12(1 − ν²)) (t/b)²" },
+    shearPlast: { kind: "NASA", text: `Shear plasticity: τcr = η τcr,e with η = (Es/E)(1 − νe²)/(1 − ν²), eq. (A5) and fig. 10; ν = 0.5 − (0.5 − νe)(Es/E), eq. (A1); Es, Et at the axial stress σ = 2τ (maximum-shear law, fig. 10 axes). Option: table 2 "rectangular plate, all edges elastically restrained" η = (Es/E)(1 − νe²)/(1 − ν²) [0.83 + 0.17 Et/Es]. ${TN3781}, appendix A and table 2` },
+    wagner: { kind: "NASA", text: `Pure diagonal tension (k = 1): web σ = 2τ / sin 2α, upright σU = −τ (d t / AUe) tan α, flange σF = −τ (h t / 2AF) cot α, angle tan⁴α = (1 + h t / 2AF) / (1 + d t / AUe). ${TN2661}, section 2.2, eqs. (11) to (15); ${TN469}, pp. 4-5 (α = 45°: web 2τ, strut force P d/h)` },
+    aue: { kind: "NASA", text: `Effective upright area: double AUe = AU; single AUe = AU / (1 + (e/ρ)²). ${TN2661}, section 4.1 and eq. (22)` },
+    tcr32: { kind: "NASA", text: `Web buckling: τcr,elastic = kss E (t/dc)² [Rh + ½ (Rd − Rh)(dc/hc)³] for dc < hc (roles swap for dc > hc). ${TN2661}, section 4.2, eq. (32); R = 1 simply supported, R = 1.62 clamped (section 3.6)` },
+    tcrPlast: { kind: "NASA", text: `Web plasticity: the TN 3781 eq. (A5) factor on the shared Ramberg-Osgood curve replaces TN 2661 fig. 12(c), which is drawn only for 24S-T3 and 75S-T6. ${TN3781}` },
+    k27: { kind: "NASA", text: `Diagonal-tension factor k = tanh(0.5 log₁₀(τ/τcr)) for τ > τcr, else 0. ${TN2661}, section 3.2, eq. (27)` },
+    idt: { kind: "NASA", text: `Incomplete diagonal tension: σU = −kτ tan α / (AUe/(d t) + 0.5(1 − k)) (30a); σF = −kτ cot α / (2AF/(h t) + 0.5(1 − k)) (30b); tan²α = (ε − εF)/(ε − εU) (30c); ε = (τ/E)[2k/sin 2α + (1 − k)(1 + ν) sin 2α] (30d), solved by successive approximation (section 3.2). Web principal stresses σ1, σ2 (28a, 28b). ${TN2661}` },
+    c1: { kind: "NASA", text: `Angle factor C1 = 1/sin 2α − 1. ${TN2661}, section 3.7 (fig. 17)` },
+    tmax: { kind: "NASA", text: `Peak web stress τ'max = τ (1 + k²C1)(1 + kC2). ${TN2661}, section 4.7, eq. (33a); ωd = 0.7 d [t / ((IC + IT) he)]^¼, eq. (19a) and fig. 18` },
+    le35: { kind: "NASA", text: `Upright effective length Le = hU / √(1 + k²(3 − 2d/hU)) for d < 1.5 hU, else hU. ${TN2661}, section 4.9, eq. (35)` },
+    upright: { kind: "NASA", text: `Upright column check: double uprights σU ≤ column allowable at Le/ρ (section 4.10(b)); single uprights σU ≤ column yield stress and σUav = σU AUe/AU (eq. 38) ≤ column allowable at hU/(2ρ) (section 4.11(b)). Column allowable from the shared column-strength function. ${TN2661}` },
+    kssFit: { kind: "fit", text: `kss = 5.03 + 3.26 (short/long)², fitted to ${TN2661} fig. 12(a) (theoretical coefficients for plates with simply supported edges, including π²/(12(1 − ν²)))` },
+    rFit: { kind: "fit", text: `Restraint coefficients R = a [1 − exp(−(x/b)^c)] fitted to ${TN2661} fig. 12(b): upper curve (double uprights, and flanges; x = tU/t or tF/t) a = 1.6522, b = 1.0666, c = 1.374; lower curve (single uprights) a = 1.2936, b = 1.1173, c = 2.2094` },
+    rHold: { kind: "NASA", text: "Hold of fig. 12(b) beyond t/t = 3 at the end value, as applied in NACA TN 2661 section 7, example 1, p. 57: tU/t = 3.20 and tF/t large give Rh = Rd = 1.62" },
+    smaxFit: { kind: "fit", text: `σUmax/σU = 1 + (1 − k)(0.78 − 0.65 d/hU), fitted to ${TN2661} fig. 15 (0 ≤ d/hU ≤ 1)` },
+    c2Fit: { kind: "fit", text: `C2 = u²(0.09234 − 0.06227u + 0.05784u² − 0.01187u³), u = ωd − 1, C2 = 0 for ωd ≤ 1, fitted to ${TN2661} fig. 18 (0 ≤ ωd ≤ 4)` },
+  };
+  const source = (id) => ({ id, ...SOURCES[id] });
+
+  /* ---------- Figure fits (closed forms fitted to NACA TN 2661 figures) ---------- */
+
+  const FIT = {
+    kss: { A: 5.03, B: 3.26, range: [1, 5] },
+    rUpper: { a: 1.6522, b: 1.0666, c: 1.374, range: [0, 3], solidFrom: 0.6 },
+    rLower: { a: 1.2936, b: 1.1173, c: 2.2094, range: [0, 3], solidFrom: 0.5 },
+    smax: { A: 0.78, B: 0.65, range: [0, 1] },
+    c2: { c: [0.09234, -0.06227, 0.05784, -0.01187], range: [0, 4] },
+  };
+  // Digitised figure points (300 dpi scan of the NTRS report, gridline
+  // calibrated, x and y in the figure's own axes). Used to report fit error.
+  let FIGURE_FITS = null;
+  function setFigureData(data) { FIGURE_FITS = data || null; }
+
+  const kssFig12a = (ratio) => FIT.kss.A + FIT.kss.B / (ratio * ratio);
+  const weibull = (p, x) => p.a * (1 - Math.exp(-Math.pow(Math.max(x, 0) / p.b, p.c)));
+  function restraintFig12b(x, curve) {
+    const p = curve === "lower" ? FIT.rLower : FIT.rUpper;
+    const notes = [];
+    const held = x > p.range[1];
+    if (held) notes.push(`thickness ratio ${fmt(x)} is beyond fig. 12(b) (ends at 3); held at the value at 3 (${SOURCES.rHold.text})`);
+    else if (x < p.solidFrom) notes.push(`thickness ratio ${fmt(x)} is on the dashed (extrapolated) part of fig. 12(b)`);
+    return { value: weibull(p, held ? p.range[1] : x), notes, held };
+  }
+  function smaxRatioFig15(k, dOverHu) {
+    if (!(dOverHu >= FIT.smax.range[0] && dOverHu <= FIT.smax.range[1])) return { unavailable: `unavailable: chart data not sourced for d/hU = ${fmt(dOverHu)} (fig. 15 covers 0 to 1)` };
+    return { value: 1 + (1 - k) * (FIT.smax.A - FIT.smax.B * dOverHu) };
+  }
+  function c2Fig18(wd) {
+    if (!(wd >= 0)) return { unavailable: "unavailable: ωd not defined" };
+    if (wd > FIT.c2.range[1]) return { unavailable: `unavailable: chart data not sourced for ωd = ${fmt(wd)} (fig. 18 ends at 4)` };
+    if (wd <= 1) return { value: 0 };
+    const u = wd - 1, c = FIT.c2.c;
+    return { value: Math.max(0, u * u * (c[0] + u * (c[1] + u * (c[2] + u * c[3])))) };
+  }
+  // Fit error of each fitted relation against its digitised points.
+  function fitErrors(data) {
+    const d = data || FIGURE_FITS;
+    if (!d) return null;
+    const stat = (pairs) => {
+      let maxAbs = 0, maxRel = 0;
+      for (const [model, digit] of pairs) {
+        const e = Math.abs(model - digit);
+        maxAbs = Math.max(maxAbs, e);
+        if (Math.abs(digit) > 0.2) maxRel = Math.max(maxRel, e / Math.abs(digit));
+      }
+      return { maxAbs, maxRel, n: pairs.length };
+    };
+    return {
+      kss: stat(d.fig12a.points.map(([x, y]) => [kssFig12a(x), y])),
+      rUpper: stat(d.fig12b.upper.map(([x, y]) => [weibull(FIT.rUpper, x), y])),
+      rLower: stat(d.fig12b.lower.map(([x, y]) => [weibull(FIT.rLower, x), y])),
+      smax: stat(d.fig15.points.map(([k, x, y]) => [smaxRatioFig15(k, x).value, y])),
+      c2: stat(d.fig18.points.map(([x, y]) => [c2Fig18(x).value, y])),
+    };
+  }
+
+  /* ---------- Material (Ramberg-Osgood) ---------- */
+
+  const MATERIAL_PRESETS = [
+    { id: "al2024t3", label: "2024-T3 sheet (illustrative)", E: 72400, Fcy: 270, nu: 0.33, n: 15 },
+    { id: "al7075t6", label: "7075-T6 sheet (illustrative)", E: 71000, Fcy: 470, nu: 0.33, n: 16 },
+    { id: "steel", label: "Low-alloy steel (illustrative)", E: 200000, Fcy: 520, nu: 0.29, n: 20 },
+  ];
+
+  const roStrain = (m, s) => s / m.E + 0.002 * Math.pow(Math.abs(s) / m.Fcy, m.n) * Math.sign(s);
+  // Secant and tangent moduli of the Ramberg-Osgood curve at stress s ≥ 0.
+  function roModuli(m, s) {
+    if (s <= 0) return { Es: m.E, Et: m.E };
+    const Es = s / roStrain(m, s);
+    const Et = 1 / (1 / m.E + 0.002 * m.n * Math.pow(s / m.Fcy, m.n - 1) / m.Fcy);
+    return { Es, Et };
+  }
+
+  /* ---------- Root finding ---------- */
+
+  // Bracketed Newton with bisection fallback on f over [lo, hi], f(lo) and
+  // f(hi) of opposite sign. The derivative is a central difference.
+  function rootBracketed(f, lo, hi, opts = {}) {
+    const tol = opts.tol ?? 1e-10, maxIter = opts.maxIter ?? 200;
+    let flo = f(lo), fhi = f(hi);
+    if (!Number.isFinite(flo) || !Number.isFinite(fhi) || flo * fhi > 0) return { converged: false, reason: "root not bracketed" };
+    if (flo === 0) return { converged: true, x: lo, iterations: 0 };
+    if (fhi === 0) return { converged: true, x: hi, iterations: 0 };
+    let x = 0.5 * (lo + hi), bisections = 0;
+    for (let i = 1; i <= maxIter; i++) {
+      const fx = f(x);
+      if (!Number.isFinite(fx)) return { converged: false, reason: "non-finite function value" };
+      if (fx === 0 || (hi - lo) <= tol * Math.max(1, Math.abs(x))) return { converged: true, x, iterations: i, bisections };
+      if (fx * flo < 0) { hi = x; fhi = fx; } else { lo = x; flo = fx; }
+      const h = 1e-6 * Math.max(Math.abs(x), (hi - lo));
+      const df = (f(x + h) - f(x - h)) / (2 * h);
+      let next = Number.isFinite(df) && df !== 0 ? x - fx / df : NaN;
+      if (!(next > lo && next < hi)) { next = 0.5 * (lo + hi); bisections++; }
+      if (Math.abs(next - x) <= tol * Math.max(1, Math.abs(x))) return { converged: true, x: next, iterations: i, bisections };
+      x = next;
+    }
+    return { converged: false, reason: `no convergence in ${maxIter} iterations` };
+  }
+
+  /* ---------- Validation ---------- */
+
+  class InputError extends Error {
+    constructor(errors) { super(errors.map((e) => e.message).join("; ")); this.errors = errors; }
+  }
+  function checker() {
+    const errors = [];
+    const num = (obj, key, label, { min = 0, strict = true, allowZero = false } = {}) => {
+      const v = obj[key];
+      if (v === null || v === undefined || v === "" || typeof v !== "number" || !Number.isFinite(v)) {
+        errors.push({ field: key, message: `${label} is missing or not a number` });
+        return NaN;
+      }
+      if (allowZero ? v < min : (strict ? v <= min : v < min)) errors.push({ field: key, message: `${label} must be ${allowZero || !strict ? "≥" : ">"} ${min}` });
+      return v;
+    };
+    return { errors, num, done() { if (errors.length) throw new InputError(errors); } };
+  }
+  function checkMaterial(c, m) {
+    c.num(m, "E", "E");
+    c.num(m, "Fcy", "Fcy");
+    const nu = c.num(m, "nu", "Poisson's ratio ν", { allowZero: true });
+    if (nu >= 0.5) c.errors.push({ field: "nu", message: "Poisson's ratio ν must be < 0.5" });
+    const n = c.num(m, "n", "Ramberg-Osgood n");
+    if (n <= 1) c.errors.push({ field: "n", message: "Ramberg-Osgood n must be > 1" });
+  }
+
+  /* ---------- Sections ---------- */
+
+  // Section properties: A, I (about the bending/buckling axis), c (extreme fibre).
+  function sectionProps(s) {
+    const c = checker();
+    let A, I, cf;
+    if (s.shape === "tube") {
+      const D = c.num(s, "D", "Outer diameter D"), t = c.num(s, "t", "Wall thickness t");
+      if (t * 2 > D) c.errors.push({ field: "t", message: "Wall thickness t must be ≤ D/2" });
+      c.done();
+      const Di = D - 2 * t;
+      A = PI / 4 * (D * D - Di * Di); I = PI / 64 * (D ** 4 - Di ** 4); cf = D / 2;
+    } else if (s.shape === "rect") {
+      const b = c.num(s, "b", "Width b"), h = c.num(s, "h", "Depth h");
+      c.done();
+      const weak = s.axis !== "strong";
+      const bend = weak ? Math.min(b, h) : Math.max(b, h), other = weak ? Math.max(b, h) : Math.min(b, h);
+      A = b * h; I = other * bend ** 3 / 12; cf = bend / 2;
+    } else {
+      A = c.num(s, "A", "Area A"); I = c.num(s, "I", "Second moment I"); cf = c.num(s, "c", "Extreme-fibre distance c");
+      c.done();
+    }
+    const r = Math.sqrt(I / A);
+    return { A, I, c: cf, r, S: I / cf };
+  }
+
+  /* ---------- Shared column strength ---------- */
+
+  // One function serves the Column tab, the beam-column cross-check and the
+  // diagonal-tension upright check. lambda = KL/r (effective slenderness).
+  function columnStrength(m, lambda, opts = {}) {
+    const lambdaC = PI * Math.sqrt(2 * m.E / m.Fcy);
+    const euler = lambda > 0 ? PI * PI * m.E / (lambda * lambda) : Infinity;
+    const johnson = m.Fcy * (1 - m.Fcy * lambda * lambda / (4 * PI * PI * m.E));
+    const regime = lambda < lambdaC ? "Johnson" : "Euler";
+    const sigmaCr = regime === "Johnson" ? johnson : euler;
+    const out = { lambda, lambdaC, euler, johnson, regime, sigmaCr, tangent: null };
+    if (opts.tangent) out.tangent = tangentModulusStress(m, lambda);
+    return out;
+  }
+  function tangentModulusStress(m, lambda) {
+    if (!(lambda > 0)) return { unavailable: "tangent modulus: KL/r must be > 0" };
+    const cap = 3 * m.Fcy;
+    const g = (s) => s - PI * PI * roModuli(m, s).Et / (lambda * lambda);
+    if (g(cap) < 0) return { unavailable: "tangent-modulus stress above 3 Fcy, beyond the Ramberg-Osgood fit" };
+    const r = rootBracketed(g, 1e-9 * m.Fcy, cap);
+    return r.converged ? { value: r.x } : { unavailable: `tangent modulus: ${r.reason}` };
+  }
+
+  /* ---------- Column tab ---------- */
+
+  const K_PRESETS = [
+    { id: "pp", label: "Pinned-pinned", K: 1.0 },
+    { id: "fp", label: "Fixed-pinned", K: 0.7 },
+    { id: "ff", label: "Fixed-fixed", K: 0.5 },
+    { id: "fr", label: "Fixed-free", K: 2.0 },
+  ];
+
+  function solveColumn(inp) {
+    const c = checker();
+    checkMaterial(c, inp.material);
+    const L = c.num(inp, "L", "Length L"), K = c.num(inp, "K", "Effective-length factor K"), P = c.num(inp, "P", "Applied load P");
+    c.done();
+    const m = inp.material, sec = sectionProps(inp.section);
+    const lambda = K * L / sec.r;
+    const cs = columnStrength(m, lambda, { tangent: !!inp.tangent });
+    const Pcr = cs.sigmaCr * sec.A;
+    const warnings = [];
+    if (lambda > 200) warnings.push(`Extreme slenderness: KL/r = ${fmt(lambda)} > 200`);
+    if (lambda < 10) warnings.push(`Very stocky: KL/r = ${fmt(lambda)} < 10; local crippling (not modelled) may govern`);
+    if (P / sec.A > m.Fcy) warnings.push(`Applied stress P/A = ${fmt(P / sec.A)} MPa is above Fcy`);
+    if (cs.tangent && cs.tangent.unavailable) warnings.push(cs.tangent.unavailable);
+    return {
+      section: sec, lambda, lambdaC: cs.lambdaC, regime: cs.regime, sigmaEuler: cs.euler, sigmaJohnson: cs.johnson,
+      sigmaCr: cs.sigmaCr, Pcr, sigmaApplied: P / sec.A, MS: Pcr / P - 1,
+      sigmaTangent: cs.tangent ? (cs.tangent.value ?? null) : null,
+      warnings, sources: ["euler", "johnson", "ro", ...(inp.tangent ? ["tangent"] : [])].map(source),
+    };
+  }
+  function columnCurve(m, lambdaMax, n = 120, tangent = false) {
+    const pts = [];
+    for (let i = 1; i <= n; i++) {
+      const l = lambdaMax * i / n, cs = columnStrength(m, l, { tangent });
+      pts.push({ lambda: l, euler: cs.euler, johnson: cs.johnson, sigmaCr: cs.sigmaCr, tangent: cs.tangent ? cs.tangent.value ?? null : null });
+    }
+    return pts;
+  }
+
+  /* ---------- Beam-column (second order) ---------- */
+
+  // Pin-ended member of length l under compression P with end moments MA, MB
+  // (sagging positive), uniform lateral load w and a sinusoidal initial bow d0.
+  // Exact elastic second-order moment and deflection by superposition, valid
+  // for 0 ≤ P < Pe = π²EI/l².
+  function beamColumnState(cfg, P, x) {
+    const { l, EI, MA, MB, w, d0 } = cfg;
+    const Pe = PI * PI * EI / (l * l);
+    // First-order moment and deflection (no amplification); the bow is geometry.
+    const M0 = MA + (MB - MA) * x / l + w * x * (l - x) / 2;
+    const yLin = x * (l - x) / (6 * EI * l) * (MA * (2 * l - x) + MB * (l + x)) + w * x * (l ** 3 - 2 * l * x * x + x ** 3) / (24 * EI);
+    const bow = d0 * Math.sin(PI * x / l);
+    if (P <= 1e-12 * Pe) return { M: M0, Mlin: M0, y: yLin + bow, yLin: yLin + bow };
+    const k = Math.sqrt(P / EI), kl = k * l;
+    // Straight member: M from the beam-column equation, and P·y = M − M0.
+    const Mlat = (MA * Math.sin(k * (l - x)) + MB * Math.sin(k * x)) / Math.sin(kl)
+      + w / (k * k) * (Math.cos(k * (x - l / 2)) / Math.cos(kl / 2) - 1);
+    // Bow: total deflection d0 sin(πx/l) / (1 − P/Pe), moment P times it.
+    const yBow = bow / (1 - P / Pe);
+    return { M: Mlat + P * yBow, Mlin: M0 + P * bow, y: (Mlat - M0) / P + yBow, yLin: yLin + bow };
+  }
+  function beamColumnMax(cfg, P, n = 200) {
+    let Mmax = 0, Mlin = 0, ymax = 0, ylin = 0, xAt = 0;
+    for (let i = 0; i <= n; i++) {
+      const x = cfg.l * i / n, s = beamColumnState(cfg, P, x);
+      if (Math.abs(s.M) > Math.abs(Mmax)) { Mmax = s.M; xAt = x; }
+      if (Math.abs(s.Mlin) > Math.abs(Mlin)) Mlin = s.Mlin;
+      if (Math.abs(s.y) > Math.abs(ymax)) ymax = s.y;
+      if (Math.abs(s.yLin) > Math.abs(ylin)) ylin = s.yLin;
+    }
+    // Refine the moment peak with a golden-section search around the grid peak.
+    const h = cfg.l / n;
+    let a = Math.max(0, xAt - h), b = Math.min(cfg.l, xAt + h);
+    const g = (x) => -Math.abs(beamColumnState(cfg, P, x).M);
+    const gr = (Math.sqrt(5) - 1) / 2;
+    for (let i = 0; i < 40; i++) {
+      const x1 = b - gr * (b - a), x2 = a + gr * (b - a);
+      if (g(x1) < g(x2)) b = x2; else a = x1;
+    }
+    const xr = 0.5 * (a + b), Mr = beamColumnState(cfg, P, xr).M;
+    if (Math.abs(Mr) > Math.abs(Mmax)) { Mmax = Mr; xAt = xr; }
+    return { Mmax, Mlin, ymax, ylin, xAt };
+  }
+
+  function solveBeamColumn(inp) {
+    const c = checker();
+    checkMaterial(c, inp.material);
+    const L = c.num(inp, "L", "Length L"), K = c.num(inp, "K", "Effective-length factor K");
+    const P = c.num(inp, "P", "Applied axial load P");
+    const e = c.num(inp, "e", "Eccentricity e", { min: -Infinity, strict: false });
+    const w = c.num(inp, "w", "Lateral load w", { min: -Infinity, strict: false });
+    const MA = c.num(inp, "M1", "End moment M1", { min: -Infinity, strict: false });
+    const MB = c.num(inp, "M2", "End moment M2", { min: -Infinity, strict: false });
+    const d0 = c.num(inp, "bow", "Initial bow δ0", { min: 0, allowZero: true });
+    if (inp.feMode === "springs") {
+      c.num(inp, "krA", "Rotational spring at end A", { min: 0, allowZero: true });
+      c.num(inp, "krB", "Rotational spring at end B", { min: 0, allowZero: true });
+      if (inp.uB === "spring") c.num(inp, "ktB", "Translational spring at end B");
+    }
+    c.done();
+    const m = inp.material, sec = sectionProps(inp.section);
+    const EI = m.E * sec.I, l = K * L;
+    const cfg = { l, EI, MA: MA + P * e, MB: MB + P * e, w, d0 };
+    // P·e moves with P: rebuild the end moments for each trial load.
+    const cfgAt = (p) => ({ ...cfg, MA: MA + p * e, MB: MB + p * e });
+    const Pe = PI * PI * EI / (l * l);
+    const sigmaMax = (p) => p / sec.A + Math.abs(beamColumnMax(cfgAt(p), p).Mmax) / sec.S;
+    const warnings = [];
+    if (Math.abs(K - 1) > 1e-12) warnings.push(`Second-order moments use the pin-ended reference case with length KL = ${fmt(l)} mm (classical approximation for K ≠ 1)`);
+    if (d0 > 0) warnings.push(`Initial bow δ0 = ${fmt(d0)} mm (L/${fmt(L / d0)}) is an assumed imperfection`);
+    if (d0 === 0 && e === 0 && w === 0 && MA === 0 && MB === 0) warnings.push("No imperfection or lateral action: first yield is squash (P = A Fcy) unless buckling comes first");
+    // First-yield load by root finding on σmax(P) = Fcy for 0 ≤ P < Pe.
+    let Pfy = null, fyMessage = null, root = null;
+    const f = (p) => sigmaMax(p) - m.Fcy;
+    const f0 = f(0);
+    if (f0 >= 0) fyMessage = "Section already reaches Fcy with P = 0 (lateral actions alone)";
+    else {
+      const hi = Pe * (1 - 1e-9);
+      if (f(hi) < 0) { Pfy = null; fyMessage = `No first-yield root below the elastic buckling load Pe = ${fmt(Pe)} N: elastic buckling governs`; }
+      else {
+        root = rootBracketed(f, 0, hi, { tol: 1e-12 });
+        if (root.converged) Pfy = root.x; else fyMessage = `Root finder did not converge (${root.reason})`;
+      }
+    }
+    const atP = P < Pe ? beamColumnMax(cfgAt(P), P) : null;
+    const sigmaAtP = atP ? P / sec.A + Math.abs(atP.Mmax) / sec.S : null;
+    if (!(P < Pe)) warnings.push(`Applied load P = ${fmt(P)} N is at or above the elastic buckling load Pe = ${fmt(Pe)} N of the reference member: second-order results are undefined`);
+    if (sigmaAtP !== null && sigmaAtP > m.Fcy) warnings.push(`σmax at the applied load = ${fmt(sigmaAtP)} MPa is above Fcy`);
+    const springs = inp.feMode === "springs";
+    const ends = springs
+      ? [{ u: "fixed", r: inp.krA || "free" }, { u: inp.uB === "spring" ? (inp.ktB || "free") : inp.uB, r: inp.krB || "free" }]
+      : endsForK(K);
+    const fe = feBuckling({ E: m.E, I: sec.I, L, ends });
+    fe.PcrClosed = springs || !ends ? null : PI * PI * EI / (K * L) ** 2;
+    const Kfe = fe.Pcr ? Math.sqrt(PI * PI * EI / fe.Pcr) / L : null;
+    const colFE = Kfe ? columnStrength(m, Kfe * L / sec.r) : null;
+    return {
+      section: sec, Pe, l, Pfy, fyMessage, root: root && { iterations: root.iterations, bisections: root.bisections },
+      MS: Pfy ? Pfy / P - 1 : null,
+      atP: atP && { Mmax: atP.Mmax, Mlin: atP.Mlin, amplification: atP.Mlin !== 0 ? atP.Mmax / atP.Mlin : null, ymax: atP.ymax, ylin: atP.ylin, sigmaMax: sigmaAtP, xAt: atP.xAt },
+      fe: { Pcr: fe.Pcr, error: fe.error || null, elements: fe.elements, Kfe, PcrClosed: fe.PcrClosed ?? null, columnSigmaCr: colFE ? colFE.sigmaCr : null, columnPcr: colFE ? colFE.sigmaCr * sec.A : null, columnRegime: colFE ? colFE.regime : null },
+      warnings, sources: ["secant", "fe", "euler", "johnson", "ro"].map(source),
+    };
+  }
+  function beamColumnCurves(inp, n = 60) {
+    const r = solveBeamColumn(inp), sec = r.section, m = inp.material;
+    const e = inp.e, cfgAt = (p) => ({ l: r.l, EI: m.E * sec.I, MA: inp.M1 + p * e, MB: inp.M2 + p * e, w: inp.w, d0: inp.bow });
+    const Pmax = 0.98 * r.Pe;
+    const pd = [];
+    for (let i = 0; i <= n; i++) {
+      const p = Pmax * i / n, s = beamColumnMax(cfgAt(p), p, 120);
+      pd.push({ P: p, ymax: Math.abs(s.ymax), ylin: Math.abs(s.ylin), sigmaMax: p / sec.A + Math.abs(s.Mmax) / sec.S });
+    }
+    const shape = [];
+    if (inp.P < r.Pe) for (let i = 0; i <= 80; i++) { const x = r.l * i / 80, s = beamColumnState(cfgAt(inp.P), inp.P, x); shape.push({ x, y: s.y, yLin: s.yLin, M: s.M, Mlin: s.Mlin }); }
+    return { result: r, pd, shape };
+  }
+
+  /* ---------- 1-D beam FE eigenvalue solve ---------- */
+
+  // End conditions: per end, translation and rotation each "fixed", "free" or
+  // a spring stiffness (number, N/mm or N·mm/rad).
+  function endsForK(K) {
+    const map = { 1: ["pinned", "pinned"], 0.7: ["fixed", "pinned"], 0.5: ["fixed", "fixed"], 2: ["fixed", "free"] };
+    const pair = map[K];
+    if (!pair) return null;
+    const one = (t) => t === "fixed" ? { u: "fixed", r: "fixed" } : t === "pinned" ? { u: "fixed", r: "free" } : { u: "free", r: "free" };
+    return [one(pair[0]), one(pair[1])];
+  }
+  function feBuckling({ E, I, L, ends, elements = 24 }) {
+    if (!ends) return { Pcr: null, error: "custom K: enter end conditions (fixity or springs) for the FE cross-check", elements };
+    const ne = elements, nd = 2 * (ne + 1), le = L / ne;
+    const Ke = zeros(nd), Kg = zeros(nd);
+    const k = E * I / le ** 3, ke = [[12, 6 * le, -12, 6 * le], [6 * le, 4 * le * le, -6 * le, 2 * le * le], [-12, -6 * le, 12, -6 * le], [6 * le, 2 * le * le, -6 * le, 4 * le * le]];
+    const g = 1 / (30 * le), kg = [[36, 3 * le, -36, 3 * le], [3 * le, 4 * le * le, -3 * le, -le * le], [-36, -3 * le, 36, -3 * le], [3 * le, -le * le, -3 * le, 4 * le * le]];
+    for (let e = 0; e < ne; e++) {
+      const idx = [2 * e, 2 * e + 1, 2 * e + 2, 2 * e + 3];
+      for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) { Ke[idx[i]][idx[j]] += k * ke[i][j]; Kg[idx[i]][idx[j]] += g * kg[i][j]; }
+    }
+    const fixed = new Set();
+    const apply = (end, node) => {
+      for (const [key, dof] of [["u", 2 * node], ["r", 2 * node + 1]]) {
+        const v = end[key];
+        if (v === "fixed") fixed.add(dof);
+        else if (typeof v === "number" && v > 0) Ke[dof][dof] += v;
+      }
+    };
+    apply(ends[0], 0); apply(ends[1], ne);
+    const keep = [];
+    for (let i = 0; i < nd; i++) if (!fixed.has(i)) keep.push(i);
+    const A = keep.map((i) => keep.map((j) => Ke[i][j])), B = keep.map((i) => keep.map((j) => Kg[i][j]));
+    const Lc = cholesky(A);
+    if (!Lc) return { Pcr: null, error: "the supports allow a rigid-body mechanism (stiffness matrix not positive definite)", elements };
+    // Largest eigenvalue μ of C = L⁻¹ Kg L⁻ᵀ gives the smallest P = 1/μ.
+    const n = keep.length, Linv = lowerInverse(Lc);
+    const C = mul(mul(Linv, B), transpose(Linv));
+    for (let i = 0; i < n; i++) for (let j = 0; j < i; j++) { const s = 0.5 * (C[i][j] + C[j][i]); C[i][j] = C[j][i] = s; }
+    const eig = jacobiEigenvalues(C);
+    if (!eig.converged) return { Pcr: null, error: "Jacobi eigen routine did not converge", elements };
+    const mu = Math.max(...eig.values);
+    if (!(mu > 0)) return { Pcr: null, error: "no compressive buckling mode", elements };
+    return { Pcr: 1 / mu, elements, sweeps: eig.sweeps };
+  }
+  const zeros = (n) => Array.from({ length: n }, () => new Array(n).fill(0));
+  const transpose = (A) => A[0].map((_, j) => A.map((r) => r[j]));
+  const mul = (A, B) => A.map((r) => B[0].map((_, j) => r.reduce((s, v, k) => s + v * B[k][j], 0)));
+  function cholesky(A) {
+    const n = A.length, L = zeros(n);
+    for (let i = 0; i < n; i++) for (let j = 0; j <= i; j++) {
+      let s = A[i][j];
+      for (let k = 0; k < j; k++) s -= L[i][k] * L[j][k];
+      if (i === j) { if (!(s > 1e-12 * Math.abs(A[i][i]))) return null; L[i][i] = Math.sqrt(s); }
+      else L[i][j] = s / L[j][j];
+    }
+    return L;
+  }
+  function lowerInverse(L) {
+    const n = L.length, X = zeros(n);
+    for (let j = 0; j < n; j++) {
+      X[j][j] = 1 / L[j][j];
+      for (let i = j + 1; i < n; i++) { let s = 0; for (let k = j; k < i; k++) s -= L[i][k] * X[k][j]; X[i][j] = s / L[i][i]; }
+    }
+    return X;
+  }
+  // Cyclic Jacobi rotations for a dense symmetric matrix; returns eigenvalues.
+  function jacobiEigenvalues(M0, maxSweeps = 100) {
+    const A = M0.map((r) => r.slice()), n = A.length;
+    for (let sweep = 1; sweep <= maxSweeps; sweep++) {
+      let off = 0, diag = 0;
+      for (let i = 0; i < n; i++) { diag += A[i][i] * A[i][i]; for (let j = i + 1; j < n; j++) off += A[i][j] * A[i][j]; }
+      if (off <= 1e-30 * diag) return { values: A.map((r, i) => r[i]), converged: true, sweeps: sweep };
+      for (let p = 0; p < n - 1; p++) for (let q = p + 1; q < n; q++) {
+        if (Math.abs(A[p][q]) < 1e-300) continue;
+        const theta = (A[q][q] - A[p][p]) / (2 * A[p][q]);
+        const t = Math.sign(theta || 1) / (Math.abs(theta) + Math.sqrt(theta * theta + 1));
+        const cs = 1 / Math.sqrt(t * t + 1), sn = t * cs;
+        for (let k = 0; k < n; k++) {
+          const akp = A[k][p], akq = A[k][q];
+          A[k][p] = cs * akp - sn * akq; A[k][q] = sn * akp + cs * akq;
+        }
+        for (let k = 0; k < n; k++) {
+          const apk = A[p][k], aqk = A[q][k];
+          A[p][k] = cs * apk - sn * aqk; A[q][k] = sn * apk + cs * aqk;
+        }
+      }
+    }
+    return { values: A.map((r, i) => r[i]), converged: false };
+  }
+
+  /* ---------- Shear buckling of flat plates ---------- */
+
+  function ksClosed(edges, ratio) {
+    const r2 = 1 / (ratio * ratio);
+    return edges === "clamped" ? 8.98 + 5.6 * r2 : 5.34 + 4.0 * r2;
+  }
+  // Solve τ = η(τ)·τe for the TN 3781 plasticity factor; σ = 2τ (maximum-shear law).
+  function shearPlasticity(m, tauE, rule = "A5") {
+    const eta = (tau) => {
+      const { Es, Et } = roModuli(m, 2 * tau);
+      const nu = 0.5 - (0.5 - m.nu) * Es / m.E;
+      let e = (Es / m.E) * (1 - m.nu * m.nu) / (1 - nu * nu);
+      if (rule === "table2") e *= 0.83 + 0.17 * Et / Es;
+      return e;
+    };
+    const f = (tau) => tau - eta(tau) * tauE;
+    if (f(tauE) <= 0) return { tau: tauE, eta: 1 };
+    const r = rootBracketed(f, 0, tauE);
+    if (!r.converged) return { error: r.reason };
+    return { tau: r.x, eta: r.x / tauE };
+  }
+  function solveShear(inp) {
+    const c = checker();
+    checkMaterial(c, inp.material);
+    const a = c.num(inp, "a", "Panel length a"), b = c.num(inp, "b", "Panel width b"), t = c.num(inp, "t", "Thickness t");
+    const tau = c.num(inp, "tau", "Applied shear stress τ");
+    if (inp.edges !== "ss" && inp.edges !== "clamped") c.errors.push({ field: "edges", message: "Edges must be simply supported or clamped" });
+    c.done();
+    const m = inp.material, short = Math.min(a, b), long = Math.max(a, b), ratio = long / short;
+    const ks = ksClosed(inp.edges, ratio);
+    const tauE = ks * PI * PI * m.E / (12 * (1 - m.nu * m.nu)) * (t / short) ** 2;
+    const pl = shearPlasticity(m, tauE, inp.plasticity || "A5");
+    const warnings = [];
+    if (a < b) warnings.push("a < b: k_s uses the long/short side ratio, so the ratio is taken as b/a");
+    if (ratio > 5) warnings.push(`Side ratio ${fmt(ratio)} is outside 1 to 5, the range of TN 3781 fig. 22 against which the closed-form k_s is checked`);
+    if (pl.error) return { ks, ratio, tauE, error: `Plasticity iteration did not converge: ${pl.error}`, warnings, sources: ["ks", "shearPlast", "ro"].map(source) };
+    if (pl.eta < 0.99) warnings.push(`Plasticity correction active: η = ${fmt(pl.eta)} (τcr,e = ${fmt(tauE)} MPa above the proportional region)`);
+    if (tau > m.Fcy / 2) warnings.push(`Applied τ = ${fmt(tau)} MPa exceeds Fcy/2 (maximum-shear yield)`);
+    if (short / t > 2000) warnings.push(`Extreme slenderness b/t = ${fmt(short / t)}`);
+    return { ratio, short, ks, tauE, tauCr: pl.tau, eta: pl.eta, MS: pl.tau / tau - 1, warnings, sources: ["ks", "shearPlast", "ro"].map(source) };
+  }
+
+  /* ---------- Diagonal tension (NACA TN 2661, plane webs) ---------- */
+
+  const kFactor = (ratio) => (ratio > 1 ? Math.tanh(0.5 * Math.log10(ratio)) : 0);
+
+  // Angle of diagonal tension by successive approximation of eqs. (30a) to (30d).
+  function idtAngle({ k, tau, E, nu, AUedt, twoAFht, heavyFlanges }) {
+    if (k <= 0) return { alpha: PI / 4, converged: true, iterations: 0 };
+    let alpha = PI / 4;
+    for (let i = 1; i <= 500; i++) {
+      const s2 = Math.sin(2 * alpha);
+      const eps = tau / E * (2 * k / s2 + (1 - k) * (1 + nu) * s2);
+      const sU = -k * tau * Math.tan(alpha) / (AUedt + 0.5 * (1 - k));
+      const sF = heavyFlanges ? 0 : -k * tau / Math.tan(alpha) / (twoAFht + 0.5 * (1 - k));
+      const t2 = (eps - sF / E) / (eps - sU / E);
+      if (!(t2 > 0)) return { converged: false, reason: "tan²α not positive" };
+      const next = Math.atan(Math.sqrt(t2));
+      if (Math.abs(next - alpha) < 1e-13) return { alpha: next, converged: true, iterations: i };
+      alpha = 0.5 * (alpha + next);
+    }
+    return { converged: false, reason: "angle iteration did not converge in 500 cycles" };
+  }
+  // Pure diagonal tension (k = 1), TN 2661 eqs. (11) to (15), Wagner / TN 469.
+  function wagner({ tau, AUedt, twoAFht, heavyFlanges }) {
+    const t4 = (1 + (heavyFlanges ? 0 : 1 / twoAFht)) / (1 + 1 / AUedt);
+    const alpha = Math.atan(Math.pow(t4, 0.25));
+    return {
+      alpha,
+      sigma: 2 * tau / Math.sin(2 * alpha),
+      sigmaU: -tau * Math.tan(alpha) / AUedt,
+      sigmaF: heavyFlanges ? 0 : -tau / Math.tan(alpha) / twoAFht,
+    };
+  }
+
+  function solveDiagonal(inp) {
+    const c = checker();
+    checkMaterial(c, inp.material);
+    const t = c.num(inp, "t", "Web thickness t");
+    const d = c.num(inp, "d", "Upright spacing d"), dc = c.num(inp, "dc", "Clear upright spacing dc");
+    const he = c.num(inp, "he", "Effective depth he"), hc = c.num(inp, "hc", "Clear web depth hc"), hU = c.num(inp, "hU", "Upright length hU");
+    const AU = c.num(inp, "AU", "Upright area AU"), rho = c.num(inp, "rho", "Upright radius of gyration ρ"), tU = c.num(inp, "tU", "Upright leg thickness tU");
+    const S = c.num(inp, "S", "Applied shear S");
+    const single = inp.upright === "single";
+    const e = single ? c.num(inp, "e", "Upright eccentricity e") : 0;
+    const heavy = !!inp.heavyFlanges;
+    const AF = heavy ? Infinity : c.num(inp, "AF", "Flange area AF");
+    const tF = inp.restraint === "fig12b" ? c.num(inp, "tF", "Flange thickness tF") : null;
+    const IT = c.num(inp, "IT", "Tension flange I", {}), IC = c.num(inp, "IC", "Compression flange I", {});
+    let Rh, Rd;
+    if (inp.restraint === "user") { Rh = c.num(inp, "Rh", "Restraint Rh"); Rd = c.num(inp, "Rd", "Restraint Rd"); }
+    if (dc > d) c.errors.push({ field: "dc", message: "Clear spacing dc must be ≤ d" });
+    c.done();
+    const m = inp.material, warnings = [];
+    // 4.1 effective upright area
+    const AUe = single ? AU / (1 + (e / rho) ** 2) : AU;
+    const AUedt = AUe / (d * t);
+    // 4.2 buckling stress
+    let held = false;
+    if (inp.restraint !== "user") {
+      const rh = restraintFig12b(tU / t, single ? "lower" : "upper"), rd = restraintFig12b(tF / t, "upper");
+      Rh = rh.value; Rd = rd.value; held = rh.held || rd.held;
+      for (const n of rh.notes) warnings.push(`Rh: ${n}`);
+      for (const n of rd.notes) warnings.push(`Rd: ${n}`);
+    }
+    const src = ["aue", "kssFit", ...(inp.restraint === "user" ? [] : ["rFit"]), ...(held ? ["rHold"] : []), "tcr32", "tcrPlast", "k27", "idt", "c1", "tmax", "c2Fit", "smaxFit", "le35", "upright", "wagner", "euler", "johnson", "ro"].map(source);
+    const ratio = Math.max(hc, dc) / Math.min(hc, dc);
+    const tau = S / (he * t);
+    if (ratio > FIT.kss.range[1]) {
+      const why = `kss unavailable: chart data not sourced for hc/dc = ${fmt(ratio)} (fig. 12(a) covers 1 to 5)`;
+      warnings.push(why);
+      return { AUe, AUedt, Rh, Rd, ratio, kss: null, tau, error: why, warnings, sources: src };
+    }
+    const kss = kssFig12a(ratio);
+    const tauCrElastic = dc < hc
+      ? kss * m.E * (t / dc) ** 2 * (Rh + 0.5 * (Rd - Rh) * (dc / hc) ** 3)
+      : kss * m.E * (t / hc) ** 2 * (Rd + 0.5 * (Rh - Rd) * (hc / dc) ** 3);
+    const noUprightsUnavailable = "unavailable: chart data not sourced - TN 2661 gives no kss for the uprights-disregarded (infinitely long) panel";
+    warnings.push(`TN 2661 section 4.2 note 2 (use the buckling stress with the uprights disregarded when it is higher) could not be checked: ${noUprightsUnavailable}; τcr uses eq. (32) with the uprights`);
+    const pl = shearPlasticity(m, tauCrElastic, "A5");
+    if (pl.error) return { AUe, AUedt, Rh, Rd, ratio, kss, tauCrElastic, tau, error: `Web plasticity iteration did not converge: ${pl.error}`, warnings, sources: src };
+    const tauCr = pl.tau;
+    if (pl.eta < 0.99) warnings.push(`Web buckling plasticity correction active: η = ${fmt(pl.eta)}`);
+    // 4.3 nominal shear, 4.4 k
+    const loading = tau / tauCr;
+    const k = kFactor(loading);
+    if (loading <= 1) warnings.push(`τ/τcr = ${fmt(loading)} ≤ 1: web not buckled, no diagonal tension yet (k = 0)`);
+    // 4.5, 4.6 upright stress and angle
+    const twoAFht = heavy ? Infinity : 2 * AF / (he * t);
+    const ang = idtAngle({ k, tau, E: m.E, nu: m.nu, AUedt, twoAFht, heavyFlanges: heavy });
+    const pdt = wagner({ tau, AUedt, twoAFht, heavyFlanges: heavy });
+    const base = { AUe, AUedt, Rh, Rd, ratio, kss, tauCrElastic, tauCrElasticNoUprights: null, noUprightsUnavailable, tauCr, etaWeb: pl.eta, tau, loading, k, pdt };
+    if (!ang.converged) return { ...base, error: `Angle of diagonal tension: ${ang.reason}`, warnings, sources: src };
+    const alpha = ang.alpha, s2 = Math.sin(2 * alpha);
+    const sigmaU = k > 0 ? -k * tau * Math.tan(alpha) / (AUedt + 0.5 * (1 - k)) : 0;
+    const sigmaF = heavy || k === 0 ? 0 : -k * tau / Math.tan(alpha) / (twoAFht + 0.5 * (1 - k));
+    const sigma1 = 2 * k * tau / s2 + tau * (1 - k) * s2;
+    const sigma2 = -tau * (1 - k) * s2;
+    const sm = smaxRatioFig15(k, d / hU);
+    const sigmaUmax = sm.unavailable ? null : sigmaU * sm.value;
+    // 4.7 web peak stress
+    const C1 = 1 / s2 - 1;
+    const wd = 0.7 * d * Math.pow(t / ((IC + IT) * he), 0.25);
+    const c2 = c2Fig18(wd);
+    const tauMaxPrime = c2.unavailable ? null : tau * (1 + k * k * C1) * (1 + k * c2.value);
+    // 3.8 / 4.9 to 4.11 upright column action (shared column-strength function)
+    const Le = d < 1.5 * hU ? hU / Math.sqrt(1 + k * k * (3 - 2 * d / hU)) : hU;
+    const checks = [];
+    const sU = Math.abs(sigmaU);
+    if (!single) {
+      const cs = columnStrength(m, Le / rho);
+      checks.push({ id: "double-column", label: "Upright σU vs column allowable at Le/ρ (4.10(b))", stress: sU, allowable: cs.sigmaCr, slenderness: Le / rho, regime: cs.regime });
+    } else {
+      checks.push({ id: "single-yield", label: "Upright σU vs column yield stress Fcy (4.11(b))", stress: sU, allowable: m.Fcy, slenderness: null, regime: null });
+      const cs = columnStrength(m, hU / (2 * rho));
+      checks.push({ id: "single-column", label: "Upright σUav = σU AUe/AU vs column allowable at hU/(2ρ) (eq. 38)", stress: sU * AUe / AU, allowable: cs.sigmaCr, slenderness: hU / (2 * rho), regime: cs.regime });
+    }
+    for (const ch of checks) ch.MS = ch.stress > 0 ? ch.allowable / ch.stress - 1 : null;
+    const governing = checks.filter((x) => x.MS !== null).sort((x, y) => x.MS - y.MS)[0] || null;
+    if (sm.unavailable) warnings.push(`σUmax/σU ${sm.unavailable}`);
+    if (c2.unavailable) warnings.push(`C2 ${c2.unavailable}`);
+    if (sigma1 > m.Fcy) warnings.push(`Web principal stress σ1 = ${fmt(sigma1)} MPa is above Fcy`);
+    if (sU > m.Fcy) warnings.push(`Upright stress |σU| = ${fmt(sU)} MPa is above Fcy`);
+    return {
+      ...base, alpha, alphaDeg: alpha * 180 / PI, tanAlpha: Math.tan(alpha), iterations: ang.iterations,
+      sigmaU, sigmaUtau: sigmaU / tau, sigmaF, sigma1, sigma2, smaxRatio: sm.unavailable ? null : sm.value, smaxUnavailable: sm.unavailable || null, sigmaUmax,
+      C1, wd, C2: c2.unavailable ? null : c2.value, C2unavailable: c2.unavailable || null, tauMaxPrime,
+      Le, checks, governing, warnings, sources: src,
+    };
+  }
+  function diagonalCurves(inp, n = 80) {
+    const r = solveDiagonal(inp);
+    const kCurve = [];
+    for (let i = 0; i <= n; i++) { const x = Math.pow(10, 2.3 * i / n); kCurve.push({ ratio: x, k: kFactor(x) }); }
+    const web = [];
+    if (!r.error) {
+      const Smax = Math.max(inp.S * 1.6, 3 * r.tauCr * inp.he * inp.t);
+      for (let i = 1; i <= n; i++) {
+        const S = Smax * i / n;
+        try {
+          const q = solveDiagonal({ ...inp, S });
+          if (!q.error) web.push({ S, tau: q.tau, sigma1: q.sigma1, sigmaU: Math.abs(q.sigmaU), sigmaPDT: q.pdt.sigma, k: q.k });
+        } catch (e) { /* skip */ }
+      }
+    }
+    return { result: r, kCurve, web };
+  }
+
+  /* ---------- Tabs, defaults, serialisation ---------- */
+
+  const TABS = ["column", "beamColumn", "shear", "diagonal"];
+  const TAB_LABELS = { column: "Column buckling", beamColumn: "Beam-column", shear: "Shear buckling", diagonal: "Diagonal tension" };
+  const baseMaterial = () => ({ preset: "al2024t3", ...pick(MATERIAL_PRESETS[0], ["E", "Fcy", "nu", "n"]) });
+  const pick = (o, keys) => Object.fromEntries(keys.map((k) => [k, o[k]]));
+
+  function defaults(tab) {
+    const material = baseMaterial();
+    switch (tab) {
+      case "column": return { material, section: { shape: "tube", D: 25, t: 1.5, axis: "weak", A: 100, I: 1000, c: 10, b: 20, h: 40 }, L: 800, K: 1, kPreset: "pp", P: 5000, tangent: false };
+      case "beamColumn": return { material, section: { shape: "tube", D: 40, t: 2, axis: "weak", A: 200, I: 20000, c: 20, b: 20, h: 40 }, L: 1500, K: 1, kPreset: "pp", P: 8000, e: 2, w: 0, M1: 0, M2: 0, bow: 1.5, feMode: "preset", krA: 0, krB: 0, uB: "fixed", ktB: 0 };
+      case "shear": return { material, a: 300, b: 150, t: 1.0, edges: "ss", tau: 15, plasticity: "A5" };
+      case "diagonal": return {
+        material, upright: "double", t: 1.0, d: 200, dc: 190, he: 400, hc: 380, hU: 390,
+        AU: 120, rho: 6, tU: 1.6, e: 8, heavyFlanges: false, AF: 400, tF: 2.5, IT: 40000, IC: 40000,
+        restraint: "fig12b", Rh: 1, Rd: 1, S: 40000,
+      };
+      default: throw new Error(`unknown tab ${tab}`);
+    }
+  }
+  function solve(tab, inputs) {
+    switch (tab) {
+      case "column": return solveColumn(inputs);
+      case "beamColumn": return solveBeamColumn(inputs);
+      case "shear": return solveShear(inputs);
+      case "diagonal": return solveDiagonal(inputs);
+      default: throw new InputError([{ field: "tab", message: `Unknown tab "${tab}"` }]);
+    }
+  }
+  // Merge a partial input over the tab defaults (import and WebMCP).
+  function normalise(tab, partial) {
+    const base = defaults(tab), p = partial || {};
+    const out = { ...base, ...p };
+    out.material = { ...base.material, ...(p.material || {}) };
+    if (base.section) out.section = { ...base.section, ...(p.section || {}) };
+    return out;
+  }
+
+  // Unit description of every numeric input and result, for display and export.
+  const INPUT_UNITS = {
+    material: { E: "stress", Fcy: "stress", nu: "none", n: "none" },
+    section: { D: "length", t: "length", b: "length", h: "length", A: "area", I: "inertia", c: "length" },
+    column: { L: "length", K: "none", P: "force" },
+    beamColumn: { L: "length", K: "none", P: "force", e: "length", w: "lineLoad", M1: "moment", M2: "moment", bow: "length", krA: "rotSpring", krB: "rotSpring", ktB: "transSpring" },
+    shear: { a: "length", b: "length", t: "length", tau: "stress" },
+    diagonal: { t: "length", d: "length", dc: "length", he: "length", hc: "length", hU: "length", AU: "area", rho: "length", tU: "length", e: "length", AF: "area", tF: "length", IT: "inertia", IC: "inertia", Rh: "none", Rd: "none", S: "force" },
+  };
+
+  // Results summarised for export: [label, value (canonical), quantity].
+  function resultRows(tab, r) {
+    const rows = [];
+    const add = (label, v, q = "none") => rows.push({ label, value: v === undefined ? null : v, q });
+    if (tab === "column") {
+      add("Radius of gyration r", r.section.r, "length"); add("Area A", r.section.A, "area"); add("Second moment I", r.section.I, "inertia");
+      add("Slenderness KL/r", r.lambda); add("Transition (KL/r)c", r.lambdaC); add("Regime", r.regime);
+      add("Euler σcr", r.sigmaEuler, "stress"); add("Johnson σcr", r.sigmaJohnson, "stress"); add("Governing σcr", r.sigmaCr, "stress");
+      if (r.sigmaTangent !== null) add("Tangent-modulus σcr", r.sigmaTangent, "stress");
+      add("Pcr", r.Pcr, "force"); add("Applied P/A", r.sigmaApplied, "stress"); add("Margin of safety Pcr/P − 1", r.MS);
+    } else if (tab === "beamColumn") {
+      add("Reference length KL", r.l, "length"); add("Elastic buckling Pe = π²EI/(KL)²", r.Pe, "force");
+      add("First-yield load Pfy", r.Pfy, "force"); if (r.fyMessage) add("First-yield note", r.fyMessage);
+      add("Margin of safety Pfy/P − 1", r.MS);
+      if (r.atP) { add("Linear moment at P", r.atP.Mlin, "moment"); add("Second-order moment at P", r.atP.Mmax, "moment"); add("Moment amplification", r.atP.amplification); add("Max deflection at P", r.atP.ymax, "length"); add("σmax at P", r.atP.sigmaMax, "stress"); }
+      add("FE Pcr", r.fe.Pcr, "force"); add("π²EI/(KL)² for the K preset", r.fe.PcrClosed, "force"); if (r.fe.error) add("FE note", r.fe.error); add("FE effective K", r.fe.Kfe);
+      add("Column strength at FE K (shared function)", r.fe.columnPcr, "force");
+    } else if (tab === "shear") {
+      add("Side ratio (long/short)", r.ratio); add("k_s", r.ks); add("τcr elastic", r.tauE, "stress");
+      if (!r.error) { add("Plasticity factor η", r.eta); add("τcr", r.tauCr, "stress"); add("Margin of safety τcr/τ − 1", r.MS); } else add("Error", r.error);
+    } else if (tab === "diagonal") {
+      add("AUe", r.AUe, "area"); add("AUe/(d t)", r.AUedt); add("Rh", r.Rh); add("Rd", r.Rd); add("kss (fig. 12(a) fit)", r.kss);
+      add("τcr elastic", r.tauCrElastic, "stress"); add("τcr", r.tauCr, "stress"); add("τ = S/(he t)", r.tau, "stress"); add("τ/τcr", r.loading); add("k", r.k);
+      if (r.error) add("Error", r.error);
+      else {
+        add("α (deg)", r.alphaDeg); add("tan α", r.tanAlpha); add("σU", r.sigmaU, "stress"); add("σU/τ", r.sigmaUtau);
+        add("σUmax/σU (fig. 15 fit)", r.smaxRatio); if (r.smaxUnavailable) add("σUmax/σU note", r.smaxUnavailable); add("σUmax", r.sigmaUmax, "stress");
+        add("σF", r.sigmaF, "stress"); add("Web σ1", r.sigma1, "stress"); add("Web σ2", r.sigma2, "stress");
+        add("C1", r.C1); add("ωd", r.wd); add("C2 (fig. 18 fit)", r.C2); if (r.C2unavailable) add("C2 note", r.C2unavailable); add("τ'max", r.tauMaxPrime, "stress");
+        add("Upright Le", r.Le, "length");
+        for (const ch of r.checks) { add(`${ch.label}: stress`, ch.stress, "stress"); add(`${ch.label}: allowable`, ch.allowable, "stress"); add(`${ch.label}: MS`, ch.MS); }
+        add("Pure diagonal tension α (deg)", r.pdt.alpha * 180 / PI); add("Pure diagonal tension web σ", r.pdt.sigma, "stress"); add("Pure diagonal tension σU", r.pdt.sigmaU, "stress");
+      }
+    }
+    return rows;
+  }
+
+  function exportJSON(tab, inputs, opts = {}) {
+    const doc = { schemaVersion: SCHEMA_VERSION, tab, units: "SI", unitSystem: "N, mm, MPa", displayUnits: opts.displayUnits || "SI", notForCertification: true, disclaimer: DISCLAIMER, inputs };
+    if (opts.withResults !== false) {
+      let res;
+      try { res = solve(tab, inputs); }
+      catch (e) { doc.results = null; doc.errors = e.errors || [{ message: e.message }]; doc.warnings = []; doc.sources = []; return doc; }
+      doc.results = Object.fromEntries(resultRows(tab, res).map((r) => [r.label, r.value]));
+      doc.warnings = res.warnings;
+      doc.sources = res.sources.map((s) => ({ id: s.id, kind: s.kind, text: s.text }));
+    }
+    return doc;
+  }
+  function importJSON(text) {
+    let doc;
+    try { doc = typeof text === "string" ? JSON.parse(text) : text; } catch (e) { throw new InputError([{ field: "file", message: `Not valid JSON: ${e.message}` }]); }
+    if (!doc || typeof doc !== "object") throw new InputError([{ field: "file", message: "File is not a JSON object" }]);
+    if (doc.schemaVersion !== SCHEMA_VERSION) throw new InputError([{ field: "schemaVersion", message: `Unsupported schemaVersion ${doc.schemaVersion} (expected ${SCHEMA_VERSION})` }]);
+    if (!TABS.includes(doc.tab)) throw new InputError([{ field: "tab", message: `Unknown tab "${doc.tab}"` }]);
+    if (doc.units !== "SI") throw new InputError([{ field: "units", message: "Files must be in canonical SI (units: \"SI\")" }]);
+    if (!doc.inputs || typeof doc.inputs !== "object") throw new InputError([{ field: "inputs", message: "File has no inputs" }]);
+    return { tab: doc.tab, inputs: normalise(doc.tab, doc.inputs), displayUnits: doc.displayUnits === "US" ? "US" : "SI" };
+  }
+  function exportMarkdown(tab, inputs, opts = {}) {
+    const sys = opts.displayUnits || "SI";
+    const v = (x, q) => (x === null || x === undefined ? "—" : typeof x === "string" ? x : `${fmt(toDisplay(x, q, sys))}${unitLabel(q, sys) ? " " + unitLabel(q, sys) : ""}`);
+    const lines = [`# Structural stability visualiser: ${TAB_LABELS[tab]}`, "", `> **${DISCLAIMER}**`, "", `Display units: ${sys === "SI" ? "N, mm, MPa" : "lbf, in, ksi"} (canonical SI in the JSON export).`, "", "## Inputs", "", "| Input | Value |", "|---|---|"];
+    const flat = (obj, units, prefix = "") => {
+      for (const [k, x] of Object.entries(obj)) {
+        if (k === "material" || k === "section") continue;
+        if (typeof x === "number") lines.push(`| ${prefix}${k} | ${v(x, units[k] || "none")} |`);
+        else if (typeof x === "string" || typeof x === "boolean") lines.push(`| ${prefix}${k} | ${x} |`);
+      }
+    };
+    flat(inputs.material, INPUT_UNITS.material, "material.");
+    if (inputs.section) flat(inputs.section, INPUT_UNITS.section, "section.");
+    flat(inputs, INPUT_UNITS[tab]);
+    let res = null, err = null;
+    try { res = solve(tab, inputs); } catch (e) { err = e; }
+    lines.push("", "## Results", "");
+    if (err) lines.push(`Calculation blocked: ${(err.errors || [{ message: err.message }]).map((x) => x.message).join("; ")}`);
+    else {
+      lines.push("| Result | Value |", "|---|---|");
+      for (const r of resultRows(tab, res)) lines.push(`| ${r.label} | ${v(r.value, r.q)} |`);
+    }
+    lines.push("", "## Warnings", "");
+    const warns = res ? res.warnings : [];
+    if (warns.length) for (const w of warns) lines.push(`- ${w}`); else lines.push("- None");
+    lines.push("", "## Formula sources", "");
+    for (const s of res ? res.sources : []) lines.push(`- **${s.kind}** (${s.id}): ${s.text}`);
+    lines.push("", `_${DISCLAIMER}_`, "");
+    return lines.join("\n");
+  }
+
+  /* ---------- Reference cases (NACA TN 2661 section 7) ---------- */
+
+  // Example 1, thin-web beam I-40-4Da (double uprights, heavy flanges) and
+  // example 2, thick-web beam V-12-10S (single uprights), in canonical SI.
+  // E = 10.6 × 10³ ksi as used in the report's arithmetic.
+  const US = { in: IN, in2: IN * IN, kips: 1000 * LBF, ksi: KSI };
+  function tn2661Example(n) {
+    const material = { preset: "custom", E: 10.6e3 * US.ksi, Fcy: 40 * US.ksi, nu: 0.32, n: 20 };
+    if (n === 1) return {
+      material, upright: "double", t: 0.039 * US.in, d: 20.0 * US.in, dc: 19.37 * US.in, he: 41.4 * US.in, hc: 37.1 * US.in, hU: 38.6 * US.in,
+      AU: 0.353 * US.in2, rho: 0.351 * US.in, tU: 0.125 * US.in, e: 0, heavyFlanges: true, AF: 1,
+      // "tF/t large": taken at the end of fig. 12(b), tF/t = 3. IT + IC are set
+      // by tn2661Case to give the report's ωd = 1.20.
+      tF: 3.0 * 0.039 * US.in, IT: 0, IC: 0, restraint: "fig12b", Rh: 1, Rd: 1, S: 30.3 * US.kips,
+    };
+    return {
+      material, upright: "single", t: 0.1043 * US.in, d: 7.0 * US.in, dc: 7.0 * US.in, he: 11.58 * US.in, hc: 9.875 * US.in, hU: 9.875 * US.in,
+      AU: 0.1443 * US.in2, rho: 0.182 * US.in, tU: 0.1283 * US.in, e: 0.251 * US.in, heavyFlanges: true, AF: 2.32 * US.in2, tF: 0.3125 * US.in,
+      IT: 0, IC: 0, restraint: "fig12b", Rh: 1, Rd: 1, S: 34.5 * US.kips,
+    };
+  }
+  // Flange inertia sum giving a target ωd = 0.7 d [t/((IC+IT) he)]^¼.
+  const inertiaForWd = (wd, d, t, he) => t / (he * Math.pow(wd / (0.7 * d), 4));
+  function tn2661Case(n) {
+    const x = tn2661Example(n);
+    const I = inertiaForWd(n === 1 ? 1.2 : 1.37, x.d, x.t, x.he) / 2;
+    x.IT = I; x.IC = I;
+    return x;
+  }
+
+  /* ---------- Self-tests ---------- */
+
+  function selfTests() {
+    const results = [];
+    const check = (name, pass, detail, tol) => results.push({ name, pass: !!pass, detail, tolerance: tol || "" });
+    const rel = (a, b) => Math.abs(a - b) / Math.abs(b);
+    const mat = { E: 72400, Fcy: 270, nu: 0.33, n: 15 };
+
+    // 1. FE eigenvalue Pcr vs π²EI/(KL)² for each K preset.
+    for (const kp of K_PRESETS) {
+      const E = 70000, I = 1000, L = 1000;
+      const fe = feBuckling({ E, I, L, ends: endsForK(kp.K) });
+      const exact = PI * PI * E * I / (kp.K * L) ** 2;
+      check(`FE Pcr = π²EI/(KL)², ${kp.label} (K = ${kp.K})`, fe.Pcr && rel(fe.Pcr, exact) < 0.005, `FE ${fmt(fe.Pcr)} N vs ${fmt(exact)} N (${fmt(100 * rel(fe.Pcr, exact))} %)`, "0.5 %");
+    }
+    // Rotational springs: very stiff springs recover fixed-fixed, zero springs pinned.
+    {
+      const E = 70000, I = 1000, L = 1000;
+      const stiff = feBuckling({ E, I, L, ends: [{ u: "fixed", r: 1e12 }, { u: "fixed", r: 1e12 }] });
+      const exact = 4 * PI * PI * E * I / (L * L);
+      check("FE end springs: rotational springs → ∞ recover fixed-fixed", rel(stiff.Pcr, exact) < 0.005, `FE ${fmt(stiff.Pcr)} N vs ${fmt(exact)} N`, "0.5 %");
+    }
+    // 2. Secant formula: pin-ended eccentric column matches the closed form.
+    {
+      const inp = { material: mat, section: { shape: "tube", D: 40, t: 2 }, L: 1500, K: 1, P: 8000, e: 2, w: 0, M1: 0, M2: 0, bow: 0 };
+      const r = solveBeamColumn(inp), s = r.section;
+      const secant = (P) => (P / s.A) * (1 + (inp.e * s.c / (s.r * s.r)) / Math.cos((inp.L / (2 * s.r)) * Math.sqrt(P / (mat.E * s.A))));
+      check("Beam-column σmax at P equals the secant formula", rel(r.atP.sigmaMax, secant(inp.P)) < 1e-9, `${fmt(r.atP.sigmaMax)} vs ${fmt(secant(inp.P))} MPa`, "1e-9");
+      check("Beam-column first-yield root satisfies the secant formula = Fcy", r.Pfy && rel(secant(r.Pfy), mat.Fcy) < 1e-8, `σ(Pfy) = ${fmt(secant(r.Pfy))} MPa`, "1e-8");
+      const w = solveBeamColumn({ ...inp, e: 0, w: 1 });
+      const u = (inp.L / 2) * Math.sqrt(inp.P / (mat.E * s.I));
+      const Mw = 1 * inp.L * inp.L / 8 * (2 * (1 / Math.cos(u) - 1) / (u * u));
+      check("Beam-column uniform load: Mmax = (wL²/8)·2(sec u − 1)/u²", rel(Math.abs(w.atP.Mmax), Mw) < 1e-6, `${fmt(w.atP.Mmax)} vs ${fmt(Mw)} N·mm`, "1e-6");
+    }
+    // 3. k_s asymptotes and exact square-plate values.
+    check("k_s simply supported → 5.34 as a/b → ∞", Math.abs(ksClosed("ss", 1e6) - 5.34) < 1e-6, `${fmt(ksClosed("ss", 1e6))}`, "1e-6");
+    check("k_s clamped → 8.98 as a/b → ∞", Math.abs(ksClosed("clamped", 1e6) - 8.98) < 1e-6, `${fmt(ksClosed("clamped", 1e6))}`, "1e-6");
+    check("k_s simply supported square plate ≈ 9.34 (exact)", rel(ksClosed("ss", 1), 9.34) < 0.01, `${fmt(ksClosed("ss", 1))}`, "1 %");
+    check("k_s clamped square plate ≈ 14.71 (exact)", rel(ksClosed("clamped", 1), 14.71) < 0.015, `${fmt(ksClosed("clamped", 1))}`, "1.5 %");
+    {
+      const low = shearPlasticity(mat, 1);
+      check("Shear plasticity η → 1 at low stress", Math.abs(low.eta - 1) < 1e-3, `η = ${fmt(low.eta)}`, "1e-3");
+      const epp = { E: 72400, Fcy: 270, nu: 0.33, n: 200 };
+      const hi = shearPlasticity(epp, 10 * epp.Fcy);
+      check("Shear plasticity caps τcr near Fcy/2 for a sharp-kneed curve (TN 3781 fig. 10, n → ∞)", Math.abs(hi.tau / (epp.Fcy / 2) - 1) < 0.02, `τcr = ${fmt(hi.tau)} MPa vs Fcy/2 = ${fmt(epp.Fcy / 2)}`, "2 %");
+    }
+    // 4. Diagonal tension k = 1 limit vs pure Wagner.
+    {
+      const args = { tau: 100, E: 72400, nu: 0.33, AUedt: 0.3, twoAFht: 2.5, heavyFlanges: false };
+      const a = idtAngle({ ...args, k: 1 }), w = wagner(args);
+      check("Diagonal tension k = 1: angle from eq. (30c) equals Wagner eq. (15)", a.converged && Math.abs(a.alpha - w.alpha) < 1e-9, `${fmt(a.alpha * 180 / PI)}° vs ${fmt(w.alpha * 180 / PI)}°`, "1e-9 rad");
+      const sU = -1 * args.tau * Math.tan(a.alpha) / (args.AUedt + 0);
+      check("Diagonal tension k = 1: σU (30a) equals Wagner eq. (12)", Math.abs(sU - w.sigmaU) < 1e-9 * Math.abs(w.sigmaU), `${fmt(sU)} vs ${fmt(w.sigmaU)} MPa`, "1e-9");
+      const s1 = 2 * args.tau / Math.sin(2 * a.alpha);
+      check("Diagonal tension k = 1: σ1 (28a) equals Wagner eq. (11)", Math.abs(s1 - w.sigma) < 1e-9 * w.sigma, `${fmt(s1)} vs ${fmt(w.sigma)} MPa`, "1e-9");
+      const h = wagner({ tau: 100, AUedt: 1e9, twoAFht: Infinity, heavyFlanges: true });
+      check("Wagner with rigid flanges and uprights: α = 45°, web σ = 2τ (TN 469)", Math.abs(h.alpha - PI / 4) < 1e-6 && Math.abs(h.sigma - 200) < 1e-6, `α = ${fmt(h.alpha * 180 / PI)}°, σ = ${fmt(h.sigma)} MPa`, "1e-6");
+      check("k = tanh(0.5 log₁₀ τ/τcr) → 1 as τ/τcr → ∞", kFactor(1e12) > 0.999 && kFactor(1) === 0, `k(10¹²) = ${fmt(kFactor(1e12))}`, "0.1 %");
+    }
+    // 5. SI/US unit round-trips.
+    {
+      let worst = 0;
+      for (const q of Object.keys(QUANTITIES)) { const x = 123.456; const back = fromDisplay(toDisplay(x, q, "US"), q, "US"); worst = Math.max(worst, rel(back, x)); }
+      check("SI → US → SI round-trip for every quantity", worst < 1e-12, `worst relative error ${worst.toExponential(1)}`, "1e-12");
+      check("1 ksi = 6.894757 MPa and 1 in = 25.4 mm", Math.abs(fromDisplay(1, "stress", "US") - 6.894757293) < 1e-8 && fromDisplay(1, "length", "US") === 25.4, "exact factors", "1e-8");
+      for (const tab of TABS) {
+        const doc = exportJSON(tab, defaults(tab), { displayUnits: "US" });
+        const back = importJSON(JSON.stringify(doc));
+        check(`JSON export → import round-trip (${TAB_LABELS[tab]})`, JSON.stringify(back.inputs) === JSON.stringify(normalise(tab, defaults(tab))) && back.displayUnits === "US", "inputs identical", "exact");
+      }
+    }
+    // 6. TN 2661 worked examples (section 7), report values and tolerances.
+    {
+      const r = solveDiagonal(tn2661Case(1)), K = (x) => x / KSI;
+      check("TN 2661 example 1: τ = P/(he t) = 18.8 ksi", rel(K(r.tau), 18.8) < 0.01, `${fmt(K(r.tau))} ksi`, "1 %");
+      check("TN 2661 example 1: kss = 5.92 at hc/dc = 1.91 (fig. 12(a) fit)", rel(r.kss, 5.92) < 0.01, `${fmt(r.kss)}`, "1 %");
+      check("TN 2661 example 1: τcr = 0.416 ksi", rel(K(r.tauCr), 0.416) < 0.02, `${fmt(K(r.tauCr))} ksi`, "2 %");
+      check("TN 2661 example 1: k = 0.680", Math.abs(r.k - 0.68) < 0.005, `${fmt(r.k)}`, "±0.005");
+      check("TN 2661 example 1: σU/τ = 0.90 (fig. 14)", rel(Math.abs(r.sigmaUtau), 0.9) < 0.03, `${fmt(Math.abs(r.sigmaUtau))}`, "3 %");
+      check("TN 2661 example 1: tan α = 0.81 (fig. 16(a))", rel(r.tanAlpha, 0.81) < 0.03, `${fmt(r.tanAlpha)}`, "3 %");
+      check("TN 2661 example 1: Le = 28.0 in (eq. 35)", rel(r.Le / IN, 28.0) < 0.01, `${fmt(r.Le / IN)} in`, "1 %");
+      check("TN 2661 example 1: column allowable π²E/(Le/ρ)² = 16.5 ksi", rel(K(r.checks[0].allowable), 16.5) < 0.01, `${fmt(K(r.checks[0].allowable))} ksi`, "1 %");
+      check("TN 2661 example 1: σUmax/σU = 1.14 (fig. 15 fit)", rel(r.smaxRatio, 1.14) < 0.02, `${fmt(r.smaxRatio)}`, "2 %");
+      check("TN 2661 example 1: C1 = 0.022", Math.abs(r.C1 - 0.022) < 0.005, `${fmt(r.C1)}`, "±0.005");
+      check("TN 2661 example 1: C2 = 0.01 at ωd = 1.20 (fig. 18 fit)", Math.abs(r.C2 - 0.01) < 0.01, `${fmt(r.C2)} at ωd ${fmt(r.wd)}`, "±0.01");
+      check("TN 2661 example 1: τ'max = 19.2 ksi", rel(K(r.tauMaxPrime), 19.2) < 0.02, `${fmt(K(r.tauMaxPrime))} ksi`, "2 %");
+      const r2 = solveDiagonal(tn2661Case(2));
+      check("TN 2661 example 2: AUe = 0.0497 in² and AUe/(d t) = 0.0681", rel(r2.AUe / (IN * IN), 0.0497) < 0.01 && rel(r2.AUedt, 0.0681) < 0.01, `${fmt(r2.AUe / (IN * IN))} in², ${fmt(r2.AUedt)}`, "1 %");
+      check("TN 2661 example 2: Rh = 0.93 at tU/t = 1.23 (fig. 12(b) fit, lower curve)", rel(r2.Rh, 0.93) < 0.02, `${fmt(r2.Rh)}`, "2 %");
+      check("TN 2661 example 2: Rd = 1.62 at tF/t = 3.00 (fig. 12(b) fit, upper curve)", rel(r2.Rd, 1.62) < 0.01, `${fmt(r2.Rd)}`, "1 %");
+      check("TN 2661 example 2: τ = 28.56 ksi", rel(K(r2.tau), 28.56) < 0.01, `${fmt(K(r2.tau))} ksi`, "1 %");
+      const k2 = kFactor(1.77);
+      check("TN 2661 example 2: k = 0.123 at τ/τcr = 1.77 (eq. 27)", Math.abs(k2 - 0.123) < 0.002, `${fmt(k2)}`, "±0.002");
+      // The report takes τcr from fig. 12(c) (24S-T3 only); from k onwards the
+      // remaining steps are checked at the report's k.
+      const a2 = idtAngle({ k: 0.123, tau: r2.tau, E: tn2661Example(2).material.E, nu: 0.32, AUedt: r2.AUedt, twoAFht: Infinity, heavyFlanges: true });
+      const su2 = 0.123 * Math.tan(a2.alpha) / (r2.AUedt + 0.5 * (1 - 0.123));
+      check("TN 2661 example 2: σU/τ = 0.227 at k = 0.123", rel(su2, 0.227) < 0.03, `${fmt(su2)}`, "3 %");
+      const sm2 = smaxRatioFig15(0.123, 7.0 / 9.875).value;
+      check("TN 2661 example 2: σUmax/σU = 1.30 (fig. 15 fit)", rel(sm2, 1.3) < 0.02, `${fmt(sm2)}`, "2 %");
+      // Eq. (32) with the printed inputs gives 16.27 ksi; the report prints 16.55.
+      const tcr2 = 6.70 * 10.6e3 * (0.1043 / 7) ** 2 * (0.93 + 0.5 * (1.62 - 0.93) * (2 / 3) ** 3);
+      check("TN 2661 example 2: eq. (32) with the printed inputs vs the printed 16.55 ksi", rel(tcr2, 16.55) < 0.02, `${fmt(tcr2)} ksi (report arithmetic differs by ${fmt(100 * rel(tcr2, 16.55))} %)`, "2 %");
+    }
+    // 7. Shared column function: Johnson meets Euler tangentially at (KL/r)c.
+    {
+      const cs = columnStrength(mat, PI * Math.sqrt(2 * mat.E / mat.Fcy));
+      check("Johnson and Euler meet at (KL/r)c with σ = Fcy/2", rel(cs.johnson, cs.euler) < 1e-12 && rel(cs.euler, mat.Fcy / 2) < 1e-12, `${fmt(cs.johnson)} = ${fmt(cs.euler)} MPa`, "1e-12");
+    }
+    return results;
+  }
+
+  function fmt(x) {
+    if (x == null || !Number.isFinite(x)) return String(x);
+    const a = Math.abs(x);
+    if (a !== 0 && (a >= 1e6 || a < 1e-3)) return x.toExponential(3);
+    return String(+x.toPrecision(4));
+  }
+
+  return {
+    SCHEMA_VERSION, DISCLAIMER, QUANTITIES, SOURCES, FIT, MATERIAL_PRESETS, K_PRESETS, TABS, TAB_LABELS, INPUT_UNITS,
+    InputError, unitLabel, toDisplay, fromDisplay, source, setFigureData, fitErrors,
+    kssFig12a, restraintFig12b, smaxRatioFig15, c2Fig18, roStrain, roModuli, rootBracketed, sectionProps,
+    columnStrength, tangentModulusStress, solveColumn, columnCurve,
+    beamColumnState, beamColumnMax, solveBeamColumn, beamColumnCurves, endsForK, feBuckling, jacobiEigenvalues, cholesky,
+    ksClosed, shearPlasticity, solveShear, kFactor, idtAngle, wagner, solveDiagonal, diagonalCurves,
+    defaults, normalise, solve, resultRows, exportJSON, importJSON, exportMarkdown, tn2661Example, tn2661Case, selfTests, fmt,
+  };
+});
+
+</script>
+<script>
+(function () {
+"use strict";
+const D = {"title":"Structural Stability Visualiser","slug":"stability","version":1,"summary":"Explore column buckling (Euler, Johnson, optional tangent modulus), second-order beam-columns (secant-type first-yield root finder with a beam FE eigenvalue cross-check), flat-plate shear buckling with the NACA TN 3781 plasticity factor, and NACA TN 2661 diagonal tension on plane webs with pure Wagner tension as the k = 1 limit.","disclaimer":"Not for certification. Exploration and preliminary sizing only: no design allowables, no knockdown factors, illustrative material presets. Check every result independently.","units":"Stored canonically in N, mm and MPa (N/mm²). The SI/US switch (N·mm·MPa or lbf·in·ksi) changes display and entry only, so exported files stay canonical SI.","source_policy":["NASA: the relation is stated in the cited NASA/NACA report and section.","classical: no NASA source was found; the relation is textbook engineering mechanics and is never presented as NASA-derived.","fit: a closed form fitted to a NASA report figure; the digitised points are in figures below and the fit error is shown on the page.","A chart-based relation outside its figure's range shows 'unavailable: chart data not sourced'. No value is guessed: kss beyond fig. 12(a) (hc/dc above 5) makes the web buckling stress and every later diagonal-tension result unavailable, and fig. 15 beyond d/hU = 1 and fig. 18 beyond ωd = 4 are unavailable.","The one exception is fig. 12(b) beyond t/t = 3, held at its end value because NACA TN 2661 section 7, example 1, p. 57 applies that hold (tU/t = 3.20 and tF/t large give Rh = Rd = 1.62); the hold is tagged with that source and warned. Below the solid part of fig. 12(b) the dashed part drawn in the figure is used, with a warning."],"tabs":{"column":"Euler and Johnson column curves with the transition slenderness, an optional tangent-modulus curve from the Ramberg-Osgood fit, Pcr and the margin of safety against the entered load.","beamColumn":"Pin-ended second-order beam-column of length KL under eccentric axial load, end moments, uniform lateral load and an initial bow (default L/1000, flagged as an assumption). A bracketed Newton root finder with bisection fallback solves σmax = P/A + Mmax/S = Fcy for the first-yield load. A 24-element beam FE model with geometric stiffness and a hand-written Jacobi eigen routine gives Pcr for the K presets and for end springs.","shear":"Flat isotropic rectangular plates in shear with simply supported or clamped edges, closed-form k_s(a/b), and the NACA TN 3781 plasticity-reduction factor on the Ramberg-Osgood curve.","diagonal":"NACA TN 2661 incomplete diagonal tension on plane webs: effective upright area, web buckling stress with the report's restraint coefficients, diagonal-tension factor k, angle of diagonal tension, upright, flange and web stresses, the peak web stress and the upright column check; pure Wagner diagonal tension (TN 469) is shown as the k = 1 limit."},"not_in_scope":["Curved webs and panels","Orthotropic or stiffened plates","Forced crippling of uprights","Flange secondary bending","Rivet checks","Allowable web stress (TN 2661 fig. 19)","Certification allowables","Plastic-hinge or interaction-curve beam-column criteria","NASA source-code ports"],"reference_notes":["NTRS returned HTTP 403 to automated downloads when these checks were made, so the report scans were read from mirrors of the same NACA documents (everyspec.com and OSTI); citations give the NTRS document IDs.","TN 2661 defines its own edge-restraint coefficients Rh and Rd (section 3.6, eq. 32; R = 1 simply supported, 1.62 clamped; empirical values in fig. 12(b)), so they replace the 0-to-1 fixity blend: Rh and Rd come from the fig. 12(b) fit or are typed in.","TN 2661 takes the plastic web buckling stress from fig. 12(c), drawn only for 24S-T3 and 75S-T6. The page uses the TN 3781 eq. (A5) factor on the entered Ramberg-Osgood curve instead, so example 2's plastic τcr (16.10 ksi in the report) is not reproduced; its later steps are checked at the report's k.","TN 3781 gives two shear plasticity factors: appendix A and fig. 10 use η = (Es/E)(1 − νe²)/(1 − ν²) (eq. A5); table 2 multiplies it by 0.83 + 0.17 Et/Es. A5 is the default; table 2 is an option.","TN 2661 example 2 prints τcr,elastic = 16.55 ksi, but eq. (32) with its printed inputs gives 16.28 ksi (1.7 % lower). It also prints hc/d = 1.50 while hc/dc = 9.875/7 = 1.41; the printed kss = 6.70 matches fig. 12(a) at 1.41.","TN 2661 section 4.2 note 2 (use the buckling stress with the uprights disregarded when it is higher) is not checked: the report gives no kss for the uprights-disregarded (infinitely long) panel, so that stress is unavailable, τcr uses eq. (32) with the uprights, and a warning says note 2 could not be checked.","The closed-form k_s(a/b) are classical approximations (Timoshenko and Gere); TN 3781 gives k_s only as a chart (fig. 22). They reproduce the exact square-plate values 9.34 (simply supported) and about 14.6 against 14.71 (clamped).","The fixed-pinned FE Pcr is 0.24 % above π²EI/(0.7L)² because the exact effective-length factor is 0.699, not 0.7."],"sources":[{"id":"TN2661","title":"A Summary of Diagonal Tension. Part I: Methods of Analysis","authors":"Paul Kuhn, James P. Peterson, L. Ross Levin","year":1952,"report":"NACA TN 2661","ntrs":"https://ntrs.nasa.gov/citations/19930083335","used":"sections 2.2, 3.2, 3.6, 3.7, 4.1 to 4.11 and 7; figures 12(a), 12(b), 15 and 18"},{"id":"TN2662","title":"A Summary of Diagonal Tension. Part II: Experimental Evidence","authors":"Paul Kuhn, James P. Peterson, L. Ross Levin","year":1952,"report":"NACA TN 2662","ntrs":"https://ntrs.nasa.gov/citations/19930083352","used":"background only (experimental evidence behind TN 2661)"},{"id":"TN469","title":"A Summary of Design Formulas for Beams Having Thin Webs in Diagonal Tension","authors":"Paul Kuhn","year":1933,"report":"NACA TN 469","ntrs":"https://ntrs.nasa.gov/citations/19930081248","used":"pp. 4-5, pure Wagner web stress, flange forces and strut force"},{"id":"TN3781","title":"Handbook of Structural Stability. Part I: Buckling of Flat Plates","authors":"George Gerard, Herbert Becker","year":1957,"report":"NACA TN 3781","ntrs":"https://ntrs.nasa.gov/citations/19930084505","used":"appendix A eqs. (A1), (A5); table 2; figures 10 and 22"},{"id":"TG","title":"Theory of Elastic Stability, 2nd ed.","authors":"S. P. Timoshenko, J. M. Gere","year":1961,"report":"McGraw-Hill","used":"classical: Euler, secant and beam-column formulas, shear-buckling coefficients"}],"figures":{"note":"Digitised from 300 dpi scans of NACA TN 2661 with gridline calibration: fig12a [hc/dc, kss]; fig12b [t/t, R] upper and lower curves; fig15 [k, d/hU, σUmax/σU]; fig18 [ωd, C2].","fig12a":{"points":[[1.0198,8.2917],[1.0248,8.2292],[1.0371,8.0885],[1.0594,7.9216],[1.0767,7.8039],[1.0965,7.6863],[1.1213,7.5539],[1.1559,7.4069],[1.1856,7.2892],[1.2153,7.1716],[1.255,7.0539],[1.3094,6.904],[1.3589,6.7828],[1.4134,6.6616],[1.4728,6.5404],[1.5728,6.3762],[1.6311,6.2921],[1.7476,6.1386],[1.8641,6.0248],[2.0248,5.8701],[2.1436,5.7696],[2.2624,5.6863],[2.3812,5.6152],[2.545,5.5368],[2.71,5.4728],[2.83,5.4356],[2.95,5.4084],[3.101,5.3738],[3.2222,5.3515],[3.3434,5.3267],[3.4646,5.3045],[3.6117,5.2797],[3.7282,5.2599],[3.8447,5.2401],[3.9612,5.2252],[4.1111,5.2079],[4.2323,5.1906],[4.3535,5.1807],[4.4747,5.1683],[4.6263,5.1535],[4.7475,5.1411],[4.8687,5.1312],[4.9596,5.1238]]},"fig12b":{"upper":[[0.0528,0.03],[0.1016,0.082],[0.1626,0.145],[0.2114,0.19],[0.2602,0.245],[0.3089,0.29],[0.3821,0.366],[0.4309,0.4154],[0.4797,0.4904],[0.5748,0.563],[0.622,0.613],[0.6693,0.656],[0.7165,0.7115],[0.7638,0.7548],[0.811,0.8098],[0.8583,0.85],[0.9173,0.9147],[0.9646,0.9637],[1.06,1.0529],[1.108,1.0892],[1.444,1.312],[1.5397,1.353],[1.5873,1.372],[1.6349,1.388],[1.7063,1.4127],[1.754,1.4284],[1.8016,1.4422],[1.8492,1.4618],[1.8968,1.4696],[1.9444,1.4804],[2.0766,1.5117],[2.125,1.5191],[2.1734,1.5287],[2.2218,1.5383],[2.2702,1.5468],[2.3185,1.5543],[2.3669,1.5628],[2.4153,1.5691],[2.4637,1.5777],[2.5605,1.5883],[2.6089,1.6104],[2.6573,1.6104],[2.7056,1.6104],[2.754,1.6104],[2.8024,1.6123],[2.8508,1.6151],[2.8992,1.6113],[2.9476,1.6245],[2.9718,1.6264]],"lower":[[0.0528,0.03],[0.1016,0.021],[0.1504,0.038],[0.1992,0.056],[0.4065,0.151],[0.4553,0.181],[0.5394,0.24],[0.5984,0.289],[0.6575,0.3415],[0.7047,0.384],[0.7638,0.4442],[0.811,0.4885],[0.8583,0.541],[0.9055,0.586],[0.9528,0.641],[1.036,0.726],[1.084,0.776],[1.132,0.8225],[1.18,0.8716],[1.228,0.9216],[1.276,0.9706],[1.324,1.0167],[1.372,1.052],[1.42,1.0833],[1.468,1.1108],[1.5516,1.1431],[1.5992,1.1588],[1.6468,1.1735],[1.6944,1.1843],[1.8016,1.2108],[1.8492,1.2176],[1.8968,1.2245],[1.9444,1.2324],[2.0282,1.2461],[2.0766,1.252],[2.125,1.2578],[2.1734,1.2627],[2.2218,1.2676],[2.2702,1.2725],[2.3185,1.2775],[2.3669,1.2814],[2.4153,1.2853],[2.4637,1.2882],[2.7419,1.31],[2.7903,1.311],[2.8387,1.312],[2.8871,1.313],[2.9355,1.315],[2.9718,1.316]]},"fig15":{"points":[[0,0.0049,1.7752],[0,0.0777,1.7292],[0,0.1723,1.6699],[0,0.2524,1.6186],[0,0.3321,1.5668],[0,0.4039,1.5203],[0,0.484,1.4681],[0,0.5632,1.4165],[0,0.6576,1.3552],[0,0.7375,1.3039],[0,0.8242,1.2475],[0,0.9039,1.1955],[0,0.9778,1.149],[0.2,0.0049,1.6186],[0.2,0.085,1.5771],[0.2,0.165,1.5371],[0.2,0.2451,1.4952],[0.2,0.3177,1.4577],[0.2,0.3895,1.4197],[0.2,0.4767,1.375],[0.2,0.556,1.3334],[0.2,0.6429,1.2882],[0.2,0.7231,1.2481],[0.2,0.7952,1.2108],[0.2,0.8821,1.1653],[0.2,0.9557,1.1282],[0.4,0.0049,1.4661],[0.4,0.0777,1.4381],[0.4,0.1578,1.4081],[0.4,0.2524,1.3714],[0.4,0.3249,1.3432],[0.4,0.3967,1.3153],[0.4,0.484,1.2818],[0.4,0.5632,1.2513],[0.4,0.6429,1.2207],[0.4,0.7303,1.1873],[0.4,0.8097,1.1565],[0.4,0.8821,1.1279],[0.4,0.9704,1.0944],[0.6,0.0049,1.312],[0.6,0.1068,1.2857],[0.6,0.1796,1.2678],[0.6,0.2597,1.2471],[0.6,0.3321,1.2287],[0.6,0.4039,1.2105],[0.6,0.4913,1.1873],[0.6,0.5703,1.1666],[0.6,0.6502,1.1455],[0.6,0.7303,1.125],[0.6,0.8097,1.1045],[0.6,0.9039,1.0796],[0.6,0.9778,1.0615],[0.8,0.0049,1.1581],[0.8,0.0777,1.1484],[0.8,0.1578,1.139],[0.8,0.2379,1.1282],[0.8,0.3105,1.1185],[0.8,0.3823,1.1088],[0.8,0.5057,1.0934],[0.8,0.5775,1.0839],[0.8,0.6576,1.074],[0.8,0.7375,1.0632],[0.8,0.8169,1.0526],[0.8,0.8894,1.0428],[0.8,0.9631,1.0339]]},"fig18":{"points":[[1.1609,0.0071],[1.2261,0.008],[1.2913,0.0089],[1.3565,0.0125],[1.4217,0.017],[1.5261,0.0241],[1.5913,0.0304],[1.6565,0.0366],[1.7217,0.0429],[1.787,0.05],[1.8522,0.058],[1.9174,0.067],[1.9826,0.0759],[2.0739,0.0911],[2.1783,0.1103],[2.2435,0.1233],[2.3087,0.1379],[2.3739,0.1543],[2.4391,0.1716],[2.5435,0.208],[2.6087,0.2295],[2.6739,0.2554],[2.7391,0.2857],[2.8174,0.3276],[2.8826,0.3612],[2.9478,0.3931],[3.0302,0.4414],[3.0819,0.4672],[3.1228,0.4931],[3.1918,0.5304],[3.2371,0.5571],[3.2866,0.5839],[3.3621,0.6259],[3.4073,0.6517],[3.4569,0.6776],[3.5239,0.7138],[3.5717,0.7397],[3.6196,0.7655],[3.6978,0.807],[3.7457,0.8333],[3.7935,0.8596],[3.8413,0.886],[3.9087,0.9224],[3.9543,0.9483],[3.9739,0.9586]]}}};
+const S = Stability;
+S.setFigureData(D.figures);
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fmt = S.fmt;
+
+/* ---------- State ---------- */
+const state = { tab: "column", units: "SI", material: S.defaults("column").material, inputs: {} };
+for (const t of S.TABS) { const d = S.defaults(t); delete d.material; state.inputs[t] = d; }
+const current = (tab = state.tab) => ({ ...state.inputs[tab], material: { ...state.material } });
+
+/* ---------- Field definitions ---------- */
+// q: quantity for unit conversion; path: "section.x" for section fields.
+const num = (key, label, q = "none", extra = {}) => ({ key, label, q, type: "number", ...extra });
+const sel = (key, label, options, extra = {}) => ({ key, label, type: "select", options, ...extra });
+const chk = (key, label, extra = {}) => ({ key, label, type: "check", ...extra });
+const sectionFields = [
+  sel("section.shape", "Section", [["tube", "Round tube"], ["rect", "Rectangle"], ["free", "Free A and I"]], { wide: true }),
+  num("section.D", "Outer dia. D", "length", { show: (x) => x.section.shape === "tube" }),
+  num("section.t", "Wall t", "length", { show: (x) => x.section.shape === "tube" }),
+  num("section.b", "Width b", "length", { show: (x) => x.section.shape === "rect" }),
+  num("section.h", "Depth h", "length", { show: (x) => x.section.shape === "rect" }),
+  sel("section.axis", "Axis", [["weak", "Weak (default)"], ["strong", "Strong"]], { show: (x) => x.section.shape === "rect" }),
+  num("section.A", "Area A", "area", { show: (x) => x.section.shape === "free" }),
+  num("section.I", "Second moment I", "inertia", { show: (x) => x.section.shape === "free" }),
+  num("section.c", "Extreme fibre c", "length", { show: (x) => x.section.shape === "free" }),
+];
+const kFields = [
+  sel("kPreset", "End fixity (K)", [...S.K_PRESETS.map((k) => [k.id, `${k.label} (${k.K})`]), ["custom", "Custom K"]], { wide: true }),
+  { key: "K", label: "Effective-length factor K", type: "range", min: 0.3, max: 3, step: 0.01, show: (x) => x.kPreset === "custom", wide: true },
+];
+const FIELDS = {
+  column: [
+    { legend: "Section", fields: sectionFields },
+    { legend: "Length and load", fields: [num("L", "Length L", "length"), ...kFields, num("P", "Applied load P", "force"), chk("tangent", "Show tangent-modulus curve (Ramberg-Osgood)")] },
+  ],
+  beamColumn: [
+    { legend: "Section", fields: sectionFields },
+    { legend: "Member", fields: [num("L", "Length L", "length"), ...kFields] },
+    { legend: "Loads", fields: [num("P", "Axial load P", "force"), num("e", "Eccentricity e", "length"), num("M1", "End moment M1", "moment"), num("M2", "End moment M2", "moment"), num("w", "Lateral load w", "lineLoad"), num("bow", "Initial bow δ0", "length", { hint: "assumption; default L/1000" })] },
+    { legend: "FE cross-check ends", fields: [
+      sel("feMode", "Ends", [["preset", "From the K preset"], ["springs", "End springs"]], { wide: true }),
+      num("krA", "Rot. spring A", "rotSpring", { show: (x) => x.feMode === "springs", hint: "0 = pinned" }),
+      num("krB", "Rot. spring B", "rotSpring", { show: (x) => x.feMode === "springs", hint: "0 = pinned" }),
+      sel("uB", "Translation at B", [["fixed", "Fixed"], ["spring", "Spring"], ["free", "Free (sway)"]], { show: (x) => x.feMode === "springs" }),
+      num("ktB", "Trans. spring B", "transSpring", { show: (x) => x.feMode === "springs" && x.uB === "spring" }),
+    ] },
+  ],
+  shear: [
+    { legend: "Panel", fields: [num("a", "Length a", "length"), num("b", "Width b", "length"), num("t", "Thickness t", "length"),
+      sel("edges", "Edges", [["ss", "Simply supported"], ["clamped", "Clamped"]], { wide: true })] },
+    { legend: "Load and plasticity", fields: [num("tau", "Applied shear τ", "stress"),
+      sel("plasticity", "Plasticity factor (TN 3781)", [["A5", "Eq. (A5), fig. 10"], ["table2", "Table 2 (× 0.83 + 0.17 Et/Es)"]], { wide: true })] },
+  ],
+  diagonal: [
+    { legend: "Web", fields: [num("t", "Web t", "length"), num("he", "Effective depth he", "length"), num("hc", "Clear depth hc", "length"), num("d", "Upright spacing d", "length"), num("dc", "Clear spacing dc", "length"), num("S", "Applied shear S", "force")] },
+    { legend: "Uprights", fields: [sel("upright", "Type", [["double", "Double (symmetric)"], ["single", "Single (one side)"]], { wide: true }),
+      num("AU", "Area AU", "area"), num("rho", "Radius of gyration ρ", "length"), num("tU", "Attached leg tU", "length"), num("hU", "Length hU", "length"),
+      num("e", "Eccentricity e", "length", { show: (x) => x.upright === "single" })] },
+    { legend: "Flanges", fields: [chk("heavyFlanges", "Heavy flanges (εF neglected, as the TN 2661 charts)"),
+      num("AF", "Area AF (one)", "area", { show: (x) => !x.heavyFlanges }), num("tF", "Thickness tF", "length", { show: (x) => x.restraint === "fig12b" }),
+      num("IT", "Tension flange I", "inertia"), num("IC", "Compression flange I", "inertia")] },
+    { legend: "Web edge restraint (TN 2661 eq. 32)", fields: [sel("restraint", "Rh, Rd", [["fig12b", "From fig. 12(b) fit (tU/t, tF/t)"], ["user", "Typed in (1 = SS, 1.62 = clamped)"]], { wide: true }),
+      num("Rh", "Rh (along uprights)", "none", { show: (x) => x.restraint === "user" }), num("Rd", "Rd (along flanges)", "none", { show: (x) => x.restraint === "user" })] },
+  ],
+};
+
+/* ---------- Helpers ---------- */
+const getPath = (o, p) => p.split(".").reduce((a, k) => (a == null ? a : a[k]), o);
+function setPath(o, p, v) { const ks = p.split("."); let a = o; for (const k of ks.slice(0, -1)) a = a[k]; a[ks[ks.length - 1]] = v; }
+const disp = (v, q) => S.toDisplay(v, q, state.units);
+const unit = (q) => S.unitLabel(q, state.units);
+const showVal = (v, q = "none") => (v === null || v === undefined ? "—" : typeof v === "string" ? v : `${fmt(disp(v, q))}${unit(q) ? " " + unit(q) : ""}`);
+
+/* ---------- Static text ---------- */
+function staticText() {
+  $("lede").textContent = D.summary;
+  $("mat-note").textContent = "Material presets are illustrative only, not design allowables; every value is editable. The material is shared by all four tabs. Stress-strain: Ramberg-Osgood with the 0.2 % offset yield (classical).";
+  $("policy").innerHTML = D.source_policy.map((x) => `<li>${esc(x)}</li>`).join("");
+  $("reports").innerHTML = D.sources.map((s) => `<li><b>${esc(s.report)}</b>: ${esc(s.title)}, ${esc(s.authors)} (${s.year})${s.ntrs ? `, <a href="${esc(s.ntrs)}">NTRS</a>` : ""}. Used: ${esc(s.used)}.</li>`).join("");
+  $("refnotes").innerHTML = D.reference_notes.map((x) => `<li>${esc(x)}</li>`).join("");
+  $("scope").textContent = D.not_in_scope.join(" · ");
+  $("fits-note").textContent = D.figures.note + " Relative error is over digitised points with values above 0.2.";
+  const errs = S.fitErrors();
+  const rows = [
+    ["kss(hc/dc)", "TN 2661 fig. 12(a)", errs.kss, "1 to 5"], ["R upper curve", "TN 2661 fig. 12(b)", errs.rUpper, "0 to 3 (solid from 0.6)"],
+    ["R lower curve", "TN 2661 fig. 12(b)", errs.rLower, "0 to 3 (solid from 0.5)"], ["σUmax/σU", "TN 2661 fig. 15", errs.smax, "d/hU 0 to 1"], ["C2(ωd)", "TN 2661 fig. 18", errs.c2, "ωd 0 to 4"],
+  ];
+  $("fit-table").tBodies[0].innerHTML = rows.map(([a, b, e, r]) => `<tr><td class="l">${a}</td><td class="l">${b}</td><td>${e.n}</td><td>${fmt(e.maxAbs)}</td><td>${fmt(100 * e.maxRel)} %</td><td class="l">${r}</td></tr>`).join("");
+  $("tabs").innerHTML = S.TABS.map((t) => `<button role="tab" id="tab-${t}" aria-selected="false" data-tab="${t}">${esc(S.TAB_LABELS[t])}</button>`).join("");
+  $("mat-preset").innerHTML = S.MATERIAL_PRESETS.map((m) => `<option value="${m.id}">${esc(m.label)}</option>`).join("") + `<option value="custom">Custom</option>`;
+}
+
+/* ---------- Material inputs ---------- */
+const MAT = [["E", "E", "stress"], ["Fcy", "Fcy (0.2 % offset)", "stress"], ["nu", "Poisson's ratio ν", "none"], ["n", "Ramberg-Osgood n", "none"]];
+function buildMaterial() {
+  $("material").innerHTML = MAT.map(([k, l, q]) => `<label class="f"><span class="n"><b>${esc(l)}</b><small>${esc(unit(q))}</small></span><input type="number" step="any" data-mat="${k}" value="${fmt(disp(state.material[k], q))}"><span class="msg" data-msg="${k}"></span></label>`).join("");
+  $("mat-preset").value = state.material.preset || "custom";
+}
+
+/* ---------- Tab inputs ---------- */
+function buildInputs() {
+  const x = current();
+  $("inputs").innerHTML = FIELDS[state.tab].map((fs) => `<fieldset><legend>${esc(fs.legend)}</legend><div class="grid">${fs.fields.filter((f) => !f.show || f.show(x)).map((f) => fieldHTML(f, x)).join("")}</div></fieldset>`).join("");
+}
+function fieldHTML(f, x) {
+  const v = getPath(x, f.key), wide = f.wide ? " wide" : "";
+  if (f.type === "select") return `<label class="f${wide}"><span class="n"><b>${esc(f.label)}</b></span><select data-key="${f.key}">${f.options.map(([val, lab]) => `<option value="${val}"${val === v ? " selected" : ""}>${esc(lab)}</option>`).join("")}</select></label>`;
+  if (f.type === "check") return `<label class="check f wide"><input type="checkbox" data-key="${f.key}"${v ? " checked" : ""}> ${esc(f.label)}</label>`;
+  if (f.type === "range") return `<label class="f${wide}"><span class="n"><b>${esc(f.label)}</b><small>${fmt(v)}</small></span><input type="range" data-key="${f.key}" min="${f.min}" max="${f.max}" step="${f.step}" value="${v}"><input type="number" step="any" data-key="${f.key}" value="${fmt(v)}" aria-label="${esc(f.label)}"></label>`;
+  const shown = typeof v === "number" && Number.isFinite(v) ? fmt(disp(v, f.q)) : "";
+  const key = f.key.includes(".") ? f.key.split(".")[1] : f.key;
+  return `<label class="f${wide}"><span class="n"><b>${esc(f.label)}</b><small>${esc(unit(f.q))}</small></span><input type="number" step="any" data-key="${f.key}" data-q="${f.q}" value="${shown}">${f.hint ? `<small class="muted">${esc(f.hint)}</small>` : ""}<span class="msg" data-msg="${key}"></span></label>`;
+}
+function parseNum(s) { const t = String(s).trim(); if (t === "") return null; const v = Number(t); return Number.isFinite(v) ? v : NaN; }
+
+function onInput(ev) {
+  const el = ev.target;
+  if (el.dataset.mat) {
+    const [, , q] = MAT.find((m) => m[0] === el.dataset.mat);
+    const v = parseNum(el.value);
+    state.material[el.dataset.mat] = v === null || Number.isNaN(v) ? v : S.fromDisplay(v, q, state.units);
+    state.material.preset = "custom"; $("mat-preset").value = "custom";
+    refresh(); return;
+  }
+  const key = el.dataset.key;
+  if (!key) return;
+  const inp = state.inputs[state.tab], target = key.startsWith("section.") ? inp.section : inp, k = key.replace("section.", "");
+  let rebuild = false;
+  if (el.type === "checkbox") { target[k] = el.checked; rebuild = true; }
+  else if (el.tagName === "SELECT") {
+    target[k] = el.value; rebuild = true;
+    if (k === "kPreset" && el.value !== "custom") inp.K = S.K_PRESETS.find((p) => p.id === el.value).K;
+  } else if (el.type === "range") { target[k] = Number(el.value); rebuild = ev.type === "change"; syncRange(el); }
+  else {
+    const v = parseNum(el.value), q = el.dataset.q || "none";
+    target[k] = v === null || Number.isNaN(v) ? v : S.fromDisplay(v, q, state.units);
+    if (k === "K") syncRange(el);
+  }
+  if (rebuild) buildInputs();
+  refresh();
+}
+function syncRange(el) {
+  const inp = state.inputs[state.tab];
+  for (const other of $("inputs").querySelectorAll('[data-key="K"]')) if (other !== el) other.value = other.type === "range" ? inp.K : fmt(inp.K);
+  const small = el.closest(".f").querySelector(".n small"); if (small) small.textContent = fmt(inp.K);
+}
+
+/* ---------- Plots (hand-rolled SVG with shared axis and tooltip helpers) ---------- */
+function niceTicks(lo, hi, n = 5) {
+  if (!(hi > lo)) { hi = lo + 1; }
+  const span = hi - lo, step0 = span / n, mag = Math.pow(10, Math.floor(Math.log10(step0)));
+  const step = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => span / s <= n) || 10 * mag;
+  const out = []; for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9 * span; v += step) out.push(+v.toPrecision(12));
+  return out;
+}
+function plot(fig, o) {
+  const W = 460, H = 280, m = { l: 58, r: 14, t: 10, b: 40 };
+  const all = o.series.flatMap((s) => s.points).concat((o.markers || []).map((k) => [k.x, k.y]));
+  const xs = all.map((p) => p[0]).filter(Number.isFinite), ys = all.map((p) => p[1]).filter(Number.isFinite);
+  const logx = !!o.logx;
+  let x0 = o.xmin ?? Math.min(...xs), x1 = o.xmax ?? Math.max(...xs), y0 = o.ymin ?? Math.min(0, ...ys), y1 = o.ymax ?? Math.max(...ys) * 1.05;
+  if (!(x1 > x0)) x1 = x0 + 1; if (!(y1 > y0)) y1 = y0 + 1;
+  const tx = logx ? (v) => Math.log10(v) : (v) => v;
+  const X = (v) => m.l + (tx(v) - tx(x0)) / (tx(x1) - tx(x0)) * (W - m.l - m.r), Y = (v) => H - m.b - (v - y0) / (y1 - y0) * (H - m.t - m.b);
+  const xt = logx ? [0, 1, 2, 3].map((e) => 10 ** e).filter((v) => v >= x0 && v <= x1) : niceTicks(x0, x1), yt = niceTicks(y0, y1);
+  let g = "";
+  for (const v of yt) g += `<line class="gridline" x1="${m.l}" x2="${W - m.r}" y1="${Y(v)}" y2="${Y(v)}"/><text x="${m.l - 6}" y="${Y(v) + 4}" text-anchor="end">${fmt(v)}</text>`;
+  for (const v of xt) g += `<line class="gridline" y1="${m.t}" y2="${H - m.b}" x1="${X(v)}" x2="${X(v)}"/><text x="${X(v)}" y="${H - m.b + 15}" text-anchor="middle">${fmt(v)}</text>`;
+  g += `<line class="axis" x1="${m.l}" x2="${W - m.r}" y1="${H - m.b}" y2="${H - m.b}"/><line class="axis" x1="${m.l}" x2="${m.l}" y1="${m.t}" y2="${H - m.b}"/>`;
+  g += `<text x="${(m.l + W - m.r) / 2}" y="${H - 6}" text-anchor="middle">${esc(o.xLabel)}</text><text transform="translate(12 ${(m.t + H - m.b) / 2}) rotate(-90)" text-anchor="middle">${esc(o.yLabel)}</text>`;
+  const clip = `clip-${fig.id}`;
+  g += `<clipPath id="${clip}"><rect x="${m.l}" y="${m.t}" width="${W - m.l - m.r}" height="${H - m.t - m.b}"/></clipPath><g clip-path="url(#${clip})">`;
+  for (const s of o.series) {
+    const pts = s.points.filter((p) => Number.isFinite(p[0]) && Number.isFinite(p[1]) && (!logx || p[0] > 0));
+    if (!pts.length) continue;
+    g += `<polyline fill="none" stroke="${s.color}" stroke-width="${s.width || 2}"${s.dash ? ' stroke-dasharray="6 4"' : ""} points="${pts.map((p) => `${X(p[0]).toFixed(1)},${Y(p[1]).toFixed(1)}`).join(" ")}"/>`;
+  }
+  for (const k of o.markers || []) if (Number.isFinite(k.x) && Number.isFinite(k.y)) g += `<circle cx="${X(k.x)}" cy="${Y(k.y)}" r="4.5" fill="${k.color || "var(--fg)"}" stroke="var(--bg)" stroke-width="1.5"/>`;
+  g += "</g>";
+  fig.innerHTML = `<figcaption>${esc(o.title)}</figcaption><svg class="plot" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(o.title)}">${g}</svg><div class="legend">${o.series.filter((s) => s.name).map((s) => `<span><i class="${s.dash ? "dash" : ""}" style="border-color:${s.color}"></i>${esc(s.name)}</span>`).join("")}${(o.markers || []).filter((k) => k.label).map((k) => `<span><i style="border-color:${k.color || "var(--fg)"};border-top-width:6px;width:6px;border-radius:3px"></i>${esc(k.label)}</span>`).join("")}</div><div class="tip" hidden></div>`;
+  // Tooltip: nearest plotted point to the cursor.
+  const svg = fig.querySelector("svg"), tip = fig.querySelector(".tip");
+  const cands = o.series.flatMap((s) => s.points.filter((p) => Number.isFinite(p[0]) && Number.isFinite(p[1])).map((p) => ({ p, name: s.name }))).concat((o.markers || []).map((k) => ({ p: [k.x, k.y], name: k.label })));
+  svg.addEventListener("mousemove", (ev) => {
+    const r = svg.getBoundingClientRect(), sx = (ev.clientX - r.left) * W / r.width, sy = (ev.clientY - r.top) * H / r.height;
+    let best = null, bd = 1e9;
+    for (const c of cands) { const d = Math.hypot(X(c.p[0]) - sx, Y(c.p[1]) - sy); if (d < bd) { bd = d; best = c; } }
+    if (!best || bd > 30) { tip.hidden = true; return; }
+    tip.hidden = false; tip.style.left = `${(X(best.p[0]) / W) * r.width + 8}px`; tip.style.top = `${(Y(best.p[1]) / H) * r.height + 26}px`;
+    tip.textContent = `${best.name ? best.name + ": " : ""}${o.xFmt ? o.xFmt(best.p[0]) : fmt(best.p[0])}, ${o.yFmt ? o.yFmt(best.p[1]) : fmt(best.p[1])}`;
+  });
+  svg.addEventListener("mouseleave", () => { tip.hidden = true; });
+}
+function figures(n) { $("plots").innerHTML = Array.from({ length: n }, (_, i) => `<figure id="fig-${i}"></figure>`).join(""); return Array.from({ length: n }, (_, i) => $(`fig-${i}`)); }
+
+/* ---------- Rendering per tab ---------- */
+const C = { a: "var(--c1)", b: "var(--c2)", c: "var(--c3)", d: "var(--c4)", fg: "var(--fg)", muted: "var(--faint)", bad: "var(--bad)" };
+function stat(label, value, neg) { return `<li class="${neg ? "neg" : ""}"><b>${esc(value)}</b><span>${esc(label)}</span></li>`; }
+const ms = (v) => (v === null || v === undefined || !Number.isFinite(v) ? "—" : (v >= 0 ? "+" : "") + fmt(v));
+
+function renderColumn(x, r) {
+  const s = (q) => (v) => showVal(v, q);
+  $("stats").innerHTML = stat("KL/r", fmt(r.lambda)) + stat(`Regime (transition ${fmt(r.lambdaC)})`, r.regime) + stat("σcr", s("stress")(r.sigmaCr)) + stat("Pcr", s("force")(r.Pcr)) + stat("Margin of safety Pcr/P − 1", ms(r.MS), r.MS < 0);
+  const lmax = Math.max(1.6 * r.lambdaC, 1.3 * r.lambda, 50), curve = S.columnCurve(x.material, lmax, 140, x.tangent), q = (v) => disp(v, "stress");
+  const cap = 1.15 * x.material.Fcy;
+  const [f] = figures(1);
+  const series = [
+    { name: "Euler", color: C.a, dash: true, points: curve.map((p) => [p.lambda, q(Math.min(p.euler, cap * 2))]) },
+    { name: "Johnson", color: C.b, dash: true, points: curve.filter((p) => p.lambda <= r.lambdaC * 1.25).map((p) => [p.lambda, q(Math.max(p.johnson, 0))]) },
+    { name: "Governing σcr", color: C.fg, points: curve.map((p) => [p.lambda, q(p.sigmaCr)]) },
+  ];
+  if (x.tangent) series.push({ name: "Tangent modulus (RO)", color: C.c, points: curve.filter((p) => p.tangent !== null).map((p) => [p.lambda, q(p.tangent)]) });
+  plot(f, { title: "Column strength σcr vs slenderness KL/r", xLabel: "KL/r", yLabel: `σcr (${unit("stress")})`, series, ymax: q(cap * 1.05), xmin: 0,
+    markers: [{ x: r.lambdaC, y: q(x.material.Fcy / 2), label: "Transition", color: C.muted }, { x: r.lambda, y: q(r.sigmaCr), label: "Your column σcr", color: C.fg }, { x: r.lambda, y: q(r.sigmaApplied), label: "Applied P/A", color: C.bad }] });
+}
+function renderBeamColumn(x, r) {
+  const c = S.beamColumnCurves(x, 60);
+  $("stats").innerHTML = stat("First-yield load Pfy", r.Pfy ? showVal(r.Pfy, "force") : "—") + stat("Margin of safety Pfy/P − 1", ms(r.MS), r.MS < 0)
+    + stat("Elastic Pe = π²EI/(KL)²", showVal(r.Pe, "force")) + stat("Moment amplification at P", r.atP && r.atP.amplification ? fmt(r.atP.amplification) : "—")
+    + stat("FE Pcr (cross-check)", r.fe.Pcr ? showVal(r.fe.Pcr, "force") : "—");
+  const F = (v) => disp(v, "force"), Lq = (v) => disp(v, "length"), M = (v) => disp(v, "moment"), Sg = (v) => disp(v, "stress");
+  const [f1, f2, f3, f4] = figures(4);
+  const mk = [];
+  if (r.atP) mk.push({ x: Lq(Math.abs(r.atP.ymax)), y: F(x.P), label: "Applied P", color: C.bad });
+  plot(f1, { title: "Load vs maximum deflection", xLabel: `δmax (${unit("length")})`, yLabel: `P (${unit("force")})`, xmin: 0,
+    series: [{ name: "Second order", color: C.a, points: c.pd.map((p) => [Lq(p.ymax), F(p.P)]) }, { name: "Linear theory", color: C.b, dash: true, points: c.pd.map((p) => [Lq(p.ylin), F(p.P)]) },
+      { name: "Pe", color: C.muted, dash: true, points: [[0, F(r.Pe)], [Lq(Math.max(...c.pd.map((p) => p.ymax))), F(r.Pe)]] }], markers: mk, ymax: F(r.Pe * 1.05) });
+  plot(f2, { title: "Deflected shape at applied P", xLabel: `x (${unit("length")})`, yLabel: `y (${unit("length")})`,
+    series: [{ name: "Second order", color: C.a, points: c.shape.map((p) => [Lq(p.x), Lq(p.y)]) }, { name: "Linear", color: C.b, dash: true, points: c.shape.map((p) => [Lq(p.x), Lq(p.yLin)]) }] });
+  plot(f3, { title: "Moment diagram at applied P", xLabel: `x (${unit("length")})`, yLabel: `M (${unit("moment")})`,
+    series: [{ name: "Second order", color: C.a, points: c.shape.map((p) => [Lq(p.x), M(p.M)]) }, { name: "Linear", color: C.b, dash: true, points: c.shape.map((p) => [Lq(p.x), M(p.Mlin)]) }] });
+  const m3 = []; if (r.Pfy) m3.push({ x: F(r.Pfy), y: Sg(x.material.Fcy), label: "Root: first yield", color: C.fg });
+  plot(f4, { title: "Max stress vs axial load", xLabel: `P (${unit("force")})`, yLabel: `σmax (${unit("stress")})`, xmin: 0, ymax: Sg(1.3 * x.material.Fcy),
+    series: [{ name: "σmax = P/A + Mmax/S", color: C.a, points: c.pd.map((p) => [F(p.P), Sg(p.sigmaMax)]) }, { name: "Fcy", color: C.bad, dash: true, points: [[0, Sg(x.material.Fcy)], [F(r.Pe), Sg(x.material.Fcy)]] }], markers: m3 });
+}
+function renderShear(x, r) {
+  $("stats").innerHTML = stat("k_s", fmt(r.ks)) + stat("τcr elastic", showVal(r.tauE, "stress")) + stat("Plasticity η", r.eta ? fmt(r.eta) : "—") + stat("τcr", r.tauCr ? showVal(r.tauCr, "stress") : "—") + stat("Margin of safety τcr/τ − 1", ms(r.MS), r.MS < 0);
+  const [f1, f2] = figures(2), rmax = Math.max(5, r.ratio * 1.1), ks = [];
+  for (let i = 0; i <= 100; i++) { const a = 1 + (rmax - 1) * i / 100; ks.push([a, S.ksClosed("ss", a), S.ksClosed("clamped", a)]); }
+  plot(f1, { title: "k_s vs side ratio (long/short)", xLabel: "a/b", yLabel: "k_s", xmin: 1, ymin: 0,
+    series: [{ name: "Simply supported", color: C.a, points: ks.map((p) => [p[0], p[1]]) }, { name: "Clamped", color: C.b, points: ks.map((p) => [p[0], p[2]]) }],
+    markers: [{ x: r.ratio, y: r.ks, label: "Your panel", color: C.fg }] });
+  const tb = [], short = r.short, mat = x.material;
+  const tbMax = Math.max(2 * x.t / short, 0.02);
+  for (let i = 1; i <= 80; i++) {
+    const v = tbMax * i / 80, te = r.ks * Math.PI ** 2 * mat.E / (12 * (1 - mat.nu ** 2)) * v * v, pl = S.shearPlasticity(mat, te, x.plasticity);
+    tb.push([v, disp(te, "stress"), pl.tau ? disp(pl.tau, "stress") : NaN]);
+  }
+  const ymax = disp(Math.min(Math.max(...tb.map((p) => S.fromDisplay(p[2], "stress", state.units))) * 1.4, mat.Fcy), "stress");
+  plot(f2, { title: "τcr vs t/b", xLabel: "t/b", yLabel: `τcr (${unit("stress")})`, xmin: 0, ymax,
+    series: [{ name: "Elastic", color: C.a, dash: true, points: tb.map((p) => [p[0], p[1]]) }, { name: "With plasticity (TN 3781)", color: C.fg, points: tb.map((p) => [p[0], p[2]]) }],
+    markers: r.tauCr ? [{ x: x.t / short, y: disp(r.tauCr, "stress"), label: "Your panel", color: C.fg }, { x: x.t / short, y: disp(x.tau, "stress"), label: "Applied τ", color: C.bad }] : [] });
+}
+function renderDiagonal(x, r) {
+  const g = r.governing;
+  $("stats").innerHTML = stat("τ/τcr", fmt(r.loading)) + stat("Diagonal-tension factor k", fmt(r.k)) + stat("Angle α", r.alphaDeg ? `${fmt(r.alphaDeg)}°` : "—")
+    + stat("Upright σU", r.sigmaU !== undefined ? showVal(r.sigmaU, "stress") : "—") + stat(g ? `Upright MS (${g.id})` : "Upright MS", ms(g && g.MS), g && g.MS < 0);
+  const c = S.diagonalCurves(x, 80), [f1, f2] = figures(2);
+  plot(f1, { title: "Diagonal-tension factor k vs τ/τcr (eq. 27)", xLabel: "τ/τcr (log)", yLabel: "k", logx: true, xmin: 1, xmax: 200, ymin: 0, ymax: 1.08,
+    series: [{ name: "k = tanh(0.5 log₁₀ τ/τcr)", color: C.a, points: c.kCurve.map((p) => [p.ratio, p.k]) }, { name: "k = 1 (pure Wagner)", color: C.muted, dash: true, points: [[1, 1], [200, 1]] }],
+    markers: r.loading > 1 ? [{ x: Math.min(r.loading, 200), y: r.k, label: "Your web", color: C.fg }] : [] });
+  const F = (v) => disp(v, "force"), Sg = (v) => disp(v, "stress");
+  plot(f2, { title: "Web and upright stress vs applied shear", xLabel: `S (${unit("force")})`, yLabel: `stress (${unit("stress")})`, xmin: 0,
+    series: [{ name: "Web σ1 (IDT)", color: C.a, points: c.web.map((p) => [F(p.S), Sg(p.sigma1)]) }, { name: "Web σ, pure Wagner", color: C.a, dash: true, points: c.web.map((p) => [F(p.S), Sg(p.sigmaPDT)]) },
+      { name: "Nominal τ", color: C.muted, dash: true, points: c.web.map((p) => [F(p.S), Sg(p.tau)]) }, { name: "Upright |σU|", color: C.b, points: c.web.map((p) => [F(p.S), Sg(p.sigmaU)]) }],
+    markers: r.sigma1 ? [{ x: F(x.S), y: Sg(r.sigma1), label: "Applied S", color: C.fg }] : [] });
+}
+const RENDER = { column: renderColumn, beamColumn: renderBeamColumn, shear: renderShear, diagonal: renderDiagonal };
+
+/* ---------- Refresh ---------- */
+let last = { result: null, errors: null };
+function refresh() {
+  const x = current();
+  for (const el of document.querySelectorAll("[data-msg]")) el.textContent = "";
+  for (const el of document.querySelectorAll("[aria-invalid]")) el.removeAttribute("aria-invalid");
+  let r = null;
+  try { r = S.solve(state.tab, x); last = { result: r, errors: null }; }
+  catch (e) {
+    const errs = e.errors || [{ message: e.message }];
+    last = { result: null, errors: errs };
+    $("error").hidden = false;
+    $("error").innerHTML = `<b>Calculation blocked.</b> ${errs.map((q) => esc(q.message)).join("; ")}`;
+    for (const q of errs) for (const el of document.querySelectorAll(`[data-msg="${q.field}"]`)) { el.textContent = q.message; const inp = el.parentElement.querySelector("input,select"); if (inp) inp.setAttribute("aria-invalid", "true"); }
+    for (const id of ["stats", "warnings", "plots", "sources"]) $(id).innerHTML = "";
+    $("rows").tBodies[0].innerHTML = "";
+    return;
+  }
+  $("error").hidden = !r.error && !r.fyMessage;
+  $("error").innerHTML = r.error ? `<b>No result.</b> ${esc(r.error)}` : r.fyMessage ? `<b>First yield:</b> ${esc(r.fyMessage)}` : "";
+  $("warnings").innerHTML = r.warnings.length ? r.warnings.map((w) => `<li>${esc(w)}</li>`).join("") : `<li class="none">None</li>`;
+  $("rows").tBodies[0].innerHTML = S.resultRows(state.tab, r).map((row) => `<tr><td class="l">${esc(row.label)}</td><td>${esc(showVal(row.value, row.q))}</td></tr>`).join("");
+  $("sources").innerHTML = r.sources.map((s) => `<li class="${s.kind}"><span class="tag ${s.kind}">${s.kind === "fit" ? "fit to NASA figure" : esc(s.kind)}</span>${esc(s.text)}</li>`).join("");
+  if (r.error) { $("stats").innerHTML = ""; $("plots").innerHTML = ""; return; }
+  RENDER[state.tab](x, r);
+}
+
+/* ---------- Tabs and units ---------- */
+function setTab(t) {
+  state.tab = t;
+  for (const b of $("tabs").children) b.setAttribute("aria-selected", String(b.dataset.tab === t));
+  buildInputs(); refresh();
+}
+function setUnits(u) {
+  state.units = u;
+  $("u-SI").setAttribute("aria-pressed", String(u === "SI")); $("u-US").setAttribute("aria-pressed", String(u === "US"));
+  buildMaterial(); buildInputs(); refresh();
+}
+
+/* ---------- Export / import ---------- */
+function exportText(kind) {
+  const x = current();
+  if (kind === "md") return { text: S.exportMarkdown(state.tab, x, { displayUnits: state.units }), name: `stability-${state.tab}.md`, type: "text/markdown" };
+  const doc = S.exportJSON(state.tab, x, { displayUnits: state.units, withResults: kind === "results" });
+  return { text: JSON.stringify(doc, null, 2), name: `stability-${state.tab}-${kind}.json`, type: "application/json" };
+}
+function say(msg) { $("io-status").textContent = msg; }
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); return true; }
+  catch (e) {
+    const ta = document.createElement("textarea"); ta.value = text; ta.setAttribute("readonly", ""); ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select(); let ok = false; try { ok = document.execCommand("copy"); } catch (e2) { ok = false; } ta.remove(); return ok;
+  }
+}
+function download({ text, name, type }) {
+  const url = URL.createObjectURL(new Blob([text], { type }));
+  const a = document.createElement("a"); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+function importDoc(text) {
+  try {
+    const r = S.importJSON(text);
+    const inp = { ...r.inputs }; state.material = { ...inp.material }; delete inp.material; state.inputs[r.tab] = inp;
+    setUnits(r.displayUnits); setTab(r.tab);
+    say(`Imported ${S.TAB_LABELS[r.tab]} inputs (displayed in ${r.displayUnits}).`);
+  } catch (e) { say(`Import failed: ${(e.errors || [{ message: e.message }]).map((q) => q.message).join("; ")}`); }
+}
+
+/* ---------- Self-tests ---------- */
+function runSelfTests() {
+  const t = S.selfTests(), passed = t.filter((x) => x.pass).length, b = $("badge");
+  b.className = `badge ${passed === t.length ? "pass" : "fail"}`;
+  b.textContent = passed === t.length ? `✓ Self-test ${passed}/${t.length} pass` : `✗ Self-test ${t.length - passed} of ${t.length} fail`;
+  $("tests").innerHTML = t.map((x) => `<li class="${x.pass ? "pass" : "fail"}"><b>${x.pass ? "PASS" : "FAIL"}</b> ${esc(x.name)} <span class="muted">(${esc(x.detail)}; tolerance ${esc(x.tolerance)})</span></li>`).join("");
+  return t;
+}
+
+/* ---------- Wiring ---------- */
+function wire() {
+  $("inputs").addEventListener("input", onInput);
+  $("inputs").addEventListener("change", (ev) => { if (ev.target.tagName === "SELECT" || ev.target.type === "checkbox" || ev.target.type === "range") onInput(ev); });
+  $("material").addEventListener("input", onInput);
+  $("mat-preset").addEventListener("change", (ev) => {
+    const p = S.MATERIAL_PRESETS.find((m) => m.id === ev.target.value);
+    if (p) state.material = { preset: p.id, E: p.E, Fcy: p.Fcy, nu: p.nu, n: p.n }; else state.material.preset = "custom";
+    buildMaterial(); refresh();
+  });
+  $("tabs").addEventListener("click", (ev) => { const b = ev.target.closest("[data-tab]"); if (b) setTab(b.dataset.tab); });
+  $("u-SI").addEventListener("click", () => setUnits("SI"));
+  $("u-US").addEventListener("click", () => setUnits("US"));
+  $("rerun").addEventListener("click", runSelfTests);
+  for (const b of document.querySelectorAll("[data-exp]")) b.addEventListener("click", async () => {
+    const out = exportText(b.dataset.exp);
+    if (b.dataset.act === "download") { download(out); say(`Downloaded ${out.name}.`); }
+    else say((await copyText(out.text)) ? `Copied ${out.name} to the clipboard.` : "Copy failed: select the text in the paste box instead.");
+    if (b.dataset.act === "copy") $("paste").value = out.text;
+  });
+  $("file").addEventListener("change", (ev) => { const f = ev.target.files[0]; if (!f) return; const rd = new FileReader(); rd.onload = () => importDoc(String(rd.result)); rd.readAsText(f); ev.target.value = ""; });
+  $("import-paste").addEventListener("click", () => importDoc($("paste").value));
+}
+
+/* ---------- WebMCP tools ---------- */
+function registerTools() {
+  const mc = (typeof document !== "undefined" && document.modelContext) || (typeof navigator !== "undefined" && navigator.modelContext);
+  if (!mc) return;
+  const out = (obj) => ({ content: [{ type: "text", text: JSON.stringify(obj) }] });
+  const empty = { type: "object", properties: {}, additionalProperties: false };
+  mc.registerTool({ name: "get_metadata", description: "Return the purpose, disclaimer, units, source policy, report citations, reference notes, scope and figure-fit errors of the structural stability visualiser.", inputSchema: empty, annotations: { readOnlyHint: true },
+    async execute() { return out({ title: D.title, disclaimer: D.disclaimer, units: D.units, tabs: D.tabs, source_policy: D.source_policy, sources: D.sources, reference_notes: D.reference_notes, not_in_scope: D.not_in_scope, formula_sources: S.SOURCES, fit_errors: S.fitErrors() }); } });
+  mc.registerTool({ name: "get_current_analysis", description: "Return the tab shown on the page with its inputs and results in canonical SI (N, mm, MPa), warnings and formula sources, as the Results JSON export.", inputSchema: empty, annotations: { readOnlyHint: true },
+    async execute() { return out(S.exportJSON(state.tab, current(), { displayUnits: state.units })); } });
+  mc.registerTool({ name: "solve_stability", description: "Solve one analysis without changing the page. tab is column, beamColumn, shear or diagonal; inputs are canonical SI (N, mm, MPa) and any field left out takes the tab default. Returns the Results JSON or the blocking errors.",
+    inputSchema: { type: "object", properties: { tab: { type: "string", enum: S.TABS }, inputs: { type: "object", description: "Tab inputs in N, mm, MPa; material {E, Fcy, nu, n}; section {shape, ...} for column and beamColumn" } }, required: ["tab"] },
+    annotations: { readOnlyHint: true },
+    async execute(i) { try { const tab = i && i.tab; if (!S.TABS.includes(tab)) return out({ errors: [{ message: `tab must be one of ${S.TABS.join(", ")}` }] }); return out(S.exportJSON(tab, S.normalise(tab, i.inputs || {}))); } catch (e) { return out({ errors: e.errors || [{ message: e.message }] }); } } });
+  mc.registerTool({ name: "run_self_tests", description: "Run the self-test (FE Pcr vs π²EI/(KL)², the k = 1 limit vs pure Wagner, k_s asymptotes, unit and file round-trips, NACA TN 2661 worked examples) and return each result with its tolerance.", inputSchema: empty, annotations: { readOnlyHint: true },
+    async execute() { const t = S.selfTests(); return out({ passed: t.filter((x) => x.pass).length, total: t.length, results: t }); } });
+}
+
+/* ---------- Start ---------- */
+function start() {
+  staticText();
+  buildMaterial();
+  wire();
+  setTab("column");
+  runSelfTests();
+  registerTools();
+}
+start();
+})();
+</script>
+</body>
+</html>
