@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" href="data:,">
+<meta name="description" content="Build a cross-section from library shapes, with per-corner radii, holes and several materials, and get its section properties, torsion constant and Ramberg–Osgood moment–curvature curve, computed in your browser.">
+<title>Sectionlab</title>
+<style>
+:root{--bg:#fff;--fg:#1d1d1f;--muted:#6e6e73;--faint:#a1a1a6;--surface:#f5f5f7;--border:#d2d2d7;--grid:#e8e8ed;--grid-major:#d8d8de;--focus:#0071e3;--series:#2a78d6;--axis:#eb6834;--part-stroke:#2a5ca8;--bad:#c4261d;--warn-bg:#fff4e5;--m0:#c9d7ee;--m1:#f3d2c1;--m2:#cfe8d9;--m3:#e6d5f0;--m4:#f5e6b8;--m5:#d6e4e8;--sans:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;--mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;--r:.5rem;color-scheme:light dark}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--faint:#6e6e73;--surface:#2c2c2e;--border:#48484a;--grid:#2c2c2f;--grid-major:#3a3a3e;--focus:#2997ff;--series:#3987e5;--axis:#d95926;--part-stroke:#8fb4ea;--bad:#ff6961;--warn-bg:#3a2a14;--m0:#2f4566;--m1:#5e3b2b;--m2:#28503d;--m3:#4a3a5c;--m4:#5a4a1e;--m5:#34484e}}
+:root[data-theme="dark"]{--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--faint:#6e6e73;--surface:#2c2c2e;--border:#48484a;--grid:#2c2c2f;--grid-major:#3a3a3e;--focus:#2997ff;--series:#3987e5;--axis:#d95926;--part-stroke:#8fb4ea;--bad:#ff6961;--warn-bg:#3a2a14;--m0:#2f4566;--m1:#5e3b2b;--m2:#28503d;--m3:#4a3a5c;--m4:#5a4a1e;--m5:#34484e;color-scheme:dark}
+:root[data-theme="light"]{color-scheme:light}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 var(--sans);letter-spacing:-.011em;-webkit-font-smoothing:antialiased}
+main{width:min(100% - 2rem,78rem);margin:auto;padding:clamp(1.25rem,5vw,3rem) 0 3rem}
+a{color:inherit;text-underline-offset:.18em}
+h1{font-size:clamp(2rem,6vw,3.25rem);line-height:1.04;letter-spacing:-.045em;margin:.35rem 0 .8rem}
+h2{font-size:1.4rem;letter-spacing:-.02em;margin:0 0 .35rem;line-height:1.2}
+h3{font:600 .72rem/1.4 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 .5rem}
+p{margin:.5rem 0;max-width:70ch}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.eyebrow{font:600 .75rem/1.4 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0;display:flex;flex-wrap:wrap;gap:.25rem .9rem}
+.eyebrow a{text-decoration:none}
+.eyebrow a:hover{text-decoration:underline}
+.lede{font-size:1.125rem;max-width:64ch}
+.notice{border:1px solid var(--bad);border-left-width:4px;border-radius:var(--r);padding:.6rem .9rem;margin:1rem 0 0;max-width:none;font-size:.9375rem}
+.notice b{color:var(--bad)}
+.muted{color:var(--muted)}
+.small{font-size:.875rem}
+section{margin-top:clamp(2.5rem,7vw,4rem);padding-top:1.25rem;border-top:1px solid var(--border)}
+.btn{display:inline-flex;align-items:center;gap:.35rem;border:1px solid var(--border);background:var(--bg);border-radius:999px;padding:.25rem .8rem;min-height:2.25rem;font-size:.875rem;white-space:nowrap}
+@media (hover:hover){.btn:hover:not(:disabled){background:var(--surface)}}
+.btn:disabled{opacity:.45;cursor:default}
+.btn[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.btn.primary{background:var(--fg);color:var(--bg);border-color:var(--fg);font-weight:600}
+.btn.danger{color:var(--bad)}
+.toolbar{display:flex;flex-wrap:wrap;gap:.5rem 1rem;align-items:center;margin:1.25rem 0 .75rem;padding:.6rem 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.toolbar .group{display:flex;flex-wrap:wrap;gap:.35rem;align-items:center;min-width:0}
+.label{font:600 .7rem var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-right:.2rem}
+select,input[type="number"],input[type="text"]{border:1px solid var(--border);background:var(--bg);border-radius:var(--r);padding:.3rem .5rem;min-height:2.25rem;font-size:.875rem;min-width:0;width:100%}
+input[type="number"]{font-variant-numeric:tabular-nums}
+[aria-invalid="true"]{border-color:var(--bad)!important;box-shadow:0 0 0 1px var(--bad)}
+.toolbar select{width:auto;max-width:100%}
+.app{display:grid;gap:1.25rem 1.75rem;grid-template-columns:minmax(0,1fr) minmax(0,22rem);align-items:start}
+@media (max-width:62rem){.app{grid-template-columns:minmax(0,1fr)}}
+.figure{margin:0;min-width:0}
+.palette{display:flex;flex-wrap:wrap;gap:.35rem;margin:0 0 .6rem;align-items:center}
+.palette .item{display:inline-flex;align-items:center;gap:.4rem;border:1px solid var(--border);background:var(--bg);border-radius:var(--r);padding:.2rem .55rem .2rem .35rem;min-height:2.5rem;font-size:.8125rem;touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab}
+.palette .item svg{width:1.6rem;height:1.6rem;flex:none}
+.palette .item svg path{fill:var(--m0);stroke:var(--part-stroke);stroke-width:1.2}
+.palette .item.void svg path{fill:var(--bg);stroke-dasharray:3 2}
+@media (hover:hover){.palette .item:hover{background:var(--surface)}}
+.ghost{position:fixed;z-index:10;pointer-events:none;border:1px dashed var(--focus);background:color-mix(in srgb,var(--bg) 70%,transparent);border-radius:var(--r);padding:.2rem .5rem;font-size:.8125rem;transform:translate(-50%,-50%)}
+#stage{position:relative;border:1px solid var(--border);border-radius:calc(var(--r)*1.5);overflow:hidden;background:var(--bg)}
+#canvas{display:block;width:100%;touch-action:none;user-select:none;-webkit-user-select:none;outline:none}
+#stage:focus-within{border-color:var(--focus)}
+#canvas .g-minor{stroke:var(--grid);stroke-width:1}
+#canvas .g-major{stroke:var(--grid-major);stroke-width:1}
+#canvas .g-origin{stroke:var(--faint);stroke-width:1}
+#canvas .part{stroke:var(--part-stroke);stroke-width:1.4;cursor:move;fill-rule:evenodd}
+#canvas .part.void{fill:var(--bg);stroke-dasharray:5 3}
+#canvas .part.selected{stroke:var(--focus);stroke-width:2.4}
+#canvas .part.bad{stroke:var(--bad);stroke-width:2.4}
+#canvas .caxis{stroke:var(--axis);stroke-width:1.2;pointer-events:none}
+#canvas .caxis.minor{stroke-dasharray:6 4}
+#canvas .centroid{fill:var(--bg);stroke:var(--axis);stroke-width:2;pointer-events:none}
+#canvas .handle{fill:var(--bg);stroke:var(--focus);stroke-width:2;cursor:pointer}
+#canvas .handle.ew{cursor:ew-resize}#canvas .handle.ns{cursor:ns-resize}
+#canvas .hit{fill:transparent;stroke:none}
+#canvas .corner{fill:var(--bg);stroke:var(--part-stroke);stroke-width:1.5;cursor:pointer}
+#canvas .corner.on{fill:var(--focus);stroke:var(--focus)}
+#canvas .guide{stroke:var(--focus);stroke-width:1;stroke-dasharray:3 3;pointer-events:none}
+#canvas .plabel{font:600 11px var(--mono);fill:var(--fg);pointer-events:none;paint-order:stroke;stroke:var(--bg);stroke-width:3px}
+#canvas .scale{font:11px var(--mono);fill:var(--muted)}
+.stage-tools{position:absolute;right:.4rem;top:.4rem;display:flex;gap:.3rem}
+.stage-tools .btn{min-height:2rem;padding:.1rem .6rem;background:color-mix(in srgb,var(--bg) 85%,transparent)}
+.hint{font-size:.8125rem;color:var(--muted);margin:.4rem 0 0;max-width:none}
+.readout{font-size:.875rem;margin:.4rem 0 0;min-height:1.4em;font-variant-numeric:tabular-nums;max-width:none}
+.error{border:1px solid var(--bad);border-radius:var(--r);padding:.55rem .8rem;margin:0 0 .6rem;font-size:.9375rem;max-width:none}
+.error[hidden]{display:none}
+.error b{color:var(--bad)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(9.5rem,1fr));gap:.6rem 1.25rem;margin:1rem 0 0;padding:0;list-style:none}
+.stats li{border-top:1px solid var(--border);padding-top:.4rem;min-width:0}
+.stats b{display:block;font-size:1.3rem;letter-spacing:-.03em;line-height:1.2;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.stats span{font-size:.8125rem;color:var(--muted)}
+.stale{opacity:.4;transition:opacity .15s}
+.panel{display:flex;flex-direction:column;gap:1rem;min-width:0}
+.card{border:1px solid var(--border);border-radius:calc(var(--r)*1.5);padding:.85rem;min-width:0}
+.row{display:grid;gap:.4rem;grid-template-columns:repeat(2,minmax(0,1fr));align-items:end}
+.row+.row,.row+.f,.f+.row{margin-top:.5rem}
+.row.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+label.f{display:flex;flex-direction:column;gap:.15rem;font-size:.75rem;color:var(--muted);min-width:0}
+label.f span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+label.check{display:flex;align-items:center;gap:.45rem;font-size:.875rem;min-height:2.25rem}
+label.check input{width:1.1rem;height:1.1rem}
+.partlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.25rem;max-height:14rem;overflow-y:auto;overscroll-behavior:contain}
+.partlist button{width:100%;text-align:left;border:1px solid transparent;background:none;border-radius:var(--r);padding:.3rem .5rem;display:flex;gap:.5rem;align-items:center;font-size:.875rem;min-height:2.25rem}
+.partlist button[aria-current="true"]{border-color:var(--focus);background:var(--surface)}
+.partlist i{display:inline-block;width:.85rem;height:.85rem;border-radius:3px;border:1px solid var(--part-stroke);flex:none}
+.partlist .kind{margin-left:auto;color:var(--muted);font:.75rem var(--mono)}
+.corners{list-style:none;margin:.35rem 0 0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.35rem .5rem}
+.corners li.on label.f span{color:var(--focus);font-weight:600}
+.corners li.on input{border-color:var(--focus)}
+.actions{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.7rem}
+.seg{display:inline-flex;border:1px solid var(--border);border-radius:999px;overflow:hidden}
+.seg button{border:0;background:none;padding:.2rem .8rem;min-height:2.25rem;font-size:.875rem}
+.seg button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
+details.mat{border-top:1px solid var(--grid);padding:.4rem 0}
+details.mat:first-of-type{border-top:0}
+details.mat>summary{cursor:pointer;display:flex;align-items:center;gap:.5rem;min-height:2.25rem;font-size:.875rem;font-weight:600;list-style:none}
+details.mat>summary::-webkit-details-marker{display:none}
+details.mat>summary i{display:inline-block;width:.85rem;height:.85rem;border-radius:3px;border:1px solid var(--part-stroke)}
+.table-wrap{overflow-x:auto;margin-top:.5rem;border:1px solid var(--border);border-radius:var(--r)}
+table{border-collapse:collapse;width:100%;font-size:.8125rem}
+th,td{text-align:left;padding:.4rem .6rem;border-bottom:1px solid var(--grid);vertical-align:top}
+th{font-weight:600;background:var(--surface)}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.cols{display:grid;gap:1.25rem 2rem;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+@media (max-width:52rem){.cols{grid-template-columns:minmax(0,1fr)}}
+.controls{display:flex;flex-wrap:wrap;gap:.6rem 1rem;align-items:end;margin:.75rem 0}
+.controls label.f{width:auto;min-width:9rem}
+#chart{position:relative;min-height:18rem}
+#chart svg{display:block;width:100%;height:auto;overflow:visible}
+#chart .overlay{fill:transparent;cursor:crosshair}
+#chart .xhair{stroke:var(--fg);stroke-width:1;stroke-dasharray:3 3;pointer-events:none;opacity:.6}
+#chart .dot{fill:var(--series);stroke:var(--bg);stroke-width:2;pointer-events:none}
+.tip{position:absolute;pointer-events:none;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:.35rem .55rem;font-size:.8125rem;box-shadow:0 4px 14px rgb(0 0 0/.14);font-variant-numeric:tabular-nums;white-space:nowrap}
+.tip[hidden]{display:none}
+.tip b{font-weight:650}
+.tip i{display:inline-block;width:.9rem;height:2px;background:var(--series);vertical-align:middle;margin-right:.35rem}
+.export{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin-top:.75rem}
+.method ul,.method ol{padding-left:1.2rem;max-width:76ch}
+.method li{margin:.35rem 0}
+code{font:.875em var(--mono)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+#print-report{display:none}
+@media (forced-colors:active){#canvas .part{fill:none}}
+@media print{
+  @page{size:A4;margin:14mm}
+  body{background:#fff;color:#000;font-size:10pt}
+  main{display:none}
+  #print-report{display:block;color:#000}
+  #print-report h1{font-size:18pt;margin:0 0 4pt}
+  #print-report h2{font-size:12pt;margin:12pt 0 4pt;break-after:avoid}
+  #print-report .notice{border:1px solid #c4261d;border-left-width:4px;padding:4pt 8pt;color:#000}
+  #print-report .figs{display:flex;gap:10pt;margin:8pt 0;break-inside:avoid}
+  #print-report .figs svg{width:50%;height:auto}
+  #print-report table{border-collapse:collapse;width:100%;font-size:8.5pt;break-inside:auto}
+  #print-report tr{break-inside:avoid}
+  #print-report th,#print-report td{border-bottom:.5pt solid #ccc;padding:2pt 4pt;text-align:left}
+  #print-report th{background:#f2f2f2}
+  #print-report .num{text-align:right}
+}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <p class="eyebrow"><a href="https://teoyujie.org/visuals.html">Visuals</a><span>Structural mechanics</span><span>Runs in your browser</span></p>
+  <h1>Sectionlab</h1>
+  <p class="lede">Build a cross-section from library shapes (drag them in, move them, resize them, round any corner, cut holes) and read its section properties, its torsion constant where a verified formula exists, and its moment–curvature curve for Ramberg–Osgood materials. Units are mm, MPa, N and N·mm.</p>
+  <p class="notice" role="note"><b>Verify independently.</b> These results come from this page's own calculation. They are not a design-code compliance check.</p>
+</header>
+
+<div class="toolbar" role="group" aria-label="Section tools">
+  <div class="group">
+    <label class="label" for="preset">Example</label>
+    <select id="preset"></select>
+  </div>
+  <div class="group" role="group" aria-label="History">
+    <button class="btn" type="button" id="undo" title="Undo (Ctrl+Z)">Undo</button>
+    <button class="btn" type="button" id="redo" title="Redo (Ctrl+Shift+Z)">Redo</button>
+  </div>
+  <div class="group">
+    <label class="label" for="snap">Snap</label>
+    <select id="snap">
+      <option value="auto">to grid</option><option value="0.5">0.5 mm</option><option value="1">1 mm</option><option value="5">5 mm</option><option value="10">10 mm</option><option value="off">off</option>
+    </select>
+  </div>
+</div>
+<p id="preset-note" class="small muted"></p>
+
+<div class="app">
+  <div class="figure">
+    <div class="palette" id="palette" role="group" aria-label="Add a shape: drag it onto the section or press it"></div>
+    <div id="error" class="error" role="alert" hidden></div>
+    <div id="stage">
+      <svg id="canvas" tabindex="0" role="application" aria-roledescription="section editor" aria-label="Section editor. Arrow keys move the selected part; Shift for 10 steps, Alt for tenth steps; R turns it 90°; D duplicates; Delete removes; [ and ] select parts; C selects the next corner."></svg>
+      <div class="stage-tools"><button class="btn" type="button" id="fit">Fit</button></div>
+    </div>
+    <p id="readout" class="readout" aria-live="polite"></p>
+    <p class="hint">Drag a shape from the palette onto the section, or press it to add it beside the section. Drag a part to move it and its square handles to resize it; parts snap to the grid and to each other's edges (hold Alt to place freely). Click a corner dot, or pick it from the corner list, to set its radius; 0 is sharp.</p>
+    <ul id="stats" class="stats" aria-label="Key properties"></ul>
+  </div>
+
+  <div class="panel">
+    <div class="card">
+      <h3>Parts</h3>
+      <ul id="partlist" class="partlist" aria-label="Parts"></ul>
+    </div>
+    <div class="card" id="part-card">
+      <h3 id="part-title">Selected part</h3>
+      <div id="part-editor"></div>
+    </div>
+    <div class="card">
+      <h3>Materials</h3>
+      <div id="materials"></div>
+      <div class="row" style="margin-top:.6rem">
+        <label class="f"><span>Add material</span><select id="add-material"></select></label>
+        <button class="btn" type="button" id="add-material-btn">Add</button>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Reference modulus</h3>
+      <div class="row">
+        <label class="f"><span>E_base from</span><select id="ebase-from"></select></label>
+        <label class="f"><span>E_base (MPa)</span><input id="ebase" type="number" step="any" min="1" data-path="E_base"></label>
+      </div>
+      <p class="small muted" style="margin-bottom:0">Composite properties are transformed to this modulus: each part counts n = E / E_base times.</p>
+      <label class="f" style="margin-top:.6rem"><span>Title</span><input id="title" type="text" data-path="title" autocomplete="off"></label>
+    </div>
+  </div>
+</div>
+
+<section id="properties" aria-labelledby="properties-h">
+  <h2 id="properties-h">Section properties</h2>
+  <p class="muted small">About the centroid. For composites, A, S, I and Q are transformed to E_base.</p>
+  <div class="cols">
+    <div><div class="table-wrap"><table id="props-table"></table></div></div>
+    <div>
+      <h3>Torsion constant</h3>
+      <div id="torsion"></div>
+      <h3 style="margin-top:1.25rem">Parts</h3>
+      <div class="table-wrap"><table id="parts-table"></table></div>
+    </div>
+  </div>
+</section>
+
+<section id="plastic" aria-labelledby="plastic-h">
+  <h2 id="plastic-h">Moment–curvature</h2>
+  <p class="muted small">Ramberg–Osgood fibre integration, from zero curvature to the curvature at which the first fibre reaches its material's ε_lim. The moment there is the allowable moment.</p>
+  <div class="controls">
+    <label class="f"><span>Bending about</span><select id="axis" data-path="plastic.axis"><option value="x">x axis</option><option value="y">y axis</option><option value="major">major principal axis</option><option value="minor">minor principal axis</option></select></label>
+    <label class="f"><span>Axial force N (N, + tension)</span><input id="axial" type="number" step="1000" data-path="plastic.N"></label>
+    <div><span class="label" id="solve-label">Neutral axis</span><div class="seg" role="group" aria-labelledby="solve-label">
+      <button type="button" data-solve="zero-cross" title="(b) the neutral axis rotates so the moment about the perpendicular axis is zero">(b) free, no cross moment</button>
+      <button type="button" data-solve="fixed-axis" title="(a) the neutral axis stays parallel to the bending axis">(a) parallel to axis</button>
+    </div></div>
+  </div>
+  <div class="cols">
+    <div>
+      <div id="chart" tabindex="0" role="img" aria-label="Moment–curvature curve"></div>
+      <div id="tip" class="tip" hidden></div>
+      <p id="chart-readout" class="readout"></p>
+    </div>
+    <div>
+      <ul id="pstats" class="stats" aria-label="Plastic results" style="margin-top:0"></ul>
+      <details style="margin-top:1rem"><summary class="small">Curve as a table</summary><div class="table-wrap"><table id="curve-table"></table></div></details>
+    </div>
+  </div>
+</section>
+
+<section id="export" aria-labelledby="export-h">
+  <h2 id="export-h">Export, import and share</h2>
+  <p>The Markdown file holds readable tables and a fenced YAML block with the whole model; import it here to rebuild the section. A share link carries the same model in the address.</p>
+  <div class="export">
+    <button class="btn primary" type="button" id="dl-md">Markdown + YAML</button>
+    <label class="btn" for="import-file" id="import-label">Import .md or .yaml</label>
+    <input id="import-file" type="file" accept=".md,.markdown,.yaml,.yml,text/markdown,text/yaml,text/plain" class="sr">
+    <button class="btn" type="button" id="share">Copy share link</button>
+    <button class="btn" type="button" id="dl-pdf">PDF report</button>
+    <button class="btn" type="button" id="print">Print</button>
+    <button class="btn" type="button" id="dl-png-section">Section PNG</button>
+    <button class="btn" type="button" id="dl-png-curve">Curve PNG</button>
+    <span id="export-status" class="small muted" role="status"></span>
+  </div>
+</section>
+
+<section id="method" class="method" aria-labelledby="method-h">
+  <h2 id="method-h">Method, conventions and assumptions</h2>
+  <ul id="method-text"></ul>
+  <h3>Sign conventions</h3>
+  <ul id="conventions"></ul>
+  <h3>Assumptions</h3>
+  <ul id="assumptions"></ul>
+  <h3>Torsion formulas and their measured accuracy</h3>
+  <div class="table-wrap"><table id="accuracy-table"></table></div>
+  <h3 style="margin-top:1.25rem">Sources</h3>
+  <ul id="sources"></ul>
+  <p class="small muted">Sectionlab <span id="version"></span>, MIT licence. Source and tests: <a href="https://github.com/yujieteo/sectionlab">github.com/yujieteo/sectionlab</a>.</p>
+</section>
+</main>
+<div id="print-report" aria-hidden="true"></div>
+
+<script>
+const D = /*@DATA@*/;
+const ACCURACY = /*@ACCURACY@*/;
+</script>
+<script>
+/*@ENGINE@*/
+</script>
+<script>
+/*@UI@*/
+</script>
+</body>
+</html>
