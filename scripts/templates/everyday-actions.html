@@ -1,0 +1,612 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" href="data:,">
+<meta name="description" content="Everyday activities plotted against measured properties: how often people do them (American Time Use Survey) and how they felt while doing them (Day Reconstruction Method). Every point traces back to a table cell or a microdata estimate.">
+<title>Everyday actions</title>
+<style>
+:root{--bg:#fff;--fg:#1d1d1f;--muted:#6e6e73;--faint:#a1a1a6;--surface:#f5f5f7;--border:#d2d2d7;--grid:#e8e8ed;--accent:#0071e3;--sans:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;--mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;color-scheme:light dark}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--faint:#6e6e73;--surface:#2c2c2e;--border:#48484a;--grid:#333336;--accent:#2997ff}}
+:root[data-theme="dark"]{--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--faint:#6e6e73;--surface:#2c2c2e;--border:#48484a;--grid:#333336;--accent:#2997ff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 var(--sans);letter-spacing:-.011em;-webkit-font-smoothing:antialiased}
+main{width:min(100% - 2rem,56rem);margin:auto;padding:clamp(2rem,6vw,4rem) 0 3rem}
+h1{font-size:clamp(2rem,6vw,3.25rem);line-height:1.04;letter-spacing:-.045em;margin:0 0 .9rem;max-width:18ch}
+h2{font-size:1.35rem;letter-spacing:-.02em;margin:0 0 .5rem}
+h3{font-size:1rem;margin:1.5rem 0 .25rem}
+p{margin:.5rem 0;max-width:68ch}
+a{color:inherit;text-underline-offset:.18em}
+.lede{font-size:1.125rem}
+.muted,.note{color:var(--muted)}
+.note{font-size:.875rem}
+section{margin-top:clamp(3rem,8vw,5rem);padding-top:1.5rem;border-top:1px solid var(--border)}
+section:first-of-type{margin-top:2rem}
+.controls{display:flex;flex-wrap:wrap;gap:.5rem 1rem;align-items:end;margin:1.25rem 0 .75rem}
+.controls label{display:flex;flex-direction:column;font-size:.8125rem;color:var(--muted);gap:.2rem;min-width:0;max-width:100%}
+select,input,button{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--border);border-radius:.45rem}
+select{padding:.45rem .5rem;min-height:2.5rem;max-width:100%;min-width:0;width:100%}
+button{padding:.45rem .75rem;min-height:2.5rem;cursor:pointer}
+button:hover{background:var(--surface)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.check{flex-direction:row!important;align-items:center;gap:.4rem!important;min-height:2.5rem}
+.presets{display:flex;flex-wrap:wrap;gap:.35rem;margin:.75rem 0 0;padding:0;list-style:none}
+.presets button{font-size:.8125rem;padding:.3rem .6rem;min-height:2.25rem;color:var(--muted)}
+.presets button[aria-pressed="true"]{color:var(--fg);border-color:var(--fg)}
+.provenance{font-size:.875rem;color:var(--muted);min-height:2.6em;margin:.25rem 0 0}
+.provenance strong{color:var(--fg);font-weight:600}
+.chart{position:relative;margin-top:.5rem}
+.chart svg{display:block;width:100%;height:auto;overflow:visible;touch-action:manipulation}
+.axis text,.tick-label{fill:var(--muted);font:11px var(--mono)}
+.axis-title{fill:var(--muted);font:12px var(--sans)}
+.gridline{stroke:var(--grid)}
+.refline{stroke:var(--faint);stroke-dasharray:3 4}
+.quad{fill:var(--faint);font:11px var(--mono)}
+.pt{cursor:pointer}
+.pt circle.mark{fill:var(--fg);stroke:var(--bg);stroke-width:2}
+.pt.partial circle.mark{fill:var(--bg);stroke:var(--fg);stroke-width:1.5}
+.pt.evidence circle.mark{fill:var(--accent)}
+.pt.hollow circle.mark{fill:var(--bg);stroke:var(--muted);stroke-width:1.25}
+.pt circle.ring{fill:none;stroke:none}
+.pt.selected circle.ring{stroke:var(--accent);stroke-width:2}
+.pt:focus{outline:none}
+.pt:focus-visible circle.ring{stroke:var(--accent);stroke-width:3}
+.labels{pointer-events:none}
+.pt text{fill:var(--fg);font:12px var(--sans);pointer-events:none;paint-order:stroke;stroke:var(--bg);stroke-width:3px;stroke-linejoin:round}
+.dim{opacity:.18}
+.bubble{fill:var(--fg);fill-opacity:.1;stroke:var(--fg);stroke-width:1.25;cursor:pointer}
+.bubble.selected{stroke:var(--accent);stroke-width:2.5}
+.tooltip{position:absolute;pointer-events:none;background:var(--bg);border:1px solid var(--border);border-radius:.4rem;padding:.4rem .55rem;font-size:.8125rem;line-height:1.35;max-width:17rem;box-shadow:0 2px 10px rgba(0,0,0,.08);opacity:0;transition:opacity .08s}
+.tooltip.show{opacity:1}
+.tooltip b{font-weight:600}
+.detail{margin-top:1rem;padding-top:.75rem;border-top:1px solid var(--grid);min-height:6rem}
+.detail h3{margin:0 0 .35rem;font-size:1.1rem}
+.detail dl{display:grid;grid-template-columns:max-content 1fr;gap:.2rem 1rem;margin:.5rem 0;font-size:.9rem}
+.detail dt{color:var(--muted)}
+.detail dd{margin:0}
+.detail code,.trace code{font:12px var(--mono);color:var(--muted)}
+.trace{font-size:.85rem;margin:.5rem 0 0;padding-left:1.1rem}
+.trace li{margin:.25rem 0}
+details{margin-top:1rem;font-size:.9rem}
+summary{color:var(--muted);padding:.4rem 0}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;font-size:.8125rem;width:100%}
+th,td{text-align:left;padding:.35rem .5rem;border-bottom:1px solid var(--grid);vertical-align:top}
+th{color:var(--muted);font-weight:500}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+.ledger input,.ledger select{width:100%;min-height:2.25rem;padding:.25rem .4rem;font-size:.875rem}
+.ledger input[type=number]{max-width:5.5rem}
+.ledger td{padding:.25rem .3rem}
+.ledger .remove{min-height:2.25rem;padding:.2rem .5rem;color:var(--muted)}
+.legend{display:flex;flex-wrap:wrap;gap:.35rem 1rem;font-size:.8125rem;color:var(--muted);margin:.4rem 0 0;padding:0;list-style:none}
+.legend svg{vertical-align:-2px;margin-right:.3rem}
+.method{font-size:.9375rem}
+.method h3{font-size:.95rem}
+.method ol{padding-left:1.2rem}
+.method li{margin:.35rem 0}
+.empty{fill:var(--muted);font:13px var(--sans)}
+@media (max-width:560px){.controls label{flex:1 1 100%}.detail dl{grid-template-columns:1fr}.detail dt{margin-top:.3rem}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<main>
+<p class="muted">Everyday actions</p>
+<h1>How ordinary activities feel, and how often people do them</h1>
+<p class="lede">Each point is an everyday activity placed by published measurements: how often people do it and how they reported feeling while doing it. Click any point to see the table cell or survey estimate behind each coordinate.</p>
+<p class="note">Population averages describe groups. They are not recommendations for any one person.</p>
+
+<section id="activities" aria-labelledby="activities-title">
+<h2 id="activities-title">Frequency and experienced affect</h2>
+<p>The default view uses one study for both axes: 909 employed women in the Day Reconstruction Method study (Kahneman et al., 2004). They reported each episode of a working day and rated how they felt. Other views bring in national time-use estimates from the American Time Use Survey. Those combine two populations and are marked as such.</p>
+<ul class="presets" id="presets" aria-label="Suggested views"></ul>
+<div class="controls">
+<label>Horizontal axis<select id="x-axis"></select></label>
+<label>Vertical axis<select id="y-axis"></select></label>
+<label>ATUS population<select id="population"></select></label>
+<label class="check"><input type="checkbox" id="show-partial" checked> Show partial crosswalk matches</label>
+</div>
+<p class="provenance" id="provenance" aria-live="polite"></p>
+<div class="chart" id="scatter-wrap"><svg id="scatter" role="img" aria-labelledby="scatter-title scatter-desc"><title id="scatter-title">Everyday activities scatterplot</title><desc id="scatter-desc">Each point is an activity. Axes are chosen with the controls above.</desc></svg><div class="tooltip" id="scatter-tip" role="presentation"></div></div>
+<ul class="legend" id="scatter-legend"></ul>
+<article class="detail" id="scatter-detail" aria-live="polite"><p class="note">Select a point. The selection stays until you pick another point.</p></article>
+<details><summary>Table view of the current chart</summary><div class="table-wrap" id="scatter-table"></div></details>
+</section>
+
+<section id="regret" aria-labelledby="regret-title">
+<h2 id="regret-title">A regret frontier</h2>
+<p>A hundred common actions, from texting a friend to buying a home, sorted by two properties that change how a mistake feels afterwards. One is how easily the action can be undone. The other is whether the chance to act closes soon. Regret studies find that people regret actions more in the short run and inactions more in the long run (Gilovich &amp; Medvec, 1995; replicated with a different shape by Richardson &amp; Gilovich, 2023). That suggests running cheap experiments on actions that are both reversible and time-limited.</p>
+<p class="note"><strong>These positions are authored codes on 1–5 scales, not measurements.</strong> No dataset rates these 100 actions on reversibility or time pressure. The coding rubric is in the methodology below. Blue points have an experiment behind them, usually showing that people misjudge how the action will go; click one to read it.</p>
+<div class="controls">
+<label>How often it comes up<select id="regret-tier"></select></label>
+<label>Domain<select id="regret-domain"></select></label>
+</div>
+<div class="chart" id="regret-wrap"><svg id="regret-chart" role="img" aria-labelledby="regret-svg-title"><title id="regret-svg-title">Actions by reversibility and time sensitivity</title></svg><div class="tooltip" id="regret-tip" role="presentation"></div></div>
+<ul class="legend" id="regret-legend"></ul>
+<article class="detail" id="regret-detail" aria-live="polite"><p class="note">Select an action.</p></article>
+</section>
+
+<section id="asymmetry" aria-labelledby="asymmetry-title">
+<h2 id="asymmetry-title">Downside, upside and what you learn</h2>
+<p>The same hundred actions placed by the plausible worst outcome (horizontal) against the plausible best outcome (vertical). Larger circles mark actions that reveal more about your preferences or about other people when done once. Low-downside, high-upside actions sit top-left, and large circles there are the cheapest ways to learn something.</p>
+<p class="note">Authored ordinal codes, as above. Filters from the previous chart apply here too.</p>
+<div class="chart" id="asym-wrap"><svg id="asym-chart" role="img" aria-labelledby="asym-svg-title"><title id="asym-svg-title">Actions by downside and upside, sized by information gained</title></svg><div class="tooltip" id="asym-tip" role="presentation"></div></div>
+<ul class="legend" id="asym-legend"></ul>
+<article class="detail" id="asym-detail" aria-live="polite"><p class="note">Select an action.</p></article>
+</section>
+
+<section id="reconsider" aria-labelledby="reconsider-title">
+<h2 id="reconsider-title">Considered, never done</h2>
+<p>Some things come back to mind again and again without getting done. Each return costs a little attention. Laboratory work finds that unfinished goals keep producing intrusive thoughts, and that writing a specific plan stops the intrusion even before the goal is met (Masicampo &amp; Baumeister, 2011). This ledger adds up the time spent reconsidering and places each item by what doing it would take.</p>
+<p class="note"><strong>No population data exists for this.</strong> The rows below are illustrative placeholders. Replace them with your own estimates; they stay in this browser only.</p>
+<div class="chart" id="ledger-wrap"><svg id="ledger-chart" role="img" aria-labelledby="ledger-svg-title"><title id="ledger-svg-title">Reconsidered items by focus required and time to complete, sized by hours spent reconsidering</title></svg><div class="tooltip" id="ledger-tip" role="presentation"></div></div>
+<p class="note" id="ledger-total"></p>
+<div class="table-wrap"><table class="ledger" id="ledger"><thead><tr><th>Item</th><th class="num">Times considered</th><th class="num">Minutes each</th><th>Batchable ↔ needs focus</th><th class="num">Minutes to do</th><th class="num">Hours reconsidering</th><th></th></tr></thead><tbody></tbody></table></div>
+<div class="controls"><button type="button" id="ledger-add">Add a row</button><button type="button" id="ledger-reset">Restore examples</button></div>
+</section>
+
+<section id="method" class="method" aria-labelledby="method-title">
+<h2 id="method-title">Sources and methodology</h2>
+<h3>Where each axis comes from</h3>
+<ul>
+<li><strong>Share reporting it on a workday</strong>, <strong>positive, negative, tired, impatient, competent</strong>, and <strong>mean hours</strong>: Kahneman, Krueger, Schkade, Schwarz &amp; Stone (2004), <a href="https://doi.org/10.1126/science.1103572">Science 306:1776</a>, Table 1, transcribed cell by cell. Ratings run from 0 (not at all) to 6 (very much). Positive affect averages happy, warm/friendly and enjoying myself. Negative affect averages six negative descriptors. <em>Net affect</em> is the paper's own difference, positive minus negative, and is labelled as a transformation.</li>
+<li><strong>Share doing it on an average day</strong> and <strong>minutes when done</strong>: American Time Use Survey microdata, 2014–2016, n = 32,990 respondents age 15+. Computed with the final weight from the BLS files redistributed in the <a href="https://github.com/cran/atus">CRAN atus package</a>. The code is <code>derive_atus.py</code>. Run on 2015 alone, the same code reproduces the <a href="https://www.bls.gov/news.release/archives/atus_06242016.htm">BLS 2015 release</a>: TV 2.8 h/day, socializing 41 min/day.</li>
+</ul>
+<h3>How activities were cross-walked</h3>
+<p>Every activity keeps its source label next to its normalized name (<code>crosswalk.csv</code>). A match is <em>close</em> when the definitions agree apart from primary versus secondary activity. It is <em>partial</em> when the constructs differ, and partial matches are drawn hollow. Intimate relations and napping have no ATUS counterpart and appear only in DRM-only views. Sleeping, reading, volunteering, gaming, studying, lawn care and adult care have no DRM counterpart and appear only in ATUS-only views. Nothing was merged to gain points.</p>
+<p>To test the crosswalk, ATUS was restricted to employed women 18+ who worked on a weekday diary day, which matches the DRM sample definition. Where the definitions match, the two surveys agree: commuting 0.87 vs 0.86, eating 0.94 vs 0.94, preparing food 0.62 vs 0.64, exercising 0.16 vs 0.18. They diverge badly for socializing (0.65 vs 0.32), relaxing (0.77 vs 0.19) and phone calls (0.61 vs 0.13). The DRM counted every activity ticked for an episode, while ATUS records only the main one.</p>
+<h3>Differences in populations and scales</h3>
+<p>The DRM sample is a 2004 convenience sample of employed women describing a working day. ATUS is nationally representative of people 15+ across all days of the week, 2014–2016. A view that pairs ATUS frequency with DRM affect places one population's feelings against another population's habits. The page says so whenever such a view is selected. Affect ratings are shown on their original 0–6 scales and are not rescaled to 0–100. The median lines are medians of the points currently shown.</p>
+<h3>What is not here, and why</h3>
+<p>Meaning, stress and pain by activity exist in the ATUS Well-Being Module (2010, 2012, 2013, 2021; 0–6 ratings of happy, meaningful, sad, stressed, tired and pain) and in the Princeton Affect and Time Survey. Neither could be retrieved from primary files in this build. Their values were therefore left out rather than retyped from secondary summaries, so there is no meaning or stress axis yet. The Well-Being Module is the next source to add.</p>
+<h3>The decision charts are interpretation</h3>
+<p>Reversibility, time sensitivity, downside, upside and information gained are ordinal codes written for this page (<code>decisions.csv</code>). Rubric, 1 → 5:</p>
+<ul>
+<li><strong>Reversibility</strong>: permanent → undo costs years → undo costs money or friction → small residue (a sent message) → fully repeatable.</li>
+<li><strong>Time sensitivity</strong>: the same value any time this year → value fades over months → over weeks → over days → the window closes within hours or days.</li>
+<li><strong>Downside</strong> and <strong>upside</strong>: a few minutes or brief awkwardness → recoverable loss or gain over weeks → months → years → lasting, life-course.</li>
+<li><strong>Information</strong>: learn nothing new → something about the task → about your own preferences → about other people's responses → resolves a major uncertainty.</li>
+</ul>
+<p>The frequency groupings (daily, weekly and so on) are authored too. Where an action belongs to an ATUS category, the detail panel shows that category's national participation rate as context, not as the rate for the action itself. Gilbert &amp; Ebert (2002) is a counterweight: people prefer reversible choices but end up less satisfied with them. Reversibility makes an experiment cheap, not free.</p>
+<h3>Primary sources</h3>
+<ol id="source-list"></ol>
+<h3>Files</h3>
+<p class="note"><code>data.csv</code> (final table) · <code>crosswalk.csv</code> · <code>sources.json</code> (one record per plotted number) · <code>drm_table1.csv</code> · <code>atus_estimates.csv</code> · <code>derive_atus.py</code> · <code>decisions.csv</code> · <code>evidence.json</code> · <code>methodology.md</code> · <code>build.py</code></p>
+</section>
+</main>
+
+<script type="application/json" id="dataset">{}</script>
+<script>
+(() => {
+"use strict";
+const DATA = JSON.parse(document.getElementById("dataset").textContent);
+const SVGNS = "http://www.w3.org/2000/svg";
+const $ = (s) => document.querySelector(s);
+const el = (tag, attrs = {}, parent) => {
+  const node = document.createElementNS(SVGNS, tag);
+  for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+  if (parent) parent.appendChild(node);
+  return node;
+};
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const num = (v) => (v === "" || v == null ? null : Number(v));
+const median = (arr) => { const s = [...arr].sort((a, b) => a - b); const m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
+const pct = (v) => `${(v * 100).toFixed(v < 0.1 ? 1 : 0)}%`;
+const fx = (d) => (v) => v.toFixed(d);
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch { /* storage unavailable */ } },
+  del(k) { try { localStorage.removeItem(k); } catch { /* storage unavailable */ } },
+};
+const SOURCES = DATA.sources;
+const MEAS = new Map(DATA.measurements.map((m) => [m.id, m]));
+const CROSS = new Map(DATA.crosswalk.map((c) => [c.activity_id, c]));
+
+// ---------- shared chart helpers ----------
+function linear(d0, d1, r0, r1) { const k = (r1 - r0) / (d1 - d0 || 1); const f = (v) => r0 + (v - d0) * k; f.invert = (p) => d0 + (p - r0) / k; return f; }
+function niceTicks(lo, hi, count) {
+  const span = hi - lo, raw = span / count, mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const step = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => span / s <= count) || 10 * mag;
+  const out = []; for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) out.push(+v.toFixed(10));
+  return out;
+}
+function frame(svg, wrap, ratio, minH, maxH) {
+  svg.textContent = "";
+  const W = Math.max(300, wrap.clientWidth), H = Math.round(Math.min(maxH, Math.max(minH, W * ratio)));
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`); svg.setAttribute("width", W); svg.setAttribute("height", H);
+  return { W, H, narrow: W < 520 };
+}
+function tooltip(tip, wrap) {
+  return {
+    show(html, x, y) {
+      tip.innerHTML = html; tip.classList.add("show");
+      const w = tip.offsetWidth, h = tip.offsetHeight, W = wrap.clientWidth;
+      let left = x + 14; if (left + w > W) left = Math.max(0, x - w - 14);
+      let top = y - h - 10; if (top < 0) top = y + 14;
+      tip.style.left = `${left}px`; tip.style.top = `${top}px`;
+    },
+    hide() { tip.classList.remove("show"); },
+  };
+}
+// Greedy label placement: highest-priority points first, four candidate spots, skip on collision.
+function placeLabels(items, bounds) {
+  const boxes = [];
+  const hit = (b) => b.x < bounds.x0 || b.x + b.w > bounds.x1 || b.y < bounds.y0 || b.y + b.h > bounds.y1 || boxes.some((o) => b.x < o.x + o.w && b.x + b.w > o.x && b.y < o.y + o.h && b.y + b.h > o.y);
+  items.forEach((it) => boxes.push({ x: it.x - it.r, y: it.y - it.r, w: it.r * 2, h: it.r * 2 }));
+  for (const it of [...items].sort((a, b) => b.priority - a.priority)) {
+    if (!it.text) continue;
+    it.text.style.display = "";
+    const bb = it.text.getBBox(), w = bb.width, h = bb.height, g = it.r + 4;
+    const spots = [[g, h / 3, "start"], [-g, h / 3, "end"], [0, -g - 2, "middle"], [0, g + h - 2, "middle"], [g, -g, "start"], [-g, -g, "end"], [g, g + h / 2, "start"], [-g, g + h / 2, "end"]];
+    const candidates = spots.map(([dx, dy, anchor]) => {
+      const x = anchor === "start" ? it.x + dx : anchor === "end" ? it.x + dx - w : it.x - w / 2;
+      return { dx, dy, anchor, box: { x, y: it.y + dy - h * 0.8, w, h } };
+    });
+    const inside = (b) => b.x >= bounds.x0 && b.x + b.w <= bounds.x1;
+    const spot = candidates.find((c) => !hit(c.box)) || (it.force ? candidates.find((c) => inside(c.box)) || candidates[0] : null);
+    if (!spot) { it.text.style.display = "none"; continue; }
+    it.text.setAttribute("x", it.x + spot.dx); it.text.setAttribute("y", it.y + spot.dy); it.text.setAttribute("text-anchor", spot.anchor);
+    if (bounds.layer) bounds.layer.appendChild(it.text);
+    boxes.push(spot.box);
+  }
+}
+function axes(g, sx, sy, xTicks, yTicks, fmtX, fmtY, m, W, H, xTitle, yTitle) {
+  const ax = el("g", { class: "axis" }, g);
+  yTicks.forEach((t) => { el("line", { class: "gridline", x1: m.l, x2: W - m.r, y1: sy(t), y2: sy(t) }, ax); const tx = el("text", { x: m.l - 8, y: sy(t) + 4, "text-anchor": "end" }, ax); tx.textContent = fmtY(t); });
+  xTicks.forEach((t) => { el("line", { class: "gridline", y1: m.t, y2: H - m.b, x1: sx(t), x2: sx(t) }, ax); const tx = el("text", { y: H - m.b + 16, x: sx(t), "text-anchor": "middle" }, ax); tx.textContent = fmtX(t); });
+  const xt = el("text", { class: "axis-title", x: W - m.r, y: H - 6, "text-anchor": "end" }, g); xt.textContent = xTitle;
+  const yt = el("text", { class: "axis-title", x: m.l - 8, y: m.t - 12, "text-anchor": "start" }, g); yt.textContent = yTitle;
+  yt.setAttribute("x", 4);
+}
+
+// ---------- section 1: activity scatter ----------
+const POPS = { all: "All people 15+, all days", weekday: "All people 15+, weekdays", weekend: "All people 15+, weekends", drm_like: "Employed women 18+ who worked, weekdays (DRM-like)" };
+const POP_IDS = { all: "all", weekday: "weekday", weekend: "weekend", drm_like: "drm-like" };
+const AXES = {
+  drm_proportion_reporting: { label: "Share reporting it on a workday", short: "Share reporting (DRM)", src: "drm", metric: "proportion_reporting", fmt: pct, lo: 0, hi: 1, low: "less common", high: "more common" },
+  atus_participation: { label: "Share doing it on an average day", short: "Share on an average day (ATUS)", src: "atus", metric: "participation", fmt: pct, lo: 0, hi: 1, low: "less common", high: "more common" },
+  drm_mean_hours_per_day: { label: "Mean hours per day, all respondents", short: "Hours per day (DRM)", src: "drm", metric: "mean_hours_per_day", fmt: fx(1), lo: 0, low: "less time", high: "more time" },
+  atus_minutes_when_performed: { label: "Minutes per day among people who do it", short: "Minutes when done (ATUS)", src: "atus", metric: "minutes_when_performed", fmt: fx(0), lo: 0, low: "shorter when done", high: "longer when done" },
+  drm_positive_affect: { label: "Positive affect while doing it (0–6)", short: "Positive affect (DRM)", src: "drm", metric: "positive_affect", fmt: fx(2), low: "lower positive affect", high: "higher positive affect" },
+  drm_net_affect: { label: "Net affect: positive minus negative (transformation)", short: "Net affect (DRM, derived)", src: "drm", metric: "net_affect", fmt: fx(2), low: "lower net affect", high: "higher net affect" },
+  drm_negative_affect: { label: "Negative affect while doing it (0–6)", short: "Negative affect (DRM)", src: "drm", metric: "negative_affect", fmt: fx(2), low: "lower negative affect", high: "higher negative affect" },
+  drm_tired: { label: "Tired while doing it (0–6)", short: "Tired (DRM)", src: "drm", metric: "tired", fmt: fx(2), low: "less tired", high: "more tired" },
+  drm_impatient: { label: "Impatient while doing it (0–6)", short: "Impatient (DRM)", src: "drm", metric: "impatient", fmt: fx(2), low: "less impatient", high: "more impatient" },
+  drm_competent: { label: "Competent while doing it (0–6)", short: "Competent (DRM)", src: "drm", metric: "competent", fmt: fx(2), low: "less competent", high: "more competent" },
+};
+const X_KEYS = ["drm_proportion_reporting", "atus_participation", "drm_mean_hours_per_day", "atus_minutes_when_performed", "drm_negative_affect", "drm_tired"];
+const Y_KEYS = ["drm_positive_affect", "drm_net_affect", "drm_negative_affect", "drm_tired", "drm_impatient", "drm_competent", "atus_minutes_when_performed"];
+const PRESETS = [
+  { label: "Frequency × positive affect (one study)", x: "drm_proportion_reporting", y: "drm_positive_affect" },
+  { label: "National frequency × positive affect (two studies)", x: "atus_participation", y: "drm_positive_affect", pop: "all" },
+  { label: "Frequency × time when done (ATUS)", x: "atus_participation", y: "atus_minutes_when_performed", pop: "all" },
+  { label: "Negative × positive affect", x: "drm_negative_affect", y: "drm_positive_affect" },
+  { label: "Tiredness × positive affect", x: "drm_tired", y: "drm_positive_affect" },
+  { label: "Hours per day × positive affect", x: "drm_mean_hours_per_day", y: "drm_positive_affect" },
+];
+const MIN_POINTS = 8;
+const params = new URLSearchParams(location.search);
+const state = {
+  x: AXES[params.get("x")] && X_KEYS.includes(params.get("x")) ? params.get("x") : "drm_proportion_reporting",
+  y: AXES[params.get("y")] && Y_KEYS.includes(params.get("y")) ? params.get("y") : "drm_positive_affect",
+  pop: POPS[params.get("pop")] ? params.get("pop") : "all",
+  partial: params.get("partial") !== "0",
+  sel: params.get("sel") || null,
+};
+const col = (key) => (AXES[key].src === "atus" ? `atus_${AXES[key].metric}_${state.pop}` : key);
+const measId = (key, id) => (AXES[key].src === "atus" ? `atus:${id}:${AXES[key].metric}:${POP_IDS[state.pop]}` : `drm:${id}:${AXES[key].metric}`);
+
+function fillSelect(sel, keys, value) { sel.innerHTML = keys.map((k) => `<option value="${k}"${k === value ? " selected" : ""}>${esc(AXES[k].short)}</option>`).join(""); }
+const xSel = $("#x-axis"), ySel = $("#y-axis"), popSel = $("#population"), partialBox = $("#show-partial");
+fillSelect(xSel, X_KEYS, state.x); fillSelect(ySel, Y_KEYS, state.y);
+popSel.innerHTML = Object.entries(POPS).map(([k, v]) => `<option value="${k}"${k === state.pop ? " selected" : ""}>${esc(v)}</option>`).join("");
+partialBox.checked = state.partial;
+$("#presets").innerHTML = PRESETS.map((p, i) => `<li><button type="button" data-i="${i}" aria-pressed="false">${esc(p.label)}</button></li>`).join("");
+$("#presets").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; const p = PRESETS[+b.dataset.i]; state.x = p.x; state.y = p.y; if (p.pop) state.pop = p.pop; xSel.value = state.x; ySel.value = state.y; popSel.value = state.pop; update(); });
+xSel.addEventListener("change", () => { state.x = xSel.value; update(); });
+ySel.addEventListener("change", () => { state.y = ySel.value; update(); });
+popSel.addEventListener("change", () => { state.pop = popSel.value; update(); });
+partialBox.addEventListener("change", () => { state.partial = partialBox.checked; update(); });
+
+function points() {
+  return DATA.activities.map((a) => ({ a, x: num(a[col(state.x)]), y: num(a[col(state.y)]) }))
+    .filter((p) => p.x != null && p.y != null)
+    .filter((p) => state.partial || !(mixed() && p.a.crosswalk_match === "partial"));
+}
+const mixed = () => AXES[state.x].src !== AXES[state.y].src;
+function syncUrl() {
+  const q = new URLSearchParams({ x: state.x, y: state.y });
+  if (AXES[state.x].src === "atus" || AXES[state.y].src === "atus") q.set("pop", state.pop);
+  if (!state.partial) q.set("partial", "0");
+  if (state.sel) q.set("sel", state.sel);
+  try { history.replaceState(null, "", `${location.pathname}?${q}${location.hash}`); } catch { /* sandboxed */ }
+}
+function provenance(n) {
+  const X = AXES[state.x], Y = AXES[state.y];
+  const pop = POPS[state.pop];
+  let text;
+  if (state.x === state.y) text = "<strong>Pick two different measures.</strong>";
+  else if (!mixed() && X.src === "drm") text = `<strong>One study, one population.</strong> Both axes come from Kahneman et al. (2004), Table 1: 909 employed women on a working day. ${n} activities.`;
+  else if (!mixed()) text = `<strong>One survey, one population.</strong> Both axes are ATUS 2014–2016 estimates for: ${esc(pop)}. ${n} activities.`;
+  else text = `<strong>Two populations.</strong> ${esc((X.src === "atus" ? X : Y).short)} is from ATUS 2014–2016 (${esc(pop)}). ${esc((X.src === "drm" ? X : Y).short)} is from 909 employed women in the 2004 DRM study. Hollow points are partial crosswalk matches. ${n} activities.`;
+  $("#provenance").innerHTML = text;
+  popSel.disabled = X.src !== "atus" && Y.src !== "atus";
+  partialBox.disabled = !mixed();
+  document.querySelectorAll("#presets button").forEach((b) => { const p = PRESETS[+b.dataset.i]; b.setAttribute("aria-pressed", String(p.x === state.x && p.y === state.y && (!p.pop || p.pop === state.pop))); });
+}
+const scatterTip = tooltip($("#scatter-tip"), $("#scatter-wrap"));
+function drawScatter() {
+  const svg = $("#scatter"), wrap = $("#scatter-wrap");
+  const { W, H, narrow } = frame(svg, wrap, 0.66, 340, 560);
+  const pts = state.x === state.y ? [] : points();
+  provenance(pts.length);
+  el("title", {}, svg).textContent = `${AXES[state.x].label} by ${AXES[state.y].label}`;
+  if (pts.length < MIN_POINTS) {
+    const t = el("text", { class: "empty", x: W / 2, y: H / 2, "text-anchor": "middle" }, svg);
+    t.textContent = state.x === state.y ? "Choose two different measures." : `Only ${pts.length} activities have both measures — too few to plot.`;
+    renderTable([]); return;
+  }
+  const m = { l: 44, r: 16, t: 30, b: 40 };
+  const X = AXES[state.x], Y = AXES[state.y];
+  const xs = pts.map((p) => p.x), ys = pts.map((p) => p.y);
+  const pad = (lo, hi) => { const s = (hi - lo) || 1; return [lo - s * 0.08, hi + s * 0.08]; };
+  let [x0, x1] = pad(Math.min(...xs), Math.max(...xs)); let [y0, y1] = pad(Math.min(...ys), Math.max(...ys));
+  if (X.lo != null) x0 = Math.max(X.lo, x0); if (X.hi != null) x1 = Math.min(X.hi, x1);
+  if (X.lo === 0) x0 = 0;
+  if (Y.lo === 0) y0 = 0;
+  const sx = linear(x0, x1, m.l, W - m.r), sy = linear(y0, y1, H - m.b, m.t);
+  const g = el("g", {}, svg);
+  axes(g, sx, sy, niceTicks(x0, x1, narrow ? 4 : 6), niceTicks(y0, y1, 5), X.fmt, Y.fmt, m, W, H, `${X.label} →`, `↑ ${Y.label}`);
+  const mx = median(xs), my = median(ys);
+  el("line", { class: "refline", x1: sx(mx), x2: sx(mx), y1: m.t, y2: H - m.b }, g);
+  el("line", { class: "refline", y1: sy(my), y2: sy(my), x1: m.l, x2: W - m.r }, g);
+  const q = el("g", {}, g);
+  [[m.l + 4, m.t + 12, "start", `${Y.high} · ${X.low}`], [W - m.r - 4, m.t + 12, "end", `${Y.high} · ${X.high}`], [m.l + 4, H - m.b - 6, "start", `${Y.low} · ${X.low}`], [W - m.r - 4, H - m.b - 6, "end", `${Y.low} · ${X.high}`]]
+    .forEach(([x, y, a, s]) => { if (!narrow) { const t = el("text", { class: "quad", x, y, "text-anchor": a }, q); t.textContent = s; } });
+  const layer = el("g", {}, g), items = [];
+  const spanX = Math.max(...xs) - Math.min(...xs) || 1, spanY = Math.max(...ys) - Math.min(...ys) || 1;
+  for (const p of pts) {
+    const id = p.a.activity_id, partial = mixed() && p.a.crosswalk_match === "partial";
+    const node = el("g", { class: `pt${partial ? " partial" : ""}${state.sel === id ? " selected" : ""}`, tabindex: 0, role: "button", "aria-label": `${p.a.activity}: ${X.short} ${X.fmt(p.x)}, ${Y.short} ${Y.fmt(p.y)}`, "data-id": id }, layer);
+    const cx = sx(p.x), cy = sy(p.y);
+    el("circle", { class: "hit", cx, cy, r: 16, fill: "transparent" }, node);
+    el("circle", { class: "ring", cx, cy, r: 9 }, node);
+    el("circle", { class: "mark", cx, cy, r: 5.5 }, node);
+    const text = el("text", {}, node); text.textContent = p.a.activity;
+    const outlier = Math.hypot((p.x - mx) / spanX, (p.y - my) / spanY);
+    items.push({ x: cx, y: cy, r: 6, text, priority: (state.sel === id ? 10 : 0) + outlier, force: state.sel === id });
+    const tipHtml = () => `<b>${esc(p.a.activity)}</b><br>${esc(X.short)}: ${X.fmt(p.x)}<br>${esc(Y.short)}: ${Y.fmt(p.y)}${partial ? "<br><i>partial crosswalk match</i>" : ""}`;
+    node.addEventListener("pointerenter", () => scatterTip.show(tipHtml(), cx, cy));
+    node.addEventListener("pointerleave", () => scatterTip.hide());
+    node.addEventListener("focus", () => scatterTip.show(tipHtml(), cx, cy));
+    node.addEventListener("blur", () => scatterTip.hide());
+    node.addEventListener("click", () => select(id));
+    node.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); select(id); } });
+  }
+  placeLabels(items, { x0: 0, x1: W, y0: 0, y1: H - m.b, layer: el("g", { class: "pt labels" }, g) });
+  $("#scatter-legend").innerHTML = mixed()
+    ? `<li><svg width="12" height="12"><circle cx="6" cy="6" r="5" fill="currentColor"/></svg>close crosswalk match</li><li><svg width="12" height="12"><circle cx="6" cy="6" r="4.5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>partial match (different constructs)</li><li>dashed lines: medians of plotted points</li>`
+    : `<li>dashed lines: medians of plotted points</li>`;
+  renderTable(pts);
+}
+function renderTable(pts) {
+  const X = AXES[state.x], Y = AXES[state.y];
+  $("#scatter-table").innerHTML = pts.length ? `<table><thead><tr><th>Activity</th><th>Source category</th><th class="num">${esc(X.short)}</th><th class="num">${esc(Y.short)}</th><th>Crosswalk</th></tr></thead><tbody>${
+    [...pts].sort((a, b) => b.y - a.y).map((p) => { const c = CROSS.get(p.a.activity_id); return `<tr><td>${esc(p.a.activity)}</td><td>${esc([c.drm_label, c.atus_label].filter(Boolean).join(" / "))}</td><td class="num">${X.fmt(p.x)}</td><td class="num">${Y.fmt(p.y)}</td><td>${esc(c.match)}</td></tr>`; }).join("")}</tbody></table>` : "";
+}
+function traceItem(key, id) {
+  const m = MEAS.get(measId(key, id));
+  if (!m) return `<li>${esc(AXES[key].short)}: no measurement</li>`;
+  const s = SOURCES[m.source];
+  return `<li><strong>${esc(AXES[key].short)} = ${esc(AXES[key].fmt(m.value))}</strong>, ${esc(m.kind)}.<br>${esc(m.location)}.${m.formula ? `<br>Formula: ${esc(m.formula)}.` : ""}<br>Population: ${esc(m.population)}; n = ${esc(m.n)}; ${esc(m.year)}. <a href="${esc(s.url)}">Source</a> <code>${esc(m.id)}</code></li>`;
+}
+function renderDetail() {
+  const box = $("#scatter-detail");
+  const a = DATA.activities.find((r) => r.activity_id === state.sel);
+  if (!a) { box.innerHTML = `<p class="note">Select a point. The selection stays until you pick another point.</p>`; return; }
+  const c = CROSS.get(a.activity_id);
+  const v = (k) => num(a[col(k)]);
+  const row = (label, value) => `<dt>${label}</dt><dd>${value}</dd>`;
+  const drm = c.drm_label ? `“${esc(c.drm_label)}” (Kahneman et al., 2004, Table 1)` : "no DRM counterpart";
+  const atus = c.atus_codes ? `${esc(c.atus_label)} — codes ${esc(c.atus_codes)}` : "no ATUS counterpart";
+  box.innerHTML = `<h3>${esc(a.activity)}</h3><dl>
+    ${row("Frequency", [a.drm_proportion_reporting ? `${pct(+a.drm_proportion_reporting)} of DRM sample on a workday` : "", a[`atus_participation_${state.pop}`] ? `${pct(+a[`atus_participation_${state.pop}`])} on an average day (ATUS, ${esc(POPS[state.pop])})` : ""].filter(Boolean).join("<br>") || "—")}
+    ${row("Time spent", [a.drm_mean_hours_per_day ? `${a.drm_mean_hours_per_day} h/day averaged over all DRM respondents` : "", a[`atus_minutes_when_performed_${state.pop}`] ? `${Math.round(+a[`atus_minutes_when_performed_${state.pop}`])} min/day among those who did it (ATUS)` : ""].filter(Boolean).join("<br>") || "—")}
+    ${row("Affect (0–6)", a.drm_positive_affect ? `positive ${a.drm_positive_affect}, negative ${a.drm_negative_affect}, tired ${a.drm_tired}, impatient ${a.drm_impatient}, competent ${a.drm_competent}` : "not measured in the available sources")}
+    ${row("Source categories", `DRM: ${drm}<br>ATUS: ${atus}`)}
+    ${row("Crosswalk", `${esc(c.match)} — ${esc(c.note)}`)}
+  </dl><p class="note">The two coordinates in the current chart come from:</p><ol class="trace">${v(state.x) != null ? traceItem(state.x, a.activity_id) : `<li>${esc(AXES[state.x].short)}: not available for this activity</li>`}${v(state.y) != null ? traceItem(state.y, a.activity_id) : `<li>${esc(AXES[state.y].short)}: not available for this activity</li>`}</ol>`;
+}
+function select(id) { state.sel = state.sel === id ? null : id; update(); }
+function update() { drawScatter(); renderDetail(); syncUrl(); }
+
+// ---------- sections 2 & 3: decision codes ----------
+const TIERS = ["daily", "weekly", "monthly", "yearly", "rare"];
+const DOMAINS = [...new Set(DATA.decisions.map((d) => d.domain))].sort();
+const dstate = { tier: "", domain: "", sel: null };
+$("#regret-tier").innerHTML = `<option value="">All (100)</option>` + TIERS.map((t) => `<option value="${t}">${t[0].toUpperCase() + t.slice(1)}</option>`).join("");
+$("#regret-domain").innerHTML = `<option value="">All domains</option>` + DOMAINS.map((d) => `<option value="${d}">${d[0].toUpperCase() + d.slice(1)}</option>`).join("");
+$("#regret-tier").addEventListener("change", (e) => { dstate.tier = e.target.value; drawDecisions(); });
+$("#regret-domain").addEventListener("change", (e) => { dstate.domain = e.target.value; drawDecisions(); });
+const decisionVisible = (d) => (!dstate.tier || d.frequency_tier === dstate.tier) && (!dstate.domain || d.domain === dstate.domain);
+const ATUS_ALL = new Map(DATA.activities.map((a) => [a.activity_id, a]));
+function decisionDetail(box) {
+  const d = DATA.decisions.find((r) => r.id === dstate.sel);
+  if (!d) { box.innerHTML = `<p class="note">Select an action.</p>`; return; }
+  const parent = d.atus_parent && ATUS_ALL.get(d.atus_parent);
+  const ev = d.evidence.map((k) => SOURCES[k]).filter(Boolean);
+  box.innerHTML = `<h3>${esc(d.action)}</h3><dl>
+    <dt>Authored codes (1–5)</dt><dd>reversibility ${d.reversibility} · time sensitivity ${d.time_sensitivity} · downside ${d.downside} · upside ${d.upside} · information ${d.information}</dd>
+    <dt>Comes up</dt><dd>${esc(d.frequency_tier)} (authored) · ${esc(d.domain)}</dd>
+    <dt>ATUS context</dt><dd>${parent && parent.atus_participation_all ? `Parent category “${esc(CROSS.get(d.atus_parent).atus_label)}”: ${pct(+parent.atus_participation_all)} of people 15+ on an average day (2014–2016). This is the category's rate, not the rate for this action.` : "No ATUS category maps cleanly to this action."}</dd>
+    <dt>Evidence</dt><dd>${ev.length ? ev.map((s) => `${esc(s.finding)} <a href="${esc(s.url)}">${esc(s.citation.split(" (")[0])} (${esc((s.citation.match(/\((\d{4})\)/) || [])[1] || "")})</a>`).join("<br>") : "No study of this specific action was used; position is judgment only."}</dd>
+  </dl>`;
+}
+function packCells(list, keyX, keyY) {
+  const cells = new Map();
+  list.forEach((d) => { const k = `${d[keyX]},${d[keyY]}`; if (!cells.has(k)) cells.set(k, []); cells.get(k).push(d); });
+  return cells;
+}
+function drawDecisionChart(opts) {
+  const { svg, wrap, tip, keyX, keyY, xLabels, yLabels, xTitle, yTitle, quads, size, detail } = opts;
+  const { W, H, narrow } = frame(svg, wrap, 0.78, 380, 620);
+  const m = { l: narrow ? 58 : 92, r: 12, t: 26, b: 44 };
+  const cw = (W - m.l - m.r) / 5, ch = (H - m.t - m.b) / 5;
+  const cx = (v) => m.l + (v - 0.5) * cw, cy = (v) => H - m.b - (v - 0.5) * ch;
+  const g = el("g", {}, svg), ax = el("g", { class: "axis" }, g);
+  for (let i = 0; i <= 5; i++) { el("line", { class: "gridline", x1: m.l + i * cw, x2: m.l + i * cw, y1: m.t, y2: H - m.b }, ax); el("line", { class: "gridline", y1: m.t + i * ch, y2: m.t + i * ch, x1: m.l, x2: W - m.r }, ax); }
+  for (let v = 1; v <= 5; v++) {
+    const tx = el("text", { x: cx(v), y: H - m.b + 15, "text-anchor": "middle" }, ax); tx.textContent = narrow ? v : xLabels[v - 1];
+    const ty = el("text", { x: m.l - 6, y: cy(v) + 4, "text-anchor": "end" }, ax); ty.textContent = narrow ? v : yLabels[v - 1];
+  }
+  el("line", { class: "refline", x1: cx(3), x2: cx(3), y1: m.t, y2: H - m.b }, g);
+  el("line", { class: "refline", y1: cy(3), y2: cy(3), x1: m.l, x2: W - m.r }, g);
+  const xt = el("text", { class: "axis-title", x: W - m.r, y: H - 6, "text-anchor": "end" }, g); xt.textContent = xTitle;
+  const yt = el("text", { class: "axis-title", x: 4, y: m.t - 10 }, g); yt.textContent = yTitle;
+  if (!narrow) quads.forEach(([qx, qy, anchor, text]) => { const t = el("text", { class: "quad", x: qx === "l" ? m.l + 6 : W - m.r - 6, y: qy === "t" ? m.t + 13 : H - m.b - 7, "text-anchor": anchor }, g); t.textContent = text; });
+  const visible = DATA.decisions.filter(decisionVisible);
+  const layer = el("g", {}, g), items = [], tipper = tooltip(tip, wrap);
+  for (const [, list] of packCells(visible, keyX, keyY)) {
+    const cols = Math.max(1, Math.ceil(Math.sqrt(list.length * cw / ch)));
+    const rows = Math.ceil(list.length / cols);
+    const stepX = Math.min(cw / (cols + 0.5), 20), stepY = Math.min(ch / (rows + 0.5), 20);
+    list.sort((a, b) => b.evidence.length - a.evidence.length || a.id.localeCompare(b.id));
+    list.forEach((d, i) => {
+      const px = cx(d[keyX]) + ((i % cols) - (cols - 1) / 2) * stepX;
+      const py = cy(d[keyY]) + (Math.floor(i / cols) - (rows - 1) / 2) * stepY;
+      const r = size ? 2.5 + d[size] * 1.1 : 4.5;
+      const node = el("g", { class: `pt${d.evidence.length ? " evidence" : " hollow"}${dstate.sel === d.id ? " selected" : ""}`, tabindex: 0, role: "button", "aria-label": `${d.action}: ${xTitle.replace(/ →$/, "")} ${d[keyX]}, ${yTitle.replace(/^↑ /, "")} ${d[keyY]}${size ? `, information ${d[size]}` : ""}` }, layer);
+      el("circle", { cx: px, cy: py, r: Math.max(r + 4, 9), fill: "transparent" }, node);
+      el("circle", { class: "ring", cx: px, cy: py, r: r + 3 }, node);
+      el("circle", { class: "mark", cx: px, cy: py, r }, node);
+      let text = null;
+      if (d.evidence.length || dstate.sel === d.id) { text = el("text", {}, node); text.textContent = d.action.length > 34 ? `${d.action.slice(0, 32)}…` : d.action; }
+      items.push({ x: px, y: py, r, text, priority: (dstate.sel === d.id ? 10 : 0) + d.evidence.length, force: dstate.sel === d.id });
+      const html = `<b>${esc(d.action)}</b><br>reversibility ${d.reversibility} · time sensitivity ${d.time_sensitivity}<br>downside ${d.downside} · upside ${d.upside} · information ${d.information}${d.evidence.length ? "<br><i>experimental evidence — click</i>" : ""}`;
+      node.addEventListener("pointerenter", () => tipper.show(html, px, py));
+      node.addEventListener("pointerleave", () => tipper.hide());
+      node.addEventListener("focus", () => tipper.show(html, px, py));
+      node.addEventListener("blur", () => tipper.hide());
+      const pick = () => { dstate.sel = dstate.sel === d.id ? null : d.id; drawDecisions(); };
+      node.addEventListener("click", pick);
+      node.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(); } });
+    });
+  }
+  const labelLayer = el("g", { class: "pt labels" }, g);
+  if (!narrow) placeLabels(items, { x0: m.l, x1: W, y0: m.t - 4, y1: H - m.b, layer: labelLayer });
+  else { items.forEach((it) => { if (it.text && !it.force) it.text.style.display = "none"; }); placeLabels(items.filter((it) => it.force), { x0: 0, x1: W, y0: 0, y1: H, layer: labelLayer }); }
+  decisionDetail(detail);
+  return visible.length;
+}
+function drawDecisions() {
+  const n = drawDecisionChart({
+    svg: $("#regret-chart"), wrap: $("#regret-wrap"), tip: $("#regret-tip"), detail: $("#regret-detail"),
+    keyX: "reversibility", keyY: "time_sensitivity",
+    xLabels: ["permanent", "years to undo", "costly to undo", "small residue", "fully undoable"],
+    yLabels: ["any time", "months", "weeks", "days", "closing now"],
+    xTitle: "Reversibility →", yTitle: "↑ Time sensitivity",
+    quads: [["l", "t", "start", "hard to undo · window closing"], ["r", "t", "end", "reversible · window closing"], ["l", "b", "start", "hard to undo · no deadline"], ["r", "b", "end", "reversible · no deadline"]],
+  });
+  drawDecisionChart({
+    svg: $("#asym-chart"), wrap: $("#asym-wrap"), tip: $("#asym-tip"), detail: $("#asym-detail"),
+    keyX: "downside", keyY: "upside", size: "information",
+    xLabels: ["minutes", "weeks", "months", "years", "lasting"],
+    yLabels: ["minutes", "weeks", "months", "years", "lasting"],
+    xTitle: "Plausible downside →", yTitle: "↑ Plausible upside",
+    quads: [["l", "t", "start", "small downside · large upside"], ["r", "t", "end", "large downside · large upside"], ["l", "b", "start", "small downside · small upside"], ["r", "b", "end", "large downside · small upside"]],
+  });
+  const legend = `<li><svg width="12" height="12"><circle cx="6" cy="6" r="5" fill="var(--accent)"/></svg>has experimental evidence (${DATA.decisions.filter((d) => d.evidence.length && decisionVisible(d)).length})</li><li><svg width="12" height="12"><circle cx="6" cy="6" r="4.5" fill="none" stroke="currentColor" stroke-width="1.25"/></svg>judgment only</li><li>${n} of 100 shown · dashed lines at the scale midpoint (3)</li>`;
+  $("#regret-legend").innerHTML = legend;
+  $("#asym-legend").innerHTML = legend + `<li>circle size: information gained (1–5)</li>`;
+}
+
+// ---------- section 4: reconsideration ledger ----------
+const LEDGER_KEY = "everyday-actions:ledger:v1";
+const FOCUS = ["1 batchable", "2", "3", "4", "5 needs focus"];
+let ledger;
+try { ledger = JSON.parse(store.get(LEDGER_KEY)) || null; } catch { ledger = null; }
+if (!Array.isArray(ledger)) ledger = DATA.reconsider_examples.map((r) => ({ ...r, example: true }));
+let ledgerSel = null;
+const hours = (r) => (Math.max(0, +r.times || 0) * Math.max(0, +r.minutes_each || 0)) / 60;
+function saveLedger() { store.set(LEDGER_KEY, JSON.stringify(ledger)); }
+function renderLedgerTable() {
+  $("#ledger tbody").innerHTML = ledger.map((r, i) => `<tr data-i="${i}">
+    <td><input aria-label="Item" data-k="item" value="${esc(r.item)}">${r.example ? '<span class="note">example</span>' : ""}</td>
+    <td class="num"><input aria-label="Times considered" type="number" min="0" step="1" data-k="times" value="${esc(r.times)}"></td>
+    <td class="num"><input aria-label="Minutes each time" type="number" min="0" step="1" data-k="minutes_each" value="${esc(r.minutes_each)}"></td>
+    <td><select aria-label="Batchable or needs focus" data-k="focus">${FOCUS.map((f, j) => `<option value="${j + 1}"${+r.focus === j + 1 ? " selected" : ""}>${f}</option>`).join("")}</select></td>
+    <td class="num"><input aria-label="Minutes to actually do it" type="number" min="1" step="5" data-k="action_minutes" value="${esc(r.action_minutes)}"></td>
+    <td class="num" data-out="hours">${hours(r).toFixed(1)}</td>
+    <td><button type="button" class="remove" aria-label="Remove row">×</button></td></tr>`).join("");
+}
+$("#ledger").addEventListener("input", (e) => {
+  const tr = e.target.closest("tr"), k = e.target.dataset.k; if (!tr || !k) return;
+  const r = ledger[+tr.dataset.i]; r[k] = e.target.type === "number" || k === "focus" ? Number(e.target.value) : e.target.value; delete r.example;
+  tr.querySelector('[data-out="hours"]').textContent = hours(r).toFixed(1);
+  saveLedger(); drawLedger();
+});
+$("#ledger").addEventListener("click", (e) => { if (!e.target.classList.contains("remove")) return; ledger.splice(+e.target.closest("tr").dataset.i, 1); saveLedger(); renderLedgerTable(); drawLedger(); });
+$("#ledger-add").addEventListener("click", () => { ledger.push({ item: "Something I keep meaning to do", times: 10, minutes_each: 5, focus: 3, action_minutes: 30 }); saveLedger(); renderLedgerTable(); drawLedger(); });
+$("#ledger-reset").addEventListener("click", () => { store.del(LEDGER_KEY); ledger = DATA.reconsider_examples.map((r) => ({ ...r, example: true })); renderLedgerTable(); drawLedger(); });
+function drawLedger() {
+  const svg = $("#ledger-chart"), wrap = $("#ledger-wrap");
+  const { W, H, narrow } = frame(svg, wrap, 0.62, 320, 480);
+  const m = { l: 52, r: 16, t: 28, b: 44 };
+  const lx = linear(0.5, 5.5, m.l, W - m.r);
+  const lo = Math.log10(5), hi = Math.log10(1500);
+  const ly = (v) => linear(lo, hi, H - m.b, m.t)(Math.log10(Math.min(1500, Math.max(5, v))));
+  const g = el("g", {}, svg), ax = el("g", { class: "axis" }, g);
+  [5, 15, 60, 240, 960].forEach((t) => { el("line", { class: "gridline", x1: m.l, x2: W - m.r, y1: ly(t), y2: ly(t) }, ax); const tx = el("text", { x: m.l - 8, y: ly(t) + 4, "text-anchor": "end" }, ax); tx.textContent = t < 60 ? `${t}m` : `${t / 60}h`; });
+  [1, 2, 3, 4, 5].forEach((t) => { el("line", { class: "gridline", y1: m.t, y2: H - m.b, x1: lx(t), x2: lx(t) }, ax); const tx = el("text", { x: lx(t), y: H - m.b + 16, "text-anchor": "middle" }, ax); tx.textContent = t === 1 ? "batchable" : t === 5 ? "needs focus" : t; });
+  const xt = el("text", { class: "axis-title", x: W - m.r, y: H - 6, "text-anchor": "end" }, g); xt.textContent = "Batchable ↔ requires focus →";
+  const yt = el("text", { class: "axis-title", x: 4, y: m.t - 12 }, g); yt.textContent = "↑ Time to actually do it (log scale): short → long";
+  if (!narrow) {
+    [[m.l + 6, m.t + 13, "start", "long · batchable"], [W - m.r - 6, m.t + 13, "end", "long · needs focus"], [m.l + 6, H - m.b - 7, "start", "short · batchable"], [W - m.r - 6, H - m.b - 7, "end", "short · needs focus"]]
+      .forEach(([x, y, a, s]) => { const t = el("text", { class: "quad", x, y, "text-anchor": a }, g); t.textContent = s; });
+  }
+  el("line", { class: "refline", x1: lx(3), x2: lx(3), y1: m.t, y2: H - m.b }, g);
+  el("line", { class: "refline", y1: ly(60), y2: ly(60), x1: m.l, x2: W - m.r }, g);
+  const maxH = Math.max(1, ...ledger.map(hours)), rMax = narrow ? 30 : 42, tipper = tooltip($("#ledger-tip"), wrap), items = [];
+  const layer = el("g", {}, g);
+  [...ledger.map((r, i) => ({ r, i }))].sort((a, b) => hours(b.r) - hours(a.r)).forEach(({ r, i }) => {
+    const h = hours(r), rad = Math.max(4, rMax * Math.sqrt(h / maxH));
+    const jitter = ((i * 37) % 11 - 5) * 2;
+    const px = lx(+r.focus || 3) + jitter, py = ly(+r.action_minutes || 5);
+    const node = el("g", { class: "pt", tabindex: 0, role: "button", "aria-label": `${r.item}: ${h.toFixed(1)} hours reconsidering, ${r.action_minutes} minutes to do` }, layer);
+    el("circle", { class: `bubble${ledgerSel === i ? " selected" : ""}`, cx: px, cy: py, r: rad }, node);
+    const text = el("text", {}, node); text.textContent = r.item.length > 30 ? `${r.item.slice(0, 28)}…` : r.item;
+    items.push({ x: px, y: py, r: rad, text, priority: h, force: ledgerSel === i });
+    const html = `<b>${esc(r.item)}</b><br>${h.toFixed(1)} h reconsidering (${r.times} × ${r.minutes_each} min)<br>${r.action_minutes} min to do it · ratio ${(h * 60 / Math.max(1, r.action_minutes)).toFixed(1)}×`;
+    node.addEventListener("pointerenter", () => tipper.show(html, px, py));
+    node.addEventListener("pointerleave", () => tipper.hide());
+    node.addEventListener("focus", () => tipper.show(html, px, py));
+    node.addEventListener("blur", () => tipper.hide());
+    node.addEventListener("click", () => { ledgerSel = ledgerSel === i ? null : i; drawLedger(); });
+  });
+  placeLabels(items, { x0: 0, x1: W, y0: 0, y1: H - m.b, layer: el("g", { class: "pt labels" }, g) });
+  const total = ledger.reduce((s, r) => s + hours(r), 0), doing = ledger.reduce((s, r) => s + (+r.action_minutes || 0), 0) / 60;
+  const sample = ledger.some((r) => r.example);
+  $("#ledger-total").textContent = `${sample ? "Example numbers: " : ""}${total.toFixed(1)} hours spent reconsidering ${ledger.length} items that would take ${doing.toFixed(1)} hours to do. Circle area is proportional to hours spent reconsidering.`;
+}
+
+// ---------- sources list ----------
+$("#source-list").innerHTML = Object.entries(SOURCES).map(([k, s]) => `<li id="src-${esc(k)}">${esc(s.citation)} <a href="${esc(s.url)}">${esc(s.url.replace(/^https?:\/\//, ""))}</a>${s.mirror ? ` · data mirror: ${esc(s.mirror)}` : ""}<br><span class="note">${esc(s.finding || s.design)} ${esc(s.verification)}</span></li>`).join("");
+
+// ---------- boot + resize ----------
+renderLedgerTable();
+function drawAll() { update(); drawDecisions(); drawLedger(); }
+drawAll();
+let raf = 0, lastW = 0;
+new ResizeObserver(() => { const w = document.body.clientWidth; if (w === lastW) return; lastW = w; cancelAnimationFrame(raf); raf = requestAnimationFrame(drawAll); }).observe(document.body);
+
+// ---------- WebMCP (read-only) ----------
+const result = (v) => ({ content: [{ type: "text", text: JSON.stringify(v) }] });
+const mc = (typeof document !== "undefined" && document.modelContext) || (typeof navigator !== "undefined" && navigator.modelContext);
+mc?.registerTool({ name: "get_data", description: "Return the everyday-activities table (one row per activity; empty string means not measured).", inputSchema: { type: "object", properties: {}, additionalProperties: false }, annotations: { readOnlyHint: true }, async execute() { return result({ total: DATA.activities.length, returned: DATA.activities.length, truncated: false, rows: DATA.activities, next_steps: ["Use query with an activity_id to see the source measurements behind a row."] }); } });
+mc?.registerTool({ name: "get_metadata", description: "Return sources, populations and the activity crosswalk.", inputSchema: { type: "object", properties: {}, additionalProperties: false }, annotations: { readOnlyHint: true }, async execute() { return result({ title: "Everyday actions", sources: SOURCES, crosswalk: DATA.crosswalk }); } });
+mc?.registerTool({ name: "query", description: "Return every source measurement for one activity, or one of the 100 coded decisions.", inputSchema: { type: "object", properties: { id: { type: "string" } }, required: ["id"], additionalProperties: false }, annotations: { readOnlyHint: true }, async execute({ id }) { const rows = DATA.measurements.filter((m) => m.activity_id === id); const decision = DATA.decisions.find((d) => d.id === id) || null; return result({ total: rows.length, returned: rows.length, truncated: false, measurements: rows, decision, next_steps: rows.length || decision ? [] : ["Use an activity_id from get_data or a decision id."] }); } });
+})();
+</script>
+</body>
+</html>
