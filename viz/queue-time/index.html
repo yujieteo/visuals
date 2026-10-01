@@ -1,0 +1,985 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" href="data:,">
+<title>How long will this queue take?</title>
+<meta name="description" content="A practical queue and food-wait estimator: enter the people ahead, the counters open and the pace to get a likely wait, compare another queue, time your own wait, or check a food order against the wait you expected. Works offline.">
+<link rel="canonical" href="https://teoyujie.org/visuals/queue-time">
+<meta property="og:type" content="website">
+<meta property="og:title" content="How long will this queue take?">
+<meta property="og:description" content="Estimate a queue's wait from the people ahead, the counters open and the pace, with a likely range. Compare queues, time your wait, or check a food order against what you expected.">
+<meta property="og:url" content="https://teoyujie.org/visuals/queue-time">
+<style>
+:root{--bg:#fff;--fg:#1d1d1f;--muted:#6e6e73;--rule:#d2d2d7;--base:#f5f5f7;--accent:#0071e3;--on-accent:#fff;--sans:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;--r:.6rem;color-scheme:light dark}
+@media (prefers-color-scheme:dark){:root{--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--rule:#48484a;--base:#2c2c2e;--accent:#2997ff;--on-accent:#1d1d1f}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 var(--sans);letter-spacing:-.011em;-webkit-font-smoothing:antialiased}
+main{width:min(100% - 2rem,50rem);margin:auto;padding:clamp(1.25rem,5vw,3rem) 0 3rem;container-type:inline-size}
+a{color:inherit;text-underline-offset:.18em}
+h1{font-size:clamp(2rem,8vw,3.25rem);line-height:1.04;letter-spacing:-.045em;margin:.35rem 0 1rem;max-width:14ch}
+h2{font-size:1.15rem;letter-spacing:-.02em;margin:0 0 .5rem}
+p{margin:.5rem 0;max-width:62ch}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+[hidden]{display:none!important}
+.eyebrow{font-size:.8125rem;font-weight:600;color:var(--muted);margin:0;display:flex;flex-wrap:wrap;gap:.25rem .9rem}
+.eyebrow a{text-decoration:none}.eyebrow a:hover{text-decoration:underline}
+.muted{color:var(--muted)}.small{font-size:.875rem}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.seg{display:inline-flex;border:1px solid var(--rule);border-radius:999px;padding:3px;gap:2px}
+.seg button{min-height:2.5rem;padding:0 1rem;border:0;border-radius:999px;background:none;color:var(--muted);font-weight:600}
+.seg button[aria-pressed="true"]{background:var(--base);color:var(--fg)}
+.controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.9rem 1rem;margin-top:1.25rem}
+.controls>fieldset{grid-column:1/-1}
+.fset{margin-top:1.25rem}
+.field{min-width:0}
+.field>label,legend{display:block;font-size:.875rem;font-weight:600;margin-bottom:.35rem;padding:0}
+fieldset{border:0;margin:0;padding:0;min-width:0}
+.hint{font-size:.8125rem;color:var(--muted);margin:.3rem 0 0}
+.stepper{display:grid;grid-template-columns:2.75rem minmax(0,1fr) 2.75rem;border:1px solid var(--rule);border-radius:var(--r);overflow:hidden}
+.stepper button{height:2.75rem;border:0;background:var(--base);font-size:1.4rem;line-height:1}
+.stepper input{min-width:0;width:100%;border:0;background:var(--bg);text-align:center;font-size:1.25rem;font-weight:600;font-variant-numeric:tabular-nums;-moz-appearance:textfield}
+input::-webkit-inner-spin-button,input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.pills{display:grid;grid-template-columns:repeat(auto-fit,minmax(4.5rem,1fr));gap:.4rem}
+.pill{position:relative;display:block}
+.pill input{position:absolute;opacity:0;inset:0;margin:0}
+.pill span{display:flex;align-items:center;justify-content:center;min-height:2.75rem;padding:0 .5rem;border:1px solid var(--rule);border-radius:var(--r);font-weight:600;font-size:.9375rem;text-align:center}
+.pill input:checked+span{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.pill input:focus-visible+span{outline:2px solid var(--accent);outline-offset:2px}
+.exact{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem;margin-top:.5rem;font-size:.875rem;color:var(--muted)}
+.exact input,.num{width:5.5rem;min-height:2.75rem;padding:0 .6rem;border:1px solid var(--rule);border-radius:var(--r);background:var(--bg);font-variant-numeric:tabular-nums}
+.result{margin-top:1.25rem;padding:1.1rem 1.15rem;border:1px solid var(--rule);border-radius:var(--r)}
+.label{font-size:.8125rem;font-weight:600;color:var(--muted);margin:0}
+.big{font-size:clamp(2.25rem,12cqi,3.75rem);font-weight:700;letter-spacing:-.045em;line-height:1.02;margin:.1rem 0 .25rem;font-variant-numeric:tabular-nums}
+.sub{font-size:1.125rem;color:var(--muted);margin:0}
+.status{font-weight:600;margin:.4rem 0 0}
+.viz{display:flex;align-items:center;gap:.5rem;margin-top:1rem;min-height:2.5rem;min-width:0}
+.lane{display:flex;align-items:center;gap:4px;min-width:0;flex-wrap:wrap}
+.lanes{display:grid;gap:.45rem}
+.row{display:flex;align-items:center;gap:.5rem}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--fg);flex:none}
+.dot.quick{width:6px;height:6px}.dot.slow{width:15px;height:15px}
+.dot.you{width:13px;height:13px;background:none;border:2px solid var(--accent)}
+.dot.faint,.ctr.faint{opacity:.35}
+.more{font-size:.75rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.arr{color:var(--muted)}
+.ctrs{display:flex;flex-direction:column;gap:3px;align-items:center}
+.ctr{display:inline-block;width:14px;height:14px;border:2px solid var(--fg);border-radius:3px}
+.ctr.off{border-style:dashed;opacity:.6}
+.desc{font-size:.875rem;color:var(--muted);margin:.6rem 0 0}
+.track{position:relative;height:.6rem;border-radius:999px;background:var(--base);margin:1.1rem 0 .25rem}
+.band{position:absolute;top:0;bottom:0;border-radius:999px;background:var(--rule)}
+.mark{position:absolute;top:-.3rem;width:3px;height:1.2rem;margin-left:-1px;border-radius:2px;background:var(--accent)}
+.ends{display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted)}
+.actions{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem .75rem;margin-top:1rem}
+.btn{min-height:2.75rem;padding:0 1.1rem;border:1px solid var(--rule);border-radius:999px;background:var(--bg);font-weight:600}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn.quiet{border-color:transparent;background:none;color:var(--muted);text-decoration:underline;text-underline-offset:.18em;padding:0 .4rem}
+.elapsed{font-size:.9375rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.vs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.5rem 1rem;margin:.6rem 0 0}
+.vs dt{font-size:.8125rem;font-weight:600;color:var(--muted)}
+.vs dd{margin:0;font-size:1.6rem;font-weight:700;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.cmp{display:grid;gap:1rem;margin-top:1rem}
+.cmp .result{margin-top:0}
+.cmp .controls+.big{margin-top:1rem}
+.diff{font-size:1.125rem;font-weight:600;margin:1rem 0 0}
+@container (min-width:40rem){.cmp{grid-template-columns:repeat(2,minmax(0,1fr))}.cmp .controls{grid-template-columns:repeat(2,minmax(0,1fr))}}
+details{border-top:1px solid var(--rule);margin-top:1.5rem}
+details details{margin-top:.25rem;border-top-style:dashed}
+summary{display:flex;align-items:center;min-height:2.75rem;font-weight:600;cursor:pointer}
+details details>summary{font-weight:500}
+.panel{padding:.25rem 0 .75rem}
+.wlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(8.5rem,1fr));gap:.5rem}
+.wlist label{display:grid;gap:.15rem;font-size:.8125rem;color:var(--muted)}
+select{min-height:2.75rem;border:1px solid var(--rule);border-radius:var(--r);background:var(--bg);padding:0 .5rem}
+.note{font-size:.8125rem;color:var(--muted);font-style:italic}
+.how p,.how li{font-size:.9375rem;max-width:62ch}
+.how ul{padding-left:1.2rem}
+.rule{font-variant-numeric:tabular-nums;background:var(--base);border-radius:var(--r);padding:.6rem .8rem;display:inline-block}
+.reset{margin-top:1.5rem}
+@media (prefers-reduced-motion:no-preference){.dot.new{animation:in .3s ease-out}.pill span,.btn{transition:background-color .15s,color .15s}}
+@keyframes in{from{opacity:0;transform:translateX(-6px)}}
+@media (forced-colors:active){.dot,.ctr,.mark,.band{forced-color-adjust:none}}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <p class="eyebrow"><a href="../../visuals.html">Visuals</a><span>Practical tool</span></p>
+  <h1>How long will this queue take?</h1>
+</header>
+
+<div id="nojs">
+  <p>This page estimates how long a queue will take from three things you can see: the people ahead of you, the counters open and how fast each person is served. It needs JavaScript for the interactive version; the rule it starts from is below.</p>
+  <p class="rule">wait ≈ (people ahead × minutes per person) ÷ counters</p>
+  <h2>Worked example</h2>
+  <p>8 people ahead, 2 counters, about 2 minutes per customer.<br>Rough estimate: (8 × 2) ÷ 2 ≈ 8 minutes.</p>
+  <p>Actual waits vary: some people take much longer than others, so treat it as “about 8 minutes, likely somewhere between 6 and 12”. With no counters open the queue is not moving at all. For a food order, compare the time you have waited with the wait you were told, rather than counting down.</p>
+</div>
+
+<div id="app" hidden>
+  <div class="seg" role="group" aria-label="Mode">
+    <button type="button" id="mode-queue" data-act="mode" data-mode="queue" aria-pressed="true">Queue</button>
+    <button type="button" id="mode-food" data-act="mode" data-mode="food" aria-pressed="false">Food order</button>
+  </div>
+
+  <section id="queue-panel" aria-label="Queue">
+    <div class="controls" id="a-controls"></div>
+    <div class="result" role="group" aria-labelledby="q-label">
+      <p class="label" id="q-label">Estimated wait</p>
+      <p class="big" id="q-head"></p>
+      <p class="sub" id="q-sub"></p>
+      <div class="viz" id="q-viz" aria-hidden="true"></div>
+      <p class="desc" id="q-desc"></p>
+      <div id="q-timer"></div>
+    </div>
+    <div class="actions"><button type="button" class="btn" id="compare-open" data-act="compare">Compare another queue</button></div>
+    <section id="compare" hidden aria-labelledby="compare-h">
+      <h2 id="compare-h" class="sr">Comparison</h2>
+      <div class="cmp">
+        <div class="result"><p class="label" id="a-name"></p><p class="big" id="a-head"></p><p class="sub" id="a-sub"></p><p class="desc" id="a-desc"></p></div>
+        <div class="result"><p class="label" id="b-name"></p><div class="controls" id="b-controls"></div><p class="big" id="b-head"></p><p class="sub" id="b-sub"></p><p class="desc" id="b-desc"></p></div>
+      </div>
+      <p class="diff" id="diff"></p>
+      <button type="button" class="btn quiet" data-act="compare-close">Close comparison</button>
+    </section>
+  </section>
+
+  <section id="food-panel" aria-label="Food order" hidden>
+    <fieldset class="fset">
+      <legend>Expected wait</legend>
+      <div class="pills" id="f-presets"></div>
+      <label class="exact" id="f-custom-box">Custom <input type="number" class="num" id="f-custom" inputmode="decimal" min="1" max="240" step="any" data-food="custom"> min</label>
+    </fieldset>
+    <div class="result" role="group" aria-labelledby="f-label">
+      <p class="label" id="f-label"></p>
+      <p class="big" id="f-head"></p>
+      <p class="sub" id="f-sub"></p>
+      <p class="status" id="f-status"></p>
+      <div id="f-viz" aria-hidden="true"></div>
+      <p class="desc" id="f-whatif"></p>
+      <p class="desc" id="f-visible"></p>
+      <div id="f-timer"></div>
+    </div>
+  </section>
+
+  <details id="more">
+    <summary>More options</summary>
+    <div class="panel">
+      <details data-for="queue" id="observe-box"><summary>Observe pace</summary><div class="panel">
+        <p class="small muted">Instead of guessing the pace, watch the counters and tap each time someone finishes.</p>
+        <div id="observe"></div>
+      </div></details>
+      <details><summary>Already waiting?</summary><div class="panel">
+        <label class="exact">Waited so far <input type="number" class="num" id="already" inputmode="decimal" min="0" max="600" step="any" value="5"> min</label>
+        <div class="actions"><button type="button" class="btn" data-act="already">Start the timer from there</button></div>
+      </div></details>
+      <details data-for="queue"><summary>Queue structure</summary><div class="panel">
+        <fieldset><legend class="sr">Queue structure</legend><div class="pills">
+          <label class="pill"><input type="radio" name="structure" value="shared" data-f="structure" data-scn="a"><span>One shared line</span></label>
+          <label class="pill"><input type="radio" name="structure" value="separate" data-f="structure" data-scn="a"><span>A line per counter</span></label>
+        </div></fieldset>
+        <p class="hint">With one shared line, whichever counter frees first takes the next person. With a line per counter, only the people in your line count, and one slow customer holds up everyone behind them.</p>
+      </div></details>
+      <details data-for="queue"><summary>Customer weights</summary><div class="panel">
+        <p class="small muted">Mark people ahead as quick (a few items) or slow (a full trolley, a complicated request). Person 1 is next to be served; anyone unmarked is typical.</p>
+        <div class="wlist" id="weights"></div>
+      </div></details>
+      <details data-for="food"><summary>What if? (not measured)</summary><div class="panel">
+        <p class="small muted">These shift the expected range for exploring. They are guesses, not measurements.</p>
+        <fieldset><legend>Order complexity</legend><div class="pills" id="f-complexity"></div></fieldset>
+        <fieldset style="margin-top:.75rem"><legend>How busy it looks</legend><div class="pills" id="f-busy"></div></fieldset>
+      </div></details>
+      <details data-for="food" id="visible-box"><summary>I can see orders ahead</summary><div class="panel">
+        <p class="small muted">Count the orders ahead of yours and how many came out while you watched. Only that rate is used; the kitchen itself is not modelled.</p>
+        <div class="controls">
+          <div class="field"><label for="f-ahead">Orders ahead</label><input type="number" class="num" id="f-ahead" inputmode="numeric" min="0" max="200" step="1" data-food="ahead"></div>
+          <div class="field"><label for="f-done">Orders completed</label><input type="number" class="num" id="f-done" inputmode="numeric" min="0" max="200" step="1" data-food="done"></div>
+          <div class="field"><label for="f-minutes">While watching for (min)</label><input type="number" class="num" id="f-minutes" inputmode="decimal" min="0.1" max="240" step="any" data-food="minutes"></div>
+        </div>
+      </div></details>
+      <details><summary>Export a talk</summary><div class="panel">
+        <div class="actions">
+          <button type="button" class="btn" id="save-beamdswitch" title="Save a narrated Markdown talk about this estimate, to open in beamdswitch">beamdswitch</button>
+          <button type="button" class="btn" id="copy-beamdswitch" title="Copy the narrated Markdown talk, to paste into beamdswitch">Copy deck</button>
+        </div>
+        <p id="deck-status" class="small muted" role="status"></p>
+        <p class="hint">Saves the current estimate as a narrated Markdown deck, every number as shown here. Open it in <a href="https://teoyujie.org/visuals/beamdswitch/">beamdswitch</a> for slides, narration and a video. Copy deck puts the same deck on the clipboard.</p>
+      </div></details>
+    </div>
+  </details>
+
+  <details class="how">
+    <summary>How this works</summary>
+    <div class="panel">
+      <p>The rough rule is <span class="rule">wait ≈ (people ahead × minutes per person) ÷ counters</span>. Counters serve in parallel, so two counters move a line about twice as fast as one.</p>
+      <p><b>Service time</b> is how long one person takes at a counter. Fast, Typical and Slow mean about 1, 2 and 4 minutes per person; you can type your own.</p>
+      <p><b>Uncertainty.</b> People are not all alike, so the page runs your queue 400 times with service times that vary around the pace (a gamma distribution with shape 3, so a typical person is within about 60% of the pace). “About” is the middle run; “likely” holds 8 runs in 10. The runs use a fixed seed, so the same inputs always give the same answer.</p>
+      <p><b>Throughput</b> is how many people the counters finish per minute: counters ÷ minutes per person. Watching real completions under Observe pace measures it directly, which is usually better than guessing; after you are served, the page works backwards from your actual wait to the pace that would explain it.</p>
+      <p><b>Arrivals behind you</b> do not change your wait in a first-come, first-served line: only the people ahead of you are served before you.</p>
+      <p><b>Shared or separate lines.</b> A shared line feeding several counters averages out slow customers: the next free counter takes the next person. With a line per counter, you wait only for your own line, so its length and any slow customer in it matter much more.</p>
+      <p><b>Food orders</b> are prepared out of sight, so the page does not pretend to model the kitchen. It compares the time you have waited with the range you expect (0.8 to 1.3 times the wait you pick). Complexity and busyness are what-ifs. Only when you count orders coming out does it estimate the time to yours, from that rate alone.</p>
+      <p>The estimate assumes first come, first served, counters of similar speed, no priority lane and no long interruptions. Everything is calculated on your device; nothing is sent anywhere.</p>
+    </div>
+  </details>
+
+  <p class="sr" id="live" aria-live="polite"></p>
+  <button type="button" class="btn quiet reset" data-act="reset">Reset</button>
+</div>
+</main>
+<script id="beamdswitch">
+/* The standard beamdswitch report template, shared by every visualisation.
+ *
+ * beamdswitch (https://teoyujie.org/visuals/beamdswitch/) turns one Markdown deck into slides, a
+ * handout, narration and a video. `deck(report)` writes a report in its deck syntax, always in the
+ * same order (templates/beamdswitch-report.md shows the skeleton):
+ *
+ *   front matter and title slide
+ *   # Set-up               what was modelled, its units and conventions
+ *   # Method               how the tool solved it
+ *   # Results              the numbers, with key equations and plots
+ *   # Checks and takeaway  what confirms the numbers, ending on one ::: key frame
+ *
+ * A report is plain data, so it can be built and tested without a page:
+ *   { meta: { title, subtitle, author, date, voice }, narration, notes,
+ *     setup, method, results, checks: [frame, ...] }
+ * and each frame is
+ *   { title, body, narration, notes, key, plot: { x: [a, b], xlabel, ylabel, curves: ["expr", ...] } }
+ * `body` is Markdown (LaTeX maths in $...$ or $$...$$); `narration` is plain spoken prose, one
+ * caption per sentence; `key`, `plot` and `notes` are optional. Every frame must be narrated, and
+ * the last checks frame must carry a key. The visualisation supplies every number already
+ * formatted, so the deck says exactly what its page shows. Every deck names its narrator: `meta.voice`
+ * when the visualisation picks one, else DEFAULT_VOICE, beamdswitch's British female default.
+ */
+(function (root, factory) {
+  const api = factory();
+  if (typeof module === "object" && module.exports) module.exports = api;
+  else root.Beamdswitch = api;
+})(typeof self !== "undefined" ? self : this, function () {
+  "use strict";
+
+  const DEFAULT_VOICE = "bf_emma";
+  const SECTIONS = [["setup", "Set-up"], ["method", "Method"], ["results", "Results"], ["checks", "Checks and takeaway"]];
+
+  const oneLine = (s) => String(s ?? "").replace(/\s+/g, " ").trim();
+  /* Markdown lines that would end a frame or a div early are refused rather than written. */
+  function block(text, what) {
+    const s = String(text ?? "").replace(/\r\n?/g, "\n").trim();
+    for (const line of s.split("\n"))
+      if (/^#{1,2}\s/.test(line) || /^\s*:{3,}/.test(line)) throw new Error(`${what} must not contain a heading or a ::: line: ${line}`);
+    return s;
+  }
+  /* Narration is read aloud: no maths, markup or line structure. */
+  function spoken(text, what) {
+    const s = oneLine(text);
+    if (!s) throw new Error(`${what} needs a narration.`);
+    if (/[$\\`*_#|<>]/.test(s)) throw new Error(`${what} narration must be plain spoken prose: ${s}`);
+    return s;
+  }
+  const div = (name, text) => [`::: ${name}`, text, ":::"];
+
+  function frame(f, where) {
+    const title = oneLine(f.title), what = `Frame "${title}" in ${where}`;
+    if (!title) throw new Error(`A frame in ${where} needs a title.`);
+    const out = [`## ${title}`, ""];
+    if (f.body) out.push(block(f.body, what), "");
+    if (f.plot) {
+      const p = f.plot, lines = [`x: ${p.x[0]}, ${p.x[1]}`];
+      if (p.xlabel) lines.push(`xlabel: ${oneLine(p.xlabel)}`);
+      if (p.ylabel) lines.push(`ylabel: ${oneLine(p.ylabel)}`);
+      for (const c of p.curves) lines.push(`y = ${oneLine(c)}`);
+      out.push(...div("plot", lines.join("\n")), "");
+    }
+    if (f.key) out.push(...div("key", block(f.key, what)), "");
+    if (f.notes) out.push(...div("notes", block(f.notes, what)), "");
+    out.push(...div("narration", spoken(f.narration, what)), "");
+    return out;
+  }
+
+  function deck(report) {
+    const meta = report.meta || {};
+    if (!oneLine(meta.title)) throw new Error("The report needs a title.");
+    const checks = report.checks || [];
+    if (!checks.length || !checks.at(-1).key) throw new Error("The last checks frame must carry a ::: key.");
+    const fm = { ...meta, voice: oneLine(meta.voice) || DEFAULT_VOICE };
+    const out = ["---"];
+    for (const k of ["title", "subtitle", "author", "date", "voice"]) if (oneLine(fm[k])) out.push(`${k}: ${oneLine(fm[k])}`);
+    out.push("---", "");
+    if (report.notes) out.push(...div("notes", block(report.notes, "The title slide")), "");
+    out.push(...div("narration", spoken(report.narration, "The title slide")), "");
+    SECTIONS.forEach(([id, title], i) => {
+      const frames = report[id] || [];
+      if (!frames.length) throw new Error(`The ${title} section needs at least one frame.`);
+      out.push(`# ${title}`, "", ...div("narration", `Part ${i + 1}. ${title}.`), "");
+      for (const f of frames) out.push(...frame(f, title));
+    });
+    return out.join("\n");
+  }
+
+  return { DEFAULT_VOICE, SECTIONS, deck };
+});
+</script>
+<script id="queue-time-engine">
+/* Queue time: the pure estimator behind the page. No DOM, storage, clock or network use:
+ * every function takes plain data (and `now` where time matters) and returns plain data.
+ *
+ * Queue model: the people ahead wait in one line (or, for separate lines, in yours) while every
+ * open counter is busy. Each service time is gamma-distributed around the pace (shape 3, so the
+ * coefficient of variation is about 0.58); the person at each counter is part-way through a
+ * length-biased service. You reach a counter when one frees after everyone ahead has started.
+ * A seeded simulation of 400 runs gives the middle run (the estimate) and the 10th to 90th
+ * percentiles (the likely range), so the same inputs always show the same numbers.
+ */
+(function (root, factory) {
+  const api = factory();
+  if (typeof module === "object" && module.exports) module.exports = api;
+  else root.QueueTime = api;
+})(typeof self !== "undefined" ? self : this, function () {
+  "use strict";
+
+  const PACES = { fast: 1, typical: 2, slow: 4 }; // minutes per person at one counter
+  const PACE_LABEL = { fast: "Fast", typical: "Typical", slow: "Slow", custom: "Your number", observed: "Observed" };
+  const WEIGHTS = { quick: 0.4, typical: 1, slow: 2.5 };
+  const FOOD_PRESETS = [10, 15, 20, 30];
+  const COMPLEXITY = { simple: 0.8, typical: 1, complex: 1.3 };
+  const BUSY = { quiet: 0.85, normal: 1, packed: 1.4 };
+  const LIMITS = { people: [0, 999], counters: [0, 50], pace: [0.05, 120], expected: [1, 240], elapsed: [0, 600], orders: [0, 200], minutes: [0.1, 240] };
+  const MODEL = { shape: 3, trials: 400, seed: 20261001, low: 0.1, high: 0.9, maxWeights: 12, spread: [0.8, 1.3] };
+  const ASSUMPTIONS = ["First come, first served", "Counters work at roughly the same speed", "Each person's service time varies around the pace", "No priority lane and no long interruptions", "People joining behind you do not change your wait"];
+  const UNDER = 57.5 / 60; // below this, a time reads as "under a minute"
+
+  const own = (o, k) => typeof k === "string" && Object.prototype.hasOwnProperty.call(o, k);
+  function clamp(v, key, fallback, int) {
+    const [lo, hi] = LIMITS[key];
+    let n = typeof v === "number" ? v : typeof v === "string" && v.trim() ? Number(v) : NaN;
+    if (!Number.isFinite(n)) return fallback;
+    if (int) n = Math.round(n);
+    return Math.min(hi, Math.max(lo, n));
+  }
+  const defaults = () => ({ people: 8, counters: 2, pace: "typical", custom: null, structure: "shared", weights: [] });
+  const foodDefaults = () => ({ expected: "15", custom: null, complexity: "typical", busy: "normal", visible: false, ahead: 5, done: 0, minutes: 5 });
+
+  /* A queue scenario with every field bounded; `minutes` is the pace in minutes per person. */
+  function scenario(x = {}) {
+    const pace = own(PACES, x.pace) ? x.pace : (x.pace === "custom" || x.pace === "observed") && clamp(x.custom, "pace", 0) > 0 ? x.pace : "typical";
+    return {
+      people: clamp(x.people, "people", 8, true), counters: clamp(x.counters, "counters", 2, true), pace,
+      minutes: own(PACES, pace) ? PACES[pace] : clamp(x.custom, "pace", 2),
+      structure: x.structure === "separate" ? "separate" : "shared",
+      weights: (Array.isArray(x.weights) ? x.weights : []).slice(0, MODEL.maxWeights).map((w) => (own(WEIGHTS, w) ? w : "typical")),
+    };
+  }
+  /* With separate lines only your own counter serves the people ahead of you. */
+  const servers = (s) => (s.structure === "separate" ? Math.min(1, s.counters) : s.counters);
+
+  function rng(seed) {
+    let a = seed >>> 0;
+    return () => {
+      a = (a + 0x6d2b79f5) >>> 0;
+      let t = Math.imul(a ^ (a >>> 15), a | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  const sumExp = (r, k) => { let s = 0; for (let i = 0; i < k; i++) s -= Math.log(1 - r()); return s; };
+  function siftDown(h, n, v) {
+    let i = 0;
+    for (;;) {
+      let m = 2 * i + 1;
+      if (m >= n) break;
+      if (m + 1 < n && h[m + 1] < h[m]) m++;
+      if (h[m] >= v) break;
+      h[i] = h[m]; i = m;
+    }
+    h[i] = v;
+  }
+  /* Sorted waits over the seeded runs. h is a min-heap of the times each counter next frees. */
+  function waits(n, c, minutes, w) {
+    const r = rng(MODEL.seed), k = MODEL.shape, out = new Float64Array(MODEL.trials), h = new Float64Array(c);
+    for (let t = 0; t < out.length; t++) {
+      for (let j = 0; j < c; j++) h[j] = r() * minutes * sumExp(r, k + 1) / k;
+      h.sort();
+      for (let i = 0; i < n; i++) siftDown(h, c, h[0] + minutes * (w[i] ?? 1) * sumExp(r, k) / k);
+      out[t] = h[0];
+    }
+    return out.sort();
+  }
+  function quantile(a, p) {
+    const i = p * (a.length - 1), lo = Math.floor(i);
+    return a[lo] + (a[Math.min(lo + 1, a.length - 1)] - a[lo]) * (i - lo);
+  }
+  const memo = new Map();
+  function estimate(x) {
+    const s = scenario(x), c = servers(s);
+    if (!c) return { kind: "stopped", s };
+    const key = [s.people, c, s.minutes, s.weights.join()].join("|");
+    let e = memo.get(key);
+    if (!e) {
+      const a = waits(s.people, c, s.minutes, s.weights.map((k) => WEIGHTS[k]));
+      e = { mid: quantile(a, 0.5), lo: quantile(a, MODEL.low), hi: quantile(a, MODEL.high), mean: a.reduce((p, v) => p + v, 0) / a.length };
+      if (memo.size > 64) memo.clear();
+      memo.set(key, e);
+    }
+    return { kind: s.people ? "wait" : "next", s, ...e };
+  }
+
+  /* ---------- words ---------- */
+  const plural = (n, one, many = one + "s") => `${n} ${n === 1 ? one : many}`;
+  const lower = (t) => t.charAt(0).toLowerCase() + t.slice(1);
+  const cap = (t) => t.charAt(0).toUpperCase() + t.slice(1);
+  const and = (xs) => (xs.length < 2 ? xs.join("") : `${xs.slice(0, -1).join(", ")} and ${xs.at(-1)}`);
+  const num = (v) => String(+v.toFixed(v < 10 ? 1 : 0));
+  /* A duration without false precision: seconds under a minute, whole minutes, then hours. */
+  function dur(min) {
+    if (!(min > 0)) return "0 min";
+    const sec = min * 60;
+    if (sec < 10) return "a few seconds";
+    if (min < UNDER) return `${Math.round(sec / 5) * 5} s`;
+    if (min < 59.5) return `${Math.max(1, Math.round(min))} min`;
+    if (min < 597.5) {
+      const m = Math.round(min / 5) * 5, h = Math.floor(m / 60), r = m % 60;
+      return r ? `${h} h ${r} min` : `${h} h`;
+    }
+    return `${Math.round(min / 60)} h`;
+  }
+  /* A likely range, rounded outwards so it never looks narrower than it is. */
+  function span(lo, hi) {
+    if (hi < UNDER) return "under a minute";
+    if (hi < 59.5) {
+      const a = Math.floor(lo), b = Math.max(a + 1, Math.ceil(hi));
+      return a < 1 ? `up to ${b} min` : `${a}–${b} min`;
+    }
+    const g = hi < 597.5 ? 5 : 60, a = Math.floor(lo / g) * g, b = Math.max(a + g, Math.ceil(hi / g) * g);
+    return a < 1 ? `up to ${dur(b)}` : `${dur(a)} – ${dur(b)}`;
+  }
+  function paceText(m) {
+    if (m < UNDER) return `${Math.max(5, Math.round(m * 12) * 5)} s per person`;
+    return `${m < 10 ? num(m) : Math.round(m)} min per person`;
+  }
+  const rateText = (r) => (r >= 0.5 ? `${num(r)} people per minute` : `${num(r * 60)} people per hour`);
+  /* Elapsed time on a waiting timer: floored, so it never runs ahead of the clock. */
+  function clock(min) {
+    if (min < 1) return "under a minute";
+    if (min < 60) return `${Math.floor(min)} min`;
+    const h = Math.floor(min / 60), m = Math.floor(min % 60);
+    return m ? `${h} h ${m} min` : `${h} h`;
+  }
+  /* The same text for a listener: "6–11 min" reads "6 to 11 minutes". */
+  const speak = (t) => String(t)
+    .replace(/(\d+) h\b/g, (_, n) => `${n} hour${n === "1" ? "" : "s"}`)
+    .replace(/(\d+) min\b/g, (_, n) => `${n} minute${n === "1" ? "" : "s"}`)
+    .replace(/(\d+) s\b/g, "$1 seconds")
+    .replace(/ ?– ?/g, " to ");
+
+  function headline(e) {
+    if (e.kind === "stopped") return { head: "Queue is not moving", sub: "No counters are open, so nobody is being served." };
+    const r = span(e.lo, e.hi);
+    if (e.kind === "next") return { head: "You’re next", sub: r === "under a minute" ? "Almost no queue wait" : `Almost no queue wait, likely ${r}` };
+    if (e.mid < UNDER) return { head: "Less than a minute", sub: `Likely ${r}` };
+    return { head: `About ${dur(e.mid)}`, sub: `Likely ${r}` };
+  }
+  /* The text equivalent of the queue diagram. */
+  function describe(e) {
+    const s = e.s, base = `${plural(s.people, "person", "people")} ahead${s.structure === "separate" ? " in your line" : ""}, ${plural(s.counters, "counter")}`;
+    if (e.kind === "stopped") return `${base}. The queue is not moving.`;
+    return `${base}${e.kind === "next" ? ". You are next," : ","} estimated wait ${speak(span(e.lo, e.hi))}.`;
+  }
+  const roughRule = (s) => (servers(s) ? (s.people * s.minutes) / servers(s) : null);
+
+  /* What changed between two queues, and the difference in the middle estimates. Descriptive only. */
+  function compare(xa, xb, names = { a: "the first queue", b: "Queue B" }) {
+    const a = estimate(xa), b = estimate(xb), A = a.s, B = b.s, ch = [], dp = B.people - A.people;
+    if (dp) ch.push(`${Math.abs(dp)} ${dp > 0 ? "more" : "fewer"} ${Math.abs(dp) === 1 ? "person" : "people"}`);
+    if (B.counters !== A.counters) ch.push(`${plural(B.counters, "counter")} instead of ${A.counters}`);
+    if (B.structure !== A.structure) ch.push(B.structure === "separate" ? "separate lines instead of one shared line" : "one shared line instead of separate lines");
+    if (B.minutes !== A.minutes) ch.push(`${B.minutes < A.minutes ? "faster" : "slower"} service (${paceText(B.minutes).replace(" per person", "")} instead of ${paceText(A.minutes)})`);
+    if (B.weights.join() !== A.weights.join()) ch.push("different quick or slow customers");
+    const changes = !ch.length ? `Same as ${names.a}.` : ch.length === 1 ? `${cap(ch[0])}.` : `${cap(names.b)} has ${and(ch)}.`;
+    let diff;
+    if (a.kind === "stopped" && b.kind === "stopped") diff = "Neither queue is moving.";
+    else if (b.kind === "stopped") diff = `${cap(names.b)} is not moving.`;
+    else if (a.kind === "stopped") diff = `${cap(names.a)} is not moving; ${names.b} is.`;
+    else {
+      const d = b.mid - a.mid;
+      diff = Math.abs(d) < Math.max(0.5, 0.1 * Math.max(a.mid, b.mid)) ? "About the same wait." : `About ${dur(Math.abs(d))} ${d < 0 ? "less" : "more"} waiting.`;
+    }
+    return { a, b, changes, diff };
+  }
+
+  /* The pace that would make the model's average wait equal the wait you measured. */
+  function backEstimate(x, actual) {
+    const s = scenario(x), c = servers(s);
+    if (!c || !(actual >= 0.05)) return null;
+    const unit = estimate({ ...s, pace: "custom", custom: 1 }).mean;
+    const minutes = Math.min(LIMITS.pace[1], Math.max(LIMITS.pace[0], actual / unit));
+    return { minutes, throughput: c / minutes, counters: c, pace: `Observed pace: about ${paceText(minutes)}`, rate: c > 1 ? `Observed throughput: about ${rateText(c / minutes)}` : "" };
+  }
+  /* Tapping "Someone finished" while watching: people served across all counters over the time watched. */
+  function observed(o, now, x) {
+    if (!o) return null;
+    const min = Math.max(0, ((o.end ?? now) - o.start) / 60000), n = o.taps | 0;
+    const text = `${plural(n, "person", "people")} served in ${clock(min)}`;
+    if (!n || min < 0.25) return { text, minutes: null };
+    const c = scenario(x).counters, rate = n / min;
+    return { text, rate, rateText: rateText(rate), minutes: c ? Math.min(LIMITS.pace[1], Math.max(LIMITS.pace[0], c / rate)) : null };
+  }
+
+  /* Timers store a start timestamp only: elapsed time is now minus start, so a locked phone,
+     a background tab or a paused page never loses time. */
+  const startTimer = (now, already = 0) => ({ start: now - clamp(already, "elapsed", 0) * 60000 });
+  const elapsed = (t, now) => (t ? Math.max(0, (now - t.start) / 60000) : 0);
+
+  /* ---------- food orders ---------- */
+  function food(x = {}) {
+    const preset = FOOD_PRESETS.includes(Number(x.expected)) ? String(Number(x.expected)) : null;
+    const expected = preset || (x.expected === "custom" && clamp(x.custom, "expected", 0) > 0 ? "custom" : "15");
+    return {
+      expected, minutes: expected === "custom" ? clamp(x.custom, "expected", 15) : Number(expected),
+      complexity: own(COMPLEXITY, x.complexity) ? x.complexity : "typical", busy: own(BUSY, x.busy) ? x.busy : "normal",
+      visible: !!x.visible, ahead: clamp(x.ahead, "orders", 0, true), done: clamp(x.done, "orders", 0, true), watched: clamp(x.minutes, "minutes", 5),
+    };
+  }
+  /* The expected range is 0.8 to 1.3 times the wait you expect. Complexity and busyness are
+     what-ifs that scale it; they are never treated as measurements. */
+  function foodRange(x) {
+    const f = food(x), r = (v) => (v >= 30 ? Math.round(v / 5) * 5 : Math.round(v));
+    const pair = (m) => { const lo = Math.max(1, r(f.minutes * m * MODEL.spread[0])); return { lo, hi: Math.max(lo + 1, r(f.minutes * m * MODEL.spread[1])) }; };
+    const m = COMPLEXITY[f.complexity] * BUSY[f.busy], what = [];
+    if (f.complexity !== "typical") what.push(`a ${f.complexity} order`);
+    if (f.busy !== "normal") what.push(`a ${f.busy} counter`);
+    return { f, ...pair(1), whatIf: m === 1 ? null : { ...pair(m), text: `With ${and(what)}` } };
+  }
+  function foodStatus(min, g) {
+    if (min < g.lo) return "Before the expected range";
+    if (min <= g.hi) return "Within the expected range";
+    return min - g.hi < 1 ? "Just past the expected range" : `About ${dur(min - g.hi)} past the expected range`;
+  }
+  /* Orders you can see: only the observed rate of finished orders is used, never the kitchen's layout.
+     Your order needs (orders ahead + 1) completions. Gaps between completions vary like service times
+     (gamma, shape 3), and the rate measured from m completions is uncertain in the same way, so the
+     range narrows as you watch more orders finish. */
+  function visible(x) {
+    const f = food(x), k = f.ahead, m = f.done, d = f.watched;
+    if (m < 2) return { k, m, d, rate: null };
+    const r = rng(MODEL.seed), a = new Float64Array(MODEL.trials);
+    const z = MODEL.shape, n = z * (k + 1), w = z * m;
+    for (let t = 0; t < a.length; t++) a[t] = ((k + 1) * d / m) * (sumExp(r, n) / n) / (sumExp(r, w) / w);
+    a.sort();
+    return { k, m, d, rate: m / d, mid: quantile(a, 0.5), lo: quantile(a, MODEL.low), hi: quantile(a, MODEL.high) };
+  }
+  const watchedText = (v) => `${plural(v.m, "order")} done in ${dur(v.d)}, ${plural(v.k, "order")} ahead`;
+
+  /* ---------- beamdswitch report (filled into templates/beamdswitch.js by the page) ---------- */
+  const list = (xs) => xs.map((x) => `- ${x}`).join("\n");
+  function names(st) { return st.observed ? { a: "the observed queue", b: "the hypothetical" } : { a: "the first queue", b: "Queue B" }; }
+  function queueReport(st) {
+    const e = estimate(st.queue), s = e.s, h = headline(e), c = s.counters, shared = s.structure === "shared";
+    const rough = roughRule(s), cEff = servers(s), marked = ["quick", "slow"].map((k) => [k, s.weights.filter((w) => w === k).length]).filter((p) => p[1]);
+    const whereNow = e.kind === "stopped" ? "No counters are open, so the queue is not moving." : `${h.head}, ${lower(h.sub)}.`;
+    const results = [{
+      title: e.kind === "stopped" ? "Queue is not moving: no counters are open" : `${h.head}, ${lower(h.sub)}`,
+      body: list(e.kind === "stopped" ? ["No counter is open, so there is no estimate"] : [`Estimate: ${h.head}`, `Likely range: ${span(e.lo, e.hi)}, which holds 8 runs in 10`, `Middle run ${num(e.mid)} min; 10th and 90th percentiles ${num(e.lo)} and ${num(e.hi)} min`]),
+      narration: e.kind === "stopped" ? whereNow : `${speak(h.head)}. ${speak(h.sub)}.`,
+    }];
+    if (st.compare) {
+      const n = names(st), k = compare(st.queue, st.compare, n), hb = headline(k.b);
+      results.push({
+        title: `${cap(n.b)}: ${k.changes.replace(/\.$/, "")}`, body: list([`${cap(n.a)}: ${h.head}, ${lower(h.sub)}`, `${cap(n.b)}: ${hb.head}, ${lower(hb.sub)}`, k.diff]),
+        narration: `${speak(k.changes)} ${speak(k.diff)}`,
+      });
+    }
+    if (st.qDone) {
+      const d = st.qDone, est = d.kind === "stopped" ? "no estimate" : span(d.lo, d.hi), back = backEstimate(d.scenario, d.actual - (d.offset || 0));
+      results.push({
+        title: `Estimated ${est}, actual ${dur(d.actual)}`, body: list([`Estimated: ${est}`, `Actual: ${dur(d.actual)}`, ...(back ? [back.pace, ...(back.rate ? [back.rate] : [])] : [])]),
+        narration: `The estimate was ${speak(est)} and the actual wait was ${speak(dur(d.actual))}.${back ? ` ${speak(back.pace.replace(":", " was"))}.` : ""}`,
+      });
+    }
+    return {
+      meta: { title: `Queue time: ${plural(s.people, "person", "people")} ahead, ${plural(c, "counter")}`, subtitle: whereNow.replace(/\.$/, "") },
+      narration: "This talk estimates how long a queue will take, from the people ahead, the counters open and the pace. Times are in minutes.",
+      setup: [{
+        title: `The queue: ${plural(s.people, "person", "people")} ahead, ${plural(c, "counter")} open`,
+        body: list([`People waiting ahead${shared ? "" : " in your line"}: ${s.people}`, `Counters open: ${c}, ${shared ? "fed by one shared line" : "each with its own line"}`, `Pace: ${PACE_LABEL[s.pace]}, about ${paceText(s.minutes)} at a counter`, ...(marked.length ? [`Marked: ${marked.map((p) => `${p[1]} ${p[0]}`).join(", ")}; the rest typical`] : [])]),
+        narration: `There ${s.people === 1 ? "is" : "are"} ${plural(s.people, "person", "people")} waiting ahead${shared ? "" : " in your line"}, and ${plural(c, "counter")} ${c === 1 ? "is" : "are"} open${shared ? ", sharing one line" : ", each with its own line"}. Each person takes about ${speak(paceText(s.minutes))} at a counter.`,
+      }],
+      method: [{
+        title: "Counters work in parallel, and service times vary",
+        body: `$$ \\text{wait} \\approx \\frac{n \\times s}{c} $$\n\n${list([
+          rough === null ? "No counter is open, so the rule would divide by zero: the queue is not moving" : `Rough rule: (${s.people} × ${num(s.minutes)}) / ${cEff} = ${num(rough)} min`,
+          `${MODEL.trials} seeded runs, each service time varying around the pace (gamma, shape ${MODEL.shape})`,
+          "The estimate is the middle run; the likely range holds 8 runs in 10"])}`,
+        narration: "The rough rule multiplies the people ahead by the minutes per person and divides by the counters. The tool then runs the queue 400 times with service times that vary around the pace, and reports the middle run and the range that holds 8 runs in 10.",
+      }],
+      results,
+      checks: [
+        { title: "Assumptions behind the estimate", body: list(ASSUMPTIONS), narration: "The estimate assumes first come, first served, counters of similar speed, no priority lane and no long interruptions. People joining behind you do not change your wait." },
+        { title: "Takeaway", key: e.kind === "stopped" ? whereNow : `${h.head}, ${lower(h.sub)}, with ${plural(s.people, "person", "people")} ahead at ${plural(c, "counter")}.`, narration: speak(whereNow) },
+      ],
+    };
+  }
+  function foodReport(st) {
+    const g = foodRange(st.food), f = g.f, v = visible(st.food), range = `${g.lo}–${g.hi} min`, results = [];
+    if (st.fDone) results.push({ title: `Expected ${st.fDone.lo}–${st.fDone.hi} min, actual ${dur(st.fDone.actual)}`, body: list([`Expected: ${st.fDone.lo}–${st.fDone.hi} min`, `Actual: ${dur(st.fDone.actual)}`, foodStatus(st.fDone.actual, st.fDone)]), narration: `The expected wait was ${speak(`${st.fDone.lo}–${st.fDone.hi} min`)} and the food arrived after ${speak(dur(st.fDone.actual))}.` });
+    else results.push({ title: `Expected around ${range}`, body: list([`Expected around ${range}`, "Compare the time you have waited with this range; there is no countdown"]), narration: `The order is expected around ${speak(range)}.` });
+    if (g.whatIf) results.push({ title: `What if: ${lower(g.whatIf.text)}, perhaps ${g.whatIf.lo}–${g.whatIf.hi} min`, body: list([`${g.whatIf.text}: perhaps ${g.whatIf.lo}–${g.whatIf.hi} min`, "A guess to explore, not a measurement"]), narration: `${g.whatIf.text}, the wait might be ${speak(`${g.whatIf.lo}–${g.whatIf.hi} min`)}. That is a guess, not a measurement.` });
+    if (f.visible && v.rate) results.push({ title: `From the orders watched: about ${dur(v.mid)} more`, body: list([watchedText(v), `About ${dur(v.mid)} more, likely ${span(v.lo, v.hi)}`]), narration: `From the orders watched, your order is about ${speak(dur(v.mid))} away, likely ${speak(span(v.lo, v.hi))}.` });
+    return {
+      meta: { title: `Food order: expected around ${range}`, subtitle: st.fDone ? `Actual ${dur(st.fDone.actual)}` : "Elapsed time against the expected range" },
+      narration: "This talk compares a food order's wait with the wait you expected. Times are in minutes.",
+      setup: [{ title: `The order: expected about ${dur(f.minutes)}`, body: list([`Expected wait: ${dur(f.minutes)}`, `Order complexity (what if): ${f.complexity}`, `How busy it looks (what if): ${f.busy}`, ...(f.visible ? [`Orders seen: ${f.ahead} ahead, ${f.done} done in ${dur(f.watched)}`] : [])]), narration: `You expect the order to take about ${speak(dur(f.minutes))}.` }],
+      method: [{ title: "Elapsed time is compared with an expected range", body: list([`Expected range: ${MODEL.spread[0]} to ${MODEL.spread[1]} times the expected wait, rounded`, "The kitchen is not modelled: its stations, staff and tickets stay unknown", "Seen orders use only the rate at which orders came out"]), narration: "The expected range runs from a little under to a little over the wait you expect. The kitchen itself is not modelled. When you count orders, only the rate at which they come out is used." }],
+      results,
+      checks: [
+        { title: "Limits of a food estimate", body: list(["Kitchens batch, reorder and parallelise work you cannot see", "Complexity and busyness are what-ifs, not measurements", "A countdown appears only from orders you watched finish"]), narration: "Kitchens batch and reorder work you cannot see, so the range is a guide, not a promise." },
+        { title: "Takeaway", key: st.fDone ? `Expected ${st.fDone.lo}–${st.fDone.hi} min; the food took ${dur(st.fDone.actual)}.` : `Expect around ${range}, and compare the time you have waited with it.`, narration: st.fDone ? `The food took ${speak(dur(st.fDone.actual))}, against an expected ${speak(`${st.fDone.lo}–${st.fDone.hi} min`)}.` : `Expect around ${speak(range)}.` },
+      ],
+    };
+  }
+  const report = (st) => (st.mode === "food" ? foodReport(st) : queueReport(st));
+
+  return {
+    PACES, PACE_LABEL, WEIGHTS, FOOD_PRESETS, COMPLEXITY, BUSY, LIMITS, MODEL, ASSUMPTIONS,
+    clamp, defaults, foodDefaults, scenario, servers, estimate, headline, describe, roughRule, compare, names, backEstimate, observed,
+    startTimer, elapsed, clock, dur, span, speak, plural, paceText, rateText, food, foodRange, foodStatus, visible, watchedText, report,
+  };
+});
+</script>
+<script id="queue-time-ui">
+(() => {
+"use strict";
+/* The page: state, rendering and events. Every number comes from QueueTime (the engine above). */
+const Q = self.QueueTime, $ = (id) => document.getElementById(id), own = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
+$("nojs").hidden = true;
+$("app").hidden = false;
+
+/* Only the last mode and pace preset are remembered, and only where storage is allowed. */
+const store = {
+  get(k) { try { return localStorage.getItem(`queue-time:${k}`); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem(`queue-time:${k}`, v); } catch { /* storage blocked */ } },
+};
+const fresh = () => ({ mode: "queue", queue: Q.defaults(), compare: null, observed: false, qTimer: null, qDone: null, watch: null, food: Q.foodDefaults(), fTimer: null, fDone: null });
+let S = fresh();
+if (store.get("mode") === "food") S.mode = "food";
+if (own(Q.PACES, store.get("pace") || "")) S.queue.pace = store.get("pace");
+const now = () => Date.now();
+const copy = (o) => ({ ...o, weights: [...o.weights] });
+const scn = (p) => (p === "b" ? S.compare : S.queue);
+
+/* ---------- controls ---------- */
+const pill = (name, value, text, data) => `<label class="pill"><input type="radio" name="${name}" value="${value}" ${data}><span>${text}</span></label>`;
+function stepper(p, f, label, max, names, hint) {
+  const id = `${p}-${f}`, d = `data-scn="${p}" data-f="${f}"`;
+  return `<div class="field"><label for="${id}">${label}</label><div class="stepper">`
+    + `<button type="button" ${d} data-step="-1" aria-label="${names[0]}">−</button>`
+    + `<input id="${id}" type="number" inputmode="numeric" min="0" max="${max}" step="1" ${d}${hint ? ` aria-describedby="${id}-hint"` : ""}>`
+    + `<button type="button" ${d} data-step="1" aria-label="${names[1]}">+</button></div>${hint ? `<p class="hint" id="${id}-hint">${hint}</p>` : ""}</div>`;
+}
+function controls(p) {
+  return stepper(p, "people", "People ahead", Q.LIMITS.people[1], ["One fewer person ahead", "One more person ahead"], p === "a" ? "Not counting anyone already at a counter" : "")
+    + stepper(p, "counters", "Counters open", Q.LIMITS.counters[1], ["One fewer counter", "One more counter"])
+    + `<fieldset><legend>Pace</legend><div class="pills">${["fast", "typical", "slow", "observed"].map((k) => pill(`${p}-pace`, k, Q.PACE_LABEL[k], `data-scn="${p}" data-f="pace"`)).join("")}</div>`
+    + `<label class="exact">or <input type="number" id="${p}-custom" inputmode="decimal" min="0.05" max="120" step="any" data-scn="${p}" data-f="custom" aria-label="Minutes per person"> min per person</label></fieldset>`;
+}
+$("a-controls").innerHTML = controls("a");
+$("b-controls").innerHTML = controls("b");
+$("f-presets").innerHTML = Q.FOOD_PRESETS.map((m) => pill("expected", m, `${m} min`, 'data-food="expected"')).join("") + pill("expected", "custom", "Custom", 'data-food="expected"');
+$("f-complexity").innerHTML = Object.keys(Q.COMPLEXITY).map((k) => pill("complexity", k, k[0].toUpperCase() + k.slice(1), 'data-food="complexity"')).join("");
+$("f-busy").innerHTML = Object.keys(Q.BUSY).map((k) => pill("busy", k, k[0].toUpperCase() + k.slice(1), 'data-food="busy"')).join("");
+
+let force = false;
+const setVal = (el, v) => { if (el && (force || document.activeElement !== el) && el.value !== String(v)) el.value = v; };
+const check = (name, v) => { for (const r of document.querySelectorAll(`input[name="${name}"]`)) r.checked = r.value === String(v); };
+/* Rebuild a block only when its content changes, so a focused button is not destroyed by a timer tick;
+   when a rebuild removes the focused control, focus moves to the block's first control. */
+function block(el, html) {
+  if (el.dataset.html === html) return;
+  const had = el.contains(document.activeElement);
+  el.dataset.html = html;
+  el.innerHTML = html;
+  if (had) el.querySelector("button,input")?.focus();
+}
+const actions = (...b) => `<div class="actions">${b.join("")}</div>`;
+const btn = (act, text, cls = "") => `<button type="button" class="btn ${cls}" data-act="${act}">${text}</button>`;
+
+/* ---------- queue ---------- */
+function renderScn(p) {
+  const o = scn(p), s = Q.scenario(o);
+  setVal($(`${p}-people`), s.people);
+  setVal($(`${p}-counters`), s.counters);
+  document.querySelector(`label[for="${p}-people"]`).textContent = s.structure === "separate" ? "People ahead in your line" : "People ahead";
+  check(`${p}-pace`, s.pace);
+  document.querySelector(`input[name="${p}-pace"][value="observed"]`).closest("label").hidden = s.pace !== "observed";
+  const c = $(`${p}-custom`);
+  setVal(c, s.pace === "custom" || s.pace === "observed" ? +s.minutes.toFixed(2) : "");
+  c.placeholder = String(+s.minutes.toFixed(2));
+  return Q.estimate(o);
+}
+let lastPeople = null;
+function diagram(s) {
+  const CAP = 10, shown = Math.min(s.people, CAP), extra = s.people - shown;
+  const grown = lastPeople === null ? 0 : Math.max(0, s.people - lastPeople);
+  lastPeople = s.people;
+  let dots = "";
+  for (let i = shown - 1; i >= 0; i--) {
+    const w = s.weights[i] && s.weights[i] !== "typical" ? ` ${s.weights[i]}` : "";
+    dots += `<i class="dot${w}${i >= shown - grown ? " new" : ""}"></i>`;
+  }
+  const lane = `<span class="lane"><span class="more">You</span><i class="dot you"></i>${extra ? `<span class="more">+${extra}</span>` : ""}${dots}</span><span class="arr">→</span>`;
+  if (s.structure === "separate" && s.counters > 0) {
+    const others = Math.min(s.counters - 1, 3), faint = (n) => '<i class="dot faint"></i>'.repeat(n);
+    return `<div class="lanes"><div class="row">${lane}<i class="ctr"></i></div>`
+      + [4, 2, 3].slice(0, others).map((n) => `<div class="row"><span class="lane">${faint(n)}</span><span class="arr">→</span><i class="ctr faint"></i></div>`).join("")
+      + (s.counters - 1 > others ? `<span class="more">+${s.counters - 1 - others} more lines</span>` : "") + "</div>";
+  }
+  const n = s.counters, ctrs = n ? '<i class="ctr"></i>'.repeat(Math.min(n, 6)) + (n > 6 ? `<span class="more">+${n - 6}</span>` : "") : '<i class="ctr off"></i>';
+  return `${lane}<span class="ctrs">${ctrs}</span>`;
+}
+function renderWeights(s) {
+  const n = Math.min(s.people, Q.MODEL.maxWeights);
+  block($("weights"), n ? Array.from({ length: n }, (_, i) => `<label>Person ${i + 1}${i ? "" : " (next)"}<select name="weight-${i + 1}" data-w="${i}">${Object.keys(Q.WEIGHTS).map((k) => `<option value="${k}">${k[0].toUpperCase() + k.slice(1)}</option>`).join("")}</select></label>`).join("") + (s.people > n ? `<p class="hint">The other ${s.people - n} count as typical.</p>` : "") : '<p class="hint">Nobody is ahead of you.</p>');
+  for (const sel of $("weights").querySelectorAll("select")) sel.value = s.weights[+sel.dataset.w] || "typical";
+}
+function renderQueue() {
+  const e = renderScn("a"), s = e.s, h = Q.headline(e);
+  $("q-head").textContent = h.head;
+  $("q-sub").textContent = h.sub;
+  $("q-desc").textContent = Q.describe(e);
+  const viz = diagram(s);
+  if ($("q-viz").dataset.html !== viz) { $("q-viz").dataset.html = viz; $("q-viz").innerHTML = viz; }
+  check("structure", s.structure);
+  renderWeights(s);
+
+  const t = S.qTimer, d = S.qDone;
+  if (t) {
+    block($("q-timer"), actions(btn("served", "Served now", "primary"), '<span class="elapsed" id="q-elapsed"></span>', btn("cancel", "Cancel timer", "quiet")) + `<p class="hint">Estimate when you started: ${t.snap.kind === "stopped" ? "not moving" : Q.span(t.snap.lo, t.snap.hi)}</p>`);
+    $("q-elapsed").textContent = `Waiting ${Q.clock(Q.elapsed(t, now()))}`;
+  } else if (d) {
+    const back = Q.backEstimate(d.scenario, d.actual - d.offset);
+    block($("q-timer"), `<dl class="vs"><div><dt>Estimated</dt><dd>${d.kind === "stopped" ? "No estimate" : Q.span(d.lo, d.hi)}</dd></div><div><dt>Actual</dt><dd>${Q.dur(d.actual)}</dd></div></dl>`
+      + (back ? `<p class="desc">${back.pace}${back.rate ? `<br>${back.rate}` : ""}</p>` : '<p class="desc">Too short a wait, or no counters open, to work out a pace.</p>')
+      + actions(back ? btn("use-observed", "Use observed pace") : "", btn("clear-done", "Clear", "quiet")));
+  } else block($("q-timer"), actions(btn("start", "Start waiting")));
+
+  $("compare").hidden = !S.compare;
+  $("compare-open").hidden = !!S.compare;
+  if (S.compare) {
+    renderScn("b");
+    const k = Q.compare(S.queue, S.compare, Q.names(S)), ha = Q.headline(k.a), hb = Q.headline(k.b);
+    $("a-name").textContent = S.observed ? "Observed queue" : "This queue";
+    $("b-name").textContent = S.observed ? "Hypothetical" : "Queue B";
+    $("a-head").textContent = ha.head; $("a-sub").textContent = ha.sub; $("a-desc").textContent = Q.describe(k.a);
+    $("b-head").textContent = hb.head; $("b-sub").textContent = hb.sub; $("b-desc").textContent = Q.describe(k.b);
+    $("diff").textContent = `${k.changes} ${k.diff}`;
+  }
+
+  const w = S.watch, o = Q.observed(w, now(), S.queue);
+  if (!w) block($("observe"), actions(btn("watch-start", "Start observing")));
+  else {
+    const use = o.minutes ? `<p class="desc" id="watch-pace"></p>` : '<p class="hint">Tap when each person finishes; a pace appears after the first, once 15 seconds have passed.</p>';
+    block($("observe"), `<p class="status" id="watch-text"></p>${use}` + actions(w.end ? "" : btn("watch-tap", "Someone finished", "primary"), o.minutes ? btn("watch-use", "Use this pace") : "", w.end ? btn("watch-clear", "Clear", "quiet") : btn("watch-stop", "Stop", "quiet")));
+    $("watch-text").textContent = o.text;
+    if (o.minutes) $("watch-pace").textContent = `About ${Q.paceText(o.minutes)} at each counter (${o.rateText} across ${Q.plural(Q.scenario(S.queue).counters, "counter")})`;
+  }
+  return e;
+}
+
+/* ---------- food ---------- */
+function renderFood() {
+  const g = Q.foodRange(S.food), f = g.f, t = S.fTimer, d = S.fDone, range = `${g.lo}–${g.hi} min`;
+  check("expected", f.expected); check("complexity", f.complexity); check("busy", f.busy);
+  setVal($("f-custom"), f.expected === "custom" ? f.minutes : "");
+  $("f-custom").placeholder = String(f.minutes);
+  $("f-custom-box").hidden = f.expected !== "custom";
+  setVal($("f-ahead"), f.ahead); setVal($("f-done"), f.done); setVal($("f-minutes"), f.watched);
+  $("visible-box").open = f.visible;
+  const el = d ? d.actual : Q.elapsed(t, now()), lo = d ? d.lo : g.lo, hi = d ? d.hi : g.hi;
+  $("f-label").textContent = d ? "Actual wait" : t ? "Waiting for your order" : "Expected around";
+  $("f-head").textContent = d ? Q.dur(d.actual) : t ? `${Q.clock(el)} elapsed` : range;
+  $("f-sub").textContent = d ? `Expected ${lo}–${hi} min` : t ? `Expected around ${range}` : "Start waiting when you order, or enter the time so far under More options.";
+  $("f-status").textContent = t || d ? Q.foodStatus(el, { lo, hi }) : "";
+  const max = Math.max(hi * 1.4, el * 1.1, 1), pct = (v) => `${Math.min(100, (v / max) * 100).toFixed(1)}%`;
+  const viz = `<div class="track"><span class="band" style="left:${pct(lo)};width:${pct(hi - lo)}"></span>${t || d ? `<span class="mark" style="left:${pct(el)}"></span>` : ""}</div><div class="ends"><span>0</span><span>${Math.round(max)} min</span></div>`;
+  if ($("f-viz").dataset.html !== viz) { $("f-viz").dataset.html = viz; $("f-viz").innerHTML = viz; }
+  $("f-whatif").textContent = g.whatIf ? `${g.whatIf.text}: perhaps ${g.whatIf.lo}–${g.whatIf.hi} min. A guess to explore, not a measurement.` : "";
+  const v = Q.visible(S.food);
+  $("f-visible").textContent = !f.visible ? "" : v.rate ? `From the orders you counted (${Q.watchedText(v)}): about ${Q.dur(v.mid)} more, likely ${Q.span(v.lo, v.hi)}.` : "Count at least 2 completed orders to estimate from what you can see.";
+  if (t) {
+    block($("f-timer"), actions(btn("got", "Got it", "primary"), btn("f-cancel", "Cancel timer", "quiet")));
+  } else if (d) block($("f-timer"), actions(btn("use-actual", "Use as expected wait"), btn("f-clear", "Clear", "quiet")));
+  else block($("f-timer"), actions(btn("start", "Start waiting")));
+  return g;
+}
+
+function render(final) {
+  force = !!final;
+  const food = S.mode === "food";
+  $("mode-queue").setAttribute("aria-pressed", String(!food));
+  $("mode-food").setAttribute("aria-pressed", String(food));
+  $("queue-panel").hidden = food;
+  $("food-panel").hidden = !food;
+  for (const d of document.querySelectorAll("#more [data-for]")) d.hidden = d.dataset.for !== S.mode;
+  if (food) renderFood(); else renderQueue();
+  force = false;
+}
+
+/* One polite announcement after input settles; timer ticks never announce. */
+let liveTimer = 0;
+function announce(msg) {
+  clearTimeout(liveTimer);
+  liveTimer = setTimeout(() => {
+    let t = msg;
+    if (!t && S.mode === "food") { const g = Q.foodRange(S.food); t = `Expected around ${g.lo} to ${g.hi} minutes.`; }
+    else if (!t) {
+      t = Q.describe(Q.estimate(S.queue));
+      if (S.compare) { const k = Q.compare(S.queue, S.compare, Q.names(S)); t += ` Comparison: ${Q.speak(k.changes)} ${Q.speak(k.diff)}`; }
+    }
+    if ($("live").textContent !== t) $("live").textContent = t;
+  }, msg ? 50 : 900);
+}
+let say = "";
+function changed(final) { render(final); announce(say); say = ""; }
+
+/* ---------- events ---------- */
+function start(already) {
+  if (S.mode === "food") { S.fTimer = Q.startTimer(now(), already); S.fDone = null; return; }
+  const e = Q.estimate(S.queue);
+  S.qTimer = { ...Q.startTimer(now(), already), snap: { scenario: copy(S.queue), offset: already, kind: e.kind, lo: (e.lo || 0) + already, hi: (e.hi || 0) + already } };
+  S.qDone = null;
+}
+const ACT = {
+  mode(b) { S.mode = b.dataset.mode; store.set("mode", S.mode); },
+  compare() { S.compare = copy(S.queue); S.observed = false; return "b-people"; },
+  "compare-close"() { S.compare = null; S.observed = false; return "compare-open"; },
+  start() { start(0); },
+  already() { start(Q.clamp($("already").value, "elapsed", 0)); $("more").open = false; return S.mode === "food" ? "f-head" : "q-head"; },
+  served() { const a = Q.elapsed(S.qTimer, now()); S.qDone = { ...S.qTimer.snap, actual: a }; S.qTimer = null; say = `Served after ${Q.speak(Q.dur(a))}.`; },
+  cancel() { S.qTimer = null; },
+  "clear-done"() { S.qDone = null; },
+  "use-observed"() {
+    const d = S.qDone, back = Q.backEstimate(d.scenario, d.actual - d.offset);
+    if (!back) return;
+    S.queue = { ...copy(d.scenario), pace: "observed", custom: back.minutes };
+    S.compare = copy(S.queue); S.observed = true; S.qDone = null;
+    return "b-people";
+  },
+  got() { const g = Q.foodRange(S.food), a = Q.elapsed(S.fTimer, now()); S.fDone = { actual: a, lo: g.lo, hi: g.hi }; S.fTimer = null; say = `Food arrived after ${Q.speak(Q.dur(a))}.`; },
+  "f-cancel"() { S.fTimer = null; },
+  "f-clear"() { S.fDone = null; },
+  "use-actual"() { S.food.expected = "custom"; S.food.custom = Math.max(1, Math.round(S.fDone.actual)); S.fDone = null; },
+  "watch-start"() { S.watch = { start: now(), taps: 0, end: null }; },
+  "watch-tap"() { S.watch.taps++; },
+  "watch-stop"() { S.watch.end = now(); },
+  "watch-clear"() { S.watch = null; },
+  "watch-use"() { const o = Q.observed(S.watch, now(), S.queue); S.watch.end ??= now(); if (o?.minutes) { S.queue.pace = "observed"; S.queue.custom = o.minutes; } },
+  reset() { S = fresh(); lastPeople = null; store.set("mode", "queue"); store.set("pace", "typical"); for (const d of document.querySelectorAll("#app details")) d.open = false; },
+};
+const app = $("app");
+app.addEventListener("click", (ev) => {
+  const b = ev.target.closest && ev.target.closest("button[data-step],button[data-act]");
+  if (!b) return;
+  if (b.dataset.step) {
+    const o = scn(b.dataset.scn), f = b.dataset.f;
+    o[f] = Q.clamp(o[f] + Number(b.dataset.step), f, o[f], true);
+    return changed(true);
+  }
+  const focus = ACT[b.dataset.act]?.(b);
+  changed(true);
+  if (!focus) return;
+  if (focus.endsWith("head")) $(focus).setAttribute("tabindex", "-1");
+  $(focus).focus();
+});
+function edit(t, final) {
+  const d = t.dataset;
+  if (final && t.type === "number" && !Number.isFinite(parseFloat(t.value))) return render(true); // restore the last valid value
+  if (d.scn) {
+    const o = scn(d.scn);
+    if (!o) return;
+    if (d.f === "pace" || d.f === "structure") { if (!t.checked) return; o[d.f] = t.value; if (o === S.queue && own(Q.PACES, t.value)) store.set("pace", t.value); }
+    else if (d.f === "custom") { const v = Q.clamp(t.value, "pace", null); if (v === null) return; o.custom = v; o.pace = "custom"; }
+    else { const v = Q.clamp(t.value, d.f, null, true); if (v === null) return; o[d.f] = v; }
+  } else if (d.food) {
+    const f = S.food, k = d.food;
+    if (k === "expected" || k === "complexity" || k === "busy") {
+      if (!t.checked) return;
+      f[k] = t.value;
+      if (t.value === "custom") { f.custom ??= Q.foodRange(f).f.minutes; if (final) setTimeout(() => $("f-custom").focus(), 0); }
+    } else if (k === "custom") { const v = Q.clamp(t.value, "expected", null); if (v === null) return; f.custom = v; f.expected = "custom"; }
+    else { const v = Q.clamp(t.value, k === "minutes" ? "minutes" : "orders", null, k !== "minutes"); if (v === null) return; f[k] = v; }
+  } else if (d.w !== undefined) {
+    const w = S.queue.weights;
+    while (w.length <= +d.w) w.push("typical");
+    w[+d.w] = t.value;
+  } else return;
+  changed(final);
+}
+app.addEventListener("input", (ev) => edit(ev.target, false));
+app.addEventListener("change", (ev) => edit(ev.target, true));
+$("visible-box").addEventListener("toggle", () => { if (S.food.visible !== $("visible-box").open) { S.food.visible = $("visible-box").open; changed(); } });
+
+/* Elapsed time is recomputed from timestamps; the interval only refreshes the text. */
+const tick = () => { if (S.qTimer || S.fTimer || (S.watch && !S.watch.end)) render(); };
+setInterval(tick, 5000);
+for (const ev of ["visibilitychange", "pageshow", "focus"]) (ev === "visibilitychange" ? document : self).addEventListener(ev, tick);
+
+/* ---------- beamdswitch deck ---------- */
+const deck = () => self.Beamdswitch.deck(Q.report({ mode: S.mode, queue: S.queue, compare: S.compare, observed: S.observed, qDone: S.qDone, food: S.food, fDone: S.fDone }));
+function save(blob, name) {
+  const url = URL.createObjectURL(blob), a = document.createElement("a");
+  a.href = url; a.download = name;
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+$("save-beamdswitch").addEventListener("click", async () => {
+  const status = $("deck-status"), text = deck(), name = "queue-time-beamdswitch.md";
+  try {
+    save(new Blob([text], { type: "text/markdown" }), name);
+    status.textContent = `Saved ${name}: open it in beamdswitch.`;
+  } catch {
+    try { await navigator.clipboard.writeText(text); status.textContent = "Copied the beamdswitch deck, as saving is blocked here: paste it into beamdswitch."; }
+    catch { status.textContent = "Could not save or copy the beamdswitch deck here."; }
+  }
+});
+$("copy-beamdswitch").addEventListener("click", async () => {
+  const status = $("deck-status");
+  try { await navigator.clipboard.writeText(deck()); status.textContent = "Copied the beamdswitch deck: paste it into beamdswitch."; }
+  catch { status.textContent = "Could not copy the beamdswitch deck here: use the beamdswitch button to save it."; }
+});
+
+/* ---------- WebMCP: read-only tools for agents ---------- */
+const result = (v) => ({ content: [{ type: "text", text: JSON.stringify(v) }] });
+const view = (e) => ({ scenario: e.s, ...Q.headline(e), description: Q.describe(e), minutes: e.kind === "stopped" ? null : { middle: +e.mid.toFixed(2), low: +e.lo.toFixed(2), high: +e.hi.toFixed(2) }, rough_rule_minutes: Q.roughRule(e.s) });
+const ro = { readOnlyHint: true }, none = { type: "object", properties: {}, additionalProperties: false };
+const tools = [
+  { name: "get_metadata", description: "Return what this queue and food-wait estimator does, its pace presets, food presets, input limits, model and assumptions.", inputSchema: none, annotations: ro,
+    async execute() { return result({ title: document.title, url: "https://teoyujie.org/visuals/queue-time", modes: ["queue", "food"], paces_minutes_per_person: Q.PACES, weights: Q.WEIGHTS, food_presets_minutes: Q.FOOD_PRESETS, complexity: Q.COMPLEXITY, busy: Q.BUSY, limits: Q.LIMITS, model: Q.MODEL, assumptions: Q.ASSUMPTIONS }); } },
+  { name: "get_current_state", description: "Return the page's current mode, queue, estimate, comparison, waiting timers and recorded waits, and the food-order range.", inputSchema: none, annotations: ro,
+    async execute() {
+      const t = now(), k = S.compare && Q.compare(S.queue, S.compare, Q.names(S));
+      return result({ mode: S.mode, queue: view(Q.estimate(S.queue)), comparison: k ? { other: view(k.b), changes: k.changes, difference: k.diff } : null,
+        waiting_minutes: S.qTimer ? +Q.elapsed(S.qTimer, t).toFixed(2) : null, served: S.qDone ? { actual_minutes: +S.qDone.actual.toFixed(2), estimated: Q.span(S.qDone.lo, S.qDone.hi), back_estimate: Q.backEstimate(S.qDone.scenario, S.qDone.actual - S.qDone.offset) } : null,
+        food: { ...Q.foodRange(S.food), waiting_minutes: S.fTimer ? +Q.elapsed(S.fTimer, t).toFixed(2) : null, arrived: S.fDone } });
+    } },
+  { name: "estimate_queue", description: "Estimate the wait for a queue from the people ahead, the counters open and the pace (a preset or minutes per person), with a likely range. Same model as the page.", annotations: ro,
+    inputSchema: { type: "object", properties: { people: { type: "integer", minimum: 0, maximum: 999 }, counters: { type: "integer", minimum: 0, maximum: 50 }, pace: { type: "string", enum: Object.keys(Q.PACES) }, minutes_per_person: { type: "number", minimum: 0.05, maximum: 120 }, structure: { type: "string", enum: ["shared", "separate"] } }, required: ["people", "counters"], additionalProperties: false },
+    async execute(i) { return result(view(Q.estimate({ people: i.people, counters: i.counters, pace: i.minutes_per_person ? "custom" : i.pace || "typical", custom: i.minutes_per_person, structure: i.structure }))); } },
+  { name: "estimate_food_wait", description: "Return the expected range for a food order, the what-if range for complexity and busyness, the status for a time already waited, and an estimate from counted orders if given. The kitchen is never modelled.", annotations: ro,
+    inputSchema: { type: "object", properties: { expected_minutes: { type: "number", minimum: 1, maximum: 240 }, complexity: { type: "string", enum: Object.keys(Q.COMPLEXITY) }, busy: { type: "string", enum: Object.keys(Q.BUSY) }, elapsed_minutes: { type: "number", minimum: 0, maximum: 600 }, orders_ahead: { type: "integer", minimum: 0, maximum: 200 }, orders_completed: { type: "integer", minimum: 0, maximum: 200 }, minutes_watched: { type: "number", minimum: 0.1, maximum: 240 } }, required: ["expected_minutes"], additionalProperties: false },
+    async execute(i) {
+      const f = { expected: "custom", custom: i.expected_minutes, complexity: i.complexity, busy: i.busy, visible: i.orders_completed != null, ahead: i.orders_ahead, done: i.orders_completed, minutes: i.minutes_watched }, g = Q.foodRange(f);
+      return result({ expected_range_minutes: [g.lo, g.hi], what_if: g.whatIf, status: i.elapsed_minutes == null ? null : Q.foodStatus(i.elapsed_minutes, g), from_counted_orders: f.visible ? Q.visible(f) : null });
+    } },
+];
+self.QueueTimeTools = tools;
+const mc = (typeof document !== "undefined" && document.modelContext) || (typeof navigator !== "undefined" && navigator.modelContext);
+if (mc && typeof mc.registerTool === "function") for (const t of tools) mc.registerTool(t);
+
+render(true);
+})();
+</script>
+</body>
+</html>
