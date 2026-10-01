@@ -6,7 +6,7 @@ Live: https://teoyujie.org/visuals/convex-payoffs/
 
 ## Source of truth
 
-This folder is `viz/convex-payoffs/` in [yujieteo/visuals](https://github.com/yujieteo/visuals). The standalone repository [yujieteo/convex-payoffs](https://github.com/yujieteo/convex-payoffs) is a read-only exact mirror of this folder. Make every change upstream in `yujieteo/visuals`; do not edit or open pull requests against the mirror.
+The standalone repository [yujieteo/convex-payoffs](https://github.com/yujieteo/convex-payoffs) is where this visualisation and its tests develop and where CI runs them. `viz/convex-payoffs/` in [yujieteo/visuals](https://github.com/yujieteo/visuals) is a port of its page files (with its data files in `data/convex-payoffs/`), refreshed when the visualisation is updated, and neither yujieteo/visuals nor yujieteo/site (which publishes it at <https://teoyujie.org/visuals/convex-payoffs/>) runs logic tests for it. Porting copies the repository minus `tests/` and `.github/`: the page files into `viz/convex-payoffs/` and the data files into `data/convex-payoffs/`.
 
 ## Files
 
@@ -19,19 +19,19 @@ This folder is `viz/convex-payoffs/` in [yujieteo/visuals](https://github.com/yu
 
 ## Build, test and verify
 
-Run from the root of a `yujieteo/visuals` checkout (Python 3 standard library and Node 22; nothing to install):
+Run from the root of a yujieteo/convex-payoffs checkout (Node 22; nothing to install):
 
 ```sh
-node --test tests/convex-payoffs-beamdswitch.test.mjs tests/voice-beamdswitch.test.mjs
+node --test 'tests/*.test.mjs'
 ```
 
-There is no builder: edit `index.html`, `report.js` and the data directly, keeping the page's inlined copies of `beamdswitch.js` and `report.js` identical to the files. Before opening a pull request, run the full suite in the upstream README's Verification section, which CI (`.github/workflows/verify.yml`) runs on every push.
+There is no builder: edit `index.html`, `report.js` and the data directly, keeping the page's inlined copies of `beamdswitch.js` and `report.js` identical to the files. Before opening a pull request, run the whole suite, as CI (`.github/workflows/ci.yml`) does on every push and pull request.
 
 ## Data and tests
 
-- Data: `data/convex-payoffs/raw.json` and `meta.json`.
+- Data: `raw.json` and `meta.json`.
 - Deck report: `report.js` in this folder.
-- Tests: `tests/convex-payoffs-beamdswitch.test.mjs`, and `tests/voice-beamdswitch.test.mjs` for every deck page.
+- Tests: `tests/convex-payoffs-beamdswitch.test.mjs`, and `tests/voice-beamdswitch.test.mjs` for the deck's narration voice.
 
 ## Conventions
 
