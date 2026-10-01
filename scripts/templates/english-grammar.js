@@ -46,7 +46,8 @@
       results]),
     h("section", { "aria-labelledby": "route-h" }, [h("h3", { id: "route-h" }, "Start here: beginner route"), h("p", { class: "hint" }, "A suggested reading order; every concept stays open."), routeList]),
     h("section", { "aria-labelledby": "conf-h" }, [h("h3", { id: "conf-h" }, "Common confusions"), confusionList]),
-    h("section", { "aria-labelledby": "browse-h" }, [h("h3", { id: "browse-h", tabindex: "-1" }, "Browse CGEL"), h("p", { class: "hint" }, "Chapters in the book's order. Muted chapters are not yet expanded in this version."), outline]),
+    h("section", { "aria-labelledby": "browse-h" }, [h("h3", { id: "browse-h", tabindex: "-1" }, "Browse CGEL"),
+      h("p", { class: "hint" }, "Chapters in the book's order." + (D.chapters.some((ch) => !idx.chapterConcepts.has(ch.n)) ? " Muted chapters are not yet expanded in this version." : "")), outline]),
   ]);
   const lab = h("main", { id: "lab", class: "lab", tabindex: "-1" });
   const live = h("div", { class: "sr-only", "aria-live": "polite", role: "status" });
@@ -286,7 +287,9 @@
       h("p", { class: "sentence" }, [h("span", { class: "sr-only" }, "Example: "), e.text]),
       e.usage ? h("p", { class: "usage" }, [h("span", { class: "tag" }, "Usage"), " " + e.usage]) : null,
       els.stripWrap,
-      h("p", { id: "strip-help", class: "hint" }, "Select a word, or a band above the words for the phrase or clause. With a part focused, arrow keys move: Up to the containing constituent, Down to its first part, Left and Right to neighbours."),
+      h("p", { id: "strip-help", class: "hint" }, (e.kind === "word" ? "Select a piece of the word, or a band above the pieces for a larger part or the whole word."
+        : "Select a word, or a band above the words for the phrase or clause." + (e.marks ? " Punctuation marks are selectable too." : "")) +
+        " With a part focused, arrow keys move: Up to the containing constituent, Down to its first part, Left and Right to neighbours."),
       h("div", { class: "controls" }, [unfold, fold, all, depthNote]),
       els.inspector].forEach((x) => { if (x) els.example.append(x); });
     if (e.predict) {
@@ -338,7 +341,11 @@
     slots.forEach((s, i) => {
       const style = { gridColumn: String(i + 1), gridRow: String(rows + 1) };
       if (s.gap) strip.append(nodeButton(e, s.gap, "word gap", style));
-      else if (s.token.k === "p") strip.append(h("span", { class: "punct", style: "grid-column:" + style.gridColumn + ";grid-row:" + style.gridRow, "aria-hidden": "true" }, s.token.t));
+      else if (s.token.k === "p") {
+        const m = (e.marks || []).find((x) => x.i === s.i);
+        if (m) strip.append(markButton(e, m, style));
+        else strip.append(h("span", { class: "punct", style: "grid-column:" + style.gridColumn + ";grid-row:" + style.gridRow, "aria-hidden": "true" }, s.token.t));
+      }
       else {
         const leaf = [...map.values()].find((v) => v.node.word === s.i).node;
         strip.append(nodeButton(e, leaf, "word", style));
@@ -352,6 +359,18 @@
     if (hadFocus) focusNode(strip);
   }
 
+  /* A punctuation mark is selectable like a word, but it is not a constituent: selecting it shows what it marks. */
+  function markButton(e, m, style) {
+    const sel = m.id === state.node, d = L.describe(idx, e.id, m.id);
+    const btn = h("button", { type: "button", class: "word mark" + (sel ? " selected" : ""), "data-node": m.id, tabindex: sel ? "0" : "-1",
+      "aria-current": sel ? "true" : null, "aria-label": L.announce(d) });
+    if (style.gridColumn) { btn.style.gridColumn = style.gridColumn; btn.style.gridRow = style.gridRow; }
+    btn.append(h("span", { class: "w" }, e.tokens[m.i].t), h("span", { class: "wl" }, "mark"));
+    btn.addEventListener("click", () => select(m.id, false));
+    btn.addEventListener("keydown", (ev) => keyNav(ev, btn.closest(".tree-marks") || btn.parentElement));
+    return btn;
+  }
+
   function contains(n, target) {
     return (n.children || []).some((k) => k === target || contains(k, target));
   }
@@ -361,7 +380,7 @@
     const label = (n.fn ? n.fn + ": " : "") + n.cat;
     const btn = h("button", { type: "button", class: kind + (sel ? " selected" : ""), "data-node": n.id, tabindex: sel ? "0" : "-1",
       "aria-current": sel ? "true" : null,
-      "aria-label": (kind === "band" ? "" : "Word ") + L.announce(d) + " (" + (d.level === "gap" ? "gap" : d.level + " level") + ")" });
+      "aria-label": (kind === "band" ? "" : d.level === "part" ? "Part of the word " : "Word ") + L.announce(d) + " (" + (d.level === "gap" ? "gap" : d.level === "part" ? "word-internal" : d.level + " level") + ")" });
     btn.style.gridColumn = style.gridColumn;
     btn.style.gridRow = style.gridRow;
     if (kind === "band") btn.append(h("span", { class: "band-label" }, label));
@@ -389,13 +408,14 @@
   /* Select a node everywhere (strip, tree, inspector); move focus only within the container in use. */
   function select(nodeId, keepFocus, container) {
     const active = document.activeElement;
-    const where = els.treeNodes && els.treeNodes.contains(active) ? "tree" : els.inspector.contains(active) ? "inspector" : null;
+    const where = els.treeNodes && (els.treeNodes.contains(active) || (els.treeMarks && els.treeMarks.contains(active))) ? "tree" : els.inspector.contains(active) ? "inspector" : null;
     state.node = nodeId;
     drawStrip();
     renderInspector();
     if (els.tree.open) renderTree();
-    if (keepFocus && container) focusNode(container.classList.contains("tree-nodes") ? els.treeNodes : els.strip);
-    else if (where === "tree") focusNode(els.treeNodes);
+    const treeBox = () => (L.markOf(idx, state.example, state.node) && els.treeMarks ? els.treeMarks : els.treeNodes);
+    if (keepFocus && container) focusNode(container.classList.contains("tree-nodes") || container.classList.contains("tree-marks") ? treeBox() : els.strip);
+    else if (where === "tree") focusNode(treeBox());
     else if (where === "inspector") focusNode(els.strip);
     say("Selected " + L.announce(L.describe(idx, state.example, nodeId)));
   }
@@ -404,11 +424,21 @@
     const d = L.describe(idx, state.example, state.node);
     const ins = els.inspector;
     ins.textContent = "";
-    const levelName = { word: "word", phrase: "phrase", clause: "clause", coordination: "coordination", gap: "gap (understood element)" }[d.level];
+    const levelName = { word: "word", part: "part of a word", mark: "punctuation mark", phrase: "phrase", clause: "clause", coordination: "coordination", gap: "gap (understood element)" }[d.level];
     ins.append(h("h4", { id: "insp-h" }, [h("span", { class: "tag" }, "Selected " + levelName), " " + q(d.text)]));
     const dl = h("dl", { class: "fields" });
     const row = (term, value) => dl.append(h("div", { class: "field" }, [h("dt", {}, term), h("dd", {}, value)]));
-    row("Category", d.category + (d.level === "word" ? " (word level)" : d.level === "phrase" || d.level === "clause" ? " (" + d.level + " level)" : ""));
+    const jump = (id, label) => h("button", { type: "button", class: "linkish", onclick: () => select(id, false) }, label);
+    if (d.level === "mark") {
+      row("Indicator", d.category + " (" + d.indicator + ")");
+      row("Marks", [d.marks.side + " ", jump(d.marks.id, (d.marks.function ? d.marks.function + ": " : "") + d.marks.category), " " + q(d.marks.text)]);
+      row("Use", d.use);
+      if (d.pair) row("Paired with", [jump(d.pair.id, "the " + d.pair.name), " " + q(d.pair.text)]);
+      row("Not a constituent", "Punctuation is not part of the tree; it is attached to a boundary of the constituent it marks.");
+      ins.append(dl);
+      return;
+    }
+    row("Category", d.category + (d.level === "word" ? " (word level)" : d.level === "part" ? " (inside the word)" : d.level === "phrase" || d.level === "clause" ? " (" + d.level + " level)" : ""));
     if (d.top) row("Function", "None at this level: this is the top-level unit of the example, not part of a larger structure.");
     else row("Function", [h("strong", {}, d.function), " in the " + d.container.category.toLowerCase() + " " + q(d.container.text)]);
     if (d.head) row("Head", [q(d.head.text), " (" + d.head.category.toLowerCase() + ")"]);
@@ -418,6 +448,9 @@
     if (d.anchor) row("Anchor", ["Supplement to " + q(d.anchor.text) + "; it is not a dependent of it."]);
     if (d.gap) row("Gap", ["Not pronounced here; understood via " + q(d.gap.text) + "."]);
     if (d.fused) row("Fusion", "One expression with two functions at once (" + d.function.toLowerCase() + ").");
+    if (d.antecedent) row("Antecedent", [jump(d.antecedent.id, q(d.antecedent.text)), ": the expression this one takes its interpretation from (a link, not a branch of the tree)."]);
+    if (d.spelling) row("Spelling", "The base " + q(d.spelling.base) + " is written " + q(d.text) + " here (" + d.spelling.alt + ").");
+    if (d.punctuation) row("Punctuation", h("ul", { class: "contains" }, d.punctuation.map((m) => h("li", {}, [jump(m.id, "The " + m.name + " " + q(m.text)), " marks " + m.side + " it"]))));
     ins.append(dl);
   }
 
@@ -430,17 +463,17 @@
     ks.sort((a, b) => (b.a.ex === state.example || b.b.ex === state.example) - (a.a.ex === state.example || a.b.ex === state.example));
     ks.forEach((k) => {
       const card = (side) => {
-        const e = idx.examples.get(k[side].ex), d = L.describe(idx, e.id, k[side].node), n = idx.nodes.get(e.id).get(k[side].node).node;
+        const e = idx.examples.get(k[side].ex), d = L.describe(idx, e.id, k[side].node), span = L.spanOf(idx, e.id, k[side].node);
         const sent = h("p", { class: "sentence small" });
         e.tokens.forEach((t, i) => {
-          const inside = n.span && i >= n.span[0] && i < n.span[1];
-          const piece = (sent.childNodes.length && !(t.k === "p" && ".,!?;:".includes(t.t)) ? " " : "") + t.t;
+          const inside = span && i >= span[0] && i < span[1];
+          const piece = (L.spaceBefore(e.tokens[i - 1], t) ? " " : "") + t.t;
           if (inside) { const last = sent.lastChild; if (last && last.tagName === "MARK") last.textContent += piece; else { if (piece.startsWith(" ")) sent.append(" "); sent.append(h("mark", {}, piece.trim())); } }
           else sent.append(piece);
         });
         const concept = e.concepts.includes(state.concept) ? state.concept : e.concepts[0];
         return h("div", { class: "card" }, [sent,
-          h("p", {}, [h("strong", {}, d.top ? "Top level" : d.function), " · " + d.category]),
+          h("p", {}, d.level === "mark" ? [h("strong", {}, d.category), " · marks " + d.marks.side + " " + q(d.marks.text)] : [h("strong", {}, d.top ? "Top level" : d.function), " · " + d.category]),
           h("p", { class: "small-text" }, e.explanation),
           link("Open this example", "#" + concept + "/" + e.id)]);
       };
@@ -480,24 +513,37 @@
     }
     els.treeNodes = nodesBox;
     const used = new Set(), cats = new Set(), notes = new Set();
+    if (e.kind === "word") notes.add("word");
     for (const v of map.values()) {
       if (v.node.fn) used.add(v.node.fn);
       cats.add(v.node.cat);
       if (v.node.gap) notes.add("gap");
       if (v.node.fn && v.node.fn.includes("+")) notes.add("fusion");
       if (v.node.anchor) notes.add("supplement");
+      if (v.node.ante) notes.add("antecedent");
     }
+    if (e.marks && e.marks.length) notes.add("mark");
+    // Punctuation is listed beside the tree, never inside it.
+    els.treeMarks = e.marks && e.marks.length ? h("ul", { class: "tree-marks", role: "group", "aria-label": "Punctuation in " + q(e.text) }, e.marks.map((m) => {
+      const d = L.describe(idx, e.id, m.id), b = markButton(e, m, {});
+      b.className = "linkish tmark" + (m.id === state.node ? " selected" : "");
+      b.tabIndex = 0;
+      b.textContent = d.category + " " + q(d.text);
+      return h("li", {}, [b, " marks " + d.marks.side + " " + q(d.marks.text) + ": " + d.use]);
+    })) : null;
     const key = h("dl", { class: "tree-key" }, [...used].map((f) => h("div", {}, [h("dt", {}, f), h("dd", {}, D.labels.functions[f])]))
       .concat([...cats].map((c) => h("div", {}, [h("dt", {}, c), h("dd", {}, D.labels.categories[c])]))));
     function outlineList(n) {
       const d = L.describe(idx, e.id, n.id);
-      const extra = (n.gap ? " — gap, understood via " + q(d.gap.text) : "") + (n.anchor ? " — supplement anchored to " + q(d.anchor.text) : "");
+      const extra = (n.gap ? " — gap, understood via " + q(d.gap.text) : "") + (n.anchor ? " — supplement anchored to " + q(d.anchor.text) : "") +
+        (n.ante ? " — antecedent " + q(d.antecedent.text) : "");
       return h("li", {}, [(d.top ? "" : d.function + ": ") + d.category + " " + q(d.text) + extra,
         n.children ? h("ul", {}, n.children.map(outlineList)) : null]);
     }
     els.tree.append(
       h("p", { class: "hint", id: "tree-help" }, "Each node shows Function: Category. Selecting here selects the same constituent in the sentence above; arrow keys move as in the sentence."),
       h("div", { class: "tree-wrap", tabindex: "-1" }, h("div", { class: "tree-canvas", style: "width:" + lay.width + "px;height:" + lay.height + "px" }, [svg, nodesBox])),
+      els.treeMarks ? h("div", { class: "tree-punct" }, [h("p", { class: "hint" }, "Punctuation, attached to constituent boundaries rather than drawn as part of the tree:"), els.treeMarks]) : null,
       h("details", { class: "subdisc" }, [h("summary", {}, "Key to labels and notation"), key,
         ...[...notes].map((k) => h("p", { class: "small-text" }, D.labels.notation[k]))]),
       h("details", { class: "subdisc" }, [h("summary", {}, "Text version of the tree"), h("ul", { class: "outline-text" }, outlineList(e.tree))]));

@@ -110,12 +110,91 @@ test("sentence strip, inspector and tree are derived from the same nodes", () =>
   }
 });
 
-test("contrasts and concept references resolve to real nodes", () => {
+const target = (ex, id) => idx.nodes.get(ex).has(id) || !!L.markOf(idx, ex, id);
+
+test("contrasts and concept references resolve to real nodes or punctuation marks", () => {
   for (const k of D.contrasts) {
-    for (const side of ["a", "b"]) assert.ok(idx.nodes.get(k[side].ex).has(k[side].node), k.id);
+    for (const side of ["a", "b"]) assert.ok(target(k[side].ex, k[side].node), k.id);
     assert.ok(k.concepts.length > 0);
   }
-  for (const c of D.concepts) for (const i of c.items) assert.ok(idx.nodes.get(i.ex).has(i.node), `${c.id} -> ${i.ex}@${i.node}`);
+  for (const c of D.concepts) for (const i of c.items) assert.ok(target(i.ex, i.node), `${c.id} -> ${i.ex}@${i.node}`);
+});
+
+test("every chapter of the outline has concepts", () => {
+  assert.equal(D.chapters.length, 20);
+  for (const ch of D.chapters) assert.ok(idx.chapterConcepts.has(ch.n), `chapter ${ch.n}`);
+});
+
+test("text is rebuilt with the spacing of the displayed example, inside words and around quotation marks", () => {
+  // The top-level unit reads exactly as the displayed example, without its final terminal.
+  for (const e of D.examples) assert.equal(L.textOf(e, e.tree), e.kind === "word" ? e.text : e.text.replace(/[.!?]$/, ""), e.id);
+  const quoted = idx.examples.get("called-it-disaster");
+  assert.equal(L.textOf(quoted, quoted.tree), "Kim called it “a disaster”");
+  assert.equal(L.describe(idx, "called-it-disaster", "pc").text, "a disaster");
+});
+
+test("word structures: the word is the top, its pieces are parts of it, and spelling changes are described", () => {
+  const words = D.examples.filter((e) => e.kind === "word");
+  assert.ok(words.length >= 20);
+  for (const e of words) {
+    const map = idx.nodes.get(e.id);
+    assert.equal(e.tokens.map((t) => t.t).join(""), e.text, e.id);
+    for (const [id, v] of map) {
+      const d = L.describe(idx, e.id, id);
+      assert.equal(d.level, v.parent ? "part" : "word", `${e.id}@${id}`);
+      if (v.node.alt) assert.equal(JSON.stringify(d.spelling), JSON.stringify({ base: v.node.base, alt: v.node.alt }));
+    }
+  }
+  const happy = L.describe(idx, "w-unhappiness", "happy");
+  assert.equal(happy.text, "happi");
+  assert.equal(happy.function, "Base");
+  assert.equal(happy.container.text, "unhappi");
+  assert.equal(L.describe(idx, "w-unhappiness", "ness").category, "Suffix");
+});
+
+test("punctuation marks: each one is selectable, attached to a constituent, and traversable", () => {
+  const marked = D.examples.filter((e) => e.marks);
+  assert.ok(marked.length >= 10);
+  for (const e of marked) {
+    const ids = new Set(e.marks.map((m) => m.id));
+    // Every punctuation token of a punctuated example belongs to exactly one mark.
+    e.tokens.forEach((t, i) => { if (t.k === "p") assert.equal(e.marks.filter((m) => m.i === i).length, 1, `${e.id}: token ${i}`); });
+    for (const m of e.marks) {
+      assert.ok(!idx.nodes.get(e.id).has(m.id), `${e.id}: ${m.id} clashes with a node`);
+      const d = L.describe(idx, e.id, m.id);
+      assert.equal(d.level, "mark");
+      assert.equal(d.text, e.tokens[m.i].t);
+      assert.equal(d.marks.id, m.bounds);
+      assert.equal(JSON.stringify(L.spanOf(idx, e.id, m.id)), JSON.stringify([m.i, m.i + 1]));
+      assert.equal(L.move(idx, e.id, m.id, "up"), m.bounds);
+      assert.equal(L.move(idx, e.id, m.id, "home"), e.tree.id);
+      assert.equal(L.ancestors(idx, e.id, m.id)[0], m.bounds);
+      for (const dir of ["left", "right", "down"]) assert.ok(ids.has(L.move(idx, e.id, m.id, dir)), `${e.id}: ${dir} from ${m.id}`);
+      if (m.pair) assert.equal(d.pair.id, m.pair);
+      assert.match(L.announce(d), /^Punctuation: /);
+      // The constituent it marks lists it.
+      assert.ok(L.describe(idx, e.id, m.bounds).punctuation.some((x) => x.id === m.id), `${e.id}: ${m.bounds} lists ${m.id}`);
+    }
+  }
+  const comma = L.describe(idx, "kim-my-neighbour", "m1");
+  assert.equal(comma.category, "Comma");
+  assert.equal(comma.marks.text, "my neighbour");
+  assert.equal(comma.marks.side, "the start of");
+  assert.equal(comma.pair.id, "m2");
+});
+
+test("antecedent links are described from the anaphor, and never inside a word", () => {
+  const she = L.describe(idx, "before-she-left", "she");
+  assert.equal(JSON.stringify(she.antecedent), JSON.stringify({ id: "kim", text: "Kim" }));
+  assert.equal(L.describe(idx, "she-locked-before-kim-left", "she").antecedent, undefined);
+  assert.equal(L.describe(idx, "red-bike-blue-one", "one").antecedent.text, "bike");
+  let links = 0;
+  for (const e of D.examples) for (const v of idx.nodes.get(e.id).values()) if (v.node.ante) {
+    links++;
+    assert.notEqual(e.kind, "word");
+    assert.ok(idx.nodes.get(e.id).has(v.node.ante), e.id);
+  }
+  assert.ok(links >= 5);
 });
 
 test("search finds canonical names, aliases, abbreviations and example words, and keeps aliases distinct", () => {

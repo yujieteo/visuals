@@ -16,7 +16,8 @@ const idx = L.index(D);
 const raw = JSON.parse(read(`data/${SLUG}/raw.json`));
 const deckFor = (id) => T.deck(R.report(idx, L, id));
 // A spread of lessons: the start page's concept, ones with and without contrasts, notes, gaps and supplements.
-const SOME = ["category-and-function", "subject", "complements-and-adjuncts", "relative-clauses", "fused-relatives", "supplementation", "passive"];
+const SOME = ["category-and-function", "subject", "complements-and-adjuncts", "relative-clauses", "fused-relatives", "supplementation", "passive",
+  "clause-polarity", "comparative-clauses", "anaphora", "morphological-structure", "primary-terminals", "hyphens"];
 
 test("the site's shared beamdswitch template is the copy the page inlines", () => {
   assertTemplateCopy(SLUG);
@@ -34,7 +35,7 @@ test("on each concept page, beamdswitch saves and Copy deck copies that lesson's
 });
 
 test("every lesson's deck parses in beamdswitch into the standard template, narrated on every slide", () => {
-  assert.equal(D.concepts.length, 50);
+  assert.equal(D.concepts.length, 84);
   for (const c of D.concepts) {
     const deck = assertStandardDeck(deckFor(c.id), c.id);
     assert.equal(deck.meta.title, c.name, c.id);
@@ -91,6 +92,23 @@ test("decks cite only the concept's own references, each a verified chapter or s
     for (const m of md.matchAll(/\bCh(?:apter|\.)?\s*(\d+)/gi)) assert.ok(own.has(Number(m[1])), `${c.id}: ${m[0]} is not one of its verified references`);
     assert.doesNotMatch(md, /§|\bsection\s+\d|\bp\.\s*\d|\bpages?\s+\d/i, `${c.id}: no other section or page numbers`);
   }
+});
+
+test("lessons on punctuation, word structure and anaphora carry those structures into the deck", () => {
+  const terminals = deckFor("primary-terminals").replace(/\\(.)/g, "$1");
+  assert.ok(terminals.includes("Selected mark: “.”"));
+  assert.ok(terminals.includes("- Indicator: Full stop (primary terminal)"));
+  assert.ok(terminals.includes("Punctuation, attached to constituent boundaries (not part of the tree):"));
+  assert.match(terminals, /Look at the full stop\. It is not a constituent/);
+  const word = deckFor("morphological-structure").replace(/\\(.)/g, "$1");
+  assert.ok(word.includes("The example word is: unhappiness."));
+  assert.ok(word.includes("Selected part: “unhappi”"));
+  assert.ok(word.includes("  - Base: Adjective “unhappi”\n    - Affix: Prefix “un”"), "the word's structure is outlined layer by layer");
+  const spelling = deckFor("spelling-alternations").replace(/\\(.)/g, "$1");
+  assert.ok(spelling.includes("- Spelling: the base “stop” is written “stopp” here (doubling)."));
+  const anaphora = deckFor("anaphora").replace(/\\(.)/g, "$1");
+  assert.ok(anaphora.includes("- Antecedent: “Kim”"));
+  assert.ok(anaphora.includes("— antecedent “Kim”"));
 });
 
 test("narration says starred examples and gaps in words", () => {

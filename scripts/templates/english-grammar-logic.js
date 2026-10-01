@@ -4,7 +4,7 @@
   "use strict";
 
   function index(D) {
-    const concepts = new Map(), examples = new Map(), nodes = new Map(), chapterConcepts = new Map();
+    const concepts = new Map(), examples = new Map(), nodes = new Map(), marks = new Map(), chapterConcepts = new Map();
     D.concepts.forEach((c, i) => {
       concepts.set(c.id, Object.assign({ order: i }, c));
       const ch = c.references[0].chapter;
@@ -19,9 +19,10 @@
         (n.children || []).forEach((k) => walk(k, n, depth + 1));
       })(e.tree, null, 0);
       nodes.set(e.id, map);
+      marks.set(e.id, new Map((e.marks || []).map((m) => [m.id, m])));
     });
     const route = D.route.map((r) => r.concept);
-    return { D, concepts, examples, nodes, chapterConcepts, route };
+    return { D, concepts, examples, nodes, marks, chapterConcepts, route };
   }
 
   const VIEWS = ["tree", "compare"];
@@ -52,9 +53,18 @@
     return c.items.find((i) => i.ex === exampleId) || c.items[0];
   }
 
-  /* Arrow-key traversal: up = containing constituent, down = first part, left/right = siblings. */
+  function markOf(idx, exampleId, id) { const m = idx.marks.get(exampleId); return (m && m.get(id)) || null; }
+
+  /* Arrow-key traversal: up = containing constituent, down = first part, left/right = siblings.
+     From a punctuation mark: up = the constituent it marks, left/right = the neighbouring marks. */
   function move(idx, exampleId, nodeId, dir) {
-    const map = idx.nodes.get(exampleId), here = map.get(nodeId);
+    const map = idx.nodes.get(exampleId), here = map.get(nodeId), mark = markOf(idx, exampleId, nodeId);
+    if (mark) {
+      if (dir === "up") return mark.bounds;
+      if (dir === "home") return idx.examples.get(exampleId).tree.id;
+      const all = idx.examples.get(exampleId).marks, i = all.indexOf(mark), j = dir === "left" ? i - 1 : dir === "right" ? i + 1 : i;
+      return j >= 0 && j < all.length ? all[j].id : nodeId;
+    }
     if (!here) return nodeId;
     if (dir === "up") return here.parent || nodeId;
     if (dir === "down") return (here.node.children && here.node.children[0].id) || nodeId;
@@ -66,18 +76,41 @@
   }
 
   function ancestors(idx, exampleId, nodeId) {
-    const map = idx.nodes.get(exampleId), out = [];
-    let cur = map.get(nodeId);
+    const map = idx.nodes.get(exampleId), out = [], mark = markOf(idx, exampleId, nodeId);
+    if (mark) out.push(mark.bounds);
+    let cur = map.get(mark ? mark.bounds : nodeId);
     while (cur && cur.parent) { out.push(cur.parent); cur = map.get(cur.parent); }
     return out;
   }
 
+  /* Whether a space is written before token t: not inside a word (g), not before closing punctuation,
+     not after opening brackets and quotation marks. */
+  function spaceBefore(prev, t) {
+    return !!prev && !t.g && !(t.k === "p" && ".,!?;:)\u201d\u2019".includes(t.t)) && !(prev.k === "p" && "(\u201c\u2018".includes(prev.t));
+  }
+
+  const CLOSE = { "\u201c": "\u201d", "\u2018": "\u2019", "(": ")" };
+
+  /* A span's tokens, plus any closing quotation mark or bracket just after it whose opener is inside it. */
+  function balanced(tokens, span) {
+    const open = [];
+    let b = span[1];
+    tokens.slice(span[0], span[1]).forEach((t) => {
+      if (t.k !== "p") return;
+      if (CLOSE[t.t]) open.push(CLOSE[t.t]);
+      else if (open.length && open[open.length - 1] === t.t) open.pop();
+    });
+    while (open.length && b < tokens.length && tokens[b].k === "p" && tokens[b].t === open[open.length - 1]) { open.pop(); b++; }
+    return tokens.slice(span[0], b);
+  }
+
   function textOf(e, n) {
     if (!n.span) return "__";
-    let out = "";
-    e.tokens.slice(n.span[0], n.span[1]).forEach((t) => {
-      if (out && !(t.k === "p" && ".,!?;:".includes(t.t))) out += " ";
+    let out = "", prev = null;
+    balanced(e.tokens, n.span).forEach((t) => {
+      if (spaceBefore(prev, t)) out += " ";
       out += t.t;
+      prev = t;
     });
     return out;
   }
@@ -86,10 +119,26 @@
   function fnName(D, fn) { return D.labels.functions[fn] || fn; }
 
   /* Fields for the inspector. Fields that do not apply are left out rather than filled in. */
+  function sideText(side) { return side === "start" ? "the start of" : side === "end" ? "the end of" : "a boundary inside"; }
+
+  /* A punctuation mark: what it is and which constituent boundary it marks. */
+  function describeMark(idx, exampleId, m) {
+    const D = idx.D, e = idx.examples.get(exampleId), map = idx.nodes.get(exampleId), b = map.get(m.bounds).node;
+    const out = { id: m.id, text: e.tokens[m.i].t, level: "mark", category: m.name.charAt(0).toUpperCase() + m.name.slice(1), cat: "mark",
+      indicator: m["class"], use: m.use, side: m.side,
+      marks: { id: b.id, text: textOf(e, b), category: catName(D, b.cat), function: b.fn ? fnName(D, b.fn) : null, side: sideText(m.side) } };
+    if (m.pair) { const p = markOf(idx, exampleId, m.pair); out.pair = { id: p.id, text: e.tokens[p.i].t, name: p.name }; }
+    return out;
+  }
+
   function describe(idx, exampleId, nodeId) {
+    const mark = markOf(idx, exampleId, nodeId);
+    if (mark) return describeMark(idx, exampleId, mark);
     const D = idx.D, e = idx.examples.get(exampleId), map = idx.nodes.get(exampleId), here = map.get(nodeId);
     const n = here.node, parent = here.parent ? map.get(here.parent).node : null;
-    const level = n.word !== undefined ? "word" : n.gap ? "gap" : n.cat === "Clause" ? "clause" : n.cat === "Coordination" ? "coordination" : "phrase";
+    // Inside a word example the whole is a word and everything below it is a part of that word.
+    const level = e.kind === "word" ? (parent ? "part" : "word") :
+      n.word !== undefined ? "word" : n.gap ? "gap" : n.cat === "Clause" ? "clause" : n.cat === "Coordination" ? "coordination" : "phrase";
     const out = { id: n.id, text: textOf(e, n), level: level, category: catName(D, n.cat), cat: n.cat };
     if (parent) {
       out.fn = n.fn;
@@ -112,11 +161,16 @@
       out.anchor = { id: n.anchor, text: text };
     }
     if (n.gap) out.gap = { id: n.gap, text: textOf(e, map.get(n.gap).node) };
+    if (n.ante) out.antecedent = { id: n.ante, text: textOf(e, map.get(n.ante).node) };
+    if (n.alt) out.spelling = { base: n.base, alt: n.alt };
+    const marks = (e.marks || []).filter((m) => m.bounds === n.id);
+    if (marks.length) out.punctuation = marks.map((m) => ({ id: m.id, text: e.tokens[m.i].t, name: m.name, side: sideText(m.side) }));
     if (n.fn && n.fn.includes("+")) out.fused = true;
     return out;
   }
 
   function announce(d) {
+    if (d.level === "mark") return "Punctuation: " + d.category.toLowerCase() + ", marking " + d.marks.side + " “" + d.marks.text + "”";
     const fn = d.top ? "Top level" : d.function;
     return fn + ": " + d.category + ", “" + d.text + "”";
   }
@@ -203,5 +257,12 @@
     return !typing;
   }
 
-  root.EGLogic = { index, parseHash, formatHash, primaryItem, move, ancestors, textOf, describe, announce, search, visibleBands, maxDepth, layout, norm, isSearchShortcut };
+  /* The token span a node or mark covers, for highlighting. */
+  function spanOf(idx, exampleId, id) {
+    const mark = markOf(idx, exampleId, id);
+    if (mark) return [mark.i, mark.i + 1];
+    return idx.nodes.get(exampleId).get(id).node.span;
+  }
+
+  root.EGLogic = { index, parseHash, formatHash, primaryItem, move, ancestors, spaceBefore, textOf, describe, announce, search, visibleBands, maxDepth, layout, norm, isSearchShortcut, markOf, spanOf };
 })(typeof globalThis !== "undefined" ? globalThis : this);

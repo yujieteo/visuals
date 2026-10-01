@@ -11,7 +11,9 @@ analysis and explanation is authored in data/english-grammar/:
   meta.json      source pages, check date and assumptions
 
 The builder expands each bracketed tree into hierarchical JSON with token spans,
-validates the whole corpus, and renders viz/english-grammar/index.html from
+validates the whole corpus (including the three special structures that are not ordinary
+constituent trees: word-internal structure, punctuation marks attached to constituent
+boundaries, and antecedent links), and renders viz/english-grammar/index.html from
 scripts/templates/english-grammar.css, english-grammar-logic.js (pure logic, also
 run by tests/english-grammar.test.mjs) and english-grammar.js (interface). Each concept page offers its
 lesson as a narrated beamdswitch deck: viz/english-grammar/beamdswitch.js (the site's shared report
@@ -55,8 +57,8 @@ KEY_MESSAGE = (
 )
 CANONICAL = "https://teoyujie.org/visuals/english-grammar"
 START_EXAMPLE = "kim-laughed"
-CONCEPT_RANGE = (40, 60)
-EXAMPLE_RANGE = (100, 150)
+CONCEPT_RANGE = (40, 90)
+EXAMPLE_RANGE = (100, 220)
 ROUTE_RANGE = (10, 12)
 SIZE_BUDGET = 1_000_000
 
@@ -70,6 +72,8 @@ FUNCTIONS = {
     "Nucleus": "Nucleus", "ExtSubj": "Extraposed subject",
     "Head+Prenucleus": "Head fused with prenucleus", "Det+Head": "Fused determiner-head",
     "Mod+Head": "Fused modifier-head",
+    # Word-internal structure (examples of kind "word").
+    "Base": "Base", "Affix": "Affix",
 }
 HEAD_FUNCTIONS = {"Head", "Predicate", "Predicator", "Head+Prenucleus", "Det+Head", "Mod+Head"}
 FUSED_FUNCTIONS = {"Head+Prenucleus", "Det+Head", "Mod+Head"}
@@ -77,6 +81,27 @@ WORD_CATEGORIES = {
     "N": "Noun", "V": "Verb", "Adj": "Adjective", "Adv": "Adverb", "Prep": "Preposition",
     "D": "Determinative", "Sbr": "Subordinator", "Crd": "Coordinator",
 }
+# Pieces of a word that are not words themselves (word-internal structure only).
+MORPH_CATEGORIES = {"Prefix": "Prefix", "Suffix": "Suffix", "Splinter": "Splinter (part of a word in a blend)"}
+MORPH_FUNCTIONS = {"Base", "Affix"}
+# Spelling alternations a base may show before a suffix, checked mechanically.
+ALTERNATIONS = {
+    "doubling": lambda base: base + base[-1],
+    "e-deletion": lambda base: base[:-1] if base.endswith("e") else None,
+    "y-replacement": lambda base: base[:-1] + "i" if base.endswith("y") else None,
+}
+# Punctuation indicators: name -> (characters, class).
+INDICATORS = {
+    "full stop": (".", "primary terminal"), "question mark": ("?", "primary terminal"),
+    "exclamation mark": ("!", "primary terminal"),
+    "comma": (",", "secondary boundary mark"), "semicolon": (";", "secondary boundary mark"),
+    "colon": (":", "secondary boundary mark"),
+    "dash": ("–—", "dash"), "opening parenthesis": ("(", "parenthesis"), "closing parenthesis": (")", "parenthesis"),
+    "opening quotation mark": ("“‘", "quotation mark"), "closing quotation mark": ("”’", "quotation mark"),
+    "hyphen": ("-", "word-level punctuation"),
+}
+PAIRED = {"opening parenthesis": "closing parenthesis", "opening quotation mark": "closing quotation mark"}
+MARK_SIDES = ("start", "end", "between")
 PHRASE_CATEGORIES = {
     "Clause": "Clause", "NP": "Noun phrase", "Nom": "Nominal", "VP": "Verb phrase",
     "AdjP": "Adjective phrase", "AdvP": "Adverb phrase", "PP": "Preposition phrase",
@@ -101,6 +126,9 @@ SPECIAL_NOTATION = {
     "gap": "A gap (__) marks the position of an element that is understood but not pronounced there; it is linked to the expression that supplies its interpretation.",
     "fusion": "A function written with + is a fusion: one expression has two functions at once, for example Head+Prenucleus in a fused relative.",
     "supplement": "A supplement is attached loosely and records its anchor, the expression it relates to; it is not a dependent of that anchor.",
+    "antecedent": "An antecedent link records where an anaphor (such as a pronoun) gets its interpretation. It is a link between two expressions, not a branch of the tree.",
+    "word": "This tree shows the structure inside a single word: bases, and affixes attached to them (prefixes before, suffixes after). Its pieces are parts of a word, not words, and a spelling change at a boundary is recorded on the base.",
+    "mark": "Punctuation marks are not constituents, so they are not drawn in the tree. Each one is attached to the boundary of the constituent it marks: at its start, at its end, or between two of its parts.",
 }
 
 # Page-scoped Solarized palette. Pairs below are checked by --verify.
@@ -118,6 +146,7 @@ CONTRAST_PAIRS = [  # (foreground, background, minimum, what)
     ("sel", "surface", 3.0, "selection outline on panels"),
 ]
 
+OPENERS, CLOSERS = "(“‘", ".,!?;:)”’"
 TOKEN_RE = re.compile(r"[A-Za-z]+(?:['’-][A-Za-z]+)*|\d+|[^\sA-Za-z\d]")
 LABEL_RE = re.compile(r"^(?:(?P<fn>[A-Za-z+]+):)?(?P<cat>[A-Za-z]+)(?:#(?P<id>[a-z0-9-]+))?(?:\{(?P<attrs>[^{}]*)\})?$")
 
@@ -133,6 +162,18 @@ def tokenize(text):
         word = m.group()[0].isalnum()
         tokens.append({"t": m.group(), "k": "w" if word else "p"})
     return tokens
+
+
+def example_tokens(ex):
+    """A sentence is split into words and punctuation; a single word (kind "word") into its
+    declared segments, glued together (g) because they are written without spaces."""
+    if ex.get("kind") != "word":
+        assert "segments" not in ex, f"example {ex['id']}: only a word example has segments"
+        return tokenize(ex["text"])
+    segments = ex["segments"]
+    assert "".join(segments) == ex["text"], f"example {ex['id']}: segments do not spell {ex['text']!r}"
+    assert all(segments) and " " not in ex["text"], f"example {ex['id']}: a word example is one word"
+    return [dict({"t": s, "k": "w" if s[0].isalnum() else "p"}, **({"g": 1} if i else {})) for i, s in enumerate(segments)]
 
 
 def lex(tree):
@@ -175,7 +216,7 @@ def parse_tree(ex):
         for item in (m.group("attrs") or "").split("|"):
             if item:
                 key, _, value = item.partition("=")
-                assert key in ("form", "cx", "anchor") and value, f"{where}: bad attribute {item!r}"
+                assert key in ("form", "cx", "anchor", "ante", "base", "alt") and value, f"{where}: bad attribute {item!r}"
                 n[key] = value.strip()
         kids = []
         while atoms[pos[0]] != "]":
@@ -202,7 +243,10 @@ def parse_tree(ex):
     root = node()
     assert pos[0] == len(atoms), f"{where}: trailing material after the root"
     assert cursor[0] == len(words), f"{where}: words not in the tree: {[tokens[i]['t'] for i in words[cursor[0]:]]}"
-    annotate(root, tokens, where)
+    if ex.get("kind") == "word":
+        annotate_word(root, tokens, where)
+    else:
+        annotate(root, tokens, where)
     return root
 
 
@@ -255,6 +299,7 @@ def annotate(root, tokens, where):
             assert cat in ("Sbr", "Crd"), f"{where}: marker {n['id']} must be a subordinator or coordinator"
         if fn == "Supplement":
             assert "anchor" in n, f"{where}: supplement {n['id']} needs an anchor"
+        assert "base" not in n and "alt" not in n, f"{where}: spelling alternations belong to word structure ({n['id']})"
 
     walk(root, None)
     nodes = {}
@@ -280,7 +325,122 @@ def annotate(root, tokens, where):
         if n.get("fn") in ("Prenucleus", "Head+Prenucleus"):
             gaps = [g for g, _ in nodes.values() if g.get("gap") == nid]
             assert len(gaps) == 1, f"{where}: prenucleus {nid} must be linked to exactly one gap"
+    check_antecedents(nodes, where)
     return nodes
+
+
+def check_antecedents(nodes, where):
+    """An antecedent link joins two separate expressions: neither contains the other, and both are pronounced."""
+    for nid, (n, _) in nodes.items():
+        if "ante" not in n:
+            continue
+        assert n["ante"] in nodes and n["ante"] != nid, f"{where}: antecedent of {nid} is unknown"
+        target = nodes[n["ante"]][0]
+        assert n.get("span") and target.get("span"), f"{where}: an antecedent link cannot involve a gap ({nid})"
+        (a, b), (c, d) = n["span"], target["span"]
+        assert b <= c or d <= a, f"{where}: anaphor {nid} and its antecedent overlap"
+
+
+def annotate_word(root, tokens, where):
+    """Validate word-internal structure: a word of a lexical category built from bases and affixes.
+
+    Every node has a lexical category except affixes and splinters; a complex node has at least one
+    base, its prefixes come before its bases and its suffixes after them, and a node with a single
+    base (conversion, a vowel change, clipping) must name its operation in cx. A base may declare
+    the spelling alternation it shows (base=happy|alt=y-replacement), which is checked."""
+    ids = set()
+
+    def walk(n, parent):
+        assert n["id"] not in ids, f"{where}: duplicate node id {n['id']}"
+        ids.add(n["id"])
+        cat, fn = n["cat"], n.get("fn")
+        assert "anchor" not in n and "ante" not in n and "gap" not in n, f"{where}: {n['id']} has syntax-only notation"
+        if parent is None:
+            assert fn is None and cat in WORD_CATEGORIES, f"{where}: the root of a word must be a word category without a function"
+        else:
+            assert fn in MORPH_FUNCTIONS, f"{where}: {fn!r} is not a function inside a word ({n['id']})"
+            if fn == "Affix":
+                assert cat in ("Prefix", "Suffix"), f"{where}: affix {n['id']} must be a prefix or suffix"
+            else:
+                assert cat in WORD_CATEGORIES or cat == "Splinter", f"{where}: base {n['id']} needs a lexical category or Splinter"
+        if "base" in n or "alt" in n:
+            assert "word" in n and n.get("alt") in ALTERNATIONS and n.get("base"), f"{where}: {n['id']} needs base= and a known alt="
+            spelled = ALTERNATIONS[n["alt"]](n["base"])
+            assert spelled == tokens[n["word"]]["t"], f"{where}: {n['base']!r} with {n['alt']} is not spelled {tokens[n['word']]['t']!r}"
+        if "word" in n:
+            n["span"] = [n["word"], n["word"] + 1]
+            assert parent is not None, f"{where}: a word example needs structure above its pieces"
+            return
+        assert cat in WORD_CATEGORIES, f"{where}: complex part {n['id']} needs a lexical category"
+        kids = n.get("children")
+        assert kids, f"{where}: {n['id']} has no parts"
+        for k in kids:
+            walk(k, n)
+        order = [0 if k["cat"] == "Prefix" else 2 if k["cat"] == "Suffix" else 1 for k in kids]
+        assert order == sorted(order) and 1 in order, f"{where}: {n['id']} needs prefixes, then at least one base, then suffixes"
+        if len(kids) == 1:
+            assert n.get("cx"), f"{where}: {n['id']} has a single base, so it must name its operation (cx)"
+        for a, b in zip(kids, kids[1:]):
+            assert a["span"][1] <= b["span"][0] and all(tokens[i]["k"] == "p" for i in range(a["span"][1], b["span"][0])), f"{where}: parts of {n['id']} are not contiguous"
+        n["span"] = [kids[0]["span"][0], kids[-1]["span"][1]]
+
+    walk(root, None)
+    return flatten(root)
+
+
+def parse_at(at):
+    """',2' is the second comma of the example; ',' the first."""
+    m = re.fullmatch(r"(\D)(\d*)", at)
+    assert m, f"bad mark position {at!r}"
+    return m.group(1), int(m.group(2) or 1)
+
+
+def build_marks(ex, nodes):
+    """Resolve and validate punctuation marks: which token each is, what it attaches to and where."""
+    where, tokens, out = f"example {ex['id']}", ex["tokens"], []
+    for m in ex.get("marks", []):
+        char, nth = parse_at(m["at"])
+        found = [i for i, t in enumerate(tokens) if t["k"] == "p" and t["t"] == char]
+        assert len(found) >= nth, f"{where}: no punctuation token {m['at']!r}"
+        i = found[nth - 1]
+        assert m["name"] in INDICATORS and char in INDICATORS[m["name"]][0], f"{where}: {char!r} is not a {m['name']}"
+        assert re.fullmatch(r"m\d+", m["id"]) and m["id"] not in nodes, f"{where}: bad or clashing mark id {m['id']}"
+        assert m["bounds"] in nodes and m["side"] in MARK_SIDES and m["use"].strip(), f"{where}: mark {m['id']} needs bounds, side and use"
+        node = nodes[m["bounds"]][0]
+        assert node.get("span"), f"{where}: mark {m['id']} cannot attach to a gap"
+        a, b = node["span"]
+        punct = lambda lo, hi: all(tokens[j]["k"] == "p" for j in range(lo, hi))
+        if m["side"] == "start":
+            assert i < a and punct(i, a), f"{where}: mark {m['id']} is not at the start of {m['bounds']}"
+        elif m["side"] == "end":
+            assert i >= b and punct(b, i), f"{where}: mark {m['id']} is not at the end of {m['bounds']}"
+        else:
+            spans = [k["span"] for k in node.get("children", []) if k.get("span")]
+            assert any(x[1] <= i < y[0] for x, y in zip(spans, spans[1:])), f"{where}: mark {m['id']} is not between two parts of {m['bounds']}"
+        if INDICATORS[m["name"]][1] == "primary terminal":
+            assert m["bounds"] == ex["tree"]["id"] and m["side"] == "end" and punct(i, len(tokens)), f"{where}: a terminal closes the whole example"
+        item = {"id": m["id"], "i": i, "name": m["name"], "class": INDICATORS[m["name"]][1], "use": m["use"], "bounds": m["bounds"], "side": m["side"]}
+        if "pair" in m:
+            item["pair"] = m["pair"]
+        out.append(item)
+    by_id = {m["id"]: m for m in out}
+    assert len(by_id) == len(out), f"{where}: duplicate mark id"
+    assert len({m["i"] for m in out}) == len(out), f"{where}: two marks on one token"
+    if out:
+        unmarked = [t["t"] for j, t in enumerate(tokens) if t["k"] == "p" and j not in {m["i"] for m in out}]
+        assert not unmarked, f"{where}: punctuation not attached to anything: {unmarked}"
+    for m in out:
+        if m["name"] in PAIRED or m["name"] in PAIRED.values():
+            assert "pair" in m, f"{where}: mark {m['id']} ({m['name']}) must be paired"
+        if "pair" in m:
+            p = by_id.get(m["pair"])
+            assert p and p.get("pair") == m["id"] and p["bounds"] == m["bounds"], f"{where}: marks {m['id']} and {m.get('pair')} are not a pair around one constituent"
+            assert {m["side"], p["side"]} == {"start", "end"}, f"{where}: paired marks {m['id']} must open and close"
+            opener = m if m["side"] == "start" else p
+            if opener["name"] in PAIRED:
+                closer = p if opener is m else m
+                assert PAIRED[opener["name"]] == closer["name"], f"{where}: {opener['name']} closed by {closer['name']}"
+    return out
 
 
 def flatten(root):
@@ -295,19 +455,33 @@ def flatten(root):
     return out
 
 
+CLOSE = {"“": "”", "‘": "’", "(": ")"}
+
+
 def text_of(ex, n):
+    """A node's text; a closing quotation mark or bracket just after the span is included when its opener is inside."""
     if n.get("span") is None:
         return "__"
-    a, b = n["span"]
-    return detokenize(ex["tokens"][a:b])
+    tokens, (a, b) = ex["tokens"], n["span"]
+    pending = []
+    for t in tokens[a:b]:
+        if t["k"] == "p" and t["t"] in CLOSE:
+            pending.append(CLOSE[t["t"]])
+        elif t["k"] == "p" and pending and pending[-1] == t["t"]:
+            pending.pop()
+    while pending and b < len(tokens) and tokens[b]["k"] == "p" and tokens[b]["t"] == pending[-1]:
+        pending.pop()
+        b += 1
+    return detokenize(tokens[a:b])
 
 
 def detokenize(tokens):
-    out = ""
+    out, prev = "", None
     for t in tokens:
-        if out and not (t["k"] == "p" and t["t"] in ".,!?;:"):
+        if out and not t.get("g") and not (t["k"] == "p" and t["t"] in CLOSERS) and not (prev["k"] == "p" and prev["t"] in OPENERS):
             out += " "
         out += t["t"]
+        prev = t
     return out
 
 
@@ -324,8 +498,9 @@ def build_model(raw, concepts, examples, meta):
     exs = []
     for ex in examples["examples"]:
         ex = dict(ex)
-        ex["tokens"] = tokenize(ex["text"])
+        ex["tokens"] = example_tokens(ex)
         ex["tree"] = parse_tree(ex)
+        ex["marks"] = build_marks(ex, flatten(ex["tree"]))
         exs.append(ex)
     by_ex = {e["id"]: e for e in exs}
     out_concepts = []
@@ -375,6 +550,7 @@ def validate(model, raw, meta):
     assert len(names) == len(concepts), "concept names must be unique"
     by_ex = {e["id"]: e for e in examples}
     nodes = {e["id"]: flatten(e["tree"]) for e in examples}
+    targets = {e["id"]: set(nodes[e["id"]]) | {m["id"] for m in e["marks"]} for e in examples}  # nodes and punctuation marks
     used = set()
     seen_alias = {}
     for c in concepts:
@@ -384,7 +560,7 @@ def validate(model, raw, meta):
         assert len({i["ex"] for i in c["items"]}) == len(c["items"]), f"concept {c['id']} lists an example twice"
         for item in c["items"]:
             assert item["ex"] in by_ex, f"concept {c['id']} cites unknown example {item['ex']}"
-            assert item["node"] in nodes[item["ex"]], f"concept {c['id']} cites unknown node {item['ex']}@{item['node']}"
+            assert item["node"] in targets[item["ex"]], f"concept {c['id']} cites unknown node {item['ex']}@{item['node']}"
             used.add(item["ex"])
         for r in c["related"]:
             assert r in cids and r != c["id"], f"concept {c['id']} has a bad related link {r}"
@@ -396,9 +572,10 @@ def validate(model, raw, meta):
     for e in examples:
         assert e["explanation"].strip(), f"example {e['id']} needs an explanation"
         assert re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", e["id"]), f"bad example id {e['id']}"
-        assert e["focus"] in nodes[e["id"]], f"example {e['id']} focus is not a node"
+        assert e["focus"] in targets[e["id"]], f"example {e['id']} focus is not a node or mark"
+        assert e.get("kind", "sentence") in ("sentence", "word"), f"example {e['id']} has an unknown kind"
         if "predict" in e:
-            assert e["predict"]["node"] in nodes[e["id"]], f"example {e['id']} prediction node is unknown"
+            assert e["predict"]["node"] in targets[e["id"]], f"example {e['id']} prediction node is unknown"
         covered = sorted(n["word"] for n, _ in nodes[e["id"]].values() if "word" in n)
         assert covered == [i for i, t in enumerate(e["tokens"]) if t["k"] == "w"], f"example {e['id']}: leaves do not cover every word once"
         assert e["tree"]["span"][0] == 0 or all(t["k"] == "p" for t in e["tokens"][: e["tree"]["span"][0]]), e["id"]
@@ -412,7 +589,7 @@ def validate(model, raw, meta):
     assert len(kids) == len(set(kids)), "duplicate contrast id"
     for k in model["contrasts"]:
         for side in ("a", "b"):
-            assert k[side]["ex"] in by_ex and k[side]["node"] in nodes[k[side]["ex"]], f"contrast {k['id']} has a bad target"
+            assert k[side]["ex"] in by_ex and k[side]["node"] in targets[k[side]["ex"]], f"contrast {k['id']} has a bad target"
         assert k["a"]["ex"] != k["b"]["ex"], f"contrast {k['id']} compares an example with itself"
         assert k["concepts"], f"contrast {k['id']} is not reachable from any concept"
         assert k["explanation"].strip()
@@ -427,7 +604,9 @@ def validate(model, raw, meta):
     assert meta["slug"] == SLUG and re.fullmatch(r"\d{4}-\d{2}-\d{2}", meta["fetched"])
     covered_chapters = {c["location"]["chapter"] for c in concepts}
     return {"concepts": len(concepts), "examples": len(examples), "contrasts": len(model["contrasts"]),
-            "chapters": len(covered_chapters), "nodes": sum(len(v) for v in nodes.values()), "aliases": len(seen_alias)}
+            "chapters": len(covered_chapters), "nodes": sum(len(v) for v in nodes.values()), "aliases": len(seen_alias),
+            "words": sum(e.get("kind") == "word" for e in examples), "marks": sum(len(e["marks"]) for e in examples),
+            "antecedents": sum("ante" in n for v in nodes.values() for n, _ in v.values())}
 
 
 def luminance(hex_color):
@@ -454,12 +633,12 @@ def check_contrast():
 # ---------------------------------------------------------------- rendering
 
 def page_data(model, raw, meta):
-    labels = {"functions": FUNCTIONS, "categories": {**WORD_CATEGORIES, **PHRASE_CATEGORIES}, "notation": SPECIAL_NOTATION}
+    labels = {"functions": FUNCTIONS, "categories": {**WORD_CATEGORIES, **PHRASE_CATEGORIES, **MORPH_CATEGORIES}, "notation": SPECIAL_NOTATION}
     examples = []
     for e in model["examples"]:
         item = {k: e[k] for k in ("id", "text", "tokens", "tree", "focus", "concepts", "explanation")}
-        for k in ("context", "usage", "predict"):
-            if k in e:
+        for k in ("kind", "context", "usage", "predict", "marks"):
+            if e.get(k):
                 item[k] = e[k]
         examples.append(item)
     concepts = []
@@ -483,7 +662,7 @@ def page_data(model, raw, meta):
 def tree_lines(ex, n, depth=0):
     """Static nested list for the no-JavaScript fallback."""
     fn = f"{FUNCTIONS[n['fn']]}: " if n.get("fn") else ""
-    cat = {**WORD_CATEGORIES, **PHRASE_CATEGORIES}[n["cat"]]
+    cat = {**WORD_CATEGORIES, **PHRASE_CATEGORIES, **MORPH_CATEGORIES}[n["cat"]]
     body = f"<span class=\"lbl\">{escape(fn + cat)}</span> <q>{escape(text_of(ex, n))}</q>"
     kids = "".join(tree_lines(ex, k, depth + 1) for k in n.get("children", []))
     return f"<li>{body}{'<ul>' + kids + '</ul>' if kids else ''}</li>"
@@ -494,7 +673,7 @@ def static_index(model):
     for c in model["concepts"]:
         chapters.setdefault(c["location"]["chapter"], []).append(c)
     rows = []
-    for ch in model["chapters"]:
+    for ch in model["chapters"]:  # chapters without concepts stay listed, muted
         concepts = chapters.get(ch["n"])
         head = f"Chapter {ch['n']}. {escape(ch['title'])} <small>pp. {ch['pages'][0]}–{ch['pages'][1]}</small>"
         if not concepts:
@@ -505,6 +684,14 @@ def static_index(model):
             for c in concepts)
         rows.append(f"<li>{head}<ul>{items}</ul></li>")
     return "".join(rows)
+
+
+UNEXPANDED_NOTE = " Chapters without concepts in this version are marked as not yet expanded."
+
+
+def unexpanded(model):
+    covered = {c["location"]["chapter"] for c in model["concepts"]}
+    return [ch["n"] for ch in model["chapters"] if ch["n"] not in covered]
 
 
 def render(model, raw, meta, tokens):
@@ -544,7 +731,7 @@ def render(model, raw, meta, tokens):
 <p>{escape(start['explanation'])}</p>
 <ul class="static-tree">{tree_lines(start, start['tree'])}</ul></section>
 <section aria-labelledby="static-index"><h2 id="static-index">Chapters and concepts</h2>
-<p>Chapter titles follow the book. Chapters without concepts in this version are marked as not yet expanded.</p>
+<p>Chapter titles follow the book.{UNEXPANDED_NOTE if unexpanded(model) else ""}</p>
 <ol class="static-index">{static_index(model)}</ol></section>
 </div>
 <div id="app" class="app" hidden></div>
@@ -582,8 +769,13 @@ def verify_page(html, model):
     assert html.count("mc?.registerTool") == 3 and len(re.findall(r"readOnlyHint:\s*true", html)) == 3
     data = json.loads(re.search(r'<script type="application/json" id="eg-data">([\s\S]*?)</script>', html).group(1).replace("<\\/", "</"))
     assert [e["id"] for e in data["examples"]] == [e["id"] for e in model["examples"]]
+    source = {e["id"]: e for e in model["examples"]}
     for e in data["examples"]:
-        assert e["tokens"] == tokenize(e["text"]), f"token boundaries changed for {e['id']}"
+        assert e["tokens"] == source[e["id"]]["tokens"], f"token boundaries changed for {e['id']}"
+        if e.get("kind") == "word":
+            assert "".join(t["t"] for t in e["tokens"]) == e["text"], f"word pieces of {e['id']} do not spell it"
+        else:
+            assert e["tokens"] == tokenize(e["text"]), f"token boundaries changed for {e['id']}"
     return data
 
 
@@ -608,7 +800,8 @@ def main():
     verify_page(VIZ.read_text(encoding="utf-8"), model)
     size = len(html.encode("utf-8"))
     print(f"verified: {summary['concepts']} concepts across {summary['chapters']} chapters, {summary['examples']} examples "
-          f"({summary['nodes']} analysis nodes), {summary['contrasts']} contrasts, {len(rows)} contrast pairs, "
+          f"({summary['nodes']} analysis nodes; {summary['words']} word structures, {summary['marks']} punctuation marks, "
+          f"{summary['antecedents']} antecedent links), {summary['contrasts']} contrasts, {len(rows)} contrast pairs, "
           f"{size / 1000:.0f} kB, zero external requests")
 
 
