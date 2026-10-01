@@ -1,0 +1,686 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:,">
+<meta name="description" content="Justin Tang's 14th-place Worlds 2026 team against the team that beat him on stream, João Felipe Leite's. Pick a position, see every legal plan for both players, the payoff of each pairing, and the mix a strong player would use, then play the turn out.">
+<title>Justin Tang turn lab</title>
+<style>
+:root{--bg:#fcfcfb;--fg:#0b0b0b;--muted:#52514e;--faint:#8a8984;--surface:#f3f2ef;--border:#dcdbd6;--focus:#2a78d6;--you:#2a78d6;--opp:#e34948;--mid:#f0efec;--mega:#b44fd6;--good:#0ca30c;--sans:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;--mono:ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace;--r:.5rem;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1a1a19;--fg:#ffffff;--muted:#c3c2b7;--faint:#8f8e86;--surface:#252523;--border:#3a3a37;--focus:#3987e5;--you:#3987e5;--opp:#e66767;--mid:#383835;--mega:#cf7cf0;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#1a1a19;--fg:#ffffff;--muted:#c3c2b7;--faint:#8f8e86;--surface:#252523;--border:#3a3a37;--focus:#3987e5;--you:#3987e5;--opp:#e66767;--mid:#383835;--mega:#cf7cf0;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 var(--sans)}
+main,footer{width:min(100% - 2rem,74rem);margin:auto}
+main{padding:clamp(1.5rem,5vw,3rem) 0 1rem}
+h1{max-width:22ch;margin:0 0 .75rem;font-size:clamp(1.9rem,6vw,3.2rem);line-height:1.05;letter-spacing:-.035em}
+h2{margin:2.25rem 0 .35rem;font-size:1.3rem;line-height:1.25;letter-spacing:-.01em}
+h3{margin:1.25rem 0 .4rem;font-size:.78rem;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:600}
+p{margin:.4rem 0}
+a{color:inherit;text-underline-offset:.18em}
+.lede{max-width:68ch;color:var(--muted);font-size:1.05rem}
+.lede strong{color:var(--fg)}
+.small{font-size:.85rem;color:var(--muted)}
+.mono{font-family:var(--mono)}
+button,select{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--border);border-radius:var(--r);min-height:2.75rem;padding:.45rem .75rem;cursor:pointer}
+button:hover{background:var(--surface)}
+button:focus-visible,select:focus-visible,a:focus-visible,[tabindex]:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+button[aria-pressed=true]{border-color:var(--fg);box-shadow:inset 0 0 0 1px var(--fg)}
+button.primary{background:var(--fg);color:var(--bg);border-color:var(--fg);font-weight:600}
+button.primary:hover{opacity:.88}
+button:disabled{opacity:.5;cursor:progress}
+select{width:100%;cursor:pointer}
+.run{display:grid;gap:.75rem;margin:1.25rem 0 0;grid-template-columns:repeat(auto-fit,minmax(14rem,1fr))}
+.tile{border:1px solid var(--border);border-radius:var(--r);padding:.75rem .9rem;background:var(--surface)}
+.tile .k{font:.72rem var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.tile .v{font-size:1.6rem;font-weight:650;letter-spacing:-.02em;line-height:1.2}
+.tile .d{font-size:.85rem;color:var(--muted)}
+.matches{list-style:none;padding:0;margin:.5rem 0;display:grid;gap:.4rem}
+.matches li{display:flex;flex-wrap:wrap;gap:.25rem .75rem;align-items:baseline;font-size:.92rem}
+.res{font:600 .8rem var(--mono);padding:.05rem .45rem;border-radius:1rem;border:1px solid var(--border)}
+.res.w{border-color:var(--you);color:var(--you)}.res.l{border-color:var(--opp);color:var(--opp)}
+.teams{display:grid;gap:1rem;grid-template-columns:1fr}
+.teamhead{display:flex;align-items:baseline;gap:.5rem;flex-wrap:wrap;margin:.25rem 0 .5rem}
+.teamhead b{font-size:1.05rem}.teamhead .you{color:var(--you)}.teamhead .opp{color:var(--opp)}
+.cards{display:grid;gap:.5rem;grid-template-columns:repeat(auto-fill,minmax(10.5rem,1fr));list-style:none;padding:0;margin:0}
+.card{border:1px solid var(--border);border-radius:var(--r);padding:.6rem;display:grid;grid-template-columns:3.5rem 1fr;gap:.1rem .6rem;align-items:start;font-size:.8rem;background:var(--bg)}
+.card canvas{grid-row:span 3;width:3.5rem;height:3.5rem}
+.card b{font-size:.92rem;overflow-wrap:anywhere}
+.card .meta{color:var(--muted)}
+.card ul{grid-column:1/-1;list-style:none;padding:0;margin:.35rem 0 0;display:flex;flex-wrap:wrap;gap:.25rem}
+.chip{display:inline-block;border:1px solid var(--border);border-radius:1rem;padding:0 .45rem;font:.72rem/1.55 var(--mono);color:var(--muted);white-space:nowrap}
+.chip.pri{color:var(--fg);border-color:var(--fg)}
+.chip.mega{color:var(--mega);border-color:var(--mega)}
+canvas.sprite{image-rendering:pixelated;image-rendering:crisp-edges}
+.tabs{display:flex;flex-wrap:wrap;gap:.4rem;margin:.75rem 0;padding:0;list-style:none}
+.tabs button{font-size:.88rem}
+.tension{max-width:72ch;margin:.25rem 0 .75rem}
+.lab{display:grid;gap:1.25rem;grid-template-columns:1fr}
+.arena{border:1px solid var(--border);border-radius:calc(var(--r) * 1.5);padding:.75rem;background:var(--surface);position:relative;overflow:hidden}
+.fieldbar{display:flex;flex-wrap:wrap;gap:.35rem;align-items:center;margin-bottom:.5rem;font-size:.8rem}
+.fieldbar .turn{font:600 .8rem var(--mono);margin-right:.25rem}
+.row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:.5rem}
+.lab>div,.slot>div,.twocol>div{min-width:0}
+.sidelabel{font:.72rem var(--mono);letter-spacing:.06em;text-transform:uppercase;margin:.35rem 0 .25rem;display:flex;justify-content:space-between;gap:.5rem;flex-wrap:wrap}
+.sidelabel.you{color:var(--you)}.sidelabel.opp{color:var(--opp)}
+.slot{border:1px solid var(--border);border-radius:var(--r);background:var(--bg);padding:.5rem;display:grid;grid-template-columns:4.5rem minmax(0,1fr);gap:.5rem;align-items:center;min-height:6rem;transition:transform .18s ease,opacity .3s ease,box-shadow .2s ease}
+.slot.opp{border-top:3px solid var(--opp)}.slot.you{border-bottom:3px solid var(--you)}
+.slot canvas{width:4.5rem;height:4.5rem}
+.slot.you canvas{transform:scaleX(-1)}
+.slot .nm{font-weight:650;font-size:.95rem;line-height:1.2;overflow-wrap:anywhere}
+.slot .sub{font-size:.75rem;color:var(--muted)}
+.hp{height:.5rem;border-radius:1rem;background:var(--mid);margin:.3rem 0 .15rem;overflow:hidden}
+.hp i{display:block;height:100%;border-radius:1rem;background:var(--good);transition:width .45s ease,background .3s}
+.hp i.mid{background:#eda100}.hp i.low{background:#d03b3b}
+.slot .chips{display:flex;flex-wrap:wrap;gap:.2rem}
+.slot.empty{opacity:.45}
+.slot.fainted{opacity:.35}
+.slot.act{box-shadow:0 0 0 3px var(--fg)}
+.slot.hit{animation:shake .35s}
+.slot.guard{box-shadow:0 0 0 3px var(--you),0 0 0 7px color-mix(in srgb,var(--you) 30%,transparent)}
+.slot.opp.guard{box-shadow:0 0 0 3px var(--opp),0 0 0 7px color-mix(in srgb,var(--opp) 30%,transparent)}
+@keyframes shake{0%,100%{transform:none}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.slot.you.lunge{transform:translateY(-6px)}.slot.opp.lunge{transform:translateY(6px)}
+.bench{display:flex;gap:.35rem;flex-wrap:wrap;margin:.35rem 0 0}
+.bench span{display:inline-flex;align-items:center;gap:.2rem;font-size:.72rem;color:var(--muted);border:1px solid var(--border);border-radius:1rem;padding:0 .45rem 0 .1rem;background:var(--bg)}
+.bench canvas{width:1.6rem;height:1.6rem}
+.bench .gone{text-decoration:line-through;opacity:.55}
+.ticker{min-height:2.6rem;margin:.6rem 0 0;padding:.45rem .6rem;border-radius:var(--r);background:var(--bg);border:1px dashed var(--border);font-size:.88rem}
+.controls{display:grid;gap:.6rem}
+.controls label{display:block;font-size:.8rem;color:var(--muted);margin-bottom:.15rem}
+.btnrow{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center}
+.force{font-size:.82rem;color:var(--muted)}
+.tiles{display:grid;gap:.5rem;grid-template-columns:repeat(auto-fit,minmax(11rem,1fr));margin:.5rem 0}
+.mix{list-style:none;padding:0;margin:.25rem 0;display:grid;gap:.3rem}
+.mix li{display:grid;grid-template-columns:3.2rem 1fr;gap:.5rem;align-items:center;font-size:.83rem}
+.mix .w{font:600 .8rem var(--mono);text-align:right}
+.mix .bar{height:.35rem;border-radius:0 4px 4px 0;margin-top:.15rem}
+.mix.you .bar{background:var(--you)}.mix.opp .bar{background:var(--opp)}
+.mix button{all:unset;cursor:pointer;display:block;border-radius:4px}
+.mix button:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.twocol{display:grid;gap:1rem;grid-template-columns:1fr}
+.chart{width:100%;height:auto;display:block}
+.chart text{font:11px var(--sans);fill:var(--muted)}
+.chart .axis{stroke:var(--border)}
+.chart .zero{stroke:var(--faint);stroke-dasharray:3 3}
+.chart .dot{fill:var(--faint);opacity:.55;cursor:pointer}
+.chart .dot.eq{fill:var(--you);opacity:.95;stroke:var(--bg);stroke-width:2}
+.chart .dot.sel{stroke:var(--fg);stroke-width:2.5;opacity:1}
+.heatwrap{overflow-x:auto}
+table.heat{border-collapse:separate;border-spacing:2px;font:.75rem var(--mono)}
+table.heat th{font-weight:600;color:var(--muted);padding:.2rem .3rem;white-space:nowrap}
+table.heat th.r{text-align:right}
+table.heat td{width:3.1rem;height:2.3rem;text-align:center;border-radius:4px;cursor:pointer;color:var(--fg)}
+table.heat td.sel{outline:2.5px solid var(--fg);outline-offset:-1px}
+table.heat td:focus-visible{outline:3px solid var(--focus)}
+.legendlist{list-style:none;padding:0;margin:.35rem 0;display:grid;gap:.15rem;font-size:.8rem}
+.legendlist b{font-family:var(--mono);display:inline-block;min-width:2.2rem}
+.scale{display:flex;align-items:center;gap:.4rem;font-size:.75rem;color:var(--muted);margin:.4rem 0}
+.scale i{display:block;width:8rem;height:.55rem;border-radius:4px}
+.log{list-style:none;padding:0;margin:.25rem 0;font-size:.85rem;max-height:18rem;overflow:auto;border:1px solid var(--border);border-radius:var(--r)}
+.log li{padding:.25rem .6rem;border-bottom:1px solid var(--border)}
+.log li.th{font:600 .75rem var(--mono);background:var(--surface);color:var(--muted)}
+.log li.y{border-left:3px solid var(--you)}.log li.o{border-left:3px solid var(--opp)}
+.notice{padding:.6rem .8rem;border:1px solid var(--fg);border-radius:var(--r);margin:.5rem 0}
+.tip{position:fixed;z-index:10;pointer-events:none;background:var(--fg);color:var(--bg);font-size:.78rem;line-height:1.35;padding:.4rem .55rem;border-radius:6px;max-width:19rem;opacity:0;transition:opacity .1s}
+details{margin:1rem 0;border-top:1px solid var(--border);padding-top:.35rem}
+summary{cursor:pointer;min-height:2.75rem;display:flex;align-items:center;font-weight:600}
+table.plans{width:100%;border-collapse:collapse;font-size:.8rem}
+table.plans th,table.plans td{padding:.3rem .4rem;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
+table.plans td.n{text-align:right;font-family:var(--mono);white-space:nowrap}
+.method li{margin:.3rem 0;max-width:75ch}
+footer{padding:1.5rem 0 2.5rem;border-top:1px solid var(--border);color:var(--muted);font-size:.85rem;margin-top:2rem}
+footer ul{list-style:none;padding:0;margin:.5rem 0}
+footer li{margin:.15rem 0;overflow-wrap:anywhere}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+@media(min-width:720px){.teams{grid-template-columns:1fr 1fr}.twocol{grid-template-columns:1fr 1fr}}
+@media(min-width:980px){.lab{grid-template-columns:minmax(0,1.05fr) minmax(0,1fr)}}
+@media(max-width:420px){.slot{grid-template-columns:2.6rem minmax(0,1fr);padding:.4rem}.slot canvas{width:2.6rem!important;height:2.6rem!important}.slot canvas{width:3.2rem;height:3.2rem}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}.slot.lunge{transform:none!important}}
+</style></head>
+<body>
+<main>
+<h1>Justin Tang's Worlds team, one turn at a time</h1>
+<p class="lede">Justin Tang finished <strong>14th of 395</strong> at the 2026 World Championships with Sneasler, Sinistcha, Kingambit, Mega Blastoise, Mega Delphox and Incineroar. His Round 11 feature match was a <strong>0-2 loss to João Felipe Leite</strong>, who went on to the semifinals. This lab puts the two real team sheets against each other. For any position it lists every legal plan for both players, simulates each pairing several times with fresh damage rolls, and finds the mix of plans a strong player would use. Then you play the turn out.</p>
+
+<section class="run" aria-label="Tournament record" id="run"></section>
+
+<h2>The two teams</h2>
+<p class="small">Pixel sprites drawn for this page. Moves, items, abilities and natures come from the published team sheets; stat points are standard spreads (the lists don't publish them). Priority moves are outlined.</p>
+<div class="teams" id="teams"></div>
+
+<h2>The lab</h2>
+<p class="small">Six positions built from these two team sheets, each around one real tradeoff. They are not a transcript of the video. You play Justin's side (blue, bottom); João's side (red, top) plays the equilibrium mix unless you pick a specific reply in the matrix.</p>
+<ul class="tabs" id="tabs" aria-label="Positions"></ul>
+<p class="tension" id="tension"></p>
+
+<div class="lab">
+ <div>
+  <div class="arena" id="arena" aria-live="polite"></div>
+  <h3>Your plan this turn</h3>
+  <div class="controls" id="controls"></div>
+  <div class="btnrow" style="margin-top:.6rem">
+   <button class="primary" id="play" type="button">Play the turn</button>
+   <button id="useeq" type="button">Sample from the equilibrium</button>
+   <button id="reset" type="button">Reset position</button>
+  </div>
+  <p class="force" id="force"></p>
+  <h3>Battle log</h3>
+  <ol class="log" id="log" aria-label="Battle log"></ol>
+ </div>
+ <div id="analysis" aria-live="polite">
+  <h3>What the plan is worth</h3>
+  <div class="tiles" id="tiles"></div>
+  <div class="twocol">
+   <div><h3>Justin's equilibrium mix</h3><ul class="mix you" id="mixyou"></ul></div>
+   <div><h3>João's equilibrium mix</h3><ul class="mix opp" id="mixopp"></ul></div>
+  </div>
+  <h3>Safe or greedy: every legal plan</h3>
+  <div id="scatter"></div>
+  <p class="small">Each dot is one of your plans. Right means a better worst case against any single reply; up means a better average against João's mix. Blue dots are the ones the equilibrium actually plays. Click a dot to choose that plan.</p>
+  <h3>Payoff matrix, top plans</h3>
+  <div class="scale"><span>worse for Justin</span><i id="scalebar"></i><span>better</span></div>
+  <div class="heatwrap" id="heat"></div>
+  <p class="small">Cells are the average change in board value, in points (100 = one healthy Pokémon), when that pair of plans meets. Click a cell to lock in both plans, then Play the turn.</p>
+  <details><summary>All plans as a table</summary><div id="plantable"></div></details>
+ </div>
+</div>
+
+<h2>How it works</h2>
+<ul class="method" id="method"></ul>
+<details><summary>Not modelled</summary><p class="small" id="notmodelled"></p></details>
+</main>
+<footer><b>Sources</b><ul id="sources"></ul><p id="fetched"></p></footer>
+<div class="tip" id="tip" role="tooltip"></div>
+
+<script id="dataset" type="application/json">/*@DATA@*/</script>
+<script id="engine">/*@ENGINE@*/</script>
+<script>
+"use strict";
+const D = JSON.parse(document.getElementById("dataset").textContent);
+const E = window.VGCEngine;
+const $ = (s) => document.querySelector(s);
+const el = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x !== undefined) e.textContent = x; return e; };
+const NS = "http://www.w3.org/2000/svg";
+const svg = (t, a, p) => { const e = document.createElementNS(NS, t); for (const [k, v] of Object.entries(a || {})) e.setAttribute(k, v); if (p) p.append(e); return e; };
+const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const sleep = (ms) => new Promise((r) => setTimeout(r, reduced ? Math.min(ms, 60) : ms));
+const pts = (v) => (v >= 0 ? "+" : "−") + Math.abs(v * 100).toFixed(0);
+const pct = (w) => (w * 100 < 1 ? "<1" : Math.round(w * 100)) + "%";
+
+// ---------- sprites ----------
+const baseForm = (form) => form.replace(/-Mega$/, "");
+function drawSprite(canvas, form, mega) {
+  const sp = D.sprites[baseForm(form)];
+  const N = 18; canvas.width = N; canvas.height = N;
+  const g = canvas.getContext("2d"); g.clearRect(0, 0, N, N);
+  const on = (x, y) => y >= 0 && y < 16 && x >= 0 && x < 16 && sp.rows[y][x] !== ".";
+  if (mega) {
+    const c = getComputedStyle(document.documentElement).getPropertyValue("--mega").trim() || "#b44fd6";
+    g.fillStyle = c;
+    for (let y = -1; y <= 16; y++) for (let x = -1; x <= 16; x++) {
+      if (on(x, y)) continue;
+      if (on(x - 1, y) || on(x + 1, y) || on(x, y - 1) || on(x, y + 1)) g.fillRect(x + 1, y + 1, 1, 1);
+    }
+  }
+  sp.rows.forEach((row, y) => [...row].forEach((ch, x) => { if (ch !== ".") { g.fillStyle = sp.palette[ch]; g.fillRect(x + 1, y + 1, 1, 1); } }));
+}
+function spriteEl(form, mega, label) {
+  const c = el("canvas", "sprite"); drawSprite(c, form, mega);
+  c.setAttribute("role", "img"); c.setAttribute("aria-label", label || (mega ? "Mega " + baseForm(form) : form) + " pixel sprite");
+  return c;
+}
+
+// ---------- tooltip ----------
+const tip = $("#tip");
+function showTip(ev, html) { tip.innerHTML = html; tip.style.opacity = 1; const x = Math.min(ev.clientX + 14, innerWidth - tip.offsetWidth - 8); const y = Math.min(ev.clientY + 14, innerHeight - tip.offsetHeight - 8); tip.style.left = x + "px"; tip.style.top = y + "px"; }
+function hideTip() { tip.style.opacity = 0; }
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+// ---------- static sections ----------
+function renderRun() {
+  const host = $("#run");
+  const t = D.teams.tang, o = D.teams.leite;
+  const tile = (k, v, d) => { const e = el("div", "tile"); e.append(el("div", "k", k), el("div", "v", v), el("div", "d", d)); return e; };
+  host.append(tile("Worlds 2026", t.placement, "Justin Tang, " + t.record + " in Swiss"));
+  host.append(tile("Round 11, on stream", "L 0-2", "vs " + o.player + ", " + o.placement));
+  const m = el("div", "tile"); m.append(el("div", "k", "Matches with a public result"));
+  const ul = el("ul", "matches");
+  for (const x of D.player.matches) {
+    const li = el("li");
+    const r = el("span", "res " + (x.result.startsWith("W") ? "w" : "l"), x.result);
+    li.append(r, el("span", "", x.opponent));
+    if (x.vod) { const src = D.sources.find((s) => s.id === x.vod); const a = el("a", "", "watch"); a.href = src.url; a.rel = "noopener"; li.append(a); }
+    ul.append(li);
+  }
+  m.append(ul); host.append(m);
+}
+function renderTeams() {
+  const host = $("#teams");
+  for (const [id, cls] of [["tang", "you"], ["leite", "opp"]]) {
+    const t = D.teams[id];
+    const wrap = el("section");
+    const head = el("div", "teamhead"); head.append(el("b", cls, t.player), el("span", "small", t.placement + " · " + t.record));
+    const ul = el("ul", "cards");
+    for (const m of t.members) {
+      const li = el("li", "card");
+      const megaForm = (D.items[m.item] || {}).mega;
+      const cv = spriteEl(m.species, !!megaForm, m.species + (megaForm ? ", Mega Evolves" : ""));
+      li.append(cv, el("b", "", m.species), el("span", "meta", m.item), el("span", "meta", m.ability + " · " + m.nature + (m.nature_assumed ? "*" : "")));
+      const moves = el("ul");
+      for (const mv of m.moves) { const c = el("li", "chip" + (D.moves[mv].pri > 0 ? " pri" : ""), mv); c.title = D.moves[mv].note || `${D.moves[mv].type}, ${D.moves[mv].bp || "—"} power, priority ${D.moves[mv].pri}`; moves.append(c); }
+      if (megaForm) moves.append(el("li", "chip mega", "Mega: " + D.species[megaForm].abilities[0]));
+      const st = E.calcStats(D.species[m.species].base_stats, m.stat_points, m.nature);
+      const spTxt = Object.entries(m.stat_points).map(([k, v]) => v + " " + k.toUpperCase()).join(" / ");
+      li.title = `Stat points ${spTxt}. Level 50 stats: ${st.hp} HP, ${st.atk} Atk, ${st.def} Def, ${st.spa} SpA, ${st.spd} SpD, ${st.spe} Spe`;
+      li.append(moves); ul.append(li);
+    }
+    wrap.append(head, ul); host.append(wrap);
+  }
+  const note = el("p", "small", "* nature assumed. Hover a card for its stat points and level-50 stats, or a move for its rule.");
+  host.append(note);
+}
+function renderMethod() {
+  const ul = $("#method");
+  for (const a of D.assumptions) ul.append(el("li", "", a));
+  ul.append(el("li", "", D.featured_match.note));
+  $("#notmodelled").textContent = D.not_modelled.join("; ") + ".";
+  const src = $("#sources");
+  for (const s of D.sources) { const li = el("li"); const a = el("a", "", s.label); a.href = s.url; a.rel = "noopener"; li.append(a, document.createTextNode(" — " + s.used_for)); src.append(li); }
+  $("#fetched").textContent = "Data fetched " + D.fetched + ". Mechanics follow Pokémon Showdown's Champions mod.";
+}
+
+// ---------- lab state ----------
+let pos = null, state = null, analysis = null, selected = 0, forcedCol = null, busy = false, token = 0, over = false;
+const turnLog = [];
+
+function loadPosition(p) {
+  pos = p; forcedCol = null; over = false; turnLog.length = 0;
+  const b = E.newBattle(D, p);
+  state = b.state;
+  document.querySelectorAll("#tabs button").forEach((x) => x.setAttribute("aria-pressed", x.dataset.id === p.id));
+  $("#tension").textContent = p.setup + " " + p.tension;
+  pushLog("Before turn " + (state.turn + 1), b.log);
+  renderArena(); renderLog(); analyse();
+}
+
+function monByKey(st, key) { for (const s of st.sides) for (const m of s.mons) if (m.key === key) return m; return null; }
+
+// ---------- arena ----------
+function hpClass(f) { return f > 0.5 ? "" : f > 0.2 ? "mid" : "low"; }
+function slotEl(mon, sideIdx, slot) {
+  const cls = sideIdx === 0 ? "you" : "opp";
+  const e = el("div", "slot " + cls);
+  e.dataset.side = sideIdx; e.dataset.slot = slot;
+  if (!mon) { e.classList.add("empty"); e.append(el("span"), el("span", "sub", "empty")); return e; }
+  e.dataset.key = mon.key;
+  if (mon.fainted) e.classList.add("fainted");
+  const cv = spriteEl(mon.form, mon.isMega);
+  const info = el("div");
+  info.append(el("div", "nm", mon.form.replace("-Mega", "")));
+  const f = mon.hp / mon.maxhp;
+  const bar = el("div", "hp"); const fill = el("i", hpClass(f)); fill.style.width = (f * 100).toFixed(1) + "%"; bar.append(fill);
+  bar.setAttribute("role", "meter"); bar.setAttribute("aria-valuemin", 0); bar.setAttribute("aria-valuemax", 100); bar.setAttribute("aria-valuenow", Math.round(f * 100)); bar.setAttribute("aria-label", "HP");
+  info.append(bar, el("div", "sub hptext", Math.round(f * 100) + "% · " + E.speedOf(state, mon) + " Spe"));
+  const chips = el("div", "chips");
+  if (mon.isMega) chips.append(el("span", "chip mega", "Mega"));
+  if (mon.status) chips.append(el("span", "chip", { brn: "BRN", psn: "PSN", par: "PAR", slp: "SLP" }[mon.status]));
+  for (const [k, v] of Object.entries(mon.boosts)) if (v) chips.append(el("span", "chip", (v > 0 ? "+" : "") + v + " " + k.toUpperCase()));
+  if (mon.fresh && mon.moves.includes("Fake Out")) chips.append(el("span", "chip pri", "Fake Out ready"));
+  if (mon.protectCount) chips.append(el("span", "chip", "Protect x" + mon.protectCount));
+  if ((mon.item === "Focus Sash" || mon.item === "White Herb" || mon.item === "Colbur Berry" || mon.item === "Sitrus Berry") && !mon.itemUsed) chips.append(el("span", "chip", mon.item));
+  if (mon.unburden && mon.itemUsed) chips.append(el("span", "chip pri", "Unburden x2 Spe"));
+  info.append(chips);
+  e.append(cv, info);
+  return e;
+}
+function renderArena() {
+  const a = $("#arena"); a.innerHTML = "";
+  const fb = el("div", "fieldbar");
+  fb.append(el("span", "turn", "Turn " + (state.turn + 1)));
+  if (state.trickRoom) fb.append(el("span", "chip pri", "Trick Room " + state.trickRoom));
+  if (state.snow) fb.append(el("span", "chip", "Snow " + state.snow));
+  if (state.sides[1].veil) fb.append(el("span", "chip", "João: Aurora Veil " + state.sides[1].veil));
+  if (state.sides[0].veil) fb.append(el("span", "chip", "Justin: Aurora Veil " + state.sides[0].veil));
+  fb.append(el("span", "chip", "Mega: Justin " + (state.sides[0].megaUsed ? "used" : "open") + ", João " + (state.sides[1].megaUsed ? "used" : "open")));
+  a.append(fb);
+  for (const sideIdx of [1, 0]) {
+    const side = state.sides[sideIdx];
+    const lab = el("div", "sidelabel " + (sideIdx ? "opp" : "you"));
+    lab.append(el("span", "", side.name));
+    const bench = el("div", "bench");
+    for (const i of side.brought) {
+      if (side.active.includes(i)) continue;
+      const m = side.mons[i];
+      const s = el("span"); s.append(spriteEl(m.form, m.isMega));
+      s.append(el("span", m.fainted ? "gone" : "", m.form.replace("-Mega", "") + (m.fainted ? "" : " " + Math.round(100 * m.hp / m.maxhp) + "%")));
+      bench.append(s);
+    }
+    const row = el("div", "row");
+    side.active.forEach((i, slot) => row.append(slotEl(side.mons[i], sideIdx, slot)));
+    if (sideIdx === 1) { lab.append(bench); a.append(lab, row); }
+    else { a.append(row); lab.append(bench); a.append(lab); }
+  }
+  const tk = el("div", "ticker"); tk.id = "ticker"; tk.textContent = over ? over : "Choose a plan, then play the turn.";
+  a.append(tk);
+}
+function slotFor(key) { return document.querySelector(`#arena .slot[data-key="${CSS.escape(key)}"]`); }
+
+// ---------- controls ----------
+function renderControls() {
+  const host = $("#controls"); host.innerHTML = "";
+  if (!analysis) { host.append(el("p", "small", "Solving the turn…")); return; }
+  const rows = analysis.rows;
+  const side = state.sides[0];
+  side.active.forEach((i, slot) => {
+    const mon = side.mons[i];
+    if (!mon || mon.fainted) return;
+    const wrap = el("div"); const id = "ctl" + slot;
+    const lab = el("label", "", mon.form.replace("-Mega", "")); lab.htmlFor = id;
+    const sel = el("select"); sel.id = id;
+    const opts = new Map();
+    rows.forEach((r) => { const c = r[slot]; const k = JSON.stringify(c); if (!opts.has(k)) opts.set(k, E.describeChoice(D, state, 0, slot, c)); });
+    for (const [k, label] of opts) { const o = el("option", "", label); o.value = k; sel.append(o); }
+    sel.value = JSON.stringify(rows[selected][slot]);
+    sel.addEventListener("change", onControlChange);
+    wrap.append(lab, sel); host.append(wrap);
+  });
+}
+function onControlChange() {
+  const want = state.sides[0].active.map((_, slot) => { const s = $("#ctl" + slot); return s ? s.value : "null"; });
+  const idx = analysis.rows.findIndex((r) => r.every((c, slot) => JSON.stringify(c) === want[slot] || (!$("#ctl" + slot))));
+  if (idx < 0) { $("#force").textContent = "That pair isn't legal (only one Mega per battle, and two Pokémon can't switch into the same slot)."; return; }
+  selectRow(idx);
+}
+function selectRow(i, keepForce) {
+  selected = i; if (!keepForce) forcedCol = null;
+  renderControls(); renderAnalysis();
+}
+function updateForce() {
+  const f = $("#force");
+  if (!analysis) { f.textContent = ""; return; }
+  if (forcedCol !== null) {
+    f.innerHTML = "";
+    f.append(document.createTextNode("João will play: " + E.describePlan(D, state, 1, analysis.cols[forcedCol]) + ". "));
+    const b = el("button", "", "Let João mix instead"); b.style.minHeight = "2.2rem"; b.addEventListener("click", () => { forcedCol = null; renderAnalysis(); }); f.append(b);
+  } else f.textContent = "João samples a plan from his equilibrium mix.";
+}
+
+// ---------- analysis ----------
+let worker = null;
+function getWorker() {
+  if (worker !== null) return worker;
+  try {
+    const src = document.getElementById("engine").textContent + "\nself.onmessage=(e)=>{const{data,state,token}=e.data;const m=VGCEngine.payoffMatrix(data,state,{budget:45000,seed:state.turn+1});const s=VGCEngine.solve(m.M,2500);self.postMessage({token,rows:m.rows,cols:m.cols,M:m.M.map(r=>Array.from(r)),trials:m.trials,p:s.p,q:s.q,value:s.value});};";
+    worker = new Worker(URL.createObjectURL(new Blob([src], { type: "text/javascript" })));
+  } catch (err) { worker = false; }
+  return worker;
+}
+function analyse() {
+  analysis = null; renderControls(); renderAnalysis(); setBusy(true);
+  const my = ++token;
+  const alive = (s) => E.actives(state, s).length;
+  if (!alive(0) || !alive(1)) { setBusy(false); return; }
+  const done = (res) => {
+    if (res.token !== my) return;
+    res.stats = E.rowStats(res.M, res.q);
+    analysis = res;
+    let best = 0; res.p.forEach((w, i) => { if (w > res.p[best]) best = i; });
+    selected = best; forcedCol = null;
+    setBusy(false); renderControls(); renderAnalysis();
+  };
+  const w = getWorker();
+  if (w) { w.onmessage = (e) => done(e.data); w.onerror = () => { worker = false; analyse(); }; w.postMessage({ data: D, state, token: my }); }
+  else setTimeout(() => { const m = E.payoffMatrix(D, state, { budget: 20000, seed: state.turn + 1 }); const s = E.solve(m.M, 2000); done({ token: my, rows: m.rows, cols: m.cols, M: m.M.map((r) => Array.from(r)), trials: m.trials, p: s.p, q: s.q, value: s.value }); }, 30);
+}
+function setBusy(b) { busy = b; for (const id of ["#play", "#useeq"]) $(id).disabled = b || !!over; }
+
+function topIdx(arr, n, must) {
+  const idx = arr.map((w, i) => i).sort((a, b) => arr[b] - arr[a]).slice(0, n);
+  if (must !== undefined && must !== null && !idx.includes(must)) idx[idx.length - 1] = must;
+  return idx;
+}
+function renderAnalysis() {
+  const tiles = $("#tiles"), mixyou = $("#mixyou"), mixopp = $("#mixopp"), sc = $("#scatter"), heat = $("#heat"), tbl = $("#plantable");
+  for (const h of [tiles, mixyou, mixopp, sc, heat, tbl]) h.innerHTML = "";
+  updateForce();
+  if (!analysis) {
+    if (over) { tiles.append(el("p", "", over)); return; }
+    tiles.append(el("p", "small", "Simulating every pairing of plans…")); return;
+  }
+  const A = analysis, st = A.stats[selected];
+  const worstCol = A.M[selected].indexOf(Math.min(...A.M[selected]));
+  const tile = (k, v, d) => { const e = el("div", "tile"); e.append(el("div", "k", k), el("div", "v", v), el("div", "d", d)); return e; };
+  tiles.append(tile("Position value", pts(A.value), "if both sides play the equilibrium, in points for Justin"));
+  tiles.append(tile("Your plan vs his mix", pts(st.ev), `${pct(A.p[selected])} equilibrium weight`));
+  tiles.append(tile("Your plan, worst case", pts(st.worst), "his best reply: " + E.describePlan(D, state, 1, A.cols[worstCol])));
+  // mixes
+  const mix = (host, probs, plans, sideIdx, stats) => {
+    for (const i of topIdx(probs, 6)) {
+      if (probs[i] < 0.005) continue;
+      const li = el("li"); li.append(el("span", "w", pct(probs[i])));
+      const b = el("button"); b.type = "button";
+      b.append(el("span", "", E.describePlan(D, state, sideIdx, plans[i])));
+      const bar = el("div", "bar"); bar.style.width = Math.max(2, probs[i] * 100) + "%"; b.append(bar);
+      if (sideIdx === 0) { b.addEventListener("click", () => selectRow(i)); if (i === selected) b.style.fontWeight = 650; }
+      else { b.addEventListener("click", () => { forcedCol = i; renderAnalysis(); }); if (i === forcedCol) b.style.fontWeight = 650; b.title = "Force João to play this"; }
+      li.append(b); host.append(li);
+    }
+  };
+  mix(mixyou, A.p, A.rows, 0);
+  mix(mixopp, A.q, A.cols, 1);
+  renderScatter(sc); renderHeat(heat); renderPlanTable(tbl);
+}
+function renderScatter(host) {
+  const A = analysis, W = 520, H = 250, m = { l: 44, r: 12, t: 12, b: 34 };
+  const xs = A.stats.map((s) => s.worst), ys = A.stats.map((s) => s.ev);
+  const pad = (lo, hi) => { const d = (hi - lo) || 0.1; return [lo - d * 0.06, hi + d * 0.06]; };
+  const [x0, x1] = pad(Math.min(...xs), Math.max(...xs)), [y0, y1] = pad(Math.min(...ys), Math.max(...ys));
+  const X = (v) => m.l + (v - x0) / (x1 - x0) * (W - m.l - m.r), Y = (v) => H - m.b - (v - y0) / (y1 - y0) * (H - m.t - m.b);
+  const s = svg("svg", { viewBox: `0 0 ${W} ${H}`, class: "chart", role: "img", "aria-label": "Scatter of your plans: worst case against expected value versus João's mix" });
+  svg("line", { x1: m.l, x2: W - m.r, y1: H - m.b, y2: H - m.b, class: "axis" }, s);
+  svg("line", { x1: m.l, x2: m.l, y1: m.t, y2: H - m.b, class: "axis" }, s);
+  if (x0 < 0 && x1 > 0) svg("line", { x1: X(0), x2: X(0), y1: m.t, y2: H - m.b, class: "zero" }, s);
+  if (y0 < 0 && y1 > 0) svg("line", { x1: m.l, x2: W - m.r, y1: Y(0), y2: Y(0), class: "zero" }, s);
+  const tick = (v, x, y, anchor) => { const t = svg("text", { x, y, "text-anchor": anchor }, s); t.textContent = pts(v); };
+  tick(x0, X(x0), H - m.b + 14, "start"); tick(x1, X(x1), H - m.b + 14, "end");
+  tick(y0, m.l - 6, Y(y0), "end"); tick(y1, m.l - 6, Y(y1) + 8, "end");
+  const xl = svg("text", { x: (m.l + W - m.r) / 2, y: H - 4, "text-anchor": "middle" }, s); xl.textContent = "worst case against his best single reply →";
+  const yl = svg("text", { x: 12, y: (m.t + H - m.b) / 2, "text-anchor": "middle", transform: `rotate(-90 12 ${(m.t + H - m.b) / 2})` }, s); yl.textContent = "average vs his mix →";
+  const order = A.stats.map((_, i) => i).sort((a, b) => A.p[a] - A.p[b]);
+  for (const i of order) {
+    const eq = A.p[i] >= 0.01;
+    const r = eq ? 4 + Math.sqrt(A.p[i]) * 10 : 4;
+    const c = svg("circle", { cx: X(xs[i]), cy: Y(ys[i]), r, class: "dot" + (eq ? " eq" : "") + (i === selected ? " sel" : ""), tabindex: -1 }, s);
+    const html = `<b>${esc(E.describePlan(D, state, 0, A.rows[i]))}</b><br>vs mix ${pts(ys[i])} · worst ${pts(xs[i])} · weight ${pct(A.p[i])}`;
+    c.addEventListener("pointermove", (ev) => showTip(ev, html));
+    c.addEventListener("pointerleave", hideTip);
+    c.addEventListener("click", () => { hideTip(); selectRow(i); });
+  }
+  host.append(s);
+}
+// Diverging blue (good for Justin) <-> gray <-> red, in the page's own tokens.
+function divColor(v, lim) {
+  const t = Math.max(-1, Math.min(1, v / lim));
+  const cs = getComputedStyle(document.documentElement);
+  const pole = cs.getPropertyValue(t >= 0 ? "--you" : "--opp").trim();
+  const mid = cs.getPropertyValue("--mid").trim();
+  return `color-mix(in oklab, ${pole} ${Math.round(Math.abs(t) * 85)}%, ${mid})`;
+}
+function renderHeat(host) {
+  const A = analysis;
+  const R = topIdx(A.p, 8, selected), C = topIdx(A.q, 8, forcedCol);
+  const lim = Math.max(0.05, ...R.flatMap((r) => C.map((c) => Math.abs(A.M[r][c]))));
+  const cs = getComputedStyle(document.documentElement);
+  $("#scalebar").style.background = `linear-gradient(90deg, ${cs.getPropertyValue("--opp")}, ${cs.getPropertyValue("--mid")}, ${cs.getPropertyValue("--you")})`;
+  const t = el("table", "heat");
+  const hr = el("tr"); hr.append(el("th", "", ""));
+  C.forEach((c, j) => { const th = el("th", "", "J" + (j + 1)); th.title = E.describePlan(D, state, 1, A.cols[c]); hr.append(th); });
+  t.append(hr);
+  R.forEach((r, i) => {
+    const tr = el("tr"); const th = el("th", "r", "T" + (i + 1)); th.title = E.describePlan(D, state, 0, A.rows[r]); tr.append(th);
+    C.forEach((c, j) => {
+      const v = A.M[r][c];
+      const td = el("td", r === selected && c === forcedCol ? "sel" : "", Math.round(v * 100));
+      td.style.background = divColor(v, lim);
+      if (Math.abs(v / lim) > 0.6) td.style.color = "#fff";
+      td.tabIndex = 0;
+      const label = `${E.describePlan(D, state, 0, A.rows[r])} against ${E.describePlan(D, state, 1, A.cols[c])}: ${pts(v)} points`;
+      td.setAttribute("aria-label", label);
+      td.addEventListener("pointermove", (ev) => showTip(ev, esc(label)));
+      td.addEventListener("pointerleave", hideTip);
+      const pick = () => { hideTip(); forcedCol = c; selectRow(r, true); };
+      td.addEventListener("click", pick);
+      td.addEventListener("keydown", (ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); pick(); } });
+      tr.append(td);
+    });
+    t.append(tr);
+  });
+  host.append(t);
+  const leg = el("div", "twocol");
+  const l1 = el("ul", "legendlist"), l2 = el("ul", "legendlist");
+  R.forEach((r, i) => { const li = el("li"); li.append(el("b", "", "T" + (i + 1)), document.createTextNode(`${pct(A.p[r])} · ${E.describePlan(D, state, 0, A.rows[r])}`)); l1.append(li); });
+  C.forEach((c, j) => { const li = el("li"); li.append(el("b", "", "J" + (j + 1)), document.createTextNode(`${pct(A.q[c])} · ${E.describePlan(D, state, 1, A.cols[c])}`)); l2.append(li); });
+  leg.append(l1, l2); host.append(leg);
+}
+function renderPlanTable(host) {
+  const A = analysis;
+  const t = el("table", "plans");
+  const h = el("tr"); for (const x of ["Justin's plan", "Weight", "vs mix", "Worst", "Best"]) h.append(el("th", "", x)); t.append(h);
+  A.stats.map((s, i) => i).sort((a, b) => A.stats[b].ev - A.stats[a].ev).forEach((i) => {
+    const s = A.stats[i]; const tr = el("tr");
+    tr.append(el("td", "", E.describePlan(D, state, 0, A.rows[i])), el("td", "n", pct(A.p[i])), el("td", "n", pts(s.ev)), el("td", "n", pts(s.worst)), el("td", "n", pts(s.best)));
+    t.append(tr);
+  });
+  host.append(el("p", "small", `${A.rows.length} plans for Justin × ${A.cols.length} for João, ${A.trials} simulated turns per pairing.`), t);
+}
+
+// ---------- playing a turn ----------
+function sample(probs) { let r = Math.random(), i = 0; for (; i < probs.length - 1; i++) { r -= probs[i]; if (r <= 0) break; } return i; }
+async function play() {
+  if (!analysis || busy) return;
+  setBusy(true);
+  const A = analysis;
+  const col = forcedCol !== null ? forcedCol : sample(A.q);
+  const plans = [A.rows[selected], A.cols[col]];
+  const before = state;
+  const res = E.resolveTurn(D, state, plans, (Math.random() * 1e9) | 0);
+  const header = `Turn ${before.turn + 1}: Justin — ${E.describePlan(D, before, 0, plans[0])} | João — ${E.describePlan(D, before, 1, plans[1])}`;
+  await animate(res.log, before);
+  state = res.state;
+  pushLog(header, res.log);
+  await replacements();
+  renderArena(); renderLog(); checkOver(); analyse();
+}
+async function replacements() {
+  // João replaces with whichever bench Pokémon leaves the best board for him.
+  for (const slot of [0, 1]) {
+    const side = state.sides[1];
+    const m = side.mons[side.active[slot]];
+    if (m && m.fainted) {
+      const bench = E.benchOf(state, 1);
+      if (bench.length) {
+        let best = null;
+        for (const b of bench) { const r = E.sendIn(D, state, 1, slot, b); const v = E.evaluate(D, r.state); if (!best || v < best.v) best = { v, r }; }
+        state = best.r.state; pushLog("João sends in", best.r.log);
+      }
+    }
+  }
+  for (const slot of [0, 1]) {
+    const side = state.sides[0];
+    const m = side.mons[side.active[slot]];
+    if (m && m.fainted) {
+      const bench = E.benchOf(state, 0);
+      if (bench.length === 1) { const r = E.sendIn(D, state, 0, slot, bench[0]); state = r.state; pushLog("Justin sends in", r.log); }
+      else if (bench.length > 1) {
+        renderArena();
+        const choice = await new Promise((resolve) => {
+          const tk = $("#ticker"); tk.innerHTML = ""; tk.append(el("span", "", m.form.replace("-Mega", "") + " fainted. Send in: "));
+          for (const b of bench) { const btn = el("button", "", side.mons[b].form); btn.style.margin = ".2rem"; btn.addEventListener("click", () => resolve(b)); tk.append(btn); }
+          tk.querySelector("button").focus();
+        });
+        const r = E.sendIn(D, state, 0, slot, choice); state = r.state; pushLog("Justin sends in", r.log);
+      }
+    }
+  }
+}
+function checkOver() {
+  const alive = (s) => state.sides[s].brought.some((i) => !state.sides[s].mons[i].fainted);
+  if (!alive(0) || !alive(1)) {
+    over = !alive(1) && alive(0) ? "Justin wins this game. Reset to try the position again." : !alive(0) && alive(1) ? "João wins this game. Reset to try a different line." : "Both sides are out: a draw.";
+    renderArena(); setBusy(false);
+  }
+}
+async function animate(log, before) {
+  const tk = $("#ticker");
+  for (const ev of log) {
+    tk.textContent = ev.text;
+    const node = ev.who ? slotFor(ev.who) : null;
+    if (ev.t === "move" && node) { node.classList.add("act", "lunge"); await sleep(420); node.classList.remove("act", "lunge"); continue; }
+    if ((ev.t === "damage" || ev.t === "recoil") && node) { node.classList.add("hit"); setHp(node, ev.hp); await sleep(480); node.classList.remove("hit"); continue; }
+    if (ev.t === "heal" && node) { setHp(node, ev.hp); await sleep(380); continue; }
+    if ((ev.t === "protect" || ev.t === "blocked") && node) { node.classList.add("guard"); await sleep(520); node.classList.remove("guard"); continue; }
+    if (ev.t === "faint" && node) { node.classList.add("fainted"); await sleep(500); continue; }
+    if (ev.t === "mega" && node) { const cv = node.querySelector("canvas"); const mon = monByKey(before, ev.who); drawSprite(cv, mon.form, true); await sleep(650); continue; }
+    if (ev.t === "switchin") {
+      const target = document.querySelector(`#arena .slot[data-side="${ev.side}"][data-slot="${ev.slot}"]`);
+      const mon = monByKey(before, ev.who);
+      if (target && mon) { const fresh = slotEl(Object.assign({}, mon, { hp: ev.hp * mon.maxhp, fainted: false }), ev.side, ev.slot); target.replaceWith(fresh); }
+      await sleep(500); continue;
+    }
+    await sleep(ev.t === "boost" || ev.t === "status" ? 380 : 330);
+  }
+}
+function setHp(node, f) {
+  if (f === undefined) return;
+  const i = node.querySelector(".hp i"); if (!i) return;
+  i.style.width = (f * 100).toFixed(1) + "%"; i.className = hpClass(f);
+  const t = node.querySelector(".hptext"); if (t) t.textContent = Math.round(f * 100) + "%";
+}
+function pushLog(header, events) { turnLog.push({ header, events }); }
+function renderLog() {
+  const ol = $("#log"); ol.innerHTML = "";
+  for (const entry of turnLog.slice().reverse()) {
+    ol.append(el("li", "th", entry.header));
+    for (const ev of entry.events) { const side = ev.who ? ev.who.split(":")[0] : null; ol.append(el("li", side === "0" ? "y" : side === "1" ? "o" : "", ev.text)); }
+  }
+}
+
+// ---------- boot ----------
+function boot() {
+  renderRun(); renderTeams(); renderMethod();
+  const tabs = $("#tabs");
+  for (const p of D.positions) { const li = el("li"); const b = el("button", "", p.title); b.type = "button"; b.dataset.id = p.id; b.addEventListener("click", () => loadPosition(p)); li.append(b); tabs.append(li); }
+  $("#play").addEventListener("click", play);
+  $("#useeq").addEventListener("click", () => { if (analysis) selectRow(sample(analysis.p)); });
+  $("#reset").addEventListener("click", () => loadPosition(pos));
+  let resizeT; addEventListener("resize", () => { clearTimeout(resizeT); resizeT = setTimeout(() => analysis && renderAnalysis(), 150); });
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { renderArena(); if (analysis) renderAnalysis(); });
+  loadPosition(D.positions[0]);
+}
+boot();
+
+// ---------- WebMCP ----------
+const result = (v) => ({ content: [{ type: "text", text: JSON.stringify(v) }] });
+const mc = (typeof document !== "undefined" && document.modelContext) || (typeof navigator !== "undefined" && navigator.modelContext);
+mc?.registerTool({ name: "get_data", description: "Return both team sheets, species and move data, and the six lab positions.", inputSchema: { type: "object", properties: {}, additionalProperties: false }, annotations: { readOnlyHint: true },
+  async execute() { return result({ teams: D.teams, species: D.species, moves: D.moves, items: D.items, positions: D.positions, player: D.player, truncated: false, next_steps: ["Use query with a position id to get the current equilibrium for that position."] }); } });
+mc?.registerTool({ name: "get_metadata", description: "Return the title, format, sources, assumptions and what is not modelled.", inputSchema: { type: "object", properties: {}, additionalProperties: false }, annotations: { readOnlyHint: true },
+  async execute() { return result({ title: document.title, format: D.format, sources: D.sources, fetched: D.fetched, assumptions: D.assumptions, not_modelled: D.not_modelled, featured_match: D.featured_match, truncated: false }); } });
+mc?.registerTool({ name: "query", description: "Solve one position (by id) and return both sides' equilibrium mixes with the expected value of each plan, or filter moves and team members by name.", inputSchema: { type: "object", properties: { position: { type: "string", enum: D.positions.map((p) => p.id) }, name: { type: "string" } }, additionalProperties: false }, annotations: { readOnlyHint: true },
+  async execute(input = {}) {
+    const out = { truncated: false };
+    if (input.name) {
+      const n = input.name.toLowerCase();
+      out.moves = Object.fromEntries(Object.entries(D.moves).filter(([k]) => k.toLowerCase().includes(n)));
+      out.members = Object.values(D.teams).flatMap((t) => t.members.filter((m) => m.species.toLowerCase().includes(n) || m.moves.some((x) => x.toLowerCase().includes(n))).map((m) => ({ player: t.player, ...m })));
+    }
+    if (input.position) {
+      const p = D.positions.find((x) => x.id === input.position);
+      const st = E.newBattle(D, p).state;
+      const m = E.payoffMatrix(D, st, { budget: 20000 }); const s = E.solve(m.M, 2000); const stats = E.rowStats(m.M, s.q);
+      out.position = { id: p.id, title: p.title, value_points: Math.round(s.value * 100),
+        justin: m.rows.map((r, i) => ({ plan: E.describePlan(D, st, 0, r), weight: +s.p[i].toFixed(3), ev_points: Math.round(stats[i].ev * 100), worst_points: Math.round(stats[i].worst * 100) })).sort((a, b) => b.weight - a.weight).slice(0, 12),
+        joao: m.cols.map((c, j) => ({ plan: E.describePlan(D, st, 1, c), weight: +s.q[j].toFixed(3) })).sort((a, b) => b.weight - a.weight).slice(0, 12) };
+    }
+    return result(out);
+  } });
+</script>
+</body></html>
