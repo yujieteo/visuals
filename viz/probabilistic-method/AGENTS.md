@@ -4,7 +4,7 @@ A visual laboratory for the probabilistic method: eighteen labs, each showing wh
 
 ## Source of truth
 
-The standalone repository [yujieteo/probabilistic-method](https://github.com/yujieteo/probabilistic-method) is where this visualisation and its tests develop and where CI runs them. `visuals/probabilistic-method/` in [yujieteo/site](https://github.com/yujieteo/site/tree/main/visuals/probabilistic-method) is a port of its page files, refreshed when the visualisation is updated, and the site runs no logic tests for it. Porting copies the folder minus `tests/` and `.github/`, so AGENTS.md and SKILLS.md must not link into either (the site checks that their links resolve).
+The standalone repository [yujieteo/probabilistic-method](https://github.com/yujieteo/probabilistic-method) is where this visualisation and its tests develop and where CI runs them. `visuals/probabilistic-method/` in [yujieteo/site](https://github.com/yujieteo/site/tree/main/visuals/probabilistic-method) is a port of its page files, refreshed when the visualisation is updated, and the site runs no logic tests for it. Porting copies the folder minus `tests/` and `.github/`. AGENTS.md and SKILLS.md must therefore not link into either (the site checks that their links resolve).
 
 ## Files and data
 
