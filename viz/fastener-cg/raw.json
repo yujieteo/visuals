@@ -1,0 +1,505 @@
+{
+  "title": "Fastener Pattern CG Tracker",
+  "version": "0.6.0-m6",
+  "milestone": "M6",
+  "unitSystems": {
+    "N-mm": {
+      "length": "mm",
+      "force": "N",
+      "moment": "N·mm",
+      "stress": "MPa",
+      "area": "mm²",
+      "section": "mm²",
+      "invLength": "1/mm",
+      "none": ""
+    },
+    "in-lbf": {
+      "length": "in",
+      "force": "lbf",
+      "moment": "in·lbf",
+      "stress": "psi",
+      "area": "in²",
+      "section": "in²",
+      "invLength": "1/in",
+      "none": ""
+    }
+  },
+  "conventions": [
+    "Right-handed axes: x right, y up, z toward the viewer.",
+    "The faying surface is the plane z = 0; fasteners are located by (x, y) and z is the fastener axis.",
+    "Positive Fz is tension: it pulls the loaded plate away from the other plate.",
+    "Moments follow the right-hand rule about each axis; positive Mz is counter-clockwise viewed from +z.",
+    "The origin is a user-defined datum."
+  ],
+  "assumptions": [
+    "Headline CG is the shear centroid Cs; J is about Cs; Ixx, Iyy and Ixy are about the axial centroid Ca.",
+    "Elastic in-plane shear: rigid plate rotating about Cs, fasteners sharing load in proportion to ks.",
+    "Axial method (a): rigid plate with the neutral axis through Ca; the joint is assumed to stay clamped (W-005). Unloading fasteners are shown as computed.",
+    "Section properties are in length² × stiffness weight.",
+    "Prying (T-stub, keyed B and Fp) acts on positive external tension only, using the loaded plate's thickness t and flange strength Fp; a ≤ 1.25·b. A manual factor f replaces it with a bolt tension f·T (W-012).",
+    "Preload: F_b = max(P_max + φ·T, T) + Q; clamp force P_min − (1 − φ)·T; separation load P_min/(1 − φ). Prying Q is added to the bolt load (conservative). Preload does not scale with the load multiplier k. Friction slip is not evaluated (N-005).",
+    "Plates are axis-aligned rectangles (up to two). Every fastener passes through every plate. Bearing R = Fbr·D·t (or a direct-load allowable); tear-out capacity 2·t·(e − D/2)·Fsu with e cast along the bearing direction: −R in the loaded plate, +R in the other plate.",
+    "Axial method (b) uses a plate edge as the neutral axis with tension-only fasteners; v1 requires zero moment about the axis perpendicular to the edge (E-012), reduced to the projection of Ca onto the edge.",
+    "ICR (in-plane shear only, ks ignored): Crawford-Kulak or elastic-perfectly-plastic response, governing fastener at Δmax, ICR searched on the line through the Rult-weighted centroid (ks-independent) perpendicular to the load (refined off it for asymmetric groups); γ_ult = P_u/|F|; reactions at the applied load are the ultimate reactions ÷ γ_ult (proportional scaling, W-015).",
+    "All allowables are keyed in by the user; the tool ships none. A check whose allowable is not entered is not evaluated and shows no margin.",
+    "Shear-tension interaction IF(k) = (k·Rs/Fs)^a + (k·Rt/Ft)^b with separate exponents; MS = k* − 1 at IF(k*) = 1 (exact load scale factor, bracketed Brent). Unloading fasteners enter with zero external tension (N-006); with preload their bolt load is P_max."
+  ],
+  "warnings": [
+    {
+      "id": "E-001",
+      "tier": "error",
+      "condition": "No fasteners"
+    },
+    {
+      "id": "E-002",
+      "tier": "error",
+      "condition": "Non-numeric or missing required field"
+    },
+    {
+      "id": "E-003",
+      "tier": "error",
+      "condition": "Non-positive area, ks or ka"
+    },
+    {
+      "id": "E-004",
+      "tier": "error",
+      "condition": "Fastener outside its plate outline"
+    },
+    {
+      "id": "E-005",
+      "tier": "error",
+      "condition": "Overlapping fasteners (centre distance < diameter)"
+    },
+    {
+      "id": "E-006",
+      "tier": "error",
+      "condition": "Edge distance < D/2"
+    },
+    {
+      "id": "E-007",
+      "tier": "error",
+      "condition": "Diameter, thickness or allowable missing for an enabled check"
+    },
+    {
+      "id": "E-008",
+      "tier": "error",
+      "condition": "Interaction exponent ≤ 0"
+    },
+    {
+      "id": "E-009",
+      "tier": "error",
+      "condition": "Preload enabled without a valid φ (0 < φ < 1)"
+    },
+    {
+      "id": "E-010",
+      "tier": "error",
+      "condition": "Equilibrium closure failure"
+    },
+    {
+      "id": "E-011",
+      "tier": "error",
+      "condition": "Collinear pattern with bending moment about the unresolved axis"
+    },
+    {
+      "id": "E-012",
+      "tier": "error",
+      "condition": "Method (b): moment component perpendicular to the contact edge is not zero"
+    },
+    {
+      "id": "E-013",
+      "tier": "error",
+      "condition": "Import: invalid file, or schemaVersion newer than supported"
+    },
+    {
+      "id": "E-014",
+      "tier": "error",
+      "condition": "P_max < P_min"
+    },
+    {
+      "id": "W-001",
+      "tier": "warning",
+      "condition": "Single fastener (no torsion resistance)"
+    },
+    {
+      "id": "W-002",
+      "tier": "warning",
+      "condition": "Collinear pattern"
+    },
+    {
+      "id": "W-003",
+      "tier": "warning",
+      "condition": "Zero load"
+    },
+    {
+      "id": "W-004",
+      "tier": "warning",
+      "condition": "Pattern extent > 10⁴ in the current unit (likely unit mix-up)"
+    },
+    {
+      "id": "W-005",
+      "tier": "warning",
+      "condition": "Method (a) assumes the joint stays clamped"
+    },
+    {
+      "id": "W-006",
+      "tier": "warning",
+      "condition": "Exponents ≠ (1, 1): MS is the exact scale factor, not 1/IF − 1"
+    },
+    {
+      "id": "W-007",
+      "tier": "warning",
+      "condition": "Exponent between 0 and 1: non-convex, unconservative"
+    },
+    {
+      "id": "W-008",
+      "tier": "warning",
+      "condition": "Scale-factor solve failed: MS not computed"
+    },
+    {
+      "id": "W-009",
+      "tier": "warning",
+      "condition": "Load point outside the plate outline"
+    },
+    {
+      "id": "W-010",
+      "tier": "warning",
+      "condition": "Contact edge on the wrong side for the applied moment"
+    },
+    {
+      "id": "W-011",
+      "tier": "warning",
+      "condition": "Edge distance below the keyed minimum e/D"
+    },
+    {
+      "id": "W-012",
+      "tier": "warning",
+      "condition": "Manual prying factor overrides the T-stub result"
+    },
+    {
+      "id": "W-013",
+      "tier": "warning",
+      "condition": "Separation reached: post-separation formulas in use"
+    },
+    {
+      "id": "W-014",
+      "tier": "warning",
+      "condition": "ICR not converged"
+    },
+    {
+      "id": "W-015",
+      "tier": "warning",
+      "condition": "ICR basis: reactions use the proportional scaling convention"
+    },
+    {
+      "id": "W-016",
+      "tier": "warning",
+      "condition": "Fasteners unloading under method (a): method (b) recommended"
+    },
+    {
+      "id": "W-017",
+      "tier": "warning",
+      "condition": "Preload alone exceeds the allowable at k = 0"
+    },
+    {
+      "id": "W-018",
+      "tier": "warning",
+      "condition": "Import: optional fields defaulted, or Markdown fallback lost settings"
+    },
+    {
+      "id": "W-019",
+      "tier": "warning",
+      "condition": "More than ~200 fasteners"
+    },
+    {
+      "id": "W-021",
+      "tier": "warning",
+      "condition": "Method (b): no contact reaction exists (C < 0)"
+    },
+    {
+      "id": "N-001",
+      "tier": "note",
+      "condition": "Load line passes through the shear centroid (zero torsion)"
+    },
+    {
+      "id": "N-002",
+      "tier": "note",
+      "condition": "Centroids differ: which one each calculation uses"
+    },
+    {
+      "id": "N-003",
+      "tier": "note",
+      "condition": "Older schema migrated"
+    },
+    {
+      "id": "N-004",
+      "tier": "note",
+      "condition": "ICR ignores ks"
+    },
+    {
+      "id": "N-005",
+      "tier": "note",
+      "condition": "Friction slip not evaluated; clamp force reported only"
+    },
+    {
+      "id": "N-006",
+      "tier": "note",
+      "condition": "Unloading fasteners counted as zero tension in the interaction"
+    },
+    {
+      "id": "N-007",
+      "tier": "note",
+      "condition": "Preload disabled"
+    },
+    {
+      "id": "N-008",
+      "tier": "note",
+      "condition": "ICR curve parameters are editable defaults; confirm for the fastener"
+    }
+  ],
+  "verification": {
+    "set": "M6 (v2)",
+    "tolerance": 1e-9,
+    "cases": [
+      {
+        "id": "VC-01",
+        "title": "2×2 rectangle, Fy = −10 000 N at (150, 0, 0)"
+      },
+      {
+        "id": "VC-02",
+        "title": "L-shape (0, 0), (100, 0), (0, 100)"
+      },
+      {
+        "id": "VC-03",
+        "title": "6-fastener bolt circle, R = 50 mm, 60° spacing"
+      },
+      {
+        "id": "VC-04",
+        "title": "VC-01 pattern, Mx,a = 12 000 N·mm"
+      },
+      {
+        "id": "VC-05",
+        "title": "VC-01 pattern, My,a = 20 000 N·mm"
+      },
+      {
+        "id": "VC-06",
+        "title": "VC-01 pattern, Fx = 1 000 N at (0, 0, zp = 50)"
+      },
+      {
+        "id": "VC-07",
+        "title": "Interaction, Rs/Fs = 0.6, Rt/Ft = 0.5; a = b = 2 and a = b = 1"
+      },
+      {
+        "id": "VC-08",
+        "title": "Preload P_max = 20 000, P_min = 16 000, φ = 0.2; T_ext = 10 000 and 25 000"
+      },
+      {
+        "id": "VB-01",
+        "title": "Bearing and tear-out, 2×2 at (±50, ±30), Fy = −10 000 N at Cs, two plates"
+      },
+      {
+        "id": "VB-02",
+        "title": "Contact-edge method (b), 2×2 at (±50, ±30), edge y = −50, Mx = 12 000 N·mm"
+      },
+      {
+        "id": "VI-01",
+        "title": "ICR, pure moment on a 6-bolt circle (R = 50): ICR at the centre, every bolt at Δmax"
+      },
+      {
+        "id": "VI-02",
+        "title": "ICR, concentric shear on the VC-01 pattern: uniform translation"
+      },
+      {
+        "id": "VI-03",
+        "title": "ICR, eccentric VC-01 load: equilibrium at ultimate and the side of the ICR"
+      },
+      {
+        "id": "VC-09",
+        "title": "Circle group, pure Mz"
+      },
+      {
+        "id": "P-01",
+        "title": "Translation invariance"
+      },
+      {
+        "id": "P-02",
+        "title": "Rotation invariance (37° about the origin)"
+      },
+      {
+        "id": "P-03",
+        "title": "Mirror symmetry about x = 0"
+      },
+      {
+        "id": "P-04",
+        "title": "Linear scaling (doubling the load doubles elastic results)"
+      },
+      {
+        "id": "P-05",
+        "title": "Equilibrium closure (asymmetric, weighted, full 3D load)"
+      },
+      {
+        "id": "P-06",
+        "title": "Sign convention (VC-04 to VC-06)"
+      },
+      {
+        "id": "P-07",
+        "title": "Load scaling: k* at λ × load is k* / λ (no preload)"
+      },
+      {
+        "id": "P-08",
+        "title": "Exact-k solution satisfies IF(k*) = 1 for unequal exponents"
+      },
+      {
+        "id": "P-09",
+        "title": "Governing MS and critical fastener"
+      },
+      {
+        "id": "P-10",
+        "title": "Preload bolt load is continuous through separation and does not scale with k"
+      },
+      {
+        "id": "P-11",
+        "title": "T-stub prying: Q = 0 below the threshold, grows with T, capped at α' = 1"
+      },
+      {
+        "id": "P-12",
+        "title": "Manual prying factor: bolt tension = factor × T"
+      },
+      {
+        "id": "P-13",
+        "title": "ICR ignores ks: overriding ks moves Cs but not γ_ult or the ICR; the search is anchored on the Rult-weighted centroid"
+      },
+      {
+        "id": "P-14",
+        "title": "ICR: rotation invariance and load-magnitude scaling of γ_ult"
+      },
+      {
+        "id": "VR-01",
+        "title": "T-stub prying against the Struik–de Back equations in the Kulak–Fisher–Struik Guide (Eqs. 17.8 to 17.12, 17.18), modified a' and b'"
+      },
+      {
+        "id": "VR-02",
+        "title": "ICR coefficients C against Table 13.1 of the Kulak–Fisher–Struik Guide (AISC 8th ed., 1980), b = 3 in, 2% or table rounding"
+      },
+      {
+        "id": "VR-03",
+        "title": "ICR side convention and coefficient against Brandt (1982) Examples 1 and 2"
+      }
+    ]
+  },
+  "examplePattern": {
+    "schemaVersion": 1,
+    "name": "Bracket A - 2x2",
+    "unitSystem": "N-mm",
+    "settings": {
+      "designBasis": "elastic",
+      "axialMethod": "centroid",
+      "contactEdge": {
+        "plateId": "P1",
+        "edge": "yMin"
+      },
+      "interaction": {
+        "a": 2,
+        "b": 2
+      },
+      "prying": {
+        "enabled": false
+      },
+      "preload": {
+        "enabled": false
+      },
+      "icr": {
+        "enabled": false,
+        "model": "crawford-kulak"
+      },
+      "precision": 4,
+      "pageSize": "A4"
+    },
+    "defaults": {
+      "diameter": 12,
+      "area": 113.1,
+      "ks": 1,
+      "ka": 1,
+      "shearAllowable": null,
+      "tensionAllowable": null,
+      "icr": {
+        "rult": null,
+        "mu": 0.3937,
+        "lambda": 0.55,
+        "deltaMax": 8.6,
+        "deltaY": null
+      },
+      "prying": {
+        "b": null,
+        "a": null,
+        "p": null,
+        "holeDiameter": null,
+        "boltStrengthB": null,
+        "manualFactor": null
+      },
+      "preload": {
+        "pMax": null,
+        "pMin": null,
+        "phi": null
+      }
+    },
+    "fasteners": [
+      {
+        "id": "F1",
+        "label": "",
+        "x": 50,
+        "y": 30,
+        "overrides": {}
+      },
+      {
+        "id": "F2",
+        "label": "",
+        "x": 50,
+        "y": -30,
+        "overrides": {}
+      },
+      {
+        "id": "F3",
+        "label": "",
+        "x": -50,
+        "y": 30,
+        "overrides": {}
+      },
+      {
+        "id": "F4",
+        "label": "",
+        "x": -50,
+        "y": -30,
+        "overrides": {}
+      }
+    ],
+    "plates": [
+      {
+        "id": "P1",
+        "thickness": 10,
+        "xMin": -80,
+        "xMax": 80,
+        "yMin": -50,
+        "yMax": 50,
+        "bearingAllowable": null,
+        "bearingLoadAllowable": null,
+        "shearOutAllowable": null,
+        "minEdgeRatio": null,
+        "flangeStrength": null
+      }
+    ],
+    "load": {
+      "appliedPlate": "P1",
+      "point": {
+        "x": 150,
+        "y": 0,
+        "z": 0
+      },
+      "Fx": 0,
+      "Fy": -10000,
+      "Fz": 0,
+      "Mx": 0,
+      "My": 0,
+      "Mz": 0
+    }
+  }
+}
