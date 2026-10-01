@@ -10,6 +10,7 @@ that uses a different method, plus closed forms.
 | Torsion constant | exact formulas, Saint-Venant series, Bredt–Batho, Vlasov thin-walled open section | `reference/prandtl.py`: Prandtl stress function, linear FEM, three uniform refinements, Richardson | per formula, stated in `torsion-accuracy.json` | see the table |
 | M–κ, κ_lim, M_lim, M_p, M_p(N) | strip fibres with exact strip moments, quadratic stress interpolation | `reference/plasticref.py`: exact width function, 400-point Gauss–Legendre between breakpoints | 1e-6 relative | 1e-8 |
 | YAML | `src/yaml.js` | PyYAML (tests only) | exact data equality both ways | — |
+| Hand calculations (`src/handcalc.js`) | composite parts: each part's own moments, then Σ n_i A_i, first moments and the parallel-axis theorem | the engine and `reference/reference.json` on every fixture and example; hand-worked literal tees and a mixed-material section with a void; closed forms (b h³/12, π d⁴/64, the tube and the sharp box) against each part's boundary integral; each torsion formula's steps against the engine's J | 1e-9 relative (closed forms 1e-12) | 1e-15 |
 
 "Relative" is measured against the larger of the two values and the section's own
 scale: √A raised to the property's length dimension, and M_lim for curve moments. Values that are zero only up to rounding (cx of a symmetric
@@ -45,6 +46,20 @@ exceeds its stated accuracy is recorded as withdrawn and the page shows "n/a" fo
 node --test 'tests/*.test.mjs'
 python -m unittest discover -s tests -p 'test_*.py'
 ```
+
+`tests/handcalc.test.mjs` also checks that every number the hand calculations show
+is the engine's value in the page's own formatting, that re-adding each written sum
+(A, I_x, I_y) lands on its result, that Q, M_el, M_p and the curve are quoted from the
+solver rather than derived, and that the Markdown is a narrated beamdswitch document
+(`voice: bf_emma`, a `. . .` reveal between formula, substitution and result, plain
+spoken narration, and no TeX the page cannot draw). `tests/beamdswitch.test.mjs`
+parses that Markdown and the deck with beamdswitch's own parser and clicks Save
+Markdown and Copy Markdown on the built page. `tests/browser.test.mjs` opens the
+built `index.html` in headless Chrome (found from `CHROME_PATH` or the usual install
+paths; skipped locally without one, required under CI): it opens the hand
+calculations, checks one card per step with drawn equations and no raw TeX, saves the
+Markdown through a real download and copies it through the real clipboard (both must
+equal the engine's document), and checks the page does not scroll sideways at 375 px.
 
 The Python suite also confirms that `index.html`, `reference/fixtures.json`,
 `reference/reference.json` and `reference/torsion-accuracy.json` are current.

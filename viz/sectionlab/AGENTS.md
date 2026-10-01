@@ -22,7 +22,7 @@ pip install -r requirements-test.txt                # once: numpy, scipy, PyYAML
 python -m unittest discover -s tests -p 'test_*.py'
 ```
 
-CI (`.github/workflows/ci.yml`) runs these same commands on every push and pull request, including the torsion accuracy-table test (the slowest, over a minute) and the beamdswitch deck test, `tests/beamdswitch.test.mjs`. In yujieteo/site the only Sectionlab test is `tests/test_sectionlab.py`, which checks that the published copy matches the ported files.
+CI (`.github/workflows/ci.yml`) runs these same commands on every push and pull request, including the torsion accuracy-table test (the slowest, over a minute) the beamdswitch deck test, `tests/beamdswitch.test.mjs`, and the end-to-end test `tests/browser.test.mjs`, which drives the built page in headless Chrome (set `CHROME_PATH` if Chrome is not in a usual place; it is skipped locally without one and required under CI). In yujieteo/site the only Sectionlab test is `tests/test_sectionlab.py`, which checks that the published copy matches the ported files.
 
 ## Conventions
 

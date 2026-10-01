@@ -4,7 +4,7 @@ Run from the repository root. Every command must pass; CI runs the same commands
 
 ```sh
 python build.py                                     # index.html is generated
-node --test 'tests/*.test.mjs'                      # engine, plastic, torsion, YAML, report, page tools, beamdswitch deck
+node --test 'tests/*.test.mjs'                      # engine, plastic, torsion, YAML, report, hand calculations, page tools, beamdswitch deck, Chrome end to end
 pip install -r requirements-test.txt                # once: numpy, scipy, PyYAML
 python -m unittest discover -s tests -p 'test_*.py' # references, torsion accuracy, PyYAML agreement, build
 ```
@@ -21,6 +21,8 @@ Then open `index.html` in a browser and check by hand:
    and set a corner radius by clicking the corner dot.
 2. Nudge a part with the arrow keys, turn it with R, undo and redo.
 3. The properties, torsion row and M–κ chart update; the notice says "Verify independently".
+   Open Hand calculations: the steps follow the section, and Save Markdown and Copy
+   Markdown hand over the same document.
 4. Download the Markdown and import it again: the same section returns.
 5. Copy a share link, open it in a new tab: the same section returns.
 6. Download the PDF and both PNGs, and open the print preview.

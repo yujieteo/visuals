@@ -11,6 +11,7 @@ Every export is rendered from the one report object built by `report.build` in
 | Print | `report.html` into `#print-report`, `@media print` in `template.html` | by hand |
 | PNG | `report.sectionSvg` / `report.curveSvg` drawn on a canvas in `src/ui.js` | SVG in `tests/report.test.mjs`; PNG by hand |
 | Share link | `encodeModel` / `decodeModel` in `src/ui.js` (base64url YAML after `#model=`) | `tests/page.test.mjs` |
+| Hand calculations (page, Markdown, deck slides) | `handcalc.frames`, `handcalc.markdown`, `handcalc.deckFrames`; drawn by `renderHand` in `src/ui.js` | `tests/handcalc.test.mjs`, `tests/beamdswitch.test.mjs` |
 | beamdswitch deck | `report.beamdswitch`, written out by `beamdswitch.js` (keep it identical to the host site's `templates/beamdswitch.js`) | `tests/beamdswitch.test.mjs` |
 
 1. Change the report object first when a new quantity must appear everywhere; change

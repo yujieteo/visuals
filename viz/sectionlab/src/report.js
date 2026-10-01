@@ -624,5 +624,8 @@
     return out;
   }
 
-  return { NOTICE, UNITS, LIGHT, fmt, build, markdown, beamdswitch, modelFromText, html, sectionSvg, curveSvg, pdf, ascii };
+  return {
+    NOTICE, UNITS, LIGHT, fmt, build, markdown, beamdswitch, modelFromText, html, sectionSvg, curveSvg, pdf, ascii, mdCell,
+    speech: { sayNumber, sayVal, texNumber, spokenName, sayList, count, SPOKEN_UNIT },
+  };
 });

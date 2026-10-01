@@ -1,7 +1,9 @@
 /* Sectionlab engine entry point: validate a model and compute every result.
  *
  *   compute(input, { accuracy, plastic }) → { model, props, torsion, plastic, parts }
- *   buildBeamdswitch(result)              → the report for the standard beamdswitch template
+ *   buildBeamdswitch(result)              → the report for the standard beamdswitch template, with the
+ *                                           hand calculations as the last Results slides
+ *   buildHandMarkdown(result)             → the hand calculations as a Markdown document beamdswitch opens
  *
  * `accuracy` is reference/torsion-accuracy.json (the page inlines it). Invalid
  * models throw section.ModelError; a plastic analysis that cannot be completed
@@ -9,12 +11,12 @@
  */
 (function (root, factory) {
   if (typeof module === "object" && module.exports) {
-    module.exports = factory(require("./geometry.js"), require("./shapes.js"), require("./section.js"), require("./torsion.js"), require("./plastic.js"), require("./yaml.js"), require("./report.js"));
+    module.exports = factory(require("./geometry.js"), require("./shapes.js"), require("./section.js"), require("./torsion.js"), require("./plastic.js"), require("./yaml.js"), require("./report.js"), require("./handcalc.js"));
   } else {
     const L = root.SectionLab;
-    Object.assign(L, factory(L.geometry, L.shapes, L.section, L.torsion, L.plastic, L.yaml, L.report));
+    Object.assign(L, factory(L.geometry, L.shapes, L.section, L.torsion, L.plastic, L.yaml, L.report, L.handcalc));
   }
-})(typeof self !== "undefined" ? self : this, function (geometry, shapes, section, torsion, plastic, yaml, report) {
+})(typeof self !== "undefined" ? self : this, function (geometry, shapes, section, torsion, plastic, yaml, report, handcalc) {
   "use strict";
 
   function compute(input, { accuracy = null, plastic: withPlastic = true, strips, points } = {}) {
@@ -32,7 +34,12 @@
   }
 
   const buildReport = (result) => report.build(result.model, { props: result.props, torsion: result.torsion, plastic: result.plastic, parts: result.parts });
-  const buildBeamdswitch = (result) => report.beamdswitch(buildReport(result), result.model, { shapes: shapes.SHAPES });
+  /* The shared template's sections are fixed, so the hand calculations close the Results section. */
+  function buildBeamdswitch(result) {
+    const rep = report.beamdswitch(buildReport(result), result.model, { shapes: shapes.SHAPES });
+    return { ...rep, meta: { ...rep.meta, voice: handcalc.VOICE }, results: [...rep.results, ...handcalc.deckFrames(result)] };
+  }
+  const buildHandMarkdown = (result) => handcalc.markdown(result);
 
-  return { geometry, shapes, section, torsion, plastic, yaml, report, compute, buildReport, buildBeamdswitch, VERSION: "1.0.0" };
+  return { geometry, shapes, section, torsion, plastic, yaml, report, handcalc, compute, buildReport, buildBeamdswitch, buildHandMarkdown, VERSION: "1.0.0" };
 });

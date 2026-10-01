@@ -129,3 +129,55 @@ test("a blocked download says to use Copy deck, and a blocked clipboard says so"
   assert.equal(p.status(), "Could not copy the beamdswitch deck: the clipboard is blocked here.");
   assert.equal(p.saved.length + p.copied.length, 0);
 });
+
+/* ---------- the hand calculations ---------- */
+test("the deck's Results end on the hand calculations, narrated, in the bf_emma voice", () => {
+  for (const { what, result, md } of CASES) {
+    const deck = parseDeck(md), hand = L.handcalc.deckFrames(result);
+    assert.equal(deck.meta.voice, "bf_emma", what);
+    const results = deck.frames.filter((f) => f.kind === "frame" && f.section === "Results");
+    assert.deepEqual(results.slice(-hand.length).map((f) => f.title), hand.map((f) => f.title), what);
+    assert.ok(hand.length >= 10, what);
+  }
+});
+
+test("the hand-calculation Markdown opens in beamdswitch as one narrated section with reveals", () => {
+  for (const { what, result } of CASES) {
+    const md = L.buildHandMarkdown(result), deck = parseDeck(md);
+    assert.equal(deck.meta.voice, "bf_emma", what);
+    assert.equal(deck.meta.title, `Hand calculations: ${result.model.title || "Section"}`, what);
+    assert.deepEqual(deck.frames.filter((f) => f.kind === "section").map((f) => f.title), ["Hand calculations"], what);
+    assert.equal(md.match(/^::: narration$/gm).length, deck.frames.length, `${what}: one narration per slide`);
+    for (const f of deck.frames) {
+      assert.ok(f.narration, `${what}: "${f.title}" is narrated`);
+      assert.doesNotMatch(f.narration, /[$\\`*_#|<>×⁰¹²³⁴⁵⁶⁷⁸⁹⁻·∠°σ]/, `${what}: "${f.title}" reads as speech`);
+    }
+    const area = deck.frames.find((f) => f.title === `Hand calculation: area A = ${fmt(result.props.A)} mm²`);
+    assert.ok(area, `${what}: the area frame`);
+    assert.ok(area.steps > 1, `${what}: the area frame reveals its steps one by one`);
+  }
+});
+
+test("the page shows the hand calculations, and Save Markdown and Copy Markdown hand over the same document", async () => {
+  const p = page(), first = RAW.presets[0], expected = L.buildHandMarkdown(L.compute(first.model, { accuracy: ACCURACY }));
+  const box = p.$("hand-steps");
+  assert.equal(box.children.length, 0, "nothing is drawn while the details are closed");
+  p.$("hand-details").open = true;
+  await p.$("hand-details").fire("toggle");
+  assert.equal(box.children.length, L.handcalc.frames(L.compute(first.model, { accuracy: ACCURACY })).length);
+  assert.equal(box.children[1].children[0].textContent, `Area A = ${fmt(L.compute(first.model, { accuracy: ACCURACY }).props.A)} mm²`);
+  await p.$("save-hand").fire("click");
+  const name = `${first.model.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}-hand-calculations.md`;
+  assert.equal(p.$("hand-status").textContent, `Saved ${name}: it opens in beamdswitch too.`);
+  const [file] = p.saved;
+  assert.equal(file.name, name);
+  assert.equal(await file.blob.text(), expected);
+  await p.$("copy-hand").fire("click");
+  await new Promise((r) => setImmediate(r));
+  assert.equal(p.$("hand-status").textContent, "Copied the hand calculations as Markdown.");
+  assert.equal(p.copied[0], expected);
+  const blocked = page({ clipboardFails: true });
+  await blocked.$("copy-hand").fire("click");
+  await new Promise((r) => setImmediate(r));
+  assert.equal(blocked.$("hand-status").textContent, "Could not copy the hand calculations: the clipboard is blocked here.");
+});

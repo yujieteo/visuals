@@ -4,7 +4,7 @@ Inputs, all in this folder:
   template.html                    page markup and styles, with five markers
   raw.json                         presets, materials, method text (/*@DATA@*/)
   reference/torsion-accuracy.json  measured torsion accuracy (/*@ACCURACY@*/)
-  src/*.js                         engine modules in ENGINE order (/*@ENGINE@*/) and src/ui.js (/*@UI@*/)
+  src/*.js                         engine modules (handcalc.js included) in ENGINE order (/*@ENGINE@*/) and src/ui.js (/*@UI@*/)
   beamdswitch.js                   the standard beamdswitch report template (/*@BEAMDSWITCH@*/)
 
 Output:
@@ -19,7 +19,7 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-ENGINE = ["geometry.js", "shapes.js", "section.js", "torsion.js", "plastic.js", "yaml.js", "report.js", "engine.js"]
+ENGINE = ["geometry.js", "shapes.js", "section.js", "torsion.js", "plastic.js", "yaml.js", "report.js", "handcalc.js", "engine.js"]
 
 
 def inline_json(path):

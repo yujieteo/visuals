@@ -94,6 +94,7 @@ function update({ plastic = "defer" } = {}) {
   renderError();
   renderCanvas();
   renderResults();
+  renderHand();
   clearTimeout(plasticTimer);
   if (failure) { renderPlastic(); return; }
   if (plastic === "now") runPlastic();
@@ -110,6 +111,7 @@ function runPlastic() {
   }
   plasticStale = false;
   renderPlastic();
+  renderHand();
 }
 
 function renderError() {
@@ -938,6 +940,80 @@ $("copy-beamdswitch").addEventListener("click", guarded(() => {
     () => status("Copied the beamdswitch deck: paste it into beamdswitch."),
     () => status("Could not copy the beamdswitch deck: the clipboard is blocked here."));
 }));
+/* ---------- hand calculations ----------
+   handcalc.js writes the steps as blocks; the page draws their small TeX subset as HTML (no maths
+   library, nothing loaded). Drawn only while the details element is open. */
+const HC = L.handcalc;
+function mathInto(parent, tex) {
+  const draw = (into, nodes) => {
+    for (const n of nodes) {
+      if (typeof n === "string") into.append(document.createTextNode(n));
+      else if (n.t === "frac") {
+        const f = h("span", { class: "frac" }, into);
+        draw(h("span", {}, f), n.n); draw(h("span", {}, f), n.d);
+      } else if (n.t === "sqrt") {
+        const r = h("span", { class: "sqrt" }, into);
+        r.append(document.createTextNode("√"));
+        draw(h("span", {}, r), n.c);
+      } else draw(h(n.t === "text" ? "span" : n.t, {}, into), n.c);
+    }
+  };
+  draw(parent, HC.texNodes(tex));
+}
+/* Text with inline $maths$. */
+function inlineInto(parent, str) {
+  String(str).split(/\$([^$]+)\$/).forEach((part, i) => {
+    if (i % 2 === 0) { if (part) parent.append(document.createTextNode(part)); return; }
+    mathInto(h("span", { class: "math" }, parent), part);
+  });
+}
+function blockNode(b) {
+  if (b.p != null) { const p = h("p"); inlineInto(p, b.p); return p; }
+  if (b.steps) {
+    const d = h("div", { class: "eq", role: "math", "aria-label": b.steps.map(HC.texText).join("; ") });
+    for (const s of b.steps) mathInto(h("div", {}, d), s);
+    return d;
+  }
+  if (b.list) { const ul = h("ul"); for (const t of b.list) inlineInto(h("li", {}, ul), t); return ul; }
+  const wrap = h("div", { class: "table-wrap" }), table = h("table", {}, wrap), hr = h("tr", {}, h("thead", {}, table)), tb = h("tbody", {}, table);
+  b.table.head.forEach((c, i) => inlineInto(h("th", { scope: "col", class: i ? "num" : "" }, hr), c));
+  for (const row of b.table.rows) { const tr = h("tr", {}, tb); row.forEach((v, i) => inlineInto(h("td", { class: i ? "num" : "" }, tr), v)); }
+  return wrap;
+}
+/* The hand calculations need the plastic results too, so they follow the full result. */
+function renderHand() {
+  const box = $("hand-steps");
+  box.classList.toggle("stale", !!failure || plasticStale);
+  if (!$("hand-details").open || !result) return;
+  const r = !plasticStale && plasticResult ? plasticResult : result;
+  box.replaceChildren(...HC.frames(r).map((f) => {
+    const art = h("article", { class: "calc" });
+    h("h4", { text: f.title.replace(/^Hand calculation: /, "").replace(/^./, (c) => c.toUpperCase()) }, art);
+    art.append(...f.blocks.map(blockNode));
+    return art;
+  }));
+}
+$("hand-details").addEventListener("toggle", renderHand);
+function handStatus(msg) { $("hand-status").textContent = msg; }
+function handText() {
+  if (failure) throw new Error(`Fix the model first: ${failure.message}`);
+  return L.buildHandMarkdown(fullResult());
+}
+$("save-hand").addEventListener("click", () => {
+  try {
+    const name = `${slug()}-hand-calculations.md`;
+    download(name, new Blob([handText()], { type: "text/markdown" }));
+    handStatus(`Saved ${name}: it opens in beamdswitch too.`);
+  } catch (e) { handStatus(e.message); }
+});
+$("copy-hand").addEventListener("click", () => {
+  let text;
+  try { text = handText(); } catch (e) { handStatus(e.message); return; }
+  Promise.resolve().then(() => navigator.clipboard.writeText(text)).then(
+    () => handStatus("Copied the hand calculations as Markdown."),
+    () => handStatus("Could not copy the hand calculations: the clipboard is blocked here."));
+});
+
 function renderPrint() {
   const r = fullResult(), rep = L.buildReport(r);
   const figs = `<div class="figs">${R.sectionSvg(rep, { width: 480, height: 380 })}${r.plastic && !r.plastic.error ? R.curveSvg(rep, { width: 480, height: 380 }) : ""}</div>`;

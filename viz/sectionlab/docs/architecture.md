@@ -13,6 +13,7 @@ src/torsion.js   formulas             │
 src/plastic.js   M–κ                  │
 src/yaml.js      YAML subset          │
 src/report.js    report + exports     │
+src/handcalc.js  hand calculations    │
 src/engine.js    compute()            │
 beamdswitch.js   deck template        │
 src/ui.js        page                 ┘
@@ -29,6 +30,10 @@ src/ui.js        page                 ┘
    print view, the SVG figures (and so the PNGs) and the beamdswitch deck
    (`report.beamdswitch`, written out by `beamdswitch.js`) are all rendered from it, so
    the exports cannot disagree with each other.
+4. `handcalc.frames(result)` works the same result by hand, by composite parts, for the
+   page's Hand calculations, their Markdown (`engine.buildHandMarkdown`) and the deck's
+   last Results slides (`engine.buildBeamdswitch`). Its numbers are the engine's; its own
+   composite chain is what the tests compare with the engine and the references.
 
 ## Modules
 
@@ -41,7 +46,8 @@ src/ui.js        page                 ┘
 | `plastic.js` | Ramberg–Osgood law, strip fibres, the ε0 and neutral-axis solves, the ε_lim search, M_el and the σ0.2-block M_p |
 | `yaml.js` | Reader and writer for the YAML subset |
 | `report.js` | Report object, Markdown, the beamdswitch report, import, HTML, SVG figures and the PDF writer |
-| `engine.js` | `compute()`, `buildReport()` and `buildBeamdswitch()` |
+| `handcalc.js` | Hand calculations: each part's own moments, the composite sums by the parallel-axis theorem, principal axes, moduli, torsion formula steps; the steps as blocks, as Markdown, and as deck frames; a small TeX subset for the page to draw |
+| `engine.js` | `compute()`, `buildReport()`, `buildBeamdswitch()` (with the hand calculations closing Results) and `buildHandMarkdown()` |
 | `beamdswitch.js` | The standard beamdswitch template: `deck(report)` writes the narrated Markdown deck |
 | `ui.js` | Editor, panels, charts, exports, share link, WebMCP tools |
 

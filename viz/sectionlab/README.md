@@ -37,13 +37,25 @@ Units are mm, MPa (N/mm²), N and N·mm throughout.
   (at N = 0) and, with an axial force, M_p(N) and M_el(N) at the applied axial force N. Bending
   about x, y or a principal axis with an axial force N; the neutral axis either rotates
   for zero cross moment (b, default) or stays parallel to the axis (a).
+- **Hand calculations.** Under the results, the closed-form properties worked by hand,
+  step by step (formula, then the numbers substituted, then the result), by composite
+  parts: each part's area, centroid and modular ratio; A = Σ n_i A_i; the centroid from
+  first moments; each part's own second moments (in closed form for sharp rectangles,
+  circles, tubes and sharp boxes, otherwise from its exact boundary); I_x, I_y and I_xy
+  by the parallel-axis theorem; the principal values and angle; section moduli, radii of
+  gyration and the polar moment; and, where the page has a verified formula, the torsion
+  constant with its numbers substituted. Q, M_el, M_p and the M–κ curve come from the
+  solver's numerical integration and are quoted, not derived. Every number is the
+  engine's, as the page shows it. Save Markdown and Copy Markdown export the steps as a
+  Markdown document with LaTeX equations that beamdswitch also opens as a narrated deck.
 - **Exports.** PNG of the section and of the curve; a one-file PDF report written by a
   small generator (standard Helvetica, no embedded fonts); a print view from the same
   report; Markdown with readable tables and a fenced YAML block of the whole model,
   which imports back; a share link carrying the model in the URL fragment; and a
   beamdswitch button that saves the section as a narrated Markdown deck for
   [beamdswitch](https://teoyujie.org/visuals/beamdswitch/) (slides, narration and a
-  video), with Copy deck beside it.
+  video), with Copy deck beside it. Its results end on the hand calculations, and it is
+  read in the `bf_emma` voice.
 - **WebMCP tools** (when the browser offers `navigator.modelContext`):
   `get_metadata`, `get_current_section`, `compute_section`, `export_markdown`.
 
@@ -53,7 +65,7 @@ Units are mm, MPa (N/mm²), N and N·mm throughout.
 | --- | --- |
 | `index.html` | The built page (do not edit; run `build.py`) |
 | `template.html` | Page markup and styles |
-| `src/` | Engine modules (`geometry`, `shapes`, `section`, `torsion`, `plastic`, `yaml`, `report`, `engine`) and the page script `ui.js`; each engine module also loads in Node |
+| `src/` | Engine modules (`geometry`, `shapes`, `section`, `torsion`, `plastic`, `yaml`, `report`, `handcalc`, `engine`) and the page script `ui.js`; each engine module also loads in Node |
 | `beamdswitch.js` | The standard beamdswitch report template (Markdown deck writer), an unchanged copy of the host site's `templates/beamdswitch.js` |
 | `raw.json` | Examples, material presets, method text and assumptions |
 | `reference/` | Independent Python references, fixtures and their results |

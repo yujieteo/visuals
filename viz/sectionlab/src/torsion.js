@@ -9,7 +9,7 @@
  *
  * Formula sources are exact elasticity solutions and theory, not handbook tables:
  *   circle, circular hollow   exact: J = π(d⁴ − dᵢ⁴)/32
- *   equilateral triangle      exact (Saint-Venant): J = √3 a⁴/80
+ *   equilateral triangle      exact (Saint-Venant): J = √3 b⁴/80
  *   semicircle                exact (Saint-Venant): J = (π/2 − 4/π) r⁴
  *   sharp rectangle           Saint-Venant series:
  *                             J = (b h³/3) [1 − (192/π⁵)(h/b) Σ_{n odd} tanh(nπb/2h)/n⁵], h ≤ b
@@ -101,7 +101,7 @@
       case "triangle": {
         const equilateral = close(d.a, d.b / 2) && close(d.h, (d.b * Math.sqrt(3)) / 2);
         if (!equilateral || !allZero(radii)) return { reason: "Only a sharp equilateral triangle (a = b/2, h = b√3/2) has an exact formula." };
-        return { id: "triangle-equilateral", method: "exact", J: (Math.sqrt(3) * d.b ** 4) / 80, text: "J = √3 a⁴ / 80" };
+        return { id: "triangle-equilateral", method: "exact", J: (Math.sqrt(3) * d.b ** 4) / 80, text: "J = √3 b⁴ / 80" };
       }
       case "rhs": {
         const { b, h, t } = d;
