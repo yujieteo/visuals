@@ -11,7 +11,7 @@ works offline.
 | File | Role |
 | --- | --- |
 | `engine.js` | Pure calculation core: material model, the shared column-strength function, the four analyses, the beam FE eigenvalue solve, figure fits, unit conversion, Markdown and JSON export and import, the beamdswitch report (`report`) and the self-test. No DOM access. Works in the browser (`Stability`) and in Node (`require`). |
-| `beamdswitch.js` | The site's standard beamdswitch report template, an unchanged copy of `templates/beamdswitch.js` |
+| `beamdswitch.js` | The site's standard beamdswitch report template, an unchanged copy of the site's `templates/beamdswitch.js` |
 | `template.html` | Page markup, styles, SVG plots, UI code and WebMCP tools |
 | `raw.json` | Sources, reference notes, scope and the digitised NASA figure points (published as `data.json`) |
 | `build.py` | Inlines `raw.json`, `engine.js` and `beamdswitch.js` into `template.html` to write `index.html` |
@@ -33,12 +33,13 @@ gives no kss for that panel; a warning says so.
 
 The tests are `tests/stability.test.mjs` (Node: the self-test, the TN 2661
 worked examples, the FE and secant cross-checks, validation, exports and the
-page's WebMCP tools), `tests/stability-beamdswitch.test.mjs` (Node: every
-tab's beamdswitch deck, parsed with beamdswitch's own parsers, and the copy of
-the shared template) and `tests/test_stability.py` (Python: build
-reproducibility, the catalogue stub, the published copy and the self-test under
-Node). The page runs the same self-test on every load and shows a pass/fail
-badge.
+page's WebMCP tools), `tests/beamdswitch.test.mjs` (Node: every tab's
+beamdswitch deck, parsed with beamdswitch's own parsers, and the copy of the
+shared template) and `tests/test_stability.py` (Python: build reproducibility
+and the self-test under Node). They develop and run here, in this repository's
+CI; `visuals/stability/` in yujieteo/site is a port of the page files without
+`tests/` or `.github/`. The page runs the same self-test on every load and
+shows a pass/fail badge.
 
 Values are stored in N, mm and MPa whatever units are displayed, so exported
 files stay valid; `displayUnits` in a file only restores the SI/US switch.
