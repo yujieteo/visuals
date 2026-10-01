@@ -41,7 +41,8 @@ each returns its result as JSON text and none changes the page.
 - Markdown report with a worked calculation trace, from Export Markdown report (or `export_markdown`).
 - JSON: Export JSON saves the pattern; Import reads JSON or Markdown back. `raw.json`, published as `data.json`, holds the published metadata.
 - PDF by browser print (Print / Save as PDF, A4 or Letter) and a 2× PNG of the annotated pattern diagram (Download PNG).
-- No beamdswitch deck.
+- Hand calculations: Save Markdown and Copy Markdown export the current pattern worked step by step (formula, substituted numbers, result) as Markdown that beamdswitch also opens as a deck.
+- beamdswitch deck: the beamdswitch and Copy deck buttons under Reports export a narrated Markdown talk for [beamdswitch](https://teoyujie.org/visuals/beamdswitch/) (set-up, method, results with every hand-calculation step as a slide, and checks), with voice `bf_emma`.
 
 ## Worked example
 

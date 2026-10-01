@@ -132,13 +132,15 @@ export function buildTrace(pattern, result, id = traceFastenerId(result), num = 
   if (plates.length) {
     const lines = [];
     for (const m of plates) {
+      const pl = (pattern.plates || []).find((q) => q.id === m.plate);
       if (m.mode === "bearing") {
-        lines.push(line(`Bearing, ${m.plate}`, m.basis === "direct-load allowable" ? "R_br,allow keyed" : "R_br,allow = Fbr·D·t", m.capacity !== undefined ? n(m.capacity) : "not evaluated", m.capacity ?? null, u("force")));
+        const bearing = m.capacity === undefined ? "not evaluated" : m.basis === "direct-load allowable" ? n(m.capacity) : `${n(pl.bearingAllowable)}·${n(f.diameter)}·${n(pl.thickness)}`;
+        lines.push(line(`Bearing, ${m.plate}`, m.basis === "direct-load allowable" ? "R_br,allow keyed" : "R_br,allow = Fbr·D·t", bearing, m.capacity ?? null, u("force")));
         if (m.status === "ok") lines.push(line(`MS bearing, ${m.plate}`, "R_br,allow / Rs − 1", `${n(m.capacity)} / ${n(m.Rs)} − 1`, m.ms));
       } else {
         if (m.e !== undefined) lines.push(line(`Edge distance along ${m.bearsTowards}, ${m.plate}`, "e (ray to the plate edge)", "", m.e, u("length")));
         if (m.status === "ok") {
-          lines.push(line(`Tear-out capacity, ${m.plate}`, "2·t·(e − D/2)·Fsu", "", m.capacity, u("force")));
+          lines.push(line(`Tear-out capacity, ${m.plate}`, "2·t·(e − D/2)·Fsu", `2·${n(pl.thickness)}·(${n(m.e)} − ${n(f.diameter)}/2)·${n(pl.shearOutAllowable)}`, m.capacity, u("force")));
           lines.push(line(`MS tear-out, ${m.plate}`, "capacity / Rs − 1", `${n(m.capacity)} / ${n(m.Rs)} − 1`, m.ms));
         }
       }

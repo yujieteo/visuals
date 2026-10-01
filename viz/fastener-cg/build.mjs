@@ -112,7 +112,11 @@ export async function render() {
   const template = readFileSync(join(SRC, "template.html"), "utf8");
   const marker = "/*@APP@*/";
   if (template.split(marker).length !== 2) throw new Error(`template.html must contain ${marker} exactly once`);
-  const html = template.replace(marker, () => bundle());
+  // The site's shared beamdswitch report template, inlined unchanged as its own script.
+  const deckMarker = "/*@BEAMDSWITCH@*/";
+  if (template.split(deckMarker).length !== 2) throw new Error(`template.html must contain ${deckMarker} exactly once`);
+  const beamdswitch = readFileSync(join(HERE, "beamdswitch.js"), "utf8");
+  const html = template.replace(deckMarker, () => beamdswitch).replace(marker, () => bundle());
   const raw = JSON.stringify(await metadata(), null, 2) + "\n";
   return { "index.html": html, "raw.json": raw };
 }

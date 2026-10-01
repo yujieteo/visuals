@@ -414,7 +414,10 @@ test("the published page and data are built from the current sources", async () 
   assert.ok(!/^\s*(import|export)\b/m.test(script));
   assert.doesNotThrow(() => new Function(`return () => { ${script} }`));
   const html = outputs["index.html"];
-  assert.ok(!/<script[^>]+src=|<link[^>]+stylesheet|https?:\/\/(?!www\.w3\.org)/.test(html.replace(/<a [^>]*>/g, "")), "offline: no external scripts, styles or fetches");
+  // The shared beamdswitch template is inlined verbatim; its header comment cites beamdswitch's address.
+  const shared = await readFile(new URL("./fixtures/beamdswitch/template.js", import.meta.url), "utf8");
+  assert.ok(html.includes(shared), "the page inlines the site's templates/beamdswitch.js unchanged");
+  assert.ok(!/<script[^>]+src=|<link[^>]+stylesheet|https?:\/\/(?!www\.w3\.org)/.test(html.replace(shared, "").replace(/<a [^>]*>/g, "")), "offline: no external scripts, styles or fetches");
   const raw = JSON.parse(outputs["raw.json"]);
   assert.equal(raw.warnings.length, Object.keys(CATALOG).length);
   assert.ok(raw.verification.cases.length >= 31);

@@ -16,7 +16,9 @@ import { preloadFromTorque } from "../core/tension.mjs";
 import { suggestContactEdge, EDGES } from "../core/contact.mjs";
 import { TOOL_VERSION } from "../core/meta.mjs";
 import { paint, palette, hitTest, centroidPath, paintLegend, legendHeight } from "./canvas.mjs";
-import { buildTrace, traceFastenerId } from "../core/trace.mjs";
+import { traceFastenerId } from "../core/trace.mjs";
+import { handCalc, handCalcMarkdown } from "../core/handcalc.mjs";
+import { deckReport } from "../core/deck.mjs";
 import { reportHtml } from "../core/report.mjs";
 import { readLibrary, writeLibrary, readWorking, writeWorking, uniqueName, StorageFullError } from "./storage.mjs";
 import { registerTools } from "./webmcp.mjs";
@@ -635,7 +637,16 @@ function renderPresets() {
   }
 }
 
-/* ---------- calculation trace ---------- */
+/* ---------- hand calculations (the calculation trace, worked into the group steps) ---------- */
+
+const handOf = () => handCalc(state.pattern, state.result, { precision: precision(), fastenerId: state.traceId });
+
+function handBlock(b) {
+  if (b.p != null) return `<p>${esc(b.p)}</p>`;
+  if (b.list) return `<ul>${b.list.map((t) => `<li>${esc(t)}</li>`).join("")}</ul>`;
+  if (b.steps) return table(["Step", "Formula", "Substituted", "Value", "Unit"], b.steps.map((l) => [esc(l.label), `<code>${esc(l.formula)}</code>`, esc(l.substituted), esc(l.text), esc(l.unit)]), { numeric: [3] });
+  return table(b.table.head.map(esc), b.table.rows.map((r) => r.map(esc)), { numeric: b.table.numeric });
+}
 
 function renderTrace() {
   const r = state.result;
@@ -643,7 +654,7 @@ function renderTrace() {
   const out = $("#trace");
   if (!r.ok) {
     pick.innerHTML = ""; pick.disabled = true;
-    out.innerHTML = `<p class="blocked">No trace: the pattern has errors.</p>`;
+    out.innerHTML = `<p class="blocked">No hand calculations: the pattern has errors.</p>`;
     return;
   }
   const gov = traceFastenerId(r);
@@ -651,10 +662,51 @@ function renderTrace() {
   const current = ids.includes(state.traceId) ? state.traceId : gov;
   pick.disabled = false;
   pick.innerHTML = ids.map((id) => `<option value="${esc(id)}"${id === current ? " selected" : ""}>${esc(id)}${id === gov ? " (governing)" : ""}</option>`).join("");
-  const tr = buildTrace(state.pattern, r, current, (v) => fmt(v, Math.max(precision(), 6)));
-  out.innerHTML = tr.sections.map((sec) => `<h3>${esc(sec.title)}</h3>${table(["Step", "Formula", "Substituted", "Value", "Unit"],
-    sec.lines.map((l) => [esc(l.label), `<code>${esc(l.formula)}</code>`, esc(l.substituted), typeof l.value === "number" ? fmt(l.value, Math.max(precision(), 6)) : esc(l.value ?? "—"), esc(l.unit)]), { numeric: [3] })}`).join("");
+  out.innerHTML = handOf().sections.map((sec) => `<h3>${esc(sec.title)}</h3>${sec.frames.map((fr) => `<h4>${esc(fr.title)}</h4>${fr.blocks.map(handBlock).join("")}`).join("")}`).join("");
 }
+
+/* ---------- hand-calculation Markdown and the beamdswitch deck ----------
+   Save and Copy are separate buttons: a blocked download fails silently, so Copy is the explicit fallback. */
+
+const handMarkdown = () => handCalcMarkdown(state.pattern, state.result, { precision: precision(), fastenerId: state.traceId, date: today() });
+const deckText = () => globalThis.Beamdswitch.deck(deckReport(state.pattern, state.result, { precision: precision(), fastenerId: state.traceId, date: today(), verification: runVerification() }));
+
+function message(id, text, kind = "") {
+  const el = $(`#${id}`);
+  el.textContent = text;
+  el.className = `msg ${kind}`;
+}
+function showFallback(label, text) {
+  $("#fallback").hidden = false;
+  $("#fallback-label").textContent = label;
+  const ta = $("#fallback-text");
+  ta.value = text;
+  ta.focus(); ta.select();
+}
+function saveText(text, filename, msg, done) {
+  try {
+    download(text, filename, "text/markdown");
+    message(msg, done, "ok");
+  } catch (e) {
+    message(msg, `Could not save: ${e.message}. Use ${msg === "hand-msg" ? "Copy Markdown" : "Copy deck"} instead.`, "bad");
+  }
+}
+async function copyText(text, msg, done, what) {
+  try {
+    if (!navigator.clipboard || !navigator.clipboard.writeText) throw new Error("no clipboard API");
+    await navigator.clipboard.writeText(text);
+    message(msg, done, "ok");
+  } catch (e) {
+    showFallback(`Clipboard access is blocked; the ${what} is selected below. Press Ctrl+C or ⌘C.`, text);
+    message(msg, `Clipboard access is blocked; the ${what} is shown under Reports to copy by hand.`, "bad");
+  }
+}
+const handFile = () => `${slug(state.pattern.name)}-hand-calculations.md`;
+const deckFile = () => `${slug(state.pattern.name)}-beamdswitch.md`;
+const saveHand = () => saveText(handMarkdown(), handFile(), "hand-msg", `Saved ${handFile()}; beamdswitch also opens it as a deck.`);
+const copyHand = () => copyText(handMarkdown(), "hand-msg", "Copied the hand calculations as Markdown.", "Markdown");
+const saveDeck = () => saveText(deckText(), deckFile(), "io-msg", `Saved ${deckFile()}: open it in beamdswitch.`);
+const copyDeck = () => copyText(deckText(), "io-msg", "Copied the beamdswitch deck: paste it into beamdswitch.", "deck");
 
 /* ---------- reports ---------- */
 
@@ -1063,6 +1115,10 @@ function bind() {
   $("#print-report-btn").addEventListener("click", () => window.print());
   window.addEventListener("beforeprint", buildPrintReport);
   $("#export-png").addEventListener("click", exportPng);
+  $("#hand-save").addEventListener("click", saveHand);
+  $("#hand-copy").addEventListener("click", copyHand);
+  $("#save-beamdswitch").addEventListener("click", saveDeck);
+  $("#copy-beamdswitch").addEventListener("click", copyDeck);
   for (const b of $$("[data-preset]")) {
     b.addEventListener("click", () => {
       const p = PRESETS[b.dataset.preset];

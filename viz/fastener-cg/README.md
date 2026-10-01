@@ -41,21 +41,39 @@ the shared scene model and are checked against it by a test; and the full
 verification panel, which runs every case including the published-reference
 cases VR-01 to VR-03.
 
+The Hand calculations section works the current pattern by hand, step by step:
+each formula, the solver's own numbers substituted into it, and the solver's
+result, in the pattern's units. It covers the three centroids, J, Ixx, Iyy,
+Ixy and the principal axes, the load reduction to Cs and Ca, every fastener's
+elastic direct and torsional shear and its tension (method (a) or the contact
+edge), the bolt-load chain with any prying and preload, bearing and tear-out,
+the interaction and its margin, and equilibrium. The per-fastener steps are the
+calculation trace, for the governing fastener or the one picked on the page.
+The ICR solve is iterative, so its method and result are stated rather than
+derived, and no table values are used. Save Markdown and Copy Markdown export
+the steps as a Markdown document that beamdswitch also opens as a narrated
+deck. The beamdswitch and Copy deck buttons under Reports export a narrated
+talk about the pattern for [beamdswitch](https://teoyujie.org/visuals/beamdswitch/),
+written with the site's standard report template (`beamdswitch.js`, a copy of
+`templates/beamdswitch.js` inlined in the page): set-up, method, results with
+every hand-calculation step as a slide, and checks, with voice `bf_emma`.
+
 | Path | Role |
 | --- | --- |
-| `src/core/*.mjs` | Dependency-free calculation core (ES modules): units, model, geometry, load reduction, elastic distribution, interaction and exact-k solve, prying and preload tension chain, plates (bearing, tear-out, geometry checks), contact-edge method (b), ICR solver, per-fastener checks, calculation trace, SVG painter, report, warnings catalogue, solve, generators, persistence, scene model, verification set |
+| `src/core/*.mjs` | Dependency-free calculation core (ES modules): units, model, geometry, load reduction, elastic distribution, interaction and exact-k solve, prying and preload tension chain, plates (bearing, tear-out, geometry checks), contact-edge method (b), ICR solver, per-fastener checks, calculation trace, hand calculations, beamdswitch report, SVG painter, report, warnings catalogue, solve, generators, persistence, scene model, verification set |
 | `src/ui/*.mjs` | Page controller, canvas painter, localStorage library and WebMCP tools |
-| `src/template.html` | Markup and styles, with one `/*@APP@*/` marker |
-| `build.mjs` | Inlines every module into `index.html` and writes `raw.json` (published metadata) |
+| `src/template.html` | Markup and styles, with one `/*@APP@*/` marker and one `/*@BEAMDSWITCH@*/` marker |
+| `beamdswitch.js` | The site's shared beamdswitch report template, copied unchanged from `templates/beamdswitch.js` |
+| `build.mjs` | Inlines every module and `beamdswitch.js` into `index.html` and writes `raw.json` (published metadata) |
 | `index.html`, `raw.json` | Build outputs; do not edit |
 | `AGENTS.md` | Notes for coding agents: where changes go (the standalone repository, where this visualisation and its tests develop; yujieteo/site holds a port of the page files), how to build and test, and the conventions. |
 | `SKILLS.md` | For agents using the tool: its tasks, inputs, read-only WebMCP tools, exports and a worked example. |
 | `LICENSE` | MIT. |
 
 ```sh
-node visuals/fastener-cg/build.mjs          # rebuild after editing src/
-node visuals/fastener-cg/build.mjs --check  # fail if the outputs are stale
-node --test tests/fastener-cg.test.mjs      # core, persistence, scene, WebMCP and build tests
+node build.mjs          # rebuild after editing src/
+node build.mjs --check  # fail if the outputs are stale
+node --test tests/fastener-cg*.test.mjs     # core, persistence, scene, WebMCP, build, hand-calculation, deck and browser tests
 ```
 
 The tests use Node's built-in runner, like the site's other Node tests, so the

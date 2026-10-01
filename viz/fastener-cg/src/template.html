@@ -118,7 +118,14 @@ dialog::backdrop{background:rgb(0 0 0/.35)}
 dialog .actions{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.8rem}
 .method li{margin:.3rem 0}
 .trace-pick{max-width:18rem}
-#trace h3{margin:1rem 0 .3rem}
+#trace h3{margin:1.4rem 0 .3rem}
+#trace h4{font-size:1rem;margin:1rem 0 .3rem;letter-spacing:-.01em}
+#trace ul{margin:.3rem 0;padding-left:1.2rem;max-width:70ch}
+.hand-tools{align-items:flex-end}
+.msg{font-size:.8125rem;color:var(--muted);min-height:1.2em;margin:.35rem 0}
+.msg.ok{color:var(--ok)}
+.msg.bad{color:var(--bad)}
+#fallback textarea{width:100%;min-height:10rem;font:.8125rem/1.4 var(--mono);background:var(--surface);color:var(--fg);border:1px solid var(--border);border-radius:var(--r);padding:.5rem}
 #print-report{display:none}
 @media print{
   :root{color-scheme:light}
@@ -425,9 +432,13 @@ td.status{color:var(--muted);font-size:.78rem}
 </section>
 
 <section aria-labelledby="trace-h">
-  <h2 id="trace-h">Calculation trace</h2>
-  <p>A worked calculation with every formula and its substituted numbers, read from the solver's own intermediate values. The reports show the governing fastener; pick any fastener here.</p>
-  <label class="f trace-pick"><span>Show trace for fastener…</span><select id="trace-fastener"></select></label>
+  <h2 id="trace-h">Hand calculations</h2>
+  <p>The current pattern worked by hand, step by step: each formula, the solver's own numbers substituted into it, and the solver's result, in the pattern's units. The group steps (centroids, J, Ixx, Iyy, Ixy, load reduction, every fastener's shear and tension, margins and equilibrium) come first; the calculation trace works one fastener through, the governing one unless you pick another. The ICR solve is iterative, so its method and result are stated rather than derived.</p>
+  <div class="toolbar hand-tools" role="group" aria-label="Hand calculations">
+    <label class="f trace-pick"><span>Worked fastener…</span><select id="trace-fastener"></select></label>
+    <div class="group"><button class="btn" type="button" id="hand-save" title="Save the hand calculations as Markdown; beamdswitch also opens the file as a narrated deck">Save Markdown</button><button class="btn" type="button" id="hand-copy" title="Copy the same Markdown to the clipboard">Copy Markdown</button></div>
+  </div>
+  <p class="msg" id="hand-msg" role="status" aria-live="polite"></p>
   <div id="trace"></div>
 </section>
 
@@ -437,7 +448,11 @@ td.status{color:var(--muted);font-size:.78rem}
   <div class="toolbar" role="group" aria-label="Reports">
     <div class="group"><label class="label" for="page-size">Page</label><select id="page-size" data-path="settings.pageSize"><option value="A4">A4</option><option value="Letter">Letter</option></select></div>
     <div class="group"><button class="btn primary" type="button" id="print-report-btn">Print / Save as PDF</button><button class="btn" type="button" id="export-png">Download PNG</button></div>
+    <div class="group"><button class="btn" type="button" id="save-beamdswitch" title="Save a narrated Markdown talk about this pattern, with the hand calculations, to open in beamdswitch">beamdswitch</button><button class="btn" type="button" id="copy-beamdswitch" title="Copy the same beamdswitch deck to the clipboard, to paste into beamdswitch">Copy deck</button></div>
   </div>
+  <p class="note">The beamdswitch deck is a narrated talk about this pattern for <a href="https://teoyujie.org/visuals/beamdswitch/">beamdswitch</a> (slides, handout and video): set-up, method, results with the hand calculations slide by slide, and checks.</p>
+  <p class="msg" id="io-msg" role="status" aria-live="polite"></p>
+  <div id="fallback" hidden><label class="f"><span id="fallback-label">Copy the text below</span><textarea id="fallback-text" readonly spellcheck="false"></textarea></label></div>
 </section>
 
 <section aria-labelledby="verify-h">
@@ -484,6 +499,9 @@ td.status{color:var(--muted);font-size:.78rem}
   </form>
 </dialog>
 
+<script id="fcg-beamdswitch">
+/*@BEAMDSWITCH@*/
+</script>
 <script>
 /*@APP@*/
 </script>
