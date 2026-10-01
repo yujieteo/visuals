@@ -13,8 +13,10 @@ analysis and explanation is authored in data/english-grammar/:
 The builder expands each bracketed tree into hierarchical JSON with token spans,
 validates the whole corpus, and renders viz/english-grammar/index.html from
 scripts/templates/english-grammar.css, english-grammar-logic.js (pure logic, also
-run by tests/english-grammar.test.mjs) and english-grammar.js (interface). --verify re-runs every check,
-including the Solarized contrast pairs, and compares the committed page.
+run by tests/english-grammar.test.mjs) and english-grammar.js (interface). Each concept page offers its
+lesson as a narrated beamdswitch deck: viz/english-grammar/beamdswitch.js (the site's shared report
+template, unchanged) and viz/english-grammar/report.js (one concept as a report) are inlined as they are.
+--verify re-runs every check, including the Solarized contrast pairs, and compares the committed page.
 
     python3 scripts/build_english_grammar.py
     python3 scripts/build_english_grammar.py --verify
@@ -36,6 +38,9 @@ TOKENS = ROOT / "design-tokens.json"
 CSS_TEMPLATE = ROOT / "scripts" / "templates" / "english-grammar.css"
 JS_TEMPLATE = ROOT / "scripts" / "templates" / "english-grammar.js"
 LOGIC_TEMPLATE = ROOT / "scripts" / "templates" / "english-grammar-logic.js"
+DECK_TEMPLATE = ROOT / "viz" / SLUG / "beamdswitch.js"
+DECK_REPORT = ROOT / "viz" / SLUG / "report.js"
+BEAMDSWITCH_URL = "https://teoyujie.org/visuals/beamdswitch/"
 
 DISPLAY_TITLE = "How English Grammar Works"
 TITLE = "How English Grammar Works — an interactive CGEL explorer"
@@ -543,10 +548,14 @@ def render(model, raw, meta, tokens):
 <ol class="static-index">{static_index(model)}</ol></section>
 </div>
 <div id="app" class="app" hidden></div>
+<div id="deck" class="deck" hidden><div class="deck-row"><button type="button" id="save-beamdswitch" class="btn small" title="Save this lesson as a narrated Markdown talk, to open in beamdswitch">beamdswitch</button><button type="button" id="copy-beamdswitch" class="btn small" title="Copy this lesson's narrated Markdown talk, to paste into beamdswitch">Copy deck</button><span id="deck-status" class="deck-status" role="status"></span></div>
+<p class="hint deck-hint">The beamdswitch button saves this lesson as a narrated talk: a Markdown deck with the concept, its main example and analysis, the explanation and its contrasts, and a spoken narration on every slide. Open it in <a href="{BEAMDSWITCH_URL}">beamdswitch</a> to get slides, a handout, narration and a video. Copy deck puts the same deck on the clipboard, to paste into beamdswitch if the download does not arrive.</p></div>
 </div>
 <footer class="foot"><p><strong>Source.</strong> Terminology and analytical framework follow <cite>{escape(book['title'])}</cite> by {escape(book['authors'])} ({escape(book['publisher'])}, {book['year']}). Teaching examples and explanations are original illustrative examples written for this page; they are not taken from the book. Analyses follow the book's framework as known to the author and have not yet been checked against the book's text. Chapter and section references were checked against the publisher's contents pages on {escape(meta['fetched'])}.</p><p><a href="/visuals">Back to all visuals</a></p></footer>
 <script type="application/json" id="eg-data">{payload}</script>
 <script id="eg-logic">{logic}</script>
+<script id="beamdswitch">\n{DECK_TEMPLATE.read_text(encoding="utf-8")}</script>
+<script id="report">\n{DECK_REPORT.read_text(encoding="utf-8")}</script>
 <script id="eg-ui">{js}</script>
 </body></html>
 '''
@@ -554,7 +563,8 @@ def render(model, raw, meta, tokens):
 
 def verify_page(html, model):
     stripped = re.sub(r"<script type=\"application/json\"[\s\S]*?</script>", "", html)
-    assert not re.search(r"""(?:src|href)=["'](?:https?:)?//""", stripped.replace(f'href="{CANONICAL}"', "")), "external asset reference"
+    links = stripped.replace(f'href="{CANONICAL}"', "").replace(f'href="{BEAMDSWITCH_URL}"', "")
+    assert not re.search(r"""(?:src|href)=["'](?:https?:)?//""", links), "external asset reference"
     assert not re.search(r"@import|url\(\s*['\"]?(?:https?:)?//", stripped), "external CSS import"
     assert not re.search(r"\b(fetch|XMLHttpRequest|WebSocket|EventSource|importScripts|sendBeacon)\s*\(", stripped), "network API in page script"
     assert not re.search(r"\b(localStorage|sessionStorage|indexedDB|document\.cookie)\b", stripped), "page must not rely on storage or cookies"
@@ -566,6 +576,9 @@ def verify_page(html, model):
     assert "og:image" not in html and f'<link rel="canonical" href="{CANONICAL}">' in html
     assert 'href="/visuals"' in html and escape(KEY_MESSAGE) in html
     assert len(html.encode("utf-8")) < SIZE_BUDGET, "page exceeds the 1 MB budget"
+    assert f'<script id="beamdswitch">\n{DECK_TEMPLATE.read_text(encoding="utf-8")}</script>' in html
+    assert f'<script id="report">\n{DECK_REPORT.read_text(encoding="utf-8")}</script>' in html
+    assert 'id="save-beamdswitch"' in html and 'id="copy-beamdswitch"' in html
     assert html.count("mc?.registerTool") == 3 and len(re.findall(r"readOnlyHint:\s*true", html)) == 3
     data = json.loads(re.search(r'<script type="application/json" id="eg-data">([\s\S]*?)</script>', html).group(1).replace("<\\/", "</"))
     assert [e["id"] for e in data["examples"]] == [e["id"] for e in model["examples"]]

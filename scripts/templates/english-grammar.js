@@ -31,7 +31,9 @@
   /* ---------- static frame ---------- */
   const toggle = h("button", { class: "concepts-btn", type: "button", "aria-controls": "nav", "aria-expanded": "false" }, "Concepts");
   const closeBtn = h("button", { class: "close-btn", type: "button", "aria-label": "Close concepts" }, "Close");
-  const searchInput = h("input", { id: "q", type: "search", autocomplete: "off", spellcheck: "false", "aria-describedby": "q-help", "aria-controls": "results" });
+  const mac = /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent || "");
+  const searchInput = h("input", { id: "q", type: "search", autocomplete: "off", spellcheck: "false", "aria-describedby": "q-help", "aria-controls": "results",
+    placeholder: "Search (" + (mac ? "⌘K" : "Ctrl+K") + ")", "aria-keyshortcuts": "Control+K Meta+K" });
   const results = h("div", { id: "results", class: "results", role: "region", "aria-live": "polite", "aria-label": "Search results" });
   const routeList = h("ol", { class: "route" });
   const confusionList = h("ul", { class: "confusions" });
@@ -136,6 +138,14 @@
   toggle.addEventListener("click", () => setNav(!state.navOpen));
   closeBtn.addEventListener("click", () => setNav(false));
   document.addEventListener("keydown", (ev) => {
+    /* Ctrl+K (Cmd+K on macOS) jumps to search, opening the navigator or the Concepts drawer first. */
+    if (L.isSearchShortcut(ev)) {
+      ev.preventDefault();
+      if (!state.navOpen) setNav(true, searchInput);
+      else searchInput.focus();
+      searchInput.select();
+      return;
+    }
     if (ev.key === "Escape" && narrow.matches && state.navOpen) { ev.preventDefault(); setNav(false); }
     if (ev.key === "Tab" && narrow.matches && state.navOpen) {
       const f = [...nav.querySelectorAll("a[href], button, input")].filter((el) => !el.closest("[hidden]"));
@@ -152,6 +162,25 @@
 
   /* ---------- laboratory ---------- */
   let els = {};
+
+  /* beamdswitch: each concept page saves or copies its lesson as a narrated Markdown deck. The report
+     template is beamdswitch.js; report.js fills it from the concept shown. */
+  const deckBox = document.getElementById("deck"), deckStatus = document.getElementById("deck-status");
+  const deck = () => window.Beamdswitch.deck(window.EGReport.report(idx, L, state.concept));
+  function saveDeck(text, name) {
+    const url = URL.createObjectURL(new Blob([text], { type: "text/markdown" })), a = document.createElement("a");
+    a.href = url; a.download = name; document.body.append(a); a.click(); a.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+  document.getElementById("save-beamdswitch").addEventListener("click", () => {
+    const name = "english-grammar-" + state.concept + "-beamdswitch.md";
+    try { saveDeck(deck(), name); deckStatus.textContent = "Saved " + name + ": open it in beamdswitch."; }
+    catch (e) { deckStatus.textContent = "Could not save the beamdswitch deck here: use Copy deck instead."; }
+  });
+  document.getElementById("copy-beamdswitch").addEventListener("click", async () => {
+    try { await navigator.clipboard.writeText(deck()); deckStatus.textContent = "Copied the beamdswitch deck: paste it into beamdswitch."; }
+    catch (e) { deckStatus.textContent = "Could not copy the beamdswitch deck here: use the beamdswitch button to save it."; }
+  });
 
   function renderConcept() {
     const c = idx.concepts.get(state.concept);
@@ -174,6 +203,9 @@
       c.aliases ? h("p", { class: "aliases" }, [h("span", {}, "Familiar terms: "), c.aliases.join(", "), h("span", { class: "hint" }, " (aliases, not the book's terms)")]) : null,
       h("p", { class: "orientation" }, c.orientation),
       routeNav]);
+    deckStatus.textContent = "";
+    deckBox.hidden = false;
+    article.append(deckBox);
     els.rail = h("ul", { class: "rail", "aria-label": "Examples for this concept" });
     els.example = h("section", { class: "example", "aria-labelledby": "ex-h" });
     article.append(h("h3", { id: "ex-h", class: "ex-h" }, "Examples"), els.rail, els.example);
