@@ -17,7 +17,7 @@ Tests live in `tests/` of yujieteo/toulmin: `tests/toulmin.test.mjs` (with the g
 Run from the root of a yujieteo/toulmin checkout:
 
 ```sh
-node --test tests/toulmin.test.mjs tests/toulmin-browser.test.mjs tests/beamdswitch-voice.test.mjs
+node --test tests/toulmin.test.mjs tests/toulmin-browser.test.mjs
 ```
 
 After editing `TEMPLATE` in the engine, regenerate `raw.json`'s `template` and the golden deck from the engine, as the README's "Changing the template" says.
