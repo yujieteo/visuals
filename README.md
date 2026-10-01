@@ -49,6 +49,7 @@ for s in scripts/build*.py; do python3 "$s" --verify || break; done
 | `haze-singapore` | `scripts/build_haze_singapore.py` | Where and when Singapore's air turned hazy |
 | `manchester-city-finances` | `scripts/build_manchester_city_finances.py` | What Manchester City's charges and accounts do and do not show |
 | `marvell` | `scripts/build_stock_cases.py` | Marvell cash conversion |
+| `multi-armed-bandit` | `scripts/build_multi_armed_bandit.py` | Choose the next trial with Thompson Sampling and UCB1, and see how they explore |
 | `ooda-orientation` | `scripts/build_ooda_orientation.py` | Orient: destroy the wrong model, act from the better one |
 | `panw` | `scripts/build_stock_cases.py` | Palo Alto Networks cash conversion |
 | `singapore-covid-governance-hindsight` | `scripts/build_singapore_covid_governance_hindsight.py` | What did 2020 Singapore analyses say? |
@@ -85,6 +86,7 @@ python3 scripts/build_singapore_covid_governance_hindsight.py
 python3 scripts/build_social_values.py
 python3 scripts/build_energy_email_productivity.py
 python3 scripts/build_english_grammar.py           # english-grammar
+python3 scripts/build_multi_armed_bandit.py        # multi-armed-bandit
 python3 scripts/build_ooda_orientation.py          # ooda-orientation
 python3 scripts/build_convexity_action_engine.py
 python3 scripts/build_everyday_actions.py
@@ -113,6 +115,7 @@ python3 scripts/build_singapore_covid_governance_hindsight.py --verify
 python3 scripts/build_social_values.py --verify
 python3 scripts/build_energy_email_productivity.py --verify
 python3 scripts/build_english_grammar.py --verify
+python3 scripts/build_multi_armed_bandit.py --verify
 python3 scripts/build_ooda_orientation.py --verify
 python3 scripts/build_convexity_action_engine.py --verify
 python3 scripts/build_everyday_actions.py --verify
@@ -127,12 +130,14 @@ punctuation and antecedent models) plus Node tests of its fragment, traversal
 and search logic, and `ooda-orientation` has Node tests of its planner state
 machine: the observation, prediction, history and referential invariants, the
 anti-pattern diagnostics, the three worked examples, search ranking, and
-persistence, import and schema migration; the four stock pages have Node tests of
+persistence, import and schema migration; `multi-armed-bandit` has Node tests of
+its Beta quantiles and sampling, UCB1, seeded generator, recording and undo,
+input and JSON import validation, and simulation determinism and regret; the four stock pages have Node tests of
 their WebMCP `get_data` and `query` tools:
 
 ```sh
 python3 -m unittest discover -s tests -p 'test_*.py'
-node --test tests/convexity-action-engine.test.mjs tests/everyday-actions.test.mjs tests/english-grammar.test.mjs tests/ooda-orientation.test.mjs tests/stock-cases-tools.test.mjs
+node --test tests/convexity-action-engine.test.mjs tests/everyday-actions.test.mjs tests/english-grammar.test.mjs tests/ooda-orientation.test.mjs tests/multi-armed-bandit.test.mjs tests/stock-cases-tools.test.mjs
 ```
 
 Pages with a narrated beamdswitch report (the beamdswitch and Copy deck buttons)
@@ -151,7 +156,10 @@ concept page, and its deck is that lesson: the concept, its main example and
 analysis, the explanation and its contrasts. `ooda-orientation` offers both
 buttons once a situation exists; its deck walks the situation along its current
 lineage, from the reality ledger through destruction and the candidates to the
-action, its frozen prediction and what happened. Their tests parse every deck with beamdswitch's
+action, its frozen prediction and what happened. `multi-armed-bandit` offers the same
+deck as Save deck and Copy deck: the experiment, its assumptions, both methods, the
+evidence and recommendations with their displayed scores, the simulation once it
+has run, and the next step. Their tests parse every deck with beamdswitch's
 own parser (vendored read-only in `tests/fixtures/beamdswitch/`), click both
 buttons where the page offers them, and, when `SITE_REPO` names a site
 checkout, also compare each copy with it:

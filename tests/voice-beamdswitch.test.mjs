@@ -10,7 +10,7 @@ import { TEMPLATE_PATH, assertVoice, read } from "./beamdswitch-decks.mjs";
 
 const EXPORTING = [
   "airbnb", "arm", "breeden-litzenberger-density", "convex-payoffs", "energy-email-productivity", "english-grammar",
-  "fpl-expected-goals", "graduate-employment-survey", "haze-singapore", "manchester-city-finances", "marvell", "ooda-orientation", "panw",
+  "fpl-expected-goals", "graduate-employment-survey", "haze-singapore", "manchester-city-finances", "marvell", "multi-armed-bandit", "ooda-orientation", "panw",
   "singapore-covid-governance-hindsight", "social-values-surveydata", "tourist-attractions",
 ];
 const pages = readdirSync(new URL("../viz/", import.meta.url), { withFileTypes: true })
