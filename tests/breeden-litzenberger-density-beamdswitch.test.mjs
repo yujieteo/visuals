@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { assertInlined, assertStandardDeck, assertTemplateCopy, load, openPage, read } from "./finance-beamdswitch-checks.mjs";
+import { assertBlockedSave, assertInlined, assertStandardDeck, assertTemplateCopy, load, openPage, read } from "./finance-beamdswitch-checks.mjs";
 
 const SLUG = "breeden-litzenberger-density";
 const html = read(`viz/${SLUG}/index.html`);
@@ -57,5 +57,6 @@ test("the beamdswitch button saves, and Copy deck copies, the deck of the strike
     assert.equal(page.$("readout").textContent, `At K = ${v.K} with Δ = ${v.D}: butterfly density ${r.est.toFixed(5)} · Black–Scholes density ${r.pK.toFixed(5)}`);
     assert.deepEqual([out.name, out.text, out.copied], [`${SLUG}-beamdswitch.md`, deckFor(v), deckFor(v)], what(v));
   }
-  assert.doesNotMatch(html, /if the download does not arrive|as saving is blocked/);
 });
+
+test("a blocked download points to Copy deck without touching the clipboard", () => assertBlockedSave(SLUG, controls()));

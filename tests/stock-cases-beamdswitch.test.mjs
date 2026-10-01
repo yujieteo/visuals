@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { assertInlined, assertStandardDeck, assertTemplateCopy, load, openPage, read } from "./finance-beamdswitch-checks.mjs";
+import { assertBlockedSave, assertInlined, assertStandardDeck, assertTemplateCopy, load, openPage, read } from "./finance-beamdswitch-checks.mjs";
 
 const SLUGS = ["airbnb", "arm", "marvell", "panw"];
 const REPORT = read("scripts/templates/stock-cases-report.js");
@@ -61,8 +61,6 @@ for (const slug of SLUGS) {
       assert.equal(out.status, `Saved ${slug}-beamdswitch.md: open it in beamdswitch.`);
     }
   });
-}
 
-test("no page claims a download falls back to the clipboard", () => {
-  for (const slug of SLUGS) assert.doesNotMatch(read(`viz/${slug}/index.html`), /if the download does not arrive|as saving is blocked/, slug);
-});
+  test(`${slug}: a blocked download points to Copy deck without touching the clipboard`, () => assertBlockedSave(slug));
+}

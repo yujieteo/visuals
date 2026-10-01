@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { assertInlined, assertStandardDeck, assertTemplateCopy, load, openPage, read } from "./finance-beamdswitch-checks.mjs";
+import { assertBlockedSave, assertInlined, assertStandardDeck, assertTemplateCopy, load, openPage, read } from "./finance-beamdswitch-checks.mjs";
 
 const SLUG = "convex-payoffs";
 const html = read(`viz/${SLUG}/index.html`);
@@ -30,10 +30,8 @@ test("the deck's words are the page's: its quadrants, message, caveat and resear
   for (const text of [PAGE.lede, PAGE.message, PAGE.caveat, ...PAGE.sources.flatMap((s) => [s.cite, s.text])]) assert.ok(strip(html).includes(text), text);
   assert.deepEqual(PAGE.sources.map((s) => s.url), META.sources.map((s) => s.url));
   assert.equal(PAGE.fetched, META.fetched);
-  for (const id of IDS) {
-    const { cost, change } = ConvexReport.axes(id);
-    assert.ok(html.includes(`data-id="${id}" aria-pressed="${id === "reversible-upside"}"><span class="kicker">${cost} · ${change}</span>`), id);
-  }
+  const kickers = Object.fromEntries([...html.matchAll(/<button class="cell"[^>]*data-id="([\w-]+)"[^>]*><span class="kicker">([^<]+)<\/span>/g)].map((m) => [m[1], m[2]]));
+  assert.deepEqual(kickers, Object.fromEntries(IDS.map((id) => { const { cost, change } = ConvexReport.axes(id); return [id, `${cost} · ${change}`]; })));
 });
 
 test("every quadrant's deck parses in beamdswitch as the standard template, narrated on every slide", () => {
@@ -56,5 +54,6 @@ test("the beamdswitch button saves, and Copy deck copies, the deck of the quadra
     assert.deepEqual([out.text, out.copied], [deckFor(id), deckFor(id)], id);
     assert.equal(out.status, `Saved ${SLUG}-beamdswitch.md: open it in beamdswitch.`);
   }
-  assert.doesNotMatch(html, /if the download does not arrive|as saving is blocked/);
 });
+
+test("a blocked download points to Copy deck without touching the clipboard", () => assertBlockedSave(SLUG, { ".cell": IDS.map((id) => ({ id })) }));

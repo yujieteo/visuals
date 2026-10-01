@@ -95,9 +95,10 @@ export class Element {
 /*
  * Runs a page's inline scripts in a fresh context. `controls` maps a querySelectorAll selector to the
  * elements it returns (each { dataset }); downloads land in `saved` ({ name, text }) and clipboard
- * writes in `copied`. `$(id)` is the element with that id.
+ * writes in `copied`. With `blockSave`, the browser refuses to make the download. `$(id)` is the
+ * element with that id.
  */
-export function openPage(slug, controls = {}) {
+export function openPage(slug, controls = {}, { blockSave = false } = {}) {
   const html = read(`viz/${slug}/index.html`);
   const nodes = new Map(), lists = new Map(), blobs = new Map(), saved = [], copied = [];
   const byId = (id) => { if (!nodes.has(id)) nodes.set(id, new Element()); return nodes.get(id); };
@@ -118,7 +119,7 @@ export function openPage(slug, controls = {}) {
   const context = vm.createContext({
     document, console, Blob, JSON, Math,
     navigator: { clipboard: { writeText: async (t) => { copied.push(t); } } },
-    URL: { createObjectURL: (b) => { const href = `blob:${++n}`; blobs.set(href, b); return href; }, revokeObjectURL() {} },
+    URL: { createObjectURL: (b) => { if (blockSave) throw new Error("download blocked"); const href = `blob:${++n}`; blobs.set(href, b); return href; }, revokeObjectURL() {} },
     setTimeout: () => 0, addEventListener() {},
   });
   context.window = context.self = context;
@@ -140,4 +141,13 @@ export function openPage(slug, controls = {}) {
       return { name: file.name, text: await file.blob.text(), status, copied: copied.at(-1) };
     },
   };
+}
+
+/* On a page whose download is blocked, the beamdswitch button saves nothing, writes nothing to the
+   clipboard on its own, and points to Copy deck. */
+export async function assertBlockedSave(slug, controls) {
+  const page = openPage(slug, controls, { blockSave: true });
+  await page.click(page.$("save-beamdswitch"));
+  assert.deepEqual([page.saved.length, page.copied.length], [0, 0], `${slug}: nothing saved or copied`);
+  assert.equal(page.$("deck-status").textContent, "Could not save the beamdswitch deck here: use Copy deck to paste it into beamdswitch.", slug);
 }
