@@ -15,7 +15,7 @@ validates the whole corpus (including the three special structures that are not 
 constituent trees: word-internal structure, punctuation marks attached to constituent
 boundaries, and antecedent links), and renders viz/english-grammar/index.html from
 scripts/templates/english-grammar.css, english-grammar-logic.js (pure logic, also
-run by tests/english-grammar.test.mjs) and english-grammar.js (interface). Each concept page offers its
+run by yujieteo/english-grammar's tests/english-grammar.test.mjs) and english-grammar.js (interface). Each concept page offers its
 lesson as a narrated beamdswitch deck: viz/english-grammar/beamdswitch.js (the site's shared report
 template, unchanged) and viz/english-grammar/report.js (one concept as a report) are inlined as they are.
 --verify re-runs every check, including the Solarized contrast pairs, and compares the committed page.

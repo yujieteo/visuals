@@ -124,20 +124,16 @@ python3 scripts/build_tampines_food_map.py --verify
 python3 scripts/build_stock_cases.py --verify
 ```
 
-The copied action visualizations also retain their source regression tests,
-`english-grammar` has data-integrity tests (including its word-structure,
-punctuation and antecedent models) plus Node tests of its fragment, traversal
-and search logic, and `ooda-orientation` has Node tests of its planner state
-machine: the observation, prediction, history and referential invariants, the
-anti-pattern diagnostics, the three worked examples, search ranking, and
-persistence, import and schema migration; `multi-armed-bandit` has Node tests of
-its Beta quantiles and sampling, UCB1, seeded generator, recording and undo,
-input and JSON import validation, and simulation determinism and regret; the four stock pages have Node tests of
-their WebMCP `get_data` and `query` tools:
+The copied action visualizations also retain their source regression tests.
+The 17 folders ported from a standalone `yujieteo/<repo>` repository (listed in
+`tests/test_mirror_docs.py`) keep their logic, deck and WebMCP tests in that
+repository, whose CI runs them; here they are checked only by their builders'
+`--verify` and by a sweep that keeps the set of pages exporting a beamdswitch
+deck known:
 
 ```sh
 python3 -m unittest discover -s tests -p 'test_*.py'
-node --test tests/convexity-action-engine.test.mjs tests/everyday-actions.test.mjs tests/english-grammar.test.mjs tests/ooda-orientation.test.mjs tests/multi-armed-bandit.test.mjs tests/stock-cases-tools.test.mjs
+node --test tests/convexity-action-engine.test.mjs tests/everyday-actions.test.mjs tests/voice-beamdswitch.test.mjs
 ```
 
 Pages with a narrated beamdswitch report (the beamdswitch and Copy deck buttons)
@@ -159,14 +155,7 @@ lineage, from the reality ledger through destruction and the candidates to the
 action, its frozen prediction and what happened. `multi-armed-bandit` offers the same
 deck as Save deck and Copy deck: the experiment, its assumptions, both methods, the
 evidence and recommendations with their displayed scores, the simulation once it
-has run, and the next step. Their tests parse every deck with beamdswitch's
-own parser (vendored read-only in `tests/fixtures/beamdswitch/`), click both
-buttons where the page offers them, and, when `SITE_REPO` names a site
-checkout, also compare each copy with it:
-
-```sh
-node --test tests/*-beamdswitch.test.mjs
-```
+has run, and the next step.
 
 ## Action visualization provenance
 
