@@ -22,7 +22,7 @@
   /* Front matter values: one line; a value wrapped in matching quotes keeps them. */
   const front = (s) => { const t = clean(s); return /^(["']).*\1$/.test(t) ? (t[0] === '"' ? "'" + t + "'" : '"' + t + '"') : t; };
   /* Narration is read aloud: no markup, maths or symbols. */
-  const speak = (s) => clean(String(s == null ? "" : s).replace(/&/g, " and ").replace(/%/g, " percent").replace(/[→↓]/g, ", then ").replace(/[−–—]/g, ", ")
+  const speak = (s) => clean(String(s == null ? "" : s).replace(/<(?=\d)/g, "less than ").replace(/>(?=\d)/g, "more than ").replace(/&/g, " and ").replace(/%/g, " percent").replace(/[→↓]/g, ", then ").replace(/[−–—]/g, ", ")
     .replace(/[$\\`*_#|<>×⁰¹²³⁴⁵⁶⁷⁸⁹⁻≈·∠°σ£€µ★▲[\]{}~^]/g, " ")).replace(/\s+([,.;:!?])/g, "$1").replace(/,\s*,/g, ",");
   const sentence = (s) => { const t = bare(s); return t ? t + "." : ""; };
   const list = (xs) => xs.map((x) => "- " + x).join("\n");
@@ -38,7 +38,7 @@
     const basis = BASIS[S.basis];
     const setup = [
       { title: "The experiment", body: ["**" + md(title) + "**", "", list(["Success: " + (success ? md(success) : "not yet defined"), "Trial unit: " + (unit ? md(unit) : "not yet defined"),
-        "Variants: " + V.rows.map((r) => md(r.name)).join(", "), "Completed trials: " + V.rows.reduce((t, r) => t + r.trials, 0), "Evidence: " + basis[0]])].join("\n"),
+        "Variants: " + V.rows.map((r) => md(r.name)).join(", "), "Completed trials: " + V.totalText, "Evidence: " + basis[0]])].join("\n"),
         narration: "The experiment is " + speak(sentence(title)) + " " + (success ? "A success means: " + speak(sentence(success)) : "Success has not been defined yet.") + " " +
           (unit ? "Each trial is one " + speak(sentence(unit.charAt(0).toLowerCase() + unit.slice(1))) : "") + " It compares " + V.rows.length + " variants. " + basis[1] },
       { title: "Assumptions", body: list(D.assumptions.map(md)),
@@ -74,9 +74,9 @@
     }
     const first = V.rows[0];
     const checks = [
-      { title: "Hand check", body: list([md(first.name) + ": prior " + V.priorText + " plus " + first.successes + " successes and " + first.failures + " failures gives " + first.text.posterior + ", mean " + first.text.mean + ".",
+      { title: "Hand check", body: list([md(first.name) + ": prior " + V.priorText + " plus " + first.text.successes + " successes and " + first.text.failures + " failures gives " + first.text.posterior + ", mean " + first.text.mean + ".",
         V.ucb.untried ? "UCB1 recommends an untried variant, so no logarithm of zero is evaluated." : md(V.ucb.name) + ": " + L4(V.rows[V.ucb.index]) ]),
-        narration: "A quick check. " + speak(bare(first.name)) + " has " + first.successes + " successes and " + first.failures + " failures, so its posterior mean is " + speak(first.text.mean) + ". Each recorded outcome moves these numbers by exactly one trial." },
+        narration: "A quick check. " + speak(bare(first.name)) + " has " + first.text.successes + " successes and " + first.text.failures + " failures, so its posterior mean is " + speak(first.text.mean) + ". Each recorded outcome moves these numbers by exactly one trial." },
       { title: "Next step", key: "Thompson Sampling suggests **" + md(V.ts.name) + "** (sample " + V.ts.value + "); UCB1 suggests **" + md(V.ucb.name) + "** (" + (V.ucb.untried ? "untried" : "score " + V.ucb.value) + ").\n\nChoose one, run one trial, record the resolved outcome, then look again. Neither method declares the experiment finished or a variant conclusively best.",
         notes: "If the success definition or environment changes, start a new experiment rather than mixing evidence.",
         narration: "The next step: choose one recommendation, run a single trial, and record its outcome once it is resolved. Neither method declares the experiment finished or any variant conclusively best." },

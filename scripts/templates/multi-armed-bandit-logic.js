@@ -27,6 +27,7 @@
     maxBudget: 2000, maxSeed: 4294967295 };
   const SIM_DEFAULTS = { probabilities: [0.08, 0.12, 0.15], budget: 1000, seed: 42, added: 0.1 };
   const METHODS = [["ts", "Thompson Sampling"], ["ucb", "UCB1"], ["eq", "Equal allocation"]];
+  const TEMPLATES = ["website", "email", "study", "outreach", "custom"];
 
   /* ---- Seeded generator ---- */
   function splitmix(x) {
@@ -344,7 +345,7 @@
       b.name + " has the highest score: observed rate " + num(b.ucb.mean) + " plus exploration bonus " + num(b.ucb.bonus) + " equals " + num(b.ucb.score) +
       (ucbNext >= 0 ? "; next is " + rows[ucbNext].name + " at " + rows[ucbNext].text.ucb : "") + ". The score is not a probability.";
     const agree = ts === u.best;
-    return { rows, total: u.T, prior: state.prior, priorText: "Beta(" + fmtPrior(state.prior.a) + ", " + fmtPrior(state.prior.b) + ")",
+    return { rows, total: u.T, totalText: group(u.T), prior: state.prior, priorText: "Beta(" + fmtPrior(state.prior.a) + ", " + fmtPrior(state.prior.b) + ")",
       ts: { index: ts, id: rows[ts].id, name: rows[ts].name, value: rows[ts].text.sample, why: tsWhy },
       ucb: { index: u.best, id: b.id, name: b.name, untried: u.untried, value: b.text.ucb, why: ucbWhy },
       agree, disagreement: agree ? "" : "The methods disagree. Thompson Sampling follows one random draw from each posterior, so uncertain variants sometimes win; UCB1 adds a deterministic exploration bonus to each observed rate, which is largest for variants with few trials.",
@@ -425,7 +426,7 @@
       if (doc[f].trim() && textError(f, doc[f])) fail(textError(f, doc[f]));
       if (doc[f].length > LIMITS[f]) fail(textError(f, doc[f]));
     }
-    if (typeof doc.template !== "string" || !["fictional", "mixed", "entered"].includes(doc.basis)) fail("Invalid template or evidence basis.");
+    if (!TEMPLATES.includes(doc.template) || !["fictional", "mixed", "entered"].includes(doc.basis)) fail("Invalid template or evidence basis.");
     if (!doc.prior || priorError(String(doc.prior.a), "a") !== null || priorError(String(doc.prior.b), "b") !== null || typeof doc.prior.a !== "number" || typeof doc.prior.b !== "number") fail("Prior a and b must be numbers from 0.1 to 100.");
     const vs = doc.variants;
     if (!Array.isArray(vs) || vs.length < LIMITS.minVariants || vs.length > LIMITS.maxVariants) fail("An experiment needs 2 to 10 variants.");

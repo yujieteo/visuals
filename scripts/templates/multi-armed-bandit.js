@@ -32,6 +32,8 @@
   let store = null;
   try { store = window.localStorage; store.getItem(KEY); } catch (e) { store = null; }
   let S, sim, undo = [], running = false, timer = 0, saveTimer = 0, simKey = "";
+  let viewOf = null, viewMemo = null;
+  const view = () => (viewOf === S ? viewMemo : (viewMemo = L.view(viewOf = S)));
   const keyOf = (s) => JSON.stringify([s.simulation.probabilities, s.simulation.budget, s.simulation.seed, s.prior]);
   function boot() {
     let msg = store ? "" : "Autosave is unavailable in this browser context; use Export JSON to keep your work.";
@@ -41,7 +43,7 @@
       if (r.error) msg = "Saved work could not be restored (" + r.error + "); started from the website example.";
       else { S = r.state; sim = r.sim; msg = "Restored your autosaved experiment."; }
     }
-    if (!S) { S = L.fromTemplate(D, "website", freshSeed()); sim = L.simCreate(S); }
+    if (!S) { S = L.fromTemplate(D, "website", freshSeed()); sim = L.simCreate(S); save(); }
     simKey = keyOf(S);
     $("store-status").textContent = msg;
   }
@@ -159,7 +161,7 @@
   const nameOf = (id) => (S.variants.find((v) => v.id === id) || {}).name;
   const active = () => document.activeElement;
   function renderExperiment(force) {
-    const V = L.view(S);
+    const V = view();
     $("template").value = S.template;
     const t = D.templates.find((x) => x.id === S.template);
     const basis = { fictional: "Fictional example counts", mixed: "Fictional starting counts plus your changes", entered: "Your entered evidence" }[S.basis];
@@ -197,7 +199,7 @@
       c.tr.className = S.selected === r.id ? "is-sel" : "";
     });
     $("add-variant").disabled = S.variants.length >= L.LIMITS.maxVariants;
-    $("vt-count").textContent = S.variants.length + " variants (2 to 10). Total completed trials: " + L.group(V.total) + ".";
+    $("vt-count").textContent = S.variants.length + " variants (2 to 10). Total completed trials: " + V.totalText + ".";
     $("ts-pick").textContent = "★ " + V.ts.name;
     $("ts-why").textContent = V.ts.why;
     $("ts-select").textContent = "Select " + V.ts.name;
@@ -214,9 +216,11 @@
     const hints = $("hints");
     hints.textContent = "";
     for (const h of L.hints(S, V)) hints.append(el("li", null, h));
-    if (force || active() !== $("prior-a")) $("prior-a").value = String(S.prior.a);
-    if (force || active() !== $("prior-b")) $("prior-b").value = String(S.prior.b);
-    if (force) setErr($("prior-a"), "e-prior", "");
+    for (const x of ["prior-a", "prior-b"]) {
+      const input = $(x);
+      if (force || (active() !== input && input.getAttribute("aria-invalid") !== "true")) input.value = String(S.prior[x.slice(-1)]);
+      if (force) setErr(input, "e-prior", "");
+    }
     $("prior-text").textContent = "Current prior: " + V.priorText + ", applied independently to every variant.";
     plotIntervals(V);
   }
@@ -283,10 +287,13 @@
       const input = $("p-" + v.id);
       if (force || (active() !== input && input.getAttribute("aria-invalid") !== "true")) input.value = String(+(c.probabilities[j] * 100).toFixed(6));
     });
-    if (force || active() !== $("sim-budget")) $("sim-budget").value = String(c.budget);
-    if (force || active() !== $("sim-seed")) $("sim-seed").value = String(c.seed);
+    for (const [x, v] of [["sim-budget", c.budget], ["sim-seed", c.seed]]) {
+      const input = $(x);
+      if (force || (active() !== input && input.getAttribute("aria-invalid") !== "true")) input.value = String(v);
+    }
+    if (force) { $("e-sim").textContent = ""; for (const e of document.querySelectorAll("#panel-sim input")) e.setAttribute("aria-invalid", "false"); }
     const V = L.simView(sim, names), done = L.simDone(sim);
-    $("sim-progress").textContent = V.progress + " Seed " + V.seed + ", prior " + L.view(S).priorText + ".";
+    $("sim-progress").textContent = V.progress + " Seed " + V.seed + ", prior " + view().priorText + ".";
     $("sim-step").disabled = $("sim-run").disabled = done || running;
     $("sim-pause").disabled = !running;
     $("sim-reset").disabled = !V.started && !running;
@@ -404,7 +411,7 @@
     const d = new Date();
     const iso = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
     const simV = sim.methods.ts.pulls ? L.simView(sim, S.variants.map((v) => v.name)) : null;
-    return Beamdswitch.deck(BanditReport.report(S, L.view(S), simV, D, iso));
+    return Beamdswitch.deck(BanditReport.report(S, view(), simV, D, iso));
   }
   function wireExports() {
     $("save-beamdswitch").addEventListener("click", () => {
@@ -485,7 +492,7 @@
       say("Added " + v.name + " with no trials; recommendations recalculated.", $("vt-status"));
     });
     const pick = (which) => () => {
-      const id = L.view(S)[which].id, r = L.select(S, id);
+      const id = view()[which].id, r = L.select(S, id);
       commit(r.state);
       say("Selected " + nameOf(id) + " for the next trial.", $("record-status"));
     };
@@ -497,7 +504,7 @@
       undo.push(before);
       if (undo.length > 200) undo.shift();
       commit(r.state);
-      const V = L.view(S);
+      const V = view();
       say("Recorded a " + (ok ? "success" : "failure") + " for " + nameOf(S.selected) + ". Thompson now recommends " + V.ts.name + "; UCB1 recommends " + V.ucb.name + ".", $("record-status"));
     };
     $("btn-success").addEventListener("click", rec(true));
@@ -510,13 +517,13 @@
     });
     $("btn-resample").addEventListener("click", () => {
       commit(L.resample(L.clone(S)));
-      say("Drew new Thompson samples; Thompson now recommends " + L.view(S).ts.name + ". Evidence and UCB1 scores are unchanged.", $("record-status"));
+      say("Drew new Thompson samples; Thompson now recommends " + view().ts.name + ". Evidence and UCB1 scores are unchanged.", $("record-status"));
     });
     for (const id of ["prior-a", "prior-b"]) $(id).addEventListener("change", () => {
       const r = L.setPrior(S, $("prior-a").value, $("prior-b").value);
       $("e-prior").textContent = r.error || "";
       for (const x of ["prior-a", "prior-b"]) $(x).setAttribute("aria-invalid", r.error ? "true" : "false");
-      if (r.state && !r.unchanged) { commit(r.state, { clearUndo: true }); say("Prior changed to " + L.view(S).priorText + "; recommendations recalculated.", $("prior-text")); }
+      if (r.state && !r.unchanged) { commit(r.state, { clearUndo: true }); say("Prior changed to " + view().priorText + "; recommendations recalculated.", $("prior-text")); }
     });
     wireSim();
     wireExports();
@@ -528,7 +535,7 @@
         if (w === last) return;
         last = w;
         cancelAnimationFrame(rw);
-        rw = requestAnimationFrame(() => { plotIntervals(L.view(S)); plotSim(L.simView(sim, S.variants.map((v) => v.name))); });
+        rw = requestAnimationFrame(() => { plotIntervals(view()); plotSim(L.simView(sim, S.variants.map((v) => v.name))); });
       }).observe($("main"));
     }
   }
@@ -537,7 +544,7 @@
     if (!mc) return;
     const result = (x) => ({ content: [{ type: "text", text: JSON.stringify(x) }] });
     const snapshot = () => {
-      const V = L.view(S);
+      const V = view();
       return { experiment: { title: S.title, success: S.success, unit: S.unit, template: S.template, evidence: S.basis, prior: V.priorText,
         variants: V.rows.map((r) => ({ name: r.name, successes: r.successes, failures: r.failures, trials: r.trials, observedRate: r.text.rate, posteriorMean: r.text.mean, interval95: r.text.interval, thompsonSample: r.text.sample, ucbScore: r.text.ucb })),
         selected: nameOf(S.selected) || null },

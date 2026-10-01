@@ -307,6 +307,8 @@ test("JSON import is fully validated and never partial", () => {
   bad((d) => { d.rng = [1, 2, 3]; });
   bad((d) => { d.nextId = 2; });
   bad((d) => { d.basis = "real"; });
+  bad((d) => { d.template = "zzz"; }, /template/);
+  bad((d) => { d.template = undefined; }, /template/);
   bad((d) => { d.simulation.probabilities = [0.1, 0.2]; });
   bad((d) => { d.simulation.probabilities[0] = 1.2; });
   bad((d) => { d.simulation.budget = 2001; });

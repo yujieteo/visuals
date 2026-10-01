@@ -105,6 +105,7 @@ const LIMITS = { minVariants: 2, maxVariants: 10, maxCount: 1000000, priorMin: 0
 maxBudget: 2000, maxSeed: 4294967295 };
 const SIM_DEFAULTS = { probabilities: [0.08, 0.12, 0.15], budget: 1000, seed: 42, added: 0.1 };
 const METHODS = [["ts", "Thompson Sampling"], ["ucb", "UCB1"], ["eq", "Equal allocation"]];
+const TEMPLATES = ["website", "email", "study", "outreach", "custom"];
 function splitmix(x) {
 x = (x + 0x9e3779b9) >>> 0;
 let z = x;
@@ -399,7 +400,7 @@ const ucbWhy = u.untried ? b.name + " has no trials yet, so UCB1 tries it before
 b.name + " has the highest score: observed rate " + num(b.ucb.mean) + " plus exploration bonus " + num(b.ucb.bonus) + " equals " + num(b.ucb.score) +
 (ucbNext >= 0 ? "; next is " + rows[ucbNext].name + " at " + rows[ucbNext].text.ucb : "") + ". The score is not a probability.";
 const agree = ts === u.best;
-return { rows, total: u.T, prior: state.prior, priorText: "Beta(" + fmtPrior(state.prior.a) + ", " + fmtPrior(state.prior.b) + ")",
+return { rows, total: u.T, totalText: group(u.T), prior: state.prior, priorText: "Beta(" + fmtPrior(state.prior.a) + ", " + fmtPrior(state.prior.b) + ")",
 ts: { index: ts, id: rows[ts].id, name: rows[ts].name, value: rows[ts].text.sample, why: tsWhy },
 ucb: { index: u.best, id: b.id, name: b.name, untried: u.untried, value: b.text.ucb, why: ucbWhy },
 agree, disagreement: agree ? "" : "The methods disagree. Thompson Sampling follows one random draw from each posterior, so uncertain variants sometimes win; UCB1 adds a deterministic exploration bonus to each observed rate, which is largest for variants with few trials.",
@@ -475,7 +476,7 @@ if (typeof doc[f] !== "string") fail("Missing " + f + ".");
 if (doc[f].trim() && textError(f, doc[f])) fail(textError(f, doc[f]));
 if (doc[f].length > LIMITS[f]) fail(textError(f, doc[f]));
 }
-if (typeof doc.template !== "string" || !["fictional", "mixed", "entered"].includes(doc.basis)) fail("Invalid template or evidence basis.");
+if (!TEMPLATES.includes(doc.template) || !["fictional", "mixed", "entered"].includes(doc.basis)) fail("Invalid template or evidence basis.");
 if (!doc.prior || priorError(String(doc.prior.a), "a") !== null || priorError(String(doc.prior.b), "b") !== null || typeof doc.prior.a !== "number" || typeof doc.prior.b !== "number") fail("Prior a and b must be numbers from 0.1 to 100.");
 const vs = doc.variants;
 if (!Array.isArray(vs) || vs.length < LIMITS.minVariants || vs.length > LIMITS.maxVariants) fail("An experiment needs 2 to 10 variants.");
@@ -639,7 +640,7 @@ parse, serialise, clone };
   /* Front matter values: one line; a value wrapped in matching quotes keeps them. */
   const front = (s) => { const t = clean(s); return /^(["']).*\1$/.test(t) ? (t[0] === '"' ? "'" + t + "'" : '"' + t + '"') : t; };
   /* Narration is read aloud: no markup, maths or symbols. */
-  const speak = (s) => clean(String(s == null ? "" : s).replace(/&/g, " and ").replace(/%/g, " percent").replace(/[→↓]/g, ", then ").replace(/[−–—]/g, ", ")
+  const speak = (s) => clean(String(s == null ? "" : s).replace(/<(?=\d)/g, "less than ").replace(/>(?=\d)/g, "more than ").replace(/&/g, " and ").replace(/%/g, " percent").replace(/[→↓]/g, ", then ").replace(/[−–—]/g, ", ")
     .replace(/[$\\`*_#|<>×⁰¹²³⁴⁵⁶⁷⁸⁹⁻≈·∠°σ£€µ★▲[\]{}~^]/g, " ")).replace(/\s+([,.;:!?])/g, "$1").replace(/,\s*,/g, ",");
   const sentence = (s) => { const t = bare(s); return t ? t + "." : ""; };
   const list = (xs) => xs.map((x) => "- " + x).join("\n");
@@ -655,7 +656,7 @@ parse, serialise, clone };
     const basis = BASIS[S.basis];
     const setup = [
       { title: "The experiment", body: ["**" + md(title) + "**", "", list(["Success: " + (success ? md(success) : "not yet defined"), "Trial unit: " + (unit ? md(unit) : "not yet defined"),
-        "Variants: " + V.rows.map((r) => md(r.name)).join(", "), "Completed trials: " + V.rows.reduce((t, r) => t + r.trials, 0), "Evidence: " + basis[0]])].join("\n"),
+        "Variants: " + V.rows.map((r) => md(r.name)).join(", "), "Completed trials: " + V.totalText, "Evidence: " + basis[0]])].join("\n"),
         narration: "The experiment is " + speak(sentence(title)) + " " + (success ? "A success means: " + speak(sentence(success)) : "Success has not been defined yet.") + " " +
           (unit ? "Each trial is one " + speak(sentence(unit.charAt(0).toLowerCase() + unit.slice(1))) : "") + " It compares " + V.rows.length + " variants. " + basis[1] },
       { title: "Assumptions", body: list(D.assumptions.map(md)),
@@ -691,9 +692,9 @@ parse, serialise, clone };
     }
     const first = V.rows[0];
     const checks = [
-      { title: "Hand check", body: list([md(first.name) + ": prior " + V.priorText + " plus " + first.successes + " successes and " + first.failures + " failures gives " + first.text.posterior + ", mean " + first.text.mean + ".",
+      { title: "Hand check", body: list([md(first.name) + ": prior " + V.priorText + " plus " + first.text.successes + " successes and " + first.text.failures + " failures gives " + first.text.posterior + ", mean " + first.text.mean + ".",
         V.ucb.untried ? "UCB1 recommends an untried variant, so no logarithm of zero is evaluated." : md(V.ucb.name) + ": " + L4(V.rows[V.ucb.index]) ]),
-        narration: "A quick check. " + speak(bare(first.name)) + " has " + first.successes + " successes and " + first.failures + " failures, so its posterior mean is " + speak(first.text.mean) + ". Each recorded outcome moves these numbers by exactly one trial." },
+        narration: "A quick check. " + speak(bare(first.name)) + " has " + first.text.successes + " successes and " + first.text.failures + " failures, so its posterior mean is " + speak(first.text.mean) + ". Each recorded outcome moves these numbers by exactly one trial." },
       { title: "Next step", key: "Thompson Sampling suggests **" + md(V.ts.name) + "** (sample " + V.ts.value + "); UCB1 suggests **" + md(V.ucb.name) + "** (" + (V.ucb.untried ? "untried" : "score " + V.ucb.value) + ").\n\nChoose one, run one trial, record the resolved outcome, then look again. Neither method declares the experiment finished or a variant conclusively best.",
         notes: "If the success definition or environment changes, start a new experiment rather than mixing evidence.",
         narration: "The next step: choose one recommendation, run a single trial, and record its outcome once it is resolved. Neither method declares the experiment finished or any variant conclusively best." },
@@ -740,6 +741,8 @@ setTimeout(() => { a.textContent = msg; }, 30);
 let store = null;
 try { store = window.localStorage; store.getItem(KEY); } catch (e) { store = null; }
 let S, sim, undo = [], running = false, timer = 0, saveTimer = 0, simKey = "";
+let viewOf = null, viewMemo = null;
+const view = () => (viewOf === S ? viewMemo : (viewMemo = L.view(viewOf = S)));
 const keyOf = (s) => JSON.stringify([s.simulation.probabilities, s.simulation.budget, s.simulation.seed, s.prior]);
 function boot() {
 let msg = store ? "" : "Autosave is unavailable in this browser context; use Export JSON to keep your work.";
@@ -749,7 +752,7 @@ const r = L.parse(saved);
 if (r.error) msg = "Saved work could not be restored (" + r.error + "); started from the website example.";
 else { S = r.state; sim = r.sim; msg = "Restored your autosaved experiment."; }
 }
-if (!S) { S = L.fromTemplate(D, "website", freshSeed()); sim = L.simCreate(S); }
+if (!S) { S = L.fromTemplate(D, "website", freshSeed()); sim = L.simCreate(S); save(); }
 simKey = keyOf(S);
 $("store-status").textContent = msg;
 }
@@ -863,7 +866,7 @@ rowIds = S.variants.map((v) => v.id).join();
 const nameOf = (id) => (S.variants.find((v) => v.id === id) || {}).name;
 const active = () => document.activeElement;
 function renderExperiment(force) {
-const V = L.view(S);
+const V = view();
 $("template").value = S.template;
 const t = D.templates.find((x) => x.id === S.template);
 const basis = { fictional: "Fictional example counts", mixed: "Fictional starting counts plus your changes", entered: "Your entered evidence" }[S.basis];
@@ -901,7 +904,7 @@ if (V.ucb.index === i) c.ucb.append(el("span", { class: "tag ucb" }, "▲ UCB1 p
 c.tr.className = S.selected === r.id ? "is-sel" : "";
 });
 $("add-variant").disabled = S.variants.length >= L.LIMITS.maxVariants;
-$("vt-count").textContent = S.variants.length + " variants (2 to 10). Total completed trials: " + L.group(V.total) + ".";
+$("vt-count").textContent = S.variants.length + " variants (2 to 10). Total completed trials: " + V.totalText + ".";
 $("ts-pick").textContent = "★ " + V.ts.name;
 $("ts-why").textContent = V.ts.why;
 $("ts-select").textContent = "Select " + V.ts.name;
@@ -918,9 +921,11 @@ $("btn-undo").disabled = !undo.length;
 const hints = $("hints");
 hints.textContent = "";
 for (const h of L.hints(S, V)) hints.append(el("li", null, h));
-if (force || active() !== $("prior-a")) $("prior-a").value = String(S.prior.a);
-if (force || active() !== $("prior-b")) $("prior-b").value = String(S.prior.b);
-if (force) setErr($("prior-a"), "e-prior", "");
+for (const x of ["prior-a", "prior-b"]) {
+const input = $(x);
+if (force || (active() !== input && input.getAttribute("aria-invalid") !== "true")) input.value = String(S.prior[x.slice(-1)]);
+if (force) setErr(input, "e-prior", "");
+}
 $("prior-text").textContent = "Current prior: " + V.priorText + ", applied independently to every variant.";
 plotIntervals(V);
 }
@@ -985,10 +990,13 @@ $("pl-" + v.id).textContent = v.name + " success probability (%)";
 const input = $("p-" + v.id);
 if (force || (active() !== input && input.getAttribute("aria-invalid") !== "true")) input.value = String(+(c.probabilities[j] * 100).toFixed(6));
 });
-if (force || active() !== $("sim-budget")) $("sim-budget").value = String(c.budget);
-if (force || active() !== $("sim-seed")) $("sim-seed").value = String(c.seed);
+for (const [x, v] of [["sim-budget", c.budget], ["sim-seed", c.seed]]) {
+const input = $(x);
+if (force || (active() !== input && input.getAttribute("aria-invalid") !== "true")) input.value = String(v);
+}
+if (force) { $("e-sim").textContent = ""; for (const e of document.querySelectorAll("#panel-sim input")) e.setAttribute("aria-invalid", "false"); }
 const V = L.simView(sim, names), done = L.simDone(sim);
-$("sim-progress").textContent = V.progress + " Seed " + V.seed + ", prior " + L.view(S).priorText + ".";
+$("sim-progress").textContent = V.progress + " Seed " + V.seed + ", prior " + view().priorText + ".";
 $("sim-step").disabled = $("sim-run").disabled = done || running;
 $("sim-pause").disabled = !running;
 $("sim-reset").disabled = !V.started && !running;
@@ -1104,7 +1112,7 @@ function deckText() {
 const d = new Date();
 const iso = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
 const simV = sim.methods.ts.pulls ? L.simView(sim, S.variants.map((v) => v.name)) : null;
-return Beamdswitch.deck(BanditReport.report(S, L.view(S), simV, D, iso));
+return Beamdswitch.deck(BanditReport.report(S, view(), simV, D, iso));
 }
 function wireExports() {
 $("save-beamdswitch").addEventListener("click", () => {
@@ -1183,7 +1191,7 @@ $("name-" + v.id).focus();
 say("Added " + v.name + " with no trials; recommendations recalculated.", $("vt-status"));
 });
 const pick = (which) => () => {
-const id = L.view(S)[which].id, r = L.select(S, id);
+const id = view()[which].id, r = L.select(S, id);
 commit(r.state);
 say("Selected " + nameOf(id) + " for the next trial.", $("record-status"));
 };
@@ -1195,7 +1203,7 @@ if (r.error) return say(r.error, $("record-status"));
 undo.push(before);
 if (undo.length > 200) undo.shift();
 commit(r.state);
-const V = L.view(S);
+const V = view();
 say("Recorded a " + (ok ? "success" : "failure") + " for " + nameOf(S.selected) + ". Thompson now recommends " + V.ts.name + "; UCB1 recommends " + V.ucb.name + ".", $("record-status"));
 };
 $("btn-success").addEventListener("click", rec(true));
@@ -1208,13 +1216,13 @@ say("Undid the last recorded outcome; the previous recommendations and samples a
 });
 $("btn-resample").addEventListener("click", () => {
 commit(L.resample(L.clone(S)));
-say("Drew new Thompson samples; Thompson now recommends " + L.view(S).ts.name + ". Evidence and UCB1 scores are unchanged.", $("record-status"));
+say("Drew new Thompson samples; Thompson now recommends " + view().ts.name + ". Evidence and UCB1 scores are unchanged.", $("record-status"));
 });
 for (const id of ["prior-a", "prior-b"]) $(id).addEventListener("change", () => {
 const r = L.setPrior(S, $("prior-a").value, $("prior-b").value);
 $("e-prior").textContent = r.error || "";
 for (const x of ["prior-a", "prior-b"]) $(x).setAttribute("aria-invalid", r.error ? "true" : "false");
-if (r.state && !r.unchanged) { commit(r.state, { clearUndo: true }); say("Prior changed to " + L.view(S).priorText + "; recommendations recalculated.", $("prior-text")); }
+if (r.state && !r.unchanged) { commit(r.state, { clearUndo: true }); say("Prior changed to " + view().priorText + "; recommendations recalculated.", $("prior-text")); }
 });
 wireSim();
 wireExports();
@@ -1226,7 +1234,7 @@ const w = $("main").clientWidth;
 if (w === last) return;
 last = w;
 cancelAnimationFrame(rw);
-rw = requestAnimationFrame(() => { plotIntervals(L.view(S)); plotSim(L.simView(sim, S.variants.map((v) => v.name))); });
+rw = requestAnimationFrame(() => { plotIntervals(view()); plotSim(L.simView(sim, S.variants.map((v) => v.name))); });
 }).observe($("main"));
 }
 }
@@ -1235,7 +1243,7 @@ const mc = (typeof document !== "undefined" && document.modelContext) || (typeof
 if (!mc) return;
 const result = (x) => ({ content: [{ type: "text", text: JSON.stringify(x) }] });
 const snapshot = () => {
-const V = L.view(S);
+const V = view();
 return { experiment: { title: S.title, success: S.success, unit: S.unit, template: S.template, evidence: S.basis, prior: V.priorText,
 variants: V.rows.map((r) => ({ name: r.name, successes: r.successes, failures: r.failures, trials: r.trials, observedRate: r.text.rate, posteriorMean: r.text.mean, interval95: r.text.interval, thompsonSample: r.text.sample, ucbScore: r.text.ucb })),
 selected: nameOf(S.selected) || null },

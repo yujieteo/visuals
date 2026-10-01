@@ -148,7 +148,46 @@ test("the page registers exactly three read-only WebMCP tools that report the co
 
 test("narration helpers make plain speech", () => {
   assert.equal(R.speak("8.82% & ★ <b>"), "8.82 percent and b");
+  assert.equal(R.speak("drew <0.01% and >99.99%"), "drew less than 0.01 percent and more than 99.99 percent");
   assert.equal(R.md("# a|b"), "\\# a\\|b");
   assert.equal(R.front("\"x\""), "'\"x\"'");
   assert.equal(parseDeck(T.deck({ meta: { title: R.front("'y'") }, narration: "n.", setup: [{ title: "a", narration: "a." }], method: [{ title: "b", narration: "b." }], results: [{ title: "c", narration: "c." }], checks: [{ title: "d", key: "k", narration: "d." }] })).meta.title, "'y'");
+});
+
+test("the deck groups large counts as the page does", () => {
+  const s = ok(L.setCounts(ok(L.setCounts(website(), 0, "250000", "1000000")), 1, "0", "1000000")), V = L.view(s), md = plainText(deckFor(s));
+  assert.equal(V.totalText, "2,000,020");
+  assert.ok(md.includes("Completed trials: 2,000,020"), "grouped total");
+  assert.ok(md.includes("plus 250,000 successes and 750,000 failures gives"), "grouped hand check");
+  assert.match(parseDeck(deckFor(s)).frames.find((f) => f.title === "Hand check").narration, /250,000 successes and 750,000 failures/);
+});
+
+test("a fresh session is autosaved, so a reload restores the same Thompson samples", async () => {
+  const writes = [], tools = [];
+  const now = (fn) => { fn(); return 0; };
+  await openPage(SLUG, { globals: { setTimeout: now, localStorage: { getItem: () => null, setItem: (k, v) => writes.push([k, v]), removeItem() {} } } });
+  assert.ok(writes.length > 0, "the fresh session was saved");
+  const [key, stored] = writes.at(-1), r = L.parse(stored);
+  assert.equal(key, "multi-armed-bandit:v1");
+  assert.equal(r.error, undefined);
+  const navigator = { modelContext: { registerTool: (t) => tools.push(t) }, clipboard: { writeText: async () => {} } };
+  await openPage(SLUG, { globals: { navigator, localStorage: { getItem: () => stored, setItem() {}, removeItem() {} } } });
+  const data = JSON.parse((await tools[0].execute()).content[0].text);
+  assert.deepEqual(data.experiment.variants.map((v) => v.thompsonSample), JSON.parse(JSON.stringify(L.view(r.state).rows.map((x) => x.text.sample))));
+});
+
+test("invalid prior and simulation inputs keep the entered text while their error stands", async () => {
+  const s = website(), stored = L.serialise(s, L.simCreate(s));
+  const page = await openPage(SLUG, { globals: { localStorage: { getItem: () => stored, setItem() {}, removeItem() {} } } });
+  const input = (id) => page.run(`document.getElementById(${JSON.stringify(id)})`);
+  const enter = async (id, v) => { input(id).value = v; await input(id).dispatch("change"); };
+  await enter("prior-b", "500");
+  assert.equal(input("prior-b").getAttribute("aria-invalid"), "true");
+  await page.click("btn-resample");
+  assert.equal(input("prior-b").value, "500");
+  await enter("sim-budget", "5000");
+  assert.equal(input("sim-budget").getAttribute("aria-invalid"), "true");
+  await page.click("sim-step");
+  assert.equal(input("sim-budget").value, "5000");
+  assert.match(input("e-sim").textContent, /Pulls per method/);
 });
