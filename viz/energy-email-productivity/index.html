@@ -22,7 +22,8 @@
  * `body` is Markdown (LaTeX maths in $...$ or $$...$$); `narration` is plain spoken prose, one
  * caption per sentence; `key`, `plot` and `notes` are optional. Every frame must be narrated, and
  * the last checks frame must carry a key. The visualisation supplies every number already
- * formatted, so the deck says exactly what its page shows.
+ * formatted, so the deck says exactly what its page shows. Every deck names its narrator: `meta.voice`
+ * when the visualisation picks one, else DEFAULT_VOICE, beamdswitch's British female default.
  */
 (function (root, factory) {
   const api = factory();
@@ -31,6 +32,7 @@
 })(typeof self !== "undefined" ? self : this, function () {
   "use strict";
 
+  const DEFAULT_VOICE = "bf_emma";
   const SECTIONS = [["setup", "Set-up"], ["method", "Method"], ["results", "Results"], ["checks", "Checks and takeaway"]];
 
   const oneLine = (s) => String(s ?? "").replace(/\s+/g, " ").trim();
@@ -73,8 +75,9 @@
     if (!oneLine(meta.title)) throw new Error("The report needs a title.");
     const checks = report.checks || [];
     if (!checks.length || !checks.at(-1).key) throw new Error("The last checks frame must carry a ::: key.");
+    const fm = { ...meta, voice: oneLine(meta.voice) || DEFAULT_VOICE };
     const out = ["---"];
-    for (const k of ["title", "subtitle", "author", "date", "voice"]) if (oneLine(meta[k])) out.push(`${k}: ${oneLine(meta[k])}`);
+    for (const k of ["title", "subtitle", "author", "date", "voice"]) if (oneLine(fm[k])) out.push(`${k}: ${oneLine(fm[k])}`);
     out.push("---", "");
     if (report.notes) out.push(...div("notes", block(report.notes, "The title slide")), "");
     out.push(...div("narration", spoken(report.narration, "The title slide")), "");
@@ -87,7 +90,7 @@
     return out.join("\n");
   }
 
-  return { SECTIONS, deck };
+  return { DEFAULT_VOICE, SECTIONS, deck };
 });
 </script><script id="report">
 /* The energy-email-productivity page's evidence as a beamdswitch report.

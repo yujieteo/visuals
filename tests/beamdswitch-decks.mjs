@@ -20,11 +20,21 @@ const siteRepo = process.env.SITE_REPO || new URL("../../site/", import.meta.url
 export const SITE_TEMPLATE = `${siteRepo.replace(/\/$/, "")}/templates/beamdswitch.js`;
 export const haveSite = existsSync(SITE_TEMPLATE);
 
+// The copy matches a site checkout's templates/beamdswitch.js.
+export function assertSiteTemplate(copy, sitePath, what) {
+  assert.equal(copy, readFileSync(sitePath, "utf8"), `the site's templates/beamdswitch.js and ${what} must stay identical`);
+}
+
+// Every deck names its narrator, so beamdswitch never narrates in silence: a voice id such as bf_emma.
+export function assertVoice(deck, what) {
+  assert.match(deck.meta.voice ?? "", /^[a-z]{2}_[a-z]+$/, `${what}: declares a voice in its front matter`);
+}
+
 // The folder's beamdswitch.js is the site's shared template, unchanged.
 export function assertTemplateCopy(slug) {
   const copy = read(`viz/${slug}/beamdswitch.js`);
   assert.equal(copy, read(TEMPLATE_PATH), `${TEMPLATE_PATH} and viz/${slug}/beamdswitch.js must stay identical`);
-  if (haveSite) assert.equal(copy, readFileSync(SITE_TEMPLATE, "utf8"), `the site's templates/beamdswitch.js and viz/${slug}/beamdswitch.js must stay identical`);
+  if (haveSite) assertSiteTemplate(copy, SITE_TEMPLATE, `viz/${slug}/beamdswitch.js`);
 }
 
 // The page inlines each script verbatim in its own <script id="..."> block.
@@ -40,9 +50,10 @@ const divs = (children, name, out = []) => {
 };
 
 // The deck opens in beamdswitch as the standard template: title slide, the four sections in order,
-// every slide narrated in plain spoken prose written in the deck, ending on one ::: key.
+// every slide narrated in plain spoken prose written in the deck, ending on one ::: key, with a voice.
 export function assertStandardDeck(md, what) {
   const deck = parseDeck(md);
+  assertVoice(deck, what);
   assert.equal(deck.frames[0].kind, "title", what);
   assert.ok(deck.meta.title, `${what}: has a title`);
   assert.deepEqual(deck.frames.filter((f) => f.kind === "section").map((f) => f.title), SECTIONS, what);
