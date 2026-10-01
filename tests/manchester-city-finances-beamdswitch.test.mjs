@@ -34,7 +34,14 @@ test("every view's deck parses in beamdswitch into the standard template, narrat
   }
 });
 
-test("every date, amount and scope in the deck is the page's own row, amounts as the page writes them", () => {
+test("every date, amount and scope in the deck is the page's own row, amounts as the page writes them", async () => {
+  const page = await openPage(SLUG), written = new Map();
+  for (const r of ROWS.filter((x) => x.revenue_gbp_m)) {
+    page.run(`show(rows.find(r=>r.id===${JSON.stringify(r.id)}))`);
+    const amounts = page.run("detail").children[2].textContent.match(/£[^m]+m/g);
+    assert.deepEqual(amounts, [`£${r.revenue_gbp_m}m`, `£${r.profit_gbp_m}m`], `${r.id}: the detail panel's amounts`);
+    written.set(r.id, amounts);
+  }
   for (const v of VIEWS) {
     const md = deckFor(v.active, v.selected);
     for (const r of ROWS) {
@@ -42,10 +49,7 @@ test("every date, amount and scope in the deck is the page's own row, amounts as
       assert.equal(md.includes(r.detail), shown || r.id === "cas-2020", `${what(v)}: ${r.id} ${shown ? "shown" : "left out"}`);
       if (!shown) continue;
       assert.ok(md.includes(r.start === r.end ? r.start : `${r.start} to ${r.end}`), `${what(v)}: ${r.id} dates`);
-      if (r.revenue_gbp_m) {
-        assert.ok(md.includes(`£${r.revenue_gbp_m}m`) && md.includes(`£${r.profit_gbp_m}m`), `${what(v)}: ${r.id} amounts`);
-        assert.ok(html.includes("Revenue £${r.revenue_gbp_m}m. Net result £${r.profit_gbp_m}m."), "the page writes amounts this way");
-      }
+      for (const amount of written.get(r.id) ?? []) assert.ok(md.includes(amount), `${what(v)}: ${r.id} ${amount}`);
     }
     assert.ok(md.includes(`date: Sources fetched ${META.fetched}`), what(v));
     assert.ok(html.includes(R.STATUS) && md.includes(R.STATUS), `${what(v)}: the page's status caveat`);

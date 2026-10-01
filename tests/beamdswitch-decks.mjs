@@ -65,6 +65,7 @@ function element(tag, store = {}) {
     disabled: false, firstChild: null, lastChild: null, nextSibling: null, previousSibling: null,
     length: 0, dataset: {}, children: [], childNodes: [], then: undefined,
     listeners, append: (...more) => { own.children = [...own.children, ...more]; },
+    replaceChildren: (...more) => { own.children = more; },
     addEventListener: (type, fn) => (listeners[type] ??= []).push(fn),
     removeEventListener() {},
     setAttribute: (key, v) => { own[key] = String(v); },
@@ -91,7 +92,8 @@ function element(tag, store = {}) {
   return self;
 }
 
-// Runs a built page's scripts in the stand-in DOM. click(id) clicks a button and waits for its handlers;
+// Runs a built page's scripts in the stand-in DOM. The page's own <button>s stand in with their attributes,
+// data-* and text, found by id or by a [data-*] selector. click(id) clicks a button and waits for its handlers;
 // press(match) clicks the latest drawn control that matches; saved holds each downloaded file's text and
 // copied each clipboard write; run(code) evaluates code in the page's global scope.
 export async function openPage(slug) {
@@ -102,11 +104,23 @@ export async function openPage(slug) {
     if (id) byId.set(id, element("script", { textContent: m[2] }));
   }
   const get = (map, key) => { if (!map.has(key)) map.set(key, element("div")); return map.get(key); };
+  for (const m of html.matchAll(/<button\b([^>]*)>([\s\S]*?)<\/button>/g)) {
+    const attrs = Object.fromEntries([...m[1].matchAll(/([\w-]+)="([^"]*)"/g)].map(([, k, v]) => [k, v]));
+    const dataset = Object.fromEntries(Object.entries(attrs).filter(([k]) => k.startsWith("data-")).map(([k, v]) => [k.slice(5), v]));
+    const b = element("button", { ...attrs, dataset, textContent: m[2].replace(/<[^>]*>/g, "") });
+    created.push(b);
+    if (attrs.id) byId.set(attrs.id, b);
+  }
   const document = element("document", {
     body: element("body"), documentElement: element("html"), activeElement: null, modelContext: undefined,
     getElementById: (id) => get(byId, id),
     createTextNode: (text) => element("#text", { textContent: String(text), nodeType: 3 }),
     querySelector: (s) => (/^#[\w-]+$/.test(s) ? get(byId, s.slice(1)) : get(bySelector, s)),
+    querySelectorAll: (s) => {
+      const m = /^(\w*)\[data-([\w-]+)\]$/.exec(s);
+      return m ? created.filter((e) => (!m[1] || e.localName === m[1]) && m[2] in e.dataset) : get(bySelector, `all ${s}`);
+    },
+    createElementNS: (_, tag) => element(tag),
     createElement: (tag) => {
       const e = element(tag);
       created.push(e);

@@ -24,9 +24,12 @@ test("the beamdswitch button saves, and Copy deck copies, the deck of the positi
   await assertButtonsExport(page, SLUG, deckFor("FWD"));
 });
 
-test("the page's position buttons set the filter the deck reads", () => {
-  for (const f of FILTERS) assert.ok(html.includes(`data-pos="${f}"`), f);
-  assert.ok(html.includes("filter=b.dataset.pos") && html.includes("FplReport.report(rows,{filter,"));
+test("the page's position buttons set the filter the deck reads", async () => {
+  for (const f of FILTERS) {
+    const page = await openPage(SLUG);
+    await page.press((c) => c.attr("data-pos") === f);
+    await assertButtonsExport(page, SLUG, deckFor(f));
+  }
   assert.ok(html.includes(`Fetched ${META.fetched}. Gameweek 5 of the 2026/27 season.`), "the deck's fetch date and gameweek are the page's");
 });
 
@@ -37,6 +40,21 @@ test("every position's deck parses in beamdswitch into the standard template, na
   }
 });
 
+test("the deck's bands are the colours the page draws each player's point in", async () => {
+  for (const f of FILTERS) {
+    const page = await openPage(SLUG);
+    await page.press((c) => c.attr("data-pos") === f);
+    const points = page.run("document.getElementById('chart')").children.filter((c) => c.localName === "circle");
+    const shown = ROWS.filter((r) => f === "all" || r.p === f);
+    assert.equal(points.length, shown.length, f);
+    const colour = { over: "ahead", under: "behind", even: "even" };
+    for (const r of shown) {
+      const point = points.find((c) => c.getAttribute("aria-label").startsWith(`${page.run("esc")(r.n)}, ${r.t}, `));
+      assert.equal(R.band(r), colour[point.getAttribute("class").replace(/^pt /, "")], `${f}: ${r.n}`);
+    }
+  }
+});
+
 test("the deck's players, bands and totals are recounted from the page's rows, in the tooltip's digits", () => {
   for (const f of FILTERS) {
     const md = deckFor(f), shown = ROWS.filter((r) => f === "all" || r.p === f);
@@ -44,7 +62,6 @@ test("the deck's players, bands and totals are recounted from the page's rows, i
     const g = (r) => r.gi - r.xgi;
     const ahead = shown.filter((r) => g(r) > 0.25).length, behind = shown.filter((r) => g(r) < -0.25).length;
     assert.ok(md.includes(`## ${ahead} ahead of expected, ${behind} behind, ${shown.length - ahead - behind} on the line`), f);
-    assert.ok(html.includes("g>0.25?'over':(g<-0.25?'under':'even')"), "the page's colour rule");
     const byGap = [...shown].sort((a, b) => g(b) - g(a));
     for (const r of [...byGap.slice(0, 5), ...byGap.slice(-5)]) {
       // As the tooltip writes them: GI, xGI to 2 places, the signed gap, cost to 1 place, points, minutes.
