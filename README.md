@@ -40,6 +40,7 @@ for s in scripts/build*.py; do python3 "$s" --verify || break; done
 | `convex-payoffs` | *(none committed)* | Find a convex 15-minute bet |
 | `convexity-action-engine` | `scripts/build_convexity_action_engine.py` | Search everyday actions, screen for ruin, compare payoff shape and opportunity cost |
 | `energy-email-productivity` | `scripts/build_energy_email_productivity.py` | Your energy dips mid-afternoon; your inbox doesn't |
+| `english-grammar` | `scripts/build_english_grammar.py` | How English Grammar Works: category, function and structure, following CGEL |
 | `everyday-actions` | `scripts/build_everyday_actions.py` | Compare activity frequency and experienced affect, with a source for every plotted value |
 | `fpl-expected-goals` | *(none committed)* | How much of the early FPL points are repeatable? |
 | `graduate-employment-survey` | `scripts/build_ges.py` | The computing salary premium widened |
@@ -80,6 +81,7 @@ python3 scripts/build_manchester_city_finances.py
 python3 scripts/build_singapore_covid_governance_hindsight.py
 python3 scripts/build_social_values.py
 python3 scripts/build_energy_email_productivity.py
+python3 scripts/build_english_grammar.py           # english-grammar
 python3 scripts/build_convexity_action_engine.py
 python3 scripts/build_everyday_actions.py
 python3 scripts/build_vgc_protect_fakeout_pivot_trainer.py
@@ -106,6 +108,7 @@ python3 scripts/build_manchester_city_finances.py --verify
 python3 scripts/build_singapore_covid_governance_hindsight.py --verify
 python3 scripts/build_social_values.py --verify
 python3 scripts/build_energy_email_productivity.py --verify
+python3 scripts/build_english_grammar.py --verify
 python3 scripts/build_convexity_action_engine.py --verify
 python3 scripts/build_everyday_actions.py --verify
 python3 scripts/build_vgc_protect_fakeout_pivot_trainer.py --verify
@@ -113,11 +116,13 @@ python3 scripts/build_tampines_food_map.py --verify
 python3 scripts/build_stock_cases.py --verify
 ```
 
-The copied action visualizations also retain their source regression tests:
+The copied action visualizations also retain their source regression tests, and
+`english-grammar` has data-integrity tests plus Node tests of its fragment,
+traversal and search logic:
 
 ```sh
 python3 -m unittest discover -s tests -p 'test_*.py'
-node --test tests/convexity-action-engine.test.mjs tests/everyday-actions.test.mjs
+node --test tests/convexity-action-engine.test.mjs tests/everyday-actions.test.mjs tests/english-grammar.test.mjs
 ```
 
 Pages with a narrated beamdswitch report (the beamdswitch and Copy deck buttons)
