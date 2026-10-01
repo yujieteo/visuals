@@ -174,7 +174,7 @@ mark{background:var(--surface);color:var(--fg);outline:2px solid var(--sel);bord
 </div>
 <div id="app" class="app" hidden></div>
 </div>
-<footer class="foot"><p><strong>Source.</strong> Terminology and analytical framework follow <cite>The Cambridge Grammar of the English Language</cite> by Rodney Huddleston and Geoffrey K. Pullum, with Laurie Bauer, Betty Birner, Ted Briscoe, Peter Collins, David Denison, David Lee, Anita Mittwoch, Geoffrey Nunberg, Frank Palmer, John Payne, Peter Peterson, Lesley Stirling and Gregory Ward (Cambridge University Press, 2002). Teaching examples and explanations are original illustrative examples written for this page; they are not taken from the book. Chapter and section references were checked against the publisher's contents pages on 2026-10-01.</p><p><a href="/visuals">Back to all visuals</a></p></footer>
+<footer class="foot"><p><strong>Source.</strong> Terminology and analytical framework follow <cite>The Cambridge Grammar of the English Language</cite> by Rodney Huddleston and Geoffrey K. Pullum, with Laurie Bauer, Betty Birner, Ted Briscoe, Peter Collins, David Denison, David Lee, Anita Mittwoch, Geoffrey Nunberg, Frank Palmer, John Payne, Peter Peterson, Lesley Stirling and Gregory Ward (Cambridge University Press, 2002). Teaching examples and explanations are original illustrative examples written for this page; they are not taken from the book. Analyses follow the book's framework as known to the author and have not yet been checked against the book's text. Chapter and section references were checked against the publisher's contents pages on 2026-10-01.</p><p><a href="/visuals">Back to all visuals</a></p></footer>
 <script type="application/json" id="eg-data">{
  "title": "How English Grammar Works",
  "key": "Grammatical category and syntactic function are different: inspect what an expression is, what role it has, and how it fits into a larger structure.",
@@ -8236,7 +8236,7 @@ mark{background:var(--surface);color:var(--fg);outline:2px solid var(--sel);bord
               "cat": "AdjP",
               "fn": "PredComp",
               "gap": "p",
-              "at": 6,
+              "at": 5,
               "span": null
              }
             ],
@@ -18102,7 +18102,7 @@ mark{background:var(--surface);color:var(--fg);outline:2px solid var(--sel);bord
               "cat": "NP",
               "fn": "Object",
               "gap": "who",
-              "at": 6,
+              "at": 5,
               "span": null
              }
             ],
@@ -18289,7 +18289,7 @@ mark{background:var(--surface);color:var(--fg);outline:2px solid var(--sel);bord
                 "cat": "NP",
                 "fn": "Object",
                 "gap": "what",
-                "at": 6,
+                "at": 5,
                 "span": null
                }
               ],
@@ -18487,7 +18487,7 @@ mark{background:var(--surface);color:var(--fg);outline:2px solid var(--sel);bord
               "cat": "NP",
               "fn": "Object",
               "gap": "whatnp",
-              "at": 6,
+              "at": 5,
               "span": null
              }
             ],
@@ -23649,7 +23649,7 @@ mark{background:var(--surface);color:var(--fg);outline:2px solid var(--sel);bord
  "checked": "2026-10-01",
  "assumptions": [
   "Every example sentence, analysis and explanation is original and authored for this page; none is reproduced from the book.",
-  "The analyses follow the framework and terminology of the book as understood by the author; they were reviewed against it, but the page is not endorsed by the authors or publisher.",
+  "The analyses follow the framework and terminology of the book as known to the author; they have not yet been checked against the book's text, and the page is not endorsed by the authors or publisher.",
   "Chapter and section references come from the publisher's contents pages. A concept cites only the chapter when its section could not be verified, and page numbers are section start pages only.",
   "Main-clause interrogatives with subject-auxiliary inversion are described in text but not drawn as trees in this version."
  ]
@@ -23684,7 +23684,8 @@ mark{background:var(--surface);color:var(--fg);outline:2px solid var(--sel);bord
 
   /* "#concept", "#concept/example", "#concept/tree", "#concept/example/tree". */
   function parseHash(hash, idx) {
-    const raw = decodeURIComponent(String(hash || "").replace(/^#/, ""));
+    let raw = String(hash || "").replace(/^#/, "");
+    try { raw = decodeURIComponent(raw); } catch (e) { return { invalid: true, raw: raw, concept: idx.route[0], example: null, view: null, valid: false }; }
     if (!raw) return { start: true, concept: idx.route[0], example: null, view: null, valid: true };
     const parts = raw.split("/").filter(Boolean);
     const concept = idx.concepts.get(parts[0]);
@@ -24342,13 +24343,13 @@ mark{background:var(--surface);color:var(--fg);outline:2px solid var(--sel);bord
   }
 
   function applyHash(initial) {
-    const s = L.parseHash(location.hash, idx);
+    const s = L.parseHash(location.hash, idx), hadNotice = !!state.notice, wasStart = state.start;
     state.notice = s.invalid ? "The link #" + s.raw + " does not match anything in this version, so the closest useful page is shown instead." : "";
     state.start = !!s.start || (s.invalid && !idx.concepts.has(String(s.raw).split("/")[0]));
     const conceptChanged = s.concept !== state.concept;
     const example = s.example || (state.start ? D.start : idx.concepts.get(s.concept).items[0].ex);
     state.explicitExample = !!s.example;
-    if (conceptChanged || initial || state.notice) {
+    if (conceptChanged || initial || state.notice || hadNotice || state.start !== wasStart) {
       state.concept = s.concept; state.example = example; state.showAll = false; state.view = s.view;
       const item = L.primaryItem(idx, state.concept, state.example);
       state.example = item.ex; state.node = item.node; state.depth = 1;

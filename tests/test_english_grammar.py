@@ -66,6 +66,19 @@ class EnglishGrammarTest(unittest.TestCase):
         self.assertNotIn("word", nodes["s"][0])
         self.assertEqual(nodes["k"][0]["word"], 0)
 
+    def test_gaps_sit_after_the_preceding_word_and_before_final_punctuation(self):
+        raw, concepts, examples, meta = corpus()
+        by_id = {e["id"]: e for e in eg.build_model(raw, concepts, examples, meta)["examples"]}
+        positions = {}
+        for e in by_id.values():
+            for n, _ in eg.flatten(e["tree"]).values():
+                if "gap" in n:
+                    positions[e["id"]] = n["at"]
+                    self.assertTrue(n["at"] == 0 or e["tokens"][n["at"] - 1]["k"] == "w", e["id"])
+        self.assertEqual(by_id["asked-who-invited"]["tokens"][positions["asked-who-invited"]]["t"], ".")
+        self.assertEqual(by_id["how-tall-grown"]["tokens"][positions["how-tall-grown"]]["t"], "!")
+        self.assertEqual(by_id["cake-kim-baked"]["tokens"][positions["cake-kim-baked"]]["t"], "was")
+
     def test_structural_errors_are_rejected(self):
         bad = {
             "a phrase category on a word": "[Clause [Subject:NP [Head:NP Kim]] [Predicate:VP [Predicator:V laughed]]]",

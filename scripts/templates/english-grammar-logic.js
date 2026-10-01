@@ -28,7 +28,8 @@
 
   /* "#concept", "#concept/example", "#concept/tree", "#concept/example/tree". */
   function parseHash(hash, idx) {
-    const raw = decodeURIComponent(String(hash || "").replace(/^#/, ""));
+    let raw = String(hash || "").replace(/^#/, "");
+    try { raw = decodeURIComponent(raw); } catch (e) { return { invalid: true, raw: raw, concept: idx.route[0], example: null, view: null, valid: false }; }
     if (!raw) return { start: true, concept: idx.route[0], example: null, view: null, valid: true };
     const parts = raw.split("/").filter(Boolean);
     const concept = idx.concepts.get(parts[0]);

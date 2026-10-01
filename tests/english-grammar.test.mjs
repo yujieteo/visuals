@@ -40,6 +40,14 @@ test("empty and invalid fragments fall back to a useful view", () => {
   assert.equal(L.parseHash("#subject/bogus", idx).concept, "subject");
 });
 
+test("malformed percent escapes in the fragment fall back instead of throwing", () => {
+  for (const bad of ["#subject%2", "#%E0%A4%A", "#%"]) {
+    const p = L.parseHash(bad, idx);
+    assert.equal(p.invalid, true, bad);
+    assert.equal(p.concept, D.route[0].concept, bad);
+  }
+});
+
 test("arrow-key traversal is consistent: up/down/left/right stay within the tree", () => {
   for (const e of D.examples) {
     const map = idx.nodes.get(e.id);

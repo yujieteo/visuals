@@ -181,7 +181,7 @@ def parse_tree(ex):
             pos[0] += 1
             if a.startswith("~"):
                 assert not kids and atoms[pos[0]] == "]", f"{where}: a gap must be a node's only child"
-                n["gap"], n["at"] = a[1:], (words[cursor[0]] if cursor[0] < len(words) else len(tokens))
+                n["gap"], n["at"] = a[1:], (words[cursor[0] - 1] + 1 if cursor[0] else 0)
             else:
                 assert cursor[0] < len(words), f"{where}: tree has extra word {a!r}"
                 index = words[cursor[0]]
@@ -544,7 +544,7 @@ def render(model, raw, meta, tokens):
 </div>
 <div id="app" class="app" hidden></div>
 </div>
-<footer class="foot"><p><strong>Source.</strong> Terminology and analytical framework follow <cite>{escape(book['title'])}</cite> by {escape(book['authors'])} ({escape(book['publisher'])}, {book['year']}). Teaching examples and explanations are original illustrative examples written for this page; they are not taken from the book. Chapter and section references were checked against the publisher's contents pages on {escape(meta['fetched'])}.</p><p><a href="/visuals">Back to all visuals</a></p></footer>
+<footer class="foot"><p><strong>Source.</strong> Terminology and analytical framework follow <cite>{escape(book['title'])}</cite> by {escape(book['authors'])} ({escape(book['publisher'])}, {book['year']}). Teaching examples and explanations are original illustrative examples written for this page; they are not taken from the book. Analyses follow the book's framework as known to the author and have not yet been checked against the book's text. Chapter and section references were checked against the publisher's contents pages on {escape(meta['fetched'])}.</p><p><a href="/visuals">Back to all visuals</a></p></footer>
 <script type="application/json" id="eg-data">{payload}</script>
 <script id="eg-logic">{logic}</script>
 <script id="eg-ui">{js}</script>

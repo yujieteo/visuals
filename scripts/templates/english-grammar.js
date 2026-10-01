@@ -488,13 +488,13 @@
   }
 
   function applyHash(initial) {
-    const s = L.parseHash(location.hash, idx);
+    const s = L.parseHash(location.hash, idx), hadNotice = !!state.notice, wasStart = state.start;
     state.notice = s.invalid ? "The link #" + s.raw + " does not match anything in this version, so the closest useful page is shown instead." : "";
     state.start = !!s.start || (s.invalid && !idx.concepts.has(String(s.raw).split("/")[0]));
     const conceptChanged = s.concept !== state.concept;
     const example = s.example || (state.start ? D.start : idx.concepts.get(s.concept).items[0].ex);
     state.explicitExample = !!s.example;
-    if (conceptChanged || initial || state.notice) {
+    if (conceptChanged || initial || state.notice || hadNotice || state.start !== wasStart) {
       state.concept = s.concept; state.example = example; state.showAll = false; state.view = s.view;
       const item = L.primaryItem(idx, state.concept, state.example);
       state.example = item.ex; state.node = item.node; state.depth = 1;

@@ -10,12 +10,17 @@
   so they are not cited: fused heads, genitives, supplementation and the Chapter 16 treatment of
   the passive cite the chapter only.
 - Page numbers are section start pages from those lists. No other page numbers are given.
-- The book's text could not be consulted. Analyses follow the book's framework as known to the
-  author and are recorded below wherever a detail could not be checked against the text.
+- The book's text could not be consulted, and no analysis has been checked against it. Analyses
+  follow the book's framework as known to the author. Section references in the table below are
+  section titles from the verified contents pages, not checks of the text.
 
-## Analyses reviewed with uncertainty, and how each was resolved
+## Analyses settled from memory, pending source review
 
-| Concept / example | Question | Resolution |
+Every analysis below was settled from the author's knowledge of the framework and is pending
+review against the book's text. Whether that review is required before publication is an open
+decision.
+
+| Concept / example | Question | Current analysis (pending source review) |
 | --- | --- | --- |
 | Clause type, auxiliaries | How the book draws main-clause subject–auxiliary inversion (*Is Kim ready?*): flat clause or discontinuous VP | Not settled from available pages. No inverted clause is drawn; interrogatives are shown as subordinate clauses and inversion is described in text and in the technical notes. |
 | Noun phrase structure | Whether a nominal (Nom) is drawn when the head noun has no dependents | Nom is stored when the head noun has a modifier or complement, otherwise the NP's head is the noun. Stated in the concept's technical note. |
@@ -25,12 +30,12 @@
 | Passive by-phrase | Function label | Complement, construction "internalised complement (by-phrase)", following the book's term for the passive by-phrase (Ch. 16; section not on the verified contents page). |
 | Extraposition | Position and label of the extraposed clause | "Extraposed subject", a dependent in the VP, with dummy *it* as subject (Ch. 16 §7.1, Ch. 4 §3.2.2). |
 | *who won the prize* | Subject relatives: is *who* a prenucleus with a subject gap? | Treated as prenucleus plus subject gap, consistent with the other wh relatives. Subject *wh* interrogatives (*Who called?*), where the same question arises, are not used. |
-| *which*, *what* | Category of standalone *which* / *what* | Determinative (Ch. 5 §7.13–7.14 list them as interrogative and relative determinatives). Standalone, *which* and *what* are fused determiner-heads, and fused-relative *what* is head fused with prenucleus (Ch. 12 §6). |
+| *which*, *what* | Category of standalone *which* / *what* | Determinative (cited at Ch. 5 §7.13–7.14). Standalone, *which* and *what* are fused determiner-heads, and fused-relative *what* is head fused with prenucleus (Ch. 12 §6). |
 | *Kim, my neighbour, fixed the fence.* | Where a supplement attaches | A clause dependent labelled Supplement with an explicit anchor; the subject NP is just *Kim*. |
 | Coordination | Category label for a coordination | "Coordination", with the construction field naming what is coordinated (e.g. coordination of NPs). The coordinator is a Marker within the coordinate it introduces. |
 | *to* infinitivals | Where infinitival *to* attaches | Marker on the VP (Ch. 14 §1.4.2); *for* marks the clause when there is a subject. |
 | Auxiliaries | Dependent-auxiliary or catenative analysis | The catenative analysis (Ch. 14 §4.2.2): the auxiliary is the predicator and takes a non-finite clause complement. |
-| *The meeting is on Monday.* | Temporal PP after *be* | Predicative complement (Ch. 4 §5.2; Ch. 8 §6.1 discusses temporal complements and adjuncts). |
+| *The meeting is on Monday.* | Temporal PP after *be* | Predicative complement (cited at Ch. 4 §5.2 and Ch. 8 §6.1). |
 | *Kim knows that Pat left.* | Content clause after *know*: object? | Complement, not object; the explanation says that "object" is reserved for NPs in this analysis. |
 | Genitives as determiners | Term and location | Subject-determiner, cited at Ch. 5 §4 (The determiner function). The genitive case itself is treated later in Ch. 5, outside the verified page. |
 | Avoided items | Category of *yesterday*, *everyone*, *there* (existential) | Not used in v1 because their category could not be confirmed. |
