@@ -1,0 +1,1269 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:,">
+<title>Multi-armed Bandit: Thompson Sampling and UCB</title>
+<meta name="description" content="Choose the next trial among variants with uncertain success rates: Thompson Sampling and UCB1 recommendations from your own success/failure counts, with a seeded simulation of how they explore.">
+<link rel="canonical" href="https://teoyujie.org/visuals/multi-armed-bandit/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Multi-armed Bandit: Thompson Sampling and UCB">
+<meta property="og:description" content="Choose the next trial among variants with uncertain success rates: Thompson Sampling and UCB1 recommendations from your own success/failure counts, with a seeded simulation of how they explore.">
+<meta property="og:url" content="https://teoyujie.org/visuals/multi-armed-bandit/">
+<style>:root{--bg:#ffffff;--fg:#1d1d1f;--muted:#6e6e73;--surface:#f5f5f7;--border:#d2d2d7;--control:#86868b;--focus:#0071e3;--mark:#0071e3;--mtext:#0062c4;--sel:#c43d2f;--eq:#6e6e73;--on-mark:#ffffff;--soft:#eef5fd;--bad:#c43d2f;--sans:Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif;--mono:SFMono-Regular, Consolas, Liberation Mono, monospace;--r:0.5rem;color-scheme:light}@media (prefers-color-scheme:dark){:root{--bg:#161617;--fg:#f5f5f7;--muted:#a1a1a6;--surface:#232326;--border:#48484c;--control:#8e8e93;--focus:#3d9bff;--mark:#3d9bff;--mtext:#3d9bff;--sel:#ff7b6b;--eq:#a1a1a6;--on-mark:#0b0b0c;--soft:#14263b;--bad:#ff7b6b;color-scheme:dark}}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 var(--sans);overflow-wrap:break-word}main,footer{width:min(100% - 2rem,72rem);margin:auto}main{padding:1rem 0 2rem}a{color:var(--mtext);text-underline-offset:.18em}.back{margin:0 0 1rem}.back a,footer a{display:inline-flex;align-items:center;min-height:2.75rem;color:var(--fg)}.hit{display:inline-flex;align-items:center;justify-content:center;min-width:2.75rem;min-height:2.75rem;margin:0;cursor:pointer}h1{margin:0 0 0.5rem;font-size:clamp(2rem,6vw,3rem);line-height:1.1;letter-spacing:-.03em}h2{margin:2rem 0 0.75rem;font-size:1.3rem;line-height:1.25}h3{margin:0 0 0.5rem;font-size:1.05rem}.lede{max-width:65ch;margin:0 0 1.5rem;color:var(--muted);font-size:1.1rem}.hint,.note{color:var(--muted);font-size:.9rem;max-width:72ch}.mono,code{font-family:var(--mono);font-size:.9em}.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}.skip{position:absolute;left:-999px}.skip:focus{left:1rem;top:1rem;z-index:3;padding:.6rem;background:var(--bg)}button,input,select,textarea{font:inherit;color:inherit}button,.filebtn{min-height:2.75rem;padding:.45rem .9rem;border:1px solid var(--control);border-radius:var(--r);background:var(--bg);cursor:pointer}button:hover,.filebtn:hover{background:var(--surface)}button.primary{background:var(--mark);border-color:var(--mark);color:var(--on-mark);font-weight:600}button:disabled{opacity:.55;cursor:not-allowed}:focus-visible{outline:.18rem solid var(--focus);outline-offset:.15rem}input,select,textarea{min-height:2.75rem;width:100%;padding:.4rem .6rem;border:1px solid var(--control);border-radius:var(--r);background:var(--bg)}textarea{min-height:4.5rem;resize:vertical}input[aria-invalid=true],textarea[aria-invalid=true]{border-color:var(--bad);border-width:2px}input[type=radio]{width:1.4rem;min-height:1.4rem;height:1.4rem;margin:0;accent-color:var(--mark)}label{display:block;font-weight:600;font-size:.95rem;margin:0 0 .25rem}.field{margin:0 0 1rem;max-width:48rem}.err{margin:.25rem 0 0;color:var(--bad);font-size:.9rem;font-weight:600}.err:empty{display:none}.row{display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center;margin:0.75rem 0}.badge{display:inline-block;padding:.15rem .55rem;border-radius:999px;border:1px solid var(--border);background:var(--surface);font-size:.85rem;font-weight:600}.badge.fic{border-color:var(--sel);color:var(--sel)}[role=tablist]{display:flex;gap:0.5rem;border-bottom:1px solid var(--border);margin:0 0 1rem;flex-wrap:wrap}[role=tab]{border:0;border-bottom:3px solid transparent;border-radius:0;background:none;font-weight:600;color:var(--muted);padding:.5rem .9rem}[role=tab][aria-selected=true]{color:var(--fg);border-bottom-color:var(--mark)}.tw{overflow-x:auto;margin:0 0 0.75rem}table{border-collapse:collapse;width:100%;font-size:.9rem;font-variant-numeric:tabular-nums}th,td{padding:.4rem .45rem;border-bottom:1px solid var(--border);text-align:left;vertical-align:middle}th{font-size:.8rem;color:var(--muted);font-weight:600}td.n,th.n{text-align:right}#vt input[type=text]{width:9rem}#vt input[inputmode]{width:5.5rem}#vt td.n{white-space:nowrap}#vt tr.is-sel{background:var(--soft)}.tag{display:block;width:max-content;margin:.1rem 0 0 auto;padding:0 .35rem;border-radius:.3rem;font-size:.75rem;font-weight:700;border:1px solid}.tag.ts{color:var(--mtext)}.tag.ucb{color:var(--sel)}.recs{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,20rem),1fr));gap:1rem}.rec{padding:1rem;border:1px solid var(--border);border-radius:var(--r);background:var(--surface)}.rec .pick{font-size:1.25rem;font-weight:700;margin:0 0 .3rem}.rec.ts{border-left:.35rem solid var(--mark)}.rec.ucb{border-left:.35rem solid var(--sel)}.callout{padding:0.75rem 1rem;border-left:.25rem solid var(--focus);background:var(--surface);border-radius:var(--r);max-width:72ch}.callout:empty{display:none}ul.hints{margin:0.75rem 0;padding-left:1.2rem}details{margin:1rem 0;border:1px solid var(--border);border-radius:var(--r);padding:0 1rem}details[open]{padding-bottom:1rem}summary{cursor:pointer;font-weight:600;min-height:2.75rem;display:flex;align-items:center}.formula{font-family:var(--mono);background:var(--surface);padding:.5rem .7rem;border-radius:var(--r);overflow-x:auto;white-space:pre-wrap}.pair{display:flex;flex-wrap:wrap;gap:1rem}.pair .field{flex:1 1 9rem;max-width:14rem}.confirm{padding:0.75rem 1rem;border:2px solid var(--sel);border-radius:var(--r);margin:0.75rem 0;max-width:48rem}.status{min-height:1.5rem;color:var(--muted);font-size:.9rem;margin:.25rem 0}.filebtn{display:inline-flex;align-items:center;font-weight:400;margin:0}.filebtn input{position:absolute;width:1px;height:1px;opacity:0}.filebtn:focus-within{outline:.18rem solid var(--focus);outline-offset:.15rem}#export-text{min-height:10rem;font-family:var(--mono);font-size:.8rem}svg{display:block;width:100%;height:auto}svg text{fill:var(--fg);font:12px var(--sans)}svg .ax{fill:var(--muted)}svg .grid{stroke:var(--border)}svg .ci{stroke:var(--fg);stroke-width:2.5}svg .mean{fill:var(--fg)}svg .smp{fill:var(--mark)}.m-ts{stroke:var(--mark)}.m-ucb{stroke:var(--sel)}.m-eq{stroke:var(--eq)}svg .line{fill:none;stroke-width:2.5}svg .m-ucb.line{stroke-dasharray:7 4}svg .m-eq.line{stroke-dasharray:2 4}.legend{display:flex;flex-wrap:wrap;gap:1rem;font-size:.9rem;margin:.25rem 0 0;padding:0;list-style:none}.legend svg{display:inline-block;width:2rem;height:.8rem;vertical-align:middle;margin-right:.3rem}.simset{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,11rem),1fr));gap:0 1rem}.nojs{padding:1rem;border:1px solid var(--border);border-radius:var(--r);background:var(--surface)}.refs li{margin:0}.refs a{display:inline-block;padding:.7rem 0}footer{padding:1rem 0 2rem;border-top:1px solid var(--border);color:var(--muted);font-size:.875rem}footer a{color:inherit}@media (max-width:64rem){#vt thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}#vt,#vt tbody,#vt tr,#vt td{display:block;width:100%}#vt tr{border:1px solid var(--border);border-radius:var(--r);margin:0 0 0.75rem;padding:0.75rem;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,9.5rem),1fr));gap:.25rem 0.75rem}#vt td{border:0;padding:.2rem 0;text-align:left;white-space:normal}#vt .tag{margin-left:0}#vt td::before{content:attr(data-label);display:block;font-size:.75rem;font-weight:600;color:var(--muted)}#vt td.wide{grid-column:1/-1}#vt input[inputmode],#vt input[type=text]{width:100%;min-width:0}}@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important;animation:none!important}}</style></head>
+<body><a class="skip" href="#main">Skip to the tool</a>
+<main id="main" tabindex="-1">
+<p class="back"><a href="https://teoyujie.org/visuals/">← All visuals</a></p>
+<h1>Multi-armed Bandit</h1>
+<p class="lede">Choose the next trial among variants with uncertain success rates. Enter comparable success/failure evidence, compare what Thompson Sampling and UCB1 recommend, record each resolved outcome, and use the seeded simulation to see how the methods explore.</p>
+<div id="nojs" class="nojs"><p><strong>The interactive tool needs JavaScript.</strong> Without it, here is how the calculations work.</p><p>For a variant with <i>s</i> successes and <i>f</i> failures, and one shared prior Beta(<i>a</i>, <i>b</i>):</p><p class="formula">posterior = Beta(a + s, b + f)
+posterior mean = (a + s) / (a + b + s + f)
+95% credible interval = posterior quantiles at 0.025 and 0.975
+Thompson score = one draw from the posterior; recommend the largest
+UCB1 score = s/n + √(2 ln T / n),  n = s + f,  T = trials across all variants</p><p class="note">UCB1 recommends the first untried variant before comparing scores, so ln 0 never occurs. Ties go to the first variant in display order. A UCB1 score is not a probability and is never capped at 1. Intervals are computed numerically from the regularised incomplete beta function, not by a normal approximation.</p><p><strong>Worked Beta update.</strong> 8 successes in 100 trials (92 failures) with the prior Beta(1, 1) gives the posterior Beta(9, 93), whose mean is 9/102 ≈ 8.82%.</p><section aria-labelledby="h-about-static"><h2 id="h-about-static">Assumptions, references and next steps</h2><ul><li>Each variant has a stable success probability while you experiment.</li><li>Trials are comparable: the same kind of unit, drawn from the same population and environment.</li><li>Every variant uses one common success definition, judged at a fixed horizon.</li><li>Every trial costs the same, so choosing one more trial of any variant is an equal decision.</li><li>Outcomes are recorded only once they are resolved; pending trials are not counted.</li></ul><p class="note">If the success definition, the audience or the environment changes, start a new experiment instead of adding to this one.</p><p class="note">Next steps: follow either recommendation for one trial, record the outcome once it is resolved, and look again. Neither method declares an experiment finished or a variant conclusively best.</p><h3>Method references</h3><ul class="refs"><li><a href="https://arxiv.org/abs/1707.02038">Russo, Van Roy, Kazerouni, Osband and Wen, A Tutorial on Thompson Sampling (2018)</a></li><li>Auer, Cesa-Bianchi and Fischer, Finite-time Analysis of the Multiarmed Bandit Problem, Machine Learning 47 (2002)</li><li><a href="https://sidbanerjee.orie.cornell.edu/docs/ORIE6154/files/Lecture15-MultiArmedBandits.pdf">Banerjee, ORIE 6154 lecture notes on multi-armed bandits (UCB1 formula cross-check)</a></li></ul></section></div>
+<div id="app" hidden>
+<div role="tablist" aria-label="Views"><button type="button" role="tab" id="tab-exp" aria-controls="panel-exp" aria-selected="true">My experiment</button><button type="button" role="tab" id="tab-sim" aria-controls="panel-sim" aria-selected="false" tabindex="-1">Simulation</button></div>
+<section role="tabpanel" id="panel-exp" aria-labelledby="tab-exp">
+<section aria-labelledby="h-def"><h2 id="h-def">1. Experiment</h2>
+<div class="field"><label for="template">Template</label><select id="template"><option value="website">Website conversions (fictional counts)</option><option value="email">Email replies (fictional counts)</option><option value="study">Study methods (passed the quiz) (fictional counts)</option><option value="outreach">Outreach channels (qualified response) (fictional counts)</option><option value="custom">Blank custom experiment</option></select></div>
+<div id="confirm" class="confirm" hidden role="alertdialog" aria-labelledby="confirm-text"><p id="confirm-text"></p><div class="row"><button type="button" id="confirm-yes" class="primary">Replace</button><button type="button" id="confirm-no">Keep current</button></div></div>
+<p><span id="basis" class="badge"></span> <span id="template-note" class="note"></span></p>
+<div class="field"><label for="f-title">Experiment title (required, up to 120 characters)</label><input type="text" id="f-title" autocomplete="off" aria-describedby="e-title"><p class="err" id="e-title"></p></div>
+<div class="field"><label for="f-success">Success definition, with a fixed outcome horizon (required, up to 300 characters)</label><textarea id="f-success" aria-describedby="e-success"></textarea><p class="err" id="e-success"></p></div>
+<div class="field"><label for="f-unit">Trial unit (required, up to 120 characters)</label><input type="text" id="f-unit" autocomplete="off" aria-describedby="e-unit"><p class="err" id="e-unit"></p></div>
+</section>
+<section aria-labelledby="h-ev"><h2 id="h-ev">2. Variants and evidence</h2>
+<p class="note">Enter resolved outcomes only. Edit successes and trials; failures are derived. Counts are whole numbers up to 1,000,000; names are unique, up to 80 characters.</p>
+<div class="tw"><table id="vt"><caption class="sr">Variants, their evidence, posterior summaries and scores</caption><thead><tr><th scope="col">Select</th><th scope="col">Name</th><th scope="col">Successes</th><th scope="col">Trials</th><th scope="col" class="n">Failures</th><th scope="col" class="n">Observed rate</th><th scope="col" class="n">Posterior mean</th><th scope="col" class="n">95% credible interval</th><th scope="col" class="n">Thompson sample</th><th scope="col" class="n">UCB1 score</th><th scope="col"></th></tr></thead><tbody id="vt-body"></tbody></table></div>
+<div class="row"><button type="button" id="add-variant">Add variant</button><span id="vt-count" class="note"></span></div>
+<p id="vt-status" class="status" role="status"></p>
+<h3>Credible intervals</h3><div id="ci-plot"></div>
+<p class="note">Line: 95% credible interval. Circle: posterior mean. Diamond: current Thompson sample. ★ marks the Thompson pick and ▲ the UCB1 pick.</p>
+</section>
+<section aria-labelledby="h-rec"><h2 id="h-rec">3. Recommendations</h2>
+<div class="recs"><div class="rec ts"><h3>Thompson Sampling</h3><p class="pick" id="ts-pick"></p><p id="ts-why"></p><button type="button" id="ts-select">Select</button></div>
+<div class="rec ucb"><h3>UCB1</h3><p class="pick" id="ucb-pick"></p><p id="ucb-why"></p><button type="button" id="ucb-select">Select</button></div></div>
+<p id="disagree" class="callout"></p>
+</section>
+<section aria-labelledby="h-out"><h2 id="h-out">4. Record an outcome</h2>
+<p id="sel-text"></p>
+<div class="row"><button type="button" id="btn-success" class="primary">Success</button><button type="button" id="btn-failure">Failure</button><button type="button" id="btn-undo">Undo last outcome</button><button type="button" id="btn-resample">Resample Thompson</button></div>
+<p id="record-why" class="note"></p><p id="record-status" class="status" role="status"></p>
+<h3>Next step</h3><ul id="hints" class="hints"></ul>
+</section>
+<details id="method"><summary>5. Method details</summary><p>For a variant with <i>s</i> successes and <i>f</i> failures, and one shared prior Beta(<i>a</i>, <i>b</i>):</p><p class="formula">posterior = Beta(a + s, b + f)
+posterior mean = (a + s) / (a + b + s + f)
+95% credible interval = posterior quantiles at 0.025 and 0.975
+Thompson score = one draw from the posterior; recommend the largest
+UCB1 score = s/n + √(2 ln T / n),  n = s + f,  T = trials across all variants</p><p class="note">UCB1 recommends the first untried variant before comparing scores, so ln 0 never occurs. Ties go to the first variant in display order. A UCB1 score is not a probability and is never capped at 1. Intervals are computed numerically from the regularised incomplete beta function, not by a normal approximation.</p>
+<h3>Shared prior</h3><p class="note">One Beta(a, b) prior is applied independently to every variant. Beta(1, 1) is uniform. Both parameters are numbers from 0.1 to 100.</p>
+<div class="pair"><div class="field"><label for="prior-a">Prior a</label><input type="text" inputmode="decimal" id="prior-a" autocomplete="off" aria-describedby="e-prior"></div>
+<div class="field"><label for="prior-b">Prior b</label><input type="text" inputmode="decimal" id="prior-b" autocomplete="off" aria-describedby="e-prior"></div></div>
+<p class="err" id="e-prior"></p><p id="prior-text" class="note" role="status"></p>
+<p class="note">The page uses the xoshiro128** generator, seeded by splitmix32 and saved with your work, for Thompson draws; the simulation has its own streams. It is not cryptographic.</p>
+</details>
+<section aria-labelledby="h-save"><h2 id="h-save">6. Save, export and import</h2>
+<p class="note">Your experiment autosaves in this browser when storage is available. JSON files hold the experiment, samples, generator state and simulation settings, but not undo history. Nothing is uploaded.</p>
+<div class="row"><button type="button" id="export-json">Export JSON</button><label class="filebtn">Import JSON<input type="file" id="import-json" accept="application/json,.json"></label><button type="button" id="reset">Reset</button></div>
+<p id="store-status" class="status" role="status"></p>
+<h3>Presentation</h3>
+<div class="row deck-row"><button type="button" id="save-beamdswitch" title="Save this experiment as a narrated Markdown deck, to open in beamdswitch">Save deck</button><button type="button" id="copy-beamdswitch" title="Copy the narrated Markdown deck, to paste into beamdswitch">Copy deck</button></div>
+<p id="deck-status" class="status" role="status"></p>
+<p class="note">Save deck writes multi-armed-bandit-beamdswitch.md: a narrated Markdown talk with the set-up, method, results (including the simulation once it has run) and checks, using the numbers shown here. Open it in <a href="https://teoyujie.org/visuals/beamdswitch/">beamdswitch</a> for slides, narration and video. Copy deck puts the same Markdown on the clipboard.</p>
+<details id="fallback"><summary>Export as text</summary><label for="export-text" id="export-label">Last export</label><textarea id="export-text" readonly placeholder="Use Save deck, Copy deck or Export JSON; the text appears here to select and copy."></textarea></details>
+</section>
+<section aria-labelledby="h-about"><h2 id="h-about">Assumptions, references and next steps</h2><ul><li>Each variant has a stable success probability while you experiment.</li><li>Trials are comparable: the same kind of unit, drawn from the same population and environment.</li><li>Every variant uses one common success definition, judged at a fixed horizon.</li><li>Every trial costs the same, so choosing one more trial of any variant is an equal decision.</li><li>Outcomes are recorded only once they are resolved; pending trials are not counted.</li></ul><p class="note">If the success definition, the audience or the environment changes, start a new experiment instead of adding to this one.</p><p class="note">Next steps: follow either recommendation for one trial, record the outcome once it is resolved, and look again. Neither method declares an experiment finished or a variant conclusively best.</p><h3>Method references</h3><ul class="refs"><li><a href="https://arxiv.org/abs/1707.02038">Russo, Van Roy, Kazerouni, Osband and Wen, A Tutorial on Thompson Sampling (2018)</a></li><li>Auer, Cesa-Bianchi and Fischer, Finite-time Analysis of the Multiarmed Bandit Problem, Machine Learning 47 (2002)</li><li><a href="https://sidbanerjee.orie.cornell.edu/docs/ORIE6154/files/Lecture15-MultiArmedBandits.pdf">Banerjee, ORIE 6154 lecture notes on multi-armed bandits (UCB1 formula cross-check)</a></li></ul></section>
+</section>
+<section role="tabpanel" id="panel-sim" aria-labelledby="tab-sim" hidden>
+<h2>Simulation</h2>
+<p class="note">The simulation reuses your variant names and the shared prior, but ignores your recorded evidence and never changes your experiment. You choose the true success probabilities; Thompson Sampling, UCB1 and equal allocation each get the same number of pulls and their own evidence. The kth pull of a variant receives that variant's kth reward under every method.</p>
+<h3>Settings</h3>
+<div id="sim-probs" class="simset"></div>
+<div class="pair"><div class="field"><label for="sim-budget">Pulls per method (variants to 2,000)</label><input type="text" inputmode="numeric" id="sim-budget" autocomplete="off" aria-describedby="e-sim"></div>
+<div class="field"><label for="sim-seed">Seed (0 to 4,294,967,295)</label><input type="text" inputmode="numeric" id="sim-seed" autocomplete="off" aria-describedby="e-sim"></div></div>
+<p class="err" id="e-sim"></p>
+<div class="row"><button type="button" id="sim-step">Step</button><button type="button" id="sim-run" class="primary">Run</button><button type="button" id="sim-pause">Pause</button><button type="button" id="sim-reset">Reset</button></div>
+<p id="sim-progress"></p><p id="sim-status" class="status" role="status"></p>
+<h3>Cumulative successes</h3><div id="sim-chart"></div>
+<ul class="legend" aria-hidden="true"><li><svg viewBox="0 0 32 8"><path class="line m-ts" d="M0 4h32"/></svg>Thompson Sampling (solid)</li><li><svg viewBox="0 0 32 8"><path class="line m-ucb" d="M0 4h32"/></svg>UCB1 (dashed)</li><li><svg viewBox="0 0 32 8"><path class="line m-eq" d="M0 4h32"/></svg>Equal allocation (dotted)</li></ul>
+<h3>Results</h3>
+<div class="tw"><table><caption class="sr">Simulation results by method</caption><thead><tr><th scope="col">Method</th><th scope="col" class="n">Pulls</th><th scope="col" class="n">Successes</th><th scope="col" class="n">Success rate</th><th scope="col" class="n">Expected regret</th></tr></thead><tbody id="sim-body"></tbody></table></div>
+<h3>Allocation per variant</h3>
+<div class="tw"><table><caption class="sr">Pulls allocated to each variant, by method</caption><thead id="alloc-head"></thead><tbody id="alloc-body"></tbody></table></div>
+<p class="note"><strong>Expected regret</strong> adds up, over the pulls, the best known probability minus the known probability of the variant chosen. It uses the probabilities you set, not observed reward differences. Equal probabilities give zero expected regret; a probability of 0% always fails and 100% always succeeds. One seeded run does not establish that one method is better than another.</p>
+</section>
+</div>
+</main>
+<footer><p>Templates use fictional counts for illustration. Everything runs in this page; nothing is uploaded. Content checked on 2026-10-01.</p><p><a href="https://teoyujie.org/visuals/">All visuals</a></p></footer>
+<p id="announce" class="sr" role="status" aria-live="polite"></p>
+<script type="application/json" id="mab-data">{"templates":[{"id":"website","label":"Website conversions","fictional":true,"title":"Landing page conversion test","success":"The visitor completes a purchase in the same session","unit":"Visitor session","note":"Fictional example counts for illustration, not real data.","variants":[{"name":"Page A","successes":8,"trials":100},{"name":"Page B","successes":12,"trials":100},{"name":"Page C","successes":3,"trials":20}]},{"id":"email","label":"Email replies","fictional":true,"title":"Email subject line test","success":"The recipient replies within 7 days of sending","unit":"Email sent","note":"Fictional example counts for illustration, not real data.","variants":[{"name":"Subject A","successes":8,"trials":100},{"name":"Subject B","successes":12,"trials":100},{"name":"Subject C","successes":3,"trials":20}]},{"id":"study","label":"Study methods (passed the quiz)","fictional":true,"title":"Study method comparison","success":"Passed the quiz taken 7 days after the study session (fixed assessment horizon)","unit":"Study session","note":"Fictional example counts for illustration, not real data. Fix the assessment horizon before recording outcomes.","variants":[{"name":"Rereading","successes":8,"trials":100},{"name":"Practice testing","successes":12,"trials":100},{"name":"Flashcards","successes":3,"trials":20}]},{"id":"outreach","label":"Outreach channels (qualified response)","fictional":true,"title":"Outreach channel comparison","success":"A qualified response within 14 days of first contact (fixed response horizon)","unit":"Contact attempt","note":"Fictional example counts for illustration, not real data. Fix the response horizon before recording outcomes.","variants":[{"name":"Email","successes":8,"trials":100},{"name":"Phone call","successes":12,"trials":100},{"name":"Social message","successes":3,"trials":20}]},{"id":"custom","label":"Blank custom experiment","fictional":false,"title":"My experiment","success":"","unit":"","note":"Your own evidence: start from zero and record resolved outcomes.","variants":[{"name":"Variant A","successes":0,"trials":0},{"name":"Variant B","successes":0,"trials":0},{"name":"Variant C","successes":0,"trials":0}]}],"assumptions":["Each variant has a stable success probability while you experiment.","Trials are comparable: the same kind of unit, drawn from the same population and environment.","Every variant uses one common success definition, judged at a fixed horizon.","Every trial costs the same, so choosing one more trial of any variant is an equal decision.","Outcomes are recorded only once they are resolved; pending trials are not counted."],"references":[{"title":"Russo, Van Roy, Kazerouni, Osband and Wen, A Tutorial on Thompson Sampling (2018)","url":"https://arxiv.org/abs/1707.02038"},{"title":"Auer, Cesa-Bianchi and Fischer, Finite-time Analysis of the Multiarmed Bandit Problem, Machine Learning 47 (2002)"},{"title":"Banerjee, ORIE 6154 lecture notes on multi-armed bandits (UCB1 formula cross-check)","url":"https://sidbanerjee.orie.cornell.edu/docs/ORIE6154/files/Lecture15-MultiArmedBandits.pdf"}]}</script>
+<script id="mab-logic">(function (root, factory) {
+const api = factory();
+if (typeof module === "object" && module.exports) module.exports = api;
+else root.BanditLogic = api;
+})(typeof self !== "undefined" ? self : this, function () {
+"use strict";
+const FORMAT = "multi-armed-bandit", VERSION = 1;
+const LIMITS = { minVariants: 2, maxVariants: 10, maxCount: 1000000, priorMin: 0.1, priorMax: 100, name: 80, title: 120, success: 300, unit: 120,
+maxBudget: 2000, maxSeed: 4294967295 };
+const SIM_DEFAULTS = { probabilities: [0.08, 0.12, 0.15], budget: 1000, seed: 42, added: 0.1 };
+const METHODS = [["ts", "Thompson Sampling"], ["ucb", "UCB1"], ["eq", "Equal allocation"]];
+const TEMPLATES = ["website", "email", "study", "outreach", "custom"];
+function splitmix(x) {
+x = (x + 0x9e3779b9) >>> 0;
+let z = x;
+z = Math.imul(z ^ (z >>> 16), 0x85ebca6b) >>> 0;
+z = Math.imul(z ^ (z >>> 13), 0xc2b2ae35) >>> 0;
+return [x, (z ^ (z >>> 16)) >>> 0];
+}
+function seedState(seed, stream) {
+let x = ((seed >>> 0) ^ Math.imul((stream || 0) + 1, 0x632be5ab)) >>> 0;
+const s = [];
+for (let i = 0; i < 4; i += 1) { const r = splitmix(x); x = r[0]; s.push(r[1]); }
+if (!(s[0] | s[1] | s[2] | s[3])) s[0] = 1;
+return s;
+}
+const rotl = (x, k) => ((x << k) | (x >>> (32 - k))) >>> 0;
+function next(s) {
+const out = Math.imul(rotl(Math.imul(s[1], 5) >>> 0, 7), 9) >>> 0;
+const t = (s[1] << 9) >>> 0;
+s[2] = (s[2] ^ s[0]) >>> 0; s[3] = (s[3] ^ s[1]) >>> 0; s[1] = (s[1] ^ s[2]) >>> 0; s[0] = (s[0] ^ s[3]) >>> 0;
+s[2] = (s[2] ^ t) >>> 0; s[3] = rotl(s[3], 11);
+return out;
+}
+const uniform = (s) => (next(s) + 0.5) / 4294967296;
+const LANCZOS = [0.99999999999980993, 676.5203681218851, -1259.1392167224028, 771.32342877765313, -176.61502916214059,
+12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7];
+function lgamma(x) {
+if (x < 0.5) return Math.log(Math.PI / Math.abs(Math.sin(Math.PI * x))) - lgamma(1 - x);
+x -= 1;
+let a = LANCZOS[0];
+const t = x + 7.5;
+for (let i = 1; i < 9; i += 1) a += LANCZOS[i] / (x + i);
+return 0.5 * Math.log(2 * Math.PI) + (x + 0.5) * Math.log(t) - t + Math.log(a);
+}
+const lbeta = (a, b) => lgamma(a) + lgamma(b) - lgamma(a + b);
+function betacf(x, a, b) {
+const TINY = 1e-300;
+let c = 1, d = 1 - (a + b) * x / (a + 1);
+if (Math.abs(d) < TINY) d = TINY;
+d = 1 / d;
+let h = d;
+for (let m = 1; m <= 100000; m += 1) {
+const m2 = 2 * m;
+let aa = m * (b - m) * x / ((a + m2 - 1) * (a + m2));
+d = 1 + aa * d; if (Math.abs(d) < TINY) d = TINY;
+c = 1 + aa / c; if (Math.abs(c) < TINY) c = TINY;
+d = 1 / d; h *= d * c;
+aa = -(a + m) * (a + b + m) * x / ((a + m2) * (a + m2 + 1));
+d = 1 + aa * d; if (Math.abs(d) < TINY) d = TINY;
+c = 1 + aa / c; if (Math.abs(c) < TINY) c = TINY;
+d = 1 / d;
+const del = d * c;
+h *= del;
+if (Math.abs(del - 1) < 1e-15) break;
+}
+return h;
+}
+function ibeta(x, a, b) {
+if (x <= 0) return 0;
+if (x >= 1) return 1;
+const lf = a * Math.log(x) + b * Math.log1p(-x) - lbeta(a, b);
+if (x < (a + 1) / (a + b + 2)) return Math.exp(lf) * betacf(x, a, b) / a;
+return 1 - Math.exp(lf) * betacf(1 - x, b, a) / b;
+}
+function betaQuantile(p, a, b) {
+if (p <= 0) return 0;
+if (p >= 1) return 1;
+const lb = lbeta(a, b);
+let lo = 0, hi = 1;
+const m = a / (a + b), sd = Math.sqrt(a * b / ((a + b) * (a + b) * (a + b + 1)));
+let x = Math.min(1 - 1e-12, Math.max(1e-12, m + (p < 0.5 ? -2 : 2) * sd * Math.abs(p - 0.5)));
+for (let i = 0; i < 300; i += 1) {
+const f = ibeta(x, a, b) - p;
+if (f === 0) return x;
+if (f < 0) lo = x; else hi = x;
+const pdf = Math.exp((a - 1) * Math.log(x) + (b - 1) * Math.log1p(-x) - lb);
+let nx = x - f / pdf;
+if (!(nx > lo && nx < hi)) nx = lo > 0 && hi / lo > 4 ? Math.sqrt(lo * hi) : (lo + hi) / 2;
+if (Math.abs(nx - x) <= 1e-15 * Math.max(x, 1e-300) || hi - lo <= 1e-16 * hi) return nx;
+x = nx;
+}
+return x;
+}
+function normal(s) {
+return Math.sqrt(-2 * Math.log(uniform(s))) * Math.cos(2 * Math.PI * uniform(s));
+}
+function logGamma(s, a) {
+if (a < 1) return logGamma(s, a + 1) + Math.log(uniform(s)) / a;
+const d = a - 1 / 3, c = 1 / Math.sqrt(9 * d);
+for (;;) {
+const x = normal(s), v = 1 + c * x;
+if (v <= 0) continue;
+const v3 = v * v * v, u = uniform(s);
+if (Math.log(u) < 0.5 * x * x + d - d * v3 + d * Math.log(v3)) return Math.log(d) + Math.log(v3);
+}
+}
+function sampleBeta(s, a, b) {
+const lx = logGamma(s, a), ly = logGamma(s, b);
+const r = 1 / (1 + Math.exp(ly - lx));
+return r < 0 ? 0 : r > 1 ? 1 : r;
+}
+const group = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+function pct(v, d) {
+if (v == null) return "—";
+const k = d == null ? 1 : d, unit = Math.pow(10, -k - 2);
+if (v > 0 && v < unit) return "<" + (unit * 100).toFixed(k) + "%";
+if (v < 1 && v > 1 - unit) return ">" + (100 - unit * 100).toFixed(k) + "%";
+return (v * 100).toFixed(k) + "%";
+}
+const num = (v, d) => v.toFixed(d == null ? 4 : d);
+const fmtPrior = (x) => String(+x.toPrecision(6));
+function posterior(prior, v) { return [prior.a + v.successes, prior.b + v.trials - v.successes]; }
+function resample(state) {
+const st = state.rng.slice();
+for (const v of state.variants) { const p = posterior(state.prior, v); v.sample = sampleBeta(st, p[0], p[1]); }
+state.rng = st;
+return state;
+}
+function ucb(variants) {
+const T = variants.reduce((t, v) => t + v.trials, 0);
+const untried = variants.findIndex((v) => v.trials === 0);
+const scores = variants.map((v) => {
+if (!v.trials) return null;
+const mean = v.successes / v.trials, bonus = Math.sqrt(2 * Math.log(T) / v.trials);
+return { mean, bonus, score: mean + bonus };
+});
+let best = untried;
+if (best < 0) { best = 0; scores.forEach((x, i) => { if (x.score > scores[best].score) best = i; }); }
+return { T, scores, best, untried: untried >= 0 };
+}
+function argmax(xs) { let b = 0; xs.forEach((x, i) => { if (x > xs[b]) b = i; }); return b; }
+function fromTemplate(D, id, seed) {
+const t = D.templates.find((x) => x.id === id) || D.templates[0];
+const variants = t.variants.map((v, i) => ({ id: "v" + (i + 1), name: v.name, successes: v.successes, trials: v.trials, sample: 0 }));
+const state = { format: FORMAT, version: VERSION, template: t.id, basis: t.fictional ? "fictional" : "entered",
+title: t.title, success: t.success, unit: t.unit, prior: { a: 1, b: 1 }, variants, selected: null, nextId: variants.length + 1,
+rng: seedState(seed, 0), simulation: { probabilities: simProbabilities([], variants.length), budget: SIM_DEFAULTS.budget, seed: SIM_DEFAULTS.seed, pulls: 0 } };
+return resample(state);
+}
+function simProbabilities(old, k) {
+const out = [];
+for (let i = 0; i < k; i += 1) out.push(i < old.length ? old[i] : old.length ? SIM_DEFAULTS.added : SIM_DEFAULTS.probabilities[i] == null ? SIM_DEFAULTS.added : SIM_DEFAULTS.probabilities[i]);
+return out;
+}
+const clone = (x) => JSON.parse(JSON.stringify(x));
+const ready = (state) => !!(state.title.trim() && state.success.trim() && state.unit.trim());
+const WHOLE = /^\d+$/, DECIMAL = /^(\d+\.?\d*|\.\d+)(e[+-]?\d+)?$/i;
+function wholeError(raw, lo, hi, what) {
+const s = String(raw).trim();
+if (!WHOLE.test(s) || +s < lo || +s > hi) return what + " must be a whole number from " + group(lo) + " to " + group(hi) + ".";
+return null;
+}
+function textError(field, raw) {
+const s = String(raw == null ? "" : raw).trim(), max = LIMITS[field];
+const label = { title: "Experiment title", success: "Success definition", unit: "Trial unit", name: "Variant name" }[field];
+if (!s) return label + " is required.";
+if (s.length > max) return label + " must be at most " + max + " characters (now " + s.length + ").";
+return null;
+}
+function nameError(state, index, raw) {
+const e = textError("name", raw);
+if (e) return e;
+const key = String(raw).trim().toLowerCase();
+if (state.variants.some((v, i) => i !== index && v.name.trim().toLowerCase() === key)) return "Variant names must be unique, ignoring case.";
+return null;
+}
+function countsError(rawS, rawN) {
+const e = wholeError(rawS, 0, LIMITS.maxCount, "Successes") || wholeError(rawN, 0, LIMITS.maxCount, "Trials");
+if (e) return e;
+if (+String(rawS).trim() > +String(rawN).trim()) return "Successes cannot exceed trials.";
+return null;
+}
+function priorError(raw, which) {
+const s = String(raw).trim();
+if (!DECIMAL.test(s) || !(+s >= LIMITS.priorMin && +s <= LIMITS.priorMax)) return "Prior " + which + " must be a number from 0.1 to 100.";
+return null;
+}
+function setText(state, field, raw) {
+const e = textError(field, raw);
+if (e) return { error: e };
+const s = clone(state); s[field] = String(raw).trim();
+return { state: s };
+}
+function rename(state, index, raw) {
+const e = nameError(state, index, raw);
+if (e) return { error: e };
+const s = clone(state); s.variants[index].name = String(raw).trim();
+return { state: s };
+}
+const touched = (s) => { if (s.basis === "fictional") s.basis = "mixed"; return s; };
+function setCounts(state, index, rawS, rawN) {
+const e = countsError(rawS, rawN);
+if (e) return { error: e };
+const s = clone(state), v = s.variants[index];
+const ns = +String(rawS).trim(), nn = +String(rawN).trim();
+if (ns === v.successes && nn === v.trials) return { state: s, unchanged: true };
+v.successes = ns; v.trials = nn;
+return { state: resample(touched(s)) };
+}
+function setPrior(state, rawA, rawB) {
+const e = priorError(rawA, "a") || priorError(rawB, "b");
+if (e) return { error: e };
+const s = clone(state);
+if (s.prior.a === +rawA && s.prior.b === +rawB) return { state: s, unchanged: true };
+s.prior = { a: +String(rawA).trim(), b: +String(rawB).trim() };
+s.simulation.pulls = 0;
+return { state: resample(s) };
+}
+function addVariant(state) {
+if (state.variants.length >= LIMITS.maxVariants) return { error: "At most " + LIMITS.maxVariants + " variants." };
+const s = clone(state);
+let n = s.variants.length, name;
+do { name = "Variant " + (n < 26 ? String.fromCharCode(65 + n) : n + 1); n += 1; } while (s.variants.some((v) => v.name.toLowerCase() === name.toLowerCase()));
+s.variants.push({ id: "v" + s.nextId, name, successes: 0, trials: 0, sample: 0 });
+s.nextId += 1;
+s.simulation.probabilities = simProbabilities(s.simulation.probabilities, s.variants.length);
+s.simulation.budget = Math.max(s.simulation.budget, s.variants.length);
+s.simulation.pulls = 0;
+return { state: resample(s) };
+}
+function removeVariant(state, index) {
+if (state.variants.length <= LIMITS.minVariants) return { error: "At least " + LIMITS.minVariants + " variants are needed." };
+const s = clone(state);
+const [gone] = s.variants.splice(index, 1);
+s.simulation.probabilities.splice(index, 1);
+s.simulation.pulls = 0;
+if (s.selected === gone.id) s.selected = null;
+return { state: resample(touched(s)) };
+}
+function select(state, id) {
+if (!state.variants.some((v) => v.id === id)) return { error: "No such variant." };
+const s = clone(state); s.selected = id;
+return { state: s };
+}
+function canRecord(state) {
+const v = state.variants.find((x) => x.id === state.selected);
+if (!v) return "Select a variant first.";
+if (!ready(state)) return "Define the experiment title, success and trial unit first.";
+if (v.trials >= LIMITS.maxCount) return "This variant has reached the limit of " + group(LIMITS.maxCount) + " trials.";
+return null;
+}
+function record(state, success) {
+const e = canRecord(state);
+if (e) return { error: e };
+const s = clone(state), v = s.variants.find((x) => x.id === s.selected);
+v.trials += 1;
+if (success) v.successes += 1;
+return { state: resample(touched(s)) };
+}
+function snapshot(state) {
+return { counts: state.variants.map((v) => [v.id, v.successes, v.trials, v.sample]), rng: state.rng.slice(), selected: state.selected, basis: state.basis };
+}
+function restore(state, snap) {
+const s = clone(state);
+for (const [id, su, tr, sa] of snap.counts) { const v = s.variants.find((x) => x.id === id); if (v) Object.assign(v, { successes: su, trials: tr, sample: sa }); }
+s.rng = snap.rng.slice(); s.selected = snap.selected; s.basis = snap.basis;
+return s;
+}
+function setSimulation(state, raws) {
+const k = state.variants.length;
+const probs = [];
+for (let i = 0; i < k; i += 1) {
+const r = String(raws.probabilities[i]).trim();
+if (!DECIMAL.test(r) || !(+r >= 0 && +r <= 100)) return { error: "Probability for " + state.variants[i].name + " must be a percentage from 0 to 100.", field: "p" + i };
+probs.push(+r / 100);
+}
+let e = wholeError(raws.budget, k, LIMITS.maxBudget, "Pulls per method");
+if (e) return { error: e, field: "budget" };
+e = wholeError(raws.seed, 0, LIMITS.maxSeed, "Seed");
+if (e) return { error: e, field: "seed" };
+const s = clone(state), sim = s.simulation;
+const changed = probs.some((p, i) => p !== sim.probabilities[i]) || +raws.budget !== sim.budget || +raws.seed !== sim.seed;
+if (!changed) return { state: s, unchanged: true };
+s.simulation = { probabilities: probs, budget: +String(raws.budget).trim(), seed: +String(raws.seed).trim(), pulls: 0 };
+return { state: s };
+}
+function view(state) {
+const u = ucb(state.variants), samples = state.variants.map((v) => v.sample), ts = argmax(samples);
+const rows = state.variants.map((v, i) => {
+const p = posterior(state.prior, v), f = v.trials - v.successes, mean = p[0] / (p[0] + p[1]);
+const lo = betaQuantile(0.025, p[0], p[1]), hi = betaQuantile(0.975, p[0], p[1]), sc = u.scores[i];
+return { id: v.id, name: v.name, successes: v.successes, failures: f, trials: v.trials, rate: v.trials ? v.successes / v.trials : null,
+mean, lo, hi, sample: v.sample, ucb: sc, alpha: p[0], beta: p[1],
+text: { successes: group(v.successes), failures: group(f), trials: group(v.trials), rate: v.trials ? pct(v.successes / v.trials) : "No trials",
+mean: pct(mean, 2), interval: pct(lo, 2) + " to " + pct(hi, 2), sample: pct(v.sample, 2),
+ucb: sc ? num(sc.score) : "Untried — explore first", posterior: "Beta(" + fmtPrior(p[0]) + ", " + fmtPrior(p[1]) + ")" } };
+});
+const second = (best, vals) => { let r = -1; vals.forEach((x, i) => { if (i !== best && x != null && (r < 0 || x > vals[r])) r = i; }); return r; };
+const tsNext = second(ts, samples), ucbNext = u.untried ? -1 : second(u.best, u.scores.map((x) => x.score));
+const tsWhy = rows[ts].name + " has the largest posterior draw, " + rows[ts].text.sample + (tsNext >= 0 ? "; the next largest is " + rows[tsNext].name + " at " + rows[tsNext].text.sample : "") + ".";
+const b = rows[u.best];
+const ucbWhy = u.untried ? b.name + " has no trials yet, so UCB1 tries it before comparing scores." :
+b.name + " has the highest score: observed rate " + num(b.ucb.mean) + " plus exploration bonus " + num(b.ucb.bonus) + " equals " + num(b.ucb.score) +
+(ucbNext >= 0 ? "; next is " + rows[ucbNext].name + " at " + rows[ucbNext].text.ucb : "") + ". The score is not a probability.";
+const agree = ts === u.best;
+return { rows, total: u.T, totalText: group(u.T), prior: state.prior, priorText: "Beta(" + fmtPrior(state.prior.a) + ", " + fmtPrior(state.prior.b) + ")",
+ts: { index: ts, id: rows[ts].id, name: rows[ts].name, value: rows[ts].text.sample, why: tsWhy },
+ucb: { index: u.best, id: b.id, name: b.name, untried: u.untried, value: b.text.ucb, why: ucbWhy },
+agree, disagreement: agree ? "" : "The methods disagree. Thompson Sampling follows one random draw from each posterior, so uncertain variants sometimes win; UCB1 adds a deterministic exploration bonus to each observed rate, which is largest for variants with few trials.",
+ready: ready(state), selected: state.selected, canRecord: canRecord(state) };
+}
+function hints(state, v) {
+const out = [];
+if (!v.ready) out.push("Define success, the trial unit and a fixed outcome horizon before you begin recording outcomes.");
+else if (v.ucb.untried) out.push("UCB1 suggests trying " + v.ucb.name + ", which has no trials yet.");
+if (v.ready && !state.selected) out.push("Select the variant you will trial next, using either recommendation or the Select column.");
+if (v.ready && state.selected) out.push("Run one trial of " + state.variants.find((x) => x.id === state.selected).name + ", then record its outcome once it is resolved.");
+if (!v.agree) out.push("The recommendations differ: compare their explanations to see how each method explores.");
+return out;
+}
+function simCreate(state) {
+const c = state.simulation, k = c.probabilities.length;
+const rewards = c.probabilities.map((p, j) => {
+const st = seedState(c.seed, 2 + j), r = new Uint8Array(c.budget);
+for (let i = 0; i < c.budget; i += 1) r[i] = uniform(st) < p ? 1 : 0;
+return r;
+});
+const best = Math.max.apply(null, c.probabilities);
+const methods = {};
+for (const [id] of METHODS) methods[id] = { successes: Array(k).fill(0), trials: Array(k).fill(0), pulls: 0, total: 0, regret: 0, curve: [], regretCurve: [] };
+return { probabilities: c.probabilities.slice(), budget: c.budget, seed: c.seed, prior: { a: state.prior.a, b: state.prior.b }, k, best, rewards, rng: seedState(c.seed, 1), methods };
+}
+function choose(sim, id) {
+const m = sim.methods[id];
+if (id === "eq") return m.pulls % sim.k;
+if (id === "ucb") return ucb(m.trials.map((n, j) => ({ successes: m.successes[j], trials: n }))).best;
+return argmax(m.trials.map((n, j) => sampleBeta(sim.rng, sim.prior.a + m.successes[j], sim.prior.b + n - m.successes[j])));
+}
+function simStep(sim) {
+let moved = false;
+for (const [id] of METHODS) {
+const m = sim.methods[id];
+if (m.pulls >= sim.budget) continue;
+const j = choose(sim, id), r = sim.rewards[j][m.trials[j]];
+m.trials[j] += 1; m.successes[j] += r; m.pulls += 1; m.total += r;
+m.regret += sim.best - sim.probabilities[j];
+m.curve.push(m.total); m.regretCurve.push(m.regret);
+moved = true;
+}
+return moved;
+}
+const simDone = (sim) => METHODS.every(([id]) => sim.methods[id].pulls >= sim.budget);
+function simReplay(state) {
+const sim = simCreate(state);
+for (let i = 0; i < state.simulation.pulls && simStep(sim); i += 1);
+return sim;
+}
+function simView(sim, names) {
+const pulls = sim.methods.ts.pulls;
+return { pulls, budget: sim.budget, seed: sim.seed, partial: pulls > 0 && pulls < sim.budget, started: pulls > 0,
+progress: pulls === 0 ? "Not run yet: 0 of " + group(sim.budget) + " pulls per method." : pulls < sim.budget ? "Partial run: " + group(pulls) + " of " + group(sim.budget) + " pulls per method." : "Complete: " + group(sim.budget) + " pulls per method.",
+settings: names.map((n, j) => ({ name: n, probability: pct(sim.probabilities[j]) })),
+methods: METHODS.map(([id, label]) => {
+const m = sim.methods[id];
+return { id, label, pulls: m.pulls, successes: m.total, regret: m.regret,
+text: { pulls: group(m.pulls), successes: group(m.total), rate: m.pulls ? pct(m.total / m.pulls) : "No pulls", regret: num(m.regret, 2) },
+allocation: names.map((n, j) => ({ name: n, trials: m.trials[j], text: group(m.trials[j]) })) };
+}) };
+}
+const isWord = (x) => Number.isInteger(x) && x >= 0 && x <= 4294967295;
+const isRng = (r) => Array.isArray(r) && r.length === 4 && r.every(isWord) && r.some((x) => x !== 0);
+function check(doc) {
+const fail = (m) => { throw new Error(m); };
+if (!doc || typeof doc !== "object" || Array.isArray(doc)) fail("The file is not a JSON object.");
+if (doc.format !== FORMAT) fail("This is not a multi-armed bandit experiment file.");
+if (doc.version !== VERSION) fail("Unsupported version " + JSON.stringify(doc.version) + "; this page reads version " + VERSION + ".");
+for (const f of ["title", "success", "unit"]) {
+if (typeof doc[f] !== "string") fail("Missing " + f + ".");
+if (doc[f].trim() && textError(f, doc[f])) fail(textError(f, doc[f]));
+if (doc[f].length > LIMITS[f]) fail(textError(f, doc[f]));
+}
+if (!TEMPLATES.includes(doc.template) || !["fictional", "mixed", "entered"].includes(doc.basis)) fail("Invalid template or evidence basis.");
+if (!doc.prior || priorError(String(doc.prior.a), "a") !== null || priorError(String(doc.prior.b), "b") !== null || typeof doc.prior.a !== "number" || typeof doc.prior.b !== "number") fail("Prior a and b must be numbers from 0.1 to 100.");
+const vs = doc.variants;
+if (!Array.isArray(vs) || vs.length < LIMITS.minVariants || vs.length > LIMITS.maxVariants) fail("An experiment needs 2 to 10 variants.");
+const ids = new Set(), names = new Set();
+vs.forEach((v, i) => {
+if (!v || typeof v.id !== "string" || !/^v\d+$/.test(v.id) || ids.has(v.id)) fail("Variant " + (i + 1) + " has a missing or duplicate id.");
+ids.add(v.id);
+if (typeof v.name !== "string" || textError("name", v.name)) fail("Variant " + (i + 1) + ": " + (textError("name", v.name) || "invalid name."));
+const key = v.name.trim().toLowerCase();
+if (names.has(key)) fail("Variant names must be unique, ignoring case.");
+names.add(key);
+if (!Number.isInteger(v.successes) || !Number.isInteger(v.trials) || countsError(v.successes, v.trials)) fail("Variant " + (i + 1) + ": " + (countsError(String(v.successes), String(v.trials)) || "counts must be whole numbers."));
+if (typeof v.sample !== "number" || !(v.sample >= 0 && v.sample <= 1)) fail("Variant " + (i + 1) + " has an invalid Thompson sample.");
+});
+if (!Number.isInteger(doc.nextId) || doc.nextId <= Math.max.apply(null, vs.map((v) => +v.id.slice(1)))) fail("Invalid next variant id.");
+if (doc.selected !== null && !ids.has(doc.selected)) fail("The selected variant does not exist.");
+if (!isRng(doc.rng)) fail("Invalid generator state.");
+const sim = doc.simulation;
+if (!sim || !Array.isArray(sim.probabilities) || sim.probabilities.length !== vs.length || !sim.probabilities.every((p) => typeof p === "number" && p >= 0 && p <= 1)) fail("Simulation probabilities must be one number from 0 to 1 per variant.");
+if (!Number.isInteger(sim.budget) || sim.budget < vs.length || sim.budget > LIMITS.maxBudget) fail("Simulation pulls per method must be a whole number from the number of variants to 2,000.");
+if (!isWord(sim.seed)) fail("Simulation seed must be a whole number from 0 to 4,294,967,295.");
+if (!Number.isInteger(sim.pulls) || sim.pulls < 0 || sim.pulls > sim.budget) fail("Simulation progress must be a whole number of pulls within the budget.");
+if (sim.thompsonRng !== undefined && !isRng(sim.thompsonRng)) fail("Invalid simulation generator state.");
+}
+function parse(text) {
+let doc;
+try { doc = JSON.parse(text); } catch (e) { return { error: "The file is not valid JSON." }; }
+try { check(doc); } catch (e) { return { error: e.message }; }
+const state = { format: FORMAT, version: VERSION, template: doc.template, basis: doc.basis, title: doc.title, success: doc.success, unit: doc.unit,
+prior: { a: doc.prior.a, b: doc.prior.b }, variants: doc.variants.map((v) => ({ id: v.id, name: v.name, successes: v.successes, trials: v.trials, sample: v.sample })),
+selected: doc.selected, nextId: doc.nextId, rng: doc.rng.slice(),
+simulation: { probabilities: doc.simulation.probabilities.slice(), budget: doc.simulation.budget, seed: doc.simulation.seed, pulls: doc.simulation.pulls } };
+const sim = simReplay(state);
+if (doc.simulation.thompsonRng && doc.simulation.thompsonRng.join() !== sim.rng.join()) return { error: "The simulation progress does not match its seed and settings." };
+return { state, sim };
+}
+function serialise(state, sim) {
+const s = clone(state);
+if (sim) s.simulation.thompsonRng = sim.rng.slice();
+return JSON.stringify(s, null, 2);
+}
+return { FORMAT, VERSION, LIMITS, SIM_DEFAULTS, METHODS, seedState, next, uniform, lgamma, lbeta, ibeta, betaQuantile, sampleBeta, ucb, argmax,
+group, pct, num, posterior, resample, fromTemplate, ready, textError, nameError, countsError, priorError, setText, rename, setCounts, setPrior,
+addVariant, removeVariant, select, canRecord, record, snapshot, restore, setSimulation, view, hints, simCreate, simStep, simDone, simReplay, simView,
+parse, serialise, clone };
+});</script>
+<script id="beamdswitch">
+/* The standard beamdswitch report template, shared by every visualisation.
+ *
+ * beamdswitch (https://teoyujie.org/visuals/beamdswitch/) turns one Markdown deck into slides, a
+ * handout, narration and a video. `deck(report)` writes a report in its deck syntax, always in the
+ * same order (templates/beamdswitch-report.md shows the skeleton):
+ *
+ *   front matter and title slide
+ *   # Set-up               what was modelled, its units and conventions
+ *   # Method               how the tool solved it
+ *   # Results              the numbers, with key equations and plots
+ *   # Checks and takeaway  what confirms the numbers, ending on one ::: key frame
+ *
+ * A report is plain data, so it can be built and tested without a page:
+ *   { meta: { title, subtitle, author, date, voice }, narration, notes,
+ *     setup, method, results, checks: [frame, ...] }
+ * and each frame is
+ *   { title, body, narration, notes, key, plot: { x: [a, b], xlabel, ylabel, curves: ["expr", ...] } }
+ * `body` is Markdown (LaTeX maths in $...$ or $$...$$); `narration` is plain spoken prose, one
+ * caption per sentence; `key`, `plot` and `notes` are optional. Every frame must be narrated, and
+ * the last checks frame must carry a key. The visualisation supplies every number already
+ * formatted, so the deck says exactly what its page shows. Every deck names its narrator: `meta.voice`
+ * when the visualisation picks one, else DEFAULT_VOICE, beamdswitch's British female default.
+ */
+(function (root, factory) {
+  const api = factory();
+  if (typeof module === "object" && module.exports) module.exports = api;
+  else root.Beamdswitch = api;
+})(typeof self !== "undefined" ? self : this, function () {
+  "use strict";
+
+  const DEFAULT_VOICE = "bf_emma";
+  const SECTIONS = [["setup", "Set-up"], ["method", "Method"], ["results", "Results"], ["checks", "Checks and takeaway"]];
+
+  const oneLine = (s) => String(s ?? "").replace(/\s+/g, " ").trim();
+  /* Markdown lines that would end a frame or a div early are refused rather than written. */
+  function block(text, what) {
+    const s = String(text ?? "").replace(/\r\n?/g, "\n").trim();
+    for (const line of s.split("\n"))
+      if (/^#{1,2}\s/.test(line) || /^\s*:{3,}/.test(line)) throw new Error(`${what} must not contain a heading or a ::: line: ${line}`);
+    return s;
+  }
+  /* Narration is read aloud: no maths, markup or line structure. */
+  function spoken(text, what) {
+    const s = oneLine(text);
+    if (!s) throw new Error(`${what} needs a narration.`);
+    if (/[$\\`*_#|<>]/.test(s)) throw new Error(`${what} narration must be plain spoken prose: ${s}`);
+    return s;
+  }
+  const div = (name, text) => [`::: ${name}`, text, ":::"];
+
+  function frame(f, where) {
+    const title = oneLine(f.title), what = `Frame "${title}" in ${where}`;
+    if (!title) throw new Error(`A frame in ${where} needs a title.`);
+    const out = [`## ${title}`, ""];
+    if (f.body) out.push(block(f.body, what), "");
+    if (f.plot) {
+      const p = f.plot, lines = [`x: ${p.x[0]}, ${p.x[1]}`];
+      if (p.xlabel) lines.push(`xlabel: ${oneLine(p.xlabel)}`);
+      if (p.ylabel) lines.push(`ylabel: ${oneLine(p.ylabel)}`);
+      for (const c of p.curves) lines.push(`y = ${oneLine(c)}`);
+      out.push(...div("plot", lines.join("\n")), "");
+    }
+    if (f.key) out.push(...div("key", block(f.key, what)), "");
+    if (f.notes) out.push(...div("notes", block(f.notes, what)), "");
+    out.push(...div("narration", spoken(f.narration, what)), "");
+    return out;
+  }
+
+  function deck(report) {
+    const meta = report.meta || {};
+    if (!oneLine(meta.title)) throw new Error("The report needs a title.");
+    const checks = report.checks || [];
+    if (!checks.length || !checks.at(-1).key) throw new Error("The last checks frame must carry a ::: key.");
+    const fm = { ...meta, voice: oneLine(meta.voice) || DEFAULT_VOICE };
+    const out = ["---"];
+    for (const k of ["title", "subtitle", "author", "date", "voice"]) if (oneLine(fm[k])) out.push(`${k}: ${oneLine(fm[k])}`);
+    out.push("---", "");
+    if (report.notes) out.push(...div("notes", block(report.notes, "The title slide")), "");
+    out.push(...div("narration", spoken(report.narration, "The title slide")), "");
+    SECTIONS.forEach(([id, title], i) => {
+      const frames = report[id] || [];
+      if (!frames.length) throw new Error(`The ${title} section needs at least one frame.`);
+      out.push(`# ${title}`, "", ...div("narration", `Part ${i + 1}. ${title}.`), "");
+      for (const f of frames) out.push(...frame(f, title));
+    });
+    return out.join("\n");
+  }
+
+  return { DEFAULT_VOICE, SECTIONS, deck };
+});
+</script>
+<script id="report">
+/* The current multi-armed bandit experiment as a beamdswitch report.
+ *
+ * report(state, view, simView, D, date) turns the committed experiment into the plain-data report that
+ * the standard template (beamdswitch.js, `Beamdswitch.deck`) writes as a narrated Markdown deck.
+ * `view` is BanditLogic.view(state) and `simView` BanditLogic.simView(...) or null when the simulation
+ * has not run, so every number is the one the page shows. Exporting is a snapshot: it reads state and
+ * never changes it. The user's own words are escaped so they cannot open a heading, a ::: div or front
+ * matter. Every deck is narrated by bf_emma.
+ */
+(function (root, factory) {
+  const api = factory();
+  if (typeof module === "object" && module.exports) module.exports = api;
+  else root.BanditReport = api;
+})(typeof self !== "undefined" ? self : this, function () {
+  "use strict";
+
+  const VOICE = "bf_emma";
+  const clean = (s) => String(s == null ? "" : s).replace(/\s+/g, " ").trim();
+  const bare = (s) => clean(s).replace(/[.!?;:,]+$/, "");
+  /* Markdown body text: the user's words are literal, never markup. */
+  const md = (s) => clean(s).replace(/[\\`*_$<>|#[\]~]/g, "\\$&");
+  /* Front matter values: one line; a value wrapped in matching quotes keeps them. */
+  const front = (s) => { const t = clean(s); return /^(["']).*\1$/.test(t) ? (t[0] === '"' ? "'" + t + "'" : '"' + t + '"') : t; };
+  /* Narration is read aloud: no markup, maths or symbols. */
+  const speak = (s) => clean(String(s == null ? "" : s).replace(/<(?=\d)/g, "less than ").replace(/>(?=\d)/g, "more than ").replace(/&/g, " and ").replace(/%/g, " percent").replace(/[→↓]/g, ", then ").replace(/[−–—]/g, ", ")
+    .replace(/[$\\`*_#|<>×⁰¹²³⁴⁵⁶⁷⁸⁹⁻≈·∠°σ£€µ★▲[\]{}~^]/g, " ")).replace(/\s+([,.;:!?])/g, "$1").replace(/,\s*,/g, ",");
+  const sentence = (s) => { const t = bare(s); return t ? t + "." : ""; };
+  const list = (xs) => xs.map((x) => "- " + x).join("\n");
+  const BASIS = {
+    fictional: ["Fictional example counts, for illustration only; not real data.", "The counts are a fictional example, for illustration only."],
+    mixed: ["Starts from fictional example counts and includes the user's edits or recorded outcomes; not purely real data.", "The counts started as a fictional example and include later edits or recorded outcomes, so they are not purely real data."],
+    entered: ["Evidence entered by the user.", "The counts are evidence entered by the user."],
+  };
+
+  function report(state, V, simV, D, date) {
+    const S = state, title = clean(S.title) || "Multi-armed bandit experiment";
+    const success = clean(S.success), unit = clean(S.unit);
+    const basis = BASIS[S.basis];
+    const setup = [
+      { title: "The experiment", body: ["**" + md(title) + "**", "", list(["Success: " + (success ? md(success) : "not yet defined"), "Trial unit: " + (unit ? md(unit) : "not yet defined"),
+        "Variants: " + V.rows.map((r) => md(r.name)).join(", "), "Completed trials: " + V.totalText, "Evidence: " + basis[0]])].join("\n"),
+        narration: "The experiment is " + speak(sentence(title)) + " " + (success ? "A success means: " + speak(sentence(success)) : "Success has not been defined yet.") + " " +
+          (unit ? "Each trial is one " + speak(sentence(unit.charAt(0).toLowerCase() + unit.slice(1))) : "") + " It compares " + V.rows.length + " variants. " + basis[1] },
+      { title: "Assumptions", body: list(D.assumptions.map(md)),
+        narration: "The recommendations assume that each variant has a stable success probability, that trials are comparable, that one success definition applies to every variant, and that every trial costs the same. Outcomes are counted only once they are resolved." },
+    ];
+    const method = [
+      { title: "Thompson Sampling", body: ["Shared prior " + V.priorText + ", applied independently to every variant.", "",
+        "$$\\text{posterior} = \\mathrm{Beta}(a+s,\\; b+f), \\qquad \\text{mean} = \\frac{a+s}{a+b+s+f}$$", "",
+        "The 95% credible interval runs between the posterior's 0.025 and 0.975 quantiles, computed numerically. Thompson Sampling draws one value from each posterior and recommends the largest; ties go to the first variant in display order."].join("\n"),
+        narration: "Thompson Sampling starts every variant from the same prior, " + speak(V.priorText) + ", and adds its successes and failures to get a posterior. It draws one random value from each posterior and recommends the variant with the largest draw. The interval shown is the central 95 percent of each posterior." },
+      { title: "UCB1", body: ["$$\\text{score}_i = \\frac{s_i}{n_i} + \\sqrt{\\frac{2 \\ln T}{n_i}}$$", "",
+        "$T$ is the total of completed trials across all variants. A variant with no trials is recommended first, in display order, so the logarithm of zero never arises. Ties go to the first variant in display order. The score is not a probability and is not capped at 1."].join("\n"),
+        narration: "UCB1 adds an exploration bonus to each variant's observed success rate. The bonus is larger for variants with fewer trials. Any variant with no trials is tried first. The score is not a probability and can exceed one." },
+    ];
+    const results = [
+      { title: "Evidence", body: list(V.rows.map((r) => "**" + md(r.name) + "**: " + r.text.successes + " successes in " + r.text.trials + " trials (" + r.text.rate + "); posterior " + r.text.posterior + ", mean " + r.text.mean + ", 95% interval " + r.text.interval)),
+        narration: V.rows.map((r) => speak(bare(r.name)) + " has " + r.text.successes + " successes in " + r.text.trials + " trials, with posterior mean " + speak(r.text.mean) + ".").join(" ") },
+      { title: "Scores behind the recommendations", body: list(V.rows.map((r) => "**" + md(r.name) + "**: Thompson sample " + r.text.sample + "; UCB1 score " + md(r.text.ucb))),
+        narration: "These are the displayed scores. " + V.rows.map((r) => speak(bare(r.name)) + " drew " + speak(r.text.sample) + " and has a UCB1 score of " + speak(r.text.ucb) + ".").join(" ") },
+      { title: "Recommendations", body: list(["Thompson Sampling recommends **" + md(V.ts.name) + "**: " + md(V.ts.why), "UCB1 recommends **" + md(V.ucb.name) + "**: " + md(V.ucb.why)]) + (V.agree ? "\n\nBoth methods recommend the same variant." : "\n\n" + md(V.disagreement)),
+        narration: "Thompson Sampling recommends " + speak(bare(V.ts.name)) + ", whose draw of " + speak(V.ts.value) + " is the largest. " +
+          (V.ucb.untried ? "UCB1 recommends " + speak(bare(V.ucb.name)) + ", because it has no trials yet." : "UCB1 recommends " + speak(bare(V.ucb.name)) + ", with the highest score, " + speak(V.ucb.value) + ".") + " " +
+          (V.agree ? "Both methods agree." : "They disagree, because Thompson follows a random posterior draw while UCB1 adds a fixed exploration bonus.") },
+    ];
+    if (simV) {
+      const names = simV.settings.map((s) => md(s.name) + " " + s.probability).join(", ");
+      results.push({ title: "Simulation", body: [simV.progress + " Seed " + simV.seed + "; known success probabilities " + names + "; prior " + V.priorText + ".", "",
+        list(simV.methods.map((m) => "**" + m.label + "**: " + m.text.successes + " successes in " + m.text.pulls + " pulls (" + m.text.rate + "); expected regret " + m.text.regret + "; allocation " + m.allocation.map((a, j) => md(simV.settings[j].name) + " " + a.text).join(", "))), "",
+        "Expected regret sums the best known probability minus the chosen variant's known probability over the pulls. One seeded run does not show that one method is better."].join("\n"),
+        notes: "Simulation rewards come from the known probabilities above, not from the entered evidence; each variant has one shared reward sequence across methods.",
+        narration: (simV.partial ? "This simulation is a partial run. " : "") + "With seed " + simV.seed + " and " + simV.methods[0].text.pulls + " pulls per method, " +
+          simV.methods.map((m) => speak(m.label) + " collected " + m.text.successes + " successes with expected regret " + m.text.regret).join("; ") + ". One seeded run does not show that one method is better." });
+    }
+    const first = V.rows[0];
+    const checks = [
+      { title: "Hand check", body: list([md(first.name) + ": prior " + V.priorText + " plus " + first.text.successes + " successes and " + first.text.failures + " failures gives " + first.text.posterior + ", mean " + first.text.mean + ".",
+        V.ucb.untried ? "UCB1 recommends an untried variant, so no logarithm of zero is evaluated." : md(V.ucb.name) + ": " + L4(V.rows[V.ucb.index]) ]),
+        narration: "A quick check. " + speak(bare(first.name)) + " has " + first.text.successes + " successes and " + first.text.failures + " failures, so its posterior mean is " + speak(first.text.mean) + ". Each recorded outcome moves these numbers by exactly one trial." },
+      { title: "Next step", key: "Thompson Sampling suggests **" + md(V.ts.name) + "** (sample " + V.ts.value + "); UCB1 suggests **" + md(V.ucb.name) + "** (" + (V.ucb.untried ? "untried" : "score " + V.ucb.value) + ").\n\nChoose one, run one trial, record the resolved outcome, then look again. Neither method declares the experiment finished or a variant conclusively best.",
+        notes: "If the success definition or environment changes, start a new experiment rather than mixing evidence.",
+        narration: "The next step: choose one recommendation, run a single trial, and record its outcome once it is resolved. Neither method declares the experiment finished or any variant conclusively best." },
+    ];
+    return {
+      meta: { title: front(title), subtitle: "Thompson Sampling and UCB1 recommendations", author: "Multi-armed Bandit tool", date: "Snapshot " + clean(date), voice: VOICE },
+      notes: "Exported from https://teoyujie.org/visuals/multi-armed-bandit/. " + basis[0],
+      narration: speak(sentence(title)) + " What Thompson Sampling and UCB1 recommend trying next, from the evidence so far.",
+      setup, method, results, checks,
+    };
+  }
+  const L4 = (r) => "observed rate " + r.ucb.mean.toFixed(4) + " plus bonus " + r.ucb.bonus.toFixed(4) + " gives score " + r.ucb.score.toFixed(4) + ".";
+
+  return { VOICE, report, speak, md, front };
+});
+</script>
+<script id="mab-ui">(function () {
+"use strict";
+const L = BanditLogic, D = JSON.parse(document.getElementById("mab-data").textContent);
+const KEY = "multi-armed-bandit:v1", SLUG = "multi-armed-bandit", NS = "http://www.w3.org/2000/svg";
+const $ = (id) => document.getElementById(id);
+const el = (tag, attrs, text) => {
+const e = document.createElement(tag);
+for (const k in attrs || {}) e.setAttribute(k, attrs[k]);
+if (text != null) e.textContent = text;
+return e;
+};
+const svg = (tag, attrs, text) => {
+const e = document.createElementNS(NS, tag);
+for (const k in attrs) e.setAttribute(k, attrs[k]);
+if (text != null) e.textContent = text;
+return e;
+};
+const now = () => (typeof performance !== "undefined" ? performance.now() : 0);
+function freshSeed() {
+try { return crypto.getRandomValues(new Uint32Array(1))[0]; } catch (e) { return 2654435769; }
+}
+function say(msg, where) {
+if (where) where.textContent = msg;
+const a = $("announce");
+a.textContent = "";
+setTimeout(() => { a.textContent = msg; }, 30);
+}
+let store = null;
+try { store = window.localStorage; store.getItem(KEY); } catch (e) { store = null; }
+let S, sim, undo = [], running = false, timer = 0, saveTimer = 0, simKey = "";
+let viewOf = null, viewMemo = null;
+const view = () => (viewOf === S ? viewMemo : (viewMemo = L.view(viewOf = S)));
+const keyOf = (s) => JSON.stringify([s.simulation.probabilities, s.simulation.budget, s.simulation.seed, s.prior]);
+function boot() {
+let msg = store ? "" : "Autosave is unavailable in this browser context; use Export JSON to keep your work.";
+const saved = store && (function () { try { return store.getItem(KEY); } catch (e) { return null; } })();
+if (saved) {
+const r = L.parse(saved);
+if (r.error) msg = "Saved work could not be restored (" + r.error + "); started from the website example.";
+else { S = r.state; sim = r.sim; msg = "Restored your autosaved experiment."; }
+}
+if (!S) { S = L.fromTemplate(D, "website", freshSeed()); sim = L.simCreate(S); save(); }
+simKey = keyOf(S);
+$("store-status").textContent = msg;
+}
+function save() {
+clearTimeout(saveTimer);
+saveTimer = setTimeout(() => {
+if (!store) return;
+try { store.setItem(KEY, L.serialise(S, sim)); }
+catch (e) { $("store-status").textContent = "Autosave failed (storage unavailable or full). Your session still works; use Export JSON to keep it."; }
+}, 300);
+}
+function edited() {
+const t = L.fromTemplate(D, S.template, 1), pick = (s) => JSON.stringify([s.title, s.success, s.unit, s.prior, s.variants.map((v) => [v.name, v.successes, v.trials])]);
+return pick(t) !== pick(S);
+}
+function commit(next, opts) {
+S = next;
+const o = opts || {};
+if (o.clearUndo) undo = [];
+if (keyOf(S) !== simKey) {
+const had = sim && sim.methods.ts.pulls > 0;
+pause();
+S.simulation.pulls = 0;
+sim = L.simCreate(S);
+simKey = keyOf(S);
+if (had) $("sim-status").textContent = "Settings changed, so the earlier simulation results no longer match and were reset.";
+}
+render(o.force);
+save();
+}
+function replace(next, nextSim, msg) {
+pause();
+S = next; sim = nextSim || L.simCreate(next); simKey = keyOf(S); undo = [];
+$("sim-status").textContent = "";
+render(true);
+save();
+say(msg, $("store-status"));
+}
+let pending = null;
+function ask(text, yes, back) {
+if (!edited()) return yes();
+pending = { yes, back };
+$("confirm-text").textContent = text;
+$("confirm").hidden = false;
+$("confirm-yes").focus();
+}
+function settle(ok) {
+const p = pending;
+pending = null;
+$("confirm").hidden = true;
+if (!p) return;
+if (ok) p.yes(); else if (p.back) { p.back.focus(); say("Kept your current experiment.", $("store-status")); }
+}
+const FIELDS = { title: "f-title", success: "f-success", unit: "f-unit" };
+const rowEls = new Map();
+let rowIds = "";
+function setErr(input, errId, msg) {
+$(errId).textContent = msg || "";
+input.setAttribute("aria-invalid", msg ? "true" : "false");
+}
+function buildRows() {
+const body = $("vt-body");
+body.textContent = "";
+rowEls.clear();
+S.variants.forEach((v, i) => {
+const tr = el("tr"), c = {};
+const cell = (label, cls) => { const td = el("td", { "data-label": label }); if (cls) td.className = cls; tr.append(td); return td; };
+c.radio = el("input", { type: "radio", name: "sel", value: v.id });
+const hit = el("label", { class: "hit" });
+hit.append(c.radio);
+cell("Select").append(hit);
+c.name = el("input", { type: "text", id: "name-" + v.id, autocomplete: "off", "aria-describedby": "err-" + v.id });
+c.err = el("p", { class: "err", id: "err-" + v.id });
+const nameCell = cell("Name", "wide");
+nameCell.append(c.name, c.err);
+c.s = el("input", { type: "text", inputmode: "numeric", id: "s-" + v.id, autocomplete: "off", "aria-describedby": "err-" + v.id });
+cell("Successes").append(c.s);
+c.n = el("input", { type: "text", inputmode: "numeric", id: "n-" + v.id, autocomplete: "off", "aria-describedby": "err-" + v.id });
+cell("Trials").append(c.n);
+for (const [k, label] of [["f", "Failures"], ["rate", "Observed rate"], ["mean", "Posterior mean"], ["ci", "95% credible interval"], ["smp", "Thompson sample"], ["ucb", "UCB1 score"]]) c[k] = cell(label, "n");
+c.ci.className = "n wide-ish";
+c.rm = el("button", { type: "button", class: "rm" }, "Remove");
+cell("").append(c.rm);
+c.radio.addEventListener("change", () => { const r = L.select(S, v.id); if (r.state) { commit(r.state); say("Selected " + nameOf(v.id) + "."); } });
+c.name.addEventListener("change", () => {
+const r = L.rename(S, S.variants.findIndex((x) => x.id === v.id), c.name.value);
+setErr(c.name, "err-" + v.id, r.error);
+if (r.state) commit(r.state);
+});
+const counts = (input) => () => {
+const idx = S.variants.findIndex((x) => x.id === v.id), r = L.setCounts(S, idx, c.s.value, c.n.value);
+$("err-" + v.id).textContent = r.error || "";
+for (const x of [c.s, c.n]) x.setAttribute("aria-invalid", r.error ? "true" : "false");
+if (r.state && !r.unchanged) { commit(r.state, { clearUndo: true }); say("Updated counts for " + nameOf(v.id) + "; recommendations recalculated."); }
+};
+c.s.addEventListener("change", counts(c.s));
+c.n.addEventListener("change", counts(c.n));
+c.rm.addEventListener("click", () => {
+const name = nameOf(v.id), r = L.removeVariant(S, S.variants.findIndex((x) => x.id === v.id));
+if (r.error) return say(r.error, $("vt-status"));
+commit(r.state, { clearUndo: true });
+$("add-variant").focus();
+say("Removed " + name + ".", $("vt-status"));
+});
+c.tr = tr;
+rowEls.set(v.id, c);
+body.append(tr);
+});
+rowIds = S.variants.map((v) => v.id).join();
+}
+const nameOf = (id) => (S.variants.find((v) => v.id === id) || {}).name;
+const active = () => document.activeElement;
+function renderExperiment(force) {
+const V = view();
+$("template").value = S.template;
+const t = D.templates.find((x) => x.id === S.template);
+const basis = { fictional: "Fictional example counts", mixed: "Fictional starting counts plus your changes", entered: "Your entered evidence" }[S.basis];
+$("basis").textContent = basis;
+$("basis").className = "badge" + (S.basis === "entered" ? "" : " fic");
+$("template-note").textContent = t ? t.note : "";
+for (const f in FIELDS) {
+const input = $(FIELDS[f]);
+if (force || active() !== input) { if (force || input.getAttribute("aria-invalid") !== "true") input.value = S[f]; }
+if (force) setErr(input, "e-" + f, "");
+}
+if (rowIds !== S.variants.map((v) => v.id).join()) buildRows();
+V.rows.forEach((r, i) => {
+const c = rowEls.get(r.id);
+c.radio.checked = S.selected === r.id;
+c.radio.setAttribute("aria-label", "Select " + r.name + " for the next trial");
+c.name.setAttribute("aria-label", "Name of variant " + (i + 1));
+c.s.setAttribute("aria-label", "Successes for " + r.name);
+c.n.setAttribute("aria-label", "Trials for " + r.name);
+c.rm.setAttribute("aria-label", "Remove " + r.name);
+c.rm.disabled = S.variants.length <= L.LIMITS.minVariants;
+if (force || (active() !== c.name && c.name.getAttribute("aria-invalid") !== "true")) c.name.value = r.name;
+const countsBad = c.s.getAttribute("aria-invalid") === "true";
+if (force || (!countsBad && active() !== c.s && active() !== c.n)) { c.s.value = String(r.successes); c.n.value = String(r.trials); }
+if (force) { c.err.textContent = ""; for (const x of [c.name, c.s, c.n]) x.setAttribute("aria-invalid", "false"); }
+c.f.textContent = r.text.failures;
+c.rate.textContent = r.text.rate;
+c.mean.textContent = r.text.mean;
+c.mean.title = "Posterior " + r.text.posterior;
+c.ci.textContent = r.text.interval;
+c.smp.textContent = r.text.sample;
+if (V.ts.index === i) c.smp.append(el("span", { class: "tag ts" }, "★ Thompson pick"));
+c.ucb.textContent = r.text.ucb;
+if (V.ucb.index === i) c.ucb.append(el("span", { class: "tag ucb" }, "▲ UCB1 pick"));
+c.tr.className = S.selected === r.id ? "is-sel" : "";
+});
+$("add-variant").disabled = S.variants.length >= L.LIMITS.maxVariants;
+$("vt-count").textContent = S.variants.length + " variants (2 to 10). Total completed trials: " + V.totalText + ".";
+$("ts-pick").textContent = "★ " + V.ts.name;
+$("ts-why").textContent = V.ts.why;
+$("ts-select").textContent = "Select " + V.ts.name;
+$("ucb-pick").textContent = "▲ " + V.ucb.name + (V.ucb.untried ? " (untried)" : "");
+$("ucb-why").textContent = V.ucb.why;
+$("ucb-select").textContent = "Select " + V.ucb.name;
+$("disagree").textContent = V.disagreement;
+const sel = S.variants.find((v) => v.id === S.selected);
+$("sel-text").textContent = sel ? "Selected: " + sel.name + ". The next outcome you record is added to " + sel.name + "." : "No variant selected yet.";
+const why = V.canRecord;
+$("btn-success").disabled = $("btn-failure").disabled = !!why;
+$("record-why").textContent = why || "";
+$("btn-undo").disabled = !undo.length;
+const hints = $("hints");
+hints.textContent = "";
+for (const h of L.hints(S, V)) hints.append(el("li", null, h));
+for (const x of ["prior-a", "prior-b"]) {
+const input = $(x);
+if (force || (active() !== input && input.getAttribute("aria-invalid") !== "true")) input.value = String(S.prior[x.slice(-1)]);
+if (force) setErr(input, "e-prior", "");
+}
+$("prior-text").textContent = "Current prior: " + V.priorText + ", applied independently to every variant.";
+plotIntervals(V);
+}
+function width(id) {
+const w = $(id).clientWidth;
+return Math.max(280, Math.min(1100, w || 640));
+}
+function plotIntervals(V) {
+const W = width("ci-plot"), left = Math.min(150, W * 0.32), right = 16, rowH = 30, top = 8, H = top + V.rows.length * rowH + 30;
+const maxHi = Math.max.apply(null, V.rows.map((r) => Math.max(r.hi, r.sample)));
+const xmax = maxHi > 0.5 ? 1 : Math.min(1, Math.ceil((maxHi + 0.02) * 10) / 10);
+const x = (v) => left + (W - left - right) * v / xmax;
+const g = svg("svg", { viewBox: "0 0 " + W + " " + H, role: "img", "aria-labelledby": "ci-title ci-desc" });
+g.append(svg("title", { id: "ci-title" }, "95% credible intervals, posterior means and Thompson samples"),
+svg("desc", { id: "ci-desc" }, V.rows.map((r) => r.name + ": mean " + r.text.mean + ", interval " + r.text.interval + ", sample " + r.text.sample).join("; ") + ". Exact values are in the table."));
+const ticks = 5;
+for (let i = 0; i <= ticks; i += 1) {
+const v = xmax * i / ticks, xx = x(v);
+g.append(svg("line", { x1: xx, x2: xx, y1: top, y2: H - 24, class: "grid" }), svg("text", { x: xx, y: H - 8, "text-anchor": "middle", class: "ax" }, Math.round(v * 100) + "%"));
+}
+V.rows.forEach((r, i) => {
+const y = top + i * rowH + rowH / 2, name = r.name.length > 18 ? r.name.slice(0, 17) + "…" : r.name;
+g.append(svg("text", { x: 0, y: y + 4 }, name + (V.ts.index === i ? " ★" : "") + (V.ucb.index === i ? " ▲" : "")),
+svg("line", { x1: x(r.lo), x2: Math.max(x(r.hi), x(r.lo) + 1), y1: y, y2: y, class: "ci" }),
+svg("circle", { cx: x(r.mean), cy: y, r: 4.5, class: "mean" }),
+svg("path", { d: "M" + x(r.sample) + " " + (y - 7) + "l6 7-6 7-6-7z", class: "smp" }));
+});
+$("ci-plot").replaceChildren(g);
+}
+let simIds = "";
+function buildSimInputs() {
+const box = $("sim-probs");
+box.textContent = "";
+S.variants.forEach((v, j) => {
+const f = el("div", { class: "field" }), id = "p-" + v.id;
+const input = el("input", { type: "text", inputmode: "decimal", id, autocomplete: "off", "aria-describedby": "e-sim" });
+input.addEventListener("change", simSettings);
+f.append(el("label", { for: id, id: "pl-" + v.id }), input);
+box.append(f);
+});
+simIds = S.variants.map((v) => v.id).join();
+}
+function simSettings(ev) {
+const r = L.setSimulation(S, { probabilities: S.variants.map((v) => $("p-" + v.id).value), budget: $("sim-budget").value, seed: $("sim-seed").value });
+for (const e of document.querySelectorAll("#panel-sim input")) e.setAttribute("aria-invalid", "false");
+$("e-sim").textContent = r.error || "";
+if (r.error) {
+const bad = r.field === "budget" ? $("sim-budget") : r.field === "seed" ? $("sim-seed") : $("p-" + S.variants[+r.field.slice(1)].id);
+bad.setAttribute("aria-invalid", "true");
+return;
+}
+if (r.unchanged) return;
+const had = sim.methods.ts.pulls > 0;
+commit(r.state);
+if (!had) say("Simulation settings applied.", $("sim-status"));
+}
+function renderSim(force) {
+if (simIds !== S.variants.map((v) => v.id).join()) buildSimInputs();
+const names = S.variants.map((v) => v.name), c = S.simulation;
+S.variants.forEach((v, j) => {
+$("pl-" + v.id).textContent = v.name + " success probability (%)";
+const input = $("p-" + v.id);
+if (force || (active() !== input && input.getAttribute("aria-invalid") !== "true")) input.value = String(+(c.probabilities[j] * 100).toFixed(6));
+});
+for (const [x, v] of [["sim-budget", c.budget], ["sim-seed", c.seed]]) {
+const input = $(x);
+if (force || (active() !== input && input.getAttribute("aria-invalid") !== "true")) input.value = String(v);
+}
+if (force) { $("e-sim").textContent = ""; for (const e of document.querySelectorAll("#panel-sim input")) e.setAttribute("aria-invalid", "false"); }
+const V = L.simView(sim, names), done = L.simDone(sim);
+$("sim-progress").textContent = V.progress + " Seed " + V.seed + ", prior " + view().priorText + ".";
+$("sim-step").disabled = $("sim-run").disabled = done || running;
+$("sim-pause").disabled = !running;
+$("sim-reset").disabled = !V.started && !running;
+const body = $("sim-body");
+body.textContent = "";
+for (const m of V.methods) {
+const tr = el("tr");
+tr.append(el("th", { scope: "row" }, m.label), el("td", { class: "n" }, m.text.pulls), el("td", { class: "n" }, m.text.successes), el("td", { class: "n" }, m.text.rate), el("td", { class: "n" }, m.text.regret));
+body.append(tr);
+}
+const ah = $("alloc-head"), ab = $("alloc-body");
+ah.textContent = ""; ab.textContent = "";
+const hr = el("tr");
+hr.append(el("th", { scope: "col" }, "Method"));
+V.settings.forEach((s) => hr.append(el("th", { scope: "col", class: "n" }, s.name + " (" + s.probability + ")")));
+ah.append(hr);
+for (const m of V.methods) {
+const tr = el("tr");
+tr.append(el("th", { scope: "row" }, m.label));
+for (const a of m.allocation) tr.append(el("td", { class: "n" }, a.text));
+ab.append(tr);
+}
+plotSim(V);
+}
+function plotSim(V) {
+const W = width("sim-chart"), H = Math.round(Math.max(220, Math.min(360, W * 0.5))), l = 48, r = 92, t = 10, b = 34;
+const top = Math.max(1, Math.ceil(sim.budget * sim.best), ...V.methods.map((m) => m.successes));
+const mag = Math.pow(10, Math.floor(Math.log10(top / 4))), unit = [1, 2, 2.5, 5, 10].map((f) => f * mag).find((u) => u * 4 >= top), ymax = unit * 4;
+const x = (i) => l + (W - l - r) * i / sim.budget, y = (v) => H - b - (H - b - t) * v / ymax;
+const g = svg("svg", { viewBox: "0 0 " + W + " " + H, role: "img", "aria-labelledby": "sc-title sc-desc" });
+g.append(svg("title", { id: "sc-title" }, "Cumulative successes by pull"),
+svg("desc", { id: "sc-desc" }, V.started ? V.methods.map((m) => m.label + ": " + m.text.successes + " successes after " + m.text.pulls + " pulls").join("; ") + ". The table below lists every value." : "No pulls yet."));
+for (let i = 0; i <= 4; i += 1) {
+const v = Math.round(ymax * i / 4), xv = Math.round(sim.budget * i / 4);
+g.append(svg("line", { x1: l, x2: W - r, y1: y(v), y2: y(v), class: "grid" }), svg("text", { x: l - 6, y: y(v) + 4, "text-anchor": "end", class: "ax" }, L.group(v)),
+svg("text", { x: x(xv), y: H - 14, "text-anchor": "middle", class: "ax" }, L.group(xv)));
+}
+g.append(svg("text", { x: (l + W - r) / 2, y: H - 1, "text-anchor": "middle", class: "ax" }, "Pulls per method"));
+const step = Math.max(1, Math.floor(sim.budget / (W - l - r)));
+const ends = [];
+for (const m of V.methods) {
+const curve = sim.methods[m.id].curve;
+if (!curve.length) continue;
+let d = "M" + x(0) + " " + y(0);
+for (let i = 0; i < curve.length; i += 1) if (i % step === step - 1 || i === curve.length - 1) d += "L" + x(i + 1).toFixed(1) + " " + y(curve[i]).toFixed(1);
+g.append(svg("path", { d, class: "line m-" + m.id }));
+ends.push({ x: x(curve.length) + 6, y: y(curve[curve.length - 1]) + 4, t: m.id === "ts" ? "Thompson" : m.id === "ucb" ? "UCB1" : "Equal" });
+}
+ends.sort((a, b) => a.y - b.y).forEach((e, i) => { if (i && e.y < ends[i - 1].y + 14) e.y = ends[i - 1].y + 14; g.append(svg("text", { x: e.x, y: e.y }, e.t)); });
+$("sim-chart").replaceChildren(g);
+}
+function pause() {
+if (running) { running = false; clearTimeout(timer); }
+}
+function afterSim() {
+S.simulation.pulls = sim.methods.ts.pulls;
+renderSim();
+save();
+}
+function tick() {
+if (!running) return;
+const t0 = now();
+let n = 0;
+while (n < 50 && L.simStep(sim)) { n += 1; if (now() - t0 > 20) break; }
+const done = L.simDone(sim);
+if (done) { running = false; say("Run complete: " + L.group(sim.budget) + " pulls per method.", $("sim-status")); }
+afterSim();
+if (running) timer = setTimeout(tick, 0);
+}
+function wireSim() {
+$("sim-budget").addEventListener("change", simSettings);
+$("sim-seed").addEventListener("change", simSettings);
+$("sim-step").addEventListener("click", () => { if (L.simStep(sim)) { $("sim-status").textContent = ""; afterSim(); say("Stepped to pull " + sim.methods.ts.pulls + "."); } });
+$("sim-run").addEventListener("click", () => {
+if (running || L.simDone(sim)) return;
+running = true;
+$("sim-status").textContent = "Running…";
+renderSim();
+$("sim-pause").focus();
+timer = setTimeout(tick, 0);
+});
+$("sim-pause").addEventListener("click", () => {
+pause();
+say("Paused at pull " + L.group(sim.methods.ts.pulls) + ".", $("sim-status"));
+renderSim();
+$("sim-run").focus();
+});
+$("sim-reset").addEventListener("click", () => {
+pause();
+sim = L.simCreate(S);
+afterSim();
+say("Simulation reset to zero pulls with the same settings and seed.", $("sim-status"));
+$("sim-step").focus();
+});
+document.addEventListener("visibilitychange", () => {
+if (document.hidden && running) { pause(); renderSim(); $("sim-status").textContent = "Paused because the page was hidden; press Run to continue."; }
+});
+}
+function download(name, text, type) {
+const a = document.createElement("a");
+a.href = URL.createObjectURL(new Blob([text], { type }));
+a.download = name;
+document.body.append(a);
+a.click();
+a.remove();
+setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+function showText(label, text) {
+$("export-label").textContent = label;
+$("export-text").value = text;
+}
+function deckText() {
+const d = new Date();
+const iso = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+const simV = sim.methods.ts.pulls ? L.simView(sim, S.variants.map((v) => v.name)) : null;
+return Beamdswitch.deck(BanditReport.report(S, view(), simV, D, iso));
+}
+function wireExports() {
+$("save-beamdswitch").addEventListener("click", () => {
+let text;
+try { text = deckText(); } catch (e) { return say("The deck could not be written: " + e.message, $("deck-status")); }
+showText("Deck Markdown (" + SLUG + "-beamdswitch.md)", text);
+try { download(SLUG + "-beamdswitch.md", text, "text/markdown"); say("Saved " + SLUG + "-beamdswitch.md. If no download appears, select the text under Export as text.", $("deck-status")); }
+catch (e) { $("fallback").open = true; say("Saving is not allowed here; select the text under Export as text instead.", $("deck-status")); }
+});
+$("copy-beamdswitch").addEventListener("click", async () => {
+let text;
+try { text = deckText(); } catch (e) { return say("The deck could not be written: " + e.message, $("deck-status")); }
+showText("Deck Markdown (" + SLUG + "-beamdswitch.md)", text);
+try { await navigator.clipboard.writeText(text); say("Copied the deck. Paste it into beamdswitch.", $("deck-status")); }
+catch (e) { $("fallback").open = true; say("Copying is not allowed here. Use Save deck, or select the text under Export as text.", $("deck-status")); }
+});
+$("export-json").addEventListener("click", () => {
+const text = L.serialise(S, sim);
+showText("Experiment JSON (multi-armed-bandit-experiment.json)", text);
+try { download("multi-armed-bandit-experiment.json", text, "application/json"); say("Exported multi-armed-bandit-experiment.json. If no download appears, select the text under Export as text.", $("store-status")); }
+catch (e) { $("fallback").open = true; say("Saving is not allowed here; select the text under Export as text instead.", $("store-status")); }
+});
+$("import-json").addEventListener("change", (ev) => {
+const file = ev.target.files && ev.target.files[0];
+if (!file) return;
+const reader = new FileReader();
+reader.onload = () => {
+ev.target.value = "";
+const r = L.parse(String(reader.result));
+if (r.error) return say("Import rejected: " + r.error + " Your current experiment is unchanged.", $("store-status"));
+ask("Replace your edited experiment with the imported file?", () => replace(r.state, r.sim, "Imported " + file.name + "."), $("import-json"));
+};
+reader.onerror = () => say("The file could not be read.", $("store-status"));
+reader.readAsText(file);
+});
+$("reset").addEventListener("click", () => ask("Reset to the website example and discard your edited experiment?", () => replace(L.fromTemplate(D, "website", freshSeed()), null, "Reset to the website conversions example."), $("reset")));
+}
+function render(force) { renderExperiment(force); renderSim(force); }
+function selectTab(id, focus) {
+for (const t of ["exp", "sim"]) {
+const on = t === id;
+$("tab-" + t).setAttribute("aria-selected", on ? "true" : "false");
+$("tab-" + t).tabIndex = on ? 0 : -1;
+$("panel-" + t).hidden = !on;
+}
+if (focus) $("tab-" + id).focus();
+render();
+}
+function wire() {
+for (const t of ["exp", "sim"]) {
+$("tab-" + t).addEventListener("click", () => selectTab(t));
+$("tab-" + t).addEventListener("keydown", (e) => {
+const k = e.key;
+const to = k === "Home" ? "exp" : k === "End" ? "sim" : k === "ArrowRight" || k === "ArrowLeft" ? (t === "exp" ? "sim" : "exp") : "";
+if (to) { e.preventDefault(); selectTab(to, true); }
+});
+}
+$("template").addEventListener("change", () => {
+const id = $("template").value, label = D.templates.find((x) => x.id === id).label;
+$("template").value = S.template;
+ask("Replace your edited experiment with the " + label + " template?", () => { replace(L.fromTemplate(D, id, freshSeed()), null, "Loaded the " + label + " template."); $("template").focus(); }, $("template"));
+});
+$("confirm-yes").addEventListener("click", () => settle(true));
+$("confirm-no").addEventListener("click", () => settle(false));
+for (const f in FIELDS) $(FIELDS[f]).addEventListener("change", () => {
+const r = L.setText(S, f, $(FIELDS[f]).value);
+setErr($(FIELDS[f]), "e-" + f, r.error);
+if (r.state) commit(r.state);
+});
+$("add-variant").addEventListener("click", () => {
+const r = L.addVariant(S);
+if (r.error) return say(r.error, $("vt-status"));
+commit(r.state, { clearUndo: true });
+const v = S.variants[S.variants.length - 1];
+$("name-" + v.id).focus();
+say("Added " + v.name + " with no trials; recommendations recalculated.", $("vt-status"));
+});
+const pick = (which) => () => {
+const id = view()[which].id, r = L.select(S, id);
+commit(r.state);
+say("Selected " + nameOf(id) + " for the next trial.", $("record-status"));
+};
+$("ts-select").addEventListener("click", pick("ts"));
+$("ucb-select").addEventListener("click", pick("ucb"));
+const rec = (ok) => () => {
+const before = L.snapshot(S), r = L.record(S, ok);
+if (r.error) return say(r.error, $("record-status"));
+undo.push(before);
+if (undo.length > 200) undo.shift();
+commit(r.state);
+const V = view();
+say("Recorded a " + (ok ? "success" : "failure") + " for " + nameOf(S.selected) + ". Thompson now recommends " + V.ts.name + "; UCB1 recommends " + V.ucb.name + ".", $("record-status"));
+};
+$("btn-success").addEventListener("click", rec(true));
+$("btn-failure").addEventListener("click", rec(false));
+$("btn-undo").addEventListener("click", () => {
+const snap = undo.pop();
+if (!snap) return;
+commit(L.restore(S, snap), { force: false });
+say("Undid the last recorded outcome; the previous recommendations and samples are restored.", $("record-status"));
+});
+$("btn-resample").addEventListener("click", () => {
+commit(L.resample(L.clone(S)));
+say("Drew new Thompson samples; Thompson now recommends " + view().ts.name + ". Evidence and UCB1 scores are unchanged.", $("record-status"));
+});
+for (const id of ["prior-a", "prior-b"]) $(id).addEventListener("change", () => {
+const r = L.setPrior(S, $("prior-a").value, $("prior-b").value);
+$("e-prior").textContent = r.error || "";
+for (const x of ["prior-a", "prior-b"]) $(x).setAttribute("aria-invalid", r.error ? "true" : "false");
+if (r.state && !r.unchanged) { commit(r.state, { clearUndo: true }); say("Prior changed to " + view().priorText + "; recommendations recalculated.", $("prior-text")); }
+});
+wireSim();
+wireExports();
+let rw = 0;
+if (typeof ResizeObserver !== "undefined") {
+let last = 0;
+new ResizeObserver(() => {
+const w = $("main").clientWidth;
+if (w === last) return;
+last = w;
+cancelAnimationFrame(rw);
+rw = requestAnimationFrame(() => { plotIntervals(view()); plotSim(L.simView(sim, S.variants.map((v) => v.name))); });
+}).observe($("main"));
+}
+}
+function tools() {
+const mc = (typeof document !== "undefined" && document.modelContext) || (typeof navigator !== "undefined" && navigator.modelContext);
+if (!mc) return;
+const result = (x) => ({ content: [{ type: "text", text: JSON.stringify(x) }] });
+const snapshot = () => {
+const V = view();
+return { experiment: { title: S.title, success: S.success, unit: S.unit, template: S.template, evidence: S.basis, prior: V.priorText,
+variants: V.rows.map((r) => ({ name: r.name, successes: r.successes, failures: r.failures, trials: r.trials, observedRate: r.text.rate, posteriorMean: r.text.mean, interval95: r.text.interval, thompsonSample: r.text.sample, ucbScore: r.text.ucb })),
+selected: nameOf(S.selected) || null },
+recommendations: { thompson: { variant: V.ts.name, sample: V.ts.value, why: V.ts.why }, ucb1: { variant: V.ucb.name, score: V.ucb.value, why: V.ucb.why }, agree: V.agree },
+simulation: L.simView(sim, S.variants.map((v) => v.name)) };
+};
+mc.registerTool({ name: "get_data", description: "Return the committed experiment, both recommendations and the simulation results, as shown on the page.", inputSchema: { type: "object", properties: {}, additionalProperties: false }, annotations: { readOnlyHint: true }, async execute() { return result(snapshot()); } });
+mc.registerTool({ name: "get_metadata", description: "Return the page title, templates, assumptions, limits and method references.", inputSchema: { type: "object", properties: {}, additionalProperties: false }, annotations: { readOnlyHint: true }, async execute() { return result({ title: document.title, url: "https://teoyujie.org/visuals/multi-armed-bandit/", format: L.FORMAT, version: L.VERSION, templates: D.templates.map((t) => ({ id: t.id, label: t.label, fictional: t.fictional })), assumptions: D.assumptions, references: D.references, limits: L.LIMITS }); } });
+mc.registerTool({ name: "query", description: "Find variants in the current experiment, or templates, whose name contains the text; read-only.", inputSchema: { type: "object", properties: { text: { type: "string" } }, additionalProperties: false }, annotations: { readOnlyHint: true }, async execute(input) {
+const q = String((input && input.text) || "").trim().toLowerCase(), snap = snapshot();
+const all = snap.experiment.variants.map((v) => Object.assign({ type: "variant" }, v)).concat(D.templates.map((t) => ({ type: "template", id: t.id, name: t.label, fictional: t.fictional })));
+const hits = all.filter((x) => !q || x.name.toLowerCase().includes(q));
+return result({ results: hits.slice(0, 50), total: hits.length, truncated: hits.length > 50 });
+} });
+}
+boot();
+$("nojs").hidden = true;
+$("app").hidden = false;
+wire();
+render(true);
+tools();
+})();</script>
+</body></html>
