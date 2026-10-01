@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:,"><meta name="description" content="Differentiate a call price twice in its strike: times e^rT, that curvature is the market-implied probability density of the stock ending at each strike. A Dirac delta hides in the payoff's kink."><title>The risk-neutral density is the curvature of the call-price curve</title><style>
+:root{--bg:#ffffff;--fg:#1d1d1f;--muted:#6e6e73;--surface:#f5f5f7;--border:#d2d2d7;--focus:#0071e3;--mark:#0071e3;--selected:#c43d2f;--sans:Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif;--mono:SFMono-Regular, Consolas, Liberation Mono, monospace;color-scheme:light}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 var(--sans)}main{width:min(100% - 2rem,72rem);margin:auto;padding:clamp(2rem,6vw,4rem) 0 1.5rem}h1{max-width:22ch;margin:0 0 .8rem;font-size:clamp(1.9rem,6vw,3.4rem);line-height:1.05;letter-spacing:-.035em}.lede{max-width:64ch;margin:.4rem 0 1rem}.method,.caveat{max-width:72ch;color:var(--muted)}.method{font-size:.95rem}.derivation{max-width:72ch;margin:1.5rem 0;padding:1rem 1.1rem;background:var(--surface);border-radius:.5rem;font:15px/1.7 var(--mono);overflow-x:auto}.derivation .step{display:block}.derivation .result{font-weight:700;color:var(--selected)}.derivation .why{color:var(--muted)}.controls{display:flex;flex-wrap:wrap;gap:.75rem 1.5rem;align-items:center;margin:1.25rem 0 .5rem}.control{flex:1 1 18rem}.control label{display:block;font-size:.9rem;color:var(--muted);margin-bottom:.15rem}.readout{margin:.25rem 0 .75rem;font:14px var(--mono);color:var(--muted);min-height:1.2em}.seg{display:inline-flex;border:1px solid var(--border);border-radius:.5rem;overflow:hidden}.seg button{appearance:none;border:0;border-left:1px solid var(--border);background:var(--bg);color:var(--fg);font:600 15px/1 var(--sans);padding:0 1rem;min-height:44px;min-width:44px;cursor:pointer}.seg button:first-child{border-left:0}.seg button[aria-pressed="true"]{background:var(--mark);color:#fff}.reset{appearance:none;border:1px solid var(--border);border-radius:.5rem;background:var(--bg);color:var(--fg);font:600 15px/1 var(--sans);padding:0 1rem;min-height:44px;cursor:pointer}button:focus-visible,input:focus-visible{outline:3px solid var(--focus);outline-offset:2px}input[type=range]{width:100%;min-height:44px;margin:0;accent-color:var(--mark)}svg{display:block;width:100%;height:auto;margin-top:.5rem}.axis{fill:var(--muted);font:13px var(--mono)}.tick{stroke:var(--border)}.grid{stroke:var(--border);stroke-dasharray:2 4}.call{fill:none;stroke:var(--fg);stroke-width:2}.dens{fill:none;stroke:var(--selected);stroke-width:2}.bracket{stroke:var(--muted)}.bracket-dot{fill:var(--mark)}.chord{stroke:var(--mark);stroke-width:1.5}.sag{stroke:var(--selected);stroke-width:2}.bar{fill:var(--mark);fill-opacity:.45}.density-dot{fill:var(--selected);stroke:var(--bg);stroke-width:2}.note{fill:var(--muted);font:12px var(--mono)}.panel-label{fill:var(--fg);font:600 13px var(--sans)}.xcheck{margin:1.5rem 0;max-width:72ch}.xcheck table{border-collapse:collapse;font:14px/1.5 var(--mono)}.xcheck th,.xcheck td{text-align:right;padding:.3rem .8rem .3rem 0;border-bottom:1px solid var(--border)}.xcheck th:first-child,.xcheck td:first-child{text-align:left}.xcheck th{color:var(--muted);font-weight:600}.xcheck .limit{font-weight:700}.caveat{margin-top:1.25rem;font-size:.9rem}.sources{margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--border);color:var(--muted);font-size:.9rem}.sources ol{padding-left:1.2rem;margin:.4rem 0}.sources li{padding:.15rem 0}.sources a{color:inherit;text-underline-offset:.18em}footer{padding:1.5rem 0 2.5rem;border-top:1px solid var(--border);color:var(--muted);font-size:.875rem;width:min(100% - 2rem,72rem);margin:auto}footer a{display:inline-block;padding:.7rem 0;color:inherit}.deck-row{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin:1rem 0 0}.deck-row .status{font-size:.9rem;color:var(--muted)}.deck-hint{max-width:72ch;margin:.4rem 0 0;font-size:.9rem;color:var(--muted)}.deck-hint a{color:inherit}@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}@media (max-width:430px){.seg button{padding:0 .75rem}.derivation{font-size:13.5px}}
+</style></head><body><main>
+<h1>The risk-neutral density is the curvature of the call-price curve.</h1>
+<p class="lede">Differentiate a call price twice with respect to its strike <em>K</em>. Times <em>e<sup>rT</sup></em>, that second derivative is the market-implied probability density of the stock ending at that strike. The kink in a call&rsquo;s payoff is the reason: its second <em>distributional</em> derivative is a Dirac delta.</p>
+<p class="method"><strong>Synthetic example.</strong> Call prices here are Black&ndash;Scholes prices (S<sub>0</sub>&nbsp;=&nbsp;100, r&nbsp;=&nbsp;5%, &sigma;&nbsp;=&nbsp;20%, T&nbsp;=&nbsp;1 year), not market data. Slide the strike and shrink the butterfly half-width &Delta; to watch curvature become density.</p>
+<div class="deck-row"><button type="button" class="reset" id="save-beamdswitch" title="Save a narrated Markdown talk about this strike, to open in beamdswitch">beamdswitch</button><button type="button" class="reset" id="copy-beamdswitch" title="Copy the narrated Markdown talk, to paste into beamdswitch">Copy deck</button><span id="deck-status" class="status" role="status"></span></div>
+<p class="deck-hint">The beamdswitch button saves the strike and half-width you set below as a narrated talk: a Markdown deck with the set-up, method, results and checks, every number as shown here, and a spoken narration on every slide. Open it in <a href="https://teoyujie.org/visuals/beamdswitch/">beamdswitch</a> to get slides, a handout, narration and a video. Copy deck puts the same deck on the clipboard, to paste into beamdswitch.</p>
+
+<section class="derivation" aria-label="Derivation">
+<span class="step">call payoff: C<sub>T</sub>(K) = (S<sub>T</sub> − K)<sub>+</sub></span>
+<span class="step why">first derivative: ∂<sub>K</sub>(S<sub>T</sub> − K)<sub>+</sub> = −H(S<sub>T</sub> − K) <span class="ann">· kink → step</span></span>
+<span class="step why">second derivative: ∂<sub>K</sub><sup>2</sup>(S<sub>T</sub> − K)<sub>+</sub> = δ(S<sub>T</sub> − K) <span class="ann">· step → Dirac delta</span></span>
+<span class="step">price: C(K) = e<sup>−rT</sup> E<sup>Q</sup>[(S<sub>T</sub> − K)<sub>+</sub>]</span>
+<span class="step why">so: ∂<sub>K</sub><sup>2</sup>C(K) = e<sup>−rT</sup> E<sup>Q</sup>[δ(S<sub>T</sub> − K)] = e<sup>−rT</sup> p(K)</span>
+<span class="step result">∴ p(K) = e<sup>rT</sup> ∂<sub>K</sub><sup>2</sup>C(K) <span class="ann">· Breeden–Litzenberger, 1978</span></span>
+</section>
+
+<div class="controls">
+  <div class="control"><label for="strike">Strike K = <span id="kval">100</span></label><input type="range" id="strike" min="65" max="145" step="0.5" value="100" aria-label="Strike K"></div>
+  <div class="control"><label id="dlabel">Butterfly half-width &Delta;</label><div class="seg" role="group" aria-labelledby="dlabel"><button type="button" data-d="0.5" aria-pressed="false">0.5</button><button type="button" data-d="1" aria-pressed="false">1</button><button type="button" data-d="2" aria-pressed="true">2</button><button type="button" data-d="5" aria-pressed="false">5</button></div></div>
+  <button type="button" class="reset" id="reset">Reset</button>
+</div>
+<p class="readout" id="readout" aria-live="polite"></p>
+
+<svg id="chart" viewBox="0 0 960 640" role="img" aria-label="Call price curve and risk-neutral density curve versus strike"><title>Curvature of the call price curve equals the risk-neutral density</title><desc>Top panel: a convex, decreasing call price curve with a butterfly bracket spanning K minus delta to K plus delta. The vertical gap between the curve and its chord is the curvature. Bottom panel: the lognormal risk-neutral density curve, with the butterfly's normalized second difference drawn as a bar and the closed-form density as a dot at the same strike; they coincide.</desc></svg>
+
+<section class="xcheck" aria-label="Independent numerical check">
+<h2>The independent check: three routes, one number</h2>
+<p>At K = 100, the butterfly portfolio (call@K&minus;&Delta; &minus; 2&thinsp;call@K + call@K+&Delta;) has a tent payoff that concentrates on a Dirac delta, so its normalized price must approach the density. The finite difference of the synthetic call curve below and the closed-form Black&ndash;Scholes density both confirm it:</p>
+<table>
+<thead><tr><th>&Delta;</th><th>butterfly price C(K&minus;&Delta;)&minus;2C(K)+C(K+&Delta;)</th><th>density estimate e<sup>rT</sup>&middot;price&thinsp;/&thinsp;&Delta;<sup>2</sup></th></tr></thead>
+<tbody>
+<tr><td>5</td><td>0.46665</td><td>0.019623</td></tr>
+<tr><td>2</td><td>0.074986</td><td>0.019708</td></tr>
+<tr><td>1</td><td>0.018758</td><td>0.01972</td></tr>
+<tr><td>0.5</td><td>0.00469</td><td>0.019723</td></tr>
+<tr><td class="limit">Black&ndash;Scholes p(100)</td><td>&nbsp;</td><td class="limit">0.019724</td></tr>
+</tbody>
+</table>
+<p class="method">Closed form: p(K)&nbsp;=&nbsp;&phi;(d<sub>2</sub>)&thinsp;/&thinsp;(K&sigma;&radic;T) with d<sub>2</sub>&nbsp;=&nbsp;0.15 at K&nbsp;=&nbsp;100, giving p(100)&nbsp;=&nbsp;0.019724. The call price C(100)&nbsp;=&nbsp;10.4506, its second derivative C&Prime;(100)&nbsp;=&nbsp;0.018762, and e<sup>rT</sup>&thinsp;C&Prime;(100)&nbsp;=&nbsp;0.019724 &mdash; the butterflies converge onto the same value as &Delta;&nbsp;&rarr;&nbsp;0.</p>
+</section>
+
+<p class="caveat"><strong>Honesty note.</strong> Every price on this page is a synthetic Black&ndash;Scholes number (S<sub>0</sub>&nbsp;=&nbsp;100, r&nbsp;=&nbsp;5%, &sigma;&nbsp;=&nbsp;20%, T&nbsp;=&nbsp;1y). The Breeden&ndash;Litzenberger identity itself is model-free: it only needs call prices that are convex in strike, so their second derivative exists almost everywhere.</p>
+
+<section class="sources" aria-label="Sources">
+<p><strong>Sources.</strong></p>
+<ol><li><a href="https://www.jstor.org/stable/2352653">Prices of State-Contingent Claims Implicit in Option Prices</a>, Douglas T. Breeden and Robert H. Litzenberger, 1978. Original derivation: the state-price density equals the second derivative of the call price with respect to strike.</li>
+<li><a href="https://personal.lse.ac.uk/martiniw/JOD%20version.pdf">Options and the Gamma Knife</a>, Ian Martin, 2018. Inspected at equation (1) and footnote 2: price of a claim to g(S_T) equals the integral of g(K) times the second derivative of the call price in K; call prices are convex so the second derivative exists almost everywhere.</li>
+<li><a href="https://en.wikipedia.org/wiki/Heaviside_step_function">Heaviside step function</a>. Inspected: d/dx max{x,0} = H(x) and the distributional derivative dH/dx = delta(x), hence the second distributional derivative of max{x,0} is the Dirac delta.</li></ol>
+</section>
+</main>
+<footer>Source: <a href="https://personal.lse.ac.uk/martiniw/JOD%20version.pdf">Martin, &ldquo;Options and the Gamma Knife&rdquo; (2018)</a>; original result by Breeden &amp; Litzenberger (1978). Retrieved 2026-09-29.</footer>
+<noscript><p>This figure is drawn with JavaScript. The result holds without it: the risk-neutral density is p(K)&nbsp;=&nbsp;e<sup>rT</sup>&thinsp;&part;<sub>K</sub><sup>2</sup>C(K), the Black&ndash;Scholes density at K&nbsp;=&nbsp;100 is 0.019724, and the &Delta;&nbsp;=&nbsp;2 butterfly estimates 0.019708.</p></noscript>
+<script id="beamdswitch">
+/* The standard beamdswitch report template, shared by every visualisation.
+ *
+ * beamdswitch (https://teoyujie.org/visuals/beamdswitch/) turns one Markdown deck into slides, a
+ * handout, narration and a video. `deck(report)` writes a report in its deck syntax, always in the
+ * same order (templates/beamdswitch-report.md shows the skeleton):
+ *
+ *   front matter and title slide
+ *   # Set-up               what was modelled, its units and conventions
+ *   # Method               how the tool solved it
+ *   # Results              the numbers, with key equations and plots
+ *   # Checks and takeaway  what confirms the numbers, ending on one ::: key frame
+ *
+ * A report is plain data, so it can be built and tested without a page:
+ *   { meta: { title, subtitle, author, date, voice }, narration, notes,
+ *     setup, method, results, checks: [frame, ...] }
+ * and each frame is
+ *   { title, body, narration, notes, key, plot: { x: [a, b], xlabel, ylabel, curves: ["expr", ...] } }
+ * `body` is Markdown (LaTeX maths in $...$ or $$...$$); `narration` is plain spoken prose, one
+ * caption per sentence; `key`, `plot` and `notes` are optional. Every frame must be narrated, and
+ * the last checks frame must carry a key. The visualisation supplies every number already
+ * formatted, so the deck says exactly what its page shows. Every deck names its narrator: `meta.voice`
+ * when the visualisation picks one, else DEFAULT_VOICE, beamdswitch's British female default.
+ */
+(function (root, factory) {
+  const api = factory();
+  if (typeof module === "object" && module.exports) module.exports = api;
+  else root.Beamdswitch = api;
+})(typeof self !== "undefined" ? self : this, function () {
+  "use strict";
+
+  const DEFAULT_VOICE = "bf_emma";
+  const SECTIONS = [["setup", "Set-up"], ["method", "Method"], ["results", "Results"], ["checks", "Checks and takeaway"]];
+
+  const oneLine = (s) => String(s ?? "").replace(/\s+/g, " ").trim();
+  /* Markdown lines that would end a frame or a div early are refused rather than written. */
+  function block(text, what) {
+    const s = String(text ?? "").replace(/\r\n?/g, "\n").trim();
+    for (const line of s.split("\n"))
+      if (/^#{1,2}\s/.test(line) || /^\s*:{3,}/.test(line)) throw new Error(`${what} must not contain a heading or a ::: line: ${line}`);
+    return s;
+  }
+  /* Narration is read aloud: no maths, markup or line structure. */
+  function spoken(text, what) {
+    const s = oneLine(text);
+    if (!s) throw new Error(`${what} needs a narration.`);
+    if (/[$\\`*_#|<>]/.test(s)) throw new Error(`${what} narration must be plain spoken prose: ${s}`);
+    return s;
+  }
+  const div = (name, text) => [`::: ${name}`, text, ":::"];
+
+  function frame(f, where) {
+    const title = oneLine(f.title), what = `Frame "${title}" in ${where}`;
+    if (!title) throw new Error(`A frame in ${where} needs a title.`);
+    const out = [`## ${title}`, ""];
+    if (f.body) out.push(block(f.body, what), "");
+    if (f.plot) {
+      const p = f.plot, lines = [`x: ${p.x[0]}, ${p.x[1]}`];
+      if (p.xlabel) lines.push(`xlabel: ${oneLine(p.xlabel)}`);
+      if (p.ylabel) lines.push(`ylabel: ${oneLine(p.ylabel)}`);
+      for (const c of p.curves) lines.push(`y = ${oneLine(c)}`);
+      out.push(...div("plot", lines.join("\n")), "");
+    }
+    if (f.key) out.push(...div("key", block(f.key, what)), "");
+    if (f.notes) out.push(...div("notes", block(f.notes, what)), "");
+    out.push(...div("narration", spoken(f.narration, what)), "");
+    return out;
+  }
+
+  function deck(report) {
+    const meta = report.meta || {};
+    if (!oneLine(meta.title)) throw new Error("The report needs a title.");
+    const checks = report.checks || [];
+    if (!checks.length || !checks.at(-1).key) throw new Error("The last checks frame must carry a ::: key.");
+    const fm = { ...meta, voice: oneLine(meta.voice) || DEFAULT_VOICE };
+    const out = ["---"];
+    for (const k of ["title", "subtitle", "author", "date", "voice"]) if (oneLine(fm[k])) out.push(`${k}: ${oneLine(fm[k])}`);
+    out.push("---", "");
+    if (report.notes) out.push(...div("notes", block(report.notes, "The title slide")), "");
+    out.push(...div("narration", spoken(report.narration, "The title slide")), "");
+    SECTIONS.forEach(([id, title], i) => {
+      const frames = report[id] || [];
+      if (!frames.length) throw new Error(`The ${title} section needs at least one frame.`);
+      out.push(`# ${title}`, "", ...div("narration", `Part ${i + 1}. ${title}.`), "");
+      for (const f of frames) out.push(...frame(f, title));
+    });
+    return out.join("\n");
+  }
+
+  return { DEFAULT_VOICE, SECTIONS, deck };
+});
+</script><script id="report">
+/* The Breeden-Litzenberger page's numbers as a beamdswitch report.
+ *
+ * reading(P, K, D) is the page's own read-out at strike K with butterfly half-width D, from the
+ * curves it draws. report(P, view) turns the page's data (P: the model, the curves, and the
+ * cross-check table as the page prints it) and its current view ({ K, D }) into the plain-data
+ * report that the standard template (beamdswitch.js, `Beamdswitch.deck`) writes as a narrated
+ * Markdown deck. The page calls the same reading, so the deck and the chart cannot drift apart.
+ */
+(function (root, factory) {
+  const api = factory();
+  if (typeof module === "object" && module.exports) module.exports = api;
+  else root.BLReport = api;
+})(typeof self !== "undefined" ? self : this, function () {
+  "use strict";
+
+  /* The value of column col (1 = call price, 2 = density) at strike K, interpolated on the grid. */
+  function at(CURVES, K, col) {
+    let lo = 0, hi = CURVES.length - 1;
+    while (lo <= hi) { const m = (lo + hi) >> 1, c = CURVES[m][0]; if (c < K) lo = m + 1; else if (c > K) hi = m - 1; else return CURVES[m][col]; }
+    if (hi < 0) hi = 0;
+    if (lo > CURVES.length - 1) lo = CURVES.length - 1;
+    const a = CURVES[hi], b = CURVES[lo];
+    if (a[0] === b[0]) return a[col];
+    const t = (K - a[0]) / (b[0] - a[0]);
+    return a[col] + (b[col] - a[col]) * t;
+  }
+
+  /* The butterfly at K with half-width D: its second difference, density estimate and the closed form. */
+  function reading(P, K, D) {
+    const cL = at(P.CURVES, K - D, 1), cK = at(P.CURVES, K, 1), cR = at(P.CURVES, K + D, 1);
+    const secondDiff = cL - 2 * cK + cR;
+    return { cL, cK, cR, secondDiff, est: P.MODEL.erT * secondDiff / (D * D), pK: at(P.CURVES, K, 2) };
+  }
+
+  /* Plain decimals for a plot expression: no binary noise such as 0.030000000000000002. */
+  const num = (x) => String(Number(x.toPrecision(12)));
+  const pct = (x) => num(x * 100) + "%";
+
+  function report(P, view = {}) {
+    const M = P.MODEL, K = view.K ?? 100, D = view.D ?? 2, r = reading(P, K, D);
+    const est = r.est.toFixed(5), pK = r.pK.toFixed(5), sd = r.secondDiff.toFixed(4), dd = (D * D).toFixed(2);
+    const params = `S₀ = ${num(M.S0)}, r = ${pct(M.r)}, σ = ${pct(M.sigma)}, T = ${num(M.T)} year`;
+    const paramsSaid = `a stock at ${num(M.S0)}, an interest rate of ${num(M.r * 100)} percent, volatility of ${num(M.sigma * 100)} percent and one year to expiry`;
+    const finest = P.XCHECK.at(-1), widest = P.XCHECK[0];
+    // The closed-form lognormal density as a plot expression in the strike x.
+    const drift = num((M.r - 0.5 * M.sigma * M.sigma) * M.T), vol = num(M.sigma * Math.sqrt(M.T));
+    const densityExpr = `exp(-0.5*((ln(${num(M.S0)}/x) + ${drift})/${vol})^2) / (x*${vol}*sqrt(2*pi))`;
+
+    const setup = [{
+      title: `A synthetic Black–Scholes market: ${params}`,
+      body: [
+        `- Call prices are Black–Scholes prices with $S_0 = ${num(M.S0)}$, $r = ${num(M.r)}$, $\\sigma = ${num(M.sigma)}$, $T = ${num(M.T)}$, not market data.`,
+        `- Strikes from ${num(M.K_min)} to ${num(M.K_max)} in steps of ${num(M.step)}; the slider runs from ${num(M.slider.K_min)} to ${num(M.slider.K_max)}.`,
+        `- Sources: ${P.SOURCES.map((s) => `[${s.title}](${s.url})`).join("; ")}.`,
+      ].join("\n"),
+      notes: "Every price in this talk is synthetic. The Breeden–Litzenberger identity itself is model-free: it needs only call prices that are convex in strike.",
+      narration: `Every call price here is a synthetic Black-Scholes price, for ${paramsSaid}. None of it is market data.`,
+    }];
+
+    const method = [{
+      title: "The payoff's kink differentiates twice into a Dirac delta",
+      body: [
+        "$$ \\partial_K (S_T - K)_+ = -H(S_T - K), \\qquad \\partial_K^2 (S_T - K)_+ = \\delta(S_T - K) $$",
+        "",
+        "$$ C(K) = e^{-rT}\\,\\mathbb{E}^Q[(S_T - K)_+] \\;\\Rightarrow\\; \\partial_K^2 C(K) = e^{-rT} p(K) $$",
+        "",
+        "$$ p(K) = e^{rT}\\,\\partial_K^2 C(K) $$",
+      ].join("\n"),
+      notes: "Breeden and Litzenberger, 1978. The first derivative of the kinked payoff is a step; the step's derivative is a Dirac delta.",
+      narration: "A call pays the stock minus the strike when that is positive, so its payoff has a kink at the strike. Differentiating once in the strike gives a step, and differentiating again gives a Dirac delta. Taking expectations, the second derivative of the call price is the discounted risk-neutral density, so the density is e to the r T times the curvature of the call-price curve.",
+    }, {
+      title: "Two routes to the density at one strike: a butterfly and the closed form",
+      body: [
+        "$$ p(K) \\approx e^{rT}\\,\\frac{C(K-\\Delta) - 2C(K) + C(K+\\Delta)}{\\Delta^2} $$",
+        "",
+        "$$ p(K) = \\frac{\\varphi(d_2)}{K\\sigma\\sqrt{T}}, \\qquad d_2 = \\frac{\\ln(S_0/K) + (r - \\sigma^2/2)T}{\\sigma\\sqrt{T}} $$",
+      ].join("\n"),
+      narration: "A butterfly buys one call below the strike, sells two at the strike and buys one above it. Its price, scaled by e to the r T and divided by the half-width squared, estimates the density. The Black-Scholes closed form gives the exact density to compare against.",
+    }];
+
+    const results = [{
+      title: `At K = ${num(K)} with Δ = ${num(D)}: butterfly density ${est}, Black–Scholes density ${pK}`,
+      body: [
+        `$$ e^{rT}\\cdot\\frac{${sd}}{${dd}} = ${est} \\qquad p(${num(K)}) = ${pK} $$`,
+        "",
+        `- Call prices: $C(${num(K - D)}) = ${r.cL.toFixed(4)}$, $C(${num(K)}) = ${r.cK.toFixed(4)}$, $C(${num(K + D)}) = ${r.cR.toFixed(4)}$; curvature ${sd}.`,
+      ].join("\n"),
+      plot: { x: [M.K_min, M.K_max], xlabel: "strike K", ylabel: "risk-neutral density p(K)", curves: [densityExpr] },
+      notes: "This is the strike and half-width set on the page. The plot is the closed-form density across every strike.",
+      narration: `At a strike of ${num(K)}, with a half-width of ${num(D)}, the butterfly's curvature is ${sd}. Scaled by e to the r T and divided by ${dd}, it estimates a density of ${est}, against the Black-Scholes density of ${pK}.`,
+    }, {
+      title: `At K = ${P.K0}, the butterflies converge on p(${P.K0}) = ${P.P0}`,
+      body: [
+        "| Δ | butterfly price | density estimate |",
+        "| ---: | ---: | ---: |",
+        ...P.XCHECK.map((x) => `| ${x.delta} | ${x.price} | ${x.est} |`),
+        `| Black–Scholes p(${P.K0}) | | ${P.P0} |`,
+      ].join("\n"),
+      narration: `At a strike of ${P.K0}, the butterfly estimate moves from ${widest.est} with a half-width of ${widest.delta} to ${finest.est} with a half-width of ${finest.delta}, closing on the Black-Scholes density of ${P.P0}.`,
+    }];
+
+    const checks = [{
+      title: `Three routes, one number: e^rT · C″(${P.K0}) = ${P.P0}`,
+      body: [
+        `$$ C(${P.K0}) = ${P.C0}, \\quad C''(${P.K0}) = ${P.CPP}, \\quad e^{rT} C''(${P.K0}) = ${P.P0} $$`,
+        "",
+        `- Closed form: $d_2 = ${P.D2}$ at $K = ${P.K0}$ gives $p(${P.K0}) = ${P.P0}$.`,
+        `- The butterflies at $\\Delta = ${P.XCHECK.map((x) => x.delta).join(", ")}$ give ${P.XCHECK.map((x) => x.est).join(", ")}.`,
+      ].join("\n"),
+      narration: `At a strike of ${P.K0} the call price is ${P.C0} and its second derivative is ${P.CPP}. Times e to the r T, that is ${P.P0}, the same as the closed-form density, and the butterflies close on it as the half-width shrinks.`,
+    }, {
+      title: "Takeaway",
+      key: `The risk-neutral density is the curvature of the call-price curve: $p(K) = e^{rT}\\,\\partial_K^2 C(K)$. At $K = ${P.K0}$ all three routes give ${P.P0}.`,
+      narration: `The risk-neutral density is e to the r T times the curvature of the call-price curve. At a strike of ${P.K0}, the butterflies, the second derivative and the closed form all give ${P.P0}.`,
+    }];
+
+    return {
+      meta: { title: `The risk-neutral density at K = ${num(K)}`, subtitle: `Breeden–Litzenberger on synthetic Black–Scholes prices, butterfly half-width Δ = ${num(D)}`, date: `Retrieved ${P.FETCHED}` },
+      narration: "This talk shows that the risk-neutral density is the curvature of the call-price curve. Strikes and prices are in the same currency units, and every price is a synthetic Black-Scholes price.",
+      setup, method, results, checks,
+    };
+  }
+
+  return { at, reading, report };
+});
+</script><script>
+const MODEL={"S0":100.0,"r":0.05,"sigma":0.2,"T":1.0,"erT":1.0512710963760241,"K0":100.0,"K_min":60.0,"K_max":160.0,"step":0.5,"slider":{"K_min":65.0,"K_max":145.0,"step":0.5}},CURVES=[[60.0,42.93752745972149,0.000858778416431758],[60.5,42.463647078903456,0.0009519917647209445],[61.0,41.98999323600784,0.0010526364066367128],[61.5,41.516589871227346,0.0011610228897681089],[62.0,41.04346276558031,0.0012774495934931294],[62.5,40.570639611821875,0.001402200426187735],[63.0,40.09815008191416,0.0015355425372655903],[63.5,39.626025890511656,0.0016777240638852795],[64.0,39.154300853926465,0.001828971932044799],[64.5,38.68301094405081,0.0019894897314399113],[65.0,38.21219433673197,0.00215945568290202],[65.5,37.74189145411628,0.0023390207164621884],[66.0,37.27214500050588,0.0025283066771246833],[66.5,36.80299999130168,0.002727404674291166],[67.0,36.334503774640176,0.0029363735894730445],[67.5,35.8667060453697,0.0031552387554837883],[68.0,35.3996588510524,0.0033839908187359054],[68.5,34.93341658972084,0.003622584794599979],[69.0,34.46803599916585,0.003870939324037814],[69.5,34.00357613757798,0.004128936137921148],[70.0,33.54009835541592,0.004396419733612451],[70.5,33.077666258424614,0.004673197266538554],[71.0,32.616345661777515,0.004959038657650582],[71.5,32.15620453536853,0.005253676915856121],[72.0,31.697312940330264,0.005556808672750196],[72.5,31.239742956905246,0.005868094925277756],[73.0,30.783568603847513,0.006187161980348327],[73.5,30.328865749578085,0.006513602593907141],[74.0,29.875712015365565,0.0068469772955592305],[74.5,29.424186670846737,0.007186815888553736],[75.0,28.97437052224312,0.007532619113774393],[75.5,28.526345793669577,0.007883860465355332],[76.0,28.0801960019661,0.008239988144654025],[76.5,27.636005825517216,0.008600427138568267],[77.0,27.19386096755288,0.008964581407583994],[77.5,26.75384801445145,0.00933183616848376],[78.0,26.31605428958619,0.009701560256331503],[78.5,25.880567703277947,0.010073108550173569],[79.0,25.447476599429635,0.01044582444685472],[79.5,25.016869599430677,0.010819042367436062],[80.0,24.58883544392775,0.011192090280910573],[80.5,24.163462833060734,0.011564292230236953],[81.0,23.740840265765044,0.011934970846141861],[81.5,23.32105587873758,0.012303449834668297],[82.0,22.90419728565753,0.012669056425062688],[82.5,22.490351417244042,0.013031123765286026],[83.0,22.079604362720048,0.013388993253195633],[83.5,21.67204121323674,0.013742016792262834],[84.0,21.267745907794122,0.01408955896155886],[84.5,20.866801082174703,0.014430999090647005],[85.0,20.469287921382403,0.01476573323095226],[85.5,20.075286016056012,0.015093176016133648],[86.0,19.684873223299377,0.015412762404947848],[86.5,19.29812553234254,0.015723949301058925],[87.0,18.915116935418894,0.016026217045208683],[87.5,18.535919304213564,0.01631907077610936],[88.0,18.16060227220582,0.01660204165734734],[88.5,17.78923312319813,0.016874687968487245],[89.0,17.42187668629076,0.017136596059434885],[89.5,17.058595237528664,0.017387381167950987],[90.0,16.69944840841599,0.017626688100998447],[90.5,16.34449310145925,0.017854191781354542],[91.0,15.993783412869746,0.01806959766161878],[91.5,15.647370562523733,0.018272642008398052],[92.0,15.30530283124773,0.018463092060049063],[92.5,14.967625505466877,0.018640746061903978],[93.0,14.634380829224469,0.01880543318339733],[93.5,14.305607963553278,0.018957013321950135],[94.0,13.981342953152158,0.019095376798851944],[94.5,13.661618700295598,0.01922044395271228],[95.0,13.346464945879582,0.01933216463633228],[95.5,13.035908257484529,0.019430517623075152],[96.0,12.72997202431398,0.019515509928993167],[96.5,12.428676458848031,0.01958717605710006],[97.0,12.132038605032143,0.019645577170264134],[97.5,11.840072352804306,0.01969080019924059],[98.0,11.552788458748985,0.019722956892364075],[98.5,11.270194572651938,0.019742182813387698],[99.0,10.99229526971736,0.01974863629388407],[99.5,10.719092088198849,0.019742497346521327],[100.0,10.450583572185565,0.019723966545394447],[100.5,10.186765319277413,0.019693263879432987],[101.0,9.927630032876934,0.019650627584722743],[101.5,9.673167578820156,0.01959631296137422],[102.0,9.423365046065136,0.019530591180347327],[102.5,9.178206811154745,0.019453748085402303],[103.0,8.937674606168592,0.019366082995094153],[103.5,8.70174758987956,0.01926790750946387],[104.0,8.470402421831132,0.019159544325807413],[104.5,8.243613339053923,0.019041326067624334],[105.0,8.021352235143176,0.018913594130564954],[105.5,7.803588741422637,0.018776697548909177],[106.0,7.590290309925564,0.018630991885824146],[106.5,7.38142229792868,0.018476838150363002],[107.0,7.176948053781999,0.018314601743884943],[107.5,6.976829003783671,0.018144651438298912],[108.0,6.7810247398570525,0.01796735838826079],[108.5,6.589493107795207,0.017783095179188343],[109.0,6.402190295846275,0.01759223491269997],[109.5,6.21907092342245,0.017395150330834008],[110.0,6.040088129724225,0.017192212980165208],[110.5,5.86519366208114,0.016983792416704713],[111.0,5.694337963819898,0.016770255452250863],[111.5,5.527470261480978,0.0165519654426491],[112.0,5.364538651213913,0.016329281618222558],[112.5,5.20549018419252,0.016102558456449194],[113.0,5.050270950900654,0.01587214509678759],[113.5,4.898826164149369,0.015638384797391526],[114.0,4.751100240696317,0.015401614433303557],[114.5,4.607036881347938,0.015162164035579035],[115.0,4.466579149434949,0.014920356370665678],[115.5,4.329669547561053,0.014676506559248247],[116.0,4.196250092534125,0.01443092173366369],[116.5,4.066262388398517,0.014183900732899126],[117.0,3.9396476974959,0.013935733834102024],[117.5,3.8163470094905634,0.01368670251945988],[118.0,3.6963011083041515,0.0134370792772436],[118.5,3.579450636911975,0.013187127435756084],[119.0,3.465736159961807,0.012937101028882755],[119.5,3.355098224182939,0.012687244691905552],[120.0,3.247477416560809,0.012437793586213957],[120.5,3.1428144202590467,0.012188973351526676],[121.0,3.04105006827794,0.01194100008422497],[121.5,2.942125394843746,0.01169408034039209],[122.0,2.8459816845298143,0.011448411162153565],[122.5,2.7525605191155655,0.011204180125918778],[123.0,2.6618038221949156,0.010961565411135334],[123.5,2.573653901550461,0.010720735888183681],[124.0,2.4880534893141046,0.010481851224059726],[124.5,2.4049457799395135,0.010245062004517552],[125.0,2.324274466015222,0.010010509871372303],[125.5,2.245983771951142,0.009778327673694203],[126.0,2.170018485574225,0.00954863963165891],[126.5,2.096323987672463,0.009321561511855344],[127.0,2.024846279528685,0.009097200812890954],[127.5,1.9555320084883903,0.008875656960174408],[128.0,1.888328491607858,0.008657021508797436],[128.5,1.8231837374307887,0.008441378353480408],[129.0,1.7600464659433896,0.008228803944590062],[129.5,1.6988661267591478,0.008019367509282128],[130.0,1.6395929155861175,0.007813131276866472],[130.5,1.582177789029961,0.007610150707537378],[131.0,1.5265724777874077,0.007410474723656588],[131.5,1.4727294982849966,0.007214145942821485],[132.0,1.420602162818465,0.00702120091199527],[132.5,1.3701445882485022,0.006831670342019822],[133.0,1.3213117033087407,0.006645579341875162],[133.5,1.2740592545814042,0.006462947652092003],[134.0,1.228343811196364,0.006283789876765036],[134.5,1.1841227683087343,0.006108115713655665],[135.0,1.1413543494094576,0.005935930181911785],[135.5,1.0999976075234752,0.005767233846970818],[136.0,1.0600124253485053,0.005602023042249238],[136.5,1.0213595143874432,0.005440290087257363],[137.0,0.9840004131261502,0.0052820235018129725],[137.5,0.9478974843075516,0.005127208216060079],[138.0,0.9130139113519355,0.004975825776031172],[138.5,0.8793136939724775,0.004827854544521472],[139.0,0.8467616430336804,0.0046832698970725815],[139.5,0.8153233746991688,0.004542044412890698],[140.0,0.784965303914646,0.004404148060550356],[140.5,0.7556546372696591,0.004269548378359738],[141.0,0.7273593652814752,0.004138210649286698],[141.5,0.7000482541425006,0.0040100980703668],[142.0,0.67369083697145,0.003885171916535339],[142.5,0.6482574046074623,0.0037633916988446246],[143.0,0.6237189959844809,0.003644715317045928],[143.5,0.6000473881224417,0.0035290992065324673],[144.0,0.5772150857700762,0.003416498479655237],[144.5,0.5551953107330361,0.0033068670614381707],[145.0,0.5339619909194449,0.003200157819732355],[145.5,0.5134897491340293,0.0030963226898612917],[146.0,0.4937538916503401,0.002995312793820538],[146.5,0.4747303965894645,0.002897078554104969],[147.0,0.45639590213226633,0.00280156980224646],[147.5,0.43872769459101857,0.0027087358821529335],[148.0,0.421703696364931,0.0026185257483470944],[148.5,0.4053024538030794,0.0025308880592099445],[149.0,0.3895031249966401,0.002445771265339797],[149.5,0.3742854675217986,0.002363123693142686],[150.0,0.3596298261529176,0.002282893623774314],[150.5,0.345517120564911,0.0022050293675573793],[151.0,0.3319288330424115,0.0021294793340011636],[151.5,0.31884699621251933,0.0020561920975527104],[152.0,0.3062541808165995,0.001985116459210789],[152.5,0.29413348353597746,0.0019162015041351821],[153.0,0.28246851488503166,0.0018493966553848465],[153.5,0.2712433871846631,0.0017846517239187311],[154.0,0.2604427026278411,0.001721916954993312],[154.5,0.2500515414484483,0.0016611430710903236],[155.0,0.24005545020348995,0.0016022813115076332],[155.5,0.23044043017817328,0.0015452834687450425],[156.0,0.22119292592245987,0.0014901019218156266],[156.5,0.21229981392702602,0.001436689666611479],[157.0,0.2037483914459477,0.0013850003434510661],[157.5,0.19552636547246394,0.0013349882619332026],[158.0,0.18762184187391862,0.001286608423220556],[158.5,0.18002331469109478,0.001239816539873109],[159.0,0.17271965560670122,0.0011945690533494732],[159.5,0.16570010358713239,0.0011508231492912734],[160.0,0.1589542547011118,0.0011085367707030145]],DECK={"XCHECK":[{"delta":"5","price":"0.46665","est":"0.019623"},{"delta":"2","price":"0.074986","est":"0.019708"},{"delta":"1","price":"0.018758","est":"0.01972"},{"delta":"0.5","price":"0.00469","est":"0.019723"}],"P0":"0.019724","C0":"10.4506","CPP":"0.018762","D2":"0.15","K0":"100","FETCHED":"2026-09-29","SOURCES":[{"title":"Prices of State-Contingent Claims Implicit in Option Prices","url":"https://www.jstor.org/stable/2352653"},{"title":"Options and the Gamma Knife","url":"https://personal.lse.ac.uk/martiniw/JOD%20version.pdf"},{"title":"Heaviside step function","url":"https://en.wikipedia.org/wiki/Heaviside_step_function"}]};
+const NS="http://www.w3.org/2000/svg",svg=document.querySelector("#chart");
+const slider=document.querySelector("#strike"),kval=document.querySelector("#kval");
+const readout=document.querySelector("#readout"),segButtons=[...document.querySelectorAll(".seg button")];
+const W=960,H=640,KMIN=MODEL.K_min,KMAX=MODEL.K_max;
+const x0=78,x1=934,topY0=62,topY1=296,topMax=45,botY0=370,botY1=556,botMax=0.021;
+const X=K=>x0+(K-KMIN)/(KMAX-KMIN)*(x1-x0);
+const Ycall=v=>topY1-(v/topMax)*(topY1-topY0);
+const Ydens=v=>botY1-(v/botMax)*(botY1-botY0);
+// The interpolation and the butterfly read-out live in report.js, so the chart and the beamdswitch deck agree.
+const P={MODEL,CURVES,...DECK},at=(K,col)=>BLReport.at(CURVES,K,col);
+const add=(name,attrs,parent=svg)=>{const n=document.createElementNS(NS,name);for(const[k,v]of Object.entries(attrs))n.setAttribute(k,v);parent.append(n);return n;};
+const text=(v,x,y,klass,anchor="start",parent=svg)=>{const n=add("text",{x,y,class:klass,"text-anchor":anchor},parent);n.textContent=v;return n;};
+let K=100,D=2;
+function drawBase(){svg.replaceChildren();svg.setAttribute("viewBox","0 0 960 640");
+// y gridlines and labels, top (call price)
+[0,10,20,30,40].forEach(v=>{add("line",{x1:x0,x2:x1,y1:Ycall(v),y2:Ycall(v),class:"grid"});text(v,x0-8,Ycall(v)+4,"axis","end");});
+text("Call price C(K)",x0,topY0-12,"panel-label");
+[0,0.005,0.010,0.015,0.020].forEach(v=>{add("line",{x1:x0,x2:x1,y1:Ydens(v),y2:Ydens(v),class:"grid"});text(v.toFixed(3),x0-8,Ydens(v)+4,"axis","end");});
+text("Risk-neutral density p(K)",x0,botY0-12,"panel-label");
+// x ticks shared
+for(let k=60;k<=160;k+=10){add("line",{x1:X(k),x2:X(k),y1:topY0,y2:topY1,class:"tick"});add("line",{x1:X(k),x2:X(k),y1:botY0,y2:botY1,class:"tick"});text(String(k),X(k),H-22,"axis","middle");}
+text("Strike K",x1,H-22,"panel-label","end");
+// curves
+const callPts=CURVES.map(c=>X(c[0]).toFixed(1)+","+Ycall(c[1]).toFixed(1)).join(" ");
+const densPts=CURVES.map(c=>X(c[0]).toFixed(1)+","+Ydens(c[2]).toFixed(1)).join(" ");
+add("polyline",{points:callPts,class:"call"});add("polyline",{points:densPts,class:"dens"});
+// connector annotation between panels
+add("line",{x1:x0+40,x2:x0+40,y1:topY1+18,y2:botY0-30,class:"bracket"});
+add("polygon",{points:(x0+40-5)+","+(botY0-32)+" "+(x0+40+5)+","+(botY0-32)+" "+(x0+40)+","+(botY0-18),class:"bracket"});
+text("× e^rT · ∂²/∂K²",x0+52,(topY1+botY0)/2,"note",undefined);
+}
+function drawMarkers(){const g=document.querySelector("#markers");if(g)g.remove();const m=add("g",{id:"markers"});
+const {cL,cK,cR,secondDiff,est,pK}=BLReport.reading(P,K,D);const sag=(cL+cR)/2-cK;
+// butterfly bracket on call curve
+add("line",{x1:X(K-D),x2:X(K+D),y1:Ycall(cL),y2:Ycall(cR),class:"chord"},m);
+[K-D,K,K+D].forEach((kk,i)=>{const v=i===0?cL:i===1?cK:cR;add("line",{x1:X(kk),x2:X(kk),y1:Ycall(v),y2:topY1,class:"bracket"},m);add("circle",{cx:X(kk),cy:Ycall(v),r:4.5,class:"bracket-dot"},m);});
+// sag (curvature) gap
+add("line",{x1:X(K),x2:X(K),y1:Ycall(cK),y2:Ycall(cK+sag),class:"sag"},m);
+const right=X(K)>700,anchor=right?"end":"start";
+text("curvature = "+secondDiff.toFixed(4),right?X(K)-8:X(K)+8,Ycall(cK+sag/2),"note",anchor,m);
+// density panel: butterfly bar + closed-form dot
+const bx=X(K)-6;add("rect",{x:bx,y:Ydens(est),width:12,height:Ydens(0)-Ydens(est),class:"bar"},m);
+add("circle",{cx:X(K),cy:Ydens(pK),r:6,class:"density-dot"},m);
+text("e^rT·"+secondDiff.toFixed(4)+"/"+(D*D).toFixed(2)+" = "+est.toFixed(5),right?X(K)-10:X(K)+10,Ydens(est)-6,"note",anchor,m);
+text("p(K) = "+pK.toFixed(5),right?X(K)-10:X(K)+10,Ydens(pK)-12,"note",anchor,m);
+}
+function update(){kval.textContent=K;segButtons.forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.d===String(D))));const {est,pK}=BLReport.reading(P,K,D);readout.textContent="At K = "+K+" with Δ = "+D+": butterfly density "+est.toFixed(5)+" · Black–Scholes density "+pK.toFixed(5);drawMarkers();}
+slider.addEventListener("input",()=>{K=parseFloat(slider.value);update();});
+segButtons.forEach(b=>b.addEventListener("click",()=>{D=parseFloat(b.dataset.d);update();}));
+document.querySelector("#reset").addEventListener("click",()=>{K=100;D=2;slider.value="100";update();});
+addEventListener("resize",()=>{});drawBase();update();
+/* The beamdswitch deck of the strike and half-width shown: beamdswitch.js is the site's report template, report.js fills it. */
+const deck=()=>Beamdswitch.deck(BLReport.report(P,{K,D})),deckStatus=document.querySelector("#deck-status");
+function save(blob,name){const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+document.querySelector("#save-beamdswitch").addEventListener("click",()=>{const name="breeden-litzenberger-density-beamdswitch.md";try{save(new Blob([deck()],{type:"text/markdown"}),name);deckStatus.textContent="Saved "+name+": open it in beamdswitch.";}catch{deckStatus.textContent="Could not save the beamdswitch deck here: use Copy deck to paste it into beamdswitch.";}});
+document.querySelector("#copy-beamdswitch").addEventListener("click",async()=>{try{await navigator.clipboard.writeText(deck());deckStatus.textContent="Copied the beamdswitch deck: paste it into beamdswitch.";}catch{deckStatus.textContent="Could not copy the beamdswitch deck here: use the beamdswitch button to save it.";}});
+const result=value=>({content:[{type:"text",text:JSON.stringify(value)}]}),mc=(typeof document!=="undefined"&&document.modelContext)||(typeof navigator!=="undefined"&&navigator.modelContext);
+mc?.registerTool({name:"get_data",description:"Return the synthetic Black-Scholes call-price and density curves plus the butterfly cross-check.",inputSchema:{type:"object",properties:{},additionalProperties:false},annotations:{readOnlyHint:true},async execute(){return result({model:MODEL,curves:CURVES,total:CURVES.length,truncated:false,next_steps:["Use query with filter.strike to inspect one strike."]})}});
+mc?.registerTool({name:"get_metadata",description:"Return the claim, model parameters, sources, and fetch date.",inputSchema:{type:"object",properties:{},additionalProperties:false},annotations:{readOnlyHint:true},async execute(){return result({title:"The risk-neutral density is the curvature of the call-price curve",claim:"The risk-neutral density is e^rT times the second derivative of the call price in strike.",model:{S0:100,r:0.05,sigma:0.20,T:1.0},disclosure:"Synthetic Black-Scholes prices, not market data.",fetched:"2026-09-29",sources:[{"title":"Prices of State-Contingent Claims Implicit in Option Prices","url":"https://www.jstor.org/stable/2352653"},{"title":"Options and the Gamma Knife","url":"https://personal.lse.ac.uk/martiniw/JOD%20version.pdf"},{"title":"Heaviside step function","url":"https://en.wikipedia.org/wiki/Heaviside_step_function"}],next_steps:["Use get_data for the full curves."]})}});
+mc?.registerTool({name:"query",description:"Return the call price and risk-neutral density at one strike.",inputSchema:{type:"object",properties:{filter:{type:"object",properties:{strike:{type:"number"}},required:["strike"],additionalProperties:false}},additionalProperties:false},annotations:{readOnlyHint:true},async execute(input={}){const k=input.filter?.strike;if(k==null)return result({error:"supply filter.strike",next_steps:["Use filter.strike between 60 and 160."]});if(k<MODEL.K_min||k>MODEL.K_max)return result({error:"filter.strike out of range",next_steps:["Use filter.strike between "+MODEL.K_min+" and "+MODEL.K_max+"."]});return result({strike:k,call_price:at(k,1),density:at(k,2),disclosure:"Synthetic Black-Scholes prices, not market data.",next_steps:["Density equals e^rT times the second derivative of the call price."]})}});
+</script></body></html>
