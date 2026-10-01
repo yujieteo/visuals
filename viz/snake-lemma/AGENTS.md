@@ -4,7 +4,7 @@ An interactive proof of the Snake Lemma: one element is chased through a commuta
 
 ## Source of truth
 
-The standalone repository [yujieteo/snake-lemma](https://github.com/yujieteo/snake-lemma) is where this visualisation and its tests develop and where its CI runs them; it is the source of truth. `visuals/snake-lemma/` in [yujieteo/site](https://github.com/yujieteo/site/tree/main/visuals/snake-lemma) is a port of the page files, refreshed whenever the lab is updated, and the site runs no logic tests for it. Porting copies the folder minus `tests/` and `.github/`, so AGENTS.md and SKILLS.md must not link into either (the site checks that their links resolve).
+The standalone repository [yujieteo/snake-lemma](https://github.com/yujieteo/snake-lemma) is where this visualisation and its tests develop and where its CI runs them; it is the source of truth. `visuals/snake-lemma/` in [yujieteo/site](https://github.com/yujieteo/site/tree/main/visuals/snake-lemma) is a port of the page files, refreshed whenever the lab is updated, and the site runs no logic tests for it. Porting copies the folder minus `tests/` and `.github/`. AGENTS.md and SKILLS.md therefore must not link into either (the site checks that their links resolve).
 
 ## Files and data
 
