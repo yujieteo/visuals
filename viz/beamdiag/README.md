@@ -67,16 +67,16 @@ Models are not saved automatically; reloading starts from the first example.
 | --- | --- |
 | `index.html` | The built page: `template.html` with `raw.json`, `engine.js`, `beamdswitch.js` and `handcalc.js` inlined |
 | `engine.js` | Stiffness-method solver, exact V/M recovery, section properties, NASTRAN SOL 101 exporter, number formatting and the beam's beamdswitch report (`beamReport`). Works in the browser (`BeamDiag`) and in Node (`require`) |
-| `beamdswitch.js` | The standard beamdswitch report template: `deck(report)` writes a report as a beamdswitch Markdown deck, and `document(doc)` any other sequence of narrated sections. Shared by every visualisation; see below |
-| `handcalc.js` | The hand calculations (`HandCalc`): `derive` works the solved beam by hand, `frames` and `pointFrame` write the steps for the page, `markdown` the Markdown document, and `beamReport` adds them to the beam's beamdswitch report |
-| `templates/beamdswitch-report.md` | The template's skeleton, with placeholders |
+| `beamdswitch.js` | The standard beamdswitch report template: `deck(report)` writes a report as a beamdswitch Markdown deck. A verbatim copy of yujieteo/site's `templates/beamdswitch.js`, shared by every visualisation; see below |
+| `handcalc.js` | The hand calculations (`HandCalc`): `derive` works the solved beam by hand, `frames` and `pointFrame` write the steps for the page, `markdown` the Markdown document (written by `document`), `beamReport` adds them to the beam's beamdswitch report, and `deck` writes that report as the template's deck with a Hand calculations section |
 | `template.html` | Page markup, styles and UI code |
 | `raw.json` | Presets, materials, conventions, assumptions, NASTRAN notes and sources |
 | `build.py` | Inlines `raw.json`, `engine.js`, `beamdswitch.js` and `handcalc.js` into `template.html` to write `index.html` |
 | `reference.py` | Independent exact-arithmetic Python solver (Macaulay integration and compatibility) and a reader for the exported decks |
 | `fixtures.json` | Test beams with closed-form expectations |
 | `reference.json` | `reference.py` output on the fixtures, compared with `engine.js` by the tests |
-| `tests/` | Node and Python tests; see [docs/verification.md](docs/verification.md). `tests/fixtures/beamdswitch/` holds a read-only copy of beamdswitch's deck and plot parsers |
+| `tests/` | Node and Python tests; see [docs/verification.md](https://github.com/yujieteo/beamdiag/blob/main/docs/verification.md). `tests/fixtures/beamdswitch/` holds read-only copies of beamdswitch's deck and plot parsers and of yujieteo/site's `templates/beamdswitch.js` (as `template.js`) and `templates/beamdswitch-report.md` |
+| `AGENTS.md`, `SKILLS.md`, `LICENSE` | Notes for coding agents, how to use the page and its WebMCP tools, and the MIT licence |
 
 ```sh
 python3 build.py              # rebuild index.html after editing template.html, engine.js, beamdswitch.js, handcalc.js or raw.json
@@ -93,24 +93,24 @@ node --test tests/*.test.mjs
 python3 -m unittest discover -s tests -p 'test_*.py' -v
 ```
 
-[docs/verification.md](docs/verification.md) lists what is checked, the sign
+[docs/verification.md](https://github.com/yujieteo/beamdiag/blob/main/docs/verification.md) lists what is checked, the sign
 conventions, and what is not.
 
 ## beamdswitch report template
 
 Every visualisation's narrated report follows one template, so their talks
 read alike. `beamdswitch.js` is that template as a small pure function with no
-dependencies: `Beamdswitch.deck(report)` in the browser, `require("./beamdswitch.js").deck(report)`
+dependencies, copied unchanged from yujieteo/site's `templates/beamdswitch.js`:
+`Beamdswitch.deck(report)` in the browser, `require("./beamdswitch.js").deck(report)`
 in Node. A report is plain data:
 
 ```js
 {
-  meta: { title, subtitle },        // front matter; author, date and voice are optional
+  meta: { title, subtitle },        // front matter; author, date and voice (default bf_emma) are optional
   narration,                        // spoken over the title slide
   setup: [frame, ...],              // # Set-up: what was modelled, its units and conventions
   method: [frame, ...],             // # Method: how the tool solved it
   results: [frame, ...],            // # Results: the numbers, with key equations and plots
-  hand: [frame, ...],               // # Hand calculations: optional, written only when given
   checks: [frame, ..., { key }],    // # Checks and takeaway: ends on one ::: key
 }
 // frame: { title, body, narration, notes?, key?, plot?: { x: [a, b], xlabel, ylabel, curves: ["expr in x"] } }
@@ -118,19 +118,22 @@ in Node. A report is plain data:
 
 `body` is Markdown with LaTeX maths; `narration` is plain spoken prose, one
 caption per sentence, with numbers written out as they should be read. The
-function writes the sections in order (four, or five with hand
-calculations), a `::: narration` on every slide (including "Part N." on each
+function writes the four sections in order, a `::: narration` on every slide (including "Part N." on each
 section slide), and refuses a report with a frame left unnarrated, a
 narration containing maths or markup, a body line that would start a new
 slide or close a block early, or no closing key.
-[templates/beamdswitch-report.md](templates/beamdswitch-report.md) shows the
-resulting deck with placeholders. A visualisation supplies its own numbers,
+[templates/beamdswitch-report.md](https://github.com/yujieteo/site/blob/main/templates/beamdswitch-report.md)
+in yujieteo/site shows the resulting deck with placeholders. A visualisation supplies its own numbers,
 formatted as its page shows them; here `BeamDiag.beamReport(result, options)`
 builds the beam's report from the solver's result, and its `::: plot` curves
 are the solver's shear, moment and deflection written as Macaulay brackets.
 `HandCalc.beamReport(result, options)` adds the hand calculations, with a
-slide for every segment, as their own section, and the page saves that deck.
-Every beam deck declares `voice: bf_emma`.
+slide for every segment, and `HandCalc.deck(report)` writes the template's
+deck with them as a fifth section, Hand calculations, between Results and
+Checks and takeaway (which becomes Part 5); the page saves that deck. The
+hand section follows the template's frame rules, written by `HandCalc.document`,
+which also writes the hand calculations' Markdown document. Every beam deck
+declares `voice: bf_emma`.
 
 ## NASTRAN
 
@@ -154,10 +157,14 @@ The deck is checked here by reading it back and re-solving it. It has not been
 run through NASTRAN, and this repository contains no `.xdb`: that file only
 comes from running the deck in a compatible NASTRAN solver.
 
-## Origin
+## Origin and the site
 
-The page, engine, Python reference, fixtures and tests come from the beam
+The page, engine, Python reference, fixtures and tests came from the beam
 diagram creator in [yujieteo/site](https://github.com/yujieteo/site)
-(`visuals/beamdiag/`, commit `e6f0ca8`). The local implementation has since
-diverged; see [docs/verification.md](docs/verification.md) for its regression
-coverage.
+(`visuals/beamdiag/`, commit `e6f0ca8`). This repository is now where beamdiag
+and its tests develop: `visuals/beamdiag/` in yujieteo/site is a port of its
+page files (this repository minus `tests/`, `.github/`, `docs/`,
+`.gitignore` and `.no-mistakes.yaml`), refreshed
+when beamdiag is updated, and the site runs no logic tests for it. The page is
+live at <https://teoyujie.org/visuals/beamdiag/>. See
+[docs/verification.md](https://github.com/yujieteo/beamdiag/blob/main/docs/verification.md) for the regression coverage.

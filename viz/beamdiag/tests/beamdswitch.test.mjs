@@ -22,7 +22,7 @@ function solvePreset(p) {
 }
 function deckFor(p, units, origin) {
   const { r, material } = solvePreset(p);
-  const md = T.deck(H.beamReport(r, { units, origin, at: p.length / 3, title: p.label, section: SECTION, material: { label: material.label } }));
+  const md = H.deck(H.beamReport(r, { units, origin, at: p.length / 3, title: p.label, section: SECTION, material: { label: material.label } }));
   return { r, md, deck: parseDeck(md) };
 }
 /* Beams beyond the presets: a right-end fixed support, actions at both ends, a trapezoidal load, an overhang, no load. */
@@ -41,10 +41,16 @@ const divs = (children, name, out = []) => {
 };
 const textOf = (node) => node.children.filter((c) => c.type === "md").map((c) => c.text).join("\n");
 
+test("beamdswitch.js is the site's shared template, unchanged", () => {
+  assert.equal(readFileSync(new URL("../beamdswitch.js", import.meta.url), "utf8"), readFileSync(new URL("./fixtures/beamdswitch/template.js", import.meta.url), "utf8"));
+});
+
 test("the deck for every preset, unit convention and origin parses in beamdswitch into the standard template", () => {
-  const skeleton = readFileSync(new URL("../templates/beamdswitch-report.md", import.meta.url), "utf8");
-  const sections = [...skeleton.matchAll(/^# (.+)$/gm)].map((m) => m[1]);
-  assert.deepEqual(sections, T.SECTIONS.map(([, title]) => title), "templates/beamdswitch-report.md and beamdswitch.js name the same sections");
+  const skeleton = readFileSync(new URL("./fixtures/beamdswitch/beamdswitch-report.md", import.meta.url), "utf8");
+  const standard = [...skeleton.matchAll(/^# (.+)$/gm)].map((m) => m[1]);
+  assert.deepEqual(standard, T.SECTIONS.map(([, title]) => title), "the site's templates/beamdswitch-report.md and beamdswitch.js name the same sections");
+  // The hand calculations go in as their own section, before Checks and takeaway.
+  const sections = [...standard.slice(0, -1), "Hand calculations", standard.at(-1)];
   for (const { p, units, origin } of CASES) {
     const { deck } = deckFor(p, units, origin), what = `${p.id} ${units} ${origin}`;
     assert.equal(deck.frames[0].kind, "title", what);

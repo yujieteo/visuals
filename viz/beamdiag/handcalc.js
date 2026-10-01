@@ -24,7 +24,9 @@
  *   frames(result, { units, origin, at })      [{ title, frames: [{ title, blocks, body, narration }] }]
  *   pointFrame(result, x, { units, origin })   the frame for one chosen x (SI, from the left end)
  *   markdown(result, { units, origin, at, title }) a Markdown document that beamdswitch also opens
- *   beamReport(result, options)                engine's beamReport with a "Hand calculations" section
+ *   beamReport(result, options)                engine's beamReport with the hand calculations as `hand`
+ *   deck(report)                               the template's deck with a "Hand calculations" section
+ *   document({ meta, narration, sections })    any sections as Markdown in beamdswitch's deck syntax
  *   texNodes(tex)                              a small TeX subset as a tree, for the page to draw
  */
 (function (root, factory) {
@@ -591,17 +593,78 @@
     return sections.map((s) => ({ ...s, frames: s.frames.map(withBody) }));
   }
 
+  /* ---------- Markdown in beamdswitch's deck syntax ---------- */
+  /* The shared template (beamdswitch.js, the site's templates/beamdswitch.js unchanged) writes only its
+     four standard sections. These write the hand calculations with the same frame rules: every slide
+     narrated, "Part N." on each section slide, and no Markdown that would end a frame or div early. */
+  const oneLine = (s) => String(s ?? "").replace(/\s+/g, " ").trim();
+  function block(text, what) {
+    const s = String(text ?? "").replace(/\r\n?/g, "\n").trim();
+    for (const line of s.split("\n"))
+      if (/^#{1,2}\s/.test(line) || /^\s*:{3,}/.test(line)) throw new Error(`${what} must not contain a heading or a ::: line: ${line}`);
+    return s;
+  }
+  function spoken(text, what) {
+    const s = oneLine(text);
+    if (!s) throw new Error(`${what} needs a narration.`);
+    if (/[$\\`*_#|<>]/.test(s)) throw new Error(`${what} narration must be plain spoken prose: ${s}`);
+    return s;
+  }
+  const div = (name, text) => [`::: ${name}`, text, ":::"];
+  function frameLines(f, where) {
+    const title = oneLine(f.title), what = `Frame "${title}" in ${where}`;
+    if (!title) throw new Error(`A frame in ${where} needs a title.`);
+    const out = [`## ${title}`, ""];
+    if (f.body) out.push(block(f.body, what), "");
+    if (f.notes) out.push(...div("notes", block(f.notes, what)), "");
+    out.push(...div("narration", spoken(f.narration, what)), "");
+    return out;
+  }
+  /* The slide that opens section `n` (from 1). */
+  const sectionSlide = (title, n) => [`# ${oneLine(title)}`, "", ...div("narration", `Part ${n}. ${oneLine(title)}.`), ""];
+  function sectionLines(title, n, frames) {
+    if (!frames || !frames.length) throw new Error(`The ${title} section needs at least one frame.`);
+    const out = sectionSlide(title, n);
+    for (const f of frames) out.push(...frameLines(f, title));
+    return out;
+  }
+
+  /* { meta, narration, notes, sections: [{ title, frames }] } as Markdown that beamdswitch opens as a deck. */
+  function document(doc) {
+    const meta = doc.meta || {};
+    if (!oneLine(meta.title)) throw new Error("The report needs a title.");
+    const out = ["---"];
+    for (const k of ["title", "subtitle", "author", "date", "voice"]) if (oneLine(meta[k])) out.push(`${k}: ${oneLine(meta[k])}`);
+    out.push("---", "");
+    if (doc.notes) out.push(...div("notes", block(doc.notes, "The title slide")), "");
+    out.push(...div("narration", spoken(doc.narration, "The title slide")), "");
+    (doc.sections || []).forEach(({ title, frames }, i) => out.push(...sectionLines(title, i + 1, frames)));
+    return out.join("\n");
+  }
+
+  /* The shared template's deck of a beamReport, with its `hand` frames as a "Hand calculations"
+     section between Results and Checks and takeaway, which becomes Part 5. */
+  const HAND = "Hand calculations";
+  function deck(report) {
+    const { hand, ...standard } = report, md = T.deck(standard);
+    if (!hand || !hand.length) return md;
+    const n = T.SECTIONS.findIndex(([id]) => id === "checks") + 1, title = T.SECTIONS[n - 1][1];
+    const slide = `\n${sectionSlide(title, n).join("\n")}`, at = md.indexOf(slide);
+    if (at < 0 || md.indexOf(slide, at + 1) >= 0) throw new Error(`The template's deck has no single ${title} section slide.`);
+    return [md.slice(0, at), ...sectionLines(HAND, n, hand), ...sectionSlide(title, n + 1)].join("\n") + md.slice(at + slide.length);
+  }
+
   /* A Markdown document of every hand-calculation step; it is also a beamdswitch deck. */
   function markdown(result, options = {}) {
     const name = String(options.title || "").trim(), c = context(result, options);
-    return T.document({
+    return document({
       meta: { title: name ? `Hand calculations: ${name}` : "Hand calculations", subtitle: "Reactions, shear force, bending moment, slope and deflection, step by step", voice: VOICE },
       narration: `Hand calculations${name ? ` for ${name}` : ""}. Each step derives the stiffness solver's answer by hand, in ${spokenUnit(c.u, "force")}, ${spokenUnit(c.u, "length")} and ${spokenUnit(c.u, "stress")}.`,
       sections: frames(result, options),
     });
   }
 
-  /* engine.js's beamReport with the hand calculations, every segment included, as their own section. */
+  /* engine.js's beamReport with the hand calculations, every segment included, as `hand` for deck(). */
   function beamReport(result, options = {}) {
     const report = B.beamReport(result, options), hand = frames(result, options).flatMap((s) => s.frames);
     return { ...report, hand };
@@ -658,5 +721,5 @@
     return flat(texNodes(src)).replace(/\s+/g, " ").trim();
   };
 
-  return { derive, frames, pointFrame, markdown, beamReport, markdownOf, texNodes, texText, WRITE_UNKNOWNS };
+  return { derive, frames, pointFrame, markdown, beamReport, deck, document, markdownOf, texNodes, texText, WRITE_UNKNOWNS };
 });

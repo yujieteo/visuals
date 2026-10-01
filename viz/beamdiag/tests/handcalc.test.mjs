@@ -6,7 +6,6 @@ import { page } from "./page-harness.mjs";
 
 const require = createRequire(import.meta.url);
 const B = require("../engine.js");
-const T = require("../beamdswitch.js");
 const H = require("../handcalc.js");
 const raw = require("../raw.json");
 const fixtures = require("../fixtures.json");
@@ -173,9 +172,10 @@ test("the Markdown export parses in beamdswitch, with plain spoken narration on 
 test("the beamdswitch deck carries the hand calculations as their own narrated section", () => {
   for (const { p, units, origin } of CASES.filter((_, i) => i % 3 === 0)) {
     const r = solved(presetModel(p)), what = `${p.id} ${units} ${origin}`;
-    const md = T.deck(H.beamReport(r, { units, origin, at: r.model.length / 2, title: p.label })), deck = parseDeck(md);
+    const md = H.deck(H.beamReport(r, { units, origin, at: r.model.length / 2, title: p.label })), deck = parseDeck(md);
     assert.deepEqual(deck.frames.filter((f) => f.kind === "section").map((f) => f.title), ["Set-up", "Method", "Results", "Hand calculations", "Checks and takeaway"], what);
     assert.equal(deck.frames.find((f) => f.title === "Hand calculations").narration, "Part 4. Hand calculations.");
+    assert.equal(deck.frames.find((f) => f.title === "Checks and takeaway").narration, "Part 5. Checks and takeaway.");
     const hand = deck.frames.filter((f) => f.section === "Hand calculations" && f.kind === "frame");
     assert.ok(hand.some((f) => /^Segment 1:/.test(f.title)) && hand.some((f) => f.title.startsWith("At the selected point")), what);
     assert.equal(md.match(/^::: narration$/gm).length, deck.frames.length, what);
@@ -183,11 +183,25 @@ test("the beamdswitch deck carries the hand calculations as their own narrated s
   }
   // A long beam's deck carries a slide for every segment, as the Markdown does.
   const c = fixtures.cases.find((x) => x.id === "random-1"), r = solved(c.model);
-  const deck = parseDeck(T.deck(H.beamReport(r, { units: "N-mm" })));
+  const deck = parseDeck(H.deck(H.beamReport(r, { units: "N-mm" })));
   const segs = deck.frames.filter((f) => f.section === "Hand calculations" && /^Segment \d+:/.test(f.title));
   assert.equal(segs.length, r.displacements.length - 1);
   const full = parseDeck(H.markdown(r, { units: "N-mm" })).frames.filter((f) => /^Segment \d+:/.test(f.title));
   assert.equal(full.length, r.displacements.length - 1);
+});
+
+test("deck adds only the hand section to the shared template's deck, with the template's frame rules", () => {
+  const T = require("../beamdswitch.js");
+  const frame = { title: "F", body: "text", narration: "Said." };
+  const good = { meta: { title: "T" }, narration: "Hello.", setup: [frame], method: [frame], results: [frame], checks: [{ ...frame, key: "Remember this." }] };
+  assert.equal(H.deck(good), T.deck(good));
+  assert.equal(H.deck({ ...good, hand: [] }), T.deck(good));
+  const md = H.deck({ ...good, hand: [{ title: "Reactions", body: "$$ R = 1 $$", narration: "One." }] });
+  assert.equal(md.replace(/\n# Hand calculations\n[\s\S]*?(?=\n# Checks and takeaway\n)/, "").replace("Part 5. Checks", "Part 4. Checks"), T.deck(good));
+  assert.throws(() => H.deck({ ...good, hand: [{ ...frame, narration: "" }] }), /needs a narration/);
+  assert.throws(() => H.deck({ ...good, hand: [{ ...frame, narration: "It is $x$." }] }), /plain spoken prose/);
+  assert.throws(() => H.deck({ ...good, hand: [{ ...frame, body: "a\n## sneaky frame" }] }), /heading/);
+  assert.throws(() => H.deck({ ...good, checks: [frame], hand: [frame] }), /::: key/);
 });
 
 test("the TeX subset draws as text, fractions, superscripts and subscripts", () => {

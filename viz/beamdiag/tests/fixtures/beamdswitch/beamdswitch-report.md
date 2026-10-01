@@ -1,6 +1,7 @@
 ---
 title: {{Tool}} analysis: {{what was modelled}}
 subtitle: {{what the report finds}}
+voice: bf_emma
 ---
 
 ::: narration
@@ -60,26 +61,10 @@ y = {{the tool's own result as an expression in x}}
 {{The same number, spoken.}}
 :::
 
-# Hand calculations
-
-::: narration
-Part 4. Hand calculations.
-:::
-
-## {{One step of the hand derivation, e.g. "Reactions by equilibrium" or "Segment 1: x = 0 to 2000 mm"}}
-
-{{The step in words, then its equations in the page's digits; this whole section is optional and written only when the visualisation supplies it.}}
-
-$$ {{e.g. R_2 = -\frac{\sum_j m_j}{L} = 30.00\ \mathrm{kN}}} $$
-
-::: narration
-{{The step, spoken.}}
-:::
-
 # Checks and takeaway
 
 ::: narration
-Part {{5, or 4 without a hand calculations section}}. Checks and takeaway.
+Part 4. Checks and takeaway.
 :::
 
 ## {{What confirms the numbers, e.g. "Loads and reactions balance"}}

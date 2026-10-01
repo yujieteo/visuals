@@ -669,7 +669,7 @@
 
   /* ---------- beamdswitch report ----------
    * beamReport(result, options) describes a solved beam as a report for the standard beamdswitch
-   * template (beamdswitch.js; templates/beamdswitch-report.md). It reads every number from the
+   * template (beamdswitch.js; the site's templates/beamdswitch-report.md). It reads every number from the
    * solver's result and writes it with the same formatter the page uses for that value, so the
    * deck, its narration and the page agree digit for digit. The ::: plot curves are the solver's
    * own shear, moment and deflection written as Macaulay brackets from its reactions and the loads.
