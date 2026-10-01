@@ -34,9 +34,17 @@
   /* A sentence named inside narration, without its final stop. */
   const bare = (s) => speak(s).replace(/[.!?]+$/, "");
 
-  /* The inspector's fields for one constituent, as the page lists them. */
+  /* The inspector's fields for one constituent or punctuation mark, as the page lists them. */
   function fields(d) {
-    const rows = ["- Category: " + d.category + (d.level === "word" ? " (word level)" : d.level === "phrase" || d.level === "clause" ? " (" + d.level + " level)" : "")];
+    if (d.level === "mark") {
+      const rows = ["- Indicator: " + d.category + " (" + d.indicator + ")",
+        "- Marks: " + d.marks.side + " " + (d.marks.function ? d.marks.function + ": " : "") + d.marks.category + " " + q(md(d.marks.text)),
+        "- Use: " + md(d.use)];
+      if (d.pair) rows.push("- Paired with: the " + d.pair.name + " " + q(md(d.pair.text)));
+      rows.push("- Not a constituent: punctuation is attached to a boundary of the constituent it marks.");
+      return rows.join("\n");
+    }
+    const rows = ["- Category: " + d.category + (d.level === "word" ? " (word level)" : d.level === "part" ? " (inside the word)" : d.level === "phrase" || d.level === "clause" ? " (" + d.level + " level)" : "")];
     rows.push(d.top ? "- Function: none at this level; this is the top-level unit of the example."
       : "- Function: **" + d.function + "** in the " + d.container.category.toLowerCase() + " " + q(md(d.container.text)));
     if (d.head) rows.push("- Head: " + q(md(d.head.text)) + " (" + d.head.category.toLowerCase() + ")");
@@ -46,15 +54,24 @@
     if (d.anchor) rows.push("- Anchor: supplement to " + q(md(d.anchor.text)) + "; it is not a dependent of it.");
     if (d.gap) rows.push("- Gap: not pronounced here; understood via " + q(md(d.gap.text)) + ".");
     if (d.fused) rows.push("- Fusion: one expression with two functions at once (" + d.function.toLowerCase() + ").");
+    if (d.antecedent) rows.push("- Antecedent: " + q(md(d.antecedent.text)) + ", the expression this one takes its interpretation from.");
+    if (d.spelling) rows.push("- Spelling: the base " + q(md(d.spelling.base)) + " is written " + q(md(d.text)) + " here (" + d.spelling.alt + ").");
+    if (d.punctuation) rows.push("- Punctuation: " + d.punctuation.map((m) => "the " + m.name + " " + q(md(m.text)) + " marks " + m.side + " it").join("; "));
     return rows.join("\n");
   }
 
   /* The text version of the tree, as the page's Tree view gives it. */
   function outline(idx, L, e, n, depth) {
     const d = L.describe(idx, e.id, n.id);
-    const extra = (n.gap ? " — gap, understood via " + q(md(d.gap.text)) : "") + (n.anchor ? " — supplement anchored to " + q(md(d.anchor.text)) : "");
+    const extra = (n.gap ? " — gap, understood via " + q(md(d.gap.text)) : "") + (n.anchor ? " — supplement anchored to " + q(md(d.anchor.text)) : "") +
+      (n.ante ? " — antecedent " + q(md(d.antecedent.text)) : "");
     const line = "  ".repeat(depth) + "- " + (d.top ? "" : d.function + ": ") + d.category + " " + q(md(d.text)) + extra;
-    return [line].concat((n.children || []).map((k) => outline(idx, L, e, k, depth + 1))).join("\n");
+    const lines = [line].concat((n.children || []).map((k) => outline(idx, L, e, k, depth + 1)));
+    if (depth === 0 && e.marks && e.marks.length) {
+      lines.push("", "Punctuation, attached to constituent boundaries (not part of the tree):");
+      e.marks.forEach((m) => { const p = L.describe(idx, e.id, m.id); lines.push("- " + p.category + " " + q(md(p.text)) + ": marks " + p.marks.side + " " + q(md(p.marks.text))); });
+    }
+    return lines.join("\n");
   }
 
   const spokenPart = (k) => lower(k.function) + ", " + article(lower(k.category)) + (k.text === "__" ? "" : ", " + speak(k.text));
@@ -62,7 +79,9 @@
   function contrastFrame(idx, L, k) {
     const side = (s) => {
       const e = idx.examples.get(k[s].ex), d = L.describe(idx, e.id, k[s].node);
-      return { e, d, line: "- " + md(e.text) + " " + q(md(d.text)) + " is " + (d.top ? "the top level" : "**" + d.function + "**") + " · " + d.category };
+      const what = d.level === "mark" ? "**" + d.category + "**, marking " + d.marks.side + " " + q(md(d.marks.text))
+        : (d.top ? "the top level" : "**" + d.function + "**") + " · " + d.category;
+      return { e, d, line: "- " + md(e.text) + " " + q(md(d.text)) + " is " + what };
     };
     const a = side("a"), b = side("b");
     return {
@@ -86,7 +105,10 @@
     if (e.context) example.push("", "Context: " + md(e.context));
     if (e.usage) example.push("", "Usage: " + md(e.usage));
     example.push("", "Selected " + (d.level === "gap" ? "gap" : d.level) + ": " + q(md(d.text)), "", fields(d));
-    const role = d.top ? ", and it is the top-level unit of the example." : ", and its function is " + lower(d.function) + " in the " + d.container.category.toLowerCase() + " " + speak(d.container.text) + ".";
+    const role = d.level === "mark" ? "" : d.top ? ", and it is the top-level unit of the example." : ", and its function is " + lower(d.function) + " in the " + d.container.category.toLowerCase() + " " + speak(d.container.text) + ".";
+    const look = d.level === "mark"
+      ? " Look at the " + d.category.toLowerCase() + ". It is not a constituent: it marks " + d.marks.side + " the " + lower(d.marks.category) + " " + bare(d.marks.text) + "."
+      : " Look at " + speak(d.text) + ". Its category is " + lower(d.category) + role + (d.head ? " Its head is " + speak(d.head.text) + "." : "");
 
     const top = L.describe(idx, e.id, e.tree.id);
     const results = [{ title: "Why this analysis?", body: md(e.explanation), narration: speak(e.explanation) }];
@@ -107,8 +129,7 @@
       setup: [{ title: "What this lesson covers", body: about.join("\n"), narration: speak(c.orientation) }],
       method: [
         { title: "The example: " + e.text, body: example.join("\n"),
-          narration: "The example sentence is: " + speak(e.text) + " Look at " + speak(d.text) + ". Its category is " + lower(d.category) + role +
-            (d.head ? " Its head is " + speak(d.head.text) + "." : "") },
+          narration: (e.kind === "word" ? "The example word is: " + speak(e.text) + "." : "The example sentence is: " + speak(e.text)) + look },
         { title: "The structure", body: outline(idx, L, e, e.tree, 0),
           narration: "Taken apart, the " + lower(top.category) + " " + bare(e.text) + " has " + (NUMBERS[top.contains.length] || top.contains.length) + (top.contains.length === 1 ? " part: " : " parts: ") +
             list(top.contains.map(spokenPart)) + "." },

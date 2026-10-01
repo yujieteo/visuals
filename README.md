@@ -118,8 +118,9 @@ python3 scripts/build_stock_cases.py --verify
 ```
 
 The copied action visualizations also retain their source regression tests, and
-`english-grammar` has data-integrity tests plus Node tests of its fragment,
-traversal and search logic:
+`english-grammar` has data-integrity tests (including its word-structure,
+punctuation and antecedent models) plus Node tests of its fragment, traversal
+and search logic:
 
 ```sh
 python3 -m unittest discover -s tests -p 'test_*.py'

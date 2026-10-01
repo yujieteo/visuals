@@ -26,8 +26,12 @@ def check(raw, concepts, examples, meta):
 class EnglishGrammarTest(unittest.TestCase):
     def test_corpus_passes_and_meets_release_counts(self):
         summary = check(*corpus())
-        self.assertTrue(40 <= summary["concepts"] <= 60)
-        self.assertTrue(100 <= summary["examples"] <= 150)
+        self.assertTrue(40 <= summary["concepts"] <= 90)
+        self.assertTrue(100 <= summary["examples"] <= 220)
+        self.assertEqual(summary["chapters"], 20, "every chapter of the outline has concepts")
+        self.assertGreater(summary["words"], 0)
+        self.assertGreater(summary["marks"], 0)
+        self.assertGreater(summary["antecedents"], 0)
 
     def test_build_is_reproducible_and_verifies(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -141,9 +145,128 @@ class EnglishGrammarTest(unittest.TestCase):
         eg.verify_page(html, model)
         self.assertLess(len(html.encode("utf-8")), 1_000_000)
         self.assertIn('<div id="static"', html)  # no-JavaScript fallback is in the initial HTML
-        self.assertIn("not yet expanded", html)
+        static = html.split('<ol class="static-index">', 1)[1].split("</ol></section>", 1)[0]
+        self.assertNotIn("not yet expanded", static, "only chapters without concepts are labelled not yet expanded")
+        self.assertEqual(static.count("<li>Chapter "), 20)
         data = json.loads(html.split('id="eg-data">', 1)[1].split("</script>", 1)[0].replace("<\\/", "</"))
         self.assertEqual(len({e["id"] for e in data["examples"]}), len(data["examples"]))
+
+
+    def test_chapters_without_concepts_are_still_labelled(self):
+        raw, concepts, examples, meta = corpus()
+        concepts = copy.deepcopy(concepts)
+        concepts["concepts"] = [c for c in concepts["concepts"] if c["loc"][0] != 20]
+        model = eg.build_model(raw, concepts, examples, meta)
+        self.assertEqual(eg.unexpanded(model), [20])
+        self.assertIn("— not yet expanded", eg.static_index(model))
+
+    def test_spacing_around_punctuation(self):
+        self.assertEqual(eg.detokenize(eg.tokenize("Kim called it “a disaster”.")), "Kim called it “a disaster”.")
+        self.assertEqual(eg.detokenize(eg.tokenize("Pat (a nurse) resigned.")), "Pat (a nurse) resigned.")
+        word = {"id": "t", "text": "well-known", "kind": "word", "segments": ["well", "-", "known"]}
+        self.assertEqual(eg.detokenize(eg.example_tokens(word)), "well-known")
+
+
+def word(tree, segments, **extra):
+    ex = dict({"id": "t", "text": "".join(segments), "kind": "word", "segments": segments, "tree": tree}, **extra)
+    ex["tokens"] = eg.example_tokens(ex)
+    return ex
+
+
+class WordStructureTest(unittest.TestCase):
+    def test_a_valid_word_structure(self):
+        ex = word("[N#w [Base:Adj#u [Affix:Prefix un] [Base:Adj{base=happy|alt=y-replacement} happi]] [Affix:Suffix ness]]", ["un", "happi", "ness"])
+        nodes = eg.flatten(eg.parse_tree(ex))
+        self.assertEqual(nodes["w"][0]["span"], [0, 3])
+        self.assertEqual(nodes["u"][0]["span"], [0, 2])
+        self.assertEqual(eg.detokenize(ex["tokens"]), "unhappiness")
+
+    def test_word_structure_errors_are_rejected(self):
+        bad = {
+            "a suffix before the base": ("[N [Affix:Suffix ness] [Base:Adj kind]]", ["ness", "kind"]),
+            "no base at all": ("[N [Affix:Prefix un] [Affix:Suffix ness]]", ["un", "ness"]),
+            "an affix with a word category": ("[N [Base:Adj kind] [Affix:N ness]]", ["kind", "ness"]),
+            "a phrase category inside a word": ("[N [Base:AdjP kind] [Affix:Suffix ness]]", ["kind", "ness"]),
+            "a syntactic function inside a word": ("[N [Head:Adj kind] [Affix:Suffix ness]]", ["kind", "ness"]),
+            "a single base without its operation": ("[V [Base:N bottle]]", ["bottle"]),
+            "a wrong spelling alternation": ("[V [Base:V{base=hope|alt=doubling} hop] [Affix:Suffix ing]]", ["hop", "ing"]),
+            "an unknown alternation": ("[V [Base:V{base=hope|alt=magic} hop] [Affix:Suffix ing]]", ["hop", "ing"]),
+            "an antecedent inside a word": ("[N [Base:Adj#a kind] [Affix:Suffix{ante=a} ness]]", ["kind", "ness"]),
+        }
+        for why, (tree, segments) in bad.items():
+            with self.assertRaises(AssertionError, msg=why):
+                eg.parse_tree(word(tree, segments))
+
+    def test_segments_must_spell_the_word(self):
+        with self.assertRaisesRegex(AssertionError, "do not spell"):
+            eg.example_tokens({"id": "t", "text": "kindness", "kind": "word", "segments": ["kind", "nes"]})
+        with self.assertRaises(AssertionError):
+            eg.example_tokens({"id": "t", "text": "Kim left.", "segments": ["Kim left."]})
+
+
+def sentence(text, tree, marks):
+    ex = {"id": "t", "text": text, "tree": tree, "marks": marks, "tokens": eg.tokenize(text)}
+    ex["tree"] = eg.parse_tree(ex)
+    return eg.build_marks(ex, eg.flatten(ex["tree"]))
+
+
+class PunctuationAndAntecedentTest(unittest.TestCase):
+    TEXT = "Pat (a nurse) resigned."
+    TREE = "[Clause#c [Subject:NP#s [Head:N Pat]] [Supplement:NP#sup{anchor=s} [Det:D a] [Head:N nurse]] [Predicate:VP#p [Predicator:V resigned]]]"
+
+    def marks(self, **change):
+        marks = [{"id": "m1", "at": "(", "name": "opening parenthesis", "bounds": "sup", "side": "start", "use": "opens", "pair": "m2"},
+                 {"id": "m2", "at": ")", "name": "closing parenthesis", "bounds": "sup", "side": "end", "use": "closes", "pair": "m1"},
+                 {"id": "m3", "at": ".", "name": "full stop", "bounds": "c", "side": "end", "use": "ends"}]
+        for key, value in change.items():
+            i, field = key.split("_", 1)
+            if value is None:
+                del marks[int(i)][field]
+            else:
+                marks[int(i)][field] = value
+        return marks
+
+    def test_valid_marks_resolve_to_tokens(self):
+        out = sentence(self.TEXT, self.TREE, self.marks())
+        self.assertEqual([m["i"] for m in out], [1, 4, 6])
+        self.assertEqual([m["class"] for m in out], ["parenthesis", "parenthesis", "primary terminal"])
+
+    def test_mark_errors_are_rejected(self):
+        bad = {
+            "a character that is not the named indicator": dict(**{"0_name": "comma"}),
+            "a mark away from its constituent": dict(**{"0_bounds": "s"}),
+            "a closing mark on the wrong side": dict(**{"1_side": "start"}),
+            "an unpaired parenthesis": dict(**{"0_pair": None, "1_pair": None}),
+            "a terminal that does not close the whole example": dict(**{"2_bounds": "p"}),
+            "a punctuation token that is not there": dict(**{"2_at": ".2"}),
+            "a mark id that clashes with a node": dict(**{"2_id": "sup"}),
+            "an unknown side": dict(**{"2_side": "middle"}),
+        }
+        for why, change in bad.items():
+            with self.assertRaises(AssertionError, msg=why):
+                sentence(self.TEXT, self.TREE, self.marks(**change))
+
+    def test_every_punctuation_token_needs_a_mark_once_any_is_marked(self):
+        with self.assertRaisesRegex(AssertionError, "not attached"):
+            sentence(self.TEXT, self.TREE, self.marks()[:2])
+        self.assertEqual(sentence(self.TEXT, self.TREE, []), [])
+
+    def test_marks_in_the_corpus_sit_on_their_boundaries(self):
+        model = eg.build_model(*corpus())
+        for e in model["examples"]:
+            for m in e["marks"]:
+                self.assertEqual(e["tokens"][m["i"]]["k"], "p", e["id"])
+                self.assertIn(e["tokens"][m["i"]]["t"], eg.INDICATORS[m["name"]][0], e["id"])
+
+    def test_antecedent_errors_are_rejected(self):
+        ok = "[Clause [Subject:NP#k [Head:N Kim]] [Predicate:VP [Predicator:V blamed] [Object:NP{ante=k} [Head:N herself]]]]"
+        text = "Kim blamed herself."
+        eg.parse_tree({"id": "t", "text": text, "tree": ok, "tokens": eg.tokenize(text)})
+        for why, tree in {"an unknown antecedent": ok.replace("ante=k", "ante=zz"),
+                          "an anaphor inside its antecedent": ok.replace("[Clause [", "[Clause#c [").replace("ante=k", "ante=c"),
+                          "a spelling alternation in a sentence": ok.replace("ante=k", "base=her|alt=doubling")}.items():
+            with self.assertRaises(AssertionError, msg=why):
+                eg.parse_tree({"id": "t", "text": text, "tree": tree, "tokens": eg.tokenize(text)})
 
 
 if __name__ == "__main__":
