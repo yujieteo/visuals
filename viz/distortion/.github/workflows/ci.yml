@@ -1,0 +1,24 @@
+# CI for the Structural Distortion Explorer. This repository is where the explorer and its tests
+# develop; the site's visuals/distortion/ is a port of the page files and runs none of these tests.
+# The steps check that index.html is current and run every tests/*.test.mjs and *.test.cjs
+# (distortion.test.mjs and beamdswitch.test.mjs).
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: node build.mjs --check
+      - run: node --test 'tests/*.test.{mjs,cjs}'

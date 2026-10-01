@@ -39,14 +39,16 @@ range while stiffeners still raise the threshold and shorten the waves.
 | `LICENSE` | MIT licence for this visualization (the inlined three.js keeps its own MIT notice) |
 
 ```sh
-node visuals/distortion/build.mjs          # rebuild index.html after editing a source
-node visuals/distortion/build.mjs --check  # fail if index.html is stale
-node --test tests/distortion.test.mjs      # kinematics, presets, artefact and build tests
-node --test tests/distortion-beamdswitch.test.mjs  # the beamdswitch deck, read with beamdswitch's parsers
+node build.mjs                          # rebuild index.html after editing a source
+node build.mjs --check                  # fail if index.html is stale
+node --test tests/distortion.test.mjs   # kinematics, presets, artefact and build tests
+node --test tests/beamdswitch.test.mjs  # the beamdswitch deck, read with beamdswitch's parsers
 ```
 
-The tests use Node's built-in runner, like the site's other Node tests, so the
-repository needs no `package.json`.
+The tests use Node's built-in runner, so the repository needs no `package.json`.
+This repository is where the explorer and its tests develop, and its CI runs
+them; `visuals/distortion/` in [yujieteo/site](https://github.com/yujieteo/site/tree/main/visuals/distortion)
+is a port of the page files without `tests/` or `.github/`.
 
 ## three.js
 
@@ -56,7 +58,7 @@ newer release), in an empty directory:
 
 ```sh
 npm pack three@0.186.1 && mkdir -p node_modules/three && tar xzf three-0.186.1.tgz -C node_modules/three --strip-components 1
-cp <site>/visuals/distortion/vendor/three-entry.mjs entry.mjs
+cp <this repository>/vendor/three-entry.mjs entry.mjs
 npx esbuild@0.25.10 entry.mjs --bundle --minify --format=iife --global-name=THREE --legal-comments=none --outfile=three.min.js
 ```
 
