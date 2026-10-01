@@ -458,3 +458,22 @@ test("error messages give lengths in the chosen convention", () => {
   assert.throws(() => B.solve({ ...good, length: 1e5 }, { units: "lbf-in" }), /between 0.0393701 in and 393701 in/);
   assert.throws(() => B.solve({ ...good, supports: [{ kind: "pin", x: 0 }, { kind: "pin", x: 0 }] }, { units: "kN-m" }), /x = 0 m/);
 });
+
+test("shear extrema include interior zeros of total intensity in either direction", () => {
+  for (const sign of [-1, 1]) {
+    for (const split of [false, true]) {
+      const load = { kind: "dist", x1: 0, x2: 6, q1: -10000 * sign, q2: 10000 * sign };
+      const loads = split ? [
+        { ...load, q1: -6000 * sign, q2: 4000 * sign },
+        { ...load, q1: -4000 * sign, q2: 6000 * sign },
+      ] : [load];
+      const r = B.solve({ ...fixtures.cases[0].model, length: 6, divisions: 1,
+        supports: [{ kind: "pin", x: 0 }, { kind: "pin", x: 6 }],
+        loads: [...loads, { kind: "moment", x: 6, C: -60000 * sign }],
+      });
+      const ex = B.extremes(r);
+      close(ex.V.x, 3, 6, "interior shear position");
+      close(ex.V.value, -15000 * sign, 15000, "interior shear value");
+    }
+  }
+});

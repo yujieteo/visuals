@@ -49,13 +49,13 @@ input[type="number"]{font-variant-numeric:tabular-nums}
 .figure{margin:0;min-width:0}
 #plots{position:relative;touch-action:pan-y;user-select:none;-webkit-user-select:none}
 #plots svg{display:block;width:100%;overflow:visible}
-#plots.stale svg{opacity:.35}
+#plots.stale svg,#stats.stale,#table.stale{opacity:.35}
 #plots .handle{cursor:grab}
 #plots .handle:focus{outline:none}
 #plots .ring{fill:none;stroke:none}
 #plots .handle:focus-visible .ring,#plots .handle.active .ring{stroke:var(--focus);stroke-width:2;fill:none}
 #plots .hit{fill:transparent}
-#plots .cursor{stroke:var(--fg);stroke-width:1;stroke-dasharray:3 3;opacity:.6}
+#plots .cursor{stroke:var(--fg);stroke-width:1;stroke-dasharray:3 3;opacity:.6;pointer-events:none}
 #plots .plotarea{outline:none}
 #plots .plotarea:focus-visible .frame{stroke:var(--focus);stroke-width:2}
 .readout{display:flex;flex-wrap:wrap;gap:.15rem 1rem;font-size:.875rem;margin:.5rem 0 0;min-height:2.8em;font-variant-numeric:tabular-nums}
@@ -520,11 +520,11 @@ function update({ keepForm = false } = {}) {
     const b = document.createElement("b"); b.textContent = "Can't solve this beam: ";
     box.append(b, document.createTextNode(inConvention(error.message)));
     markInvalid(error.field);
-    $("plots").classList.add("stale");
+    for (const id of ["plots", "stats", "table"]) $(id).classList.add("stale");
   } else {
     box.hidden = true;
     markInvalid(null);
-    $("plots").classList.remove("stale");
+    for (const id of ["plots", "stats", "table"]) $(id).classList.remove("stale");
   }
   resetDeck();
   if (result) {
@@ -576,8 +576,12 @@ function tickLabels(ticks) {
 const labelWidth = (str) => 7 * [...str].length;
 
 function axisOf(panel, pts, narrow) {
-  const values = pts.map(panel.get);
-  let lo = Math.min(0, ...values), hi = Math.max(0, ...values);
+  // A loop, not Math.min(...values): sample counts can exceed the engine's argument limit.
+  let lo = 0, hi = 0;
+  for (const p of pts) {
+    const value = panel.get(p);
+    lo = Math.min(lo, value); hi = Math.max(hi, value);
+  }
   if (!(hi - lo >= 1e-9)) { lo = -1; hi = 1; }
   // Halved before subtracting so the span of loads near the double limit cannot overflow.
   const pad = (hi / 2 - lo / 2) * 0.4;
@@ -687,8 +691,11 @@ function drawBeam(svg, fig) {
   const handle = (attrs) => el("g", interactive ? { class: "handle", tabindex: 0, role: "slider", "aria-valuemin": tidy(showX(0, L)), "aria-valuemax": tidy(showX(L, L)), ...attrs } : {}, g);
   const grip = (h, ring, hit) => { if (interactive) { el("rect", { class: "ring", ...ring }, h); el("rect", { class: "hit", ...hit }, h); } };
   // Distributed loads: arrows scaled to the largest intensity.
-  const qmax = Math.max(1e-12, ...model.loads.filter((l) => l.kind === "dist").flatMap((l) => [Math.abs(l.q1), Math.abs(l.q2)]));
-  const Fmax = Math.max(1e-12, ...model.loads.filter((l) => l.kind === "point").map((l) => Math.abs(l.F)));
+  let qmax = 1e-12, Fmax = 1e-12;
+  for (const l of model.loads) {
+    if (l.kind === "dist") qmax = Math.max(qmax, Math.abs(l.q1), Math.abs(l.q2));
+    if (l.kind === "point") Fmax = Math.max(Fmax, Math.abs(l.F));
+  }
   const arrowHead = (x, yTip, dir, color, size = 5) => el("path", { d: `M${x},${yTip} l${-size},${-dir * size * 1.6} h${2 * size} z`, fill: color }, g);
   model.loads.forEach((l) => {
     if (l.kind !== "dist") return;

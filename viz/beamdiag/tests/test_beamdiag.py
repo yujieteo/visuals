@@ -44,6 +44,40 @@ out["@units"] = B.UNIT_SYSTEMS;
 process.stdout.write(JSON.stringify(out));
 """
 
+# The WebMCP tools the page registers, in registration order.
+WEBMCP_TOOLS = ["get_metadata", "get_current_beam", "solve_beam", "export_nastran_bdf"]
+
+# Run the built page's scripts against an inert DOM with a stub navigator.modelContext,
+# then call the registered tools the way an agent would.
+PAGE_SCRIPT = r"""
+const fs = require("fs"), vm = require("vm");
+const dir = process.argv[1];
+const html = fs.readFileSync(dir + "/index.html", "utf8");
+const fixtures = require(dir + "/fixtures.json");
+const inert = () => new Proxy(function () {}, {
+  get: (t, k) => (k === "modelContext" ? undefined : k === Symbol.iterator ? [][Symbol.iterator] : k === Symbol.toPrimitive ? () => 0 : inert()),
+  set: () => true, apply: () => inert(), construct: () => inert(),
+});
+const tools = [];
+const ctx = vm.createContext({
+  document: inert(), requestAnimationFrame: () => 0, cancelAnimationFrame() {}, setTimeout: () => 0, clearTimeout() {},
+  ResizeObserver: function () { return inert(); }, Option: function () { return inert(); },
+  navigator: { modelContext: { registerTool: (t) => tools.push(t) } },
+});
+for (const m of html.matchAll(/<script>([\s\S]*?)<\/script>/g)) vm.runInContext(m[1], ctx);
+const call = async (name, input) => JSON.parse((await tools.find((t) => t.name === name).execute(input)).content[0].text);
+(async () => {
+  const model = fixtures.cases[0].model;
+  process.stdout.write(JSON.stringify({
+    names: tools.map((t) => t.name),
+    solve: await call("solve_beam", model),
+    bdf: await call("export_nastran_bdf", { model }),
+    current: await call("get_current_beam", {}),
+    bad: await call("solve_beam", { ...model, supports: [] }),
+  }));
+})();
+"""
+
 
 def node_results():
     node = shutil.which("node")
@@ -201,16 +235,26 @@ class BeamDiagTest(unittest.TestCase):
         for case in FIXTURES["cases"]:
             model = case["model"]
             original = reference.Beam(model)
+            # The default deck is the SI one, so it is checked below with the other conventions.
+            self.assertEqual(self.js[case["id"]]["bdf"], self.js[case["id"]]["units"]["N-m"])
             for uid, u in systems.items():
                 with self.subTest(case=case["id"], units=uid):
                     text = self.js[case["id"]]["units"][uid]
                     self.assertIn(f"$ Units {u['ascii']}.", text)
-                    got = reference.model_from_bdf(text)["model"]
+                    deck = reference.model_from_bdf(text)
+                    got = deck["model"]
+                    self.assertEqual(deck["params"], {"POST": "0"})
+                    self.assertEqual(deck["case"]["SPC"], "1")
+                    self.assertEqual(deck["case"]["LOAD"], "2")
                     f = u["factor"]
                     # The deck's numbers are the model in this convention.
                     self.assertAlmostEqual(got["length"] * f["length"] / model["length"], 1, places=12)
                     self.assertAlmostEqual(got["material"]["E"] * f["stress"] / model["material"]["E"], 1, places=12)
+                    self.assertAlmostEqual(got["material"]["nu"], model["material"]["nu"], places=9)
+                    self.assertAlmostEqual(got["section"]["A"] * f["area"] / model["section"]["A"], 1, places=9)
                     self.assertAlmostEqual(got["section"]["I"] * f["inertia"] / model["section"]["I"], 1, places=12)
+                    self.assertEqual(sorted((s["kind"], round(s["x"] * f["length"], 9)) for s in got["supports"]),
+                                     sorted((s["kind"], round(s["x"], 9)) for s in model["supports"]))
                     # Solved in its own units, then converted to SI, it gives the original reactions and deflections.
                     beam = reference.Beam(got)
                     scale = max(abs(float(r["Fy"])) for r in original.reactions)
@@ -247,6 +291,18 @@ class BeamDiagTest(unittest.TestCase):
         for required in ("plots", "readout", "error", "supports", "loads", "table", "download", "deck", "method", "hand-body", "hand-point", "save-hand", "copy-hand"):
             self.assertIn(required, parser.ids)
         self.assertFalse([s for s in parser.scripts if s.get("src") or s.get("href")], "no external scripts or styles")
+
+    def test_page_registers_its_webmcp_tools(self):
+        run = subprocess.run([shutil.which("node") or "node", "-e", PAGE_SCRIPT, str(VIZ)], check=True, capture_output=True, text=True)
+        page = json.loads(run.stdout)
+        self.assertEqual(page["names"], WEBMCP_TOOLS)
+        case = FIXTURES["cases"][0]
+        expected = self.js[case["id"]]
+        self.assertEqual(page["solve"]["reactions"], expected["reactions"])
+        # The deck tool writes in the page's unit convention, which opens as N, mm, MPa.
+        self.assertEqual(page["bdf"]["bdf"], expected["units"]["N-mm"])
+        self.assertIn("reactions", page["current"])
+        self.assertIn("error", page["bad"])
 
 
 if __name__ == "__main__":
