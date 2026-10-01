@@ -23,7 +23,7 @@ Run from the root of a `yujieteo/visuals` checkout (Python 3 standard library an
 ```sh
 python3 scripts/build_stock_cases.py  # regenerates all four stock pages (airbnb, arm, marvell, panw) and the gallery
 python3 scripts/build_stock_cases.py --verify
-node --test tests/stock-cases-beamdswitch.test.mjs tests/voice-beamdswitch.test.mjs
+node --test tests/stock-cases-beamdswitch.test.mjs tests/stock-cases-tools.test.mjs tests/voice-beamdswitch.test.mjs
 ```
 
 Change the data or `scripts/build_stock_cases.py`, then regenerate; never hand-edit `index.html`. Before opening a pull request, run the full suite in the upstream README's Verification section, which CI (`.github/workflows/verify.yml`) runs on every push.
@@ -32,7 +32,7 @@ Change the data or `scripts/build_stock_cases.py`, then regenerate; never hand-e
 
 - Data: `data/arm/raw.json` (SEC XBRL company facts) and `data/arm/meta.json`.
 - Deck report: `scripts/templates/stock-cases-report.js` upstream (the builder inlines it; there is no `report.js` in this folder).
-- Tests: `tests/stock-cases-beamdswitch.test.mjs`, and `tests/voice-beamdswitch.test.mjs` for every deck page.
+- Tests: `tests/stock-cases-beamdswitch.test.mjs`, `tests/stock-cases-tools.test.mjs` for the WebMCP tools, and `tests/voice-beamdswitch.test.mjs` for every deck page.
 
 ## Conventions
 
