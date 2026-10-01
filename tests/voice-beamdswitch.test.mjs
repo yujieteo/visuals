@@ -38,7 +38,7 @@ test("the pages that export a beamdswitch deck are the known set", () => {
 
 test("the shared template defaults the voice to bf_emma and keeps one the report names", () => {
   const T = templateOf(read(TEMPLATE_PATH));
-  assert.equal(T.VOICE, "bf_emma");
+  assert.equal(T.DEFAULT_VOICE, "bf_emma");
   for (const meta of [{}, { voice: "" }, { voice: "  " }]) assert.equal(parseDeck(T.deck(report(meta))).meta.voice, "bf_emma", JSON.stringify(meta));
   assert.equal(parseDeck(T.deck(report({ voice: "bf_isabella" }))).meta.voice, "bf_isabella");
   assert.equal(T.deck(report({})).match(/^voice:/gm).length, 1);
