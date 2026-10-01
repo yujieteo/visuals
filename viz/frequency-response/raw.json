@@ -1,0 +1,223 @@
+{
+  "title": "Frequency-Response Visualiser",
+  "phase": 4,
+  "disclaimer": "EXPLORATION ONLY. Not a substitute for a verified control-design toolchain. Classical textbook methods, unverified against any certified tool; margin thresholds are unsourced defaults. Check every result independently before relying on it.",
+  "units": "Canonical: rad/s, seconds, absolute magnitude, degrees. Display toggles change only what is shown.",
+  "scope": "Phase 4 of 4: SISO and MIMO loops in continuous or discrete time. SISO: Bode, singular-value (magnitudes), Nyquist and Nichols views, margins, the Nyquist count cross-checked against the closed-loop poles, and the pole-zero map. MIMO (state space, or a transfer matrix with the hidden-mode caveat): entry-wise Bode, singular values of L, I + L, S and T, eigenvalue loci with the generalised Nyquist count on det(I + L) cross-checked against the closed-loop eigenvalues, eigenvalue-locus, return-difference, sensitivity-peak and loop-at-a-time margins at both breaking points. ZOH, Tustin (optional prewarp), forward and backward Euler discretisation, integer-sample delays, self-tests and exports.",
+  "mimoPresets": {
+    "spinning-satellite": {
+      "label": "Spinning satellite, a = 10, controller K = I"
+    },
+    "distillation-lv": {
+      "label": "Distillation column (LV) 1/(75s + 1)·G₀ with inverse-based PI controller"
+    },
+    "decoupled": {
+      "label": "Two decoupled loops diag(1/(s + 1), 2/(s(s + 2))) as a transfer matrix, K = I"
+    }
+  },
+  "nichols": {
+    "mContoursDb": [
+      12,
+      6,
+      3,
+      1,
+      0.5,
+      0,
+      -1,
+      -3,
+      -6,
+      -12,
+      -20
+    ],
+    "nContoursDeg": [
+      -5,
+      -10,
+      -20,
+      -30,
+      -60,
+      -90,
+      -120,
+      -150
+    ]
+  },
+  "discretization": {
+    "methods": {
+      "zoh": "zero-order hold",
+      "tustin": "Tustin (bilinear)",
+      "forward": "forward Euler",
+      "backward": "backward Euler",
+      "z": "entered directly in z"
+    },
+    "prewarp": "Tustin prewarp frequency in rad/s; 0 means none"
+  },
+  "conventions": [
+    "Open loop L(s) = K · C(s) · G(s) · e^(−sτ) with unity negative feedback; S = 1/(1 + L), T = L/(1 + L).",
+    "Evaluated at s = jω for ω > 0 in rad/s. Magnitude and phase come from the factored form k · Π(jω − zᵢ) / Π(jω − pᵢ), so accuracy holds near lightly damped poles; phase is the continuous sum of the factor angles (atan2) minus ωτ, so it is unwrapped by continuity.",
+    "Gain crossover ω_gc: |L| = 1 (0 dB), found by a sign-change scan on the grid and refined with Brent's method on log₁₀ ω. Phase margin PM = 180° + ∠L(ω_gc), wrapped to (−180°, 180°].",
+    "Phase crossover ω_pc: ∠L = −180° + k·360°, found the same way; a finite, real negative L(0) is a phase crossover at ω = 0 and, without delay, a finite, real negative L(∞) is one at ω = ∞ (marked atInfinity in JSON, where ω is written as null). Gain margin GM = −20·log₁₀|L(ω_pc)| dB. Every crossover is reported. The smallest PM governs; the upper gain margin is the smallest GM ≥ 0 dB (gain increase to instability) and the lower gain margin the largest GM < 0 dB (gain reduction to instability). The GM check passes when the upper margin ≥ threshold and the lower margin ≤ −threshold, each where present.",
+    "Delay margin = PM (rad) / ω_gc in seconds, the smallest over crossovers with positive PM; if any gain crossover has PM ≤ 0 the delay margin is 0 s, with a message.",
+    "Ms = max|S|, Mt = max|T|, refined by golden-section search on log₁₀ ω; vector margin = 1/Ms, the minimum distance from L to −1. The closed-loop resonant peak Mr is max|T| relative to the DC gain |T(0)|, and the −3 dB bandwidth is the first frequency where |T| falls below |T(0)|/√2.",
+    "Closed-loop poles are the roots (Aberth iteration) of D_C·D_G + K·N_C·N_G; in continuous time they are available only without delay. Poles with |Re| ≤ 1e-9·max(1, |p|) are on the stability boundary and reported as marginal.",
+    "Discrete time: L(z) = K · C(z) · G(z) · z^(−d) with sample time Ts, evaluated at z = e^(jωTs) for 0 < ω ≤ π/Ts (the Nyquist frequency), with each factor angle measured from +j for a root inside the unit circle and from −r for a root r outside it, so the phase stays continuous along the arc; the grid ends exactly at π/Ts and a manual ω_max above it is clipped with a warning. Stability means |p| < 1; poles with ||p| − 1| ≤ 1e-9 are on the unit circle and reported as marginal. The delay d is a whole number of samples, applied exactly as z^(−d); because z^(−d) is rational, the closed-loop poles (roots of D·z^d + N) stay available with a delay in discrete time.",
+    "Discrete phase crossovers include ω = 0 when L(1) is finite, real and negative, and ω = π/Ts when L(−1) is finite, real and negative (z = −1 makes L real, so a crossover can sit exactly at the Nyquist frequency). The ω = ∞ crossover applies only in continuous time.",
+    "Discretisation is done in state space: each continuous block is realised in controllable canonical form (it must be proper), then Ad, Bd, Cd, Dd come from zero-order hold (exact, via the matrix exponential of [[A, B], [0, 0]]·Ts by scaling and squaring with a degree-6 Padé approximant), Tustin (s = c·(z − 1)/(z + 1) with c = 2/Ts, or c = ωp/tan(ωp·Ts/2) with prewarp frequency ωp), forward Euler (s = (z − 1)/Ts) or backward Euler (s = (z − 1)/(z·Ts)). The z-domain transfer function is det-based: den = det(zI − Ad), num = Dd·den + det(zI − Ad + Bd·Cd) − den, with characteristic polynomials from a Hessenberg reduction; leading numerator coefficients below 1e-12 of the largest are treated as round-off and dropped. The discrete poles and zeros come from the exact root maps rather than by re-rooting: Tustin z = (c + p)/(c − p) plus n − m zeros at exactly z = −1, forward Euler z = 1 + p·Ts, backward Euler z = 1/(1 − p·Ts) plus n − m zeros at exactly z = 0, and ZOH poles z = e^(p·Ts) with the zeros from the discretised numerator; num and den stay the state-space result.",
+    "When every block is discretised from s, the continuous response L(jω) (with delay d·Ts) is overlaid on the discrete one to show warping and aliasing. Straight-line asymptotes are drawn in continuous time only.",
+    "Nyquist: the count Z = N + P uses the argument principle on 1 + L round the whole contour (the lower half is the conjugate mirror of the upper half). Continuous time: up the jω axis from −j∞ to +j∞, closed clockwise through the right half-plane (by an arc for an improper loop, otherwise at |L| → 0), indented to the right round jω-axis poles. Discrete time: anticlockwise round the unit circle, indented outwards round unit-circle poles. Boundary poles therefore count as stable. N is the net number of clockwise encirclements of −1, P the open-loop poles strictly in the unstable region (of the delay-free part), Z the unstable closed-loop poles; a non-causal L(z) adds its degree excess. The contour is refined adaptively wherever arg(1 + L) turns by more than 45°, a delay turns L by more than 45° while |L| > 0.5 (for MIMO, while det(I + L) is more than half of |det(I + D_G·D_C)| from that limit), or the locus jumps further than its distance to −1 (capped at 120 000 evaluations); a leftover turn above 90° or a non-integer winding marks the count unresolved. Where the closed-loop poles are available the two verdicts are compared and any disagreement is flagged first among the warnings.",
+    "Nichols: open-loop phase (degrees, unwrapped) against magnitude (dB), with the critical point (−180° + k·360°, 0 dB) repeated every 360°. Constant-|T| = M contours solve (M² − 1)|L|² + 2M²·cos φ·|L| + M² = 0 for its positive roots (two branches when M > 1); constant-∠T = ψ contours are |L| = sin(φ − ψ)/sin ψ where that is positive and on the right branch; the Ms boundary is |1 + L| = 1/Ms, i.e. |L| = −cos φ ± √(cos²φ − 1 + 1/Ms²).",
+    "MIMO: plant G (p × m) and controller C (m × p) are state space, a static gain (controller only), or a transfer matrix realised by stacking one controllable-canonical block per non-zero entry; that realisation is not minimal and can hide modes. The loop broken at the plant output is L_o = G·Δ·C (p × p) and at the plant input L_i = Δ·C·G (m × m), with delays e^(−sτ) applied to G per plant input (G·Δ), per plant output (Δ·G) or per entry (G_ij·e^(−sτ_ij)); in discrete time they are whole samples held as shift-register states (per output through the transposed realisation, per entry by stacking one delayed copy of the plant per output row, which is not minimal). G(s) = C(sI − A)⁻¹B + D is evaluated through a Hessenberg form of A by complex elimination at each frequency. Closed-loop poles are the eigenvalues of A_cl (complex Hessenberg reduction and shifted QR). The generalised Nyquist count uses the winding of det(I + L) about 0 on the same contour, refinement and indentation as the single-loop count, P being the unstable eigenvalues of the open-loop state matrix; it never depends on eigenvalue matching.",
+    "MIMO margins, at both breaking points (the chosen one drives the checks): eigenvalue loci λᵢ(L), matched between neighbouring frequencies only for colouring, give the eigenvalue-locus phase margin at |λ| = 1 and the uniform scalar-gain margins (all loops scaled together) at negative-real-axis crossings, which can be optimistic for non-normal L (crossings exactly at ω = 0 or π/Ts are not read). The return difference α = min σ_min(I + L) (one-sided Jacobi SVD, golden-section refined) is a genuine but conservative bound: simultaneous gain margins from 1/(1 + α) to 1/(1 − α) and phase margins of ±2·asin(α/2). max σ_max(S) = 1/α and max σ_max(T) (golden-section refined) are reported, and loop-at-a-time margins are the classical margins of each diagonal channel with the other loops open, which ignore cross-coupling. The MIMO grid uses at most 60 points per decade; every crossing and peak is refined between grid points (Brent and golden-section search), so the reported margins do not depend on the grid density. Disk margins and structured singular value (μ) analysis are out of scope."
+  ],
+  "assumptions": [
+    "Unity negative feedback and LTI systems, in continuous or discrete time chosen globally (no mixed sampled-data loops); SISO, or MIMO with up to 6 inputs and 6 outputs and about 50 states.",
+    "MIMO input is state space first; a transfer matrix is a convenience path whose stacked realisation can contain hidden modes, so its open-loop pole count can overcount P. The user chooses the loop-breaking point (plant input or output); the generalised Nyquist count uses det(I + L), and eigenvalue loci serve visualisation and the eigenvalue-based margins. MIMO Nichols views show eigenvalue loci and are illustrative, not a robustness proof. MIMO delays are per plant input channel, per plant output channel or per plant entry.",
+    "Continuous delays are exact e^(−jωτ) in the response; no Padé approximation is used in plots. Discrete delays are integer samples; fractional delays are not supported.",
+    "Each block in discrete time is either entered directly in z or entered in s and discretised by its own method (ZOH, Tustin with optional prewarp, forward or backward Euler); presets are continuous prototypes and must be discretised.",
+    "Margin thresholds are user inputs; the pre-filled values are unsourced defaults, not requirements.",
+    "Classical control theory only; no NASA or Niu source is claimed."
+  ],
+  "sources": [
+    {
+      "tag": "classical",
+      "text": "Classical frequency-response analysis (Bode, gain and phase margins, sensitivity peaks) as in standard feedback-control textbooks, e.g. G. F. Franklin, J. D. Powell, A. Emami-Naeini, Feedback Control of Dynamic Systems; S. Skogestad, I. Postlethwaite, Multivariable Feedback Control, 2nd ed., Wiley, 2005."
+    },
+    {
+      "tag": "classical",
+      "text": "O. Aberth, “Iteration methods for finding all zeros of a polynomial simultaneously”, Mathematics of Computation 27 (1973) 339–344 (polynomial roots)."
+    },
+    {
+      "tag": "classical",
+      "text": "R. P. Brent, Algorithms for Minimization without Derivatives, Prentice-Hall, 1973 (root refinement and golden-section search)."
+    },
+    {
+      "tag": "classical",
+      "text": "G. F. Franklin, J. D. Powell, M. L. Workman, Digital Control of Dynamic Systems, 3rd ed., Addison-Wesley, 1998 (zero-order hold, Tustin with prewarping, Euler discretisation)."
+    },
+    {
+      "tag": "classical",
+      "text": "C. Moler, C. Van Loan, “Nineteen dubious ways to compute the exponential of a matrix, twenty-five years later”, SIAM Review 45 (2003) 3–49 (scaling and squaring with Padé approximation)."
+    }
+  ],
+  "thresholdDefaults": {
+    "gmDb": 6,
+    "pmDeg": 45,
+    "ms": 2,
+    "source": "unsourced default"
+  },
+  "presets": {
+    "gain": {
+      "label": "Static gain k",
+      "params": {
+        "k": 1
+      }
+    },
+    "first-order": {
+      "label": "First order k/(τs + 1)",
+      "params": {
+        "k": 1,
+        "tau": 1
+      }
+    },
+    "second-order": {
+      "label": "Second order k·ωn²/(s² + 2ζωn·s + ωn²)",
+      "params": {
+        "k": 1,
+        "wn": 1,
+        "zeta": 0.2
+      }
+    },
+    "integrator": {
+      "label": "Integrator k/s",
+      "params": {
+        "k": 1
+      }
+    },
+    "pi": {
+      "label": "PI kp·(1 + 1/(Ti·s))",
+      "params": {
+        "kp": 1,
+        "ti": 1
+      }
+    },
+    "pid": {
+      "label": "PID kp·(1 + 1/(Ti·s) + Td·s/((Td/N)·s + 1))",
+      "params": {
+        "kp": 1,
+        "ti": 2,
+        "td": 0.5,
+        "n": 10
+      }
+    },
+    "lead": {
+      "label": "Lead k·(s/ωz + 1)/(s/ωp + 1), ωz < ωp",
+      "params": {
+        "k": 1,
+        "wz": 1,
+        "wp": 10
+      }
+    },
+    "lag": {
+      "label": "Lag k·(s/ωz + 1)/(s/ωp + 1), ωz > ωp",
+      "params": {
+        "k": 1,
+        "wz": 1,
+        "wp": 0.1
+      }
+    },
+    "notch": {
+      "label": "Notch (s² + 2ζz·ωn·s + ωn²)/(s² + 2ζp·ωn·s + ωn²)",
+      "params": {
+        "wn": 1,
+        "zetaZ": 0.02,
+        "zetaP": 0.5
+      }
+    },
+    "type1-third-order": {
+      "label": "1/(s(s + 1)(s + 2)) — critical gain K = 6",
+      "params": {}
+    }
+  },
+  "schemaVersion": 2,
+  "example": {
+    "schemaVersion": 2,
+    "system": "siso",
+    "timeDomain": "continuous",
+    "Ts": 0.1,
+    "plant": {
+      "form": "preset",
+      "preset": "type1-third-order",
+      "params": {}
+    },
+    "controller": {
+      "form": "preset",
+      "preset": "gain",
+      "params": {
+        "k": 1
+      }
+    },
+    "discretization": {
+      "plant": "zoh",
+      "controller": "tustin",
+      "prewarp": 0
+    },
+    "K": 3,
+    "delay": 0,
+    "delaySamples": 0,
+    "range": {
+      "auto": true,
+      "wMin": 0.01,
+      "wMax": 100,
+      "pointsPerDecade": 200
+    },
+    "thresholds": {
+      "gmDb": 6,
+      "pmDeg": 45,
+      "ms": 2
+    },
+    "displayUnits": {
+      "freq": "rad/s",
+      "mag": "dB",
+      "phase": "deg",
+      "wrapPhase": false
+    }
+  }
+}
