@@ -20,12 +20,17 @@ BOUNDARY = ROOT / "data" / SLUG / "boundary.geojson"
 META = ROOT / "data" / SLUG / "meta.json"
 TOKENS = ROOT / "design-tokens.json"
 VIZ = ROOT / "viz" / SLUG / "index.html"
+TEMPLATE = ROOT / "viz" / SLUG / "beamdswitch.js"
+REPORT = ROOT / "viz" / SLUG / "report.js"
 GALLERY = ROOT / "index.html"
 README = ROOT / "README.md"
 TITLE = "Singapore haze, region by region"
 PSI_URL = "https://api-open.data.gov.sg/v2/real-time/api/psi"
 PM25_URL = "https://api-open.data.gov.sg/v2/real-time/api/pm25"
 BOUNDARY_URL = "https://data.gov.sg/datasets/d_4765db0e87b9c86336792efe8a1f7a66/view"
+BEAMDSWITCH_URL = "https://teoyujie.org/visuals/beamdswitch/"
+DECK_SOURCES = [{"label": "NEA PSI readings via data.gov.sg", "url": PSI_URL}, {"label": "NEA PM2.5 readings via data.gov.sg", "url": PM25_URL},
+                {"label": "URA Master Plan 2019 planning-area boundary", "url": BOUNDARY_URL}]
 REGIONS = ["north", "west", "central", "east", "south"]
 # PSI bands (NEA): upper bound, label. PM2.5 1-hour bands (NEA): upper bound, label.
 PSI_BANDS = [(50, "Good"), (100, "Moderate"), (200, "Unhealthy"), (300, "Very unhealthy"), (None, "Hazardous")]
@@ -218,6 +223,7 @@ h1{max-width:26ch;margin:0 0 .6rem;font-size:clamp(1.85rem,5.4vw,3.5rem);line-he
 .btn{min-height:2.75rem;padding:.35rem .9rem;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);font-size:.9rem}.btn:hover{background:var(--surface)}
 .btn.play{min-width:6.5rem;background:var(--fg);color:var(--bg);border-color:var(--fg);font-weight:600}
 .spacer{flex:1}
+.deck-row{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin-top:1rem}.deck-status,.deck-hint{color:var(--muted);font-size:.875rem}.deck-hint{max-width:56rem;margin:.5rem 0 0}
 .layout{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(16rem,1fr);gap:1.5rem;align-items:start}
 .stage{position:relative;min-width:0}
 .mapwrap{border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);overflow:hidden}
@@ -370,6 +376,12 @@ document.addEventListener("keydown",e=>{if(e.target.matches("input,select,textar
 
 drawLegend();drawStrip();select(null);render();
 
+/* beamdswitch deck: the report template is beamdswitch.js; report.js fills it from the measure, hour and region shown. */
+const deckStatus=document.getElementById("deck-status"),deck=()=>Beamdswitch.deck(HazeReport.report({...D,bands:BANDS,sources:__SOURCES__},{metric,t,sel}));
+function saveDeck(text,name){const url=URL.createObjectURL(new Blob([text],{type:"text/markdown"})),a=document.createElement("a");a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+document.getElementById("save-beamdswitch").addEventListener("click",()=>{const name="haze-singapore-beamdswitch.md";try{saveDeck(deck(),name);deckStatus.textContent=`Saved ${name}: open it in beamdswitch.`}catch{deckStatus.textContent="Could not save the beamdswitch deck here: use Copy deck instead."}});
+document.getElementById("copy-beamdswitch").addEventListener("click",async()=>{try{await navigator.clipboard.writeText(deck());deckStatus.textContent="Copied the beamdswitch deck: paste it into beamdswitch."}catch{deckStatus.textContent="Could not copy the beamdswitch deck here: use the beamdswitch button to save it."}});
+
 /* agent tools */
 const result=v=>({content:[{type:"text",text:JSON.stringify(v)}]}),mc=(typeof document!=="undefined"&&document.modelContext)||(typeof navigator!=="undefined"&&navigator.modelContext);
 const cols=["timestamp",...R.map(r=>"psi_"+r),...R.map(r=>"pm25_1h_"+r)];
@@ -380,7 +392,9 @@ mc?.registerTool({name:"query",description:"Return readings for one region, opti
 """
 
 BODY = """<a class="skip" href="#map">Skip to map</a>
-<header><h1>__HEADLINE__</h1><p class="lede">__LEDE__</p></header>
+<header><h1>__HEADLINE__</h1><p class="lede">__LEDE__</p>
+<div class="deck-row"><button type="button" id="save-beamdswitch" class="btn" title="Save a narrated Markdown talk about this hour, to open in beamdswitch">beamdswitch</button><button type="button" id="copy-beamdswitch" class="btn" title="Copy the narrated Markdown talk, to paste into beamdswitch">Copy deck</button><span id="deck-status" class="deck-status" role="status"></span></div>
+<p class="deck-hint">The beamdswitch button saves the measure, hour and region you pick below as a narrated talk: a Markdown deck with the data, method, results and checks, every reading as shown here, and a spoken narration on every slide. Open it in <a href="__BEAMDSWITCH__">beamdswitch</a> to get slides, a handout, narration and a video. Copy deck puts the same deck on the clipboard, to paste into beamdswitch if the download does not arrive.</p></header>
 <main id="main">
 <div class="controls" role="group" aria-label="Map controls">
 <div class="seg" role="group" aria-label="Measure"><button type="button" data-metric="psi" aria-pressed="true">PSI (24-hour)</button><button type="button" data-metric="pm1" aria-pressed="false">PM2.5 (1-hour)</button></div>
@@ -444,17 +458,20 @@ def render(model, meta, tokens):
               f'Retrieved {meta["fetched"]}.')
     body = (BODY.replace("__HEADLINE__", escape(headline)).replace("__LEDE__", escape(lede))
             .replace("__W__", str(geo["width"])).replace("__H__", str(geo["height"]))
-            .replace("__TH__", th).replace("__METHOD__", s["method_html"]).replace("__FOOTER__", footer))
+            .replace("__TH__", th).replace("__METHOD__", s["method_html"]).replace("__FOOTER__", footer)
+            .replace("__BEAMDSWITCH__", BEAMDSWITCH_URL))
     js = (JS.replace("__DATA__", json.dumps(data, separators=(",", ":")))
           .replace("__MAP__", json.dumps(map_json, separators=(",", ":")))
           .replace("__BANDS__", json.dumps(band_payload(), separators=(",", ":")))
+          .replace("__SOURCES__", json.dumps(DECK_SOURCES, separators=(",", ":")))
           .replace("__META__", json.dumps({"title": TITLE, "claim": headline, "sources": meta["sources"], "method": s["method_text"],
                                           "fetched": meta["fetched"], "coverage": meta["coverage"], "caveat": s["caveat"]},
                                          ensure_ascii=False)))
     js = js.replace("</", "<\\/")
     return (f'<!doctype html>\n<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
             f'<link rel="icon" href="data:,"><meta name="description" content="{escape(s["description"])}"><title>{escape(TITLE)}</title>'
-            f'<style>{css}</style></head><body>{body}<script>{js}</script></body></html>\n')
+            f'<style>{css}</style></head><body>{body}<script id="beamdswitch">\n{TEMPLATE.read_text()}</script><script id="report">\n{REPORT.read_text()}</script>'
+            f'<script>{js}</script></body></html>\n')
 
 
 README_ROW = f"| `{SLUG}` | `scripts/build_haze_singapore.py` | TITLE_PLACEHOLDER |"
@@ -542,8 +559,10 @@ def verify(model, meta, raw, boundary):
     assert meta == build_meta(model), "meta.json out of date"
     html = VIZ.read_text()
     assert html == render(model, meta, json.loads(TOKENS.read_text())), "viz/haze-singapore/index.html is out of date; run the builder"
-    assert html.count("<h1>") == 1 and html.count('id="map"') == 1 and html.count("<script") == 1
-    assert not re.search(r'''(?:src|href)=["']https?://''', re.sub(r'<footer>.*</footer>', "", html, flags=re.S)), "external asset"
+    assert html.count("<h1>") == 1 and html.count('id="map"') == 1 and html.count("<script") == 3
+    assert f'<script id="beamdswitch">\n{TEMPLATE.read_text()}</script>' in html and f'<script id="report">\n{REPORT.read_text()}</script>' in html
+    assert 'id="save-beamdswitch"' in html and 'id="copy-beamdswitch"' in html
+    assert not re.search(r'''(?:src|href)=["']https?://''', re.sub(r'<footer>.*</footer>', "", html, flags=re.S).replace(f'href="{BEAMDSWITCH_URL}"', "")), "external asset"
     assert not re.search(r"/(?:Users|home)/", html), "local path leaked"
     assert "fetch(" not in html and "XMLHttpRequest" not in html
     assert html.count("mc?.registerTool") == 3 and html.count("readOnlyHint:true") == 3
@@ -551,7 +570,7 @@ def verify(model, meta, raw, boundary):
     assert f'href="viz/{SLUG}/index.html"' in GALLERY.read_text()
     assert f"| `{SLUG}` |" in README.read_text() and README.read_text() == render_readme(README.read_text())
     print(f"verified: {s['hours']:,} hourly readings x 5 regions x 3 measures, peak PSI {s['peak_psi']} ({s['peak_region']}, {s['peak_stamp'][:16]}), "
-          f"{len(boundary['features'])} planning areas in 5 regions, 3 read-only tools, zero external assets")
+          f"{len(boundary['features'])} planning areas in 5 regions, 3 read-only tools, a narrated beamdswitch deck, zero external assets")
 
 
 def main():

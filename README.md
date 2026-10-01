@@ -23,6 +23,7 @@ for s in scripts/build*.py; do python3 "$s" --verify || break; done
 | `scripts/build*.py` | Dependency-free Python builders and verifiers. |
 | `scripts/gallery.py` | Shared helper that rebuilds the root gallery from every `viz/*/index.html`. |
 | `viz/<slug>/index.html` | Generated standalone visualization page. |
+| `viz/<slug>/beamdswitch.js`, `viz/<slug>/report.js` | Sources a builder inlines for a page's narrated beamdswitch deck: the site's unchanged report template and that page's report. |
 | `index.html` | Generated root gallery that links the visualization pages. |
 | `design-tokens.json` | Shared colors, spacing, radius, and fonts used by the builders. |
 | `SKILLS.md` | Agent router: maps task types to the focused sub-skills below. |
@@ -123,7 +124,10 @@ node --test tests/convexity-action-engine.test.mjs tests/everyday-actions.test.m
 Pages with a narrated beamdswitch report (the beamdswitch and Copy deck buttons)
 keep `viz/<slug>/beamdswitch.js`, an unchanged copy of the site's
 `templates/beamdswitch.js`, and `viz/<slug>/report.js`, which builds the report
-from the page's own data; the page inlines both. The four stock pages, whose
+from the page's own data; the page inlines both. `energy-email-productivity`,
+`fpl-expected-goals`, `manchester-city-finances`, `graduate-employment-survey`,
+`haze-singapore`, `singapore-covid-governance-hindsight`,
+`social-values-surveydata`, `tourist-attractions`, the four stock pages, whose
 report lives in `scripts/templates/stock-cases-report.js`,
 `breeden-litzenberger-density` and `convex-payoffs` offer the same narrated
 report for [beamdswitch](https://teoyujie.org/visuals/beamdswitch/): the
@@ -158,6 +162,7 @@ publication (there is no site deployment copy to test here).
 
 Each verifier checks the story's invariants, the embedded data tables, and
 (where applicable) that the page has no external assets. The Node tests run each
-action page's emitted scripts and check its read-only tool registrations.
+action page's emitted scripts and check its read-only tool registrations, and
+run each deck page's scripts to check its beamdswitch decks.
 `.github/workflows/verify.yml` runs every command above on every push and pull
 request.
