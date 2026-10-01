@@ -45,7 +45,7 @@ class Canvas extends Element {
   toBlob(done, type) { done(new Blob([new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])], { type })); }
 }
 
-export async function page({ runTimers = false, navigator = {}, saveFails = false } = {}) {
+export async function page({ runTimers = false, navigator = {} } = {}) {
   const nodes = new Map(), tools = new Map(), buttons = ["point", "moment"].map((kind) => {
     const b = new Element("button"); b.dataset.add = kind; return b;
   });
@@ -62,7 +62,7 @@ export async function page({ runTimers = false, navigator = {}, saveFails = fals
     createElement(tag) {
       if (tag === "canvas") { const c = new Canvas(); canvases.push(c); return c; }
       const e = new Element(tag);
-      if (tag === "a") e.click = () => { if (saveFails) throw new Error("downloads are blocked"); saved.push({ name: e.download, blob: urls.get(e.href) }); };
+      if (tag === "a") e.click = () => { saved.push({ name: e.download, blob: urls.get(e.href) }); };
       return e;
     },
     createElementNS: (_, tag) => new Element(tag),
@@ -100,7 +100,7 @@ export async function page({ runTimers = false, navigator = {}, saveFails = fals
   };
   const choose = (id, value) => { const e = document.getElementById(id); e.value = value; e.dispatch("change"); };
   const current = async () => JSON.parse((await tools.get("get_current_beam").execute()).content[0].text);
-  /* Click a save button and wait for the page to report the outcome. */
+  /* Click a save or copy button and wait for the page to report the outcome. */
   const save = async (id) => {
     const status = document.getElementById("figure-status");
     status.textContent = "";

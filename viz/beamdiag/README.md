@@ -34,8 +34,10 @@ Models are not saved automatically; reloading starts from the first example.
   results with their plots, and the checks, and spoken narration on every
   slide. Every number is the solver's, written as the page writes it and read
   aloud in the chosen units. Open it in beamdswitch (Open, or drop the file) to
-  get slides, a handout, narration and a video. If the browser blocks the
-  download, the deck is copied to the clipboard instead.
+  get slides, a handout, narration and a video. Copy deck, beside it, puts the
+  same deck on the clipboard to paste into beamdswitch, for when the browser
+  blocks the download (a blocked download fails silently, so the page cannot
+  tell and copy on its own).
 - Download the same model as an MSC Nastran SOL 101 bulk data deck (`.bdf`) to
   run in NASTRAN yourself. “Elements per segment” sets only the export mesh,
   with no upper cap; it does not change the browser solution or plot sampling.

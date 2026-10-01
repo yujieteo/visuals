@@ -209,16 +209,23 @@ test("the deck is titled after a preset only while the beam is still that preset
   }
 });
 
-test("when saving is blocked the deck is copied to the clipboard instead", async () => {
+test("Copy deck copies the same deck the beamdswitch button saves, without downloading", async () => {
   const copied = [];
-  const p = await page({ saveFails: true, navigator: { clipboard: { writeText: async (t) => { copied.push(t); } } } });
-  assert.equal(await p.save("save-beamdswitch"), "Copied the beamdswitch deck, as saving is blocked here: paste it into beamdswitch.");
+  const p = await page({ navigator: { clipboard: { writeText: async (t) => { copied.push(t); } } } });
+  assert.equal(await p.save("copy-beamdswitch"), "Copied the beamdswitch deck: paste it into beamdswitch.");
   assert.equal(p.saved.length, 0);
   assert.equal(copied.length, 1);
   assert.equal(parseDeck(copied[0]).meta.title, `Beam analysis: ${raw.presets[0].label}`);
+  assert.match(await p.save("save-beamdswitch"), /^Saved/);
+  assert.equal(await p.saved.at(-1).blob.text(), copied[0]);
+});
 
-  const blocked = await page({ saveFails: true });
-  assert.equal(await blocked.save("save-beamdswitch"), "Could not save or copy the beamdswitch deck here.");
+test("Copy deck says so when the clipboard is blocked", async () => {
+  const denied = await page({ navigator: { clipboard: { writeText: async () => { throw new Error("NotAllowedError"); } } } });
+  assert.equal(await denied.save("copy-beamdswitch"), "Could not copy the beamdswitch deck: the clipboard is blocked here.");
+  const missing = await page();
+  assert.equal(await missing.save("copy-beamdswitch"), "Could not copy the beamdswitch deck: the clipboard is blocked here.");
+  assert.equal(missing.saved.length, 0);
 });
 
 test("nothing is saved for beamdswitch while the beam cannot be solved", async () => {
@@ -226,4 +233,5 @@ test("nothing is saved for beamdswitch while the beam cannot be solved", async (
   p.input("length", -1);
   assert.equal(await p.save("save-beamdswitch"), "Fix the beam first: there is no solution to save.");
   assert.equal(p.saved.length, 0);
+  assert.equal(await p.save("copy-beamdswitch"), "Fix the beam first: there is no solution to copy.");
 });

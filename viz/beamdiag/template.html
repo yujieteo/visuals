@@ -150,10 +150,11 @@ code{font:.875em var(--mono)}
       <button class="btn primary" type="button" id="save-image">Save image</button>
       <button class="btn" type="button" id="save-pdf">Save PDF</button>
       <button class="btn" type="button" id="save-beamdswitch" title="Save a narrated Markdown talk about this beam, to open in beamdswitch">beamdswitch</button>
+      <button class="btn" type="button" id="copy-beamdswitch" title="Copy the same beamdswitch deck to the clipboard, to paste into beamdswitch">Copy deck</button>
       <span id="figure-status" class="small muted" role="status"></span>
     </div>
     <p class="hint">The image and the PDF hold the beam, shear force, bending moment and deflection diagrams with every result below them. They are drawn on this page and saved straight to your device: nothing is uploaded.</p>
-    <p class="hint">The beamdswitch button saves this beam as a narrated talk: a Markdown deck with the set-up, method, results and checks, every number as shown here, and a spoken narration on every slide. Open it in <a href="https://teoyujie.org/visuals/beamdswitch/">beamdswitch</a> to get slides, a handout, narration and a video. If saving is blocked, the deck is copied to the clipboard instead.</p>
+    <p class="hint">The beamdswitch button saves this beam as a narrated talk: a Markdown deck with the set-up, method, results and checks, every number as shown here, and a spoken narration on every slide. Open it in <a href="https://teoyujie.org/visuals/beamdswitch/">beamdswitch</a> to get slides, a handout, narration and a video. Copy deck puts the same deck on the clipboard to paste into beamdswitch, for when the browser blocks the download.</p>
   </div>
 
   <div class="panel">
@@ -1106,17 +1107,28 @@ function reportDeck() {
     material: { label: mat ? mat.label : "" },
   }));
 }
-async function saveReport() {
+/* A blocked download fails silently, so the page cannot fall back on its own: Copy deck is the explicit fallback. */
+function saveReport() {
   const status = $("figure-status");
   if (pending !== null) update({ keepForm: true });
   if (!result || solveError) { status.textContent = "Fix the beam first: there is no solution to save."; return; }
-  const text = reportDeck(), name = "beamdiag-beamdswitch.md";
+  const name = "beamdiag-beamdswitch.md";
   try {
-    save(new Blob([text], { type: "text/markdown" }), name);
+    save(new Blob([reportDeck()], { type: "text/markdown" }), name);
     status.textContent = `Saved ${name}: open it in beamdswitch.`;
+  } catch (e) {
+    status.textContent = `Could not save: ${e.message}. Use Copy deck instead.`;
+  }
+}
+async function copyReport() {
+  const status = $("figure-status");
+  if (pending !== null) update({ keepForm: true });
+  if (!result || solveError) { status.textContent = "Fix the beam first: there is no solution to copy."; return; }
+  try {
+    await navigator.clipboard.writeText(reportDeck());
+    status.textContent = "Copied the beamdswitch deck: paste it into beamdswitch.";
   } catch {
-    try { await navigator.clipboard.writeText(text); status.textContent = "Copied the beamdswitch deck, as saving is blocked here: paste it into beamdswitch."; }
-    catch { status.textContent = "Could not save or copy the beamdswitch deck here."; }
+    status.textContent = "Could not copy the beamdswitch deck: the clipboard is blocked here.";
   }
 }
 
@@ -1257,6 +1269,7 @@ function wire() {
   $("save-image").addEventListener("click", () => saveFigure($("image-format").value === "svg" ? "svg" : "png"));
   $("save-pdf").addEventListener("click", () => saveFigure("pdf"));
   $("save-beamdswitch").addEventListener("click", saveReport);
+  $("copy-beamdswitch").addEventListener("click", copyReport);
   $("divisions").addEventListener("input", () => { state.divisions = Number($("divisions").value); updateSoon(); });
   $("add-support").addEventListener("click", () => {
     const L = state.length, taken = new Set(state.supports.map((s) => s.x));
