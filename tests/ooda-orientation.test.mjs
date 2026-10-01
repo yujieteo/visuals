@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import vm from "node:vm";
+import { openPage } from "./beamdswitch-decks.mjs";
 
 // The page inlines its pure logic as <script id="oo-logic"> and its data as JSON; run the shipped code directly.
 const html = await readFile(new URL("../viz/ooda-orientation/index.html", import.meta.url), "utf8");
@@ -165,6 +166,35 @@ test("referential integrity holds after every step, and broken references are re
   assert.ok(ids.sig);
 });
 
+test("a draft action is abandoned, not carried over, when a new orientation is adopted", () => {
+  const { s, ids } = build([...base(),
+    { do: "action", type: "probe", text: "Call three customers who cancelled", expected: "They mention slow delivery", reconsider: "Nobody mentions delivery", as: "act" },
+    { do: "reorient" },
+    { do: "move", op: "a-negate", targets: ["@asm"], replacement: { text: "Customers care about reliability more than price" }, as: "rep" },
+    { do: "candidate", inside: "a reliability problem", from: ["@rep"], items: ["@rep", "@bnd"], boundary: "@bnd", mechanism: "unreliable delivery loses customers", move: "Fix reliability", as: "o1" },
+    { do: "adopt", id: "@o1" }]);
+  const old = s.actions.find((a) => a.id === ids.act);
+  assert.equal(old.status, "abandoned");
+  assert.equal(old.orientation, s.orientations[0].id, "the abandoned action stays traced to the model it came from");
+  assert.ok(s.predictions.some((p) => p.id === old.prediction), "its prediction is kept");
+  assert.ok(s.history.some((h) => h.kind === "abandon" && h.action === ids.act && h.orientation === s.orientations[0].id));
+  assert.equal(L.currentAction(s), null);
+  assert.equal(L.readiness(s).action, false);
+  assert.deepEqual(plain(L.check(s)), []);
+  assert.match(L.markdown(s), /## Current decision\n\nNo action chosen yet\./);
+  assert.equal(L.records(s).find((r) => r.id === ids.act).location, "Loop 1 · abandoned");
+  rejects(s, { do: "start", id: ids.act }, "untraced-action");
+  rejects(s, { do: "editAction", id: ids.act, text: "x" }, "action-started");
+  const r = ok(s, { do: "action", type: "probe", text: "Track missed delivery windows for a week", expected: "Missed windows precede cancellations", reconsider: "No link appears" });
+  const fresh = r.state.actions.find((a) => a.id === r.id);
+  assert.equal(fresh.orientation, ids.o1);
+  assert.equal(L.currentAction(r.state).id, r.id);
+  assert.match(L.actionSentence(r.state, fresh), /a reliability problem/);
+  const started = ok(r.state, { do: "start", id: r.id }).state;
+  assert.equal(started.actions.find((a) => a.id === ids.act).status, "abandoned");
+  assert.equal(L.importText(L.exportJSON(started)).ok, true);
+});
+
 test("export integrity: JSON export and import round-trip without semantic loss", () => {
   for (const e of D.examples)
     for (const n of [1, Math.floor(e.steps.length / 2), e.steps.length]) {
@@ -212,14 +242,38 @@ test("rejected candidates remain visible in the lineage", () => {
   assert.equal(L.label(r, L.current(r)), "O0");
 });
 
-test("reduced motion changes presentation only: the state has no motion setting and the transition view is data", () => {
+// Opens the page on a stored situation; typing into the palette draws its rows, and Enter chooses the first.
+async function page(s, globals = {}) {
+  const stored = JSON.stringify(s), writes = [];
+  const localStorage = { getItem: (k) => (k === L.KEY ? stored : null), setItem: (k, v) => writes.push(v), removeItem() {} };
+  const pg = await openPage("ooda-orientation", { globals: { localStorage, ...globals } });
+  const palette = async (q, enter) => {
+    pg.run("document").getElementById("pal-input").value = q;
+    await pg.run("document").getElementById("pal-input").dispatch("input");
+    if (enter) for (const fn of pg.run("document").getElementById("pal-input").listeners.keydown) await fn({ key: "Enter", preventDefault() {} });
+    await new Promise((r) => setImmediate(r));
+    return [...pg.run("document").getElementById("pal-list").innerHTML.matchAll(/<li role="option"[^>]*class="([^"]*)"[^>]*><span class="ty">([^<]*)<\/span><span class="ti">([^<]*)<\/span>/g)].map(([, cls, type, title]) => ({ cls, type, title }));
+  };
+  return { pg, writes, palette };
+}
+
+test("reduced motion changes presentation only: the state has no motion setting and the transition view is data", async () => {
   const { s } = replay("southwest");
   assert.deepEqual(Object.keys(s.uiPreferences), ["stage"]);
   const t = s.history.find((h) => h.kind === "transition").id;
   assert.deepEqual(plain(L.signature(s, t)), plain(L.signature(JSON.parse(L.exportJSON(s)), t)));
-  assert.match(html, /@media \(prefers-reduced-motion:reduce\)\{\*,\*::before,\*::after\{animation:none!important;transition:none!important/);
-  const ui = script("oo-ui");
-  assert.doesNotMatch(ui, /prefers-reduced-motion|reducedMotion/, "the interface never branches state on motion");
+  // The same situation opened with and without a reduced-motion preference exports and stores the same thing.
+  const out = [];
+  for (const matches of [false, true]) {
+    const { pg, writes, palette } = await page(s, { matchMedia: (q) => ({ matches: matches && /reduce/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} }) });
+    await palette("Copy Markdown", true);
+    await pg.click("copy-beamdswitch");
+    out.push({ copied: pg.copied, writes });
+  }
+  assert.equal(out[0].copied.length, 2);
+  assert.equal(out[0].copied[0], L.markdown(s));
+  assert.deepEqual(out[1], out[0]);
+  for (const w of out[1].writes) assert.deepEqual(JSON.parse(w), plain(s));
 });
 
 /* ---------- search (sections 47-52, 83) ---------- */
@@ -291,8 +345,16 @@ test("commands appear in the same palette and stay distinguishable from records"
   assert.ok(mixed.some((r) => r.kind === "command") && mixed.some((r) => r.kind === "record"));
   for (const r of mixed) assert.equal(r.kind === "command", r.type === "Command");
   assert.equal(mixed[0].title, "Reorient");
-  const ui = script("oo-ui");
-  assert.match(ui, /class="' \+ \(r\.kind === "command" \? "cmd" : ""\)/, "commands get their own visual class");
+});
+
+test("the palette draws commands with their own class and records without it", async () => {
+  const s = replay("stalled-project").s;
+  const { palette, writes } = await page(s);
+  const rows = await palette("reorient");
+  assert.deepEqual(plain(rows.map((r) => r.title)), plain(L.search(s, "reorient", 40).results.map((r) => r.title)));
+  assert.ok(rows.some((r) => r.cls === "cmd") && rows.some((r) => r.cls === ""));
+  for (const r of rows) assert.equal(r.cls === "cmd", r.type === "Command", r.title);
+  for (const w of writes) assert.deepEqual(JSON.parse(w), plain(s), "drawing the palette leaves the state alone");
 });
 
 test("search stays fast for several hundred local records", () => {

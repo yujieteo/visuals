@@ -203,6 +203,7 @@ const TEMPOS = ["low", "moderate", "high"];
 const CONFIDENCE = ["tenuous", "working", "strong"];
 const PRED_STATUS = ["pending", "observed", "partial", "not-observed", "unresolved"];
 const O_STATUS = ["adopted", "candidate", "rejected", "superseded"];
+const A_STATUS = ["draft", "started", "done", "abandoned"];
 const FIELDS = ["inside", "explains", "fails", "matters", "keyAssumption", "observe", "move", "mechanism", "falsifier"];
 const MSG = {
 invalid: "This file is not a valid Orient state. Your current situation has not been changed.",
@@ -254,7 +255,8 @@ if (i >= 0) return p + (p === "O" ? i : i + 1);
 return "";
 };
 const labelOf = (s, id) => label(s, find(s.orientations, id) || find(s.predictions, id) || find(s.actions, id) || find(s.outcomes, id));
-const locked = (s, o) => !!o && s.actions.some((a) => a.orientation === o.id && a.status !== "draft");
+const open = (a) => a.status === "draft" || a.status === "started";
+const locked = (s, o) => !!o && s.actions.some((a) => a.orientation === o.id && (a.status === "started" || a.status === "done"));
 const live = (i) => i && i.status !== "withdrawn";
 const itemsOf = (s, o, type) => (o ? o.items.map((id) => find(s.items, id)).filter((i) => live(i) && (!type || i.type === type)) : []);
 function newOrientation(s, parent, status, creation) {
@@ -543,6 +545,10 @@ const rejected = ws.candidates.filter((id) => id !== o.id && find(s.orientations
 for (const id of rejected) find(s.orientations, id).status = "rejected";
 prev.status = "superseded";
 o.status = "adopted";
+for (const a of s.actions.filter((x) => x.status === "draft" && x.orientation === prev.id)) {
+a.status = "abandoned";
+log(s, "abandon", { action: a.id, orientation: prev.id });
+}
 const intent = itemsOf(s, o, "intention").find((i) => i.id !== s.intent);
 if (intent) s.intent = intent.id;
 const kept = prev.items.filter((id) => o.items.includes(id));
@@ -575,7 +581,7 @@ return o0.id;
 case "action": {
 const o = c.orientation ? find(s.orientations, c.orientation) : o0;
 if (!o || o.status !== "adopted") throw err("untraced-action", "Every action must follow from the adopted orientation.");
-if (s.actions.some((a) => a.status !== "done")) throw err("one-action", "Finish or edit the current action first: one meaningful next move per loop.");
+if (s.actions.some(open)) throw err("one-action", "Finish or edit the current action first: one meaningful next move per loop.");
 if (!D.actionTypes.some((t) => t.id === c.type)) throw err("bad-type", "Choose probe, maneuver, commitment or wait.");
 if (!clean(c.text)) throw err("empty", "Say what you will do.");
 const a = { id: nid(s, "a"), orientation: o.id, type: c.type, text: clean(c.text), prediction: null, reconsider: clean(c.reconsider),
@@ -623,6 +629,7 @@ return p.id;
 }
 case "start": {
 const a = find(s.actions, c.id);
+if (a && find(s.orientations, a.orientation).status !== "adopted") throw err("untraced-action", "Every action must follow from the adopted orientation.");
 if (!a || a.status !== "draft") throw err("bad-ref", "There is no draft action to start.");
 if (a.type === "commitment" && !a.reconsider) throw err("commitment-trigger", "A commitment needs a reconsideration trigger before it starts.");
 a.status = "started";
@@ -694,7 +701,7 @@ const o = find(s.orientations, a.orientation), p = a.prediction && find(s.predic
 return "Because I currently believe " + (o ? claim(o) : "…") + ", I will " + (lowerFirst(a.text) || "…") + ", and I expect to observe " + (p ? lowerFirst(p.text) : "…") + ".";
 }
 const expectedOf = (s, a) => { const p = a && a.prediction && find(s.predictions, a.prediction); return p ? p.text : ""; };
-const currentAction = (s) => s.actions.filter((a) => a.status !== "done").slice(-1)[0] || null;
+const currentAction = (s) => s.actions.filter(open).slice(-1)[0] || null;
 function basis(s, o) {
 const its = itemsOf(s, o);
 const preds = s.predictions.filter((p) => p.orientation === o.id);
@@ -767,7 +774,7 @@ const fails = outcomesOf(s, o).filter((r) => r.effect === "not");
 if (fails.length >= 2) {
 const adoptedAt = s.history.findIndex((h) => (h.kind === "transition" && h.to === o.id) || (h.kind === "situation" && h.orientation === o.id));
 const raised = s.history.slice(adoptedAt + 1).some((h) => h.kind === "tempo" && TEMPOS.indexOf(h.to) > TEMPOS.indexOf(h.from));
-const again = s.actions.some((a) => a.orientation === o.id && a.status !== "done");
+const again = s.actions.some((a) => a.orientation === o.id && open(a));
 if (s.tempo === "high" || raised || again) add("tempo-substitution", o.id, fails.length + " failed actions under " + label(s, o) + ".");
 }
 for (const k of itemsOf(s, o, "constraint")) if (!k.tested) add("untested-constraint", k.id, k.text);
@@ -913,7 +920,7 @@ location: x === o ? "Current orientation" : cands.has(x.id) ? "Candidates" : "Li
 target: { stage: x === o ? "model" : cands.has(x.id) ? "compare" : "lineage", id: x.id, inspect: historical ? x.id : null } });
 }
 for (const p of s.predictions) out.push({ kind: "record", type: "Prediction", id: p.id, title: p.text, text: p.result + " " + p.interpretation, location: "Prediction ledger", loop: (find(s.actions, p.action) || {}).loop || null, target: { stage: "observe", id: p.id } });
-for (const a of s.actions) out.push({ kind: "record", type: "Action", id: a.id, title: a.text, text: a.reconsider, location: a.status === "done" ? "Loop " + a.loop : "Action", loop: a.loop, target: { stage: "act", id: a.id } });
+for (const a of s.actions) out.push({ kind: "record", type: "Action", id: a.id, title: a.text, text: a.reconsider, location: open(a) ? "Action" : "Loop " + a.loop + (a.status === "abandoned" ? " · abandoned" : ""), loop: a.loop, target: { stage: "act", id: a.id } });
 for (const r of s.outcomes) out.push({ kind: "record", type: "Outcome", id: r.id, title: r.observed, text: [r.surprise, r.absent, r.interpretation].join(" "), location: "Outcomes", loop: r.loop, target: { stage: "observe", id: r.id } });
 }
 for (const e of D.examples) out.push({ kind: "record", type: "Example", id: "ex-" + e.id, title: e.title, text: e.purpose + " " + e.note, location: "Examples", target: { stage: "example", id: e.id } });
@@ -981,7 +988,8 @@ need(has(st.orientations, p.orientation), "orientation of " + p.id);
 need(p.action === null || has(st.actions, p.action), "action of " + p.id);
 need(PRED_STATUS.includes(p.status) && typeof p.text === "string" && (!p.locked || typeof p.original === "string"), "prediction " + p.id);
 }
-for (const a of st.actions) need(has(st.orientations, a.orientation) && (a.prediction === null || has(st.predictions, a.prediction)), "action " + a.id);
+for (const a of st.actions) need(A_STATUS.includes(a.status) && has(st.orientations, a.orientation) && (a.prediction === null || has(st.predictions, a.prediction)), "action " + a.id);
+need(st.actions.filter(open).length <= 1, "one open action");
 for (const r of st.outcomes) need(has(st.actions, r.action), "outcome " + r.id);
 for (const h of st.history) if (h.kind === "transition") need(has(st.orientations, h.from) && has(st.orientations, h.to), "lineage edge " + h.id);
 if (st.workspace) {
@@ -1103,7 +1111,7 @@ if (o) {
 L.push(statement(o), "", "Falsifier: " + (bare(o.falsifier) || "Hard to test"), "", "Confidence: " + o.confidence + " (" + basisText(basis(s, o)).join(", ") + ")", "");
 } else L.push("None yet.", "");
 L.push("## Current decision", "");
-const a = currentAction(s) || s.actions[s.actions.length - 1];
+const a = currentAction(s) || s.actions.filter((x) => x.status === "done").slice(-1)[0];
 if (a) {
 const x = find(s.orientations, a.orientation);
 L.push("Because " + claim(x) + ",", "I will " + lowerFirst(a.text) + " (" + a.type + "),", "I expect " + (lowerFirst(expectedOf(s, a)) || "…") + ".", "Reconsider if " + (lowerFirst(a.reconsider) || "…") + ".", "");
