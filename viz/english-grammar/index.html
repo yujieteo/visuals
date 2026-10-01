@@ -37309,6 +37309,8 @@ mark{background:var(--surface);color:var(--fg);outline:2px solid var(--sel);bord
  * A report is plain data, so it can be built and tested without a page:
  *   { meta: { title, subtitle, author, date, voice }, narration, notes,
  *     setup, method, results, checks: [frame, ...] }
+ * `meta.voice` names the narrator; a report that names none is narrated in VOICE, beamdswitch's
+ * default British female voice, so every deck it writes carries a voice.
  * and each frame is
  *   { title, body, narration, notes, key, plot: { x: [a, b], xlabel, ylabel, curves: ["expr", ...] } }
  * `body` is Markdown (LaTeX maths in $...$ or $$...$$); `narration` is plain spoken prose, one
@@ -37324,6 +37326,7 @@ mark{background:var(--surface);color:var(--fg);outline:2px solid var(--sel);bord
   "use strict";
 
   const SECTIONS = [["setup", "Set-up"], ["method", "Method"], ["results", "Results"], ["checks", "Checks and takeaway"]];
+  const VOICE = "bf_emma";
 
   const oneLine = (s) => String(s ?? "").replace(/\s+/g, " ").trim();
   /* Markdown lines that would end a frame or a div early are refused rather than written. */
@@ -37366,7 +37369,8 @@ mark{background:var(--surface);color:var(--fg);outline:2px solid var(--sel);bord
     const checks = report.checks || [];
     if (!checks.length || !checks.at(-1).key) throw new Error("The last checks frame must carry a ::: key.");
     const out = ["---"];
-    for (const k of ["title", "subtitle", "author", "date", "voice"]) if (oneLine(meta[k])) out.push(`${k}: ${oneLine(meta[k])}`);
+    for (const k of ["title", "subtitle", "author", "date"]) if (oneLine(meta[k])) out.push(`${k}: ${oneLine(meta[k])}`);
+    out.push(`voice: ${oneLine(meta.voice) || VOICE}`);
     out.push("---", "");
     if (report.notes) out.push(...div("notes", block(report.notes, "The title slide")), "");
     out.push(...div("narration", spoken(report.narration, "The title slide")), "");
@@ -37379,7 +37383,7 @@ mark{background:var(--surface);color:var(--fg);outline:2px solid var(--sel);bord
     return out.join("\n");
   }
 
-  return { SECTIONS, deck };
+  return { SECTIONS, VOICE, deck };
 });
 </script>
 <script id="report">

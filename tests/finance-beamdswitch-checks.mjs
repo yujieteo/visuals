@@ -8,21 +8,20 @@ import { readFileSync } from "node:fs";
 import vm from "node:vm";
 import { parseDeck, splitSentences } from "./fixtures/beamdswitch/deck.mjs";
 import { parsePlot } from "./fixtures/beamdswitch/plot.mjs";
+import { assertSiteTemplate, assertVoice } from "./beamdswitch-decks.mjs";
 
 export const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
 /* SHA-256 of yujieteo/site templates/beamdswitch.js, the site's standard report template. Every
    page folder carries it unchanged. Set SITE_REPO to a site checkout to compare against the file. */
-export const TEMPLATE_SHA256 = "f990792dc269c844b30f458cab22d3b32310dd5ca19c610b8b305ca9bbbc9e52";
+export const TEMPLATE_SHA256 = "f4357d8fe419f74bdcf8a97db5c3cc3b0ac2d4a3450c5997944cde93b514f413";
 export const SECTIONS = [...read("tests/fixtures/beamdswitch/report-template.md").matchAll(/^# (.+)$/gm)].map((m) => m[1]);
 
 export function assertTemplateCopy(slug) {
   const copy = read(`viz/${slug}/beamdswitch.js`);
   assert.equal(createHash("sha256").update(copy).digest("hex"), TEMPLATE_SHA256,
     `viz/${slug}/beamdswitch.js must stay identical to the site's templates/beamdswitch.js`);
-  if (process.env.SITE_REPO) {
-    assert.equal(copy, readFileSync(`${process.env.SITE_REPO}/templates/beamdswitch.js`, "utf8"), `viz/${slug}/beamdswitch.js`);
-  }
+  if (process.env.SITE_REPO) assertSiteTemplate(copy, `${process.env.SITE_REPO}/templates/beamdswitch.js`, `viz/${slug}/beamdswitch.js`);
 }
 
 /* The page inlines each script verbatim in its own <script id="..."> block. */
@@ -48,9 +47,10 @@ const textOf = (node) => node.children.filter((c) => c.type === "md").map((c) =>
 
 /* The deck opens in beamdswitch as the standard template: a title slide, the four sections in order,
    every slide narrated in plain spoken prose written in the deck, ending on one ::: key. Every plot
-   parses and is finite across its x range. Returns the parsed deck. */
+   parses and is finite across its x range, and the front matter names a voice. Returns the parsed deck. */
 export function assertStandardDeck(md, what) {
   const deck = parseDeck(md);
+  assertVoice(deck, what);
   assert.equal(deck.frames[0].kind, "title", what);
   assert.ok(deck.meta.title, `${what}: has a title`);
   assert.deepEqual(deck.frames.filter((f) => f.kind === "section").map((f) => f.title), SECTIONS, `${what}: the template's sections, in order`);
