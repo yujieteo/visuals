@@ -114,18 +114,20 @@ python3 scripts/build_tampines_food_map.py --verify
 python3 scripts/build_stock_cases.py --verify
 ```
 
-The copied action visualizations also retain their source regression tests, and
-the Node tests check every narrated beamdswitch deck:
+The copied action visualizations also retain their source regression tests:
 
 ```sh
 python3 -m unittest discover -s tests -p 'test_*.py'
-node --test tests/*.test.mjs
+node --test tests/convexity-action-engine.test.mjs tests/everyday-actions.test.mjs
 ```
 
 Pages with a narrated beamdswitch report (the beamdswitch and Copy deck buttons)
 keep `viz/<slug>/beamdswitch.js`, an unchanged copy of the site's
 `templates/beamdswitch.js`, and `viz/<slug>/report.js`, which builds the report
-from the page's own data; the page inlines both. The four stock pages, whose
+from the page's own data; the page inlines both. `energy-email-productivity`,
+`fpl-expected-goals`, `manchester-city-finances`, `graduate-employment-survey`,
+`haze-singapore`, `singapore-covid-governance-hindsight`,
+`social-values-surveydata`, `tourist-attractions`, the four stock pages, whose
 report lives in `scripts/templates/stock-cases-report.js`,
 `breeden-litzenberger-density` and `convex-payoffs` offer the same narrated
 report for [beamdswitch](https://teoyujie.org/visuals/beamdswitch/): the
@@ -164,19 +166,3 @@ action page's emitted scripts and check its read-only tool registrations, and
 run each deck page's scripts to check its beamdswitch decks.
 `.github/workflows/verify.yml` runs every command above on every push and pull
 request.
-
-## Narrated beamdswitch decks
-
-`graduate-employment-survey`, `haze-singapore`,
-`singapore-covid-governance-hindsight`, `social-values-surveydata` and
-`tourist-attractions` have a beamdswitch button that saves the page as shown as
-a narrated Markdown talk for
-[beamdswitch](https://teoyujie.org/visuals/beamdswitch/), and a Copy deck
-button that puts the same deck on the clipboard. Each folder keeps an unchanged
-copy of the site's report template (`beamdswitch.js`, also vendored in
-`tests/fixtures/beamdswitch/`) and the page's `report.js`, which fills it from
-the page's own data and view; the builder inlines both. Each
-`tests/<slug>-beamdswitch.test.mjs` asserts the template copy is unchanged,
-clicks both buttons, parses the decks with beamdswitch's own parser
-(`tests/fixtures/beamdswitch/deck.mjs`) and checks their numbers against the
-committed data.

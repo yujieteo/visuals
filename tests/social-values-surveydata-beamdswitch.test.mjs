@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { assertButtonsExport, assertDeckButtons, assertInlined, assertStandardDeck, assertTemplateCopy, load, openPage, read } from "./singapore-beamdswitch.mjs";
+import { assertButtonsExport, assertDeckButtons, assertInlined, assertStandardDeck, assertTemplateCopy, load, openPage, read } from "./beamdswitch-decks.mjs";
 
 const SLUG = "social-values-surveydata";
 const T = load(`viz/${SLUG}/beamdswitch.js`);
@@ -66,5 +66,10 @@ test("every number in the deck is the survey's, in the chart's digits", () => {
   assert.ok(md.includes("## The gap grows from 0.09 points at ages 16–19 to 1.07 at 65–75"));
   assert.ok(md.includes("::: key\nOlder residents feel more connected, but less interested in shaping Singapore’s future. The gap grows from 0.09 points"));
   const total = fresh.reduce((s, r) => s + r[1], 0);
-  assert.ok(md.includes(`= ${total.toFixed(1)}.`), "weighted respondents add up");
+  const [, parts, sum] = /- Weighted respondents: ([\d. +]+) = ([\d.]+)\./.exec(md);
+  const addends = parts.split(" + ");
+  assert.deepEqual(addends, fresh.map((r) => r[1].toFixed(3)), "the check lists each group's weighted respondents");
+  assert.equal(addends.reduce((s, x) => s + Math.round(x * 1000), 0), Math.round(sum * 1000), "the printed addends add up to the printed total");
+  assert.equal((+sum).toFixed(1), total.toFixed(1), "the printed total is the survey's");
+  assert.ok(md.includes(`## The 7 groups hold ${total.toFixed(1)} weighted respondents`));
 });

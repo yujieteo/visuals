@@ -11,6 +11,7 @@ import { parseDeck, splitSentences } from "./fixtures/beamdswitch/deck.mjs";
 const root = new URL("../", import.meta.url);
 export const read = (path) => readFileSync(new URL(path, root), "utf8");
 export const require = createRequire(import.meta.url);
+export const load = (path) => require(new URL(path, root).pathname);
 export const TEMPLATE_PATH = "tests/fixtures/beamdswitch/beamdswitch.js";
 export const SECTIONS = require(`../${TEMPLATE_PATH}`).SECTIONS.map(([, title]) => title);
 
@@ -48,7 +49,7 @@ export function assertStandardDeck(md, what) {
   assert.equal(md.match(/^::: narration$/gm).length, deck.frames.length, `${what}: one ::: narration per slide`);
   for (const f of deck.frames) {
     assert.ok(splitSentences(f.narration).length > 0, `${what}: "${f.title}" is narrated`);
-    assert.doesNotMatch(f.narration, /[$\\`*_#|<>×⁰¹²³⁴⁵⁶⁷⁸⁹⁻%&≈·∠°σ£€]/, `${what}: "${f.title}" reads as speech: ${f.narration}`);
+    assert.doesNotMatch(f.narration, /[$\\`*_#|<>×⁰¹²³⁴⁵⁶⁷⁸⁹⁻%&≈·∠°σ£€µ]/, `${what}: "${f.title}" reads as speech: ${f.narration}`);
   }
   for (const s of SECTIONS) assert.ok(deck.frames.some((f) => f.kind === "frame" && f.section === s), `${what}: ${s} has a frame`);
   const last = deck.frames.at(-1);
@@ -95,8 +96,8 @@ function element(tag, store = {}) {
 // Runs a built page's scripts in the stand-in DOM. The page's own <button>s stand in with their attributes,
 // data-* and text, found by id or by a [data-*] selector. click(id) clicks a button and waits for its handlers;
 // press(match) clicks the latest drawn control that matches; saved holds each downloaded file's text and
-// copied each clipboard write; run(code) evaluates code in the page's global scope.
-export async function openPage(slug) {
+// copied each clipboard write; run(code) evaluates code in the page's global scope. globals adds stand-ins (such as d3).
+export async function openPage(slug, { globals = {} } = {}) {
   const html = read(`viz/${slug}/index.html`);
   const byId = new Map(), bySelector = new Map(), urls = new Map(), created = [], saved = [], copied = [];
   for (const m of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)) {
@@ -140,9 +141,10 @@ export async function openPage(slug) {
     matchMedia: () => element("media", { matches: false }), getComputedStyle: () => element("style"), Event: class { constructor(type) { this.type = type; } },
     addEventListener() {}, removeEventListener() {}, scrollTo() {}, innerWidth: 1200, innerHeight: 800, scrollX: 0, scrollY: 0, devicePixelRatio: 1,
     ResizeObserver: class { observe() {} disconnect() {} }, IntersectionObserver: class { observe() {} disconnect() {} },
+    ...globals,
   });
   context.window = context.self = context.globalThis = context;
-  for (const m of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)) if (!/type="application\/json"/.test(m[1])) vm.runInContext(m[2], context);
+  for (const m of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)) if (!/\bsrc=|type="application\/json"/.test(m[1])) vm.runInContext(m[2], context);
   const click = async (id) => { await get(byId, id).dispatch("click"); await new Promise((r) => setImmediate(r)); };
   const textOf = (e) => e.textContent + e.children.map(textOf).join("");
   const press = async (match) => {
@@ -159,4 +161,14 @@ export async function assertButtonsExport(page, slug, expected) {
   assert.deepEqual(page.saved, [{ name: `${slug}-beamdswitch.md`, text: expected }]);
   await page.click("copy-beamdswitch");
   assert.deepEqual(page.copied, [expected]);
+}
+
+// The page's deck-row matches the site's: a beamdswitch button, a Copy deck button and a status line,
+// and the hint never claims the download falls back to the clipboard.
+export function assertDeckButtons(html, what) {
+  assert.match(html, /<button type="button" id="save-beamdswitch"[^>]*>beamdswitch<\/button>/, what);
+  assert.match(html, /<button type="button" id="copy-beamdswitch"[^>]*>Copy deck<\/button>/, what);
+  assert.match(html, /id="deck-status"[^>]*role="status"/, what);
+  assert.ok(html.includes('href="https://teoyujie.org/visuals/beamdswitch/"'), `${what}: links beamdswitch`);
+  assert.doesNotMatch(html, /saving is blocked|copied (it )?instead|falls? back to the clipboard/i, `${what}: no clipboard-fallback claim`);
 }

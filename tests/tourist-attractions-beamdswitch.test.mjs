@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { assertButtonsExport, assertDeckButtons, assertInlined, assertStandardDeck, assertTemplateCopy, load, openPage, read } from "./singapore-beamdswitch.mjs";
+import { assertButtonsExport, assertDeckButtons, assertInlined, assertStandardDeck, assertTemplateCopy, load, openPage, read } from "./beamdswitch-decks.mjs";
 
 const SLUG = "tourist-attractions";
 const T = load(`viz/${SLUG}/beamdswitch.js`);
@@ -40,6 +40,8 @@ const WORDS = [null, "museum", "heritage", D.terms.at(-1).term];
 const VIEWS = WORDS.flatMap((term) => ["", "garden", "zzz-no-match"].flatMap((query) => [null, ...R.matches(D.rows, { term, query }).slice(0, 2).map((d) => d.id), "1001"].map((selection) => ({ term, query, selection }))));
 const what = (v) => `term=${v.term} query=${v.query} selection=${v.selection}`;
 const deckFor = (v) => T.deck(R.report(D, v));
+// Deck text escapes the characters beamdswitch reads as maths or markup.
+const esc = (s) => String(s ?? "").replace(/\s+/g, " ").trim().replace(/[\\$*_`|<>[\]#]/g, "\\$&");
 
 test("the site's shared beamdswitch template is the copy the page inlines", () => {
   assertTemplateCopy(SLUG);
@@ -74,7 +76,10 @@ test("the deck's counts are the page's, recounted from the committed GeoJSON", (
     const regions = `NW ${c.NW}, NE ${c.NE}, SW ${c.SW}, SE ${c.SE}`;
     assert.ok(md.includes(`## ${visible.length} of ${raw.features.length} attractions shown${v.term ? ` for “${v.term}”` : ""}`), what(v));
     assert.ok(md.includes(v.term ? `${v.term} appears in ${visible.length} matching descriptions. ${regions}.` : `The full map shows ${visible.length} attractions. ${regions}.`), what(v));
-    for (const [i, d] of [...visible].slice(0, 6).entries()) assert.ok(md.includes(`${i + 1}. `) && byId.get(d.id).geometry.coordinates[0] === d.longitude, `${what(v)}: ${d.id}`);
+    for (const [i, d] of [...visible].slice(0, 6).entries()) {
+      assert.equal(byId.get(d.id).geometry.coordinates[0], d.longitude, `${what(v)}: ${d.id}`);
+      assert.ok(md.includes(`\n${i + 1}. ${esc(d.title)} · ${esc(d.address) || "Address not provided"}\n`), `${what(v)}: ${d.id} listed ${i + 1}`);
+    }
     // A beamdswitch slide fits six attractions; the rest are counted, not listed.
     assert.ok(!md.includes("\n7. "), `${what(v)}: at most six attractions on the slide`);
     assert.equal(md.includes(`And ${visible.length - 6} more on the page.`), visible.length > 6, what(v));
