@@ -14,13 +14,13 @@
   follow the book's framework as known to the author. Section references in the table below are
   section titles from the verified contents pages, not checks of the text.
 
-## Analyses settled from memory, pending source review
+## Analyses settled from memory (informational)
 
-Every analysis below was settled from the author's knowledge of the framework and is pending
-review against the book's text. Whether that review is required before publication is an open
-decision.
+Every analysis below was settled from the author's knowledge of the framework and has not been
+checked against the book's text. The explorer does not aim at total fidelity to the book, so this
+list is a note for readers and future editors, not a publication blocker.
 
-| Concept / example | Question | Current analysis (pending source review) |
+| Concept / example | Question | Analysis used |
 | --- | --- | --- |
 | Clause type, auxiliaries | How the book draws main-clause subject–auxiliary inversion (*Is Kim ready?*): flat clause or discontinuous VP | Not settled from available pages. No inverted clause is drawn; interrogatives are shown as subordinate clauses and inversion is described in text and in the technical notes. |
 | Noun phrase structure | Whether a nominal (Nom) is drawn when the head noun has no dependents | Nom is stored when the head noun has a modifier or complement, otherwise the NP's head is the noun. Stated in the concept's technical note. |
