@@ -120,6 +120,17 @@ python3 -m unittest discover -s tests -p 'test_*.py'
 node --test tests/convexity-action-engine.test.mjs tests/everyday-actions.test.mjs
 ```
 
+Pages with a narrated beamdswitch report (the beamdswitch and Copy deck buttons)
+keep `viz/<slug>/beamdswitch.js`, an unchanged copy of the site's
+`templates/beamdswitch.js`, and `viz/<slug>/report.js`, which builds the report
+from the page's own data; the page inlines both. Their tests parse every deck
+with beamdswitch's own parser (vendored read-only in `tests/fixtures/beamdswitch/`)
+and, when `SITE_REPO` names a site checkout, also compare each copy with it:
+
+```sh
+node --test tests/*-beamdswitch.test.mjs
+```
+
 ## Action visualization provenance
 
 `convexity-action-engine` and `everyday-actions` were copied from the committed
