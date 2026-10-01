@@ -49,6 +49,7 @@ for s in scripts/build*.py; do python3 "$s" --verify || break; done
 | `haze-singapore` | `scripts/build_haze_singapore.py` | Where and when Singapore's air turned hazy |
 | `manchester-city-finances` | `scripts/build_manchester_city_finances.py` | What Manchester City's charges and accounts do and do not show |
 | `marvell` | `scripts/build_stock_cases.py` | Marvell cash conversion |
+| `ooda-orientation` | `scripts/build_ooda_orientation.py` | Orient: destroy the wrong model, act from the better one |
 | `panw` | `scripts/build_stock_cases.py` | Palo Alto Networks cash conversion |
 | `singapore-covid-governance-hindsight` | `scripts/build_singapore_covid_governance_hindsight.py` | What did 2020 Singapore analyses say? |
 | `social-values-surveydata` | `scripts/build_social_values.py` | Connection rises as appetite to shape the future falls |
@@ -84,6 +85,7 @@ python3 scripts/build_singapore_covid_governance_hindsight.py
 python3 scripts/build_social_values.py
 python3 scripts/build_energy_email_productivity.py
 python3 scripts/build_english_grammar.py           # english-grammar
+python3 scripts/build_ooda_orientation.py          # ooda-orientation
 python3 scripts/build_convexity_action_engine.py
 python3 scripts/build_everyday_actions.py
 python3 scripts/build_vgc_protect_fakeout_pivot_trainer.py
@@ -111,6 +113,7 @@ python3 scripts/build_singapore_covid_governance_hindsight.py --verify
 python3 scripts/build_social_values.py --verify
 python3 scripts/build_energy_email_productivity.py --verify
 python3 scripts/build_english_grammar.py --verify
+python3 scripts/build_ooda_orientation.py --verify
 python3 scripts/build_convexity_action_engine.py --verify
 python3 scripts/build_everyday_actions.py --verify
 python3 scripts/build_vgc_protect_fakeout_pivot_trainer.py --verify
@@ -118,14 +121,17 @@ python3 scripts/build_tampines_food_map.py --verify
 python3 scripts/build_stock_cases.py --verify
 ```
 
-The copied action visualizations also retain their source regression tests, and
+The copied action visualizations also retain their source regression tests,
 `english-grammar` has data-integrity tests (including its word-structure,
 punctuation and antecedent models) plus Node tests of its fragment, traversal
-and search logic:
+and search logic, and `ooda-orientation` has Node tests of its planner state
+machine: the observation, prediction, history and referential invariants, the
+anti-pattern diagnostics, the three worked examples, search ranking, and
+persistence, import and schema migration:
 
 ```sh
 python3 -m unittest discover -s tests -p 'test_*.py'
-node --test tests/convexity-action-engine.test.mjs tests/everyday-actions.test.mjs tests/english-grammar.test.mjs
+node --test tests/convexity-action-engine.test.mjs tests/everyday-actions.test.mjs tests/english-grammar.test.mjs tests/ooda-orientation.test.mjs
 ```
 
 Pages with a narrated beamdswitch report (the beamdswitch and Copy deck buttons)
@@ -141,7 +147,10 @@ report for [beamdswitch](https://teoyujie.org/visuals/beamdswitch/): the
 beamdswitch button saves the view shown as a Markdown deck, and Copy deck puts
 the same deck on the clipboard. `english-grammar` offers both buttons on every
 concept page, and its deck is that lesson: the concept, its main example and
-analysis, the explanation and its contrasts. Their tests parse every deck with beamdswitch's
+analysis, the explanation and its contrasts. `ooda-orientation` offers both
+buttons once a situation exists; its deck walks the situation along its current
+lineage, from the reality ledger through destruction and the candidates to the
+action, its frozen prediction and what happened. Their tests parse every deck with beamdswitch's
 own parser (vendored read-only in `tests/fixtures/beamdswitch/`), click both
 buttons where the page offers them, and, when `SITE_REPO` names a site
 checkout, also compare each copy with it:
