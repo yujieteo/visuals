@@ -4,7 +4,7 @@ A computational laboratory for algebraic curves: choose a curve, place a divisor
 
 ## Source of truth
 
-The standalone repository [yujieteo/riemann-roch](https://github.com/yujieteo/riemann-roch) is where this visualisation and its tests develop and where CI runs them; it is the source of truth. `visuals/riemann-roch/` in [yujieteo/site](https://github.com/yujieteo/site/tree/main/visuals/riemann-roch) is a port of its page files, refreshed when the visualisation is updated, and the site runs no logic tests for it. Porting copies the folder minus `tests/` and `.github/`, so AGENTS.md and SKILLS.md must not link into either (the site checks that their links resolve).
+The standalone repository [yujieteo/riemann-roch](https://github.com/yujieteo/riemann-roch) is where this visualisation and its tests develop and where CI runs them; it is the source of truth. `visuals/riemann-roch/` in [yujieteo/site](https://github.com/yujieteo/site/tree/main/visuals/riemann-roch) is a port of its page files, refreshed when the visualisation is updated, and the site runs no logic tests for it. Porting copies the folder minus `tests/` and `.github/`. AGENTS.md and SKILLS.md must therefore not link into either (the site checks that their links resolve).
 
 ## Files and data
 
