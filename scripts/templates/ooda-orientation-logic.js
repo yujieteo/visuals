@@ -846,7 +846,10 @@
       need(p.action === null || has(st.actions, p.action), "action of " + p.id);
       need(PRED_STATUS.includes(p.status) && typeof p.text === "string" && (!p.locked || typeof p.original === "string"), "prediction " + p.id);
     }
-    for (const a of st.actions) need(A_STATUS.includes(a.status) && has(st.orientations, a.orientation) && (a.prediction === null || has(st.predictions, a.prediction)), "action " + a.id);
+    for (const a of st.actions) {
+      need(A_STATUS.includes(a.status) && has(st.orientations, a.orientation) && (a.prediction === null || has(st.predictions, a.prediction)), "action " + a.id);
+      need(a.status !== "draft" || (find(st.orientations, a.orientation) || {}).status === "adopted", "draft action " + a.id + " follows the adopted orientation");
+    }
     need(st.actions.filter(open).length <= 1, "one open action");
     for (const r of st.outcomes) need(has(st.actions, r.action), "outcome " + r.id);
     for (const h of st.history) if (h.kind === "transition") need(has(st.orientations, h.from) && has(st.orientations, h.to), "lineage edge " + h.id);
@@ -898,9 +901,10 @@
       for (const p of v.predictions || []) s.predictions.push({ id: keep(String(p.id)), orientation: String(p.orientation), action: p.action == null ? null : String(p.action), text: clean(p.text),
         locked: !!p.frozen, original: p.frozen ? clean(p.text) : null, status: PRED_STATUS.includes(p.outcome) ? p.outcome : "pending", result: "", interpretation: "" });
       for (const a of v.actions || []) {
-        const p = s.predictions.find((x) => x.action === String(a.id));
+        const p = s.predictions.find((x) => x.action === String(a.id)), o = find(s.orientations, String(a.orientation));
+        const status = ["draft", "started", "done"].includes(a.status) ? a.status : "done";
         s.actions.push({ id: keep(String(a.id)), orientation: String(a.orientation), type: D.actionTypes.some((t) => t.id === a.kind) ? a.kind : "probe", text: clean(a.text),
-          prediction: p ? p.id : null, reconsider: clean(a.reconsider), refs: [], consistency: consistency(), info: [], status: ["draft", "started", "done"].includes(a.status) ? a.status : "done", loop: 1 });
+          prediction: p ? p.id : null, reconsider: clean(a.reconsider), refs: [], consistency: consistency(), info: [], status: status === "draft" && !(o && o.status === "adopted") ? "abandoned" : status, loop: 1 });
       }
       for (const r of v.outcomes || []) s.outcomes.push({ id: keep(String(r.id)), action: String(r.action), loop: 1, observed: clean(r.observed), surprise: clean(r.surprise), absent: "",
         changedEnvironment: "unsure", weakened: [], strengthened: [], betterFit: "", reorient: "", interpretation: clean(r.interpretation), attribution: "", effect: "", signals: [] });

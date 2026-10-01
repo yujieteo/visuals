@@ -710,6 +710,19 @@ test("an old supported schema migrates deterministically", () => {
   assert.deepEqual(plain([s.predictions[0].locked, s.predictions[0].original, s.predictions[0].status]), [true, "A test settles it", "observed"]);
   assert.equal(s.actions[0].prediction, "p1");
   assert.equal(L.lineage(s).length, 2);
+  // A draft left under a superseded orientation migrates as abandoned, so a new action can follow the adopted one.
+  const stale = plain(v1);
+  stale.actions.push({ id: "x2", orientation: "o1", kind: "probe", text: "Write the detailed plan", reconsider: "", status: "draft" });
+  const m = L.importText(JSON.stringify(stale));
+  assert.equal(m.ok, true);
+  assert.deepEqual(plain(m.state.actions.map((x) => [x.id, x.status])), [["x1", "done"], ["x2", "abandoned"]]);
+  assert.equal(L.currentAction(m.state), null);
+  rejects(m.state, { do: "start", id: "x2" }, "untraced-action");
+  const next = ok(m.state, { do: "action", type: "probe", text: "Run a second test" });
+  assert.equal(next.state.actions.find((x) => x.id === next.id).orientation, "o2");
+  const forged = plain(m.state);
+  forged.actions.find((x) => x.id === "x2").status = "draft";
+  assert.equal(L.importText(L.exportJSON(forged)).ok, false, "a draft must follow the adopted orientation");
   // New objects get fresh ids after migration.
   const t = ok(s, { do: "item", type: "signal", text: "New" });
   assert.ok(!["s1", "a1", "u1", "o1", "o2", "p1", "x1", "r1"].includes(t.id));
