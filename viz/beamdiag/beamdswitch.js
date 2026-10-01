@@ -8,17 +8,22 @@
  *   # Set-up               what was modelled, its units and conventions
  *   # Method               how the tool solved it
  *   # Results              the numbers, with key equations and plots
+ *   # Hand calculations    optional: a step-by-step hand derivation of the same numbers
  *   # Checks and takeaway  what confirms the numbers, ending on one ::: key frame
  *
  * A report is plain data, so it can be built and tested without a page:
  *   { meta: { title, subtitle, author, date, voice }, narration, notes,
- *     setup, method, results, checks: [frame, ...] }
+ *     setup, method, results, hand, checks: [frame, ...] }
  * and each frame is
  *   { title, body, narration, notes, key, plot: { x: [a, b], xlabel, ylabel, curves: ["expr", ...] } }
  * `body` is Markdown (LaTeX maths in $...$ or $$...$$); `narration` is plain spoken prose, one
  * caption per sentence; `key`, `plot` and `notes` are optional. Every frame must be narrated, and
  * the last checks frame must carry a key. The visualisation supplies every number already
  * formatted, so the deck says exactly what its page shows.
+ *
+ * `document({ meta, narration, notes, sections: [{ title, frames }] })` writes any other
+ * sequence of sections with the same frame rules (every slide narrated, "Part N." on each
+ * section slide), for a Markdown document that beamdswitch also opens as a deck.
  */
 (function (root, factory) {
   const api = factory();
@@ -27,7 +32,8 @@
 })(typeof self !== "undefined" ? self : this, function () {
   "use strict";
 
-  const SECTIONS = [["setup", "Set-up"], ["method", "Method"], ["results", "Results"], ["checks", "Checks and takeaway"]];
+  /* [id, title, optional]: an optional section is written only when the report has frames for it. */
+  const SECTIONS = [["setup", "Set-up"], ["method", "Method"], ["results", "Results"], ["hand", "Hand calculations", true], ["checks", "Checks and takeaway"]];
 
   const oneLine = (s) => String(s ?? "").replace(/\s+/g, " ").trim();
   /* Markdown lines that would end a frame or a div early are refused rather than written. */
@@ -64,24 +70,29 @@
     return out;
   }
 
-  function deck(report) {
-    const meta = report.meta || {};
+  function document(doc) {
+    const meta = doc.meta || {};
     if (!oneLine(meta.title)) throw new Error("The report needs a title.");
-    const checks = report.checks || [];
-    if (!checks.length || !checks.at(-1).key) throw new Error("The last checks frame must carry a ::: key.");
     const out = ["---"];
     for (const k of ["title", "subtitle", "author", "date", "voice"]) if (oneLine(meta[k])) out.push(`${k}: ${oneLine(meta[k])}`);
     out.push("---", "");
-    if (report.notes) out.push(...div("notes", block(report.notes, "The title slide")), "");
-    out.push(...div("narration", spoken(report.narration, "The title slide")), "");
-    SECTIONS.forEach(([id, title], i) => {
-      const frames = report[id] || [];
-      if (!frames.length) throw new Error(`The ${title} section needs at least one frame.`);
-      out.push(`# ${title}`, "", ...div("narration", `Part ${i + 1}. ${title}.`), "");
+    if (doc.notes) out.push(...div("notes", block(doc.notes, "The title slide")), "");
+    out.push(...div("narration", spoken(doc.narration, "The title slide")), "");
+    (doc.sections || []).forEach(({ title, frames }, i) => {
+      if (!frames || !frames.length) throw new Error(`The ${title} section needs at least one frame.`);
+      out.push(`# ${oneLine(title)}`, "", ...div("narration", `Part ${i + 1}. ${oneLine(title)}.`), "");
       for (const f of frames) out.push(...frame(f, title));
     });
     return out.join("\n");
   }
 
-  return { SECTIONS, deck };
+  function deck(report) {
+    const checks = report.checks || [];
+    if (!checks.length || !checks.at(-1).key) throw new Error("The last checks frame must carry a ::: key.");
+    const sections = SECTIONS.filter(([id, , optional]) => !optional || (report[id] || []).length)
+      .map(([id, title]) => ({ title, frames: report[id] || [] }));
+    return document({ ...report, sections });
+  }
+
+  return { SECTIONS, deck, document };
 });

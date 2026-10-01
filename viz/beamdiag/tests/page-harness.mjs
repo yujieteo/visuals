@@ -101,8 +101,8 @@ export async function page({ runTimers = false, navigator = {} } = {}) {
   const choose = (id, value) => { const e = document.getElementById(id); e.value = value; e.dispatch("change"); };
   const current = async () => JSON.parse((await tools.get("get_current_beam").execute()).content[0].text);
   /* Click a save or copy button and wait for the page to report the outcome. */
-  const save = async (id) => {
-    const status = document.getElementById("figure-status");
+  const save = async (id, statusId = "figure-status") => {
+    const status = document.getElementById(statusId);
     status.textContent = "";
     document.getElementById(id).dispatch("click");
     for (const until = Date.now() + 20000; Date.now() < until && !/^(Saved|Copied|Could not|Fix)/.test(status.textContent);) await new Promise((r) => setImmediate(r));

@@ -9,6 +9,7 @@ import { page } from "./page-harness.mjs";
 const require = createRequire(import.meta.url);
 const B = require("../engine.js");
 const T = require("../beamdswitch.js");
+const H = require("../handcalc.js");
 const raw = require("../raw.json");
 const { sig, sci, shortNf } = B.format;
 
@@ -21,7 +22,7 @@ function solvePreset(p) {
 }
 function deckFor(p, units, origin) {
   const { r, material } = solvePreset(p);
-  const md = T.deck(B.beamReport(r, { units, origin, title: p.label, section: SECTION, material: { label: material.label } }));
+  const md = T.deck(H.beamReport(r, { units, origin, at: p.length / 3, title: p.label, section: SECTION, material: { label: material.label } }));
   return { r, md, deck: parseDeck(md) };
 }
 /* Beams beyond the presets: a right-end fixed support, actions at both ends, a trapezoidal load, an overhang, no load. */
@@ -48,6 +49,7 @@ test("the deck for every preset, unit convention and origin parses in beamdswitc
     const { deck } = deckFor(p, units, origin), what = `${p.id} ${units} ${origin}`;
     assert.equal(deck.frames[0].kind, "title", what);
     assert.equal(deck.meta.title, `Beam analysis: ${p.label}`, what);
+    assert.equal(deck.meta.voice, "bf_emma", what);
     assert.deepEqual(deck.frames.filter((f) => f.kind === "section").map((f) => f.title), sections, what);
     const plots = deck.frames.flatMap((f) => divs(f.children, "plot"));
     assert.equal(plots.length, 3, `${what}: shear, moment and deflection plots`);

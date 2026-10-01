@@ -28,16 +28,35 @@ Models are not saved automatically; reloading starts from the first example.
   locations, section, material, and the values at each support and load) as a
   PNG or SVG image, or as a one-page PDF. They are drawn in the page and saved
   straight to your device, so saving works offline and uploads nothing.
+- Read the hand calculations: the same beam worked by hand, step by step,
+  under the results. The reactions come from equilibrium (sum of forces and
+  of moments about a support) when the beam is statically determinate, and
+  from compatibility, the force method worked with Macaulay's double
+  integration, when it is indeterminate: the two equilibrium equations plus
+  v = 0 at every support and v′ = 0 at every fixed support, written out in
+  numbers when there are at most eight unknowns and stated in general, with
+  the solver's values, when there are more. Every segment between
+  consecutive supports and load points then gets V(x) and M(x) by the method
+  of sections, EI θ(x) and EI v(x) by integrating M with the boundary and
+  continuity conditions, its end values and any point of zero shear; the
+  point selected on the diagrams gets V, M, θ, v and the bending stress with
+  its numbers substituted; and the view ends on the peak bending stress and
+  the equilibrium sums. The stiffness solver is authoritative: every number
+  shown is its value, in the page's units, origin and digits, and the hand
+  steps are a readable derivation of that answer. Save Markdown saves them as
+  a Markdown document with LaTeX equations (which beamdswitch also opens as a
+  narrated deck); Copy Markdown copies the same text.
 - Save the beam as a narrated talk for
   [beamdswitch](https://teoyujie.org/visuals/beamdswitch/) with the
   beamdswitch button: one Markdown deck with the set-up, the method, the
-  results with their plots, and the checks, and spoken narration on every
-  slide. Every number is the solver's, written as the page writes it and read
-  aloud in the chosen units. Open it in beamdswitch (Open, or drop the file) to
-  get slides, a handout, narration and a video. Copy deck, beside it, puts the
-  same deck on the clipboard to paste into beamdswitch, for when the browser
-  blocks the download (a blocked download fails silently, so the page cannot
-  tell and copy on its own).
+  results with their plots, the hand calculations, and the checks, and spoken
+  narration on every slide, read in the `bf_emma` voice. Every number is the
+  solver's, written as the page writes it and read aloud in the chosen units.
+  Open it in beamdswitch (Open, or drop the file) to get slides, a handout,
+  narration and a video. Copy deck, beside it, puts the same deck on the
+  clipboard to paste into beamdswitch, for when the browser blocks the
+  download (a blocked download fails silently, so the page cannot tell and
+  copy on its own).
 - Download the same model as an MSC Nastran SOL 101 bulk data deck (`.bdf`) to
   run in NASTRAN yourself. “Elements per segment” sets only the export mesh,
   with no upper cap; it does not change the browser solution or plot sampling.
@@ -46,20 +65,21 @@ Models are not saved automatically; reloading starts from the first example.
 
 | Path | Role |
 | --- | --- |
-| `index.html` | The built page: `template.html` with `raw.json`, `engine.js` and `beamdswitch.js` inlined |
+| `index.html` | The built page: `template.html` with `raw.json`, `engine.js`, `beamdswitch.js` and `handcalc.js` inlined |
 | `engine.js` | Stiffness-method solver, exact V/M recovery, section properties, NASTRAN SOL 101 exporter, number formatting and the beam's beamdswitch report (`beamReport`). Works in the browser (`BeamDiag`) and in Node (`require`) |
-| `beamdswitch.js` | The standard beamdswitch report template: `deck(report)` writes a report as a beamdswitch Markdown deck. Shared by every visualisation; see below |
+| `beamdswitch.js` | The standard beamdswitch report template: `deck(report)` writes a report as a beamdswitch Markdown deck, and `document(doc)` any other sequence of narrated sections. Shared by every visualisation; see below |
+| `handcalc.js` | The hand calculations (`HandCalc`): `derive` works the solved beam by hand, `frames` and `pointFrame` write the steps for the page, `markdown` the Markdown document, and `beamReport` adds them to the beam's beamdswitch report |
 | `templates/beamdswitch-report.md` | The template's skeleton, with placeholders |
 | `template.html` | Page markup, styles and UI code |
 | `raw.json` | Presets, materials, conventions, assumptions, NASTRAN notes and sources |
-| `build.py` | Inlines `raw.json`, `engine.js` and `beamdswitch.js` into `template.html` to write `index.html` |
+| `build.py` | Inlines `raw.json`, `engine.js`, `beamdswitch.js` and `handcalc.js` into `template.html` to write `index.html` |
 | `reference.py` | Independent exact-arithmetic Python solver (Macaulay integration and compatibility) and a reader for the exported decks |
 | `fixtures.json` | Test beams with closed-form expectations |
 | `reference.json` | `reference.py` output on the fixtures, compared with `engine.js` by the tests |
 | `tests/` | Node and Python tests; see [docs/verification.md](docs/verification.md). `tests/fixtures/beamdswitch/` holds a read-only copy of beamdswitch's deck and plot parsers |
 
 ```sh
-python3 build.py              # rebuild index.html after editing template.html, engine.js, beamdswitch.js or raw.json
+python3 build.py              # rebuild index.html after editing template.html, engine.js, beamdswitch.js, handcalc.js or raw.json
 python3 reference.py          # rebuild reference.json after editing fixtures.json
 python3 reference.py --check  # fail if reference.json is stale
 ```
@@ -90,6 +110,7 @@ in Node. A report is plain data:
   setup: [frame, ...],              // # Set-up: what was modelled, its units and conventions
   method: [frame, ...],             // # Method: how the tool solved it
   results: [frame, ...],            // # Results: the numbers, with key equations and plots
+  hand: [frame, ...],               // # Hand calculations: optional, written only when given
   checks: [frame, ..., { key }],    // # Checks and takeaway: ends on one ::: key
 }
 // frame: { title, body, narration, notes?, key?, plot?: { x: [a, b], xlabel, ylabel, curves: ["expr in x"] } }
@@ -97,15 +118,19 @@ in Node. A report is plain data:
 
 `body` is Markdown with LaTeX maths; `narration` is plain spoken prose, one
 caption per sentence, with numbers written out as they should be read. The
-function writes the four sections in order, a `::: narration` on every slide
-(including "Part N." on each section slide), and refuses a report with a
-frame left unnarrated, a narration containing maths or markup, a body line
-that would start a new slide or close a block early, or no closing key.
+function writes the sections in order (four, or five with hand
+calculations), a `::: narration` on every slide (including "Part N." on each
+section slide), and refuses a report with a frame left unnarrated, a
+narration containing maths or markup, a body line that would start a new
+slide or close a block early, or no closing key.
 [templates/beamdswitch-report.md](templates/beamdswitch-report.md) shows the
 resulting deck with placeholders. A visualisation supplies its own numbers,
 formatted as its page shows them; here `BeamDiag.beamReport(result, options)`
 builds the beam's report from the solver's result, and its `::: plot` curves
 are the solver's shear, moment and deflection written as Macaulay brackets.
+`HandCalc.beamReport(result, options)` adds the hand calculations, with a
+slide for every segment, as their own section, and the page saves that deck.
+Every beam deck declares `voice: bf_emma`.
 
 ## NASTRAN
 

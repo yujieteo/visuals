@@ -712,7 +712,11 @@
   /* A number as the page writes it (−1,234 or 1.5×10⁻⁴), read aloud or typeset. */
   const sayNumber = (t) => t.replace(/^−/, "minus ").replace(/×10([⁻⁰¹²³⁴⁵⁶⁷⁸⁹]+)$/, (_, e) => ` times ten to the ${exponent(e).replace("-", "minus ")}`);
   const texNumber = (t) => t.replace(/^−/, "-").replace(/,/g, "{,}").replace(/×10([⁻⁰¹²³⁴⁵⁶⁷⁸⁹]+)$/, (_, e) => `\\times 10^{${exponent(e)}}`);
-  const texUnit = (sym) => `\\mathrm{${sym.replace(/·/g, "\\cdot ").replace(/²/g, "^2").replace(/⁴/g, "^4")}}`;
+  const texUnit = (sym) => `\\mathrm{${sym.replace(/·/g, "\\cdot ").replace(/²/g, "^2").replace(/³/g, "^3").replace(/⁴/g, "^4")}}`;
+
+  /* The narration voice every beam deck declares. */
+  const VOICE = "bf_emma";
+  const speech = Object.freeze({ sayNumber, texNumber, texUnit, spokenUnit, VOICE });
 
   const NUMBER_WORDS = ["no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"];
   const SHAPE_NAMES = { rect: "solid rectangle", circle: "solid circle", tube: "circular tube", custom: "custom section" };
@@ -953,7 +957,7 @@
 
     const name = String(title || "").trim();
     return {
-      meta: { title: name ? `Beam analysis: ${name}` : "Beam analysis", subtitle: "Reactions, shear force, bending moment and deflection" },
+      meta: { title: name ? `Beam analysis: ${name}` : "Beam analysis", subtitle: "Reactions, shear force, bending moment and deflection", voice: VOICE },
       narration: `Beam analysis${name ? `: ${name}` : ""}. We find the reactions, shear force, bending moment and deflection of this beam, with every number from the solver, in ${unitsSpoken}.`,
       setup: [beamFrame, sectionFrame],
       method: [methodFrame, staticsFrame],
@@ -967,5 +971,5 @@
   }
   const lengthText = (units) => { const u = unitSystem(units); return (x) => `${fmt(toUnits(x, "length", u))} ${u.symbol.length}`; };
 
-  return { SUPPORT_KINDS, UNIT_SYSTEMS, DEFAULT_UNITS, toUnits, fromUnits, scaleModel, ModelError, sectionProperties, indeterminacy, validate, mesh, solve, internal, deflection, at, diagram, extremes, exportBdf, smallEntry, largeEntry, exactReal, nastranReal, format, fromOrigin, residual, spanRatio, beamReport };
+  return { SUPPORT_KINDS, UNIT_SYSTEMS, DEFAULT_UNITS, toUnits, fromUnits, scaleModel, ModelError, sectionProperties, indeterminacy, validate, mesh, solve, internal, deflection, at, diagram, extremes, exportBdf, smallEntry, largeEntry, exactReal, nastranReal, format, speech, fromOrigin, residual, spanRatio, intensity, beamReport };
 });

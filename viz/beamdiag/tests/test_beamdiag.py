@@ -16,17 +16,29 @@ import reference  # noqa: E402
 
 FIXTURES = json.loads((VIZ / "fixtures.json").read_text(encoding="utf-8"))
 
-# Solve every fixture with the browser engine and export its NASTRAN deck.
+# Solve every fixture with the browser engine, export its NASTRAN deck, and work it by hand
+# (handcalc.js) in every unit convention from both origins, with the hand values back in SI.
 NODE_SCRIPT = r"""
 const B = require(process.argv[1] + "/engine.js");
+const H = require(process.argv[1] + "/handcalc.js");
 const fixtures = require(process.argv[1] + "/fixtures.json");
 const out = {};
+const QUANTITY = { V: "force", M: "moment", theta: "angle", v: "length" };
+function hand(r, units, origin) {
+  const D = H.derive(r, { units, origin }), si = (x, q) => B.fromUnits(x, q, units);
+  const reactions = D.hand && D.unknowns.flatMap((k, i) => (k.kind === "R" ? [{ x: k.r.x, Fy: si(D.hand[i], "force") }]
+    : k.kind === "M" ? [{ x: k.r.x, Mz: si(D.hand[i], "moment") }] : []));
+  const ends = (e) => Object.fromEntries(Object.entries(QUANTITY).map(([k, q]) => [k, si(e[k], q)]));
+  return { reactions, segments: D.segments.map((s) => ({ a: s.a, b: s.b, start: ends(s.hand.start), end: ends(s.hand.end) })) };
+}
 for (const c of fixtures.cases) {
   const r = B.solve(c.model);
+  r.extremes = B.extremes(r);
   const xs = [...new Set([0, r.model.length, ...r.model.supports.map((s) => s.x),
     ...r.model.loads.flatMap((l) => (l.kind === "dist" ? [l.x1, l.x2] : [l.x]))])];
   const units = Object.fromEntries(Object.keys(B.UNIT_SYSTEMS).map((u) => [u, B.exportBdf(c.model, { units: u })]));
-  out[c.id] = { reactions: r.reactions, points: xs.map((x) => B.at(r, x)), bdf: B.exportBdf(c.model), units };
+  const handCalc = Object.fromEntries(Object.keys(B.UNIT_SYSTEMS).flatMap((u) => ["left", "mid"].map((o) => [`${u} ${o}`, hand(r, u, o)])));
+  out[c.id] = { reactions: r.reactions, points: xs.map((x) => B.at(r, x)), bdf: B.exportBdf(c.model), units, hand: handCalc };
 }
 out["@units"] = B.UNIT_SYSTEMS;
 process.stdout.write(JSON.stringify(out));
@@ -127,6 +139,36 @@ class BeamDiagTest(unittest.TestCase):
                     self.assertAlmostEqual(p["Mright"], float(beam.M(x, "right")), delta=1e-9 * scale_m)
                 self.assertAlmostEqual(p["v"], float(beam.v(x)), delta=1e-9 * scale_v)
 
+    def test_hand_calculations_agree_with_python_reference(self):
+        """handcalc.js's own chain (reactions from its written equations, then V, M, θ and v carried
+        segment by segment) matches the exact reference in every unit convention and origin."""
+        for case in FIXTURES["cases"]:
+            beam = reference.Beam(case["model"])
+            xs = reference.sample_points(case["model"])
+            scale = {
+                "V": max(abs(float(beam.V(x))) for x in xs) or 1.0,
+                "M": max(abs(float(beam.M(x))) for x in xs) or 1.0,
+                "v": max(abs(float(beam.v(x))) for x in xs) or 1.0,
+            }
+            scale["theta"] = scale["v"] / float(beam.L)
+            exact = {"V": beam.V, "M": beam.M, "theta": lambda x, side=None: beam.theta(x), "v": lambda x, side=None: beam.v(x)}
+            for key, hand in self.js[case["id"]]["hand"].items():
+                with self.subTest(case=case["id"], convention=key):
+                    if hand["reactions"] is not None:
+                        size_f = max(abs(float(r["Fy"])) for r in beam.reactions)
+                        for r in hand["reactions"]:
+                            ref = next(p for p in beam.reactions if p["x"] == Fraction(r["x"]))
+                            if "Fy" in r:
+                                self.assertAlmostEqual(r["Fy"], float(ref["Fy"]), delta=1e-7 * size_f)
+                            else:
+                                self.assertAlmostEqual(r["Mz"], float(ref["Mz"]), delta=1e-7 * (scale["M"] + size_f * float(beam.L)))
+                    else:
+                        self.assertGreater(len(beam.reactions), 3, "only large systems are left unwritten")
+                    for seg in hand["segments"]:
+                        for q in ("V", "M", "theta", "v"):
+                            self.assertAlmostEqual(seg["start"][q], float(exact[q](seg["a"], "right")), delta=1e-6 * scale[q])
+                            self.assertAlmostEqual(seg["end"][q], float(exact[q](seg["b"], "left")), delta=1e-6 * scale[q])
+
     def test_nastran_deck_encodes_the_same_beam(self):
         for case in FIXTURES["cases"]:
             model = case["model"]
@@ -193,7 +235,7 @@ class BeamDiagTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             copy = Path(directory) / "beamdiag"
             copy.mkdir()
-            for name in ("build.py", "raw.json", "engine.js", "beamdswitch.js", "template.html"):
+            for name in ("build.py", "raw.json", "engine.js", "beamdswitch.js", "handcalc.js", "template.html"):
                 shutil.copy(VIZ / name, copy / name)
             subprocess.run([sys.executable, str(copy / "build.py")], check=True, capture_output=True)
             self.assertEqual((copy / "index.html").read_text(encoding="utf-8"), (VIZ / "index.html").read_text(encoding="utf-8"))
@@ -202,7 +244,7 @@ class BeamDiagTest(unittest.TestCase):
         html = (VIZ / "index.html").read_text(encoding="utf-8")
         parser = _Ids()
         parser.feed(html)
-        for required in ("plots", "readout", "error", "supports", "loads", "table", "download", "deck", "method"):
+        for required in ("plots", "readout", "error", "supports", "loads", "table", "download", "deck", "method", "hand-body", "hand-point", "save-hand", "copy-hand"):
             self.assertIn(required, parser.ids)
         self.assertFalse([s for s in parser.scripts if s.get("src") or s.get("href")], "no external scripts or styles")
 

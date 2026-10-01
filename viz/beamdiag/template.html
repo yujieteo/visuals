@@ -106,6 +106,20 @@ pre.deck{font:12px/1.45 var(--mono);background:var(--surface);border-radius:var(
 .export label.format{width:7rem}
 details>summary{cursor:pointer;font-weight:600;min-height:2.25rem;display:flex;align-items:center}
 code{font:.875em var(--mono)}
+/* Hand calculations */
+.calc{border-top:1px solid var(--grid);padding:.75rem 0 .25rem;min-width:0}
+.calc h4,.calc>summary{font-size:1rem;font-weight:650;letter-spacing:-.01em;margin:0 0 .35rem}
+.calc p,.calc li{font-size:.9375rem}
+.calc ul{padding-left:1.2rem;margin:.4rem 0}
+.calc .table-wrap table{min-width:0;width:auto}
+.hand-part{margin-top:1.5rem}
+.eq{font:1rem/1.9 "Cambria Math","STIX Two Math","Latin Modern Math",Cambria,Georgia,serif;margin:.35rem 0;padding:.35rem .6rem;background:var(--surface);border-radius:var(--r);overflow-x:auto;white-space:nowrap;font-variant-numeric:tabular-nums}
+.math{font-family:"Cambria Math","STIX Two Math","Latin Modern Math",Cambria,Georgia,serif;white-space:nowrap}
+.frac{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;margin:0 .15em;line-height:1.25}
+.frac>span+span{border-top:1px solid currentColor}
+.eq sup,.eq sub,.math sup,.math sub{font-size:.72em;line-height:0}
+#hand-point{border:1px solid var(--border);border-radius:calc(var(--r) * 1.5);padding:.25rem .85rem .5rem;margin-top:1rem}
+#hand-point .calc{border-top:0}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 @media (forced-colors:active){#plots .area{fill:none}}
 </style>
@@ -154,7 +168,7 @@ code{font:.875em var(--mono)}
       <span id="figure-status" class="small muted" role="status"></span>
     </div>
     <p class="hint">The image and the PDF hold the beam, shear force, bending moment and deflection diagrams with every result below them. They are drawn on this page and saved straight to your device: nothing is uploaded.</p>
-    <p class="hint">The beamdswitch button saves this beam as a narrated talk: a Markdown deck with the set-up, method, results and checks, every number as shown here, and a spoken narration on every slide. Open it in <a href="https://teoyujie.org/visuals/beamdswitch/">beamdswitch</a> to get slides, a handout, narration and a video. Copy deck puts the same deck on the clipboard to paste into beamdswitch, for when the browser blocks the download.</p>
+    <p class="hint">The beamdswitch button saves this beam as a narrated talk: a Markdown deck with the set-up, method, results, hand calculations and checks, every number as shown here, and a spoken narration on every slide. Open it in <a href="https://teoyujie.org/visuals/beamdswitch/">beamdswitch</a> to get slides, a handout, narration and a video. Copy deck puts the same deck on the clipboard to paste into beamdswitch, for when the browser blocks the download.</p>
   </div>
 
   <div class="panel">
@@ -207,6 +221,18 @@ code{font:.875em var(--mono)}
   </table></div>
 </section>
 
+<section id="hand" aria-labelledby="hand-h">
+  <h2 id="hand-h">Hand calculations</h2>
+  <p class="small">The same beam worked by hand, step by step, for every segment between consecutive supports and load points and at the point selected on the diagrams: reactions from equilibrium (or from compatibility when the beam is statically indeterminate), shear and moment by the method of sections, slope and deflection by double integration with the boundary and continuity conditions, then the bending stress and an equilibrium check. The stiffness solver is authoritative: every number below is its value, written as this page writes it, and the hand steps are a readable derivation of that same answer.</p>
+  <div class="export" role="group" aria-label="Save the hand calculations">
+    <button class="btn primary" type="button" id="save-hand" title="Save the hand calculations as a Markdown document, which beamdswitch also opens as a narrated deck">Save Markdown</button>
+    <button class="btn" type="button" id="copy-hand" title="Copy the same Markdown to the clipboard">Copy Markdown</button>
+    <span id="hand-status" class="small muted" role="status"></span>
+  </div>
+  <div id="hand-point"></div>
+  <div id="hand-body"></div>
+</section>
+
 <section id="nastran" aria-labelledby="nastran-h">
   <h2 id="nastran-h">NASTRAN deck</h2>
   <p>Download this beam as an MSC Nastran SOL 101 linear static bulk data file (<code>.bdf</code>). It encodes the same supports, loads, section and material the page solved, with every number in the units chosen above (<span data-unit="system">SI: N, mm, MPa</span>); a <code>$ Units</code> comment at the top of the deck names them.</p>
@@ -243,6 +269,9 @@ const D = /*@DATA@*/;
 </script>
 <script>
 /*@BEAMDSWITCH@*/
+</script>
+<script>
+/*@HANDCALC@*/
 </script>
 <script>
 (() => {
@@ -503,6 +532,9 @@ function update({ keepForm = false } = {}) {
     render();
     if (!error) { renderStats(); renderTable(); }
   }
+  // Re-deriving a long beam on every drag step is wasted work: the view catches up when the drag ends.
+  if (active && !error) handStale = true;
+  else renderHand();
   renderSectionDerived();
 }
 
@@ -841,6 +873,7 @@ function setCursor(x) {
   }
   layout.plot.setAttribute("aria-valuenow", tidy(showX(cursor, L)));
   layout.plot.setAttribute("aria-valuetext", parts.map(([k, v]) => `${k} ${v}`).join(", "));
+  if (!active) renderHandPoint();
 }
 
 /* A position along the beam in the current length unit. */
@@ -1101,8 +1134,8 @@ function reportDeck() {
   const preset = D.presets.find((p) => p.id === state.preset);
   const dims = state.section.shape === "custom" ? [] : (SECTION_FIELDS[state.section.shape] || [])
     .filter(([key]) => state.section[key] != null).map(([key, label, quantity]) => [label, state.section[key], quantity]);
-  return Beamdswitch.deck(B.beamReport(result, {
-    units, origin, title: preset ? preset.label : "",
+  return Beamdswitch.deck(H.beamReport(result, {
+    units, origin, at: cursor, title: preset ? preset.label : "",
     section: { shape: state.section.shape, label: shape ? shape.label : state.section.shape, dims },
     material: { label: mat ? mat.label : "" },
   }));
@@ -1129,6 +1162,130 @@ async function copyReport() {
     status.textContent = "Copied the beamdswitch deck: paste it into beamdswitch.";
   } catch {
     status.textContent = "Could not copy the beamdswitch deck: the clipboard is blocked here.";
+  }
+}
+
+/* ---------- hand calculations ----------
+   handcalc.js writes the derivation as blocks of text, equations, lists and tables; the page draws
+   them, with the equations' small TeX subset turned into HTML (no maths library, nothing loaded). */
+const H = HandCalc;
+let handCache = null, handStale = false;
+function derivation() {
+  if (!result || solveError) return null;
+  if (!handCache || handCache.result !== result || handCache.units !== units || handCache.origin !== origin)
+    handCache = { result, units, origin, dv: H.derive(result, { units, origin }) };
+  return handCache.dv;
+}
+function mathInto(parent, tex) {
+  const draw = (into, nodes) => {
+    for (const n of nodes) {
+      if (typeof n === "string") into.append(document.createTextNode(n));
+      else if (n.t === "frac") {
+        const f = document.createElement("span"), top = document.createElement("span"), bottom = document.createElement("span");
+        f.className = "frac";
+        draw(top, n.n); draw(bottom, n.d);
+        f.append(top, bottom); into.append(f);
+      } else {
+        const e = document.createElement(n.t === "text" ? "span" : n.t);
+        draw(e, n.c); into.append(e);
+      }
+    }
+  };
+  draw(parent, H.texNodes(tex));
+}
+/* Text with inline $maths$. */
+function inlineInto(parent, str) {
+  String(str).split(/\$([^$]+)\$/).forEach((part, i) => {
+    if (i % 2 === 0) { if (part) parent.append(document.createTextNode(part)); return; }
+    const m = document.createElement("span");
+    m.className = "math";
+    mathInto(m, part);
+    parent.append(m);
+  });
+}
+function blockNode(b) {
+  if (b.p != null) { const p = document.createElement("p"); inlineInto(p, b.p); return p; }
+  if (b.eq != null) {
+    const d = document.createElement("div");
+    d.className = "eq"; d.setAttribute("role", "math"); d.setAttribute("aria-label", H.texText(b.eq));
+    mathInto(d, b.eq);
+    return d;
+  }
+  if (b.list) {
+    const ul = document.createElement("ul");
+    for (const t of b.list) { const li = document.createElement("li"); inlineInto(li, t); ul.append(li); }
+    return ul;
+  }
+  const wrap = document.createElement("div"), table = document.createElement("table"), head = document.createElement("thead"), body = document.createElement("tbody"), hr = document.createElement("tr");
+  wrap.className = "table-wrap";
+  b.table.head.forEach((h, i) => { const th = document.createElement("th"); th.setAttribute("scope", "col"); if (i) th.className = "num"; inlineInto(th, h); hr.append(th); });
+  head.append(hr);
+  for (const row of b.table.rows) {
+    const tr = document.createElement("tr");
+    row.forEach((v, i) => { const td = document.createElement("td"); if (i) td.className = "num"; inlineInto(td, v); tr.append(td); });
+    body.append(tr);
+  }
+  table.append(head, body); wrap.append(table);
+  return wrap;
+}
+/* A frame as an article, or for a segment a details element, open while the beam has few segments. */
+function frameNode(f, collapsible = false, open = true) {
+  const box = document.createElement(collapsible ? "details" : "article"), h = document.createElement(collapsible ? "summary" : "h4");
+  box.className = "calc";
+  h.textContent = f.title;
+  box.append(h, ...f.blocks.map(blockNode));
+  if (collapsible && open) box.open = true;
+  return box;
+}
+function renderHand() {
+  handStale = false;
+  const body = $("hand-body"), dv = derivation();
+  body.replaceChildren();
+  if (!dv) {
+    const p = document.createElement("p"); p.className = "muted"; p.textContent = "Fix the beam first: there is no solution to work by hand.";
+    body.append(p); $("hand-point").replaceChildren();
+    return;
+  }
+  for (const part of H.frames(result, { units, origin, derivation: dv })) {
+    const box = document.createElement("div"), h = document.createElement("h3"), segments = part.frames.filter((f) => /^Segment /.test(f.title)).length;
+    box.className = "hand-part";
+    h.textContent = part.title;
+    box.append(h, ...part.frames.map((f) => frameNode(f, /^Segment /.test(f.title), segments <= 6)));
+    body.append(box);
+  }
+  renderHandPoint();
+}
+/* The selected point's frame follows the cursor on the diagrams. */
+function renderHandPoint() {
+  const box = $("hand-point"), dv = derivation();
+  box.replaceChildren();
+  if (dv && cursor != null) box.append(frameNode(H.pointFrame(result, cursor, { units, origin, derivation: dv })));
+}
+function handMarkdown() {
+  const preset = D.presets.find((p) => p.id === state.preset);
+  return H.markdown(result, { units, origin, at: cursor, title: preset ? preset.label : "", derivation: derivation() });
+}
+function saveHand() {
+  const status = $("hand-status");
+  if (pending !== null) update({ keepForm: true });
+  if (!derivation()) { status.textContent = "Fix the beam first: there is no solution to save."; return; }
+  const name = "beamdiag-hand-calculations.md";
+  try {
+    save(new Blob([handMarkdown()], { type: "text/markdown" }), name);
+    status.textContent = `Saved ${name}.`;
+  } catch (e) {
+    status.textContent = `Could not save: ${e.message}. Use Copy Markdown instead.`;
+  }
+}
+async function copyHand() {
+  const status = $("hand-status");
+  if (pending !== null) update({ keepForm: true });
+  if (!derivation()) { status.textContent = "Fix the beam first: there is no solution to copy."; return; }
+  try {
+    await navigator.clipboard.writeText(handMarkdown());
+    status.textContent = "Copied the hand calculations as Markdown.";
+  } catch {
+    status.textContent = "Could not copy the hand calculations: the clipboard is blocked here.";
   }
 }
 
@@ -1181,7 +1338,11 @@ function wire() {
     }
     setCursor(snapEvent(pointerX(ev), 6));
   });
-  const end = () => { if (active) { const h = host.querySelector(`[data-key="${active}"]`); if (h) h.classList.remove("active"); } active = null; };
+  const end = () => {
+    if (active) { const h = host.querySelector(`[data-key="${active}"]`); if (h) h.classList.remove("active"); }
+    active = null;
+    if (handStale) renderHand();
+  };
   host.addEventListener("pointerup", end);
   host.addEventListener("pointercancel", end);
   host.addEventListener("keydown", (ev) => {
@@ -1270,6 +1431,8 @@ function wire() {
   $("save-pdf").addEventListener("click", () => saveFigure("pdf"));
   $("save-beamdswitch").addEventListener("click", saveReport);
   $("copy-beamdswitch").addEventListener("click", copyReport);
+  $("save-hand").addEventListener("click", saveHand);
+  $("copy-hand").addEventListener("click", copyHand);
   $("divisions").addEventListener("input", () => { state.divisions = Number($("divisions").value); updateSoon(); });
   $("add-support").addEventListener("click", () => {
     const L = state.length, taken = new Set(state.supports.map((s) => s.x));
