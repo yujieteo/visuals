@@ -4,7 +4,7 @@ An interactive proof that computes the simplicial cohomology of the sphere, the 
 
 ## Where changes go
 
-The standalone repository [yujieteo/delta-cohomology](https://github.com/yujieteo/delta-cohomology) is where this visualisation and its tests develop and where CI runs them. `visuals/delta-cohomology/` in [yujieteo/site](https://github.com/yujieteo/site/tree/main/visuals/delta-cohomology) is a port of its page files, refreshed when the visualisation is updated, and the site runs no logic tests for it. Porting copies the folder minus `tests/` and `.github/`, so this file and SKILLS.md must not link into either. `README.md` lists every file here and its role.
+The standalone repository [yujieteo/delta-cohomology](https://github.com/yujieteo/delta-cohomology) is where this visualisation and its tests develop and where CI runs them. `visuals/delta-cohomology/` in [yujieteo/site](https://github.com/yujieteo/site/tree/main/visuals/delta-cohomology) is a port of its page files, refreshed when the visualisation is updated, and the site runs no logic tests for it. Porting copies the folder minus `tests/` and `.github/`. The site checks that this file and SKILLS.md link only inside the folder. `README.md` lists every file here and its role.
 
 ## Build, test and verify
 
