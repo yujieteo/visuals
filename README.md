@@ -123,9 +123,15 @@ node --test tests/convexity-action-engine.test.mjs tests/everyday-actions.test.m
 Pages with a narrated beamdswitch report (the beamdswitch and Copy deck buttons)
 keep `viz/<slug>/beamdswitch.js`, an unchanged copy of the site's
 `templates/beamdswitch.js`, and `viz/<slug>/report.js`, which builds the report
-from the page's own data; the page inlines both. Their tests parse every deck
-with beamdswitch's own parser (vendored read-only in `tests/fixtures/beamdswitch/`)
-and, when `SITE_REPO` names a site checkout, also compare each copy with it:
+from the page's own data; the page inlines both. The four stock pages, whose
+report lives in `scripts/templates/stock-cases-report.js`,
+`breeden-litzenberger-density` and `convex-payoffs` offer the same narrated
+report for [beamdswitch](https://teoyujie.org/visuals/beamdswitch/): the
+beamdswitch button saves the view shown as a Markdown deck, and Copy deck puts
+the same deck on the clipboard. Their tests parse every deck with beamdswitch's
+own parser (vendored read-only in `tests/fixtures/beamdswitch/`), click both
+buttons where the page offers them, and, when `SITE_REPO` names a site
+checkout, also compare each copy with it:
 
 ```sh
 node --test tests/*-beamdswitch.test.mjs
