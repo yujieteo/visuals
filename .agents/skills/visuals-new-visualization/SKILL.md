@@ -12,7 +12,7 @@ description: Add a new story-first visualization to the visuals repo from a loca
 5. Enumerate two to four candidates internally, each naming its question, fields, and representation. Select by surprise, then write one disputable sentence about the data before choosing the representation.
 6. Run exactly one critique: "Is this the most interesting thing in the data, or just the easiest thing to visualize?" If it fails, pick one other candidate, then commit. Never abstain.
 7. Write `scripts/build_<slug>.py` (stdlib only; copy the closest existing builder such as `build_energy_email_productivity.py`) that renders `viz/<slug>/index.html`, rebuilds the root gallery with `render_gallery` from `scripts/gallery.py` (import it; never copy the gallery code), and supports `--verify`. Page rules: `.agents/skills/visuals-page-conventions/SKILL.md`.
-8. Register the builder: `.agents/skills/visuals-verify-ci/SKILL.md`. Add a row to the README visualization table (keep it sorted by slug).
+8. Register the builder: `.agents/skills/visuals-verify-ci/SKILL.md`. Add a row to the README visualization table (keep it sorted by slug). List the slug in `MIRRORS` (adding `viz/<slug>/AGENTS.md`, `SKILLS.md`, `LICENSE`) or `EXCLUDED` in `tests/test_mirror_docs.py`, which fails on any unlisted folder.
 9. Run the builder twice (output must be identical), then `--verify`. Validate JSON, run `git diff --check`, inspect all untracked files.
 10. Commit only after every check passes. Report the commit, changed files, checks, source date, and limitations.
 
