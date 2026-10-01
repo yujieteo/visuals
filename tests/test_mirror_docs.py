@@ -17,9 +17,19 @@ MIRRORS = {
     "singapore-covid-governance-hindsight": "sg-covid-hindsight",
     "social-values-surveydata": "social-values-surveydata", "tourist-attractions": "tourist-attractions",
 }
+# Stale older copies; their current versions (and mirrors) live in yujieteo/site visuals/.
+EXCLUDED = {"vgc-protect-fakeout-pivot-trainer", "tampines-food-map", "convexity-action-engine", "everyday-actions"}
 
 
 class MirrorDocsTest(unittest.TestCase):
+    def test_every_viz_folder_is_either_mirrored_or_excluded(self):
+        slugs = {p.parent.name for p in (ROOT / "viz").glob("*/index.html")}
+        self.assertEqual(slugs, set(MIRRORS) | EXCLUDED)
+        self.assertFalse(set(MIRRORS) & EXCLUDED)
+        for slug in EXCLUDED:
+            for name in ("AGENTS.md", "SKILLS.md", "LICENSE"):
+                self.assertFalse((ROOT / "viz" / slug / name).exists(), f"{slug}/{name}")
+
     def test_license_is_the_shared_mit_text(self):
         texts = {slug: (ROOT / "viz" / slug / "LICENSE").read_text() for slug in MIRRORS}
         self.assertEqual(len(set(texts.values())), 1)
