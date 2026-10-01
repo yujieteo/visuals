@@ -194,5 +194,14 @@
     return { width: total, height: (depth + 1) * rowH + 24, rowH: rowH, pos: pos, catName: (c) => catName(D, c) };
   }
 
-  root.EGLogic = { index, parseHash, formatHash, primaryItem, move, ancestors, textOf, describe, announce, search, visibleBands, maxDepth, layout, norm };
+  /* Ctrl+K or Cmd+K, unless the keystroke is going into a text field (including the search box itself). */
+  function isSearchShortcut(ev) {
+    if (!ev || ev.isComposing || String(ev.key).toLowerCase() !== "k" || !(ev.ctrlKey || ev.metaKey) || ev.altKey || ev.shiftKey) return false;
+    const t = ev.target, tag = t && t.tagName ? String(t.tagName).toUpperCase() : "";
+    const typing = tag === "TEXTAREA" || tag === "SELECT" || !!(t && t.isContentEditable) ||
+      (tag === "INPUT" && !/^(button|checkbox|radio|submit|reset|range|color|file|image)$/i.test(t.type || "text"));
+    return !typing;
+  }
+
+  root.EGLogic = { index, parseHash, formatHash, primaryItem, move, ancestors, textOf, describe, announce, search, visibleBands, maxDepth, layout, norm, isSearchShortcut };
 })(typeof globalThis !== "undefined" ? globalThis : this);

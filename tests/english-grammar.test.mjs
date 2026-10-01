@@ -158,3 +158,20 @@ test("emitted page registers three read-only tools without requiring a DOM", () 
   assert.deepEqual([...tools.keys()].sort(), ["get_data", "get_metadata", "query"]);
   for (const tool of tools.values()) assert.equal(tool.annotations.readOnlyHint, true);
 });
+
+test("Ctrl+K and Cmd+K go to search, except while typing in a text field", () => {
+  const key = (over, target = { tagName: "BODY" }) => L.isSearchShortcut({ key: "k", ctrlKey: false, metaKey: false, altKey: false, shiftKey: false, target, ...over });
+  assert.equal(key({ ctrlKey: true }), true);
+  assert.equal(key({ metaKey: true }), true);
+  assert.equal(key({ ctrlKey: true, key: "K" }), true, "with Caps Lock on");
+  assert.equal(key({ ctrlKey: true }, { tagName: "BUTTON" }), true, "from a focused button");
+  assert.equal(key({ ctrlKey: true }, { tagName: "INPUT", type: "checkbox" }), true, "from a checkbox");
+  assert.equal(key({}), false, "plain k");
+  assert.equal(key({ ctrlKey: true, key: "j" }), false);
+  assert.equal(key({ ctrlKey: true, shiftKey: true }), false);
+  assert.equal(key({ ctrlKey: true, altKey: true }), false);
+  assert.equal(key({ ctrlKey: true, isComposing: true }), false);
+  assert.equal(key({ key: "Escape" }), false, "Escape is left to the drawer");
+  for (const target of [{ tagName: "INPUT", type: "search" }, { tagName: "INPUT", type: "text" }, { tagName: "INPUT" }, { tagName: "TEXTAREA" }, { tagName: "SELECT" }, { tagName: "DIV", isContentEditable: true }])
+    assert.equal(key({ ctrlKey: true }, target), false, `not while typing in ${target.tagName} ${target.type || ""}`);
+});
