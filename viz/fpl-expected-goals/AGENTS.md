@@ -6,7 +6,7 @@ Live: https://teoyujie.org/visuals/fpl-expected-goals/
 
 ## Source of truth
 
-This folder is `viz/fpl-expected-goals/` in [yujieteo/visuals](https://github.com/yujieteo/visuals). The standalone repository [yujieteo/fpl-expected-goals](https://github.com/yujieteo/fpl-expected-goals) is a read-only exact mirror of this folder. Make every change upstream in `yujieteo/visuals`; do not edit or open pull requests against the mirror.
+The standalone repository [yujieteo/fpl-expected-goals](https://github.com/yujieteo/fpl-expected-goals) is where this visualisation and its tests develop and where CI runs them. `viz/fpl-expected-goals/` in [yujieteo/visuals](https://github.com/yujieteo/visuals) is a port of its page files (with its data files in `data/fpl-expected-goals/`), refreshed when the visualisation is updated, and neither yujieteo/visuals nor yujieteo/site (which publishes it at <https://teoyujie.org/visuals/fpl-expected-goals/>) runs logic tests for it. Porting copies the repository minus `tests/` and `.github/`: the page files into `viz/fpl-expected-goals/` and the data files into `data/fpl-expected-goals/`.
 
 ## Files
 
@@ -19,19 +19,19 @@ This folder is `viz/fpl-expected-goals/` in [yujieteo/visuals](https://github.co
 
 ## Build, test and verify
 
-Run from the root of a `yujieteo/visuals` checkout (Python 3 standard library and Node 22; nothing to install):
+Run from the root of a yujieteo/fpl-expected-goals checkout (Node 22; nothing to install):
 
 ```sh
-node --test tests/fpl-expected-goals-beamdswitch.test.mjs tests/voice-beamdswitch.test.mjs
+node --test 'tests/*.test.mjs'
 ```
 
-There is no builder: edit `index.html`, `report.js` and the data directly, keeping the page's inlined copies of `beamdswitch.js` and `report.js` identical to the files. Before opening a pull request, run the full suite in the upstream README's Verification section, which CI (`.github/workflows/verify.yml`) runs on every push.
+There is no builder: edit `index.html`, `report.js` and the data directly, keeping the page's inlined copies of `beamdswitch.js` and `report.js` identical to the files. Before opening a pull request, run the whole suite, as CI (`.github/workflows/ci.yml`) does on every push and pull request.
 
 ## Data and tests
 
-- Data: `data/fpl-expected-goals/raw.json` and `meta.json`.
+- Data: `raw.json` and `meta.json`.
 - Deck report: `report.js` in this folder.
-- Tests: `tests/fpl-expected-goals-beamdswitch.test.mjs`, and `tests/voice-beamdswitch.test.mjs` for every deck page.
+- Tests: `tests/fpl-expected-goals-beamdswitch.test.mjs`, and `tests/voice-beamdswitch.test.mjs` for the deck's narration voice.
 
 ## Conventions
 
