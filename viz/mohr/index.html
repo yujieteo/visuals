@@ -106,6 +106,10 @@ td .tag{font:600 .62rem var(--mono);letter-spacing:.04em;text-transform:uppercas
 .selftests li b{font-family:var(--mono);font-size:.72rem;margin-right:.35rem}
 .selftests li.pass b{color:var(--ok)}
 .selftests li.fail b{color:var(--bad)}
+.calc{border-top:1px solid var(--grid);padding:.6rem 0 .2rem;min-width:0}
+.calc h3{font:600 .9375rem/1.35 var(--sans);letter-spacing:-.01em;text-transform:none;color:var(--fg);margin:0 0 .3rem}
+.calc p{font-size:.875rem;margin:.3rem 0}
+.eq{font:.9375rem/1.7 "Cambria Math","STIX Two Math","Latin Modern Math",Cambria,Georgia,serif;margin:.25rem 0;padding:.25rem .6rem;background:var(--surface);border-radius:var(--r);overflow-x:auto;white-space:nowrap;font-variant-numeric:tabular-nums}
 footer{margin-top:3rem;padding-top:1rem;border-top:1px solid var(--border);font-size:.8125rem;color:var(--muted)}
 .visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
@@ -235,6 +239,17 @@ footer{margin-top:3rem;padding-top:1rem;border-top:1px solid var(--border);font-
     <div class="tablewrap"><table id="tbl-tensors"></table></div>
   </section>
 
+  <section id="hand" aria-labelledby="t-hand">
+    <h2 id="t-hand">Hand calculations</h2>
+    <p class="note">The current state worked by hand for the 2D view's axis: the in-plane components, the circle's centre and radius, the in-plane principal values and angle, the maximum in-plane shear, the element rotated by θ (or the plane given by direction cosines), then the 3D principal values and the absolute maximum shear. Each line is the formula, the numbers substituted, then the result; every result is this page's own value, in its units, sign convention and digits.</p>
+    <div id="hand-body"></div>
+    <div class="actions">
+      <button class="btn small" type="button" id="save-hand" title="Save the hand calculations as a Markdown document, which beamdswitch also opens as a narrated deck">Save Markdown</button>
+      <button class="btn small" type="button" id="copy-hand" title="Copy the same Markdown to the clipboard">Copy Markdown</button>
+    </div>
+    <p class="msg" id="hand-msg" role="status" aria-live="polite"></p>
+  </section>
+
   <section id="io" aria-labelledby="t-io">
     <h2 id="t-io">Import and export</h2>
     <p class="note">JSON holds the full state as displayed (units and sign convention recorded); the Markdown report embeds the same JSON, which is all an import reads.</p>
@@ -249,7 +264,7 @@ footer{margin-top:3rem;padding-top:1rem;border-top:1px solid var(--border);font-
       <button class="btn small" type="button" id="save-beamdswitch" title="Save a narrated Markdown talk about this state, to open in beamdswitch">beamdswitch</button>
       <button class="btn small" type="button" id="copy-beamdswitch" title="Copy the same beamdswitch deck to the clipboard, to paste into beamdswitch">Copy deck</button>
     </div>
-    <p class="note">The beamdswitch button saves this state as a narrated talk: a Markdown deck with the set-up, method, results and checks, every number as shown here, and a spoken narration on every slide. Open it in <a href="https://teoyujie.org/visuals/beamdswitch/">beamdswitch</a> to get slides, a handout, narration and a video. Copy deck puts the same deck on the clipboard to paste into beamdswitch, for when the browser blocks the download.</p>
+    <p class="note">The beamdswitch button saves this state as a narrated talk: a Markdown deck with the set-up, method, results with the hand calculations, and checks, every number as shown here, and a spoken narration on every slide. Open it in <a href="https://teoyujie.org/visuals/beamdswitch/">beamdswitch</a> to get slides, a handout, narration and a video. Copy deck puts the same deck on the clipboard to paste into beamdswitch, for when the browser blocks the download.</p>
     <div class="actions"><label class="btn small" for="import-file">Import file…</label><input type="file" id="import-file" accept=".json,.md,.markdown,.txt,application/json,text/markdown,text/plain" class="visually-hidden"></div>
     <label class="f"><span>Paste to import (JSON or a Markdown report)</span><textarea id="import-text" spellcheck="false"></textarea></label>
     <div class="actions"><button class="btn small" type="button" id="import-go">Import pasted text</button></div>
@@ -1238,6 +1253,9 @@ function beamdswitchReport(st) {
     });
   }
 
+  /* ----- hand calculations: the driven tensor's transformation worked step by step ----- */
+  results.push(...handFrames(st));
+
   /* ----- checks and takeaway ----- */
   const fail = r.failure, tests = selfTests(), passed = tests.filter((t) => t.pass).length;
   const fos = fail ? fosText(fail.fos, d) : null;
@@ -1288,6 +1306,369 @@ function beamdswitchReport(st) {
     method: methodFrames,
     results,
     checks,
+  };
+}
+
+/* ---------- hand calculations ----------
+   handCalc(st) works the driven tensor's transformation by hand for the 2D view's axis and the
+   selected plane: the in-plane components, the circle's centre and radius, the in-plane principal
+   values and angle, the maximum in-plane shear, the rotated element at the selected θ (or the
+   traction on a plane given by direction cosines), then the 3D principal values and the absolute
+   maximum shear. Each equation is written as formula = numbers substituted = result, in the page's
+   units, sign convention and digits, as Unicode text for the page and TeX for Markdown. Every result
+   is the page's own value from analyse(st), shown as the results table shows it; `chain` holds the
+   same quantities worked by the hand formulas from the components, in display units, which the
+   tests compare with the page and with closed-form references. */
+const TEX_STRAIN_UNIT = { ue: "\\mu\\varepsilon", "mm/mm": "\\mathrm{mm/mm}", "%": "\\%" };
+const COORD_SHEARS = { x: ["xy", "zx"], y: ["xy", "yz"], z: ["yz", "zx"] };
+const COMPONENTS = [["x", 0, 0], ["y", 1, 1], ["z", 2, 2], ["xy", 0, 1], ["yz", 1, 2], ["zx", 0, 2]];
+
+function handCalc(st) {
+  const r = analyse(st);
+  const isStress = r.stressDriven, res = isStress ? r.stress : r.strain, T = res.T, c = res.circle, b = r.basis;
+  const d = st.view.digits || 4, f = (x) => fmt(x, d), sign = r.sign;
+  const ref = frob(T) || 1, snap = (x, k = 1) => (Math.abs(x) <= 1e-12 * ref ** k ? 0 : x);
+  const fac = isStress ? stressFactor(st) : strainFactor(st);
+  // Display values: signed in the active convention, magnitudes, and tension-positive (for angles).
+  const disp = (x) => (sign * snap(x)) / fac, mag = (x) => Math.abs(snap(x)) / fac, tens = (x) => snap(x) / fac;
+  const V = (x) => f(disp(x)), Mg = (x) => f(mag(x));
+  const u = isStress ? st.units.stress : STRAIN_LABEL[st.units.strain];
+  const uT = isStress ? `\\mathrm{${st.units.stress}}` : TEX_STRAIN_UNIT[st.units.strain];
+  const say = (t) => `${sayNumber(t)} ${isStress ? SPOKEN_STRESS[st.units.stress] : SPOKEN_STRAIN[st.units.strain]}`;
+  const sayDeg = (t) => `${sayNumber(t)} degrees`;
+  const withU = (t) => `${t} ${u}`, withUT = (t) => `${texNumber(t)}\\ ${uT}`;
+  const P = (t) => (String(t).startsWith("−") ? `(${t})` : String(t)), PT = (t) => (String(t).startsWith("−") ? `(${texNumber(t)})` : texNumber(t));
+  // One equation: [text, tex] parts joined by " = ".
+  const eq = (...parts) => ({ text: parts.map((p) => p[0]).join(" = "), tex: parts.map((p) => p[1]).join(" = "), texParts: parts.map((p) => p[1]) });
+  const nm = isStress ? "σ" : "ε", nmT = isStress ? "\\sigma" : "\\varepsilon", sh = isStress ? "τ" : "ε", shT = isStress ? "\\tau" : "\\varepsilon";
+  const word = isStress ? "stress" : "strain", words = isStress ? "stresses" : "strains", shearWord = isStress ? "shear stress" : "tensor shear strain";
+  const N = (k) => [`${nm}${k}`, `${nmT}_{${k}}`], S = (k) => [`${sh}${k}`, `${shT}_{${k}}`];
+  const [pn, qn] = b.names, pq = `${pn}${qn}`;
+  const [sp, spT] = N(pn), [sq, sqT] = N(qn), [tpq, tpqT] = S(pq);
+  const axisName = ["1", "2", "3"].includes(st.plane.axis) ? `principal axis ${st.plane.axis}` : st.plane.axis;
+  const steps = [];
+
+  /* ----- 1. the in-plane components ----- */
+  const dp = disp(c.sp), dq = disp(c.sq), dt = disp(c.tpq);
+  const tp = f(dp), tq = f(dq), tt = f(dt);
+  {
+    const eqs = [], text = [];
+    if (b.principal) {
+      text.push(`Rotating about ${axisName}, the plane holds principal directions ${pn} and ${qn}, which carry no shear.`);
+      eqs.push(eq([sp, spT], [withU(tp), withUT(tp)]), eq([sq, sqT], [withU(tq), withUT(tq)]), eq([tpq, tpqT], [withU(tt), withUT(tt)]));
+    } else {
+      text.push(`Rotating about ${axisName}, the plane is the ${pn}${qn} plane: its components are read from the ${word} tensor.`);
+      eqs.push(eq([sp, spT], [withU(tp), withUT(tp)]), eq([sq, sqT], [withU(tq), withUT(tq)]));
+      if (!isStress && shearFactor(st) === 2) {
+        const tg = f(disp(2 * c.tpq));
+        text.push(`The page holds strain with tensor shear, half the engineering shear strain γ${pq} that was entered.`);
+        eqs.push(eq([tpq, tpqT], [`γ${pq}/2`, `\\frac{\\gamma_{${pq}}}{2}`], [`${P(tg)}/2`, `\\frac{${texNumber(tg)}}{2}`], [withU(tt), withUT(tt)]));
+      } else eqs.push(eq([tpq, tpqT], [withU(tt), withUT(tt)]));
+    }
+    const der = r.derived && r.derived.kind === (isStress ? "stress-z" : "strain-z") ? r.derived : null;
+    if (der) {
+      const ax = f(disp(T[0][0])), ay = f(disp(T[1][1])), nu = f(st.material.nu), z = V(T[2][2]);
+      if (!r.material.nuValid) text.push(`${CONSTRAINT_TEXT[st.constraint]} needs a valid ν to derive ${nm}z, so ${nm}z is taken as 0.`);
+      else if (isStress) {
+        text.push("Plane strain holds εz = 0, so Hooke's law gives the out-of-plane stress.");
+        eqs.push(eq(["σz", "\\sigma_z"], ["ν(σx + σy)", "\\nu(\\sigma_x + \\sigma_y)"], [`${P(nu)} × (${ax} + ${P(ay)})`, `${PT(nu)} \\times (${texNumber(ax)} + ${PT(ay)})`], [withU(z), withUT(z)]));
+      } else {
+        text.push("Plane stress holds σz = 0, so Hooke's law gives the out-of-plane strain.");
+        eqs.push(eq(["εz", "\\varepsilon_z"], ["−ν(εx + εy)/(1 − ν)", "-\\frac{\\nu(\\varepsilon_x + \\varepsilon_y)}{1 - \\nu}"], [`−${P(nu)} × (${ax} + ${P(ay)})/(1 − ${P(nu)})`, `-\\frac{${PT(nu)} \\times (${texNumber(ax)} + ${PT(ay)})}{1 - ${PT(nu)}}`], [withU(z), withUT(z)]));
+      }
+    }
+    steps.push({
+      id: "components", short: "The in-plane components",
+      title: `In-plane components for a rotation about ${axisName}: ${sp} = ${tp}, ${sq} = ${tq}, ${tpq} = ${tt} ${u}`,
+      text, eqs,
+      narration: [
+        `For a rotation about ${axisName}, the plane's normal ${words} are ${say(tp)} and ${say(tq)}, and its ${shearWord} is ${say(tt)}.`,
+        ...(der && r.material.nuValid ? [`The ${CONSTRAINT_TEXT[st.constraint]} condition gives an out-of-plane ${word} of ${say(V(T[2][2]))}.`] : []),
+      ].join(" "),
+    });
+  }
+
+  /* ----- 2. centre and radius ----- */
+  const chain = { C: (dp + dq) / 2, D: (dp - dq) / 2 };
+  chain.R = Math.hypot(chain.D, dt);
+  const Ds = f(chain.D), Cs = V(c.C), Rs = Mg(c.R);
+  steps.push({
+    id: "circle", short: "Centre and radius of the circle",
+    title: `Centre and radius: C = ${Cs}, R = ${Rs} ${u}`,
+    text: ["The circle's centre is the mean of the two normal values; its radius combines half their difference with the shear."],
+    eqs: [
+      eq(["C", "C"], [`(${sp} + ${sq})/2`, `\\frac{${spT} + ${sqT}}{2}`], [`(${tp} + ${P(tq)})/2`, `\\frac{${texNumber(tp)} + ${PT(tq)}}{2}`], [withU(Cs), withUT(Cs)]),
+      eq(["D", "D"], [`(${sp} − ${sq})/2`, `\\frac{${spT} - ${sqT}}{2}`], [`(${tp} − ${P(tq)})/2`, `\\frac{${texNumber(tp)} - ${PT(tq)}}{2}`], [withU(Ds), withUT(Ds)]),
+      eq(["R", "R"], [`√(D² + ${tpq}²)`, `\\sqrt{D^2 + ${tpqT}^2}`], [`√(${P(Ds)}² + ${P(tt)}²)`, `\\sqrt{${PT(Ds)}^2 + ${PT(tt)}^2}`], [withU(Rs), withUT(Rs)]),
+    ],
+    narration: [
+      `The centre is the mean of the two normal ${words}, ${say(Cs)}.`,
+      `Half their difference is ${say(Ds)}, and combining it with the shear of ${say(tt)} gives a radius of ${say(Rs)}.`,
+    ].join(" "),
+  });
+
+  /* ----- 3. in-plane principal values and angle ----- */
+  const ord = sign === 1 ? [c.max, c.min] : [c.min, c.max];
+  chain.larger = chain.C + chain.R; chain.smaller = chain.C - chain.R;
+  const hi = V(ord[0]), lo = V(ord[1]);
+  {
+    const eqs = [
+      eq([`${nm}max`, `${nmT}_{\\max}`], ["C + R", "C + R"], [`${Cs} + ${Rs}`, `${texNumber(Cs)} + ${texNumber(Rs)}`], [withU(hi), withUT(hi)]),
+      eq([`${nm}min`, `${nmT}_{\\min}`], ["C − R", "C - R"], [`${Cs} − ${Rs}`, `${texNumber(Cs)} - ${texNumber(Rs)}`], [withU(lo), withUT(lo)]),
+    ];
+    const text = ["The in-plane principal values sit where the circle crosses the normal axis, at the centre plus and minus the radius."];
+    let narr;
+    if (c.degenerate) {
+      chain.twoThetaP = 0; chain.thetaP = 0;
+      text.push("The radius is zero, so every direction in the plane is principal, and the page takes θp = 0°.");
+      narr = "The radius is zero, so every direction in the plane is principal.";
+    } else {
+      // atan2 fixes the quadrant; it takes tension-positive components, as the page measures θp.
+      const ap = f(tens(c.sp)), aq = f(tens(c.sq)), at = f(tens(c.tpq)), y2 = f(2 * tens(c.tpq)), x2 = f(tens(c.sp) - tens(c.sq));
+      chain.twoThetaP = (Math.atan2(2 * tens(c.tpq), tens(c.sp) - tens(c.sq)) * 180) / Math.PI;
+      chain.thetaP = chain.twoThetaP / 2;
+      const tw = f(2 * c.thetaP), th = f(c.thetaP);
+      if (sign === -1) text.push("The angle is measured with tension-positive components, as the page reports θp, so the signs of the normal and shear values are reversed here.");
+      eqs.push(eq(["2θp", "2\\theta_p"], [`atan2(2${tpq}, ${sp} − ${sq})`, `\\operatorname{atan2}(2${tpqT},\\ ${spT} - ${sqT})`], [`atan2(2 × ${P(at)}, ${ap} − ${P(aq)})`, `\\operatorname{atan2}(2 \\times ${PT(at)},\\ ${texNumber(ap)} - ${PT(aq)})`], [`atan2(${y2}, ${x2})`, `\\operatorname{atan2}(${texNumber(y2)},\\ ${texNumber(x2)})`], [`${tw}°`, `${texNumber(tw)}^\\circ`]));
+      eqs.push(eq(["θp", "\\theta_p"], [`${tw}°/2`, `\\frac{${texNumber(tw)}^\\circ}{2}`], [`${th}°`, `${texNumber(th)}^\\circ`]));
+      text.push(`Rotating the element by θp = ${th}° turns the ${pn} face onto the principal direction carrying ${withU(V(c.max))}.`);
+      narr = `Half the angle whose tangent is twice the shear over the difference of the normal ${words} gives the principal angle, ${sayDeg(th)}, where the ${pn} face carries ${say(V(c.max))}.`;
+    }
+    steps.push({
+      id: "principal-2d", short: `In-plane principal ${words}${c.degenerate ? "" : " and θp"}`,
+      title: `In-plane principal ${words}: ${nm}max = ${hi}, ${nm}min = ${lo} ${u}${c.degenerate ? "" : `, θp = ${f(c.thetaP)}°`}`,
+      text, eqs,
+      narration: `The in-plane principal ${words} are the centre plus and minus the radius, ${say(hi)} and ${say(lo)}. ${narr}`,
+    });
+  }
+
+  /* ----- 4. maximum in-plane shear ----- */
+  {
+    const eqs = [], text = [];
+    if (isStress) eqs.push(eq(["τmax, in-plane", "\\tau_{\\max,\\ \\text{in-plane}}"], ["R", "R"], [withU(Rs), withUT(Rs)]));
+    else {
+      const g2 = Mg(2 * c.R);
+      eqs.push(eq(["γmax, in-plane", "\\gamma_{\\max,\\ \\text{in-plane}}"], ["2R", "2R"], [`2 × ${Rs}`, `2 \\times ${texNumber(Rs)}`], [withU(g2), withUT(g2)]));
+    }
+    chain.thetaS = c.degenerate ? null : [chain.thetaP - 45, chain.thetaP + 45];
+    if (c.degenerate) text.push("The radius is zero, so no plane in this rotation carries shear.");
+    else {
+      const th = f(c.thetaP), [s1, s2] = c.thetaS.map(f);
+      text.push(`The circle's top and bottom points lie 90° from the principal points on the circle, so the planes of maximum shear are 45° from θp, and both carry the centre's normal ${word}.`);
+      eqs.push(eq(["θs", "\\theta_s"], ["θp ∓ 45°", "\\theta_p \\mp 45^\\circ"], [`${th}° ∓ 45°`, `${texNumber(th)}^\\circ \\mp 45^\\circ`], [`${s1}° and ${s2}°`, `${texNumber(s1)}^\\circ \\text{ and } ${texNumber(s2)}^\\circ`]));
+      eqs.push(eq([`${nm}(θs)`, `${nmT}(\\theta_s)`], ["C", "C"], [withU(Cs), withUT(Cs)]));
+    }
+    steps.push({
+      id: "shear-2d", short: "Maximum in-plane shear",
+      title: isStress ? `Maximum in-plane shear: τmax = R = ${Rs} ${u}` : `Maximum in-plane shear strain: γmax = 2R = ${Mg(2 * c.R)} ${u}`,
+      text, eqs,
+      narration: [
+        isStress ? `The maximum in-plane shear stress is the radius, ${say(Rs)}.` : `The maximum in-plane engineering shear strain is twice the radius, ${say(Mg(2 * c.R))}.`,
+        ...(c.degenerate ? [] : [`It acts on planes 45 degrees either side of the principal angle, at ${sayDeg(f(c.thetaS[0]))} and ${sayDeg(f(c.thetaS[1]))}, where the normal ${word} equals the centre.`]),
+      ].join(" "),
+    });
+  }
+
+  /* ----- 5. the rotated element at θ, or the traction on the selected plane ----- */
+  if (r.thetaView !== null) {
+    const theta = r.thetaView, two = 2 * theta, rad = (two * Math.PI) / 180, co = Math.cos(rad), si = Math.sin(rad);
+    const pt = pointAt(c, theta);
+    chain.rotated = { s: chain.C + chain.D * co + dt * si, sOther: chain.C - chain.D * co - dt * si, t: -chain.D * si + dt * co };
+    // Shear on the rotated face along the rotation axis: zero unless the axis carries shear.
+    const ta = disp(dot(r.normal, matVec(T, b.a)));
+    chain.rotated.tau = Math.hypot(chain.rotated.t, ta);
+    const th = f(theta), tw = f(two), cs = f(co), sn = f(si);
+    const a = V(pt.s), bq = V(pt.sOther), t = V(pt.t);
+    const [rp, rpT] = [`${sp}′`, `${nmT}_{${pn}'}`], [rq, rqT] = [`${sq}′`, `${nmT}_{${qn}'}`], [rt, rtT] = [`${sh}${pn}′${qn}′`, `${shT}_{${pn}'${qn}'}`];
+    const sub = (s1, s2, s3) => [`${Cs} ${s1} ${P(Ds)} × ${P(cs)} ${s2} ${P(tt)} × ${P(sn)}`, `${texNumber(Cs)} ${s1 === "−" ? "-" : "+"} ${PT(Ds)} \\times ${PT(cs)} ${s2 === "−" ? "-" : "+"} ${PT(tt)} \\times ${PT(sn)}`];
+    steps.push({
+      id: "rotated", short: "The element rotated by θ",
+      title: `The element rotated by θ = ${th}°: ${rp} = ${a}, ${rq} = ${bq}, ${rt} = ${t} ${u}`,
+      text: [
+        `The selected plane is a rotation of θ = ${th}° about ${axisName}, so 2θ = ${tw}°, cos 2θ = ${cs} and sin 2θ = ${sn}.`,
+        `Its normal ${word} and shear magnitude are the page's ${nm}n = ${withU(V(res.plane.sn))} and ${isStress ? "τ" : "γ/2"} = ${withU(Mg(res.plane.tau))}${Math.abs(ta) > 1e-9 * (ref / fac) ? `; the ${st.plane.axis} axis carries shear, so the face also has ${sh}${pn}′${st.plane.axis} = ${withU(f(ta))} along it` : ""}.`,
+      ],
+      eqs: [
+        eq([rp, rpT], [`C + D cos 2θ + ${tpq} sin 2θ`, `C + D\\cos 2\\theta + ${tpqT}\\sin 2\\theta`], sub("+", "+"), [withU(a), withUT(a)]),
+        eq([rq, rqT], [`C − D cos 2θ − ${tpq} sin 2θ`, `C - D\\cos 2\\theta - ${tpqT}\\sin 2\\theta`], sub("−", "−"), [withU(bq), withUT(bq)]),
+        eq([rt, rtT], [`−D sin 2θ + ${tpq} cos 2θ`, `-D\\sin 2\\theta + ${tpqT}\\cos 2\\theta`], [`−${P(Ds)} × ${P(sn)} + ${P(tt)} × ${P(cs)}`, `-${PT(Ds)} \\times ${PT(sn)} + ${PT(tt)} \\times ${PT(cs)}`], [withU(t), withUT(t)]),
+        eq([`${rp} + ${rq}`, `${rpT} + ${rqT}`], [`${a} + ${P(bq)}`, `${texNumber(a)} + ${PT(bq)}`], [`${sp} + ${sq}`, `${spT} + ${sqT}`], [withU(f(dp + dq)), withUT(f(dp + dq))]),
+        ...(Math.abs(ta) > 1e-9 * (ref / fac) ? [eq([isStress ? "τ" : "γ/2", isStress ? "\\tau" : "\\gamma/2"], [`√(${rt}² + ${sh}${pn}′${st.plane.axis}²)`, `\\sqrt{${rtT}^2 + ${shT}_{${pn}'${st.plane.axis}}^2}`], [`√(${P(t)}² + ${P(f(ta))}²)`, `\\sqrt{${PT(t)}^2 + ${PT(f(ta))}^2}`], [withU(Mg(res.plane.tau)), withUT(Mg(res.plane.tau))])] : []),
+      ],
+      narration: [
+        `Rotating the element by ${sayDeg(th)} about ${axisName}, the rotated face carries a normal ${word} of ${say(a)} and a ${shearWord} of ${say(t)}.`,
+        `The other face carries ${say(bq)}, and the two normal ${words} still add up to the same total, ${say(f(dp + dq))}.`,
+      ].join(" "),
+    });
+  } else {
+    const n = r.normal, tv = matVec(T, n).map(disp), ns = n.map((x) => f(Math.abs(x) < 1e-12 ? 0 : x));
+    const tx = tv.map(f), sn = V(res.plane.sn), ta = Mg(res.plane.tau);
+    const snH = dot(n, tv), tt2 = dot(tv, tv);
+    chain.traction = { t: tv, sn: snH, tau: Math.sqrt(Math.max(0, tt2 - snH * snH)) };
+    const T3 = [0, 1, 2].map((i) => [0, 1, 2].map((j) => V(T[i][j])));
+    const tName = isStress ? "t" : "e";
+    steps.push({
+      id: "traction", short: "The plane by direction cosines",
+      title: `The plane by direction cosines: ${nm}n = ${sn}, ${isStress ? "τ" : "γ/2"} = ${ta} ${u}`,
+      text: [
+        `The selected plane has unit normal n = (${ns.join(", ")}), which is not a rotation about ${axisName}, so its values come from the ${word} vector on it.`,
+      ],
+      eqs: [
+        ...["x", "y", "z"].map((k, i) => eq([`${tName}${k}`, `${tName}_${k}`], [`${T3[i][0]} × ${P(ns[0])} + ${P(T3[i][1])} × ${P(ns[1])} + ${P(T3[i][2])} × ${P(ns[2])}`, `${texNumber(T3[i][0])} \\times ${PT(ns[0])} + ${PT(T3[i][1])} \\times ${PT(ns[1])} + ${PT(T3[i][2])} \\times ${PT(ns[2])}`], [withU(tx[i]), withUT(tx[i])])),
+        eq([`${nm}n`, `${nmT}_n`], [`n · ${tName}`, `\\mathbf{n} \\cdot \\mathbf{${tName}}`], [`${P(ns[0])} × ${P(tx[0])} + ${P(ns[1])} × ${P(tx[1])} + ${P(ns[2])} × ${P(tx[2])}`, `${PT(ns[0])} \\times ${PT(tx[0])} + ${PT(ns[1])} \\times ${PT(tx[1])} + ${PT(ns[2])} \\times ${PT(tx[2])}`], [withU(sn), withUT(sn)]),
+        eq([isStress ? "τ" : "γ/2", isStress ? "\\tau" : "\\gamma/2"], [`√(|${tName}|² − ${nm}n²)`, `\\sqrt{\\lvert\\mathbf{${tName}}\\rvert^2 - ${nmT}_n^2}`], [`√(${f(tt2)} − ${P(sn)}²)`, `\\sqrt{${texNumber(f(tt2))} - ${PT(sn)}^2}`], [withU(ta), withUT(ta)]),
+      ],
+      narration: `On the plane given by its direction cosines, the ${word} vector has a normal part of ${say(sn)} and a shear part of ${say(ta)}.`,
+    });
+  }
+
+  /* ----- 6. 3D principal values and the absolute maximum shear ----- */
+  {
+    const pv = res.principal.values, shown = pv.map(V);
+    const a = b.a, w = matVec(T, a), sa = dot(a, w), off = norm(sub(w, scale(a, sa)));
+    const text = [], eqs = [];
+    let narr, cuts = null;
+    if (off <= 1e-9 * ref) {
+      // The view's axis carries no shear, so its normal value is a principal value.
+      const [an] = N(st.plane.axis);
+      const san = V(sa);
+      const shears = b.principal ? [] : COORD_SHEARS[st.plane.axis];
+      chain.principal = [chain.larger, chain.smaller, disp(sa)].sort((x, y) => y - x);
+      text.push(b.principal
+        ? `Principal axis ${st.plane.axis} is itself principal, so ${an} = ${withU(san)} joins the two in-plane values.`
+        : `The ${st.plane.axis} axis carries no shear (${shears.map((k) => `${sh}${k} = 0`).join(", ")}), so ${an} = ${withU(san)} is a principal value and joins the two in-plane values.`);
+      eqs.push(eq([`${nm}1, ${nm}2, ${nm}3`, `${nmT}_1, ${nmT}_2, ${nmT}_3`], [`sort(${hi}, ${lo}, ${san})`, `\\operatorname{sort}(${texNumber(hi)},\\ ${texNumber(lo)},\\ ${texNumber(san)})`], [withU(shown.join(", ")), `${shown.map(texNumber).join(",\\ ")}\\ ${uT}`]));
+      narr = b.principal
+        ? `Principal axis ${st.plane.axis} is itself principal, so its normal ${word}, ${say(san)}, joins the two in-plane values.`
+        : `The ${st.plane.axis} axis carries no shear, so its normal ${word}, ${say(san)}, is a principal value and joins the two in-plane values.`;
+    } else {
+      // The characteristic cubic, solved in closed form by the trigonometric method.
+      const comp = COMPONENTS.map(([k, i, j]) => V(T[i][j]));
+      const [x, y, z, xy, yz, zx] = comp, [xT, yT, zT, xyT, yzT, zxT] = comp.map(PT);
+      const D3 = COMPONENTS.map(([, i, j]) => disp(T[i][j]));
+      const I1 = D3[0] + D3[1] + D3[2];
+      const I2 = D3[0] * D3[1] + D3[1] * D3[2] + D3[2] * D3[0] - D3[3] ** 2 - D3[4] ** 2 - D3[5] ** 2;
+      const I3 = D3[0] * D3[1] * D3[2] + 2 * D3[3] * D3[4] * D3[5] - D3[0] * D3[4] ** 2 - D3[1] * D3[5] ** 2 - D3[2] * D3[3] ** 2;
+      const m = I1 / 3, J2 = Math.max(0, (I1 * I1) / 3 - I2), J3 = I3 - (I1 * I2) / 3 + (2 * I1 ** 3) / 27;
+      const rr = 2 * Math.sqrt(J2 / 3), cos3 = J2 > 0 ? Math.max(-1, Math.min(1, ((3 * Math.sqrt(3)) / 2) * J3 / J2 ** 1.5)) : 1;
+      const alpha = Math.acos(cos3) / 3;
+      chain.invariants = { I1, I2, I3 }; chain.J2 = J2; chain.J3 = J3; chain.alphaDeg = (alpha * 180) / Math.PI;
+      chain.principal = [0, 1, 2].map((k) => m + rr * Math.cos(alpha - (2 * Math.PI * k) / 3));
+      const inv = res.invariants, i1 = V(inv.I1), i2 = f(snap(inv.I2, 2) / fac ** 2), i3 = f((sign * snap(inv.I3, 3)) / fac ** 3);
+      const fm = f(m), fj2 = f(J2), fj3 = f(J3), fc = f(cos3), fa = f(chain.alphaDeg), fr = f(rr);
+      const u2 = `${u}²`, u3 = `${u}³`, u2T = `${uT}^2`, u3T = `${uT}^3`;
+      text.push(`The ${b.principal ? axisName : `${st.plane.axis} axis`} carries shear, so the principal values are the roots of the characteristic cubic, solved in closed form by the trigonometric method.`);
+      eqs.push(
+        eq(["I1", "I_1"], [`${nm}x + ${nm}y + ${nm}z`, `${nmT}_x + ${nmT}_y + ${nmT}_z`], [`${x} + ${P(y)} + ${P(z)}`, `${texNumber(x)} + ${yT} + ${zT}`], [withU(i1), withUT(i1)]),
+        eq(["I2", "I_2"], [`${nm}x${nm}y + ${nm}y${nm}z + ${nm}z${nm}x − ${sh}xy² − ${sh}yz² − ${sh}zx²`, `${nmT}_x${nmT}_y + ${nmT}_y${nmT}_z + ${nmT}_z${nmT}_x - ${shT}_{xy}^2 - ${shT}_{yz}^2 - ${shT}_{zx}^2`],
+          [`${P(x)} × ${P(y)} + ${P(y)} × ${P(z)} + ${P(z)} × ${P(x)} − ${P(xy)}² − ${P(yz)}² − ${P(zx)}²`, `${xT} \\times ${yT} + ${yT} \\times ${zT} + ${zT} \\times ${xT} - ${xyT}^2 - ${yzT}^2 - ${zxT}^2`], [`${i2} ${u2}`, `${texNumber(i2)}\\ ${u2T}`]),
+        eq(["I3", "I_3"], [`${nm}x${nm}y${nm}z + 2${sh}xy${sh}yz${sh}zx − ${nm}x${sh}yz² − ${nm}y${sh}zx² − ${nm}z${sh}xy²`, `${nmT}_x${nmT}_y${nmT}_z + 2${shT}_{xy}${shT}_{yz}${shT}_{zx} - ${nmT}_x${shT}_{yz}^2 - ${nmT}_y${shT}_{zx}^2 - ${nmT}_z${shT}_{xy}^2`],
+          [`${P(x)} × ${P(y)} × ${P(z)} + 2 × ${P(xy)} × ${P(yz)} × ${P(zx)} − ${P(x)} × ${P(yz)}² − ${P(y)} × ${P(zx)}² − ${P(z)} × ${P(xy)}²`, `${xT} \\times ${yT} \\times ${zT} + 2 \\times ${xyT} \\times ${yzT} \\times ${zxT} - ${xT} \\times ${yzT}^2 - ${yT} \\times ${zxT}^2 - ${zT} \\times ${xyT}^2`], [`${i3} ${u3}`, `${texNumber(i3)}\\ ${u3T}`]),
+        { text: `λ³ − I1 λ² + I2 λ − I3 = 0`, tex: "\\lambda^3 - I_1\\lambda^2 + I_2\\lambda - I_3 = 0", texParts: ["\\lambda^3 - I_1\\lambda^2 + I_2\\lambda - I_3", "0"] },
+      );
+      cuts = [eqs.length];
+      eqs.push(
+        eq(["m", "m"], ["I1/3", "\\frac{I_1}{3}"], [withU(fm), withUT(fm)]),
+        eq(["J2", "J_2"], ["I1²/3 − I2", "\\frac{I_1^2}{3} - I_2"], [`${P(i1)}²/3 − ${P(i2)}`, `\\frac{${PT(i1)}^2}{3} - ${PT(i2)}`], [`${fj2} ${u2}`, `${texNumber(fj2)}\\ ${u2T}`]),
+        eq(["J3", "J_3"], ["I3 − I1 I2/3 + 2 I1³/27", "I_3 - \\frac{I_1 I_2}{3} + \\frac{2 I_1^3}{27}"], [`${i3} − ${P(i1)} × ${P(i2)}/3 + 2 × ${P(i1)}³/27`, `${texNumber(i3)} - \\frac{${PT(i1)} \\times ${PT(i2)}}{3} + \\frac{2 \\times ${PT(i1)}^3}{27}`], [`${fj3} ${u3}`, `${texNumber(fj3)}\\ ${u3T}`]),
+      );
+      if (J2 > 0) {
+        eqs.push(
+          eq(["cos 3α", "\\cos 3\\alpha"], ["(3√3/2) J3 / J2^(3/2)", "\\frac{3\\sqrt{3}}{2}\\,\\frac{J_3}{J_2^{3/2}}"], [`(3√3/2) × ${P(fj3)} / ${fj2}^(3/2)`, `\\frac{3\\sqrt{3}}{2} \\times \\frac{${texNumber(fj3)}}{${texNumber(fj2)}^{3/2}}`], [fc, texNumber(fc)]),
+          eq(["α", "\\alpha"], ["arccos(cos 3α)/3", "\\frac{\\arccos(\\cos 3\\alpha)}{3}"], [`${fa}°`, `${texNumber(fa)}^\\circ`]),
+          eq(["r", "r"], ["2√(J2/3)", "2\\sqrt{J_2/3}"], [`2√(${fj2}/3)`, `2\\sqrt{${texNumber(fj2)}/3}`], [withU(fr), withUT(fr)]),
+        );
+        cuts.push(eqs.length);
+        eqs.push(
+          ...[["α", "\\alpha"], ["α − 120°", "\\alpha - 120^\\circ"], ["α + 120°", "\\alpha + 120^\\circ"]].map(([ang, angT], k) =>
+            eq([`${nm}${k + 1}`, `${nmT}_${k + 1}`], [`m + r cos(${ang})`, `m + r\\cos(${angT})`], [`${fm} + ${fr} × cos(${f(chain.alphaDeg + [0, -120, 120][k])}°)`, `${texNumber(fm)} + ${texNumber(fr)} \\times \\cos(${texNumber(f(chain.alphaDeg + [0, -120, 120][k]))}^\\circ)`], [withU(shown[k]), withUT(shown[k])])),
+        );
+      } else {
+        text.push(`J2 = 0: the state is hydrostatic, so all three principal values equal m.`);
+        cuts.push(eqs.length);
+        eqs.push(eq([`${nm}1 = ${nm}2 = ${nm}3`, `${nmT}_1 = ${nmT}_2 = ${nmT}_3`], ["m", "m"], [withU(shown[0]), withUT(shown[0])]));
+      }
+      narr = `The ${b.principal ? axisName : `${st.plane.axis} axis`} carries shear, so the three principal values come from the characteristic cubic, solved by the trigonometric method.`;
+    }
+    const am = isStress ? Mg(res.absMax) : Mg(2 * res.absMax);
+    chain.absMax = isStress ? (chain.principal[0] - chain.principal[2]) / 2 : chain.principal[0] - chain.principal[2];
+    eqs.push(isStress
+      ? eq(["τmax", "\\tau_{\\max}"], ["(σ1 − σ3)/2", "\\frac{\\sigma_1 - \\sigma_3}{2}"], [`(${shown[0]} − ${P(shown[2])})/2`, `\\frac{${texNumber(shown[0])} - ${PT(shown[2])}}{2}`], [withU(am), withUT(am)])
+      : eq(["γmax", "\\gamma_{\\max}"], ["ε1 − ε3", "\\varepsilon_1 - \\varepsilon_3"], [`${shown[0]} − ${P(shown[2])}`, `${texNumber(shown[0])} - ${PT(shown[2])}`], [withU(am), withUT(am)]));
+    steps.push({
+      id: "principal-3d", short: `3D principal ${words} and ${isStress ? "τmax" : "γmax"}`,
+      title: `3D principal ${words}: ${shown.map((t, i) => `${nm}${i + 1} = ${t}`).join(", ")} ${u}; ${isStress ? "τmax" : "γmax"} = ${am} ${u}`,
+      text, eqs,
+      // On slides the cubic takes three frames: the invariants, its solution, then the values.
+      frames: cuts && [
+        { end: cuts[0], short: `3D principal ${words}: the invariants`, narration: `${narr} First come the three invariants of the tensor, the coefficients of the cubic.` },
+        { end: cuts[1], short: `3D principal ${words}: solving the cubic`, narration: "Shifting the cubic by its mean value removes the squared term, and its two remaining coefficients fix an angle whose cosines give the three roots." },
+      ],
+      narration: [
+        narr,
+        `The principal ${words} are ${sayList(shown.map(say))}.`,
+        isStress ? `The absolute maximum shear stress is half the difference of the first and third, ${say(am)}.` : `The largest engineering shear strain is the first minus the third, ${say(am)}.`,
+      ].join(" "),
+    });
+  }
+  return { quantity: word, unit: u, steps, chain };
+}
+
+/* The hand calculation steps as beamdswitch frames: a short title that fits a slide, the words, then
+   each equation on its own line. */
+function handFrames(st) {
+  // A long equation breaks after its formula, so the numbers continue on a second line.
+  const lines = (e) => (e.texParts.length > 2 && e.tex.length > 90
+    ? [`$$ ${e.texParts.slice(0, 2).join(" = ")} $$`, `$$ = ${e.texParts.slice(2).join(" = ")} $$`]
+    : [`$$ ${e.tex} $$`]);
+  const frame = (title, text, eqs, narration) => ({ title, body: [...text, ...eqs.flatMap(lines)].join("\n\n"), narration });
+  return handCalc(st).steps.flatMap((s, i) => {
+    const title = (short) => `Hand calculation ${i + 1}: ${short}`;
+    if (!s.frames) return [frame(title(s.short), s.text, s.eqs, s.narration)];
+    let from = 0;
+    const out = s.frames.map((g, k) => { const f = frame(title(g.short), k ? [] : s.text, s.eqs.slice(from, g.end), g.narration); from = g.end; return f; });
+    return [...out, frame(title(s.short), [], s.eqs.slice(from), s.narration.slice(s.narration.indexOf("The principal ")))];
+  });
+}
+
+/* The hand calculations on their own, as a Markdown document that beamdswitch also opens as a deck. */
+function handReport(st) {
+  const base = beamdswitchReport(st), h = handCalc(st), r = analyse(st);
+  const isStress = r.stressDriven, res = isStress ? r.stress : r.strain;
+  const d = st.view.digits || 4, f = (x) => fmt(x, d), fac = isStress ? stressFactor(st) : strainFactor(st), sign = r.sign;
+  const ref = frob(res.T) || 1, nm = isStress ? "σ" : "ε", V = (x) => f((sign * (Math.abs(x) <= 1e-12 * ref ? 0 : x)) / fac);
+  const pv = res.principal.values.map(V), am = f((Math.abs(res.absMax) <= 1e-12 * ref ? 0 : (isStress ? 1 : 2) * res.absMax) / fac);
+  const say = (t) => `${sayNumber(t)} ${isStress ? SPOKEN_STRESS[st.units.stress] : SPOKEN_STRAIN[st.units.strain]}`;
+  const shownSum = f((sign * (res.principal.values[0] + res.principal.values[1] + res.principal.values[2])) / fac);
+  return {
+    meta: { title: `Mohr's circle hand calculations: ${CONSTRAINT_TEXT[st.constraint]}, ${st.driver}-driven`, subtitle: "The page's transformation worked by hand, step by step" },
+    narration: `The Mohr's circle transformation of a ${CONSTRAINT_TEXT[st.constraint]} state worked by hand, step by step. Every number is the Mohr's Circle Visualiser's own, in ${SPOKEN_STRESS[st.units.stress]} and ${SPOKEN_STRAIN[st.units.strain]}.`,
+    setup: [base.setup[0]],
+    method: [{
+      title: "The route by hand",
+      body: [
+        "1. Read the in-plane components for the rotation axis.",
+        "2. Centre and radius of the circle.",
+        "3. In-plane principal values and the principal angle.",
+        "4. Maximum in-plane shear and its planes.",
+        `5. ${r.thetaView !== null ? "The element rotated by the selected angle." : "The values on the plane given by direction cosines."}`,
+        "6. The 3D principal values and the absolute maximum shear.",
+      ].join("\n"),
+      narration: "We read the plane's components, find the circle's centre and radius, then the principal values and angle, the maximum shear, the selected plane, and finally the three principal values in 3D.",
+    }],
+    results: handFrames(st),
+    checks: [{
+      title: "Checks: the hand steps reproduce the page",
+      body: [
+        `- The principal values sum to the first invariant: ${shownSum} = ${f((sign * res.invariants.I1) / fac)} ${h.unit}.`,
+        "- Every result above is the page's own value; the formulas reproduce it from the substituted numbers.",
+      ].join("\n"),
+      narration: "As a check, the three principal values add up to the first invariant, the trace of the tensor, and each formula reproduces the page's result from the numbers substituted into it.",
+    }, {
+      title: "Takeaway",
+      key: `${pv.map((t, i) => `${nm}${i + 1}`).join(", ")} = ${pv.join(", ")} ${h.unit}; ${isStress ? "τmax" : "γmax"} = ${am} ${h.unit}.`,
+      narration: `To sum up, by hand as on the page, the principal ${isStress ? "stresses" : "strains"} are ${sayList(pv.map(say))}, and the ${isStress ? "absolute maximum shear stress" : "largest engineering shear strain"} is ${say(am)}.`,
+    }],
   };
 }
 
@@ -1443,7 +1824,7 @@ root.Mohr = {
   checkFailureParams, failureCheck, envelope, rosette, gaugeReading,
   defaultState, presetState, applyRosette, clone, signOf, analyse, seedShadows, tensorSeed, principalSeed,
   dStress, dStressMag, dStrain, dStrainMag, shearFactor,
-  toObject, toJSON, fromObject, importText, toMarkdown, report, beamdswitchReport, selfTests,
+  toObject, toJSON, fromObject, importText, toMarkdown, report, beamdswitchReport, handCalc, handFrames, handReport, selfTests,
 };
 })(typeof self !== "undefined" ? self : globalThis);
 </script>
@@ -1874,6 +2255,7 @@ function render(o) {
   for (const [id, on] of Object.entries(cardVisibility())) $(`card-${id}`).hidden = !on;
   renderWarnings();
   renderTables();
+  renderHand();
   renderLegends();
   renderSummary();
 }
@@ -1988,6 +2370,12 @@ function renderSummary() {
     const text = parts.join(" ");
     if ($("sr-summary").textContent !== text) $("sr-summary").textContent = text;
   }, 700);
+}
+
+/* ---------- hand calculations ---------- */
+function renderHand() {
+  const h = M.handCalc(state);
+  $("hand-body").innerHTML = h.steps.map((s, i) => `<article class="calc"><h3>${i + 1}. ${esc(s.title)}</h3>${s.text.map((t) => `<p>${esc(t)}</p>`).join("")}${s.eqs.map((e) => `<div class="eq" role="math">${esc(e.text)}</div>`).join("")}</article>`).join("");
 }
 
 /* ---------- canvas plumbing ---------- */
@@ -2758,6 +3146,33 @@ async function copyReport() {
     showFallback("Clipboard access is blocked; the deck is selected below. Press Ctrl+C or ⌘C.", text);
   }
 }
+/* The hand calculations as Markdown: the same document beamdswitch opens as a narrated deck. */
+const HAND_NAME = "mohr-hand-calculations.md";
+const handText = () => Beamdswitch.deck(M.handReport(state));
+function handMsg(text, kind) { const el = $("hand-msg"); el.textContent = text; el.className = `msg ${kind || ""}`; }
+function saveHand() {
+  const text = handText();
+  try {
+    const url = URL.createObjectURL(new Blob([text], { type: "text/markdown" }));
+    const a = document.createElement("a");
+    a.href = url; a.download = HAND_NAME;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    handMsg(`Saved ${HAND_NAME}. It also opens in beamdswitch as a narrated deck.`, "ok");
+  } catch (err) {
+    handMsg(`Could not save: ${err.message}. Use Copy Markdown instead.`, "bad");
+  }
+}
+async function copyHand() {
+  const text = handText();
+  try {
+    if (!navigator.clipboard || !navigator.clipboard.writeText) throw new Error("no clipboard API");
+    await navigator.clipboard.writeText(text);
+    handMsg("Copied the hand calculations as Markdown.", "ok");
+  } catch (err) {
+    showFallback("Clipboard access is blocked; the hand calculations are selected below. Press Ctrl+C or ⌘C.", text);
+  }
+}
 function ioMsg(text, kind) { const el = $("io-msg"); el.textContent = text; el.className = `msg ${kind || ""}`; }
 function doImport(text) {
   try {
@@ -2786,6 +3201,8 @@ function wireIO() {
   $("import-go").addEventListener("click", () => doImport($("import-text").value));
   $("save-beamdswitch").addEventListener("click", saveReport);
   $("copy-beamdswitch").addEventListener("click", copyReport);
+  $("save-hand").addEventListener("click", saveHand);
+  $("copy-hand").addEventListener("click", copyHand);
 }
 
 /* ---------- self-test ---------- */

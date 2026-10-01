@@ -18,6 +18,7 @@ Live at <https://teoyujie.org/visuals/mohr/>. A teaching tool and calculator for
 | Turn rosette gauge readings into strains | Fill strain from gauges on the page |
 | Save or reload a state | Download or Copy JSON or Markdown, then Import pasted text |
 | Keep the state as a talk | the beamdswitch button (or Copy deck) |
+| Show the transformation worked by hand | the Hand calculations section, then Save Markdown or Copy Markdown |
 
 ## Inputs
 
@@ -38,7 +39,8 @@ All read-only.
 
 - **JSON:** `mohr-state.json`, the state in the recorded units and sign convention; imports back.
 - **Markdown:** `mohr-report.md`; imports back.
-- **beamdswitch deck:** `mohr-beamdswitch.md`, a narrated Markdown deck of the state (voice `bf_emma`), or Copy deck.
+- **beamdswitch deck:** `mohr-beamdswitch.md`, a narrated Markdown deck of the state (voice `bf_emma`), ending with the hand calculations as slides, or Copy deck.
+- **Hand calculations:** `mohr-hand-calculations.md`, every step of the transformation as formula, substituted numbers and result in the page's units; beamdswitch also opens it as a narrated deck. Or Copy Markdown.
 - **Data:** the metadata and default state are published as [data.json](https://teoyujie.org/visuals/mohr/data.json).
 
 ## Worked example
