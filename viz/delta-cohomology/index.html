@@ -1,0 +1,1892 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" href="data:,">
+<title>Δ-Complex Cohomology Visualiser</title>
+<meta name="description" content="An interactive proof: compute the cohomology of the sphere, torus and real projective plane from Δ-complexes of two triangles, tracing every matrix entry back to an oriented face.">
+<link rel="canonical" href="https://teoyujie.org/visuals/delta-cohomology">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Δ-Complex Cohomology Visualiser">
+<meta property="og:description" content="An interactive proof: compute the cohomology of the sphere, torus and real projective plane from Δ-complexes of two triangles, tracing every matrix entry back to an oriented face.">
+<meta property="og:url" content="https://teoyujie.org/visuals/delta-cohomology">
+<meta name="twitter:card" content="summary">
+<style>
+:root{--bg:#fbfbfa;--panel:#fff;--fg:#1c1c1e;--muted:#66666b;--faint:#a3a3a8;--rule:#dcdcde;--soft:#f1f1f0;--focus:#0a66d6;
+--vert:#b4570b;--vert-bg:rgba(180,87,11,.10);--edge:#1f5fbf;--edge-bg:rgba(31,95,191,.09);--tri:#6d3fc0;--tri-fill:rgba(109,63,192,.10);--tri-fill2:rgba(109,63,192,.18);
+--emph:#c0262d;--emph-bg:rgba(192,38,45,.10);--ok:#1f7a3a;--bad:#b3261e;--hl:#1c1c1e;
+--sans:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;--mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;--serif:"STIX Two Math","Cambria Math","Latin Modern Math",Georgia,serif;--r:.55rem;color-scheme:light dark}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#161618;--panel:#1e1e21;--fg:#f2f2f4;--muted:#a3a3a8;--faint:#6b6b70;--rule:#38383c;--soft:#26262a;--focus:#4b9bff;
+--vert:#f0a23b;--vert-bg:rgba(240,162,59,.14);--edge:#6ea8ff;--edge-bg:rgba(110,168,255,.13);--tri:#b493ff;--tri-fill:rgba(180,147,255,.12);--tri-fill2:rgba(180,147,255,.22);--emph:#ff6b6b;--emph-bg:rgba(255,107,107,.14);--ok:#5ed184;--bad:#ff7b72;--hl:#f2f2f4}}
+:root[data-theme="dark"]{--bg:#161618;--panel:#1e1e21;--fg:#f2f2f4;--muted:#a3a3a8;--faint:#6b6b70;--rule:#38383c;--soft:#26262a;--focus:#4b9bff;
+--vert:#f0a23b;--vert-bg:rgba(240,162,59,.14);--edge:#6ea8ff;--edge-bg:rgba(110,168,255,.13);--tri:#b493ff;--tri-fill:rgba(180,147,255,.12);--tri-fill2:rgba(180,147,255,.22);--emph:#ff6b6b;--emph-bg:rgba(255,107,107,.14);--ok:#5ed184;--bad:#ff7b72;--hl:#f2f2f4;color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.55 var(--sans);-webkit-font-smoothing:antialiased}
+main{width:min(100% - 2rem,96rem);margin:auto;padding:clamp(1rem,4vw,2.25rem) 0 4rem}
+a{color:inherit;text-underline-offset:.18em}
+h1{font-size:clamp(1.8rem,5vw,2.7rem);line-height:1.05;letter-spacing:-.035em;margin:.3rem 0 .5rem}
+h2{font:600 .74rem/1.4 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 .6rem;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
+h2 .key{font-weight:500;border:1px solid var(--rule);border-radius:.3rem;padding:0 .3rem;color:var(--faint)}
+h3{font:600 .8rem/1.4 var(--sans);margin:1rem 0 .4rem;color:var(--fg)}
+p{margin:.45rem 0}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.eyebrow{font:600 .72rem/1.4 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0;display:flex;flex-wrap:wrap;gap:.2rem .9rem}
+.eyebrow a{text-decoration:none}.eyebrow a:hover{text-decoration:underline}
+.lede{font-size:1.02rem;max-width:72ch;color:var(--fg)}
+.muted{color:var(--muted)}
+.math{font-family:var(--serif);font-size:1.06em;white-space:nowrap}
+.btn{display:inline-flex;align-items:center;gap:.35rem;border:1px solid var(--rule);background:var(--panel);border-radius:999px;padding:.2rem .75rem;min-height:2rem;font-size:.82rem;white-space:nowrap}
+@media (hover:hover){.btn:hover{background:var(--soft)}}
+.btn[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.btn.small{min-height:1.7rem;padding:.05rem .55rem;font-size:.78rem}
+.btn.primary{border-color:var(--fg)}
+.seg{display:inline-flex;border:1px solid var(--rule);border-radius:999px;overflow:hidden;background:var(--panel)}
+.seg button{border:0;background:none;padding:.15rem .75rem;min-height:2rem;font-size:.85rem}
+.seg button[aria-pressed="true"]{background:var(--fg);color:var(--bg);font-weight:600}
+.banner{display:flex;flex-wrap:wrap;gap:.4rem .9rem;align-items:center;margin:.7rem 0 0;font-size:.85rem;color:var(--muted)}
+.badge{border:1px solid currentColor;border-radius:999px;padding:.05rem .6rem;font:600 .75rem var(--mono);background:none}
+.badge.pass{color:var(--ok)}.badge.fail{color:var(--bad)}
+kbd{font:600 .72rem var(--mono);border:1px solid var(--rule);border-bottom-width:2px;border-radius:.3rem;padding:0 .3rem;background:var(--panel)}
+/* space picker */
+.picker{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) auto;gap:.6rem;margin:1.1rem 0 .7rem;align-items:stretch}
+.space{display:grid;grid-template-columns:auto minmax(0,1fr);gap:.1rem .7rem;align-items:center;text-align:left;border:1px solid var(--rule);background:var(--panel);border-radius:var(--r);padding:.5rem .7rem;min-width:0}
+.space .sym{font:600 1.5rem/1 var(--serif);grid-row:span 2}
+.space .nm{font-weight:600;font-size:.88rem}
+.space .hs{font-size:.78rem;color:var(--muted);font-family:var(--serif);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.space[aria-pressed="true"]{border-color:var(--fg);box-shadow:inset 0 0 0 1px var(--fg)}
+.compare-btn{align-self:center}
+@media (max-width:44rem){.picker{grid-template-columns:repeat(3,minmax(0,1fr))}.compare-btn{grid-column:1/-1;justify-self:start}.space{grid-template-columns:minmax(0,1fr)}.space .sym{grid-row:auto}.space .hs{display:none}}
+.toolbar{display:flex;flex-wrap:wrap;gap:.5rem 1.2rem;align-items:center;padding:.5rem 0;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);margin-bottom:.8rem}
+.toolbar .grp{display:flex;flex-wrap:wrap;gap:.3rem;align-items:center;min-width:0}
+.lbl{font:600 .68rem var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-right:.15rem}
+.chipbtn{border:1px dashed var(--rule);background:none;border-radius:999px;padding:.05rem .55rem;font-size:.78rem;min-height:1.7rem;color:var(--muted)}
+.chipbtn[aria-pressed="true"]{border-style:solid;border-color:var(--fg);color:var(--fg)}
+/* guide */
+.guide{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:.6rem;align-items:start;background:var(--panel);border:1px solid var(--rule);border-left:3px solid var(--fg);border-radius:var(--r);padding:.6rem .8rem;margin-bottom:.8rem}
+.guide .count{font:600 .72rem var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.guide h3{margin:.05rem 0 .2rem;font-size:.98rem}
+.guide p{margin:.2rem 0;max-width:80ch}
+.steps{display:flex;gap:3px;margin-top:.45rem;flex-wrap:wrap}
+.steps button{width:1.6rem;height:.45rem;border:0;border-radius:2px;background:var(--rule);padding:0}
+.steps button.done{background:var(--muted)}.steps button.on{background:var(--fg)}
+/* panels */
+.panels{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.35fr) minmax(0,1fr);gap:.8rem;align-items:start}
+@media (max-width:78rem){.panels{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.panel.result{grid-column:1/-1}}
+@media (max-width:50rem){.panels{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--panel);border:1px solid var(--rule);border-radius:var(--r);padding:.8rem .9rem;min-width:0}
+.panel:focus{outline:none}.panel:focus-visible{outline:2px solid var(--focus)}
+.panel section{border-top:1px solid var(--rule);padding-top:.6rem;margin-top:.8rem}
+.panel section:first-of-type{border-top:0;margin-top:0;padding-top:0}
+.panel section[hidden]{display:none}
+.panel section h3{display:flex;align-items:center;gap:.5rem;justify-content:space-between;flex-wrap:wrap}
+.reveal-in{animation:rin .25s ease-out}
+@keyframes rin{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+/* chips: persistent identity per dimension */
+.chip{display:inline-flex;align-items:center;gap:.15rem;border-radius:.35rem;padding:0 .3rem;font:500 .92em/1.45 var(--serif);border:1px solid transparent;cursor:default;white-space:nowrap}
+.chip.v{color:var(--vert);background:var(--vert-bg)}
+.chip.e{color:var(--edge);background:var(--edge-bg)}
+.chip.t{color:var(--tri);background:var(--tri-fill2)}
+.chip.v::before{content:"";width:.5em;height:.5em;background:currentColor;display:inline-block;margin-right:.1em}
+.chip.v.s0::before{border-radius:50%}.chip.v.s2::before{transform:rotate(45deg) scale(.85)}
+.chip.e::after{font:700 .8em var(--sans);margin-left:.05em}
+.chip.e.k1::after{content:"›"}.chip.e.k2::after{content:"»"}.chip.e.k3::after{content:"›»"}
+.chip.t.L{background-image:repeating-linear-gradient(135deg,transparent 0 3px,var(--tri-fill) 3px 5px)}
+.chip.hl,.cell.hl,.hd.hl{outline:2px solid var(--hl);outline-offset:0}
+.chip.cur{box-shadow:0 0 0 3px var(--focus)}
+[data-trace]{cursor:pointer}
+.combo{font-family:var(--serif);white-space:normal}
+.combo .op{margin:0 .2em;color:var(--muted)}
+/* geometry */
+.geo-wrap{position:relative}
+svg.geo{width:100%;height:auto;display:block;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+.geo .tri-g{transition:transform .28s cubic-bezier(.3,.7,.3,1)}
+.geo:not(.glued) .tri-U{transform:translate(-14px,-14px)}
+.geo:not(.glued) .tri-L{transform:translate(14px,14px)}
+.geo .tri-poly{fill:var(--tri-fill);stroke:none;cursor:pointer;transition:fill .15s}
+.geo .tri-poly.hl{fill:var(--tri-fill2)}
+.geo .tri-poly.hl+.tri-ring{stroke:var(--tri);stroke-width:3}
+.geo .tri-ring{fill:none;stroke:none;pointer-events:none}
+.geo .side{stroke:var(--edge);stroke-width:2;fill:none;pointer-events:none}
+.geo .side.hl{stroke-width:4.5}
+.geo .side-hit{stroke:transparent;stroke-width:14;fill:none;cursor:pointer;pointer-events:stroke}
+.geo .chev{stroke:var(--edge);stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
+.geo .elabel{font:italic 600 13px var(--serif);fill:var(--edge);text-anchor:middle;dominant-baseline:central;pointer-events:none}
+.geo .tlabel{font:italic 700 17px var(--serif);fill:var(--tri);text-anchor:middle;dominant-baseline:central;pointer-events:none}
+.geo .orient{stroke:var(--tri);stroke-width:1.6;fill:none}
+.geo .orient-head{fill:var(--tri)}
+.geo .idx{font:600 9px var(--mono);fill:var(--muted);text-anchor:middle;dominant-baseline:central;pointer-events:none}
+.geo .vmark{fill:var(--vert);stroke:var(--panel);stroke-width:1.5;cursor:pointer}
+.geo .vmark.hl{stroke:var(--hl);stroke-width:2.5}
+.geo .clabel,.geo .vlabel{font:600 12px var(--serif);text-anchor:middle;dominant-baseline:central;pointer-events:none;transition:opacity .22s}
+.geo .clabel{fill:var(--muted);font-family:var(--mono);font-size:10px}
+.geo .vlabel{fill:var(--vert);font-style:italic;font-size:13px}
+.geo.glued .clabel{opacity:0}
+.geo:not(.glued) .vlabel{opacity:0}
+.geo.glued .dup{opacity:0}
+.geo.flash .side{animation:flash .3s}
+@keyframes flash{50%{stroke-width:4}}
+@media (prefers-reduced-motion:no-preference){.geo .side.hl{animation:pulse 1s ease-in-out infinite}}
+@keyframes pulse{50%{stroke-width:2.5;opacity:.7}}
+.geo-controls{display:flex;flex-wrap:wrap;gap:.35rem;align-items:center;margin:.4rem 0}
+.flips{display:flex;flex-wrap:wrap;gap:.3rem;align-items:center;margin:.35rem 0 .2rem}
+.note{font-size:.84rem;color:var(--muted)}
+.callout{border:1px solid var(--rule);border-left:3px solid var(--edge);border-radius:var(--r);padding:.5rem .7rem;margin:.6rem 0;font-size:.88rem;background:var(--soft)}
+.callout.emph{border-left-color:var(--emph)}
+details.mini>summary{cursor:pointer;font-size:.84rem;color:var(--muted);padding:.2rem 0}
+table.cmp{border-collapse:collapse;font-size:.82rem;width:100%;margin:.3rem 0}
+table.cmp th,table.cmp td{border-bottom:1px solid var(--rule);padding:.2rem .35rem;text-align:left;vertical-align:top}
+table.cmp th{font-weight:600;color:var(--muted)}
+/* algebra */
+.cx-line{display:flex;flex-wrap:wrap;align-items:center;gap:.25rem .35rem;font-family:var(--serif);font-size:1rem;margin:.25rem 0}
+.cx-line .arrow{display:inline-flex;flex-direction:column;align-items:center;font-size:.8rem;color:var(--muted);line-height:1;padding:0 .15rem}
+.cx-line .arrow b{font-size:1.1rem;font-weight:400;color:var(--fg)}
+.cx-line .grp{white-space:nowrap}
+.mxrow{display:flex;flex-wrap:wrap;gap:.6rem 1.4rem;align-items:flex-start}
+.mxbox{min-width:0;max-width:100%;overflow-x:auto}
+.mxcap{font-family:var(--serif);font-size:.95rem;margin:.1rem 0 .25rem}
+table.mx{border-collapse:separate;border-spacing:2px;font-family:var(--serif)}
+table.mx th{font-weight:400;padding:0 .1rem}
+table.mx th.hd{border-radius:.3rem;cursor:pointer}
+table.mx td.cell{min-width:2.3rem;height:1.9rem;text-align:center;border-radius:.3rem;background:var(--soft);font-variant-numeric:tabular-nums;cursor:pointer;transition:background .15s}
+table.mx td.cell.z{color:var(--faint)}
+table.mx td.cell.cur{box-shadow:inset 0 0 0 2px var(--focus)}
+table.mx td.cell.changed{animation:chg .6s}
+@keyframes chg{0%,40%{background:var(--emph-bg);color:var(--emph)}}
+.faces{border-collapse:collapse;font-size:.82rem;width:100%}
+.faces th,.faces td{padding:.2rem .3rem;border-bottom:1px solid var(--rule);text-align:left;white-space:nowrap}
+.faces th{color:var(--muted);font-weight:600;font-size:.74rem}
+.faces tr[data-trace]:hover td{background:var(--soft)}
+.faces td.val{font-family:var(--serif);font-weight:600}
+.tbl-scroll{overflow-x:auto;max-width:100%}
+/* ∂² = 0 */
+.bb{border:1px solid var(--rule);border-radius:var(--r);padding:.5rem .7rem;margin:.5rem 0;background:var(--soft)}
+.bb ol{margin:.2rem 0;padding-left:1.3rem}
+.bb li{margin:.25rem 0;font-family:var(--serif);transition:opacity .25s,transform .25s}
+.bb li.pending{opacity:0;transform:translateY(-3px)}
+.bb .term{display:inline-block;padding:0 .2rem;border-radius:.25rem;border-bottom:2px solid transparent}
+.bb .term.struck{text-decoration:line-through;text-decoration-thickness:1.5px}
+.bb .p0{border-bottom-color:#e07a1f}.bb .p1{border-bottom-color:#2d9d78}.bb .p2{border-bottom-color:#c94f9d}.bb .p3{border-bottom-color:#5b7fd6}.bb .p4{border-bottom-color:#a08a2a}.bb .p5{border-bottom-color:#7a7a7a}
+.caption{font-style:italic;color:var(--muted);font-size:.88rem}
+/* transpose */
+.tp{position:relative;margin:.3rem 0 .2rem}
+.tp .cellg{position:absolute;top:0;left:0;width:2.2rem;height:1.8rem;display:flex;align-items:center;justify-content:center;border-radius:.3rem;background:var(--soft);font-family:var(--serif);font-variant-numeric:tabular-nums;cursor:pointer}
+.tp .cellg.z{color:var(--faint)}
+.tp .lab{position:absolute;top:0;left:0;height:1.8rem;display:flex;align-items:center;justify-content:center;width:2.2rem}
+.tp.anim .cellg,.tp.anim .lab{transition:transform .3s cubic-bezier(.3,.7,.3,1)}
+.tp .cellg.cur{box-shadow:inset 0 0 0 2px var(--focus)}
+/* ker / im */
+.ki{display:grid;grid-template-columns:minmax(9rem,13rem) minmax(0,1fr);gap:.5rem .9rem;align-items:start;margin:.5rem 0 .9rem}
+@media (max-width:30rem){.ki{grid-template-columns:minmax(0,1fr)}}
+.ki svg{width:100%;height:auto}
+.ki .outer{fill:none;stroke:var(--muted);stroke-width:1.2}
+.ki .kerr{fill:var(--edge-bg);stroke:var(--edge);stroke-width:1.2}
+.ki .imr{fill:var(--tri-fill2);stroke:var(--tri);stroke-width:1.2;transform-box:fill-box;transform-origin:center;transition:transform .3s cubic-bezier(.3,.7,.3,1),opacity .3s}
+.ki .imr.torsion{fill:url(#checker)}
+.ki.collapsed .imr{transform:scale(.04);opacity:.6}
+.ki .lab{font:11px var(--serif);fill:var(--fg)}
+.ki .lab.m{fill:var(--muted);font-family:var(--mono);font-size:9px}
+.ki .qlab{font:600 13px var(--serif);fill:var(--fg);opacity:0;transition:opacity .25s}
+.ki.collapsed .qlab{opacity:1}
+.ki dl{margin:0;font-size:.86rem}
+.ki dt{font-weight:600;font-family:var(--serif);margin-top:.25rem}
+.ki dd{margin:0 0 .15rem 0}
+/* smith */
+.snf-steps{font-size:.82rem;margin:.2rem 0;padding-left:1.2rem}
+.snf-steps li{margin:.15rem 0}
+.snf-steps .op{font-family:var(--mono);margin-right:.4rem}
+.small-mx{display:inline-table;border-collapse:collapse;font-family:var(--serif);font-size:.82rem;vertical-align:middle;border-left:1px solid var(--muted);border-right:1px solid var(--muted);border-radius:.25rem}
+.small-mx td{padding:0 .28rem;text-align:right}
+.emph{color:var(--emph);font-weight:700}
+.big2{display:inline-block;font:700 1.35em var(--serif);color:var(--emph);background:var(--emph-bg);border-radius:.3rem;padding:0 .3rem;box-shadow:0 0 0 2px var(--emph)}
+.lattice{display:flex;flex-wrap:wrap;gap:.6rem 1.2rem;align-items:center;margin:.5rem 0}
+.lattice svg{width:10rem;max-width:100%;height:auto}
+.lattice svg.nl{width:15rem}
+.lattice .pt{fill:var(--panel);stroke:var(--muted);stroke-width:1.2}
+.lattice .pt.in{fill:var(--tri);stroke:var(--tri)}
+.lattice text{font:11px var(--serif);fill:var(--fg)}
+.lattice .ax{stroke:var(--rule)}
+.warn{color:var(--emph)}
+/* result */
+.tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.45rem}
+.tile{border:1px solid var(--rule);border-radius:var(--r);padding:.45rem .55rem;background:var(--panel);text-align:left;min-width:0}
+.tile .hk{font:600 .78rem var(--serif);color:var(--muted)}
+.tile .g{font:600 1.45rem/1.2 var(--serif);margin:.1rem 0;overflow-wrap:anywhere}
+.tile .g.tors{color:var(--emph)}
+.tile .r{font-size:.72rem;color:var(--muted)}
+.tile.hl{outline:2px solid var(--hl)}
+.gens{margin:.4rem 0;font-size:.88rem}
+.gens li{margin:.2rem 0}
+.gens ul{padding-left:1.1rem;margin:.2rem 0}
+.try{display:flex;gap:.4rem;flex-wrap:wrap;margin:.6rem 0}
+details.lens{border:1px solid var(--rule);border-radius:var(--r);margin:.5rem 0;background:var(--panel)}
+details.lens>summary{cursor:pointer;padding:.4rem .6rem;font-weight:600;font-size:.88rem;list-style:none;display:flex;gap:.4rem;align-items:center}
+details.lens>summary::-webkit-details-marker{display:none}
+details.lens>summary::before{content:"▸";color:var(--muted);transition:transform .15s}
+details.lens[open]>summary::before{transform:rotate(90deg)}
+details.lens>div{padding:0 .7rem .6rem}
+.aw{font-size:.82rem;border-collapse:collapse;width:100%}
+.aw td,.aw th{border-bottom:1px solid var(--rule);padding:.2rem .3rem;text-align:left;font-family:var(--serif)}
+.aw th{font-family:var(--sans);font-size:.74rem;color:var(--muted)}
+/* trace */
+.trace{position:sticky;bottom:.5rem;z-index:5;margin-top:.8rem;background:var(--panel);border:1px solid var(--fg);border-radius:var(--r);padding:.5rem .8rem;box-shadow:0 6px 24px rgba(0,0,0,.08);max-height:42vh;overflow:auto}
+.trace h2{margin:0 0 .2rem}
+.trace .tt{font-weight:600;font-size:.92rem}
+.trace ol{list-style:none;padding:0;margin:.25rem 0 0;font-size:.86rem}
+.trace li{position:relative;padding-left:1.2rem;margin:.12rem 0}
+.trace li::before{content:"↑";position:absolute;left:.1rem;color:var(--muted)}
+.trace li:first-child::before{content:"•"}
+@media (max-width:50rem){.trace{position:static;max-height:none}}
+/* compare */
+.compare{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.8rem}
+@media (max-width:60rem){.compare{grid-template-columns:minmax(0,1fr)}}
+.compare .panel h3{margin-top:0;font-size:1.05rem;font-family:var(--serif)}
+.lesson{font-size:.95rem;margin:.8rem 0;max-width:80ch}
+/* export, palette */
+.export{display:flex;flex-wrap:wrap;gap:.4rem .8rem;align-items:center;margin:1.4rem 0 .4rem}
+.msg{font-size:.84rem;color:var(--muted)}.msg.ok{color:var(--ok)}.msg.bad{color:var(--bad)}
+#fallback textarea{width:100%;min-height:8rem;font:.78rem/1.4 var(--mono);border:1px solid var(--rule);border-radius:var(--r);background:var(--panel);color:var(--fg);padding:.4rem}
+.about{margin-top:1.5rem;font-size:.88rem;max-width:90ch}
+.about summary{cursor:pointer;font-weight:600}
+.about li{margin:.2rem 0}
+#selftests li.fail{color:var(--bad)}
+.palette{position:fixed;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:flex-start;justify-content:center;padding-top:12vh;z-index:50}
+.palette[hidden]{display:none}
+.palette .box{width:min(32rem,calc(100% - 2rem));background:var(--panel);border:1px solid var(--rule);border-radius:.8rem;box-shadow:0 20px 60px rgba(0,0,0,.25);overflow:hidden}
+.palette input{width:100%;border:0;border-bottom:1px solid var(--rule);padding:.75rem 1rem;font:inherit;font-size:1rem;background:var(--panel);color:var(--fg);outline:none}
+.palette ul{list-style:none;margin:0;padding:.3rem;max-height:50vh;overflow:auto}
+.palette li{padding:.4rem .7rem;border-radius:.45rem;display:flex;justify-content:space-between;gap:1rem;cursor:pointer;font-size:.9rem}
+.palette li[aria-selected="true"]{background:var(--fg);color:var(--bg)}
+.palette li kbd{color:inherit;background:none}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+#nojs table{border-collapse:collapse}#nojs td,#nojs th{border:1px solid var(--rule);padding:.2rem .5rem}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
+@media (forced-colors:active){.chip,.tile,.cell{forced-color-adjust:auto}}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <p class="eyebrow"><a href="../../visuals.html">Visuals</a><span>Interactive proof</span><span>Algebraic topology</span><span>Works offline</span></p>
+  <h1>Δ-Complex Cohomology</h1>
+  <p class="lede">Compute the cohomology of the sphere, the torus and the real projective plane from two oriented triangles each: geometry → oriented simplices → boundary maps → coboundary maps → kernels and images → cohomology. Point at any entry and the page traces it back to an oriented face.</p>
+  <div class="banner"><span>Hover or tap any simplex, matrix entry or group. <kbd>⌘K</kbd> / <kbd>Ctrl K</kbd> opens commands; <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> pick a space, <kbd>←</kbd><kbd>→</kbd> step.</span><button class="badge" type="button" id="selftest-badge">Self-test…</button></div>
+</header>
+
+<div id="nojs">
+  <p>This page computes simplicial cohomology from three small Δ-complexes, each a square cut along its diagonal into two triangles U and L with edges a, b, c. The boundary matrices come from the face maps and the gluing; the coboundaries are their transposes, δᵏ = ∂ₖ₊₁ᵀ, and Hᵏ = ker δᵏ / im δᵏ⁻¹ by the Smith normal form.</p>
+  <table><thead><tr><th>Space</th><th>Vertices</th><th>ℤ</th><th>𝔽₂</th><th>𝔽₃</th></tr></thead><tbody>
+  <tr><td>S²</td><td>3</td><td>ℤ, 0, ℤ</td><td>𝔽₂, 0, 𝔽₂</td><td>𝔽₃, 0, 𝔽₃</td></tr>
+  <tr><td>T²</td><td>1</td><td>ℤ, ℤ², ℤ</td><td>𝔽₂, 𝔽₂², 𝔽₂</td><td>𝔽₃, 𝔽₃², 𝔽₃</td></tr>
+  <tr><td>RP²</td><td>2</td><td>ℤ, 0, ℤ/2</td><td>𝔽₂, 𝔽₂, 𝔽₂</td><td>𝔽₃, 0, 0</td></tr></tbody></table>
+  <p>For RP², δ¹ = ∂₂ᵀ has Smith normal form diag(1, 2): the 2 is the torsion in H²(RP²; ℤ) ≅ ℤ/2. <strong>The interactive proof requires JavaScript.</strong> Everything runs on your device.</p>
+</div>
+
+<div id="app" hidden>
+  <div class="picker" id="picker" role="group" aria-label="Space"></div>
+
+  <div class="toolbar">
+    <div class="grp"><span class="lbl">Mode</span><span class="seg" role="group" aria-label="Mode"><button type="button" data-act="mode" data-v="guided">Guided</button><button type="button" data-act="mode" data-v="inspect">Inspect</button></span></div>
+    <div class="grp" id="reveals" aria-label="Reveal"><span class="lbl">Reveal</span></div>
+    <div class="grp"><button class="btn small" type="button" data-act="palette" title="Command palette (⌘K / Ctrl K)">Commands <kbd>⌘K</kbd></button><button class="btn small" type="button" data-act="reset">Reset</button></div>
+  </div>
+
+  <div class="guide" id="guide" aria-live="polite"></div>
+
+  <div class="panels" id="panels">
+    <div class="panel geometry" id="panel-geometry" tabindex="-1" aria-labelledby="h-geo">
+      <h2 id="h-geo">Δ-complex geometry <span class="key">G</span></h2>
+      <div id="geometry"></div>
+    </div>
+    <div class="panel algebra" id="panel-algebra" tabindex="-1" aria-labelledby="h-alg">
+      <h2 id="h-alg">Chain / cochain algebra <span class="key">A</span></h2>
+      <div id="algebra"></div>
+    </div>
+    <div class="panel result" id="panel-result" tabindex="-1" aria-labelledby="h-res">
+      <h2 id="h-res">Cohomology <span class="key">R</span></h2>
+      <div id="result"></div>
+    </div>
+  </div>
+  <div id="compare" hidden></div>
+
+  <div class="trace" id="trace" aria-live="polite"></div>
+
+  <div class="export">
+    <button class="btn" type="button" id="save-beamdswitch" title="Save a narrated Markdown talk about this computation, to open in beamdswitch">beamdswitch</button>
+    <button class="btn" type="button" id="copy-beamdswitch" title="Copy the same beamdswitch deck to the clipboard">Copy deck</button>
+    <span class="msg" id="io-msg" role="status"></span>
+  </div>
+  <p class="note">The beamdswitch button saves the current space, coefficients and orientations as a narrated talk (set-up, method, results, checks) to open in <a href="https://teoyujie.org/visuals/beamdswitch/">beamdswitch</a> for slides, narration and a video. Copy deck puts the same deck on the clipboard, for when downloads are blocked.</p>
+  <div id="fallback" hidden><p class="note" id="fallback-label"></p><textarea id="fallback-text" readonly></textarea></div>
+
+  <details class="about" id="selftest-details">
+    <summary id="selftest-title">Conventions and self-test</summary>
+    <ul>
+      <li>A 2-simplex [p₀, p₁, p₂] has boundary Σ (−1)ⁱ dᵢ, where dᵢ deletes vertex i. Each face is compared with the edge it is glued to: +1 along the edge's arrow, −1 against it. A simplex whose arrow runs against its vertex order (or is flipped) negates its generator.</li>
+      <li>Rows of ∂₂ are edges, columns are 2-simplices; rows of ∂₁ are vertices, columns are edges. δᵏ = ∂ₖ₊₁ᵀ because (δφ)(σ) = φ(∂σ).</li>
+      <li>Hᵏ = ker δᵏ / im δᵏ⁻¹ is computed by the Smith normal form over ℤ and row reduction over 𝔽ₚ — never from ranks alone, which would miss the torsion in H²(RP²; ℤ).</li>
+      <li>Cup products use Alexander–Whitney: (φ⌣ψ)[p₀, p₁, p₂] = φ[p₀, p₁]·ψ[p₁, p₂].</li>
+      <li>Superscripts throughout: these are cohomology groups Hᵏ, not homology groups Hₖ.</li>
+    </ul>
+    <p><button class="btn small" type="button" id="selftest-run">Run self-test again</button></p>
+    <ul id="selftests"></ul>
+  </details>
+</div>
+
+<div class="palette" id="palette" hidden role="dialog" aria-modal="true" aria-label="Commands">
+  <div class="box"><input id="palette-input" type="text" placeholder="Type a command…" aria-label="Command" autocomplete="off"><ul id="palette-list" role="listbox"></ul></div>
+</div>
+</main>
+<script id="beamdswitch">
+/* The standard beamdswitch report template, shared by every visualisation.
+ *
+ * beamdswitch (https://teoyujie.org/visuals/beamdswitch/) turns one Markdown deck into slides, a
+ * handout, narration and a video. `deck(report)` writes a report in its deck syntax, always in the
+ * same order (templates/beamdswitch-report.md shows the skeleton):
+ *
+ *   front matter and title slide
+ *   # Set-up               what was modelled, its units and conventions
+ *   # Method               how the tool solved it
+ *   # Results              the numbers, with key equations and plots
+ *   # Checks and takeaway  what confirms the numbers, ending on one ::: key frame
+ *
+ * A report is plain data, so it can be built and tested without a page:
+ *   { meta: { title, subtitle, author, date, voice }, narration, notes,
+ *     setup, method, results, checks: [frame, ...] }
+ * and each frame is
+ *   { title, body, narration, notes, key, plot: { x: [a, b], xlabel, ylabel, curves: ["expr", ...] } }
+ * `body` is Markdown (LaTeX maths in $...$ or $$...$$); `narration` is plain spoken prose, one
+ * caption per sentence; `key`, `plot` and `notes` are optional. Every frame must be narrated, and
+ * the last checks frame must carry a key. The visualisation supplies every number already
+ * formatted, so the deck says exactly what its page shows. Every deck names its narrator: `meta.voice`
+ * when the visualisation picks one, else DEFAULT_VOICE, beamdswitch's British female default.
+ */
+(function (root, factory) {
+  const api = factory();
+  if (typeof module === "object" && module.exports) module.exports = api;
+  else root.Beamdswitch = api;
+})(typeof self !== "undefined" ? self : this, function () {
+  "use strict";
+
+  const DEFAULT_VOICE = "bf_emma";
+  const SECTIONS = [["setup", "Set-up"], ["method", "Method"], ["results", "Results"], ["checks", "Checks and takeaway"]];
+
+  const oneLine = (s) => String(s ?? "").replace(/\s+/g, " ").trim();
+  /* Markdown lines that would end a frame or a div early are refused rather than written. */
+  function block(text, what) {
+    const s = String(text ?? "").replace(/\r\n?/g, "\n").trim();
+    for (const line of s.split("\n"))
+      if (/^#{1,2}\s/.test(line) || /^\s*:{3,}/.test(line)) throw new Error(`${what} must not contain a heading or a ::: line: ${line}`);
+    return s;
+  }
+  /* Narration is read aloud: no maths, markup or line structure. */
+  function spoken(text, what) {
+    const s = oneLine(text);
+    if (!s) throw new Error(`${what} needs a narration.`);
+    if (/[$\\`*_#|<>]/.test(s)) throw new Error(`${what} narration must be plain spoken prose: ${s}`);
+    return s;
+  }
+  const div = (name, text) => [`::: ${name}`, text, ":::"];
+
+  function frame(f, where) {
+    const title = oneLine(f.title), what = `Frame "${title}" in ${where}`;
+    if (!title) throw new Error(`A frame in ${where} needs a title.`);
+    const out = [`## ${title}`, ""];
+    if (f.body) out.push(block(f.body, what), "");
+    if (f.plot) {
+      const p = f.plot, lines = [`x: ${p.x[0]}, ${p.x[1]}`];
+      if (p.xlabel) lines.push(`xlabel: ${oneLine(p.xlabel)}`);
+      if (p.ylabel) lines.push(`ylabel: ${oneLine(p.ylabel)}`);
+      for (const c of p.curves) lines.push(`y = ${oneLine(c)}`);
+      out.push(...div("plot", lines.join("\n")), "");
+    }
+    if (f.key) out.push(...div("key", block(f.key, what)), "");
+    if (f.notes) out.push(...div("notes", block(f.notes, what)), "");
+    out.push(...div("narration", spoken(f.narration, what)), "");
+    return out;
+  }
+
+  function deck(report) {
+    const meta = report.meta || {};
+    if (!oneLine(meta.title)) throw new Error("The report needs a title.");
+    const checks = report.checks || [];
+    if (!checks.length || !checks.at(-1).key) throw new Error("The last checks frame must carry a ::: key.");
+    const fm = { ...meta, voice: oneLine(meta.voice) || DEFAULT_VOICE };
+    const out = ["---"];
+    for (const k of ["title", "subtitle", "author", "date", "voice"]) if (oneLine(fm[k])) out.push(`${k}: ${oneLine(fm[k])}`);
+    out.push("---", "");
+    if (report.notes) out.push(...div("notes", block(report.notes, "The title slide")), "");
+    out.push(...div("narration", spoken(report.narration, "The title slide")), "");
+    SECTIONS.forEach(([id, title], i) => {
+      const frames = report[id] || [];
+      if (!frames.length) throw new Error(`The ${title} section needs at least one frame.`);
+      out.push(`# ${title}`, "", ...div("narration", `Part ${i + 1}. ${title}.`), "");
+      for (const f of frames) out.push(...frame(f, title));
+    });
+    return out.join("\n");
+  }
+
+  return { DEFAULT_VOICE, SECTIONS, deck };
+});
+</script>
+<script id="delta-cohomology-engine">
+/* Δ-complex cohomology engine: pure data and integer / mod-p linear algebra, no DOM, storage,
+   clock, randomness or network. Every matrix is derived from the gluing data below; nothing
+   downstream is typed in by hand. self.DeltaCohomology in the browser. */
+(function (root) {
+"use strict";
+
+const VERSION = 1;
+const URL_SELF = "https://teoyujie.org/visuals/delta-cohomology/";
+
+/* ---------- the three Δ-complexes ----------
+   Each space is a unit square P(0,0) Q(1,0) R(1,1) S(0,1) cut along the diagonal PR into two
+   2-simplices U (upper-left) and L (lower-right). A triangle lists its corners in Δ-order
+   [p0, p1, p2] (the order of its characteristic map) and its default orientation: the chain
+   generator is orient · [p0, p1, p2]. A side [tri, from, to, edge] glues the side of tri from
+   corner `from` to corner `to` onto `edge`, with the edge's arrow pointing from → to. Vertex
+   classes, endpoints, face signs and both boundary matrices are derived from these lists. */
+const SPACES = [
+  {
+    id: "S2", name: "Sphere", sym: "S²", tex: "S^2", spoken: "the sphere",
+    vertices: [["v0", "U.P"], ["v1", "U.S"], ["v2", "U.R"]],
+    edges: ["a", "b", "c"],
+    triangles: [{ id: "U", corners: ["P", "S", "R"], orient: 1 }, { id: "L", corners: ["P", "Q", "R"], orient: -1 }],
+    sides: [["U", "P", "S", "a"], ["U", "S", "R", "b"], ["U", "P", "R", "c"], ["L", "P", "Q", "a"], ["L", "Q", "R", "b"], ["L", "P", "R", "c"]],
+    blurb: "Two triangles glued along their whole boundary: the square's word is a b b⁻¹ a⁻¹.",
+  },
+  {
+    id: "T2", name: "Torus", sym: "T²", tex: "T^2", spoken: "the torus",
+    vertices: [["v", "U.P"]],
+    edges: ["a", "b", "c"],
+    triangles: [{ id: "U", corners: ["P", "S", "R"], orient: 1 }, { id: "L", corners: ["P", "Q", "R"], orient: -1 }],
+    sides: [["U", "P", "S", "b"], ["U", "S", "R", "a"], ["U", "P", "R", "c"], ["L", "P", "Q", "a"], ["L", "Q", "R", "b"], ["L", "P", "R", "c"]],
+    blurb: "Opposite sides of the square glued the same way round: the word is a b a⁻¹ b⁻¹.",
+  },
+  {
+    id: "RP2", name: "Projective plane", sym: "RP²", tex: "\\mathbb{RP}^2", spoken: "the real projective plane",
+    vertices: [["v", "U.S"], ["w", "U.P"]],
+    edges: ["a", "b", "c"],
+    triangles: [{ id: "U", corners: ["S", "P", "R"], orient: 1 }, { id: "L", corners: ["Q", "P", "R"], orient: 1 }],
+    sides: [["U", "P", "R", "a"], ["U", "S", "R", "b"], ["U", "S", "P", "c"], ["L", "P", "R", "a"], ["L", "Q", "R", "c"], ["L", "Q", "P", "b"]],
+    blurb: "Opposite sides glued with a half twist, so opposite corners meet: the word is b⁻¹ c b⁻¹ c.",
+  },
+];
+const SQUARE = { P: [0, 0], Q: [1, 0], R: [1, 1], S: [0, 1] };
+const SPACE = Object.fromEntries(SPACES.map((s) => [s.id, s]));
+
+/* The incidence matrices exactly as the specification states them (rows, columns as named). The
+   engine never uses these: the self-test and the Node tests compare the derived matrices with them. */
+const SPEC = {
+  S2: { d2: [[1, -1], [1, -1], [-1, 1]], d1: [[-1, 0, -1], [1, -1, 0], [0, 1, 1]] },
+  T2: { d2: [[1, -1], [1, -1], [-1, 1]], d1: [[0, 0, 0]] },
+  RP2: { d2: [[1, 1], [-1, 1], [1, -1]], d1: [[0, -1, -1], [0, 1, 1]] },
+};
+/* The specification's cohomology table (H⁰, H¹, H²), with 𝔽₃ from its odd-characteristic rule. */
+const SPEC_TABLE = {
+  S2: { Z: ["ℤ", "0", "ℤ"], F2: ["𝔽₂", "0", "𝔽₂"], F3: ["𝔽₃", "0", "𝔽₃"] },
+  T2: { Z: ["ℤ", "ℤ²", "ℤ"], F2: ["𝔽₂", "𝔽₂²", "𝔽₂"], F3: ["𝔽₃", "𝔽₃²", "𝔽₃"] },
+  RP2: { Z: ["ℤ", "0", "ℤ/2"], F2: ["𝔽₂", "𝔽₂", "𝔽₂"], F3: ["𝔽₃", "0", "0"] },
+};
+
+const COEFFS = [
+  { id: "Z", p: 0, sym: "ℤ", tex: "\\mathbb{Z}", spoken: "integer", name: "integers" },
+  { id: "F2", p: 2, sym: "𝔽₂", tex: "\\mathbb{F}_2", spoken: "F 2", name: "the field with two elements" },
+  { id: "F3", p: 3, sym: "𝔽₃", tex: "\\mathbb{F}_3", spoken: "F 3", name: "the field with three elements" },
+];
+const COEFF = Object.fromEntries(COEFFS.map((c) => [c.id, c]));
+
+/* ---------- small integer / mod-p linear algebra ---------- */
+const red = (x, p) => (p ? ((x % p) + p) % p : x);
+/* Symmetric representative for display: mod 3, 2 is shown as −1; mod 2 everything is 0 or 1. */
+const sym = (x, p) => { if (!p) return x; const r = red(x, p); return p > 2 && r > p / 2 ? r - p : r; };
+const inv = (x, p) => { for (let y = 1; y < p; y++) if (red(x * y, p) === 1) return y; throw new Error(`${x} is not a unit mod ${p}`); };
+const eye = (n) => Array.from({ length: n }, (_, i) => Array.from({ length: n }, (_, j) => +(i === j)));
+const zeros = (m, n) => Array.from({ length: m }, () => Array(n).fill(0));
+const clone = (A) => A.map((r) => r.slice());
+const transpose = (A, cols) => { const m = A.length, n = m ? A[0].length : cols || 0; return Array.from({ length: n }, (_, j) => Array.from({ length: m }, (_, i) => A[i][j])); };
+const mul = (A, B, p = 0) => A.map((r) => (B[0] || []).map((_, j) => red(r.reduce((s, x, k) => s + x * B[k][j], 0), p)));
+const apply = (A, x, p = 0) => A.map((r) => red(r.reduce((s, a, k) => s + a * x[k], 0), p));
+const reduceM = (A, p) => A.map((r) => r.map((x) => red(x, p)));
+const isZero = (A) => A.every((r) => r.every((x) => x === 0));
+const size = (x, p) => (p ? (x ? 1 : 0) : Math.abs(x));
+const fmtCoef = (q) => (Math.abs(q) === 1 ? "" : String(Math.abs(q)));
+
+/* Smith normal form U·A·V = D over ℤ (p = 0) or 𝔽ₚ, recording each elementary operation. U and V
+   are invertible over the ring (unimodular over ℤ); Ui = U⁻¹ and Vi = V⁻¹ are kept alongside.
+   The diagonal is normalised to 1, …, 1, d₁ | d₂ | …, 0, …, 0 with dᵢ > 0. */
+function smith(A0, p = 0, cols = 0) {
+  const m = A0.length, n = m ? A0[0].length : cols;
+  const D = reduceM(A0, p), U = eye(m), Ui = eye(m), V = eye(n), Vi = eye(n), steps = [];
+  const log = (text) => steps.push({ text, M: clone(D) });
+  const show = (q) => sym(q, p);
+  const rowAdd = (i, j, q) => { // Rᵢ ← Rᵢ + q·Rⱼ
+    q = red(q, p); if (!q) return;
+    for (let k = 0; k < n; k++) D[i][k] = red(D[i][k] + q * D[j][k], p);
+    for (let k = 0; k < m; k++) U[i][k] = red(U[i][k] + q * U[j][k], p);
+    for (let k = 0; k < m; k++) Ui[k][j] = red(Ui[k][j] - q * Ui[k][i], p);
+    const s = show(q); log(`R${i + 1} ← R${i + 1} ${s < 0 ? "−" : "+"} ${fmtCoef(s)}R${j + 1}`);
+  };
+  const colAdd = (j, i, q) => { // Cⱼ ← Cⱼ + q·Cᵢ
+    q = red(q, p); if (!q) return;
+    for (let k = 0; k < m; k++) D[k][j] = red(D[k][j] + q * D[k][i], p);
+    for (let k = 0; k < n; k++) V[k][j] = red(V[k][j] + q * V[k][i], p);
+    for (let k = 0; k < n; k++) Vi[i][k] = red(Vi[i][k] - q * Vi[j][k], p);
+    const s = show(q); log(`C${j + 1} ← C${j + 1} ${s < 0 ? "−" : "+"} ${fmtCoef(s)}C${i + 1}`);
+  };
+  const rowSwap = (i, j) => {
+    if (i === j) return;
+    for (const M of [D, U]) [M[i], M[j]] = [M[j], M[i]];
+    for (const r of Ui) [r[i], r[j]] = [r[j], r[i]];
+    log(`R${i + 1} ↔ R${j + 1}`);
+  };
+  const colSwap = (i, j) => {
+    if (i === j) return;
+    for (const M of [D, V]) for (const r of M) [r[i], r[j]] = [r[j], r[i]];
+    [Vi[i], Vi[j]] = [Vi[j], Vi[i]];
+    log(`C${i + 1} ↔ C${j + 1}`);
+  };
+  const rowScale = (i, u) => { // u a unit
+    u = red(u, p); if (u === 1) return;
+    for (let k = 0; k < n; k++) D[i][k] = red(D[i][k] * u, p);
+    for (let k = 0; k < m; k++) U[i][k] = red(U[i][k] * u, p);
+    const ui = p ? inv(u, p) : u;
+    for (let k = 0; k < m; k++) Ui[k][i] = red(Ui[k][i] * ui, p);
+    log(`R${i + 1} ← ${show(u) === -1 ? "−" : show(u)}R${i + 1}`);
+  };
+  const quot = (a, d) => (p ? red(a * inv(d, p), p) : Math.trunc(a / d));
+  const minIn = (cells) => cells.filter(([i, j]) => D[i][j]).reduce((b, c) => (!b || size(D[c[0]][c[1]], p) < size(D[b[0]][b[1]], p) ? c : b), null);
+  let t = 0;
+  for (; t < Math.min(m, n); t++) {
+    const cells = [];
+    for (let i = t; i < m; i++) for (let j = t; j < n; j++) cells.push([i, j]);
+    const piv = minIn(cells);
+    if (!piv) break;
+    rowSwap(t, piv[0]); colSwap(t, piv[1]);
+    for (let guard = 0; guard < 1000; guard++) {
+      for (let i = t + 1; i < m; i++) if (D[i][t]) rowAdd(i, t, -quot(D[i][t], D[t][t]));
+      const r = minIn(Array.from({ length: m - t - 1 }, (_, k) => [t + 1 + k, t]));
+      if (r) { rowSwap(t, r[0]); continue; }
+      for (let j = t + 1; j < n; j++) if (D[t][j]) colAdd(j, t, -quot(D[t][j], D[t][t]));
+      const c = minIn(Array.from({ length: n - t - 1 }, (_, k) => [t, t + 1 + k]));
+      if (c) { colSwap(t, c[1]); continue; }
+      let bad = null;
+      if (!p) for (let i = t + 1; i < m && !bad; i++) for (let j = t + 1; j < n; j++) if (D[i][j] % D[t][t]) { bad = i; break; }
+      if (bad !== null) { rowAdd(t, bad, 1); continue; }
+      break;
+    }
+    if (p) rowScale(t, inv(D[t][t], p)); else if (D[t][t] < 0) rowScale(t, -1);
+  }
+  const diag = Array.from({ length: Math.min(m, n) }, (_, i) => D[i][i]);
+  return { D, diag, rank: diag.filter((x) => x).length, U, Ui, V, Vi, steps, m, n };
+}
+
+/* Solve A·x = b over the ring, or return null when there is no solution. */
+function solve(A, b, p = 0, cols = 0) {
+  const S = smith(A, p, cols), c = apply(S.U, b, p), y = Array(S.n).fill(0);
+  for (let i = 0; i < c.length; i++) {
+    if (i < S.rank) {
+      const d = S.diag[i];
+      if (p) y[i] = red(c[i] * inv(d, p), p);
+      else { if (c[i] % d) return null; y[i] = c[i] / d; }
+    } else if (c[i]) return null;
+  }
+  return apply(S.V, y, p);
+}
+
+/* Echelon form of a list of row vectors by invertible row operations: pivots positive (1 over a
+   field) and entries above each pivot reduced. Returns the nonzero rows. */
+function echelon(rows0, p = 0) {
+  const rows = rows0.map((r) => r.map((x) => red(x, p))), n = rows.length ? rows[0].length : 0;
+  let r = 0;
+  for (let c = 0; c < n && r < rows.length; c++) {
+    for (;;) {
+      let best = -1;
+      for (let i = r; i < rows.length; i++) if (rows[i][c] && (best < 0 || size(rows[i][c], p) < size(rows[best][c], p))) best = i;
+      if (best < 0) break;
+      [rows[r], rows[best]] = [rows[best], rows[r]];
+      let left = false;
+      for (let i = r + 1; i < rows.length; i++) if (rows[i][c]) {
+        const q = p ? red(rows[i][c] * inv(rows[r][c], p), p) : Math.trunc(rows[i][c] / rows[r][c]);
+        rows[i] = rows[i].map((x, k) => red(x - q * rows[r][k], p));
+        if (rows[i][c]) left = true;
+      }
+      if (!left) break;
+    }
+    if (!rows[r] || !rows[r][c]) continue;
+    const u = p ? inv(rows[r][c], p) : Math.sign(rows[r][c]);
+    rows[r] = rows[r].map((x) => red(x * u, p));
+    for (let i = 0; i < r; i++) if (rows[i][c]) {
+      const q = p ? rows[i][c] : Math.floor(rows[i][c] / rows[r][c]);
+      rows[i] = rows[i].map((x, k) => red(x - q * rows[r][k], p));
+    }
+    r++;
+  }
+  return rows.filter((row) => row.some((x) => x));
+}
+
+/* A basis of ker A (columns of V past the rank), put in echelon form. Over ℤ this is a basis of the
+   whole kernel lattice, which is saturated. */
+function kernelBasis(A, p, n) {
+  if (!A.length) return eye(n);
+  const S = smith(A, p, n);
+  const vecs = [];
+  for (let j = S.rank; j < n; j++) vecs.push(S.V.map((r) => r[j]));
+  return echelon(vecs, p);
+}
+
+/* Normalise a class representative: add small multiples of image generators to reach the shortest
+   support (then smallest entries), and make its first entry positive (1 over a field). */
+function tidy(g, image, p) {
+  const base = echelon(image, p).slice(0, 3), opts = [0, 1, -1, 2, -2];
+  let best = g.map((x) => red(x, p)), key = null;
+  const score = (v) => { const s = v.map((x) => sym(x, p)); return [s.filter((x) => x).length, s.reduce((a, x) => a + Math.abs(x), 0), s.findIndex((x) => x)]; };
+  const walk = (k, v) => {
+    if (k === base.length) {
+      const s = score(v);
+      const d = key ? s.map((x, i) => x - key[i]).find((x) => x) : -1;
+      if (d < 0) { key = s; best = v; }
+      return;
+    }
+    for (const c of opts) walk(k + 1, v.map((x, i) => red(x + c * base[k][i], p)));
+  };
+  walk(0, g.map((x) => red(x, p)));
+  const lead = best.find((x) => x);
+  if (lead !== undefined) {
+    const u = p ? inv(lead, p) : Math.sign(sym(lead, p));
+    best = best.map((x) => red(x * u, p));
+  }
+  return best.map((x) => sym(x, p));
+}
+
+/* ---------- the complex derived from the gluing ---------- */
+const DEFAULT_FLIPS = () => ({ U: false, L: false, a: false, b: false, c: false });
+
+function complex(spaceId, flips = {}) {
+  const sp = SPACE[spaceId];
+  if (!sp) throw new Error(`Unknown space ${spaceId}`);
+  const tris = sp.triangles.map((t) => ({ ...t, orient: t.orient * (flips[t.id] ? -1 : 1), flipped: !!flips[t.id] }));
+  const edgeOrient = Object.fromEntries(sp.edges.map((e) => [e, flips[e] ? -1 : 1]));
+  // Vertex classes: union-find on the six triangle corners, merged along every glued edge.
+  const parent = {};
+  const find = (x) => (parent[x] === x ? x : (parent[x] = find(parent[x])));
+  const union = (x, y) => { parent[find(x)] = find(y); };
+  for (const t of tris) for (const c of t.corners) parent[`${t.id}.${c}`] = `${t.id}.${c}`;
+  const sidesOf = (e) => sp.sides.filter((s) => s[3] === e);
+  for (const e of sp.edges) {
+    const ss = sidesOf(e);
+    for (const s of ss.slice(1)) { union(`${ss[0][0]}.${ss[0][1]}`, `${s[0]}.${s[1]}`); union(`${ss[0][0]}.${ss[0][2]}`, `${s[0]}.${s[2]}`); }
+  }
+  const classes = {};
+  for (const k of Object.keys(parent)) (classes[find(k)] ??= []).push(k);
+  const vertexOf = {}, vertices = [];
+  for (const [name, rep] of sp.vertices) {
+    const members = classes[find(rep)];
+    if (vertices.some((v) => v.members === members)) throw new Error(`${spaceId}: ${name} names a class that already has a name`);
+    vertices.push({ id: name, members });
+    for (const k of members) vertexOf[k] = name;
+  }
+  if (Object.keys(classes).length !== vertices.length) throw new Error(`${spaceId}: ${Object.keys(classes).length} vertex classes but ${vertices.length} names`);
+  const edges = sp.edges.map((e) => {
+    const s = sidesOf(e)[0];
+    return { id: e, tail: vertexOf[`${s[0]}.${s[1]}`], head: vertexOf[`${s[0]}.${s[2]}`], orient: edgeOrient[e], flipped: edgeOrient[e] < 0, sides: sidesOf(e).map((x) => ({ tri: x[0], from: x[1], to: x[2] })) };
+  });
+  const E = Object.fromEntries(edges.map((e) => [e.id, e]));
+  // Faces: deleting vertex i of [p0, p1, p2] leaves the ordered face [pj, pk] (j < k), with sign (−1)^i.
+  const faces = [];
+  const d2 = zeros(edges.length, tris.length);
+  tris.forEach((t, col) => {
+    for (let i = 0; i < 3; i++) {
+      const [pj, pk] = t.corners.filter((_, k) => k !== i);
+      const side = sp.sides.find((s) => s[0] === t.id && ((s[1] === pj && s[2] === pk) || (s[1] === pk && s[2] === pj)));
+      if (!side) throw new Error(`${spaceId}: face ${i} of ${t.id} is not glued`);
+      const e = side[3], eps = side[1] === pj ? 1 : -1, sign = i % 2 ? -1 : 1;
+      const value = sign * t.orient * eps * E[e].orient;
+      faces.push({ tri: t.id, i, face: [pj, pk], from: [vertexOf[`${t.id}.${pj}`], vertexOf[`${t.id}.${pk}`]], edge: e, eps, sign, triOrient: t.orient, edgeOrient: E[e].orient, value });
+      d2[sp.edges.indexOf(e)][col] += value;
+    }
+  });
+  const d1 = zeros(vertices.length, edges.length);
+  const vi = (v) => vertices.findIndex((x) => x.id === v);
+  edges.forEach((e, j) => { d1[vi(e.head)][j] += e.orient; d1[vi(e.tail)][j] -= e.orient; });
+  return {
+    space: spaceId, sp, tris, edges, vertices, faces, vertexOf, d1, d2,
+    basis: { 0: vertices.map((v) => v.id), 1: edges.map((e) => e.id), 2: tris.map((t) => t.id) },
+  };
+}
+
+/* ---------- cohomology ---------- */
+const SUPS = { "-": "⁻", 0: "⁰", 1: "¹", 2: "²", 3: "³", 4: "⁴", 5: "⁵", 6: "⁶", 7: "⁷", 8: "⁸", 9: "⁹" };
+const sup = (n) => String(n).split("").map((d) => SUPS[d]).join("");
+const SUBS = { 0: "₀", 1: "₁", 2: "₂", 3: "₃" };
+
+function groupText(summands, p) {
+  const free = summands.filter((s) => s.kind === "free").length, tors = summands.filter((s) => s.kind === "torsion");
+  const R = p ? `𝔽${SUBS[p]}` : "ℤ", Rt = p ? `\\mathbb{F}_${p}` : "\\mathbb{Z}";
+  const parts = [], tex = [], said = [];
+  if (free) { parts.push(free > 1 ? `${R}${sup(free)}` : R); tex.push(free > 1 ? `${Rt}^{${free}}` : Rt); said.push(`${p ? `F ${p}` : "Z"}${free === 2 ? " squared" : free > 2 ? ` to the power ${free}` : ""}`); }
+  for (const t of tors) { parts.push(`ℤ/${t.order}`); tex.push(`\\mathbb{Z}/${t.order}`); said.push(`Z mod ${t.order}`); }
+  return { text: parts.join(" ⊕ ") || "0", tex: tex.join(" \\oplus ") || "0", spoken: said.join(" plus ") || "zero" };
+}
+
+/* δᵏ = ∂ₖ₊₁ᵀ : Cᵏ → Cᵏ⁺¹; δ⁻¹ and δ² are zero maps. */
+function coboundaries(cx) {
+  const n = [cx.vertices.length, cx.edges.length, cx.tris.length];
+  return { n, delta: { 0: transpose(cx.d1), 1: transpose(cx.d2) } };
+}
+
+/* Hᵏ = ker δᵏ / im δᵏ⁻¹ by integer (or mod-p) linear algebra, never by ranks alone:
+   K is a basis of ker δᵏ, X the coordinates of im δᵏ⁻¹ in K, and the Smith form of X splits the
+   quotient into free and torsion summands with their generators K·U⁻¹. */
+function degree(k, dk, dprev, nk, nprev, p) {
+  const K = kernelBasis(dk, p, nk);              // rows are kernel vectors
+  const Kc = transpose(K, 0);                    // nk × r
+  const r = K.length;
+  const imgs = nprev ? transpose(dprev, nprev).map((v) => v.map((x) => red(x, p))) : []; // image generators δᵏ⁻¹(eᵢ*)
+  const X = zeros(r, imgs.length);
+  imgs.forEach((v, j) => {
+    const y = r ? solve(Kc, v, p, r) : [];
+    if (!y) throw new Error(`im δ${sup(k - 1)} is not inside ker δ${sup(k)}`);
+    y.forEach((x, i) => (X[i][j] = x));
+  });
+  const S = smith(X, p, imgs.length);
+  const G = r ? mul(Kc, S.Ui, p) : [];
+  const summands = [];
+  for (let i = 0; i < r; i++) {
+    const d = i < S.rank ? S.diag[i] : 0;
+    if (d === 1) continue;
+    const g = G.map((row) => row[i]);
+    summands.push({ kind: d ? "torsion" : "free", order: d || null, index: i, rep: tidy(g, imgs, p) });
+  }
+  const img = echelon(imgs, p).map((v) => v.map((x) => sym(x, p)));
+  return {
+    k, n: nk, kernel: K.map((v) => v.map((x) => sym(x, p))), kerRank: r, image: img, imRank: img.length,
+    X, smith: S, summands, group: groupText(summands, p),
+    classOf(x) { // coordinates of a cocycle's class: free coordinates, torsion mod its order
+      const y = r ? solve(Kc, x.map((v) => red(v, p)), p, r) : [];
+      if (!y) return null;
+      const z = apply(S.U, y, p);
+      return summands.map((s) => (s.kind === "torsion" ? red(z[s.index], s.order) : sym(z[s.index], p)));
+    },
+  };
+}
+
+function cohomology(cx, p = 0) {
+  const { n, delta } = coboundaries(cx);
+  const dm = (k) => (k === 0 || k === 1 ? reduceM(delta[k], p) : []);
+  return [0, 1, 2].map((k) => degree(k, k < 2 ? dm(k) : [], k > 0 ? dm(k - 1) : zeros(n[0], 0), n[k], k > 0 ? n[k - 1] : 0, p));
+}
+
+/* Homology Hₖ = ker ∂ₖ / im ∂ₖ₊₁, computed only so the page can say what it is not. */
+function homology(cx, p = 0) {
+  const n = [cx.vertices.length, cx.edges.length, cx.tris.length];
+  const d = { 1: reduceM(cx.d1, p), 2: reduceM(cx.d2, p) };
+  // Hₖ: kernel of ∂ₖ: Cₖ → Cₖ₋₁ (∂₀ = 0), image of ∂ₖ₊₁: Cₖ₊₁ → Cₖ (∂₃ = 0).
+  return [0, 1, 2].map((k) => degree(k, k > 0 ? d[k] : [], k < 2 ? d[k + 1] : zeros(n[2], 0), n[k], k < 2 ? n[k + 1] : 0, p));
+}
+
+/* ---------- cup products by Alexander–Whitney ----------
+   (φ ⌣ ψ)[p0, p1, p2] = φ[p0, p1] · ψ[p1, p2]. The ordered simplex [p0, p1, p2] is orient·T, and an
+   ordered face [pj, pk] glued to edge e is eps · orient(e) · e, so the value on the generator T is
+   orient(T) · (eps·o(e)·φ(e)) · (eps'·o(e')·ψ(e')). */
+function faceChain(cx, t, i) {
+  const f = cx.faces.find((x) => x.tri === t.id && x.i === i);
+  return { edge: f.edge, coef: f.eps * f.edgeOrient };
+}
+function cup11(cx, phi, psi, p = 0) {
+  const ei = (e) => cx.basis[1].indexOf(e);
+  return cx.tris.map((t) => {
+    const front = faceChain(cx, t, 2), back = faceChain(cx, t, 0);
+    return red(t.orient * front.coef * phi[ei(front.edge)] * back.coef * psi[ei(back.edge)], p);
+  });
+}
+/* 0-cochains act through the front vertex: (f ⌣ ψ)[p0, …] = f(p0) · ψ[p0, …]. */
+function cup0k(cx, f, psi, k, p = 0) {
+  const vi = (v) => cx.basis[0].indexOf(v);
+  if (k === 1) return cx.edges.map((e, j) => red(f[vi(e.orient > 0 ? e.tail : e.head)] * psi[j], p));
+  return cx.tris.map((t, j) => red(f[vi(cx.vertexOf[`${t.id}.${t.corners[0]}`])] * psi[j], p));
+}
+
+function ring(cx, H, p = 0) {
+  const gens1 = H[1].summands, gens2 = H[2].summands;
+  const one = Array(cx.vertices.length).fill(1);
+  const unitOk = gens1.every((g) => cup0k(cx, one, g.rep, 1, p).every((x, i) => x === red(g.rep[i], p))) &&
+    gens2.every((g) => cup0k(cx, one, g.rep, 2, p).every((x, i) => x === red(g.rep[i], p)));
+  const names1 = gens1.length === 1 ? ["x"] : ["α", "β", "γ"].slice(0, gens1.length);
+  const products = [];
+  gens1.forEach((g, i) => gens1.forEach((h, j) => {
+    const value = cup11(cx, g.rep, h.rep, p);
+    products.push({ i, j, a: names1[i], b: names1[j], value: value.map((x) => sym(x, p)), cls: H[2].classOf(value) });
+  }));
+  const zeroCls = (c) => c.every((x, i) => (gens2[i].kind === "torsion" ? red(x, gens2[i].order) === 0 : red(x, p) === 0));
+  const u = gens2.length === 1 && gens2[0].kind === "free" ? "u" : gens2.length === 1 ? "t" : "u";
+  const R = p ? `𝔽${SUBS[p]}` : "ℤ", Rt = p ? `\\mathbb{F}_${p}` : "\\mathbb{Z}";
+  const coefText = (c) => (c === 1 ? u : c === -1 ? `−${u}` : `${c}${u}`);
+  const said = (c) => (c === 1 ? u : c === -1 ? `minus ${u}` : `${c} ${u}`);
+  const cls = (pr) => (zeroCls(pr.cls) ? "0" : pr.cls.length === 1 ? coefText(pr.cls[0]) : `(${pr.cls.join(", ")})`);
+  for (const pr of products) { pr.text = `${pr.a}${pr.a === pr.b ? "²" : ` ⌣ ${pr.b}`} = ${cls(pr)}`; pr.zero = zeroCls(pr.cls); pr.spoken = pr.zero ? "zero" : pr.cls.length === 1 ? said(pr.cls[0]) : "nonzero"; }
+  let text, tex, spoken, kind;
+  const top = gens2.length === 1 ? gens2[0] : null;
+  const gen = (pr) => pr && !pr.zero && pr.cls.length === 1 && (top.kind === "free" ? Math.abs(pr.cls[0]) === 1 : red(pr.cls[0], top.order || p) !== 0);
+  if (gens1.length === 2 && top && top.kind === "free" && products.filter((x) => x.i === x.j).every((x) => x.zero) && gen(products.find((x) => x.i === 0 && x.j === 1))) {
+    kind = "exterior"; text = `${R}[α, β]/(α², β², αβ + βα) = Λ_${R}(α, β)`; tex = `\\Lambda_{${Rt}}(\\alpha,\\beta)`; spoken = `the exterior algebra on alpha and beta over ${p ? `F ${p}` : "the integers"}`;
+  } else if (gens1.length === 1 && top && gen(products[0])) {
+    kind = "truncated"; text = `${R}[x]/(x³)`; tex = `${Rt}[x]/(x^3)`; spoken = `a polynomial ring on x of degree one, truncated at x cubed`;
+  } else if (!gens1.length && top && top.kind === "free") {
+    kind = "dual-numbers"; text = `${R}[u]/(u²)`; tex = `${Rt}[u]/(u^2)`; spoken = `a polynomial ring on u of degree two, truncated at u squared`;
+  } else if (!gens1.length && top) {
+    kind = "torsion-top"; text = `ℤ ⊕ ℤ/${top.order}·t with |t| = 2 and t² = 0`; tex = `\\mathbb{Z}\\oplus \\mathbb{Z}/${top.order}\\,t,\\ t^2=0`; spoken = `Z in degree zero and Z mod ${top.order} in degree two, with every product of positive-degree classes zero`;
+  } else if (!gens1.length && !gens2.length) {
+    kind = "trivial"; text = `${R} in degree 0 only`; tex = Rt; spoken = `only the coefficients, in degree zero`;
+  } else { kind = "other"; text = "see the product table"; tex = ""; spoken = "as in the product table"; }
+  return { names1, top: top ? u : null, products, unitOk, kind, text, tex, spoken };
+}
+
+/* ---------- ∂² = 0, term by term ---------- */
+function boundaryOfBoundary(cx, triId) {
+  const col = cx.basis[2].indexOf(triId);
+  const edgeTerms = cx.edges.map((e, j) => ({ edge: e.id, coef: cx.d2[j][col] })).filter((t) => t.coef);
+  const vertexTerms = [];
+  for (const t of edgeTerms) {
+    const e = cx.edges.find((x) => x.id === t.edge);
+    vertexTerms.push({ edge: e.id, end: e.orient > 0 ? "head" : "tail", vertex: e.orient > 0 ? e.head : e.tail, coef: t.coef });
+    vertexTerms.push({ edge: e.id, end: e.orient > 0 ? "tail" : "head", vertex: e.orient > 0 ? e.tail : e.head, coef: -t.coef });
+  }
+  const used = new Set(), pairs = [];
+  vertexTerms.forEach((a, i) => {
+    if (used.has(i)) return;
+    const j = vertexTerms.findIndex((b, k) => k > i && !used.has(k) && b.vertex === a.vertex && b.coef === -a.coef);
+    if (j >= 0) { used.add(i); used.add(j); pairs.push([i, j]); }
+  });
+  const total = Object.fromEntries(cx.basis[0].map((v) => [v, vertexTerms.filter((t) => t.vertex === v).reduce((s, t) => s + t.coef, 0)]));
+  return { tri: triId, edgeTerms, vertexTerms, pairs, unpaired: vertexTerms.map((_, i) => i).filter((i) => !used.has(i)), total };
+}
+
+/* ---------- the whole analysis of one page state ---------- */
+function normState(s = {}) {
+  const space = SPACE[s.space] ? s.space : "T2";
+  const coef = COEFF[s.coef] ? s.coef : "Z";
+  const flips = DEFAULT_FLIPS();
+  for (const k of Object.keys(flips)) flips[k] = !!(s.flips && s.flips[k]);
+  return { space, coef, flips };
+}
+
+function analyse(state) {
+  const st = normState(state), p = COEFF[st.coef].p;
+  const cx = complex(st.space, st.flips);
+  const { n, delta } = coboundaries(cx);
+  const H = cohomology(cx, p);
+  const Hz = p ? cohomology(cx, 0) : H;
+  const smith0 = smith(reduceM(delta[0], p), p), smith1 = smith(reduceM(delta[1], p), p);
+  const rankOnly = (() => { // what ranks alone (as over ℚ) would claim, to show why ℤ needs the Smith form
+    const r0 = smith(delta[0]).rank, r1 = smith(delta[1]).rank;
+    return [n[0] - r0, n[1] - r1 - r0, n[2] - r1];
+  })();
+  return {
+    state: st, p, coef: COEFF[st.coef], cx, n, delta, H, Hz, smith: { 0: smith0, 1: smith1 },
+    checks: { d1d2: mul(cx.d1, cx.d2), dd: mul(delta[1], delta[0]) },
+    bb: Object.fromEntries(cx.basis[2].map((t) => [t, boundaryOfBoundary(cx, t)])),
+    ring: ring(cx, H, p), homology: homology(cx, 0), rankOnly,
+  };
+}
+
+/* The compact table the page, raw.json and the WebMCP tools share. */
+function table() {
+  return Object.fromEntries(SPACES.map((s) => {
+    const cx = complex(s.id);
+    return [s.id, {
+      name: s.name, symbol: s.sym, vertices: cx.vertices.length, edges: cx.edges.length, triangles: cx.tris.length,
+      d2: cx.d2, d1: cx.d1, rows: { d2: cx.basis[1], d1: cx.basis[0] }, cols: { d2: cx.basis[2], d1: cx.basis[1] },
+      cohomology: Object.fromEntries(COEFFS.map((c) => [c.id, cohomology(cx, c.p).map((h) => h.group.text)])),
+    }];
+  }));
+}
+
+/* JSON-safe summary of one state, for WebMCP and tests. */
+function summary(state) {
+  const A = analyse(state);
+  const strip = (h) => ({ group: h.group.text, kernelRank: h.kerRank, imageRank: h.imRank, generators: h.summands.map((s) => ({ kind: s.kind, order: s.order, cochain: s.rep })) });
+  return {
+    state: A.state, coefficients: A.coef.sym,
+    basis: { C0: A.cx.basis[0], C1: A.cx.basis[1], C2: A.cx.basis[2] },
+    boundary: { d2: A.cx.d2, d1: A.cx.d1 }, coboundary: { delta0: A.delta[0], delta1: A.delta[1] },
+    faces: A.cx.faces.map((f) => ({ simplex: f.tri, deleted: f.i, face: f.face, edge: f.edge, sign: f.sign, compare: f.eps * f.edgeOrient, orientation: f.triOrient, entry: f.value })),
+    smith: { delta0: A.smith[0].diag, delta1: A.smith[1].diag },
+    cohomology: A.H.map(strip), checks: { d1d2_zero: isZero(A.checks.d1d2), delta1delta0_zero: isZero(A.checks.dd) },
+    ring: { description: A.ring.text, products: A.ring.products.map((x) => x.text) },
+  };
+}
+
+/* ---------- beamdswitch report (the standard template, beamdswitch.js) ---------- */
+const texM = (A, p = 0) => `\\begin{pmatrix}${A.map((r) => r.map((x) => sym(x, p)).join("&")).join("\\\\")}\\end{pmatrix}`;
+const texVec = (v, names, star = true) => {
+  const parts = v.map((x, i) => [x, names[i]]).filter(([x]) => x);
+  if (!parts.length) return "0";
+  return parts.map(([x, nm], i) => `${x < 0 ? "-" : i ? "+" : ""}${Math.abs(x) === 1 ? "" : Math.abs(x)}${nm}${star ? "^*" : ""}`).join("");
+};
+const plainVec = (v, names, star = true) => {
+  const parts = v.map((x, i) => [x, names[i]]).filter(([x]) => x);
+  if (!parts.length) return "0";
+  return parts.map(([x, nm], i) => `${x < 0 ? (i ? " − " : "−") : i ? " + " : ""}${Math.abs(x) === 1 ? "" : Math.abs(x)}${nm}${star ? "*" : ""}`).join("");
+};
+const NUM = ["zero", "one", "two", "three", "four", "five"];
+const spokenVec = (v, names) => {
+  const parts = v.map((x, i) => [x, names[i]]).filter(([x]) => x);
+  if (!parts.length) return "zero";
+  return parts.map(([x, nm], i) => `${x < 0 ? "minus " : i ? "plus " : ""}${Math.abs(x) === 1 ? "" : `${NUM[Math.abs(x)] || Math.abs(x)} `}${nm} star`).join(" ");
+};
+const spokenName = (nm) => nm.replace(/^v(\d)$/, "v $1");
+
+function beamdswitchReport(state, meta = {}) {
+  const A = analyse(state), { cx, H, p } = A, sp = cx.sp, C = A.coef;
+  const R = C.tex, Rsym = C.sym;
+  const flipped = Object.entries(A.state.flips).filter(([, v]) => v).map(([k]) => k);
+  const flipText = flipped.length ? ` with ${flipped.join(", ")} flipped` : "";
+  const groups = H.map((h) => h.group);
+  const title = `Cohomology of ${sp.sym} with ${Rsym} coefficients`;
+  const vs = cx.basis[0], es = cx.basis[1], ts = cx.basis[2];
+  const ent = (f) => `${f.value > 0 ? "+" : "−"}1`;
+  const faceLines = cx.faces.map((f) => `- Delete vertex ${f.i} of ${f.tri}: face [${f.face.join(", ")}] is edge ${f.edge}, sign ${f.sign > 0 ? "+" : "−"}, orientations ${f.eps * f.edgeOrient * f.triOrient > 0 ? "agree" : "disagree"}, entry ${ent(f)}`).join("\n");
+  const boundaryOf = (t) => plainVec(cx.d2.map((r) => r[cx.basis[2].indexOf(t)]), es, false);
+  const torsion = H[2].summands.find((s) => s.kind === "torsion");
+  const d1Spoken = isZero(cx.d1) ? "every edge starts and ends at the same vertex, so the boundary map from edges to vertices is zero" : `the boundary of each edge is its head minus its tail, which gives a nonzero boundary map from edges to vertices`;
+  const hSpoken = groups.map((g, k) => `H ${NUM[k]} is ${g.spoken}`).join(", ");
+  const repLines = H.map((h, k) => h.summands.length ? `- $H^${k}$: ${h.summands.map((s) => `${s.kind === "torsion" ? `order ${s.order}: ` : ""}$${texVec(s.rep, cx.basis[k])}$`).join(", ")}` : `- $H^${k} = 0$`).join("\n");
+  const snf1 = A.smith[1].diag.map((x) => sym(x, p));
+  const flipA = analyse({ ...A.state, flips: { ...A.state.flips, U: !A.state.flips.U, a: !A.state.flips.a } });
+  const sameAfterFlip = flipA.H.every((h, k) => h.group.text === groups[k].text);
+  const ringFrame = A.ring.products.length || H[2].summands.length ? [{
+    title: `Cup products: ${A.ring.text}`,
+    body: `Alexander–Whitney on each 2-simplex: $(\\varphi\\smile\\psi)[p_0,p_1,p_2] = \\varphi[p_0,p_1]\\,\\psi[p_1,p_2]$.\n\n${A.ring.products.length ? A.ring.products.map((x) => `- ${x.text}`).join("\n") : "- No degree-one classes, so the only products land in degree four or more, which is zero here."}`,
+    narration: `Cup products come from the Alexander Whitney formula: multiply a cochain's value on the front edge of each triangle by another's value on the back edge. ${A.ring.products.length ? A.ring.products.map((x) => `${x.a} times ${x.b} is ${x.spoken}.`).join(" ") : "There are no degree one classes, and there are no simplices above degree two."} So the cohomology ring is ${A.ring.spoken}.`,
+  }] : [];
+  return {
+    meta: { title, subtitle: `A Δ-complex of two 2-simplices${flipText}`, author: meta.author || "Δ-Complex Cohomology Visualiser", date: meta.date || "", voice: "bf_emma" },
+    narration: `This talk computes the cohomology of ${sp.spoken} with ${C.spoken} coefficients, straight from a Δ-complex with two triangles. Every number comes from how the triangles are glued.`,
+    notes: `Generated by the Δ-Complex Cohomology Visualiser (${URL_SELF}). Orientation flips: ${flipped.join(", ") || "none"}.`,
+    setup: [{
+      title: `${sp.name}: ${cx.vertices.length} ${cx.vertices.length === 1 ? "vertex" : "vertices"}, ${cx.edges.length} edges, ${cx.tris.length} triangles`,
+      body: `${sp.blurb}\n\n- 2-simplices ${ts.join(", ")}, edges ${es.join(", ")}, vertices ${vs.join(", ")}\n- Vertex classes come from the gluing: corners glued to the same end of an edge are one vertex.`,
+      narration: `${sp.spoken[0].toUpperCase()}${sp.spoken.slice(1)} is built from a square cut along its diagonal into two triangles, U and L. Gluing the sides leaves ${NUM[cx.vertices.length]} ${cx.vertices.length === 1 ? "vertex" : "vertices"}, three edges a, b and c, and the two triangles.`,
+    }],
+    method: [{
+      title: "Boundary matrices from the faces",
+      body: `${faceLines}\n\n$$\\partial_2 = ${texM(cx.d2)},\\qquad \\partial_1 = ${texM(cx.d1)}$$`,
+      narration: `Deleting vertex i of a triangle leaves a face with sign minus one to the power i. That face is glued to an edge, and comparing orientations gives plus or minus one. So the boundary of U is ${boundaryOf("U").replace(/−/g, "minus").replace(/\+/g, "plus")}, and the boundary of L is ${boundaryOf("L").replace(/^−/, "minus ").replace(/−/g, "minus").replace(/\+/g, "plus")}. For the edges, ${d1Spoken}.`,
+    }, {
+      title: "Dualise: the coboundary is the transpose",
+      body: `$(\\delta\\varphi)(\\sigma) = \\varphi(\\partial\\sigma)$, so $\\delta^k = \\partial_{k+1}^{T}$.\n\n$$\\delta^0 = ${texM(A.delta[0], p)},\\qquad \\delta^1 = ${texM(A.delta[1], p)}$$${p ? `\n\nEntries are read in $${R}$.` : ""}`,
+      narration: `A cochain assigns a coefficient to each simplex, and its coboundary evaluates it on boundaries. The entry of delta at a simplex and a face is the same incidence number, read the other way, so each coboundary matrix is the transpose of a boundary matrix.${p === 2 ? " With coefficients in F 2, minus one equals one, so the signs disappear." : ""}`,
+    }],
+    results: [{
+      title: `H⁰, H¹, H² = ${groups.map((g) => g.text).join(", ")}`,
+      body: `$$H^k(${sp.tex};${R}) = \\ker\\delta^k/\\operatorname{im}\\delta^{k-1}$$\n\n${repLines}`,
+      narration: `Each group is the kernel of one coboundary modulo the image of the previous one. With ${C.spoken} coefficients, ${hSpoken}.`,
+    }, {
+      title: `Smith normal form of δ¹: diag(${snf1.join(", ")})`,
+      body: `$$\\delta^1 \\sim ${texM(A.smith[1].D, p)}$$\n\n${torsion ? `The ${torsion.order} on the diagonal makes $\\operatorname{coker}\\delta^1 \\cong \\mathbb{Z}/${torsion.order}$: two units of $${texVec(torsion.rep, ts)}$ are a coboundary, one unit is not.` : `Every nonzero diagonal entry is a unit, so ${p ? "the field" : "the integers"} see no torsion here.`}`,
+      narration: torsion
+        ? `Row and column operations that are invertible over the integers bring delta one to a diagonal of one and two. The two means twice the degree two cochain is a coboundary but the cochain itself is not, so H two is Z mod 2. Counting ranks alone would wrongly give zero.`
+        : `Invertible row and column operations bring delta one to a diagonal of ${snf1.map((x) => NUM[Math.abs(x)] || x).join(" and ")}. ${p === 2 && A.state.space === "RP2" ? "Mod 2 the two becomes zero, so a class survives in degree two and another in degree one." : "No diagonal entry is larger than one, so there is no torsion."}`,
+    }, ...ringFrame],
+    checks: [{
+      title: "∂₁∂₂ = 0 and δ¹δ⁰ = 0",
+      body: `$$\\partial_1\\partial_2 = ${texM(A.checks.d1d2)},\\qquad \\delta^1\\delta^0 = (\\partial_1\\partial_2)^{T} = ${texM(A.checks.dd)}$$`,
+      narration: `Each edge of a triangle contributes its two endpoints with opposite signs, and around the triangle they cancel in pairs. So the boundary of a boundary is zero, and transposing, delta one after delta zero is zero: every coboundary is a cocycle.`,
+    }, {
+      title: "Orientations change signs, not cohomology",
+      body: `Flipping U and a changes the signs in U's column and a's row; the groups stay ${flipA.H.map((h) => h.group.text).join(", ")}.`,
+      narration: `Flipping the orientation of U negates its column, and flipping edge a negates its row. ${sameAfterFlip ? "The groups do not change" : "The groups changed, which would be a bug"}: the matrices depend on orientation choices, the cohomology does not.`,
+      key: `$H^\\bullet(${sp.tex};${R}) = (${groups.map((g) => g.tex).join(",\\ ")})$, read off ker δ / im δ of the transposed boundary matrices${torsion ? `, with the Smith factor ${torsion.order} giving the torsion` : ""}.`,
+    }],
+  };
+}
+
+/* ---------- self-test, run on every page load ---------- */
+function selfTests() {
+  const out = [];
+  const check = (name, pass, detail = "") => out.push({ name, pass: !!pass, detail: pass ? "" : detail });
+  const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  for (const s of SPACES) {
+    const cx = complex(s.id);
+    check(`${s.sym}: ${cx.vertices.length} vertex classes from the gluing`, cx.vertices.length === { S2: 3, T2: 1, RP2: 2 }[s.id], `${cx.vertices.length}`);
+    check(`${s.sym}: derived ∂₂ equals the stated matrix`, eq(cx.d2, SPEC[s.id].d2), JSON.stringify(cx.d2));
+    check(`${s.sym}: derived ∂₁ equals the stated matrix`, eq(cx.d1, SPEC[s.id].d1), JSON.stringify(cx.d1));
+    let allZero = true, sameH = true;
+    for (let mask = 0; mask < 32; mask++) {
+      const flips = Object.fromEntries(["U", "L", "a", "b", "c"].map((k, i) => [k, !!(mask & (1 << i))]));
+      const fx = complex(s.id, flips);
+      if (!isZero(mul(fx.d1, fx.d2))) allZero = false;
+      for (const c of COEFFS) if (!eq(cohomology(fx, c.p).map((h) => h.group.text), SPEC_TABLE[s.id][c.id])) sameH = false;
+    }
+    check(`${s.sym}: ∂₁∂₂ = 0 for all 32 orientation choices`, allZero);
+    check(`${s.sym}: all 32 orientation choices give the same cohomology`, sameH);
+    for (const c of COEFFS) {
+      const got = cohomology(cx, c.p).map((h) => h.group.text);
+      check(`${s.sym}: H* with ${c.sym} coefficients = ${SPEC_TABLE[s.id][c.id].join(", ")}`, eq(got, SPEC_TABLE[s.id][c.id]), got.join(", "));
+    }
+  }
+  const rp = analyse({ space: "RP2", coef: "Z" });
+  check("RP²: Smith form of δ¹ is diag(1, 2)", eq(rp.smith[1].diag, [1, 2]), JSON.stringify(rp.smith[1].diag));
+  check("RP²: ranks alone would wrongly give H² = 0", rp.rankOnly[2] === 0 && rp.H[2].group.text === "ℤ/2");
+  const ringOf = (space, coef) => analyse({ space, coef }).ring;
+  check("T²: α² = β² = 0 and α⌣β generates H² (exterior algebra)", ringOf("T2", "Z").kind === "exterior", ringOf("T2", "Z").text);
+  check("RP² over 𝔽₂: x² ≠ 0, so 𝔽₂[x]/(x³)", ringOf("RP2", "F2").kind === "truncated", ringOf("RP2", "F2").text);
+  check("S²: ℤ[u]/(u²)", ringOf("S2", "Z").kind === "dual-numbers", ringOf("S2", "Z").text);
+  check("Homology is not cohomology: H₁(RP²; ℤ) = ℤ/2 while H¹ = 0", rp.homology[1].group.text === "ℤ/2" && rp.H[1].group.text === "0");
+  return out;
+}
+
+const META = {
+  title: "Δ-Complex Cohomology Visualiser",
+  schema: "delta-cohomology",
+  version: VERSION,
+  url: URL_SELF,
+  scope: "Simplicial cohomology of S², T² and RP² from Δ-complexes with two 2-simplices U and L each, over ℤ, 𝔽₂ and 𝔽₃: boundary matrices derived from face maps and gluing, coboundaries as transposes, kernels and images, Smith normal form, and cup products by Alexander–Whitney.",
+  conventions: [
+    "A 2-simplex [p0, p1, p2] has boundary Σ (−1)^i d_i, where d_i deletes vertex i; an edge [p, q] has boundary q − p.",
+    "Each face is compared with the edge it is glued to: +1 when the face's vertex order runs along the edge's arrow, −1 against it. A flipped simplex negates its generator.",
+    "Rows of ∂₂ are edges a, b, c and its columns are U, L; rows of ∂₁ are vertices and its columns are edges. δᵏ = ∂ₖ₊₁ᵀ.",
+    "Hᵏ = ker δᵏ / im δᵏ⁻¹ is computed with the Smith normal form over ℤ and row reduction over 𝔽ₚ, never from ranks alone.",
+    "Cup products use the Alexander–Whitney front and back faces (φ⌣ψ)[p0,p1,p2] = φ[p0,p1]·ψ[p1,p2].",
+  ],
+  spaces: SPACES.map((s) => ({ id: s.id, name: s.name, symbol: s.sym, triangles: s.triangles.map((t) => ({ id: t.id, corners: t.corners, orientation: t.orient })), sides: s.sides.map(([tri, from, to, edge]) => ({ tri, from, to, edge })), vertex_names: s.vertices.map(([name, rep]) => ({ name, corner: rep })) })),
+  square: SQUARE,
+  coefficients: COEFFS.map((c) => ({ id: c.id, symbol: c.sym, characteristic: c.p })),
+};
+
+const api = {
+  VERSION, META, SPACES, SPACE, SQUARE, SPEC, SPEC_TABLE, COEFFS, COEFF, DEFAULT_FLIPS,
+  red, sym, mul, transpose, isZero, smith, solve, echelon, kernelBasis,
+  complex, cohomology, homology, cup11, cup0k, ring, boundaryOfBoundary, analyse, normState, table, summary,
+  beamdswitchReport, plainVec, texVec, spokenVec, spokenName, selfTests, sup,
+};
+root.DeltaCohomology = api;
+})(typeof self !== "undefined" ? self : this);
+</script>
+<script id="delta-cohomology-ui">
+(function () {
+"use strict";
+const D = self.DeltaCohomology, T = self.Beamdswitch;
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const M = "−";
+const num = (x) => (x < 0 ? `${M}${-x}` : String(x));
+const sgn = (x) => (x > 0 ? `+${x}` : x < 0 ? `${M}${-x}` : "0");
+const SUB = "₀₁₂₃₄₅₆₇₈₉";
+const vname = (v) => v.replace(/^v(\d)$/, (_, d) => `v${SUB[d]}`);
+const reduced = () => { try { return matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) { return false; } };
+const later = (fn, ms) => { try { return setTimeout(fn, ms); } catch (e) { return 0; } };
+
+/* ---------- state ---------- */
+const DEFAULT = () => ({ space: "T2", coef: "Z", flips: D.DEFAULT_FLIPS(), mode: "guided", step: 0, glued: false, manual: {}, compare: false, ring: false, transposed: true, bbTri: "U", bbStage: 0, collapsed: {} });
+let ui = DEFAULT();
+let A = D.analyse(ui);
+let prevMatrices = null;
+let timers = [];
+const cancelTimers = () => { for (const t of timers) try { clearTimeout(t); } catch (e) { /* stand-in */ } timers = []; };
+const schedule = (fn, ms) => { const t = later(fn, ms); timers.push(t); return t; };
+
+const REVEALS = [["faces", "Face maps"], ["boundary", "∂ matrices"], ["coboundary", "δ matrices"], ["kerim", "ker / im"], ["smith", "Smith form"]];
+const STEPS = [
+  { id: "identify", title: "Identify simplices", reveal: [] },
+  { id: "orient", title: "Orient simplices", reveal: [] },
+  { id: "d1", title: "Compute ∂₁", reveal: ["boundary"] },
+  { id: "d2", title: "Compute ∂₂", reveal: ["faces", "boundary"] },
+  { id: "dd", title: "Check ∂₁∂₂ = 0", reveal: ["boundary"] },
+  { id: "dual", title: "Dualise", reveal: ["coboundary"] },
+  { id: "ker0", title: "Compute ker δ⁰", reveal: ["kerim"] },
+  { id: "ker1", title: "Compute ker δ¹", reveal: ["kerim"] },
+  { id: "im0", title: "Compute im δ⁰", reveal: ["kerim"] },
+  { id: "quot", title: "Form quotients", reveal: ["smith", "kerim"] },
+  { id: "read", title: "Read H⁰, H¹, H²", reveal: [] },
+];
+const revealed = (key) => (key in ui.manual ? ui.manual[key] : ui.mode === "inspect" || STEPS.slice(0, ui.step + 1).some((s) => s.reveal.includes(key)));
+
+/* ---------- chips: the same simplex looks the same everywhere ---------- */
+const vIndex = (v) => A.cx.basis[0].indexOf(v);
+const KCHEV = { a: 1, b: 2, c: 3 };
+function chip(kind, id, star = false, ns = "") {
+  if (kind === "t") return `<span class="chip t ${id}" data-k="${ns}t:${id}" data-hk="${ns}t:${id}" data-trace="tri:${id}" tabindex="0">${id}${star ? "*" : ""}</span>`;
+  if (kind === "e") return `<span class="chip e k${KCHEV[id] || 1}" data-k="${ns}e:${id}" data-hk="${ns}e:${id}" data-trace="edge:${id}" tabindex="0">${id}${star ? "*" : ""}</span>`;
+  return `<span class="chip v s${Math.max(0, vIndex(id))}" data-k="${ns}v:${id}" data-hk="${ns}v:${id}" data-trace="vert:${id}" tabindex="0">${vname(id)}${star ? "*" : ""}</span>`;
+}
+const KIND = { 0: "v", 1: "e", 2: "t" };
+/* A linear combination of basis (co)chains as chips: a* + c*, 2U*, … */
+function combo(vec, k, star = true) {
+  const names = A.cx.basis[k], parts = [];
+  vec.forEach((x, i) => {
+    if (!x) return;
+    const sign = x < 0 ? M : "+", mag = Math.abs(x);
+    parts.push(`${parts.length || x < 0 ? `<span class="op">${parts.length ? sign : M}</span>` : ""}${mag === 1 ? "" : mag}${chip(KIND[k], names[i], star)}`);
+  });
+  return `<span class="combo">${parts.join("") || "0"}</span>`;
+}
+const R = () => A.coef.sym;
+const sp = () => A.cx.sp;
+const Hk = (k) => `H${D.sup(k)}(${sp().sym}; ${R()})`;
+/* φ(c) solved from φ(∂U) = 0 in the current orientations: φ(c) = ±φ(a) ± φ(b). */
+function diagonalRule() {
+  const x = A.cx.d2.map((r) => r[0]);
+  const [ta, tb] = [0, 1].map((j) => [-x[2] * x[j] < 0 ? M : "+", `φ(${A.cx.basis[1][j]})`]);
+  return `φ(c) = ${ta[0] === M ? M : ""}${ta[1]} ${tb[0]} ${tb[1]}`;
+}
+
+/* ---------- picker, toolbar, guide ---------- */
+function renderPicker() {
+  const tab = D.table();
+  $("picker").innerHTML = D.SPACES.map((s, i) => `<button type="button" class="space" data-act="space" data-v="${s.id}" aria-pressed="${!ui.compare && ui.space === s.id}" title="${esc(s.name)} (${i + 1})"><span class="sym">${s.sym}</span><span class="nm">${s.name}</span><span class="hs">${tab[s.id].vertices} ${tab[s.id].vertices === 1 ? "vertex" : "vertices"} · H* = ${tab[s.id].cohomology[ui.coef].join(", ")}</span></button>`).join("") +
+    `<button type="button" class="btn compare-btn" data-act="compare" aria-pressed="${ui.compare}">Compare spaces</button>`;
+  for (const b of document.querySelectorAll("[data-act=mode]")) b.setAttribute("aria-pressed", String(b.dataset.v === ui.mode));
+  $("reveals").innerHTML = `<span class="lbl">Reveal</span>` + REVEALS.map(([k, label]) => `<button type="button" class="chipbtn" data-act="reveal" data-v="${k}" aria-pressed="${revealed(k)}">${label}</button>`).join("");
+}
+
+function stepText(id) {
+  const cx = A.cx, s = sp(), H = A.H, nV = cx.vertices.length;
+  const vlist = cx.vertices.map((v) => `${chip("v", v.id)} = {${v.members.map((m) => m.replace(".", "·")).join(", ")}}`).join("; ");
+  const dU = combo(cx.d2.map((r) => r[0]), 1, false), dL = combo(cx.d2.map((r) => r[1]), 1, false);
+  const dE = (es) => es.map((e) => `∂${chip("e", e)} = ${combo(cx.d1.map((r) => r[cx.basis[1].indexOf(e)]), 0, false)}`).join(", ");
+  const eqs = A.delta[1].map((row, i) => `${chip("t", cx.basis[2][i])}: φ(∂${cx.basis[2][i]}) = ${row.map((x, j) => (x ? `${x < 0 ? M : "+"}${Math.abs(x) > 1 ? Math.abs(x) : ""}φ(${cx.basis[1][j]})` : "")).join("").replace(/^\+/, "")} = 0`).join(", ");
+  switch (id) {
+    case "identify": return `<p>${esc(s.blurb)} Cut the square along its diagonal into two 2-simplices ${chip("t", "U")} and ${chip("t", "L")}, then press <b>Glue</b>: sides with the same letter are identified along their arrows, so the corners merge into ${nV === 1 ? "a single vertex" : `${nV} vertices`}: ${vlist}.</p><p class="note">A Δ-complex lets faces and vertices of one simplex be identified — ${s.id === "T2" ? "here every edge starts and ends at the same vertex v" : s.id === "RP2" ? "here edge a is a loop and both triangles have two corners at w" : "here two triangles share all three edges"} — which a simplicial complex forbids. That is why two triangles suffice.</p>`;
+    case "orient": return `<p>Each 2-simplex is ordered [p₀, p₁, p₂] (the small 0, 1, 2 in its corners) and carries an orientation arrow; each edge carries an arrow (one, two or three chevrons for a, b, c). ${cx.tris.filter((t) => t.orient < 0).map((t) => `${chip("t", t.id)}'s arrow runs against its vertex order, so its generator is ${M}[${t.corners.join(", ")}].`).join(" ")}</p><p class="note">${s.id === "RP2" ? "U turns one way and L the other: no choice of arrows makes the two triangles agree along every edge, because RP² is not orientable." : `With these arrows ${combo(A.homology[2].summands[0].rep, 2, false)} is a cycle, the fundamental class: its edges cancel in pairs.`} Flip any simplex below the picture: signs change, cohomology does not.</p>`;
+    case "d1": return `<p>An edge [p, q] has boundary q ${M} p. ${s.id === "T2" ? `Every edge runs from ${chip("v", "v")} to ${chip("v", "v")}, so each boundary is v ${M} v = 0 and <b>∂₁ = 0</b>.` : s.id === "RP2" ? `Edge ${chip("e", "a")} is a loop at ${chip("v", "w")}, so ∂a = 0; ${chip("e", "b")} and ${chip("e", "c")} both join ${chip("v", "v")} and ${chip("v", "w")}: ${dE(["b", "c"])}.` : `Each edge joins two different vertices, so ∂₁ is nonzero: ${dE(cx.basis[1])}.`} Hover an entry to see which endpoint it comes from.</p>`;
+    case "d2": return `<p>∂[p₀, p₁, p₂] = [p₁, p₂] ${M} [p₀, p₂] + [p₀, p₁]: delete vertex i with sign (${M}1)ⁱ, find the edge that face is glued to, and compare its direction with the edge's arrow. Result: ∂U = ${dU}, ∂L = ${dL}.</p>${s.id !== "RP2" ? `<p class="note">The sphere and the torus have the <b>same ∂₂</b>. Everything that distinguishes them is in ∂₁ — in how the edge endpoints are identified.</p>` : ""}`;
+    case "dd": return `<p>Apply ∂₁ to the boundary of a triangle: each edge contributes head ${M} tail, and around the triangle these endpoint terms cancel in pairs. So ∂₁∂₂ = 0, and transposing, δ¹δ⁰ = 0: every coboundary is a cocycle.</p>`;
+    case "dual": return `<p>A k-cochain assigns a coefficient in ${R()} to each k-simplex. Its coboundary is (δφ)(σ) = φ(∂σ), so the entry of δᵏ at (σ, τ) is the coefficient of τ in ∂σ — the same incidence number read the other way: <b>δᵏ = ∂ₖ₊₁ᵀ</b>.${A.p === 2 ? " Over 𝔽₂, −1 = 1, so every sign disappears." : A.p === 3 ? " Over 𝔽₃ the entries are read mod 3." : ""}</p>`;
+    case "ker0": return `<p>ker δ⁰ is the vertex cochains that take the same value at both ends of every edge: ${H[0].kernel.map((v) => combo(v, 0)).join(", ")}. The space is connected, so <b>H⁰ = ker δ⁰ ≅ ${H[0].group.text}</b>, spanned by the constant cochain.</p>`;
+    case "ker1": return `<p>ker δ¹ is the edge cochains φ with φ(∂U) = φ(∂L) = 0: ${eqs}. ${H[1].kerRank ? `Solutions: ${H[1].kernel.map((v) => combo(v, 1)).join(", ")} (rank ${H[1].kerRank}).` : "Only φ = 0."}${s.id === "T2" ? ` The diagonal ${chip("e", "c")} is dependent: ${diagonalRule()}, so a cocycle is fixed by its values on the two loops a and b.` : ""}</p>`;
+    case "im0": return `<p>The coboundaries: im δ⁰ in degree 1 is spanned by ${A.H[1].image.length ? A.H[1].image.map((v) => combo(v, 1)).join(", ") : "nothing (δ⁰ = 0)"}, and im δ¹ in degree 2 by ${A.H[2].image.length ? A.H[2].image.map((v) => combo(v, 2)).join(", ") : "nothing"}.${s.id === "S2" ? " For the sphere, im δ⁰ fills all of ker δ¹: every cocycle on the edges is a coboundary." : ""}</p>`;
+    case "quot": return `<p>Hᵏ = ker δᵏ / im δᵏ⁻¹. Over ℤ the quotient needs integer linear algebra: the Smith normal form of δ¹ is diag(${A.smith[1].diag.map(num).join(", ")}).${s.id === "RP2" && !A.p ? ` The <span class="big2">2</span> means im δ¹ has index 2 in C²: two units of ${chip("t", "U", true)} are a coboundary, one is not, so H² ≅ ℤ/2. A rank count would give 0.` : s.id === "RP2" && A.p === 2 ? " Mod 2 the entry 2 becomes 0, so δ¹ loses rank: a class appears in H² and another in H¹." : ""}</p>`;
+    case "read": return `<p><b>${[0, 1, 2].map((k) => `${Hk(k)} = ${H[k].group.text}`).join(", ")}</b>.</p><p>${interpretation()}</p><div class="try">${D.SPACES.filter((x) => x.id !== s.id).map((x) => `<button class="btn small primary" type="button" data-act="space" data-v="${x.id}">Try ${x.sym}</button>`).join("")}</div>`;
+  }
+  return "";
+}
+
+function renderGuide() {
+  const g = $("guide");
+  g.hidden = ui.mode !== "guided" || ui.compare;
+  if (g.hidden) return;
+  const s = STEPS[ui.step];
+  g.innerHTML = `<button class="btn small" type="button" data-act="prev" ${ui.step ? "" : "disabled"} aria-label="Previous step">←</button>
+    <div><span class="count">Step ${ui.step + 1} of ${STEPS.length} · ${sp().sym}</span><h3>${s.title}</h3>${stepText(s.id)}
+    <div class="steps">${STEPS.map((x, i) => `<button type="button" data-act="step" data-v="${i}" class="${i < ui.step ? "done" : i === ui.step ? "on" : ""}" title="${i + 1}. ${esc(x.title)}" aria-label="Step ${i + 1}: ${esc(x.title)}"></button>`).join("")}</div></div>
+    <button class="btn small" type="button" data-act="next" ${ui.step < STEPS.length - 1 ? "" : "disabled"} aria-label="Next step">→</button>`;
+}
+
+/* ---------- geometry ---------- */
+const X = (x) => 50 + 200 * x, Y = (y) => 230 - 200 * y;
+const P = (c) => [X(D.SQUARE[c][0]), Y(D.SQUARE[c][1])];
+function geometrySVG(A0, ns = "", opts = {}) {
+  const cx = A0.cx, s = cx.sp, out = [];
+  const shape = (v, x, y, cls, keys, extra = "") => {
+    const i = cx.basis[0].indexOf(v);
+    const k = `class="vmark ${cls}" data-k="${keys}" data-hk="${keys}" data-trace="${ns ? "" : `vert:${v}`}" ${extra}`;
+    if (i === 1) return `<rect x="${x - 4.5}" y="${y - 4.5}" width="9" height="9" ${k}/>`;
+    if (i === 2) return `<path d="M${x} ${y - 6}L${x + 6} ${y}L${x} ${y + 6}L${x - 6} ${y}Z" ${k}/>`;
+    return `<circle cx="${x}" cy="${y}" r="5" ${k}/>`;
+  };
+  out.push(`<defs><pattern id="${ns}hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="var(--tri-fill)"/><line x1="0" y1="0" x2="0" y2="6" stroke="var(--tri-fill2)" stroke-width="3"/></pattern><marker id="${ns}ah" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="orient-head"/></marker></defs>`);
+  for (const t of cx.tris) {
+    const pts = t.corners.map(P), cen = [pts.reduce((a, p) => a + p[0], 0) / 3, pts.reduce((a, p) => a + p[1], 0) / 3];
+    const g = [`<g class="tri-g tri-${t.id}">`];
+    g.push(`<polygon class="tri-poly" points="${pts.map((p) => p.join(",")).join(" ")}" ${t.id === "L" ? `style="fill:url(#${ns}hatch)"` : ""} data-k="${ns}t:${t.id}" data-hk="${ns}t:${t.id}" data-trace="${ns ? "" : `tri:${t.id}`}"/><polygon class="tri-ring" points="${pts.map((p) => p.join(",")).join(" ")}"/>`);
+    // orientation arrow: the circulation of the vertex order, reversed when the generator is −[p0,p1,p2]
+    const area = (pts[1][0] - pts[0][0]) * (pts[2][1] - pts[0][1]) - (pts[2][0] - pts[0][0]) * (pts[1][1] - pts[0][1]);
+    const cw = (area > 0 ? 1 : -1) * t.orient > 0, r = 15, a0 = -Math.PI / 2, a1 = a0 + (cw ? 1 : -1) * 1.5 * Math.PI;
+    const tc = [cen[0] + (t.id === "U" ? -8 : 8), cen[1] + (t.id === "U" ? -8 : 8)];
+    g.push(`<path class="orient" d="M${(tc[0] + r * Math.cos(a0)).toFixed(1)} ${(tc[1] + r * Math.sin(a0)).toFixed(1)} A${r} ${r} 0 1 ${cw ? 1 : 0} ${(tc[0] + r * Math.cos(a1)).toFixed(1)} ${(tc[1] + r * Math.sin(a1)).toFixed(1)}" marker-end="url(#${ns}ah)"/><text class="tlabel" x="${tc[0]}" y="${tc[1]}">${t.id}</text>`);
+    // sides, each the face d_i that omits corner i
+    for (const side of s.sides.filter((x) => x[0] === t.id)) {
+      const [, from, to, e] = side, edge = cx.edges.find((x) => x.id === e);
+      const i = t.corners.findIndex((c) => c !== from && c !== to);
+      const a = P(from), b = P(to);
+      const [ta, tb] = edge.orient > 0 ? [a, b] : [b, a];
+      const len = Math.hypot(tb[0] - ta[0], tb[1] - ta[1]), d = [(tb[0] - ta[0]) / len, (tb[1] - ta[1]) / len], nrm = [-d[1], d[0]];
+      const mid = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+      const keys = `${ns}e:${e} ${ns}side:${t.id}:${i}`;
+      g.push(`<line class="side" x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" data-k="${keys}"/>`);
+      const k = KCHEV[e] || 1, chev = [];
+      for (let j = 0; j < k; j++) {
+        const o = (j - (k - 1) / 2) * 5.5, c = [mid[0] + d[0] * o, mid[1] + d[1] * o];
+        chev.push(`M${(c[0] - d[0] * 4 + nrm[0] * 4).toFixed(1)} ${(c[1] - d[1] * 4 + nrm[1] * 4).toFixed(1)}L${c[0].toFixed(1)} ${c[1].toFixed(1)}L${(c[0] - d[0] * 4 - nrm[0] * 4).toFixed(1)} ${(c[1] - d[1] * 4 - nrm[1] * 4).toFixed(1)}`);
+      }
+      g.push(`<path class="chev" d="${chev.join("")}"/>`);
+      // label outside the square on a boundary side; inside its own triangle, past the chevrons, on the diagonal
+      const isDiag = [from, to].sort().join("") === "PR", tw = [cen[0] - mid[0], cen[1] - mid[1]], twl = Math.hypot(...tw) || 1;
+      const lp = isDiag ? [mid[0] + (tw[0] / twl) * 11 + d[0] * 20, mid[1] + (tw[1] / twl) * 11 + d[1] * 20] : [mid[0] - (tw[0] / twl) * 12, mid[1] - (tw[1] / twl) * 12];
+      g.push(`<text class="elabel" x="${lp[0].toFixed(1)}" y="${lp[1].toFixed(1)}">${e}</text>`);
+      g.push(`<line class="side-hit" x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" data-k="${keys}" data-hk="${keys}" data-trace="${ns ? "" : `side:${t.id}:${i}`}"/>`);
+    }
+    // corners: Δ-order index inside, corner letter (unglued) or vertex class (glued) outside
+    t.corners.forEach((c, i) => {
+      const p = P(c), towards = [cen[0] - p[0], cen[1] - p[1]], tl = Math.hypot(...towards);
+      g.push(`<text class="idx" x="${(p[0] + (towards[0] / tl) * 17).toFixed(1)}" y="${(p[1] + (towards[1] / tl) * 17).toFixed(1)}">${i}</text>`);
+      const v = cx.vertexOf[`${t.id}.${c}`], outv = [p[0] - 150, p[1] - 130], ovl = Math.hypot(...outv);
+      const lx = p[0] + (outv[0] / ovl) * 15, ly = p[1] + (outv[1] / ovl) * 15;
+      const dup = t.id === "L" && cx.tris[0].corners.includes(c) ? " dup" : "";
+      g.push(`<text class="clabel" x="${lx.toFixed(1)}" y="${ly.toFixed(1)}">${c}</text><text class="vlabel${dup}" x="${lx.toFixed(1)}" y="${ly.toFixed(1)}">${vname(v)}</text>`);
+      g.push(shape(v, p[0], p[1], dup.trim(), `${ns}v:${v} ${ns}corner:${t.id}:${c}`));
+    });
+    g.push("</g>");
+    out.push(g.join(""));
+  }
+  return `<svg class="geo${opts.glued ? " glued" : ""}" viewBox="-12 -12 324 284" role="img" aria-label="${esc(s.name)} as a Δ-complex: two triangles U and L ${opts.glued ? "glued" : "separated"}">${out.join("")}</svg>`;
+}
+
+function renderGeometry() {
+  const cx = A.cx;
+  const flipBtn = (k) => `<button type="button" class="btn small" data-act="flip" data-v="${k}" aria-pressed="${ui.flips[k]}" title="Flip the orientation of ${k}">${k}</button>`;
+  const flipped = Object.keys(ui.flips).filter((k) => ui.flips[k]);
+  $("geometry").innerHTML = `
+    <div class="geo-controls"><span class="seg" role="group" aria-label="Glue or unfold"><button type="button" data-act="unfold" aria-pressed="${!ui.glued}">Unfold</button><button type="button" data-act="glue" aria-pressed="${ui.glued}">Glue</button></span>
+      <span class="note">${ui.glued ? `Glued: ${cx.vertices.length} ${cx.vertices.length === 1 ? "vertex" : "vertices"}, ${cx.edges.length} edges, ${cx.tris.length} triangles` : "Separated simplices: corners P, Q, R, S of the square"}</span></div>
+    <div class="geo-wrap" id="geo-wrap">${geometrySVG(A, "", { glued: ui.glued })}</div>
+    <div class="flips" role="group" aria-label="Flip orientation"><span class="lbl">Flip orientation</span>${["U", "L"].map(flipBtn).join("")}${cx.basis[1].map(flipBtn).join("")}</div>
+    <p class="note" id="flip-note">${flipped.length ? `Flipped ${flipped.join(", ")}: the matrices' signs changed, H* is still ${A.H.map((h) => h.group.text).join(", ")}. The matrices depend on orientation choices; the cohomology does not.` : "Each flip negates one generator: a column of ∂₂ (U, L) or a row of ∂₂ and a column of ∂₁ (a, b, c)."}</p>
+    <h3>Basis</h3>
+    <p class="cx-line">C₂: ${cx.basis[2].map((t) => chip("t", t)).join(" ")} &nbsp; C₁: ${cx.basis[1].map((e) => chip("e", e)).join(" ")} &nbsp; C₀: ${cx.basis[0].map((v) => chip("v", v)).join(" ")}</p>
+    <details class="mini"><summary>Δ-complex, not a simplicial complex</summary>
+      <table class="cmp"><thead><tr><th></th><th>Simplicial complex</th><th>Δ-complex</th></tr></thead><tbody>
+      <tr><td>Simplices</td><td>many</td><td>few: here 2 + 3 + ${cx.vertices.length}</td></tr>
+      <tr><td>Vertices of one simplex</td><td>must stay distinct</td><td>may be identified</td></tr>
+      <tr><td>Faces</td><td>determined by vertices</td><td>glued by affine face maps</td></tr>
+      <tr><td>Good for</td><td>general theory</td><td>hand computation</td></tr></tbody></table>
+      <p class="note">A simplicial torus needs at least 7 vertices and 14 triangles. As a Δ-complex it has one vertex and two triangles.</p></details>`;
+}
+
+/* ---------- algebra ---------- */
+function matrixHTML(id, Mx, rows, rk, cols, ck, opts = {}) {
+  const p = opts.p || 0;
+  const head = `<tr><th></th>${cols.map((c, j) => `<th class="hd" data-k="${KIND[ck]}:${c}" data-hk="${KIND[ck]}:${c}" data-trace="col:${id}:${j}" tabindex="0" title="Column ${esc(c)}${opts.star ? "*" : ""}">${chip(KIND[ck], c, opts.star).replace(/data-trace="[^"]*"/, "")}</th>`).join("")}</tr>`;
+  const body = Mx.map((r, i) => `<tr><th class="hd" data-k="${KIND[rk]}:${rows[i]}" data-hk="${KIND[rk]}:${rows[i]}" data-trace="row:${id}:${i}" tabindex="0">${chip(KIND[rk], rows[i], opts.star).replace(/data-trace="[^"]*"/, "")}</th>${r.map((x, j) => {
+    const v = D.sym(x, p);
+    return `<td class="cell${v ? "" : " z"}" data-cell="${id}:${i}:${j}" data-k="${KIND[rk]}:${rows[i]} ${KIND[ck]}:${cols[j]}" data-hk="${cellKeys(id, i, j)}" data-trace="cell:${id}:${i}:${j}" tabindex="0">${v ? sgn(v).replace("+", opts.plus ? "+" : "") : "0"}</td>`;
+  }).join("")}</tr>`).join("");
+  return `<table class="mx" id="mx-${id}" aria-label="${esc(opts.label || id)}">${head}${body}</table>`;
+}
+/* What a matrix entry lights up: the two simplices, and for ∂₂ the exact face of the triangle. */
+function cellKeys(id, i, j) {
+  const cx = A.cx;
+  if (id === "d2" || id === "del1") {
+    const [e, t] = id === "d2" ? [cx.basis[1][i], cx.basis[2][j]] : [cx.basis[1][j], cx.basis[2][i]];
+    return [`t:${t}`, `e:${e}`, ...cx.faces.filter((f) => f.tri === t && f.edge === e).map((f) => `side:${t}:${f.i}`)].join(" ");
+  }
+  const [v, e] = id === "d1" ? [cx.basis[0][i], cx.basis[1][j]] : [cx.basis[0][j], cx.basis[1][i]];
+  return `v:${v} e:${e}`;
+}
+
+function smallMx(Mx, p = 0, emph = null) {
+  return `<table class="small-mx">${Mx.map((r, i) => `<tr>${r.map((x, j) => { const v = D.sym(x, p); return `<td${emph && emph(i, j, v) ? ' class="emph"' : ""}>${num(v)}</td>`; }).join("")}</tr>`).join("")}</table>`;
+}
+
+function renderAlgebra() {
+  const cx = A.cx, p = A.p, H = A.H;
+  const nm = (k) => cx.basis[k].map((x) => (k === 0 ? vname(x) : x)).join(", ");
+  const coefSeg = `<span class="seg" role="group" aria-label="Coefficients">${D.COEFFS.map((c) => `<button type="button" data-act="coef" data-v="${c.id}" aria-pressed="${ui.coef === c.id}" title="Coefficients: ${c.id}">${c.sym}</button>`).join("")}</span>`;
+  const out = [];
+  out.push(`<section data-sec="complex"><h3><span>Coefficients</span>${coefSeg}</h3>
+    <p class="cx-line"><span class="grp">C₂ = ${R()}⟨${nm(2)}⟩</span><span class="arrow" data-trace="arrow:d2" tabindex="0">∂₂<b>→</b></span><span class="grp">C₁ = ${R()}⟨${nm(1)}⟩</span><span class="arrow" data-trace="arrow:d1" tabindex="0">∂₁<b>→</b></span><span class="grp">C₀ = ${R()}⟨${nm(0)}⟩</span></p>
+    <p class="cx-line"><span class="grp">C⁰</span><span class="arrow" data-trace="arrow:del0" tabindex="0">δ⁰<b>→</b></span><span class="grp">C¹</span><span class="arrow" data-trace="arrow:del1" tabindex="0">δ¹<b>→</b></span><span class="grp">C²</span><span class="note">&nbsp;with δᵏ = ∂ₖ₊₁ᵀ, Hᵏ = ker δᵏ / im δᵏ⁻¹</span></p></section>`);
+  // face maps
+  out.push(`<section data-reveal="faces"><h3>Face maps: oriented triangle → delete vertex i → face → glued edge → compare → ±1</h3><div class="tbl-scroll"><table class="faces"><thead><tr><th>Simplex</th><th>Delete</th><th>Face</th><th>(−1)ⁱ</th><th>Glued to</th><th>Compare</th><th>Orient.</th><th>Entry</th></tr></thead><tbody>${
+    cx.faces.map((f) => `<tr data-k="side:${f.tri}:${f.i}" data-hk="t:${f.tri} e:${f.edge} side:${f.tri}:${f.i}" data-trace="side:${f.tri}:${f.i}" tabindex="0"><td>${chip("t", f.tri)} [${cx.tris.find((t) => t.id === f.tri).corners.join(",")}]</td><td>p${SUB[f.i]}</td><td>[${f.face.join(", ")}]</td><td>${sgn(f.sign)}</td><td>${chip("e", f.edge)}</td><td>${f.eps * f.edgeOrient > 0 ? "agree +1" : `against ${M}1`}</td><td>${sgn(f.triOrient)}</td><td class="val">${sgn(f.value)} ${f.edge}</td></tr>`).join("")
+  }</tbody></table></div><p class="note">Entry = (−1)ⁱ × compare × orientation of the triangle. Summing a triangle's three rows gives its column of ∂₂.</p></section>`);
+  // boundary
+  const contrast = cx.sp.id !== "RP2" ? (() => {
+    const other = D.complex(cx.sp.id === "S2" ? "T2" : "S2"), s2 = cx.sp.id === "S2" ? cx : other, t2 = cx.sp.id === "S2" ? other : cx;
+    return `<div class="callout"><b>Same ∂₂, different ∂₁.</b> S² and T² use the same two triangles with the same face signs, so ∂₂ is identical. They differ only in how edge endpoints are identified: S² has 3 vertices and ∂₁ = ${smallMx(s2.d1)}, T² has 1 vertex and ∂₁ = ${smallMx(t2.d1)}. <button class="btn small" type="button" data-act="compare">Compare spaces</button></div>`;
+  })() : `<div class="callout">RP² glues the same two triangles with a twist: ∂U = ${combo(cx.d2.map((r) => r[0]), 1, false)}, ∂L = ${combo(cx.d2.map((r) => r[1]), 1, false)}, and ∂U + ∂L = ${combo(cx.d2.map((r) => r[0] + r[1]), 1, false)}. No combination of U and L is a cycle: there is no integral fundamental class, and that is where the 2-torsion will come from.</div>`;
+  out.push(`<section data-reveal="boundary"><h3><span>Boundary matrices (over ℤ)</span><button class="btn small" type="button" data-act="bb">Show ∂² = 0</button></h3>
+    <div class="mxrow"><div class="mxbox"><p class="mxcap">∂₂ : C₂ → C₁</p>${matrixHTML("d2", cx.d2, cx.basis[1], 1, cx.basis[2], 2, { label: "boundary matrix ∂₂", plus: true })}</div>
+    <div class="mxbox"><p class="mxcap">∂₁ : C₁ → C₀</p>${matrixHTML("d1", cx.d1, cx.basis[0], 0, cx.basis[1], 1, { label: "boundary matrix ∂₁", plus: true })}</div></div>
+    <p class="note">Hover an entry for its face; click a column header for the whole boundary, a row header for where that simplex occurs.</p>
+    ${contrast}<div id="bb"></div></section>`);
+  // coboundary
+  out.push(`<section data-reveal="coboundary"><h3><span>Coboundary matrices: transpose${p ? ` (entries in ${R()})` : ""}</span><button class="btn small" type="button" data-act="transpose">Animate ∂ → δ</button></h3>
+    <p class="note">(δφ)(σ) = φ(∂σ): the entry at (σ*, τ*) is the coefficient of τ in ∂σ.${p === 2 ? " Mod 2, −1 = 1: the signs vanish." : ""}</p>
+    <div class="mxrow"><div class="mxbox"><p class="mxcap" id="tp-cap-1">δ¹ = ∂₂ᵀ : C¹ → C²</p><div class="tp" id="tp-1"></div></div><div class="mxbox"><p class="mxcap" id="tp-cap-0">δ⁰ = ∂₁ᵀ : C⁰ → C¹</p><div class="tp" id="tp-0"></div></div></div>
+    <p class="cx-line">δ¹δ⁰ = (∂₁∂₂)ᵀ = ${smallMx(A.checks.dd, p)} ${D.isZero(A.checks.dd) ? '<span class="note">✓ zero: every coboundary is a cocycle.</span>' : '<span class="warn">not zero!</span>'}</p></section>`);
+  // kernels and images
+  out.push(`<section data-reveal="kerim"><h3>Kernels and images</h3>${[0, 1, 2].map(kerImHTML).join("")}</section>`);
+  // smith
+  out.push(`<section data-reveal="smith"><h3>${p ? `Row reduction over ${R()} (Smith form over a field)` : "Smith normal form over ℤ"}</h3>${[1, 0].map(smithHTML).join("")}${torsionHTML()}</section>`);
+  $("algebra").innerHTML = out.join("");
+  renderTranspose();
+  renderBB();
+}
+
+function kerImHTML(k) {
+  const H = A.H[k], n = H.n, r = H.kerRank, s = H.imRank, cx = A.cx;
+  const tors = H.summands.filter((x) => x.kind === "torsion");
+  const W = 200, Hh = 112, kw = n ? Math.max(0.3, r / n) : 0, iw = r ? (s === r && tors.length ? 0.86 : Math.max(s ? 0.22 : 0, (s / r) * 0.86)) : 0;
+  const kx = 10 + (W - 20) * (1 - kw) / 2, kwid = (W - 20) * kw;
+  const ix = kx + kwid * (1 - iw) / 2, iwid = kwid * iw;
+  const svg = `<svg viewBox="0 0 ${W} ${Hh}" role="img" aria-label="C${k} contains ker δ${k} which contains im δ${k - 1}">
+    <defs><pattern id="checker${k}" width="8" height="8" patternUnits="userSpaceOnUse"><rect width="8" height="8" fill="var(--tri-fill)"/><rect width="4" height="4" fill="var(--tri-fill2)"/><rect x="4" y="4" width="4" height="4" fill="var(--tri-fill2)"/></pattern></defs>
+    <rect class="outer" x="2" y="2" width="${W - 4}" height="${Hh - 4}" rx="6"/><text class="lab" x="8" y="14">C${D.sup(k)} ≅ ${R()}${n > 1 ? D.sup(n) : ""}</text>
+    ${r ? `<rect class="kerr" x="${kx}" y="22" width="${kwid}" height="${Hh - 30}" rx="5" data-k="ker:${k}"/><text class="lab" x="${kx + 5}" y="34">ker δ${D.sup(k)}</text><text class="lab m" x="${kx + kwid - 5}" y="34" text-anchor="end">rank ${r}</text>` : `<text class="lab m" x="${W / 2}" y="${Hh / 2 + 8}" text-anchor="middle">ker δ${D.sup(k)} = 0</text>`}
+    ${s ? `<rect class="imr${tors.length ? " torsion" : ""}" x="${ix}" y="44" width="${iwid}" height="${Hh - 60}" rx="4" ${tors.length ? `style="fill:url(#checker${k})"` : ""}/><text class="lab" x="${ix + iwid / 2}" y="${44 + (Hh - 60) / 2 + 4}" text-anchor="middle">${iwid > 60 ? `im δ${D.sup(k - 1)}${tors.length ? `, index ${tors.map((t) => t.order).join("·")}` : ""}` : "im"}</text>` : ""}
+    <text class="qlab" x="${W / 2}" y="${Hh - 10}" text-anchor="middle">H${D.sup(k)} ≅ ${H.group.text}</text></svg>`;
+  const gens = H.summands.length ? H.summands.map((g) => `${combo(g.rep, k)}${g.kind === "torsion" ? ` <span class="emph">order ${g.order}</span>` : ""}`).join(", ") : "none";
+  return `<div class="ki${ui.collapsed[k] ? " collapsed" : ""}" id="ki-${k}"><div>${svg}${s ? `<button class="btn small" type="button" data-act="collapse" data-v="${k}">${ui.collapsed[k] ? "Restore" : `Collapse im δ${D.sup(k - 1)}`}</button>` : ""}</div>
+    <dl><dt data-trace="H:${k}" tabindex="0">${Hk(k)} = ker δ${D.sup(k)} / im δ${D.sup(k - 1)}</dt>
+    <dd>ker δ${D.sup(k)}: ${k === 2 ? `all of C² (δ² = 0): ${cx.basis[2].map((t) => chip("t", t, true)).join(", ")}` : H.kernel.length ? H.kernel.map((v) => combo(v, k)).join(", ") : "0"}</dd>
+    <dd>im δ${D.sup(k - 1)}: ${k === 0 ? "0 (there is no C⁻¹)" : H.image.length ? H.image.map((v) => combo(v, k)).join(", ") : "0"}</dd>
+    <dd>Quotient: <b>${H.group.text}</b>; generators ${gens}${tors.length ? `. <span class="note">Lattice language: im δ${D.sup(k - 1)} has full rank in ker δ${D.sup(k)} but index ${tors.map((t) => t.order).join("·")}, so the quotient is finite.</span>` : ""}</dd></dl></div>`;
+}
+
+function smithHTML(k) {
+  const S = A.smith[k], p = A.p, cx = A.cx;
+  const big = (i, j, v) => i === j && Math.abs(v) > 1;
+  const steps = S.steps.map((s) => `<li><span class="op">${s.text}</span>${smallMx(s.M, p, big)}</li>`).join("");
+  return `<div><p class="cx-line">δ${D.sup(k)} = ${smallMx(A.delta[k], p)} ∼ ${smallMx(S.D, p, big)} <span class="note">diag(${S.diag.map((x) => num(D.sym(x, p))).join(", ")}), rank ${S.rank}</span></p>
+    ${steps ? `<details class="mini"${k === 1 && cx.sp.id === "RP2" ? " open" : ""}><summary>${S.steps.length} invertible row and column operations (R = rows ${cx.basis[k + 1].map((x) => x + "*").join(", ")}; C = columns ${cx.basis[k].map((x) => (k === 0 ? vname(x) : x) + "*").join(", ")})</summary><ol class="snf-steps">${steps}</ol></details>` : '<p class="note">Already in normal form.</p>'}</div>`;
+}
+
+function torsionHTML() {
+  const H2 = A.H[2], cx = A.cx, p = A.p;
+  const tors = H2.summands.find((s) => s.kind === "torsion");
+  const rk = A.rankOnly;
+  if (!tors) {
+    if (cx.sp.id === "RP2" && p === 2) return `<div class="callout">Mod 2 the Smith entry 2 is 0, so rank δ¹ drops from 2 to 1. Then H² = 𝔽₂²/𝔽₂ ≅ 𝔽₂, and ker δ¹ grows to rank 2 against im δ⁰ of rank 1, so H¹ ≅ 𝔽₂: classes reappear in degrees 1 and 2.</div>`;
+    if (cx.sp.id === "RP2" && p === 3) return `<div class="callout">2 is a unit in 𝔽₃, so the Smith entry 2 acts like 1: im δ¹ fills C² and H² = 0. Only characteristic 2 sees the twist.</div>`;
+    return `<p class="note">Every nonzero diagonal entry is ${p ? "a unit" : "1"}, so ${p ? "row reduction" : "ranks"} and the Smith form agree here: no torsion.</p>`;
+  }
+  // 2·rep = δ¹(φ): find φ
+  const target = tors.rep.map((x) => x * tors.order), phi = D.solve(A.delta[1], target);
+  const lat = [];
+  for (let y = 2; y >= -2; y--) for (let x = -2; x <= 2; x++) lat.push({ x, y, in: !!D.solve(A.delta[1], [x, y]) });
+  const latSVG = `<svg viewBox="0 0 150 150" role="img" aria-label="The lattice C² with the image of δ¹ marked"><line class="ax" x1="75" y1="5" x2="75" y2="145"/><line class="ax" x1="5" y1="75" x2="145" y2="75"/>${lat.map((q) => `<circle class="pt${q.in ? " in" : ""}" cx="${75 + q.x * 28}" cy="${75 - q.y * 28}" r="${q.in ? 5 : 4}"/>`).join("")}<text x="145" y="70" text-anchor="end">${cx.basis[2][0]}*</text><text x="81" y="12">${cx.basis[2][1]}*</text></svg>`;
+  const line = `<svg class="nl" viewBox="0 0 240 70" role="img" aria-label="Number line 0 to 4 with even numbers identified: Z mod 2"><line class="ax" x1="10" y1="40" x2="230" y2="40"/>${[0, 1, 2, 3, 4].map((x) => `<circle class="pt${x % 2 ? "" : " in"}" cx="${20 + x * 50}" cy="40" r="5"/><text x="${20 + x * 50}" y="62" text-anchor="middle">${x}</text>`).join("")}<path d="M20 32 Q70 0 120 32" fill="none" stroke="var(--emph)" stroke-width="1.5"/><path d="M120 32 Q170 0 220 32" fill="none" stroke="var(--emph)" stroke-width="1.5"/><text x="120" y="12" text-anchor="middle" fill="var(--emph)">mod ${tors.order}</text></svg>`;
+  return `<div class="callout emph"><p>δ¹ ∼ diag(1, <span class="big2">${tors.order}</span>). In the Smith basis f₁, f₂ of C², im δ¹ = ℤf₁ ⊕ <b>${tors.order}</b>ℤf₂, so coker δ¹ ≅ ℤ/1 ⊕ ℤ/${tors.order} ≅ <b>ℤ/${tors.order}</b>.</p>
+    <p class="caption">Two units of this degree-two cochain become a coboundary, but one unit does not: ${tors.order}${combo(tors.rep, 2).replace('<span class="combo">', '<span class="combo">')} = δ¹(${phi ? combo(phi, 1) : "?"}), while ${combo(tors.rep, 2)} itself is not in im δ¹.</p>
+    <div class="lattice">${latSVG}${line}</div>
+    <p class="note">Left: the lattice C² = ℤ${cx.basis[2][0]}* ⊕ ℤ${cx.basis[2][1]}*, filled where a point lies in im δ¹ (x + y even): two cosets. Right: the same quotient in the Smith basis, translations by even numbers identified.</p>
+    <p class="warn">Ranks alone (as over ℚ) would give H⁰, H¹, H² = ${rk.join(", ")} in dimensions — reading H² = 0, which is wrong. Torsion needs the Smith form.</p></div>`;
+}
+
+/* The transpose widget: ∂ cells slide to their transposed places, becoming δ. */
+function renderTranspose() {
+  const p = A.p, cx = A.cx, W = 2.45, Hh = 2.05;
+  for (const k of [0, 1]) {
+    const el = $(`tp-${k}`);
+    if (!el || !el.style) continue;
+    const Bm = k === 0 ? cx.d1 : cx.d2; // ∂ with rows (k)-simplices of the lower dim, cols the higher
+    const rows = cx.basis[k], cols = cx.basis[k + 1], rk = k, ck = k + 1, m = rows.length, n = cols.length;
+    const T = ui.transposed;
+    const id = k === 0 ? "del0" : "del1";
+    const cells = [];
+    for (let i = 0; i < m; i++) for (let j = 0; j < n; j++) {
+      const v = D.sym(Bm[i][j], T ? p : 0);
+      // ∂ position (row i, col j) → δ position (row j, col i), one header offset
+      const [r, c] = T ? [j + 1, i + 1] : [i + 1, j + 1];
+      cells.push(`<div class="cellg${v ? "" : " z"}" style="transform:translate(${c * W}rem,${r * Hh}rem)" data-k="${KIND[rk]}:${rows[i]} ${KIND[ck]}:${cols[j]}" data-hk="${cellKeys(T ? id : k === 0 ? "d1" : "d2", T ? j : i, T ? i : j)}" data-trace="${T ? `cell:${id}:${j}:${i}` : `cell:${k === 0 ? "d1" : "d2"}:${i}:${j}`}" tabindex="0">${v ? sgn(v).replace("+", "") : "0"}</div>`);
+    }
+    const labs = [];
+    rows.forEach((x, i) => { const [r, c] = T ? [0, i + 1] : [i + 1, 0]; labs.push(`<div class="lab" style="transform:translate(${c * W}rem,${r * Hh}rem)">${chip(KIND[rk], x, T)}</div>`); });
+    cols.forEach((x, j) => { const [r, c] = T ? [j + 1, 0] : [0, j + 1]; labs.push(`<div class="lab" style="transform:translate(${c * W}rem,${r * Hh}rem)">${chip(KIND[ck], x, T)}</div>`); });
+    const size = Math.max(m, n) + 1;
+    el.style.width = `${(T ? m + 1 : n + 1) * W}rem`;
+    el.style.height = `${(T ? n + 1 : m + 1) * Hh}rem`;
+    el.innerHTML = cells.join("") + labs.join("");
+    void size;
+    const cap = $(`tp-cap-${k}`);
+    if (cap) cap.textContent = T ? (k === 0 ? "δ⁰ = ∂₁ᵀ : C⁰ → C¹" : "δ¹ = ∂₂ᵀ : C¹ → C²") : (k === 0 ? "∂₁ : C₁ → C₀ (about to transpose)" : "∂₂ : C₂ → C₁ (about to transpose)");
+  }
+}
+function animateTranspose() {
+  cancelTimers();
+  ui.transposed = false;
+  for (const k of [0, 1]) { const el = $(`tp-${k}`); if (el && el.classList) el.classList.remove("anim"); }
+  renderTranspose(); refreshHL();
+  if (reduced()) { ui.transposed = true; renderTranspose(); refreshHL(); return; }
+  schedule(() => {
+    for (const k of [0, 1]) { const el = $(`tp-${k}`); if (el && el.classList) el.classList.add("anim"); }
+    ui.transposed = true; renderTranspose(); refreshHL();
+  }, 420);
+}
+
+/* ∂² = 0, term by term */
+function renderBB() {
+  const el = $("bb");
+  if (!el) return;
+  if (!ui.bbStage) { el.innerHTML = ""; return; }
+  const cx = A.cx, b = A.bb[ui.bbTri], st = ui.bbStage;
+  const pairOf = {};
+  b.pairs.forEach(([i, j], n) => { pairOf[i] = n; pairOf[j] = n; });
+  const edgeSum = b.edgeTerms.map((t, i) => `${t.coef < 0 ? (i ? ` ${M} ` : M) : i ? " + " : ""}${Math.abs(t.coef) > 1 ? Math.abs(t.coef) : ""}${chip("e", t.edge)}`).join("");
+  const endpoints = b.edgeTerms.map((t, i) => {
+    const e = cx.edges.find((x) => x.id === t.edge), [h, tl] = e.orient > 0 ? [e.head, e.tail] : [e.tail, e.head];
+    return `${t.coef < 0 ? (i ? ` ${M} ` : M) : i ? " + " : ""}(${chip("v", h)} ${M} ${chip("v", tl)})`;
+  }).join("");
+  const terms = b.vertexTerms.map((t, i) => `<span class="term${st >= 4 && i in pairOf ? ` p${pairOf[i]} struck` : st >= 4 ? "" : ""}" data-k="v:${t.vertex}">${t.coef < 0 ? M : "+"}${Math.abs(t.coef) > 1 ? Math.abs(t.coef) : ""}${vname(t.vertex)}<sub class="note">${t.edge}</sub></span>`).join(" ");
+  const li = (n, html) => `<li class="${st >= n ? "" : "pending"}">${html}</li>`;
+  el.innerHTML = `<div class="bb"><p><b>∂² = 0 for</b> <span class="seg" role="group" aria-label="Triangle">${cx.basis[2].map((t) => `<button type="button" data-act="bbtri" data-v="${t}" aria-pressed="${ui.bbTri === t}">${t}</button>`).join("")}</span> <button class="btn small" type="button" data-act="bbclose">Close</button></p><ol>
+    ${li(1, `Its three oriented edges: ∂${ui.bbTri} = ${edgeSum}`)}
+    ${li(2, `Apply ∂₁ to each edge (head ${M} tail): ${endpoints}`)}
+    ${li(3, `Endpoint terms: ${terms}`)}
+    ${li(4, `Pair the cancelling terms: ${b.pairs.length} pairs${b.unpaired.length ? `, unpaired ${b.unpaired.length}` : ""} (matching underlines)`)}
+    ${li(5, `Sum: ${Object.values(b.total).every((x) => x === 0) ? "<b>0</b>" : `<span class="warn">${JSON.stringify(b.total)}</span>`}. So ∂₁∂₂ = ${smallMx(A.checks.d1d2)} = 0, and dually δ¹δ⁰ = (∂₁∂₂)ᵀ = 0.`)}
+    </ol><p class="caption">This is why every coboundary is automatically a cocycle.</p></div>`;
+}
+function runBB(tri) {
+  cancelTimers();
+  if (tri) ui.bbTri = tri;
+  ui.bbStage = reduced() ? 5 : 1;
+  renderBB(); bbHighlight();
+  for (let s = 2; s <= 5 && !reduced(); s++) schedule(() => { ui.bbStage = s; renderBB(); bbHighlight(); }, (s - 1) * 450);
+}
+function bbHighlight() {
+  const b = A.bb[ui.bbTri];
+  if (!b) return;
+  const keys = ui.bbStage <= 1 ? [`t:${ui.bbTri}`, ...b.edgeTerms.map((t) => `e:${t.edge}`)] : [...new Set(b.vertexTerms.map((t) => `v:${t.vertex}`))];
+  setHL(new Set(keys), null);
+}
+
+/* ---------- result ---------- */
+function interpretation() {
+  const id = sp().id, p = A.p, H = A.H;
+  if (id === "S2") return "Two triangles → the boundary loops die (every edge cocycle is a coboundary, so there is no H¹) → the oriented fundamental 2-class survives.";
+  if (id === "T2") return `Two triangles → two independent 1-cocycles survive, dual to the horizontal loop a and the vertical loop b, so H¹ ≅ ${H[1].group.text} → the oriented fundamental 2-class survives.`;
+  if (!p) return "Two triangles → the integral degree-one class disappears → the orientation obstruction produces 2-torsion: H² ≅ ℤ/2. Switch to 𝔽₂ and classes reappear in degrees 1 and 2.";
+  if (p === 2) return "Mod 2 the twist is invisible to signs, so RP² looks orientable: H¹ ≅ 𝔽₂ (the loop a) and H² ≅ 𝔽₂. Changing coefficients reveals topology that 𝔽₃ cannot see.";
+  return "Over 𝔽₃ the Smith entry 2 is a unit, so RP² looks like a point: H¹ = H² = 0. Only characteristic 2 detects the twist.";
+}
+
+function renderResult() {
+  const H = A.H, cx = A.cx;
+  const tiles = H.map((h, k) => `<button type="button" class="tile" data-k="H:${k}" data-hk="H:${k} ${h.summands.map((s) => s.rep.map((x, i) => (x ? `${KIND[k]}:${cx.basis[k][i]}` : "")).join(" ")).join(" ")}" data-trace="H:${k}"><div class="hk">H${D.sup(k)}(${sp().sym}; ${R()})</div><div class="g${h.summands.some((s) => s.kind === "torsion") ? " tors" : ""}">${h.group.text}</div><div class="r">ker ${h.kerRank} / im ${h.imRank}</div></button>`).join("");
+  const gens = H.map((h, k) => `<li><b>H${D.sup(k)}</b>: ${h.summands.length ? h.summands.map((s, i) => `<span data-trace="gen:${k}:${i}" tabindex="0">${combo(s.rep, k)}</span>${s.kind === "torsion" ? ` <span class="emph">(order ${s.order})</span>` : ""}`).join(", ") : "no generators"}</li>`).join("");
+  const fund = (() => {
+    const H2 = A.homology[2];
+    if (A.p || !H[2].summands.length) return "";
+    const g = H[2].summands[0];
+    if (g.kind === "torsion") return `<p class="note">No integral fundamental class: no combination of U and L is a cycle (for instance ∂(U + L) = ${combo(cx.d2.map((r) => r[0] + r[1]), 1, false)}). ${combo(g.rep, 2)} has order 2 in H².</p>`;
+    return H2.summands.length ? `<p class="note">The <b>fundamental cocycle</b> ${combo(g.rep, 2)} takes the value ${num(g.rep.reduce((s, x, i) => s + x * H2.summands[0].rep[i], 0))} on the fundamental cycle ${combo(H2.summands[0].rep, 2, false)} (whose boundary is 0). ${cx.basis[2].map((t) => chip("t", t, true)).join(" and ")} differ by a coboundary, so either represents it.</p>` : "";
+  })();
+  const loops = sp().id === "T2" ? `<p class="note">Read the two degree-one classes on the loops: ${H[1].summands.map((s, i) => `${["α", "β"][i]} = ${combo(s.rep, 1)} takes ${num(s.rep[0])} on a (horizontal) and ${num(s.rep[1])} on b (vertical)`).join("; ")}. Their value on the diagonal c is forced by the cocycle condition ${diagonalRule()}.</p>` : "";
+  const ring = ringHTML();
+  const hom = A.homology.map((h, k) => `H<sub>${k}</sub>(${sp().sym}; ℤ) = ${h.group.text}`).join(", ");
+  $("result").innerHTML = `<div class="tiles">${tiles}</div>
+    <details class="lens" open><summary>Cohomology groups</summary><div><ul class="gens">${gens}</ul>${fund}${loops}<p>${interpretation()}</p>
+      <div class="try">${D.SPACES.filter((x) => x.id !== sp().id).map((x) => `<button class="btn small primary" type="button" data-act="space" data-v="${x.id}">Try ${x.sym}</button>`).join("")}</div></div></details>
+    <details class="lens" id="ring-lens"${ui.ring ? " open" : ""}><summary>Cohomology ring</summary><div>${ring}</div></details>
+    <details class="mini"><summary>Hᵏ is not Hₖ</summary><p class="note">This page computes cohomology Hᵏ (superscript) from cochains and δ. Homology Hₖ (subscript) uses ∂ directly: ${hom}. ${sp().id === "RP2" ? "Torsion moves up one degree: H₁(RP²; ℤ) = ℤ/2 but H¹ = 0 and H² = ℤ/2." : "For this space the free parts agree, as they always do."}</p></details>`;
+}
+
+function ringHTML() {
+  const rg = A.ring, cx = A.cx, H = A.H;
+  if (!rg.products.length) {
+    const top = H[2].summands[0];
+    return `<p>${H[1].summands.length ? "" : "H¹ = 0, so there are no products of degree-one classes. "}${top ? `${top.kind === "torsion" ? "t" : "u"} = [${cx.basis[2].map((t, i) => (top.rep[i] ? t + "*" : "")).join("")}] has degree 2, and ${top.kind === "torsion" ? "t" : "u"}² would have degree 4, where there are no cochains: ${top.kind === "torsion" ? "t" : "u"}² = 0.` : ""}</p><p><b>H*(${sp().sym}; ${R()}) ≅ ${esc(rg.text)}</b></p><p class="note">Products with H⁰ act as the identity: the constant cochain 1 is the unit (checked by Alexander–Whitney: ${rg.unitOk ? "1 ⌣ φ = φ ✓" : "failed"}).</p>`;
+  }
+  const names = rg.names1;
+  const rows = rg.products.map((pr) => {
+    const per = cx.tris.map((t) => {
+      const f = cx.faces.find((x) => x.tri === t.id && x.i === 2), b = cx.faces.find((x) => x.tri === t.id && x.i === 0);
+      const g = H[1].summands[pr.i].rep, h = H[1].summands[pr.j].rep, ei = (e) => cx.basis[1].indexOf(e);
+      const fv = f.eps * f.edgeOrient * g[ei(f.edge)], bv = b.eps * b.edgeOrient * h[ei(b.edge)];
+      return `${t.id}: ${t.orient < 0 ? `${M}` : ""}${pr.a}[${t.corners[0]},${t.corners[1]}]·${pr.b}[${t.corners[1]},${t.corners[2]}] = ${t.orient < 0 ? M : ""}(${num(fv)})(${num(bv)})`;
+    }).join("; ");
+    return `<tr><td>${pr.a} ⌣ ${pr.b}</td><td>${per}</td><td>${combo(pr.value, 2)}</td><td><b>${pr.text.split(" = ")[1]}</b></td></tr>`;
+  }).join("");
+  const top = H[2].summands[0];
+  return `<p>Degree-one generators: ${H[1].summands.map((s, i) => `${names[i]} = ${combo(s.rep, 1)}`).join(", ")}; ${top ? `u = [${combo(top.rep, 2)}] generates H².` : ""}</p>
+    <p class="note">Alexander–Whitney: (φ ⌣ ψ)[p₀, p₁, p₂] = φ[p₀, p₁] · ψ[p₁, p₂] — front edge times back edge, with the sign of each face's comparison and of the triangle's orientation.</p>
+    <div class="tbl-scroll"><table class="aw"><thead><tr><th>Product</th><th>On each triangle</th><th>Cochain</th><th>Class</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <p><b>H*(${sp().sym}; ${R()}) ≅ ${esc(rg.text)}</b>${rg.kind === "truncated" ? "; x³ = 0 because there are no 3-cochains." : rg.kind === "exterior" ? (A.p === 2 ? "; mod 2, αβ = βα." : "; αβ = −βα, as graded commutativity demands.") : ""}</p>`;
+}
+
+/* ---------- compare ---------- */
+function renderCompare() {
+  const el = $("compare");
+  el.hidden = !ui.compare;
+  $("panels").hidden = ui.compare;
+  if (!ui.compare) { el.innerHTML = ""; return; }
+  const cols = D.SPACES.map((s) => {
+    const An = D.analyse({ space: s.id, coef: ui.coef });
+    const save = A; A = An;
+    const html = `<div class="panel"><h3>${s.sym} · ${s.name}</h3>${geometrySVG(An, `${s.id}-`, { glued: true })}
+      <p class="cx-line">∂₂ = ${smallMx(An.cx.d2)} &nbsp; ∂₁ = ${smallMx(An.cx.d1)}</p>
+      <p class="cx-line">H* = ${An.H.map((h) => `<b>${h.group.text}</b>`).join(", ")}</p>
+      <button class="btn small" type="button" data-act="space" data-v="${s.id}">Open ${s.sym}</button></div>`;
+    A = save;
+    return html;
+  }).join("");
+  const tab = D.table();
+  const row = (label, f) => `<tr><th>${label}</th>${D.SPACES.map((s) => `<td>${f(tab[s.id], s)}</td>`).join("")}</tr>`;
+  el.innerHTML = `<div class="compare">${cols}</div>
+    <div class="panel" style="margin-top:.8rem"><div class="tbl-scroll"><table class="cmp"><thead><tr><th></th>${D.SPACES.map((s) => `<th>${s.sym}</th>`).join("")}</tr></thead><tbody>
+    ${row("vertices", (t) => t.vertices)}${row("edges", (t) => t.edges)}${row("triangles", (t) => t.triangles)}
+    ${[0, 1, 2].map((k) => row(`H${D.sup(k)}(${A.coef.sym})`, (t) => t.cohomology[ui.coef][k])).join("")}
+    ${ui.coef !== "Z" ? [0, 1, 2].map((k) => row(`H${D.sup(k)}(ℤ)`, (t) => t.cohomology.Z[k])).join("") : ""}</tbody></table></div>
+    <p class="lesson">The spaces contain almost the same amount of simplicial data — 2 triangles, 3 edges, 1 to 3 vertices. What matters is how the faces are glued.</p></div>`;
+}
+
+/* ---------- highlighting and the backwards trace ---------- */
+let hoverKeys = null, hoverTrace = null, pinned = null, curEl = null;
+function setHL(keys, el) {
+  for (const n of document.querySelectorAll("[data-k]")) {
+    const ks = String(n.getAttribute("data-k") || "").split(" ");
+    if (n.classList) n.classList.toggle("hl", !!keys && ks.some((k) => keys.has(k)));
+  }
+  if (curEl && curEl.classList) curEl.classList.remove("cur");
+  curEl = el;
+  if (el && el.classList) el.classList.add("cur");
+}
+function refreshHL() {
+  const src = hoverKeys || (pinned && pinned.keys);
+  setHL(src, null);
+  renderTrace(hoverTrace || (pinned && pinned.trace));
+}
+
+function faceText(f) {
+  const t = A.cx.tris.find((x) => x.id === f.tri);
+  const cmp = f.eps > 0 ? `runs ${f.face[0]}→${f.face[1]} along ${f.edge}'s arrow: agree (+1)` : `runs against ${f.edge}'s arrow: ${M}1`;
+  return `Delete vertex ${f.i} (${t.corners[f.i]}) of ${chip("t", t.id)} = [${t.corners.join(", ")}] → face [${f.face.join(", ")}] with sign (${M}1)${D.sup(f.i)} = ${sgn(f.sign)}; it is glued to ${chip("e", f.edge)} and ${cmp}${f.edgeOrient < 0 ? `; ${f.edge} is flipped (${M}1)` : ""}${f.triOrient < 0 ? `; ${t.id}'s generator is ${M}[${t.corners.join(", ")}] (${M}1)` : ""} ⇒ <b>${sgn(f.value)}</b>.`;
+}
+const ROOT = () => [`Gluing: ${esc(sp().blurb)}`, `Δ-complex ${sp().sym}: ${chip("t", "U")} ${chip("t", "L")} · ${A.cx.basis[1].map((e) => chip("e", e)).join(" ")} · ${A.cx.basis[0].map((v) => chip("v", v)).join(" ")}`];
+
+function traceFor(spec) {
+  if (!spec) return null;
+  const [kind, ...a] = spec.split(":");
+  const cx = A.cx, p = A.p;
+  const col = (t) => cx.d2.map((r) => r[cx.basis[2].indexOf(t)]);
+  switch (kind) {
+    case "tri": {
+      const t = cx.tris.find((x) => x.id === a[0]);
+      return { title: `2-simplex ${t.id} = ${t.orient < 0 ? M : ""}[${t.corners.join(", ")}]: ∂${t.id} = ${combo(col(t.id), 1, false)}`, steps: [...cx.faces.filter((f) => f.tri === t.id).map(faceText), ...ROOT()] };
+    }
+    case "side": {
+      const f = cx.faces.find((x) => x.tri === a[0] && x.i === +a[1]);
+      const others = cx.faces.filter((x) => x.edge === f.edge && x !== f).map((x) => `face ${x.i} of ${x.tri}`);
+      return { title: `Face d${SUB[f.i]}${f.tri} is glued to ${f.edge}`, steps: [faceText(f), `Identified with ${others.join(", ") || "no other face"}: they pulse together.`, ...ROOT()] };
+    }
+    case "edge": {
+      const e = cx.edges.find((x) => x.id === a[0]), i = cx.basis[1].indexOf(e.id);
+      const occ = cx.basis[2].map((t, j) => [t, cx.d2[i][j]]).filter(([, x]) => x).map(([t, x]) => `∂${t} (${sgn(x)})`);
+      const [h, tl] = e.orient > 0 ? [e.head, e.tail] : [e.tail, e.head];
+      return { title: `Edge ${e.id} = ${e.orient < 0 ? M : ""}[${vname(e.tail)}, ${vname(e.head)}]: ∂${e.id} = ${vname(h)} ${M} ${vname(tl)}${h === tl ? " = 0" : ""}`, steps: [`Occurs in ${occ.join(" and ") || "no boundary"}.`, `Its ${e.sides.length} sides: ${e.sides.map((s) => `${s.tri}: ${s.from}→${s.to}`).join(", ")} — glued along the arrow.`, ...ROOT()] };
+    }
+    case "vert": {
+      const v = cx.vertices.find((x) => x.id === a[0]);
+      return { title: `Vertex ${vname(v.id)}: ${v.members.length} corners identified`, steps: [`Corners ${v.members.map((m) => m.replace(".", "·")).join(", ")} are glued to the same ends of edges.`, `As an endpoint: ${cx.edges.filter((e) => e.head === v.id || e.tail === v.id).map((e) => `${e.id} (${e.head === v.id && e.tail === v.id ? "both ends" : e.head === v.id ? "head" : "tail"})`).join(", ")}.`, ...ROOT()] };
+    }
+    case "cell": {
+      const [m, i, j] = [a[0], +a[1], +a[2]];
+      if (m === "d2" || m === "del1") {
+        const [e, t] = m === "d2" ? [cx.basis[1][i], cx.basis[2][j]] : [cx.basis[1][j], cx.basis[2][i]];
+        const val = cx.d2[cx.basis[1].indexOf(e)][cx.basis[2].indexOf(t)], fs = cx.faces.filter((f) => f.tri === t && f.edge === e);
+        const why = fs.length ? fs.map(faceText) : [`${e} is not a face of ${t}: none of ${t}'s three faces is glued to ${e}, so ${t}'s boundary does not involve ${e}.`];
+        const head = m === "d2" ? `∂₂ entry (${e}, ${t}) = ${sgn(val)}: the coefficient of ${e} in ∂${t}` : `δ¹ entry (${t}*, ${e}*) = ${sgn(D.sym(val, p))}: (δ¹${e}*)(${t}) = ${e}*(∂${t}) = ${e}*(${combo(col(t), 1, false)}) = ${sgn(val)}`;
+        return { title: head, steps: [...(m === "del1" ? [`Transpose: the same number as ∂₂ entry (${e}, ${t}).${p ? ` Read in ${R()}.` : ""}`] : []), ...why, ...ROOT()] };
+      }
+      const [v, e] = m === "d1" ? [cx.basis[0][i], cx.basis[1][j]] : [cx.basis[0][j], cx.basis[1][i]];
+      const E = cx.edges.find((x) => x.id === e), val = cx.d1[cx.basis[0].indexOf(v)][cx.basis[1].indexOf(e)];
+      const [h, tl] = E.orient > 0 ? [E.head, E.tail] : [E.tail, E.head];
+      const why = h === v && tl === v ? `${e} starts and ends at ${vname(v)}: +${vname(v)} ${M} ${vname(v)} cancel to 0.` : h === v ? `${vname(v)} is the head of ${e}: +1.` : tl === v ? `${vname(v)} is the tail of ${e}: ${M}1.` : `${vname(v)} is not an endpoint of ${e}: 0.`;
+      const head = m === "d1" ? `∂₁ entry (${vname(v)}, ${e}) = ${sgn(val)}` : `δ⁰ entry (${e}*, ${vname(v)}*) = ${sgn(D.sym(val, p))}: (δ⁰${vname(v)}*)(${e}) = ${vname(v)}*(∂${e})`;
+      return { title: head, steps: [...(m === "del0" ? [`Transpose: the same number as ∂₁ entry (${vname(v)}, ${e}).`] : []), `∂${e} = ${vname(h)} ${M} ${vname(tl)} (head ${M} tail${E.orient < 0 ? `, ${e} flipped` : ""}). ${why}`, `Endpoints come from the gluing: ${E.sides.map((s) => `${s.tri}: ${s.from}→${s.to}`).join(", ")}.`, ...ROOT()] };
+    }
+    case "col": {
+      const [m, j] = [a[0], +a[1]];
+      if (m === "d2") { const t = cx.basis[2][j]; return { title: `Column ${t}: ∂${t} = ${combo(col(t), 1, false)}`, steps: [...cx.faces.filter((f) => f.tri === t).map(faceText), ...ROOT()] }; }
+      const e = cx.basis[1][j];
+      return traceFor(`edge:${e}`);
+    }
+    case "row": {
+      const [m, i] = [a[0], +a[1]];
+      if (m === "d2") { const e = cx.basis[1][i]; const occ = cx.basis[2].map((t, j) => [t, cx.d2[i][j]]).filter(([, x]) => x); return { title: `Row ${e}: in which 2-simplex boundaries does ${e} occur?`, steps: [occ.length ? occ.map(([t, x]) => `In ∂${t} with ${sgn(x)}`).join("; ") + "." : `${e} occurs in no boundary.`, ...cx.faces.filter((f) => f.edge === e).map(faceText), ...ROOT()] }; }
+      const v = cx.basis[0][i], occ = cx.basis[1].map((e, j) => [e, cx.d1[i][j]]).filter(([, x]) => x);
+      return { title: `Row ${vname(v)}: in which edge boundaries does ${vname(v)} occur?`, steps: [occ.length ? occ.map(([e, x]) => `In ∂${e} with ${sgn(x)}`).join("; ") + "." : `In none: every edge at ${vname(v)} has it as both head and tail, or misses it.`, ...ROOT()] };
+    }
+    case "arrow": return { title: { d2: "∂₂: 2-simplices to edges", d1: "∂₁: edges to vertices", del0: "δ⁰ = ∂₁ᵀ: vertex cochains to edge cochains", del1: "δ¹ = ∂₂ᵀ: edge cochains to 2-simplex cochains" }[a[0]], steps: [a[0].startsWith("del") ? "(δφ)(σ) = φ(∂σ): evaluate the cochain on boundaries, so the matrix is the transpose." : "Built face by face: Σ (−1)ⁱ dᵢ, each face compared with its glued edge.", ...ROOT()] };
+    case "H": case "gen": {
+      const k = +a[0], h = A.H[k], prev = k > 0 ? `δ${D.sup(k - 1)} = ∂${SUB[k]}ᵀ` : "δ⁻¹ = 0";
+      const S = k > 0 ? A.smith[k - 1] : null;
+      const g = kind === "gen" ? h.summands[+a[1]] : null;
+      return {
+        title: g ? `Generator ${combo(g.rep, k)} of ${Hk(k)}${g.kind === "torsion" ? `, order ${g.order}` : ""}` : `${Hk(k)} = ${h.group.text}`,
+        steps: [
+          `${Hk(k)} = ker δ${D.sup(k)} / im δ${D.sup(k - 1)}: rank ${h.kerRank} modulo rank ${h.imRank}${h.summands.some((s) => s.kind === "torsion") ? `, index ${h.summands.filter((s) => s.kind === "torsion").map((s) => s.order).join("·")}` : ""}.`,
+          k > 0 ? `Smith form of δ${D.sup(k - 1)}: diag(${S.diag.map((x) => num(D.sym(x, p))).join(", ")})${S.diag.some((x) => Math.abs(D.sym(x, p)) > 1) ? " — the entry above 1 is the torsion" : ""}.` : "No coboundaries in degree 0.",
+          `ker δ${D.sup(k)}: ${k === 2 ? "all of C²" : h.kernel.map((v) => combo(v, k)).join(", ") || "0"}; im δ${D.sup(k - 1)}: ${h.image.map((v) => combo(v, k)).join(", ") || "0"}.`,
+          `${prev}${k < 2 ? `, δ${D.sup(k)} = ∂${SUB[k + 1]}ᵀ` : ""}: coboundaries are transposed boundary matrices.`,
+          `Boundary matrices from oriented faces: ∂U = ${combo(col("U"), 1, false)}, ∂L = ${combo(col("L"), 1, false)}.`,
+          ...ROOT(),
+        ],
+      };
+    }
+  }
+  return null;
+}
+function renderTrace(spec) {
+  const tr = traceFor(spec) || { title: "Point at anything", steps: ["Hover or tap a simplex, a matrix entry, a row or column header, a group or a generator, and this box traces it back: cohomology class ← kernel/image ← coboundary matrix ← boundary matrix ← oriented faces ← glued simplices ← Δ-complex."] };
+  $("trace").innerHTML = `<h2>Where did this come from?</h2><div class="tt">${tr.title}</div><ol>${tr.steps.map((s) => `<li>${s}</li>`).join("")}</ol>`;
+}
+
+function keysOf(el) { return new Set(String(el.getAttribute("data-hk") || el.getAttribute("data-k") || "").split(" ").filter(Boolean)); }
+function onOver(ev) {
+  const el = ev.target && ev.target.closest && ev.target.closest("[data-trace],[data-hk]");
+  if (!el || el === curEl) return;
+  hoverKeys = keysOf(el); hoverTrace = el.getAttribute("data-trace") || null;
+  setHL(hoverKeys, el); if (hoverTrace) renderTrace(hoverTrace);
+}
+function onOut(ev) {
+  const el = ev.target && ev.target.closest && ev.target.closest("[data-trace],[data-hk]");
+  if (!el) return;
+  const to = ev.relatedTarget && ev.relatedTarget.closest && ev.relatedTarget.closest("[data-trace],[data-hk]");
+  if (to === el) return;
+  hoverKeys = null; hoverTrace = null; curEl = null;
+  refreshHL();
+}
+
+/* ---------- actions ---------- */
+function recompute(opts = {}) {
+  const before = A;
+  A = D.analyse(ui);
+  renderAll();
+  if (opts.flash && before.cx.space === A.cx.space) {
+    for (const [id, Bm, Am] of [["d2", before.cx.d2, A.cx.d2], ["d1", before.cx.d1, A.cx.d1]])
+      Am.forEach((r, i) => r.forEach((x, j) => { if (x !== Bm[i][j]) { const c = document.querySelector(`[data-cell="${id}:${i}:${j}"]`); if (c && c.classList) c.classList.add("changed"); } }));
+  }
+  writeHash();
+}
+function renderAll() {
+  renderPicker(); renderGuide(); renderGeometry(); renderAlgebra(); renderResult(); renderCompare(); applyReveal();
+  hoverKeys = null; hoverTrace = null; curEl = null;
+  refreshHL();
+}
+function applyReveal(fresh) {
+  for (const s of document.querySelectorAll("[data-reveal]")) {
+    const on = revealed(s.getAttribute("data-reveal"));
+    if (fresh && on && s.hidden && s.classList) s.classList.add("reveal-in");
+    s.hidden = !on;
+  }
+  for (const b of document.querySelectorAll("[data-act=reveal]")) b.setAttribute("aria-pressed", String(revealed(b.dataset.v)));
+}
+function scrollToSec(key) { const s = document.querySelector(`[data-reveal="${key}"]`); if (s && s.scrollIntoView) s.scrollIntoView({ behavior: reduced() ? "auto" : "smooth", block: "nearest" }); }
+
+function glue(on) {
+  ui.glued = on;
+  const svg = document.querySelector("#geo-wrap svg");
+  if (svg && svg.classList) svg.classList.toggle("glued", on);
+  for (const b of document.querySelectorAll("[data-act=glue],[data-act=unfold]")) b.setAttribute("aria-pressed", String(b.dataset.act === (on ? "glue" : "unfold")));
+  const note = document.querySelector(".geo-controls .note");
+  if (note) note.textContent = on ? `Glued: ${A.cx.vertices.length} ${A.cx.vertices.length === 1 ? "vertex" : "vertices"}, ${A.cx.edges.length} edges, ${A.cx.tris.length} triangles` : "Separated simplices: corners P, Q, R, S of the square";
+}
+
+function goStep(i) {
+  cancelTimers();
+  ui.step = Math.max(0, Math.min(STEPS.length - 1, i));
+  ui.manual = {};
+  const id = STEPS[ui.step].id;
+  ui.bbStage = 0;
+  if (id === "identify") { ui.glued = false; }
+  else ui.glued = true;
+  ui.collapsed = id === "quot" || id === "read" ? { 0: true, 1: true, 2: true } : {};
+  renderGuide(); renderPicker(); renderGeometry(); renderAlgebra(); applyReveal(true);
+  hoverKeys = null; curEl = null; pinned = null;
+  const cx = A.cx;
+  const focus = {
+    identify: [...cx.basis[2].map((t) => `t:${t}`), ...cx.basis[0].map((v) => `v:${v}`)],
+    orient: cx.basis[2].map((t) => `t:${t}`),
+    d1: [...cx.basis[1].map((e) => `e:${e}`), ...cx.basis[0].map((v) => `v:${v}`)],
+    d2: [...cx.basis[2].map((t) => `t:${t}`)],
+    ker0: ["H:0"], ker1: ["H:1"], im0: ["H:1", "H:2"], quot: ["H:2"], read: ["H:0", "H:1", "H:2"],
+  }[id];
+  const trace = { identify: "tri:U", orient: "tri:L", d1: "arrow:d1", d2: "col:d2:0", dual: "cell:del1:0:0", ker0: "H:0", ker1: "H:1", im0: "H:1", quot: "H:2", read: "H:1" }[id];
+  pinned = { keys: new Set(focus || []), trace };
+  refreshHL();
+  if (id === "identify" && !reduced()) schedule(() => glue(true), 700);
+  if (id === "identify" && reduced()) glue(true);
+  if (id === "dd") runBB("U");
+  if (id === "dual") animateTranspose();
+  if (id === "d1" || id === "d2" || id === "dd") scrollToSec("boundary");
+  if (id === "dual") scrollToSec("coboundary");
+  if (id.startsWith("ker") || id === "im0") scrollToSec("kerim");
+  if (id === "quot") scrollToSec("smith");
+}
+
+function setSpace(id) {
+  if (!D.SPACE[id]) return;
+  cancelTimers();
+  ui.space = id; ui.compare = false; ui.flips = D.DEFAULT_FLIPS(); ui.bbStage = 0; pinned = null;
+  A = D.analyse(ui);
+  if (ui.mode === "guided") goStep(ui.step); else recompute();
+  renderResult(); renderCompare(); writeHash();
+}
+function setCoef(c) { if (!D.COEFF[c]) return; ui.coef = c; recompute(); if (ui.mode === "guided") renderGuide(); }
+function setMode(m) { ui.mode = m; ui.manual = {}; if (m === "guided") goStep(ui.step); else { cancelTimers(); ui.glued = true; ui.collapsed = {}; renderAll(); } }
+function reset() { cancelTimers(); ui = DEFAULT(); pinned = null; A = D.analyse(ui); renderAll(); goStep(0); writeHash(); }
+
+const ACTIONS = {
+  space: (v) => setSpace(v), coef: (v) => setCoef(v), mode: (v) => setMode(v),
+  compare: () => { ui.compare = !ui.compare; renderPicker(); renderGuide(); renderCompare(); refreshHL(); },
+  reveal: (v) => { ui.manual[v] = !revealed(v); applyReveal(true); if (revealed(v)) scrollToSec(v); },
+  prev: () => goStep(ui.step - 1), next: () => goStep(ui.step + 1), step: (v) => goStep(+v),
+  glue: () => glue(true), unfold: () => glue(false),
+  flip: (v) => { ui.flips[v] = !ui.flips[v]; recompute({ flash: true }); if (ui.mode === "guided") renderGuide(); const g = $("geo-wrap"); if (g && g.classList) g.classList.add("flash"); },
+  bb: () => { ui.manual.boundary = true; applyReveal(true); runBB(ui.bbTri); scrollToSec("boundary"); },
+  bbtri: (v) => runBB(v), bbclose: () => { cancelTimers(); ui.bbStage = 0; renderBB(); refreshHL(); },
+  transpose: () => { ui.manual.coboundary = true; applyReveal(true); animateTranspose(); scrollToSec("coboundary"); },
+  collapse: (v) => { ui.collapsed[v] = !ui.collapsed[v]; const el = $(`ki-${v}`); if (el && el.classList) el.classList.toggle("collapsed", !!ui.collapsed[v]); const b = el && el.querySelector && el.querySelector("[data-act=collapse]"); if (b) b.textContent = ui.collapsed[v] ? "Restore" : `Collapse im δ${D.sup(v - 1)}`; },
+  palette: () => openPalette(), reset: () => reset(),
+};
+function onClick(ev) {
+  const b = ev.target && ev.target.closest && ev.target.closest("[data-act]");
+  if (b) { const f = ACTIONS[b.getAttribute("data-act")]; if (f) { f(b.getAttribute("data-v") || (b.dataset && b.dataset.v)); return; } }
+  const t = ev.target && ev.target.closest && ev.target.closest("[data-trace]");
+  if (t && t.getAttribute("data-trace")) { pinned = { keys: keysOf(t), trace: t.getAttribute("data-trace") }; hoverKeys = null; hoverTrace = null; refreshHL(); return; }
+}
+
+/* ---------- command palette and shortcuts ---------- */
+const COMMANDS = [
+  ["Sphere", "1", () => setSpace("S2")], ["Torus", "2", () => setSpace("T2")], ["Projective plane", "3", () => setSpace("RP2")],
+  ["Coefficients: Z", "", () => setCoef("Z")], ["Coefficients: F2", "", () => setCoef("F2")], ["Coefficients: F3", "", () => setCoef("F3")],
+  ["Guided mode", "", () => setMode("guided")], ["Inspect mode", "", () => setMode("inspect")],
+  ["Compare spaces", "", () => { ui.compare = true; renderPicker(); renderGuide(); renderCompare(); }],
+  ["Show boundary matrices", "", () => { ui.compare = false; renderCompare(); ui.manual.boundary = true; applyReveal(true); scrollToSec("boundary"); }],
+  ["Show coboundary matrices", "", () => { ui.compare = false; renderCompare(); ACTIONS.transpose(); }],
+  ["Show ∂² = 0", "", () => { ui.compare = false; renderCompare(); ACTIONS.bb(); }],
+  ["Show Smith normal form", "", () => { ui.compare = false; renderCompare(); ui.manual.smith = true; applyReveal(true); scrollToSec("smith"); }],
+  ["Show cohomology ring", "", () => { ui.compare = false; renderCompare(); ui.ring = true; const d = $("ring-lens"); if (d) { d.open = true; if (d.scrollIntoView) d.scrollIntoView({ block: "nearest" }); } }],
+  ["Glue", "", () => glue(true)], ["Unfold", "", () => glue(false)],
+  ["Next step", "→", () => goStep(ui.step + 1)], ["Previous step", "←", () => goStep(ui.step - 1)],
+  ["Focus geometry", "G", () => focusPanel("geometry")], ["Focus algebra", "A", () => focusPanel("algebra")], ["Focus result", "R", () => focusPanel("result")],
+  ["Reset", "", () => reset()],
+];
+let palSel = 0, palItems = [];
+function openPalette() { const p = $("palette"); p.hidden = false; const i = $("palette-input"); i.value = ""; drawPalette(); if (i.focus) i.focus(); }
+function closePalette() { $("palette").hidden = true; }
+function drawPalette() {
+  const q = String($("palette-input").value || "").toLowerCase().trim();
+  palItems = COMMANDS.filter(([n]) => !q || n.toLowerCase().includes(q) || q.split(/\s+/).every((w) => n.toLowerCase().includes(w)));
+  palSel = Math.min(palSel, Math.max(0, palItems.length - 1));
+  $("palette-list").innerHTML = palItems.map(([n, k], i) => `<li role="option" data-i="${i}" aria-selected="${i === palSel}">${esc(n)}${k ? `<kbd>${esc(k)}</kbd>` : ""}</li>`).join("") || '<li aria-disabled="true">No command</li>';
+}
+function runPalette(i) { const c = palItems[i]; closePalette(); if (c) c[2](); }
+function focusPanel(name) { if (ui.compare) { ui.compare = false; renderPicker(); renderCompare(); } const p = $(`panel-${name}`); if (p && p.focus) { p.focus(); if (p.scrollIntoView) p.scrollIntoView({ behavior: reduced() ? "auto" : "smooth", block: "start" }); } }
+function onKey(ev) {
+  const k = ev.key;
+  if ((ev.metaKey || ev.ctrlKey) && (k === "k" || k === "K")) { ev.preventDefault(); if ($("palette").hidden) openPalette(); else closePalette(); return; }
+  if (!$("palette").hidden) {
+    if (k === "Escape") { closePalette(); return; }
+    if (k === "ArrowDown") { palSel = Math.min(palItems.length - 1, palSel + 1); drawPalette(); ev.preventDefault(); return; }
+    if (k === "ArrowUp") { palSel = Math.max(0, palSel - 1); drawPalette(); ev.preventDefault(); return; }
+    if (k === "Enter") { runPalette(palSel); ev.preventDefault(); }
+    return;
+  }
+  const tag = ev.target && ev.target.tagName;
+  if (ev.metaKey || ev.ctrlKey || ev.altKey || tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+  if (k === "Escape") { cancelTimers(); pinned = null; refreshHL(); return; }
+  if (k === "Enter" || k === " ") {
+    const el = ev.target && ev.target.closest && ev.target.closest("[data-trace]");
+    if (el && !el.closest("button")) { ev.preventDefault(); pinned = { keys: keysOf(el), trace: el.getAttribute("data-trace") }; refreshHL(); }
+    return;
+  }
+  const map = { 1: () => setSpace("S2"), 2: () => setSpace("T2"), 3: () => setSpace("RP2"), ArrowLeft: () => { if (ui.mode !== "guided") setMode("guided"); goStep(ui.step - 1); }, ArrowRight: () => { if (ui.mode !== "guided") setMode("guided"); goStep(ui.step + 1); }, g: () => focusPanel("geometry"), a: () => focusPanel("algebra"), r: () => focusPanel("result") };
+  const f = map[k] || map[k.toLowerCase && k.toLowerCase()];
+  if (f) { ev.preventDefault(); f(); }
+}
+
+/* ---------- URL hash: #T2, #RP2/F2 ---------- */
+function readHash() {
+  const h = String((typeof location !== "undefined" && location.hash) || "").replace(/^#/, "");
+  const [s, c] = h.split("/");
+  if (D.SPACE[s]) ui.space = s;
+  if (D.COEFF[c]) ui.coef = c;
+}
+function writeHash() {
+  try { history.replaceState(null, "", `#${ui.space}${ui.coef === "Z" ? "" : `/${ui.coef}`}`); } catch (e) { /* file:// or sandbox */ }
+}
+
+/* ---------- beamdswitch deck ---------- */
+const DECK_NAME = "delta-cohomology-beamdswitch.md";
+const currentDeck = () => T.deck(D.beamdswitchReport({ space: ui.space, coef: ui.coef, flips: ui.flips }));
+function ioMsg(text, kind) { const el = $("io-msg"); el.textContent = text; el.className = `msg ${kind || ""}`; }
+function saveReport() {
+  const text = currentDeck();
+  try {
+    const url = URL.createObjectURL(new Blob([text], { type: "text/markdown" }));
+    const a = document.createElement("a");
+    a.href = url; a.download = DECK_NAME;
+    document.body.appendChild(a); a.click(); a.remove();
+    later(() => URL.revokeObjectURL(url), 2000);
+    ioMsg(`Saved ${DECK_NAME}: open it in beamdswitch.`, "ok");
+  } catch (err) { ioMsg(`Could not save: ${err.message}. Use Copy deck instead.`, "bad"); }
+}
+async function copyReport() {
+  const text = currentDeck();
+  try {
+    if (!navigator.clipboard || !navigator.clipboard.writeText) throw new Error("no clipboard API");
+    await navigator.clipboard.writeText(text);
+    ioMsg("Copied the beamdswitch deck: paste it into beamdswitch.", "ok");
+  } catch (err) {
+    $("fallback").hidden = false;
+    $("fallback-label").textContent = "Clipboard access is blocked; the deck is selected below. Press Ctrl+C or ⌘C.";
+    const ta = $("fallback-text"); ta.value = text; if (ta.focus) ta.focus(); if (ta.select) ta.select();
+  }
+}
+
+/* ---------- self-test ---------- */
+function runSelfTests() {
+  let t;
+  try { t = D.selfTests(); } catch (e) { t = [{ name: "Self-test crashed", pass: false, detail: String(e && e.message) }]; }
+  const failed = t.filter((x) => !x.pass), b = $("selftest-badge");
+  b.className = `badge ${failed.length ? "fail" : "pass"}`;
+  b.textContent = failed.length ? `✗ Self-test: ${failed.length} of ${t.length} fail` : `✓ Self-test ${t.length}/${t.length}`;
+  $("selftests").innerHTML = t.map((x) => `<li class="${x.pass ? "pass" : "fail"}">${x.pass ? "PASS" : "FAIL"} ${esc(x.name)}${x.detail ? ` (${esc(x.detail)})` : ""}</li>`).join("");
+  return t;
+}
+
+/* ---------- WebMCP: read-only tools ---------- */
+const out = (obj) => ({ content: [{ type: "text", text: JSON.stringify(obj) }] });
+const empty = { type: "object", properties: {}, additionalProperties: false };
+const tools = [
+  { name: "get_metadata", description: "Return the scope, conventions, the three Δ-complexes (corners, gluing, orientations) and the cohomology table of this visualiser.", inputSchema: empty, annotations: { readOnlyHint: true }, async execute() { return out({ ...D.META, table: D.table() }); } },
+  { name: "get_current_state", description: "Return the page's current space, coefficients, orientation flips, mode and step, with the derived boundary and coboundary matrices, face signs, Smith forms, cohomology groups with generators, the ∂² checks and the cup-product ring.", inputSchema: empty, annotations: { readOnlyHint: true }, async execute() { return out({ ...D.summary(ui), ui: { mode: ui.mode, step: ui.step + 1, step_title: STEPS[ui.step].title, glued: ui.glued, compare: ui.compare } }); } },
+  { name: "compute_cohomology", description: "Compute cohomology without changing the page: space S2, T2 or RP2; coefficients Z, F2 or F3; optional orientation flips of U, L, a, b, c. Returns matrices, face signs, Smith forms, groups with generators and the ring.", inputSchema: { type: "object", properties: { space: { type: "string", enum: ["S2", "T2", "RP2"] }, coefficients: { type: "string", enum: ["Z", "F2", "F3"] }, flips: { type: "object", description: "{U, L, a, b, c}: true flips that simplex's orientation" } }, required: ["space"], additionalProperties: false }, annotations: { readOnlyHint: true }, async execute(input = {}) {
+    if (!D.SPACE[input.space]) return out({ error: "space must be S2, T2 or RP2" });
+    if (input.coefficients && !D.COEFF[input.coefficients]) return out({ error: "coefficients must be Z, F2 or F3" });
+    return out(D.summary({ space: input.space, coef: input.coefficients || "Z", flips: input.flips || {} }));
+  } },
+  { name: "run_self_tests", description: "Run the self-test: derived matrices against the stated ones, ∂₁∂₂ = 0 and orientation invariance for all 32 orientation choices, the cohomology table over ℤ, 𝔽₂ and 𝔽₃, the Smith factor 2 of RP², and the cup-product rings.", inputSchema: empty, annotations: { readOnlyHint: true }, async execute() { const t = D.selfTests(); return out({ passed: t.filter((x) => x.pass).length, total: t.length, results: t }); } },
+];
+self.DeltaCohomologyTools = tools;
+
+/* ---------- start ---------- */
+function start() {
+  $("nojs").hidden = true;
+  $("app").hidden = false;
+  readHash();
+  A = D.analyse(ui);
+  document.addEventListener("click", onClick);
+  document.addEventListener("pointerover", onOver);
+  document.addEventListener("pointerout", onOut);
+  document.addEventListener("focusin", onOver);
+  document.addEventListener("focusout", onOut);
+  document.addEventListener("keydown", onKey);
+  $("palette-input").addEventListener("input", () => { palSel = 0; drawPalette(); });
+  $("palette-list").addEventListener("click", (ev) => { const li = ev.target && ev.target.closest && ev.target.closest("[data-i]"); if (li) runPalette(+li.getAttribute("data-i")); });
+  $("palette").addEventListener("click", (ev) => { if (ev.target === $("palette")) closePalette(); });
+  $("save-beamdswitch").addEventListener("click", saveReport);
+  $("copy-beamdswitch").addEventListener("click", copyReport);
+  $("selftest-badge").addEventListener("click", () => { $("selftest-details").open = true; const t = $("selftest-title"); if (t.scrollIntoView) t.scrollIntoView({ block: "start" }); });
+  $("selftest-run").addEventListener("click", runSelfTests);
+  renderAll();
+  goStep(0);
+  runSelfTests();
+  const mc = (typeof document !== "undefined" && document.modelContext) || (typeof navigator !== "undefined" && navigator.modelContext);
+  if (mc && typeof mc.registerTool === "function") for (const t of tools) mc.registerTool(t);
+}
+start();
+})();
+</script>
+</body>
+</html>
