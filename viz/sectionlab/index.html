@@ -276,8 +276,11 @@ code{font:.875em var(--mono)}
     <button class="btn" type="button" id="print">Print</button>
     <button class="btn" type="button" id="dl-png-section">Section PNG</button>
     <button class="btn" type="button" id="dl-png-curve">Curve PNG</button>
+    <button class="btn" type="button" id="save-beamdswitch" title="Save a narrated Markdown talk about this section, to open in beamdswitch">beamdswitch</button>
+    <button class="btn" type="button" id="copy-beamdswitch" title="Copy the same beamdswitch deck to the clipboard, to paste into beamdswitch">Copy deck</button>
     <span id="export-status" class="small muted" role="status"></span>
   </div>
+  <p class="small muted">The beamdswitch button saves this section as a narrated talk: a Markdown deck with the set-up, method, results and checks, every number as shown here, and a spoken narration on every slide. Open it in <a href="https://teoyujie.org/visuals/beamdswitch/">beamdswitch</a> to get slides, a handout, narration and a video. Copy deck puts the same deck on the clipboard to paste into beamdswitch, for when the browser blocks the download.</p>
 </section>
 
 <section id="method" class="method" aria-labelledby="method-h">
@@ -2170,6 +2173,7 @@ const ACCURACY = {"generated_by":"reference/torsion_accuracy.py","reference":"Pr
  *
  *   build(model, results)       → report data (tables, notes, figure data)
  *   markdown(report, model)     → Markdown with readable tables and a fenced YAML block of the model
+ *   beamdswitch(report, model)  → a report for the standard beamdswitch template (a narrated Markdown deck)
  *   modelFromText(text)         → the model in a Markdown export (its ```yaml block) or a YAML file
  *   html(report)                → HTML for the print view
  *   sectionSvg / curveSvg       → standalone SVG figures (PNG export draws these on a canvas)
@@ -2318,6 +2322,202 @@ const ACCURACY = {"generated_by":"reference/torsion_accuracy.py","reference":"Pr
     }
     out.push("## Model", "", "Import this file into Sectionlab to rebuild the section; the YAML block below is the whole model.", "", "```yaml", Y.stringify(model).trimEnd(), "```", "");
     return out.join("\n");
+  }
+
+  /* ---------- beamdswitch deck ----------
+   * beamdswitch(report, model, { shapes }) turns the report object into a report for the site's
+   * standard beamdswitch template (beamdswitch.js writes the Markdown deck). Every number is a
+   * string from the report's own tables, so the deck says exactly what the page's tables and the
+   * other exports say; the ::: plot is the M–κ curve itself, through every point the engine
+   * computed. `shapes` is the catalogue (shapes.SHAPES), for the shape and dimension names. */
+  const sayNumber = (t) => String(t).replace(/^−/, "minus ").replace(/e(−?)(\d+)$/, (_, minus, e) => ` times ten to the ${minus ? "minus " : ""}${e}`);
+  const texNumber = (t) => String(t).replace(/−/g, "-").replace(/e(-?\d+)$/, (_, e) => ` \\times 10^{${e}}`);
+  const plotNumber = (v) => String(+v.toPrecision(12));
+  const sayList = (items) => (items.length < 2 ? items.join("") : `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`);
+  const COUNT = ["no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"];
+  const count = (n, one, many) => `${COUNT[n] ?? n} ${n === 1 ? one : many}`;
+  const SPOKEN_UNIT = { mm: "millimetres", "mm²": "square millimetres", "mm³": "cubic millimetres", "mm⁴": "millimetres to the fourth", MPa: "megapascals", N: "newtons", "N·mm": "newton millimetres", "1/mm": "per millimetre", "°": "degrees" };
+  const sayVal = (t, unit) => `${sayNumber(t)}${unit ? ` ${SPOKEN_UNIT[unit] || unit}` : ""}`;
+  /* A name typed on the page, made safe to read aloud: "200 × 100" is "200 by 100", and the
+     characters a narration may not hold become spaces. */
+  const spokenName = (s) => String(s).replace(/\s*\(illustrative\)$/, "").replace(/\s*×\s*/g, " by ")
+    .replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹]/g, (c) => String("⁰¹²³⁴⁵⁶⁷⁸⁹".indexOf(c))).replace(/[_*#|<>$`\\⁻]/g, " ").replace(/\s+/g, " ").trim();
+
+  /* A line through the points (x, y) as one expression in x: the first segment plus a hinge
+     max(0, x − xᵢ) for each change of slope, so it passes through every point exactly. */
+  function polyline(points) {
+    const pts = points.filter((p, i) => i === 0 || p[0] > points[i - 1][0]);
+    if (pts.length < 2) return plotNumber(pts.length ? pts[0][1] : 0);
+    const slope = (i) => (pts[i + 1][1] - pts[i][1]) / (pts[i + 1][0] - pts[i][0]);
+    const terms = [plotNumber(pts[0][1] - slope(0) * pts[0][0]), `${plotNumber(slope(0))}*x`];
+    const big = Math.max(...pts.slice(1).map((_, i) => Math.abs(slope(i))));
+    for (let i = 1; i + 1 < pts.length; i++) {
+      // A change of slope at round-off level would only lengthen the expression.
+      const d = slope(i) - slope(i - 1);
+      if (Math.abs(d) > 1e-12 * big) terms.push(`${plotNumber(d)}*max(0, x - ${plotNumber(pts[i][0])})`);
+    }
+    return terms.join(" + ");
+  }
+
+  function beamdswitch(rep, model, { shapes = {} } = {}) {
+    const sec = (title) => rep.sections.find((s) => s.title === title);
+    const parts = sec("Parts"), mats = sec("Materials"), props = sec("Section properties"), tors = sec("Torsion"), plast = sec("Plastic bending");
+    const prop = (sym) => props.rows.find((r) => r[1] === sym)[2];
+    const row = (s, label) => (s.rows.find((r) => r[0] === label) || [])[1];
+    const table = (s) => mdTable(s);
+    const solids = model.parts.filter((p) => !p.void), voids = model.parts.filter((p) => p.void);
+    const shapeName = (p) => (shapes[p.shape] ? shapes[p.shape].label : p.shape).toLowerCase();
+    const dimSaid = (p) => {
+      const defs = shapes[p.shape] ? shapes[p.shape].dims : [];
+      return Object.entries(p.dims).map(([k, v]) => {
+        const d = defs.find((x) => x.key === k), label = d ? d.label.replace(/\s+\S+$/, "").toLowerCase() : k;
+        return d && d.integer ? `${sayNumber(fmt(v))} ${label}` : `${label} ${sayVal(fmt(v), "mm")}`;
+      });
+    };
+    const matName = (id) => { const m = model.materials.find((x) => x.id === id); return m ? spokenName(m.name || m.id) : id; };
+    const partSaid = (p) => p.void
+      ? `a ${shapeName(p)} void, ${spokenName(p.name || p.id)}, with ${sayList(dimSaid(p))}, at x ${sayVal(fmt(p.x), "mm")} and y ${sayVal(fmt(p.y), "mm")}`
+      : `${spokenName(p.name || p.id)}, a ${shapeName(p)} in ${matName(p.material)}, with ${sayList(dimSaid(p))}, centred at x ${sayVal(fmt(p.x), "mm")} and y ${sayVal(fmt(p.y), "mm")}${p.orientation ? `, turned ${p.orientation} degrees` : ""}`;
+    const usedMats = model.materials.filter((m) => solids.some((p) => p.material === m.id));
+    const A = prop("A"), Eb = fmt(model.E_base);
+
+    /* ----- set-up ----- */
+    const setup = [{
+      title: `The section: ${count(solids.length, "part", "parts")}${voids.length ? ` and ${count(voids.length, "hole", "holes")}` : ""}, A = ${A} mm²`,
+      body: table(parts),
+      notes: `${rep.units} Dimensions are each shape's own; x and y place its centre. Voids are cut from the one solid part that contains them.`,
+      narration: [
+        `The section is built from ${count(solids.length, "part", "parts")}${voids.length ? `, with ${count(voids.length, "hole", "holes")} cut out` : ""}.`,
+        ...model.parts.map((p) => `${partSaid(p).replace(/^./, (c) => c.toUpperCase())}.`),
+        "Every length is in millimetres.",
+      ].join(" "),
+    }, {
+      title: `Materials and units: E_base = ${Eb} MPa`,
+      body: [table(mats), "", rep.units].join("\n"),
+      notes: "Ramberg–Osgood law per material: ε = σ/E + 0.002 (σ/σ0.2)^n, used only for the moment–curvature curve.",
+      narration: [
+        `The section uses ${sayList(usedMats.map((m) => `${spokenName(m.name || m.id)}, with a Young's modulus of ${sayVal(fmt(m.E), "MPa")} and a 0.2 percent proof stress of ${sayVal(fmt(m.sigma02), "MPa")}`))}.`,
+        usedMats.length > 1 ? `Composite properties are transformed to a base modulus of ${sayVal(Eb, "MPa")}, with each part weighted by its modular ratio.` : `Properties are transformed to a base modulus of ${sayVal(Eb, "MPa")}.`,
+        "Every number in this talk is in millimetres, newtons and megapascals.",
+      ].join(" "),
+    }];
+
+    /* ----- method ----- */
+    const t = rep.figures && tors && tors.rows[0][1] !== "n/a";
+    const pl = rep.figures.curve;
+    const method = [{
+      title: "Properties from the exact boundaries by Green's theorem",
+      body: [
+        "$$ A = \\oint x\\,dy, \\qquad I_x = -\\oint y^3\\,dx \\,/\\, 3, \\qquad n_i = E_i / E_{base} $$",
+        "",
+        "- Every part is lines and circular arcs, never a polygon standing in for a curve.",
+        "- Each property is about the transformed centroid; voids subtract from their host part.",
+      ].join("\n"),
+      narration: [
+        "Every part is drawn with exact lines and circular arcs.",
+        "Green's theorem turns each area integral into a boundary integral, so the area, centroid and second moments are exact for these shapes.",
+        "Each part is weighted by its modular ratio, its modulus over the base modulus, and every property is taken about the transformed centroid.",
+      ].join(" "),
+    }, {
+      title: t ? `Torsion: ${row(tors, "Method")}` : "Torsion: only from a verified formula",
+      body: t ? [`- Formula: ${row(tors, "Formula")}`, `- Stated accuracy against the Prandtl reference: ${row(tors, "Stated accuracy vs Prandtl reference")}; largest error measured ${row(tors, "Largest error measured")}`].join("\n")
+        : `- ${row(tors, "Why")}`,
+      narration: t
+        ? `The torsion constant comes from the ${spokenName(row(tors, "Method"))} formula, which the page states is accurate ${spokenName(row(tors, "Stated accuracy vs Prandtl reference")).replace(/%/, " percent")} of a numerical Prandtl solution.`
+        : "Sectionlab gives a torsion constant only for a single library shape whose formula has been measured against a numerical Prandtl solution, and this section has none.",
+    }];
+    if (pl) method.push({
+      title: "Moment–curvature: Ramberg–Osgood fibres up to ε_lim",
+      body: [
+        "$$ \\varepsilon = \\frac{\\sigma}{E} + 0.002\\left(\\frac{\\sigma}{\\sigma_{0.2}}\\right)^n, \\qquad \\varepsilon = \\varepsilon_0 - \\kappa\\, v $$",
+        "",
+        `- ${plast.note}`,
+        "- Strip fibres through every part; the curve stops where the first fibre reaches its strain limit ε_lim.",
+      ].join("\n"),
+      narration: [
+        "For bending, plane sections stay plane, so the strain varies linearly across the section.",
+        "Each material follows its Ramberg-Osgood law, and the page integrates the stress over thin strips through every part.",
+        "It raises the curvature until the first fibre reaches its strain limit, which gives the allowable moment.",
+      ].join(" "),
+    });
+
+    /* ----- results ----- */
+    const rowsOf = (syms) => ({ ...props, rows: props.rows.filter((r) => syms.includes(r[1])) });
+    const results = [{
+      title: `Area A = ${A} mm², centroid (${prop("x_c")}, ${prop("y_c")}) mm`,
+      body: table(rowsOf(["A", "x_c", "y_c"])),
+      narration: `The transformed area is ${sayVal(A, "mm²")}, and the centroid sits at x ${sayVal(prop("x_c"), "mm")} and y ${sayVal(prop("y_c"), "mm")}.`,
+    }, {
+      title: `I_x = ${prop("I_x")}, I_y = ${prop("I_y")} mm⁴; principal I_1 = ${prop("I_1")}, I_2 = ${prop("I_2")} mm⁴ at θ = ${prop("θ")}°`,
+      body: table(rowsOf(["I_x", "I_y", "I_xy", "I_1", "I_2", "θ", "I_p"])),
+      narration: [
+        `About the centroid, the second moment of area is ${sayVal(prop("I_x"), "mm⁴")} about x and ${sayVal(prop("I_y"), "mm⁴")} about y, with a product moment of ${sayVal(prop("I_xy"), "mm⁴")}.`,
+        `The principal values are ${sayVal(prop("I_1"), "mm⁴")} and ${sayVal(prop("I_2"), "mm⁴")}, with the major axis at ${sayVal(prop("θ"), "°")} from x.`,
+      ].join(" "),
+    }, {
+      title: `Section moduli S_x+ = ${prop("S_x+")}, S_x− = ${prop("S_x−")} mm³; r_x = ${prop("r_x")}, r_y = ${prop("r_y")} mm`,
+      body: table(rowsOf(["S_x+", "S_x−", "S_y+", "S_y−", "r_x", "r_y", "r_p", "Q_x", "Q_y"])),
+      narration: [
+        `The elastic section moduli about x are ${sayVal(prop("S_x+"), "mm³")} to the top fibre and ${sayVal(prop("S_x−"), "mm³")} to the bottom fibre.`,
+        `The radii of gyration are ${sayVal(prop("r_x"), "mm")} about x and ${sayVal(prop("r_y"), "mm")} about y.`,
+      ].join(" "),
+    }, t ? {
+      title: `Torsion constant J = ${tors.rows[0][1]} mm⁴`,
+      body: table(tors),
+      narration: `The torsion constant is ${sayVal(tors.rows[0][1], "mm⁴")}, from the ${spokenName(row(tors, "Method"))} formula; the largest error measured against the Prandtl reference was ${spokenName(row(tors, "Largest error measured")).replace(/%/, " percent")}.`,
+    } : {
+      title: "Torsion constant J: n/a",
+      body: table(tors),
+      narration: "The page gives no torsion constant for this section, and the slide says why.",
+    }];
+    let keyPlastic = "", saidPlastic = "";
+    if (pl) {
+      const v = (label) => row(plast, label) ?? "n/a";
+      const Mlim = v("Allowable moment at ε_lim, M_lim"), klim = v("Curvature at ε_lim, κ_lim");
+      const pts = pl.curve.map((s) => [s.kappa, s.M]);
+      results.push({
+        title: `Allowable moment M_lim = ${Mlim} N·mm at κ_lim = ${klim} 1/mm`,
+        body: table(plast),
+        plot: { x: [0, plotNumber(pl.limit.kappa)], xlabel: "curvature κ (1/mm)", ylabel: "moment M (N·mm)", curves: [polyline(pts)] },
+        narration: [
+          "Here is the moment-curvature curve, up to the strain limit.",
+          `The allowable moment is ${sayVal(Mlim, "N·mm")}, reached at a curvature of ${sayVal(klim, "1/mm")}, when the ${pl.limit.governing.fibre} fibre of ${spokenName(pl.limit.governing.part)} reaches its strain limit.`,
+          `At zero axial force, first yield is at ${sayVal(v("First-yield moment at N = 0 (elastic, σ0.2), M_el"), "N·mm")} and the fully plastic moment is ${sayVal(v("Fully plastic moment at N = 0 (σ0.2 stress block), M_p"), "N·mm")}, a shape factor of ${sayNumber(v("Shape factor, M_p / M_el"))}.`,
+        ].join(" "),
+      });
+      keyPlastic = ` M_lim = ${Mlim} N·mm at ε_lim; shape factor ${v("Shape factor, M_p / M_el")}.`;
+      saidPlastic = ` The allowable moment at the strain limit is ${sayVal(Mlim, "N·mm")}.`;
+    } else if (plast) {
+      results.push({ title: "Plastic bending: n/a", body: table(plast), narration: "The page could not complete the moment-curvature analysis for this section, and the slide says why." });
+    }
+
+    /* ----- checks and takeaway ----- */
+    const n = (sym) => Number(String(prop(sym)).replace("−", "-").replace(/e−/, "e-"));
+    const sumP = n("I_1") + n("I_2"), sumX = n("I_x") + n("I_y");
+    const checks = [{
+      title: "Checks: the invariants agree, and the results need independent verification",
+      body: [
+        `- $I_1 + I_2$ = ${fmt(sumP)} mm⁴ and $I_x + I_y$ = ${fmt(sumX)} mm⁴: rotating the axes keeps the sum.`,
+        `- $I_p$ = ${prop("I_p")} mm⁴ = $I_x + I_y$ about the centroid.`,
+        `- Torsion: ${t ? `stated accuracy ${row(tors, "Stated accuracy vs Prandtl reference")}, largest error measured ${row(tors, "Largest error measured")}` : "n/a, as no verified formula covers this section"}.`,
+        `- ${rep.notice}`,
+      ].join("\n"),
+      narration: [
+        "Two quick checks on the numbers: the principal second moments add up to the same total as the moments about x and y, and that total is the polar moment.",
+        "Sectionlab reports its own calculation and is not a design-code compliance check, so verify every result independently.",
+      ].join(" "),
+    }, {
+      title: "Takeaway",
+      key: `A = ${A} mm²; I_x = ${prop("I_x")}, I_y = ${prop("I_y")} mm⁴; J = ${t ? `${tors.rows[0][1]} mm⁴` : "n/a"}.${keyPlastic}`,
+      narration: `To sum up, the section has an area of ${sayVal(A, "mm²")} and second moments of ${sayVal(prop("I_x"), "mm⁴")} about x and ${sayVal(prop("I_y"), "mm⁴")} about y.${t ? ` Its torsion constant is ${sayVal(tors.rows[0][1], "mm⁴")}.` : ""}${saidPlastic}`,
+    }];
+
+    return {
+      meta: { title: `Section analysis: ${rep.title}`, subtitle: "Section properties, torsion and moment–curvature" },
+      notes: rep.notice,
+      narration: `Section analysis: ${spokenName(rep.title)}. We find the section properties, the torsion constant and the moment-curvature curve, with every number from Sectionlab, in millimetres, newtons and megapascals.`,
+      setup, method, results, checks,
+    };
   }
 
   /* The model in a Markdown export (its fenced yaml block) or in plain YAML text. */
@@ -2595,12 +2795,13 @@ const ACCURACY = {"generated_by":"reference/torsion_accuracy.py","reference":"Pr
     return out;
   }
 
-  return { NOTICE, UNITS, LIGHT, fmt, build, markdown, modelFromText, html, sectionSvg, curveSvg, pdf, ascii };
+  return { NOTICE, UNITS, LIGHT, fmt, build, markdown, beamdswitch, modelFromText, html, sectionSvg, curveSvg, pdf, ascii };
 });
 
 /* Sectionlab engine entry point: validate a model and compute every result.
  *
  *   compute(input, { accuracy, plastic }) → { model, props, torsion, plastic, parts }
+ *   buildBeamdswitch(result)              → the report for the standard beamdswitch template
  *
  * `accuracy` is reference/torsion-accuracy.json (the page inlines it). Invalid
  * models throw section.ModelError; a plastic analysis that cannot be completed
@@ -2631,8 +2832,99 @@ const ACCURACY = {"generated_by":"reference/torsion_accuracy.py","reference":"Pr
   }
 
   const buildReport = (result) => report.build(result.model, { props: result.props, torsion: result.torsion, plastic: result.plastic, parts: result.parts });
+  const buildBeamdswitch = (result) => report.beamdswitch(buildReport(result), result.model, { shapes: shapes.SHAPES });
 
-  return { geometry, shapes, section, torsion, plastic, yaml, report, compute, buildReport, VERSION: "1.0.0" };
+  return { geometry, shapes, section, torsion, plastic, yaml, report, compute, buildReport, buildBeamdswitch, VERSION: "1.0.0" };
+});
+
+</script>
+<script>
+/* The standard beamdswitch report template, shared by every visualisation.
+ *
+ * beamdswitch (https://teoyujie.org/visuals/beamdswitch/) turns one Markdown deck into slides, a
+ * handout, narration and a video. `deck(report)` writes a report in its deck syntax, always in the
+ * same order (templates/beamdswitch-report.md shows the skeleton):
+ *
+ *   front matter and title slide
+ *   # Set-up               what was modelled, its units and conventions
+ *   # Method               how the tool solved it
+ *   # Results              the numbers, with key equations and plots
+ *   # Checks and takeaway  what confirms the numbers, ending on one ::: key frame
+ *
+ * A report is plain data, so it can be built and tested without a page:
+ *   { meta: { title, subtitle, author, date, voice }, narration, notes,
+ *     setup, method, results, checks: [frame, ...] }
+ * and each frame is
+ *   { title, body, narration, notes, key, plot: { x: [a, b], xlabel, ylabel, curves: ["expr", ...] } }
+ * `body` is Markdown (LaTeX maths in $...$ or $$...$$); `narration` is plain spoken prose, one
+ * caption per sentence; `key`, `plot` and `notes` are optional. Every frame must be narrated, and
+ * the last checks frame must carry a key. The visualisation supplies every number already
+ * formatted, so the deck says exactly what its page shows.
+ */
+(function (root, factory) {
+  const api = factory();
+  if (typeof module === "object" && module.exports) module.exports = api;
+  else root.Beamdswitch = api;
+})(typeof self !== "undefined" ? self : this, function () {
+  "use strict";
+
+  const SECTIONS = [["setup", "Set-up"], ["method", "Method"], ["results", "Results"], ["checks", "Checks and takeaway"]];
+
+  const oneLine = (s) => String(s ?? "").replace(/\s+/g, " ").trim();
+  /* Markdown lines that would end a frame or a div early are refused rather than written. */
+  function block(text, what) {
+    const s = String(text ?? "").replace(/\r\n?/g, "\n").trim();
+    for (const line of s.split("\n"))
+      if (/^#{1,2}\s/.test(line) || /^\s*:{3,}/.test(line)) throw new Error(`${what} must not contain a heading or a ::: line: ${line}`);
+    return s;
+  }
+  /* Narration is read aloud: no maths, markup or line structure. */
+  function spoken(text, what) {
+    const s = oneLine(text);
+    if (!s) throw new Error(`${what} needs a narration.`);
+    if (/[$\\`*_#|<>]/.test(s)) throw new Error(`${what} narration must be plain spoken prose: ${s}`);
+    return s;
+  }
+  const div = (name, text) => [`::: ${name}`, text, ":::"];
+
+  function frame(f, where) {
+    const title = oneLine(f.title), what = `Frame "${title}" in ${where}`;
+    if (!title) throw new Error(`A frame in ${where} needs a title.`);
+    const out = [`## ${title}`, ""];
+    if (f.body) out.push(block(f.body, what), "");
+    if (f.plot) {
+      const p = f.plot, lines = [`x: ${p.x[0]}, ${p.x[1]}`];
+      if (p.xlabel) lines.push(`xlabel: ${oneLine(p.xlabel)}`);
+      if (p.ylabel) lines.push(`ylabel: ${oneLine(p.ylabel)}`);
+      for (const c of p.curves) lines.push(`y = ${oneLine(c)}`);
+      out.push(...div("plot", lines.join("\n")), "");
+    }
+    if (f.key) out.push(...div("key", block(f.key, what)), "");
+    if (f.notes) out.push(...div("notes", block(f.notes, what)), "");
+    out.push(...div("narration", spoken(f.narration, what)), "");
+    return out;
+  }
+
+  function deck(report) {
+    const meta = report.meta || {};
+    if (!oneLine(meta.title)) throw new Error("The report needs a title.");
+    const checks = report.checks || [];
+    if (!checks.length || !checks.at(-1).key) throw new Error("The last checks frame must carry a ::: key.");
+    const out = ["---"];
+    for (const k of ["title", "subtitle", "author", "date", "voice"]) if (oneLine(meta[k])) out.push(`${k}: ${oneLine(meta[k])}`);
+    out.push("---", "");
+    if (report.notes) out.push(...div("notes", block(report.notes, "The title slide")), "");
+    out.push(...div("narration", spoken(report.narration, "The title slide")), "");
+    SECTIONS.forEach(([id, title], i) => {
+      const frames = report[id] || [];
+      if (!frames.length) throw new Error(`The ${title} section needs at least one frame.`);
+      out.push(`# ${title}`, "", ...div("narration", `Part ${i + 1}. ${title}.`), "");
+      for (const f of frames) out.push(...frame(f, title));
+    });
+    return out.join("\n");
+  }
+
+  return { SECTIONS, deck };
 });
 
 </script>
@@ -3558,6 +3850,24 @@ $("dl-png-curve").addEventListener("click", guarded(() => {
   const r = fullResult();
   if (!r.plastic || r.plastic.error) throw new Error("No moment–curvature curve to export.");
   png(R.curveSvg(L.buildReport(r), { width: 800, height: 500 }), `${slug()}-m-kappa.png`, 800, 500);
+}));
+/* The beamdswitch deck: the standard template (beamdswitch.js) filled from the report object. A blocked
+   download fails silently, so the page cannot fall back on its own: Copy deck is the explicit fallback. */
+const deckText = () => Beamdswitch.deck(L.buildBeamdswitch(fullResult()));
+$("save-beamdswitch").addEventListener("click", guarded(() => {
+  const text = deckText(), name = `${slug()}-beamdswitch.md`;
+  try {
+    download(name, new Blob([text], { type: "text/markdown" }));
+    status(`Saved ${name}: open it in beamdswitch.`);
+  } catch (e) {
+    status(`Could not save: ${e.message}. Use Copy deck instead.`);
+  }
+}));
+$("copy-beamdswitch").addEventListener("click", guarded(() => {
+  const text = deckText();
+  Promise.resolve().then(() => navigator.clipboard.writeText(text)).then(
+    () => status("Copied the beamdswitch deck: paste it into beamdswitch."),
+    () => status("Could not copy the beamdswitch deck: the clipboard is blocked here."));
 }));
 function renderPrint() {
   const r = fullResult(), rep = L.buildReport(r);

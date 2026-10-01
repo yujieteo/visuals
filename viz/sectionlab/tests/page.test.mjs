@@ -29,7 +29,7 @@ test("the page is one self-contained file with the notice and no external resour
   assert.match(HTML, /Verify independently/);
   assert.doesNotMatch(HTML, /<script[^>]+src=/);
   assert.doesNotMatch(HTML, /<link[^>]+rel="stylesheet"/);
-  assert.doesNotMatch(HTML, /\/\*@(DATA|ACCURACY|ENGINE|UI)@\*\//);
+  assert.doesNotMatch(HTML, /\/\*@(DATA|ACCURACY|ENGINE|BEAMDSWITCH|UI)@\*\//);
   assert.doesNotMatch(HTML, /design[- ]code compliant/i);
 });
 

@@ -14,6 +14,7 @@ src/plastic.js   M–κ                  │
 src/yaml.js      YAML subset          │
 src/report.js    report + exports     │
 src/engine.js    compute()            │
+beamdswitch.js   deck template        │
 src/ui.js        page                 ┘
 ```
 
@@ -25,8 +26,9 @@ src/ui.js        page                 ┘
    checks overlaps and void hosts (`section.assemble`), and computes
    `section.properties`, `torsion.torsion` and `plastic.analyse`.
 3. `report.build` turns the results into one report object. Markdown, the PDF, the
-   print view and the SVG figures (and so the PNGs) are all rendered from it, so the
-   exports cannot disagree with each other.
+   print view, the SVG figures (and so the PNGs) and the beamdswitch deck
+   (`report.beamdswitch`, written out by `beamdswitch.js`) are all rendered from it, so
+   the exports cannot disagree with each other.
 
 ## Modules
 
@@ -38,8 +40,9 @@ src/ui.js        page                 ┘
 | `torsion.js` | Torsion formulas and their domains; availability from the accuracy table |
 | `plastic.js` | Ramberg–Osgood law, strip fibres, the ε0 and neutral-axis solves, the ε_lim search, M_el and the σ0.2-block M_p |
 | `yaml.js` | Reader and writer for the YAML subset |
-| `report.js` | Report object, Markdown, import, HTML, SVG figures and the PDF writer |
-| `engine.js` | `compute()` and `buildReport()` |
+| `report.js` | Report object, Markdown, the beamdswitch report, import, HTML, SVG figures and the PDF writer |
+| `engine.js` | `compute()`, `buildReport()` and `buildBeamdswitch()` |
+| `beamdswitch.js` | The standard beamdswitch template: `deck(report)` writes the narrated Markdown deck |
 | `ui.js` | Editor, panels, charts, exports, share link, WebMCP tools |
 
 Every engine module is a UMD file: in the browser it attaches to `SectionLab`, and

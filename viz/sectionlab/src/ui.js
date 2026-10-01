@@ -920,6 +920,24 @@ $("dl-png-curve").addEventListener("click", guarded(() => {
   if (!r.plastic || r.plastic.error) throw new Error("No moment–curvature curve to export.");
   png(R.curveSvg(L.buildReport(r), { width: 800, height: 500 }), `${slug()}-m-kappa.png`, 800, 500);
 }));
+/* The beamdswitch deck: the standard template (beamdswitch.js) filled from the report object. A blocked
+   download fails silently, so the page cannot fall back on its own: Copy deck is the explicit fallback. */
+const deckText = () => Beamdswitch.deck(L.buildBeamdswitch(fullResult()));
+$("save-beamdswitch").addEventListener("click", guarded(() => {
+  const text = deckText(), name = `${slug()}-beamdswitch.md`;
+  try {
+    download(name, new Blob([text], { type: "text/markdown" }));
+    status(`Saved ${name}: open it in beamdswitch.`);
+  } catch (e) {
+    status(`Could not save: ${e.message}. Use Copy deck instead.`);
+  }
+}));
+$("copy-beamdswitch").addEventListener("click", guarded(() => {
+  const text = deckText();
+  Promise.resolve().then(() => navigator.clipboard.writeText(text)).then(
+    () => status("Copied the beamdswitch deck: paste it into beamdswitch."),
+    () => status("Could not copy the beamdswitch deck: the clipboard is blocked here."));
+}));
 function renderPrint() {
   const r = fullResult(), rep = L.buildReport(r);
   const figs = `<div class="figs">${R.sectionSvg(rep, { width: 480, height: 380 })}${r.plastic && !r.plastic.error ? R.curveSvg(rep, { width: 480, height: 380 }) : ""}</div>`;

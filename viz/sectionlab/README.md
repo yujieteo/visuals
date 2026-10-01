@@ -40,7 +40,10 @@ Units are mm, MPa (N/mm²), N and N·mm throughout.
 - **Exports.** PNG of the section and of the curve; a one-file PDF report written by a
   small generator (standard Helvetica, no embedded fonts); a print view from the same
   report; Markdown with readable tables and a fenced YAML block of the whole model,
-  which imports back; and a share link carrying the model in the URL fragment.
+  which imports back; a share link carrying the model in the URL fragment; and a
+  beamdswitch button that saves the section as a narrated Markdown deck for
+  [beamdswitch](https://teoyujie.org/visuals/beamdswitch/) (slides, narration and a
+  video), with Copy deck beside it.
 - **WebMCP tools** (when the browser offers `navigator.modelContext`):
   `get_metadata`, `get_current_section`, `compute_section`, `export_markdown`.
 
@@ -51,6 +54,7 @@ Units are mm, MPa (N/mm²), N and N·mm throughout.
 | `index.html` | The built page (do not edit; run `build.py`) |
 | `template.html` | Page markup and styles |
 | `src/` | Engine modules (`geometry`, `shapes`, `section`, `torsion`, `plastic`, `yaml`, `report`, `engine`) and the page script `ui.js`; each engine module also loads in Node |
+| `beamdswitch.js` | The standard beamdswitch report template (Markdown deck writer), an unchanged copy of the host site's `templates/beamdswitch.js` |
 | `raw.json` | Examples, material presets, method text and assumptions |
 | `reference/` | Independent Python references, fixtures and their results |
 | `tests/` | Node (`*.test.mjs`) and Python (`test_*.py`) tests |

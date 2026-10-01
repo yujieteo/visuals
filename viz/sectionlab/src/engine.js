@@ -1,6 +1,7 @@
 /* Sectionlab engine entry point: validate a model and compute every result.
  *
  *   compute(input, { accuracy, plastic }) → { model, props, torsion, plastic, parts }
+ *   buildBeamdswitch(result)              → the report for the standard beamdswitch template
  *
  * `accuracy` is reference/torsion-accuracy.json (the page inlines it). Invalid
  * models throw section.ModelError; a plastic analysis that cannot be completed
@@ -31,6 +32,7 @@
   }
 
   const buildReport = (result) => report.build(result.model, { props: result.props, torsion: result.torsion, plastic: result.plastic, parts: result.parts });
+  const buildBeamdswitch = (result) => report.beamdswitch(buildReport(result), result.model, { shapes: shapes.SHAPES });
 
-  return { geometry, shapes, section, torsion, plastic, yaml, report, compute, buildReport, VERSION: "1.0.0" };
+  return { geometry, shapes, section, torsion, plastic, yaml, report, compute, buildReport, buildBeamdswitch, VERSION: "1.0.0" };
 });

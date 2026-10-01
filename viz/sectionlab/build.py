@@ -1,10 +1,11 @@
 """Assemble index.html, the single-file Sectionlab page.
 
 Inputs, all in this folder:
-  template.html                    page markup and styles, with four markers
+  template.html                    page markup and styles, with five markers
   raw.json                         presets, materials, method text (/*@DATA@*/)
   reference/torsion-accuracy.json  measured torsion accuracy (/*@ACCURACY@*/)
   src/*.js                         engine modules in ENGINE order (/*@ENGINE@*/) and src/ui.js (/*@UI@*/)
+  beamdswitch.js                   the standard beamdswitch report template (/*@BEAMDSWITCH@*/)
 
 Output:
   index.html
@@ -26,10 +27,10 @@ def inline_json(path):
     return json.dumps(data, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
 
 
-def script(name):
-    text = (HERE / "src" / name).read_text(encoding="utf-8")
+def script(name, folder="src"):
+    text = (HERE / folder / name).read_text(encoding="utf-8")
     if "</script" in text.lower():
-        raise SystemExit(f"src/{name} must not contain </script")
+        raise SystemExit(f"{folder}/{name} must not contain </script")
     return text
 
 
@@ -39,6 +40,7 @@ def render():
         "/*@DATA@*/": inline_json(HERE / "raw.json"),
         "/*@ACCURACY@*/": inline_json(HERE / "reference" / "torsion-accuracy.json"),
         "/*@ENGINE@*/": "\n".join(script(n) for n in ENGINE),
+        "/*@BEAMDSWITCH@*/": script("beamdswitch.js", "."),
         "/*@UI@*/": script("ui.js"),
     }
     for marker, text in parts.items():
