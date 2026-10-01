@@ -1,0 +1,1465 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" href="data:,">
+<title>Bayesian reasoning in plain English — Yu Jie Teo</title>
+<meta name="description" content="Turn probability words such as “likely” into rough numbers, compare Sherman Kent's reference scale with how people actually read the words, then update your estimate with evidence using Bayes' rule. Works offline.">
+<link rel="canonical" href="https://teoyujie.org/visuals/bayes">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Bayesian reasoning in plain English">
+<meta property="og:description" content="Estimate with words, update with evidence: probability phrases calibrated against Kent's scale and a survey of how people read them, and a plain-English Bayes calculator.">
+<meta property="og:url" content="https://teoyujie.org/visuals/bayes">
+<style>
+:root{--bg:#fff;--fg:#1d1d1f;--muted:#6e6e73;--rule:#d2d2d7;--base:#f5f5f7;--accent:#0071e3;--on-accent:#fff;--kent:#1d1d1f;--survey:#1f7a5a;--survey-soft:rgba(31,122,90,.28);--up:#0071e3;--down:#b4442c;--region:rgba(31,122,90,.14);--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;--mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;--r:.6rem;--thumb:22px;color-scheme:light dark}
+@media (prefers-color-scheme:dark){:root{--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--rule:#48484a;--base:#2c2c2e;--accent:#2997ff;--on-accent:#1d1d1f;--kent:#f5f5f7;--survey:#4cc597;--survey-soft:rgba(76,197,151,.32);--up:#2997ff;--down:#ff8a70;--region:rgba(76,197,151,.16)}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 var(--sans);letter-spacing:-.011em;-webkit-font-smoothing:antialiased;overflow-wrap:break-word}
+main{width:min(100% - 2rem,64rem);margin:auto;padding:clamp(1.25rem,5vw,3rem) 0 3rem}
+a{color:inherit;text-underline-offset:.18em}
+h1{font-size:clamp(2rem,7vw,3.25rem);line-height:1.04;letter-spacing:-.045em;margin:.35rem 0 1rem;max-width:16ch}
+h2{font-size:.8125rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 .75rem}
+h3{font-size:1.15rem;letter-spacing:-.02em;margin:0 0 .5rem}
+h4{font-size:.9375rem;margin:.75rem 0 .35rem}
+p{margin:.5rem 0;max-width:66ch}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+button:disabled{cursor:not-allowed;opacity:.5}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+[hidden]{display:none!important}
+.eyebrow{font-size:.8125rem;font-weight:600;color:var(--muted);margin:0;display:flex;flex-wrap:wrap;gap:.25rem .9rem}
+.eyebrow a{text-decoration:none}.eyebrow a:hover{text-decoration:underline}
+.lede{font-size:1.125rem;color:var(--muted);max-width:56ch}
+.muted{color:var(--muted)}.small{font-size:.875rem}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+section.part{border-top:1px solid var(--rule);padding-top:1.25rem;margin-top:1.75rem}
+.grid2{display:grid;gap:1.25rem}
+@media (min-width:52rem){.grid2{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+.field{min-width:0}.grow{flex:1 1 12rem}
+.field>label,.lab{display:block;font-size:.875rem;font-weight:600;margin-bottom:.35rem}
+fieldset{border:0;margin:0;padding:0;min-width:0}
+legend{font-weight:600;padding:0;margin-bottom:.15rem}
+.hint{font-size:.8125rem;color:var(--muted);margin:.1rem 0 .5rem}
+input[type=text],input[type=number]{min-height:2.75rem;border:1px solid var(--rule);border-radius:var(--r);background:var(--bg);padding:0 .7rem;width:100%;min-width:0}
+input[type=number]{font-variant-numeric:tabular-nums}
+input.num{width:5.5rem}
+.numwrap{display:flex;align-items:center;gap:.35rem}
+.hyp{font-size:1.0625rem;font-weight:600}
+.chips{display:flex;flex-wrap:wrap;gap:.4rem;margin:.4rem 0}
+.chip{min-height:2.5rem;padding:.3rem .9rem;border:1px solid var(--rule);border-radius:999px;background:var(--bg);font-weight:600;font-size:.9375rem;text-align:left}
+.chip[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.btn{min-height:2.75rem;padding:0 1.1rem;border:1px solid var(--rule);border-radius:999px;background:var(--bg);font-weight:600}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn.sm{min-height:2.5rem;padding:0 .9rem;font-size:.875rem}
+.btn.quiet{border-color:transparent;background:none;color:var(--muted);text-decoration:underline;text-underline-offset:.18em}
+.btn[aria-pressed="true"]{background:var(--base)}
+.link{border:0;background:none;padding:.35rem 0;color:var(--accent);text-decoration:underline;text-underline-offset:.18em;font-weight:600;min-height:2.25rem}
+.tag{display:inline-block;font-size:.75rem;font-weight:700;border:1px solid currentColor;border-radius:999px;padding:0 .5rem}
+.pf{border:1px solid var(--rule);border-radius:var(--r);padding:.9rem 1rem 1rem;margin-top:1rem}
+.pf-row{display:flex;flex-wrap:wrap;gap:.75rem;align-items:flex-end}
+.pf-help{margin-top:.6rem;padding:.6rem .8rem;border-radius:var(--r);background:var(--base);font-size:.9375rem}
+.pf-help p{margin:0 0 .25rem}
+.own-btn{border-style:dashed}
+.scale{margin-top:.9rem}
+.band,.ptrack,.kband{position:relative;height:2.1rem;margin:0 calc(var(--thumb)/2)}
+.b-rule{position:absolute;left:0;right:0;top:50%;border-top:1px solid var(--rule)}
+.b-kent{position:absolute;top:.1rem;height:.8rem;border:2px solid var(--kent);border-radius:2px;min-width:2px}
+.b-kent.pt{width:0;border-width:0 0 0 3px;height:.9rem}
+.b-kc{position:absolute;top:.1rem;height:.8rem;border-left:2px solid var(--kent);margin-left:-1px}
+.b-dot{position:absolute;bottom:.15rem;width:6px;height:6px;margin-left:-3px;border-radius:50%;background:var(--survey);opacity:.35}
+.b-iqr{position:absolute;bottom:.15rem;height:6px;margin-top:0;background:var(--survey-soft);border-radius:3px;outline:1px solid var(--survey)}
+.b-med{position:absolute;bottom:0;width:0;height:0;margin-left:-5px;border:5px solid transparent;border-bottom:7px solid var(--survey);transform:translateY(-.55rem)}
+.b-own{position:absolute;top:.15rem;height:.7rem;border:2px dashed var(--accent);border-radius:2px}
+.pnone{position:absolute;left:0;top:.35rem;font-size:.75rem;color:var(--muted);background:var(--bg);padding-right:.4rem}
+.slider{-webkit-appearance:none;appearance:none;width:100%;height:2.75rem;background:none;margin:0;cursor:pointer;touch-action:pan-y}
+.slider::-webkit-slider-runnable-track{height:4px;border-radius:2px;background:var(--rule)}
+.slider::-moz-range-track{height:4px;border-radius:2px;background:var(--rule)}
+.slider::-webkit-slider-thumb{-webkit-appearance:none;width:var(--thumb);height:var(--thumb);margin-top:calc(2px - var(--thumb)/2);border-radius:50%;background:var(--accent);border:3px solid var(--bg);box-shadow:0 0 0 1px var(--accent)}
+.slider::-moz-range-thumb{width:var(--thumb);height:var(--thumb);border-radius:50%;background:var(--accent);border:3px solid var(--bg);box-shadow:0 0 0 1px var(--accent)}
+.slider:focus-visible{outline:none}
+.slider:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--accent)}
+.slider:focus-visible::-moz-range-thumb{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--accent)}
+.ends{display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted);margin:0 calc(var(--thumb)/2 - .6rem)}
+.basis{font-weight:600;margin:.5rem 0 0}
+.legend-line{font-size:.8125rem;color:var(--muted);margin:.2rem 0 0}
+.legend-line .sw{vertical-align:middle;margin-right:.1rem}
+.own{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem .75rem;margin-top:.5rem;font-size:.875rem}
+.own label{display:flex;align-items:center;gap:.35rem}
+.key{display:flex;flex-wrap:wrap;gap:.3rem 1.1rem;font-size:.8125rem;color:var(--muted);margin:.5rem 0}
+.key span{display:inline-flex;align-items:center;gap:.35rem}
+.sw{display:inline-block;width:1.4rem;height:.7rem;position:relative}
+.sw.k{border:2px solid var(--kent);border-radius:2px}
+.sw.s{height:6px;background:var(--survey-soft);outline:1px solid var(--survey);border-radius:3px}
+.sw.d{width:6px;height:6px;border-radius:50%;background:var(--survey)}
+.sw.m{width:0;height:0;border:5px solid transparent;border-bottom:7px solid var(--survey);transform:translateY(-3px)}
+.sw.y{width:.9rem;height:.9rem;border-radius:50%;background:var(--accent)}
+.result{border:1px solid var(--rule);border-radius:var(--r);padding:1.1rem 1.15rem}
+.ba{display:grid;gap:.75rem;grid-template-columns:minmax(0,1fr)}
+@media (min-width:40rem){.ba{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr) minmax(0,1fr)}}
+.ba>div{min-width:0}
+.label{font-size:.8125rem;font-weight:600;color:var(--muted);margin:0}
+.big{font-size:clamp(2.25rem,9vw,3.5rem);font-weight:700;letter-spacing:-.045em;line-height:1.02;margin:.1rem 0 .2rem;font-variant-numeric:tabular-nums}
+.big.after{color:var(--up)}
+.mid{font-size:1.125rem;font-weight:600;margin:.35rem 0}
+.word{margin:0;font-size:.9375rem}
+.nat{margin:0;font-size:.8125rem;color:var(--muted)}
+.explain{font-size:1.0625rem;margin-top:1rem}
+.axis{position:relative;height:5.5rem;margin:1.25rem .5rem .25rem}
+.ax-rule{position:absolute;left:0;right:0;top:50%;height:4px;margin-top:-2px;border-radius:2px;background:var(--base);outline:1px solid var(--rule)}
+.ax-tick{position:absolute;top:calc(50% + 4px);height:6px;border-left:1px solid var(--muted)}
+.ax-region{position:absolute;top:calc(50% - 1.1rem);height:2.2rem;background:var(--region);border-radius:3px}
+.ax-range{position:absolute;top:calc(50% - .8rem);height:1.6rem;border:2px solid var(--fg);border-top:0;border-bottom:0;min-width:2px}
+.ax-range::before{content:"";position:absolute;left:0;right:0;top:50%;border-top:2px dotted var(--fg)}
+.ax-move{position:absolute;top:50%;height:4px;margin-top:-2px;background:var(--up)}
+.ax-move.down{background:var(--down)}
+.ax-move::after{content:"";position:absolute;top:-5px;border:7px solid transparent}
+.ax-move.up::after{right:-6px;border-left:9px solid var(--up);border-right:0}
+.ax-move.down::after{left:-6px;border-right:9px solid var(--down);border-left:0}
+.ax-prior{position:absolute;top:50%;width:18px;height:18px;margin:-9px 0 0 -9px;border-radius:50%;border:3px solid var(--fg);background:var(--bg)}
+.ax-post{position:absolute;top:50%;width:16px;height:16px;margin:-8px 0 0 -8px;background:var(--up);border:2px solid var(--bg);transform:rotate(45deg)}
+.ax-lab{position:absolute;font-size:.8125rem;font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums}
+.ax-lab.top{top:0}.ax-lab.bot{bottom:0}
+.ax-lab.c{transform:translateX(-50%)}.ax-lab.r{transform:translateX(-100%)}.ax-lab.l{transform:translateX(-.5rem)}
+.ax-ends{display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted);margin:0 .5rem}
+.range-box{margin-top:.75rem;padding:.6rem .8rem;border-radius:var(--r);background:var(--base)}
+.kv{display:inline-flex;gap:.5rem;align-items:baseline;margin-right:1.25rem}
+.kv b{font-size:1.25rem;font-variant-numeric:tabular-nums}
+.toggle{display:flex;align-items:center;gap:.5rem;min-height:2.75rem;font-weight:600}
+.toggle input{width:1.2rem;height:1.2rem;accent-color:var(--accent)}
+details{border-top:1px solid var(--rule);margin-top:1rem}
+summary{display:flex;align-items:center;min-height:2.75rem;font-weight:600;cursor:pointer}
+.panel{padding:.25rem 0 .75rem}
+table{border-collapse:collapse;font-variant-numeric:tabular-nums}
+.nums th,.nums td{padding:.35rem .75rem .35rem 0;border-bottom:1px solid var(--rule);text-align:left;vertical-align:top}
+.nums td{font-weight:600;white-space:nowrap}
+.formula{font-family:var(--mono);font-size:.875rem;background:var(--base);border-radius:var(--r);padding:.6rem .8rem;overflow-x:auto}
+.chain{list-style:none;display:flex;flex-wrap:wrap;align-items:center;gap:.25rem .5rem;padding:0;margin:.25rem 0 1rem;font-size:1.25rem;font-weight:700;font-variant-numeric:tabular-nums}
+.chain li+li::before{content:"→";color:var(--muted);margin-right:.5rem;font-weight:400}
+.chain li.cur{color:var(--up)}
+.cards{list-style:none;padding:0;margin:0;display:grid;gap:.6rem}
+.card{border:1px solid var(--rule);border-radius:var(--r);padding:.7rem .9rem}
+.card.cur{border-color:var(--accent);box-shadow:inset 3px 0 0 var(--accent)}
+.card p{margin:.15rem 0}
+.ct{font-weight:600}.cs,.cr{font-size:.875rem}
+.cbtn{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.4rem}
+.note-box{border-left:3px solid var(--rule);padding:.25rem 0 .25rem .9rem;margin:1rem 0;color:var(--muted);font-size:.9375rem}
+.note-box b{color:var(--fg)}
+.actions{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem .75rem;margin-top:1rem}
+.confirm{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem .75rem;margin-top:.75rem;padding:.6rem .8rem;border:1px solid var(--accent);border-radius:var(--r)}
+.confirm p{margin:0;font-weight:600}
+.xrows{list-style:none;padding:0;margin:.5rem 0 0;display:grid;gap:2px}
+.prow{display:grid;grid-template-columns:minmax(7rem,12rem) minmax(0,1fr);align-items:center;gap:.25rem .75rem;width:100%;min-height:2.75rem;padding:.2rem .5rem;border:1px solid transparent;border-radius:var(--r);background:none;text-align:left}
+.prow:hover{background:var(--base)}
+.prow[aria-pressed="true"]{border-color:var(--accent);background:var(--base)}
+.pname{font-weight:600;font-size:.9375rem}
+.prow .ptrack{margin:0}
+@media (max-width:30rem){.prow{grid-template-columns:minmax(0,1fr)}.prow .ptrack{height:1.9rem}}
+.xdetail{border:1px solid var(--rule);border-radius:var(--r);padding:1rem;margin-top:.75rem;scroll-margin-top:1rem}
+.xgrid{display:grid;gap:1rem}
+@media (min-width:52rem){.xgrid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.xb{min-width:0}
+.xb h4{margin-top:0}
+.hist{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:2px;height:4.5rem;align-items:end;margin-top:.5rem}
+.hb{position:relative;height:100%;display:flex;align-items:flex-end;border-bottom:1px solid var(--rule)}
+.hbar{display:block;width:100%;background:var(--survey-soft);outline:1px solid var(--survey);min-height:0}
+.hc{position:absolute;left:0;right:0;top:0;text-align:center;font-size:.6875rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.hist+.ends{margin:0}
+.tscroll{overflow-x:auto;max-width:100%}
+.ref{width:100%;min-width:34rem;font-size:.875rem}
+.ref th,.ref td{padding:.3rem .6rem .3rem 0;border-bottom:1px solid var(--rule);text-align:left;vertical-align:middle}
+.ref thead th{font-size:.75rem;color:var(--muted)}
+.sbar-cell{width:30%;min-width:8rem}
+.sbar{display:block;position:relative;height:1.6rem;background:linear-gradient(var(--rule),var(--rule)) center/100% 1px no-repeat}
+.sk{position:absolute;top:.2rem;height:.5rem;border:2px solid var(--kent);border-radius:2px}
+.ss{position:absolute;bottom:.2rem;height:5px;background:var(--survey-soft);outline:1px solid var(--survey);border-radius:3px}
+.method p,.method li{font-size:.9375rem;max-width:66ch}
+.method dl{display:grid;grid-template-columns:minmax(0,9rem) minmax(0,1fr);gap:.25rem 1rem;font-size:.875rem;margin:.5rem 0 1rem}
+.method dt{font-weight:600;color:var(--muted)}
+.method dd{margin:0}
+@media (max-width:30rem){.method dl{grid-template-columns:minmax(0,1fr)}.method dd{margin-bottom:.4rem}}
+.rule-box{font-family:var(--mono);font-size:.875rem;background:var(--base);border-radius:var(--r);padding:.6rem .8rem;display:block;overflow-x:auto}
+@media (prefers-reduced-motion:no-preference){.ax-prior,.ax-post,.ax-lab{transition:left .35s ease-out}.ax-move,.ax-range,.ax-region{transition:left .35s ease-out,width .35s ease-out}.b-kent,.b-iqr,.b-med,.b-kc{transition:left .25s ease-out,width .25s ease-out}.chip,.btn,.prow{transition:background-color .15s,color .15s}}
+@media (forced-colors:active){.b-dot,.b-iqr,.b-med,.b-kent,.ax-move,.ax-post,.ax-prior,.hbar,.sk,.ss{forced-color-adjust:none}}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <p class="eyebrow"><a href="https://teoyujie.org/visuals.html">Visuals</a><span>Practical tool</span></p>
+  <h1>Bayesian reasoning in plain English</h1>
+  <p class="lede">Turn words like “likely” into rough probabilities, then update them when you learn something new.</p>
+</header>
+
+<noscript><p class="note-box"><b>The reference chart works without JavaScript.</b> Enable JavaScript to use the interactive Bayesian calculator.</p></noscript>
+
+<div id="nojs">
+  <h2>How an update works</h2>
+  <p>To update a belief with evidence you need three numbers, all of which can start as words:</p>
+  <ol>
+    <li><b>Before:</b> how likely was your hypothesis before this evidence? (the prior, P(H))</li>
+    <li><b>If true:</b> if the hypothesis were true, how likely would you be to see this evidence? (P(E | H))</li>
+    <li><b>If false:</b> if the hypothesis were false, how likely would you be to see the same evidence? (P(E | not H))</li>
+  </ol>
+  <p>Bayes' rule combines them: <span class="rule-box">after = (if true × before) ÷ (if true × before + if false × (1 − before))</span></p>
+  <p>Or with odds: posterior odds = prior odds × (if true ÷ if false). The ratio in brackets, the likelihood ratio, is what makes evidence matter: how much more expected it is if the hypothesis is true than if it is false.</p>
+  <p>Example: the restaurant wait will be longer than 20 minutes. Before looking, “probably not”: the median survey answer is 26.5%. There are 12 groups ahead: “likely” (70%) if the wait is long, “unlikely” (20%) if it is not. The evidence is 3.5 times more expected if the hypothesis is true, so the odds go from 26.5 : 73.5 to about 93 : 73.5, and the estimate moves up to about 56%.</p>
+</div>
+
+<div id="app" hidden>
+<section class="part" aria-labelledby="est-h">
+  <h2 id="est-h">Make an estimate</h2>
+  <p class="lab" id="ex-lab">Try an example</p>
+  <div class="chips" id="examples" role="group" aria-labelledby="ex-lab"></div>
+  <p class="note-box" id="scn-note" hidden></p>
+  <div class="field"><label for="hyp">What are you estimating? (your hypothesis)</label><input id="hyp" class="hyp" type="text" autocomplete="off" maxlength="300" placeholder="e.g. The bus will arrive within 10 minutes."></div>
+  <div id="prior-slot"></div>
+</section>
+
+<section class="part" aria-labelledby="evd-h">
+  <h2 id="evd-h">Add evidence</h2>
+  <p class="small muted">The key question is not “is this strong evidence?” but how differently you would expect to see it if your hypothesis were true and if it were false.</p>
+  <div id="editor">
+    <h3 id="ev-h">Evidence</h3>
+    <div class="field"><label for="ev-text">What did you observe?</label><input id="ev-text" type="text" autocomplete="off" maxlength="300" placeholder="e.g. There are 12 groups ahead of me."></div>
+    <div class="grid2"><div id="a-slot"></div><div id="b-slot"></div></div>
+  </div>
+  <p id="no-evidence" class="muted" hidden>No evidence yet. Add a piece of evidence to update your estimate.</p>
+</section>
+
+<section class="part" aria-labelledby="res-h">
+  <h2 id="res-h">Before → after</h2>
+  <div class="result">
+    <p class="small muted" id="r-step"></p>
+    <div class="ba">
+      <div><p class="label" id="r-before-label">Before</p><p class="big" id="r-before"></p><p class="word" id="r-before-w"></p><p class="nat" id="r-before-n"></p></div>
+      <div><p class="label">Evidence</p><p class="mid" id="r-lean"></p></div>
+      <div><p class="label">After</p><p class="big after" id="r-after"></p><p class="word" id="r-after-w"></p><p class="nat" id="r-after-n"></p></div>
+    </div>
+    <div class="axis" id="r-axis" aria-hidden="true"></div>
+    <div class="ax-ends" aria-hidden="true"><span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span></div>
+    <p class="small muted" id="r-axis-text"></p>
+    <p class="small muted" id="r-axis-legend"></p>
+    <p class="explain" id="r-explain"></p>
+    <p id="r-overall" class="small"></p>
+    <label class="toggle"><input type="checkbox" id="show-range"> Show range from your phrase choices</label>
+    <div class="range-box" id="range-box" hidden><p id="r-range" style="margin:0"></p><p class="small muted" style="margin:.35rem 0 0">This range reflects ambiguity in the probability words you used, not statistical sampling uncertainty. Each phrase spans the middle half of survey answers (or Kent's range when the survey did not ask), and both ends are calculated separately.</p></div>
+    <details id="d-num"><summary>Show numbers</summary><div class="panel" id="r-num"></div></details>
+    <details id="d-calc"><summary>Show calculation</summary><div class="panel" id="r-calc"></div></details>
+  </div>
+  <p class="sr" id="live" aria-live="polite"></p>
+</section>
+
+<section class="part" aria-labelledby="trail-h">
+  <h2 id="trail-h">Reasoning trail</h2>
+  <ol class="chain" id="chain" aria-label="Estimate after each step"></ol>
+  <ol class="cards" id="cards"></ol>
+  <div class="actions"><button type="button" class="btn primary" id="add" data-act="add">Add another piece of evidence</button></div>
+  <div class="chips" id="sugg"></div>
+  <p class="note-box" id="correlated" hidden><b>Are these clues partly telling you the same thing?</b> This calculator treats each evidence item as a fresh update. Correlated evidence can make the final probability look more certain than your information really warrants.</p>
+</section>
+
+<section class="part" aria-labelledby="words-h">
+  <h2 id="words-h">What do these words mean?</h2>
+  <p>Probability words are useful, but different people can mean substantially different numbers by the same word. Each phrase below shows Kent's proposed reference range separately from how people in a survey actually read it. When the number matters, say the number.</p>
+  <div class="field" style="max-width:22rem"><label for="x-phrase">Select a phrase</label><input id="x-phrase" type="text" list="phrase-list" autocomplete="off" spellcheck="false" enterkeyhint="done"></div>
+  <p class="small muted" id="x-status" role="status"></p>
+  <div class="xdetail" id="x-detail" tabindex="-1" aria-labelledby="x-name">
+    <h3 id="x-name"></h3>
+    <div class="xgrid">
+      <div class="xb"><h4>Kent reference</h4><div class="kband" id="x-kent-band" aria-hidden="true"></div><p class="small" id="x-kent"></p></div>
+      <div class="xb"><h4>People's interpretations</h4><div id="x-hist"></div><p class="small" id="x-survey"></p></div>
+      <div class="xb"><h4>Your meaning</h4>
+        <div id="x-you"><div class="scale"><div class="band" id="x-band" aria-hidden="true"></div><input type="range" class="slider" id="x-range" min="0" max="100" step="1" aria-label="What you mean by this phrase, percent" aria-describedby="x-basis"></div>
+          <div class="numwrap"><label for="x-num" class="small">Percent</label><input id="x-num" class="num" type="number" inputmode="decimal" min="0" max="100" step="any"><span aria-hidden="true">%</span></div>
+          <p class="small" id="x-basis"></p>
+          <div class="chips"><button type="button" class="chip" data-act="use" data-to="prior">Use as “before”</button><button type="button" class="chip" data-act="use" data-to="a">Use as “if true”</button><button type="button" class="chip" data-act="use" data-to="b">Use as “if false”</button></div></div>
+        <p class="small muted" id="x-nonum" hidden>No numbers to start from: type this phrase into an estimate above and choose “Use my own meaning” to give it yours.</p>
+      </div>
+    </div>
+  </div>
+  <div class="key" aria-hidden="true"><span><i class="sw k"></i>Kent's range (centre tick)</span><span><i class="sw d"></i>one survey answer (darker where answers overlap)</span><span><i class="sw s"></i>middle half of survey answers</span><span><i class="sw m"></i>survey median</span><span><i class="sw y"></i>your meaning</span></div>
+  <div class="chips" role="group" aria-label="Which phrases to list"><button type="button" class="chip" data-act="filter" data-f="all" aria-pressed="true">All phrases</button><button type="button" class="chip" data-act="filter" data-f="survey" aria-pressed="false">In the survey</button><button type="button" class="chip" data-act="filter" data-f="kent" aria-pressed="false">In Kent's essay</button></div>
+  <ul class="xrows" id="x-rows" aria-label="Probability phrases, from least to most likely"></ul>
+</section>
+
+<section class="part" aria-labelledby="more-h">
+  <h2 id="more-h">Your scenario</h2>
+  <p class="small muted">Your current scenario is kept in this browser so it survives a refresh. Nothing you enter is sent anywhere.</p>
+  <div class="actions"><button type="button" class="btn" id="reset">Reset</button></div>
+  <div class="confirm" id="confirm" role="group" aria-labelledby="confirm-msg" hidden><p id="confirm-msg"></p><button type="button" class="btn primary sm" id="confirm-yes" data-act="confirm-yes">Reset</button><button type="button" class="btn sm" data-act="confirm-no">Cancel</button></div>
+  <details><summary>Export a talk</summary><div class="panel">
+    <div class="actions">
+      <button type="button" class="btn" id="save-beamdswitch" title="Save a narrated Markdown talk about this update, to open in beamdswitch">beamdswitch</button>
+      <button type="button" class="btn" id="copy-beamdswitch" title="Copy the narrated Markdown talk, to paste into beamdswitch">Copy deck</button>
+    </div>
+    <p id="deck-status" class="small muted" role="status"></p>
+    <p class="small muted">Saves the current scenario and reasoning trail as a narrated Markdown deck, every number as shown here. Open it in <a href="https://teoyujie.org/visuals/beamdswitch/">beamdswitch</a> for slides, narration and a video. Copy deck puts the same deck on the clipboard.</p>
+  </div></details>
+</section>
+<datalist id="phrase-list"></datalist>
+</div>
+
+<section class="part method" aria-labelledby="about-h">
+  <h2 id="about-h">About probability words</h2>
+  <details id="tables" open><summary>Reference chart: every phrase in both sources</summary><div class="panel">
+    <p class="small muted">Kent's column is his proposed range; the survey column is the median answer and the middle half of answers. Phrases are in ascending order of their working value. A phrase marked “as …” is one Kent lists as a synonym. Bars: outlined, Kent's range; filled, middle half of survey answers.</p>
+    <div class="tscroll"><table class="ref">
+      <thead><tr><th scope="col">Phrase</th><th scope="col">Kent reference</th><th scope="col">Survey: median (middle half, people)</th><th scope="col"><span class="sr">Bars on a 0 to 100% scale</span></th></tr></thead>
+      <tbody>
+<tr><th scope="row">impossible</th><td>0% (end of scale)</td><td>not asked</td><td class="sbar-cell" aria-hidden="true"><span class="sbar"><span class="sk" style="left:0%;width:0.6%"></span></span></td></tr>
+<tr><th scope="row">almost no chance</th><td>not listed</td><td>2% (middle half 1%–5%, n = 46)</td><td class="sbar-cell" aria-hidden="true"><span class="sbar"><span class="ss" style="left:1%;width:4%"></span></span></td></tr>
+<tr><th scope="row">highly unlikely</th><td>not listed</td><td>5% (middle half 5%–10%, n = 46)</td><td class="sbar-cell" aria-hidden="true"><span class="sbar"><span class="ss" style="left:5%;width:5%"></span></span></td></tr>
+<tr><th scope="row">almost certainly not</th><td>2–12%</td><td>not asked</td><td class="sbar-cell" aria-hidden="true"><span class="sbar"><span class="sk" style="left:2%;width:10%"></span></span></td></tr>
+<tr><th scope="row">chances are slight</th><td>not listed</td><td>10% (middle half 10%–15%, n = 46)</td><td class="sbar-cell" aria-hidden="true"><span class="sbar"><span class="ss" style="left:10%;width:5%"></span></span></td></tr>
+<tr><th scope="row">improbable</th><td>20–40% (as “probably not”)</td><td>15% (middle half 7%–28%, n = 46)</td><td class="sbar-cell" aria-hidden="true"><span class="sbar"><span class="sk" style="left:20%;width:20%"></span><span class="ss" style="left:7%;width:21%"></span></span></td></tr>
+<tr><th scope="row">little chance</th><td>not listed</td><td>15% (middle half 10%–20%, n = 46)</td><td class="sbar-cell" aria-hidden="true"><span class="sbar"><span class="ss" style="left:10%;width:10%"></span></span></td></tr>
+<tr><th scope="row">unlikely</th><td>20–40% (as “probably not”)</td><td>20% (middle half 10%–28.8%, n = 46)</td><td class="sbar-cell" aria-hidden="true"><span class="sbar"><span class="sk" style="left:20%;width:20%"></span><span class="ss" style="left:10%;width:18.75%"></span></span></td></tr>
+<tr><th scope="row">we doubt</th><td>20–40% (as “probably not”)</td><td>25% (middle half 15%–33%, n = 46)</td><td class="sbar-cell" aria-hidden="true"><span class="sbar"><span class="sk" style="left:20%;width:20%"></span><span class="ss" style="left:15%;width:18%"></span></span></td></tr>
+<tr><th scope="row">probably not</th><td>20–40%</td><td>26.5% (middle half 20%–38.8%, n = 46)</td><td class="sbar-cell" aria-hidden="true"><span class="sbar"><span class="sk" style="left:20%;width:20%"></span><span class="ss" style="left:20%;width:18.75%"></span></span></td></tr>
+<tr><th scope="row">doubtful</th><td>20–40% (as “probably not”)</td><td>not asked</td><td class="sbar-cell" aria-hidden="true"><span class="sbar"><span class="sk" style="left:20%;width:20%"></span></span></td></tr>
+<tr><th scope="row">we believe that … not</th><td>20–40% (as “probably not”)</td><td>not asked</td><td class="sbar-cell" aria-hidden="true"><span class="sbar"><span class="sk" style="left:20%;width:20%"></span></span></td></tr>
+<tr><th scope="row">we estimate that … not</th><td>20–40% (as “probably not”)</td><td>not asked</td><td class="sbar-cell" aria-hidden="true"><span class="sbar"><span class="sk" style="left:20%;width:20%"></span></span></td></tr>
+<tr><th scope="row">about even</th><td>not listed</td><td>50% (middle half 50%–50%, n = 46)</td><td class="sbar-cell" aria-hidden="true"><span class="sbar"><span class="ss" style="left:50%;width:0.6%"></span></span></td></tr>
+<tr><th scope="row">chances a little better</th><td>40–60% (as “chances about even”)</td><td>not asked</td><td class="sbar-cell" aria-hidden="true"><span class="sbar"><span class="sk" style="left:40%;width:20%"></span></span></td></tr>
+<tr><th scope="row">chances a little less</th><td>40–60% (as “chances about even”)</td><td>not asked</td><td class="sbar-cell" aria-hidden="true"><span class="sbar"><span class="sk" style="left:40%;width:20%"></span></span></td></tr>
+<tr><th scope="row">chances about even</th><td>40–60%</td><td>not asked</td><td class="sbar-cell" aria-hidden="true"><span class="sbar"><span class="sk" style="left:40%;width:20%"></span></span></td></tr>
+<tr><th scope="row">better than even</th><td>not listed</td><td>60% (middle half 55%–60%, n = 46)</td><td class="sbar-cell" aria-hidden="true"><span class="sbar"><span class="ss" style="left:55%;width:5%"></span></span></td></tr>
+<tr><th scope="row">likely</th><td>63–87% (as “probable”)</td><td>70% (middle half 65%–75%, n = 46)</td><td class="sbar-cell" aria-hidden="true"><span class="sbar"><span class="sk" style="left:63%;width:24%"></span><span class="ss" style="left:65%;width:10%"></span></span></td></tr>
+<tr><th scope="row">probable</th><td>63–87%</td><td>70% (middle half 65%–78.8%, n = 46)</td><td class="sbar-cell" aria-hidden="true"><span class="sbar"><span class="sk" style="left:63%;width:24%"></span><span class="ss" style="left:65%;width:13.75%"></span></span></td></tr>
+<tr><th scope="row">we believe</th><td>63–87% (as “probable”)</td><td>70% (middle half 60%–80%, n = 46)</td><td class="sbar-cell" aria-hidden="true"><span class="sbar"><span class="sk" style="left:63%;width:24%"></span><span class="ss" style="left:60%;width:20%"></span></span></td></tr>
+<tr><th scope="row">probably</th><td>63–87% (as “probable”)</td><td>75% (middle half 65%–80%, n = 46)</td><td class="sbar-cell" aria-hidden="true"><span class="sbar"><span class="sk" style="left:63%;width:24%"></span><span class="ss" style="left:65%;width:15%"></span></span></td></tr>
+<tr><th scope="row">we estimate</th><td>63–87% (as “probable”)</td><td>not asked</td><td class="sbar-cell" aria-hidden="true"><span class="sbar"><span class="sk" style="left:63%;width:24%"></span></span></td></tr>
+<tr><th scope="row">very good chance</th><td>not listed</td><td>80% (middle half 75%–85%, n = 46)</td><td class="sbar-cell" aria-hidden="true"><span class="sbar"><span class="ss" style="left:75%;width:10%"></span></span></td></tr>
+<tr><th scope="row">highly likely</th><td>87–99% (as “almost certain”)</td><td>90% (middle half 84.3%–95%, n = 46)</td><td class="sbar-cell" aria-hidden="true"><span class="sbar"><span class="sk" style="left:87%;width:12%"></span><span class="ss" style="left:84.25%;width:10.75%"></span></span></td></tr>
+<tr><th scope="row">all but certain</th><td>87–99% (as “almost certain”)</td><td>not asked</td><td class="sbar-cell" aria-hidden="true"><span class="sbar"><span class="sk" style="left:87%;width:12%"></span></span></td></tr>
+<tr><th scope="row">almost certain</th><td>87–99%</td><td>not asked</td><td class="sbar-cell" aria-hidden="true"><span class="sbar"><span class="sk" style="left:87%;width:12%"></span></span></td></tr>
+<tr><th scope="row">chances overwhelming</th><td>87–99% (as “almost certain”)</td><td>not asked</td><td class="sbar-cell" aria-hidden="true"><span class="sbar"><span class="sk" style="left:87%;width:12%"></span></span></td></tr>
+<tr><th scope="row">highly probable</th><td>87–99% (as “almost certain”)</td><td>not asked</td><td class="sbar-cell" aria-hidden="true"><span class="sbar"><span class="sk" style="left:87%;width:12%"></span></span></td></tr>
+<tr><th scope="row">odds overwhelming</th><td>87–99% (as “almost certain”)</td><td>not asked</td><td class="sbar-cell" aria-hidden="true"><span class="sbar"><span class="sk" style="left:87%;width:12%"></span></span></td></tr>
+<tr><th scope="row">virtually certain</th><td>87–99% (as “almost certain”)</td><td>not asked</td><td class="sbar-cell" aria-hidden="true"><span class="sbar"><span class="sk" style="left:87%;width:12%"></span></span></td></tr>
+<tr><th scope="row">almost certainly</th><td>87–99% (as “almost certain”)</td><td>95% (middle half 90%–97.8%, n = 46)</td><td class="sbar-cell" aria-hidden="true"><span class="sbar"><span class="sk" style="left:87%;width:12%"></span><span class="ss" style="left:90%;width:7.75%"></span></span></td></tr>
+<tr><th scope="row">certain</th><td>100% (end of scale)</td><td>not asked</td><td class="sbar-cell" aria-hidden="true"><span class="sbar"><span class="sk" style="left:100%;width:0.6%"></span></span></td></tr>
+      </tbody>
+    </table></div>
+    <p class="small muted">Kent also lists words of possibility with no odds attached: possible, conceivable, could, may, might, perhaps. Kent's two ends are 100% certainty and 0% impossibility.</p>
+  </div></details>
+
+  <h3>Sources and method</h3>
+  <h4>1. Sherman Kent's reference scale</h4>
+  <dl>
+    <dt>Source</dt><dd><a href="https://www.cia.gov/resources/csi/static/Words-of-Estimative-Probability.pdf">“Words of Estimative Probability”</a>, Sherman Kent</dd>
+    <dt>Publication</dt><dd>Studies in Intelligence, vol. 8, no. 4 (CIA), 1964; approved for release 22 September 1993. A work of the United States government.</dd>
+    <dt>What it is</dt><dd>A proposed standard for National Intelligence Estimates, not a measurement of how English is used: five phrases with a central percentage and a “give or take” margin (almost certain 93 ± about 6; probable 75 ± about 12; chances about even 50 ± about 10; probably not 30 ± about 10; almost certainly not 7 ± about 5), between 100% certainty and 0% impossibility, plus tables of accepted synonyms.</dd>
+    <dt>Transformation</dt><dd>Ranges are centre ± margin as printed. Synonyms take the range of the phrase they are listed under; bracketed alternatives are split (“odds [or chances] overwhelming”, “chances a little better [or less]”, “we doubt, doubtful”). “Probably” and “almost certainly” are the forms Kent uses for “probable” and “almost certain” in his own text. Kent attaches no odds to “possible” and its synonyms, so they carry no numbers here.</dd>
+  </dl>
+  <h4>2. How people actually read the words</h4>
+  <dl>
+    <dt>Source</dt><dd><a href="https://github.com/zonination/perceptions/blob/51207062aa173777264d3acce0131e1e2456d966/probly.csv">“Perceptions of Probability and Numbers”</a> (probly.csv), zonination (Zoni Nation)</dd>
+    <dt>Publication</dt><dd>GitHub repository zonination/perceptions, first shared on Reddit's r/dataisbeautiful; the survey ran on r/samplesize in 2015. File as of commit 5120706 (25 August 2017), sha256 235c1b22…4ee9. MIT License, copyright (c) 2016 Zoni Nation.</dd>
+    <dt>What was measured</dt><dd>46 volunteers each gave the probability they would assign to 17 phrases (the list used in an earlier study of intelligence analysts). It is a small, self-selected online sample, not a representative survey, so treat it as an illustration of disagreement rather than the meaning of a word.</dd>
+    <dt>Transformation</dt><dd>All 782 answers are embedded unchanged in this page's source. Nothing is removed, including identical rows and answers that look like misreadings (one person gave 15% for “highly likely”). Medians, quartiles (the “middle half”), 10th and 90th percentiles use linear interpolation between ordered answers; histogram bins are 10 points wide with 100 in the top bin. All are calculated in the page from the answers.</dd>
+  </dl>
+  <h4>How the page uses them</h4>
+  <ul>
+    <li>A phrase's default working value is the median survey answer; if the survey did not ask about it, the middle of Kent's range. The page always says which it used, and you can choose any value, inside the range or not.</li>
+    <li>A phrase in neither source gets no numbers. You can give it your own meaning, which is labelled “your calibration”.</li>
+    <li>The word beside a result (“close to what people meant by …”) is the survey phrase whose median is nearest. It is a gloss, not a calibration.</li>
+    <li>The range from phrase choices uses the middle half of survey answers for each phrase (Kent's range when the survey did not ask) and widens it to include your chosen value. The low end combines the lowest prior and “if true” with the highest “if false”, and the high end the reverse, each calculated through Bayes' rule.</li>
+    <li>Wording such as “favours the hypothesis slightly” follows fixed thresholds on the likelihood ratio (within 1.1× either way, up to 2×, 5×, 20×, beyond). They are interface language, not scientific categories.</li>
+    <li>Results are rounded to whole percentages, shown as &lt;1% or &gt;99% near the ends; 0% and 100% appear only when an input makes them exact, and the page explains what that means rather than nudging your numbers.</li>
+  </ul>
+  <p class="small muted">Runs entirely in your browser. Nothing you enter is sent anywhere. <span id="selfcheck"></span></p>
+</section>
+</main>
+<script id="beamdswitch">
+/* The standard beamdswitch report template, shared by every visualisation.
+ *
+ * beamdswitch (https://teoyujie.org/visuals/beamdswitch/) turns one Markdown deck into slides, a
+ * handout, narration and a video. `deck(report)` writes a report in its deck syntax, always in the
+ * same order (templates/beamdswitch-report.md shows the skeleton):
+ *
+ *   front matter and title slide
+ *   # Set-up               what was modelled, its units and conventions
+ *   # Method               how the tool solved it
+ *   # Results              the numbers, with key equations and plots
+ *   # Checks and takeaway  what confirms the numbers, ending on one ::: key frame
+ *
+ * A report is plain data, so it can be built and tested without a page:
+ *   { meta: { title, subtitle, author, date, voice }, narration, notes,
+ *     setup, method, results, checks: [frame, ...] }
+ * and each frame is
+ *   { title, body, narration, notes, key, plot: { x: [a, b], xlabel, ylabel, curves: ["expr", ...] } }
+ * `body` is Markdown (LaTeX maths in $...$ or $$...$$); `narration` is plain spoken prose, one
+ * caption per sentence; `key`, `plot` and `notes` are optional. Every frame must be narrated, and
+ * the last checks frame must carry a key. The visualisation supplies every number already
+ * formatted, so the deck says exactly what its page shows. Every deck names its narrator: `meta.voice`
+ * when the visualisation picks one, else DEFAULT_VOICE, beamdswitch's British female default.
+ */
+(function (root, factory) {
+  const api = factory();
+  if (typeof module === "object" && module.exports) module.exports = api;
+  else root.Beamdswitch = api;
+})(typeof self !== "undefined" ? self : this, function () {
+  "use strict";
+
+  const DEFAULT_VOICE = "bf_emma";
+  const SECTIONS = [["setup", "Set-up"], ["method", "Method"], ["results", "Results"], ["checks", "Checks and takeaway"]];
+
+  const oneLine = (s) => String(s ?? "").replace(/\s+/g, " ").trim();
+  /* Markdown lines that would end a frame or a div early are refused rather than written. */
+  function block(text, what) {
+    const s = String(text ?? "").replace(/\r\n?/g, "\n").trim();
+    for (const line of s.split("\n"))
+      if (/^#{1,2}\s/.test(line) || /^\s*:{3,}/.test(line)) throw new Error(`${what} must not contain a heading or a ::: line: ${line}`);
+    return s;
+  }
+  /* Narration is read aloud: no maths, markup or line structure. */
+  function spoken(text, what) {
+    const s = oneLine(text);
+    if (!s) throw new Error(`${what} needs a narration.`);
+    if (/[$\\`*_#|<>]/.test(s)) throw new Error(`${what} narration must be plain spoken prose: ${s}`);
+    return s;
+  }
+  const div = (name, text) => [`::: ${name}`, text, ":::"];
+
+  function frame(f, where) {
+    const title = oneLine(f.title), what = `Frame "${title}" in ${where}`;
+    if (!title) throw new Error(`A frame in ${where} needs a title.`);
+    const out = [`## ${title}`, ""];
+    if (f.body) out.push(block(f.body, what), "");
+    if (f.plot) {
+      const p = f.plot, lines = [`x: ${p.x[0]}, ${p.x[1]}`];
+      if (p.xlabel) lines.push(`xlabel: ${oneLine(p.xlabel)}`);
+      if (p.ylabel) lines.push(`ylabel: ${oneLine(p.ylabel)}`);
+      for (const c of p.curves) lines.push(`y = ${oneLine(c)}`);
+      out.push(...div("plot", lines.join("\n")), "");
+    }
+    if (f.key) out.push(...div("key", block(f.key, what)), "");
+    if (f.notes) out.push(...div("notes", block(f.notes, what)), "");
+    out.push(...div("narration", spoken(f.narration, what)), "");
+    return out;
+  }
+
+  function deck(report) {
+    const meta = report.meta || {};
+    if (!oneLine(meta.title)) throw new Error("The report needs a title.");
+    const checks = report.checks || [];
+    if (!checks.length || !checks.at(-1).key) throw new Error("The last checks frame must carry a ::: key.");
+    const fm = { ...meta, voice: oneLine(meta.voice) || DEFAULT_VOICE };
+    const out = ["---"];
+    for (const k of ["title", "subtitle", "author", "date", "voice"]) if (oneLine(fm[k])) out.push(`${k}: ${oneLine(fm[k])}`);
+    out.push("---", "");
+    if (report.notes) out.push(...div("notes", block(report.notes, "The title slide")), "");
+    out.push(...div("narration", spoken(report.narration, "The title slide")), "");
+    SECTIONS.forEach(([id, title], i) => {
+      const frames = report[id] || [];
+      if (!frames.length) throw new Error(`The ${title} section needs at least one frame.`);
+      out.push(`# ${title}`, "", ...div("narration", `Part ${i + 1}. ${title}.`), "");
+      for (const f of frames) out.push(...frame(f, title));
+    });
+    return out.join("\n");
+  }
+
+  return { DEFAULT_VOICE, SECTIONS, deck };
+});
+</script>
+<script id="bayes-data">
+/* Embedded data. Nothing is fetched at run time; raw.json beside this page mirrors these constants and a test keeps them equal.
+ * KENT_DATA             Sherman Kent's proposed scale, transcribed from the essay (a proposal, not a measurement).
+ * EMPIRICAL_PHRASE_DATA Every individual answer from the "Perceptions of Probability" survey, as published.
+ * EXAMPLE_SCENARIOS     Six starting points; the numbers in them are illustrative guesses, not data. */
+(function (root) {
+"use strict";
+const KENT_DATA = {
+  source: {
+    title: "Words of Estimative Probability",
+    authors: "Sherman Kent",
+    publication: "Studies in Intelligence, vol. 8, no. 4 (CIA), 1964; approved for release 22 September 1993",
+    date: "1964",
+    url: "https://www.cia.gov/resources/csi/static/Words-of-Estimative-Probability.pdf",
+    licence: "Work of the United States government (public domain)",
+    measured: "Nothing was measured: Kent proposed numerical odds for five estimative phrases used in National Intelligence Estimates, plus lists of accepted synonyms.",
+    transformation: "The chart's centre and 'give or take' values are copied as printed; lower = centre - give or take and upper = centre + give or take. Synonyms inherit the range of the phrase they are listed under. Bracketed alternatives are split: 'odds [or chances] overwhelming' becomes two phrases, 'chances a little better [or less]' becomes two, and 'we doubt, doubtful' becomes two. 'Probably' and 'almost certainly' are the adverb forms Kent himself uses for 'probable' and 'almost certain' (footnote 9 and the 'probably'/'we believe' bracket). The 'possible' group carries no odds in the essay, so it is shown without numbers."
+  },
+  /* The five orders of likelihood in Kent's chart, as printed: centre % and "give or take" %. */
+  scale: [
+    { phrase: "almost certain", centre: 93, giveOrTake: 6, printed: "93%, give or take almost 6%" },
+    { phrase: "probable", centre: 75, giveOrTake: 12, printed: "75%, give or take about 12%" },
+    { phrase: "chances about even", centre: 50, giveOrTake: 10, printed: "50%, give or take about 10%" },
+    { phrase: "probably not", centre: 30, giveOrTake: 10, printed: "30%, give or take about 10%" },
+    { phrase: "almost certainly not", centre: 7, giveOrTake: 5, printed: "7%, give or take about 5%" }
+  ],
+  /* The chart's two limits. */
+  endpoints: [
+    { phrase: "certain", value: 100, printed: "100% certainty" },
+    { phrase: "impossible", value: 0, printed: "0% Impossibility" }
+  ],
+  /* Kent's synonym tables ("The Growth of Variants"), keyed by the chart phrase they stand for. */
+  synonyms: {
+    "almost certain": ["virtually certain", "all but certain", "highly probable", "highly likely", "odds overwhelming", "chances overwhelming"],
+    "probable": ["likely", "we believe", "we estimate"],
+    "chances about even": ["chances a little better", "chances a little less"],
+    "probably not": ["improbable", "unlikely", "we believe that … not", "we estimate that … not", "we doubt", "doubtful"]
+  },
+  /* Adverb forms Kent uses in his own text for chart phrases. */
+  textForms: { "probably": "probable", "almost certainly": "almost certain" },
+  /* "Possible" and its synonyms: Kent attaches no odds to them. */
+  possible: ["possible", "conceivable", "could", "may", "might", "perhaps"],
+  /* Kent's own glosses, quoted from the "Important note to consumers". */
+  notes: {
+    "unlikely": "Kent's note to consumers: “unlikely” means the chances of it happening are “about one in four”.",
+    "almost certainly not": "Kent's note to consumers: “almost certain … not” still leaves “an appreciable chance, say five percent or less”."
+  }
+};
+
+/* The survey answers below are from zonination/perceptions (probly.csv), used under this licence:
+ *
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2016 Zoni Nation
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+const EMPIRICAL_PHRASE_DATA = {
+  source: {
+    title: "Perceptions of Probability and Numbers",
+    authors: "zonination (Zoni Nation)",
+    publication: "GitHub repository zonination/perceptions, file probly.csv; first shared on Reddit r/dataisbeautiful",
+    date: "Survey run on Reddit's r/samplesize in 2015; file as of commit 5120706, 25 August 2017",
+    url: "https://github.com/zonination/perceptions/blob/51207062aa173777264d3acce0131e1e2456d966/probly.csv",
+    licence: "MIT License, copyright (c) 2016 Zoni Nation",
+    sha256: "235c1b22fc8bd096f8235b93e8d4801bcaf5b6f042dd90cc81a0d3afa45e4ee9",
+    measured: "Volunteers on Reddit's r/samplesize answered “What probability would you assign to the phrase “[phrase]”?” for 17 phrases (the list of an earlier intelligence-analyst study). 46 people answered every phrase. It is a self-selected online sample, not a representative survey.",
+    transformation: "Every answer is embedded unchanged, one column per phrase in the file's order (row i of each column is respondent i). Phrase labels are lower-cased for display. Nothing is removed: the file has some identical rows and some answers that look like misreadings (for example 15% for “highly likely”), and they stay in. The median, quartiles, 10th and 90th percentiles (linear interpolation between ordered answers), mean and 10-point histogram bins are calculated in this page from those answers."
+  },
+  respondents: 46,
+  columns: [
+    ["Almost Certainly", [95,95,95,95,98,95,85,97,95,90,90,99,60,88.7,99,95,97,99,95,95,90,92,98,98,90,95,95,98,85,80,98,96,99,85,90,95,98,98,80,95,99,85,90,95,85,95]],
+    ["Highly Likely", [80,75,85,85,95,99,95,95,95,85,90,97,80,69,98,90,90,95,95,90,80,85,90,92,90,85,90,95,85,15,80,85,85,84,95,85,96,96,90,90,90,80,70,80,90,80]],
+    ["Very Good Chance", [85,75,85,85,80,85,65,75,80,90,85,70,70,80,85,80,70,75,90,75,80,75,75,91,75,80,80,75,90,74,75,80,75,87,80,80,90,82,70,90,80,80,80,90,75,75]],
+    ["Probable", [75,51,70,70,70,90,80,70,70,70,70,75,70,51,85,70,51,60,60,80,75,60,80,85,75,75,60,85,60,65,65,75,80,50,70,64,90,75,80,80,90,70,75,75,65,75]],
+    ["Likely", [66,75,75,75,70,75,40,70,65,75,60,75,60,70,75,70,65,65,80,75,80,70,85,85,65,65,75,90,65,65,70,70,75,60,90,80,90,86,80,90,60,70,70,70,65,60]],
+    ["Probably", [75,51,70,70,75,75,45,80,80,70,75,75,55,60,65,80,60,75,75,75,75,60,85,85,80,75,60,85,76,65,55,90,90,65,60,80,80,80,80,90,50,70,65,75,60,68]],
+    ["We Believe", [66,51,80,80,65,80,80,75,65,65,80,90,60,50,5,85,75,80,75,50,60,85,85,70,80,50,60,75,50,60,60,80,50,50,60,75,70,45,70,85,90,65,70,100,95,55]],
+    ["Better Than Even", [55,51,60,60,60,65,60,55,55,60,60,67,55,5,65,60,51,55,60,50.1,60,57,60,60,60,60,51,98,51,60,55,60,51,60,80,80,53,69,60,55,60,51,60,60,55,51]],
+    ["About Even", [50,50,50,50,50,50,45,50,50,52,50,50,50,50,50,50,50,50,50,50,50,50,49,50,50,50,50,50,50,50,50,50,50,50,40,50,50,52,50,48,50,45,50,50,50,49]],
+    ["We Doubt", [40,20,30,30,10,7,45,25,20,60,25,17,20,30,100,30,5,25,25,25,40,25,5,30,12,33,10,40,33,38,25,5,1,60,25,10,40,21,10,15,40,30,15,10,95,25]],
+    ["Improbable", [20,49,10,10,50,15,35,30,30,20,1,10,5,49,1,40,10,3,10,20,30,33,15,7,25,10,49,7,25,29,20,9,0.001,3,3,10,4,12,0,20,20,15,35,5,5,20]],
+    ["Unlikely", [30,25,25,25,5,8,20,15,35,30,15,10,30,20,10,30,15,15,10,25,10,10,2,18,35,25,20,10,25,36,12,3,10,24,5,25,30,34,20,35,10,35,20,10,20,35]],
+    ["Probably Not", [15,49,25,25,20,15,40,25,35,45,40,25,30,40,100,40,10,30,20,49.9,25,10,10,27,30,25,40,25,20,34,35,20,10,30,20,20,30,26,30,15,40,30,25,20,40,40]],
+    ["Little Chance", [20,5,20,20,5,5,20,20,15,20,20,17,10,13,100,15,15,10,25,25,20,7,2,17,20,10,15,10,10,29,15,20,5,20,4,8,8,18,10,15,5,10,5,10,25,17]],
+    ["Almost No Chance", [5,5,1,1,1,1,10,3,5,10,15,2,5,2,95,1,2,1,5,5,5,3,5,2,2,2,5,2,1,7,1,10,0.05,5,2,2,1,7,1,5,1,5,2,1,2,5]],
+    ["Highly Unlikely", [25,10,5,5,2,3,20,5,15,6,10,3,5,3,90,5,7,5,5,5,5,3,5,3,10,5,20,5,15,15,8,5,10,15,2,5,5,3,10,8,30,15,10,5,5,10]],
+    ["Chances Are Slight", [25,5,15,15,10,20,30,10,10,25,15,5,15,5,35,10,5,40,10,10,5,13,5,10,20,5,10,5,15,30,15,12,5,30,30,5,10,13,10,10,15,20,10,5,10,15]]
+
+  ]
+};
+
+/* Starting points. A probability is either a phrase (its default working value) or a number in percent.
+ * These are illustrative guesses for a worked example, not measurements; every one can be edited. */
+const P = (phrase) => ({ phrase }), N = (value) => ({ value });
+const EXAMPLE_SCENARIOS = [
+  { id: "restaurant", chip: "Restaurant", hypothesis: "The restaurant wait will be longer than 20 minutes.", prior: P("probably not"),
+    evidence: [
+      { text: "There are 12 groups ahead of me.", a: P("likely"), b: P("unlikely") },
+      { text: "Several tables are paying.", a: N(30), b: N(60) },
+      { text: "Only one section appears to be seating customers.", a: P("probable"), b: N(35) }
+    ] },
+  { id: "delivery", chip: "Delivery", hypothesis: "My parcel will arrive today.", prior: P("better than even"),
+    evidence: [
+      { text: "Tracking says “out for delivery”.", a: P("highly likely"), b: P("chances are slight") },
+      { text: "It is already late afternoon.", a: N(60), b: N(75) },
+      { text: "Previous deliveries usually arrived before this time.", a: N(30), b: N(70) }
+    ] },
+  { id: "rain", chip: "Rain", hypothesis: "It will rain within the next hour.", prior: P("unlikely"),
+    note: "A reasoning exercise with your own judgements, not a forecast.",
+    evidence: [
+      { text: "Dark clouds are approaching.", a: P("very good chance"), b: N(30) },
+      { text: "The ground nearby is already wet.", a: N(60), b: N(35) },
+      { text: "The wind has changed.", a: N(55), b: N(40) }
+    ] },
+  { id: "phishing", chip: "Phishing", hypothesis: "This email is phishing.", prior: P("chances are slight"),
+    note: "A reasoning exercise, not a security check: a low result does not make an email safe.",
+    evidence: [
+      { text: "The sender domain is unfamiliar.", a: P("highly likely"), b: P("about even") },
+      { text: "The message creates urgency.", a: P("likely"), b: P("unlikely") },
+      { text: "The displayed link differs from where it really goes.", a: N(70), b: N(5) }
+    ] },
+  { id: "shopping", chip: "Shopping", hypothesis: "The item will still be in stock when I arrive.", prior: P("likely"),
+    evidence: [
+      { text: "The website showed low stock earlier.", a: N(40), b: N(75) },
+      { text: "It is a popular item.", a: N(50), b: N(70) },
+      { text: "The shop closes soon.", a: N(50), b: N(50) }
+    ] },
+  { id: "project", chip: "Project", hypothesis: "I will finish this project today.", prior: P("about even"),
+    evidence: [
+      { text: "The main task is already complete.", a: P("highly likely"), b: P("probably not") },
+      { text: "A dependency is still unresolved.", a: N(30), b: N(70) },
+      { text: "There are two hours left.", a: N(60), b: N(50) }
+    ] }
+];
+
+root.BayesData = { KENT_DATA, EMPIRICAL_PHRASE_DATA, EXAMPLE_SCENARIOS };
+})(typeof self !== "undefined" ? self : this);
+</script>
+<script id="bayes-engine">
+/* The pure core (self.Bayes): phrase calibration, Bayes' rule, rounding, wording, the scenario model,
+ * the beamdswitch report and the self-checks. No DOM, storage, clock or network use, so Node can load it. */
+(function (root) {
+"use strict";
+const D = root.BayesData;
+const isNum = (x) => typeof x === "number" && Number.isFinite(x);
+const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
+const own = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
+
+/* ---------- survey statistics, computed from the embedded answers ---------- */
+/* Quantile by linear interpolation between ordered answers (R's default, type 7). */
+function quantile(sorted, q) {
+  const h = (sorted.length - 1) * q, i = Math.floor(h);
+  return i + 1 < sorted.length ? sorted[i] + (h - i) * (sorted[i + 1] - sorted[i]) : sorted[i];
+}
+function stats(values) {
+  const s = [...values].sort((x, y) => x - y), bins = Array(10).fill(0);
+  for (const v of s) bins[Math.min(9, Math.floor(v / 10))]++;
+  return { n: s.length, values: s, median: quantile(s, 0.5), mean: s.reduce((t, v) => t + v, 0) / s.length,
+    q1: quantile(s, 0.25), q3: quantile(s, 0.75), p10: quantile(s, 0.1), p90: quantile(s, 0.9), min: s[0], max: s[s.length - 1], bins };
+}
+
+/* ---------- the merged vocabulary ---------- */
+const norm = (t) => String(t ?? "").toLowerCase().replace(/\.{3}|…/g, " … ").replace(/[“”"'‘’.,!?;:()[\]]/g, " ").replace(/\s+/g, " ").trim();
+const PHRASES = new Map();
+const entry = (label) => {
+  const key = norm(label);
+  if (!PHRASES.has(key)) PHRASES.set(key, { key, label: key, kent: null, survey: null, possible: false, note: null });
+  return PHRASES.get(key);
+};
+for (const k of D.KENT_DATA.scale) {
+  const r = { group: k.phrase, centre: k.centre, lo: k.centre - k.giveOrTake, hi: k.centre + k.giveOrTake, printed: k.printed };
+  entry(k.phrase).kent = { ...r, via: "chart" };
+  for (const syn of D.KENT_DATA.synonyms[k.phrase] || []) entry(syn).kent = { ...r, via: "synonym" };
+}
+for (const [form, group] of Object.entries(D.KENT_DATA.textForms)) entry(form).kent = { ...PHRASES.get(group).kent, via: "text" };
+for (const e of D.KENT_DATA.endpoints) entry(e.phrase).kent = { group: e.phrase, centre: e.value, lo: e.value, hi: e.value, printed: e.printed, via: "endpoint" };
+for (const p of D.KENT_DATA.possible) entry(p).possible = true;
+for (const [k, n] of Object.entries(D.KENT_DATA.notes)) entry(k).note = n;
+for (const [label, values] of D.EMPIRICAL_PHRASE_DATA.columns) entry(label).survey = stats(values);
+
+/* The default working value, in the order: survey median, then the middle of Kent's range (his reference point). */
+function working(ph) {
+  if (!ph) return null;
+  if (ph.survey) return { value: ph.survey.median, basis: "median survey answer" };
+  if (ph.kent && ph.kent.via === "endpoint") return { value: ph.kent.centre, basis: "Kent's end of the scale" };
+  if (ph.kent) return { value: (ph.kent.lo + ph.kent.hi) / 2, basis: "middle of Kent's range" };
+  return null;
+}
+/* The interval a phrase stands for, for range propagation: the middle half of survey answers, else Kent's range. */
+function span(ph) {
+  if (!ph) return null;
+  if (ph.survey) return { lo: ph.survey.q1, hi: ph.survey.q3, basis: "middle half of survey answers" };
+  if (ph.kent) return { lo: ph.kent.lo, hi: ph.kent.hi, basis: "Kent's range" };
+  return null;
+}
+const numbered = (ph) => !!(ph && (ph.kent || ph.survey));
+const LIST = [...PHRASES.values()].sort((x, y) => {
+  const a = working(x), b = working(y);
+  if (!a || !b) return a ? -1 : b ? 1 : x.key.localeCompare(y.key);
+  return a.value - b.value || x.key.localeCompare(y.key);
+});
+const lookup = (text) => PHRASES.get(norm(text)) || null;
+
+/* Suggestions for an unknown phrase: shared words first, then shared letter triples. A suggestion is only a
+ * pointer to a calibrated phrase; the unknown phrase itself never receives calibration. */
+const grams = (s) => { const t = ` ${s} `, g = new Set(); for (let i = 0; i + 3 <= t.length; i++) g.add(t.slice(i, i + 3)); return g; };
+function suggest(text, k = 3) {
+  const q = norm(text);
+  if (!q) return [];
+  const words = new Set(q.split(" ")), qg = grams(q);
+  return LIST.filter((ph) => numbered(ph) || ph.possible).map((ph) => {
+    const w = ph.key.split(" "), shared = w.filter((x) => words.has(x)).length, pg = grams(ph.key);
+    let common = 0; for (const g of qg) if (pg.has(g)) common++;
+    /* The ends of the scale are only suggested on a shared word: "plausible" should not offer "impossible". */
+    return { ph, score: ph.kent?.via === "endpoint" && !shared ? 0 : shared * 2 + (2 * common) / (qg.size + pg.size) };
+  }).filter((x) => x.score > 0.3).sort((x, y) => y.score - x.score || x.ph.key.localeCompare(y.ph.key)).slice(0, k).map((x) => x.ph);
+}
+
+/* ---------- Bayes' rule ---------- */
+/* p = prior, a = P(E | H), b = P(E | not H), all in [0, 1]. The direct form a·p / (a·p + b·(1 − p)) is exact
+ * for these inputs; the cases where it would divide by zero are reported instead of producing NaN. */
+function update(p, a, b) {
+  const lr = a === b ? { kind: "one", value: 1 } : b === 0 ? { kind: "infinite", value: null } : a === 0 ? { kind: "zero", value: 0 } : { kind: "finite", value: a / b };
+  const den = a * p + b * (1 - p);
+  if (den === 0) {
+    const reason = a === 0 && b === 0 ? "impossible-both" : p === 0 ? "prior-zero-ruled-out" : "prior-one-ruled-out";
+    return { status: "undetermined", reason, prior: p, posterior: null, lr };
+  }
+  /* Neutral evidence leaves the prior exactly unchanged, not merely to rounding error. */
+  const posterior = a === b ? p : clamp((a * p) / den, 0, 1);
+  return { status: "ok", reason: null, prior: p, posterior, lr };
+}
+/* Each posterior becomes exactly the next prior. After an undetermined step the rest cannot be computed. */
+function chain(p0, steps) {
+  const out = [];
+  let p = p0;
+  for (const s of steps) {
+    if (p === null) { out.push({ status: "blocked", reason: "earlier", prior: null, posterior: null, lr: null }); continue; }
+    const r = update(p, s.a, s.b);
+    out.push(r);
+    p = r.posterior;
+  }
+  return out;
+}
+/* Range propagation. The posterior rises with the prior and with P(E|H) and falls with P(E|not H), so the low
+ * end uses every low prior and P(E|H) with every high P(E|not H), and the high end the reverse. Both ends are
+ * computed through the full formula, step by step, never by interpolating in probability. */
+function propagate(prior, steps) {
+  const low = chain(prior.lo, steps.map((s) => ({ a: s.a.lo, b: s.b.hi })));
+  const high = chain(prior.hi, steps.map((s) => ({ a: s.a.hi, b: s.b.lo })));
+  return low.map((l, i) => ({ lo: l.posterior, hi: high[i].posterior }));
+}
+/* Odds for display, from a probability; certain and impossible are named rather than divided by zero. */
+function odds(p) {
+  if (p === null) return { value: null, text: "—" };
+  if (p >= 1) return { value: null, text: "1 : 0 (certain)" };
+  if (p <= 0) return { value: 0, text: "0 : 1 (ruled out)" };
+  return { value: p / (1 - p), text: ratio(p / (1 - p)) };
+}
+const sig = (x) => (x < 10 ? String(Math.round(x * 10) / 10) : Math.round(x).toLocaleString("en-GB"));
+/* A small whole-number ratio when one fits within 0.5%, such as 2 : 3; otherwise x : 1 or 1 : x. */
+function ratio(o) {
+  for (let n = 1; n <= 12; n++) { const m = Math.round(o * n); if (m >= 1 && m <= 99 && Math.abs(m / n - o) / o < 0.005) return `${m} : ${n}`; }
+  return o >= 1 ? `${sig(o)} : 1` : `1 : ${sig(1 / o)}`;
+}
+const times = (x) => (x < 1.1 ? x.toFixed(2) : x < 10 ? String(Math.round(x * 10) / 10) : Math.round(x).toLocaleString("en-GB")) + "×";
+
+/* ---------- rounding and wording ---------- */
+/* Approximate display: whole percent, with the ends shown as <1% and >99% unless exactly 0 or 1. */
+function pct(x) {
+  if (!isNum(x)) return "—";
+  if (x <= 0) return "0%";
+  if (x >= 1) return "100%";
+  const r = x * 100;
+  return r < 1 ? "<1%" : r > 99 ? ">99%" : `${Math.round(r)}%`;
+}
+const approx = (x) => (isNum(x) && x > 0 && x < 1 && x * 100 >= 1 && x * 100 <= 99 ? `≈${pct(x)}` : pct(x));
+/* An entered value, as typed: up to one decimal. */
+const entered = (v) => `${Math.round(v * 10) / 10}%`;
+/* Natural frequency for understanding: "about 7 in 10" when that is close, else in 100 or 1,000. */
+function natural(x) {
+  if (!isNum(x)) return "";
+  if (x <= 0) return "0 in 100";
+  if (x >= 1) return "100 in 100";
+  const t = Math.round(x * 10);
+  if (x >= 0.1 && x <= 0.9 && Math.abs(x * 10 - t) < 0.25) return `about ${t} in 10`;
+  const h = Math.round(x * 100);
+  if (h >= 1 && h <= 99) return `about ${h} in 100`;
+  const k = Math.round(x * 1000);
+  if (k >= 1 && k <= 999) return `about ${k} in 1,000`;
+  return x < 0.5 ? "fewer than 1 in 1,000" : "more than 999 in 1,000";
+}
+/* The survey phrase whose median answer is nearest, as a plain-English gloss of a result (not a calibration). */
+const DESCRIBERS = ["almost no chance", "highly unlikely", "chances are slight", "unlikely", "probably not", "about even", "better than even", "likely", "very good chance", "highly likely", "almost certainly"];
+function word(x) {
+  if (!isNum(x)) return null;
+  if (x <= 0) return { phrase: "ruled out", median: null };
+  if (x >= 1) return { phrase: "certain", median: null };
+  let best = null;
+  for (const k of DESCRIBERS) { const m = PHRASES.get(k).survey.median; if (!best || Math.abs(m - x * 100) < Math.abs(best.median - x * 100)) best = { phrase: k, median: m }; }
+  return best;
+}
+/* How far the evidence leans. These thresholds are interface wording, not scientific categories:
+ * a ratio within 1.1× either way "tells you very little"; up to 2× "slightly"; up to 5× "clearly";
+ * up to 20× "strongly"; beyond that "very strongly". */
+function strength(lr) {
+  const r = lr >= 1 ? lr : 1 / lr;
+  return r < 1.1 ? "little" : r < 2 ? "slightly" : r < 5 ? "clearly" : r < 20 ? "strongly" : "very strongly";
+}
+function leanText(r) {
+  if (!r.lr) return "";
+  if (r.lr.kind === "one") return "Equally expected either way";
+  if (r.lr.kind === "infinite") return "Only possible if the hypothesis is true, by your estimates";
+  if (r.lr.kind === "zero") return "Only possible if the hypothesis is false, by your estimates";
+  const v = r.lr.value;
+  return v >= 1 ? `About ${times(v)} more expected if the hypothesis is true` : `About ${times(1 / v)} more expected if the hypothesis is false`;
+}
+const REASONS = {
+  "impossible-both": "You said this evidence could not appear whether the hypothesis is true or false, yet you saw it. These assumptions cannot determine an update: raise at least one of the two evidence estimates above 0%.",
+  "prior-zero-ruled-out": "Your estimate before this evidence was 0%, and you said the evidence could not appear if the hypothesis were false. The two contradict each other, so these assumptions cannot determine an update.",
+  "prior-one-ruled-out": "Your estimate before this evidence was 100%, and you said the evidence could not appear if the hypothesis were true. The two contradict each other, so these assumptions cannot determine an update.",
+  "earlier": "An earlier step could not be determined, so this one cannot be computed either."
+};
+function explain(r) {
+  if (r.status !== "ok") return REASONS[r.reason];
+  const p = r.prior, k = r.lr.kind;
+  if (k === "one") return "This evidence does not favour either possibility, so your probability stays the same.";
+  if (p === 0) return "Your estimate was 0%, which rules the hypothesis out completely, so no evidence can raise it in this calculation. If you are not truly certain, try a small number such as 1%.";
+  if (p === 1) return "Your estimate was 100%, which rules the alternative out completely, so no evidence can lower it in this calculation. If you are not truly certain, try a large number such as 99%.";
+  if (k === "infinite") return "By your estimates this evidence could not appear if the hypothesis were false, so it rules the alternative out and the update gives 100%.";
+  if (k === "zero") return "By your estimates this evidence could not appear if the hypothesis were true, so it rules the hypothesis out and the update gives 0%.";
+  const s = strength(r.lr.value);
+  if (s === "little") return "This evidence is about equally expected either way, so it tells you very little.";
+  if (r.lr.value > 1) return `This evidence favours the hypothesis ${s}: it is more expected if the hypothesis is true, so your estimate moves ${s === "slightly" ? "up a little" : s === "clearly" ? "upward" : "substantially upward"}.`;
+  return `This evidence favours the alternative ${s}: it is more expected if the hypothesis is false, so your estimate moves ${s === "slightly" ? "down a little" : s === "clearly" ? "downward" : "substantially downward"}.`;
+}
+/* Imagine N cases like this one: the natural-frequency version of the same update. Counts are rounded. */
+function tree(p, a, b) {
+  const whole = (x) => Math.abs(x * 100 - Math.round(x * 100)) < 1e-9, N = whole(p) && whole(p * a) && whole((1 - p) * b) ? 100 : 1000;
+  const h = Math.round(p * N), nh = N - h, eh = Math.round(a * h), enh = Math.round(b * nh);
+  return { N, h, nh, eh, enh, seen: eh + enh };
+}
+
+/* ---------- inputs and the scenario ---------- */
+/* An input is { phrase, custom, value } in percent. phrase: a calibrated phrase key or null. custom: a phrase the
+ * person calibrated themselves ({ label, lo, hi }) or null. value: the working percent, or null to use the
+ * phrase's default. */
+const LIMIT = (v) => (isNum(v) ? clamp(v, 0, 100) : null);
+function cleanInput(x) {
+  const o = x && typeof x === "object" ? x : {};
+  const ph = typeof o.phrase === "string" ? lookup(o.phrase) : null;
+  const c = o.custom && typeof o.custom === "object" ? o.custom : null;
+  const custom = c ? { label: String(c.label ?? "").slice(0, 80), lo: LIMIT(c.lo), hi: LIMIT(c.hi) } : null;
+  const input = { phrase: !custom && numbered(ph) ? ph.key : null, custom, value: LIMIT(o.value) };
+  if (input.value === null && !input.phrase) input.value = 50;
+  return input;
+}
+/* Resolve an input to fractions for the maths, with its interval and a disclosed basis. */
+function resolve(input) {
+  const i = cleanInput(input), ph = i.phrase ? PHRASES.get(i.phrase) : null;
+  if (ph) {
+    const w = working(ph), sp = span(ph), v = i.value ?? w.value;
+    return { v: v / 100, lo: Math.min(sp.lo, v) / 100, hi: Math.max(sp.hi, v) / 100, label: ph.label, kind: "phrase", chosen: i.value !== null,
+      basis: i.value !== null ? "your choice" : w.basis, defaultValue: w.value, defaultBasis: w.basis, spanBasis: sp.basis };
+  }
+  if (i.custom) {
+    const v = i.value, lo = i.custom.lo ?? v, hi = i.custom.hi ?? v;
+    return { v: v / 100, lo: Math.min(lo, hi, v) / 100, hi: Math.max(lo, hi, v) / 100, label: i.custom.label || "your phrase", kind: "custom", chosen: true, basis: "your calibration", defaultValue: null, spanBasis: "your range" };
+  }
+  return { v: i.value / 100, lo: i.value / 100, hi: i.value / 100, label: null, kind: "number", chosen: true, basis: "your number", defaultValue: null, spanBasis: null };
+}
+/* How an input reads: "likely — interpreted here as 70% (median survey answer)". */
+function inputText(r) {
+  const n = entered(r.v * 100);
+  if (r.kind === "number") return n;
+  return `${r.label} — interpreted here as ${n} (${r.basis})`;
+}
+
+const scenarioIds = D.EXAMPLE_SCENARIOS.map((s) => s.id);
+function fromExample(id) {
+  const s = D.EXAMPLE_SCENARIOS.find((x) => x.id === id) || D.EXAMPLE_SCENARIOS[0];
+  return { v: 1, example: s.id, hypothesis: s.hypothesis, prior: cleanInput(s.prior), evidence: [{ text: s.evidence[0].text, a: cleanInput(s.evidence[0].a), b: cleanInput(s.evidence[0].b) }], sel: 0, showRange: false };
+}
+const defaults = () => fromExample("restaurant");
+const MAX_EVIDENCE = 12;
+/* Sanitise a scenario, such as one read back from storage. Anything unusable falls back to the default. */
+function clean(raw) {
+  if (!raw || typeof raw !== "object") return defaults();
+  const o = raw, d = defaults();
+  const ev = Array.isArray(o.evidence) ? o.evidence.slice(0, MAX_EVIDENCE).map((e) => ({ text: String(e?.text ?? "").slice(0, 300), a: cleanInput(e?.a), b: cleanInput(e?.b) })) : d.evidence;
+  return { v: 1, example: scenarioIds.includes(o.example) ? o.example : null, hypothesis: typeof o.hypothesis === "string" ? o.hypothesis.slice(0, 300) : d.hypothesis,
+    prior: o.prior ? cleanInput(o.prior) : d.prior, evidence: ev, sel: clamp(Number.isInteger(o.sel) ? o.sel : ev.length - 1, 0, Math.max(0, ev.length - 1)), showRange: o.showRange === true };
+}
+function suggestions(s) {
+  const ex = D.EXAMPLE_SCENARIOS.find((x) => x.id === s.example);
+  if (!ex) return [];
+  const have = new Set(s.evidence.map((e) => e.text));
+  return ex.evidence.filter((e) => !have.has(e.text)).map((e) => ({ text: e.text, a: cleanInput(e.a), b: cleanInput(e.b) }));
+}
+/* Everything the page shows, computed from a scenario. */
+function evaluate(state) {
+  const s = clean(state), prior = resolve(s.prior), ev = s.evidence.map((e) => ({ text: e.text, a: resolve(e.a), b: resolve(e.b) }));
+  const steps = chain(prior.v, ev.map((e) => ({ a: e.a.v, b: e.b.v })));
+  const ranges = propagate({ lo: prior.lo, hi: prior.hi }, ev.map((e) => ({ a: { lo: e.a.lo, hi: e.a.hi }, b: { lo: e.b.lo, hi: e.b.hi } })));
+  const ambiguous = [prior, ...ev.flatMap((e) => [e.a, e.b])].some((r) => r.hi > r.lo);
+  const last = steps.length ? steps[steps.length - 1] : null;
+  const final = last ? last.posterior : prior.v;
+  return { s, prior, ev, steps, ranges, ambiguous, final, finalRange: last ? ranges[ranges.length - 1] : { lo: prior.lo, hi: prior.hi } };
+}
+/* The probability-language rows as static HTML, for the page without JavaScript (a test keeps it in step). */
+function staticRows() {
+  const pos = (v) => `${Math.round(v * 10) / 10}%`;
+  return LIST.filter(numbered).map((ph) => {
+    const k = ph.kent, sv = ph.survey;
+    const kent = k ? (k.lo === k.hi ? `${k.centre}%` : `${k.lo}–${k.hi}%`) + (k.via === "chart" ? "" : k.via === "endpoint" ? " (end of scale)" : ` (as “${k.group}”)`) : "not listed";
+    const surv = sv ? `${pos(sv.median)} (middle half ${pos(sv.q1)}–${pos(sv.q3)}, n = ${sv.n})` : "not asked";
+    const bar = (lo, hi, cls) => `<span class="${cls}" style="left:${lo}%;width:${Math.max(hi - lo, 0.6)}%"></span>`;
+    return `<tr><th scope="row">${ph.label}</th><td>${kent}</td><td>${surv}</td><td class="sbar-cell" aria-hidden="true"><span class="sbar">${k ? bar(k.lo, k.hi, "sk") : ""}${sv ? bar(sv.q1, sv.q3, "ss") : ""}</span></td></tr>`;
+  }).join("\n");
+}
+
+/* ---------- beamdswitch report ---------- */
+const speakPct = (x) => {
+  if (!isNum(x)) return "undetermined";
+  if (x <= 0) return "zero percent";
+  if (x >= 1) return "one hundred percent";
+  const r = x * 100;
+  return r < 1 ? "less than one percent" : r > 99 ? "more than 99 percent" : `about ${Math.round(r)} percent`;
+};
+/* User text goes into the deck as plain words: no Markdown, maths or symbols that beamdswitch would read. */
+const plain = (t) => String(t ?? "").replace(/%/g, " percent").replace(/&/g, " and ").replace(/[$\\`*_#|<>×≈⁰¹²³⁴⁵⁶⁷⁸⁹⁻:]/g, " ").replace(/\s+/g, " ").trim();
+const spokenInput = (r) => (r.kind === "number" ? `${plain(entered(r.v * 100))}` : `${plain(r.label)}, taken as ${plain(entered(r.v * 100))}`);
+const bodyInput = (r) => (r.kind === "number" ? entered(r.v * 100) : `${plain(r.label)} (${entered(r.v * 100)}, ${r.basis})`);
+function report(state, checks) {
+  const e = evaluate(state), hyp = plain(e.s.hypothesis) || "an unnamed hypothesis", n = e.ev.length;
+  const steps = e.ev.map((x, i) => ({ x, r: e.steps[i], g: e.ranges[i] }));
+  const results = steps.length ? steps.map(({ x, r, g }, i) => ({
+    title: `Evidence ${i + 1}: ${approx(r.prior)} to ${approx(r.posterior)}`,
+    body: [`- Evidence: ${plain(x.text) || "(no description)"}`, `- If true: ${bodyInput(x.a)}; if false: ${bodyInput(x.b)}`,
+      `- ${leanText(r)}`, `- Prior odds ${odds(r.prior).text}, posterior odds ${odds(r.posterior).text}`,
+      ...(e.ambiguous && e.s.showRange ? [`- Range from phrase choices: ${approx(g.lo)} to ${approx(g.hi)}`] : [])].join("\n"),
+    narration: `Evidence ${i + 1}. ${plain(x.text) || "No description was given"}. ${r.status === "ok" ? `${plain(leanText(r))}. The estimate moves from ${speakPct(r.prior)} to ${speakPct(r.posterior)}.` : "These assumptions cannot determine an update at this step."}`
+  })) : [{ title: "No evidence yet", body: `- The estimate stays at ${approx(e.prior.v)}`, narration: `No evidence has been added yet, so the estimate stays at ${speakPct(e.prior.v)}.` }];
+  const ok = checks ? checks.filter((c) => c.ok).length : null;
+  return {
+    meta: { title: `Bayesian update: ${hyp}`, subtitle: n ? `From ${approx(e.prior.v)} to ${approx(e.final)} after ${n} piece${n === 1 ? "" : "s"} of evidence` : `Starting estimate ${approx(e.prior.v)}` },
+    narration: `This talk follows one Bayesian update of the hypothesis: ${hyp}. Every number is a probability read in percent, and every number is an estimate the person entered or calculated from them.`,
+    setup: [
+      { title: "The hypothesis and the starting estimate", body: `- Hypothesis: ${hyp}\n- Before any evidence: ${bodyInput(e.prior)}`,
+        narration: `The hypothesis is: ${hyp}. Before any evidence the estimate is ${spokenInput(e.prior)}.` },
+      { title: `${n} piece${n === 1 ? "" : "s"} of evidence, each judged two ways`, body: n ? e.ev.map((x, i) => `${i + 1}. ${plain(x.text) || "(no description)"}: if true ${entered(x.a.v * 100)}, if false ${entered(x.b.v * 100)}`).join("\n") : "- None yet",
+        narration: n ? `Each piece of evidence is judged twice: how likely it would be if the hypothesis were true, and how likely if it were false. ${e.ev.map((x, i) => `Evidence ${i + 1}: if true, ${spokenInput(x.a)}; if false, ${spokenInput(x.b)}.`).join(" ")}` : "No evidence has been entered yet." }
+    ],
+    method: [
+      { title: "Bayes' rule in odds form", body: "$$\\text{posterior odds} = \\text{prior odds} \\times \\frac{P(E \\mid H)}{P(E \\mid \\text{not } H)}$$\n\n- Each posterior becomes the next prior\n- Each piece of evidence is treated as a fresh, independent update",
+        narration: "Bayes' rule multiplies the odds before the evidence by the likelihood ratio: how much more expected the evidence is if the hypothesis is true than if it is false. Each result becomes the starting point for the next piece of evidence, and each piece is treated as independent." },
+      { title: "Probability words come from two separate sources", body: "- Kent's 1964 reference scale: a proposed standard, with ranges\n- A 2015 online survey of 46 people: how they actually read 17 phrases\n- A phrase's default value is the median survey answer, else the middle of Kent's range",
+        narration: "Probability words are calibrated from two separate sources: Sherman Kent's proposed scale for intelligence estimates, and an online survey of 46 people who gave a number for each of 17 phrases. Different people mean quite different numbers by the same word." }
+    ],
+    results,
+    checks: [
+      { title: "What the update assumes", body: `- The evidence items are treated as independent; correlated clues would overstate the change\n- The result follows from the estimates entered, not from data${ok !== null ? `\n- In-page self-checks: ${ok} of ${checks.length} passed` : ""}`,
+        narration: `The calculation treats each piece of evidence as independent, so clues that tell you the same thing would overstate the change. The result follows from the estimates entered, not from data.${ok !== null ? ` The page's ${checks.length} self checks: ${ok} of ${checks.length} passed.` : ""}` },
+      { title: "Takeaway", key: n ? `Given these estimates, ${approx(e.prior.v)} → ${approx(e.final)}${e.final !== null ? ` (${natural(e.final)})` : ""}` : `Starting estimate ${approx(e.prior.v)}`,
+        narration: n ? `Given these estimates, the update takes the hypothesis from ${speakPct(e.prior.v)} to ${speakPct(e.final)}.` : `The starting estimate is ${speakPct(e.prior.v)}, with no evidence yet.` }
+    ]
+  };
+}
+
+/* ---------- self-checks: deterministic numerical cases, reported to the console by the page ---------- */
+function selfTest() {
+  const near = (x, y) => Math.abs(x - y) < 1e-12, out = [];
+  const t = (name, ok) => out.push({ name, ok: !!ok });
+  t("neutral evidence leaves the prior unchanged", [0.03, 0.27, 0.5, 0.9].every((p) => update(p, 0.4, 0.4).posterior === p));
+  const s = update(0.5, 0.75, 0.25);
+  t("50% prior with likelihood ratio 3 gives 75%", near(s.posterior, 0.75) && s.lr.value === 3 && odds(0.5).text === "1 : 1" && odds(s.posterior).text === "3 : 1");
+  t("strong positive evidence moves up", update(0.2, 0.9, 0.05).posterior > 0.8);
+  t("strong negative evidence moves down", update(0.8, 0.05, 0.9).posterior < 0.2);
+  t("0% prior stays 0%", update(0, 0.9, 0.1).posterior === 0);
+  t("100% prior stays 100%", update(1, 0.1, 0.9).posterior === 1);
+  t("zero likelihood under the hypothesis gives 0%", update(0.6, 0, 0.3).posterior === 0 && update(0.6, 0, 0.3).lr.kind === "zero");
+  t("zero likelihood under the alternative gives 100%", update(0.6, 0.3, 0).posterior === 1 && update(0.6, 0.3, 0).lr.kind === "infinite");
+  t("certain likelihoods stay finite", near(update(0.4, 1, 0.5).posterior, 0.4 / 0.7) && near(update(0.4, 0.5, 1).posterior, 0.2 / 0.8));
+  t("evidence impossible both ways is undetermined", update(0.4, 0, 0).status === "undetermined");
+  t("contradictory certainty is undetermined", update(0, 0.5, 0).status === "undetermined" && update(1, 0, 0.5).status === "undetermined");
+  const c = chain(0.3, [{ a: 0.7, b: 0.2 }, { a: 0.4, b: 0.6 }]);
+  t("sequential: each posterior is the next prior", c[1].prior === c[0].posterior && near(c[1].posterior, update(update(0.3, 0.7, 0.2).posterior, 0.4, 0.6).posterior));
+  const g = propagate({ lo: 0.2, hi: 0.4 }, [{ a: { lo: 0.6, hi: 0.8 }, b: { lo: 0.1, hi: 0.3 } }])[0];
+  t("range ends are computed independently", near(g.lo, update(0.2, 0.6, 0.3).posterior) && near(g.hi, update(0.4, 0.8, 0.1).posterior) && g.lo < update(0.3, 0.7, 0.2).posterior && g.hi > update(0.3, 0.7, 0.2).posterior);
+  t("rounding never shows NaN or Infinity", [0, 1e-9, 0.004, 0.5, 0.996, 1, null, NaN, Infinity].every((x) => !/NaN|Infinity|undefined/.test(pct(x) + approx(x) + natural(x))));
+  return out;
+}
+
+root.Bayes = { KENT: D.KENT_DATA, SURVEY: D.EMPIRICAL_PHRASE_DATA, SCENARIOS: D.EXAMPLE_SCENARIOS, PHRASES, LIST, DESCRIBERS, MAX_EVIDENCE,
+  quantile, stats, norm, lookup, suggest, working, span, numbered, update, chain, propagate, odds, ratio, times, pct, approx, entered, natural, word,
+  strength, leanText, explain, tree, cleanInput, resolve, inputText, fromExample, defaults, clean, suggestions, evaluate, staticRows, plain, speakPct, report, selfTest };
+})(typeof self !== "undefined" ? self : this);
+</script>
+<script id="bayes-ui">
+(() => {
+"use strict";
+/* The page: state, rendering and events. Every number comes from Bayes (the engine above). */
+const B = self.Bayes, $ = (id) => document.getElementById(id);
+const esc = (t) => String(t ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+const reduced = () => { try { return matchMedia("(prefers-reduced-motion: reduce)").matches; } catch { return true; } };
+$("nojs").hidden = true;
+$("app").hidden = false;
+
+/* ---------- self-checks: reported to the console; the page never depends on them ---------- */
+const CHECKS = B.selfTest(), failed = CHECKS.filter((c) => !c.ok);
+for (const f of failed) console.error(`Bayes self-check failed: ${f.name}`);
+$("selfcheck").textContent = `In-page self-checks: ${CHECKS.length - failed.length} of ${CHECKS.length} passed.`;
+
+/* ---------- state: only the current scenario is kept, and only where storage is allowed ---------- */
+const KEY = "bayes:scenario";
+const store = {
+  get() { try { return JSON.parse(localStorage.getItem(KEY) || "null"); } catch { return null; } },
+  set(v) { try { localStorage.setItem(KEY, JSON.stringify(v)); } catch { /* storage blocked: carry on without it */ } },
+  clear() { try { localStorage.removeItem(KEY); } catch { /* storage blocked */ } },
+};
+let S = B.clean(store.get() || B.defaults());
+const save = () => store.set(S);
+const help = { prior: null, a: null, b: null };   // an unknown phrase awaiting a choice, per field
+const X = { phrase: "likely", value: null, filter: "all" };   // the phrase explorer
+let pending = null;   // an action awaiting confirmation
+
+const core = (s) => JSON.stringify({ h: s.hypothesis, p: s.prior, e: s.evidence });
+const dirty = () => !S.example || core(S) !== core(B.fromExample(S.example));
+const step = () => S.evidence[S.sel] || null;
+const getInput = (id) => (id === "prior" ? S.prior : step()?.[id]);
+function setInput(id, v) { const c = B.cleanInput(v); if (id === "prior") S.prior = c; else if (step()) step()[id] = c; }
+
+/* ---------- controls ---------- */
+const PF = {
+  prior: { legend: "Before seeing any evidence, how likely is your hypothesis?", hint: "A phrase such as “unlikely” or “about even”, or a percentage." },
+  a: { legend: "If your hypothesis were true, how likely would you be to see this evidence?", hint: "Think only of the world where the hypothesis is true." },
+  b: { legend: "If your hypothesis were false, how likely would you be to see the same evidence?", hint: "If your guess were wrong, how surprising would this evidence be?" },
+};
+function pfield(id) {
+  return `<fieldset class="pf" id="${id}-pf"><legend>${PF[id].legend}</legend><p class="hint" id="${id}-hint">${PF[id].hint}</p>
+<div class="pf-row"><div class="field grow"><label for="${id}-phrase">In words</label><input id="${id}-phrase" type="text" list="phrase-list" autocomplete="off" spellcheck="false" enterkeyhint="done" data-pf-phrase="${id}" aria-describedby="${id}-basis" placeholder="e.g. likely"></div>
+<div class="field"><label for="${id}-num">Percent</label><span class="numwrap"><input id="${id}-num" class="num" type="number" inputmode="decimal" min="0" max="100" step="any" data-pf-num="${id}"><span aria-hidden="true">%</span></span></div></div>
+<div class="pf-help" id="${id}-help" hidden></div>
+<div class="scale"><div class="band" id="${id}-band" aria-hidden="true"></div>
+<input type="range" class="slider" id="${id}-range" min="0" max="100" step="1" data-pf-range="${id}" aria-label="${id === "prior" ? "Starting estimate" : id === "a" ? "Chance of the evidence if the hypothesis is true" : "Chance of the evidence if the hypothesis is false"}, percent" aria-describedby="${id}-basis"></div>
+<div class="ends" aria-hidden="true"><span>0%</span><span>50%</span><span>100%</span></div>
+<p class="basis" id="${id}-basis"></p><p class="legend-line" id="${id}-legend"></p><div id="${id}-custom"></div></fieldset>`;
+}
+$("prior-slot").innerHTML = pfield("prior");
+$("a-slot").innerHTML = pfield("a");
+$("b-slot").innerHTML = pfield("b");
+$("phrase-list").innerHTML = B.LIST.map((ph) => `<option value="${esc(ph.label)}"></option>`).join("");
+$("examples").innerHTML = B.SCENARIOS.map((s) => `<button type="button" class="chip" data-act="example" data-id="${s.id}" aria-pressed="false">${s.chip}</button>`).join("");
+
+let force = false;
+const setVal = (el, v) => { if (el && (force || document.activeElement !== el) && el.value !== String(v)) el.value = v; };
+/* Rebuild a block only when its content changes; when that removes the focused control, focus its replacement. */
+function block(el, html) {
+  if (el.dataset.html === html) return;
+  const a = document.activeElement, had = !!a && el.contains(a), key = had ? a.dataset?.focus : null;
+  el.dataset.html = html;
+  el.innerHTML = html;
+  if (had && !el.contains(document.activeElement)) (key && el.querySelector(`[data-focus="${key}"]`) || el.querySelector("button,input") || el).focus?.();
+}
+
+/* ---------- small visuals: positions are percentages, so they follow any container width ---------- */
+const P = (v) => `${Math.max(0, Math.min(100, v))}%`;
+function band(ph, extra = "") {
+  if (!ph) return `<span class="b-rule"></span>${extra}`;
+  const k = ph.kent, sv = ph.survey;
+  let h = `<span class="b-rule"></span>`;
+  if (k) h += k.lo === k.hi ? `<span class="b-kent pt" style="left:${P(k.lo)}"></span>` : `<span class="b-kent" style="left:${P(k.lo)};width:${P(k.hi - k.lo)}"></span><span class="b-kc" style="left:${P(k.centre)}"></span>`;
+  if (sv) {
+    h += sv.values.map((v) => `<span class="b-dot" style="left:${P(v)}"></span>`).join("");
+    h += `<span class="b-iqr" style="left:${P(sv.q1)};width:${P(Math.max(sv.q3 - sv.q1, 0.6))}"></span><span class="b-med" style="left:${P(sv.median)}"></span>`;
+  }
+  return h + extra;
+}
+const kentText = (ph) => {
+  const k = ph?.kent;
+  if (!k) return ph?.possible ? "Kent: listed as “possible”, with no odds attached" : "Kent: not listed";
+  if (k.via === "endpoint") return `Kent: ${k.printed}`;
+  return `Kent: ${k.lo}–${k.hi}%${k.via === "chart" ? "" : ` (as “${k.group}”${k.via === "text" ? ", the form Kent uses in his text" : ""})`}`;
+};
+const r1 = (v) => Math.round(v * 10) / 10;
+const surveyText = (ph) => (ph?.survey ? `Survey: median ${r1(ph.survey.median)}%, middle half ${r1(ph.survey.q1)}–${r1(ph.survey.q3)}% (${ph.survey.n} people)` : "Survey: not asked");
+
+/* ---------- render ---------- */
+function renderField(id) {
+  const inp = getInput(id);
+  if (!inp) return;
+  const r = B.resolve(inp), ph = inp.phrase ? B.PHRASES.get(inp.phrase) : null, h = help[id];
+  setVal($(`${id}-phrase`), h ? $(`${id}-phrase`).value : ph ? ph.label : inp.custom ? inp.custom.label : "");
+  setVal($(`${id}-num`), r1(r.v * 100));
+  const range = $(`${id}-range`);
+  setVal(range, Math.round(r.v * 100));
+  const name = r.kind === "number" ? "your number" : r.label;
+  range.setAttribute("aria-valuetext", `${name}: ${B.entered(r.v * 100)}${ph ? `. ${kentText(ph)}. ${surveyText(ph)}` : ""}`);
+  block($(`${id}-band`), band(ph, inp.custom && inp.custom.lo !== null && inp.custom.hi !== null ? `<span class="b-own" style="left:${P(Math.min(inp.custom.lo, inp.custom.hi))};width:${P(Math.abs(inp.custom.hi - inp.custom.lo))}"></span>` : ""));
+  let basis;
+  if (r.kind === "phrase" && !r.chosen) basis = `Using ${B.approx(r.v)} as the working estimate (${r.basis}). Drag or type to choose what you mean.`;
+  else if (r.kind === "phrase") basis = `${esc(r.label)} — interpreted here as ${B.entered(r.v * 100)} (your choice). <button type="button" class="link" data-act="reset-value" data-pf="${id}" data-focus="rv-${id}">Use ${B.approx(r.defaultValue / 100)} (${r.defaultBasis})</button>`;
+  else if (r.kind === "custom") basis = `${esc(r.label)} — interpreted here as ${B.entered(r.v * 100)}. <span class="tag">Your calibration</span>`;
+  else basis = `Your number: ${B.entered(r.v * 100)}.`;
+  block($(`${id}-basis`), basis);
+  block($(`${id}-legend`), ph ? `<i class="sw k" aria-hidden="true"></i> ${esc(kentText(ph))} · <i class="sw s" aria-hidden="true"></i> ${esc(surveyText(ph))}` : inp.custom ? "Not in either source: this is your own calibration, not Kent's or the survey's." : "Type a phrase to compare your number with how people use words.");
+  block($(`${id}-custom`), inp.custom ? `<div class="own"><span>Your range for “${esc(inp.custom.label)}” (optional):</span>
+<label>from <input class="num" type="number" min="0" max="100" step="any" inputmode="decimal" data-pf-own="${id}" data-end="lo" value="${inp.custom.lo ?? ""}"> %</label>
+<label>to <input class="num" type="number" min="0" max="100" step="any" inputmode="decimal" data-pf-own="${id}" data-end="hi" value="${inp.custom.hi ?? ""}"> %</label></div>` : "");
+  const hp = $(`${id}-help`);
+  hp.hidden = !h;
+  if (h) {
+    const t = esc(h.text);
+    block(hp, (h.kind === "possible" ? `<p>Kent lists “${t}” among words of possibility with <b>no odds attached</b>, and the survey did not ask about it, so there is nothing to calibrate it against.</p>`
+      : `<p>“${t}” is not in Kent's scale or the survey, so it has no calibration.${h.sugg.length ? " Did you mean:" : ""}</p>`)
+      + `<div class="chips">${(h.kind === "possible" ? [] : h.sugg).map((p) => `<button type="button" class="chip" data-act="pick" data-pf="${id}" data-ph="${esc(p.key)}">${esc(p.label)}${B.numbered(p) ? "" : " (no odds)"}</button>`).join("")}`
+      + `<button type="button" class="chip own-btn" data-act="own" data-pf="${id}">Use my own meaning</button></div>`);
+  }
+}
+
+function render() {
+  const E = B.evaluate(S);
+  S = E.s;
+  setVal($("hyp"), S.hypothesis);
+  for (const b of document.querySelectorAll('[data-act="example"]')) b.setAttribute("aria-pressed", String(b.dataset.id === S.example && !dirty()));
+  const ex = B.SCENARIOS.find((x) => x.id === S.example);
+  $("scn-note").textContent = ex?.note || "";
+  $("scn-note").hidden = !ex?.note;
+  renderField("prior");
+
+  /* evidence editor */
+  const st = step(), n = S.evidence.length;
+  $("editor").hidden = !st;
+  $("no-evidence").hidden = !!st;
+  if (st) {
+    $("ev-h").textContent = n > 1 ? `Evidence ${S.sel + 1} of ${n}` : "Evidence";
+    setVal($("ev-text"), st.text);
+    renderField("a");
+    renderField("b");
+  }
+
+  /* before → after */
+  const r = st ? E.steps[S.sel] : null, before = st ? r.prior : E.prior.v, after = st ? r.posterior : null;
+  $("r-step").textContent = st ? `${n > 1 ? `Evidence ${S.sel + 1}: ` : ""}${S.evidence[S.sel].text || "(no description yet)"}` : "No evidence yet: add some below.";
+  $("r-before").textContent = B.approx(before);
+  $("r-before-label").textContent = st && S.sel > 0 ? `Before (after evidence ${S.sel})` : "Before";
+  const wb = B.word(before), wa = B.word(after);
+  $("r-before-w").textContent = wordText(wb);
+  $("r-before-n").textContent = B.natural(before);
+  $("r-lean").textContent = st ? (r.status === "ok" ? B.leanText(r) : "Cannot be determined") : "—";
+  $("r-after").textContent = st ? B.approx(after) : "—";
+  $("r-after-w").textContent = st ? wordText(wa) : "";
+  $("r-after-n").textContent = st ? B.natural(after) : "";
+  $("r-explain").textContent = st ? (r.status === "ok" ? `Given the estimates you entered, the update gives ${B.approx(after)}. ${B.explain(r)}` : B.explain(r)) : "";
+  $("r-overall").hidden = !(st && S.sel < n - 1);
+  $("r-overall").textContent = st && S.sel < n - 1 ? `After all ${n} pieces of evidence: ${B.approx(E.final)}.` : "";
+  const g = st ? E.ranges[S.sel] : { lo: E.prior.lo, hi: E.prior.hi };
+  $("show-range").checked = S.showRange;
+  $("range-box").hidden = !S.showRange;
+  $("r-range").innerHTML = !E.ambiguous ? "Every input is an exact number, so there is no range from phrase choices to show."
+    : g.lo === null || g.hi === null ? "One end of the range cannot be determined, because at an extreme of your phrase ranges the evidence you saw could not have appeared."
+    : `<span class="kv"><span>Working estimate</span><b>${B.approx(st ? after : before)}</b></span><span class="kv"><span>Range from your phrase choices</span><b>${rangeText(g)}</b></span>`;
+  axis(st ? before : null, st ? after : before, S.showRange && E.ambiguous && g.lo !== null && g.hi !== null ? g : null, st ? wa : wb);
+  numbers(E, st, r);
+  trail(E);
+  explorer();
+  announce(st && r.status === "ok" ? `After ${n > 1 ? `evidence ${S.sel + 1}` : "the evidence"}: ${B.approx(after)}, ${wordText(wa)}.` : "");
+}
+const wordText = (w) => (!w ? "" : w.median === null ? (w.phrase === "certain" ? "certain, under these inputs" : "ruled out, under these inputs") : `close to what people meant by “${w.phrase}”`);
+const rangeText = (g) => (B.pct(g.lo) === B.pct(g.hi) ? B.approx(g.lo) : `${B.approx(g.lo)} to ${B.approx(g.hi)}`.replace(/^≈(\d+)% to ≈/, "≈$1–"));
+
+function axis(before, after, g, w) {
+  const at = (x) => `${x * 100}%`, side = (x) => (x < 0.12 ? "l" : x > 0.88 ? "r" : "c");
+  const near = w && w.median !== null ? B.PHRASES.get(w.phrase).survey : null;
+  let h = `<span class="ax-rule"></span>`;
+  for (const t of [0, 25, 50, 75, 100]) h += `<span class="ax-tick" style="left:${t}%"></span>`;
+  if (near) h += `<span class="ax-region" style="left:${P(near.q1)};width:${P(near.q3 - near.q1)}"></span>`;
+  if (g) h += `<span class="ax-range" style="left:${at(g.lo)};width:${(g.hi - g.lo) * 100}%"></span>`;
+  if (before !== null && after !== null && before !== after) {
+    const lo = Math.min(before, after), hi = Math.max(before, after);
+    h += `<span class="ax-move ${after > before ? "up" : "down"}" style="left:${at(lo)};width:${(hi - lo) * 100}%"></span>`;
+  }
+  if (before !== null) h += `<span class="ax-prior" style="left:${at(before)}"></span><span class="ax-lab top ${side(before)}" style="left:${at(before)}">○ before ${B.approx(before)}</span>`;
+  if (after !== null) h += `<span class="ax-post" style="left:${at(after)}"></span><span class="ax-lab bot ${side(after)}" style="left:${at(after)}">◆ ${before === null ? "estimate" : "after"} ${B.approx(after)}</span>`;
+  block($("r-axis"), h);
+  $("r-axis-legend").textContent = (near ? `Shaded: the middle half of survey answers for “${w.phrase}”. ` : "") + (g ? "Bracket: range from your phrase choices. " : "");
+  $("r-axis-text").textContent = after === null ? "The update cannot be determined." : before === null ? `On a 0 to 100% scale, the estimate is ${B.approx(after)}.` : before === after ? `On a 0 to 100% scale, the estimate stays at ${B.approx(after)}.` : `On a 0 to 100% scale, the estimate moves ${after > before ? "up" : "down"} from ${B.approx(before)} to ${B.approx(after)}.`;
+}
+
+function numbers(E, st, r) {
+  if (!st) { block($("r-num"), "<p>Add evidence to see the numbers.</p>"); block($("r-calc"), "<p>Add evidence to see the calculation.</p>"); return; }
+  const e = E.ev[S.sel], x = (v) => (v === null ? "—" : `${Math.round(v * 1000) / 10}%`);
+  const t = r.prior !== null ? B.tree(r.prior, e.a.v, e.b.v) : null;
+  block($("r-num"), `<table class="nums"><tbody>
+<tr><th scope="row">Before: P(H)</th><td>${x(r.prior)}</td></tr>
+<tr><th scope="row">If true: P(E | H)</th><td>${x(e.a.v)}</td></tr>
+<tr><th scope="row">If false: P(E | not H)</th><td>${x(e.b.v)}</td></tr>
+<tr><th scope="row">After: P(H | E)</th><td>${x(r.posterior)}</td></tr></tbody></table>
+${t && r.status === "ok" ? `<h4>As natural frequencies</h4><p>Imagine ${t.N.toLocaleString("en-GB")} situations like this one. In about ${t.h} the hypothesis is true, and you would see this evidence in about ${t.eh} of them. In the other ${t.nh} it is false, and you would see the evidence in about ${t.enh}. So of the ${t.seen} situations where you see this evidence, about ${t.eh} are ones where the hypothesis is true${t.seen ? `: ${t.eh} in ${t.seen}` : ""}. Counts are rounded.</p>` : ""}`);
+  const po = B.odds(r.prior), qo = B.odds(r.posterior);
+  const lr = r.lr ? (r.lr.kind === "infinite" ? "unbounded (P(E | not H) is 0)" : r.lr.kind === "zero" ? "0 (P(E | H) is 0)" : B.times(r.lr.value)) : "—";
+  block($("r-calc"), `<table class="nums"><tbody>
+<tr><th scope="row">Prior probability</th><td>${x(r.prior)}</td></tr>
+<tr><th scope="row">Prior odds, P(H) : P(not H)</th><td>${po.text}</td></tr>
+<tr><th scope="row">Likelihood ratio, P(E | H) ÷ P(E | not H)</th><td>${lr}</td></tr>
+<tr><th scope="row">Posterior odds = prior odds × ratio</th><td>${r.status === "ok" ? qo.text : "—"}</td></tr>
+<tr><th scope="row">Posterior probability</th><td>${x(r.posterior)}</td></tr></tbody></table>
+<p class="formula">P(H | E) = P(E | H) × P(H) ÷ [ P(E | H) × P(H) + P(E | not H) × (1 − P(H)) ]</p>
+<p class="small muted">Odds are how many times more likely something is than not. The likelihood ratio is the core of the update: evidence matters according to how differently you would expect to see it if the hypothesis were true and if it were false.</p>`);
+}
+
+function trail(E) {
+  const n = S.evidence.length;
+  const pts = [E.prior.v, ...E.steps.map((s) => s.posterior)];
+  block($("chain"), pts.map((p, i) => `<li${i && i - 1 === S.sel ? ' class="cur"' : ""}><span class="sr">${i ? `after evidence ${i}` : "start"}: </span>${B.approx(p)}</li>`).join(""));
+  block($("cards"), S.evidence.map((e, i) => {
+    const r = E.steps[i], v = E.ev[i], cur = i === S.sel;
+    const desc = (x) => (x.kind === "number" ? B.entered(x.v * 100) : `${esc(x.label)} (${B.entered(x.v * 100)})`);
+    return `<li class="card${cur ? " cur" : ""}"${cur ? ' aria-current="step"' : ""}><p class="ct"><span class="muted">Evidence ${i + 1}</span> ${esc(e.text) || '<i class="muted">no description yet</i>'}</p>
+<p class="cs">If true: ${desc(v.a)} · If false: ${desc(v.b)}</p><p class="cr"><b>${B.approx(r.prior)} → ${B.approx(r.posterior)}</b> <span class="muted">${r.status === "ok" ? esc(B.leanText(r)) : "cannot be determined"}</span></p>
+<div class="cbtn"><button type="button" class="btn sm" data-act="edit" data-i="${i}" data-focus="edit-${i}"${cur ? ' aria-pressed="true"' : ""}>${cur ? "Editing" : "Edit"}<span class="sr"> evidence ${i + 1}</span></button><button type="button" class="btn sm quiet" data-act="del" data-i="${i}" data-focus="del-${i}">Delete<span class="sr"> evidence ${i + 1}</span></button></div></li>`;
+  }).join(""));
+  $("add").disabled = n >= B.MAX_EVIDENCE;
+  const sg = B.suggestions(S);
+  block($("sugg"), sg.length && n < B.MAX_EVIDENCE ? `<span class="small muted">Ideas from this example:</span> ${sg.map((x, i) => `<button type="button" class="chip" data-act="add-sug" data-i="${i}" data-focus="sug-${i}">+ ${esc(x.text)}</button>`).join("")}` : "");
+  $("correlated").hidden = n < 2;
+}
+
+/* ---------- the phrase explorer ---------- */
+function explorer() {
+  const rows = B.LIST.filter((ph) => (X.filter === "survey" ? ph.survey : X.filter === "kent" ? ph.kent || ph.possible : true));
+  for (const b of document.querySelectorAll('[data-act="filter"]')) b.setAttribute("aria-pressed", String(b.dataset.f === X.filter));
+  block($("x-rows"), rows.map((ph) => `<li><button type="button" class="prow" data-act="xpick" data-ph="${esc(ph.key)}" data-focus="x-${esc(ph.key)}" aria-pressed="${ph.key === X.phrase}">
+<span class="pname">${esc(ph.label)}</span><span class="ptrack" aria-hidden="true">${B.numbered(ph) ? band(ph) : '<span class="b-rule"></span><span class="pnone">no odds attached</span>'}</span>
+<span class="sr">. ${esc(kentText(ph))}. ${esc(surveyText(ph))}.</span></button></li>`).join(""));
+  const ph = B.PHRASES.get(X.phrase);
+  if (!ph) return;
+  setVal($("x-phrase"), ph.label);
+  $("x-name").textContent = ph.label;
+  const k = ph.kent, sv = ph.survey;
+  $("x-kent").innerHTML = k ? `${esc(kentText(ph))}.${k.via === "chart" ? ` Printed in the chart as “${esc(k.printed)}”.` : k.via === "endpoint" ? "" : ` Kent's chart gives “${esc(k.group)}” ${esc(k.printed)}.`}${ph.note ? ` <span class="muted">${esc(ph.note)}</span>` : ""}`
+    : ph.possible ? "Kent lists this among words of possibility and deliberately attaches no odds to them." : "Not in Kent's scale or synonym lists.";
+  block($("x-kent-band"), k ? band({ kent: k }) : '<span class="b-rule"></span>');
+  if (sv) {
+    const max = Math.max(...sv.bins);
+    block($("x-hist"), `<div class="hist" aria-hidden="true">${sv.bins.map((c, i) => `<span class="hb"><span class="hbar" style="height:${(c / max) * 100}%"></span><span class="hc">${c || ""}</span></span>`).join("")}</div><div class="ends" aria-hidden="true"><span>0%</span><span>50%</span><span>100%</span></div>`);
+    $("x-survey").textContent = `${sv.n} people answered. Median ${r1(sv.median)}%, middle half ${r1(sv.q1)}–${r1(sv.q3)}%, 10th to 90th percentile ${r1(sv.p10)}–${r1(sv.p90)}%, lowest ${r1(sv.min)}%, highest ${r1(sv.max)}%. Bars count answers in each 10-point band (${sv.bins.map((c, i) => `${i * 10}–${i * 10 + 10}%: ${c}`).join(", ")}).`;
+  } else {
+    block($("x-hist"), "");
+    $("x-survey").textContent = "The survey did not ask about this phrase, so there are no observed answers to show.";
+  }
+  const w = B.working(ph), v = X.value ?? w?.value ?? 50;
+  $("x-you").hidden = !w;
+  $("x-nonum").hidden = !!w;
+  if (w) {
+    setVal($("x-range"), Math.round(v));
+    setVal($("x-num"), r1(v));
+    $("x-range").setAttribute("aria-valuetext", `${ph.label}: ${B.entered(v)}`);
+    block($("x-band"), band(ph));
+    $("x-basis").textContent = X.value === null ? `Using ≈${r1(v)}% as the working estimate (${w.basis}).` : `${ph.label} — interpreted here as ${B.entered(v)} (your choice; ${w.basis} is ${r1(w.value)}%).`;
+  }
+  for (const b of document.querySelectorAll('[data-act="use"]')) b.disabled = !w || (b.dataset.to !== "prior" && !step());
+}
+
+/* A restrained live region: the result is announced once input settles, not on every slider step. */
+let liveTimer = 0, lastSaid = "";
+function announce(text) {
+  clearTimeout(liveTimer);
+  liveTimer = setTimeout(() => { if (text && text !== lastSaid) { lastSaid = text; $("live").textContent = text; } }, 900);
+}
+
+/* ---------- actions ---------- */
+const commit = () => { save(); render(); };
+function choosePhrase(id, text) {
+  const t = text.trim(), inp = getInput(id);
+  if (!inp) return;
+  help[id] = null;
+  if (!t) { setInput(id, { value: B.resolve(inp).v * 100 }); return commit(); }
+  const ph = B.lookup(t);
+  if (B.numbered(ph)) { if (inp.phrase !== ph.key) setInput(id, { phrase: ph.key }); }
+  else if (inp.custom && B.norm(inp.custom.label) === B.norm(t)) { /* unchanged */ }
+  else help[id] = { kind: ph && ph.possible ? "possible" : "unknown", text: t, sugg: B.suggest(t) };
+  commit();
+}
+function setValue(id, v) {
+  const inp = getInput(id);
+  if (!inp || !Number.isFinite(v)) return;
+  setInput(id, { ...inp, value: Math.min(100, Math.max(0, v)) });
+  commit();
+}
+function confirmThen(message, yes, run, from) {
+  if (!dirty()) return run();
+  pending = { run, from };
+  $("confirm-msg").textContent = message;
+  $("confirm-yes").textContent = yes;
+  $("confirm").hidden = false;
+  $("confirm-yes").focus();
+}
+function closeConfirm(back) { const p = pending; pending = null; $("confirm").hidden = true; if (back && p?.from?.isConnected) p.from.focus(); }
+const evidenceFrom = (x) => ({ text: x.text, a: B.cleanInput(x.a), b: B.cleanInput(x.b) });
+function addEvidence(x) {
+  if (S.evidence.length >= B.MAX_EVIDENCE) return;
+  S.evidence.push(x || { text: "", a: { value: 50 }, b: { value: 50 } });
+  S.sel = S.evidence.length - 1;
+  help.a = help.b = null;
+  force = true; commit(); force = false;
+  $("ev-text").focus();
+  if (!x) $("ev-text").select?.();
+}
+
+const app = $("app");
+app.addEventListener("click", (ev) => {
+  const t = ev.target.closest("[data-act]");
+  if (!t) return;
+  const act = t.dataset.act, id = t.dataset.pf;
+  if (act === "example") return confirmThen("Replace your scenario with this example?", "Replace", () => { S = B.fromExample(t.dataset.id); help.prior = help.a = help.b = null; force = true; commit(); force = false; t.focus(); }, t);
+  if (act === "pick") {
+    const ph = B.PHRASES.get(t.dataset.ph);
+    if (B.numbered(ph)) { help[id] = null; setInput(id, { phrase: ph.key }); }
+    else help[id] = { kind: "possible", text: ph.label, sugg: [] };
+    force = true; commit(); force = false;
+    $(`${id}-phrase`).value = ph.label;
+    return $(`${id}-phrase`).focus();
+  }
+  if (act === "own") {
+    const h = help[id], inp = getInput(id);
+    help[id] = null;
+    setInput(id, { custom: { label: h ? h.text : "", lo: null, hi: null }, value: B.resolve(inp).v * 100 });
+    commit();
+    return $(`${id}-num`).focus();
+  }
+  if (act === "reset-value") { const inp = getInput(id); setInput(id, { ...inp, value: null }); commit(); return $(`${id}-range`).focus(); }
+  if (act === "edit") { S.sel = +t.dataset.i; help.a = help.b = null; force = true; commit(); force = false; return $("ev-text").focus(); }
+  if (act === "del") {
+    const i = +t.dataset.i;
+    S.evidence.splice(i, 1);
+    if (S.sel >= i && S.sel > 0) S.sel--;
+    force = true; commit(); force = false;
+    const next = $("cards").querySelector(`[data-act="edit"][data-i="${Math.min(i, S.evidence.length - 1)}"]`);
+    return (next || $("add")).focus();
+  }
+  if (act === "add") return addEvidence(null);
+  if (act === "add-sug") return addEvidence(evidenceFrom(B.suggestions(S)[+t.dataset.i]));
+  if (act === "filter") { X.filter = t.dataset.f; return render(); }
+  if (act === "xpick") {
+    X.phrase = t.dataset.ph; X.value = null;
+    render();
+    $("x-detail").scrollIntoView?.({ block: "nearest", behavior: reduced() ? "auto" : "smooth" });
+    $("x-status").textContent = `Showing “${X.phrase}”.`;
+    return;
+  }
+  if (act === "use") {
+    const ph = B.PHRASES.get(X.phrase), to = t.dataset.to, names = { prior: "the starting estimate", a: "“if true”", b: "“if false”" };
+    help[to] = null;
+    setInput(to, { phrase: ph.key, value: X.value });
+    commit();
+    $("x-status").textContent = `Set ${names[to]}${to === "prior" ? "" : ` for evidence ${S.sel + 1}`} to ${ph.label} (${B.entered(B.resolve(getInput(to)).v * 100)}).`;
+    return;
+  }
+  if (act === "confirm-yes") { const p = pending; closeConfirm(false); return p?.run(); }
+  if (act === "confirm-no") return closeConfirm(true);
+});
+$("reset").addEventListener("click", (ev) => confirmThen("Reset discards your scenario and restores the first example.", "Reset", () => {
+  store.clear();
+  S = B.defaults();
+  help.prior = help.a = help.b = null;
+  X.phrase = "likely"; X.value = null;
+  force = true; render(); force = false;
+  store.clear();
+  $("hyp").focus();
+}, ev.currentTarget));
+
+app.addEventListener("input", (ev) => {
+  const t = ev.target, d = t.dataset;
+  if (t.id === "hyp") { S.hypothesis = t.value; return commit(); }
+  if (t.id === "ev-text" && step()) { step().text = t.value; return commit(); }
+  if (d.pfRange) return setValue(d.pfRange, +t.value);
+  if (d.pfNum) { if (t.value.trim() !== "" && Number.isFinite(+t.value)) setValue(d.pfNum, +t.value); return; }
+  if (d.pfOwn) {
+    const inp = getInput(d.pfOwn);
+    if (!inp?.custom) return;
+    const v = t.value.trim() === "" ? null : +t.value;
+    if (v !== null && !Number.isFinite(v)) return;
+    setInput(d.pfOwn, { ...inp, custom: { ...inp.custom, [d.end]: v } });
+    return commit();
+  }
+  if (t.id === "x-range" || t.id === "x-num") {
+    if (t.value.trim() === "" || !Number.isFinite(+t.value)) return;
+    X.value = Math.min(100, Math.max(0, +t.value));
+    return render();
+  }
+});
+app.addEventListener("change", (ev) => {
+  const t = ev.target, d = t.dataset;
+  if (d.pfPhrase) return choosePhrase(d.pfPhrase, t.value);
+  /* A blank or unusable number snaps back to the current value; anything else is kept within 0–100. */
+  if (d.pfNum || d.pfOwn || t.id === "x-num") { force = true; render(); force = false; return; }
+  if (t.id === "show-range") { S.showRange = t.checked; return commit(); }
+  if (t.id === "x-phrase") {
+    const ph = B.lookup(t.value);
+    if (ph) { X.phrase = ph.key; X.value = null; $("x-status").textContent = ""; }
+    else $("x-status").textContent = t.value.trim() ? `“${t.value.trim()}” is not in either source, so it has no calibration. Pick a listed phrase, or type it into an estimate and choose “Use my own meaning”.` : "";
+    force = true; render(); force = false;
+  }
+});
+app.addEventListener("keydown", (ev) => {
+  const t = ev.target;
+  if (ev.key === "Enter" && (t.dataset?.pfPhrase || t.id === "x-phrase")) { t.dispatchEvent(new Event("change", { bubbles: true })); return; }
+  /* Shift + arrow moves a probability slider in steps of 10. */
+  if (t.type === "range" && ev.shiftKey && /^Arrow(Left|Right|Up|Down)$/.test(ev.key)) {
+    ev.preventDefault();
+    const v = Math.min(100, Math.max(0, Math.round(+t.value) + (/Left|Down/.test(ev.key) ? -10 : 10)));
+    t.value = v;
+    t.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+});
+
+/* ---------- beamdswitch deck ---------- */
+const deck = () => self.Beamdswitch.deck(B.report(S, CHECKS));
+function saveFile(blob, name) {
+  const url = URL.createObjectURL(blob), a = document.createElement("a");
+  a.href = url; a.download = name;
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+$("save-beamdswitch").addEventListener("click", async () => {
+  const status = $("deck-status"), text = deck(), name = "bayes-beamdswitch.md";
+  try {
+    saveFile(new Blob([text], { type: "text/markdown" }), name);
+    status.textContent = `Saved ${name}: open it in beamdswitch.`;
+  } catch {
+    try { await navigator.clipboard.writeText(text); status.textContent = "Copied the beamdswitch deck, as saving is blocked here: paste it into beamdswitch."; }
+    catch { status.textContent = "Could not save or copy the beamdswitch deck here."; }
+  }
+});
+$("copy-beamdswitch").addEventListener("click", async () => {
+  const status = $("deck-status");
+  try { await navigator.clipboard.writeText(deck()); status.textContent = "Copied the beamdswitch deck: paste it into beamdswitch."; }
+  catch { status.textContent = "Could not copy the beamdswitch deck here: use the beamdswitch button to save it."; }
+});
+
+/* ---------- WebMCP: read-only tools for agents ---------- */
+const result = (v) => ({ content: [{ type: "text", text: JSON.stringify(v) }] });
+const ro = { readOnlyHint: true }, none = { type: "object", properties: {}, additionalProperties: false };
+const pc = (x) => (x === null ? null : Math.round(x * 1e6) / 1e4);
+const view = (r) => ({ prior_percent: pc(r.prior), posterior_percent: pc(r.posterior), posterior: r.status === "ok" ? B.approx(r.posterior) : null, status: r.status,
+  likelihood_ratio: r.lr ? (r.lr.kind === "infinite" ? "unbounded" : r.lr.value) : null, prior_odds: B.odds(r.prior).text, posterior_odds: B.odds(r.posterior).text,
+  evidence: r.lr ? B.leanText(r) : null, explanation: B.explain(r) });
+const phraseView = (ph) => ({ phrase: ph.label, kent: ph.kent ? { range_percent: [ph.kent.lo, ph.kent.hi], centre_percent: ph.kent.centre, listed_as: ph.kent.group, via: ph.kent.via, note: ph.note } : ph.possible ? "listed by Kent as possible, with no odds" : null,
+  survey: ph.survey ? { n: ph.survey.n, median: ph.survey.median, quartiles: [ph.survey.q1, ph.survey.q3], p10_p90: [ph.survey.p10, ph.survey.p90], mean: Math.round(ph.survey.mean * 10) / 10, bins_of_10_points: ph.survey.bins } : null,
+  default_working: B.working(ph) });
+const src = (s) => ({ title: s.title, authors: s.authors, publication: s.publication, date: s.date, url: s.url, licence: s.licence, measured: s.measured, transformation: s.transformation });
+const tools = [
+  { name: "get_metadata", description: "Return what this Bayesian reasoning page does, its two probability-language sources with provenance, the phrase vocabulary and the example scenarios.", inputSchema: none, annotations: ro,
+    async execute() { return result({ title: document.title, url: "https://teoyujie.org/visuals/bayes", sources: { kent: src(B.KENT.source), survey: src(B.SURVEY.source) }, phrases: B.LIST.map((p) => p.label), examples: B.SCENARIOS.map((s) => ({ id: s.id, hypothesis: s.hypothesis })), self_checks: CHECKS }); } },
+  { name: "get_current_state", description: "Return the page's current hypothesis, starting estimate, each piece of evidence with its two judgements, every posterior in the reasoning trail and the range from phrase choices.", inputSchema: none, annotations: ro,
+    async execute() {
+      const E = B.evaluate(S);
+      return result({ hypothesis: S.hypothesis, prior: B.inputText(E.prior), evidence: E.ev.map((e, i) => ({ text: e.text, if_true: B.inputText(e.a), if_false: B.inputText(e.b), ...view(E.steps[i]), range_from_phrases_percent: [pc(E.ranges[i].lo), pc(E.ranges[i].hi)] })),
+        final: B.approx(E.final), trail: [E.prior.v, ...E.steps.map((s) => s.posterior)].map(B.approx), selected: S.sel });
+    } },
+  { name: "lookup_phrase", description: "Look up a probability phrase: Kent's reference range, the survey's answers (median, quartiles, histogram) and the default working value. Unknown phrases return suggestions, never invented calibration.", annotations: ro,
+    inputSchema: { type: "object", properties: { phrase: { type: "string" } }, required: ["phrase"], additionalProperties: false },
+    async execute(i) { const ph = B.lookup(i.phrase); return result(ph ? phraseView(ph) : { phrase: i.phrase, calibrated: false, suggestions: B.suggest(i.phrase).map((p) => p.label) }); } },
+  { name: "bayes_update", description: "Update a starting probability with one or more pieces of evidence, each given as the percent chance of seeing it if the hypothesis is true and if it is false. Each posterior becomes the next prior. Same maths as the page.", annotations: ro,
+    inputSchema: { type: "object", properties: { prior_percent: { type: "number", minimum: 0, maximum: 100 }, evidence: { type: "array", minItems: 1, maxItems: 50, items: { type: "object", properties: { if_true_percent: { type: "number", minimum: 0, maximum: 100 }, if_false_percent: { type: "number", minimum: 0, maximum: 100 } }, required: ["if_true_percent", "if_false_percent"], additionalProperties: false } } }, required: ["prior_percent", "evidence"], additionalProperties: false },
+    async execute(i) {
+      const f = (v) => Math.min(100, Math.max(0, Number(v) || 0)) / 100;
+      return result({ steps: B.chain(f(i.prior_percent), (i.evidence || []).map((e) => ({ a: f(e.if_true_percent), b: f(e.if_false_percent) }))).map(view) });
+    } },
+];
+self.BayesTools = tools;
+const mc = (typeof document !== "undefined" && document.modelContext) || (typeof navigator !== "undefined" && navigator.modelContext);
+if (mc && typeof mc.registerTool === "function") for (const t of tools) mc.registerTool(t);
+
+$("tables").open = false;
+force = true; render(); force = false;
+})();
+</script>
+</body>
+</html>
