@@ -23,6 +23,7 @@ for s in scripts/build*.py; do python3 "$s" --verify || break; done
 | `scripts/build*.py` | Dependency-free Python builders and verifiers. |
 | `scripts/gallery.py` | Shared helper that rebuilds the root gallery from every `viz/*/index.html`. |
 | `viz/<slug>/index.html` | Generated standalone visualization page. |
+| `viz/<slug>/beamdswitch.js`, `viz/<slug>/report.js` | Sources a builder inlines for a page's narrated beamdswitch deck: the site's unchanged report template and that page's report. |
 | `index.html` | Generated root gallery that links the visualization pages. |
 | `design-tokens.json` | Shared colors, spacing, radius, and fonts used by the builders. |
 | `SKILLS.md` | Agent router: maps task types to the focused sub-skills below. |
@@ -113,11 +114,12 @@ python3 scripts/build_tampines_food_map.py --verify
 python3 scripts/build_stock_cases.py --verify
 ```
 
-The copied action visualizations also retain their source regression tests:
+The copied action visualizations also retain their source regression tests, and
+the Node tests check every narrated beamdswitch deck:
 
 ```sh
 python3 -m unittest discover -s tests -p 'test_*.py'
-node --test tests/convexity-action-engine.test.mjs tests/everyday-actions.test.mjs
+node --test tests/*.test.mjs
 ```
 
 Pages with a narrated beamdswitch report (the beamdswitch and Copy deck buttons)
@@ -158,6 +160,23 @@ publication (there is no site deployment copy to test here).
 
 Each verifier checks the story's invariants, the embedded data tables, and
 (where applicable) that the page has no external assets. The Node tests run each
-action page's emitted scripts and check its read-only tool registrations.
+action page's emitted scripts and check its read-only tool registrations, and
+run each deck page's scripts to check its beamdswitch decks.
 `.github/workflows/verify.yml` runs every command above on every push and pull
 request.
+
+## Narrated beamdswitch decks
+
+`graduate-employment-survey`, `haze-singapore`,
+`singapore-covid-governance-hindsight`, `social-values-surveydata` and
+`tourist-attractions` have a beamdswitch button that saves the page as shown as
+a narrated Markdown talk for
+[beamdswitch](https://teoyujie.org/visuals/beamdswitch/), and a Copy deck
+button that puts the same deck on the clipboard. Each folder keeps an unchanged
+copy of the site's report template (`beamdswitch.js`, also vendored in
+`tests/fixtures/beamdswitch/`) and the page's `report.js`, which fills it from
+the page's own data and view; the builder inlines both. Each
+`tests/<slug>-beamdswitch.test.mjs` asserts the template copy is unchanged,
+clicks both buttons, parses the decks with beamdswitch's own parser
+(`tests/fixtures/beamdswitch/deck.mjs`) and checks their numbers against the
+committed data.
