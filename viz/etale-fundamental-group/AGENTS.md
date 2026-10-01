@@ -2,9 +2,9 @@
 
 A geometric laboratory for the étale fundamental group, following Tamás Szamuely's *Galois Groups and Fundamental Groups*: loops, finite covers, fibres, monodromy and Galois symmetry, from Spec of a field to curves, elliptic curves and characteristic p. Live at <https://teoyujie.org/visuals/etale-fundamental-group/>.
 
-## Source of truth
+## Where changes go
 
-This repository, [yujieteo/etale-fundamental-group](https://github.com/yujieteo/etale-fundamental-group), is the source of truth: the laboratory and its tests are developed here, and its CI runs them here. `visuals/etale-fundamental-group/` in [yujieteo/site](https://github.com/yujieteo/site/tree/main/visuals/etale-fundamental-group) is a port of the page files, refreshed whenever the laboratory is updated, and the site runs no logic tests for it. Porting copies this repository minus `tests/` and `.github/`, so AGENTS.md and SKILLS.md must not link into either (the site checks that their links resolve).
+The standalone repository [yujieteo/etale-fundamental-group](https://github.com/yujieteo/etale-fundamental-group) is where this visualisation and its tests develop and where CI runs them. `visuals/etale-fundamental-group/` in [yujieteo/site](https://github.com/yujieteo/site/tree/main/visuals/etale-fundamental-group) is a port of its page files, refreshed when the visualisation is updated, and the site runs no logic tests for it. Porting copies the folder minus `tests/` and `.github/`. AGENTS.md and SKILLS.md must therefore not link into either (the site checks that their links resolve).
 
 ## Files and data
 
