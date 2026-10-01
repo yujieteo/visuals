@@ -74,7 +74,10 @@ test("the deck's counts are the page's, recounted from the committed GeoJSON", (
     const regions = `NW ${c.NW}, NE ${c.NE}, SW ${c.SW}, SE ${c.SE}`;
     assert.ok(md.includes(`## ${visible.length} of ${raw.features.length} attractions shown${v.term ? ` for “${v.term}”` : ""}`), what(v));
     assert.ok(md.includes(v.term ? `${v.term} appears in ${visible.length} matching descriptions. ${regions}.` : `The full map shows ${visible.length} attractions. ${regions}.`), what(v));
-    for (const [i, d] of [...visible].slice(0, 24).entries()) assert.ok(md.includes(`${i + 1}. `) && byId.get(d.id).geometry.coordinates[0] === d.longitude, `${what(v)}: ${d.id}`);
+    for (const [i, d] of [...visible].slice(0, 6).entries()) assert.ok(md.includes(`${i + 1}. `) && byId.get(d.id).geometry.coordinates[0] === d.longitude, `${what(v)}: ${d.id}`);
+    // A beamdswitch slide fits six attractions; the rest are counted, not listed.
+    assert.ok(!md.includes("\n7. "), `${what(v)}: at most six attractions on the slide`);
+    assert.equal(md.includes(`And ${visible.length - 6} more on the page.`), visible.length > 6, what(v));
     const selected = visible.find((d) => d.id === v.selection);
     if (selected) assert.ok(md.includes(`- Coordinates: ${selected.latitude.toFixed(6)}, ${selected.longitude.toFixed(6)}`), what(v));
     else assert.ok(!md.includes("- Coordinates: "), `${what(v)}: no attraction frame unless one is selected and shown`);

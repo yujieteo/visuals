@@ -15,7 +15,7 @@
 
   const QUADRANTS = ["NW", "NE", "SW", "SE"];
   const QUADRANT_NAMES = { NW: "north-west", NE: "north-east", SW: "south-west", SE: "south-east" };
-  const LISTED = 24; // The page lists the first 24 matches until Show all results.
+  const LISTED = 6; // A slide fits the first 6 matches; the page lists the rest.
   /* Markdown text: characters beamdswitch would read as maths or markup are escaped. */
   const md = (s) => String(s ?? "").replace(/\s+/g, " ").trim().replace(/[\\$*_`|<>[\]#]/g, "\\$&");
   /* Narration is read aloud: tags and markup characters are dropped and symbols become words. */
@@ -79,7 +79,7 @@
         ...(visible.length
           ? visible.slice(0, LISTED).map((d, i) => `${i + 1}. ${md(d.title)} · ${md(d.address) || "Address not provided"}`)
           : ["No attractions match."]),
-        ...(visible.length > LISTED ? ["", `And ${visible.length - LISTED} more, under Show all results.`] : []),
+        ...(visible.length > LISTED ? ["", `And ${visible.length - LISTED} more on the page.`] : []),
       ].join("\n"),
       narration: visible.length
         ? `${term ? `The word ${term} appears in ${plural(visible.length, "matching description")}` : `The map shows ${plural(visible.length, "attraction")}`}${query ? ` for the search ${say(query)}` : ""}: ${sayRegions(counts)}. ${term && visible.length ? `They include ${list(visible.slice(0, 3).map((d) => say(d.title)))}.` : ""}`.trim()
