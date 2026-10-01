@@ -4,7 +4,7 @@ Entropy as a counting technology: choose an object of a finite family uniformly,
 
 ## Source of truth
 
-This repository is the source of truth. The standalone repository [yujieteo/entropy-combinatorics](https://github.com/yujieteo/entropy-combinatorics) is where this visualisation and its tests develop and where CI runs them. `visuals/entropy-combinatorics/` in [yujieteo/site](https://github.com/yujieteo/site/tree/main/visuals/entropy-combinatorics) is a port of the page files, refreshed whenever the lab is updated, and the site runs no logic tests for it. Porting copies the folder minus `tests/` and `.github/`, so AGENTS.md and SKILLS.md must not link into either (the site checks that their links resolve).
+This repository is the source of truth. The standalone repository [yujieteo/entropy-combinatorics](https://github.com/yujieteo/entropy-combinatorics) is where this visualisation and its tests develop and where CI runs them. `visuals/entropy-combinatorics/` in [yujieteo/site](https://github.com/yujieteo/site/tree/main/visuals/entropy-combinatorics) is a port of the page files, refreshed whenever the lab is updated, and the site runs no logic tests for it. Porting copies the folder minus `tests/` and `.github/`. AGENTS.md and SKILLS.md must not link into either (the site checks that their links resolve).
 
 ## Files and data
 
