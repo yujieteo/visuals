@@ -1,0 +1,26 @@
+# CI for the Generating Functions Lab. This repository is where the lab and its tests develop; the
+# site's visuals/generating-functions/ is a port of the page files and runs none of these tests.
+# The Python test also rebuilds index.html with build.py and checks it is unchanged.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: node --test 'tests/*.test.{mjs,cjs}'
+      - run: python -m unittest discover -s tests -p 'test_*.py'

@@ -1,0 +1,1025 @@
+{
+  "title": "Generating Functions Lab",
+  "url": "https://teoyujie.org/visuals/generating-functions",
+  "summary": "Generating functions as a calculus for discrete structures: problem, discrete object, encode, manipulate, read coefficient, answer, verify.",
+  "conventions": {
+    "ogf": "A(x) = Σ aₙxⁿ; [xⁿ]A(x) = aₙ",
+    "egf": "A(x) = Σ aₙxⁿ/n!; strips show the counts aₙ",
+    "dft": "Â_k = A(ω^k) with ω = e^{2πi/N}; aₙ = (1/N) Σ_k A(ω^k) ω^{−kn}. numpy.fft uses e^{−2πi/N}, so its entry k is entry N − k here.",
+    "fibonacci": "F₀ = 0, F₁ = 1; the strip 1, 1, 2, 3, 5, 8 is aₙ = Fₙ₊₁",
+    "exactness": "Counting uses exact integers and rationals; roots-of-unity values are exact in ℤ[ζ_N]; floating point only for pictures and asymptotics, with stated tolerances."
+  },
+  "levels": [
+    {
+      "level": 0,
+      "id": "ogf",
+      "fragment": "#ogf",
+      "aliases": [
+        "#what-is-a-gf",
+        "#sequence-encoding"
+      ],
+      "title": "What is a generating function?",
+      "branch": "ogf",
+      "techniques": [
+        "sequence encoding",
+        "coefficient extraction",
+        "ordinary generating functions"
+      ],
+      "gf_type": "OGF",
+      "when_to_use": "Use an encoding whenever you want to treat a whole sequence as one algebraic object.",
+      "key": "A generating function is an encoding of coefficients, not primarily a function to plug numbers into.",
+      "optional": false
+    },
+    {
+      "level": 1,
+      "id": "geometric-series",
+      "fragment": "#geometric-series",
+      "aliases": [
+        "#geometric"
+      ],
+      "title": "Geometric series",
+      "branch": "ogf",
+      "techniques": [
+        "geometric series"
+      ],
+      "gf_type": "OGF",
+      "when_to_use": "Use the geometric series whenever an object is any number of copies of one thing.",
+      "key": "The formal identity 1 + x + x² + ⋯ = 1/(1 − x) needs no convergence; |x| < 1 matters only in the analytic view.",
+      "optional": false
+    },
+    {
+      "level": 2,
+      "id": "shift",
+      "fragment": "#shift",
+      "aliases": [
+        "#shifting"
+      ],
+      "title": "Shifts",
+      "branch": "ogf",
+      "techniques": [
+        "shifting"
+      ],
+      "gf_type": "OGF",
+      "when_to_use": "Use a shift when a sequence is the same as another one, delayed by a fixed amount.",
+      "key": "Multiplying by x^k slides the coefficient strip k places right: [xⁿ] x^k A(x) = aₙ₋ₖ.",
+      "optional": false
+    },
+    {
+      "level": 3,
+      "id": "add-subtract",
+      "fragment": "#add-subtract",
+      "aliases": [
+        "#addition",
+        "#subtraction"
+      ],
+      "title": "Addition and subtraction",
+      "branch": "ogf",
+      "techniques": [
+        "addition",
+        "subtraction",
+        "combinatorial sum"
+      ],
+      "gf_type": "OGF",
+      "when_to_use": "Use addition when objects split into disjoint types, and subtraction to discard a class of forbidden objects.",
+      "key": "Disjoint union adds generating functions; removing a subclass subtracts its generating function.",
+      "optional": false
+    },
+    {
+      "level": 4,
+      "id": "differentiation",
+      "fragment": "#differentiation",
+      "aliases": [
+        "#derivative",
+        "#integration"
+      ],
+      "title": "Differentiation",
+      "branch": "ogf",
+      "techniques": [
+        "differentiation",
+        "integration"
+      ],
+      "gf_type": "OGF",
+      "when_to_use": "Use differentiation when coefficients must be weighted by n, as in marking one atom or computing a mean.",
+      "key": "d/dx multiplies aₙ by n and shifts left; x·d/dx multiplies by n in place: Σ n xⁿ = x/(1 − x)².",
+      "optional": false
+    },
+    {
+      "level": 5,
+      "id": "fibonacci",
+      "fragment": "#fibonacci",
+      "aliases": [
+        "#recurrence",
+        "#recurrence-solving"
+      ],
+      "title": "Solving a recurrence (Fibonacci)",
+      "branch": "recurrence",
+      "techniques": [
+        "recurrence solving",
+        "rational generating functions"
+      ],
+      "gf_type": "OGF",
+      "when_to_use": "Use recurrence solving when a sequence is specified recursively by finitely many shifted terms.",
+      "key": "Shifted copies of the recurrence become xF(x) and x²F(x); the recurrence becomes a linear equation for F(x).",
+      "optional": false
+    },
+    {
+      "level": 6,
+      "id": "partial-fractions",
+      "fragment": "#partial-fractions",
+      "aliases": [
+        "#binet"
+      ],
+      "title": "Partial fractions and Binet's formula",
+      "branch": "recurrence",
+      "techniques": [
+        "partial fractions",
+        "rational generating functions"
+      ],
+      "gf_type": "OGF",
+      "when_to_use": "Use partial fractions when a rational generating function factors into simple poles.",
+      "key": "Partial fractions turn a complicated rational generating function into a sum of simple coefficient machines.",
+      "optional": false
+    },
+    {
+      "level": 7,
+      "id": "convolution",
+      "fragment": "#convolution",
+      "aliases": [
+        "#cauchy-product",
+        "#product"
+      ],
+      "title": "Cauchy product and convolution",
+      "branch": "products",
+      "techniques": [
+        "Cauchy product",
+        "convolution",
+        "combinatorial product"
+      ],
+      "gf_type": "OGF",
+      "when_to_use": "Use a product when an object decomposes into independently chosen pieces whose sizes add.",
+      "key": "A product of generating functions is the convolution of coefficients: cₙ = Σ aₖbₙ₋ₖ, a diagonal of the product grid.",
+      "optional": false
+    },
+    {
+      "level": 8,
+      "id": "coin-change",
+      "fragment": "#coin-change",
+      "aliases": [
+        "#coins"
+      ],
+      "title": "Coin change",
+      "branch": "products",
+      "techniques": [
+        "combinatorial product",
+        "geometric series"
+      ],
+      "gf_type": "OGF",
+      "when_to_use": "Use a product of geometric series when each kind of part may be used any number of times independently.",
+      "key": "Each denomination contributes an independent factor 1/(1 − x^d); [xⁿ] of the product counts the solutions of a + 2b + 5c = n.",
+      "optional": false
+    },
+    {
+      "level": 9,
+      "id": "compositions",
+      "fragment": "#compositions",
+      "aliases": [
+        "#restricted-compositions"
+      ],
+      "title": "Restricted compositions",
+      "branch": "products",
+      "techniques": [
+        "sequence construction"
+      ],
+      "gf_type": "OGF",
+      "when_to_use": "Use the sequence construction when an object is an ordered list of parts from a fixed class.",
+      "key": "A sequence of parts from P(x) is 1 + P + P² + ⋯ = 1/(1 − P(x)).",
+      "optional": false
+    },
+    {
+      "level": 10,
+      "id": "symbolic-combinatorics",
+      "fragment": "#symbolic-combinatorics",
+      "aliases": [
+        "#symbolic",
+        "#constructions"
+      ],
+      "title": "Symbolic combinatorics",
+      "branch": "products",
+      "techniques": [
+        "combinatorial sum",
+        "combinatorial product",
+        "sequence construction"
+      ],
+      "gf_type": "OGF",
+      "when_to_use": "Use the symbolic method when you can describe the objects by a grammar of sums, products and sequences.",
+      "key": "CHOICE is A + B, PAIR is AB (convolution), SEQUENCE is 1/(1 − A): the construction is the equation.",
+      "optional": false
+    },
+    {
+      "level": 11,
+      "id": "composition",
+      "fragment": "#composition",
+      "aliases": [
+        "#substitution"
+      ],
+      "title": "Composition (substitution)",
+      "branch": "composition",
+      "techniques": [
+        "composition"
+      ],
+      "gf_type": "OGF",
+      "when_to_use": "Use composition when atoms of one structure are replaced by structures of another kind.",
+      "key": "Product combines independent sizes; composition replaces each atom by a whole structure: A(B(x)).",
+      "optional": false
+    },
+    {
+      "level": 12,
+      "id": "catalan",
+      "fragment": "#catalan",
+      "aliases": [
+        "#balanced-parentheses",
+        "#binary-trees"
+      ],
+      "title": "Catalan numbers",
+      "branch": "composition",
+      "techniques": [
+        "implicit equations",
+        "algebraic generating functions"
+      ],
+      "gf_type": "OGF",
+      "when_to_use": "Use an implicit equation when the class is defined recursively in terms of itself.",
+      "key": "C = 1 + xC² is a quadratic; its power-series root (1 − √(1 − 4x))/(2x) gives Cₙ = C(2n, n)/(n + 1).",
+      "optional": false
+    },
+    {
+      "level": 13,
+      "id": "lagrange-inversion",
+      "fragment": "#lagrange-inversion",
+      "aliases": [
+        "#lagrange"
+      ],
+      "title": "Lagrange inversion",
+      "branch": "composition",
+      "techniques": [
+        "Lagrange inversion",
+        "implicit equations"
+      ],
+      "gf_type": "OGF",
+      "when_to_use": "Use Lagrange inversion when the generating function is defined implicitly by T = xφ(T).",
+      "key": "[xⁿ]Tᵏ = (k/n)[uⁿ⁻ᵏ]φ(u)ⁿ: a coefficient of an unknown series becomes a coefficient of a known power.",
+      "optional": false
+    },
+    {
+      "level": 14,
+      "id": "egf",
+      "fragment": "#egf",
+      "aliases": [
+        "#exponential-generating-functions",
+        "#labelled"
+      ],
+      "title": "Exponential generating functions",
+      "branch": "egf",
+      "techniques": [
+        "exponential generating functions",
+        "ordinary generating functions"
+      ],
+      "gf_type": "EGF",
+      "when_to_use": "Use an EGF when objects carry distinct labels and decompositions require choosing subsets of those labels.",
+      "key": "A(x) = Σ aₙxⁿ/n!: dividing by n! removes the ambient permutation factor of the labels.",
+      "optional": false
+    },
+    {
+      "level": 15,
+      "id": "labelled-product",
+      "fragment": "#labelled-product",
+      "aliases": [
+        "#egf-product",
+        "#binomial-convolution"
+      ],
+      "title": "The labelled product",
+      "branch": "egf",
+      "techniques": [
+        "labelled product",
+        "exponential generating functions"
+      ],
+      "gf_type": "EGF",
+      "when_to_use": "Use the labelled product when a labelled object splits into two labelled pieces whose label sets partition the labels.",
+      "key": "cₙ = Σ C(n, k) aₖbₙ₋ₖ: the binomial coefficient is the act of choosing which labels go left; EGFs multiply.",
+      "optional": false
+    },
+    {
+      "level": 16,
+      "id": "exponential-formula",
+      "fragment": "#exponential-formula",
+      "aliases": [
+        "#set-of-components"
+      ],
+      "title": "The exponential formula",
+      "branch": "egf",
+      "techniques": [
+        "exponential formula",
+        "composition"
+      ],
+      "gf_type": "EGF",
+      "when_to_use": "Use the exponential formula when every object is an unordered set of labelled connected components.",
+      "key": "A(x) = exp(C(x)) = 1 + C + C²/2! + C³/3! + ⋯: k components form a k-fold labelled product, divided by k! because they are unordered.",
+      "optional": false
+    },
+    {
+      "level": 17,
+      "id": "permutations-cycles",
+      "fragment": "#permutations-cycles",
+      "aliases": [
+        "#permutations",
+        "#cycles",
+        "#stirling"
+      ],
+      "title": "Permutations and cycles",
+      "branch": "egf",
+      "techniques": [
+        "exponential formula",
+        "marking"
+      ],
+      "gf_type": "EGF",
+      "when_to_use": "Use PERM = SET(CYC) when you need permutations by cycle structure.",
+      "key": "PERMUTATION = SET(CYCLE): exp(log 1/(1 − x)) = 1/(1 − x), so n! permutations; marking cycles gives Stirling numbers.",
+      "optional": false
+    },
+    {
+      "level": 18,
+      "id": "bivariate",
+      "fragment": "#bivariate",
+      "aliases": [
+        "#marking",
+        "#bgf"
+      ],
+      "title": "Bivariate generating functions",
+      "branch": "marking",
+      "techniques": [
+        "bivariate generating functions",
+        "marking"
+      ],
+      "gf_type": "BGF",
+      "when_to_use": "Use a bivariate generating function when you want a second parameter (marked by y) alongside size.",
+      "key": "Setting y = 1 marginalises; ∂/∂y at y = 1 sums the marked parameter, giving its mean Hₙ.",
+      "optional": false
+    },
+    {
+      "level": 19,
+      "id": "probability",
+      "fragment": "#probability",
+      "aliases": [
+        "#pgf",
+        "#dice"
+      ],
+      "title": "Probability generating functions",
+      "branch": "marking",
+      "techniques": [
+        "probability generating functions",
+        "convolution"
+      ],
+      "gf_type": "PGF",
+      "when_to_use": "Use a probability generating function for sums of independent integer-valued random variables.",
+      "key": "G_{X+Y}(z) = G_X(z)G_Y(z): counting convolution = probability convolution = polynomial multiplication.",
+      "optional": false
+    },
+    {
+      "level": 20,
+      "id": "roots-of-unity",
+      "fragment": "#roots-of-unity",
+      "aliases": [
+        "#roots-of-unity-filter",
+        "#filter",
+        "#multisection"
+      ],
+      "title": "Roots-of-unity filters",
+      "branch": "fourier",
+      "techniques": [
+        "roots-of-unity filters",
+        "DFT"
+      ],
+      "gf_type": "OGF",
+      "when_to_use": "Use a roots-of-unity filter when only coefficients in selected congruence classes matter.",
+      "key": "(1/m)Σⱼ ω^{j(n−r)} is 1 when n ≡ r (mod m) and 0 otherwise: the phasors of unwanted classes cancel.",
+      "optional": false
+    },
+    {
+      "level": 21,
+      "id": "finite-vectors",
+      "fragment": "#finite-vectors",
+      "aliases": [
+        "#evaluation",
+        "#finite-gf"
+      ],
+      "title": "Finite generating functions as vectors",
+      "branch": "fourier",
+      "techniques": [
+        "DFT",
+        "coefficient extraction"
+      ],
+      "gf_type": "finite",
+      "when_to_use": "Use the evaluation representation when a finite coefficient vector is easier to manipulate through its values.",
+      "key": "The DFT is the change of coordinates from the coefficients of a polynomial to its values at the roots of unity.",
+      "optional": false
+    },
+    {
+      "level": 22,
+      "id": "dft",
+      "fragment": "#dft",
+      "aliases": [
+        "#dft-matrix",
+        "#fourier"
+      ],
+      "title": "The DFT matrix",
+      "branch": "fourier",
+      "techniques": [
+        "DFT"
+      ],
+      "gf_type": "finite",
+      "when_to_use": "Use the DFT when a finite coefficient vector is easier to manipulate through polynomial values at roots of unity.",
+      "key": "Row k of the DFT matrix is (1, ωᵏ, ω²ᵏ, …): evaluating A at ωᵏ is a dot product. A(1) = 10, A(i) = −2 − 2i, A(−1) = −2, A(−i) = −2 + 2i.",
+      "optional": false
+    },
+    {
+      "level": 23,
+      "id": "inverse-dft",
+      "fragment": "#inverse-dft",
+      "aliases": [
+        "#idft"
+      ],
+      "title": "Inverse DFT as coefficient extraction",
+      "branch": "fourier",
+      "techniques": [
+        "inverse DFT",
+        "coefficient extraction",
+        "roots-of-unity filters"
+      ],
+      "gf_type": "finite",
+      "when_to_use": "Use the inverse DFT to read coefficients back from values at the roots of unity.",
+      "key": "aₙ = (1/N)Σₖ A(ωᵏ)ω^{−kn}: a finite coefficient-extraction formula, and the same phenomenon as the roots-of-unity filter.",
+      "optional": false
+    },
+    {
+      "level": 24,
+      "id": "cyclic-convolution",
+      "fragment": "#cyclic-convolution",
+      "aliases": [
+        "#convolution-theorem"
+      ],
+      "title": "The cyclic convolution theorem",
+      "branch": "fourier",
+      "techniques": [
+        "cyclic convolution",
+        "convolution theorem"
+      ],
+      "gf_type": "finite",
+      "when_to_use": "Use the convolution theorem when a cyclic convolution is cheaper as pointwise multiplication of DFTs.",
+      "key": "DFT(a ⊛ b) = DFT(a)·DFT(b): multiplication modulo xᴺ − 1 becomes coordinatewise multiplication.",
+      "optional": false
+    },
+    {
+      "level": 25,
+      "id": "fft",
+      "fragment": "#fft",
+      "aliases": [
+        "#polynomial-multiplication",
+        "#fft-decomposition"
+      ],
+      "title": "Polynomial multiplication and the FFT",
+      "branch": "fourier",
+      "techniques": [
+        "FFT decomposition",
+        "convolution theorem"
+      ],
+      "gf_type": "finite",
+      "when_to_use": "Use the FFT viewpoint when multiplying long polynomials or convolving long sequences.",
+      "key": "A(x) = A_even(x²) + xA_odd(x²) halves the work at each level: O(n log n) instead of O(n²).",
+      "optional": false
+    },
+    {
+      "level": 26,
+      "id": "transfer-matrix",
+      "fragment": "#transfer-matrix",
+      "aliases": [
+        "#automata",
+        "#binary-strings",
+        "#no-11"
+      ],
+      "title": "Rational GFs and automata",
+      "branch": "rational",
+      "techniques": [
+        "transfer matrices",
+        "rational generating functions",
+        "recurrence solving"
+      ],
+      "gf_type": "OGF",
+      "when_to_use": "Use a transfer matrix when objects are words accepted by a finite automaton.",
+      "key": "v_{n+1} = Mvₙ gives Σ vₙxⁿ = (I − xM)⁻¹v₀: finite-state constraints give rational generating functions.",
+      "optional": false
+    },
+    {
+      "level": 27,
+      "id": "partitions",
+      "fragment": "#partitions",
+      "aliases": [
+        "#integer-partitions",
+        "#q-series"
+      ],
+      "title": "Partitions and q-series",
+      "branch": "rational",
+      "techniques": [
+        "integer partitions",
+        "q-series"
+      ],
+      "gf_type": "OGF",
+      "when_to_use": "Use an infinite product when each part size can be chosen independently any number of times.",
+      "key": "Each part size k contributes 1 + xᵏ + x²ᵏ + ⋯; the product over all k is Π 1/(1 − xᵏ).",
+      "optional": false
+    },
+    {
+      "level": 28,
+      "id": "euler-identity",
+      "fragment": "#euler-identity",
+      "aliases": [
+        "#distinct-odd",
+        "#euler"
+      ],
+      "title": "Euler's partition identity",
+      "branch": "rational",
+      "techniques": [
+        "integer partitions",
+        "q-series"
+      ],
+      "gf_type": "OGF",
+      "when_to_use": "Use an equality of generating functions to prove that two families are equinumerous.",
+      "key": "Π(1 + xᵏ) = Π(1 − x²ᵏ)/(1 − xᵏ) = Π 1/(1 − x²ᵏ⁻¹): an algebraic identity, also explained by a bijection.",
+      "optional": false
+    },
+    {
+      "level": 29,
+      "id": "singularities",
+      "fragment": "#singularities",
+      "aliases": [
+        "#asymptotics",
+        "#poles"
+      ],
+      "title": "Singularities and growth",
+      "branch": "asymptotics",
+      "techniques": [
+        "singularity analysis",
+        "rational generating functions"
+      ],
+      "gf_type": "OGF",
+      "when_to_use": "Use singularity analysis when exact formulas matter less than the growth of coefficients.",
+      "key": "The nearest singularity sets the exponential growth: a pole at ρ gives coefficients ≈ ρ⁻ⁿ.",
+      "optional": false
+    },
+    {
+      "level": 30,
+      "id": "singularity-analysis",
+      "fragment": "#singularity-analysis",
+      "aliases": [
+        "#catalan-asymptotics",
+        "#transfer"
+      ],
+      "title": "Singularity analysis",
+      "branch": "asymptotics",
+      "techniques": [
+        "singularity analysis"
+      ],
+      "gf_type": "OGF",
+      "when_to_use": "Use singularity analysis when the generating function has an algebraic singularity on its circle of convergence.",
+      "key": "Location of the singularity → exponential factor (4ⁿ); its type (square root) → polynomial correction (n^{−3/2}).",
+      "optional": false
+    },
+    {
+      "level": 31,
+      "id": "saddle-point",
+      "fragment": "#saddle-point",
+      "aliases": [
+        "#cauchy-formula",
+        "#contour"
+      ],
+      "title": "Saddle-point intuition",
+      "branch": "asymptotics",
+      "techniques": [
+        "Cauchy coefficient formula",
+        "saddle-point intuition"
+      ],
+      "gf_type": "OGF",
+      "when_to_use": "Use the saddle-point view when the generating function is entire or has no useful singularity.",
+      "key": "Choosing r at the saddle (r ≈ n) concentrates the integral near z = r and recovers Stirling: 1/n! ≈ eⁿ/(nⁿ√(2πn)).",
+      "optional": true
+    },
+    {
+      "level": 32,
+      "id": "multivariate",
+      "fragment": "#multivariate",
+      "aliases": [
+        "#lattice-paths",
+        "#diagonal"
+      ],
+      "title": "Multivariate generating functions",
+      "branch": "extended",
+      "techniques": [
+        "multivariate coefficient extraction",
+        "bivariate generating functions"
+      ],
+      "gf_type": "multivariate",
+      "when_to_use": "Use multivariate generating functions when objects carry several sizes at once.",
+      "key": "1/(1 − x − y) has a_{m,n} = C(m+n, m); the diagonal [xⁿyⁿ] = C(2n, n) is selected geometrically and has GF 1/√(1 − 4t).",
+      "optional": true
+    },
+    {
+      "level": 33,
+      "id": "unification",
+      "fragment": "#unification",
+      "aliases": [
+        "#unifying-picture",
+        "#synthesis"
+      ],
+      "title": "The unifying picture",
+      "branch": "extended",
+      "techniques": [
+        "coefficient extraction",
+        "convolution theorem"
+      ],
+      "gf_type": "all",
+      "when_to_use": "Use this map to pick a representation before picking a trick.",
+      "key": "Generating functions are changes of representation; at roots of unity, convolution becomes multiplication.",
+      "optional": false
+    }
+  ],
+  "problems": [
+    {
+      "k": 1,
+      "fragment": "#problem-1",
+      "title": "Encode 1, 1, 1, …",
+      "technique": "geometric series",
+      "difficulty": 1,
+      "lesson": "geometric-series",
+      "problem": "Find the generating function of the constant sequence 1, 1, 1, …."
+    },
+    {
+      "k": 2,
+      "fragment": "#problem-2",
+      "title": "Encode 0, 0, 1, 1, …",
+      "technique": "shifting",
+      "difficulty": 1,
+      "lesson": "shift",
+      "problem": "Find the generating function of 0, 0, 1, 1, 1, …."
+    },
+    {
+      "k": 3,
+      "fragment": "#problem-3",
+      "title": "GF of n",
+      "technique": "differentiation",
+      "difficulty": 2,
+      "lesson": "differentiation",
+      "problem": "Find Σ n xⁿ."
+    },
+    {
+      "k": 4,
+      "fragment": "#problem-4",
+      "title": "Fibonacci numbers",
+      "technique": "recurrence",
+      "difficulty": 2,
+      "lesson": "fibonacci",
+      "problem": "Find F(x) for F₀ = 0, F₁ = 1, Fₙ = Fₙ₋₁ + Fₙ₋₂."
+    },
+    {
+      "k": 5,
+      "fragment": "#problem-5",
+      "title": "Solve Fibonacci explicitly",
+      "technique": "partial fractions",
+      "difficulty": 3,
+      "lesson": "partial-fractions",
+      "problem": "Find a closed formula for Fₙ."
+    },
+    {
+      "k": 6,
+      "fragment": "#problem-6",
+      "title": "Count i + j = n",
+      "technique": "convolution",
+      "difficulty": 2,
+      "lesson": "convolution",
+      "problem": "How many pairs (i, j) of nonnegative integers have i + j = n?"
+    },
+    {
+      "k": 7,
+      "fragment": "#problem-7",
+      "title": "Coin change",
+      "technique": "product",
+      "difficulty": 2,
+      "lesson": "coin-change",
+      "problem": "How many ways to make 12 cents with coins 1, 2, 5?"
+    },
+    {
+      "k": 8,
+      "fragment": "#problem-8",
+      "title": "Compositions with parts 1, 2, 3",
+      "technique": "sequence construction",
+      "difficulty": 2,
+      "lesson": "compositions",
+      "problem": "Count compositions of 7 with parts 1, 2, 3."
+    },
+    {
+      "k": 9,
+      "fragment": "#problem-9",
+      "title": "Binary strings without 11",
+      "technique": "recurrence / transfer matrix",
+      "difficulty": 3,
+      "lesson": "transfer-matrix",
+      "problem": "Count binary strings of length 6 with no two adjacent 1s."
+    },
+    {
+      "k": 10,
+      "fragment": "#problem-10",
+      "title": "Balanced parentheses",
+      "technique": "implicit GF",
+      "difficulty": 3,
+      "lesson": "catalan",
+      "problem": "Find the GF equation for balanced strings of n pairs of parentheses."
+    },
+    {
+      "k": 11,
+      "fragment": "#problem-11",
+      "title": "Catalan closed form",
+      "technique": "algebraic GF",
+      "difficulty": 3,
+      "lesson": "catalan",
+      "problem": "Solve C = 1 + xC² and find Cₙ."
+    },
+    {
+      "k": 12,
+      "fragment": "#problem-12",
+      "title": "Rooted tree coefficient",
+      "technique": "Lagrange inversion",
+      "difficulty": 4,
+      "lesson": "lagrange-inversion",
+      "problem": "For T = x(1 + T)², find [x⁶]T."
+    },
+    {
+      "k": 13,
+      "fragment": "#problem-13",
+      "title": "Labelled selections",
+      "technique": "EGF",
+      "difficulty": 3,
+      "lesson": "labelled-product",
+      "problem": "Choose an ordered list from some of the labels {1, …, n}, leaving the rest unordered. How many for n = 4?"
+    },
+    {
+      "k": 14,
+      "fragment": "#problem-14",
+      "title": "Permutations by cycles",
+      "technique": "exponential formula",
+      "difficulty": 4,
+      "lesson": "permutations-cycles",
+      "problem": "Count permutations of 5 labels, and those with exactly 2 cycles."
+    },
+    {
+      "k": 15,
+      "fragment": "#problem-15",
+      "title": "Sum of dice",
+      "technique": "probability GF",
+      "difficulty": 3,
+      "lesson": "probability",
+      "problem": "Probability that two fair dice sum to 7?"
+    },
+    {
+      "k": 16,
+      "fragment": "#problem-16",
+      "title": "Coefficients with n ≡ r mod m",
+      "technique": "roots-of-unity filter",
+      "difficulty": 4,
+      "lesson": "roots-of-unity",
+      "problem": "In 1 + x + ⋯ + x¹¹, how many exponents are divisible by 3?"
+    },
+    {
+      "k": 17,
+      "fragment": "#problem-17",
+      "title": "Recover a vector from root evaluations",
+      "technique": "inverse DFT",
+      "difficulty": 4,
+      "lesson": "inverse-dft",
+      "problem": "Given A(1) = 10, A(i) = −2 − 2i, A(−1) = −2, A(−i) = −2 + 2i, find a₂."
+    },
+    {
+      "k": 18,
+      "fragment": "#problem-18",
+      "title": "Cyclic convolution",
+      "technique": "DFT",
+      "difficulty": 4,
+      "lesson": "cyclic-convolution",
+      "problem": "Compute c₀ for a = [1,2,3,4], b = [1,1,0,0] cyclically."
+    },
+    {
+      "k": 19,
+      "fragment": "#problem-19",
+      "title": "Polynomial product",
+      "technique": "FFT viewpoint",
+      "difficulty": 4,
+      "lesson": "fft",
+      "problem": "Find [x²] of (1 + 2x + 3x²)(4 + 5x + 6x²)."
+    },
+    {
+      "k": 20,
+      "fragment": "#problem-20",
+      "title": "Integer partitions",
+      "technique": "infinite product",
+      "difficulty": 3,
+      "lesson": "partitions",
+      "problem": "How many partitions of 10?"
+    },
+    {
+      "k": 21,
+      "fragment": "#problem-21",
+      "title": "Catalan asymptotics",
+      "technique": "singularity analysis",
+      "difficulty": 5,
+      "lesson": "singularity-analysis",
+      "problem": "Estimate C₁₀₀ to leading order."
+    },
+    {
+      "k": 22,
+      "fragment": "#problem-22",
+      "title": "Multivariate lattice paths",
+      "technique": "multivariate GF",
+      "difficulty": 5,
+      "lesson": "multivariate",
+      "problem": "How many E/N lattice paths from (0, 0) to (5, 5)?"
+    }
+  ],
+  "techniques": [
+    {
+      "technique": "sequence encoding",
+      "lesson": "ogf"
+    },
+    {
+      "technique": "coefficient extraction",
+      "lesson": "ogf"
+    },
+    {
+      "technique": "geometric series",
+      "lesson": "geometric-series"
+    },
+    {
+      "technique": "shifting",
+      "lesson": "shift"
+    },
+    {
+      "technique": "differentiation",
+      "lesson": "differentiation"
+    },
+    {
+      "technique": "integration",
+      "lesson": "differentiation"
+    },
+    {
+      "technique": "addition",
+      "lesson": "add-subtract"
+    },
+    {
+      "technique": "subtraction",
+      "lesson": "add-subtract"
+    },
+    {
+      "technique": "Cauchy product",
+      "lesson": "convolution"
+    },
+    {
+      "technique": "convolution",
+      "lesson": "convolution"
+    },
+    {
+      "technique": "partial fractions",
+      "lesson": "partial-fractions"
+    },
+    {
+      "technique": "recurrence solving",
+      "lesson": "fibonacci"
+    },
+    {
+      "technique": "rational generating functions",
+      "lesson": "fibonacci"
+    },
+    {
+      "technique": "combinatorial sum",
+      "lesson": "add-subtract"
+    },
+    {
+      "technique": "combinatorial product",
+      "lesson": "convolution"
+    },
+    {
+      "technique": "sequence construction",
+      "lesson": "compositions"
+    },
+    {
+      "technique": "composition",
+      "lesson": "composition"
+    },
+    {
+      "technique": "implicit equations",
+      "lesson": "catalan"
+    },
+    {
+      "technique": "Lagrange inversion",
+      "lesson": "lagrange-inversion"
+    },
+    {
+      "technique": "ordinary generating functions",
+      "lesson": "ogf"
+    },
+    {
+      "technique": "exponential generating functions",
+      "lesson": "egf"
+    },
+    {
+      "technique": "labelled product",
+      "lesson": "labelled-product"
+    },
+    {
+      "technique": "exponential formula",
+      "lesson": "exponential-formula"
+    },
+    {
+      "technique": "marking",
+      "lesson": "permutations-cycles"
+    },
+    {
+      "technique": "bivariate generating functions",
+      "lesson": "bivariate"
+    },
+    {
+      "technique": "probability generating functions",
+      "lesson": "probability"
+    },
+    {
+      "technique": "roots-of-unity filters",
+      "lesson": "roots-of-unity"
+    },
+    {
+      "technique": "DFT",
+      "lesson": "roots-of-unity"
+    },
+    {
+      "technique": "inverse DFT",
+      "lesson": "inverse-dft"
+    },
+    {
+      "technique": "cyclic convolution",
+      "lesson": "cyclic-convolution"
+    },
+    {
+      "technique": "convolution theorem",
+      "lesson": "cyclic-convolution"
+    },
+    {
+      "technique": "FFT decomposition",
+      "lesson": "fft"
+    },
+    {
+      "technique": "transfer matrices",
+      "lesson": "transfer-matrix"
+    },
+    {
+      "technique": "integer partitions",
+      "lesson": "partitions"
+    },
+    {
+      "technique": "q-series",
+      "lesson": "partitions"
+    },
+    {
+      "technique": "singularity analysis",
+      "lesson": "singularities"
+    },
+    {
+      "technique": "Cauchy coefficient formula",
+      "lesson": "saddle-point"
+    },
+    {
+      "technique": "saddle-point intuition",
+      "lesson": "saddle-point"
+    },
+    {
+      "technique": "multivariate coefficient extraction",
+      "lesson": "multivariate"
+    }
+  ],
+  "pages": [
+    "#problems",
+    "#compare",
+    "#fourier",
+    "#sandbox",
+    "#map",
+    "#techniques",
+    "#confusions"
+  ],
+  "spec_corrections": [
+    "Spec §2 and Level 2 call 1, 1, 2, 3, 5, 8 'Fibonacci(n)'; with F₀ = 0 (as Level 5 uses) that strip is aₙ = Fₙ₊₁, so the lab labels it that way.",
+    "Spec §16 uses ω = i for N = 4, i.e. ω = e^{+2πi/N}; the lab keeps that sign and notes that numpy's fft (e^{−2πi/N}) lists A(−i) = −2 + 2i where the lab lists A(i) = −2 − 2i.",
+    "Spec §12's example '21' is [x⁷] of 1/(1 − x − x²) (compositions of 7 into 1s and 2s); the symbolic-method lesson opens on exactly that case."
+  ]
+}
