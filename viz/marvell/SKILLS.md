@@ -30,7 +30,7 @@ Registered with `registerTool` on `document.modelContext` (or `navigator.modelCo
 | --- | --- | --- |
 | `get_data` | none | Pipe-delimited (TOON) rows `fy\|revenue_usd\|operating_cash_flow_usd\|cash_margin_pct`, then `total` and `next` lines. |
 | `get_metadata` | none | Pipe-delimited `ticker`, `source` (SEC company-facts URL), `fetched` and `next` lines. |
-| `query` | `fy` (string, optional) | Intended to return one fiscal year, or all rows when `fy` is absent. Known defect: it currently throws `ReferenceError: toon is not defined` because the page never defines `toon`; use `get_data` and pick the row instead. |
+| `query` | `fy` (string, optional) | The `get_data` header and the row for fiscal year `fy`, then `total` and `next` lines; every row when `fy` is absent. An unknown `fy` returns `total\|0` and a `next` line listing the available years. |
 
 ## Exports
 

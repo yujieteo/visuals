@@ -127,11 +127,12 @@ punctuation and antecedent models) plus Node tests of its fragment, traversal
 and search logic, and `ooda-orientation` has Node tests of its planner state
 machine: the observation, prediction, history and referential invariants, the
 anti-pattern diagnostics, the three worked examples, search ranking, and
-persistence, import and schema migration:
+persistence, import and schema migration; the four stock pages have Node tests of
+their WebMCP `get_data` and `query` tools:
 
 ```sh
 python3 -m unittest discover -s tests -p 'test_*.py'
-node --test tests/convexity-action-engine.test.mjs tests/everyday-actions.test.mjs tests/english-grammar.test.mjs tests/ooda-orientation.test.mjs
+node --test tests/convexity-action-engine.test.mjs tests/everyday-actions.test.mjs tests/english-grammar.test.mjs tests/ooda-orientation.test.mjs tests/stock-cases-tools.test.mjs
 ```
 
 Pages with a narrated beamdswitch report (the beamdswitch and Copy deck buttons)
