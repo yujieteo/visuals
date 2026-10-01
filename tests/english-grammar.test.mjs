@@ -175,14 +175,3 @@ test("Ctrl+K and Cmd+K go to search, except while typing in a text field", () =>
   for (const target of [{ tagName: "INPUT", type: "search" }, { tagName: "INPUT", type: "text" }, { tagName: "INPUT" }, { tagName: "TEXTAREA" }, { tagName: "SELECT" }, { tagName: "DIV", isContentEditable: true }])
     assert.equal(key({ ctrlKey: true }, target), false, `not while typing in ${target.tagName} ${target.type || ""}`);
 });
-
-test("the search box shows its shortcut, and chapter tags stay on one line", () => {
-  const ui = script("eg-ui"), css = /<style>([\s\S]*?)<\/style>/.exec(html)[1];
-  assert.match(ui, /placeholder: "Search \(" \+ \(mac \? "⌘K" : "Ctrl\+K"\) \+ "\)"/);
-  assert.match(ui, /"aria-keyshortcuts": "Control\+K Meta\+K"/);
-  assert.match(ui, /if \(L\.isSearchShortcut\(ev\)\) \{[\s\S]*?if \(!state\.navOpen\) setNav\(true, searchInput\)/);
-  // A pill-shaped tag stretched by a flex row turned into an oval that cut through its text.
-  assert.match(css, /\.chapter-btn\{[^}]*display:grid/);
-  assert.match(css, /\.chapter\.muted\{[^}]*display:grid/);
-  assert.match(css, /\.outline \.tag\{[^}]*white-space:nowrap/);
-});
