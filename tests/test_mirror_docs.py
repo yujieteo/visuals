@@ -13,7 +13,7 @@ MIRRORS = {
     "convex-payoffs": "convex-payoffs", "energy-email-productivity": "energy-email-productivity",
     "english-grammar": "english-grammar", "fpl-expected-goals": "fpl-expected-goals",
     "graduate-employment-survey": "graduate-employment-survey", "haze-singapore": "haze-singapore",
-    "manchester-city-finances": "manchester-city-finances", "marvell": "marvell", "panw": "panw",
+    "manchester-city-finances": "manchester-city-finances", "marvell": "marvell", "ooda-orientation": "ooda-orientation", "panw": "panw",
     "singapore-covid-governance-hindsight": "sg-covid-hindsight",
     "social-values-surveydata": "social-values-surveydata", "tourist-attractions": "tourist-attractions",
 }
