@@ -839,6 +839,416 @@
     return lines.join("\n");
   }
 
+  /* ---------- beamdswitch report ----------
+   * report(tab, inputs, { displayUnits }) describes the analysis on one tab as a report for the
+   * standard beamdswitch template (beamdswitch.js; templates/beamdswitch-report.md in the site).
+   * Every number comes from solve() and is written as the page writes it: fmt() in the display
+   * units, with the same labels as the page's stats and results table. The ::: plot curves are this
+   * file's own closed forms (the shared column-strength curve, the second-order moment, k_s and k).
+   * A tab that has no result (blocked inputs, or a chart relation without sourced data) throws. */
+
+  const SPOKEN_UNITS = {
+    mm: ["millimetre", "millimetres"], in: ["inch", "inches"], N: ["newton", "newtons"], lbf: ["pound-force", "pounds-force"],
+    MPa: ["megapascal", "megapascals"], ksi: ["kip per square inch", "kips per square inch"],
+  };
+  const SPOKEN_QUANTITY = {
+    length: (L) => L, area: (L, F, many) => `square ${SPOKEN_UNITS[L][many ? 1 : 0]}`, inertia: (L, F, many) => `${SPOKEN_UNITS[L][many ? 1 : 0]} to the fourth`,
+    force: (L, F) => F, lineLoad: (L, F, many) => `${SPOKEN_UNITS[F][many ? 1 : 0]} per ${SPOKEN_UNITS[L][0]}`,
+    moment: (L, F, many) => `${SPOKEN_UNITS[F][0]} ${SPOKEN_UNITS[L][many ? 1 : 0]}`, rotSpring: (L, F, many) => `${SPOKEN_UNITS[F][0]} ${SPOKEN_UNITS[L][many ? 1 : 0]} per radian`,
+    transSpring: (L, F, many) => `${SPOKEN_UNITS[F][many ? 1 : 0]} per ${SPOKEN_UNITS[L][0]}`,
+  };
+  function spokenUnit(q, system, many = true) {
+    const L = unitLabel("length", system), F = unitLabel("force", system);
+    if (q === "stress") return SPOKEN_UNITS[unitLabel("stress", system)][many ? 1 : 0];
+    const said = SPOKEN_QUANTITY[q](L, F, many);
+    return SPOKEN_UNITS[said] ? SPOKEN_UNITS[said][many ? 1 : 0] : said;
+  }
+  /* A number as fmt() writes it (−0.5, 1234 or 1.234e+6), read aloud. */
+  const sayNumber = (t) => String(t).replace(/^-/, "minus ").replace(/e\+?(-?)(\d+)$/, (_, minus, e) => ` times ten to the ${minus ? "minus " : ""}${e}`);
+  const texNumber = (t) => String(t).replace(/e\+?(-?\d+)$/, (_, e) => ` \\times 10^{${e}}`);
+  const plotNumber = (v) => String(+v.toPrecision(12));
+  const LIST = (items) => (items.length < 2 ? items.join("") : `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`);
+  const COUNT = ["no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"];
+  const count = (n, one, many) => `${COUNT[n] ?? n} ${n === 1 ? one : many}`;
+
+  function report(tab, inputs, opts = {}) {
+    const sys = opts.displayUnits === "US" ? "US" : "SI";
+    const r = solve(tab, inputs);
+    if (r.error) throw new Error(r.error);
+    const m = inputs.material;
+    const n = (v, q = "none") => fmt(toDisplay(v, q, sys));
+    // The page's showVal: the number in display units with its unit symbol.
+    const val = (v, q = "none") => (v === null || v === undefined ? "—" : typeof v === "string" ? v : `${n(v, q)}${unitLabel(q, sys) ? " " + unitLabel(q, sys) : ""}`);
+    const say = (v, q = "none") => { const t = n(v, q); return q === "none" ? sayNumber(t) : `${sayNumber(t)} ${spokenUnit(q, sys, !/^-?1$/.test(t))}`; };
+    const tex = (v, q = "none") => `${texNumber(n(v, q))}${unitLabel(q, sys) ? `\\ \\mathrm{${unitLabel(q, sys).replace(/·/g, "\\cdot ").replace(/²/g, "^2").replace(/⁴/g, "^4")}}` : ""}`;
+    // The page's margin-of-safety text, signed.
+    const ms = (v) => (v === null || v === undefined || !Number.isFinite(v) ? "—" : (v >= 0 ? "+" : "") + fmt(v));
+    const sayMs = (v) => `${v < 0 ? "minus" : "plus"} ${sayNumber(fmt(Math.abs(v)))}`;
+    const unitsText = sys === "SI" ? "N, mm, MPa" : "lbf, in, ksi";
+    const unitsSaid = `${spokenUnit("force", sys)}, ${spokenUnit("length", sys)} and ${spokenUnit("stress", sys)}`;
+    const preset = MATERIAL_PRESETS.find((p) => p.id === m.preset);
+    const matName = preset ? preset.label : "Custom material";
+
+    const materialFrame = {
+      title: `Material: ${matName}, E = ${val(m.E, "stress")}, Fcy = ${val(m.Fcy, "stress")}`,
+      body: [
+        `- Young's modulus $E$ = ${val(m.E, "stress")}; compressive yield $F_{cy}$ = ${val(m.Fcy, "stress")} (0.2 % offset)`,
+        `- Poisson's ratio $\\nu$ = ${fmt(m.nu)}; Ramberg-Osgood exponent $n$ = ${fmt(m.n)}`,
+        `- Display units: ${unitsText}. Every number in this talk is in these units.`,
+      ].join("\n"),
+      notes: `${DISCLAIMER} Material presets are illustrative only, not design allowables.`,
+      narration: [
+        `The material is ${preset ? `${preset.label.replace(/\s*\(illustrative\)$/, "")}, an illustrative preset` : "a custom material"}, with a Young's modulus of ${say(m.E, "stress")} and a compressive yield stress of ${say(m.Fcy, "stress")}.`,
+        `Its Poisson's ratio is ${sayNumber(fmt(m.nu))}, and its Ramberg-Osgood exponent is ${sayNumber(fmt(m.n))}.`,
+        `Every number in this talk is in ${unitsSaid}.`,
+      ].join(" "),
+    };
+    const sec = inputs.section;
+    const sectionText = !sec ? "" : sec.shape === "tube" ? `round tube, D = ${val(sec.D, "length")}, t = ${val(sec.t, "length")}`
+      : sec.shape === "rect" ? `rectangle, b = ${val(sec.b, "length")}, h = ${val(sec.h, "length")}, ${sec.axis === "strong" ? "strong" : "weak"} axis`
+        : `free A and I, A = ${val(sec.A, "area")}, I = ${val(sec.I, "inertia")}, c = ${val(sec.c, "length")}`;
+    const sectionSaid = !sec ? "" : sec.shape === "tube" ? `a round tube, ${say(sec.D, "length")} in diameter, with a wall ${say(sec.t, "length")} thick`
+      : sec.shape === "rect" ? `a rectangle, ${say(sec.b, "length")} wide and ${say(sec.h, "length")} deep, bending about its ${sec.axis === "strong" ? "strong" : "weak"} axis`
+        : `a section typed in directly, with an area of ${say(sec.A, "area")}`;
+    const kPreset = K_PRESETS.find((k) => k.id === inputs.kPreset);
+    const endsText = kPreset ? `${kPreset.label} (K = ${fmt(kPreset.K)})` : `custom K = ${fmt(inputs.K)}`;
+    const endsSaid = kPreset ? `Its ends are ${kPreset.label.toLowerCase()}, so K is ${sayNumber(fmt(kPreset.K))}` : `Its effective-length factor K is set to ${sayNumber(fmt(inputs.K))}`;
+
+    const rows = resultRows(tab, r);
+    const resultsTable = {
+      title: "Every result, as in the page's results table",
+      body: ["| Quantity | Value |", "| --- | --- |", ...rows.map((row) => `| ${String(row.label).replace(/\|/g, "/")} | ${String(val(row.value, row.q)).replace(/\|/g, "/")} |`)].join("\n"),
+      narration: `This slide lists all ${count(rows.length, "result", "results")} from the page's results table, in ${unitsSaid}.`,
+    };
+    const tests = selfTests(), passed = tests.filter((t) => t.pass).length;
+    const warnings = r.warnings || [];
+    const kinds = ["NASA", "classical", "fit"].map((k) => [k, r.sources.filter((s) => s.kind === k).length]).filter(([, c]) => c);
+    const checksFrame = {
+      title: `Checks: self-test ${passed}/${tests.length} pass, ${count(warnings.length, "warning", "warnings")}`,
+      body: [
+        `- Self-test: ${passed} of ${tests.length} checks pass (FE buckling loads, the k = 1 Wagner limit, the k_s asymptotes, unit and file round-trips, the NACA TN 2661 worked examples).`,
+        `- Every formula carries its source: ${kinds.map(([k, c]) => `${c} ${k === "fit" ? "fit to a NASA figure" : k}`).join(", ")}.`,
+        ...(warnings.length ? warnings.map((w) => `- Warning: ${w}`) : ["- Warnings: none."]),
+      ].join("\n"),
+      notes: r.sources.map((s) => `${s.kind} (${s.id}): ${s.text}`).join("\n"),
+      narration: [
+        `The page runs its self-test on every load, and ${passed === tests.length ? `all ${tests.length} checks pass` : `${tests.length - passed} of ${tests.length} checks fail`}.`,
+        `Every formula here is tagged with its source: ${LIST(kinds.map(([k, c]) => `${COUNT[c] ?? c} ${k === "fit" ? (c === 1 ? "fit" : "fits") : k} ${k === "fit" ? "to a NASA figure" : c === 1 ? "relation" : "relations"}`))}.`,
+        warnings.length ? `The page raises ${count(warnings.length, "warning", "warnings")} for these inputs, listed on the slide.` : "The page raises no warnings for these inputs.",
+        "This is an exploration tool, not for certification.",
+      ].join(" "),
+    };
+
+    let setup, method, results, key, keySaid, subtitle;
+    if (tab === "column") {
+      const lmax = Math.max(1.6 * r.lambdaC, 1.3 * r.lambda, 50), sd = (v) => toDisplay(v, "stress", sys);
+      subtitle = "Euler and Johnson column strength";
+      setup = [{
+        title: `The column: L = ${val(inputs.L, "length")}, ${endsText}, P = ${val(inputs.P, "force")}`,
+        body: [
+          `- Length $L$ = ${val(inputs.L, "length")}; ends ${endsText}; effective length $KL$ = ${val(r.lambda * r.section.r, "length")}`,
+          `- Section: ${sectionText}`,
+          `- $A$ = ${val(r.section.A, "area")}, $I$ = ${val(r.section.I, "inertia")}, $r = \\sqrt{I/A}$ = ${val(r.section.r, "length")}`,
+          `- Applied load $P$ = ${val(inputs.P, "force")}, so $P/A$ = ${val(r.sigmaApplied, "stress")}`,
+        ].join("\n"),
+        narration: [
+          `The column is ${say(inputs.L, "length")} long. ${endsSaid}.`,
+          `Its section is ${sectionSaid}, giving an area of ${say(r.section.A, "area")} and a radius of gyration of ${say(r.section.r, "length")}.`,
+          `It carries an axial load of ${say(inputs.P, "force")}, an applied stress of ${say(r.sigmaApplied, "stress")}.`,
+        ].join(" "),
+      }, materialFrame];
+      method = [{
+        title: "Johnson below the transition slenderness, Euler above it",
+        body: [
+          "$$ \\sigma_{cr,\\,Euler} = \\frac{\\pi^2 E}{(KL/r)^2}, \\qquad \\sigma_{cr,\\,Johnson} = F_{cy}\\left[1 - \\frac{F_{cy}\\,(KL/r)^2}{4\\pi^2 E}\\right] $$",
+          "",
+          `$$ (KL/r)_c = \\pi\\sqrt{2E/F_{cy}} = ${fmt(r.lambdaC)}, \\qquad P_{cr} = \\sigma_{cr} A $$`,
+          ...(inputs.tangent ? ["", "- Tangent modulus (optional): $\\sigma_{cr} = \\pi^2 E_t(\\sigma_{cr}) / (KL/r)^2$ on the Ramberg-Osgood curve."] : []),
+        ].join("\n"),
+        notes: "One column-strength function serves the column tab, the beam-column cross-check and the diagonal-tension upright check.",
+        narration: [
+          "A slender column buckles elastically at the Euler stress, pi squared E over the slenderness squared.",
+          "A stocky column yields first, and the Johnson parabola blends from the yield stress down to the Euler curve.",
+          `The two meet at the transition slenderness, ${sayNumber(fmt(r.lambdaC))} for this material, where the stress is half the yield stress.`,
+          ...(inputs.tangent ? ["The tangent-modulus curve from the Ramberg-Osgood law is shown as well."] : []),
+        ].join(" "),
+      }];
+      results = [{
+        title: `KL/r = ${fmt(r.lambda)}: ${r.regime} regime (transition ${fmt(r.lambdaC)})`,
+        body: `$$ \\frac{KL}{r} = ${texNumber(fmt(r.lambda))}, \\qquad \\sigma_{cr} = ${tex(r.sigmaCr, "stress")}, \\qquad P_{cr} = ${tex(r.Pcr, "force")} $$`,
+        plot: {
+          x: [0, plotNumber(lmax)], xlabel: "slenderness KL/r", ylabel: `governing σcr and applied P/A (${unitLabel("stress", sys)})`,
+          curves: [
+            `${plotNumber(sd(m.Fcy))}*(1 - ${plotNumber(m.Fcy / (4 * PI * PI * m.E))}*min(x, ${plotNumber(r.lambdaC)})^2)*(${plotNumber(r.lambdaC)}/max(x, ${plotNumber(r.lambdaC)}))^2`,
+            plotNumber(sd(r.sigmaApplied)),
+          ],
+        },
+        narration: [
+          "Here is the governing column strength against slenderness, with the applied stress as a flat line.",
+          `This column has a slenderness of ${sayNumber(fmt(r.lambda))}, ${r.lambda < r.lambdaC ? "below" : "above"} the transition, so the ${r.regime} curve governs.`,
+          `Its critical stress is ${say(r.sigmaCr, "stress")}, and the buckling load is ${say(r.Pcr, "force")}.`,
+          ...(r.sigmaTangent !== null ? [`The tangent-modulus stress is ${say(r.sigmaTangent, "stress")}.`] : []),
+        ].join(" "),
+      }, {
+        title: `Margin of safety Pcr/P − 1 = ${ms(r.MS)}`,
+        body: `$$ MS = \\frac{P_{cr}}{P} - 1 = \\frac{${tex(r.Pcr, "force")}}{${tex(inputs.P, "force")}} - 1 = ${texNumber(ms(r.MS))} $$`,
+        narration: `Dividing the buckling load of ${say(r.Pcr, "force")} by the applied load of ${say(inputs.P, "force")} and subtracting one gives a margin of safety of ${sayMs(r.MS)}${r.MS < 0 ? ", so the column buckles under this load" : ""}.`,
+      }, resultsTable];
+      key = `KL/r = ${fmt(r.lambda)} (${r.regime}): σcr = ${val(r.sigmaCr, "stress")}, Pcr = ${val(r.Pcr, "force")}, margin of safety ${ms(r.MS)}.`;
+      keySaid = `the column buckles at ${say(r.Pcr, "force")}, in the ${r.regime} regime, for a margin of safety of ${sayMs(r.MS)}`;
+    } else if (tab === "beamColumn") {
+      subtitle = "Second-order first yield, with an FE buckling cross-check";
+      const ends = inputs.feMode === "springs" ? "end springs" : "the K preset";
+      setup = [{
+        title: `The beam-column: L = ${val(inputs.L, "length")}, ${endsText}, P = ${val(inputs.P, "force")}`,
+        body: [
+          `- Length $L$ = ${val(inputs.L, "length")}; ends ${endsText}; reference length $KL$ = ${val(r.l, "length")}`,
+          `- Section: ${sectionText}; $A$ = ${val(r.section.A, "area")}, $I$ = ${val(r.section.I, "inertia")}`,
+          `- Axial load $P$ = ${val(inputs.P, "force")}; eccentricity $e$ = ${val(inputs.e, "length")}; end moments $M_1$ = ${val(inputs.M1, "moment")}, $M_2$ = ${val(inputs.M2, "moment")}`,
+          `- Lateral load $w$ = ${val(inputs.w, "lineLoad")}; initial bow $\\delta_0$ = ${val(inputs.bow, "length")} (an assumed imperfection)`,
+        ].join("\n"),
+        narration: [
+          `The member is ${say(inputs.L, "length")} long. ${endsSaid}, and the reference length is ${say(r.l, "length")}.`,
+          `Its section is ${sectionSaid}.`,
+          `It carries an axial load of ${say(inputs.P, "force")} at an eccentricity of ${say(inputs.e, "length")}, end moments of ${say(inputs.M1, "moment")} and ${say(inputs.M2, "moment")}, and a lateral load of ${say(inputs.w, "lineLoad")}.`,
+          `An initial bow of ${say(inputs.bow, "length")} is assumed.`,
+        ].join(" "),
+      }, materialFrame];
+      method = [{
+        title: "First yield: the root of σmax(P) = Fcy below the elastic buckling load",
+        body: [
+          "$$ \\sigma_{\\max}(P) = \\frac{P}{A} + \\frac{|M_{\\max}(P)|}{S} = F_{cy}, \\qquad 0 \\le P < P_e = \\frac{\\pi^2 EI}{(KL)^2} $$",
+          "",
+          "- $M_{\\max}$ is the exact elastic second-order moment of a pin-ended member of length $KL$: end moments, $P e$, lateral load and the bow, superposed.",
+          "- A bracketed Newton root finder solves for the first-yield load $P_{fy}$.",
+        ].join("\n"),
+        narration: [
+          "Axial load bends a bent member further, so the moment grows faster than the load.",
+          "The page computes the exact elastic second-order moment of a pin-ended member of the reference length, with the end moments, the eccentricity, the lateral load and the bow superposed.",
+          "A bracketed Newton root finder then finds the load at which the extreme fibre first reaches the yield stress, below the elastic buckling load.",
+        ].join(" "),
+      }, {
+        title: `FE cross-check: buckling eigenvalue from ${ends}`,
+        body: [
+          "$$ (\\mathbf{K}_e - P\\,\\mathbf{K}_g)\\,\\boldsymbol{\\phi} = \\mathbf{0} $$",
+          "",
+          `- ${r.fe.elements} Euler-Bernoulli beam elements with consistent geometric stiffness, solved by Cholesky reduction and a cyclic Jacobi eigen routine.`,
+        ].join("\n"),
+        narration: `As an independent check, the page builds ${COUNT[r.fe.elements] ?? r.fe.elements} beam finite elements with ${ends === "end springs" ? "the end springs" : "the ends of the K preset"}, and solves the buckling eigenvalue problem for the critical load.`,
+      }];
+      const fyFrame = r.Pfy ? {
+        title: `First-yield load Pfy = ${val(r.Pfy, "force")}, margin of safety ${ms(r.MS)}`,
+        body: [
+          `$$ P_{fy} = ${tex(r.Pfy, "force")}, \\qquad P_e = ${tex(r.Pe, "force")} $$`,
+          "",
+          `$$ MS = \\frac{P_{fy}}{P} - 1 = ${texNumber(ms(r.MS))} $$`,
+        ].join("\n"),
+        narration: [
+          `The root finder puts first yield at ${say(r.Pfy, "force")}, below the elastic buckling load of ${say(r.Pe, "force")}.`,
+          `Against the applied load of ${say(inputs.P, "force")}, the margin of safety is ${sayMs(r.MS)}.`,
+        ].join(" "),
+      } : {
+        title: `No first-yield load: elastic buckling at Pe = ${val(r.Pe, "force")}`,
+        body: `- First yield: ${r.fyMessage}\n- $P_e$ = ${val(r.Pe, "force")}`,
+        narration: `The page finds no first-yield load for this member, and reports why on the slide. The elastic buckling load is ${say(r.Pe, "force")}.`,
+      };
+      const momentFrame = r.atP ? (() => {
+        const s = fromDisplay(1, "length", sys), mf = fromDisplay(1, "moment", sys), EI = m.E * r.section.I, l = r.l;
+        const MA = inputs.M1 + inputs.P * inputs.e, MB = inputs.M2 + inputs.P * inputs.e, P = inputs.P, w = inputs.w, d0 = inputs.bow;
+        const ld = l / s, k = Math.sqrt(P / EI), kd = k * s;
+        const bowTerm = (amp) => `${plotNumber(amp / mf)}*sin(${plotNumber(PI / ld)}*x)`;
+        const M0 = `${plotNumber(MA / mf)} + ${plotNumber((MB - MA) / mf / ld)}*x + ${plotNumber(w * s * s / 2 / mf)}*x*(${plotNumber(ld)} - x)`;
+        const second = P <= 1e-12 * r.Pe ? M0 : [
+          `${plotNumber(MA / Math.sin(k * l) / mf)}*sin(${plotNumber(kd)}*(${plotNumber(ld)} - x))`,
+          `${plotNumber(MB / Math.sin(k * l) / mf)}*sin(${plotNumber(kd)}*x)`,
+          `${plotNumber(w / (k * k) / mf)}*(cos(${plotNumber(kd)}*(x - ${plotNumber(ld / 2)}))/${plotNumber(Math.cos(k * l / 2))} - 1)`,
+          bowTerm(P * d0 / (1 - P / r.Pe)),
+        ].join(" + ");
+        return {
+          title: `Second-order moment at P: ${val(r.atP.Mmax, "moment")}, amplification ${r.atP.amplification ? fmt(r.atP.amplification) : "—"}`,
+          body: [
+            `$$ M_{\\max} = ${tex(r.atP.Mmax, "moment")}, \\qquad M_{\\text{linear}} = ${tex(r.atP.Mlin, "moment")}, \\qquad \\sigma_{\\max} = ${tex(r.atP.sigmaMax, "stress")} $$`,
+            "",
+            `- Largest deflection at $P$: ${val(r.atP.ymax, "length")} (linear theory ${val(r.atP.ylin, "length")}).`,
+          ].join("\n"),
+          plot: { x: [0, plotNumber(ld)], xlabel: `x along KL (${unitLabel("length", sys)})`, ylabel: `M, second order and linear (${unitLabel("moment", sys)})`, curves: [second, `${M0} + ${bowTerm(P * d0)}`] },
+          narration: [
+            "Here is the bending moment along the member at the applied load, second order against linear theory.",
+            `The second-order moment peaks at ${say(r.atP.Mmax, "moment")}, against ${say(r.atP.Mlin, "moment")} from linear theory${r.atP.amplification ? `, an amplification of ${sayNumber(fmt(r.atP.amplification))}` : ""}.`,
+            `The largest stress at this load is ${say(r.atP.sigmaMax, "stress")}, and the largest deflection is ${say(r.atP.ymax, "length")}.`,
+          ].join(" "),
+        };
+      })() : {
+        title: `P = ${val(inputs.P, "force")} is at or above Pe: second-order results are undefined`,
+        body: `- $P$ = ${val(inputs.P, "force")}, $P_e$ = ${val(r.Pe, "force")}`,
+        narration: `The applied load of ${say(inputs.P, "force")} is at or above the elastic buckling load of ${say(r.Pe, "force")}, so the page gives no second-order moment.`,
+      };
+      const feFrame = r.fe.Pcr ? {
+        title: `FE Pcr = ${val(r.fe.Pcr, "force")}${r.fe.PcrClosed ? ` against π²EI/(KL)² = ${val(r.fe.PcrClosed, "force")}` : ""}`,
+        body: [
+          `- FE critical load $P_{cr}$ = ${val(r.fe.Pcr, "force")}; effective $K$ from the FE = ${val(r.fe.Kfe)}`,
+          ...(r.fe.PcrClosed ? [`- Closed form for the K preset: $\\pi^2 EI/(KL)^2$ = ${val(r.fe.PcrClosed, "force")}`] : []),
+          `- Column strength at the FE $K$ (shared function): ${val(r.fe.columnPcr, "force")}${r.fe.columnRegime ? `, ${r.fe.columnRegime} regime` : ""}`,
+        ].join("\n"),
+        narration: [
+          `The finite elements put the elastic critical load at ${say(r.fe.Pcr, "force")}${r.fe.PcrClosed ? `, against ${say(r.fe.PcrClosed, "force")} from the closed form` : ""}.`,
+          `With the shared column-strength function at the effective length factor the elements imply, the column strength is ${say(r.fe.columnPcr, "force")}.`,
+        ].join(" "),
+      } : {
+        title: "FE cross-check: no critical load",
+        body: `- ${r.fe.error}`,
+        narration: "The finite-element cross-check gives no critical load for these ends, and the slide says why.",
+      };
+      results = [fyFrame, momentFrame, feFrame, resultsTable];
+      key = r.Pfy ? `First yield at Pfy = ${val(r.Pfy, "force")}, margin of safety ${ms(r.MS)}; elastic buckling Pe = ${val(r.Pe, "force")}.`
+        : `No first-yield load (${r.fyMessage}); elastic buckling Pe = ${val(r.Pe, "force")}.`;
+      keySaid = r.Pfy ? `the member first yields at ${say(r.Pfy, "force")}, a margin of safety of ${sayMs(r.MS)}` : `the member has no first-yield load below its elastic buckling load of ${say(r.Pe, "force")}`;
+    } else if (tab === "shear") {
+      subtitle = "Flat-plate shear buckling with the NACA TN 3781 plasticity factor";
+      const edges = inputs.edges === "clamped" ? "clamped" : "simply supported";
+      const rmax = Math.max(5, r.ratio * 1.1);
+      setup = [{
+        title: `The panel: ${val(inputs.a, "length")} × ${val(inputs.b, "length")}, t = ${val(inputs.t, "length")}, ${edges} edges`,
+        body: [
+          `- Length $a$ = ${val(inputs.a, "length")}, width $b$ = ${val(inputs.b, "length")}, thickness $t$ = ${val(inputs.t, "length")}; side ratio (long/short) ${fmt(r.ratio)}`,
+          `- Edges: ${edges}`,
+          `- Applied shear $\\tau$ = ${val(inputs.tau, "stress")}`,
+          `- Plasticity factor: ${inputs.plasticity === "table2" ? "TN 3781 table 2, elastically restrained edges" : "TN 3781 eq. (A5), fig. 10"}`,
+        ].join("\n"),
+        narration: [
+          `The panel is ${say(inputs.a, "length")} by ${say(inputs.b, "length")}, ${say(inputs.t, "length")} thick, with ${edges} edges.`,
+          `It carries a shear stress of ${say(inputs.tau, "stress")}.`,
+        ].join(" "),
+      }, materialFrame];
+      method = [{
+        title: "Elastic shear buckling, then the TN 3781 plasticity factor",
+        body: [
+          `$$ \\tau_{cr,e} = k_s \\frac{\\pi^2 E}{12(1 - \\nu^2)} \\left(\\frac{t}{b_{short}}\\right)^2, \\qquad k_s = ${inputs.edges === "clamped" ? "8.98 + 5.60" : "5.34 + 4.00"} \\left(\\frac{b_{short}}{a_{long}}\\right)^2 $$`,
+          "",
+          "$$ \\tau_{cr} = \\eta\\,\\tau_{cr,e}, \\qquad \\eta = \\frac{E_s}{E}\\,\\frac{1 - \\nu_e^2}{1 - \\nu^2} $$",
+        ].join("\n"),
+        notes: "Es and Et are taken at the axial stress 2τ on the Ramberg-Osgood curve (maximum-shear law), and τ = η(τ) τcr,e is solved by a bracketed root finder.",
+        narration: [
+          "The elastic buckling stress of a flat plate in shear is the buckling coefficient times pi squared E over twelve times one minus nu squared, times the thickness over the short side, squared.",
+          "Above the proportional limit, the TN 3781 plasticity factor reduces it, using the secant modulus of the Ramberg-Osgood curve.",
+        ].join(" "),
+      }];
+      results = [{
+        title: `k_s = ${fmt(r.ks)} at side ratio ${fmt(r.ratio)}`,
+        body: `$$ k_s = ${texNumber(fmt(r.ks))}, \\qquad \\tau_{cr,e} = ${tex(r.tauE, "stress")} $$`,
+        plot: { x: [1, plotNumber(rmax)], xlabel: "side ratio a/b (long/short)", ylabel: "k_s, simply supported and clamped", curves: ["5.34 + 4/x^2", "8.98 + 5.6/x^2"] },
+        narration: [
+          "Here is the buckling coefficient against the side ratio, for simply supported and for clamped edges.",
+          `At this panel's side ratio of ${sayNumber(fmt(r.ratio))}, the coefficient is ${sayNumber(fmt(r.ks))}, so the elastic buckling stress is ${say(r.tauE, "stress")}.`,
+        ].join(" "),
+      }, {
+        title: `τcr = ${val(r.tauCr, "stress")} (η = ${fmt(r.eta)}), margin of safety ${ms(r.MS)}`,
+        body: [
+          `$$ \\tau_{cr} = \\eta\\,\\tau_{cr,e} = ${texNumber(fmt(r.eta))} \\times ${tex(r.tauE, "stress")} = ${tex(r.tauCr, "stress")} $$`,
+          "",
+          `$$ MS = \\frac{\\tau_{cr}}{\\tau} - 1 = ${texNumber(ms(r.MS))} $$`,
+        ].join("\n"),
+        narration: [
+          `The plasticity factor is ${sayNumber(fmt(r.eta))}${r.eta < 0.99 ? ", so plasticity lowers the buckling stress" : ", so the panel buckles elastically"}, and the critical shear stress is ${say(r.tauCr, "stress")}.`,
+          `Against the applied ${say(inputs.tau, "stress")}, the margin of safety is ${sayMs(r.MS)}.`,
+        ].join(" "),
+      }, resultsTable];
+      key = `k_s = ${fmt(r.ks)}, τcr = ${val(r.tauCr, "stress")} (η = ${fmt(r.eta)}), margin of safety ${ms(r.MS)} against τ = ${val(inputs.tau, "stress")}.`;
+      keySaid = `the panel buckles in shear at ${say(r.tauCr, "stress")}, a margin of safety of ${sayMs(r.MS)}`;
+    } else if (tab === "diagonal") {
+      subtitle = "NACA TN 2661 incomplete diagonal tension";
+      const single = inputs.upright === "single", g = r.governing;
+      setup = [{
+        title: `The web: t = ${val(inputs.t, "length")}, he = ${val(inputs.he, "length")}, d = ${val(inputs.d, "length")}, S = ${val(inputs.S, "force")}`,
+        body: [
+          `- Web thickness $t$ = ${val(inputs.t, "length")}; effective depth $h_e$ = ${val(inputs.he, "length")}, clear depth $h_c$ = ${val(inputs.hc, "length")}`,
+          `- Upright spacing $d$ = ${val(inputs.d, "length")}, clear spacing $d_c$ = ${val(inputs.dc, "length")}`,
+          `- Applied shear $S$ = ${val(inputs.S, "force")}, so $\\tau = S/(h_e t)$ = ${val(r.tau, "stress")}`,
+        ].join("\n"),
+        narration: [
+          `The web is ${say(inputs.t, "length")} thick, with an effective depth of ${say(inputs.he, "length")} and uprights every ${say(inputs.d, "length")}.`,
+          `It carries a shear force of ${say(inputs.S, "force")}, a nominal shear stress of ${say(r.tau, "stress")}.`,
+        ].join(" "),
+      }, {
+        title: `${single ? "Single" : "Double"} uprights and ${inputs.heavyFlanges ? "heavy" : "real"} flanges`,
+        body: [
+          `- Uprights: ${single ? "single (one side)" : "double (symmetric)"}, $A_U$ = ${val(inputs.AU, "area")}, $\\rho$ = ${val(inputs.rho, "length")}, $t_U$ = ${val(inputs.tU, "length")}, $h_U$ = ${val(inputs.hU, "length")}${single ? `, $e$ = ${val(inputs.e, "length")}` : ""}`,
+          `- Flanges: ${inputs.heavyFlanges ? "heavy (flange strain neglected, as the TN 2661 charts)" : `$A_F$ = ${val(inputs.AF, "area")}`}; $I_T$ = ${val(inputs.IT, "inertia")}, $I_C$ = ${val(inputs.IC, "inertia")}`,
+          `- Edge restraint: ${inputs.restraint === "user" ? "typed in" : "from the fig. 12(b) fit"}, $R_h$ = ${fmt(r.Rh)}, $R_d$ = ${fmt(r.Rd)}`,
+        ].join("\n"),
+        narration: [
+          `The uprights are ${single ? "single, on one side of the web" : "double, on both sides of the web"}, each with an area of ${say(inputs.AU, "area")} and a radius of gyration of ${say(inputs.rho, "length")}.`,
+          inputs.heavyFlanges ? "The flanges are treated as heavy, so their strain is neglected." : `Each flange has an area of ${say(inputs.AF, "area")}.`,
+          `The edge restraint coefficients are ${sayNumber(fmt(r.Rh))} along the uprights and ${sayNumber(fmt(r.Rd))} along the flanges.`,
+        ].join(" "),
+      }, materialFrame];
+      method = [{
+        title: "Web buckling, then the diagonal-tension factor k",
+        body: [
+          "$$ \\tau_{cr,elastic} = k_{ss} E \\left(\\frac{t}{d_c}\\right)^2 \\left[R_h + \\tfrac{1}{2}(R_d - R_h)\\left(\\frac{d_c}{h_c}\\right)^3\\right] \\quad \\text{(eq. 32)} $$",
+          "",
+          "$$ k = \\tanh\\left(0.5 \\log_{10} \\frac{\\tau}{\\tau_{cr}}\\right) \\quad \\text{(eq. 27)} $$",
+        ].join("\n"),
+        notes: "kss is a closed form fitted to TN 2661 fig. 12(a); the TN 3781 plasticity factor replaces fig. 12(c).",
+        narration: [
+          "First, the web buckling stress, from equation 32 of TN 2661 with the edge restraint of the uprights and the flanges, reduced for plasticity.",
+          "Past buckling, the web carries part of the shear as diagonal tension; the factor k, from equation 27, says how much.",
+        ].join(" "),
+      }, {
+        title: "Incomplete diagonal tension: the angle α and the stresses",
+        body: [
+          "$$ \\sigma_U = \\frac{-k\\tau\\tan\\alpha}{A_{Ue}/(d t) + 0.5(1 - k)}, \\qquad \\tan^2\\alpha = \\frac{\\varepsilon - \\varepsilon_F}{\\varepsilon - \\varepsilon_U} $$",
+          "",
+          "- Solved by successive approximation (TN 2661 section 3.2); $k = 1$ is pure Wagner diagonal tension.",
+        ].join("\n"),
+        narration: "The angle of the diagonal folds and the upright and flange stresses depend on each other, so the page solves equations 30a to 30d by successive approximation, as TN 2661 does.",
+      }];
+      const lmax = Math.min(200, Math.max(10, 1.5 * r.loading));
+      results = [{
+        title: `τ/τcr = ${fmt(r.loading)}, so k = ${fmt(r.k)}`,
+        body: `$$ \\tau_{cr} = ${tex(r.tauCr, "stress")}, \\qquad \\frac{\\tau}{\\tau_{cr}} = ${texNumber(fmt(r.loading))}, \\qquad k = ${texNumber(fmt(r.k))} $$`,
+        plot: { x: [1, plotNumber(lmax)], xlabel: "τ/τcr", ylabel: "diagonal-tension factor k", curves: [`tanh(0.5*log(x)/${plotNumber(Math.LN10)})`] },
+        narration: [
+          `The web buckles at ${say(r.tauCr, "stress")}, so the applied shear is ${sayNumber(fmt(r.loading))} times the buckling stress.`,
+          `On this curve of equation 27, that gives a diagonal-tension factor k of ${sayNumber(fmt(r.k))}.`,
+        ].join(" "),
+      }, {
+        title: `α = ${fmt(r.alphaDeg)}°, upright σU = ${val(r.sigmaU, "stress")}, web σ1 = ${val(r.sigma1, "stress")}`,
+        body: [
+          `- Angle of diagonal tension $\\alpha$ = ${fmt(r.alphaDeg)}°`,
+          `- Upright stress $\\sigma_U$ = ${val(r.sigmaU, "stress")}; peak $\\sigma_{U\\max}$ = ${val(r.sigmaUmax, "stress")}`,
+          `- Flange stress $\\sigma_F$ = ${val(r.sigmaF, "stress")}`,
+          `- Web principal stresses $\\sigma_1$ = ${val(r.sigma1, "stress")}, $\\sigma_2$ = ${val(r.sigma2, "stress")}; peak web shear $\\tau'_{\\max}$ = ${val(r.tauMaxPrime, "stress")}`,
+        ].join("\n"),
+        narration: [
+          `The folds settle at an angle of ${sayNumber(fmt(r.alphaDeg))} degrees.`,
+          `The uprights carry a stress of ${say(r.sigmaU, "stress")}, and the largest principal stress in the web is ${say(r.sigma1, "stress")}.`,
+        ].join(" "),
+      }, {
+        title: g ? `Upright check (${g.id}): margin of safety ${ms(g.MS)}` : "Upright check: no margin (unloaded uprights)",
+        body: r.checks.map((c) => `- ${c.label}: ${val(c.stress, "stress")} against ${val(c.allowable, "stress")}, margin of safety ${ms(c.MS)}`).join("\n"),
+        narration: [
+          `The page checks the uprights as columns, with an effective length of ${say(r.Le, "length")}.`,
+          ...r.checks.map((c) => `${c.id === "single-yield" ? "Against yield" : "Against the column allowable"}, the upright stress of ${say(c.stress, "stress")} meets an allowable of ${say(c.allowable, "stress")}${c.MS === null ? "" : `, a margin of safety of ${sayMs(c.MS)}`}.`),
+        ].join(" "),
+      }, resultsTable];
+      key = `τ/τcr = ${fmt(r.loading)}, k = ${fmt(r.k)}, α = ${fmt(r.alphaDeg)}°; upright σU = ${val(r.sigmaU, "stress")}${g ? `, governing margin of safety ${ms(g.MS)} (${g.id})` : ""}.`;
+      keySaid = `the web works at a diagonal-tension factor of ${sayNumber(fmt(r.k))}${g ? `, and the governing upright check has a margin of safety of ${sayMs(g.MS)}` : ""}`;
+    } else throw new InputError([{ field: "tab", message: `Unknown tab "${tab}"` }]);
+
+    return {
+      meta: { title: `Stability analysis: ${TAB_LABELS[tab]}`, subtitle },
+      notes: DISCLAIMER,
+      narration: `Stability analysis: ${TAB_LABELS[tab].toLowerCase()}. ${subtitle}, with every number from the structural stability visualiser, in ${unitsSaid}. It is an exploration tool, not for certification.`,
+      setup, method, results,
+      checks: [checksFrame, {
+        title: "Takeaway",
+        key: `${key} Not for certification.`,
+        narration: `To sum up, ${keySaid}. Check every result independently: this is not for certification.`,
+      }],
+    };
+  }
+
   /* ---------- Reference cases (NACA TN 2661 section 7) ---------- */
 
   // Example 1, thin-web beam I-40-4Da (double uprights, heavy flanges) and
@@ -995,6 +1405,6 @@
     columnStrength, tangentModulusStress, solveColumn, columnCurve,
     beamColumnState, beamColumnMax, solveBeamColumn, beamColumnCurves, endsForK, feBuckling, jacobiEigenvalues, cholesky,
     ksClosed, shearPlasticity, solveShear, kFactor, idtAngle, wagner, solveDiagonal, diagonalCurves,
-    defaults, normalise, solve, resultRows, exportJSON, importJSON, exportMarkdown, tn2661Example, tn2661Case, selfTests, fmt,
+    defaults, normalise, solve, resultRows, exportJSON, importJSON, exportMarkdown, report, tn2661Example, tn2661Case, selfTests, fmt,
   };
 });

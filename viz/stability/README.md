@@ -1,20 +1,23 @@
 # Structural Stability Visualiser (STABILITY)
 
 An exploration tool for column buckling, second-order beam-columns, flat-plate
-shear buckling and NACA TN 2661 diagonal tension on plane webs. **Not for
+shear buckling and NACA TN 2661 diagonal tension on plane webs. The beamdswitch
+button saves the current tab as a narrated Markdown deck for
+[beamdswitch](https://teoyujie.org/visuals/beamdswitch/), with Copy deck beside it. **Not for
 certification**: the page says so on a permanent banner and every export
 repeats it. `index.html` is one self-contained file with no dependencies that
 works offline.
 
 | File | Role |
 | --- | --- |
-| `engine.js` | Pure calculation core: material model, the shared column-strength function, the four analyses, the beam FE eigenvalue solve, figure fits, unit conversion, Markdown and JSON export and import, and the self-test. No DOM access. Works in the browser (`Stability`) and in Node (`require`). |
+| `engine.js` | Pure calculation core: material model, the shared column-strength function, the four analyses, the beam FE eigenvalue solve, figure fits, unit conversion, Markdown and JSON export and import, the beamdswitch report (`report`) and the self-test. No DOM access. Works in the browser (`Stability`) and in Node (`require`). |
+| `beamdswitch.js` | The site's standard beamdswitch report template, an unchanged copy of `templates/beamdswitch.js` |
 | `template.html` | Page markup, styles, SVG plots, UI code and WebMCP tools |
 | `raw.json` | Sources, reference notes, scope and the digitised NASA figure points (published as `data.json`) |
-| `build.py` | Inlines `raw.json` and `engine.js` into `template.html` to write `index.html` |
+| `build.py` | Inlines `raw.json`, `engine.js` and `beamdswitch.js` into `template.html` to write `index.html` |
 
 ```sh
-python build.py   # rebuild index.html after editing template.html, engine.js or raw.json
+python build.py   # rebuild index.html after editing template.html, engine.js, beamdswitch.js or raw.json
 ```
 
 Every formula carries a source tag: `NASA` (report and section), `classical`
@@ -30,7 +33,9 @@ gives no kss for that panel; a warning says so.
 
 The tests are `tests/stability.test.mjs` (Node: the self-test, the TN 2661
 worked examples, the FE and secant cross-checks, validation, exports and the
-page's WebMCP tools) and `tests/test_stability.py` (Python: build
+page's WebMCP tools), `tests/stability-beamdswitch.test.mjs` (Node: every
+tab's beamdswitch deck, parsed with beamdswitch's own parsers, and the copy of
+the shared template) and `tests/test_stability.py` (Python: build
 reproducibility, the catalogue stub, the published copy and the self-test under
 Node). The page runs the same self-test on every load and shows a pass/fail
 badge.

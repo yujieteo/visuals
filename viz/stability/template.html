@@ -156,6 +156,10 @@ textarea{min-height:6rem;font:.8rem var(--mono)}
       <button class="btn" data-exp="results" data-act="download">Results JSON ↓</button><button class="btn" data-exp="results" data-act="copy">Copy</button>
       <button class="btn" data-exp="inputs" data-act="download">Inputs JSON ↓</button><button class="btn" data-exp="inputs" data-act="copy">Copy</button>
     </div>
+    <div class="row"><span class="label">Narrated talk</span>
+      <button class="btn" type="button" id="save-beamdswitch" title="Save a narrated Markdown talk about this analysis, to open in beamdswitch">beamdswitch</button><button class="btn" type="button" id="copy-beamdswitch" title="Copy the same beamdswitch deck to the clipboard, to paste into beamdswitch">Copy deck</button>
+    </div>
+    <p class="small muted">The beamdswitch button saves the current tab as a narrated talk: a Markdown deck with the set-up, method, results and checks, every number as shown here, and a spoken narration on every slide. Open it in <a href="https://teoyujie.org/visuals/beamdswitch/">beamdswitch</a> to get slides, a handout, narration and a video. Copy deck puts the same deck on the clipboard to paste into beamdswitch, for when the browser blocks the download.</p>
     <div class="row"><span class="label">Import</span><input type="file" id="file" accept=".json,application/json" aria-label="Import JSON file"></div>
     <textarea id="paste" aria-label="Paste JSON to import" placeholder="…or paste an exported JSON here and press Import pasted"></textarea>
     <div class="row"><button class="btn" id="import-paste">Import pasted</button><span class="status" id="io-status" role="status"></span></div>
@@ -188,6 +192,9 @@ textarea{min-height:6rem;font:.8rem var(--mono)}
 
 <script>
 /*@ENGINE@*/
+</script>
+<script>
+/*@BEAMDSWITCH@*/
 </script>
 <script>
 (function () {
@@ -522,6 +529,30 @@ function download({ text, name, type }) {
   const a = document.createElement("a"); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
+/* ---------- beamdswitch deck ----------
+   The report template lives in beamdswitch.js; the engine fills it from the analysis on this tab. */
+function reportDeck() {
+  if (!last.result || last.result.error) return null;
+  return { text: Beamdswitch.deck(S.report(state.tab, current(), { displayUnits: state.units })), name: `stability-${state.tab}-beamdswitch.md` };
+}
+/* A blocked download fails silently, so the page cannot fall back on its own: Copy deck is the explicit fallback. */
+function saveReport() {
+  let deck;
+  try { deck = reportDeck(); } catch (e) { say(`Could not write the deck: ${e.message}`); return; }
+  if (!deck) { say("Fix the inputs first: there is no result to save."); return; }
+  try {
+    download({ text: deck.text, name: deck.name, type: "text/markdown" });
+    say(`Saved ${deck.name}: open it in beamdswitch.`);
+  } catch (e) {
+    say(`Could not save: ${e.message}. Use Copy deck instead.`);
+  }
+}
+async function copyReport() {
+  let deck;
+  try { deck = reportDeck(); } catch (e) { say(`Could not write the deck: ${e.message}`); return; }
+  if (!deck) { say("Fix the inputs first: there is no result to copy."); return; }
+  say((await copyText(deck.text)) ? "Copied the beamdswitch deck: paste it into beamdswitch." : "Could not copy the beamdswitch deck: the clipboard is blocked here.");
+}
 function importDoc(text) {
   try {
     const r = S.importJSON(text);
@@ -562,6 +593,8 @@ function wire() {
   });
   $("file").addEventListener("change", (ev) => { const f = ev.target.files[0]; if (!f) return; const rd = new FileReader(); rd.onload = () => importDoc(String(rd.result)); rd.readAsText(f); ev.target.value = ""; });
   $("import-paste").addEventListener("click", () => importDoc($("paste").value));
+  $("save-beamdswitch").addEventListener("click", saveReport);
+  $("copy-beamdswitch").addEventListener("click", copyReport);
 }
 
 /* ---------- WebMCP tools ---------- */
