@@ -1,0 +1,608 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" href="data:,">
+<meta name="description" content="How often each Singapore Pools TOTO ball, 1 to 49, was drawn in the last 3 months, 6 months or 1 year, coloured by count, from Singapore Pools' published results. Past draws do not predict future ones.">
+<title>TOTO ball frequency</title>
+<style>
+:root{--bg:#fff;--fg:#1d1d1f;--muted:#6e6e73;--faint:#a1a1a6;--surface:#f5f5f7;--border:#d2d2d7;--grid:#e8e8ed;--focus:#0071e3;--shadow:rgb(0 0 0/.16);--b0:#1c5cab;--b0-ink:#fff;--b1:#86b6ef;--b1-ink:#1d1d1f;--b2:#f4a09a;--b2-ink:#1d1d1f;--b3:#c42b2b;--b3-ink:#fff;--sans:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;--mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;--r:.5rem;--fade:200ms cubic-bezier(.2,0,0,1);color-scheme:light dark}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--faint:#6e6e73;--surface:#2c2c2e;--border:#48484a;--grid:#333336;--focus:#2997ff;--shadow:rgb(0 0 0/.6);--b0:#5598e7;--b0-ink:#1d1d1f;--b1:#184f95;--b1-ink:#fff;--b2:#983230;--b2-ink:#fff;--b3:#ee6a66;--b3-ink:#1d1d1f}}
+:root[data-theme="dark"]{--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--faint:#6e6e73;--surface:#2c2c2e;--border:#48484a;--grid:#333336;--focus:#2997ff;--shadow:rgb(0 0 0/.6);--b0:#5598e7;--b0-ink:#1d1d1f;--b1:#184f95;--b1-ink:#fff;--b2:#983230;--b2-ink:#fff;--b3:#ee6a66;--b3-ink:#1d1d1f;color-scheme:dark}
+:root[data-theme="light"]{color-scheme:light}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 var(--sans);letter-spacing:-.011em;-webkit-font-smoothing:antialiased}
+main{width:min(100% - 2rem,64rem);margin:auto;padding:clamp(1.25rem,5vw,3rem) 0 3rem}
+a{color:inherit;text-underline-offset:.18em}
+h1{font-size:clamp(2rem,6vw,3.25rem);line-height:1.04;letter-spacing:-.045em;margin:.35rem 0 .8rem;max-width:16ch}
+h2{font-size:1.4rem;letter-spacing:-.02em;margin:0 0 .35rem;line-height:1.2}
+h3{font-size:1.05rem;margin:0 0 .25rem;letter-spacing:-.015em}
+p{margin:.5rem 0;max-width:68ch}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.eyebrow{font:600 .75rem/1.4 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0;display:flex;flex-wrap:wrap;gap:.25rem .9rem}
+.eyebrow a{text-decoration:none}
+.eyebrow a:hover{text-decoration:underline}
+.lede{font-size:1.125rem;max-width:60ch}
+.muted{color:var(--muted)}
+.small{font-size:.875rem}
+.caveat{border-left:3px solid var(--fg);padding:.1rem 0 .1rem .8rem;margin:1rem 0 0;max-width:62ch}
+section{margin-top:clamp(2.5rem,7vw,4rem);padding-top:1.25rem;border-top:1px solid var(--border)}
+#grid-section{margin-top:1rem;border-top:0;padding-top:.5rem}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(9.5rem,1fr));gap:.5rem 1.25rem;margin:1.5rem 0 0;padding:0;list-style:none}
+.stats li{border-top:1px solid var(--border);padding-top:.4rem;min-width:0}
+.stats b{display:block;font-size:1.6rem;letter-spacing:-.03em;line-height:1.15;font-variant-numeric:tabular-nums}
+.stats span{font-size:.8125rem;color:var(--muted)}
+.deck-row{display:flex;flex-wrap:wrap;gap:.35rem .5rem;align-items:center;margin:1rem 0 0}
+.deck-hint{margin:.4rem 0 0}
+/* Controls: one bar that scopes the grid, the detail and the table. */
+.filters{background:var(--bg);margin:1.5rem calc(-1 * min(1rem,2vw)) 0;padding:.6rem min(1rem,2vw) .5rem;border-bottom:1px solid var(--border)}
+@media (min-width:48rem){.filters{position:sticky;top:0;z-index:4}}
+.filter-row{display:flex;flex-wrap:wrap;gap:.35rem;align-items:center;min-width:0}
+.filter-row+.filter-row{margin-top:.4rem}
+.filter-label{font:600 .7rem var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-right:.25rem;min-width:4.2rem}
+.chip{display:inline-flex;align-items:center;gap:.4rem;border:1px solid var(--border);background:var(--bg);border-radius:999px;padding:.25rem .7rem;min-height:2.25rem;font-size:.875rem;white-space:nowrap;transition:background-color var(--fade),border-color var(--fade)}
+@media (hover:hover){.chip:hover{background:var(--surface)}}
+.chip[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.chip .n{font:.75rem var(--mono);color:var(--muted)}
+.chip[aria-pressed="true"] .n{color:inherit;opacity:.75}
+.status{font-size:.875rem;color:var(--muted);margin:.45rem 0 0;min-height:1.4em}
+.status strong{color:var(--fg);font-weight:600}
+/* Colour runs blue (drawn least) to red (drawn most); the key names each band's range so colour is never the only cue. */
+.swatch{width:.9rem;height:.9rem;border-radius:50%;display:inline-block;flex:none;box-shadow:0 0 0 2px var(--bg)}
+.sw-b0{background:var(--b0)}.sw-b1{background:var(--b1)}.sw-b2{background:var(--b2)}.sw-b3{background:var(--b3)}
+.key{margin:.9rem 0 0;max-width:40rem}
+.key-ends{display:flex;justify-content:space-between;gap:1rem;font-size:.8125rem;font-weight:600;margin-bottom:.3rem}
+.key-ends span:first-child::before{content:"← "}.key-ends span:last-child::after{content:" →"}
+.key-bands{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:2px}
+.key-bands li{min-width:0;text-align:center;font-size:.75rem;line-height:1.3;color:var(--muted)}
+.key-bands .bar{display:block;height:.75rem;margin-bottom:.3rem}
+.key-bands li:first-child .bar{border-radius:999px 0 0 999px}.key-bands li:last-child .bar{border-radius:0 999px 999px 0}
+.key-bands b{display:block;color:var(--fg);font-weight:600;overflow-wrap:anywhere}
+/* Ball grid */
+.balls{list-style:none;margin:1rem 0 0;padding:0;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:clamp(.35rem,1.6vw,.8rem);max-width:40rem}
+.balls li{min-width:0}
+.ball{width:100%;aspect-ratio:1;border-radius:50%;border:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;padding:0;background:var(--bg);box-shadow:inset 0 0 0 1.5px var(--faint);transition:opacity var(--fade),transform var(--fade),background-color var(--fade)}
+.ball .num{font-size:clamp(1rem,3.6vw,1.45rem);font-weight:650;letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums}
+.ball .cnt{font:clamp(.62rem,1.9vw,.75rem)/1.2 var(--mono);opacity:.85;margin-top:.15em;font-variant-numeric:tabular-nums}
+.ball.b0{background:var(--b0);color:var(--b0-ink);box-shadow:none}
+.ball.b1{background:var(--b1);color:var(--b1-ink);box-shadow:none}
+.ball.b2{background:var(--b2);color:var(--b2-ink);box-shadow:none}
+.ball.b3{background:var(--b3);color:var(--b3-ink);box-shadow:none}
+.ball[aria-pressed="true"]{outline:2px solid var(--fg);outline-offset:3px}
+.ball.dim{opacity:.22}
+@media (hover:hover){.ball:hover{transform:scale(1.06)}}
+.rank-badge{display:block;text-align:center;font:.68rem/1.4 var(--mono);color:var(--muted);margin-top:.15rem;min-height:1.4em}
+.grid-note{font-size:.8125rem;color:var(--muted);margin-top:.75rem}
+/* Detail panel for the chosen ball: the tap target on touch screens. */
+.detail{margin-top:1rem;border:1px solid var(--border);border-radius:calc(var(--r) * 1.5);padding:1rem;max-width:40rem;min-width:0}
+.detail h3{font-size:1.15rem}
+.detail dl{display:grid;grid-template-columns:minmax(0,10rem) minmax(0,1fr);gap:.3rem .9rem;margin:.5rem 0 0;font-size:.875rem}
+.detail dt{color:var(--muted)}
+.detail dd{margin:0;min-width:0;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.detail .dates{font-size:.8125rem;color:var(--muted);margin-top:.5rem}
+details.plain{margin-top:1rem}
+details.plain>summary{cursor:pointer;font-weight:600;min-height:2.25rem;display:flex;align-items:center}
+.table-wrap{overflow-x:auto;margin-top:.5rem;border:1px solid var(--border);border-radius:var(--r)}
+table{border-collapse:collapse;width:100%;font-size:.8125rem;min-width:32rem}
+th,td{text-align:left;padding:.4rem .6rem;border-bottom:1px solid var(--grid);vertical-align:top}
+th{font-weight:600;background:var(--surface)}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+.method ol,.method ul{padding-left:1.2rem;max-width:72ch}
+.method li{margin:.35rem 0}
+.sources li{margin:.3rem 0;overflow-wrap:anywhere}
+/* Tooltip: enhances, never gates. The same numbers are on the balls, in the detail panel and in the table. */
+.tip{position:fixed;z-index:10;max-width:min(20rem,calc(100vw - 1.5rem));background:var(--bg);color:var(--fg);border:1px solid var(--border);border-radius:var(--r);box-shadow:0 8px 24px var(--shadow);padding:.6rem .75rem;font-size:.8125rem;line-height:1.45;pointer-events:none;opacity:0;transition:opacity var(--fade)}
+.tip.on{opacity:1}
+.tip .t-head{font-weight:650;font-size:.875rem;margin-bottom:.15rem}
+.tip .t-big{font-size:1.15rem;font-weight:650;font-variant-numeric:tabular-nums}
+.tip .soft{color:var(--muted)}
+@media (max-width:40rem){
+  .detail dl{grid-template-columns:minmax(0,1fr)}
+  .detail dt{margin-top:.3rem}
+  .filter-label{min-width:0;width:100%}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media (forced-colors:active){.ball,.swatch,.key-bands .bar{forced-color-adjust:none}}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <p class="eyebrow"><a href="../../visuals.html">Visuals</a><span>Singapore Pools TOTO</span><span id="as-of"></span></p>
+  <h1>TOTO ball frequency</h1>
+  <p class="lede">How often each of the 49 TOTO balls was drawn as a winning number in the last 3 months, 6 months or 1 year of Singapore Pools draws. Balls drawn least are blue and balls drawn most are red.</p>
+  <p class="caveat small" id="random-note"></p>
+  <ul class="stats" id="stats"></ul>
+  <div class="deck-row">
+    <button class="chip" type="button" id="save-beamdswitch" title="Save a narrated Markdown talk about these counts, to open in beamdswitch">beamdswitch</button>
+    <button class="chip" type="button" id="copy-beamdswitch" title="Copy the narrated Markdown talk, to paste into beamdswitch">Copy deck</button>
+    <span id="deck-status" class="small muted" role="status"></span>
+  </div>
+  <p class="small muted deck-hint">The beamdswitch button saves the window you pick below as a narrated talk: a Markdown deck with the data, method, results and checks, every number as shown here, and a spoken narration on every slide. Open it in <a href="https://teoyujie.org/visuals/beamdswitch/">beamdswitch</a> to get slides, a handout, narration and a video. Copy deck puts the same deck on the clipboard, to paste into beamdswitch if the download does not arrive.</p>
+</header>
+
+<div class="filters" role="group" aria-label="Choose the window, sort and highlight">
+  <div class="filter-row" id="window-chips" role="group" aria-label="Window"><span class="filter-label" aria-hidden="true">Window</span></div>
+  <div class="filter-row" id="sort-chips" role="group" aria-label="Order"><span class="filter-label" aria-hidden="true">Order</span></div>
+  <div class="filter-row" id="band-chips" role="group" aria-label="Highlight balls drawn"><span class="filter-label" aria-hidden="true">Drawn</span></div>
+  <p class="status" id="status" aria-live="polite"></p>
+</div>
+
+<section id="grid-section" aria-labelledby="grid-h">
+  <h2 id="grid-h">Balls 1 to 49</h2>
+  <p class="muted small">Each ball shows its number and, below it, how many draws in the window included it. Hover or focus a ball for details; tap or press it to pin them below. Pick a band above to highlight only those balls.</p>
+  <div class="key" id="key" role="group" aria-label="Colour key: blue means drawn less often, red means drawn more often"><div class="key-ends" aria-hidden="true"><span>Drawn less often</span><span>Drawn more often</span></div><ul class="key-bands" id="key-bands"></ul></div>
+  <ol class="balls" id="balls"></ol>
+  <p class="grid-note" id="grid-note"></p>
+  <div class="detail" id="detail" aria-live="polite"></div>
+  <details class="plain"><summary>Show the counts as a table</summary>
+    <div class="table-wrap"><table id="count-table"><caption class="muted small" id="count-caption" style="text-align:left;padding:.5rem .6rem"></caption><thead><tr><th scope="col" class="num">Ball</th><th scope="col" class="num">Times drawn</th><th scope="col">Band</th><th scope="col">Last drawn</th></tr></thead><tbody></tbody></table></div>
+  </details>
+  <details class="plain"><summary>Show every draw in the window</summary>
+    <div class="table-wrap"><table id="draw-table"><caption class="muted small" style="text-align:left;padding:.5rem .6rem">Draws as published by Singapore Pools; each draw number links to its results page</caption><thead><tr><th scope="col" class="num">Draw</th><th scope="col">Date</th><th scope="col">Winning numbers</th><th scope="col" class="num">Additional</th></tr></thead><tbody></tbody></table></div>
+  </details>
+</section>
+
+<section id="method" class="method" aria-labelledby="method-h">
+  <h2 id="method-h">How this was made</h2>
+  <ol id="method-list"></ol>
+  <h3>Windows</h3>
+  <ul class="small" id="window-list"></ul>
+  <h3>Sources</h3>
+  <ul class="sources small" id="sources"></ul>
+  <p class="small muted">The full dataset, with every draw, is at <a href="data.json">data.json</a>.</p>
+</section>
+</main>
+<div class="tip" id="tip" role="tooltip" aria-hidden="true"></div>
+<noscript><p style="width:min(100% - 2rem,64rem);margin:1rem auto">This page needs JavaScript to draw the balls. The data is at <a href="data.json">data.json</a>.</p></noscript>
+
+<script id="dataset" type="application/json">{"title":"TOTO ball frequency","as_of":"2026-09-30","latest_draw":{"draw_no":4221,"date":"2026-09-28"},"random_note":"Every TOTO draw is a fresh random draw of 6 balls from 49, whatever happened before. Past counts do not predict future draws. Here “best balls” only means the balls drawn most often in the window you pick.","method":["Each row is one TOTO draw as Singapore Pools publishes it: the draw list names every draw and its date, and each draw's own results page gives the six winning numbers and the additional number. fetch.py read those pages on the retrieval date; no draw was typed by hand.","A window counts back from the latest draw in the data: 3 months, 6 months or 1 year means every draw dated after the same calendar day that many months earlier, up to and including the latest draw.","A ball's count is the number of draws in the window whose six winning numbers include it. The additional number is drawn after them and is excluded from that count.","Colour bands follow the counts asked for: 3 or fewer, more than 3 (4 or 5), more than 5 (6 to 10) and more than 10 (11 or more).","The average is what every ball would get if the six winning numbers were spread evenly: 6 × draws ÷ 49. It is a reference line, not a prediction."],"bands":[{"id":"b0","label":"3 or fewer","min":0,"max":3},{"id":"b1","label":"More than 3","min":4,"max":5},{"id":"b2","label":"More than 5","min":6,"max":10},{"id":"b3","label":"More than 10","min":11,"max":null}],"windows":[{"id":"3m","label":"3 months","after":"2026-06-28","first_draw":{"draw_no":4195,"date":"2026-06-29"},"draws":27,"average_per_ball":3.31},{"id":"6m","label":"6 months","after":"2026-03-28","first_draw":{"draw_no":4169,"date":"2026-03-30"},"draws":53,"average_per_ball":6.49},{"id":"1y","label":"1 year","after":"2025-09-28","first_draw":{"draw_no":4117,"date":"2025-09-29"},"draws":105,"average_per_ball":12.86}],"balls":[{"number":1,"counts":{"3m":1,"6m":4,"1y":8},"bands":{"3m":"b0","6m":"b1","1y":"b2"},"last_drawn":{"draw_no":4201,"date":"2026-07-20"}},{"number":2,"counts":{"3m":0,"6m":5,"1y":10},"bands":{"3m":"b0","6m":"b1","1y":"b2"},"last_drawn":{"draw_no":4192,"date":"2026-06-18"}},{"number":3,"counts":{"3m":2,"6m":8,"1y":14},"bands":{"3m":"b0","6m":"b2","1y":"b3"},"last_drawn":{"draw_no":4210,"date":"2026-08-20"}},{"number":4,"counts":{"3m":3,"6m":8,"1y":16},"bands":{"3m":"b0","6m":"b2","1y":"b3"},"last_drawn":{"draw_no":4215,"date":"2026-09-07"}},{"number":5,"counts":{"3m":2,"6m":5,"1y":12},"bands":{"3m":"b0","6m":"b1","1y":"b3"},"last_drawn":{"draw_no":4206,"date":"2026-08-07"}},{"number":6,"counts":{"3m":5,"6m":9,"1y":16},"bands":{"3m":"b1","6m":"b2","1y":"b3"},"last_drawn":{"draw_no":4217,"date":"2026-09-14"}},{"number":7,"counts":{"3m":7,"6m":12,"1y":15},"bands":{"3m":"b2","6m":"b3","1y":"b3"},"last_drawn":{"draw_no":4220,"date":"2026-09-24"}},{"number":8,"counts":{"3m":5,"6m":9,"1y":15},"bands":{"3m":"b1","6m":"b2","1y":"b3"},"last_drawn":{"draw_no":4217,"date":"2026-09-14"}},{"number":9,"counts":{"3m":3,"6m":6,"1y":10},"bands":{"3m":"b0","6m":"b2","1y":"b2"},"last_drawn":{"draw_no":4212,"date":"2026-08-27"}},{"number":10,"counts":{"3m":0,"6m":4,"1y":11},"bands":{"3m":"b0","6m":"b1","1y":"b3"},"last_drawn":{"draw_no":4189,"date":"2026-06-08"}},{"number":11,"counts":{"3m":5,"6m":10,"1y":17},"bands":{"3m":"b1","6m":"b2","1y":"b3"},"last_drawn":{"draw_no":4208,"date":"2026-08-13"}},{"number":12,"counts":{"3m":2,"6m":5,"1y":11},"bands":{"3m":"b0","6m":"b1","1y":"b3"},"last_drawn":{"draw_no":4220,"date":"2026-09-24"}},{"number":13,"counts":{"3m":2,"6m":4,"1y":13},"bands":{"3m":"b0","6m":"b1","1y":"b3"},"last_drawn":{"draw_no":4215,"date":"2026-09-07"}},{"number":14,"counts":{"3m":4,"6m":6,"1y":13},"bands":{"3m":"b1","6m":"b2","1y":"b3"},"last_drawn":{"draw_no":4221,"date":"2026-09-28"}},{"number":15,"counts":{"3m":0,"6m":4,"1y":14},"bands":{"3m":"b0","6m":"b1","1y":"b3"},"last_drawn":{"draw_no":4193,"date":"2026-06-22"}},{"number":16,"counts":{"3m":4,"6m":9,"1y":14},"bands":{"3m":"b1","6m":"b2","1y":"b3"},"last_drawn":{"draw_no":4217,"date":"2026-09-14"}},{"number":17,"counts":{"3m":4,"6m":4,"1y":10},"bands":{"3m":"b1","6m":"b1","1y":"b2"},"last_drawn":{"draw_no":4218,"date":"2026-09-17"}},{"number":18,"counts":{"3m":2,"6m":5,"1y":12},"bands":{"3m":"b0","6m":"b1","1y":"b3"},"last_drawn":{"draw_no":4217,"date":"2026-09-14"}},{"number":19,"counts":{"3m":2,"6m":5,"1y":12},"bands":{"3m":"b0","6m":"b1","1y":"b3"},"last_drawn":{"draw_no":4218,"date":"2026-09-17"}},{"number":20,"counts":{"3m":1,"6m":4,"1y":9},"bands":{"3m":"b0","6m":"b1","1y":"b2"},"last_drawn":{"draw_no":4220,"date":"2026-09-24"}},{"number":21,"counts":{"3m":1,"6m":6,"1y":8},"bands":{"3m":"b0","6m":"b2","1y":"b2"},"last_drawn":{"draw_no":4202,"date":"2026-07-23"}},{"number":22,"counts":{"3m":7,"6m":9,"1y":23},"bands":{"3m":"b2","6m":"b2","1y":"b3"},"last_drawn":{"draw_no":4221,"date":"2026-09-28"}},{"number":23,"counts":{"3m":6,"6m":12,"1y":15},"bands":{"3m":"b2","6m":"b3","1y":"b3"},"last_drawn":{"draw_no":4218,"date":"2026-09-17"}},{"number":24,"counts":{"3m":1,"6m":2,"1y":11},"bands":{"3m":"b0","6m":"b0","1y":"b3"},"last_drawn":{"draw_no":4209,"date":"2026-08-17"}},{"number":25,"counts":{"3m":4,"6m":7,"1y":13},"bands":{"3m":"b1","6m":"b2","1y":"b3"},"last_drawn":{"draw_no":4221,"date":"2026-09-28"}},{"number":26,"counts":{"3m":3,"6m":8,"1y":12},"bands":{"3m":"b0","6m":"b2","1y":"b3"},"last_drawn":{"draw_no":4216,"date":"2026-09-10"}},{"number":27,"counts":{"3m":5,"6m":7,"1y":12},"bands":{"3m":"b1","6m":"b2","1y":"b3"},"last_drawn":{"draw_no":4221,"date":"2026-09-28"}},{"number":28,"counts":{"3m":1,"6m":5,"1y":11},"bands":{"3m":"b0","6m":"b1","1y":"b3"},"last_drawn":{"draw_no":4200,"date":"2026-07-16"}},{"number":29,"counts":{"3m":3,"6m":5,"1y":8},"bands":{"3m":"b0","6m":"b1","1y":"b2"},"last_drawn":{"draw_no":4219,"date":"2026-09-21"}},{"number":30,"counts":{"3m":5,"6m":10,"1y":14},"bands":{"3m":"b1","6m":"b2","1y":"b3"},"last_drawn":{"draw_no":4216,"date":"2026-09-10"}},{"number":31,"counts":{"3m":2,"6m":4,"1y":14},"bands":{"3m":"b0","6m":"b1","1y":"b3"},"last_drawn":{"draw_no":4198,"date":"2026-07-09"}},{"number":32,"counts":{"3m":5,"6m":7,"1y":15},"bands":{"3m":"b1","6m":"b2","1y":"b3"},"last_drawn":{"draw_no":4215,"date":"2026-09-07"}},{"number":33,"counts":{"3m":7,"6m":10,"1y":17},"bands":{"3m":"b2","6m":"b2","1y":"b3"},"last_drawn":{"draw_no":4214,"date":"2026-09-03"}},{"number":34,"counts":{"3m":3,"6m":4,"1y":15},"bands":{"3m":"b0","6m":"b1","1y":"b3"},"last_drawn":{"draw_no":4221,"date":"2026-09-28"}},{"number":35,"counts":{"3m":4,"6m":7,"1y":18},"bands":{"3m":"b1","6m":"b2","1y":"b3"},"last_drawn":{"draw_no":4218,"date":"2026-09-17"}},{"number":36,"counts":{"3m":5,"6m":8,"1y":14},"bands":{"3m":"b1","6m":"b2","1y":"b3"},"last_drawn":{"draw_no":4218,"date":"2026-09-17"}},{"number":37,"counts":{"3m":4,"6m":6,"1y":14},"bands":{"3m":"b1","6m":"b2","1y":"b3"},"last_drawn":{"draw_no":4221,"date":"2026-09-28"}},{"number":38,"counts":{"3m":2,"6m":5,"1y":12},"bands":{"3m":"b0","6m":"b1","1y":"b3"},"last_drawn":{"draw_no":4211,"date":"2026-08-24"}},{"number":39,"counts":{"3m":8,"6m":14,"1y":19},"bands":{"3m":"b2","6m":"b3","1y":"b3"},"last_drawn":{"draw_no":4219,"date":"2026-09-21"}},{"number":40,"counts":{"3m":3,"6m":5,"1y":10},"bands":{"3m":"b0","6m":"b1","1y":"b2"},"last_drawn":{"draw_no":4212,"date":"2026-08-27"}},{"number":41,"counts":{"3m":2,"6m":4,"1y":8},"bands":{"3m":"b0","6m":"b1","1y":"b2"},"last_drawn":{"draw_no":4213,"date":"2026-08-31"}},{"number":42,"counts":{"3m":4,"6m":6,"1y":11},"bands":{"3m":"b1","6m":"b2","1y":"b3"},"last_drawn":{"draw_no":4219,"date":"2026-09-21"}},{"number":43,"counts":{"3m":4,"6m":6,"1y":15},"bands":{"3m":"b1","6m":"b2","1y":"b3"},"last_drawn":{"draw_no":4219,"date":"2026-09-21"}},{"number":44,"counts":{"3m":5,"6m":8,"1y":12},"bands":{"3m":"b1","6m":"b2","1y":"b3"},"last_drawn":{"draw_no":4220,"date":"2026-09-24"}},{"number":45,"counts":{"3m":0,"6m":0,"1y":5},"bands":{"3m":"b0","6m":"b0","1y":"b1"},"last_drawn":{"draw_no":4160,"date":"2026-02-27"}},{"number":46,"counts":{"3m":5,"6m":9,"1y":17},"bands":{"3m":"b1","6m":"b2","1y":"b3"},"last_drawn":{"draw_no":4213,"date":"2026-08-31"}},{"number":47,"counts":{"3m":3,"6m":5,"1y":10},"bands":{"3m":"b0","6m":"b1","1y":"b2"},"last_drawn":{"draw_no":4220,"date":"2026-09-24"}},{"number":48,"counts":{"3m":4,"6m":8,"1y":13},"bands":{"3m":"b1","6m":"b2","1y":"b3"},"last_drawn":{"draw_no":4219,"date":"2026-09-21"}},{"number":49,"counts":{"3m":2,"6m":5,"1y":12},"bands":{"3m":"b0","6m":"b1","1y":"b3"},"last_drawn":{"draw_no":4208,"date":"2026-08-13"}}],"draws":[{"draw_no":4221,"date":"2026-09-28","winning":[14,22,25,27,34,37],"additional":18,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MjIx","retrieved":"2026-09-30"},{"draw_no":4220,"date":"2026-09-24","winning":[7,12,20,25,44,47],"additional":2,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MjIw","retrieved":"2026-09-30"},{"draw_no":4219,"date":"2026-09-21","winning":[12,29,39,42,43,48],"additional":26,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MjE5","retrieved":"2026-09-30"},{"draw_no":4218,"date":"2026-09-17","winning":[17,19,23,35,36,39],"additional":49,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MjE4","retrieved":"2026-09-30"},{"draw_no":4217,"date":"2026-09-14","winning":[6,7,8,16,18,35],"additional":31,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MjE3","retrieved":"2026-09-30"},{"draw_no":4216,"date":"2026-09-10","winning":[6,16,26,30,39,42],"additional":27,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MjE2","retrieved":"2026-09-30"},{"draw_no":4215,"date":"2026-09-07","winning":[4,7,13,23,27,32],"additional":48,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MjE1","retrieved":"2026-09-30"},{"draw_no":4214,"date":"2026-09-03","winning":[29,33,39,42,43,44],"additional":49,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MjE0","retrieved":"2026-09-30"},{"draw_no":4213,"date":"2026-08-31","winning":[7,26,33,39,41,46],"additional":11,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MjEz","retrieved":"2026-09-30"},{"draw_no":4212,"date":"2026-08-27","winning":[8,9,14,17,35,40],"additional":18,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MjEy","retrieved":"2026-09-30"},{"draw_no":4211,"date":"2026-08-24","winning":[13,22,26,38,39,44],"additional":6,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MjEx","retrieved":"2026-09-30"},{"draw_no":4210,"date":"2026-08-20","winning":[3,18,19,25,27,48],"additional":40,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MjEw","retrieved":"2026-09-30"},{"draw_no":4209,"date":"2026-08-17","winning":[9,16,22,24,33,47],"additional":8,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MjA5","retrieved":"2026-09-30"},{"draw_no":4208,"date":"2026-08-13","winning":[4,11,22,32,40,49],"additional":37,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MjA4","retrieved":"2026-09-30"},{"draw_no":4207,"date":"2026-08-10","winning":[3,6,17,32,33,39],"additional":7,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MjA3","retrieved":"2026-09-30"},{"draw_no":4206,"date":"2026-08-07","winning":[5,7,30,33,36,46],"additional":44,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MjA2","retrieved":"2026-09-30"},{"draw_no":4205,"date":"2026-08-03","winning":[9,29,30,35,36,40],"additional":11,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MjA1","retrieved":"2026-09-30"},{"draw_no":4204,"date":"2026-07-30","winning":[4,7,16,23,30,32],"additional":8,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MjA0","retrieved":"2026-09-30"},{"draw_no":4203,"date":"2026-07-27","winning":[22,23,30,36,44,48],"additional":28,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MjAz","retrieved":"2026-09-30"},{"draw_no":4202,"date":"2026-07-23","winning":[8,11,17,21,37,48],"additional":35,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MjAy","retrieved":"2026-09-30"},{"draw_no":4201,"date":"2026-07-20","winning":[1,8,11,14,33,43],"additional":44,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MjAx","retrieved":"2026-09-30"},{"draw_no":4200,"date":"2026-07-16","winning":[6,27,28,41,43,44],"additional":19,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MjAw","retrieved":"2026-09-30"},{"draw_no":4199,"date":"2026-07-13","winning":[14,22,32,33,36,46],"additional":42,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTk5","retrieved":"2026-09-30"},{"draw_no":4198,"date":"2026-07-09","winning":[23,27,31,38,42,47],"additional":29,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTk4","retrieved":"2026-09-30"},{"draw_no":4197,"date":"2026-07-06","winning":[8,25,34,37,39,46],"additional":44,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTk3","retrieved":"2026-09-30"},{"draw_no":4196,"date":"2026-07-02","winning":[5,7,11,37,46,49],"additional":16,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTk2","retrieved":"2026-09-30"},{"draw_no":4195,"date":"2026-06-29","winning":[6,11,22,23,31,34],"additional":14,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTk1","retrieved":"2026-09-30"},{"draw_no":4194,"date":"2026-06-25","winning":[4,21,23,28,31,39],"additional":41,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTk0","retrieved":"2026-09-30"},{"draw_no":4193,"date":"2026-06-22","winning":[4,11,15,16,21,39],"additional":20,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTkz","retrieved":"2026-09-30"},{"draw_no":4192,"date":"2026-06-18","winning":[2,7,11,19,20,42],"additional":23,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTky","retrieved":"2026-09-30"},{"draw_no":4191,"date":"2026-06-15","winning":[9,16,27,28,32,49],"additional":18,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTkx","retrieved":"2026-09-30"},{"draw_no":4190,"date":"2026-06-11","winning":[14,16,21,22,35,38],"additional":36,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTkw","retrieved":"2026-09-30"},{"draw_no":4189,"date":"2026-06-08","winning":[10,15,28,39,40,46],"additional":12,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTg5","retrieved":"2026-09-30"},{"draw_no":4188,"date":"2026-06-04","winning":[3,5,20,23,26,27],"additional":28,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTg4","retrieved":"2026-09-30"},{"draw_no":4187,"date":"2026-06-01","winning":[2,19,26,29,33,36],"additional":21,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTg3","retrieved":"2026-09-30"},{"draw_no":4186,"date":"2026-05-28","winning":[10,13,30,35,38,44],"additional":15,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTg2","retrieved":"2026-09-30"},{"draw_no":4185,"date":"2026-05-25","winning":[11,12,24,33,38,46],"additional":30,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTg1","retrieved":"2026-09-30"},{"draw_no":4184,"date":"2026-05-21","winning":[11,18,25,36,39,49],"additional":41,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTg0","retrieved":"2026-09-30"},{"draw_no":4183,"date":"2026-05-18","winning":[7,18,32,37,41,44],"additional":19,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTgz","retrieved":"2026-09-30"},{"draw_no":4182,"date":"2026-05-14","winning":[4,8,21,25,43,46],"additional":32,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTgy","retrieved":"2026-09-30"},{"draw_no":4181,"date":"2026-05-11","winning":[6,10,25,26,34,40],"additional":30,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTgx","retrieved":"2026-09-30"},{"draw_no":4180,"date":"2026-05-07","winning":[2,3,8,16,20,47],"additional":10,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTgw","retrieved":"2026-09-30"},{"draw_no":4179,"date":"2026-05-04","winning":[7,18,19,30,36,48],"additional":11,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTc5","retrieved":"2026-09-30"},{"draw_no":4178,"date":"2026-04-30","winning":[2,6,7,31,35,39],"additional":15,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTc4","retrieved":"2026-09-30"},{"draw_no":4177,"date":"2026-04-27","winning":[3,11,13,22,28,48],"additional":21,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTc3","retrieved":"2026-09-30"},{"draw_no":4176,"date":"2026-04-23","winning":[3,5,15,23,37,42],"additional":48,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTc2","retrieved":"2026-09-30"},{"draw_no":4175,"date":"2026-04-20","winning":[3,5,9,23,43,49],"additional":8,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTc1","retrieved":"2026-09-30"},{"draw_no":4174,"date":"2026-04-16","winning":[1,3,6,12,21,41],"additional":18,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTc0","retrieved":"2026-09-30"},{"draw_no":4173,"date":"2026-04-13","winning":[4,8,10,15,16,26],"additional":17,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTcz","retrieved":"2026-09-30"},{"draw_no":4172,"date":"2026-04-09","winning":[1,2,6,9,44,48],"additional":24,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTcy","retrieved":"2026-09-30"},{"draw_no":4171,"date":"2026-04-06","winning":[14,23,29,30,39,48],"additional":12,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTcx","retrieved":"2026-09-30"},{"draw_no":4170,"date":"2026-04-02","winning":[1,7,8,23,30,33],"additional":21,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTcw","retrieved":"2026-09-30"},{"draw_no":4169,"date":"2026-03-30","winning":[4,12,26,30,46,47],"additional":6,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTY5","retrieved":"2026-09-30"},{"draw_no":4168,"date":"2026-03-26","winning":[4,7,22,29,33,46],"additional":48,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTY4","retrieved":"2026-09-30"},{"draw_no":4167,"date":"2026-03-23","winning":[4,25,28,33,43,48],"additional":31,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTY3","retrieved":"2026-09-30"},{"draw_no":4166,"date":"2026-03-19","winning":[3,27,34,35,38,49],"additional":17,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTY2","retrieved":"2026-09-30"},{"draw_no":4165,"date":"2026-03-16","winning":[6,14,18,22,35,36],"additional":13,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTY1","retrieved":"2026-09-30"},{"draw_no":4164,"date":"2026-03-12","winning":[12,25,33,40,43,46],"additional":21,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTY0","retrieved":"2026-09-30"},{"draw_no":4163,"date":"2026-03-09","winning":[7,13,14,17,40,44],"additional":35,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTYz","retrieved":"2026-09-30"},{"draw_no":4162,"date":"2026-03-05","winning":[1,5,12,15,22,42],"additional":37,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTYy","retrieved":"2026-09-30"},{"draw_no":4161,"date":"2026-03-02","winning":[6,8,28,37,41,49],"additional":40,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTYx","retrieved":"2026-09-30"},{"draw_no":4160,"date":"2026-02-27","winning":[5,9,20,23,45,46],"additional":7,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTYw","retrieved":"2026-09-30"},{"draw_no":4159,"date":"2026-02-23","winning":[24,26,30,32,37,47],"additional":2,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTU5","retrieved":"2026-09-30"},{"draw_no":4158,"date":"2026-02-19","winning":[8,16,17,34,38,48],"additional":25,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTU4","retrieved":"2026-09-30"},{"draw_no":4157,"date":"2026-02-16","winning":[13,24,28,34,37,44],"additional":29,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTU3","retrieved":"2026-09-30"},{"draw_no":4156,"date":"2026-02-13","winning":[10,15,25,43,45,49],"additional":4,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTU2","retrieved":"2026-09-30"},{"draw_no":4155,"date":"2026-02-09","winning":[10,15,29,31,33,49],"additional":30,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTU1","retrieved":"2026-09-30"},{"draw_no":4154,"date":"2026-02-05","winning":[6,18,24,26,36,48],"additional":5,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTU0","retrieved":"2026-09-30"},{"draw_no":4153,"date":"2026-02-02","winning":[4,19,40,41,46,47],"additional":20,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTUz","retrieved":"2026-09-30"},{"draw_no":4152,"date":"2026-01-29","winning":[11,13,16,31,42,48],"additional":21,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTUy","retrieved":"2026-09-30"},{"draw_no":4151,"date":"2026-01-26","winning":[10,11,13,26,32,39],"additional":44,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTUx","retrieved":"2026-09-30"},{"draw_no":4150,"date":"2026-01-22","winning":[6,22,27,32,37,44],"additional":19,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTUw","retrieved":"2026-09-30"},{"draw_no":4149,"date":"2026-01-19","winning":[4,11,21,23,31,35],"additional":48,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTQ5","retrieved":"2026-09-30"},{"draw_no":4148,"date":"2026-01-15","winning":[16,32,34,35,36,41],"additional":14,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTQ4","retrieved":"2026-09-30"},{"draw_no":4147,"date":"2026-01-12","winning":[1,9,16,18,35,43],"additional":12,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTQ3","retrieved":"2026-09-30"},{"draw_no":4146,"date":"2026-01-08","winning":[3,14,15,17,25,27],"additional":31,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTQ2","retrieved":"2026-09-30"},{"draw_no":4145,"date":"2026-01-05","winning":[5,20,35,39,40,49],"additional":27,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTQ1","retrieved":"2026-09-30"},{"draw_no":4144,"date":"2026-01-02","winning":[11,18,20,32,38,39],"additional":34,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTQ0","retrieved":"2026-09-30"},{"draw_no":4143,"date":"2025-12-29","winning":[2,4,22,24,30,33],"additional":49,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTQz","retrieved":"2026-09-30"},{"draw_no":4142,"date":"2025-12-25","winning":[3,8,15,28,37,43],"additional":49,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTQy","retrieved":"2026-09-30"},{"draw_no":4141,"date":"2025-12-22","winning":[4,5,13,22,24,30],"additional":36,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTQx","retrieved":"2026-09-30"},{"draw_no":4140,"date":"2025-12-18","winning":[2,14,15,30,31,43],"additional":27,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTQw","retrieved":"2026-09-30"},{"draw_no":4139,"date":"2025-12-15","winning":[17,21,22,35,37,42],"additional":9,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTM5","retrieved":"2026-09-30"},{"draw_no":4138,"date":"2025-12-11","winning":[6,11,20,28,33,43],"additional":16,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTM4","retrieved":"2026-09-30"},{"draw_no":4137,"date":"2025-12-08","winning":[9,12,15,23,27,47],"additional":45,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTM3","retrieved":"2026-09-30"},{"draw_no":4136,"date":"2025-12-04","winning":[1,5,24,36,41,46],"additional":39,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTM2","retrieved":"2026-09-30"},{"draw_no":4135,"date":"2025-12-01","winning":[2,10,24,35,45,49],"additional":37,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTM1","retrieved":"2026-09-30"},{"draw_no":4134,"date":"2025-11-27","winning":[6,8,17,28,32,46],"additional":16,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTM0","retrieved":"2026-09-30"},{"draw_no":4133,"date":"2025-11-24","winning":[8,25,27,34,45,47],"additional":19,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTMz","retrieved":"2026-09-30"},{"draw_no":4132,"date":"2025-11-20","winning":[11,13,22,31,47,49],"additional":39,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTMy","retrieved":"2026-09-30"},{"draw_no":4131,"date":"2025-11-17","winning":[3,9,12,18,19,34],"additional":24,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTMx","retrieved":"2026-09-30"},{"draw_no":4130,"date":"2025-11-13","winning":[6,13,18,22,34,35],"additional":40,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTMw","retrieved":"2026-09-30"},{"draw_no":4129,"date":"2025-11-10","winning":[2,11,12,19,25,36],"additional":16,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTI5","retrieved":"2026-09-30"},{"draw_no":4128,"date":"2025-11-06","winning":[3,20,24,29,32,44],"additional":46,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTI4","retrieved":"2026-09-30"},{"draw_no":4127,"date":"2025-11-03","winning":[10,19,22,34,39,43],"additional":35,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTI3","retrieved":"2026-09-30"},{"draw_no":4126,"date":"2025-10-30","winning":[1,5,31,34,38,45],"additional":21,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTI2","retrieved":"2026-09-30"},{"draw_no":4125,"date":"2025-10-27","winning":[4,12,14,24,36,38],"additional":17,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTI1","retrieved":"2026-09-30"},{"draw_no":4124,"date":"2025-10-23","winning":[7,14,17,18,31,38],"additional":46,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTI0","retrieved":"2026-09-30"},{"draw_no":4123,"date":"2025-10-20","winning":[3,10,13,15,32,37],"additional":8,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTIz","retrieved":"2026-09-30"},{"draw_no":4122,"date":"2025-10-16","winning":[2,4,8,19,35,39],"additional":7,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTIy","retrieved":"2026-09-30"},{"draw_no":4121,"date":"2025-10-13","winning":[5,31,33,34,38,46],"additional":39,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTIx","retrieved":"2026-09-30"},{"draw_no":4120,"date":"2025-10-09","winning":[13,14,19,22,31,42],"additional":41,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTIw","retrieved":"2026-09-30"},{"draw_no":4119,"date":"2025-10-06","winning":[10,15,22,31,42,48],"additional":4,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTE5","retrieved":"2026-09-30"},{"draw_no":4118,"date":"2025-10-02","winning":[19,22,26,37,40,46],"additional":14,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTE4","retrieved":"2026-09-30"},{"draw_no":4117,"date":"2025-09-29","winning":[15,16,22,34,35,43],"additional":26,"source_url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj00MTE3","retrieved":"2026-09-30"}],"sources":[{"id":"draw-list","publisher":"Singapore Pools","title":"TOTO results: list of draws","url":"https://www.singaporepools.com.sg/DataFileArchive/Lottery/Output/toto_result_draw_list_en.html","retrieved":"2026-09-30"},{"id":"draw-pages","publisher":"Singapore Pools","title":"TOTO results pages, one per draw (105 draws, linked in the draw table)","url":"https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx","retrieved":"2026-09-30"}]}</script>
+<script id="beamdswitch">
+/* The standard beamdswitch report template, shared by every visualisation.
+ *
+ * beamdswitch (https://teoyujie.org/visuals/beamdswitch/) turns one Markdown deck into slides, a
+ * handout, narration and a video. `deck(report)` writes a report in its deck syntax, always in the
+ * same order (templates/beamdswitch-report.md shows the skeleton):
+ *
+ *   front matter and title slide
+ *   # Set-up               what was modelled, its units and conventions
+ *   # Method               how the tool solved it
+ *   # Results              the numbers, with key equations and plots
+ *   # Checks and takeaway  what confirms the numbers, ending on one ::: key frame
+ *
+ * A report is plain data, so it can be built and tested without a page:
+ *   { meta: { title, subtitle, author, date, voice }, narration, notes,
+ *     setup, method, results, checks: [frame, ...] }
+ * and each frame is
+ *   { title, body, narration, notes, key, plot: { x: [a, b], xlabel, ylabel, curves: ["expr", ...] } }
+ * `body` is Markdown (LaTeX maths in $...$ or $$...$$); `narration` is plain spoken prose, one
+ * caption per sentence; `key`, `plot` and `notes` are optional. Every frame must be narrated, and
+ * the last checks frame must carry a key. The visualisation supplies every number already
+ * formatted, so the deck says exactly what its page shows. Every deck names its narrator: `meta.voice`
+ * when the visualisation picks one, else DEFAULT_VOICE, beamdswitch's British female default.
+ */
+(function (root, factory) {
+  const api = factory();
+  if (typeof module === "object" && module.exports) module.exports = api;
+  else root.Beamdswitch = api;
+})(typeof self !== "undefined" ? self : this, function () {
+  "use strict";
+
+  const DEFAULT_VOICE = "bf_emma";
+  const SECTIONS = [["setup", "Set-up"], ["method", "Method"], ["results", "Results"], ["checks", "Checks and takeaway"]];
+
+  const oneLine = (s) => String(s ?? "").replace(/\s+/g, " ").trim();
+  /* Markdown lines that would end a frame or a div early are refused rather than written. */
+  function block(text, what) {
+    const s = String(text ?? "").replace(/\r\n?/g, "\n").trim();
+    for (const line of s.split("\n"))
+      if (/^#{1,2}\s/.test(line) || /^\s*:{3,}/.test(line)) throw new Error(`${what} must not contain a heading or a ::: line: ${line}`);
+    return s;
+  }
+  /* Narration is read aloud: no maths, markup or line structure. */
+  function spoken(text, what) {
+    const s = oneLine(text);
+    if (!s) throw new Error(`${what} needs a narration.`);
+    if (/[$\\`*_#|<>]/.test(s)) throw new Error(`${what} narration must be plain spoken prose: ${s}`);
+    return s;
+  }
+  const div = (name, text) => [`::: ${name}`, text, ":::"];
+
+  function frame(f, where) {
+    const title = oneLine(f.title), what = `Frame "${title}" in ${where}`;
+    if (!title) throw new Error(`A frame in ${where} needs a title.`);
+    const out = [`## ${title}`, ""];
+    if (f.body) out.push(block(f.body, what), "");
+    if (f.plot) {
+      const p = f.plot, lines = [`x: ${p.x[0]}, ${p.x[1]}`];
+      if (p.xlabel) lines.push(`xlabel: ${oneLine(p.xlabel)}`);
+      if (p.ylabel) lines.push(`ylabel: ${oneLine(p.ylabel)}`);
+      for (const c of p.curves) lines.push(`y = ${oneLine(c)}`);
+      out.push(...div("plot", lines.join("\n")), "");
+    }
+    if (f.key) out.push(...div("key", block(f.key, what)), "");
+    if (f.notes) out.push(...div("notes", block(f.notes, what)), "");
+    out.push(...div("narration", spoken(f.narration, what)), "");
+    return out;
+  }
+
+  function deck(report) {
+    const meta = report.meta || {};
+    if (!oneLine(meta.title)) throw new Error("The report needs a title.");
+    const checks = report.checks || [];
+    if (!checks.length || !checks.at(-1).key) throw new Error("The last checks frame must carry a ::: key.");
+    const fm = { ...meta, voice: oneLine(meta.voice) || DEFAULT_VOICE };
+    const out = ["---"];
+    for (const k of ["title", "subtitle", "author", "date", "voice"]) if (oneLine(fm[k])) out.push(`${k}: ${oneLine(fm[k])}`);
+    out.push("---", "");
+    if (report.notes) out.push(...div("notes", block(report.notes, "The title slide")), "");
+    out.push(...div("narration", spoken(report.narration, "The title slide")), "");
+    SECTIONS.forEach(([id, title], i) => {
+      const frames = report[id] || [];
+      if (!frames.length) throw new Error(`The ${title} section needs at least one frame.`);
+      out.push(`# ${title}`, "", ...div("narration", `Part ${i + 1}. ${title}.`), "");
+      for (const f of frames) out.push(...frame(f, title));
+    });
+    return out.join("\n");
+  }
+
+  return { DEFAULT_VOICE, SECTIONS, deck };
+});
+</script>
+<script id="report">
+/* The TOTO page's numbers as a beamdswitch report.
+ *
+ * report(D, view) turns the dataset and the page's current view ({ window, band, open }) into the
+ * plain-data report that the standard template (beamdswitch.js, `Beamdswitch.deck`) writes as a
+ * narrated Markdown deck. Every number comes from the dataset, formatted as the page shows it; the
+ * page uses the same formatters and ranking, so the deck and the page cannot drift apart.
+ */
+(function (root, factory) {
+  const api = factory();
+  if (typeof module === "object" && module.exports) module.exports = api;
+  else root.TotoReport = api;
+})(typeof self !== "undefined" ? self : this, function () {
+  "use strict";
+
+  const fmtDate = (iso) => new Date(iso + "T00:00:00").toLocaleDateString("en-SG", { day: "numeric", month: "short", year: "numeric" });
+  const sayDate = (iso) => new Date(iso + "T00:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+  const plural = (n, one, many = one + "s") => `${n} ${n === 1 ? one : many}`;
+  const bandText = (b) => (b.max == null ? `${b.min} or more` : b.min === 0 ? `0 to ${b.max}` : `${b.min} to ${b.max}`);
+  // Rank 1 = most drawn; tied balls share a rank.
+  function ranked(D, wid) {
+    const rows = [...D.balls].sort((a, b) => b.counts[wid] - a.counts[wid] || a.number - b.number);
+    let rank = 0;
+    return rows.map((b, i) => {
+      if (i === 0 || b.counts[wid] !== rows[i - 1].counts[wid]) rank = i + 1;
+      return { ball: b, rank, count: b.counts[wid] };
+    });
+  }
+
+  /* Markdown text: characters beamdswitch would read as maths or markup are escaped. */
+  const md = (s) => String(s ?? "").replace(/\s+/g, " ").trim().replace(/[\\$*_`|<>[\]]/g, "\\$&");
+  /* Narration is read aloud: symbols become words and markup characters are dropped. */
+  const say = (s) => String(s ?? "")
+    .replace(/(\d)\s?%/g, "$1 percent").replace(/&/g, " and ").replace(/×/g, " times ").replace(/÷/g, " divided by ")
+    .replace(/[“”"]/g, "").replace(/[$\\`*_#|<>[\]]/g, " ").replace(/\s+/g, " ").trim();
+  const list = (xs) => (xs.length < 2 ? xs.join("") : `${xs.slice(0, -1).join(", ")} and ${xs.at(-1)}`);
+
+  function report(D, view = {}) {
+    const W = Object.fromEntries(D.windows.map((w) => [w.id, w])), B = Object.fromEntries(D.bands.map((b) => [b.id, b]));
+    const w = W[view.window] || D.windows[0], wid = w.id, latest = D.latest_draw;
+    const rows = ranked(D, wid), avg = w.average_per_ball.toFixed(1);
+    const best = rows.filter((r) => r.rank === 1), top = best[0].count;
+    const low = Math.min(...rows.map((r) => r.count)), least = rows.filter((r) => r.count === low);
+    const zero = D.balls.filter((b) => b.counts[wid] === 0).length;
+    const balls = (rs) => rs.map((r) => r.ball.number);
+    const span = `${fmtDate(w.first_draw.date)} to ${fmtDate(latest.date)}`, spanSaid = `${sayDate(w.first_draw.date)} to ${sayDate(latest.date)}`;
+    const total = D.balls.reduce((s, b) => s + b.counts[wid], 0);
+    const tally = (id) => D.balls.filter((b) => b.bands[wid] === id).length;
+
+    const setup = [{
+      title: `The data: ${w.draws} draws in the last ${w.label}, ${span}`,
+      body: [
+        `- Window: the last ${md(w.label)}, every draw after ${fmtDate(w.after)}: draw ${w.first_draw.draw_no} (${fmtDate(w.first_draw.date)}) to draw ${latest.draw_no} (${fmtDate(latest.date)}).`,
+        `- Each draw picks 6 winning numbers from the balls 1 to 49, then an additional number.`,
+        ...D.sources.map((s) => `- ${md(s.publisher)}, [${md(s.title)}](${s.url}). Retrieved ${fmtDate(s.retrieved)}.`),
+      ].join("\n"),
+      narration: `The data are the ${w.draws} TOTO draws Singapore Pools published in the last ${w.label}, from ${spanSaid}. Each draw picks six winning numbers from the balls 1 to 49, then an additional number.`,
+    }];
+
+    const method = [{
+      title: "A ball's count is the number of draws whose six winning numbers include it",
+      body: [
+        `- ${md(D.method[2])}`,
+        `- ${md(D.method[1])}`,
+        "",
+        `$$ \\text{even-spread average} = \\frac{6 \\times ${w.draws}}{49} \\approx ${avg} $$`,
+      ].join("\n"),
+      narration: `A ball's count is the number of draws in the window whose six winning numbers include it; the additional number is not counted. If the winning numbers were spread evenly, every ball would be drawn 6 times ${w.draws}, divided by 49, which is about ${avg} times.`,
+    }, {
+      title: `Four colour bands: ${list(D.bands.map((b) => b.label.toLowerCase()))}`,
+      body: [
+        "| Band | Times drawn | Balls in the last " + md(w.label) + " |",
+        "| --- | ---: | ---: |",
+        ...[...D.bands].reverse().map((b) => `| ${md(b.label)} | ${bandText(b)} | ${tally(b.id)} |`),
+      ].join("\n"),
+      notes: md(D.method[3]),
+      narration: `Balls are coloured in four bands, from blue for drawn least to red for drawn most. In the last ${w.label}, ${list([...D.bands].reverse().map((b) => `${tally(b.id) ? plural(tally(b.id), "ball") : "no balls"} ${tally(b.id) === 1 ? "was" : "were"} drawn ${bandText(b)} times`))}.`,
+    }];
+
+    const results = [{
+      title: `Drawn most: ${best.length > 1 ? "balls" : "ball"} ${balls(best).join(", ")}, ${plural(top, "time")} each`,
+      body: [
+        `| Rank | Ball | Times drawn | Band | Last drawn |`,
+        `| ---: | ---: | ---: | --- | --- |`,
+        ...rows.filter((r) => r.rank <= 5).map((r) => `| ${r.rank} | ${r.ball.number} | ${r.count} | ${md(B[r.ball.bands[wid]].label)} | ${r.ball.last_drawn ? fmtDate(r.ball.last_drawn.date) : "—"} |`),
+      ].join("\n"),
+      notes: "Tied balls share a rank. The full table is on the page under Show the counts as a table.",
+      narration: `In the last ${w.label}, ${best.length > 1 ? `balls ${list(balls(best).map(String))} were` : `ball ${best[0].ball.number} was`} drawn most, ${plural(top, "time")}${best.length > 1 ? " each" : ""}, against an even-spread average of about ${avg}.`,
+    }, {
+      title: `Drawn least: ${zero ? `${plural(zero, "ball")} not drawn at all` : `${least.length > 1 ? "balls" : "ball"} ${balls(least).join(", ")}, ${plural(low, "time")} each`}`,
+      body: [
+        `- Drawn ${plural(low, "time")}: ${least.length > 1 ? "balls" : "ball"} ${balls(least).join(", ")}.`,
+        `- Balls not drawn at all in this window: ${zero}.`,
+        `- Lowest band, ${md(D.bands[0].label.toLowerCase())} (${bandText(D.bands[0])} times): ${plural(tally(D.bands[0].id), "ball")}.`,
+      ].join("\n"),
+      narration: `At the other end, ${least.length > 1 ? `balls ${list(balls(least).map(String))} were` : `ball ${least[0].ball.number} was`} ${low === 0 ? "not drawn at all in this window" : `drawn ${plural(low, "time")}${least.length > 1 ? " each" : ""}, and every ball was drawn at least once`}.`,
+    }];
+    if (view.band && B[view.band]) {
+      const b = B[view.band], lit = rows.filter((r) => r.ball.bands[wid] === b.id);
+      results.push({
+        title: `Highlighted: ${plural(lit.length, "ball")} drawn ${bandText(b)} times`,
+        body: lit.length ? `${md(b.label)}: ${lit.map((r) => `${r.ball.number} (${r.count})`).join(", ")}.` : `No ball was drawn ${bandText(b)} times in the last ${md(w.label)}.`,
+        narration: lit.length
+          ? `The highlighted band, ${say(b.label.toLowerCase())}, holds ${plural(lit.length, "ball")} drawn ${bandText(b)} times: ${list(lit.map((r) => String(r.ball.number)))}.`
+          : `No ball was drawn ${bandText(b)} times in the last ${w.label}.`,
+      });
+    }
+    const open = D.balls.find((b) => b.number === view.open);
+    if (open) {
+      const r = rows.find((x) => x.ball === open), hits = D.draws.filter((d) => d.date > w.after && d.winning.includes(open.number));
+      results.push({
+        title: `Ball ${open.number}: drawn ${plural(open.counts[wid], "time")} in ${w.draws} draws, rank ${r.rank} of 49`,
+        body: [
+          ...D.windows.map((x) => `- Last ${md(x.label)}: ${plural(open.counts[x.id], "time")} of ${x.draws} draws · ${md(B[open.bands[x.id]].label.toLowerCase())}`),
+          `- Last drawn: ${open.last_drawn ? `draw ${open.last_drawn.draw_no}, ${fmtDate(open.last_drawn.date)}` : "not in the last year"}`,
+          `- ${hits.length ? `Drawn in the last ${md(w.label)} on: ${hits.map((d) => fmtDate(d.date)).join(" · ")}` : `Not drawn in the last ${md(w.label)}.`}`,
+        ].join("\n"),
+        narration: `Ball ${open.number} was drawn ${plural(open.counts[wid], "time")} in the last ${w.label}, rank ${r.rank} of 49. ${open.last_drawn ? `It was last drawn on ${sayDate(open.last_drawn.date)}.` : "It was not drawn in the last year."}`,
+      });
+    }
+
+    const checks = [{
+      title: `The counts add up: ${total} = 6 × ${w.draws} draws`,
+      body: [
+        "| Window | Draws | Sum of the 49 counts | 6 × draws |",
+        "| --- | ---: | ---: | ---: |",
+        ...D.windows.map((x) => `| Last ${md(x.label)} | ${x.draws} | ${D.balls.reduce((s, b) => s + b.counts[x.id], 0)} | ${6 * x.draws} |`),
+      ].join("\n"),
+      narration: `Each draw adds one to six balls, so the 49 counts must add up to six times the number of draws. In the last ${w.label} they add up to ${total}, which is 6 times ${w.draws}.`,
+    }, {
+      title: "Takeaway",
+      key: `In the last ${md(w.label)}, ${best.length > 1 ? "balls" : "ball"} ${balls(best).join(", ")} ${best.length > 1 ? "were" : "was"} drawn most, ${plural(top, "time")}${best.length > 1 ? " each" : ""}, against an even-spread average of ${avg}. ${md(D.random_note.split(". ").slice(0, 2).join(". "))}.`,
+      narration: `${best.length > 1 ? `Balls ${list(balls(best).map(String))} were` : `Ball ${best[0].ball.number} was`} drawn most in the last ${w.label}. But every TOTO draw is a fresh random draw, so past counts do not predict future draws.`,
+    }];
+
+    return {
+      meta: { title: `TOTO ball frequency: the last ${w.label}`, subtitle: `${w.draws} Singapore Pools draws, ${span}`, date: `Data to ${fmtDate(latest.date)}` },
+      narration: `This talk counts how often each of the 49 TOTO balls was a winning number in the last ${w.label}, over ${w.draws} Singapore Pools draws. Every count is a number of draws.`,
+      notes: md(D.random_note),
+      setup, method, results, checks,
+    };
+  }
+
+  return { fmtDate, sayDate, plural, bandText, ranked, report };
+});
+</script>
+<script>
+(() => {
+"use strict";
+const D = JSON.parse(document.getElementById("dataset").textContent);
+const WINDOW = Object.fromEntries(D.windows.map((w) => [w.id, w]));
+const BAND = Object.fromEntries(D.bands.map((b) => [b.id, b]));
+const BALL = Object.fromEntries(D.balls.map((b) => [b.number, b]));
+const state = { window: "3m", sort: "number", band: null, open: null };
+
+function h(tag, attrs, ...kids) {
+  const el = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (v == null || v === false) continue;
+    if (k === "class") el.className = v;
+    else if (k === "text") el.textContent = v;
+    else if (k.startsWith("on")) el.addEventListener(k.slice(2), v);
+    else el.setAttribute(k, v === true ? "" : v);
+  }
+  for (const kid of kids.flat()) if (kid != null && kid !== false) el.append(kid.nodeType ? kid : document.createTextNode(String(kid)));
+  return el;
+}
+const $ = (id) => document.getElementById(id);
+// The formatters and ranking live in report.js, so the page and its beamdswitch deck write every number the same way.
+const { fmtDate, plural, bandText } = TotoReport;
+const drawsIn = (wid) => D.draws.filter((d) => d.date > WINDOW[wid].after);
+// Rank 1 = most drawn; tied balls share a rank.
+const ranked = (wid) => TotoReport.ranked(D, wid);
+const rankOf = (wid) => Object.fromEntries(ranked(wid).map((r) => [r.ball.number, r.rank]));
+
+function header() {
+  $("as-of").textContent = `Data to ${fmtDate(D.latest_draw.date)}`;
+  $("random-note").textContent = D.random_note;
+}
+
+function stats() {
+  const w = WINDOW[state.window];
+  const top = ranked(state.window);
+  const best = top.filter((r) => r.rank === 1);
+  $("stats").replaceChildren(
+    h("li", null, h("b", { text: String(w.draws) }), h("span", { text: `draws in the last ${w.label}, ${fmtDate(w.first_draw.date)} to ${fmtDate(D.latest_draw.date)}` })),
+    h("li", null, h("b", { text: best.map((r) => r.ball.number).join(", ") }), h("span", { text: `drawn most, ${plural(best[0].count, "time")} each` })),
+    h("li", null, h("b", { text: w.average_per_ball.toFixed(1) }), h("span", { text: "times per ball if the draws were spread evenly (6 × draws ÷ 49)" })),
+    h("li", null, h("b", { text: String(D.balls.filter((b) => b.counts[state.window] === 0).length) }), h("span", { text: "balls not drawn at all in this window" })),
+  );
+}
+
+function chips() {
+  $("window-chips").replaceChildren($("window-chips").firstElementChild, ...D.windows.map((w) =>
+    h("button", { type: "button", class: "chip", "aria-pressed": String(state.window === w.id), onclick: () => { state.window = w.id; render(); } }, `Last ${w.label}`, h("span", { class: "n", text: String(w.draws) }))));
+  $("sort-chips").replaceChildren($("sort-chips").firstElementChild,
+    ...[["number", "Ball number"], ["most", "Most drawn first"]].map(([id, label]) =>
+      h("button", { type: "button", class: "chip", "aria-pressed": String(state.sort === id), onclick: () => { state.sort = id; render(); } }, label)));
+  const tally = (id) => D.balls.filter((b) => b.bands[state.window] === id).length;
+  $("band-chips").replaceChildren($("band-chips").firstElementChild,
+    h("button", { type: "button", class: "chip", "aria-pressed": String(state.band == null), onclick: () => { state.band = null; render(); } }, "All"),
+    ...[...D.bands].reverse().map((b) =>
+      h("button", { type: "button", class: "chip", "aria-pressed": String(state.band === b.id), title: `${bandText(b)} times`, onclick: () => { state.band = state.band === b.id ? null : b.id; render(); } },
+        h("span", { class: `swatch sw-${b.id}`, "aria-hidden": "true" }), b.label, h("span", { class: "n", text: String(tally(b.id)) }))));
+}
+
+function key() {
+  $("key-bands").replaceChildren(...D.bands.map((b) =>
+    h("li", null, h("span", { class: `bar sw-${b.id}`, "aria-hidden": "true" }), h("b", { text: b.label }), `${bandText(b)} times`)));
+}
+
+function statusLine() {
+  const w = WINDOW[state.window];
+  const lit = state.band ? D.balls.filter((b) => b.bands[state.window] === state.band).length : 49;
+  const parts = [h("strong", { text: `Last ${w.label}` }), `: ${plural(w.draws, "draw")}, average ${w.average_per_ball.toFixed(1)} per ball.`];
+  if (state.band) parts.push(` Highlighting ${plural(lit, "ball")} drawn ${bandText(BAND[state.band])} times.`);
+  $("status").replaceChildren(...parts);
+}
+
+function describe(b) {
+  const w = WINDOW[state.window];
+  return `Ball ${b.number}: drawn ${plural(b.counts[state.window], "time")} in ${w.draws} draws over the last ${w.label}`;
+}
+
+function grid() {
+  const ranks = rankOf(state.window);
+  const rows = state.sort === "most" ? ranked(state.window).map((r) => r.ball) : D.balls;
+  $("balls").replaceChildren(...rows.map((b) => {
+    const band = b.bands[state.window];
+    const dim = state.band && band !== state.band;
+    const btn = h("button", {
+      type: "button", class: `ball ${band}${dim ? " dim" : ""}`, "aria-pressed": String(state.open === b.number),
+      "aria-label": `${describe(b)}. Rank ${ranks[b.number]} of 49.`, "data-ball": String(b.number),
+      onclick: () => { state.open = state.open === b.number ? null : b.number; hideTip(); render(); },
+      onmouseenter: (e) => showTip(b, e.currentTarget), onmouseleave: hideTip, onfocus: (e) => showTip(b, e.currentTarget), onblur: hideTip,
+    }, h("span", { class: "num", text: String(b.number) }), h("span", { class: "cnt", "aria-hidden": "true", text: `×${b.counts[state.window]}` }));
+    return h("li", null, btn, state.sort === "most" ? h("span", { class: "rank-badge", "aria-hidden": "true", text: `#${ranks[b.number]}` }) : null);
+  }));
+  $("grid-note").textContent = state.sort === "most"
+    ? "Sorted by times drawn, most first; ties keep ball-number order and share a rank (#)."
+    : "In ball-number order. The number under each ball (×) is how many draws included it.";
+}
+
+function detail() {
+  const el = $("detail");
+  if (state.open == null) {
+    el.replaceChildren(h("p", { class: "muted small", style: "margin:0", text: "Tap or press a ball to see its counts in every window and the draws that included it." }));
+    return;
+  }
+  const b = BALL[state.open];
+  const hits = drawsIn(state.window).filter((d) => d.winning.includes(b.number));
+  const ranks = rankOf(state.window);
+  el.replaceChildren(
+    h("h3", { text: `Ball ${b.number}` }),
+    h("p", { class: "small", style: "margin:.15rem 0 0", text: `${describe(b)} — rank ${ranks[b.number]} of 49. The even-spread average is ${WINDOW[state.window].average_per_ball.toFixed(1)}.` }),
+    h("dl", null,
+      ...D.windows.flatMap((w) => [h("dt", { text: `Last ${w.label}` }), h("dd", { text: `${plural(b.counts[w.id], "time")} of ${w.draws} draws · ${BAND[b.bands[w.id]].label.toLowerCase()}` })]),
+      h("dt", { text: "Last drawn" }), h("dd", { text: b.last_drawn ? `Draw ${b.last_drawn.draw_no}, ${fmtDate(b.last_drawn.date)}` : "Not in the last year" }),
+    ),
+    h("p", { class: "dates", text: hits.length ? `Drawn in the last ${WINDOW[state.window].label} on: ${hits.map((d) => fmtDate(d.date)).join(" · ")}` : `Not drawn in the last ${WINDOW[state.window].label}.` }),
+  );
+}
+
+function tables() {
+  const w = WINDOW[state.window];
+  $("count-caption").textContent = `Times each ball was a winning number in the last ${w.label} (${w.draws} draws)`;
+  $("count-table").tBodies[0].replaceChildren(...ranked(state.window).map((r) => h("tr", null,
+    h("td", { class: "num", text: String(r.ball.number) }),
+    h("td", { class: "num", text: String(r.count) }),
+    h("td", { text: BAND[r.ball.bands[state.window]].label }),
+    h("td", { text: r.ball.last_drawn ? fmtDate(r.ball.last_drawn.date) : "—" }),
+  )));
+  $("draw-table").tBodies[0].replaceChildren(...drawsIn(state.window).map((d) => h("tr", null,
+    h("td", { class: "num" }, h("a", { href: d.source_url, rel: "noopener", text: String(d.draw_no) })),
+    h("td", { text: fmtDate(d.date) }),
+    h("td", { text: d.winning.join(", ") }),
+    h("td", { class: "num", text: String(d.additional) }),
+  )));
+}
+
+function method() {
+  $("method-list").replaceChildren(...D.method.map((m) => h("li", { text: m })));
+  $("window-list").replaceChildren(...D.windows.map((w) => h("li", { text: `Last ${w.label}: draws after ${fmtDate(w.after)} — draw ${w.first_draw.draw_no} (${fmtDate(w.first_draw.date)}) to draw ${D.latest_draw.draw_no} (${fmtDate(D.latest_draw.date)}), ${w.draws} draws.` })));
+  $("sources").replaceChildren(...D.sources.map((s) => h("li", null, `${s.publisher}, `, h("a", { href: s.url, rel: "noopener", text: s.title }), `. Retrieved ${fmtDate(s.retrieved)}.`)));
+}
+
+const tip = $("tip");
+function showTip(b, target) {
+  const w = WINDOW[state.window];
+  tip.replaceChildren(
+    h("div", { class: "t-head", text: `Ball ${b.number}` }),
+    h("div", null, h("span", { class: "t-big", text: String(b.counts[state.window]) }), h("span", { class: "soft", text: ` of ${w.draws} draws, last ${w.label}` })),
+    h("div", { class: "soft", text: `${BAND[b.bands[state.window]].label} · average ${w.average_per_ball.toFixed(1)}` }),
+    h("div", { class: "soft", text: b.last_drawn ? `Last drawn ${fmtDate(b.last_drawn.date)}` : "Not drawn in the last year" }),
+  );
+  const r = target.getBoundingClientRect();
+  tip.classList.add("on");
+  const tw = tip.offsetWidth, th = tip.offsetHeight;
+  let x = Math.min(Math.max(8, r.left + r.width / 2 - tw / 2), window.innerWidth - tw - 8);
+  let y = r.top - th - 8;
+  if (y < 8) y = r.bottom + 8;
+  tip.style.left = `${x}px`;
+  tip.style.top = `${y}px`;
+}
+function hideTip() { tip.classList.remove("on"); }
+window.addEventListener("scroll", hideTip, { passive: true });
+
+function render() {
+  const focused = document.activeElement;
+  const refocus = focused && focused.dataset && focused.dataset.ball;
+  stats(); chips(); statusLine(); grid(); detail(); tables();
+  if (refocus) document.querySelector(`[data-ball="${refocus}"]`)?.focus({ preventScroll: true });
+}
+
+/* ---------- beamdswitch deck ----------
+   The report template lives in beamdswitch.js; report.js fills it from the window shown. */
+const deck = () => Beamdswitch.deck(TotoReport.report(D, state));
+function save(blob, name) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = name;
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+$("save-beamdswitch").addEventListener("click", async () => {
+  const status = $("deck-status"), text = deck(), name = "toto-frequency-beamdswitch.md";
+  try {
+    save(new Blob([text], { type: "text/markdown" }), name);
+    status.textContent = `Saved ${name}: open it in beamdswitch.`;
+  } catch {
+    try { await navigator.clipboard.writeText(text); status.textContent = "Copied the beamdswitch deck, as saving is blocked here: paste it into beamdswitch."; }
+    catch { status.textContent = "Could not save or copy the beamdswitch deck here."; }
+  }
+});
+$("copy-beamdswitch").addEventListener("click", async () => {
+  const status = $("deck-status");
+  try { await navigator.clipboard.writeText(deck()); status.textContent = "Copied the beamdswitch deck: paste it into beamdswitch."; }
+  catch { status.textContent = "Could not copy the beamdswitch deck here: use the beamdswitch button to save it."; }
+});
+
+header(); method(); key(); render();
+
+// WebMCP: the same data for agents. Read-only.
+const result = (v) => ({ content: [{ type: "text", text: JSON.stringify(v) }] });
+const mc = (typeof document !== "undefined" && document.modelContext) || (typeof navigator !== "undefined" && navigator.modelContext);
+const windowSchema = { type: "string", enum: D.windows.map((w) => w.id), description: "3m, 6m or 1y, counted back from the latest draw" };
+mc?.registerTool({ name: "get_metadata", description: "Return what this page counts, the latest draw, the windows (with draw counts and date ranges), the colour bands, the method, the randomness caveat and the sources.", inputSchema: { type: "object", properties: {}, additionalProperties: false }, annotations: { readOnlyHint: true }, async execute() { return result({ title: D.title, as_of: D.as_of, latest_draw: D.latest_draw, windows: D.windows, bands: D.bands, method: D.method, random_note: D.random_note, sources: D.sources, truncated: false }); } });
+mc?.registerTool({ name: "get_ball_counts", description: "Return how many draws in a window included each ball 1-49 as a winning number, with its band and rank. Sort by ball number or most drawn first. Past counts do not predict future draws.", inputSchema: { type: "object", properties: { window: windowSchema, sort: { type: "string", enum: ["number", "most"] }, limit: { type: "integer", minimum: 1, maximum: 49 } }, required: ["window"], additionalProperties: false }, annotations: { readOnlyHint: true }, async execute(i) { const rows = ranked(i.window); if (i.sort !== "most") rows.sort((a, b) => a.ball.number - b.ball.number); const limit = i.limit || 49; return result({ window: WINDOW[i.window], returned: Math.min(limit, 49), truncated: limit < 49, balls: rows.slice(0, limit).map((r) => ({ number: r.ball.number, count: r.count, rank: r.rank, band: BAND[r.ball.bands[i.window]].label })), note: D.random_note, next_steps: ["Use get_ball with a number for every window and its draw dates."] }); } });
+mc?.registerTool({ name: "get_ball", description: "Return one ball's counts in every window, when it was last drawn and the draws that included it in the last year.", inputSchema: { type: "object", properties: { number: { type: "integer", minimum: 1, maximum: 49 } }, required: ["number"], additionalProperties: false }, annotations: { readOnlyHint: true }, async execute({ number }) { const b = BALL[number]; if (!b) return result({ error: "number must be 1 to 49" }); return result({ ball: b, draws: D.draws.filter((d) => d.winning.includes(number)).map((d) => ({ draw_no: d.draw_no, date: d.date, source_url: d.source_url })), note: D.random_note, truncated: false }); } });
+mc?.registerTool({ name: "list_draws", description: "List the draws in a window, newest first, with winning numbers, additional number and the Singapore Pools results page for each.", inputSchema: { type: "object", properties: { window: windowSchema, limit: { type: "integer", minimum: 1, maximum: 200 } }, required: ["window"], additionalProperties: false }, annotations: { readOnlyHint: true }, async execute(i) { const rows = drawsIn(i.window); const limit = i.limit || rows.length; return result({ total: rows.length, returned: Math.min(limit, rows.length), truncated: rows.length > limit, draws: rows.slice(0, limit) }); } });
+})();
+</script>
+</body>
+</html>
