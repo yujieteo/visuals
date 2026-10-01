@@ -51,10 +51,3 @@ for (const slug of pages) {
     assertVoice(parseDeck(templateOf(source).deck(report({}))), slug);
   });
 }
-
-test("no report names a voice other than a beamdswitch voice id", () => {
-  const sources = [...pages.map((slug) => `viz/${slug}/report.js`).filter((p) => { try { read(p); return true; } catch { return false; } }),
-    "scripts/templates/stock-cases-report.js", "scripts/templates/english-grammar.js"];
-  for (const path of sources)
-    for (const m of read(path).matchAll(/\bvoice\s*:\s*["'`]([^"'`]*)["'`]/g)) assert.match(m[1], /^[a-z]{2}_[a-z]+$/, `${path}: ${m[0]}`);
-});

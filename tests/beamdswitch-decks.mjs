@@ -3,7 +3,6 @@
 // here as tests/fixtures/beamdswitch/beamdswitch.js) and decks are parsed with beamdswitch's own
 // parser (read-only copies in tests/fixtures/beamdswitch/), as the site's tests do.
 import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import vm from "node:vm";
@@ -21,15 +20,9 @@ const siteRepo = process.env.SITE_REPO || new URL("../../site/", import.meta.url
 export const SITE_TEMPLATE = `${siteRepo.replace(/\/$/, "")}/templates/beamdswitch.js`;
 export const haveSite = existsSync(SITE_TEMPLATE);
 
-// SHA-256 of the site's templates/beamdswitch.js before it defaulted the voice to bf_emma. Until that
-// change merges in yujieteo/site, a site checkout may still hold this version; drop it once merged.
-export const PREVIOUS_SITE_TEMPLATE_SHA256 = "f990792dc269c844b30f458cab22d3b32310dd5ca19c610b8b305ca9bbbc9e52";
-
-// The copy matches a site checkout's templates/beamdswitch.js, or that checkout predates the voice default.
+// The copy matches a site checkout's templates/beamdswitch.js.
 export function assertSiteTemplate(copy, sitePath, what) {
-  const site = readFileSync(sitePath, "utf8");
-  if (createHash("sha256").update(site).digest("hex") === PREVIOUS_SITE_TEMPLATE_SHA256) return;
-  assert.equal(copy, site, `the site's templates/beamdswitch.js and ${what} must stay identical`);
+  assert.equal(copy, readFileSync(sitePath, "utf8"), `the site's templates/beamdswitch.js and ${what} must stay identical`);
 }
 
 // Every deck names its narrator, so beamdswitch never narrates in silence: a voice id such as bf_emma.
