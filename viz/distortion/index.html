@@ -218,6 +218,12 @@ button:focus-visible, select:focus-visible, summary:focus-visible, input[type=ch
       <p class="note" id="motion-note" hidden>Auto-play is off because your system asks for reduced motion.</p>
       <div class="actions"><button type="button" id="reset">Reset</button><button type="button" id="reset-view">Reset view</button></div>
     </fieldset>
+    <fieldset>
+      <legend>Narrated talk</legend>
+      <div class="actions"><button type="button" id="save-beamdswitch" title="Save a narrated Markdown talk about this view, to open in beamdswitch">beamdswitch</button><button type="button" id="copy-beamdswitch" title="Copy the same beamdswitch deck to the clipboard, to paste into beamdswitch">Copy deck</button></div>
+      <p class="note" id="deck-status" role="status"></p>
+      <p class="note">Saves the set loads as a narrated talk: a Markdown deck with the set-up, method, results and checks, in the words shown here, and a spoken narration on every slide. Open it in <a href="https://teoyujie.org/visuals/beamdswitch/">beamdswitch</a> to get slides, a handout, narration and a video. Copy deck puts the same deck on the clipboard to paste into beamdswitch, for when the browser blocks the download.</p>
+    </fieldset>
   </aside>
 </main>
 <script>/*! three.js r186 (npm three@0.186.1) with OrbitControls, bundled as the global THREE by
@@ -5205,15 +5211,267 @@ void main() {
     };
   }
 
+  /* ---------- Words the page shows ----------
+   * Nothing here has units, so the page describes loads, strains and buckling in words; these are
+   * those words, shared by the page and the beamdswitch report. */
+
+  const LOAD_UI = {
+    axial: { label: "Axial", words: ["compression", "tension"] },
+    shear: { label: "Transverse shear", words: ["down", "up"] },
+    torsion: { label: "Torsion", words: ["clockwise", "anticlockwise"] },
+    bending: { label: "Bending", words: ["tip down", "tip up"] },
+    inplane: { label: "In-plane shear", words: ["one way", "other way"] },
+  };
+  const level = (a) => (a < 0.02 ? "none" : a < 0.34 ? "light" : a < 0.67 ? "moderate" : "heavy");
+  function loadText(key, v) {
+    const a = Math.abs(v);
+    if (a < 0.02) return "none";
+    return `${LOAD_UI[key].words[v < 0 ? 0 : 1]}, ${level(a)}`;
+  }
+  function strainWord(e) {
+    const a = Math.abs(e);
+    if (a < 0.002) return "no change";
+    return `${e > 0 ? "stretching" : "shortening"}${a > 0.03 ? ", strongly" : ""}`;
+  }
+  const shearWord = (g) => (Math.abs(g) < 0.002 ? "none" : Math.abs(g) < 0.03 ? "small" : "clear");
+  const alongWord = (along) => (along < 0.25 ? "near the clamp" : along > 0.75 ? "near the free end" : "mid-span");
+  /* Where buckling starts for one load acting alone (the slider's ▲ marks), or null. */
+  function onsetText(crit, key) {
+    const c = crit[key], marks = [c.neg != null ? -c.neg : null, c.pos].filter((x) => x != null);
+    if (!marks.length) return null;
+    return `buckling starts beyond ${level(Math.abs(marks[marks.length - 1]))} ${marks.length > 1 ? "either way" : LOAD_UI[key].words[marks[0] < 0 ? 0 : 1]}`;
+  }
+
+  /* ---------- beamdswitch report ----------
+   * report(model, state, meta, { colourMap }) describes the view as a report for the site's
+   * standard beamdswitch template (beamdswitch.js writes the Markdown deck). The view is
+   * qualitative, so the report holds no numbers: it says what the page says, in the page's words
+   * (the load sliders, the buckling status, the effects legend and the patch inset), and labels
+   * every effect analytic or assumed as raw.json (`meta`) does. */
+  const COLOUR_MAPS = { none: "none", shear: "shear strain", axial: "axial strain", warping: "warping displacement" };
+  const sayList = (items) => (items.length < 2 ? items.join("") : `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`);
+  const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+  // Effect labels mid-sentence: lower case, except a name such as Poisson or Saint-Venant.
+  const lower = (s) => (/^(Poisson|Saint)/.test(s) ? s : s.charAt(0).toLowerCase() + s.slice(1));
+  // The inset's strain words, read as a phrase: "strong shortening" for "shortening, strongly".
+  const strainSaid = (e) => strainWord(e).replace(/^(\w+), strongly$/, "strong $1");
+
+  function report(model, state, meta, { colourMap = "none" } = {}) {
+    const st = model.structure, P = prepare(model, state), panel = st === "panel";
+    const info = meta.structures.find((s) => s.id === st), label = info.label;
+    const effect = (id) => meta.effects.find((e) => e.id === id) || { label: id, note: "" };
+    const used = LOADS.filter((k) => APPLIES[k].includes(st)), on = used.filter((k) => loadText(k, state.loads[k]) !== "none");
+    const loadsShown = on.map((k) => `${LOAD_UI[k].label} ${loadText(k, state.loads[k])}`);
+    const loadsSaid = on.map((k) => { const v = state.loads[k]; return `${level(Math.abs(v))} ${LOAD_UI[k].label.toLowerCase()} ${LOAD_UI[k].words[v < 0 ? 0 : 1]}`; });
+    const ex = `${Number(state.exaggeration).toFixed(1)}×`;
+    const fx = activeEffects(P), analytic = fx.filter((e) => e.basis === "analytic"), assumed = fx.filter((e) => e.basis === "assumed");
+    const buckled = [...new Set(bucklingState(P).filter((b) => b.buckled).map((b) => b.name))];
+    const crit = criticalLoads(model, state);
+    const onsets = used.map((k) => [k, onsetText(crit, k)]).filter(([, t]) => t);
+    const strain = patchStrain(P, state.patch), ps = slidersFromPatch(model, state.patch);
+    const face = model.walls[state.patch.wall].name.toLowerCase(), where = alongWord(ps.along), angle = Math.round(state.patch.angle);
+    const pr = strain.principal;
+    const toggles = panel
+      ? `Stringers ${state.stringers ? "on" : "off"}, frames ${state.frames ? "on" : "off"}`
+      : `Warping ${state.warpingRestraint ? "restrained" : "free"} at the clamp`;
+    const nothing = !on.length;
+
+    const setup = [{
+      title: `The structure: ${label.toLowerCase()}, ${info.boundary.split(",")[0]}`,
+      body: [
+        `- ${label}: ${info.type}`,
+        `- ${cap(info.boundary)}`,
+        `- ${toggles}`,
+        `- ${meta.disclaimer}`,
+      ].join("\n"),
+      notes: meta.nature,
+      narration: [
+        `The structure is a ${label.toLowerCase()}, ${panel ? "a flat skin with stringers and frames, loaded in its own plane" : "a thin-walled cantilever, clamped at one end and loaded at the free end"}.`,
+        panel ? `Its stringers are ${state.stringers ? "on" : "off"}, and its frames are ${state.frames ? "on" : "off"}.` : `Warping is ${state.warpingRestraint ? "restrained" : "free"} at the clamp.`,
+        "Everything here is exaggerated and qualitative: nothing is calibrated and nothing has units.",
+      ].join(" "),
+    }, {
+      title: nothing ? "The loads: none" : `The loads: ${loadsShown.join("; ")}`,
+      body: [
+        "| Load | Setting |", "| --- | --- |",
+        ...LOADS.map((k) => `| ${LOAD_UI[k].label} | ${APPLIES[k].includes(st) ? loadText(k, state.loads[k]) : "not used here"} |`),
+        "",
+        `Exaggeration ${ex}; colour map: ${COLOUR_MAPS[colourMap] || "none"}.`,
+      ].join("\n"),
+      narration: [
+        nothing ? "No load is applied, so the structure keeps its shape." : `The loads are ${sayList(loadsSaid)}.`,
+        "Each load is a dimensionless slider setting, described as light, moderate or heavy.",
+        `Displacements are drawn at ${Number(state.exaggeration).toFixed(1)} times the base exaggeration.`,
+      ].join(" "),
+    }];
+
+    const method = [{
+      title: nothing ? "The effects: none on show" : `The effects: ${analytic.length} analytic${assumed.length ? `, ${assumed.length} assumed ${assumed.length === 1 ? "shape" : "shapes"}` : ""}`,
+      body: nothing ? "- No load: move a load slider or try a preset." : fx.map((e) => `- **${effect(e.id).label}** (${e.basis === "analytic" ? "analytic" : "assumed shape"}): ${effect(e.id).note}`).join("\n"),
+      narration: nothing ? "With no load, no effect is on show." : [
+        analytic.length ? `The page draws ${sayList(analytic.map((e) => lower(effect(e.id).label)))} from analytic solutions.` : "",
+        assumed.length ? `${cap(sayList(assumed.map((e) => lower(effect(e.id).label))))} ${assumed.length === 1 ? "is an assumed shape" : "are assumed shapes"}, not solved.` : "Nothing on show is an assumed shape.",
+      ].filter(Boolean).join(" "),
+    }, {
+      title: st === "tube" ? "Buckling: not modelled for the tube" : "Buckling: threshold-triggered, as assumed shapes",
+      body: st === "tube" ? "- The tube stays smooth: its buckling is not modelled." : [
+        "$$ r = \\frac{\\sigma}{\\sigma_{cr}} + \\left(\\frac{\\tau}{\\tau_{cr}}\\right)^2 $$",
+        "",
+        "- A plate stays flat until $r$ passes 1, then wrinkles growing as $\\sqrt{r - 1}$.",
+        ...(onsets.length ? onsets.map(([k, t]) => `- ${LOAD_UI[k].label}: ${t} (this load alone)`) : ["- No load on this structure buckles it alone."]),
+      ].join("\n"),
+      notes: st === "tube" ? undefined : effect("thresholds").note,
+      narration: st === "tube" ? "The tube stays smooth: its buckling is not modelled." : [
+        "Each thin plate stays flat until its interaction ratio, compression over its critical value plus the shear ratio squared, passes one.",
+        "Past that threshold it wrinkles, growing with the square root of how far past it is.",
+        onsets.length ? `Acting alone, each load buckles a plate past its mark on the slider: ${sayList(onsets.map(([k, t]) => `${LOAD_UI[k].label.toLowerCase()} beyond ${t.replace(/^buckling starts beyond /, "")}`))}.` : "No single load on this structure buckles it.",
+      ].join(" "),
+    }];
+
+    const results = [{
+      title: `The unit patch, ${where} on the ${face}, at ${angle}°: a1 ${strainWord(strain.patch.e11)}, a2 ${strainWord(strain.patch.e22)}`,
+      body: [
+        `- Along the patch edge a1: ${strainWord(strain.patch.e11)}. Across, a2: ${strainWord(strain.patch.e22)}.`,
+        `- Shear angle γ: ${shearWord(strain.shearAngle)}.`,
+        `- Principal directions: ${pr[0].value > 0.002 ? "one stretching (red)" : "no stretching"}, ${pr[1].value < -0.002 ? "one shortening (blue)" : "no shortening"}.`,
+      ].join("\n"),
+      notes: "The inset shows the membrane strain of the wall under the patch, with rigid rotation removed and the shape change enlarged; wrinkles appear in 3D only.",
+      narration: [
+        `The amber unit patch sits ${where} on the ${face}, turned ${angle} ${angle === 1 ? "degree" : "degrees"} from the span.`,
+        `Along its first edge it shows ${strainSaid(strain.patch.e11)}, and across it, ${strainSaid(strain.patch.e22)}.`,
+        `Its shear angle is ${shearWord(strain.shearAngle) === "none" ? "zero" : shearWord(strain.shearAngle)}${pr[0].value > 0.002 && pr[1].value < -0.002 ? ": one principal direction stretches and the other shortens" : ""}.`,
+      ].join(" "),
+    }, {
+      title: st === "tube" ? "Buckling: the tube stays smooth" : buckled.length ? `Buckled: ${buckled.join(", ")}` : "No buckling",
+      body: st === "tube" ? "- The tube stays smooth: its buckling is not modelled." : buckled.length
+        ? `- Buckled: ${buckled.join(", ")}.\n- The wrinkles are assumed shapes, not solved.` : "- No plate has passed its threshold.",
+      narration: st === "tube" ? "The tube never buckles here, because its buckling is not modelled." : buckled.length
+        ? `The ${sayList(buckled)} ${buckled.length === 1 ? "has" : "have"} passed ${buckled.length === 1 ? "its" : "their"} threshold and wrinkled.`
+        : "No plate has passed its buckling threshold, so the skin stays smooth.",
+    }];
+
+    const checks = [{
+      title: "What the view is: exaggerated and qualitative, not to scale",
+      body: [`- ${meta.disclaimer}`, `- ${meta.nature}`, "- Colour maps are scaled to the largest value shown, so they show pattern and sign, not size."].join("\n"),
+      narration: [
+        "Read this view for pattern and sign, not size.",
+        "Nothing is calibrated and no quantity carries units, and each effect is labelled analytic or assumed so you know which shapes are solved and which are drawn to suit.",
+      ].join(" "),
+    }, {
+      title: "Takeaway",
+      key: `${label}${nothing ? " with no load" : ` under ${loadsShown.join("; ")}`}: the patch ${where} on the ${face} shows a1 ${strainWord(strain.patch.e11)}, a2 ${strainWord(strain.patch.e22)}, shear angle ${shearWord(strain.shearAngle)}; ${st === "tube" ? "no buckling modelled" : buckled.length ? `buckled: ${buckled.join(", ")}` : "no buckling"}. Exaggerated, qualitative, no units.`,
+      narration: [
+        `To sum up, the ${label.toLowerCase()} ${nothing ? "carries no load" : `under ${sayList(loadsSaid)}`} ${nothing ? "and keeps its shape" : `shows ${strainSaid(strain.patch.e11)} along the patch and ${strainSaid(strain.patch.e22)} across it`}.`,
+        st === "tube" ? "Its buckling is not modelled." : buckled.length ? `The ${sayList(buckled)} ${buckled.length === 1 ? "has" : "have"} buckled.` : "Nothing has buckled.",
+        "Everything shown is exaggerated and qualitative.",
+      ].join(" "),
+    }];
+
+    return {
+      meta: { title: `Structural distortion: ${label}`, subtitle: meta.disclaimer },
+      notes: meta.nature,
+      narration: `Structural distortion of a ${label.toLowerCase()}. An exaggerated, qualitative view of how ${nothing ? "loads distort it" : `${sayList(loadsSaid)} ${on.length === 1 ? "distorts" : "distort"} it`}, from the Structural Distortion Explorer. Nothing is to scale and nothing has units.`,
+      setup, method, results, checks,
+    };
+  }
+
   const sub3 = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
   const dot3 = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 
   return {
     PATCH, patchFaces, placePatch, patchFromSliders, slidersFromPatch, patchParamLines, patchStrain, eig2, faceSign, defaultPatch,
-    PRESETS, presetState, activeEffects,
+    PRESETS, presetState, activeEffects, LOAD_UI, level, loadText, strainWord, shearWord, alongWord, onsetText, report,
     L, NU, axisPoint, warping, fieldValue, plates, wrinkle, criticalLoads, bucklingState, GEOM, STRUCTURES, BEAMS, LOADS, APPLIES,
     buildModel, defaultState, prepare, reference, deform, lookup, sampleArray,
   };
+});
+</script>
+<script>/* The standard beamdswitch report template, shared by every visualisation.
+ *
+ * beamdswitch (https://teoyujie.org/visuals/beamdswitch/) turns one Markdown deck into slides, a
+ * handout, narration and a video. `deck(report)` writes a report in its deck syntax, always in the
+ * same order (templates/beamdswitch-report.md shows the skeleton):
+ *
+ *   front matter and title slide
+ *   # Set-up               what was modelled, its units and conventions
+ *   # Method               how the tool solved it
+ *   # Results              the numbers, with key equations and plots
+ *   # Checks and takeaway  what confirms the numbers, ending on one ::: key frame
+ *
+ * A report is plain data, so it can be built and tested without a page:
+ *   { meta: { title, subtitle, author, date, voice }, narration, notes,
+ *     setup, method, results, checks: [frame, ...] }
+ * and each frame is
+ *   { title, body, narration, notes, key, plot: { x: [a, b], xlabel, ylabel, curves: ["expr", ...] } }
+ * `body` is Markdown (LaTeX maths in $...$ or $$...$$); `narration` is plain spoken prose, one
+ * caption per sentence; `key`, `plot` and `notes` are optional. Every frame must be narrated, and
+ * the last checks frame must carry a key. The visualisation supplies every number already
+ * formatted, so the deck says exactly what its page shows.
+ */
+(function (root, factory) {
+  const api = factory();
+  if (typeof module === "object" && module.exports) module.exports = api;
+  else root.Beamdswitch = api;
+})(typeof self !== "undefined" ? self : this, function () {
+  "use strict";
+
+  const SECTIONS = [["setup", "Set-up"], ["method", "Method"], ["results", "Results"], ["checks", "Checks and takeaway"]];
+
+  const oneLine = (s) => String(s ?? "").replace(/\s+/g, " ").trim();
+  /* Markdown lines that would end a frame or a div early are refused rather than written. */
+  function block(text, what) {
+    const s = String(text ?? "").replace(/\r\n?/g, "\n").trim();
+    for (const line of s.split("\n"))
+      if (/^#{1,2}\s/.test(line) || /^\s*:{3,}/.test(line)) throw new Error(`${what} must not contain a heading or a ::: line: ${line}`);
+    return s;
+  }
+  /* Narration is read aloud: no maths, markup or line structure. */
+  function spoken(text, what) {
+    const s = oneLine(text);
+    if (!s) throw new Error(`${what} needs a narration.`);
+    if (/[$\\`*_#|<>]/.test(s)) throw new Error(`${what} narration must be plain spoken prose: ${s}`);
+    return s;
+  }
+  const div = (name, text) => [`::: ${name}`, text, ":::"];
+
+  function frame(f, where) {
+    const title = oneLine(f.title), what = `Frame "${title}" in ${where}`;
+    if (!title) throw new Error(`A frame in ${where} needs a title.`);
+    const out = [`## ${title}`, ""];
+    if (f.body) out.push(block(f.body, what), "");
+    if (f.plot) {
+      const p = f.plot, lines = [`x: ${p.x[0]}, ${p.x[1]}`];
+      if (p.xlabel) lines.push(`xlabel: ${oneLine(p.xlabel)}`);
+      if (p.ylabel) lines.push(`ylabel: ${oneLine(p.ylabel)}`);
+      for (const c of p.curves) lines.push(`y = ${oneLine(c)}`);
+      out.push(...div("plot", lines.join("\n")), "");
+    }
+    if (f.key) out.push(...div("key", block(f.key, what)), "");
+    if (f.notes) out.push(...div("notes", block(f.notes, what)), "");
+    out.push(...div("narration", spoken(f.narration, what)), "");
+    return out;
+  }
+
+  function deck(report) {
+    const meta = report.meta || {};
+    if (!oneLine(meta.title)) throw new Error("The report needs a title.");
+    const checks = report.checks || [];
+    if (!checks.length || !checks.at(-1).key) throw new Error("The last checks frame must carry a ::: key.");
+    const out = ["---"];
+    for (const k of ["title", "subtitle", "author", "date", "voice"]) if (oneLine(meta[k])) out.push(`${k}: ${oneLine(meta[k])}`);
+    out.push("---", "");
+    if (report.notes) out.push(...div("notes", block(report.notes, "The title slide")), "");
+    out.push(...div("narration", spoken(report.narration, "The title slide")), "");
+    SECTIONS.forEach(([id, title], i) => {
+      const frames = report[id] || [];
+      if (!frames.length) throw new Error(`The ${title} section needs at least one frame.`);
+      out.push(`# ${title}`, "", ...div("narration", `Part ${i + 1}. ${title}.`), "");
+      for (const f of frames) out.push(...frame(f, title));
+    });
+    return out.join("\n");
+  }
+
+  return { SECTIONS, deck };
 });
 </script>
 <script>
@@ -5251,19 +5509,8 @@ function viewState() {
 let model = D.buildModel(state.structure);
 
 /* ---------- Controls ---------- */
-const LOAD_UI = {
-  axial: { label: "Axial", words: ["compression", "tension"] },
-  shear: { label: "Transverse shear", words: ["down", "up"] },
-  torsion: { label: "Torsion", words: ["clockwise", "anticlockwise"] },
-  bending: { label: "Bending", words: ["tip down", "tip up"] },
-  inplane: { label: "In-plane shear", words: ["one way", "other way"] },
-};
-const level = (a) => (a < 0.02 ? "none" : a < 0.34 ? "light" : a < 0.67 ? "moderate" : "heavy");
-function loadText(key, v) {
-  const a = Math.abs(v);
-  if (a < 0.02) return "none";
-  return `${LOAD_UI[key].words[v < 0 ? 0 : 1]}, ${level(a)}`;
-}
+/* The words for loads, strains and buckling live in kinematics.js, shared with the beamdswitch report. */
+const { LOAD_UI, loadText, strainWord, shearWord, alongWord, onsetText } = D;
 function slider(parent, id, label, min, max, step, value) {
   const wrap = document.createElement("div");
   wrap.className = "slider"; wrap.id = `w-${id}`;
@@ -5292,7 +5539,7 @@ function critMarkers() {
     }
     $(`w-${k}`).classList.toggle("has-crit", marks.length > 0);
     const s = $(`s-${k}`), base = s.getAttribute("aria-valuetext") || "";
-    if (marks.length) s.setAttribute("aria-valuetext", `${base}; buckling starts beyond ${level(Math.abs(marks[marks.length - 1]))} ${marks.length > 1 ? "either way" : LOAD_UI[k].words[marks[0] < 0 ? 0 : 1]}`);
+    if (marks.length) s.setAttribute("aria-valuetext", `${base}; ${onsetText(crit, k)}`);
   }
   buckleStatus();
 }
@@ -5334,7 +5581,7 @@ function syncControls() {
   const ps = D.slidersFromPatch(model, state.patch);
   $("s-along").value = ps.along; $("s-around").value = ps.around; $("s-angle").value = ps.angle;
   const w = model.walls[state.patch.wall];
-  const where = `${ps.along < 0.25 ? "near the clamp" : ps.along > 0.75 ? "near the free end" : "mid-span"}`;
+  const where = alongWord(ps.along);
   $("o-along").textContent = where; $("s-along").setAttribute("aria-valuetext", where);
   $("o-around").textContent = w.name.toLowerCase(); $("s-around").setAttribute("aria-valuetext", `on the ${w.name.toLowerCase()}`);
   $("o-angle").textContent = `${Math.round(state.patch.angle)}°`; $("s-angle").setAttribute("aria-valuetext", `${Math.round(state.patch.angle)} degrees`);
@@ -5880,11 +6127,6 @@ $("inset-toggle").addEventListener("click", () => {
   $("inset-body").hidden = !insetOpen;
   if (insetOpen) drawInset();
 });
-function strainWord(e) {
-  const a = Math.abs(e);
-  if (a < 0.002) return "no change";
-  return `${e > 0 ? "stretching" : "shortening"}${a > 0.03 ? ", strongly" : ""}`;
-}
 function drawInset() {
   if (!insetOpen) return;
   const cv = $("inset-canvas"), dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -5956,7 +6198,7 @@ function drawInset() {
   $("inset-text").innerHTML =
     `<span class="key"><span class="sw" style="background:${col.t}"></span>tension</span><span class="key"><span class="sw" style="background:${col.c}"></span>compression</span><br>` +
     `Along the patch edge a1: ${strainWord(st.patch.e11)}. Across, a2: ${strainWord(st.patch.e22)}. ` +
-    `Shear angle γ: ${Math.abs(gam) < 0.002 ? "none" : Math.abs(gam) < 0.03 ? "small" : "clear"}.`;
+    `Shear angle γ: ${shearWord(gam)}.`;
   $("inset-canvas").setAttribute("aria-label", `Unit patch: principal ${pr[0].value > 0.002 ? "stretching" : "no stretching"}, principal ${pr[1].value < -0.002 ? "shortening" : "no shortening"}, shear angle ${Math.abs(gam) < 0.002 ? "none" : "present"}.`);
 }
 
@@ -5975,6 +6217,29 @@ function refresh() {
   });
 }
 new ResizeObserver(() => drawInset()).observe($("inset"));
+
+/* ---------- beamdswitch deck ----------
+   The report template is beamdswitch.js; kinematics.js fills it from the set loads (not the
+   auto-play frame), in the words the page shows. */
+const deckText = () => Beamdswitch.deck(D.report(model, state, META, { colourMap: ui.contour }));
+const deckSay = (msg) => { $("deck-status").textContent = msg; };
+/* A blocked download fails silently, so the page cannot fall back on its own: Copy deck is the explicit fallback. */
+$("save-beamdswitch").addEventListener("click", () => {
+  const text = deckText(), name = `distortion-${state.structure}-beamdswitch.md`;
+  try {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([text], { type: "text/markdown" })); a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    deckSay(`Saved ${name}: open it in beamdswitch.`);
+  } catch (e) {
+    deckSay(`Could not save: ${e.message}. Use Copy deck instead.`);
+  }
+});
+$("copy-beamdswitch").addEventListener("click", async () => {
+  try { await navigator.clipboard.writeText(deckText()); deckSay("Copied the beamdswitch deck: paste it into beamdswitch."); }
+  catch (e) { deckSay("Could not copy the beamdswitch deck: the clipboard is blocked here."); }
+});
 
 /* ---------- WebMCP tools ---------- */
 function currentView() {

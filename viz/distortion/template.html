@@ -218,10 +218,17 @@ button:focus-visible, select:focus-visible, summary:focus-visible, input[type=ch
       <p class="note" id="motion-note" hidden>Auto-play is off because your system asks for reduced motion.</p>
       <div class="actions"><button type="button" id="reset">Reset</button><button type="button" id="reset-view">Reset view</button></div>
     </fieldset>
+    <fieldset>
+      <legend>Narrated talk</legend>
+      <div class="actions"><button type="button" id="save-beamdswitch" title="Save a narrated Markdown talk about this view, to open in beamdswitch">beamdswitch</button><button type="button" id="copy-beamdswitch" title="Copy the same beamdswitch deck to the clipboard, to paste into beamdswitch">Copy deck</button></div>
+      <p class="note" id="deck-status" role="status"></p>
+      <p class="note">Saves the set loads as a narrated talk: a Markdown deck with the set-up, method, results and checks, in the words shown here, and a spoken narration on every slide. Open it in <a href="https://teoyujie.org/visuals/beamdswitch/">beamdswitch</a> to get slides, a handout, narration and a video. Copy deck puts the same deck on the clipboard to paste into beamdswitch, for when the browser blocks the download.</p>
+    </fieldset>
   </aside>
 </main>
 <script>/*@THREE@*/</script>
 <script>/*@KINEMATICS@*/</script>
+<script>/*@BEAMDSWITCH@*/</script>
 <script>
 (() => {
 "use strict";
@@ -257,19 +264,8 @@ function viewState() {
 let model = D.buildModel(state.structure);
 
 /* ---------- Controls ---------- */
-const LOAD_UI = {
-  axial: { label: "Axial", words: ["compression", "tension"] },
-  shear: { label: "Transverse shear", words: ["down", "up"] },
-  torsion: { label: "Torsion", words: ["clockwise", "anticlockwise"] },
-  bending: { label: "Bending", words: ["tip down", "tip up"] },
-  inplane: { label: "In-plane shear", words: ["one way", "other way"] },
-};
-const level = (a) => (a < 0.02 ? "none" : a < 0.34 ? "light" : a < 0.67 ? "moderate" : "heavy");
-function loadText(key, v) {
-  const a = Math.abs(v);
-  if (a < 0.02) return "none";
-  return `${LOAD_UI[key].words[v < 0 ? 0 : 1]}, ${level(a)}`;
-}
+/* The words for loads, strains and buckling live in kinematics.js, shared with the beamdswitch report. */
+const { LOAD_UI, loadText, strainWord, shearWord, alongWord, onsetText } = D;
 function slider(parent, id, label, min, max, step, value) {
   const wrap = document.createElement("div");
   wrap.className = "slider"; wrap.id = `w-${id}`;
@@ -298,7 +294,7 @@ function critMarkers() {
     }
     $(`w-${k}`).classList.toggle("has-crit", marks.length > 0);
     const s = $(`s-${k}`), base = s.getAttribute("aria-valuetext") || "";
-    if (marks.length) s.setAttribute("aria-valuetext", `${base}; buckling starts beyond ${level(Math.abs(marks[marks.length - 1]))} ${marks.length > 1 ? "either way" : LOAD_UI[k].words[marks[0] < 0 ? 0 : 1]}`);
+    if (marks.length) s.setAttribute("aria-valuetext", `${base}; ${onsetText(crit, k)}`);
   }
   buckleStatus();
 }
@@ -340,7 +336,7 @@ function syncControls() {
   const ps = D.slidersFromPatch(model, state.patch);
   $("s-along").value = ps.along; $("s-around").value = ps.around; $("s-angle").value = ps.angle;
   const w = model.walls[state.patch.wall];
-  const where = `${ps.along < 0.25 ? "near the clamp" : ps.along > 0.75 ? "near the free end" : "mid-span"}`;
+  const where = alongWord(ps.along);
   $("o-along").textContent = where; $("s-along").setAttribute("aria-valuetext", where);
   $("o-around").textContent = w.name.toLowerCase(); $("s-around").setAttribute("aria-valuetext", `on the ${w.name.toLowerCase()}`);
   $("o-angle").textContent = `${Math.round(state.patch.angle)}°`; $("s-angle").setAttribute("aria-valuetext", `${Math.round(state.patch.angle)} degrees`);
@@ -886,11 +882,6 @@ $("inset-toggle").addEventListener("click", () => {
   $("inset-body").hidden = !insetOpen;
   if (insetOpen) drawInset();
 });
-function strainWord(e) {
-  const a = Math.abs(e);
-  if (a < 0.002) return "no change";
-  return `${e > 0 ? "stretching" : "shortening"}${a > 0.03 ? ", strongly" : ""}`;
-}
 function drawInset() {
   if (!insetOpen) return;
   const cv = $("inset-canvas"), dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -962,7 +953,7 @@ function drawInset() {
   $("inset-text").innerHTML =
     `<span class="key"><span class="sw" style="background:${col.t}"></span>tension</span><span class="key"><span class="sw" style="background:${col.c}"></span>compression</span><br>` +
     `Along the patch edge a1: ${strainWord(st.patch.e11)}. Across, a2: ${strainWord(st.patch.e22)}. ` +
-    `Shear angle γ: ${Math.abs(gam) < 0.002 ? "none" : Math.abs(gam) < 0.03 ? "small" : "clear"}.`;
+    `Shear angle γ: ${shearWord(gam)}.`;
   $("inset-canvas").setAttribute("aria-label", `Unit patch: principal ${pr[0].value > 0.002 ? "stretching" : "no stretching"}, principal ${pr[1].value < -0.002 ? "shortening" : "no shortening"}, shear angle ${Math.abs(gam) < 0.002 ? "none" : "present"}.`);
 }
 
@@ -981,6 +972,29 @@ function refresh() {
   });
 }
 new ResizeObserver(() => drawInset()).observe($("inset"));
+
+/* ---------- beamdswitch deck ----------
+   The report template is beamdswitch.js; kinematics.js fills it from the set loads (not the
+   auto-play frame), in the words the page shows. */
+const deckText = () => Beamdswitch.deck(D.report(model, state, META, { colourMap: ui.contour }));
+const deckSay = (msg) => { $("deck-status").textContent = msg; };
+/* A blocked download fails silently, so the page cannot fall back on its own: Copy deck is the explicit fallback. */
+$("save-beamdswitch").addEventListener("click", () => {
+  const text = deckText(), name = `distortion-${state.structure}-beamdswitch.md`;
+  try {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([text], { type: "text/markdown" })); a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    deckSay(`Saved ${name}: open it in beamdswitch.`);
+  } catch (e) {
+    deckSay(`Could not save: ${e.message}. Use Copy deck instead.`);
+  }
+});
+$("copy-beamdswitch").addEventListener("click", async () => {
+  try { await navigator.clipboard.writeText(deckText()); deckSay("Copied the beamdswitch deck: paste it into beamdswitch."); }
+  catch (e) { deckSay("Could not copy the beamdswitch deck: the clipboard is blocked here."); }
+});
 
 /* ---------- WebMCP tools ---------- */
 function currentView() {

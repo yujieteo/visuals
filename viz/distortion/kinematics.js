@@ -736,12 +736,176 @@
     };
   }
 
+  /* ---------- Words the page shows ----------
+   * Nothing here has units, so the page describes loads, strains and buckling in words; these are
+   * those words, shared by the page and the beamdswitch report. */
+
+  const LOAD_UI = {
+    axial: { label: "Axial", words: ["compression", "tension"] },
+    shear: { label: "Transverse shear", words: ["down", "up"] },
+    torsion: { label: "Torsion", words: ["clockwise", "anticlockwise"] },
+    bending: { label: "Bending", words: ["tip down", "tip up"] },
+    inplane: { label: "In-plane shear", words: ["one way", "other way"] },
+  };
+  const level = (a) => (a < 0.02 ? "none" : a < 0.34 ? "light" : a < 0.67 ? "moderate" : "heavy");
+  function loadText(key, v) {
+    const a = Math.abs(v);
+    if (a < 0.02) return "none";
+    return `${LOAD_UI[key].words[v < 0 ? 0 : 1]}, ${level(a)}`;
+  }
+  function strainWord(e) {
+    const a = Math.abs(e);
+    if (a < 0.002) return "no change";
+    return `${e > 0 ? "stretching" : "shortening"}${a > 0.03 ? ", strongly" : ""}`;
+  }
+  const shearWord = (g) => (Math.abs(g) < 0.002 ? "none" : Math.abs(g) < 0.03 ? "small" : "clear");
+  const alongWord = (along) => (along < 0.25 ? "near the clamp" : along > 0.75 ? "near the free end" : "mid-span");
+  /* Where buckling starts for one load acting alone (the slider's ▲ marks), or null. */
+  function onsetText(crit, key) {
+    const c = crit[key], marks = [c.neg != null ? -c.neg : null, c.pos].filter((x) => x != null);
+    if (!marks.length) return null;
+    return `buckling starts beyond ${level(Math.abs(marks[marks.length - 1]))} ${marks.length > 1 ? "either way" : LOAD_UI[key].words[marks[0] < 0 ? 0 : 1]}`;
+  }
+
+  /* ---------- beamdswitch report ----------
+   * report(model, state, meta, { colourMap }) describes the view as a report for the site's
+   * standard beamdswitch template (beamdswitch.js writes the Markdown deck). The view is
+   * qualitative, so the report holds no numbers: it says what the page says, in the page's words
+   * (the load sliders, the buckling status, the effects legend and the patch inset), and labels
+   * every effect analytic or assumed as raw.json (`meta`) does. */
+  const COLOUR_MAPS = { none: "none", shear: "shear strain", axial: "axial strain", warping: "warping displacement" };
+  const sayList = (items) => (items.length < 2 ? items.join("") : `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`);
+  const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+  // Effect labels mid-sentence: lower case, except a name such as Poisson or Saint-Venant.
+  const lower = (s) => (/^(Poisson|Saint)/.test(s) ? s : s.charAt(0).toLowerCase() + s.slice(1));
+  // The inset's strain words, read as a phrase: "strong shortening" for "shortening, strongly".
+  const strainSaid = (e) => strainWord(e).replace(/^(\w+), strongly$/, "strong $1");
+
+  function report(model, state, meta, { colourMap = "none" } = {}) {
+    const st = model.structure, P = prepare(model, state), panel = st === "panel";
+    const info = meta.structures.find((s) => s.id === st), label = info.label;
+    const effect = (id) => meta.effects.find((e) => e.id === id) || { label: id, note: "" };
+    const used = LOADS.filter((k) => APPLIES[k].includes(st)), on = used.filter((k) => loadText(k, state.loads[k]) !== "none");
+    const loadsShown = on.map((k) => `${LOAD_UI[k].label} ${loadText(k, state.loads[k])}`);
+    const loadsSaid = on.map((k) => { const v = state.loads[k]; return `${level(Math.abs(v))} ${LOAD_UI[k].label.toLowerCase()} ${LOAD_UI[k].words[v < 0 ? 0 : 1]}`; });
+    const ex = `${Number(state.exaggeration).toFixed(1)}×`;
+    const fx = activeEffects(P), analytic = fx.filter((e) => e.basis === "analytic"), assumed = fx.filter((e) => e.basis === "assumed");
+    const buckled = [...new Set(bucklingState(P).filter((b) => b.buckled).map((b) => b.name))];
+    const crit = criticalLoads(model, state);
+    const onsets = used.map((k) => [k, onsetText(crit, k)]).filter(([, t]) => t);
+    const strain = patchStrain(P, state.patch), ps = slidersFromPatch(model, state.patch);
+    const face = model.walls[state.patch.wall].name.toLowerCase(), where = alongWord(ps.along), angle = Math.round(state.patch.angle);
+    const pr = strain.principal;
+    const toggles = panel
+      ? `Stringers ${state.stringers ? "on" : "off"}, frames ${state.frames ? "on" : "off"}`
+      : `Warping ${state.warpingRestraint ? "restrained" : "free"} at the clamp`;
+    const nothing = !on.length;
+
+    const setup = [{
+      title: `The structure: ${label.toLowerCase()}, ${info.boundary.split(",")[0]}`,
+      body: [
+        `- ${label}: ${info.type}`,
+        `- ${cap(info.boundary)}`,
+        `- ${toggles}`,
+        `- ${meta.disclaimer}`,
+      ].join("\n"),
+      notes: meta.nature,
+      narration: [
+        `The structure is a ${label.toLowerCase()}, ${panel ? "a flat skin with stringers and frames, loaded in its own plane" : "a thin-walled cantilever, clamped at one end and loaded at the free end"}.`,
+        panel ? `Its stringers are ${state.stringers ? "on" : "off"}, and its frames are ${state.frames ? "on" : "off"}.` : `Warping is ${state.warpingRestraint ? "restrained" : "free"} at the clamp.`,
+        "Everything here is exaggerated and qualitative: nothing is calibrated and nothing has units.",
+      ].join(" "),
+    }, {
+      title: nothing ? "The loads: none" : `The loads: ${loadsShown.join("; ")}`,
+      body: [
+        "| Load | Setting |", "| --- | --- |",
+        ...LOADS.map((k) => `| ${LOAD_UI[k].label} | ${APPLIES[k].includes(st) ? loadText(k, state.loads[k]) : "not used here"} |`),
+        "",
+        `Exaggeration ${ex}; colour map: ${COLOUR_MAPS[colourMap] || "none"}.`,
+      ].join("\n"),
+      narration: [
+        nothing ? "No load is applied, so the structure keeps its shape." : `The loads are ${sayList(loadsSaid)}.`,
+        "Each load is a dimensionless slider setting, described as light, moderate or heavy.",
+        `Displacements are drawn at ${Number(state.exaggeration).toFixed(1)} times the base exaggeration.`,
+      ].join(" "),
+    }];
+
+    const method = [{
+      title: nothing ? "The effects: none on show" : `The effects: ${analytic.length} analytic${assumed.length ? `, ${assumed.length} assumed ${assumed.length === 1 ? "shape" : "shapes"}` : ""}`,
+      body: nothing ? "- No load: move a load slider or try a preset." : fx.map((e) => `- **${effect(e.id).label}** (${e.basis === "analytic" ? "analytic" : "assumed shape"}): ${effect(e.id).note}`).join("\n"),
+      narration: nothing ? "With no load, no effect is on show." : [
+        analytic.length ? `The page draws ${sayList(analytic.map((e) => lower(effect(e.id).label)))} from analytic solutions.` : "",
+        assumed.length ? `${cap(sayList(assumed.map((e) => lower(effect(e.id).label))))} ${assumed.length === 1 ? "is an assumed shape" : "are assumed shapes"}, not solved.` : "Nothing on show is an assumed shape.",
+      ].filter(Boolean).join(" "),
+    }, {
+      title: st === "tube" ? "Buckling: not modelled for the tube" : "Buckling: threshold-triggered, as assumed shapes",
+      body: st === "tube" ? "- The tube stays smooth: its buckling is not modelled." : [
+        "$$ r = \\frac{\\sigma}{\\sigma_{cr}} + \\left(\\frac{\\tau}{\\tau_{cr}}\\right)^2 $$",
+        "",
+        "- A plate stays flat until $r$ passes 1, then wrinkles growing as $\\sqrt{r - 1}$.",
+        ...(onsets.length ? onsets.map(([k, t]) => `- ${LOAD_UI[k].label}: ${t} (this load alone)`) : ["- No load on this structure buckles it alone."]),
+      ].join("\n"),
+      notes: st === "tube" ? undefined : effect("thresholds").note,
+      narration: st === "tube" ? "The tube stays smooth: its buckling is not modelled." : [
+        "Each thin plate stays flat until its interaction ratio, compression over its critical value plus the shear ratio squared, passes one.",
+        "Past that threshold it wrinkles, growing with the square root of how far past it is.",
+        onsets.length ? `Acting alone, each load buckles a plate past its mark on the slider: ${sayList(onsets.map(([k, t]) => `${LOAD_UI[k].label.toLowerCase()} beyond ${t.replace(/^buckling starts beyond /, "")}`))}.` : "No single load on this structure buckles it.",
+      ].join(" "),
+    }];
+
+    const results = [{
+      title: `The unit patch, ${where} on the ${face}, at ${angle}°: a1 ${strainWord(strain.patch.e11)}, a2 ${strainWord(strain.patch.e22)}`,
+      body: [
+        `- Along the patch edge a1: ${strainWord(strain.patch.e11)}. Across, a2: ${strainWord(strain.patch.e22)}.`,
+        `- Shear angle γ: ${shearWord(strain.shearAngle)}.`,
+        `- Principal directions: ${pr[0].value > 0.002 ? "one stretching (red)" : "no stretching"}, ${pr[1].value < -0.002 ? "one shortening (blue)" : "no shortening"}.`,
+      ].join("\n"),
+      notes: "The inset shows the membrane strain of the wall under the patch, with rigid rotation removed and the shape change enlarged; wrinkles appear in 3D only.",
+      narration: [
+        `The amber unit patch sits ${where} on the ${face}, turned ${angle} ${angle === 1 ? "degree" : "degrees"} from the span.`,
+        `Along its first edge it shows ${strainSaid(strain.patch.e11)}, and across it, ${strainSaid(strain.patch.e22)}.`,
+        `Its shear angle is ${shearWord(strain.shearAngle) === "none" ? "zero" : shearWord(strain.shearAngle)}${pr[0].value > 0.002 && pr[1].value < -0.002 ? ": one principal direction stretches and the other shortens" : ""}.`,
+      ].join(" "),
+    }, {
+      title: st === "tube" ? "Buckling: the tube stays smooth" : buckled.length ? `Buckled: ${buckled.join(", ")}` : "No buckling",
+      body: st === "tube" ? "- The tube stays smooth: its buckling is not modelled." : buckled.length
+        ? `- Buckled: ${buckled.join(", ")}.\n- The wrinkles are assumed shapes, not solved.` : "- No plate has passed its threshold.",
+      narration: st === "tube" ? "The tube never buckles here, because its buckling is not modelled." : buckled.length
+        ? `The ${sayList(buckled)} ${buckled.length === 1 ? "has" : "have"} passed ${buckled.length === 1 ? "its" : "their"} threshold and wrinkled.`
+        : "No plate has passed its buckling threshold, so the skin stays smooth.",
+    }];
+
+    const checks = [{
+      title: "What the view is: exaggerated and qualitative, not to scale",
+      body: [`- ${meta.disclaimer}`, `- ${meta.nature}`, "- Colour maps are scaled to the largest value shown, so they show pattern and sign, not size."].join("\n"),
+      narration: [
+        "Read this view for pattern and sign, not size.",
+        "Nothing is calibrated and no quantity carries units, and each effect is labelled analytic or assumed so you know which shapes are solved and which are drawn to suit.",
+      ].join(" "),
+    }, {
+      title: "Takeaway",
+      key: `${label}${nothing ? " with no load" : ` under ${loadsShown.join("; ")}`}: the patch ${where} on the ${face} shows a1 ${strainWord(strain.patch.e11)}, a2 ${strainWord(strain.patch.e22)}, shear angle ${shearWord(strain.shearAngle)}; ${st === "tube" ? "no buckling modelled" : buckled.length ? `buckled: ${buckled.join(", ")}` : "no buckling"}. Exaggerated, qualitative, no units.`,
+      narration: [
+        `To sum up, the ${label.toLowerCase()} ${nothing ? "carries no load" : `under ${sayList(loadsSaid)}`} ${nothing ? "and keeps its shape" : `shows ${strainSaid(strain.patch.e11)} along the patch and ${strainSaid(strain.patch.e22)} across it`}.`,
+        st === "tube" ? "Its buckling is not modelled." : buckled.length ? `The ${sayList(buckled)} ${buckled.length === 1 ? "has" : "have"} buckled.` : "Nothing has buckled.",
+        "Everything shown is exaggerated and qualitative.",
+      ].join(" "),
+    }];
+
+    return {
+      meta: { title: `Structural distortion: ${label}`, subtitle: meta.disclaimer },
+      notes: meta.nature,
+      narration: `Structural distortion of a ${label.toLowerCase()}. An exaggerated, qualitative view of how ${nothing ? "loads distort it" : `${sayList(loadsSaid)} ${on.length === 1 ? "distorts" : "distort"} it`}, from the Structural Distortion Explorer. Nothing is to scale and nothing has units.`,
+      setup, method, results, checks,
+    };
+  }
+
   const sub3 = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
   const dot3 = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 
   return {
     PATCH, patchFaces, placePatch, patchFromSliders, slidersFromPatch, patchParamLines, patchStrain, eig2, faceSign, defaultPatch,
-    PRESETS, presetState, activeEffects,
+    PRESETS, presetState, activeEffects, LOAD_UI, level, loadText, strainWord, shearWord, alongWord, onsetText, report,
     L, NU, axisPoint, warping, fieldValue, plates, wrinkle, criticalLoads, bucklingState, GEOM, STRUCTURES, BEAMS, LOADS, APPLIES,
     buildModel, defaultState, prepare, reference, deform, lookup, sampleArray,
   };

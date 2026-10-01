@@ -16,7 +16,10 @@ assumed shapes, and the page's legend and "What am I looking at?" panel say
 which is which. A draggable, rotatable amber unit patch has a synced 2D inset
 with principal arrows and the shear-angle arc; there are colour maps, six
 presets, auto-play (off by default and disabled for reduced motion), a
-bottom-sheet layout on phones and a plain message when WebGL is missing.
+bottom-sheet layout on phones and a plain message when WebGL is missing. The
+beamdswitch button saves the view as a narrated Markdown deck for
+[beamdswitch](https://teoyujie.org/visuals/beamdswitch/), in the page's own words
+(it has no numbers to report), with Copy deck beside it.
 
 Buckling is threshold-triggered: a plate stays flat until the interaction ratio
 σ/σcr + (τ/τcr)² passes 1 (each load slider marks its own onset), then wrinkles
@@ -26,18 +29,20 @@ range while stiffeners still raise the threshold and shorten the waves.
 
 | File | Role |
 | --- | --- |
-| `kinematics.js` | Pure kinematics: section paths, thin-walled shear flow, the deformation field of every load. No DOM and no three.js. Works in the browser (`Distortion`) and in Node (`require`). |
+| `kinematics.js` | Pure kinematics: section paths, thin-walled shear flow, the deformation field of every load, the words the page uses for loads, strain and buckling, and the beamdswitch report (`report`). No DOM and no three.js. Works in the browser (`Distortion`) and in Node (`require`). |
+| `beamdswitch.js` | The site's standard beamdswitch report template, an unchanged copy of `templates/beamdswitch.js` |
 | `template.html` | Page markup, styles, three.js scene and UI code |
 | `raw.json` | Published metadata: the effects shown and whether each is analytic or an assumed shape, and the three.js release |
 | `vendor/three.min.js` | three.js r186 (npm `three@0.186.1`, MIT licence, <https://threejs.org>) with `OrbitControls`, bundled as the global `THREE` |
 | `vendor/three-entry.mjs` | The classes re-exported into that bundle |
-| `build.mjs` | Inlines `vendor/three.min.js`, `kinematics.js` and `raw.json` into `template.html` to write `index.html` |
+| `build.mjs` | Inlines `vendor/three.min.js`, `kinematics.js`, `beamdswitch.js` and `raw.json` into `template.html` to write `index.html` |
 | `LICENSE` | MIT licence for this visualization (the inlined three.js keeps its own MIT notice) |
 
 ```sh
 node visuals/distortion/build.mjs          # rebuild index.html after editing a source
 node visuals/distortion/build.mjs --check  # fail if index.html is stale
 node --test tests/distortion.test.mjs      # kinematics, presets, artefact and build tests
+node --test tests/distortion-beamdswitch.test.mjs  # the beamdswitch deck, read with beamdswitch's parsers
 ```
 
 The tests use Node's built-in runner, like the site's other Node tests, so the

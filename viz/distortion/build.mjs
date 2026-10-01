@@ -2,12 +2,13 @@
  *
  * Inputs (checked in next to this file):
  *   template.html        markup, styles and page code, with the markers below
- *   kinematics.js        the pure kinematics (also run by the tests)
+ *   kinematics.js        the pure kinematics and beamdswitch report (also run by the tests)
+ *   beamdswitch.js       the standard beamdswitch report template (Markdown deck writer)
  *   raw.json             published metadata: effects, presets, three.js version
  *   vendor/three.min.js  three.js r186 with OrbitControls (MIT), see README.md
  *
  * Output:
- *   index.html           the template with all three inlined; works offline
+ *   index.html           the template with all four inlined; works offline
  *
  *   node build.mjs          write index.html
  *   node build.mjs --check  exit 1 if index.html is stale
@@ -24,6 +25,7 @@ export function buildPage() {
   const parts = {
     "/*@THREE@*/": read("vendor/three.min.js"),
     "/*@KINEMATICS@*/": read("kinematics.js"),
+    "/*@BEAMDSWITCH@*/": read("beamdswitch.js"),
     "/*@DATA@*/": JSON.stringify(JSON.parse(read("raw.json"))).replace(/</g, "\\u003c"),
   };
   let html = read("template.html");
