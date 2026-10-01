@@ -25,9 +25,10 @@ The tests are `tests/mohr.test.mjs`, run with Node's built-in runner
 in-page self-test and the acceptance checks (presets 1, 6 and 7, unit and sign
 round trips, constraints, degenerate states, failure criteria, JSON and
 Markdown round trips, import validation), and boot the page against an inert
-DOM to exercise the WebMCP tools. `tests/mohr-beamdswitch.test.mjs` parses
+DOM to exercise the WebMCP tools. `tests/beamdswitch.test.mjs` parses
 the beamdswitch decks with beamdswitch's own parsers and keeps the inlined
-template identical to `templates/beamdswitch.js`. The page runs the same self-test on every
+template identical to the site's `templates/beamdswitch.js` (a copy is in
+`tests/fixtures/beamdswitch/`). The page runs the same self-test on every
 load and shows a pass/fail badge. After changing `META` or `defaultState()`,
 regenerate `raw.json` from the engine; the test says when it has drifted.
 
