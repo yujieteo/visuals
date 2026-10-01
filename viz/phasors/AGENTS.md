@@ -34,6 +34,6 @@ node --test 'tests/*.test.{mjs,cjs}'
 - `index.html` stays under 120 KB; the test enforces it.
 - Files hold canonical units only: Ω, H, F, Hz, V (RMS) and degrees.
 - Tests use Node's built-in runner (`node --test`) only; never add Vitest, Jest, a `package.json` or another test framework.
-- The engine builds the beamdswitch deck itself and declares the narration voice `bf_emma` in its front matter; `tests/beamdswitch-voice.test.mjs` checks it.
+- The engine builds the beamdswitch deck itself and declares the narration voice `bf_emma` in its front matter; `tests/phasors.test.mjs` and the site's `tests/beamdswitch-voice.test.mjs` check it.
 - WebMCP tools stay read-only (`readOnlyHint: true`), never change the page, and keep their names equal to `webmcp_tools` in `data/visuals/phasors.yaml` in yujieteo/site.
 - `LICENSE` is MIT (Copyright (c) 2026 Yu Jie Teo).
