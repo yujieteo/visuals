@@ -1,0 +1,31 @@
+# Per-repo no-mistakes overrides.
+#
+# Pin the Test step to exactly what .github/workflows/verify.yml runs, so the
+# gate tests deterministically instead of handing testing to an agent.
+# Everything here is stdlib Python and node --test: no install step, no network,
+# no browser. no-mistakes honours commands from the default-branch copy of this
+# file only, so changes take effect once merged to main.
+commands:
+  test: >-
+    python3 scripts/build.py --verify &&
+    python3 scripts/build_breeden_litzenberger_density.py --verify &&
+    python3 scripts/build_english_grammar.py --verify &&
+    python3 scripts/build_ges.py --verify &&
+    python3 scripts/build_haze_singapore.py --verify &&
+    python3 scripts/build_manchester_city_finances.py --verify &&
+    python3 scripts/build_singapore_covid_governance_hindsight.py --verify &&
+    python3 scripts/build_social_values.py --verify &&
+    python3 scripts/build_energy_email_productivity.py --verify &&
+    python3 scripts/build_convexity_action_engine.py --verify &&
+    python3 scripts/build_everyday_actions.py --verify &&
+    python3 scripts/build_vgc_protect_fakeout_pivot_trainer.py --verify &&
+    python3 scripts/build_tampines_food_map.py --verify &&
+    python3 scripts/build_stock_cases.py --verify &&
+    python3 -m unittest discover -s tests -p 'test_*.py' &&
+    node --test tests/convexity-action-engine.test.mjs tests/everyday-actions.test.mjs tests/english-grammar.test.mjs &&
+    node --test tests/*-beamdswitch.test.mjs
+
+test:
+  instructions: |
+    The configured commands.test suite (mirroring CI) is the test. Do not
+    download TTS models or other weights, and do not drive a real browser.
