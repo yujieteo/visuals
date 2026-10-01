@@ -28,5 +28,5 @@ Rules that apply to every task:
 1. Units are mm, MPa, N and N·mm. Never add unit conversions inside the engine.
 2. `index.html` is generated: edit `template.html`, `src/` or `raw.json`, then run `python build.py`.
 3. The page must keep its "verify independently" notice and must never be described as design-code compliant.
-4. The folder is mirrored byte for byte as a standalone repository: nothing may refer to files outside it.
+4. The repository is ported to the site as `visuals/sectionlab/`, minus `tests/` and `.github/`: nothing may refer to files outside it.
 5. Every change ends with the [Verify](playbooks/verify.md) playbook passing.

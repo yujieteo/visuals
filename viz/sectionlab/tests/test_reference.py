@@ -1,4 +1,4 @@
-"""The Python references against closed forms, and the stored reference files against a rebuild."""
+"""The Python references against closed forms (test_build.py rebuilds the stored reference files)."""
 
 import json
 import math
@@ -15,9 +15,6 @@ import cases as C  # noqa: E402
 import sectionref as R  # noqa: E402
 
 class ReferenceTest(unittest.TestCase):
-    def test_fixture_and_reference_files_are_current(self):
-        self.assertEqual(build_reference.main(["--check"]), 0)
-
     def test_check_ignores_rounding_noise_but_not_real_changes(self):
         stored = json.loads(build_reference.REFERENCE.read_text(encoding="utf-8"))
 
