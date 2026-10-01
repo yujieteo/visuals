@@ -245,6 +245,11 @@ footer{margin-top:3rem;padding-top:1rem;border-top:1px solid var(--border);font-
       <button class="btn small" type="button" data-copy="md">Copy Markdown</button>
       <label class="check"><input type="checkbox" id="md-png"> PNG of each canvas in Markdown</label>
     </div>
+    <div class="actions">
+      <button class="btn small" type="button" id="save-beamdswitch" title="Save a narrated Markdown talk about this state, to open in beamdswitch">beamdswitch</button>
+      <button class="btn small" type="button" id="copy-beamdswitch" title="Copy the same beamdswitch deck to the clipboard, to paste into beamdswitch">Copy deck</button>
+    </div>
+    <p class="note">The beamdswitch button saves this state as a narrated talk: a Markdown deck with the set-up, method, results and checks, every number as shown here, and a spoken narration on every slide. Open it in <a href="https://teoyujie.org/visuals/beamdswitch/">beamdswitch</a> to get slides, a handout, narration and a video. Copy deck puts the same deck on the clipboard to paste into beamdswitch, for when the browser blocks the download.</p>
     <div class="actions"><label class="btn small" for="import-file">Import file…</label><input type="file" id="import-file" accept=".json,.md,.markdown,.txt,application/json,text/markdown,text/plain" class="visually-hidden"></div>
     <label class="f"><span>Paste to import (JSON or a Markdown report)</span><textarea id="import-text" spellcheck="false"></textarea></label>
     <div class="actions"><button class="btn small" type="button" id="import-go">Import pasted text</button></div>
@@ -1035,6 +1040,257 @@ function report(st) {
   };
 }
 
+/* ---------- beamdswitch report ----------
+   beamdswitchReport(st) describes the state on the page as a report for the standard beamdswitch
+   template (beamdswitch.js, inlined in the script element mohr-beamdswitch). Every number is the page's
+   own: analyse(st), shown with fmt() at the page's significant digits, in its units and sign
+   convention, with values below 1e-12 of the tensor size shown as 0 as the results table does.
+   The ::: plot curves are the Mohr circles themselves, drawn as their upper and lower halves. */
+const SPOKEN_STRESS = { Pa: "pascals", kPa: "kilopascals", MPa: "megapascals", GPa: "gigapascals", psi: "pounds per square inch", ksi: "kips per square inch" };
+const SPOKEN_STRAIN = { ue: "microstrain", "mm/mm": "millimetres per millimetre", "%": "percent" };
+/* A number as fmt() writes it (−40 or 1.5e-4), read aloud. */
+const sayNumber = (t) => String(t).replace(/^−/, "minus ").replace(/e(-?)(\d+)$/, (_, minus, e) => ` times ten to the ${minus ? "minus " : ""}${e}`);
+const texNumber = (t) => String(t).replace(/^−/, "-").replace(/e(-?\d+)$/, (_, e) => ` \\times 10^{${e}}`);
+const plotNumber = (v) => String(+v.toPrecision(12));
+/* The upper (s = 1) or lower (s = −1) half of the circle with centre C and radius R. */
+const halfCircle = (C, R, s) => `${s < 0 ? "-" : ""}sqrt(max(0, ${plotNumber(R * R)} - (x ${C < 0 ? "+" : "-"} ${plotNumber(Math.abs(C))})^2))`;
+const sayList = (items) => (items.length < 2 ? items.join("") : `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`);
+const CONSTRAINT_TEXT = { "plane-stress": "plane stress", "plane-strain": "plane strain", general: "general 3D" };
+
+function beamdswitchReport(st) {
+  const r = analyse(st);
+  const d = st.view.digits || 4, f = (x) => fmt(x, d);
+  const su = st.units.stress, eu = STRAIN_LABEL[st.units.strain], g = shearFactor(st);
+  const refS = r.S ? frob(r.S) : 1, refE = r.E ? frob(r.E) : 1;
+  const snap = (x, ref) => (x !== null && Math.abs(x) <= 1e-12 * (ref || 1) ? 0 : x);
+  // The results table's cells: signed and magnitude values, stress and strain.
+  const S = (v) => f(dStress(st, snap(v, refS))), SM = (v) => f(dStressMag(st, snap(v, refS)));
+  const E = (v) => f(dStrain(st, snap(v, refE))), EM = (v) => f(dStrainMag(st, snap(v, refE)));
+  const sayS = (t) => `${sayNumber(t)} ${SPOKEN_STRESS[su]}`, sayE = (t) => `${sayNumber(t)} ${SPOKEN_STRAIN[st.units.strain]}`;
+  const texS = (t) => `${texNumber(t)}\\ \\mathrm{${su}}`;
+  const vec = (v) => `(${v.map((x) => f(snap(x, 1))).join(", ")})`;
+  const sign = r.sign, compPos = sign === -1;
+  const signText = compPos ? "compression positive" : "tension positive";
+  const conv = st.conventions.shear2D === "A" ? "A (τ positive plotted down)" : "B (τ positive plotted up)";
+  const axisName = (a) => (["1", "2", "3"].includes(a) ? `principal axis ${a}` : a);
+  const stressDriven = r.stressDriven, drivenRes = stressDriven ? r.stress : r.strain;
+  const shearName = (n) => (g === 2 ? `γ${n}` : `ε${n}`);
+  const names = stressDriven ? ["σx", "σy", "σz", "τxy", "τyz", "τzx"] : ["εx", "εy", "εz", shearName("xy"), shearName("yz"), shearName("zx")];
+  const Tin = stressDriven ? r.S : r.E;
+  const comps = [Tin[0][0], Tin[1][1], Tin[2][2], Tin[0][1], Tin[1][2], Tin[0][2]].map((x, i) => (i > 2 && !stressDriven ? g * x : x));
+  const shown = comps.map(stressDriven ? S : E);
+  const nonZero = names.map((n, i) => [n, shown[i]]).filter(([, t]) => t !== "0");
+  const inputUnit = stressDriven ? su : eu;
+  const spokenComp = { σx: "sigma x", σy: "sigma y", σz: "sigma z", τxy: "tau x y", τyz: "tau y z", τzx: "tau z x", εx: "epsilon x", εy: "epsilon y", εz: "epsilon z",
+    γxy: "gamma x y", γyz: "gamma y z", γzx: "gamma z x", εxy: "epsilon x y", εyz: "epsilon y z", εzx: "epsilon z x" };
+  const sayIn = stressDriven ? sayS : sayE;
+  const mat = r.material;
+  const crit = st.failure.criterion, fp = st.failure;
+  const params = crit === "tresca" || crit === "von-mises" ? `σy = ${SM(fp.sigmaY)} ${su}`
+    : crit === "rankine" ? `σt = ${SM(fp.sigmaT)} ${su}, σc = ${SM(fp.sigmaC)} ${su}`
+      : `c = ${SM(fp.c)} ${su}, φ = ${f(fp.phiDeg)}°, tension cutoff ${fp.tensionCutoff === null ? "none" : SM(fp.tensionCutoff) + " " + su}`;
+  const paramsSaid = crit === "tresca" || crit === "von-mises" ? `a yield stress of ${sayS(SM(fp.sigmaY))}`
+    : crit === "rankine" ? `a tensile strength of ${sayS(SM(fp.sigmaT))} and a compressive strength of ${sayS(SM(fp.sigmaC))}`
+      : `a cohesion of ${sayS(SM(fp.c))} and a friction angle of ${sayNumber(f(fp.phiDeg))} degrees`;
+  const critSaid = { tresca: "Tresca", "mohr-coulomb": "Mohr-Coulomb", rankine: "Rankine maximum normal stress", "von-mises": "von Mises" }[crit];
+
+  /* ----- set-up ----- */
+  const stateFrame = {
+    title: `The state: ${CONSTRAINT_TEXT[st.constraint]}, ${st.driver}-driven, ${nonZero.length ? nonZero.map(([n, t]) => `${n} = ${t}`).join(", ") : "all components 0"} ${inputUnit}`,
+    body: [
+      `| Component | Value (${inputUnit}) |`, "| --- | ---: |",
+      ...names.map((n, i) => `| ${n} | ${shown[i]} |`),
+      "",
+      `Units: stress ${su}, strain ${eu}. Normal sign: ${signText}. 2D shear convention ${conv}. Strain shear input: ${st.conventions.strainShear}.`,
+    ].join("\n"),
+    notes: META.conventions.join("\n"),
+    narration: [
+      `The state is ${CONSTRAINT_TEXT[st.constraint]}, driven by the ${st.driver} tensor${st.entryMode === "principal" ? ", entered as principal values" : ""}.`,
+      nonZero.length ? `Its non-zero components are ${sayList(nonZero.map(([n, t]) => `${spokenComp[n]} equal to ${sayIn(t)}`))}.` : "Every component is zero.",
+      `Stresses are in ${SPOKEN_STRESS[su]} and strains in ${SPOKEN_STRAIN[st.units.strain]}, with ${signText}.`,
+    ].join(" "),
+  };
+  const materialFrame = {
+    title: `Material and failure criterion: E = ${SM(st.material.E)} ${su}, ν = ${f(st.material.nu)}; ${CRITERION_NAME[crit]}`,
+    body: [
+      `- Isotropic linear elastic: $E$ = ${SM(st.material.E)} ${su}, $\\nu$ = ${f(st.material.nu)}${mat.valid ? `, $G$ = ${SM(mat.G)} ${su}` : " (invalid material)"}`,
+      `- ${stressDriven ? "Strain" : "Stress"} follows from Hooke's law${r.derived ? `; ${CONSTRAINT_TEXT[st.constraint]} sets the out-of-plane ${r.derived.kind === "strain-z" ? "stress σz = 0 and derives εz" : "strain εz = 0 and derives σz"}` : ""}`,
+      `- Failure criterion: ${CRITERION_NAME[crit]}, ${params}`,
+    ].join("\n"),
+    narration: [
+      mat.valid ? `The material is isotropic and linear elastic, with a Young's modulus of ${sayS(SM(st.material.E))} and a Poisson's ratio of ${sayNumber(f(st.material.nu))}.`
+        : `The material is invalid, so the page shows only the ${st.driver} side.`,
+      `Failure is checked with the ${critSaid} criterion, with ${paramsSaid}.`,
+    ].join(" "),
+  };
+
+  /* ----- method ----- */
+  const b = r.basis;
+  const methodFrames = [{
+    title: "Principal values by Jacobi rotation",
+    body: [
+      "$$ \\det(\\boldsymbol{\\sigma} - \\lambda \\mathbf{I}) = 0, \\qquad \\lambda^3 - I_1 \\lambda^2 + I_2 \\lambda - I_3 = 0 $$",
+      "",
+      "- Cyclic Jacobi rotations diagonalise the symmetric tensor: the diagonal holds the principal values and the rotations the principal directions.",
+      `- Sorted so that the first is the largest, ${signText}.`,
+    ].join("\n"),
+    narration: [
+      "The principal values are the eigenvalues of the symmetric tensor.",
+      "The page finds them by Jacobi rotation, which zeroes the off-diagonal terms one pair at a time, and keeps the rotations as the principal directions.",
+      "Three principal values give three Mohr circles: every plane's normal and shear values lie on or between them.",
+    ].join(" "),
+  }, {
+    title: `The 2D circle: a rotation about ${axisName(st.plane.axis)}, in the ${b.names.join("–")} plane`,
+    body: [
+      "$$ C = \\frac{\\sigma_p + \\sigma_q}{2}, \\qquad R = \\sqrt{\\left(\\frac{\\sigma_p - \\sigma_q}{2}\\right)^2 + \\tau_{pq}^2}, \\qquad \\tan 2\\theta_p = \\frac{2\\tau_{pq}}{\\sigma_p - \\sigma_q} $$",
+      "",
+      `- Shear convention ${conv}: rotating the element by θ moves the point by 2θ on the circle.`,
+    ].join("\n"),
+    narration: [
+      `For a rotation about ${axisName(st.plane.axis)}, the normal and shear values of the rotated planes trace one circle.`,
+      "Its centre is the mean of the two normal components, and its radius combines half their difference with the shear.",
+      "Rotating the element by an angle moves the point twice that angle around the circle.",
+    ].join(" "),
+  }];
+
+  /* ----- results ----- */
+  const side = (res, isStress) => {
+    const V = isStress ? S : E, Mg = isStress ? SM : EM, u = isStress ? su : eu, sym = isStress ? "σ" : "ε", say = isStress ? sayS : sayE;
+    const pv = res.principal.values.map(V), word = isStress ? "stress" : "strain";
+    const ref = isStress ? refS : refE;
+    const circles = res.circles.map((k) => ({ C: (isStress ? dStress : dStrain)(st, snap(k.centre, ref)), R: (isStress ? dStressMag : dStrainMag)(st, snap(k.radius, ref)) }));
+    const lo = Math.min(...circles.map((k) => k.C - k.R)), hi = Math.max(...circles.map((k) => k.C + k.R)), pad = 0.1 * Math.max(hi - lo, Math.abs(hi), Math.abs(lo), 1e-12);
+    const tauName = isStress ? "τ" : "γ/2";
+    return {
+      title: `Principal ${isStress ? "stresses" : "strains"}: ${pv.map((t, i) => `${sym}${i + 1} = ${t}`).join(", ")} ${u}`,
+      body: [
+        `| Quantity | ${isStress ? "Stress" : "Strain"} (${u}) |`, "| --- | ---: |",
+        ...pv.map((t, i) => `| ${sym}${i + 1} | ${t} |`),
+        ...res.principal.vectors.map((v, i) => `| direction ${i + 1} | ${vec(v)} |`),
+        ...res.circles.map((k, i) => `| circle ${k.i}–${k.j}: centre, radius | ${V(k.centre)}, ${Mg(k.radius)} |`),
+      ].join("\n"),
+      plot: { x: [plotNumber(lo - pad), plotNumber(hi + pad)], xlabel: `${isStress ? "normal stress σn" : "normal strain εn"} (${u}), ${signText}`, ylabel: `${tauName} (${u}), the three circles`, curves: circles.map((k) => halfCircle(k.C, k.R, 1)) },
+      narration: [
+        `Here are the three Mohr circles of the ${word}, upper halves.`,
+        `The principal ${isStress ? "stresses" : "strains"} are ${sayList(pv.map(say))}.`,
+        `The largest circle, between the first and third principal values, has a radius of ${say(Mg(res.circles[0].radius))}.`,
+      ].join(" "),
+    };
+  };
+  const inPlane = (res, isStress) => {
+    const V = isStress ? S : E, Mg = isStress ? SM : EM, u = isStress ? su : eu, say = isStress ? sayS : sayE, c = res.circle;
+    const ref = isStress ? refS : refE, Cd = (isStress ? dStress : dStrain)(st, snap(c.C, ref)), Rd = (isStress ? dStressMag : dStrainMag)(st, snap(c.R, ref));
+    const ord = sign === 1 ? [c.max, c.min] : [c.min, c.max];
+    const theta = r.thetaView;
+    const pad = 0.15 * Math.max(Rd, Math.abs(Cd), 1e-12);
+    const tauName = isStress ? "τ" : "γ/2", sym = isStress ? "σ" : "ε";
+    return {
+      title: `The 2D ${isStress ? "stress" : "strain"} circle about ${axisName(st.plane.axis)}: C = ${V(c.C)}, R = ${Mg(c.R)} ${u}${c.degenerate ? "" : `, θp = ${f(c.thetaP)}°`}`,
+      body: [
+        `$$ C = ${isStress ? texS(V(c.C)) : texNumber(V(c.C))}, \\qquad R = ${isStress ? texS(Mg(c.R)) : texNumber(Mg(c.R))} $$`,
+        "",
+        `- In-plane principal values, larger / smaller: ${V(ord[0])} / ${V(ord[1])} ${u}`,
+        `- In-plane principal angle $\\theta_p$: ${c.degenerate ? "any (R = 0)" : `${f(c.thetaP)}°`}`,
+        `- Plane normal ${vec(r.normal)}${theta === null ? "" : ` (θ = ${f(theta)}° about ${axisName(st.plane.axis)})`}: ${sym}n = ${V(res.plane.sn)}, ${tauName} = ${Mg(res.plane.tau)} ${u}`,
+      ].join("\n"),
+      plot: { x: [plotNumber(Cd - Rd - pad), plotNumber(Cd + Rd + pad)], xlabel: `${sym}n (${u}), ${signText}`, ylabel: `${tauName} (${u}), the 2D circle`, curves: [halfCircle(Cd, Rd, 1), halfCircle(Cd, Rd, -1)] },
+      narration: [
+        `For a rotation about ${axisName(st.plane.axis)}, the circle is centred at ${say(V(c.C))}, with a radius of ${say(Mg(c.R))}.`,
+        `So the in-plane principal values are ${say(V(ord[0]))} and ${say(V(ord[1]))}${c.degenerate ? ", and every direction in the plane is principal" : `, reached by rotating the element ${sayNumber(f(c.thetaP))} degrees`}.`,
+        `On the selected plane, the normal ${isStress ? "stress" : "strain"} is ${say(V(res.plane.sn))} and the shear is ${say(Mg(res.plane.tau))}.`,
+      ].join(" "),
+    };
+  };
+  const results = [];
+  const primary = stressDriven ? [r.stress, true] : [r.strain, false], secondary = stressDriven ? [r.strain, false] : [r.stress, true];
+  results.push(side(...primary), inPlane(...primary));
+  if (secondary[0]) results.push(side(...secondary));
+  if (r.stress) {
+    const s = r.stress, inv = s.invariants;
+    results.push({
+      title: `Maximum shear τmax = ${SM(s.absMax)} ${su}, von Mises σvm = ${SM(s.vm)} ${su}`,
+      body: [
+        `$$ \\tau_{\\max} = \\frac{\\sigma_1 - \\sigma_3}{2} = ${texS(SM(s.absMax))}, \\qquad \\sigma_{vm} = \\sqrt{\\tfrac{1}{2}\\left[(\\sigma_1 - \\sigma_2)^2 + (\\sigma_2 - \\sigma_3)^2 + (\\sigma_3 - \\sigma_1)^2\\right]} = ${texS(SM(s.vm))} $$`,
+        "",
+        `- Invariants: $I_1$ = ${S(inv.I1)} ${su}, $I_2$ = ${f(snap(inv.I2, refS * refS) / stressFactor(st) ** 2)} ${su}², $I_3$ = ${f((sign * snap(inv.I3, refS ** 3)) / stressFactor(st) ** 3)} ${su}³`,
+        `- Hydrostatic $p = I_1/3$ = ${S(s.p)} ${su}`,
+      ].join("\n"),
+      narration: [
+        `The absolute maximum shear stress is half the difference of the first and third principal stresses, ${sayS(SM(s.absMax))}.`,
+        `The von Mises equivalent stress is ${sayS(SM(s.vm))}, and the hydrostatic stress is ${sayS(S(s.p))}.`,
+      ].join(" "),
+    });
+  }
+  if (r.strain) {
+    const e = r.strain;
+    results.push({
+      title: `Strain: γmax = ε1 − ε3 = ${EM(2 * e.absMax)} ${eu}, volumetric ${E(e.invariants.I1)} ${eu}`,
+      body: [
+        `- Principal strains: ${e.principal.values.map((v, i) => `ε${i + 1} = ${E(v)}`).join(", ")} ${eu}`,
+        `- Maximum engineering shear strain $\\gamma_{\\max} = \\varepsilon_1 - \\varepsilon_3$ = ${EM(2 * e.absMax)} ${eu}`,
+        `- Volumetric strain $\\varepsilon_v$ = ${E(e.invariants.I1)} ${eu}`,
+        ...(r.derived ? [`- Derived out-of-plane: ${r.derived.kind === "strain-z" ? `εz = ${r.derived.value === null ? "—" : E(r.derived.value) + " " + eu}` : `σz = ${r.derived.value === null ? "—" : S(r.derived.value) + " " + su}`}`] : []),
+      ].join("\n"),
+      narration: [
+        `The largest engineering shear strain is ${sayE(EM(2 * e.absMax))}, and the volumetric strain is ${sayE(E(e.invariants.I1))}.`,
+        ...(r.derived && r.derived.value !== null ? [`The ${CONSTRAINT_TEXT[st.constraint]} condition gives an out-of-plane ${r.derived.kind === "strain-z" ? `strain of ${sayE(E(r.derived.value))}` : `stress of ${sayS(S(r.derived.value))}`}.`] : []),
+      ].join(" "),
+    });
+  }
+
+  /* ----- checks and takeaway ----- */
+  const fail = r.failure, tests = selfTests(), passed = tests.filter((t) => t.pass).length;
+  const fos = fail ? fosText(fail.fos, d) : null;
+  const sum = drivenRes.principal.values.reduce((a, x) => a + x, 0);
+  const checks = [{
+    title: fail ? `${CRITERION_NAME[crit]}: FoS ${fos}, ${fail.pass ? "PASS" : "FAIL"}` : `${CRITERION_NAME[crit]}: needs the stress tensor`,
+    body: fail ? [
+      `| Criterion | Parameters | FoS (proportional loading) | Result |`, "| --- | --- | ---: | --- |",
+      `| ${CRITERION_NAME[crit]} | ${params} | ${fos} | ${fail.pass ? "PASS" : "FAIL"} |`,
+      "",
+      `- ${fail.parts.map((p) => `${p.name}: ${fosText(p.fos, d)}`).join("; ")}`,
+    ].join("\n") : "- The material is invalid, so there is no stress tensor to check.",
+    notes: "Factors of safety use proportional load scaling: the factor k on every stress component that brings the state to the criterion. A factor of at least 1 passes.",
+    narration: fail ? [
+      `Scaling every stress component together, the ${critSaid} criterion gives a factor of safety of ${fail.fos === Infinity ? "infinity, so no proportional load ever fails it" : sayNumber(fos)}.`,
+      `So the state ${fail.pass ? "passes" : "fails"} the check.`,
+    ].join(" ") : `There is no stress tensor, so the ${critSaid} check is not available.`,
+  }, {
+    title: `Checks: self-test ${passed}/${tests.length} pass, ${r.warnings.length ? `${r.warnings.length} warning${r.warnings.length === 1 ? "" : "s"}` : "no warnings"}`,
+    body: [
+      `- Self-test: ${passed} of ${tests.length} checks pass (presets, eigenvectors, rotation and Hooke round trips, shear conventions, rosettes, units, export round trips).`,
+      `- The principal values sum to the first invariant: ${(stressDriven ? S : E)(sum)} = ${(stressDriven ? S : E)(drivenRes.invariants.I1)} ${inputUnit}.`,
+      ...(r.warnings.length ? r.warnings.map((w) => `- Warning: ${w.message}`) : ["- Warnings: none."]),
+    ].join("\n"),
+    narration: [
+      `The page runs its self-test on every load, and ${passed === tests.length ? `all ${tests.length} checks pass` : `${tests.length - passed} of ${tests.length} checks fail`}.`,
+      "As a check on the numbers, the principal values add up to the first invariant, the trace of the tensor.",
+      r.warnings.length ? `The page raises ${r.warnings.length === 1 ? "one warning" : `${r.warnings.length} warnings`} for this state, listed on the slide.` : "The page raises no warnings for this state.",
+    ].join(" "),
+  }];
+  const p = drivenRes.principal.values.map(stressDriven ? S : E);
+  checks.push({
+    title: "Takeaway",
+    key: `${stressDriven ? "σ" : "ε"}1, ${stressDriven ? "σ" : "ε"}2, ${stressDriven ? "σ" : "ε"}3 = ${p.join(", ")} ${inputUnit}`
+      + (r.stress ? `; τmax = ${SM(r.stress.absMax)} ${su}, σvm = ${SM(r.stress.vm)} ${su}` : "")
+      + (fail ? `; ${CRITERION_NAME[crit]} FoS ${fos}, ${fail.pass ? "PASS" : "FAIL"}.` : "."),
+    narration: [
+      `To sum up, the principal ${stressDriven ? "stresses" : "strains"} are ${sayList(p.map(stressDriven ? sayS : sayE))}.`,
+      ...(r.stress ? [`The maximum shear stress is ${sayS(SM(r.stress.absMax))}, and the von Mises stress is ${sayS(SM(r.stress.vm))}.`] : []),
+      ...(fail ? [`The ${critSaid} factor of safety is ${fail.fos === Infinity ? "infinite" : sayNumber(fos)}, so the state ${fail.pass ? "passes" : "fails"}.`] : []),
+    ].join(" "),
+  });
+
+  return {
+    meta: { title: `Mohr's circle analysis: ${CONSTRAINT_TEXT[st.constraint]}, ${st.driver}-driven`, subtitle: "Principal values, Mohr's circles, maximum shear and a failure check" },
+    narration: `Mohr's circle analysis of a ${CONSTRAINT_TEXT[st.constraint]} state, driven by the ${st.driver} tensor. We find the principal values, the Mohr circles, the maximum shear and a failure check, with every number from the Mohr's Circle Visualiser, in ${SPOKEN_STRESS[su]} and ${SPOKEN_STRAIN[st.units.strain]}.`,
+    setup: [stateFrame, materialFrame],
+    method: methodFrames,
+    results,
+    checks,
+  };
+}
+
 /* ---------- self-test ---------- */
 function selfTests() {
   const out = [];
@@ -1187,9 +1443,98 @@ root.Mohr = {
   checkFailureParams, failureCheck, envelope, rosette, gaugeReading,
   defaultState, presetState, applyRosette, clone, signOf, analyse, seedShadows, tensorSeed, principalSeed,
   dStress, dStressMag, dStrain, dStrainMag, shearFactor,
-  toObject, toJSON, fromObject, importText, toMarkdown, report, selfTests,
+  toObject, toJSON, fromObject, importText, toMarkdown, report, beamdswitchReport, selfTests,
 };
 })(typeof self !== "undefined" ? self : globalThis);
+</script>
+<script id="mohr-beamdswitch">
+/* The standard beamdswitch report template, shared by every visualisation.
+ *
+ * beamdswitch (https://teoyujie.org/visuals/beamdswitch/) turns one Markdown deck into slides, a
+ * handout, narration and a video. `deck(report)` writes a report in its deck syntax, always in the
+ * same order (templates/beamdswitch-report.md shows the skeleton):
+ *
+ *   front matter and title slide
+ *   # Set-up               what was modelled, its units and conventions
+ *   # Method               how the tool solved it
+ *   # Results              the numbers, with key equations and plots
+ *   # Checks and takeaway  what confirms the numbers, ending on one ::: key frame
+ *
+ * A report is plain data, so it can be built and tested without a page:
+ *   { meta: { title, subtitle, author, date, voice }, narration, notes,
+ *     setup, method, results, checks: [frame, ...] }
+ * and each frame is
+ *   { title, body, narration, notes, key, plot: { x: [a, b], xlabel, ylabel, curves: ["expr", ...] } }
+ * `body` is Markdown (LaTeX maths in $...$ or $$...$$); `narration` is plain spoken prose, one
+ * caption per sentence; `key`, `plot` and `notes` are optional. Every frame must be narrated, and
+ * the last checks frame must carry a key. The visualisation supplies every number already
+ * formatted, so the deck says exactly what its page shows.
+ */
+(function (root, factory) {
+  const api = factory();
+  if (typeof module === "object" && module.exports) module.exports = api;
+  else root.Beamdswitch = api;
+})(typeof self !== "undefined" ? self : this, function () {
+  "use strict";
+
+  const SECTIONS = [["setup", "Set-up"], ["method", "Method"], ["results", "Results"], ["checks", "Checks and takeaway"]];
+
+  const oneLine = (s) => String(s ?? "").replace(/\s+/g, " ").trim();
+  /* Markdown lines that would end a frame or a div early are refused rather than written. */
+  function block(text, what) {
+    const s = String(text ?? "").replace(/\r\n?/g, "\n").trim();
+    for (const line of s.split("\n"))
+      if (/^#{1,2}\s/.test(line) || /^\s*:{3,}/.test(line)) throw new Error(`${what} must not contain a heading or a ::: line: ${line}`);
+    return s;
+  }
+  /* Narration is read aloud: no maths, markup or line structure. */
+  function spoken(text, what) {
+    const s = oneLine(text);
+    if (!s) throw new Error(`${what} needs a narration.`);
+    if (/[$\\`*_#|<>]/.test(s)) throw new Error(`${what} narration must be plain spoken prose: ${s}`);
+    return s;
+  }
+  const div = (name, text) => [`::: ${name}`, text, ":::"];
+
+  function frame(f, where) {
+    const title = oneLine(f.title), what = `Frame "${title}" in ${where}`;
+    if (!title) throw new Error(`A frame in ${where} needs a title.`);
+    const out = [`## ${title}`, ""];
+    if (f.body) out.push(block(f.body, what), "");
+    if (f.plot) {
+      const p = f.plot, lines = [`x: ${p.x[0]}, ${p.x[1]}`];
+      if (p.xlabel) lines.push(`xlabel: ${oneLine(p.xlabel)}`);
+      if (p.ylabel) lines.push(`ylabel: ${oneLine(p.ylabel)}`);
+      for (const c of p.curves) lines.push(`y = ${oneLine(c)}`);
+      out.push(...div("plot", lines.join("\n")), "");
+    }
+    if (f.key) out.push(...div("key", block(f.key, what)), "");
+    if (f.notes) out.push(...div("notes", block(f.notes, what)), "");
+    out.push(...div("narration", spoken(f.narration, what)), "");
+    return out;
+  }
+
+  function deck(report) {
+    const meta = report.meta || {};
+    if (!oneLine(meta.title)) throw new Error("The report needs a title.");
+    const checks = report.checks || [];
+    if (!checks.length || !checks.at(-1).key) throw new Error("The last checks frame must carry a ::: key.");
+    const out = ["---"];
+    for (const k of ["title", "subtitle", "author", "date", "voice"]) if (oneLine(meta[k])) out.push(`${k}: ${oneLine(meta[k])}`);
+    out.push("---", "");
+    if (report.notes) out.push(...div("notes", block(report.notes, "The title slide")), "");
+    out.push(...div("narration", spoken(report.narration, "The title slide")), "");
+    SECTIONS.forEach(([id, title], i) => {
+      const frames = report[id] || [];
+      if (!frames.length) throw new Error(`The ${title} section needs at least one frame.`);
+      out.push(`# ${title}`, "", ...div("narration", `Part ${i + 1}. ${title}.`), "");
+      for (const f of frames) out.push(...frame(f, title));
+    });
+    return out.join("\n");
+  }
+
+  return { SECTIONS, deck };
+});
 </script>
 <script id="mohr-ui">
 (function () {
@@ -2383,6 +2728,33 @@ async function copy(kind, btn) {
     try { if (document.execCommand("copy")) done(); } catch (e) { /* manual copy */ }
   }
 }
+/* ---------- beamdswitch deck ----------
+   The report template is the inlined beamdswitch.js; the engine fills it from the state on the page. */
+const DECK_NAME = "mohr-beamdswitch.md";
+/* A blocked download fails silently, so the page cannot fall back on its own: Copy deck is the explicit fallback. */
+function saveReport() {
+  const text = Beamdswitch.deck(M.beamdswitchReport(state));
+  try {
+    const url = URL.createObjectURL(new Blob([text], { type: "text/markdown" }));
+    const a = document.createElement("a");
+    a.href = url; a.download = DECK_NAME;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    ioMsg(`Saved ${DECK_NAME}: open it in beamdswitch.`, "ok");
+  } catch (err) {
+    ioMsg(`Could not save: ${err.message}. Use Copy deck instead.`, "bad");
+  }
+}
+async function copyReport() {
+  const text = Beamdswitch.deck(M.beamdswitchReport(state));
+  try {
+    if (!navigator.clipboard || !navigator.clipboard.writeText) throw new Error("no clipboard API");
+    await navigator.clipboard.writeText(text);
+    ioMsg("Copied the beamdswitch deck: paste it into beamdswitch.", "ok");
+  } catch (err) {
+    showFallback("Clipboard access is blocked; the deck is selected below. Press Ctrl+C or ⌘C.", text);
+  }
+}
 function ioMsg(text, kind) { const el = $("io-msg"); el.textContent = text; el.className = `msg ${kind || ""}`; }
 function doImport(text) {
   try {
@@ -2409,6 +2781,8 @@ function wireIO() {
     ev.target.value = "";
   });
   $("import-go").addEventListener("click", () => doImport($("import-text").value));
+  $("save-beamdswitch").addEventListener("click", saveReport);
+  $("copy-beamdswitch").addEventListener("click", copyReport);
 }
 
 /* ---------- self-test ---------- */
