@@ -1,0 +1,24 @@
+# CI for the Snake Lemma diagram chase. This repository is where the lab and its tests develop; the
+# site's visuals/snake-lemma/ is a port of the page files and runs none of these tests. There is no
+# Python test, so the steps check that index.html and raw.json are built from src/ and run every
+# tests/*.test.mjs and tests/*.test.cjs.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: node build.mjs --check
+      - run: node --test 'tests/*.test.{mjs,cjs}'
