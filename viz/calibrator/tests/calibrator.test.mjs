@@ -249,3 +249,13 @@ test("export round-trip: the exported TOON is the site's TOON and decodes to the
   for (const k of ["questions", "sources", "claims"]) assert.deepEqual(plain(back[k]), plain(imported[k]));
   assert.equal(back.session.session_id, imported.session.session_id);
 });
+
+test("the codec reads every escape toon.py writes and rejects any other; a table row must be an object", () => {
+  assert.deepEqual(plain(C.decode('k: "a\\\\b\\"c\\nd\\re\\tf\\u0001"')), { k: 'a\\b"c\nd\re\tf\u0001' });
+  for (const bad of ['k: "a\\x"', 'k: "a\\']) assert.throws(() => C.decode(bad), C.ToonError, bad);
+  const doc = C.parseSession(sample);
+  for (const t of ["questions", "sources", "claims"]) {
+    const broken = { ...doc, [t]: [1, ...doc[t].slice(1)] };
+    assert.throws(() => C.validateSession(broken), /: not a row$/, t);
+  }
+});

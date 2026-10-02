@@ -211,6 +211,7 @@ pre{margin:0;max-height:40dvh;overflow:auto;padding:.6rem .75rem;border:1px soli
 const NUMERIC = /^[+-]?[0-9]+(?:\.[0-9]+)?(?:e[+-]?[0-9]+)?$/i;
 const KEY = /^[A-Za-z_][A-Za-z0-9_.]*$/;
 const ESC = { "\\": "\\\\", '"': '\\"', "\n": "\\n", "\r": "\\r", "\t": "\\t" };
+const UNESCAPE = { "\\": "\\", '"': '"', n: "\n", r: "\r", t: "\t" };
 
 function escapeText(value) {
   let out = "";
@@ -290,7 +291,7 @@ function readQuoted(s, i, where) {
         const hex = s.slice(i + 1, i + 5);
         if (!/^[0-9a-fA-F]{4}$/.test(hex)) throw new ToonError(`${where}: bad \\u escape`);
         out += String.fromCharCode(parseInt(hex, 16)); i += 4;
-      } else if ({ "\\": 1, '"': 1, n: 1, r: 1, t: 1 }[n]) out += { "\\": "\\", '"': '"', n: "\n", r: "\r", t: "\t" }[n];
+      } else if (UNESCAPE[n] !== undefined) out += UNESCAPE[n];
       else throw new ToonError(`${where}: unknown escape \\${n ?? ""}`);
     } else out += ch;
   }
@@ -410,6 +411,7 @@ const ID = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 
 class SchemaError extends Error {}
 function checkFields(row, allowed, where) {
+  if (!isObject(row)) throw new SchemaError(`${where}: not a row`);
   for (const k of Object.keys(row)) if (!allowed.includes(k)) throw new SchemaError(`${where}: unknown field ${k}`);
   for (const k of allowed) if (!OPTIONAL.has(k) && (row[k] === undefined || row[k] === null)) throw new SchemaError(`${where}: missing ${k}`);
 }
@@ -444,7 +446,6 @@ function validateSession(doc) {
   const ids = new Set();
   questions.forEach((q, i) => {
     const where = `question ${i + 1}`;
-    if (!isObject(q)) throw new SchemaError(`${where}: not a row`);
     checkFields(q, FIELDS.questions, where);
     text(q, "question_id", where);
     if (!ID.test(q.question_id)) throw new SchemaError(`${where}: question_id may use only letters, digits, '.', '_' and '-'`);
@@ -464,7 +465,6 @@ function validateSession(doc) {
   const sourceKeys = new Set(), sourced = new Set();
   sources.forEach((s, i) => {
     const where = `source ${i + 1}`;
-    if (!isObject(s)) throw new SchemaError(`${where}: not a row`);
     checkFields(s, FIELDS.sources, where);
     for (const k of ["question_id", "source_id", "title", "url", "retrieved_at"]) text(s, k, where);
     text(s, "published_at", where, { nullable: true });
@@ -476,7 +476,6 @@ function validateSession(doc) {
   for (const id of ids) if (!sourced.has(id)) throw new SchemaError(`question ${id} has no source`);
   claims.forEach((c, i) => {
     const where = `claim ${i + 1}`;
-    if (!isObject(c)) throw new SchemaError(`${where}: not a row`);
     checkFields(c, FIELDS.claims, where);
     for (const k of ["question_id", "source_id", "claim"]) text(c, k, where);
     if (!sourceKeys.has(`${c.question_id}\0${c.source_id}`)) throw new SchemaError(`${where}: unknown source ${c.source_id} for ${c.question_id}`);
@@ -526,10 +525,11 @@ function answer(state, p, now) {
   let s = state.shown[qid(state)] == null ? display(state, now) : clone(state);
   const id = qid(s), prev = s.responses[id];
   if (prev && prev.state === "answered") {
-    if (p === prev.final_probability) return { state: s, advanced: false, first: false, end: false };
-    const history = [...prev.revision_history, { probability: p, at: now }];
-    s.responses[id] = { ...prev, final_probability: p, final_answered_at: now, revision_history: history };
-    s.changed_at = now;
+    if (p !== prev.final_probability) {
+      const history = [...prev.revision_history, { probability: p, at: now }];
+      s.responses[id] = { ...prev, final_probability: p, final_answered_at: now, revision_history: history };
+      s.changed_at = now;
+    }
     return { state: s, advanced: false, first: false, end: false };
   }
   s.responses[id] = { state: "answered", first_probability: p, final_probability: p, first_answered_at: now,
@@ -644,6 +644,10 @@ function load() {
   if (!json) return null;
   try { return C.deserialize(json); } catch { return null; }
 }
+// The session in memory, else the one saved on this device (null when there is none).
+const loaded = () => S || load();
+// Show a session again: stamp its current question as displayed, save, and open the question card.
+function resume(state) { S = C.display(state, now()); save(); showAsk(); }
 const setState = (t) => { $("state").textContent = t; };
 const startMsg = (t, error = false) => { const m = $("start-msg"); m.textContent = t; m.classList.toggle("error", error); };
 
@@ -660,8 +664,8 @@ function begin(doc) {
 function offer(toon) {
   let doc;
   try { doc = C.parseSession(toon); } catch (e) { startMsg(`Not a valid session: ${e.message}`, true); return; }
-  const prev = S || load();
-  if (prev && prev.doc.session.session_id === doc.session.session_id) { S = C.display(prev, now()); save(); showAsk(); return; }
+  const prev = loaded();
+  if (prev && prev.doc.session.session_id === doc.session.session_id) { resume(prev); return; }
   if (prev && C.unfinished(prev)) {
     const c = C.counts(prev);
     pendingDoc = doc;
@@ -699,9 +703,9 @@ $("file").addEventListener("change", async (e) => {
   const f = e.target.files[0]; e.target.value = "";
   if (f) offer(await f.text());
 });
-$("guard-resume").addEventListener("click", () => { const prev = S || load(); pendingDoc = null; if (prev) { S = C.display(prev, now()); save(); showAsk(); } });
+$("guard-resume").addEventListener("click", () => { const prev = loaded(); pendingDoc = null; if (prev) resume(prev); });
 $("guard-replace").addEventListener("click", () => {
-  const prev = S || load();
+  const prev = loaded();
   if (prev) store.set(PREVIOUS, C.serialize(prev));
   if (pendingDoc) begin(pendingDoc);
 });
@@ -835,15 +839,15 @@ const tools = [
   { name: "get_metadata", description: "Return what Calibrator does and its session TOON schema: the fields of each table, the allowed origins and question states, and where the schema is documented.", inputSchema: none, annotations: ro,
     async execute() { return result({ title: "Calibrator", url: "https://teoyujie.org/visuals/calibrator/", format: C.FORMAT, version: C.VERSION, import_fields: C.FIELDS, export_fields: C.EXPORT_FIELDS, origins: C.ORIGINS, scores: C.SCORES, states: C.STATES, schema_docs: "https://github.com/yujieteo/calibrator#session-toon-schema" }); } },
   { name: "get_session_summary", description: "Return the loaded session's id, position and answered, skipped and unseen counts, or null when no session is loaded. Never changes the page.", inputSchema: none, annotations: ro,
-    async execute() { const s = S || load(); return result(s ? { session_id: s.doc.session.session_id, current: s.current + 1, ...C.counts(s), unfinished: C.unfinished(s) } : null); } },
+    async execute() { const s = loaded(); return result(s ? { session_id: s.doc.session.session_id, current: s.current + 1, ...C.counts(s), unfinished: C.unfinished(s) } : null); } },
   { name: "get_current_question", description: "Return the question on screen: its number, id, proposition, context, high and low actions and its state (answered, skipped or unseen). Generator scores and sources are not included.", inputSchema: none, annotations: ro,
     async execute() {
-      const s = S || load(); if (!s) return result(null);
+      const s = loaded(); if (!s) return result(null);
       const q = s.doc.questions[s.current], r = s.responses[q.question_id];
       return result({ number: s.current + 1, of: s.doc.questions.length, question_id: q.question_id, proposition: q.proposition, context: q.context, high_action: q.high_action, low_action: q.low_action, state: C.stateOf(s, q.question_id), final_probability: r?.final_probability ?? null });
     } },
   { name: "export_session_toon", description: "Return the loaded session as exported TOON (every question answered, skipped or unseen), as Copy TOON would, without marking it exported.", inputSchema: none, annotations: ro,
-    async execute() { const s = S || load(); return result(s ? { toon: C.exportToon(s, now()) } : null); } },
+    async execute() { const s = loaded(); return result(s ? { toon: C.exportToon(s, now()) } : null); } },
   { name: "validate_session_toon", description: "Check whether a session TOON would import: decode it, validate the schema, and return the session id and question count or the first error. Never loads it.", annotations: ro,
     inputSchema: { type: "object", properties: { toon: { type: "string" } }, required: ["toon"], additionalProperties: false },
     async execute({ toon }) { try { const d = C.parseSession(toon); return result({ valid: true, session_id: d.session.session_id, questions: d.questions.length }); } catch (e) { return result({ valid: false, error: e.message }); } } },
@@ -852,8 +856,8 @@ self.CalibratorTools = tools;
 const mc = (typeof document !== "undefined" && document.modelContext) || (typeof navigator !== "undefined" && navigator.modelContext);
 if (mc && typeof mc.registerTool === "function") for (const t of tools) mc.registerTool(t);
 
-S = load();
-if (S) { S = C.display(S, now()); save(); showAsk(); } else showStart();
+const saved = load();
+if (saved) resume(saved); else showStart();
 })();
 </script>
 </body>

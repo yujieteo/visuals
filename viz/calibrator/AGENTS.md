@@ -11,7 +11,7 @@ The standalone repository [yujieteo/calibrator](https://github.com/yujieteo/cali
 There is no build step: edit `index.html` directly. Run the tests from the repository root, as CI (`.github/workflows/ci.yml`) does on every push:
 
 ```sh
-node --test 'tests/*.test.{mjs,cjs}'
+node --test 'tests/*.test.mjs'
 ```
 
 Keep the suite to the high-value deterministic checks it has (import, rejection, unanswered state, first answer, auto-advance, Back and revisions, Skip, the three states, persistence, export round-trip). Never add Playwright, Selenium, browser end-to-end tests or another test framework.

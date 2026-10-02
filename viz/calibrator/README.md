@@ -131,10 +131,11 @@ build turns each answered question into one Corpus Record, `calibration:<questio
 
 ## Tests
 
-`node --test 'tests/*.test.{mjs,cjs}'` (Node 22, as CI runs it). `tests/calibrator.test.mjs` loads
-the engine from `index.html` and checks only: valid session import, invalid TOON rejection, the
-unanswered state, first-answer capture, auto-advance, Back and revision preservation, Skip, the
-answered/skipped/unseen distinction, local persistence serialization and the export round-trip.
+`node --test 'tests/*.test.mjs'` (Node 22, as CI runs it). `tests/calibrator.test.mjs` loads
+the engine from `index.html` and checks only: valid session import, invalid TOON rejection
+(unknown escapes and non-object table rows included), the unanswered state, first-answer capture,
+auto-advance, Back and revision preservation, Skip, the answered/skipped/unseen distinction, local
+persistence serialization and the export round-trip.
 `tests/fixtures/` holds a read-only copy of the site's `scripts/toon.py` and the TOON files it
 wrote (`python3 tests/fixtures/make_fixtures.py` regenerates them, and `sample-session.toon`);
 the tests require the page's codec to write them byte for byte. There are deliberately no browser
