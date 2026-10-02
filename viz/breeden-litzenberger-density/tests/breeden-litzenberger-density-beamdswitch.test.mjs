@@ -1,14 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { assertBlockedSave, assertInlined, assertStandardDeck, assertTemplateCopy, load, openPage, read } from "./finance-beamdswitch-checks.mjs";
+import { SLUG, assertBlockedSave, assertInlined, assertStandardDeck, assertTemplateCopy, load, openPage, read } from "./finance-beamdswitch-checks.mjs";
 
-const SLUG = "breeden-litzenberger-density";
-const html = read(`index.html`);
-const { Beamdswitch, BLReport } = load(read(`beamdswitch.js`), read(`report.js`));
+const html = read("index.html");
+const { Beamdswitch, BLReport } = load(read("beamdswitch.js"), read("report.js"));
 const WIDTHS = [0.5, 1, 2, 5];
 const controls = () => ({ ".seg button": WIDTHS.map((d) => ({ d: String(d) })) });
 // The page's model, curves and cross-check table, as a run of the page holds them.
-const P = JSON.parse(JSON.stringify(openPage(SLUG, controls()).run("P")));
+const P = JSON.parse(JSON.stringify(openPage(controls()).run("P")));
 const VIEWS = [65, 80.5, 100, 123, 145].flatMap((K) => WIDTHS.map((D) => ({ K, D })));
 const deckFor = (v) => Beamdswitch.deck(BLReport.report(P, v));
 const what = (v) => `K=${v.K} D=${v.D}`;
@@ -20,9 +19,9 @@ const density = (K, { S0, r, sigma, T }) => {
 };
 
 test("the site's beamdswitch template is the copy the page inlines, with its report", () => {
-  assertTemplateCopy(SLUG);
-  assertInlined(html, "beamdswitch", read(`beamdswitch.js`), SLUG);
-  assertInlined(html, "report", read(`report.js`), SLUG);
+  assertTemplateCopy();
+  assertInlined(html, "beamdswitch", read("beamdswitch.js"));
+  assertInlined(html, "report", read("report.js"));
 });
 
 test("every strike and half-width's deck parses in beamdswitch as the standard template, narrated on every slide", () => {
@@ -48,7 +47,7 @@ test("the deck's numbers are the page's: its read-out, its cross-check table, an
 });
 
 test("the beamdswitch button saves, and Copy deck copies, the deck of the strike and half-width shown", async () => {
-  const page = openPage(SLUG, controls());
+  const page = openPage(controls());
   for (const v of [{ K: 100, D: 2 }, { K: 123.5, D: 0.5 }, { K: 70, D: 5 }]) {
     page.$("strike").value = String(v.K);
     await page.$("strike").fire("input");
@@ -59,4 +58,15 @@ test("the beamdswitch button saves, and Copy deck copies, the deck of the strike
   }
 });
 
-test("a blocked download points to Copy deck without touching the clipboard", () => assertBlockedSave(SLUG, controls()));
+test("a blocked download points to Copy deck without touching the clipboard", () => assertBlockedSave(controls()));
+
+test("at() hits grid strikes exactly, interpolates linearly between them and clamps outside the grid", () => {
+  const C = P.CURVES, [lo, hi] = [C[0], C.at(-1)], i = C.length >> 1;
+  for (const col of [1, 2]) {
+    assert.equal(BLReport.at(C, C[i][0], col), C[i][col]);
+    const mid = (C[i][0] + C[i + 1][0]) / 2;
+    assert.ok(Math.abs(BLReport.at(C, mid, col) - (C[i][col] + C[i + 1][col]) / 2) < 1e-12, `column ${col} midpoint`);
+    assert.equal(BLReport.at(C, lo[0] - 10, col), lo[col]);
+    assert.equal(BLReport.at(C, hi[0] + 10, col), hi[col]);
+  }
+});

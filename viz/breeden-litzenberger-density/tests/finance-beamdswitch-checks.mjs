@@ -1,6 +1,5 @@
-/* Shared checks for the beamdswitch decks of the finance visualisations (airbnb, arm, marvell, panw,
-   breeden-litzenberger-density, convex-payoffs), and a small stand-in DOM to click their beamdswitch
-   and Copy deck buttons in Node. Decks are parsed with beamdswitch's own parsers (read-only copies in
+/* Checks for this page's beamdswitch deck, and a small stand-in DOM to click its beamdswitch and
+   Copy deck buttons in Node. Decks are parsed with beamdswitch's own parsers (read-only copies in
    tests/fixtures/beamdswitch/), as the site's tests do. */
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
@@ -8,27 +7,36 @@ import { readFileSync } from "node:fs";
 import vm from "node:vm";
 import { parseDeck, splitSentences } from "./fixtures/beamdswitch/deck.mjs";
 import { parsePlot } from "./fixtures/beamdswitch/plot.mjs";
-import { assertSiteTemplate, assertVoice } from "./beamdswitch-decks.mjs";
 
 export const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
+// This repository holds one page; its slug names the files the page saves.
+export const SLUG = JSON.parse(read("meta.json")).slug;
 
 /* SHA-256 of yujieteo/site templates/beamdswitch.js, the site's standard report template. Every
    page folder carries it unchanged. Set SITE_REPO to a site checkout to compare against the file. */
 const TEMPLATE_SHA256 = "f9ce9c6eb07842a2fa50dd72c828cb53c09f412c6bb1505d825d081b5b4362c7";
 const SECTIONS = [...read("tests/fixtures/beamdswitch/report-template.md").matchAll(/^# (.+)$/gm)].map((m) => m[1]);
 
-export function assertTemplateCopy(slug) {
-  const copy = read(`beamdswitch.js`);
+export function assertTemplateCopy() {
+  const copy = read("beamdswitch.js");
   assert.equal(createHash("sha256").update(copy).digest("hex"), TEMPLATE_SHA256,
-    `beamdswitch.js must stay identical to the site's templates/beamdswitch.js`);
-  if (process.env.SITE_REPO) assertSiteTemplate(copy, `${process.env.SITE_REPO}/templates/beamdswitch.js`, `beamdswitch.js`);
+    "beamdswitch.js must stay identical to the site's templates/beamdswitch.js");
+  if (process.env.SITE_REPO)
+    assert.equal(copy, readFileSync(`${process.env.SITE_REPO}/templates/beamdswitch.js`, "utf8"),
+      "the site's templates/beamdswitch.js and beamdswitch.js must stay identical");
 }
 
-/* The page inlines each script verbatim in its own <script id="..."> block. */
-export function assertInlined(html, id, source, what) {
-  const m = new RegExp(`<script id="${id}">\\n([\\s\\S]*?)</script>`).exec(html);
-  assert.ok(m, `${what}: the page has a <script id="${id}"> block`);
-  assert.equal(m[1], source, `${what}: the page inlines ${id} unchanged`);
+/* The page inlines each script verbatim in its own <script id="..."> block; returns that block's source. */
+export const inlined = (html, id) => new RegExp(`<script id="${id}">\\n([\\s\\S]*?)</script>`).exec(html)?.[1];
+export function assertInlined(html, id, source) {
+  const block = inlined(html, id);
+  assert.ok(block !== undefined, `${SLUG}: the page has a <script id="${id}"> block`);
+  assert.equal(block, source, `${SLUG}: the page inlines ${id} unchanged`);
+}
+
+// Every deck names its narrator, so beamdswitch never narrates in silence: a voice id such as bf_emma.
+export function assertVoice(deck, what) {
+  assert.match(deck.meta.voice ?? "", /^[a-z]{2}_[a-z]+$/, `${what}: declares a voice in its front matter`);
 }
 
 /* Loads UMD scripts (the template and a report) into one context and returns its globals. */
@@ -98,8 +106,8 @@ class Element {
  * writes in `copied`. With `blockSave`, the browser refuses to make the download. `$(id)` is the
  * element with that id.
  */
-export function openPage(slug, controls = {}, { blockSave = false } = {}) {
-  const html = read(`index.html`);
+export function openPage(controls = {}, { blockSave = false } = {}) {
+  const html = read("index.html");
   const nodes = new Map(), lists = new Map(), blobs = new Map(), saved = [], copied = [];
   const byId = (id) => { if (!nodes.has(id)) nodes.set(id, new Element()); return nodes.get(id); };
   for (const [selector, items] of Object.entries(controls)) lists.set(selector, items.map((d) => Object.assign(new Element("button"), { dataset: { ...d } })));
@@ -135,7 +143,7 @@ export function openPage(slug, controls = {}, { blockSave = false } = {}) {
     async exportDeck() {
       const before = saved.length;
       await this.click($("save-beamdswitch"));
-      assert.equal(saved.length, before + 1, `${slug}: one download per click`);
+      assert.equal(saved.length, before + 1, `${SLUG}: one download per click`);
       const file = saved.at(-1), status = $("deck-status").textContent;
       await this.click($("copy-beamdswitch"));
       return { name: file.name, text: await file.blob.text(), status, copied: copied.at(-1) };
@@ -145,9 +153,9 @@ export function openPage(slug, controls = {}, { blockSave = false } = {}) {
 
 /* On a page whose download is blocked, the beamdswitch button saves nothing, writes nothing to the
    clipboard on its own, and points to Copy deck. */
-export async function assertBlockedSave(slug, controls) {
-  const page = openPage(slug, controls, { blockSave: true });
+export async function assertBlockedSave(controls) {
+  const page = openPage(controls, { blockSave: true });
   await page.click(page.$("save-beamdswitch"));
-  assert.deepEqual([page.saved.length, page.copied.length], [0, 0], `${slug}: nothing saved or copied`);
-  assert.equal(page.$("deck-status").textContent, "Could not save the beamdswitch deck here: use Copy deck to paste it into beamdswitch.", slug);
+  assert.deepEqual([page.saved.length, page.copied.length], [0, 0], `${SLUG}: nothing saved or copied`);
+  assert.equal(page.$("deck-status").textContent, "Could not save the beamdswitch deck here: use Copy deck to paste it into beamdswitch.", SLUG);
 }
