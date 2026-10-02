@@ -483,12 +483,12 @@ function renderExperiment() {
   const xs = (n) => 20 + (n + 13) * 26.15;
   const dots = all.map((k, i) => {
     const a = 2 * k + c, odd = Math.abs(a) % 2 === 1, tx = mod ? (odd ? 470 : 250) + ((i % 6) - 2.5) * 2 : xs(a), ty = mod ? 122 : 40;
-    return `<g class="nl-dot ${odd ? "odd" : "even"}" style="transform:translate(${tx}px,${ty}px)" transform="translate(${tx} ${ty})"><circle r="${k === cur ? 8 : 6}"/>${mod ? "" : `<text y="-12" text-anchor="middle" class="nl-num" style="fill:var(--text)">a${sub(i + 1)}</text>`}</g>`;
+    return `<g class="nl-dot ${odd ? "odd" : "even"}" style="transform:translate(${tx}px,${ty}px)" transform="translate(${tx} ${ty})"><circle r="${k === cur ? 8 : 6}"/>${mod ? "" : `<text y="-12" text-anchor="middle" class="nl-num" style="fill:var(--fg)">a${sub(i + 1)}</text>`}</g>`;
   }).join("");
   const ticks = range([-13, 13]).map((n) => `<line class="nl-tick" x1="${xs(n)}" x2="${xs(n)}" y1="52" y2="${n % 2 ? 62 : 58}" style="stroke:${Math.abs(n) % 2 ? "var(--magenta)" : "var(--cyan)"}"/><text class="nl-num" x="${xs(n)}" y="76" text-anchor="middle">${n < 0 ? "−" + -n : n}</text>`).join("");
   const svg = `<svg viewBox="0 0 720 ${mod ? 156 : 104}" role="img" aria-label="${esc(mod ? `Mod out by im α: all ${all.length} endpoints collapse onto the class [${SL.Z.mod2(c)}] in ℤ/2ℤ.` : `Raw A: endpoints ${all.map((k) => 2 * k + c).join(", ")} are different integers.`)}">
-    <line x1="14" x2="706" y1="52" y2="52" stroke="var(--rule)"/>${ticks}
-    <text x="14" y="96" class="nl-num">A = ℤ · odd integers ┆ magenta, even ┆ cyan · im α = 2ℤ (the even integers)</text>
+    <line x1="14" x2="706" y1="52" y2="52" stroke="var(--axis)"/>${ticks}
+    <text x="14" y="96" class="nl-num">A = ℤ · odd integers ┆ violet, even ┆ teal · im α = 2ℤ (the even integers)</text>
     ${mod ? `<g><circle cx="250" cy="122" r="18" fill="none" stroke="var(--cyan)" stroke-width="2"/><text x="250" y="148" text-anchor="middle" class="nl-cls">[0]</text><circle cx="470" cy="122" r="18" fill="none" stroke="var(--magenta)" stroke-width="2"/><text x="470" y="148" text-anchor="middle" class="nl-cls">[1]</text><text x="600" y="126" class="nl-num">coker α = ℤ/2ℤ</text></g>` : ""}
     ${dots}</svg>`;
   const rows = all.map((k, i) => `<tr><td>a${sub(i + 1)}</td><td class="math">${SL.fmtInt(k)}</td><td class="math">${SL.fmtPair([k, c])}</td><td class="math">${SL.fmtInt(2 * k + c)}</td><td class="math">[${SL.Z.mod2(2 * k + c)}]</td></tr>`).join("");
@@ -889,9 +889,9 @@ function toggleTheme() {
   const root = document.documentElement, cur = root.getAttribute("data-theme");
   const dark = cur ? cur === "dark" : (() => { try { return matchMedia("(prefers-color-scheme: dark)").matches; } catch { return false; } })();
   root.setAttribute("data-theme", dark ? "light" : "dark");
-  try { localStorage.setItem("snake-lemma-theme", dark ? "light" : "dark"); } catch { /* storage blocked */ }
+  try { localStorage.setItem("theme", dark ? "light" : "dark"); } catch { /* storage blocked */ }
 }
-try { const t = localStorage.getItem("snake-lemma-theme"); if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t); } catch { /* storage blocked */ }
+try { const t = localStorage.getItem("theme"); if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t); } catch { /* storage blocked */ }
 $("btn-theme").addEventListener("click", toggleTheme);
 $("abelian-text").textContent = SL.ABELIAN_NOTE;
 
