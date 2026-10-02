@@ -14,8 +14,7 @@
 })(typeof self !== "undefined" ? self : this, function (G) {
   "use strict";
   const { B, Q, qstr, fmtInt } = G;
-  const big = (x) => fmtInt(x);
-  const val = (x) => (G.isQ(x) ? qstr(x) : big(x));
+  const val = (x) => (G.isQ(x) ? qstr(x) : fmtInt(x));
   const range = (n) => Array.from({ length: n }, (_, i) => i);
 
   /* The stages of the lab's cycle; a deck puts object states in Set-up and encode/manipulate states in Method. */
@@ -52,7 +51,7 @@
       coeffs: (N) => G.seriesFrom([], N).map(() => 1n),
       enumerate: (n) => BigInt(G.compositionsList([1], n).length), enumLabel: "rows of n unit blocks, listed",
       objects: (n) => objList([n === 0 ? "∅" : "▪".repeat(n)]),
-      answer: (n, v) => `There is ${big(v)} object of size ${n}, so the coefficient of x${G.sup(n)} is ${big(v)}.`,
+      answer: (n, v) => `There is ${fmtInt(v)} object of size ${n}, so the coefficient of x${G.sup(n)} is ${fmtInt(v)}.`,
       reps: () => ({ sequence: "1, 1, 1, 1, …", series: "1 + x + x² + x³ + ⋯", closed: "1/(1 − x)", recurrence: "a₀ = 1, aₙ = aₙ₋₁", class: "SEQ(Z) with one object per size", roots: "finite truncation: values at roots of unity in the Fourier lab", asymptotic: "aₙ = 1" }),
       states: () => [
         { id: "strip", stage: "object", title: "A sequence is a strip of coefficients", tex: ["a_0, a_1, a_2, \\ldots = 1, 1, 1, \\ldots"], text: "Each bar of the strip is one number a_n, the count of objects of size n.", say: "Start with the sequence one, one, one, and so on. Each entry counts the objects of one size." },
@@ -76,7 +75,7 @@
       coeffs: (N) => G.seriesFrom([], N).map(() => 1n),
       enumerate: (n) => BigInt(G.compositionsList([1], n).length), enumLabel: "compositions into unit parts, listed",
       objects: (n) => objList(G.compositionsList([1], n).map((c) => (c.length ? c.map(() => "▪").join("") : "∅"))),
-      answer: (n, v) => `There is exactly ${big(v)} way to build ${n} from unit pieces.`,
+      answer: (n, v) => `There is exactly ${fmtInt(v)} way to build ${n} from unit pieces.`,
       reps: () => ({ sequence: "1, 1, 1, …", series: "1 + x + x² + ⋯", closed: "1/(1 − x)", recurrence: "aₙ = aₙ₋₁", class: "SEQ(Z)", asymptotic: "pole at x = 1, aₙ = 1ⁿ" }),
       states: (p) => [
         { id: "blocks", stage: "object", title: "Repeated blocks", tex: ["\\text{one piece} \\mapsto x"], text: "One unit piece has size 1, so it is encoded by x.", say: "One unit piece has size one, so it becomes x." },
@@ -100,14 +99,14 @@
       coeffs: (N, p) => G.shift(fibShift(N), p.k, N),
       enumerate: (n, p) => (n < p.k ? 0n : BigInt(G.compositionsList([1, 2], n - p.k).length)), enumLabel: "compositions of n − k into 1s and 2s, listed",
       objects: (n, p) => objList(n < p.k ? [] : G.compositionsList([1, 2], n - p.k).map((c) => "···".slice(0, p.k) + "|" + (c.join("+") || "∅"))),
-      answer: (n, v, p) => `[x${G.sup(n)}] x${G.sup(p.k)}A(x) = a${G.subs(Math.max(n - p.k, 0))}${n < p.k ? " (none: n < k)" : ""} = ${big(v)}.`,
+      answer: (n, v, p) => `[x${G.sup(n)}] x${G.sup(p.k)}A(x) = a${G.subs(Math.max(n - p.k, 0))}${n < p.k ? " (none: n < k)" : ""} = ${fmtInt(v)}.`,
       reps: (p) => ({ sequence: `${"0, ".repeat(p.k)}1, 1, 2, 3, 5, …`, series: `x${G.sup(p.k)} + x${G.sup(p.k + 1)} + 2x${G.sup(p.k + 2)} + ⋯`, closed: `x${G.sup(p.k)}/(1 − x − x²)`, recurrence: `bₙ = aₙ₋${G.subs(p.k)}` }),
       states: (p) => [
         { id: "strip", stage: "object", title: "The strip of A(x)", tex: ["A(x) = 1 + x + 2x^2 + 3x^3 + 5x^4 + \\cdots"], text: "Here aₙ = Fₙ₊₁, the number of ways to write n as an ordered sum of 1s and 2s.", say: "Take the strip one, one, two, three, five, the Fibonacci numbers shifted by one." },
         { id: "slide", stage: "manipulate", title: `Slide ${p.k} positions`, tex: [`x^{${p.k}}A(x) = \\sum_n a_n x^{n+${p.k}}`], text: "Multiplying every term by x^k raises every exponent by k: the strip moves right and zeros fill in.", say: `Multiplying by x to the ${p.k} raises every exponent by ${p.k}. The strip slides right and zeros fill the gap.` },
         { id: "rule", stage: "manipulate", title: "The shift rule", tex: ["[x^n]\\,x^kA(x) = a_{n-k}"], text: "Read the coefficient by looking k places to the left in the original strip.", say: "So the coefficient of x to the n is the original coefficient k places earlier." },
       ],
-      checks: (n, p) => { const a = fibShift(n + 1), s = G.shift(a, p.k, n + 1); return [{ name: "shifted strip equals the strip read k places earlier", gf: big(s[n]), other: big(n >= p.k ? a[n - p.k] : 0n), method: "exact", pass: s[n] === (n >= p.k ? a[n - p.k] : 0n) }]; },
+      checks: (n, p) => { const a = fibShift(n + 1), s = G.shift(a, p.k, n + 1); return [{ name: "shifted strip equals the strip read k places earlier", gf: fmtInt(s[n]), other: fmtInt(n >= p.k ? a[n - p.k] : 0n), method: "exact", pass: s[n] === (n >= p.k ? a[n - p.k] : 0n) }]; },
     },
     {
       id: "add-subtract", sayProblem: "Piles of blocks are even or odd. Encode each type, merge them, then remove the piles whose size is a multiple of three.", level: 3, hash: "add-subtract", aliases: ["addition", "subtraction"], title: "Addition and subtraction", nav: "Add / subtract", branch: "ogf", difficulty: 1,
@@ -121,7 +120,7 @@
       coeffs: (N, p) => (p.mode === "A + B" ? G.add(G.evenGF(N), G.oddGF(N), N) : G.notMultipleOf3GF(N)),
       enumerate: (n, p) => (p.mode === "A + B" ? 1n : n % 3 === 0 ? 0n : 1n), enumLabel: "direct test of the pile size",
       objects: (n, p) => objList(p.mode === "A + B" || n % 3 ? [(n % 2 ? "B: " : "A: ") + ("▪".repeat(n) || "∅")] : []),
-      answer: (n, v) => `${big(v)} allowed pile${v === 1n ? "" : "s"} of size ${n}.`,
+      answer: (n, v) => `${fmtInt(v)} allowed pile${v === 1n ? "" : "s"} of size ${n}.`,
       reps: () => ({ sequence: "0, 1, 1, 0, 1, 1, 0, …", series: "x + x² + x⁴ + x⁵ + ⋯", closed: "1/(1 − x) − 1/(1 − x³)" }),
       states: () => [
         { id: "types", stage: "object", title: "Two disjoint types", tex: ["A(x) = \\frac{1}{1-x^2}, \\quad B(x) = \\frac{x}{1-x^2}"], text: "Even piles are encoded by 1 + x² + x⁴ + ⋯ and odd piles by x + x³ + ⋯.", say: "Even piles and odd piles are two disjoint types, each with its own generating function." },
@@ -140,7 +139,7 @@
       coeffs: (N) => G.xDerivative(G.seriesFrom([], N).map(() => 1n)),
       enumerate: (n) => BigInt(n), enumLabel: "marked blocks, counted one by one",
       objects: (n) => objList(range(n).map((i) => "▪".repeat(i) + "◆" + "▪".repeat(n - 1 - i))),
-      answer: (n, v) => `${big(v)} ways to mark one block in a pile of ${n}.`,
+      answer: (n, v) => `${fmtInt(v)} ways to mark one block in a pile of ${n}.`,
       reps: () => ({ sequence: "0, 1, 2, 3, …", series: "x + 2x² + 3x³ + ⋯", closed: "x/(1 − x)²", recurrence: "aₙ = aₙ₋₁ + 1", class: "pile with one marked atom (pointing)" }),
       states: () => [
         { id: "start", stage: "object", title: "Start from the constant strip", tex: ["A(x) = \\sum_{n\\ge0} x^n = \\frac{1}{1-x}"], text: "Every coefficient is 1.", say: "Start from the constant strip, one over one minus x." },
@@ -161,7 +160,7 @@
       coeffs: (N) => G.fibonacciGF(N),
       enumerate: (n) => G.fibonacciDP(n + 1)[n], enumLabel: "dynamic-programming recurrence",
       objects: (n) => objList(n === 0 ? [] : G.compositionsList([1, 2], n - 1).map((c) => c.map((s) => (s === 1 ? "□" : "▭")).join("") || "∅")),
-      answer: (n, v) => `F${G.subs(n)} = ${big(v)}.`,
+      answer: (n, v) => `F${G.subs(n)} = ${fmtInt(v)}.`,
       reps: () => ({ sequence: "0, 1, 1, 2, 3, 5, 8, …", series: "x + x² + 2x³ + 3x⁴ + ⋯", closed: "x/(1 − x − x²)", recurrence: "Fₙ = Fₙ₋₁ + Fₙ₋₂", class: "tilings by squares and dominoes", matrix: "[[1,1],[1,0]]ⁿ", asymptotic: "Fₙ ∼ φⁿ/√5" }),
       states: () => [
         { id: "sequence", stage: "object", title: "The sequence", tex: ["F_n:\\ 0, 1, 1, 2, 3, 5, 8, 13, \\ldots"], text: "Fₙ also counts tilings of a strip of length n − 1 by squares and dominoes.", say: "The Fibonacci numbers start zero, one, one, two, three, five, eight." },
@@ -183,14 +182,14 @@
       n: { def: 10, min: 0, max: 40 }, gfName: "F(x)", closed: () => "\\frac{1}{\\sqrt5}\\left(\\frac{1}{1-\\varphi x} - \\frac{1}{1-\\psi x}\\right)",
       coeffs: (N) => G.fibonacciGF(N),
       enumerate: (n) => G.binet(n), enumLabel: "Binet's formula, exact in ℚ(√5)",
-      answer: (n, v) => `F${G.subs(n)} = (φ${G.sup(n)} − ψ${G.sup(n)})/√5 = ${big(v)}.`,
+      answer: (n, v) => `F${G.subs(n)} = (φ${G.sup(n)} − ψ${G.sup(n)})/√5 = ${fmtInt(v)}.`,
       reps: () => ({ closed: "x/(1 − x − x²) = (1/√5)(1/(1 − φx) − 1/(1 − ψx))", sequence: "Fₙ = (φⁿ − ψⁿ)/√5", asymptotic: "Fₙ ∼ φⁿ/√5 (pole 1/φ ≈ 0.618)" }),
       states: () => [
         { id: "factor", stage: "encode", title: "Factor the denominator into poles", tex: ["1 - x - x^2 = (1-\\varphi x)(1-\\psi x), \\quad \\varphi = \\frac{1+\\sqrt5}{2},\\ \\psi = \\frac{1-\\sqrt5}{2}"], text: "The poles are at x = 1/φ ≈ 0.618 and x = 1/ψ ≈ −1.618.", say: "Factor the denominator. The poles sit at one over phi and one over psi." },
         { id: "split", stage: "manipulate", title: "Split into two geometric machines", tex: ["\\frac{x}{1-x-x^2} = \\frac{1}{\\sqrt5}\\left(\\frac{1}{1-\\varphi x} - \\frac{1}{1-\\psi x}\\right)"], text: "Each simple pole is a geometric series with ratio φ or ψ.", say: "Split the fraction into two simple pieces. Each piece is a geometric series." },
         { id: "recombine", stage: "manipulate", title: "Coefficients recombine", tex: ["F_n = \\frac{\\varphi^n - \\psi^n}{\\sqrt5}"], text: "Read each geometric coefficient and subtract: Binet's formula. ψⁿ shrinks, so φⁿ/√5 dominates.", say: "Read off each geometric coefficient and subtract. That is Binet's formula, and the phi term dominates." },
       ],
-      checks: (n) => [{ name: "Binet (exact in ℚ(√5)) vs DP recurrence", gf: big(G.binet(n)), other: big(G.fibonacciDP(n + 1)[n]), method: "exact", pass: G.binet(n) === G.fibonacciDP(n + 1)[n] }],
+      checks: (n) => [{ name: "Binet (exact in ℚ(√5)) vs DP recurrence", gf: fmtInt(G.binet(n)), other: fmtInt(G.fibonacciDP(n + 1)[n]), method: "exact", pass: G.binet(n) === G.fibonacciDP(n + 1)[n] }],
     },
     {
       id: "convolution", sayProblem: "Count ordered pairs of nonnegative integers i and j that add up to n.", level: 7, hash: "convolution", aliases: ["cauchy-product", "product"], title: "Cauchy product and convolution", nav: "Convolution", branch: "products", difficulty: 2,
@@ -203,7 +202,7 @@
       coeffs: (N) => G.mul(G.seriesFrom([], N).map(() => 1n), G.seriesFrom([], N).map(() => 1n), N),
       enumerate: (n) => BigInt(range(n + 1).length), enumLabel: "lattice points on i + j = n, listed",
       objects: (n) => objList(range(n + 1).map((i) => `(${i}, ${n - i})`)),
-      answer: (n, v) => `${big(v)} ordered pairs (i, j) with i + j = ${n}.`,
+      answer: (n, v) => `${fmtInt(v)} ordered pairs (i, j) with i + j = ${n}.`,
       reps: () => ({ sequence: "1, 2, 3, 4, …", series: "1 + 2x + 3x² + ⋯", closed: "1/(1 − x)²", class: "SEQ(Z) × SEQ(Z)", matrix: "product grid aᵢbⱼ" }),
       states: (p, n) => [
         { id: "two", stage: "object", title: "Two sequences", tex: ["A(x) = \\sum a_n x^n, \\qquad B(x) = \\sum b_n x^n"], text: "Here aₙ = bₙ = 1: one way to choose each coordinate.", say: "Take two sequences, here both all ones." },
@@ -223,7 +222,7 @@
       coeffs: (N, p) => G.coinChangeGF(denoms(p), N),
       enumerate: (n, p) => BigInt(G.coinSolutions(denoms(p), n).length), enumLabel: "solutions of Σ cᵢdᵢ = n, listed",
       objects: (n, p) => objList(G.coinSolutions(denoms(p), n).map((t) => t.map((c, i) => `${c}×${denoms(p)[i]}`).join(" + "))),
-      answer: (n, v, p) => `${big(v)} ways to make ${n} from coins ${denoms(p).join(", ")}.`,
+      answer: (n, v, p) => `${fmtInt(v)} ways to make ${n} from coins ${denoms(p).join(", ")}.`,
       reps: (p) => ({ series: G.seriesText(G.coinChangeGF(denoms(p), 9)), closed: `1/${denoms(p).map((d) => `(1 − x${d === 1 ? "" : G.sup(d)})`).join("")}`, class: denoms(p).map((d) => `SEQ(Z${G.sup(d)})`).join(" × ") }),
       states: (p, n) => [
         { id: "tracks", stage: "object", title: "Independent tracks", tex: denoms(p).map((d) => `\\text{${d}-cent: } 1 + ${xp(d)} + ${xp(2 * d)} + \\cdots = \\frac{1}{1-${xp(d)}}`), text: "Each denomination is its own repeatable track; the amount it contributes is a multiple of its value.", say: "Each kind of coin is an independent track that can be used any number of times." },
@@ -243,7 +242,7 @@
       coeffs: (N, p) => G.compositionsGF(partsOf(p), N),
       enumerate: (n, p) => BigInt(G.compositionsList(partsOf(p), n).length), enumLabel: "compositions, listed one by one",
       objects: (n, p) => objList(G.compositionsList(partsOf(p), n, 200).map((c) => c.join("+") || "∅")),
-      answer: (n, v, p) => `${big(v)} compositions of ${n} with parts ${partsOf(p).join(", ")}.`,
+      answer: (n, v, p) => `${fmtInt(v)} compositions of ${n} with parts ${partsOf(p).join(", ")}.`,
       reps: (p) => ({ series: G.seriesText(G.compositionsGF(partsOf(p), 9)), closed: `1/(1 − (${partsOf(p).map((s) => (s === 1 ? "x" : "x" + G.sup(s))).join(" + ")}))`, recurrence: `sₙ = ${partsOf(p).map((s) => `sₙ₋${G.subs(s)}`).join(" + ")}`, class: "SEQ(parts)" }),
       states: (p) => [
         { id: "tiles", stage: "object", title: "Compositions as tiles", tex: ["3 = 1+1+1 = 1+2 = 2+1 = 3"], text: "A composition is a row of tiles; order matters.", say: "A composition is a row of tiles, and the order of the tiles matters." },
@@ -262,7 +261,7 @@
       closed: (p) => BUILDS[p.build].tex, coeffs: (N, p) => BUILDS[p.build].coeffs(N),
       enumerate: (n, p) => BigInt(BUILDS[p.build].list(n).length), enumLabel: "objects built and listed",
       objects: (n, p) => objList(BUILDS[p.build].list(n)),
-      answer: (n, v, p) => `${big(v)} objects of size ${n} in ${p.build}.`,
+      answer: (n, v, p) => `${fmtInt(v)} objects of size ${n} in ${p.build}.`,
       reps: (p) => ({ class: p.build, closed: BUILDS[p.build].text, series: G.seriesText(BUILDS[p.build].coeffs(9)) }),
       states: (p) => [
         { id: "atoms", stage: "object", title: "Atoms and operators", tex: ["\\text{CHOICE} \\mapsto A+B,\\quad \\text{PAIR} \\mapsto AB,\\quad \\text{SEQUENCE} \\mapsto \\frac{1}{1-A}"], text: "An atom Z has size 1 and generating function x.", say: "Atoms have size one and become x. Three operators build everything else." },
@@ -281,7 +280,7 @@
       coeffs: (N) => G.compositionsAllGF(N),
       enumerate: (n) => BigInt(G.compositionsList(range(n).map((i) => i + 1), n).length), enumLabel: "outer slots filled with inner blocks, listed",
       objects: (n) => objList(G.compositionsList(range(n).map((i) => i + 1), n).map((c) => c.map((s) => `[${"•".repeat(s)}]`).join("") || "∅")),
-      answer: (n, v) => `${big(v)} = ${n ? `2${G.sup(n - 1)}` : "1"} nested objects of size ${n}.`,
+      answer: (n, v) => `${fmtInt(v)} = ${n ? `2${G.sup(n - 1)}` : "1"} nested objects of size ${n}.`,
       reps: () => ({ closed: "A(B(x)) with A(u) = 1/(1 − u), B(x) = x/(1 − x)", series: "1 + x + 2x² + 4x³ + 8x⁴ + ⋯", class: "SEQ(SEQ≥1(Z))", sequence: "1, 1, 2, 4, 8, … = 2ⁿ⁻¹" }),
       states: () => [
         { id: "outer", stage: "object", title: "Outer structure with slots", tex: ["A(u) = \\frac{1}{1-u} \\quad \\text{(a row of slots)}"], text: "The outer structure only says how many slots there are and in what order.", say: "The outer structure is a row of slots." },
@@ -301,7 +300,7 @@
       coeffs: (N) => G.catalanGF(N),
       enumerate: (n) => (n <= 12 ? BigInt(G.balancedParens(n).length) : G.catalanClosed(n)), enumLabel: "balanced strings listed (closed form beyond n = 12)",
       objects: (n) => objList(n <= 7 ? G.balancedParens(n) : []),
-      answer: (n, v) => `C${G.subs(n)} = ${big(v)} binary trees with ${n} internal nodes.`,
+      answer: (n, v) => `C${G.subs(n)} = ${fmtInt(v)} binary trees with ${n} internal nodes.`,
       reps: () => ({ sequence: "1, 1, 2, 5, 14, 42, …", series: "1 + x + 2x² + 5x³ + 14x⁴ + ⋯", closed: "(1 − √(1 − 4x))/(2x)", recurrence: "Cₙ₊₁ = Σ CₖCₙ₋ₖ", class: "C = ε + Z × C × C", asymptotic: "Cₙ ∼ 4ⁿ/(√π n^{3/2})" }),
       states: () => [
         { id: "tree", stage: "object", title: "A binary tree grows recursively", tex: ["\\mathcal{C} = \\varepsilon + \\mathcal{Z}\\times\\mathcal{C}\\times\\mathcal{C}"], text: "Each internal root contributes one x and two subtrees.", say: "A binary tree is empty, or a root with two subtrees." },
@@ -309,7 +308,7 @@
         { id: "quadratic", stage: "manipulate", title: "Solve the quadratic", tex: ["xC^2 - C + 1 = 0 \\Rightarrow C(x) = \\frac{1 \\pm \\sqrt{1-4x}}{2x}"], text: "Pick the minus sign so that C(0) = 1 is a power series.", say: "Solve the quadratic and take the root that is a power series at zero." },
         { id: "coefficients", stage: "manipulate", title: "Extract coefficients", tex: ["C_n = \\frac{1}{n+1}\\binom{2n}{n}: \\ 1, 1, 2, 5, 14, 42, \\ldots"], text: "Expanding √(1 − 4x) by the binomial theorem gives the Catalan numbers.", say: "Expand the square root by the binomial theorem to get the Catalan numbers." },
       ],
-      checks: (n) => [{ name: "closed form C(2n, n)/(n + 1)", gf: big(G.catalanGF(n + 1)[n]), other: big(G.catalanClosed(n)), method: "exact", pass: G.catalanGF(n + 1)[n] === G.catalanClosed(n) }, ...(n <= 8 ? [{ name: "binary trees enumerated", gf: big(G.catalanGF(n + 1)[n]), other: String(G.binaryTrees(n).length), method: "exact enumeration", pass: G.catalanGF(n + 1)[n] === BigInt(G.binaryTrees(n).length) }] : [])],
+      checks: (n) => [{ name: "closed form C(2n, n)/(n + 1)", gf: fmtInt(G.catalanGF(n + 1)[n]), other: fmtInt(G.catalanClosed(n)), method: "exact", pass: G.catalanGF(n + 1)[n] === G.catalanClosed(n) }, ...(n <= 8 ? [{ name: "binary trees enumerated", gf: fmtInt(G.catalanGF(n + 1)[n]), other: String(G.binaryTrees(n).length), method: "exact enumeration", pass: G.catalanGF(n + 1)[n] === BigInt(G.binaryTrees(n).length) }] : [])],
     },
     {
       id: "lagrange-inversion", sayProblem: "Trees satisfy T equals x times phi of T. Find their coefficients without solving for T.", level: 13, hash: "lagrange-inversion", aliases: ["lagrange"], title: "Lagrange inversion", nav: "Lagrange inversion", branch: "composition", difficulty: 4,
@@ -324,7 +323,7 @@
       egf: (p) => p.phi !== "(1+u)^2",
       enumerate: (n, p) => (p.phi === "(1+u)^2" ? (n >= p.k ? G.toBig(G.lagrange([1, 2, 1], n, p.k)) : 0n) : n <= 5 ? G.rootedLabelledTrees(n) : cayleyByLagrange(n)),
       enumLabel: "Lagrange's formula (and brute-force trees for n ≤ 5, labelled case)",
-      answer: (n, v, p) => (p.phi === "(1+u)^2" ? `[x${G.sup(n)}]T${p.k === 1 ? "" : G.sup(p.k)} = ${p.k}/${n} · [u${G.sup(n - p.k)}](1 + u)${G.sup(2 * n)} = ${big(v)}.` : `${big(v)} = ${n}${G.sup(n - 1)} rooted labelled trees on ${n} vertices.`),
+      answer: (n, v, p) => (p.phi === "(1+u)^2" ? `[x${G.sup(n)}]T${p.k === 1 ? "" : G.sup(p.k)} = ${p.k}/${n} · [u${G.sup(n - p.k)}](1 + u)${G.sup(2 * n)} = ${fmtInt(v)}.` : `${fmtInt(v)} = ${n}${G.sup(n - 1)} rooted labelled trees on ${n} vertices.`),
       reps: () => ({ closed: "T = x(1 + T)², T = C − 1", class: "T = Z × (1 + T)²", sequence: "1, 2, 5, 14, 42, … (Catalan)" }),
       states: (p, n) => [
         { id: "implicit", stage: "object", title: "An implicit equation", tex: [p.phi === "(1+u)^2" ? "T(x) = x\\,\\phi(T(x)), \\quad \\phi(u) = (1+u)^2" : "T(x) = x\\,e^{T(x)}"], text: "A root (x) with an ordered pair of optional subtrees φ(T).", say: "The tree is a root times phi of T, an implicit equation." },
@@ -333,10 +332,10 @@
         { id: "map", stage: "manipulate", title: `Map the coefficient for n = ${n}`, tex: [p.phi === "(1+u)^2" ? `[x^{${n}}]T^{${p.k}} = \\frac{${p.k}}{${n}}[u^{${n - p.k}}](1+u)^{${2 * n}} = \\frac{${p.k}}{${n}}\\binom{${2 * n}}{${n - p.k}}` : `[x^{${n}}]T = \\frac{1}{${n}}[u^{${n - 1}}]e^{${n}u} = \\frac{${n}^{${n - 1}}}{${n}!}`], text: "With φ = (1 + u)² this is the binomial coefficient C(2n, n − k), which for k = 1 is the Catalan number.", say: "For our phi, the answer is a binomial coefficient, and for k equal to one it is the Catalan number." },
       ],
       checks: (n, p) => {
-        if (p.phi !== "(1+u)^2") { const ok = n <= 5; return ok ? [{ name: "rooted labelled trees by brute force vs nⁿ⁻¹", gf: big(B(n) ** B(n - 1)), other: big(G.rootedLabelledTrees(n)), method: "exact enumeration over parent maps", pass: B(n) ** B(n - 1) === G.rootedLabelledTrees(n) }] : []; }
+        if (p.phi !== "(1+u)^2") { const ok = n <= 5; return ok ? [{ name: "rooted labelled trees by brute force vs nⁿ⁻¹", gf: fmtInt(B(n) ** B(n - 1)), other: fmtInt(G.rootedLabelledTrees(n)), method: "exact enumeration over parent maps", pass: B(n) ** B(n - 1) === G.rootedLabelledTrees(n) }] : []; }
         const t = G.power(G.implicitSeries([1, 2, 1], n + 1), p.k, n + 1)[n], l = n >= p.k ? G.toBig(G.lagrange([1, 2, 1], n, p.k)) : 0n;
-        const out = [{ name: "fixed-point iteration vs Lagrange", gf: big(t), other: big(l), method: "exact", pass: t === l }];
-        if (p.k === 1 && n <= 8) out.push({ name: "nonempty binary trees enumerated", gf: big(l), other: String(G.binaryTrees(n).length), method: "exact enumeration", pass: l === BigInt(G.binaryTrees(n).length) });
+        const out = [{ name: "fixed-point iteration vs Lagrange", gf: fmtInt(t), other: fmtInt(l), method: "exact", pass: t === l }];
+        if (p.k === 1 && n <= 8) out.push({ name: "nonempty binary trees enumerated", gf: fmtInt(l), other: String(G.binaryTrees(n).length), method: "exact enumeration", pass: l === BigInt(G.binaryTrees(n).length) });
         return out;
       },
     },
@@ -353,7 +352,7 @@
       egf: (p) => p.view === "labelled",
       enumerate: (n, p) => (p.view === "labelled" ? BigInt(G.permutations(Math.min(n, 8)).length) * (n > 8 ? G.factorial(n) / G.factorial(8) : 1n) : 1n), enumLabel: "label assignments enumerated (n ≤ 8)",
       objects: (n, p) => objList(p.view === "labelled" && n <= 4 ? G.permutations(n).map((q) => q.map((i) => i + 1).join(" ")) : ["•".repeat(n) || "∅"]),
-      answer: (n, v, p) => (p.view === "labelled" ? `${big(v)} = ${n}! labelled rows; the EGF coefficient is ${big(v)}/${n}! = 1.` : `${big(v)} unlabelled row of size ${n}.`),
+      answer: (n, v, p) => (p.view === "labelled" ? `${fmtInt(v)} = ${n}! labelled rows; the EGF coefficient is ${fmtInt(v)}/${n}! = 1.` : `${fmtInt(v)} unlabelled row of size ${n}.`),
       reps: () => ({ sequence: "aₙ = n!: 1, 1, 2, 6, 24, …", series: "Σ n! xⁿ/n! = Σ xⁿ", closed: "1/(1 − x) as an EGF" }),
       states: () => [
         { id: "atoms", stage: "object", title: "Three labelled atoms", tex: ["\\{1, 2, 3\\} \\Rightarrow 3! = 6 \\text{ rows}"], text: "One unlabelled shape explodes into n! labelled objects.", say: "Take three atoms. Once they carry labels, one row becomes six." },
@@ -372,14 +371,14 @@
       coeffs: (N) => G.arrangementsGF(N),
       enumerate: (n) => (n <= 12 ? G.arrangementsEnumerated(n) : G.arrangementsGF(n + 1)[n]), enumLabel: "every (subset, order) pair enumerated",
       objects: (n) => objList(n <= 4 ? G.arrangementsList(n).map((r) => `(${r.join(" ")}) | {${range(n).map((i) => i + 1).filter((i) => !r.includes(i)).join(",")}}`) : []),
-      answer: (n, v) => `${big(v)} labelled splits of {1…${n}}.`,
+      answer: (n, v) => `${fmtInt(v)} labelled splits of {1…${n}}.`,
       reps: () => ({ sequence: "1, 2, 5, 16, 65, 326, …", series: "Σ cₙxⁿ/n!", closed: "eˣ/(1 − x)", class: "SEQ(Z) ⋆ SET(Z)" }),
       states: (p, n) => [
         { id: "dots", stage: "object", title: `Start with ${n} labelled dots`, tex: [`\\{1, \\ldots, ${n}\\} = L \\sqcup R`.replace("\\sqcup", "\\cup")], text: "Choose k labels for the left (A) structure; the remaining n − k go right.", say: "Start with labelled dots and choose which ones go to the left structure." },
         { id: "binomial", stage: "manipulate", title: "The split appears as a binomial", tex: ["c_n = \\sum_{k} \\binom{n}{k} a_k b_{n-k}"], text: "There are C(n, k) ways to choose the left labels; then aₖ and bₙ₋ₖ structures on them.", say: "There are n choose k ways to choose the left labels, then an A structure and a B structure." },
         { id: "egfmul", stage: "manipulate", title: "EGF multiplication produces exactly this", tex: ["\\frac{x^k}{k!}\\cdot\\frac{x^{n-k}}{(n-k)!} = \\binom{n}{k}\\frac{x^n}{n!}"], text: "Multiplying EGFs creates the binomial automatically.", say: "Multiplying exponential generating functions creates the binomial coefficient automatically." },
       ],
-      checks: (n) => { const c = G.arrangementsGF(n + 1)[n], d = G.countsFromEgf(G.qmulSeries(G.egfFromCounts(range(n + 1).map((k) => G.factorial(k))), G.egfFromCounts(range(n + 1).map(() => 1n)), n + 1))[n]; return [{ name: "binomial sum vs product of EGFs", gf: big(c), other: big(d), method: "exact rational", pass: c === d }]; },
+      checks: (n) => { const c = G.arrangementsGF(n + 1)[n], d = G.countsFromEgf(G.qmulSeries(G.egfFromCounts(range(n + 1).map((k) => G.factorial(k))), G.egfFromCounts(range(n + 1).map(() => 1n)), n + 1))[n]; return [{ name: "binomial sum vs product of EGFs", gf: fmtInt(c), other: fmtInt(d), method: "exact rational", pass: c === d }]; },
     },
     {
       id: "exponential-formula", sayProblem: "A labelled object is a set of connected components. Find its generating function from the components.", level: 16, hash: "exponential-formula", aliases: ["set-of-components"], title: "The exponential formula", nav: "Exponential formula", branch: "egf", difficulty: 4,
@@ -393,7 +392,7 @@
       coeffs: (N, p) => (p.kind.startsWith("cycles") ? G.permutationsByExpFormula(N) : G.bellByExpFormula(N)),
       enumerate: (n, p) => (n <= 8 ? BigInt(p.kind.startsWith("cycles") ? G.permutations(n).length : G.setPartitions(n).length) : p.kind.startsWith("cycles") ? G.factorial(n) : G.bellByExpFormula(n + 1)[n]), enumLabel: "objects enumerated (n ≤ 8)",
       objects: (n, p) => objList(n <= 4 ? (p.kind.startsWith("cycles") ? G.permutations(n).map((q) => G.cyclesOf(q).map((c) => `(${c.map((i) => i + 1).join(" ")})`).join("")) : G.setPartitions(n).map((s) => blocksText(s))) : []),
-      answer: (n, v, p) => `${big(v)} ${p.kind.startsWith("cycles") ? "permutations" : "set partitions"} of ${n} labels.`,
+      answer: (n, v, p) => `${fmtInt(v)} ${p.kind.startsWith("cycles") ? "permutations" : "set partitions"} of ${n} labels.`,
       reps: (p) => (p.kind.startsWith("cycles") ? { class: "PERM = SET(CYC)", closed: "exp(Σ xⁿ/n) = 1/(1 − x)", sequence: "n!: 1, 1, 2, 6, 24, …" } : { class: "SETPART = SET(SET≥1(Z))", closed: "exp(eˣ − 1)", sequence: "Bell: 1, 1, 2, 5, 15, 52, …" }),
       states: (p) => [
         { id: "islands", stage: "object", title: "Connected components as islands", tex: [p.kind.startsWith("cycles") ? "C(x) = \\sum_{n\\ge1} (n-1)!\\frac{x^n}{n!} = \\log\\frac{1}{1-x}" : "C(x) = e^x - 1"], text: "Each island is one connected component: a cycle, or a block.", say: "Each island is one connected component." },
@@ -412,14 +411,14 @@
       closed: () => "\\exp\\left(\\sum_{k\\ge1}\\frac{x^k}{k}\\right) = \\frac{1}{1-x}",
       coeffs: (N) => range(N).map((n) => G.factorial(n)),
       enumerate: (n) => (n <= 8 ? BigInt(G.permutations(n).length) : G.factorial(n)), enumLabel: "permutations enumerated (n ≤ 8)",
-      answer: (n, v) => `${big(v)} permutations; by cycles: ${G.stirling1(n + 1)[n].map(big).join(", ")}.`,
+      answer: (n, v) => `${fmtInt(v)} permutations; by cycles: ${G.stirling1(n + 1)[n].map(fmtInt).join(", ")}.`,
       reps: () => ({ class: "PERM = SET(CYC)", closed: "1/(1 − x) (EGF)", matrix: "Stirling numbers c(n, k)", recurrence: "c(n+1, k) = n c(n, k) + c(n, k − 1)" }),
       states: () => [
         { id: "arrows", stage: "object", title: "A permutation as arrows", tex: ["1 \\to 4 \\to 2 \\to 1, \\qquad 3 \\to 5 \\to 3"], text: "Following arrows from any label returns to it: a cycle.", say: "Follow the arrows from any label and you come back to it. That loop is a cycle." },
         { id: "cyc", stage: "encode", title: "Cycles on k labels", tex: ["\\text{CYC}_k: (k-1)! \\text{ cycles}, \\quad \\sum_k (k-1)!\\frac{x^k}{k!} = \\log\\frac{1}{1-x}"], text: "Fix the smallest label first; the rest can follow in (k − 1)! orders.", say: "There are k minus one factorial cycles on k labels. Their generating function is a logarithm." },
         { id: "set", stage: "manipulate", title: "PERMUTATION = SET(CYCLE)", tex: ["\\exp\\left(\\log\\frac{1}{1-x}\\right) = \\frac{1}{1-x} = \\sum n!\\frac{x^n}{n!}"], text: "The exponential formula makes n! inevitable.", say: "A permutation is a set of cycles, and the exponential formula gives n factorial." },
       ],
-      checks: (n) => { const t = G.stirling1(n + 1)[n], e = n <= 7 ? G.stirling1Enumerated(n) : null; return e ? [{ name: "Stirling c(n, k) by recurrence vs enumerated cycle counts", gf: t.map(big).join(","), other: e.map(big).join(","), method: "exact enumeration", pass: t.every((x, i) => x === e[i]) }] : []; },
+      checks: (n) => { const t = G.stirling1(n + 1)[n], e = n <= 7 ? G.stirling1Enumerated(n) : null; return e ? [{ name: "Stirling c(n, k) by recurrence vs enumerated cycle counts", gf: t.map(fmtInt).join(","), other: e.map(fmtInt).join(","), method: "exact enumeration", pass: t.every((x, i) => x === e[i]) }] : []; },
     },
     {
       id: "bivariate", sayProblem: "Count permutations by size and number of cycles at once, and find the mean number of cycles.", level: 18, hash: "bivariate", aliases: ["marking", "bgf"], title: "Bivariate generating functions", nav: "Bivariate (marking)", branch: "marking", difficulty: 4,
@@ -480,7 +479,7 @@
         { id: "cancel", stage: "manipulate", title: "Phasors of unwanted classes cancel", tex: ["\\frac1m\\sum_{j=0}^{m-1}\\omega^{j(n-r)} = \\begin{cases}1, & n \\equiv r \\pmod m\\\\ 0, & \\text{otherwise}\\end{cases}"], text: "For each monomial xⁿ the m phasors either all point the same way or spread evenly and sum to zero.", say: "For one monomial, the phasors either line up or spread evenly around the circle and cancel." },
         { id: "filter", stage: "manipulate", title: "The filter", tex: ["\\sum_{n \\equiv r} a_n = \\frac1m\\sum_{j=0}^{m-1}\\omega^{-rj}A(\\omega^j)"], text: "This is a Fourier projection onto one character of ℤ/mℤ.", say: "So the filter is an average over the roots. It is a Fourier projection onto one character of the cyclic group." },
       ],
-      checks: (n, p) => { const a = filterPoly(p), f = G.rootsFilterExact(a, p.m, p.r % p.m), d = G.residueSum(a, p.m, p.r % p.m); return [{ name: "filter (exact in ℤ[ζ]) vs explicit residue-class enumeration", gf: qstr(f), other: big(d), method: "exact cyclotomic arithmetic", pass: G.qeq(f, Q(d)) }]; },
+      checks: (n, p) => { const a = filterPoly(p), f = G.rootsFilterExact(a, p.m, p.r % p.m), d = G.residueSum(a, p.m, p.r % p.m); return [{ name: "filter (exact in ℤ[ζ]) vs explicit residue-class enumeration", gf: qstr(f), other: fmtInt(d), method: "exact cyclotomic arithmetic", pass: G.qeq(f, Q(d)) }]; },
     },
     {
       id: "finite-vectors", sayProblem: "Represent one plus two x plus three x squared plus four x cubed by its coefficients and by its values at the fourth roots of unity.", level: 21, hash: "finite-vectors", aliases: ["evaluation", "finite-gf"], title: "Finite generating functions as vectors", nav: "Finite GFs as vectors", branch: "fourier", difficulty: 3,
@@ -547,7 +546,7 @@
       closed: (p) => `A(x)B(x) \\bmod (x^{${p.N}} - 1)`,
       coeffs: (N, p) => G.seriesFrom(G.cyclicConvolution(cycA(p.N), cycB(p.N), p.N), N),
       enumerate: (n, p) => G.cyclicByDFT(cycA(p.N), cycB(p.N), p.N)[n % p.N], enumLabel: "IDFT(DFT(a)·DFT(b)), exact",
-      answer: (n, v, p) => `c${G.subs(n % p.N)} = ${big(G.cyclicConvolution(cycA(p.N), cycB(p.N), p.N)[n % p.N])} (wrap-around included).`,
+      answer: (n, v, p) => `c${G.subs(n % p.N)} = ${fmtInt(G.cyclicConvolution(cycA(p.N), cycB(p.N), p.N)[n % p.N])} (wrap-around included).`,
       reps: (p) => ({ sequence: `a = [${cycA(p.N)}], b = [${cycB(p.N)}], c = [${G.cyclicConvolution(cycA(p.N), cycB(p.N), p.N).map(String)}]`, closed: `A(x)B(x) mod (x${G.sup(p.N)} − 1)` }),
       states: () => [
         { id: "direct", stage: "manipulate", title: "Left: cyclic convolution directly", tex: ["c_n = \\sum_k a_k b_{(n-k) \\bmod N}"], text: "The convolution grid is wrapped on a cylinder: diagonals that fall off the end come back at the start.", say: "Directly, the convolution grid wraps around a cylinder, so diagonals that run off the end come back." },
@@ -566,7 +565,7 @@
       n: { def: 2, min: 0, max: 4 }, params: { size: { label: "transform length", values: [8, 16, 64, 1024], def: 8 } }, gfName: "A(x)B(x)",
       closed: () => "(1+2x+3x^2)(4+5x+6x^2)", coeffs: (N) => G.seriesFrom(G.mul([1n, 2n, 3n], [4n, 5n, 6n]), N),
       enumerate: (n) => G.multiplyByDFT([1, 2, 3], [4, 5, 6])[n] ?? 0n, enumLabel: "evaluate → multiply → interpolate, exact",
-      answer: (n, v) => `[x${G.sup(n)}] = ${big(v)}; product 4 + 13x + 28x² + 27x³ + 18x⁴.`,
+      answer: (n, v) => `[x${G.sup(n)}] = ${fmtInt(v)}; product 4 + 13x + 28x² + 27x³ + 18x⁴.`,
       reps: (p) => ({ sequence: "[4, 13, 28, 27, 18]", closed: "(1 + 2x + 3x²)(4 + 5x + 6x²)", matrix: `naive: ${p.size}² = ${p.size * p.size} products; FFT: (N/2)log₂N = ${(p.size / 2) * Math.log2(p.size)} twiddle products` }),
       states: () => [
         { id: "naive", stage: "manipulate", title: "Coefficient method: O(n²)", tex: ["c_n = \\sum_k a_k b_{n-k}"], text: "Every pair of coefficients meets once.", say: "The direct method multiplies every pair of coefficients." },
@@ -587,14 +586,14 @@
       coeffs: (N) => G.no11GF(N),
       enumerate: (n) => (n <= 16 ? BigInt(G.no11Strings(n).length) : G.transferCounts(n + 1)[n]), enumLabel: "all 2ⁿ strings filtered (n ≤ 16)",
       objects: (n) => objList(n <= 8 ? G.no11Strings(n).map((s) => s || "ε") : []),
-      answer: (n, v) => `${big(v)} strings of length ${n} avoid 11.`,
+      answer: (n, v) => `${fmtInt(v)} strings of length ${n} avoid 11.`,
       reps: () => ({ matrix: "M = [[1, 1], [1, 0]]", recurrence: "sₙ = sₙ₋₁ + sₙ₋₂", closed: "(1 + x)/(1 − x − x²)", sequence: "1, 2, 3, 5, 8, 13, …", class: "words accepted by a 2-state automaton" }),
       states: () => [
         { id: "automaton", stage: "object", title: "A finite-state automaton", tex: ["\\text{state 0: last bit 0 (or empty)}, \\quad \\text{state 1: last bit 1}"], text: "From state 0 you may write 0 or 1; from state 1 only 0.", say: "Two states remember the last bit. After a one, only a zero is allowed." },
         { id: "matrix", stage: "encode", title: "The transfer matrix", tex: ["v_{n+1} = Mv_n, \\quad M = \\begin{bmatrix}1&1\\\\1&0\\end{bmatrix}, \\quad v_0 = \\begin{bmatrix}1\\\\0\\end{bmatrix}"], text: "Row i of M lists the transitions into state i.", say: "The transfer matrix moves the counts of strings by state one step." },
         { id: "resolvent", stage: "manipulate", title: "Sum the geometric series of matrices", tex: ["\\sum_{n\\ge0} v_n x^n = (I - xM)^{-1}v_0", "S(x) = \\frac{1+x}{1-x-x^2}"], text: "Cramer's rule makes every entry rational with denominator det(I − xM) = 1 − x − x².", say: "Summing gives the inverse of I minus x M, a rational function with denominator one minus x minus x squared." },
       ],
-      checks: (n) => { const t = G.transferCounts(n + 1)[n], g = G.no11GF(n + 1)[n]; return [{ name: "transfer matrix vₙ vs rational GF", gf: big(g), other: big(t), method: "exact", pass: t === g }, { name: "equals Fₙ₊₂", gf: big(g), other: big(G.fibonacciDP(n + 3)[n + 2]), method: "exact", pass: g === G.fibonacciDP(n + 3)[n + 2] }]; },
+      checks: (n) => { const t = G.transferCounts(n + 1)[n], g = G.no11GF(n + 1)[n]; return [{ name: "transfer matrix vₙ vs rational GF", gf: fmtInt(g), other: fmtInt(t), method: "exact", pass: t === g }, { name: "equals Fₙ₊₂", gf: fmtInt(g), other: fmtInt(G.fibonacciDP(n + 3)[n + 2]), method: "exact", pass: g === G.fibonacciDP(n + 3)[n + 2] }]; },
     },
     {
       id: "partitions", sayProblem: "Count the ways to write n as an unordered sum of positive integers.", level: 27, hash: "partitions", aliases: ["integer-partitions", "q-series"], title: "Partitions and q-series", nav: "Integer partitions", branch: "rational", difficulty: 3,
@@ -608,7 +607,7 @@
       coeffs: (N, p) => partGF(p.kind, N),
       enumerate: (n, p) => (n <= 30 ? BigInt(partList(p.kind, n).length) : partGF(p.kind, n + 1)[n]), enumLabel: "partitions listed (n ≤ 30)",
       objects: (n, p) => objList(n <= 12 ? partList(p.kind, n).map((q) => q.join("+") || "∅") : []),
-      answer: (n, v, p) => `p${p.kind === "any" ? "" : `_${p.kind}`}(${n}) = ${big(v)}.`,
+      answer: (n, v, p) => `p${p.kind === "any" ? "" : `_${p.kind}`}(${n}) = ${fmtInt(v)}.`,
       reps: (p) => ({ closed: { any: "Π 1/(1 − xᵏ)", distinct: "Π (1 + xᵏ)", odd: "Π 1/(1 − x²ᵏ⁻¹)", "at most 3": "1/((1 − x)(1 − x²)(1 − x³))" }[p.kind], series: G.seriesText(partGF(p.kind, 10)) }),
       states: () => [
         { id: "ferrers", stage: "object", title: "Ferrers diagrams", tex: ["5 + 3 + 2 + 1 = 11"], text: "A partition is a multiset of parts, drawn as rows of dots.", say: "A partition is drawn as rows of dots, longest first." },
@@ -627,7 +626,7 @@
       coeffs: (N) => G.partitionsGF(N, { distinct: true }),
       enumerate: (n) => (n <= 40 ? BigInt(G.partitionsList(n, { odd: true }).length) : G.partitionsGF(n + 1, { parts: "odd" })[n]), enumLabel: "odd-part partitions listed",
       objects: (n) => objList(n <= 12 ? G.partitionsList(n, { distinct: true }).map((q) => q.join("+") || "∅") : []),
-      answer: (n, v) => `${big(v)} distinct-part partitions = ${big(v)} odd-part partitions of ${n}.`,
+      answer: (n, v) => `${fmtInt(v)} distinct-part partitions = ${fmtInt(v)} odd-part partitions of ${n}.`,
       reps: () => ({ closed: "Π(1 + xᵏ) = Π 1/(1 − x²ᵏ⁻¹)", series: G.seriesText(G.partitionsGF(10, { distinct: true })) }),
       states: () => [
         { id: "two", stage: "object", title: "Two families", tex: ["D(x) = \\prod_{k\\ge1}(1+x^k), \\quad O(x) = \\prod_{k\\ge1}\\frac{1}{1-x^{2k-1}}"], text: "Distinct parts: each size used at most once. Odd parts: only odd sizes, any multiplicity.", say: "One family uses each part at most once. The other uses only odd parts." },
@@ -708,7 +707,7 @@
       n: { def: 4, min: 0, max: 14 }, gfName: "\\Delta A(t)", closed: () => "\\frac{1}{1-x-y} \\to \\sum_n \\binom{2n}{n}t^n = \\frac{1}{\\sqrt{1-4t}}",
       coeffs: (N) => G.centralBinomials(N),
       enumerate: (n) => G.latticeGrid(n + 1)[n][n], enumLabel: "paths counted by lattice dynamic programming",
-      answer: (n, v) => `[x${G.sup(n)}y${G.sup(n)}] = C(${2 * n}, ${n}) = ${big(v)} paths.`,
+      answer: (n, v) => `[x${G.sup(n)}y${G.sup(n)}] = C(${2 * n}, ${n}) = ${fmtInt(v)} paths.`,
       reps: () => ({ closed: "1/(1 − x − y)", matrix: "a_{m,n} = C(m + n, m)", sequence: "diagonal 1, 2, 6, 20, 70, …" }),
       states: () => [
         { id: "lattice", stage: "object", title: "Coefficients on the lattice", tex: ["A(x,y) = \\sum a_{m,n}x^my^n = \\frac{1}{1-x-y}"], text: "Cell (m, n) holds the number of paths to it.", say: "Put each coefficient on its lattice point." },
@@ -735,8 +734,10 @@
 
   /* ---------- small helpers used by the lessons ---------- */
   const xp = (d) => (d === 1 ? "x" : `x^{${d}}`);
-  function denoms(p) { return p.coins.split(",").map((s) => Number(s.trim())); }
-  function partsOf(p) { return p.parts.split(",").map((s) => Number(s.trim())); }
+  /* A comma-separated choice such as "1, 2, 5" as numbers. */
+  const numList = (text) => text.split(",").map((s) => Number(s.trim()));
+  const denoms = (p) => numList(p.coins);
+  const partsOf = (p) => numList(p.parts);
   function blocksText(s) { const blocks = []; s.forEach((b, i) => { (blocks[b] ??= []).push(i + 1); }); return blocks.map((b) => `{${b.join(",")}}`).join(""); }
   /* n! [xⁿ]T for T = x e^T, by Lagrange: n! · (1/n) [u^{n−1}] e^{nu} = n! · n^{n−1}/(n · (n−1)!), exactly. */
   function cayleyByLagrange(n) { return G.toBig(G.qmul(Q(G.factorial(n)), G.qdiv(Q(B(n) ** B(n - 1), G.factorial(n - 1)), Q(n)))); }
@@ -747,8 +748,10 @@
   function cycA(N) { return range(N).map((i) => B(i + 1)); }
   function cycB(N) { return range(N).map((i) => (i < 2 ? 1n : 0n)); }
   function polyTex(a) { return a.map((c, n) => `${n && c >= 0 ? "+" : ""}${c === 1 && n ? "" : c}${n === 0 ? "" : n === 1 ? "x" : `x^{${n}}`}`).join(" "); }
-  function partGF(kind, N) { return kind === "distinct" ? G.partitionsGF(N, { distinct: true }) : kind === "odd" ? G.partitionsGF(N, { parts: "odd" }) : kind === "at most 3" ? G.partitionsGF(N, { maxPart: 3 }) : G.partitionsGF(N); }
-  function partList(kind, n) { return kind === "distinct" ? G.partitionsList(n, { distinct: true }) : kind === "odd" ? G.partitionsList(n, { odd: true }) : kind === "at most 3" ? G.partitionsList(n, { maxPart: 3 }) : G.partitionsList(n); }
+  /* Each partition kind as options for the product (partitionsGF) and for the enumeration (partitionsList); any other kind is unrestricted. */
+  const PART_KINDS = { distinct: [{ distinct: true }, { distinct: true }], odd: [{ parts: "odd" }, { odd: true }], "at most 3": [{ maxPart: 3 }, { maxPart: 3 }] };
+  const partGF = (kind, N) => G.partitionsGF(N, (PART_KINDS[kind] || [])[0]);
+  const partList = (kind, n) => G.partitionsList(n, (PART_KINDS[kind] || [])[1]);
   /* Exact DFT checks shared by the Fourier lessons: IDFT(DFT(a)) = a, and the float phasor sums agree. */
   function fourierChecks(N) {
     const a = fourierVec(N), v = G.dftExact(a, N), back = G.idftExact(v, N), f = G.dftFloat(a, N);

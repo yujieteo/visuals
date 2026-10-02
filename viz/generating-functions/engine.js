@@ -351,7 +351,6 @@
   /* ζ^k as an element. */
   function zeta(k, N) { const m = ((k % N) + N) % N, p = zeros(m + 1); p[m] = 1n; return zreduce(p, N); }
   const zadd = (a, b) => a.map((x, i) => x + b[i]);
-  const zsub = (a, b) => a.map((x, i) => x - b[i]);
   const zmul = (a, b, N) => zreduce(mul(a, b), N);
   const zIsInt = (a) => a.slice(1).every((x) => x === 0n);
   const zeq = (a, b) => a.length === b.length && a.every((x, i) => x === b[i]);
@@ -476,7 +475,6 @@
   function risingCoefficient(alpha, n) { let r = Q(1); for (let j = 0; j < n; j++) r = qmul(r, qdiv(qadd(toQ(alpha), Q(j)), Q(j + 1))); return r; }
   const singularityEstimate = (alpha, n) => Math.pow(n, qnum(alpha) - 1) / gamma(qnum(alpha));
   const catalanLogEstimate = (n) => n * Math.log(4) - 0.5 * Math.log(Math.PI) - 1.5 * Math.log(n);
-  const catalanEstimate = (n) => Math.exp(n * Math.log(4) - 0.5 * Math.log(Math.PI) - 1.5 * Math.log(n));
   const fibonacciEstimate = (n) => Math.pow((1 + Math.sqrt(5)) / 2, n) / Math.sqrt(5);
   /* Ratio exact/estimate, computed through logs so huge coefficients never overflow. */
   const ratioToEstimate = (exactBig, logEstimate) => Math.exp(bigLog(exactBig) - logEstimate);
@@ -572,12 +570,12 @@
         case "left": case "right": case "big": case "Big": case "bigl": case "bigr": case "Bigl": case "Bigr": {
           while (s[i] === " ") i++;
           if (s[i] === ".") { i++; return ""; }
-          if (s[i] === "\\") { const c = parseCommand(); return c; }
+          if (s[i] === "\\") return parseCommand();
           return esc(s[i++]);
         }
         case "bmod": return " mod ";
         case "pmod": return ` (mod ${readGroup()})`;
-        case "begin": { const env = readRawGroup(); return parseEnv(env); }
+        case "begin": return parseEnv(readRawGroup());
         case "displaystyle": case "limits": case "nolimits": return "";
         default:
           if (FUNCS.has(name)) return `<span class="fn">${name}</span>`;
@@ -598,8 +596,7 @@
     }
     function parseSeq(end) { let out = ""; while (i < s.length && s[i] !== end) out += parseOne(); if (end && s[i] !== end) throw new Error(`texToHtml: missing ${end} in ${s}`); return out; }
     /* Binary spacing, except where a sign is unary: at the start, or after an opening bracket, a script or an operator. */
-    const html = parseSeq(undefined).replace(/ {2,}/g, " ").replace(/(^|[(\[{]|<sup>|<sub>|<span class="(?:nu|de|sqa|mc)">) ([−+±]) /g, "$1$2").replace(/([,=≤≥≡→↦∼≈≅]) ([−+±]) /g, "$1 $2").replace(/ {2,}/g, " ").trim();
-    return html;
+    return parseSeq(undefined).replace(/ {2,}/g, " ").replace(/(^|[(\[{]|<sup>|<sub>|<span class="(?:nu|de|sqa|mc)">) ([−+±]) /g, "$1$2").replace(/([,=≤≥≡→↦∼≈≅]) ([−+±]) /g, "$1 $2").replace(/ {2,}/g, " ").trim();
   }
 
   /* ---------- formatting helpers shared by the page and the decks ---------- */
@@ -645,9 +642,9 @@
     permutations, cyclesOf, stirling1, cyclesBGF, stirling1Enumerated, permutationsByExpFormula, bellByExpFormula, setPartitions,
     arrangementsGF, arrangementsEnumerated, arrangementsList, dicePGF, diceEnumerated, pgfMean,
     partitionsGF, partitionsList, evenGF, oddGF, notMultipleOf3GF, compositionsAllGF, latticeGrid, centralBinomials,
-    cyclotomic, zreduce, zeta, zadd, zsub, zmul, zeq, zIsInt, evalAtRoot, dftExact, idftExact, cyclicConvolution, cyclicByDFT, rootsFilterExact, residueSum,
+    cyclotomic, zreduce, zeta, zadd, zmul, zeq, zIsInt, evalAtRoot, dftExact, idftExact, cyclicConvolution, cyclicByDFT, rootsFilterExact, residueSum,
     zToComplex, zExactString, C, cadd, csub, cmul, cabs, root, phasorPath, dftFloat, fft, evenOddSplitHolds, multiplyByDFT,
-    gamma, risingCoefficient, singularityEstimate, catalanEstimate, catalanLogEstimate, fibonacciEstimate, ratioToEstimate, saddleEstimate, contourMagnitude,
+    gamma, risingCoefficient, singularityEstimate, catalanLogEstimate, fibonacciEstimate, ratioToEstimate, saddleEstimate, contourMagnitude,
     texToHtml, esc, sup, subs, seriesText, fmtNum, fmtComplex,
   };
 });

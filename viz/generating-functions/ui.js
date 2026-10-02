@@ -17,7 +17,7 @@
   function scripts(h) { return h.replace(/\^\{([^{}]+)\}/g, "<sup>$1</sup>").replace(/_\{([^{}]+)\}/g, "<sub>$1</sub>").replace(/\^([A-Za-z0-9])/g, "<sup>$1</sup>"); }
   const svg = (w, h, inner, alt) => `<svg viewBox="0 0 ${w} ${h}" width="${w}" role="img" aria-label="${esc(alt)}"><title>${esc(alt)}</title>${inner}</svg>`;
   const line = (x1, y1, x2, y2, cls = "l-muted", extra = "") => `<line x1="${f(x1)}" y1="${f(y1)}" x2="${f(x2)}" y2="${f(y2)}" class="${cls}" ${extra}/>`;
-  const arrow = (x1, y1, x2, y2, cls = "l-acc") => `<line x1="${f(x1)}" y1="${f(y1)}" x2="${f(x2)}" y2="${f(y2)}" class="${cls}" marker-end="url(#${({ "l-c2": "arr-c2", "l-c3": "arr-c3", "l-muted": "arr-muted" })[cls] || "arr"})"/>`;
+  const arrow = (x1, y1, x2, y2, cls = "l-acc") => line(x1, y1, x2, y2, cls, `marker-end="url(#${({ "l-c2": "arr-c2", "l-c3": "arr-c3", "l-muted": "arr-muted" })[cls] || "arr"})"`);
   const text = (x, y, s, cls = "", anchor = "middle") => `<text x="${f(x)}" y="${f(y)}" text-anchor="${anchor}" class="${cls}">${esc(s)}</text>`;
   const f = (x) => (Math.round(x * 100) / 100).toString();
   const say = (msg) => { const el = $("live"); el.textContent = ""; setTimeout(() => { el.textContent = msg; }, 30); };
@@ -732,7 +732,7 @@
   function currentReport(kind) {
     const r = S.route;
     if (kind === "full") return { report: L.fullReport(), name: "generating-functions-core.md", what: "Full core deck" };
-    if ((kind === "problem" || (!kind && r.page === "problem")) && r.page === "problem") return { report: L.problemReport(r.k), name: `generating-functions-problem-${r.k}.md`, what: `Problem ${r.k}` };
+    if ((!kind || kind === "problem") && r.page === "problem") return { report: L.problemReport(r.k), name: `generating-functions-problem-${r.k}.md`, what: `Problem ${r.k}` };
     if (r.page === "lesson") { const l = L.lesson(r.id); return { report: L.lessonReport(l.id, r.params, r.n), name: `generating-functions-${l.hash}.md`, what: `Lesson: ${l.title}` }; }
     return { report: L.fullReport(), name: "generating-functions-core.md", what: "Full core deck (no lesson selected)" };
   }
