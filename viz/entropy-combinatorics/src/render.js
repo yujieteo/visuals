@@ -26,11 +26,28 @@
   const IGNORE = new Set(["left", "right", "big", "Big", "bigl", "bigr", "Bigl", "Bigr", "displaystyle", "textstyle", "limits"]);
   const CAL = { A: "𝒜", B: "ℬ", C: "𝒞", D: "𝒟", E: "ℰ", F: "ℱ", G: "𝒢", H: "ℋ", L: "ℒ", M: "ℳ", P: "𝒫", S: "𝒮", T: "𝒯", X: "𝒳" };
   const BB = { E: "𝔼", Z: "ℤ", R: "ℝ", N: "ℕ", P: "ℙ" };
+  /* Symbols set as relations (with relation spacing); \sum and \prod are set as big operators. */
+  const RELS = new Set(["le", "leq", "ge", "geq", "ne", "neq", "in", "subseteq", "approx", "lesssim", "to", "Rightarrow", "iff"]);
+  const BIG = new Set(["sum", "prod"]);
+  const alphabet = (map) => (t) => [...t].map((ch) => map[ch] || ch).join("");
+  const frac = (a, b, cls = "frac") => `<span class="${cls}"><span>${a}</span><span>${b}</span></span>`;
+  /* Commands with arguments: each reads its arguments through the parser p ({ group, rawText }). */
+  const COMMANDS = {
+    frac: (p) => frac(p.group(), p.group()),
+    binom: (p) => `<span class="binom"><span class="paren">(</span>${frac(p.group(), p.group(), "frac nobar")}<span class="paren">)</span></span>`,
+    sqrt: (p) => `√<span class="ol">${p.group()}</span>`,
+    text: (p) => `<span class="up">${esc(p.rawText())}</span>`,
+    operatorname: (p) => `<span class="up op">${esc(p.rawText())}</span>`,
+    mathcal: (p) => alphabet(CAL)(p.rawText()),
+    mathbb: (p) => alphabet(BB)(p.rawText()),
+    mathbf: (p) => `<b>${esc(p.rawText())}</b>`,
+  };
+  COMMANDS.tfrac = COMMANDS.dfrac = COMMANDS.frac;
+  COMMANDS.mathrm = COMMANDS.textrm = COMMANDS.text;
 
   function tex(src, unknown = []) {
     let i = 0;
     const s = String(src);
-    const peek = () => s[i];
     function group() {
       /* Read one argument: a {group}, a \command or one character. */
       while (s[i] === " ") i++;
@@ -64,16 +81,9 @@
       else name = s[i++] || "";
       if (name === "\\") return "";
       if (IGNORE.has(name)) return "";
-      if (name === "frac" || name === "tfrac" || name === "dfrac") { const a = group(), b = group(); return `<span class="frac"><span>${a}</span><span>${b}</span></span>`; }
-      if (name === "binom") { const a = group(), b = group(); return `<span class="binom"><span class="paren">(</span><span class="frac nobar"><span>${a}</span><span>${b}</span></span><span class="paren">)</span></span>`; }
-      if (name === "sqrt") return `√<span class="ol">${group()}</span>`;
-      if (name === "text" || name === "mathrm" || name === "textrm") return `<span class="up">${esc(rawText())}</span>`;
-      if (name === "operatorname") return `<span class="up op">${esc(rawText())}</span>`;
-      if (name === "mathcal") { const t = rawText(); return [...t].map((ch) => CAL[ch] || ch).join(""); }
-      if (name === "mathbb") { const t = rawText(); return [...t].map((ch) => BB[ch] || ch).join(""); }
-      if (name === "mathbf") return `<b>${esc(rawText())}</b>`;
+      if (Object.hasOwn(COMMANDS, name)) return COMMANDS[name](parser);
       if (OPS.has(name)) return `<span class="up op">${name}</span>`;
-      if (name in SYM) return name === "sum" || name === "prod" ? `<span class="bigop">${SYM[name]}</span>` : /^(le|leq|ge|geq|ne|neq|in|subseteq|approx|lesssim|to|Rightarrow|iff)$/.test(name) ? `<span class="rel">${SYM[name]}</span>` : SYM[name];
+      if (name in SYM) return BIG.has(name) ? `<span class="bigop">${SYM[name]}</span>` : RELS.has(name) ? `<span class="rel">${SYM[name]}</span>` : SYM[name];
       unknown.push(name);
       return esc("\\" + name);
     }
@@ -90,7 +100,7 @@
       }
       return out;
     }
-    void peek;
+    const parser = { group, rawText };
     return seq(undefined);
   }
 

@@ -462,6 +462,15 @@
   function fullscreen() { const el = $("present"); try { if (doc.fullscreenElement) doc.exitFullscreen(); else if (el.requestFullscreen) el.requestFullscreen().catch(() => say("Fullscreen is not available here.")); } catch { say("Fullscreen is not available here."); } }
 
   /* ---------- wiring ---------- */
+  /* Where each mode button goes from the current lesson: its own page, its guided proof, its problem
+     level, or the comparison and encoding last open. */
+  const MODE_ROUTES = {
+    explore: (l) => `#${l.id}`,
+    guided: (l) => `#guided/${l.id}`,
+    problems: (l) => { const prob = Ls.PROBLEMS.find((p) => p.lesson === l.id); return `#problems/${prob ? prob.level : S.problem}`; },
+    compare: () => `#compare/${S.compare}`,
+    encode: () => `#encode/${S.encode}`,
+  };
   function wire() {
     const main = $("main");
     main.addEventListener("click", onMainClick);
@@ -474,8 +483,7 @@
     main.addEventListener("keydown", onKey);
     $("modes").addEventListener("click", (e) => {
       const b = e.target.closest("[data-mode]"); if (!b) return;
-      const mode = b.dataset.mode, l = curLesson(), prob = Ls.PROBLEMS.find((p) => p.lesson === l.id);
-      go(mode === "explore" ? `#${l.id}` : mode === "guided" ? `#guided/${l.id}` : mode === "problems" ? `#problems/${prob ? prob.level : S.problem}` : mode === "compare" ? `#compare/${S.compare}` : `#encode/${S.encode}`);
+      go(MODE_ROUTES[Object.hasOwn(MODE_ROUTES, b.dataset.mode) ? b.dataset.mode : "encode"](curLesson()));
     });
     $("units").addEventListener("click", (e) => { const b = e.target.closest("[data-unit]"); if (b) setUnit(b.dataset.unit); });
     $("menu-btn").addEventListener("click", () => { const open = doc.body.classList.toggle("navopen"); $("menu-btn").setAttribute("aria-expanded", String(open)); if (open) $("nav").querySelector("a").focus(); });

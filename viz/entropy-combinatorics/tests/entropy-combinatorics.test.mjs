@@ -281,3 +281,21 @@ test("the no-JavaScript reference covers spec §76 with the engine's numbers", (
   assert.match(main, /449\.728/, "2^(10 h(0.3)) from the engine");
   assert.match(main, /2\.828/, "C6 Bregman bound from the engine");
 });
+
+test("the TeX subset sets each argument command, relation and big operator, and records unknown commands", () => {
+  const unknown = [];
+  const t = (s) => R.tex(s, unknown);
+  assert.equal(t("\\frac{a}{b}"), t("\\dfrac{a}{b}"));
+  assert.equal(t("\\tfrac12"), '<span class="frac"><span>1</span><span>2</span></span>');
+  assert.equal(t("\\binom{n}{k}"), '<span class="binom"><span class="paren">(</span><span class="frac nobar"><span><i>n</i></span><span><i>k</i></span></span><span class="paren">)</span></span>');
+  assert.equal(t("\\sqrt{x}"), '√<span class="ol"><i>x</i></span>');
+  assert.equal(t("\\text{a<b}"), '<span class="up">a&lt;b</span>');
+  assert.equal(t("\\mathrm{d}"), t("\\textrm{d}"));
+  assert.equal(t("\\mathcal{AQ}\\mathbb{E}"), "𝒜Q𝔼");
+  assert.equal(t("\\le"), '<span class="rel">≤</span>');
+  assert.equal(t("\\sum"), '<span class="bigop">∑</span>');
+  assert.equal(t("\\alpha"), "α");
+  assert.deepEqual(unknown, []);
+  assert.equal(t("\\nosuch"), "\\nosuch");
+  assert.deepEqual(unknown, ["nosuch"]);
+});
