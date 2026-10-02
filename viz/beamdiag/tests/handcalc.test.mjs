@@ -181,14 +181,72 @@ test("the beamdswitch deck carries the hand calculations as their own narrated s
     assert.equal(md.match(/^::: narration$/gm).length, deck.frames.length, what);
     assert.equal(deck.meta.voice, "bf_emma", what);
   }
-  // A long beam's deck carries a slide for every segment, as the Markdown does.
+  // A long beam's deck opens a slide for every segment, as the Markdown does.
   const c = fixtures.cases.find((x) => x.id === "random-1"), r = solved(c.model);
   const deck = parseDeck(H.deck(H.beamReport(r, { units: "N-mm" })));
-  const segs = deck.frames.filter((f) => f.section === "Hand calculations" && /^Segment \d+:/.test(f.title));
+  const segs = deck.frames.filter((f) => f.section === "Hand calculations" && /^Segment \d+: x = /.test(f.title));
   assert.equal(segs.length, r.displacements.length - 1);
   const full = parseDeck(H.markdown(r, { units: "N-mm" })).frames.filter((f) => /^Segment \d+:/.test(f.title));
   assert.equal(full.length, r.displacements.length - 1);
 });
+
+/* What fits on one beamdswitch slide, as measured in beamdswitch (tests/browser.test.mjs renders every
+   preset's deck there): the 1136 × 506 px body holds about 12 rows of 30 px text, where a paragraph
+   wraps after about 80 characters of Markdown, a display equation takes 2 rows (1.2 more per extra
+   line, 0.5 more with a fraction) and fits the width while it draws about 63 characters, a table row
+   takes 1.1 rows and a list item a row per 80 characters; a title stays on one line up to about 53
+   characters. A hand-calculation slide is held inside these, so it fits at full size. */
+const SLIDE = { rows: 12, eqChars: 60, titleChars: 50 };
+const drawn = (tex) => tex.replace(/\\(?:mathrm|text)\{([^}]*)\}/g, "$1").replace(/\\times 10\^\{(-?\d+)\}/g, "×10$1")
+  .replace(/\\(?:left|right|bigl|bigr|begin\{aligned\}|end\{aligned\})/g, "").replace(/\\[,;: ]/g, " ")
+  .replace(/\\qquad/g, "    ").replace(/\\quad/g, "  ").replace(/\\frac\{1\}\{EI\}/g, "EI").replace(/\\frac/g, "")
+  .replace(/\\\\/g, "").replace(/\\[a-zA-Z]+/g, "x").replace(/[{}^_&]/g, "").length;
+/* Rows and widest equation line of a slide body, read from its Markdown. */
+function measureBody(md) {
+  let rows = 0, widest = 0;
+  const wraps = (t) => Math.ceil(t.length / 80);
+  for (const block of md.split(/\n\n+/)) {
+    const tex = block.match(/^\$\$ (.+) \$\$$/)?.[1];
+    if (tex != null) {
+      const lines = tex.split(" \\\\ "), lhs = lines[0].includes("={}&") ? lines[0].split("={}&")[0] : "";
+      rows += 0.8 + 1.2 * lines.length + (/\\frac/.test(tex) ? 0.5 : 0);
+      lines.forEach((l, i) => { widest = Math.max(widest, drawn(i ? lhs + l : l)); });
+    } else if (block.startsWith("| ")) rows += 1.1 * (block.split("\n").length - 1);
+    else if (block.startsWith("- ")) rows += block.split("\n").reduce((n, l) => n + wraps(l.slice(2)), 0);
+    else rows += wraps(block);
+  }
+  return { rows, widest };
+}
+const numbersOf = (blocks) => textOf(blocks).match(/\d[\d.,]*/g) || [];
+
+test("every hand-calculation slide of the deck fits beamdswitch's slide, narrated, with every number the page shows", () => {
+  const random = fixtures.cases.filter((c) => /^random-|continuous-32/.test(c.id)).map((c) => ({ id: c.id, model: c.model }));
+  // Determinate beams with many loads, whose sums of forces and moments wrap over many lines.
+  const loaded = [12, 14].flatMap((n) => [["simply supported", [{ kind: "pin", x: 0 }, { kind: "pin", x: 10 }]], ["cantilever", [{ kind: "fixed", x: 0 }]]]
+    .map(([kind, supports]) => ({ id: `${kind}, ${n} point loads`, model: presetModel({ length: 10, material: "steel", section: { shape: "rect", b: 0.1, h: 0.2 }, supports,
+      loads: Array.from({ length: n }, (_, i) => ({ kind: "point", x: 0.37 + i * 9.1 / n, F: -1234.567 * (i + 1) })) }) })));
+  const beams = [...BEAMS.map((p) => ({ id: p.id, model: presetModel(p) })), ...random, ...loaded];
+  for (const { id, model } of beams) for (const units of UNITS) for (const origin of ORIGINS) {
+    const r = solved(model), what = `${id} ${units} ${origin}`, at = r.model.length / 3;
+    // Split only on the deck: each frame's slides hold its blocks, in order, with the same numbers.
+    for (const f of H.frames(r, { units, origin, at }).flatMap((s) => s.frames)) {
+      const slides = H.slidesOf(f);
+      assert.deepEqual(slides.flatMap((s) => numbersOf(s.blocks)), numbersOf(f.blocks), `${what}: "${f.title}" keeps every number`);
+      assert.equal(slides[0].title, f.deckTitle || f.title, what);
+      for (const s of slides) assert.ok(splitSentences(s.narration).length > 0, `${what}: "${s.title}" is narrated`);
+    }
+    const deck = parseDeck(H.deck(H.beamReport(r, { units, origin, at })));
+    const hand = deck.frames.filter((f) => f.section === "Hand calculations" && f.kind === "frame");
+    for (const f of hand) {
+      const body = textOfDeckFrame(f), { rows, widest } = measureBody(body);
+      assert.ok(rows <= SLIDE.rows, `${what}: "${f.title}" takes ${rows} rows`);
+      assert.ok(widest <= SLIDE.eqChars, `${what}: "${f.title}" has an equation ${widest} characters wide`);
+      assert.ok(f.title.length <= SLIDE.titleChars, `${what}: "${f.title}" fits one line`);
+    }
+  }
+  assert.equal(H.SLIDE_ROWS, SLIDE.rows);
+});
+const textOfDeckFrame = (f) => f.children.filter((c) => c.type === "md").map((c) => c.text).join("\n").trim();
 
 test("deck adds only the hand section to the shared template's deck, with the template's frame rules", () => {
   const T = require("../beamdswitch.js");

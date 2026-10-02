@@ -68,14 +68,14 @@ Models are not saved automatically; reloading starts from the first example.
 | `index.html` | The built page: `template.html` with `raw.json`, `engine.js`, `beamdswitch.js` and `handcalc.js` inlined |
 | `engine.js` | Stiffness-method solver, exact V/M recovery, section properties, NASTRAN SOL 101 exporter, number formatting and the beam's beamdswitch report (`beamReport`). Works in the browser (`BeamDiag`) and in Node (`require`) |
 | `beamdswitch.js` | The standard beamdswitch report template: `deck(report)` writes a report as a beamdswitch Markdown deck. A verbatim copy of yujieteo/site's `templates/beamdswitch.js`, shared by every visualisation; see below |
-| `handcalc.js` | The hand calculations (`HandCalc`): `derive` works the solved beam by hand, `frames` and `pointFrame` write the steps for the page, `markdown` the Markdown document (written by `document`), `beamReport` adds them to the beam's beamdswitch report, and `deck` writes that report as the template's deck with a Hand calculations section |
+| `handcalc.js` | The hand calculations (`HandCalc`): `derive` works the solved beam by hand, `frames` and `pointFrame` write the steps for the page, `markdown` the Markdown document (written by `document`), `slidesOf` splits a step into slides that fit beamdswitch's slide, `beamReport` adds them to the beam's beamdswitch report, and `deck` writes that report as the template's deck with a Hand calculations section |
 | `template.html` | Page markup, styles and UI code |
 | `raw.json` | Presets, materials, conventions, assumptions, NASTRAN notes and sources |
 | `build.py` | Inlines `raw.json`, `engine.js`, `beamdswitch.js` and `handcalc.js` into `template.html` to write `index.html` |
 | `reference.py` | Independent exact-arithmetic Python solver (Macaulay integration and compatibility) and a reader for the exported decks |
 | `fixtures.json` | Test beams with closed-form expectations |
 | `reference.json` | `reference.py` output on the fixtures, compared with `engine.js` by the tests |
-| `tests/` | Node and Python tests; see [docs/verification.md](https://github.com/yujieteo/beamdiag/blob/main/docs/verification.md). `tests/fixtures/beamdswitch/` holds read-only copies of beamdswitch's deck and plot parsers and of yujieteo/site's `templates/beamdswitch.js` (as `template.js`) and `templates/beamdswitch-report.md` |
+| `tests/` | Node and Python tests; see [docs/verification.md](https://github.com/yujieteo/beamdiag/blob/main/docs/verification.md). `tests/fixtures/beamdswitch/` holds read-only copies of beamdswitch's deck and plot parsers, of its page (`beamdswitch.html`, which the browser test renders decks in) and of yujieteo/site's `templates/beamdswitch.js` (as `template.js`) and `templates/beamdswitch-report.md` |
 | `AGENTS.md`, `SKILLS.md`, `LICENSE` | Notes for coding agents, how to use the page and its WebMCP tools, and the MIT licence |
 
 ```sh
@@ -127,8 +127,12 @@ in yujieteo/site shows the resulting deck with placeholders. A visualisation sup
 formatted as its page shows them; here `BeamDiag.beamReport(result, options)`
 builds the beam's report from the solver's result, and its `::: plot` curves
 are the solver's shear, moment and deflection written as Macaulay brackets.
-`HandCalc.beamReport(result, options)` adds the hand calculations, with a
-slide for every segment, and `HandCalc.deck(report)` writes the template's
+`HandCalc.beamReport(result, options)` adds the hand calculations, every
+segment included, each step on as many slides as it needs to fit
+beamdswitch's slide at full size (`HandCalc.slidesOf`: a step splits at its
+narrated parts, long equations break over aligned lines and long tables and
+lists continue on further slides, with every number as the page shows it;
+the page and the Markdown keep each step whole), and `HandCalc.deck(report)` writes the template's
 deck with them as a fifth section, Hand calculations, between Results and
 Checks and takeaway (which becomes Part 5); the page saves that deck. The
 hand section follows the template's frame rules, written by `HandCalc.document`,

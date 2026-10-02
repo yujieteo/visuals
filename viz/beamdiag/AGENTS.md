@@ -23,7 +23,7 @@ node --test tests/*.test.mjs
 python3 -m unittest discover -s tests -p 'test_*.py' -v
 ```
 
-`tests/browser.test.mjs` drags handles in Chrome and is skipped unless `BEAMDIAG_BROWSER_URL` points at a Chrome started with remote debugging, as CI does. `docs/verification.md` lists what each test checks. In yujieteo/site the only beamdiag checks are the site's integration tests: the catalogue stub `data/visuals/beamdiag.yaml` points into the folder and names the tools the page registers, the published copy equals the port, and the folder docs keep their links inside the folder.
+`tests/browser.test.mjs` drags handles in Chrome and lays out every preset's deck in beamdswitch's own page (`tests/fixtures/beamdswitch/beamdswitch.html`); it is skipped unless `BEAMDIAG_BROWSER_URL` points at a Chrome started with remote debugging, as CI does. `docs/verification.md` lists what each test checks. In yujieteo/site the only beamdiag checks are the site's integration tests: the catalogue stub `data/visuals/beamdiag.yaml` points into the folder and names the tools the page registers, the published copy equals the port, and the folder docs keep their links inside the folder.
 
 ## Code and data
 

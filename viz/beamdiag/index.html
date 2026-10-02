@@ -1359,10 +1359,11 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
  * stated generally and the solver's values are listed instead of fabricated steps.
  *
  *   derive(result, { units, origin })           the derivation as data
- *   frames(result, { units, origin, at })      [{ title, frames: [{ title, blocks, body, narration }] }]
+ *   frames(result, { units, origin, at })      [{ title, frames: [{ title, blocks, body, narration, parts }] }]
  *   pointFrame(result, x, { units, origin })   the frame for one chosen x (SI, from the left end)
  *   markdown(result, { units, origin, at, title }) a Markdown document that beamdswitch also opens
  *   beamReport(result, options)                engine's beamReport with the hand calculations as `hand`
+ *   slidesOf(frame)                            one frame as deck slides that fit beamdswitch's slide
  *   deck(report)                               the template's deck with a "Hand calculations" section
  *   document({ meta, narration, sections })    any sections as Markdown in beamdswitch's deck syntax
  *   texNodes(tex)                              a small TeX subset as a tree, for the page to draw
@@ -1672,8 +1673,15 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
     const { c, deg } = D, r = c.m.supports.reduce((n, s) => n + (s.kind === "fixed" ? 2 : 1), 0);
     const method = deg === 0 ? "equilibrium alone (sum of vertical forces and sum of moments)"
       : "compatibility, the force method, worked with Macaulay's double integration of EI v″ = M(x)";
+    const said = [
+      "These hand calculations derive the solver's answer step by step.",
+      "The stiffness solver is authoritative, and every number shown is its value, so the hand steps and the solver agree to the digits shown.",
+      deg === 0 ? "The beam is statically determinate, so equilibrium alone gives the reactions."
+        : `The beam is statically indeterminate to degree ${deg}, so the reactions come from compatibility, worked by Macaulay's method of double integration.`,
+    ].join(" ");
     return {
       title: "Hand calculations: method, and how they relate to the solver",
+      deckTitle: "Hand calculations: method and the solver",
       blocks: [
         P("The direct stiffness solver is authoritative. These steps are a readable derivation of the same answer: every number shown is the solver's value at that step, written as this page writes it, and carrying the hand steps through reproduces it to the digits shown."),
         EQ(`n = r - 2 = ${r} - 2 = ${deg}`),
@@ -1686,12 +1694,8 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
           `$EI = ${c.tq(sci(c.EI), "rigidity")}$.`,
         ]),
       ],
-      narration: [
-        "These hand calculations derive the solver's answer step by step.",
-        "The stiffness solver is authoritative, and every number shown is its value, so the hand steps and the solver agree to the digits shown.",
-        deg === 0 ? "The beam is statically determinate, so equilibrium alone gives the reactions."
-          : `The beam is statically indeterminate to degree ${deg}, so the reactions come from compatibility, worked by Macaulay's method of double integration.`,
-      ].join(" "),
+      narration: said,
+      parts: [{ narration: said }, { at: 3, title: "Hand calculations: units and sign conventions", narration: "The units and sign conventions used throughout are listed here." }],
     };
   }
 
@@ -1724,20 +1728,24 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
           EQ(`R_2 \\times ${c.texP(span)} + \\sum_j m_j = 0 \\quad\\Rightarrow\\quad R_2 = -\\frac{${c.tex(sM)}}{${c.tex(span)}} = ${c.tq(rtext(k2), "force")}`),
           P("Vertical equilibrium then gives $R_1$:"),
           EQ(`R_1 + R_2 + \\sum_j F_j = 0 \\quad\\Rightarrow\\quad R_1 = -${c.texP(sF)} - ${c.texP(rtext(k2))} = ${c.tq(rtext(k1), "force")}`));
-        said = `Taking moments about support 1 gives R 2 equals ${c.say(rtext(k2), "force")}, and vertical equilibrium then gives R 1 equals ${c.say(rtext(k1), "force")}.`;
+        said = [`Taking moments about support 1 gives R 2 equals ${c.say(rtext(k2), "force")}`, `vertical equilibrium then gives R 1 equals ${c.say(rtext(k1), "force")}`];
       } else {
         const kR = unknowns.find((k) => k.kind === "R"), kM = unknowns.find((k) => k.kind === "M");
         blocks.push(
           P("Vertical equilibrium and moments about the fixed support:"),
           EQ(`R_1 + \\sum_j F_j = 0 \\quad\\Rightarrow\\quad R_1 = -${c.texP(sF)} = ${c.tq(rtext(kR), "force")}`),
           EQ(`M_1 + \\sum_j m_j = 0 \\quad\\Rightarrow\\quad M_1 = -${c.texP(sM)} = ${c.tq(rtext(kM), "moment")}`));
-        said = `Vertical equilibrium gives R 1 equals ${c.say(rtext(kR), "force")}, and moments about the fixed support give a support moment of ${c.say(rtext(kM), "moment")}.`;
+        said = [`Vertical equilibrium gives R 1 equals ${c.say(rtext(kR), "force")}`, `moments about the fixed support give a support moment of ${c.say(rtext(kM), "moment")}`];
       }
       if (acts.length > WRITE_TERMS) blocks.push(P(`The ${acts.length} load terms are summed without being listed one by one.`));
       return [{
         title: "Reactions by equilibrium",
         blocks,
-        narration: `The loads add up to ${c.say(sF, "force")} vertically. ${said}`,
+        narration: `The loads add up to ${c.say(sF, "force")} vertically. ${said[0]}, and ${said[1]}.`,
+        parts: [{ narration: `The loads add up to ${c.say(sF, "force")} vertically.` },
+          { at: 2, title: "Reactions by equilibrium: moments of the loads", narration: `Their moments about support 1 add up to ${c.say(sM, "moment")}.` },
+          { at: 3, title: "Reactions by equilibrium: solving for them", narration: `${said[0]}.` },
+          { at: 5, title: "Reactions by equilibrium: solving for them (cont.)", narration: `${said[1][0].toUpperCase()}${said[1].slice(1)}.` }],
       }];
     }
 
@@ -1752,20 +1760,29 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
     const frames = [];
     if (written) {
       const eqs = rows.map((r) => EQ(`${r.label}: \\quad ${linear(r.coef.map((k, i) => [k, names[i]]), c)} = ${c.tex(sig(r.rhs, 4))}`));
+      const said = [
+        `With ${c.count(R.length, "support", "supports")}, there are ${c.count(unknowns.length - 2, "unknown reaction", "unknown reactions")} and two constants of integration.`,
+        "Two equations come from equilibrium, and the rest say the beam cannot deflect at a support or rotate at a fixed support.",
+      ];
+      const inNumbers = "Compatibility equations in numbers";
       frames.push({
         title: `Compatibility: ${c.count(unknowns.length, "equation", "equations")} in the reactions and two integration constants`,
+        deckTitle: `Compatibility: ${c.count(unknowns.length, "equation", "equations")} in the unknowns`,
         blocks: [...setup, P("In numbers (coefficients to four significant figures):"), ...eqs],
-        narration: [
-          `With ${c.count(R.length, "support", "supports")}, there are ${c.count(unknowns.length - 2, "unknown reaction", "unknown reactions")} and two constants of integration.`,
-          "Two equations come from equilibrium, and the rest say the beam cannot deflect at a support or rotate at a fixed support.",
-        ].join(" "),
+        narration: said.join(" "),
+        // On slides, each equation is read out by what it says.
+        parts: [{ narration: said[0] }, { at: setup.length, title: inNumbers, narration: said[1] },
+          ...rows.map((r, i) => ({ at: setup.length + 1 + i, title: `${inNumbers} (cont.)`, narration: `${r.what[0].toUpperCase()}${r.what.slice(1)}.` }))],
       });
     } else {
       frames.push({
         title: `Compatibility: ${c.count(unknowns.length, "equation", "equations")}, too many to write out`,
+        deckTitle: `Compatibility: ${unknowns.length} equations, stated in general`,
         blocks: [...setup,
           P(`With ${unknowns.length} unknowns the system is not worth working by hand. Its rows are $\\sum F_y = 0$, $\\sum M = 0$, $EI\\,v(a_s) = 0$ at each of the ${R.length} supports and $EI\\,v'(a_s) = 0$ at each fixed support; the values below are the stiffness solver's solution of the same conditions.`)],
         narration: `This beam has ${unknowns.length} unknowns, too many to work by hand, so the equations are stated in general and the solver's values are used.`,
+        parts: [{ narration: `This beam has ${unknowns.length} unknowns, too many to work by hand.` },
+          { at: setup.length - 1, title: "Compatibility: the unknowns and the conditions", narration: "So the equations are stated in general, and the solver's values are used." }],
       });
     }
     frames.push({
@@ -1783,12 +1800,17 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
     // Terms at the right end vanish everywhere on the beam, so they are left out.
     const terms = [...D.known, ...c.reactions.flatMap((r) => [[r.Fy, r.xi, 1], [-r.Mz, r.xi, 0]])].filter(([k, a]) => k !== 0 && a < D.ends[1]);
     const blocks = [P("Integrate $EI\\,v'' = M(x)$ twice. Each Macaulay term $c\\langle x - a\\rangle^n$ integrates to $c\\langle x - a\\rangle^{n+1}/(n+1)$, which keeps $\\theta$ and $v$ continuous at every support and load:")];
+    let atV = 1, atM;
     if (terms.length <= WRITE_TERMS && terms.length) {
+      atM = blocks.length;
       blocks.push(EQ(`M(x) = ${linear(terms.map(([k, a, p]) => [k, bracket(a, p, c)]), c)}`));
+      atV = blocks.length;
       blocks.push(EQ(`EI\\,v(x) = ${linear(terms.map(([k, a, p]) => [k / ((p + 1) * (p + 2)), bracket(a, p + 2, c)]), c)} + C_1 x + C_2`));
     } else blocks.push(EQ("EI\\,v(x) = \\iint M(x)\\,dx\\,dx + C_1 x + C_2"));
-    const bc = rows.slice(2);
-    blocks.push(P(`Boundary conditions: ${bc.map((r) => `$${r.label}$ (${r.what})`).join("; ")}.`));
+    const bc = rows.slice(2), atBC = blocks.length;
+    // The items let a deck continue a long list of conditions over slides.
+    const items = bc.map((r) => ({ text: `$${r.label}$ (${r.what})`, said: r.what }));
+    blocks.push({ ...P(`Boundary conditions: ${items.map((t) => t.text).join("; ")}.`), lead: "Boundary conditions: ", items });
     if (deg === 0) {
       blocks.push(P("With the reactions known, these give the two constants:"));
       for (const r of bc) {
@@ -1796,16 +1818,24 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
         blocks.push(EQ(`${r.label}: \\quad ${linear([[r.coef[n - 2], "C_1"], [r.coef[n - 1], "C_2"]], c)} = ${c.tex(sig(r.rhs - rest, 4))}`));
       }
     } else blocks.push(P("They are the compatibility rows above, solved with the reactions."));
+    const atC = blocks.length;
     blocks.push(EQ(`C_1 = EI\\,\\theta(${c.tex(sig(D.ends[0]))}) = ${c.tq(sig(solver[n - 2], 4), "rigidity")}, \\qquad C_2 = ${c.tex(sig(solver[n - 1], 4))}\\ ${texUnit(`${c.sym("force")}·${c.sym("length")}³`)}`));
     const t0 = vtext(c, D.segments[0].start.theta, "angle"), v0 = vtext(c, D.segments[0].start.v, "length");
     blocks.push(P(`So at the left end $\\theta$ = ${t0} rad and $v$ = ${v0} ${c.sym("length")}; each segment below starts from the slope and deflection the previous one ends with.`));
+    const said = [
+      "Integrating the bending moment over E I twice gives the slope and the deflection, with two constants of integration.",
+      `The support conditions fix them, so at the left end the slope is ${sayNumber(t0)} radians and the deflection is ${c.say(v0, "length")}.`,
+    ];
     return {
       title: "Deflection and slope: double integration and boundary conditions",
+      deckTitle: "Deflection and slope by double integration",
       blocks,
-      narration: [
-        "Integrating the bending moment over E I twice gives the slope and the deflection, with two constants of integration.",
-        `The support conditions fix them, so at the left end the slope is ${sayNumber(t0)} radians and the deflection is ${c.say(v0, "length")}.`,
-      ].join(" "),
+      narration: said.join(" "),
+      parts: [{ narration: said[0] },
+        ...(atM ? [{ at: atM, title: "Deflection and slope: the bending moment", narration: "The bending moment carries a bracket term for every load and reaction." }] : []),
+        { at: atV, title: "Deflection and slope: integrating twice", narration: "Each bracket term integrates to the next power up, and the two constants of integration appear at the end." },
+        { at: atBC, title: "Deflection and slope: boundary conditions", narration: "The boundary conditions say the beam cannot deflect at a support, or rotate at a fixed support." },
+        { at: atC, title: "Deflection and slope: the two constants", narration: said[1] }],
     };
   }
 
@@ -1822,17 +1852,20 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
     if (mJ.length) blocks.push(EQ(`M(${at}) = M(${c.tex(xa)}^{-}) - ${mJ.map((j) => j.name).join(" - ")} = ${c.texP(vtext(c, before.M, "moment"))} - ${mJ.map((j) => c.texP(vtext(c, j.value, "moment"))).join(" - ")} = ${c.tq(Ms, "moment")}`));
     else blocks.push(EQ(`M(${at}) = M(${c.tex(xa)}^{-}) = ${c.tq(Ms, "moment")}`));
     // The section equations.
-    const loaded = seg.qa !== 0 || seg.k !== 0;
+    const loaded = seg.qa !== 0 || seg.k !== 0, atV = blocks.length;
     blocks.push(loaded ? EQ(`q(s) = ${poly([seg.qa, seg.k], seg.h, c)}\\ ${ue("distributed")}`)
       : P("No distributed load acts here, so $V$ is constant and $M$ is linear."));
     blocks.push(
       EQ(`V(s) = V(${at}) + \\int_0^s q\\,ds = ${poly(seg.poly.V, seg.h, c)}`),
       EQ(`M(s) = M(${at}) + \\int_0^s V\\,ds = ${poly(seg.poly.M, seg.h, c)}`),
+    );
+    const atTheta = blocks.length;
+    blocks.push(
       EQ(`EI\\,\\theta(s) = EI\\,\\theta(${c.tex(xa)}) + \\int_0^s M\\,ds = ${poly(seg.poly.theta, seg.h, c)}`),
       EQ(`EI\\,v(s) = EI\\,v(${c.tex(xa)}) + \\int_0^s \\theta\\,EI\\,ds = ${poly(seg.poly.v, seg.h, c)}`),
     );
     // Values at both ends, as the solver gives them.
-    const E = seg.end, row = (name, q, s, e) => [name, `${vtext(c, s, q)}`, `${vtext(c, e, q)}`];
+    const E = seg.end, row = (name, q, s, e) => [name, `${vtext(c, s, q)}`, `${vtext(c, e, q)}`], atEnds = blocks.length;
     blocks.push(TABLE([`At`, `x = ${xa}⁺`, `x = ${xb}⁻`], [
       row(`V (${c.sym("force")})`, "force", S.V, E.V), row(`M (${c.sym("moment")})`, "moment", S.M, E.M),
       row("θ (rad)", "angle", S.theta, E.theta), row(`v (${L})`, "length", S.v, E.v),
@@ -1850,7 +1883,13 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
       ...seg.stationary.map((st) => `The shear force is zero at ${c.sayPos(st.x)}, where the moment reaches ${c.say(vtext(c, st.M, "moment"), "moment")}.`),
       `At the end of the segment the deflection is ${c.say(vtext(c, E.v, "length"), "length")}.`,
     ];
-    return { title: `Segment ${seg.index}: x = ${xa} to ${xb} ${L}`, blocks, narration: said.join(" ") };
+    const name = `Segment ${seg.index}`;
+    return {
+      title: `${name}: x = ${xa} to ${xb} ${L}`, blocks, narration: said.join(" "),
+      parts: [{ narration: said[0] }, { at: atV, title: `${name}: shear force and bending moment`, narration: said.slice(1, 3).join(" ") },
+        { at: atTheta, title: `${name}: slope and deflection`, narration: "Integrating the bending moment once gives the slope, and twice the deflection, both carried on from the start of the segment." },
+        { at: atEnds, title: `${name}: values at both ends`, narration: said.slice(3).join(" ") }],
+    };
   }
 
   function checksFrame(D) {
@@ -1865,13 +1904,16 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
       blocks.push(P("The section has no extreme-fibre distance $c$, so the bending stress $\\sigma = M c / I$ is not evaluated."));
       said.push("The section has no extreme fibre distance, so the bending stress is not evaluated.");
     }
-    const sR = shortNf(q.sumR), sF = shortNf(q.sumF), sMR = shortNf(q.sumMR), sM = shortNf(q.sumM0);
+    const sR = shortNf(q.sumR), sF = shortNf(q.sumF), sMR = shortNf(q.sumMR), sM = shortNf(q.sumM0), atSums = blocks.length;
     blocks.push(P("Equilibrium of the whole beam, loads and reactions together (moments about the left end):"),
       EQ(`\\sum F_y = \\sum_i R_i + \\sum_j F_j = ${c.texP(sR)} + ${c.texP(sF)} \\approx 0`),
       EQ(`\\sum M = \\sum_i (R_i\\,a_i + M_i) + \\sum_j m_j = ${c.texP(sMR)} + ${c.texP(sM)} \\approx 0`),
       P(`Relative error of the two sums: ${sci(q.resid)}.`));
     said.push(`The reactions add up to ${c.say(sR, "force")} and the loads to ${c.say(sF, "force")}, so the forces balance, and so do the moments, to a relative error of ${sayNumber(sci(q.resid))}.`);
-    return { title: m.section.c ? "Bending stress and the equilibrium check" : "Equilibrium check", blocks, narration: said.join(" ") };
+    return {
+      title: m.section.c ? "Bending stress and the equilibrium check" : "Equilibrium check", blocks, narration: said.join(" "),
+      parts: [{ narration: said[0] }, { at: atSums, title: "Equilibrium check", narration: said[1] }],
+    };
   }
 
   /* V, M, θ, v and σ at a chosen x (SI, measured from the left end), from the segment it lies in. */
@@ -1888,20 +1930,27 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
     const tt = vtext(c, a.theta, "angle"), vt = vtext(c, c.show(a.v, "length"), "length");
     const blocks = [P(`x = ${xT} ${L} lies in segment ${seg.index} (x = ${sig(seg.xa)} to ${sig(seg.xb)} ${L}), so $s = x - ${c.texP(sig(seg.xa))}$ = ${sT} ${L}.`)];
     if (onStart) blocks.push(P(`A support or load acts here, so $V$ and $M$ can jump: just to the left they are ${vtext(c, c.show(a.Vleft, "force"), "force")} ${c.sym("force")} and ${vtext(c, c.show(a.Mleft, "moment"), "moment")} ${c.sym("moment")} (the end of segment ${seg.index - 1}); the values below are just to the right.`));
-    blocks.push(
-      EQ(`V = ${linear(sub(seg.poly.V), c)} = ${c.tq(Vt, "force")}`),
-      EQ(`M = ${linear(sub(seg.poly.M), c)} = ${c.tq(Mt, "moment")}`),
-      EQ(`\\theta = \\frac{1}{EI}\\left(${linear(sub(seg.poly.theta), c)}\\right) = ${c.tex(tt)}\\ \\mathrm{rad}`),
-      EQ(`v = \\frac{1}{EI}\\left(${linear(sub(seg.poly.v), c)}\\right) = ${c.tq(vt, "length")}`),
-    );
+    const at = (name) => ({ at: blocks.length, title: `At x = ${xT} ${L}: ${name}` });
+    blocks.push(EQ(`V = ${linear(sub(seg.poly.V), c)} = ${c.tq(Vt, "force")}`));
+    const atM = at("bending moment");
+    blocks.push(EQ(`M = ${linear(sub(seg.poly.M), c)} = ${c.tq(Mt, "moment")}`));
+    const atTheta = at("slope");
+    blocks.push(EQ(`\\theta = \\frac{1}{EI}\\left(${linear(sub(seg.poly.theta), c)}\\right) = ${c.tex(tt)}\\ \\mathrm{rad}`));
+    const atV = at("deflection");
+    blocks.push(EQ(`v = \\frac{1}{EI}\\left(${linear(sub(seg.poly.v), c)}\\right) = ${c.tq(vt, "length")}`));
     const said = [`At ${c.sayPos(x)}, in segment ${seg.index}, the shear force is ${c.say(Vt, "force")} and the bending moment ${c.say(Mt, "moment")}.`,
       `The slope is ${sayNumber(tt)} radians and the deflection ${c.say(vt, "length")}.`];
+    const parts = [{ narration: `At ${c.sayPos(x)}, in segment ${seg.index}, the shear force is ${c.say(Vt, "force")}.` },
+      { ...atM, narration: `The bending moment is ${c.say(Mt, "moment")}.` },
+      { ...atTheta, narration: `The slope is ${sayNumber(tt)} radians.` },
+      { ...atV, narration: `The deflection is ${c.say(vt, "length")}.` }];
     if (c.m.section.c) {
       const st = sig(c.show(Math.abs(M) * c.m.section.c / c.m.section.I, "stress"), 4);
+      parts.push({ ...at("bending stress"), narration: `The bending stress at the extreme fibre is ${c.say(st, "stress")}.` });
       blocks.push(EQ(`\\sigma = \\frac{|M|\\,c}{I} = ${c.tq(st, "stress")}`));
-      said.push(`The bending stress at the extreme fibre is ${c.say(st, "stress")}.`);
+      said.push(parts.at(-1).narration);
     }
-    return { title: `At the selected point x = ${xT} ${L}`, blocks, narration: said.join(" "), x, segment: seg.index };
+    return { title: `At the selected point x = ${xT} ${L}`, blocks, narration: said.join(" "), parts, x, segment: seg.index };
   }
 
   /* ---------- assembling ---------- */
@@ -1918,6 +1967,127 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
     }).join("\n\n");
   }
   const withBody = (f) => ({ ...f, body: markdownOf(f.blocks) });
+
+  /* ---------- slides that fit ----------
+     beamdswitch lays a slide out at 1280 × 720 px: a 1136 × 506 px body in 30 px text, which it
+     shrinks to no less than 18 px before the body clips, and a title on one line. Measured there, the
+     body holds about 12 rows of 30 px text; a paragraph wraps after about 80 characters of Markdown;
+     a display equation takes about 2 rows, 1.2 more per extra line and 0.5 more with a fraction, and
+     fits the width while it draws about 63 characters; a table row takes 1.1 rows; a title fits on
+     one line up to about 53 characters. So a hand-calculation slide holds at most SLIDE_ROWS rows,
+     its equations draw at most SLIDE_EQ_CHARS characters a line, its tables at most SLIDE_TABLE_ROWS
+     rows, and its title at most 50 characters: it then fits at full size. The page and the
+     Markdown keep each frame whole; only the deck splits it, at the narrated `parts` the frame
+     marks, and breaks long equations over lines, so every number is the same. */
+  const SLIDE_ROWS = 12, SLIDE_TEXT_CHARS = 80, SLIDE_EQ_CHARS = 56, SLIDE_TABLE_ROWS = 6;
+
+  /* Characters a TeX expression draws, roughly: commands as one glyph, \frac{1}{EI} as two,
+     braces, scripts and spacing as none. */
+  function drawn(tex) {
+    return String(tex).replace(/\\(?:mathrm|text)\{([^}]*)\}/g, "$1").replace(/\\times 10\^\{(-?\d+)\}/g, "×10$1")
+      .replace(/\\(?:left|right|bigl|bigr|begin\{aligned\}|end\{aligned\})/g, "").replace(/\\[,;: ]/g, " ")
+      .replace(/\\qquad/g, "    ").replace(/\\quad/g, "  ").replace(/\\frac\{1\}\{EI\}/g, "EI").replace(/\\frac/g, "")
+      .replace(/\\\\/g, "").replace(/\\[a-zA-Z]+/g, "x").replace(/[{}^_&]/g, "").length;
+  }
+  /* Rows a block takes on a slide at 30 px. */
+  function slideRows(b) {
+    const text = (t) => Math.ceil(String(t).length / SLIDE_TEXT_CHARS);
+    if (b.p != null) return text(b.p);
+    if (b.eq != null) return 0.8 + 1.2 * (b.eq.split("\\\\").length) + (/\\frac/.test(b.eq) ? 0.5 : 0);
+    if (b.list) return b.list.reduce((n, t) => n + text(t), 0);
+    return 1.1 * (b.table.rows.length + 1);
+  }
+  /* A display equation as lines that each draw at most SLIDE_EQ_CHARS characters: each statement of
+     "a = …, \qquad b = …" on lines of its own, aligned on its first "=" and broken before a "+", "−"
+     or "=" outside any group or Macaulay bracket. */
+  function wrapEquation(tex) {
+    if (drawn(tex) <= SLIDE_EQ_CHARS) return tex;
+    const lines = tex.replace(/\\left\(/g, "\\bigl(").replace(/\\right\)/g, "\\bigr)").split(/(?<=,) \\qquad /).map(statementLines);
+    if (lines.includes(null)) return tex;
+    return `\\begin{aligned} ${lines.flat().join(" \\\\ ")} \\end{aligned}`;
+  }
+  function statementLines(flat) {
+    const pieces = [];
+    let depth = 0, from = 0;
+    for (let i = 0; i < flat.length; i++) {
+      const ch = flat[i];
+      if (ch === "{") depth++;
+      else if (ch === "}") depth--;
+      else if (flat.startsWith("\\langle", i)) depth++;
+      else if (flat.startsWith("\\rangle", i)) depth--;
+      else if (depth === 0 && (flat.startsWith(" + ", i) || flat.startsWith(" - ", i) || flat.startsWith(" = ", i)) && i > from) {
+        pieces.push(flat.slice(from, i));
+        from = i + 1;
+      }
+    }
+    pieces.push(flat.slice(from));
+    const eq = pieces.findIndex((p) => p.startsWith("= "));
+    if (eq < 1) return null;
+    const lhs = pieces.slice(0, eq).join(" "), lead = drawn(lhs) + 3, lines = [[pieces[eq].slice(2)]];
+    for (const p of pieces.slice(eq + 1)) {
+      const line = lines.at(-1);
+      if (lead + drawn([...line, p].join(" ")) <= SLIDE_EQ_CHARS) line.push(p);
+      else lines.push([p]);
+    }
+    return lines.map((l, i) => (i === 0 ? `${lhs} ={}& ${l.join(" ")}` : l[0].startsWith("= ") ? `&${l.join(" ")}` : `&\\quad ${l.join(" ")}`));
+  }
+  const fitted = (b) => (b.eq != null ? EQ(wrapEquation(b.eq)) : b);
+  const rowsOf = (blocks) => blocks.reduce((n, b) => n + slideRows(b), 0);
+
+  /* A frame as deck slides: its parts ({ at, title, narration }, the first at block 0) packed in
+     order, as many to a slide as fit in SLIDE_ROWS, a long table or equation continuing on slides of its own.
+     The first slide carries the frame's title (its shorter deckTitle when it has one), each later one
+     the title of the part it opens with. */
+  function slidesOf(f) {
+    const cuts = f.parts || [{ narration: f.narration }], slides = [], parts = [];
+    cuts.forEach((part, i) => {
+      let blocks = [];
+      parts.push({ ...part, blocks });
+      for (const b of f.blocks.slice(part.at || 0, i + 1 < cuts.length ? cuts[i + 1].at : f.blocks.length)) {
+        const fit = fitted(b);
+        if (fit.eq != null && slideRows(fit) > SLIDE_ROWS) {
+          const lines = fit.eq.replace(/^\\begin\{aligned\} | \\end\{aligned\}$/g, "").split(" \\\\ "), per = Math.floor((SLIDE_ROWS - 1.3) / 1.2);
+          for (let l = 0; l < lines.length; l += per) {
+            if (l) parts.push({ title: `${part.title || f.deckTitle || f.title} (cont.)`, narration: "The equation continues.", blocks: blocks = [] });
+            blocks.push(EQ(`\\begin{aligned} ${lines.slice(l, l + per).join(" \\\\ ")} \\end{aligned}`));
+          }
+          continue;
+        }
+        if (!b.table || b.table.rows.length <= SLIDE_TABLE_ROWS) { blocks.push(fit); continue; }
+        const { head, rows } = b.table;
+        for (let r = 0; r < rows.length; r += SLIDE_TABLE_ROWS) {
+          if (r) parts.push({ title: `${f.deckTitle || f.title} (cont.)`, narration: `The table continues with rows ${r + 1} to ${Math.min(r + SLIDE_TABLE_ROWS, rows.length)}.`, blocks: blocks = [] });
+          blocks.push(TABLE(head, rows.slice(r, r + SLIDE_TABLE_ROWS)));
+        }
+      }
+    });
+    // A paragraph that lists items ({ p, lead, items }) and would not fit continues on slides of its own.
+    for (let i = 0; i < parts.length; i++) {
+      const k = parts[i].blocks.findIndex((b) => b.items && slideRows(b) > SLIDE_ROWS / 2);
+      if (k < 0) continue;
+      const b = parts[i].blocks[k], rest = parts[i].blocks.slice(k + 1), chunks = [[]];
+      for (const t of b.items) {
+        if (chunks.at(-1).length && [...chunks.at(-1), t].reduce((n, x) => n + x.text.length + 2, b.lead.length) > SLIDE_TEXT_CHARS * SLIDE_ROWS / 2) chunks.push([]);
+        chunks.at(-1).push(t);
+      }
+      if (chunks.length < 2) continue;
+      const text = (c, j) => `${j ? "" : b.lead}${c.map((t) => t.text).join("; ")}${j + 1 < chunks.length ? ";" : "."}`;
+      parts[i].blocks.splice(k, Infinity, P(text(chunks[0], 0)));
+      parts.splice(i + 1, 0, ...chunks.slice(1).map((c, j) => ({
+        title: `${parts[i].title || f.deckTitle || f.title} (cont.)`,
+        narration: `The list continues, from ${c[0].said} to ${c.at(-1).said}.`,
+        blocks: [P(text(c, j + 1)), ...(j + 2 === chunks.length ? rest : [])],
+      })));
+    }
+    for (const { title, narration, blocks } of parts) {
+      const last = slides.at(-1);
+      if (last && rowsOf(last.blocks) + rowsOf(blocks) <= SLIDE_ROWS) {
+        last.blocks.push(...blocks);
+        last.narration.push(narration);
+      } else slides.push({ title: slides.length ? title : f.deckTitle || f.title, blocks, narration: [narration] });
+    }
+    return slides.map((s) => ({ title: s.title, blocks: s.blocks, body: markdownOf(s.blocks), narration: s.narration.join(" ") }));
+  }
 
   /* The hand calculations as sections of frames; `at` (SI, from the left end) adds the chosen point. */
   function frames(result, options = {}) {
@@ -2002,9 +2172,10 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
     });
   }
 
-  /* engine.js's beamReport with the hand calculations, every segment included, as `hand` for deck(). */
+  /* engine.js's beamReport with the hand calculations, every segment included, as `hand` for deck():
+     each frame on as many slides as it needs to fit. */
   function beamReport(result, options = {}) {
-    const report = B.beamReport(result, options), hand = frames(result, options).flatMap((s) => s.frames);
+    const report = B.beamReport(result, options), hand = frames(result, options).flatMap((s) => s.frames.flatMap(slidesOf));
     return { ...report, hand };
   }
 
@@ -2059,7 +2230,7 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
     return flat(texNodes(src)).replace(/\s+/g, " ").trim();
   };
 
-  return { derive, frames, pointFrame, markdown, beamReport, deck, document, markdownOf, texNodes, texText, WRITE_UNKNOWNS };
+  return { derive, frames, pointFrame, markdown, beamReport, deck, document, markdownOf, slidesOf, texNodes, texText, WRITE_UNKNOWNS, SLIDE_ROWS };
 });
 
 </script>
