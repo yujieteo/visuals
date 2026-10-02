@@ -16,7 +16,7 @@ The standalone repository [yujieteo/vgc-trainer](https://github.com/yujieteo/vgc
 | `template.html` | Page markup, styles and UI code |
 | `build.py` | Inlines `raw.json`, `sprites.json` and `engine.js` into `template.html` to write `index.html` |
 
-`index.html` is generated: edit the sources and rerun the build. Tests live in `tests/` of yujieteo/vgc-trainer: `tests/vgc-turn-lab.test.mjs` and `tests/test_vgc_turn_lab.py`.
+`index.html` is generated: edit the sources and rerun the build. Tests live in `tests/` of yujieteo/vgc-trainer: `tests/vgc-turn-lab.test.mjs`, `tests/site-theme.test.mjs` and `tests/test_vgc_turn_lab.py`.
 
 ## Build, test and verify
 
