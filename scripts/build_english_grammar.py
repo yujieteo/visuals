@@ -18,7 +18,7 @@ scripts/templates/english-grammar.css, english-grammar-logic.js (pure logic, als
 run by yujieteo/english-grammar's tests/english-grammar.test.mjs) and english-grammar.js (interface). Each concept page offers its
 lesson as a narrated beamdswitch deck: viz/english-grammar/beamdswitch.js (the site's shared report
 template, unchanged) and viz/english-grammar/report.js (one concept as a report) are inlined as they are.
---verify re-runs every check, including the Solarized contrast pairs, and compares the committed page.
+--verify re-runs every check, including the style-guide contrast pairs, and compares the committed page.
 
     python3 scripts/build_english_grammar.py
     python3 scripts/build_english_grammar.py --verify
@@ -30,6 +30,7 @@ from html import escape
 from pathlib import Path
 
 from gallery import render_gallery
+from style_guide import THEME_SCRIPT, root_css
 
 ROOT = Path(__file__).resolve().parents[1]
 SLUG = "english-grammar"
@@ -130,19 +131,13 @@ SPECIAL_NOTATION = {
     "mark": "Punctuation marks are not constituents, so they are not drawn in the tree. Each one is attached to the boundary of the constituent it marks: at its start, at its end, or between two of its parts.",
 }
 
-# Page-scoped Solarized palette. Pairs below are checked by --verify.
-SOLARIZED = {
-    "light": {"bg": "#fdf6e3", "surface": "#eee8d5", "fg": "#073642", "muted": "#586e75",
-              "line": "#657b83", "focus": "#6c71c4", "sel": "#d33682", "hair": "#93a1a1"},
-    "dark": {"bg": "#002b36", "surface": "#073642", "fg": "#eee8d5", "muted": "#93a1a1",
-             "line": "#839496", "focus": "#b58900", "sel": "#2aa198", "hair": "#586e75"},
-}
-CONTRAST_PAIRS = [  # (foreground, background, minimum, what)
+# The palette is the style guide's (design-tokens.json "style_guide"); --verify checks these pairs in both themes.
+CONTRAST_PAIRS = [  # (foreground, background, minimum, what) over the style guide's tokens
     ("fg", "bg", 4.5, "body text"), ("fg", "surface", 4.5, "text on panels"),
-    ("muted", "bg", 4.5, "secondary text"), ("line", "bg", 3.0, "control borders and tree lines"),
-    ("line", "surface", 3.0, "control borders on panels"), ("focus", "bg", 3.0, "focus indicator"),
-    ("focus", "surface", 3.0, "focus indicator on panels"), ("sel", "bg", 3.0, "selection outline"),
-    ("sel", "surface", 3.0, "selection outline on panels"),
+    ("muted", "bg", 4.5, "secondary text"), ("control", "bg", 3.0, "control borders and tree lines"),
+    ("control", "surface", 3.0, "control borders on panels"), ("focus", "bg", 3.0, "focus indicator"),
+    ("focus", "surface", 3.0, "focus indicator on panels"), ("hl", "bg", 3.0, "selection outline"),
+    ("hl", "surface", 3.0, "selection outline on panels"),
 ]
 
 OPENERS, CLOSERS = "(“‘", ".,!?;:)”’"
@@ -619,9 +614,11 @@ def contrast(a, b):
     return (hi + 0.05) / (lo + 0.05)
 
 
-def check_contrast():
+def check_contrast(tokens=None):
+    tokens = tokens or json.loads(TOKENS.read_text(encoding="utf-8"))
     rows = []
-    for mode, pal in SOLARIZED.items():
+    for mode in ("light", "dark"):
+        pal = tokens["style_guide"][mode]
         for fg, bg, minimum, what in CONTRAST_PAIRS:
             ratio = contrast(pal[fg], pal[bg])
             assert ratio >= minimum, f"{mode} {what}: {pal[fg]} on {pal[bg]} is {ratio:.2f}:1, below {minimum}:1"
@@ -696,15 +693,8 @@ def unexpanded(model):
 def render(model, raw, meta, tokens):
     data = page_data(model, raw, meta)
     css = CSS_TEMPLATE.read_text(encoding="utf-8")
-    replacements = {"font_sans": tokens["font_sans"], "font_mono": tokens["font_mono"], "radius": tokens["radius"],
-                    "content_width": tokens["content_width"]}
-    for i, step in enumerate(tokens["spacing_rem"]):
-        replacements[f"s{i}"] = f"{step}rem"
-    for mode, pal in SOLARIZED.items():
-        for k, v in pal.items():
-            replacements[f"{mode}_{k}"] = v
-    for key, val in replacements.items():
-        css = css.replace(f"%%{key}%%", val)
+    spacing = ";".join(f"--s{i}:{step}rem" for i, step in enumerate(tokens["spacing_rem"]))
+    css = css.replace("%%root_css%%", root_css(tokens, f"--r:{tokens['radius']};--w:{tokens['content_width']};{spacing}"))
     assert "%%" not in css, "unreplaced CSS token"
     js = JS_TEMPLATE.read_text(encoding="utf-8")
     logic = LOGIC_TEMPLATE.read_text(encoding="utf-8")
@@ -720,7 +710,7 @@ def render(model, raw, meta, tokens):
 <meta property="og:description" content="{escape(DESCRIPTION)}">
 <meta property="og:type" content="website">
 <meta property="og:url" content="{CANONICAL}">
-<style>{css}</style></head>
+{THEME_SCRIPT}<style>{css}</style></head>
 <body><a class="skip" href="#content">Skip to the content</a>
 <header class="top"><p class="back"><a href="/visuals">← Visuals</a></p><h1>{escape(DISPLAY_TITLE)}</h1><p class="sub">{SUBTITLE}</p><p class="key" id="key-message">{escape(KEY_MESSAGE)}</p></header>
 <div id="content" tabindex="-1">
@@ -748,7 +738,8 @@ def render(model, raw, meta, tokens):
 
 
 def verify_page(html, model):
-    stripped = re.sub(r"<script type=\"application/json\"[\s\S]*?</script>", "", html)
+    assert html.count(THEME_SCRIPT) == 1, "the page follows the site theme"
+    stripped = re.sub(r"<script type=\"application/json\"[\s\S]*?</script>", "", html.replace(THEME_SCRIPT, ""))
     links = stripped.replace(f'href="{CANONICAL}"', "").replace(f'href="{BEAMDSWITCH_URL}"', "")
     assert not re.search(r"""(?:src|href)=["'](?:https?:)?//""", links), "external asset reference"
     assert not re.search(r"@import|url\(\s*['\"]?(?:https?:)?//", stripped), "external CSS import"
@@ -786,7 +777,7 @@ def main():
     tokens = json.loads(TOKENS.read_text(encoding="utf-8"))
     model = build_model(raw, concepts, examples, meta)
     summary = validate(model, raw, meta)
-    rows = check_contrast()
+    rows = check_contrast(tokens)
     html = render(model, raw, meta, tokens)
     assert html == render(build_model(raw, concepts, examples, meta), raw, meta, tokens), "render is not deterministic"
     if not args.verify:

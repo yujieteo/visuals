@@ -21,6 +21,7 @@ from html import escape
 from pathlib import Path
 
 from gallery import render_gallery
+from style_guide import THEME_SCRIPT, root_css
 
 ROOT = Path(__file__).resolve().parents[1]
 SLUG = "ooda-orientation"
@@ -44,10 +45,12 @@ SIZE_TARGET = 150_000
 SIZE_LIMIT = 250_000
 
 # Page-scoped dark palette; the light palette comes from design-tokens.json.
-DARK = {"background": "#161617", "foreground": "#f5f5f7", "secondary": "#a1a1a6", "surface": "#232326",
-        "border": "#48484c", "mark": "#3d9bff", "selected": "#ff7b6b"}
-SOFT = {"light": {"mark_soft": "#e8f1fc", "red_soft": "#fbeceb", "card": "#ffffff", "on_mark": "#ffffff"},
-        "dark": {"mark_soft": "#14263b", "red_soft": "#3a1d1a", "card": "#1c1c1f", "on_mark": "#0b0b0c"}}
+# The page's roles as aliases of the style guide's tokens (design-tokens.json "style_guide"):
+# the accent marks links and the primary action, red marks warnings, and the soft fills
+# are 12% of each mixed into the background, as the CSS does with color-mix().
+ALIASES = "--mark:var(--focus);--on-mark:var(--on-focus);--red:var(--bad);--card:var(--bg);" \
+    "--mark-soft:color-mix(in srgb,var(--focus) 12%,var(--bg));--red-soft:color-mix(in srgb,var(--bad) 12%,var(--bg))"
+SOFT_SHARE = 0.12
 
 COMMANDS = {"new", "situation", "intent", "tempo", "mode", "stage", "item", "contradiction", "edit", "qualify", "promote",
             "withdraw", "resolve", "orient", "reorient", "wsmode", "jolt", "move", "unmove", "candidate", "drop", "adopt",
@@ -137,12 +140,19 @@ def contrast(a, b):
     return (la + 0.05) / (lb + 0.05)
 
 
+def mix(color, base, share):
+    a, b = (int(color[i:i + 2], 16) for i in (1, 3, 5)), (int(base[i:i + 2], 16) for i in (1, 3, 5))
+    return "#" + "".join(f"{round(x * share + y * (1 - share)):02x}" for x, y in zip(a, b))
+
+
 def palettes(tokens):
-    light = dict(tokens["colors"])
-    light.update(SOFT["light"])
-    dark = dict(DARK)
-    dark.update(SOFT["dark"])
-    return {"light": light, "dark": dark}
+    out = {}
+    for mode in ("light", "dark"):
+        g = tokens["style_guide"][mode]
+        out[mode] = {"background": g["bg"], "foreground": g["fg"], "secondary": g["muted"], "surface": g["surface"],
+                     "card": g["bg"], "mark": g["focus"], "on_mark": g["on-focus"], "selected": g["bad"],
+                     "mark_soft": mix(g["focus"], g["bg"], SOFT_SHARE), "red_soft": mix(g["bad"], g["bg"], SOFT_SHARE)}
+    return out
 
 
 def check_contrast(tokens):
@@ -170,12 +180,9 @@ def compact(js):
 
 def css(tokens):
     text = CSS_TEMPLATE.read_text(encoding="utf-8")
-    rep = {"font_sans": tokens["font_sans"], "font_mono": tokens["font_mono"], "radius": tokens["radius"], "content_width": tokens["content_width"]}
+    rep = {"root_css": root_css(tokens, f"{ALIASES};--r:{tokens['radius']};--w:{tokens['content_width']}")}
     for i, step in enumerate(tokens["spacing_rem"]):
         rep[f"s{i}"] = f"{step}rem"
-    for mode, p in palettes(tokens).items():
-        for k, v in p.items():
-            rep[k if mode == "light" else f"dark_{k}"] = v
     for key, value in rep.items():
         text = text.replace(f"%%{key}%%", value)
     assert "%%" not in text, "unreplaced CSS token"
@@ -300,7 +307,7 @@ def render(raw, meta, tokens):
 <meta property="og:title" content="{escape(OG_TITLE)}">
 <meta property="og:description" content="{escape(DESCRIPTION)}">
 <meta property="og:url" content="{CANONICAL}">
-<style>{css(tokens)}</style></head>
+{THEME_SCRIPT}<style>{css(tokens)}</style></head>
 <body><a class="skip" href="#main">Skip to the planner</a>
 <header class="top"><p class="back"><a href="/visuals">← Visuals</a></p><h1>Orient</h1><p class="sub">Destroy the wrong model, act from the better one. {escape(raw["tagline"])}</p></header>
 <main id="main" tabindex="-1">
@@ -326,6 +333,7 @@ def render(raw, meta, tokens):
 
 
 def verify_page(html, raw):
+    assert html.count(THEME_SCRIPT) == 1, "the page follows the site theme"
     stripped = re.sub(r'<script type="application/json"[\s\S]*?</script>', "", html)
     allowed = [CANONICAL, BEAMDSWITCH_URL] + [s["url"] for s in raw["sources"] if s.get("url")]
     links = stripped
