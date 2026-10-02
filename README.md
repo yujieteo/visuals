@@ -63,10 +63,13 @@ for s in scripts/build*.py; do python3 "$s" --verify || break; done
 
 `convex-payoffs` and `fpl-expected-goals` have no builder in `scripts/`: they are
 edited in their standalone repositories and ported unchanged, so they are not
-covered by the verifier suite. `convexity-action-engine`, `everyday-actions`,
-`tampines-food-map` and `vgc-protect-fakeout-pivot-trainer` (`EXCLUDED` in
+covered by the verifier suite. `convexity-action-engine`, `everyday-actions`
+and `vgc-protect-fakeout-pivot-trainer` (`EXCLUDED` in
 `tests/test_mirror_docs.py`) are stale copies; their current versions live in
-yujieteo/site `visuals/`.
+yujieteo/site `visuals/`. `tampines-food-map` is an older, separate version of
+the site's `tampines-food` page: it develops in
+[yujieteo/tampines-food-map](https://github.com/yujieteo/tampines-food-map)
+and is not published on the site.
 
 ## Generated outputs
 
@@ -131,7 +134,7 @@ python3 scripts/build_stock_cases.py --verify
 ```
 
 The copied action visualizations also retain their source regression tests.
-The 17 folders ported from a standalone `yujieteo/<repo>` repository (listed in
+The 18 folders ported from a standalone `yujieteo/<repo>` repository (listed in
 `tests/test_mirror_docs.py`) keep their logic, deck and WebMCP tests in that
 repository, whose CI runs them; here they are checked only by their builders'
 `--verify` and by a sweep that keeps the set of pages exporting a beamdswitch

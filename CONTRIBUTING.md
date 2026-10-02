@@ -5,7 +5,7 @@ standalone HTML page. See `README.md` for the layout and commands.
 
 ## Change an existing visualization
 
-The 17 folders listed in `MIRRORS` in `tests/test_mirror_docs.py` develop in
+The 18 folders listed in `MIRRORS` in `tests/test_mirror_docs.py` develop in
 their standalone `yujieteo/<repo>` repository, which runs their tests; this
 repository holds byte-for-byte ports of their page and data files. The order
 between the two is in `SKILLS.md`.
