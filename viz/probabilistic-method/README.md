@@ -16,7 +16,7 @@ inventory when JavaScript is off.
 | --- | --- |
 | `index.html` | The built page. Generated: do not edit it by hand. |
 | `build.mjs` | Builds `index.html` and `raw.json` from the sources (`node build.mjs`; `--check` exits 1 when either is stale). |
-| `template.html` | Markup and styles (Solarized light and dark, reduced motion, responsive layout) with the inlining markers. |
+| `template.html` | Markup and styles (the site style guide's tokens in light and dark, the shared site theme choice, reduced motion, responsive layout) with the inlining markers. |
 | `src/engine/*.js` | The pure engine, concatenated into `<script id="probabilistic-method-engine">` as `self.PM`: seeded randomness, combinatorics and distributions, graphs and set systems, the inventory and concept map, the eighteen modules (parameters, analysis, sampling, hypotheses, proofs, deck stories), URL state, experiments, deck and Markdown exports, search, the recommender and self-tests. No DOM, clock or network. |
 | `src/ui/*.js` | The page code, concatenated into `<script id="probabilistic-method-ui">`: one SVG renderer per lab, the views (atlas, lab, technique, compare, recommender), deck mode, command palette, keyboard, export menu and the read-only WebMCP tools. |
 | `beamdswitch.js` | The site's standard report template, a verbatim copy of `templates/beamdswitch.js` in yujieteo/site, inlined unchanged as `<script id="beamdswitch">`. |

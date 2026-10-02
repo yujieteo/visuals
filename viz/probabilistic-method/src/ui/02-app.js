@@ -182,7 +182,7 @@ function conceptPanel() {
   const pre = M.edges.filter(([, b]) => b === n.id).map(([a]) => M.nodes.find((x) => x.id === a).label), post = M.edges.filter(([a]) => a === n.id).map(([, b]) => M.nodes.find((x) => x.id === b).label);
   const mods = (n.modules || []).map(PM.moduleById);
   return `<div class="card"><h4>${esc(n.label)}</h4><p class="small"><b>Prerequisites:</b> ${esc(pre.join(", ") || "none — start here")}. <b>Descendants:</b> ${esc(post.join(", ") || "none")}.</p>
-    ${mods.length ? `<table class="grid"><tr><th>technique</th><th>canonical problem</th><th>controls</th><th>typical conclusion</th></tr>${mods.map((m) => `<tr><td><button class="chip" type="button" data-act="module" data-id="${m.id}">${esc(m.short)}</button></td><td>${esc(m.archetype)}</td><td>${esc(m.pattern.controls)}</td><td>${esc(m.pattern.conclusion)}</td></tr>`).join("")}</table>` : ""}</div>`;
+    ${mods.length ? `<div class="scroll"><table class="grid"><tr><th>technique</th><th>canonical problem</th><th>controls</th><th>typical conclusion</th></tr>${mods.map((m) => `<tr><td><button class="chip" type="button" data-act="module" data-id="${m.id}">${esc(m.short)}</button></td><td>${esc(m.archetype)}</td><td>${esc(m.pattern.controls)}</td><td>${esc(m.pattern.conclusion)}</td></tr>`).join("")}</table></div>` : ""}</div>`;
 }
 function inventoryTable() {
   return `<div class="scroll"><table class="grid"><tr><th>#</th><th>technique</th><th>family</th><th>archetypal problem</th><th>status</th></tr>${PM.INVENTORY.map((t) => {
@@ -444,9 +444,9 @@ function onKey(e) {
 
 function applyTheme(t) { const root = document.documentElement; if (t === "light" || t === "dark") root.setAttribute("data-theme", t); else root.removeAttribute("data-theme"); }
 function cycleTheme() {
-  let t = ""; try { t = localStorage.getItem("pm-theme") || ""; } catch (e) { /* storage may be blocked */ }
+  let t = ""; try { t = localStorage.getItem("theme") || ""; } catch (e) { /* storage may be blocked */ }
   t = t === "" ? "light" : t === "light" ? "dark" : "";
-  try { if (t) localStorage.setItem("pm-theme", t); else localStorage.removeItem("pm-theme"); } catch (e) { /* ignore */ }
+  try { if (t) localStorage.setItem("theme", t); else localStorage.removeItem("theme"); } catch (e) { /* ignore */ }
   applyTheme(t); toast(`Theme: ${t || "system"}`);
 }
 
@@ -486,7 +486,7 @@ if (mc && typeof mc.registerTool === "function") for (const t of tools) mc.regis
 function start() {
   const st = $("static"); if (st && st.remove) st.remove();
   $("app").hidden = false;
-  try { applyTheme(localStorage.getItem("pm-theme") || ""); } catch (e) { /* storage may be blocked */ }
+  try { applyTheme(localStorage.getItem("theme") || ""); } catch (e) { /* storage may be blocked */ }
   buildActions();
   $("mode-atlas").addEventListener("click", () => { S.view = "atlas"; S.deck = false; render(); writeHash(); });
   $("mode-lab").addEventListener("click", () => { if (S.module) { S.view = "lab"; S.lens = "lab"; S.deck = false; evaluateNow(); render(); writeHash(); } else openModule("first-moment"); });
