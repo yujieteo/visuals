@@ -1668,78 +1668,11 @@ function run(req) {
     const fr = { name: f.name, searched: sel.files[fi], matches: [], matchCount: 0, lineCount: 0, lines: [] };
     result.files.push(fr);
     if (!fr.searched) return;
-    const text = f.text;
     const keep = (s, e, m) => { fr.matchCount++; if (budget > 0) { budget--; fr.matches.push({ s, e, g: engineGroupsArray(m, rec).map((x) => (x === undefined ? null : x)), m }); } else result.capped = true; };
-    if (rec.model === "lines" || rec.model === "pslines" || rec.model === "records") {
-      const lines = splitLines(text, rec.model === "pslines" ? "ps" : rec.model === "records" ? "nul" : "lf");
-      const firstOnly = preset === "pwsh" && !o.AllMatches;
-      lines.forEach((ln, idx) => {
-        const sub = text.slice(ln.start, ln.end);
-        const ms = [];
-        for (const m of execAll(re, sub)) { ms.push(m); if (firstOnly) break; }
-        ln.no = idx + 1;
-        ln.hit = ms.length > 0;
-        ln.ms = ms.map((m) => ({ s: ln.start + m.index, e: ln.start + m.index + m[0].length, m }));
-      });
-      fr.lines = lines;
-      const invert = preset === "rg" ? o.v : preset === "grep" ? o.v : preset === "pwsh" ? o.NotMatch : false;
-      for (const ln of lines) {
-        ln.sel = invert ? !ln.hit : ln.hit;
-        if (ln.sel) fr.lineCount++;
-        if (!invert) for (const x of ln.ms) keep(x.s, x.e, x.m);
-      }
-    } else if (rec.model === "multiline") {
-      const lines = splitLines(text, "lf");
-      lines.forEach((ln, idx) => { ln.no = idx + 1; ln.ms = []; ln.hit = false; });
-      fr.lines = lines;
-      let li = 0;
-      for (const m of execAll(re, text)) {
-        const s = m.index, e = m.index + m[0].length;
-        keep(s, e, m);
-        while (li < lines.length - 1 && lines[li].next <= s) li++;
-        let lj = li;
-        while (lj < lines.length - 1 && lines[lj].next < e) lj++;
-        for (let k = li; k <= lj; k++) lines[k].hit = true;
-        lines[li].ms.push({ s, e, m });
-      }
-      const invert = preset === "rg" && o.v;
-      for (const ln of lines) { ln.sel = invert ? !ln.hit : ln.hit; if (ln.sel) fr.lineCount++; }
-    } else if (rec.model === "whole") {
-      const ms = [];
-      for (const m of execAll(re, text)) { ms.push(m); if (o.mode !== "replace") break; }
-      for (const m of ms) keep(m.index, m.index + m[0].length, m);
-      fr.lineCount = ms.length ? 1 : 0;
-    } else if (rec.model === "document") {
-      // VS Code's view of the file: lines joined with \n; offsets map back to the text.
-      const lines = splitLines(text, "ps");
-      const view = lines.map((l) => text.slice(l.start, l.end)).join("\n");
-      const viewStarts = []; let acc = 0;
-      for (const l of lines) { viewStarts.push(acc); acc += l.end - l.start + 1; }
-      const toText = (vpos) => {
-        let lo = 0, hi = lines.length - 1;
-        while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (viewStarts[mid] <= vpos) lo = mid; else hi = mid - 1; }
-        if (!lines.length) return vpos;
-        const col = vpos - viewStarts[lo];
-        const l = lines[lo];
-        return col > l.end - l.start ? l.next : l.start + col;
-      };
-      const ranges = rec.multiline ? [[0, view.length]] : lines.map((l, k) => [viewStarts[k], viewStarts[k] + l.end - l.start]);
-      const hitLines = new Set();
-      for (const [a, b] of ranges) {
-        const sub = rec.multiline ? view : view.slice(a, b);
-        for (const m of execAll(re, sub)) {
-          const vs = (rec.multiline ? 0 : a) + m.index, ve = vs + m[0].length;
-          if (o.wholeWord && !vsWholeWordOk(view, vs, ve)) continue;
-          keep(toText(vs), toText(ve), m);
-          let lo = 0, hi = lines.length - 1;
-          while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (viewStarts[mid] <= vs) lo = mid; else hi = mid - 1; }
-          hitLines.add(lo);
-        }
-      }
-      lines.forEach((l, k) => { l.no = k + 1; l.sel = hitLines.has(k); });
-      fr.lines = lines;
-      fr.lineCount = hitLines.size;
-    }
+    if (rec.model === "lines" || rec.model === "pslines" || rec.model === "records") searchLines(preset, o, rec, re, f.text, fr, keep);
+    else if (rec.model === "multiline") searchMultiline(preset, o, re, f.text, fr, keep);
+    else if (rec.model === "whole") searchWhole(o, re, f.text, fr, keep);
+    else if (rec.model === "document") searchDocument(o, rec, re, f.text, fr, keep);
     result.totals.matches += fr.matchCount;
     result.totals.lines += fr.lineCount;
     if (fr.lineCount > 0 || fr.matchCount > 0) result.totals.files++;
@@ -1749,6 +1682,87 @@ function run(req) {
   // The worker posts results; RegExp match arrays do not survive structured clone well.
   for (const fr of result.files) { for (const x of fr.matches) delete x.m; for (const l of fr.lines) delete l.ms; }
   return result;
+}
+
+/* The matching models. Each fills fr.lines and fr.lineCount for one file and passes every match to keep(start, end, match). */
+// Line by line (rg, grep, Select-String) or NUL-separated records (grep -z); a match cannot cross a line.
+function searchLines(preset, o, rec, re, text, fr, keep) {
+  const lines = splitLines(text, rec.model === "pslines" ? "ps" : rec.model === "records" ? "nul" : "lf");
+  const firstOnly = preset === "pwsh" && !o.AllMatches;
+  lines.forEach((ln, idx) => {
+    const sub = text.slice(ln.start, ln.end);
+    const ms = [];
+    for (const m of execAll(re, sub)) { ms.push(m); if (firstOnly) break; }
+    ln.no = idx + 1;
+    ln.hit = ms.length > 0;
+    ln.ms = ms.map((m) => ({ s: ln.start + m.index, e: ln.start + m.index + m[0].length, m }));
+  });
+  fr.lines = lines;
+  const invert = preset === "rg" ? o.v : preset === "grep" ? o.v : preset === "pwsh" ? o.NotMatch : false;
+  for (const ln of lines) {
+    ln.sel = invert ? !ln.hit : ln.hit;
+    if (ln.sel) fr.lineCount++;
+    if (!invert) for (const x of ln.ms) keep(x.s, x.e, x.m);
+  }
+}
+// rg -U and multiline VS Code Search: the regex runs over the whole file and every line a match touches is selected.
+function searchMultiline(preset, o, re, text, fr, keep) {
+  const lines = splitLines(text, "lf");
+  lines.forEach((ln, idx) => { ln.no = idx + 1; ln.ms = []; ln.hit = false; });
+  fr.lines = lines;
+  let li = 0;
+  for (const m of execAll(re, text)) {
+    const s = m.index, e = m.index + m[0].length;
+    keep(s, e, m);
+    while (li < lines.length - 1 && lines[li].next <= s) li++;
+    let lj = li;
+    while (lj < lines.length - 1 && lines[lj].next < e) lj++;
+    for (let k = li; k <= lj; k++) lines[k].hit = true;
+    lines[li].ms.push({ s, e, m });
+  }
+  const invert = preset === "rg" && o.v;
+  for (const ln of lines) { ln.sel = invert ? !ln.hit : ln.hit; if (ln.sel) fr.lineCount++; }
+}
+// PowerShell -match and -replace: the whole string is one subject; -match stops at the first match.
+function searchWhole(o, re, text, fr, keep) {
+  const ms = [];
+  for (const m of execAll(re, text)) { ms.push(m); if (o.mode !== "replace") break; }
+  for (const m of ms) keep(m.index, m.index + m[0].length, m);
+  fr.lineCount = ms.length ? 1 : 0;
+}
+// VS Code Find: VS Code's view of the file is its lines joined with \n; offsets map back to the text.
+function searchDocument(o, rec, re, text, fr, keep) {
+  const lines = splitLines(text, "ps");
+  const view = lines.map((l) => text.slice(l.start, l.end)).join("\n");
+  const viewStarts = []; let acc = 0;
+  for (const l of lines) { viewStarts.push(acc); acc += l.end - l.start + 1; }
+  // The index of the line holding view offset vpos.
+  const lineAt = (vpos) => {
+    let lo = 0, hi = lines.length - 1;
+    while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (viewStarts[mid] <= vpos) lo = mid; else hi = mid - 1; }
+    return lo;
+  };
+  const toText = (vpos) => {
+    const lo = lineAt(vpos);
+    if (!lines.length) return vpos;
+    const col = vpos - viewStarts[lo];
+    const l = lines[lo];
+    return col > l.end - l.start ? l.next : l.start + col;
+  };
+  const ranges = rec.multiline ? [[0, view.length]] : lines.map((l, k) => [viewStarts[k], viewStarts[k] + l.end - l.start]);
+  const hitLines = new Set();
+  for (const [a, b] of ranges) {
+    const sub = rec.multiline ? view : view.slice(a, b);
+    for (const m of execAll(re, sub)) {
+      const vs = (rec.multiline ? 0 : a) + m.index, ve = vs + m[0].length;
+      if (o.wholeWord && !vsWholeWordOk(view, vs, ve)) continue;
+      keep(toText(vs), toText(ve), m);
+      hitLines.add(lineAt(vs));
+    }
+  }
+  lines.forEach((l, k) => { l.no = k + 1; l.sel = hitLines.has(k); });
+  fr.lines = lines;
+  fr.lineCount = hitLines.size;
 }
 
 const VS_SEPARATORS = "`~!@#$%^&*()-=+[{]}\\|;:'\",.<>/?";
@@ -1764,110 +1778,112 @@ function vsWholeWordOk(text, s, e) {
 /* Output rows: {kind: match|context|sep|info|count|file, prefix, text, spans:[[a,b]]} (spans relative to text). */
 function formatOutput(preset, o, rec, result, files, multi) {
   const rows = [];
-  const cap = () => rows.length >= MAX_HIGHLIGHTS;
-  const add = (r) => { if (cap()) { result.capped = true; return; } rows.push(r); };
-  if (preset === "rg" || preset === "grep") {
-    const invert = o.v;
-    const z = preset === "grep" && o.z;
-    const sepCh = z ? "␀" : "";
-    const nameOf = (fr) => fr.name;
-    if (o.l) { for (const fr of result.files) if (fr.searched && fr.lineCount > 0) add({ kind: "file", prefix: "", text: nameOf(fr) + sepCh, spans: [] }); return rows; }
-    if (o.c) {
-      for (const fr of result.files) {
-        if (!fr.searched) continue;
-        if (preset === "rg" && fr.lineCount === 0) continue;
-        add({ kind: "count", prefix: multi ? nameOf(fr) + ":" : "", text: String(fr.lineCount), spans: [] });
-      }
-      return rows;
-    }
-    const A0 = o.C !== null && o.C !== undefined ? +o.C : 0;
-    const after = o.A !== null && o.A !== undefined ? +o.A : A0;
-    const before = o.B !== null && o.B !== undefined ? +o.B : A0;
-    let lastPrinted = null, lastFile = null;
-    for (const fr of result.files) {
-      if (!fr.searched || fr.lineCount === 0) continue;
-      const lines = fr.lines;
-      const pre = (ln, sep) => (multi ? nameOf(fr) + sep : "") + (o.n ? ln.no + sep : "");
-      if (o.o) {
-        if (invert) continue;
-        for (const x of fr.matches) {
-          if (x.e === x.s) continue;
-          const ln = lines.find((l) => x.s >= l.start && x.s < l.next);
-          add({ kind: "match", prefix: ln ? pre(ln, ":") : "", text: textOf(files, fr, x.s, x.e) + sepCh, spans: [[0, x.e - x.s]] });
-        }
-        continue;
-      }
-      const printed = new Set();
-      // Selected lines; with -U that is every line a match touches.
-      const want = [];
-      lines.forEach((ln, k) => { if (ln.sel) want.push(k); });
-      const ctxSet = new Set();
-      for (const k of want) { for (let j = Math.max(0, k - before); j <= Math.min(lines.length - 1, k + after); j++) ctxSet.add(j); }
-      const order = [...ctxSet].sort((a, b) => a - b);
-      const wantSet = new Set(want);
-      for (const k of order) {
-        if (printed.has(k)) continue;
-        if ((before || after) && lastPrinted !== null && (lastFile !== fr.name || k > lastPrinted + 1)) add({ kind: "sep", prefix: "", text: "--", spans: [] });
-        const ln = lines[k];
-        const isMatch = wantSet.has(k);
-        const t = files[result.files.indexOf(fr)].text.slice(ln.start, ln.end);
-        const spans = isMatch && !invert ? spansOfLine(fr, ln) : [];
-        add({ kind: isMatch ? "match" : "context", prefix: pre(ln, isMatch ? ":" : "-"), text: t + sepCh, spans, lineStart: ln.start, file: fr.name });
-        printed.add(k); lastPrinted = k; lastFile = fr.name;
-      }
-    }
-    return rows;
-  }
-  if (preset === "pwsh") {
-    if (o.mode === "select") {
-      for (const fr of result.files) {
-        const lines = fr.lines;
-        const pre = o.Context ? o.Context[0] : 0, post = o.Context ? o.Context[1] : 0;
-        const text = files[result.files.indexOf(fr)].text;
-        const show = new Set();
-        lines.forEach((ln, k) => { if (ln.sel) for (let j = Math.max(0, k - pre); j <= Math.min(lines.length - 1, k + post); j++) show.add(j); });
-        for (const k of [...show].sort((a, b) => a - b)) {
-          const ln = lines[k];
-          if (ln.sel) add({ kind: "match", prefix: `${o.Context ? "> " : ""}${fr.name}:${ln.no}:`, text: text.slice(ln.start, ln.end), spans: o.NotMatch ? [] : spansOfLine(fr, ln) });
-          else add({ kind: "context", prefix: `  ${fr.name}:${ln.no}:`, text: text.slice(ln.start, ln.end), spans: [] });
-        }
-      }
-      return rows;
-    }
-    if (o.mode === "replace") return rows;
-    const fr = result.files[0];
-    const hit = fr && fr.matchCount > 0;
-    add({ kind: "info", prefix: "", text: hit ? "True" : "False", spans: [] });
-    if (hit) {
-      const x = fr.matches[0];
-      add({ kind: "info", prefix: "", text: "", spans: [] });
-      add({ kind: "info", prefix: "", text: "$Matches", spans: [] });
-      const names = Object.keys(rec.names);
-      const nameNums = new Set(names.map((n) => rec.names[n]));
-      const entries = [];
-      for (const n of names) if (x.g && rec.names[n] !== undefined) { const eng = Object.keys(rec.groupMap).find((k) => rec.groupMap[k] === rec.names[n]); const v = x.g[+eng]; if (v !== null && v !== undefined) entries.push([n, v]); }
-      for (let k = rec.groupCount; k >= 1; k--) { if (nameNums.has(rec.groupMap[k])) continue; const v = x.g[k]; if (v !== null && v !== undefined) entries.push([String(k), v]); }
-      entries.push(["0", x.g[0]]);
-      for (const [n, v] of entries) add({ kind: "match", prefix: n.padEnd(6) + " ", text: v, spans: [[0, v.length]] });
-    }
-    return rows;
-  }
-  if (preset === "vsfind" || preset === "vssearch") {
-    for (const fr of result.files) {
-      if (!fr.searched || fr.matchCount === 0) continue;
-      const text = files[result.files.indexOf(fr)].text;
-      add({ kind: "file", prefix: "", text: `${fr.name} (${fr.matchCount})`, spans: [] });
-      for (const ln of fr.lines) {
-        if (!ln.sel) continue;
-        add({ kind: "match", prefix: `  ${ln.no}: `, text: text.slice(ln.start, ln.end), spans: spansOfLine(fr, ln) });
-      }
-    }
-    return rows;
-  }
+  const add = (r) => { if (rows.length >= MAX_HIGHLIGHTS) { result.capped = true; return; } rows.push(r); };
+  if (preset === "rg" || preset === "grep") formatGrepRows(preset, o, result, files, multi, add);
+  else if (preset === "pwsh") formatPwshRows(o, rec, result, files, add);
+  else if (preset === "vsfind" || preset === "vssearch") formatVsCodeRows(result, files, add);
   return rows;
-  function spansOfLine(fr, ln) {
-    return fr.matches.filter((x) => x.s < ln.next && x.e > ln.start || (x.s === x.e && x.s >= ln.start && x.s <= ln.end)).map((x) => [Math.max(x.s, ln.start) - ln.start, Math.min(x.e, ln.end) - ln.start]);
+}
+// rg and grep: -l file names, -c counts, -o matched parts, or matching lines with -A/-B/-C context and "--" separators.
+function formatGrepRows(preset, o, result, files, multi, add) {
+  const invert = o.v;
+  const z = preset === "grep" && o.z;
+  const sepCh = z ? "␀" : "";
+  const nameOf = (fr) => fr.name;
+  if (o.l) { for (const fr of result.files) if (fr.searched && fr.lineCount > 0) add({ kind: "file", prefix: "", text: nameOf(fr) + sepCh, spans: [] }); return; }
+  if (o.c) {
+    for (const fr of result.files) {
+      if (!fr.searched) continue;
+      if (preset === "rg" && fr.lineCount === 0) continue;
+      add({ kind: "count", prefix: multi ? nameOf(fr) + ":" : "", text: String(fr.lineCount), spans: [] });
+    }
+    return;
   }
+  const A0 = o.C !== null && o.C !== undefined ? +o.C : 0;
+  const after = o.A !== null && o.A !== undefined ? +o.A : A0;
+  const before = o.B !== null && o.B !== undefined ? +o.B : A0;
+  let lastPrinted = null, lastFile = null;
+  for (const fr of result.files) {
+    if (!fr.searched || fr.lineCount === 0) continue;
+    const lines = fr.lines;
+    const pre = (ln, sep) => (multi ? nameOf(fr) + sep : "") + (o.n ? ln.no + sep : "");
+    if (o.o) {
+      if (invert) continue;
+      for (const x of fr.matches) {
+        if (x.e === x.s) continue;
+        const ln = lines.find((l) => x.s >= l.start && x.s < l.next);
+        add({ kind: "match", prefix: ln ? pre(ln, ":") : "", text: textOf(files, fr, x.s, x.e) + sepCh, spans: [[0, x.e - x.s]] });
+      }
+      continue;
+    }
+    const printed = new Set();
+    // Selected lines; with -U that is every line a match touches.
+    const want = [];
+    lines.forEach((ln, k) => { if (ln.sel) want.push(k); });
+    const ctxSet = new Set();
+    for (const k of want) { for (let j = Math.max(0, k - before); j <= Math.min(lines.length - 1, k + after); j++) ctxSet.add(j); }
+    const order = [...ctxSet].sort((a, b) => a - b);
+    const wantSet = new Set(want);
+    for (const k of order) {
+      if (printed.has(k)) continue;
+      if ((before || after) && lastPrinted !== null && (lastFile !== fr.name || k > lastPrinted + 1)) add({ kind: "sep", prefix: "", text: "--", spans: [] });
+      const ln = lines[k];
+      const isMatch = wantSet.has(k);
+      const t = files[result.files.indexOf(fr)].text.slice(ln.start, ln.end);
+      const spans = isMatch && !invert ? spansOfLine(fr, ln) : [];
+      add({ kind: isMatch ? "match" : "context", prefix: pre(ln, isMatch ? ":" : "-"), text: t + sepCh, spans, lineStart: ln.start, file: fr.name });
+      printed.add(k); lastPrinted = k; lastFile = fr.name;
+    }
+  }
+}
+// Select-String: MatchInfo lines with optional -Context; -match: True or False and the $Matches table; -replace prints nothing here.
+function formatPwshRows(o, rec, result, files, add) {
+  if (o.mode === "select") {
+    for (const fr of result.files) {
+      const lines = fr.lines;
+      const pre = o.Context ? o.Context[0] : 0, post = o.Context ? o.Context[1] : 0;
+      const text = files[result.files.indexOf(fr)].text;
+      const show = new Set();
+      lines.forEach((ln, k) => { if (ln.sel) for (let j = Math.max(0, k - pre); j <= Math.min(lines.length - 1, k + post); j++) show.add(j); });
+      for (const k of [...show].sort((a, b) => a - b)) {
+        const ln = lines[k];
+        if (ln.sel) add({ kind: "match", prefix: `${o.Context ? "> " : ""}${fr.name}:${ln.no}:`, text: text.slice(ln.start, ln.end), spans: o.NotMatch ? [] : spansOfLine(fr, ln) });
+        else add({ kind: "context", prefix: `  ${fr.name}:${ln.no}:`, text: text.slice(ln.start, ln.end), spans: [] });
+      }
+    }
+    return;
+  }
+  if (o.mode === "replace") return;
+  const fr = result.files[0];
+  const hit = fr && fr.matchCount > 0;
+  add({ kind: "info", prefix: "", text: hit ? "True" : "False", spans: [] });
+  if (!hit) return;
+  const x = fr.matches[0];
+  add({ kind: "info", prefix: "", text: "", spans: [] });
+  add({ kind: "info", prefix: "", text: "$Matches", spans: [] });
+  const names = Object.keys(rec.names);
+  const nameNums = new Set(names.map((n) => rec.names[n]));
+  const entries = [];
+  for (const n of names) if (x.g && rec.names[n] !== undefined) { const eng = Object.keys(rec.groupMap).find((k) => rec.groupMap[k] === rec.names[n]); const v = x.g[+eng]; if (v !== null && v !== undefined) entries.push([n, v]); }
+  for (let k = rec.groupCount; k >= 1; k--) { if (nameNums.has(rec.groupMap[k])) continue; const v = x.g[k]; if (v !== null && v !== undefined) entries.push([String(k), v]); }
+  entries.push(["0", x.g[0]]);
+  for (const [n, v] of entries) add({ kind: "match", prefix: n.padEnd(6) + " ", text: v, spans: [[0, v.length]] });
+}
+// VS Code: each file with its match count, then its matching lines.
+function formatVsCodeRows(result, files, add) {
+  for (const fr of result.files) {
+    if (!fr.searched || fr.matchCount === 0) continue;
+    const text = files[result.files.indexOf(fr)].text;
+    add({ kind: "file", prefix: "", text: `${fr.name} (${fr.matchCount})`, spans: [] });
+    for (const ln of fr.lines) {
+      if (!ln.sel) continue;
+      add({ kind: "match", prefix: `  ${ln.no}: `, text: text.slice(ln.start, ln.end), spans: spansOfLine(fr, ln) });
+    }
+  }
+}
+// The highlighted spans of one output line, relative to its start; an empty match counts when it sits inside the line.
+function spansOfLine(fr, ln) {
+  return fr.matches.filter((x) => x.s < ln.next && x.e > ln.start || (x.s === x.e && x.s >= ln.start && x.s <= ln.end)).map((x) => [Math.max(x.s, ln.start) - ln.start, Math.min(x.e, ln.end) - ln.start]);
 }
 function textOf(files, fr, s, e) { const f = files.find((x) => x.name === fr.name); return f.text.slice(s, e); }
 
