@@ -1,5 +1,5 @@
 // Shared checks for the visualisations' beamdswitch decks. Each page inlines the site's standard
-// report template (viz/<slug>/beamdswitch.js, a copy of the site's templates/beamdswitch.js, vendored
+// report template (the root beamdswitch.js, a copy of the site's templates/beamdswitch.js, vendored
 // here as tests/fixtures/beamdswitch/beamdswitch.js) and decks are parsed with beamdswitch's own
 // parser (read-only copies in tests/fixtures/beamdswitch/), as the site's tests do.
 import assert from "node:assert/strict";
@@ -17,11 +17,11 @@ export const SECTIONS = require(`../${TEMPLATE_PATH}`).SECTIONS.map(([, title]) 
 
 // A site checkout to compare against as well, when one is at hand: SITE_REPO, or a sibling `site`.
 const siteRepo = process.env.SITE_REPO || new URL("../../site/", import.meta.url).pathname;
-export const SITE_TEMPLATE = `${siteRepo.replace(/\/$/, "")}/templates/beamdswitch.js`;
-export const haveSite = existsSync(SITE_TEMPLATE);
+const SITE_TEMPLATE = `${siteRepo.replace(/\/$/, "")}/templates/beamdswitch.js`;
+const haveSite = existsSync(SITE_TEMPLATE);
 
 // The copy matches a site checkout's templates/beamdswitch.js.
-export function assertSiteTemplate(copy, sitePath, what) {
+function assertSiteTemplate(copy, sitePath, what) {
   assert.equal(copy, readFileSync(sitePath, "utf8"), `the site's templates/beamdswitch.js and ${what} must stay identical`);
 }
 
@@ -106,7 +106,7 @@ function element(tag, store = {}) {
 
 // Runs a built page's scripts in the stand-in DOM. The page's own <button>s stand in with their attributes,
 // data-* and text, found by id or by a [data-*] selector. click(id) clicks a button and waits for its handlers;
-// press(match) clicks the latest drawn control that matches; saved holds each downloaded file's text and
+// saved holds each downloaded file's text and
 // copied each clipboard write; run(code) evaluates code in the page's global scope. globals adds stand-ins (such as d3).
 export async function openPage(slug, { globals = {} } = {}) {
   const html = read(`index.html`);
@@ -157,29 +157,5 @@ export async function openPage(slug, { globals = {} } = {}) {
   context.window = context.self = context.globalThis = context;
   for (const m of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)) if (!/\bsrc=|type="application\/json"/.test(m[1])) vm.runInContext(m[2], context);
   const click = async (id) => { await get(byId, id).dispatch("click"); await new Promise((r) => setImmediate(r)); };
-  const textOf = (e) => e.textContent + e.children.map(textOf).join("");
-  const press = async (match) => {
-    const e = created.findLast((x) => x.listeners.click && match({ attr: (k) => x.getAttribute(k), text: textOf(x) }));
-    assert.ok(e, "the page drew the control");
-    await e.dispatch("click");
-  };
-  return { html, run: (code) => vm.runInContext(code, context), click, press, saved, copied };
-}
-
-// Clicking beamdswitch downloads the deck of the page as set; Copy deck puts that same deck on the clipboard.
-export async function assertButtonsExport(page, slug, expected) {
-  await page.click("save-beamdswitch");
-  assert.deepEqual(page.saved, [{ name: `${slug}-beamdswitch.md`, text: expected }]);
-  await page.click("copy-beamdswitch");
-  assert.deepEqual(page.copied, [expected]);
-}
-
-// The page's deck-row matches the site's: a beamdswitch button, a Copy deck button and a status line,
-// and the hint never claims the download falls back to the clipboard.
-export function assertDeckButtons(html, what) {
-  assert.match(html, /<button type="button" id="save-beamdswitch"[^>]*>beamdswitch<\/button>/, what);
-  assert.match(html, /<button type="button" id="copy-beamdswitch"[^>]*>Copy deck<\/button>/, what);
-  assert.match(html, /id="deck-status"[^>]*role="status"/, what);
-  assert.ok(html.includes('href="https://teoyujie.org/visuals/beamdswitch/"'), `${what}: links beamdswitch`);
-  assert.doesNotMatch(html, /saving is blocked|copied (it )?instead|falls? back to the clipboard/i, `${what}: no clipboard-fallback claim`);
+  return { html, run: (code) => vm.runInContext(code, context), click, saved, copied };
 }
