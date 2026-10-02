@@ -360,6 +360,7 @@ function runPage(html) {
     matchMedia: () => ({ matches: false, addEventListener: noop }),
     requestAnimationFrame: (fn) => frames.push(fn),
     ResizeObserver: class { observe() {} },
+    MutationObserver: class { observe() {} },
     fetch: (...a) => { requests.push(["fetch", a]); return Promise.reject(new Error("offline")); },
     XMLHttpRequest: class { open(...a) { requests.push(["xhr", a]); } send() {} },
   };

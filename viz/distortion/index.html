@@ -5,90 +5,82 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Structural Distortion Explorer</title>
 <meta name="description" content="A qualitative, exaggerated 3D view of how axial load, shear, torsion and bending distort a patch of skin on thin-walled structures.">
+<script id="site-theme">try { var t = localStorage.getItem("theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (e) {}</script>
 <style>
-:root {
-  color-scheme: dark;
-  --bg: #1d1f23; --stage: #202328; --panel: #262a30; --panel-2: #2d3239; --text: #e7e9ec; --muted: #a0a7b1;
-  --line: #3a4048; --amber: #ffb000; --tension: #ef5350; --compression: #4f8dff; --ghost: #9cc3ff;
-  --steel: #8d949e; --focus: #ffd166; --shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
-}
-@media (prefers-color-scheme: light) {
-  :root {
-    color-scheme: light;
-    --bg: #e8eaed; --stage: #eceef1; --panel: #f7f8fa; --panel-2: #ffffff; --text: #1b1f25; --muted: #56606c;
-    --line: #cdd2d9; --amber: #d98a00; --tension: #d32f2f; --compression: #1f63d6; --ghost: #5a8fd6;
-    --steel: #8d949e; --focus: #b35c00; --shadow: 0 6px 20px rgba(20, 30, 40, 0.15);
-  }
-}
+:root{--bg:#ffffff;--fg:#1d1d1f;--muted:#6e6e73;--faint:#a1a1a6;--surface:#f5f5f7;--border:#d2d2d7;--control:#86868b;--grid:#e8e8ed;--axis:#86868b;--focus:#0071e3;--on-focus:#ffffff;--c1:#2a78d6;--c2:#eb6834;--c3:#8a4fd8;--c4:#0f8b8d;--hl:#c43d2f;--ok:#1a7f4b;--warn:#9a6700;--bad:#c4261d;--shadow:rgb(0 0 0/.16);--sans:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;--mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;--math:"Cambria Math","STIX Two Math","Latin Modern Math",Cambria,"Times New Roman",serif;--fade-duration:200ms;--fade-ease:cubic-bezier(0.2,0,0,1);--stage:var(--surface);--panel:var(--bg);--panel-2:var(--bg);--amber:var(--warn);--tension:var(--hl);--compression:var(--c1);--ghost:var(--c1);--steel:var(--axis);--r:.5rem;color-scheme:light dark}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--faint:#6e6e73;--surface:#2c2c2e;--border:#48484a;--control:#8e8e93;--grid:#333336;--axis:#8e8e93;--focus:#2997ff;--on-focus:#1d1d1f;--c1:#3987e5;--c2:#d95926;--c3:#a77bf0;--c4:#3bb6b8;--hl:#ff6961;--ok:#30c07a;--warn:#e3b341;--bad:#ff6961;--shadow:rgb(0 0 0/.6)}}
+:root[data-theme="dark"]{--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--faint:#6e6e73;--surface:#2c2c2e;--border:#48484a;--control:#8e8e93;--grid:#333336;--axis:#8e8e93;--focus:#2997ff;--on-focus:#1d1d1f;--c1:#3987e5;--c2:#d95926;--c3:#a77bf0;--c4:#3bb6b8;--hl:#ff6961;--ok:#30c07a;--warn:#e3b341;--bad:#ff6961;--shadow:rgb(0 0 0/.6);color-scheme:dark}
+:root[data-theme="light"]{color-scheme:light}
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; }
 body {
-  background: var(--bg); color: var(--text);
-  font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: var(--bg); color: var(--fg);
+  font: 14px/1.45 var(--sans); letter-spacing: -0.011em; -webkit-font-smoothing: antialiased;
   display: grid; grid-template-rows: auto 1fr; overflow: hidden;
 }
-header { position: relative; z-index: 5; padding: 10px 16px 8px; border-bottom: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: baseline; }
+header { position: relative; z-index: 5; padding: 10px 16px 8px; border-bottom: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: baseline; }
 #about { margin-left: auto; }
-#about summary { cursor: pointer; color: var(--text); font-size: 13px; font-weight: 600; list-style: none; border: 1px solid var(--line); border-radius: 8px; padding: 3px 10px; background: var(--panel-2); }
+#about summary { cursor: pointer; color: var(--fg); font-size: 13px; font-weight: 600; list-style: none; border: 1px solid var(--control); border-radius: 999px; padding: 4px 12px; background: var(--bg); }
 #about summary::-webkit-details-marker { display: none; }
-#about[open] summary { border-color: var(--amber); }
-#about .about-body { position: absolute; right: 16px; top: calc(100% + 6px); width: min(560px, calc(100vw - 32px)); max-height: min(72vh, 640px); overflow: auto; padding: 4px 18px 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); font-size: 13.5px; }
+#about[open] summary { border-color: var(--fg); background: var(--fg); color: var(--bg); }
+#about .about-body { position: absolute; right: 16px; top: calc(100% + 6px); width: min(560px, calc(100vw - 32px)); max-height: min(72vh, 640px); overflow: auto; padding: 4px 18px 14px; background: var(--panel); border: 1px solid var(--border); border-radius: var(--r); box-shadow: 0 8px 24px var(--shadow); font-size: 13.5px; }
 .about-body h2 { font-size: 14px; margin: 14px 0 4px; }
 .about-body p, .about-body ul { margin: 4px 0; }
 .about-body ul { padding-left: 18px; }
-.tag { display: inline-block; font-size: 11px; font-weight: 650; letter-spacing: 0.03em; padding: 0 6px; border-radius: 99px; border: 1px solid var(--line); color: var(--muted); vertical-align: 1px; }
+.tag { display: inline-block; font: 600 11px/1.5 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; padding: 0 6px; border-radius: 99px; border: 1px solid var(--border); color: var(--muted); vertical-align: 1px; }
 .tag.assumed { color: var(--amber); border-color: var(--amber); }
-#legend { position: absolute; left: 12px; top: 12px; max-width: min(300px, calc(100% - 24px)); padding: 8px 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow); font-size: 12px; }
+#legend { position: absolute; left: 12px; top: 12px; max-width: min(300px, calc(100% - 24px)); padding: 8px 10px; background: var(--panel); border: 1px solid var(--border); border-radius: var(--r); box-shadow: 0 8px 24px var(--shadow); font-size: 12px; }
 #legend .row { display: flex; flex-wrap: wrap; gap: 2px 10px; }
 #legend .fx { margin-top: 5px; color: var(--muted); }
 #legend .fx span { white-space: nowrap; }
 .sym { display: inline-block; width: 14px; height: 10px; border-radius: 2px; vertical-align: -1px; margin-right: 4px; }
 .presets { display: grid; gap: 6px; }
-.presets button { text-align: left; }
-.presets button[aria-pressed=true] { border-color: var(--amber); }
+.presets button { text-align: left; border-radius: var(--r); }
+.presets button[aria-pressed=true] { border-color: var(--fg); background: var(--fg); color: var(--bg); }
 #hint { margin: 8px 0 0; font-size: 12.5px; color: var(--muted); }
 #hint:empty { display: none; }
 #sheet-handle { display: none; }
-h1 { font-size: 18px; margin: 0; font-weight: 650; letter-spacing: 0.01em; }
+h1 { font-size: 18px; margin: 0; font-weight: 700; letter-spacing: -0.02em; }
 .disclaimer { color: var(--muted); margin: 0; font-size: 13px; }
 main { display: grid; grid-template-columns: minmax(0, 1fr) 340px; min-height: 0; }
 #stage { position: relative; min-width: 0; min-height: 0; background: var(--stage); overflow: hidden; }
 #view { display: block; width: 100%; height: 100%; touch-action: none; outline: none; }
-#view:focus-visible { box-shadow: inset 0 0 0 3px var(--focus); }
+#view:focus-visible { box-shadow: inset 0 0 0 2px var(--focus); }
 #nogl { position: absolute; inset: 0; display: none; place-items: center; padding: 24px; text-align: center; color: var(--muted); }
 #nogl p { max-width: 34em; }
 .nogl #nogl { display: grid; }
 .nogl #view, .nogl #legend { display: none; }
-#panel { background: var(--panel); border-left: 1px solid var(--line); overflow-y: auto; padding: 12px 16px 24px; min-height: 0; }
+#panel { background: var(--panel); border-left: 1px solid var(--border); overflow-y: auto; padding: 12px 16px 24px; min-height: 0; }
 fieldset { border: 0; margin: 0 0 14px; padding: 0; min-width: 0; }
-legend { font-weight: 650; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 0 0 6px; padding: 0; }
+legend { font: 600 12px/1.4 var(--mono); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 0 0 6px; padding: 0; }
 .seg { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
 .seg label { display: block; position: relative; }
 .seg input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
-.seg span { display: block; padding: 7px 8px; border: 1px solid var(--line); border-radius: 8px; text-align: center; background: var(--panel-2); cursor: pointer; }
-.seg input:checked + span { border-color: var(--amber); box-shadow: inset 0 0 0 1px var(--amber); font-weight: 600; }
-.seg input:focus-visible + span { outline: 3px solid var(--focus); outline-offset: 2px; }
+.seg span { display: block; padding: 7px 8px; border: 1px solid var(--control); border-radius: 999px; text-align: center; background: var(--bg); cursor: pointer; }
+.seg input:checked + span { border-color: var(--fg); background: var(--fg); color: var(--bg); font-weight: 600; }
+.seg input:focus-visible + span { outline: 2px solid var(--focus); outline-offset: 2px; }
 .slider { margin: 0 0 10px; transition: opacity 0.2s; }
 .slider .row { display: flex; justify-content: space-between; gap: 8px; }
-.slider output { color: var(--muted); font-size: 12.5px; text-align: right; }
+.slider output { color: var(--muted); font: 12.5px var(--mono); font-variant-numeric: tabular-nums; text-align: right; }
 .slider.dim { opacity: 0.38; }
 .track { position: relative; }
-.crit { position: absolute; top: 25px; width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 7px solid var(--text); transform: translateX(-50%); pointer-events: none; }
+.crit { position: absolute; top: 25px; width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 7px solid var(--fg); transform: translateX(-50%); pointer-events: none; }
 .slider.has-crit { margin-bottom: 16px; }
 #buckle-status { margin: 0 0 12px; font-size: 12.5px; color: var(--muted); }
-#buckle-status strong { color: var(--text); font-weight: 600; }
-input[type=range] { width: 100%; margin: 4px 0 0; accent-color: var(--amber); height: 22px; }
-input[type=range]:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
-button, select { font: inherit; color: var(--text); background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; cursor: pointer; }
-button:hover, select:hover { border-color: var(--muted); }
-button:focus-visible, select:focus-visible, summary:focus-visible, input[type=checkbox]:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+#buckle-status strong { color: var(--fg); font-weight: 600; }
+input[type=range] { width: 100%; margin: 4px 0 0; accent-color: var(--focus); height: 22px; }
+input[type=range]:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
+button, select { font: inherit; color: var(--fg); background: var(--bg); border: 1px solid var(--control); border-radius: 999px; padding: 6px 12px; cursor: pointer; }
+select { border-radius: var(--r); }
+button:hover, select:hover { background: var(--surface); }
+button:focus-visible, select:focus-visible, summary:focus-visible, input[type=checkbox]:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .toggles label { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; cursor: pointer; }
-.toggles input { width: 16px; height: 16px; accent-color: var(--amber); margin: 0; }
+.toggles input { width: 16px; height: 16px; accent-color: var(--focus); margin: 0; }
 .toggles label.dim { opacity: 0.38; cursor: default; }
 .actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .note { color: var(--muted); font-size: 12.5px; margin: 4px 0 0; }
-#inset { position: absolute; left: 12px; bottom: 12px; width: 236px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow); }
-#inset-toggle { width: 100%; display: flex; justify-content: space-between; align-items: center; border: 0; background: transparent; border-radius: 10px; padding: 7px 10px; font-weight: 600; font-size: 13px; }
+#inset { position: absolute; left: 12px; bottom: 12px; width: 236px; background: var(--panel); border: 1px solid var(--border); border-radius: var(--r); box-shadow: 0 8px 24px var(--shadow); }
+#inset-toggle { width: 100%; display: flex; justify-content: space-between; align-items: center; border: 0; background: transparent; border-radius: var(--r); padding: 7px 10px; font-weight: 600; font-size: 13px; }
 #inset-toggle .chev { transition: transform 0.2s; }
 #inset-toggle[aria-expanded=false] .chev { transform: rotate(-90deg); }
 #inset-body { padding: 0 10px 8px; }
@@ -97,7 +89,7 @@ button:focus-visible, select:focus-visible, summary:focus-visible, input[type=ch
 #inset-text { margin: 4px 0 0; font-size: 12px; color: var(--muted); }
 .key { display: inline-flex; align-items: center; gap: 4px; margin-right: 8px; }
 .sw { display: inline-block; width: 14px; height: 3px; border-radius: 2px; }
-#maplegend { position: absolute; right: 12px; top: 12px; width: 190px; padding: 8px 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow); font-size: 12px; }
+#maplegend { position: absolute; right: 12px; top: 12px; width: 190px; padding: 8px 10px; background: var(--panel); border: 1px solid var(--border); border-radius: var(--r); box-shadow: 0 8px 24px var(--shadow); font-size: 12px; }
 #maplegend[hidden] { display: none; }
 #maplegend .bar { height: 10px; border-radius: 3px; margin: 5px 0 3px; }
 #maplegend .ends { display: flex; justify-content: space-between; color: var(--muted); }
@@ -110,10 +102,10 @@ button:focus-visible, select:focus-visible, summary:focus-visible, input[type=ch
   .disclaimer { font-size: 12px; }
   main { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) var(--peek); }
   :root { --peek: 36vh; }
-  #panel { position: fixed; left: 0; right: 0; bottom: 0; height: 80vh; z-index: 4; border-left: 0; border-top: 1px solid var(--line); border-radius: 14px 14px 0 0; box-shadow: var(--shadow); padding-top: 0; transform: translateY(calc(80vh - var(--peek))); transition: transform 0.25s ease; }
+  #panel { position: fixed; left: 0; right: 0; bottom: 0; height: 80vh; z-index: 4; border-left: 0; border-top: 1px solid var(--border); border-radius: 14px 14px 0 0; box-shadow: 0 8px 24px var(--shadow); padding-top: 0; transform: translateY(calc(80vh - var(--peek))); transition: transform 0.25s ease; }
   #panel.open { transform: translateY(0); }
   #sheet-handle { display: flex; position: sticky; top: 0; z-index: 1; width: calc(100% + 32px); margin: 0 -16px 8px; justify-content: center; align-items: center; gap: 8px; padding: 10px 0 8px; border: 0; border-radius: 14px 14px 0 0; background: var(--panel); font-size: 12px; color: var(--muted); touch-action: none; }
-  #sheet-handle::before { content: ""; width: 40px; height: 5px; border-radius: 3px; background: var(--line); }
+  #sheet-handle::before { content: ""; width: 40px; height: 5px; border-radius: 3px; background: var(--border); }
   #inset { width: 150px; left: 8px; bottom: 8px; }
   #inset-text { display: none; }
   #inset-toggle { font-size: 12px; padding: 5px 8px; }
@@ -121,7 +113,8 @@ button:focus-visible, select:focus-visible, summary:focus-visible, input[type=ch
   #legend .fx { display: none; }
   #maplegend { right: 8px; top: auto; bottom: 8px; width: 150px; font-size: 11px; }
 }
-@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+@media (prefers-reduced-motion: reduce) { :root { --fade-duration: 0ms; } * { transition: none !important; animation: none !important; } }
+@media print{:root:root{--bg:#ffffff;--fg:#1d1d1f;--muted:#6e6e73;--faint:#a1a1a6;--surface:#f5f5f7;--border:#d2d2d7;--control:#86868b;--grid:#e8e8ed;--axis:#86868b;--focus:#0071e3;--on-focus:#ffffff;--c1:#2a78d6;--c2:#eb6834;--c3:#8a4fd8;--c4:#0f8b8d;--hl:#c43d2f;--ok:#1a7f4b;--warn:#9a6700;--bad:#c4261d;--shadow:rgb(0 0 0/.16);color-scheme:light}}
 </style>
 </head>
 <body>
@@ -5491,8 +5484,9 @@ const hex = (c) => `rgb(${c.map((x) => Math.round(x * 255)).join(",")})`;
 const lin = (c) => c.map((x) => (x <= 0.04045 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4)));
 let DIV = [], SEQ = [];
 function setScales() {
-  DIV = [hexRGB(css("--compression")), [0.96, 0.96, 0.95], hexRGB(css("--tension"))];
-  SEQ = ["#2d1b4e", "#3b528b", "#21918c", "#5ec962", "#fde725"].map(hexRGB);
+  const bg = hexRGB(css("--bg")), c1 = hexRGB(css("--c1"));
+  DIV = [hexRGB(css("--compression")), bg, hexRGB(css("--tension"))];
+  SEQ = [0.15, 0.35, 0.55, 0.8, 1].map((f) => bg.map((x, i) => x + (c1[i] - x) * f));
 }
 setScales();
 const mix = (a, b, f) => a.map((x, i) => x + (b[i] - x) * f);
@@ -5738,14 +5732,15 @@ function createView() {
 
   function themeColours() {
     scene.background = new T.Color(css("--stage"));
-    const light = matchMedia("(prefers-color-scheme: light)").matches;
-    gridMat.color.set(light ? 0x39414b : 0x23262b); gridMat.opacity = light ? 0.35 : 0.5;
+    const light = css("--bg").toLowerCase() === "#ffffff";
+    gridMat.color.set(css("--axis")); gridMat.opacity = light ? 0.35 : 0.5;
+    bodyMat.color.set(css("--steel"));
     ghostMat.color.set(css("--ghost"));
     patchMat.emissive.set(css("--amber"));
+    if (axes) axes.children[0].material.color.set(css("--muted"));
     setScales();
   }
   themeColours();
-  matchMedia("(prefers-color-scheme: light)").addEventListener("change", () => { themeColours(); render(); });
 
   /* One mesh per wall: outer and inner faces, the end rims and, for open
    * walls, the side rims. Each vertex remembers its (u, v, zeta); closed walls
@@ -5885,7 +5880,7 @@ function createView() {
     const geo = new T.BufferGeometry();
     geo.setAttribute("position", new T.BufferAttribute(new Float32Array([
       ...o, o[0] + len, o[1], o[2], ...o, o[0], o[1] + len, o[2], ...o, o[0], o[1], o[2] + len]), 3));
-    g.add(new T.LineSegments(geo, new T.LineBasicMaterial({ color: 0xa0a7b1 })));
+    g.add(new T.LineSegments(geo, new T.LineBasicMaterial({ color: new T.Color(css("--muted")) })));
     g.userData.tips = [["x", [o[0] + len + 0.12, o[1], o[2]]], ["y", [o[0], o[1] + len + 0.12, o[2]]], ["z", [o[0], o[1], o[2] + len + 0.12]]];
     return g;
   }
@@ -6106,7 +6101,7 @@ function createView() {
   controls.addEventListener("change", render);
   new ResizeObserver(resize).observe(stage);
 
-  return { rebuild, update, render, resize, frame, scene, camera, renderer };
+  return { rebuild, update, render, resize, frame, themeColours, scene, camera, renderer };
 }
 
 /* ---------- 2D inset ---------- */
@@ -6149,7 +6144,7 @@ function drawInset() {
   const sx = Math.cos(-a), sy = -Math.sin(-a);
   const ix = small ? 14 : 26, iy = small ? 12 : 26, il = small ? 9 : 14;
   g.beginPath(); g.moveTo(ix - il * sx, iy - il * sy); g.lineTo(ix + il * sx, iy + il * sy); g.stroke();
-  g.font = "11px system-ui, sans-serif"; g.fillText("span", ix + il + 5, iy + 4);
+  g.font = `11px ${css("--sans")}`; g.fillText("span", ix + il + 5, iy + 4);
   // ghost
   g.setLineDash([4, 3]); g.strokeStyle = col.ghost; g.lineWidth = 1.2;
   g.strokeRect(cx - k, cy - k, 2 * k, 2 * k); g.setLineDash([]);
@@ -6172,7 +6167,7 @@ function drawInset() {
     g.beginPath(); g.moveTo(...o); g.lineTo(o[0] + r * 1.25 * Math.cos(ref), o[1] + r * 1.25 * Math.sin(ref)); g.stroke(); g.setLineDash([]);
     g.strokeStyle = col.amber; g.lineWidth = 1.6; g.beginPath();
     g.arc(o[0], o[1], r, Math.min(ref, a2), Math.max(ref, a2)); g.stroke();
-    g.fillStyle = col.amber; g.font = "italic 13px Georgia, serif";
+    g.fillStyle = col.amber; g.font = `italic 13px ${css("--math")}`;
     const mid = (ref + a2) / 2, lx = o[0] + (r + 9) * Math.cos(mid) - 4, ly = o[1] + (r + 9) * Math.sin(mid) + 4;
     g.fillText("γ", Math.max(2, lx), ly);
   }
@@ -6220,6 +6215,9 @@ function refresh() {
   });
 }
 new ResizeObserver(() => drawInset()).observe($("inset"));
+function themeChanged() { if (three) three.themeColours(); refresh(); }
+matchMedia("(prefers-color-scheme: light)").addEventListener("change", themeChanged);
+new MutationObserver(themeChanged).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 
 /* ---------- beamdswitch deck ----------
    The report template is beamdswitch.js; kinematics.js fills it from the set loads (not the

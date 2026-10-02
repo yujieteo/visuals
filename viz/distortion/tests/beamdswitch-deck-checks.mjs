@@ -129,6 +129,7 @@ export function standIn({ saveFails = false, clipboardFails = false, select = ()
     location: { href: "https://example.test/", hash: "", search: "" }, history: { replaceState() {} },
     setTimeout: () => 0, clearTimeout() {}, requestAnimationFrame: () => 0, addEventListener() {}, matchMedia: () => ({ matches: false, addEventListener() {} }),
     getComputedStyle: () => ({ getPropertyValue: () => "", fontFamily: "serif" }), devicePixelRatio: 1,
+    MutationObserver: class { observe() {} },
     Event: class { constructor(type) { this.type = type; } }, ...globals,
   });
   context.window = context; context.self = context;
