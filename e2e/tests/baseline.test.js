@@ -6,10 +6,11 @@ import { after, before, describe, test } from "node:test";
 import { runBaseline } from "../lib/baseline.js";
 import { selectedProjects } from "../lib/browser.js";
 import { BASELINE_CHECKS, checkOptions, loadManifest } from "../lib/manifest.js";
-import { recordResult } from "../lib/results.js";
+import { startResults } from "../lib/results.js";
 import { loadTargets } from "../lib/targets.js";
 
 const targets = await loadTargets();
+const recordResult = startResults(`baseline${process.env.E2E_SHARD ? `-${process.env.E2E_SHARD}` : ""}`, selectedProjects());
 const concurrency = Number(process.env.E2E_CONCURRENCY ?? 4);
 after(() => targets.close());
 

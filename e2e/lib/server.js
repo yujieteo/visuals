@@ -35,7 +35,13 @@ const TYPES = /** @type {Record<string, string>} */ ({
  */
 export async function serveArtifacts(folders) {
   const server = createServer((req, res) => {
-    const path = decodeURIComponent(new URL(req.url ?? "/", "http://localhost").pathname);
+    let path;
+    try {
+      path = decodeURIComponent(new URL(req.url ?? "/", "http://localhost").pathname);
+    } catch {
+      res.writeHead(400).end();
+      return;
+    }
     const [, slug, ...rest] = path.split("/");
     const root = folders.get(slug);
     if (!root || req.method !== "GET" && req.method !== "HEAD") {

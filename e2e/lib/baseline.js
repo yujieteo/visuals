@@ -47,7 +47,7 @@ async function pause(page) {
 export async function runBaseline(browser, project, artifact, targets, manifest) {
   /** @type {Record<string, Outcome>} */
   const out = {};
-  if (artifact.stageError) {
+  if (artifact.stageError && !artifact.remoteUrl) {
     for (const check of ["opens", "runtime-errors", "console-errors", "network", "file-url", "overflow-320", "primary-control"]) {
       out[check] = { outcome: "fail", evidence: `could not stage the artifact: ${artifact.stageError}`, ms: 0 };
     }
@@ -141,7 +141,7 @@ export async function runBaseline(browser, project, artifact, targets, manifest)
   if (!offline) {
     out["file-url"] = { outcome: "skip", evidence: "the visual does not claim to work offline", ms: 0 };
   } else if (!fileUrl) {
-    out["file-url"] = { outcome: "skip", evidence: "no local copy of the artifact", ms: 0 };
+    out["file-url"] = { outcome: "skip", evidence: artifact.stageError ? `no local copy of the artifact: could not stage it: ${artifact.stageError}` : "no local copy of the artifact", ms: 0 };
   } else {
     const local = await openSession(browser, project, fileUrl.replace(/[^/]*$/, ""));
     try {

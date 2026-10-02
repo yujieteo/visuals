@@ -34,7 +34,8 @@ for (const [slug, checks] of [...bySlug].sort(([a], [b]) => a.localeCompare(b)))
   for (const [check, runs] of checks) {
     const previous = (manifest.findings ?? []).find((f) => f.check === check);
     // Projects this run did not cover keep what an earlier run found in them.
-    const carried = previous && !previous.projects.includes("*") ? previous.projects.filter((p) => !projectsRun.has(p)) : [];
+    const previousProjects = previous?.projects.includes("*") ? PROJECTS.map((p) => p.name) : previous?.projects ?? [];
+    const carried = previousProjects.filter((p) => !projectsRun.has(p));
     let projects = [...new Set([...carried, ...runs.filter((r) => r.outcome === "fail").map((r) => r.project)])].sort();
     if (!projects.length) continue;
     if (PROJECTS.every((p) => projects.includes(p.name))) projects = ["*"];

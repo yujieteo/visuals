@@ -1,7 +1,7 @@
 // The harness itself, without a browser: discovery, staging, the static
 // server, sharding and manifest options.
 import assert from "node:assert/strict";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -9,6 +9,7 @@ import { test } from "node:test";
 import { isArtifactUrl } from "../lib/browser.js";
 import { discoverVisuals } from "../lib/catalogue.js";
 import { checkOptions } from "../lib/manifest.js";
+import { startResults } from "../lib/results.js";
 import { serveArtifacts } from "../lib/server.js";
 import { stageVisual } from "../lib/stage.js";
 import { selectShard } from "../lib/targets.js";
@@ -55,6 +56,8 @@ test("the static server serves each artifact under its slug and nothing else", a
     assert.equal((await fetch(`${server.origin}/alpha/missing.js`)).status, 404);
     assert.equal((await fetch(`${server.origin}/gamma/`)).status, 404);
     assert.notEqual((await fetch(`${server.origin}/alpha/%2e%2e/gamma/index.html`)).status, 200, "no escaping the artifact folder");
+    assert.equal((await fetch(`${server.origin}/alpha/100%.png`)).status, 400, "a malformed escape is refused, not fatal");
+    assert.equal((await fetch(server.urlFor("alpha"))).status, 200, "the server survives it");
   } finally {
     await server.close();
   }
@@ -88,4 +91,27 @@ test("only the artifact's own URLs count as its requests", () => {
   assert.equal(isArtifactUrl("data:image/png;base64,AAAA", prefix), true);
   assert.equal(isArtifactUrl("http://127.0.0.1:4000/beta/index.html", prefix), false);
   assert.equal(isArtifactUrl("https://cdn.jsdelivr.net/npm/d3", prefix), false);
+});
+
+test("a rerun replaces its own results and leaves other runs' alone", () => {
+  const dir = mkdtempSync(join(tmpdir(), "technical-e2e-results-"));
+  const saved = process.env.E2E_RESULTS;
+  process.env.E2E_RESULTS = dir;
+  try {
+    const project = { name: "chromium-desktop" };
+    /** @param {"pass" | "fail"} outcome */
+    const result = (outcome) => ({ slug: "alpha", check: "opens", project: project.name, outcome, evidence: "", owner: "", ms: 1 });
+    startResults("baseline", [project])(result("fail"));
+    startResults("full-alpha", [project])(result("fail"));
+    startResults("baseline", [project])(result("pass"));
+    /** @param {string} name */
+    const lines = (name) => readFileSync(join(dir, name), "utf8").split("\n").filter(Boolean).map((l) => JSON.parse(l).outcome);
+    assert.deepEqual(readdirSync(dir).sort(), ["chromium-desktop.baseline.jsonl", "chromium-desktop.full-alpha.jsonl"]);
+    assert.deepEqual(lines("chromium-desktop.baseline.jsonl"), ["pass"]);
+    assert.deepEqual(lines("chromium-desktop.full-alpha.jsonl"), ["fail"]);
+  } finally {
+    if (saved === undefined) delete process.env.E2E_RESULTS;
+    else process.env.E2E_RESULTS = saved;
+    rmSync(dir, { recursive: true, force: true });
+  }
 });

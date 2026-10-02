@@ -1,7 +1,10 @@
 // Optional machine-readable results: with E2E_RESULTS set to a folder, every
-// check appends one JSON line to <folder>/<project>.jsonl. Scripts turn the
-// failures into manifest findings and FINDINGS.md.
-import { appendFileSync, mkdirSync } from "node:fs";
+// check appends one JSON line to <folder>/<project>.<run>.jsonl. Each test
+// entry point names its run and empties its own files when it starts, so a
+// rerun into the same folder replaces that run's results without touching
+// the other entry points' or shards'. Scripts turn the failures into
+// manifest findings and FINDINGS.md.
+import { appendFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 /**
@@ -15,10 +18,18 @@ import { join } from "node:path";
  * @property {number} ms how long the check's work took
  */
 
-/** @param {CheckResult} result */
-export function recordResult(result) {
+/**
+ * Start a run's results: empty its file for each project, and return the
+ * function that records one check.
+ * @param {string} run e.g. "baseline" or "full-snake-lemma"
+ * @param {{ name: string }[]} projects
+ * @returns {(result: CheckResult) => void}
+ */
+export function startResults(run, projects) {
   const dir = process.env.E2E_RESULTS;
-  if (!dir) return;
+  if (!dir) return () => {};
+  const file = (/** @type {string} */ project) => join(dir, `${project}.${run.replace(/[^\w-]/g, "_")}.jsonl`);
   mkdirSync(dir, { recursive: true });
-  appendFileSync(join(dir, `${result.project}.jsonl`), `${JSON.stringify(result)}\n`);
+  for (const project of projects) writeFileSync(file(project.name), "");
+  return (result) => appendFileSync(file(result.project), `${JSON.stringify(result)}\n`);
 }

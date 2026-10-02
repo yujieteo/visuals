@@ -11,7 +11,7 @@ import { tmpdir } from "node:os";
 import { after, before, describe, test } from "node:test";
 import { openSession, selectedProjects, settle } from "./browser.js";
 import { FULL_CHECKS, checkOptions, loadManifest } from "./manifest.js";
-import { recordResult } from "./results.js";
+import { startResults } from "./results.js";
 import { loadTargets } from "./targets.js";
 
 /**
@@ -39,6 +39,7 @@ import { loadTargets } from "./targets.js";
  * @param {Partial<Record<typeof FULL_CHECKS[number], FullCheck>>} checks
  */
 export async function fullSuite(slug, checks) {
+  const recordResult = startResults(`full-${slug}`, selectedProjects());
   const only = (process.env.E2E_ONLY ?? "").split(",").map((s) => s.trim()).filter(Boolean);
   if (only.length && !only.includes(slug) || process.env.E2E_ARTIFACT && (process.env.E2E_SLUG ?? "") !== slug) {
     test(`${slug} full checks`, { skip: "not selected by E2E_ONLY or E2E_ARTIFACT" }, () => {});
@@ -47,7 +48,7 @@ export async function fullSuite(slug, checks) {
   const targets = await loadTargets({ only: [slug] });
   after(() => targets.close());
   const artifact = targets.artifacts.find((a) => a.slug === slug);
-  if (!artifact || artifact.stageError) {
+  if (!artifact || artifact.stageError && !artifact.remoteUrl) {
     test(`${slug} full checks`, () => assert.fail(`cannot stage ${slug}: ${artifact?.stageError ?? "not in the catalogue"}`));
     return;
   }
