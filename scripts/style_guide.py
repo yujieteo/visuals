@@ -31,3 +31,16 @@ def root_css(tokens, extra=""):
         f':root[data-theme="dark"]{{{dark};color-scheme:dark}}'
         f':root[data-theme="light"]{{color-scheme:light}}'
     )
+
+
+def luminance(hex_color):
+    """WCAG relative luminance of a #rrggbb colour."""
+    rgb = [int(hex_color[i:i + 2], 16) / 255 for i in (1, 3, 5)]
+    lin = [c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4 for c in rgb]
+    return 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2]
+
+
+def contrast(a, b):
+    """WCAG contrast ratio between two #rrggbb colours, from 1 to 21."""
+    hi, lo = sorted((luminance(a), luminance(b)), reverse=True)
+    return (hi + 0.05) / (lo + 0.05)

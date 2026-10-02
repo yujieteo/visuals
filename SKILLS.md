@@ -28,6 +28,6 @@ One standalone page per story: `data/<slug>/` (unchanged source + `meta.json`) -
 | Add a new visualization from a dataset, site, or API | `.agents/skills/visuals-new-visualization/SKILL.md` |
 | Refresh data or regenerate an existing page or gallery | `.agents/skills/visuals-refresh-data/SKILL.md` |
 | Change page markup, design tokens, interactions, or model-context tools | `.agents/skills/visuals-page-conventions/SKILL.md` |
-| Run verifiers, fix a failing check, edit CI, register a new builder | `.agents/skills/visuals-verify-ci/SKILL.md` |
+| Run verifiers, fix a failing check, edit CI, document a new builder | `.agents/skills/visuals-verify-ci/SKILL.md` |
 
 Quick check for any change: `for s in scripts/build*.py; do python3 "$s" --verify || break; done`

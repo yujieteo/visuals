@@ -21,7 +21,8 @@ from html import escape
 from pathlib import Path
 
 from gallery import render_gallery
-from style_guide import THEME_SCRIPT, root_css
+from page_parts import compact
+from style_guide import THEME_SCRIPT, contrast, root_css
 
 ROOT = Path(__file__).resolve().parents[1]
 SLUG = "ooda-orientation"
@@ -128,17 +129,6 @@ def validate(raw, meta):
     return {"operations": len(ops), "examples": len(raw["examples"]), "cards": len(raw["cards"]), "sources": len(sources)}
 
 
-def luminance(hex_color):
-    rgb = [int(hex_color[i:i + 2], 16) / 255 for i in (1, 3, 5)]
-    lin = [c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4 for c in rgb]
-    return 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2]
-
-
-def contrast(a, b):
-    la, lb = sorted((luminance(a), luminance(b)), reverse=True)
-    return (la + 0.05) / (lb + 0.05)
-
-
 def mix(color, base, share):
     a, b = (int(color[i:i + 2], 16) for i in (1, 3, 5)), (int(base[i:i + 2], 16) for i in (1, 3, 5))
     return "#" + "".join(f"{round(x * share + y * (1 - share)):02x}" for x, y in zip(a, b))
@@ -165,16 +155,6 @@ def check_contrast(tokens):
             assert ratio >= minimum, f"{mode}: {fg} on {bg} is {ratio:.2f}, below {minimum}"
             rows.append((mode, fg, bg, round(ratio, 2)))
     return rows
-
-
-def compact(js):
-    """Drops whole-line comments, blank lines and indentation. The sources use no template literals or
-    line continuations, so every statement is unchanged; tests run the compacted code the page ships."""
-    out = re.sub(r"^[ \t]*/\*[\s\S]*?\*/[ \t]*\n", "", js, flags=re.M)
-    lines = [ln.strip() for ln in out.split("\n")]
-    out = "\n".join(ln for ln in lines if ln and not ln.startswith("//"))
-    assert "`" not in out and not re.search(r"\\$", out, re.M), "compact() cannot handle template literals or continuations"
-    return out
 
 
 def css(tokens):

@@ -30,7 +30,7 @@ from html import escape
 from pathlib import Path
 
 from gallery import render_gallery
-from style_guide import THEME_SCRIPT, root_css
+from style_guide import THEME_SCRIPT, contrast, root_css
 
 ROOT = Path(__file__).resolve().parents[1]
 SLUG = "english-grammar"
@@ -601,17 +601,6 @@ def validate(model, raw, meta):
             "chapters": len(covered_chapters), "nodes": sum(len(v) for v in nodes.values()), "aliases": len(seen_alias),
             "words": sum(e.get("kind") == "word" for e in examples), "marks": sum(len(e["marks"]) for e in examples),
             "antecedents": sum("ante" in n for v in nodes.values() for n, _ in v.values())}
-
-
-def luminance(hex_color):
-    rgb = [int(hex_color[i:i + 2], 16) / 255 for i in (1, 3, 5)]
-    rgb = [c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4 for c in rgb]
-    return 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2]
-
-
-def contrast(a, b):
-    hi, lo = sorted((luminance(a), luminance(b)), reverse=True)
-    return (hi + 0.05) / (lo + 0.05)
 
 
 def check_contrast(tokens=None):

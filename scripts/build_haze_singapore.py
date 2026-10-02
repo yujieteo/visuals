@@ -12,6 +12,7 @@ import re
 from html import escape
 from pathlib import Path
 from gallery import render_gallery
+from page_parts import deck_buttons_js
 from style_guide import THEME_SCRIPT, root_css
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -373,9 +374,7 @@ drawLegend();drawStrip();select(null);render();
 
 /* beamdswitch deck: the report template is beamdswitch.js; report.js fills it from the measure, hour and region shown. */
 const deckStatus=document.getElementById("deck-status"),deck=()=>Beamdswitch.deck(HazeReport.report({...D,bands:BANDS,sources:__SOURCES__},{metric,t,sel}));
-function saveDeck(text,name){const url=URL.createObjectURL(new Blob([text],{type:"text/markdown"})),a=document.createElement("a");a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)}
-document.getElementById("save-beamdswitch").addEventListener("click",()=>{const name="haze-singapore-beamdswitch.md";try{saveDeck(deck(),name);deckStatus.textContent=`Saved ${name}: open it in beamdswitch.`}catch{deckStatus.textContent="Could not save the beamdswitch deck here: use Copy deck instead."}});
-document.getElementById("copy-beamdswitch").addEventListener("click",async()=>{try{await navigator.clipboard.writeText(deck());deckStatus.textContent="Copied the beamdswitch deck: paste it into beamdswitch."}catch{deckStatus.textContent="Could not copy the beamdswitch deck here: use the beamdswitch button to save it."}});
+__DECK_BUTTONS__
 
 /* agent tools */
 const result=v=>({content:[{type:"text",text:JSON.stringify(v)}]}),mc=(typeof document!=="undefined"&&document.modelContext)||(typeof navigator!=="undefined"&&navigator.modelContext);
@@ -456,6 +455,7 @@ def render(model, meta, tokens):
           .replace("__MAP__", json.dumps(map_json, separators=(",", ":")))
           .replace("__BANDS__", json.dumps(band_payload(), separators=(",", ":")))
           .replace("__SOURCES__", json.dumps(DECK_SOURCES, separators=(",", ":")))
+          .replace("__DECK_BUTTONS__", deck_buttons_js(SLUG, by_id=True))
           .replace("__META__", json.dumps({"title": TITLE, "claim": headline, "sources": meta["sources"], "method": s["method_text"],
                                           "fetched": meta["fetched"], "coverage": meta["coverage"], "caveat": s["caveat"]},
                                          ensure_ascii=False)))

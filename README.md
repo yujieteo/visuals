@@ -27,7 +27,8 @@ for s in scripts/build*.py; do python3 "$s" --verify || break; done
 | `viz/<slug>/beamdswitch.js`, `viz/<slug>/report.js` | Sources a builder inlines for a page's narrated beamdswitch deck: the site's unchanged report template and that page's report. |
 | `index.html` | Generated root gallery that links the visualization pages. |
 | `design-tokens.json` | Shared colors, spacing, radius, and fonts used by the builders; `style_guide` holds the light and dark tokens of the shared visual style guide. |
-| `scripts/style_guide.py` | Renders the `style_guide` tokens as a page's `:root` CSS for both themes, plus the site's theme script, for builders that follow the style guide. |
+| `scripts/style_guide.py` | Renders the `style_guide` tokens as a page's `:root` CSS for both themes, plus the site's theme script, for builders that follow the style guide; also the WCAG `contrast()` ratio the builders' contrast checks use. |
+| `scripts/page_parts.py` | Inline-script pieces several builders emit unchanged: `compact()` for inlined JavaScript and the beamdswitch Save and Copy deck handlers. |
 | `SKILLS.md` | Agent router: maps task types to the focused sub-skills below. |
 | `.agents/skills/visuals-*/SKILL.md` | Sub-skills loaded on demand: new visualization, refresh data, page conventions, verify and CI. |
 | `CONTRIBUTING.md` | Human contributor guide. |
@@ -115,22 +116,7 @@ rebuilds the in-memory model, and asserts the committed HTML and metadata match.
 `--verify` never writes files, so it is safe to run anywhere:
 
 ```sh
-python3 scripts/build.py --verify
-python3 scripts/build_breeden_litzenberger_density.py --verify
-python3 scripts/build_ges.py --verify
-python3 scripts/build_haze_singapore.py --verify
-python3 scripts/build_manchester_city_finances.py --verify
-python3 scripts/build_singapore_covid_governance_hindsight.py --verify
-python3 scripts/build_social_values.py --verify
-python3 scripts/build_energy_email_productivity.py --verify
-python3 scripts/build_english_grammar.py --verify
-python3 scripts/build_multi_armed_bandit.py --verify
-python3 scripts/build_ooda_orientation.py --verify
-python3 scripts/build_convexity_action_engine.py --verify
-python3 scripts/build_everyday_actions.py --verify
-python3 scripts/build_vgc_protect_fakeout_pivot_trainer.py --verify
-python3 scripts/build_tampines_food_map.py --verify
-python3 scripts/build_stock_cases.py --verify
+for s in scripts/build*.py; do python3 "$s" --verify || break; done
 ```
 
 The copied action visualizations also retain their source regression tests.
@@ -142,7 +128,7 @@ deck known:
 
 ```sh
 python3 -m unittest discover -s tests -p 'test_*.py'
-node --test tests/convexity-action-engine.test.mjs tests/everyday-actions.test.mjs tests/voice-beamdswitch.test.mjs
+node --test tests/*.test.mjs
 ```
 
 Pages with a narrated beamdswitch report (the beamdswitch and Copy deck buttons)
@@ -190,4 +176,4 @@ Each verifier checks the story's invariants, the embedded data tables, and
 action page's emitted scripts and check its read-only tool registrations, and
 run each deck page's scripts to check its beamdswitch decks.
 `.github/workflows/verify.yml` runs every command above on every push and pull
-request.
+request; its verify loop picks up every `scripts/build*.py`, so a new builder needs no CI edit.

@@ -4,6 +4,7 @@ import csv
 import json
 from pathlib import Path
 from gallery import render_gallery
+from page_parts import deck_buttons_js
 from style_guide import THEME_SCRIPT, root_css
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -35,9 +36,7 @@ DECK_HTML = '<div class="deck-row"><button type="button" id="save-beamdswitch" t
 # The deck is built from the page as shown: CovidReport (report.js) fills the shared template (beamdswitch.js).
 DECK_JS = """/* beamdswitch deck: the report template is beamdswitch.js; report.js fills it from the filter and analysis shown. */
 const deckStatus=document.querySelector("#deck-status"),deck=()=>Beamdswitch.deck(CovidReport.report({rows,fetched:__FETCHED__},state));
-function saveDeck(text,name){const url=URL.createObjectURL(new Blob([text],{type:"text/markdown"})),a=document.createElement("a");a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)}
-document.querySelector("#save-beamdswitch").addEventListener("click",()=>{const name="singapore-covid-governance-hindsight-beamdswitch.md";try{saveDeck(deck(),name);deckStatus.textContent=`Saved ${name}: open it in beamdswitch.`}catch{deckStatus.textContent="Could not save the beamdswitch deck here: use Copy deck instead."}});
-document.querySelector("#copy-beamdswitch").addEventListener("click",async()=>{try{await navigator.clipboard.writeText(deck());deckStatus.textContent="Copied the beamdswitch deck: paste it into beamdswitch."}catch{deckStatus.textContent="Could not copy the beamdswitch deck here: use the beamdswitch button to save it."}});"""
+""" + deck_buttons_js(SLUG)
 
 def load_rows():
     with RAW.open(encoding="utf-8", newline="") as handle:

@@ -27,9 +27,9 @@ between the two is in `SKILLS.md`.
   whether a key file was used.
 - Add `scripts/build_<slug>.py` (standard library only, with a `--verify` mode),
   modelled on an existing builder.
-- Add the builder to `.github/workflows/verify.yml`, `.no-mistakes.yaml` and the README Generation
-  and Verification lists, and add a row to the README visualization table
-  (sorted by slug).
+- Add the builder to the README Generation list and a row to the README
+  visualization table (sorted by slug). CI and `.no-mistakes.yaml` verify every
+  `scripts/build*.py` in a loop, so they need no edit.
 - The workflow that agents follow is in `.agents/skills/visuals-new-visualization/SKILL.md`.
 
 ## Rules
