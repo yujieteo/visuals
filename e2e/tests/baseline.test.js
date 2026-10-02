@@ -18,7 +18,7 @@ for (const project of selectedProjects()) {
   describe(project.name, { concurrency }, () => {
     /** @type {import("playwright").Browser} */
     let browser;
-    before(async () => { browser = await project.browserType.launch(); });
+    before(async () => { browser = await project.browserType.launch(project.launch); });
     after(async () => { await browser?.close(); });
 
     for (const artifact of targets.artifacts) {

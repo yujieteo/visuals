@@ -63,7 +63,7 @@ export async function fullSuite(slug, checks) {
     describe(`${project.name} ${slug}`, () => {
       /** @type {import("playwright").Browser} */
       let browser;
-      before(async () => { browser = await project.browserType.launch({ downloadsPath }); });
+      before(async () => { browser = await project.browserType.launch({ ...project.launch, downloadsPath }); });
       after(async () => { await browser?.close(); });
 
       /** @type {FullContext} */

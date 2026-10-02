@@ -8,16 +8,24 @@ import { chromium, devices, firefox, webkit } from "playwright";
  * @typedef {object} Project
  * @property {string} name
  * @property {import("playwright").BrowserType} browserType
+ * @property {import("playwright").LaunchOptions} launch
  * @property {import("playwright").BrowserContextOptions} context
  */
 
+/** @type {import("playwright").LaunchOptions} */
+const FIREFOX = {
+  // Firefox otherwise holds navigator.clipboard.readText() on its own Paste
+  // prompt, which automation cannot answer; Chromium and WebKit settle the read.
+  firefoxUserPrefs: { "dom.events.testing.asyncClipboard": true },
+};
+
 /** @type {Project[]} */
 export const PROJECTS = [
-  { name: "chromium-desktop", browserType: chromium, context: { viewport: { width: 1280, height: 800 } } },
-  { name: "firefox-desktop", browserType: firefox, context: { viewport: { width: 1280, height: 800 } } },
-  { name: "webkit-desktop", browserType: webkit, context: { viewport: { width: 1280, height: 800 } } },
-  { name: "chromium-mobile", browserType: chromium, context: { ...devices["Pixel 7"] } },
-  { name: "webkit-mobile", browserType: webkit, context: { ...devices["iPhone 15"] } },
+  { name: "chromium-desktop", browserType: chromium, launch: {}, context: { viewport: { width: 1280, height: 800 } } },
+  { name: "firefox-desktop", browserType: firefox, launch: FIREFOX, context: { viewport: { width: 1280, height: 800 } } },
+  { name: "webkit-desktop", browserType: webkit, launch: {}, context: { viewport: { width: 1280, height: 800 } } },
+  { name: "chromium-mobile", browserType: chromium, launch: {}, context: { ...devices["Pixel 7"] } },
+  { name: "webkit-mobile", browserType: webkit, launch: {}, context: { ...devices["iPhone 15"] } },
 ];
 
 /**
