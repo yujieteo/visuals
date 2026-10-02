@@ -404,7 +404,7 @@ test("ARIA tabs: roles, aria-selected, roving tabindex and aria-controls; one h1
   assert.equal((tabs.match(/aria-controls="argpanel"/g) || []).length, 3);
   assert.match(html, /role="tablist" aria-label="Arguments in essay order"/);
   assert.match(html, /role="tabpanel" id="argpanel"/);
-  assert.equal((html.slice(0, html.indexOf("<script")).match(/<h1[\s>]/g) || []).length, 1);
+  assert.equal((html.slice(0, html.indexOf('<script id="toulmin-engine">')).match(/<h1[\s>]/g) || []).length, 1);
   const page = T.view.argumentHTML(T.TEMPLATE, 2);
   assert.equal((page.match(/<h2[\s>]/g) || []).length, 1);
   for (const p of T.PARTS) assert.match(page, new RegExp(`<h3 id="h-${p.key}"><span class="badge" aria-hidden="true">${p.letter}</span>${p.name}</h3>`));
@@ -414,7 +414,6 @@ test("ARIA tabs: roles, aria-selected, roving tabindex and aria-controls; one h1
   assert.match(page, /Your turn: finish this one\./);
   assert.doesNotMatch(page, /id="marker" hidden/);
   assert.match(T.view.argumentHTML(T.TEMPLATE, 0), /id="marker" hidden/);
-  assert.match(html, /grid-template-areas:"grounds qualifier claim" "\. warrant rebuttal" "\. backing \."/);
 });
 
 test("guidance text: definitions, Why/Example, chips and the 60-second panel", () => {
@@ -442,19 +441,19 @@ test("colour tokens in the shipped CSS meet the contrast figures in spec 10.1", 
   const dark = tokens(/@media \(prefers-color-scheme:dark\)\{:root:not\(\[data-theme="light"\]\)\{([^}]*)\}\}/.exec(html)[1]);
   const forced = tokens(/:root\[data-theme="dark"\]\{([^}]*)\}/.exec(html)[1]);
   assert.deepEqual(forced, dark, "the data-theme hook matches the dark scheme");
-  assert.deepEqual([light.bg, light.surface, light.text, light.muted, light.outline, light.focus], ["#fdf6e3", "#eee8d5", "#073642", "#586e75", "#586e75", "#268bd2"]);
-  assert.deepEqual([dark.bg, dark.surface, dark.text, dark.muted, dark.outline, dark.focus], ["#002b36", "#073642", "#eee8d5", "#93a1a1", "#839496", "#268bd2"]);
+  assert.deepEqual([light.bg, light.surface, light.fg, light.muted, light.control, light.focus], ["#ffffff", "#f5f5f7", "#1d1d1f", "#6e6e73", "#86868b", "#0071e3"]);
+  assert.deepEqual([dark.bg, dark.surface, dark.fg, dark.muted, dark.control, dark.focus], ["#1d1d1f", "#2c2c2e", "#f5f5f7", "#a1a1a6", "#8e8e93", "#2997ff"]);
   const min = (a, b, m, what) => assert.ok(ratio(a, b) >= m, `${what}: ${ratio(a, b).toFixed(2)} < ${m}`);
-  min(light.text, light.bg, 12.0, "light text on page"); min(light.text, light.surface, 10.6, "light text on surface");
-  min(dark.text, dark.bg, 12.2, "dark text on page"); min(dark.text, dark.surface, 10.6, "dark text on surface");
+  min(light.fg, light.bg, 12.0, "light text on page"); min(light.fg, light.surface, 10.6, "light text on surface");
+  min(dark.fg, dark.bg, 12.2, "dark text on page"); min(dark.fg, dark.surface, 10.6, "dark text on surface");
   min(light.muted, light.bg, 4.5, "light muted on page");
   min(dark.muted, dark.bg, 4.5, "dark muted on page"); min(dark.muted, dark.surface, 4.5, "dark muted on surface");
-  min(light.outline, light.surface, 3, "light outline on surface"); min(dark.outline, dark.surface, 3, "dark outline on surface");
-  for (const [bg, what] of [[light.bg, "light page"], [light.surface, "light surface"], [dark.bg, "dark page"], [dark.surface, "dark surface"]]) min(light.focus, bg, 2.99, `focus on ${what}`);
-  assert.ok(ratio(light.muted, light.surface) < 4.5, "so muted text never sits on a light surface");
+  min(light.control, light.surface, 3, "light control outline on surface"); min(dark.control, dark.surface, 3, "dark control outline on surface");
+  for (const [fg, bg, what] of [[light.focus, light.bg, "light page"], [light.focus, light.surface, "light surface"], [dark.focus, dark.bg, "dark page"], [dark.focus, dark.surface, "dark surface"]]) min(fg, bg, 3, `focus on ${what}`);
+  min(light.muted, light.surface, 4.5, "light muted on surface");
   assert.doesNotMatch(html, /\.(card|panel|notice|banner|confirm)[^{]*\{[^}]*color:var\(--muted\)/, "no muted text on surfaces");
-  for (const accent of ["blue", "orange", "yellow", "magenta", "red", "slate"]) assert.doesNotMatch(html, new RegExp(`[^-]color:var\\(--${accent}\\)`), `accent ${accent} is never text`);
-  assert.match(html, /a\{color:var\(--text\);text-decoration:underline\}/);
+  for (const accent of ["claim", "grounds", "warrant", "backing", "qualifier", "rebuttal", "c1", "c2", "c3", "c4", "hl"]) assert.doesNotMatch(html, new RegExp(`[^-]color:var\\(--${accent}\\)`), `accent ${accent} is never text`);
+  assert.match(html, /a\{color:var\(--fg\);text-decoration:underline\}/);
 });
 
 test("colour is never the only cue: letters, distinct bar patterns, words plus symbols", () => {

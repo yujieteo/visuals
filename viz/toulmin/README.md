@@ -24,8 +24,8 @@ prompts, limits, paragraphs, accessible names, the colour contrast of the
 shipped tokens and `raw.json`. They
 also boot the page script in `node:vm` against a stub DOM and storage to check
 the WebMCP tools, the 12-argument limit, tab keys and deck copying.
-`tests/toulmin-browser.test.mjs` checks the 320 px layout in a real Chrome and
-is skipped unless `TOULMIN_BROWSER_URL` names a remote-debugging endpoint.
+`tests/toulmin-browser.test.mjs` checks the 320 px layout and the 1280 px diagram
+layout in a real Chrome and is skipped unless `TOULMIN_BROWSER_URL` names a remote-debugging endpoint.
 
 ## Narration timing
 
