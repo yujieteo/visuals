@@ -75,7 +75,10 @@ CSV_FIELDS = [
 ]
 
 CSS = """
-:root{--bg:%%background%%;--fg:%%foreground%%;--muted:%%secondary%%;--surface:%%surface%%;--border:%%border%%;--focus:%%focus%%;--pos:%%mark%%;--danger:%%selected%%;--warn:#8a5a00;--warnbg:#fff6e0;--dangerbg:#fdeceb;--posbg:#eaf3fe;--sans:%%font_sans%%;--mono:%%font_mono%%;--r:%%radius%%;color-scheme:light}
+:root{--bg:%%background%%;--fg:%%foreground%%;--muted:%%secondary%%;--surface:%%surface%%;--border:%%border%%;--control:#86868b;--focus:%%focus%%;--pos:%%mark%%;--danger:%%selected%%;--warn:#8a5a00;--warnbg:#fff6e0;--dangerbg:#fdeceb;--posbg:#eaf3fe;--avoid-muted:#5c5c61;--sans:%%font_sans%%;--mono:%%font_mono%%;--r:%%radius%%;color-scheme:light dark}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--surface:#2c2c2e;--border:#48484a;--control:#8e8e93;--focus:#2997ff;--pos:#2997ff;--danger:#ff6961;--warn:#e3b341;--warnbg:#3a2c05;--dangerbg:#3d1614;--posbg:#0f2a46;--avoid-muted:#b8b8bd}}
+:root[data-theme="dark"]{--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--surface:#2c2c2e;--border:#48484a;--control:#8e8e93;--focus:#2997ff;--pos:#2997ff;--danger:#ff6961;--warn:#e3b341;--warnbg:#3a2c05;--dangerbg:#3d1614;--posbg:#0f2a46;--avoid-muted:#b8b8bd;color-scheme:dark}
+:root[data-theme="light"]{color-scheme:light}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 var(--sans)}
@@ -87,11 +90,11 @@ h3{margin:.9rem 0 .3rem;font:600 .72rem/1.3 var(--mono);letter-spacing:.07em;tex
 p{margin:.3rem 0}
 a{color:inherit;text-underline-offset:.18em}
 button,select,input{font:inherit;color:inherit}
-button{cursor:pointer;border:1px solid var(--border);border-radius:var(--r);background:var(--bg);padding:.3rem .6rem;min-height:2.25rem}
+button{cursor:pointer;border:1px solid var(--control);border-radius:var(--r);background:var(--bg);padding:.3rem .6rem;min-height:2.25rem}
 button:hover{background:var(--surface)}
-select{border:1px solid var(--border);border-radius:var(--r);background:var(--bg);padding:.25rem .5rem;min-height:2.25rem;max-width:100%;min-width:0}
+select{border:1px solid var(--control);border-radius:var(--r);background:var(--bg);padding:.25rem .5rem;min-height:2.25rem;max-width:100%;min-width:0}
 :focus-visible{outline:3px solid var(--focus);outline-offset:2px}
-button[aria-pressed=true]{border-color:var(--fg);box-shadow:inset 0 0 0 1px var(--fg)}
+button[aria-pressed=true]{border-color:var(--fg);background:var(--fg);color:var(--bg)}
 .skip{position:absolute;left:1rem;top:-4rem;z-index:40;background:var(--fg);color:var(--bg);border-color:var(--fg)}
 .skip:focus{top:.5rem}
 .top{border-bottom:1px solid var(--border);background:var(--bg);position:sticky;top:0;z-index:5}
@@ -144,7 +147,7 @@ label.check input{width:1.1rem;height:1.1rem;accent-color:var(--fg)}
 .ctxpanel .disc{margin:0}
 .ctxfoot{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center}
 .ctxfoot button[hidden]{display:none}
-.chip{font:.75rem var(--mono);border:1px solid var(--border);border-radius:1rem;padding:.1rem .6rem;min-height:2rem;background:var(--bg);display:inline-flex;align-items:center;justify-content:center}
+.chip{font:.75rem var(--mono);border:1px solid var(--control);border-radius:1rem;padding:.1rem .6rem;min-height:2rem;background:var(--bg);display:inline-flex;align-items:center;justify-content:center}
 .chip[hidden]{display:none}
 .chip.on,.chip.cur,.chip[aria-pressed=true]{background:var(--fg);color:var(--bg);border-color:var(--fg);box-shadow:none}
 .act{border:0;background:none;padding:0;min-height:0;text-decoration:underline;text-decoration-color:var(--border);text-underline-offset:.2em;text-align:left;font-weight:600;cursor:pointer;border-radius:3px}
@@ -163,7 +166,7 @@ label.check input{width:1.1rem;height:1.1rem;accent-color:var(--fg)}
 .also{display:flex;flex-wrap:wrap;gap:.15rem .75rem;align-items:baseline;margin:.4rem 0 0;font-size:.85rem}
 .also .lbl{margin-right:-.2rem}
 .also .act{min-height:1.5rem}
-.card.avoid{border-color:var(--danger);background:var(--dangerbg);--muted:#5c5c61}
+.card.avoid{border-color:var(--danger);background:var(--dangerbg);--muted:var(--avoid-muted)}
 .card.warnc{border-color:var(--warn);background:var(--warnbg)}
 .head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:.25rem 1rem;align-items:baseline;margin-top:1rem}
 .head .name{font-size:clamp(1.45rem,4.5vw,2.1rem);font-weight:700;letter-spacing:-.02em;margin:0;line-height:1.15}
@@ -173,7 +176,7 @@ label.check input{width:1.1rem;height:1.1rem;accent-color:var(--fg)}
 .badge.clear{border-color:var(--pos);color:var(--pos)}
 .badge.noted{color:var(--muted)}
 .badge.warning{border-color:var(--warn);background:var(--warnbg);color:var(--warn)}
-.badge.danger{border-color:var(--danger);background:var(--danger);color:#fff}
+.badge.danger{border-color:var(--danger);background:var(--danger);color:var(--bg)}
 .quick{display:grid;grid-template-columns:repeat(auto-fit,minmax(10rem,1fr));gap:.4rem 1rem;margin:.3rem 0 .6rem}
 .quick div{border-top:1px solid var(--border);padding-top:.25rem;min-width:0}
 .quick dt{font:.68rem var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
@@ -418,7 +421,7 @@ def render(raw, meta, tokens):
     examples = "".join(f'<button type="button" data-q="{escape(q)}">{escape(q)}</button>' for q in EXAMPLES)
     keys = "".join(f"<div><dt>{k}</dt><dd>{escape(v)}</dd></div>" for k, v in KEYS)
     return f'''<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:,"><meta name="description" content="{escape(DESCRIPTION)}"><title>{escape(TITLE)}</title><style>{css}</style></head><body>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:,"><meta name="description" content="{escape(DESCRIPTION)}"><title>{escape(TITLE)}</title><script id="site-theme">try {{ var t = localStorage.getItem("theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; }} catch (e) {{}}</script><style>{css}</style></head><body>
 <button type="button" class="skip" id="skip">Skip to content</button>
 <header class="top"><div class="bar"><a class="brand" href="#/now">{escape(TITLE)}</a><button type="button" class="searchbtn" id="open-search" aria-haspopup="dialog" aria-keyshortcuts="Control+K Meta+K /">{icon}<span>Search actions or situations</span><kbd id="kbd">Ctrl K</kbd></button><nav class="tabs" aria-label="Views"><a href="#/now">NOW</a><a href="#/avoid">AVOID</a><a href="#/compare">COMPARE</a><a href="#/history">HISTORY</a><a href="#/data">DATA</a></nav></div></header>
 <main>
@@ -516,7 +519,7 @@ def verify(raw, meta, html):
     for name, text in spreadsheets(raw).items():
         assert (DATA / name).read_text(encoding="utf-8") == text, f"{name} is stale: rerun the builder"
 
-    assert html.count("<h1>") == 1 and html.count("<script") == 2
+    assert html.count("<h1>") == 1 and html.count("<script") == 3
     assert f'<script id="beamdswitch">\n{BEAMDSWITCH_PATH.read_text(encoding="utf-8")}</script>' in html, "beamdswitch.js is inlined unchanged"
     assert "<script src=" not in html and '<link rel="stylesheet"' not in html
     assert not re.search(r'''(?:src|href)=["']https?://''', html), "external asset"

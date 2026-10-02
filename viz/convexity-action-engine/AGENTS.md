@@ -22,7 +22,7 @@ The standalone repository [yujieteo/convexity-action-engine](https://github.com/
 | `design-tokens.json` | The colours and type `build.py` writes into the page's CSS |
 | `index.html` | Generated: never edit it by hand |
 
-Tests live in `tests/` of yujieteo/convexity-action-engine: `tests/convexity-action-engine.test.mjs`, `tests/convexity-action-engine-beamdswitch.test.mjs` and `tests/test_convexity_action_engine.py`.
+Tests live in `tests/` of yujieteo/convexity-action-engine: `tests/convexity-action-engine.test.mjs`, `tests/convexity-action-engine-beamdswitch.test.mjs`, `tests/site-theme.test.mjs` and `tests/test_convexity_action_engine.py`.
 
 ## Build, test and verify
 

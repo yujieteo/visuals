@@ -1,6 +1,9 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:,"><meta name="description" content="Search any everyday action, screen it for ruin, then compare its payoff shape, timing and opportunity cost against real alternatives in your Singapore context. Ordinal author judgements, labelled as such."><title>Convexity Action Engine</title><style>
-:root{--bg:#ffffff;--fg:#1d1d1f;--muted:#6e6e73;--surface:#f5f5f7;--border:#d2d2d7;--focus:#0071e3;--pos:#0071e3;--danger:#c43d2f;--warn:#8a5a00;--warnbg:#fff6e0;--dangerbg:#fdeceb;--posbg:#eaf3fe;--sans:Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif;--mono:SFMono-Regular, Consolas, Liberation Mono, monospace;--r:0.5rem;color-scheme:light}
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:,"><meta name="description" content="Search any everyday action, screen it for ruin, then compare its payoff shape, timing and opportunity cost against real alternatives in your Singapore context. Ordinal author judgements, labelled as such."><title>Convexity Action Engine</title><script id="site-theme">try { var t = localStorage.getItem("theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (e) {}</script><style>
+:root{--bg:#ffffff;--fg:#1d1d1f;--muted:#6e6e73;--surface:#f5f5f7;--border:#d2d2d7;--control:#86868b;--focus:#0071e3;--pos:#0071e3;--danger:#c43d2f;--warn:#8a5a00;--warnbg:#fff6e0;--dangerbg:#fdeceb;--posbg:#eaf3fe;--avoid-muted:#5c5c61;--sans:Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif;--mono:SFMono-Regular, Consolas, Liberation Mono, monospace;--r:0.5rem;color-scheme:light dark}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--surface:#2c2c2e;--border:#48484a;--control:#8e8e93;--focus:#2997ff;--pos:#2997ff;--danger:#ff6961;--warn:#e3b341;--warnbg:#3a2c05;--dangerbg:#3d1614;--posbg:#0f2a46;--avoid-muted:#b8b8bd}}
+:root[data-theme="dark"]{--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--surface:#2c2c2e;--border:#48484a;--control:#8e8e93;--focus:#2997ff;--pos:#2997ff;--danger:#ff6961;--warn:#e3b341;--warnbg:#3a2c05;--dangerbg:#3d1614;--posbg:#0f2a46;--avoid-muted:#b8b8bd;color-scheme:dark}
+:root[data-theme="light"]{color-scheme:light}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 var(--sans)}
@@ -12,11 +15,11 @@ h3{margin:.9rem 0 .3rem;font:600 .72rem/1.3 var(--mono);letter-spacing:.07em;tex
 p{margin:.3rem 0}
 a{color:inherit;text-underline-offset:.18em}
 button,select,input{font:inherit;color:inherit}
-button{cursor:pointer;border:1px solid var(--border);border-radius:var(--r);background:var(--bg);padding:.3rem .6rem;min-height:2.25rem}
+button{cursor:pointer;border:1px solid var(--control);border-radius:var(--r);background:var(--bg);padding:.3rem .6rem;min-height:2.25rem}
 button:hover{background:var(--surface)}
-select{border:1px solid var(--border);border-radius:var(--r);background:var(--bg);padding:.25rem .5rem;min-height:2.25rem;max-width:100%;min-width:0}
+select{border:1px solid var(--control);border-radius:var(--r);background:var(--bg);padding:.25rem .5rem;min-height:2.25rem;max-width:100%;min-width:0}
 :focus-visible{outline:3px solid var(--focus);outline-offset:2px}
-button[aria-pressed=true]{border-color:var(--fg);box-shadow:inset 0 0 0 1px var(--fg)}
+button[aria-pressed=true]{border-color:var(--fg);background:var(--fg);color:var(--bg)}
 .skip{position:absolute;left:1rem;top:-4rem;z-index:40;background:var(--fg);color:var(--bg);border-color:var(--fg)}
 .skip:focus{top:.5rem}
 .top{border-bottom:1px solid var(--border);background:var(--bg);position:sticky;top:0;z-index:5}
@@ -69,7 +72,7 @@ label.check input{width:1.1rem;height:1.1rem;accent-color:var(--fg)}
 .ctxpanel .disc{margin:0}
 .ctxfoot{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center}
 .ctxfoot button[hidden]{display:none}
-.chip{font:.75rem var(--mono);border:1px solid var(--border);border-radius:1rem;padding:.1rem .6rem;min-height:2rem;background:var(--bg);display:inline-flex;align-items:center;justify-content:center}
+.chip{font:.75rem var(--mono);border:1px solid var(--control);border-radius:1rem;padding:.1rem .6rem;min-height:2rem;background:var(--bg);display:inline-flex;align-items:center;justify-content:center}
 .chip[hidden]{display:none}
 .chip.on,.chip.cur,.chip[aria-pressed=true]{background:var(--fg);color:var(--bg);border-color:var(--fg);box-shadow:none}
 .act{border:0;background:none;padding:0;min-height:0;text-decoration:underline;text-decoration-color:var(--border);text-underline-offset:.2em;text-align:left;font-weight:600;cursor:pointer;border-radius:3px}
@@ -88,7 +91,7 @@ label.check input{width:1.1rem;height:1.1rem;accent-color:var(--fg)}
 .also{display:flex;flex-wrap:wrap;gap:.15rem .75rem;align-items:baseline;margin:.4rem 0 0;font-size:.85rem}
 .also .lbl{margin-right:-.2rem}
 .also .act{min-height:1.5rem}
-.card.avoid{border-color:var(--danger);background:var(--dangerbg);--muted:#5c5c61}
+.card.avoid{border-color:var(--danger);background:var(--dangerbg);--muted:var(--avoid-muted)}
 .card.warnc{border-color:var(--warn);background:var(--warnbg)}
 .head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:.25rem 1rem;align-items:baseline;margin-top:1rem}
 .head .name{font-size:clamp(1.45rem,4.5vw,2.1rem);font-weight:700;letter-spacing:-.02em;margin:0;line-height:1.15}
@@ -98,7 +101,7 @@ label.check input{width:1.1rem;height:1.1rem;accent-color:var(--fg)}
 .badge.clear{border-color:var(--pos);color:var(--pos)}
 .badge.noted{color:var(--muted)}
 .badge.warning{border-color:var(--warn);background:var(--warnbg);color:var(--warn)}
-.badge.danger{border-color:var(--danger);background:var(--danger);color:#fff}
+.badge.danger{border-color:var(--danger);background:var(--danger);color:var(--bg)}
 .quick{display:grid;grid-template-columns:repeat(auto-fit,minmax(10rem,1fr));gap:.4rem 1rem;margin:.3rem 0 .6rem}
 .quick div{border-top:1px solid var(--border);padding-top:.25rem;min-width:0}
 .quick dt{font:.68rem var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
@@ -672,7 +675,7 @@ function V_decay(S){const W=640,H=260,m={l:36,r:120,t:14,b:30},svg=svgBox(W,H,"V
  series.forEach(([o,p],i)=>{const g=sv("g",{class:"pt",tabindex:"0",role:"link","aria-label":nameOf(o),onclick:()=>openA(o)});g.append(sv("path",{d:p.map(([d,v],j)=>(j?"L":"M")+X(d).toFixed(1)+","+Y(v).toFixed(1)).join(""),fill:"none",stroke:i===0?"var(--fg)":"var(--pos)","stroke-width":i===0?2.5:1.3,opacity:i===0?1:.75}));let k=1,drop=0;for(let j=1;j<p.length;j++){const dd=p[j-1][1]-p[j][1];if(dd>drop){drop=dd;k=j}}if(drop>.15)g.append(sv("circle",{cx:X(p[k][0]),cy:Y(p[k][1]),r:4,fill:"var(--warn)"}));g.append(sv("text",{x:X(48)+4,y:Y(p[48][1])+4-(i%2)*0,class:"lab",text:nameOf(o).slice(0,20)}));svg.append(g)});
  return el("div",null,el("p",{class:"note"},pv("MODEL")," E[value | done after delay t] from judged decay, timing fit and Singapore hours at each future hour. Amber dot: sharpest drop (e.g. closing time, sunset). Recurring windows show as waves."),svg)}
 const HZ=["tonight","tomorrow","1 week","1 month","1 year","5 years","10 years","lifetime"];
-function V_regret(S){const w=[0,.1,.25,.4,.6,.8,.9,1],tb=el("table",{class:"sheet"},el("thead",null,el("tr",null,el("th",null,"Regret if skipped"),HZ.map((h,i)=>el("th",{style:i>=4?"color:var(--muted);font-style:italic":null},h)))),el("tbody",null,S.map(o=>el("tr",null,el("th",null,aBtn(o)),w.map((k,i)=>{const f=o.f,r=clamp((1-k)*(f.decay*.5+f.joy*.3+f.reg*.2)+k*(f.lt*.6+f.reg*.4)-(o.b.cat==="avoid"?2:0));return el("td",{style:`background:rgba(29,29,31,${(r/4*.55).toFixed(2)});color:${r>2.4?"var(--bg)":"var(--fg)"}`},lv(r))})))));
+function V_regret(S){const w=[0,.1,.25,.4,.6,.8,.9,1],tb=el("table",{class:"sheet"},el("thead",null,el("tr",null,el("th",null,"Regret if skipped"),HZ.map((h,i)=>el("th",{style:i>=4?"color:var(--muted);font-style:italic":null},h)))),el("tbody",null,S.map(o=>el("tr",null,el("th",null,aBtn(o)),w.map((k,i)=>{const f=o.f,r=clamp((1-k)*(f.decay*.5+f.joy*.3+f.reg*.2)+k*(f.lt*.6+f.reg*.4)-(o.b.cat==="avoid"?2:0));return el("td",{style:`background:color-mix(in srgb,var(--fg) ${(r/4*55).toFixed(0)}%,transparent);color:${r>2.4?"var(--bg)":"var(--fg)"}`},lv(r))})))));
  const g=STU.gilovich1995,r2=STU.richardson2023;return el("div",null,el("p",{class:"note"},pv("JUDGEMENT")," Short horizons weight decay and enjoyment; long horizons weight long-term value. The shape (inaction weighs more as the horizon lengthens) follows ",pv("EMPIRICAL")," ",g?el("a",{href:g.url,rel:"noopener noreferrer"},"Gilovich & Medvec 1995"):"",g?": "+g.finding+" ":"",r2?el("a",{href:r2.url,rel:"noopener noreferrer"},"Richardson & Gilovich 2023"):"",r2?": "+r2.finding:""," The per-action values are still judgement; italic columns are the least supported."),el("div",{class:"tablewrap"},tb))}
 function V_revunc(S){return el("div",null,el("p",{class:"note"},"High uncertainty does not mean wait: cheap reversible experiments beat analysis."),quad("Reversibility × uncertainty",["EXPERIMENT","RESEARCH","JUST ACT","DELIBERATE"],S,o=>4-o.f.rev+rs(o)*.3,o=>o.f.unc,"reversible → irreversible","uncertainty →"))}
 const hard=o=>clamp(o.f.act*.6+o.f.setup/20+o.f.intr*.3+o.f.dur[0]/40);
