@@ -1,0 +1,784 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" href="data:,">
+<title>Calibrator</title>
+<meta name="description" content="A low-friction probability elicitation instrument: paste a session of ranked questions as TOON, answer each with one slider, skip freely, and copy the answered session back as TOON. No network, no accounts.">
+<link rel="canonical" href="https://teoyujie.org/visuals/calibrator/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Calibrator">
+<meta property="og:description" content="Answer a session of ranked questions with one probability slider each, then copy the answered session back as TOON.">
+<meta property="og:url" content="https://teoyujie.org/visuals/calibrator/">
+<meta name="robots" content="noindex">
+<style>
+:root{--bg:#fff;--fg:#1d1d1f;--muted:#6e6e73;--rule:#d2d2d7;--base:#f5f5f7;--accent:#0071e3;--on-accent:#fff;--danger:#c4281c;--sans:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;--r:.6rem;--fade:120ms;color-scheme:light dark}
+@media (prefers-color-scheme:dark){:root{--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--rule:#48484a;--base:#2c2c2e;--accent:#2997ff;--on-accent:#1d1d1f;--danger:#ff6961}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;height:100%}
+body{margin:0;min-height:100%;background:var(--bg);color:var(--fg);font:16px/1.5 var(--sans);letter-spacing:-.011em;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer;-webkit-tap-highlight-color:transparent}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+[hidden]{display:none!important}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.shell{display:flex;flex-direction:column;min-height:100vh;min-height:100dvh;width:min(100%,40rem);margin:auto;padding:max(.75rem,env(safe-area-inset-top)) max(1rem,env(safe-area-inset-right)) max(.75rem,env(safe-area-inset-bottom)) max(1rem,env(safe-area-inset-left))}
+.btn{min-height:2.75rem;min-width:2.75rem;padding:0 1.1rem;border:1px solid var(--rule);border-radius:999px;background:var(--bg);font-weight:600}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn.quiet{border-color:transparent;background:none;color:var(--muted)}
+.btn:disabled{opacity:.4;cursor:default}
+.muted{color:var(--muted)}.small{font-size:.875rem}
+.msg{font-size:.9375rem;margin:.75rem 0 0;min-height:1.5em}
+.msg.error{color:var(--danger)}
+/* Start screen */
+.start{flex:1;display:flex;flex-direction:column;justify-content:center;gap:1rem;padding-bottom:10vh}
+.start h1{font-size:clamp(2rem,9vw,3rem);line-height:1.04;letter-spacing:-.045em;margin:0}
+.start p{margin:0;max-width:34ch}
+.start .stack{display:grid;gap:.6rem;max-width:22rem}
+.start .stack .btn{min-height:3.25rem;font-size:1.0625rem}
+.or{text-align:center;color:var(--muted);font-size:.875rem}
+textarea{width:100%;min-height:9rem;padding:.6rem .75rem;border:1px solid var(--rule);border-radius:var(--r);background:var(--bg);font:.8125rem/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;resize:vertical}
+.file{position:relative;display:flex;align-items:center;justify-content:center}
+.file input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.file:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+.foot{font-size:.8125rem;color:var(--muted);margin-top:auto;padding-top:1rem}
+.foot a{color:inherit}
+.confirm{border:1px solid var(--rule);border-radius:var(--r);padding:.85rem 1rem;display:grid;gap:.6rem;max-width:26rem}
+.confirm p{margin:0}
+.confirm .row{display:flex;flex-wrap:wrap;gap:.5rem}
+/* Question card */
+.top{display:flex;align-items:center;justify-content:space-between;gap:.5rem;min-height:2.75rem}
+.count{font-weight:600;font-variant-numeric:tabular-nums;color:var(--muted)}
+.card{flex:1;display:flex;flex-direction:column;justify-content:center;gap:.75rem;padding:1rem 0;min-width:0}
+.prop{font-size:clamp(1.375rem,5.6vw,1.875rem);line-height:1.2;letter-spacing:-.025em;font-weight:650;margin:0;overflow-wrap:anywhere}
+.ctx{font-size:1rem;color:var(--muted);margin:0;overflow-wrap:anywhere}
+.answer{margin-top:.75rem}
+.value{display:block;text-align:center;font-size:clamp(2.5rem,13vw,3.5rem);font-weight:700;letter-spacing:-.045em;line-height:1;font-variant-numeric:tabular-nums;min-height:1em}
+.value.none{color:var(--muted);font-weight:500;font-size:1.25rem;line-height:3.5rem;min-height:0;letter-spacing:-.01em}
+.slider{position:relative;margin:.25rem 0 0}
+.ends{display:flex;justify-content:space-between;font-size:.8125rem;color:var(--muted);font-variant-numeric:tabular-nums}
+input[type=range]{-webkit-appearance:none;appearance:none;display:block;width:100%;height:3.5rem;margin:0;background:none;touch-action:none;cursor:pointer}
+input[type=range]::-webkit-slider-runnable-track{height:.5rem;border-radius:999px;background:var(--rule)}
+input[type=range]::-moz-range-track{height:.5rem;border-radius:999px;background:var(--rule)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:2rem;height:2rem;margin-top:-.75rem;border-radius:50%;border:0;background:var(--accent);box-shadow:0 0 0 4px var(--bg)}
+input[type=range]::-moz-range-thumb{width:2rem;height:2rem;border-radius:50%;border:0;background:var(--accent);box-shadow:0 0 0 4px var(--bg)}
+input[type=range].unanswered::-webkit-slider-thumb{opacity:0}
+input[type=range].unanswered::-moz-range-thumb{opacity:0}
+input[type=range]:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:var(--r)}
+.acts{display:grid;gap:.25rem;margin:.75rem 0 0;font-size:.9375rem}
+.acts p{margin:0;overflow-wrap:anywhere}
+.acts b{font-weight:600}
+.nav{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;padding-top:.5rem}
+.nav .btn{min-height:3.25rem;font-size:1.0625rem}
+.state{text-align:center;font-size:.8125rem;color:var(--muted);min-height:1.25rem;margin:0}
+/* Export sheet */
+dialog{border:0;padding:0;margin:auto auto 0;width:min(100%,40rem);max-width:100%;max-height:90dvh;border-radius:1rem 1rem 0 0;background:var(--bg);color:var(--fg);box-shadow:0 -1px 0 var(--rule),0 -8px 30px rgba(0,0,0,.18)}
+dialog::backdrop{background:rgba(0,0,0,.35)}
+.sheet{display:grid;gap:.75rem;padding:1.1rem max(1.1rem,env(safe-area-inset-right)) max(1.1rem,env(safe-area-inset-bottom)) max(1.1rem,env(safe-area-inset-left))}
+.sheet h2{font-size:1.15rem;letter-spacing:-.02em;margin:0}
+.tally{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.5rem;margin:0}
+.tally div{border:1px solid var(--rule);border-radius:var(--r);padding:.5rem .65rem}
+.tally dt{font-size:.8125rem;color:var(--muted)}
+.tally dd{margin:0;font-size:1.5rem;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.03em}
+.sheet .row{display:flex;flex-wrap:wrap;gap:.5rem}
+.sheet .row .btn.primary{flex:1 1 10rem}
+pre{margin:0;max-height:40dvh;overflow:auto;padding:.6rem .75rem;border:1px solid var(--rule);border-radius:var(--r);background:var(--base);font:.75rem/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre}
+@media (prefers-reduced-motion:no-preference){.card.fade{animation:fade var(--fade) ease-out}.btn{transition:background-color .15s,color .15s}}
+@keyframes fade{from{opacity:0}}
+@media (forced-colors:active){input[type=range]{forced-color-adjust:auto}}
+</style>
+</head>
+<body>
+<noscript><p style="padding:1rem">Calibrator needs JavaScript. It runs entirely in this page: nothing is uploaded.</p></noscript>
+
+<div class="shell" id="start" hidden>
+  <div class="start">
+    <h1>Calibrator</h1>
+    <p class="muted">Paste a session, answer each question with your probability, then copy the result.</p>
+    <div class="stack">
+      <button type="button" class="btn primary" id="paste">Paste Session</button>
+      <span class="or">or</span>
+      <label class="btn file" for="file">Import .toon<input type="file" id="file" accept=".toon,text/plain"></label>
+    </div>
+    <div id="manual" hidden>
+      <label for="manual-text" class="small muted">Clipboard access is blocked here: paste the session TOON below.</label>
+      <textarea id="manual-text" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
+      <div style="margin-top:.5rem"><button type="button" class="btn primary" id="manual-load">Load session</button></div>
+    </div>
+    <div class="confirm" id="guard" hidden role="alertdialog" aria-labelledby="guard-text">
+      <p id="guard-text"></p>
+      <div class="row">
+        <button type="button" class="btn" id="guard-resume">Keep current session</button>
+        <button type="button" class="btn quiet" id="guard-replace">Replace it</button>
+      </div>
+    </div>
+    <p class="msg" id="start-msg" role="status" aria-live="polite"></p>
+  </div>
+  <p class="foot" id="start-foot">Runs in this page only: no uploads, accounts or network. <a href="../../visuals.html">Visuals</a></p>
+</div>
+
+<div class="shell" id="ask" hidden>
+  <div class="top">
+    <span class="count" id="count" aria-hidden="true"></span>
+    <button type="button" class="btn quiet" id="export-open">Export</button>
+  </div>
+  <section class="card" id="card" aria-labelledby="prop">
+    <h1 class="prop" id="prop"><span class="sr" id="qnum"></span><span id="prop-text"></span></h1>
+    <p class="ctx" id="ctx"></p>
+    <div class="answer">
+      <output class="value none" id="value" for="range" aria-hidden="true">Unanswered</output>
+      <div class="slider">
+        <label for="range" class="sr" id="range-label">Probability that the proposition is true, in percent</label>
+        <input type="range" id="range" min="0" max="100" step="1" value="50" class="unanswered" aria-describedby="hint">
+        <div class="ends" aria-hidden="true"><span>0%</span><span>100%</span></div>
+      </div>
+      <p class="sr" id="hint">Use the arrow keys to choose, then press Enter to save.</p>
+    </div>
+    <div class="acts">
+      <p id="high"><b>High →</b> <span></span></p>
+      <p id="low"><b>Low →</b> <span></span></p>
+    </div>
+  </section>
+  <p class="state" id="state" role="status" aria-live="polite"></p>
+  <div class="nav">
+    <button type="button" class="btn" id="back">Back</button>
+    <button type="button" class="btn" id="skip">Skip</button>
+  </div>
+</div>
+
+<dialog id="sheet" aria-labelledby="sheet-title">
+  <div class="sheet">
+    <h2 id="sheet-title">Session</h2>
+    <dl class="tally">
+      <div><dt>Answered</dt><dd id="n-answered">0</dd></div>
+      <div><dt>Skipped</dt><dd id="n-skipped">0</dd></div>
+      <div><dt>Unseen</dt><dd id="n-unseen">0</dd></div>
+    </dl>
+    <div class="row">
+      <button type="button" class="btn primary" id="copy">Copy TOON</button>
+      <button type="button" class="btn" id="download">Save .toon</button>
+    </div>
+    <p class="msg" id="sheet-msg" role="status" aria-live="polite"></p>
+    <details id="preview-box">
+      <summary class="small">Preview</summary>
+      <pre id="preview" tabindex="0"></pre>
+    </details>
+    <div class="row">
+      <button type="button" class="btn" id="close">Close</button>
+      <button type="button" class="btn quiet" id="new">New session</button>
+    </div>
+  </div>
+</dialog>
+
+<script id="calibrator-engine">
+// Pure core: the TOON codec (the format of yujieteo/site's scripts/toon.py), the session schema,
+// and the session state machine. No DOM, storage, clock or network: callers pass times in ms.
+(function (root) {
+"use strict";
+
+/* ---------- TOON (comma delimiter, two-space indent) ---------- */
+const NUMERIC = /^[+-]?[0-9]+(?:\.[0-9]+)?(?:e[+-]?[0-9]+)?$/i;
+const KEY = /^[A-Za-z_][A-Za-z0-9_.]*$/;
+const ESC = { "\\": "\\\\", '"': '\\"', "\n": "\\n", "\r": "\\r", "\t": "\\t" };
+
+function escapeText(value) {
+  let out = "";
+  for (const ch of value) {
+    if (ESC[ch]) out += ESC[ch];
+    else if (ch.charCodeAt(0) < 0x20) out += "\\u" + ch.charCodeAt(0).toString(16).padStart(4, "0");
+    else out += ch;
+  }
+  return out;
+}
+function needsQuotes(v) {
+  return v === "" || v !== v.replace(/^[ \t]+|[ \t]+$/g, "") || v === "true" || v === "false" || v === "null"
+    || NUMERIC.test(v) || /[:"\\[\]{}]/.test(v) || /[\x00-\x1f]/.test(v) || v.includes(",")
+    || v.startsWith("-") || v.startsWith("#");
+}
+const encodeString = (v) => needsQuotes(v) ? `"${escapeText(v)}"` : v;
+const encodeKey = (k) => KEY.test(k) ? k : `"${escapeText(k)}"`;
+// Python's repr(float): fixed notation for 1e-4 <= |x| < 1e16, else d.ddde+XX.
+function pyFloat(x) {
+  const [mant, exp] = x.toExponential().split("e");
+  const e = Number(exp), digits = mant.replace("-", "").replace(".", ""), sign = x < 0 ? "-" : "";
+  if (e >= -4 && e < 16) {
+    if (e < 0) return `${sign}0.${"0".repeat(-e - 1)}${digits}`;
+    const whole = digits.padEnd(e + 1, "0"), frac = digits.slice(e + 1);
+    return frac ? `${sign}${whole.slice(0, e + 1)}.${frac}` : `${sign}${whole}`;
+  }
+  return `${mant}e${e < 0 ? "-" : "+"}${String(Math.abs(e)).padStart(2, "0")}`;
+}
+function encodePrimitive(v) {
+  if (v === null || v === undefined) return "null";
+  if (v === true) return "true";
+  if (v === false) return "false";
+  if (typeof v === "number") {
+    if (!Number.isFinite(v)) return "null";
+    return Number.isInteger(v) && Math.abs(v) < 1e16 ? String(v) : pyFloat(v);
+  }
+  return encodeString(String(v));
+}
+const isPrimitive = (v) => v === null || ["string", "number", "boolean"].includes(typeof v);
+const isObject = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
+function isTabular(items) {
+  if (!items.length || !items.every((i) => isObject(i) && Object.keys(i).length)) return false;
+  const keys = Object.keys(items[0]).sort().join("\0");
+  return items.every((i) => Object.keys(i).sort().join("\0") === keys && Object.values(i).every(isPrimitive));
+}
+function encodeValue(key, value, depth, lines) {
+  const pad = "  ".repeat(depth), name = encodeKey(key);
+  if (isObject(value)) {
+    lines.push(`${pad}${name}:`);
+    for (const [k, v] of Object.entries(value)) encodeValue(k, v, depth + 1, lines);
+  } else if (Array.isArray(value)) {
+    if (!value.length) lines.push(`${pad}${name}: []`);
+    else if (value.every(isPrimitive)) lines.push(`${pad}${name}[${value.length}]: ${value.map(encodePrimitive).join(",")}`);
+    else if (isTabular(value)) {
+      const fields = Object.keys(value[0]);
+      lines.push(`${pad}${name}[${value.length}]{${fields.map(encodeKey).join(",")}}:`);
+      for (const item of value) lines.push(`${pad}  ${fields.map((f) => encodePrimitive(item[f])).join(",")}`);
+    } else throw new TypeError(`${key}: only primitive or uniform flat object arrays are supported`);
+  } else lines.push(`${pad}${name}: ${encodePrimitive(value)}`);
+}
+function encode(doc) {
+  const lines = [];
+  for (const [k, v] of Object.entries(doc)) encodeValue(k, v, 0, lines);
+  return lines.join("\n");
+}
+
+class ToonError extends Error {}
+// Read one quoted string starting at s[i] === '"'; returns [value, next index].
+function readQuoted(s, i, where) {
+  let out = "";
+  for (i++; i < s.length; i++) {
+    const ch = s[i];
+    if (ch === '"') return [out, i + 1];
+    if (ch === "\\") {
+      const n = s[++i];
+      if (n === "u") {
+        const hex = s.slice(i + 1, i + 5);
+        if (!/^[0-9a-fA-F]{4}$/.test(hex)) throw new ToonError(`${where}: bad \\u escape`);
+        out += String.fromCharCode(parseInt(hex, 16)); i += 4;
+      } else if ({ "\\": 1, '"': 1, n: 1, r: 1, t: 1 }[n]) out += { "\\": "\\", '"': '"', n: "\n", r: "\r", t: "\t" }[n];
+      else throw new ToonError(`${where}: unknown escape \\${n ?? ""}`);
+    } else out += ch;
+  }
+  throw new ToonError(`${where}: unterminated string`);
+}
+function parsePrimitive(token, where) {
+  const t = token.trim();
+  if (t.startsWith('"')) {
+    const [v, end] = readQuoted(t, 0, where);
+    if (end !== t.length) throw new ToonError(`${where}: text after a quoted string`);
+    return v;
+  }
+  if (t === "null") return null;
+  if (t === "true") return true;
+  if (t === "false") return false;
+  if (NUMERIC.test(t)) return Number(t);
+  return t;
+}
+function splitCells(text, where) {
+  const cells = [];
+  let i = 0;
+  for (;;) {
+    while (text[i] === " ") i++;
+    let start = i;
+    if (text[i] === '"') { i = readQuoted(text, i, where)[1]; while (text[i] === " ") i++; }
+    else while (i < text.length && text[i] !== ",") i++;
+    cells.push(text.slice(start, i));
+    if (i >= text.length) return cells;
+    if (text[i] !== ",") throw new ToonError(`${where}: expected a comma`);
+    i++;
+  }
+}
+function parseKey(line, where) {
+  if (line.startsWith('"')) {
+    const [k, end] = readQuoted(line, 0, where);
+    return [k, line.slice(end)];
+  }
+  const m = /^[A-Za-z_][A-Za-z0-9_.]*/.exec(line);
+  if (!m) throw new ToonError(`${where}: expected a key`);
+  return [m[0], line.slice(m[0].length)];
+}
+function decode(text) {
+  if (typeof text !== "string") throw new ToonError("TOON must be text");
+  const raw = text.replace(/^\uFEFF/, "").replace(/\r\n?/g, "\n").split("\n");
+  while (raw.length && raw[raw.length - 1].trim() === "") raw.pop();
+  if (!raw.length) throw new ToonError("The TOON is empty");
+  const lines = raw.map((l, n) => {
+    const where = `line ${n + 1}`;
+    if (/^ *\t/.test(l)) throw new ToonError(`${where}: tabs are not allowed for indentation`);
+    const indent = /^ */.exec(l)[0].length;
+    if (l.trim() === "") throw new ToonError(`${where}: blank lines are not allowed`);
+    if (indent % 2) throw new ToonError(`${where}: indentation must be a multiple of two spaces`);
+    return { depth: indent / 2, body: l.slice(indent), where };
+  });
+  let pos = 0;
+  function parseObject(depth) {
+    const obj = {};
+    while (pos < lines.length && lines[pos].depth >= depth) {
+      const { depth: d, body, where } = lines[pos];
+      if (d > depth) throw new ToonError(`${where}: unexpected indentation`);
+      pos++;
+      const [key, rest] = parseKey(body, where);
+      if (Object.prototype.hasOwnProperty.call(obj, key)) throw new ToonError(`${where}: duplicate key ${key}`);
+      let m;
+      if (rest === ":") obj[key] = parseObject(depth + 1);
+      else if (rest === ": []") obj[key] = [];
+      else if ((m = /^\[(\d+)\]\{(.*)\}:$/.exec(rest))) {
+        const n = Number(m[1]), fields = splitCells(m[2], where).map((f) => {
+          const t = f.trim();
+          return t.startsWith('"') ? readQuoted(t, 0, where)[0] : t;
+        });
+        if (new Set(fields).size !== fields.length || fields.some((f) => !f)) throw new ToonError(`${where}: bad field list`);
+        const rows = [];
+        while (pos < lines.length && lines[pos].depth === depth + 1) {
+          const row = lines[pos++], cells = splitCells(row.body, row.where);
+          if (cells.length !== fields.length) throw new ToonError(`${row.where}: ${cells.length} values for ${fields.length} fields of ${key}`);
+          rows.push(Object.fromEntries(fields.map((f, i) => [f, parsePrimitive(cells[i], row.where)])));
+        }
+        if (pos < lines.length && lines[pos].depth > depth + 1) throw new ToonError(`${lines[pos].where}: unexpected indentation`);
+        if (rows.length !== n) throw new ToonError(`${where}: ${key} declares ${n} rows but has ${rows.length}`);
+        obj[key] = rows;
+      } else if ((m = /^\[(\d+)\]:(?: (.*))?$/.exec(rest))) {
+        const n = Number(m[1]), items = m[2] === undefined || m[2] === "" ? [] : splitCells(m[2], where).map((c) => parsePrimitive(c, where));
+        if (items.length !== n) throw new ToonError(`${where}: ${key} declares ${n} items but has ${items.length}`);
+        obj[key] = items;
+      } else if (rest.startsWith(": ")) obj[key] = parsePrimitive(rest.slice(2), where);
+      else throw new ToonError(`${where}: expected "${key}: value"`);
+    }
+    return obj;
+  }
+  const doc = parseObject(0);
+  if (pos !== lines.length) throw new ToonError(`${lines[pos].where}: unexpected indentation`);
+  return doc;
+}
+
+/* ---------- Session schema ---------- */
+const FORMAT = "calibrator-session", VERSION = 1;
+const ORIGINS = ["news", "notes", "project", "calibration", "synthesis"];
+const SCORES = ["info_gain", "action_impact", "novelty", "adversariality", "relevance"];
+const FIELDS = {
+  session: ["session_id", "generated_at", "generator", "inputs"],
+  questions: ["question_id", "session_id", "proposition", "context", "high_action", "low_action", "origin",
+    ...SCORES, "explore_exploit", "resolution_rule", "resolution_horizon", "resolution_status", "outcome",
+    "resolution_evidence", "generated_at"],
+  sources: ["question_id", "source_id", "title", "url", "published_at", "retrieved_at"],
+  claims: ["question_id", "source_id", "claim"],
+};
+const EXPORT_FIELDS = {
+  session: [...FIELDS.session, "question_count", "imported_at", "exported_at", "answered", "skipped", "unseen"],
+  responses: ["question_id", "state", "first_probability", "final_probability", "revision_count",
+    "time_to_first_answer_ms", "time_to_final_answer_ms", "first_shown_at", "first_answered_at", "final_answered_at"],
+  revisions: ["question_id", "revision", "probability", "at", "ms_since_first_shown"],
+};
+const OPTIONAL = new Set(["generator", "inputs", "published_at", "outcome", "resolution_evidence"]);
+const STATES = ["answered", "skipped", "unseen"];
+const ID = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
+
+class SchemaError extends Error {}
+function checkFields(row, allowed, where) {
+  for (const k of Object.keys(row)) if (!allowed.includes(k)) throw new SchemaError(`${where}: unknown field ${k}`);
+  for (const k of allowed) if (!OPTIONAL.has(k) && (row[k] === undefined || row[k] === null)) throw new SchemaError(`${where}: missing ${k}`);
+}
+function text(row, k, where, { empty = false, nullable = false } = {}) {
+  const v = row[k];
+  if (v === null || v === undefined) { if (nullable) return; throw new SchemaError(`${where}: missing ${k}`); }
+  if (typeof v !== "string") throw new SchemaError(`${where}: ${k} must be text`);
+  if (!empty && !v.trim()) throw new SchemaError(`${where}: ${k} is empty`);
+}
+const table = (doc, k) => {
+  if (!Array.isArray(doc[k])) throw new SchemaError(`${k} must be a table`);
+  return doc[k];
+};
+// Validate a decoded session document; returns a normalized copy in canonical field order.
+function validateSession(doc) {
+  if (!isObject(doc)) throw new SchemaError("Not a session document");
+  if (doc.format !== FORMAT) throw new SchemaError(`format must be ${FORMAT}`);
+  if (doc.version !== VERSION) throw new SchemaError(`version must be ${VERSION}`);
+  for (const k of Object.keys(doc)) {
+    if (k === "responses" || k === "revisions") throw new SchemaError("This is an exported session; paste a fresh one");
+    if (!["format", "version", "session", "questions", "sources", "claims"].includes(k)) throw new SchemaError(`unknown top-level key ${k}`);
+  }
+  if (!isObject(doc.session)) throw new SchemaError("session must be an object");
+  checkFields(doc.session, FIELDS.session, "session");
+  text(doc.session, "session_id", "session");
+  if (!ID.test(doc.session.session_id)) throw new SchemaError("session.session_id may use only letters, digits, '.', '_' and '-'");
+  text(doc.session, "generated_at", "session");
+  text(doc.session, "generator", "session", { nullable: true });
+  text(doc.session, "inputs", "session", { nullable: true, empty: true });
+  const questions = table(doc, "questions"), sources = table(doc, "sources"), claims = table(doc, "claims");
+  if (!questions.length) throw new SchemaError("The session has no questions");
+  const ids = new Set();
+  questions.forEach((q, i) => {
+    const where = `question ${i + 1}`;
+    if (!isObject(q)) throw new SchemaError(`${where}: not a row`);
+    checkFields(q, FIELDS.questions, where);
+    text(q, "question_id", where);
+    if (!ID.test(q.question_id)) throw new SchemaError(`${where}: question_id may use only letters, digits, '.', '_' and '-'`);
+    if (ids.has(q.question_id)) throw new SchemaError(`${where}: duplicate question_id ${q.question_id}`);
+    ids.add(q.question_id);
+    if (q.session_id !== doc.session.session_id) throw new SchemaError(`${where}: session_id does not match the session`);
+    for (const k of ["proposition", "high_action", "low_action", "resolution_rule", "resolution_horizon", "generated_at"]) text(q, k, where);
+    text(q, "context", where, { empty: true });
+    text(q, "resolution_evidence", where, { empty: true, nullable: true });
+    if (!ORIGINS.includes(q.origin)) throw new SchemaError(`${where}: origin must be one of ${ORIGINS.join(", ")}`);
+    if (!["explore", "exploit"].includes(q.explore_exploit)) throw new SchemaError(`${where}: explore_exploit must be explore or exploit`);
+    for (const k of SCORES) if (typeof q[k] !== "number" || q[k] < 0 || q[k] > 100) throw new SchemaError(`${where}: ${k} must be a number from 0 to 100`);
+    if (!["unresolved", "resolved"].includes(q.resolution_status)) throw new SchemaError(`${where}: resolution_status must be unresolved or resolved`);
+    if (![null, undefined, true, false].includes(q.outcome)) throw new SchemaError(`${where}: outcome must be true, false or null`);
+    if (q.resolution_status === "unresolved" && q.outcome != null) throw new SchemaError(`${where}: an unresolved question has no outcome`);
+  });
+  const sourceKeys = new Set(), sourced = new Set();
+  sources.forEach((s, i) => {
+    const where = `source ${i + 1}`;
+    if (!isObject(s)) throw new SchemaError(`${where}: not a row`);
+    checkFields(s, FIELDS.sources, where);
+    for (const k of ["question_id", "source_id", "title", "url", "retrieved_at"]) text(s, k, where);
+    text(s, "published_at", where, { nullable: true });
+    if (!ids.has(s.question_id)) throw new SchemaError(`${where}: unknown question_id ${s.question_id}`);
+    const key = `${s.question_id}\0${s.source_id}`;
+    if (sourceKeys.has(key)) throw new SchemaError(`${where}: duplicate source_id ${s.source_id} for ${s.question_id}`);
+    sourceKeys.add(key); sourced.add(s.question_id);
+  });
+  for (const id of ids) if (!sourced.has(id)) throw new SchemaError(`question ${id} has no source`);
+  claims.forEach((c, i) => {
+    const where = `claim ${i + 1}`;
+    if (!isObject(c)) throw new SchemaError(`${where}: not a row`);
+    checkFields(c, FIELDS.claims, where);
+    for (const k of ["question_id", "source_id", "claim"]) text(c, k, where);
+    if (!sourceKeys.has(`${c.question_id}\0${c.source_id}`)) throw new SchemaError(`${where}: unknown source ${c.source_id} for ${c.question_id}`);
+  });
+  const order = (row, fields) => Object.fromEntries(fields.map((f) => [f, row[f] === undefined ? null : row[f]]));
+  return {
+    format: FORMAT, version: VERSION,
+    session: order(doc.session, FIELDS.session),
+    questions: questions.map((q) => order(q, FIELDS.questions)),
+    sources: sources.map((s) => order(s, FIELDS.sources)),
+    claims: claims.map((c) => order(c, FIELDS.claims)),
+  };
+}
+// Decode and validate pasted TOON; throws ToonError or SchemaError with a readable message.
+const parseSession = (toon) => validateSession(decode(toon));
+
+/* ---------- Session state ---------- */
+const deepFreeze = (v) => { if (v && typeof v === "object") { Object.values(v).forEach(deepFreeze); Object.freeze(v); } return v; };
+function newState(doc, now) {
+  return { v: 1, doc: deepFreeze(doc), imported_at: now, current: 0, responses: {}, shown: {}, displayed: {}, changed_at: now, exported_at: null };
+}
+const clone = (state) => ({ ...state, responses: { ...state.responses }, shown: { ...state.shown }, displayed: { ...state.displayed } });
+const qid = (state, i = state.current) => state.doc.questions[i].question_id;
+const total = (state) => state.doc.questions.length;
+const isLast = (state) => state.current >= total(state) - 1;
+const stateOf = (state, id) => state.responses[id]?.state || "unseen";
+// The current question is on screen: stamp its first and latest display times.
+function display(state, now) {
+  const s = clone(state), id = qid(s);
+  if (s.shown[id] == null) s.shown[id] = now;
+  s.displayed[id] = now;
+  return s;
+}
+function advance(s) { if (!isLast(s)) s.current += 1; }
+const checkProbability = (p) => {
+  if (!Number.isInteger(p) || p < 0 || p > 100) throw new RangeError("probability must be an integer from 0 to 100");
+};
+// Set the probability for the current question. The first answer is kept forever and auto-advances;
+// later answers are revisions that change only final_probability.
+function answer(state, p, now) {
+  checkProbability(p);
+  let s = state.shown[qid(state)] == null ? display(state, now) : clone(state);
+  const id = qid(s), prev = s.responses[id];
+  if (prev && prev.state === "answered") {
+    if (p === prev.final_probability) return { state: s, advanced: false, first: false, end: false };
+    const history = [...prev.revision_history, { probability: p, at: now }];
+    s.responses[id] = { ...prev, final_probability: p, final_answered_at: now, revision_history: history };
+    s.changed_at = now;
+    return { state: s, advanced: false, first: false, end: false };
+  }
+  s.responses[id] = { state: "answered", first_probability: p, final_probability: p, first_answered_at: now,
+    final_answered_at: now, latency_ms: now - (s.displayed[id] ?? now), revision_history: [] };
+  s.changed_at = now;
+  const end = isLast(s);
+  advance(s);
+  return { state: s, advanced: !end, first: true, end };
+}
+// One tap: mark the current question skipped unless it is already answered, then move on.
+function skip(state, now) {
+  const s = clone(state), id = qid(s);
+  if (stateOf(s, id) === "unseen") { s.responses[id] = { state: "skipped" }; s.changed_at = now; }
+  const end = isLast(s);
+  advance(s);
+  return { state: s, advanced: !end, end };
+}
+function back(state) { const s = clone(state); if (s.current > 0) s.current -= 1; return s; }
+function counts(state) {
+  const c = { answered: 0, skipped: 0, unseen: 0, total: total(state) };
+  for (const q of state.doc.questions) c[stateOf(state, q.question_id)] += 1;
+  return c;
+}
+const iso = (ms) => ms == null ? null : new Date(ms).toISOString();
+// The complete session envelope with every question's answered, skipped or unseen state.
+function exportDocument(state, now) {
+  const c = counts(state), responses = [], revisions = [];
+  for (const q of state.doc.questions) {
+    const id = q.question_id, r = state.responses[id], st = stateOf(state, id);
+    const row = Object.fromEntries(EXPORT_FIELDS.responses.map((f) => [f, null]));
+    row.question_id = id; row.state = st;
+    if (st === "answered") {
+      const shown = state.shown[id];
+      Object.assign(row, {
+        first_probability: r.first_probability, final_probability: r.final_probability,
+        revision_count: r.revision_history.length, time_to_first_answer_ms: r.latency_ms,
+        time_to_final_answer_ms: r.final_answered_at - shown, first_shown_at: iso(shown),
+        first_answered_at: iso(r.first_answered_at), final_answered_at: iso(r.final_answered_at),
+      });
+      r.revision_history.forEach((h, i) => revisions.push({ question_id: id, revision: i + 1, probability: h.probability, at: iso(h.at), ms_since_first_shown: h.at - shown }));
+    }
+    responses.push(row);
+  }
+  return {
+    format: FORMAT, version: VERSION,
+    session: { ...state.doc.session, question_count: c.total, imported_at: iso(state.imported_at), exported_at: iso(now), answered: c.answered, skipped: c.skipped, unseen: c.unseen },
+    questions: state.doc.questions, sources: state.doc.sources, claims: state.doc.claims, responses, revisions,
+  };
+}
+const exportToon = (state, now) => encode(exportDocument(state, now));
+const markExported = (state, now) => ({ ...clone(state), exported_at: now });
+// Unfinished: something was answered or skipped since the last export, or questions remain unseen.
+const unfinished = (state) => state.exported_at == null ? true : state.changed_at > state.exported_at || counts(state).unseen > 0;
+
+/* ---------- Persistence ---------- */
+function serialize(state) { return JSON.stringify(state); }
+function deserialize(json) {
+  const s = JSON.parse(json);
+  if (!s || s.v !== 1 || !isObject(s.responses) || !isObject(s.shown) || !isObject(s.displayed)) throw new SchemaError("Not a saved Calibrator session");
+  const doc = validateSession(s.doc);
+  if (!Number.isInteger(s.current) || s.current < 0 || s.current >= doc.questions.length) throw new SchemaError("Saved position is out of range");
+  for (const [id, r] of Object.entries(s.responses)) {
+    if (!doc.questions.some((q) => q.question_id === id)) throw new SchemaError(`Saved answer for unknown question ${id}`);
+    if (r.state === "answered") { checkProbability(r.first_probability); checkProbability(r.final_probability); if (!Array.isArray(r.revision_history)) throw new SchemaError("Saved revisions are missing"); }
+    else if (r.state !== "skipped") throw new SchemaError(`Saved state ${r.state} is not answered or skipped`);
+  }
+  return { ...s, doc: deepFreeze(doc) };
+}
+
+root.Calibrator = {
+  encode, decode, ToonError, SchemaError, FORMAT, VERSION, FIELDS, EXPORT_FIELDS, ORIGINS, SCORES, STATES,
+  validateSession, parseSession, newState, display, answer, skip, back, counts, stateOf, isLast,
+  exportDocument, exportToon, markExported, unfinished, serialize, deserialize,
+};
+})(typeof self !== "undefined" ? self : globalThis);
+</script>
+
+<script id="calibrator-ui">
+(function () {
+"use strict";
+const C = self.Calibrator, $ = (id) => document.getElementById(id);
+const KEY = "calibrator:session", PREVIOUS = "calibrator:previous";
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); return true; } catch { return false; } },
+};
+const now = () => Date.now();
+const reduced = matchMedia("(prefers-reduced-motion: reduce)");
+let S = null, pendingDoc = null, advanceTimer = 0;
+
+function save() { if (S && !store.set(KEY, C.serialize(S))) setState("Could not save on this device: export before closing."); }
+function load() {
+  const json = store.get(KEY);
+  if (!json) return null;
+  try { return C.deserialize(json); } catch { return null; }
+}
+const setState = (t) => { $("state").textContent = t; };
+const startMsg = (t, error = false) => { const m = $("start-msg"); m.textContent = t; m.classList.toggle("error", error); };
+
+/* ---------- Start screen ---------- */
+function showStart() {
+  $("ask").hidden = true; $("start").hidden = false;
+  $("guard").hidden = true; $("manual").hidden = true;
+}
+function begin(doc) {
+  S = C.display(C.newState(doc, now()), now());
+  save(); pendingDoc = null;
+  showAsk();
+}
+function offer(toon) {
+  let doc;
+  try { doc = C.parseSession(toon); } catch (e) { startMsg(`Not a valid session: ${e.message}`, true); return; }
+  const prev = S || load();
+  if (prev && prev.doc.session.session_id === doc.session.session_id) { S = C.display(prev, now()); save(); showAsk(); return; }
+  if (prev && C.unfinished(prev)) {
+    const c = C.counts(prev);
+    pendingDoc = doc;
+    $("guard-text").textContent = `An unfinished session (${prev.doc.session.session_id}: ${c.answered} answered, ${c.skipped} skipped, ${c.unseen} unseen) has not been exported. Replace it with ${doc.session.session_id}?`;
+    $("guard").hidden = false; startMsg("");
+    $("guard-resume").focus();
+    return;
+  }
+  if (prev) store.set(PREVIOUS, C.serialize(prev));
+  begin(doc);
+}
+$("paste").addEventListener("click", async () => {
+  startMsg("");
+  try {
+    const t = await navigator.clipboard.readText();
+    if (!t.trim()) { startMsg("The clipboard is empty: copy the session TOON first.", true); return; }
+    offer(t);
+  } catch {
+    $("manual").hidden = false; $("manual-text").focus();
+  }
+});
+$("manual-load").addEventListener("click", () => offer($("manual-text").value));
+$("file").addEventListener("change", async (e) => {
+  const f = e.target.files[0]; e.target.value = "";
+  if (f) offer(await f.text());
+});
+$("guard-resume").addEventListener("click", () => { const prev = S || load(); pendingDoc = null; if (prev) { S = C.display(prev, now()); save(); showAsk(); } });
+$("guard-replace").addEventListener("click", () => {
+  const prev = S || load();
+  if (prev) store.set(PREVIOUS, C.serialize(prev));
+  if (pendingDoc) begin(pendingDoc);
+});
+
+/* ---------- Question card ---------- */
+const range = $("range");
+let gesture = false, keyed = false;
+function render(fade) {
+  const q = S.doc.questions[S.current], n = S.current + 1, total = S.doc.questions.length;
+  const r = S.responses[q.question_id], st = C.stateOf(S, q.question_id);
+  $("count").textContent = `${n} / ${total}`;
+  $("qnum").textContent = `Question ${n} of ${total}: `;
+  $("prop-text").textContent = q.proposition;
+  $("ctx").textContent = q.context; $("ctx").hidden = !q.context;
+  $("high").lastElementChild.textContent = q.high_action;
+  $("low").lastElementChild.textContent = q.low_action;
+  const answered = st === "answered";
+  range.classList.toggle("unanswered", !answered);
+  range.value = answered ? r.final_probability : 50;
+  range.setAttribute("aria-valuetext", answered ? `${r.final_probability}%` : "Unanswered");
+  showValue(answered ? r.final_probability : null);
+  $("back").disabled = S.current === 0;
+  $("skip").textContent = st === "unseen" ? "Skip" : "Next";
+  $("skip").disabled = st !== "unseen" && C.isLast(S);
+  setState(st === "skipped" ? "Skipped" : answered && r.revision_history.length ? "Revised" : answered ? "Answered" : "");
+  if (fade && !reduced.matches) { const c = $("card"); c.classList.remove("fade"); void c.offsetWidth; c.classList.add("fade"); }
+}
+function showValue(p) {
+  const v = $("value");
+  v.textContent = p == null ? "Unanswered" : `${p}%`;
+  v.classList.toggle("none", p == null);
+}
+function showAsk() {
+  $("start").hidden = true; $("ask").hidden = false;
+  render(true);
+}
+function go(next, focus = true) {
+  S = C.display(next, now()); save(); render(true);
+  if (focus) range.focus({ preventScroll: true });
+}
+function commit() {
+  clearTimeout(advanceTimer);
+  const p = Number(range.value), res = C.answer(S, p, now());
+  S = res.state; save();
+  range.classList.remove("unanswered");
+  range.setAttribute("aria-valuetext", `${p}%`);
+  showValue(p);
+  if (res.first) {
+    // Keep the saved number on screen for a beat, then move on.
+    advanceTimer = setTimeout(() => {
+      if (res.advanced) go(S); else { render(false); openSheet(); }
+    }, reduced.matches ? 120 : 220);
+  } else render(false);
+}
+range.addEventListener("pointerdown", () => { gesture = true; clearTimeout(advanceTimer); });
+range.addEventListener("input", () => {
+  range.classList.remove("unanswered");
+  range.setAttribute("aria-valuetext", `${range.value}%`);
+  showValue(Number(range.value));
+});
+// A pointer release commits; so does a tap on the unanswered slider at the value it already holds.
+const release = () => { if (gesture) { gesture = false; commit(); } };
+range.addEventListener("pointerup", release);
+range.addEventListener("pointercancel", () => { gesture = false; render(false); });
+range.addEventListener("change", () => { if (keyed) return; if (gesture) release(); });
+// Keyboard: arrows choose without saving; Enter (or leaving the slider) saves.
+range.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") { e.preventDefault(); keyed = false; commit(); return; }
+  if (/^(Arrow|Page|Home|End)/.test(e.key)) {
+    keyed = true;
+    if (range.classList.contains("unanswered")) { e.preventDefault(); range.value = 50; range.dispatchEvent(new Event("input")); }
+  }
+});
+range.addEventListener("blur", () => {
+  if (!keyed) return;
+  keyed = false;
+  const r = S.responses[S.doc.questions[S.current].question_id];
+  if (r?.state === "answered" && Number(range.value) !== r.final_probability) commit(); else render(false);
+});
+$("back").addEventListener("click", () => { clearTimeout(advanceTimer); go(C.back(S), false); });
+$("skip").addEventListener("click", () => {
+  clearTimeout(advanceTimer);
+  const res = C.skip(S, now());
+  S = res.state; save();
+  if (res.end) { render(false); openSheet(); } else go(S, false);
+});
+
+/* ---------- Export sheet ---------- */
+const sheet = $("sheet");
+let exportText = "";
+function openSheet() {
+  const c = C.counts(S);
+  $("n-answered").textContent = c.answered; $("n-skipped").textContent = c.skipped; $("n-unseen").textContent = c.unseen;
+  exportText = C.exportToon(S, now());
+  $("preview").textContent = exportText; $("sheet-msg").textContent = "";
+  if (!sheet.open) sheet.showModal();
+}
+function exported() { S = C.markExported(S, now()); save(); }
+$("export-open").addEventListener("click", openSheet);
+$("close").addEventListener("click", () => sheet.close());
+sheet.addEventListener("click", (e) => { if (e.target === sheet) sheet.close(); });
+$("copy").addEventListener("click", async () => {
+  try { await navigator.clipboard.writeText(exportText); exported(); $("sheet-msg").textContent = "Copied the session TOON."; }
+  catch { $("preview-box").open = true; $("sheet-msg").textContent = "Copying is blocked here: select the preview text, or save a .toon file."; }
+});
+$("download").addEventListener("click", () => {
+  const url = URL.createObjectURL(new Blob([exportText], { type: "text/plain" })), a = document.createElement("a");
+  a.href = url; a.download = `${S.doc.session.session_id}-answered.toon`;
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  exported(); $("sheet-msg").textContent = `Saved ${a.download}.`;
+});
+$("new").addEventListener("click", () => { sheet.close(); showStart(); startMsg(""); });
+
+/* ---------- WebMCP: read-only tools for agents ---------- */
+const result = (v) => ({ content: [{ type: "text", text: JSON.stringify(v) }] });
+const ro = { readOnlyHint: true }, none = { type: "object", properties: {}, additionalProperties: false };
+const tools = [
+  { name: "get_metadata", description: "Return what Calibrator does and its session TOON schema: the fields of each table, the allowed origins and question states, and where the schema is documented.", inputSchema: none, annotations: ro,
+    async execute() { return result({ title: "Calibrator", url: "https://teoyujie.org/visuals/calibrator/", format: C.FORMAT, version: C.VERSION, import_fields: C.FIELDS, export_fields: C.EXPORT_FIELDS, origins: C.ORIGINS, scores: C.SCORES, states: C.STATES, schema_docs: "https://github.com/yujieteo/calibrator#session-toon-schema" }); } },
+  { name: "get_session_summary", description: "Return the loaded session's id, position and answered, skipped and unseen counts, or null when no session is loaded. Never changes the page.", inputSchema: none, annotations: ro,
+    async execute() { const s = S || load(); return result(s ? { session_id: s.doc.session.session_id, current: s.current + 1, ...C.counts(s), unfinished: C.unfinished(s) } : null); } },
+  { name: "get_current_question", description: "Return the question on screen: its number, id, proposition, context, high and low actions and its state (answered, skipped or unseen). Generator scores and sources are not included.", inputSchema: none, annotations: ro,
+    async execute() {
+      const s = S || load(); if (!s) return result(null);
+      const q = s.doc.questions[s.current], r = s.responses[q.question_id];
+      return result({ number: s.current + 1, of: s.doc.questions.length, question_id: q.question_id, proposition: q.proposition, context: q.context, high_action: q.high_action, low_action: q.low_action, state: C.stateOf(s, q.question_id), final_probability: r?.final_probability ?? null });
+    } },
+  { name: "export_session_toon", description: "Return the loaded session as exported TOON (every question answered, skipped or unseen), as Copy TOON would, without marking it exported.", inputSchema: none, annotations: ro,
+    async execute() { const s = S || load(); return result(s ? { toon: C.exportToon(s, now()) } : null); } },
+  { name: "validate_session_toon", description: "Check whether a session TOON would import: decode it, validate the schema, and return the session id and question count or the first error. Never loads it.", annotations: ro,
+    inputSchema: { type: "object", properties: { toon: { type: "string" } }, required: ["toon"], additionalProperties: false },
+    async execute({ toon }) { try { const d = C.parseSession(toon); return result({ valid: true, session_id: d.session.session_id, questions: d.questions.length }); } catch (e) { return result({ valid: false, error: e.message }); } } },
+];
+self.CalibratorTools = tools;
+const mc = (typeof document !== "undefined" && document.modelContext) || (typeof navigator !== "undefined" && navigator.modelContext);
+if (mc && typeof mc.registerTool === "function") for (const t of tools) mc.registerTool(t);
+
+S = load();
+if (S) { S = C.display(S, now()); save(); showAsk(); } else showStart();
+})();
+</script>
+</body>
+</html>
