@@ -32,7 +32,7 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .msg{font-size:.9375rem;margin:.75rem 0 0;min-height:1.5em}
 .msg.error{color:var(--danger)}
 /* Start screen */
-.start{flex:1;display:flex;flex-direction:column;justify-content:center;gap:1rem;padding-bottom:10vh}
+.start{flex:1;display:flex;flex-direction:column;justify-content:center;gap:1rem;padding-bottom:10vh;padding-bottom:10svh}
 .start h1{font-size:clamp(2rem,9vw,3rem);line-height:1.04;letter-spacing:-.045em;margin:0}
 .start p{margin:0;max-width:34ch}
 .start .stack{display:grid;gap:.6rem;max-width:22rem}
@@ -50,7 +50,13 @@ textarea{width:100%;min-height:9rem;padding:.6rem .75rem;border:1px solid var(--
 /* Question card */
 .top{display:flex;align-items:center;justify-content:space-between;gap:.5rem;min-height:2.75rem}
 .count{font-weight:600;font-variant-numeric:tabular-nums;color:var(--muted)}
-.card{flex:1;display:flex;flex-direction:column;justify-content:center;gap:.75rem;padding:1rem 0;min-width:0}
+.card{flex:1;display:flex;flex-direction:column;gap:.75rem;padding:1rem 0;min-width:0}
+/* The question screen is exactly the visible viewport (dvh follows Safari's toolbars), so Back and Skip are
+   always on screen; a question too long to fit scrolls inside the card. Auto margins centre the card's content
+   without clipping its top when it overflows, as justify-content:center would. */
+#ask{height:100vh;height:100dvh;min-height:0}
+#ask .card{min-height:0;overflow-y:auto;overscroll-behavior:contain}
+.card>:first-child{margin-top:auto}.card>:last-child{margin-bottom:auto}
 .prop{font-size:clamp(1.375rem,5.6vw,1.875rem);line-height:1.2;letter-spacing:-.025em;font-weight:650;margin:0;overflow-wrap:anywhere}
 .ctx{font-size:1rem;color:var(--muted);margin:0;overflow-wrap:anywhere}
 .answer{margin-top:.75rem}
@@ -84,6 +90,27 @@ dialog::backdrop{background:rgba(0,0,0,.35)}
 .sheet .row{display:flex;flex-wrap:wrap;gap:.5rem}
 .sheet .row .btn.primary{flex:1 1 10rem}
 pre{margin:0;max-height:40dvh;overflow:auto;padding:.6rem .75rem;border:1px solid var(--rule);border-radius:var(--r);background:var(--base);font:.75rem/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre}
+/* Short viewports (an iPhone SE, or any phone with Safari's toolbars showing): tighten the type and spacing so
+   the question, slider and controls fit without scrolling. Targets stay at least 2.75rem. */
+@media (max-height:740px){
+  .top{min-height:2.25rem}
+  .card{gap:.5rem;padding:.5rem 0}
+  .prop{font-size:clamp(1.125rem,5vw,1.5rem)}
+  .ctx{font-size:.9375rem;line-height:1.4}
+  .answer{margin-top:.25rem}
+  .value{font-size:clamp(2rem,10vw,2.75rem)}
+  .value.none{font-size:1.125rem;line-height:2.75rem}
+  input[type=range]{height:2.75rem}
+  .acts{margin-top:.5rem;font-size:.875rem;gap:.125rem}
+  .acts p{line-height:1.4}
+  .nav .btn{min-height:2.75rem}
+}
+@media (max-height:600px){
+  .prop{font-size:1.0625rem;line-height:1.25}
+  .ctx{font-size:.875rem;line-height:1.35}
+  .acts{font-size:.8125rem;line-height:1.35}
+  .ends{font-size:.75rem}
+}
 @media (prefers-reduced-motion:no-preference){.card.fade{animation:fade var(--fade) ease-out}.btn{transition:background-color .15s,color .15s}}
 @keyframes fade{from{opacity:0}}
 @media (forced-colors:active){input[type=range]{forced-color-adjust:auto}}
@@ -102,7 +129,7 @@ pre{margin:0;max-height:40dvh;overflow:auto;padding:.6rem .75rem;border:1px soli
       <label class="btn file" for="file">Import .toon<input type="file" id="file" accept=".toon,text/plain"></label>
     </div>
     <div id="manual" hidden>
-      <label for="manual-text" class="small muted">Clipboard access is blocked here: paste the session TOON below.</label>
+      <label for="manual-text" class="small muted">Paste the session TOON here: it loads as soon as it is pasted.</label>
       <textarea id="manual-text" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
       <div style="margin-top:.5rem"><button type="button" class="btn primary" id="manual-load">Load session</button></div>
     </div>
@@ -461,7 +488,12 @@ function validateSession(doc) {
   };
 }
 // Decode and validate pasted TOON; throws ToonError or SchemaError with a readable message.
-const parseSession = (toon) => validateSession(decode(toon));
+// Text pasted from a web page or a chat app picks up noise a session file never has: blank lines before it,
+// spaces after a line, and no-break spaces in the indentation. toon.py quotes every value with outer spaces,
+// so removing these changes nothing it wrote; decode itself stays byte for byte toon.py's.
+const tidy = (text) => text.replace(/^\uFEFF/, "").replace(/\r\n?/g, "\n").split("\n")
+  .map((l) => l.replace(/^[ \u00a0]+/, (lead) => " ".repeat(lead.length)).replace(/[ \t\u00a0]+$/, "")).join("\n").replace(/^\n+/, "");
+const parseSession = (toon) => validateSession(decode(typeof toon === "string" ? tidy(toon) : toon));
 
 /* ---------- Session state ---------- */
 const deepFreeze = (v) => { if (v && typeof v === "object") { Object.values(v).forEach(deepFreeze); Object.freeze(v); } return v; };
@@ -578,7 +610,7 @@ const STEPS = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1, PageUp:
 function keyProbability(key, choice) {
   if (key === "Home") return 0;
   if (key === "End") return 100;
-  if (!Object.hasOwn(STEPS, key)) return null;
+  if (!Object.prototype.hasOwnProperty.call(STEPS, key)) return null;
   return choice == null ? 50 : clampProbability(choice + STEPS[key]);
 }
 
@@ -638,15 +670,26 @@ function offer(toon) {
   if (prev) store.set(PREVIOUS, C.serialize(prev));
   begin(doc);
 }
+// Safari reads the clipboard only when its own Paste prompt is tapped; any other outcome, or an empty read, opens
+// the paste box, which loads the session the moment text is pasted into it.
+const manual = () => { $("manual").hidden = false; $("manual-text").focus(); };
 $("paste").addEventListener("click", async () => {
   startMsg("");
-  try {
-    const t = await navigator.clipboard.readText();
-    if (!t.trim()) { startMsg("The clipboard is empty: copy the session TOON first.", true); return; }
-    offer(t);
-  } catch {
-    $("manual").hidden = false; $("manual-text").focus();
-  }
+  let t = "";
+  try { t = await navigator.clipboard.readText(); } catch {}
+  if (t.trim()) offer(t); else manual();
+});
+const pasted = (e) => e.clipboardData?.getData("text/plain") || "";
+$("manual-text").addEventListener("paste", (e) => {
+  const t = pasted(e);
+  if (!t.trim()) return;
+  e.preventDefault(); $("manual-text").value = t; offer(t);
+});
+// A paste anywhere on the start screen (Cmd+V or Ctrl+V) loads the session too.
+document.addEventListener("paste", (e) => {
+  if ($("start").hidden || e.target === $("manual-text")) return;
+  const t = pasted(e);
+  if (t.trim()) { e.preventDefault(); offer(t); }
 });
 $("manual-load").addEventListener("click", () => offer($("manual-text").value));
 $("file").addEventListener("change", async (e) => {

@@ -41,6 +41,32 @@ test("valid session import: the sample decodes, validates and opens question 1",
   assert.deepEqual(meta.states, plain(C.STATES));
 });
 
+test("real session import: the generated 100-question session pastes, validates and exports, even with pasted noise", () => {
+  const toon = read("sessions/2026-10-02.toon");
+  const t0 = performance.now();
+  const doc = C.parseSession(toon);
+  assert.ok(performance.now() - t0 < 1000, "decoding and validating a 129 kB session is fast");
+  assert.deepEqual([doc.questions.length, doc.sources.length, doc.claims.length], [100, 240, 331]);
+  // Copied from a web page or a chat app: CRLF, a BOM, blank lines before, spaces after lines and no-break spaces
+  // in the indentation. All of it is noise toon.py never writes, and the session must still load unchanged.
+  const noisy = [
+    toon.replace(/\n/g, "\r\n"),
+    `\uFEFF${toon}`,
+    `\n\n${toon}\n\n`,
+    toon.replace(/\n/g, " \n"),
+    toon.replace(/^ {2}/gm, "\u00a0 "),
+  ];
+  for (const t of noisy) assert.deepEqual(plain(C.parseSession(t)), plain(doc));
+  let s = C.display(C.newState(doc, T0), T0);
+  for (let i = 0; i < 100; i++) s = (i % 3 ? C.answer(s, i, T0 + i + 1) : C.skip(s, T0 + i + 1)).state;
+  const out = C.exportToon(s, T0 + 500), back = C.decode(out);
+  assert.equal(back.responses.length, 100);
+  assert.deepEqual(plain(back.claims), plain(doc.claims), "claims survive the export");
+  // The page loads a session the moment it is pasted into the paste box, the path Safari leaves when it will not
+  // hand the clipboard to Paste Session.
+  assert.match(html, /\$\("manual-text"\)\.addEventListener\("paste"/);
+});
+
 test("invalid TOON rejection: malformed text and schema violations are refused with a reason", () => {
   const bad = [
     ["", /empty/],
