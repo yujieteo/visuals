@@ -23,7 +23,7 @@ for s in scripts/build*.py; do python3 "$s" --verify || break; done
 | `scripts/build*.py` | Dependency-free Python builders and verifiers. |
 | `scripts/gallery.py` | Shared helper that rebuilds the root gallery from every `viz/*/index.html`. |
 | `viz/<slug>/index.html` | Generated standalone visualization page. |
-| `viz/<slug>/AGENTS.md`, `SKILLS.md`, `LICENSE` | Agent guides and MIT licence inside each folder ported from a standalone `yujieteo/<repo>` repository (listed in `tests/test_mirror_docs.py`), where the visualization and its tests develop; the folder is that repository minus `tests/` and `.github/`, with data files under `data/<slug>/`. |
+| `viz/<slug>/AGENTS.md`, `SKILLS.md`, `LICENSE` | Agent guides and MIT licence inside each folder ported from a standalone `yujieteo/<repo>` repository (listed in `tests/test_mirror_docs.py`), where the visualization and its tests develop; the folder holds its ported page files, with data files under `data/<slug>/`; that `AGENTS.md` lists what is ported. |
 | `viz/<slug>/beamdswitch.js`, `viz/<slug>/report.js` | Sources a builder inlines for a page's narrated beamdswitch deck: the site's unchanged report template and that page's report. |
 | `index.html` | Generated root gallery that links the visualization pages. |
 | `design-tokens.json` | Shared colors, spacing, radius, and fonts used by the builders. |
