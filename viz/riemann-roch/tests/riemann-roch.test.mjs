@@ -21,7 +21,7 @@ test("the page is built from its sources and is one offline file", () => {
   assert.match(html, /<title>Divisors, Linear Systems &amp; Riemann–Roch Laboratory<\/title>/);
   assert.match(html, /<link rel="canonical" href="https:\/\/teoyujie\.org\/visuals\/riemann-roch">/);
   assert.match(html, /<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'/);
-  assert.deepEqual([...html.matchAll(/<script\b([^>]*)>/g)].map((m) => m[1]), [' id="beamdswitch"', ' id="riemann-roch-engine"', ' id="riemann-roch-ui"'], "inline scripts only");
+  assert.deepEqual([...html.matchAll(/<script\b([^>]*)>/g)].map((m) => m[1]), [' id="site-theme"', ' id="beamdswitch"', ' id="riemann-roch-engine"', ' id="riemann-roch-ui"'], "inline scripts only");
   assert.doesNotMatch(html, /\b(?:src|href)="(?:https?:)?\/\/(?!teoyujie\.org)/, "no external resources");
   assert.match(html, /<div id="nojs">[\s\S]*L\(d∞\) = ⟨1, x, …, x<sup>d<\/sup>⟩/, "a no-JavaScript fallback with the core computations");
   assert.match(html, /prefers-color-scheme:dark/); assert.match(html, /prefers-reduced-motion/);

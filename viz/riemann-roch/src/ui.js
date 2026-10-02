@@ -170,7 +170,7 @@ function drawGeo() {
   if (c === "P1") {
     if (ST.p1view === "sphere") {
       if (L.curve) {
-        g += `<circle cx="${SC[0]}" cy="${SC[1]}" r="${SR}" fill="var(--panel)" stroke="var(--curve)" stroke-width="1.8"/>`;
+        g += `<circle cx="${SC[0]}" cy="${SC[1]}" r="${SR}" fill="var(--bg)" stroke="var(--curve)" stroke-width="1.8"/>`;
         for (const lat of [-0.66, -0.33, 0, 0.33, 0.66]) { const pts = []; for (let k = 0; k <= 72; k++) { const t = (2 * Math.PI * k) / 72, r = Math.sqrt(1 - lat * lat); pts.push(sph2scr([r * Math.cos(t), r * Math.sin(t), lat])); } g += `<path class="grid" d="M${pts.map((p) => p[0].toFixed(1) + " " + p[1].toFixed(1)).join("L")}"/>`; }
         const real = []; for (let k = 0; k <= 120; k++) { const t = (2 * Math.PI * k) / 120; real.push(sph2scr([Math.sin(t), 0, Math.cos(t)])); }
         g += `<path class="curve" d="M${real.map((p) => p[0].toFixed(1) + " " + p[1].toFixed(1)).join("L")}" stroke-dasharray="none" opacity=".75"/>`;
@@ -182,7 +182,7 @@ function drawGeo() {
         g += `<rect x="0" y="0" width="560" height="${GH}" fill="none"/><line class="axis" x1="${PF.X(-4)}" y1="${PF.Y(0)}" x2="${PF.X(4)}" y2="${PF.Y(0)}"/><line class="axis" x1="${PF.X(0)}" y1="${PF.Y(-2.4)}" x2="${PF.X(0)}" y2="${PF.Y(2.4)}"/>`;
         g += `<line class="curve" x1="${PF.X(-4)}" y1="${PF.Y(0)}" x2="${PF.X(4)}" y2="${PF.Y(0)}"/>`;
         for (let k = -4; k <= 4; k++) g += `<text class="lblm" x="${PF.X(k) - 4}" y="${PF.Y(0) + 16}">${k}</text>`;
-        g += `<circle cx="${INF_XY[0]}" cy="${INF_XY[1]}" r="16" fill="var(--panel)" stroke="var(--curve)" stroke-width="1.6"/><text x="${INF_XY[0] - 5}" y="${INF_XY[1] + 5}" font-size="16">∞</text>`;
+        g += `<circle cx="${INF_XY[0]}" cy="${INF_XY[1]}" r="16" fill="var(--bg)" stroke="var(--curve)" stroke-width="1.6"/><text x="${INF_XY[0] - 5}" y="${INF_XY[1] + 5}" font-size="16">∞</text>`;
       }
       caption = "The affine line ℂ (real axis dark) plus the point ∞ (circle). Click the plane to add a point, the circle to add ∞.";
     }
@@ -191,7 +191,7 @@ function drawGeo() {
     if (L.curve) {
       g += `<line class="axis" x1="${F.X(F.x0)}" y1="${F.Y(0)}" x2="${F.X(F.x1)}" y2="${F.Y(0)}"/><line class="axis" x1="${F.X(0)}" y1="${F.Y(F.y0)}" x2="${F.X(0)}" y2="${F.Y(F.y1)}"/>`;
       for (const comp of RR.ecRealLocus(ST.E, F.x0, F.x1)) { const pts = [...comp.upper.slice().reverse(), ...comp.lower]; g += `<path class="curve" d="${path(pts.filter(([, y]) => Math.abs(y) <= F.y1 * 1.2), F)}${comp.closed ? "Z" : ""}"/>`; }
-      g += `<circle cx="${OXY[0]}" cy="${OXY[1]}" r="16" fill="var(--panel)" stroke="var(--curve)" stroke-width="1.6"/><text x="${OXY[0] - 6}" y="${OXY[1] + 5}" font-size="15">O</text><text class="lblm" x="${OXY[0] - 32}" y="${OXY[1] + 34}">at ∞ = [0:1:0]</text>`;
+      g += `<circle cx="${OXY[0]}" cy="${OXY[1]}" r="16" fill="var(--bg)" stroke="var(--curve)" stroke-width="1.6"/><text x="${OXY[0] - 6}" y="${OXY[1] + 5}" font-size="15">O</text><text class="lblm" x="${OXY[0] - 32}" y="${OXY[1] + 34}">at ∞ = [0:1:0]</text>`;
     }
     caption = `E: y² = ${RR.pstr([ST.E.b, ST.E.a, 0, 1])}, real locus (the complex curve is a torus). Click near the curve to place a point; the circle is O.`;
   } else if (c === "hyperelliptic") {
@@ -200,8 +200,8 @@ function drawGeo() {
       g += `<line class="axis" x1="${F.X(F.x0)}" y1="${F.Y(0)}" x2="${F.X(F.x1)}" y2="${F.Y(0)}"/>`;
       for (const part of hyperLocus(F)) { const pts = [...part.slice().reverse(), ...part.map(([x, y]) => [x, -y])]; g += `<path class="curve" d="${path(pts, F)}"/>`; }
       for (const r of RR.realRoots(ST.hyper.f)) g += `<circle class="branch" cx="${F.X(r).toFixed(1)}" cy="${F.Y(0).toFixed(1)}" r="4.5"/>`;
-      if (hyperOdd()) g += `<circle cx="${OXY[0]}" cy="${OXY[1]}" r="16" fill="var(--panel)" stroke="var(--curve)" stroke-width="1.6"/><text x="${OXY[0] - 6}" y="${OXY[1] + 5}" font-size="15">∞</text>`;
-      else g += `<circle cx="${OXY[0]}" cy="${OXY[1]}" r="15" fill="var(--panel)" stroke="var(--curve)"/><text x="${OXY[0] - 9}" y="${OXY[1] + 5}" font-size="13">∞₊</text><circle cx="${OXY[0]}" cy="${OXY[1] + 50}" r="15" fill="var(--panel)" stroke="var(--curve)"/><text x="${OXY[0] - 9}" y="${OXY[1] + 55}" font-size="13">∞₋</text>`;
+      if (hyperOdd()) g += `<circle cx="${OXY[0]}" cy="${OXY[1]}" r="16" fill="var(--bg)" stroke="var(--curve)" stroke-width="1.6"/><text x="${OXY[0] - 6}" y="${OXY[1] + 5}" font-size="15">∞</text>`;
+      else g += `<circle cx="${OXY[0]}" cy="${OXY[1]}" r="15" fill="var(--bg)" stroke="var(--curve)"/><text x="${OXY[0] - 9}" y="${OXY[1] + 5}" font-size="13">∞₊</text><circle cx="${OXY[0]}" cy="${OXY[1] + 50}" r="15" fill="var(--bg)" stroke="var(--curve)"/><text x="${OXY[0] - 9}" y="${OXY[1] + 55}" font-size="13">∞₋</text>`;
     }
     const nb = RR.hyperBranchCount(ST.hyper.f.length - 1);
     caption = `y² = ${RR.pstr(ST.hyper.f)}, genus ${RR.hyperGenus(ST.hyper.f.length - 1)}: real locus with the ${RR.realRoots(ST.hyper.f).length} real branch points (orange) of x : C → P¹${hyperOdd() ? " (∞ is the remaining branch point)" : ""}; ${nb} in all.`;
@@ -625,7 +625,7 @@ function drawFn() {
   const f = fnObj(), D = RR.p1div(f), F = frame(-3.5, 3.5, -1, 1, 470, 170, 18);
   let g = `<line class="curve" x1="${F.X(-3.5)}" y1="${F.Y(0)}" x2="${F.X(3.5)}" y2="${F.Y(0)}"/>`;
   for (let k = -3; k <= 3; k++) g += `<text class="lblm" x="${F.X(k) - 3}" y="${F.Y(0) + 18}">${k}</text>`;
-  g += `<circle cx="495" cy="${F.Y(0)}" r="15" fill="var(--panel)" stroke="var(--curve)"/><text x="489" y="${F.Y(0) + 5}" font-size="14">∞</text>`;
+  g += `<circle cx="495" cy="${F.Y(0)}" r="15" fill="var(--bg)" stroke="var(--curve)"/><text x="489" y="${F.Y(0) + 5}" font-size="14">∞</text>`;
   for (const t of D) { const x = t.p.inf ? 495 : F.X(t.p.re), k = Math.abs(t.n); for (let i = 0; i < k; i++) g += `<circle class="${t.n > 0 ? "zero" : "pole"}" cx="${x}" cy="${F.Y(0) - 26 - i * 13}" r="5.5"/>`; g += `<text class="lblm" x="${x - 18}" y="${F.Y(0) - 32 - k * 13}">${t.n > 0 ? "zero" : "pole"} ${k}</text>`; }
   draw("fn-svg", g);
   const deg = RR.degree(D);
@@ -661,8 +661,8 @@ function renderEquiv() {
   $("eq-out").innerHTML = h;
   const F = { X: (d) => 40 + (d + 1) * 62 }; let g = `<line class="axis" x1="20" y1="170" x2="350" y2="170"/>`;
   const ex = { "-1": ["−[∞]", "−[0]", "[1] − 2[3]"], 0: ["0", "[0] − [∞]", "[2] − [1]"], 1: ["[∞]", "[0]", "2[1] − [3]"], 2: ["2[∞]", "[0] + [1]", "3[2] − [∞]"], 3: ["3[∞]", "[0]+[1]+[2]", "4[1] − [0]"], 4: ["4[∞]", "2[0]+2[1]", "…"] };
-  for (let d = -1; d <= 4; d++) { g += `<circle class="pos" cx="${F.X(d)}" cy="170" r="6"/><text class="lbl" x="${F.X(d) - 5}" y="192">${d}</text>`; ex[d].forEach((s, i) => { g += `<text class="lblm" x="${F.X(d) - 24}" y="${40 + i * 30}">${esc(s)}</text><line stroke="var(--rule)" x1="${F.X(d)}" y1="${46 + i * 30}" x2="${F.X(d)}" y2="162"/>`; }); }
-  for (const [D, lab] of [[D1, "D"], [D2, "D′"]]) { const d = RR.degree(D); if (d >= -1 && d <= 4) g += `<text class="lbl" x="${F.X(d) - 8}" y="150" style="fill:var(--accent);font-weight:700">${lab}</text>`; }
+  for (let d = -1; d <= 4; d++) { g += `<circle class="pos" cx="${F.X(d)}" cy="170" r="6"/><text class="lbl" x="${F.X(d) - 5}" y="192">${d}</text>`; ex[d].forEach((s, i) => { g += `<text class="lblm" x="${F.X(d) - 24}" y="${40 + i * 30}">${esc(s)}</text><line stroke="var(--border)" x1="${F.X(d)}" y1="${46 + i * 30}" x2="${F.X(d)}" y2="162"/>`; }); }
+  for (const [D, lab] of [[D1, "D"], [D2, "D′"]]) { const d = RR.degree(D); if (d >= -1 && d <= 4) g += `<text class="lbl" x="${F.X(d) - 8}" y="150" style="fill:var(--focus);font-weight:700">${lab}</text>`; }
   draw("pic-svg", g);
 }
 /* --- Riemann–Roch balance --- */
@@ -722,7 +722,7 @@ function renderGroupLaw() {
   const tp = (th, ph) => [Tc[0] + (Rb + rb * Math.cos(ph)) * Math.cos(th), Tc[1] + (Rb + rb * Math.cos(ph)) * Math.sin(th) * Math.sin(tilt) - rb * Math.sin(ph) * Math.cos(tilt)];
   let t = "";
   const ring = (ph, cls, w = 1) => { const pts = []; for (let k = 0; k <= 96; k++) pts.push(tp((2 * Math.PI * k) / 96, ph)); return `<path class="${cls}" stroke-width="${w}" d="M${pts.map((p) => p[0].toFixed(1) + " " + p[1].toFixed(1)).join("L")}"/>`; };
-  t += `<ellipse cx="${Tc[0]}" cy="${Tc[1]}" rx="${Rb + rb}" ry="${(Rb + rb) * Math.sin(tilt) + rb * Math.cos(tilt)}" fill="var(--soft)" stroke="var(--curve)" stroke-width="1.4"/><ellipse cx="${Tc[0]}" cy="${Tc[1]}" rx="${Rb - rb}" ry="${Math.max(4, (Rb - rb) * Math.sin(tilt) - rb * Math.cos(tilt) * 0.2)}" fill="var(--base)" stroke="var(--curve)" stroke-width="1.2"/>`;
+  t += `<ellipse cx="${Tc[0]}" cy="${Tc[1]}" rx="${Rb + rb}" ry="${(Rb + rb) * Math.sin(tilt) + rb * Math.cos(tilt)}" fill="var(--soft)" stroke="var(--curve)" stroke-width="1.4"/><ellipse cx="${Tc[0]}" cy="${Tc[1]}" rx="${Rb - rb}" ry="${Math.max(4, (Rb - rb) * Math.sin(tilt) - rb * Math.cos(tilt) * 0.2)}" fill="var(--surface)" stroke="var(--curve)" stroke-width="1.2"/>`;
   t += ring(0, "curve", 2.2); if (roots.length === 3) t += ring(Math.PI, "curve", 1.4);
   const mk = (u, lab, cls) => { const q = tp(2 * Math.PI * u + Math.PI / 2, 0); return `<circle class="${cls}" cx="${q[0].toFixed(1)}" cy="${q[1].toFixed(1)}" r="5.5"/><text class="lbl" x="${(q[0] + 7).toFixed(1)}" y="${(q[1] - 6).toFixed(1)}">${lab}</text>`; };
   const uS = S.inf ? 0 : RR.ecAbel(E, S).u, uP = RR.ecAbel(E, P).u, uQ = RR.ecAbel(E, Q).u;
@@ -952,7 +952,7 @@ function runCmd(t) { const c = COMMANDS.find(([x]) => x === t); try { $("palette
 /* ================= notation and theme ================= */
 function setNotation(bundle) { document.body.classList.toggle("bundle", bundle); $("nt-div").setAttribute("aria-pressed", String(!bundle)); $("nt-lb").setAttribute("aria-pressed", String(bundle)); store.set("rr-notation", bundle ? "bundle" : "divisor"); }
 const THEMES = ["auto", "light", "dark"];
-function setTheme(t) { if (t === "auto") document.documentElement.removeAttribute("data-theme"); else document.documentElement.setAttribute("data-theme", t); $("theme").textContent = `Theme: ${t}`; store.set("rr-theme", t); }
+function setTheme(t) { if (t === "auto") document.documentElement.removeAttribute("data-theme"); else document.documentElement.setAttribute("data-theme", t); $("theme").textContent = `Theme: ${t}`; try { if (t === "auto") localStorage.removeItem("theme"); else localStorage.setItem("theme", t); } catch { /* storage blocked */ } }
 
 /* ================= beamdswitch deck ================= */
 const deck = () => self.Beamdswitch.deck(RR.report(labState()));
@@ -1036,7 +1036,7 @@ if (mc && typeof mc.registerTool === "function") for (const t of tools) mc.regis
 
 /* ================= boot ================= */
 setNotation(store.get("rr-notation") === "bundle");
-setTheme(THEMES.includes(store.get("rr-theme")) ? store.get("rr-theme") : "auto");
+setTheme(["light", "dark"].includes(store.get("theme")) ? store.get("theme") : "auto");
 renderSide(); update();
 renderFn(); renderLocalOrder(); renderEquiv(); renderBalance(); renderBranch(); renderVeronese(); renderPlane(); renderCanonical(); runCompute(); renderSemigroup(); renderValuation(); renderClifford(); renderJacobian(); renderSym(); renderConcept(); renderChecklist();
 })();
