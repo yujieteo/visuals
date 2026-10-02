@@ -6,6 +6,7 @@ description: Page, design-token, and model-context rules for visualization HTML 
 # Page conventions
 
 - Read `design-tokens.json` (colors, `content_width`, `radius`, fonts, `spacing_rem`) and inject it from the builder; do not hard-code palette values.
+- Follow the shared visual style guide (yujieteo/skills `interactive-visual-spec/references/style-guide.md`): put `style_guide.THEME_SCRIPT` in `<head>` and `style_guide.root_css(tokens)` first in `<style>`, so the page has both themes and follows the site's theme choice; declare domain colours as aliases such as `--energy:var(--hl)`.
 - Exactly one visible key message and one interactive visualization. Every interaction must reveal more of the selected story.
 - Standalone: inline all CSS, data, and JavaScript. No external assets, dependencies, CDN links, or build step (exception: `tourist-attractions` loads d3 7.9.0 by design). Include `<meta name="viewport" content="width=device-width,initial-scale=1">`; every page must be mobile friendly (no horizontal page scroll).
 - Data encoding: compact row arrays, CSV, or TSV for flat data; minimal JSON for hierarchical data. Escape `</` in embedded JSON as `<\/`.
