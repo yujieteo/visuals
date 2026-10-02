@@ -20,7 +20,7 @@ The standalone repository [yujieteo/tampines-food](https://github.com/yujieteo/t
 | `beamdswitch.js` | The site's standard beamdswitch report template, an unchanged copy of `templates/beamdswitch.js` |
 | `build.py` | Ranks the outlets, writes `raw.json` (published as `data.json`) and rewrites the dataset, template and report blocks of `index.html` |
 
-Tests live in `tests/` of yujieteo/tampines-food: `tests/tampines-food-beamdswitch.test.mjs` and `tests/test_tampines_food.py`.
+Tests live in `tests/` of yujieteo/tampines-food: `tests/tampines-food-beamdswitch.test.mjs`, `tests/site-theme.test.mjs` and `tests/test_tampines_food.py`.
 
 ## Build, test and verify
 
