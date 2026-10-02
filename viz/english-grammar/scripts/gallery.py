@@ -39,6 +39,3 @@ def render_gallery(root=ROOT):
         )
     return PAGE % "".join(cards)
 
-
-def write_gallery(root=ROOT):
-    (root / "index.html").write_text(render_gallery(root), encoding="utf-8")

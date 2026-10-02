@@ -21,6 +21,6 @@ This repository is where the visualisation and its tests develop; CI (`.github/w
 ## Test
 
 ```sh
-node --test 'tests/*.test.mjs'
+node --test 'tests/*.test.{mjs,cjs}'
 python3 -m unittest discover -s tests -p 'test_*.py'
 ```
