@@ -588,6 +588,7 @@ root.PhraseData = { KENT_DATA, EMPIRICAL_PHRASE_DATA };
   const TOL = 1e-12;
 
   const isNum = (x) => typeof x === "number" && Number.isFinite(x);
+  const within = (x, lo, hi) => isNum(x) && x >= lo && x <= hi;
   const own = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
   const clamp01 = (x) => (x < 0 ? 0 : x > 1 ? 1 : x);
   const tidy = (x) => (Math.abs(x) < TOL ? 0 : x);
@@ -705,9 +706,9 @@ root.PhraseData = { KENT_DATA, EMPIRICAL_PHRASE_DATA };
   /* A probability input: the percentage used in the maths, and the phrase it came from (if any). */
   function prob(spec) {
     const s = spec && typeof spec === "object" ? spec : {};
-    return { phrase: typeof s.phrase === "string" && phrase(s.phrase) ? s.phrase : null, pct: isNum(s.pct) && s.pct >= 0 && s.pct <= 100 ? s.pct : null };
+    return { phrase: typeof s.phrase === "string" && phrase(s.phrase) ? s.phrase : null, pct: within(s.pct, 0, 100) ? s.pct : null };
   }
-  const val = (s) => (s && isNum(s.pct) && s.pct >= 0 && s.pct <= 100 ? s.pct / 100 : null);
+  const val = (s) => (s && within(s.pct, 0, 100) ? s.pct / 100 : null);
 
   /* ---------- scenario ---------- */
   function check(c, i) {
@@ -717,7 +718,7 @@ root.PhraseData = { KENT_DATA, EMPIRICAL_PHRASE_DATA };
       id: typeof c.id === "string" && /^[\w-]{1,24}$/.test(c.id) ? c.id : `c${i + 1}`,
       name: str(c.name, LIMITS.text), resultA: str(c.resultA, LIMITS.text), resultB: str(c.resultB, LIMITS.text),
       a: prob(c.a), b: prob(c.b),
-      time: { value: isNum(t.value) && t.value >= 0 && t.value <= LIMITS.time ? t.value : null, unit: own(UNITS, t.unit) ? t.unit : "min", free: t.free === true },
+      time: { value: within(t.value, 0, LIMITS.time) ? t.value : null, unit: own(UNITS, t.unit) ? t.unit : "min", free: t.free === true },
     };
   }
   const nextId = (checks) => `c${1 + checks.reduce((m, c) => Math.max(m, Number(/^c(\d+)$/.exec(c.id)?.[1] || 0)), 0)}`;
@@ -735,7 +736,7 @@ root.PhraseData = { KENT_DATA, EMPIRICAL_PHRASE_DATA };
     return {
       example: typeof x.example === "string" && /^[\w-]{1,24}$/.test(x.example) ? x.example : "custom",
       hypothesis: str(x.hypothesis, LIMITS.hypothesis), prior: prob(x.prior), checks, trail,
-      budget: { on: b.on === true, value: isNum(b.value) && b.value >= 0 && b.value <= LIMITS.time ? b.value : 5, unit: own(UNITS, b.unit) ? b.unit : "min" },
+      budget: { on: b.on === true, value: within(b.value, 0, LIMITS.time) ? b.value : 5, unit: own(UNITS, b.unit) ? b.unit : "min" },
       objective: x.objective === "most" || x.objective === "fastest" ? x.objective : null,
       view: x.view === "rate" ? "rate" : "total",
       level: x.level === 2 || x.level === 3 ? x.level : 1,
@@ -906,7 +907,7 @@ root.PhraseData = { KENT_DATA, EMPIRICAL_PHRASE_DATA };
 
   /* ---------- examples (illustrative numbers, not data) ---------- */
   /* A phrase example starts at the phrase's working value. */
-  const P = (pct, phraseId) => ({ pct: phraseId && phrase(phraseId) ? phrase(phraseId).value : pct, phrase: phraseId && phrase(phraseId) ? phraseId : null });
+  const P = (pct, phraseId) => { const ph = phraseId ? phrase(phraseId) : null; return { pct: ph ? ph.value : pct, phrase: ph ? phraseId : null }; };
   const C = (name, value, unit, resultA, resultB, a, b) => ({ name, time: { value, unit, free: false }, resultA, resultB, a: P(a), b: P(b) });
   const EXAMPLES = [
     { id: "restaurant", label: "Restaurant queue", hypothesis: "The restaurant wait will be longer than 20 minutes.", prior: P(70, "likely"), checks: [
