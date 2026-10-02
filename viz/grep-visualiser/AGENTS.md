@@ -33,6 +33,7 @@ Change and test this repository first, then port it; the site's [add-visualizati
 - `raw.json`: published metadata, the engine's `META` (presets, confidence levels, matching models, flags and replace syntaxes); it must equal `META`, and the test fails when it drifts.
 - Inside `index.html`: `<script id="grep-engine">` (pure core, `self.GrepViz`, also run in the page's Web Worker) and `<script id="grep-ui">` (page, worker runner and WebMCP tools).
 - `tests/grep-visualiser.test.mjs` extracts the engine from `index.html` and checks each dialect's translation, the matching models, quoting, the replace syntaxes and that the page makes no network calls; it also boots the page in `node:vm` with a stand-in DOM to check the worker timeout, blocked storage and clipboard, and the file tabs.
+- `tests/site-theme.test.mjs` runs the `site-theme` head script under `node:vm` and checks that an explicit Dark choice gets exactly the system dark palette (including `--control`) and that Light pins `color-scheme: light`.
 
 ## Conventions
 

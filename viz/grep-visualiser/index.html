@@ -9,10 +9,11 @@
 <link rel="icon" href="data:,">
 <meta name="description" content="See what ripgrep, GNU grep, PowerShell and VS Code would match for a pattern: dialect translation with honest confidence levels, each engine's line model and line endings, a compare-all view, generated bash and PowerShell commands and a live replace preview. Runs locally; nothing is sent.">
 <title>Grep Visualiser</title>
+<script id="site-theme">try { var t = localStorage.getItem("theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (e) {}</script>
 <style>
-:root{--bg:#fff;--fg:#1d1d1f;--muted:#6e6e73;--surface:#f5f5f7;--border:#d2d2d7;--grid:#e8e8ed;--focus:#0071e3;--c1:#2a78d6;--mark:rgba(42,120,214,.22);--mark-edge:#2a78d6;--rep:rgba(26,127,100,.22);--ok:#1a7f4b;--bad:#c4261d;--warn:#9a6700;--sans:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;--mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;--r:.5rem;color-scheme:light dark}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--surface:#2c2c2e;--border:#48484a;--grid:#333336;--focus:#2997ff;--c1:#5aa2f0;--mark:rgba(90,162,240,.30);--mark-edge:#5aa2f0;--rep:rgba(60,197,154,.28);--ok:#30c07a;--bad:#ff6961;--warn:#e3b341}}
-:root[data-theme="dark"]{--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--surface:#2c2c2e;--border:#48484a;--grid:#333336;--focus:#2997ff;--c1:#5aa2f0;--mark:rgba(90,162,240,.30);--mark-edge:#5aa2f0;--rep:rgba(60,197,154,.28);--ok:#30c07a;--bad:#ff6961;--warn:#e3b341;color-scheme:dark}
+:root{--bg:#fff;--fg:#1d1d1f;--muted:#6e6e73;--surface:#f5f5f7;--border:#d2d2d7;--control:#86868b;--grid:#e8e8ed;--focus:#0071e3;--c1:#2a78d6;--mark:rgba(42,120,214,.22);--mark-edge:#2a78d6;--rep:rgba(26,127,100,.22);--ok:#1a7f4b;--bad:#c4261d;--warn:#9a6700;--sans:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;--mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;--r:.5rem;color-scheme:light dark}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--surface:#2c2c2e;--border:#48484a;--control:#8e8e93;--grid:#333336;--focus:#2997ff;--c1:#5aa2f0;--mark:rgba(90,162,240,.30);--mark-edge:#5aa2f0;--rep:rgba(60,197,154,.28);--ok:#30c07a;--bad:#ff6961;--warn:#e3b341}}
+:root[data-theme="dark"]{--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--surface:#2c2c2e;--border:#48484a;--control:#8e8e93;--grid:#333336;--focus:#2997ff;--c1:#5aa2f0;--mark:rgba(90,162,240,.30);--mark-edge:#5aa2f0;--rep:rgba(60,197,154,.28);--ok:#30c07a;--bad:#ff6961;--warn:#e3b341;color-scheme:dark}
 :root[data-theme="light"]{color-scheme:light}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
@@ -30,12 +31,12 @@ code,kbd{font-family:var(--mono);font-size:.9em}
 .lede{font-size:1.125rem;max-width:68ch}
 .muted{color:var(--muted)}
 .targets{font:.8rem/1.5 var(--mono);color:var(--muted);margin:.2rem 0 0}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:.35rem;border:1px solid var(--border);background:var(--bg);border-radius:999px;padding:.2rem .75rem;min-height:2.1rem;font-size:.8125rem;white-space:nowrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.35rem;border:1px solid var(--control);background:var(--bg);border-radius:999px;padding:.2rem .75rem;min-height:2.1rem;font-size:.8125rem;white-space:nowrap}
 @media (hover:hover){.btn:hover{background:var(--surface)}}
 .btn:disabled{opacity:.5;cursor:not-allowed}
 .btn.small{min-height:1.8rem;padding:.05rem .6rem;font-size:.78rem}
 .presets{display:flex;flex-wrap:wrap;gap:.4rem;margin:1.25rem 0 1rem;padding:.6rem 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);align-items:center}
-.seg{display:inline-flex;flex-wrap:wrap;border:1px solid var(--border);border-radius:1.1rem;overflow:hidden;max-width:100%}
+.seg{display:inline-flex;flex-wrap:wrap;border:1px solid var(--control);border-radius:1.1rem;overflow:hidden;max-width:100%}
 .seg label{display:inline-flex;align-items:center;cursor:pointer;font-size:.8125rem;min-height:2.1rem;padding:0 .75rem;position:relative}
 .seg input{position:absolute;opacity:0;width:1px;height:1px}
 .seg label:has(input:checked){background:var(--fg);color:var(--bg);font-weight:600}
@@ -50,7 +51,7 @@ fieldset{border:1px solid var(--border);border-radius:var(--r);padding:.65rem .8
 legend{font:600 .72rem/1.4 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:0 .3rem}
 .f{display:flex;flex-direction:column;gap:.2rem;min-width:0;font-size:.8125rem;margin:.35rem 0}
 .f>span{color:var(--muted);font-size:.78rem}
-input[type="text"],input[type="number"],select,textarea{border:1px solid var(--border);background:var(--bg);border-radius:var(--r);padding:.3rem .5rem;min-height:2.1rem;font-size:.875rem;min-width:0;width:100%}
+input[type="text"],input[type="number"],select,textarea{border:1px solid var(--control);background:var(--bg);border-radius:var(--r);padding:.3rem .5rem;min-height:2.1rem;font-size:.875rem;min-width:0;width:100%}
 input.code,textarea{font:.875rem/1.45 var(--mono)}
 input[type="number"]{width:4.5rem}
 textarea{min-height:12rem;resize:vertical;white-space:pre;overflow-wrap:normal;overflow-x:auto}
@@ -63,7 +64,7 @@ textarea{min-height:12rem;resize:vertical;white-space:pre;overflow-wrap:normal;o
 .hint{font-size:.78rem;color:var(--muted);margin:.3rem 0 0}
 .unsupported{font-size:.8rem;color:var(--bad);margin:.3rem 0 0;overflow-wrap:anywhere}
 .files{display:flex;flex-wrap:wrap;gap:.3rem;align-items:center;margin-bottom:.4rem}
-.files .tab{border:1px solid var(--border);border-radius:.4rem;padding:.1rem .5rem;font:.78rem var(--mono);background:var(--bg);min-height:1.8rem}
+.files .tab{border:1px solid var(--control);border-radius:.4rem;padding:.1rem .5rem;font:.78rem var(--mono);background:var(--bg);min-height:1.8rem}
 .files .tab[aria-selected="true"]{background:var(--fg);color:var(--bg)}
 .filebar{display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;margin:.35rem 0}
 .filebar input{width:auto;flex:1 1 10rem}

@@ -20,6 +20,8 @@ and ERE escaping, POSIX classes, the Unicode `\d` and `\w` rewrites, named group
 model, rg's `$1`-followed-by-digits trap, PowerShell and bash quoting, VS Code's
 case modifiers and Preserve Case, and that the page makes no network calls. The
 page runs the same self-test on every load and shows a pass/fail badge in the footer.
+`tests/site-theme.test.mjs` checks the shared style guide's `site-theme` head
+script and that an explicit Dark or Light site choice gets the matching palette.
 
 How it works: every dialect except VS Code Find (which is JavaScript already) is
 parsed and emitted as a JavaScript `RegExp` in `v` mode. Anchors become

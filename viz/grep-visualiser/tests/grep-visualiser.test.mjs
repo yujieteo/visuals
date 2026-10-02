@@ -132,7 +132,7 @@ test("the code makes no network calls and uses no relative URLs", () => {
   const refs = [...html.matchAll(/\s(?:href|src|action|srcset|poster)=["']([^"']*)["']/g)].map((m) => m[1]);
   assert.deepEqual(refs, ["data:,"]);
   assert.ok(!/<(?:iframe|object|embed|img|link rel="stylesheet"|base)\b/i.test(html));
-  assert.equal((html.match(/<script\b/g) || []).length, 2, "two inline scripts only");
+  assert.equal((html.match(/<script\b/g) || []).length, 3, "three inline scripts only: site-theme and the two page scripts");
 });
 
 test("the page still works when storage and the clipboard are blocked", async () => {
