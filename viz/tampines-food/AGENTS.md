@@ -24,14 +24,20 @@ Tests live in `tests/` of yujieteo/tampines-food: `tests/tampines-food-beamdswit
 
 ## Build, test and verify
 
-Run from the root of a yujieteo/tampines-food checkout (Python 3 standard library and Node 22; nothing to install):
+Run from the root of a yujieteo/tampines-food checkout (Python 3 standard library and Node 22; nothing to install), as CI (`.github/workflows/ci.yml`) does:
 
 ```sh
-python3 build.py           # regenerate raw.json and index.html
+python3 build.py           # regenerate raw.json and the generated blocks of index.html
 python3 build.py --verify  # check both are fresh
-node --test tests/tampines-food-beamdswitch.test.mjs
-python3 -m unittest discover -s tests -p 'test_tampines_food.py'
+node --test 'tests/*.test.{mjs,cjs}'
+python3 -m unittest discover -s tests -p 'test_*.py'
 ```
+
+`build.py` rewrites only the `dataset`, `beamdswitch` and `report` script blocks of `index.html`; edit the rest of the page directly. Rerun `python3 extract_fndds.py <FoodData Central survey zip>` only when `outlets.csv` names a new FNDDS food (its docstring gives the download).
+
+## Change workflow
+
+Change and test this repository first, end to end (open `index.html` in a browser, filter, open an outlet, save the deck), and run no-mistakes here; then port the page files byte for byte into `visuals/tampines-food/` of yujieteo/site, where a second no-mistakes run covers only the site's own tests. Logic tests stay here; never add them to the site.
 
 ## Conventions
 
