@@ -9,7 +9,8 @@ bound against an exact count.
 
 `index.html` is one self-contained page with no dependencies, no network
 requests and no TeX library. It works from `file://`, offline and inside an
-iframe, follows the light or dark colour scheme and reduced motion, and shows a
+iframe, follows the reader's site-wide Light or Dark choice (`localStorage`
+`theme`, else the system colour scheme) and reduced motion, and shows a
 reference edition (the entropy method, concept map, inequalities, the binomial,
 Shearer and Loomis–Whitney proofs, Bregman's proof architecture, techniques,
 problems and the master workflow) when JavaScript is off. It is served at
