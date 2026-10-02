@@ -80,12 +80,6 @@ def region_labels(raw):
     return labels
 
 
-def band_index(bands, value):
-    for i, (upper, _) in enumerate(bands):
-        if upper is None or value <= upper:
-            return i
-
-
 def story(order, series):
     psi = series["psi"]
     hourly_max = [max((psi[r][i] for r in REGIONS if psi[r][i] is not None), default=None) for i in range(len(order))]

@@ -76,7 +76,6 @@ FUNCTIONS = {
     "Base": "Base", "Affix": "Affix",
 }
 HEAD_FUNCTIONS = {"Head", "Predicate", "Predicator", "Head+Prenucleus", "Det+Head", "Mod+Head"}
-FUSED_FUNCTIONS = {"Head+Prenucleus", "Det+Head", "Mod+Head"}
 WORD_CATEGORIES = {
     "N": "Noun", "V": "Verb", "Adj": "Adjective", "Adv": "Adverb", "Prep": "Preposition",
     "D": "Determinative", "Sbr": "Subordinator", "Crd": "Coordinator",

@@ -186,7 +186,6 @@ def example_text(e):
     """The worked example as plain facts read from its own command script, for the no-JavaScript page."""
     names, moves, cands = {}, [], {}
     out = {"title": e["title"], "purpose": e["purpose"], "note": e["note"], "signals": [], "inferred": [], "unknown": [], "contradictions": []}
-    ops = {}
     for st in e["steps"]:
         do = st["do"]
         if do == "new":
@@ -258,7 +257,7 @@ def diagram():
 
 
 def method_html(raw):
-    m, srcs = raw["methodology"], {s["id"]: s for s in raw["sources"]}
+    m = raw["methodology"]
     prov = raw["provenance"]
     why = "".join(f'<dt id="{x["id"]}">{escape(x["title"])} <span class="prov">({escape(prov[x["source"]]["label"])})</span></dt><dd>{escape(x["text"])}</dd>' for x in m["why"])
     rao = "".join(f'<details id="{n["id"]}"><summary>{escape(n["title"])}</summary><p>{escape(n["text"])}</p><p class="prov">{escape(n["basis"])}</p></details>' for n in m["rao"])

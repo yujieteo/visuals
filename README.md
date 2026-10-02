@@ -30,7 +30,9 @@ for s in scripts/build*.py; do python3 "$s" --verify || break; done
 | `SKILLS.md` | Agent router: maps task types to the focused sub-skills below. |
 | `.agents/skills/visuals-*/SKILL.md` | Sub-skills loaded on demand: new visualization, refresh data, page conventions, verify and CI. |
 | `CONTRIBUTING.md` | Human contributor guide. |
-| `.github/workflows/verify.yml` | CI that runs every verifier on push and pull requests. |
+| `tests/` | Repository-level checks: mirror docs, the beamdswitch-deck sweep, and the stale action copies' regression tests. |
+| `.github/workflows/verify.yml` | CI that runs every verifier and test on push and pull requests. |
+| `.no-mistakes.yaml` | Pins the no-mistakes test step to the same commands as CI. |
 
 ## Visualizations
 
@@ -58,9 +60,12 @@ for s in scripts/build*.py; do python3 "$s" --verify || break; done
 | `tourist-attractions` | `scripts/build.py` | How Singapore attractions are marketed |
 | `vgc-protect-fakeout-pivot-trainer` | `scripts/build_vgc_protect_fakeout_pivot_trainer.py` | Win the turn: Protect, Fake Out and pivots |
 
-`convex-payoffs` and `fpl-expected-goals` were authored directly (page and data
-committed together) and have no builder in `scripts/`, so they are not covered
-by the verifier suite.
+`convex-payoffs` and `fpl-expected-goals` have no builder in `scripts/`: they are
+edited in their standalone repositories and ported unchanged, so they are not
+covered by the verifier suite. `convexity-action-engine`, `everyday-actions`,
+`tampines-food-map` and `vgc-protect-fakeout-pivot-trainer` (`EXCLUDED` in
+`tests/test_mirror_docs.py`) are stale copies; their current versions live in
+yujieteo/site `visuals/`.
 
 ## Generated outputs
 

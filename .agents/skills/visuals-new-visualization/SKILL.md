@@ -5,6 +5,8 @@ description: Add a new story-first visualization to the visuals repo from a loca
 
 # New visualization
 
+A new visualization develops in its own public `yujieteo/<slug>` repository first; ask the owner to create it. Set it up and test it there as yujieteo/site `skills/playbooks/add-visualization.md` describes (tests in `tests/`, `.github/workflows/ci.yml`, `AGENTS.md`, `SKILLS.md`, MIT `LICENSE`, end-to-end and first no-mistakes run). Add it here only when the site will publish it from this repository at a pinned commit.
+
 1. Derive a kebab-case slug from the source; use `visualization` as fallback. Never ask for a slug.
 2. Fetch or read the source. Read credentials at runtime and never persist them.
 3. Save the unchanged source as `data/<slug>/raw.csv` or `raw.json`, plus `data/<slug>/meta.json` (public source label or URL, ISO fetch date, whether a key file was used).
@@ -12,8 +14,9 @@ description: Add a new story-first visualization to the visuals repo from a loca
 5. Enumerate two to four candidates internally, each naming its question, fields, and representation. Select by surprise, then write one disputable sentence about the data before choosing the representation.
 6. Run exactly one critique: "Is this the most interesting thing in the data, or just the easiest thing to visualize?" If it fails, pick one other candidate, then commit. Never abstain.
 7. Write `scripts/build_<slug>.py` (stdlib only; copy the closest existing builder such as `build_energy_email_productivity.py`) that renders `viz/<slug>/index.html`, rebuilds the root gallery with `render_gallery` from `scripts/gallery.py` (import it; never copy the gallery code), and supports `--verify`. Page rules: `.agents/skills/visuals-page-conventions/SKILL.md`.
-8. Register the builder: `.agents/skills/visuals-verify-ci/SKILL.md`. Add a row to the README visualization table (keep it sorted by slug). List the slug in `MIRRORS` (adding `viz/<slug>/AGENTS.md`, `SKILLS.md`, `LICENSE`) or `EXCLUDED` in `tests/test_mirror_docs.py`, which fails on any unlisted folder.
-9. Run the builder twice (output must be identical), then `--verify`. Validate JSON, run `git diff --check`, inspect all untracked files.
-10. Commit only after every check passes. Report the commit, changed files, checks, source date, and limitations.
+8. Copy the generated page files into the standalone repository and pass its tests there. Logic, deck and end-to-end tests stay in that repository; add none here.
+9. Register the builder: `.agents/skills/visuals-verify-ci/SKILL.md`. Add a row to the README visualization table (keep it sorted by slug). Add the slug to `MIRRORS` in `tests/test_mirror_docs.py` (with `viz/<slug>/AGENTS.md`, `SKILLS.md`, `LICENSE` identical to the repository's) and to `EXPORTING` in `tests/voice-beamdswitch.test.mjs` if it exports a beamdswitch deck.
+10. Run the builder twice (output must be identical), then `--verify`. Validate JSON, run `git diff --check`, inspect all untracked files.
+11. Commit only after every check passes. Report the commit, changed files, checks, source date, and limitations.
 
-Stop if the source, required credentials, or publication target cannot be resolved safely.
+Stop if the source, required credentials, standalone repository, or publication target cannot be resolved safely.

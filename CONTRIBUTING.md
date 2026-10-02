@@ -5,6 +5,11 @@ standalone HTML page. See `README.md` for the layout and commands.
 
 ## Change an existing visualization
 
+The 17 folders listed in `MIRRORS` in `tests/test_mirror_docs.py` develop in
+their standalone `yujieteo/<repo>` repository, which runs their tests; this
+repository holds byte-for-byte ports of their page and data files. The order
+between the two is in `SKILLS.md`.
+
 1. Change the source data in `data/<slug>/`, `design-tokens.json`, or the
    builder in `scripts/`. Do not hand-edit `viz/<slug>/index.html` or the root
    `index.html`; they are generated.
@@ -14,12 +19,15 @@ standalone HTML page. See `README.md` for the layout and commands.
 
 ## Add a visualization
 
+- Start in a new standalone `yujieteo/<slug>` repository, as yujieteo/site
+  `skills/playbooks/add-visualization.md` describes; add it here only when the
+  site will publish it from this repository.
 - Save the unchanged source as `data/<slug>/raw.csv` or `raw.json`, with a
   `meta.json` holding the public source label or URL, the ISO fetch date, and
   whether a key file was used.
 - Add `scripts/build_<slug>.py` (standard library only, with a `--verify` mode),
   modelled on an existing builder.
-- Add the builder to `.github/workflows/verify.yml` and to the README Generation
+- Add the builder to `.github/workflows/verify.yml`, `.no-mistakes.yaml` and the README Generation
   and Verification lists, and add a row to the README visualization table
   (sorted by slug).
 - The workflow that agents follow is in `.agents/skills/visuals-new-visualization/SKILL.md`.
