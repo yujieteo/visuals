@@ -5,7 +5,9 @@ published at <https://teoyujie.org/visuals/phasors/data.json>.
 
 ## Where changes go
 
-The standalone repository [yujieteo/phasors](https://github.com/yujieteo/phasors) is where this visualisation and its tests develop and where CI runs them. `visuals/phasors/` in [yujieteo/site](https://github.com/yujieteo/site/tree/main/visuals/phasors) is a port of its page files, refreshed when the visualisation is updated, and the site runs no logic tests for it. Porting copies the folder minus `tests/` and `.github/`. `README.md` lists every file here and its role.
+The standalone repository [yujieteo/phasors](https://github.com/yujieteo/phasors) is where this visualisation and its tests develop and where CI runs them. `visuals/phasors/` in [yujieteo/site](https://github.com/yujieteo/site/tree/main/visuals/phasors) is a port of its page files, refreshed when the visualisation is updated, and the site runs no logic tests for it. Porting copies the folder minus `tests/` and `.github/`. The copy is byte for byte, so AGENTS.md and SKILLS.md must not link into either. `README.md` lists every file here and its role.
+
+Change and test here first, then port. The site's [add-visualization playbook](https://github.com/yujieteo/site/blob/main/skills/playbooks/add-visualization.md) owns the procedure: run this repository's tests, an end-to-end check of the page in a browser and the first no-mistakes pass here; then port the page files into yujieteo/site and run the second pass there with site-level tests only. Logic and browser tests stay here, never in the site; time every test you add (`time node --test tests/<file>`).
 
 ## Build, test and verify
 
