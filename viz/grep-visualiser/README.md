@@ -3,9 +3,7 @@
 A live match visualiser and scratchpad. Paste some text, type a pattern and see
 what ripgrep 14, GNU grep 3.x, PowerShell 7 and VS Code (Find and Search) would
 match. `index.html` is one self-contained file. It has no dependencies, no
-network access and no build step, and it works from `file://`. The build spec
-names the page `visuals/grep-visualiser.html`; this site keeps each
-visualization at `visuals/<slug>/index.html`, so that is where it lives.
+network access and no build step, and it works from `file://`.
 
 | File | Role |
 | --- | --- |

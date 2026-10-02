@@ -21,11 +21,18 @@ Before opening a pull request, run the whole suite, as CI (`.github/workflows/ci
 node --test 'tests/*.test.{mjs,cjs}'
 ```
 
+## Porting to yujieteo/site
+
+Change and test this repository first, then port it; the site's [add-visualization playbook](https://github.com/yujieteo/site/blob/main/skills/playbooks/add-visualization.md) owns the full workflow.
+
+1. Run the suite above, check the page end to end in a browser (load `index.html`, use what changed, call the WebMCP tools and the exports), and run no-mistakes here.
+2. Copy this repository minus `tests/` and `.github/`, byte for byte, into `visuals/grep-visualiser/` of yujieteo/site, and run no-mistakes again on that pull request, which runs only the site-level tests. Never add logic tests to the site; its test cost must stay flat.
+
 ## Data and tests
 
 - `raw.json`: published metadata, the engine's `META` (presets, confidence levels, matching models, flags and replace syntaxes); it must equal `META`, and the test fails when it drifts.
 - Inside `index.html`: `<script id="grep-engine">` (pure core, `self.GrepViz`, also run in the page's Web Worker) and `<script id="grep-ui">` (page, worker runner and WebMCP tools).
-- `tests/grep-visualiser.test.mjs` in yujieteo/site extracts the engine from `index.html` and checks each dialect's translation, the matching models, quoting, the replace syntaxes and that the page makes no network calls.
+- `tests/grep-visualiser.test.mjs` extracts the engine from `index.html` and checks each dialect's translation, the matching models, quoting, the replace syntaxes and that the page makes no network calls; it also boots the page in `node:vm` with a stand-in DOM to check the worker timeout, blocked storage and clipboard, and the file tabs.
 
 ## Conventions
 
