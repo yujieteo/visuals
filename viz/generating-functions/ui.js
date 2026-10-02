@@ -661,7 +661,6 @@
   }
   function sandbox(op) {
     const s = S.sandbox, a = s.a, b = parseVec(s.b, 16);
-    const pad = (x, N) => [...x, ...range(N - x.length).map(() => G.Q(0))].slice(0, N);
     switch (op) {
       case "Shift": s.a = [G.Q(0), ...a].slice(0, 16); s.note = "Multiplied by x: coefficients shifted right by one."; break;
       case "Differentiate": s.a = a.length > 1 ? a.slice(1).map((c, i) => G.qmul(c, G.Q(i + 1))) : [G.Q(0)]; s.note = "Differentiated: each aₙ multiplied by n and shifted left."; break;

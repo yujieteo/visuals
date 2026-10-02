@@ -25,6 +25,16 @@ python3 -m unittest discover -s tests -p 'test_*.py'
 
 CI (`.github/workflows/ci.yml`) runs both test commands on every push and pull request: `tests/generating-functions.test.mjs` (the mathematics against independent enumerations, raw.json, deep links, search, TeX), `tests/generating-functions-beamdswitch.test.mjs` (every lesson, problem and the full deck parsed with beamdswitch's own parser), `tests/generating-functions-page.test.mjs` (every route boots against a stand-in DOM, the WebMCP tools, no-network and no-JavaScript checks) and `tests/test_generating_functions.py` (build reproducibility and the self-test under Node). In yujieteo/site the only checks for the lab are the site's integration tests: the published copy, the catalogue stub and the folder docs. The page also runs its self-test from the `run_self_tests` tool. When the site's `templates/beamdswitch.js` changes, copy it to both `beamdswitch.js` and `tests/fixtures/beamdswitch/template.js`, then rebuild.
 
+## Workflow
+
+Every change follows the site's [add-visualization playbook](https://github.com/yujieteo/site/blob/main/skills/playbooks/add-visualization.md):
+
+1. Change and test it here first: run the commands above and check the page end to end in a browser.
+2. Run the first no-mistakes pass in this repository. It also checks the page in a shallow clone of yujieteo/site (`git clone --depth 1 https://github.com/yujieteo/site`) with the change ported in; build and browse only this page there, never the site's full build or test suite.
+3. Once this repository's pull request merges, port the page files byte for byte into `visuals/generating-functions/` in yujieteo/site (this repository minus `tests/` and `.github/`) and run the second no-mistakes pass on that pull request, which runs only the site-level tests.
+
+Logic, end-to-end and other heavy tests live here, where they run only when this tool changes; the site adds none for it, so its test time stays flat.
+
 ## Conventions
 
 - `index.html` is one self-contained HTML file: no network requests, no external scripts, fonts or TeX library. It works offline.
