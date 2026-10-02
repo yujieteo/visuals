@@ -80,7 +80,7 @@ list is a note for readers and future editors, not a publication blocker.
 and `node --test tests/english-grammar.test.mjs` cover IDs and links, token boundaries, ordinary
 nesting, declared gaps, fusions and supplements, sentence/inspector/tree consistency, canonical
 names versus aliases, chapter metadata, determinism, zero external requests, release counts,
-the size budget, Solarized contrast pairs, and fragment, traversal and search logic.
+the size budget, style-guide contrast pairs, and fragment, traversal and search logic.
 
 The three structures added with Chapters 9–20 are validated on their own terms rather than as
 constituent trees:
