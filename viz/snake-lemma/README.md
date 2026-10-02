@@ -72,6 +72,6 @@ that the page is built from its sources; and, booting the page against a stand-i
 DOM, the WebMCP tools and the export buttons. Run them from the repository root
 with `node --test 'tests/*.test.{mjs,cjs}'`. They live in
 [yujieteo/snake-lemma](https://github.com/yujieteo/snake-lemma) with read-only copies of
-beamdswitch's parsers and the site's shared template in `tests/fixtures/beamdswitch/`,
+beamdswitch's deck parser and the site's shared template in `tests/fixtures/beamdswitch/`,
 and its CI runs them; the site's `visuals/snake-lemma/` is a port of the page files
 and carries no tests.

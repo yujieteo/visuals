@@ -472,7 +472,7 @@
    * { q: objectId, x } a class in the cokernel at that object. Facts: equalities and memberships, each
    * with its justification and the hypotheses it used. Legal moves are generated from these. */
   const V = (v) => ({ v }), F = (f, x) => ({ f, x }), ZERO = { z: true };
-  const COKER_AT = { A: "alpha", B: "beta", C: "gamma" }, KER_AT = { Ap: "alpha", Bp: "beta", Cp: "gamma" };
+  const COKER_AT = { A: "alpha", B: "beta", C: "gamma" };
   function show(e) {
     if (e.z) return "0";
     if (e.v) return e.v;
