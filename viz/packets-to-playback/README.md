@@ -12,7 +12,7 @@ information bottleneck, and the dictionary.
 
 | File | Role |
 | --- | --- |
-| `index.html` | The whole page. `<script id="packets-to-playback-engine">` is the pure core (`self.PacketsPlayback`): special functions, the seeded synthetic process, stall probability and utility, Gaussian couplings, the RG flow and its truncated projection, scaling of perturbations, the CLT and stable-law flows, exponential tilting, the quartic expansion, the information bottleneck, packets, schematic playback and the beamdswitch report. It has no DOM, storage, clock or network use. `<script id="packets-to-playback-ui">` is the page, the remembered mode and vocabulary (`localStorage`, optional), the drawn football scene and the four read-only WebMCP tools. `<script id="beamdswitch">` is `beamdswitch.js` inlined unchanged. Edit this file directly. |
+| `index.html` | The whole page. A head `<script id="site-theme">` applies the reader's site-wide Light or Dark choice (`localStorage` `theme`) before paint. `<script id="packets-to-playback-engine">` is the pure core (`self.PacketsPlayback`): special functions, the seeded synthetic process, stall probability and utility, Gaussian couplings, the RG flow and its truncated projection, scaling of perturbations, the CLT and stable-law flows, exponential tilting, the quartic expansion, the information bottleneck, packets, schematic playback and the beamdswitch report. It has no DOM, storage, clock or network use. `<script id="packets-to-playback-ui">` is the page, the remembered mode and vocabulary (`localStorage`, optional), the drawn football scene and the four read-only WebMCP tools. `<script id="beamdswitch">` is `beamdswitch.js` inlined unchanged. Edit this file directly. |
 | `beamdswitch.js` | The site's standard report template, a verbatim copy of `templates/beamdswitch.js`. |
 | `raw.json` | Catalogue data, published as `data.json`: the initial scenario, rungs, presets, candidate models, limits, model constants and assumptions. The page never fetches it; the test says when it has drifted from the engine. |
 | `AGENTS.md` | Notes for coding agents: where changes go (the standalone repository, where this visualisation and its tests develop; yujieteo/site holds a port of the page files), how to build and test, how to port to yujieteo/site, and the conventions. |
@@ -59,4 +59,5 @@ does not, the truncated projection, the quartic expansion, the bottleneck,
 `raw.json` and the stub. It also boots the page in `node:vm` against a
 stand-in DOM to check the WebMCP tools, Reset, and that the beamdswitch and
 Copy deck buttons export the deck of the page as set, parsed with
-beamdswitch's own parser.
+beamdswitch's own parser. `tests/site-theme.test.mjs` checks the site-theme
+script and that an explicit Dark or Light choice gets the matching palette.
