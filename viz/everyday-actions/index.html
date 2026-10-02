@@ -6,10 +6,12 @@
 <link rel="icon" href="data:,">
 <meta name="description" content="Everyday activities plotted against measured properties: how often people do them (American Time Use Survey) and how they felt while doing them (Day Reconstruction Method). Every point traces back to a table cell or a microdata estimate.">
 <title>Everyday actions</title>
+<script id="site-theme">try { var t = localStorage.getItem("theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (e) {}</script>
 <style>
-:root{--bg:#fff;--fg:#1d1d1f;--muted:#6e6e73;--faint:#a1a1a6;--surface:#f5f5f7;--border:#d2d2d7;--grid:#e8e8ed;--accent:#0071e3;--sans:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;--mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;color-scheme:light dark}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--faint:#6e6e73;--surface:#2c2c2e;--border:#48484a;--grid:#333336;--accent:#2997ff}}
-:root[data-theme="dark"]{--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--faint:#6e6e73;--surface:#2c2c2e;--border:#48484a;--grid:#333336;--accent:#2997ff}
+:root{--bg:#fff;--fg:#1d1d1f;--muted:#6e6e73;--faint:#a1a1a6;--surface:#f5f5f7;--border:#d2d2d7;--control:#86868b;--grid:#e8e8ed;--focus:#0071e3;--sans:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;--mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;color-scheme:light dark}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--faint:#6e6e73;--surface:#2c2c2e;--border:#48484a;--control:#8e8e93;--grid:#333336;--focus:#2997ff}}
+:root[data-theme="dark"]{--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--faint:#6e6e73;--surface:#2c2c2e;--border:#48484a;--control:#8e8e93;--grid:#333336;--focus:#2997ff;color-scheme:dark}
+:root[data-theme="light"]{color-scheme:light}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 var(--sans);letter-spacing:-.011em;-webkit-font-smoothing:antialiased}
 main{width:min(100% - 2rem,56rem);margin:auto;padding:clamp(2rem,6vw,4rem) 0 3rem}
@@ -25,16 +27,16 @@ section{margin-top:clamp(3rem,8vw,5rem);padding-top:1.5rem;border-top:1px solid 
 section:first-of-type{margin-top:2rem}
 .controls{display:flex;flex-wrap:wrap;gap:.5rem 1rem;align-items:end;margin:1.25rem 0 .75rem}
 .controls label{display:flex;flex-direction:column;font-size:.8125rem;color:var(--muted);gap:.2rem;min-width:0;max-width:100%}
-select,input,button{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--border);border-radius:.45rem}
+select,input,button{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--control);border-radius:.45rem}
 select{padding:.45rem .5rem;min-height:2.5rem;max-width:100%;min-width:0;width:100%}
 button{padding:.45rem .75rem;min-height:2.5rem;cursor:pointer}
 button:hover{background:var(--surface)}
-:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .check{flex-direction:row!important;align-items:center;gap:.4rem!important;min-height:2.5rem}
 .deck-row{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin:.75rem 0 0}
 .presets{display:flex;flex-wrap:wrap;gap:.35rem;margin:.75rem 0 0;padding:0;list-style:none}
 .presets button{font-size:.8125rem;padding:.3rem .6rem;min-height:2.25rem;color:var(--muted)}
-.presets button[aria-pressed="true"]{color:var(--fg);border-color:var(--fg)}
+.presets button[aria-pressed="true"]{color:var(--bg);border-color:var(--fg);background:var(--fg)}
 .provenance{font-size:.875rem;color:var(--muted);min-height:2.6em;margin:.25rem 0 0}
 .provenance strong{color:var(--fg);font-weight:600}
 .chart{position:relative;margin-top:.5rem}
@@ -47,16 +49,16 @@ button:hover{background:var(--surface)}
 .pt{cursor:pointer}
 .pt circle.mark{fill:var(--fg);stroke:var(--bg);stroke-width:2}
 .pt.partial circle.mark{fill:var(--bg);stroke:var(--fg);stroke-width:1.5}
-.pt.evidence circle.mark{fill:var(--accent)}
+.pt.evidence circle.mark{fill:var(--focus)}
 .pt.hollow circle.mark{fill:var(--bg);stroke:var(--muted);stroke-width:1.25}
 .pt circle.ring{fill:none;stroke:none}
-.pt.selected circle.ring{stroke:var(--accent);stroke-width:2}
+.pt.selected circle.ring{stroke:var(--focus);stroke-width:2}
 .pt:focus{outline:none}
-.pt:focus-visible circle.ring{stroke:var(--accent);stroke-width:3}
+.pt:focus-visible circle.ring{stroke:var(--focus);stroke-width:3}
 .labels{pointer-events:none}
 .pt text{fill:var(--fg);font:12px var(--sans);pointer-events:none;paint-order:stroke;stroke:var(--bg);stroke-width:3px;stroke-linejoin:round}
 .bubble{fill:var(--fg);fill-opacity:.1;stroke:var(--fg);stroke-width:1.25;cursor:pointer}
-.bubble.selected{stroke:var(--accent);stroke-width:2.5}
+.bubble.selected{stroke:var(--focus);stroke-width:2.5}
 .tooltip{position:absolute;pointer-events:none;background:var(--bg);border:1px solid var(--border);border-radius:.4rem;padding:.4rem .55rem;font-size:.8125rem;line-height:1.35;max-width:17rem;box-shadow:0 2px 10px rgba(0,0,0,.08);opacity:0;transition:opacity .08s}
 .tooltip.show{opacity:1}
 .tooltip b{font-weight:600}
@@ -806,7 +808,7 @@ function drawDecisions() {
     xTitle: "Plausible downside →", yTitle: "↑ Plausible upside",
     quads: [["l", "t", "start", "small downside · large upside"], ["r", "t", "end", "large downside · large upside"], ["l", "b", "start", "small downside · small upside"], ["r", "b", "end", "large downside · small upside"]],
   });
-  const legend = `<li><svg width="12" height="12"><circle cx="6" cy="6" r="5" fill="var(--accent)"/></svg>has experimental evidence (${DATA.decisions.filter((d) => d.evidence.length && decisionVisible(d)).length})</li><li><svg width="12" height="12"><circle cx="6" cy="6" r="4.5" fill="none" stroke="currentColor" stroke-width="1.25"/></svg>judgment only</li><li>${n} of 100 shown · dashed lines at the scale midpoint (3)</li>`;
+  const legend = `<li><svg width="12" height="12"><circle cx="6" cy="6" r="5" fill="var(--focus)"/></svg>has experimental evidence (${DATA.decisions.filter((d) => d.evidence.length && decisionVisible(d)).length})</li><li><svg width="12" height="12"><circle cx="6" cy="6" r="4.5" fill="none" stroke="currentColor" stroke-width="1.25"/></svg>judgment only</li><li>${n} of 100 shown · dashed lines at the scale midpoint (3)</li>`;
   $("#regret-legend").innerHTML = legend;
   $("#asym-legend").innerHTML = legend + `<li>circle size: information gained (1–5)</li>`;
 }

@@ -23,7 +23,7 @@ The standalone repository [yujieteo/everyday-actions](https://github.com/yujiete
 | `data.csv` | Generated: one row per activity, missing values empty (the published data file) |
 | `sources.json` | Generated: the citations plus one record per number shown in the graph |
 
-Tests live in `tests/` of yujieteo/everyday-actions: `tests/everyday-actions-beamdswitch.test.mjs` and `tests/test_everyday_actions.py`.
+Tests live in `tests/` of yujieteo/everyday-actions: `tests/everyday-actions-beamdswitch.test.mjs`, `tests/site-theme.test.mjs` and `tests/test_everyday_actions.py`.
 
 ## Build, test and verify
 
