@@ -73,3 +73,13 @@ test("the deck's players, bands and totals are recounted from the page's rows, i
     assert.match(md, /::: key\n[^\n]*This is descriptive information, not advice\.\n:::/, f);
   }
 });
+
+test("the page's one metadata record agrees with meta.json, the footer and the deck", async () => {
+  const page = await openPage(SLUG);
+  const meta = page.run("META");
+  assert.equal(meta.source, META.source_url);
+  assert.equal(meta.fetched, META.fetched);
+  assert.ok(html.includes(`Fetched ${meta.fetched}. Gameweek ${meta.gameweek.replace(" of ", " of the ")} season.`), "footer");
+  await page.click("save-beamdswitch");
+  assert.equal(page.saved[0].text, deckFor());
+});

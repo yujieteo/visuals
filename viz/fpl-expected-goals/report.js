@@ -4,8 +4,8 @@
  * gameweek, source }) into the plain-data report that the standard template (beamdswitch.js,
  * `Beamdswitch.deck`) writes as a narrated Markdown deck. Every number is the row's own value,
  * formatted as the page's tooltip shows it (xGI to two places, the gap signed, cost as £5.8m);
- * the gap and the colour bands use the page's rule: gap = GI − xGI, ahead above +0.25, behind
- * below −0.25.
+ * the gap and the colour bands are defined here and the page's chart reuses them: gap = GI − xGI,
+ * ahead above +0.25, behind below −0.25.
  */
 (function (root, factory) {
   const api = factory();
