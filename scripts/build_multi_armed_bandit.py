@@ -6,7 +6,7 @@ Thompson Sampling (one shared Beta prior) and UCB1 recommendations from the user
 a seeded simulation comparing them with equal allocation. The authored material (templates with
 fictional counts, assumptions, method references) lives in data/multi-armed-bandit/raw.json. The page
 is assembled from scripts/templates/multi-armed-bandit.css, multi-armed-bandit-logic.js (pure numerics,
-state and simulation, also run by tests/multi-armed-bandit.test.mjs) and multi-armed-bandit.js
+state and simulation, also run by yujieteo/multi-armed-bandit's tests/multi-armed-bandit.test.mjs) and multi-armed-bandit.js
 (interface). viz/multi-armed-bandit/beamdswitch.js (the site's shared report template, unchanged) and
 viz/multi-armed-bandit/report.js (the experiment as a report) are inlined as they are, so the page
 makes no request at runtime. --verify re-runs every check and compares the committed page and

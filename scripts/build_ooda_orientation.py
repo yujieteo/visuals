@@ -5,7 +5,7 @@ Orient is a Boyd-inspired OODA planner in which orientation is the central activ
 material (operation catalogue, guided rules, random jolts, creation prompts, diagnostics, the three
 worked examples as replayable command scripts, the short cards, methodology and sources) lives in
 data/ooda-orientation/raw.json. The page is assembled from scripts/templates/ooda-orientation.css,
-ooda-orientation-logic.js (pure state machine, also run by tests/ooda-orientation.test.mjs) and
+ooda-orientation-logic.js (pure state machine, also run by yujieteo/ooda-orientation's tests/ooda-orientation.test.mjs) and
 ooda-orientation.js (interface). viz/ooda-orientation/beamdswitch.js (the site's shared report
 template, unchanged) and viz/ooda-orientation/report.js (the situation as a report) are inlined as
 they are. The no-JavaScript worksheet and the worked examples are rendered here from the same data.
