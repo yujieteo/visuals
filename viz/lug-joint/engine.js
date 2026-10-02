@@ -375,8 +375,30 @@
 
     const f = member(input.female, G, cap, alpha, "female", warnings);
     const m = member(input.male, G, cap, alpha, "male", warnings);
-    const t1 = f.t, t2 = m.t, g = G.g, DP = G.DP;
+    const J = jointStrength(f, m, G, pin);
 
+    // Loads. ultimate: P·ff·af; yield: P/uf·ff·af.
+    const Pu = L.P * L.ff * L.af, Py = (L.P / L.uf) * L.ff * L.af;
+    const loads = { Pu, Py, Pu_ax: Pu * cosA, Pu_tr: Pu * sinA, Py_ax: Py * cosA, Py_tr: Py * sinA, cosA, sinA };
+
+    const rows = marginRows(f, m, J, loads, alpha);
+
+    const modes = rows.filter((r) => !r.summary && !r.informative);
+    const minBy = (arr, k) => arr.filter((r) => r[k] != null).reduce((b, r) => (b == null || r[k] < b[k] ? r : b), null);
+    const controlling = { ultimate: minBy(modes, "FSu"), yield: minBy(modes, "FSy") };
+    if (J.weakPin) warnings.push({ field: "pin.kbP", message: `Pin is weak in bending (Pub.P < Pu.L.B and Pus.P), so the load-shift refinement applies (Eqs. 9-16 to 9-19b) and the female tangs use Eq. 9-22a.` });
+    if (J.shiftExceedsLug) warnings.push({ field: "pin.kbP", message: `Pub.P.max exceeds the full-thickness lug-bushing strength Pu.L.B (b1.min > t1 or 2b2.min > t2), so the load-shift refinement is not valid: Pall is capped at Pu.L.B and b1.min, 2b2.min are clamped to t1, t2 for Eq. 9-22a.` });
+    if (alpha > 0 && alpha < 90) warnings.push({ field: "load.alpha", message: "Assumption: under oblique load the tangs are checked for the axial component P·cos α only." });
+
+    return {
+      input, cap, alpha, loads, members: { female: f, male: m }, joint: J, rows, controlling,
+      warnings: dedupe(warnings), trace: trace(input, { f, m, J, cap, loads, alpha }),
+    };
+  }
+
+  // Joint, pin and tang strengths (Eqs. 9-11 to 9-22) from the two members' lug-bushing strengths.
+  function jointStrength(f, m, G, pin) {
+    const t1 = f.t, t2 = m.t, g = G.g, DP = G.DP;
     // Joint, Eqs. 9-11 to 9-19. Under oblique load each member's oblique lug
     // strength has replaced Pu.L in Eq. 9-10 (Sec. 9.11).
     const J = {};
@@ -413,11 +435,11 @@
       J.PT1 = J.PT1_stage1;
       J.tangEq = "9-20";
     }
+    return J;
+  }
 
-    // Loads. ultimate: P·ff·af; yield: P/uf·ff·af.
-    const Pu = L.P * L.ff * L.af, Py = (L.P / L.uf) * L.ff * L.af;
-    const loads = { Pu, Py, Pu_ax: Pu * cosA, Pu_tr: Pu * sinA, Py_ax: Py * cosA, Py_tr: Py * sinA, cosA, sinA };
-
+  // One row per failure mode, with its ultimate and yield factors of safety and margins.
+  function marginRows(f, m, J, loads, alpha) {
     const rows = [];
     const row = (o) => {
       const r = { yieldAllowable: null, yieldLoad: null, ...o };
@@ -456,18 +478,7 @@
       row({ id: "tang-female", group: "tang", mode: "Female tangs (both legs)", eq: J.weakPin ? "9-22a" : "9-20a", allowable: J.PT1, ultLoad: loads.Pu_ax, component: "axial (assumption)" });
       row({ id: "tang-male", group: "tang", mode: "Male tang", eq: J.weakPin ? "9-22b" : "9-20b", allowable: J.PT2, ultLoad: loads.Pu_ax, component: "axial (assumption)" });
     }
-
-    const modes = rows.filter((r) => !r.summary && !r.informative);
-    const minBy = (arr, k) => arr.filter((r) => r[k] != null).reduce((b, r) => (b == null || r[k] < b[k] ? r : b), null);
-    const controlling = { ultimate: minBy(modes, "FSu"), yield: minBy(modes, "FSy") };
-    if (J.weakPin) warnings.push({ field: "pin.kbP", message: `Pin is weak in bending (Pub.P < Pu.L.B and Pus.P), so the load-shift refinement applies (Eqs. 9-16 to 9-19b) and the female tangs use Eq. 9-22a.` });
-    if (J.shiftExceedsLug) warnings.push({ field: "pin.kbP", message: `Pub.P.max exceeds the full-thickness lug-bushing strength Pu.L.B (b1.min > t1 or 2b2.min > t2), so the load-shift refinement is not valid: Pall is capped at Pu.L.B and b1.min, 2b2.min are clamped to t1, t2 for Eq. 9-22a.` });
-    if (alpha > 0 && alpha < 90) warnings.push({ field: "load.alpha", message: "Assumption: under oblique load the tangs are checked for the axial component P·cos α only." });
-
-    return {
-      input, cap, alpha, loads, members: { female: f, male: m }, joint: J, rows, controlling,
-      warnings: dedupe(warnings), trace: trace(input, { f, m, J, cap, loads, alpha }),
-    };
+    return rows;
   }
 
   function dedupe(list) {
@@ -563,8 +574,7 @@
     return JSON.stringify(input, null, 2);
   }
   function parse(text) {
-    const x = JSON.parse(text);
-    return normalise(x);
+    return normalise(JSON.parse(text));
   }
   function normalise(x) {
     const base = example96();
