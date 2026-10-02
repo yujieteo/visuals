@@ -5,7 +5,9 @@ published at <https://teoyujie.org/visuals/edge-pitch/data.json>.
 
 ## Where changes go
 
-The standalone repository [yujieteo/edge-pitch](https://github.com/yujieteo/edge-pitch) is where this visualisation and its tests develop and where CI runs them. `visuals/edge-pitch/` in [yujieteo/site](https://github.com/yujieteo/site/tree/main/visuals/edge-pitch) is a port of its page files, refreshed when the visualisation is updated, and the site runs no logic tests for it. Porting copies the folder minus `tests/` and `.github/`. `README.md` lists every file here and its role.
+The standalone repository [yujieteo/edge-pitch](https://github.com/yujieteo/edge-pitch) is where this visualisation and its tests develop and where CI runs them. `visuals/edge-pitch/` in [yujieteo/site](https://github.com/yujieteo/site/tree/main/visuals/edge-pitch) is a port of its page files, refreshed when the visualisation is updated, and the site runs no logic tests for it. Porting copies the folder minus `tests/` and `.github/`. The copy is byte for byte, so AGENTS.md and SKILLS.md must not link into either. `README.md` lists every file here and its role.
+
+Change and test here first, then port. The site's [add-visualization playbook](https://github.com/yujieteo/site/blob/main/skills/playbooks/add-visualization.md) owns the procedure: run this repository's tests, an end-to-end check of the page in a browser and the first no-mistakes pass here; then port the page files into yujieteo/site and run the second pass there with site-level tests only. Logic and browser tests stay here, never in the site; time every test you add (`time node --test tests/<file>`).
 
 ## Build, test and verify
 
@@ -13,13 +15,12 @@ Run these from the root of the yujieteo/edge-pitch checkout. `index.html` is gen
 `beamdswitch.js`, then rebuild and test:
 
 ```sh
-(cd visuals/edge-pitch && python build.py)
+python3 build.py
 node --test tests/edge-pitch.test.mjs tests/edge-pitch-beamdswitch.test.mjs
 python3 -m unittest discover -s tests -p 'test_edge_pitch.py'
 ```
 
-The Python test checks that the build is reproducible and that the built
-`site/` copy matches the sources, so run `scripts/build.py` before it.
+The Python test checks that the build is reproducible and that the engine self-test passes under Node.
 
 Before opening a pull request, run the whole suite, as CI (`.github/workflows/ci.yml`) does on every push and pull request:
 
@@ -35,7 +36,7 @@ python3 -m unittest discover -s tests -p 'test_*.py'
 - `template.html`: markup, styles, UI, schematic, plots and WebMCP tools.
 - `tests/edge-pitch.test.mjs`: hand calculations, bearing interpolation end points, unit round trips, validation, exports, test-vector import and the WebMCP tools.
 - `tests/edge-pitch-beamdswitch.test.mjs`: the beamdswitch deck, parsed with beamdswitch's own parsers, and its buttons.
-- `tests/test_edge_pitch.py`: build reproducibility, the stub, the engine self-test under Node and the published copy.
+- `tests/test_edge_pitch.py`: build reproducibility and the engine self-test under Node.
 
 ## Conventions
 
