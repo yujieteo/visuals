@@ -278,7 +278,7 @@ test("the page is one offline file with the metadata it promises", () => {
   assert.match(html, /<link rel="canonical" href="https:\/\/teoyujie\.org\/visuals\/infer-a-theory">/);
   assert.match(html, /<meta property="og:url" content="https:\/\/teoyujie\.org\/visuals\/infer-a-theory">/);
   assert.match(html, /<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'/);
-  assert.deepEqual([...html.matchAll(/<script\b([^>]*)>/g)].map((m) => m[1]), [' id="beamdswitch"', ' id="infer-a-theory-phrases"', ' id="infer-a-theory-engine"', ' id="infer-a-theory-ui"'], "inline scripts only");
+  assert.deepEqual([...html.matchAll(/<script\b([^>]*)>/g)].map((m) => m[1]), [' id="site-theme"', ' id="beamdswitch"', ' id="infer-a-theory-phrases"', ' id="infer-a-theory-engine"', ' id="infer-a-theory-ui"'], "inline scripts only");
 });
 
 test("every deck opens in beamdswitch as the standard narrated template", () => {
