@@ -931,3 +931,26 @@ test("page registers its WebMCP tools", async () => {
   assert.equal(m.system, "mimo");
   close(m.margins.chosen.eigenLocus.pm.deg, (Math.atan(0.1) * 180) / Math.PI, 1e-6, "analyze_loop MIMO eigenvalue-locus PM");
 });
+
+test("Mr and bandwidth explain why they are undefined when |T(0)| is 0 or unbounded", () => {
+  // A zero at DC makes L(0) = 0, so |T(0)| = 0.
+  const r0 = F.analyze({ plant: { form: "tf", num: [1, 0], den: [1, 1, 1] }, K: 1 }).margins;
+  assert.equal(r0.resonance.ok, false);
+  assert.match(r0.resonance.message, /\|T\(0\)\| = 0/);
+  assert.equal(r0.bandwidth.message, r0.resonance.message);
+  // L = −1/(s + 1) gives 1 + L(0) = 0: a closed-loop pole at s = 0 and a 0 dB gain margin at DC.
+  const r1 = F.analyze({ plant: { form: "tf", num: [1], den: [1, 1] }, K: -1 }).margins;
+  assert.equal(r1.resonance.ok, false);
+  assert.match(r1.resonance.message, /1 \+ L vanishes at DC \(a closed-loop pole at s = 0\)/);
+  assert.equal(r1.governing.gmUpper.w, 0);
+  close(r1.governing.gmUpper.dB, 0, 1e-12, "GM at DC");
+});
+
+test("every CSV view of blocked inputs carries the disclaimer and the reason, and no data rows", () => {
+  for (const system of ["siso", "mimo"]) {
+    for (const view of ["bode", "singular", "nyquist", "nichols", "eig"]) {
+      const csv = F.toCSV({ system, K: NaN }, view);
+      assert.equal(csv, `# ${F.DISCLAIMER}\n# No data: the inputs have blocking errors.\n`, `${system} ${view}`);
+    }
+  }
+});

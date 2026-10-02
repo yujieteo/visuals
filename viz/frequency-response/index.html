@@ -853,12 +853,13 @@ function expandBlock(b, name, errors, key) {
   return { num, den, zeros: zr.roots, poles: pr.roots, gain: num[0] / den[0], converged: zr.converged && pr.converged };
 }
 /** A block as a transfer function or factored form, for switching editor forms; null when the block is invalid. */
+const expandAlone = (b) => expandBlock(normaliseBlock(b, { form: "tf", num: [1], den: [1] }), "block", [], "block");
 function blockTf(b) {
-  const e = [], r = expandBlock(normaliseBlock(b, { form: "tf", num: [1], den: [1] }), "block", e, "block");
+  const r = expandAlone(b);
   return r ? { form: "tf", num: r.num.slice(), den: r.den.slice() } : null;
 }
 function blockZpk(b) {
-  const e = [], r = expandBlock(normaliseBlock(b, { form: "tf", num: [1], den: [1] }), "block", e, "block");
+  const r = expandAlone(b);
   const plain = (z) => ({ re: z.re, im: z.im });
   return r ? { form: "zpk", zeros: r.zeros.map(plain), poles: r.poles.map(plain), gain: r.num[0] / r.den[0] } : null;
 }
@@ -1320,20 +1321,16 @@ const NICHOLS_M_DB = [12, 6, 3, 1, 0.5, 0, -1, -3, -6, -12, -20];
 const NICHOLS_N_DEG = [-5, -10, -20, -30, -60, -90, -120, -150];
 
 /* ---------- analysis ---------- */
-function analyze(inputs) {
-  if (normalise(inputs).system === "mimo") return analyzeMimo(inputs);
-  const built = buildLoop(inputs);
-  const { x, errors, warnings, loop } = built;
-  if (errors.length) return { schemaVersion: SCHEMA_VERSION, ok: false, errors, warnings };
-  const z = loop.domain === "z";
-  const wN = z ? nyquistOf(loop.Ts) : null;
+/** The grid and its responses, with log₁₀ ω and a fine evaluator for the refining searches. */
+function sampleLoop(loop, x, warnings) {
   const range = analysisRange(loop, warnings);
   const ws = makeGrid(loop, range.wMin, range.wMax, x.range.pointsPerDecade, warnings);
-  const pts = ws.map((w) => evalLoop(loop, w));
-  const u = ws.map(Math.log10);
-  const at = (uu) => evalLoop(loop, Math.pow(10, uu));
+  return { ws, pts: ws.map((w) => evalLoop(loop, w)), u: ws.map(Math.log10), at: (uu) => evalLoop(loop, Math.pow(10, uu)) };
+}
 
-  // Gain crossovers: log|L| changes sign.
+/** Gain crossovers: log|L| changes sign, refined by Brent's method. */
+function findGainCrossovers(loop, { ws, pts, u, at }, warnings) {
+  const z = loop.domain === "z";
   const gainCrossovers = [];
   const logm = pts.map((p) => Math.log(p.mag));
   for (let i = 0; i < pts.length - 1; i++) {
@@ -1347,7 +1344,17 @@ function analyze(inputs) {
       gainCrossovers.push({ w, phaseDeg: e.phaseDeg, pmDeg: pm, delayMargin: dm, ...(z ? { delayMarginSamples: dm === null ? null : dm / loop.Ts } : {}) });
     }
   }
-  // Phase crossovers: continuous phase meets −180° + k·360°; intervals holding a boundary singularity (a 180° jump) are skipped.
+  return gainCrossovers;
+}
+
+/**
+ * Phase crossovers: continuous phase meets −180° + k·360°; intervals holding a boundary singularity (a 180° jump) are skipped.
+ * L at DC is real; so are L(∞) in continuous time without delay and L(−1) at the Nyquist frequency in discrete time, and
+ * those crossovers are read exactly rather than bracketed.
+ */
+function findPhaseCrossovers(loop, { ws, pts, u, at }, L0, warnings) {
+  const z = loop.domain === "z";
+  const wN = z ? nyquistOf(loop.Ts) : null;
   const phaseCrossovers = [];
   const jumps = boundaryFreqs(loop);
   for (let i = 0; i < pts.length - 1; i++) {
@@ -1368,112 +1375,140 @@ function analyze(inputs) {
       phaseCrossovers.push({ w, atInfinity: false, phaseDeg: target, magnitude: e.mag, gmDb: -toDb(e.mag) });
     }
   }
-  // L at DC is real; so are L(∞) in continuous time without delay and L(−1) at the Nyquist frequency in discrete time.
   const onTarget = (deg) => -180 + 360 * Math.round((deg + 180) / 360);
-  const L0 = realPointValue(loop, "dc");
   if (Number.isFinite(L0) && L0 < 0) phaseCrossovers.unshift({ w: 0, atInfinity: false, phaseDeg: onTarget(dcPhaseDeg(loop)), magnitude: Math.abs(L0), gmDb: -toDb(Math.abs(L0)) });
   if (!z && loop.tau === 0 && degree(loop.num) === degree(loop.den) && loop.gain < 0) phaseCrossovers.push({ w: Infinity, atInfinity: true, phaseDeg: -180, magnitude: Math.abs(loop.gain), gmDb: -toDb(Math.abs(loop.gain)) });
   if (z && ws[ws.length - 1] === wN) {
     const LN = realPointValue(loop, "nyquist");
     if (Number.isFinite(LN) && LN < 0) phaseCrossovers.push({ w: wN, atInfinity: false, atNyquist: true, phaseDeg: onTarget(evalLoop(loop, wN).phaseDeg), magnitude: Math.abs(LN), gmDb: -toDb(Math.abs(LN)) });
   }
-  const pmGov = gainCrossovers.length ? gainCrossovers.reduce((m, c) => (c.pmDeg < m.pmDeg ? c : m)) : null;
-  // Upper margin: the smallest gain increase to instability; lower margin: the smallest gain reduction.
+  return phaseCrossovers;
+}
+
+/** The governing margins: smallest PM; upper margin the smallest gain increase to instability, lower the smallest reduction; the delay margin. */
+function governingMargins(loop, gainCrossovers, phaseCrossovers) {
+  const minBy = (list, key) => (list.length ? list.reduce((m, c) => (c[key] < m[key] ? c : m)) : null);
+  const pmGov = minBy(gainCrossovers, "pmDeg");
   const ups = phaseCrossovers.filter((c) => c.gmDb >= 0), downs = phaseCrossovers.filter((c) => c.gmDb < 0);
-  const gmUpper = ups.length ? ups.reduce((m, c) => (c.gmDb < m.gmDb ? c : m)) : null;
+  const gmUpper = minBy(ups, "gmDb");
   const gmLower = downs.length ? downs.reduce((m, c) => (c.gmDb > m.gmDb ? c : m)) : null;
   const noPm = gainCrossovers.filter((c) => c.pmDeg <= 0);
   const dms = gainCrossovers.filter((c) => c.delayMargin !== null);
   let dmGov = noPm.length
     ? { seconds: 0, w: noPm[0].w, message: `A gain crossover at ${fmt(noPm[0].w)} rad/s has PM ≤ 0°, so any added delay leaves the loop at or past the stability boundary.` }
-    : dms.length ? (({ delayMargin, w }) => ({ seconds: delayMargin, w }))(dms.reduce((m, c) => (c.delayMargin < m.delayMargin ? c : m))) : null;
-  if (dmGov && z) dmGov = { ...dmGov, samples: dmGov.seconds / loop.Ts };
+    : dms.length ? (({ delayMargin, w }) => ({ seconds: delayMargin, w }))(minBy(dms, "delayMargin")) : null;
+  if (dmGov && loop.domain === "z") dmGov = { ...dmGov, samples: dmGov.seconds / loop.Ts };
+  return { pmGov, gmUpper, gmLower, dmGov };
+}
 
-  // Peaks of |S| and |T|, refined by golden section around the grid maximum.
-  const peak = (fn, label) => {
-    const vals = pts.map((p) => fn(p.value));
-    let i = 0;
-    for (let j = 1; j < vals.length; j++) if (vals[j] > vals[i]) i = j;
-    if (!Number.isFinite(vals[i])) return { ok: false, message: `${label} is unbounded on the grid (L passes through −1).` };
-    if (i === 0 || i === vals.length - 1) return { ok: true, value: vals[i], w: ws[i], atEdge: true };
-    const g = goldenMax((uu) => fn(at(uu).value), u[i - 1], u[i + 1]);
-    if (!g.ok) return { ok: false, message: `${label} peak search did not converge.` };
-    return { ok: true, value: Math.max(g.f, vals[i]), w: g.f >= vals[i] ? Math.pow(10, g.x) : ws[i], atEdge: false };
-  };
-  const Ms = peak(sensitivity, "Ms"), Mt = peak(complementary, "Mt");
-  // |T(0)| exactly from the DC value of L (a delay does not change the DC gain).
+/** Peak of fn(L) over the grid, refined by golden section around the grid maximum. */
+function gridPeak({ ws, pts, u, at }, fn, label) {
+  const vals = pts.map((p) => fn(p.value));
+  let i = 0;
+  for (let j = 1; j < vals.length; j++) if (vals[j] > vals[i]) i = j;
+  if (!Number.isFinite(vals[i])) return { ok: false, message: `${label} is unbounded on the grid (L passes through −1).` };
+  if (i === 0 || i === vals.length - 1) return { ok: true, value: vals[i], w: ws[i], atEdge: true };
+  const g = goldenMax((uu) => fn(at(uu).value), u[i - 1], u[i + 1]);
+  if (!g.ok) return { ok: false, message: `${label} peak search did not converge.` };
+  return { ok: true, value: Math.max(g.f, vals[i]), w: g.f >= vals[i] ? Math.pow(10, g.x) : ws[i], atEdge: false };
+}
+
+/** Resonant peak Mr relative to |T(0)| and the −3 dB bandwidth; |T(0)| comes exactly from the DC value of L (a delay does not change it). */
+function resonanceAndBandwidth(loop, grid, Mt, L0) {
+  const { pts, u, at } = grid;
   const tLow = L0 === Infinity ? 1 : L0 === 0 ? 0 : 1 + L0 === 0 ? Infinity : Math.abs(L0 / (1 + L0));
-  let resonance = null, bandwidth = null;
-  if (Mt.ok && tLow > 0 && Number.isFinite(tLow)) {
-    resonance = { ok: true, mrDb: toDb(Mt.value / tLow), w: Mt.w, atEdge: Mt.atEdge };
-    const target = tLow / Math.SQRT2;
-    const f = (uu) => Math.log(complementary(at(uu).value) / target);
-    for (let i = 0; i < pts.length - 1; i++) {
-      const a = Math.log(complementary(pts[i].value) / target), b = Math.log(complementary(pts[i + 1].value) / target);
-      if (a >= 0 && b < 0) { const r = brent(f, u[i], u[i + 1]); bandwidth = r.ok ? { ok: true, w: Math.pow(10, r.x) } : { ok: false, message: "Bandwidth search did not converge." }; break; }
-    }
-    if (!bandwidth) bandwidth = { ok: false, message: "|T| does not fall 3 dB below its DC value within the frequency range." };
-  } else {
-    resonance = { ok: false, message: tLow === 0 ? "|T(0)| = 0, so the resonant peak and bandwidth are not defined relative to the DC gain." : Mt.ok ? `1 + L vanishes at DC (a closed-loop pole at ${z ? "z = 1" : "s = 0"}), so the DC gain is unbounded.` : Mt.message };
-    bandwidth = { ok: false, message: resonance.message };
+  if (!(Mt.ok && tLow > 0 && Number.isFinite(tLow))) {
+    const message = tLow === 0 ? "|T(0)| = 0, so the resonant peak and bandwidth are not defined relative to the DC gain." : Mt.ok ? `1 + L vanishes at DC (a closed-loop pole at ${loop.domain === "z" ? "z = 1" : "s = 0"}), so the DC gain is unbounded.` : Mt.message;
+    return { resonance: { ok: false, message }, bandwidth: { ok: false, message } };
   }
+  const resonance = { ok: true, mrDb: toDb(Mt.value / tLow), w: Mt.w, atEdge: Mt.atEdge };
+  const target = tLow / Math.SQRT2;
+  const f = (uu) => Math.log(complementary(at(uu).value) / target);
+  for (let i = 0; i < pts.length - 1; i++) {
+    const a = Math.log(complementary(pts[i].value) / target), b = Math.log(complementary(pts[i + 1].value) / target);
+    if (a >= 0 && b < 0) { const r = brent(f, u[i], u[i + 1]); return { resonance, bandwidth: r.ok ? { ok: true, w: Math.pow(10, r.x) } : { ok: false, message: "Bandwidth search did not converge." } }; }
+  }
+  return { resonance, bandwidth: { ok: false, message: "|T| does not fall 3 dB below its DC value within the frequency range." } };
+}
 
-  // Closed-loop poles from the characteristic polynomial: D + N in s (delay-free only), D·z^d + N in z.
-  let closedLoop;
-  const olUnstable = loop.poles.filter((p) => rootClass(loop, p).unstable).length;
+/** Closed-loop poles from the characteristic polynomial: D + N in s (delay-free only), D·z^d + N in z. */
+function closedLoopPoles(loop, warnings) {
+  const z = loop.domain === "z";
   if (!z && loop.tau > 0) {
-    closedLoop = { available: false, message: "A delay is present, so the closed-loop pole check is unavailable; the Nyquist count is the only stability verdict." };
+    const closedLoop = { available: false, message: "A delay is present, so the closed-loop pole check is unavailable; the Nyquist count is the only stability verdict." };
     warnings.push({ code: "delay-no-poles", message: closedLoop.message });
-  } else {
-    const den = z && loop.d ? polyMul(loop.den, [1].concat(new Array(loop.d).fill(0))) : loop.den;
-    const ch = trimPoly(polyAdd(den, loop.num));
-    if (ch.length < Math.max(den.length, loop.num.length)) warnings.push({ code: "improper-cl", message: "1 + L vanishes at infinite frequency, so the closed loop is improper (leading terms cancel)." });
-    if (ch.length === 1) {
-      closedLoop = { available: false, message: "The characteristic polynomial is constant, so there are no closed-loop poles to check." };
-    } else {
-      const pr = polyRoots(ch);
-      if (!pr.converged) {
-        closedLoop = { available: false, message: "The closed-loop root finder did not converge; no stability verdict is given." };
-        warnings.push({ code: "nonconvergence", message: closedLoop.message });
-      } else {
-        const cls = pr.roots.map((p) => rootClass(loop, p));
-        const unstable = cls.filter((k) => !k.boundary && k.unstable).length;
-        const marginal = cls.filter((k) => k.boundary).length;
-        const verdict = unstable ? "unstable" : marginal ? "marginal" : "stable";
-        closedLoop = { available: true, poles: pr.roots, unstable, marginal, verdict, characteristic: ch };
-      }
-    }
+    return closedLoop;
   }
-  // Nyquist count, cross-checked against the closed-loop poles where both exist.
-  const nyquist = nyquistCount(loop, closedLoop);
-  nyqLast = { key: JSON.stringify(x), upper: nyquist.available ? loop.nyqUpper : null, clMarginal: closedLoop.available && closedLoop.marginal > 0 };
+  const den = z && loop.d ? polyMul(loop.den, [1].concat(new Array(loop.d).fill(0))) : loop.den;
+  const ch = trimPoly(polyAdd(den, loop.num));
+  if (ch.length < Math.max(den.length, loop.num.length)) warnings.push({ code: "improper-cl", message: "1 + L vanishes at infinite frequency, so the closed loop is improper (leading terms cancel)." });
+  if (ch.length === 1) return { available: false, message: "The characteristic polynomial is constant, so there are no closed-loop poles to check." };
+  const pr = polyRoots(ch);
+  if (!pr.converged) {
+    const closedLoop = { available: false, message: "The closed-loop root finder did not converge; no stability verdict is given." };
+    warnings.push({ code: "nonconvergence", message: closedLoop.message });
+    return closedLoop;
+  }
+  const cls = pr.roots.map((p) => rootClass(loop, p));
+  const unstable = cls.filter((k) => !k.boundary && k.unstable).length;
+  const marginal = cls.filter((k) => k.boundary).length;
+  const verdict = unstable ? "unstable" : marginal ? "marginal" : "stable";
+  return { available: true, poles: pr.roots, unstable, marginal, verdict, characteristic: ch };
+}
+
+/** Warnings from the Nyquist count, its cross-check and the closed-loop verdict; a disagreement goes first. */
+function stabilityWarnings(loop, nyquist, closedLoop, phaseCrossovers, warnings) {
   if (nyquist.available) {
     if (nyquist.onContour) warnings.push({ code: "nyquist-boundary", message: nyquist.message });
     if (nyquist.unresolved && !nyquist.onContour) warnings.push({ code: "nyquist-unresolved", message: `The Nyquist locus is still unresolved after refinement (${nyquist.evaluations} evaluations); the encirclement count N = ${nyquist.N} may be wrong.` });
     if (nyquist.crossCheck.available && !nyquist.crossCheck.agree) warnings.unshift({ code: "nyquist-mismatch", message: `NYQUIST AND CLOSED-LOOP POLES DISAGREE: the Nyquist count gives Z = ${nyquist.Z} unstable closed-loop pole(s) but the characteristic roots give ${closedLoop.unstable} (${closedLoop.marginal} on the boundary). Neither verdict should be trusted until this is resolved.` });
   } else warnings.push({ code: "nyquist-unavailable", message: nyquist.message });
   if (closedLoop.available && closedLoop.verdict === "stable" && phaseCrossovers.some((c) => c.gmDb < 0)) warnings.push({ code: "conditional", message: "The loop is conditionally stable: reducing the gain enough would destabilise it (a phase crossover has |L| > 1)." });
-  if (closedLoop.available && closedLoop.verdict === "unstable") warnings.push({ code: "cl-unstable", message: `The closed loop is unstable with ${closedLoop.unstable} pole(s) ${z ? "outside the unit circle" : "in the right half-plane"}; the margins describe the loop, not a stable design.` });
+  if (closedLoop.available && closedLoop.verdict === "unstable") warnings.push({ code: "cl-unstable", message: `The closed loop is unstable with ${closedLoop.unstable} pole(s) ${loop.domain === "z" ? "outside the unit circle" : "in the right half-plane"}; the margins describe the loop, not a stable design.` });
+}
 
-  const th = x.thresholds;
+/** Pass/fail of the gain-margin, phase-margin and Ms checks against the user's thresholds. */
+function thresholdChecks(th, { pmGov, gmUpper, gmLower }, Ms) {
   const gmLimit = !gmLower ? gmUpper : !gmUpper ? gmLower : gmUpper.gmDb <= -gmLower.gmDb ? gmUpper : gmLower;
-  const checks = [
+  return [
     { id: "gm", label: "Gain margin: upper ≥ threshold, lower ≤ −threshold", threshold: th.gmDb, unit: "dB", value: gmLimit ? gmLimit.gmDb : null, pass: (!gmUpper || gmUpper.gmDb >= th.gmDb) && (!gmLower || gmLower.gmDb <= -th.gmDb), note: gmLimit ? "" : "no phase crossover (infinite gain margin)" },
     { id: "pm", label: "Phase margin ≥ threshold", threshold: th.pmDeg, unit: "deg", value: pmGov ? pmGov.pmDeg : null, pass: pmGov ? pmGov.pmDeg >= th.pmDeg : null, note: pmGov ? "" : "no gain crossover" },
     { id: "ms", label: "Ms ≤ threshold", threshold: th.ms, unit: "", value: Ms.ok ? Ms.value : null, pass: Ms.ok ? Ms.value <= th.ms : false, note: Ms.ok ? "" : Ms.message },
   ].map((c) => ({ ...c, source: THRESHOLD_NOTE }));
+}
+
+function analyze(inputs) {
+  if (normalise(inputs).system === "mimo") return analyzeMimo(inputs);
+  const { x, errors, warnings, loop } = buildLoop(inputs);
+  if (errors.length) return { schemaVersion: SCHEMA_VERSION, ok: false, errors, warnings };
+  const z = loop.domain === "z";
+  const grid = sampleLoop(loop, x, warnings);
+  const { ws } = grid;
+  const L0 = realPointValue(loop, "dc");
+  const gainCrossovers = findGainCrossovers(loop, grid, warnings);
+  const phaseCrossovers = findPhaseCrossovers(loop, grid, L0, warnings);
+  const gov = governingMargins(loop, gainCrossovers, phaseCrossovers);
+  const Ms = gridPeak(grid, sensitivity, "Ms"), Mt = gridPeak(grid, complementary, "Mt");
+  const { resonance, bandwidth } = resonanceAndBandwidth(loop, grid, Mt, L0);
+  const closedLoop = closedLoopPoles(loop, warnings);
+  // Nyquist count, cross-checked against the closed-loop poles where both exist.
+  const nyquist = nyquistCount(loop, closedLoop);
+  nyqLast = { key: JSON.stringify(x), upper: nyquist.available ? loop.nyqUpper : null, clMarginal: closedLoop.available && closedLoop.marginal > 0 };
+  stabilityWarnings(loop, nyquist, closedLoop, phaseCrossovers, warnings);
+  const checks = thresholdChecks(x.thresholds, gov, Ms);
 
   const gmOut = (c) => c && { dB: c.gmDb, w: c.w, atInfinity: c.atInfinity, ...(c.atNyquist ? { atNyquist: true } : {}) };
   return {
     schemaVersion: SCHEMA_VERSION, ok: true, errors: [], warnings,
     loop: {
-      domain: loop.domain, Ts: loop.Ts, gain: loop.gain, numerator: loop.num, denominator: loop.den, zeros: loop.zeros, poles: loop.poles, openLoopUnstable: olUnstable,
-      delay: z ? loop.d * loop.Ts : loop.tau, ...(z ? { delaySamples: loop.d, nyquist: wN, discretization: { ...x.discretization } } : {}),
+      domain: loop.domain, Ts: loop.Ts, gain: loop.gain, numerator: loop.num, denominator: loop.den, zeros: loop.zeros, poles: loop.poles,
+      openLoopUnstable: loop.poles.filter((p) => rootClass(loop, p).unstable).length,
+      delay: z ? loop.d * loop.Ts : loop.tau, ...(z ? { delaySamples: loop.d, nyquist: nyquistOf(loop.Ts), discretization: { ...x.discretization } } : {}),
     },
     grid: { wMin: ws[0], wMax: ws[ws.length - 1], points: ws.length, pointsPerDecade: x.range.pointsPerDecade, auto: x.range.auto },
     margins: {
       gainCrossovers, phaseCrossovers,
-      governing: { pm: pmGov && { deg: pmGov.pmDeg, w: pmGov.w }, gmUpper: gmOut(gmUpper), gmLower: gmOut(gmLower), delayMargin: dmGov },
+      governing: { pm: gov.pmGov && { deg: gov.pmGov.pmDeg, w: gov.pmGov.w }, gmUpper: gmOut(gov.gmUpper), gmLower: gmOut(gov.gmLower), delayMargin: gov.dmGov },
       Ms, Mt, vectorMargin: Ms.ok ? { ok: true, value: 1 / Ms.value, w: Ms.w } : { ok: false, message: Ms.message },
       resonance, bandwidth,
     },
@@ -1543,13 +1578,14 @@ function describeBlock(b, v = "s") {
 const jsonNum = (v) => (typeof v === "number" && !Number.isFinite(v) ? null : v);
 const canonicalJSON = (obj) => JSON.stringify(obj, (k, v) => jsonNum(v), 2);
 
+/** The shared header of both JSON exports. */
+const exportEnvelope = (kind, x) => ({ kind, schemaVersion: SCHEMA_VERSION, phase: PHASE, disclaimer: DISCLAIMER, units: "rad/s, seconds, absolute magnitude, degrees", inputs: x, displayUnits: x.displayUnits });
 function toResultsJSON(inputs, results) {
   const x = normalise(inputs);
-  return canonicalJSON({ kind: "frequency-response-results", schemaVersion: SCHEMA_VERSION, phase: PHASE, disclaimer: DISCLAIMER, units: "rad/s, seconds, absolute magnitude, degrees", inputs: x, displayUnits: x.displayUnits, results: results || analyze(x) });
+  return canonicalJSON({ ...exportEnvelope("frequency-response-results", x), results: results || analyze(x) });
 }
 function toInputsJSON(inputs) {
-  const x = normalise(inputs);
-  return canonicalJSON({ kind: "frequency-response-inputs", schemaVersion: SCHEMA_VERSION, phase: PHASE, disclaimer: DISCLAIMER, units: "rad/s, seconds, absolute magnitude, degrees", inputs: x, displayUnits: x.displayUnits });
+  return canonicalJSON(exportEnvelope("frequency-response-inputs", normalise(inputs)));
 }
 /** Accept either JSON export (or a bare inputs object) and return normalised inputs; displayUnits only restore toggles. */
 function importJSON(text) {
@@ -1563,70 +1599,75 @@ function importJSON(text) {
   return x;
 }
 
+/** CSV text: the disclaimer and comment lines, then the column header and data rows (each an array of cells). */
+const csvText = (comments, head, rows) => [`# ${DISCLAIMER}`, ...comments, head].concat(rows.map((r) => r.join(","))).join("\n") + "\n";
+/** A CSV with no data: the disclaimer and the reason. */
+const csvNote = (note) => `# ${DISCLAIMER}\n# ${note}\n`;
+
 /** CSV of a view's data in canonical units: "bode" (default), "nyquist" (the full contour) or "nichols". */
 function toCSV(inputs, view = "bode") {
   const x = normalise(inputs);
   const n = (v) => (typeof v === "number" && Number.isFinite(v) ? String(v) : "");
   if (x.system === "mimo") return mimoCSV(x, view, n);
   const rows = curves(x);
-  if (!rows) return `# ${DISCLAIMER}\n# No data: the inputs have blocking errors.\n`;
+  if (!rows) return csvNote("No data: the inputs have blocking errors.");
   if (view === "singular") {
-    return [`# ${DISCLAIMER}`, "# Single loop: the singular values reduce to magnitudes. omega in rad/s.", "omega_rad_s,abs_L,abs_1_plus_L,abs_S,abs_T"]
-      .concat(rows.map((r) => [r.w, r.mag, 1 / r.S, r.S, r.T].map(n).join(","))).join("\n") + "\n";
+    return csvText(["# Single loop: the singular values reduce to magnitudes. omega in rad/s."], "omega_rad_s,abs_L,abs_1_plus_L,abs_S,abs_T",
+      rows.map((r) => [r.w, r.mag, 1 / r.S, r.S, r.T].map(n)));
   }
   if (view === "nyquist") {
     const loc = nyquistLocus(x);
-    if (!loc) return `# ${DISCLAIMER}\n# No Nyquist data for these inputs.\n`;
+    if (!loc) return csvNote("No Nyquist data for these inputs.");
     // Upper half as computed, then its conjugate mirror in contour order (negative frequencies).
     const up = loc.map((p) => [p.kind, p.w, p.re, p.im]);
     const down = loc.slice().reverse().map((p) => [p.kind === "pos" ? "neg" : p.kind, Number.isFinite(p.w) ? -p.w : p.w, p.re, -p.im]);
-    return [`# ${DISCLAIMER}`, "# Nyquist contour of L: kind is pos/neg (frequency axis), indent (semicircle round a boundary pole, omega is its centre) or arc; omega in rad/s.", "kind,omega_rad_s,re_L,im_L"]
-      .concat(up.concat(down).map((r) => [r[0], n(r[1]), n(r[2]), n(r[3])].join(","))).join("\n") + "\n";
+    return csvText(["# Nyquist contour of L: kind is pos/neg (frequency axis), indent (semicircle round a boundary pole, omega is its centre) or arc; omega in rad/s."], "kind,omega_rad_s,re_L,im_L",
+      up.concat(down).map((r) => [r[0], n(r[1]), n(r[2]), n(r[3])]));
   }
   if (view === "nichols") {
-    return [`# ${DISCLAIMER}`, "# Nichols locus of L: open-loop phase (degrees, unwrapped) and magnitude (dB); omega in rad/s.", "omega_rad_s,phase_deg,mag_db"]
-      .concat(rows.map((r) => [r.w, r.phaseDeg, toDb(r.mag)].map(n).join(","))).join("\n") + "\n";
+    return csvText(["# Nichols locus of L: open-loop phase (degrees, unwrapped) and magnitude (dB); omega in rad/s."], "omega_rad_s,phase_deg,mag_db",
+      rows.map((r) => [r.w, r.phaseDeg, toDb(r.mag)].map(n)));
   }
   if (x.timeDomain === "discrete") {
     const head = "omega_rad_s,freq_hz,omega_rad_per_sample,mag_abs,mag_db,phase_deg,sensitivity_abs,complementary_abs,continuous_mag_abs,continuous_phase_deg";
-    return [`# ${DISCLAIMER}`, `# Discrete time, Ts = ${x.Ts} s. Canonical units: rad/s, absolute magnitude (and dB), degrees (unwrapped). Continuous columns are the overlay L(jω) and are empty when a block is entered in z.`, head]
-      .concat(rows.map((r) => [r.w, r.w / TWO_PI, r.w * x.Ts, r.mag, toDb(r.mag), r.phaseDeg, r.S, r.T, r.contMag, r.contPhaseDeg].map(n).join(","))).join("\n") + "\n";
+    return csvText([`# Discrete time, Ts = ${x.Ts} s. Canonical units: rad/s, absolute magnitude (and dB), degrees (unwrapped). Continuous columns are the overlay L(jω) and are empty when a block is entered in z.`], head,
+      rows.map((r) => [r.w, r.w / TWO_PI, r.w * x.Ts, r.mag, toDb(r.mag), r.phaseDeg, r.S, r.T, r.contMag, r.contPhaseDeg].map(n)));
   }
   const head = "omega_rad_s,freq_hz,mag_abs,mag_db,phase_deg,sensitivity_abs,complementary_abs,asymptote_mag_db,asymptote_phase_deg";
-  return [`# ${DISCLAIMER}`, "# Canonical units: rad/s, absolute magnitude (and dB), degrees (unwrapped).", head]
-    .concat(rows.map((r) => [r.w, r.w / TWO_PI, r.mag, toDb(r.mag), r.phaseDeg, r.S, r.T, r.asymMagDb, r.asymPhaseDeg].map(n).join(","))).join("\n") + "\n";
+  return csvText(["# Canonical units: rad/s, absolute magnitude (and dB), degrees (unwrapped)."], head,
+    rows.map((r) => [r.w, r.w / TWO_PI, r.mag, toDb(r.mag), r.phaseDeg, r.S, r.T, r.asymMagDb, r.asymPhaseDeg].map(n)));
 }
 
 /** CSV of a MIMO view at the chosen breaking point: "bode" (entries of L), "singular", "nyquist" (det(I + L) contour), "eig" (eigenvalue loci) or "nichols". */
 function mimoCSV(x, view, n) {
   const c = mimoCurves(x);
-  if (!c) return `# ${DISCLAIMER}\n# No data: the inputs have blocking errors.\n`;
-  const rows = c.rows, k = rows[0].entries.length, at = x.mimo.breakAt, head = [`# ${DISCLAIMER}`, `# MIMO loop broken at the plant ${at}; omega in rad/s, magnitudes absolute, phases in degrees.`];
+  if (!c) return csvNote("No data: the inputs have blocking errors.");
+  const rows = c.rows, k = rows[0].entries.length, at = x.mimo.breakAt, broken = `# MIMO loop broken at the plant ${at}; omega in rad/s, magnitudes absolute, phases in degrees.`;
   if (view === "singular") {
-    return head.concat([["omega_rad_s", ...Array.from({ length: k }, (_, i) => `sigma_${i + 1}_L`), "sigma_min_I_plus_L", "sigma_max_S", "sigma_max_T"].join(",")])
-      .concat(rows.map((r) => [r.w, ...r.sv, r.sigmaMinIplusL, r.sigmaMaxS, r.sigmaMaxT].map(n).join(","))).join("\n") + "\n";
+    return csvText([broken], ["omega_rad_s", ...Array.from({ length: k }, (_, i) => `sigma_${i + 1}_L`), "sigma_min_I_plus_L", "sigma_max_S", "sigma_max_T"].join(","),
+      rows.map((r) => [r.w, ...r.sv, r.sigmaMinIplusL, r.sigmaMaxS, r.sigmaMaxT].map(n)));
   }
   if (view === "eig" || view === "nichols") {
     const cols = Array.from({ length: k }, (_, i) => (view === "eig" ? [`re_lambda_${i + 1}`, `im_lambda_${i + 1}`] : [`phase_deg_lambda_${i + 1}`, `mag_db_lambda_${i + 1}`])).flat();
     const ph = new Array(k).fill(0);
-    return head.concat(["# Eigenvalue loci, matched between neighbouring frequencies by continuity (for colouring only)." + (view === "nichols" ? " Illustrative, not a robustness proof." : ""), ["omega_rad_s", ...cols].join(",")])
-      .concat(rows.map((r, idx) => [r.w, ...r.eig.map((e, i) => {
+    return csvText([broken, "# Eigenvalue loci, matched between neighbouring frequencies by continuity (for colouring only)." + (view === "nichols" ? " Illustrative, not a robustness proof." : "")], ["omega_rad_s", ...cols].join(","),
+      rows.map((r, idx) => [r.w, ...r.eig.map((e, i) => {
         if (view === "eig") return [e.re, e.im];
         ph[i] = idx === 0 ? carg(e) : ph[i] + wrapPi(carg(e) - carg(rows[idx - 1].eig[i]));
         return [(ph[i] * 180) / Math.PI, toDb(cabs(e))];
-      }).flat()].map(n).join(","))).join("\n") + "\n";
+      }).flat()].map(n)));
   }
   if (view === "nyquist") {
-    if (!c.upper) return head.concat("# No contour for these inputs.").join("\n") + "\n";
+    if (!c.upper) return `# ${DISCLAIMER}\n${broken}\n# No contour for these inputs.\n`;
     const up = c.upper.map((p) => [p.kind, p.w, p.L.re + 1, p.L.im]);
     const down = c.upper.slice().reverse().map((p) => [p.kind === "pos" ? "neg" : p.kind, Number.isFinite(p.w) ? -p.w : p.w, p.L.re + 1, -p.L.im]);
-    return head.concat(["# Generalised Nyquist contour of det(I + L); kind is pos/neg/indent.", "kind,omega_rad_s,re_det_I_plus_L,im_det_I_plus_L"])
-      .concat(up.concat(down).map((r) => [r[0], n(r[1]), n(r[2]), n(r[3])].join(","))).join("\n") + "\n";
+    return csvText([broken, "# Generalised Nyquist contour of det(I + L); kind is pos/neg/indent."], "kind,omega_rad_s,re_det_I_plus_L,im_det_I_plus_L",
+      up.concat(down).map((r) => [r[0], n(r[1]), n(r[2]), n(r[3])]));
   }
   const cols = [];
   for (let i = 0; i < k; i++) for (let j = 0; j < k; j++) cols.push(`mag_L${i + 1}${j + 1}`, `phase_deg_L${i + 1}${j + 1}`);
-  return head.concat([["omega_rad_s", ...cols].join(",")])
-    .concat(rows.map((r) => [r.w, ...r.entries.flat().map((e) => [e.mag, e.phaseDeg]).flat()].map(n).join(","))).join("\n") + "\n";
+  return csvText([broken], ["omega_rad_s", ...cols].join(","),
+    rows.map((r) => [r.w, ...r.entries.flat().map((e) => [e.mag, e.phaseDeg]).flat()].map(n)));
 }
 
 function mimoMarkdown(x, r) {
@@ -3256,6 +3297,18 @@ function extent(arrs, clipSpan) {
   const pad = (hi - lo) * 0.06 || 1;
   return [lo - pad, hi + pad];
 }
+/* Shared chart pieces: every plot starts with the same frame and ends with the same border, axis titles and wrapper. */
+const plotFrame = (W, H, m) => `<rect x="0" y="0" width="${W}" height="${H}" style="fill:var(--bg)"/><text x="${m.l}" y="16" style="fill:var(--warn);font:600 11px var(--mono)">EXPLORATION ONLY — not a verified control-design toolchain</text>`;
+const plotClip = (id, m, pw, phh) => `<clipPath id="${id}"><rect x="${m.l}" y="${m.t}" width="${pw}" height="${phh}"/></clipPath>`;
+const plotBorder = (m, pw, phh) => `<rect x="${m.l}" y="${m.t}" width="${pw}" height="${phh}" style="fill:none;stroke:var(--border)"/>`;
+const xTitle = (x, H, text) => `<text x="${x}" y="${H - 6}" text-anchor="middle" style="fill:var(--muted);font:11px var(--sans)">${text}</text>`;
+const yTitle = (y, text) => `<text transform="translate(14 ${y}) rotate(-90)" text-anchor="middle" style="fill:var(--muted);font:11px var(--sans)">${text}</text>`;
+/** Vertical grid lines at x ticks with their labels under the plot, and horizontal ones at y ticks labelled on the left. */
+const xGrid = (ticks, X, m, phh, label) => ticks.map((v) => `<line x1="${X(v)}" x2="${X(v)}" y1="${m.t}" y2="${m.t + phh}" style="stroke:var(--grid)"/><text x="${X(v)}" y="${m.t + phh + 15}" text-anchor="middle" style="fill:var(--muted);font:11px var(--mono)">${label(v)}</text>`).join("");
+const yGrid = (ticks, Y, m, pw, label) => ticks.map((v) => `<line x1="${m.l}" x2="${m.l + pw}" y1="${Y(v)}" y2="${Y(v)}" style="stroke:var(--grid)"/><text x="${m.l - 6}" y="${Y(v) + 4}" text-anchor="end" style="fill:var(--muted);font:11px var(--mono)">${label(v)}</text>`).join("");
+const svgDoc = (W, H, label, body) => `<svg xmlns="${NS}" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${label}" style="font-family:var(--sans)">${body}</svg>`;
+const decadeLabel = (p) => (p >= -2 && p <= 3 ? fmt(Math.pow(10, p)) : `1e${p}`);
+const fmt3 = (v) => fmt(v, 3);
 function bodeSVG(W) {
   const u = state.displayUnits, H = Math.round(Math.min(620, Math.max(420, W * 0.62)));
   const m = { l: 62, r: 16, t: 30, b: 38 }, gap = 34, ph = (H - m.t - m.b - gap) / 2;
@@ -3290,8 +3343,7 @@ function bodeSVG(W) {
     return d;
   };
   const g = [];
-  g.push(`<rect x="0" y="0" width="${W}" height="${H}" style="fill:var(--bg)"/>`);
-  g.push(`<text x="${m.l}" y="16" style="fill:var(--warn);font:600 11px var(--mono)">EXPLORATION ONLY — not a verified control-design toolchain</text>`);
+  g.push(plotFrame(W, H, m));
   for (const k of [0, 1]) g.push(`<clipPath id="clip${k}"><rect x="${m.l}" y="${top[k]}" width="${W - m.l - m.r}" height="${ph}"/></clipPath>`);
   // Frequency grid (decades) on both panels.
   for (let p = Math.ceil(lx0); p <= Math.floor(lx1); p++) {
@@ -3303,7 +3355,7 @@ function bodeSVG(W) {
     const v = k * Math.pow(10, p);
     if (Math.log10(v) > lx0 && Math.log10(v) < lx1) for (const q of [0, 1]) g.push(`<line x1="${X(v)}" x2="${X(v)}" y1="${top[q]}" y2="${top[q] + ph}" style="stroke:var(--grid);stroke-opacity:.45"/>`);
   }
-  g.push(`<text x="${(m.l + W - m.r) / 2}" y="${H - 6}" text-anchor="middle" style="fill:var(--muted);font:11px var(--sans)">Frequency (${u.freq})</text>`);
+  g.push(xTitle((m.l + W - m.r) / 2, H, `Frequency (${u.freq})`));
   // Magnitude axis.
   const mticks = logMag ? niceTicks(my0, my1, 5, false).filter((v) => Number.isInteger(v)) : niceTicks(my0, my1, 6, false);
   for (const v of mticks) {
@@ -3312,7 +3364,7 @@ function bodeSVG(W) {
     g.push(`<text x="${m.l - 6}" y="${y + 4}" text-anchor="end" style="fill:var(--muted);font:11px var(--mono)">${logMag ? (v >= -3 && v <= 4 ? fmt(Math.pow(10, v)) : `1e${v}`) : fmt(v, 3)}</text>`);
   }
   if (0 >= my0 && 0 <= my1) g.push(`<line x1="${m.l}" x2="${W - m.r}" y1="${Y[0](0)}" y2="${Y[0](0)}" style="stroke:var(--fg);stroke-opacity:.55;stroke-dasharray:2 3"/>`);
-  g.push(`<text transform="translate(14 ${top[0] + ph / 2}) rotate(-90)" text-anchor="middle" style="fill:var(--muted);font:11px var(--sans)">Magnitude${logMag ? " (abs)" : " (dB)"}</text>`);
+  g.push(yTitle(top[0] + ph / 2, `Magnitude${logMag ? " (abs)" : " (dB)"}`));
   // Phase axis.
   const pticks = niceTicks(py0, py1, 6, u.phase === "deg");
   for (const v of pticks) {
@@ -3323,7 +3375,7 @@ function bodeSVG(W) {
   const crit = [];
   for (let k = Math.ceil((F.phaseFrom(py0, u.phase) + 180) / 360); -180 + 360 * k <= F.phaseFrom(py1, u.phase); k++) crit.push(phv(-180 + 360 * k));
   for (const c of crit) g.push(`<line x1="${m.l}" x2="${W - m.r}" y1="${Y[1](c)}" y2="${Y[1](c)}" style="stroke:var(--bad);stroke-opacity:.55;stroke-dasharray:2 3"/>`);
-  g.push(`<text transform="translate(14 ${top[1] + ph / 2}) rotate(-90)" text-anchor="middle" style="fill:var(--muted);font:11px var(--sans)">Phase (${u.phase === "deg" ? "deg" : "rad"})</text>`);
+  g.push(yTitle(top[1] + ph / 2, `Phase (${u.phase === "deg" ? "deg" : "rad"})`));
   for (const k of [0, 1]) g.push(`<rect x="${m.l}" y="${top[k]}" width="${W - m.l - m.r}" height="${ph}" style="fill:none;stroke:var(--border)"/>`);
   // Nyquist frequency marker in discrete time.
   if (result.ok && result.loop.domain === "z") {
@@ -3337,36 +3389,40 @@ function bodeSVG(W) {
   for (const s of series) g.push(`<path clip-path="url(#clip0)" d="${path(s.vals, Y[0], my0, my1, false)}" style="fill:none;stroke:${s.color};stroke-width:${s.width}${s.dash ? `;stroke-dasharray:${s.dash}` : ""}"/>`);
   for (const s of pser) g.push(`<path clip-path="url(#clip1)" d="${path(s.vals, Y[1], py0, py1, true)}" style="fill:none;stroke:${s.color};stroke-width:${s.width}${s.dash ? `;stroke-dasharray:${s.dash}` : ""}"/>`);
   // Margin markers.
-  if (view.marks && result.ok && result.system !== "mimo") {
-    const inX = (w) => { if (!Number.isFinite(w)) return false; const v = F.freqTo(w, u.freq, state.Ts); return v >= xs[0] && v <= xs[xs.length - 1]; };
-    const zero = logMag ? 0 : 0;
-    const gov = result.margins.governing;
-    for (const c of result.margins.gainCrossovers) {
-      if (!inX(c.w)) continue;
-      const labelled = gov.pm && gov.pm.w === c.w;
-      const x = X(F.freqTo(c.w, u.freq, state.Ts)), yp = Y[1](phv(c.phaseDeg));
-      const ref = phv(c.phaseDeg - c.pmDeg);
-      g.push(`<circle cx="${x}" cy="${Y[0](zero)}" r="3.5" style="fill:var(--bad)"/>`);
-      g.push(`<line x1="${x}" x2="${x}" y1="${Y[0](zero)}" y2="${top[1] + ph}" style="stroke:var(--bad);stroke-opacity:${labelled ? ".35" : ".15"}"/>`);
-      if (ref >= py0 && ref <= py1) g.push(`<line x1="${x}" x2="${x}" y1="${Y[1](ref)}" y2="${yp}" style="stroke:var(--bad);stroke-width:2.5"/>`);
-      g.push(`<circle cx="${x}" cy="${yp}" r="3.5" style="fill:var(--bad)"/>`);
-      if (labelled) g.push(`<text x="${x + 5}" y="${Math.min(top[1] + ph - 4, Math.max(top[1] + 12, (yp + Y[1](ref)) / 2))}" style="fill:var(--bad);font:600 11px var(--mono)">PM ${esc(phText(c.pmDeg))}</text>`);
-    }
-    for (const c of result.margins.phaseCrossovers) {
-      if (!inX(c.w)) continue;
-      const labelled = [gov.gmUpper, gov.gmLower].some((gm) => gm && gm.w === c.w);
-      const x = X(F.freqTo(c.w, u.freq, state.Ts)), ym = Y[0](mv(c.magnitude)), y0 = Y[0](zero), yc = Y[1](phv(c.phaseDeg));
-      g.push(`<circle cx="${x}" cy="${yc}" r="3.5" style="fill:var(--bad)"/>`);
-      g.push(`<line x1="${x}" x2="${x}" y1="${top[0]}" y2="${yc}" style="stroke:var(--bad);stroke-opacity:${labelled ? ".35" : ".15"}"/>`);
-      if (ym >= top[0] && ym <= top[0] + ph) g.push(`<line x1="${x}" x2="${x}" y1="${y0}" y2="${ym}" style="stroke:var(--bad);stroke-width:2.5"/><circle cx="${x}" cy="${ym}" r="3.5" style="fill:var(--bad)"/>`);
-      if (labelled) g.push(`<text x="${x + 5}" y="${Math.min(top[0] + ph - 4, Math.max(top[0] + 12, (y0 + Math.max(top[0], Math.min(top[0] + ph, ym))) / 2))}" style="fill:var(--bad);font:600 11px var(--mono)">GM ${fmt(c.gmDb)} dB</text>`);
-    }
-  }
+  if (view.marks && result.ok && result.system !== "mimo") g.push(bodeMarginMarks({ X, Y, xs, mv, phv, top, ph, py0, py1 }));
   // Cursor (not exported).
   g.push(`<g data-cursor style="display:none"><line data-cl x1="0" x2="0" y1="${top[0]}" y2="${top[1] + ph}" style="stroke:var(--fg);stroke-opacity:.5"/><circle data-cm r="4" style="fill:var(--c1)"/><circle data-cp r="4" style="fill:var(--c1)"/></g>`);
   g.push(`<rect data-hit x="${m.l}" y="${top[0]}" width="${W - m.l - m.r}" height="${top[1] + ph - top[0]}" style="fill:transparent"/>`);
-  const svg = `<svg xmlns="${NS}" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Bode magnitude and phase of L" style="font-family:var(--sans)">${g.join("")}</svg>`;
+  const svg = svgDoc(W, H, "Bode magnitude and phase of L", g.join(""));
   return { svg, geom: { X, Y, xs, mv, phv, m, W } };
+}
+/** Gain- and phase-crossover markers on the Bode panels, labelling the governing PM and gain margins. */
+function bodeMarginMarks({ X, Y, xs, mv, phv, top, ph, py0, py1 }) {
+  const u = state.displayUnits, g = [];
+  const inX = (w) => { if (!Number.isFinite(w)) return false; const v = F.freqTo(w, u.freq, state.Ts); return v >= xs[0] && v <= xs[xs.length - 1]; };
+  const zero = 0; // |L| = 1 sits at 0 on both the dB and the log-abs axis
+  const gov = result.margins.governing;
+  for (const c of result.margins.gainCrossovers) {
+    if (!inX(c.w)) continue;
+    const labelled = gov.pm && gov.pm.w === c.w;
+    const x = X(F.freqTo(c.w, u.freq, state.Ts)), yp = Y[1](phv(c.phaseDeg));
+    const ref = phv(c.phaseDeg - c.pmDeg);
+    g.push(`<circle cx="${x}" cy="${Y[0](zero)}" r="3.5" style="fill:var(--bad)"/>`);
+    g.push(`<line x1="${x}" x2="${x}" y1="${Y[0](zero)}" y2="${top[1] + ph}" style="stroke:var(--bad);stroke-opacity:${labelled ? ".35" : ".15"}"/>`);
+    if (ref >= py0 && ref <= py1) g.push(`<line x1="${x}" x2="${x}" y1="${Y[1](ref)}" y2="${yp}" style="stroke:var(--bad);stroke-width:2.5"/>`);
+    g.push(`<circle cx="${x}" cy="${yp}" r="3.5" style="fill:var(--bad)"/>`);
+    if (labelled) g.push(`<text x="${x + 5}" y="${Math.min(top[1] + ph - 4, Math.max(top[1] + 12, (yp + Y[1](ref)) / 2))}" style="fill:var(--bad);font:600 11px var(--mono)">PM ${esc(phText(c.pmDeg))}</text>`);
+  }
+  for (const c of result.margins.phaseCrossovers) {
+    if (!inX(c.w)) continue;
+    const labelled = [gov.gmUpper, gov.gmLower].some((gm) => gm && gm.w === c.w);
+    const x = X(F.freqTo(c.w, u.freq, state.Ts)), ym = Y[0](mv(c.magnitude)), y0 = Y[0](zero), yc = Y[1](phv(c.phaseDeg));
+    g.push(`<circle cx="${x}" cy="${yc}" r="3.5" style="fill:var(--bad)"/>`);
+    g.push(`<line x1="${x}" x2="${x}" y1="${top[0]}" y2="${yc}" style="stroke:var(--bad);stroke-opacity:${labelled ? ".35" : ".15"}"/>`);
+    if (ym >= top[0] && ym <= top[0] + ph) g.push(`<line x1="${x}" x2="${x}" y1="${y0}" y2="${ym}" style="stroke:var(--bad);stroke-width:2.5"/><circle cx="${x}" cy="${ym}" r="3.5" style="fill:var(--bad)"/>`);
+    if (labelled) g.push(`<text x="${x + 5}" y="${Math.min(top[0] + ph - 4, Math.max(top[0] + 12, (y0 + Math.max(top[0], Math.min(top[0] + ph, ym))) / 2))}" style="fill:var(--bad);font:600 11px var(--mono)">GM ${fmt(c.gmDb)} dB</text>`);
+  }
+  return g.join("");
 }
 let geom = null;
 function renderBode() {
@@ -3476,23 +3532,24 @@ function svSVG(W) {
   const [y0, y1] = extent(dbs.concat([[0]]), 200);
   const Y = (v) => m.t + phh - ((v - y0) / (y1 - y0)) * phh;
   const g = [];
-  g.push(`<rect x="0" y="0" width="${W}" height="${H}" style="fill:var(--bg)"/>`);
-  g.push(`<text x="${m.l}" y="16" style="fill:var(--warn);font:600 11px var(--mono)">EXPLORATION ONLY — not a verified control-design toolchain</text>`);
-  g.push(`<clipPath id="svclip"><rect x="${m.l}" y="${m.t}" width="${pw}" height="${phh}"/></clipPath>`);
-  for (let p = Math.ceil(lx0); p <= Math.floor(lx1); p++) { const x = X(Math.pow(10, p)); g.push(`<line x1="${x}" x2="${x}" y1="${m.t}" y2="${m.t + phh}" style="stroke:var(--grid)"/><text x="${x}" y="${m.t + phh + 15}" text-anchor="middle" style="fill:var(--muted);font:11px var(--mono)">${p >= -2 && p <= 3 ? fmt(Math.pow(10, p)) : `1e${p}`}</text>`); }
-  for (const v of niceTicks(y0, y1, 6, false)) g.push(`<line x1="${m.l}" x2="${m.l + pw}" y1="${Y(v)}" y2="${Y(v)}" style="stroke:var(--grid)"/><text x="${m.l - 6}" y="${Y(v) + 4}" text-anchor="end" style="fill:var(--muted);font:11px var(--mono)">${fmt(v, 3)}</text>`);
+  g.push(plotFrame(W, H, m));
+  g.push(plotClip("svclip", m, pw, phh));
+  const decades = [];
+  for (let p = Math.ceil(lx0); p <= Math.floor(lx1); p++) decades.push(p);
+  g.push(xGrid(decades, (p) => X(Math.pow(10, p)), m, phh, decadeLabel));
+  g.push(yGrid(niceTicks(y0, y1, 6, false), Y, m, pw, fmt3));
   if (0 >= y0 && 0 <= y1) g.push(`<line x1="${m.l}" x2="${m.l + pw}" y1="${Y(0)}" y2="${Y(0)}" style="stroke:var(--fg);stroke-opacity:.5;stroke-dasharray:2 3"/>`);
   vis.forEach((s, k) => {
     let d = "", pen = false;
     dbs[k].forEach((v, i) => { if (!Number.isFinite(v)) { pen = false; return; } d += `${pen ? "L" : "M"}${X(xs[i]).toFixed(1)} ${Y(Math.max(y0 - 50, Math.min(y1 + 50, v))).toFixed(1)}`; pen = true; });
     g.push(`<path clip-path="url(#svclip)" d="${d}" style="fill:none;stroke:${s.color};stroke-width:${s.dash ? 1.5 : 2}${s.dash ? `;stroke-dasharray:${s.dash}` : ""}"/>`);
   });
-  g.push(`<rect x="${m.l}" y="${m.t}" width="${pw}" height="${phh}" style="fill:none;stroke:var(--border)"/>`);
-  g.push(`<text x="${m.l + pw / 2}" y="${H - 6}" text-anchor="middle" style="fill:var(--muted);font:11px var(--sans)">Frequency (${u.freq})</text>`);
-  g.push(`<text transform="translate(14 ${m.t + phh / 2}) rotate(-90)" text-anchor="middle" style="fill:var(--muted);font:11px var(--sans)">Gain (dB)</text>`);
+  g.push(plotBorder(m, pw, phh));
+  g.push(xTitle(m.l + pw / 2, H, `Frequency (${u.freq})`));
+  g.push(yTitle(m.t + phh / 2, `Gain (dB)`));
   g.push(`<g data-cursor style="display:none"><line data-cl x1="0" x2="0" y1="${m.t}" y2="${m.t + phh}" style="stroke:var(--fg);stroke-opacity:.5"/></g>`);
   g.push(`<rect data-hit x="${m.l}" y="${m.t}" width="${pw}" height="${phh}" style="fill:transparent"/>`);
-  return { svg: `<svg xmlns="${NS}" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Singular values" style="font-family:var(--sans)">${g.join("")}</svg>`, geom: { X, xs, ws, series, m, W, pw } };
+  return { svg: svgDoc(W, H, "Singular values", g.join("")), geom: { X, xs, ws, series, m, W, pw } };
 }
 function renderSv() {
   const host = $("sv-plot");
@@ -3564,12 +3621,11 @@ function nyqSVG(W) {
   const X = (v) => m.l + pw / 2 + (v - cxm) * scale, Y = (v) => m.t + phh / 2 - (v - cym) * scale;
   const vx0 = cxm - pw / 2 / scale, vx1 = cxm + pw / 2 / scale, vy0 = cym - phh / 2 / scale, vy1 = cym + phh / 2 / scale;
   const g = [];
-  g.push(`<rect x="0" y="0" width="${W}" height="${H}" style="fill:var(--bg)"/>`);
-  g.push(`<text x="${m.l}" y="16" style="fill:var(--warn);font:600 11px var(--mono)">EXPLORATION ONLY — not a verified control-design toolchain</text>`);
-  g.push(`<clipPath id="nyqclip"><rect x="${m.l}" y="${m.t}" width="${pw}" height="${phh}"/></clipPath>`);
+  g.push(plotFrame(W, H, m));
+  g.push(plotClip("nyqclip", m, pw, phh));
   if (!nyqView.log) {
-    for (const v of niceTicks(vx0, vx1, 6, false)) { g.push(`<line x1="${X(v)}" x2="${X(v)}" y1="${m.t}" y2="${m.t + phh}" style="stroke:var(--grid)"/>`); g.push(`<text x="${X(v)}" y="${m.t + phh + 15}" text-anchor="middle" style="fill:var(--muted);font:11px var(--mono)">${fmt(v, 3)}</text>`); }
-    for (const v of niceTicks(vy0, vy1, 6, false)) { g.push(`<line x1="${m.l}" x2="${m.l + pw}" y1="${Y(v)}" y2="${Y(v)}" style="stroke:var(--grid)"/>`); g.push(`<text x="${m.l - 6}" y="${Y(v) + 4}" text-anchor="end" style="fill:var(--muted);font:11px var(--mono)">${fmt(v, 3)}</text>`); }
+    g.push(xGrid(niceTicks(vx0, vx1, 6, false), X, m, phh, fmt3));
+    g.push(yGrid(niceTicks(vy0, vy1, 6, false), Y, m, pw, fmt3));
   } else {
     // Rings at |L| = 0.1, 1, 10, 100, 1000 in the compressed radius.
     for (const r of [0.1, 1, 10, 100, 1000]) {
@@ -3617,15 +3673,15 @@ function nyqSVG(W) {
   const [mx, my] = P({ re: -1, im: 0 });
   g.push(`<path d="M${mx - 7} ${my}L${mx + 7} ${my}M${mx} ${my - 7}L${mx} ${my + 7}" style="stroke:var(--bad);stroke-width:2.5"/></g>`);
   g.push(`<text x="${mx}" y="${my + 20}" text-anchor="middle" style="fill:var(--bad);font:600 11px var(--mono)">−1</text>`);
-  g.push(`<rect x="${m.l}" y="${m.t}" width="${pw}" height="${phh}" style="fill:none;stroke:var(--border)"/>`);
+  g.push(plotBorder(m, pw, phh));
   const nq = result.nyquist;
   if (nq.available) g.push(`<text x="${m.l + pw - 6}" y="${m.t + 16}" text-anchor="end" style="fill:var(--fg);font:600 12px var(--mono)">${isMimo() ? "det(I + L): " : ""}N = ${nq.N}, P = ${nq.P}, Z = ${nq.Z}${nq.excess ? ` (+${nq.excess})` : ""}</text>`);
   if (isMimo()) series.forEach((sr, k) => g.push(`<text x="${m.l + 8}" y="${m.t + 16 + 14 * k}" style="fill:${sr.color};font:600 11px var(--mono)">${esc(sr.label)}</text>`));
-  g.push(`<text x="${m.l + pw / 2}" y="${H - 6}" text-anchor="middle" style="fill:var(--muted);font:11px var(--sans)">Re L${nyqView.log ? " (compressed radius)" : ""}</text>`);
-  g.push(`<text transform="translate(14 ${m.t + phh / 2}) rotate(-90)" text-anchor="middle" style="fill:var(--muted);font:11px var(--sans)">Im L</text>`);
+  g.push(xTitle(m.l + pw / 2, H, `Re L${nyqView.log ? " (compressed radius)" : ""}`));
+  g.push(yTitle(m.t + phh / 2, `Im L`));
   g.push(`<g data-cursor style="display:none"><circle data-cm r="5" style="fill:none;stroke:var(--fg);stroke-width:1.5"/></g>`);
   g.push(`<rect data-hit x="${m.l}" y="${m.t}" width="${pw}" height="${phh}" style="fill:transparent"/>`);
-  return { svg: `<svg xmlns="${NS}" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Nyquist plot of L" style="font-family:var(--sans)">${g.join("")}</svg>`, geom: { P, up: series.flatMap((sr) => sr.up.map((p) => ({ ...p, series: sr.label, color: sr.color }))), W } };
+  return { svg: svgDoc(W, H, "Nyquist plot of L", g.join("")), geom: { P, up: series.flatMap((sr) => sr.up.map((p) => ({ ...p, series: sr.label, color: sr.color }))), W } };
 }
 function renderNyq() {
   const host = $("nyq-plot");
@@ -3682,11 +3738,10 @@ function nicSVG(W) {
   let y0 = Math.max(-60, Math.min(-12, ...src.map((p) => p.y)) - 3), y1 = Math.min(60, Math.max(12, ...src.map((p) => p.y)) + 3);
   const X = (v) => m.l + ((v - x0) / (x1 - x0)) * pw, Y = (v) => m.t + phh - ((v - y0) / (y1 - y0)) * phh;
   const g = [];
-  g.push(`<rect x="0" y="0" width="${W}" height="${H}" style="fill:var(--bg)"/>`);
-  g.push(`<text x="${m.l}" y="16" style="fill:var(--warn);font:600 11px var(--mono)">EXPLORATION ONLY — not a verified control-design toolchain</text>`);
-  g.push(`<clipPath id="nicclip"><rect x="${m.l}" y="${m.t}" width="${pw}" height="${phh}"/></clipPath>`);
-  for (const v of niceTicks(x0, x1, 8, true)) { g.push(`<line x1="${X(v)}" x2="${X(v)}" y1="${m.t}" y2="${m.t + phh}" style="stroke:var(--grid)"/>`); g.push(`<text x="${X(v)}" y="${m.t + phh + 15}" text-anchor="middle" style="fill:var(--muted);font:11px var(--mono)">${fmt(v, 4)}</text>`); }
-  for (const v of niceTicks(y0, y1, 7, false)) { g.push(`<line x1="${m.l}" x2="${m.l + pw}" y1="${Y(v)}" y2="${Y(v)}" style="stroke:var(--grid)"/>`); g.push(`<text x="${m.l - 6}" y="${Y(v) + 4}" text-anchor="end" style="fill:var(--muted);font:11px var(--mono)">${fmt(v, 3)}</text>`); }
+  g.push(plotFrame(W, H, m));
+  g.push(plotClip("nicclip", m, pw, phh));
+  g.push(xGrid(niceTicks(x0, x1, 8, true), X, m, phh, (v) => fmt(v, 4)));
+  g.push(yGrid(niceTicks(y0, y1, 7, false), Y, m, pw, fmt3));
   // Contours are periodic in φ, so one sweep over the visible phase range repeats them every 360°.
   const steps = Math.min(4000, Math.ceil((x1 - x0) / 0.25));
   const sweep = (fn) => {
@@ -3729,12 +3784,12 @@ function nicSVG(W) {
   }
   g.push("</g>");
   if (isMimo()) { g.push(`<text x="${m.l + 8}" y="${m.t + 16}" style="fill:var(--warn);font:600 11px var(--mono)">Eigenvalue loci — illustrative, not a robustness proof</text>`); nser.forEach((sr, k) => g.push(`<text x="${m.l + 8}" y="${m.t + 32 + 14 * k}" style="fill:${sr.color};font:600 11px var(--mono)">${esc(sr.label)}</text>`)); }
-  g.push(`<rect x="${m.l}" y="${m.t}" width="${pw}" height="${phh}" style="fill:none;stroke:var(--border)"/>`);
-  g.push(`<text x="${m.l + pw / 2}" y="${H - 6}" text-anchor="middle" style="fill:var(--muted);font:11px var(--sans)">Open-loop phase (deg, unwrapped)</text>`);
-  g.push(`<text transform="translate(14 ${m.t + phh / 2}) rotate(-90)" text-anchor="middle" style="fill:var(--muted);font:11px var(--sans)">Open-loop magnitude (dB)</text>`);
+  g.push(plotBorder(m, pw, phh));
+  g.push(xTitle(m.l + pw / 2, H, `Open-loop phase (deg, unwrapped)`));
+  g.push(yTitle(m.t + phh / 2, `Open-loop magnitude (dB)`));
   g.push(`<g data-cursor style="display:none"><circle data-cm r="5" style="fill:none;stroke:var(--fg);stroke-width:1.5"/></g>`);
   g.push(`<rect data-hit x="${m.l}" y="${m.t}" width="${pw}" height="${phh}" style="fill:transparent"/>`);
-  return { svg: `<svg xmlns="${NS}" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Nichols chart of L" style="font-family:var(--sans)">${g.join("")}</svg>`, geom: { X, Y, pts, W, H } };
+  return { svg: svgDoc(W, H, "Nichols chart of L", g.join("")), geom: { X, Y, pts, W, H } };
 }
 function renderNic() {
   const host = $("nic-plot");
@@ -3780,18 +3835,17 @@ function pzSVG(W) {
   const X = (v) => m.l + pw / 2 + (v - cxm) * scale, Y = (v) => m.t + phh / 2 - (v - cym) * scale;
   const vx0 = cxm - pw / 2 / scale, vx1 = cxm + pw / 2 / scale, vy0 = cym - phh / 2 / scale, vy1 = cym + phh / 2 / scale;
   const g = [];
-  g.push(`<rect x="0" y="0" width="${W}" height="${H}" style="fill:var(--bg)"/>`);
-  g.push(`<text x="${m.l}" y="16" style="fill:var(--warn);font:600 11px var(--mono)">EXPLORATION ONLY — not a verified control-design toolchain</text>`);
-  g.push(`<clipPath id="pzclip"><rect x="${m.l}" y="${m.t}" width="${pw}" height="${phh}"/></clipPath>`);
+  g.push(plotFrame(W, H, m));
+  g.push(plotClip("pzclip", m, pw, phh));
   if (!disc && vx1 > 0) g.push(`<rect clip-path="url(#pzclip)" x="${X(0)}" y="${m.t}" width="${Math.max(0, m.l + pw - X(0))}" height="${phh}" style="fill:var(--bad);fill-opacity:.05"/>`);
-  for (const v of niceTicks(vx0, vx1, 6, false)) { g.push(`<line x1="${X(v)}" x2="${X(v)}" y1="${m.t}" y2="${m.t + phh}" style="stroke:var(--grid)"/>`); g.push(`<text x="${X(v)}" y="${m.t + phh + 15}" text-anchor="middle" style="fill:var(--muted);font:11px var(--mono)">${fmt(v, 3)}</text>`); }
-  for (const v of niceTicks(vy0, vy1, 6, false)) { g.push(`<line x1="${m.l}" x2="${m.l + pw}" y1="${Y(v)}" y2="${Y(v)}" style="stroke:var(--grid)"/>`); g.push(`<text x="${m.l - 6}" y="${Y(v) + 4}" text-anchor="end" style="fill:var(--muted);font:11px var(--mono)">${fmt(v, 3)}</text>`); }
+  g.push(xGrid(niceTicks(vx0, vx1, 6, false), X, m, phh, fmt3));
+  g.push(yGrid(niceTicks(vy0, vy1, 6, false), Y, m, pw, fmt3));
   g.push(`<g clip-path="url(#pzclip)"><line x1="${m.l}" x2="${m.l + pw}" y1="${Y(0)}" y2="${Y(0)}" style="stroke:var(--muted)"/>`);
   if (disc) g.push(`<line x1="${X(0)}" x2="${X(0)}" y1="${m.t}" y2="${m.t + phh}" style="stroke:var(--muted)"/><circle cx="${X(0)}" cy="${Y(0)}" r="${scale}" style="fill:none;stroke:var(--fg);stroke-width:1.5;stroke-dasharray:5 3"/></g>`);
   else g.push(`<line x1="${X(0)}" x2="${X(0)}" y1="${m.t}" y2="${m.t + phh}" style="stroke:var(--fg);stroke-width:1.5;stroke-dasharray:5 3"/></g>`);
-  g.push(`<rect x="${m.l}" y="${m.t}" width="${pw}" height="${phh}" style="fill:none;stroke:var(--border)"/>`);
-  g.push(`<text x="${m.l + pw / 2}" y="${H - 6}" text-anchor="middle" style="fill:var(--muted);font:11px var(--sans)">Real axis${disc ? " (z-plane)" : " (s-plane, rad/s)"}</text>`);
-  g.push(`<text transform="translate(14 ${m.t + phh / 2}) rotate(-90)" text-anchor="middle" style="fill:var(--muted);font:11px var(--sans)">Imaginary axis</text>`);
+  g.push(plotBorder(m, pw, phh));
+  g.push(xTitle(m.l + pw / 2, H, `Real axis${disc ? " (z-plane)" : " (s-plane, rad/s)"}`));
+  g.push(yTitle(m.t + phh / 2, `Imaginary axis`));
   const inView = (p) => p.re >= vx0 && p.re <= vx1 && p.im >= vy0 && p.im <= vy1;
   const tip = (kind, p) => `<title>${esc(kind)} ${esc(fmtC(p, 6))}</title>`;
   for (const p of L.zeros.filter(inView)) g.push(`<circle cx="${X(p.re)}" cy="${Y(p.im)}" r="5.5" style="fill:none;stroke:var(--c1);stroke-width:2">${tip("Open-loop zero", p)}</circle>`);
@@ -3799,7 +3853,7 @@ function pzSVG(W) {
   for (const p of cl.filter(inView)) g.push(`<rect x="${X(p.re) - 4}" y="${Y(p.im) - 4}" width="8" height="8" style="fill:var(--c2)">${tip("Closed-loop pole", p)}</rect>`);
   const hidden = all.length - all.filter(inView).length;
   if (hidden) g.push(`<text x="${m.l + pw - 4}" y="${m.t + 14}" text-anchor="end" style="fill:var(--muted);font:11px var(--mono)">${hidden} root(s) outside the view</text>`);
-  return `<svg xmlns="${NS}" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Pole-zero map in the ${disc ? "z" : "s"}-plane" style="font-family:var(--sans)">${g.join("")}</svg>`;
+  return svgDoc(W, H, `Pole-zero map in the ${disc ? "z" : "s"}-plane`, g.join(""));
 }
 function renderPz() {
   const host = $("pz-plot");
