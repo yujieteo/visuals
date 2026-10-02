@@ -48,10 +48,11 @@
 <link rel="icon" href="data:,">
 <meta name="description" content="Paste standard markdown and explore it offline: tabs per file, a section tree, cross-tab links and backlinks, #tags and Ctrl/Cmd+K search.">
 <title>Markdown Explorer</title>
+<script id="site-theme">try { var t = localStorage.getItem("theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (e) {}</script>
 <style>
-:root{--bg:#fff;--fg:#1d1d1f;--muted:#6e6e73;--faint:#a1a1a6;--surface:#f5f5f7;--border:#d2d2d7;--grid:#e8e8ed;--focus:#0071e3;--link:#0066cc;--tag:#1a7f64;--tagbg:rgba(26,127,100,.1);--bad:#c4261d;--hl:rgba(255,204,0,.45);--sel:rgba(0,113,227,.1);--code:#f5f5f7;--shadow:0 10px 40px rgba(0,0,0,.18);--sans:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;--mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;--r:.5rem;color-scheme:light dark}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--faint:#6e6e73;--surface:#2c2c2e;--border:#48484a;--grid:#333336;--focus:#2997ff;--link:#4ea3ff;--tag:#3cc59a;--tagbg:rgba(60,197,154,.14);--bad:#ff6b5e;--hl:rgba(255,204,0,.32);--sel:rgba(41,151,255,.16);--code:#2c2c2e;--shadow:0 10px 40px rgba(0,0,0,.6)}}
-:root[data-theme="dark"]{--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--faint:#6e6e73;--surface:#2c2c2e;--border:#48484a;--grid:#333336;--focus:#2997ff;--link:#4ea3ff;--tag:#3cc59a;--tagbg:rgba(60,197,154,.14);--bad:#ff6b5e;--hl:rgba(255,204,0,.32);--sel:rgba(41,151,255,.16);--code:#2c2c2e;--shadow:0 10px 40px rgba(0,0,0,.6);color-scheme:dark}
+:root{--bg:#fff;--fg:#1d1d1f;--muted:#6e6e73;--faint:#a1a1a6;--surface:#f5f5f7;--border:#d2d2d7;--control:#86868b;--grid:#e8e8ed;--focus:#0071e3;--link:#0066cc;--tag:#1a7f64;--tagbg:rgba(26,127,100,.1);--bad:#c4261d;--hl:rgba(255,204,0,.45);--sel:rgba(0,113,227,.1);--code:#f5f5f7;--shadow:0 10px 40px rgba(0,0,0,.18);--sans:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;--mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;--r:.5rem;color-scheme:light dark}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--faint:#6e6e73;--surface:#2c2c2e;--border:#48484a;--control:#8e8e93;--grid:#333336;--focus:#2997ff;--link:#4ea3ff;--tag:#3cc59a;--tagbg:rgba(60,197,154,.14);--bad:#ff6b5e;--hl:rgba(255,204,0,.32);--sel:rgba(41,151,255,.16);--code:#2c2c2e;--shadow:0 10px 40px rgba(0,0,0,.6)}}
+:root[data-theme="dark"]{--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--faint:#6e6e73;--surface:#2c2c2e;--border:#48484a;--control:#8e8e93;--grid:#333336;--focus:#2997ff;--link:#4ea3ff;--tag:#3cc59a;--tagbg:rgba(60,197,154,.14);--bad:#ff6b5e;--hl:rgba(255,204,0,.32);--sel:rgba(41,151,255,.16);--code:#2c2c2e;--shadow:0 10px 40px rgba(0,0,0,.6);color-scheme:dark}
 :root[data-theme="light"]{color-scheme:light}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
@@ -59,7 +60,7 @@ body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 var(--sans);le
 button,input,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
 :focus-visible{outline:2px solid var(--focus);outline-offset:2px}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:.35rem;border:1px solid var(--border);background:var(--bg);border-radius:999px;padding:.2rem .75rem;min-height:2.1rem;font-size:.8125rem;white-space:nowrap;flex:none}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.35rem;border:1px solid var(--control);background:var(--bg);border-radius:999px;padding:.2rem .75rem;min-height:2.1rem;font-size:.8125rem;white-space:nowrap;flex:none}
 @media (hover:hover){.btn:hover{background:var(--surface)}}
 .btn.icon{width:2.1rem;padding:0}
 .btn svg{width:1rem;height:1rem;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
@@ -72,7 +73,7 @@ button{cursor:pointer}
 .brand{font:600 .75rem/1.2 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-decoration:none;white-space:nowrap;flex:none}
 .brand:hover{text-decoration:underline}
 .tabstrip{display:flex;align-items:center;gap:.3rem;flex:1;min-width:0;overflow-x:auto;scrollbar-width:thin;padding:.1rem}
-.tab{display:inline-flex;align-items:center;flex:none;max-width:14rem;border:1px solid var(--border);border-radius:999px;background:var(--bg);font-size:.8125rem;min-height:2.1rem}
+.tab{display:inline-flex;align-items:center;flex:none;max-width:14rem;border:1px solid var(--control);border-radius:999px;background:var(--bg);font-size:.8125rem;min-height:2.1rem}
 .tab.active{background:var(--fg);color:var(--bg);border-color:var(--fg)}
 .tab .name{border:0;background:none;padding:.2rem .15rem .2rem .75rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:11rem;min-height:2rem}
 .tab .close{border:0;background:none;width:1.9rem;min-height:2rem;border-radius:999px;opacity:.65;font-size:1rem;line-height:1}
@@ -125,7 +126,7 @@ a.tag .n{color:var(--muted);margin-left:.25rem;font-size:.9em}
 .doc pre{margin:0;overflow:auto;padding:.8rem .9rem;font:.82rem/1.5 var(--mono)}
 .doc pre code{background:none;padding:0;font-size:inherit}
 .codeblock{position:relative;background:var(--code);border-radius:var(--r);margin:1rem 0}
-.codeblock .copy{position:absolute;top:.35rem;right:.35rem;border:1px solid var(--border);background:var(--bg);border-radius:999px;font-size:.72rem;padding:.1rem .6rem;min-height:1.7rem}
+.codeblock .copy{position:absolute;top:.35rem;right:.35rem;border:1px solid var(--control);background:var(--bg);border-radius:999px;font-size:.72rem;padding:.1rem .6rem;min-height:1.7rem}
 .codeblock .lang{position:absolute;top:.5rem;right:4.5rem;font:.68rem var(--mono);color:var(--muted)}
 pre.raw-html{background:none;border:1px dashed var(--border);border-radius:var(--r);white-space:pre-wrap;color:var(--muted);margin:1rem 0}
 code.raw-html{color:var(--muted)}
@@ -356,7 +357,7 @@ const META = {
   scope: "Paste or drop standard markdown (CommonMark plus GFM tables, task lists and strikethrough, plus inline #tags) and explore it: tabs per file, a section tree from GitHub-style heading slugs, in-tab and cross-tab links with broken-link styling, backlinks, tag chips and a tag view, and Ctrl/Cmd+K search. Pasted HTML is shown as text; only http, https, mailto and in-app # links are live; images load only over https.",
   parser: { name: "marked", version: "18.0.14", license: "MIT", url: "https://github.com/markedjs/marked" },
   routes: ["#/tab/<tab-id>/<section-slug>", "#/tag/<name>"],
-  storage: "localStorage key md-explorer-v1 (tabs and active tab) and md-explorer-theme; the app runs without them.",
+  storage: "localStorage key md-explorer-v1 (tabs and active tab) and the site-wide theme key theme; the app runs without them.",
   webmcp_tools: ["get_metadata", "list_tabs", "get_outline", "search_notes", "analyze_markdown"],
 };
 
@@ -1103,7 +1104,7 @@ for (const id of ["tabstrip", "add-tab", "search-btn", "search-kbd", "theme-btn"
 
 /* ---------- storage (every call guarded; the app runs without it) ---------- */
 const KEY = "md-explorer-v1";
-const THEME_KEY = "md-explorer-theme";
+const THEME_KEY = "theme"; // the site-wide theme key, shared with teoyujie.org and every visual
 const store = {
   ok: (() => { try { const k = "__mdx"; localStorage.setItem(k, "1"); localStorage.removeItem(k); return true; } catch (e) { return false; } })(),
   get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },

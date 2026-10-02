@@ -8,7 +8,7 @@ This repository, [yujieteo/md-explorer](https://github.com/yujieteo/md-explorer)
 
 ## Files and data
 
-See [README.md](README.md). `index.html` is the whole tool with no build step: edit it directly. `<script id="marked-lib">` is marked v18.0.14, `<script id="mdx-core">` the pure core (`self.MdxCore`; no DOM or storage) and `<script id="mdx-ui">` the page and the WebMCP tools. `raw.json` (published as `data.json`) must equal the core's `META`. The tests are in `tests/md-explorer.test.mjs`.
+See [README.md](README.md). `index.html` is the whole tool with no build step: edit it directly. `<script id="marked-lib">` is marked v18.0.14, `<script id="mdx-core">` the pure core (`self.MdxCore`; no DOM or storage) and `<script id="mdx-ui">` the page and the WebMCP tools. `raw.json` (published as `data.json`) must equal the core's `META`. The tests are in `tests/md-explorer.test.mjs` and `tests/site-theme.test.mjs`.
 
 ## Build, test and verify
 

@@ -109,7 +109,7 @@ test("the page is one offline file: every script is inline and runs, and nothing
   const doc = html.replace(/<!--[\s\S]*?-->/g, "");
   // Script elements as the HTML tokenizer sees them: each body runs to the first "</script".
   const scripts = [...doc.matchAll(/<script\b([^>]*)>[\s\S]*?<\/script/gi)].map((m) => m[1].trim());
-  deq(scripts, ['id="marked-lib"', 'id="mdx-core"', 'id="mdx-ui"']);
+  deq(scripts, ['id="site-theme"', 'id="marked-lib"', 'id="mdx-core"', 'id="mdx-ui"']);
   const rels = [...doc.matchAll(/<link\b[^>]*\brel="([^"]*)"[^>]*\bhref="([^"]*)"/gi)].map((m) => [m[1], m[2]]);
   deq(rels, [["icon", "data:,"]]);
   const meta = (name) => (new RegExp(`<meta (?:name|http-equiv)="${name}" content="([^"]*)">`).exec(doc) || [])[1];

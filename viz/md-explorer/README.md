@@ -38,8 +38,9 @@ Live at <https://teoyujie.org/visuals/md-explorer/>.
   text. Images load only over `https:`. A Content-Security-Policy meta tag backs
   this up.
 - **Storage.** Tabs and the theme choice are saved to `localStorage` when it is
-  available; without it the app runs without persistence. "Clear all" resets to
-  the built-in guide.
+  available; without it the app runs without persistence. The theme uses the
+  site-wide `theme` key, so a Light or Dark choice holds across teoyujie.org.
+  "Clear all" resets to the built-in guide.
 
 ## Files
 
@@ -48,6 +49,7 @@ Live at <https://teoyujie.org/visuals/md-explorer/>.
 | `index.html` | The whole tool. `<script id="marked-lib">` is marked; `<script id="mdx-core">` is the pure core (parsing, slugs, section tree, link resolution, the backlink index, tags, search scoring, routes and the sanitising renderer; no DOM or storage; `self.MdxCore`); `<script id="mdx-ui">` is the page and the WebMCP tools. Edit this file directly. |
 | `raw.json` | Published metadata; must equal the core's `META`. |
 | `tests/md-explorer.test.mjs` | Node's built-in runner: `node --test 'tests/*.test.{mjs,cjs}'` from the repository root, which CI (`.github/workflows/ci.yml`) also runs. It loads marked and the core from `index.html` and checks slugs, the tree, links, the incremental backlink index, tags, search, routes, the security cases and a 5 MB input; it also boots the whole page in a `vm` with stub DOM and storage to check the CSP, that nothing fetches, the WebMCP tools and tab-switch edits. |
+| `tests/site-theme.test.mjs` | The shared style-guide check: the `site-theme` head script applies the site-wide Light or Dark choice before paint, and an explicit Dark choice gets the system dark palette. |
 | `LICENSE` | MIT. |
 
 To update marked, replace the body of `<script id="marked-lib">` with the new
