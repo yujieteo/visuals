@@ -10,9 +10,9 @@ Change and test here first, then port. The site's [add-visualization playbook](h
 
 ## Files and data
 
-See [README.md](README.md). `index.html` is the whole tool and has no build step: edit it directly. `beamdswitch.js` is the site's standard template, an unchanged copy of `templates/beamdswitch.js`, also pasted unchanged as the page's first script. `raw.json` (published as `data.json`) holds the method notes, examples and verification table.
+See [README.md](README.md). `index.html` is the whole tool and has no build step: edit it directly. `beamdswitch.js` is the site's standard template, an unchanged copy of `templates/beamdswitch.js`, also pasted unchanged as the page's first body script. `raw.json` (published as `data.json`) holds the method notes, examples and verification table.
 
-Tests live in `tests/` of yujieteo/root-locus: `tests/root-locus.test.cjs` (the built-in verification cases plus parser, import, export, tracking and WebMCP checks) and `tests/root-locus-beamdswitch.test.mjs`.
+Tests live in `tests/` of yujieteo/root-locus: `tests/root-locus.test.cjs` (the built-in verification cases plus parser, import, export, tracking and WebMCP checks), `tests/root-locus-beamdswitch.test.mjs` and `tests/site-theme.test.mjs`.
 
 ## Build, test and verify
 
@@ -30,6 +30,6 @@ Open `index.html?selftest` to see the same verification cases in the page.
 
 - `index.html` is one self-contained HTML file with inline CSS and vanilla JavaScript; it makes no network requests.
 - The core parses a Python subset by hand; never use `eval`.
-- When `templates/beamdswitch.js` changes in yujieteo/site, copy it here and paste it over the page's first script.
+- When `templates/beamdswitch.js` changes in yujieteo/site, copy it here and paste it over the page's first body script.
 - Tests use Node's built-in `node --test` runner only; never add Vitest, Jest or a `package.json`.
 - The beamdswitch deck is written with the unchanged shared template and declares `voice: bf_emma` in its front matter.

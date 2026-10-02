@@ -5,10 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="Type a loop transfer function C, G and H, see its s-plane or z-plane root locus, pick the gain K and check the closed-loop poles against damping, natural-frequency and settling-time requirements. Exports a Markdown record that re-imports. Runs offline in your browser.">
 <title>Root locus design check</title>
+<script id="site-theme">try { var t = localStorage.getItem("theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (e) {}</script>
 <style>
-:root{--bg:#fff;--fg:#1d1d1f;--muted:#5f5f64;--faint:#8e8e93;--surface:#f5f5f7;--border:#c7c7cc;--grid:#e5e5ea;--axis:#8e8e93;--focus:#0060c7;--ok:#146c2e;--ok-bg:#e3f4e8;--bad:#b3261e;--bad-bg:#fbe7e6;--warn:#7a4f00;--warn-bg:#fff4d6;--region:rgb(20 108 46/.13);--pole:#1d1d1f;--cl:#b3261e;--b1:#0060c7;--b2:#c2410c;--b3:#7c3aed;--b4:#0f766e;--b5:#be185d;--b6:#4d7c0f;--sans:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;--mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;--r:.5rem;color-scheme:light dark}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#161618;--fg:#f2f2f7;--muted:#aeaeb2;--faint:#8e8e93;--surface:#232326;--border:#48484a;--grid:#2c2c2f;--axis:#8e8e93;--focus:#64a8ff;--ok:#7ddc95;--ok-bg:#12351f;--bad:#ff8a80;--bad-bg:#3d1614;--warn:#ffd479;--warn-bg:#3a2c05;--region:rgb(125 220 149/.13);--pole:#f2f2f7;--cl:#ff8a80;--b1:#64a8ff;--b2:#ff9f5a;--b3:#b794ff;--b4:#4fd1c5;--b5:#f472b6;--b6:#a3e635}}
-:root[data-theme="dark"]{--bg:#161618;--fg:#f2f2f7;--muted:#aeaeb2;--faint:#8e8e93;--surface:#232326;--border:#48484a;--grid:#2c2c2f;--axis:#8e8e93;--focus:#64a8ff;--ok:#7ddc95;--ok-bg:#12351f;--bad:#ff8a80;--bad-bg:#3d1614;--warn:#ffd479;--warn-bg:#3a2c05;--region:rgb(125 220 149/.13);--pole:#f2f2f7;--cl:#ff8a80;--b1:#64a8ff;--b2:#ff9f5a;--b3:#b794ff;--b4:#4fd1c5;--b5:#f472b6;--b6:#a3e635;color-scheme:dark}
+:root{--bg:#fff;--fg:#1d1d1f;--muted:#5f5f64;--faint:#8e8e93;--surface:#f5f5f7;--border:#c7c7cc;--control:#86868b;--grid:#e5e5ea;--axis:#8e8e93;--focus:#0060c7;--ok:#146c2e;--ok-bg:#e3f4e8;--bad:#b3261e;--bad-bg:#fbe7e6;--warn:#7a4f00;--warn-bg:#fff4d6;--region:rgb(20 108 46/.13);--pole:#1d1d1f;--cl:#b3261e;--b1:#0060c7;--b2:#c2410c;--b3:#7c3aed;--b4:#0f766e;--b5:#be185d;--b6:#4d7c0f;--sans:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;--mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;--r:.5rem;color-scheme:light dark}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#161618;--fg:#f2f2f7;--muted:#aeaeb2;--faint:#8e8e93;--surface:#232326;--border:#48484a;--control:#8e8e93;--grid:#2c2c2f;--axis:#8e8e93;--focus:#64a8ff;--ok:#7ddc95;--ok-bg:#12351f;--bad:#ff8a80;--bad-bg:#3d1614;--warn:#ffd479;--warn-bg:#3a2c05;--region:rgb(125 220 149/.13);--pole:#f2f2f7;--cl:#ff8a80;--b1:#64a8ff;--b2:#ff9f5a;--b3:#b794ff;--b4:#4fd1c5;--b5:#f472b6;--b6:#a3e635}}
+:root[data-theme="dark"]{--bg:#161618;--fg:#f2f2f7;--muted:#aeaeb2;--faint:#8e8e93;--surface:#232326;--border:#48484a;--control:#8e8e93;--grid:#2c2c2f;--axis:#8e8e93;--focus:#64a8ff;--ok:#7ddc95;--ok-bg:#12351f;--bad:#ff8a80;--bad-bg:#3d1614;--warn:#ffd479;--warn-bg:#3a2c05;--region:rgb(125 220 149/.13);--pole:#f2f2f7;--cl:#ff8a80;--b1:#64a8ff;--b2:#ff9f5a;--b3:#b794ff;--b4:#4fd1c5;--b5:#f472b6;--b6:#a3e635;color-scheme:dark}
+:root[data-theme="light"]{color-scheme:light}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 var(--sans);-webkit-font-smoothing:antialiased}
@@ -23,12 +25,12 @@ header.top{display:flex;flex-wrap:wrap;gap:.6rem 1rem;align-items:center;justify
 header.top .lede{color:var(--muted);font-size:.88rem;max-width:60ch}
 .toolbar{display:flex;flex-wrap:wrap;gap:.4rem;align-items:center}
 button,select,input,textarea{font:inherit;color:inherit}
-button{display:inline-flex;align-items:center;justify-content:center;gap:.35rem;min-height:44px;min-width:44px;padding:.3rem .85rem;border:1px solid var(--border);border-radius:999px;background:var(--bg);cursor:pointer;font-size:.88rem;white-space:nowrap}
+button{display:inline-flex;align-items:center;justify-content:center;gap:.35rem;min-height:44px;min-width:44px;padding:.3rem .85rem;border:1px solid var(--control);border-radius:999px;background:var(--bg);cursor:pointer;font-size:.88rem;white-space:nowrap}
 button:hover{background:var(--surface)}
 button.primary{background:var(--fg);color:var(--bg);border-color:var(--fg);font-weight:600}
 button[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
 button.small{min-height:44px;padding:.2rem .6rem;font-size:.8rem}
-select,input[type="number"],input[type="text"],textarea{min-height:44px;border:1px solid var(--border);border-radius:var(--r);background:var(--bg);padding:.4rem .55rem;width:100%;min-width:0}
+select,input[type="number"],input[type="text"],textarea{min-height:44px;border:1px solid var(--control);border-radius:var(--r);background:var(--bg);padding:.4rem .55rem;width:100%;min-width:0}
 textarea{font-family:var(--mono);font-size:.9rem;resize:vertical;line-height:1.4}
 textarea[aria-invalid="true"],input[aria-invalid="true"]{border-color:var(--bad);box-shadow:0 0 0 1px var(--bad)}
 label{font-weight:600;font-size:.88rem}
@@ -44,7 +46,7 @@ label{font-weight:600;font-size:.88rem}
 .err{color:var(--bad);background:var(--bad-bg);border-radius:var(--r);padding:.3rem .5rem;font-size:.84rem;margin:.25rem 0}
 .err:empty,.note:empty{display:none}
 .note{color:var(--warn);background:var(--warn-bg);border-radius:var(--r);padding:.3rem .5rem;font-size:.84rem;margin:.25rem 0}
-.seg{display:inline-flex;border:1px solid var(--border);border-radius:999px;padding:2px;gap:2px}
+.seg{display:inline-flex;border:1px solid var(--control);border-radius:999px;padding:2px;gap:2px}
 .seg button{border:0;min-width:5.5rem}
 details{border:1px solid var(--border);border-radius:var(--r);margin:.6rem 0;background:var(--bg)}
 details>summary{cursor:pointer;min-height:44px;display:flex;align-items:center;padding:.35rem .7rem;font-weight:600;font-size:.9rem;list-style:none}
