@@ -92,6 +92,31 @@ test("first-answer capture: probability, timestamp and latency are saved at once
   for (const p of [0, 100]) assert.equal(C.answer(start(), p, T0).state.responses[ids(start())[0]].first_probability, p, "the ends are answers");
 });
 
+test("slider input: the first answer is the value chosen, never the untouched thumb's 50", () => {
+  // A 400px range with a 32px thumb, as on a phone. A tap at 70% of the thumb's run is 70 wherever the
+  // browser left the native value: iOS does not move it on a tap, which saved every first answer as 50.
+  const run = (f) => 100 + 16 + f * (400 - 32);
+  assert.equal(C.pointerProbability(run(0.7), 100, 400, 32), 70);
+  assert.equal(C.pointerProbability(run(0.2), 100, 400, 32), 20);
+  assert.equal(C.pointerProbability(100, 100, 400, 32), 0, "a touch left of the thumb's run is 0");
+  assert.equal(C.pointerProbability(600, 100, 400, 32), 100, "and right of it 100");
+  for (const x of [100, 250, 333.3, 499]) assert.ok(Number.isInteger(C.pointerProbability(x, 100, 400, 32)));
+  // Keyboard: nothing is chosen until a key chooses; Enter is not a choice, so an untouched question cannot save 50.
+  assert.equal(C.keyProbability("Enter", null), null);
+  assert.equal(C.keyProbability("Tab", null), null);
+  assert.equal(C.keyProbability("ArrowRight", null), 50, "the first arrow reveals the thumb at the middle, unsaved");
+  assert.equal(C.keyProbability("ArrowRight", 50), 51);
+  assert.equal(C.keyProbability("ArrowDown", 0), 0);
+  assert.equal(C.keyProbability("PageUp", 95), 100);
+  assert.equal(C.keyProbability("End", null), 100);
+  assert.equal(C.keyProbability("Home", 73), 0);
+  // The page commits only a choice: the range takes no pointer input of its own, and commit() needs one.
+  assert.match(html, /input\[type=range\]\{[^}]*pointer-events:none/);
+  assert.match(html, /function commit\(\) \{\n {2}if \(choice == null\) return;/);
+  const r = C.answer(start(), C.pointerProbability(run(0.7), 100, 400, 32), T0 + 3000);
+  assert.equal(r.state.responses[ids(r.state)[0]].first_probability, 70);
+});
+
 test("auto-advance: the first answer moves on, and the last one stays and ends the session", () => {
   let s = start();
   const r = C.answer(s, 60, T0 + 1000);

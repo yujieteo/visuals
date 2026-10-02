@@ -56,9 +56,9 @@ textarea{width:100%;min-height:9rem;padding:.6rem .75rem;border:1px solid var(--
 .answer{margin-top:.75rem}
 .value{display:block;text-align:center;font-size:clamp(2.5rem,13vw,3.5rem);font-weight:700;letter-spacing:-.045em;line-height:1;font-variant-numeric:tabular-nums;min-height:1em}
 .value.none{color:var(--muted);font-weight:500;font-size:1.25rem;line-height:3.5rem;min-height:0;letter-spacing:-.01em}
-.slider{position:relative;margin:.25rem 0 0}
+.slider{position:relative;margin:.25rem 0 0;touch-action:none;cursor:pointer}
 .ends{display:flex;justify-content:space-between;font-size:.8125rem;color:var(--muted);font-variant-numeric:tabular-nums}
-input[type=range]{-webkit-appearance:none;appearance:none;display:block;width:100%;height:3.5rem;margin:0;background:none;touch-action:none;cursor:pointer}
+input[type=range]{-webkit-appearance:none;appearance:none;display:block;width:100%;height:3.5rem;margin:0;background:none;pointer-events:none}
 input[type=range]::-webkit-slider-runnable-track{height:.5rem;border-radius:999px;background:var(--rule)}
 input[type=range]::-moz-range-track{height:.5rem;border-radius:999px;background:var(--rule)}
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:2rem;height:2rem;margin-top:-.75rem;border-radius:50%;border:0;background:var(--accent);box-shadow:0 0 0 4px var(--bg)}
@@ -564,10 +564,28 @@ function deserialize(json) {
   return { ...s, doc: deepFreeze(doc) };
 }
 
+// The slider's input, decided here so that it is testable. A pointer chooses the value under it, wherever the
+// browser's own range would have left its thumb (iOS does not move it on a tap). The thumb's centre runs from
+// half a thumb inside the left end to half a thumb inside the right end, as native ranges draw it.
+const clampProbability = (p) => Math.min(100, Math.max(0, p));
+function pointerProbability(x, left, width, thumb) {
+  const run = width - thumb;
+  return clampProbability(Math.round(run > 0 ? (x - left - thumb / 2) / run * 100 : 0));
+}
+// A key from the current choice (null: nothing chosen). Home and End choose an end; with no choice yet an arrow
+// or Page key only reveals the thumb at the middle, shown but not saved; Enter saves. null: not a slider key.
+const STEPS = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1, PageUp: 10, PageDown: -10 };
+function keyProbability(key, choice) {
+  if (key === "Home") return 0;
+  if (key === "End") return 100;
+  if (!Object.hasOwn(STEPS, key)) return null;
+  return choice == null ? 50 : clampProbability(choice + STEPS[key]);
+}
+
 root.Calibrator = {
   encode, decode, ToonError, SchemaError, FORMAT, VERSION, FIELDS, EXPORT_FIELDS, ORIGINS, SCORES, STATES,
   validateSession, parseSession, newState, display, answer, skip, back, counts, stateOf, isLast,
-  exportDocument, exportToon, markExported, unfinished, serialize, deserialize,
+  exportDocument, exportToon, markExported, unfinished, serialize, deserialize, pointerProbability, keyProbability,
 };
 })(typeof self !== "undefined" ? self : globalThis);
 </script>
@@ -643,8 +661,9 @@ $("guard-replace").addEventListener("click", () => {
 });
 
 /* ---------- Question card ---------- */
-const range = $("range");
-let gesture = false, keyed = false;
+const range = $("range"), track = range.parentElement;
+// choice: the probability on screen, or null while the question is untouched. drag: the pointer choosing it.
+let choice = null, drag = null, keyed = false;
 function render(fade) {
   const q = S.doc.questions[S.current], n = S.current + 1, total = S.doc.questions.length;
   const r = S.responses[q.question_id], st = C.stateOf(S, q.question_id);
@@ -655,10 +674,11 @@ function render(fade) {
   $("high").lastElementChild.textContent = q.high_action;
   $("low").lastElementChild.textContent = q.low_action;
   const answered = st === "answered";
+  choice = answered ? r.final_probability : null;
   range.classList.toggle("unanswered", !answered);
   range.value = answered ? r.final_probability : 50;
   range.setAttribute("aria-valuetext", answered ? `${r.final_probability}%` : "Unanswered");
-  showValue(answered ? r.final_probability : null);
+  showValue(choice);
   $("back").disabled = S.current === 0;
   $("skip").textContent = st === "unseen" ? "Skip" : "Next";
   $("skip").disabled = st !== "unseen" && C.isLast(S);
@@ -670,6 +690,12 @@ function showValue(p) {
   v.textContent = p == null ? "Unanswered" : `${p}%`;
   v.classList.toggle("none", p == null);
 }
+function choose(p) {
+  choice = p; range.value = p;
+  range.classList.remove("unanswered");
+  range.setAttribute("aria-valuetext", `${p}%`);
+  showValue(p);
+}
 function showAsk() {
   $("start").hidden = true; $("ask").hidden = false;
   render(true);
@@ -679,12 +705,11 @@ function go(next, focus = true) {
   if (focus) range.focus({ preventScroll: true });
 }
 function commit() {
+  if (choice == null) return;
   clearTimeout(advanceTimer);
-  const p = Number(range.value), res = C.answer(S, p, now());
+  const p = choice, res = C.answer(S, p, now());
   S = res.state; save();
-  range.classList.remove("unanswered");
-  range.setAttribute("aria-valuetext", `${p}%`);
-  showValue(p);
+  choose(p);
   if (res.first) {
     // Keep the saved number on screen for a beat, then move on.
     advanceTimer = setTimeout(() => {
@@ -692,30 +717,35 @@ function commit() {
     }, reduced.matches ? 120 : 220);
   } else render(false);
 }
-range.addEventListener("pointerdown", () => { gesture = true; clearTimeout(advanceTimer); });
-range.addEventListener("input", () => {
-  range.classList.remove("unanswered");
-  range.setAttribute("aria-valuetext", `${range.value}%`);
-  showValue(Number(range.value));
+// Pointer: the page, not the browser, reads the position, so a tap or drag saves the value under the finger on
+// release. The range itself takes no pointer input; it keeps its native semantics for the keyboard and assistive tech.
+const thumb = () => 2 * parseFloat(getComputedStyle(document.documentElement).fontSize);
+const under = (e) => { const b = range.getBoundingClientRect(); return C.pointerProbability(e.clientX, b.left, b.width, thumb()); };
+track.addEventListener("pointerdown", (e) => {
+  if (e.button !== 0) return;
+  e.preventDefault(); clearTimeout(advanceTimer);
+  drag = e.pointerId; keyed = false;
+  try { track.setPointerCapture(e.pointerId); } catch {}
+  range.focus({ preventScroll: true });
+  choose(under(e));
 });
-// A pointer release commits; so does a tap on the unanswered slider at the value it already holds.
-const release = () => { if (gesture) { gesture = false; commit(); } };
-range.addEventListener("pointerup", release);
-range.addEventListener("pointercancel", () => { gesture = false; render(false); });
-range.addEventListener("change", () => { if (keyed) return; if (gesture) release(); });
-// Keyboard: arrows choose without saving; Enter (or leaving the slider) saves.
+track.addEventListener("pointermove", (e) => { if (e.pointerId === drag) choose(under(e)); });
+track.addEventListener("pointerup", (e) => { if (e.pointerId !== drag) return; drag = null; choose(under(e)); commit(); });
+track.addEventListener("pointercancel", (e) => { if (e.pointerId === drag) { drag = null; render(false); } });
+// Assistive tech adjusting the native range: show the value; Enter or leaving the slider saves it.
+range.addEventListener("input", () => { keyed = true; choose(Number(range.value)); });
+// Keyboard: keys choose without saving, starting from nothing on an untouched question; Enter (or leaving the slider) saves.
 range.addEventListener("keydown", (e) => {
   if (e.key === "Enter") { e.preventDefault(); keyed = false; commit(); return; }
-  if (/^(Arrow|Page|Home|End)/.test(e.key)) {
-    keyed = true;
-    if (range.classList.contains("unanswered")) { e.preventDefault(); range.value = 50; range.dispatchEvent(new Event("input")); }
-  }
+  const p = C.keyProbability(e.key, choice);
+  if (p == null) return;
+  e.preventDefault(); keyed = true; choose(p);
 });
 range.addEventListener("blur", () => {
   if (!keyed) return;
   keyed = false;
   const r = S.responses[S.doc.questions[S.current].question_id];
-  if (r?.state === "answered" && Number(range.value) !== r.final_probability) commit(); else render(false);
+  if (r?.state === "answered" && choice !== r.final_probability) commit(); else render(false);
 });
 $("back").addEventListener("click", () => { clearTimeout(advanceTimer); go(C.back(S), false); });
 $("skip").addEventListener("click", () => {
