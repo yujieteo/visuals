@@ -6,10 +6,11 @@
 <link rel="icon" href="data:,">
 <meta name="description" content="Mohr's circle for 3D stress and strain: principal values and directions, three circles with the admissible region, 2D circles as rotations about any axis, plane stress and plane strain, Hooke's law, Tresca, Mohr–Coulomb, Rankine and von Mises checks, a strain-gauge rosette helper and an orbitable 3D element with a cut plane. Runs offline in your browser.">
 <title>Mohr's Circle Visualiser</title>
+<script id="site-theme">try { var t = localStorage.getItem("theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (e) {}</script>
 <style>
-:root{--bg:#fff;--fg:#1d1d1f;--muted:#6e6e73;--faint:#a1a1a6;--surface:#f5f5f7;--border:#d2d2d7;--grid:#e8e8ed;--axis:#86868b;--focus:#0071e3;--c1:#2a78d6;--c2:#1a7f64;--hl:#8a4fd8;--region:rgba(42,120,214,.12);--region2:rgba(26,127,100,.12);--ten:#2a78d6;--comp:#c4561d;--shear:#8a4fd8;--env:#c4261d;--ok:#1a7f4b;--bad:#c4261d;--warn:#9a6700;--face:rgba(120,130,150,.16);--cut:rgba(138,79,216,.28);--sans:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;--mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;--r:.5rem;color-scheme:light dark}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--faint:#6e6e73;--surface:#2c2c2e;--border:#48484a;--grid:#333336;--axis:#8e8e93;--focus:#2997ff;--c1:#5aa2f0;--c2:#3cc59a;--hl:#b98cff;--region:rgba(90,162,240,.16);--region2:rgba(60,197,154,.16);--ten:#5aa2f0;--comp:#ff9a5c;--shear:#b98cff;--env:#ff6961;--ok:#30c07a;--bad:#ff6961;--warn:#e3b341;--face:rgba(170,180,200,.14);--cut:rgba(185,140,255,.30)}}
-:root[data-theme="dark"]{--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--faint:#6e6e73;--surface:#2c2c2e;--border:#48484a;--grid:#333336;--axis:#8e8e93;--focus:#2997ff;--c1:#5aa2f0;--c2:#3cc59a;--hl:#b98cff;--region:rgba(90,162,240,.16);--region2:rgba(60,197,154,.16);--ten:#5aa2f0;--comp:#ff9a5c;--shear:#b98cff;--env:#ff6961;--ok:#30c07a;--bad:#ff6961;--warn:#e3b341;--face:rgba(170,180,200,.14);--cut:rgba(185,140,255,.30);color-scheme:dark}
+:root{--bg:#ffffff;--fg:#1d1d1f;--muted:#6e6e73;--faint:#a1a1a6;--surface:#f5f5f7;--border:#d2d2d7;--control:#86868b;--grid:#e8e8ed;--axis:#86868b;--focus:#0071e3;--on-focus:#ffffff;--c1:#2a78d6;--c2:#eb6834;--c3:#8a4fd8;--c4:#0f8b8d;--hl:#c43d2f;--ok:#1a7f4b;--warn:#9a6700;--bad:#c4261d;--region:rgba(42,120,214,.12);--region2:rgba(15,139,141,.12);--face:rgba(134,134,139,.16);--cut:rgba(138,79,216,.28);--stress:var(--c1);--strain:var(--c4);--plane:var(--c3);--ten:var(--c1);--comp:var(--c2);--shear:var(--c3);--env:var(--bad);--sans:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;--mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;--r:.5rem;color-scheme:light dark}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--faint:#6e6e73;--surface:#2c2c2e;--border:#48484a;--control:#8e8e93;--grid:#333336;--axis:#8e8e93;--focus:#2997ff;--on-focus:#1d1d1f;--c1:#3987e5;--c2:#d95926;--c3:#a77bf0;--c4:#3bb6b8;--hl:#ff6961;--ok:#30c07a;--warn:#e3b341;--bad:#ff6961;--region:rgba(57,135,229,.16);--region2:rgba(59,182,184,.16);--face:rgba(142,142,147,.14);--cut:rgba(167,123,240,.30)}}
+:root[data-theme="dark"]{--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--faint:#6e6e73;--surface:#2c2c2e;--border:#48484a;--control:#8e8e93;--grid:#333336;--axis:#8e8e93;--focus:#2997ff;--on-focus:#1d1d1f;--c1:#3987e5;--c2:#d95926;--c3:#a77bf0;--c4:#3bb6b8;--hl:#ff6961;--ok:#30c07a;--warn:#e3b341;--bad:#ff6961;--region:rgba(57,135,229,.16);--region2:rgba(59,182,184,.16);--face:rgba(142,142,147,.14);--cut:rgba(167,123,240,.30);color-scheme:dark}
 :root[data-theme="light"]{color-scheme:light}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
@@ -29,21 +30,21 @@ button{cursor:pointer}
 .eyebrow a:hover{text-decoration:underline}
 .lede{font-size:1.125rem;max-width:66ch}
 .muted{color:var(--muted)}
-.banner{border:1px solid var(--border);border-left-width:4px;border-left-color:var(--c1);border-radius:var(--r);padding:.6rem .9rem;margin:1rem 0 0;font-size:.9375rem;display:flex;flex-wrap:wrap;gap:.4rem 1rem;align-items:center;justify-content:space-between}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:.35rem;border:1px solid var(--border);background:var(--bg);border-radius:999px;padding:.25rem .8rem;min-height:2.25rem;font-size:.875rem;white-space:nowrap;text-decoration:none}
+.banner{border:1px solid var(--border);border-left-width:4px;border-left-color:var(--stress);border-radius:var(--r);padding:.6rem .9rem;margin:1rem 0 0;font-size:.9375rem;display:flex;flex-wrap:wrap;gap:.4rem 1rem;align-items:center;justify-content:space-between}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.35rem;border:1px solid var(--control);background:var(--bg);border-radius:999px;padding:.25rem .8rem;min-height:2.25rem;font-size:.875rem;white-space:nowrap;text-decoration:none}
 @media (hover:hover){.btn:hover{background:var(--surface)}}
 .btn.small{min-height:1.9rem;padding:.1rem .65rem;font-size:.8125rem}
 .btn:disabled{opacity:.5;cursor:not-allowed}
 .toolbar{display:flex;flex-wrap:wrap;gap:.6rem 1.25rem;align-items:center;margin:1.25rem 0 .75rem;padding:.6rem 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
 .toolbar .group{display:flex;flex-wrap:wrap;gap:.35rem;align-items:center;min-width:0}
 .label{font:600 .7rem var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-right:.2rem}
-select,input[type="number"],input[type="text"],textarea{border:1px solid var(--border);background:var(--bg);border-radius:var(--r);padding:.3rem .5rem;min-height:2.25rem;font-size:.875rem;min-width:0;width:100%}
+select,input[type="number"],input[type="text"],textarea{border:1px solid var(--control);background:var(--bg);border-radius:var(--r);padding:.3rem .5rem;min-height:2.25rem;font-size:.875rem;min-width:0;width:100%}
 .toolbar select{width:auto;max-width:100%}
 input[type="text"]{font-variant-numeric:tabular-nums}
 input:disabled,input[readonly]{color:var(--muted);background:var(--surface);border-style:dashed}
 textarea{font:.8125rem/1.45 var(--mono);min-height:7rem;resize:vertical}
 [aria-invalid="true"]{border-color:var(--bad);box-shadow:0 0 0 1px var(--bad)}
-.seg{display:inline-flex;border:1px solid var(--border);border-radius:999px;overflow:hidden}
+.seg{display:inline-flex;border:1px solid var(--control);border-radius:999px;overflow:hidden}
 .seg label{display:inline-flex;align-items:center;cursor:pointer;font-size:.8125rem;min-height:2.1rem;padding:0 .7rem;position:relative}
 .seg input{position:absolute;opacity:0;width:1px;height:1px}
 .seg label:has(input:checked){background:var(--fg);color:var(--bg);font-weight:600}
@@ -68,7 +69,7 @@ legend{font:600 .72rem/1.4 var(--mono);letter-spacing:.06em;text-transform:upper
 .check{display:inline-flex;gap:.4rem;align-items:center;font-size:.875rem}
 .checks{display:grid;grid-template-columns:repeat(auto-fill,minmax(9.5rem,1fr));gap:.25rem .8rem}
 .note{font-size:.8125rem;color:var(--muted);margin:.35rem 0 0}
-input[type="range"]{width:100%;accent-color:var(--hl)}
+input[type="range"]{width:100%;accent-color:var(--plane)}
 .warnings{list-style:none;margin:0 0 1rem;padding:0;display:flex;flex-direction:column;gap:.3rem;font-size:.875rem}
 .warnings li{border-left:3px solid var(--warn);padding:.15rem .6rem}
 .warnings li::before{content:"Note · ";font:600 .7rem var(--mono);letter-spacing:.04em;text-transform:uppercase;color:var(--warn)}
@@ -2219,7 +2220,7 @@ function wireControls() {
     const cur = document.documentElement.dataset.theme || "auto";
     const next = cur === "auto" ? "light" : cur === "light" ? "dark" : "auto";
     applyTheme(next);
-    store.set("mohr-theme", next);
+    try { if (next === "auto") localStorage.removeItem("theme"); else localStorage.setItem("theme", next); } catch (e) { /* storage blocked */ }
   });
   try { matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => schedule()); } catch (e) { /* old browsers */ }
 }
@@ -2393,7 +2394,7 @@ let tok = {};
 function readTokens() {
   const cs = getComputedStyle(document.documentElement);
   const t = {};
-  for (const k of ["bg", "fg", "muted", "faint", "surface", "border", "grid", "axis", "c1", "c2", "hl", "region", "region2", "ten", "comp", "shear", "env", "ok", "bad", "warn", "face", "cut", "sans", "mono"]) t[k] = cs.getPropertyValue(`--${k}`).trim();
+  for (const k of ["bg", "fg", "muted", "faint", "surface", "border", "grid", "axis", "stress", "strain", "plane", "region", "region2", "ten", "comp", "shear", "env", "ok", "bad", "warn", "face", "cut", "sans", "mono"]) t[k] = cs.getPropertyValue(`--${k}`).trim();
   tok = t;
 }
 function sizeCanvas(cv, box) {
@@ -2598,7 +2599,7 @@ function drawPlot(id) {
 }
 function draw2D(ctx, P, id, d) {
   const c = d.r.circle, ov = state.view.overlays, conv = state.conventions.shear2D;
-  const col = d.isStress ? tok.c1 : tok.c2;
+  const col = d.isStress ? tok.stress : tok.strain;
   const W = (s, t) => { const p = M.mohrPoint(snap(s, d.ref), snap(t, d.ref), conv, d.s); return [p[0] / d.f, p[1] / d.f]; };
   const C = W(c.C, 0), R = d.Mg(c.R);
   const names = res.basis.names.map((n) => n.toUpperCase());
@@ -2649,18 +2650,18 @@ function draw2D(ctx, P, id, d) {
       const sense = conv === "A" ? -1 : 1; // canvas angles grow clockwise
       const a1 = a0 + sense * (2 * theta * Math.PI) / 180;
       const rr = Math.min(R * P.ppu * 0.4, 46);
-      ctx.strokeStyle = tok.hl; ctx.lineWidth = 1.5;
+      ctx.strokeStyle = tok.plane; ctx.lineWidth = 1.5;
       ctx.beginPath(); ctx.arc(sc[0], sc[1], rr, a0, a1, a1 < a0); ctx.stroke();
       const am = (a0 + a1) / 2;
-      label(ctx, "2θ", sc[0] + (rr + 12) * Math.cos(am), sc[1] + (rr + 12) * Math.sin(am) + 4, { size: 11.5, color: tok.hl, align: "center", weight: 600 });
+      label(ctx, "2θ", sc[0] + (rr + 12) * Math.cos(am), sc[1] + (rr + 12) * Math.sin(am) + 4, { size: 11.5, color: tok.plane, align: "center", weight: 600 });
     }
     const sq = toS(P, Q[0], Q[1]), sc = toS(P, C[0], 0);
-    ctx.strokeStyle = tok.hl; ctx.lineWidth = 1.5;
+    ctx.strokeStyle = tok.plane; ctx.lineWidth = 1.5;
     ctx.beginPath(); ctx.moveTo(sc[0], sc[1]); ctx.lineTo(sq[0], sq[1]); ctx.stroke();
-    ctx.beginPath(); ctx.arc(sq[0], sq[1], 8, 0, 2 * Math.PI); ctx.fillStyle = tok.hl; ctx.fill();
+    ctx.beginPath(); ctx.arc(sq[0], sq[1], 8, 0, 2 * Math.PI); ctx.fillStyle = tok.plane; ctx.fill();
     ctx.lineWidth = 2; ctx.strokeStyle = tok.bg; ctx.stroke();
     P.handle = sq;
-    if (ov.labels) label(ctx, `θ = ${F(theta)}°`, sq[0] + 11, sq[1] + 14, { size: 12, weight: 600, color: tok.hl });
+    if (ov.labels) label(ctx, `θ = ${F(theta)}°`, sq[0] + 11, sq[1] + 14, { size: 12, weight: 600, color: tok.plane });
   }
   drawInset(ctx, P, d, theta);
   const u = d.isStress ? sU() : eU();
@@ -2693,7 +2694,7 @@ function drawInset(ctx, P, d, theta) {
   for (const [a, b] of [[1, 1], [-1, 1], [-1, -1], [1, -1]]) { const p = S([n[0] * a + t[0] * b, n[1] * a + t[1] * b], h); ctx.lineTo(p[0], p[1]); }
   ctx.closePath(); ctx.fillStyle = tok.face; ctx.fill(); ctx.strokeStyle = tok.fg; ctx.lineWidth = 1.5; ctx.stroke();
   if (state.view.overlays.principalAxes && !d.r.circle.degenerate) {
-    ctx.strokeStyle = tok.hl; ctx.setLineDash([5, 3]); ctx.lineWidth = 1.2;
+    ctx.strokeStyle = tok.plane; ctx.setLineDash([5, 3]); ctx.lineWidth = 1.2;
     for (const a of [d.r.circle.thetaP, d.r.circle.thetaP + 90]) {
       const r = (a * Math.PI) / 180, v = [Math.cos(r), Math.sin(r)];
       const A = S(v, size * 0.45), B = S(v, -size * 0.45);
@@ -2740,7 +2741,7 @@ function arrowLine(ctx, a, b, col, lw, head) {
 }
 function draw3D(ctx, P, id, d) {
   const ov = state.view.overlays, r = d.r;
-  const col = d.isStress ? tok.c1 : tok.c2;
+  const col = d.isStress ? tok.stress : tok.strain;
   const circ = r.circles.map((k) => ({ ...k, cx: d.X(k.centre), R: d.Mg(k.radius) }));
   const hs = d.isStress ? "σ" : "ε";
   if (ov.region && !r.hydrostatic) {
@@ -2757,7 +2758,7 @@ function draw3D(ctx, P, id, d) {
   const c2 = r.circle;
   if (ov.circles && !c2.degenerate) {
     circlePath(ctx, P, d.X(c2.C), d.Mg(c2.R), true);
-    ctx.strokeStyle = tok.hl; ctx.lineWidth = 3.5; ctx.globalAlpha = 0.55; ctx.stroke(); ctx.globalAlpha = 1;
+    ctx.strokeStyle = tok.plane; ctx.lineWidth = 3.5; ctx.globalAlpha = 0.55; ctx.stroke(); ctx.globalAlpha = 1;
   }
   const vals = r.principal.values.map((v) => d.X(v));
   for (let i = 0; i < 3; i++) dot(ctx, P, vals[i], 0, 4, col, tok.bg);
@@ -2784,8 +2785,8 @@ function draw3D(ctx, P, id, d) {
   }
   if (ov.plane) {
     const x = d.X(r.plane.sn), y = d.Mg(r.plane.tau);
-    dot(ctx, P, x, y, 7, tok.hl, tok.bg);
-    if (ov.labels) { const [sx, sy] = toS(P, x, y); label(ctx, "plane", sx + 10, sy - 8, { size: 11.5, weight: 600, color: tok.hl }); }
+    dot(ctx, P, x, y, 7, tok.plane, tok.bg);
+    if (ov.labels) { const [sx, sy] = toS(P, x, y); label(ctx, "plane", sx + 10, sy - 8, { size: 11.5, weight: 600, color: tok.plane }); }
   }
   const u = d.isStress ? sU() : eU();
   $(`cv-${id}`).setAttribute("aria-label", `3D ${d.isStress ? "stress" : "strain"} Mohr circles: principal values ${vals.map((v, i) => `${hs}${i + 1} = ${F(v)}`).join(", ")} ${u}; plane point ${hs}n = ${F(d.X(r.plane.sn))}, ${d.isStress ? "τ" : "γ/2"} = ${F(d.Mg(r.plane.tau))} ${u}.`);
@@ -2872,10 +2873,10 @@ function drawCube() {
   ctx.globalAlpha = 1;
   if (!isStress && T) {
     const vis = faces.filter((f) => f.depth > 0 && f.s > 0);
-    for (const f of vis) { const tp = pr(V.scale(f.n, 1.25)); label(ctx, `ε${names[f.i]} = ${F(dE(T[f.i][f.i], ref))}`, tp[0], tp[1], { size: 11.5, weight: 600, align: "center", color: tok.c2 }); }
+    for (const f of vis) { const tp = pr(V.scale(f.n, 1.25)); label(ctx, `ε${names[f.i]} = ${F(dE(T[f.i][f.i], ref))}`, tp[0], tp[1], { size: 11.5, weight: 600, align: "center", color: tok.strain }); }
     const s = shearSym(), gg = g();
     const lines = [`${s}xy = ${F(dE(gg * T[0][1], ref))}`, `${s}yz = ${F(dE(gg * T[1][2], ref))}`, `${s}zx = ${F(dE(gg * T[0][2], ref))}`, `(${eU()})`];
-    lines.forEach((t, i) => label(ctx, t, 10, 18 + i * 15, { size: 11.5, color: tok.c2 }));
+    lines.forEach((t, i) => label(ctx, t, 10, 18 + i * 15, { size: 11.5, color: tok.strain }));
   }
   if (!T) label(ctx, "Tensor not available (invalid material).", 10, 18, { size: 12, color: tok.bad });
   // principal axes overlay
@@ -2883,9 +2884,9 @@ function drawCube() {
     const pv = (res.stressDriven ? res.stress : res.strain).principal.vectors;
     pv.forEach((v, i) => {
       const a = pr(V.scale(v, -1.7)), b = pr(V.scale(v, 1.7));
-      ctx.strokeStyle = tok.hl; ctx.lineWidth = 1.6; ctx.setLineDash([6, 4]);
+      ctx.strokeStyle = tok.plane; ctx.lineWidth = 1.6; ctx.setLineDash([6, 4]);
       ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke(); ctx.setLineDash([]);
-      label(ctx, String(i + 1), b[0] + 4, b[1] - 4, { size: 12.5, weight: 700, color: tok.hl });
+      label(ctx, String(i + 1), b[0] + 4, b[1] - 4, { size: 12.5, weight: 700, color: tok.plane });
     });
   }
   // world axes key
@@ -2921,12 +2922,12 @@ function drawCutPlane(ctx, pr, T, isStress, ref) {
     pts.sort((a, b) => Math.atan2(V.dot(a, w), V.dot(a, u)) - Math.atan2(V.dot(b, w), V.dot(b, u)));
     ctx.beginPath();
     for (const p of pts) { const s = pr(p); ctx.lineTo(s[0], s[1]); }
-    ctx.closePath(); ctx.fillStyle = tok.cut; ctx.fill(); ctx.strokeStyle = tok.hl; ctx.lineWidth = 1.4; ctx.stroke();
+    ctx.closePath(); ctx.fillStyle = tok.cut; ctx.fill(); ctx.strokeStyle = tok.plane; ctx.lineWidth = 1.4; ctx.stroke();
   }
   const o = pr([0, 0, 0]);
   const nTip = pr(V.scale(n, 1.55));
-  ctx.setLineDash([4, 3]); arrowLine(ctx, o, nTip, tok.hl, 1.4, 7); ctx.setLineDash([]);
-  label(ctx, "n", nTip[0] + 6, nTip[1] - 4, { size: 12.5, weight: 700, color: tok.hl });
+  ctx.setLineDash([4, 3]); arrowLine(ctx, o, nTip, tok.plane, 1.4, 7); ctx.setLineDash([]);
+  label(ctx, "n", nTip[0] + 6, nTip[1] - 4, { size: 12.5, weight: 700, color: tok.plane });
   if (!T) return;
   const tr = M.traction(T, n);
   if (isStress) {
@@ -2946,7 +2947,7 @@ function drawCutPlane(ctx, pr, T, isStress, ref) {
     label(ctx, `σn ${F(dS(tr.sn, ref))} ${tr.sn > 0 ? "(T)" : tr.sn < 0 ? "(C)" : ""}`, lp[0] + 8, lp[1] + 14, { size: 11.5, weight: 600, color: tr.sn >= 0 ? tok.ten : tok.comp });
   } else {
     const lp = pr(V.scale(n, 1.15));
-    label(ctx, `εn ${F(dE(tr.sn, ref))}, γ/2 ${F(dEM(tr.tau, ref))}`, lp[0] + 8, lp[1] + 14, { size: 11.5, weight: 600, color: tok.c2 });
+    label(ctx, `εn ${F(dE(tr.sn, ref))}, γ/2 ${F(dEM(tr.tau, ref))}`, lp[0] + 8, lp[1] + 14, { size: 11.5, weight: 600, color: tok.strain });
   }
 }
 
@@ -3260,7 +3261,7 @@ function registerTools() {
 
 /* ---------- start ---------- */
 function start() {
-  const theme = store.get("mohr-theme");
+  const theme = store.get("theme");
   wireControls(); wirePlots(); wireCube(); wireIO();
   $("selftest-badge").addEventListener("click", () => { $("selftest-details").open = true; $("selftest-title").scrollIntoView({ block: "start" }); });
   $("selftest-run").addEventListener("click", runSelfTests);

@@ -389,7 +389,7 @@ const bootPage = () => {
   });
   ctx.self = ctx; ctx.window = ctx;
   const scripts = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)];
-  assert.deepEqual(scripts.map((m) => /id="([^"]+)"/.exec(m[0])?.[1]), ["mohr-engine", "mohr-beamdswitch", "mohr-ui"]);
+  assert.deepEqual(scripts.map((m) => /id="([^"]+)"/.exec(m[0])?.[1]), ["site-theme", "mohr-engine", "mohr-beamdswitch", "mohr-ui"]);
   for (const m of scripts) vm.runInContext(m[1], ctx);
   return { tools, network };
 };

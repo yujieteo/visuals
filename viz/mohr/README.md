@@ -29,7 +29,7 @@ steps as slides at the end of its Results section.
 
 | File | Role |
 | --- | --- |
-| `index.html` | The whole tool. `<script id="mohr-engine">` is the numeric core (units, tensor, plane, failure, io, the beamdswitch report, the hand calculations, self-test; no DOM, storage, clock or randomness; `self.Mohr` in the browser). `<script id="mohr-beamdswitch">` is `beamdswitch.js` inlined. `<script id="mohr-ui">` is the page, the canvases and the WebMCP tools. Edit this file directly. |
+| `index.html` | The whole tool. `<script id="site-theme">` is the site's shared head line that applies the reader's Light or Dark choice before paint. `<script id="mohr-engine">` is the numeric core (units, tensor, plane, failure, io, the beamdswitch report, the hand calculations, self-test; no DOM, storage, clock or randomness; `self.Mohr` in the browser). `<script id="mohr-beamdswitch">` is `beamdswitch.js` inlined. `<script id="mohr-ui">` is the page, the canvases and the WebMCP tools. Edit this file directly. |
 | `beamdswitch.js` | The site's standard beamdswitch report template, an unchanged copy of `templates/beamdswitch.js`; paste it into `<script id="mohr-beamdswitch">` whenever it changes. |
 | `raw.json` | Published metadata (`META`) and the default state as exported JSON (`example`); must equal the engine's `META` and `toJSON(defaultState())`. |
 
