@@ -146,5 +146,4 @@ test("all diagram axes render sample counts beyond JavaScript argument limits", 
   assert.equal(diagrams.length, 5);
   for (const path of diagrams) assert.doesNotMatch(path, /NaN|Infinity/);
   assert.ok(p.get("deck").textContent.includes("BEGIN BULK"));
-  assert.ok(p.get("deck").textContent.includes("BEGIN BULK"));
 });

@@ -14,5 +14,16 @@ commands:
 test:
   instructions: |
     The configured commands.test is the test suite; it matches CI. Do not
-    download models or other large assets, and do not drive a real browser
-    to test.
+    download models or other large assets. Before running it, start
+    headless Chrome as .github/workflows/ci.yml does, with a temporary
+    profile (on macOS the binary is
+    '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'):
+    --headless=new --remote-debugging-port=9227 '--remote-allow-origins=*'
+    --user-data-dir="$(mktemp -d)", and export
+    BEAMDIAG_BROWSER_URL=http://127.0.0.1:9227 so the end-to-end test
+    tests/browser.test.mjs runs instead of being skipped.
+    Then check the port: `git clone --depth 1 https://github.com/yujieteo/site`
+    into a temporary directory, copy the tracked page files (`git ls-files`
+    minus tests/, .github/, docs/, .gitignore and .no-mistakes.yaml) into its
+    visuals/beamdiag/, and build and browse only that page in the same
+    Chrome; never run the full site build or the site suite.
