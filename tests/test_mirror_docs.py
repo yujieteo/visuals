@@ -15,10 +15,12 @@ MIRRORS = {
     "graduate-employment-survey": "graduate-employment-survey", "haze-singapore": "haze-singapore",
     "manchester-city-finances": "manchester-city-finances", "marvell": "marvell", "multi-armed-bandit": "multi-armed-bandit", "ooda-orientation": "ooda-orientation", "panw": "panw",
     "singapore-covid-governance-hindsight": "sg-covid-hindsight",
-    "social-values-surveydata": "social-values-surveydata", "tourist-attractions": "tourist-attractions",
+    "social-values-surveydata": "social-values-surveydata", "tampines-food-map": "tampines-food-map", "tourist-attractions": "tourist-attractions",
 }
+# Mirrors the site does not publish: an older, separate version of a site page. AGENTS.md says so instead of naming a live page.
+UNPUBLISHED = {"tampines-food-map"}
 # Stale older copies; their current versions (and mirrors) live in yujieteo/site visuals/.
-EXCLUDED = {"vgc-protect-fakeout-pivot-trainer", "tampines-food-map", "convexity-action-engine", "everyday-actions"}
+EXCLUDED = {"vgc-protect-fakeout-pivot-trainer", "convexity-action-engine", "everyday-actions"}
 
 
 class MirrorDocsTest(unittest.TestCase):
@@ -41,7 +43,10 @@ class MirrorDocsTest(unittest.TestCase):
             text = (ROOT / "viz" / slug / "AGENTS.md").read_text()
             self.assertIn(f"`viz/{slug}/` in [yujieteo/visuals]", text, slug)
             self.assertIn(f"[yujieteo/{repo}](https://github.com/yujieteo/{repo})", text, slug)
-            self.assertIn(f"https://teoyujie.org/visuals/{slug}/", text, slug)
+            if slug in UNPUBLISHED:
+                self.assertIn("Not published on teoyujie.org", text, slug)
+            else:
+                self.assertIn(f"https://teoyujie.org/visuals/{slug}/", text, slug)
 
     def test_skills_documents_exactly_the_registered_tools(self):
         for slug in MIRRORS:
