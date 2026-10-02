@@ -11,14 +11,14 @@ The standalone repository [yujieteo/delta-cohomology](https://github.com/yujiete
 Run these from the root of the yujieteo/delta-cohomology checkout. There is no build step: edit `index.html` directly. Run the whole suite, as CI (`.github/workflows/ci.yml`) does on every push and pull request:
 
 ```sh
-node --test 'tests/*.test.{mjs,cjs}'
+node --test 'tests/*.test.mjs'
 ```
 
 ## Data and tests
 
 - `raw.json`: catalogue data published as `data.json` (the metadata, the gluing data, the derived matrices and cohomology table, and the stated matrices and table). The page never fetches it; after changing the engine's metadata or data, regenerate it from the engine (the test fails when it drifts).
 - Inside `index.html`: `<script id="delta-cohomology-engine">` (pure core, `self.DeltaCohomology`), `<script id="delta-cohomology-ui">` (page and WebMCP tools) and `<script id="beamdswitch">`.
-- `tests/delta-cohomology.test.mjs`: the derived matrices against the stated ones, ∂² = 0 for every orientation choice, the cohomology table over ℤ, 𝔽₂ and 𝔽₃, the Smith factor 2 of RP², orientation invariance, the cup-product rings, `raw.json`, the beamdswitch decks, and the page booted against a stand-in DOM to call its WebMCP tools and deck buttons. `tests/data-visuals-beamdswitch.mjs` holds the shared deck checks, and `tests/fixtures/beamdswitch/` read-only copies of beamdswitch's deck parser and the site's `templates/beamdswitch.js` and `templates/beamdswitch-report.md`.
+- `tests/delta-cohomology.test.mjs`: the derived matrices against the stated ones, ∂² = 0 for every orientation choice, the cohomology table over ℤ, 𝔽₂ and 𝔽₃, the Smith factor 2 of RP², orientation invariance, the cup-product rings, `raw.json`, the beamdswitch decks, and the page booted against a stand-in DOM to call its WebMCP tools and deck buttons. `tests/data-visuals-beamdswitch.mjs` holds the shared deck checks, and `tests/fixtures/beamdswitch/` read-only copies of beamdswitch's deck parser and the site's `templates/beamdswitch-report.md`.
 
 ## Workflow
 
@@ -35,6 +35,6 @@ Logic, end-to-end and other heavy tests live here, where they run only when this
 - One self-contained `index.html`: no external scripts, stylesheets, fonts or network requests (a Content-Security-Policy forbids them). It works offline and from `file://`.
 - The engine has no DOM, storage, clock, randomness or network use, so Node can load it.
 - Tests use Node's built-in runner (`node --test`) only; never add Vitest, Jest, a `package.json` or another test framework.
-- `beamdswitch.js` is a verbatim copy of yujieteo/site's `templates/beamdswitch.js` and is inlined unchanged; the tests check the copy against `tests/fixtures/beamdswitch/beamdswitch.js`. When the site's template changes, copy it to both and paste it into `<script id="beamdswitch">`. Every beamdswitch deck declares the narration voice `bf_emma` in its front matter.
+- `beamdswitch.js` is a verbatim copy of yujieteo/site's `templates/beamdswitch.js` and is inlined unchanged; the tests pin the copy's SHA-256. When the site's template changes, copy it here, update that hash in `tests/data-visuals-beamdswitch.mjs` and paste it into `<script id="beamdswitch">`. Every beamdswitch deck declares the narration voice `bf_emma` in its front matter.
 - WebMCP tools stay read-only (`readOnlyHint: true`), never change the page, and keep their names equal to `webmcp_tools` in `data/visuals/delta-cohomology.yaml` in yujieteo/site.
 - `LICENSE` is MIT (Copyright (c) 2026 Yu Jie Teo).

@@ -918,22 +918,16 @@ function summary(state) {
 
 /* ---------- beamdswitch report (the standard template, beamdswitch.js) ---------- */
 const texM = (A, p = 0) => `\\begin{pmatrix}${A.map((r) => r.map((x) => sym(x, p)).join("&")).join("\\\\")}\\end{pmatrix}`;
-const texVec = (v, names, star = true) => {
-  const parts = v.map((x, i) => [x, names[i]]).filter(([x]) => x);
-  if (!parts.length) return "0";
-  return parts.map(([x, nm], i) => `${x < 0 ? "-" : i ? "+" : ""}${Math.abs(x) === 1 ? "" : Math.abs(x)}${nm}${star ? "^*" : ""}`).join("");
-};
-const plainVec = (v, names, star = true) => {
-  const parts = v.map((x, i) => [x, names[i]]).filter(([x]) => x);
-  if (!parts.length) return "0";
-  return parts.map(([x, nm], i) => `${x < 0 ? (i ? " − " : "−") : i ? " + " : ""}${Math.abs(x) === 1 ? "" : Math.abs(x)}${nm}${star ? "*" : ""}`).join("");
-};
+/* The nonzero terms of the combination Σ v[i]·names[i], as [coefficient, name] pairs; every writer of a
+   combination (TeX, plain text, speech and the page's chips) spells these out its own way. */
+const terms = (v, names) => v.map((x, i) => [x, names[i]]).filter(([x]) => x);
+const texVec = (v, names, star = true) =>
+  terms(v, names).map(([x, nm], i) => `${x < 0 ? "-" : i ? "+" : ""}${Math.abs(x) === 1 ? "" : Math.abs(x)}${nm}${star ? "^*" : ""}`).join("") || "0";
+const plainVec = (v, names, star = true) =>
+  terms(v, names).map(([x, nm], i) => `${x < 0 ? (i ? " − " : "−") : i ? " + " : ""}${Math.abs(x) === 1 ? "" : Math.abs(x)}${nm}${star ? "*" : ""}`).join("") || "0";
 const NUM = ["zero", "one", "two", "three", "four", "five"];
-const spokenVec = (v, names) => {
-  const parts = v.map((x, i) => [x, names[i]]).filter(([x]) => x);
-  if (!parts.length) return "zero";
-  return parts.map(([x, nm], i) => `${x < 0 ? "minus " : i ? "plus " : ""}${Math.abs(x) === 1 ? "" : `${NUM[Math.abs(x)] || Math.abs(x)} `}${nm} star`).join(" ");
-};
+const spokenVec = (v, names) =>
+  terms(v, names).map(([x, nm], i) => `${x < 0 ? "minus " : i ? "plus " : ""}${Math.abs(x) === 1 ? "" : `${NUM[Math.abs(x)] || Math.abs(x)} `}${nm} star`).join(" ") || "zero";
 const spokenName = (nm) => nm.replace(/^v(\d)$/, "v $1");
 
 function beamdswitchReport(state, meta = {}) {
@@ -1058,7 +1052,7 @@ const api = {
   VERSION, META, SPACES, SPACE, SQUARE, SPEC, SPEC_TABLE, COEFFS, COEFF, DEFAULT_FLIPS,
   red, sym, mul, transpose, isZero, smith, solve, echelon, kernelBasis,
   complex, cohomology, homology, cup11, cup0k, ring, boundaryOfBoundary, analyse, normState, table, summary,
-  beamdswitchReport, plainVec, texVec, spokenVec, spokenName, selfTests, sup,
+  beamdswitchReport, terms, plainVec, texVec, spokenVec, spokenName, selfTests, sup,
 };
 root.DeltaCohomology = api;
 })(typeof self !== "undefined" ? self : this);
@@ -1112,12 +1106,8 @@ function chip(kind, id, star = false, ns = "") {
 const KIND = { 0: "v", 1: "e", 2: "t" };
 /* A linear combination of basis (co)chains as chips: a* + c*, 2U*, … */
 function combo(vec, k, star = true) {
-  const names = A.cx.basis[k], parts = [];
-  vec.forEach((x, i) => {
-    if (!x) return;
-    const sign = x < 0 ? M : "+", mag = Math.abs(x);
-    parts.push(`${parts.length || x < 0 ? `<span class="op">${parts.length ? sign : M}</span>` : ""}${mag === 1 ? "" : mag}${chip(KIND[k], names[i], star)}`);
-  });
+  const parts = D.terms(vec, A.cx.basis[k]).map(([x, nm], i) =>
+    `${i || x < 0 ? `<span class="op">${x < 0 ? M : "+"}</span>` : ""}${Math.abs(x) === 1 ? "" : Math.abs(x)}${chip(KIND[k], nm, star)}`);
   return `<span class="combo">${parts.join("") || "0"}</span>`;
 }
 const R = () => A.coef.sym;
