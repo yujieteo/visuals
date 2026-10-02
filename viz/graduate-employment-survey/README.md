@@ -13,8 +13,8 @@ This repository is where the visualisation and its tests develop; CI (`.github/w
 | `index.html` | The self-contained page (CSS, data and JavaScript inline; no external requests). |
 | `beamdswitch.js` | Unchanged copy of the site's beamdswitch report template, inlined into the page. |
 | `report.js` | Builds the narrated beamdswitch deck, inlined into the page. |
-| `meta.json`, `raw.csv` | The data, moved here from `data/graduate-employment-survey/` in yujieteo/visuals. |
-| `tests/` | `node --test` suites (and `unittest` where present) with read-only beamdswitch fixtures under `tests/fixtures/`. |
+| `meta.json`, `raw.csv` | The data, ported to `data/graduate-employment-survey/` in yujieteo/visuals. |
+| `tests/` | `node --test` suites, with read-only beamdswitch fixtures under `tests/fixtures/`. |
 | `AGENTS.md`, `SKILLS.md` | Guides for agents changing and using the page. |
 
 ## Test
