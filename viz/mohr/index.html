@@ -952,6 +952,23 @@ function importText(text) {
   throw importError([{ field: "", message: sawJson ? `No fenced json block with "schema": "${SCHEMA}" was found in the Markdown.` : "Not JSON, and no fenced ```json block was found (a Markdown report embeds one)." }]);
 }
 
+/* The input tensor's six components as entered: names, and values with engineering shear (γ = 2ε)
+   applied to strain when the page shows it. Shared by the Markdown report and the beamdswitch deck. */
+function inputComponents(st, r) {
+  const g = shearFactor(st), shear = (n) => (g === 2 ? `γ${n}` : `ε${n}`);
+  const T = r.stressDriven ? r.S : r.E;
+  return {
+    names: r.stressDriven ? ["σx", "σy", "σz", "τxy", "τyz", "τzx"] : ["εx", "εy", "εz", shear("xy"), shear("yz"), shear("zx")],
+    values: [T[0][0], T[1][1], T[2][2], T[0][1], T[1][2], T[0][2]].map((x, i) => (i > 2 && !r.stressDriven ? g * x : x)),
+  };
+}
+/* The failure criterion's parameters as written in both reports: SM formats a stress magnitude, f a plain number. */
+function failureParams(fp, SM, f, su) {
+  if (fp.criterion === "tresca" || fp.criterion === "von-mises") return `σy = ${SM(fp.sigmaY)} ${su}`;
+  if (fp.criterion === "rankine") return `σt = ${SM(fp.sigmaT)} ${su}, σc = ${SM(fp.sigmaC)} ${su}`;
+  return `c = ${SM(fp.c)} ${su}, φ = ${f(fp.phiDeg)}°, tension cutoff ${fp.tensionCutoff === null ? "none" : SM(fp.tensionCutoff) + " " + su}`;
+}
+
 /* ---------- Markdown report ---------- */
 function toMarkdown(st, opts) {
   const o = opts || {};
@@ -966,11 +983,8 @@ function toMarkdown(st, opts) {
   L.push(`Units: stress ${su}, strain ${eu}. Normal sign: ${st.conventions.normalSign}. 2D shear convention: ${st.conventions.shear2D === "A" ? "A (rotation-preserving, τ down)" : "B (τ up)"}. Strain shear input: ${st.conventions.strainShear}.`, "");
   L.push("## Input", "");
   L.push(`Driver: ${st.driver}; entry mode: ${st.entryMode}; constraint: ${st.constraint}.`, "");
-  const Tin = r.stressDriven ? r.S : r.E;
   const conv = r.stressDriven ? S : Es;
-  const g = shearFactor(st);
-  const names = r.stressDriven ? ["σx", "σy", "σz", "τxy", "τyz", "τzx"] : ["εx", "εy", "εz", g === 2 ? "γxy" : "εxy", g === 2 ? "γyz" : "εyz", g === 2 ? "γzx" : "εzx"];
-  const vals = [Tin[0][0], Tin[1][1], Tin[2][2], Tin[0][1], Tin[1][2], Tin[0][2]].map((x, i) => (i > 2 && !r.stressDriven ? g * x : x));
+  const { names, values: vals } = inputComponents(st, r);
   L.push(`| Component | Value (${r.stressDriven ? su : eu}) |`, "| --- | ---: |");
   names.forEach((n, i) => L.push(`| ${n} | ${conv(vals[i])} |`));
   L.push("", `Material: E = ${SM(st.material.E)} ${su}, ν = ${fmt(st.material.nu, d)}${r.material.valid ? `, G = ${SM(r.material.G)} ${su}` : " (invalid material)"}.`, "");
@@ -1002,9 +1016,7 @@ function toMarkdown(st, opts) {
   if (r.derived) L.push(`Derived out-of-plane: ${r.derived.kind === "strain-z" ? `εz = ${r.derived.value === null ? "— (invalid material)" : Es(r.derived.value) + " " + eu}` : `σz = ${r.derived.value === null ? "— (invalid material)" : S(r.derived.value) + " " + su}`}.`, "");
   L.push("## Failure check", "");
   const fp = st.failure;
-  const params = fp.criterion === "tresca" || fp.criterion === "von-mises" ? `σy = ${SM(fp.sigmaY)} ${su}`
-    : fp.criterion === "rankine" ? `σt = ${SM(fp.sigmaT)} ${su}, σc = ${SM(fp.sigmaC)} ${su}`
-      : `c = ${SM(fp.c)} ${su}, φ = ${fmt(fp.phiDeg, d)}°, tension cutoff ${fp.tensionCutoff === null ? "none" : SM(fp.tensionCutoff) + " " + su}`;
+  const params = failureParams(fp, SM, f, su);
   if (r.failure) {
     L.push(`| Criterion | Parameters | FoS (proportional loading) | Result |`, "| --- | --- | ---: | --- |");
     L.push(`| ${CRITERION_NAME[fp.criterion]} | ${params} | ${fosText(r.failure.fos, d)} | ${r.failure.pass ? "PASS" : "FAIL"} |`, "");
@@ -1074,7 +1086,7 @@ const CONSTRAINT_TEXT = { "plane-stress": "plane stress", "plane-strain": "plane
 function beamdswitchReport(st) {
   const r = analyse(st);
   const d = st.view.digits || 4, f = (x) => fmt(x, d);
-  const su = st.units.stress, eu = STRAIN_LABEL[st.units.strain], g = shearFactor(st);
+  const su = st.units.stress, eu = STRAIN_LABEL[st.units.strain];
   const refS = r.S ? frob(r.S) : 1, refE = r.E ? frob(r.E) : 1;
   const snap = (x, ref) => (x !== null && Math.abs(x) <= 1e-12 * (ref || 1) ? 0 : x);
   // The results table's cells: signed and magnitude values, stress and strain.
@@ -1088,10 +1100,7 @@ function beamdswitchReport(st) {
   const conv = st.conventions.shear2D === "A" ? "A (τ positive plotted down)" : "B (τ positive plotted up)";
   const axisName = (a) => (["1", "2", "3"].includes(a) ? `principal axis ${a}` : a);
   const stressDriven = r.stressDriven, drivenRes = stressDriven ? r.stress : r.strain;
-  const shearName = (n) => (g === 2 ? `γ${n}` : `ε${n}`);
-  const names = stressDriven ? ["σx", "σy", "σz", "τxy", "τyz", "τzx"] : ["εx", "εy", "εz", shearName("xy"), shearName("yz"), shearName("zx")];
-  const Tin = stressDriven ? r.S : r.E;
-  const comps = [Tin[0][0], Tin[1][1], Tin[2][2], Tin[0][1], Tin[1][2], Tin[0][2]].map((x, i) => (i > 2 && !stressDriven ? g * x : x));
+  const { names, values: comps } = inputComponents(st, r);
   const shown = comps.map(stressDriven ? S : E);
   const nonZero = names.map((n, i) => [n, shown[i]]).filter(([, t]) => t !== "0");
   const inputUnit = stressDriven ? su : eu;
@@ -1100,9 +1109,7 @@ function beamdswitchReport(st) {
   const sayIn = stressDriven ? sayS : sayE;
   const mat = r.material;
   const crit = st.failure.criterion, fp = st.failure;
-  const params = crit === "tresca" || crit === "von-mises" ? `σy = ${SM(fp.sigmaY)} ${su}`
-    : crit === "rankine" ? `σt = ${SM(fp.sigmaT)} ${su}, σc = ${SM(fp.sigmaC)} ${su}`
-      : `c = ${SM(fp.c)} ${su}, φ = ${f(fp.phiDeg)}°, tension cutoff ${fp.tensionCutoff === null ? "none" : SM(fp.tensionCutoff) + " " + su}`;
+  const params = failureParams(fp, SM, f, su);
   const paramsSaid = crit === "tresca" || crit === "von-mises" ? `a yield stress of ${sayS(SM(fp.sigmaY))}`
     : crit === "rankine" ? `a tensile strength of ${sayS(SM(fp.sigmaT))} and a compressive strength of ${sayS(SM(fp.sigmaC))}`
       : `a cohesion of ${sayS(SM(fp.c))} and a friction angle of ${sayNumber(f(fp.phiDeg))} degrees`;

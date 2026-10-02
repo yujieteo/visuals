@@ -419,3 +419,23 @@ test("the page boots without a real DOM and registers its WebMCP tools", async (
   assert.equal(st.passed, st.total);
   assert.equal((await call("get_metadata", {})).schema, "mohr-visualiser");
 });
+
+test("the Markdown report and the beamdswitch deck write the same input components and failure parameters", () => {
+  const params = { tresca: "σy = 250 MPa", "von-mises": "σy = 250 MPa", rankine: "σt = ", "mohr-coulomb": "tension cutoff " };
+  for (const crit of Object.keys(params)) {
+    const s = M.presetState(1);
+    s.failure.criterion = crit;
+    const md = M.toMarkdown(s), deck = JSON.stringify(M.beamdswitchReport(s));
+    const row = md.split("\n").find((l) => l.startsWith(`| ${M.CRITERION_NAME[crit]} |`));
+    const written = row.split(" | ")[1];
+    assert.ok(written.includes(params[crit]), `${crit}: ${written}`);
+    assert.ok(deck.includes(`${M.CRITERION_NAME[crit]}, ${written}`), `${crit}: the deck names the same parameters`);
+  }
+  // Strain-driven with engineering shear: both show γ names and doubled tensor shear.
+  const s = M.presetState(8), md = M.toMarkdown(s), deck = JSON.stringify(M.beamdswitchReport(s));
+  for (const n of ["εx", "εy", "εz", "γxy", "γyz", "γzx"]) {
+    const cell = md.split("\n").find((l) => l.startsWith(`| ${n} |`));
+    assert.ok(cell, `${n} in the Markdown report`);
+    assert.ok(deck.includes(cell.replace(/ \|$/, "")), `${n}: the deck's component row matches`);
+  }
+});
