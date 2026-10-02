@@ -101,7 +101,7 @@ function addPoint(p, n, label) {
 }
 
 /* ================= curve geometry in the laboratory ================= */
-const GW = 640, GH = 420;
+const GH = 420;
 /* P¹ as a sphere: rotation about the x-axis by TILT so ∞ (north pole) leans towards the viewer. */
 const TILT = 0.42, YAW = 0.55, SC = [320, 215], SR = 170;
 function sph2scr([X0, Y0, Z]) { const X = Math.cos(YAW) * X0 - Math.sin(YAW) * Y0, Y = Math.sin(YAW) * X0 + Math.cos(YAW) * Y0; const y = Math.cos(TILT) * Y - Math.sin(TILT) * Z, z = Math.sin(TILT) * Y + Math.cos(TILT) * Z; return [SC[0] + SR * X, SC[1] - SR * z, -y]; }

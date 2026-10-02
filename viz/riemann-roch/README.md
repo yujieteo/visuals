@@ -25,7 +25,7 @@ JavaScript is off.
 | `build.mjs` | Inlines everything into `index.html` and writes `raw.json`. Never edit those two by hand. |
 | `raw.json` | Catalogue data, published as `data.json`: presets, the minimum computations and their live results, references. |
 | `AGENTS.md`, `SKILLS.md` | Notes for coding agents, and how an agent uses the page and its WebMCP tools. |
-| `tests/` | The tests, with read-only copies of beamdswitch's deck parsers and the site's template and report skeleton in `tests/fixtures/beamdswitch/`. Not ported to the site. |
+| `tests/` | The tests, with read-only copies of beamdswitch's deck parser and the site's template and report skeleton in `tests/fixtures/beamdswitch/`. Not ported to the site. |
 | `.github/workflows/ci.yml` | CI: the freshness check and the tests on every push and pull request. Not ported to the site. |
 
 Rebuild after editing anything under `src/`:

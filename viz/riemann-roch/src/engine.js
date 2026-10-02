@@ -27,7 +27,6 @@
     const s = Number(x.toPrecision(digits)).toString();
     return s.replace("-", "−");
   }
-  const binom2 = (m) => (m < 2 ? 0 : (m * (m - 1)) / 2);
   const choose = (n, k) => { if (k < 0 || k > n) return 0; let r = 1; for (let i = 1; i <= k; i++) r = (r * (n - k + i)) / i; return Math.round(r); };
   const pow = (v, e) => (e === 0 ? "" : e === 1 ? v : v + sup(e));
 
@@ -47,7 +46,6 @@
 
   /* ---------- univariate polynomials: ascending real coefficient arrays ---------- */
   const ptrim = (p) => { const q = p.slice(); while (q.length > 1 && Math.abs(q[q.length - 1]) < 1e-14) q.pop(); return q; };
-  const pdeg = (p) => { const q = ptrim(p); return q.length === 1 && q[0] === 0 ? -Infinity : q.length - 1; };
   const peval = (p, x) => p.reduceRight((acc, c) => acc * x + c, 0);
   const pevalC = (p, z) => p.reduceRight((acc, c) => cadd(cmul(acc, z), cx(c)), cx(0));
   const pmul = (p, q) => { const r = new Array(p.length + q.length - 1).fill(0); p.forEach((a, i) => q.forEach((b, j) => { r[i + j] += a * b; })); return r; };
