@@ -1311,7 +1311,7 @@ const tolWord = (t) => (/\broughly\b|\bvery roughly\b|\bsomething like\b/.test(t
 /* A claim: what is measured (kind, at which scale), and what is said about it. */
 function claim(kind, o) { return { kind, form: "prop", lag: 1, k: DEFAULTS.tailK, ...o }; }
 const SIDE_LO = /\b(downward|negative|low|lower|drops?|dips?|falls?|crash(?:es)?|bad|poor)\b/, SIDE_HI = /\b(upward|positive|high|higher|spikes?|jumps?|surges?|good)\b/;
-const LOWWORD = /\b(low|bad|poor|weak|small|slow|down|off)\b/, HIGHWORD = /\b(high|good|strong|large|big|fast|up|on)\b/;
+const LOWWORD = /\b(low|bad|poor|weak|small|slow|down|off)\b/;
 /* parse(sentence, { scale, mode }) -> { status, claims, confidence, scale, notes, cls } */
 function parse(text, opts = {}) {
   const mode = opts.mode || "continuous", raw = String(text ?? "").trim(), t0 = normaliseText(raw);
@@ -2059,17 +2059,6 @@ function adequacy(constraints, ens, basis, nonstationary) {
  * computed from the observed-scale theory itself (exact second-order statistics; block-mean distributions by the forward
  * recursion). The projected action at each scale is the minimum-KL (moment-matched) member of the chosen basis.
  * Binary field: literal decimation, keeping every other spin and summing out the rest. */
-function expectBlock(sol, d, id, w) {
-  // Expectation of a site operator under a block-mean distribution (integrated on a fine grid of the CDF).
-  const n = 400, lo = d.quantile(1e-7), hi = d.quantile(1 - 1e-7);
-  let s = 0, prev = 0;
-  for (let i = 1; i <= n; i++) {
-    const x0 = lo + (hi - lo) * (i - 1) / n, x1 = lo + (hi - lo) * i / n, c1 = d.cdf(x1), p = c1 - (i === 1 ? d.cdf(x0) : prev);
-    prev = c1;
-    s += p * opValue(id, (x0 + x1) / 2, w);
-  }
-  return s;
-}
 function exactObservables(sol, B) {
   const d = sol.block(B), v = blockCov(sol.cov, B, 0);
   const lo = (k) => Math.log(Math.max(PFLOOR, d.cdf(d.mean - k * d.sd)) / Phi(-k)), hi = (k) => Math.log(Math.max(PFLOOR, 1 - d.cdf(d.mean + k * d.sd)) / Phi(-k));
@@ -2107,7 +2096,6 @@ function marginalKL(dExact, projSol) {
   return Math.max(0, kl);
 }
 const PROJ_OK = { kl: 0.01, klBad: 0.05, rho2: 0.05, rho2Bad: 0.15, tail: 0.15, tailBad: 0.4 };
-const cltToPlain = (th, n) => cltCouplings(th, -n);
 /* A block distribution expressed in the rescaled coordinate x → s·x. */
 const scaledDist = (d, s) => ({ ...d, mean: d.mean * s, sd: d.sd * s, cdf: (x) => d.cdf(x / s), quantile: (p) => s * d.quantile(p) });
 /* The forward flow of one observed-scale theory: exact coarse observables and projected couplings at 2ⁿ steps.
