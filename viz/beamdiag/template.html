@@ -490,6 +490,10 @@ function updateSoon() {
   deckText = null;
   pending = setTimeout(() => update({ keepForm: true }), 150);
 }
+/* Apply a re-solve still waiting on paused typing, so an export or a drag starts from what was typed. */
+function flushPending() {
+  if (pending !== null) update({ keepForm: true });
+}
 
 /* Whether a solved beam's diagrams stay finite when converted to the current convention. */
 const showable = (r) => [["V", "force"], ["M", "moment"], ["v", "length"]].every(([k, q]) => Number.isFinite(show(r.extremes[k].value, q)));
@@ -954,7 +958,7 @@ function renderTable() {
 /* The deck is built only when it is downloaded, copied or shown: a fine mesh makes it large. */
 let deckText = null;
 function deck() {
-  if (pending !== null) update({ keepForm: true });
+  flushPending();
   if (deckText === null) {
     try {
       deckText = B.exportBdf(modelOf(state), { units });
@@ -1117,7 +1121,7 @@ async function pdfOf(canvas, fig) {
 
 async function saveFigure(kind) {
   const status = $("figure-status");
-  if (pending !== null) update({ keepForm: true });
+  flushPending();
   if (!result || solveError) { status.textContent = "Fix the beam first: there is no solution to save."; return; }
   status.textContent = "Drawing…";
   try {
@@ -1136,13 +1140,14 @@ async function saveFigure(kind) {
 
 /* ---------- beamdswitch deck ----------
    The report template lives in beamdswitch.js; the engine fills it from the solved beam. */
+/* The chosen preset's name, used as the title of the exported deck and hand calculations. */
+const presetTitle = () => D.presets.find((p) => p.id === state.preset)?.label ?? "";
 function reportDeck() {
   const shape = D.sections.find((x) => x.id === state.section.shape), mat = D.materials.find((x) => x.id === state.material.id);
-  const preset = D.presets.find((p) => p.id === state.preset);
   const dims = state.section.shape === "custom" ? [] : (SECTION_FIELDS[state.section.shape] || [])
     .filter(([key]) => state.section[key] != null).map(([key, label, quantity]) => [label, state.section[key], quantity]);
   return H.deck(H.beamReport(result, {
-    units, origin, at: cursor, title: preset ? preset.label : "",
+    units, origin, at: cursor, title: presetTitle(),
     section: { shape: state.section.shape, label: shape ? shape.label : state.section.shape, dims },
     material: { label: mat ? mat.label : "" },
   }));
@@ -1150,7 +1155,7 @@ function reportDeck() {
 /* A blocked download fails silently, so the page cannot fall back on its own: Copy deck is the explicit fallback. */
 function saveReport() {
   const status = $("figure-status");
-  if (pending !== null) update({ keepForm: true });
+  flushPending();
   if (!result || solveError) { status.textContent = "Fix the beam first: there is no solution to save."; return; }
   const name = "beamdiag-beamdswitch.md";
   try {
@@ -1162,7 +1167,7 @@ function saveReport() {
 }
 async function copyReport() {
   const status = $("figure-status");
-  if (pending !== null) update({ keepForm: true });
+  flushPending();
   if (!result || solveError) { status.textContent = "Fix the beam first: there is no solution to copy."; return; }
   try {
     await navigator.clipboard.writeText(reportDeck());
@@ -1269,12 +1274,11 @@ function renderHandPoint() {
   if (dv && cursor != null) box.append(frameNode(H.pointFrame(result, cursor, { units, origin, derivation: dv })));
 }
 function handMarkdown() {
-  const preset = D.presets.find((p) => p.id === state.preset);
-  return H.markdown(result, { units, origin, at: cursor, title: preset ? preset.label : "", derivation: derivation() });
+  return H.markdown(result, { units, origin, at: cursor, title: presetTitle(), derivation: derivation() });
 }
 function saveHand() {
   const status = $("hand-status");
-  if (pending !== null) update({ keepForm: true });
+  flushPending();
   if (!derivation()) { status.textContent = "Fix the beam first: there is no solution to save."; return; }
   const name = "beamdiag-hand-calculations.md";
   try {
@@ -1286,7 +1290,7 @@ function saveHand() {
 }
 async function copyHand() {
   const status = $("hand-status");
-  if (pending !== null) update({ keepForm: true });
+  flushPending();
   if (!derivation()) { status.textContent = "Fix the beam first: there is no solution to copy."; return; }
   try {
     await navigator.clipboard.writeText(handMarkdown());
@@ -1430,7 +1434,7 @@ function wire() {
   });
   for (const type of ["change", "blur"]) $("length").addEventListener(type, () => { lengthEdit = null; });
   $("origin").addEventListener("change", () => {
-    if (pending !== null) update({ keepForm: true });
+    flushPending();
     origin = $("origin").value === "mid" ? "mid" : "left";
     update();
   });
@@ -1481,7 +1485,7 @@ function wire() {
   const unitSel = $("units");
   for (const u of Object.values(B.UNIT_SYSTEMS)) unitSel.add(new Option(u.label, u.id));
   unitSel.addEventListener("change", () => {
-    if (pending !== null) update({ keepForm: true });
+    flushPending();
     units = B.UNIT_SYSTEMS[unitSel.value] || units;
     materialOptions();
     update();
