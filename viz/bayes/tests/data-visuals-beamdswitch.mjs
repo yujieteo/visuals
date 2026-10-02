@@ -1,7 +1,8 @@
 // Shared checks for this visualisation's beamdswitch deck (ported from yujieteo/site tests/data-visuals-beamdswitch.mjs).
 // The deck is parsed with beamdswitch's own parser, vendored read-only in tests/fixtures/beamdswitch/, and the folder's
-// beamdswitch.js is compared against the vendored copy of the site's templates/beamdswitch.js there.
+// beamdswitch.js is pinned by hash to the site's templates/beamdswitch.js.
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
 import { parseDeck, splitSentences } from "./fixtures/beamdswitch/deck.mjs";
@@ -11,10 +12,13 @@ export const read = (path) => readFileSync(new URL(path, root), "utf8");
 const skeleton = read("tests/fixtures/beamdswitch/report-template.md");
 export const SECTIONS = [...skeleton.matchAll(/^# (.+)$/gm)].map((m) => m[1]);
 
-// The folder's beamdswitch.js is the site's shared template, unchanged (the vendored copy in tests/fixtures/beamdswitch/).
+/* SHA-256 of yujieteo/site templates/beamdswitch.js, the site's standard report template, which the folder's
+   beamdswitch.js copies unchanged. */
+const TEMPLATE_SHA256 = "f9ce9c6eb07842a2fa50dd72c828cb53c09f412c6bb1505d825d081b5b4362c7";
 export function assertTemplateCopy(slug) {
-  assert.equal(read("beamdswitch.js"), read("tests/fixtures/beamdswitch/beamdswitch.js"),
-    `tests/fixtures/beamdswitch/beamdswitch.js and beamdswitch.js must stay identical (${slug})`);
+  const copy = read("beamdswitch.js");
+  assert.equal(createHash("sha256").update(copy).digest("hex"), TEMPLATE_SHA256,
+    `beamdswitch.js must stay identical to the site's templates/beamdswitch.js (${slug})`);
 }
 
 // The page inlines each script verbatim in its own <script id="..."> block.

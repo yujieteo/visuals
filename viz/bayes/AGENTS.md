@@ -18,7 +18,7 @@ node --test tests/bayes.test.mjs
 Before opening a pull request, run the whole suite, as CI (`.github/workflows/ci.yml`) does on every push and pull request:
 
 ```sh
-node --test 'tests/*.test.{mjs,cjs}'
+node --test 'tests/*.test.mjs'
 ```
 
 ## Porting to yujieteo/site
@@ -41,6 +41,6 @@ Change and test this repository first, then port it; the site's [add-visualizati
 - The engine (`<script id="bayes-engine">`) has no DOM, storage, clock or network use, so Node can load it.
 - The static reference-table rows are the output of `Bayes.staticRows()`; regenerate them when the engine changes (the test fails when they drift).
 - Tests use Node's built-in runner (`node --test`) only; never add Vitest, Jest, a `package.json` or another test framework.
-- `beamdswitch.js` is a verbatim copy of yujieteo/site's `templates/beamdswitch.js` and is inlined unchanged; the tests check the copy against `tests/fixtures/beamdswitch/beamdswitch.js`, and the site's `tests/beamdswitch-voice.test.mjs` checks the port. Every beamdswitch deck declares the narration voice `bf_emma` in its front matter.
+- `beamdswitch.js` is a verbatim copy of yujieteo/site's `templates/beamdswitch.js` and is inlined unchanged; the tests pin the copy's SHA-256, and the site's `tests/beamdswitch-voice.test.mjs` checks the port. Every beamdswitch deck declares the narration voice `bf_emma` in its front matter.
 - WebMCP tools stay read-only (`readOnlyHint: true`), never change the page, and keep their names equal to `webmcp_tools` in `data/visuals/bayes.yaml` in yujieteo/site.
 - `LICENSE` is MIT (Copyright (c) 2026 Yu Jie Teo), followed by the survey data's own MIT notice and a note that Kent's essay is a US government work.

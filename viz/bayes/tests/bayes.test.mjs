@@ -125,6 +125,10 @@ test("results are rounded for back-of-envelope reading", () => {
   assert.equal(B.times(3.4999999999999996), "3.5×");
   assert.equal(B.times(1.04), "1.04×");
   assert.equal(B.times(24.4), "24×");
+  // Below 10× one decimal; from 10× whole numbers with thousands separators.
+  assert.equal(B.times(1.1), "1.1×");
+  assert.equal(B.times(9.96), "10×");
+  assert.equal(B.times(1234.4), "1,234×");
   assert.equal(B.ratio(1 / 9), "1 : 9");
   assert.equal(B.ratio(37.3), "37 : 1");
   const t = B.tree(0.5, 0.75, 0.25);
@@ -293,6 +297,11 @@ test("the page boots, its WebMCP tools answer, and the deck buttons export the s
   assert.equal(unknown.calibrated, false);
   const up = await call("bayes_update", { prior_percent: 50, evidence: [{ if_true_percent: 75, if_false_percent: 25 }, { if_true_percent: 0, if_false_percent: 0 }] });
   assert.deepEqual([up.steps[0].posterior_percent, up.steps[0].prior_odds, up.steps[0].posterior_odds, up.steps[1].status], [75, "1 : 1", "3 : 1", "undetermined"]);
+  // Out-of-range or non-numeric percents are clamped to 0–100, as the page clamps its own inputs.
+  const clamped = await call("bayes_update", { prior_percent: 150, evidence: [{ if_true_percent: -5, if_false_percent: "x" }, { if_true_percent: 40, if_false_percent: 20 }] });
+  assert.deepEqual(clamped.steps.map((s) => [s.prior_percent, s.status]), [[100, "undetermined"], [null, "blocked"]]);
+  const high = await call("bayes_update", { prior_percent: -20, evidence: [{ if_true_percent: 250, if_false_percent: 50 }] });
+  assert.deepEqual([high.steps[0].prior_percent, high.steps[0].posterior_percent, high.steps[0].likelihood_ratio], [0, 0, 2]);
   // Change the hypothesis through the page's own input handler, then export.
   page.run(`document.getElementById("app").listeners.input[0]({ target: { id: "hyp", value: "The bus will arrive within 10 minutes.", dataset: {} } })`);
   await assertButtonsExport(page, "bayes", T.deck(B.report({ ...B.defaults(), hypothesis: "The bus will arrive within 10 minutes." }, B.selfTest())));

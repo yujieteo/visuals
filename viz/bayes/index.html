@@ -750,7 +750,7 @@ function ratio(o) {
   for (let n = 1; n <= 12; n++) { const m = Math.round(o * n); if (m >= 1 && m <= 99 && Math.abs(m / n - o) / o < 0.005) return `${m} : ${n}`; }
   return o >= 1 ? `${sig(o)} : 1` : `1 : ${sig(1 / o)}`;
 }
-const times = (x) => (x < 1.1 ? x.toFixed(2) : x < 10 ? String(Math.round(x * 10) / 10) : Math.round(x).toLocaleString("en-GB")) + "×";
+const times = (x) => (x < 1.1 ? x.toFixed(2) : sig(x)) + "×";
 
 /* ---------- rounding and wording ---------- */
 /* Approximate display: whole percent, with the ends shown as <1% and >99% unless exactly 0 or 1. */
@@ -989,6 +989,7 @@ root.Bayes = { KENT: D.KENT_DATA, SURVEY: D.EMPIRICAL_PHRASE_DATA, SCENARIOS: D.
 /* The page: state, rendering and events. Every number comes from Bayes (the engine above). */
 const B = self.Bayes, $ = (id) => document.getElementById(id);
 const esc = (t) => String(t ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+const clampPct = (v) => Math.min(100, Math.max(0, v));
 const reduced = () => { try { return matchMedia("(prefers-reduced-motion: reduce)").matches; } catch { return true; } };
 $("nojs").hidden = true;
 $("app").hidden = false;
@@ -1008,6 +1009,7 @@ const store = {
 let S = B.clean(store.get() || B.defaults());
 const save = () => store.set(S);
 const help = { prior: null, a: null, b: null };   // an unknown phrase awaiting a choice, per field
+const clearHelp = (...ids) => { for (const id of ids) help[id] = null; };
 const X = { phrase: "likely", value: null, filter: "all" };   // the phrase explorer
 let pending = null;   // an action awaiting confirmation
 
@@ -1019,9 +1021,9 @@ function setInput(id, v) { const c = B.cleanInput(v); if (id === "prior") S.prio
 
 /* ---------- controls ---------- */
 const PF = {
-  prior: { legend: "Before seeing any evidence, how likely is your hypothesis?", hint: "A phrase such as “unlikely” or “about even”, or a percentage." },
-  a: { legend: "If your hypothesis were true, how likely would you be to see this evidence?", hint: "Think only of the world where the hypothesis is true." },
-  b: { legend: "If your hypothesis were false, how likely would you be to see the same evidence?", hint: "If your guess were wrong, how surprising would this evidence be?" },
+  prior: { legend: "Before seeing any evidence, how likely is your hypothesis?", hint: "A phrase such as “unlikely” or “about even”, or a percentage.", slider: "Starting estimate" },
+  a: { legend: "If your hypothesis were true, how likely would you be to see this evidence?", hint: "Think only of the world where the hypothesis is true.", slider: "Chance of the evidence if the hypothesis is true" },
+  b: { legend: "If your hypothesis were false, how likely would you be to see the same evidence?", hint: "If your guess were wrong, how surprising would this evidence be?", slider: "Chance of the evidence if the hypothesis is false" },
 };
 function pfield(id) {
   return `<fieldset class="pf" id="${id}-pf"><legend>${PF[id].legend}</legend><p class="hint" id="${id}-hint">${PF[id].hint}</p>
@@ -1029,17 +1031,17 @@ function pfield(id) {
 <div class="field"><label for="${id}-num">Percent</label><span class="numwrap"><input id="${id}-num" class="num" type="number" inputmode="decimal" min="0" max="100" step="any" data-pf-num="${id}"><span aria-hidden="true">%</span></span></div></div>
 <div class="pf-help" id="${id}-help" hidden></div>
 <div class="scale"><div class="band" id="${id}-band" aria-hidden="true"></div>
-<input type="range" class="slider" id="${id}-range" min="0" max="100" step="1" data-pf-range="${id}" aria-label="${id === "prior" ? "Starting estimate" : id === "a" ? "Chance of the evidence if the hypothesis is true" : "Chance of the evidence if the hypothesis is false"}, percent" aria-describedby="${id}-basis"></div>
+<input type="range" class="slider" id="${id}-range" min="0" max="100" step="1" data-pf-range="${id}" aria-label="${PF[id].slider}, percent" aria-describedby="${id}-basis"></div>
 <div class="ends" aria-hidden="true"><span>0%</span><span>50%</span><span>100%</span></div>
 <p class="basis" id="${id}-basis"></p><p class="legend-line" id="${id}-legend"></p><div id="${id}-custom"></div></fieldset>`;
 }
-$("prior-slot").innerHTML = pfield("prior");
-$("a-slot").innerHTML = pfield("a");
-$("b-slot").innerHTML = pfield("b");
+for (const id of Object.keys(PF)) $(`${id}-slot`).innerHTML = pfield(id);
 $("phrase-list").innerHTML = B.LIST.map((ph) => `<option value="${esc(ph.label)}"></option>`).join("");
 $("examples").innerHTML = B.SCENARIOS.map((s) => `<button type="button" class="chip" data-act="example" data-id="${s.id}" aria-pressed="false">${s.chip}</button>`).join("");
 
 let force = false;
+/* Run a render or commit that also overwrites the focused control, as after an action that replaces its value. */
+const forced = (fn) => { force = true; fn(); force = false; };
 const setVal = (el, v) => { if (el && (force || document.activeElement !== el) && el.value !== String(v)) el.value = v; };
 /* Rebuild a block only when its content changes; when that removes the focused control, focus its replacement. */
 function block(el, html) {
@@ -1051,7 +1053,7 @@ function block(el, html) {
 }
 
 /* ---------- small visuals: positions are percentages, so they follow any container width ---------- */
-const P = (v) => `${Math.max(0, Math.min(100, v))}%`;
+const P = (v) => `${clampPct(v)}%`;
 function band(ph, extra = "") {
   if (!ph) return `<span class="b-rule"></span>${extra}`;
   const k = ph.kent, sv = ph.survey;
@@ -1272,7 +1274,7 @@ function choosePhrase(id, text) {
 function setValue(id, v) {
   const inp = getInput(id);
   if (!inp || !Number.isFinite(v)) return;
-  setInput(id, { ...inp, value: Math.min(100, Math.max(0, v)) });
+  setInput(id, { ...inp, value: clampPct(v) });
   commit();
 }
 function confirmThen(message, yes, run, from) {
@@ -1289,8 +1291,8 @@ function addEvidence(x) {
   if (S.evidence.length >= B.MAX_EVIDENCE) return;
   S.evidence.push(x || { text: "", a: { value: 50 }, b: { value: 50 } });
   S.sel = S.evidence.length - 1;
-  help.a = help.b = null;
-  force = true; commit(); force = false;
+  clearHelp("a", "b");
+  forced(commit);
   $("ev-text").focus();
   if (!x) $("ev-text").select?.();
 }
@@ -1300,12 +1302,12 @@ app.addEventListener("click", (ev) => {
   const t = ev.target.closest("[data-act]");
   if (!t) return;
   const act = t.dataset.act, id = t.dataset.pf;
-  if (act === "example") return confirmThen("Replace your scenario with this example?", "Replace", () => { S = B.fromExample(t.dataset.id); help.prior = help.a = help.b = null; force = true; commit(); force = false; t.focus(); }, t);
+  if (act === "example") return confirmThen("Replace your scenario with this example?", "Replace", () => { S = B.fromExample(t.dataset.id); clearHelp("prior", "a", "b"); forced(commit); t.focus(); }, t);
   if (act === "pick") {
     const ph = B.PHRASES.get(t.dataset.ph);
     if (B.numbered(ph)) { help[id] = null; setInput(id, { phrase: ph.key }); }
     else help[id] = { kind: "possible", text: ph.label, sugg: [] };
-    force = true; commit(); force = false;
+    forced(commit);
     $(`${id}-phrase`).value = ph.label;
     return $(`${id}-phrase`).focus();
   }
@@ -1317,12 +1319,12 @@ app.addEventListener("click", (ev) => {
     return $(`${id}-num`).focus();
   }
   if (act === "reset-value") { const inp = getInput(id); setInput(id, { ...inp, value: null }); commit(); return $(`${id}-range`).focus(); }
-  if (act === "edit") { S.sel = +t.dataset.i; help.a = help.b = null; force = true; commit(); force = false; return $("ev-text").focus(); }
+  if (act === "edit") { S.sel = +t.dataset.i; clearHelp("a", "b"); forced(commit); return $("ev-text").focus(); }
   if (act === "del") {
     const i = +t.dataset.i;
     S.evidence.splice(i, 1);
     if (S.sel >= i && S.sel > 0) S.sel--;
-    force = true; commit(); force = false;
+    forced(commit);
     const next = $("cards").querySelector(`[data-act="edit"][data-i="${Math.min(i, S.evidence.length - 1)}"]`);
     return (next || $("add")).focus();
   }
@@ -1350,10 +1352,9 @@ app.addEventListener("click", (ev) => {
 $("reset").addEventListener("click", (ev) => confirmThen("Reset discards your scenario and restores the first example.", "Reset", () => {
   store.clear();
   S = B.defaults();
-  help.prior = help.a = help.b = null;
+  clearHelp("prior", "a", "b");
   X.phrase = "likely"; X.value = null;
-  force = true; render(); force = false;
-  store.clear();
+  forced(render);
   $("hyp").focus();
 }, ev.currentTarget));
 
@@ -1373,7 +1374,7 @@ app.addEventListener("input", (ev) => {
   }
   if (t.id === "x-range" || t.id === "x-num") {
     if (t.value.trim() === "" || !Number.isFinite(+t.value)) return;
-    X.value = Math.min(100, Math.max(0, +t.value));
+    X.value = clampPct(+t.value);
     return render();
   }
 });
@@ -1381,13 +1382,13 @@ app.addEventListener("change", (ev) => {
   const t = ev.target, d = t.dataset;
   if (d.pfPhrase) return choosePhrase(d.pfPhrase, t.value);
   /* A blank or unusable number snaps back to the current value; anything else is kept within 0–100. */
-  if (d.pfNum || d.pfOwn || t.id === "x-num") { force = true; render(); force = false; return; }
+  if (d.pfNum || d.pfOwn || t.id === "x-num") { forced(render); return; }
   if (t.id === "show-range") { S.showRange = t.checked; return commit(); }
   if (t.id === "x-phrase") {
     const ph = B.lookup(t.value);
     if (ph) { X.phrase = ph.key; X.value = null; $("x-status").textContent = ""; }
     else $("x-status").textContent = t.value.trim() ? `“${t.value.trim()}” is not in either source, so it has no calibration. Pick a listed phrase, or type it into an estimate and choose “Use my own meaning”.` : "";
-    force = true; render(); force = false;
+    forced(render);
   }
 });
 app.addEventListener("keydown", (ev) => {
@@ -1396,7 +1397,7 @@ app.addEventListener("keydown", (ev) => {
   /* Shift + arrow moves a probability slider in steps of 10. */
   if (t.type === "range" && ev.shiftKey && /^Arrow(Left|Right|Up|Down)$/.test(ev.key)) {
     ev.preventDefault();
-    const v = Math.min(100, Math.max(0, Math.round(+t.value) + (/Left|Down/.test(ev.key) ? -10 : 10)));
+    const v = clampPct(Math.round(+t.value) + (/Left|Down/.test(ev.key) ? -10 : 10));
     t.value = v;
     t.dispatchEvent(new Event("input", { bubbles: true }));
   }
@@ -1452,7 +1453,7 @@ const tools = [
   { name: "bayes_update", description: "Update a starting probability with one or more pieces of evidence, each given as the percent chance of seeing it if the hypothesis is true and if it is false. Each posterior becomes the next prior. Same maths as the page.", annotations: ro,
     inputSchema: { type: "object", properties: { prior_percent: { type: "number", minimum: 0, maximum: 100 }, evidence: { type: "array", minItems: 1, maxItems: 50, items: { type: "object", properties: { if_true_percent: { type: "number", minimum: 0, maximum: 100 }, if_false_percent: { type: "number", minimum: 0, maximum: 100 } }, required: ["if_true_percent", "if_false_percent"], additionalProperties: false } } }, required: ["prior_percent", "evidence"], additionalProperties: false },
     async execute(i) {
-      const f = (v) => Math.min(100, Math.max(0, Number(v) || 0)) / 100;
+      const f = (v) => clampPct(Number(v) || 0) / 100;
       return result({ steps: B.chain(f(i.prior_percent), (i.evidence || []).map((e) => ({ a: f(e.if_true_percent), b: f(e.if_false_percent) }))).map(view) });
     } },
 ];
@@ -1461,7 +1462,7 @@ const mc = (typeof document !== "undefined" && document.modelContext) || (typeof
 if (mc && typeof mc.registerTool === "function") for (const t of tools) mc.registerTool(t);
 
 $("tables").open = false;
-force = true; render(); force = false;
+forced(render);
 })();
 </script>
 </body>
