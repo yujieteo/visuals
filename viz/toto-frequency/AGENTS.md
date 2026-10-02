@@ -16,7 +16,7 @@ The standalone repository [yujieteo/toto-frequency](https://github.com/yujieteo/
 | `beamdswitch.js` | The site's standard beamdswitch report template, an unchanged copy of `templates/beamdswitch.js` |
 | `build.py` | Counts the draws, writes `raw.json` (published as `data.json`) and rewrites the dataset, template and report blocks of `index.html` |
 
-Tests live in `tests/` of yujieteo/toto-frequency: `tests/toto-frequency-beamdswitch.test.mjs` and `tests/test_toto_frequency.py`.
+Tests live in `tests/` of yujieteo/toto-frequency: `tests/toto-frequency-beamdswitch.test.mjs`, `tests/site-theme.test.mjs` and `tests/test_toto_frequency.py`.
 
 ## Build, test and verify
 
