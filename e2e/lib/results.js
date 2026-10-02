@@ -3,8 +3,8 @@
 // Each test entry point names its run and empties its own files when it
 // starts, so a rerun into the same folder replaces that run's results without
 // touching the other entry points'. A sharded run empties only its own shard's
-// file; an unsharded run empties every shard's file of the run. Scripts turn the failures into
-// manifest findings and FINDINGS.md.
+// file; an unsharded run empties every shard's file of the run. Scripts turn
+// the failures into manifest findings and FINDINGS.md.
 import { appendFileSync, mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
