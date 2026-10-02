@@ -5,7 +5,9 @@ published at <https://teoyujie.org/visuals/frequency-response/data.json>.
 
 ## Where changes go
 
-The standalone repository [yujieteo/frequency-response](https://github.com/yujieteo/frequency-response) is where this visualisation and its tests develop and where CI runs them. `visuals/frequency-response/` in [yujieteo/site](https://github.com/yujieteo/site/tree/main/visuals/frequency-response) is a port of its page files, refreshed when the visualisation is updated, and the site runs no logic tests for it. Porting copies the folder minus `tests/` and `.github/`. `README.md` lists every file here and its role.
+The standalone repository [yujieteo/frequency-response](https://github.com/yujieteo/frequency-response) is where this visualisation and its tests develop and where CI runs them. `visuals/frequency-response/` in [yujieteo/site](https://github.com/yujieteo/site/tree/main/visuals/frequency-response) is a port of its page files, refreshed when the visualisation is updated, and the site runs no logic tests for it. Porting copies the folder minus `tests/` and `.github/`. The copy is byte for byte, so AGENTS.md and SKILLS.md must not link into either. `README.md` lists every file here and its role.
+
+Change and test here first, then port. The site's [add-visualization playbook](https://github.com/yujieteo/site/blob/main/skills/playbooks/add-visualization.md) owns the procedure: run this repository's tests, an end-to-end check of the page in a browser and the first no-mistakes pass here; then port the page files into yujieteo/site and run the second pass there with site-level tests only. Logic and browser tests stay here, never in the site; time every test you add (`time node --test tests/<file>`).
 
 ## Build, test and verify
 
@@ -25,7 +27,7 @@ node --test 'tests/*.test.{mjs,cjs}'
 
 - `raw.json`: published metadata (scope, conventions, assumptions, sources, presets, threshold defaults) and the default example; it must equal the engine's `META` and `defaultInputs()`, and the test fails when it drifts.
 - Inside `index.html`: `<script id="fr-engine">` (pure core, `self.FreqResponse`) and `<script id="fr-ui">` (page, plots and WebMCP tools).
-- `tests/frequency-response.test.mjs` in yujieteo/site extracts the engine from `index.html`, runs the in-page self-tests and further analytic checks, and exercises the WebMCP tools.
+- `tests/frequency-response.test.mjs` extracts the engine from `index.html`, runs the in-page self-tests and further analytic checks, and exercises the WebMCP tools.
 
 ## Conventions
 
