@@ -124,3 +124,43 @@ test("the page inlines the site's shared beamdswitch template unchanged", () => 
   assert.ok(inlined, "index.html has the fbd-beamdswitch script");
   assert.equal(inlined[1], copy, "index.html inlines beamdswitch.js unchanged");
 });
+
+test("long schedules split over slides of seven rows, each row its own body's or load's", () => {
+  // Nine joints and nine loads: two joint slides and two load slides, numbered "(1 of 2)" and "(2 of 2)".
+  const d = structuredClone(DOCS[EXAMPLES[0].id]);
+  const j0 = d.geometry.joints[0];
+  for (let k = 0; d.geometry.joints.length < 9; k++) d.geometry.joints.push({ ...j0, id: `Z${k}`, x: j0.x + 10 * (k + 1) });
+  const l0 = d.geometry.loads[0];
+  for (let k = 0; d.geometry.loads.length < 9; k++) d.geometry.loads.push({ ...structuredClone(l0), id: `L${k + 100}` });
+  const md = deckFor(d);
+  checkDeck(md, "nine joints and loads");
+  assert.ok(md.includes("(1 of 2)\n") && md.includes("(2 of 2)\n"), "paged titles");
+  const loadRows = F.loadRows(d);
+  const loadTitle = md.match(/^## Loads: .*\(2 of 2\)$/m)[0].slice(3);
+  assert.deepEqual(tableRows(section(md, loadTitle)), F.mdTable(["ID", "Type", "Style", "Label", "Magnitude", "Direction", "Position"], loadRows.slice(7)).trim().split("\n").slice(2));
+  // The takeaway key and its narration say the same counts.
+  const report = F.beamdswitchReport(d), last = report.checks.at(-1);
+  assert.ok(last.narration.endsWith(last.key), last.narration);
+});
+
+test("a resize before boot queues no draw, so draw never runs before the toolbar exists", () => {
+  // Regression: technical-e2e saw "Cannot set properties of null (setting 'disabled') at draw" on
+  // chromium-mobile when a resize during loading drew before boot() built the Undo button.
+  const frames = [], listeners = {};
+  const p = standIn({ globals: {
+    localStorage: { getItem: () => null, setItem() {} }, innerWidth: 800, innerHeight: 600, confirm: () => true, CSS: { escape: (s) => s },
+    requestAnimationFrame: (cb) => frames.push(cb), addEventListener: (type, fn) => { listeners[type] = fn; },
+  } });
+  for (const m of html.matchAll(/<script\b(?![^>]*application\/json)([^>]*)>([\s\S]*?)<\/script>/g)) {
+    if (!/id="fbd-start"/.test(m[1])) vm.runInContext(m[2], p.context);
+  }
+  listeners.resize();
+  assert.equal(frames.length, 0, "no draw is queued before boot");
+  p.context.FBDBoot();
+  assert.ok(frames.length > 0, "boot queues the first draw");
+  const queued = frames.length;
+  frames.splice(0).forEach((cb) => cb());
+  listeners.resize();
+  assert.equal(frames.length, 1, "after boot a resize queues a draw");
+  assert.ok(queued >= 1);
+});

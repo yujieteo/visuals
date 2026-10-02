@@ -1484,19 +1484,23 @@ function loadWords(doc, l) {
   return `${cap(KIND_WORDS[l.kind])} ${l.id}${label ? `, labelled ${label}` : ""}: ${l.style === "reaction" ? "a reaction" : "applied"}, ${mag}, ${dir}, ${where}.`;
 }
 
-/* beamdswitchReport(doc) returns the report object that Beamdswitch.deck writes as a deck. */
-function beamdswitchReport(doc) {
+/* What a report's sections share: the drawing's parts, split by role, and its display units. */
+function reportContext(doc) {
   const g = doc.geometry, u = doc.view.units, t = doc.view.triad, U = u.length;
   const title = String(doc.title || "Untitled drawing").replace(/\s+/g, " ").trim();
   const applied = g.loads.filter((l) => l.style !== "reaction"), reactions = g.loads.filter((l) => l.style === "reaction");
   const members = g.bodies.filter((b) => b.type !== "line"), lines = g.bodies.filter((b) => b.type === "line");
   const dims = lines.filter((b) => b.role === "dimension");
   const [a, b] = t.labels.map(F.plainLabel);
-  const table = (head, rows) => F.mdTable(head, rows).trim();
-  const unitsLine = `Lengths in ${u.length}, forces in ${u.force}, moments in ${u.moment} and distributed loads in ${u.distributed} unless a load sets its own unit.`;
-  const roundTrip = F.parseJSON(F.serialize(doc)), same = !roundTrip.errors.length && F.serialize(roundTrip.doc) === F.serialize(doc);
+  return { g, u, t, U, title, applied, reactions, members, dims, a, b };
+}
+const table = (head, rows) => F.mdTable(head, rows).trim();
 
-  const setup = [
+/* Set-up: the drawing as a picture, its axes, and schedules of its bodies and joints. */
+function setupFrames(doc, { g, u, t, U, title, applied, reactions, members, a, b }) {
+  const unitsLine = `Lengths in ${u.length}, forces in ${u.force}, moments in ${u.moment} and distributed loads in ${u.distributed} unless a load sets its own unit.`;
+  const bodyRows = F.bodyRows(doc);
+  return [
     {
       title: `The drawing: ${count(members.length, "member", "members")}, ${count(g.loads.length, "load", "loads")} and ${count(g.supports.length, "support", "supports")}`,
       body: [`![${title.replace(/[[\]]/g, "")}](${F.svgDataUri(F.exportSVG(doc, { background: "white" }))})`, "", `- ${unitsLine}`, "- Arrow lengths are schematic, not proportional to magnitude."].join("\n"),
@@ -1511,7 +1515,7 @@ function beamdswitchReport(doc) {
       narration: `Angles are measured from the ${sayLabel(a)} axis towards the ${sayLabel(b)} axis, which is ${t.ySense > 0 ? "counter-clockwise" : "clockwise"} on the page, and the ${sayLabel(a)} axis is turned ${sayAngle(t.rotation)} from the page's horizontal. ` +
         `Positive moments turn ${t.ySense > 0 ? "counter-clockwise" : "clockwise"}. Positions are read from the axes origin.`,
     },
-    ...paged(g.bodies.map((x, i) => [x, F.bodyRows(doc)[i]]), (page, part) => ({
+    ...paged(g.bodies.map((x, i) => [x, bodyRows[i]]), (page, part) => ({
       title: `Bodies, lengths in ${U}${part}`,
       body: table(["ID", "Type", "Label", "Joints", "Size", "Angle"], page.map(([, row]) => row)),
       narration: page.length ? page.map(([x]) => `Body ${x.id} is ${bodyWords(doc, x)}.`).join(" ") : "The drawing has no bodies yet.",
@@ -1522,8 +1526,11 @@ function beamdswitchReport(doc) {
       narration: page.length ? page.map((j) => `Joint ${j.id} is at ${say(j.x - t.x, "length", U)} along ${sayLabel(a)} and ${say(j.y - t.y, "length", U)} along ${sayLabel(b)}.`).join(" ") : "The drawing has no joints yet.",
     })),
   ];
+}
 
-  const method = [
+/* Method: how the drawing stores loads; there is no solver, so no equations. */
+function methodFrames() {
+  return [
     {
       title: "Loads are data, not pictures: there is no solver",
       body: [
@@ -1537,9 +1544,13 @@ function beamdswitchReport(doc) {
         "There is no solver, so the reactions are drawn as the person drew them rather than computed.",
     },
   ];
+}
 
-  const results = [
-    ...paged(g.loads.map((l, i) => [l, F.loadRows(doc)[i]]), (page, part) => ({
+/* Results: schedules of the loads, supports and centre-of-gravity markers. */
+function resultFrames(doc, { g, applied, reactions }) {
+  const loadRows = F.loadRows(doc);
+  return [
+    ...paged(g.loads.map((l, i) => [l, loadRows[i]]), (page, part) => ({
       title: `Loads: ${count(applied.length, "applied load", "applied loads")} and ${count(reactions.length, "reaction", "reactions")}${part}`,
       body: table(["ID", "Type", "Style", "Label", "Magnitude", "Direction", "Position"], page.map(([, row]) => row)),
       notes: "Blank values are shown as —. Directions are measured from the axes' first axis.",
@@ -1556,8 +1567,13 @@ function beamdswitchReport(doc) {
       narration: page.map((m) => `Marker ${m.id} is a centre of gravity ${placeWords(doc, m.at)}.`).join(" "),
     })) : []),
   ];
+}
 
-  const checks = [
+/* Checks: what the dimension lines measure, the save-and-reload round trip and the takeaway. */
+function checkFrames(doc, { g, U, applied, reactions, members, dims }) {
+  const roundTrip = F.parseJSON(F.serialize(doc)), same = !roundTrip.errors.length && F.serialize(roundTrip.doc) === F.serialize(doc);
+  const takeaway = `${count(applied.length, "applied load", "applied loads")} and ${count(reactions.length, "reaction", "reactions")} on ${count(members.length, "member", "members")}, held by ${count(g.supports.length, "support", "supports")}. The reactions are drawn, not computed.`;
+  return [
     {
       title: dims.length ? `Dimension lines measure: ${dims.map((x) => F.formatQuantity(F.memberLength(doc, x), "length", U)).join(", ")}` : "No dimension lines drawn",
       body: dims.length ? dims.map((x) => `- ${x.id}${x.label ? ` (${F.htmlLabel(x.label)})` : ""}: ${F.formatQuantity(F.memberLength(doc, x), "length", U)} between ${x.joints.join(" and ")}`).join("\n") : "- The drawing has no dimension lines.",
@@ -1570,11 +1586,16 @@ function beamdswitchReport(doc) {
     },
     {
       title: "Takeaway",
-      key: `${count(applied.length, "applied load", "applied loads")} and ${count(reactions.length, "reaction", "reactions")} on ${count(members.length, "member", "members")}, held by ${count(g.supports.length, "support", "supports")}. The reactions are drawn, not computed.`,
-      narration: `This free body diagram shows ${count(applied.length, "applied load", "applied loads")} and ${count(reactions.length, "reaction", "reactions")} on ${count(members.length, "member", "members")}, held by ${count(g.supports.length, "support", "supports")}. The reactions are drawn, not computed.`,
+      key: takeaway,
+      narration: `This free body diagram shows ${takeaway}`,
     },
   ];
+}
 
+/* beamdswitchReport(doc) returns the report object that Beamdswitch.deck writes as a deck. */
+function beamdswitchReport(doc) {
+  const c = reportContext(doc), { g, title } = c;
+  const setup = setupFrames(doc, c), method = methodFrames(), results = resultFrames(doc, c), checks = checkFrames(doc, c);
   return {
     meta: { title: `Free body diagram: ${title}`, subtitle: `${count(g.loads.length, "load", "loads")} and ${count(g.supports.length, "support", "supports")}, drawn to scale` },
     notes: "Drawn with FBD Drawer. There is no solver: reactions are drawn, not computed.",
@@ -1684,8 +1705,10 @@ function findAny(id) {
 }
 
 /* ---------- rendering ---------- */
-let raf = 0;
-function schedule() { if (!raf) raf = requestAnimationFrame(draw); }
+let raf = 0, booted = false;
+/* A draw needs the toolbar that boot() builds (its Undo and Redo buttons), so draws asked for
+   before boot (a resize while the page is still loading) wait for boot's own first draw. */
+function schedule() { if (booted && !raf) raf = requestAnimationFrame(draw); }
 function refresh(force = false) { schedule(); panel(force); }
 function draw() {
   raf = 0;
@@ -2292,6 +2315,7 @@ function toast(msg, ms = 2600) { const t = $("toast"); t.textContent = msg; t.hi
 window.addEventListener("resize", () => { measure(); schedule(); });
 function boot() {
   buildToolbar(); wireToolbar();
+  booted = true;
   const restored = restore();
   measure();
   if (!restored) fit();
