@@ -298,9 +298,9 @@ function profiniteFig(sel) {
   }
   for (const [m, A] of Object.entries(nodes)) {
     const M = +m, on = sel === M;
-    b += `<g data-q="${M}" style="cursor:pointer">${circ(A[0], A[1], 26, "", `style="fill:${on ? "var(--accent)" : "var(--panel)"};stroke:var(--fg)" stroke-width="1.2"`)}`;
+    b += `<g data-q="${M}" style="cursor:pointer">${circ(A[0], A[1], 26, "", `style="fill:${on ? "var(--fg)" : "var(--panel)"};stroke:var(--fg)" stroke-width="1.2"`)}`;
     const rr = 15;
-    for (let k = 0; k < M; k++) { const a = -Math.PI / 2 + (TAU * k) / M; b += circ(A[0] + rr * Math.cos(a), A[1] + rr * Math.sin(a), 2.4, "", `style="fill:${on ? "var(--on-accent)" : sheetVar(k)}"`); }
+    for (let k = 0; k < M; k++) { const a = -Math.PI / 2 + (TAU * k) / M; b += circ(A[0] + rr * Math.cos(a), A[1] + rr * Math.sin(a), 2.4, "", `style="fill:${on ? "var(--bg)" : sheetVar(k)}"`); }
     b += txt(A[0] + 30, A[1] + 5, `ℤ/${M}`, "sv-label") + "</g>";
   }
   b += txt(10, h - 8, "degree-n covers of the cylinder, n | 12", "sv-small ui-t");

@@ -103,7 +103,9 @@ function applyTheme(t) {
   if (t === "light" || t === "dark") d.setAttribute("data-theme", t); else d.removeAttribute("data-theme");
   $("theme-toggle").textContent = `Theme: ${t || "auto"}`;
 }
-function cycleTheme() { const cur = store.get("theme") || "auto", next = { auto: "light", light: "dark", dark: "auto" }[cur] || "auto"; store.set("theme", next); applyTheme(next === "auto" ? "" : next); }
+// The theme is the site's shared choice (localStorage "theme"), so one setting holds across the site and every visual.
+function siteTheme() { try { const t = localStorage.getItem("theme"); return t === "light" || t === "dark" ? t : ""; } catch { return ""; } }
+function cycleTheme() { const next = { "": "light", light: "dark", dark: "" }[siteTheme()]; try { if (next) localStorage.setItem("theme", next); else localStorage.removeItem("theme"); } catch { /* storage blocked */ } applyTheme(next); }
 
 /* ---------- view toggle ---------- */
 function setView(v) {
@@ -323,7 +325,7 @@ function wire() {
 function init() {
   $("machine-perm").innerHTML = MACH_OPTIONS.map((o) => `<option ${o === MACH.perm ? "selected" : ""}>${o}</option>`).join("");
   $("ss-p").innerHTML = [5, 7, 11, 13, 17, 19, 23, 29, 31].map((p) => `<option ${p === CP.ep ? "selected" : ""}>${p}</option>`).join("");
-  applyTheme(store.get("theme") === "light" || store.get("theme") === "dark" ? store.get("theme") : "");
+  applyTheme(siteTheme());
   wire();
   renderOpening(); renderGallery(); renderLab(); renderMachine(); renderSurfaces(); renderElliptic(); renderCharp(); renderArith(); renderProfinite(); renderDessin(); renderPuzzles(); renderSummary();
   for (const d of document.querySelectorAll("details.gal")) d.addEventListener("toggle", () => { const f = d.querySelector("[data-galfig]"); if (d.open && f && !f.innerHTML) f.innerHTML = GALLERY.find((g) => g.id === d.dataset.gal).pic(); });

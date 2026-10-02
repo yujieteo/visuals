@@ -9,7 +9,8 @@ inverse limit of all of them.
 
 `index.html` is one self-contained file with no network requests (a
 Content-Security-Policy forbids them). It works from `file://` and offline, has
-light and dark themes (following the system, or chosen with the Theme button),
+light and dark themes (following the system, or the reader's site-wide choice in
+`localStorage` `theme`, which the Theme button also sets),
 respects reduced motion (animations jump to their end state), and keeps the
 dictionary, the Szamuely concept map and the results table when JavaScript is off.
 

@@ -278,7 +278,7 @@ function abelianGridFig(g, n) {
 }
 function fpPointsFig(a, b0, p) {
   const w = 300, h = 300, cell = 240 / p;
-  let b = `<rect x="40" y="20" width="${n1(cell * p)}" height="${n1(cell * p)}" style="fill:none;stroke:var(--rule)"/>`;
+  let b = `<rect x="40" y="20" width="${n1(cell * p)}" height="${n1(cell * p)}" style="fill:none;stroke:var(--border)"/>`;
   for (let x = 0; x < p; x++) for (let y = 0; y < p; y++) if (E.mod(y * y - (x * x * x + a * x + b0), p) === 0) b += circ(40 + (x + 0.5) * cell, 20 + (p - y - 0.5) * cell, Math.max(2, cell * 0.28), "", 'style="fill:var(--alg)"');
   b += txt(40, h - 18, `points of ${curveName(a, b0)} in 𝔽${E.sub(p)}², plus O`, "sv-small ui-t");
   return svg(w, h, b, "The affine points of the curve over the finite field");
