@@ -65,3 +65,13 @@ test("a selected item in the lane shown leads the results, and the deck ends on 
   assert.ok(html.includes(R.CLAIM));
   assert.match(deckFor(), new RegExp(`::: key\\n${R.CLAIM.replace(/\./g, "\\.")}\\n:::`));
 });
+
+test("the set-up table and the periods slide span each lane from its earliest start to its latest end", () => {
+  const md = deckFor();
+  for (const lane of LANES) {
+    const its = ROWS.filter((r) => r.lane === lane);
+    const from = its.map((r) => r.start).reduce((a, b) => (a < b ? a : b)), to = its.map((r) => r.end).reduce((a, b) => (a > b ? a : b));
+    assert.ok(md.includes(`| ${lane} | ${its.length} | ${from} to ${to} |`), `${lane}: set-up row`);
+  }
+  assert.match(md, /## 6 alleged periods, from 2009-07-01 to 2023-06-30\n/);
+});

@@ -19,11 +19,6 @@ const siteRepo = process.env.SITE_REPO || new URL("../../site/", import.meta.url
 const SITE_TEMPLATE = `${siteRepo.replace(/\/$/, "")}/templates/beamdswitch.js`;
 const haveSite = existsSync(SITE_TEMPLATE);
 
-// The copy matches a site checkout's templates/beamdswitch.js.
-function assertSiteTemplate(copy, sitePath, what) {
-  assert.equal(copy, readFileSync(sitePath, "utf8"), `the site's templates/beamdswitch.js and ${what} must stay identical`);
-}
-
 // Every deck names its narrator, so beamdswitch never narrates in silence: a voice id such as bf_emma.
 export function assertVoice(deck, what) {
   assert.match(deck.meta.voice ?? "", /^[a-z]{2}_[a-z]+$/, `${what}: declares a voice in its front matter`);
@@ -33,7 +28,7 @@ export function assertVoice(deck, what) {
 export function assertTemplateCopy(slug) {
   const copy = read(`beamdswitch.js`);
   assert.equal(copy, read(TEMPLATE_PATH), `${TEMPLATE_PATH} and beamdswitch.js must stay identical`);
-  if (haveSite) assertSiteTemplate(copy, SITE_TEMPLATE, `beamdswitch.js`);
+  if (haveSite) assert.equal(copy, readFileSync(SITE_TEMPLATE, "utf8"), "the site's templates/beamdswitch.js and beamdswitch.js must stay identical");
 }
 
 // The page inlines each script verbatim in its own <script id="..."> block.
