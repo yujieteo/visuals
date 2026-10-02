@@ -11,7 +11,7 @@ shows the rule and a worked example when JavaScript is off.
 | `index.html` | The whole tool. `<script id="queue-time-engine">` is the pure core (`self.QueueTime`): the seeded queue simulation, wording and rounding, comparison statements, back-estimation of pace, timestamp timers, food ranges, the visible-orders estimate and the beamdswitch report. It has no DOM, storage, clock or network use. `<script id="queue-time-ui">` is the page, the remembered mode and pace preset (`localStorage`, optional) and the four read-only WebMCP tools. `<script id="beamdswitch">` is `beamdswitch.js` inlined unchanged. Edit this file directly. |
 | `beamdswitch.js` | The site's standard report template, a verbatim copy of `templates/beamdswitch.js`. |
 | `raw.json` | Catalogue data, published as `data.json`: the initial state, presets, limits, model constants and assumptions. The page never fetches it; the test says when it has drifted from the engine. |
-| `AGENTS.md` | Notes for coding agents: where changes go (the standalone repository, where this visualisation and its tests develop; yujieteo/site holds a port of the page files), how to build and test, and the conventions. |
+| `AGENTS.md` | Notes for coding agents: where changes go (the standalone repository, where this visualisation and its tests develop; yujieteo/site holds a port of the page files), how to build and test, how to port to yujieteo/site, and the conventions. |
 | `SKILLS.md` | For agents using the tool: its tasks, inputs, read-only WebMCP tools, exports and a worked example. |
 | `LICENSE` | MIT. |
 
