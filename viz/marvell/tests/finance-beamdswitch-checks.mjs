@@ -1,5 +1,4 @@
-/* Shared checks for the beamdswitch decks of the finance visualisations (airbnb, arm, marvell, panw,
-   breeden-litzenberger-density, convex-payoffs), and a small stand-in DOM to click their beamdswitch
+/* Checks for the marvell page's beamdswitch deck, and a small stand-in DOM to click its beamdswitch
    and Copy deck buttons in Node. Decks are parsed with beamdswitch's own parsers (read-only copies in
    tests/fixtures/beamdswitch/), as the site's tests do. */
 import assert from "node:assert/strict";
@@ -8,9 +7,9 @@ import { readFileSync } from "node:fs";
 import vm from "node:vm";
 import { parseDeck, splitSentences } from "./fixtures/beamdswitch/deck.mjs";
 import { parsePlot } from "./fixtures/beamdswitch/plot.mjs";
-import { assertSiteTemplate, assertVoice } from "./beamdswitch-decks.mjs";
 
 export const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
+export const TEMPLATE_PATH = "tests/fixtures/beamdswitch/beamdswitch.js";
 
 /* SHA-256 of yujieteo/site templates/beamdswitch.js, the site's standard report template. Every
    page folder carries it unchanged. Set SITE_REPO to a site checkout to compare against the file. */
@@ -21,7 +20,13 @@ export function assertTemplateCopy(slug) {
   const copy = read(`beamdswitch.js`);
   assert.equal(createHash("sha256").update(copy).digest("hex"), TEMPLATE_SHA256,
     `beamdswitch.js must stay identical to the site's templates/beamdswitch.js`);
-  if (process.env.SITE_REPO) assertSiteTemplate(copy, `${process.env.SITE_REPO}/templates/beamdswitch.js`, `beamdswitch.js`);
+  if (process.env.SITE_REPO) assert.equal(copy, readFileSync(`${process.env.SITE_REPO}/templates/beamdswitch.js`, "utf8"),
+    "the site's templates/beamdswitch.js and beamdswitch.js must stay identical");
+}
+
+/* Every deck names its narrator, so beamdswitch never narrates in silence: a voice id such as bf_emma. */
+export function assertVoice(deck, what) {
+  assert.match(deck.meta.voice ?? "", /^[a-z]{2}_[a-z]+$/, `${what}: declares a voice in its front matter`);
 }
 
 /* The page inlines each script verbatim in its own <script id="..."> block. */

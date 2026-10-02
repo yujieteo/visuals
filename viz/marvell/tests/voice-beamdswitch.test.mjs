@@ -5,7 +5,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import vm from "node:vm";
 import { parseDeck } from "./fixtures/beamdswitch/deck.mjs";
-import { TEMPLATE_PATH, assertVoice, read } from "./beamdswitch-decks.mjs";
+import { TEMPLATE_PATH, assertVoice, read } from "./finance-beamdswitch-checks.mjs";
 
 // This repository holds one page; the sweep upstream in yujieteo/visuals covers every exporting page.
 const SLUG = "marvell";
