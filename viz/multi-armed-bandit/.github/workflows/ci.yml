@@ -1,5 +1,7 @@
-# CI for the standalone multi-armed-bandit repository: this is where the visualisation and its tests develop.
-# yujieteo/visuals carries a port of the page files (viz/multi-armed-bandit/, data/multi-armed-bandit/), which yujieteo/site publishes; neither runs these tests.
+# CI for the standalone multi-armed-bandit repository: this is where the visualisation, its builder and its tests develop.
+# yujieteo/site publishes a port of the page files (visuals/multi-armed-bandit/) and runs none of these tests.
+# tests/multi-armed-bandit-page.test.mjs drives the runner's preinstalled Google Chrome headless over the DevTools protocol
+# (standing in for the technical E2E repository), so it needs no install step; it fails rather than skips when CI finds no Chrome.
 name: CI
 
 on:
@@ -15,7 +17,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+      - run: python3 build.py --verify
       - run: node --test 'tests/*.test.mjs'

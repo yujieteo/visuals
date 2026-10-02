@@ -167,8 +167,8 @@ test("a fresh session is autosaved, so a reload restores the same Thompson sampl
   const now = (fn) => { fn(); return 0; };
   await openPage(SLUG, { globals: { setTimeout: now, localStorage: { getItem: () => null, setItem: (k, v) => writes.push([k, v]), removeItem() {} } } });
   assert.ok(writes.length > 0, "the fresh session was saved");
-  const [key, stored] = writes.at(-1), r = L.parse(stored);
-  assert.equal(key, "multi-armed-bandit:v1");
+  assert.deepEqual([...new Set(writes.map(([k]) => k))].sort(), ["multi-armed-bandit:hours:v1", "multi-armed-bandit:v1"], "the experiment and the hours plan are saved under their own keys");
+  const [, stored] = writes.filter(([k]) => k === "multi-armed-bandit:v1").at(-1), r = L.parse(stored);
   assert.equal(r.error, undefined);
   const navigator = { modelContext: { registerTool: (t) => tools.push(t) }, clipboard: { writeText: async () => {} } };
   await openPage(SLUG, { globals: { navigator, localStorage: { getItem: () => stored, setItem() {}, removeItem() {} } } });
