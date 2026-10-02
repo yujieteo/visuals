@@ -64,7 +64,8 @@ python3 -m unittest discover -s tests -p 'test_*.py'
 
 Python tests validate the serialized dataset, source references, fixed
 vocabularies, speculation boundaries, reproducibility and generated HTML.
-Node tests execute filtering, matrix drilldown and detail retrieval. All are
+Node tests execute filtering, matrix drilldown, detail retrieval and the
+site-theme script that applies the reader's Light or Dark choice. All are
 included in normal CI. Invalid claim references or unflagged forecasts also
 prevent the visualization builder from rendering.
 

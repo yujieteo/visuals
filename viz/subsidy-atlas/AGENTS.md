@@ -10,7 +10,7 @@ The standalone repository [yujieteo/subsidy-atlas](https://github.com/yujieteo/s
 
 See [README.md](README.md) for the evidence rules. `author.py` is the curated data source and writes `raw.json` (published as `data.json`); `engine.js` filters and builds the beamdswitch report; `style.css` and `beamdswitch.js` (an unchanged copy of `templates/beamdswitch.js`) are inlined by `build.py` into `index.html`, which is generated. `build.py` also reads the design tokens from the site's `static/css/style.css`, so it runs only inside a yujieteo/site checkout.
 
-Tests live in `tests/` of yujieteo/subsidy-atlas: `tests/subsidy-atlas.test.cjs`, `tests/subsidy-atlas-beamdswitch.test.mjs` and `tests/test_subsidy_atlas.py`.
+Tests live in `tests/` of yujieteo/subsidy-atlas: `tests/subsidy-atlas.test.cjs`, `tests/subsidy-atlas-beamdswitch.test.mjs`, `tests/site-theme.test.mjs` and `tests/test_subsidy_atlas.py`.
 
 ## Build, test and verify
 
