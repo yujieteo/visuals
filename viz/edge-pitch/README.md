@@ -15,6 +15,7 @@ is one self-contained file with no dependencies that works offline.
 | `AGENTS.md` | Notes for coding agents: where changes go (the standalone repository, where this visualisation and its tests develop; yujieteo/site holds a port of the page files), how to build and test, and the conventions. |
 | `SKILLS.md` | For agents using the tool: its tasks, inputs, read-only WebMCP tools, exports and a worked example. |
 | `LICENSE` | MIT. |
+| `.gitignore` | Keeps Python bytecode (`__pycache__/`, `*.pyc`) and `node_modules/` out of the repository. |
 
 ```sh
 python build.py   # rebuild index.html after editing template.html, engine.js, beamdswitch.js or raw.json
