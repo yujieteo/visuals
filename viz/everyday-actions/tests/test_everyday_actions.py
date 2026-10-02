@@ -75,3 +75,35 @@ class EverydayActionsTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+sys.path.insert(0, str(ROOT))
+import build  # noqa: E402
+
+
+class BuildStagesTest(unittest.TestCase):
+    def test_activity_rows_leave_missing_sources_empty(self):
+        crosswalk = [
+            {"activity_id": "both", "activity": "Both", "match": "close", "drm_label": "Eating", "atus_codes": "11", "atus_label": "Eating"},
+            {"activity_id": "none", "activity": "Neither", "match": "none", "drm_label": "", "atus_codes": "", "atus_label": ""},
+        ]
+        drm = {"Eating": {m: "1.5" for m in build.DRM_METRICS} | {"positive_affect": "4.10", "negative_affect": "0.55"}}
+        atus = {("both", p): {"participation_rate": "0.9", "minutes_when_performed": "60", "population": p, "n_respondents": "10",
+                              "years": "2014-2016", "atus_codes": "11"} for p in build.ATUS_POPULATIONS}
+        rows, measurements = build.activity_rows(crosswalk, drm, atus)
+        self.assertEqual(rows[0]["drm_net_affect"], "3.55")
+        self.assertEqual(rows[0]["atus_participation_drm_like"], "0.9")
+        self.assertEqual((rows[0]["source_affect"], rows[0]["source_frequency"]), (build.DRM_SOURCE, build.ATUS_SOURCE))
+        self.assertTrue(all(v == "" for k, v in rows[1].items() if k not in ("activity_id", "activity", "crosswalk_match")))
+        # Seven DRM metrics plus net affect, and two ATUS metrics for each of four populations.
+        self.assertEqual(len(measurements), len(build.DRM_METRICS) + 1 + 2 * len(build.ATUS_POPULATIONS))
+        net = next(m for m in measurements if m["id"] == "drm:both:net_affect")
+        self.assertEqual((net["kind"], net["value"]), ("transformation", 3.55))
+
+    def test_replace_block_needs_exactly_one_block(self):
+        html = '<script id="report">old</script>'
+        self.assertEqual(build.replace_block(html, "report", "new"), '<script id="report">new</script>')
+        with self.assertRaises(SystemExit):
+            build.replace_block(html + html, "report", "new")
+        with self.assertRaises(SystemExit):
+            build.replace_block("<p></p>", "report", "new")

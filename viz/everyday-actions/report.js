@@ -76,7 +76,10 @@
     return `Two populations. ${(X.src === "atus" ? X : Y).short} is from ATUS 2014–2016 (${pop}). ${(X.src === "drm" ? X : Y).short} is from 909 employed women in the 2004 DRM study. Hollow points are partial crosswalk matches. ${n} activities.`;
   }
 
-  function report(DATA, view = {}) {
+  const capitalise = (s) => s[0].toUpperCase() + s.slice(1);
+
+  /* Everything the report's sections share: the view with defaults filled in, its axes and the points it plots. */
+  function reportContext(DATA, view) {
     const v = {
       x: X_KEYS.includes(view.x) ? view.x : "drm_proportion_reporting", y: Y_KEYS.includes(view.y) ? view.y : "drm_positive_affect",
       pop: POPS[view.pop] ? view.pop : "all", partial: view.partial !== false, sel: view.sel || null,
@@ -87,91 +90,104 @@
     const usesAtus = X.src === "atus" || Y.src === "atus";
     const srcs = [...new Set([X.src, Y.src])].map((s) => (s === "drm" ? "kahneman2004" : "atus2014_2016"));
     const byY = [...pts].sort((a, b) => b.y - a.y);
-    const preset = PRESETS.find((p) => p.x === v.x && p.y === v.y && (!p.pop || p.pop === v.pop));
-    const title = `${X.label} by ${Y.label}`;
+    return { DATA, v, X, Y, SOURCES, MEAS, CROSS, pts, plotted, usesAtus, srcs, byY };
+  }
 
-    const setup = [{
-      title: `The chart: ${X.short} against ${Y.short}, ${plural(pts.length, "activity", "activities")}`,
-      body: [
-        `- Horizontal axis: ${md(X.label)}.`,
-        `- Vertical axis: ${md(Y.label)}.`,
-        ...(usesAtus ? [`- ATUS population: ${md(POPS[v.pop])}.`] : []),
-        ...(mixed(v) ? [`- Partial crosswalk matches: ${v.partial ? "shown, hollow" : "hidden"}.`] : []),
-        `- ${md(provenance(v, pts.length))}`,
-      ].join("\n"),
-      notes: "Population averages describe groups. They are not recommendations for any one person.",
-      narration: `Each point is an everyday activity. Across, ${spoken(v.x)}; up, ${spoken(v.y)}. ${mixed(v) ? `The two axes come from two populations: the national time use survey, for ${say(POPS[v.pop]).toLowerCase()}, and 909 employed women in the 2004 day reconstruction study.` : X.src === "drm" ? "Both axes come from one study, 909 employed women describing a working day." : `Both axes are national time use survey estimates for ${say(POPS[v.pop]).toLowerCase()}.`} ${plural(pts.length, "activity has", "activities have")} both measures.`,
-    }];
+  /* Set-up: the two axes, the population and where the numbers come from. */
+  function setupFrames({ v, X, Y, pts, usesAtus }) {
+    return [{
+    title: `The chart: ${X.short} against ${Y.short}, ${plural(pts.length, "activity", "activities")}`,
+    body: [
+      `- Horizontal axis: ${md(X.label)}.`,
+      `- Vertical axis: ${md(Y.label)}.`,
+      ...(usesAtus ? [`- ATUS population: ${md(POPS[v.pop])}.`] : []),
+      ...(mixed(v) ? [`- Partial crosswalk matches: ${v.partial ? "shown, hollow" : "hidden"}.`] : []),
+      `- ${md(provenance(v, pts.length))}`,
+    ].join("\n"),
+    notes: "Population averages describe groups. They are not recommendations for any one person.",
+    narration: `Each point is an everyday activity. Across, ${spoken(v.x)}; up, ${spoken(v.y)}. ${mixed(v) ? `The two axes come from two populations: the national time use survey, for ${say(POPS[v.pop]).toLowerCase()}, and 909 employed women in the 2004 day reconstruction study.` : X.src === "drm" ? "Both axes come from one study, 909 employed women describing a working day." : `Both axes are national time use survey estimates for ${say(POPS[v.pop]).toLowerCase()}.`} ${plural(pts.length, "activity has", "activities have")} both measures.`,
+  }];
 
-    const method = [{
-      title: "Every coordinate is a published table cell or a survey estimate",
-      body: [
-        ...srcs.map((id) => `- ${md(SOURCES[id].citation)} [Source](${SOURCES[id].url}). ${md(SOURCES[id].design)}`),
-        "- Activities are cross-walked between the two surveys; a match is close when the definitions agree, partial when the constructs differ.",
-        "- The dashed lines on the chart are the medians of the points shown.",
-      ].join("\n"),
-      notes: srcs.map((id) => md(SOURCES[id].verification || "")).filter(Boolean).join(" "),
-      narration: `${srcs.length > 1 ? "The two sources are" : "The source is"} ${list(srcs.map((id) => id === "kahneman2004" ? "the 2004 day reconstruction study by Kahneman and colleagues, where 909 employed women rebuilt a working day and rated how they felt from 0 to 6" : `the American Time Use Survey microdata for 2014 to 2016, with ${SOURCES.atus2014_2016.n.toLocaleString("en-GB")} respondents`))}. The dashed lines on the chart are the medians of the points shown.`,
-    }];
+  }
 
-    const results = [];
+  /* Method: the sources behind every coordinate. */
+  function methodFrames({ srcs, SOURCES }) {
+    return [{
+    title: "Every coordinate is a published table cell or a survey estimate",
+    body: [
+      ...srcs.map((id) => `- ${md(SOURCES[id].citation)} [Source](${SOURCES[id].url}). ${md(SOURCES[id].design)}`),
+      "- Activities are cross-walked between the two surveys; a match is close when the definitions agree, partial when the constructs differ.",
+      "- The dashed lines on the chart are the medians of the points shown.",
+    ].join("\n"),
+    notes: srcs.map((id) => md(SOURCES[id].verification || "")).filter(Boolean).join(" "),
+    narration: `${srcs.length > 1 ? "The two sources are" : "The source is"} ${list(srcs.map((id) => id === "kahneman2004" ? "the 2004 day reconstruction study by Kahneman and colleagues, where 909 employed women rebuilt a working day and rated how they felt from 0 to 6" : `the American Time Use Survey microdata for 2014 to 2016, with ${SOURCES.atus2014_2016.n.toLocaleString("en-GB")} respondents`))}. The dashed lines on the chart are the medians of the points shown.`,
+  }];
+
+  }
+
+  /* The scatter chart: its points ranked, the median quadrants and the selected point, or why nothing is plotted. */
+  function chartFrames({ DATA, v, X, Y, SOURCES, MEAS, CROSS, pts, plotted, byY }) {
     if (!plotted) {
-      results.push({
+      return [{
         title: v.x === v.y ? "Choose two different measures" : `Only ${pts.length} activities have both measures: too few to plot`,
         body: v.x === v.y ? "The two axes are the same measure, so there is nothing to compare." : `The page plots a chart only when at least ${MIN_POINTS} activities have both measures.`,
         narration: v.x === v.y ? "The two axes are the same measure, so there is nothing to compare." : `Only ${pts.length} activities have both measures, too few to plot.`,
-      });
-    } else {
-      const mx = median(pts.map((p) => p.x)), my = median(pts.map((p) => p.y)), top = byY[0], bottom = byY.at(-1);
-      results.push({
-        title: `Highest ${Y.short}: ${top.a.activity}, ${Y.fmt(top.y)}; lowest: ${bottom.a.activity}, ${Y.fmt(bottom.y)}`,
-        body: [
-          `| Activity | ${md(X.short)} | ${md(Y.short)} | Crosswalk |`,
-          "| --- | ---: | ---: | --- |",
-          ...byY.map((p) => `| ${md(p.a.activity)} | ${X.fmt(p.x)} | ${Y.fmt(p.y)} | ${md(CROSS.get(p.a.activity_id).match)} |`),
-        ].join("\n"),
-        narration: `Sorted by ${spoken(v.y)}, ${say(top.a.activity)} comes top at ${say(Y.fmt(top.y))}, and ${say(bottom.a.activity)} comes last at ${say(Y.fmt(bottom.y))}.`,
-      });
-      const quads = [[true, false], [true, true], [false, false], [false, true]].map(([hy, hx]) => ({
-        name: `${hy ? Y.high : Y.low} · ${hx ? X.high : X.low}`,
-        acts: pts.filter((p) => (p.y >= my) === hy && (p.x >= mx) === hx).map((p) => p.a.activity),
-      }));
-      results.push({
-        title: `Medians split the chart: ${X.short} ${X.fmt(mx)}, ${Y.short} ${Y.fmt(my)}`,
-        body: quads.map((q) => `- **${md(q.name)}** (${q.acts.length}): ${q.acts.length ? q.acts.map(md).join(", ") : "none"}`).join("\n"),
-        notes: "A point on a median line is counted on the higher side.",
-        narration: `The median ${spoken(v.x)} is ${say(X.fmt(mx))}, and the median ${spoken(v.y)} is ${say(Y.fmt(my))}. ${quads.filter((q) => q.acts.length).map((q) => `${plural(q.acts.length, "activity sits", "activities sit")} at ${say(q.name.replace(" · ", " and "))}`).join("; ")}.`,
-      });
-      const a = DATA.activities.find((r) => r.activity_id === v.sel);
-      const sp = a && pts.find((p) => p.a === a);
-      if (sp) {
-        const trace = [v.x, v.y].map((key) => MEAS.get(measId(key, a.activity_id, v.pop)));
-        results.push({
-          title: `${a.activity}: ${X.short} ${X.fmt(sp.x)}, ${Y.short} ${Y.fmt(sp.y)}`,
-          body: [v.x, v.y].map((key, i) => {
-            const m = trace[i];
-            return m ? `- **${md(AXES[key].short)} = ${md(AXES[key].fmt(m.value))}**, ${md(m.kind)}. ${md(m.location)}. Population: ${md(m.population)}; n = ${m.n}; ${m.year}. [Source](${SOURCES[m.source].url})` : `- ${md(AXES[key].short)}: no measurement`;
-          }).join("\n"),
-          notes: md(`Crosswalk: ${CROSS.get(a.activity_id).match} — ${CROSS.get(a.activity_id).note}`),
-          narration: `${say(a.activity)} sits at ${say(X.fmt(sp.x))} across and ${say(Y.fmt(sp.y))} up. Each coordinate is one published number, cited on the slide.`,
-        });
-      }
+      }];
     }
+    const results = [];
+    const mx = median(pts.map((p) => p.x)), my = median(pts.map((p) => p.y)), top = byY[0], bottom = byY.at(-1);
+    results.push({
+      title: `Highest ${Y.short}: ${top.a.activity}, ${Y.fmt(top.y)}; lowest: ${bottom.a.activity}, ${Y.fmt(bottom.y)}`,
+      body: [
+        `| Activity | ${md(X.short)} | ${md(Y.short)} | Crosswalk |`,
+        "| --- | ---: | ---: | --- |",
+        ...byY.map((p) => `| ${md(p.a.activity)} | ${X.fmt(p.x)} | ${Y.fmt(p.y)} | ${md(CROSS.get(p.a.activity_id).match)} |`),
+      ].join("\n"),
+      narration: `Sorted by ${spoken(v.y)}, ${say(top.a.activity)} comes top at ${say(Y.fmt(top.y))}, and ${say(bottom.a.activity)} comes last at ${say(Y.fmt(bottom.y))}.`,
+    });
+    const quads = [[true, false], [true, true], [false, false], [false, true]].map(([hy, hx]) => ({
+      name: `${hy ? Y.high : Y.low} · ${hx ? X.high : X.low}`,
+      acts: pts.filter((p) => (p.y >= my) === hy && (p.x >= mx) === hx).map((p) => p.a.activity),
+    }));
+    results.push({
+      title: `Medians split the chart: ${X.short} ${X.fmt(mx)}, ${Y.short} ${Y.fmt(my)}`,
+      body: quads.map((q) => `- **${md(q.name)}** (${q.acts.length}): ${q.acts.length ? q.acts.map(md).join(", ") : "none"}`).join("\n"),
+      notes: "A point on a median line is counted on the higher side.",
+      narration: `The median ${spoken(v.x)} is ${say(X.fmt(mx))}, and the median ${spoken(v.y)} is ${say(Y.fmt(my))}. ${quads.filter((q) => q.acts.length).map((q) => `${plural(q.acts.length, "activity sits", "activities sit")} at ${say(q.name.replace(" · ", " and "))}`).join("; ")}.`,
+    });
+    const a = DATA.activities.find((r) => r.activity_id === v.sel);
+    const sp = a && pts.find((p) => p.a === a);
+    if (sp) {
+      const trace = [v.x, v.y].map((key) => MEAS.get(measId(key, a.activity_id, v.pop)));
+      results.push({
+        title: `${a.activity}: ${X.short} ${X.fmt(sp.x)}, ${Y.short} ${Y.fmt(sp.y)}`,
+        body: [v.x, v.y].map((key, i) => {
+          const m = trace[i];
+          return m ? `- **${md(AXES[key].short)} = ${md(AXES[key].fmt(m.value))}**, ${md(m.kind)}. ${md(m.location)}. Population: ${md(m.population)}; n = ${m.n}; ${m.year}. [Source](${SOURCES[m.source].url})` : `- ${md(AXES[key].short)}: no measurement`;
+        }).join("\n"),
+        notes: md(`Crosswalk: ${CROSS.get(a.activity_id).match} — ${CROSS.get(a.activity_id).note}`),
+        narration: `${say(a.activity)} sits at ${say(X.fmt(sp.x))} across and ${say(Y.fmt(sp.y))} up. Each coordinate is one published number, cited on the slide.`,
+      });
+    }
+    return results;
+  }
 
+  /* The regret frontier: the actions shown under the page's filters, and the selected action's codes. */
+  function frontierFrames({ DATA, SOURCES }, view) {
     const tier = TIERS.includes(view.tier) ? view.tier : "", domain = view.domain || "";
     const decisions = DATA.decisions.filter((d) => (!tier || d.frequency_tier === tier) && (!domain || d.domain === domain));
     const cheap = decisions.filter((d) => d.reversibility >= 4 && d.time_sensitivity >= 4);
     const tested = decisions.filter((d) => d.evidence.length);
-    results.push({
+    const results = [{
       title: `A regret frontier: ${plural(decisions.length, "action", "actions")}, ${cheap.length} both reversible and time-limited`,
       body: [
-        `- Filters: ${tier ? md(tier[0].toUpperCase() + tier.slice(1)) : "every frequency"} · ${domain ? md(domain[0].toUpperCase() + domain.slice(1)) : "all domains"}.`,
+        `- Filters: ${tier ? md(capitalise(tier)) : "every frequency"} · ${domain ? md(capitalise(domain)) : "all domains"}.`,
         `- Reversibility 4 or 5 and time sensitivity 4 or 5: ${cheap.length ? cheap.map((d) => md(d.action)).join("; ") : "none"}.`,
         `- ${tested.length} of these ${decisions.length} have an experiment behind them.`,
         "- **These positions are authored codes on 1–5 scales, not measurements.**",
       ].join("\n"),
       narration: `The second chart places ${plural(decisions.length, "action", "actions")} by how easily they can be undone and whether the chance to act closes soon. These are authored codes, not measurements. ${cheap.length ? `${plural(cheap.length, "action is", "actions are")} both reversible and time-limited, the cheapest experiments to run.` : "None is both reversible and time-limited."}`,
-    });
+    }];
     const d = DATA.decisions.find((r) => r.id === view.decision);
     if (d) {
       results.push({
@@ -183,10 +199,14 @@
         narration: `${say(d.action)} is coded ${d.reversibility} for reversibility, ${d.time_sensitivity} for time sensitivity, ${d.downside} for downside, ${d.upside} for upside and ${d.information} for information, each on a scale of 1 to 5.`,
       });
     }
+    return results;
+  }
 
+  /* Checks: every plotted number traces to a source record, then the takeaway. */
+  function checkFrames({ v, Y, pts, plotted, byY, MEAS }) {
     const traced = pts.filter((p) => MEAS.has(measId(v.x, p.a.activity_id, v.pop)) && MEAS.has(measId(v.y, p.a.activity_id, v.pop)));
     const partial = pts.filter((p) => mixed(v) && p.a.crosswalk_match === "partial").length;
-    const checks = [{
+    return [{
       title: `Every plotted number has a source record: ${traced.length} of ${pts.length} points`,
       body: [
         `- ${traced.length} of ${pts.length} points have a measurement record for both coordinates, with its table cell or survey estimate, population, sample size and year.`,
@@ -203,7 +223,13 @@
         ? `${say(byY[0].a.activity)} has the highest ${spoken(v.y)}, and ${say(byY.at(-1).a.activity)} the lowest. But population averages describe groups. They are not recommendations for any one person.`
         : "Population averages describe groups. They are not recommendations for any one person.",
     }];
+  }
 
+  function report(DATA, view = {}) {
+    const c = reportContext(DATA, view), { v, X, Y, SOURCES, pts, srcs } = c;
+    const preset = PRESETS.find((p) => p.x === v.x && p.y === v.y && (!p.pop || p.pop === v.pop));
+    const title = `${X.label} by ${Y.label}`;
+    const setup = setupFrames(c), method = methodFrames(c), results = [...chartFrames(c), ...frontierFrames(c, view)], checks = checkFrames(c);
     return {
       meta: { title: `Everyday activities: ${title}`, subtitle: preset ? preset.label : provenance(v, pts.length).split(". ")[0], date: srcs.map((id) => `${SOURCES[id].year}`).join(" and ") },
       narration: `This talk places everyday activities by published measurements: ${spoken(v.x)}, against ${spoken(v.y)}. Every number is a published table cell or survey estimate.`,
