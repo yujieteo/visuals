@@ -14,6 +14,7 @@ requests; it works offline and from `file://`.
 | `index.html` | The whole tool. `<script id="calibrator-engine">` is the pure core (`self.Calibrator`): the TOON codec, the session schema and its validation, and the session state machine (answer, revise, skip, back, export). It has no DOM, storage, clock or network use; callers pass times in milliseconds. `<script id="calibrator-ui">` is the page: paste and file import, the question card, `localStorage` persistence, the export sheet and five read-only WebMCP tools. Edit this file directly; there is no build step. |
 | `raw.json` | Catalogue data, published as `data.json` on the site: the schema's format, version, table fields, origins, scores and states. The page never fetches it; the tests fail when it drifts from the engine. |
 | `sample-session.toon` | A five-question sample session in the import schema, for trying the page and as a target for the generator. |
+| `sessions/` | Generated sessions ready to paste, one `YYYY-MM-DD.toon` per session. |
 | `AGENTS.md` | Notes for coding agents: where changes go, how to test, how to port to yujieteo/site, conventions. |
 | `SKILLS.md` | For agents using the page: its tasks, the read-only WebMCP tools and the workflow. |
 | `LICENSE` | MIT. |
