@@ -429,134 +429,149 @@ function table(head, rows, { numeric = [] } = {}) {
   return `<div class="table-wrap"><table><thead><tr>${head.map((h, i) => `<th scope="col" class="${numeric.includes(i) ? "num" : ""}">${h}</th>`).join("")}</tr></thead><tbody>${rows.map((r) => `<tr>${r.map((c, i) => `<td class="${numeric.includes(i) ? "num" : ""}">${c}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
 }
 
-function renderResults() {
-  const r = state.result;
-  const out = $("#results");
-  if (!r.ok) {
-    const n = r.issues.filter((i) => i.tier === "error").length;
-    out.innerHTML = `<p class="blocked">No results: ${n} error${n === 1 ? "" : "s"} must be fixed first (see Warnings). Errors block every result so no number is shown that the checks rejected.</p>`;
-    return;
-  }
-  const colours = palette(canvas());
+/* The results panel's tables share one context: the result, its display units and the scales
+   that set each column's significant figures. */
+function resultContext(r) {
   const p = r.props, red = r.reduced;
-  const L = units("length"), F = units("force"), M = units("moment"), S = units("section");
   const lenScale = Math.max(p.extent, 1);
   const forceScale = Math.max(...r.fasteners.map((q) => Math.max(q.shear.Rs, Math.abs(q.axial.T))), Math.hypot(red.Fx, red.Fy, red.Fz), 0);
   const momScale = Math.max(Math.abs(red.shear.Mz), Math.hypot(red.axial.Mx, red.axial.My), forceScale * lenScale);
   const secScale = Math.max(p.J, p.Ixx + p.Iyy);
+  return { r, p, red, L: units("length"), F: units("force"), M: units("moment"), S: units("section"), lenScale, forceScale, momScale, secScale };
+}
+const selectButton = (q) => `<button class="btn" type="button" data-select="${esc(q.id)}">${esc(q.id)}</button>`;
+const msCell = (m) => (m.status === "ok" ? `<span class="${m.ms < 0 ? "ms-neg" : ""}">${f(m.ms)}</span>` : `<span class="muted">${esc(marginText(m))}</span>`);
 
-  const centroids = table(["", "Centroid", `x (${L})`, `y (${L})`, "Weight", "Used for"],
+function centroidsTable({ p, L, lenScale }) {
+  const colours = palette(canvas());
+  return table(["", "Centroid", `x (${L})`, `y (${L})`, "Weight", "Used for"],
     p.centroids.map((c) => [
       centroidSvg(c.key, colours[CENTROID_STYLE[c.key].colour]),
       `${esc(c.name)} <b>${c.key}</b>${c.key === "Cs" ? ' <span class="tag">CG</span>' : ""}${c.coincidentWith.length ? ` <span class="tag">coincident with ${c.coincidentWith.join(", ")}</span>` : ""}`,
       f(c.x, lenScale), f(c.y, lenScale), c.weight, esc(c.usedFor),
     ]), { numeric: [2, 3] });
+}
 
-  const props = table(["Property", "Value", "Unit"], [
+function propertiesTable({ p, S, secScale }) {
+  return table(["Property", "Value", "Unit"], [
     ["J about Cs", f(p.J, secScale), S], ["Ixx about Ca", f(p.Ixx, secScale), S], ["Iyy about Ca", f(p.Iyy, secScale), S],
     ["Ixy about Ca", f(p.Ixy, secScale), S], ["I₁ (major)", f(p.principal.I1, secScale), S], ["I₂ (minor)", f(p.principal.I2, secScale), S],
     ["θp, CCW from +x to the I₁ axis", f(p.principal.thetaDeg, 360), "°"], ["Σks", f(p.Ks), ""], ["Σka", f(p.Ka), ""],
   ], { numeric: [1] });
+}
 
-  const reduced = table(["Component", "Value", "Unit", "Reduced to", "Transfer"], [
+function reducedLoadTable({ red, F, M, lenScale, forceScale, momScale }) {
+  return table(["Component", "Value", "Unit", "Reduced to", "Transfer"], [
     ["Fx", f(red.Fx, forceScale), F, "", ""], ["Fy", f(red.Fy, forceScale), F, "", ""], ["Fz", f(red.Fz, forceScale), F, "", ""],
     ["Mz,s", f(red.shear.Mz, momScale), M, `Cs (${f(red.shear.Q.x, lenScale)}, ${f(red.shear.Q.y, lenScale)}, 0)`, `Mz + rx·Fy − ry·Fx; rx = ${f(red.shear.rx, lenScale)}, ry = ${f(red.shear.ry, lenScale)}`],
     ["Mx,a", f(red.axial.Mx, momScale), M, `Ca (${f(red.axial.Q.x, lenScale)}, ${f(red.axial.Q.y, lenScale)}, 0)`, `Mx + ry·Fz − zp·Fy; ry = ${f(red.axial.ry, lenScale)}, zp = ${f(red.axial.zp, lenScale)}`],
     ["My,a", f(red.axial.My, momScale), M, `Ca (${f(red.axial.Q.x, lenScale)}, ${f(red.axial.Q.y, lenScale)}, 0)`, `My + zp·Fx − rx·Fz; rx = ${f(red.axial.rx, lenScale)}, zp = ${f(red.axial.zp, lenScale)}`],
   ], { numeric: [1] });
+}
 
+function fastenerLoadsTable({ r, F, forceScale }) {
   const maxRs = Math.max(...r.fasteners.map((q) => q.shear.Rs));
   const maxT = Math.max(...r.fasteners.map((q) => q.axial.T));
-  const per = table(["Fastener", `Rdx (${F})`, `Rdy (${F})`, `Rtx (${F})`, `Rty (${F})`, `Rs (${F})`, "Direction", `T (${F})`, "State"],
+  return table(["Fastener", `Rdx (${F})`, `Rdy (${F})`, `Rtx (${F})`, `Rty (${F})`, `Rs (${F})`, "Direction", `T (${F})`, "State"],
     r.fasteners.map((q) => {
       const tags = [];
       if (q.shear.Rs === maxRs && maxRs > 0) tags.push('<span class="tag">max shear</span>');
       if (q.axial.T === maxT && maxT > 0) tags.push('<span class="tag tension">max tension</span>');
       const st = q.axial.unloading ? '<span class="tag unloading">unloading</span>' : q.axial.T > 1e-9 * forceScale ? "tension" : "—";
-      return [`<button class="btn" type="button" data-select="${esc(q.id)}">${esc(q.id)}</button> ${tags.join("")}`,
+      return [`${selectButton(q)} ${tags.join("")}`,
         f(q.shear.Rdx, forceScale), f(q.shear.Rdy, forceScale), f(q.shear.Rtx, forceScale), f(q.shear.Rty, forceScale),
         `<b>${f(q.shear.Rs, forceScale)}</b>`, q.shear.Rs > 0 ? `${f(q.shear.angleDeg, 360)}°` : "—", f(q.axial.T, forceScale), st];
     }), { numeric: [1, 2, 3, 4, 5, 6, 7] });
+}
 
-  const ms = (m) => (m.status === "ok" ? `<span class="${m.ms < 0 ? "ms-neg" : ""}">${f(m.ms)}</span>` : `<span class="muted">${esc(marginText(m))}</span>`);
-  const checks = table(["Fastener", `Rs (${F})`, `Rt (${F})`, `Fs (${F})`, `Ft (${F})`, "IF(1)", "k*", "MS interaction", "Governing MS"],
+function marginsTable({ r, F, forceScale }) {
+  return table(["Fastener", `Rs (${F})`, `Rt (${F})`, `Fs (${F})`, `Ft (${F})`, "IF(1)", "k*", "MS interaction", "Governing MS"],
     r.fasteners.map((q) => {
       const m = q.checks.modes.find((x) => x.mode === "interaction");
       const crit = r.critical && r.critical.id === q.id ? ' <span class="tag unloading">critical</span>' : "";
       const zero = q.axial.unloading ? ' <span class="tag">T counted as 0</span>' : "";
       const evaluated = m.status !== "not-evaluated";
-      return [`<button class="btn" type="button" data-select="${esc(q.id)}">${esc(q.id)}</button>${crit}`,
+      return [`${selectButton(q)}${crit}`,
         f(m.Rs, forceScale), `${f(m.Rt, forceScale)}${zero}`, evaluated ? f(m.Fs) : "—", evaluated ? f(m.Ft) : "—",
-        evaluated && Number.isFinite(m.IF1) ? f(m.IF1) : "—", m.status === "ok" ? f(m.kStar) : "—", ms(m),
+        evaluated && Number.isFinite(m.IF1) ? f(m.IF1) : "—", m.status === "ok" ? f(m.kStar) : "—", msCell(m),
         q.checks.governing ? `<b>${Number.isFinite(q.checks.governing.ms) ? f(q.checks.governing.ms) : "∞"}</b> <span class="muted">(${esc(q.checks.governing.label)})</span>` : '<span class="muted">—</span>'];
     }), { numeric: [1, 2, 3, 4, 5, 6] });
+}
+
+/* The critical fastener's line, or why no margin was evaluated. */
+function criticalLine({ r }) {
   const it = r.interaction;
   const none = r.critical ? null : noMarginSummary(r.fasteners.map((q) => q.checks));
-  const crit = r.critical
+  return r.critical
     ? `<p class="critical">Critical fastener <b>${esc(r.critical.id)}</b>: governing MS <b class="ms ${r.critical.ms < 0 ? "ms-neg" : ""}">${f(r.critical.ms)}</b> — ${esc(r.critical.label)}${r.critical.mode === "interaction" && (it.a !== 1 || it.b !== 1) ? ` <span class="muted">(exact load scale factor, not 1/IF − 1; W-006)</span>` : ""}.</p>`
     : none.unloaded.length || none.blocked.length
     ? `<p class="critical muted">${esc(none.text)}</p>`
     : `<p class="critical muted">No margin evaluated: enter shear and tension allowables Fs and Ft (group defaults or per-fastener overrides). A check without its allowable shows “not evaluated” and never a margin.</p>`;
+}
 
+/* Bolt tension with prying and preload; empty when neither is on. */
+function boltTensionTable({ r, F, forceScale }) {
   const ts = r.tensionSettings;
-  let tensionTable = "";
-  if (ts.prying || ts.preload) {
-    const head = ["Fastener", `T external (${F})`];
-    if (ts.prying) head.push("Prying", "α'", `Q (${F})`);
-    if (ts.preload) head.push(`P_max + φT (${F})`, `Clamp force (${F})`, `Separation at T (${F})`);
-    head.push(`Bolt load F_b (${F})`, "Joint");
-    tensionTable = table(head, r.fasteners.map((q) => {
-      const t = q.checks.tension, c = q.checks.clamp;
-      const row = [`<button class="btn" type="button" data-select="${esc(q.id)}">${esc(q.id)}</button>`, f(t.Text, forceScale)];
-      if (ts.prying) {
-        const pm = t.prying;
-        row.push(pm.method === "manual" ? `manual × ${f(pm.factor)}` : pm.method === "t-stub" ? (t.Text > 0 ? "T-stub" : "T-stub (no tension)") : "—",
-          pm.method === "t-stub" && pm.alphaRaw !== null ? `${f(pm.alpha)}${pm.alphaRaw !== pm.alpha ? ` <span class="muted">(${f(pm.alphaRaw)} clamped)</span>` : ""}` : "—",
-          f(t.Q, forceScale));
-      }
-      if (ts.preload) row.push(f(t.preload.shared, forceScale), `${f(t.preload.clamp, forceScale)}`, f(t.preload.separationLoad, forceScale));
-      row.push(`<b>${f(t.Fb, forceScale)}</b>`, c.status === "separated" ? '<span class="tag unloading">separated</span>' : c.status === "clamped" ? "clamped" : "—");
-      return row;
-    }), { numeric: [1, 2, 3, 4, 5, 6, 7, 8] });
-  }
+  if (!ts.prying && !ts.preload) return "";
+  const head = ["Fastener", `T external (${F})`];
+  if (ts.prying) head.push("Prying", "α'", `Q (${F})`);
+  if (ts.preload) head.push(`P_max + φT (${F})`, `Clamp force (${F})`, `Separation at T (${F})`);
+  head.push(`Bolt load F_b (${F})`, "Joint");
+  return table(head, r.fasteners.map((q) => {
+    const t = q.checks.tension, c = q.checks.clamp;
+    const row = [selectButton(q), f(t.Text, forceScale)];
+    if (ts.prying) {
+      const pm = t.prying;
+      row.push(pm.method === "manual" ? `manual × ${f(pm.factor)}` : pm.method === "t-stub" ? (t.Text > 0 ? "T-stub" : "T-stub (no tension)") : "—",
+        pm.method === "t-stub" && pm.alphaRaw !== null ? `${f(pm.alpha)}${pm.alphaRaw !== pm.alpha ? ` <span class="muted">(${f(pm.alphaRaw)} clamped)</span>` : ""}` : "—",
+        f(t.Q, forceScale));
+    }
+    if (ts.preload) row.push(f(t.preload.shared, forceScale), `${f(t.preload.clamp, forceScale)}`, f(t.preload.separationLoad, forceScale));
+    row.push(`<b>${f(t.Fb, forceScale)}</b>`, c.status === "separated" ? '<span class="tag unloading">separated</span>' : c.status === "clamped" ? "clamped" : "—");
+    return row;
+  }), { numeric: [1, 2, 3, 4, 5, 6, 7, 8] });
+}
 
-  let plateTable = "";
+/* Bearing and tear-out for every plate a fastener bears on; empty when no plate is checked. */
+function plateChecksTable({ r, F, L, lenScale }) {
   const plateIds = [...new Set(r.fasteners.flatMap((q) => q.checks.modes.filter((m) => m.plate).map((m) => m.plate)))];
-  if (plateIds.length) {
-    plateTable = table(["Fastener", "Plate", `Bearing capacity (${F})`, "MS bearing", "Bears towards", `e (${L})`, "e/D", `Tear-out capacity (${F})`, "MS tear-out"],
-      r.fasteners.flatMap((q) => plateIds.map((pid) => {
-        const b = q.checks.modes.find((m) => m.mode === "bearing" && m.plate === pid);
-        const t = q.checks.modes.find((m) => m.mode === "tearout" && m.plate === pid);
-        const gov = q.checks.governing && q.checks.governing.plate === pid ? ' <span class="tag">governing</span>' : "";
-        return [`<button class="btn" type="button" data-select="${esc(q.id)}">${esc(q.id)}</button>`, `${esc(pid)}${gov}`,
-          b.capacity !== undefined ? `${f(b.capacity)} <span class="muted">(${esc(b.basis)})</span>` : "—", ms(b),
-          t.e !== undefined ? esc(t.bearsTowards) : "—", t.e !== undefined ? f(t.e, lenScale) : "—",
-          t.eOverD !== undefined && t.eOverD !== null ? `${f(t.eOverD)}${t.minRatio !== null && t.eOverD < t.minRatio ? ' <span class="tag unloading">below min</span>' : ""}` : "—",
-          t.capacity !== undefined ? f(t.capacity) : "—", ms(t)];
-      })), { numeric: [5, 6, 7] });
-  }
+  if (!plateIds.length) return "";
+  return table(["Fastener", "Plate", `Bearing capacity (${F})`, "MS bearing", "Bears towards", `e (${L})`, "e/D", `Tear-out capacity (${F})`, "MS tear-out"],
+    r.fasteners.flatMap((q) => plateIds.map((pid) => {
+      const b = q.checks.modes.find((m) => m.mode === "bearing" && m.plate === pid);
+      const t = q.checks.modes.find((m) => m.mode === "tearout" && m.plate === pid);
+      const gov = q.checks.governing && q.checks.governing.plate === pid ? ' <span class="tag">governing</span>' : "";
+      return [selectButton(q), `${esc(pid)}${gov}`,
+        b.capacity !== undefined ? `${f(b.capacity)} <span class="muted">(${esc(b.basis)})</span>` : "—", msCell(b),
+        t.e !== undefined ? esc(t.bearsTowards) : "—", t.e !== undefined ? f(t.e, lenScale) : "—",
+        t.eOverD !== undefined && t.eOverD !== null ? `${f(t.eOverD)}${t.minRatio !== null && t.eOverD < t.minRatio ? ' <span class="tag unloading">below min</span>' : ""}` : "—",
+        t.capacity !== undefined ? f(t.capacity) : "—", msCell(t)];
+    })), { numeric: [5, 6, 7] });
+}
 
-  let icrHtml = "";
-  if (r.icr) {
-    const ic = r.icr;
-    if (ic.status !== "converged") {
-      icrHtml = `<p class="blocked">ICR not converged (W-014): ${esc(ic.reason)}${ic.residual !== null && ic.residual !== undefined ? `, residual ${fmt(ic.residual, 3)}` : ""}. No ICR numbers are shown; the elastic result remains.${r.designBasis === "icr" ? " The checks on the ICR basis are not computed." : ""}</p>`;
-    } else if (ic.mode === "no-shear") {
-      icrHtml = `<p class="note">${esc(ic.modelLabel)}; no in-plane load (Fx = Fy = Mz,s = 0), so every ICR shear is zero and the checks use Rs = 0.</p>`;
-    } else {
-      const where = ic.mode === "translation" ? "at infinity (uniform translation: the translation loads balance the applied moment)"
-        : `at (${f(ic.icr.x, lenScale)}, ${f(ic.icr.y, lenScale)}) ${L}${ic.mode === "pure-moment" ? " (pure moment)" : ""}${ic.offLine ? " — moved off the search line to balance an asymmetric group" : ""}`;
-      const cmp = r.comparison;
-      const icrRows = table(["Fastener", `ρ (${L})`, `Δ (${L})`, `R ultimate (${F})`, `Rs at applied load (${F})`, `Elastic Rs (${F})`, "ICR vs elastic"],
-        r.fasteners.map((q) => {
-          const u = q.icr.ultimate, a = q.icr.atLoad;
-          const change = q.shear.Rs > 0 ? a.Rs / q.shear.Rs - 1 : null;
-          const gov = ic.governing === q.id ? ' <span class="tag">governs Δmax</span>' : "";
-          return [`<button class="btn" type="button" data-select="${esc(q.id)}">${esc(q.id)}</button>${gov}`,
-            Number.isFinite(u.rho) ? f(u.rho, lenScale) : "∞", f(u.delta), f(u.R), `<b>${f(a.Rs, forceScale)}</b>`, f(q.shear.Rs, forceScale),
-            change === null ? "—" : `${change >= 0 ? "+" : "−"}${f(Math.abs(change) * 100, 100)}%`];
-        }), { numeric: [1, 2, 3, 4, 5, 6] });
-      icrHtml = `
+/* The ICR summary and its per-fastener comparison with the elastic result; empty without ICR. */
+function icrSection({ r, F, M, L, lenScale, forceScale }) {
+  const ic = r.icr;
+  if (!ic) return "";
+  if (ic.status !== "converged") {
+    return `<p class="blocked">ICR not converged (W-014): ${esc(ic.reason)}${ic.residual !== null && ic.residual !== undefined ? `, residual ${fmt(ic.residual, 3)}` : ""}. No ICR numbers are shown; the elastic result remains.${r.designBasis === "icr" ? " The checks on the ICR basis are not computed." : ""}</p>`;
+  }
+  if (ic.mode === "no-shear") {
+    return `<p class="note">${esc(ic.modelLabel)}; no in-plane load (Fx = Fy = Mz,s = 0), so every ICR shear is zero and the checks use Rs = 0.</p>`;
+  }
+  const where = ic.mode === "translation" ? "at infinity (uniform translation: the translation loads balance the applied moment)"
+    : `at (${f(ic.icr.x, lenScale)}, ${f(ic.icr.y, lenScale)}) ${L}${ic.mode === "pure-moment" ? " (pure moment)" : ""}${ic.offLine ? " — moved off the search line to balance an asymmetric group" : ""}`;
+  const cmp = r.comparison;
+  const icrRows = table(["Fastener", `ρ (${L})`, `Δ (${L})`, `R ultimate (${F})`, `Rs at applied load (${F})`, `Elastic Rs (${F})`, "ICR vs elastic"],
+    r.fasteners.map((q) => {
+      const u = q.icr.ultimate, a = q.icr.atLoad;
+      const change = q.shear.Rs > 0 ? a.Rs / q.shear.Rs - 1 : null;
+      const gov = ic.governing === q.id ? ' <span class="tag">governs Δmax</span>' : "";
+      return [`${selectButton(q)}${gov}`,
+        Number.isFinite(u.rho) ? f(u.rho, lenScale) : "∞", f(u.delta), f(u.R), `<b>${f(a.Rs, forceScale)}</b>`, f(q.shear.Rs, forceScale),
+        change === null ? "—" : `${change >= 0 ? "+" : "−"}${f(Math.abs(change) * 100, 100)}%`];
+    }), { numeric: [1, 2, 3, 4, 5, 6] });
+  return `
         <ul class="stats-row">
           <li><b>${f(ic.gamma)}</b><span>γ_ult = ${ic.mode === "pure-moment" ? "M_u/|Mz,s|" : "P_u/|F|"}</span></li>
           <li><b class="${ic.margin < 0 ? "ms-neg" : ""}">${f(ic.margin)}</b><span>ICR margin γ_ult − 1 (ultimate capacity; not comparable to allowable MS)</span></li>
@@ -566,18 +581,35 @@ function renderResults() {
         <p class="note">${esc(ic.modelLabel)}; ICR ${where}. ${ic.iterations} iterations, residual ${fmt(ic.residual, 2)}. Reactions at the applied load are the ultimate reactions ÷ γ_ult (proportional scaling convention${r.designBasis === "icr" ? ", W-015" : ""}).</p>
         ${cmp ? `<p class="critical">Critical-fastener load: elastic <b>${esc(cmp.elasticCritical.id)}</b> ${f(cmp.elasticCritical.Rs)} ${F} vs ICR <b>${esc(cmp.icrCritical.id)}</b> ${f(cmp.icrCritical.Rs)} ${F}${cmp.change === null ? "" : ` — <b class="${cmp.change > 0 ? "ms-neg" : ""}">${cmp.change >= 0 ? "+" : "−"}${f(Math.abs(cmp.change) * 100, 100)}%</b>`}. Checks use the <b>${r.designBasis === "icr" ? "ICR" : "elastic"}</b> basis.</p>` : ""}
         ${icrRows}`;
-    }
-  }
+}
 
-  const closure = table(["Equilibrium check", "Residual", "Relative", ""],
+function closureTable({ r }) {
+  return table(["Equilibrium check", "Residual", "Relative", ""],
     r.closure.checks.map((c) => [esc(c.name), fmt(c.residual, 3), c.relative.toExponential(1), c.pass ? '<span class="pass">pass</span>' : '<span class="fail">fail</span>']),
     { numeric: [1, 2] });
+}
 
-  const axialNote = r.axial.mode === "contact-edge"
+/* How the out-of-plane tension was found, for the fastener-loads note. */
+function axialMethodNote({ r, F, M, lenScale, forceScale, momScale, secScale }) {
+  return r.axial.mode === "contact-edge"
     ? `Method (b), contact edge: the ${EDGES[r.axial.edge].label} of ${r.axial.plateId} is the neutral axis. M_L = ${f(r.axial.ML, momScale)} ${M} (reduced to (${f(r.axial.Q.x, lenScale)}, ${f(r.axial.Q.y, lenScale)}, 0)), Σka·d² = ${f(r.axial.S)}, contact reaction C = ${f(r.axial.C, forceScale)} ${F}.`
     : r.axial.mode === "general"
     ? `Method (a): D = ${f(r.axial.D, secScale * secScale)}, θx = ${f(r.axial.thetaX)}, θy = ${f(r.axial.thetaY)}.`
     : r.axial.mode === "collinear" ? "Method (a), collinear pattern: bending resisted about the pattern's major principal axis only." : "Method (a): all fasteners at one point; only Fz is resisted.";
+}
+
+function renderResults() {
+  const r = state.result;
+  const out = $("#results");
+  if (!r.ok) {
+    const n = r.issues.filter((i) => i.tier === "error").length;
+    out.innerHTML = `<p class="blocked">No results: ${n} error${n === 1 ? "" : "s"} must be fixed first (see Warnings). Errors block every result so no number is shown that the checks rejected.</p>`;
+    return;
+  }
+  const c = resultContext(r), it = r.interaction, ts = r.tensionSettings;
+  const centroids = centroidsTable(c), props = propertiesTable(c), reduced = reducedLoadTable(c), per = fastenerLoadsTable(c);
+  const checks = marginsTable(c), crit = criticalLine(c), tensionTable = boltTensionTable(c), plateTable = plateChecksTable(c);
+  const icrHtml = icrSection(c), closure = closureTable(c), axialNote = axialMethodNote(c);
 
   out.innerHTML = `
     <div class="results-grid">
