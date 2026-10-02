@@ -891,7 +891,6 @@ function toggleTheme() {
   root.setAttribute("data-theme", dark ? "light" : "dark");
   try { localStorage.setItem("theme", dark ? "light" : "dark"); } catch { /* storage blocked */ }
 }
-try { const t = localStorage.getItem("theme"); if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t); } catch { /* storage blocked */ }
 $("btn-theme").addEventListener("click", toggleTheme);
 $("abelian-text").textContent = SL.ABELIAN_NOTE;
 
