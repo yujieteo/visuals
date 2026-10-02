@@ -18,10 +18,10 @@ The tests are `tests/toulmin.test.mjs`, run with Node's built-in runner
 (`node --test`). They extract the engine from `index.html` and check the
 template deck byte for byte against `tests/fixtures/toulmin-template.md`, parse
 decks with beamdswitch's own parser (`tests/fixtures/beamdswitch/deck.mjs`),
-compare the sentence splitter and timing constants with the vendored build in
-`visuals/beamdswitch/index.html`, and cover escaping, JSON round trips and
-import rejection, the checklist and prompts, limits, paragraphs, accessible
-names, the colour contrast of the shipped tokens, `raw.json` and the stub. They
+compare the sentence splitter with that parser's, check the integer-ms timing,
+and cover escaping, JSON round trips and import rejection, the checklist and
+prompts, limits, paragraphs, accessible names, the colour contrast of the
+shipped tokens and `raw.json`. They
 also boot the page script in `node:vm` against a stub DOM and storage to check
 the WebMCP tools, the 12-argument limit, tab keys and deck copying.
 `tests/toulmin-browser.test.mjs` checks the 320 px layout in a real Chrome and

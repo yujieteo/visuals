@@ -14,13 +14,22 @@ Tests live in `tests/` of yujieteo/toulmin: `tests/toulmin.test.mjs` (with the g
 
 ## Build, test and verify
 
-Run from the root of a yujieteo/toulmin checkout:
+Run from the root of a yujieteo/toulmin checkout, as CI (`.github/workflows/ci.yml`) does on Node 22 for every push and pull request:
 
 ```sh
-node --test tests/toulmin.test.mjs tests/toulmin-browser.test.mjs
+node --test 'tests/*.test.{mjs,cjs}'
 ```
 
+CI skips the browser test. Run it locally against an isolated Chrome started with `--remote-debugging-port=9227`: `TOULMIN_BROWSER_URL=http://127.0.0.1:9227 node --test tests/toulmin-browser.test.mjs`.
+
 After editing `TEMPLATE` in the engine, regenerate `raw.json`'s `template` and the golden deck from the engine, as the README's "Changing the template" says.
+
+## Porting to yujieteo/site
+
+Change and test this repository first, then port it; the site's [add-visualization playbook](https://github.com/yujieteo/site/blob/main/skills/playbooks/add-visualization.md) owns the full workflow.
+
+1. Run the suite above, check the page end to end in a browser (load `index.html`, use what changed, call the WebMCP tools and the exports), and run no-mistakes here.
+2. Copy this repository minus `tests/` and `.github/`, byte for byte, into `visuals/toulmin/` of yujieteo/site, and run no-mistakes again on that pull request, which runs only the site-level tests. Never add logic tests to the site; its test cost must stay flat.
 
 ## Conventions
 
