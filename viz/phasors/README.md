@@ -9,7 +9,7 @@ Published at `https://teoyujie.org/visuals/phasors`.
 
 | File | Role |
 | --- | --- |
-| `index.html` | The whole tool. `<script id="ph-engine">` is the pure core (circuit, formatter, diagram scenes, SVG, hash, JSON, report, deck, self-tests; no DOM, storage, clock, randomness, `Intl` or locale calls; `self.Phasors` in the browser). `<script id="ph-ui">` is the page, the animation and the WebMCP tools. Edit this file directly. |
+| `index.html` | The whole tool. `<script id="site-theme">` in the head applies the reader's site-wide Light or Dark choice (`localStorage` key `theme`) before paint. `<script id="ph-engine">` is the pure core (circuit, formatter, diagram scenes, SVG, hash, JSON, report, deck, self-tests; no DOM, storage, clock, randomness, `Intl` or locale calls; `self.Phasors` in the browser). `<script id="ph-ui">` is the page, the animation and the WebMCP tools. Edit this file directly. |
 | `raw.json` | Published metadata (`META`: scope, conventions, ranges, presets, default state, degenerate cases, sources), `schemaVersion` and the default inputs as `example`; must equal the engine's `META` and `defaultInputs()`. |
 | `AGENTS.md` | Notes for coding agents: where changes go (the standalone repository, where this visualisation and its tests develop; yujieteo/site holds a port of the page files), how to build and test, and the conventions. |
 | `SKILLS.md` | For agents using the tool: its tasks, inputs, read-only WebMCP tools, exports and a worked example. |
@@ -22,9 +22,10 @@ in-page self-tests, the hand-calculated default (Z = 100 + j84.5 Ω,
 degenerate case, every range corner, formatter boundaries, the hash and JSON
 round trips, deck and report structure and determinism, and the forbidden-call
 check. They also boot the page against an inert DOM to exercise the WebMCP
-tools and assert that no network request is attempted. After changing `META`
-or `defaultInputs()`, regenerate `raw.json` from the engine; the test says when
-it has drifted.
+tools and assert that no network request is attempted, and run the site-theme
+script against a stub to check it only reads `theme` and applies light or dark.
+After changing `META` or `defaultInputs()`, regenerate `raw.json` from the
+engine; the test says when it has drifted.
 
 ## Conventions
 

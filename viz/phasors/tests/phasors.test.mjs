@@ -284,10 +284,24 @@ const bootPage = () => {
   ctx.self = ctx; ctx.window = ctx;
   for (const name of ["localStorage", "sessionStorage"]) Object.defineProperty(ctx, name, { get() { network.push(name); return inert(); } });
   const scripts = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)];
-  assert.deepEqual(scripts.map((m) => /id="([^"]+)"/.exec(m[0])?.[1]), ["ph-engine", "ph-ui"]);
-  for (const m of scripts) vm.runInContext(m[1], ctx);
+  assert.deepEqual(scripts.map((m) => /id="([^"]+)"/.exec(m[0])?.[1]), ["site-theme", "ph-engine", "ph-ui"]);
+  // The site-theme script only reads the reader's site-wide theme; its own test below checks that.
+  for (const m of scripts) if (!m[0].includes('id="site-theme"')) vm.runInContext(m[1], ctx);
   return { tools, network };
 };
+
+test("the site-theme script only reads the site's theme key and applies light or dark", () => {
+  const theme = /<script id="site-theme">([\s\S]*?)<\/script>/.exec(html)[1];
+  for (const [stored, expected] of [["dark", "dark"], ["light", "light"], ["sepia", undefined], [null, undefined]]) {
+    const calls = [];
+    const dataset = {};
+    const localStorage = new Proxy({}, { get: (_, k) => (k === "getItem" ? (key) => { calls.push(["getItem", key]); return stored; } : () => calls.push([k])) });
+    vm.runInNewContext(theme, { localStorage, document: { documentElement: { dataset } } });
+    deq(calls, [["getItem", "theme"]]);
+    assert.equal(dataset.theme, expected, String(stored));
+  }
+  vm.runInNewContext(theme, { document: { documentElement: { dataset: {} } } }); // no storage at all: silent
+});
 
 test("the page boots without a real DOM, registers its WebMCP tools and makes no network request", async () => {
   const { tools, network } = bootPage();
