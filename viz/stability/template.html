@@ -6,10 +6,11 @@
 <link rel="icon" href="data:,">
 <meta name="description" content="Explore column buckling, second-order beam-columns, flat-plate shear buckling and NACA TN 2661 diagonal tension with source-tagged formulas, SI/US units, Markdown and JSON export, and self-tests. Not for certification. Runs offline in your browser.">
 <title>Structural Stability Visualiser</title>
+<script id="site-theme">try { var t = localStorage.getItem("theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (e) {}</script>
 <style>
-:root{--bg:#fff;--fg:#1d1d1f;--muted:#6e6e73;--faint:#a1a1a6;--surface:#f5f5f7;--border:#d2d2d7;--grid:#e8e8ed;--focus:#0071e3;--c1:#2a78d6;--c2:#eb6834;--c3:#7a4fd0;--c4:#1a7f4b;--ok:#1a7f4b;--bad:#c4261d;--warn:#9a6700;--nasa:#2a78d6;--classical:#6e6e73;--fit:#9a6700;--sans:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;--mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;--r:.5rem;color-scheme:light dark}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--faint:#6e6e73;--surface:#2c2c2e;--border:#48484a;--grid:#333336;--focus:#2997ff;--c1:#3987e5;--c2:#d95926;--c3:#a07ff0;--c4:#30c07a;--ok:#30c07a;--bad:#ff6961;--warn:#e3b341;--nasa:#3987e5;--classical:#a1a1a6;--fit:#e3b341}}
-:root[data-theme="dark"]{--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--faint:#6e6e73;--surface:#2c2c2e;--border:#48484a;--grid:#333336;--focus:#2997ff;--c1:#3987e5;--c2:#d95926;--c3:#a07ff0;--c4:#30c07a;--ok:#30c07a;--bad:#ff6961;--warn:#e3b341;--nasa:#3987e5;--classical:#a1a1a6;--fit:#e3b341;color-scheme:dark}
+:root{--bg:#fff;--fg:#1d1d1f;--muted:#6e6e73;--faint:#a1a1a6;--surface:#f5f5f7;--border:#d2d2d7;--control:#86868b;--grid:#e8e8ed;--focus:#0071e3;--c1:#2a78d6;--c2:#eb6834;--c3:#7a4fd0;--c4:#1a7f4b;--ok:#1a7f4b;--bad:#c4261d;--warn:#9a6700;--nasa:#2a78d6;--classical:#6e6e73;--fit:#9a6700;--sans:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;--mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;--r:.5rem;color-scheme:light dark}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--faint:#6e6e73;--surface:#2c2c2e;--border:#48484a;--control:#8e8e93;--grid:#333336;--focus:#2997ff;--c1:#3987e5;--c2:#d95926;--c3:#a07ff0;--c4:#30c07a;--ok:#30c07a;--bad:#ff6961;--warn:#e3b341;--nasa:#3987e5;--classical:#a1a1a6;--fit:#e3b341}}
+:root[data-theme="dark"]{--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--faint:#6e6e73;--surface:#2c2c2e;--border:#48484a;--control:#8e8e93;--grid:#333336;--focus:#2997ff;--c1:#3987e5;--c2:#d95926;--c3:#a07ff0;--c4:#30c07a;--ok:#30c07a;--bad:#ff6961;--warn:#e3b341;--nasa:#3987e5;--classical:#a1a1a6;--fit:#e3b341;color-scheme:dark}
 :root[data-theme="light"]{color-scheme:light}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
@@ -30,13 +31,13 @@ button{cursor:pointer}
 .muted{color:var(--muted)}
 .small{font-size:.875rem}
 section.block{margin-top:clamp(2rem,6vw,3.5rem);padding-top:1.25rem;border-top:1px solid var(--border)}
-.btn{display:inline-flex;align-items:center;gap:.35rem;border:1px solid var(--border);background:var(--bg);border-radius:999px;padding:.25rem .8rem;min-height:2.25rem;font-size:.875rem;white-space:nowrap}
+.btn{display:inline-flex;align-items:center;gap:.35rem;border:1px solid var(--control);background:var(--bg);border-radius:999px;padding:.25rem .8rem;min-height:2.25rem;font-size:.875rem;white-space:nowrap}
 @media (hover:hover){.btn:hover{background:var(--surface)}}
 .btn[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
 .toolbar{display:flex;flex-wrap:wrap;gap:.6rem 1.2rem;align-items:center;margin:1rem 0 .75rem;padding:.6rem 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
 .toolbar .group{display:flex;flex-wrap:wrap;gap:.35rem;align-items:center;min-width:0}
 .label{font:600 .7rem var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-right:.2rem}
-select,input[type="number"],input[type="text"],textarea{border:1px solid var(--border);background:var(--bg);border-radius:var(--r);padding:.3rem .5rem;min-height:2.25rem;font-size:.875rem;min-width:0;width:100%}
+select,input[type="number"],input[type="text"],textarea{border:1px solid var(--control);background:var(--bg);border-radius:var(--r);padding:.3rem .5rem;min-height:2.25rem;font-size:.875rem;min-width:0;width:100%}
 .toolbar select{width:auto;max-width:100%}
 input[type="number"]{font-variant-numeric:tabular-nums}
 input[type="range"]{width:100%}
@@ -45,7 +46,7 @@ input[type="range"]{width:100%}
 .badge.pass{color:var(--ok)}
 .badge.fail{color:var(--bad)}
 .tabs{display:flex;flex-wrap:wrap;gap:.35rem;margin:1rem 0}
-.tabs button{border:1px solid var(--border);background:var(--bg);border-radius:var(--r);padding:.45rem .9rem;font-size:.9375rem;font-weight:600}
+.tabs button{border:1px solid var(--control);background:var(--bg);border-radius:var(--r);padding:.45rem .9rem;font-size:.9375rem;font-weight:600}
 .tabs button[aria-selected="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
 .material{display:grid;grid-template-columns:repeat(auto-fill,minmax(8.5rem,1fr));gap:.5rem .6rem;margin:.5rem 0 0}
 .layout{display:grid;gap:1.5rem 2rem;grid-template-columns:minmax(0,24rem) minmax(0,1fr);align-items:start}

@@ -239,7 +239,7 @@ test("built page is self-contained, carries the banner and registers its WebMCP 
     navigator: { modelContext: { registerTool: (t) => tools.push(t) } }, Blob: function () {}, URL: inert(), FileReader: function () {},
   });
   ctx.self = ctx; ctx.window = ctx;
-  for (const m of html.matchAll(/<script>([\s\S]*?)<\/script>/g)) vm.runInContext(m[1], ctx);
+  for (const m of html.matchAll(/<script(?: id="[^"]*")?>([\s\S]*?)<\/script>/g)) vm.runInContext(m[1], ctx);
   assert.deepEqual(tools.map((t) => t.name), names);
   const call = async (name, input) => JSON.parse((await tools.find((t) => t.name === name).execute(input)).content[0].text);
   const solved = await call("solve_stability", { tab: "shear", inputs: { t: 1.2 } });
