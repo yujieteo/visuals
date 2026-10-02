@@ -11,5 +11,3 @@ export function fmt(value, precision = 4, scale = 0) {
   const text = a >= 1e-4 && a < 1e12 ? String(rounded) : rounded.toExponential(Math.max(0, precision - 1)).replace(/\.?0+e/, "e");
   return text.replace(/^-/, "−");
 }
-
-export const fmtDeg = (value, precision = 4) => `${fmt(value, precision)}°`;
