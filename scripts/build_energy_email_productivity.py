@@ -32,8 +32,6 @@ CURVE = [
     [8.0, 48], [9.0, 62], [10.0, 74], [11.0, 82], [12.0, 86],
     [13.0, 80], [14.0, 62], [15.0, 70], [16.0, 84], [17.0, 88], [18.0, 76],
 ]
-DIP_START = 13.0
-DIP_END = 15.0
 
 # Marker anchors: energy markers sit on the curve (need an alertness value),
 # email markers sit just above the email auto-check strip.

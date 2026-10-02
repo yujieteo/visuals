@@ -467,7 +467,6 @@ def verify(raw, meta, html):
             assert names.get(al.lower(), a["id"]) == a["id"], ("alias equals another action's name", a["id"], al)
     names = [a["name"].lower() for a in acts]
     assert len(names) == len(set(names)), "duplicate names"
-    alias_owner = {}
     for a in acts:
         for al in a["aliases"]:
             assert al.strip() == al and al, (a["id"], al)
