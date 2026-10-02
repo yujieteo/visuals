@@ -12,7 +12,7 @@ Change and test here first, then port. The site's [add-visualization playbook](h
 
 See [README.md](README.md). `kinematics.js` is the pure deformation model and beamdswitch report (no DOM, no three.js), `template.html` the page, scene and WebMCP tools, `raw.json` the published metadata (published as `data.json`), and `vendor/three.min.js` the checked-in three.js r186 bundle. `build.mjs` inlines them with `beamdswitch.js` into `template.html` to write `index.html`, which is generated.
 
-The tests are in `tests/`, with read-only copies of beamdswitch's deck parsers and the site's shared template in `tests/fixtures/beamdswitch/`.
+The tests are in `tests/`, with read-only copies of beamdswitch's deck parsers and the site's report outline in `tests/fixtures/beamdswitch/`; the site's shared template, `beamdswitch.js`, is pinned by its SHA-256.
 
 ## Build, test and verify
 
@@ -21,7 +21,7 @@ From the repository root:
 ```sh
 node build.mjs                    # regenerate index.html
 node build.mjs --check            # fail if index.html is stale
-node --test 'tests/*.test.{mjs,cjs}'
+node --test 'tests/*.test.mjs'
 ```
 
 CI (`.github/workflows/ci.yml`) runs the `--check` and the tests on every push and pull request: `tests/distortion.test.mjs` (kinematics, presets, the built page and the build) and `tests/beamdswitch.test.mjs` (the beamdswitch deck). yujieteo/site runs no Structural Distortion Explorer logic tests; it only checks its ported copy as part of the site.

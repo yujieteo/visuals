@@ -51,6 +51,7 @@
   const APPLIES = { axial: STRUCTURES, shear: BEAMS, torsion: BEAMS, bending: BEAMS, inplane: ["panel"] };
 
   const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
+  const radians = (deg) => (deg * Math.PI) / 180;
 
   /* ---------- Sampled cross-section paths ---------- */
 
@@ -316,10 +317,13 @@
     };
   }
 
+  /* Load k's slider value on this structure: 0 for a load the structure does not take. */
+  const applied = (structure, loads, k) => (APPLIES[k].includes(structure) ? loads[k] || 0 : 0);
+
   /* Effective (exaggerated) load amplitudes and the bending centreline table. */
   function prepare(model, state) {
     const e = state.exaggeration;
-    const on = (k) => (APPLIES[k].includes(model.structure) ? state.loads[k] || 0 : 0);
+    const on = (k) => applied(model.structure, state.loads, k);
     const P = {
       model, state,
       epsA: on("axial") * EPS_AXIAL * e,
@@ -453,8 +457,8 @@
    * and the demand functions sigma(x) (compression positive) and tau, both in
    * slider units. Circular tube: none. */
   function plates(model, state) {
-    const L_ = state.loads, out = [];
-    const on = (k) => (APPLIES[k].includes(model.structure) ? L_[k] || 0 : 0);
+    const out = [];
+    const on = (k) => applied(model.structure, state.loads, k);
     const N = on("axial"), V = on("shear"), T = on("torsion"), M = on("bending"), Q = on("inplane");
     if (model.structure === "panel") {
       const G = GEOM.panel, C = BUCKLE.panel;
@@ -602,7 +606,7 @@
   /* Effects in play for the legend: analytic or assumed. */
   function activeEffects(P) {
     const s = P.state, st = P.model.structure, out = [];
-    const on = (k) => APPLIES[k].includes(st) && Math.abs(s.loads[k] || 0) > 0.005;
+    const on = (k) => Math.abs(applied(st, s.loads, k)) > 0.005;
     if (on("axial")) out.push(["axial", "analytic"], ["poisson", "analytic"]);
     if (on("bending")) out.push(["bending", "analytic"]);
     if (on("shear")) out.push(["shear", "analytic"]);
@@ -672,7 +676,7 @@
   /* Keep the whole (rotated) patch on its wall. */
   function placePatch(model, patch) {
     const w = model.walls[patch.wall] || model.walls[0];
-    const a = (patch.angle * Math.PI) / 180, half = (PATCH / 2) * (Math.abs(Math.cos(a)) + Math.abs(Math.sin(a)));
+    const a = radians(patch.angle), half = (PATCH / 2) * (Math.abs(Math.cos(a)) + Math.abs(Math.sin(a)));
     const out = { wall: w.id, side: patch.side === -1 ? -1 : 1, angle: clamp(patch.angle, 0, 90) };
     out.u = clamp(patch.u, w.u0 + half + 0.05, w.u1 - half - 0.02);
     if (w.closed) out.v = ((patch.v % w.path.length) + w.path.length) % w.path.length;
@@ -691,7 +695,7 @@
   /* Param-space polylines of the 4 x 4 grid: each is a list of [u, v]. */
   function patchParamLines(model, patch, samples = 12) {
     const w = model.walls[patch.wall], sg = faceSign(w, patch);
-    const a = (patch.angle * Math.PI) / 180, c = Math.cos(a), s = Math.sin(a), h = PATCH / 2;
+    const a = radians(patch.angle), c = Math.cos(a), s = Math.sin(a), h = PATCH / 2;
     const at = (xi, eta) => [patch.u + xi * c - eta * s, patch.v + sg * (xi * s + eta * c)];
     const lines = [];
     for (let k = 0; k < PATCH_LINES; k++) {
@@ -719,7 +723,7 @@
     const Fs = sub3(at(0, sg * h), at(0, -sg * h)).map((x) => x / (2 * h));
     const C = [dot3(Fu, Fu), dot3(Fu, Fs), dot3(Fs, Fs)];
     const E = [(C[0] - 1) / 2, C[1] / 2, (C[2] - 1) / 2];
-    const a = (patch.angle * Math.PI) / 180, c = Math.cos(a), s = Math.sin(a);
+    const a = radians(patch.angle), c = Math.cos(a), s = Math.sin(a);
     const e11 = c * c * E[0] + 2 * c * s * E[1] + s * s * E[2];
     const e22 = s * s * E[0] - 2 * c * s * E[1] + c * c * E[2];
     const e12 = (c * c - s * s) * E[1] + c * s * (E[2] - E[0]);
