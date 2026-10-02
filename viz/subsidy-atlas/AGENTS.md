@@ -14,17 +14,24 @@ Tests live in `tests/` of yujieteo/subsidy-atlas: `tests/subsidy-atlas.test.cjs`
 
 ## Build, test and verify
 
-Run from the root of a yujieteo/subsidy-atlas checkout (Python 3 standard library and Node 22; nothing to install):
-
-`build.py` inlines the design tokens from yujieteo/site's `static/css/style.css`, two directories up, so run it inside `visuals/subsidy-atlas/` of a site checkout; the tests build in a temporary copy laid out that way with the fixture `tests/fixtures/static/css/style.css`.
+Python 3 standard library and Node 22; nothing to install. `build.py` inlines the design tokens from yujieteo/site's `static/css/style.css`, two directories up, so it runs only inside `visuals/subsidy-atlas/` of a site checkout; the Python tests build in a temporary copy laid out that way beside the fixture `tests/fixtures/static/css/style.css`. From a site checkout's `visuals/subsidy-atlas/`:
 
 ```sh
-python3 author.py          # after editing the evidence
+python3 author.py          # after editing the evidence: rewrites raw.json
 python3 build.py           # regenerate index.html
 python3 build.py --verify  # check it is fresh
-node --test tests/subsidy-atlas.test.cjs tests/subsidy-atlas-beamdswitch.test.mjs
-python3 -m unittest discover -s tests -p 'test_subsidy_atlas.py'
 ```
+
+From the root of a yujieteo/subsidy-atlas checkout, as CI (`.github/workflows/ci.yml`) does:
+
+```sh
+node --test 'tests/*.test.{mjs,cjs}'
+python3 -m unittest discover -s tests -p 'test_*.py'
+```
+
+## Change workflow
+
+Change and test this repository first, end to end (open the built page in a browser, filter, open a card, save the deck), and run no-mistakes here; then port the page files byte for byte into `visuals/subsidy-atlas/` of yujieteo/site, where a second no-mistakes run covers only the site's own tests. Logic tests stay here; never add them to the site.
 
 ## Conventions
 

@@ -3,7 +3,7 @@
 A self-contained consumer guide with 15 sourced records, a depth × lifecycle
 count matrix, four filters, search, and three separately flagged speculative
 watchlist picks. Published at `/visuals/subsidy-atlas/index.html` by the normal
-site build. No deployment is part of this change.
+site build.
 
 ## Update the evidence
 
@@ -68,4 +68,4 @@ Node tests execute filtering, matrix drilldown and detail retrieval. All are
 included in normal CI. Invalid claim references or unflagged forecasts also
 prevent the visualization builder from rendering.
 
-Real-browser evidence and screenshots: [verification](../../docs/subsidy-atlas/verification.md).
+Real-browser evidence and screenshots: [verification](https://github.com/yujieteo/site/blob/main/docs/subsidy-atlas/verification.md) in yujieteo/site.

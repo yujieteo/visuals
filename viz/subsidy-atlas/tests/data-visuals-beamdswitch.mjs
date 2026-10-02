@@ -17,13 +17,6 @@ export function assertTemplateCopy(slug) {
     `tests/fixtures/beamdswitch/beamdswitch.js and beamdswitch.js must stay identical (${slug})`);
 }
 
-// The page inlines each script verbatim in its own <script id="..."> block.
-export function assertInlined(html, id, source, what) {
-  const m = new RegExp(`<script id="${id}">\\n([\\s\\S]*?)</script>`).exec(html);
-  assert.ok(m, `${what}: the page has a <script id="${id}"> block`);
-  assert.equal(m[1], source, `${what}: the page inlines ${id} unchanged`);
-}
-
 const divs = (children, name, out = []) => {
   for (const c of children) if (c.type === "div") { if (c.name === name) out.push(c); divs(c.children, name, out); }
   return out;
@@ -83,10 +76,10 @@ function element(tag, store = {}) {
 }
 
 // Runs a built page's scripts in the stand-in DOM. click(id) clicks a button and waits for its handlers;
-// saved holds each downloaded file's text and copied each clipboard write. globals replaces or adds browser globals.
-export async function openPage(slug, { hash = "", search = "", globals = {} } = {}) {
+// saved holds each downloaded file's text and copied each clipboard write.
+export async function openPage(slug) {
   const html = read("index.html");
-  const byId = new Map(), bySelector = new Map(), urls = new Map(), created = [], saved = [], copied = [];
+  const byId = new Map(), bySelector = new Map(), urls = new Map(), saved = [], copied = [];
   for (const m of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)) {
     const id = /\bid="([^"]+)"/.exec(m[1])?.[1];
     if (id) byId.set(id, element("script", { textContent: m[2] }));
@@ -99,7 +92,6 @@ export async function openPage(slug, { hash = "", search = "", globals = {} } = 
     querySelector: (s) => (/^#[\w-]+$/.test(s) ? get(byId, s.slice(1)) : get(bySelector, s)),
     createElement: (tag) => {
       const e = element(tag);
-      created.push(e);
       if (tag === "a") e.click = async () => saved.push({ name: e.download, text: await urls.get(e.href).text() });
       return e;
     },
@@ -107,7 +99,7 @@ export async function openPage(slug, { hash = "", search = "", globals = {} } = 
   const context = vm.createContext({
     document, console, Intl, Blob, URLSearchParams, TextEncoder, JSON, Math, Date,
     navigator: { clipboard: { writeText: async (text) => { copied.push(text); } } },
-    location: { hash, search, pathname: `/visuals/${slug}/`, href: `https://teoyujie.org/visuals/${slug}/${hash}` },
+    location: { hash: "", search: "", pathname: `/visuals/${slug}/`, href: `https://teoyujie.org/visuals/${slug}/` },
     history: { replaceState() {}, pushState() {} },
     localStorage: { getItem: () => null, setItem() {}, removeItem() {} },
     URL: Object.assign(function (u) { return new URL(u); }, {
@@ -116,20 +108,11 @@ export async function openPage(slug, { hash = "", search = "", globals = {} } = 
     matchMedia: () => element("media", { matches: false }), getComputedStyle: () => element("style"),
     addEventListener() {}, removeEventListener() {}, scrollTo() {}, innerWidth: 1200, innerHeight: 800, scrollX: 0, scrollY: 0, devicePixelRatio: 1,
     ResizeObserver: class { observe() {} disconnect() {} }, IntersectionObserver: class { observe() {} disconnect() {} },
-    ...globals,
   });
   context.window = context.self = context.globalThis = context;
   for (const m of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)) if (!/type="application\/json"/.test(m[1])) vm.runInContext(m[2], context);
   const click = async (id) => { await get(byId, id).dispatch("click"); await new Promise((r) => setImmediate(r)); };
-  // Clicks the latest drawn control whose attributes and text match, as the page redraws its controls.
-  const textOf = (e) => e.textContent + e.children.map(textOf).join("");
-  const press = async (match) => {
-    const e = created.findLast((x) => x.listeners.click && match({ attr: (k) => x.getAttribute(k), text: textOf(x) }));
-    assert.ok(e, "the page drew the control");
-    await e.dispatch("click");
-  };
-  const change = async (id, value) => { const e = get(byId, id); e.value = value; await e.dispatch("change"); };
-  return { run: (code) => vm.runInContext(code, context), click, press, change, saved, copied };
+  return { run: (code) => vm.runInContext(code, context), click, saved, copied };
 }
 
 // Clicking beamdswitch downloads the deck of the page as set; Copy deck puts that same deck on the clipboard.
