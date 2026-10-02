@@ -131,11 +131,3 @@ export async function openPage(slug, { hash = "", search = "", globals = {} } = 
   const change = async (id, value) => { const e = get(byId, id); e.value = value; await e.dispatch("change"); };
   return { run: (code) => vm.runInContext(code, context), click, press, change, saved, copied };
 }
-
-// Clicking beamdswitch downloads the deck of the page as set; Copy deck puts that same deck on the clipboard.
-export async function assertButtonsExport(page, slug, expected) {
-  await page.click("save-beamdswitch");
-  assert.deepEqual(page.saved, [{ name: `${slug}-beamdswitch.md`, text: expected }]);
-  await page.click("copy-beamdswitch");
-  assert.deepEqual(page.copied, [expected]);
-}

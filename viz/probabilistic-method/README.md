@@ -55,6 +55,6 @@ indicator expectations and brute force, displayed dependency degree against the 
 maximum, histogram trial counts, deck equations against lab values, exports against the
 scene state), the inventory, every deck with beamdswitch's own parser, and the page booted
 in a stand-in DOM with its WebMCP tools and export buttons. `tests/page-checks.mjs` holds
-the shared deck and stand-in DOM helpers; beamdswitch's parsers and read-only copies of the
+the shared deck and stand-in DOM helpers; beamdswitch's deck parser and read-only copies of the
 site's `templates/beamdswitch.js` and `templates/beamdswitch-report.md` are in
 `tests/fixtures/beamdswitch/`.
