@@ -11,17 +11,16 @@ import { parseDeck, splitSentences } from "./fixtures/beamdswitch/deck.mjs";
 const root = new URL("../", import.meta.url);
 export const read = (path) => readFileSync(new URL(path, root), "utf8");
 export const require = createRequire(import.meta.url);
-export const load = (path) => require(new URL(path, root).pathname);
 export const TEMPLATE_PATH = "tests/fixtures/beamdswitch/beamdswitch.js";
-export const SECTIONS = require(`../${TEMPLATE_PATH}`).SECTIONS.map(([, title]) => title);
+const SECTIONS = require(`../${TEMPLATE_PATH}`).SECTIONS.map(([, title]) => title);
 
 // A site checkout to compare against as well, when one is at hand: SITE_REPO, or a sibling `site`.
 const siteRepo = process.env.SITE_REPO || new URL("../../site/", import.meta.url).pathname;
-export const SITE_TEMPLATE = `${siteRepo.replace(/\/$/, "")}/templates/beamdswitch.js`;
-export const haveSite = existsSync(SITE_TEMPLATE);
+const SITE_TEMPLATE = `${siteRepo.replace(/\/$/, "")}/templates/beamdswitch.js`;
+const haveSite = existsSync(SITE_TEMPLATE);
 
 // The copy matches a site checkout's templates/beamdswitch.js.
-export function assertSiteTemplate(copy, sitePath, what) {
+function assertSiteTemplate(copy, sitePath, what) {
   assert.equal(copy, readFileSync(sitePath, "utf8"), `the site's templates/beamdswitch.js and ${what} must stay identical`);
 }
 
@@ -107,8 +106,8 @@ function element(tag, store = {}) {
 // Runs a built page's scripts in the stand-in DOM. The page's own <button>s stand in with their attributes,
 // data-* and text, found by id or by a [data-*] selector. click(id) clicks a button and waits for its handlers;
 // press(match) clicks the latest drawn control that matches; saved holds each downloaded file's text and
-// copied each clipboard write; run(code) evaluates code in the page's global scope. globals adds stand-ins (such as d3).
-export async function openPage(slug, { globals = {} } = {}) {
+// copied each clipboard write; run(code) evaluates code in the page's global scope.
+export async function openPage(slug) {
   const html = read(`index.html`);
   const byId = new Map(), bySelector = new Map(), urls = new Map(), created = [], saved = [], copied = [];
   for (const m of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)) {
@@ -152,7 +151,6 @@ export async function openPage(slug, { globals = {} } = {}) {
     matchMedia: () => element("media", { matches: false }), getComputedStyle: () => element("style"), Event: class { constructor(type) { this.type = type; } },
     addEventListener() {}, removeEventListener() {}, scrollTo() {}, innerWidth: 1200, innerHeight: 800, scrollX: 0, scrollY: 0, devicePixelRatio: 1,
     ResizeObserver: class { observe() {} disconnect() {} }, IntersectionObserver: class { observe() {} disconnect() {} },
-    ...globals,
   });
   context.window = context.self = context.globalThis = context;
   for (const m of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)) if (!/\bsrc=|type="application\/json"/.test(m[1])) vm.runInContext(m[2], context);
@@ -163,7 +161,7 @@ export async function openPage(slug, { globals = {} } = {}) {
     assert.ok(e, "the page drew the control");
     await e.dispatch("click");
   };
-  return { html, run: (code) => vm.runInContext(code, context), click, press, saved, copied };
+  return { run: (code) => vm.runInContext(code, context), click, press, saved, copied };
 }
 
 // Clicking beamdswitch downloads the deck of the page as set; Copy deck puts that same deck on the clipboard.
@@ -172,14 +170,4 @@ export async function assertButtonsExport(page, slug, expected) {
   assert.deepEqual(page.saved, [{ name: `${slug}-beamdswitch.md`, text: expected }]);
   await page.click("copy-beamdswitch");
   assert.deepEqual(page.copied, [expected]);
-}
-
-// The page's deck-row matches the site's: a beamdswitch button, a Copy deck button and a status line,
-// and the hint never claims the download falls back to the clipboard.
-export function assertDeckButtons(html, what) {
-  assert.match(html, /<button type="button" id="save-beamdswitch"[^>]*>beamdswitch<\/button>/, what);
-  assert.match(html, /<button type="button" id="copy-beamdswitch"[^>]*>Copy deck<\/button>/, what);
-  assert.match(html, /id="deck-status"[^>]*role="status"/, what);
-  assert.ok(html.includes('href="https://teoyujie.org/visuals/beamdswitch/"'), `${what}: links beamdswitch`);
-  assert.doesNotMatch(html, /saving is blocked|copied (it )?instead|falls? back to the clipboard/i, `${what}: no clipboard-fallback claim`);
 }
