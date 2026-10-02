@@ -6,6 +6,8 @@ Four stability checks with every formula tagged by source: column buckling, seco
 
 This repository, [yujieteo/stability](https://github.com/yujieteo/stability), is the source of truth: the Structural Stability Visualiser and its tests are developed here, and its CI runs them here. `visuals/stability/` in [yujieteo/site](https://github.com/yujieteo/site/tree/main/visuals/stability) is a port of the page files, refreshed whenever the visualiser is updated, and the site runs no logic tests for it. Porting copies this repository minus `tests/` and `.github/`, so AGENTS.md and SKILLS.md must not link into either (the site checks that their links resolve).
 
+Change and test here first, then port. The site's [add-visualization playbook](https://github.com/yujieteo/site/blob/main/skills/playbooks/add-visualization.md) owns the procedure: run this repository's tests, an end-to-end check of the page in a browser and the first no-mistakes pass here; then port the page files into yujieteo/site and run the second pass there with site-level tests only. Logic and browser tests stay here, never in the site; time every test you add (`time node --test tests/<file>`).
+
 ## Files and data
 
 See [README.md](README.md). `engine.js` is the pure calculation core (no DOM; `Stability` in the browser, `require` in Node), `template.html` the page and WebMCP tools, `raw.json` the sources and digitised NASA figure points (published as `data.json`), and `build.py` inlines `raw.json`, `engine.js` and `beamdswitch.js` into `template.html` to write `index.html`, which is generated.
