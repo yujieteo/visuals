@@ -20,6 +20,16 @@ node --test 'tests/*.test.{mjs,cjs}'
 - Inside `index.html`: `<script id="delta-cohomology-engine">` (pure core, `self.DeltaCohomology`), `<script id="delta-cohomology-ui">` (page and WebMCP tools) and `<script id="beamdswitch">`.
 - `tests/delta-cohomology.test.mjs`: the derived matrices against the stated ones, ∂² = 0 for every orientation choice, the cohomology table over ℤ, 𝔽₂ and 𝔽₃, the Smith factor 2 of RP², orientation invariance, the cup-product rings, `raw.json`, the beamdswitch decks, and the page booted against a stand-in DOM to call its WebMCP tools and deck buttons. `tests/data-visuals-beamdswitch.mjs` holds the shared deck checks, and `tests/fixtures/beamdswitch/` read-only copies of beamdswitch's deck parser and the site's `templates/beamdswitch.js` and `templates/beamdswitch-report.md`.
 
+## Workflow
+
+Every change follows the site's [add-visualization playbook](https://github.com/yujieteo/site/blob/main/skills/playbooks/add-visualization.md):
+
+1. Change and test it here first: run the commands above and check the page end to end in a browser.
+2. Run the first no-mistakes pass in this repository. It also checks the page in a shallow clone of yujieteo/site (`git clone --depth 1 https://github.com/yujieteo/site`) with the change ported in; build and browse only this page there, never the site's full build or test suite.
+3. Once this repository's pull request merges, port the page files byte for byte into `visuals/delta-cohomology/` in yujieteo/site (this repository minus `tests/` and `.github/`) and run the second no-mistakes pass on that pull request, which runs only the site-level tests.
+
+Logic, end-to-end and other heavy tests live here, where they run only when this tool changes; the site adds none for it, so its test time stays flat.
+
 ## Conventions
 
 - One self-contained `index.html`: no external scripts, stylesheets, fonts or network requests (a Content-Security-Policy forbids them). It works offline and from `file://`.
