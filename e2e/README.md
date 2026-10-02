@@ -47,7 +47,7 @@ Everything is chosen by environment variables:
 | `E2E_ONLY` | comma-separated slugs |
 | `E2E_SHARD` | `i/n`: every n-th visual from the i-th, for splitting a run across machines |
 | `E2E_CONCURRENCY` | visuals tested at once per browser (default 4) |
-| `E2E_RESULTS` | write one JSON line per check to `<folder>/<project>.<run>.jsonl`, where the run is `baseline` (with its shard) or `full-<slug>`; each run empties its own files when it starts, so rerunning into the same folder replaces that run's results |
+| `E2E_RESULTS` | write one JSON line per check to `<folder>/<project>.<run>[.<shard>].jsonl`, where the run is `baseline` (a sharded baseline adds e.g. `1of2`) or `full-<slug>`; each run empties its own files for the selected projects when it starts, so rerunning into the same folder replaces that run's results, and an unsharded baseline also empties every shard's baseline file |
 | `E2E_TMP` | where staged artifacts and downloads go (default the system temp folder) |
 
 For example, to test a visual's repository before porting it:

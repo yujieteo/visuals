@@ -58,10 +58,11 @@ export const MANIFEST_DIR = join(ROOT, "manifest");
 
 /**
  * @param {string} slug
+ * @param {string} [dir]
  * @returns {Manifest}
  */
-export function loadManifest(slug) {
-  const path = join(MANIFEST_DIR, `${slug}.json`);
+export function loadManifest(slug, dir = MANIFEST_DIR) {
+  const path = join(dir, `${slug}.json`);
   return existsSync(path) ? JSON.parse(readFileSync(path, "utf8")) : {};
 }
 

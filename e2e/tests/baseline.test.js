@@ -10,7 +10,7 @@ import { startResults } from "../lib/results.js";
 import { loadTargets } from "../lib/targets.js";
 
 const targets = await loadTargets();
-const recordResult = startResults(`baseline${process.env.E2E_SHARD ? `-${process.env.E2E_SHARD}` : ""}`, selectedProjects());
+const recordResult = startResults("baseline", selectedProjects(), process.env.E2E_SHARD);
 const concurrency = Number(process.env.E2E_CONCURRENCY ?? 4);
 after(() => targets.close());
 

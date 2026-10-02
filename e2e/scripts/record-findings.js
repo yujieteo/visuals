@@ -1,9 +1,10 @@
 // Turn the failures of a run into manifest findings. Run the suite with
-// E2E_RESULTS=<folder>, then: node scripts/record-findings.js <folder>.
-// Each failing check of a visual becomes (or replaces) one finding in
-// manifest/<slug>.json listing the projects it failed in and the first
-// evidence; a finding whose check now passes in every project it was seen
-// in is dropped.
+// E2E_RESULTS=<folder>, then: node scripts/record-findings.js <folder>
+// [manifest folder]. Each failing check of a visual becomes (or replaces) one
+// finding in manifest/<slug>.json listing the projects it failed in and the
+// first evidence. A project counts as retested for a check only when the
+// check passed or failed there; a skip keeps what an earlier run found, and a
+// finding whose check now passes in every project it was seen in is dropped.
 // Review the diff: mark a check that fails only sometimes "status": "flaky".
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -11,7 +12,8 @@ import { PROJECTS } from "../lib/browser.js";
 import { MANIFEST_DIR, loadManifest } from "../lib/manifest.js";
 
 const dir = process.argv[2];
-if (!dir || !existsSync(dir)) throw new Error("usage: node scripts/record-findings.js <E2E_RESULTS folder>");
+if (!dir || !existsSync(dir)) throw new Error("usage: node scripts/record-findings.js <E2E_RESULTS folder> [manifest folder]");
+const manifestDir = process.argv[3] ?? MANIFEST_DIR;
 
 /** @type {import("../lib/results.js").CheckResult[]} */
 const results = readdirSync(dir).filter((n) => n.endsWith(".jsonl"))
@@ -27,15 +29,15 @@ for (const r of results) {
 
 let written = 0;
 for (const [slug, checks] of [...bySlug].sort(([a], [b]) => a.localeCompare(b))) {
-  const manifest = loadManifest(slug);
-  const projectsRun = new Set([...checks.values()].flat().map((r) => r.project));
+  const manifest = loadManifest(slug, manifestDir);
   /** @type {import("../lib/manifest.js").Finding[]} */
   const kept = (manifest.findings ?? []).filter((f) => !checks.has(f.check));
   for (const [check, runs] of checks) {
     const previous = (manifest.findings ?? []).find((f) => f.check === check);
-    // Projects this run did not cover keep what an earlier run found in them.
+    // Projects this run did not retest keep what an earlier run found in them.
+    const retested = new Set(runs.filter((r) => r.outcome !== "skip").map((r) => r.project));
     const previousProjects = previous?.projects.includes("*") ? PROJECTS.map((p) => p.name) : previous?.projects ?? [];
-    const carried = previousProjects.filter((p) => !projectsRun.has(p));
+    const carried = previousProjects.filter((p) => !retested.has(p));
     let projects = [...new Set([...carried, ...runs.filter((r) => r.outcome === "fail").map((r) => r.project)])].sort();
     if (!projects.length) continue;
     if (PROJECTS.every((p) => projects.includes(p.name))) projects = ["*"];
@@ -49,7 +51,7 @@ for (const [slug, checks] of [...bySlug].sort(([a], [b]) => a.localeCompare(b)))
   if (kept.length) manifest.findings = kept.sort((a, b) => a.check.localeCompare(b.check));
   else delete manifest.findings;
   if (JSON.stringify(manifest.findings ?? []) === before) continue;
-  writeFileSync(join(MANIFEST_DIR, `${slug}.json`), `${JSON.stringify(manifest, null, 2)}\n`);
+  writeFileSync(join(manifestDir, `${slug}.json`), `${JSON.stringify(manifest, null, 2)}\n`);
   written++;
 }
 console.log(`updated ${written} manifest(s) from ${results.length} results`);

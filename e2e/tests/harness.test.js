@@ -1,7 +1,8 @@
 // The harness itself, without a browser: discovery, staging, the static
 // server, sharding and manifest options.
 import assert from "node:assert/strict";
-import { mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -109,9 +110,45 @@ test("a rerun replaces its own results and leaves other runs' alone", () => {
     assert.deepEqual(readdirSync(dir).sort(), ["chromium-desktop.baseline.jsonl", "chromium-desktop.full-alpha.jsonl"]);
     assert.deepEqual(lines("chromium-desktop.baseline.jsonl"), ["pass"]);
     assert.deepEqual(lines("chromium-desktop.full-alpha.jsonl"), ["fail"]);
+    startResults("baseline", [project], "1/2")(result("fail"));
+    assert.deepEqual(lines("chromium-desktop.baseline.1of2.jsonl"), ["fail"]);
+    assert.deepEqual(lines("chromium-desktop.baseline.jsonl"), ["pass"], "a sharded run leaves the unsharded file alone");
+    startResults("baseline", [project]);
+    assert.deepEqual(readdirSync(dir).sort(), ["chromium-desktop.baseline.jsonl", "chromium-desktop.full-alpha.jsonl"], "an unsharded run empties every shard's file");
+    assert.deepEqual(lines("chromium-desktop.baseline.jsonl"), []);
   } finally {
     if (saved === undefined) delete process.env.E2E_RESULTS;
     else process.env.E2E_RESULTS = saved;
     rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("recording findings keeps what a run did not retest and drops what now passes", () => {
+  const root = mkdtempSync(join(tmpdir(), "technical-e2e-record-"));
+  try {
+    const [results, manifests] = ["results", "manifest"].map((n) => join(root, n));
+    for (const d of [results, manifests]) mkdirSync(d);
+    const finding = (/** @type {string} */ check, /** @type {string[]} */ projects) => ({ check, projects, status: "finding", evidence: "old", owner: "o" });
+    writeFileSync(join(manifests, "alpha.json"), JSON.stringify({ findings: [
+      finding("console-errors", ["*"]),
+      finding("file-url", ["chromium-desktop"]),
+      finding("network", ["*"]),
+      finding("opens", ["chromium-desktop", "firefox-desktop"]),
+    ] }));
+    /** @param {string} check @param {"pass" | "fail" | "skip"} outcome */
+    const line = (check, outcome) => JSON.stringify({ slug: "alpha", check, project: "chromium-desktop", outcome, evidence: "new", owner: "o", ms: 1 });
+    writeFileSync(join(results, "chromium-desktop.baseline.jsonl"), [
+      line("console-errors", "fail"), line("file-url", "skip"), line("network", "pass"), line("opens", "pass"),
+    ].join("\n"));
+    execFileSync(process.execPath, [fileURLToPath(new URL("../scripts/record-findings.js", import.meta.url)), results, manifests]);
+    const findings = JSON.parse(readFileSync(join(manifests, "alpha.json"), "utf8")).findings;
+    assert.deepEqual(Object.fromEntries(findings.map((/** @type {{ check: string, projects: string[] }} */ f) => [f.check, f.projects])), {
+      "console-errors": ["*"],
+      "file-url": ["chromium-desktop"],
+      network: ["chromium-mobile", "firefox-desktop", "webkit-desktop", "webkit-mobile"],
+      opens: ["firefox-desktop"],
+    });
+  } finally {
+    rmSync(root, { recursive: true, force: true });
   }
 });
