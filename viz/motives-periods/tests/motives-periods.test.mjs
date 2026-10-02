@@ -87,6 +87,15 @@ test("∮ dz/z is 2πi times the winding number, and the Riemann sum converges t
   }
 });
 
+test("the Tate panel writes k·2πi for every winding", () => {
+  const want = { 1: "2πi", [-1]: "−2πi", 2: "2·2πi", [-2]: "−2·2πi" };
+  for (const turns of M.TURNS) {
+    const t = M.analyse(M.normalize({ example: "tate", tate: { centre: 0, turns, steps: 64 } }).state).tate;
+    assert.ok(t.headline.endsWith(`the integral is ${want[turns]}.`), t.headline);
+    assert.ok(t.exactText.startsWith(`${want[turns]} = `), t.exactText);
+  }
+});
+
 test("counting points reads h(P¹) = 𝟏 ⊕ 𝐋 as 1 + q and G_m as q − 1", () => {
   for (const q of M.PRIMES) { assert.equal(M.pointCountP1(q), q + 1); assert.equal(M.pointCountGm(q), q - 1); }
   assert.deepEqual(plain(M.analyse(M.defaultState()).tate.counts), [2, 3, 5, 7, 11].map((q) => ({ q, p1: q + 1, gm: q - 1 })));
@@ -342,4 +351,24 @@ test("the page boots and its WebMCP tools answer", async () => {
   assert.equal(st.passed, st.total);
   // The tate panel shows the engine's numbers.
   assert.equal(s.$("tate-sum").textContent, M.analyse(M.defaultState()).tate.sumText);
+});
+
+test("partialSum is the defining nested sum, at depth one and above", () => {
+  // ζ(2, 1) cut at n₁ ≤ 4: Σ_{n₁ > n₂ ≥ 1} 1/(n₁² n₂), written out term by term.
+  const direct = 1 / 4 + (1 + 1 / 2) / 9 + (1 + 1 / 2 + 1 / 3) / 16;
+  assert.ok(Math.abs(M.partialSum([2, 1], 4) - direct) < 1e-15, `${M.partialSum([2, 1], 4)} vs ${direct}`);
+  assert.equal(M.partialSum([3], 1), 1);
+  assert.ok(Math.abs(M.partialSum([2], 3) - (1 + 1 / 4 + 1 / 9)) < 1e-15);
+});
+
+test("normalize clamps each integer field to its limits and says so", () => {
+  const { state, errors } = M.normalize({ tate: { steps: 9999 }, zeta: { terms: 0 }, feynman: { nodes: 3.6 } });
+  assert.deepEqual([state.tate.steps, state.zeta.terms, state.feynman.nodes], [512, 1, 4]);
+  assert.deepEqual([...errors], [
+    "tate.steps must be an integer from 3 to 512; using 512.",
+    "zeta.terms must be an integer from 1 to 100000; using 1.",
+    "feynman.nodes must be an integer from 4 to 200; using 4.",
+  ]);
+  const ok = M.normalize({ tate: { steps: 40 }, zeta: { terms: 500 }, feynman: { nodes: 80 } });
+  assert.deepEqual([ok.state.tate.steps, ok.state.zeta.terms, ok.state.feynman.nodes, ok.errors.length], [40, 500, 80, 0]);
 });

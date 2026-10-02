@@ -439,18 +439,8 @@ summary{cursor:pointer;font-weight:600;min-height:32px}
     }
     return total;
   }
-  /* The defining nested sum cut at n₁ ≤ N: slow, which is the point. */
-  function partialSum(s, N) {
-    const k = s.length;
-    let inner = null;
-    for (let j = k - 1; j >= 0; j--) {
-      const out = new Float64Array(N + 1);
-      let acc = 0;
-      for (let n = 1; n <= N; n++) { acc += (j === k - 1 ? 1 : inner[n - 1]) / Math.pow(n, s[j]); out[n] = acc; }
-      inner = out;
-    }
-    return inner[N];
-  }
+  /* The defining nested sum cut at n₁ ≤ N: slow, which is the point. It is Li_s(1) summed to N terms. */
+  const partialSum = (s, N) => multiPolylog(s, 1, N);
   /* Zagier's d_k (d₀ = 1, d₁ = 0, d₂ = 1, d_k = d_{k−2} + d_{k−3}) and Hoffman's compositions of k into 2s and 3s. */
   function zagierD(k) { const d = [1, 0, 1]; for (let i = 3; i <= k; i++) d.push(d[i - 2] + d[i - 3]); return d[k]; }
   function hoffmanCount(k) {
@@ -572,6 +562,12 @@ summary{cursor:pointer;font-weight:600;min-height:32px}
     const d = defaultState(), errors = [];
     if (raw === null || typeof raw !== "object" || Array.isArray(raw)) return { state: d, errors: ["The state must be an object."] };
     const st = defaultState();
+    // An integer field clamped to its limits, reporting any change.
+    const intField = (v, name, limits, fallback) => {
+      const n = clampInt(v, limits, fallback);
+      if (n !== +v) errors.push(`${name} must be an integer from ${limits[0]} to ${limits[1]}; using ${n}.`);
+      return n;
+    };
     if (raw.example !== undefined) { if (EXAMPLE_IDS.includes(raw.example)) st.example = raw.example; else errors.push(`Unknown example “${raw.example}”.`); }
     const t = raw.tate || {};
     if (t.centre !== undefined) {
@@ -580,13 +576,13 @@ summary{cursor:pointer;font-weight:600;min-height:32px}
       if (Number.isFinite(c) && st.tate.centre !== c) errors.push(`tate.centre ${c} was moved to ${st.tate.centre} (quarter steps from −2 to 2).`);
     }
     if (t.turns !== undefined) { if (TURNS.includes(+t.turns)) st.tate.turns = +t.turns; else errors.push("tate.turns must be −2, −1, 1 or 2."); }
-    if (t.steps !== undefined) { st.tate.steps = clampInt(t.steps, LIMITS.steps, d.tate.steps); if (st.tate.steps !== +t.steps) errors.push(`tate.steps must be an integer from 3 to 512; using ${st.tate.steps}.`); }
+    if (t.steps !== undefined) st.tate.steps = intField(t.steps, "tate.steps", LIMITS.steps, d.tate.steps);
     const z = raw.zeta || {};
     if (z.composition !== undefined) { const c = checkComposition(Array.isArray(z.composition) ? z.composition.map(Number) : z.composition); if (c.ok) st.zeta.composition = c.composition; else errors.push(c.error); }
-    if (z.terms !== undefined) { st.zeta.terms = clampInt(z.terms, LIMITS.terms, d.zeta.terms); if (st.zeta.terms !== +z.terms) errors.push(`zeta.terms must be an integer from 1 to 100000; using ${st.zeta.terms}.`); }
+    if (z.terms !== undefined) st.zeta.terms = intField(z.terms, "zeta.terms", LIMITS.terms, d.zeta.terms);
     const f = raw.feynman || {};
     if (f.graph !== undefined) { if (GRAPH[f.graph]) st.feynman.graph = f.graph; else errors.push(`Unknown graph “${f.graph}”.`); }
-    if (f.nodes !== undefined) { st.feynman.nodes = clampInt(f.nodes, LIMITS.nodes, d.feynman.nodes); if (st.feynman.nodes !== +f.nodes) errors.push(`feynman.nodes must be an integer from 4 to 200; using ${st.feynman.nodes}.`); }
+    if (f.nodes !== undefined) st.feynman.nodes = intField(f.nodes, "feynman.nodes", LIMITS.nodes, d.feynman.nodes);
     const allowed = countablePrimes(GRAPH[st.feynman.graph]);
     if (f.q !== undefined && !allowed.includes(+f.q)) errors.push(`q = ${f.q} is not offered for ${GRAPH[st.feynman.graph].name}; choose from ${allowed.join(", ")}.`);
     const q = f.q !== undefined && allowed.includes(+f.q) ? +f.q : st.feynman.q;
@@ -603,17 +599,19 @@ summary{cursor:pointer;font-weight:600;min-height:32px}
   const sub = (n) => [...String(n)].map((c) => "₀₁₂₃₄₅₆₇₈₉"[c]).join("");
   const sup = (n) => [...String(n)].map((c) => (c === "-" ? "⁻" : "⁰¹²³⁴⁵⁶⁷⁸⁹"[c])).join("");
 
+  /* k·2πi as the page writes it: 2πi, −2πi, 2·… with the sign as a minus character. */
+  const timesTwoPiI = (k) => `${k === 1 ? "" : k === -1 ? "−" : minus(k) + "·"}2πi`;
   function analyseTate(t) {
     const r = loopIntegral(t);
     const counts = PRIMES.slice(0, 5).map((q) => ({ q, p1: pointCountP1(q), gm: pointCountGm(q) }));
     let headline;
     if (r.onPath) headline = "The loop passes through 0, where dz/z has its pole: the integral is undefined.";
     else if (r.winding === 0) headline = "0 lies outside the loop: the integral is 0 (Cauchy).";
-    else headline = `The loop winds ${Math.abs(r.winding) === 1 ? "once" : "twice"} ${r.winding > 0 ? "anticlockwise" : "clockwise"} around 0: the integral is ${r.winding === 1 ? "" : r.winding === -1 ? "−" : minus(r.winding)}2πi.`;
+    else headline = `The loop winds ${Math.abs(r.winding) === 1 ? "once" : "twice"} ${r.winding > 0 ? "anticlockwise" : "clockwise"} around 0: the integral is ${timesTwoPiI(r.winding)}.`;
     return {
       ...r, counts, headline,
       sumText: r.sum ? cfmt(r.sum, 6) : "undefined",
-      exactText: r.exact ? (r.winding === 0 ? "0" : `${r.winding === 1 ? "" : r.winding === -1 ? "−" : minus(r.winding)}2πi = ${cfmt(r.exact, 6)}`) : "undefined",
+      exactText: r.exact ? (r.winding === 0 ? "0" : `${timesTwoPiI(r.winding)} = ${cfmt(r.exact, 6)}`) : "undefined",
       errorText: r.error === null ? "—" : sci(r.error),
     };
   }
@@ -1166,11 +1164,17 @@ summary{cursor:pointer;font-weight:600;min-height:32px}
   self.MotivesPeriodsTools = tools;
 
   /* ---------- INITIALIZATION ---------- */
+  // Lay the link's fragment over base, reporting anything it had to repair.
+  function stateFromHash(base) {
+    const r = M.fromHash(location.hash, base);
+    state = r.state;
+    if (r.errors.length) msg(`From the link: ${r.errors.join(" ")}`, true);
+  }
   function start() {
     $("nojs").hidden = true;
     $("app").hidden = false;
     renderStatic();
-    if (location.hash.length > 1) { const r = M.fromHash(location.hash); state = r.state; if (r.errors.length) msg(`From the link: ${r.errors.join(" ")}`, true); }
+    if (location.hash.length > 1) stateFromHash(M.defaultState());
     for (const ex of M.EXAMPLES) $(`tab-${ex.id}`).addEventListener("click", () => go(ex.id));
     document.addEventListener("keydown", onKey);
     $("tate-centre").addEventListener("input", (e) => edit((s) => { s.tate.centre = +e.target.value; }));
@@ -1192,7 +1196,7 @@ summary{cursor:pointer;font-weight:600;min-height:32px}
     $("reset").addEventListener("click", () => { $("zeta-error").textContent = ""; setState(M.defaultState(), { push: true }); msg("Reset to the defaults."); });
     $("import").addEventListener("click", importState);
     $("selftest-run").addEventListener("click", () => { runSelfTests(); $("selftest-details").open = true; });
-    addEventListener("hashchange", () => { const r = M.fromHash(location.hash, state); state = r.state; render(); if (r.errors.length) msg(`From the link: ${r.errors.join(" ")}`, true); });
+    addEventListener("hashchange", () => { stateFromHash(state); render(); });
     render();
     runSelfTests();
     const mc = (typeof document !== "undefined" && document.modelContext) || (typeof navigator !== "undefined" && navigator.modelContext);
