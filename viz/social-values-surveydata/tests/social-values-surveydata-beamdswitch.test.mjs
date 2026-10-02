@@ -21,7 +21,7 @@ test("the site's shared beamdswitch template is the copy the page inlines", () =
 });
 
 test("the beamdswitch button saves, and Copy deck copies, the chart's deck", async () => {
-  await assertButtonsExport(await openPage(SLUG), SLUG, md);
+  await assertButtonsExport(await openPage(), SLUG, md);
 });
 
 test("the deck parses in beamdswitch into the standard template, narrated on every slide", () => {
