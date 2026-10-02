@@ -122,7 +122,7 @@ the new ones, exports a narrated deck that carries its marks, word structures an
 | Offline | Passed: with the network emulated offline the only request is the page itself. |
 | 320 px layout | Passed in Chrome mobile emulation: no horizontal page scroll with every disclosure open; tree and strip scroll inside bounded regions. |
 | Touch targets | Passed: every visible link, button, input and summary at 320 px is at least 44 × 44 px. |
-| Both Solarized modes | Light and dark checked visually in Chrome; contrast ratios checked by the builder. |
+| Both style-guide themes | Light and dark checked visually in Chrome; contrast ratios checked by the builder. |
 | Keyboard traversal | Passed in Chrome: Tab reaches controls; arrows move up, down, left and right; Home goes to the top; selection is announced. |
 | Mobile drawer focus | Passed in Chrome emulation: opens as a modal dialog, focus goes to search, the rest is inert, Escape closes and returns focus to the Concepts button. |
 | Contrast stacking | Passed: pairs stack at 320 px. |
