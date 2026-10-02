@@ -27,7 +27,17 @@ In yujieteo/site the only Pigeonhole checks are the site's integration tests: th
 - `raw.json`: catalogue data published as `data.json` (scenes, modes, examples, challenges, the real example, the lab's starting values and the worked bounds). The page never fetches it; the test fails when it drifts from the engine.
 - Inside `index.html`: `<script id="pigeonhole-engine">` (pure core, `self.Pigeonhole`), `<script id="pigeonhole-ui">` (page and WebMCP tools) and `<script id="beamdswitch">`.
 - `tests/pigeonhole.test.mjs`: the engine, the worked bounds, `raw.json`, the offline promises, every scene's deck, the WebMCP tools and the beamdswitch and Copy deck buttons. `tests/data-visuals-beamdswitch.mjs` holds the deck checks and a stand-in DOM that boots the page in `node:vm`.
-- `tests/fixtures/beamdswitch/`: read-only copies of beamdswitch's deck parsers and the site's `templates/beamdswitch.js` (as `template.js`) and `templates/beamdswitch-report.md`.
+- `tests/fixtures/beamdswitch/`: read-only copies of beamdswitch's deck parser and the site's `templates/beamdswitch.js` (as `template.js`) and `templates/beamdswitch-report.md`.
+
+## Workflow
+
+Every change follows the site's [add-visualization playbook](https://github.com/yujieteo/site/blob/main/skills/playbooks/add-visualization.md):
+
+1. Change and test it here first: run the commands above and check the page end to end in a browser.
+2. Run the first no-mistakes pass in this repository. It also checks the page in a shallow clone of yujieteo/site (`git clone --depth 1 https://github.com/yujieteo/site`) with the change ported in; build and browse only this page there, never the site's full build or test suite.
+3. Once this repository's pull request merges, port the page files byte for byte into `visuals/pigeonhole/` in yujieteo/site (this repository minus `tests/` and `.github/`) and run the second no-mistakes pass on that pull request, which runs only the site-level tests.
+
+Logic, end-to-end and other heavy tests live here, where they run only when this tool changes; the site adds none for it, so its test time stays flat.
 
 ## Conventions
 

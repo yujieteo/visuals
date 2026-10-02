@@ -55,7 +55,7 @@ the WebMCP tools and that the beamdswitch and Copy deck buttons export the
 deck of the scene as set, parsed with beamdswitch's own parser.
 `tests/data-visuals-beamdswitch.mjs` holds the deck checks and the stand-in
 DOM, and `tests/fixtures/beamdswitch/` holds read-only copies of
-beamdswitch's parsers and the site's `templates/beamdswitch.js` and
+beamdswitch's deck parser and the site's `templates/beamdswitch.js` and
 `templates/beamdswitch-report.md`. The tests and CI live in
 [yujieteo/pigeonhole](https://github.com/yujieteo/pigeonhole); the site's
 `visuals/pigeonhole/` is a port of the page files without them.
