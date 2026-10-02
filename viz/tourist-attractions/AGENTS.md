@@ -39,7 +39,7 @@ Change and test this repository first, end to end (open `index.html` in a browse
 
 ## Conventions
 
-- Single self-contained HTML page: CSS, data and JavaScript are inline. The one exception is d3 7.9.0, loaded from jsDelivr by design.
+- Single self-contained HTML page: CSS, data and JavaScript, d3 7.9.0 included, are inline, so it makes no network request and works offline.
 - JavaScript tests run with `node --test` only; never add Vitest or another runner.
 - Exported beamdswitch decks declare `voice: bf_emma` (the default in `beamdswitch.js`).
 - WebMCP tools are read-only (`annotations: {readOnlyHint: true}`) and the page works without `modelContext`.

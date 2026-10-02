@@ -22,6 +22,7 @@ for s in scripts/build*.py; do python3 "$s" --verify || break; done
 | `data/<slug>/meta.json` | Source label or URL, ISO fetch date, and whether a key file was used. |
 | `scripts/build*.py` | Dependency-free Python builders and verifiers. |
 | `scripts/gallery.py` | Shared helper that rebuilds the root gallery from every `viz/*/index.html`. |
+| `scripts/vendor/` | Third-party code a builder inlines, unchanged, with its licence: d3 7.9.0 for `tourist-attractions`. |
 | `viz/<slug>/index.html` | Generated standalone visualization page. |
 | `viz/<slug>/AGENTS.md`, `SKILLS.md`, `LICENSE` | Agent guides and MIT licence inside each folder ported from a standalone `yujieteo/<repo>` repository (listed in `tests/test_mirror_docs.py`), where the visualization and its tests develop; the folder holds its ported page files, with data files under `data/<slug>/`; that `AGENTS.md` lists what is ported. |
 | `viz/<slug>/beamdswitch.js`, `viz/<slug>/report.js` | Sources a builder inlines for a page's narrated beamdswitch deck: the site's unchanged report template and that page's report. |
