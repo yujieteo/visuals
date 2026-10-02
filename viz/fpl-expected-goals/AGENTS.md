@@ -27,6 +27,10 @@ node --test 'tests/*.test.mjs'
 
 There is no builder: edit `index.html`, `report.js` and the data directly, keeping the page's inlined copies of `beamdswitch.js` and `report.js` identical to the files. Before opening a pull request, run the whole suite, as CI (`.github/workflows/ci.yml`) does on every push and pull request.
 
+## Change workflow
+
+Change and test this repository first, end to end (open `index.html` in a browser, use its controls and save the deck), and run no-mistakes here. Then port the page files into `viz/fpl-expected-goals/` and the data files into `data/fpl-expected-goals/` of yujieteo/visuals, and point yujieteo/site's `data/visuals/fpl-expected-goals.pin` at that commit; the site's no-mistakes run covers only the site's own tests. Logic tests stay here; never add them to the site.
+
 ## Data and tests
 
 - Data: `raw.json` and `meta.json`.
