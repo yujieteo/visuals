@@ -34,7 +34,7 @@ Run from the root of a yujieteo/convexity-action-engine checkout (Python 3 stand
 python3 author.py          # after editing author.py
 python3 build.py           # regenerate index.html and the CSVs
 python3 build.py --verify  # check they are fresh
-node --test 'tests/*.test.{mjs,cjs}'
+node --test 'tests/*.test.mjs'
 python3 -m unittest discover -s tests -p 'test_*.py'
 ```
 

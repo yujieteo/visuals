@@ -320,55 +320,58 @@ def csv_text(rows, header):
     return buf.getvalue()
 
 
+def action_row(raw, a):
+    """One action's row of actions.csv, in CSV_FIELDS order."""
+    r = a.get("ruin") or {}
+    av = a.get("avoid") or {}
+    row = []
+    for col, key in CSV_FIELDS:
+        if key:
+            v = a.get(key, "")
+            v = ",".join(v) if isinstance(v, list) else v
+        elif col == "kind":
+            v = "avoid" if av else "canonical"
+        elif col.startswith("dur_"):
+            v = a["dur"][{"dur_min": 0, "dur_typical": 1, "dur_max": 2}[col]]
+        elif col == "typical_time":
+            v = fmt_hours(a.get("typ"))
+        elif col == "judged_optimum":
+            v = fmt_hours(a.get("best"))
+        elif col == "sg_opening_hours":
+            v = "-".join(f"{x:g}" for x in a["open"]) if "open" in a else ""
+        elif col.startswith("ruin_"):
+            v = {"ruin_kind": r.get("kind", ""), "ruin_probability": r.get("p", ""), "ruin_severity": r.get("sev", ""),
+                 "ruin_irreversibility": r.get("irrev", ""), "ruin_repeated": ("yes" if r.get("rep") else "no") if r else "",
+                 "ruin_trigger": r.get("trig", "")}[col]
+        elif col == "avoid_related":
+            v = ",".join(av.get("rel", []))
+        elif col == "avoid_safer":
+            v = av.get("safer", "")
+        elif col == "action_specific_fields":
+            v = ",".join(a["own"])
+        elif col.startswith("atus_") and col != "atus_code":
+            ob = raw["observed"].get(a.get("atus")) if a.get("atus") else None
+            v = "" if not ob else {"atus_link": "action" if "atus" in a["own"] else "category", "atus_label": ob["label"],
+                                   "atus_participation_rate": ob["rate"], "atus_minutes_when_performed": ob["min"]}[col]
+        elif col.startswith("drm_") and col != "drm_row":
+            d = raw["drm"].get(a.get("drm")) if a.get("drm") else None
+            v = "" if not d else d[col[4:]]
+        elif col == "cited_studies":
+            v = ";".join(f'{c["id"]}:{c["rel"]}' for c in a.get("cites", []))
+        elif col == "evidence_type":
+            v = ";".join(["heuristic"] + (["observational"] if a.get("atus") else []) + (["experiments"] if a.get("cites") else []))
+        elif col == "confidence":
+            v = "medium (social reception, direct experiment); low elsewhere" if any(c["rel"] == "direct" for c in a.get("cites", [])) else "low"
+        elif col == "source_ids":
+            v = ";".join(["judgement"] + (["singapore"] if ("open" in a or a.get("out") or a.get("sg")) else [])
+                         + (["atus2014_2016"] if a.get("atus") else []) + (["kahneman2004"] if a.get("drm") else [])
+                         + [c["id"] for c in a.get("cites", [])])
+        row.append(v if v is not None else "")
+    return row
+
+
 def spreadsheets(raw):
-    rows = []
-    for a in raw["actions"]:
-        r = a.get("ruin") or {}
-        av = a.get("avoid") or {}
-        row = []
-        for col, key in CSV_FIELDS:
-            if key:
-                v = a.get(key, "")
-                v = ",".join(v) if isinstance(v, list) else v
-            elif col == "kind":
-                v = "avoid" if av else "canonical"
-            elif col.startswith("dur_"):
-                v = a["dur"][{"dur_min": 0, "dur_typical": 1, "dur_max": 2}[col]]
-            elif col == "typical_time":
-                v = fmt_hours(a.get("typ"))
-            elif col == "judged_optimum":
-                v = fmt_hours(a.get("best"))
-            elif col == "sg_opening_hours":
-                v = "-".join(f"{x:g}" for x in a["open"]) if "open" in a else ""
-            elif col.startswith("ruin_"):
-                v = {"ruin_kind": r.get("kind", ""), "ruin_probability": r.get("p", ""), "ruin_severity": r.get("sev", ""),
-                     "ruin_irreversibility": r.get("irrev", ""), "ruin_repeated": ("yes" if r.get("rep") else "no") if r else "",
-                     "ruin_trigger": r.get("trig", "")}[col]
-            elif col == "avoid_related":
-                v = ",".join(av.get("rel", []))
-            elif col == "avoid_safer":
-                v = av.get("safer", "")
-            elif col == "action_specific_fields":
-                v = ",".join(a["own"])
-            elif col.startswith("atus_") and col != "atus_code":
-                ob = raw["observed"].get(a.get("atus")) if a.get("atus") else None
-                v = "" if not ob else {"atus_link": "action" if "atus" in a["own"] else "category", "atus_label": ob["label"],
-                                       "atus_participation_rate": ob["rate"], "atus_minutes_when_performed": ob["min"]}[col]
-            elif col.startswith("drm_") and col != "drm_row":
-                d = raw["drm"].get(a.get("drm")) if a.get("drm") else None
-                v = "" if not d else d[col[4:]]
-            elif col == "cited_studies":
-                v = ";".join(f'{c["id"]}:{c["rel"]}' for c in a.get("cites", []))
-            elif col == "evidence_type":
-                v = ";".join(["heuristic"] + (["observational"] if a.get("atus") else []) + (["experiments"] if a.get("cites") else []))
-            elif col == "confidence":
-                v = "medium (social reception, direct experiment); low elsewhere" if any(c["rel"] == "direct" for c in a.get("cites", [])) else "low"
-            elif col == "source_ids":
-                v = ";".join(["judgement"] + (["singapore"] if ("open" in a or a.get("out") or a.get("sg")) else [])
-                             + (["atus2014_2016"] if a.get("atus") else []) + (["kahneman2004"] if a.get("drm") else [])
-                             + [c["id"] for c in a.get("cites", [])])
-            row.append(v if v is not None else "")
-        rows.append(row)
+    rows = [action_row(raw, a) for a in raw["actions"]]
     actions = csv_text(rows, [c for c, _ in CSV_FIELDS])
     aliases = csv_text(sorted({(al.lower(), a["id"]) for a in raw["actions"] for al in [a["name"], *a["aliases"]]}), ["alias", "action_id"])
     study_rows = [[k, v["citation"], v["kind"], "used: " + v["finding"], v["url"], v["verification"]] for k, v in raw["studies"].items()]
@@ -387,6 +390,14 @@ def instance_count(raw):
         manner = 1 + sum(1 for m in mods.values() if m.get("flag") and m["flag"] in a["flags"]) + len(a["places"])
         total += manner * times
     return total
+
+
+def counts(raw):
+    """The counts the page quotes: canonical and avoid actions, ATUS-linked canonical actions, and actions
+    (avoid ones included) that cite published experiments."""
+    canon = [a for a in raw["actions"] if a["cat"] != "avoid"]
+    return {"canon": len(canon), "avoid": len(raw["actions"]) - len(canon),
+            "observed": sum(1 for a in canon if a.get("atus")), "cited": sum(1 for a in raw["actions"] if a.get("cites"))}
 
 
 def page_data(raw, meta):
@@ -408,11 +419,9 @@ def render(raw, meta, tokens):
     js = JS_PATH.read_text(encoding="utf-8").replace("%%DATA%%", data)
     beamdswitch = BEAMDSWITCH_PATH.read_text(encoding="utf-8")
     assert "</script" not in beamdswitch, "beamdswitch.js must not contain </script"
-    n_canon = sum(1 for a in raw["actions"] if a["cat"] != "avoid")
-    n_avoid = len(raw["actions"]) - n_canon
+    n = counts(raw)
+    n_canon, n_avoid, n_obs, n_cite = n["canon"], n["avoid"], n["observed"], n["cited"]
     n_inst = instance_count(raw)
-    n_obs = sum(1 for a in raw["actions"] if a["cat"] != "avoid" and a.get("atus"))
-    n_cite = sum(1 for a in raw["actions"] if a.get("cites"))
     assumptions = "".join(f"<li>{escape(a)}</li>" for a in meta["assumptions"])
     noscript = "".join(
         f"<li>{escape(a['name'])}: {escape(a['avoid']['why'])}</li>" for a in raw["actions"] if a.get("avoid")
@@ -454,7 +463,7 @@ def verify(raw, meta, html):
     canon = [a for a in acts if a["cat"] != "avoid"]
     avoid = [a for a in acts if a["cat"] == "avoid"]
     assert len(canon) >= 1300 and len(avoid) >= 25, (len(canon), len(avoid))
-    assert sum(1 for a in canon if a.get("atus")) >= 1200, "ATUS crosswalk coverage fell"
+    assert counts(raw)["observed"] >= 1200, "ATUS crosswalk coverage fell"
     for a in canon:
         if a.get("atus"):
             assert a["atus"] in raw["observed"], (a["id"], a["atus"])
@@ -471,9 +480,8 @@ def verify(raw, meta, html):
     for a in acts:
         for al in a["aliases"]:
             assert names.get(al.lower(), a["id"]) == a["id"], ("alias equals another action's name", a["id"], al)
-    names = [a["name"].lower() for a in acts]
-    assert len(names) == len(set(names)), "duplicate names"
-    alias_owner = {}
+    lowered = [a["name"].lower() for a in acts]
+    assert len(lowered) == len(set(lowered)), "duplicate names"
     for a in acts:
         for al in a["aliases"]:
             assert al.strip() == al and al, (a["id"], al)
@@ -513,7 +521,8 @@ def verify(raw, meta, html):
     assert meta["slug"] == SLUG and meta["fetched"] == EXPECTED_FETCHED and meta["key_file_used"] is False
     assert len(meta["assumptions"]) >= 5
     blurb = " ".join(meta["assumptions"])
-    assert f"{len(canon):,} canonical actions and {len(avoid)} actions to avoid" in blurb, "meta.json counts are stale"
+    n = counts(raw)
+    assert f"{n['canon']:,} canonical actions and {n['avoid']} actions to avoid" in blurb, "meta.json counts are stale"
     assert f"{sum(1 for a in canon if a.get('cites'))} actions link to published experiments" in blurb, "meta.json experiment count is stale"
 
     for name, text in spreadsheets(raw).items():
@@ -530,7 +539,7 @@ def verify(raw, meta, html):
                    "prefers-reduced-motion", "Asia/Singapore", "localStorage", "Compared with what?", "WHAT AM I GIVING UP?"):
         assert needle in html, needle
     assert "<title>" + escape(TITLE) + "</title>" in html
-    print(f"verified: {len(canon)} canonical actions ({sum(1 for a in canon if a.get('atus'))} ATUS-linked, {sum(1 for a in canon if a.get('cites'))} with experiments), {len(avoid)} avoid actions, {n_inst:,} contextual instances, "
+    print(f"verified: {n['canon']} canonical actions ({n['observed']} ATUS-linked, {sum(1 for a in canon if a.get('cites'))} with experiments), {n['avoid']} avoid actions, {n_inst:,} contextual instances, "
           f"{sum(1 for a in acts if 'ruin' in a)} ruin-screened, 3 CSVs fresh, 4 read-only tools, zero external assets")
 
 
