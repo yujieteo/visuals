@@ -4,7 +4,7 @@ Build a cross-section from library shapes by dragging and read its section prope
 
 ## Source of truth
 
-This repository, [yujieteo/sectionlab](https://github.com/yujieteo/sectionlab), is the source of truth: Sectionlab and its tests are developed here, and its CI runs them here. `visuals/sectionlab/` in [yujieteo/site](https://github.com/yujieteo/site/tree/main/visuals/sectionlab) is a port of the page files, refreshed whenever Sectionlab is updated, and the site runs no logic tests for it. Porting copies this repository minus `tests/` and `.github/`, so AGENTS.md and SKILLS.md must not link into either (the site checks that their links resolve); [playbooks/deploy-to-site.md](playbooks/deploy-to-site.md) gives the steps.
+This repository, [yujieteo/sectionlab](https://github.com/yujieteo/sectionlab), is the source of truth: Sectionlab and its tests are developed here, and its CI runs them here. `visuals/sectionlab/` in [yujieteo/site](https://github.com/yujieteo/site/tree/main/visuals/sectionlab) is a port of the page files, refreshed whenever Sectionlab is updated, and the site runs no logic tests for it. Porting copies this repository minus `tests/` and `.github/`, so AGENTS.md and SKILLS.md must not link into either (the site checks that their links resolve); [playbooks/deploy-to-site.md](playbooks/deploy-to-site.md) gives the steps: change and test here first, with the first no-mistakes pass, then port and run the second pass on the site with site-level tests only. Time every test you add (`time node --test tests/<file>`).
 
 ## Files and data
 
@@ -22,7 +22,7 @@ pip install -r requirements-test.txt                # once: numpy, scipy, PyYAML
 python -m unittest discover -s tests -p 'test_*.py'
 ```
 
-CI (`.github/workflows/ci.yml`) runs these same commands on every push and pull request, including the torsion accuracy-table test (the slowest, over a minute) the beamdswitch deck test, `tests/beamdswitch.test.mjs`, and the end-to-end test `tests/browser.test.mjs`, which drives the built page in headless Chrome (set `CHROME_PATH` if Chrome is not in a usual place; it is skipped locally without one and required under CI). In yujieteo/site the only Sectionlab test is `tests/test_sectionlab.py`, which checks that the published copy matches the ported files.
+CI (`.github/workflows/ci.yml`) runs these same commands on every push and pull request, including the torsion accuracy-table test (the slowest, over a minute), the beamdswitch deck test, `tests/beamdswitch.test.mjs`, and the end-to-end test `tests/browser.test.mjs`, which drives the built page in headless Chrome (set `CHROME_PATH` if Chrome is not in a usual place; it is skipped locally without one and required under CI). In yujieteo/site the only Sectionlab test is `tests/test_sectionlab.py`, which checks that the published copy matches the ported files.
 
 ## Conventions
 
