@@ -6,7 +6,7 @@ Live: https://teoyujie.org/visuals/convex-payoffs/
 
 ## Source of truth
 
-The standalone repository [yujieteo/convex-payoffs](https://github.com/yujieteo/convex-payoffs) is where this visualisation and its tests develop and where CI runs them. `viz/convex-payoffs/` in [yujieteo/visuals](https://github.com/yujieteo/visuals) is a port of its page files (with its data files in `data/convex-payoffs/`), refreshed when the visualisation is updated, and neither yujieteo/visuals nor yujieteo/site (which publishes it at <https://teoyujie.org/visuals/convex-payoffs/>) runs logic tests for it. Porting copies the repository minus `tests/` and `.github/`: the page files into `viz/convex-payoffs/` and the data files into `data/convex-payoffs/`.
+The standalone repository [yujieteo/convex-payoffs](https://github.com/yujieteo/convex-payoffs) is where this visualisation and its tests develop and where CI runs them. `viz/convex-payoffs/` in [yujieteo/visuals](https://github.com/yujieteo/visuals) is a byte-for-byte port of its page files, with its data files in `data/convex-payoffs/`. yujieteo/site publishes it at <https://teoyujie.org/visuals/convex-payoffs/> from the yujieteo/visuals commit pinned in its `data/visuals/convex-payoffs.pin`. Neither runs this repository's tests.
 
 ## Files
 
@@ -25,7 +25,13 @@ Run from the root of a yujieteo/convex-payoffs checkout (Node 22; nothing to ins
 node --test 'tests/*.test.mjs'
 ```
 
-There is no builder: edit `index.html`, `report.js` and the data directly, keeping the page's inlined copies of `beamdswitch.js` and `report.js` identical to the files. Before opening a pull request, run the whole suite, as CI (`.github/workflows/ci.yml`) does on every push and pull request.
+There is no builder: edit `index.html`, `report.js` and the data directly, keeping the page's inlined copies of `beamdswitch.js` and `report.js` identical to the files. CI (`.github/workflows/ci.yml`) runs the suite on every push and pull request.
+
+## Change workflow
+
+1. Change and test here. Run the suite and check the page end to end: open `index.html` in a browser, use each control and both deck buttons, and confirm the console shows no errors. When a change adds or removes tests, time the suite before and after (`time node --test 'tests/*.test.mjs'`) and give both times in the pull request. Validate the branch with no-mistakes and get CI green.
+2. Port to yujieteo/visuals: copy `index.html`, `beamdswitch.js`, `report.js`, `AGENTS.md`, `SKILLS.md` and `LICENSE` byte for byte into `viz/convex-payoffs/` and `raw.json` and `meta.json` into `data/convex-payoffs/`. `README.md`, `tests/` and `.github/` stay here.
+3. Publish: a yujieteo/site pull request moves `data/visuals/convex-payoffs.pin` to the new yujieteo/visuals commit. It runs only the site-level tests, never this repository's.
 
 ## Data and tests
 
@@ -36,7 +42,8 @@ There is no builder: edit `index.html`, `report.js` and the data directly, keepi
 ## Conventions
 
 - Single self-contained HTML page: CSS, data and JavaScript are inline, with no external requests.
-- JavaScript tests run with `node --test` only; never add Vitest or another runner.
+- Tests run with `node --test` (JavaScript) or `unittest` (Python) only; never add Vitest, pytest or another runner.
+- `beamdswitch.js` stays byte-identical to yujieteo/site `templates/beamdswitch.js`; the tests check it.
 - Exported beamdswitch decks declare `voice: bf_emma` (the default in `beamdswitch.js`).
 - WebMCP tools are read-only (`annotations: {readOnlyHint: true}`) and the page works without `modelContext`.
 - Never commit credentials, host details or absolute home-directory paths.

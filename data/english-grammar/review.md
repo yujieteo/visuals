@@ -76,8 +76,8 @@ list is a note for readers and future editors, not a publication blocker.
 
 ## Automated checks
 
-`python3 scripts/build_english_grammar.py --verify`, and yujieteo/english-grammar's
-`python3 -m unittest tests/test_english_grammar.py` and `node --test tests/english-grammar.test.mjs`, cover IDs and links, token boundaries, ordinary
+`python3 scripts/build_english_grammar.py --verify`, `python3 -m unittest tests/test_english_grammar.py`
+and `node --test tests/english-grammar.test.mjs` cover IDs and links, token boundaries, ordinary
 nesting, declared gaps, fusions and supplements, sentence/inspector/tree consistency, canonical
 names versus aliases, chapter metadata, determinism, zero external requests, release counts,
 the size budget, Solarized contrast pairs, and fragment, traversal and search logic.
@@ -95,7 +95,7 @@ constituent trees:
   is punctuated, every punctuation token belongs to exactly one mark.
 - Antecedent links: the target exists, is pronounced, and does not overlap the anaphor.
 
-yujieteo/english-grammar's `node --test tests/english-grammar-beamdswitch.test.mjs` checks that every lesson, including
+`node --test tests/english-grammar-beamdswitch.test.mjs` checks that every lesson, including
 the new ones, exports a narrated deck that carries its marks, word structures and antecedents.
 
 ## Manual acceptance of Chapters 9, 13 and 17–20 (1 October 2026)
