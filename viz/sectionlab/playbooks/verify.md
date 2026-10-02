@@ -4,7 +4,7 @@ Run from the repository root. Every command must pass; CI runs the same commands
 
 ```sh
 python build.py                                     # index.html is generated
-node --test 'tests/*.test.mjs'                      # engine, plastic, torsion, YAML, report, hand calculations, page tools, beamdswitch deck, Chrome end to end
+node --test 'tests/*.test.mjs'                      # engine, plastic, torsion, YAML, report, hand calculations, page tools, site theme, beamdswitch deck, Chrome end to end
 pip install -r requirements-test.txt                # once: numpy, scipy, PyYAML
 python -m unittest discover -s tests -p 'test_*.py' # references, torsion accuracy, PyYAML agreement, build
 ```
