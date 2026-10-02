@@ -155,6 +155,34 @@ test("hard errors block the calculation with a field path", () => {
   }
 });
 
+test("field errors are reported before cross-field geometry errors, and either suppresses the warnings", () => {
+  // A bad field and a bad geometry together: only the field error is reported.
+  const both = E.validate(joint({ "fastener.D": 0, "sheet.W": 100 }));
+  assert.deepEqual(both.errors.map((e) => e.path), ["fastener.D"]);
+  assert.deepEqual(both.warnings, []);
+  // A joint that would warn (e/D below 1.5) but is blocked by its width carries no warnings.
+  const blocked = E.validate(joint({ "geometry.eEnd": 6, "sheet.W": 100 }));
+  assert.deepEqual(blocked.errors.map((e) => e.path), ["sheet.W"]);
+  assert.deepEqual(blocked.warnings, []);
+  assert.deepEqual(E.validate(null), { errors: [{ path: null, message: "No input." }], warnings: [] });
+});
+
+test("conditional fields and default sources are shared by the page and the report", () => {
+  const csk = E.FIELD["fastener.csk"], g = E.FIELD["geometry.g"];
+  assert.equal(E.isShown(csk, joint()), false);
+  assert.equal(E.isShown(csk, joint({ "fastener.head": "countersunk" })), true);
+  assert.equal(E.isShown(g, joint({ "geometry.rows": 1 })), false);
+  assert.equal(E.isShown(g, {}), true, "a malformed input shows the field instead of throwing");
+  assert.equal(E.isShown(E.FIELD["fastener.D"], {}), true);
+  assert.equal(E.defaultSource("material.Ftu"), E.DEFAULT_SOURCES["material.*"]);
+  assert.equal(E.defaultSource("rules.eDmin").tag, "nasa");
+  assert.equal(E.defaultSource("fastener.D"), null);
+  // The report hides the countersink row for a protruding head and tags placeholder allowables.
+  assert.doesNotMatch(E.toMarkdown(joint()), /\| Countersink depth \|/);
+  assert.match(E.toMarkdown(joint({ "fastener.head": "countersunk" })), /\| Countersink depth \|/);
+  assert.match(E.toMarkdown(joint()), /\| F_tu \| 400 MPa \| user allowable; default: unsourced default \|/);
+});
+
 test("soft warnings: e/D, p/D, countersink, stress above F_cy, too few rows or fasteners", () => {
   const w = (patch) => messages(E.solve(joint(patch)).warnings);
   assert.match(w({ "geometry.eEnd": 7 }), /below 1\.5, outside the tabulated range/);

@@ -247,7 +247,7 @@ const E = EdgePitch;
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const fmt = E.fmt;
-const DIMENSIONAL = ["length", "force", "stress"];
+const DIMENSIONAL = E.DIMENSIONAL;
 
 let state = E.example();
 let units = "SI";
@@ -256,7 +256,6 @@ let userVectors = [];
 const u = (v, kind) => (v == null ? "—" : `${fmt(E.toDisplay(v, kind, units))} ${E.unitSym(kind, units)}`);
 const msCell = (m) => (m == null ? "<td class=\"info\">—</td>" : `<td class="${m < 0 ? "neg" : ""}">${fmt(m)}</td>`);
 const tagHTML = (t) => `<span class="tag ${t}" title="${esc(E.TAGS[t].note)}">${esc(t === "niu" ? "Niu · confirm against your copy" : E.TAGS[t].label)}</span>`;
-const defaultSource = (path) => E.DEFAULT_SOURCES[path] || (path.startsWith("material.") ? E.DEFAULT_SOURCES["material.*"] : null);
 
 /* ---------- Form ---------- */
 function buildForm() {
@@ -277,7 +276,7 @@ function buildForm() {
 const id = (f) => "in-" + f.path.replace(".", "-");
 function fieldHTML(f) {
   const unit = DIMENSIONAL.includes(f.kind) ? `<small data-unit="${f.kind}"></small>` : "";
-  const ds = defaultSource(f.path);
+  const ds = E.defaultSource(f.path);
   const tags = [...(f.tags || [])].map(tagHTML);
   if (ds) tags.push(`<span class="tag ${ds.tag}" title="${esc(ds.text)}">default: ${esc(E.TAGS[ds.tag].label)}</span>`);
   const control = f.kind === "enum"
@@ -308,9 +307,7 @@ function syncForm(skip) {
       else if (v == null || (typeof v === "number" && !Number.isFinite(v))) el.value = "";
       else el.value = +(DIMENSIONAL.includes(f.kind) ? E.toDisplay(v, f.kind, units) : v).toPrecision(8);
     }
-    let shown = true;
-    try { shown = !f.when || f.when(state); } catch (e) { shown = true; }
-    $("wrap-" + id(f)).hidden = !shown;
+    $("wrap-" + id(f)).hidden = !E.isShown(f, state);
   }
   $("derive-sigma").checked = state.load.sigmaSheet == null;
   for (const s of document.querySelectorAll("[data-unit]")) s.textContent = E.unitSym(s.dataset.unit, units);
@@ -466,19 +463,27 @@ function payload(kind) {
   const obj = kind === "results" ? E.resultsJSON(state, units) : E.inputsJSON(state, units);
   return { text: JSON.stringify(obj, null, 2) + "\n", name: `edge-pitch-${kind}.json`, type: "application/json" };
 }
-function download(kind) {
-  const p = payload(kind);
+// Saves text as a file through a temporary download link; throws when the browser blocks it.
+function saveFile(text, name, type) {
   const a = document.createElement("a");
-  a.href = URL.createObjectURL(new Blob([p.text], { type: p.type }));
-  a.download = p.name;
+  a.href = URL.createObjectURL(new Blob([text], { type }));
+  a.download = name;
   document.body.appendChild(a);
   a.click();
   setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 0);
+}
+// Puts text on the clipboard and reports done or failed; resolves either way.
+async function copyText(text, done) {
+  try { await navigator.clipboard.writeText(text); say(done); } catch (e) { say("Copy failed: the browser blocked clipboard access."); }
+}
+function download(kind) {
+  const p = payload(kind);
+  saveFile(p.text, p.name, p.type);
   say(`Downloaded ${p.name}.`);
 }
 async function copy(kind) {
   const p = payload(kind);
-  try { await navigator.clipboard.writeText(p.text); say(`Copied ${p.name.replace(/^edge-pitch-/, "")} to the clipboard.`); } catch (e) { say("Copy failed: the browser blocked clipboard access."); }
+  await copyText(p.text, `Copied ${p.name.replace(/^edge-pitch-/, "")} to the clipboard.`);
 }
 function say(msg) { $("status").textContent = msg; }
 
@@ -492,12 +497,7 @@ async function saveDeck() {
   const text = reportDeck(), name = "edge-pitch-beamdswitch.md";
   if (!text) { say("Fix the joint first: there is no solution to save."); return; }
   try {
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(new Blob([text], { type: "text/markdown" }));
-    a.download = name;
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 0);
+    saveFile(text, name, "text/markdown");
     say(`Saved ${name}: open it in beamdswitch.`);
   } catch (e) {
     try { await navigator.clipboard.writeText(text); say("Copied the beamdswitch deck, as saving is blocked here: paste it into beamdswitch."); }
@@ -507,8 +507,7 @@ async function saveDeck() {
 async function copyDeck() {
   const text = reportDeck();
   if (!text) { say("Fix the joint first: there is no solution to copy."); return; }
-  try { await navigator.clipboard.writeText(text); say("Copied the beamdswitch deck: paste it into beamdswitch."); }
-  catch (e) { say("Copy failed: the browser blocked clipboard access."); }
+  await copyText(text, "Copied the beamdswitch deck: paste it into beamdswitch.");
 }
 function importText(text) {
   let got;

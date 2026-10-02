@@ -275,6 +275,8 @@ footer{margin-top:3rem;font-size:.8125rem;color:var(--muted)}
     SI: { length: { sym: "mm", f: 1 }, force: { sym: "N", f: 1 }, stress: { sym: "MPa", f: 1 } },
     US: { length: { sym: "in", f: 25.4 }, force: { sym: "lbf", f: 4.4482216152605 }, stress: { sym: "ksi", f: 6.89475729316836 } },
   };
+  // Field kinds that carry a unit and convert between SI and US.
+  const DIMENSIONAL = ["length", "force", "stress"];
   const unitSym = (kind, sys) => (UNITS[sys] && UNITS[sys][kind] ? UNITS[sys][kind].sym : "");
   const toDisplay = (v, kind, sys) => (v == null || !UNITS[sys][kind] ? v : v / UNITS[sys][kind].f);
   const fromDisplay = (v, kind, sys) => (v == null || !UNITS[sys][kind] ? v : v * UNITS[sys][kind].f);
@@ -367,6 +369,9 @@ footer{margin-top:3rem;font-size:.8125rem;color:var(--muted)}
     "material.*": { tag: "unsourced", text: "round placeholders, not material allowables" },
   };
 
+  // A field's default-value source; every material allowable shares one entry.
+  const defaultSource = (path) => DEFAULT_SOURCES[path] || (path.startsWith("material.") ? DEFAULT_SOURCES["material.*"] : null);
+
   const get = (o, path) => path.split(".").reduce((a, k) => (a == null ? undefined : a[k]), o);
   function set(o, path, v) {
     const keys = path.split(".");
@@ -390,7 +395,7 @@ footer{margin-top:3rem;font-size:.8125rem;color:var(--muted)}
   function convertInputs(x, sys, dir) {
     const out = JSON.parse(JSON.stringify(x));
     for (const f of FIELDS) {
-      if (!["length", "force", "stress"].includes(f.kind)) continue;
+      if (!DIMENSIONAL.includes(f.kind)) continue;
       const v = get(out, f.path);
       if (typeof v === "number") set(out, f.path, dir === "toDisplay" ? toDisplay(v, f.kind, sys) : fromDisplay(v, f.kind, sys));
     }
@@ -399,26 +404,39 @@ footer{margin-top:3rem;font-size:.8125rem;color:var(--muted)}
 
   /* ---------- Validation ---------- */
 
+  // Hard errors block the calculation; soft warnings accompany a solution.
   function validate(x) {
+    if (!x || typeof x !== "object") return { errors: [{ path: null, message: "No input." }], warnings: [] };
+    let errors = fieldErrors(x);
+    if (!errors.length) errors = geometryErrors(x);
+    return { errors, warnings: errors.length ? [] : softWarnings(x) };
+  }
+
+  // Each field on its own: enum choice, finite number, sign and integrality.
+  function fieldErrors(x) {
     const errors = [];
-    const warnings = [];
     const err = (path, message) => errors.push({ path, message });
-    if (!x || typeof x !== "object") return { errors: [{ path: null, message: "No input." }], warnings };
     for (const f of FIELDS) {
       const v = get(x, f.path);
       if (f.kind === "enum") {
         if (!f.options.some((o) => o[0] === v)) err(f.path, `${f.label}: choose one of ${f.options.map((o) => o[0]).join(", ")}.`);
         continue;
       }
-      if (f.when && !safeWhen(f, x)) continue;
+      if (!isShown(f, x)) continue;
       if (f.nullable && v === null) continue;
       if (typeof v !== "number" || !Number.isFinite(v)) { err(f.path, `${f.label} is missing or not a number.`); continue; }
       if (f.kind === "count" && (!Number.isInteger(v) || v < 1)) err(f.path, `${f.label} must be a whole number of at least 1.`);
       else if (f.pos && v <= 0) err(f.path, `${f.label} must be positive.`);
       else if (f.nonneg && v < 0) err(f.path, `${f.label} must not be negative.`);
     }
-    if (errors.length) return { errors, warnings };
-    const { fastener: F, sheet: S, material: M, geometry: G, rules: R } = x;
+    return errors;
+  }
+
+  // Fields that are valid alone but cannot form a joint together.
+  function geometryErrors(x) {
+    const errors = [];
+    const err = (path, message) => errors.push({ path, message });
+    const { fastener: F, sheet: S, material: M, geometry: G } = x;
     if (M.nu >= 0.5) err("material.nu", "Poisson's ratio must be below 0.5.");
     if (F.Dh >= G.p) err("geometry.p", "Hole diameter D_h must be smaller than the pitch p.");
     if (G.rows > 1 && F.Dh >= G.g) err("geometry.g", "Hole diameter D_h must be smaller than the row spacing g.");
@@ -429,9 +447,15 @@ footer{margin-top:3rem;font-size:.8125rem;color:var(--muted)}
     if (alongRows(x) && G.rows < 2) err("load.direction", "Load along the rows needs at least two rows: the row spacing g sets the net-section strip across the load.");
     const need = patternWidth(x);
     if (S.W < need * (1 - 1e-9)) err("sheet.W", `Width W is narrower than the pattern: 2·e_side + (n_f − 1)·p${stagger(x) ? " + p/2" : ""} = ${fmt(need)} mm.`);
-    if (errors.length) return { errors, warnings };
+    return errors;
+  }
 
+  function softWarnings(x) {
+    const warnings = [];
     const w = (path, message) => warnings.push({ path, message });
+    const { fastener: F, sheet: S, material: M, geometry: G, rules: R } = x;
+    const need = patternWidth(x);
+    const along = alongSpacing(x);
     const eD = G.eEnd / F.D;
     if (eD < 1.5) w("geometry.eEnd", `e_end/D = ${fmt(eD)} is below 1.5, outside the tabulated range for bearing; F_bru is not extrapolated, so bearing is not evaluated.`);
     if (G.eSide / F.D < 1.5) w("geometry.eSide", `e_side/D = ${fmt(G.eSide / F.D)} is below 1.5.`);
@@ -447,17 +471,19 @@ footer{margin-top:3rem;font-size:.8125rem;color:var(--muted)}
     if (bearingStress > M.Fcy) w("load.P", `Applied bearing stress ${fmt(bearingStress)} MPa is above F_cy = ${fmt(M.Fcy)} MPa.`);
     if (G.pattern !== "single" && G.rows < 2) w("geometry.rows", `The ${G.pattern} pattern assumes at least two rows; with one row it is checked as a single row.`);
     if (!alongRows(x) && G.perRow < 2) w("geometry.perRow", "Fewer than two fasteners per row: net section uses the plate width W − D_h, not the pitch.");
-    if (alongSpacing(x).L == null) w("geometry." + (alongRows(x) ? "perRow" : "rows"), `Only one fastener along the load: inter-rivet buckling needs the spacing ${alongSpacing(x).sym} between fasteners along the load, so it and the maximum spacing are not evaluated.`);
+    if (along.L == null) w("geometry." + (alongRows(x) ? "perRow" : "rows"), `Only one fastener along the load: inter-rivet buckling needs the spacing ${along.sym} between fasteners along the load, so it and the maximum spacing are not evaluated.`);
     if (G.rows * G.perRow < 2) w("geometry.perRow", "A single fastener: the pattern checks assume more than one.");
     if (G.rows > 1 && G.g / F.D < 1.5) w("geometry.g", `g/D = ${fmt(G.g / F.D)} is below 1.5, outside the tabulated range for interior-row bearing; F_bru is not extrapolated, so interior-row bearing is not evaluated.`);
     else if (G.rows > 1 && G.g / F.D < 2) w("geometry.g", `g/D = ${fmt(G.g / F.D)}: interior-row bearing uses F_bru at e/D = g/D.`);
     if (alongRows(x)) w("load.direction", "Load along the rows: net section uses the row spacing g across the load; inter-rivet buckling and maximum pitch use the pitch p along it; bearing, shear-out and side edge still take the rows across the load. Treat those as nominal.");
-    if (x.material.Fbru20 < x.material.Fbru15) w("material.Fbru20", "F_bru at e/D = 2.0 is below the value at 1.5.");
+    if (M.Fbru20 < M.Fbru15) w("material.Fbru20", "F_bru at e/D = 2.0 is below the value at 1.5.");
     if (S.W > need * (1 + 1e-6)) w("sheet.W", `Width W exceeds 2·e_side + (n_f − 1)·p${stagger(x) ? " + p/2" : ""} = ${fmt(need)} mm; the side ligament is checked at e_side.`);
-    return { errors, warnings };
+    return warnings;
   }
 
-  function safeWhen(f, x) {
+  // Whether a conditional field applies; a malformed input shows the field rather than throwing.
+  function isShown(f, x) {
+    if (!f.when) return true;
     try { return f.when(x); } catch (e) { return true; }
   }
 
@@ -530,6 +556,16 @@ footer{margin-top:3rem;font-size:.8125rem;color:var(--muted)}
     return zigzag < straight ? { width: zigzag, path: "zig-zag, p − 2D_h + ((2n_f − 1)/(2n_f))·g²/p", straight, zigzag } : { width: straight, path: "straight, p − D_h", straight, zigzag };
   }
 
+  // The net-section formula for the load direction and pattern, as the results table shows it.
+  function netFormula(x) {
+    if (alongRows(x)) {
+      return stagger(x)
+        ? "σ_net = (P/n_r) / (w_net·t), w_net = min(g − (⌈n_r/2⌉/n_r)·D_h, g − D_h + ((n_r − 1)/n_r)·p²/(16g)), load along the rows"
+        : "σ_net = (P/n_r) / ((g − D_h)·t), load along the rows";
+    }
+    return stagger(x) ? "σ_net = (P/n_f) / (w_net·t), w_net = min(p − D_h, p − 2D_h + ((2n_f − 1)/(2n_f))·g²/p)" : "σ_net = (P/n_f) / ((p − D_h)·t)";
+  }
+
   function netSection(x) {
     const { geometry: G, sheet: S, material: M, load: L } = x;
     const n = netWidth(x);
@@ -554,8 +590,7 @@ footer{margin-top:3rem;font-size:.8125rem;color:var(--muted)}
     return { id, title, kind, allowable, applied, ms: ms(allowable, applied), source, formula, ...extra };
   }
 
-  function solve(input) {
-    const x = input;
+  function solve(x) {
     const { errors, warnings } = validate(x);
     if (errors.length) return { ok: false, errors, warnings: [] };
     const { fastener: F, sheet: S, material: M, geometry: G, load: L, rules: R } = x;
@@ -574,14 +609,14 @@ footer{margin-top:3rem;font-size:.8125rem;color:var(--muted)}
     const irStatus = sp.L == null ? "one fastener along the load" : sigma > 0 ? null : "no compressive sheet stress";
     const pMax = maxPitch(x);
 
+    const bearingCheck = (id, title, b, formula) =>
+      check(id, title, "force", b.allowable, Pf, ["niu", "user"], formula, { eD: b.eD, Fbru: b.Fbru, status: b.Fbru == null ? "outside tabulated range" : null });
     const strength = [
-      check("bearing", "Bearing (end row)", "force", br.allowable, Pf, ["niu", "user"], "P_br = F_bru(e/D)·D·t, F_bru linear between e/D = 1.5 and 2.0",
-        { eD: br.eD, Fbru: br.Fbru, status: br.Fbru == null ? "outside tabulated range" : null }),
-      bi && check("bearingInterior", "Bearing (interior rows)", "force", bi.allowable, Pf, ["niu", "user"], "P_br = F_bru(g/D)·D·t, interior rows take e/D = g/D",
-        { eD: bi.eD, Fbru: bi.Fbru, status: bi.Fbru == null ? "outside tabulated range" : null }),
+      bearingCheck("bearing", "Bearing (end row)", br, "P_br = F_bru(e/D)·D·t, F_bru linear between e/D = 1.5 and 2.0"),
+      bi && bearingCheck("bearingInterior", "Bearing (interior rows)", bi, "P_br = F_bru(g/D)·D·t, interior rows take e/D = g/D"),
       check("shearOut", "Shear-out (end distance)", "force", 2 * soPlane * S.t * M.Fsu, Pf, ["classical", "niu"], "P_so = 2·(e_end − D_h/2)·t·F_su",
         { plane: soPlane, note: "Plane length e_end − D_h/2: confirm the convention against your copy." }),
-      check("netSection", "Net section between holes", "force", net.allowable, net.applied, ["classical"], alongRows(x) ? (stagger(x) ? "σ_net = (P/n_r) / (w_net·t), w_net = min(g − (⌈n_r/2⌉/n_r)·D_h, g − D_h + ((n_r − 1)/n_r)·p²/(16g)), load along the rows" : "σ_net = (P/n_r) / ((g − D_h)·t), load along the rows") : stagger(x) ? "σ_net = (P/n_f) / (w_net·t), w_net = min(p − D_h, p − 2D_h + ((2n_f − 1)/(2n_f))·g²/p)" : "σ_net = (P/n_f) / ((p − D_h)·t)",
+      check("netSection", "Net section between holes", "force", net.allowable, net.applied, ["classical"], netFormula(x),
         { width: net.width, path: net.path, stress: net.stress, straight: net.straight, zigzag: net.zigzag }),
       check("sideEdge", "Side-edge net section", "force", M.Ftu * sideA, strip / 2, ["classical"], "(P/n_f)/2 across (e_side − D_h/2)·t against F_tu",
         { area: sideA, note: "Each ligament beside the edge hole takes half its strip load (tool convention)." }),
@@ -615,9 +650,15 @@ footer{margin-top:3rem;font-size:.8125rem;color:var(--muted)}
     return { id, title, kind: "ratio", actual, minimum: min, typical, ms: actual / min - 1, ratioToTypical: typical ? actual / typical : null, source };
   }
 
-  function governing(list) {
+  // The entry with the smallest evaluated margin (the first on a tie), or null when none is evaluated.
+  function smallestMargin(list) {
     let best = null;
-    for (const c of list) if (c.ms != null && c.governs !== false && (best == null || c.ms < best.ms)) best = c;
+    for (const c of list) if (c.ms != null && (best == null || c.ms < best.ms)) best = c;
+    return best;
+  }
+
+  function governing(list) {
+    const best = smallestMargin(list.filter((c) => c.governs !== false));
     return best ? { id: best.id, title: best.title, ms: best.ms } : null;
   }
 
@@ -631,13 +672,11 @@ footer{margin-top:3rem;font-size:.8125rem;color:var(--muted)}
     for (let r = 0; r < G.rows; r++) {
       for (let i = 0; i < G.perRow; i++) {
         const shift = stagger(x) && r % 2 === 1 ? G.p / 2 : 0;
-        const list = [["netSection", by.netSection.ms], ["interRivet", by.interRivet.ms]];
-        if (r === 0) list.push(["bearing", by.bearing.ms], ["shearOut", by.shearOut.ms]);
-        else list.push(["bearingInterior", by.bearingInterior.ms]);
+        const ids = ["netSection", "interRivet", ...(r === 0 ? ["bearing", "shearOut"] : ["bearingInterior"])];
         const y = G.eSide + i * G.p + shift;
-        if (Math.min(y, x.sheet.W - y) <= G.eSide * (1 + 1e-9)) list.push(["sideEdge", by.sideEdge.ms]);
-        let gov = null;
-        for (const [id, m] of list) if (m != null && (gov == null || m < gov.ms)) gov = { id, ms: m };
+        if (Math.min(y, x.sheet.W - y) <= G.eSide * (1 + 1e-9)) ids.push("sideEdge");
+        const best = smallestMargin(ids.map((id) => by[id]));
+        const gov = best && { id: best.id, ms: best.ms };
         const status = gov == null ? "unknown" : gov.ms < 0 ? "fail" : gov.ms < x.rules.marginal ? "marginal" : "pass";
         holes.push({ row: r, index: i, x: G.eEnd + r * G.g, y, governing: gov, status });
       }
@@ -768,21 +807,31 @@ footer{margin-top:3rem;font-size:.8125rem;color:var(--muted)}
     });
   }
 
+  /* ---------- Text formatting shared by the Markdown report and the beamdswitch deck ---------- */
+
+  // A value in display units with its unit symbol, or "—" when missing.
+  const withUnit = (v, kind, sys) => (v == null ? "—" : `${fmt(toDisplay(v, kind, sys))} ${unitSym(kind, sys)}`.trim());
+  const plain = (v) => (v == null ? "—" : fmt(v));
+  const tagLabels = (list) => list.map((t) => (t === "niu" ? "Niu (confirm against your copy)" : TAGS[t].label)).join(", ");
+  // The label of an enum field's current option (the raw value when it is not an option).
+  const optionLabel = (f, v) => (f.options.find((o) => o[0] === v) || [v, v])[1];
+  const capitalise = (text) => text[0].toUpperCase() + text.slice(1);
+
   function toMarkdown(x, displayUnits = "SI") {
     const r = solve(x);
     const sys = displayUnits;
-    const u = (v, kind) => (v == null ? "—" : `${fmt(toDisplay(v, kind, sys))} ${unitSym(kind, sys)}`.trim());
-    const m = (v) => (v == null ? "—" : fmt(v));
-    const tags = (list) => list.map((t) => (t === "niu" ? "Niu (confirm against your copy)" : TAGS[t].label)).join(", ");
+    const u = (v, kind) => withUnit(v, kind, sys);
+    const m = plain;
+    const tags = tagLabels;
     const L = [];
     L.push("# Fastener edge margin and pitch report", "", `> **${DISCLAIMER}**`, "");
     L.push(`Units shown: ${sys === "US" ? "in, lbf, ksi" : "mm, N, MPa"}. Stored values are canonical SI (mm, N, MPa).`, "");
     L.push("## Inputs", "", "| Input | Value | Source |", "| --- | --- | --- |");
     for (const f of FIELDS) {
-      if (f.when && !safeWhen(f, x)) continue;
+      if (!isShown(f, x)) continue;
       const v = get(x, f.path);
-      const shown = f.kind === "enum" ? (f.options.find((o) => o[0] === v) || [v, v])[1] : v === null && f.nullable ? "derived from P/(width across the load · t)" : ["length", "force", "stress"].includes(f.kind) ? u(v, f.kind) : m(v);
-      const ds = DEFAULT_SOURCES[f.path] || (f.path.startsWith("material.") ? DEFAULT_SOURCES["material.*"] : null);
+      const shown = f.kind === "enum" ? optionLabel(f, v) : v === null && f.nullable ? "derived from P/(width across the load · t)" : DIMENSIONAL.includes(f.kind) ? u(v, f.kind) : m(v);
+      const ds = defaultSource(f.path);
       L.push(`| ${f.label} | ${shown} | ${[f.tags ? tags(f.tags) : "", ds ? `default: ${TAGS[ds.tag].label}` : ""].filter(Boolean).join("; ") || "—"} |`);
     }
     L.push("");
@@ -837,12 +886,12 @@ footer{margin-top:3rem;font-size:.8125rem;color:var(--muted)}
     const r = solve(x);
     if (!r.ok) return null;
     const sys = displayUnits === "US" ? "US" : "SI";
-    const u = (v, kind) => (v == null ? "—" : `${fmt(toDisplay(v, kind, sys))} ${unitSym(kind, sys)}`);
+    const u = (v, kind) => withUnit(v, kind, sys);
     const say = (v, kind) => `${sayNumber(fmt(toDisplay(v, kind, sys)))} ${SPOKEN_UNITS[unitSym(kind, sys)]}`;
     const tex = (v, kind) => `${fmt(toDisplay(v, kind, sys))}\\ \\text{${unitSym(kind, sys)}}`;
-    const m = (v) => (v == null ? "—" : fmt(v));
-    const tags = (list) => list.map((t) => (t === "niu" ? "Niu (confirm against your copy)" : TAGS[t].label)).join(", ");
-    const option = (path) => { const f = FIELD[path], v = get(x, path); return (f.options.find((o) => o[0] === v) || [v, v])[1]; };
+    const m = plain;
+    const tags = tagLabels;
+    const option = (path) => optionLabel(FIELD[path], get(x, path));
     const { fastener: F, sheet: S, material: M, geometry: G, load: L, buckling: B, rules: R } = x;
     const d = r.derived, g = r.governing, gg = r.governingGeom;
     const kind = { "solid-rivet": "solid rivets", "blind-rivet": "blind rivets", bolt: "bolts" }[F.type];
@@ -917,7 +966,7 @@ footer{margin-top:3rem;font-size:.8125rem;color:var(--muted)}
         body: ["| Check | Allowable | Applied | MS |", "| --- | --- | --- | --- |", ...strengthRows].join("\n"),
         notes: `Load ${across} the rows: net section uses ${d.across.sym} = ${u(d.across.L, "length")} across the load; inter-rivet buckling uses ${d.along.sym}${d.along.L == null ? " (not evaluated: one fastener along the load)" : ` = ${u(d.along.L, "length")}`} along it.`,
         narration: evaluated.length
-          ? evaluated.map((c) => `${SPOKEN_CHECKS[c.id][0].toUpperCase()}${SPOKEN_CHECKS[c.id].slice(1)} has a margin of ${sayNumber(m(c.ms))}.`).join(" ")
+          ? evaluated.map((c) => `${capitalise(SPOKEN_CHECKS[c.id])} has a margin of ${sayNumber(m(c.ms))}.`).join(" ")
           : "No strength check could be evaluated for this joint.",
       },
       gov
@@ -948,7 +997,7 @@ footer{margin-top:3rem;font-size:.8125rem;color:var(--muted)}
         title: `Geometric margins: ${gg.title}, MS_geom = ${m(gg.ms)}`,
         body: ["Meeting a geometry rule is not the same as passing strength.", "", "| Rule | Actual | Minimum | MS_geom | ÷ typical |", "| --- | --- | --- | --- | --- |",
           ...r.geometric.map((c) => `| ${c.title} | ${m(c.actual)} | ${m(c.minimum)} | ${m(c.ms)} | ${m(c.ratioToTypical)} |`)].join("\n"),
-        narration: r.geometric.map((c) => `${SPOKEN_CHECKS[c.id][0].toUpperCase()}${SPOKEN_CHECKS[c.id].slice(1)} is ${sayNumber(m(c.actual))} against a minimum of ${sayNumber(m(c.minimum))}.`).join(" ") +
+        narration: r.geometric.map((c) => `${capitalise(SPOKEN_CHECKS[c.id])} is ${sayNumber(m(c.actual))} against a minimum of ${sayNumber(m(c.minimum))}.`).join(" ") +
           ` The governing geometric rule is ${SPOKEN_CHECKS[gg.id]}, with a margin of ${sayNumber(m(gg.ms))}.`,
       },
     ];
@@ -1067,8 +1116,8 @@ footer{margin-top:3rem;font-size:.8125rem;color:var(--muted)}
   }
 
   return {
-    SCHEMA_VERSION, KIND, DISCLAIMER, UNITS, TAGS, SOURCES, FIELDS, FIELD, DEFAULT_SOURCES, ASSUMPTIONS, FORMULAS, HAND,
-    unitSym, toDisplay, fromDisplay, convertInputs, example, normalise, validate, solve, fbru, columnStrength, slendernessFor,
+    SCHEMA_VERSION, KIND, DISCLAIMER, UNITS, DIMENSIONAL, TAGS, SOURCES, FIELDS, FIELD, DEFAULT_SOURCES, ASSUMPTIONS, FORMULAS, HAND,
+    unitSym, toDisplay, fromDisplay, convertInputs, defaultSource, isShown, example, normalise, validate, solve, fbru, columnStrength, slendernessFor,
     netWidth, maxPitch, sheetStress, acrossSpacing, alongSpacing, loadedWidth, sweepED, sweepPitch, sweepSlenderness, inputsJSON, resultsJSON, parseImport, lookup, runVector,
     toMarkdown, jointReport, selfTests, get, set, fmt,
   };
@@ -1176,7 +1225,7 @@ const E = EdgePitch;
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const fmt = E.fmt;
-const DIMENSIONAL = ["length", "force", "stress"];
+const DIMENSIONAL = E.DIMENSIONAL;
 
 let state = E.example();
 let units = "SI";
@@ -1185,7 +1234,6 @@ let userVectors = [];
 const u = (v, kind) => (v == null ? "—" : `${fmt(E.toDisplay(v, kind, units))} ${E.unitSym(kind, units)}`);
 const msCell = (m) => (m == null ? "<td class=\"info\">—</td>" : `<td class="${m < 0 ? "neg" : ""}">${fmt(m)}</td>`);
 const tagHTML = (t) => `<span class="tag ${t}" title="${esc(E.TAGS[t].note)}">${esc(t === "niu" ? "Niu · confirm against your copy" : E.TAGS[t].label)}</span>`;
-const defaultSource = (path) => E.DEFAULT_SOURCES[path] || (path.startsWith("material.") ? E.DEFAULT_SOURCES["material.*"] : null);
 
 /* ---------- Form ---------- */
 function buildForm() {
@@ -1206,7 +1254,7 @@ function buildForm() {
 const id = (f) => "in-" + f.path.replace(".", "-");
 function fieldHTML(f) {
   const unit = DIMENSIONAL.includes(f.kind) ? `<small data-unit="${f.kind}"></small>` : "";
-  const ds = defaultSource(f.path);
+  const ds = E.defaultSource(f.path);
   const tags = [...(f.tags || [])].map(tagHTML);
   if (ds) tags.push(`<span class="tag ${ds.tag}" title="${esc(ds.text)}">default: ${esc(E.TAGS[ds.tag].label)}</span>`);
   const control = f.kind === "enum"
@@ -1237,9 +1285,7 @@ function syncForm(skip) {
       else if (v == null || (typeof v === "number" && !Number.isFinite(v))) el.value = "";
       else el.value = +(DIMENSIONAL.includes(f.kind) ? E.toDisplay(v, f.kind, units) : v).toPrecision(8);
     }
-    let shown = true;
-    try { shown = !f.when || f.when(state); } catch (e) { shown = true; }
-    $("wrap-" + id(f)).hidden = !shown;
+    $("wrap-" + id(f)).hidden = !E.isShown(f, state);
   }
   $("derive-sigma").checked = state.load.sigmaSheet == null;
   for (const s of document.querySelectorAll("[data-unit]")) s.textContent = E.unitSym(s.dataset.unit, units);
@@ -1395,19 +1441,27 @@ function payload(kind) {
   const obj = kind === "results" ? E.resultsJSON(state, units) : E.inputsJSON(state, units);
   return { text: JSON.stringify(obj, null, 2) + "\n", name: `edge-pitch-${kind}.json`, type: "application/json" };
 }
-function download(kind) {
-  const p = payload(kind);
+// Saves text as a file through a temporary download link; throws when the browser blocks it.
+function saveFile(text, name, type) {
   const a = document.createElement("a");
-  a.href = URL.createObjectURL(new Blob([p.text], { type: p.type }));
-  a.download = p.name;
+  a.href = URL.createObjectURL(new Blob([text], { type }));
+  a.download = name;
   document.body.appendChild(a);
   a.click();
   setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 0);
+}
+// Puts text on the clipboard and reports done or failed; resolves either way.
+async function copyText(text, done) {
+  try { await navigator.clipboard.writeText(text); say(done); } catch (e) { say("Copy failed: the browser blocked clipboard access."); }
+}
+function download(kind) {
+  const p = payload(kind);
+  saveFile(p.text, p.name, p.type);
   say(`Downloaded ${p.name}.`);
 }
 async function copy(kind) {
   const p = payload(kind);
-  try { await navigator.clipboard.writeText(p.text); say(`Copied ${p.name.replace(/^edge-pitch-/, "")} to the clipboard.`); } catch (e) { say("Copy failed: the browser blocked clipboard access."); }
+  await copyText(p.text, `Copied ${p.name.replace(/^edge-pitch-/, "")} to the clipboard.`);
 }
 function say(msg) { $("status").textContent = msg; }
 
@@ -1421,12 +1475,7 @@ async function saveDeck() {
   const text = reportDeck(), name = "edge-pitch-beamdswitch.md";
   if (!text) { say("Fix the joint first: there is no solution to save."); return; }
   try {
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(new Blob([text], { type: "text/markdown" }));
-    a.download = name;
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 0);
+    saveFile(text, name, "text/markdown");
     say(`Saved ${name}: open it in beamdswitch.`);
   } catch (e) {
     try { await navigator.clipboard.writeText(text); say("Copied the beamdswitch deck, as saving is blocked here: paste it into beamdswitch."); }
@@ -1436,8 +1485,7 @@ async function saveDeck() {
 async function copyDeck() {
   const text = reportDeck();
   if (!text) { say("Fix the joint first: there is no solution to copy."); return; }
-  try { await navigator.clipboard.writeText(text); say("Copied the beamdswitch deck: paste it into beamdswitch."); }
-  catch (e) { say("Copy failed: the browser blocked clipboard access."); }
+  await copyText(text, "Copied the beamdswitch deck: paste it into beamdswitch.");
 }
 function importText(text) {
   let got;
