@@ -39,7 +39,7 @@ Change and test this repository first, then port it; the site's [add-visualizati
 
 - One self-contained `index.html`: no external scripts, stylesheets, fonts or network requests. It works offline.
 - The engine has no DOM, storage, clock or network use, so Node can load it.
-- The page's own code stays under about 100 KB, not counting the embedded phrase data and the beamdswitch template; the test enforces it.
+- The page's own code stays under 100,500 bytes (about 100 KB, raised by 500 bytes for the style guide's site-theme script and dark-theme blocks), not counting the embedded phrase data and the beamdswitch template; the test enforces it.
 - The survey's MIT notice travels with the embedded answers, in `LICENSE` and on the page; a test checks both.
 - Tests use Node's built-in runner (`node --test`) only; never add Vitest, Jest, a `package.json` or another test framework.
 - `beamdswitch.js` is a verbatim copy of yujieteo/site's `templates/beamdswitch.js` and is inlined unchanged; the tests check the copy against `tests/fixtures/beamdswitch/beamdswitch.js`, and the site's `tests/beamdswitch-voice.test.mjs` checks the port. Every beamdswitch deck declares the narration voice `bf_emma` in its front matter.
