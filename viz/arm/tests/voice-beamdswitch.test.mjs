@@ -8,8 +8,7 @@ import { parseDeck } from "./fixtures/beamdswitch/deck.mjs";
 import { TEMPLATE_PATH, assertVoice, read } from "./beamdswitch-decks.mjs";
 
 // This repository holds one page; the sweep upstream in yujieteo/visuals covers every exporting page.
-const EXPORTING = ["arm"];
-const pages = ["arm"];
+const SLUG = "arm";
 
 const frame = (title) => ({ title, body: "A body.", narration: `This is ${title}.` });
 const report = (meta) => ({
@@ -24,10 +23,6 @@ function templateOf(source) {
   return context.Beamdswitch;
 }
 
-test("the pages that export a beamdswitch deck are the known set", () => {
-  assert.deepEqual(pages, EXPORTING);
-});
-
 test("the shared template defaults the voice to bf_emma and keeps one the report names", () => {
   const T = templateOf(read(TEMPLATE_PATH));
   assert.equal(T.DEFAULT_VOICE, "bf_emma");
@@ -36,10 +31,8 @@ test("the shared template defaults the voice to bf_emma and keeps one the report
   assert.equal(T.deck(report({})).match(/^voice:/gm).length, 1);
 });
 
-for (const slug of pages) {
-  test(`${slug}: the page's inlined template writes a voice into every deck`, () => {
-    const source = inlined(read(`index.html`));
-    assert.equal(source, read(TEMPLATE_PATH), `${slug} inlines the shared template`);
-    assertVoice(parseDeck(templateOf(source).deck(report({}))), slug);
-  });
-}
+test(`${SLUG}: the page's inlined template writes a voice into every deck`, () => {
+  const source = inlined(read(`index.html`));
+  assert.equal(source, read(TEMPLATE_PATH), `${SLUG} inlines the shared template`);
+  assertVoice(parseDeck(templateOf(source).deck(report({}))), SLUG);
+});
