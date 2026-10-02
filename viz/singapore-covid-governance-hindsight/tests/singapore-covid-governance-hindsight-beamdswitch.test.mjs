@@ -25,7 +25,7 @@ test("the site's shared beamdswitch template is the copy the page inlines", () =
 });
 
 test("the beamdswitch button saves, and Copy deck copies, the deck of the filter and analysis shown", async () => {
-  const page = await openPage(SLUG);
+  const page = await openPage();
   page.run('state.filter="policy overlap";state.selectedId="digital-trust";render()');
   // The selection is not in the filter, so the page falls back to the first match, as the deck does.
   assert.equal(page.run("state.selectedId"), "job-security");
