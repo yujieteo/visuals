@@ -12,6 +12,7 @@ import re
 from html import escape
 from pathlib import Path
 from gallery import render_gallery
+from style_guide import THEME_SCRIPT, root_css
 
 ROOT = Path(__file__).resolve().parents[1]
 SLUG = "haze-singapore"
@@ -201,43 +202,43 @@ def build_map(boundary, labels):
 # ------------------------------------------------------------- render ----
 
 CSS = """
-:root{--bg:__background__;--fg:__foreground__;--muted:__secondary__;--surface:__surface__;--border:__border__;--focus:__focus__;--mark:__mark__;--selected:__selected__;--radius:__radius__;--sans:__font_sans__;--mono:__font_mono__;color-scheme:light}
-*{box-sizing:border-box}html{font-family:var(--sans);line-height:1.5}body{margin:0;background:var(--bg);color:var(--fg)}
+__ROOT_CSS__
+*{box-sizing:border-box}html{font-family:var(--sans);line-height:1.55}body{margin:0;background:var(--bg);color:var(--fg);letter-spacing:-.011em;-webkit-font-smoothing:antialiased}
 a{color:inherit;text-underline-offset:.18em}button,input,select{font:inherit;color:inherit}button{cursor:pointer}
-:focus-visible{outline:.125rem solid var(--focus);outline-offset:.125rem}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .skip{position:fixed;left:1rem;top:1rem;transform:translateY(-250%);z-index:10;background:var(--fg);color:var(--bg);padding:.5rem .75rem;border-radius:var(--radius)}.skip:focus{transform:none}
 header,main,footer{width:min(calc(100% - 2rem),__content_width__);margin:auto}
-header{padding:clamp(1.5rem,5vw,2.75rem) 0 1rem}
-h1{max-width:26ch;margin:0 0 .6rem;font-size:clamp(1.85rem,5.4vw,3.5rem);line-height:1.06;letter-spacing:-.04em}
-.lede{max-width:56rem;margin:0;color:var(--muted)}
+header{padding:clamp(1.25rem,5vw,3rem) 0 1rem}
+h1{max-width:20ch;margin:.35rem 0 .8rem;font-size:clamp(2rem,6vw,3.25rem);font-weight:700;line-height:1.04;letter-spacing:-.045em}
+.lede{max-width:66ch;margin:0;font-size:1.125rem}
 .controls{display:flex;flex-wrap:wrap;gap:.6rem 1.25rem;align-items:center;padding:.9rem 0;border-top:1px solid var(--border)}
-.seg{display:inline-flex;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
-.seg button{min-height:2.75rem;padding:.35rem .8rem;border:0;background:var(--bg);font-size:.9rem}
-.seg button+button{border-left:1px solid var(--border)}.seg button[aria-pressed=true]{background:var(--fg);color:var(--bg)}
-.btn{min-height:2.75rem;padding:.35rem .9rem;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);font-size:.9rem}.btn:hover{background:var(--surface)}
-.btn.play{min-width:6.5rem;background:var(--fg);color:var(--bg);border-color:var(--fg);font-weight:600}
+.seg{display:inline-flex;border:1px solid var(--control);border-radius:999px;overflow:hidden}
+.seg button{min-height:2.75rem;padding:.35rem .9rem;border:0;background:var(--bg);font-size:.875rem}
+.seg button:hover{background:var(--surface)}.seg button[aria-pressed=true]{background:var(--fg);color:var(--bg)}
+.btn{min-height:2.75rem;padding:.25rem .9rem;border:1px solid var(--control);border-radius:999px;background:var(--bg);font-size:.875rem}.btn:hover{background:var(--surface)}
+.btn.play{min-width:6.5rem;background:var(--focus);color:var(--on-focus);border-color:var(--focus);font-weight:600}
 .spacer{flex:1}
 .deck-row{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin-top:1rem}.deck-status,.deck-hint{color:var(--muted);font-size:.875rem}.deck-hint{max-width:56rem;margin:.5rem 0 0}
 .layout{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(16rem,1fr);gap:1.5rem;align-items:start}
 .stage{position:relative;min-width:0}
 .mapwrap{border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);overflow:hidden}
 svg#map{display:block;width:100%;height:auto;touch-action:manipulation}
-.sea{fill:var(--surface)}.reg{stroke:none;transition:fill .12s linear}.seam{fill:none;stroke:#fff;stroke-opacity:.55;stroke-width:.6;pointer-events:none}
+.sea{fill:var(--surface)}.reg{stroke:none;transition:fill .12s linear}.seam{fill:none;stroke:var(--bg);stroke-opacity:.55;stroke-width:.6;pointer-events:none}
 .hit{fill:transparent;cursor:pointer;outline:none}
 .hl{pointer-events:none;opacity:0}.on .hl{opacity:1}
 .rname,.rval,.rband{paint-order:stroke;stroke-linejoin:round}.rname{font:600 15px var(--sans);letter-spacing:.06em;text-transform:uppercase;pointer-events:none;stroke-width:4px}
 .rval{font:700 34px var(--sans);letter-spacing:-.02em;pointer-events:none;stroke-width:6px}
 .rband{font:600 13px var(--sans);pointer-events:none;stroke-width:4px}
 .scale line{stroke:var(--fg);stroke-width:2}.scale text{fill:var(--muted);font:12px var(--mono)}
-.tip{position:absolute;z-index:3;width:17.5rem;max-width:calc(100% - .5rem);padding:.7rem .8rem;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);box-shadow:0 .4rem 1.4rem #0002;pointer-events:none;font-size:.875rem}
-.tip strong{display:block;font-size:.95rem}.tip dl{margin:.4rem 0 0;display:grid;grid-template-columns:1fr auto;gap:.15rem .75rem}.tip dt{color:var(--muted)}.tip dd{margin:0;font:600 .85rem var(--mono);text-align:right}
+.tip{position:absolute;z-index:3;width:17.5rem;max-width:calc(100% - .5rem);padding:.7rem .8rem;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);box-shadow:0 8px 24px rgb(0 0 0 / .16);pointer-events:none;font-size:.875rem}
+.tip strong{display:block;font-size:.95rem}.tip dl{margin:.4rem 0 0;display:grid;grid-template-columns:1fr auto;gap:.15rem .75rem}.tip dt{color:var(--muted)}.tip dd{margin:0;font:600 .85rem var(--mono);font-variant-numeric:tabular-nums;text-align:right}
 .panel{min-width:0}
 .now{margin:0;font-size:clamp(1.3rem,3vw,1.75rem);font-weight:700;letter-spacing:-.02em}.nowsub{margin:.1rem 0 .9rem;color:var(--muted);font:14px var(--mono)}
 .rows{list-style:none;margin:0;padding:0;border-top:1px solid var(--border)}
 .rows li{border-bottom:1px solid var(--border)}
 .row{display:grid;grid-template-columns:.9rem 1fr auto;gap:.2rem .7rem;align-items:center;width:100%;padding:.55rem .35rem;border:0;background:none;text-align:left}
 .row:hover,.row[aria-pressed=true]{background:var(--surface)}
-.sw{width:.9rem;height:.9rem;border-radius:50%;border:1px solid #0003}.rn{font-weight:600}.rv{font:700 1.15rem var(--mono);text-align:right}.rb{grid-column:2/4;color:var(--muted);font-size:.875rem;margin-top:-.25rem}
+.sw{width:.9rem;height:.9rem;border-radius:50%;border:1px solid #0003}.rn{font-weight:600}.rv{font:700 1.15rem var(--mono);font-variant-numeric:tabular-nums;text-align:right}.rb{grid-column:2/4;color:var(--muted);font-size:.875rem;margin-top:-.25rem}
 .legend{display:flex;flex-wrap:wrap;gap:.35rem 1rem;margin:1rem 0 0;padding:0;list-style:none;font-size:.875rem}
 .legend li{display:flex;gap:.4rem;align-items:center}.legend i{width:.9rem;height:.9rem;border-radius:.2rem;border:1px solid #0003;flex:none}.legend span{color:var(--muted);font-family:var(--mono);font-size:.875rem}
 .timeline{margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--border)}
@@ -247,13 +248,13 @@ svg#map{display:block;width:100%;height:auto;touch-action:manipulation}
 .rowlabels{display:grid;grid-template-rows:repeat(5,.8rem);gap:1px}
 .stripwrap{position:relative;cursor:ew-resize;touch-action:none;border-radius:.25rem;overflow:hidden;border:1px solid var(--border)}
 svg#strip{display:block;width:100%;height:calc(5*.8rem + 4px)}
-.cursor{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:var(--fg);pointer-events:none;box-shadow:0 0 0 1px #fff}
-.slider{grid-column:2;width:100%;margin:.4rem 0 0;accent-color:var(--fg);height:2.75rem}
+.cursor{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:var(--fg);pointer-events:none;box-shadow:0 0 0 1px var(--bg)}
+.slider{grid-column:2;width:100%;margin:.4rem 0 0;accent-color:var(--focus);height:2.75rem}
 .tlnote{grid-column:2;margin:0;font-size:.875rem;color:var(--muted)}
-.method{margin:1.5rem 0 0;padding:1rem 0 0;border-top:1px solid var(--border);color:var(--muted);font-size:.88rem;max-width:62rem}.method p{margin:.4rem 0}
-details{margin:1rem 0 0}summary{cursor:pointer;font-weight:600;font-size:.9rem}
+.method{margin:1.5rem 0 0;padding:1rem 0 0;border-top:1px solid var(--border);color:var(--muted);font-size:.875rem;max-width:62rem}.method p{margin:.4rem 0}
+details{margin:1rem 0 0}summary{cursor:pointer;font-weight:600;font-size:.875rem}
 .tablewrap{max-height:24rem;overflow:auto;margin-top:.6rem;border:1px solid var(--border);border-radius:var(--radius)}
-table{width:100%;border-collapse:collapse;font:14px var(--mono)}th,td{padding:.3rem .6rem;text-align:right;border-bottom:1px solid var(--border)}th:first-child,td:first-child{text-align:left}thead th{position:sticky;top:0;background:var(--surface)}
+table{width:100%;border-collapse:collapse;font:14px var(--mono);font-variant-numeric:tabular-nums}th,td{padding:.3rem .6rem;text-align:right;border-bottom:1px solid var(--border)}th:first-child,td:first-child{text-align:left}thead th{position:sticky;top:0;background:var(--surface)}
 footer{padding:1.25rem 0 2.5rem;margin-top:1.5rem;border-top:1px solid var(--border);color:var(--muted);font-size:.875rem}
 .vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 @media(max-width:820px){.tip{position:static;width:auto;max-width:none;margin-top:.5rem;box-shadow:none}.layout{grid-template-columns:minmax(0,1fr)}.rname,.rband{display:none}.rval{font-size:calc(20px/var(--k,1));stroke-width:calc(4px/var(--k,1))}.scale text{font-size:calc(13px/var(--k,1))}.tl{grid-template-columns:4.2rem minmax(0,1fr)}summary{padding:.6rem 0}footer a{display:inline-block;padding:.7rem 0}}
@@ -266,10 +267,10 @@ const NS="http://www.w3.org/2000/svg",R=D.regions,N=D.n,T0=Date.parse(D.start);
 const $=s=>document.querySelector(s),el=(n,a={},p)=>{const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);if(p)p.append(e);return e};
 const cap=s=>s[0].toUpperCase()+s.slice(1);
 const METRICS={psi:{name:"PSI (24-hour)",key:"psi",bands:BANDS.psi,unit:""},pm1:{name:"PM2.5 (1-hour)",key:"pm1",bands:BANDS.pm,unit:" µg/m³"}};
-let metric="psi",t=D.peak,sel=null,timer=null,speed=96,last=0;
+let metric="psi";var t=D.peak,sel=null,timer=null,speed=96,last=0;
 const val=(m,r,i)=>D.m[m][r][i];
 function bandOf(m,v){if(v==null)return null;const b=METRICS[m].bands;for(let i=0;i<b.length;i++)if(b[i].max==null||v<=b[i].max)return i;}
-const bandColor=(m,i)=>i==null?"#d2d2d7":METRICS[m].bands[i].color, bandInk=(m,i)=>i==null?"#1d1d1f":METRICS[m].bands[i].ink;
+const bandColor=(m,i)=>i==null?"var(--border)":METRICS[m].bands[i].color, bandInk=(m,i)=>i==null?"var(--fg)":METRICS[m].bands[i].ink;
 const DAYS=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 function sgt(i){const d=new Date(T0+i*36e5+8*36e5);return{dow:DAYS[d.getUTCDay()],d:d.getUTCDate(),mon:MON[d.getUTCMonth()],y:d.getUTCFullYear(),h:String(d.getUTCHours()).padStart(2,"0"),iso:d.toISOString().slice(0,10)}}
 const fmt=i=>{const s=sgt(i);return `${s.dow} ${s.d} ${s.mon} ${s.y}, ${s.h}:00`};
@@ -335,14 +336,14 @@ function render(){
 }
 
 /* legend */
-function drawLegend(){$("#legend").innerHTML=METRICS[metric].bands.map(b=>`<li><i style="background:${b.color}"></i>${b.label} <span>${b.range}</span></li>`).join("")+'<li><i style="background:#d2d2d7"></i>No reading</li>'}
+function drawLegend(){$("#legend").innerHTML=METRICS[metric].bands.map(b=>`<li><i style="background:${b.color}"></i>${b.label} <span>${b.range}</span></li>`).join("")+'<li><i style="background:var(--border)"></i>No reading</li>'}
 
 /* strip: daily peak per region */
 const dayStart=[];for(let i=0;i<N;i++)if(i===0||sgt(i).iso!==sgt(i-1).iso)dayStart.push(i);
 const strip=$("#strip");
 function drawStrip(){strip.replaceChildren();const nd=dayStart.length,w=100/nd;
   R.forEach((r,ri)=>{dayStart.forEach((d0,di)=>{const d1=di+1<nd?dayStart[di+1]:N;let mx=null;for(let i=d0;i<d1;i++){const v=val(metric,r,i);if(v!=null&&(mx==null||v>mx))mx=v}
-    el("rect",{x:(di*w)+"%",y:ri*(.8*16)+"px",width:(w+.05)+"%",height:(.8*16-1)+"px",fill:bandColor(metric,bandOf(metric,mx))},strip)})});
+    el("rect",{x:(di*w)+"%",y:ri*(.8*16)+"px",width:(w+.05)+"%",height:(.8*16-1)+"px",style:"fill:"+bandColor(metric,bandOf(metric,mx))},strip)})});
   const months=$("#months");months.replaceChildren();dayStart.forEach((d0,di)=>{const s=sgt(d0);if(s.d===1||di===0){const sp=document.createElement("span");sp.style.left=(di/nd*100)+"%";sp.textContent=s.mon+(s.mon==="Jan"?" "+s.y:"");months.append(sp)}})}
 const rl=$("#rowlabels");R.forEach(r=>{const d=document.createElement("div");d.className="rl";d.textContent=r;rl.append(d)});
 
@@ -437,11 +438,8 @@ def long_date(stamp):
 
 def render(model, meta, tokens):
     s, series, geo = model["story"], model["series"], model["map"]
-    colors = tokens["colors"]
-    css = CSS
-    for key, value in {**colors, "radius": tokens["radius"], "font_sans": tokens["font_sans"],
-                       "font_mono": tokens["font_mono"], "content_width": tokens["content_width"]}.items():
-        css = css.replace(f"__{key}__", value)
+    css = CSS.replace("__ROOT_CSS__", root_css(tokens, f"--mark:var(--c1);--selected:var(--hl);--radius:{tokens['radius']}"))
+    css = css.replace("__content_width__", tokens["content_width"])
     data = {"start": s["first"], "n": s["hours"], "regions": REGIONS, "peak": s["peak_index"],
             "m": {key: {r: series[key][r] for r in REGIONS} for key in series}}
     map_json = {k: geo[k] for k in ("width", "height", "paths", "labels", "scale_10km")}
@@ -464,7 +462,7 @@ def render(model, meta, tokens):
     js = js.replace("</", "<\\/")
     return (f'<!doctype html>\n<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
             f'<link rel="icon" href="data:,"><meta name="description" content="{escape(s["description"])}"><title>{escape(TITLE)}</title>'
-            f'<style>{css}</style></head><body>{body}<script id="beamdswitch">\n{TEMPLATE.read_text()}</script><script id="report">\n{REPORT.read_text()}</script>'
+            f'{THEME_SCRIPT}<style>{css}</style></head><body>{body}<script id="beamdswitch">\n{TEMPLATE.read_text()}</script><script id="report">\n{REPORT.read_text()}</script>'
             f'<script>{js}</script></body></html>\n')
 
 
@@ -553,7 +551,7 @@ def verify(model, meta, raw, boundary):
     assert meta == build_meta(model), "meta.json out of date"
     html = VIZ.read_text()
     assert html == render(model, meta, json.loads(TOKENS.read_text())), "viz/haze-singapore/index.html is out of date; run the builder"
-    assert html.count("<h1>") == 1 and html.count('id="map"') == 1 and html.count("<script") == 3
+    assert html.count("<h1>") == 1 and html.count('id="map"') == 1 and html.count("<script") == 4 and THEME_SCRIPT in html
     assert f'<script id="beamdswitch">\n{TEMPLATE.read_text()}</script>' in html and f'<script id="report">\n{REPORT.read_text()}</script>' in html
     assert 'id="save-beamdswitch"' in html and 'id="copy-beamdswitch"' in html
     assert not re.search(r'''(?:src|href)=["']https?://''', re.sub(r'<footer>.*</footer>', "", html, flags=re.S).replace(f'href="{BEAMDSWITCH_URL}"', "")), "external asset"
