@@ -6,6 +6,8 @@ An exaggerated, qualitative and unit-free 3D view of how axial load, shear, tors
 
 This repository, [yujieteo/distortion](https://github.com/yujieteo/distortion), is the source of truth: the Structural Distortion Explorer and its tests are developed here, and its CI runs them here. `visuals/distortion/` in [yujieteo/site](https://github.com/yujieteo/site/tree/main/visuals/distortion) is a port of the page files, refreshed whenever the explorer is updated, and the site runs no logic tests for it. Porting copies this repository minus `tests/` and `.github/`, so AGENTS.md and SKILLS.md must not link into either (the site checks that their links resolve).
 
+Change and test here first, then port. The site's [add-visualization playbook](https://github.com/yujieteo/site/blob/main/skills/playbooks/add-visualization.md) owns the procedure: run this repository's tests, an end-to-end check of the page in a browser and the first no-mistakes pass here; then port the page files into yujieteo/site and run the second pass there with site-level tests only. Logic and browser tests stay here, never in the site; time every test you add (`time node --test tests/<file>`).
+
 ## Files and data
 
 See [README.md](README.md). `kinematics.js` is the pure deformation model and beamdswitch report (no DOM, no three.js), `template.html` the page, scene and WebMCP tools, `raw.json` the published metadata (published as `data.json`), and `vendor/three.min.js` the checked-in three.js r186 bundle. `build.mjs` inlines them with `beamdswitch.js` into `template.html` to write `index.html`, which is generated.
