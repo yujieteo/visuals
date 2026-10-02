@@ -169,7 +169,8 @@ self.EtaleTools = tools;
 
 /* ---------- wiring ---------- */
 function onInput(id, fn) { const el = $(id); el.addEventListener("input", fn); el.addEventListener("change", fn); }
-function wire() {
+/* One delegated click handler: the first matching data-* control wins. */
+function wireClicks() {
   document.addEventListener("click", (e) => {
     const t = e.target && e.target.closest ? e.target : null;
     if (!t) return;
@@ -201,6 +202,10 @@ function wire() {
     if ((el = hit("[data-present-lab]"))) { closePresent(); return setObj(el.dataset.presentLab); }
     if (t === $("palette")) return closePalette();
   });
+}
+
+/* The lab: its controls, the monodromy slider, hover highlighting and dragging in the panels. */
+function wireLab() {
   $("lab-controls").addEventListener("input", (e) => {
     const el = e.target, k = el && el.dataset && el.dataset.ctl;
     if (!k || el.dataset.v) return;
@@ -241,11 +246,17 @@ function wire() {
     }
   });
   for (const ev of ["pointerup", "pointercancel"]) $("lab-panels").addEventListener(ev, () => { if (drag && S.s >= 0.999) S.done.add(4); drag = null; });
+}
 
-  $("opening-play").addEventListener("click", () => animate("open", OPEN.s >= 0.999 ? 0 : OPEN.s, 1, 2600, (v) => { OPEN.s = v; renderOpening(); }));
+/* Play from the start, or from where the slider is when it has not reached the end. */
+const replay = (key, st, ms, render, ...rest) => animate(key, st.s >= 0.999 ? 0 : st.s, 1, ms, (v) => { st.s = v; render(); }, ...rest);
+
+/* The opening, machine, surfaces, elliptic, characteristic p, arithmetic, profinite, summary and puzzle sections. */
+function wireSections() {
+  $("opening-play").addEventListener("click", () => replay("open", OPEN, 2600, renderOpening));
   onInput("opening-s", () => { stopAnim("open"); OPEN.s = Number($("opening-s").value) / 1000; renderOpening(); });
   onInput("machine-perm", () => { MACH.perm = $("machine-perm").value; MACH.s = 0; renderMachine(); });
-  $("machine-play").addEventListener("click", () => animate("mach", MACH.s >= 0.999 ? 0 : MACH.s, 1, 2600, (v) => { MACH.s = v; renderMachine(); }));
+  $("machine-play").addEventListener("click", () => replay("mach", MACH, 2600, renderMachine));
   onInput("machine-s", () => { stopAnim("mach"); MACH.s = Number($("machine-s").value) / 1000; renderMachine(); });
   onInput("surf-g", () => { SURF.g = Number($("surf-g").value); SURF.hl = null; SURF.elim = false; renderSurfaces(); });
   onInput("surf-r", () => { SURF.r = Number($("surf-r").value); SURF.hl = null; SURF.elim = false; renderSurfaces(); });
@@ -254,7 +265,7 @@ function wire() {
   onInput("poly-s", () => { stopAnim("fold"); SURF.ps = Number($("poly-s").value) / 1000; renderSurfaces(); });
   $("poly-play").addEventListener("click", foldPolygon);
   onInput("ell-s", () => { stopAnim("ell"); ELL.s = Number($("ell-s").value) / 1000; renderElliptic(); });
-  $("ell-play").addEventListener("click", () => animate("ell", ELL.s >= 0.999 ? 0 : ELL.s, 1, 4000, (v) => { ELL.s = v; renderElliptic(); }, null, true));
+  $("ell-play").addEventListener("click", () => replay("ell", ELL, 4000, renderElliptic, null, true));
   onInput("ell-n", () => { ELL.n = Number($("ell-n").value); renderElliptic(); });
   onInput("ell-a", () => { ELL.a = Number($("ell-a").value) / 10; renderElliptic(); });
   onInput("ell-b", () => { ELL.b = Number($("ell-b").value) / 10; renderElliptic(); });
@@ -277,6 +288,10 @@ function wire() {
     if (id === "pz-n") { PZ.n = Number(e.target.value); PZ.s = 0; PZ.stacked = false; renderPuzzles(); }
     if (id === "pz-s") { PZ.s = Number(e.target.value) / 1000; renderPuzzles(); const el = $("pz-s"); if (el && el.focus) el.focus(); }
   });
+}
+
+/* The command palette, the presentation and the keyboard: Cmd/Ctrl+K, Escape, arrows and g/c/f/a views. */
+function wirePaletteAndKeys() {
   $("open-palette").addEventListener("click", openPalette);
   $("palette-input").addEventListener("input", () => { PAL.q = $("palette-input").value; PAL.i = 0; renderPalette(); });
   $("palette-input").addEventListener("keydown", (e) => {
@@ -305,20 +320,35 @@ function wire() {
     const v = { g: "geometry", c: "cover", f: "fibre", a: "all" }[String(e.key).toLowerCase()];
     if (v) setView(v);
   });
+}
+
+/* The deck's text, or null after saying in the message line why it could not be built. */
+function deckOrReport(msg) {
+  try { return deck(); } catch (err) { msg.textContent = `Could not build the deck: ${err.message}`; return null; }
+}
+function wireDeck() {
   $("save-beamdswitch").addEventListener("click", async () => {
     const msg = $("io-msg"), name = "etale-fundamental-group-beamdswitch.md";
-    let text;
-    try { text = deck(); } catch (err) { msg.textContent = `Could not build the deck: ${err.message}`; return; }
+    const text = deckOrReport(msg);
+    if (text === null) return;
     try { saveFile(new Blob([text], { type: "text/markdown" }), name); msg.textContent = `Saved ${name}: open it in beamdswitch.`; }
     catch { msg.textContent = "Could not save: downloads are blocked. Use Copy deck instead."; }
   });
   $("copy-beamdswitch").addEventListener("click", async () => {
     const msg = $("io-msg");
-    let text;
-    try { text = deck(); } catch (err) { msg.textContent = `Could not build the deck: ${err.message}`; return; }
+    const text = deckOrReport(msg);
+    if (text === null) return;
     try { await navigator.clipboard.writeText(text); msg.textContent = "Copied the beamdswitch deck: paste it into beamdswitch."; }
     catch { showFallback(text); msg.textContent = "Clipboard access is blocked: copy the deck from the box below."; }
   });
+}
+
+function wire() {
+  wireClicks();
+  wireLab();
+  wireSections();
+  wirePaletteAndKeys();
+  wireDeck();
 }
 
 /* ---------- start ---------- */
