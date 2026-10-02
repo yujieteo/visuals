@@ -20,6 +20,8 @@ import re
 from html import escape
 from pathlib import Path
 
+from style_guide import THEME_SCRIPT, root_css
+
 ROOT = Path(__file__).resolve().parent
 SLUG = "multi-armed-bandit"
 DATA = ROOT
@@ -42,11 +44,11 @@ DESCRIPTION = ("Choose the next trial among variants with uncertain success rate
 CANONICAL = "https://teoyujie.org/visuals/multi-armed-bandit/"
 SIZE_LIMIT = 150_000  # the canonical specification's indicative budget for an ordinary visual
 
-# Page-scoped additions to design-tokens.json: control borders that reach 3:1, and the dark palette.
-LIGHT_EXTRA = {"mark_text": "#0062c4", "control": "#86868b", "eq": "#6e6e73", "on_mark": "#ffffff", "mark_soft": "#eef5fd"}
-DARK = {"background": "#161617", "foreground": "#f5f5f7", "secondary": "#a1a1a6", "surface": "#232326", "border": "#48484c",
-        "control": "#8e8e93", "focus": "#3d9bff", "mark": "#3d9bff", "mark_text": "#3d9bff", "selected": "#ff7b6b", "eq": "#a1a1a6", "on_mark": "#0b0b0c",
-        "mark_soft": "#14263b"}
+# The page's roles as aliases of the style guide's tokens (design-tokens.json "style_guide"): Thompson Sampling
+# is series 1, UCB1 series 2, equal allocation the muted grey; the selected-row fill is 8% of series 1.
+ALIASES = "--mark:var(--c1);--sel:var(--c2);--eq:var(--muted);--mtext:var(--focus);--on-mark:var(--on-focus);" \
+    "--soft:color-mix(in srgb,var(--c1) 8%,var(--bg))"
+SOFT_SHARE = 0.08
 FICTIONAL = {"website": [("Page A", 8, 100), ("Page B", 12, 100), ("Page C", 3, 20)]}
 
 
@@ -93,10 +95,20 @@ def contrast(a, b):
     return (la + 0.05) / (lb + 0.05)
 
 
+def mix(color, base, share):
+    a, b = (int(color[i:i + 2], 16) for i in (1, 3, 5)), (int(base[i:i + 2], 16) for i in (1, 3, 5))
+    return "#" + "".join(f"{round(x * share + y * (1 - share)):02x}" for x, y in zip(a, b))
+
+
 def palettes(tokens):
-    light = dict(tokens["colors"])
-    light.update(LIGHT_EXTRA)
-    return {"light": light, "dark": dict(DARK)}
+    out = {}
+    for mode in ("light", "dark"):
+        g = tokens["style_guide"][mode]
+        out[mode] = {"background": g["bg"], "foreground": g["fg"], "secondary": g["muted"], "surface": g["surface"],
+                     "control": g["control"], "focus": g["focus"], "mark_text": g["focus"], "on_mark": g["on-focus"],
+                     "mark": g["c1"], "selected": g["c2"], "eq": g["muted"], "bad": g["bad"],
+                     "mark_soft": mix(g["c1"], g["bg"], SOFT_SHARE)}
+    return out
 
 
 def check_contrast(tokens):
@@ -104,9 +116,9 @@ def check_contrast(tokens):
     rows = []
     pairs = [("foreground", "background", 4.5), ("foreground", "surface", 4.5), ("foreground", "mark_soft", 4.5),
              ("secondary", "background", 4.5), ("secondary", "surface", 4.5), ("secondary", "mark_soft", 4.5),
-             ("mark_text", "background", 4.5), ("mark_text", "surface", 4.5), ("mark_text", "mark_soft", 4.5), ("mark", "background", 3),
-             ("selected", "background", 4.5), ("selected", "surface", 4.5), ("selected", "mark_soft", 4.5), ("on_mark", "mark", 4.5), ("focus", "background", 3),
-             ("control", "background", 3), ("eq", "background", 3), ("eq", "surface", 3)]
+             ("mark_text", "background", 4.5), ("mark", "background", 3), ("mark", "surface", 3), ("selected", "background", 3),
+             ("bad", "background", 4.5), ("on_mark", "focus", 4.5), ("focus", "background", 3),
+             ("control", "background", 3), ("control", "surface", 3), ("eq", "background", 3), ("eq", "surface", 3)]
     for mode, p in palettes(tokens).items():
         for fg, bg, minimum in pairs:
             ratio = contrast(p[fg], p[bg])
@@ -127,12 +139,9 @@ def compact(js):
 
 def css(tokens):
     text = CSS_TEMPLATE.read_text(encoding="utf-8")
-    rep = {"font_sans": tokens["font_sans"], "font_mono": tokens["font_mono"], "radius": tokens["radius"], "content_width": tokens["content_width"]}
+    rep = {"root_css": root_css(tokens, f"{ALIASES};--r:{tokens['radius']}"), "content_width": tokens["content_width"]}
     for i, step in enumerate(tokens["spacing_rem"]):
         rep[f"s{i}"] = f"{step}rem"
-    for mode, p in palettes(tokens).items():
-        for k, v in p.items():
-            rep[k if mode == "light" else f"dark_{k}"] = v
     for key, value in rep.items():
         text = text.replace(f"%%{key}%%", value)
     assert "%%" not in text, "unreplaced CSS token"
@@ -312,7 +321,7 @@ def render(raw, meta, tokens):
 <meta property="og:title" content="{escape(TITLE)}">
 <meta property="og:description" content="{escape(DESCRIPTION)}">
 <meta property="og:url" content="{CANONICAL}">
-<style>{css(tokens)}</style></head>
+{THEME_SCRIPT}<style>{css(tokens)}</style></head>
 <body><a class="skip" href="#main">Skip to the tool</a>
 <main id="main" tabindex="-1">
 <p class="back"><a href="{GALLERY_URL}">← All visuals</a></p>

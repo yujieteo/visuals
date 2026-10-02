@@ -14,11 +14,12 @@ This repository, [yujieteo/multi-armed-bandit](https://github.com/yujieteo/multi
 | --- | --- |
 | `index.html` | Generated page. Do not hand-edit; edit the sources and run `python3 build.py`. |
 | `build.py` | Builds `index.html` from the sources and data and checks it (contrast, size, no external requests, embedded data); `--verify` checks the committed page without writing. |
+| `style_guide.py` | The shared visual style guide's theme script and `:root` tokens for both themes (from yujieteo/visuals `scripts/style_guide.py`), used by `build.py`. |
 | `src/multi-armed-bandit-logic.js` | Pure numerics, experiment state, validation and the simulation (`<script id="mab-logic">`). |
 | `src/hours-logic.js` | Pure hours-mode model: evidence, chance best by quadrature, Thompson and UCB1 allocations, the Markdown plan and plan validation (`<script id="hours-logic">`). |
 | `src/multi-armed-bandit.js` | The experiment and simulation interface, the tabs and the WebMCP tools (`<script id="mab-ui">`). |
 | `src/hours.js` | The Next week's hours interface (`<script id="hours-ui">`). |
-| `src/multi-armed-bandit.css`, `src/design-tokens.json` | Styles, with colour tokens filled in by `build.py`. |
+| `src/multi-armed-bandit.css`, `src/design-tokens.json` | Styles, with the style guide's colour tokens (`style_guide` in `src/design-tokens.json`) filled in by `build.py`. |
 | `beamdswitch.js` | Unchanged copy of the site's beamdswitch report template, inlined into `index.html`. |
 | `report.js` | Builds the narrated deck from the committed experiment, inlined into `index.html`. |
 | `raw.json`, `meta.json` | The data: templates, assumptions and references, and the hours example (`hours`). `raw.json` is embedded in the page. |
