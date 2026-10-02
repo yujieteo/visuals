@@ -482,10 +482,9 @@ function blockText(t) {
 
 /* ---------- parse ---------- */
 let md = null;
-function lexer(src) {
-  if (!md) md = makeMarked();
-  return md.lexer(String(src || ""));
-}
+/* One configured marked instance, made on first use. */
+function parser() { return md || (md = makeMarked()); }
+function lexer(src) { return parser().lexer(String(src || "")); }
 
 /* Parse one tab into its section tree.
    nodes[i] = {slug, title, depth, parent, children, start, end, subEnd, offset, tags, links, text}
@@ -635,7 +634,7 @@ function resolveLink(world, fromTabId, href) {
     if (!tab) return { kind: "broken", reason: `No tab named "${c.path}"` };
   }
   if (!tab) return { kind: "broken", reason: "Tab not found" };
-  const anchor = c.kind === "anchor" ? c.anchor : c.anchor;
+  const anchor = c.anchor;
   if (anchor === null || anchor === "") return { kind: "internal", tabId: tab.id, slug: firstSlug(tab.doc), whole: true };
   const slug = findSlug(tab.doc, anchor);
   if (slug === null) return { kind: "broken", reason: `No section "#${anchor}" in ${tab.title}` };
@@ -893,7 +892,6 @@ function resolveRoute(world, r) {
 /* ---------- rendering ---------- */
 /* ctx for the renderer: {world, tabId}. Set by renderTokens around one render. */
 let ctx = null;
-const copyIcon = "Copy";
 function makeMarked() {
   const m = new marked.Marked();
   const base = new marked.Renderer();
@@ -943,7 +941,7 @@ function makeMarked() {
       checkbox(t) { return `<input type="checkbox" disabled${t.checked ? " checked" : ""}> `; },
       code(t) {
         const lang = t.lang ? `<span class="lang">${escapeHtml(t.lang.split(/\s/)[0])}</span>` : "";
-        return `<div class="codeblock">${lang}<button type="button" class="copy">${copyIcon}</button><pre><code>${escapeHtml(t.text)}</code></pre></div>\n`;
+        return `<div class="codeblock">${lang}<button type="button" class="copy">Copy</button><pre><code>${escapeHtml(t.text)}</code></pre></div>\n`;
       },
       table(t) { return `<div class="tablewrap">${base.table.call(this, t)}</div>\n`; },
     },
@@ -953,13 +951,12 @@ function makeMarked() {
 
 /* Render tokens to HTML with links resolved against the world. */
 function renderTokens(tokens, world, tabId) {
-  if (!md) md = makeMarked();
   const prev = ctx;
   ctx = world ? { world, tabId } : null;
   try {
     const list = tokens.slice();
     list.links = tokens.links || {};
-    return md.parser(list);
+    return parser().parser(list);
   } finally { ctx = prev; }
 }
 /* Render a whole markdown string (used by tests and analyze_markdown). */
@@ -1154,9 +1151,11 @@ function reindexTitle(t) {
 }
 function newTab(content, name) {
   const t = { id: "t" + (++S.seq), name: name || "", pinned: !!name, content: content || "", untitled: 0 };
-  t.untitled = name ? 0 : C.nextUntitled(S.tabs.filter((x) => x.untitled));
+  t.untitled = name ? 0 : freeUntitled();
   return t;
 }
+/* The lowest "Untitled N" number no other unnamed tab holds. */
+const freeUntitled = () => C.nextUntitled(S.tabs.filter((x) => x.untitled));
 function loadDemo() {
   S.tabs = C.DEMO_TABS.map((d) => newTab(d.content, d.name));
   S.tabs.forEach(parseTab);
@@ -1199,6 +1198,8 @@ function setHash(route, replace) {
   return true;
 }
 function navigate(route, replace) { if (!setHash(route, replace)) applyRoute(); }
+/* Open a tab at its first section. */
+function showTab(id) { navigate({ kind: "tab", tabId: id, slug: C.firstSlug(docOf(id)) }); }
 function applyRoute() {
   closeOverlays();
   if (!S.tabs.length) loadDemo();
@@ -1286,6 +1287,9 @@ function crumbs(doc, idx, t) {
   return `<p class="crumbs"><a href="${routeHref(t.id, C.firstSlug(doc))}">${esc(titleOf(t))}</a>${chain.map((p) => `<span aria-hidden="true">›</span><a href="${routeHref(t.id, doc.nodes[p].slug)}">${esc(doc.nodes[p].title)}</a>`).join("")}</p>`;
 }
 
+/* The selected section's node, or the first node when the selection is gone. */
+const selectedIndex = (doc) => (doc.bySlug.has(S.sel) ? doc.bySlug.get(S.sel) : 0);
+
 const CHUNK = 120000; // characters of source per progressive render step
 function renderReader(opts) {
   const gen = ++S.renderGen;
@@ -1298,7 +1302,7 @@ function renderReader(opts) {
     el.reader.scrollTop = 0;
     return;
   }
-  const idx = doc.bySlug.has(S.sel) ? doc.bySlug.get(S.sel) : 0;
+  const idx = selectedIndex(doc);
   const n = doc.nodes[idx];
   const w = world();
   // Only the selected section's subtree is rendered, in chunks when large.
@@ -1331,7 +1335,7 @@ function renderRight() {
     el.backlinks.innerHTML = '<li class="empty">No section selected.</li>';
     return;
   }
-  const idx = doc.bySlug.has(S.sel) ? doc.bySlug.get(S.sel) : 0;
+  const idx = selectedIndex(doc);
   const n = doc.nodes[idx];
   // Outline of the current section: its heading and every heading below it.
   const item = (i) => { const m = doc.nodes[i]; return `<li><a href="${routeHref(S.active, m.slug)}">${esc(m.title)}</a>${m.children.length ? `<ul>${m.children.map(item).join("")}</ul>` : ""}</li>`; };
@@ -1431,7 +1435,9 @@ function addTab(content, name, focus) {
   const t = newTab(content, name);
   S.tabs.push(t);
   parseTab(t);
-  navigate({ kind: "tab", tabId: t.id, slug: C.firstSlug(docOf(t.id)) });
+  // Switch now, not on the hashchange that follows: text typed in between belongs to the new tab.
+  switchTab(t.id);
+  showTab(t.id);
   scheduleSave();
   if (focus) { setDrawer(true); el.editor.focus(); }
   return t;
@@ -1454,7 +1460,7 @@ function closeTab(id) {
   if (wasActive) {
     const next = S.tabs[Math.min(i, S.tabs.length - 1)];
     switchTab(next.id);
-    navigate({ kind: "tab", tabId: next.id, slug: C.firstSlug(docOf(next.id)) });
+    showTab(next.id);
   } else renderAll({ scroll: "keep" });
   scheduleSave();
   toast(`Closed ${name}`, "Undo", () => {
@@ -1462,7 +1468,7 @@ function closeTab(id) {
     S.tabs.splice(Math.min(undo.index, S.tabs.length), 0, t);
     parseTab(t);
     undo = null;
-    if (wasActive) navigate({ kind: "tab", tabId: t.id, slug: C.firstSlug(docOf(t.id)) });
+    if (wasActive) showTab(t.id);
     else renderAll({ scroll: "keep" });
     scheduleSave();
   });
@@ -1473,10 +1479,7 @@ el.tabstrip.addEventListener("click", (e) => {
   if (!tab) return;
   const id = tab.dataset.id;
   if (e.target.closest(".close")) { closeTab(id); return; }
-  if (e.target.closest(".name") && id !== S.active) {
-    const doc = docOf(id);
-    navigate({ kind: "tab", tabId: id, slug: C.firstSlug(doc) });
-  }
+  if (e.target.closest(".name") && id !== S.active) showTab(id);
 });
 // Double-click renames; a manual name pins it. An empty name unpins (back to the first H1).
 el.tabstrip.addEventListener("dblclick", (e) => {
@@ -1496,7 +1499,7 @@ el.tabstrip.addEventListener("dblclick", (e) => {
     finished = true;
     if (commit) {
       const v = input.value.trim();
-      if (v) { t.name = v; t.pinned = true; } else { t.name = ""; t.pinned = false; if (!t.untitled) t.untitled = C.nextUntitled(S.tabs.filter((x) => x.untitled)); }
+      if (v) { t.name = v; t.pinned = true; } else { t.name = ""; t.pinned = false; if (!t.untitled) t.untitled = freeUntitled(); }
       reindexTitle(t);
       scheduleSave();
     }
@@ -1528,7 +1531,7 @@ addEventListener("drop", async (e) => {
     parseTab(t);
     last = t;
   }
-  if (last) { scheduleSave(); navigate({ kind: "tab", tabId: last.id, slug: C.firstSlug(docOf(last.id)) }); }
+  if (last) { switchTab(last.id); showTab(last.id); }
   if (md.length < files.length) toast(`Skipped ${files.length - md.length} file(s) that are not .md`);
 });
 
@@ -1612,7 +1615,7 @@ el["clear-all"].addEventListener("click", () => {
   loadDemo();
   el.editor.value = activeTab().content;
   setDrawer(false);
-  navigate({ kind: "tab", tabId: S.active, slug: C.firstSlug(docOf(S.active)) });
+  showTab(S.active);
   scheduleSave();
 });
 

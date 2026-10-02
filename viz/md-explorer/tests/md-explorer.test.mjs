@@ -148,6 +148,23 @@ test("closing the only tab loads the demo into the editor, so edits go to the de
   assert.equal(saved.tabs.find((t) => t.id === tabs.active).content, C.DEMO_TABS[0].content + "\n\n## Added");
 });
 
+test("closing the active tab opens the next one at its first section; Undo reopens the closed tab", async () => {
+  const page = bootPage(savedTabs([["a.md", "Intro text\n\n# A"], ["b.md", "# B\n\n## B2"], ["c.md", "# C"]]));
+  page.clickTab("t2");
+  page.advance(1000);
+  const where = async () => { const t = await page.tool("list_tabs"); return [t.active, t.selected, t.tabs.map((x) => x.id)]; };
+  deq(await where(), ["t2", "b", ["t1", "t2", "t3"]]);
+  page.closeTab("t2");
+  page.advance(1000);
+  deq(await where(), ["t3", "c", ["t1", "t3"]]);
+  page.el("toast-action").fire("click");
+  page.advance(1000);
+  deq(await where(), ["t2", "b", ["t1", "t2", "t3"]]);
+  page.clickTab("t1");
+  page.advance(1000);
+  deq(await where(), ["t1", "", ["t1", "t2", "t3"]], "a tab with an Intro opens on it");
+});
+
 test("switching tabs right after typing still reparses the edited tab", async () => {
   const page = bootPage(savedTabs([["a.md", "# A"], ["b.md", "# B\n\n[to a](a.md#a2)"]]));
   page.type("# A\n\n## A2");
@@ -501,4 +518,15 @@ test("large input: ~5 MB and 1,000+ sections parse, index and search in reasonab
   const chunks = C.chunkTokens(doc.tokens, 0, doc.tokens.length, 120000);
   assert.ok(chunks.length > 30);
   assert.equal(chunks.reduce((s, c) => s + c.length, 0), doc.tokens.length);
+});
+
+test("text typed into a new tab before the route changes stays in the new tab", async () => {
+  const page = bootPage(savedTabs([["a.md", "# A"]]));
+  page.el("add-tab").fire("click");
+  page.type("# Scratch"); // before the hashchange that follows "+" has fired
+  page.advance(1000);
+  const tabs = (await page.tool("list_tabs")).tabs;
+  deq(tabs.map((t) => t.title), ["a.md", "Scratch"], "the new tab takes the text; a.md keeps its own");
+  const saved = JSON.parse(page.ls.get("md-explorer-v1"));
+  deq(saved.tabs.map((t) => t.content), ["# A", "# Scratch"]);
 });
