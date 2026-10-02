@@ -147,6 +147,22 @@ class EnglishGrammarTest(unittest.TestCase):
             with self.assertRaises((AssertionError, KeyError, StopIteration), msg=f"mutation {i}"):
                 check(raw, concepts, examples, meta)
 
+    def test_each_validation_stage_names_what_is_wrong(self):
+        cases = [
+            (lambda r, c, e: r["chapters"][2].update(title=""), "needs a title and authors"),
+            (lambda r, c, e: c["concepts"][0]["related"].append(c["concepts"][0]["id"]), "has a bad related link"),
+            (lambda r, c, e: e["contrasts"][0]["b"].update(e["contrasts"][0]["a"]), "compares an example with itself"),
+            (lambda r, c, e: e["examples"][0].update(focus="nope"), "focus is not a node or mark"),
+            (lambda r, c, e: c["route"].__setitem__(1, c["route"][0]), "route stops must be unique concepts"),
+            (lambda r, c, e: c["confusions"][0].update(concept="no-such-concept"), "points to unknown concept"),
+        ]
+        base = corpus()
+        for mutate, message in cases:
+            raw, concepts, examples, meta = (copy.deepcopy(x) for x in base)
+            mutate(raw, concepts, examples)
+            with self.assertRaisesRegex(AssertionError, message):
+                check(raw, concepts, examples, meta)
+
     def test_aliases_never_replace_canonical_names(self):
         _, concepts, _, _ = corpus()
         names = {c["name"].lower() for c in concepts["concepts"]}
