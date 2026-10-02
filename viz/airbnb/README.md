@@ -12,9 +12,9 @@ This repository is where the visualisation and its tests develop; CI (`.github/w
 | --- | --- |
 | `index.html` | The self-contained page (CSS, data and JavaScript inline; no external requests). |
 | `beamdswitch.js` | Unchanged copy of the site's beamdswitch report template, inlined into the page. |
-| `meta.json`, `raw.json` | The data, moved here from `data/airbnb/` in yujieteo/visuals. |
+| `meta.json`, `raw.json` | The data, ported to `data/airbnb/` in yujieteo/visuals. |
 | `scripts/templates/stock-cases-report.js` | The builder's deck template, which the page inlines. |
-| `tests/` | `node --test` suites (and `unittest` where present) with read-only beamdswitch fixtures under `tests/fixtures/`. |
+| `tests/` | `node --test` suites, with read-only beamdswitch fixtures under `tests/fixtures/`. |
 | `AGENTS.md`, `SKILLS.md` | Guides for agents changing and using the page. |
 
 ## Test
