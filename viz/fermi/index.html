@@ -430,6 +430,8 @@ self.Fermi = (function () {
     return { factors, errors, bestOk: !errors.some((e) => e.blocks === "best"), rangeOk: !errors.length };
   }
 
+  /* Whether factor i divides its term: a ÷ operator on any factor but the term's first. */
+  const divides = (factors, i, idx) => factors[i].op === "div" && i !== idx[0];
   /* The chain as terms: index lists split at each +. */
   function terms(factors) {
     const g = [];
@@ -440,12 +442,12 @@ self.Fermi = (function () {
      or underflows while the true product is representable, the product is redone in log space. */
   function product(factors, idx, pick) {
     let p = 1;
-    for (const i of idx) { const v = pick(factors[i], i); p = factors[i].op === "div" && i !== idx[0] ? p / v : p * v; }
-    const zero = idx.some((i, k) => k === 0 || factors[i].op !== "div" ? pick(factors[i], i) === 0 : false);
+    for (const i of idx) { const v = pick(factors[i], i); p = divides(factors, i, idx) ? p / v : p * v; }
+    const zero = idx.some((i) => !divides(factors, i, idx) && pick(factors[i], i) === 0);
     if (zero) return 0;
     if (Number.isFinite(p) && p !== 0) return p;
     let l = 0;
-    for (const i of idx) l += (factors[i].op === "div" && i !== idx[0] ? -1 : 1) * Math.log(pick(factors[i], i));
+    for (const i of idx) l += (divides(factors, i, idx) ? -1 : 1) * Math.log(pick(factors[i], i));
     /* A true product below the smallest double is kept as the smallest positive number, so it is
        reported as too small rather than silently shown as zero. */
     return l < -745 ? Number.MIN_VALUE : Math.exp(l);
@@ -548,8 +550,10 @@ self.Fermi = (function () {
     const [m, e] = x.toExponential(0).split("e");
     return `${m} × 10${sup(Number(e))}`;
   }
+  /* A range is wide when it spans an order of magnitude or more, or starts at zero. */
+  const isWide = (r) => r.low !== null && r.high !== null && r.high > 0 && (r.low === 0 || r.high / r.low >= 10);
   /* Wide ranges get one significant figure: 1,000 rather than 1,047 when the range is 400–3,000. */
-  const sigFor = (r) => (r.low !== null && r.high !== null && r.high > 0 && (r.low === 0 || r.high / r.low >= 10) ? 1 : 2);
+  const sigFor = (r) => (isWide(r) ? 1 : 2);
   const withUnit = (text, unit) => (unit ? `${text} ${unit}` : text);
   function fmtRange(lo, hi, sig, unit) {
     const a = fmt(lo, sig), b = fmt(hi, sig);
@@ -586,7 +590,7 @@ self.Fermi = (function () {
     for (const i of idx) {
       const p = parseUnit(factors[i].unit);
       if (!p) return null;
-      const sign = factors[i].op === "div" && i !== idx[0] ? -1 : 1;
+      const sign = divides(factors, i, idx) ? -1 : 1;
       for (const t of p.num) add(t, sign);
       for (const t of p.den) add(t, -sign);
     }
@@ -629,9 +633,11 @@ self.Fermi = (function () {
       best: approx(r.best, sig, unit), mag: `≈ ${withUnit(magnitude(r.best), unit)}`,
       range: r.low !== null ? `≈ ${fmtRange(r.low, r.high, sig, unit)}` : null,
       rangeIssue: r.rangeIssue ? r.rangeIssue.message : null,
-      wide: r.low !== null && r.high > 0 && (r.low === 0 || r.high / r.low >= 10),
+      wide: isWide(r),
     };
   }
+  /* The range text shown beside the estimate: only when the range is valid and not a single point. */
+  const shownRange = (r, h) => (h.ok && h.range && r.ranged ? h.range : null);
   /* "12 × 10 ÷ 4", with each multi-factor term in brackets when there is more than one term. */
   function expression(r, pick, withUnits) {
     return r.groups.map((g) => {
@@ -724,7 +730,8 @@ self.Fermi = (function () {
     if (!h.ok) { out.push(`No estimate yet: ${h.issue}`); return out.join("\n"); }
     const chain = [...chainLines(r), h.best];
     out.push("Estimate:", ...(md ? ["", "```", ...chain, "```"] : chain), "");
-    if (h.range && r.ranged) out.push(md ? `Range from assumptions: ${h.range}` : "Range from assumptions:", ...(md ? [] : [h.range]), "");
+    const range = shownRange(r, h);
+    if (range) out.push(md ? `Range from assumptions: ${range}` : "Range from assumptions:", ...(md ? [] : [range]), "");
     out.push("Assumptions:", ...r.factors.map((f, i) => `- ${assumption(f, i, r.s.showRange)}`));
     if (t) out.push("", md ? `Most sensitive assumption: ${t.name}` : "Most sensitive assumption:", ...(md ? [] : [t.name]));
     return out.join("\n");
@@ -783,7 +790,7 @@ self.Fermi = (function () {
   }
   const list = (xs) => xs.map((x) => `- ${x}`).join("\n");
   function report(st) {
-    const r = compute(st), h = headline(r), rows = sensitivity(r), t = top(rows), u = units(r);
+    const r = compute(st), h = headline(r), rows = sensitivity(r), t = top(rows), u = units(r), range = shownRange(r, h);
     const q = mdText(r.s.question) || "Fermi estimate", qs = speak(mdText(r.s.question)) || "an unnamed estimate";
     const facts = r.factors.map((f, i) => mdText(assumption(f, i, r.s.showRange)));
     const spokenFactor = (f, i) => {
@@ -811,9 +818,9 @@ self.Fermi = (function () {
     else {
       const tr = trail(r);
       results.push({
-        title: h.range && r.ranged ? `Best estimate ${h.best}, range ${h.range}` : `Best estimate ${h.best}`,
-        body: list([...tr.map((x) => `${x.label}: ${mdText(x.expr)} ${x.value}`), `Order of magnitude: ${h.mag}`, ...(h.range && r.ranged ? ["The range comes from the low and high values entered; it is not a measured confidence interval"] : [])]),
-        narration: `The best estimate is ${speak(h.best)}.${h.range && r.ranged ? ` The range from these assumptions is ${speak(h.range)}. It is not a measured confidence interval.` : ""}`,
+        title: range ? `Best estimate ${h.best}, range ${range}` : `Best estimate ${h.best}`,
+        body: list([...tr.map((x) => `${x.label}: ${mdText(x.expr)} ${x.value}`), `Order of magnitude: ${h.mag}`, ...(range ? ["The range comes from the low and high values entered; it is not a measured confidence interval"] : [])]),
+        narration: `The best estimate is ${speak(h.best)}.${range ? ` The range from these assumptions is ${speak(range)}. It is not a measured confidence interval.` : ""}`,
       });
       if (t) results.push({
         title: `Sensitivity to the assumptions: ${mdText(t.name)} matters most`,
@@ -823,14 +830,14 @@ self.Fermi = (function () {
     }
     const sc = h.ok ? scale(r) : null, bm = h.ok ? benchmark(r, r.s.benchmark) : null, rv = h.ok ? reverse(r, bm, rows) : null;
     const checks = [mdText(NOTES.caveat), ...(sc ? [sc.text] : []), ...(bm && bm.text ? [bm.text] : []), ...(rv ? rv.map(mdText) : []), ...(u.warning ? [u.warning.text] : [])];
-    const key = h.ok ? `${h.best}${h.range && r.ranged ? ` (range ${h.range})` : ""}${t ? `; improve ${mdText(t.name)} first` : ""}.` : `No estimate yet: ${mdText(h.issue)}`;
+    const key = h.ok ? `${h.best}${range ? ` (range ${range})` : ""}${t ? `; improve ${mdText(t.name)} first` : ""}.` : `No estimate yet: ${mdText(h.issue)}`;
     return {
-      meta: { title: `Fermi estimate: ${q}`, subtitle: h.ok ? `Best estimate ${h.best}${h.range && r.ranged ? `, range ${h.range}` : ""}` : "No estimate yet" },
+      meta: { title: `Fermi estimate: ${q}`, subtitle: h.ok ? `Best estimate ${h.best}${range ? `, range ${range}` : ""}` : "No estimate yet" },
       narration: "This talk works through a Fermi estimate: a hard question broken into rough factors, each with a best value and a plausible range. Every number is in the units entered on the page.",
       setup, method, results,
       checks: [
         { title: "Does this answer make sense?", body: list(checks), narration: `${speak(NOTES.caveat)}${sc ? ` ${speak(sc.text)}` : ""}${bm && bm.text ? ` ${speak(bm.text)}` : ""}${u.warning ? ` ${speak(u.warning.text)}` : ""}` },
-        { title: "Takeaway", key, narration: h.ok ? `The answer is ${speak(h.best)}${h.range && r.ranged ? `, somewhere in ${speak(h.range)}` : ""}.${t ? ` To tighten it, improve ${speak(mdText(t.name))} first.` : ""}` : `There is no estimate yet. ${speak(h.issue)}` },
+        { title: "Takeaway", key, narration: h.ok ? `The answer is ${speak(h.best)}${range ? `, somewhere in ${speak(range)}` : ""}.${t ? ` To tighten it, improve ${speak(mdText(t.name))} first.` : ""}` : `There is no estimate yet. ${speak(h.issue)}` },
       ],
     };
   }
@@ -861,7 +868,7 @@ self.Fermi = (function () {
     OPS, OP_WORDS, MESSAGES, EXAMPLES, MAX_FACTORS, NOTES, RULES, LIMIT,
     defaults, example, blank, blankFactor, normalize, parseNum, check, terms, evaluate, compute, sensitivity, top, next,
     fmt, plain, sci, magnitude, fmtRange, sup, word, val, sigFor, parseUnit, termUnit, units, resultUnit,
-    headline, expression, chainLines, trail, scale, benchmark, reverse, describe, summary, axis, sliderScale, toPos, fromPos,
+    headline, shownRange, expression, chainLines, trail, scale, benchmark, reverse, describe, summary, axis, sliderScale, toPos, fromPos,
     speak, report, selfTest, label, hasRange,
   };
 })();
@@ -981,6 +988,7 @@ function load() {
 let S = load();
 /* Not remembered: the selected sensitivity row and an open what-if. */
 const U = { sel: null, whatIf: null };
+const clearSelection = () => { U.sel = null; U.whatIf = null; };
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const factorName = (i) => F.label({ name: (S.factors[i] && S.factors[i].name.trim()) || "" }, i);
@@ -1071,7 +1079,7 @@ function renderOutputs() {
   $("mag").textContent = h.ok ? `Order of magnitude ${h.mag}` : "";
   $("issue").hidden = h.ok;
   $("issue").textContent = h.ok ? "" : h.issue;
-  const showRange = !!(h.ok && h.range && r.ranged);
+  const showRange = !!F.shownRange(r, h);
   $("range-box").hidden = !showRange;
   $("range").textContent = showRange ? h.range : "";
   $("range-issue").hidden = !(h.ok && h.rangeIssue);
@@ -1228,8 +1236,8 @@ function openWhatIf(i) {
   return true;
 }
 const ACT = {
-  example(b) { S = { ...F.example(b.dataset.ex), showRange: S.showRange, showMag: S.showMag, benchmark: "" }; U.sel = null; U.whatIf = null; renderAll(); focusLater(`[data-ex="${b.dataset.ex}"]`); },
-  blank() { S = F.blank(S); U.sel = null; U.whatIf = null; renderAll(); focusLater($("question")); },
+  example(b) { S = { ...F.example(b.dataset.ex), showRange: S.showRange, showMag: S.showMag, benchmark: "" }; clearSelection(); renderAll(); focusLater(`[data-ex="${b.dataset.ex}"]`); },
+  blank() { S = F.blank(S); clearSelection(); renderAll(); focusLater($("question")); },
   add() {
     if (S.factors.length >= F.MAX_FACTORS) return;
     S.factors.push(F.blankFactor("mul"));
@@ -1242,7 +1250,7 @@ const ACT = {
     if (S.factors.length <= 1) return;
     S.factors.splice(i, 1);
     if (S.factors[0]) S.factors[0].op = "mul";
-    U.sel = null; U.whatIf = null;
+    clearSelection();
     renderAll();
     const n = Math.min(i, S.factors.length - 1);
     focusLater(`#f${n}-name`);
@@ -1273,7 +1281,7 @@ const ACT = {
   },
   sens(b) { const i = +b.dataset.i; U.sel = U.sel === i ? null : i; renderOutputs(); focusLater(`[data-act="sens"][data-i="${i}"]`); },
   goto(b) { const i = +b.dataset.i, c = $(`card-${i}`); if (c && c.scrollIntoView) c.scrollIntoView({ block: "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" }); focusLater(`#f${i}-best`); },
-  reset() { store.clear(); S = F.defaults(); U.sel = null; U.whatIf = null; renderAll(); $("copy-status").textContent = "Restored the restaurant queue example."; },
+  reset() { store.clear(); S = F.defaults(); clearSelection(); renderAll(); $("copy-status").textContent = "Restored the restaurant queue example."; },
 };
 function move(i, d) {
   const j = i + d;

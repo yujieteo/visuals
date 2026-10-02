@@ -354,3 +354,36 @@ test("the page boots, its WebMCP tools answer, and the deck buttons export the p
   st.factors[0].best = "16";
   await assertButtonsExport(page, "fermi", T.deck(F.report(st)));
 });
+
+test("the shown range, the wide flag and one-figure rounding follow one rule", () => {
+  // 400–3,000 spans less than ten times: two figures, not wide, range shown.
+  const narrow = chain([["mul", 400, 1000, 3000]]), hn = F.headline(narrow);
+  assert.equal(hn.wide, false);
+  assert.equal(F.sigFor(narrow), 2);
+  assert.equal(F.shownRange(narrow, hn), hn.range);
+  // From zero, or ten times and more: one figure and wide.
+  for (const rows of [[["mul", 0, 5, 9]], [["mul", 100, 1000, 1000]]]) {
+    const r = chain(rows), h = F.headline(r);
+    assert.equal(h.wide, true, JSON.stringify(rows));
+    assert.equal(F.sigFor(r), 1, JSON.stringify(rows));
+  }
+  // A single point, a blocked range or no estimate shows no range, in the summary and the deck alike.
+  const point = chain([["mul", 4, 4, 4]]);
+  assert.equal(F.shownRange(point, F.headline(point)), null);
+  const blocked = chain([["mul", 9, 4, 5]]);
+  assert.equal(F.shownRange(blocked, F.headline(blocked)), null);
+  assert.equal(F.shownRange(chain([["mul", "x"]]), F.headline(chain([["mul", "x"]]))), null);
+  const st = { showRange: true, factors: [{ op: "mul", best: "4", low: "4", high: "4", ranged: true }] };
+  assert.doesNotMatch(F.summary(st), /Range from assumptions/);
+  const rep = F.report(st);
+  assert.equal(rep.meta.subtitle, "Best estimate ≈ 4");
+  assert.equal(rep.results[0].title, "Best estimate ≈ 4");
+});
+
+test("a ÷ factor divides only within its own term, and a zero numerator makes the term zero", () => {
+  // 0 × 5 ÷ 2 is zero; 6 ÷ 2 + 0 ÷ 3 is 3; a leading ÷ on a term's first factor multiplies.
+  assert.equal(chain([["mul", 0], ["mul", 5], ["div", 2]]).best, 0);
+  near(chain([["mul", 6], ["div", 2], ["add", 0], ["div", 3]]).best, 3, "6 ÷ 2 + 0 ÷ 3");
+  near(chain([["mul", 6], ["div", 2], ["add", 4], ["div", 2]]).best, 5, "6 ÷ 2 + 4 ÷ 2");
+  assert.equal(F.termUnit(F.check(F.normalize({ factors: [{ best: "1", unit: "groups" }, { op: "mul", best: "1", unit: "min/cycle" }, { op: "div", best: "1", unit: "groups/cycle" }] })).factors, [0, 1, 2]), "min");
+});
