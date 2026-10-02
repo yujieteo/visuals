@@ -6,10 +6,11 @@
 <link rel="icon" href="data:,">
 <meta name="description" content="Place fasteners on a canvas or in a table and get the shear, axial and area centroids, polar moment J, Ixx, Iyy, Ixy and principal axes, then distribute a general 3D eccentric load to every fastener by the elastic method. Runs offline in your browser.">
 <title>Fastener Pattern CG Tracker</title>
+<script id="site-theme">try { var t = localStorage.getItem("theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (e) {}</script>
 <style>
-:root{--bg:#fff;--fg:#1d1d1f;--muted:#6e6e73;--faint:#a1a1a6;--surface:#f5f5f7;--border:#d2d2d7;--grid:#e8e8ed;--focus:#0071e3;--shear:#2a78d6;--axial:#eb6834;--area:#1baf7a;--load:#8e44ad;--reaction:#1d1d1f;--tension:#eb6834;--bad:#c4261d;--warn:#b26b00;--note:#2a78d6;--ok:#1b8a5a;--sans:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;--mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;--r:.5rem;color-scheme:light dark}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--faint:#6e6e73;--surface:#2c2c2e;--border:#48484a;--grid:#333336;--focus:#2997ff;--shear:#3987e5;--axial:#e0763f;--area:#199e70;--load:#b77fdc;--reaction:#f5f5f7;--tension:#e0763f;--bad:#ff6961;--warn:#e5a13a;--note:#5aa2f0;--ok:#3cc98a}}
-:root[data-theme="dark"]{--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--faint:#6e6e73;--surface:#2c2c2e;--border:#48484a;--grid:#333336;--focus:#2997ff;--shear:#3987e5;--axial:#e0763f;--area:#199e70;--load:#b77fdc;--reaction:#f5f5f7;--tension:#e0763f;--bad:#ff6961;--warn:#e5a13a;--note:#5aa2f0;--ok:#3cc98a;color-scheme:dark}
+:root{--bg:#fff;--fg:#1d1d1f;--muted:#6e6e73;--faint:#a1a1a6;--surface:#f5f5f7;--border:#d2d2d7;--control:#86868b;--grid:#e8e8ed;--focus:#0071e3;--shear:#2a78d6;--axial:#eb6834;--area:#1baf7a;--load:#8e44ad;--reaction:#1d1d1f;--tension:#eb6834;--bad:#c4261d;--warn:#b26b00;--note:#2a78d6;--ok:#1b8a5a;--sans:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;--mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;--r:.5rem;color-scheme:light dark}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--faint:#6e6e73;--surface:#2c2c2e;--border:#48484a;--control:#8e8e93;--grid:#333336;--focus:#2997ff;--shear:#3987e5;--axial:#e0763f;--area:#199e70;--load:#b77fdc;--reaction:#f5f5f7;--tension:#e0763f;--bad:#ff6961;--warn:#e5a13a;--note:#5aa2f0;--ok:#3cc98a}}
+:root[data-theme="dark"]{--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--faint:#6e6e73;--surface:#2c2c2e;--border:#48484a;--control:#8e8e93;--grid:#333336;--focus:#2997ff;--shear:#3987e5;--axial:#e0763f;--area:#199e70;--load:#b77fdc;--reaction:#f5f5f7;--tension:#e0763f;--bad:#ff6961;--warn:#e5a13a;--note:#5aa2f0;--ok:#3cc98a;color-scheme:dark}
 :root[data-theme="light"]{color-scheme:light}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
@@ -32,7 +33,7 @@ button:disabled{cursor:not-allowed;opacity:.5}
 .small{font-size:.875rem}
 .prelim{font-size:.875rem;border-left:3px solid var(--warn);padding:.2rem .7rem;margin:.75rem 0}
 section{margin-top:clamp(2rem,6vw,3.25rem);padding-top:1.25rem;border-top:1px solid var(--border)}
-.btn{display:inline-flex;align-items:center;gap:.35rem;border:1px solid var(--border);background:var(--bg);border-radius:999px;padding:.25rem .8rem;min-height:2.25rem;font-size:.875rem;white-space:nowrap}
+.btn{display:inline-flex;align-items:center;gap:.35rem;border:1px solid var(--control);background:var(--bg);border-radius:999px;padding:.25rem .8rem;min-height:2.25rem;font-size:.875rem;white-space:nowrap}
 @media (hover:hover){.btn:hover:not(:disabled){background:var(--surface)}}
 .btn[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
 .btn.primary{background:var(--fg);color:var(--bg);border-color:var(--fg);font-weight:600}
@@ -40,13 +41,13 @@ section{margin-top:clamp(2rem,6vw,3.25rem);padding-top:1.25rem;border-top:1px so
 .toolbar{display:flex;flex-wrap:wrap;gap:.6rem 1.1rem;align-items:center;margin:1.25rem 0 .75rem;padding:.6rem 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
 .group{display:flex;flex-wrap:wrap;gap:.35rem;align-items:center;min-width:0}
 .label{font:600 .7rem var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-right:.2rem}
-select,input[type="number"],input[type="text"]{border:1px solid var(--border);background:var(--bg);border-radius:var(--r);padding:.3rem .5rem;min-height:2.25rem;font-size:.875rem;min-width:0;width:100%}
+select,input[type="number"],input[type="text"]{border:1px solid var(--control);background:var(--bg);border-radius:var(--r);padding:.3rem .5rem;min-height:2.25rem;font-size:.875rem;min-width:0;width:100%}
 input[type="number"]{font-variant-numeric:tabular-nums}
 .toolbar select,.toolbar input{width:auto}
 #name{width:min(18rem,100%)}
 #precision{width:4.2rem}
 [aria-invalid="true"]{border-color:var(--bad)!important;box-shadow:0 0 0 1px var(--bad)}
-.seg{display:inline-flex;border:1px solid var(--border);border-radius:999px;overflow:hidden}
+.seg{display:inline-flex;border:1px solid var(--control);border-radius:999px;overflow:hidden}
 .seg button{border:0;background:var(--bg);padding:.25rem .8rem;min-height:2.25rem;font-size:.875rem}
 .seg button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
 .banner{border:1px solid var(--bad);border-radius:var(--r);padding:.55rem .8rem;margin:.5rem 0;font-size:.9rem;display:flex;flex-wrap:wrap;gap:.5rem;align-items:center}
@@ -124,7 +125,7 @@ dialog .actions{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.8rem}
 .msg{font-size:.8125rem;color:var(--muted);min-height:1.2em;margin:.35rem 0}
 .msg.ok{color:var(--ok)}
 .msg.bad{color:var(--bad)}
-#fallback textarea{width:100%;min-height:10rem;font:.8125rem/1.4 var(--mono);background:var(--surface);color:var(--fg);border:1px solid var(--border);border-radius:var(--r);padding:.5rem}
+#fallback textarea{width:100%;min-height:10rem;font:.8125rem/1.4 var(--mono);background:var(--surface);color:var(--fg);border:1px solid var(--control);border-radius:var(--r);padding:.5rem}
 #print-report{display:none}
 @media print{
   :root{color-scheme:light}
