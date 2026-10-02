@@ -421,6 +421,8 @@ const gradations = (scale) => scaleOf(scale).terms.filter((t) => t.anchor > 0 &&
 
 /* ---------- numbers ---------- */
 const isNum = (x) => typeof x === "number" && Number.isFinite(x);
+/* A probability as stored: a finite number from 0 to 100, never clamped. */
+const isP = (x) => isNum(x) && x >= 0 && x <= 100;
 const clamp = (p) => (isNum(p) ? Math.min(100, Math.max(0, p)) : 50);
 const trimZero = (s) => s.replace(/(\.\d*?)0+$/, "$1").replace(/\.$/, "");
 const MINUS = "−";
@@ -464,7 +466,7 @@ function parseP(input) {
   if (!s) return { ok: false, error: MESSAGES.blank };
   if (!/^[+-]?(\d+\.?\d*|\.\d+)$/.test(s)) return { ok: false, error: MESSAGES.nan };
   const value = Number(s);
-  if (!isNum(value) || value < 0 || value > 100) return { ok: false, error: MESSAGES.range };
+  if (!isP(value)) return { ok: false, error: MESSAGES.range };
   const d = decimalsOf(s), extreme = value < 1 || value > 99;
   const precise = d > (extreme ? 2 : 0);
   return { ok: true, value, precise, warning: precise ? PRECISION : null, display: fmtP(value) };
@@ -590,7 +592,7 @@ function decide(p, t, { direction = "above", scale, subject = "it" } = {}) {
 /* ---------- uncertainty around the probability ---------- */
 function range(lo, best, hi) {
   const out = { ok: true, errors: [] };
-  for (const [k, v] of [["lo", lo], ["hi", hi]]) if (!isNum(v) || v < 0 || v > 100) out.errors.push(MESSAGES.range + ` (${k === "lo" ? "low" : "high"} end)`);
+  for (const [k, v] of [["lo", lo], ["hi", hi]]) if (!isP(v)) out.errors.push(MESSAGES.range + ` (${k === "lo" ? "low" : "high"} end)`);
   if (!out.errors.length) {
     if (lo > best) out.errors.push(MESSAGES.orderLo);
     if (hi < best) out.errors.push(MESSAGES.orderHi);
@@ -617,7 +619,7 @@ function commit(ledger, f, now) {
   const claim = cleanText(f && f.claim);
   if (!claim) return { ok: false, error: MESSAGES.claim, ledger };
   const p = f.probability;
-  if (!isNum(p) || p < 0 || p > 100) return { ok: false, error: MESSAGES.range, ledger };
+  if (!isP(p)) return { ok: false, error: MESSAGES.range, ledger };
   const id = nextId(ledger, now);
   const ev = freezeEvent({ type: "commit", id, at: now, claim, probability: p, confidence: normConfidence(f.confidence),
     criterion: cleanText(f.criterion, 400), resolveBy: f.resolveBy ? String(f.resolveBy) : "", phrase: cleanText(f.phrase, 60) });
@@ -627,7 +629,7 @@ const commitOf = (ledger, id) => ledger.find((e) => e.type === "commit" && e.id 
 function revise(ledger, id, probability, now, note = "") {
   if (!commitOf(ledger, id)) return { ok: false, error: MESSAGES.unknown, ledger };
   if (ledger.some((e) => e.type === "resolve" && e.id === id)) return { ok: false, error: MESSAGES.resolved, ledger };
-  if (!isNum(probability) || probability < 0 || probability > 100) return { ok: false, error: MESSAGES.range, ledger };
+  if (!isP(probability)) return { ok: false, error: MESSAGES.range, ledger };
   return { ok: true, ledger: Object.freeze([...ledger, freezeEvent({ type: "revise", id, at: now, probability, note: cleanText(note, 400) })]) };
 }
 function resolve(ledger, id, outcome, now, note = "") {
@@ -655,7 +657,7 @@ function forecasts(ledger, now) {
     const due = t(f.resolveBy);
     f.late = !!(f.resolvedAt && isNum(due) && t(f.resolvedAt) > due);
     f.status = f.outcome ? "resolved" : isNum(due) && now && t(now) > due ? "overdue" : "open";
-    f.brier = f.outcome === "yes" || f.outcome === "no" ? brier(f.probability, f.outcome === "yes" ? 1 : 0) : null;
+    f.brier = f.outcome === "yes" || f.outcome === "no" ? brierOf(f) : null;
   }
   return out;
 }
@@ -677,7 +679,7 @@ function validateLedger(x) {
     } else if (!seen.has(e.id)) errors.push(`${where} refers to a forecast that was not committed before it.`);
     if (e.type === "revise" && resolved.has(e.id)) errors.push(`${where} revises ${e.id} after it was resolved.`);
     if (e.type === "resolve") resolved.add(e.id);
-    if ((e.type === "commit" || e.type === "revise") && (!isNum(e.probability) || e.probability < 0 || e.probability > 100)) errors.push(`${where} has a probability outside 0–100.`);
+    if ((e.type === "commit" || e.type === "revise") && !isP(e.probability)) errors.push(`${where} has a probability outside 0–100.`);
     if (e.type === "resolve" && !OUTCOMES.includes(e.outcome)) errors.push(`${where} has an unknown outcome.`);
   });
   return { ok: !errors.length, errors, ledger: errors.length ? [] : Object.freeze(x.map(freezeEvent)) };
@@ -687,6 +689,8 @@ function validateLedger(x) {
 const MIN_GROUP = 5;
 const brier = (p, o) => +(((clamp(p) / 100) - o) ** 2).toFixed(6);
 const scoredOf = (list) => list.filter((f) => f.outcome === "yes" || f.outcome === "no");
+/* The Brier score of a forecast resolved yes or no, against its committed probability. */
+const brierOf = (f) => brier(f.probability, f.outcome === "yes" ? 1 : 0);
 function summarise(items) {
   const n = items.length, predicted = n ? items.reduce((s, f) => s + f.probability, 0) / n : null;
   const observed = n ? (100 * items.filter((f) => f.outcome === "yes").length) / n : null;
@@ -697,7 +701,8 @@ function bins(list) {
   const s = scoredOf(list), out = [];
   for (let i = 0; i < 10; i++) {
     const items = s.filter((f) => Math.min(9, Math.floor(clamp(f.probability) / 10)) === i);
-    out.push({ lo: i * 10, hi: i === 9 ? 100 : i * 10 + 9, label: `${i * 10}–${i === 9 ? 100 : i * 10 + 9}%`, ...summarise(items) });
+    const lo = i * 10, hi = i === 9 ? 100 : lo + 9;
+    out.push({ lo, hi, label: `${lo}–${hi}%`, ...summarise(items) });
   }
   return out;
 }
@@ -723,7 +728,7 @@ function groupNote(g, phrase) {
 function brierSummary(list) {
   const s = scoredOf(list);
   if (!s.length) return { n: 0, mean: null };
-  return { n: s.length, mean: +(s.reduce((a, f) => a + brier(f.probability, f.outcome === "yes" ? 1 : 0), 0) / s.length).toFixed(4) };
+  return { n: s.length, mean: +(s.reduce((a, f) => a + brierOf(f), 0) / s.length).toFixed(4) };
 }
 
 /* ---------- URL state (simple estimates only: claim, probability, confidence) ---------- */
@@ -977,7 +982,7 @@ function report(state) {
 const FORMAT = "kent-visual";
 function normEstimate(e) {
   const x = e && typeof e === "object" ? e : {};
-  const p = isNum(x.p) && x.p >= 0 && x.p <= 100 ? x.p : 50;
+  const p = isP(x.p) ? x.p : 50;
   const ev = Array.isArray(x.evidence) ? x.evidence.filter((v) => v && cleanText(v.text, 300)).slice(0, 50).map((v, i) => ({ id: String(v.id || `e${i}`), text: cleanText(v.text, 300), kind: ["for", "against", "unknown"].includes(v.kind) ? v.kind : "unknown" })) : [];
   const hist = Array.isArray(x.history) ? x.history.filter((h) => h && isNum(h.before) && isNum(h.after)).slice(-100).map((h) => ({ at: String(h.at || ""), before: clamp(h.before), after: clamp(h.after), evidence: cleanText(h.evidence, 300) })) : [];
   const rg = x.range && isNum(x.range.lo) && isNum(x.range.hi) && range(x.range.lo, p, x.range.hi).ok ? { lo: x.range.lo, hi: x.range.hi } : null;
@@ -986,7 +991,7 @@ function normEstimate(e) {
 }
 function normDict(d) {
   const out = {};
-  if (d && typeof d === "object") for (const [k, v] of Object.entries(d)) if (norm(k) && isNum(v) && v >= 0 && v <= 100) out[norm(k).slice(0, 60)] = v;
+  if (d && typeof d === "object") for (const [k, v] of Object.entries(d)) if (norm(k) && isP(v)) out[norm(k).slice(0, 60)] = v;
   return out;
 }
 function exportData(st, now) {
@@ -1640,8 +1645,7 @@ function loadExample(id) {
   changed();
 }
 function newEstimate(all = false) {
-  const keep = all ? {} : { };
-  D.estimate = K.normEstimate(keep);
+  D.estimate = K.normEstimate({});
   U.precision = null; U.exactTyped = null; U.upd = { after: null, evidence: "" };
   if (all) { U.mode = "number"; U.panel = null; for (const id of ["more-lens", "judgment", "inputs", "urange-box"]) $(id).open = false; renderNav(); }
   changed();
