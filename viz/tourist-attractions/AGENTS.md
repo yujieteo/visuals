@@ -35,7 +35,7 @@ Change and test this repository first, end to end (open `index.html` in a browse
 
 - Data: `raw.json` (the TouristAttractions GeoJSON) and `meta.json`.
 - Deck report: `report.js` in this folder.
-- Tests: `tests/tourist-attractions-beamdswitch.test.mjs`, and `tests/voice-beamdswitch.test.mjs` for the deck's narration voice.
+- Tests: `tests/tourist-attractions-beamdswitch.test.mjs`, `tests/offline.test.mjs` for the inlined d3 and the page making no network request, and `tests/voice-beamdswitch.test.mjs` for the deck's narration voice.
 
 ## Conventions
 
