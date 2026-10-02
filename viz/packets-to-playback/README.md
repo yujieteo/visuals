@@ -15,7 +15,7 @@ information bottleneck, and the dictionary.
 | `index.html` | The whole page. `<script id="packets-to-playback-engine">` is the pure core (`self.PacketsPlayback`): special functions, the seeded synthetic process, stall probability and utility, Gaussian couplings, the RG flow and its truncated projection, scaling of perturbations, the CLT and stable-law flows, exponential tilting, the quartic expansion, the information bottleneck, packets, schematic playback and the beamdswitch report. It has no DOM, storage, clock or network use. `<script id="packets-to-playback-ui">` is the page, the remembered mode and vocabulary (`localStorage`, optional), the drawn football scene and the four read-only WebMCP tools. `<script id="beamdswitch">` is `beamdswitch.js` inlined unchanged. Edit this file directly. |
 | `beamdswitch.js` | The site's standard report template, a verbatim copy of `templates/beamdswitch.js`. |
 | `raw.json` | Catalogue data, published as `data.json`: the initial scenario, rungs, presets, candidate models, limits, model constants and assumptions. The page never fetches it; the test says when it has drifted from the engine. |
-| `AGENTS.md` | Notes for coding agents: where changes go (the standalone repository, where this visualisation and its tests develop; yujieteo/site holds a port of the page files), how to build and test, and the conventions. |
+| `AGENTS.md` | Notes for coding agents: where changes go (the standalone repository, where this visualisation and its tests develop; yujieteo/site holds a port of the page files), how to build and test, how to port to yujieteo/site, and the conventions. |
 | `SKILLS.md` | For agents using the tool: its tasks, inputs, read-only WebMCP tools, exports and a worked example. |
 | `LICENSE` | MIT. |
 
