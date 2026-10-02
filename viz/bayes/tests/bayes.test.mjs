@@ -238,7 +238,7 @@ test("the page is one offline file with the metadata and static fallback it prom
   assert.match(html, /<a href="https:\/\/teoyujie\.org\/visuals\.html">Visuals<\/a>/);
   assert.doesNotMatch(html, /<script[^>]+src=|<link[^>]+rel="stylesheet"|@import|type="module"|@font-face/, "no external scripts, styles or fonts to load");
   const css = /<style>\n([\s\S]*?)<\/style>/.exec(html)[1], media = (q) => css.split("\n").filter((l) => l.startsWith(`@media (${q})`)).join("\n");
-  for (const v of ["--bg", "--fg", "--accent"]) assert.match(media("prefers-color-scheme:dark"), new RegExp(`${v}:#`), `dark theme sets ${v}`);
+  for (const v of ["--bg", "--fg", "--focus"]) assert.match(media("prefers-color-scheme:dark"), new RegExp(`${v}:#`), `dark theme sets ${v}`);
   const still = css.split("\n").filter((l) => !l.startsWith("@media (prefers-reduced-motion:no-preference)")).join("\n");
   assert.match(media("prefers-reduced-motion:no-preference"), /transition:/);
   assert.doesNotMatch(still, /transition|animation/, "motion only when the reader has not asked to reduce it");
