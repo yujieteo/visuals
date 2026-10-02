@@ -890,9 +890,9 @@
   $("nav").addEventListener("click", (ev) => { if (ev.target.closest("a, [data-nav-close]")) { if (ev.target.closest("[data-nav-close]")) $("menu-btn").focus(); $("nav").classList.remove("open"); $("menu-btn").setAttribute("aria-expanded", "false"); } });
   const THEMES = ["system", "light", "dark"];
   let theme = "system";
-  try { theme = localStorage.getItem("gf-theme") || "system"; } catch (e) { /* storage may be blocked */ }
+  try { const t = localStorage.getItem("theme"); theme = t === "light" || t === "dark" ? t : "system"; } catch (e) { /* storage may be blocked */ }
   function applyTheme() { if (theme === "system") document.documentElement.removeAttribute("data-theme"); else document.documentElement.setAttribute("data-theme", theme); $("theme-btn").setAttribute("aria-label", `Colour theme: ${theme === "system" ? "follow system" : theme}`); $("theme-btn").textContent = theme === "light" ? "☀" : theme === "dark" ? "☾" : "◐"; }
-  $("theme-btn").addEventListener("click", () => { theme = THEMES[(THEMES.indexOf(theme) + 1) % 3]; try { localStorage.setItem("gf-theme", theme); } catch (e) { /* ignore */ } applyTheme(); say(`Theme: ${theme}.`); });
+  $("theme-btn").addEventListener("click", () => { theme = THEMES[(THEMES.indexOf(theme) + 1) % 3]; try { if (theme === "system") localStorage.removeItem("theme"); else localStorage.setItem("theme", theme); } catch (e) { /* ignore */ } applyTheme(); say(`Theme: ${theme}.`); });
   applyTheme();
 
   /* ---------- WebMCP: read-only tools ---------- */
