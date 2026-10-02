@@ -19,6 +19,7 @@ This repository, [yujieteo/multi-armed-bandit](https://github.com/yujieteo/multi
 | `src/hours-logic.js` | Pure hours-mode model: evidence, chance best by quadrature, Thompson and UCB1 allocations, the Markdown plan and plan validation (`<script id="hours-logic">`). |
 | `src/multi-armed-bandit.js` | The experiment and simulation interface, the tabs and the WebMCP tools (`<script id="mab-ui">`). |
 | `src/hours.js` | The Next week's hours interface (`<script id="hours-ui">`). |
+| `src/page-helpers.js` | DOM, storage and download helpers both interfaces share (`<script id="page-helpers">`, `self.BanditPage`). |
 | `src/multi-armed-bandit.css`, `src/design-tokens.json` | Styles, with the style guide's colour tokens (`style_guide` in `src/design-tokens.json`) filled in by `build.py`. |
 | `beamdswitch.js` | Unchanged copy of the site's beamdswitch report template, inlined into `index.html`. |
 | `report.js` | Builds the narrated deck from the committed experiment, inlined into `index.html`. |

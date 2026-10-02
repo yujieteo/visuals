@@ -3,41 +3,21 @@
 (function () {
   "use strict";
   const L = BanditLogic, D = JSON.parse(document.getElementById("mab-data").textContent);
-  const KEY = "multi-armed-bandit:v1", SLUG = "multi-armed-bandit", NS = "http://www.w3.org/2000/svg";
-  const $ = (id) => document.getElementById(id);
-  const el = (tag, attrs, text) => {
-    const e = document.createElement(tag);
-    for (const k in attrs || {}) e.setAttribute(k, attrs[k]);
-    if (text != null) e.textContent = text;
-    return e;
-  };
-  const svg = (tag, attrs, text) => {
-    const e = document.createElementNS(NS, tag);
-    for (const k in attrs) e.setAttribute(k, attrs[k]);
-    if (text != null) e.textContent = text;
-    return e;
-  };
+  const KEY = "multi-armed-bandit:v1", SLUG = "multi-armed-bandit";
+  const { $, el, svg, say, isoToday, openStore, download } = BanditPage;
   const now = () => (typeof performance !== "undefined" ? performance.now() : 0);
   function freshSeed() {
     try { return crypto.getRandomValues(new Uint32Array(1))[0]; } catch (e) { return 2654435769; }
   }
-  function say(msg, where) {
-    if (where) where.textContent = msg;
-    const a = $("announce");
-    a.textContent = "";
-    setTimeout(() => { a.textContent = msg; }, 30);
-  }
 
   /* ---- Storage: optional; every access is guarded ---- */
-  let store = null;
-  try { store = window.localStorage; store.getItem(KEY); } catch (e) { store = null; }
+  const { store, saved } = openStore(KEY);
   let S, sim, undo = [], running = false, timer = 0, saveTimer = 0, simKey = "";
   let viewOf = null, viewMemo = null;
   const view = () => (viewOf === S ? viewMemo : (viewMemo = L.view(viewOf = S)));
   const keyOf = (s) => JSON.stringify([s.simulation.probabilities, s.simulation.budget, s.simulation.seed, s.prior]);
   function boot() {
     let msg = store ? "" : "Autosave is unavailable in this browser context; use Export JSON to keep your work.";
-    const saved = store && (function () { try { return store.getItem(KEY); } catch (e) { return null; } })();
     if (saved) {
       const r = L.parse(saved);
       if (r.error) msg = "Saved work could not be restored (" + r.error + "); started from the website example.";
@@ -394,24 +374,13 @@
   }
 
   /* ---- Exports ---- */
-  function download(name, text, type) {
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(new Blob([text], { type }));
-    a.download = name;
-    document.body.append(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-  }
   function showText(label, text) {
     $("export-label").textContent = label;
     $("export-text").value = text;
   }
   function deckText() {
-    const d = new Date();
-    const iso = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
     const simV = sim.methods.ts.pulls ? L.simView(sim, S.variants.map((v) => v.name)) : null;
-    return Beamdswitch.deck(BanditReport.report(S, view(), simV, D, iso));
+    return Beamdswitch.deck(BanditReport.report(S, view(), simV, D, isoToday()));
   }
   function wireExports() {
     $("save-beamdswitch").addEventListener("click", () => {

@@ -4,36 +4,15 @@
 (function () {
   "use strict";
   const H = HoursLogic, D = JSON.parse(document.getElementById("mab-data").textContent);
-  const KEY = "multi-armed-bandit:hours:v1", FILE = "multi-armed-bandit-hours", NS = "http://www.w3.org/2000/svg";
-  const $ = (id) => document.getElementById(id);
-  const el = (tag, attrs, text) => {
-    const e = document.createElement(tag);
-    for (const k in attrs || {}) e.setAttribute(k, attrs[k]);
-    if (text != null) e.textContent = text;
-    return e;
-  };
-  const svg = (tag, attrs, text) => {
-    const e = document.createElementNS(NS, tag);
-    for (const k in attrs) e.setAttribute(k, attrs[k]);
-    if (text != null) e.textContent = text;
-    return e;
-  };
-  function say(msg, where) {
-    if (where) where.textContent = msg;
-    const a = $("announce");
-    a.textContent = "";
-    setTimeout(() => { a.textContent = msg; }, 30);
-  }
-  const today = () => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
+  const KEY = "multi-armed-bandit:hours:v1", FILE = "multi-armed-bandit-hours";
+  const { $, el, svg, say, isoToday, openStore, download } = BanditPage;
 
   /* ---- State and storage ---- */
-  let store = null;
-  try { store = window.localStorage; store.getItem(KEY); } catch (e) { store = null; }
+  const { store, saved } = openStore(KEY);
   let S, saveTimer = 0, viewOf = null, viewMemo = null, visible = false;
   const view = () => (viewOf === S ? viewMemo : (viewMemo = H.view(viewOf = S)));
   function boot() {
     let msg = store ? "" : "Autosave is unavailable in this browser context; use Export JSON to keep your plan.";
-    const saved = store && (function () { try { return store.getItem(KEY); } catch (e) { return null; } })();
     if (saved) {
       const r = H.parse(saved);
       if (r.error) msg = "Saved plan could not be restored (" + r.error + "); started a blank plan.";
@@ -189,20 +168,11 @@
   }
 
   /* ---- Exports ---- */
-  function download(name, text, type) {
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(new Blob([text], { type }));
-    a.download = name;
-    document.body.append(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-  }
   function showText(label, text) {
     $("h-export-label").textContent = label;
     $("h-export-text").value = text;
   }
-  const planText = () => H.markdown(S, view(), D, today());
+  const planText = () => H.markdown(S, view(), D, isoToday());
   function wire() {
     $("h-add").addEventListener("click", () => {
       const r = H.addActivity(S);

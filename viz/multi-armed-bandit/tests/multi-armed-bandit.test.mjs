@@ -328,3 +328,17 @@ test("next-step hints follow the state", () => {
   const s = ok(L.select(website(2), "v2"));
   assert.ok(L.hints(s, L.view(s)).some((h) => /record its outcome once it is resolved/.test(h)));
 });
+
+test("the shared page helpers: storage that throws reads as unavailable, saved text is returned, dates are local ISO", () => {
+  const src = /<script id="page-helpers">([\s\S]*?)<\/script>/.exec(html)[1];
+  const run = (window) => { const c = { window, Date: class extends Date { constructor() { super(2026, 0, 5, 9); } } }; c.self = c; vm.createContext(c); vm.runInContext(src, c); return c.BanditPage; };
+  const blocked = run({ get localStorage() { throw new Error("SecurityError"); } });
+  assert.deepEqual({ ...blocked.openStore("k") }, { store: null, saved: null });
+  const throwsOnRead = run({ localStorage: { getItem() { throw new Error("denied"); } } });
+  assert.equal(throwsOnRead.openStore("k").store, null);
+  const ls = { getItem: (k) => (k === "k" ? "{\"v\":1}" : null) };
+  const ok = run({ localStorage: ls }).openStore("k");
+  assert.equal(ok.store, ls);
+  assert.equal(ok.saved, "{\"v\":1}");
+  assert.equal(run({}).isoToday(), "2026-01-05");
+});

@@ -24,7 +24,6 @@ from style_guide import THEME_SCRIPT, root_css
 
 ROOT = Path(__file__).resolve().parent
 SLUG = "multi-armed-bandit"
-DATA = ROOT
 VIZ = ROOT / "index.html"
 SRC = ROOT / "src"
 TOKENS = SRC / "design-tokens.json"
@@ -33,6 +32,7 @@ LOGIC_TEMPLATE = SRC / "multi-armed-bandit-logic.js"
 JS_TEMPLATE = SRC / "multi-armed-bandit.js"
 HOURS_LOGIC = SRC / "hours-logic.js"
 HOURS_JS = SRC / "hours.js"
+PAGE_HELPERS = SRC / "page-helpers.js"
 DECK_TEMPLATE = ROOT / "beamdswitch.js"
 DECK_REPORT = ROOT / "report.js"
 BEAMDSWITCH_URL = "https://teoyujie.org/visuals/beamdswitch/"
@@ -53,8 +53,8 @@ FICTIONAL = {"website": [("Page A", 8, 100), ("Page B", 12, 100), ("Page C", 3, 
 
 
 def load():
-    raw = json.loads((DATA / "raw.json").read_text(encoding="utf-8"))
-    meta = json.loads((DATA / "meta.json").read_text(encoding="utf-8"))
+    raw = json.loads((ROOT / "raw.json").read_text(encoding="utf-8"))
+    meta = json.loads((ROOT / "meta.json").read_text(encoding="utf-8"))
     return raw, meta
 
 
@@ -145,8 +145,16 @@ def css(tokens):
     for key, value in rep.items():
         text = text.replace(f"%%{key}%%", value)
     assert "%%" not in text, "unreplaced CSS token"
-    text = re.sub(r"\n", "", text)
-    return text
+    return text.replace("\n", "")
+
+
+def items_html(texts):
+    return "".join(f"<li>{escape(t)}</li>" for t in texts)
+
+
+def table_head(columns):
+    """Header cells from (label, numeric) pairs; numeric columns are right-aligned."""
+    return "".join(f'<th scope="col"{" class=\"n\"" if n else ""}>{escape(h)}</th>' for h, n in columns)
 
 
 def refs_html(raw):
@@ -158,8 +166,7 @@ def refs_html(raw):
 
 def about_html(raw, suffix):
     """Assumptions, references and next steps: in the experiment tab and in the no-JavaScript page."""
-    items = "".join(f"<li>{escape(a)}</li>" for a in raw["assumptions"])
-    return (f'<section aria-labelledby="h-about{suffix}"><h2 id="h-about{suffix}">Assumptions, references and next steps</h2><ul>{items}</ul>'
+    return (f'<section aria-labelledby="h-about{suffix}"><h2 id="h-about{suffix}">Assumptions, references and next steps</h2><ul>{items_html(raw["assumptions"])}</ul>'
             '<p class="note">If the success definition, the audience or the environment changes, start a new experiment instead of adding to this one.</p>'
             '<p class="note">Next steps: follow either recommendation for one trial, record the outcome once it is resolved, and look again. '
             'Neither method declares an experiment finished or a variant conclusively best.</p>'
@@ -188,7 +195,7 @@ def nojs_html(raw):
 
 def experiment_html(raw):
     options = "".join(f'<option value="{escape(t["id"])}">{escape(t["label"])}{" (fictional counts)" if t["fictional"] else ""}</option>' for t in raw["templates"])
-    head = "".join(f'<th scope="col"{" class=\"n\"" if n else ""}>{escape(h)}</th>' for h, n in [
+    head = table_head([
         ("Select", 0), ("Name", 0), ("Successes", 0), ("Trials", 0), ("Failures", 1), ("Observed rate", 1), ("Posterior mean", 1),
         ("95% credible interval", 1), ("Thompson sample", 1), ("UCB1 score", 1), ("", 0)])
     field = lambda fid, key, label, tag="input": (
@@ -267,7 +274,7 @@ def simulation_html():
 
 def hours_html(raw):
     h = raw["hours"]
-    head = "".join(f'<th scope="col"{" class=\"n\"" if n else ""}>{escape(t)}</th>' for t, n in [
+    head = table_head([
         ("Activity", 0), ("Worthwhile blocks", 0), ("Not-worthwhile blocks", 0), ("Past blocks", 1),
         ("Posterior mean", 1), ("95% credible interval", 1), ("Chance best", 1), ("Thompson hours", 1), ("UCB1 hours", 1), ("", 0)])
     return f'''<section role="tabpanel" id="panel-hrs" aria-labelledby="tab-hrs" hidden>
@@ -297,8 +304,8 @@ chance best = P(this activity's draw is the highest) = ∫ pdf(x) · Π other CD
 Thompson hours = hours × chance best, rounded to whole hours by largest remainder
 UCB1: for each hour in turn, the highest s/n + √(2 ln T / n) gets it; then n += 1 and T += 1</p>
 <p class="note">Thompson Sampling would give each hour to the activity with the highest random draw from its posterior; the plan uses each activity's expected share of those hours, computed by numerical integration, so the same evidence always gives the same plan. UCB1 counts every planned hour as one more block with the same worthwhile share, so its exploration bonus shrinks as hours are added. An activity with no blocks gets UCB1's first hours. Ties go to the first activity.</p>
-<h4>Assumptions</h4><ul>{"".join(f"<li>{escape(a)}</li>" for a in h["assumptions"])}</ul>
-<h4>Next steps</h4><ul>{"".join(f"<li>{escape(a)}</li>" for a in h["next"])}</ul>
+<h4>Assumptions</h4><ul>{items_html(h["assumptions"])}</ul>
+<h4>Next steps</h4><ul>{items_html(h["next"])}</ul>
 </details>
 <section aria-labelledby="h-save"><h3 id="h-save">4. Save, export and import</h3>
 <p class="note">The plan autosaves in this browser when storage is available. Nothing is uploaded.</p>
@@ -342,6 +349,7 @@ def render(raw, meta, tokens):
 <script id="beamdswitch">\n{DECK_TEMPLATE.read_text(encoding="utf-8")}</script>
 <script id="report">\n{DECK_REPORT.read_text(encoding="utf-8")}</script>
 <script id="hours-logic">{compact(HOURS_LOGIC.read_text(encoding="utf-8"))}</script>
+<script id="page-helpers">{compact(PAGE_HELPERS.read_text(encoding="utf-8"))}</script>
 <script id="mab-ui">{compact(JS_TEMPLATE.read_text(encoding="utf-8"))}</script>
 <script id="hours-ui">{compact(HOURS_JS.read_text(encoding="utf-8"))}</script>
 </body></html>
