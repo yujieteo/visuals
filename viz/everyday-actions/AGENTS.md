@@ -21,6 +21,7 @@ The standalone repository [yujieteo/everyday-actions](https://github.com/yujiete
 | `beamdswitch.js` | The site's standard beamdswitch report template, an unchanged copy of `templates/beamdswitch.js` |
 | `build.py` | Writes `data.csv` and `sources.json` and rewrites the dataset, template and report blocks of `index.html` |
 | `data.csv` | Generated: one row per activity, missing values empty (the published data file) |
+| `sources.json` | Generated: the citations plus one record per number shown in the graph |
 
 Tests live in `tests/` of yujieteo/everyday-actions: `tests/everyday-actions-beamdswitch.test.mjs` and `tests/test_everyday_actions.py`.
 
@@ -30,9 +31,18 @@ Run from the root of a yujieteo/everyday-actions checkout (Python 3 standard lib
 
 ```sh
 python3 build.py   # regenerate data.csv, sources.json and index.html
-node --test tests/everyday-actions-beamdswitch.test.mjs
-python3 -m unittest discover -s tests -p 'test_everyday_actions.py'
+node --test 'tests/*.test.{mjs,cjs}'
+python3 -m unittest discover -s tests -p 'test_*.py'
 ```
+
+CI (`.github/workflows/ci.yml`) runs the last two commands on Node 22 and Python 3.13 for every push and pull request.
+
+## Porting to yujieteo/site
+
+Change and test this repository first, then port it; the site's [add-visualization playbook](https://github.com/yujieteo/site/blob/main/skills/playbooks/add-visualization.md) owns the full workflow.
+
+1. Run the suite above, check the page end to end in a browser (load `index.html`, use what changed, call the WebMCP tools and the exports), and run no-mistakes here.
+2. Copy this repository minus `tests/` and `.github/`, byte for byte, into `visuals/everyday-actions/` of yujieteo/site, and run no-mistakes again on that pull request, which runs only the site-level tests. Never add logic tests to the site; its test cost must stay flat.
 
 ## Conventions
 
