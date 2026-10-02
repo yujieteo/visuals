@@ -6,10 +6,11 @@
 <link rel="icon" href="data:,">
 <meta name="description" content="Explore how poles, zeros, gain, delay, sampling and a controller shape a loop's frequency response in continuous or discrete time: Bode, Nyquist (with the encirclement count) and Nichols views, pole-zero map, ZOH, Tustin and Euler discretisation, gain, phase and delay margins, sensitivity peaks and closed-loop poles, with Markdown, JSON, CSV and SVG exports and self-tests. Exploration only; runs offline in your browser.">
 <title>Frequency-Response Visualiser</title>
+<script id="site-theme">try { var t = localStorage.getItem("theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (e) {}</script>
 <style>
-:root{--bg:#fff;--fg:#1d1d1f;--muted:#6e6e73;--faint:#a1a1a6;--surface:#f5f5f7;--border:#d2d2d7;--grid:#e8e8ed;--focus:#0071e3;--c1:#2a78d6;--c2:#eb6834;--c3:#8a4fd8;--c4:#0f8b8d;--ok:#1a7f4b;--bad:#c4261d;--warn:#9a6700;--sans:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;--mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;--r:.5rem;color-scheme:light dark}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--faint:#6e6e73;--surface:#2c2c2e;--border:#48484a;--grid:#333336;--focus:#2997ff;--c1:#3987e5;--c2:#d95926;--c3:#a77bf0;--c4:#3bb6b8;--ok:#30c07a;--bad:#ff6961;--warn:#e3b341}}
-:root[data-theme="dark"]{--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--faint:#6e6e73;--surface:#2c2c2e;--border:#48484a;--grid:#333336;--focus:#2997ff;--c1:#3987e5;--c2:#d95926;--c3:#a77bf0;--c4:#3bb6b8;--ok:#30c07a;--bad:#ff6961;--warn:#e3b341;color-scheme:dark}
+:root{--bg:#fff;--fg:#1d1d1f;--muted:#6e6e73;--faint:#a1a1a6;--surface:#f5f5f7;--border:#d2d2d7;--control:#86868b;--grid:#e8e8ed;--focus:#0071e3;--c1:#2a78d6;--c2:#eb6834;--c3:#8a4fd8;--c4:#0f8b8d;--ok:#1a7f4b;--bad:#c4261d;--warn:#9a6700;--sans:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;--mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;--r:.5rem;color-scheme:light dark}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--faint:#6e6e73;--surface:#2c2c2e;--border:#48484a;--control:#8e8e93;--grid:#333336;--focus:#2997ff;--c1:#3987e5;--c2:#d95926;--c3:#a77bf0;--c4:#3bb6b8;--ok:#30c07a;--bad:#ff6961;--warn:#e3b341}}
+:root[data-theme="dark"]{--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--faint:#6e6e73;--surface:#2c2c2e;--border:#48484a;--control:#8e8e93;--grid:#333336;--focus:#2997ff;--c1:#3987e5;--c2:#d95926;--c3:#a77bf0;--c4:#3bb6b8;--ok:#30c07a;--bad:#ff6961;--warn:#e3b341;color-scheme:dark}
 :root[data-theme="light"]{color-scheme:light}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -31,14 +32,14 @@ button{cursor:pointer}
 .muted{color:var(--muted)}
 .banner{border:1px solid var(--warn);border-left-width:4px;border-radius:var(--r);padding:.6rem .9rem;margin:1rem 0 0;font-size:.9375rem;max-width:none;display:flex;flex-wrap:wrap;gap:.4rem 1rem;align-items:center;justify-content:space-between}
 .banner b{color:var(--warn)}
-.btn{display:inline-flex;align-items:center;gap:.35rem;border:1px solid var(--border);background:var(--bg);border-radius:999px;padding:.25rem .8rem;min-height:2.25rem;font-size:.875rem;white-space:nowrap;text-decoration:none}
+.btn{display:inline-flex;align-items:center;gap:.35rem;border:1px solid var(--control);background:var(--bg);border-radius:999px;padding:.25rem .8rem;min-height:2.25rem;font-size:.875rem;white-space:nowrap;text-decoration:none}
 @media (hover:hover){.btn:hover{background:var(--surface)}}
 .btn.small{min-height:1.9rem;padding:.1rem .65rem;font-size:.8125rem}
 .toolbar{display:flex;flex-wrap:wrap;gap:.6rem 1.1rem;align-items:center;margin:1.25rem 0 .75rem;padding:.6rem 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
 .toolbar .group{display:flex;flex-wrap:wrap;gap:.35rem;align-items:center;min-width:0}
 .label{font:600 .7rem var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-right:.2rem}
 .label.nt{text-transform:none;letter-spacing:.02em}
-select,input[type="number"],input[type="text"],textarea{border:1px solid var(--border);background:var(--bg);border-radius:var(--r);padding:.3rem .5rem;min-height:2.25rem;font-size:.875rem;min-width:0;width:100%}
+select,input[type="number"],input[type="text"],textarea{border:1px solid var(--control);background:var(--bg);border-radius:var(--r);padding:.3rem .5rem;min-height:2.25rem;font-size:.875rem;min-width:0;width:100%}
 .toolbar select{width:auto;max-width:100%}
 .toolbar input[type="number"]{width:7rem}
 input[type="number"],input[type="text"]{font-variant-numeric:tabular-nums}
@@ -92,7 +93,7 @@ td.pass{color:var(--ok);font-weight:600}
 td.fail{color:var(--bad);font-weight:600}
 .mono{font-family:var(--mono);font-size:.8125rem;overflow-wrap:anywhere}
 .entrygrid{display:grid;gap:.4rem;margin:.4rem 0 1rem;max-width:44rem}
-.entrygrid button{border:1px solid var(--border);background:var(--bg);border-radius:var(--r);padding:.2rem;min-width:0}
+.entrygrid button{border:1px solid var(--control);background:var(--bg);border-radius:var(--r);padding:.2rem;min-width:0}
 .entrygrid button[aria-pressed="true"]{border-color:var(--c1);box-shadow:0 0 0 1px var(--c1)}
 .entrygrid svg{display:block;width:100%;height:auto}
 .legend{display:flex;flex-wrap:wrap;gap:.4rem 1.1rem;align-items:center;margin:.25rem 0 .5rem;font-size:.875rem}
