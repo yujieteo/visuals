@@ -26,7 +26,8 @@ for s in scripts/build*.py; do python3 "$s" --verify || break; done
 | `viz/<slug>/AGENTS.md`, `SKILLS.md`, `LICENSE` | Agent guides and MIT licence inside each folder ported from a standalone `yujieteo/<repo>` repository (listed in `tests/test_mirror_docs.py`), where the visualization and its tests develop; the folder holds its ported page files, with data files under `data/<slug>/`; that `AGENTS.md` lists what is ported. |
 | `viz/<slug>/beamdswitch.js`, `viz/<slug>/report.js` | Sources a builder inlines for a page's narrated beamdswitch deck: the site's unchanged report template and that page's report. |
 | `index.html` | Generated root gallery that links the visualization pages. |
-| `design-tokens.json` | Shared colors, spacing, radius, and fonts used by the builders. |
+| `design-tokens.json` | Shared colors, spacing, radius, and fonts used by the builders; `style_guide` holds the light and dark tokens of the shared visual style guide. |
+| `scripts/style_guide.py` | Renders the `style_guide` tokens as a page's `:root` CSS for both themes, plus the site's theme script, for builders that follow the style guide. |
 | `SKILLS.md` | Agent router: maps task types to the focused sub-skills below. |
 | `.agents/skills/visuals-*/SKILL.md` | Sub-skills loaded on demand: new visualization, refresh data, page conventions, verify and CI. |
 | `CONTRIBUTING.md` | Human contributor guide. |
