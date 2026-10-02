@@ -44,7 +44,6 @@ CANONICAL = "https://teoyujie.org/visuals/ooda-orientation"
 SIZE_TARGET = 150_000
 SIZE_LIMIT = 250_000
 
-# Page-scoped dark palette; the light palette comes from design-tokens.json.
 # The page's roles as aliases of the style guide's tokens (design-tokens.json "style_guide"):
 # the accent marks links and the primary action, red marks warnings, and the soft fills
 # are 12% of each mixed into the background, as the CSS does with color-mix().
