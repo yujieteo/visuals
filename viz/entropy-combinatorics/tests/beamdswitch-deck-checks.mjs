@@ -1,59 +1,7 @@
-/* Shared checks for the visualisations' beamdswitch decks, and a small stand-in DOM to click their
-   beamdswitch and Copy deck buttons in Node. The decks are parsed with beamdswitch's own parsers
-   (read-only copies in tests/fixtures/beamdswitch/), as tests/beamdiag-beamdswitch.test.mjs does. */
-import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+/* A small stand-in DOM to boot the page in Node and click its beamdswitch and Copy deck buttons;
+   tests/entropy-combinatorics.test.mjs parses the decks with beamdswitch's own parser (a read-only
+   copy in tests/fixtures/beamdswitch/). */
 import vm from "node:vm";
-import { parseDeck, splitSentences } from "./fixtures/beamdswitch/deck.mjs";
-import { parsePlot } from "./fixtures/beamdswitch/plot.mjs";
-
-export { parseDeck, parsePlot };
-
-const read = (path) => readFileSync(new URL(path, import.meta.url), "utf8");
-export const TEMPLATE = read("./fixtures/beamdswitch/template.js");
-export const SECTIONS = [...read("./fixtures/beamdswitch/beamdswitch-report.md").matchAll(/^# (.+)$/gm)].map((m) => m[1]);
-
-export const divs = (children, name, out = []) => {
-  for (const c of children) if (c.type === "div") { if (c.name === name) out.push(c); divs(c.children, name, out); }
-  return out;
-};
-export const textOf = (node) => node.children.filter((c) => c.type === "md").map((c) => c.text).join("\n");
-export const plotsOf = (deck) => deck.frames.flatMap((f) => divs(f.children, "plot")).map((d) => parsePlot(textOf(d)));
-
-/* Parse a deck and check it is the standard template with narration on every slide; returns the deck. */
-export function checkDeck(md, what) {
-  const deck = parseDeck(md);
-  assert.equal(deck.frames[0].kind, "title", what);
-  assert.ok(deck.meta.title, `${what}: has a title`);
-  assert.match(deck.meta.voice ?? "", /^[a-z]{2}_[a-z]+$/, `${what}: names its narration voice`);
-  assert.deepEqual(deck.frames.filter((f) => f.kind === "section").map((f) => f.title), SECTIONS, `${what}: the template's sections, in order`);
-  for (const s of SECTIONS) assert.ok(deck.frames.some((f) => f.kind === "frame" && f.section === s), `${what}: ${s} has a frame`);
-  const last = deck.frames.at(-1);
-  assert.equal(last.section, "Checks and takeaway", what);
-  assert.equal(divs(last.children, "key").length, 1, `${what}: ends on a ::: key`);
-  // Written in the deck, not filled in by beamdswitch's defaults: one ::: narration per slide.
-  assert.equal(md.match(/^::: narration$/gm).length, deck.frames.length, `${what}: one narration per slide`);
-  for (const f of deck.frames) {
-    assert.ok(splitSentences(f.narration).length > 0, `${what}: "${f.title}" is narrated`);
-    assert.doesNotMatch(f.narration, /[$\\`*_#|<>×⁰¹²³⁴⁵⁶⁷⁸⁹⁻·∠°σ]/, `${what}: "${f.title}" reads as speech: ${f.narration}`);
-  }
-  for (const plot of plotsOf(deck)) {
-    assert.deepEqual(plot.errors, [], what);
-    assert.ok(plot.curves.length > 0, what);
-  }
-  return deck;
-}
-
-/* checkDeck, then every plot with the frame it sits on; each curve must be finite across its x range. */
-export function checkDeckPlots(md, what) {
-  const deck = checkDeck(md, what);
-  const plots = deck.frames.flatMap((f) => divs(f.children, "plot").map((d) => ({ frame: f, spec: parsePlot(textOf(d)) })));
-  for (const { frame, spec } of plots) for (const c of spec.curves) for (let i = 0; i <= 20; i++) {
-    const x = spec.x[0] + ((spec.x[1] - spec.x[0]) * i) / 20;
-    assert.ok(Number.isFinite(c.f(x)), `${what}: "${c.src}" on "${frame.title}" is finite at x = ${x}`);
-  }
-  return { deck, plots };
-}
 
 /* ---------- a stand-in DOM: enough for a page script to start and for its buttons to be clicked ---------- */
 export class Element {

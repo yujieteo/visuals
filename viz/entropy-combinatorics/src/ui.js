@@ -86,7 +86,6 @@
   const curLesson = () => Ls.byId(S.mode === "problems" ? Ls.PROBLEMS[S.problem - 1].lesson : S.mode === "compare" ? Ls.COMPARISONS.find((c) => c.id === S.compare).lesson : S.mode === "encode" ? "compression" : LAB(S.view) ? LAB(S.view).lesson : Ls.byId(S.view) ? S.view : S.lastLesson);
 
   /* ---------- widgets ---------- */
-  const widgetKey = (key) => key;
   function widgetBox(key, spec) {
     return `<div class="widget" data-wkey="${esc(key)}" data-wtype="${esc(spec.type)}"><div class="wc"></div><div class="wv"></div></div>`;
   }
