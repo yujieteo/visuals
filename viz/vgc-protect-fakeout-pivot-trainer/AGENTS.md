@@ -20,13 +20,17 @@ The standalone repository [yujieteo/vgc-trainer](https://github.com/yujieteo/vgc
 
 ## Build, test and verify
 
-Run from the root of a yujieteo/vgc-trainer checkout (Python 3 standard library and Node 22; nothing to install):
+Run from the root of a yujieteo/vgc-trainer checkout (Python 3 standard library and Node 22; nothing to install), as CI (`.github/workflows/ci.yml`) does:
 
 ```sh
 python3 build.py   # regenerate index.html
-node --test tests/vgc-turn-lab.test.mjs
-python3 -m unittest discover -s tests -p 'test_vgc_turn_lab.py'
+node --test 'tests/*.test.{mjs,cjs}'
+python3 -m unittest discover -s tests -p 'test_*.py'   # includes a check that index.html is fresh
 ```
+
+## Change workflow
+
+Change and test this repository first, end to end (open `index.html` in a browser, pick a position, play the turn), and run no-mistakes here; then port the page files byte for byte into `visuals/vgc-protect-fakeout-pivot-trainer/` of yujieteo/site, where a second no-mistakes run covers only the site's own tests. Logic tests stay here; never add them to the site.
 
 ## Conventions
 

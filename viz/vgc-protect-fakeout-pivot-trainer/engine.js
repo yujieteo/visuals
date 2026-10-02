@@ -8,7 +8,6 @@
 (function (root) {
   "use strict";
 
-  const TYPES = ["Normal", "Fire", "Water", "Electric", "Grass", "Ice", "Fighting", "Poison", "Ground", "Flying", "Psychic", "Bug", "Rock", "Ghost", "Dragon", "Dark", "Steel", "Fairy"];
   // Attacking type -> defending types it hits for 2x / 0.5x / 0x (Showdown typechart.ts).
   const CHART = {
     Normal: { h: [], r: ["Rock", "Steel"], z: ["Ghost"] },
