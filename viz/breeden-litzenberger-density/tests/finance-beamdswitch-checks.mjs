@@ -14,8 +14,8 @@ export const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url
 
 /* SHA-256 of yujieteo/site templates/beamdswitch.js, the site's standard report template. Every
    page folder carries it unchanged. Set SITE_REPO to a site checkout to compare against the file. */
-export const TEMPLATE_SHA256 = "f9ce9c6eb07842a2fa50dd72c828cb53c09f412c6bb1505d825d081b5b4362c7";
-export const SECTIONS = [...read("tests/fixtures/beamdswitch/report-template.md").matchAll(/^# (.+)$/gm)].map((m) => m[1]);
+const TEMPLATE_SHA256 = "f9ce9c6eb07842a2fa50dd72c828cb53c09f412c6bb1505d825d081b5b4362c7";
+const SECTIONS = [...read("tests/fixtures/beamdswitch/report-template.md").matchAll(/^# (.+)$/gm)].map((m) => m[1]);
 
 export function assertTemplateCopy(slug) {
   const copy = read(`beamdswitch.js`);
@@ -77,7 +77,7 @@ export function assertStandardDeck(md, what) {
 }
 
 /* ---------- a stand-in DOM: enough for a page script to start and for its controls to be clicked ---------- */
-export class Element {
+class Element {
   constructor(tag = "div") {
     Object.assign(this, { tag, children: [], dataset: {}, attrs: {}, listeners: {}, style: {}, textContent: "", innerHTML: "", value: "" });
   }
@@ -128,7 +128,7 @@ export function openPage(slug, controls = {}, { blockSave = false } = {}) {
   const pick = (selector, key, value) => lists.get(selector).find((e) => e.dataset[key] === value);
   const settle = () => new Promise((r) => setImmediate(r));
   return {
-    html, saved, copied, $, pick,
+    saved, copied, $, pick,
     run: (code) => vm.runInContext(code, context),
     click: async (el) => { await el.fire("click"); await settle(); },
     /* Clicks beamdswitch then Copy deck, and returns the saved file and the copied text. */
