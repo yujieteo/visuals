@@ -6,6 +6,8 @@ A teaching tool and calculator for 3D stress and small-strain transformation in 
 
 This repository, [yujieteo/mohr](https://github.com/yujieteo/mohr), is the source of truth: the tool and its tests are developed here, and its CI runs them here. `visuals/mohr/` in [yujieteo/site](https://github.com/yujieteo/site/tree/main/visuals/mohr) is a port of the page files, refreshed whenever the tool is updated, and the site runs no logic tests for it. Porting copies this repository minus `tests/` and `.github/`, so AGENTS.md and SKILLS.md must not link into either (the site checks that their links resolve).
 
+Change and test here first, then port. The site's [add-visualization playbook](https://github.com/yujieteo/site/blob/main/skills/playbooks/add-visualization.md) owns the procedure: run this repository's tests, an end-to-end check of the page in a browser and the first no-mistakes pass here; then port the page files into yujieteo/site and run the second pass there with site-level tests only. Logic and browser tests stay here, never in the site; time every test you add (`time node --test tests/<file>`).
+
 ## Files and data
 
 See [README.md](README.md). `index.html` is the whole tool with no build step: edit it directly. `<script id="mohr-engine">` is the numeric core (`self.Mohr`; no DOM, storage, clock or randomness), `<script id="mohr-beamdswitch">` is `beamdswitch.js` inlined, and `<script id="mohr-ui">` is the page and the WebMCP tools. `raw.json` (published as `data.json`) must equal the engine's `META` and `toJSON(defaultState())`.
