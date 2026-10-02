@@ -22,6 +22,16 @@ node --test 'tests/*.test.mjs'
 
 CI (`.github/workflows/ci.yml`) runs the same command on every push and pull request: `tests/kent.test.mjs` (the Kent 1964 scale, lookup, ledger, calibration, URL state, phrase detection, `raw.json`, the WebMCP tools and the beamdswitch deck). In yujieteo/site the only Kent checks are the site's integration tests: the published copy, the catalogue stub and the folder docs. After changing the engine's scale, examples, glossary or messages, regenerate `raw.json` from the engine; the test says when it has drifted. When the site's `templates/beamdswitch.js` changes, copy it to both `beamdswitch.js` and `tests/fixtures/beamdswitch/template.js` and paste it into `<script id="beamdswitch">`.
 
+## Workflow
+
+Every change follows the site's [add-visualization playbook](https://github.com/yujieteo/site/blob/main/skills/playbooks/add-visualization.md):
+
+1. Change and test it here first: run the commands above and check the page end to end in a browser.
+2. Run the first no-mistakes pass in this repository. It also checks the page in a shallow clone of yujieteo/site (`git clone --depth 1 https://github.com/yujieteo/site`) with the change ported in; build and browse only this page there, never the site's full build or test suite.
+3. Once this repository's pull request merges, port the page files byte for byte into `visuals/kent/` in yujieteo/site (this repository minus `tests/` and `.github/`) and run the second no-mistakes pass on that pull request, which runs only the site-level tests.
+
+Logic, end-to-end and other heavy tests live here, where they run only when this tool changes; the site adds none for it, so its test time stays flat.
+
 ## Conventions
 
 - `index.html` is one self-contained HTML file with no dependencies and no network access; it works from `file://` and offline.
