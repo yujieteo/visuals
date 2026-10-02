@@ -1,23 +1,23 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { assertBlockedSave, assertInlined, assertStandardDeck, assertTemplateCopy, load, openPage, read } from "./finance-beamdswitch-checks.mjs";
+import { SLUG, assertBlockedSave, assertInlined, assertStandardDeck, assertTemplateCopy, load, openPage, read } from "./finance-beamdswitch-checks.mjs";
 
-const SLUG = "convex-payoffs";
-const html = read(`index.html`);
-const { Beamdswitch, ConvexReport } = load(read(`beamdswitch.js`), read(`report.js`));
-const DATA = JSON.parse(read(`raw.json`)), META = JSON.parse(read(`meta.json`));
+const html = read("index.html");
+const { Beamdswitch, ConvexReport } = load(read("beamdswitch.js"), read("report.js"));
+const DATA = JSON.parse(read("raw.json")), META = JSON.parse(read("meta.json"));
 const IDS = DATA.map((q) => q.id);
+const cells = () => ({ ".cell": IDS.map((id) => ({ id })) });
 const strip = (s) => s.replace(/<[^>]+>/g, "");
 
 // The page's data as its deck reads it, taken from a run of the page itself.
-const page0 = openPage(SLUG, { ".cell": IDS.map((id) => ({ id })) });
+const page0 = openPage(cells());
 const PAGE = JSON.parse(JSON.stringify(page0.run("PAGE")));
 const deckFor = (id) => Beamdswitch.deck(ConvexReport.report(PAGE, { id }));
 
 test("the site's beamdswitch template is the copy the page inlines, with its report", () => {
-  assertTemplateCopy(SLUG);
-  assertInlined(html, "beamdswitch", read(`beamdswitch.js`), SLUG);
-  assertInlined(html, "report", read(`report.js`), SLUG);
+  assertTemplateCopy();
+  assertInlined(html, "beamdswitch", read("beamdswitch.js"));
+  assertInlined(html, "report", read("report.js"));
 });
 
 test("the deck's words are the page's: its quadrants, message, caveat and research basis", () => {
@@ -45,7 +45,7 @@ test("every quadrant's deck parses in beamdswitch as the standard template, narr
 });
 
 test("the beamdswitch button saves, and Copy deck copies, the deck of the quadrant shown", async () => {
-  const page = openPage(SLUG, { ".cell": IDS.map((id) => ({ id })) });
+  const page = openPage(cells());
   let out = await page.exportDeck();
   assert.deepEqual([out.name, out.text, out.copied], [`${SLUG}-beamdswitch.md`, deckFor("reversible-upside"), deckFor("reversible-upside")]);
   for (const id of ["costly-flat", "reversible-flat", "costly-upside"]) {
@@ -56,4 +56,4 @@ test("the beamdswitch button saves, and Copy deck copies, the deck of the quadra
   }
 });
 
-test("a blocked download points to Copy deck without touching the clipboard", () => assertBlockedSave(SLUG, { ".cell": IDS.map((id) => ({ id })) }));
+test("a blocked download points to Copy deck without touching the clipboard", () => assertBlockedSave(cells()));
