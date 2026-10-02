@@ -105,7 +105,7 @@ function cylinderFig(o = {}) {
   const vis = (P) => -Math.sin(Math.atan2(P[1], P[0])) > -1e-9 && P[1] <= 0;
   const circleAt = (z) => Array.from({ length: 97 }, (_, k) => { const a = (k * TAU) / 96; return [Math.cos(a), Math.sin(a), z]; });
   let b = "";
-  const top = circleAt(H).map((P) => c.p(P)), bot = circleAt(-H).map((P) => c.p(P));
+  const top = circleAt(H).map((P) => c.p(P));
   b += pgon([...circleAt(-H).filter((P) => P[1] <= 0).map((P) => c.p(P)).sort((a, z) => a[0] - z[0]), ...circleAt(H).filter((P) => P[1] <= 0).map((P) => c.p(P)).sort((a, z) => z[0] - a[0])], "sv-surf");
   b += pline(top, "sv-edge") + draw3(circleAt(-H), c, (P) => P[1] <= 0, "sv-edge", "sv-back");
   b += line(c.p([-1, 0, -H]), c.p([-1, 0, H]), "sv-edge") + line(c.p([1, 0, -H]), c.p([1, 0, H]), "sv-edge");

@@ -24,6 +24,16 @@ node --test 'tests/*.test.mjs'
 
 CI (`.github/workflows/ci.yml`) runs the build check and the tests on every push and pull request: `tests/etale-fundamental-group.test.mjs` covers the built files, the mathematics, the results table, the self-contained page, the WebMCP tools and the beamdswitch deck. In yujieteo/site the only checks for this laboratory are the site's integration tests: the published copy, the catalogue stub and the folder docs. The page also reruns a check for every row of its results table on load and marks it ✓. When the site's `templates/beamdswitch.js` changes, copy it to both `beamdswitch.js` and `tests/fixtures/beamdswitch/template.js`, then rebuild.
 
+## Workflow
+
+Every change follows the site's [add-visualization playbook](https://github.com/yujieteo/site/blob/main/skills/playbooks/add-visualization.md):
+
+1. Change and test it here first: run the commands above and check the page end to end in a browser.
+2. Run the first no-mistakes pass in this repository. It also checks the page in a shallow clone of yujieteo/site (`git clone --depth 1 https://github.com/yujieteo/site`) with the change ported in; build and browse only this page there, never the site's full build or test suite.
+3. Once this repository's pull request merges, port the page files byte for byte into `visuals/etale-fundamental-group/` in yujieteo/site (this repository minus `tests/` and `.github/`) and run the second no-mistakes pass on that pull request, which runs only the site-level tests.
+
+Logic, end-to-end and other heavy tests live here, where they run only when this tool changes; the site adds none for it, so its test time stays flat.
+
 ## Conventions
 
 - `index.html` is one self-contained HTML file with no dependencies and no network access (its Content-Security-Policy forbids requests).

@@ -110,7 +110,6 @@ function torusFig(o = {}) {
   const w = o.w ?? 320, h = o.h ?? 260, t = clamp(o.stage ?? 2, 0, 2), n = o.n ?? 0, tau = o.tau ?? TAU_LAT;
   const Wd = 4.4, Hd = 2.0, r = Hd / TAU, Rb = Wd / TAU, skew = Hd * (tau.re / tau.im);
   const c = cam(w / 2, h / 2 + 4, (o.scale ?? 0.2) * w, lerp(0.12, 0.62, t / 2));
-  const flat = (u, v) => [(u - 0.5) * Wd + (v - 0.5) * skew * (1 - Math.min(t, 1)), 0, (v - 0.5) * Hd];
   const at = (u, v) => {
     const th = TAU * (u - 0.5), ph = TAU * (v - 0.5);
     const F = [(u - 0.5) * Wd + (v - 0.5) * skew, 0, (v - 0.5) * Hd], Cy = [(u - 0.5) * Wd, -r * Math.cos(ph), r * Math.sin(ph)];

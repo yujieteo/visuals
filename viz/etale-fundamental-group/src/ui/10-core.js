@@ -108,4 +108,3 @@ function animate(key, from, to, dur, step, done, easeIt = false) {
   if (!rafOn) { rafOn = true; requestAnimationFrame(tick); }
 }
 const stopAnim = (key) => anims.delete(key);
-const animating = (key) => anims.has(key);
