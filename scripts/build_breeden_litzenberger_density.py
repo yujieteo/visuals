@@ -16,6 +16,7 @@ import re
 from html import escape
 from pathlib import Path
 from gallery import render_gallery
+from style_guide import THEME_SCRIPT, root_css
 
 ROOT = Path(__file__).resolve().parents[1]
 SLUG = "breeden-litzenberger-density"
@@ -99,13 +100,7 @@ def fmt(x, nd=6):
 
 
 def render(model, meta, tokens):
-    colors = tokens["colors"]
-    root_vars = (
-        f"--bg:{colors['background']};--fg:{colors['foreground']};--muted:{colors['secondary']};"
-        f"--surface:{colors['surface']};--border:{colors['border']};--focus:{colors['focus']};"
-        f"--mark:{colors['mark']};--selected:{colors['selected']};"
-        f"--sans:{tokens['font_sans']};--mono:{tokens['font_mono']}"
-    )
+    root_vars = root_css(tokens, "--mark:var(--c1);--selected:var(--hl)")
 
     model_json = json.dumps({
         "S0": model["S0"], "r": model["r"], "sigma": model["sigma"], "T": model["T"],
@@ -158,6 +153,7 @@ def render(model, meta, tokens):
     html = TEMPLATE
     for token, value in [
         ("@@ROOT_VARS@@", root_vars),
+        ("@@THEME_SCRIPT@@", THEME_SCRIPT),
         ("@@TITLE@@", title),
         ("@@DESC@@", desc),
         ("@@MODEL_JSON@@", model_json),
@@ -216,7 +212,7 @@ def verify(raw, model, meta):
 
     html = VIZ.read_text()
     assert html.count("<h1>") == 1 and html.count("<svg") == 1 and html.count("<section") >= 1
-    assert html.count("<script") == 3 and "<script src=" not in html
+    assert html.count("<script") == 4 and THEME_SCRIPT in html and "<script src=" not in html
     assert f'<script id="beamdswitch">\n{BEAMDSWITCH_JS.read_text()}</script>' in html
     assert f'<script id="report">\n{REPORT_JS.read_text()}</script>' in html
     assert 'id="save-beamdswitch"' in html and 'id="copy-beamdswitch"' in html
@@ -236,8 +232,8 @@ def verify(raw, model, meta):
 
 
 TEMPLATE = '''<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:,"><meta name="description" content="@@DESC@@"><title>@@TITLE@@</title><style>
-:root{@@ROOT_VARS@@;color-scheme:light}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 var(--sans)}main{width:min(100% - 2rem,72rem);margin:auto;padding:clamp(2rem,6vw,4rem) 0 1.5rem}h1{max-width:22ch;margin:0 0 .8rem;font-size:clamp(1.9rem,6vw,3.4rem);line-height:1.05;letter-spacing:-.035em}.lede{max-width:64ch;margin:.4rem 0 1rem}.method,.caveat{max-width:72ch;color:var(--muted)}.method{font-size:.95rem}.derivation{max-width:72ch;margin:1.5rem 0;padding:1rem 1.1rem;background:var(--surface);border-radius:.5rem;font:15px/1.7 var(--mono);overflow-x:auto}.derivation .step{display:block}.derivation .result{font-weight:700;color:var(--selected)}.derivation .why{color:var(--muted)}.controls{display:flex;flex-wrap:wrap;gap:.75rem 1.5rem;align-items:center;margin:1.25rem 0 .5rem}.control{flex:1 1 18rem}.control label{display:block;font-size:.9rem;color:var(--muted);margin-bottom:.15rem}.readout{margin:.25rem 0 .75rem;font:14px var(--mono);color:var(--muted);min-height:1.2em}.seg{display:inline-flex;border:1px solid var(--border);border-radius:.5rem;overflow:hidden}.seg button{appearance:none;border:0;border-left:1px solid var(--border);background:var(--bg);color:var(--fg);font:600 15px/1 var(--sans);padding:0 1rem;min-height:44px;min-width:44px;cursor:pointer}.seg button:first-child{border-left:0}.seg button[aria-pressed="true"]{background:var(--mark);color:#fff}.reset{appearance:none;border:1px solid var(--border);border-radius:.5rem;background:var(--bg);color:var(--fg);font:600 15px/1 var(--sans);padding:0 1rem;min-height:44px;cursor:pointer}button:focus-visible,input:focus-visible{outline:3px solid var(--focus);outline-offset:2px}input[type=range]{width:100%;min-height:44px;margin:0;accent-color:var(--mark)}svg{display:block;width:100%;height:auto;margin-top:.5rem}.axis{fill:var(--muted);font:13px var(--mono)}.tick{stroke:var(--border)}.grid{stroke:var(--border);stroke-dasharray:2 4}.call{fill:none;stroke:var(--fg);stroke-width:2}.dens{fill:none;stroke:var(--selected);stroke-width:2}.bracket{stroke:var(--muted)}.bracket-dot{fill:var(--mark)}.chord{stroke:var(--mark);stroke-width:1.5}.sag{stroke:var(--selected);stroke-width:2}.bar{fill:var(--mark);fill-opacity:.45}.density-dot{fill:var(--selected);stroke:var(--bg);stroke-width:2}.note{fill:var(--muted);font:12px var(--mono)}.panel-label{fill:var(--fg);font:600 13px var(--sans)}.xcheck{margin:1.5rem 0;max-width:72ch}.xcheck table{border-collapse:collapse;font:14px/1.5 var(--mono)}.xcheck th,.xcheck td{text-align:right;padding:.3rem .8rem .3rem 0;border-bottom:1px solid var(--border)}.xcheck th:first-child,.xcheck td:first-child{text-align:left}.xcheck th{color:var(--muted);font-weight:600}.xcheck .limit{font-weight:700}.caveat{margin-top:1.25rem;font-size:.9rem}.sources{margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--border);color:var(--muted);font-size:.9rem}.sources ol{padding-left:1.2rem;margin:.4rem 0}.sources li{padding:.15rem 0}.sources a{color:inherit;text-underline-offset:.18em}footer{padding:1.5rem 0 2.5rem;border-top:1px solid var(--border);color:var(--muted);font-size:.875rem;width:min(100% - 2rem,72rem);margin:auto}footer a{display:inline-block;padding:.7rem 0;color:inherit}.deck-row{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin:1rem 0 0}.deck-row .status{font-size:.9rem;color:var(--muted)}.deck-hint{max-width:72ch;margin:.4rem 0 0;font-size:.9rem;color:var(--muted)}.deck-hint a{color:inherit}@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}@media (max-width:430px){.seg button{padding:0 .75rem}.derivation{font-size:13.5px}}
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:,"><meta name="description" content="@@DESC@@"><title>@@TITLE@@</title>@@THEME_SCRIPT@@<style>
+@@ROOT_VARS@@*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 var(--sans);letter-spacing:-.011em;-webkit-font-smoothing:antialiased}main{width:min(100% - 2rem,72rem);margin:auto;padding:clamp(1.25rem,5vw,3rem) 0 1.5rem}h1{max-width:20ch;margin:.35rem 0 .8rem;font-size:clamp(2rem,6vw,3.25rem);font-weight:700;line-height:1.04;letter-spacing:-.045em}.lede{max-width:66ch;margin:.4rem 0 1rem;font-size:1.125rem}.method,.caveat{max-width:72ch;color:var(--muted)}.method{font-size:.875rem}.derivation{max-width:72ch;margin:1.5rem 0;padding:1rem 1.1rem;background:var(--surface);border-radius:.5rem;font:15px/1.7 var(--mono);overflow-x:auto}.derivation .step{display:block}.derivation .result{font-weight:700;color:var(--selected)}.derivation .why{color:var(--muted)}.controls{display:flex;flex-wrap:wrap;gap:.75rem 1.5rem;align-items:center;margin:1.25rem 0 .5rem}.control{flex:1 1 18rem}.control label{display:block;font-size:.875rem;color:var(--muted);margin-bottom:.15rem}.readout{margin:.25rem 0 .75rem;font:14px var(--mono);font-variant-numeric:tabular-nums;color:var(--muted);min-height:1.2em}.seg{display:inline-flex;border:1px solid var(--control);border-radius:999px;overflow:hidden}.seg button{appearance:none;border:0;background:var(--bg);color:var(--fg);font:400 .875rem/1 var(--mono);font-variant-numeric:tabular-nums;padding:0 1rem;min-height:44px;min-width:44px;cursor:pointer}.seg button:hover,.reset:hover{background:var(--surface)}.seg button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}.reset{appearance:none;border:1px solid var(--control);border-radius:999px;background:var(--bg);color:var(--fg);font:400 .875rem/1 var(--sans);padding:0 1rem;min-height:44px;cursor:pointer}button:focus-visible,input:focus-visible{outline:2px solid var(--focus);outline-offset:2px}input[type=range]{width:100%;min-height:44px;margin:0;accent-color:var(--focus)}svg{display:block;width:100%;height:auto;margin-top:.5rem}.axis{fill:var(--muted);font:13px var(--mono);font-variant-numeric:tabular-nums}.tick{stroke:var(--grid)}.grid{stroke:var(--grid)}.call{fill:none;stroke:var(--fg);stroke-width:2}.dens{fill:none;stroke:var(--selected);stroke-width:2}.bracket{stroke:var(--muted)}.bracket-dot{fill:var(--mark)}.chord{stroke:var(--mark);stroke-width:1.5}.sag{stroke:var(--selected);stroke-width:2}.bar{fill:var(--mark);fill-opacity:.45}.density-dot{fill:var(--selected);stroke:var(--bg);stroke-width:2}.note{fill:var(--muted);font:12px var(--mono)}.panel-label{fill:var(--fg);font:600 13px var(--sans)}.xcheck{margin:1.5rem 0;max-width:72ch}.xcheck table{border-collapse:collapse;font:14px/1.5 var(--mono)}.xcheck th,.xcheck td{text-align:right;padding:.3rem .8rem .3rem 0;border-bottom:1px solid var(--border)}.xcheck th:first-child,.xcheck td:first-child{text-align:left}.xcheck th{color:var(--muted);font-weight:600}.xcheck .limit{font-weight:700}.caveat{margin-top:1.25rem;font-size:.875rem}.sources{margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--border);color:var(--muted);font-size:.875rem}.sources ol{padding-left:1.2rem;margin:.4rem 0}.sources li{padding:.15rem 0}.sources a{color:inherit;text-underline-offset:.18em}footer{padding:1.5rem 0 2.5rem;border-top:1px solid var(--border);color:var(--muted);font-size:.875rem;width:min(100% - 2rem,72rem);margin:auto}footer a{display:inline-block;padding:.7rem 0;color:inherit}.deck-row{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin:1rem 0 0}.deck-row .status{font-size:.875rem;color:var(--muted)}.deck-hint{max-width:72ch;margin:.4rem 0 0;font-size:.875rem;color:var(--muted)}.deck-hint a{color:inherit}@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}@media (max-width:430px){.seg button{padding:0 .75rem}.derivation{font-size:13.5px}}
 </style></head><body><main>
 <h1>@@TITLE@@.</h1>
 <p class="lede">Differentiate a call price twice with respect to its strike <em>K</em>. Times <em>e<sup>rT</sup></em>, that second derivative is the market-implied probability density of the stock ending at that strike. The kink in a call&rsquo;s payoff is the reason: its second <em>distributional</em> derivative is a Dirac delta.</p>
