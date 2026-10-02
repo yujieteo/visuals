@@ -5,9 +5,7 @@ in-tab and cross-tab links, backlinks, inline `#tags` and Ctrl/Cmd+K search.
 `index.html` is one self-contained file that works offline, with no build step
 and no runtime network requests. MIT licence (see `LICENSE`).
 
-Live at <https://teoyujie.org/visuals/md-explorer/>. The build spec named the
-page `visuals/md-explorer.html`; the site keeps one folder per visualization, so
-it is `visuals/md-explorer/index.html`.
+Live at <https://teoyujie.org/visuals/md-explorer/>.
 
 ## What it does
 
