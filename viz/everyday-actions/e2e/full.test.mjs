@@ -4,7 +4,7 @@
 // the reconsideration ledger lives in localStorage and Restore examples
 // resets it; the only export is the beamdswitch deck of the charts as set.
 import assert from "node:assert/strict";
-import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../lib/full.js";
+import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../../e2e/lib/full.js";
 
 /** @param {import("playwright").Page} page */
 const query = (page) => page.evaluate(() => Object.fromEntries(new URLSearchParams(location.search)));

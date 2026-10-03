@@ -3,7 +3,7 @@
 // switch and the material preset drive it; the inputs JSON round-trips through
 // Import; the Markdown report and the beamdswitch deck save the tab as set.
 import assert from "node:assert/strict";
-import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../lib/full.js";
+import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../../e2e/lib/full.js";
 
 /** @param {import("playwright").Page} page */
 const stats = async (page) => (await page.locator("#stats").textContent() ?? "").replace(/\s+/g, " ").trim();

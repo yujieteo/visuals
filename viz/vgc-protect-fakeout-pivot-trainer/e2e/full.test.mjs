@@ -6,9 +6,9 @@
 // beamdswitch export; those checks assert the canonical contract and are
 // recorded as findings in manifest/vgc-protect-fakeout-pivot-trainer.json.
 import assert from "node:assert/strict";
-import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, jsonRoundTrip, markdownExport, saved } from "../../lib/full.js";
+import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, jsonRoundTrip, markdownExport, saved } from "../../../e2e/lib/full.js";
 
-/** @typedef {import("../../lib/full.js").Opened} Opened */
+/** @typedef {import("../../../e2e/lib/full.js").Opened} Opened */
 
 /**
  * Open the lab, wait for the first analysis, run `body`, check it stayed clean, and close it.

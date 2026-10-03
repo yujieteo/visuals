@@ -8,7 +8,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 import { isArtifactUrl } from "../lib/browser.js";
-import { discoverVisuals } from "../lib/catalogue.js";
+import { discoverVisuals, discoverVisualsRepo } from "../lib/catalogue.js";
 import { checkOptions } from "../lib/manifest.js";
 import { startResults } from "../lib/results.js";
 import { serveArtifacts } from "../lib/server.js";
@@ -16,6 +16,7 @@ import { stageVisual } from "../lib/stage.js";
 import { selectShard } from "../lib/targets.js";
 
 const SITE = fileURLToPath(new URL("fixtures/site", import.meta.url));
+const VISUALS = fileURLToPath(new URL("fixtures/visuals", import.meta.url));
 
 test("discovery finds catalogued, pinned and uncatalogued visuals", () => {
   const visuals = discoverVisuals(SITE);
@@ -33,15 +34,35 @@ test("discovery finds catalogued, pinned and uncatalogued visuals", () => {
   assert.equal(gamma.owner, "https://github.com/yujieteo/site");
 });
 
+test("discovery reads every viz/<slug>/visual.json of a visuals checkout", () => {
+  const [delta] = discoverVisualsRepo(VISUALS);
+  assert.deepEqual({ slug: delta.slug, source: delta.source, htmlPath: delta.htmlPath, dataPath: delta.dataPath, assets: delta.assets, pin: delta.pin },
+    { slug: "delta", source: "visuals", htmlPath: "viz/delta/index.html", dataPath: "viz/delta/raw.json", assets: ["viz/delta/probly.csv"], pin: null });
+  assert.equal(delta.offlineClaim, true);
+  assert.equal(delta.owner, "https://github.com/yujieteo/visuals");
+});
+
+test("a visual of the visuals checkout stages from its folder as the site publishes it", () => {
+  const root = mkdtempSync(join(tmpdir(), "visuals-e2e-harness-"));
+  try {
+    const out = stageVisual(discoverVisualsRepo(VISUALS)[0], { siteRoot: SITE, visualsRepo: VISUALS, stagingRoot: root });
+    assert.match(readFileSync(join(out, "index.html"), "utf8"), /<title>Delta<\/title>/);
+    assert.deepEqual(JSON.parse(readFileSync(join(out, "data.json"), "utf8")), { delta: true });
+    assert.equal(readFileSync(join(out, "probly.csv"), "utf8"), "x\n1\n");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("staging publishes index.html, data.json and assets as the site does", () => {
-  const root = mkdtempSync(join(tmpdir(), "technical-e2e-harness-"));
+  const root = mkdtempSync(join(tmpdir(), "visuals-e2e-harness-"));
   try {
     const [alpha, beta] = discoverVisuals(SITE);
     const out = stageVisual(alpha, { siteRoot: SITE, visualsRepo: null, stagingRoot: root });
     assert.match(readFileSync(join(out, "index.html"), "utf8"), /<title>Alpha<\/title>/);
     assert.deepEqual(JSON.parse(readFileSync(join(out, "data.json"), "utf8")), { alpha: true });
     assert.equal(readFileSync(join(out, "extra.csv"), "utf8"), "a,b\n1,2\n");
-    assert.throws(() => stageVisual(beta, { siteRoot: SITE, visualsRepo: null, stagingRoot: root }), /E2E_VISUALS/);
+    assert.throws(() => stageVisual(beta, { siteRoot: SITE, visualsRepo: null, stagingRoot: root }), /no checkout of it/);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -95,7 +116,7 @@ test("only the artifact's own URLs count as its requests", () => {
 });
 
 test("a rerun replaces its own results and leaves other runs' alone", () => {
-  const dir = mkdtempSync(join(tmpdir(), "technical-e2e-results-"));
+  const dir = mkdtempSync(join(tmpdir(), "visuals-e2e-results-"));
   const saved = process.env.E2E_RESULTS;
   process.env.E2E_RESULTS = dir;
   try {
@@ -124,12 +145,12 @@ test("a rerun replaces its own results and leaves other runs' alone", () => {
 });
 
 test("recording findings keeps what a run did not retest and drops what now passes", () => {
-  const root = mkdtempSync(join(tmpdir(), "technical-e2e-record-"));
+  const root = mkdtempSync(join(tmpdir(), "visuals-e2e-record-"));
   try {
-    const [results, manifests] = ["results", "manifest"].map((n) => join(root, n));
-    for (const d of [results, manifests]) mkdirSync(d);
+    const results = join(root, "results"), manifests = join(root, "viz", "alpha", "e2e");
+    for (const d of [results, manifests]) mkdirSync(d, { recursive: true });
     const finding = (/** @type {string} */ check, /** @type {string[]} */ projects) => ({ check, projects, status: "finding", evidence: "old", owner: "o" });
-    writeFileSync(join(manifests, "alpha.json"), JSON.stringify({ findings: [
+    writeFileSync(join(manifests, "manifest.json"), JSON.stringify({ findings: [
       finding("console-errors", ["*"]),
       finding("file-url", ["chromium-desktop"]),
       finding("network", ["*"]),
@@ -140,8 +161,8 @@ test("recording findings keeps what a run did not retest and drops what now pass
     writeFileSync(join(results, "chromium-desktop.baseline.jsonl"), [
       line("console-errors", "fail"), line("file-url", "skip"), line("network", "pass"), line("opens", "pass"),
     ].join("\n"));
-    execFileSync(process.execPath, [fileURLToPath(new URL("../scripts/record-findings.js", import.meta.url)), results, manifests]);
-    const findings = JSON.parse(readFileSync(join(manifests, "alpha.json"), "utf8")).findings;
+    execFileSync(process.execPath, [fileURLToPath(new URL("../scripts/record-findings.js", import.meta.url)), results, root]);
+    const findings = JSON.parse(readFileSync(join(manifests, "manifest.json"), "utf8")).findings;
     assert.deepEqual(Object.fromEntries(findings.map((/** @type {{ check: string, projects: string[] }} */ f) => [f.check, f.projects])), {
       "console-errors": ["*"],
       "file-url": ["chromium-desktop"],

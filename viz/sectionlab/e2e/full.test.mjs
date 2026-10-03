@@ -3,7 +3,7 @@
 // part, Ctrl/Cmd+Z undoes); choosing a preset replaces the model; the Markdown
 // report carries a YAML model block that imports back; beamdswitch saves a deck.
 import assert from "node:assert/strict";
-import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../lib/full.js";
+import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../../e2e/lib/full.js";
 
 /** @param {import("playwright").Page} page */
 const stats = async (page) => (await page.locator("#stats").textContent() ?? "").replace(/\s+/g, " ").trim();

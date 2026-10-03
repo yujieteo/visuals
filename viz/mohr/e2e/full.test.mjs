@@ -3,7 +3,7 @@
 // focused 2D circle; JSON, Markdown and a beamdswitch deck download, and the
 // JSON imports back through the paste box.
 import assert from "node:assert/strict";
-import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../lib/full.js";
+import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../../e2e/lib/full.js";
 
 /** @param {import("playwright").Page} page */
 const theta = (page) => page.locator("#theta").inputValue();

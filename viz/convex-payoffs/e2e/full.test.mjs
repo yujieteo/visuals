@@ -3,7 +3,7 @@
 // Copy deck buttons export a narrated deck of the quadrant shown. The page
 // keeps no state in the URL and has no palette or Reset.
 import assert from "node:assert/strict";
-import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../lib/full.js";
+import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../../e2e/lib/full.js";
 
 const QUADRANTS = ["reversible-upside", "reversible-flat", "costly-upside", "costly-flat"];
 /**

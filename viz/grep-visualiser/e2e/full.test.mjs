@@ -4,7 +4,7 @@
 // keeps no state in the URL and has no command palette, Reset control or file
 // export, which are recorded as findings.
 import assert from "node:assert/strict";
-import { assertClean, assertDarkMode, assertReducedMotion, exportJson, fullSuite, output } from "../../lib/full.js";
+import { assertClean, assertDarkMode, assertReducedMotion, exportJson, fullSuite, output } from "../../../e2e/lib/full.js";
 
 /**
  * Type a pattern into the first pattern field and wait for the result to follow it.

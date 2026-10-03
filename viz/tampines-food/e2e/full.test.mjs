@@ -6,7 +6,7 @@
 // Markdown export apart from the deck; those checks assert the canonical
 // contract and are recorded as findings in manifest/tampines-food.json.
 import assert from "node:assert/strict";
-import { assertBeamdswitchDeck, assertDarkMode, assertReducedMotion, fullSuite, jsonRoundTrip, markdownExport, resetsToDefaults, saved, using } from "../../lib/full.js";
+import { assertBeamdswitchDeck, assertDarkMode, assertReducedMotion, fullSuite, jsonRoundTrip, markdownExport, resetsToDefaults, saved, using } from "../../../e2e/lib/full.js";
 
 /** @param {import("playwright").Page} page */
 const status = (page) => page.locator("#status").innerText();

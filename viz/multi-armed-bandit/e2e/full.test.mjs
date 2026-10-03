@@ -3,7 +3,7 @@
 // the hours plan autosave; Reset and an import ask before replacing an edited
 // experiment; JSON, the hours plan in Markdown and a beamdswitch deck download.
 import assert from "node:assert/strict";
-import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../lib/full.js";
+import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../../e2e/lib/full.js";
 
 /** @param {import("playwright").Page} page */
 const firstSuccesses = (page) => page.locator("#vt-body input[id^='s-']").first();

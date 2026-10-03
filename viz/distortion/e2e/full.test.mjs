@@ -5,7 +5,7 @@
 // phone the controls live in a bottom sheet the checks open first. The page
 // keeps no state in the URL and has no palette.
 import assert from "node:assert/strict";
-import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../lib/full.js";
+import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../../e2e/lib/full.js";
 
 /**
  * @param {import("playwright").Page} page

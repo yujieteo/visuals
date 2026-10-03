@@ -4,7 +4,7 @@
 // the detail panel; the lane and item shown download as a beamdswitch deck.
 // It has no URL state, history, palette, reset, JSON or Markdown export.
 import assert from "node:assert/strict";
-import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, exportedMarkdown, fullSuite, saved } from "../../lib/full.js";
+import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, exportedMarkdown, fullSuite, saved } from "../../../e2e/lib/full.js";
 
 /** @param {import("playwright").Page} page */
 const detailTitle = (page) => page.locator("#detail h2").textContent();

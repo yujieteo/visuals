@@ -4,7 +4,7 @@
 // palette; "Reset to defaults" restores a lab; the Export menu copies or saves
 // slide, technique and course decks for beamdswitch.
 import assert from "node:assert/strict";
-import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, blur, fullSuite, saved } from "../../lib/full.js";
+import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, blur, fullSuite, saved } from "../../../e2e/lib/full.js";
 
 /** @param {import("playwright").Page} page */
 const title = (page) => page.locator("#lab-title").textContent();

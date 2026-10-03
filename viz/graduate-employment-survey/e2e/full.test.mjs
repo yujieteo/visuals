@@ -4,7 +4,7 @@
 // value. It has no editable state, so the URL, history, Reset, JSON and
 // palette checks do not apply; the deck buttons save and copy a beamdswitch deck.
 import assert from "node:assert/strict";
-import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../lib/full.js";
+import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../../e2e/lib/full.js";
 
 /** @param {import("playwright").Page} page */
 const tip = (page) => page.locator("#tip").innerText();

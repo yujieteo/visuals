@@ -4,7 +4,7 @@
 // presentation and the arrow keys step it; each laboratory has Reset
 // example; the BeamMD Switch menu exports decks of the current lesson.
 import assert from "node:assert/strict";
-import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, at, blur, fullSuite, saved } from "../../lib/full.js";
+import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, at, blur, fullSuite, saved } from "../../../e2e/lib/full.js";
 
 /**
  * @param {import("playwright").Page} page

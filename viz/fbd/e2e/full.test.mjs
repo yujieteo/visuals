@@ -3,7 +3,7 @@
 // drawings, starts a new drawing (the reset), saves and reopens JSON, and
 // saves Markdown and a beamdswitch deck; Escape returns to the Select tool.
 import assert from "node:assert/strict";
-import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../lib/full.js";
+import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../../e2e/lib/full.js";
 
 /**
  * Choose a File menu item by its visible name, accepting any confirmation.

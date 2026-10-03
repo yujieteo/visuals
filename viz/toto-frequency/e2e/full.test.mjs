@@ -6,7 +6,7 @@
 // checks assert the canonical contract and are recorded as findings in
 // manifest/toto-frequency.json.
 import assert from "node:assert/strict";
-import { assertBeamdswitchDeck, assertDarkMode, assertReducedMotion, fullSuite, jsonRoundTrip, markdownExport, resetsToDefaults, saved, using } from "../../lib/full.js";
+import { assertBeamdswitchDeck, assertDarkMode, assertReducedMotion, fullSuite, jsonRoundTrip, markdownExport, resetsToDefaults, saved, using } from "../../../e2e/lib/full.js";
 
 /**
  * @param {import("playwright").Page} page

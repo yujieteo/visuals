@@ -5,7 +5,7 @@
 // tour; Cmd/Ctrl+K opens the command palette; Reset restores the torus over
 // ℤ; the beamdswitch button saves a narrated deck of the space shown.
 import assert from "node:assert/strict";
-import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../lib/full.js";
+import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../../e2e/lib/full.js";
 
 /** @param {import("playwright").Page} page */
 const result = (page) => page.locator("#result").innerText();

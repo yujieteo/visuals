@@ -3,7 +3,7 @@
 // finding in the detail panel by click, Enter or Space; Reset view (or
 // Escape) returns to the default panel; the only export is the deck.
 import assert from "node:assert/strict";
-import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../lib/full.js";
+import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../../e2e/lib/full.js";
 
 /** @param {import("playwright").Page} page */
 const detail = (page) => page.locator("#detail").innerText();

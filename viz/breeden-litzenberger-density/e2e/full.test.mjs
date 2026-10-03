@@ -4,7 +4,7 @@
 // the Black-Scholes density 0.019724. Reset restores K = 100, Δ = 2; the
 // beamdswitch and Copy deck buttons export a deck of the strike shown.
 import assert from "node:assert/strict";
-import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../lib/full.js";
+import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../../e2e/lib/full.js";
 
 /** @param {import("playwright").Page} page */
 const readout = (page) => page.locator("#readout").innerText();

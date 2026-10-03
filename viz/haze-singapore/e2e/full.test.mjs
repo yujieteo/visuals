@@ -5,7 +5,7 @@
 // page keeps no state in the URL and has no command palette, Reset control,
 // JSON export or session Markdown, which are recorded as findings.
 import assert from "node:assert/strict";
-import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, output, saved } from "../../lib/full.js";
+import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, output, saved } from "../../../e2e/lib/full.js";
 
 /** @param {import("playwright").Page} page */
 const now = (page) => page.locator("#now").innerText();

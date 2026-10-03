@@ -3,7 +3,7 @@
 // arrow keys step the guided proof; Cmd/Ctrl+K opens the command palette;
 // Export writes a beamdswitch deck.
 import assert from "node:assert/strict";
-import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, at, blur, fullSuite, saved } from "../../lib/full.js";
+import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, at, blur, fullSuite, saved } from "../../../e2e/lib/full.js";
 
 await fullSuite("snake-lemma", {
   "url-state": async ({ open }) => {

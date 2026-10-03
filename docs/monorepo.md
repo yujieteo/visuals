@@ -88,10 +88,11 @@ procedure of porting a change into the site.
 
 ## Browser checks
 
-The technical E2E checks for one visual (its manifest and its full browser test in yujieteo/technical-e2e)
-move into that visual's folder, and the shared harness moves to the root, so a visual's browser checks run
-only when it changes, like its other tests, and a failure or recorded finding stays with its visual. The
-combined findings list is generated in CI from the folders instead of being committed.
+The technical E2E checks moved here from yujieteo/technical-e2e with their history: each visual's manifest
+and fuller checks into its folder (`viz/<slug>/e2e/`), the shared harness to `e2e/`. CI runs a visual's
+browser checks only when it changes, so a failure or recorded finding stays with its visual, and runs every
+visual's once a day against new browser releases, with the two visuals the site keeps itself (their checks
+are in `e2e/site/`). The combined findings list is generated in CI from the manifests, never committed.
 
 ## Review by risk
 

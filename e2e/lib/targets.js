@@ -1,9 +1,10 @@
 // Decide what the suite tests, from the environment:
 //
-//   E2E_SITE      a clone of yujieteo/site; every visual in its catalogue is
-//                 staged and tested (default .cache/site)
-//   E2E_VISUALS   a clone of yujieteo/visuals, for the pinned visuals
-//                 (default .cache/visuals)
+//   E2E_VISUALS   the yujieteo/visuals checkout whose viz/*/ visuals are
+//                 staged and tested (default: this repository)
+//   E2E_SITE      a clone of yujieteo/site, to also test the visuals the site
+//                 keeps itself (visuals/<slug>/; default .cache/site, skipped
+//                 when absent)
 //   E2E_BASE_URL  test already-served artifacts at <base>/<slug>/ instead,
 //                 e.g. http://localhost:8000/visuals for a built site/
 //   E2E_ARTIFACT  test one artifact: a folder holding index.html (such as a
@@ -15,7 +16,7 @@ import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, statSync } fr
 import { tmpdir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { discoverVisuals } from "./catalogue.js";
+import { discoverVisuals, discoverVisualsRepo } from "./catalogue.js";
 import { serveArtifacts } from "./server.js";
 import { stageVisual } from "./stage.js";
 
@@ -95,7 +96,14 @@ function adHocVisual(slug, folder) {
  */
 export async function loadTargets(options = {}) {
   const siteRoot = dirFromEnv("E2E_SITE", ".cache/site");
-  const catalogue = existsSync(join(siteRoot, "data", "visuals")) ? discoverVisuals(siteRoot) : null;
+  const visualsRepo = process.env.E2E_VISUALS ? resolve(process.env.E2E_VISUALS) : resolve(ROOT, "..");
+  // The visuals repository's own visuals, then any the site keeps itself (a site stub for a visual that
+  // now lives in viz/ is the older copy, so the folder wins).
+  const own = existsSync(join(visualsRepo, "viz")) ? discoverVisualsRepo(visualsRepo) : [];
+  const ownSlugs = new Set(own.map((v) => v.slug));
+  const site = existsSync(join(siteRoot, "data", "visuals"))
+    ? discoverVisuals(siteRoot).filter((v) => v.source === "site" && !ownSlugs.has(v.slug)) : [];
+  const catalogue = own.length || site.length ? [...own, ...site].sort((a, b) => a.slug.localeCompare(b.slug)) : null;
   const bySlug = new Map((catalogue ?? []).map((v) => [v.slug, v]));
   /** @type {Artifact[]} */
   let artifacts;
@@ -114,10 +122,9 @@ export async function loadTargets(options = {}) {
       artifacts = [{ slug, visual: bySlug.get(slug) ?? adHocVisual(slug, folder), folder, entry: isDir ? "index.html" : basename(path), remoteUrl: null, stageError: null }];
     }
   } else {
-    if (!catalogue) throw new Error(`No artifacts to test: set E2E_SITE to a clone of yujieteo/site (looked in ${siteRoot}), or E2E_ARTIFACT to one artifact. \`npm run fetch-targets\` clones the site and visuals into .cache/.`);
-    const visualsRepo = dirFromEnv("E2E_VISUALS", ".cache/visuals");
+    if (!catalogue) throw new Error(`No artifacts to test: no viz/ in ${visualsRepo} and no yujieteo/site clone in ${siteRoot}; set E2E_VISUALS or E2E_SITE, or E2E_ARTIFACT to one artifact.`);
     const base = process.env.E2E_BASE_URL?.replace(/\/$/, "");
-    const tmpRoot = process.env.E2E_TMP ?? join(tmpdir(), "technical-e2e");
+    const tmpRoot = process.env.E2E_TMP ?? join(tmpdir(), "visuals-e2e");
     mkdirSync(tmpRoot, { recursive: true });
     stagingRoot = mkdtempSync(join(tmpRoot, "staging-"));
     const root = stagingRoot;
@@ -126,7 +133,7 @@ export async function loadTargets(options = {}) {
       /** @type {Artifact} */
       const artifact = { slug: visual.slug, visual, folder: null, entry: "index.html", remoteUrl: base ? `${base}/${visual.slug}/` : null, stageError: null };
       try {
-        artifact.folder = stageVisual(visual, { siteRoot, visualsRepo: existsSync(visualsRepo) ? visualsRepo : null, stagingRoot: root });
+        artifact.folder = stageVisual(visual, { siteRoot, visualsRepo, stagingRoot: root });
       } catch (error) {
         artifact.stageError = error instanceof Error ? error.message : String(error);
       }

@@ -3,7 +3,7 @@
 // and a Reset button; Show why unfolds the derivation; the decision downloads
 // as a narrated beamdswitch deck.
 import assert from "node:assert/strict";
-import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, exportedMarkdown, fullSuite, saved } from "../../lib/full.js";
+import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, exportedMarkdown, fullSuite, saved } from "../../../e2e/lib/full.js";
 
 /** @param {import("playwright").Page} page */
 const recommendation = (page) => page.locator("#rec-sub").textContent();

@@ -3,7 +3,7 @@
 // chart, and the measure shown downloads as a narrated beamdswitch deck. It has
 // no URL state, history, palette, reset or JSON export.
 import assert from "node:assert/strict";
-import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../lib/full.js";
+import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../../e2e/lib/full.js";
 
 /** @param {import("playwright").Page} page @param {string} metric */
 const pressed = (page, metric) => page.locator(`button[data-metric=${metric}]`).getAttribute("aria-pressed");

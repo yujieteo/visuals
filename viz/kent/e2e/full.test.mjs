@@ -8,7 +8,7 @@ import assert from "node:assert/strict";
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, output, saved } from "../../lib/full.js";
+import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, output, saved } from "../../../e2e/lib/full.js";
 
 /** @param {import("playwright").Page} page */
 const percent = (page) => page.locator("#p-input").inputValue();

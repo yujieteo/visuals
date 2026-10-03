@@ -5,7 +5,7 @@
 // URL, has no command palette and no JSON file export, which are recorded as
 // findings.
 import assert from "node:assert/strict";
-import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, exportJson, fullSuite, output, saved } from "../../lib/full.js";
+import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, exportJson, fullSuite, output, saved } from "../../../e2e/lib/full.js";
 
 /**
  * Wait for the inference the page starts on load to finish ("Done: … theories").

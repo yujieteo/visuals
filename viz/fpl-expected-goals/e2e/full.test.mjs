@@ -2,7 +2,7 @@
 // checks. A scatter of players with position filters and focusable points;
 // the only export is the beamdswitch deck of the players shown.
 import assert from "node:assert/strict";
-import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../lib/full.js";
+import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../../e2e/lib/full.js";
 
 /** @param {import("playwright").Page} page */
 const points = (page) => page.locator("#chart circle.pt").count();

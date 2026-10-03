@@ -3,7 +3,7 @@
 // presentation steps with the arrow keys and closes with Escape; the only
 // export is the beamdswitch deck, under the "Export a narrated talk" disclosure.
 import assert from "node:assert/strict";
-import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, blur, fullSuite, saved } from "../../lib/full.js";
+import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, blur, fullSuite, saved } from "../../../e2e/lib/full.js";
 
 /**
  * @param {import("playwright").Page} page

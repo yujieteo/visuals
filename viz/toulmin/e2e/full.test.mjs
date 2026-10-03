@@ -7,7 +7,7 @@
 // assert the canonical contract and are recorded as findings in
 // manifest/toulmin.json.
 import assert from "node:assert/strict";
-import { assertBeamdswitchDeck, assertDarkMode, assertReducedMotion, fullSuite, markdownExport, saved, using } from "../../lib/full.js";
+import { assertBeamdswitchDeck, assertDarkMode, assertReducedMotion, fullSuite, markdownExport, saved, using } from "../../../e2e/lib/full.js";
 
 /**
  * @param {import("playwright").Page} page

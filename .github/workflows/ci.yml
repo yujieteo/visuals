@@ -1,8 +1,11 @@
 # CI tests only what a change touches (docs/monorepo.md). scripts/changed.py maps the diff to the visuals
 # it changes, and each gets its own job on a sparse checkout of the shared tooling plus its own folder, so
-# its checks cannot read another visual's folder and its failure cannot hide or fail another's. A change to
-# shared tooling selects every visual. The repository job runs on every change: the shared tooling's tests
-# and type check, every visual.json, and the generated catalogue, kept as an artifact and never committed.
+# its checks cannot read another visual's folder and its failure cannot hide or fail another's. The browser
+# jobs run the changed visuals' browser checks (e2e/, each visual's e2e/) in one job per browser project.
+# A change to shared tooling selects every visual. The repository job runs on every change: the shared
+# tooling's tests and type check, every visual.json, and the generated catalogue, kept as an artifact and
+# never committed. A daily run repeats every visual's browser checks, and the site's own, against new
+# browser releases.
 name: CI
 
 on:
@@ -10,6 +13,8 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+  schedule:
+    - cron: "17 3 * * *"
 
 permissions:
   contents: read
@@ -63,6 +68,9 @@ jobs:
         with:
           node-version: "22"
           cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            e2e/package-lock.json
       - name: Every visual.json against the schema, the folder rules, no absolute home paths
         run: python3 scripts/check_repo.py
       - name: Tests of the shared tooling
@@ -72,6 +80,11 @@ jobs:
       # tsc checks the JSDoc types of the shared tooling (tsconfig.json), with the versions package.json pins.
       - name: Type-check the shared tooling
         run: npm ci && npm run typecheck
+      # The browser checks' harness (e2e/) and every visual's e2e/ checks: tsc and the harness's own tests,
+      # without a browser. The browser jobs below run the checks themselves.
+      - name: Type-check and test the browser harness
+        working-directory: e2e
+        run: npm ci && npm run typecheck && npm run test:harness
       - name: Generate the catalogue and gallery
         run: python3 scripts/build_catalogue.py
       - uses: actions/upload-artifact@v4
@@ -82,7 +95,7 @@ jobs:
   visual:
     name: Visual ${{ matrix.slug }}
     needs: plan
-    if: needs.plan.outputs.slugs != '[]'
+    if: github.event_name != 'schedule' && needs.plan.outputs.slugs != '[]'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
@@ -111,10 +124,69 @@ jobs:
           SLUG: ${{ matrix.slug }}
         run: python3 scripts/check.py "$SLUG" --require-typecheck
 
+  browser:
+    name: Browser ${{ matrix.project }}
+    needs: plan
+    if: needs.plan.outputs.slugs != '[]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [chromium-desktop, firefox-desktop, webkit-desktop, chromium-mobile, webkit-mobile]
+    defaults:
+      run:
+        working-directory: e2e
+    env:
+      E2E_PROJECTS: ${{ matrix.project }}
+      # Every visual on the daily run; otherwise only the changed ones.
+      E2E_ONLY: ${{ github.event_name != 'schedule' && join(fromJSON(needs.plan.outputs.slugs), ',') || '' }}
+      E2E_RESULTS: results
+      E2E_CONCURRENCY: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: e2e/package-lock.json
+      - run: npm ci
+      - name: Fetch yujieteo/site, whose own visuals the daily run also tests
+        if: github.event_name == 'schedule'
+        run: npm run fetch-targets
+      - name: Install the browser
+        env:
+          MATRIX_PROJECT: ${{ matrix.project }}
+        run: npx playwright install --with-deps "${MATRIX_PROJECT%%-*}"
+      - name: Baseline checks
+        run: npm run test:baseline
+      - name: Fuller checks of the visuals that have them
+        run: |
+          files=()
+          if [ -z "$E2E_ONLY" ]; then
+            files=(../viz/*/e2e/full.test.mjs site/*/full.test.js)
+          else
+            for slug in ${E2E_ONLY//,/ }; do
+              [ -f "../viz/$slug/e2e/full.test.mjs" ] && files+=("../viz/$slug/e2e/full.test.mjs")
+            done
+          fi
+          if [ ${#files[@]} -gt 0 ]; then node --test "${files[@]}"; fi
+      - name: Findings and timings
+        if: always()
+        run: |
+          node scripts/findings.js >> "$GITHUB_STEP_SUMMARY"
+          node scripts/timings.js results >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: browser-results-${{ matrix.project }}
+          path: e2e/results/
+          if-no-files-found: ignore
+
   # One stable check name for branch protection: it fails when any job above failed or was cancelled.
   passed:
     name: CI passed
-    needs: [plan, repository, visual]
+    needs: [plan, repository, visual, browser]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 2
@@ -123,6 +195,8 @@ jobs:
           PLAN: ${{ needs.plan.result }}
           REPOSITORY: ${{ needs.repository.result }}
           VISUAL: ${{ needs.visual.result }}
+          BROWSER: ${{ needs.browser.result }}
         run: |
-          echo "plan=$PLAN repository=$REPOSITORY visual=$VISUAL"
-          [ "$PLAN" = success ] && [ "$REPOSITORY" = success ] && { [ "$VISUAL" = success ] || [ "$VISUAL" = skipped ]; }
+          echo "plan=$PLAN repository=$REPOSITORY visual=$VISUAL browser=$BROWSER"
+          ok() { [ "$1" = success ] || [ "$1" = skipped ]; }
+          [ "$PLAN" = success ] && [ "$REPOSITORY" = success ] && ok "$VISUAL" && ok "$BROWSER"

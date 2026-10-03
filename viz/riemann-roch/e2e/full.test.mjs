@@ -4,7 +4,7 @@
 // curve and divisor; the beamdswitch button saves the lab as a narrated deck.
 // State is read through the page's documented RiemannRochPage handle.
 import assert from "node:assert/strict";
-import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../lib/full.js";
+import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../../e2e/lib/full.js";
 
 /**
  * The analysis on the page: divisor, degree and ℓ(D).

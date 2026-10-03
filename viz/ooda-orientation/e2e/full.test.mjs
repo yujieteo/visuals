@@ -5,7 +5,7 @@
 // dialog, Export JSON and Import JSON go through dialogs, Copy Markdown copies
 // and the deck downloads.
 import assert from "node:assert/strict";
-import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../lib/full.js";
+import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../../e2e/lib/full.js";
 
 /** @param {import("playwright").Page} page */
 async function loadExample(page) {

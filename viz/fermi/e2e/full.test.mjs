@@ -2,7 +2,7 @@
 // editor and in localStorage (no URL state); Reset restores the queue
 // example; the estimate copies as Markdown and saves as a beamdswitch deck.
 import assert from "node:assert/strict";
-import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../lib/full.js";
+import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../../e2e/lib/full.js";
 
 /** @param {import("playwright").Page} page */
 const best = (page) => page.locator("#best").innerText();

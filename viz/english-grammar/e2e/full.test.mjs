@@ -3,7 +3,7 @@
 // jumps to the concept search; the arrow keys walk a sentence's
 // constituents; the only export is the beamdswitch deck.
 import assert from "node:assert/strict";
-import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, at, fullSuite, saved } from "../../lib/full.js";
+import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, at, fullSuite, saved } from "../../../e2e/lib/full.js";
 
 /** @param {import("playwright").Page} page */
 const concept = (page) => page.locator("#concept-h").innerText();

@@ -1,19 +1,19 @@
 // Turn the failures of a run into manifest findings. Run the suite with
-// E2E_RESULTS=<folder>, then: node scripts/record-findings.js <folder>
-// [manifest folder]. Each failing check of a visual becomes (or replaces) one
-// finding in manifest/<slug>.json listing the projects it failed in and the
+// E2E_RESULTS=<folder>, then: node scripts/record-findings.js <folder> [repository root].
+// Each failing check of a visual becomes (or replaces) one finding in its
+// manifest (viz/<slug>/e2e/manifest.json, or e2e/site/<slug>/) listing the projects it failed in and the
 // first evidence. A project counts as retested for a check only when the
 // check passed or failed there; a skip keeps what an earlier run found, and a
 // finding whose check now passes in every project it was seen in is dropped.
 // Review the diff: mark a check that fails only sometimes "status": "flaky".
-import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
 import { PROJECTS } from "../lib/browser.js";
-import { MANIFEST_DIR, loadManifest } from "../lib/manifest.js";
+import { REPO, loadManifest, manifestPath } from "../lib/manifest.js";
 
 const dir = process.argv[2];
-if (!dir || !existsSync(dir)) throw new Error("usage: node scripts/record-findings.js <E2E_RESULTS folder> [manifest folder]");
-const manifestDir = process.argv[3] ?? MANIFEST_DIR;
+if (!dir || !existsSync(dir)) throw new Error("usage: node scripts/record-findings.js <E2E_RESULTS folder> [repository root]");
+const repo = process.argv[3] ? resolve(process.argv[3]) : REPO;
 
 /** @type {import("../lib/results.js").CheckResult[]} */
 const results = readdirSync(dir).filter((n) => n.endsWith(".jsonl"))
@@ -29,7 +29,7 @@ for (const r of results) {
 
 let written = 0;
 for (const [slug, checks] of [...bySlug].sort(([a], [b]) => a.localeCompare(b))) {
-  const manifest = loadManifest(slug, manifestDir);
+  const manifest = loadManifest(slug, repo);
   /** @type {import("../lib/manifest.js").Finding[]} */
   const kept = (manifest.findings ?? []).filter((f) => !checks.has(f.check));
   for (const [check, runs] of checks) {
@@ -51,7 +51,9 @@ for (const [slug, checks] of [...bySlug].sort(([a], [b]) => a.localeCompare(b)))
   if (kept.length) manifest.findings = kept.sort((a, b) => a.check.localeCompare(b.check));
   else delete manifest.findings;
   if (JSON.stringify(manifest.findings ?? []) === before) continue;
-  writeFileSync(join(manifestDir, `${slug}.json`), `${JSON.stringify(manifest, null, 2)}\n`);
+  const path = manifestPath(slug, repo);
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, `${JSON.stringify(manifest, null, 2)}\n`);
   written++;
 }
 console.log(`updated ${written} manifest(s) from ${results.length} results`);

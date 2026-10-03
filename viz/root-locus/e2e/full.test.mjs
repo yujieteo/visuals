@@ -3,7 +3,7 @@
 // keyboard (arrows pan, +/− zoom, F fits); Reset reloads the first example;
 // the Markdown record round-trips through Import; beamdswitch saves a deck.
 import assert from "node:assert/strict";
-import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../lib/full.js";
+import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../../e2e/lib/full.js";
 
 /** @param {import("playwright").Page} page */
 const badges = async (page) => (await page.locator("#badges").textContent()) ?? "";

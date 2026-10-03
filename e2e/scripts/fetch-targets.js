@@ -1,6 +1,6 @@
-// Clone or update yujieteo/site and yujieteo/visuals into .cache/, the
-// default E2E_SITE and E2E_VISUALS. Pass a site ref (branch, tag or commit)
-// as the first argument to test something other than main.
+// Clone or update yujieteo/site into .cache/site, the default E2E_SITE, to also test the visuals the
+// site keeps itself. Pass a site ref (branch, tag or commit) as the first argument to test something other
+// than main. The visuals repository's own visuals need no fetch: they are this checkout's viz/.
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -24,4 +24,3 @@ function sync(name, ref) {
 }
 
 sync("site", process.argv[2] ?? "main");
-sync("visuals", "main");

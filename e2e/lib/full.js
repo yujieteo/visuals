@@ -1,6 +1,6 @@
 // The fuller section-28 checks for one visual: URL state, Back and Forward,
 // keyboard, Cmd/Ctrl+K, Reset, JSON round trip, Markdown and beamdswitch
-// export, dark mode and reduced motion. A visual's file under tests/full/
+// export, dark mode and reduced motion. A visual's e2e/full.test.js
 // supplies one function per check that drives that visual through its
 // stable, user-visible interface; this module runs them across the browser
 // matrix with the same manifest findings, skips and results as the baseline.
@@ -57,10 +57,10 @@ export async function fullSuite(slug, checks) {
   }
   const manifest = loadManifest(slug);
   for (const check of FULL_CHECKS) {
-    if (!checks[check] && !manifest.skip?.[check]) throw new Error(`${slug}: write the ${check} check, or skip it in manifest/${slug}.json with a reason`);
+    if (!checks[check] && !manifest.skip?.[check]) throw new Error(`${slug}: write the ${check} check, or skip it in its e2e/manifest.json with a reason`);
   }
   const allowed = targets.origin(artifact);
-  const downloadsPath = join(process.env.E2E_TMP ?? join(tmpdir(), "technical-e2e"), "downloads");
+  const downloadsPath = join(process.env.E2E_TMP ?? join(tmpdir(), "visuals-e2e"), "downloads");
 
   for (const project of selectedProjects()) {
     describe(`${project.name} ${slug}`, () => {

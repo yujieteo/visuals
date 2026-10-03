@@ -4,7 +4,7 @@
 // keeps its scenario in localStorage, not the URL, and has no command palette
 // or JSON file export, which are recorded as findings.
 import assert from "node:assert/strict";
-import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, exportJson, fullSuite, output, saved } from "../../lib/full.js";
+import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, exportJson, fullSuite, output, saved } from "../../../e2e/lib/full.js";
 
 /** @param {import("playwright").Page} page */
 const hypothesis = (page) => page.locator("#hyp").inputValue();

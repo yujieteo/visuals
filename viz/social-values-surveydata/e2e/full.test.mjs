@@ -2,7 +2,7 @@
 // dumbbell chart is a focusable button that shows its mean, weighted sample
 // and top-box share; the beamdswitch button saves the chart as a narrated deck.
 import assert from "node:assert/strict";
-import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../lib/full.js";
+import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../../e2e/lib/full.js";
 
 await fullSuite("social-values-surveydata", {
   keyboard: async ({ open }) => {

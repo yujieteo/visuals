@@ -1,6 +1,7 @@
-// Per-visual manifests: manifest/<slug>.json says how to drive one visual and
-// which of its checks are known to fail. One file per visual, so workers who
-// each own a batch of visuals never edit the same file or the shared code.
+// Per-visual manifests: viz/<slug>/e2e/manifest.json (e2e/site/<slug>/manifest.json
+// for a visual the site keeps) says how to drive one visual and which of its checks
+// are known to fail. One file per visual, in its own folder, so workers who each
+// own a visual never edit the same file or the shared code.
 //
 // {
 //   "primary": { "selector": "#prior", "action": "range", "value": "0.3" },
@@ -22,7 +23,7 @@ export const BASELINE_CHECKS = /** @type {const} */ ([
   "opens", "runtime-errors", "console-errors", "network", "file-url", "overflow-320", "primary-control",
 ]);
 
-/** The fuller section-28 checks, written per visual under tests/full/. */
+/** The fuller section-28 checks, written per visual in its e2e/full.test.js. */
 export const FULL_CHECKS = /** @type {const} */ ([
   "url-state", "back-forward", "keyboard", "command-palette", "reset", "json-round-trip",
   "markdown-export", "beamdswitch-export", "dark-mode", "reduced-motion",
@@ -53,24 +54,44 @@ export const FULL_CHECKS = /** @type {const} */ ([
  * @property {Finding[]} [findings] known failures, reported but not failing CI
  */
 
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-export const MANIFEST_DIR = join(ROOT, "manifest");
+/** The repository root: e2e/ holds the harness, viz/ the visuals. */
+export const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
+
+/**
+ * Where a visual's manifest lives: its own folder in viz/, or e2e/site/ for a visual the site keeps.
+ * @param {string} slug
+ * @param {string} [repo]
+ * @returns {string}
+ */
+export function manifestPath(slug, repo = REPO) {
+  const own = join(repo, "viz", slug, "e2e", "manifest.json");
+  return existsSync(join(repo, "viz", slug)) ? own : join(repo, "e2e", "site", slug, "manifest.json");
+}
 
 /**
  * @param {string} slug
- * @param {string} [dir]
+ * @param {string} [repo]
  * @returns {Manifest}
  */
-export function loadManifest(slug, dir = MANIFEST_DIR) {
-  const path = join(dir, `${slug}.json`);
+export function loadManifest(slug, repo = REPO) {
+  const path = manifestPath(slug, repo);
   return existsSync(path) ? JSON.parse(readFileSync(path, "utf8")) : {};
 }
 
-/** @returns {Map<string, Manifest>} */
-export function loadAllManifests() {
+/**
+ * Every manifest, by slug.
+ * @param {string} [repo]
+ * @returns {Map<string, Manifest>}
+ */
+export function loadAllManifests(repo = REPO) {
   const out = new Map();
-  for (const name of readdirSync(MANIFEST_DIR).filter((n) => n.endsWith(".json")).sort()) {
-    out.set(name.replace(/\.json$/, ""), JSON.parse(readFileSync(join(MANIFEST_DIR, name), "utf8")));
+  const slugs = [
+    ...readdirSync(join(repo, "viz")).filter((slug) => existsSync(join(repo, "viz", slug, "e2e", "manifest.json"))),
+    ...(existsSync(join(repo, "e2e", "site")) ? readdirSync(join(repo, "e2e", "site")) : []),
+  ];
+  for (const slug of slugs.sort()) {
+    const path = manifestPath(slug, repo);
+    if (existsSync(path)) out.set(slug, JSON.parse(readFileSync(path, "utf8")));
   }
   return out;
 }

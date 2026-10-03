@@ -2,7 +2,7 @@
 // URL fragment (#coin-change?n=15), modes push history, Cmd/Ctrl+K opens the
 // command palette and the BeamMD Switch menu exports Markdown decks.
 import assert from "node:assert/strict";
-import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, output } from "../../lib/full.js";
+import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, output } from "../../../e2e/lib/full.js";
 
 /** @param {import("playwright").Page} page */
 const heading = (page) => page.locator("main h1, main h2").first().textContent();

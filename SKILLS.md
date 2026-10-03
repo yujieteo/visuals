@@ -16,6 +16,10 @@ What a visual must be (artifact contract, state and export, interaction and acce
 3. Put its tests in its own `tests/` (`*.test.mjs` for `node --test`, `test_*.py` for unittest). A test reads only its own folder and the shared tooling, never another visual's folder: CI runs it on a checkout without them. Time any test you add and keep it fast.
 4. Check it: `python3 scripts/check.py <slug>`, then `python3 scripts/check.py --changed` for everything the branch touches.
 
+## Browser checks
+
+A visual's browser checks are its `e2e/manifest.json` (how to drive it, checks that do not apply, known findings) and, when it has them, its fuller checks `e2e/full.test.mjs`; the shared harness is `e2e/` ([e2e/README.md](e2e/README.md)). CI runs them only when the visual changes, one job per browser project, and every visual's once a day. Record a run's failures in the manifests with `e2e/scripts/record-findings.js`; the combined findings list is generated, never committed.
+
 ## Add a visual
 
 Create `viz/<slug>/` with `index.html`, the data file, `visual.json` (copy a neighbour's and change every field) and its tests. Nothing else lists the visuals: CI, the catalogue and the site find the folder. Stdlib Python builders import the shared modules from `scripts/` (`page_parts`, `style_guide`, `stock_cases`) and read `design-tokens.json`; a builder for several pages lives in `scripts/` and each page lists it in `uses`.

@@ -3,7 +3,7 @@
 // entries); each quantity has a text field and a logarithmic slider; JSON, a
 // Markdown report and a beamdswitch deck download, and JSON imports back.
 import assert from "node:assert/strict";
-import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../lib/full.js";
+import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../../e2e/lib/full.js";
 
 /** @param {import("playwright").Page} page */
 const sentence = (page) => page.locator("#sentence").textContent();

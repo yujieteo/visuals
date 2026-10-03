@@ -5,7 +5,7 @@
 // an unfinished one asks first. The page keeps no state in the URL and has no
 // Reset: answers are immutable by design.
 import assert from "node:assert/strict";
-import { assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../lib/full.js";
+import { assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../../e2e/lib/full.js";
 
 // A two-question session in the Calibrator session TOON schema (the first two
 // questions of the repository's sample-session.toon).

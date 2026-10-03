@@ -5,7 +5,7 @@
 // deck and Save Markdown saves the hand calculations. The page keeps no state
 // in the URL and has no palette or Reset.
 import assert from "node:assert/strict";
-import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../lib/full.js";
+import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../../e2e/lib/full.js";
 
 /** The reactions list, one line per support. @param {import("playwright").Page} page */
 const reactions = async (page) => (await page.locator("#reactions").innerText()).split("\n").map((l) => l.trim()).filter(Boolean);

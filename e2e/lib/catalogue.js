@@ -1,9 +1,8 @@
-// Discover every visual the site publishes, straight from a clone of yujieteo/site.
-//
-// The catalogue is data/visuals/*.yaml. A stub whose html_path starts with
-// visuals/ is built in the site repository (visuals/<slug>/); any other stub
-// is pinned to a commit of yujieteo/visuals by data/visuals/<slug>.pin. A
-// folder visuals/<slug>/ without a stub is still discovered, so nothing the
+// Discover the visuals to test. discoverVisualsRepo reads every viz/<slug>/visual.json of a
+// yujieteo/visuals checkout, the visuals' home. discoverVisuals reads a clone of yujieteo/site: its
+// catalogue is data/visuals/*.yaml, a stub whose html_path starts with visuals/ is built in the site
+// repository (visuals/<slug>/), and an older stub may still be pinned to a yujieteo/visuals commit by
+// data/visuals/<slug>.pin. A folder visuals/<slug>/ without a stub is still discovered, so nothing the
 // site ships can hide from the suite.
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -14,11 +13,11 @@ import { parse } from "yaml";
  * @property {string} slug
  * @property {string} title
  * @property {string} summary
- * @property {"site" | "visuals"} source where the page is built: visuals/<slug>/ in the site, or the pinned visuals repository
+ * @property {"site" | "visuals"} source where the page is built: visuals/<slug>/ in the site, or viz/<slug>/ in the visuals repository
  * @property {string} htmlPath html_path from the catalogue, relative to its repository
  * @property {string | null} dataPath data_path from the catalogue, published as data.json
- * @property {string[]} assets extra files published beside index.html, relative to the site repository
- * @property {string | null} pin the visuals commit for a pinned visual
+ * @property {string[]} assets extra files published beside index.html, relative to their repository
+ * @property {string | null} pin the visuals commit for a visual a site stub still pins; null to read the checkout
  * @property {boolean} catalogued whether data/visuals/<slug>.yaml exists
  * @property {boolean} offlineClaim whether the visual says it works offline or from file://
  * @property {string} owner the repository that owns the visual's source
@@ -50,6 +49,34 @@ function siteVisualOwner(folder) {
 function readmeText(folder) {
   return ["README.md", "AGENTS.md"].map((name) => join(folder, name))
     .filter((path) => existsSync(path)).map((path) => readFileSync(path, "utf8")).join("\n");
+}
+
+/**
+ * Enumerate every visual of a yujieteo/visuals checkout (its viz/<slug>/visual.json), sorted by slug.
+ * @param {string} visualsRoot
+ * @returns {Visual[]}
+ */
+export function discoverVisualsRepo(visualsRoot) {
+  const viz = join(visualsRoot, "viz");
+  if (!existsSync(viz)) throw new Error(`not a checkout of yujieteo/visuals (no viz/): ${visualsRoot}`);
+  return readdirSync(viz).sort().filter((slug) => existsSync(join(viz, slug, "visual.json"))).map((slug) => {
+    const doc = JSON.parse(readFileSync(join(viz, slug, "visual.json"), "utf8"));
+    const folder = `viz/${slug}/`;
+    const summary = String(doc.summary ?? "");
+    return {
+      slug,
+      title: String(doc.title ?? slug),
+      summary,
+      source: /** @type {const} */ ("visuals"),
+      htmlPath: `${folder}index.html`,
+      dataPath: doc.data ? folder + String(doc.data) : null,
+      assets: Array.isArray(doc.assets) ? doc.assets.map((/** @type {unknown} */ asset) => folder + String(asset)) : [],
+      pin: null,
+      catalogued: true,
+      offlineClaim: OFFLINE_CLAIM.test(summary) || OFFLINE_CLAIM.test(readmeText(join(viz, slug))),
+      owner: "https://github.com/yujieteo/visuals",
+    };
+  });
 }
 
 /**

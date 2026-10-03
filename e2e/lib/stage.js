@@ -3,7 +3,7 @@
 // own. The suite then tests that folder over http:// and file:// without
 // building or deploying the site.
 import { execFileSync } from "node:child_process";
-import { copyFileSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { copyFileSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
 
 /** @typedef {import("./catalogue.js").Visual} Visual */
@@ -54,11 +54,17 @@ export function stageVisual(visual, { siteRoot, visualsRepo, stagingRoot }) {
       copyFileSync(join(siteRoot, asset), target);
     }
   } else {
-    if (!visualsRepo) throw new Error(`${visual.slug} is pinned to yujieteo/visuals; set E2E_VISUALS to a clone of it`);
-    if (!visual.pin) throw new Error(`${visual.slug} has no data/visuals/${visual.slug}.pin`);
-    writeFileSync(join(out, "index.html"), pinnedFile(visualsRepo, visual.pin, visual.htmlPath));
-    if (visual.dataPath) writeFileSync(join(out, "data.json"), pinnedFile(visualsRepo, visual.pin, visual.dataPath));
+    if (!visualsRepo) throw new Error(`${visual.slug} lives in yujieteo/visuals; no checkout of it was found`);
+    /** @param {string} path */
+    const read = (path) => visual.pin ? pinnedFile(visualsRepo, visual.pin, path) : readFileSync(join(visualsRepo, path));
+    writeFileSync(join(out, "index.html"), read(visual.htmlPath));
+    if (visual.dataPath) writeFileSync(join(out, "data.json"), read(visual.dataPath));
+    const folder = dirname(join(visualsRepo, visual.htmlPath));
+    for (const asset of visual.assets) {
+      const target = join(out, relative(folder, join(visualsRepo, asset)));
+      mkdirSync(dirname(target), { recursive: true });
+      writeFileSync(target, read(asset));
+    }
   }
   return out;
 }
-

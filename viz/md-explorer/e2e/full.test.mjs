@@ -3,7 +3,7 @@
 // fresh context opens on the three demo tabs t1 (guide.md), t2 (links.md) and
 // t3 (search.md), named after their files. Ctrl/Cmd+K or / opens search; Clear all resets to the demo.
 import assert from "node:assert/strict";
-import { assertClean, assertDarkMode, assertReducedMotion, fullSuite } from "../../lib/full.js";
+import { assertClean, assertDarkMode, assertReducedMotion, fullSuite } from "../../../e2e/lib/full.js";
 
 /** @param {import("playwright").Page} page */
 const selectedTab = (page) => page.locator("#tabstrip [role=tab][aria-selected=true]").textContent();

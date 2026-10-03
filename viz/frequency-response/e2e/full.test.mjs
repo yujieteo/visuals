@@ -3,7 +3,7 @@
 // import of its inputs and a Markdown report; it keeps no state in the URL and
 // has no Reset control or command palette, which are recorded as findings.
 import assert from "node:assert/strict";
-import { assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../lib/full.js";
+import { assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../../e2e/lib/full.js";
 
 /**
  * Set the loop gain K and wait for the analysis to follow it.

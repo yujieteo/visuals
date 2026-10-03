@@ -4,7 +4,7 @@
 // it); New from example resets the pattern; the pattern exports as JSON
 // and imports back; the report exports as Markdown and a beamdswitch deck.
 import assert from "node:assert/strict";
-import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../lib/full.js";
+import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../../e2e/lib/full.js";
 
 /** @param {import("playwright").Page} page */
 const results = (page) => page.locator("#results").innerText();
