@@ -5,7 +5,7 @@
 # that visual's (e2e/site/<slug>/). A change to shared tooling selects every visual, and a change to the
 # browser harness every visual's browser checks and the site's own, in shards when there are too many for a
 # job each. The repository job runs on every change: the shared tooling's tests and type check, every
-# visual.json, and the generated catalogue, kept as an artifact and never committed. A daily run repeats every visual's browser
+# visual.json, tracked build or OS artifacts, and the generated catalogue, kept as an artifact and never committed. A daily run repeats every visual's browser
 # checks, and the site's own, against new browser releases.
 name: CI
 
@@ -73,15 +73,16 @@ jobs:
           cache-dependency-path: |
             package-lock.json
             e2e/package-lock.json
-      - name: Every visual.json against the schema, the folder rules, no absolute home paths
+      - name: Every visual.json against the schema, the folder rules, no absolute home paths, no tracked artifacts, no dead tooling Python
         run: python3 scripts/check_repo.py
+      # tsc checks the JSDoc types of the shared tooling (tsconfig.json), with the versions package.json pins, and
+      # fails on its unused locals and unreachable code. It goes first: the tooling's tests run the pinned tsc too.
+      - name: Type-check the shared tooling
+        run: npm ci && npm run typecheck
       - name: Tests of the shared tooling
         run: |
           python3 -m unittest discover -s tests -p 'test_*.py'
           node --test tests/*.test.mjs
-      # tsc checks the JSDoc types of the shared tooling (tsconfig.json), with the versions package.json pins.
-      - name: Type-check the shared tooling
-        run: npm ci && npm run typecheck
       # The browser checks' harness (e2e/) and every visual's e2e/ checks: tsc and the harness's own tests,
       # without a browser. The browser jobs below run the checks themselves.
       - name: Type-check and test the browser harness
@@ -118,8 +119,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+      # Every visual's dead-code check (scripts/deadcode.mjs) runs the pinned tsc, as does its type check.
       - name: Install the type checker
-        if: hashFiles(format('viz/{0}/tsconfig.json', matrix.slug)) != ''
         run: npm ci
       - name: Check ${{ matrix.slug }}
         env:

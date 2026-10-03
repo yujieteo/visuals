@@ -40,6 +40,11 @@ class SyncTemplateTest(unittest.TestCase):
         self.assertEqual(stale(NEW, self.layout.root), {})
         self.assertEqual(sync(NEW, self.layout.root), {})
 
+    def test_the_template_sha256_is_recorded_for_scripts_check(self):
+        sync(NEW, self.layout.root)
+        recorded = (self.layout.root / "scripts" / "templates" / "beamdswitch.sha256").read_text(encoding="utf-8")
+        self.assertEqual(recorded.split()[0], sha256(NEW))
+
     def test_a_folder_without_its_own_copy_is_left_alone_even_when_a_file_holds_the_old_text(self):
         sync(NEW, self.layout.root)
         self.assertEqual((self.plain / "notes.txt").read_text(encoding="utf-8"), OLD)
