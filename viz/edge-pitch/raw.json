@@ -1,0 +1,193 @@
+{
+  "title": "Fastener edge margin and pitch visualiser",
+  "slug": "edge-pitch",
+  "version": 1,
+  "summary": "Explore how end distance, side edge distance, pitch and row spacing drive the strength margins and geometric margins of a riveted or bolted single-lap or double-shear sheet joint, against loads and allowables you enter.",
+  "disclaimer": "Not for certification. Exploration and preliminary sizing only. Loads and allowables are yours; every result must be checked independently before it is relied on for design, manufacture or airworthiness.",
+  "units": "Stored canonically in mm, N and MPa (N/mm²). The SI/US toggle (mm, N, MPa or in, lbf, ksi) changes display and entry only; exported JSON is always SI, and displayUnits only restores the toggle.",
+  "checks": [
+    {
+      "check": "Edge distance ratio",
+      "formula": "MS_geom = (e/D) / (e/D)_min − 1",
+      "source": [
+        "Niu",
+        "NASA: RP-1228"
+      ],
+      "note": "RP-1228 p. 21 states a 1.5D minimum and a 2D nominal edge distance."
+    },
+    {
+      "check": "Pitch ratio",
+      "formula": "MS_geom = (p/D) / (p/D)_min − 1; also p/D ÷ typical",
+      "source": [
+        "Niu",
+        "NASA: RP-1228"
+      ],
+      "note": "RP-1228 pp. 21 and 34 state a 4D nominal spacing; the minimum is an unsourced default."
+    },
+    {
+      "check": "Bearing",
+      "formula": "P_br = F_bru(e/D) · D · t",
+      "source": [
+        "Niu",
+        "user allowable"
+      ],
+      "note": "Confirm against your copy. F_bru values are yours. End row at e/D = e_end/D; interior rows at e/D = g/D."
+    },
+    {
+      "check": "Shear-out",
+      "formula": "P_so = 2 · (e_end − D_h/2) · t · F_su",
+      "source": [
+        "classical"
+      ],
+      "note": "Two shear planes. The plane-length convention: confirm against your copy (Niu)."
+    },
+    {
+      "check": "Net section",
+      "formula": "σ_net = (P/n_f) / ((p − D_h) · t) ≤ F_tu",
+      "source": [
+        "classical"
+      ],
+      "note": "Load across the rows. Staggered rows: w_net = min(p − D_h, p − 2D_h + ((2n_f − 1)/(2n_f))·g²/p). Load along the rows: σ_net = (P/n_r) / (w_net · t), w_net = g − D_h, or min(g − (⌈n_r/2⌉/n_r)·D_h, g − D_h + ((n_r − 1)/n_r)·p²/(16g)) when staggered."
+    },
+    {
+      "check": "Side-edge net section",
+      "formula": "(P/n_f)/2 / ((e_side − D_h/2) · t) ≤ F_tu",
+      "source": [
+        "classical"
+      ],
+      "note": ""
+    },
+    {
+      "check": "Inter-rivet buckling",
+      "formula": "σ_E = π²E/(L/(ρ√c))²; Johnson σ = F_cy − F_cy²(L/(ρ√c))²/(4π²E) when σ_E > F_cy/2; ρ = t/√12",
+      "source": [
+        "classical",
+        "Niu"
+      ],
+      "note": "L is the fastener spacing along the load: g with the load across the rows, p with it along them (spec check 7's 'strip length p'). Fixity c: confirm against your copy."
+    },
+    {
+      "check": "Maximum pitch",
+      "formula": "L_max solves σ_ir(L_max) = σ_applied",
+      "source": [
+        "classical"
+      ],
+      "note": "Checked against the spacing along the load: p with the load along the rows, g across them. RP-1228 p. 34: spacing above 4D is acceptable only if sealing or inter-rivet buckling is not a problem."
+    }
+  ],
+  "assumptions": [
+    "Equal load share: every fastener carries P / (n_r · n_f). Load transfer, fastener flexibility and end-fastener peaking are not modelled.",
+    "The checked sheet carries the full fastener load: a single-lap sheet, or the middle plate of a double-shear joint. For an outer plate of a double-shear joint, enter half the load.",
+    "Row 0, at e_end from the free end, takes bearing and shear-out at e_end; interior rows take bearing at e/D = g/D. Bearing, shear-out and side edge always take the rows across the load.",
+    "Load direction: net section uses the fastener spacing across the load and inter-rivet buckling the spacing along it. Across the rows (default): strip p − D_h carrying P/n_f, buckling length g, maximum row spacing. Along the rows: strip g − D_h carrying P/n_r, buckling length p, maximum pitch; spec check 7's 'strip length p' is this case. With one fastener along the load, inter-rivet buckling is not evaluated.",
+    "F_bru is linear between your values at e/D = 1.5 and 2.0, is held at the 2.0 value above 2.0, and is not extrapolated below 1.5.",
+    "Net section between holes carries the whole strip load at the end row: P/n_f across the rows, P/n_r along them. Staggered rows also try the zig-zag path through one hole of each row (Cochrane s²/4g): across the rows a zig-zag through the 2n_f holes of two rows has 2n_f − 1 diagonals, so p − 2D_h + ((2n_f − 1)/(2n_f))·g²/p per pitch strip; along the rows, where the p/2 offset leaves a straight section ⌈n_r/2⌉ holes and a zig-zag n_r − 1 diagonals across the n_r rows, min(g − (⌈n_r/2⌉/n_r)·D_h, g − D_h + ((n_r − 1)/n_r)·p²/(16g)) per row strip.",
+    "Side-edge net section: each ligament beside the edge hole takes half of its pitch strip's load, (P/n_f)/2.",
+    "Inter-rivet buckling treats the sheet between fasteners along the load as a column of length g (load across the rows) or p (load along the rows), radius of gyration t/√12 and end fixity c, under the compressive sheet stress: entered, or P over the width across the load times t when left blank (W across the rows; 2·e_end + (n_r − 1)·g along them).",
+    "Single-lap and double-shear joints only: no lugs, eccentric loading or prying; no fatigue, fastener strength, preload or torque."
+  ],
+  "not_in_scope": [
+    "Fastener strength and interaction checks",
+    "Load-transfer stiffness models and end-fastener peaking",
+    "Lugs and pin joints",
+    "Composite laminates",
+    "Fatigue and fretting",
+    "Corrosion, sealant and gap effects",
+    "Certification allowables",
+    "Reproduction of any Niu table or figure"
+  ],
+  "source_tags": {
+    "niu": "Niu: confirm against your copy",
+    "nasa": "NASA: RP-1228: Barrett, Fastener Design Manual (1990)",
+    "classical": "classical: textbook mechanics",
+    "unsourced": "unsourced default: placeholder, not a book value",
+    "user": "user allowable: entered by you"
+  },
+  "sources": [
+    {
+      "cite": "Barrett, R. T., Fastener Design Manual, NASA Reference Publication 1228, March 1990. NTRS 19900009424.",
+      "url": "https://ntrs.nasa.gov/citations/19900009424",
+      "states": [
+        "p. 21, 'Fastener Edge Distance and Spacing': nominal edge distance 2D from the hole centreline, minimum not less than 1.5D, nominal spacing 4D; buckling between fasteners can be a problem in thin material.",
+        "p. 34, 'General Guidelines for Selecting Rivets and Lockbolts': nominal rivet edge distance 2D and linear spacing 4D; the 4D spacing can be increased if sealing or inter-rivet buckling is not a problem."
+      ]
+    },
+    {
+      "cite": "Niu, M. C. Y., Airframe Stress Analysis and Sizing. Methods only; no table or figure is reproduced. Enter tabulated values from your own copy.",
+      "url": null,
+      "states": []
+    },
+    {
+      "cite": "Classical strength of materials: net-section tension, shear-out planes, the Cochrane s²/4g stagger rule, and Euler and Johnson column strength.",
+      "url": null,
+      "states": []
+    }
+  ],
+  "test_vector_format": {
+    "kind": "edge-pitch-test-vector",
+    "schemaVersion": 1,
+    "name": "Worked example from your copy",
+    "inputs": "canonical SI inputs, same shape as an inputs JSON",
+    "expected": [
+      {
+        "path": "strength.bearing.allowable",
+        "value": 5760,
+        "tol": 0.01
+      }
+    ]
+  },
+  "example": {
+    "note": "Round placeholder allowables, not material data: replace them with your own.",
+    "inputs": {
+      "fastener": {
+        "type": "solid-rivet",
+        "D": 4.8,
+        "Dh": 4.9,
+        "head": "protruding",
+        "csk": 0
+      },
+      "sheet": {
+        "t": 1.6,
+        "W": 115.2,
+        "shear": "single"
+      },
+      "material": {
+        "E": 70000,
+        "nu": 0.33,
+        "Ftu": 400,
+        "Fty": 300,
+        "Fcy": 300,
+        "Fsu": 250,
+        "Fbru15": 600,
+        "Fbru20": 750
+      },
+      "geometry": {
+        "pattern": "aligned",
+        "rows": 2,
+        "perRow": 5,
+        "eEnd": 9.6,
+        "eSide": 9.6,
+        "p": 24,
+        "g": 19.2
+      },
+      "load": {
+        "P": 10000,
+        "share": "equal",
+        "direction": "normal",
+        "sigmaSheet": null
+      },
+      "buckling": {
+        "c": 1
+      },
+      "rules": {
+        "eDmin": 1.5,
+        "eDnom": 2,
+        "pDmin": 3,
+        "pDtyp": 4,
+        "gDmin": 3,
+        "cskMax": 0.6666666666666666,
+        "marginal": 0.1
+      }
+    }
+  }
+}
