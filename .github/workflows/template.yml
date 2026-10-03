@@ -35,9 +35,13 @@ jobs:
           SITE_REF: ${{ inputs.site_ref }}
         run: |
           case "$SITE_REF" in
-            "" | *[!A-Za-z0-9._/-]* | *..*) echo "not a branch, tag or commit: $SITE_REF" >&2; exit 1 ;;
+            "" | -* | *[!A-Za-z0-9._/-]* | *..*) echo "not a branch, tag or commit: $SITE_REF" >&2; exit 1 ;;
           esac
-          curl -fsSL --retry 3 "https://raw.githubusercontent.com/yujieteo/site/$SITE_REF/templates/beamdswitch.js" -o "$RUNNER_TEMP/beamdswitch.js"
+          site="$RUNNER_TEMP/site"
+          git init -q "$site"
+          git -C "$site" fetch -q --depth 1 https://github.com/yujieteo/site.git "$SITE_REF"
+          git -C "$site" show FETCH_HEAD:templates/beamdswitch.js > "$RUNNER_TEMP/beamdswitch.js"
+          echo "SITE_COMMIT=$(git -C "$site" rev-parse FETCH_HEAD)" >> "$GITHUB_ENV"
       - name: Copy it into every visual that carries another
         run: python3 scripts/sync_template.py "$RUNNER_TEMP/beamdswitch.js"
       - name: Push the copies to a branch for a pull request
@@ -45,17 +49,18 @@ jobs:
           SITE_REF: ${{ inputs.site_ref }}
         run: |
           if git diff --quiet; then
-            echo "Every visual already carries the template of yujieteo/site $SITE_REF." >> "$GITHUB_STEP_SUMMARY"
+            echo "Every visual already carries the template of yujieteo/site $SITE_REF ($SITE_COMMIT)." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
           branch="ci/beamdswitch-template-$(sha256sum "$RUNNER_TEMP/beamdswitch.js" | cut -c1-12)"
           if git ls-remote --exit-code --heads origin "$branch" >/dev/null; then
-            echo "$branch already carries this template; open or update its pull request." >> "$GITHUB_STEP_SUMMARY"
+            echo "$branch already carries the template of yujieteo/site $SITE_REF ($SITE_COMMIT); open or update its pull request." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git switch -c "$branch"
-          git commit -qam "chore(viz): copy the beamdswitch template of yujieteo/site $SITE_REF into every visual that carries it"
+          git commit -qam "chore(viz): copy the beamdswitch template of yujieteo/site $SITE_REF into every visual that carries it" -m "yujieteo/site commit: $SITE_COMMIT"
           git push origin "$branch"
+          echo "Copied the template of yujieteo/site $SITE_REF ($SITE_COMMIT) into $branch." >> "$GITHUB_STEP_SUMMARY"
           echo "Open the pull request: https://github.com/$GITHUB_REPOSITORY/compare/main...$branch?expand=1" >> "$GITHUB_STEP_SUMMARY"
