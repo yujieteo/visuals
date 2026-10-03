@@ -15,7 +15,7 @@ export const TEMPLATE_PATH = "tests/fixtures/beamdswitch/beamdswitch.js";
 const SECTIONS = require(`../${TEMPLATE_PATH}`).SECTIONS.map(([, title]) => title);
 
 // A site checkout to compare against as well, when one is at hand: SITE_REPO, or a sibling `site`.
-const siteRepo = process.env.SITE_REPO || new URL("../../site/", import.meta.url).pathname;
+const siteRepo = process.env.SITE_REPO || new URL("../../../../site/", import.meta.url).pathname;
 const SITE_TEMPLATE = `${siteRepo.replace(/\/$/, "")}/templates/beamdswitch.js`;
 const haveSite = existsSync(SITE_TEMPLATE);
 

@@ -1,9 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import { assertBlockedSave, assertInlined, assertStandardDeck, assertTemplateCopy, load, openPage, read } from "./finance-beamdswitch-checks.mjs";
 
 const slug = "panw";
-const REPORT = read("scripts/templates/stock-cases-report.js");
+// The shared scripts/templates/stock-cases-report.js (listed in uses in visual.json) as the page inlines it, type-stripped by scripts/page_parts.py.
+const REPORT = execFileSync("python3", ["-c", "import sys; from page_parts import strip_types; sys.stdout.buffer.write(strip_types(open('templates/stock-cases-report.js', encoding='utf-8').read()).encode())"],
+  { cwd: new URL("../../../scripts/", import.meta.url), encoding: "utf8" });
 const METRICS = ["revenue", "cash_margin"];
 const { Beamdswitch, StockReport } = load(read("beamdswitch.js"), REPORT);
 const caseOf = (html) => JSON.parse(/,CASE=(\{.*?\}),svg=/.exec(html)[1]);
