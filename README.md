@@ -20,7 +20,8 @@ python3 scripts/build_catalogue.py     # build/catalogue.json and build/index.ht
 
 `npm ci` installs the pinned TypeScript; after it, `npm run typecheck` checks
 the shared tooling and `scripts/check.py` also type-checks every visual with a
-`tsconfig.json`.
+`tsconfig.json`: its `src/`, its tests and the page's own inline scripts, less the
+blocks its `visual.json` `typecheck.skip` names.
 
 ## Layout
 

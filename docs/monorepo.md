@@ -35,8 +35,9 @@ tsconfig.base.json     compiler options every visual's tsconfig.json extends
 
 `visual.json` carries the site's catalogue fields (`title`, `summary`, `source_url`, `fetched`, `data`,
 `webmcp_tools`, `tags`, `category`, optional `links`, `assets`, `downloads`) and the tooling fields: `checks`
-(commands run from the folder, when the defaults do not fit), `typecheck` (inline script ids the extractor
-skips), `uses` (shared files outside `viz/` the visual depends on, so changing one runs only its users) and
+(commands run from the folder, when the defaults do not fit), `typecheck` (the page and the inline
+script ids the extractor skips: a builder's inlined copies of `src/*.js`, checked from `src/`, and the
+byte-identical `beamdswitch` and `report` templates), `uses` (shared files outside `viz/` the visual depends on, so changing one runs only its users) and
 `published: false` for a visual the site does not publish. The folder name is the slug.
 
 ## Checks
@@ -44,7 +45,8 @@ skips), `uses` (shared files outside `viz/` the visual depends on, so changing o
 `python3 scripts/check.py <slug>...` (or `--changed [base]`, `--all`) runs, from each visual's folder:
 `build.py --verify` when there is a builder, its `tests/*.test.{mjs,cjs}` with `node --test`, its
 `tests/test_*.py` with unittest, its `tsconfig.json` with `tsc` after the shared extractor copies the page's
-inline scripts out, and a check that `visual.json` and `SKILLS.md` name exactly the WebMCP tools the page
+inline scripts, less the ones `typecheck.skip` names, into `.typecheck/inline/`, which that `tsconfig.json`
+includes, and a check that `visual.json` and `SKILLS.md` name exactly the WebMCP tools the page
 registers. `checks` in `visual.json` replaces the first three. `python3 scripts/check_repo.py` is the fast
 repository-wide check: every `visual.json` against the schema, the folder rules and the absolute-path scan.
 
@@ -91,6 +93,8 @@ combined findings list is generated in CI from the folders instead of being comm
 
 ## Review by risk
 
-Data-only, documentation-only and mechanical changes (an import, a regenerated page, a copied file) take CI
-only, through a plain pull request. Anything touching a page's logic, a builder, tests, CI or shared tooling
-keeps the full no-mistakes pipeline. The diff decides.
+Data-only, documentation-only and mechanical changes take CI only, through a plain pull request. Mechanical
+means moving or copying already-reviewed content without changing its logic, tests or tooling: a
+byte-identical import of a repository's main with its history, a regenerated file, a copied page. Anything
+touching a page's logic, a builder, tests, CI or shared tooling keeps the full no-mistakes pipeline, and so
+does an import that also edits logic, tests or tooling to fit the monorepo. The diff decides.

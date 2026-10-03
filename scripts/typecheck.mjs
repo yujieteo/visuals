@@ -1,9 +1,10 @@
 // Type-check visuals, each as its own tsc project, so one visual's globals and errors never reach another's.
 // For each viz/<slug>/ with a tsconfig.json (which extends ../../tsconfig.base.json): copy the page's own
 // inline <script> blocks, in page order, into viz/<slug>/.typecheck/inline/ (ignored by Git), where that
-// tsconfig.json includes them as global scripts, then run the pinned tsc on it. visual.json "typecheck"
-// names the page (index.html when absent) and the ids of blocks to leave out, such as the inlined
-// beamdswitch template that must stay byte-identical to the site's.
+// tsconfig.json includes them (".typecheck/inline/*.js") as global scripts, then run the pinned tsc on it.
+// visual.json "typecheck" names the page (index.html when absent) and the ids of blocks to leave out: a
+// builder's inlined copies of src/*.js, which tsc checks from src/ instead, and the beamdswitch and report
+// templates that must stay byte-identical to the site's.
 // Usage: node scripts/typecheck.mjs SLUG...   (after npm ci; scripts/check.py runs it per visual)
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
