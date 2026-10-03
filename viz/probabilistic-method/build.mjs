@@ -21,23 +21,28 @@ import { fileURLToPath } from "node:url";
 import vm from "node:vm";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const read = (name) => readFileSync(join(HERE, name), "utf8");
-const concat = (dir) => readdirSync(join(HERE, dir)).filter((f) => f.endsWith(".js")).sort().map((f) => read(join(dir, f))).join("\n");
+const read = (/** @type {string} */ name) => readFileSync(join(HERE, name), "utf8");
+const concat = (/** @type {string} */ dir) => readdirSync(join(HERE, dir)).filter((f) => f.endsWith(".js")).sort().map((f) => read(join(dir, f))).join("\n");
 
 export const engineSource = () => `(function () {\n"use strict";\n${concat("src/engine")}\n})();\n`;
 export const uiSource = () => `(function () {\n"use strict";\nconst PM = self.PM;\n${concat("src/ui")}\n})();\n`;
 
 /* Load the engine (with the template) in a fresh context, as the page and the tests do. */
+/** @returns {PMApi} */
 export function loadEngine() {
-  const ctx = {}; ctx.self = ctx; vm.createContext(ctx);
+  /** @type {Record<string, any>} the engine's global scope; it sets PM there */
+  const ctx = {};
+  ctx.self = ctx; vm.createContext(ctx);
   vm.runInContext(read("beamdswitch.js"), ctx);
   vm.runInContext(engineSource(), ctx);
   return ctx.PM;
 }
 
+/** @param {PMApi} PM */
 function staticHtml(PM) {
-  const e = PM.escapeHtml, mod = PM.moduleById("first-moment"), E = PM.evaluate(mod, PM.defaults(mod)), A = E.A;
-  const rows = PM.INVENTORY.map((t) => `<tr><td>${t.n}</td><td>${e(t.title)}</td><td>${e(t.problem)}</td><td>${t.module ? `lab: ${e(PM.moduleById(t.module).title)}` : "not yet built"}</td></tr>`).join("\n");
+  const e = PM.escapeHtml, mod = /** @type {Module} */ (PM.moduleById("first-moment")), E = PM.evaluate(mod, PM.defaults(mod)), A = E.A;
+  const rows = PM.INVENTORY.map((t) => `<tr><td>${t.n}</td><td>${e(t.title)}</td><td>${e(t.problem)}</td><td>${t.module ? `lab: ${e(/** @type {Module} */ (PM.moduleById(t.module)).title)}`
+ : "not yet built"}</td></tr>`).join("\n");
   return `<p><a href="../">teoyujie.org / visuals</a></p>
 <h1>Probabilistic Method Atlas</h1>
 <p>A visual laboratory for the probabilistic method. The interactive labs, proof lens, deck mode and Markdown export need JavaScript; this is the static summary.</p>

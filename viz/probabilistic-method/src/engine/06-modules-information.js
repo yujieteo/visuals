@@ -2,22 +2,26 @@
 
 /* ---------- Discrepancy ---------- */
 
+/** @param {number} m @param {number} n @param {number} dens @param {Rng} r */
 function setSystem(m, n, dens, r) {
   const sets = [];
-  for (let i = 0; i < m; i++) { const s = []; for (let j = 0; j < n; j++) if (r() < dens) s.push(j); if (!s.length) s.push(r.int(n)); sets.push(s); }
+  for (let i = 0; i < m; i++) { /** @type {number[]} */ const s = []; for (let j = 0; j < n; j++) if (r() < dens) s.push(j); if (!s.length) s.push(r.int(n)); sets.push(s); }
   return sets;
 }
-const rowSums = (A, x) => A.map((row) => row.reduce((s, a, j) => s + a * x[j], 0));
-const discOf = (A, x) => Math.max(...rowSums(A, x).map(Math.abs));
+const rowSums = (/** @type {number[][]} */ A, /** @type {number[]} */ x) => A.map((row) => row.reduce((s, a, j) => s + a * x[j], 0));
+const discOf = (/** @type {number[][]} */ A, /** @type {number[]} */ x) => Math.max(...rowSums(A, x).map(Math.abs));
 /* Pr[|sum of s independent ±1| ≥ t], exactly. */
+/** @param {number} s @param {number} t */
 function rademacherTail(s, t) { let pr = 0; for (let k = 0; k <= s; k++) if (Math.abs(2 * k - s) >= t - 1e-12) pr += binomPmf(s, k, 0.5); return Math.min(1, pr); }
+/** @param {number[]} sizes @param {number} n @param {number} m */
 function discrepancyBounds(sizes, n, m) {
-  const hoeff = (t) => sizes.reduce((s, z) => s + 2 * Math.exp(-(t * t) / (2 * z)), 0), exact = (t) => sizes.reduce((s, z) => s + rademacherTail(z, t), 0);
+  const hoeff = (/** @type {number} */ t) => sizes.reduce((s, z) => s + 2 * Math.exp(-(t * t) / (2 * z)), 0), exact = (/** @type {number} */ t) => sizes.reduce((s, z) => s + rademacherTail(z, t), 0);
   let tH = 1; while (hoeff(tH) >= 1 && tH < 10 * n) tH++;
   let tE = 1; while (exact(tE) >= 1 && tE < 10 * n) tE++;
   return { tHoeff: tH, failHoeff: hoeff(tH), tExact: tE, failExact: exact(tE), generic: Math.sqrt(2 * n * Math.log(2 * m)) };
 }
 /* Experimental algorithms (no guarantee claimed): greedy signs, then single-flip local search. */
+/** @param {number[][]} A @param {number} n @returns {number[]} */
 function greedySigns(A, n) {
   const x = new Array(n).fill(0);
   for (let j = 0; j < n; j++) {
@@ -27,6 +31,7 @@ function greedySigns(A, n) {
   }
   return x;
 }
+/** @param {number[][]} A @param {number[]} x0 */
 function localSearch(A, x0) {
   const x = x0.slice(); let cur = discOf(A, x), improved = true, guard = 0;
   while (improved && guard++ < 500) {
@@ -63,6 +68,7 @@ defineModule({
     };
   },
   sample(P, r, F) {
+    /** @type {number[]} */
     let x = Array.from({ length: P.n }, () => (r() < 0.5 ? 1 : -1));
     if (P.algo === "greedy") x = greedySigns(F.A, P.n);
     if (P.algo === "search") x = localSearch(F.A, greedySigns(F.A, P.n));
@@ -134,10 +140,17 @@ defineModule({
 
 /* ---------- ε-nets and VC dimension ---------- */
 
+/** @type {Record<string, { label: string, vc: number }>} */
 const RANGE_FAMILIES = { intervals: { label: "intervals on ℝ", vc: 2 }, halfplanes: { label: "halfplanes in ℝ²", vc: 3 } };
 const DIRECTIONS = 720;
+/** @typedef {[number, number]} Point */
+/** @param {Params} P @param {() => number} r @returns {Point[]} */
 function pointSet(P, r) { return Array.from({ length: P.N }, () => (P.family === "intervals" ? [r(), 0] : [r(), r()])); }
 /* The largest range of the family containing no sample point; exact for intervals, over a 720-direction grid for halfplanes. */
+/**
+ * @param {Params} P @param {Point[]} pts @param {number[]} sampleIdx
+ * @returns {{ count: number, lo?: number, hi?: number, theta?: number, cut?: number }}
+ */
 function largestMissedRange(P, pts, sampleIdx) {
   if (P.family === "intervals") {
     const xs = pts.map((p) => p[0]).sort((a, b) => a - b), ss = [...new Set(sampleIdx.map((i) => pts[i][0]))].sort((a, b) => a - b);
@@ -161,6 +174,7 @@ function largestMissedRange(P, pts, sampleIdx) {
   return best;
 }
 /* Which of the 2^k labelings of a tiny point set the family realises (intervals exactly; halfplanes by direction search). */
+/** @param {string} family @param {number[][]} pts */
 function traces(family, pts) {
   const k = pts.length, out = [];
   for (let mask = 0; mask < 1 << k; mask++) {
@@ -178,6 +192,7 @@ function traces(family, pts) {
   }
   return out;
 }
+/** @type {Record<string, number[][][]>} */
 const VC_EXAMPLES = { intervals: [[[0.2, 0], [0.5, 0]], [[0.2, 0], [0.5, 0], [0.8, 0]]], halfplanes: [[[0.2, 0.2], [0.8, 0.3], [0.5, 0.8]], [[0.2, 0.2], [0.8, 0.2], [0.8, 0.8], [0.2, 0.8]]] };
 defineModule({
   id: "epsilon-net", route: "geometry/epsilon-net", title: "ε-nets and VC dimension", short: "ε-net / VC",
@@ -281,6 +296,7 @@ defineModule({
 /* ---------- Entropy ---------- */
 
 /* A Markov chain on bits: X1 ~ Bernoulli(a), each next bit flips the previous one with probability f. */
+/** @param {number} n @param {number} a @param {number} f */
 function chainDistribution(n, a, f) {
   const out = [];
   for (let x = 0; x < 1 << n; x++) {
@@ -291,6 +307,7 @@ function chainDistribution(n, a, f) {
   }
   return out;
 }
+/** @param {number} N @param {number} r */
 function hammingVolume(N, r) { let s = 0; for (let i = 0; i <= r; i++) s += choose(N, i); return s; }
 defineModule({
   id: "entropy", route: "entropy/coding", title: "Entropy and counting", short: "Entropy",
@@ -392,9 +409,13 @@ defineModule({
 /* ---------- Conditional expectation: MAX-CUT ---------- */
 
 /* E[cut | b_i fixed where assign[i] is 0 or 1, the rest uniform]. */
+/** @param {{ edges: Edge[] }} G @param {number[]} assign each vertex's side, or −1 while undecided */
 function condExpCut(G, assign) { let s = 0; for (const [a, b] of G.edges) s += assign[a] < 0 || assign[b] < 0 ? 0.5 : assign[a] !== assign[b] ? 1 : 0; return s; }
+/** @param {{ n: number, edges: Edge[] }} G */
 function derandomizeCut(G, rule = "better") {
-  const n = G.n, assign = new Array(n).fill(-1), path = [{ i: -1, value: condExpCut(G, assign) }];
+  const n = G.n, assign = new Array(n).fill(-1);
+  /** @type {{ i: number, value: number, e0?: number, e1?: number, choice?: number }[]} */
+  const path = [{ i: -1, value: condExpCut(G, assign) }];
   for (let i = 0; i < n; i++) {
     assign[i] = 0; const e0 = condExpCut(G, assign);
     assign[i] = 1; const e1 = condExpCut(G, assign);
@@ -456,7 +477,8 @@ defineModule({
     ];
   },
   story(P, A, I) {
-    const steps = A.path.slice(1, 7).map((s) => `| $b_{${s.i + 1}}$ | ${tex(s.e0)} | ${tex(s.e1)} | ${s.choice} |`).join("\n");
+    // Every step after the starting value records both branch values.
+    const steps = A.path.slice(1, 7).map((s) => `| $b_{${s.i + 1}}$ | ${tex(/** @type {number} */ (s.e0))} | ${tex(/** @type {number} */ (s.e1))} | ${s.choice} |`).join("\n");
     return {
       title: `Conditional expectation: a cut of at least ${fmt(A.mean)} edges`,
       subtitle: "Removing the randomness from a proof",
@@ -494,16 +516,19 @@ defineModule({
 /* ---------- Property testing: triangle-freeness ---------- */
 
 const TEST_N = 10000;
+/** @param {Params} P @param {number} seed */
 function testerGraph(P, seed) {
   const perm = rng(seed, "tester-hidden").shuffle(Array.from({ length: TEST_N }, (_, i) => i)), part = new Int8Array(TEST_N).fill(-1);
   if (P.type === "far") { const a = Math.floor((P.alpha * TEST_N) / 3); for (let i = 0; i < 3 * a; i++) part[perm[i]] = Math.floor(i / a); return { part, a, size: a }; }
   const b = Math.floor((P.alpha * TEST_N) / 2); for (let i = 0; i < 2 * b; i++) part[perm[i]] = Math.floor(i / b); return { part, a: 0, size: b };
 }
 /* Edges: between different labelled parts (complete tripartite K_{a,a,a}, or complete bipartite K_{b,b}); nothing else. */
-const testerAdjacent = (F, u, v) => F.part[u] >= 0 && F.part[v] >= 0 && F.part[u] !== F.part[v];
+const testerAdjacent = (/** @type {{ part: Int8Array }} */ F, /** @type {number} */ u, /** @type {number} */ v) => F.part[u] >= 0 && F.part[v] >= 0 && F.part[u] !== F.part[v];
+/** @param {Params} P @param {number} a @param {number} s */
 function rejectProbability(P, a, s) {
   if (P.type !== "far" || a === 0) return 0;
-  const base = logChoose(TEST_N, s), q = (k) => (TEST_N - k >= s ? Math.exp(logChoose(TEST_N - k, s) - base) : 0);
+  const base = logChoose(TEST_N, s), q = (/** @type {number} */ k) =>
+ (TEST_N - k >= s ? Math.exp(logChoose(TEST_N - k, s) - base) : 0);
   return Math.max(0, Math.min(1, 1 - (3 * q(a) - 3 * q(2 * a) + q(3 * a))));
 }
 defineModule({
@@ -607,4 +632,5 @@ defineModule({
   scenes: ["problem", "random-object", "variable", "bound", "experiment", "conclusion"],
 });
 
-Object.assign(PM, { setSystem, rowSums, discOf, rademacherTail, discrepancyBounds, greedySigns, localSearch, largestMissedRange, traces, chainDistribution, hammingVolume, condExpCut, derandomizeCut, rejectProbability, testerGraph, testerAdjacent, TEST_N, RANGE_FAMILIES });
+const INFORMATION_API = { setSystem, rowSums, discOf, rademacherTail, discrepancyBounds, greedySigns, localSearch, largestMissedRange, traces, chainDistribution, hammingVolume, condExpCut, derandomizeCut, rejectProbability, testerGraph, testerAdjacent, TEST_N, RANGE_FAMILIES };
+Object.assign(PM, INFORMATION_API);

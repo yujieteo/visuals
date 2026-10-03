@@ -4,15 +4,18 @@
 
 /* A k-uniform "band" hypergraph on a ring of N = m·s vertices: edge i is the k consecutive vertices starting at i·s.
  * The stride s sets how much neighbouring edges overlap (so the dependency degree d), independently of the number m of edges. */
+/** @typedef {{ N: number, k: number, m: number, s: number, edges: number[][], nbrs: number[][], d: number, degrees: number[] }} BandHypergraph */
+/** @param {number} k @param {number} s @param {number} m @returns {BandHypergraph} */
 function bandHypergraph(k, s, m) {
   const N = m * s, edges = [];
-  for (let i = 0; i < m; i++) { const e = []; for (let j = 0; j < k; j++) e.push((i * s + j) % N); edges.push([...new Set(e)].sort((a, b) => a - b)); }
+  for (let i = 0; i < m; i++) { /** @type {number[]} */ const e = []; for (let j = 0; j < k; j++) e.push((i * s + j) % N); edges.push([...new Set(e)].sort((a, b) => a - b)); }
   const nbrs = dependencyGraph(edges), deg = nbrs.map((x) => x.length);
   return { N, k, m, s, edges, nbrs, d: Math.max(0, ...deg), degrees: deg };
 }
-const monochromatic = (e, col) => e.every((v) => col[v] === col[e[0]]);
+const monochromatic = (/** @type {number[]} */ e, /** @type {ArrayLike<number>} */ col) => e.every((v) => col[v] === col[e[0]]);
 const LLL_E = Math.E;
 
+/** @param {Params} P @param {BandHypergraph} H */
 function lllAnalysis(P, H) {
   const p = 2 ** (1 - P.k), d = H.d, m = H.m, gauge = LLL_E * p * (d + 1), union = m * p;
   const lllLower = gauge <= 1 ? (d === 0 ? (1 - p) ** m : (1 - 1 / (d + 1)) ** m) : null;
@@ -49,6 +52,7 @@ defineModule({
   sample(P, r, H) {
     const col = new Uint8Array(H.N);
     for (let v = 0; v < H.N; v++) col[v] = r() < 0.5 ? 1 : 0;
+    /** @type {number[]} */
     const bad = []; H.edges.forEach((e, i) => { if (monochromatic(e, col)) bad.push(i); });
     return { col, bad, X: bad.length };
   },
@@ -101,8 +105,8 @@ defineModule({
       results: [
         { title: `The gauge: e·p·(d+1) = ${fmt(A.gauge)}`, focus: "condition", body: reveal(`$$mp=${A.m}\\cdot ${tex(A.p)}=${tex(A.union)}${A.unionOk ? "<1" : ">1"}$$`, `$$e\\,p\\,(d+1)=${tex(A.gauge)}${A.ok ? "\\le 1" : ">1"}$$`),
           narration: `The union bound sum is ${spokenNumber(A.union)}${A.unionOk ? ", still below one" : ", hopelessly above one"}. The Local Lemma quantity is ${spokenNumber(A.gauge)}${A.ok ? ", within its limit" : ", above its limit"}.` },
-        { title: "Experiment: how often a random colouring works", focus: "experiment", body: reveal(`Seed ${P.seed}: ${I.X} bad edges.`, A.ok ? `The Local Lemma guarantees $\\Pr[\\text{none}]\\ge ${tex(A.lllLower)}$; samples illustrate how loose that is.` : "Samples may still find good colourings: failure of the condition is not failure of existence."),
-          narration: A.ok ? `The Local Lemma guarantees a success probability of at least ${spokenNumber(A.lllLower)}. Simulation shows the true chance is usually far larger, but proves nothing.` : "Simulation may still find good colourings. A failed condition only means this proof is silent." },
+        { title: "Experiment: how often a random colouring works", focus: "experiment", body: reveal(`Seed ${P.seed}: ${I.X} bad edges.`, A.ok ? `The Local Lemma guarantees $\\Pr[\\text{none}]\\ge ${tex(/** @type {number} A.ok, so the Local Lemma bound exists */ (A.lllLower))}$; samples illustrate how loose that is.` : "Samples may still find good colourings: failure of the condition is not failure of existence."),
+          narration: A.ok ? `The Local Lemma guarantees a success probability of at least ${spokenNumber(/** @type {number} */ (A.lllLower))}. Simulation shows the true chance is usually far larger, but proves nothing.` : "Simulation may still find good colourings. A failed condition only means this proof is silent." },
       ],
       checks: [
         { title: A.ok ? "Conclusion: a proper colouring exists" : "Conclusion: the condition fails", focus: "conclusion", body: A.ok ? "$$\\Pr\\Big[\\bigcap_e\\overline{A_e}\\Big]>0$$\n\nSo an outcome avoiding every bad event exists." : "The dependency neighbourhoods are too large; increase the stride or the edge size.",
@@ -119,10 +123,13 @@ defineModule({
 /* ---------- Moser–Tardos ---------- */
 
 /* Resample the variables of the lowest-numbered violated edge until none is violated (or maxSteps). */
+/** @param {BandHypergraph} H @param {() => number} r */
 function moserTardos(H, r, maxSteps = 100000) {
   const col = new Uint8Array(H.N);
   for (let v = 0; v < H.N; v++) col[v] = r() < 0.5 ? 1 : 0;
-  const initial = col.slice(), log = [];
+  const initial = col.slice();
+  /** @type {{ event: number, values: number[] }[]} */
+  const log = [];
   const violated = () => { for (let i = 0; i < H.m; i++) if (monochromatic(H.edges[i], col)) return i; return -1; };
   let e;
   while ((e = violated()) >= 0 && log.length < maxSteps) {
@@ -132,6 +139,7 @@ function moserTardos(H, r, maxSteps = 100000) {
   }
   return { initial, final: col, log, resamplings: log.length, done: violated() < 0 };
 }
+/** @param {ReturnType<typeof lllAnalysis>} A */
 function mtBound(A) {
   if (!A.ok) return null;
   const x = A.d === 0 ? A.p : 1 / (A.d + 1);
@@ -194,7 +202,7 @@ defineModule({
       subtitle: "The Local Lemma becomes an algorithm",
       narration: "This deck turns the Local Lemma into an algorithm by resampling only the variables of a violated edge.",
       setup: [
-        { title: "Problem: construct, don't just prove", focus: "problem", body: reveal("The Local Lemma says a proper colouring exists.", `Its probability bound may be tiny: ${A.lllLower === null ? "here none applies" : `$${tex(A.lllLower)}$`}.`, "We want to find one."),
+        { title: "Problem: construct, don't just prove", focus: "problem", body: reveal("The Local Lemma says a proper colouring exists.", `Its probability bound may be tiny: ${A.lllLower === null ? "here none applies" : `$${tex(/** @type {number} A.ok, so the Local Lemma bound exists */ (A.lllLower))}$`}.`, "We want to find one."),
           narration: "The Local Lemma proves a proper colouring exists, but its probability bound can be tiny. We want an efficient way to find one." },
         { title: "Random object: a colouring, then local fixes", focus: "random-object", body: reveal("Start from a uniformly random colouring.", `Seed ${P.seed}: ${I.log.length ? `the first violated edge is $A_{${I.log[0].event}}$` : "no edge is violated"}.`),
           narration: `Start from a random colouring. With seed ${P.seed} the algorithm needed ${I.resamplings} resamplings.` },
@@ -225,7 +233,9 @@ defineModule({
 
 /* ---------- Janson and Poisson: triangles in G(n, p) ---------- */
 
+/** @param {Params} P @param {Rng} r @returns {Graph & { planted?: number[] }} */
 function plantedGraph(P, r) {
+  /** @type {Graph & { planted?: number[] }} */
   const G = gnp(P.n, P.p, r);
   if (P.rho > 0 && r() < P.rho) {
     const vs = r.shuffle(Array.from({ length: P.n }, (_, i) => i)).slice(0, 4);
@@ -330,6 +340,7 @@ defineModule({
 
 /* ---------- Chernoff: the degree of a vertex ---------- */
 
+/** @param {Params} P */
 function chernoffAnalysis(P) {
   const N = P.n - 1, p = P.p, mu = N * p, d = P.delta, a = (1 + d) * mu, rho = P.rho;
   const indepTail = binomUpperTail(N, a, p), allOn = N >= a - 1e-12 ? p : 0;
@@ -444,14 +455,18 @@ defineModule({
 
 /* ---------- Martingales: edge exposure ---------- */
 
+/** @type {Record<string, string>} */
 const STATISTICS = { triangles: "triangles", isolated: "isolated vertices", edges: "edges" };
-function edgeList(n) { const e = []; for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) e.push([i, j]); return e; }
+/** @param {number} n */
+function edgeList(n) { /** @type {Edge[]} */ const e = []; for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) e.push([i, j]); return e; }
 /* Lipschitz constant of the statistic under changing one edge. */
+/** @param {string} stat @param {number} n */
 function lipschitz(stat, n) { return stat === "triangles" ? n - 2 : stat === "isolated" ? 2 : 1; }
 /* E[statistic | the first `known` edges in lexicographic order are revealed as x[0..known−1]]. Exact. */
+/** @param {string} stat @param {number} n @param {number} p @param {ArrayLike<number>} x @param {number} known */
 function conditionalExpectation(stat, n, p, x, known) {
-  const E = edgeList(n), idx = (a, b) => { const i = Math.min(a, b), j = Math.max(a, b); return i * n - (i * (i + 1)) / 2 + (j - i - 1); };
-  const val = (a, b) => { const e = idx(a, b); return e < known ? x[e] : p; };
+  const E = edgeList(n), idx = (/** @type {number} */ a, /** @type {number} */ b) => { const i = Math.min(a, b), j = Math.max(a, b); return i * n - (i * (i + 1)) / 2 + (j - i - 1); };
+  const val = (/** @type {number} */ a, /** @type {number} */ b) => { const e = idx(a, b); return e < known ? x[e] : p; };
   if (stat === "edges") { let s = 0; for (let e = 0; e < known; e++) s += x[e]; return s + (E.length - known) * p; }
   if (stat === "isolated") {
     let s = 0;
@@ -462,7 +477,9 @@ function conditionalExpectation(stat, n, p, x, known) {
   for (let a = 0; a < n; a++) for (let b = a + 1; b < n; b++) { const ab = val(a, b); if (!ab) continue; for (let c = b + 1; c < n; c++) s += ab * val(a, c) * val(b, c); }
   return s;
 }
-function doobPath(stat, n, p, x) { const m = (n * (n - 1)) / 2, out = []; for (let i = 0; i <= m; i++) out.push(conditionalExpectation(stat, n, p, x, i)); return out; }
+/** @param {string} stat @param {number} n @param {number} p @param {ArrayLike<number>} x */
+function doobPath(stat, n, p, x) { const m = (n * (n - 1)) / 2, out = [];
+ for (let i = 0; i <= m; i++) out.push(conditionalExpectation(stat, n, p, x, i)); return out; }
 
 defineModule({
   id: "martingale", route: "martingale/exposure", title: "Martingales and bounded differences", short: "Martingales",
@@ -562,4 +579,5 @@ defineModule({
   scenes: ["problem", "random-object", "variable", "corridor", "bound", "experiment", "conclusion"],
 });
 
-Object.assign(PM, { bandHypergraph, moserTardos, lllAnalysis, chernoffAnalysis, conditionalExpectation, doobPath, lipschitz, edgeList, STATISTICS });
+const DEPENDENCE_API = { bandHypergraph, moserTardos, lllAnalysis, chernoffAnalysis, conditionalExpectation, doobPath, lipschitz, edgeList, STATISTICS };
+Object.assign(PM, DEPENDENCE_API);

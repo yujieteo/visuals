@@ -11,19 +11,78 @@
  *   story(P, A, I)    the deck frames: problem, random object, variable, technique, bound, experiment, conclusion, use
  * Text is written for this atlas; the numbers come from analyse, so the lab, proof, deck and export agree.
  */
+/**
+ * A lab's parameters by key: the seed, numbers, or the option string of a choice control. Each lab reads its own
+ * keys, so the values are typed where they are used.
+ * @typedef {{ seed: number, [key: string]: any }} Params
+ */
+/**
+ * One control: a number range, or a choice from options; hidden ones carry encoded state such as a set of indices.
+ * @typedef {{ key: string, label: string, def: any, min?: number, max?: number, step?: number, options?: [any, string][], hidden?: boolean }} ParamSpec
+ */
+/** @typedef {{ id: string, label: string, ok: boolean, broken?: string }} Assumption a hypothesis of the theorem, holding or broken */
+/** @typedef {{ title: string, focus: string, body: string, narration: string, notes?: string, key?: string }} StoryFrame */
+/** @typedef {{ title: string, subtitle: string, narration: string, setup: StoryFrame[], method: StoryFrame[], results: StoryFrame[], checks: StoryFrame[] }} Story */
+/**
+ * What theory predicts for a lab's experiment: the mean, the event counted and the bound on its frequency.
+ * @typedef {{ mean?: number | null, meanLabel?: string, pmf?: number[] | null, event: string, eventTest: (x: number, A: any, P: Params) => boolean,
+ bound?: number | null, boundKind?: string, boundLabel?: string, lower?: number, lowerLabel?: string }} Theory
+ */
+/**
+ * A lab: plain data plus pure functions (see above), typed by its analysis A, its sampled outcome I, its fixed structure F
+ * and the outcome V the page shows (a lab with view() shows a deterministic picture rather than a sample).
+ * @template A, I, F
+ * @template [V=I]
+ * @typedef {{
+ *   id: string, route: string, title: string, short: string, family: string, archetype: string, intuition: string, problem: string,
+ *   randomObject: string, variable: string, variableTex: string, why: string, need: string, boundTex: string,
+ *   pattern: { controls: string, conclusion: string, worksWhen: string, visual: string },
+ *   params: ParamSpec[],
+ *   coerce?: (P: Params) => Params,
+ *   fixed?: (P: Params, seed: number) => F,
+ *   analyse: (P: Params, F: F) => A,
+ *   sample: (P: Params, r: Rng, F: F) => I,
+ *   view?: (P: Params, F: F) => V,
+ *   stat: (I: I, P: Params, F: F) => number,
+ *   fastStat?: (P: Params, r: Rng, F: F) => number,
+ *   trialCap: (P: Params) => number,
+ *   sweep?: (P: Params) => unknown,
+ *   experiment: { label: string, theory: (A: A, P: Params) => Theory },
+ *   assumptions: (P: Params, A: A) => Assumption[],
+ *   breakIt: { label: string, apply: (P: Params, A: A) => Params },
+ *   compare: string[],
+ *   whyNot: (P: Params, A: A) => { title: string, text: string }[],
+ *   proof: (P: Params, A: A) => { text: string, focus: string }[],
+ *   asymptotic?: (P: Params, A: A) => { formula: string, terms: [string, number][], total: number, note: string },
+ *   story: (P: Params, A: A, I: V) => Story,
+ *   scenes: string[],
+ * }} ModuleDef
+ */
+/**
+ * Any lab, as the shared machinery and the page handle them: each lab's analysis, outcome and structure have their
+ * own shapes, read by that lab's own functions and renderer, so they stay open here.
+ * @typedef {ModuleDef<any, any, any, any>} Module
+ */
+/** @type {Module[]} */
 const MODULES = [];
+/** @template A, I, F @template [V=I] @param {ModuleDef<A, I, F, V>} m */
 const defineModule = (m) => { MODULES.push(m); return m; };
 
 /* Shared pieces of the deck frames: reveals (". . .") and the scene comment that rides along. */
-const reveal = (...parts) => parts.filter(Boolean).join("\n\n. . .\n\n");
+const reveal = (/** @type {(string | false | null | undefined)[]} */ ...parts) => parts.filter(Boolean).join("\n\n. . .\n\n");
+/** @param {string} module @param {string} scene @param {Params} P @param {string} focus */
 const sceneComment = (module, scene, P, focus) =>
+
   `<!-- probabilistic-method scene: module=${module}; scene=${scene}; seed=${P.seed}; focus=${focus}; ` +
   Object.keys(P).filter((k) => k !== "seed").sort().map((k) => `${k}=${P[k]}`).join(", ") + " -->";
 
 /* ---------- 1. Basic method and first moment: the Ramsey lower bound ---------- */
 
+/** @type {Record<number, string>} */
 const KNOWN_RAMSEY = { 3: "R(3,3) = 6", 4: "R(4,4) = 18", 5: "43 ≤ R(5,5) ≤ 46" };
-const KNOWN_RAMSEY_TEX = { 3: "R(3,3)=6", 4: "R(4,4)=18", 5: "43\\le R(5,5)\\le 46" };
+/** @type {Record<number, string>} */
+const KNOWN_RAMSEY_TEX = {
+ 3: "R(3,3)=6", 4: "R(4,4)=18", 5: "43\\le R(5,5)\\le 46" };
 
 defineModule({
   id: "first-moment", route: "first-moment/ramsey", title: "Basic method and first moment", short: "First moment",
@@ -108,7 +167,7 @@ defineModule({
     };
   },
   story(P, A, I) {
-    const f = (x) => tex(x);
+    const f = (/** @type {number} */ x) => tex(x);
     return {
       title: `The first moment: no monochromatic K_${P.k} in K_${P.n}`,
       subtitle: "Expected failures below one force a perfect outcome",
@@ -147,6 +206,7 @@ defineModule({
 /* ---------- 2. Linearity of expectation: Szele's tournaments ---------- */
 
 /* Number of directed Hamiltonian paths in a tournament, by dynamic programming over vertex subsets. */
+/** @param {number} n @param {ArrayLike<number>} beats beats[v * n + w] is 1 when v beats w */
 function hamiltonianPaths(n, beats) {
   const full = (1 << n) - 1, dp = new Float64Array((1 << n) * n);
   for (let v = 0; v < n; v++) dp[(1 << v) * n + v] = 1;
@@ -160,7 +220,9 @@ function hamiltonianPaths(n, beats) {
   return total;
 }
 /* Probability that every ordering in a list is a directed Hamiltonian path of a uniformly random tournament. */
+/** @param {number[][]} orders */
 function jointPathProbability(orders) {
+  /** @type {Map<string, number>} */
   const need = new Map();
   for (const o of orders) for (let i = 0; i + 1 < o.length; i++) {
     const a = o[i], b = o[i + 1], key = Math.min(a, b) + "-" + Math.max(a, b), dir = a < b ? 1 : 0;
@@ -189,7 +251,7 @@ defineModule({
   analyse(P) {
     const n = P.n, orders = factorial(n), pOne = 2 ** -(n - 1), EX = orders * pOne;
     const id = Array.from({ length: n }, (_, i) => i), rot = [n - 1, ...id.slice(0, n - 1)], rev = id.slice().reverse();
-    const pair = (o) => { const j = jointPathProbability([id, o]); return { order: o, joint: j, product: pOne * pOne }; };
+    const pair = (/** @type {number[]} */ o) => { const j = jointPathProbability([id, o]); return { order: o, joint: j, product: pOne * pOne }; };
     return {
       orders, pOne, EX, ok: true, dependent: [pair(rot), pair(rev)],
       rows: [["orderings π", fmt(orders), `${n}!=${orders}`], ["Pr[I_π = 1]", fmt(pOne), `2^{-${n - 1}}`], ["E[X] = Σ Pr[I_π = 1]", fmt(EX), `\\mathbb E[X]=${tex(EX)}`]],
@@ -381,6 +443,7 @@ defineModule({
 /* ---------- 4. Second moment: cliques in G(n, p) ---------- */
 
 const CLUSTER_PI = 0.01;
+/** @param {number} n @param {number} k @param {number} p */
 function secondMomentTable(n, k, p) {
   const K = choose(k, 2), rows = [];
   for (let j = 0; j <= k; j++) {
@@ -421,10 +484,12 @@ defineModule({
         ["Pr[X > 0] ≥ (Paley–Zygmund)", fmt(1 / ratio), `${tex(1 / ratio)}`], ["Pr[X = 0] ≤ (Chebyshev)", fmt(Math.min(1, Math.max(0, ratio - 1))), `${tex(Math.min(1, Math.max(0, ratio - 1)))}`]],
     };
   },
+  /** @this {Module} the lab itself, for its own analyse @param {Params} P */
   sweep(P) {
     const out = [];
+
     for (let i = 1; i < 100; i++) {
-      const p = i / 100, a = this.analyse({ ...P, p, cluster: "off" });
+      const p = i / 100, a = this.analyse({ ...P, p, cluster: "off" }, null);
       out.push({ p, markov: a.markov, pz: a.pz });
     }
     return out;
@@ -435,6 +500,7 @@ defineModule({
     if (P.cluster === "on") G = r() < CLUSTER_PI ? graphFromEdges(n, subsets(n, 2)) : graphFromEdges(n, []);
     else G = gnp(n, P.p, r);
     const X = countCliques(G, k);
+    /** @type {number[][]} */
     let witnesses = [];
     if (X && choose(n, k) <= 20000) witnesses = subsets(n, k).filter((S) => S.every((a, i) => S.slice(i + 1).every((b) => G.adj[a * n + b]))).slice(0, 40);
     return { G, X, witnesses };
@@ -503,4 +569,5 @@ defineModule({
   scenes: ["problem", "random-object", "variable", "overlap", "bound", "experiment", "threshold", "conclusion"],
 });
 
-Object.assign(PM, { MODULES, hamiltonianPaths, jointPathProbability, secondMomentTable, reveal, sceneComment });
+const EXISTENCE_API = { MODULES, hamiltonianPaths, jointPathProbability, secondMomentTable, reveal, sceneComment };
+Object.assign(PM, EXISTENCE_API);

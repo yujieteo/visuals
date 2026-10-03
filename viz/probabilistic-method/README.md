@@ -20,6 +20,7 @@ inventory when JavaScript is off.
 | `src/engine/*.js` | The pure engine, concatenated into `<script id="probabilistic-method-engine">` as `self.PM`: seeded randomness, combinatorics and distributions, graphs and set systems, the inventory and concept map, the eighteen modules (parameters, analysis, sampling, hypotheses, proofs, deck stories), URL state, experiments, deck and Markdown exports, search, the recommender and self-tests. No DOM, clock or network. |
 | `src/ui/*.js` | The page code, concatenated into `<script id="probabilistic-method-ui">`: one SVG renderer per lab, the views (atlas, lab, technique, compare, recommender), deck mode, command palette, keyboard, export menu and the read-only WebMCP tools. |
 | `beamdswitch.js` | The site's standard report template, a verbatim copy of `templates/beamdswitch.js` in yujieteo/site, inlined unchanged as `<script id="beamdswitch">`. |
+| `package.json`, `package-lock.json`, `tsconfig.json`, `scripts/extract-inline.mjs`, `types/`, `.gitignore` | Development-only type-check tooling: `npm run typecheck` runs the pinned TypeScript over the JSDoc types in `src/`, `build.mjs`, the tests and the template's inline script. Not ported to the site. |
 | `raw.json` | Catalogue data, published as `data.json`, generated from the engine: every module's route and parameters, the families, the inventory and the course order. The page never fetches it. |
 
 ## Determinism and URLs
@@ -44,7 +45,7 @@ conclusions come from the displayed inequalities.
 This repository, [yujieteo/probabilistic-method](https://github.com/yujieteo/probabilistic-method),
 is where the atlas and its tests develop; CI runs them on every push and pull request.
 `visuals/probabilistic-method/` in yujieteo/site is a port of the page files without
-`tests/` or `.github/`.
+`tests/`, `.github/` or the type-check tooling.
 
 `tests/probabilistic-method.test.mjs` (`node --test 'tests/*.test.{mjs,cjs}'`) checks that the build is current,
 the page is self-contained, every specification §85 utility (combinations, binomial and
@@ -57,4 +58,4 @@ scene state), the inventory, every deck with beamdswitch's own parser, and the p
 in a stand-in DOM with its WebMCP tools and export buttons. `tests/page-checks.mjs` holds
 the shared deck and stand-in DOM helpers; beamdswitch's deck parser and read-only copies of the
 site's `templates/beamdswitch.js` and `templates/beamdswitch-report.md` are in
-`tests/fixtures/beamdswitch/`.
+`tests/fixtures/beamdswitch/`, with `deck.d.mts` typing the parser for the type check.

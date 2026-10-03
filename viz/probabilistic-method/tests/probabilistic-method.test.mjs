@@ -7,11 +7,15 @@ import { read, assertTemplateCopy, assertInlined, assertStandardDeck, openPage }
 
 const { buildPage, loadEngine, engineSource, uiSource, catalogueText } = await import("../build.mjs");
 const PM = loadEngine();
-const J = (x) => JSON.parse(JSON.stringify(x));
+const J = (/** @type {unknown} */ x) => JSON.parse(JSON.stringify(x));
 /* Engine values come from another vm realm; compare them as plain JSON. */
+/** @param {unknown} a @param {unknown} b @param {string} [msg] */
 const deq = (a, b, msg) => assert.deepEqual(J(a), J(b), msg);
-const close = (a, b, tol, what) => assert.ok(Math.abs(a - b) <= tol, `${what}: ${a} vs ${b}`);
-const evalDefault = (id, over = {}) => { const m = PM.moduleById(id); return PM.evaluate(m, { ...PM.defaults(m), ...over }); };
+const close = (/** @type {number} */ a, /** @type {number} */ b, /** @type {number} */ tol, /** @type {string} */ what) => assert.ok(Math.abs(a - b) <= tol, `${what}: ${a} vs ${b}`);
+/* A lab the test names: it must exist. */
+const lab = (/** @type {string} */ id) => { const m = PM.moduleById(id); assert.ok(m, id); return m; };
+/** @param {string} id @param {Record<string, unknown>} [over] */
+const evalDefault = (id, over = {}) => { const m = lab(id); return PM.evaluate(m, { ...PM.defaults(m), ...over }); };
 test("index.html and raw.json are the build of the sources, with every script inlined unchanged", () => {
   const html = read("index.html");
   assert.equal(html, buildPage(), "run node build.mjs");
@@ -32,7 +36,7 @@ test("the page is self-contained: no external scripts, styles, fonts or requests
 });
 
 test("the no-JavaScript fallback has the worked example and the whole inventory", () => {
-  const html = read("index.html"), stat = /<div id="static" class="static">([\s\S]*?)<\/div>\n<div id="app" hidden>/.exec(html)[1];
+  const html = read("index.html"), stat = /** @type {RegExpExecArray} */ (/<div id="static" class="static">([\s\S]*?)<\/div>\n<div id="app" hidden>/.exec(html))[1];
   assert.match(stat, /E\[X\] = 0\.4922 &lt; 1/);
   for (const t of PM.INVENTORY) assert.ok(stat.includes(PM.escapeHtml(t.title)), t.title);
 });
@@ -46,6 +50,7 @@ test("the built-in self-tests pass", () => {
 /* ---------- §85: mathematical utilities ---------- */
 
 test("numbers are written the same way on the page, in LaTeX and aloud", () => {
+  /** @type {[number, string, string, string][]} */
   const cases = [
     [0, "0", "0", "0"], [-1234567, "−1,234,567", "-1234567", "minus 1234567"], [1e9, "1×10⁹", "1 \\times 10^{9}", "1 times ten to the 9"],
     [123456.789, "123500", "123500", "123000"], [-0.000012345, "−1.234×10⁻⁵", "-1.234 \\times 10^{-5}", "minus 1.23 times ten to the minus 5"],
@@ -133,7 +138,7 @@ test("conditional expectations: each node averages its children (cut and Doob ma
   }
   const D = evalDefault("derandomization").A;
   assert.ok(D.cut >= D.m / 2, "the derandomised cut reaches the mean");
-  D.path.slice(1).forEach((s, i) => assert.ok(s.value >= D.path[i].value - 1e-12, "the value never falls"));
+  D.path.slice(1).forEach((/** @type {{ value: number }} */ s, /** @type {number} */ i) => assert.ok(s.value >= D.path[i].value - 1e-12, "the value never falls"));
 });
 
 test("seeded PRNG: fixed draws, independent named streams", () => {
@@ -156,7 +161,7 @@ test("graph generation: seed 17, n = 8, p = 0.5 gives one fixed graph", () => {
 test("incidence matrices", () => {
   deq(J(PM.incidenceMatrix([[0, 2], [1], [0, 1, 3]], 4)), [[1, 0, 1, 0], [0, 1, 0, 0], [1, 1, 0, 1]]);
   const E = evalDefault("discrepancy");
-  E.F.A.forEach((row, i) => assert.equal(row.reduce((a, b) => a + b, 0), E.F.sets[i].length));
+  E.F.A.forEach((/** @type {number[]} */ row, /** @type {number} */ i) => assert.equal(row.reduce((a, b) => a + b, 0), E.F.sets[i].length));
   deq(J(PM.rowSums([[1, 1, 0], [0, 1, 1]], [1, -1, 1])), [0, 0]);
 });
 
@@ -164,20 +169,20 @@ test("incidence matrices", () => {
 
 test("displayed expectation equals the sum of the displayed indicator expectations", () => {
   for (const [n, k] of [[8, 4], [10, 5], [12, 4]]) {
-    const A = PM.moduleById("first-moment").analyse({ n, k, seed: 17 });
+    const A = lab("first-moment").analyse({ n, k, seed: 17 }, null);
     const sum = PM.subsets(n, k).reduce((s) => s + 2 ** (1 - PM.choose(k, 2)), 0);
     close(A.EX, sum, 1e-12, `n=${n}, k=${k}`);
   }
   /* The second moment table, against a brute-force sum over every ordered pair of k-sets. */
   const n = 8, k = 3, p = 0.4, K = 3, sets = PM.subsets(n, k);
   let brute = 0; for (const S of sets) for (const T of sets) { const j = S.filter((v) => T.includes(v)).length; brute += p ** (2 * K - PM.choose(j, 2)); }
-  close(PM.moduleById("second-moment").analyse({ n, k, p, cluster: "off", seed: 17 }).EX2, brute, 1e-9, "E[X²]");
+  close(lab("second-moment").analyse({ n, k, p, cluster: "off", seed: 17 }, null).EX2, brute, 1e-9, "E[X²]");
   /* Janson's Δ against every ordered pair of triangles sharing an edge. */
   const tri = PM.subsets(7, 3); let pairs = 0; for (const a of tri) for (const b of tri) if (a !== b && a.filter((v) => b.includes(v)).length === 2) pairs++;
-  close(PM.moduleById("janson").analyse({ n: 7, p: 0.2, rho: 0 }).Delta, pairs * 0.2 ** 5, 1e-12, "Δ");
+  close(lab("janson").analyse({ n: 7, p: 0.2, rho: 0, seed: 17 }, null).Delta, pairs * 0.2 ** 5, 1e-12, "Δ");
   /* Dependent random choice: E|A′| and E[Y] are sums over vertices and bad pairs. */
   const D = evalDefault("drc");
-  let EA = 0; for (const row of D.F.adj) EA += (row.reduce((a, b) => a + b, 0) / D.P.N) ** D.P.t;
+  let EA = 0; for (const row of D.F.adj) EA += (row.reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0) / D.P.N) ** D.P.t;
   close(D.A.EA, EA, 1e-12, "E|A′|");
   /* Alterations: E[X − Y] = nq − mq². */
   const Al = evalDefault("alterations"); close(Al.A.EXY, Al.P.n * Al.P.q - Al.F.edges.length * Al.P.q ** 2, 1e-12, "E[X − Y]");
@@ -186,9 +191,9 @@ test("displayed expectation equals the sum of the displayed indicator expectatio
 test("displayed dependency degree equals the actual maximum", () => {
   for (const over of [{}, { s: 1 }, { k: 3, s: 3 }, { k: 8, s: 3, m: 37 }]) {
     for (const id of ["local-lemma", "moser-tardos"]) {
-      const E = evalDefault(id, over), real = Math.max(...E.F.edges.map((e, i) => E.F.edges.filter((f, j) => j !== i && f.some((v) => e.includes(v))).length));
+      const E = evalDefault(id, over), real = Math.max(...E.F.edges.map((/** @type {number[]} */ e, /** @type {number} */ i) => E.F.edges.filter((/** @type {number[]} */ f, /** @type {number} */ j) => j !== i && f.some((v) => e.includes(v))).length));
       assert.equal(E.A.d, real, `${id} ${JSON.stringify(over)}`);
-      assert.ok(E.A.rows.some(([l, v]) => /dependency degree/.test(l) && v === String(real)));
+      assert.ok(E.A.rows.some((/** @type {string[]} */ [l, v]) => /dependency degree/.test(l) && v === String(real)));
     }
   }
 });
@@ -201,10 +206,10 @@ test("the Local Lemma condition is e·p·(d+1) ≤ 1 and its guarantee is a true
   assert.equal(evalDefault("local-lemma", { s: 1 }).A.ok, true, "k = 6, stride 1: d = 10 and e·p·11 < 1 still");
   assert.equal(evalDefault("local-lemma", { s: 1, k: 5 }).A.ok, false, "k = 5, stride 1: d = 8 and e·9/16 > 1");
   /* A tiny instance where Pr[no monochromatic edge] can be enumerated exactly. */
-  const H = PM.bandHypergraph(3, 3, 4), P = { k: 3, s: 3, m: 4 }, B = PM.lllAnalysis(P, H);
+  const H = PM.bandHypergraph(3, 3, 4), P = /** @type {Params} lllAnalysis reads only k */ (/** @type {unknown} */ ({ k: 3, s: 3, m: 4 })), B = PM.lllAnalysis(P, H);
   let good = 0; for (let x = 0; x < 1 << H.N; x++) { const col = Array.from({ length: H.N }, (_, v) => (x >> v) & 1); if (H.edges.every((e) => !e.every((v) => col[v] === col[e[0]]))) good++; }
-  assert.ok(good / 2 ** H.N >= B.lllLower - 1e-12);
-  assert.equal(PM.moduleById("moser-tardos").analyse(P, H).bound, 4 * B.p / (1 - B.p), "d = 0 uses x = p");
+  assert.ok(B.lllLower !== null && good / 2 ** H.N >= B.lllLower - 1e-12);
+  assert.equal(lab("moser-tardos").analyse(P, H).bound, 4 * B.p / (1 - B.p), "d = 0 uses x = p");
 });
 
 test("histograms use exactly the stated number of trials, and trials are deterministic", () => {
@@ -218,7 +223,7 @@ test("histograms use exactly the stated number of trials, and trials are determi
 });
 
 test("experiments agree with the theory they illustrate", () => {
-  const rate = (id, over, N) => { const E = evalDefault(id, over), v = PM.runTrials(E, 0, N), s = PM.summarise(E, v); return { E, s }; };
+  const rate = (/** @type {string} */ id, /** @type {Record<string, unknown>} */ over, /** @type {number} */ N) => { const E = evalDefault(id, over), v = PM.runTrials(E, 0, N), s = PM.summarise(E, v); return { E, s }; };
   { const { E, s } = rate("first-moment", {}, 600); close(s.mean, E.A.EX, 0.2, "mean number of monochromatic 5-sets"); assert.ok(s.frac >= E.A.markovZero - 0.06); }
   { const { E, s } = rate("chernoff", {}, 4000); close(s.frac, E.A.exact, 0.012, "Chernoff lab exact tail"); }
   { const { E, s } = rate("testing", {}, 3000); close(s.frac, E.A.rej, 0.03, "tester rejection rate"); }
@@ -230,7 +235,7 @@ test("experiments agree with the theory they illustrate", () => {
 test("every sample from the labs is what the lab says it is", () => {
   const Al = evalDefault("alterations"); assert.ok(Al.I.independent && Al.I.survivors >= Al.I.guaranteed);
   const Dr = evalDefault("drc"); for (let i = 0; i < Dr.I.U.length; i++) for (let j = i + 1; j < Dr.I.U.length; j++) assert.ok(Dr.F.co[Dr.I.U[i]][Dr.I.U[j]] >= Dr.P.m);
-  const Mt = evalDefault("moser-tardos"); assert.ok(Mt.I.done && Mt.F.edges.every((e) => !e.every((v) => Mt.I.final[v] === Mt.I.final[e[0]])));
+  const Mt = evalDefault("moser-tardos"); assert.ok(Mt.I.done && Mt.F.edges.every((/** @type {number[]} */ e) => !e.every((v) => Mt.I.final[v] === Mt.I.final[e[0]])));
   const Nb = evalDefault("nibble"); const used = new Set(); for (const e of Nb.I.matching) for (const v of e) { assert.ok(!used.has(v), "matching edges are disjoint"); used.add(v); }
   const Qr = evalDefault("quasirandom"); assert.ok(Qr.A.regular); close(Qr.A.lambda, (1 + Math.sqrt(29)) / 2, 1e-9, "Paley λ = (1+√q)/2"); assert.ok(Qr.I.dev <= Qr.I.bound + 1e-9, "expander mixing holds");
   const En = evalDefault("entropy").A; assert.ok(En.H <= En.sumHi + 1e-12 && En.logV <= En.bound);
@@ -250,7 +255,7 @@ test("the inventory has stable ids for every technique, and built techniques poi
   for (const t of PM.INVENTORY) {
     assert.match(t.id, /^[a-z0-9]+(-[a-z0-9]+)*$/);
     assert.ok(PM.FAMILIES.some((f) => f.id === t.family), t.id);
-    if (t.module) { const m = PM.moduleById(t.module); assert.ok(m, t.id); assert.ok(m.scenes.includes(t.scene) || PM.focusLabel({ A: {} }, t.scene) !== t.scene, `${t.id}: scene ${t.scene}`); }
+    if (t.module) { const m = PM.moduleById(t.module); assert.ok(m, t.id); assert.ok(m.scenes.includes(/** @type {string} */ (t.scene)) || PM.focusLabel(/** @type {Evaluated} only the scene name is needed */ ({ A: {} }), /** @type {string} */ (t.scene)) !== t.scene, `${t.id}: scene ${t.scene}`); }
     else assert.equal(t.scene, null);
   }
   /* The spec §88 MVP: every one of these has a lab. */
@@ -260,7 +265,7 @@ test("the inventory has stable ids for every technique, and built techniques poi
 
 test("every lab carries the twelve-part technique schema and the four questions", () => {
   for (const m of PM.MODULES) {
-    for (const k of ["title", "intuition", "problem", "randomObject", "variable", "variableTex", "why", "need", "boundTex"]) assert.ok(typeof m[k] === "string" && m[k].length > 10, `${m.id}.${k}`);
+    for (const k of /** @type {const} */ (["title", "intuition", "problem", "randomObject", "variable", "variableTex", "why", "need", "boundTex"])) assert.ok(typeof m[k] === "string" && m[k].length > 10, `${m.id}.${k}`);
     const E = PM.evaluate(m, PM.defaults(m));
     assert.ok(m.params.length >= 1 && E.A.rows.length >= 3, `${m.id}: play and bound`);
     assert.ok(m.assumptions(E.P, E.A).every((a) => a.ok), `${m.id}: defaults satisfy every hypothesis`);
@@ -274,8 +279,8 @@ test("every lab carries the twelve-part technique schema and the four questions"
 });
 
 test("search resolves the specification's alias examples", () => {
-  const ids = (q) => PM.search(q).map((r) => r.id);
-  for (const [q, want] of [["bad events", ["union-bound", "symmetric-lll", "janson"]], ["tails", ["chernoff", "azuma-hoeffding", "talagrand", "kim-vu"]], ["remove randomness", ["conditional-expectation", "k-wise-independence"]], ["common neighbours", ["dependent-random-choice"]]]) {
+  const ids = (/** @type {string} */ q) => PM.search(q).map((r) => r.id);
+  for (const [q, want] of /** @type {[string, string[]][]} */ ([["bad events", ["union-bound", "symmetric-lll", "janson"]], ["tails", ["chernoff", "azuma-hoeffding", "talagrand", "kim-vu"]], ["remove randomness", ["conditional-expectation", "k-wise-independence"]], ["common neighbours", ["dependent-random-choice"]]])) {
     const got = ids(q); for (const w of want) assert.ok(got.includes(w), `${q} → ${w}: ${got}`);
   }
 });
@@ -286,19 +291,25 @@ test("URL state reproduces the scene", () => {
   for (const m of PM.MODULES) {
     const P = { ...PM.defaults(m), seed: 1729 }, st = { view: "lab", module: m.id, P, deck: true, frame: 2, step: 1, lens: "proof" };
     const h = PM.stateHash(st), back = PM.parseHash(h);
+    assert.ok(back.view === "lab", h);
     assert.equal(back.module, m.id); deq(J(back.P), J(P)); assert.equal(back.frame, 2); assert.equal(back.step, 1); assert.equal(back.lens, "proof");
     assert.ok(h.startsWith(`#${m.route}?`));
   }
-  const lm = PM.moduleById("local-lemma"), lP = { ...PM.defaults(lm), focus: 12, seed: 17 };
+  const lm = lab("local-lemma"), lP = { ...PM.defaults(lm), focus: 12, seed: 17 };
   for (const focus of ["dependency", ""]) {
     const back = PM.parseHash(PM.stateHash({ view: "lab", module: lm.id, P: lP, focus }));
+    assert.ok(back.view === "lab");
     deq(J(back.P), J(lP), `selected event survives with scene "${focus}"`); assert.equal(back.focus, focus);
   }
   const bad = PM.parseHash("#first-moment/ramsey?n=10%&k=4");
+  assert.ok(bad.view === "lab");
   assert.equal(bad.module, "first-moment"); assert.equal(bad.P.n, 10); assert.equal(bad.P.k, 4, "a malformed escape drops only its own pair");
   const ll = PM.parseHash("#local-lemma/hypergraph-colouring?deck=1&switch=4&seed=17");
+  assert.ok(ll.view === "lab");
   assert.equal(ll.module, "local-lemma"); assert.equal(ll.deck, true); assert.equal(ll.step, 4); assert.equal(ll.P.seed, 17);
-  assert.equal(PM.parseHash("#first-moment/ramsey?n=999&k=abc").P.n, 14, "out-of-range values clamp");
+  const clamped = PM.parseHash("#first-moment/ramsey?n=999&k=abc");
+  assert.ok(clamped.view === "lab");
+  assert.equal(clamped.P.n, 14, "out-of-range values clamp");
   assert.equal(PM.parseHash("#technique/talagrand").view, "technique");
   assert.equal(PM.parseHash("#nonsense").view, "atlas");
 });
@@ -338,8 +349,8 @@ test("slide, course and switch-sequence exports are decoded and parse", () => {
   assert.equal(slide.frames.filter((f) => f.kind === "frame").length, 1);
   const course = PM.courseDeck(17), deck = parseDeck(course);
   assert.equal(deck.meta.voice, "bf_emma");
-  deq(deck.frames.filter((f) => f.kind === "section").map((f) => f.title), PM.COURSE.map((id) => PM.moduleById(id).title));
-  assert.equal(course.match(/^::: narration$/gm).length, deck.frames.length, "every course slide is narrated");
+  deq(deck.frames.filter((f) => f.kind === "section").map((f) => f.title), PM.COURSE.map((id) => lab(id).title));
+  assert.equal(course.match(/^::: narration$/gm)?.length, deck.frames.length, "every course slide is narrated");
   assert.equal(PM.courseDeck(17), course);
   const seq = PM.switchSequence(E);
   assert.match(seq, /focus: bad event A_7 and its dependency neighbourhood/);
@@ -359,17 +370,17 @@ test("maths text renders without leftover LaTeX", () => {
 test("the page boots, registers read-only WebMCP tools and exports the deck of the page as set", async () => {
   const page = await openPage("probabilistic-method", { hash: "#local-lemma/hypergraph-colouring?k=5&s=1&seed=17" });
   const tools = page.run("self.ProbabilisticMethodTools");
-  deq(tools.map((t) => t.name), ["get_metadata", "get_current_state", "analyse_technique", "export_technique_deck", "run_self_tests"]);
+  deq(tools.map((/** @type {WebMcpTool} */ t) => t.name), ["get_metadata", "get_current_state", "analyse_technique", "export_technique_deck", "run_self_tests"]);
   for (const t of tools) assert.equal(t.annotations.readOnlyHint, true);
   const meta = JSON.parse((await tools[0].execute()).content[0].text);
   assert.equal(meta.inventory.length, 92); assert.equal(meta.modules.length, 18);
   const state = JSON.parse((await tools[1].execute()).content[0].text);
   assert.equal(state.module, "local-lemma"); assert.equal(state.params.s, 1); assert.equal(state.params.k, 5);
-  assert.ok(state.assumptions.some((a) => !a.holds), "the broken condition is reported");
+  assert.ok(state.assumptions.some((/** @type {{ holds: boolean }} */ a) => !a.holds), "the broken condition is reported");
   const an = JSON.parse((await tools[2].execute({ module: "chernoff", params: { rho: 0.3 } })).content[0].text);
-  assert.ok(an.assumptions.some((a) => !a.holds));
+  assert.ok(an.assumptions.some((/** @type {{ holds: boolean }} */ a) => !a.holds));
   assert.match(JSON.parse((await tools[2].execute({ module: "nope" })).content[0].text).error, /Unknown module/);
-  const expected = PM.techniqueDeck(PM.evaluate(PM.moduleById("local-lemma"), PM.withParams(PM.moduleById("local-lemma"), { k: 5, s: 1, seed: 17 })));
+  const expected = PM.techniqueDeck(PM.evaluate(lab("local-lemma"), PM.withParams(lab("local-lemma"), { k: 5, s: 1, seed: 17 })));
   assert.equal(JSON.parse((await tools[3].execute({ module: "local-lemma", params: { k: 5, s: 1 }, seed: 17 })).content[0].text).markdown, expected);
   await page.click("save-beamdswitch");
   deq(page.saved, [{ name: "probabilistic-method-local-lemma-beamdswitch.md", text: expected }]);
@@ -378,5 +389,5 @@ test("the page boots, registers read-only WebMCP tools and exports the deck of t
   await page.click("copy-course");
   assert.equal(page.copied[1], PM.courseDeck(17));
   const selfT = JSON.parse((await tools[4].execute()).content[0].text);
-  assert.ok(selfT.every((x) => x.pass));
+  assert.ok(selfT.every((/** @type {{ pass: boolean }} */ x) => x.pass));
 });

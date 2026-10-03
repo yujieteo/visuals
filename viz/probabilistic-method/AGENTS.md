@@ -4,7 +4,7 @@ A visual laboratory for the probabilistic method: eighteen labs, each showing wh
 
 ## Source of truth
 
-The standalone repository [yujieteo/probabilistic-method](https://github.com/yujieteo/probabilistic-method) is where this visualisation and its tests develop and where CI runs them. `visuals/probabilistic-method/` in [yujieteo/site](https://github.com/yujieteo/site/tree/main/visuals/probabilistic-method) is a port of its page files, refreshed when the visualisation is updated, and the site runs no logic tests for it. Porting copies the folder minus `tests/` and `.github/`. AGENTS.md and SKILLS.md must therefore not link into either (the site checks that their links resolve).
+The standalone repository [yujieteo/probabilistic-method](https://github.com/yujieteo/probabilistic-method) is where this visualisation and its tests develop and where CI runs them. `visuals/probabilistic-method/` in [yujieteo/site](https://github.com/yujieteo/site/tree/main/visuals/probabilistic-method) is a port of its page files, refreshed when the visualisation is updated, and the site runs no logic tests for it. Porting copies the folder minus `tests/`, `.github/` and the type-check tooling (`package.json`, `package-lock.json`, `tsconfig.json`, `.gitignore`, `scripts/`, `types/`, and the generated `node_modules/` and `.typecheck/`). AGENTS.md and SKILLS.md must therefore not link into either (the site checks that their links resolve).
 
 ## Files and data
 
@@ -20,9 +20,12 @@ From the repository root:
 node build.mjs           # rebuild index.html and raw.json
 node build.mjs --check   # exit 1 when either is stale
 node --test 'tests/*.test.{mjs,cjs}'
+npm ci && npm run typecheck   # tsc over the JSDoc types (tsconfig.json: checkJs, strict, no output)
 ```
 
-CI (`.github/workflows/ci.yml`) runs `node build.mjs --check` and the test command on every push and pull request: `tests/probabilistic-method.test.mjs` covers the build, the engine's mathematics and consistency checks, the inventory, every beamdswitch deck and the page booted in a stand-in DOM with its WebMCP tools and export buttons. In yujieteo/site the only checks are the site's integration tests: the published copy, the catalogue stub and the folder docs. The page also runs its self-tests (`run_self_tests`). When the site's `templates/beamdswitch.js` changes, copy it to both `beamdswitch.js` and `tests/fixtures/beamdswitch/template.js` and rebuild.
+The type check covers `src/`, `build.mjs`, `tests/*.mjs` and `template.html`'s own inline script, which `scripts/extract-inline.mjs` copies into `.typecheck/inline/` first. It leaves out the read-only copies (`beamdswitch.js`, `tests/fixtures/beamdswitch/`; `deck.d.mts` and `types/` type what they provide) and the built `index.html`, whose scripts are the sources in `src/`.
+
+CI (`.github/workflows/ci.yml`) runs `node build.mjs --check`, the test command and the type check on every push and pull request: `tests/probabilistic-method.test.mjs` covers the build, the engine's mathematics and consistency checks, the inventory, every beamdswitch deck and the page booted in a stand-in DOM with its WebMCP tools and export buttons. In yujieteo/site the only checks are the site's integration tests: the published copy, the catalogue stub and the folder docs. The page also runs its self-tests (`run_self_tests`). When the site's `templates/beamdswitch.js` changes, copy it to both `beamdswitch.js` and `tests/fixtures/beamdswitch/template.js` and rebuild.
 
 ## Workflow
 
@@ -30,7 +33,7 @@ Every change follows the site's [add-visualization playbook](https://github.com/
 
 1. Change and test it here first: run the commands above and check the page end to end in a browser.
 2. Run the first no-mistakes pass in this repository. It also checks the page in a shallow clone of yujieteo/site (`git clone --depth 1 https://github.com/yujieteo/site`) with the change ported in; build and browse only this page there, never the site's full build or test suite.
-3. Once this repository's pull request merges, port the page files byte for byte into `visuals/probabilistic-method/` in yujieteo/site (this repository minus `tests/` and `.github/`) and run the second no-mistakes pass on that pull request, which runs only the site-level tests.
+3. Once this repository's pull request merges, port the page files byte for byte into `visuals/probabilistic-method/` in yujieteo/site (this repository minus `tests/`, `.github/` and the type-check tooling) and run the second no-mistakes pass on that pull request, which runs only the site-level tests.
 
 Logic, end-to-end and other heavy tests live here, where they run only when this tool changes; the site adds none for it, so its test time stays flat.
 
@@ -39,5 +42,5 @@ Logic, end-to-end and other heavy tests live here, where they run only when this
 - `index.html` is one self-contained HTML file with no dependencies and no network access; it works offline, from `file://` and in an iframe.
 - A module, its parameters and its seed fix every random object and experiment; the URL hash carries that state, and exports are byte-for-byte identical for the same state.
 - Simulations illustrate; the proofs rest on the displayed inequalities.
-- Tests use Node's built-in `node --test` runner only; never add Vitest, Jest or a `package.json`.
+- Tests use Node's built-in `node --test` runner only; never add Vitest, Jest or another test framework. `package.json` exists only to pin the type-check tooling (TypeScript and `@types/node`, development-only, no runtime dependencies).
 - The beamdswitch decks are written with the unchanged shared template and declare `voice: bf_emma` in their front matter.

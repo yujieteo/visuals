@@ -394,20 +394,30 @@ kbd{font-family:var(--mono);font-size:.8rem;border:1px solid var(--border);borde
  * Everything here is deterministic: every random draw comes from a seeded stream, so the same seed
  * and parameters always give the same graph, colouring, sample and witness. No DOM, clock or network.
  */
-const PM = {};
+/** @typedef {[number, number]} Edge an edge {i, j} with i < j */
+/** @typedef {{ n: number, adj: Uint8Array, edges: Edge[] }} Graph a simple graph on 0..n-1 with its adjacency matrix */
+/**
+ * A seeded stream: rng() is uniform on [0, 1), with helpers for integers, bits, picks, shuffles and Poisson draws.
+ * @typedef {(() => number) & { int(n: number): number, bit(p?: number): number, pick<T>(arr: ArrayLike<T>): T, shuffle<T>(arr: T[]): T[], poisson(lam: number): number }} Rng
+ */
+/** The engine's public object, filled in by each part (see PMApi in part 7). */
+const PM = /** @type {PMApi} */ ({});
 
 /* ---------- formatting ---------- */
 
 const MINUS = "−";
 /* The three number writers below (page, LaTeX, speech) share one shape: integers below 10⁹ stay whole, magnitudes
  * below `small` or from 10⁹ up go to scientific notation, and the rest keep `sig` significant figures. */
-const wholeNumber = (x) => Number.isInteger(x) && Math.abs(x) < 1e9;
-const scientific = (a, small) => a !== 0 && (a < small || a >= 1e9);
+const wholeNumber = (/** @type {number} */ x) => Number.isInteger(x) && Math.abs(x) < 1e9;
+const scientific = (/** @type {number} */ a, /** @type {number} */ small) => a !== 0 && (a < small || a >= 1e9);
 /* |x| in scientific notation: the trimmed mantissa and the exponent. */
+/** @param {number} a @param {number} sig @returns {[string, number]} */
 function mantissaExponent(a, sig) { const [m, e] = a.toExponential(sig - 1).split("e"); return [trimZeros(m), Number(e)]; }
 /* |x| to sig significant figures, never in exponent form, trailing zeros dropped. */
+/** @param {number} a @param {number} sig */
 function significant(a, sig) { const s = a.toPrecision(sig); return trimZeros(s.includes("e") ? String(Number(s)) : s); }
 /* Significant-figure formatting with a true minus sign; integers stay integers. */
+/** @param {number | null | undefined} x */
 function fmt(x, sig = 4) {
   if (x === null || x === undefined || Number.isNaN(x)) return "—";
   if (x === Infinity) return "∞";
@@ -417,10 +427,14 @@ function fmt(x, sig = 4) {
   if (scientific(a, 1e-4)) { const [m, e] = mantissaExponent(a, sig); return sign + m + "×10" + superscript(e); }
   return sign + significant(a, sig);
 }
+/** @param {string} s */
 function trimZeros(s) { return s.includes(".") ? s.replace(/0+$/, "").replace(/\.$/, "") : s; }
+/** @type {Record<string, string>} */
 const SUP = { "-": "⁻", 0: "⁰", 1: "¹", 2: "²", 3: "³", 4: "⁴", 5: "⁵", 6: "⁶", 7: "⁷", 8: "⁸", 9: "⁹" };
+/** @param {number | string} n */
 function superscript(n) { return String(n).split("").map((c) => SUP[c] ?? c).join(""); }
 /* Plain ASCII-ish number for Markdown and LaTeX: 1.234e-5 becomes 1.234 \times 10^{-5}. */
+/** @param {number} x */
 function tex(x, sig = 4) {
   if (x === Infinity) return "\\infty";
   if (x === -Infinity) return "-\\infty";
@@ -430,6 +444,7 @@ function tex(x, sig = 4) {
   return sign + significant(a, sig);
 }
 /* A number as it is read aloud: no symbols, so it can go into ::: narration. */
+/** @param {number} x */
 function spokenNumber(x, sig = 3) {
   const sign = x < 0 ? "minus " : "", a = Math.abs(x);
   if (a === Infinity) return sign + "infinity";
@@ -437,17 +452,19 @@ function spokenNumber(x, sig = 3) {
   if (scientific(a, 1e-3)) { const [m, e] = mantissaExponent(a, sig); return sign + m + " times ten to the " + (e < 0 ? "minus " : "") + Math.abs(e); }
   return sign + significant(a, sig);
 }
-const pct = (x, sig = 3) => fmt(100 * x, sig) + "%";
+const pct = (/** @type {number} */ x, sig = 3) => fmt(100 * x, sig) + "%";
 
 /* ---------- seeded randomness ---------- */
 
 /* 32-bit FNV-1a of a string, used to split one seed into independent named streams. */
+/** @param {string} str */
 function hash32(str) {
   let h = 0x811c9dc5;
   for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193); }
   return h >>> 0;
 }
 /* mulberry32: a small, fast, well-mixed 32-bit generator. rng() is uniform on [0, 1). */
+/** @param {number} a @returns {() => number} */
 function mulberry32(a) {
   a >>>= 0;
   return function () {
@@ -459,8 +476,10 @@ function mulberry32(a) {
   };
 }
 /* A named stream: rng(seed, "graph") and rng(seed, "colouring") never share draws. */
+/** @param {number} seed @returns {Rng} */
 function rng(seed, stream = "") {
-  const r = mulberry32((hash32(stream) ^ Math.imul((seed >>> 0) || 0, 0x9e3779b1)) >>> 0);
+  // The helpers are attached just below.
+  const r = /** @type {Rng} */ (mulberry32((hash32(stream) ^ Math.imul((seed >>> 0) || 0, 0x9e3779b1)) >>> 0));
   r.int = (n) => Math.floor(r() * n);
   r.bit = (p = 0.5) => (r() < p ? 1 : 0);
   r.pick = (arr) => arr[Math.floor(r() * arr.length)];
@@ -472,6 +491,7 @@ function rng(seed, stream = "") {
 /* ---------- combinatorics ---------- */
 
 /* Binomial coefficient C(n, k) as a float (exact for every integer result below 2^53). */
+/** @param {number} n @param {number} k */
 function choose(n, k) {
   if (!Number.isInteger(n) || !Number.isInteger(k) || k < 0 || n < 0 || k > n) return 0;
   k = Math.min(k, n - k);
@@ -479,20 +499,28 @@ function choose(n, k) {
   for (let i = 1; i <= k; i++) r = (r * (n - k + i)) / i;
   return Math.round(r) === r || r > 2 ** 53 ? Math.round(r) : r;
 }
+/** @param {number} n @param {number} k */
 function logChoose(n, k) {
   if (k < 0 || k > n) return -Infinity;
   return logFactorial(n) - logFactorial(k) - logFactorial(n - k);
 }
+/** @type {number[]} */
 const LF = [0];
+/** @param {number} n */
 function logFactorial(n) {
   for (let i = LF.length; i <= n; i++) LF[i] = LF[i - 1] + Math.log(i);
   return LF[n];
 }
+/** @param {number} n */
 function factorial(n) { let r = 1; for (let i = 2; i <= n; i++) r *= i; return r; }
 /* All k-subsets of {0..n-1} in lexicographic order. */
+/** @param {number} n @param {number} k */
 function subsets(n, k) {
-  const out = [], cur = [];
-  (function rec(start) {
+  /** @type {number[][]} */
+  const out = [];
+  /** @type {number[]} */
+  const cur = [];
+  (function rec(/** @type {number} */ start) {
     if (cur.length === k) { out.push(cur.slice()); return; }
     for (let i = start; i <= n - (k - cur.length); i++) { cur.push(i); rec(i + 1); cur.pop(); }
   })(0);
@@ -501,6 +529,7 @@ function subsets(n, k) {
 
 /* ---------- distributions ---------- */
 
+/** @param {number} n @param {number} k @param {number} p */
 function binomPmf(n, k, p) {
   if (k < 0 || k > n) return 0;
   if (p <= 0) return k === 0 ? 1 : 0;
@@ -508,27 +537,36 @@ function binomPmf(n, k, p) {
   return Math.exp(logChoose(n, k) + k * Math.log(p) + (n - k) * Math.log1p(-p));
 }
 /* P(X >= k) for X ~ Bin(n, p), summed exactly term by term. */
+/** @param {number} n @param {number} k @param {number} p */
 function binomUpperTail(n, k, p) {
   k = Math.max(0, Math.ceil(k - 1e-12));
   let s = 0;
   for (let i = k; i <= n; i++) s += binomPmf(n, i, p);
   return Math.min(1, s);
 }
+/** @param {number} lam @param {number} k */
 function poissonPmf(lam, k) {
   if (k < 0) return 0;
   if (lam === 0) return k === 0 ? 1 : 0;
   return Math.exp(-lam + k * Math.log(lam) - logFactorial(k));
 }
+/** @param {number} lam @param {number} k */
 function poissonCdf(lam, k) { let s = 0; for (let i = 0; i <= k; i++) s += poissonPmf(lam, i); return Math.min(1, s); }
 /* Chernoff upper tail for a sum of independent [0,1] variables with mean mu:
  * P(X >= (1+d) mu) <= (e^d / (1+d)^(1+d))^mu, and the simpler exp(-d^2 mu / (2+d)), both for d > 0. */
+/** @param {number} mu @param {number} d */
 function chernoffUpper(mu, d) { return d <= 0 ? 1 : Math.min(1, Math.exp(mu * (d - (1 + d) * Math.log1p(d)))); }
+/** @param {number} mu @param {number} d */
 function chernoffSimple(mu, d) { return d <= 0 ? 1 : Math.min(1, Math.exp((-d * d * mu) / (2 + d))); }
 /* Lower tail, 0 < d < 1: P(X <= (1-d) mu) <= exp(-d^2 mu / 2). */
+/** @param {number} mu @param {number} d */
 function chernoffLower(mu, d) { return d <= 0 ? 1 : Math.min(1, Math.exp((-d * d * mu) / 2)); }
+/** @param {number} x */
 function binaryEntropy(x) { return x <= 0 || x >= 1 ? 0 : -x * Math.log2(x) - (1 - x) * Math.log2(1 - x); }
+/** @param {Iterable<number>} probs */
 function entropy(probs) { let h = 0; for (const p of probs) if (p > 0) h -= p * Math.log2(p); return h; }
 /* Standard normal upper tail, Abramowitz–Stegun 7.1.26 (error below 1.5e-7); used only for labelled heuristics. */
+/** @param {number} z */
 function normalUpper(z) {
   const t = 1 / (1 + 0.3275911 * Math.abs(z) / Math.SQRT2);
   const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-z * z / 2);
@@ -538,24 +576,32 @@ function normalUpper(z) {
 /* ---------- graphs ---------- */
 
 /* G(n, p): each of the C(n,2) pairs, in lexicographic order, is an edge with probability p. */
+/** @param {number} n @param {number} p @param {() => number} r @returns {Graph} */
 function gnp(n, p, r) {
-  const adj = new Uint8Array(n * n), edges = [];
+  const adj = new Uint8Array(n * n);
+  /** @type {Edge[]} */
+  const edges = [];
   for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) if (r() < p) { adj[i * n + j] = adj[j * n + i] = 1; edges.push([i, j]); }
   return { n, adj, edges };
 }
+/** @param {number} n @param {readonly (readonly number[])[]} edges pairs, in either order @returns {Graph} */
 function graphFromEdges(n, edges) {
   const adj = new Uint8Array(n * n);
   for (const [i, j] of edges) adj[i * n + j] = adj[j * n + i] = 1;
-  return { n, adj, edges: edges.map((e) => [Math.min(...e), Math.max(...e)]).sort((a, b) => a[0] - b[0] || a[1] - b[1]) };
+  return { n, adj, edges: edges.map((e) => /** @type {Edge} */ ([Math.min(...e), Math.max(...e)])).sort((a, b) => a[0] - b[0] || a[1] - b[1]) };
 }
+/** @param {{ n: number, edges: readonly (readonly number[])[] }} g @returns {number[]} */
 function degrees(g) { const d = new Array(g.n).fill(0); for (const [i, j] of g.edges) { d[i]++; d[j]++; } return d; }
 /* Expected number of copies of a fixed graph H (v vertices, e edges, automorphism group of size aut) in G(n, p). */
+/** @param {number} n @param {number} p @param {number} v @param {number} e @param {number} aut */
 function expectedCopies(n, p, v, e, aut) { return (choose(n, v) * factorial(v) / aut) * p ** e; }
 /* Number of k-sets that are cliques in g (k-cliques), by enumeration; for teaching sizes only. */
+/** @param {Graph} g @param {number} k */
 function countCliques(g, k) {
   const { n, adj } = g; let c = 0;
+  /** @type {number[]} */
   const cur = [];
-  (function rec(start) {
+  (function rec(/** @type {number} */ start) {
     if (cur.length === k) { c++; return; }
     for (let v = start; v < n; v++) {
       if (cur.every((u) => adj[u * n + v])) { cur.push(v); rec(v + 1); cur.pop(); }
@@ -563,22 +609,27 @@ function countCliques(g, k) {
   })(0);
   return c;
 }
+/** @param {Graph} g */
 function countTriangles(g) {
   const { n, adj } = g; let c = 0;
   for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) if (adj[i * n + j]) for (let k = j + 1; k < n; k++) if (adj[i * n + k] && adj[j * n + k]) c++;
   return c;
 }
 /* Connected components with union–find; returns sizes (descending) and the component label of each vertex. */
+/** @param {number} n @param {readonly (readonly number[])[]} edges @returns {{ label: number[], sizes: number[] }} */
 function components(n, edges) {
   const parent = Array.from({ length: n }, (_, i) => i), size = new Array(n).fill(1);
-  const find = (x) => { while (parent[x] !== x) { parent[x] = parent[parent[x]]; x = parent[x]; } return x; };
+  const find = (/** @type {number} */ x) => { while (parent[x] !== x) { parent[x] = parent[parent[x]]; x = parent[x]; } return x; };
   for (const [a, b] of edges) {
     let x = find(a), y = find(b);
     if (x === y) continue;
     if (size[x] < size[y]) [x, y] = [y, x];
     parent[y] = x; size[x] += size[y];
   }
-  const label = new Array(n), bySize = new Map();
+  /** @type {number[]} */
+  const label = new Array(n);
+  /** @type {Map<number, number>} */
+  const bySize = new Map();
   for (let i = 0; i < n; i++) { label[i] = find(i); bySize.set(label[i], size[label[i]]); }
   return { label, sizes: [...bySize.values()].sort((a, b) => b - a) };
 }
@@ -586,23 +637,29 @@ function components(n, edges) {
 /* ---------- set systems and dependency ---------- */
 
 /* m × n 0/1 incidence matrix of sets (arrays of element indices) over n elements. */
+/** @param {readonly (readonly number[])[]} sets @param {number} n @returns {number[][]} */
 function incidenceMatrix(sets, n) { return sets.map((s) => { const row = new Array(n).fill(0); for (const x of s) row[x] = 1; return row; }); }
 /* Dependency graph of events given by the variables each one reads: events i ≠ j are adjacent when they share a variable.
  * Each event is mutually independent of the events it does not touch, so this is a valid dependency graph. */
+/** @param {readonly Iterable<unknown>[]} supports the variables each event reads @returns {number[][]} */
 function dependencyGraph(supports) {
+  /** @type {Map<unknown, number[]>} */
   const byVar = new Map();
-  supports.forEach((s, i) => { for (const v of s) { if (!byVar.has(v)) byVar.set(v, []); byVar.get(v).push(i); } });
-  const nbrs = supports.map(() => new Set());
+  supports.forEach((s, i) => { for (const v of s) { if (!byVar.has(v)) byVar.set(v, []); /** @type {number[]} */ (byVar.get(v)).push(i); } });
+  const nbrs = supports.map(() => /** @type {Set<number>} */ (new Set()));
   for (const evs of byVar.values()) for (const a of evs) for (const b of evs) if (a !== b) nbrs[a].add(b);
   return nbrs.map((s) => [...s].sort((a, b) => a - b));
 }
+/** @param {readonly Iterable<unknown>[]} supports */
 function dependencyDegrees(supports) { return dependencyGraph(supports).map((s) => s.length); }
 
-Object.assign(PM, {
+const CORE_API = {
   fmt, tex, pct, spokenNumber, superscript, hash32, mulberry32, rng, choose, logChoose, logFactorial, factorial, subsets,
   binomPmf, binomUpperTail, poissonPmf, poissonCdf, chernoffUpper, chernoffSimple, chernoffLower, binaryEntropy, entropy, normalUpper,
   gnp, graphFromEdges, degrees, expectedCopies, countCliques, countTriangles, components, incidenceMatrix, dependencyGraph, dependencyDegrees,
-});
+};
+Object.assign(PM, CORE_API);
+
 
 /* Part 2: the complete technique inventory (specification section 8), with stable IDs.
  *
@@ -631,7 +688,13 @@ const FAMILIES = [
   { id: "drc", title: "Dependent random choice", branch: "structure" },
 ];
 
+/**
+ * One technique: its number, stable id, title, family, archetypal problem, planned visual, and the lab and scene
+ * that demonstrate it (null when not yet built).
+ * @typedef {{ n: number, id: string, title: string, family: string, problem: string, visual: string, module: string | null, scene: string | null }} Technique
+ */
 /* [number, id, title, family, archetypal problem, planned visual, module or null, scene] */
+/** @type {[number, string, string, string, string, string, string | null, string | null][]} */
 const INVENTORY_ROWS = [
   [1, "basic-random-construction", "Basic random construction", "elementary", "Lower bound for Ramsey numbers", "Randomly 2-colour the edges of K_n; monochromatic K_k appear and disappear", "first-moment", "random-object"],
   [2, "first-moment-method", "First moment method", "elementary", "Show a random object avoids a forbidden configuration", "Histogram of the number X of bad configurations, with E[X] < 1 marked", "first-moment", "experiment"],
@@ -726,9 +789,11 @@ const INVENTORY_ROWS = [
   [91, "testing-colourability", "Testing colourability", "testing", "Local obstruction sampling", "Random subsets and their induced chromatic structure", null, null],
   [92, "dependent-random-choice", "Dependent random choice", "drc", "A large set whose small subsets have many common neighbours", "Random vertices; their neighbourhoods intersect and contract", "drc", "random-object"],
 ];
+/** @type {Technique[]} */
 const INVENTORY = INVENTORY_ROWS.map(([n, id, title, family, problem, visual, module, scene]) => ({ n, id, title, family, problem, visual, module, scene }));
 
 /* Search aliases: words a learner might type, resolved to techniques and modules. */
+/** @type {Record<string, string[]>} */
 const ALIASES = {
   "bad events": ["union-bound", "symmetric-lll", "janson"],
   "tails": ["chernoff", "azuma-hoeffding", "talagrand", "kim-vu"],
@@ -768,6 +833,7 @@ const ALIASES = {
 };
 
 /* Section 7: the concept map. Nodes are branches and topics; each topic lists the modules or techniques it opens. */
+/** @type {{ nodes: { id: string, label: string, x: number, y: number, kind: string, modules?: string[] }[], edges: [string, string][] }} */
 const CONCEPT_MAP = {
   nodes: [
     { id: "pm", label: "Probabilistic method", x: 50, y: 6, kind: "root" },
@@ -783,7 +849,9 @@ const CONCEPT_MAP = {
     ["concentration", "structure"], ["structure", "pseudorandom"], ["pseudorandom", "algorithms"], ["algorithms", "information"]],
 };
 
-Object.assign(PM, { FAMILIES, INVENTORY, ALIASES, CONCEPT_MAP });
+const INVENTORY_API = { FAMILIES, INVENTORY, ALIASES, CONCEPT_MAP };
+Object.assign(PM, INVENTORY_API);
+
 
 /* Part 3: the existence modules — first moment, linearity, alterations, second moment.
  *
@@ -798,19 +866,78 @@ Object.assign(PM, { FAMILIES, INVENTORY, ALIASES, CONCEPT_MAP });
  *   story(P, A, I)    the deck frames: problem, random object, variable, technique, bound, experiment, conclusion, use
  * Text is written for this atlas; the numbers come from analyse, so the lab, proof, deck and export agree.
  */
+/**
+ * A lab's parameters by key: the seed, numbers, or the option string of a choice control. Each lab reads its own
+ * keys, so the values are typed where they are used.
+ * @typedef {{ seed: number, [key: string]: any }} Params
+ */
+/**
+ * One control: a number range, or a choice from options; hidden ones carry encoded state such as a set of indices.
+ * @typedef {{ key: string, label: string, def: any, min?: number, max?: number, step?: number, options?: [any, string][], hidden?: boolean }} ParamSpec
+ */
+/** @typedef {{ id: string, label: string, ok: boolean, broken?: string }} Assumption a hypothesis of the theorem, holding or broken */
+/** @typedef {{ title: string, focus: string, body: string, narration: string, notes?: string, key?: string }} StoryFrame */
+/** @typedef {{ title: string, subtitle: string, narration: string, setup: StoryFrame[], method: StoryFrame[], results: StoryFrame[], checks: StoryFrame[] }} Story */
+/**
+ * What theory predicts for a lab's experiment: the mean, the event counted and the bound on its frequency.
+ * @typedef {{ mean?: number | null, meanLabel?: string, pmf?: number[] | null, event: string, eventTest: (x: number, A: any, P: Params) => boolean,
+ bound?: number | null, boundKind?: string, boundLabel?: string, lower?: number, lowerLabel?: string }} Theory
+ */
+/**
+ * A lab: plain data plus pure functions (see above), typed by its analysis A, its sampled outcome I, its fixed structure F
+ * and the outcome V the page shows (a lab with view() shows a deterministic picture rather than a sample).
+ * @template A, I, F
+ * @template [V=I]
+ * @typedef {{
+ *   id: string, route: string, title: string, short: string, family: string, archetype: string, intuition: string, problem: string,
+ *   randomObject: string, variable: string, variableTex: string, why: string, need: string, boundTex: string,
+ *   pattern: { controls: string, conclusion: string, worksWhen: string, visual: string },
+ *   params: ParamSpec[],
+ *   coerce?: (P: Params) => Params,
+ *   fixed?: (P: Params, seed: number) => F,
+ *   analyse: (P: Params, F: F) => A,
+ *   sample: (P: Params, r: Rng, F: F) => I,
+ *   view?: (P: Params, F: F) => V,
+ *   stat: (I: I, P: Params, F: F) => number,
+ *   fastStat?: (P: Params, r: Rng, F: F) => number,
+ *   trialCap: (P: Params) => number,
+ *   sweep?: (P: Params) => unknown,
+ *   experiment: { label: string, theory: (A: A, P: Params) => Theory },
+ *   assumptions: (P: Params, A: A) => Assumption[],
+ *   breakIt: { label: string, apply: (P: Params, A: A) => Params },
+ *   compare: string[],
+ *   whyNot: (P: Params, A: A) => { title: string, text: string }[],
+ *   proof: (P: Params, A: A) => { text: string, focus: string }[],
+ *   asymptotic?: (P: Params, A: A) => { formula: string, terms: [string, number][], total: number, note: string },
+ *   story: (P: Params, A: A, I: V) => Story,
+ *   scenes: string[],
+ * }} ModuleDef
+ */
+/**
+ * Any lab, as the shared machinery and the page handle them: each lab's analysis, outcome and structure have their
+ * own shapes, read by that lab's own functions and renderer, so they stay open here.
+ * @typedef {ModuleDef<any, any, any, any>} Module
+ */
+/** @type {Module[]} */
 const MODULES = [];
+/** @template A, I, F @template [V=I] @param {ModuleDef<A, I, F, V>} m */
 const defineModule = (m) => { MODULES.push(m); return m; };
 
 /* Shared pieces of the deck frames: reveals (". . .") and the scene comment that rides along. */
-const reveal = (...parts) => parts.filter(Boolean).join("\n\n. . .\n\n");
+const reveal = (/** @type {(string | false | null | undefined)[]} */ ...parts) => parts.filter(Boolean).join("\n\n. . .\n\n");
+/** @param {string} module @param {string} scene @param {Params} P @param {string} focus */
 const sceneComment = (module, scene, P, focus) =>
+
   `<!-- probabilistic-method scene: module=${module}; scene=${scene}; seed=${P.seed}; focus=${focus}; ` +
   Object.keys(P).filter((k) => k !== "seed").sort().map((k) => `${k}=${P[k]}`).join(", ") + " -->";
 
 /* ---------- 1. Basic method and first moment: the Ramsey lower bound ---------- */
 
+/** @type {Record<number, string>} */
 const KNOWN_RAMSEY = { 3: "R(3,3) = 6", 4: "R(4,4) = 18", 5: "43 ≤ R(5,5) ≤ 46" };
-const KNOWN_RAMSEY_TEX = { 3: "R(3,3)=6", 4: "R(4,4)=18", 5: "43\\le R(5,5)\\le 46" };
+/** @type {Record<number, string>} */
+const KNOWN_RAMSEY_TEX = {
+ 3: "R(3,3)=6", 4: "R(4,4)=18", 5: "43\\le R(5,5)\\le 46" };
 
 defineModule({
   id: "first-moment", route: "first-moment/ramsey", title: "Basic method and first moment", short: "First moment",
@@ -895,7 +1022,7 @@ defineModule({
     };
   },
   story(P, A, I) {
-    const f = (x) => tex(x);
+    const f = (/** @type {number} */ x) => tex(x);
     return {
       title: `The first moment: no monochromatic K_${P.k} in K_${P.n}`,
       subtitle: "Expected failures below one force a perfect outcome",
@@ -934,6 +1061,7 @@ defineModule({
 /* ---------- 2. Linearity of expectation: Szele's tournaments ---------- */
 
 /* Number of directed Hamiltonian paths in a tournament, by dynamic programming over vertex subsets. */
+/** @param {number} n @param {ArrayLike<number>} beats beats[v * n + w] is 1 when v beats w */
 function hamiltonianPaths(n, beats) {
   const full = (1 << n) - 1, dp = new Float64Array((1 << n) * n);
   for (let v = 0; v < n; v++) dp[(1 << v) * n + v] = 1;
@@ -947,7 +1075,9 @@ function hamiltonianPaths(n, beats) {
   return total;
 }
 /* Probability that every ordering in a list is a directed Hamiltonian path of a uniformly random tournament. */
+/** @param {number[][]} orders */
 function jointPathProbability(orders) {
+  /** @type {Map<string, number>} */
   const need = new Map();
   for (const o of orders) for (let i = 0; i + 1 < o.length; i++) {
     const a = o[i], b = o[i + 1], key = Math.min(a, b) + "-" + Math.max(a, b), dir = a < b ? 1 : 0;
@@ -976,7 +1106,7 @@ defineModule({
   analyse(P) {
     const n = P.n, orders = factorial(n), pOne = 2 ** -(n - 1), EX = orders * pOne;
     const id = Array.from({ length: n }, (_, i) => i), rot = [n - 1, ...id.slice(0, n - 1)], rev = id.slice().reverse();
-    const pair = (o) => { const j = jointPathProbability([id, o]); return { order: o, joint: j, product: pOne * pOne }; };
+    const pair = (/** @type {number[]} */ o) => { const j = jointPathProbability([id, o]); return { order: o, joint: j, product: pOne * pOne }; };
     return {
       orders, pOne, EX, ok: true, dependent: [pair(rot), pair(rev)],
       rows: [["orderings π", fmt(orders), `${n}!=${orders}`], ["Pr[I_π = 1]", fmt(pOne), `2^{-${n - 1}}`], ["E[X] = Σ Pr[I_π = 1]", fmt(EX), `\\mathbb E[X]=${tex(EX)}`]],
@@ -1168,6 +1298,7 @@ defineModule({
 /* ---------- 4. Second moment: cliques in G(n, p) ---------- */
 
 const CLUSTER_PI = 0.01;
+/** @param {number} n @param {number} k @param {number} p */
 function secondMomentTable(n, k, p) {
   const K = choose(k, 2), rows = [];
   for (let j = 0; j <= k; j++) {
@@ -1208,10 +1339,12 @@ defineModule({
         ["Pr[X > 0] ≥ (Paley–Zygmund)", fmt(1 / ratio), `${tex(1 / ratio)}`], ["Pr[X = 0] ≤ (Chebyshev)", fmt(Math.min(1, Math.max(0, ratio - 1))), `${tex(Math.min(1, Math.max(0, ratio - 1)))}`]],
     };
   },
+  /** @this {Module} the lab itself, for its own analyse @param {Params} P */
   sweep(P) {
     const out = [];
+
     for (let i = 1; i < 100; i++) {
-      const p = i / 100, a = this.analyse({ ...P, p, cluster: "off" });
+      const p = i / 100, a = this.analyse({ ...P, p, cluster: "off" }, null);
       out.push({ p, markov: a.markov, pz: a.pz });
     }
     return out;
@@ -1222,6 +1355,7 @@ defineModule({
     if (P.cluster === "on") G = r() < CLUSTER_PI ? graphFromEdges(n, subsets(n, 2)) : graphFromEdges(n, []);
     else G = gnp(n, P.p, r);
     const X = countCliques(G, k);
+    /** @type {number[][]} */
     let witnesses = [];
     if (X && choose(n, k) <= 20000) witnesses = subsets(n, k).filter((S) => S.every((a, i) => S.slice(i + 1).every((b) => G.adj[a * n + b]))).slice(0, 40);
     return { G, X, witnesses };
@@ -1290,7 +1424,8 @@ defineModule({
   scenes: ["problem", "random-object", "variable", "overlap", "bound", "experiment", "threshold", "conclusion"],
 });
 
-Object.assign(PM, { MODULES, hamiltonianPaths, jointPathProbability, secondMomentTable, reveal, sceneComment });
+const EXISTENCE_API = { MODULES, hamiltonianPaths, jointPathProbability, secondMomentTable, reveal, sceneComment };
+Object.assign(PM, EXISTENCE_API);
 
 /* Part 4: dependence and concentration — Local Lemma, Moser–Tardos, Janson and Poisson, Chernoff, martingales. */
 
@@ -1298,15 +1433,18 @@ Object.assign(PM, { MODULES, hamiltonianPaths, jointPathProbability, secondMomen
 
 /* A k-uniform "band" hypergraph on a ring of N = m·s vertices: edge i is the k consecutive vertices starting at i·s.
  * The stride s sets how much neighbouring edges overlap (so the dependency degree d), independently of the number m of edges. */
+/** @typedef {{ N: number, k: number, m: number, s: number, edges: number[][], nbrs: number[][], d: number, degrees: number[] }} BandHypergraph */
+/** @param {number} k @param {number} s @param {number} m @returns {BandHypergraph} */
 function bandHypergraph(k, s, m) {
   const N = m * s, edges = [];
-  for (let i = 0; i < m; i++) { const e = []; for (let j = 0; j < k; j++) e.push((i * s + j) % N); edges.push([...new Set(e)].sort((a, b) => a - b)); }
+  for (let i = 0; i < m; i++) { /** @type {number[]} */ const e = []; for (let j = 0; j < k; j++) e.push((i * s + j) % N); edges.push([...new Set(e)].sort((a, b) => a - b)); }
   const nbrs = dependencyGraph(edges), deg = nbrs.map((x) => x.length);
   return { N, k, m, s, edges, nbrs, d: Math.max(0, ...deg), degrees: deg };
 }
-const monochromatic = (e, col) => e.every((v) => col[v] === col[e[0]]);
+const monochromatic = (/** @type {number[]} */ e, /** @type {ArrayLike<number>} */ col) => e.every((v) => col[v] === col[e[0]]);
 const LLL_E = Math.E;
 
+/** @param {Params} P @param {BandHypergraph} H */
 function lllAnalysis(P, H) {
   const p = 2 ** (1 - P.k), d = H.d, m = H.m, gauge = LLL_E * p * (d + 1), union = m * p;
   const lllLower = gauge <= 1 ? (d === 0 ? (1 - p) ** m : (1 - 1 / (d + 1)) ** m) : null;
@@ -1343,6 +1481,7 @@ defineModule({
   sample(P, r, H) {
     const col = new Uint8Array(H.N);
     for (let v = 0; v < H.N; v++) col[v] = r() < 0.5 ? 1 : 0;
+    /** @type {number[]} */
     const bad = []; H.edges.forEach((e, i) => { if (monochromatic(e, col)) bad.push(i); });
     return { col, bad, X: bad.length };
   },
@@ -1395,8 +1534,8 @@ defineModule({
       results: [
         { title: `The gauge: e·p·(d+1) = ${fmt(A.gauge)}`, focus: "condition", body: reveal(`$$mp=${A.m}\\cdot ${tex(A.p)}=${tex(A.union)}${A.unionOk ? "<1" : ">1"}$$`, `$$e\\,p\\,(d+1)=${tex(A.gauge)}${A.ok ? "\\le 1" : ">1"}$$`),
           narration: `The union bound sum is ${spokenNumber(A.union)}${A.unionOk ? ", still below one" : ", hopelessly above one"}. The Local Lemma quantity is ${spokenNumber(A.gauge)}${A.ok ? ", within its limit" : ", above its limit"}.` },
-        { title: "Experiment: how often a random colouring works", focus: "experiment", body: reveal(`Seed ${P.seed}: ${I.X} bad edges.`, A.ok ? `The Local Lemma guarantees $\\Pr[\\text{none}]\\ge ${tex(A.lllLower)}$; samples illustrate how loose that is.` : "Samples may still find good colourings: failure of the condition is not failure of existence."),
-          narration: A.ok ? `The Local Lemma guarantees a success probability of at least ${spokenNumber(A.lllLower)}. Simulation shows the true chance is usually far larger, but proves nothing.` : "Simulation may still find good colourings. A failed condition only means this proof is silent." },
+        { title: "Experiment: how often a random colouring works", focus: "experiment", body: reveal(`Seed ${P.seed}: ${I.X} bad edges.`, A.ok ? `The Local Lemma guarantees $\\Pr[\\text{none}]\\ge ${tex(/** @type {number} A.ok, so the Local Lemma bound exists */ (A.lllLower))}$; samples illustrate how loose that is.` : "Samples may still find good colourings: failure of the condition is not failure of existence."),
+          narration: A.ok ? `The Local Lemma guarantees a success probability of at least ${spokenNumber(/** @type {number} */ (A.lllLower))}. Simulation shows the true chance is usually far larger, but proves nothing.` : "Simulation may still find good colourings. A failed condition only means this proof is silent." },
       ],
       checks: [
         { title: A.ok ? "Conclusion: a proper colouring exists" : "Conclusion: the condition fails", focus: "conclusion", body: A.ok ? "$$\\Pr\\Big[\\bigcap_e\\overline{A_e}\\Big]>0$$\n\nSo an outcome avoiding every bad event exists." : "The dependency neighbourhoods are too large; increase the stride or the edge size.",
@@ -1413,10 +1552,13 @@ defineModule({
 /* ---------- Moser–Tardos ---------- */
 
 /* Resample the variables of the lowest-numbered violated edge until none is violated (or maxSteps). */
+/** @param {BandHypergraph} H @param {() => number} r */
 function moserTardos(H, r, maxSteps = 100000) {
   const col = new Uint8Array(H.N);
   for (let v = 0; v < H.N; v++) col[v] = r() < 0.5 ? 1 : 0;
-  const initial = col.slice(), log = [];
+  const initial = col.slice();
+  /** @type {{ event: number, values: number[] }[]} */
+  const log = [];
   const violated = () => { for (let i = 0; i < H.m; i++) if (monochromatic(H.edges[i], col)) return i; return -1; };
   let e;
   while ((e = violated()) >= 0 && log.length < maxSteps) {
@@ -1426,6 +1568,7 @@ function moserTardos(H, r, maxSteps = 100000) {
   }
   return { initial, final: col, log, resamplings: log.length, done: violated() < 0 };
 }
+/** @param {ReturnType<typeof lllAnalysis>} A */
 function mtBound(A) {
   if (!A.ok) return null;
   const x = A.d === 0 ? A.p : 1 / (A.d + 1);
@@ -1488,7 +1631,7 @@ defineModule({
       subtitle: "The Local Lemma becomes an algorithm",
       narration: "This deck turns the Local Lemma into an algorithm by resampling only the variables of a violated edge.",
       setup: [
-        { title: "Problem: construct, don't just prove", focus: "problem", body: reveal("The Local Lemma says a proper colouring exists.", `Its probability bound may be tiny: ${A.lllLower === null ? "here none applies" : `$${tex(A.lllLower)}$`}.`, "We want to find one."),
+        { title: "Problem: construct, don't just prove", focus: "problem", body: reveal("The Local Lemma says a proper colouring exists.", `Its probability bound may be tiny: ${A.lllLower === null ? "here none applies" : `$${tex(/** @type {number} A.ok, so the Local Lemma bound exists */ (A.lllLower))}$`}.`, "We want to find one."),
           narration: "The Local Lemma proves a proper colouring exists, but its probability bound can be tiny. We want an efficient way to find one." },
         { title: "Random object: a colouring, then local fixes", focus: "random-object", body: reveal("Start from a uniformly random colouring.", `Seed ${P.seed}: ${I.log.length ? `the first violated edge is $A_{${I.log[0].event}}$` : "no edge is violated"}.`),
           narration: `Start from a random colouring. With seed ${P.seed} the algorithm needed ${I.resamplings} resamplings.` },
@@ -1519,7 +1662,9 @@ defineModule({
 
 /* ---------- Janson and Poisson: triangles in G(n, p) ---------- */
 
+/** @param {Params} P @param {Rng} r @returns {Graph & { planted?: number[] }} */
 function plantedGraph(P, r) {
+  /** @type {Graph & { planted?: number[] }} */
   const G = gnp(P.n, P.p, r);
   if (P.rho > 0 && r() < P.rho) {
     const vs = r.shuffle(Array.from({ length: P.n }, (_, i) => i)).slice(0, 4);
@@ -1624,6 +1769,7 @@ defineModule({
 
 /* ---------- Chernoff: the degree of a vertex ---------- */
 
+/** @param {Params} P */
 function chernoffAnalysis(P) {
   const N = P.n - 1, p = P.p, mu = N * p, d = P.delta, a = (1 + d) * mu, rho = P.rho;
   const indepTail = binomUpperTail(N, a, p), allOn = N >= a - 1e-12 ? p : 0;
@@ -1738,14 +1884,18 @@ defineModule({
 
 /* ---------- Martingales: edge exposure ---------- */
 
+/** @type {Record<string, string>} */
 const STATISTICS = { triangles: "triangles", isolated: "isolated vertices", edges: "edges" };
-function edgeList(n) { const e = []; for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) e.push([i, j]); return e; }
+/** @param {number} n */
+function edgeList(n) { /** @type {Edge[]} */ const e = []; for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) e.push([i, j]); return e; }
 /* Lipschitz constant of the statistic under changing one edge. */
+/** @param {string} stat @param {number} n */
 function lipschitz(stat, n) { return stat === "triangles" ? n - 2 : stat === "isolated" ? 2 : 1; }
 /* E[statistic | the first `known` edges in lexicographic order are revealed as x[0..known−1]]. Exact. */
+/** @param {string} stat @param {number} n @param {number} p @param {ArrayLike<number>} x @param {number} known */
 function conditionalExpectation(stat, n, p, x, known) {
-  const E = edgeList(n), idx = (a, b) => { const i = Math.min(a, b), j = Math.max(a, b); return i * n - (i * (i + 1)) / 2 + (j - i - 1); };
-  const val = (a, b) => { const e = idx(a, b); return e < known ? x[e] : p; };
+  const E = edgeList(n), idx = (/** @type {number} */ a, /** @type {number} */ b) => { const i = Math.min(a, b), j = Math.max(a, b); return i * n - (i * (i + 1)) / 2 + (j - i - 1); };
+  const val = (/** @type {number} */ a, /** @type {number} */ b) => { const e = idx(a, b); return e < known ? x[e] : p; };
   if (stat === "edges") { let s = 0; for (let e = 0; e < known; e++) s += x[e]; return s + (E.length - known) * p; }
   if (stat === "isolated") {
     let s = 0;
@@ -1756,7 +1906,9 @@ function conditionalExpectation(stat, n, p, x, known) {
   for (let a = 0; a < n; a++) for (let b = a + 1; b < n; b++) { const ab = val(a, b); if (!ab) continue; for (let c = b + 1; c < n; c++) s += ab * val(a, c) * val(b, c); }
   return s;
 }
-function doobPath(stat, n, p, x) { const m = (n * (n - 1)) / 2, out = []; for (let i = 0; i <= m; i++) out.push(conditionalExpectation(stat, n, p, x, i)); return out; }
+/** @param {string} stat @param {number} n @param {number} p @param {ArrayLike<number>} x */
+function doobPath(stat, n, p, x) { const m = (n * (n - 1)) / 2, out = [];
+ for (let i = 0; i <= m; i++) out.push(conditionalExpectation(stat, n, p, x, i)); return out; }
 
 defineModule({
   id: "martingale", route: "martingale/exposure", title: "Martingales and bounded differences", short: "Martingales",
@@ -1856,13 +2008,15 @@ defineModule({
   scenes: ["problem", "random-object", "variable", "corridor", "bound", "experiment", "conclusion"],
 });
 
-Object.assign(PM, { bandHypergraph, moserTardos, lllAnalysis, chernoffAnalysis, conditionalExpectation, doobPath, lipschitz, edgeList, STATISTICS });
+const DEPENDENCE_API = { bandHypergraph, moserTardos, lllAnalysis, chernoffAnalysis, conditionalExpectation, doobPath, lipschitz, edgeList, STATISTICS };
+Object.assign(PM, DEPENDENCE_API);
 
 /* Part 5: random structure — Rödl nibble, quasirandomness, the phase transition, dependent random choice. */
 
 /* ---------- Rödl nibble ---------- */
 
 /* A 3-uniform hypergraph on N vertices: the union of D random partitions of the vertices into triples (about D-regular). */
+/** @param {number} N @param {number} D @param {Rng} r @returns {number[][]} */
 function tripleSystem(N, D, r) {
   const seen = new Set(), edges = [];
   for (let t = 0; t < D; t++) {
@@ -1874,6 +2028,7 @@ function tripleSystem(N, D, r) {
   }
   return edges;
 }
+/** @param {number} N @param {number[][]} edges */
 function maxCodegree(N, edges) {
   const co = new Map(); let best = 0;
   for (const e of edges) for (let a = 0; a < 3; a++) for (let b = a + 1; b < 3; b++) { const k = e[a] * N + e[b], v = (co.get(k) || 0) + 1; co.set(k, v); if (v > best) best = v; }
@@ -1881,16 +2036,24 @@ function maxCodegree(N, edges) {
 }
 /* Run the nibble: each round, select each live edge with probability ε/D_current, discard selected edges that meet another
  * selected edge, accept the rest, and delete every covered vertex. mode "one-shot" stops after one round. */
+/** @param {number} N @param {number[][]} edges @param {number} eps @param {() => number} r */
 function runNibble(N, edges, eps, r, mode = "nibble", maxRounds = 60) {
-  const alive = new Uint8Array(N).fill(1), rounds = [], matching = [];
+  const alive = new Uint8Array(N).fill(1), rounds = [];
+  /** @type {number[][]} */
+  const matching = [];
   let liveCount = N;
   for (let round = 1; round <= maxRounds; round++) {
     const live = edges.filter((e) => alive[e[0]] && alive[e[1]] && alive[e[2]]);
     if (!live.length) break;
     const D = (3 * live.length) / liveCount, q = Math.min(1, eps / D);
-    const selected = live.filter(() => r() < q), hits = new Map();
+    const selected = live.filter(() => r() < q);
+    /** @type {Map<number, number>} */
+    const hits = new Map();
     for (const e of selected) for (const v of e) hits.set(v, (hits.get(v) || 0) + 1);
-    const accepted = [], collided = [];
+    /** @type {number[][]} */
+    const accepted = [];
+    /** @type {number[][]} */
+    const collided = [];
     for (const e of selected) (e.every((v) => hits.get(v) === 1) ? accepted : collided).push(e);
     for (const e of accepted) { for (const v of e) alive[v] = 0; matching.push(e); }
     liveCount -= 3 * accepted.length;
@@ -1995,6 +2158,7 @@ defineModule({
 /* ---------- Quasirandomness ---------- */
 
 /* Eigenvalues of a symmetric matrix (array of rows) by the cyclic Jacobi method. */
+/** @param {number[][]} M */
 function symmetricEigenvalues(M) {
   const n = M.length, a = M.map((r) => r.slice());
   for (let sweep = 0; sweep < 100; sweep++) {
@@ -2011,12 +2175,14 @@ function symmetricEigenvalues(M) {
   }
   return a.map((r, i) => r[i]).sort((x, y) => y - x);
 }
+/** @param {number} q */
 function paleyGraph(q) {
   const sq = new Set(); for (let x = 1; x < q; x++) sq.add((x * x) % q);
   const edges = []; for (let i = 0; i < q; i++) for (let j = i + 1; j < q; j++) if (sq.has((j - i) % q)) edges.push([i, j]);
   return graphFromEdges(q, edges);
 }
 const PALEY_PRIMES = [5, 13, 17, 29, 37, 41];
+/** @param {Params} P @param {number} seed */
 function quasiGraph(P, seed) {
   const n = P.q;
   let G;
@@ -2033,6 +2199,7 @@ function quasiGraph(P, seed) {
   }
   return G;
 }
+/** @param {Graph} G @param {Iterable<number>} S @param {Iterable<number>} T */
 function edgesBetween(G, S, T) { let c = 0; for (const s of S) for (const t of T) if (G.adj[s * G.n + t]) c++; return c; }
 
 defineModule({
@@ -2139,15 +2306,21 @@ defineModule({
 /* ---------- Phase transition ---------- */
 
 /* Survival probability β of a Poisson(c) Galton–Watson tree: β = 1 − e^(−cβ), the giant component fraction. */
+/** @param {number} c */
 function giantFraction(c) {
   if (c <= 1) return 0;
   let b = 1;
   for (let i = 0; i < 500; i++) b = 1 - Math.exp(-c * b);
   return b;
 }
+/** @param {number} n @param {number[][]} adjList @param {number} root */
 function bfsGenerations(n, adjList, root, maxGen = 8) {
-  const seen = new Map([[root, 0]]), gens = [[root]], parent = new Map([[root, null]]);
-  let collision = null, order = 0;
+  const seen = new Map([[root, 0]]), gens = [[root]];
+  /** @type {Map<number, number | null>} */
+  const parent = new Map([[root, null]]);
+  /** @type {{ generation: number, at: number, from: number, to: number } | null} */
+  let collision = null;
+  let order = 0;
   for (let g = 0; g < maxGen && gens[g].length; g++) {
     const next = [];
     for (const v of gens[g]) for (const w of adjList[v]) {
@@ -2161,8 +2334,12 @@ function bfsGenerations(n, adjList, root, maxGen = 8) {
   while (gens.length && !gens[gens.length - 1].length) gens.pop();
   return { gens: gens.map((g) => g.length), parent: [...parent.entries()], collision };
 }
+/** @param {number} c @param {Rng} r */
 function galtonWatson(c, r, maxGen = 8, cap = 400) {
-  const gens = [1], parent = [null];
+  const gens = [1];
+  /** @type {(number | null)[]} */
+  const parent = [null];
+
   let frontier = [0];
   for (let g = 0; g < maxGen && frontier.length && parent.length < cap; g++) {
     const next = [];
@@ -2204,9 +2381,12 @@ defineModule({
     };
   },
   view(P, F) {
-    const p = P.c / P.n, present = [];
+    const p = P.c / P.n;
+    /** @type {Edge[]} */
+    const present = [];
     for (const e of F.edges) { if (e.u > p) break; present.push([e.a, e.b]); }
-    const comp = components(P.n, present), adjList = Array.from({ length: P.n }, () => []);
+    const comp = components(P.n, present), adjList = Array.from({ length: P.n }, () => /** @type {number[]} */ ([]));
+
     for (const [a, b] of present) { adjList[a].push(b); adjList[b].push(a); }
     const bfs = bfsGenerations(P.n, adjList, 0), gw = galtonWatson(P.c, rng(F.gwSeed, "galton-watson"));
     return { present, comp, L1: comp.sizes[0] || 1, L2: comp.sizes[1] || 0, count: comp.sizes.length, bfs, gw, X: (comp.sizes[0] || 1) / P.n };
@@ -2291,18 +2471,24 @@ defineModule({
 
 /* ---------- Dependent random choice ---------- */
 
+/** @param {number} N @param {number} alpha @param {() => number} r */
 function bipartiteGraph(N, alpha, r) {
   const adj = Array.from({ length: N }, () => new Uint8Array(N));
   for (let a = 0; a < N; a++) for (let b = 0; b < N; b++) adj[a][b] = r() < alpha ? 1 : 0;
   return adj;
 }
+/** @param {Uint8Array[]} adj */
 function codegrees(adj) {
-  const N = adj.length, co = [];
+  const N = adj.length;
+  /** @type {number[][]} */
+  const co = [];
   for (let a = 0; a < N; a++) { co.push(new Array(N).fill(0)); }
   for (let a = 0; a < N; a++) for (let c = a + 1; c < N; c++) { let s = 0; for (let b = 0; b < N; b++) s += adj[a][b] & adj[c][b]; co[a][c] = co[c][a] = s; }
   return co;
 }
+/** @param {{ adj: Uint8Array[], co: number[][] }} F @param {number} t @param {number} mThr */
 function drcTerms(F, t, mThr) {
+
   const N = F.adj.length, deg = F.adj.map((row) => row.reduce((s, x) => s + x, 0));
   let EA = 0; for (const d of deg) EA += (d / N) ** t;
   let Ebad = 0, badPairs = 0;
@@ -2409,28 +2595,33 @@ defineModule({
   scenes: ["problem", "random-object", "variable", "bad", "transition", "experiment", "conclusion"],
 });
 
-Object.assign(PM, { tripleSystem, runNibble, maxCodegree, symmetricEigenvalues, paleyGraph, quasiGraph, edgesBetween, giantFraction, bfsGenerations, galtonWatson, bipartiteGraph, codegrees, drcTerms, PALEY_PRIMES });
+const STRUCTURE_API = { tripleSystem, runNibble, maxCodegree, symmetricEigenvalues, paleyGraph, quasiGraph, edgesBetween, giantFraction, bfsGenerations, galtonWatson, bipartiteGraph, codegrees, drcTerms, PALEY_PRIMES };
+Object.assign(PM, STRUCTURE_API);
 
 /* Part 6: discrepancy, ε-nets and VC dimension, entropy, conditional expectation, property testing. */
 
 /* ---------- Discrepancy ---------- */
 
+/** @param {number} m @param {number} n @param {number} dens @param {Rng} r */
 function setSystem(m, n, dens, r) {
   const sets = [];
-  for (let i = 0; i < m; i++) { const s = []; for (let j = 0; j < n; j++) if (r() < dens) s.push(j); if (!s.length) s.push(r.int(n)); sets.push(s); }
+  for (let i = 0; i < m; i++) { /** @type {number[]} */ const s = []; for (let j = 0; j < n; j++) if (r() < dens) s.push(j); if (!s.length) s.push(r.int(n)); sets.push(s); }
   return sets;
 }
-const rowSums = (A, x) => A.map((row) => row.reduce((s, a, j) => s + a * x[j], 0));
-const discOf = (A, x) => Math.max(...rowSums(A, x).map(Math.abs));
+const rowSums = (/** @type {number[][]} */ A, /** @type {number[]} */ x) => A.map((row) => row.reduce((s, a, j) => s + a * x[j], 0));
+const discOf = (/** @type {number[][]} */ A, /** @type {number[]} */ x) => Math.max(...rowSums(A, x).map(Math.abs));
 /* Pr[|sum of s independent ±1| ≥ t], exactly. */
+/** @param {number} s @param {number} t */
 function rademacherTail(s, t) { let pr = 0; for (let k = 0; k <= s; k++) if (Math.abs(2 * k - s) >= t - 1e-12) pr += binomPmf(s, k, 0.5); return Math.min(1, pr); }
+/** @param {number[]} sizes @param {number} n @param {number} m */
 function discrepancyBounds(sizes, n, m) {
-  const hoeff = (t) => sizes.reduce((s, z) => s + 2 * Math.exp(-(t * t) / (2 * z)), 0), exact = (t) => sizes.reduce((s, z) => s + rademacherTail(z, t), 0);
+  const hoeff = (/** @type {number} */ t) => sizes.reduce((s, z) => s + 2 * Math.exp(-(t * t) / (2 * z)), 0), exact = (/** @type {number} */ t) => sizes.reduce((s, z) => s + rademacherTail(z, t), 0);
   let tH = 1; while (hoeff(tH) >= 1 && tH < 10 * n) tH++;
   let tE = 1; while (exact(tE) >= 1 && tE < 10 * n) tE++;
   return { tHoeff: tH, failHoeff: hoeff(tH), tExact: tE, failExact: exact(tE), generic: Math.sqrt(2 * n * Math.log(2 * m)) };
 }
 /* Experimental algorithms (no guarantee claimed): greedy signs, then single-flip local search. */
+/** @param {number[][]} A @param {number} n @returns {number[]} */
 function greedySigns(A, n) {
   const x = new Array(n).fill(0);
   for (let j = 0; j < n; j++) {
@@ -2440,6 +2631,7 @@ function greedySigns(A, n) {
   }
   return x;
 }
+/** @param {number[][]} A @param {number[]} x0 */
 function localSearch(A, x0) {
   const x = x0.slice(); let cur = discOf(A, x), improved = true, guard = 0;
   while (improved && guard++ < 500) {
@@ -2476,6 +2668,7 @@ defineModule({
     };
   },
   sample(P, r, F) {
+    /** @type {number[]} */
     let x = Array.from({ length: P.n }, () => (r() < 0.5 ? 1 : -1));
     if (P.algo === "greedy") x = greedySigns(F.A, P.n);
     if (P.algo === "search") x = localSearch(F.A, greedySigns(F.A, P.n));
@@ -2547,10 +2740,17 @@ defineModule({
 
 /* ---------- ε-nets and VC dimension ---------- */
 
+/** @type {Record<string, { label: string, vc: number }>} */
 const RANGE_FAMILIES = { intervals: { label: "intervals on ℝ", vc: 2 }, halfplanes: { label: "halfplanes in ℝ²", vc: 3 } };
 const DIRECTIONS = 720;
+/** @typedef {[number, number]} Point */
+/** @param {Params} P @param {() => number} r @returns {Point[]} */
 function pointSet(P, r) { return Array.from({ length: P.N }, () => (P.family === "intervals" ? [r(), 0] : [r(), r()])); }
 /* The largest range of the family containing no sample point; exact for intervals, over a 720-direction grid for halfplanes. */
+/**
+ * @param {Params} P @param {Point[]} pts @param {number[]} sampleIdx
+ * @returns {{ count: number, lo?: number, hi?: number, theta?: number, cut?: number }}
+ */
 function largestMissedRange(P, pts, sampleIdx) {
   if (P.family === "intervals") {
     const xs = pts.map((p) => p[0]).sort((a, b) => a - b), ss = [...new Set(sampleIdx.map((i) => pts[i][0]))].sort((a, b) => a - b);
@@ -2574,6 +2774,7 @@ function largestMissedRange(P, pts, sampleIdx) {
   return best;
 }
 /* Which of the 2^k labelings of a tiny point set the family realises (intervals exactly; halfplanes by direction search). */
+/** @param {string} family @param {number[][]} pts */
 function traces(family, pts) {
   const k = pts.length, out = [];
   for (let mask = 0; mask < 1 << k; mask++) {
@@ -2591,6 +2792,7 @@ function traces(family, pts) {
   }
   return out;
 }
+/** @type {Record<string, number[][][]>} */
 const VC_EXAMPLES = { intervals: [[[0.2, 0], [0.5, 0]], [[0.2, 0], [0.5, 0], [0.8, 0]]], halfplanes: [[[0.2, 0.2], [0.8, 0.3], [0.5, 0.8]], [[0.2, 0.2], [0.8, 0.2], [0.8, 0.8], [0.2, 0.8]]] };
 defineModule({
   id: "epsilon-net", route: "geometry/epsilon-net", title: "ε-nets and VC dimension", short: "ε-net / VC",
@@ -2694,6 +2896,7 @@ defineModule({
 /* ---------- Entropy ---------- */
 
 /* A Markov chain on bits: X1 ~ Bernoulli(a), each next bit flips the previous one with probability f. */
+/** @param {number} n @param {number} a @param {number} f */
 function chainDistribution(n, a, f) {
   const out = [];
   for (let x = 0; x < 1 << n; x++) {
@@ -2704,6 +2907,7 @@ function chainDistribution(n, a, f) {
   }
   return out;
 }
+/** @param {number} N @param {number} r */
 function hammingVolume(N, r) { let s = 0; for (let i = 0; i <= r; i++) s += choose(N, i); return s; }
 defineModule({
   id: "entropy", route: "entropy/coding", title: "Entropy and counting", short: "Entropy",
@@ -2805,9 +3009,13 @@ defineModule({
 /* ---------- Conditional expectation: MAX-CUT ---------- */
 
 /* E[cut | b_i fixed where assign[i] is 0 or 1, the rest uniform]. */
+/** @param {{ edges: Edge[] }} G @param {number[]} assign each vertex's side, or −1 while undecided */
 function condExpCut(G, assign) { let s = 0; for (const [a, b] of G.edges) s += assign[a] < 0 || assign[b] < 0 ? 0.5 : assign[a] !== assign[b] ? 1 : 0; return s; }
+/** @param {{ n: number, edges: Edge[] }} G */
 function derandomizeCut(G, rule = "better") {
-  const n = G.n, assign = new Array(n).fill(-1), path = [{ i: -1, value: condExpCut(G, assign) }];
+  const n = G.n, assign = new Array(n).fill(-1);
+  /** @type {{ i: number, value: number, e0?: number, e1?: number, choice?: number }[]} */
+  const path = [{ i: -1, value: condExpCut(G, assign) }];
   for (let i = 0; i < n; i++) {
     assign[i] = 0; const e0 = condExpCut(G, assign);
     assign[i] = 1; const e1 = condExpCut(G, assign);
@@ -2869,7 +3077,8 @@ defineModule({
     ];
   },
   story(P, A, I) {
-    const steps = A.path.slice(1, 7).map((s) => `| $b_{${s.i + 1}}$ | ${tex(s.e0)} | ${tex(s.e1)} | ${s.choice} |`).join("\n");
+    // Every step after the starting value records both branch values.
+    const steps = A.path.slice(1, 7).map((s) => `| $b_{${s.i + 1}}$ | ${tex(/** @type {number} */ (s.e0))} | ${tex(/** @type {number} */ (s.e1))} | ${s.choice} |`).join("\n");
     return {
       title: `Conditional expectation: a cut of at least ${fmt(A.mean)} edges`,
       subtitle: "Removing the randomness from a proof",
@@ -2907,16 +3116,19 @@ defineModule({
 /* ---------- Property testing: triangle-freeness ---------- */
 
 const TEST_N = 10000;
+/** @param {Params} P @param {number} seed */
 function testerGraph(P, seed) {
   const perm = rng(seed, "tester-hidden").shuffle(Array.from({ length: TEST_N }, (_, i) => i)), part = new Int8Array(TEST_N).fill(-1);
   if (P.type === "far") { const a = Math.floor((P.alpha * TEST_N) / 3); for (let i = 0; i < 3 * a; i++) part[perm[i]] = Math.floor(i / a); return { part, a, size: a }; }
   const b = Math.floor((P.alpha * TEST_N) / 2); for (let i = 0; i < 2 * b; i++) part[perm[i]] = Math.floor(i / b); return { part, a: 0, size: b };
 }
 /* Edges: between different labelled parts (complete tripartite K_{a,a,a}, or complete bipartite K_{b,b}); nothing else. */
-const testerAdjacent = (F, u, v) => F.part[u] >= 0 && F.part[v] >= 0 && F.part[u] !== F.part[v];
+const testerAdjacent = (/** @type {{ part: Int8Array }} */ F, /** @type {number} */ u, /** @type {number} */ v) => F.part[u] >= 0 && F.part[v] >= 0 && F.part[u] !== F.part[v];
+/** @param {Params} P @param {number} a @param {number} s */
 function rejectProbability(P, a, s) {
   if (P.type !== "far" || a === 0) return 0;
-  const base = logChoose(TEST_N, s), q = (k) => (TEST_N - k >= s ? Math.exp(logChoose(TEST_N - k, s) - base) : 0);
+  const base = logChoose(TEST_N, s), q = (/** @type {number} */ k) =>
+ (TEST_N - k >= s ? Math.exp(logChoose(TEST_N - k, s) - base) : 0);
   return Math.max(0, Math.min(1, 1 - (3 * q(a) - 3 * q(2 * a) + q(3 * a))));
 }
 defineModule({
@@ -3020,7 +3232,8 @@ defineModule({
   scenes: ["problem", "random-object", "variable", "bound", "experiment", "conclusion"],
 });
 
-Object.assign(PM, { setSystem, rowSums, discOf, rademacherTail, discrepancyBounds, greedySigns, localSearch, largestMissedRange, traces, chainDistribution, hammingVolume, condExpCut, derandomizeCut, rejectProbability, testerGraph, testerAdjacent, TEST_N, RANGE_FAMILIES });
+const INFORMATION_API = { setSystem, rowSums, discOf, rademacherTail, discrepancyBounds, greedySigns, localSearch, largestMissedRange, traces, chainDistribution, hammingVolume, condExpCut, derandomizeCut, rejectProbability, testerGraph, testerAdjacent, TEST_N, RANGE_FAMILIES };
+Object.assign(PM, INFORMATION_API);
 
 /* Part 7: the shared machinery — state, URLs, experiments, decks and exports, search, recommender, maths text, self-tests.
  * One state feeds the lab, the proof lens, deck mode and every Markdown export, so they cannot disagree. */
@@ -3028,34 +3241,53 @@ Object.assign(PM, { setSystem, rowSums, discOf, rademacherTail, discrepancyBound
 const URL_BASE = "https://teoyujie.org/visuals/probabilistic-method/";
 const DEFAULT_SEED = 17;
 const COURSE = ["first-moment", "linearity", "alterations", "second-moment", "local-lemma", "moser-tardos", "chernoff", "martingale", "janson", "nibble", "quasirandom", "phase-transition", "discrepancy", "epsilon-net", "entropy", "derandomization", "testing", "drc"];
+/** @type {[string, string[]][]} */
 const COURSE_STAGES = [
   ["randomness proves existence", ["first-moment"]], ["expectation without independence", ["linearity"]], ["repair imperfect random objects", ["alterations"]],
   ["variance and second moments", ["second-moment"]], ["local dependence", ["local-lemma", "moser-tardos"]], ["concentration", ["chernoff", "martingale", "discrepancy"]],
   ["rare events", ["janson"]], ["iterative randomness", ["nibble", "phase-transition", "drc"]], ["pseudorandomness", ["quasirandom"]], ["derandomisation", ["derandomization"]],
   ["information and sampling", ["epsilon-net", "entropy", "testing"]],
 ];
-const moduleById = (id) => MODULES.find((m) => m.id === id) || null;
-const moduleByRoute = (route) => MODULES.find((m) => m.route === route) || null;
-const techniqueById = (id) => INVENTORY.find((t) => t.id === id) || null;
+const moduleById = (/** @type {string} */ id) => MODULES.find((m) => m.id === id) || null;
+const moduleByRoute = (/** @type {string} */ route) => MODULES.find((m) => m.route === route) || null;
+const techniqueById = (/** @type {string} */ id) => INVENTORY.find((t) => t.id === id) || null;
+/* A lab the caller names by a known id: the course, the self-tests and a validated state. */
+const knownModule = (/** @type {string} */ id) => /** @type {Module} */ (moduleById(id));
 
 /* ---------- parameters and state ---------- */
 
-function defaults(mod) { const P = { seed: DEFAULT_SEED }; for (const p of mod.params) P[p.key] = p.def; return mod.coerce ? mod.coerce(P) : P; }
+/** @param {Module} mod @returns {Params} */
+function defaults(mod) {
+  /** @type {Params} */
+  const P = { seed: DEFAULT_SEED };
+  for (const p of mod.params) P[p.key] = p.def;
+  return mod.coerce ? mod.coerce(P) : P;
+}
+/** @param {ParamSpec} p @param {unknown} raw */
 function coerceParam(p, raw) {
   if (raw === undefined || raw === null || raw === "") return p.def;
   if (p.options) { const hit = p.options.find(([v]) => String(v) === String(raw)); return hit ? hit[0] : p.def; }
   if (p.hidden) return String(raw).replace(/[^0-9,-]/g, "");
   const x = Number(raw);
   if (!Number.isFinite(x)) return p.def;
-  const clamped = Math.min(p.max, Math.max(p.min, x)), stepped = Math.round((clamped - p.min) / p.step) * p.step + p.min;
+  // A control without options is a number range, so it has min, max and step.
+  const min = /** @type {number} */ (p.min), max = /** @type {number} */ (p.max), step = /** @type {number} */ (p.step);
+  const clamped = Math.min(max, Math.max(min, x)), stepped = Math.round((clamped - min) / step) * step + min;
   return Number(stepped.toFixed(6));
 }
+/** @param {Module} mod @param {Record<string, unknown>} raw @returns {Params} */
 function withParams(mod, raw) {
+  /** @type {Params} */
   const P = { seed: Number.isInteger(Number(raw.seed)) && Number(raw.seed) >= 0 ? Number(raw.seed) % 4294967296 : DEFAULT_SEED };
   for (const p of mod.params) P[p.key] = coerceParam(p, raw[p.key]);
   return mod.coerce ? mod.coerce(P) : P;
 }
 /* Everything one module needs, computed once from its parameters and seed. */
+/**
+ * One lab evaluated at its parameters and seed: the structure F, analysis A and shown outcome I, in that lab's own shapes.
+ * @typedef {{ mod: Module, P: Params, F: any, A: any, I: any }} Evaluated
+ */
+/** @param {Module} mod @param {Params} P @returns {Evaluated} */
 function evaluate(mod, P) {
   const F = mod.fixed ? mod.fixed(P, P.seed) : null, A = mod.analyse(P, F);
   const I = mod.view ? mod.view(P, F) : mod.sample(P, rng(P.seed, `${mod.id}:sample`), F);
@@ -3064,8 +3296,20 @@ function evaluate(mod, P) {
 
 /* ---------- URL state: #route?key=value&… ---------- */
 
+/**
+ * The page state a URL hash carries, by view.
+ * @typedef {{ view: "lab", module: string, P: Params, deck: boolean, frame: number, step: number, lens: string, asym: boolean, focus: string }
+ *   | { view: "technique", technique: string } | { view: "compare", a: string, b: string } | { view: "recommend" } | { view: "atlas" }} HashState
+ */
+/**
+ * The page state stateHash writes: the view and whichever of its fields that view uses.
+ * @typedef {{ view: string, module?: string | null, P?: Params | null, deck?: boolean, frame?: number, step?: number, lens?: string, asym?: boolean, focus?: string, technique?: string | null, a?: string, b?: string }} HashInput
+ */
+/** @param {unknown} hash @returns {HashState} */
 function parseHash(hash) {
-  const h = String(hash || "").replace(/^#/, ""), [path, query = ""] = h.split("?"), q = {};
+  const h = String(hash || "").replace(/^#/, ""), [path, query = ""] = h.split("?");
+  /** @type {Record<string, string>} */
+  const q = {};
   for (const part of query.split("&").filter(Boolean)) { const [k, v = ""] = part.split("="); try { q[decodeURIComponent(k)] = decodeURIComponent(v); } catch { continue; } }
   const mod = moduleByRoute(path);
   if (mod) return { view: "lab", module: mod.id, P: withParams(mod, q), deck: q.deck === "1", frame: Math.max(0, Number(q.frame) || 0), step: Math.max(0, Number(q.switch) || 0), lens: q.lens === "proof" || q.lens === "experiment" ? q.lens : "lab", asym: q.view === "asymptotic", focus: q.scene || "" };
@@ -3076,14 +3320,16 @@ function parseHash(hash) {
   if (path === "recommend") return { view: "recommend" };
   return { view: "atlas" };
 }
+/** @param {HashInput} s */
 function stateHash(s) {
   if (s.view === "technique") return `#technique/${s.technique}`;
   if (s.view === "compare") return `#compare/${s.a}/${s.b}`;
   if (s.view === "recommend") return "#recommend";
   if (s.view !== "lab") return "#atlas";
-  const mod = moduleById(s.module), def = defaults(mod), q = [];
-  for (const p of mod.params) if (String(s.P[p.key]) !== String(def[p.key])) q.push(`${p.key}=${encodeURIComponent(s.P[p.key])}`);
-  q.push(`seed=${s.P.seed}`);
+  // A lab state names a lab and its parameters.
+  const mod = knownModule(/** @type {string} */ (s.module)), P = /** @type {Params} */ (s.P), def = defaults(mod), q = [];
+  for (const p of mod.params) if (String(P[p.key]) !== String(def[p.key])) q.push(`${p.key}=${encodeURIComponent(P[p.key])}`);
+  q.push(`seed=${P.seed}`);
   if (s.lens && s.lens !== "lab") q.push(`lens=${s.lens}`);
   if (s.asym) q.push("view=asymptotic");
   if (s.deck) q.push("deck=1", `frame=${s.frame || 0}`, `switch=${s.step || 0}`);
@@ -3093,11 +3339,18 @@ function stateHash(s) {
 
 /* ---------- experiments ---------- */
 
+/** @param {Evaluated} E @param {number} t @returns {number} */
 function trialValue(E, t) {
   const r = rng(E.P.seed, `${E.mod.id}:trial:${t}`);
   return E.mod.fastStat ? E.mod.fastStat(E.P, r, E.F) : E.mod.stat(E.mod.sample(E.P, r, E.F), E.P, E.F);
 }
+/** @param {Evaluated} E @param {number} from @param {number} to */
 function runTrials(E, from, to) { const out = []; for (let t = from; t < to; t++) out.push(trialValue(E, t)); return out; }
+/**
+ * @typedef {{ x0: number, x1: number, label: string, count: number }} Bin
+ * @typedef {{ bins: Bin[], N: number, integer?: boolean }} Histogram
+ */
+/** @param {number[]} values @returns {Histogram} */
 function histogram(values) {
   if (!values.length) return { bins: [], N: 0 };
   const allInt = values.every((v) => Number.isInteger(v)), lo = Math.min(...values), hi = Math.max(...values);
@@ -3110,6 +3363,7 @@ function histogram(values) {
   for (const v of values) bins[Math.min(k - 1, Math.floor((v - lo) / w))].count++;
   return { bins, N: values.length, integer: false };
 }
+/** @param {Evaluated} E @param {number[]} values */
 function summarise(E, values) {
   const th = E.mod.experiment.theory(E.A, E.P), N = values.length;
   const hits = values.filter((x) => th.eventTest(x, E.A, E.P)).length, mean = N ? values.reduce((a, b) => a + b, 0) / N : NaN;
@@ -3120,15 +3374,20 @@ function summarise(E, values) {
 
 const B = () => (typeof Beamdswitch !== "undefined" ? Beamdswitch : self.Beamdswitch);
 /* The live page's link to this exact lab state: the address a deck tells the reader to reproduce it from. */
-const labUrl = (E) => `${URL_BASE}${stateHash({ view: "lab", module: E.mod.id, P: E.P })}`;
+const labUrl = (/** @type {Evaluated} */ E) => `${URL_BASE}${stateHash({ view: "lab", module: E.mod.id, P: E.P })}`;
 /* A report's frames in deck order. */
+/** @template T @param {{ setup: T[], method: T[], results: T[], checks: T[] }} R */
 const reportFrames = (R) => [...R.setup, ...R.method, ...R.results, ...R.checks];
+/** @typedef {BeamdswitchFrame & { body: string }} DeckFrame */
+/** @param {Evaluated} E @param {StoryFrame} f @returns {DeckFrame} */
 function frameWithScene(E, f) {
   const body = [sceneComment(E.mod.id, f.focus, E.P, focusLabel(E, f.focus)), f.body].filter(Boolean).join("\n\n");
   return { title: f.title, body, narration: f.narration, notes: f.notes, key: f.key };
 }
 /* A human-readable focus for a scene (narration-decoded: never an opaque id alone). */
+/** @param {Evaluated} E @param {string} scene */
 function focusLabel(E, scene) {
+  /** @type {Record<string, string>} */
   const names = { problem: "the deterministic goal", "random-object": "the sampled random object", witnesses: "the witnesses that matter", variable: "the key random variable", bound: "the technique's inequality",
     experiment: "the simulation (an illustration, not a proof)", transition: "the step from probability to existence", conclusion: "the deterministic conclusion", overlap: "pairs of witnesses by overlap",
     dependency: `bad event A_${E.A.focusEvent ?? 0} and its dependency neighbourhood`, condition: "the Local Lemma condition e p (d+1) <= 1", "union-bound": "the union-bound sum", resample: "the resampling history", mgf: "the exponential envelope",
@@ -3136,20 +3395,24 @@ function focusLabel(E, scene) {
     branching: "graph exploration beside the branching process", vc: "shattered subsets", counting: "the counting bound", construction: "the conditional-expectation path", bad: "bad pairs and their deletion", repair: "the repair step", threshold: "the threshold sweep" };
   return names[scene] || scene;
 }
+/** @param {Evaluated} E */
 function techniqueReport(E) {
-  const s = E.mod.story(E.P, E.A, E.I), wrap = (arr) => arr.map((f) => frameWithScene(E, f));
+  const s = E.mod.story(E.P, E.A, E.I), wrap = (/** @type {StoryFrame[]} */ arr) => arr.map((f) => frameWithScene(E, f));
   return { meta: { title: s.title, subtitle: s.subtitle, author: "The Probabilistic Method Atlas", voice: "bf_emma" }, narration: s.narration,
     notes: `Scene state: module ${E.mod.id}, seed ${E.P.seed}. Reproduce at ${labUrl(E)}`,
     setup: wrap(s.setup), method: wrap(s.method), results: wrap(s.results), checks: wrap(s.checks) };
 }
+/** @param {Evaluated} E */
 function techniqueDeck(E) { return B().deck(techniqueReport(E)); }
 /* The frames deck mode shows, in order, with their reveal steps — the same text the export writes. */
+/** @param {Evaluated} E */
 function deckFrames(E) {
   const s = E.mod.story(E.P, E.A, E.I), out = [];
   for (const [id, label] of B().SECTIONS) for (const f of s[id]) out.push({ section: label, title: f.title, focus: f.focus, body: f.body, steps: f.body.split(/\n\s*\.\s\.\s\.\s*\n/).length, narration: f.narration, notes: f.notes || "", key: f.key || "" });
   return out;
 }
-const oneLine = (x) => String(x ?? "").replace(/\s+/g, " ").trim();
+const oneLine = (/** @type {unknown} */ x) => String(x ?? "").replace(/\s+/g, " ").trim();
+/** @param {DeckFrame} f */
 function writeFrame(f) {
   const out = [`## ${oneLine(f.title)}`, "", f.body, ""];
   if (f.key) out.push("::: key", f.key, ":::", "");
@@ -3158,6 +3421,7 @@ function writeFrame(f) {
   return out;
 }
 /* One technique's frame on its own, as a standalone one-slide deck. */
+/** @param {Evaluated} E @param {number} index */
 function slideMarkdown(E, index) {
   const frames = deckFrames(E), f = frames[Math.max(0, Math.min(frames.length - 1, index))], R = techniqueReport(E);
   const g = reportFrames(R)[frames.indexOf(f)];
@@ -3168,13 +3432,14 @@ function courseDeck(seed = DEFAULT_SEED) {
   const out = ["---", "title: The Probabilistic Method Atlas", "subtitle: Random experiment, observable, dependency, inequality, deterministic consequence", "author: The Probabilistic Method Atlas", "voice: bf_emma", "---", "",
     "::: narration", "This course follows one recurring move. Build a probability space, show that good outcomes have positive probability, and conclude that a good object exists.", ":::", ""];
   COURSE.forEach((id, i) => {
-    const mod = moduleById(id), E = evaluate(mod, { ...defaults(mod), seed }), R = techniqueReport(E);
+    const mod = knownModule(id), E = evaluate(mod, { ...defaults(mod), seed }), R = techniqueReport(E);
     out.push(`# ${mod.title}`, "", "::: narration", `Part ${i + 1}. ${mod.title.replace(/[–—]/g, " ")}.`, ":::", "");
     for (const f of reportFrames(R)) out.push(...writeFrame(f));
   });
   return out.join("\n");
 }
 /* The Beam MD Switch sequence: every deck state of the technique, decoded into words. */
+/** @param {Evaluated} E */
 function switchSequence(E) {
   const frames = deckFrames(E), lines = [`# Beam MD Switch sequence: ${E.mod.title}`, "", `Reproduce: ${labUrl(E)}`, ""];
   frames.forEach((f, i) => {
@@ -3188,22 +3453,30 @@ function switchSequence(E) {
 
 /* ---------- maths text: LaTeX-like source to Unicode for the page ---------- */
 
+/** @type {Record<string, string>} */
 const GREEK = { alpha: "α", beta: "β", gamma: "γ", delta: "δ", varepsilon: "ε", epsilon: "ε", lambda: "λ", mu: "μ", pi: "π", rho: "ρ", sigma: "σ", omega: "ω", theta: "θ", Delta: "Δ", Omega: "Ω", Phi: "Φ", Sigma: "Σ" };
+/** @type {Record<string, string>} */
 const SYMBOLS = { le: "≤", leq: "≤", ge: "≥", geq: "≥", ne: "≠", neq: "≠", cdot: "·", times: "×", infty: "∞", to: "→", Longrightarrow: "⟹", Rightarrow: "⇒", sum: "Σ", prod: "Π", bigcap: "⋂", cap: "∩", cup: "∪", subseteq: "⊆", sim: "∼",
   mid: "|", in: "∈", dots: "…", ldots: "…", cdots: "⋯", approx: "≈", ll: "≪", gg: "≫", emptyset: "∅", Pr: "Pr", ln: "ln", log: "log", exp: "exp", max: "max", min: "min", "|": "‖", "{": "{", "}": "}", ",": " ", ";": " ", "!": "", quad: "  ", qquad: "    ", " ": " ", partial: "∂" };
+/** @type {Record<string, string>} */
 const SUPS = { 0: "⁰", 1: "¹", 2: "²", 3: "³", 4: "⁴", 5: "⁵", 6: "⁶", 7: "⁷", 8: "⁸", 9: "⁹", "+": "⁺", "-": "⁻", "−": "⁻", "(": "⁽", ")": "⁾", n: "ⁿ", i: "ⁱ", k: "ᵏ", t: "ᵗ", r: "ʳ", d: "ᵈ", m: "ᵐ" };
+/** @type {Record<string, string>} */
 const SUBS = { 0: "₀", 1: "₁", 2: "₂", 3: "₃", 4: "₄", 5: "₅", 6: "₆", 7: "₇", 8: "₈", 9: "₉", "+": "₊", "-": "₋", i: "ᵢ", j: "ⱼ", k: "ₖ", n: "ₙ", e: "ₑ", m: "ₘ", t: "ₜ", r: "ᵣ", s: "ₛ", p: "ₚ", x: "ₓ" };
 /* A term set off as one unit: brackets once it is longer than one character, as in (n−1)/2 or √(2k). */
-const unit = (t) => (t.length > 1 ? `(${t})` : t);
+const unit = (/** @type {string} */ t) => (t.length > 1 ? `(${t})` : t);
+/** @param {unknown} src @returns {string} */
 function texToText(src) {
   let s = String(src);
+  /** @param {string} str @param {number} i @returns {[string, number]} */
   const group = (str, i) => { if (str[i] !== "{") return [str[i] || "", i + 1]; let d = 0, j = i; for (; j < str.length; j++) { if (str[j] === "{") d++; else if (str[j] === "}") { d--; if (!d) break; } } return [str.slice(i + 1, j), j + 1]; };
+  /** @param {string} str @param {number} i @returns {[string, number]} */
   const arg = (str, i) => { while (str[i] === " ") i++; if (str[i] === "\\") { const m = /^\\[A-Za-z]+/.exec(str.slice(i)); if (m) return [m[0], i + m[0].length]; } return group(str, i); };
   let out = "", i = 0;
   while (i < s.length) {
     const c = s[i];
     if (c === "\\") {
-      const m = /^\\([A-Za-z]+|.)/.exec(s.slice(i)), name = m[1]; i += m[0].length;
+      // A backslash is followed by a command name or one character, so this always matches.
+      const m = /** @type {RegExpExecArray} */ (/^\\([A-Za-z]+|.)/.exec(s.slice(i))), name = m[1]; i += m[0].length;
       if (name === "frac" || name === "tfrac" || name === "dfrac") { const [a, j] = arg(s, i); const [b, k] = arg(s, j); i = k; const ta = texToText(a), tb = texToText(b); if (ta === "1" && tb === "2") out += "½"; else out += unit(ta) + "/" + unit(tb); continue; }
       if (name === "binom") { const [a, j] = arg(s, i); const [b, k] = arg(s, j); i = k; out += `C(${texToText(a)},${texToText(b)})`; continue; }
       if (name === "sqrt") { const [a, j] = arg(s, i); i = j; out += "√" + unit(texToText(a)); continue; }
@@ -3226,11 +3499,14 @@ function texToText(src) {
   }
   return out.replace(/\s{2,}/g, " ").replace(/(\S)-(\S)/g, "$1−$2").trim();
 }
-const escapeHtml = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+const escapeHtml = (/** @type {unknown} */ s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 /* A small Markdown renderer for the frames this atlas writes: paragraphs, lists, tables, $…$ and $$…$$, bold, reveal steps. */
+/** @param {unknown} md */
 function renderMarkdown(md, upToStep = Infinity) {
-  const parts = String(md).replace(/<!--[\s\S]*?-->/g, "").split(/\n\s*\.\s\.\s\.\s*\n/), html = [];
-  const inline = (t) => escapeHtml(t).replace(/\$([^$]+)\$/g, (_, x) => `<span class="m">${escapeHtml(texToText(x.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")))}</span>`).replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  const parts = String(md).replace(/<!--[\s\S]*?-->/g, "").split(/\n\s*\.\s\.\s\.\s*\n/);
+  /** @type {string[]} */
+  const html = [];
+  const inline = (/** @type {string} */ t) => escapeHtml(t).replace(/\$([^$]+)\$/g, (_, x) => `<span class="m">${escapeHtml(texToText(x.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")))}</span>`).replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
   parts.forEach((part, step) => {
     const hidden = step > upToStep, blocks = part.trim().split(/\n{2,}/);
     for (const b of blocks) {
@@ -3251,17 +3527,21 @@ function renderMarkdown(md, upToStep = Infinity) {
 
 /* ---------- search, comparison, recommender, indexes ---------- */
 
+/** @typedef {{ kind: string, id: string, title: string, text: string, built: boolean, module?: string | null }} SearchEntry */
+/** @returns {SearchEntry[]} */
 function searchEntries() {
+  /** @type {SearchEntry[]} */
   const out = [];
   for (const m of MODULES) out.push({ kind: "module", id: m.id, title: m.title, text: [m.title, m.short, m.archetype, m.intuition, m.problem, m.variable, m.boundTex, m.family].join(" ").toLowerCase(), built: true });
   for (const t of INVENTORY) out.push({ kind: "technique", id: t.id, title: t.title, text: [t.title, t.problem, t.visual, t.family].join(" ").toLowerCase(), built: !!t.module, module: t.module });
   return out;
 }
+/** @param {unknown} query @returns {SearchEntry[]} */
 function search(query, limit = 12) {
   const q = String(query || "").toLowerCase().trim();
   if (!q) return [];
   const entries = searchEntries(), score = new Map();
-  const bump = (key, s) => score.set(key, (score.get(key) || 0) + s);
+  const bump = (/** @type {string} */ key, /** @type {number} */ s) => score.set(key, (score.get(key) || 0) + s);
   for (const [alias, ids] of Object.entries(ALIASES)) if (alias.includes(q) || q.includes(alias)) ids.forEach((id, i) => bump(`technique:${id}`, 50 - i));
   const words = q.split(/\s+/).filter((w) => w.length > 1);
   for (const e of entries) {
@@ -3269,10 +3549,13 @@ function search(query, limit = 12) {
     if (e.title.toLowerCase().includes(q)) bump(key, 40);
     for (const w of words) if (e.text.includes(w)) bump(key, 5);
   }
-  return [...score.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, limit).map(([key]) => entries.find((e) => `${e.kind}:${e.id}` === key)).filter(Boolean);
+  return [...score.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, limit).map(([key]) => entries.find((e) => `${e.kind}:${e.id}` === key)).filter((e) => e !== undefined);
 }
+/** @typedef {{ title: string, built: boolean, intuition: string, controls: string, inequality: string, worksWhen: string, visual: string, conclusion: string, problem: string }} CompareSide */
+/** @param {string} aId @param {string} bId */
 function compareRows(aId, bId) {
-  const side = (id) => {
+  /** @returns {CompareSide | null} */
+  const side = (/** @type {string} */ id) => {
     const m = moduleById(id), t = techniqueById(id);
     if (m) return { title: m.title, built: true, intuition: m.intuition, controls: m.pattern.controls, inequality: texToText(m.boundTex), worksWhen: m.pattern.worksWhen, visual: m.pattern.visual, conclusion: m.pattern.conclusion, problem: m.archetype };
     if (t) { const host = t.module ? moduleById(t.module) : null; return { title: t.title, built: !!host, intuition: host ? `Shown inside the ${host.short} lab.` : "Not yet built in this release.", controls: "—", inequality: host ? texToText(host.boundTex) : "—", worksWhen: "—", visual: t.visual, conclusion: "—", problem: t.problem }; }
@@ -3280,7 +3563,9 @@ function compareRows(aId, bId) {
   };
   return { a: side(aId), b: side(bId) };
 }
+/** @type {[string, string][]} */
 const KEY_COMPARISONS = [["first-moment", "local-lemma"], ["first-moment", "second-moment"], ["chernoff", "martingale"], ["first-moment", "alterations"], ["local-lemma", "moser-tardos"], ["first-moment", "derandomization"], ["phase-transition", "quasirandom"], ["alterations", "nibble"], ["chernoff", "discrepancy"]];
+/** @type {Record<string, { q: string, why?: string, options: [string, string][] }>} */
 const RECOMMENDER = {
   start: { q: "What are you trying to prove?", options: [["existence", "An object exists"], ["concentration", "A random quantity is concentrated"], ["rare", "A rare-event probability"], ["pseudo", "A deterministic object behaves randomly"], ["algorithm", "An algorithm finds the object"], ["sampling", "Tiny samples decide something global"]] },
   existence: { q: "Can the expected number of failures be made below 1?", why: "If E[#failures] < 1, some outcome has none: the first moment is the cheapest tool.", options: [["first-moment", "yes → first moment"], ["existence-2", "no"]] },
@@ -3294,6 +3579,7 @@ const RECOMMENDER = {
   algorithm: { q: "Is your existence proof a Local Lemma or an expectation argument?", why: "Each has its own constructive counterpart.", options: [["moser-tardos", "Local Lemma → Moser–Tardos"], ["derandomization", "expectation → conditional expectation"], ["nibble", "iterated random choice → Rödl nibble"]] },
   sampling: { q: "Hit every large range, or test a property?", why: "Bounded VC dimension gives ε-nets; far-from-property gives many witnesses for testers.", options: [["epsilon-net", "hit ranges → ε-net / VC"], ["testing", "test a property → property testing"], ["entropy", "count a family → entropy"]] },
 };
+/** @type {[string, string[]][]} */
 const PROBLEM_INDEX = [
   ["How can I prove an object exists?", ["first-moment", "alterations", "second-moment", "local-lemma"]],
   ["How do I show a random variable rarely deviates?", ["chernoff", "martingale", "talagrand", "kim-vu"]],
@@ -3304,6 +3590,7 @@ const PROBLEM_INDEX = [
   ["How can tiny random samples say something global?", ["epsilon-net", "testing", "vc-dimension"]],
   ["How can dense structure force common neighbourhoods?", ["drc"]],
 ];
+/** @type {[string, string, string[]][]} */
 const GALLERY = [
   ["Avoid every bad configuration", "First moment / Local Lemma", ["first-moment", "local-lemma"]],
   ["Prove something random is tightly concentrated", "Chernoff / martingales", ["chernoff", "martingale"]],
@@ -3317,7 +3604,9 @@ const GALLERY = [
 /* ---------- self-tests (also run by node --test) ---------- */
 
 function selfTests() {
-  const T = [], ok = (name, pass, detail = "") => T.push({ name, pass: !!pass, detail });
+  /** @type {{ name: string, pass: boolean, detail: string }[]} */
+  const T = [];
+  const ok = (/** @type {string} */ name, /** @type {unknown} */ pass, detail = "") => T.push({ name, pass: !!pass, detail });
   ok("C(10,5) = 252", choose(10, 5) === 252);
   ok("C(n,k) = C(n,n−k)", choose(17, 4) === choose(17, 13));
   ok("binomial PMF sums to 1", Math.abs(Array.from({ length: 31 }, (_, k) => binomPmf(30, k, 0.3)).reduce((a, b) => a + b, 0) - 1) < 1e-12);
@@ -3326,23 +3615,29 @@ function selfTests() {
   ok("the same seed gives the same graph", JSON.stringify(gnp(8, 0.5, rng(17, "x")).edges) === JSON.stringify(gnp(8, 0.5, rng(17, "x")).edges));
   for (const mod of MODULES) {
     const E = evaluate(mod, defaults(mod));
-    ok(`${mod.id}: analysis is finite`, E.A.rows.every((r) => r[1] !== "NaN"));
+    ok(`${mod.id}: analysis is finite`, E.A.rows.every((/** @type {string[]} */ r) => r[1] !== "NaN"));
     ok(`${mod.id}: deck parses into the four standard sections`, (() => { try { const md = techniqueDeck(E); return /voice: bf_emma/.test(md) && (md.match(/^# /gm) || []).length === 4; } catch (e) { return false; } })());
   }
-  const fm = moduleById("first-moment"), Pf = { ...defaults(fm), n: 8, k: 4 }, Af = fm.analyse(Pf);
+  const fm = knownModule("first-moment"), Pf = { ...defaults(fm), n: 8, k: 4 }, Af = fm.analyse(Pf, null);
   ok("first moment: E[X] = sum of the indicator expectations", Math.abs(subsets(8, 4).length * 2 ** (1 - 6) - Af.EX) < 1e-12);
-  const ll = moduleById("local-lemma"), El = evaluate(ll, defaults(ll));
+  const ll = knownModule("local-lemma"), El = evaluate(ll, defaults(ll));
   ok("Local Lemma: displayed d = actual maximum dependency degree", El.A.d === Math.max(...dependencyDegrees(El.F.edges)));
   ok("conditional expectation: each node is the average of its children", (() => { const G = gnp(9, 0.5, rng(3, "t")), a = new Array(9).fill(-1); a[0] = 1; const p = condExpCut(G, a); a[1] = 0; const x = condExpCut(G, a); a[1] = 1; const y = condExpCut(G, a); return Math.abs(p - (x + y) / 2) < 1e-12; })());
   return T;
 }
 
-Object.assign(PM, {
+const FRAMEWORK_API = {
   URL_BASE, DEFAULT_SEED, COURSE, COURSE_STAGES, moduleById, moduleByRoute, techniqueById, defaults, withParams, coerceParam, evaluate, parseHash, stateHash,
   trialValue, runTrials, histogram, summarise, techniqueReport, techniqueDeck, deckFrames, slideMarkdown, courseDeck, switchSequence, focusLabel,
   texToText, renderMarkdown, escapeHtml, search, compareRows, KEY_COMPARISONS, RECOMMENDER, PROBLEM_INDEX, GALLERY, selfTests,
-});
-self.PM = PM;
+};
+Object.assign(PM, FRAMEWORK_API);
+/**
+ * The engine's public object, as the page and the tests read it.
+ * @typedef {typeof CORE_API & typeof INVENTORY_API & typeof EXISTENCE_API & typeof DEPENDENCE_API & typeof STRUCTURE_API & typeof INFORMATION_API & typeof FRAMEWORK_API} PMApi
+ */
+/** @type {typeof self & { PM?: PMApi }} */ (self).PM = PM;
+
 
 })();
 </script>
@@ -3352,18 +3647,28 @@ self.PM = PM;
 const PM = self.PM;
 /* Page part 1: drawing. Every renderer turns one evaluated state into SVG text plus a plain-language summary.
  * Colour never carries meaning alone: red edges are solid and blue dashed, bad marks carry ×, survivors ✓, selections are filled. */
-const esc = PM.escapeHtml, f = PM.fmt, T = PM.texToText, { choose, binomPmf } = PM;
-const svgOpen = (w, h, label) => `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(label)}" xmlns="http://www.w3.org/2000/svg">`;
-const circlePos = (n, cx, cy, R, start = -Math.PI / 2) => Array.from({ length: n }, (_, i) => [cx + R * Math.cos(start + (2 * Math.PI * i) / n), cy + R * Math.sin(start + (2 * Math.PI * i) / n)]);
-const line = (a, b, cls, extra = "") => `<line x1="${a[0].toFixed(1)}" y1="${a[1].toFixed(1)}" x2="${b[0].toFixed(1)}" y2="${b[1].toFixed(1)}" class="${cls}" ${extra}/>`;
-const dot = (p, r, cls, extra = "") => `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="${r}" class="${cls}" ${extra}/>`;
-const text = (x, y, s, cls = "lbl", anchor = "middle") => `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" class="${cls}" text-anchor="${anchor}">${esc(s)}</text>`;
-const cross = (p, s, cls = "red") => `<path d="M${p[0] - s},${p[1] - s}L${p[0] + s},${p[1] + s}M${p[0] - s},${p[1] + s}L${p[0] + s},${p[1] - s}" class="${cls}" stroke-width="2"/>`;
-const scale = (d0, d1, r0, r1) => (x) => r0 + ((x - d0) / (d1 - d0 || 1)) * (r1 - r0);
+// The page reaches the engine through PM only: the build gives the engine and the page separate scopes.
+const esc = PM.escapeHtml, f = PM.fmt, T = PM.texToText;
+/** @typedef {[number, number]} XY a point on the drawing */
+const svgOpen = (/** @type {number} */ w, /** @type {number} */ h, /** @type {string} */ label) => `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(label)}" xmlns="http://www.w3.org/2000/svg">`;
+const circlePos = (/** @type {number} */ n, /** @type {number} */ cx, /** @type {number} */ cy, /** @type {number} */ R, start = -Math.PI / 2) => Array.from({ length: n }, (_, i) => /** @type {XY} */ ([cx + R * Math.cos(start + (2 * Math.PI * i) / n), cy + R * Math.sin(start + (2 * Math.PI * i) / n)]));
+const line = (/** @type {readonly number[]} */ a, /** @type {readonly number[]} */ b, /** @type {string} */ cls, extra = "") => `<line x1="${a[0].toFixed(1)}" y1="${a[1].toFixed(1)}" x2="${b[0].toFixed(1)}" y2="${b[1].toFixed(1)}" class="${cls}" ${extra}/>`;
+const dot = (/** @type {readonly number[]} */ p, /** @type {number} */ r, /** @type {string} */ cls, extra = "") => `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="${r}" class="${cls}" ${extra}/>`;
+const text = (/** @type {number} */ x, /** @type {number} */ y, /** @type {unknown} */ s, cls = "lbl", anchor = "middle") => `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" class="${cls}" text-anchor="${anchor}">${esc(s)}</text>`;
+const cross = (/** @type {readonly number[]} */ p, /** @type {number} */ s, cls = "red") => `<path d="M${p[0] - s},${p[1] - s}L${p[0] + s},${p[1] + s}M${p[0] - s},${p[1] + s}L${p[0] + s},${p[1] - s}" class="${cls}" stroke-width="2"/>`;
+const scale = (/** @type {number} */ d0, /** @type {number} */ d1, /** @type {number} */ r0, /** @type {number} */ r1) => (/** @type {number} */ x) => r0 + ((x - d0) / (d1 - d0 || 1)) * (r1 - r0);
 
 /* A small line chart: series of [x, y] points, optional vertical markers and a shaded band. */
+/**
+ * @typedef {{ pts: number[][], dots?: boolean, fill?: string, cls?: string, width?: number, dash?: string, label?: string }} Series
+ * @typedef {{ x?: number, y?: number, point?: number[], cls?: string, dash?: string, fill?: string, label?: string }} Marker
+ * @typedef {{ from: number, to: number, label?: string }} Band
+ */
+/**
+ * @param {{ w?: number, h?: number, x0: number, x1: number, y0: number, y1: number, series?: Series[], markers?: Marker[], bands?: Band[], xlabel?: string, ylabel?: string, title?: string, logY?: boolean }} chart
+ */
 function lineChart({ w = 600, h = 220, x0, x1, y0, y1, series = [], markers = [], bands = [], xlabel = "", ylabel = "", title = "", logY = false }) {
-  const L = 48, R = 14, Tp = title ? 24 : 12, Bm = 34, yv = (v) => (logY ? Math.log10(Math.max(v, 1e-12)) : v);
+  const L = 48, R = 14, Tp = title ? 24 : 12, Bm = 34, yv = (/** @type {number} */ v) => (logY ? Math.log10(Math.max(v, 1e-12)) : v);
   const sx = scale(x0, x1, L, w - R), sy = scale(yv(y0), yv(y1), h - Bm, Tp);
   let s = svgOpen(w, h, title || ylabel) + (title ? text(L, 15, title, "ttl", "start") : "");
   for (const b of bands) s += `<rect x="${sx(b.from).toFixed(1)}" y="${Tp}" width="${Math.max(1, sx(b.to) - sx(b.from)).toFixed(1)}" height="${h - Bm - Tp}" class="fmuted" opacity=".12"/>` + text((sx(b.from) + sx(b.to)) / 2, Tp + 11, b.label || "", "lbl");
@@ -3388,6 +3693,10 @@ function lineChart({ w = 600, h = 220, x0, x1, y0, y1, series = [], markers = []
   return s + "</svg>";
 }
 /* Histogram with the stated trial count, an optional mean line and an optional overlay PMF (expected counts). */
+/**
+ * @param {Histogram} hist
+ * @param {{ mean?: number | null, meanLabel?: string, pmf?: number[] | null, w?: number, h?: number, event?: ((b: Bin) => boolean) | null }} [options]
+ */
 function histogramChart(hist, { mean = null, meanLabel = "E", pmf = null, w = 600, h = 200, event = null } = {}) {
   const bins = hist.bins; if (!bins.length) return "";
   const L = 40, R = 10, Tp = 18, Bm = 30, maxC = Math.max(...bins.map((b) => b.count), ...(pmf ? bins.map((b) => (pmf[b.x0] || 0) * hist.N) : [0]), 1);
@@ -3404,16 +3713,23 @@ function histogramChart(hist, { mean = null, meanLabel = "E", pmf = null, w = 60
   if (mean !== null && Number.isFinite(mean) && mean >= lo && mean <= hi) s += line([sx(hist.integer ? mean + 0.5 : mean), Tp], [sx(hist.integer ? mean + 0.5 : mean), h - Bm], "blue", 'stroke-width="2" stroke-dasharray="6 3"') + text(sx(hist.integer ? mean + 0.5 : mean) + 4, Tp + 10, `${meanLabel} = ${f(mean)}`, "lbl", "start");
   return s + "</svg>";
 }
+/** @param {[string, number, string][]} rows label, value and kind (truth, proved or not justified) */
 function barsHtml(rows) {
   const max = Math.max(1e-12, ...rows.map((r) => r[1]));
   const useLog = max / Math.max(1e-12, Math.min(...rows.map((r) => r[1]).filter((v) => v > 0))) > 50;
-  const width = (v) => (useLog ? Math.max(0, 1 + Math.log10(Math.max(v, 1e-12)) / 12) : v / Math.max(1, max)) * 100;
+  const width = (/** @type {number} */ v) => (useLog ? Math.max(0, 1 + Math.log10(Math.max(v, 1e-12)) / 12) : v / Math.max(1, max)) * 100;
   return `<div class="bars">${rows.map(([label, v, kind]) => `<div class="bar"><span>${esc(label)} <span class="badge ${kind === "truth" ? "exp" : kind === "proved" ? "thm" : "todo"}">${esc(kind)}</span></span><span class="track"><span class="fill${kind === "not justified" ? " void" : ""}" style="width:${Math.min(100, width(v)).toFixed(1)}%"></span></span><span class="val">${f(v)}</span></div>`).join("")}${useLog ? '<p class="small muted">Bar lengths on a log scale (1 down to 10⁻¹²).</p>' : ""}</div>`;
 }
 
 /* ---------- per-module renderers: draw(E, ui) → { svg, summary, extra } ---------- */
 
+/**
+ * What a lab's renderer draws: the SVG, a plain-language summary for screen readers, and optional extra HTML.
+ * @typedef {{ svg: string, summary: string, extra?: string }} Drawing
+ */
+/** @type {Record<string, (E: Evaluated, ui: UiState) => Drawing>} */
 const DRAW = {};
+
 
 DRAW["first-moment"] = (E, ui) => {
   const { n, k } = E.P, I = E.I, pos = circlePos(n, 180, 180, 150), hl = ui.hl ?? (ui.focus === "witnesses" || ui.focus === "transition" ? 0 : null);
@@ -3429,8 +3745,8 @@ DRAW["first-moment"] = (E, ui) => {
   s += text(gx, 200, `THIS SAMPLE: X = ${I.X} bad ${k}-sets`, "ttl", "start") + text(gx, 218, `out of C(${n},${k}) = ${f(E.A.sets)}`, "lbl", "start");
   s += text(gx, 250, "red edges solid, blue edges dashed", "lbl", "start") + "</svg>";
   const reds = Array.from({ length: n }, (_, i) => Array.from({ length: n - i - 1 }, (_, j) => I.col[i * n + i + j + 1])).flat().reduce((a, b) => a + b, 0);
-  const chips = I.mono.slice(0, 24).map((w, i) => `<button class="chip" type="button" data-act="hl" data-i="${i}" aria-pressed="${hl === i}">I<sub>{${w.set.join(",")}}</sub> = 1 × ${w.colour}</button>`).join("");
-  return { svg: s, summary: `K_${n} with ${choose(n, 2)} edges, ${reds} red and ${choose(n, 2) - reds} blue. ${I.X} of ${f(E.A.sets)} sets of ${k} vertices are monochromatic. E[X] = ${f(E.A.EX)}${E.A.ok ? ", below 1" : ", not below 1"}.`,
+  const chips = I.mono.slice(0, 24).map((/** @type {{ set: number[], colour: string }} */ w, /** @type {number} */ i) => `<button class="chip" type="button" data-act="hl" data-i="${i}" aria-pressed="${hl === i}">I<sub>{${w.set.join(",")}}</sub> = 1 × ${w.colour}</button>`).join("");
+  return { svg: s, summary: `K_${n} with ${PM.choose(n, 2)} edges, ${reds} red and ${PM.choose(n, 2) - reds} blue. ${I.X} of ${f(E.A.sets)} sets of ${k} vertices are monochromatic. E[X] = ${f(E.A.EX)}${E.A.ok ? ", below 1" : ", not below 1"}.`,
     extra: `<h3>Indicators that fired (X = Σ I<sub>S</sub>)</h3><div class="chips">${chips || '<span class="muted small">None: this colouring is already a witness, X = 0 ✓.</span>'}${I.X > 24 ? `<span class="small muted">… and ${I.X - 24} more</span>` : ""}</div>` };
 };
 
@@ -3447,7 +3763,7 @@ DRAW.linearity = (E, ui) => {
   s += text(400, 100, `E[X] = ${E.P.n}!/2^${E.P.n - 1} = ${f(E.A.EX)}`, "ttl", "start") + text(400, 130, "green: one witness path", "lbl", "start") + text(400, 146, "(found by inserting players one by one)", "lbl", "start");
   s += text(400, 180, I.X >= E.A.EX - 1e-9 ? "this tournament is at or above the mean ✓" : "this one is below the mean", "lbl", "start") + text(400, 196, "— some tournament must reach it", "lbl", "start") + "</svg>";
   const d = E.A.dependent;
-  return { svg: s, summary: `Tournament on ${n} players with ${choose(n, 2)} arcs. It has ${f(I.X)} directed Hamiltonian paths; the expected number is ${f(E.A.EX)}.`,
+  return { svg: s, summary: `Tournament on ${n} players with ${PM.choose(n, 2)} arcs. It has ${f(I.X)} directed Hamiltonian paths; the expected number is ${f(E.A.EX)}.`,
     extra: `<h3>Indicators are dependent — linearity does not care</h3><table class="rows"><tr><td>Pr[I<sub>identity</sub> = 1]</td><td>${f(E.A.pOne)}</td></tr><tr><td>identity and its rotation, Pr[both]</td><td>${f(d[0].joint)}</td></tr><tr><td>… if they were independent</td><td>${f(d[0].product)}</td></tr><tr><td>identity and its reversal, Pr[both]</td><td>${f(d[1].joint)}</td></tr></table>` };
 };
 
@@ -3479,13 +3795,18 @@ DRAW["second-moment"] = (E, ui) => {
   pos.forEach((p, i) => { s += dot(p, w && w.includes(i) ? 7 : 5, w && w.includes(i) ? "fgreen" : "fbg ink"); });
   s += text(360, 40, "THIS SAMPLE", "lbl", "start") + text(360, 62, `X = ${f(I.X)} cliques K_${E.P.k}`, "ttl", "start") + text(360, 90, `E[X] = ${f(E.A.EX)}`, "ttl", "start") + text(360, 110, `E[X²]/E[X]² = ${f(E.A.ratio)}`, "ttl", "start");
   s += text(360, 140, `Pr[X > 0] ≥ ${f(E.A.pz)} (Paley–Zygmund)`, "lbl", "start") + text(360, 158, `Pr[X = 0] ≤ ${f(E.A.cheb)} (Chebyshev)`, "lbl", "start") + text(360, 186, "green: one clique witness", "lbl", "start") + "</svg>";
-  const sel = ui.j ?? null, rows = E.A.table.map((r) => `<tr${sel === r.j ? ' class="active"' : ""}><td><button class="chip" type="button" data-act="j" data-i="${r.j}" aria-pressed="${sel === r.j}">j = ${r.j}</button></td><td class="num">${f(r.pairs)}</td><td class="num">${f(r.joint)}</td><td class="num">${f(r.contribution)}</td></tr>`).join("");
-  const sweep = E.mod.sweep(E.P), chart = lineChart({ x0: 0, x1: 1, y0: 0, y1: 1, title: "Threshold via moments", xlabel: "p", ylabel: "probability", series: [{ pts: sweep.map((d) => [d.p, d.markov]), cls: "red", label: "upper: min(1, E X)" }, { pts: sweep.map((d) => [d.p, d.pz]), cls: "blue", dash: "5 3", label: "lower: (EX)²/E[X²]" }], markers: [{ x: E.P.p, label: `p = ${f(E.P.p)}` }, { x: Math.min(1, E.A.threshold), cls: "green", label: "E X = 1" }] });
-  const detail = sel !== null ? `<p class="eq">Pairs with |S ∩ T| = ${sel}: E[I<sub>S</sub>I<sub>T</sub>] = p<sup>2·${E.A.K} − ${choose(sel, 2)}</sup> = ${f(E.A.table[sel].joint)}${sel < 2 ? " = E[I_S]·E[I_T] (no shared edge: independent)" : " (shared edges: positively correlated)"}</p>` : "";
+  const sel = ui.j ?? null, rows = E.A.table.map((/** @type {{ j: number, pairs: number, joint: number, contribution: number, independent: boolean }} */ r) => `<tr${sel === r.j ? ' class="active"' : ""}><td><button class="chip" type="button" data-act="j" data-i="${r.j}" aria-pressed="${sel === r.j}">j = ${r.j}</button></td><td class="num">${f(r.pairs)}</td><td class="num">${f(r.joint)}</td><td class="num">${f(r.contribution)}</td></tr>`).join("");
+  // Only the second-moment lab draws this, and it has a sweep.
+  const sweep = /** @type {{ p: number, markov: number, pz: number }[]} */ (/** @type {NonNullable<Module["sweep"]>} */ (E.mod.sweep)(E.P)), chart = lineChart({ x0: 0, x1: 1, y0: 0, y1: 1, title: "Threshold via moments", xlabel: "p", ylabel: "probability", series: [{ pts: sweep.map((d) => [d.p, d.markov]), cls: "red", label: "upper: min(1, E X)" }, { pts: sweep.map((d) => [d.p, d.pz]), cls: "blue", dash: "5 3", label: "lower: (EX)²/E[X²]" }], markers: [{ x: E.P.p, label: `p = ${f(E.P.p)}` }, { x: Math.min(1, E.A.threshold), cls: "green", label: "E X = 1" }] });
+  const detail = sel !== null ? `<p class="eq">Pairs with |S ∩ T| = ${sel}: E[I<sub>S</sub>I<sub>T</sub>] = p<sup>2·${E.A.K} − ${PM.choose(sel, 2)}</sup> = ${f(E.A.table[sel].joint)}${sel < 2 ? " = E[I_S]·E[I_T] (no shared edge: independent)" : " (shared edges: positively correlated)"}</p>` : "";
   return { svg: s, summary: `Random graph with ${n} vertices and ${G.edges.length} edges containing ${f(I.X)} cliques of size ${E.P.k}. The second-moment ratio is ${f(E.A.ratio)}.`,
     extra: `<h3>Pair-overlap table: E[X²] = Σ over overlap j</h3><div class="scroll"><table class="grid"><tr><th>overlap</th><th>ordered pairs</th><th>E[I<sub>S</sub>I<sub>T</sub>]</th><th>contribution</th></tr>${rows}<tr><td><b>E[X²]</b></td><td></td><td></td><td class="num"><b>${f(E.A.EX2)}</b></td></tr></table></div>${detail}${E.P.cluster === "on" ? '<p class="small">Clustered model: the table describes G(n,p), not this variable.</p>' : ""}<div class="stage">${chart}</div>` };
 };
 
+/**
+ * @param {Evaluated} E @param {ArrayLike<number>} col @param {number | null | undefined} highlight
+ * @param {{ title?: string, badSet?: number[], resampled?: Set<number> | null }} [options]
+ */
 function ringPicture(E, col, highlight, { title, badSet, resampled } = {}) {
   const H = E.F, N = H.N, cx = 180, cy = 190, R = 150, pos = circlePos(N, cx, cy, R);
   let s = "";
@@ -3494,10 +3815,10 @@ function ringPicture(E, col, highlight, { title, badSet, resampled } = {}) {
     const ang = -Math.PI / 2 + (2 * Math.PI * v) / N, red = col[v] === 1, r1 = red ? R : R - 12, r2 = red ? R + 12 : R;
     s += line([cx + r1 * Math.cos(ang), cy + r1 * Math.sin(ang)], [cx + r2 * Math.cos(ang), cy + r2 * Math.sin(ang)], red ? "red" : "blue", `stroke-width="${N > 300 ? 1 : 2}"${resampled && resampled.has(v) ? ' style="stroke-width:4"' : ""}`);
   }
-  const mid = (e) => { const a = -Math.PI / 2 + (2 * Math.PI * (e[0] + (H.k - 1) / 2)) / N; return [cx + (R - 30) * Math.cos(a), cy + (R - 30) * Math.sin(a)]; };
+  const mid = (/** @type {number[]} */ e) => { const a = -Math.PI / 2 + (2 * Math.PI * (e[0] + (H.k - 1) / 2)) / N; return [cx + (R - 30) * Math.cos(a), cy + (R - 30) * Math.sin(a)]; };
   for (const i of badSet || []) s += cross(mid(H.edges[i]), 4);
   if (highlight !== null && highlight !== undefined && H.edges[highlight]) {
-    const e = H.edges[highlight], arc = (ids, cls, r) => ids.forEach((v) => { const a = -Math.PI / 2 + (2 * Math.PI * v) / N; s += dot([cx + r * Math.cos(a), cy + r * Math.sin(a)], 3, cls); });
+    const e = H.edges[highlight], arc = (/** @type {number[]} */ ids, /** @type {string} */ cls, /** @type {number} */ r) => ids.forEach((v) => { const a = -Math.PI / 2 + (2 * Math.PI * v) / N; s += dot([cx + r * Math.cos(a), cy + r * Math.sin(a)], 3, cls); });
     for (const j of H.nbrs[highlight]) arc(H.edges[j], "fyellow", R + 20);
     arc(e, "fink", R + 20);
   }
@@ -3508,29 +3829,30 @@ DRAW["local-lemma"] = (E, ui) => {
   const A = E.A, H = E.F, f0 = A.focusEvent;
   let s = svgOpen(600, 380, `Hypergraph with ${A.m} edges of size ${E.P.k} on a ring of ${A.N} vertices`) + ringPicture(E, E.I.col, f0, { title: `${A.N} vertices, ${A.m} edges`, badSet: E.I.bad });
   const gx = 380, sc = scale(0, 2, gx, gx + 200);
-  const gauge = (y, label, v, ok) => text(gx, y, label, "lbl", "start") + `<rect x="${gx}" y="${y + 6}" width="160" height="12" class="fbg axis"/><rect x="${gx}" y="${y + 6}" width="${((sc(Math.min(2, v)) - gx) * 0.8).toFixed(1)}" height="12" class="${ok ? "fgreen" : "fred"}" opacity=".8"/>` + line([gx + 80, y + 2], [gx + 80, y + 22], "ink", 'stroke-width="2"') + `<text x="595" y="${y + 17}" class="ttl" text-anchor="end" style="font-family:var(--mono)">${esc(f(v))}</text>`;
+  const gauge = (/** @type {number} */ y, /** @type {string} */ label, /** @type {number} */ v, /** @type {boolean} */ ok) => text(gx, y, label, "lbl", "start") + `<rect x="${gx}" y="${y + 6}" width="160" height="12" class="fbg axis"/><rect x="${gx}" y="${y + 6}" width="${((sc(Math.min(2, v)) - gx) * 0.8).toFixed(1)}" height="12" class="${ok ? "fgreen" : "fred"}" opacity=".8"/>` + line([gx + 80, y + 2], [gx + 80, y + 22], "ink", 'stroke-width="2"') + `<text x="595" y="${y + 17}" class="ttl" text-anchor="end" style="font-family:var(--mono)">${esc(f(v))}</text>`;
   s += gauge(40, "UNION BOUND m·p (needs < 1)", A.union, A.unionOk) + gauge(90, "LOCAL LEMMA e·p·(d+1) (needs ≤ 1)", A.gauge, A.ok);
   s += text(gx, 140, A.ok ? "Local Lemma condition satisfied ✓" : "condition fails ×", "ttl", "start");
-  s += text(gx, 168, `selected A_${f0}: depends on ${H.nbrs[f0].length} events`, "lbl", "start") + text(gx, 184, H.nbrs[f0].length ? H.nbrs[f0].map((x) => "A_" + x).join(", ").slice(0, 44) : "none", "lbl", "start");
+  s += text(gx, 168, `selected A_${f0}: depends on ${H.nbrs[f0].length} events`, "lbl", "start") + text(gx, 184, H.nbrs[f0].length ? H.nbrs[f0].map((/** @type {number} */ x) => "A_" + x).join(", ").slice(0, 44) : "none", "lbl", "start");
   s += text(gx, 204, `the other ${A.m - 1 - H.nbrs[f0].length} events are irrelevant to it`, "lbl", "start") + text(gx, 220, "dark dots: its edge · yellow: dependents", "lbl", "start");
   /* phase diagram: d against p (log), the curve e p (d+1) = 1 */
-  const px = 400, py = 240, pw = 180, ph = 120, sd = scale(0, 30, px, px + pw), sp = scale(-8, 0, py + ph, py), lg = (p) => Math.log2(p);
+  const px = 400, py = 240, pw = 180, ph = 120, sd = scale(0, 30, px, px + pw), sp = scale(-8, 0, py + ph, py), lg = (/** @type {number} */ p) => Math.log2(p);
   s += `<rect x="${px}" y="${py}" width="${pw}" height="${ph}" class="fbg axis"/>` + `<polyline fill="none" class="ink" points="${Array.from({ length: 31 }, (_, d) => `${sd(d).toFixed(1)},${sp(Math.max(-8, lg(1 / (Math.E * (d + 1))))).toFixed(1)}`).join(" ")}"/>`;
   s += dot([sd(Math.min(30, A.d)), sp(Math.max(-8, lg(A.p)))], 5, A.ok ? "fgreen" : "fred", 'stroke="var(--strong)"') + text(px + pw / 2, py + ph + 14, "d (dependency degree)", "lbl") + text(px - 4, py + 8, "p=1", "lbl", "end") + text(px - 4, py + ph, "2⁻⁸", "lbl", "end");
   s += text(px + pw - 4, py + 14, "invalid", "lbl", "end") + text(px + 6, py + ph - 6, "valid", "lbl", "start") + "</svg>";
   const list = Array.from({ length: Math.min(A.m, 60) }, (_, i) => `<button class="chip" type="button" data-act="focus-event" data-i="${i}" aria-pressed="${i === f0}">A<sub>${i}</sub> ${E.I.bad.includes(i) ? "×" : "✓"}</button>`).join("");
-  return { svg: s, summary: `Ring of ${A.N} vertices with ${A.m} edges of size ${E.P.k}. ${E.I.X} bad events are currently true. Selected event A_${f0} depends on ${H.nbrs[f0].length ? H.nbrs[f0].map((x) => "A_" + x).join(", ") : "no other event"}. e·p·(d+1) = ${f(A.gauge)}, m·p = ${f(A.union)}.`,
+  return { svg: s, summary: `Ring of ${A.N} vertices with ${A.m} edges of size ${E.P.k}. ${E.I.X} bad events are currently true. Selected event A_${f0} depends on ${H.nbrs[f0].length ? H.nbrs[f0].map((/** @type {number} */ x) => "A_" + x).join(", ") : "no other event"}. e·p·(d+1) = ${f(A.gauge)}, m·p = ${f(A.union)}.`,
     extra: `<h3>Bad-event view — select an event to see its dependency neighbourhood</h3><div class="chips">${list}${A.m > 60 ? `<span class="small muted">… ${A.m - 60} more</span>` : ""}</div>` };
 };
 DRAW["moser-tardos"] = (E, ui) => {
   const I = E.I, H = E.F, steps = Math.min(ui.labStep ?? I.log.length, I.log.length), col = I.initial.slice();
-  for (let i = 0; i < steps; i++) { const s0 = I.log[i]; H.edges[s0.event].forEach((v, j) => { col[v] = s0.values[j]; }); }
-  const bad = []; H.edges.forEach((e, i) => { if (e.every((v) => col[v] === col[e[0]])) bad.push(i); });
+  for (let i = 0; i < steps; i++) { const s0 = I.log[i]; H.edges[s0.event].forEach((/** @type {number} */ v, /** @type {number} */ j) => { col[v] = s0.values[j]; }); }
+  /** @type {number[]} */
+  const bad = []; H.edges.forEach((/** @type {number[]} */ e, /** @type {number} */ i) => { if (e.every((v) => col[v] === col[e[0]])) bad.push(i); });
   const cur = steps < I.log.length ? I.log[steps].event : null, last = steps > 0 ? I.log[steps - 1] : null;
   let s = svgOpen(600, 380, "Moser–Tardos resampling") + ringPicture(E, col, cur ?? (last ? last.event : null), { title: steps === I.log.length ? "no violated edge ✓" : `step ${steps} of ${I.log.length}`, badSet: bad, resampled: last ? new Set(H.edges[last.event]) : null });
   s += text(380, 40, "RESAMPLING HISTORY", "lbl", "start");
   const hist = I.log.slice(Math.max(0, steps - 12), steps);
-  hist.forEach((h0, i) => { s += text(380, 62 + i * 17, `A_${h0.event}`, i === hist.length - 1 ? "ttl" : "lbl", "start"); });
+  hist.forEach((/** @type {{ event: number }} */ h0, /** @type {number} */ i) => { s += text(380, 62 + i * 17, `A_${h0.event}`, i === hist.length - 1 ? "ttl" : "lbl", "start"); });
   if (steps === I.log.length) s += text(380, 62 + hist.length * 17, "✓ done", "ttl", "start");
   s += text(470, 62, "variables changed", "lbl", "start") + text(470, 80, `this step: ${last ? E.P.k : 0} / ${H.N}`, "ttl", "start") + text(470, 104, "violated now", "lbl", "start") + text(470, 122, String(bad.length), "ttl", "start");
   s += text(470, 146, "total resamplings", "lbl", "start") + text(470, 164, String(I.resamplings), "ttl", "start") + text(470, 188, "bound on E[R]", "lbl", "start") + text(470, 206, E.A.bound === null ? "none" : f(E.A.bound), "ttl", "start");
@@ -3541,7 +3863,7 @@ DRAW.chernoff = (E, ui) => {
   const A = E.A, N = A.N, p = E.P.p, rho = E.P.rho, sd = Math.sqrt(Math.max(A.variance, 1e-9));
   let lo = Math.max(0, Math.floor(A.mu - 6 * sd)), hi = Math.min(N, Math.ceil(Math.max(A.a + 3 * sd, A.mu + 6 * sd)));
   if (rho > 0) { lo = 0; hi = N; }
-  const pmf = (x) => (1 - rho) * binomPmf(N, x, p) + rho * (x === N ? p : x === 0 ? 1 - p : 0);
+  const pmf = (/** @type {number} */ x) => (1 - rho) * PM.binomPmf(N, x, p) + rho * (x === N ? p : x === 0 ? 1 - p : 0);
   const xs = []; for (let x = lo; x <= hi; x++) xs.push(x);
   if (xs.length > 260) { const st = Math.ceil(xs.length / 260); for (let i = xs.length - 1; i >= 0; i--) if (i % st) xs.splice(i, 1); }
   const maxP = Math.max(...xs.map(pmf)), w = 600, h = 300, L = 40, R = 10, Tp = 20, Bm = 34, sx = scale(lo, hi + 1, L, w - R), sy = scale(0, maxP * 1.1, h - Bm, Tp);
@@ -3567,7 +3889,7 @@ DRAW.martingale = (E, ui) => {
   }
   s += line([L, sy(A.mean)], [w - R, sy(A.mean)], "blue", 'stroke-dasharray="5 3"') + text(w - R, sy(A.mean) - 4, "E[X]", "lbl", "end");
   for (const d of [-1, 1]) s += line([L, sy(A.mean + d * E.P.t)], [w - R, sy(A.mean + d * E.P.t)], "red", 'stroke-dasharray="2 4"') + text(w - R, sy(A.mean + d * E.P.t) - 4, d > 0 ? "E[X] + t" : "E[X] − t", "lbl", "end");
-  s += `<polyline fill="none" class="ink" stroke-width="2" points="${path.slice(0, k + 1).map((z, i) => `${sx(i).toFixed(1)},${sy(z).toFixed(1)}`).join(" ")}"/>` + dot([sx(k), sy(path[k])], 4, "fyellow", 'stroke="var(--strong)"');
+  s += `<polyline fill="none" class="ink" stroke-width="2" points="${path.slice(0, k + 1).map((/** @type {number} */ z, /** @type {number} */ i) => `${sx(i).toFixed(1)},${sy(z).toFixed(1)}`).join(" ")}"/>` + dot([sx(k), sy(path[k])], 4, "fyellow", 'stroke="var(--strong)"');
   s += line([L, h - Bm], [w - R, h - Bm], "axis") + text(L, h - 8, "0", "lbl") + text(w - R, h - 8, `m = ${m}`, "lbl", "end") + text((L + w) / 2, h - 8, "reveal step", "lbl");
   return { svg: s + "</svg>", summary: `Edge-exposure martingale for the number of ${PM.STATISTICS[E.P.stat]}: ${k} of ${m} edges revealed, prediction Z = ${f(path[k])}, final X = ${f(I.X)}, largest step ${f(I.maxStep)} against c = ${A.c}.`,
     extra: '<p class="small muted">The martingale is not the statistic itself: it is our changing prediction of its final value as edges are revealed.</p>' };
@@ -3577,10 +3899,10 @@ DRAW.janson = (E, ui) => {
   const I = E.I, G = I.G, n = E.P.n, pos = circlePos(n, 160, 180, 140);
   let s = svgOpen(600, 360, `G(${n}, ${E.P.p}) with its triangles`);
   for (const [a, b] of G.edges) s += line(pos[a], pos[b], "ink", 'stroke-width=".8" opacity=".35"');
-  for (const t of I.tris.slice(0, 30)) s += `<polygon points="${t.map((v) => pos[v].map((z) => z.toFixed(1)).join(",")).join(" ")}" class="fred red" fill-opacity=".18" stroke-width="2"/>`;
+  for (const t of I.tris.slice(0, 30)) s += `<polygon points="${t.map((/** @type {number} */ v) => pos[v].map((z) => z.toFixed(1)).join(",")).join(" ")}" class="fred red" fill-opacity=".18" stroke-width="2"/>`;
   pos.forEach((p) => { s += dot(p, 4, "fbg ink"); });
   /* overlap network: triangles as nodes, joined when they share an edge */
-  const T0 = I.tris.slice(0, 16), tp = circlePos(T0.length, 460, 190, 90), share = (a, b) => a.filter((v) => b.includes(v)).length >= 2;
+  const T0 = I.tris.slice(0, 16), tp = circlePos(T0.length, 460, 190, 90), share = (/** @type {number[]} */ a, /** @type {number[]} */ b) => a.filter((v) => b.includes(v)).length >= 2;
   s += text(460, 40, "OVERLAP NETWORK", "lbl") + text(460, 56, "triangles sharing an edge are joined", "lbl");
   for (let i = 0; i < T0.length; i++) for (let j = i + 1; j < T0.length; j++) if (share(T0[i], T0[j])) s += line(tp[i], tp[j], "red", 'stroke-width="2"');
   tp.forEach((p, i) => { s += `<path d="M${p[0]},${p[1] - 9}L${p[0] + 8},${p[1] + 6}L${p[0] - 8},${p[1] + 6}z" class="fbg ink"/>` + text(p[0], p[1] + 20, `△${i + 1}`, "lbl"); });
@@ -3596,18 +3918,18 @@ DRAW.nibble = (E, ui) => {
   const covered = new Uint8Array(N); for (let i = 0; i < r0 - 1; i++) for (const e of I.rounds[i].accepted) for (const v of e) covered[v] = 1;
   const cur = r0 > 0 ? I.rounds[r0 - 1] : null;
   let s = svgOpen(600, 360, "Rödl nibble rounds");
-  const tri = (e, cls, extra) => `<polygon points="${e.map((v) => pos[v].map((z) => z.toFixed(1)).join(",")).join(" ")}" class="${cls}" fill="none" ${extra}/>`;
+  const tri = (/** @type {number[]} */ e, /** @type {string} */ cls, /** @type {string} */ extra) => `<polygon points="${e.map((v) => pos[v].map((z) => z.toFixed(1)).join(",")).join(" ")}" class="${cls}" fill="none" ${extra}/>`;
   if (cur) { for (const e of cur.collided) s += tri(e, "red", 'stroke-width="1.5"') + cross(pos[e[0]], 3); for (const e of cur.accepted) s += tri(e, "ink", 'stroke-width="2.5"'); }
   if (cur && cur.selected.length < 400) for (const e of cur.selected) if (!cur.accepted.includes(e) && !cur.collided.includes(e)) s += tri(e, "ink", 'stroke-dasharray="2 3"');
   pos.forEach((p, v) => { s += dot(p, 3, covered[v] ? "fmuted" : "fink", covered[v] ? 'opacity=".3"' : ""); });
-  const pts = [[0, 1], ...I.rounds.slice(0, Math.max(1, r0)).map((r) => [r.round, r.aliveAfter / N])];
+  const pts = [[0, 1], ...I.rounds.slice(0, Math.max(1, r0)).map((/** @type {{ round: number, aliveAfter: number }} */ r) => [r.round, r.aliveAfter / N])];
   s += `<g transform="translate(370 20)">${text(110, 12, "uncovered fraction by round", "lbl")}`;
   const sx2 = scale(0, Math.max(8, I.rounds.length), 10, 220), sy2 = scale(0, 1, 280, 30);
   s += line([10, 280], [220, 280], "axis") + line([10, 30], [10, 280], "axis");
-  s += `<polyline fill="none" class="blue" stroke-dasharray="5 3" points="${E.A.predicted.slice(0, Math.max(8, I.rounds.length) + 1).map((v, i) => `${sx2(i).toFixed(1)},${sy2(v).toFixed(1)}`).join(" ")}"/>`;
+  s += `<polyline fill="none" class="blue" stroke-dasharray="5 3" points="${E.A.predicted.slice(0, Math.max(8, I.rounds.length) + 1).map((/** @type {number} */ v, /** @type {number} */ i) => `${sx2(i).toFixed(1)},${sy2(v).toFixed(1)}`).join(" ")}"/>`;
   s += `<polyline fill="none" class="ink" stroke-width="2" points="${pts.map(([x, y]) => `${sx2(x).toFixed(1)},${sy2(y).toFixed(1)}`).join(" ")}"/>` + text(220, 300, "dashed: predicted (heuristic)", "lbl", "end") + "</g>";
   return { svg: s + "</svg>", summary: `Round ${r0} of ${I.rounds.length}: ${cur ? `${cur.selected.length} candidates, ${cur.collided.length} collided, ${cur.accepted.length} accepted; ` : ""}${N - (cur ? cur.aliveAfter : N)} of ${N} vertices covered. Solid triangles accepted, dotted candidates, crossed collisions, faint covered vertices.`,
-    extra: `<div class="scroll"><table class="grid"><tr><th>round</th><th>live vertices</th><th>candidate edges</th><th>accepted</th><th>collision rate</th></tr>${I.rounds.slice(0, 12).map((r) => `<tr${r.round === r0 ? ' style="font-weight:700"' : ""}><td>${r.round}</td><td class="num">${r.aliveBefore}</td><td class="num">${r.selected.length}</td><td class="num">${r.accepted.length}</td><td class="num">${f(r.collisionRate)}</td></tr>`).join("")}</table></div>` };
+    extra: `<div class="scroll"><table class="grid"><tr><th>round</th><th>live vertices</th><th>candidate edges</th><th>accepted</th><th>collision rate</th></tr>${I.rounds.slice(0, 12).map((/** @type {ReturnType<typeof PM.runNibble>["rounds"][number]} */ r) => `<tr${r.round === r0 ? ' style="font-weight:700"' : ""}><td>${r.round}</td><td class="num">${r.aliveBefore}</td><td class="num">${r.selected.length}</td><td class="num">${r.accepted.length}</td><td class="num">${f(r.collisionRate)}</td></tr>`).join("")}</table></div>` };
 };
 
 DRAW.quasirandom = (E, ui) => {
@@ -3635,14 +3957,14 @@ DRAW["phase-transition"] = (E, ui) => {
   for (const l of I.comp.label) sizes.set(l, (sizes.get(l) || 0) + 1);
   const maxL = [...sizes.entries()].sort((a, b) => b[1] - a[1])[0][0];
   let s = svgOpen(600, 380, `G(${n}, ${f(E.A.p)}) by coupled edge labels`);
-  const P0 = (v) => [20 + F.pos[v][0] * 320, 20 + F.pos[v][1] * 320];
+  const P0 = (/** @type {number} */ v) => [20 + F.pos[v][0] * 320, 20 + F.pos[v][1] * 320];
   for (const [a, b] of I.present) s += line(P0(a), P0(b), I.comp.label[a] === maxL ? "ink" : "faint", `stroke-width="${I.comp.label[a] === maxL ? 1.6 : 1}"`);
   for (let v = 0; v < n; v++) s += dot(P0(v), 3, I.comp.label[v] === maxL ? "fink" : "fbg ink", I.comp.label[v] === maxL ? "" : 'stroke-width=".8"');
   s += text(180, 362, "filled: largest component · hollow: the rest", "lbl");
   s += `<g transform="translate(350 0)">` + text(0, 24, `p = ${f(E.A.p)}   np = ${f(E.P.c)}`, "ttl", "start") + text(0, 44, `largest component: ${I.L1}   second: ${I.L2}`, "ttl", "start") + text(0, 62, `regime: ${E.A.regime}`, "lbl", "start");
   const sx = scale(0, 3, 0, 240), sy = scale(0, 1, 200, 80);
   s += `<rect x="${sx(E.A.window[0]).toFixed(1)}" y="80" width="${(sx(E.A.window[1]) - sx(E.A.window[0])).toFixed(1)}" height="120" class="fmuted" opacity=".15"/>` + line([0, 200], [240, 200], "axis") + line([0, 80], [0, 200], "axis");
-  s += `<polyline fill="none" class="blue" stroke-width="2" points="${E.A.curve.map(([c, b]) => `${sx(c).toFixed(1)},${sy(b).toFixed(1)}`).join(" ")}"/>` + dot([sx(E.P.c), sy(I.L1 / n)], 5, "fyellow", 'stroke="var(--strong)"');
+  s += `<polyline fill="none" class="blue" stroke-width="2" points="${E.A.curve.map((/** @type {number[]} */ [c, b]) => `${sx(c).toFixed(1)},${sy(b).toFixed(1)}`).join(" ")}"/>` + dot([sx(E.P.c), sy(I.L1 / n)], 5, "fyellow", 'stroke="var(--strong)"');
   s += text(0, 216, "0", "lbl") + text(sx(1), 216, "c = 1", "lbl") + text(240, 216, "3", "lbl", "end") + text(240, 92, "β(c) and L₁/n", "lbl", "end") + text(sx(1), 76, "window", "lbl");
   s += text(0, 248, "GENERATION SIZES", "lbl", "start") + text(0, 266, `graph BFS from vertex 0: ${I.bfs.gens.slice(0, 7).join(", ")}`, "lbl", "start") + text(0, 284, `Poisson(${f(E.P.c)}) tree: ${I.gw.gens.slice(0, 7).join(", ")}${I.gw.gens.length === 1 ? " (died out)" : ""}`, "lbl", "start");
   s += text(0, 304, I.bfs.collision ? `first collision: generation ${I.bfs.collision.generation} (not a tree)` : "no collision in the explored generations", "lbl", "start") + "</g>";
@@ -3653,8 +3975,8 @@ DRAW.discrepancy = (E, ui) => {
   const A = E.F.A, m = A.length, n = A[0].length, x = ui.signs && ui.signs.length === n ? ui.signs : E.I.x, sums = PM.rowSums(A, x), worst = Math.max(...sums.map(Math.abs));
   const cw = Math.min(22, 420 / n), ch = Math.min(18, 300 / m), x0 = 50, y0 = 40;
   let s = svgOpen(600, y0 + m * ch + 30, "Incidence matrix times sign vector");
-  x.forEach((v, j) => { s += `<g data-act="flip-sign" data-i="${j}" tabindex="0" role="button" aria-label="flip sign of element ${j}, now ${v > 0 ? "plus" : "minus"}" style="cursor:pointer"><rect x="${x0 + j * cw}" y="${y0 - 26}" width="${cw - 2}" height="20" class="fbg axis"/>${text(x0 + j * cw + cw / 2 - 1, y0 - 11, v > 0 ? "+" : "−", "ttl")}</g>`; });
-  A.forEach((row, i) => {
+  x.forEach((/** @type {number} */ v, /** @type {number} */ j) => { s += `<g data-act="flip-sign" data-i="${j}" tabindex="0" role="button" aria-label="flip sign of element ${j}, now ${v > 0 ? "plus" : "minus"}" style="cursor:pointer"><rect x="${x0 + j * cw}" y="${y0 - 26}" width="${cw - 2}" height="20" class="fbg axis"/>${text(x0 + j * cw + cw / 2 - 1, y0 - 11, v > 0 ? "+" : "−", "ttl")}</g>`; });
+  A.forEach((/** @type {number[]} */ row, /** @type {number} */ i) => {
     s += text(x0 - 8, y0 + i * ch + ch * 0.7, `S${i + 1}`, "lbl", "end");
     row.forEach((a, j) => { if (a) s += `<rect x="${x0 + j * cw}" y="${y0 + i * ch}" width="${cw - 2}" height="${ch - 2}" class="${x[j] > 0 ? "fink" : "fmuted"}" opacity="${x[j] > 0 ? 0.75 : 0.45}"/>`; else s += dot([x0 + j * cw + cw / 2 - 1, y0 + i * ch + ch / 2 - 1], 1.2, "fmuted"); });
     const v = sums[i]; s += `<text x="${x0 + n * cw + 34}" y="${y0 + i * ch + ch * 0.75}" class="${Math.abs(v) === worst ? "ttl" : "lbl"}" text-anchor="end" style="font-family:var(--mono)">${v > 0 ? "+" : v < 0 ? "−" : ""}${Math.abs(v)}</text>`;
@@ -3668,9 +3990,9 @@ DRAW["epsilon-net"] = (E, ui) => {
   const pts = E.F.pts, I = E.I, N = E.P.N, eps = E.P.eps, sampled = new Set(I.idx);
   let s = svgOpen(600, 330, `${PM.RANGE_FAMILIES[E.P.family].label}: sample and missed ranges`);
   if (E.P.family === "intervals") {
-    const sx = scale(0, 1, 30, 570), jit = (i) => 120 + ((i * 37) % 60);
+    const sx = scale(0, 1, 30, 570), jit = (/** @type {number} */ i) => 120 + ((i * 37) % 60);
     if (I.miss.count) { const a = sx(Math.max(0, I.miss.lo === -Infinity ? 0 : I.miss.lo)), b = sx(Math.min(1, I.miss.hi === Infinity ? 1 : I.miss.hi)); s += `<rect x="${a.toFixed(1)}" y="100" width="${(b - a).toFixed(1)}" height="100" class="${I.miss.count >= eps * N ? "fred" : "fmuted"}" opacity=".15"/>` + text((a + b) / 2, 94, `largest gap: ${I.miss.count} points ${I.miss.count >= eps * N ? "≥ ε|X| — missed heavy range ×" : "< ε|X| ✓"}`, "lbl"); }
-    pts.forEach((p, i) => { s += dot([sx(p[0]), jit(i)], sampled.has(i) ? 5 : 2, sampled.has(i) ? "fink" : "fmuted"); });
+    pts.forEach((/** @type {number[]} */ p, /** @type {number} */ i) => { s += dot([sx(p[0]), jit(i)], sampled.has(i) ? 5 : 2, sampled.has(i) ? "fink" : "fmuted"); });
     s += line([30, 210], [570, 210], "axis") + text(300, 236, "points of X (jittered vertically for visibility); ● large = sampled", "lbl");
   } else {
     const sx = scale(0, 1, 40, 300), sy = scale(0, 1, 300, 40);
@@ -3679,18 +4001,18 @@ DRAW["epsilon-net"] = (E, ui) => {
       s += `<clipPath id="sq"><rect x="40" y="40" width="260" height="260"/></clipPath><polygon clip-path="url(#sq)" points="${[P1, P2, [P2[0] + far[0], P2[1] + far[1]], [P1[0] + far[0], P1[1] + far[1]]].map((q) => `${sx(q[0]).toFixed(1)},${sy(q[1]).toFixed(1)}`).join(" ")}" class="${I.miss.count >= eps * N ? "fred" : "fmuted"}" opacity=".15"/>`;
     }
     s += `<rect x="40" y="40" width="260" height="260" fill="none" class="axis"/>`;
-    pts.forEach((p, i) => { s += dot([sx(p[0]), sy(p[1])], sampled.has(i) ? 5 : 2, sampled.has(i) ? "fink" : "fmuted"); });
+    pts.forEach((/** @type {number[]} */ p, /** @type {number} */ i) => { s += dot([sx(p[0]), sy(p[1])], sampled.has(i) ? 5 : 2, sampled.has(i) ? "fink" : "fmuted"); });
     s += text(170, 322, "shaded: heaviest halfplane avoiding the sample", "lbl");
   }
   s += `<g transform="translate(${E.P.family === "intervals" ? 30 : 330} ${E.P.family === "intervals" ? 260 : 60})">` + text(0, 0, `sample s = ${E.P.s}, heavy = ≥ ${E.A.heavy} points`, "ttl", "start") + text(0, 20, I.isNet ? "this sample is an ε-net ✓" : "this sample misses a heavy range ×", "ttl", "start") + text(0, 40, `union bound: Pr[fail] ≤ ${f(E.A.fail)}`, "lbl", "start") + "</g>";
   const vc = E.A.vcPts, vsx = scale(0, 1, 6, 66), vsy = scale(0, 1, 66, 6);
-  const tiles = E.A.traces.map((t) => `<span class="card" style="display:inline-block;padding:.2rem;margin:.15rem;text-align:center"><svg viewBox="0 0 72 72" width="54" height="54" role="img" aria-label="labeling ${t.labels.join("")} ${t.realised ? "realised" : "not realised"}">${vc.map((p, i) => dot([vsx(p[0]), E.P.family === "intervals" ? 36 : vsy(p[1])], 5, t.labels[i] ? "fink" : "fbg ink")).join("")}</svg><br><span class="small">${t.realised ? "✓" : "×"}</span></span>`).join("");
+  const tiles = E.A.traces.map((/** @type {{ labels: number[], realised: boolean }} */ t) => `<span class="card" style="display:inline-block;padding:.2rem;margin:.15rem;text-align:center"><svg viewBox="0 0 72 72" width="54" height="54" role="img" aria-label="labeling ${t.labels.join("")} ${t.realised ? "realised" : "not realised"}">${vc.map((/** @type {number[]} */ p, /** @type {number} */ i) => dot([vsx(p[0]), E.P.family === "intervals" ? 36 : vsy(p[1])], 5, t.labels[i] ? "fink" : "fbg ink")).join("")}</svg><br><span class="small">${t.realised ? "✓" : "×"}</span></span>`).join("");
   return { svg: s + "</svg>", summary: `${N} points; a sample of ${E.P.s}. The heaviest range avoiding the sample holds ${I.miss.count} points (heavy means at least ${E.A.heavy}), so this sample ${I.isNet ? "is" : "is not"} an ε-net.`,
     extra: `<h3>VC panel — can ${vc.length} points realise every 0/1 labelling?</h3><div>${tiles}</div><p class="small">${E.A.shattered ? `All ${2 ** vc.length} labellings realised: this set is shattered.` : `Not every labelling is realised: this set is not shattered (filled = inside the range).`} VC dimension of ${esc(PM.RANGE_FAMILIES[E.P.family].label)} is ${E.A.d}.</p>` };
 };
 
 DRAW.entropy = (E, ui) => {
-  const A = E.A, dist = A.dist.slice().sort((a, b) => b.p - a.p), maxS = Math.max(...dist.map((d) => (d.p > 0 ? -Math.log2(d.p) : 0)), 1);
+  const A = E.A, dist = A.dist.slice().sort((/** @type {{ p: number }} */ a, /** @type {{ p: number }} */ b) => b.p - a.p), maxS = Math.max(...dist.map((/** @type {{ p: number }} */ d) => (d.p > 0 ? -Math.log2(d.p) : 0)), 1);
   let s = svgOpen(600, 380, "Entropy as area: width = probability, height = surprise");
   const L = 30, W = 540, base = 170, hs = scale(0, maxS, 0, 130); let x = L;
   s += text(L, 18, "each outcome x: width Pr(x), height −log₂ Pr(x) — total area = H(X)", "lbl", "start");
@@ -3699,7 +4021,7 @@ DRAW.entropy = (E, ui) => {
   const sc = scale(0, Math.max(A.sumHi, A.H, 0.01), L, L + W);
   s += text(L, 222, "GLOBAL INFORMATION BLOCK  H(X)", "lbl", "start") + `<rect x="${L}" y="228" width="${(sc(A.H) - L).toFixed(1)}" height="22" class="fink" opacity=".75"/>` + text(sc(A.H) + 4, 244, `${f(A.H)} bits`, "lbl", "start");
   s += text(L, 284, "SPLIT INTO COORDINATES  Σ H(Xᵢ)", "lbl", "start"); let cx = L;
-  A.Hi.forEach((h, i) => { const w = sc(h) - L; s += `<rect x="${cx.toFixed(1)}" y="290" width="${Math.max(0.5, w - 2).toFixed(1)}" height="22" class="${i % 2 ? "fmuted" : "fink"}" opacity=".6"/>` + (w > 30 ? text(cx + w / 2, 305, `X${i + 1}`, "lbl") : ""); cx += w; });
+  A.Hi.forEach((/** @type {number} */ h, /** @type {number} */ i) => { const w = sc(h) - L; s += `<rect x="${cx.toFixed(1)}" y="290" width="${Math.max(0.5, w - 2).toFixed(1)}" height="22" class="${i % 2 ? "fmuted" : "fink"}" opacity=".6"/>` + (w > 30 ? text(cx + w / 2, 305, `X${i + 1}`, "lbl") : ""); cx += w; });
   s += text(cx + 4, 306, `${f(A.sumHi)} bits`, "lbl", "start") + text(L, 340, `gap Σ H(Xᵢ) − H(X) = ${f(A.gap)} bits of shared information`, "ttl", "start");
   s += text(L, 362, `this sample: ${E.I.bits.join("")} with surprise ${f(E.I.X)} bits`, "lbl", "start");
   const shells = Array.from({ length: E.P.N + 1 }, (_, i) => [i, PM.logChoose(E.P.N, i) / Math.LN2]);
@@ -3724,14 +4046,14 @@ DRAW.derandomization = (E, ui) => {
 };
 
 DRAW.testing = (E, ui) => {
-  const F = E.F, I = E.I, N = PM.TEST_N, reveal = !!ui.reveal, inS = new Map(I.S.map((v, i) => [v, i]));
+  const F = E.F, I = E.I, N = PM.TEST_N, reveal = !!ui.reveal, inS = new Map(I.S.map((/** @type {number} */ v, /** @type {number} */ i) => [v, i]));
   let s = svgOpen(600, 340, "A graph on 10,000 vertices; the tester sees only the sample");
   const cell = 3, gx = 10, gy = 10;
   if (reveal) for (let v = 0; v < N; v++) if (F.part[v] >= 0) s += `<rect x="${gx + (v % 100) * cell}" y="${gy + Math.floor(v / 100) * cell}" width="${cell}" height="${cell}" class="${["fred", "fblue", "fgreen"][F.part[v]]}" opacity=".5"/>`;
   s += `<rect x="${gx}" y="${gy}" width="${100 * cell}" height="${100 * cell}" fill="none" class="axis"/>`;
   for (const [v] of inS) s += dot([gx + (v % 100) * cell + 1.5, gy + Math.floor(v / 100) * cell + 1.5], 4, "fyellow", 'stroke="var(--strong)"');
   s += text(160, 326, reveal ? "hidden structure revealed (parts A, B, C shaded)" : "10,000 vertices; the tester sees only the yellow ones", "lbl");
-  const ip = circlePos(I.S.length, 470, 150, 95), lab = (v) => (F.part[v] < 0 ? "–" : "ABC"[F.part[v]]);
+  const ip = circlePos(I.S.length, 470, 150, 95), lab = (/** @type {number} */ v) => (F.part[v] < 0 ? "–" : "ABC"[F.part[v]]);
   for (const [a, b] of I.edges) s += line(ip[a], ip[b], "ink", 'opacity=".5"');
   if (I.witness) for (let a = 0; a < 3; a++) for (let b = a + 1; b < 3; b++) s += line(ip[I.witness[a]], ip[I.witness[b]], "red", 'stroke-width="3"');
   ip.forEach((p, i) => { s += dot(p, 9, "fbg ink") + text(p[0], p[1] + 4, reveal ? lab(I.S[i]) : String(i + 1), "lbl"); });
@@ -3742,7 +4064,7 @@ DRAW.testing = (E, ui) => {
 };
 
 DRAW.drc = (E, ui) => {
-  const F = E.F, I = E.I, N = E.P.N, k = Math.min(ui.labStep ?? E.P.t, E.P.t), yA = (a) => 30 + (a * 300) / Math.max(1, N - 1), xA = 120, xB = 360;
+  const F = E.F, I = E.I, N = E.P.N, k = Math.min(ui.labStep ?? E.P.t, E.P.t), yA = (/** @type {number} */ a) => 30 + (a * 300) / Math.max(1, N - 1), xA = 120, xB = 360;
   let cur = Array.from({ length: N }, (_, a) => a); for (let i = 0; i < k; i++) cur = cur.filter((a) => F.adj[a][I.T[i]]);
   const inCur = new Set(cur), chosen = new Set(I.T.slice(0, k)), final = k === E.P.t, del = new Set(final ? I.deleted : []);
   let s = svgOpen(600, 360, "Dependent random choice on a bipartite graph");
@@ -3752,26 +4074,48 @@ DRAW.drc = (E, ui) => {
   for (let b = 0; b < N; b++) { const p = [xB, yA(b)]; s += chosen.has(b) ? dot(p, 8, "fyellow", 'stroke="var(--strong)" stroke-width="2"') : dot(p, 3, "fmuted"); }
   s += text(xA, 18, "A", "ttl") + text(xB, 18, "B", "ttl") + text(470, 40, `chosen ${k} of t = ${E.P.t}`, "ttl") + text(470, 62, `|A′| = ${cur.length}`, "ttl");
   s += text(470, 84, `sizes: ${[N, ...I.steps.slice(0, k)].join(" → ")}`, "lbl") + (final ? text(470, 108, `bad pairs ${I.bad.length} (red arcs)`, "lbl") + text(470, 126, `deleted ${I.deleted.length} ×, |U| = ${I.U.length} ✓`, "lbl") : "");
-  const tr = E.A.tradeoff, chart = lineChart({ x0: 1, x1: 8, y0: 0, y1: Math.max(...tr.map((d) => d.EA), 1), title: "Tradeoff in t: make A′ large vs kill bad pairs", xlabel: "t", ylabel: "expected count", series: [{ pts: tr.map((d) => [d.t, d.EA]), cls: "ink", label: "E|A′|" }, { pts: tr.map((d) => [d.t, d.Ebad]), cls: "red", dash: "4 3", label: "E[Y]" }, { pts: tr.map((d) => [d.t, Math.max(0, d.gain)]), cls: "green", label: "gain" }], markers: [{ x: E.P.t, label: `t = ${E.P.t}` }] });
+  const tr = /** @type {{ t: number, EA: number, Ebad: number, gain: number }[]} */ (E.A.tradeoff), chart = lineChart({ x0: 1, x1: 8, y0: 0, y1: Math.max(...tr.map((d) => d.EA), 1), title: "Tradeoff in t: make A′ large vs kill bad pairs", xlabel: "t", ylabel: "expected count", series: [{ pts: tr.map((d) => [d.t, d.EA]), cls: "ink", label: "E|A′|" }, { pts: tr.map((d) => [d.t, d.Ebad]), cls: "red", dash: "4 3", label: "E[Y]" }, { pts: tr.map((d) => [d.t, Math.max(0, d.gain)]), cls: "green", label: "gain" }], markers: [{ x: E.P.t, label: `t = ${E.P.t}` }] });
   return { svg: s + "</svg>", summary: `Bipartite graph with ${N} + ${N} vertices. After ${k} chosen vertices the common neighbourhood has ${cur.length} vertices${final ? `; ${I.bad.length} bad pairs, ${I.deleted.length} deleted, final set U of ${I.U.length}` : ""}.`, extra: `<div class="stage">${chart}</div>` };
 };
 
+/* The labs whose picture steps through a process, and how many steps it has. */
+/** @type {Partial<Record<string, (E: Evaluated) => number>>} */
 const STEPPABLE = { alterations: (E) => 3, "moser-tardos": (E) => E.I.log.length, martingale: (E) => E.A.m, nibble: (E) => E.I.rounds.length, derandomization: (E) => E.P.n, drc: (E) => E.P.t };
 
 /* Page part 2: state, views, events, exports and the read-only WebMCP tools.
  * One evaluated state E (module, parameters, seed) drives the lab, the proof lens, deck mode and every export. */
-const $ = (id) => document.getElementById(id);
+/* The page's markup holds every id the script looks up; the few callers that might run before a view is drawn check the result. */
+const $ = (/** @type {string} */ id) => /** @type {HTMLElement} */ (document.getElementById(id));
 const now = () => Date.now();
-const S = { view: "atlas", module: null, P: null, lens: "lab", deck: false, frame: 0, step: 0, asym: false, focus: "", labStep: null, hl: null, j: null, reveal: false, signs: null,
+/* A lab by an id that names one: from the engine's own lists, a validated state, or a lab button the page drew. */
+const labOf = (/** @type {string} */ id) => /** @type {Module} */ (PM.moduleById(id));
+/**
+ * The page state: the view, the lab and its parameters, the lens and deck position, and what is highlighted or stepped.
+ * module and P are null until a lab first opens, and only lab views read them.
+ * @typedef {{
+ *   view: string, module: string, P: Params, lens: string, deck: boolean, frame: number, step: number, asym: boolean,
+ *   focus: string, labStep: number | null, hl: number | null, j: number | null, reveal: boolean, signs: number[] | null,
+ *   trials: { key: string, values: number[], total: number } | null, trialsN: number, conceptSel: string, rec: string[], cmpA: string, cmpB: string,
+ *   technique: string | null, autoplay: ReturnType<typeof setInterval> | null, proofIndex?: number,
+ * }} UiState
+ */
+/** @type {UiState} */
+const S = { view: "atlas", module: /** @type {string} */ (/** @type {unknown} */ (null)), P: /** @type {Params} */ (/** @type {unknown} */ (null)), lens: "lab", deck: false, frame: 0, step: 0, asym: false, focus: "", labStep: null, hl: null, j: null, reveal: false, signs: null,
   trials: null, trialsN: 1000, conceptSel: "existence", rec: ["start"], cmpA: "first-moment", cmpB: "local-lemma", technique: null, autoplay: null };
-let E = null, runId = 0, SELF = null;
+/* The evaluated lab. Only lab views read it, and evaluateNow sets it before any lab view draws. */
+let E = /** @type {Evaluated} */ (/** @type {unknown} */ (null));
+let runId = 0;
+/** @type {ReturnType<typeof PM.selfTests> | null} */
+let SELF = null;
+
 
 /* ---------- state ---------- */
 
-function evaluateNow() { E = PM.evaluate(PM.moduleById(S.module), S.P); }
+function evaluateNow() { E = PM.evaluate(labOf(S.module), S.P); }
 function trialKey() { return S.module + JSON.stringify(S.P); }
 function hashNow() { return PM.stateHash({ view: S.view, module: S.module, P: S.P, lens: S.lens, asym: S.asym, deck: S.deck, frame: S.frame, step: S.step, focus: S.focus, technique: S.technique, a: S.cmpA, b: S.cmpB }); }
 function writeHash() { try { const h = hashNow(); if (location.hash === h) return; if (location.protocol === "file:") location.replace(h); else history.replaceState(null, "", h); } catch (e) { /* sandboxed frames may refuse; the state still works */ } }
+/** @param {string} hash */
 function applyHash(hash) {
   const st = PM.parseHash(hash);
   S.view = st.view;
@@ -3779,27 +4123,33 @@ function applyHash(hash) {
   if (st.view === "technique") S.technique = st.technique;
   if (st.view === "compare") { S.cmpA = st.a; S.cmpB = st.b; }
 }
+/** @param {string} id @param {Partial<UiState>} [extra] */
 function openModule(id, extra = {}) {
-  const mod = PM.moduleById(id);
+  const mod = labOf(id);
   Object.assign(S, { view: "lab", module: id, P: { ...PM.defaults(mod), seed: S.P ? S.P.seed : PM.DEFAULT_SEED }, labStep: null, hl: null, j: null, signs: null, focus: "", deck: false, frame: 0, step: 0, asym: false }, extra);
   evaluateNow(); render(); writeHash(); window.scrollTo(0, 0);
 }
 /* New parameters or seed: drop the step, sign and highlight state that belonged to the old object, then redraw. */
+/** @param {Params} P */
 function changeLab(P) { S.P = P; S.labStep = null; S.signs = null; S.hl = null; evaluateNow(); updateLab(); writeHash(); }
+/** @param {string} key @param {unknown} value */
 function setParam(key, value) {
-  const mod = PM.moduleById(S.module), p = mod.params.find((x) => x.key === key), P = { ...S.P, [key]: PM.coerceParam(p, value) };
+  const mod = labOf(S.module), p = /** @type {ParamSpec} the control that changed */ (mod.params.find((x) => x.key === key)), P = { ...S.P, [key]: PM.coerceParam(p, value) };
   changeLab(mod.coerce ? mod.coerce(P) : P);
 }
+/** @param {number} seed */
 function setSeed(seed) { changeLab({ ...S.P, seed: ((seed % 4294967296) + 4294967296) % 4294967296 }); }
 
 /* ---------- small helpers ---------- */
 
-const say = (msg) => { const l = $("live"); if (l) l.textContent = msg; };
+const say = (/** @type {string} */ msg) => { const l = $("live"); if (l) l.textContent = msg; };
+/** @param {string} msg */
 function toast(msg) {
   say(msg);
   const t = document.createElement("div"); t.className = "toast"; t.textContent = msg; document.body.append(t);
   setTimeout(() => { if (t.remove) t.remove(); }, 1800);
 }
+/** @param {string} text @param {string} what */
 async function copyText(text, what) {
   try { await navigator.clipboard.writeText(text); toast(`${what} copied`); }
   catch (e) {
@@ -3808,20 +4158,21 @@ async function copyText(text, what) {
     if (ta.remove) ta.remove();
   }
 }
+/** @param {string} name @param {string} text */
 function download(name, text) {
   const url = URL.createObjectURL(new Blob([text], { type: "text/markdown;charset=utf-8" }));
   const a = document.createElement("a"); a.href = url; a.download = name; document.body.append(a); a.click();
   setTimeout(() => { URL.revokeObjectURL(url); if (a.remove) a.remove(); }, 0);
   toast(`Saved ${name}`);
 }
-const option = (v, label, sel) => `<option value="${esc(v)}"${String(v) === String(sel) ? " selected" : ""}>${esc(label)}</option>`;
-const famTitle = (id) => (PM.FAMILIES.find((x) => x.id === id) || { title: id }).title;
+const option = (/** @type {unknown} */ v, /** @type {string} */ label, /** @type {unknown} */ sel) => `<option value="${esc(v)}"${String(v) === String(sel) ? " selected" : ""}>${esc(label)}</option>`;
+const famTitle = (/** @type {string} */ id) => (PM.FAMILIES.find((x) => x.id === id) || { title: id }).title;
 
 /* ---------- top level ---------- */
 
 function render() {
   document.body.classList.toggle("proof-lens", S.view === "lab" && S.lens === "proof");
-  for (const [id, on] of [["mode-atlas", S.view === "atlas"], ["mode-lab", S.view === "lab" && S.lens !== "proof"], ["mode-proof", S.view === "lab" && S.lens === "proof"], ["mode-deck", S.deck]]) { const b = $(id); b.setAttribute("aria-pressed", String(!!on)); }
+  for (const [id, on] of /** @type {[string, boolean][]} */ ([["mode-atlas", S.view === "atlas"], ["mode-lab", S.view === "lab" && S.lens !== "proof"], ["mode-proof", S.view === "lab" && S.lens === "proof"], ["mode-deck", S.deck]])) { const b = $(id); b.setAttribute("aria-pressed", String(!!on)); }
   const main = $("main");
   if (S.view === "lab") renderLab(main);
   else if (S.view === "technique") main.innerHTML = techniqueView();
@@ -3836,16 +4187,19 @@ function render() {
 
 const MACHINE = [["problem", "Goal"], ["random-object", "Random object"], ["witnesses", "Witnesses"], ["variable", "Random variable"], ["bound", "Estimate"], ["transition", "Existence transition"], ["conclusion", "Construction / limitation"]];
 function navHtml() {
+  /** @type {[string, Module[]][]} */
   const groups = [];
   for (const fam of PM.FAMILIES) { const mods = PM.MODULES.filter((m) => m.family === fam.id); if (mods.length) groups.push([fam.title, mods]); }
   return groups.map(([t, mods]) => `<h3>${esc(t)}</h3>${mods.map((m) => `<button type="button" data-act="module" data-id="${m.id}" aria-current="${m.id === S.module}">${esc(m.short)}</button>`).join("")}`).join("") +
     `<h3>Everything else</h3><button type="button" data-act="atlas-inventory">All ${PM.INVENTORY.length} techniques</button><button type="button" data-act="recommend">Method recommender</button>`;
 }
+/** @param {Module} mod */
 function controlsHtml(mod) {
   return mod.params.filter((p) => !p.hidden).map((p) => p.options
     ? `<label>${esc(p.label)}<select data-param="${p.key}" id="p-${p.key}">${p.options.map(([v, l]) => option(v, l, S.P[p.key])).join("")}</select></label>`
     : `<label for="p-${p.key}">${esc(p.label)} <output id="o-${p.key}">${esc(f(S.P[p.key]))}</output><input type="range" id="p-${p.key}" data-param="${p.key}" min="${p.min}" max="${p.max}" step="${p.step}" value="${S.P[p.key]}"></label>`).join("");
 }
+/** @param {HTMLElement} main */
 function renderLab(main) {
   const mod = E.mod;
   main.innerHTML = `<div class="shell">
@@ -3870,7 +4224,7 @@ function renderLab(main) {
 function updateLab() {
   if (S.view !== "lab" || !$("lab-stage")) return;
   const mod = E.mod, A = E.A, asm = mod.assumptions(E.P, A), proof = mod.proof(E.P, A), allOk = asm.every((a) => a.ok);
-  for (const p of mod.params) { const o = $(`o-${p.key}`); if (o) o.textContent = f(E.P[p.key]); const i = $(`p-${p.key}`); if (i && String(i.value) !== String(E.P[p.key]) && document.activeElement !== i) i.value = E.P[p.key]; }
+  for (const p of mod.params) { const o = $(`o-${p.key}`); if (o) o.textContent = f(E.P[p.key]); const i = /** @type {HTMLInputElement} */ ($(`p-${p.key}`)); if (i && String(i.value) !== String(E.P[p.key]) && document.activeElement !== i) i.value = E.P[p.key]; }
   $("lab-four").innerHTML = [["What was random?", mod.randomObject], ["What quantity did we control?", mod.variable], ["Why does the estimate imply a deterministic statement?", mod.why], ["Why this technique?", mod.need]].map(([q, a]) => `<div><b>${esc(q)}</b><span>${esc(a)}</span></div>`).join("");
   $("lab-machine").innerHTML = MACHINE.map(([id, l], i) => `<button class="chip" type="button" data-act="focus" data-id="${id}" aria-pressed="${S.focus === id}">${i + 1}. ${esc(l)}</button>`).join("");
   $("lab-seed").innerHTML = `<span class="num">seed: ${E.P.seed}</span> <button class="btn quiet" type="button" data-act="new-seed">New seed</button> <button class="btn quiet" type="button" data-act="copy-state">Copy state</button> <label class="small">set seed <input class="field num" type="number" min="0" step="1" value="${E.P.seed}" data-act="seed-input" style="width:7rem"></label>`;
@@ -3885,16 +4239,16 @@ function updateLab() {
     <h3 id="bound-h">Bound</h3><div class="eq" tabindex="-1" id="bound-eq">${esc(T(mod.boundTex))}</div>
     ${asym ? `<div class="chips" role="group" aria-label="Finite or asymptotic"><button class="chip" type="button" data-act="asym" data-v="0" aria-pressed="${!S.asym}">Finite</button><button class="chip" type="button" data-act="asym" data-v="1" aria-pressed="${S.asym}">Asymptotic</button></div>` : ""}
     ${asym && S.asym ? `<p class="eq">${esc(asym.formula)}</p><table class="rows">${asym.terms.map(([l, v]) => `<tr><td>${esc(l)}</td><td>${esc(f(v))}</td></tr>`).join("")}<tr><td><b>total (exact ln)</b></td><td>${esc(f(asym.total))}</td></tr></table><p class="small">${esc(asym.note)}</p>`
-      : `<table class="rows">${A.rows.map(([l, v]) => `<tr><td>${esc(l)}</td><td>${esc(v)}</td></tr>`).join("")}</table>`}
+      : `<table class="rows">${A.rows.map((/** @type {string[]} */ [l, v]) => `<tr><td>${esc(l)}</td><td>${esc(v)}</td></tr>`).join("")}</table>`}
     <div class="transition" aria-label="From random experiment to deterministic conclusion"><span>random experiment</span><span class="arrow">⟹</span><span>${allOk ? "deterministic conclusion" : "no conclusion"}</span></div>
-    <div class="verdict ${allOk ? "ok" : "no"}"><b>${allOk ? "Deterministic conclusion" : "Theorem not applicable"}</b>${esc(allOk ? proof[proof.length - 1].text : asm.find((a) => !a.ok).broken || asm.find((a) => !a.ok).label)}</div>
+    <div class="verdict ${allOk ? "ok" : "no"}"><b>${allOk ? "Deterministic conclusion" : "Theorem not applicable"}</b>${esc(allOk ? proof[proof.length - 1].text : /** @type {Assumption} not allOk, so one fails */ (asm.find((a) => !a.ok)).broken || /** @type {Assumption} */ (asm.find((a) => !a.ok)).label)}</div>
     <h3>Proof</h3><ol class="proof">${proof.map((p, i) => `<li class="${S.focus === p.focus && S.proofIndex === i ? "active" : ""}"><button type="button" data-act="proof-step" data-i="${i}" data-id="${p.focus}">${esc(p.text)}</button></li>`).join("")}</ol>
     <div class="secondary">
     <h3>Break it — assumptions</h3><ul class="assume">${asm.map((a) => `<li class="${a.ok ? "" : "no"}">${a.ok ? "✓" : "×"} ${esc(a.label)}${a.ok ? "" : `<span class="why">${esc(a.broken || "")}</span>`}</li>`).join("")}</ul>
     <p><button class="btn" type="button" data-act="break">${esc(mod.breakIt.label)}</button> <button class="btn quiet" type="button" data-act="reset">Reset to defaults</button></p>
     <h3>Compare — why not another method?</h3>${mod.whyNot(E.P, A).map((w) => `<p class="small"><b>${esc(w.title)}</b> ${esc(w.text)}</p>`).join("")}
-    <div class="chips">${mod.compare.map((c) => `<a class="chip" href="#compare/${mod.id}/${c}" style="display:inline-flex;align-items:center;text-decoration:none;color:inherit">${esc(mod.short)} ↔ ${esc(PM.moduleById(c).short)}</a>`).join("")}</div>
-    <h3>Where next</h3><div class="chips">${mod.compare.concat(PM.COURSE[PM.COURSE.indexOf(mod.id) + 1] || []).filter((x, i, a) => a.indexOf(x) === i).map((c) => `<button class="chip" type="button" data-act="module" data-id="${c}">${esc(PM.moduleById(c).title)}</button>`).join("")}</div>
+    <div class="chips">${mod.compare.map((c) => `<a class="chip" href="#compare/${mod.id}/${c}" style="display:inline-flex;align-items:center;text-decoration:none;color:inherit">${esc(mod.short)} ↔ ${esc(labOf(c).short)}</a>`).join("")}</div>
+    <h3>Where next</h3><div class="chips">${mod.compare.concat(PM.COURSE[PM.COURSE.indexOf(mod.id) + 1] || []).filter((x, i, a) => a.indexOf(x) === i).map((c) => `<button class="chip" type="button" data-act="module" data-id="${c}">${esc(labOf(c).title)}</button>`).join("")}</div>
     </div>`;
   updateExperiment();
 }
@@ -3905,12 +4259,13 @@ function updateExperiment() {
   const thmText = th.bound === null || th.bound === undefined ? esc(th.boundLabel) : `${esc(th.boundLabel)}: <span class="num">${esc(th.boundKind === "at least" ? "≥ " : th.boundKind === "at most" ? "≤ " : "= ")}${esc(f(th.bound))}</span>`;
   box.innerHTML = `<div class="exp"><div class="two">
       <div><b class="badge thm">Theorem</b><p class="small">Proved guarantee for the event “${esc(th.event)}”: ${thmText}${th.lower !== undefined ? `; ${esc(th.lowerLabel)} ${esc(f(th.lower))}` : ""}.${th.mean !== null && th.mean !== undefined ? ` ${esc(th.meanLabel || "E")} = <span class="num">${esc(f(th.mean))}</span>.` : ""}</p></div>
-      <div><b class="badge exp">Experiment</b><p class="small">${sum ? `What these ${f(sum.N)} finite simulations did: “${esc(th.event)}” in <span class="num">${f(sum.hits)} / ${f(sum.N)} = ${esc(f(sum.frac))}</span>; sample mean <span class="num">${esc(f(sum.mean))}</span>.${tr.values.length < tr.total ? ` Running… ${tr.values.length} of ${tr.total}.` : ""}` : "No simulation yet. Run trials to see what finite samples do."}</p></div></div>
+      <div><b class="badge exp">Experiment</b><p class="small">${sum && tr ? `What these ${f(sum.N)} finite simulations did: “${esc(th.event)}” in <span class="num">${f(sum.hits)} / ${f(sum.N)} = ${esc(f(sum.frac))}</span>; sample mean <span class="num">${esc(f(sum.mean))}</span>.${tr.values.length < tr.total ? ` Running… ${tr.values.length} of ${tr.total}.` : ""}` : "No simulation yet. Run trials to see what finite samples do."}</p></div></div>
     <p class="chips"><label class="small">trials <select class="field" data-act="trials-n">${[1, 100, 1000, 10000].map((n) => option(n, f(n), S.trialsN)).join("")}</select></label><button class="btn" type="button" data-act="run" id="run-trials">Run ${f(Math.min(S.trialsN, cap))}</button>${S.trialsN > cap ? `<span class="small muted">capped at ${f(cap)} to stay responsive</span>` : ""}</p>
     ${tr && tr.values.length < tr.total ? `<progress max="${tr.total}" value="${tr.values.length}"></progress>` : ""}
     ${sum ? `<div class="stage">${histogramChart(sum.hist, { mean: th.mean ?? null, meanLabel: th.meanLabel || "E", pmf: th.pmf || null, event: sum.hist.integer ? (b) => th.eventTest(b.x0, E.A, E.P) : null })}</div><p class="small muted">Label: ${esc(E.mod.experiment.label)}. Highlighted bars: outcomes where “${esc(th.event)}”. Every histogram uses exactly the ${f(sum.N)} trials stated.</p>` : ""}
     <p class="small"><b>Simulations illustrate; they never prove.</b> The existence or concentration claim comes from the displayed inequality.</p></div>`;
 }
+/** @param {number} N */
 function runExperiment(N) {
   const cap = E.mod.trialCap(E.P), total = Math.max(1, Math.min(N, cap)), my = ++runId;
   S.trials = { key: trialKey(), values: [], total };
@@ -3927,20 +4282,20 @@ function runExperiment(N) {
 /* ---------- atlas ---------- */
 
 function conceptMapSvg() {
-  const M = PM.CONCEPT_MAP, W = 600, H = 520, X = (x) => (x / 100) * W, Y = (y) => (y / 100) * (H - 40) + 20, byId = Object.fromEntries(M.nodes.map((n) => [n.id, n]));
+  const M = PM.CONCEPT_MAP, W = 600, H = 520, X = (/** @type {number} */ x) => (x / 100) * W, Y = (/** @type {number} */ y) => (y / 100) * (H - 40) + 20, byId = Object.fromEntries(M.nodes.map((n) => [n.id, n]));
   let s = svgOpen(W, H, "Concept map of the probabilistic method");
   for (const [a, b] of M.edges) s += line([X(byId[a].x), Y(byId[a].y)], [X(byId[b].x), Y(byId[b].y)], "axis", 'stroke-width="1.5"');
   for (const n of M.nodes) {
     const sel = S.conceptSel === n.id, w = Math.max(90, n.label.length * 7.4);
     s += `<g role="button" tabindex="0" data-act="concept" data-id="${n.id}" aria-pressed="${sel}" aria-label="${esc(n.label)}" style="cursor:pointer"><rect x="${(X(n.x) - w / 2).toFixed(1)}" y="${(Y(n.y) - 15).toFixed(1)}" width="${w.toFixed(1)}" height="30" rx="5" class="${sel ? "fink" : "fbg"} ink"/>${`<text x="${X(n.x).toFixed(1)}" y="${(Y(n.y) + 4).toFixed(1)}" text-anchor="middle" class="ttl" style="${sel ? "fill:var(--bg)" : ""}">${esc(n.label)}</text>`}</g>`;
-    if (n.modules) { const names = n.modules.map((m) => PM.moduleById(m).short); for (let r = 0; r * 2 < names.length; r++) s += text(X(n.x), Y(n.y) + 28 + r * 13, names.slice(2 * r, 2 * r + 2).join(" · "), "lbl"); }
+    if (n.modules) { const names = n.modules.map((m) => labOf(m).short); for (let r = 0; r * 2 < names.length; r++) s += text(X(n.x), Y(n.y) + 28 + r * 13, names.slice(2 * r, 2 * r + 2).join(" · "), "lbl"); }
   }
   return s + "</svg>";
 }
 function conceptPanel() {
   const M = PM.CONCEPT_MAP, n = M.nodes.find((x) => x.id === S.conceptSel) || M.nodes[1];
-  const pre = M.edges.filter(([, b]) => b === n.id).map(([a]) => M.nodes.find((x) => x.id === a).label), post = M.edges.filter(([a]) => a === n.id).map(([, b]) => M.nodes.find((x) => x.id === b).label);
-  const mods = (n.modules || []).map(PM.moduleById);
+  const pre = M.edges.filter(([, b]) => b === n.id).map(([a]) => /** @type {typeof n} */ (M.nodes.find((x) => x.id === a)).label), post = M.edges.filter(([a]) => a === n.id).map(([, b]) => /** @type {typeof n} */ (M.nodes.find((x) => x.id === b)).label);
+  const mods = (n.modules || []).map(labOf);
   return `<div class="card"><h4>${esc(n.label)}</h4><p class="small"><b>Prerequisites:</b> ${esc(pre.join(", ") || "none — start here")}. <b>Descendants:</b> ${esc(post.join(", ") || "none")}.</p>
     ${mods.length ? `<div class="scroll"><table class="grid"><tr><th>technique</th><th>canonical problem</th><th>controls</th><th>typical conclusion</th></tr>${mods.map((m) => `<tr><td><button class="chip" type="button" data-act="module" data-id="${m.id}">${esc(m.short)}</button></td><td>${esc(m.archetype)}</td><td>${esc(m.pattern.controls)}</td><td>${esc(m.pattern.conclusion)}</td></tr>`).join("")}</table></div>` : ""}</div>`;
 }
@@ -3961,37 +4316,39 @@ function atlasView() {
   <div class="layer"><h3>The universal proof machine</h3><div class="chips">${MACHINE.map(([, l], i) => `<span class="chip" style="display:inline-flex;align-items:center">${i + 1}. ${esc(l)}</span>`).join("<span aria-hidden=\"true\">→</span>")}</div></div>
   <div class="layer"><h3>Problems, not chapters</h3><div class="cards">${PM.GALLERY.map(([q, m, ids]) => `<button class="card" type="button" data-act="module" data-id="${ids[0]}"><h4>${esc(q)}</h4><span class="small muted">${esc(m)}</span></button>`).join("")}</div></div>
   <div class="layer"><h3>Concept map — select a node</h3><div class="split"><div class="stage">${conceptMapSvg()}</div><div id="concept-panel">${conceptPanel()}</div></div></div>
-  <div class="layer"><h3>Guided course</h3><ol>${PM.COURSE_STAGES.map(([t, ids]) => `<li>${esc(t)}: ${ids.map((id) => `<button class="chip" type="button" data-act="module" data-id="${id}">${esc(PM.moduleById(id).short)}</button>`).join(" ")}</li>`).join("")}</ol><p class="small muted">The order is a suggestion; every lab is open.</p></div>
+  <div class="layer"><h3>Guided course</h3><ol>${PM.COURSE_STAGES.map(([t, ids]) => `<li>${esc(t)}: ${ids.map((id) => `<button class="chip" type="button" data-act="module" data-id="${id}">${esc(labOf(id).short)}</button>`).join(" ")}</li>`).join("")}</ol><p class="small muted">The order is a suggestion; every lab is open.</p></div>
   <div class="layer"><h3>Navigate by question</h3>${PM.PROBLEM_INDEX.map(([q, ids]) => `<p><b>${esc(q)}</b> ${ids.map((id) => { const m = PM.moduleById(id), t = PM.techniqueById(id); return m ? `<button class="chip" type="button" data-act="module" data-id="${id}">${esc(m.short)}</button>` : `<a class="chip" href="#technique/${id}" style="display:inline-flex;align-items:center;text-decoration:none;color:inherit">${esc(t ? t.title : id)} <span class="badge todo" style="margin-left:.3rem">not yet built</span></a>`; }).join(" ")}</p>`).join("")}</div>
   <div class="layer"><h3>Proof-pattern matrix</h3><div class="scroll"><table class="grid"><tr><th>method</th><th>controls</th><th>typical conclusion</th><th>works when</th></tr>${PM.MODULES.map((m) => `<tr><td><button class="chip" type="button" data-act="module" data-id="${m.id}">${esc(m.short)}</button></td><td>${esc(m.pattern.controls)}</td><td>${esc(m.pattern.conclusion)}</td><td>${esc(m.pattern.worksWhen)}</td></tr>`).join("")}</table></div></div>
-  <div class="layer"><h3>Key comparisons</h3><div class="chips">${PM.KEY_COMPARISONS.map(([a, b]) => `<a class="chip" href="#compare/${a}/${b}" style="display:inline-flex;align-items:center;text-decoration:none;color:inherit">${esc(PM.moduleById(a).short)} ↔ ${esc(PM.moduleById(b).short)}</a>`).join("")}</div></div>
+  <div class="layer"><h3>Key comparisons</h3><div class="chips">${PM.KEY_COMPARISONS.map(([a, b]) => `<a class="chip" href="#compare/${a}/${b}" style="display:inline-flex;align-items:center;text-decoration:none;color:inherit">${esc(labOf(a).short)} ↔ ${esc(labOf(b).short)}</a>`).join("")}</div></div>
   <div class="layer" id="inventory"><h3>Complete technique inventory — ${built} of ${PM.INVENTORY.length} shown in a lab</h3><p class="small">Techniques not yet built keep their stable id and are marked as such; nothing here is a placeholder page.</p>${inventoryTable()}</div>
   <div class="layer"><h3>Self-tests</h3><p class="small" id="selftests">${SELF ? `${SELF.filter((x) => x.pass).length} of ${SELF.length} built-in self-tests pass${SELF.every((x) => x.pass) ? "." : `; failing: ${esc(SELF.filter((x) => !x.pass).map((x) => x.name).join(", "))}.`}` : ""}</p></div>
   </div>`;
 }
 function techniqueView() {
-  const t = PM.techniqueById(S.technique), m = t.module && PM.moduleById(t.module), siblings = PM.MODULES.filter((x) => x.family === t.family);
+  // The technique view opens only for a technique the inventory has.
+  const t = /** @type {Technique} */ (PM.techniqueById(/** @type {string} */ (S.technique))), m = t.module && PM.moduleById(t.module), siblings = PM.MODULES.filter((x) => x.family === t.family);
   return `<div class="center" style="max-width:52rem;margin:auto"><p class="small muted"><a href="#atlas">Atlas</a> · technique ${t.n} · id <span class="num">${esc(t.id)}</span></p>
     <h2>${esc(t.title)} ${m ? '<span class="badge done">built</span>' : '<span class="badge todo">not yet built</span>'}</h2>
     <table class="rows"><tr><td>family</td><td>${esc(famTitle(t.family))}</td></tr><tr><td>archetypal problem</td><td>${esc(t.problem)}</td></tr><tr><td>planned visual</td><td>${esc(t.visual)}</td></tr></table>
-    ${m ? `<p>This technique is demonstrated inside the <b>${esc(m.title)}</b> lab (scene: ${esc(PM.focusLabel({ A: {} }, t.scene))}).</p><p><button class="btn primary" type="button" data-act="module" data-id="${m.id}" data-focus="${t.scene}">Open the ${esc(m.short)} lab</button></p>`
+    ${m ? `<p>This technique is demonstrated inside the <b>${esc(m.title)}</b> lab (scene: ${esc(PM.focusLabel(/** @type {Evaluated} only the scene name is needed */ ({ A: {} }), /** @type {string} */ (t.scene)))}).</p><p><button class="btn primary" type="button" data-act="module" data-id="${m.id}" data-focus="${t.scene}">Open the ${esc(m.short)} lab</button></p>`
       : `<p>Not yet built: this release does not have an interactive lab for it, and shows none rather than a placeholder. ${siblings.length ? "Nearest built labs:" : ""}</p><div class="chips">${siblings.map((x) => `<button class="chip" type="button" data-act="module" data-id="${x.id}">${esc(x.short)}</button>`).join("")}</div>`}</div>`;
 }
 function compareView() {
   const ids = [...PM.MODULES.map((m) => [m.id, m.title]), ...PM.INVENTORY.filter((t) => !t.module).map((t) => [t.id, `${t.title} (not yet built)`])];
   const { a, b } = PM.compareRows(S.cmpA, S.cmpB);
+  /** @type {[string, keyof CompareSide][]} */
   const rows = [["Problem", "problem"], ["Intuition", "intuition"], ["Controls", "controls"], ["Key inequality", "inequality"], ["Works when", "worksWhen"], ["Canonical visual", "visual"], ["Typical conclusion", "conclusion"]];
   return `<div class="center" style="max-width:64rem;margin:auto"><p class="small muted"><a href="#atlas">Atlas</a> · technique comparison</p><h2>Compare two techniques</h2>
     <div class="split"><label>left <select class="field" data-act="cmp" data-side="a">${ids.map(([v, l]) => option(v, l, S.cmpA)).join("")}</select></label><label>right <select class="field" data-act="cmp" data-side="b">${ids.map(([v, l]) => option(v, l, S.cmpB)).join("")}</select></label></div>
     ${a && b ? `<div class="scroll"><table class="grid"><tr><th></th><th>${esc(a.title)}</th><th>${esc(b.title)}</th></tr>${rows.map(([l, k]) => `<tr><th>${l}</th><td>${esc(a[k])}</td><td>${esc(b[k])}</td></tr>`).join("")}</table></div>` : ""}
-    <p class="chips">${[S.cmpA, S.cmpB].filter((x) => PM.moduleById(x)).map((x) => `<button class="btn" type="button" data-act="module" data-id="${x}">Open ${esc(PM.moduleById(x).short)}</button>`).join(" ")}</p>
-    <h3>Especially important comparisons</h3><div class="chips">${PM.KEY_COMPARISONS.map(([x, y]) => `<a class="chip" href="#compare/${x}/${y}" style="display:inline-flex;align-items:center;text-decoration:none;color:inherit">${esc(PM.moduleById(x).short)} ↔ ${esc(PM.moduleById(y).short)}</a>`).join("")}</div></div>`;
+    <p class="chips">${[S.cmpA, S.cmpB].filter((x) => PM.moduleById(x)).map((x) => `<button class="btn" type="button" data-act="module" data-id="${x}">Open ${esc(labOf(x).short)}</button>`).join(" ")}</p>
+    <h3>Especially important comparisons</h3><div class="chips">${PM.KEY_COMPARISONS.map(([x, y]) => `<a class="chip" href="#compare/${x}/${y}" style="display:inline-flex;align-items:center;text-decoration:none;color:inherit">${esc(labOf(x).short)} ↔ ${esc(labOf(y).short)}</a>`).join("")}</div></div>`;
 }
 function recommendView() {
   const R = PM.RECOMMENDER, path = S.rec, last = path[path.length - 1], node = R[last], done = !node;
   const trail = path.slice(0, -1).map((id, i) => { const nd = R[id], chosen = nd.options.find(([v]) => v === path[i + 1]); return `<li><b>${esc(nd.q)}</b> → ${esc(chosen ? chosen[1] : "")}${nd.why ? `<br><span class="small muted">${esc(nd.why)}</span>` : ""}</li>`; }).join("");
   return `<div class="center" style="max-width:52rem;margin:auto"><p class="small muted"><a href="#atlas">Atlas</a> · method recommender</p><h2>Which method do I need?</h2><ol>${trail}</ol>
-    ${done ? `<div class="verdict ok"><b>Recommended</b>${esc(PM.moduleById(last).title)} — ${esc(PM.moduleById(last).need)}</div><p><button class="btn primary" type="button" data-act="module" data-id="${last}">Open the lab</button> <button class="btn quiet" type="button" data-act="rec-reset">Start again</button></p>`
+    ${done ? `<div class="verdict ok"><b>Recommended</b>${esc(labOf(last).title)} — ${esc(labOf(last).need)}</div><p><button class="btn primary" type="button" data-act="module" data-id="${last}">Open the lab</button> <button class="btn quiet" type="button" data-act="rec-reset">Start again</button></p>`
       : `<h3>${esc(node.q)}</h3>${node.why ? `<p class="small">${esc(node.why)}</p>` : ""}<div class="chips">${node.options.map(([v, l]) => `<button class="btn" type="button" data-act="rec" data-id="${v}">${esc(l)}</button>`).join("")}</div>${path.length > 1 ? '<p><button class="btn quiet" type="button" data-act="rec-back">Back</button></p>' : ""}`}</div>`;
 }
 
@@ -4018,7 +4375,7 @@ function buildActions() {
       <button role="menuitem" type="button" id="copy-sequence">Copy Beam MD Switch sequence</button>
       <button role="menuitem" type="button" id="copy-url">Copy state URL</button>
     </span></span>`;
-  const on = (id, fn) => $(id).addEventListener("click", fn);
+  const on = (/** @type {string} */ id, /** @type {() => void} */ fn) => $(id).addEventListener("click", fn);
   on("act-sample", () => setSeed(E.P.seed + 1));
   on("act-step", () => labStep(1));
   on("act-run", () => { S.trialsN = 1000; runExperiment(1000); });
@@ -4036,12 +4393,14 @@ function buildActions() {
   on("copy-sequence", () => { close(); return copyText(PM.switchSequence(E), "Beam MD Switch sequence"); });
   on("copy-url", () => { close(); return copyText(PM.URL_BASE + hashNow(), "State URL"); });
 }
+/** @param {number | "start" | "end"} d */
 function labStep(d) {
   const st = STEPPABLE[S.module]; if (!st) return;
   const max = st(E), cur = S.labStep ?? max;
   S.labStep = d === "start" ? 0 : d === "end" ? max : Math.max(0, Math.min(max, (cur >= max && d > 0 ? -1 : cur) + d));
   updateLab();
 }
+/** @param {boolean} [force] */
 function toggleProof(force) { if (S.view !== "lab") return; S.lens = (force ?? S.lens !== "proof") ? "proof" : "lab"; render(); writeHash(); }
 
 /* ---------- deck mode: the same frames the export writes ---------- */
@@ -4059,12 +4418,14 @@ function renderDeck() {
     <footer><button class="btn" type="button" data-deck="prev" aria-label="Previous switch">◀</button><button class="btn primary" type="button" data-deck="next" aria-label="Next switch">▶</button><span class="small muted">← → or Space to advance · Esc to exit · voice: bf_emma</span></footer>`;
   say(`${fr.title}. ${fr.narration}`);
 }
+/** @param {number} d */
 function deckMove(d) {
   const frames = PM.deckFrames(E);
   if (d > 0) { if (S.step + 1 < frames[S.frame].steps) S.step++; else if (S.frame + 1 < frames.length) { S.frame++; S.step = 0; } }
   else if (S.step > 0) S.step--; else if (S.frame > 0) { S.frame--; S.step = frames[S.frame].steps - 1; }
   renderDeck(); writeHash();
 }
+/** @param {boolean} on */
 function toggleDeck(on) { if (S.view !== "lab") return; S.deck = on; if (on) { S.frame = S.frame || 0; S.step = S.step || 0; } render(); writeHash(); }
 
 /* ---------- command palette and help ---------- */
@@ -4074,17 +4435,19 @@ function openPalette() {
   const o = document.createElement("div"); o.className = "overlay"; o.id = "overlay";
   o.innerHTML = `<div class="dialog" role="dialog" aria-modal="true" aria-label="Search techniques"><input id="pal-input" type="search" placeholder="Search: bad events, tails, remove randomness, common neighbours…" aria-label="Search" autocomplete="off"><ul class="results" id="pal-results" role="listbox"></ul></div>`;
   document.body.append(o);
-  const input = $("pal-input"), list = $("pal-results");
-  let items = [], sel = 0;
+  const input = /** @type {HTMLInputElement} */ ($("pal-input")), list = $("pal-results");
+  /** @type {Pick<SearchEntry, "kind" | "id" | "title" | "built" | "module">[]} */
+  let items = [];
+  let sel = 0;
   const draw = () => {
     items = input.value ? PM.search(input.value) : PM.MODULES.map((m) => ({ kind: "module", id: m.id, title: m.title, built: true }));
     sel = Math.min(sel, Math.max(0, items.length - 1));
-    list.innerHTML = items.map((r, i) => `<li role="option" aria-selected="${i === sel}"><button type="button" data-pal="${i}">${esc(r.title)} <span class="small muted">${r.kind === "module" ? "lab" : r.module ? `in the ${esc(PM.moduleById(r.module).short)} lab` : "not yet built"}</span></button></li>`).join("") || '<li class="small muted">No match.</li>';
+    list.innerHTML = items.map((r, i) => `<li role="option" aria-selected="${i === sel}"><button type="button" data-pal="${i}">${esc(r.title)} <span class="small muted">${r.kind === "module" ? "lab" : r.module ? `in the ${esc(labOf(r.module).short)} lab` : "not yet built"}</span></button></li>`).join("") || '<li class="small muted">No match.</li>';
   };
-  const go = (r) => { closeOverlay(); if (!r) return; if (r.kind === "module") openModule(r.id); else if (r.module) openModule(r.module, { focus: PM.techniqueById(r.id).scene }); else { S.view = "technique"; S.technique = r.id; render(); writeHash(); } };
+  const go = (/** @type {typeof items[number] | undefined} */ r) => { closeOverlay(); if (!r) return; if (r.kind === "module") openModule(r.id); else if (r.module) openModule(r.module, { focus: /** @type {string} a built technique names its scene */ (/** @type {Technique} */ (PM.techniqueById(r.id)).scene) }); else { S.view = "technique"; S.technique = r.id; render(); writeHash(); } };
   input.addEventListener("input", () => { sel = 0; draw(); });
   input.addEventListener("keydown", (e) => { if (e.key === "ArrowDown") { sel = Math.min(items.length - 1, sel + 1); draw(); e.preventDefault(); } else if (e.key === "ArrowUp") { sel = Math.max(0, sel - 1); draw(); e.preventDefault(); } else if (e.key === "Enter") { go(items[sel]); e.preventDefault(); } });
-  list.addEventListener("click", (e) => { const b = e.target.closest("[data-pal]"); if (b) go(items[Number(b.dataset.pal)]); });
+  list.addEventListener("click", (e) => { const b = /** @type {HTMLElement | null} */ (/** @type {Element} */ (e.target).closest("[data-pal]")); if (b) go(items[Number(b.dataset.pal)]); });
   o.addEventListener("click", (e) => { if (e.target === o) closeOverlay(); });
   draw(); input.focus();
 }
@@ -4101,12 +4464,15 @@ function closeOverlay() { const o = $("overlay"); if (o && o.isConnected && o.re
 /* ---------- events ---------- */
 
 function proofSteps() { return E.mod.proof(E.P, E.A); }
+/** @param {number} i */
 function setProofIndex(i) {
   const steps = proofSteps(); S.proofIndex = (i + steps.length) % steps.length; S.focus = steps[S.proofIndex].focus; updateLab(); writeHash();
 }
+/** @param {MouseEvent} e */
 function onMainClick(e) {
-  const t = e.target.closest("[data-act]"); if (!t) return;
-  const act = t.dataset.act, id = t.dataset.id, i = Number(t.dataset.i);
+  const t = /** @type {HTMLElement | null} */ (/** @type {Element} */ (e.target).closest("[data-act]")); if (!t) return;
+  // Every control whose action takes an id carries data-id.
+  const act = t.dataset.act, id = /** @type {string} */ (t.dataset.id), i = Number(t.dataset.i);
   if (act === "module") { openModule(id, t.dataset.focus ? { focus: t.dataset.focus } : {}); return; }
   if (act === "atlas-inventory") { S.view = "atlas"; render(); writeHash(); const inv = $("inventory"); if (inv && inv.scrollIntoView) inv.scrollIntoView(); return; }
   if (act === "recommend") { S.view = "recommend"; S.rec = ["start"]; render(); writeHash(); return; }
@@ -4139,26 +4505,31 @@ function onMainClick(e) {
     if (row !== col && row >= 0 && col >= 0 && row < n && col < n) flipPair(row, col);
   }
 }
+/** @param {number} a @param {number} b */
 function flipPair(a, b) { const list = String(S.P.flips || "").split(",").filter(Boolean); list.push(`${Math.min(a, b)}-${Math.max(a, b)}`); setParam("flips", list.join(",")); }
+/** @param {Event} e */
 function onMainInput(e) {
-  const t = e.target;
+  const t = /** @type {HTMLInputElement} the control that changed */ (e.target);
   if (t.dataset && t.dataset.param) { setParam(t.dataset.param, t.value); return; }
 }
+/** @param {Event} e */
 function onMainChange(e) {
-  const t = e.target, act = t.dataset && t.dataset.act;
+  const t = /** @type {HTMLInputElement} the control that changed */ (e.target), act = t.dataset && t.dataset.act;
   if (t.dataset && t.dataset.param && t.tagName === "SELECT") { setParam(t.dataset.param, t.value); return; }
   if (act === "module-select") { openModule(t.value); return; }
   if (act === "trials-n") { S.trialsN = Number(t.value); updateExperiment(); return; }
   if (act === "seed-input") { const v = Math.floor(Number(t.value)); if (Number.isFinite(v) && v >= 0) setSeed(v); return; }
   if (act === "cmp") { if (t.dataset.side === "a") S.cmpA = t.value; else S.cmpB = t.value; render(); writeHash(); }
 }
+/** @param {SubmitEvent} e */
 function onMainSubmit(e) {
-  const form = e.target; if (!form.dataset || form.dataset.act !== "flip-form") return;
+  const form = /** @type {HTMLFormElement & { elements: { i: HTMLInputElement, j: HTMLInputElement } }} the flip form names its fields i and j */ (e.target); if (!form.dataset || form.dataset.act !== "flip-form") return;
   e.preventDefault(); const a = Number(form.elements.i.value), b = Number(form.elements.j.value);
   if (Number.isInteger(a) && Number.isInteger(b) && a !== b) flipPair(a, b);
 }
+/** @param {MouseEvent} e */
 function onDeckClick(e) {
-  const b = e.target.closest && e.target.closest("[data-deck]"); if (!b) return;
+  const target = /** @type {Element} */ (e.target), b = /** @type {HTMLElement | null} */ (target.closest && target.closest("[data-deck]")); if (!b) return;
   const k = b.dataset.deck;
   if (k === "close") toggleDeck(false);
   if (k === "next") deckMove(1);
@@ -4171,15 +4542,16 @@ function autoplay() {
   if (S.autoplay) { clearInterval(S.autoplay); S.autoplay = null; toast("Autoplay stopped"); return; }
   if (S.view !== "lab") return;
   setProofIndex(0);
-  S.autoplay = setInterval(() => { const n = proofSteps().length; if ((S.proofIndex ?? 0) + 1 >= n) { clearInterval(S.autoplay); S.autoplay = null; return; } setProofIndex((S.proofIndex ?? 0) + 1); }, 1800);
+  S.autoplay = setInterval(() => { const n = proofSteps().length; if ((S.proofIndex ?? 0) + 1 >= n) { clearInterval(/** @type {ReturnType<typeof setInterval>} this interval */ (S.autoplay)); S.autoplay = null; return; } setProofIndex((S.proofIndex ?? 0) + 1); }, 1800);
 }
+/** @param {KeyboardEvent} e */
 function onKey(e) {
-  const tag = (e.target && e.target.tagName) || "", typing = /INPUT|SELECT|TEXTAREA/.test(tag);
+  const target = /** @type {HTMLElement | null} */ (e.target), tag = (target && target.tagName) || "", typing = /INPUT|SELECT|TEXTAREA/.test(tag);
   if ((e.metaKey || e.ctrlKey) && (e.key === "k" || e.key === "K")) { e.preventDefault(); openPalette(); return; }
   if (e.key === "Escape") { if ($("overlay") && $("overlay").isConnected) closeOverlay(); else if (S.deck) toggleDeck(false); else if (S.lens === "proof") toggleProof(false); else { const m = $("export-menu"); if (m) m.hidden = true; } return; }
   if (typing || e.altKey || e.metaKey || e.ctrlKey) return;
   if ($("overlay") && $("overlay").isConnected) return;
-  if (e.target && e.target.closest && e.target.closest("[role=button]") && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); e.target.closest("[role=button]").dispatchEvent(new MouseEvent("click", { bubbles: true })); return; }
+  if (target && target.closest && target.closest("[role=button]") && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); /** @type {Element} */ (target.closest("[role=button]")).dispatchEvent(new MouseEvent("click", { bubbles: true })); return; }
   const k = e.key;
   if (k === "/") { e.preventDefault(); openPalette(); return; }
   if (k === "?") { openHelp(); return; }
@@ -4190,7 +4562,7 @@ function onKey(e) {
   else if (k === "ArrowLeft") { e.preventDefault(); setProofIndex((S.proofIndex ?? 0) - 1); }
   else if (k === "ArrowDown") { e.preventDefault(); openModule(PM.MODULES[(idx + 1) % PM.MODULES.length].id); }
   else if (k === "ArrowUp") { e.preventDefault(); openModule(PM.MODULES[(idx - 1 + PM.MODULES.length) % PM.MODULES.length].id); }
-  else if (k === " ") { if (e.target && /BUTTON|A/.test(tag)) return; e.preventDefault(); if (STEPPABLE[S.module]) labStep(1); else setSeed(E.P.seed + 1); }
+  else if (k === " ") { if (target && /BUTTON|A/.test(tag)) return; e.preventDefault(); if (STEPPABLE[S.module]) labStep(1); else setSeed(E.P.seed + 1); }
   else if (k === "r" || k === "R") setSeed(E.P.seed + 1);
   else if (k === "a" || k === "A") autoplay();
   else if (k === "p" || k === "P") toggleProof();
@@ -4202,6 +4574,7 @@ function onKey(e) {
 
 /* ---------- theme ---------- */
 
+/** @param {string} t */
 function applyTheme(t) { const root = document.documentElement; if (t === "light" || t === "dark") root.setAttribute("data-theme", t); else root.removeAttribute("data-theme"); }
 function cycleTheme() {
   let t = ""; try { t = localStorage.getItem("theme") || ""; } catch (e) { /* storage may be blocked */ }
@@ -4212,12 +4585,16 @@ function cycleTheme() {
 
 /* ---------- WebMCP: read-only tools for agents ---------- */
 
-const result = (v) => ({ content: [{ type: "text", text: JSON.stringify(v) }] });
+const result = (/** @type {unknown} */ v) => ({ content: [{ type: "text", text: JSON.stringify(v) }] });
 const ro = { readOnlyHint: true }, none = { type: "object", properties: {}, additionalProperties: false };
+/**
+ * @param {{ module?: string, params?: Record<string, unknown>, seed?: number } | undefined} input
+ * @returns {{ error: string } | { Ev: Evaluated, mod: Module }}
+ */
 function analyseFor(input) {
-  const mod = PM.moduleById(input && input.module);
+  const mod = PM.moduleById(/** @type {string} */ (input && input.module));
   if (!mod) return { error: `Unknown module. Use one of: ${PM.MODULES.map((m) => m.id).join(", ")}.` };
-  const Ev = PM.evaluate(mod, PM.withParams(mod, { ...(input.params || {}), seed: input.seed ?? PM.DEFAULT_SEED }));
+  const Ev = PM.evaluate(mod, PM.withParams(mod, { ...(/** @type {NonNullable<typeof input>} it named a lab */ (input).params || {}), seed: /** @type {NonNullable<typeof input>} */ (input).seed ?? PM.DEFAULT_SEED }));
   return { Ev, mod };
 }
 const tools = [
@@ -4227,17 +4604,17 @@ const tools = [
     async execute() {
       if (S.view !== "lab") return result({ view: S.view, url: PM.URL_BASE + hashNow() });
       const asm = E.mod.assumptions(E.P, E.A);
-      return result({ view: "lab", module: S.module, params: E.P, quantities: E.A.rows.map(([label, value]) => ({ label, value })), assumptions: asm.map((a) => ({ label: a.label, holds: a.ok, reason: a.ok ? null : a.broken })), conclusion: E.mod.proof(E.P, E.A).at(-1).text, summary: DRAW[S.module](E, S).summary, url: PM.URL_BASE + hashNow() });
+      return result({ view: "lab", module: S.module, params: E.P, quantities: E.A.rows.map((/** @type {string[]} */ [label, value]) => ({ label, value })), assumptions: asm.map((a) => ({ label: a.label, holds: a.ok, reason: a.ok ? null : a.broken })), conclusion: /** @type {{ text: string }} every proof has steps */ (E.mod.proof(E.P, E.A).at(-1)).text, summary: DRAW[S.module](E, S).summary, url: PM.URL_BASE + hashNow() });
     } },
   { name: "analyse_technique", description: "Compute one lab's proof quantities, assumptions and proof steps for given parameters and seed, without changing the page.", annotations: ro,
     inputSchema: { type: "object", properties: { module: { type: "string" }, params: { type: "object" }, seed: { type: "integer", minimum: 0 } }, required: ["module"], additionalProperties: false },
-    async execute(input) { const r = analyseFor(input); if (r.error) return result(r); const { Ev, mod } = r; return result({ module: mod.id, params: Ev.P, quantities: Ev.A.rows.map(([label, value]) => ({ label, value })), assumptions: mod.assumptions(Ev.P, Ev.A).map((a) => ({ label: a.label, holds: a.ok })), proof: mod.proof(Ev.P, Ev.A).map((p) => p.text) }); } },
+    async execute(/** @type {Parameters<typeof analyseFor>[0]} */ input) { const r = analyseFor(input); if ("error" in r) return result(r); const { Ev, mod } = r; return result({ module: mod.id, params: Ev.P, quantities: Ev.A.rows.map((/** @type {string[]} */ [label, value]) => ({ label, value })), assumptions: mod.assumptions(Ev.P, Ev.A).map((a) => ({ label: a.label, holds: a.ok })), proof: mod.proof(Ev.P, Ev.A).map((p) => p.text) }); } },
   { name: "export_technique_deck", description: "The narrated beamdswitch Markdown deck for one lab at given parameters and seed (deterministic).", annotations: ro,
     inputSchema: { type: "object", properties: { module: { type: "string" }, params: { type: "object" }, seed: { type: "integer", minimum: 0 } }, required: ["module"], additionalProperties: false },
-    async execute(input) { const r = analyseFor(input); if (r.error) return result(r); return result({ module: r.mod.id, markdown: PM.techniqueDeck(r.Ev) }); } },
+    async execute(/** @type {Parameters<typeof analyseFor>[0]} */ input) { const r = analyseFor(input); if ("error" in r) return result(r); return result({ module: r.mod.id, markdown: PM.techniqueDeck(r.Ev) }); } },
   { name: "run_self_tests", description: "Run the built-in deterministic self-tests.", inputSchema: none, annotations: ro, async execute() { return result(PM.selfTests()); } },
 ];
-self.ProbabilisticMethodTools = tools;
+/** @type {typeof self & { ProbabilisticMethodTools?: typeof tools }} */ (self).ProbabilisticMethodTools = tools;
 const mc = (typeof document !== "undefined" && document.modelContext) || (typeof navigator !== "undefined" && navigator.modelContext);
 if (mc && typeof mc.registerTool === "function") for (const t of tools) mc.registerTool(t);
 

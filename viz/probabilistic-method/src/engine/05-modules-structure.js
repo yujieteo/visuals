@@ -3,6 +3,7 @@
 /* ---------- Rödl nibble ---------- */
 
 /* A 3-uniform hypergraph on N vertices: the union of D random partitions of the vertices into triples (about D-regular). */
+/** @param {number} N @param {number} D @param {Rng} r @returns {number[][]} */
 function tripleSystem(N, D, r) {
   const seen = new Set(), edges = [];
   for (let t = 0; t < D; t++) {
@@ -14,6 +15,7 @@ function tripleSystem(N, D, r) {
   }
   return edges;
 }
+/** @param {number} N @param {number[][]} edges */
 function maxCodegree(N, edges) {
   const co = new Map(); let best = 0;
   for (const e of edges) for (let a = 0; a < 3; a++) for (let b = a + 1; b < 3; b++) { const k = e[a] * N + e[b], v = (co.get(k) || 0) + 1; co.set(k, v); if (v > best) best = v; }
@@ -21,16 +23,24 @@ function maxCodegree(N, edges) {
 }
 /* Run the nibble: each round, select each live edge with probability ε/D_current, discard selected edges that meet another
  * selected edge, accept the rest, and delete every covered vertex. mode "one-shot" stops after one round. */
+/** @param {number} N @param {number[][]} edges @param {number} eps @param {() => number} r */
 function runNibble(N, edges, eps, r, mode = "nibble", maxRounds = 60) {
-  const alive = new Uint8Array(N).fill(1), rounds = [], matching = [];
+  const alive = new Uint8Array(N).fill(1), rounds = [];
+  /** @type {number[][]} */
+  const matching = [];
   let liveCount = N;
   for (let round = 1; round <= maxRounds; round++) {
     const live = edges.filter((e) => alive[e[0]] && alive[e[1]] && alive[e[2]]);
     if (!live.length) break;
     const D = (3 * live.length) / liveCount, q = Math.min(1, eps / D);
-    const selected = live.filter(() => r() < q), hits = new Map();
+    const selected = live.filter(() => r() < q);
+    /** @type {Map<number, number>} */
+    const hits = new Map();
     for (const e of selected) for (const v of e) hits.set(v, (hits.get(v) || 0) + 1);
-    const accepted = [], collided = [];
+    /** @type {number[][]} */
+    const accepted = [];
+    /** @type {number[][]} */
+    const collided = [];
     for (const e of selected) (e.every((v) => hits.get(v) === 1) ? accepted : collided).push(e);
     for (const e of accepted) { for (const v of e) alive[v] = 0; matching.push(e); }
     liveCount -= 3 * accepted.length;
@@ -135,6 +145,7 @@ defineModule({
 /* ---------- Quasirandomness ---------- */
 
 /* Eigenvalues of a symmetric matrix (array of rows) by the cyclic Jacobi method. */
+/** @param {number[][]} M */
 function symmetricEigenvalues(M) {
   const n = M.length, a = M.map((r) => r.slice());
   for (let sweep = 0; sweep < 100; sweep++) {
@@ -151,12 +162,14 @@ function symmetricEigenvalues(M) {
   }
   return a.map((r, i) => r[i]).sort((x, y) => y - x);
 }
+/** @param {number} q */
 function paleyGraph(q) {
   const sq = new Set(); for (let x = 1; x < q; x++) sq.add((x * x) % q);
   const edges = []; for (let i = 0; i < q; i++) for (let j = i + 1; j < q; j++) if (sq.has((j - i) % q)) edges.push([i, j]);
   return graphFromEdges(q, edges);
 }
 const PALEY_PRIMES = [5, 13, 17, 29, 37, 41];
+/** @param {Params} P @param {number} seed */
 function quasiGraph(P, seed) {
   const n = P.q;
   let G;
@@ -173,6 +186,7 @@ function quasiGraph(P, seed) {
   }
   return G;
 }
+/** @param {Graph} G @param {Iterable<number>} S @param {Iterable<number>} T */
 function edgesBetween(G, S, T) { let c = 0; for (const s of S) for (const t of T) if (G.adj[s * G.n + t]) c++; return c; }
 
 defineModule({
@@ -279,15 +293,21 @@ defineModule({
 /* ---------- Phase transition ---------- */
 
 /* Survival probability β of a Poisson(c) Galton–Watson tree: β = 1 − e^(−cβ), the giant component fraction. */
+/** @param {number} c */
 function giantFraction(c) {
   if (c <= 1) return 0;
   let b = 1;
   for (let i = 0; i < 500; i++) b = 1 - Math.exp(-c * b);
   return b;
 }
+/** @param {number} n @param {number[][]} adjList @param {number} root */
 function bfsGenerations(n, adjList, root, maxGen = 8) {
-  const seen = new Map([[root, 0]]), gens = [[root]], parent = new Map([[root, null]]);
-  let collision = null, order = 0;
+  const seen = new Map([[root, 0]]), gens = [[root]];
+  /** @type {Map<number, number | null>} */
+  const parent = new Map([[root, null]]);
+  /** @type {{ generation: number, at: number, from: number, to: number } | null} */
+  let collision = null;
+  let order = 0;
   for (let g = 0; g < maxGen && gens[g].length; g++) {
     const next = [];
     for (const v of gens[g]) for (const w of adjList[v]) {
@@ -301,8 +321,12 @@ function bfsGenerations(n, adjList, root, maxGen = 8) {
   while (gens.length && !gens[gens.length - 1].length) gens.pop();
   return { gens: gens.map((g) => g.length), parent: [...parent.entries()], collision };
 }
+/** @param {number} c @param {Rng} r */
 function galtonWatson(c, r, maxGen = 8, cap = 400) {
-  const gens = [1], parent = [null];
+  const gens = [1];
+  /** @type {(number | null)[]} */
+  const parent = [null];
+
   let frontier = [0];
   for (let g = 0; g < maxGen && frontier.length && parent.length < cap; g++) {
     const next = [];
@@ -344,9 +368,12 @@ defineModule({
     };
   },
   view(P, F) {
-    const p = P.c / P.n, present = [];
+    const p = P.c / P.n;
+    /** @type {Edge[]} */
+    const present = [];
     for (const e of F.edges) { if (e.u > p) break; present.push([e.a, e.b]); }
-    const comp = components(P.n, present), adjList = Array.from({ length: P.n }, () => []);
+    const comp = components(P.n, present), adjList = Array.from({ length: P.n }, () => /** @type {number[]} */ ([]));
+
     for (const [a, b] of present) { adjList[a].push(b); adjList[b].push(a); }
     const bfs = bfsGenerations(P.n, adjList, 0), gw = galtonWatson(P.c, rng(F.gwSeed, "galton-watson"));
     return { present, comp, L1: comp.sizes[0] || 1, L2: comp.sizes[1] || 0, count: comp.sizes.length, bfs, gw, X: (comp.sizes[0] || 1) / P.n };
@@ -431,18 +458,24 @@ defineModule({
 
 /* ---------- Dependent random choice ---------- */
 
+/** @param {number} N @param {number} alpha @param {() => number} r */
 function bipartiteGraph(N, alpha, r) {
   const adj = Array.from({ length: N }, () => new Uint8Array(N));
   for (let a = 0; a < N; a++) for (let b = 0; b < N; b++) adj[a][b] = r() < alpha ? 1 : 0;
   return adj;
 }
+/** @param {Uint8Array[]} adj */
 function codegrees(adj) {
-  const N = adj.length, co = [];
+  const N = adj.length;
+  /** @type {number[][]} */
+  const co = [];
   for (let a = 0; a < N; a++) { co.push(new Array(N).fill(0)); }
   for (let a = 0; a < N; a++) for (let c = a + 1; c < N; c++) { let s = 0; for (let b = 0; b < N; b++) s += adj[a][b] & adj[c][b]; co[a][c] = co[c][a] = s; }
   return co;
 }
+/** @param {{ adj: Uint8Array[], co: number[][] }} F @param {number} t @param {number} mThr */
 function drcTerms(F, t, mThr) {
+
   const N = F.adj.length, deg = F.adj.map((row) => row.reduce((s, x) => s + x, 0));
   let EA = 0; for (const d of deg) EA += (d / N) ** t;
   let Ebad = 0, badPairs = 0;
@@ -549,4 +582,5 @@ defineModule({
   scenes: ["problem", "random-object", "variable", "bad", "transition", "experiment", "conclusion"],
 });
 
-Object.assign(PM, { tripleSystem, runNibble, maxCodegree, symmetricEigenvalues, paleyGraph, quasiGraph, edgesBetween, giantFraction, bfsGenerations, galtonWatson, bipartiteGraph, codegrees, drcTerms, PALEY_PRIMES });
+const STRUCTURE_API = { tripleSystem, runNibble, maxCodegree, symmetricEigenvalues, paleyGraph, quasiGraph, edgesBetween, giantFraction, bfsGenerations, galtonWatson, bipartiteGraph, codegrees, drcTerms, PALEY_PRIMES };
+Object.assign(PM, STRUCTURE_API);

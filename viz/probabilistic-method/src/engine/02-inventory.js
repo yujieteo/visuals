@@ -25,7 +25,13 @@ const FAMILIES = [
   { id: "drc", title: "Dependent random choice", branch: "structure" },
 ];
 
+/**
+ * One technique: its number, stable id, title, family, archetypal problem, planned visual, and the lab and scene
+ * that demonstrate it (null when not yet built).
+ * @typedef {{ n: number, id: string, title: string, family: string, problem: string, visual: string, module: string | null, scene: string | null }} Technique
+ */
 /* [number, id, title, family, archetypal problem, planned visual, module or null, scene] */
+/** @type {[number, string, string, string, string, string, string | null, string | null][]} */
 const INVENTORY_ROWS = [
   [1, "basic-random-construction", "Basic random construction", "elementary", "Lower bound for Ramsey numbers", "Randomly 2-colour the edges of K_n; monochromatic K_k appear and disappear", "first-moment", "random-object"],
   [2, "first-moment-method", "First moment method", "elementary", "Show a random object avoids a forbidden configuration", "Histogram of the number X of bad configurations, with E[X] < 1 marked", "first-moment", "experiment"],
@@ -120,9 +126,11 @@ const INVENTORY_ROWS = [
   [91, "testing-colourability", "Testing colourability", "testing", "Local obstruction sampling", "Random subsets and their induced chromatic structure", null, null],
   [92, "dependent-random-choice", "Dependent random choice", "drc", "A large set whose small subsets have many common neighbours", "Random vertices; their neighbourhoods intersect and contract", "drc", "random-object"],
 ];
+/** @type {Technique[]} */
 const INVENTORY = INVENTORY_ROWS.map(([n, id, title, family, problem, visual, module, scene]) => ({ n, id, title, family, problem, visual, module, scene }));
 
 /* Search aliases: words a learner might type, resolved to techniques and modules. */
+/** @type {Record<string, string[]>} */
 const ALIASES = {
   "bad events": ["union-bound", "symmetric-lll", "janson"],
   "tails": ["chernoff", "azuma-hoeffding", "talagrand", "kim-vu"],
@@ -162,6 +170,7 @@ const ALIASES = {
 };
 
 /* Section 7: the concept map. Nodes are branches and topics; each topic lists the modules or techniques it opens. */
+/** @type {{ nodes: { id: string, label: string, x: number, y: number, kind: string, modules?: string[] }[], edges: [string, string][] }} */
 const CONCEPT_MAP = {
   nodes: [
     { id: "pm", label: "Probabilistic method", x: 50, y: 6, kind: "root" },
@@ -177,4 +186,6 @@ const CONCEPT_MAP = {
     ["concentration", "structure"], ["structure", "pseudorandom"], ["pseudorandom", "algorithms"], ["algorithms", "information"]],
 };
 
-Object.assign(PM, { FAMILIES, INVENTORY, ALIASES, CONCEPT_MAP });
+const INVENTORY_API = { FAMILIES, INVENTORY, ALIASES, CONCEPT_MAP };
+Object.assign(PM, INVENTORY_API);
+
