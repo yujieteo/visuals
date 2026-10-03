@@ -2,7 +2,7 @@
 // For each viz/<slug>/ with a tsconfig.json (which extends ../../tsconfig.base.json): copy the page's own
 // inline <script> blocks, in page order, into viz/<slug>/.typecheck/inline/ (ignored by Git), where that
 // tsconfig.json includes them (".typecheck/inline/*.js") as global scripts, then run the pinned tsc on it.
-// visual.json "typecheck" names the page (index.html when absent) and the ids of blocks to leave out: a
+// The page is index.html; visual.json "typecheck.skip" names the ids of blocks to leave out: a
 // builder's inlined copies of src/*.js, which tsc checks from src/ instead, and the beamdswitch and report
 // templates that must stay byte-identical to the site's.
 // Usage: node scripts/typecheck.mjs SLUG...   (after npm ci; scripts/check.py runs it per visual)
@@ -46,13 +46,12 @@ function typecheck(slug) {
     return 1;
   }
   const meta = JSON.parse(readFileSync(new URL("visual.json", folder), "utf8"));
-  const page = meta.typecheck?.page ?? "index.html";
-  const files = extract(readFileSync(new URL(page, folder), "utf8"), page, meta.typecheck?.skip);
+  const files = extract(readFileSync(new URL("index.html", folder), "utf8"), "index.html", meta.typecheck?.skip);
   const out = new URL(".typecheck/inline/", folder);
   rmSync(out, { recursive: true, force: true });
   mkdirSync(out, { recursive: true });
   for (const { name, text } of files) writeFileSync(new URL(name, out), text);
-  console.log(`viz/${slug}: ${files.length} inline script(s) from ${page}`);
+  console.log(`viz/${slug}: ${files.length} inline script(s) from index.html`);
   const tsc = fileURLToPath(new URL("node_modules/.bin/tsc", ROOT));
   return spawnSync(tsc, ["-p", fileURLToPath(new URL("tsconfig.json", folder))], { stdio: "inherit" }).status ?? 1;
 }

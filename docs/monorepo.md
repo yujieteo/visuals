@@ -35,7 +35,7 @@ tsconfig.base.json     compiler options every visual's tsconfig.json extends
 
 `visual.json` carries the site's catalogue fields (`title`, `summary`, `source_url`, `fetched`, `data`,
 `webmcp_tools`, `tags`, `category`, optional `links`, `assets`, `downloads`) and the tooling fields: `checks`
-(commands run from the folder, when the defaults do not fit), `typecheck` (the page and the inline
+(commands run from the folder, when the defaults do not fit), `typecheck` (the `index.html` inline
 script ids the extractor skips: a builder's inlined copies of `src/*.js`, checked from `src/`, and the
 byte-identical `beamdswitch` and `report` templates), `uses` (shared files outside `viz/` the visual depends on, so changing one runs only its users) and
 `published: false` for a visual the site does not publish. The folder name is the slug.
