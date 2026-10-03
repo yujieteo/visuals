@@ -1,6 +1,7 @@
 // Calibrator: the fuller section-28 checks. A pasted session opens on question
 // 1 with no probability; arrow keys choose a value without saving, Enter saves
-// it and moves on; the session survives a reload (localStorage); the export
+// it and moves on (question 1 is a slow card, so a quick Enter asks first); the
+// session survives a reload (localStorage); the export
 // sheet saves the answered session as TOON; and pasting another session over
 // an unfinished one asks first. The page keeps no state in the URL and has no
 // Reset: answers are immutable by design.
@@ -59,6 +60,10 @@ await fullSuite("calibrator", {
       assert.equal(await value(s.page), "60%", "Page Up adds 10");
       assert.equal(await count(s.page), "1 / 2", "choosing neither saves nor moves on");
       await s.page.keyboard.press("Enter");
+      // Question 1 has an action_impact of 90, so a first answer this quick asks before it is saved.
+      await s.page.locator("#hasty").waitFor({ state: "visible" });
+      assert.equal(await count(s.page), "1 / 2", "a hasty answer to a slow card is held, not saved");
+      await s.page.locator("#hasty-save").click();
       await s.page.waitForFunction(() => document.getElementById("count")?.textContent === "2 / 2");
       assert.equal(await value(s.page), "Unanswered", "Enter saves and moves to the next question");
       await s.page.locator("#back").click();
