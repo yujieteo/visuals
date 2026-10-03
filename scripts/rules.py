@@ -15,6 +15,8 @@ and scripts/check_repo.py the repository-wide ones. No check reads the network.
   python        unused imports, unused local variables and definitions made twice in the visual's Python
   source-tests  tests whose every assertion checks the page's source text, or a value read out of it, instead
                 of running the code
+  vendor        every vendored block of the page (<script data-vendor>, such as MathJax 4.1.3 with its Fira font)
+                is the bundle scripts/visual_kit.py builds from scripts/vendor/, unchanged
   artifacts     no tracked __pycache__, *.pyc, .DS_Store or AppleDouble ._* file, and .gitignore keeps them out
 
 A finding a visual keeps on purpose is listed, with its reason in the pull request, in visual.json
@@ -79,6 +81,27 @@ def template_problems(folder, expected=None):
     builder = any((folder / name).is_file() for name in ("build.py", "build.mjs"))
     if report.is_file() and not builder and report.read_text(encoding="utf-8").strip() not in html:
         problems.append("index.html does not inline report.js unchanged")
+    return problems
+
+
+# vendor -----------------------------------------------------------------------------------------------------
+
+VENDOR_BLOCK = re.compile(r'<script\b[^>]*\bdata-vendor="([^"]*)"[^>]*>\n(.*?)\n</script>', re.S)
+
+
+def vendor_problems(html):
+    """Vendored blocks of the page that are not the bundle scripts/visual_kit.py builds from scripts/vendor/."""
+    import visual_kit
+    bundles = {visual_kit.MATHJAX: visual_kit.mathjax_bundle}
+    blocks = VENDOR_BLOCK.findall(html)
+    problems = []
+    if len(blocks) != len(re.findall(r"<script\b[^>]*\bdata-vendor=", html)):
+        problems.append("index.html: a <script data-vendor> block is not in the form scripts/visual_build.py writes; rebuild the page")
+    for name, body in blocks:
+        if name not in bundles:
+            problems.append(f'index.html: <script data-vendor="{name}"> names no bundle in scripts/visual_kit.py ({", ".join(bundles)})')
+        elif body != bundles[name]().rstrip("\n"):
+            problems.append(f'index.html: <script data-vendor="{name}"> differs from the vendored files; rebuild the page, never edit the block')
     return problems
 
 

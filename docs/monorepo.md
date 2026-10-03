@@ -26,9 +26,15 @@ viz/<slug>/            one visual, self-contained
   SKILLS.md            how an agent uses the page and its WebMCP tools
   AGENTS.md            at most a few lines specific to changing this visual
   e2e/                 its browser checks: manifest.json and, when it has them, full.test.mjs
+  generated.json       for a visual scripts/new_visual.py wrote: its options, the kit's version and the template's SHA-256
 e2e/                   the shared browser-check harness, and the checks of the visuals the site keeps (site/<slug>/)
 scripts/               shared tooling: changed.py, check.py, build_catalogue.py, check_repo.py,
                        typecheck.mjs, with_chrome.py, and the builders' shared modules (page_parts, style_guide, stock_cases)
+  new_visual.py        the generator of new visuals, and its drift check and update
+  visual_build.py, visual_kit.py, kit/   what a generated page is built from: the shell, the state and export
+                       runtime, the style tokens and the shared tests
+  templates/           the site's beamdswitch template and its parsers, copied unchanged
+  vendor/mathjax/      MathJax 4.1.3 and its Fira font, byte for byte, with their licences and SHA-256 list
 schema/visual.schema.json   what visual.json may hold
 tests/                 tests of the shared tooling only
 package.json           pins typescript and @types/node, nothing else
@@ -62,6 +68,8 @@ deterministic rules that replaced review by reading (`scripts/rules.py`, `script
 | `pydead` | the folder's Python has an unused import or local, or defines a function or class twice |
 | `deadcode` | tsc finds an unused local or import, unreachable code, or a `let`, `const` or class declared twice in the page's inline scripts (one global scope, as the browser runs them) or its test modules; it needs `npm ci` |
 | `sourcetests` | a test's every assertion checks the page's source text, or a value read out of it, instead of running its code |
+| `vendor` | a vendored block of the page (`<script data-vendor>`, such as the embedded MathJax) is not the bundle `scripts/visual_kit.py` makes from `scripts/vendor/`; the type and dead-code checks leave such a block out |
+| `generated` | a visual with a `generated.json` holds a mechanical file, or a `uses` or `typecheck` key, that differs from what `scripts/new_visual.py` writes now |
 
 A finding a visual keeps on purpose goes in `visual.json` `allow`, under the check's name, as the check
 prints it but without the line number after the file name, so an edit elsewhere in the file does not break
@@ -70,8 +78,10 @@ with the same text still fails. An entry that no longer matches a finding fails,
 code is fixed.
 `python3 scripts/check_repo.py` is the fast repository-wide check: every `visual.json` against the schema
 (which requires at least 3 `webmcp_tools`), the folder rules, the absolute-path scan, no tracked `__pycache__`,
-`*.pyc`, `.DS_Store` or AppleDouble `._*` file with `.gitignore` keeping them out, and no unused or duplicated
-Python in `scripts/` and `tests/`. The tooling's own `tsconfig.json` fails on unused locals and unreachable code.
+`*.pyc`, `.DS_Store` or AppleDouble `._*` file with `.gitignore` keeping them out, no unused or duplicated
+Python in `scripts/` and `tests/`, and the copies in `scripts/` unchanged: the vendored MathJax files against
+`scripts/vendor/mathjax/SOURCES.json`, `scripts/kit/style-tokens.css` against `scripts/kit/SOURCES.json`, and
+`scripts/templates/beamdswitch.js` against the SHA-256 that `scripts/sync_template.py` records. The tooling's own `tsconfig.json` fails on unused locals and unreachable code.
 
 `scripts/changed.py` decides what a change runs: a path in `viz/<slug>/` selects that visual; a path a
 visual lists in `uses` selects its users; documentation (`*.md` at the root or in `e2e/`, `docs/`) selects
@@ -83,6 +93,19 @@ harness does not use, runs none. Each visual's browser checks get one job per
 browser; when more than 40 visuals are selected they are split into 8 shards. CI computes it against the
 pull request's base, or the previous commit on a push to `main`; `workflow_dispatch` and the daily run run
 everything, the site's own visuals included.
+
+## Generating a visual
+
+`python3 scripts/new_visual.py <slug> --title ... --summary ... [--mathjax]` writes a new visual whose
+mechanical parts come from shared, versioned code instead of copies: its `build.py` calls
+`scripts/visual_build.py`, which inlines the kit (`scripts/kit/`), the style guide's tokens and, with
+`--mathjax`, the vendored MathJax, and its `visual.json` lists those paths in `uses`, so a change to one runs
+only the generated visuals. The one copy is `beamdswitch.js`, which must stay byte-identical to the site's
+template; `generated.json` records its source and SHA-256, and `scripts/sync_template.py` updates both. The
+folder's domain files (model, views, report, data, the domain's tests, `SKILLS.md`, `AGENTS.md`) are written
+once from a starter and never rewritten. `--check` reports drift in the mechanical parts of a generated visual, and
+`--update` rewrites them. `viz/visual-skeleton/` is the generator's output, committed
+unchanged and unpublished, so CI and the daily browser run keep testing what the generator writes.
 
 ## Generated, never committed
 

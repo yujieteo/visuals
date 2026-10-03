@@ -2,8 +2,8 @@
 // imports, unreachable code, unused labels, and a let, const or class declared twice in one scope (in a page,
 // the inline scripts share one global scope, as the browser runs them, where the second throws). tsc accepts a
 // function declared twice in JavaScript, so review still looks for that.
-// For each viz/<slug>/: copy the inline scripts of index.html (less the byte-identical beamdswitch template
-// and blocks holding only a build placeholder) into viz/<slug>/.typecheck/deadcode/ (ignored by Git) beside
+// For each viz/<slug>/: copy the inline scripts of index.html (less the byte-identical beamdswitch template,
+// vendored blocks (data-vendor) and blocks holding only a build placeholder) into viz/<slug>/.typecheck/deadcode/ (ignored by Git) beside
 // a generated tsconfig.json that also includes the folder's own tests/*.test.mjs, tests/*.mjs and
 // tests/*.cjs, run tsc with noUnusedLocals and allowUnreachableCode: false, and report only the diagnostics
 // in CODES. Type errors are scripts/typecheck.mjs's, for the visuals that opt in with a tsconfig.json.

@@ -5,15 +5,19 @@ Every viz/<slug>/ has a visual.json that matches schema/visual.schema.json and n
 file in the working tree, including ignored ones such as .claude/settings.local.json, holds an absolute
 user-home path; Git tracks no build or OS artifact (__pycache__, *.pyc, .DS_Store, AppleDouble ._*) and
 .gitignore keeps them out; and the shared tooling's Python (scripts/, tests/) has no unused import or local
-and no definition made twice. Each visual's own checks are scripts/check.py's; the rules are scripts/rules.py.
+and no definition made twice; the vendored MathJax files match the SHA-256 list in scripts/vendor/mathjax/SOURCES.json;
+the kit's copied files match scripts/kit/SOURCES.json; and scripts/templates/beamdswitch.js, the copy
+scripts/new_visual.py writes, is the template whose SHA-256 scripts/sync_template.py recorded. Each visual's own checks are scripts/check.py's; the rules are scripts/rules.py.
 
 Usage: scripts/check_repo.py
 """
+import json
 import re
 import subprocess
 import sys
 
 import rules
+import visual_kit
 from build_catalogue import load
 from visuals import ROOT
 
@@ -44,16 +48,33 @@ def tooling_problems(root=ROOT):
     return [problem for folder in ("scripts", "tests") for problem in rules.python_folder_problems(root / folder, f"{folder}/")]
 
 
+def shared_copy_problems(root=ROOT):
+    """Vendored files that changed, and a beamdswitch template copy in scripts/templates/ that is not the recorded one."""
+    problems = visual_kit.vendor_problems(root / "scripts" / "vendor" / "mathjax")
+    kit = root / "scripts" / "kit"
+    for name, source in json.loads((kit / "SOURCES.json").read_text(encoding="utf-8"))["files"].items():
+        if visual_kit.sha256((kit / name).read_bytes()) != source["sha256"]:
+            problems.append(f"scripts/kit/{name}: differs from {source['source']} at {source['commit'][:12]} (scripts/kit/SOURCES.json); "
+                            "copy the new file and record its sha256, never edit it here")
+    template = (root / "scripts" / "templates" / "beamdswitch.js").read_text(encoding="utf-8")
+    expected = (root / "scripts" / "templates" / "beamdswitch.sha256").read_text(encoding="utf-8").split()[0]
+    if visual_kit.sha256(template) != expected:
+        problems.append("scripts/templates/beamdswitch.js: not the template whose SHA-256 scripts/templates/beamdswitch.sha256 "
+                        "records; run scripts/sync_template.py, never edit it by hand")
+    return problems
+
+
 def main():
     by_slug, errors = load()
     errors += [f"{path}: holds an absolute user-home path" for path in home_paths()]
     errors += rules.artifact_problems(tracked(), (ROOT / ".gitignore").read_text(encoding="utf-8"))
     errors += tooling_problems()
+    errors += shared_copy_problems()
     if errors:
         print("\n".join(errors), file=sys.stderr)
         sys.exit(1)
     print(f"verified: {len(by_slug)} visual folder(s), every visual.json valid, no absolute user-home paths, "
-          "no tracked build or OS artifacts, no unused or duplicated tooling Python")
+          "no tracked build or OS artifacts, no unused or duplicated tooling Python, vendored files and template copy unchanged")
 
 
 if __name__ == "__main__":

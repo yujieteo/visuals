@@ -17,7 +17,10 @@ page. See `README.md` for the layout and commands and `SKILLS.md` for the rules.
 
 ## Add a visual
 
-Create `viz/<slug>/` with `index.html`, its data, `visual.json` and its tests.
+Run `python3 scripts/new_visual.py <slug> --title "..." --summary "..."` (add
+`--mathjax` when the visual needs it), then replace the starter
+model, views, report and data with the domain and run `python3 build.py` in
+the folder. `SKILLS.md` says what the generator writes and what stays manual.
 Nothing else needs an edit: CI, the catalogue and the site find the folder.
 
 ## Rules
