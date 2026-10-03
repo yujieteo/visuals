@@ -43,9 +43,15 @@ async function launch(chrome) {
   if (process.platform === "linux") args.push("--no-sandbox");
   const proc = spawn(chrome, args, { stdio: "ignore" });
   const portFile = path.join(profile, "DevToolsActivePort");
-  const [port, wsPath] = (await until("Chrome's DevTools port", () => fs.existsSync(portFile) && fs.readFileSync(portFile, "utf8").trim().split("\n").length === 2 && fs.readFileSync(portFile, "utf8").trim().split("\n")));
-  const ws = new WebSocket(`ws://127.0.0.1:${port}${wsPath}`);
-  await new Promise((ok, bad) => { ws.onopen = ok; ws.onerror = bad; });
+  let ws;
+  try {
+    const [port, wsPath] = (await until("Chrome's DevTools port", () => fs.existsSync(portFile) && fs.readFileSync(portFile, "utf8").trim().split("\n").length === 2 && fs.readFileSync(portFile, "utf8").trim().split("\n")));
+    ws = new WebSocket(`ws://127.0.0.1:${port}${wsPath}`);
+    await new Promise((ok, bad) => { ws.onopen = ok; ws.onerror = bad; });
+  } catch (err) {
+    proc.kill("SIGKILL"); // a Chrome left running keeps the test process alive until the job times out
+    throw err;
+  }
   let id = 0;
   const pending = new Map(), listeners = [];
   ws.onmessage = (m) => {
