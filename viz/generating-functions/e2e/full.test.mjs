@@ -2,12 +2,34 @@
 // URL fragment (#coin-change?n=15), modes push history, Cmd/Ctrl+K opens the
 // command palette and the BeamMD Switch menu exports Markdown decks.
 import assert from "node:assert/strict";
-import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../lib/full.js";
+import { readFile } from "node:fs/promises";
+import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite } from "../../lib/full.js";
 
 /** @param {import("playwright").Page} page */
 const heading = (page) => page.locator("main h1, main h2").first().textContent();
 /** @param {import("playwright").Page} page */
 const coefficient = async (page) => /\[x\^?(\d+)\]/.exec(await page.locator("main").innerText())?.[1];
+
+/**
+ * Click a control that saves a file or copies text, and return that text. The
+ * clipboard is a stand-in, so no browser asks for permission.
+ * @param {import("playwright").Page} page
+ * @param {import("playwright").Locator} control
+ */
+async function output(page, control) {
+  await page.evaluate(() => {
+    const w = /** @type {Window & { __copied?: string }} */ (window);
+    delete w.__copied;
+    Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: async (/** @type {string} */ t) => { w.__copied = t; } } });
+  });
+  const download = page.waitForEvent("download", { timeout: 5_000 });
+  const copied = page.waitForFunction(() => /** @type {Window & { __copied?: string }} */ (window).__copied, undefined, { timeout: 5_000 });
+  await control.click();
+  const first = await Promise.any([download, copied]);
+  download.catch(() => {});
+  copied.catch(() => {});
+  return "path" in first ? readFile(await first.path(), "utf8") : String(await first.jsonValue());
+}
 
 await fullSuite("generating-functions", {
   "url-state": async ({ open }) => {
@@ -95,17 +117,17 @@ await fullSuite("generating-functions", {
     }
   },
 
+  // Spec section 14: Markdown of the session state, separate from the section 15 deck (beamdswitch-export).
   "markdown-export": async ({ open }) => {
-    const s = await open("#coin-change");
+    const s = await open("#coin-change?n=15");
     try {
+      assert.equal(await coefficient(s.page), "15");
       await s.page.locator("#beam-btn").click();
-      await s.page.getByRole("menuitem", { name: "Export current lesson" }).click();
-      await s.page.locator("#export").waitFor({ state: "visible" });
-      const shown = await s.page.locator("#export-text").inputValue();
-      const file = await saved(s.page, () => s.page.locator("#export-download").click());
-      assert.match(file.name, /\.md$/);
-      assert.equal(file.text, shown, "the saved file is the Markdown shown");
-      assert.match(file.text, /Coin change/i, "the export is about the current lesson");
+      const copyMarkdown = s.page.getByRole("menuitem", { name: "Copy Markdown", exact: true });
+      const text = await output(s.page, copyMarkdown);
+      assert.match(text, /Coin change/i, "the Markdown is about the current lesson");
+      assert.match(text, /\bn\b\s*[:=]\s*15\b/, "the Markdown carries the page's n");
+      assert.doesNotMatch(text, /^::: narration$/m, "Copy Markdown copies the session state, not the beamdswitch deck (spec section 14)");
       assertClean(s);
     } finally {
       await s.close();
