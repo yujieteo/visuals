@@ -23,10 +23,12 @@ test("mouse dragging a point-force handle through the section cursor reaches the
     if (response.error) callbacks.reject(new Error(response.error.message));
     else callbacks.resolve(response.result);
   };
+  /** @param {string} method @returns {Promise<any>} the DevTools protocol's reply, whatever shape that method returns */
   const send = (method, params = {}) => new Promise((resolve, reject) => {
     pending.set(++id, { resolve, reject });
     socket.send(JSON.stringify({ id, method, params }));
   });
+  /** @param {string} expression */
   const evaluate = async (expression) => {
     const response = await send("Runtime.evaluate", { expression, returnByValue: true, awaitPromise: true });
     assert.equal(response.exceptionDetails, undefined);
@@ -74,6 +76,7 @@ test("the vendored beamdswitch page is the pinned upstream build", () => {
 });
 
 /* An open tab on the isolated Chrome: evaluate(expression) runs in the page and returns its value. */
+/** @param {string} url */
 async function tab(url) {
   const target = await (await fetch(`${browser}/json/new?about:blank`, { method: "PUT" })).json();
   const socket = new WebSocket(target.webSocketDebuggerUrl);
@@ -87,10 +90,12 @@ async function tab(url) {
     if (response.error) callbacks.reject(new Error(response.error.message));
     else callbacks.resolve(response.result);
   };
+  /** @param {string} method @returns {Promise<any>} the DevTools protocol's reply, whatever shape that method returns */
   const send = (method, params = {}) => new Promise((resolve, reject) => {
     pending.set(++id, { resolve, reject });
     socket.send(JSON.stringify({ id, method, params }));
   });
+  /** @param {string} expression */
   const evaluate = async (expression) => {
     const response = await send("Runtime.evaluate", { expression, returnByValue: true, awaitPromise: true });
     assert.equal(response.exceptionDetails, undefined, JSON.stringify(response.exceptionDetails));
@@ -137,6 +142,7 @@ test("every slide of every preset's deck fits beamdswitch's slide, and every han
     await page.evaluate(`new Promise((resolve) => { const ready = () => (window.beamdswitch && window.MathJax && MathJax.tex2svg ? resolve() : setTimeout(ready, 20)); ready(); })`);
     for (const p of raw.presets) for (const units of Object.keys(B.UNIT_SYSTEMS)) for (const origin of ["left", "mid"]) {
       const material = raw.materials.find((m) => m.id === p.material);
+      assert.ok(material, p.material);
       const r = B.solve({ length: p.length, material, section: B.sectionProperties(p.section), supports: p.supports, loads: p.loads });
       r.extremes = B.extremes(r);
       const md = H.deck(H.beamReport(r, { units, origin, at: p.length / 3, title: p.label, material: { label: material.label } }));

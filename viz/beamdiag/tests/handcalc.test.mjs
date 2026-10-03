@@ -11,11 +11,22 @@ const raw = require("../raw.json");
 const fixtures = require("../fixtures.json");
 const reference = require("../reference.json");
 const { sig, sci, shortNf } = B.format;
+/** @typedef {ReturnType<typeof B.solve>} Result */
+/** @typedef {Parameters<typeof B.toUnits>[1]} Quantity */
+/** @typedef {ReturnType<typeof H.frames>[number]["frames"][number]} HFrame */
+/** @typedef {HFrame["blocks"][number]} Block */
+/** @typedef {import("./fixtures/beamdswitch/deck.mjs").DeckFrame} DeckFrame */
+/** @typedef {{ id: string, label?: string, length: number, material: string, section: object, supports: object[], loads: object[] }} Preset */
+/** @template T @param {T | undefined | null} x @param {string} what @returns {T} */
+const found = (x, what) => { assert.ok(x, what); return x; };
 
 const UNITS = Object.keys(B.UNIT_SYSTEMS), ORIGINS = ["left", "mid"];
-const solved = (model) => { const r = B.solve(model); r.extremes = B.extremes(r); return r; };
-const presetModel = (p) => ({ length: p.length, material: raw.materials.find((m) => m.id === p.material), section: B.sectionProperties(p.section), supports: p.supports, loads: p.loads });
+/** @param {unknown} model @returns {Result & { extremes: NonNullable<Result["extremes"]> }} */
+const solved = (model) => { const r = B.solve(model); r.extremes = B.extremes(r); return /** @type {Result & { extremes: NonNullable<Result["extremes"]> }} */ (r); };
+/** @param {Preset} p */
+const presetModel = (p) => ({ length: p.length, material: raw.materials.find((/** @type {{ id: string }} */ m) => m.id === p.material), section: B.sectionProperties(p.section), supports: p.supports, loads: p.loads });
 /* Each kind of beam the hand calculations must handle. */
+/** @type {Record<string, string>} */
 const KINDS = {
   "simply-supported-udl": "determinate, two pins",
   "cantilever-tip-load": "cantilever",
@@ -26,10 +37,12 @@ const KINDS = {
   "continuous-32-span-fixed-ends-udl": "continuous spans, too many unknowns to write out",
 };
 /* Round-off far below the largest value of the same kind on the beam reads as zero, as on the page. */
+/** @param {ReturnType<typeof solved>} r @returns {Record<string, number>} */
 function scales(r) {
   const ex = r.extremes;
   return { V: Math.abs(ex.V.value), M: Math.abs(ex.M.value), v: Math.abs(ex.v.value), theta: Math.abs(ex.v.value) / r.model.length };
 }
+/** @type {Record<string, Quantity>} */
 const QUANTITY = { V: "force", M: "moment", v: "length", theta: "angle" };
 
 test("the fixtures cover every kind of beam the hand calculations handle", () => {
@@ -41,30 +54,30 @@ test("the fixtures cover every kind of beam the hand calculations handle", () =>
 
 test("the hand chain reproduces the stiffness solver and reference.py on every fixture, unit convention and origin", () => {
   for (const c of fixtures.cases) {
-    const r = solved(c.model), ref = reference.cases.find((x) => x.id === c.id), sc = scales(r);
+    const r = solved(c.model), ref = found(reference.cases.find((x) => x.id === c.id), c.id), sc = scales(r);
     for (const units of UNITS) for (const origin of ORIGINS) {
       const what = `${c.id} ${units} ${origin}`, u = B.UNIT_SYSTEMS[units], D = H.derive(r, { units, origin });
-      const toSI = (x, key) => B.fromUnits(x, QUANTITY[key], u);
+      const toSI = (/** @type {number} */ x, /** @type {string} */ key) => B.fromUnits(x, QUANTITY[key], u);
       // Reactions: solved by hand from the written equations whenever they are written.
       const deg = B.indeterminacy(r.model.supports);
       assert.equal(D.written, deg === 0 || D.unknowns.length <= H.WRITE_UNKNOWNS, what);
       if (D.written) {
-        assert.ok(D.hand, what);
-        const reactions = D.unknowns.map((k, i) => [k, i]).filter(([k]) => k.kind === "R" || k.kind === "M");
+        const handValues = found(D.hand, what);
+        const reactions = D.unknowns.flatMap((k, i) => (k.kind === "R" || k.kind === "M" ? [/** @type {const} */ ([k, i])] : []));
         const size = Math.max(...ref.reactions.map((re) => Math.abs(re.Fy)), 1e-300), msize = Math.max(...ref.reactions.map((re) => Math.abs(re.Mz) + Math.abs(re.Fy) * r.model.length), 1e-300);
         for (const [k, i] of reactions) {
-          const re = ref.reactions.find((x) => x.x === k.r.x), hand = toSI(D.hand[i], k.kind === "R" ? "V" : "M");
+          const re = found(ref.reactions.find((x) => x.x === k.r.x), k.name), hand = toSI(handValues[i], k.kind === "R" ? "V" : "M");
           const want = k.kind === "R" ? re.Fy : re.Mz, tol = 1e-7 * (k.kind === "R" ? size : msize);
           assert.ok(Math.abs(hand - want) <= tol, `${what} ${k.name}: hand ${hand}, reference ${want}`);
-          assert.ok(Math.abs(D.solver[i] - D.hand[i]) <= 1e-7 * Math.abs(B.toUnits(k.kind === "R" ? size : msize, k.kind === "R" ? "force" : "moment", u)), `${what} ${k.name}: hand vs solver`);
+          assert.ok(Math.abs(D.solver[i] - handValues[i]) <= 1e-7 * Math.abs(B.toUnits(k.kind === "R" ? size : msize, k.kind === "R" ? "force" : "moment", u)), `${what} ${k.name}: hand vs solver`);
         }
       }
       // Every segment: the hand chain at both ends against the solver and the exact reference.
       const points = new Map(ref.points.map((p) => [p.x, p]));
       for (const seg of D.segments) {
-        for (const key of ["V", "M", "theta", "v"]) {
+        for (const key of /** @type {const} */ (["V", "M", "theta", "v"])) {
           const tol = 1e-6 * sc[key];
-          for (const end of ["start", "end"]) {
+          for (const end of /** @type {const} */ (["start", "end"])) {
             const hand = toSI(seg.hand[end][key], key), solver = toSI(seg[end][key], key);
             assert.ok(Math.abs(hand - solver) <= tol, `${what} segment ${seg.index} ${end} ${key}: hand ${hand}, solver ${solver}`);
             const p = points.get(end === "start" ? seg.a : seg.b);
@@ -74,7 +87,7 @@ test("the hand chain reproduces the stiffness solver and reference.py on every f
           }
           // The written polynomials, evaluated at the far end, land on the solver's value there.
           const coef = seg.poly[key === "theta" ? "theta" : key], scale = key === "theta" || key === "v" ? D.c.EI : 1;
-          const atEnd = coef.reduce((acc, k, n) => acc + k * seg.h ** n, 0) / scale;
+          const atEnd = coef.reduce((/** @type {number} */ acc, /** @type {number} */ k, /** @type {number} */ n) => acc + k * seg.h ** n, 0) / scale;
           assert.ok(Math.abs(toSI(atEnd, key) - toSI(seg.end[key], key)) <= tol, `${what} segment ${seg.index} ${key}(h)`);
         }
       }
@@ -84,6 +97,7 @@ test("the hand chain reproduces the stiffness solver and reference.py on every f
 });
 
 /* The presets, plus beams with a right-hand fixed end, an overhang and no load. */
+/** @type {Preset[]} */
 const EXTRA = [
   { id: "right-cantilever", label: "Right-hand cantilever", length: 4, supports: [{ kind: "fixed", x: 4 }],
     loads: [{ kind: "point", x: 0, F: -3000 }, { kind: "moment", x: 4, C: 2000 }, { kind: "dist", x1: 1, x2: 4, q1: -1000, q2: -4000 }] },
@@ -91,15 +105,17 @@ const EXTRA = [
     loads: [{ kind: "point", x: 7.5, F: -8000 }, { kind: "moment", x: 0, C: -5000 }, { kind: "dist", x1: 0, x2: 7.5, q1: 2000, q2: -6000 }] },
   { id: "unloaded", label: "Unloaded beam", length: 3, supports: [{ kind: "pin", x: 0 }, { kind: "pin", x: 3 }], loads: [] },
 ].map((p) => ({ ...p, material: "timber", section: { shape: "rect", b: 0.05, h: 0.15 } }));
+/** @type {Preset[]} */
 const BEAMS = [...raw.presets, ...EXTRA];
 const CASES = BEAMS.flatMap((p) => UNITS.flatMap((units) => ORIGINS.map((origin) => ({ p, units, origin }))));
-const textOf = (blocks) => blocks.map((b) => b.p ?? b.eq ?? (b.list ? b.list.join("\n") : [b.table.head, ...b.table.rows].map((r) => r.join(" | ")).join("\n"))).join("\n");
+/** @param {Block[]} blocks */
+const textOf = (blocks) => blocks.map((b) => b.p ?? b.eq ?? (b.list ? b.list.join("\n") : (({ head, rows }) => [head, ...rows].map((r) => r.join(" | ")).join("\n"))(found(b.table, "a table")))).join("\n");
 
 test("every number shown is the solver's, written as the page writes it", () => {
   for (const { p, units, origin } of CASES) {
     const r = solved(presetModel(p)), u = B.UNIT_SYSTEMS[units], what = `${p.id} ${units} ${origin}`, sc = scales(r);
-    const show = (si, q) => B.toUnits(si, q, u);
-    const page = (si, key) => shortNf(show(Math.abs(si) <= 1e-10 * sc[key] ? 0 : si, QUANTITY[key]));
+    const show = (/** @type {number} */ si, /** @type {Quantity} */ q) => B.toUnits(si, q, u);
+    const page = (/** @type {number} */ si, /** @type {string} */ key) => shortNf(show(Math.abs(si) <= 1e-10 * sc[key] ? 0 : si, QUANTITY[key]));
     const at = r.model.length * 0.37, parts = H.frames(r, { units, origin, at }), all = parts.flatMap((s) => s.frames);
     // Reactions: as the page's reaction list writes them.
     const reactions = textOf(all.filter((f) => /^Reactions/.test(f.title)).flatMap((f) => f.blocks));
@@ -111,7 +127,7 @@ test("every number shown is the solver's, written as the page writes it", () => 
     const segments = all.filter((f) => /^Segment \d+:/.test(f.title));
     assert.equal(segments.length, r.displacements.length - 1, what);
     segments.forEach((f, i) => {
-      const a = r.displacements[i].x, b = r.displacements[i + 1].x, table = f.blocks.find((x) => x.table).table;
+      const a = r.displacements[i].x, b = r.displacements[i + 1].x, table = found(f.blocks.find((x) => x.table)?.table, `${what} ${f.title} table`);
       const start = B.internal(r, a, "right"), end = B.internal(r, b, "left"), da = B.deflection(r, a), db = B.deflection(r, b);
       assert.deepEqual(table.rows.map((row) => row.slice(1)), [
         [page(start.V, "V"), page(end.V, "V")], [page(start.M, "M"), page(end.M, "M")],
@@ -120,13 +136,13 @@ test("every number shown is the solver's, written as the page writes it", () => 
       assert.ok(f.title.includes(`x = ${sig(show(B.fromOrigin(a, r.model.length, origin), "length"))} to ${sig(show(B.fromOrigin(b, r.model.length, origin), "length"))} ${u.symbol.length}`), `${what}: ${f.title}`);
     });
     // The selected point: the readout's values.
-    const point = all.find((f) => f.title.startsWith("At the selected point")), pt = B.at(r, at), text = textOf(point.blocks);
-    for (const [si, key] of [[pt.Vright, "V"], [pt.Mright, "M"], [pt.theta, "theta"], [pt.v, "v"]])
+    const point = found(all.find((f) => f.title.startsWith("At the selected point")), what), pt = B.at(r, at), text = textOf(point.blocks);
+    for (const [si, key] of /** @type {[number, string][]} */ ([[pt.Vright, "V"], [pt.Mright, "M"], [pt.theta, "theta"], [pt.v, "v"]]))
       assert.ok(text.includes(`= ${B.speech.texNumber(page(si, key))}`), `${what}: ${key} = ${page(si, key)} in ${text}`);
     assert.ok(point.title.endsWith(`x = ${sig(show(B.fromOrigin(at, r.model.length, origin), "length"))} ${u.symbol.length}`), what);
     // Peak stress and the equilibrium residual, as the results under the figure write them.
-    const checks = textOf(all.at(-1).blocks);
-    assert.ok(checks.includes(B.speech.texNumber(sig(show(Math.abs(r.extremes.M.value) * r.model.section.c / r.model.section.I, "stress"), 4))), `${what}: stress`);
+    const checks = textOf(found(all.at(-1), what).blocks);
+    assert.ok(checks.includes(B.speech.texNumber(sig(show(Math.abs(r.extremes.M.value) * /** @type {number} */ (r.model.section.c) / r.model.section.I, "stress"), 4))), `${what}: stress`);
     assert.ok(checks.includes(`Relative error of the two sums: ${sci(B.residual(r.equilibrium))}.`), what);
     // Every frame states its method honestly and says the solver is authoritative.
     assert.match(textOf(all[0].blocks), /The direct stiffness solver is authoritative/);
@@ -136,15 +152,15 @@ test("every number shown is the solver's, written as the page writes it", () => 
 });
 
 test("a beam with too many unknowns states the set-up and lists the solver's values instead of a worked system", () => {
-  const c = fixtures.cases.find((x) => x.id === "continuous-32-span-fixed-ends-udl"), r = solved(c.model);
+  const c = found(fixtures.cases.find((x) => x.id === "continuous-32-span-fixed-ends-udl"), "the 32-span beam"), r = solved(c.model);
   const D = H.derive(r, { units: "kN-m" });
   assert.equal(D.written, false);
   assert.equal(D.hand, null);
   const frames = H.frames(r, { units: "kN-m" }).flatMap((s) => s.frames);
-  const system = frames.find((f) => f.title.startsWith("Compatibility"));
+  const system = found(frames.find((f) => f.title.startsWith("Compatibility")), "the compatibility frame");
   assert.match(system.title, /too many to write out/);
   assert.ok(!system.blocks.some((b) => b.eq && /R_\{1\} \+/.test(b.eq)), "no numeric rows are written");
-  assert.match(textOf(frames.find((f) => f.title === "Reactions from the compatibility equations").blocks), /These are the solver's values/);
+  assert.match(textOf(found(frames.find((f) => f.title === "Reactions from the compatibility equations"), "the reactions frame").blocks), /These are the solver's values/);
 });
 
 test("the Markdown export parses in beamdswitch, with plain spoken narration on every slide and readable equations", () => {
@@ -155,7 +171,7 @@ test("the Markdown export parses in beamdswitch, with plain spoken narration on 
     assert.equal(deck.meta.title, `Hand calculations: ${p.label}`, what);
     assert.deepEqual(deck.frames.filter((f) => f.kind === "section").map((f) => f.title),
       ["Method and reactions", "Shear, moment, slope and deflection by segment", "At the selected point", "Stress and equilibrium"], what);
-    assert.equal(md.match(/^::: narration$/gm).length, deck.frames.length, what);
+    assert.equal(md.match(/^::: narration$/gm)?.length, deck.frames.length, what);
     for (const f of deck.frames) {
       assert.ok(splitSentences(f.narration).length > 0, `${what}: "${f.title}" is narrated`);
       assert.doesNotMatch(f.narration, /[$\\`*_#|<>×⁰¹²³⁴⁵⁶⁷⁸⁹⁻]/, `${what}: "${f.title}" reads as speech`);
@@ -174,15 +190,15 @@ test("the beamdswitch deck carries the hand calculations as their own narrated s
     const r = solved(presetModel(p)), what = `${p.id} ${units} ${origin}`;
     const md = H.deck(H.beamReport(r, { units, origin, at: r.model.length / 2, title: p.label })), deck = parseDeck(md);
     assert.deepEqual(deck.frames.filter((f) => f.kind === "section").map((f) => f.title), ["Set-up", "Method", "Results", "Hand calculations", "Checks and takeaway"], what);
-    assert.equal(deck.frames.find((f) => f.title === "Hand calculations").narration, "Part 4. Hand calculations.");
-    assert.equal(deck.frames.find((f) => f.title === "Checks and takeaway").narration, "Part 5. Checks and takeaway.");
+    assert.equal(deck.frames.find((f) => f.title === "Hand calculations")?.narration, "Part 4. Hand calculations.");
+    assert.equal(deck.frames.find((f) => f.title === "Checks and takeaway")?.narration, "Part 5. Checks and takeaway.");
     const hand = deck.frames.filter((f) => f.section === "Hand calculations" && f.kind === "frame");
     assert.ok(hand.some((f) => /^Segment 1:/.test(f.title)) && hand.some((f) => f.title.startsWith("At the selected point")), what);
-    assert.equal(md.match(/^::: narration$/gm).length, deck.frames.length, what);
+    assert.equal(md.match(/^::: narration$/gm)?.length, deck.frames.length, what);
     assert.equal(deck.meta.voice, "bf_emma", what);
   }
   // A long beam's deck opens a slide for every segment, as the Markdown does.
-  const c = fixtures.cases.find((x) => x.id === "random-1"), r = solved(c.model);
+  const c = found(fixtures.cases.find((x) => x.id === "random-1"), "random-1"), r = solved(c.model);
   const deck = parseDeck(H.deck(H.beamReport(r, { units: "N-mm" })));
   const segs = deck.frames.filter((f) => f.section === "Hand calculations" && /^Segment \d+: x = /.test(f.title));
   assert.equal(segs.length, r.displacements.length - 1);
@@ -197,14 +213,15 @@ test("the beamdswitch deck carries the hand calculations as their own narrated s
    takes 1.1 rows and a list item a row per 80 characters; a title stays on one line up to about 53
    characters. A hand-calculation slide is held inside these, so it fits at full size. */
 const SLIDE = { rows: 12, eqChars: 60, titleChars: 50 };
-const drawn = (tex) => tex.replace(/\\(?:mathrm|text)\{([^}]*)\}/g, "$1").replace(/\\times 10\^\{(-?\d+)\}/g, "×10$1")
+const drawn = (/** @type {string} */ tex) => tex.replace(/\\(?:mathrm|text)\{([^}]*)\}/g, "$1").replace(/\\times 10\^\{(-?\d+)\}/g, "×10$1")
   .replace(/\\(?:left|right|bigl|bigr|begin\{aligned\}|end\{aligned\})/g, "").replace(/\\[,;: ]/g, " ")
   .replace(/\\qquad/g, "    ").replace(/\\quad/g, "  ").replace(/\\frac\{1\}\{EI\}/g, "EI").replace(/\\frac/g, "")
   .replace(/\\\\/g, "").replace(/\\[a-zA-Z]+/g, "x").replace(/[{}^_&]/g, "").length;
 /* Rows and widest equation line of a slide body, read from its Markdown. */
+/** @param {string} md */
 function measureBody(md) {
   let rows = 0, widest = 0;
-  const wraps = (t) => Math.ceil(t.length / 80);
+  const wraps = (/** @type {string} */ t) => Math.ceil(t.length / 80);
   for (const block of md.split(/\n\n+/)) {
     const tex = block.match(/^\$\$ (.+) \$\$$/)?.[1];
     if (tex != null) {
@@ -217,13 +234,13 @@ function measureBody(md) {
   }
   return { rows, widest };
 }
-const numbersOf = (blocks) => textOf(blocks).match(/\d[\d.,]*/g) || [];
+const numbersOf = (/** @type {Block[]} */ blocks) => textOf(blocks).match(/\d[\d.,]*/g) || [];
 
 test("every hand-calculation slide of the deck fits beamdswitch's slide, narrated, with every number the page shows", () => {
   const random = fixtures.cases.filter((c) => /^random-|continuous-32/.test(c.id)).map((c) => ({ id: c.id, model: c.model }));
   // Determinate beams with many loads, whose sums of forces and moments wrap over many lines.
-  const loaded = [12, 14].flatMap((n) => [["simply supported", [{ kind: "pin", x: 0 }, { kind: "pin", x: 10 }]], ["cantilever", [{ kind: "fixed", x: 0 }]]]
-    .map(([kind, supports]) => ({ id: `${kind}, ${n} point loads`, model: presetModel({ length: 10, material: "steel", section: { shape: "rect", b: 0.1, h: 0.2 }, supports,
+  const loaded = [12, 14].flatMap((n) => /** @type {[string, object[]][]} */ ([["simply supported", [{ kind: "pin", x: 0 }, { kind: "pin", x: 10 }]], ["cantilever", [{ kind: "fixed", x: 0 }]]])
+    .map(([kind, supports]) => ({ id: `${kind}, ${n} point loads`, model: presetModel({ id: kind, length: 10, material: "steel", section: { shape: "rect", b: 0.1, h: 0.2 }, supports,
       loads: Array.from({ length: n }, (_, i) => ({ kind: "point", x: 0.37 + i * 9.1 / n, F: -1234.567 * (i + 1) })) }) })));
   const beams = [...BEAMS.map((p) => ({ id: p.id, model: presetModel(p) })), ...random, ...loaded];
   for (const { id, model } of beams) for (const units of UNITS) for (const origin of ORIGINS) {
@@ -246,7 +263,8 @@ test("every hand-calculation slide of the deck fits beamdswitch's slide, narrate
   }
   assert.equal(H.SLIDE_ROWS, SLIDE.rows);
 });
-const textOfDeckFrame = (f) => f.children.filter((c) => c.type === "md").map((c) => c.text).join("\n").trim();
+/** @param {DeckFrame} f */
+const textOfDeckFrame = (f) => f.children.flatMap((c) => (c.type === "md" ? [c.text] : [])).join("\n").trim();
 
 test("deck adds only the hand section to the shared template's deck, with the template's frame rules", () => {
   const T = require("../beamdswitch.js");
@@ -271,11 +289,14 @@ test("the TeX subset draws as text, fractions, superscripts and subscripts", () 
 });
 
 /* The page's hand-calculation view. */
+/** @typedef {import("./page-harness.mjs").Element} Element */
+/** @param {Element} e @returns {Element[]} */
 const node = (e) => [e, ...(e.children || []).flatMap(node)];
-const text = (e) => node(e).map((n) => n.textContent ?? "").join("");
+const text = (/** @type {Element} */ e) => node(e).map((n) => n.textContent ?? "").join("");
+/** @param {Awaited<ReturnType<typeof page>>} p @param {string} key */
 const pressPlot = (p, key) => {
   for (const fn of p.document.getElementById("plots").listeners.keydown)
-    fn({ key, shiftKey: false, preventDefault() {}, target: { closest: () => null, classList: { contains: (c) => c === "plotarea" } } });
+    fn({ key, shiftKey: false, preventDefault() {}, target: { closest: () => null, classList: { contains: (/** @type {string} */ c) => c === "plotarea" } } });
 };
 
 test("the page shows the hand calculations for every segment and the selected point, in its units and origin", async () => {
@@ -283,7 +304,7 @@ test("the page shows the hand calculations for every segment and the selected po
   p.choose("preset", "pin-pin-mixed");
   p.choose("units", "kN-m");
   p.choose("origin", "mid");
-  const body = p.document.getElementById("hand-body"), parts = body.children;
+  const body = p.document.getElementById("hand-body"), parts = /** @type {Element[]} */ (body.children);
   assert.deepEqual(parts.map((d) => d.children[0].textContent), ["Method and reactions", "Shear, moment, slope and deflection by segment", "Stress and equilibrium"]);
   const segments = parts[1].children.filter((e) => e.tag === "details");
   assert.equal(segments.length, 3);
@@ -301,28 +322,30 @@ test("the page shows the hand calculations for every segment and the selected po
   pressPlot(p, "PageDown");
   assert.equal(point.children[0].children[0].textContent, "At the selected point x = −1 m");
   assert.match(text(point.children[0]), /A support or load acts here/);
-  const readout = p.document.getElementById("readout").children.map((s) => s.children[1].textContent);
-  const V = readout[1].split(" → ").at(-1).replace(/ kN$/, "");
+  /** @type {string[]} */
+  const readout = p.document.getElementById("readout").children.map((/** @type {Element} */ s) => s.children[1].textContent);
+  const V = found(readout[1].split(" → ").at(-1), "the readout's shear").replace(/ kN$/, "");
   assert.ok(text(point.children[0]).includes(`= ${V} kN`), `${V} in ${text(point.children[0])}`);
 });
 
 test("Save Markdown and Copy Markdown hand over the same document, and nothing while the beam cannot be solved", async () => {
+  /** @type {string[]} */
   const copied = [];
-  const p = await page({ navigator: { clipboard: { writeText: async (t) => { copied.push(t); } } } });
+  const p = await page({ navigator: { clipboard: { writeText: async (/** @type {string} */ t) => { copied.push(t); } } } });
   p.choose("preset", "continuous");
   assert.equal(await p.save("save-hand", "hand-status"), "Saved beamdiag-hand-calculations.md.");
   const [file] = p.saved;
   assert.equal(file.name, "beamdiag-hand-calculations.md");
   assert.equal(file.blob.type, "text/markdown");
   const md = await file.blob.text(), deck = parseDeck(md);
-  assert.equal(deck.meta.title, `Hand calculations: ${raw.presets.find((x) => x.id === "continuous").label}`);
+  assert.equal(deck.meta.title, `Hand calculations: ${found(raw.presets.find((/** @type {Preset} */ x) => x.id === "continuous"), "the continuous preset").label}`);
   assert.equal(deck.meta.voice, "bf_emma");
   assert.ok(deck.frames.some((f) => f.title.startsWith("At the selected point")));
   assert.equal(await p.save("copy-hand", "hand-status"), "Copied the hand calculations as Markdown.");
   assert.deepEqual(copied, [md]);
   // The narrated deck now carries the same hand calculations.
   assert.match(await p.save("save-beamdswitch"), /^Saved/);
-  assert.ok(parseDeck(await p.saved.at(-1).blob.text()).frames.some((f) => f.title === "Hand calculations" && f.kind === "section"));
+  assert.ok(parseDeck(await found(p.saved.at(-1), "a saved deck").blob.text()).frames.some((f) => f.title === "Hand calculations" && f.kind === "section"));
   p.input("length", -1);
   assert.equal(await p.save("save-hand", "hand-status"), "Fix the beam first: there is no solution to save.");
   assert.equal(await p.save("copy-hand", "hand-status"), "Fix the beam first: there is no solution to copy.");

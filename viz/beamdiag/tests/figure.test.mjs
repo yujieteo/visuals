@@ -3,12 +3,18 @@ import assert from "node:assert/strict";
 import { inflateSync } from "node:zlib";
 import { page } from "./page-harness.mjs";
 
-const value = (p, name) => String(p.document.querySelector(`[data-field="${name}"]`).value);
+/** @typedef {Awaited<ReturnType<typeof page>>} Page */
+/** @typedef {import("./page-harness.mjs").Element} Element */
+/** @template T @param {T | undefined | null} x @param {string} what @returns {T} */
+const found = (x, what) => { assert.ok(x, what); return x; };
+const value = (/** @type {Page} */ p, /** @type {string} */ name) => String(found(p.document.querySelector(`[data-field="${name}"]`), name).value);
+/** @param {Element} node @param {Element[]} [out] @returns {Element[]} */
 const texts = (node, out = []) => {
   if (node.tag === "text") out.push(node);
   for (const c of node.children || []) texts(c, out);
   return out;
 };
+/** @param {Page} p @returns {Element} */
 const svgOf = (p) => p.document.getElementById("plots").children[0];
 /* Most checks read values in kN and m; the unit convention's own test covers the others. */
 const kNm = async () => { const p = await page(); p.choose("units", "kN-m"); return p; };
@@ -45,7 +51,7 @@ test("measuring x from mid-span changes only the positions typed and shown, neve
   mid.input("length", "");
   mid.input("length", 8);
   const beam = (await mid.current()).model;
-  assert.deepEqual(beam.supports.map((s) => s.x), [0, 8]);
+  assert.deepEqual(beam.supports.map((/** @type {{ x: number }} */ s) => s.x), [0, 8]);
   assert.deepEqual([beam.loads[0].x1, beam.loads[0].x2, beam.loads[1].x], [0, 8, 4]);
   assert.deepEqual(["supports.0.x", "supports.1.x", "loads.1.x"].map((f) => value(mid, f)), ["-4", "4", "0"]);
 
@@ -61,7 +67,7 @@ test("measuring x from mid-span changes only the positions typed and shown, neve
 });
 
 test("typing a length one keystroke at a time keeps loads where they were typed and the ends at the ends", async () => {
-  for (const [origin, typedAt, x] of [["mid", -0.5, 4.5], ["mid", 0.5, 5.5], ["left", 1, 1]]) {
+  for (const [origin, typedAt, x] of /** @type {[string, number, number][]} */ ([["mid", -0.5, 4.5], ["mid", 0.5, 5.5], ["left", 1, 1]])) {
     const p = await kNm();
     p.choose("origin", origin);
     p.buttons[0].dispatch("click");
@@ -69,7 +75,7 @@ test("typing a length one keystroke at a time keeps loads where they were typed 
     p.type("length", 1, 10);
     const beam = (await p.current()).model;
     assert.equal(beam.length, 10);
-    assert.deepEqual(beam.supports.map((s) => s.x), [0, 10], origin);
+    assert.deepEqual(beam.supports.map((/** @type {{ x: number }} */ s) => s.x), [0, 10], origin);
     assert.deepEqual([beam.loads[0].x1, beam.loads[0].x2], [0, 10], origin);
     assert.equal(beam.loads[1].x, x, `${origin} ${typedAt}`);
     assert.equal(value(p, "loads.1.x"), String(typedAt));
@@ -84,10 +90,12 @@ test("every diagram has labelled x and y axes with arrowheads, ticked in the cho
     assert.equal(labels.filter((t) => t === "x (m)").length, 4, "beam, shear, moment and deflection each have an x axis");
     assert.equal(labels.filter((t) => t === "y").length, 1);
     for (const title of ["SHEAR FORCE V (kN)", "BENDING MOMENT M (kN·m) · SAGGING +", "DEFLECTION v (m)"]) assert.ok(labels.includes(title), title);
+    /** @param {Element} node @param {Element[]} [out] @returns {Element[]} */
     const arrows = (node, out = []) => { if (node.tag === "path" && /^rotate\(90 /.test(node.attrs.transform || "")) out.push(node); for (const c of node.children || []) arrows(c, out); return out; };
     assert.equal(arrows(svg).length, 4);
-    const beam = svg.children.flatMap((g) => g.children || []).find((e) => e.tag === "rect" && e.attrs.fill === "var(--surface)");
-    const tick = (label) => texts(svg).filter((t) => t.attrs.class === "tick" && t.attrs["text-anchor"] === "middle" && t.textContent === label).map((t) => t.attrs.x);
+    /** @type {Element} */
+    const beam = found(svg.children.flatMap((/** @type {Element} */ g) => g.children || []).find((/** @type {Element} */ e) => e.tag === "rect" && e.attrs.fill === "var(--surface)"), "the beam");
+    const tick = (/** @type {string} */ label) => texts(svg).filter((t) => t.attrs.class === "tick" && t.attrs["text-anchor"] === "middle" && t.textContent === label).map((t) => t.attrs.x);
     const ends = origin === "mid" ? ["−3", "3"] : ["0", "6"];
     assert.equal(tick(ends[0]).length, 4);
     for (const x of tick(ends[0])) assert.equal(x, beam.attrs.x);
@@ -135,23 +143,23 @@ test("the PDF is one page holding the figure as a lossless image", async () => {
   assert.equal(blob.type, "application/pdf");
   const bytes = Buffer.from(await blob.arrayBuffer()), pdf = bytes.toString("latin1");
   assert.ok(pdf.startsWith("%PDF-1.4\n") && pdf.endsWith("%%EOF\n"));
-  const xref = Number(pdf.match(/startxref\n(\d+)\n%%EOF\n$/)[1]);
+  const xref = Number(found(pdf.match(/startxref\n(\d+)\n%%EOF\n$/), "startxref")[1]);
   assert.ok(pdf.startsWith("xref\n0 7\n", xref));
   [...pdf.slice(xref).matchAll(/(\d{10}) 00000 n /g)].forEach((m, i) => assert.ok(pdf.startsWith(`${i + 1} 0 obj\n`, Number(m[1])), `object ${i + 1} offset`));
 
   const { width, height } = p.canvases[0];
-  const image = pdf.match(/<< \/Type \/XObject \/Subtype \/Image \/Width (\d+) \/Height (\d+) \/ColorSpace \/DeviceRGB \/BitsPerComponent 8 \/Filter \/FlateDecode \/Length (\d+) >>\nstream\n/);
+  const image = found(pdf.match(/<< \/Type \/XObject \/Subtype \/Image \/Width (\d+) \/Height (\d+) \/ColorSpace \/DeviceRGB \/BitsPerComponent 8 \/Filter \/FlateDecode \/Length (\d+) >>\nstream\n/), "the image object");
   assert.deepEqual([Number(image[1]), Number(image[2])], [width, height]);
-  const start = image.index + image[0].length, pixels = inflateSync(bytes.subarray(start, start + Number(image[3])));
+  const start = /** @type {number} */ (image.index) + image[0].length, pixels = inflateSync(bytes.subarray(start, start + Number(image[3])));
   assert.equal(pixels.length, width * height * 3);
-  const [, pw, ph] = pdf.match(/\/MediaBox \[0 0 ([\d.]+) ([\d.]+)\]/).map(Number);
+  const [, pw, ph] = found(pdf.match(/\/MediaBox \[0 0 ([\d.]+) ([\d.]+)\]/), "the MediaBox").map(Number);
   assert.ok(Math.abs(pw / ph - width / height) < 2e-3, "page has the figure's proportions");
 
   assert.match(pdf, /\/Resources << \/XObject << \/Im1 4 0 R >> >> \/Contents 5 0 R >>/);
   assert.match(pdf, /\/Root 1 0 R \/Info 6 0 R >>/);
 
-  const content = pdf.match(/5 0 obj\n<< \/Length (\d+) >>\nstream\n/);
-  assert.equal(pdf.substr(content.index + content[0].length, Number(content[1])), `q ${pw} 0 0 ${ph} 0 0 cm /Im1 Do Q\n`, "the page draws the image and nothing else");
+  const content = found(pdf.match(/5 0 obj\n<< \/Length (\d+) >>\nstream\n/), "the content stream");
+  assert.equal(pdf.substr(/** @type {number} */ (content.index) + content[0].length, Number(content[1])), `q ${pw} 0 0 ${ph} 0 0 cm /Im1 Do Q\n`, "the page draws the image and nothing else");
 });
 
 test("nothing is saved while the beam cannot be solved", async () => {

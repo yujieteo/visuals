@@ -5,20 +5,33 @@ import test from "node:test";
 
 const require = createRequire(import.meta.url);
 const B = require("../engine.js");
-const read = async (name) => JSON.parse(await readFile(new URL(`../${name}`, import.meta.url), "utf8"));
+/** @typedef {ReturnType<typeof B.validate>} Model */
+/** @typedef {ReturnType<typeof B.solve>} Result */
+/** @typedef {Model["loads"][number]} Load */
+/** @typedef {Parameters<typeof B.toUnits>[1]} Quantity */
+/** @typedef {{ id: string, title: string, model: Model, expect: { quantity: string, x: number, value: number, formula: string }[] }} Fixture */
+/** @typedef {{ x: number, Vleft: number, Vright: number, Mleft: number, Mright: number, v: number, theta: number }} Point */
+/** @typedef {{ id: string, reactions: { kind: string, x: number, Fy: number, Mz: number }[], points: Point[] }} Reference */
+const read = async (/** @type {string} */ name) => JSON.parse(await readFile(new URL(`../${name}`, import.meta.url), "utf8"));
+/** @type {{ cases: Fixture[] }} */
 const fixtures = await read("fixtures.json");
+/** @type {{ cases: Reference[] }} */
 const reference = await read("reference.json");
+/** @param {string} id */
+const fixture = (id) => /** @type {Fixture} */ (fixtures.cases.find((c) => c.id === id)).model;
 
+/** @param {number} actual @param {number} expected @param {number} scale @param {string} label */
 const close = (actual, expected, scale, label, tol = 1e-9) =>
   assert.ok(Math.abs(actual - expected) <= tol * Math.max(scale, Math.abs(expected), 1e-300), `${label}: ${actual} vs ${expected}`);
 
+/** @param {Result} result @param {string} q @param {number} x @returns {number | undefined} */
 function quantity(result, q, x) {
   const L = result.model.length, a = B.at(result, x);
   const r = result.reactions.find((rr) => rr.x === x);
   return {
     R: r && r.Fy, Mr: r && r.Mz, v: a.v, theta: a.theta,
     M: x >= L ? a.Mleft : a.Mright, Mleft: a.Mleft, Mright: a.Mright, Vleft: a.Vleft, Vright: a.Vright,
-  }[q];
+  }[/** @type {"R"} */ (q)];
 }
 
 test("closed-form results for simply supported, fixed-fixed, propped, cantilever and continuous beams", () => {
@@ -26,9 +39,10 @@ test("closed-form results for simply supported, fixed-fixed, propped, cantilever
   for (const c of fixtures.cases) {
     const result = B.solve(c.model), ex = B.extremes(result);
     // Zero-valued expectations are compared against the size of that quantity elsewhere on the beam.
+    /** @type {Record<string, number>} */
     const scale = { v: Math.abs(ex.v.value), theta: Math.abs(ex.v.value) / result.model.length, R: Math.abs(ex.V.value) };
     for (const e of c.expect) {
-      close(quantity(result, e.quantity, e.x), e.value, scale[e.quantity] ?? Math.abs(ex.M.value), `${c.id} ${e.formula}`);
+      close(/** @type {number} */ (quantity(result, e.quantity, e.x)), e.value, scale[e.quantity] ?? Math.abs(ex.M.value), `${c.id} ${e.formula}`);
       checked++;
     }
   }
@@ -38,7 +52,7 @@ test("closed-form results for simply supported, fixed-fixed, propped, cantilever
 test("stiffness solution agrees with the independent Python (exact Macaulay) reference on every fixture", () => {
   assert.deepEqual(reference.cases.map((c) => c.id), fixtures.cases.map((c) => c.id));
   for (const ref of reference.cases) {
-    const result = B.solve(fixtures.cases.find((c) => c.id === ref.id).model);
+    const result = B.solve(fixture(ref.id));
     const Fs = Math.max(...ref.reactions.map((r) => Math.abs(r.Fy)));
     const Ms = Math.max(...ref.points.flatMap((p) => [Math.abs(p.Mleft), Math.abs(p.Mright)]));
     const vs = Math.max(...ref.points.map((p) => Math.abs(p.v)));
@@ -75,17 +89,18 @@ test("loads and reactions are in equilibrium and supports hold their constraints
     }
     // Free or pinned ends carry no moment except an applied couple; both ends of the beam close to zero shear and moment.
     const at0 = B.at(result, 0), atL = B.at(result, L);
-    const couples = (x) => result.model.loads.filter((l) => l.kind === "moment" && l.x === x).reduce((s, l) => s + l.C, 0);
-    const fixedAt = (x) => result.reactions.find((r) => r.x === x && r.kind === "fixed");
+    const couples = (/** @type {number} */ x) => result.model.loads.flatMap((l) => (l.kind === "moment" && l.x === x ? [l.C] : [])).reduce((s, C) => s + C, 0);
+    const fixedAt = (/** @type {number} */ x) => result.reactions.find((r) => r.x === x && r.kind === "fixed");
     if (!fixedAt(0)) close(at0.Mright, -couples(0), Math.abs(ex.M.value), `${c.id} M(0⁺)`);
     if (!fixedAt(L)) close(atL.Mleft, couples(L), Math.abs(ex.M.value), `${c.id} M(L⁻)`);
   }
 });
 
 test("shear jumps by each point force and moment jumps by minus each couple", () => {
-  const model = fixtures.cases.find((c) => c.id === "overhang-mixed-asymmetric").model;
+  const model = fixture("overhang-mixed-asymmetric");
   const result = B.solve(model);
   for (const l of model.loads) {
+    if (l.kind === "dist") continue;
     const a = B.at(result, l.x);
     if (l.x === 0 || l.x === model.length) continue;
     const reaction = result.reactions.find((r) => r.x === l.x);
@@ -101,7 +116,7 @@ test("shear jumps by each point force and moment jumps by minus each couple", ()
 
 test("results do not depend on the number of elements (mesh convergence is exact)", () => {
   for (const id of ["fixed-fixed-triangular", "fixed-pinned-pinned-mixed", "two-span-continuous-udl"]) {
-    const model = fixtures.cases.find((c) => c.id === id).model;
+    const model = fixture(id);
     const coarse = B.solve({ ...model, divisions: 1 });
     for (const n of [2, 5, 12, 40]) {
       const fine = B.solve({ ...model, divisions: n });
@@ -120,7 +135,7 @@ test("results do not depend on the number of elements (mesh convergence is exact
 });
 
 test("units are consistent: re-expressing the model in mm, N and MPa scales every result as expected", () => {
-  const model = fixtures.cases.find((c) => c.id === "fixed-pinned-pinned-mixed").model;
+  const model = fixture("fixed-pinned-pinned-mixed");
   const k = 1000;
   const mmModel = {
     length: model.length * k, divisions: model.divisions,
@@ -150,6 +165,7 @@ test("units are consistent: re-expressing the model in mm, N and MPa scales ever
 
 test("invalid models, mechanisms and singular systems give useful errors", () => {
   const good = fixtures.cases[0].model;
+  /** @type {[object, string, RegExp][]} */
   const cases = [
     [{ ...good, length: 0 }, "length", /greater than zero/],
     [{ ...good, length: Number.NaN }, "length", /finite/],
@@ -169,14 +185,14 @@ test("invalid models, mechanisms and singular systems give useful errors", () =>
     [{ ...good, material: { E: 1e300, nu: 0.3 }, section: { A: 1, I: 1e300 } }, "section.I", /overflows/],
   ];
   for (const [model, field, message] of cases) {
-    assert.throws(() => B.solve(model), (e) => e instanceof B.ModelError && e.field === field && message.test(e.message), `${field} ${message}`);
+    assert.throws(() => B.solve(model), (/** @type {unknown} */ e) => e instanceof B.ModelError && e.field === field && message.test(e.message), `${field} ${message}`);
   }
   assert.throws(() => B.exportBdf({ ...good, loads: [] }), /non-zero load/);
 });
 
 test("section properties follow the standard formulas", () => {
   const r = B.sectionProperties({ shape: "rect", b: 0.1, h: 0.2 });
-  close(r.A, 0.02, 1, "A"); close(r.I, 0.1 * 0.2 ** 3 / 12, 1e-4, "I"); close(r.Iy, 0.2 * 0.1 ** 3 / 12, 1e-4, "Iy"); close(r.c, 0.1, 1, "c");
+  close(r.A, 0.02, 1, "A"); close(r.I, 0.1 * 0.2 ** 3 / 12, 1e-4, "I"); close(r.Iy, 0.2 * 0.1 ** 3 / 12, 1e-4, "Iy"); close(/** @type {number} */ (r.c), 0.1, 1, "c");
   const c = B.sectionProperties({ shape: "circle", d: 0.2 });
   close(c.I, Math.PI * 0.2 ** 4 / 64, 1e-4, "circle I"); close(c.J, 2 * c.I, 1e-4, "circle J");
   const t = B.sectionProperties({ shape: "tube", d: 0.2, t: 0.01 });
@@ -188,25 +204,31 @@ test("section properties follow the standard formulas", () => {
 });
 
 /* Bulk entries of a deck as {name, large, fields}, joining continuation lines. */
+/** @typedef {{ name: string, large: boolean, fields: string[] }} Entry */
+/** @param {string} deck */
 function bulkEntries(deck) {
-  const lines = deck.split("\n"), out = [];
+  const lines = deck.split("\n");
+  /** @type {Entry[]} */
+  const out = [];
   for (const l of lines.slice(lines.indexOf("BEGIN BULK") + 1, lines.indexOf("ENDDATA"))) {
     if (l.startsWith("$")) continue;
     const head = l.slice(0, 8).trim();
     if (head === "" || head === "*") {
-      const e = out.at(-1), width = e.large ? 16 : 8;
+      const e = /** @type {Entry} */ (out.at(-1)), width = e.large ? 16 : 8;
       for (let i = 8; i < 8 + (e.large ? 4 : 8) * width; i += width) e.fields.push(l.slice(i, i + width).trim());
       continue;
     }
-    const large = head.endsWith("*"), width = large ? 16 : 8, fields = [];
+    const large = head.endsWith("*"), width = large ? 16 : 8;
+    /** @type {string[]} */
+    const fields = [];
     for (let i = 8; i < 8 + (large ? 4 : 8) * width; i += width) fields.push(l.slice(i, i + width).trim());
     out.push({ name: head.replace("*", ""), large, fields });
   }
   return out;
 }
-const named = (entries, name) => entries.filter((e) => e.name === name);
+const named = (/** @type {Entry[]} */ entries, /** @type {string} */ name) => entries.filter((e) => e.name === name);
 /* A NASTRAN real as a number, including the exponent-without-E form 1.5-3. */
-const nreal = (text) => Number(text.replace(/(\d|\.)([+-]\d+)$/, "$1E$2"));
+const nreal = (/** @type {string} */ text) => Number(text.replace(/(\d|\.)([+-]\d+)$/, "$1E$2"));
 
 test("NASTRAN deck is hand-style fixed-column bulk data for the solved mesh", () => {
   for (const c of fixtures.cases) {
@@ -244,7 +266,7 @@ test("NASTRAN deck is hand-style fixed-column bulk data for the solved mesh", ()
     assert.ok(spc1.length <= 2);
     assert.equal(spc1.flatMap((e) => e.fields.slice(2).filter(Boolean)).length, c.model.supports.length);
   }
-  const lines = B.exportBdf(fixtures.cases.find((c) => c.id === "simply-supported-udl").model).split("\n");
+  const lines = B.exportBdf(fixture("simply-supported-udl")).split("\n");
   for (const card of [
     "PARAM   POST    0",
     "MAT1    1       2.E11           0.3",
@@ -258,6 +280,7 @@ test("NASTRAN deck is hand-style fixed-column bulk data for the solved mesh", ()
 });
 
 test("reals are written compactly and exactly, falling back to large field", () => {
+  /** @type {[number, string][]} */
   const cases = [[0, "0."], [6, "6."], [0.3, "0.3"], [-40000, "-40000."], [200e9, "2.E11"], [8e-5, "8.E-5"], [0.005, "0.005"], [1.6e-4, "1.6E-4"], [-1.25e-7, "-1.25-7"], [4.456e-4, "4.456-4"]];
   for (const [x, text] of cases) {
     assert.equal(B.exactReal(x, 8), text);
@@ -305,14 +328,14 @@ test("no cap on supports, loads or elements: 150 supports, 200 loads and a fine 
   assert.equal(named(entries, "MOMENT").length, 50);
   assert.equal(named(entries, "PLOAD1").length, grids - 1);
   // Every support lands on its own GRID with the right constrained components.
-  const listed = (c) => spcs.filter((e) => e.fields[1] === c).flatMap((e) => e.fields.slice(2).filter(Boolean));
+  const listed = (/** @type {string} */ c) => spcs.filter((e) => e.fields[1] === c).flatMap((e) => e.fields.slice(2).filter(Boolean));
   assert.equal(new Set([...listed("12"), ...listed("126")]).size, S);
   assert.equal(listed("126").length, model.supports.filter((s) => s.kind === "fixed").length);
   assert.equal(listed("12").length, model.supports.filter((s) => s.kind === "pin").length);
 });
 
 test("a very fine mesh keeps the page responsive: solving, plotting and extremes cost the same at 10000 elements per segment", () => {
-  const model = { ...fixtures.cases.find((c) => c.id === "overhang-mixed-asymmetric").model };
+  const model = { ...fixture("overhang-mixed-asymmetric") };
   const coarse = B.solve({ ...model, divisions: 1 }), coarseEx = B.extremes(coarse), coarsePts = B.diagram(coarse);
   const t0 = performance.now();
   const fine = B.solve({ ...model, divisions: 10000 }), ex = B.extremes(fine), pts = B.diagram(fine);
@@ -325,9 +348,9 @@ test("a very fine mesh keeps the page responsive: solving, plotting and extremes
     close(p.M, coarsePts[i].M, Math.abs(coarseEx.M.value), `M(${p.x})`);
     close(p.v, coarsePts[i].v, Math.abs(coarseEx.v.value), `v(${p.x})`);
   });
-  for (const k of ["V", "M", "v"]) close(ex[k].value, coarseEx[k].value, Math.abs(coarseEx[k].value), `extreme ${k}`);
+  for (const k of /** @type {const} */ (["V", "M", "v"])) close(ex[k].value, coarseEx[k].value, Math.abs(coarseEx[k].value), `extreme ${k}`);
   // Both sides of every jump are plotted at the event itself.
-  for (const l of model.loads.filter((ld) => ld.kind === "point" && ld.x > 0 && ld.x < model.length)) {
+  for (const l of model.loads.filter(/** @returns {ld is Extract<Load, { kind: "point" }>} */ (ld) => ld.kind === "point" && ld.x > 0 && ld.x < model.length)) {
     const a = B.at(fine, l.x), side = pts.filter((p) => p.x === l.x).map((p) => p.V);
     assert.ok(side.includes(a.Vleft) && side.includes(a.Vright), `V jump at ${l.x}`);
   }
@@ -347,15 +370,17 @@ test("the deflection extreme is found where the slope vanishes, not just at a sa
 /* ---------- unit conventions ---------- */
 
 const SYSTEMS = Object.values(B.UNIT_SYSTEMS);
+/** @type {Quantity[]} */
 const QUANTITIES = ["length", "force", "moment", "distributed", "stress", "area", "inertia", "rigidity", "angle"];
-const toSystem = (model, u) => B.scaleModel(B.validate(model), u);
-const fromSystem = (model, u) => B.scaleModel(model, u, B.fromUnits);
+/** @typedef {Parameters<typeof B.toUnits>[2]} Units */
+const toSystem = (/** @type {Model} */ model, /** @type {Units} */ u) => B.scaleModel(B.validate(model), u);
+const fromSystem = (/** @type {Model} */ model, /** @type {Units} */ u) => B.scaleModel(model, u, B.fromUnits);
 
 test("every unit convention is consistent: stress is force per length squared and derived units follow", () => {
   assert.deepEqual(SYSTEMS.map((u) => u.id), ["kN-m", "N-m", "N-mm", "lbf-in", "kip-in"]);
   assert.ok(B.UNIT_SYSTEMS[B.DEFAULT_UNITS]);
   for (const u of SYSTEMS) {
-    const { length: l, force: f } = u.factor, rel = (a, b) => Math.abs(a - b) / Math.abs(b);
+    const { length: l, force: f } = u.factor, rel = (/** @type {number} */ a, /** @type {number} */ b) => Math.abs(a - b) / Math.abs(b);
     assert.ok(rel(u.factor.stress, f / l ** 2) < 1e-15, `${u.id} stress`);
     assert.ok(rel(u.factor.moment, f * l) < 1e-15 && rel(u.factor.distributed, f / l) < 1e-15, `${u.id} moment, distributed`);
     assert.ok(rel(u.factor.inertia, l ** 4) < 1e-15 && rel(u.factor.rigidity, f * l * l) < 1e-15, `${u.id} inertia, rigidity`);
@@ -382,20 +407,22 @@ test("converting into a convention and back is exact to rounding, also through t
     for (const w of SYSTEMS) y = B.fromUnits(B.toUnits(y, q, w), q, w);
     assert.ok(Math.abs(y - x) <= 16 * Number.EPSILON * Math.abs(x), `${q} ${x} through all`);
   }
-  const model = fixtures.cases.find((c) => c.id === "fixed-pinned-pinned-mixed").model, v = B.validate(model);
+  const model = fixture("fixed-pinned-pinned-mixed"), v = B.validate(model);
   for (const u of SYSTEMS) {
     const back = fromSystem(toSystem(model, u), u);
     assert.equal(back.supports.length, v.supports.length);
     assert.ok(Math.abs(back.material.E - v.material.E) <= 4 * Number.EPSILON * v.material.E);
     back.loads.forEach((l, i) => {
-      for (const k of ["x", "F", "C", "x1", "x2", "q1", "q2"]) if (k in l) assert.ok(Math.abs(l[k] - v.loads[i][k]) <= 4 * Number.EPSILON * Math.abs(v.loads[i][k]), `${u.id} load ${i} ${k}`);
+      // The loads as plain records of their numbers, whatever their kind.
+      const got = /** @type {Record<string, number>} */ (/** @type {unknown} */ (l)), want = /** @type {Record<string, number>} */ (/** @type {unknown} */ (v.loads[i]));
+      for (const k of ["x", "F", "C", "x1", "x2", "q1", "q2"]) if (k in l) assert.ok(Math.abs(got[k] - want[k]) <= 4 * Number.EPSILON * Math.abs(want[k]), `${u.id} load ${i} ${k}`);
     });
   }
 });
 
 test("the same beam entered in each convention gives the same results, and the right numbers in that convention", () => {
   // A propped continuous beam with every load kind, entered through each convention's numbers.
-  const model = fixtures.cases.find((c) => c.id === "fixed-pinned-pinned-mixed").model;
+  const model = fixture("fixed-pinned-pinned-mixed");
   const si = B.solve(model), exSI = B.extremes(si), F = Math.abs(exSI.V.value), M = Math.abs(exSI.M.value), v = Math.abs(exSI.v.value);
   for (const u of SYSTEMS) {
     const entered = toSystem(model, u); // what a user would type in this convention
@@ -413,20 +440,20 @@ test("the same beam entered in each convention gives the same results, and the r
   }
   // A US-customary beam in its own numbers: 240 in simply supported span, 50 lbf/in down,
   // E = 29 000 ksi, I = 100 in⁴. Closed forms: M = wL²/8, v = 5wL⁴/(384 EI), σ = M c / I.
-  for (const [id, w, E] of [["lbf-in", -50, 29e6], ["kip-in", -0.05, 29e3]]) {
+  for (const [id, w, E] of /** @type {[string, number, number][]} */ ([["lbf-in", -50, 29e6], ["kip-in", -0.05, 29e3]])) {
     const L = 240, I = 100;
     const beam = fromSystem({ length: L, divisions: 4, material: { E, nu: 0.3 }, section: { A: 10, I, Iy: I, J: 2 * I, c: 6 },
       supports: [{ kind: "pin", x: 0 }, { kind: "pin", x: L }], loads: [{ kind: "dist", x1: 0, x2: L, q1: w, q2: w }] }, id);
-    const r = B.solve(beam), ex = B.extremes(r), to = (x, q) => B.toUnits(x, q, id);
+    const r = B.solve(beam), ex = B.extremes(r), to = (/** @type {number} */ x, /** @type {Quantity} */ q) => B.toUnits(x, q, id);
     close(to(ex.M.value, "moment"), -w * L * L / 8, 1, `${id} M max`, 1e-12);
     close(to(ex.v.value, "length"), 5 * w * L ** 4 / (384 * E * I), 1, `${id} v max`, 1e-12);
     close(to(r.reactions[0].Fy, "force"), -w * L / 2, 1, `${id} reaction`, 1e-12);
-    close(to(Math.abs(ex.M.value) * r.model.section.c / r.model.section.I, "stress"), -w * L * L / 8 * 6 / I, 1, `${id} stress`, 1e-12);
+    close(to(Math.abs(ex.M.value) * /** @type {number} */ (r.model.section.c) / r.model.section.I, "stress"), -w * L * L / 8 * 6 / I, 1, `${id} stress`, 1e-12);
   }
 });
 
 test("the NASTRAN deck states its unit convention and writes every number in it", () => {
-  const model = fixtures.cases.find((c) => c.id === "fixed-pinned-pinned-mixed").model;
+  const model = fixture("fixed-pinned-pinned-mixed");
   assert.equal(B.exportBdf(model), B.exportBdf(model, { units: "N-m" }), "SI N, m, Pa stays the default");
   for (const u of SYSTEMS) {
     const deck = B.exportBdf(model, { units: u.id }), lines = deck.split("\n");
@@ -434,6 +461,7 @@ test("the NASTRAN deck states its unit convention and writes every number in it"
     assert.match(lines[0], new RegExp(`^\\$ Beam, L = [\\d.]+ ${u.symbol.length}:`));
     assert.match(deck, /^[\x00-\x7e]*$/, "deck is ASCII");
     // Numbers match the convention: read E, A and I back from MAT1 and PBAR (small or large field).
+    /** @type {Record<string, string[]>} */
     const cards = {};
     for (let i = 0; i < lines.length; i++) {
       const name = lines[i].slice(0, 8).trim();
@@ -442,8 +470,8 @@ test("the NASTRAN deck states its unit convention and writes every number in it"
       while (lines[i + 1] && lines[i + 1][0] === "*") text.push(lines[++i]);
       cards[name.replace("*", "")] = text.flatMap((t) => Array.from({ length: per }, (_, k) => t.slice(8 + k * w, 8 + (k + 1) * w).trim()));
     }
-    const real = (s) => Number(s.replace(/([0-9.])([+-]\d+)$/, "$1E$2"));
-    const rel = (a, b) => Math.abs(a - b) / Math.abs(b);
+    const real = (/** @type {string} */ s) => Number(s.replace(/([0-9.])([+-]\d+)$/, "$1E$2"));
+    const rel = (/** @type {number} */ a, /** @type {number} */ b) => Math.abs(a - b) / Math.abs(b);
     assert.ok(rel(real(cards.MAT1[1]), B.toUnits(model.material.E, "stress", u)) < 1e-9, `${u.id} E ${cards.MAT1[1]}`);
     assert.ok(rel(real(cards.PBAR[2]), B.toUnits(model.section.A, "area", u)) < 1e-9, `${u.id} A ${cards.PBAR[2]}`);
     assert.ok(rel(real(cards.PBAR[3]), B.toUnits(model.section.I, "inertia", u)) < 1e-9, `${u.id} I ${cards.PBAR[3]}`);

@@ -75,8 +75,9 @@ Models are not saved automatically; reloading starts from the first example.
 | `reference.py` | Independent exact-arithmetic Python solver (Macaulay integration and compatibility) and a reader for the exported decks |
 | `fixtures.json` | Test beams with closed-form expectations |
 | `reference.json` | `reference.py` output on the fixtures, compared with `engine.js` by the tests |
-| `tests/` | Node and Python tests; see [docs/verification.md](https://github.com/yujieteo/beamdiag/blob/main/docs/verification.md). `tests/fixtures/beamdswitch/` holds read-only copies of beamdswitch's deck and plot parsers, of its page (`beamdswitch.html`, which the browser test renders decks in) and of yujieteo/site's `templates/beamdswitch.js` (as `template.js`) and `templates/beamdswitch-report.md` |
+| `tests/` | Node and Python tests; see [docs/verification.md](https://github.com/yujieteo/beamdiag/blob/main/docs/verification.md). `tests/fixtures/beamdswitch/` holds read-only copies of beamdswitch's deck and plot parsers (typed for `tsc` by `deck.d.mts` and `plot.d.mts`), of its page (`beamdswitch.html`, which the browser test renders decks in) and of yujieteo/site's `templates/beamdswitch.js` (as `template.js`) and `templates/beamdswitch-report.md` |
 | `AGENTS.md`, `SKILLS.md`, `LICENSE` | Notes for coding agents, how to use the page and its WebMCP tools, and the MIT licence |
+| `package.json`, `package-lock.json`, `tsconfig.json`, `types/`, `beamdswitch.d.ts`, `scripts/extract-inline.mjs` | The type check (development only, not ported): pinned TypeScript, its settings, the page's global types, types for the unedited `beamdswitch.js`, and the script that copies the page's inline scripts out for `tsc` |
 
 ```sh
 python3 build.py              # rebuild index.html after editing template.html, engine.js, beamdswitch.js, handcalc.js or raw.json
@@ -91,6 +92,7 @@ Needs Python 3.10 or later (standard library only) and Node 22 or later.
 ```sh
 node --test tests/*.test.mjs
 python3 -m unittest discover -s tests -p 'test_*.py' -v
+npm ci && npm run typecheck   # tsc over the JSDoc types: engine.js, handcalc.js, the page's inline scripts and the tests
 ```
 
 [docs/verification.md](https://github.com/yujieteo/beamdiag/blob/main/docs/verification.md) lists what is checked, the sign

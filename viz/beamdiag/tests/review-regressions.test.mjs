@@ -3,7 +3,14 @@ import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 import { page } from "./page-harness.mjs";
 
-const B = createRequire(import.meta.url)("../engine.js");
+const require = createRequire(import.meta.url);
+const B = require("../engine.js");
+/** @typedef {Awaited<ReturnType<typeof page>>} Page */
+/** @typedef {import("./page-harness.mjs").Element} Element */
+/** @template T @param {T | undefined | null} x @param {string} what @returns {T} */
+const found = (x, what) => { assert.ok(x, what); return x; };
+/** @param {Page} p @param {string} name */
+const fieldOf = (p, name) => found(p.document.querySelector(`[data-field="${name}"]`), name);
 
 test("short-span plot samples contain exact critical points for every axis", () => {
   for (const start of [0, 1]) for (const q of [-12000, 12000]) {
@@ -20,15 +27,14 @@ test("short-span plot samples contain exact critical points for every axis", () 
     for (const count of [1, 800]) {
       const pts = B.diagram(r, count);
       for (const u of [t, 1 - t]) {
-        const p = pts.find((p) => Math.abs(p.x - start - u) < 1e-8);
-        assert.ok(p, `critical point at ${start + u}`);
+        const at = found(pts.find((p) => Math.abs(p.x - start - u) < 1e-8), `critical point at ${start + u}`);
         const v = q / (120 * E * I) * u ** 2 * (u - 1) ** 2 * (2 * u - 1);
-        assert.ok(Math.abs(p.v - v) < 1e-12);
-        assert.ok(Math.abs(B.internal(r, p.x).V) < 1e-6);
+        assert.ok(Math.abs(at.v - v) < 1e-12);
+        assert.ok(Math.abs(B.internal(r, at.x).V) < 1e-6);
       }
       assert.ok(pts.some((p) => Math.abs(p.x - start - 0.5) < 1e-8));
       const extrema = B.extremes(r);
-      for (const key of ["V", "M", "v"]) {
+      for (const key of /** @type {const} */ (["V", "M", "v"])) {
         const values = pts.map((p) => p[key]);
         assert.ok(extrema[key].value >= Math.min(...values) - 1e-10);
         assert.ok(extrema[key].value <= Math.max(...values) + 1e-10);
@@ -46,7 +52,7 @@ test("length edits preserve every right-end attachment through invalid inputs an
   assert.equal((await p.current()).model.length, 6);
   for (const b of p.buttons) b.dispatch("click");
   for (const field of ["loads.1.x", "loads.2.x"]) {
-    const e = p.document.querySelector(`[data-field="${field}"]`);
+    const e = fieldOf(p, field);
     e.value = "6000"; e.dispatch("input");
   }
   for (const value of ["", 0, -1, "", 8000, "", 10000]) p.input("length", value);
@@ -62,15 +68,16 @@ test("length edits preserve every right-end attachment through invalid inputs an
   beam = await p.current();
   assert.equal(beam.model.supports[1].x, 7);
   assert.equal(beam.model.loads[0].x2, 7);
-  const deck = JSON.parse((await p.tools.get("export_nastran_bdf").execute({})).content[0].text);
-  assert.ok(deck.bdf.split("\n").some((line) => line.trim() === "SOL 101"));
+  const deck = JSON.parse((await found(p.tools.get("export_nastran_bdf"), "export_nastran_bdf").execute({})).content[0].text);
+  assert.ok(deck.bdf.split("\n").some((/** @type {string} */ line) => line.trim() === "SOL 101"));
   assert.deepEqual(p.urlAccess(), { reads: 0, writes: 0 });
 });
 
 test("rendered short-span diagrams contain their extreme markers within the plotted ranges", async () => {
   const p = await page();
+  /** @param {string} name @param {unknown} value */
   const field = (name, value, event = "input") => {
-    const e = p.document.querySelector(`[data-field="${name}"]`);
+    const e = fieldOf(p, name);
     e.value = String(value); e.dispatch(event);
   };
   p.input("length", 400000);
@@ -83,12 +90,16 @@ test("rendered short-span diagrams contain their extreme markers within the plot
   shape.value = "custom"; shape.dispatch("change");
   field("section.I", 3000); // mm⁴ in the default N, mm, MPa convention
   for (let i = 0; i < 3; i++) field(`supports.${i}.kind`, "fixed", "change");
+  /** @type {Element} */
   const svg = p.document.getElementById("plots").children[0];
-  const plot = svg.children.find((e) => e.attrs?.class === "plotarea");
+  /** @type {Element} */
+  const plot = svg.children.find((/** @type {Element} */ e) => e.attrs?.class === "plotarea");
   for (const color of ["var(--shear)", "var(--moment)", "var(--fg)"]) {
-    const path = plot.children.find((e) => e.tag === "path" && e.attrs.stroke === color);
-    const marker = plot.children.find((e) => e.tag === "circle" && e.attrs.fill === color);
-    const ys = [...path.attrs.d.matchAll(/[ML][-\d.]+,([-\d.]+)/g)].map((match) => Number(match[1]));
+    /** @type {Element} */
+    const path = plot.children.find((/** @type {Element} */ e) => e.tag === "path" && e.attrs.stroke === color);
+    /** @type {Element} */
+    const marker = plot.children.find((/** @type {Element} */ e) => e.tag === "circle" && e.attrs.fill === color);
+    const ys = [...path.attrs.d.matchAll(/[ML][-\d.]+,([-\d.]+)/g)].map((/** @type {RegExpMatchArray} */ match) => Number(match[1]));
     const lo = Math.min(...ys), hi = Math.max(...ys);
     assert.ok(hi - lo > 20, `${color} diagram must not be flat`);
     assert.ok(marker.attrs.cy >= lo - 0.01 && marker.attrs.cy <= hi + 0.01, `${color} marker lies within the curve's range`);
@@ -96,26 +107,29 @@ test("rendered short-span diagrams contain their extreme markers within the plot
 });
 
 // Parses a figure label number: plain ("−2.5", "30.00", "2.5e+21") or a power of ten ("−2.5×10¹²").
+/** @param {string} str */
 const labelNumber = (str) => {
-  const m = str.replace(/,/g, "").replace(/−/g, "-").match(/^(-?[\d.]+(?:e[-+]\d+)?)(?:×10([⁻⁰¹²³⁴⁵⁶⁷⁸⁹]+))?/);
+  const m = found(str.replace(/,/g, "").replace(/−/g, "-").match(/^(-?[\d.]+(?:e[-+]\d+)?)(?:×10([⁻⁰¹²³⁴⁵⁶⁷⁸⁹]+))?/), `a number: ${str}`);
   const e = m[2] ? Number([...m[2]].map((c) => (c === "⁻" ? "-" : "⁰¹²³⁴⁵⁶⁷⁸⁹".indexOf(c))).join("")) : 0;
   return Number(m[1]) * 10 ** e;
 };
 
 const UNITS = Object.values(B.UNIT_SYSTEMS);
-const useUnits = (p, id) => { const s = p.document.getElementById("units"); s.value = id; s.dispatch("change"); };
+const useUnits = (/** @type {Page} */ p, /** @type {string} */ id) => { const s = p.document.getElementById("units"); s.value = id; s.dispatch("change"); };
 // Escapes a unit symbol such as "N·mm" or "lbf/in" for a regular expression.
-const esc = (str) => str.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&");
+const esc = (/** @type {string} */ str) => str.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&");
 
 /* A beam with every load kind whose magnitudes are typed in the `units` convention; loads sit 2 m
    and 4 m along the default 6 m beam whatever the convention. */
+/** @param {number} magnitude @param {number} width */
 async function extremeBeam(magnitude, width, units = "kN-m") {
   const p = await page({ runTimers: true });
   p.document.getElementById("plots").clientWidth = width;
   useUnits(p, units);
   for (const b of p.buttons) b.dispatch("click");
+  /** @param {string} name @param {unknown} value */
   const field = (name, value) => {
-    const e = p.document.querySelector(`[data-field="${name}"]`);
+    const e = fieldOf(p, name);
     e.value = String(value); e.dispatch("input");
   };
   field("loads.1.x", +B.toUnits(2, "length", units).toPrecision(10));
@@ -124,13 +138,16 @@ async function extremeBeam(magnitude, width, units = "kN-m") {
   field("loads.0.q2", -magnitude / 2);
   field("loads.1.F", -3 * magnitude);
   field("loads.2.C", magnitude);
+  /** @type {Element} */
   const svg = p.document.getElementById("plots").children[0];
   return { p, svg, W: svg.attrs.width, H: svg.attrs.height };
 }
 
+/** @param {Element} svg */
 function drawn(svg) {
+  /** @type {Element[]} */
   const out = [];
-  const visit = (e) => {
+  const visit = (/** @type {Element} */ e) => {
     if (/\b(hit|ring)\b/.test(e.attrs?.class || "")) return;
     out.push(e);
     for (const c of e.children || []) visit(c);
@@ -149,12 +166,12 @@ for (const width of [700, 360]) for (const { id } of UNITS) {
         const where = `${magnitude}: ${e.tag} ${e.textContent ?? e.attrs.d ?? ""}`;
         if (e.tag === "text") {
           // Overestimates the rendered width: 7px per character at the 11–11.5px label sizes.
-          const w = 7 * [...e.textContent].length, x = e.attrs.x, anchor = e.attrs["text-anchor"] || "start";
+          const w = 7 * [.../** @type {string} */ (e.textContent)].length, x = e.attrs.x, anchor = e.attrs["text-anchor"] || "start";
           const left = anchor === "end" ? x - w : anchor === "middle" ? x - w / 2 : x;
           assert.ok(left >= 0 && left + w <= W, `${where} fits horizontally (${left}..${left + w} of ${W})`);
           assert.ok(e.attrs.y - 12 >= 0 && e.attrs.y <= H, `${where} fits vertically`);
         }
-        for (const [k, limit] of [["x1", W], ["x2", W], ["cx", W], ["y1", H], ["y2", H], ["cy", H]]) {
+        for (const [k, limit] of /** @type {[string, number][]} */ ([["x1", W], ["x2", W], ["cx", W], ["y1", H], ["y2", H], ["cy", H]])) {
           if (k in e.attrs) assert.ok(e.attrs[k] >= 0 && e.attrs[k] <= limit, `${where} ${k}=${e.attrs[k]}`);
         }
         if (e.tag === "path") {
@@ -177,13 +194,18 @@ for (const { id } of UNITS) test(`extreme-load diagrams fill their panels and la
   for (const magnitude of [1e9, 1e15, 1e300]) {
     const { p, svg } = await extremeBeam(magnitude, 700, id);
     const result = (await p.current()).extremes;
-    const plot = svg.children.find((e) => e.attrs?.class === "plotarea");
-    const axes = plot.children.filter((e) => e.attrs?.class === "axis");
+    /** @type {Element} */
+    const plot = svg.children.find((/** @type {Element} */ e) => e.attrs?.class === "plotarea");
+    /** @type {Element[]} */
+    const axes = plot.children.filter((/** @type {Element} */ e) => e.attrs?.class === "axis");
+    /** @type {Element[]} */
     const curves = ["var(--shear)", "var(--moment)", "var(--fg)"].map((color) =>
-      plot.children.find((e) => e.tag === "path" && e.attrs.stroke === color));
+      plot.children.find((/** @type {Element} */ e) => e.tag === "path" && e.attrs.stroke === color));
     axes.forEach((axis, i) => {
-      const grid = axis.children.filter((e) => e.tag === "line").slice(0, -1);
-      const labels = axis.children.filter((e) => e.tag === "text").map((e) => labelNumber(e.textContent));
+      /** @type {Element[]} */
+      const grid = axis.children.filter((/** @type {Element} */ e) => e.tag === "line").slice(0, -1);
+      /** @type {number[]} */
+      const labels = axis.children.filter((/** @type {Element} */ e) => e.tag === "text").map((/** @type {Element} */ e) => labelNumber(/** @type {string} */ (e.textContent)));
       assert.equal(grid.length, labels.length);
       // Tick labels are exact: evenly spaced values at evenly spaced grid lines, zero on the zero line.
       const step = labels[1] - labels[0], px = grid[1].attrs.y1 - grid[0].attrs.y1;
@@ -193,14 +215,15 @@ for (const { id } of UNITS) test(`extreme-load diagrams fill their panels and la
       });
       const zero = axis.children.at(-1).attrs.y1;
       assert.ok(Math.abs(grid[0].attrs.y1 + (0 - labels[0]) / step * px - zero) < 1e-6, `zero line of axis ${i}`);
-      const ys = [...curves[i].attrs.d.matchAll(/[ML][-\d.]+,([-\d.]+)/g)].map((m) => Number(m[1]));
+      const ys = [...curves[i].attrs.d.matchAll(/[ML][-\d.]+,([-\d.]+)/g)].map((/** @type {RegExpMatchArray} */ m) => Number(m[1]));
       assert.ok(Math.max(...ys) - Math.min(...ys) > 40, `curve ${i} at ${magnitude} is scaled to its panel, not flat`);
       const gy = grid.map((g) => g.attrs.y1);
       assert.ok(Math.min(...ys) >= Math.min(...gy) - Math.abs(px) && Math.max(...ys) <= Math.max(...gy) + Math.abs(px),
         `curve ${i} stays within a tick step of its outer grid lines`);
     });
-    const extremeLabels = plot.children.filter((e) => e.tag === "text" && e.attrs.class === "val").map((e) => e.textContent);
-    for (const [key, quantity] of [["shear", "force"], ["moment", "moment"], ["deflection", "length"]]) {
+    /** @type {string[]} */
+    const extremeLabels = plot.children.filter((/** @type {Element} */ e) => e.tag === "text" && e.attrs.class === "val").map((/** @type {Element} */ e) => /** @type {string} */ (e.textContent));
+    for (const [key, quantity] of /** @type {[string, Parameters<typeof B.toUnits>[1]][]} */ ([["shear", "force"], ["moment", "moment"], ["deflection", "length"]])) {
       const expected = B.toUnits(result[key].value, quantity, id);
       assert.ok(extremeLabels.some((s) => Math.abs(labelNumber(s) - expected) <= 5e-4 * Math.abs(expected)),
         `${key} extreme ${expected} is labelled (${extremeLabels})`);
@@ -211,7 +234,8 @@ for (const { id } of UNITS) test(`extreme-load diagrams fill their panels and la
 for (const { id, symbol } of UNITS) test(`the cursor readout stays compact at 1e300 ${symbol.force} on a 360px figure`, async () => {
   const { p } = await extremeBeam(1e300, 360, id);
   const readout = p.document.getElementById("readout");
-  const values = Object.fromEntries(readout.children.map((s) => [s.children[0].textContent.trim(), s.children[1].textContent]));
+  /** @type {Record<string, string>} */
+  const values = Object.fromEntries(readout.children.map((/** @type {Element} */ s) => [s.children[0].textContent.trim(), s.children[1].textContent]));
   for (const [k, v] of Object.entries(values)) {
     // Overestimates the rendered width: 9px per character at the .875rem readout size; each entry wraps on its own.
     assert.ok(9 * [...`${k} ${v}`].length <= 360, `readout ${k} "${v}" fits its 360px container`);
@@ -224,7 +248,8 @@ for (const { id, symbol } of UNITS) test(`the cursor readout stays compact at 1e
 
 for (const { id, symbol } of UNITS) test(`support-reaction boxes stay compact at 1e300 ${symbol.force} on a 360px figure`, async () => {
   const { p } = await extremeBeam(1e300, 360, id);
-  const boxes = p.document.getElementById("reactions").children.map((li) => li.children.map((c) => c.textContent || "").join(""));
+  /** @type {string[]} */
+  const boxes = p.document.getElementById("reactions").children.map((/** @type {Element} */ li) => li.children.map((/** @type {Element} */ c) => c.textContent || "").join(""));
   assert.ok(boxes.length > 0);
   for (const text of boxes) {
     // Same overestimate as the readout: 9px per character at .875rem, plus the swatch and padding.
@@ -237,7 +262,8 @@ for (const { id, symbol } of UNITS) test(`support-reaction boxes stay compact at
 test("support-reaction boxes keep plain digits under normal loads", async () => {
   const p = await page();
   useUnits(p, "kN-m");
-  const boxes = p.document.getElementById("reactions").children.map((li) => li.children.map((c) => c.textContent || "").join(""));
+  /** @type {string[]} */
+  const boxes = p.document.getElementById("reactions").children.map((/** @type {Element} */ li) => li.children.map((/** @type {Element} */ c) => c.textContent || "").join(""));
   assert.ok(boxes.length > 0);
   for (const text of boxes) assert.match(text, /: −?[\d,.]+ kN(, −?[\d,.]+ kN·m)?$/);
 });
@@ -252,12 +278,15 @@ test("the cursor readout keeps plain digits under normal loads", async () => {
 test("normal loads keep the usual margin and plain-digit labels", async () => {
   const p = await page();
   useUnits(p, "kN-m");
+  /** @type {Element} */
   const svg = p.document.getElementById("plots").children[0];
-  const plot = svg.children.find((e) => e.attrs?.class === "plotarea");
-  const axes = plot.children.filter((e) => e.attrs?.class === "axis");
+  /** @type {Element} */
+  const plot = svg.children.find((/** @type {Element} */ e) => e.attrs?.class === "plotarea");
+  /** @type {Element[]} */
+  const axes = plot.children.filter((/** @type {Element} */ e) => e.attrs?.class === "axis");
   for (const axis of axes) {
     assert.equal(axis.children[0].attrs.x1, 64);
-    for (const t of axis.children.filter((e) => e.tag === "text")) assert.match(t.textContent, /^−?[\d.]+$/);
+    for (const t of axis.children.filter((/** @type {Element} */ e) => e.tag === "text")) assert.match(t.textContent, /^−?[\d.]+$/);
   }
   const texts = drawn(svg).filter((e) => e.tag === "text").map((e) => e.textContent);
   assert.ok(texts.includes("−10 kN/m"));
@@ -269,7 +298,7 @@ for (const { id } of UNITS) test(`a point force larger than the last solved mode
   const p = await page({ runTimers: true });
   useUnits(p, id);
   p.buttons[0].dispatch("click");
-  const e = p.document.querySelector('[data-field="loads.1.F"]');
+  const e = fieldOf(p, "loads.1.F");
   for (const value of [1e306, 1e300]) {
     e.value = String(value); e.dispatch("input");
     const svg = p.document.getElementById("plots").children[0];
@@ -282,7 +311,7 @@ for (const { id } of UNITS) test(`a point force larger than the last solved mode
 test("results too large to show in the chosen units are refused instead of drawn as Infinity", async () => {
   const p = await page({ runTimers: true });
   useUnits(p, "N-mm");
-  const e = p.document.querySelector('[data-field="loads.0.q1"]');
+  const e = fieldOf(p, "loads.0.q1");
   e.value = "-1e303"; e.dispatch("input"); // −10³⁰⁶ N/m: finite in SI, but its moments overflow in N·mm
   const box = p.document.getElementById("error");
   assert.equal(box.hidden, false);
@@ -296,12 +325,12 @@ test("results too large to show in the chosen units are refused instead of drawn
 
 test("switching units converts what was entered, keeps the beam and results, and reads new input in the new units", async () => {
   const p = await page();
-  const units = p.document.getElementById("units"), field = (name) => p.document.querySelector(`[data-field="${name}"]`);
-  const switchTo = (id) => { units.value = id; units.dispatch("change"); };
-  const deck = async () => JSON.parse((await p.tools.get("export_nastran_bdf").execute({})).content[0].text).bdf;
+  const units = p.document.getElementById("units"), field = (/** @type {string} */ name) => fieldOf(p, name);
+  const switchTo = (/** @type {string} */ id) => { units.value = id; units.dispatch("change"); };
+  const deck = async () => JSON.parse((await found(p.tools.get("export_nastran_bdf"), "export_nastran_bdf").execute({})).content[0].text).bdf;
   const before = await p.current();
   assert.equal(units.value, "N-mm");
-  assert.deepEqual(units.children.map((o) => o.value), ["kN-m", "N-m", "N-mm", "lbf-in", "kip-in"]);
+  assert.deepEqual(units.children.map((/** @type {Element} */ o) => o.value), ["kN-m", "N-m", "N-mm", "lbf-in", "kip-in"]);
   assert.equal(p.document.getElementById("length").value, 6000);
   assert.equal(field("loads.0.q1").value, -10);
   assert.equal(field("section.b").value, 100);
@@ -339,7 +368,7 @@ test("End moves a support handle to exactly the beam end, even when L is not a w
   const p = await page();
   const units = p.document.getElementById("units");
   units.value = "lbf-in"; units.dispatch("change");
-  const key = (handle, name) => {
+  const key = (/** @type {string} */ handle, /** @type {string} */ name) => {
     for (const fn of p.document.getElementById("plots").listeners.keydown) {
       fn({ key: name, shiftKey: false, preventDefault() {}, target: { closest: () => ({ dataset: { key: handle } }) } });
     }
@@ -354,7 +383,7 @@ test("typing back a shown position in N-mm gives that exact position", async () 
   const p = await page();
   p.input("length", 4600);
   p.buttons[0].dispatch("click"); // a point force at L/2 = 2300 mm
-  const e = p.document.querySelector('[data-field="supports.0.x"]');
+  const e = fieldOf(p, "supports.0.x");
   e.value = "2300"; e.dispatch("input");
   const beam = await p.current();
   assert.equal(beam.error, undefined);
@@ -366,7 +395,7 @@ test("typing a shown lbf-in position lands on the position it shows", async () =
   const p = await page();
   useUnits(p, "lbf-in");
   p.buttons[0].dispatch("click");
-  const e = p.document.querySelector('[data-field="loads.1.x"]');
+  const e = fieldOf(p, "loads.1.x");
   e.value = "236.2204724"; e.dispatch("input"); // the right support at 6 m, as shown
   const beam = await p.current();
   assert.equal(beam.error, undefined);

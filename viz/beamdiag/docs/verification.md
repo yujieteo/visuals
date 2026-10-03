@@ -13,9 +13,10 @@ Run everything from the repository root:
 ```sh
 node --test tests/*.test.mjs
 python3 -m unittest discover -s tests -p 'test_*.py' -v
+npm ci && npm run typecheck
 ```
 
-CI (`.github/workflows/ci.yml`) runs both on every push to `main` and every
+CI (`.github/workflows/ci.yml`) runs all three on every push to `main` and every
 pull request.
 
 ## What is checked

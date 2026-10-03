@@ -262,6 +262,7 @@ code{font:.875em var(--mono)}
 </main>
 
 <script>
+/** @type {BeamDiagData} */
 const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","summary":"Build a straight beam with pinned and fixed supports, point forces, couples and distributed loads; see reactions, shear force, bending moment and deflection solved in the browser by the stiffness method, including statically indeterminate beams, and download the same model as an MSC Nastran SOL 101 bulk data deck.","units":{"internal":"SI: m, N, N/m, N·m, Pa, m², m⁴","conventions":"Inputs, results, diagrams and the NASTRAN deck use one consistent unit convention chosen on the page: SI N, mm, MPa (the default); SI kN, m, kPa; SI N, m, Pa; US customary lbf, in, psi; or US customary kip, in, ksi. Values are converted only where they are typed or shown, so the solved beam is the same in every convention and switching re-expresses the values already entered. Slopes are in radians.","tools":"The page tools take and return SI; export_nastran_bdf writes the deck in the page's convention unless given another."},"conventions":["x runs along the beam, positive to the right, measured from its left end or, when chosen, from mid-span (then from −L/2 to +L/2); +y is up.","Point forces and distributed loads are positive upward: enter downward loads as negative numbers.","Couples, rotations and support moments are positive counter-clockwise.","Shear V(x) is the sum of the upward forces to the left of the section.","Bending moment M(x) is positive when it sags the beam (tension on the bottom fibre); dM/dx = V and dV/dx = q.","At a point force V jumps by the force; at a couple C, M jumps by −C. Both one-sided values are reported."],"assumptions":["Linear elastic, small displacement, static loading.","Euler–Bernoulli bending: plane sections stay plane and shear deformation is neglected.","Uniform prismatic section and one material along the whole beam.","Loads act in the plane of bending through the shear centre; no axial load, torsion, temperature or dynamics.","A pin restrains deflection; a fixed support restrains deflection and slope. Supports are rigid."],"method":"Direct stiffness method with two-node Hermite beam elements between the supports and the beam ends. Point forces, couples and distributed loads inside each element enter as consistent nodal loads, which are the exact fixed-end actions for Euler–Bernoulli beams, so nodal deflections and reactions are exact and statically indeterminate supports need no special handling. Load points stay out of the stiffness matrix, so closely spaced loads do not degrade its conditioning, and there is no cap on the number of supports or loads. Shear and moment are then recovered exactly by statics from the loads and reactions, and deflection between nodes by integrating M/EI. Results are checked against an independent exact-arithmetic Python solver (Macaulay integration with compatibility conditions) on shared fixtures.","materials":[{"id":"steel","label":"Structural steel","E":200000000000.0,"nu":0.3},{"id":"aluminium","label":"Aluminium alloy","E":69000000000.0,"nu":0.33},{"id":"concrete","label":"Concrete (uncracked, C30/37)","E":33000000000.0,"nu":0.2},{"id":"timber","label":"Softwood timber (C24, along grain)","E":11000000000.0,"nu":0.3}],"sections":[{"id":"rect","label":"Solid rectangle b × h"},{"id":"circle","label":"Solid circle, diameter d"},{"id":"tube","label":"Circular tube D × t"},{"id":"custom","label":"Custom A and I"}],"presets":[{"id":"pin-pin-udl","label":"Pinned–pinned, uniform load","note":"Statically determinate: reactions from equilibrium alone.","length":6,"supports":[{"kind":"pin","x":0},{"kind":"pin","x":6}],"loads":[{"kind":"dist","x1":0,"x2":6,"q1":-10000.0,"q2":-10000.0}],"material":"steel","section":{"shape":"rect","b":0.1,"h":0.2}},{"id":"fixed-fixed-udl","label":"Fixed–fixed, uniform load","note":"Indeterminate to degree 2: end moments wL²/12 hog, mid-span wL²/24 sags.","length":6,"supports":[{"kind":"fixed","x":0},{"kind":"fixed","x":6}],"loads":[{"kind":"dist","x1":0,"x2":6,"q1":-10000.0,"q2":-10000.0}],"material":"steel","section":{"shape":"rect","b":0.1,"h":0.2}},{"id":"fixed-fixed-point","label":"Fixed–fixed, off-centre point load","note":"End moments Pab²/L² and Pa²b/L² are unequal, so the reactions are too.","length":6,"supports":[{"kind":"fixed","x":0},{"kind":"fixed","x":6}],"loads":[{"kind":"point","x":2,"F":-40000.0}],"material":"steel","section":{"shape":"rect","b":0.1,"h":0.2}},{"id":"pin-pin-mixed","label":"Pinned–pinned, point load and couple","note":"The couple makes the moment diagram jump; the point load makes the shear jump.","length":8,"supports":[{"kind":"pin","x":0},{"kind":"pin","x":8}],"loads":[{"kind":"point","x":3,"F":-20000.0},{"kind":"moment","x":5.5,"C":15000.0}],"material":"steel","section":{"shape":"rect","b":0.1,"h":0.2}},{"id":"propped-cantilever","label":"Propped cantilever (fixed–pinned)","note":"Indeterminate to degree 1: the prop carries 3wL/8.","length":6,"supports":[{"kind":"fixed","x":0},{"kind":"pin","x":6}],"loads":[{"kind":"dist","x1":0,"x2":6,"q1":-10000.0,"q2":-10000.0}],"material":"steel","section":{"shape":"rect","b":0.1,"h":0.2}},{"id":"cantilever","label":"Cantilever, tip load","note":"Statically determinate: the whole load returns through the fixed end.","length":3,"supports":[{"kind":"fixed","x":0}],"loads":[{"kind":"point","x":3,"F":-5000.0}],"material":"steel","section":{"shape":"rect","b":0.1,"h":0.2}},{"id":"continuous","label":"Two-span continuous beam","note":"Indeterminate to degree 1: the middle support carries 5wL/4 and hogs by wL²/8.","length":8,"supports":[{"kind":"pin","x":0},{"kind":"pin","x":4},{"kind":"pin","x":8}],"loads":[{"kind":"dist","x1":0,"x2":8,"q1":-10000.0,"q2":-10000.0}],"material":"steel","section":{"shape":"rect","b":0.1,"h":0.2}}],"nastran":{"dialect":"MSC Nastran, SOL 101 linear statics, small-field fixed-format bulk data (large field only for a card group whose values need more than eight characters to stay exact)","cards":[{"card":"GRID","use":"One grid per node along basic X; GRDSET sets PS=345 on every grid, permanently removing out-of-plane translation and rotations."},{"card":"CBAR","use":"One bar per element, orientation vector X1,X2,X3 = 0,1,0 (element y = basic +Y)."},{"card":"PBAR","use":"A, I1 (in-plane I), I2, J; K1/K2 blank = zero shear flexibility, matching Euler–Bernoulli."},{"card":"MAT1","use":"E and ν; G left blank so NASTRAN derives it."},{"card":"SPC1","use":"Set 1: one card for the pins (components 12) and one for the fixed supports (126), each listing its support grids."},{"card":"FORCE / MOMENT","use":"Load set 2: point forces along basic Y and couples about basic Z at grids."},{"card":"PLOAD1","use":"Load set 2: TYPE=FY, SCALE=FR from 0 to 1 on each element under a distributed load, with the intensities at its ends."},{"card":"PARAM,POST,0","use":"Asks MSC Nastran to write the Patran results database (.xdb) alongside the run."}],"run":["Save the deck, e.g. beam.bdf, on a machine with a licensed MSC Nastran installation.","Run: nastran beam.bdf","PARAM,POST,0 makes the run write beam.xdb next to beam.f06; open it in Patran (or another .xdb reader) to post-process.","Compare DISPLACEMENT T2 (deflection) and R3 (slope, rad), and SPCFORCES T2 (reaction) and R3 (support moment), with this page in the same unit convention; the deck's $ Units comment names it. These are in basic coordinates and use the same signs."],"status":"The deck is generated from the same model the page solves and is checked by reading it back and re-solving it with the independent Python reference. This page does not run NASTRAN and does not produce an .xdb file itself."},"sources":[{"id":"cbar","title":"MSC Nastran Quick Reference Guide: CBAR","url":"https://nexus.hexagon.com/documentationcenter/en-US/bundle/MSC_Nastran_2024.1/page/Nastran_Combined_Book/qrg/bulkc1/TOC.CBAR.xhtml"},{"id":"pbar","title":"MSC Nastran Quick Reference Guide: PBAR","url":"https://nexus.hexagon.com/documentationcenter/en-US/bundle/MSC_Nastran_2024.1/page/Nastran_Combined_Book/qrg/bulkp/TOC.PBAR.xhtml"},{"id":"pload1","title":"MSC Nastran Quick Reference Guide: PLOAD1","url":"https://nexus.hexagon.com/documentationcenter/en-US/bundle/MSC_Nastran_2023.1/page/Nastran_Combined_Book/qrg/bulkp/TOC.PLOAD1.xhtml"},{"id":"post","title":"MSC Nastran Quick Reference Guide: parameter POST","url":"https://nexus.hexagon.com/documentationcenter/en-US/bundle/MSC_Nastran_2024.2/page/Nastran_Combined_Book/qrg/parameters/TOC.POST.xhtml"},{"id":"code","title":"Source, fixtures and the Python reference solver","url":"https://github.com/yujieteo/site/tree/main/visuals/beamdiag"}]};
 </script>
 <script>
@@ -291,22 +292,44 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
  * exactly from the nearest event on the left. None of this depends on the
  * number of elements per segment, which only sets the NASTRAN mesh.
  */
-(function (root, factory) {
+(function (/** @type {{ BeamDiag?: unknown }} */ root, factory) {
   const api = factory();
   if (typeof module === "object" && module.exports) module.exports = api;
   else root.BeamDiag = api;
 })(typeof self !== "undefined" ? self : this, function () {
   "use strict";
 
+  /** @typedef {"pin" | "fixed"} SupportKind */
+  /** @typedef {{ kind: SupportKind, x: number }} Support */
+  /** @typedef {{ kind: "point", x: number, F: number }} PointLoad */
+  /** @typedef {{ kind: "moment", x: number, C: number }} MomentLoad */
+  /** @typedef {{ kind: "dist", x1: number, x2: number, q1: number, q2: number }} DistLoad */
+  /** @typedef {PointLoad | MomentLoad | DistLoad} Load */
+  /** @typedef {{ A: number, I: number, Iy: number, J: number, c: number | null }} Section */
+  /** @typedef {{ length: number, material: { E: number, nu: number }, section: Section, supports: Support[], loads: Load[], divisions: number }} Model */
+  /** @typedef {"length" | "force" | "stress" | "moment" | "distributed" | "area" | "inertia" | "rigidity" | "angle"} Quantity */
+  /** @typedef {Readonly<{ id: string, label: string, ascii: string, factor: Readonly<Record<Quantity, number>>, symbol: Readonly<Record<Quantity, string>> }>} UnitSystem */
+  /** @typedef {string | UnitSystem} Units a unit system or its id */
+  /** @typedef {{ kind: SupportKind, x: number, Fy: number, Mz: number }} Reaction */
+  /** @typedef {{ x: number, v: number, theta: number }} Displacement */
+  /** @typedef {{ Fy: number, Mz: number, scaleF: number, scaleM: number }} Equilibrium */
+  /** @typedef {{ x: number, value: number }} Extreme */
+  /** @typedef {{ V: Extreme, M: Extreme, v: Extreme }} Extremes */
+  /** @typedef {{ model: Model, reactions: Reaction[], displacements: Displacement[], equilibrium: Equilibrium, extremes?: Extremes }} Result */
+  /** @typedef {{ x: number, V: number, M: number, v: number, theta: number }} Sample */
+  /** @typedef {"left" | "right"} Side */
+
   const SUPPORT_KINDS = ["pin", "fixed"];
 
   class ModelError extends Error {
+    /** @param {string} message @param {string} [field] */
     constructor(message, field) {
       super(message);
       this.name = "ModelError";
       this.field = field || null;
     }
   }
+  /** @type {(message: string, field?: string) => never} */
   const fail = (message, field) => { throw new ModelError(message, field); };
 
   /* ---------- unit conventions ---------- */
@@ -316,38 +339,48 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
      system without extra factors. Other quantities are derived from length and force.
      `ascii` names the system in NASTRAN comments, which should stay plain ASCII. */
   const LBF = 4.4482216152605, INCH = 0.0254; // exact by definition
-  const UNIT_SYSTEMS = Object.freeze(Object.fromEntries([
+  /** @type {Readonly<Record<string, UnitSystem>>} */
+  const UNIT_SYSTEMS = Object.freeze(Object.fromEntries(/** @type {{ id: string, label: string, length: [number, string], force: [number, string], stress: [number, string], ascii: string }[]} */ ([
     { id: "kN-m", label: "SI: kN, m, kPa", length: [1, "m"], force: [1e3, "kN"], stress: [1e3, "kPa"], ascii: "kN, m, kPa (kN/m2)" },
     { id: "N-m", label: "SI: N, m, Pa", length: [1, "m"], force: [1, "N"], stress: [1, "Pa"], ascii: "N, m, Pa (N/m2)" },
     { id: "N-mm", label: "SI: N, mm, MPa", length: [1e-3, "mm"], force: [1, "N"], stress: [1e6, "MPa"], ascii: "N, mm, MPa (N/mm2)" },
     { id: "lbf-in", label: "US customary: lbf, in, psi", length: [INCH, "in"], force: [LBF, "lbf"], stress: [LBF / INCH ** 2, "psi"], ascii: "lbf, in, psi (lbf/in2)" },
     { id: "kip-in", label: "US customary: kip, in, ksi", length: [INCH, "in"], force: [1e3 * LBF, "kip"], stress: [1e3 * LBF / INCH ** 2, "ksi"], ascii: "kip, in, ksi (kip/in2)" },
-  ].map((u) => {
+  ]).map((u) => {
     const [l, L] = u.length, [f, F] = u.force, [p, P] = u.stress;
+    /** @type {Record<Quantity, number>} */
     const factor = { length: l, force: f, stress: p, moment: f * l, distributed: f / l, area: l * l, inertia: l ** 4, rigidity: f * l * l, angle: 1 };
+    /** @type {Record<Quantity, string>} */
     const symbol = { length: L, force: F, stress: P, moment: `${F}·${L}`, distributed: `${F}/${L}`, area: `${L}²`, inertia: `${L}⁴`, rigidity: `${F}·${L}²`, angle: "rad" };
     return [u.id, Object.freeze({ id: u.id, label: u.label, ascii: u.ascii, factor: Object.freeze(factor), symbol: Object.freeze(symbol) })];
   })));
   const DEFAULT_UNITS = "N-mm";
   const SI = UNIT_SYSTEMS["N-m"];
 
+  /** @param {Units | undefined} units @returns {UnitSystem} */
   function unitSystem(units) {
     const u = typeof units === "string" ? UNIT_SYSTEMS[units] : units;
-    if (!u || !UNIT_SYSTEMS[u.id]) fail(`Unknown unit convention ${JSON.stringify(units && units.id || units)}; choose one of ${Object.keys(UNIT_SYSTEMS).join(", ")}.`, "units");
+    if (!u || !UNIT_SYSTEMS[u.id]) return fail(`Unknown unit convention ${JSON.stringify(units && /** @type {UnitSystem} */ (units).id || units)}; choose one of ${Object.keys(UNIT_SYSTEMS).join(", ")}.`, "units");
     return u;
   }
   /* SI value → number in `units`, and back. */
+  /** @param {number} value @param {Quantity} quantity @param {Units} units */
   const toUnits = (value, quantity, units) => value / unitSystem(units).factor[quantity];
+  /** @param {number} value @param {Quantity} quantity @param {Units} units */
   const fromUnits = (value, quantity, units) => value * unitSystem(units).factor[quantity];
 
   /* Re-express a validated SI model in `units` (both directions via `convert`). */
+  /** @param {Model} model @param {Units} units @param {(value: number, quantity: Quantity, units: UnitSystem) => number} [convert] @returns {Model} */
   function scaleModel(model, units, convert = toUnits) {
-    const u = unitSystem(units), c = (v, q) => (v == null ? v : convert(v, q, u)), x = (v) => c(v, "length");
+    const u = unitSystem(units);
+    /** @type {<T extends number | null>(v: T, q: Quantity) => T} */
+    const c = (v, q) => /** @type {typeof v} */ (v == null ? v : convert(v, q, u));
+    const x = (/** @type {number} */ v) => c(v, "length");
     const { section: s } = model;
     return {
       ...model, length: x(model.length),
       material: { ...model.material, E: c(model.material.E, "stress") },
-      section: { ...s, A: c(s.A, "area"), I: c(s.I, "inertia"), Iy: c(s.Iy, "inertia"), J: c(s.J, "inertia"), c: x(s.c) },
+      section: { ...s, A: c(s.A, "area"), I: c(s.I, "inertia"), Iy: c(s.Iy, "inertia"), J: c(s.J, "inertia"), c: c(s.c, "length") },
       supports: model.supports.map((sp) => ({ ...sp, x: x(sp.x) })),
       loads: model.loads.map((l) => (l.kind === "point" ? { ...l, x: x(l.x), F: c(l.F, "force") }
         : l.kind === "moment" ? { ...l, x: x(l.x), C: c(l.C, "moment") }
@@ -355,8 +388,9 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
     };
   }
 
+  /** @param {unknown} value @param {string} label @param {string} field @returns {number} */
   function number(value, label, field, { positive = false, min = -Infinity, max = Infinity } = {}) {
-    if (typeof value !== "number" || !Number.isFinite(value)) fail(`${label} must be a finite number.`, field);
+    if (typeof value !== "number" || !Number.isFinite(value)) return fail(`${label} must be a finite number.`, field);
     if (positive && !(value > 0)) fail(`${label} must be greater than zero.`, field);
     if (value < min || value > max) fail(`${label} must be between ${min} and ${max}.`, field);
     return value;
@@ -364,15 +398,21 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
 
   /* Check and normalise an SI model; throws ModelError naming the offending field.
      `units` only sets how lengths are written in the messages. */
+  /**
+   * @param {any} input an SI model from the page, a WebMCP tool or a test, untrusted: every field is checked here
+   * @param {{ units?: Units }} [options]
+   * @returns {Model}
+   */
   function validate(input, { units = SI } = {}) {
     if (!input || typeof input !== "object") fail("A beam model is required.");
     const len = lengthText(units);
     const L = number(input.length, "Beam length", "length", { positive: true });
     if (L < 1e-3 || L > 1e4) fail(`Beam length must be between ${len(1e-3)} and ${len(1e4)}.`, "length");
+    /** @param {unknown} value @param {string} label @param {string} field */
     const at = (value, label, field) => {
-      number(value, label, field);
-      if (value < 0 || value > L) fail(`${label} must lie on the beam, between 0 and ${len(L)}.`, field);
-      return value;
+      const v = number(value, label, field);
+      if (v < 0 || v > L) fail(`${label} must lie on the beam, between 0 and ${len(L)}.`, field);
+      return v;
     };
     const material = input.material || {};
     const E = number(material.E, "Young's modulus E", "material.E", { positive: true });
@@ -391,7 +431,8 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
       fail("Elements per segment must be a whole number, at least 1.", "divisions");
 
     if (!Array.isArray(input.supports) || input.supports.length === 0) fail("Add at least one support.", "supports");
-    const supports = input.supports.map((s, i) => {
+    /** @type {Support[]} */
+    const supports = input.supports.map((/** @type {any} */ s, /** @type {number} */ i) => {
       if (!SUPPORT_KINDS.includes(s && s.kind)) fail(`Support ${i + 1} must be a pin or fixed support.`, `supports.${i}.kind`);
       return { kind: s.kind, x: at(s.x, `Support ${i + 1} position`, `supports.${i}.x`) };
     });
@@ -404,7 +445,8 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
       fail("Mechanism: a single pin lets the beam rotate freely. Add a second support or make it fixed.", "supports");
 
     if (!Array.isArray(input.loads)) fail("Loads must be a list.", "loads");
-    const loads = input.loads.map((l, i) => {
+    /** @type {Load[]} */
+    const loads = input.loads.map((/** @type {any} */ l, /** @type {number} */ i) => {
       const label = `Load ${i + 1}`;
       switch (l && l.kind) {
         case "point":
@@ -426,6 +468,7 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
   }
 
   /* Positions where something happens: ends, supports, point actions, load ends. */
+  /** @param {Model} model @param {Units} [units] */
   function events(model, units = SI) {
     const xs = [0, model.length, ...model.supports.map((s) => s.x)];
     for (const l of model.loads) xs.push(...(l.kind === "dist" ? [l.x1, l.x2] : [l.x]));
@@ -436,6 +479,7 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
     return unique;
   }
 
+  /** @param {Model} model */
   function mesh(model) {
     const ev = events(model), nodes = [ev[0]];
     for (let i = 1; i < ev.length; i++) {
@@ -446,6 +490,7 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
   }
 
   /* Distributed-load intensity at x, taking the load starting at x (side "right") or ending there ("left"). */
+  /** @param {Model} model @param {number} x @param {Side} [side] */
   function intensity(model, x, side = "right") {
     let q = 0;
     for (const l of model.loads) {
@@ -458,12 +503,14 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
 
   /* Symmetric banded matrix: row i keeps K[i][i..i+BAND]. Beam DOFs only couple within one element, so BAND = 3. */
   const BAND = 3;
-  const banded = (n) => Array.from({ length: n }, () => new Float64Array(BAND + 1));
+  const banded = (/** @type {number} */ n) => Array.from({ length: n }, () => new Float64Array(BAND + 1));
+  /** @param {Float64Array[]} K @param {number} i @param {number} j */
   const entry = (K, i, j) => (Math.abs(i - j) > BAND ? 0 : i <= j ? K[i][j - i] : K[j][i - j]);
 
   /* Solve K u = f for symmetric positive definite banded K by LDLᵀ elimination.
      The system is first scaled to a unit diagonal, which makes the pivot test independent of
      units and element lengths; a vanishing scaled pivot means a mechanism. */
+  /** @param {Float64Array[]} K @param {number[]} f */
   function solveBanded(K, f) {
     const n = f.length, d = K.map((row) => 1 / Math.sqrt(row[0]));
     if (d.some((v) => !(v > 0 && Number.isFinite(v))))
@@ -489,22 +536,28 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
 
   /* Hermite shape functions on an element of length l at ξ ∈ [0, 1] (values and x-derivatives),
      ordered v_i, θ_i, v_j, θ_j. */
+  /** @param {number} l @param {number} t */
   const hermite = (l, t) => [1 - 3 * t * t + 2 * t ** 3, l * (t - 2 * t * t + t ** 3), 3 * t * t - 2 * t ** 3, l * (t ** 3 - t * t)];
+  /** @param {number} l @param {number} t */
   const hermiteSlope = (l, t) => [(6 * t * t - 6 * t) / l, 1 - 4 * t + 3 * t * t, (6 * t - 6 * t * t) / l, 3 * t * t - 2 * t];
   const GAUSS5 = [[-0.9061798459386640, 0.2369268850561891], [-0.5384693101056831, 0.4786286704993665], [0, 0.5688888888888889],
     [0.5384693101056831, 0.4786286704993665], [0.9061798459386640, 0.2369268850561891]];
 
+  /** @param {unknown} input @param {{ units?: Units }} [options] @returns {Result} */
   function solve(input, { units = SI } = {}) {
     const model = validate(input, { units }), EI = model.material.E * model.section.I;
     // Stiffness stations: the ends and every support. Loads between them enter as consistent nodal loads.
     const stations = [...new Set([0, model.length, ...model.supports.map((s) => s.x)])].sort((a, b) => a - b);
     const n = stations.length * 2, K = banded(n), f = Array(n).fill(0);
-    const where = new Map(stations.map((x, i) => [x, i])), index = (x) => where.get(x);
-    const element = (x) => { // the element with stations[e] < x < stations[e + 1]
+    const where = new Map(stations.map((x, i) => [x, i])), index = (/** @type {number} */ x) => where.get(x);
+    // Every support is a station.
+    const station = (/** @type {number} */ x) => /** @type {number} */ (where.get(x));
+    const element = (/** @type {number} */ x) => { // the element with stations[e] < x < stations[e + 1]
       let lo = 0, hi = stations.length - 2;
       while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (stations[mid] < x) lo = mid; else hi = mid - 1; }
       return lo;
     };
+    /** @param {number} e @param {number[]} weights @param {number} value */
     const spread = (e, weights, value) => weights.forEach((w, i) => { f[2 * e + i] += w * value; });
 
     for (let e = 0; e < stations.length - 1; e++) {
@@ -534,8 +587,8 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
 
     const fixed = new Set();
     for (const s of model.supports) {
-      fixed.add(2 * index(s.x));
-      if (s.kind === "fixed") fixed.add(2 * index(s.x) + 1);
+      fixed.add(2 * station(s.x));
+      if (s.kind === "fixed") fixed.add(2 * station(s.x) + 1);
     }
     // Dropping constrained DOFs keeps the free system banded with the same BAND.
     const free = [...Array(n).keys()].filter((i) => !fixed.has(i));
@@ -547,21 +600,23 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
     }
     if (u.some((v) => !Number.isFinite(v))) fail("The solution overflowed; check that E, I and the loads use consistent units.", "section.I");
 
-    const residual = (i) => {
+    const residual = (/** @type {number} */ i) => {
       let s = -f[i];
       for (let j = Math.max(0, i - BAND); j <= Math.min(n - 1, i + BAND); j++) s += entry(K, i, j) * u[j];
       return s;
     };
     const reactions = model.supports.map((s) => {
-      const i = index(s.x);
+      const i = station(s.x);
       return { kind: s.kind, x: s.x, Fy: residual(2 * i), Mz: s.kind === "fixed" ? residual(2 * i + 1) : 0 };
     }).sort((a, b) => a.x - b.x);
 
     // Deflection at every event: stations take the solved values; other events integrate M/EI
     // exactly from the previous event (nothing happens strictly between two events).
-    const result = { model, reactions, displacements: [] };
+    // The equilibrium is added once the displacements are known.
+    const result = /** @type {Result} */ ({ model, reactions, displacements: /** @type {Displacement[]} */ ([]) });
     for (const x of events(model)) {
-      const i = index(x), prev = result.displacements.at(-1);
+      // x = 0 is a station, so every other event has one before it.
+      const i = index(x), prev = /** @type {Displacement} */ (result.displacements.at(-1));
       result.displacements.push(i !== undefined ? { x, v: u[2 * i], theta: u[2 * i + 1] } : { x, ...integrate(result, prev, x) });
     }
     result.equilibrium = equilibrium(result);
@@ -569,9 +624,11 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
   }
 
   /* Resultant force and moment about x = 0 of all loads and reactions (should vanish). */
+  /** @param {Result} result @returns {Equilibrium} */
   function equilibrium(result) {
     const { model, reactions } = result;
     let Fy = 0, Mz = 0, scaleF = 0, scaleM = 0;
+    /** @param {number} F @param {number} x */
     const add = (F, x, C = 0) => { Fy += F; Mz += F * x + C; scaleF += Math.abs(F); scaleM += Math.abs(F * x) + Math.abs(C); };
     for (const r of reactions) add(r.Fy, r.x, r.Mz);
     for (const l of model.loads) {
@@ -588,9 +645,10 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
   }
 
   /* Exact internal forces at x from the left free body. side "left" gives the limit x⁻, "right" gives x⁺. */
+  /** @param {Result} result @param {number} x @param {Side} [side] */
   function internal(result, x, side = "right") {
     const { model, reactions } = result;
-    const incl = (a) => (side === "right" ? a <= x : a < x);
+    const incl = (/** @type {number} */ a) => (side === "right" ? a <= x : a < x);
     let V = 0, M = 0;
     for (const r of reactions) if (incl(r.x)) { V += r.Fy; M += r.Fy * (x - r.x) - r.Mz; }
     for (const l of model.loads) {
@@ -610,6 +668,7 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
   const GAUSS = [[-Math.sqrt(3 / 5), 5 / 9], [0, 8 / 9], [Math.sqrt(3 / 5), 5 / 9]];
 
   /* Deflection and slope at x: values at the events, integrated exactly from M/EI between them. */
+  /** @param {Result} result @param {number} x @returns {{ v: number, theta: number }} */
   function deflection(result, x) {
     const d = result.displacements;
     // Binary search for the segment containing x (the last one whose start is at or before x).
@@ -621,6 +680,7 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
 
   /* v and θ at x from their values at an earlier point `from` with no event between: θ' = M/EI, v' = θ.
      M is at most cubic there, so 3-point Gauss integrates M and (x − t)M exactly. */
+  /** @param {Result} result @param {Displacement} from @param {number} x @returns {{ v: number, theta: number }} */
   function integrate(result, from, x) {
     const EI = result.model.material.E * result.model.section.I, x0 = from.x, s = x - x0, { v, theta } = from;
     if (s === 0) return { v, theta };
@@ -634,6 +694,7 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
   }
 
   /* Values at x with both one-sided limits of V and M. */
+  /** @param {Result} result @param {number} x */
   function at(result, x) {
     const L = result.model.length;
     const left = x > 0 ? internal(result, x, "left") : { V: 0, M: 0 };
@@ -644,8 +705,11 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
   /* Mesh-independent plot samples: about `count` regular points plus per-segment critical points
      and event limits. Each segment runs from its right limit at the start to its left limit at the
      end, so jumps appear as two points at the same x. */
+  /** @param {Result} result @returns {Sample[]} */
   function diagram(result, count = 800) {
-    const ev = result.displacements.map((d) => d.x), L = result.model.length, pts = [];
+    const ev = result.displacements.map((d) => d.x), L = result.model.length;
+    /** @type {Sample[]} */
+    const pts = [];
     for (let e = 0; e < ev.length - 1; e++) {
       const a = ev[e], b = ev[e + 1], n = Math.max(2, Math.ceil(count * (b - a) / L));
       const xs = new Set(criticalPoints(result, a, b));
@@ -658,6 +722,7 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
     return [{ x: 0, V: 0, M: 0, ...deflection(result, 0) }, ...pts, { x: L, V: 0, M: 0, ...deflection(result, L) }];
   }
 
+  /** @param {Result} result @param {number} a @param {number} b */
   function criticalPoints(result, a, b) {
     const model = result.model, h = b - a, xs = [a, b];
     const ra = internal(result, a, "right"), qa = intensity(model, a, "right"), qb = intensity(model, b, "left");
@@ -670,6 +735,7 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
     })();
     const shearRoots = roots.filter((s) => s > 0 && s < h).map((s) => a + s).sort((x, y) => x - y);
     xs.push(...shearRoots);
+    /** @param {number} lo @param {number} hi @param {(x: number) => number} value */
     const bisect = (lo, hi, value) => {
       let vlo = value(lo);
       for (let k = 0; k < 60; k++) {
@@ -682,14 +748,15 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
       }
       return (lo + hi) / 2;
     };
-    const moment = (x) => internal(result, x, x === b ? "left" : "right").M;
+    const moment = (/** @type {number} */ x) => internal(result, x, x === b ? "left" : "right").M;
+    /** @type {number[]} */
     const momentRoots = [], partitions = [a, ...shearRoots, b];
     for (let i = 0; i < partitions.length - 1; i++) {
       const lo = partitions[i], hi = partitions[i + 1];
       if (moment(lo) === 0) momentRoots.push(lo);
       if (moment(lo) * moment(hi) < 0) momentRoots.push(bisect(lo, hi, moment));
     }
-    const slope = (x) => deflection(result, x).theta;
+    const slope = (/** @type {number} */ x) => deflection(result, x).theta;
     const slopePartitions = [a, ...momentRoots.filter((x) => x > a && x < b), b];
     for (let i = 0; i < slopePartitions.length - 1; i++) {
       const lo = slopePartitions[i], hi = slopePartitions[i + 1];
@@ -699,19 +766,27 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
     return xs;
   }
 
+  /** @param {Result} result @returns {Extremes} */
   function extremes(result) {
+    /** @type {Record<"V" | "M" | "v", Extreme | null>} */
     const best = { V: null, M: null, v: null };
     for (const p of diagram(result).slice(1, -1)) {
-      for (const key of ["V", "M", "v"]) {
+      for (const key of /** @type {const} */ (["V", "M", "v"])) {
         const value = p[key];
         if (!best[key] || Math.abs(value) > Math.abs(best[key].value) + 1e-12 * Math.abs(value)) best[key] = { x: p.x, value };
       }
     }
-    return best;
+    // A solved beam has interior samples, so every extreme is set.
+    return /** @type {Extremes} */ (best);
   }
 
   /* Section properties (m, m², m⁴) from a shape. Bending is about the horizontal axis, depth along y. */
+  /**
+   * @param {any} spec a shape and its dimensions from the page or a WebMCP tool, untrusted: every field is checked here
+   * @returns {Section}
+   */
   function sectionProperties(spec) {
+    /** @param {unknown} v @param {string} label @param {string} field */
     const pos = (v, label, field) => number(v, label, field, { positive: true });
     switch (spec && spec.shape) {
       case "rect": {
@@ -746,6 +821,7 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
   }
 
   /* Degree of static indeterminacy for transverse loading: reaction components minus the two equilibrium equations. */
+  /** @param {{ kind: string }[]} supports */
   function indeterminacy(supports) {
     return supports.reduce((n, s) => n + (s.kind === "fixed" ? 2 : 1), 0) - 2;
   }
@@ -754,6 +830,7 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
 
   /* A real in the fewest characters that still read back as exactly the same double,
    * e.g. 6. 0.3 -40000. 2.E11 4.456-4; null when that takes more than `width` characters. */
+  /** @param {number} x @param {number} width @returns {string | null} */
   function exactReal(x, width) {
     if (x === 0) return "0.";
     const [mant, exp] = Math.abs(x).toExponential().split("e"), e = +exp, sign = x < 0 ? "-" : "";
@@ -771,6 +848,7 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
   }
 
   /* A real for a 16-character large field: exact when it fits, otherwise rounded to as many digits as fit. */
+  /** @param {number} x @returns {string} */
   function nastranReal(x) {
     for (let digits = 17; ; digits--) {
       const text = exactReal(digits === 17 ? x : Number(x.toPrecision(digits)), 16);
@@ -779,22 +857,27 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
   }
 
   /* Fields are {int}, {real} or a literal string (blank = ""). */
-  const int = (n) => ({ int: n });
-  const real = (x) => ({ real: x });
+  /** @typedef {{ int: number } | { real: number } | string | null | undefined} Field */
+  const int = (/** @type {number} */ n) => ({ int: n });
+  const real = (/** @type {number} */ x) => ({ real: x });
+  /** @param {Field} v */
   function smallField(v) {
     if (v && typeof v === "object" && "int" in v) return String(v.int);
     if (v && typeof v === "object" && "real" in v) return exactReal(v.real, 8);
     return v == null ? "" : String(v);
   }
+  /** @param {Field} v @returns {string} */
   function largeField(v) {
     if (v && typeof v === "object" && "real" in v) return nastranReal(v.real);
-    return smallField(v);
+    // Only a real can fail to fit a field.
+    return /** @type {string} */ (smallField(v));
   }
-  const fitsSmall = (fields) => fields.every((v) => { const s = smallField(v); return s !== null && s.length <= 8; });
+  const fitsSmall = (/** @type {Field[]} */ fields) => fields.every((v) => { const s = smallField(v); return s !== null && s.length <= 8; });
 
   /* One small-field entry: the name, then eight 8-character fields per line; continuations start blank. */
+  /** @param {string} name @param {Field[]} fields fields that fit eight characters (cardGroup checks) */
   function smallEntry(name, fields) {
-    const out = [], values = fields.map(smallField);
+    const out = [], values = /** @type {string[]} */ (fields.map(smallField));
     for (let i = 0; i < Math.max(values.length, 1); i += 8) {
       const head = i === 0 ? name.padEnd(8) : "".padEnd(8);
       out.push((head + values.slice(i, i + 8).map((v) => v.padEnd(8)).join("")).trimEnd());
@@ -803,6 +886,7 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
   }
 
   /* One large-field entry: NAME* then four 16-character fields per line. */
+  /** @param {string} name @param {Field[]} fields */
   function largeEntry(name, fields) {
     const out = [], values = fields.map(largeField);
     for (const v of values) if (v.length > 16) throw new Error(`Field ${v} is wider than 16 characters.`);
@@ -815,23 +899,26 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
 
   /* Cards of one type share a format: small field unless some value needs more than
    * eight characters to stay exact, then large field for the whole group. */
+  /** @param {string} name @param {Field[][]} rows */
   function cardGroup(name, rows) {
     const entry = rows.every(fitsSmall) ? smallEntry : largeEntry;
     return rows.flatMap((fields) => entry(name, fields));
   }
   /* A "$" line naming the columns of a small-field card. */
-  const columns = (...names) => ("$" + names[0].padEnd(7) + names.slice(1).map((n) => n.padEnd(8)).join("")).trimEnd();
+  const columns = (/** @type {string[]} */ ...names) => ("$" + names[0].padEnd(7) + names.slice(1).map((n) => n.padEnd(8)).join("")).trimEnd();
 
-  const count = (n, noun) => `${n} ${noun}${n === 1 ? "" : "s"}`;
+  const count = (/** @type {number} */ n, /** @type {string} */ noun) => `${n} ${noun}${n === 1 ? "" : "s"}`;
 
   /* Build a NASTRAN deck that encodes exactly the model the browser solved. */
   /* The input is SI, like every other function here; the deck's numbers are written in `units`. */
+  /** @param {unknown} input @param {{ title?: unknown, units?: Units }} [options] */
   function exportBdf(input, { title = "BEAMDIAG LINEAR STATIC", units = SI } = {}) {
     // Fifteen digits drop the last-bit noise a conversion leaves (5e-3 m² is 5000 mm², not 5000.000000000001).
     const u = unitSystem(units), model = scaleModel(validate(input, { units: u }), u, (v, q) => +toUnits(v, q, u).toPrecision(15)), nodes = mesh(model);
     const hasLoad = model.loads.some((l) => (l.kind === "point" && l.F !== 0) || (l.kind === "moment" && l.C !== 0) || (l.kind === "dist" && (l.q1 !== 0 || l.q2 !== 0)));
     if (!hasLoad) fail("Add a non-zero load before exporting a NASTRAN deck.", "loads");
-    const ids = new Map(nodes.map((x, i) => [x, i + 1])), gid = (x) => ids.get(x);
+    // Every support and point load sits on a mesh node.
+    const ids = new Map(nodes.map((x, i) => [x, i + 1])), gid = (/** @type {number} */ x) => /** @type {number} */ (ids.get(x));
     const safeTitle = String(title).replace(/[^A-Za-z0-9 _.,()+\-]/g, " ").slice(0, 60).trim() || "BEAMDIAG";
     const { material: mat, section: sec } = model, SPC = 1, LOAD = 2;
     const lines = [
@@ -875,22 +962,23 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
       "$ Pin: 12 (T1, T2). Fixed: 126 (T1, T2, R3).",
       columns("SPC1", "SID", "C", "G1", "G2", "G3", "G4", "G5", "G6"),
     ];
-    for (const [kind, c] of [["pin", 12], ["fixed", 126]]) {
+    for (const [kind, c] of /** @type {[SupportKind, number][]} */ ([["pin", 12], ["fixed", 126]])) {
       const grids = model.supports.filter((s) => s.kind === kind).map((s) => gid(s.x)).sort((a, b) => a - b);
       if (grids.length) lines.push(...smallEntry("SPC1", [int(SPC), int(c), ...grids.map(int)]));
     }
     lines.push("$", "$ ---- Loads ----");
-    const forces = model.loads.filter((l) => l.kind === "point" && l.F !== 0);
+    const forces = model.loads.filter(/** @returns {l is PointLoad} */ (l) => l.kind === "point" && l.F !== 0);
     if (forces.length) lines.push(columns("FORCE", "SID", "G", "CID", "F", "N1", "N2", "N3"),
       ...cardGroup("FORCE", forces.map((l) => [int(LOAD), int(gid(l.x)), int(0), real(l.F), real(0), real(1), real(0)])));
-    const moments = model.loads.filter((l) => l.kind === "moment" && l.C !== 0);
+    const moments = model.loads.filter(/** @returns {l is MomentLoad} */ (l) => l.kind === "moment" && l.C !== 0);
     if (moments.length) lines.push(columns("MOMENT", "SID", "G", "CID", "M", "N1", "N2", "N3"),
       ...cardGroup("MOMENT", moments.map((l) => [int(LOAD), int(gid(l.x)), int(0), real(l.C), real(0), real(0), real(1)])));
     // One PLOAD1 per element under each distributed load, with the intensities at the element ends.
+    /** @type {Field[][]} */
     const ploads = [];
     for (const l of model.loads) {
       if (l.kind !== "dist" || (l.q1 === 0 && l.q2 === 0)) continue;
-      const q = (x) => l.q1 + (l.q2 - l.q1) * (x - l.x1) / (l.x2 - l.x1);
+      const q = (/** @type {number} */ x) => l.q1 + (l.q2 - l.q1) * (x - l.x1) / (l.x2 - l.x1);
       for (let e = 0; e < nodes.length - 1; e++) {
         const a = nodes[e], b = nodes[e + 1];
         if (a >= l.x1 && b <= l.x2) ploads.push([int(LOAD), int(e + 1), "FY", "FR", real(0), real(q(a)), real(1), real(q(b))]);
@@ -904,11 +992,14 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
   /* ---------- number formatting, shared by the page and the beamdswitch report ---------- */
   /* Each unit convention puts values on a different scale (a deflection is 0.004 m or 4 mm),
      so very large and very small magnitudes switch to powers of ten. */
+  /** @param {number} x @param {number} n */
   const plain = (x, n) => String(+x.toPrecision(n)).replace("-", "−");
+  /** @param {number} x @param {number} n */
   const pow10 = (x, n) => {
     const [m, e] = x.toExponential(n - 1).split("e");
-    return `${plain(+m, n)}×10${e.replace("+", "").replace("-", "⁻").replace(/\d/g, (c) => "⁰¹²³⁴⁵⁶⁷⁸⁹"[c])}`;
+    return `${plain(+m, n)}×10${e.replace("+", "").replace("-", "⁻").replace(/\d/g, (c) => "⁰¹²³⁴⁵⁶⁷⁸⁹"[Number(c)])}`;
   };
+  /** @param {number} x */
   const nf = (x, digits = 3) => {
     if (!Number.isFinite(x)) return "—";
     const a = Math.abs(x);
@@ -918,20 +1009,21 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
     const d = a >= 1000 ? 0 : a >= 100 ? 1 : a >= 10 ? 2 : digits;
     return x.toLocaleString("en-GB", { minimumFractionDigits: d, maximumFractionDigits: d }).replace("-", "−");
   };
+  /** @param {number} x */
   const sig = (x, n = 4) => {
     if (!Number.isFinite(x)) return "—";
     const a = Math.abs(x);
     return a === 0 || (a >= 1e-4 && a < 1e7) ? plain(x, n) : pow10(x, n);
   };
-  const sci = (x) => {
+  const sci = (/** @type {number} */ x) => {
     if (!Number.isFinite(x)) return "—";
     const a = Math.abs(x);
     return a === 0 || (a >= 1e-2 && a < 1e6) ? plain(x, 4) : pow10(x, 4);
   };
   // Figure labels: plain digits below `big`, otherwise n significant figures × a power of ten, so a
   // label stays a few characters long at any load magnitude in any unit convention.
-  const short = (x, n = 3, big = 1e6) => (Number.isFinite(x) && Math.abs(x) >= big ? pow10(x, n) : sig(x, n));
-  const shortNf = (x, digits) => (Number.isFinite(x) && Math.abs(x) >= 1e6 ? pow10(x, 4) : nf(x, digits));
+  const short = (/** @type {number} */ x, n = 3, big = 1e6) => (Number.isFinite(x) && Math.abs(x) >= big ? pow10(x, n) : sig(x, n));
+  const shortNf = (/** @type {number} */ x, /** @type {number} */ digits = 3) => (Number.isFinite(x) && Math.abs(x) >= 1e6 ? pow10(x, 4) : nf(x, digits));
   const format = Object.freeze({ plain, pow10, nf, sig, sci, short, shortNf });
 
   /* ---------- beamdswitch report ----------
@@ -945,6 +1037,7 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
 
   /* A position measured from the left end, re-measured from `origin` ("left" or "mid") as the page
      shows it. Round-off of order 1e-12·L reads as exactly mid-span rather than as 10⁻¹⁴ mm. */
+  /** @param {number} x @param {number} L @param {string} origin */
   function fromOrigin(x, L, origin) {
     if (origin !== "mid") return x;
     const s = x - L / 2;
@@ -952,18 +1045,20 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
   }
 
   /* Relative out-of-balance of loads and reactions, as the page reports it. */
-  const residual = (eq) => Math.max(Math.abs(eq.Fy) / Math.max(eq.scaleF, 1e-300), Math.abs(eq.Mz) / Math.max(eq.scaleM, 1e-300));
+  const residual = (/** @type {Equilibrium} */ eq) => Math.max(Math.abs(eq.Fy) / Math.max(eq.scaleF, 1e-300), Math.abs(eq.Mz) / Math.max(eq.scaleM, 1e-300));
   /* Span over largest deflection, as in "L/360"; "∞" when the beam does not deflect. */
-  const spanRatio = (L, v) => (Math.abs(v) > 0 ? String(Math.round(L / Math.abs(v))) : "∞");
+  const spanRatio = (/** @type {number} */ L, /** @type {number} */ v) => (Math.abs(v) > 0 ? String(Math.round(L / Math.abs(v))) : "∞");
 
+  /** @type {Record<string, [string, string]>} */
   const SPOKEN_UNITS = {
     m: ["metre", "metres"], mm: ["millimetre", "millimetres"], in: ["inch", "inches"],
     N: ["newton", "newtons"], kN: ["kilonewton", "kilonewtons"], lbf: ["pound-force", "pounds-force"], kip: ["kip", "kips"],
     Pa: ["pascal", "pascals"], kPa: ["kilopascal", "kilopascals"], MPa: ["megapascal", "megapascals"],
     psi: ["pound per square inch", "pounds per square inch"], ksi: ["kip per square inch", "kips per square inch"],
   };
+  /** @param {UnitSystem} u @param {Quantity} quantity */
   function spokenUnit(u, quantity, plural = true) {
-    const w = (sym, many) => SPOKEN_UNITS[sym][many ? 1 : 0], L = u.symbol.length, F = u.symbol.force;
+    const w = (/** @type {string} */ sym, /** @type {boolean} */ many) => SPOKEN_UNITS[sym][many ? 1 : 0], L = u.symbol.length, F = u.symbol.force;
     switch (quantity) {
       case "moment": return `${w(F, false)} ${w(L, plural)}`;
       case "distributed": return `${w(F, plural)} per ${w(L, false)}`;
@@ -975,23 +1070,25 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
     }
   }
   const SUPERSCRIPT = "⁰¹²³⁴⁵⁶⁷⁸⁹";
-  const exponent = (e) => (e.startsWith("⁻") ? "-" : "") + [...e.replace("⁻", "")].map((c) => SUPERSCRIPT.indexOf(c)).join("");
+  const exponent = (/** @type {string} */ e) => (e.startsWith("⁻") ? "-" : "") + [...e.replace("⁻", "")].map((c) => SUPERSCRIPT.indexOf(c)).join("");
   /* A number as the page writes it (−1,234 or 1.5×10⁻⁴), read aloud or typeset. */
-  const sayNumber = (t) => t.replace(/^−/, "minus ").replace(/×10([⁻⁰¹²³⁴⁵⁶⁷⁸⁹]+)$/, (_, e) => ` times ten to the ${exponent(e).replace("-", "minus ")}`);
-  const texNumber = (t) => t.replace(/^−/, "-").replace(/,/g, "{,}").replace(/×10([⁻⁰¹²³⁴⁵⁶⁷⁸⁹]+)$/, (_, e) => `\\times 10^{${exponent(e)}}`);
-  const texUnit = (sym) => `\\mathrm{${sym.replace(/·/g, "\\cdot ").replace(/²/g, "^2").replace(/³/g, "^3").replace(/⁴/g, "^4")}}`;
+  const sayNumber = (/** @type {string} */ t) => t.replace(/^−/, "minus ").replace(/×10([⁻⁰¹²³⁴⁵⁶⁷⁸⁹]+)$/, (_, e) => ` times ten to the ${exponent(e).replace("-", "minus ")}`);
+  const texNumber = (/** @type {string} */ t) => t.replace(/^−/, "-").replace(/,/g, "{,}").replace(/×10([⁻⁰¹²³⁴⁵⁶⁷⁸⁹]+)$/, (_, e) => `\\times 10^{${exponent(e)}}`);
+  const texUnit = (/** @type {string} */ sym) => `\\mathrm{${sym.replace(/·/g, "\\cdot ").replace(/²/g, "^2").replace(/³/g, "^3").replace(/⁴/g, "^4")}}`;
 
   /* The narration voice every beam deck declares. */
   const VOICE = "bf_emma";
   const speech = Object.freeze({ sayNumber, texNumber, texUnit, spokenUnit, VOICE });
 
   const NUMBER_WORDS = ["no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"];
+  /** @type {Record<string, string>} */
   const SHAPE_NAMES = { rect: "solid rectangle", circle: "solid circle", tube: "circular tube", custom: "custom section" };
   /* "two supports", "one load": a small count in words. */
-  const counted = (n, one, many) => `${NUMBER_WORDS[n] ?? n} ${n === 1 ? one : many}`;
+  const counted = (/** @type {number} */ n, /** @type {string} */ one, /** @type {string} */ many) => `${NUMBER_WORDS[n] ?? n} ${n === 1 ? one : many}`;
 
   /* The method frame: how the reactions follow, for a beam statically indeterminate to degree deg
      (its supports give r = deg + 2 reaction components). */
+  /** @param {number} deg @returns {import("./beamdswitch.js").Frame} */
   function methodFrame(deg) {
     const r = deg + 2;
     if (deg <= 0) return {
@@ -1032,18 +1129,24 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
 
   /* The solver's V, M and v in units u, measured from `origin`, as beamdswitch plot expressions
      written with Macaulay brackets from the reactions and the loads, and the x range they span. */
+  /** @param {Result} result @param {UnitSystem} u @param {string} origin */
   function macaulayCurves(result, u, origin) {
-    const show = (si, q) => toUnits(si, q, u);
+    const show = (/** @type {number} */ si, /** @type {Quantity} */ q) => toUnits(si, q, u);
     const d = scaleModel(result.model, u), Ld = d.length, o = origin === "mid" ? Ld / 2 : 0, eps = 1e-9 * Ld;
-    const num = (v) => String(+v.toPrecision(12));
-    const shift = (a) => { const s = a - o; return s === 0 ? "x" : s > 0 ? `x - ${num(s)}` : `x + ${num(-s)}`; };
-    const mac = (a, n) => `max(0, ${shift(a)})^${n}`;
-    const step = (a) => `min(1, max(0, (${shift(a)})/${num(eps)} + 1))`; // 1 from a on: V and M just right of a
-    const sum = (terms) => terms.filter(([c]) => c !== 0).map(([c, t], i) => `${i ? (c < 0 ? " - " : " + ") : c < 0 ? "-" : ""}${num(Math.abs(c))}${t ? `*${t}` : ""}`).join("") || "0";
+    const num = (/** @type {number} */ v) => String(+v.toPrecision(12));
+    const shift = (/** @type {number} */ a) => { const s = a - o; return s === 0 ? "x" : s > 0 ? `x - ${num(s)}` : `x + ${num(-s)}`; };
+    const mac = (/** @type {number} */ a, /** @type {number} */ n) => `max(0, ${shift(a)})^${n}`;
+    const step = (/** @type {number} */ a) => `min(1, max(0, (${shift(a)})/${num(eps)} + 1))`; // 1 from a on: V and M just right of a
+    const sum = (/** @type {[number, string][]} */ terms) => terms.filter(([c]) => c !== 0).map(([c, t], i) => `${i ? (c < 0 ? " - " : " + ") : c < 0 ? "-" : ""}${num(Math.abs(c))}${t ? `*${t}` : ""}`).join("") || "0";
     // A point action at the right end only affects the diagram at x = L itself, where the page shows the left limit.
-    const inside = (a) => a < Ld;
+    const inside = (/** @type {number} */ a) => a < Ld;
     const reacts = result.reactions.map((re) => ({ x: toUnits(re.x, "length", u), Fy: show(re.Fy, "force"), Mz: show(re.Mz, "moment") })).filter((re) => inside(re.x));
-    const Vt = [], Mt = [], vt = [];
+    /** @type {[number, string][]} */
+    const Vt = [];
+    /** @type {[number, string][]} */
+    const Mt = [];
+    /** @type {[number, string][]} */
+    const vt = [];
     const EId = d.material.E * d.section.I, start = result.displacements[0];
     vt.push([show(start.v, "length"), ""], [start.theta, o ? `(${shift(0)})` : "x"]);
     for (const re of reacts) {
@@ -1066,32 +1169,41 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
     return { V: sum(Vt), M: sum(Mt), v: sum(vt), x: [num(-o), num(Ld - o)] };
   }
 
+  /**
+   * @typedef {object} ReportOptions
+   * @property {Units} [units]
+   * @property {string} [origin] "left" or "mid"
+   * @property {unknown} [title]
+   * @property {{ shape?: string, label?: string, dims?: [string, number, Quantity][] }} [section]
+   * @property {{ label?: string }} [material]
+   */
+  /** @param {Result} result @param {ReportOptions} [options] */
   function beamReport(result, { units = DEFAULT_UNITS, origin = "left", title = "", section = {}, material = {} } = {}) {
     const u = unitSystem(units), m = result.model, L = m.length, ex = result.extremes || extremes(result);
-    const sym = (q) => u.symbol[q], show = (si, q) => toUnits(si, q, u);
+    const sym = (/** @type {Quantity} */ q) => u.symbol[q], show = (/** @type {number} */ si, /** @type {Quantity} */ q) => toUnits(si, q, u);
     const mid = origin === "mid";
-    const X = (x) => show(fromOrigin(x, L, origin), "length");
-    const text = (t, q) => `${t} ${sym(q)}`;
-    const say = (t, q) => `${sayNumber(t)} ${spokenUnit(u, q, !/^−?1$/.test(t))}`;
-    const tex = (t, q) => `${texNumber(t)}\\ ${texUnit(sym(q))}`;
-    const v4 = (si, q) => sig(show(si, q), 4);
-    const pos = (x) => text(sig(X(x)), "length"), sayPos = (x) => `x equals ${say(sig(X(x)), "length")}`;
+    const X = (/** @type {number} */ x) => show(fromOrigin(x, L, origin), "length");
+    const text = (/** @type {string} */ t, /** @type {Quantity} */ q) => `${t} ${sym(q)}`;
+    const say = (/** @type {string} */ t, /** @type {Quantity} */ q) => `${sayNumber(t)} ${spokenUnit(u, q, !/^−?1$/.test(t))}`;
+    const tex = (/** @type {string} */ t, /** @type {Quantity} */ q) => `${texNumber(t)}\\ ${texUnit(sym(q))}`;
+    const v4 = (/** @type {number} */ si, /** @type {Quantity} */ q) => sig(show(si, q), 4);
+    const pos = (/** @type {number} */ x) => text(sig(X(x)), "length"), sayPos = (/** @type {number} */ x) => `x equals ${say(sig(X(x)), "length")}`;
     const unitsSpoken = `${spokenUnit(u, "force")}, ${spokenUnit(u, "length")} and ${spokenUnit(u, "stress")}`;
     const deg = indeterminacy(m.supports), EI = m.material.E * m.section.I, resid = residual(result.equilibrium);
-    const stress = m.section.c ? Math.abs(ex.M.value) * m.section.c / m.section.I : null;
+    const c = m.section.c, stress = c ? Math.abs(ex.M.value) * c / m.section.I : null;
     const ratio = spanRatio(L, ex.v.value);
-    const kind = (s) => (s.kind === "pin" ? "pinned support" : "fixed support");
+    const kind = (/** @type {{ kind: SupportKind }} */ s) => (s.kind === "pin" ? "pinned support" : "fixed support");
 
     /* ----- set-up ----- */
-    const loadText = (l) => (l.kind === "point" ? `point force ${text(v4(l.F, "force"), "force")} at x = ${pos(l.x)}`
+    const loadText = (/** @type {Load} */ l) => (l.kind === "point" ? `point force ${text(v4(l.F, "force"), "force")} at x = ${pos(l.x)}`
       : l.kind === "moment" ? `couple ${text(v4(l.C, "moment"), "moment")} at x = ${pos(l.x)}`
         : `distributed ${l.q1 === l.q2 ? text(v4(l.q1, "distributed"), "distributed") : `${v4(l.q1, "distributed")} → ${text(v4(l.q2, "distributed"), "distributed")}`} from x = ${pos(l.x1)} to ${pos(l.x2)}`);
-    const updown = (v) => (v < 0 ? "downward " : v > 0 ? "upward " : "");
-    const loadSaid = (l) => (l.kind === "point" ? `a ${updown(l.F)}point force of ${say(v4(Math.abs(l.F), "force"), "force")} at ${sayPos(l.x)}`
+    const updown = (/** @type {number} */ v) => (v < 0 ? "downward " : v > 0 ? "upward " : "");
+    const loadSaid = (/** @type {Load} */ l) => (l.kind === "point" ? `a ${updown(l.F)}point force of ${say(v4(Math.abs(l.F), "force"), "force")} at ${sayPos(l.x)}`
       : l.kind === "moment" ? `a ${l.C < 0 ? "clockwise " : l.C > 0 ? "counter-clockwise " : ""}couple of ${say(v4(Math.abs(l.C), "moment"), "moment")} at ${sayPos(l.x)}`
         : l.q1 === l.q2 ? `a uniform ${updown(l.q1)}load of ${say(v4(Math.abs(l.q1), "distributed"), "distributed")} from ${sayPos(l.x1)} to ${say(sig(X(l.x2)), "length")}`
           : `a distributed load varying from ${say(v4(l.q1, "distributed"), "distributed")} at ${sayPos(l.x1)} to ${say(v4(l.q2, "distributed"), "distributed")} at ${sayPos(l.x2)}`);
-    const list = (items) => (items.length < 2 ? items.join("") : `${items.slice(0, -1).join(", ")} and ${items.at(-1)}`);
+    const list = (/** @type {string[]} */ items) => (items.length < 2 ? items.join("") : `${items.slice(0, -1).join(", ")} and ${items.at(-1)}`);
     const fromWhere = mid ? "mid-span, negative to the left" : "the left end";
     const beamFrame = {
       title: `The beam: L = ${text(v4(L, "length"), "length")} on ${counted(m.supports.length, "support", "supports")}, with ${counted(m.loads.length, "load", "loads")}`,
@@ -1121,7 +1233,7 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
         `- Units: ${u.label}, one consistent convention for every input and result.`,
       ].join("\n"),
       narration: [
-        `The section is a ${SHAPE_NAMES[section.shape] || "custom section"}${saidDims.length ? `, ${list(saidDims)}` : ""}, with a second moment of area of ${say(sci(show(m.section.I, "inertia")), "inertia")}.`,
+        `The section is a ${SHAPE_NAMES[section.shape ?? ""] || "custom section"}${saidDims.length ? `, ${list(saidDims)}` : ""}, with a second moment of area of ${say(sci(show(m.section.I, "inertia")), "inertia")}.`,
         `The material is ${material.label ? material.label.replace(/\s*\(.*\)$/, "").toLowerCase() : "a custom material"}, with a Young's modulus of ${say(v4(m.material.E, "stress"), "stress")}.`,
         `So the flexural rigidity E I is ${say(sci(show(EI, "rigidity")), "rigidity")}.`,
         `Every number in this talk is in ${unitsSpoken}.`,
@@ -1148,7 +1260,7 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
 
     /* ----- results ----- */
     const reactionRows = result.reactions.map((re, i) => `| ${i + 1}, ${re.kind === "pin" ? "pin" : "fixed"} | ${sig(X(re.x))} | ${shortNf(show(re.Fy, "force"))} | ${re.kind === "fixed" ? shortNf(show(re.Mz, "moment")) : "—"} |`);
-    const reactionSaid = (re) => {
+    const reactionSaid = (/** @type {Reaction} */ re) => {
       const F = shortNf(show(Math.abs(re.Fy), "force")), push = re.Fy < 0 ? "pulls down with" : "pushes up with";
       let s = `The ${kind(re)} at ${sayPos(re.x)} ${push} ${say(F, "force")}`;
       if (re.kind === "fixed") s += `, and resists with a ${re.Mz < 0 ? "clockwise" : "counter-clockwise"} moment of ${say(shortNf(show(Math.abs(re.Mz), "moment")), "moment")}`;
@@ -1168,7 +1280,7 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
 
     // Plots: the solver's V, M and v in the page's units and origin, as Macaulay brackets.
     const curves = macaulayCurves(result, u, origin);
-    const plot = (ylabel, curve) => ({ x: curves.x, xlabel: `x (${sym("length")}), from ${mid ? "mid-span" : "the left end"}`, ylabel, curves: [curve] });
+    const plot = (/** @type {string} */ ylabel, /** @type {string} */ curve) => ({ x: curves.x, xlabel: `x (${sym("length")}), from ${mid ? "mid-span" : "the left end"}`, ylabel, curves: [curve] });
 
     const V = sig(show(ex.V.value, "force"), 4), M = sig(show(ex.M.value, "moment"), 4), vmax = sig(show(ex.v.value, "length"), 4);
     const sense = ex.M.value >= 0 ? "sagging" : "hogging";
@@ -1193,7 +1305,7 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
         "Next, the bending moment.",
         "It is the running integral of the shear, so it peaks where the shear crosses zero or jumps.",
         `The largest moment is ${say(M, "moment")}, ${sense}, at ${sayPos(ex.M.x)}.`,
-        ...(stress != null ? [`With the extreme fibre ${say(sig(show(m.section.c, "length")), "length")} from the neutral axis, that is a peak bending stress of ${say(sig(show(stress, "stress"), 4), "stress")}.`] : []),
+        ...(stress != null && c ? [`With the extreme fibre ${say(sig(show(c, "length")), "length")} from the neutral axis, that is a peak bending stress of ${say(sig(show(stress, "stress"), 4), "stress")}.`] : []),
       ].join(" "),
     };
     const deflectionFrame = {
@@ -1248,10 +1360,11 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
     };
   }
 
+  /** @param {number} x */
   function fmt(x) {
     return Number.isInteger(x) ? String(x) : String(+x.toPrecision(6));
   }
-  const lengthText = (units) => { const u = unitSystem(units); return (x) => `${fmt(toUnits(x, "length", u))} ${u.symbol.length}`; };
+  const lengthText = (/** @type {Units} */ units) => { const u = unitSystem(units); return (/** @type {number} */ x) => `${fmt(toUnits(x, "length", u))} ${u.symbol.length}`; };
 
   return { SUPPORT_KINDS, UNIT_SYSTEMS, DEFAULT_UNITS, toUnits, fromUnits, scaleModel, ModelError, sectionProperties, indeterminacy, validate, mesh, solve, internal, deflection, at, diagram, extremes, exportBdf, smallEntry, largeEntry, exactReal, nastranReal, format, speech, fromOrigin, residual, spanRatio, intensity, beamReport };
 });
@@ -1383,23 +1496,49 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
  *   document({ meta, narration, sections })    any sections as Markdown in beamdswitch's deck syntax
  *   texNodes(tex)                              a small TeX subset as a tree, for the page to draw
  */
-(function (root, factory) {
+(function (/** @type {any} */ root, factory) {
+  // In the page, root is self, on which engine.js and beamdswitch.js have published their APIs.
   if (typeof module === "object" && module.exports) module.exports = factory(require("./engine.js"), require("./beamdswitch.js"));
   else root.HandCalc = factory(root.BeamDiag, root.Beamdswitch);
-})(typeof self !== "undefined" ? self : this, function (B, T) {
+})(typeof self !== "undefined" ? self : this, /** @param {typeof import("./engine.js")} B @param {typeof import("./beamdswitch.js")} T */ function (B, T) {
   "use strict";
+
+  /** @typedef {ReturnType<typeof B.solve>} Result */
+  /** @typedef {Parameters<typeof B.toUnits>[1]} Quantity */
+  /** @typedef {{ units?: Parameters<typeof B.toUnits>[2], origin?: string }} Options */
+  /** @typedef {{ i: number, kind: "pin" | "fixed", x: number, xi: number, Fy: number, Mz: number, si: Result["reactions"][number] }} CReaction */
+  /** @typedef {{ n: number, kind: "dist", x1: number, x2: number, xi1: number, xi2: number, q1: number, q2: number }} CDist */
+  /** @typedef {{ n: number, kind: "point", x: number, xi: number, F: number, C: number }} CForce */
+  /** @typedef {{ n: number, kind: "moment", x: number, xi: number, F: number, C: number }} CCouple */
+  /** @typedef {CForce | CCouple} CPoint */
+  /** @typedef {CDist | CPoint} CLoad */
+  /** @typedef {{ name: string, r: CReaction, kind: "R" | "M" } | { name: string, r?: undefined, kind: "C1" | "C2" }} Unknown */
+  /** @typedef {{ label: string, what: string, coef: number[], rhs: number, support?: CReaction, slope?: boolean }} Row */
+  /** @typedef {[number, number, number]} Term a Macaulay term: coefficient, position, power */
+  /** @typedef {{ text: string, said: string }} Item */
+  /**
+   * A block of a frame: a paragraph (which may list items a deck continues over slides), a display
+   * equation, a list or a table.
+   * @typedef {{ p?: string, lead?: string, items?: Item[], eq?: string, list?: string[], table?: { head: string[], rows: string[][] } }} Block
+   */
+  /** @typedef {{ at?: number, title?: string, narration: string }} Part */
+  /** @typedef {{ title: string, deckTitle?: string, blocks: Block[], narration: string, parts?: Part[], body?: string, x?: number, segment?: number }} HFrame */
+  /** @typedef {{ title: string, blocks: Block[], body: string, narration: string }} Slide */
+  /** @typedef {string | { t: "sup" | "sub" | "text", c: TexNode[] } | { t: "frac", n: TexNode[], d: TexNode[] }} TexNode */
 
   const { sig, sci, shortNf } = B.format;
   const { sayNumber, texNumber, texUnit, spokenUnit, VOICE } = B.speech;
   /* Largest linear system written out in full, and longest sum written term by term. */
   const WRITE_UNKNOWNS = 8, WRITE_TERMS = 14;
   const NUMBER_WORDS = ["no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"];
+  /** @type {Partial<Record<Quantity, "V" | "M" | "v" | "theta">>} */
   const KEY = { force: "V", moment: "M", length: "v", angle: "theta" };
 
   /* <d>^n for d = x − a: zero left of a. */
-  const mac = (d, n) => (d > 0 ? d ** n : 0);
+  const mac = (/** @type {number} */ d, /** @type {number} */ n) => (d > 0 ? d ** n : 0);
 
   /* Gaussian elimination with partial pivoting on an equilibrated copy; null when singular. */
+  /** @param {number[][]} A @param {number[]} b @returns {number[] | null} */
   function solveDense(A, b) {
     const n = b.length, a = A.map((row, i) => {
       const s = Math.max(...row.map(Math.abs)) || 1;
@@ -1421,39 +1560,45 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
 
   /* Everything about one beam in one unit convention and origin: numbers in display units, the
      formatters, and the actions (loads and reactions) as Macaulay terms in x. */
+  /** @param {Result} result @param {Options} [options] */
   function context(result, { units = B.DEFAULT_UNITS, origin = "left" } = {}) {
     const u = B.UNIT_SYSTEMS[typeof units === "string" ? units : units && units.id];
     if (!u) throw new Error(`Unknown unit convention ${JSON.stringify(units)}.`);
     const m = result.model, L = m.length, ex = result.extremes || B.extremes(result), mid = origin === "mid";
-    const show = (si, q) => B.toUnits(si, q, u), sym = (q) => u.symbol[q];
+    const show = (/** @type {number} */ si, /** @type {Quantity} */ q) => B.toUnits(si, q, u), sym = (/** @type {Quantity} */ q) => u.symbol[q];
     const scale = { V: Math.abs(ex.V.value), M: Math.abs(ex.M.value), v: Math.abs(ex.v.value), theta: Math.abs(ex.v.value) / L };
-    const clean = (si, key) => (Math.abs(si) <= 1e-10 * scale[key] ? 0 : si);
+    const clean = (/** @type {number} */ si, /** @type {keyof typeof scale} */ key) => (Math.abs(si) <= 1e-10 * scale[key] ? 0 : si);
     // Display coordinate of an SI position measured from the left end, as the page shows it.
-    const X = (x) => show(B.fromOrigin(x, L, origin), "length");
+    const X = (/** @type {number} */ x) => show(B.fromOrigin(x, L, origin), "length");
     const d = B.scaleModel(m, u), o = mid ? d.length / 2 : 0, EI = d.material.E * d.section.I;
+    /** @type {CReaction[]} */
     const reactions = result.reactions.map((r, i) => ({
       i: i + 1, kind: r.kind, x: r.x, xi: X(r.x), Fy: show(r.Fy, "force"), Mz: show(r.Mz, "moment"), si: r,
     }));
+    // d.loads[j] is m.loads[j] in display units, the same kind of load.
+    /** @type {CLoad[]} */
     const loads = m.loads.map((l, j) => {
-      const s = d.loads[j];
+      const s = /** @type {any} */ (d.loads[j]);
       return l.kind === "dist" ? { n: j + 1, kind: "dist", x1: l.x1, x2: l.x2, xi1: s.x1 - o, xi2: s.x2 - o, q1: s.q1, q2: s.q2 }
         : { n: j + 1, kind: l.kind, x: l.x, xi: s.x - o, F: l.kind === "point" ? s.F : 0, C: l.kind === "moment" ? s.C : 0 };
     });
     /* Text, TeX and speech for a number already formatted by the page's formatters. */
-    const val = (si, q) => shortNf(show(clean(si, KEY[q] || "V"), q));
-    const tex = (t) => texNumber(t);
-    const texP = (t) => (t.startsWith("−") ? `(${tex(t)})` : tex(t));
-    const tq = (t, q) => `${tex(t)}\\ ${texUnit(sym(q))}`;
-    const say = (t, q) => `${sayNumber(t)} ${spokenUnit(u, q, !/^−?1$/.test(t))}`;
-    const pos = (x) => sig(X(x));
-    const sayPos = (x) => `x equals ${say(pos(x), "length")}`;
-    const count = (n, one, many) => `${NUMBER_WORDS[n] ?? n} ${n === 1 ? one : many}`;
+    const val = (/** @type {number} */ si, /** @type {Quantity} */ q) => shortNf(show(clean(si, KEY[q] || "V"), q));
+    const tex = (/** @type {string} */ t) => texNumber(t);
+    const texP = (/** @type {string} */ t) => (t.startsWith("−") ? `(${tex(t)})` : tex(t));
+    const tq = (/** @type {string} */ t, /** @type {Quantity} */ q) => `${tex(t)}\\ ${texUnit(sym(q))}`;
+    const say = (/** @type {string} */ t, /** @type {Quantity} */ q) => `${sayNumber(t)} ${spokenUnit(u, q, !/^−?1$/.test(t))}`;
+    const pos = (/** @type {number} */ x) => sig(X(x));
+    const sayPos = (/** @type {number} */ x) => `x equals ${say(pos(x), "length")}`;
+    const count = (/** @type {number} */ n, /** @type {string} */ one, /** @type {string} */ many) => `${NUMBER_WORDS[n] ?? n} ${n === 1 ? one : many}`;
     return { result, m, L, ex, u, show, sym, clean, X, d, o, EI, reactions, loads, val, tex, texP, tq, say, pos, sayPos, count, mid, origin, scale };
   }
+  /** @typedef {ReturnType<typeof context>} Context */
 
   /* ---------- writing equations ---------- */
 
   /* "c x" terms as TeX: [[coefficient, symbol]], zero coefficients left out, 1 written as the symbol. */
+  /** @param {[number, string][]} terms @param {Context} c */
   function linear(terms, c) {
     const out = [];
     for (const [k, s] of terms) {
@@ -1464,17 +1609,20 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
     return out.join("") || "0";
   }
   /* A polynomial in s with coefficients [c0, c1, ...], dropping terms that are round-off at s = h. */
+  /** @param {number[]} coef @param {number} h @param {Context} c */
   function poly(coef, h, c, v = "s") {
     const size = Math.max(...coef.map((k, n) => Math.abs(k) * h ** n));
-    return linear(coef.map((k, n) => [Math.abs(k) * h ** n <= 1e-10 * size ? 0 : k, n === 0 ? "" : n === 1 ? v : `${v}^{${n}}`]), c);
+    return linear(coef.map((k, n) => /** @type {[number, string]} */ ([Math.abs(k) * h ** n <= 1e-10 * size ? 0 : k, n === 0 ? "" : n === 1 ? v : `${v}^{${n}}`])), c);
   }
-  const evalPoly = (coef, s) => coef.reduce((acc, k, n) => acc + k * s ** n, 0);
+  const evalPoly = (/** @type {number[]} */ coef, /** @type {number} */ s) => coef.reduce((acc, k, n) => acc + k * s ** n, 0);
   /* The bracket <x − a>^n in the display coordinate. */
+  /** @param {number} a @param {number} n @param {Context} c */
   function bracket(a, n, c) {
     const t = sig(Math.abs(a), 4), inner = a === 0 || t === "0" ? "x" : `x ${a > 0 ? "-" : "+"} ${c.tex(t)}`;
     return `\\langle ${inner}\\rangle${n === 1 ? "" : `^{${n}}`}`;
   }
   /* A sum of already formatted terms, written out when short and then totalled. */
+  /** @param {string[]} texts @param {string} total @param {Context} c */
   function sumOf(texts, total, c) {
     if (!texts.length) return c.tex(total);
     if (texts.length > WRITE_TERMS || texts.length === 1) return c.tex(total);
@@ -1487,7 +1635,9 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
   /* Each load's vertical force and its moment about the display coordinate ref, counter-clockwise
      positive, as display numbers with TeX for both. A trapezoid is a rectangle plus a triangle,
      here split into two triangles so a load whose ends have opposite signs needs no special case. */
+  /** @param {Context} c @param {number} ref */
   function actions(c, ref) {
+    /** @type {{ n: number, F: number, Mo: number, fTex: string | null, mTex: string }[]} */
     const out = [];
     for (const l of c.loads) {
       if (l.kind === "point") {
@@ -1508,7 +1658,9 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
   }
 
   /* Macaulay terms of M(x) from the loads: [coefficient, position, power], display units. */
+  /** @param {Context} c */
   function loadTerms(c) {
+    /** @type {Term[]} */
     const out = [];
     for (const l of c.loads) {
       if (l.kind === "point" && l.F !== 0) out.push([l.F, l.xi, 1]);
@@ -1521,6 +1673,7 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
     return out.filter(([k]) => k !== 0);
   }
   /* k-fold integral of the terms at x. */
+  /** @param {Term[]} terms @param {number} k @param {number} x */
   const integrated = (terms, k, x) => terms.reduce((acc, [coef, a, p]) => {
     let den = 1;
     for (let n = p + 1; n <= p + k; n++) den *= n;
@@ -1529,11 +1682,13 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
 
   /* ---------- the derivation ---------- */
 
+  /** @param {Result} result @param {Options} [options] */
   function derive(result, options = {}) {
     const c = context(result, options), { reactions: R, d, o, EI } = c;
     const deg = B.indeterminacy(c.m.supports), xi0 = -o, xiL = d.length - o;
 
     // Unknowns: each reaction force and fixed-support moment, then the integration constants.
+    /** @type {Unknown[]} */
     const unknowns = [];
     for (const r of R) {
       unknowns.push({ name: `R_{${r.i}}`, r, kind: "R" });
@@ -1542,6 +1697,7 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
     unknowns.push({ name: "C_1", kind: "C1" }, { name: "C_2", kind: "C2" });
     const known = loadTerms(c), about0 = actions(c, xi0);
     const sumF = about0.reduce((s, a) => s + a.F, 0), sumM0 = about0.reduce((s, a) => s + a.Mo, 0);
+    /** @type {Row[]} */
     const rows = [
       { label: "\\sum F_y = 0", what: "vertical equilibrium", coef: unknowns.map((k) => (k.kind === "R" ? 1 : 0)), rhs: -sumF },
       { label: `\\sum M_{x = ${c.tex(sig(xi0))}} = 0`, what: "moments about the left end", coef: unknowns.map((k) => (k.kind === "R" ? k.r.xi - xi0 : k.kind === "M" ? 1 : 0)), rhs: -sumM0 },
@@ -1562,7 +1718,7 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
     // The solver's values of the unknowns, in display units: the integration constants are EI θ and
     // EI v at the left end, re-expressed for brackets measured in the display coordinate.
     const start = result.displacements[0], theta0 = start.theta, v0 = c.show(start.v, "length");
-    const solverValue = (k) => (k.kind === "R" ? k.r.Fy : k.kind === "M" ? k.r.Mz : k.kind === "C1" ? EI * theta0 : EI * v0 - EI * theta0 * xi0);
+    const solverValue = (/** @type {Unknown} */ k) => (k.kind === "R" ? k.r.Fy : k.kind === "M" ? k.r.Mz : k.kind === "C1" ? EI * theta0 : EI * v0 - EI * theta0 * xi0);
     const solver = unknowns.map(solverValue);
 
     // The hand solution: equilibrium alone when determinate, the whole system when it is small enough.
@@ -1575,14 +1731,15 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
     const handReactions = hand ? hand : solver;
 
     // Segment by segment: V and M by sections from the solver's left-limit values; θ and v integrated.
-    const xs = result.displacements.map((p) => p.x), segments = [];
-    let chain = { V: 0, M: 0 };
-    const handAt = (k) => handReactions[unknowns.indexOf(k)];
-    let C1 = handAt(unknowns.at(-2)), C2 = handAt(unknowns.at(-1));
-    chain.theta = C1 / EI;
-    chain.v = (C1 * xi0 + C2) / EI;
+    const xs = result.displacements.map((p) => p.x);
+    /** @type {Segment[]} */
+    const segments = [];
+    const handAt = (/** @type {Unknown} */ k) => handReactions[unknowns.indexOf(k)];
+    // The last two unknowns are always C_1 and C_2.
+    let C1 = handAt(/** @type {Unknown} */ (unknowns.at(-2))), C2 = handAt(/** @type {Unknown} */ (unknowns.at(-1)));
+    let chain = { V: 0, M: 0, theta: C1 / EI, v: (C1 * xi0 + C2) / EI };
     for (let e = 0; e < xs.length - 1; e++) {
-      const a = xs[e], b = xs[e + 1], seg = segment(c, a, b, e);
+      const a = xs[e], b = xs[e + 1], seg = /** @type {Segment} */ (segment(c, a, b, e));
       // Hand chain: jumps at a from the hand reactions and the loads, then the polynomials across.
       let dV = 0, dM = 0;
       for (const j of seg.jumps) {
@@ -1611,6 +1768,7 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
   }
 
   /* Reactions of a determinate beam from equilibrium alone, in the order of `unknowns`. */
+  /** @param {Context} c @param {Unknown[]} unknowns @param {Row[]} rows @returns {number[]} */
   function statics(c, unknowns, rows) {
     const R = c.reactions, out = Array(unknowns.length).fill(0);
     const ref = R[0].xi, acts = actions(c, ref);
@@ -1626,12 +1784,14 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
     // The integration constants from the boundary-condition rows, with the reactions now known.
     const bc = rows.slice(2), n = unknowns.length;
     const reduced = bc.map((r) => ({ coef: [r.coef[n - 2], r.coef[n - 1]], rhs: r.rhs - r.coef.slice(0, n - 2).reduce((s, k, i) => s + k * out[i], 0) }));
-    const [C1, C2] = solveDense(reduced.map((r) => r.coef), reduced.map((r) => r.rhs));
+    // The two boundary conditions of a stable determinate beam fix C_1 and C_2.
+    const [C1, C2] = /** @type {number[]} */ (solveDense(reduced.map((r) => r.coef), reduced.map((r) => r.rhs)));
     out[n - 2] = C1; out[n - 1] = C2;
     return out;
   }
 
   /* One segment between consecutive events: the solver's values and the jumps at its start. */
+  /** @param {Context} c @param {number} a @param {number} b @param {number} e */
   function segment(c, a, b, e) {
     const { result, show, EI } = c, h = show(b - a, "length");
     const qa = show(B.intensity(c.m, a, "right"), "distributed"), qb = show(B.intensity(c.m, b, "left"), "distributed");
@@ -1641,6 +1801,7 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
     const da = B.deflection(result, a), db = B.deflection(result, b);
     const S = { V: show(start.V, "force"), M: show(start.M, "moment"), theta: da.theta, v: show(da.v, "length") };
     const E = { V: show(end.V, "force"), M: show(end.M, "moment"), theta: db.theta, v: show(db.v, "length") };
+    /** @type {{ name: string, value: number, reaction?: CReaction, moment?: boolean }[]} */
     const jumps = [];
     for (const r of c.reactions) if (r.x === a) {
       jumps.push({ name: `R_{${r.i}}`, value: r.Fy, reaction: r });
@@ -1651,6 +1812,7 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
     const V = [S.V, qa, k / 2], M = [S.M, S.V, qa / 2, k / 6];
     const theta = [EI * S.theta, S.M, S.V / 2, qa / 6, k / 24], v = [EI * S.v, EI * S.theta, S.M / 2, S.V / 6, qa / 24, k / 120];
     // Zero shear inside the segment: the bending moment is stationary there.
+    /** @type {number[]} */
     const roots = [];
     const A2 = k / 2, A1 = qa, A0 = S.V, size = Math.abs(A0) + Math.abs(A1) * h + Math.abs(A2) * h * h;
     if (size > 0) {
@@ -1672,18 +1834,29 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
       supportAtEnd: c.reactions.find((r) => r.x === b) || null, supportAtStart: c.reactions.find((r) => r.x === a) || null,
     };
   }
+  /** @typedef {ReturnType<typeof segment> & { hand: { start: Record<"V" | "M" | "theta" | "v", number>, end: Record<"V" | "M" | "theta" | "v", number> } }} Segment */
+  /** @typedef {ReturnType<typeof derive>} Derivation */
 
   /* ---------- frames ---------- */
 
-  const P = (text) => ({ p: text }), EQ = (tex) => ({ eq: tex }), LIST = (items) => ({ list: items }), TABLE = (head, rows) => ({ table: { head, rows } });
+  /** @type {(text: string) => Block} */
+  const P = (text) => ({ p: text });
+  /** @type {(tex: string) => Block} */
+  const EQ = (tex) => ({ eq: tex });
+  /** @type {(items: string[]) => Block} */
+  const LIST = (items) => ({ list: items });
+  /** @type {(head: string[], rows: string[][]) => Block} */
+  const TABLE = (head, rows) => ({ table: { head, rows } });
 
   /* Values as the page writes them: forces and moments as the reaction list and readout (shortNf),
      cleaned of round-off far below the largest value of the same kind on this beam. */
+  /** @param {Context} c @param {number} value @param {Quantity} q */
   function vtext(c, value, q) {
     const key = KEY[q], scale = key ? c.show(c.scale[key], q) : 0;
     return shortNf(Math.abs(value) <= 1e-10 * Math.abs(scale) ? 0 : value);
   }
 
+  /** @param {Derivation} D @returns {HFrame} */
   function authorityFrame(D) {
     const { c, deg } = D, r = c.m.supports.reduce((n, s) => n + (s.kind === "fixed" ? 2 : 1), 0);
     const method = deg === 0 ? "equilibrium alone (sum of vertical forces and sum of moments)"
@@ -1714,27 +1887,30 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
     };
   }
 
+  /** @param {Derivation} D @returns {HFrame[]} */
   function reactionFrames(D) {
     const { c, deg, unknowns, rows, solver, written } = D, R = c.reactions;
-    const valueOf = (k) => solver[unknowns.indexOf(k)];
-    const rq = (k) => (k.kind === "M" ? "moment" : "force");
-    const rtext = (k) => vtext(c, valueOf(k), rq(k));
-    const listSay = (items) => (items.length < 2 ? items.join("") : `${items.slice(0, -1).join(", ")} and ${items.at(-1)}`);
+    // Every reaction has its R unknown, and every fixed support its M.
+    const valueOf = (/** @type {Unknown | undefined} */ k) => solver[unknowns.indexOf(/** @type {Unknown} */ (k))];
+    const rq = (/** @type {Unknown | undefined} */ k) => (k?.kind === "M" ? "moment" : "force");
+    const rtext = (/** @type {Unknown | undefined} */ k) => vtext(c, valueOf(k), rq(k));
+    const listSay = (/** @type {string[]} */ items) => (items.length < 2 ? items.join("") : `${items.slice(0, -1).join(", ")} and ${items.at(-1)}`);
     const reactionSaid = R.map((r) => {
       const kR = unknowns.find((k) => k.r === r && k.kind === "R"), kM = unknowns.find((k) => k.r === r && k.kind === "M");
       return `R ${r.i} is ${c.say(rtext(kR), "force")}` + (kM ? ` with a support moment of ${c.say(rtext(kM), "moment")}` : "");
     });
-    const resultTable = TABLE(["Unknown", "Value", "Where"], unknowns.filter((k) => k.kind === "R" || k.kind === "M")
+    const resultTable = TABLE(["Unknown", "Value", "Where"], unknowns.filter(/** @returns {k is Extract<Unknown, { r: CReaction }>} */ (k) => k.kind === "R" || k.kind === "M")
       .map((k) => [`$${k.name}$`, `${rtext(k)} ${c.sym(rq(k))}`, `${k.r.kind} at x = ${sig(k.r.xi)} ${c.sym("length")}`]));
 
     if (deg === 0) {
       const ref = R[0], acts = actions(c, ref.xi);
       const sumF = acts.reduce((s, a) => s + a.F, 0), sumM = acts.reduce((s, a) => s + a.Mo, 0);
-      const fT = acts.filter((a) => a.fTex).map((a) => a.fTex), mT = acts.map((a) => a.mTex);
+      const fT = acts.flatMap((a) => (a.fTex ? [a.fTex] : [])), mT = acts.map((a) => a.mTex);
       const sF = shortNf(sumF), sM = shortNf(sumM);
       const blocks = [P(`Each load's vertical force and its moment about support 1 at x = ${sig(ref.xi)} ${c.sym("length")} (counter-clockwise positive; a distributed load acts through its resultant):`),
         EQ(`\\sum_j F_j = ${sumOf(fT, sF, c)}\\ ${texUnit(c.sym("force"))}`),
         EQ(`\\sum_j m_j = ${sumOf(mT, sM, c)}\\ ${texUnit(c.sym("moment"))}`)];
+      /** @type {string[]} */
       let said;
       if (R.length === 2) {
         const [k1, k2] = [unknowns.find((k) => k.r === R[0]), unknowns.find((k) => k.r === R[1])], span = sig(R[1].xi - ref.xi);
@@ -1772,6 +1948,7 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
       EQ("EI\\,v(x) = \\sum_i \\frac{R_i}{6} \\langle x - a_i\\rangle^{3} - \\sum_i \\frac{M_i}{2} \\langle x - a_i\\rangle^{2} + \\iint M_{\\text{loads}} + C_1 x + C_2"),
       P(`Unknowns: ${names.map((n) => `$${n}$`).join(", ")}: ${c.count(unknowns.length, "unknown", "unknowns")}, and as many equations.`),
     ];
+    /** @type {HFrame[]} */
     const frames = [];
     if (written) {
       const eqs = rows.map((r) => EQ(`${r.label}: \\quad ${linear(r.coef.map((k, i) => [k, names[i]]), c)} = ${c.tex(sig(r.rhs, 4))}`));
@@ -1803,19 +1980,22 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
     frames.push({
       title: "Reactions from the compatibility equations",
       blocks: [resultTable,
-        EQ(`C_1 = ${c.tq(sig(solver.at(-2), 4), "rigidity")}, \\qquad C_2 = ${c.tex(sig(solver.at(-1), 4))}\\ ${texUnit(`${c.sym("force")}·${c.sym("length")}³`)}`),
+        EQ(`C_1 = ${c.tq(sig(solver[solver.length - 2], 4), "rigidity")}, \\qquad C_2 = ${c.tex(sig(solver[solver.length - 1], 4))}\\ ${texUnit(`${c.sym("force")}·${c.sym("length")}³`)}`),
         P(written ? "Solving the equations above reproduces these values, which are the solver's." : "These are the solver's values; the hand method above gives the same conditions.")],
       narration: `Solving gives ${listSay(reactionSaid)}.`,
     });
     return frames;
   }
 
+  /** @param {Derivation} D @returns {HFrame} */
   function deflectionFrame(D) {
     const { c, deg, unknowns, rows, solver } = D, n = unknowns.length;
     // Terms at the right end vanish everywhere on the beam, so they are left out.
-    const terms = [...D.known, ...c.reactions.flatMap((r) => [[r.Fy, r.xi, 1], [-r.Mz, r.xi, 0]])].filter(([k, a]) => k !== 0 && a < D.ends[1]);
+    const terms = [...D.known, ...c.reactions.flatMap((r) => /** @type {Term[]} */ ([[r.Fy, r.xi, 1], [-r.Mz, r.xi, 0]]))].filter(([k, a]) => k !== 0 && a < D.ends[1]);
     const blocks = [P("Integrate $EI\\,v'' = M(x)$ twice. Each Macaulay term $c\\langle x - a\\rangle^n$ integrates to $c\\langle x - a\\rangle^{n+1}/(n+1)$, which keeps $\\theta$ and $v$ continuous at every support and load:")];
-    let atV = 1, atM;
+    /** @type {number | undefined} */
+    let atM;
+    let atV = 1;
     if (terms.length <= WRITE_TERMS && terms.length) {
       atM = blocks.length;
       blocks.push(EQ(`M(x) = ${linear(terms.map(([k, a, p]) => [k, bracket(a, p, c)]), c)}`));
@@ -1854,8 +2034,9 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
     };
   }
 
+  /** @param {Derivation} D @param {Segment} seg @returns {HFrame} */
   function segmentFrame(D, seg) {
-    const { c } = D, L = c.sym("length"), ue = (q) => texUnit(c.sym(q));
+    const { c } = D, L = c.sym("length"), ue = (/** @type {Quantity} */ q) => texUnit(c.sym(q));
     const xa = sig(seg.xa), xb = sig(seg.xb), hT = sig(seg.h);
     const blocks = [P(`Cut the beam at $x$ between ${xa} and ${xb} ${L} and keep the part to the left of the cut, with $s = x - ${c.texP(xa)}$ running from 0 to ${hT} ${L}.`)];
     // Start values: what the previous segment ends with, plus the jumps at x = a.
@@ -1880,11 +2061,12 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
       EQ(`EI\\,v(s) = EI\\,v(${c.tex(xa)}) + \\int_0^s \\theta\\,EI\\,ds = ${poly(seg.poly.v, seg.h, c)}`),
     );
     // Values at both ends, as the solver gives them.
-    const E = seg.end, row = (name, q, s, e) => [name, `${vtext(c, s, q)}`, `${vtext(c, e, q)}`], atEnds = blocks.length;
+    const E = seg.end, row = (/** @type {string} */ name, /** @type {Quantity} */ q, /** @type {number} */ s, /** @type {number} */ e) => [name, `${vtext(c, s, q)}`, `${vtext(c, e, q)}`], atEnds = blocks.length;
     blocks.push(TABLE([`At`, `x = ${xa}⁺`, `x = ${xb}⁻`], [
       row(`V (${c.sym("force")})`, "force", S.V, E.V), row(`M (${c.sym("moment")})`, "moment", S.M, E.M),
       row("θ (rad)", "angle", S.theta, E.theta), row(`v (${L})`, "length", S.v, E.v),
     ]));
+    /** @type {string[]} */
     const notes = [];
     for (const st of seg.stationary) notes.push(`$V = 0$ at $s$ = ${sig(st.s)} ${L} (x = ${sig(c.X(st.x))} ${L}), where $M$ is stationary: $M$ = ${vtext(c, st.M, "moment")} ${c.sym("moment")}.`);
     if (seg.qa * seg.qb < 0) notes.push(`$q = 0$ at $s$ = ${sig(-seg.qa / seg.k)} ${L}, where $V$ is stationary.`);
@@ -1907,11 +2089,17 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
     };
   }
 
+  /** @param {Derivation} D @returns {HFrame} */
   function checksFrame(D) {
-    const { c, equilibrium: q } = D, m = c.m, ex = c.ex, blocks = [], said = [];
-    if (m.section.c) {
-      const Mmax = sig(c.show(ex.M.value, "moment"), 4), cc = sig(c.show(m.section.c, "length")), I = sci(c.show(m.section.I, "inertia"));
-      const stress = sig(c.show(Math.abs(ex.M.value) * m.section.c / m.section.I, "stress"), 4);
+    const { c, equilibrium: q } = D, m = c.m, ex = c.ex;
+    /** @type {Block[]} */
+    const blocks = [];
+    /** @type {string[]} */
+    const said = [];
+    const fibre = m.section.c;
+    if (fibre) {
+      const Mmax = sig(c.show(ex.M.value, "moment"), 4), cc = sig(c.show(fibre, "length")), I = sci(c.show(m.section.I, "inertia"));
+      const stress = sig(c.show(Math.abs(ex.M.value) * fibre / m.section.I, "stress"), 4);
       blocks.push(P(`The largest moment is ${Mmax} ${c.sym("moment")} at x = ${c.pos(ex.M.x)} ${c.sym("length")}; the extreme fibre is $c$ = ${cc} ${c.sym("length")} from the neutral axis.`),
         EQ(`\\sigma_{\\max} = \\frac{|M|_{\\max}\\, c}{I} = \\frac{${c.tex(sig(Math.abs(c.show(ex.M.value, "moment")), 4))} \\times ${c.tex(cc)}}{${c.tex(I)}} = ${c.tq(stress, "stress")}`));
       said.push(`The peak bending stress is the largest moment times the extreme fibre distance over I, which is ${c.say(stress, "stress")}.`);
@@ -1932,20 +2120,21 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
   }
 
   /* V, M, θ, v and σ at a chosen x (SI, measured from the left end), from the segment it lies in. */
+  /** @param {Result} result @param {number} x @param {Options & { derivation?: Derivation }} [options] @returns {HFrame} */
   function pointFrame(result, x, options = {}) {
     const D = options.derivation || derive(result, options), { c } = D, L = c.sym("length");
     x = Math.min(c.L, Math.max(0, x));
     const segs = D.segments, i = Math.max(0, segs.findIndex((s) => x < s.b || s === segs.at(-1)));
     const seg = segs[i], onStart = x === seg.a && i > 0, s = c.show(x - seg.a, "length");
     const xT = sig(c.X(x)), sT = sig(s);
-    const sub = (coef) => coef.map((k, n) => [k, n === 0 ? "" : n === 1 ? `(${c.tex(sT)})` : `(${c.tex(sT)})^{${n}}`]);
+    const sub = (/** @type {number[]} */ coef) => coef.map((k, n) => /** @type {[number, string]} */ ([k, n === 0 ? "" : n === 1 ? `(${c.tex(sT)})` : `(${c.tex(sT)})^{${n}}`]));
     const a = B.at(result, x);
     const V = x >= c.L ? a.Vleft : a.Vright, M = x >= c.L ? a.Mleft : a.Mright;
     const Vt = vtext(c, c.show(V, "force"), "force"), Mt = vtext(c, c.show(M, "moment"), "moment");
     const tt = vtext(c, a.theta, "angle"), vt = vtext(c, c.show(a.v, "length"), "length");
     const blocks = [P(`x = ${xT} ${L} lies in segment ${seg.index} (x = ${sig(seg.xa)} to ${sig(seg.xb)} ${L}), so $s = x - ${c.texP(sig(seg.xa))}$ = ${sT} ${L}.`)];
     if (onStart) blocks.push(P(`A support or load acts here, so $V$ and $M$ can jump: just to the left they are ${vtext(c, c.show(a.Vleft, "force"), "force")} ${c.sym("force")} and ${vtext(c, c.show(a.Mleft, "moment"), "moment")} ${c.sym("moment")} (the end of segment ${seg.index - 1}); the values below are just to the right.`));
-    const at = (name) => ({ at: blocks.length, title: `At x = ${xT} ${L}: ${name}` });
+    const at = (/** @type {string} */ name) => ({ at: blocks.length, title: `At x = ${xT} ${L}: ${name}` });
     blocks.push(EQ(`V = ${linear(sub(seg.poly.V), c)} = ${c.tq(Vt, "force")}`));
     const atM = at("bending moment");
     blocks.push(EQ(`M = ${linear(sub(seg.poly.M), c)} = ${c.tq(Mt, "moment")}`));
@@ -1955,15 +2144,17 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
     blocks.push(EQ(`v = \\frac{1}{EI}\\left(${linear(sub(seg.poly.v), c)}\\right) = ${c.tq(vt, "length")}`));
     const said = [`At ${c.sayPos(x)}, in segment ${seg.index}, the shear force is ${c.say(Vt, "force")} and the bending moment ${c.say(Mt, "moment")}.`,
       `The slope is ${sayNumber(tt)} radians and the deflection ${c.say(vt, "length")}.`];
+    /** @type {Part[]} */
     const parts = [{ narration: `At ${c.sayPos(x)}, in segment ${seg.index}, the shear force is ${c.say(Vt, "force")}.` },
       { ...atM, narration: `The bending moment is ${c.say(Mt, "moment")}.` },
       { ...atTheta, narration: `The slope is ${sayNumber(tt)} radians.` },
       { ...atV, narration: `The deflection is ${c.say(vt, "length")}.` }];
-    if (c.m.section.c) {
-      const st = sig(c.show(Math.abs(M) * c.m.section.c / c.m.section.I, "stress"), 4);
+    const fibre = c.m.section.c;
+    if (fibre) {
+      const st = sig(c.show(Math.abs(M) * fibre / c.m.section.I, "stress"), 4);
       parts.push({ ...at("bending stress"), narration: `The bending stress at the extreme fibre is ${c.say(st, "stress")}.` });
       blocks.push(EQ(`\\sigma = \\frac{|M|\\,c}{I} = ${c.tq(st, "stress")}`));
-      said.push(parts.at(-1).narration);
+      said.push(parts[parts.length - 1].narration);
     }
     return { title: `At the selected point x = ${xT} ${L}`, blocks, narration: said.join(" "), parts, x, segment: seg.index };
   }
@@ -1971,17 +2162,18 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
   /* ---------- assembling ---------- */
 
   /* Blocks → Markdown with LaTeX maths, as beamdswitch reads it. */
+  /** @param {Block[]} blocks */
   function markdownOf(blocks) {
-    const cell = (t) => String(t).replace(/\|/g, "\\|");
+    const cell = (/** @type {unknown} */ t) => String(t).replace(/\|/g, "\\|");
     return blocks.map((b) => {
       if (b.p != null) return b.p;
       if (b.eq != null) return `$$ ${b.eq} $$`;
       if (b.list) return b.list.map((t) => `- ${t}`).join("\n");
-      const { head, rows } = b.table;
+      const { head, rows } = /** @type {NonNullable<Block["table"]>} */ (b.table);
       return [`| ${head.map(cell).join(" | ")} |`, `| ${head.map(() => "---").join(" | ")} |`, ...rows.map((r) => `| ${r.map(cell).join(" | ")} |`)].join("\n");
     }).join("\n\n");
   }
-  const withBody = (f) => ({ ...f, body: markdownOf(f.blocks) });
+  const withBody = (/** @type {HFrame} */ f) => ({ ...f, body: markdownOf(f.blocks) });
 
   /* ---------- slides that fit ----------
      beamdswitch lays a slide out at 1280 × 720 px: a 1136 × 506 px body in 30 px text, which it
@@ -1998,6 +2190,7 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
 
   /* Characters a TeX expression draws, roughly: commands as one glyph, \frac{1}{EI} as two,
      braces, scripts and spacing as none. */
+  /** @param {unknown} tex */
   function drawn(tex) {
     return String(tex).replace(/\\(?:mathrm|text)\{([^}]*)\}/g, "$1").replace(/\\times 10\^\{(-?\d+)\}/g, "×10$1")
       .replace(/\\(?:left|right|bigl|bigr|begin\{aligned\}|end\{aligned\})/g, "").replace(/\\[,;: ]/g, " ")
@@ -2005,23 +2198,27 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
       .replace(/\\\\/g, "").replace(/\\[a-zA-Z]+/g, "x").replace(/[{}^_&]/g, "").length;
   }
   /* Rows a block takes on a slide at 30 px. */
+  /** @param {Block} b @returns {number} */
   function slideRows(b) {
-    const text = (t) => Math.ceil(String(t).length / SLIDE_TEXT_CHARS);
+    const text = (/** @type {unknown} */ t) => Math.ceil(String(t).length / SLIDE_TEXT_CHARS);
     if (b.p != null) return text(b.p);
     if (b.eq != null) return 0.8 + 1.2 * (b.eq.split("\\\\").length) + (/\\frac/.test(b.eq) ? 0.5 : 0);
     if (b.list) return b.list.reduce((n, t) => n + text(t), 0);
-    return 1.1 * (b.table.rows.length + 1);
+    return 1.1 * (/** @type {NonNullable<Block["table"]>} */ (b.table).rows.length + 1);
   }
   /* A display equation as lines that each draw at most SLIDE_EQ_CHARS characters: each statement of
      "a = …, \qquad b = …" on lines of its own, aligned on its first "=" and broken before a "+", "−"
      or "=" outside any group or Macaulay bracket. */
+  /** @param {string} tex */
   function wrapEquation(tex) {
     if (drawn(tex) <= SLIDE_EQ_CHARS) return tex;
     const lines = tex.replace(/\\left\(/g, "\\bigl(").replace(/\\right\)/g, "\\bigr)").split(/(?<=,) \\qquad /).map(statementLines);
     if (lines.includes(null)) return tex;
     return `\\begin{aligned} ${lines.flat().join(" \\\\ ")} \\end{aligned}`;
   }
+  /** @param {string} flat @returns {string[] | null} */
   function statementLines(flat) {
+    /** @type {string[]} */
     const pieces = [];
     let depth = 0, from = 0;
     for (let i = 0; i < flat.length; i++) {
@@ -2040,22 +2237,29 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
     if (eq < 1) return null;
     const lhs = pieces.slice(0, eq).join(" "), lead = drawn(lhs) + 3, lines = [[pieces[eq].slice(2)]];
     for (const p of pieces.slice(eq + 1)) {
-      const line = lines.at(-1);
+      const line = lines[lines.length - 1];
       if (lead + drawn([...line, p].join(" ")) <= SLIDE_EQ_CHARS) line.push(p);
       else lines.push([p]);
     }
     return lines.map((l, i) => (i === 0 ? `${lhs} ={}& ${l.join(" ")}` : l[0].startsWith("= ") ? `&${l.join(" ")}` : `&\\quad ${l.join(" ")}`));
   }
-  const fitted = (b) => (b.eq != null ? EQ(wrapEquation(b.eq)) : b);
-  const rowsOf = (blocks) => blocks.reduce((n, b) => n + slideRows(b), 0);
+  const fitted = (/** @type {Block} */ b) => (b.eq != null ? EQ(wrapEquation(b.eq)) : b);
+  const rowsOf = (/** @type {Block[]} */ blocks) => blocks.reduce((n, b) => n + slideRows(b), 0);
 
   /* A frame as deck slides: its parts ({ at, title, narration }, the first at block 0) packed in
      order, as many to a slide as fit in SLIDE_ROWS, a long table or equation continuing on slides of its own.
      The first slide carries the frame's title (its shorter deckTitle when it has one), each later one
      the title of the part it opens with. */
+  /** @param {HFrame} f @returns {Slide[]} */
   function slidesOf(f) {
-    const cuts = f.parts || [{ narration: f.narration }], slides = [], parts = [];
+    /** @type {Part[]} */
+    const cuts = f.parts || [{ narration: f.narration }];
+    /** @type {{ title: string | undefined, blocks: Block[], narration: string[] }[]} */
+    const slides = [];
+    /** @type {(Part & { blocks: Block[] })[]} */
+    const parts = [];
     cuts.forEach((part, i) => {
+      /** @type {Block[]} */
       let blocks = [];
       parts.push({ ...part, blocks });
       for (const b of f.blocks.slice(part.at || 0, i + 1 < cuts.length ? cuts[i + 1].at : f.blocks.length)) {
@@ -2080,17 +2284,21 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
     for (let i = 0; i < parts.length; i++) {
       const k = parts[i].blocks.findIndex((b) => b.items && slideRows(b) > SLIDE_ROWS / 2);
       if (k < 0) continue;
-      const b = parts[i].blocks[k], rest = parts[i].blocks.slice(k + 1), chunks = [[]];
+      // findIndex matched a block with items, which always comes with its lead.
+      const b = /** @type {Block & { items: Item[], lead: string }} */ (parts[i].blocks[k]), rest = parts[i].blocks.slice(k + 1);
+      /** @type {Item[][]} */
+      const chunks = [[]];
+      const lastChunk = () => chunks[chunks.length - 1];
       for (const t of b.items) {
-        if (chunks.at(-1).length && [...chunks.at(-1), t].reduce((n, x) => n + x.text.length + 2, b.lead.length) > SLIDE_TEXT_CHARS * SLIDE_ROWS / 2) chunks.push([]);
-        chunks.at(-1).push(t);
+        if (lastChunk().length && [...lastChunk(), t].reduce((n, x) => n + x.text.length + 2, b.lead.length) > SLIDE_TEXT_CHARS * SLIDE_ROWS / 2) chunks.push([]);
+        lastChunk().push(t);
       }
       if (chunks.length < 2) continue;
-      const text = (c, j) => `${j ? "" : b.lead}${c.map((t) => t.text).join("; ")}${j + 1 < chunks.length ? ";" : "."}`;
+      const text = (/** @type {Item[]} */ c, /** @type {number} */ j) => `${j ? "" : b.lead}${c.map((t) => t.text).join("; ")}${j + 1 < chunks.length ? ";" : "."}`;
       parts[i].blocks.splice(k, Infinity, P(text(chunks[0], 0)));
       parts.splice(i + 1, 0, ...chunks.slice(1).map((c, j) => ({
         title: `${parts[i].title || f.deckTitle || f.title} (cont.)`,
-        narration: `The list continues, from ${c[0].said} to ${c.at(-1).said}.`,
+        narration: `The list continues, from ${c[0].said} to ${c[c.length - 1].said}.`,
         blocks: [P(text(c, j + 1)), ...(j + 2 === chunks.length ? rest : [])],
       })));
     }
@@ -2101,10 +2309,12 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
         last.narration.push(narration);
       } else slides.push({ title: slides.length ? title : f.deckTitle || f.title, blocks, narration: [narration] });
     }
-    return slides.map((s) => ({ title: s.title, blocks: s.blocks, body: markdownOf(s.blocks), narration: s.narration.join(" ") }));
+    // The first slide takes the frame's own title, so every slide has one.
+    return slides.map((s) => ({ title: /** @type {string} */ (s.title), blocks: s.blocks, body: markdownOf(s.blocks), narration: s.narration.join(" ") }));
   }
 
   /* The hand calculations as sections of frames; `at` (SI, from the left end) adds the chosen point. */
+  /** @param {Result} result @param {Options & { at?: number | null, derivation?: Derivation }} [options] @returns {{ title: string, frames: HFrame[] }[]} */
   function frames(result, options = {}) {
     const D = options.derivation || derive(result, options);
     const sections = [
@@ -2120,20 +2330,23 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
   /* The shared template (beamdswitch.js, the site's templates/beamdswitch.js unchanged) writes only its
      four standard sections. These write the hand calculations with the same frame rules: every slide
      narrated, "Part N." on each section slide, and no Markdown that would end a frame or div early. */
-  const oneLine = (s) => String(s ?? "").replace(/\s+/g, " ").trim();
+  const oneLine = (/** @type {unknown} */ s) => String(s ?? "").replace(/\s+/g, " ").trim();
+  /** @param {unknown} text @param {string} what */
   function block(text, what) {
     const s = String(text ?? "").replace(/\r\n?/g, "\n").trim();
     for (const line of s.split("\n"))
       if (/^#{1,2}\s/.test(line) || /^\s*:{3,}/.test(line)) throw new Error(`${what} must not contain a heading or a ::: line: ${line}`);
     return s;
   }
+  /** @param {unknown} text @param {string} what */
   function spoken(text, what) {
     const s = oneLine(text);
     if (!s) throw new Error(`${what} needs a narration.`);
     if (/[$\\`*_#|<>]/.test(s)) throw new Error(`${what} narration must be plain spoken prose: ${s}`);
     return s;
   }
-  const div = (name, text) => [`::: ${name}`, text, ":::"];
+  const div = (/** @type {string} */ name, /** @type {string} */ text) => [`::: ${name}`, text, ":::"];
+  /** @param {{ title: string, body?: string, notes?: string, narration: string }} f @param {string} where */
   function frameLines(f, where) {
     const title = oneLine(f.title), what = `Frame "${title}" in ${where}`;
     if (!title) throw new Error(`A frame in ${where} needs a title.`);
@@ -2144,7 +2357,8 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
     return out;
   }
   /* The slide that opens section `n` (from 1). */
-  const sectionSlide = (title, n) => [`# ${oneLine(title)}`, "", ...div("narration", `Part ${n}. ${oneLine(title)}.`), ""];
+  const sectionSlide = (/** @type {string} */ title, /** @type {number} */ n) => [`# ${oneLine(title)}`, "", ...div("narration", `Part ${n}. ${oneLine(title)}.`), ""];
+  /** @param {string} title @param {number} n @param {{ title: string, body?: string, notes?: string, narration: string }[] | undefined} frames */
   function sectionLines(title, n, frames) {
     if (!frames || !frames.length) throw new Error(`The ${title} section needs at least one frame.`);
     const out = sectionSlide(title, n);
@@ -2153,6 +2367,9 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
   }
 
   /* { meta, narration, notes, sections: [{ title, frames }] } as Markdown that beamdswitch opens as a deck. */
+  /**
+   * @param {{ meta?: Record<string, unknown>, narration: string, notes?: string, sections?: { title: string, frames: { title: string, body?: string, notes?: string, narration: string }[] }[] }} doc
+   */
   function document(doc) {
     const meta = doc.meta || {};
     if (!oneLine(meta.title)) throw new Error("The report needs a title.");
@@ -2168,6 +2385,7 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
   /* The shared template's deck of a beamReport, with its `hand` frames as a "Hand calculations"
      section between Results and Checks and takeaway, which becomes Part 5. */
   const HAND = "Hand calculations";
+  /** @param {import("./beamdswitch.js").Report & { hand?: { title: string, body?: string, notes?: string, narration: string }[] }} report */
   function deck(report) {
     const { hand, ...standard } = report, md = T.deck(standard);
     if (!hand || !hand.length) return md;
@@ -2178,6 +2396,7 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
   }
 
   /* A Markdown document of every hand-calculation step; it is also a beamdswitch deck. */
+  /** @param {Result} result @param {Options & { at?: number | null, title?: unknown, derivation?: Derivation }} [options] */
   function markdown(result, options = {}) {
     const name = String(options.title || "").trim(), c = context(result, options);
     return document({
@@ -2189,29 +2408,34 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
 
   /* engine.js's beamReport with the hand calculations, every segment included, as `hand` for deck():
      each frame on as many slides as it needs to fit. */
+  /** @param {Result} result @param {Parameters<typeof B.beamReport>[1] & { at?: number | null }} [options] */
   function beamReport(result, options = {}) {
     const report = B.beamReport(result, options), hand = frames(result, options).flatMap((s) => s.frames.flatMap(slidesOf));
     return { ...report, hand };
   }
 
   /* ---------- a small TeX subset, drawn by the page without a maths library ---------- */
+  /** @type {Record<string, string>} */
   const SYMBOLS = {
     langle: "⟨", rangle: "⟩", theta: "θ", sigma: "σ", sum: "Σ", int: "∫", iint: "∬", cdot: "·", times: " × ", Rightarrow: " ⇒ ",
     le: " ≤ ", ge: " ≥ ", approx: " ≈ ", pm: " ± ", infty: "∞", nu: "ν", Delta: "Δ", max: "max", min: "min",
     quad: " ", qquad: "  ", ",": " ", " ": " ", ";": " ", "{": "{", "}": "}", "|": "‖", "\\": " ",
   };
   /* Nodes are strings or { t: "sup" | "sub" | "text" | "frac", c | n, d }. */
+  /** @param {string} src @returns {TexNode[]} */
   function texNodes(src) {
     let i = 0;
+    /** @returns {TexNode[]} */
     const atom = () => {
       if (src[i] === "{") { i++; return seq("}"); }
       if (src[i] === "\\") return command();
       return i < src.length ? [mathChar(src[i++])] : [];
     };
-    const mathChar = (ch) => (ch === "-" ? "−" : ch === "'" ? "′" : ch === "=" ? " = " : ch);
+    const mathChar = (/** @type {string} */ ch) => (ch === "-" ? "−" : ch === "'" ? "′" : ch === "=" ? " = " : ch);
+    /** @returns {TexNode[]} */
     function command() {
       i++;
-      const name = /[A-Za-z]/.test(src[i] || "") ? src.slice(i).match(/^[A-Za-z]+/)[0] : (src[i] || "");
+      const name = /[A-Za-z]/.test(src[i] || "") ? /** @type {RegExpMatchArray} */ (src.slice(i).match(/^[A-Za-z]+/))[0] : (src[i] || "");
       i += name.length;
       if (/^[A-Za-z]/.test(name)) while (src[i] === " ") i++; // as in TeX, a control word swallows the spaces after it
       if (name === "frac") { const n = atom(), d = atom(); return [{ t: "frac", n, d }]; }
@@ -2223,7 +2447,9 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
       if (name === "left" || name === "right") return src[i] === "." ? (i++, []) : [mathChar(src[i++])];
       return [SYMBOLS[name] ?? name];
     }
+    /** @param {string | null} end @returns {TexNode[]} */
     function seq(end) {
+      /** @type {TexNode[]} */
       const out = [];
       while (i < src.length) {
         const ch = src[i];
@@ -2234,13 +2460,14 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
         out.push(mathChar(ch)); i++;
       }
       // Merge neighbouring strings.
-      return out.reduce((acc, n) => { if (typeof n === "string" && typeof acc.at(-1) === "string") acc[acc.length - 1] += n; else acc.push(n); return acc; }, [])
+      return out.reduce((/** @type {TexNode[]} */ acc, n) => { if (typeof n === "string" && typeof acc.at(-1) === "string") acc[acc.length - 1] += n; else acc.push(n); return acc; }, [])
         .map((n) => (typeof n === "string" ? n.replace(/ {2,}/g, " ") : n));
     }
     return seq(null);
   }
   /* Plain text of a TeX string, for accessible labels and tests. */
-  const texText = (src) => {
+  const texText = (/** @type {string} */ src) => {
+    /** @param {TexNode[]} nodes @returns {string} */
     const flat = (nodes) => nodes.map((n) => (typeof n === "string" ? n : n.t === "frac" ? `(${flat(n.n)})/(${flat(n.d)})` : n.t === "sup" ? `^${flat(n.c)}` : n.t === "sub" ? `_${flat(n.c)}` : flat(n.c))).join("");
     return flat(texNodes(src)).replace(/\s+/g, " ").trim();
   };
@@ -2252,64 +2479,94 @@ const D = {"title":"Beam diagram creator","slug":"beamdiag","version":"1.0.0","s
 <script>
 (() => {
 "use strict";
+/** @typedef {typeof BeamDiag} Engine */
+/** @typedef {Parameters<Engine["toUnits"]>[1]} Quantity */
+/** @typedef {BeamDiagModel["supports"][number]} Support */
+/** @typedef {BeamDiagModel["loads"][number]} Load */
+/** @typedef {ReturnType<Engine["solve"]>} Result */
+/** @typedef {Result & { extremes: ReturnType<Engine["extremes"]> }} Solved a solved beam with its extremes */
+/** @typedef {{ preset: string | null, length: number, divisions: number, supports: Support[], loads: Load[], material: { id: string, E: number, nu: number }, section: BeamDiagSectionSpec }} State */
+/** @typedef {Exclude<keyof BeamDiagSectionSpec, "shape">} SectionKey */
+/** @typedef {HTMLInputElement & HTMLSelectElement & { open: boolean }} Control the page's own elements: inputs, selects, details and plain blocks */
 const B = BeamDiag;
-const $ = (id) => document.getElementById(id);
+// Every id the script asks for is in the page's markup.
+const $ = (/** @type {string} */ id) => /** @type {Control} */ (document.getElementById(id));
 const SVGNS = "http://www.w3.org/2000/svg";
 
 /* ---------- number formatting ---------- */
 /* The engine holds the formatters, so the page, its saved figures and the beamdswitch deck write
    every number the same way. */
 const { plain, pow10, nf, sig, sci, short, shortNf } = B.format;
-const tidy = (x) => (Number.isFinite(x) ? +x.toPrecision(10) : "");
+/* The DOM turns a number set as a field value or an attribute into its string itself. */
+const dom = (/** @type {string | number} */ v) => /** @type {string} */ (v);
+const tidy = (/** @type {number} */ x) => (Number.isFinite(x) ? +x.toPrecision(10) : "");
 
 /* ---------- unit convention ---------- */
 /* The state and the solver stay in SI (N, m, Pa). Values are converted only where they are
    typed or shown, so changing the convention re-expresses what was entered and never changes
    the beam or its results. */
 let units = B.UNIT_SYSTEMS[B.DEFAULT_UNITS];
-const show = (si, quantity) => B.toUnits(si, quantity, units);
+const show = (/** @type {number} */ si, /** @type {Quantity} */ quantity) => B.toUnits(si, quantity, units);
 /* Typed lengths drop conversion noise (2300 mm is 2.3 m, not 2.3000000000000003 m). */
-const take = (value, quantity) => { const si = B.fromUnits(value, quantity, units); return quantity === "length" ? +si.toPrecision(15) : si; };
+const take = (/** @type {number} */ value, /** @type {Quantity} */ quantity) => { const si = B.fromUnits(value, quantity, units); return quantity === "length" ? +si.toPrecision(15) : si; };
 /* A typed position (or length) lands exactly on any other position on the beam within 1e-9·L of it:
    fields show 10 significant figures, so typing back a shown value must give the position it shows. */
+/** @param {number} value @param {object} obj @param {string} key */
 function takeX(value, obj, key) {
   const x = key === "length" ? take(value, "length") : typed(take(value, "length")), L = key === "length" ? x : state.length;
   const at = key === "length" ? [0] : [0, L];
-  for (const o of [...state.supports, ...state.loads]) for (const k of ["x", "x1", "x2"]) if (k in o && !(o === obj && k === key)) at.push(o[k]);
+  for (const o of [...state.supports, ...state.loads]) for (const k of ["x", "x1", "x2"]) if (k in o && !(o === obj && k === key)) at.push(/** @type {Record<string, number>} */ (/** @type {unknown} */ (o))[k]);
   return at.find((p) => Math.abs(p - x) <= 1e-9 * L) ?? x;
 }
-const sym = (quantity) => units.symbol[quantity];
+const sym = (/** @type {Quantity} */ quantity) => units.symbol[quantity];
 /* A default in SI, rounded to one significant figure in the current convention (−10 kN is −2000 lbf). */
-const round1 = (si, quantity) => take(+show(si, quantity).toPrecision(1), quantity);
+const round1 = (/** @type {number} */ si, /** @type {Quantity} */ quantity) => take(+show(si, quantity).toPrecision(1), quantity);
 function relabel() {
-  for (const e of document.querySelectorAll("[data-unit]")) e.textContent = e.dataset.unit === "system" ? units.label : sym(e.dataset.unit);
+  for (const e of document.querySelectorAll(/** @type {"span"} */ ("[data-unit]"))) e.textContent = e.dataset.unit === "system" ? units.label : sym(/** @type {Quantity} */ (e.dataset.unit));
 }
 
 /* ---------- state (SI units) ---------- */
-let state, attachmentLength, result = null, cursor = null, active = null, solveError = null;
+// start() sets state, and update() the attachment length, before anything reads them.
+/** @type {State} */
+let state;
+/** @type {number} */
+let attachmentLength;
+/** @type {Solved | null} */
+let result = null;
+/** @type {number | null} */
+let cursor = null;
+/** @type {string | null} */
+let active = null;
+/** @type {InstanceType<Engine["ModelError"]> | null} */
+let solveError = null;
+/* The solved beam, for what is drawn or written only once there is one. */
+const solved = () => /** @type {Solved} */ (result);
 
 /* ---------- where x is measured from ----------
    The model and the solver always measure x from the left end. The origin option only changes the
    positions people type and read: from mid-span they run from −L/2 to +L/2, still positive to the right.
    shown and typed move between the two in SI; show and take then convert to the unit convention. */
 let origin = "left";
-const offset = (L = attachmentLength) => (origin === "mid" ? L / 2 : 0);
-const shown = (x, L = attachmentLength) => B.fromOrigin(x, L, origin);
-const typed = (d, L) => { const o = offset(L); return o ? +(d + o).toPrecision(12) : d; };
+const offset = (/** @type {number} */ L = attachmentLength) => (origin === "mid" ? L / 2 : 0);
+const shown = (/** @type {number} */ x, /** @type {number} */ L = attachmentLength) => B.fromOrigin(x, L, origin);
+const typed = (/** @type {number} */ d, /** @type {number} */ L = attachmentLength) => { const o = offset(L); return o ? +(d + o).toPrecision(12) : d; };
 /* A beam position as it is typed and read, in the chosen origin and units. */
-const showX = (x, L) => show(shown(x, L), "length");
+const showX = (/** @type {number} */ x, /** @type {number} */ L = attachmentLength) => show(shown(x, L), "length");
 /* The solver's messages quote left-end positions; restate them in the chosen convention. */
+/** @param {string} message */
 function inConvention(message) {
   if (!offset()) return message;
-  const at = (n) => `${sig(showX(B.fromUnits(Number(n), "length", units)), 6)} ${sym("length")}`;
+  const at = (/** @type {string | number} */ n) => `${sig(showX(B.fromUnits(Number(n), "length", units)), 6)} ${sym("length")}`;
   return message
-    .replace(/between 0 and (\S+) \S+\.$/, (_, L) => `between ${at(0)} and ${at(L)}.`)
-    .replace(/position x = (\S+) \S+\./, (_, x) => `position x = ${at(x)}.`)
-    .replace(/^Positions (\S+) \S+ and (\S+) \S+ are/, (_, a, b) => `Positions ${at(a)} and ${at(b)} are`);
+    .replace(/between 0 and (\S+) \S+\.$/, (_, /** @type {string} */ L) => `between ${at(0)} and ${at(L)}.`)
+    .replace(/position x = (\S+) \S+\./, (_, /** @type {string} */ x) => `position x = ${at(x)}.`)
+    .replace(/^Positions (\S+) \S+ and (\S+) \S+ are/, (_, /** @type {string} */ a, /** @type {string} */ b) => `Positions ${at(a)} and ${at(b)} are`);
 }
 
+/** @param {BeamDiagPreset} p @returns {State} */
 function fromPreset(p) {
-  const m = D.materials.find((x) => x.id === p.material);
+  // Every preset names one of the materials.
+  const m = /** @type {BeamDiagData["materials"][number]} */ (D.materials.find((x) => x.id === p.material));
   return {
     preset: p.id, length: p.length, divisions: 4,
     supports: p.supports.map((s) => ({ ...s })), loads: p.loads.map((l) => ({ ...l })),
@@ -2318,6 +2575,7 @@ function fromPreset(p) {
   };
 }
 
+/** @param {State} s */
 function modelOf(s) {
   return {
     length: s.length, divisions: s.divisions,
@@ -2328,6 +2586,7 @@ function modelOf(s) {
 }
 
 /* ---------- editor panel ---------- */
+/** @param {{ label: string, value: number, field: string, step?: string, onInput: (value: number) => void, min?: string }} options */
 function numInput({ label, value, field, step = "any", onInput, min }) {
   const wrap = document.createElement("label");
   wrap.className = "f";
@@ -2337,12 +2596,13 @@ function numInput({ label, value, field, step = "any", onInput, min }) {
   input.type = "number";
   input.step = step;
   if (min != null) input.min = min;
-  input.value = tidy(value);
+  input.value = dom(tidy(value));
   input.dataset.field = field;
   input.addEventListener("input", () => { onInput(input.value === "" ? NaN : Number(input.value)); updateSoon(); });
   wrap.append(span, input);
   return wrap;
 }
+/** @param {string} label @param {() => void} onClick */
 function removeButton(label, onClick) {
   const b = document.createElement("button");
   b.type = "button"; b.className = "btn icon"; b.textContent = "×";
@@ -2350,6 +2610,7 @@ function removeButton(label, onClick) {
   b.addEventListener("click", onClick);
   return b;
 }
+/** @type {Record<Load["kind"], string>} */
 const LOAD_NAMES = { point: "Point force", moment: "Couple", dist: "Distributed load" };
 
 function buildSupports() {
@@ -2367,7 +2628,7 @@ function buildSupports() {
     sel.dataset.field = `supports.${i}.kind`;
     for (const k of B.SUPPORT_KINDS) { const o = new Option(k === "pin" ? "Pin" : "Fixed", k); sel.add(o); }
     sel.value = s.kind;
-    sel.addEventListener("change", () => { s.kind = sel.value; update({ keepForm: true }); });
+    sel.addEventListener("change", () => { s.kind = /** @type {Support["kind"]} */ (sel.value); update({ keepForm: true }); });
     kind.append(ks, sel);
     fields.append(kind, numInput({ label: `x (${sym("length")})`, value: showX(s.x), field: `supports.${i}.x`, onInput: (v) => { s.x = takeX(v, s, "x"); } }));
     li.append(fields, removeButton(`Remove support ${i + 1}`, () => { state.supports.splice(i, 1); state.preset = null; update(); }));
@@ -2408,12 +2669,14 @@ function buildLoads() {
   });
 }
 
+/** @type {Record<string, [SectionKey, string, Quantity, string?][]>} */
 const SECTION_FIELDS = {
   rect: [["b", "Width b", "length"], ["h", "Depth h", "length"]],
   circle: [["d", "Diameter d", "length"]],
   tube: [["d", "Outside D", "length"], ["t", "Wall t", "length"]],
   custom: [["A", "Area A", "area"], ["I", "I, in plane", "inertia"], ["c", "Fibre c", "length", ", optional"], ["Iy", "Iy, out of plane", "inertia"], ["J", "Torsion J", "inertia"]],
 };
+/** @type {Record<string, Partial<Record<SectionKey, number>>>} */
 const SECTION_DEFAULTS = { rect: { b: 0.1, h: 0.2 }, circle: { d: 0.15 }, tube: { d: 0.1683, t: 0.008 }, custom: { A: 5.0e-3, I: 8.0e-5, c: 0.15, Iy: 8.0e-5, J: 1.6e-4 } };
 
 function buildSection() {
@@ -2425,7 +2688,8 @@ function buildSection() {
     const row = document.createElement("div");
     row.className = "row";
     for (const [key, label, quantity, note = ""] of fields.slice(i, i + 2)) {
-      row.append(numInput({ label: `${label} (${sym(quantity)}${note})`, value: state.section[key] == null ? NaN : show(state.section[key], quantity), field: `section.${key}`,
+      const v = state.section[key];
+      row.append(numInput({ label: `${label} (${sym(quantity)}${note})`, value: v == null ? NaN : show(v, quantity), field: `section.${key}`,
         onInput: (v) => { if (key === "c" && Number.isNaN(v)) delete state.section.c; else state.section[key] = take(v, quantity); } }));
     }
     box.append(row);
@@ -2434,15 +2698,15 @@ function buildSection() {
 
 function buildMaterial() {
   $("material").value = state.material.id;
-  $("E").value = tidy(show(state.material.E, "stress"));
-  $("nu").value = tidy(state.material.nu);
+  $("E").value = dom(tidy(show(state.material.E, "stress")));
+  $("nu").value = dom(tidy(state.material.nu));
 }
 
 function buildForm() {
   $("units").value = units.id;
   relabel();
-  $("length").value = tidy(show(state.length, "length"));
-  $("divisions").value = state.divisions;
+  $("length").value = dom(tidy(show(state.length, "length")));
+  $("divisions").value = dom(state.divisions);
   $("origin").value = origin;
   buildSupports(); buildLoads(); buildSection(); buildMaterial();
   const p = D.presets.find((x) => x.id === state.preset);
@@ -2451,18 +2715,20 @@ function buildForm() {
 }
 
 /* ---------- solving and rendering ---------- */
+/** @param {string | null} field */
 function markInvalid(field) {
-  for (const el of document.querySelectorAll("[data-field]")) {
-    const f = el.dataset.field;
+  for (const el of document.querySelectorAll(/** @type {"input"} */ ("[data-field]"))) {
+    const f = /** @type {string} */ (el.dataset.field);
     const bad = field && (f === field || (field === "supports" && f.startsWith("supports.") && f.endsWith(".x")) || (field === "loads" && f.startsWith("loads.") && /\.(x|x1|x2)$/.test(f)));
     if (bad) el.setAttribute("aria-invalid", "true"); else el.removeAttribute("aria-invalid");
   }
 }
 
 /* Typing in number fields re-solves once the typing pauses; any direct update cancels the pending one. */
+/** @type {ReturnType<typeof setTimeout> | null} */
 let pending = null;
 function updateSoon() {
-  clearTimeout(pending);
+  clearTimeout(pending ?? undefined);
   deckText = null;
   pending = setTimeout(() => update({ keepForm: true }), 150);
 }
@@ -2472,18 +2738,20 @@ function flushPending() {
 }
 
 /* Whether a solved beam's diagrams stay finite when converted to the current convention. */
-const showable = (r) => [["V", "force"], ["M", "moment"], ["v", "length"]].every(([k, q]) => Number.isFinite(show(r.extremes[k].value, q)));
+const showable = (/** @type {Solved} */ r) => /** @type {["V" | "M" | "v", Quantity][]} */ ([["V", "force"], ["M", "moment"], ["v", "length"]]).every(([k, q]) => Number.isFinite(show(r.extremes[k].value, q)));
 
 function update({ keepForm = false } = {}) {
-  clearTimeout(pending);
+  clearTimeout(pending ?? undefined);
   pending = null;
   if (Number.isFinite(state.length) && state.length > 0) attachmentLength = state.length;
   if (!keepForm) buildForm();
   else if (state.preset) { state.preset = null; $("preset").value = ""; $("preset-note").textContent = ""; }
+  /** @type {InstanceType<Engine["ModelError"]> | null} */
   let error = null;
   solveError = null;
   try {
-    const next = B.solve(modelOf(state), { units });
+    // Solved once its extremes are set, on the next line.
+    const next = /** @type {Solved} */ (B.solve(modelOf(state), { units }));
     next.extremes = B.extremes(next);
     if (!showable(next)) throw new B.ModelError(`The results are too large to show in ${units.label}; choose a convention with larger units.`);
     result = next;
@@ -2499,7 +2767,7 @@ function update({ keepForm = false } = {}) {
     box.replaceChildren();
     const b = document.createElement("b"); b.textContent = "Can't solve this beam: ";
     box.append(b, document.createTextNode(inConvention(error.message)));
-    markInvalid(error.field);
+    markInvalid(/** @type {string | null} */ (error.field));
     for (const id of ["plots", "stats", "table"]) $(id).classList.add("stale");
   } else {
     box.hidden = true;
@@ -2530,31 +2798,45 @@ function renderSectionDerived() {
   $("section-derived").textContent = sectionSummary();
 }
 
+/** @typedef {Record<string, string | number>} Attrs */
+/** @param {string} name @param {Attrs} [attrs] @param {Element} [parent] */
 const el = (name, attrs = {}, parent) => {
   const n = document.createElementNS(SVGNS, name);
-  for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+  for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, /** @type {string} */ (v));
   if (parent) parent.append(n);
   return n;
 };
+/** @param {Element} parent @param {number} x @param {number} y @param {string} str @param {Attrs} [attrs] */
 const text = (parent, x, y, str, attrs = {}) => { const t = el("text", { x, y, ...attrs }, parent); t.textContent = str; return t; };
 
+/** @param {number} lo @param {number} hi @returns {number[]} */
 function niceTicks(lo, hi, count = 4) {
   if (lo === hi) { lo -= 1; hi += 1; }
   const raw = hi / count - lo / count, p = 10 ** Math.floor(Math.log10(raw));
-  const step = [1, 2, 2.5, 5, 10].map((m) => m * p).find((s) => s >= raw);
+  // 10·p is at least raw, so a step is always found.
+  const step = /** @type {number} */ ([1, 2, 2.5, 5, 10].map((m) => m * p).find((s) => s >= raw));
   const ticks = [];
   for (let t = Math.ceil(lo / step) * step; t <= hi + step * 1e-9; t += step) ticks.push(Math.abs(t) < step * 1e-9 ? 0 : t);
   return ticks;
 }
 
 // Tick labels on one axis share a format: plain below 10⁵, otherwise a power of ten.
+/** @param {number[]} ticks */
 function tickLabels(ticks) {
   const big = Math.max(...ticks.map(Math.abs)) >= 1e5;
   return ticks.map((t) => (t === 0 ? "0" : big ? pow10(t, 3) : sig(t, 3)));
 }
 // Width of an 11px monospace axis label, rounded up.
-const labelWidth = (str) => 7 * [...str].length;
+const labelWidth = (/** @type {string} */ str) => 7 * [...str].length;
 
+/** @typedef {ReturnType<Engine["diagram"]>[number]} Sample */
+/** @typedef {{ lo: number, hi: number, ticks: number[], labels: string[] }} Axis */
+/**
+ * One panel of the figure: the beam, or a diagram of one quantity with its axis.
+ * @typedef {{ key: string, h: number, yb?: number, title?: string, color?: string, get?: (p: Record<string, number>) => number, unit?: string, top?: number, bottom?: number, axis?: Axis, Y?: (v: number) => number }} Panel
+ */
+/** @typedef {Panel & { title: string, color: string, get: (p: Record<string, number>) => number, unit: string, top: number, bottom: number, axis: Axis }} Diagram */
+/** @param {Diagram} panel @param {Sample[]} pts @param {boolean} narrow */
 function axisOf(panel, pts, narrow) {
   // A loop, not Math.min(...values): sample counts can exceed the engine's argument limit.
   let lo = 0, hi = 0;
@@ -2570,6 +2852,7 @@ function axisOf(panel, pts, narrow) {
   return { lo, hi, ticks, labels: tickLabels(ticks) };
 }
 
+/** @type {Fig | null} */
 let layout = null;
 
 /* The figure carries its own styles, so a saved SVG looks the same as the page. */
@@ -2588,10 +2871,12 @@ const FIGURE_CSS = [
 
 /* A filled arrowhead with its tip at (x, y). */
 const TURN = { up: 0, right: 90, down: 180, left: 270 };
+/** @param {Element} parent @param {number} x @param {number} y @param {keyof typeof TURN} dir @param {string} color */
 const arrowTip = (parent, x, y, dir, color, size = 4) =>
   el("path", { d: `M${x},${y} l${-size},${size * 1.6} h${2 * size} z`, fill: color, ...(dir === "up" ? {} : { transform: `rotate(${TURN[dir]} ${x} ${y})` }) }, parent);
 
 /* The x axis at height y: an arrow to the right, labelled past its tip. */
+/** @param {Element} parent @param {Fig} fig @param {number} y */
 function xAxis(parent, fig, y) {
   const { X, W, mr } = fig;
   el("line", { x1: X(0), x2: W - mr + 6, y1: y, y2: y, stroke: "var(--fg)", "stroke-width": 1 }, parent);
@@ -2600,6 +2885,7 @@ function xAxis(parent, fig, y) {
 }
 
 /* Position ticks at height y, numbered in the chosen convention and drawn at their place on the beam. */
+/** @param {Element} parent @param {Fig} fig @param {number} y */
 function xTicks(parent, fig, y) {
   const { X, L, narrow } = fig, o = offset(L);
   for (const t of niceTicks(showX(0, L), showX(L, L), narrow ? 4 : 6)) {
@@ -2610,12 +2896,19 @@ function xTicks(parent, fig, y) {
 }
 
 /* Draw the beam and its diagrams at width W. The page's figure is interactive; a saved one is not. */
+/**
+ * A drawn figure: its SVG, x scale, margins and panels; the page's interactive one also has the plot area and cursor.
+ * @typedef {{ svg: SVGElement, X: (x: number) => number, ml: number, mr: number, W: number, H: number, L: number, narrow: boolean, panels: Panel[], interactive: boolean, xLabel: string, plot: SVGElement, cursorLine: SVGElement }} Fig
+ */
+/** @param {number} W @param {boolean} interactive @returns {Fig} */
 function figure(W, interactive) {
+  const result = solved();
   const narrow = W < 520;
   // The right margin holds the x axis's arrowhead and its label.
   const xLabel = `x (${sym("length")})`, mr = 16 + labelWidth(xLabel);
   const L = result.model.length;
   const yb = narrow ? 75 : 85;
+  /** @type {Panel[]} */
   const panels = [
     { key: "beam", h: yb + 124, yb },
     { key: "V", title: `SHEAR FORCE V (${sym("force")})`, h: narrow ? 130 : 160, color: "var(--shear)", get: (p) => show(p.V, "force"), unit: sym("force") },
@@ -2630,58 +2923,67 @@ function figure(W, interactive) {
   }
   const H = y;
   const pts = B.diagram(result);
-  for (const p of panels.slice(1)) p.axis = axisOf(p, pts, narrow);
+  // Every panel after the beam is a diagram.
+  const diagrams = /** @type {Diagram[]} */ (panels.slice(1));
+  for (const p of diagrams) p.axis = axisOf(p, pts, narrow);
   // Widen the left margin only when a tick label would not fit the usual one.
-  const ml = Math.max(narrow ? 48 : 64, 12 + Math.max(...panels.slice(1).flatMap((p) => p.axis.labels.map(labelWidth))));
-  const X = (x) => ml + (x / L) * (W - ml - mr);
+  const ml = Math.max(narrow ? 48 : 64, 12 + Math.max(...diagrams.flatMap((p) => p.axis.labels.map(labelWidth))));
+  const X = (/** @type {number} */ x) => ml + (x / L) * (W - ml - mr);
   const svg = el("svg", { class: "bd-fig", width: W, height: H, viewBox: `0 0 ${W} ${H}`, ...(interactive ? { role: "group", "aria-label": "Beam, shear force, bending moment and deflection diagrams" } : {}) });
   el("style", {}, svg).textContent = FIGURE_CSS;
+  const [, top1, , top3] = /** @type {Diagram[]} */ (panels);
   if (!interactive) el("rect", { x: 0, y: 0, width: "100%", height: "100%", fill: "var(--bg)" }, svg);
-  const fig = { svg, X, ml, mr, W, H, L, narrow, panels, interactive, xLabel };
+  // The plot area and the cursor are added below.
+  const fig = /** @type {Fig} */ ({ svg, X, ml, mr, W, H, L, narrow, panels, interactive, xLabel });
 
   drawBeam(svg, fig);
   const plot = el("g", interactive ? { class: "plotarea", tabindex: 0, role: "slider", "aria-label": "Section position along the beam", "aria-valuemin": tidy(showX(0, L)), "aria-valuemax": tidy(showX(L, L)) } : {}, svg);
-  for (const p of panels.slice(1)) drawDiagram(plot, p, pts, fig);
+  for (const p of diagrams) drawDiagram(plot, p, pts, fig);
   fig.plot = plot;
   if (interactive) {
-    el("rect", { class: "frame", x: ml - 4, y: panels[1].top - 20, width: W - ml - mr + 8, height: panels[3].bottom - panels[1].top + 24, fill: "none", stroke: "none", rx: 6 }, plot);
-    fig.cursorLine = el("line", { class: "cursor", x1: 0, x2: 0, y1: panels[0].top + 8, y2: panels[3].bottom }, svg);
+    el("rect", { class: "frame", x: ml - 4, y: top1.top - 20, width: W - ml - mr + 8, height: top3.bottom - top1.top + 24, fill: "none", stroke: "none", rx: 6 }, plot);
+    fig.cursorLine = el("line", { class: "cursor", x1: 0, x2: 0, y1: /** @type {number} */ (panels[0].top) + 8, y2: top3.bottom }, svg);
   }
   return fig;
 }
 
 function render() {
   const host = $("plots");
-  const focused = document.activeElement && document.activeElement.closest && document.activeElement.closest("#plots [data-key]");
+  const focused = document.activeElement && document.activeElement.closest && document.activeElement.closest(/** @type {"g"} */ ("#plots [data-key]"));
   const focusKey = focused ? focused.dataset.key : null;
   const plotFocused = document.activeElement === (host.querySelector(".plotarea"));
-  layout = figure(Math.max(300, host.clientWidth || 700), true);
-  host.replaceChildren(layout.svg);
-  if (focusKey) { const again = host.querySelector(`[data-key="${focusKey}"]`); if (again) again.focus(); }
-  if (plotFocused) layout.plot.focus();
-  setCursor(cursor);
+  const fig = layout = figure(Math.max(300, host.clientWidth || 700), true);
+  host.replaceChildren(fig.svg);
+  if (focusKey) { const again = host.querySelector(/** @type {"g"} */ (`[data-key="${focusKey}"]`)); if (again) again.focus(); }
+  if (plotFocused) fig.plot.focus();
+  // update() places the cursor before it draws.
+  setCursor(/** @type {number} */ (cursor));
 }
 
+/** @param {SVGElement} svg @param {Fig} fig */
 function drawBeam(svg, fig) {
+  const result = solved();
   const { X, interactive } = fig, panel = fig.panels[0];
   const g = el("g", {}, svg);
-  const yb = panel.top + panel.yb;
+  // The beam panel has its top and its beam line.
+  const yb = /** @type {number} */ (panel.top) + /** @type {number} */ (panel.yb);
   const model = result.model;
   const L = model.length;
-  const handle = (attrs) => el("g", interactive ? { class: "handle", tabindex: 0, role: "slider", "aria-valuemin": tidy(showX(0, L)), "aria-valuemax": tidy(showX(L, L)), ...attrs } : {}, g);
-  const grip = (h, ring, hit) => { if (interactive) { el("rect", { class: "ring", ...ring }, h); el("rect", { class: "hit", ...hit }, h); } };
+  const handle = (/** @type {Attrs} */ attrs) => el("g", interactive ? { class: "handle", tabindex: 0, role: "slider", "aria-valuemin": tidy(showX(0, L)), "aria-valuemax": tidy(showX(L, L)), ...attrs } : {}, g);
+  const grip = (/** @type {Element} */ h, /** @type {Attrs} */ ring, /** @type {Attrs} */ hit) => { if (interactive) { el("rect", { class: "ring", ...ring }, h); el("rect", { class: "hit", ...hit }, h); } };
   // Distributed loads: arrows scaled to the largest intensity.
   let qmax = 1e-12, Fmax = 1e-12;
   for (const l of model.loads) {
     if (l.kind === "dist") qmax = Math.max(qmax, Math.abs(l.q1), Math.abs(l.q2));
     if (l.kind === "point") Fmax = Math.max(Fmax, Math.abs(l.F));
   }
+  /** @param {number} x @param {number} yTip @param {number} dir @param {string} color */
   const arrowHead = (x, yTip, dir, color, size = 5) => el("path", { d: `M${x},${yTip} l${-size},${-dir * size * 1.6} h${2 * size} z`, fill: color }, g);
   model.loads.forEach((l) => {
     if (l.kind !== "dist") return;
-    const h = (q) => 10 + 30 * Math.abs(q) / qmax;
+    const h = (/** @type {number} */ q) => 10 + 30 * Math.abs(q) / qmax;
     const x1 = X(l.x1), x2 = X(l.x2), n = Math.max(2, Math.round((x2 - x1) / 22));
-    const topAt = (x) => { const q = l.q1 + (l.q2 - l.q1) * (x - l.x1) / (l.x2 - l.x1); return yb - 7 - h(q); };
+    const topAt = (/** @type {number} */ x) => { const q = l.q1 + (l.q2 - l.q1) * (x - l.x1) / (l.x2 - l.x1); return yb - 7 - h(q); };
     el("path", { d: `M${x1},${topAt(l.x1)} L${x2},${topAt(l.x2)}`, stroke: "var(--fg)", "stroke-width": 1.5, fill: "none" }, g);
     for (let j = 0; j <= n; j++) {
       const xm = l.x1 + (l.x2 - l.x1) * j / n, q = l.q1 + (l.q2 - l.q1) * j / n;
@@ -2690,7 +2992,7 @@ function drawBeam(svg, fig) {
       el("line", { x1: px, x2: px, y1: top, y2: yb - 8, stroke: "var(--fg)", "stroke-width": 1 }, g);
       arrowHead(px, d > 0 ? yb - 7 : top, d, "var(--fg)", 3);
     }
-    const q = (v) => short(show(v, "distributed"));
+    const q = (/** @type {number} */ v) => short(show(v, "distributed"));
     const label = l.q1 === l.q2 ? `${q(l.q1)} ${sym("distributed")}` : `${q(l.q1)} → ${q(l.q2)} ${sym("distributed")}`;
     text(g, (x1 + x2) / 2, Math.min(topAt(l.x1), topAt(l.x2)) - 6, label, { class: "val", "text-anchor": "middle" });
   });
@@ -2774,11 +3076,13 @@ function drawBeam(svg, fig) {
   text(ax, xo - 6, ya - 8, "y", { class: "axlabel halo", "text-anchor": "end" });
 }
 
+/** @param {Element} g @param {Diagram} panel @param {Sample[]} pts @param {Fig} fig */
 function drawDiagram(g, panel, pts, fig) {
+  const result = solved();
   const { X, W, ml, mr } = fig;
   const { lo, hi, ticks, labels } = panel.axis;
   const top = panel.top, bot = panel.bottom;
-  const Y = (v) => bot - (v / 2 - lo / 2) / (hi / 2 - lo / 2) * (bot - top);
+  const Y = (/** @type {number} */ v) => bot - (v / 2 - lo / 2) / (hi / 2 - lo / 2) * (bot - top);
   panel.Y = Y;
   const axis = el("g", { class: "axis" }, g);
   ticks.forEach((t, i) => {
@@ -2799,7 +3103,7 @@ function drawDiagram(g, panel, pts, fig) {
   }
   el("path", { d: path, fill: "none", stroke: panel.color, "stroke-width": 2, "stroke-linejoin": "round" }, g);
   // Label the extremes.
-  const ex = result.extremes[panel.key];
+  const ex = result.extremes[/** @type {"V" | "M" | "v"} */ (panel.key)];
   if (ex && Math.abs(ex.value) > 0) {
     const v = panel.get({ [panel.key]: ex.value });
     const x = X(ex.x), yv = Y(v);
@@ -2809,6 +3113,7 @@ function drawDiagram(g, panel, pts, fig) {
   }
 }
 
+/** @param {number} x @param {number} px */
 function snapEvent(x, px) {
   if (!layout) return x;
   const { X } = layout;
@@ -2818,8 +3123,10 @@ function snapEvent(x, px) {
 }
 
 function eventsOf() {
-  const m = result.model, map = new Map();
-  const add = (x, what) => { const k = x; if (!map.has(k)) map.set(k, []); map.get(k).push(what); };
+  /** @type {Map<number, string[]>} */
+  const map = new Map();
+  const m = solved().model;
+  const add = (/** @type {number} */ x, /** @type {string} */ what) => { const k = x; if (!map.has(k)) map.set(k, []); /** @type {string[]} */ (map.get(k)).push(what); };
   add(0, "left end"); add(m.length, "right end");
   m.supports.forEach((s) => add(s.x, s.kind === "pin" ? "pin support" : "fixed support"));
   m.loads.forEach((l) => {
@@ -2830,21 +3137,22 @@ function eventsOf() {
   return [...map.entries()].sort((a, b) => a[0] - b[0]).map(([x, what]) => ({ x, what: [...new Set(what)] }));
 }
 
+/** @param {number} x */
 function setCursor(x) {
   if (!result || !layout) return;
   const L = result.model.length;
-  cursor = Math.min(L, Math.max(0, x));
-  const px = layout.X(cursor);
-  layout.cursorLine.setAttribute("x1", px);
-  layout.cursorLine.setAttribute("x2", px);
-  const a = B.at(result, cursor);
+  const c = cursor = Math.min(L, Math.max(0, x));
+  const px = layout.X(c);
+  layout.cursorLine.setAttribute("x1", dom(px));
+  layout.cursorLine.setAttribute("x2", dom(px));
+  const a = B.at(result, c);
   const jumpV = Math.abs(a.Vleft - a.Vright) > 1e-9 * (Math.abs(a.Vleft) + Math.abs(a.Vright) + 1);
   const jumpM = Math.abs(a.Mleft - a.Mright) > 1e-9 * (Math.abs(a.Mleft) + Math.abs(a.Mright) + 1);
-  const V = cursor <= 0 ? a.Vright : cursor >= L ? a.Vleft : a.Vright;
-  const M = cursor <= 0 ? a.Mright : cursor >= L ? a.Mleft : a.Mright;
-  const f = (v, key, quantity) => shortNf(show(clean(v, key), quantity));
+  const V = c <= 0 ? a.Vright : c >= L ? a.Vleft : a.Vright;
+  const M = c <= 0 ? a.Mright : c >= L ? a.Mleft : a.Mright;
+  const f = (/** @type {number} */ v, /** @type {"V" | "M" | "v" | "theta"} */ key, /** @type {Quantity} */ quantity) => shortNf(show(clean(v, key), quantity));
   const parts = [
-    ["x", `${shortNf(showX(cursor, L), 3)} ${sym("length")}`],
+    ["x", `${shortNf(showX(c, L), 3)} ${sym("length")}`],
     ["V", `${jumpV ? `${f(a.Vleft, "V", "force")} → ${f(a.Vright, "V", "force")}` : f(V, "V", "force")} ${sym("force")}`],
     ["M", `${jumpM ? `${f(a.Mleft, "M", "moment")} → ${f(a.Mright, "M", "moment")}` : f(M, "M", "moment")} ${sym("moment")}`],
     ["v", `${f(a.v, "v", "length")} ${sym("length")}`],
@@ -2858,35 +3166,41 @@ function setCursor(x) {
     const b = document.createElement("b"); b.textContent = v;
     s.append(kk, b); out.append(s);
   }
-  layout.plot.setAttribute("aria-valuenow", tidy(showX(cursor, L)));
+  layout.plot.setAttribute("aria-valuenow", dom(tidy(showX(c, L))));
   layout.plot.setAttribute("aria-valuetext", parts.map(([k, v]) => `${k} ${v}`).join(", "));
   if (!active) renderHandPoint();
 }
 
 /* A position along the beam in the current length unit. */
-const at = (x) => `${sig(showX(x, result.model.length))} ${sym("length")}`;
+const at = (/** @type {number} */ x) => `${sig(showX(x, solved().model.length))} ${sym("length")}`;
 /* Round-off far below the largest value of the same quantity on this beam reads as zero. */
+/** @param {number} value @param {"V" | "M" | "v" | "theta"} key */
 function clean(value, key) {
+  const result = solved();
   const ex = result.extremes, scale = key === "theta" ? Math.abs(ex.v.value) / result.model.length : Math.abs(ex[key].value);
   return Math.abs(value) <= 1e-10 * scale ? 0 : value;
 }
 
 /* The headline results, as [value, what it is]; shown under the figure and in saved figures. */
+/** @returns {[string, string][]} */
 function statItems() {
+  const result = solved();
   const ex = result.extremes, m = result.model;
   const deg = B.indeterminacy(m.supports);
+  /** @type {[string, string][]} */
   const items = [
     [deg > 0 ? `Indeterminate, degree ${deg}` : "Determinate", deg > 0 ? "more reactions than equilibrium can find: solved with compatibility" : "reactions follow from equilibrium alone"],
     [`${sig(show(ex.V.value, "force"), 4)} ${sym("force")}`, `largest shear, at x = ${at(ex.V.x)}`],
     [`${sig(show(ex.M.value, "moment"), 4)} ${sym("moment")}`, `largest moment (${ex.M.value >= 0 ? "sagging" : "hogging"}), at x = ${at(ex.M.x)}`],
     [`${sig(show(ex.v.value, "length"), 4)} ${sym("length")}`, `largest deflection, at x = ${at(ex.v.x)} (L/${B.spanRatio(m.length, ex.v.value)})`],
   ];
-  if (m.section.c) items.push([`${sig(show(Math.abs(ex.M.value) * m.section.c / m.section.I, "stress"), 4)} ${sym("stress")}`, "peak bending stress |M|·c / I"]);
+  const c = m.section.c;
+  if (c) items.push([`${sig(show(Math.abs(ex.M.value) * c / m.section.I, "stress"), 4)} ${sym("stress")}`, "peak bending stress |M|·c / I"]);
   const resid = B.residual(result.equilibrium);
   items.push([resid < 1e-9 ? "Balanced" : `Residual ${sci(resid)}`, `ΣF and ΣM of loads and reactions, relative error ${sci(resid)}`]);
   return items;
 }
-const reactionText = (r) => `${r.kind === "pin" ? "Pin" : "Fixed"} at ${at(r.x)}: ${shortNf(show(r.Fy, "force"))} ${sym("force")}` + (r.kind === "fixed" ? `, ${shortNf(show(r.Mz, "moment"))} ${sym("moment")}` : "");
+const reactionText = (/** @type {Result["reactions"][number]} */ r) => `${r.kind === "pin" ? "Pin" : "Fixed"} at ${at(r.x)}: ${shortNf(show(r.Fy, "force"))} ${sym("force")}` + (r.kind === "fixed" ? `, ${shortNf(show(r.Mz, "moment"))} ${sym("moment")}` : "");
 
 function renderStats() {
   const ul = $("stats");
@@ -2899,7 +3213,7 @@ function renderStats() {
   }
   const rl = $("reactions");
   rl.replaceChildren();
-  result.reactions.forEach((r) => {
+  solved().reactions.forEach((r) => {
     const li = document.createElement("li");
     li.append(document.createElement("i"));
     li.append(document.createTextNode(reactionText(r)));
@@ -2908,8 +3222,10 @@ function renderStats() {
 }
 
 /* Values at every support and load, one row of [text, numeric] cells each. */
+/** @returns {[string, boolean][][]} */
 function tableRows() {
-  const L = result.model.length, f = (v, key, quantity) => nf(show(clean(v, key), quantity));
+  const result = solved();
+  const L = result.model.length, f = (/** @type {number} */ v, /** @type {"V" | "M" | "v" | "theta"} */ key, /** @type {Quantity} */ quantity) => nf(show(clean(v, key), quantity));
   return eventsOf().map((e) => {
     const a = B.at(result, e.x);
     return [
@@ -2932,7 +3248,9 @@ function renderTable() {
 }
 
 /* The deck is built only when it is downloaded, copied or shown: a fine mesh makes it large. */
+/** @type {string | null} */
 let deckText = null;
+/** @returns {string} */
 function deck() {
   flushPending();
   if (deckText === null) {
@@ -2955,6 +3273,7 @@ function resetDeck() {
 /* ---------- saving the figure ----------
    The image and the PDF are drawn from the same SVG as the page, entirely in this page: nothing is uploaded.
    Saved figures always use the light colours, which print well. */
+/** @type {Record<string, string>} */
 const PRINT = {
   bg: "#fff", fg: "#1d1d1f", muted: "#6e6e73", faint: "#a1a1a6", surface: "#f5f5f7", border: "#d2d2d7", grid: "#e8e8ed",
   shear: "#2a78d6", moment: "#eb6834", react: "#1baf7a", bad: "#c4261d",
@@ -2962,6 +3281,7 @@ const PRINT = {
 };
 const FIGURE_W = 960;
 
+/** @param {Blob} blob @param {string} name */
 function save(blob, name) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -2971,7 +3291,9 @@ function save(blob, name) {
 }
 
 /* Break text into lines of at most n characters, at spaces. */
+/** @param {string} str @param {number} n */
 function wrap(str, n) {
+  /** @type {string[]} */
   const lines = [];
   let line = "";
   for (const word of str.split(" ")) {
@@ -2981,16 +3303,18 @@ function wrap(str, n) {
 }
 
 function modelLines() {
-  const L = result.model.length, v = (si, quantity) => `${sig(show(si, quantity), 4)} ${sym(quantity)}`;
-  const q = (l) => (l.q1 === l.q2 ? v(l.q1, "distributed") : `${sig(show(l.q1, "distributed"), 4)} → ${v(l.q2, "distributed")}`);
+  const L = solved().model.length, v = (/** @type {number} */ si, /** @type {Quantity} */ quantity) => `${sig(show(si, quantity), 4)} ${sym(quantity)}`;
+  const q = (/** @type {{ q1: number, q2: number }} */ l) => (l.q1 === l.q2 ? v(l.q1, "distributed") : `${sig(show(l.q1, "distributed"), 4)} → ${v(l.q2, "distributed")}`);
   const lines = [`Length L = ${v(L, "length")}; x runs from ${at(0)} to ${at(L)}`];
   state.supports.forEach((s, i) => lines.push(`Support ${i + 1}: ${s.kind === "pin" ? "pin" : "fixed"} at x = ${at(s.x)}`));
   state.loads.forEach((l, i) => lines.push(`Load ${i + 1}: ` + (l.kind === "point" ? `point force ${v(l.F, "force")} at x = ${at(l.x)}`
     : l.kind === "moment" ? `couple ${v(l.C, "moment")} at x = ${at(l.x)}`
       : `distributed ${q(l)} from x = ${at(l.x1)} to ${at(l.x2)}`)));
   const shape = D.sections.find((x) => x.id === state.section.shape);
-  const dims = (SECTION_FIELDS[state.section.shape] || []).filter(([key]) => state.section[key] != null)
-    .map(([key, label, quantity]) => `${label} = ${v(state.section[key], quantity)}`);
+  const dims = (SECTION_FIELDS[state.section.shape] || []).flatMap(([key, label, quantity]) => {
+    const value = state.section[key];
+    return value != null ? [`${label} = ${v(value, quantity)}`] : [];
+  });
   lines.push(`Section: ${shape ? shape.label : state.section.shape}`, ...(dims.length ? [dims.join(", ")] : []), sectionSummary());
   const mat = D.materials.find((x) => x.id === state.material.id);
   lines.push(`Material: ${mat ? mat.label : "custom"}, E = ${v(state.material.E, "stress")}, ν = ${sig(state.material.nu)}`);
@@ -3008,55 +3332,58 @@ function exportFigure() {
     text(g, left, y, line, { class: "note" }); y += 16;
   }
   y += 12;
-  const column = (x, title, lines) => {
+  const column = (/** @type {number} */ x, /** @type {string} */ title, /** @type {string[]} */ lines) => {
     let yy = y;
     text(g, x, yy, title, { class: "title" }); yy += 18;
     for (const line of lines) for (const part of wrap(line, 68)) { text(g, x, yy, part, { class: "body" }); yy += 17; }
     return yy;
   };
-  const results = [...statItems().map(([big, small]) => `${big}: ${small}`), "Reactions (force + up, couple + counter-clockwise):", ...result.reactions.map((r) => `  ${reactionText(r)}`)];
+  const results = [...statItems().map(([big, small]) => `${big}: ${small}`), "Reactions (force + up, couple + counter-clockwise):", ...solved().reactions.map((r) => `  ${reactionText(r)}`)];
   y = Math.max(column(left, "BEAM, SECTION AND MATERIAL", modelLines()), column(mid, "RESULTS", results)) + 14;
   text(g, left, y, "VALUES AT SUPPORTS AND LOADS", { class: "title" });
   y += 20;
   // x, what, V x⁻, V x⁺, M x⁻, M x⁺, v, θ: numbers right-aligned at these edges, "what" from its left.
   const cols = [92, 104, 520, 600, 690, 780, 860, W - left];
-  const cells = (row, cls) => {
+  const cells = (/** @type {[string, boolean][]} */ row, /** @type {string} */ cls) => {
     const what = wrap(row[1][0], 48);
     row.forEach(([v, num], i) => { if (i !== 1) text(g, cols[i], y, v, { class: cls, ...(num ? { "text-anchor": "end" } : {}) }); });
     what.forEach((part, k) => text(g, cols[1], y + 16 * k, part, { class: cls }));
     y += 16 * what.length + 6;
     el("line", { x1: left, x2: W - left, y1: y - 13, y2: y - 13, stroke: "var(--grid)", "stroke-width": 1 }, g);
   };
-  const u = (q) => ` (${sym(q)})`;
+  const u = (/** @type {Quantity} */ q) => ` (${sym(q)})`;
   cells([[`x${u("length")}`, true], ["What is here", false], [`V x⁻${u("force")}`, true], [`V x⁺${u("force")}`, true], [`M x⁻${u("moment")}`, true], [`M x⁺${u("moment")}`, true], [`v${u("length")}`, true], [`θ${u("angle")}`, true]], "cell th");
   for (const row of tableRows()) cells(row, "cell");
   fig.H = Math.ceil(y + 12);
-  svg.setAttribute("height", fig.H);
+  svg.setAttribute("height", dom(fig.H));
   svg.setAttribute("viewBox", `0 0 ${W} ${fig.H}`);
   return fig;
 }
 
-const svgText = (svg) => '<?xml version="1.0" encoding="UTF-8"?>\n' + new XMLSerializer().serializeToString(svg).replace(/var\(--([a-z]+)\)/g, (m, k) => PRINT[k] ?? m);
+const svgText = (/** @type {Node} */ svg) => '<?xml version="1.0" encoding="UTF-8"?>\n' + new XMLSerializer().serializeToString(svg).replace(/var\(--([a-z]+)\)/g, (m, k) => PRINT[k] ?? m);
 
+/** @param {Fig} fig */
 async function rasterize(fig) {
   // Twice the pixels for a sharp print, within what every browser's canvas allows.
   const scale = Math.min(2, Math.sqrt(16e6 / (fig.W * fig.H)));
   const img = new Image();
   await new Promise((resolve, reject) => {
-    img.onload = resolve;
+    img.onload = () => resolve(undefined);
     img.onerror = () => reject(new Error("this browser could not draw the figure"));
     img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svgText(fig.svg));
   });
   const canvas = document.createElement("canvas");
   canvas.width = Math.round(fig.W * scale);
   canvas.height = Math.round(fig.H * scale);
-  const ctx = canvas.getContext("2d");
+  // A 2D context is always available on a fresh canvas.
+  const ctx = /** @type {CanvasRenderingContext2D} */ (canvas.getContext("2d"));
   ctx.fillStyle = PRINT.bg;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
   return canvas;
 }
 
+/** @param {Uint8Array<ArrayBuffer>} bytes */
 async function deflate(bytes) {
   if (typeof CompressionStream !== "function") return { data: bytes, filter: "" };
   const stream = new Blob([bytes]).stream().pipeThrough(new CompressionStream("deflate"));
@@ -3064,9 +3391,10 @@ async function deflate(bytes) {
 }
 
 /* A one-page PDF: the figure as a lossless image, sized as it is drawn at 96 px to the inch. */
+/** @param {HTMLCanvasElement} canvas @param {Fig} fig */
 async function pdfOf(canvas, fig) {
   const w = canvas.width, h = canvas.height;
-  const px = canvas.getContext("2d").getImageData(0, 0, w, h).data;
+  const px = /** @type {CanvasRenderingContext2D} */ (canvas.getContext("2d")).getImageData(0, 0, w, h).data;
   const rgb = new Uint8Array(w * h * 3);
   for (let i = 0, j = 0; i < px.length; i += 4) { rgb[j++] = px[i]; rgb[j++] = px[i + 1]; rgb[j++] = px[i + 2]; }
   const image = await deflate(rgb);
@@ -3081,13 +3409,16 @@ async function pdfOf(canvas, fig) {
     [`<< /Length ${content.length} >>`, enc.encode(content)],
     "<< /Title (Beam diagram results) /Producer (beamdiag) >>",
   ];
-  const parts = [], offsets = [];
+  /** @type {Uint8Array<ArrayBuffer>[]} */
+  const parts = [];
+  /** @type {number[]} */
+  const offsets = [];
   let size = 0;
-  const put = (x) => { const b = typeof x === "string" ? enc.encode(x) : x; parts.push(b); size += b.length; };
+  const put = (/** @type {string | Uint8Array<ArrayBuffer>} */ x) => { const b = typeof x === "string" ? enc.encode(x) : x; parts.push(b); size += b.length; };
   put("%PDF-1.4\n%\u00e2\u00e3\u00cf\u00d3\n");
   objects.forEach((o, i) => {
     offsets.push(size);
-    if (Array.isArray(o)) { put(`${i + 1} 0 obj\n${o[0]}\nstream\n`); put(o[1]); put("\nendstream\nendobj\n"); } else put(`${i + 1} 0 obj\n${o}\nendobj\n`);
+    if (Array.isArray(o)) { put(`${i + 1} 0 obj\n${o[0]}\nstream\n`); put(/** @type {Uint8Array<ArrayBuffer>} */ (o[1])); put("\nendstream\nendobj\n"); } else put(`${i + 1} 0 obj\n${o}\nendobj\n`);
   });
   const xref = size;
   put(`xref\n0 ${objects.length + 1}\n0000000000 65535 f \n${offsets.map((o) => `${String(o).padStart(10, "0")} 00000 n \n`).join("")}`
@@ -3095,6 +3426,7 @@ async function pdfOf(canvas, fig) {
   return new Blob(parts, { type: "application/pdf" });
 }
 
+/** @param {string} kind */
 async function saveFigure(kind) {
   const status = $("figure-status");
   flushPending();
@@ -3106,11 +3438,11 @@ async function saveFigure(kind) {
     else {
       const canvas = await rasterize(fig);
       save(kind === "pdf" ? await pdfOf(canvas, fig)
-        : await new Promise((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("this browser could not encode the PNG"))), "image/png")), name);
+        : await new Promise((/** @type {(blob: Blob) => void} */ resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("this browser could not encode the PNG"))), "image/png")), name);
     }
     status.textContent = `Saved ${name}.`;
   } catch (e) {
-    status.textContent = `Could not save: ${e.message}.`;
+    status.textContent = `Could not save: ${/** @type {Error} */ (e).message}.`;
   }
 }
 
@@ -3120,9 +3452,11 @@ async function saveFigure(kind) {
 const presetTitle = () => D.presets.find((p) => p.id === state.preset)?.label ?? "";
 function reportDeck() {
   const shape = D.sections.find((x) => x.id === state.section.shape), mat = D.materials.find((x) => x.id === state.material.id);
-  const dims = state.section.shape === "custom" ? [] : (SECTION_FIELDS[state.section.shape] || [])
-    .filter(([key]) => state.section[key] != null).map(([key, label, quantity]) => [label, state.section[key], quantity]);
-  return H.deck(H.beamReport(result, {
+  const dims = state.section.shape === "custom" ? [] : (SECTION_FIELDS[state.section.shape] || []).flatMap(([key, label, quantity]) => {
+    const value = state.section[key];
+    return value != null ? [/** @type {[string, number, Quantity]} */ ([label, value, quantity])] : [];
+  });
+  return H.deck(H.beamReport(solved(), {
     units, origin, at: cursor, title: presetTitle(),
     section: { shape: state.section.shape, label: shape ? shape.label : state.section.shape, dims },
     material: { label: mat ? mat.label : "" },
@@ -3138,7 +3472,7 @@ function saveReport() {
     save(new Blob([reportDeck()], { type: "text/markdown" }), name);
     status.textContent = `Saved ${name}: open it in beamdswitch.`;
   } catch (e) {
-    status.textContent = `Could not save: ${e.message}. Use Copy deck instead.`;
+    status.textContent = `Could not save: ${/** @type {Error} */ (e).message}. Use Copy deck instead.`;
   }
 }
 async function copyReport() {
@@ -3157,14 +3491,19 @@ async function copyReport() {
    handcalc.js writes the derivation as blocks of text, equations, lists and tables; the page draws
    them, with the equations' small TeX subset turned into HTML (no maths library, nothing loaded). */
 const H = HandCalc;
-let handCache = null, handStale = false;
+/** @type {{ result: Solved, units: typeof units, origin: string, dv: ReturnType<typeof H.derive> } | null} */
+let handCache = null;
+let handStale = false;
 function derivation() {
   if (!result || solveError) return null;
   if (!handCache || handCache.result !== result || handCache.units !== units || handCache.origin !== origin)
     handCache = { result, units, origin, dv: H.derive(result, { units, origin }) };
   return handCache.dv;
 }
+/** @typedef {ReturnType<typeof H.texNodes>[number]} TexNode */
+/** @param {HTMLElement} parent @param {string} tex */
 function mathInto(parent, tex) {
+  /** @param {HTMLElement} into @param {TexNode[]} nodes */
   const draw = (into, nodes) => {
     for (const n of nodes) {
       if (typeof n === "string") into.append(document.createTextNode(n));
@@ -3182,6 +3521,7 @@ function mathInto(parent, tex) {
   draw(parent, H.texNodes(tex));
 }
 /* Text with inline $maths$. */
+/** @param {HTMLElement} parent @param {unknown} str */
 function inlineInto(parent, str) {
   String(str).split(/\$([^$]+)\$/).forEach((part, i) => {
     if (i % 2 === 0) { if (part) parent.append(document.createTextNode(part)); return; }
@@ -3191,6 +3531,8 @@ function inlineInto(parent, str) {
     parent.append(m);
   });
 }
+/** @typedef {ReturnType<typeof H.frames>[number]["frames"][number]} HFrame */
+/** @param {HFrame["blocks"][number]} b */
 function blockNode(b) {
   if (b.p != null) { const p = document.createElement("p"); inlineInto(p, b.p); return p; }
   if (b.eq != null) {
@@ -3206,9 +3548,11 @@ function blockNode(b) {
   }
   const wrap = document.createElement("div"), table = document.createElement("table"), head = document.createElement("thead"), body = document.createElement("tbody"), hr = document.createElement("tr");
   wrap.className = "table-wrap";
-  b.table.head.forEach((h, i) => { const th = document.createElement("th"); th.setAttribute("scope", "col"); if (i) th.className = "num"; inlineInto(th, h); hr.append(th); });
+  // Every other block is a table.
+  const t = /** @type {NonNullable<typeof b.table>} */ (b.table);
+  t.head.forEach((h, i) => { const th = document.createElement("th"); th.setAttribute("scope", "col"); if (i) th.className = "num"; inlineInto(th, h); hr.append(th); });
   head.append(hr);
-  for (const row of b.table.rows) {
+  for (const row of t.rows) {
     const tr = document.createElement("tr");
     row.forEach((v, i) => { const td = document.createElement("td"); if (i) td.className = "num"; inlineInto(td, v); tr.append(td); });
     body.append(tr);
@@ -3217,8 +3561,9 @@ function blockNode(b) {
   return wrap;
 }
 /* A frame as an article, or for a segment a details element, open while the beam has few segments. */
+/** @param {HFrame} f */
 function frameNode(f, collapsible = false, open = true) {
-  const box = document.createElement(collapsible ? "details" : "article"), h = document.createElement(collapsible ? "summary" : "h4");
+  const box = /** @type {HTMLDetailsElement} */ (document.createElement(collapsible ? "details" : "article")), h = document.createElement(collapsible ? "summary" : "h4");
   box.className = "calc";
   h.textContent = f.title;
   box.append(h, ...f.blocks.map(blockNode));
@@ -3234,7 +3579,7 @@ function renderHand() {
     body.append(p); $("hand-point").replaceChildren();
     return;
   }
-  for (const part of H.frames(result, { units, origin, derivation: dv })) {
+  for (const part of H.frames(solved(), { units, origin, derivation: dv })) {
     const box = document.createElement("div"), h = document.createElement("h3"), segments = part.frames.filter((f) => /^Segment /.test(f.title)).length;
     box.className = "hand-part";
     h.textContent = part.title;
@@ -3247,10 +3592,10 @@ function renderHand() {
 function renderHandPoint() {
   const box = $("hand-point"), dv = derivation();
   box.replaceChildren();
-  if (dv && cursor != null) box.append(frameNode(H.pointFrame(result, cursor, { units, origin, derivation: dv })));
+  if (dv && cursor != null) box.append(frameNode(H.pointFrame(solved(), cursor, { units, origin, derivation: dv })));
 }
 function handMarkdown() {
-  return H.markdown(result, { units, origin, at: cursor, title: presetTitle(), derivation: derivation() });
+  return H.markdown(solved(), { units, origin, at: cursor, title: presetTitle(), derivation: derivation() ?? undefined });
 }
 function saveHand() {
   const status = $("hand-status");
@@ -3261,7 +3606,7 @@ function saveHand() {
     save(new Blob([handMarkdown()], { type: "text/markdown" }), name);
     status.textContent = `Saved ${name}.`;
   } catch (e) {
-    status.textContent = `Could not save: ${e.message}. Use Copy Markdown instead.`;
+    status.textContent = `Could not save: ${/** @type {Error} */ (e).message}. Use Copy Markdown instead.`;
   }
 }
 async function copyHand() {
@@ -3278,38 +3623,44 @@ async function copyHand() {
 
 /* ---------- interaction ---------- */
 /* Steps and snapping work in the current length unit, so a dragged support lands on 24 in, not 0.6 m. */
+/** @param {number} L */
 function stepFor(L) {
   const raw = show(L, "length") / 100, p = 10 ** Math.floor(Math.log10(raw));
-  return take([1, 2, 5, 10].map((m) => m * p).find((s) => s >= raw), "length");
+  // 10·p is at least raw, so a step is always found.
+  return take(/** @type {number} */ ([1, 2, 5, 10].map((m) => m * p).find((s) => s >= raw)), "length");
 }
-const snap = (x, step) => { const s = show(step, "length"); return take(+(Math.round(show(x, "length") / s) * s).toPrecision(12), "length"); };
+const snap = (/** @type {number} */ x, /** @type {number} */ step) => { const s = show(step, "length"); return take(+(Math.round(show(x, "length") / s) * s).toPrecision(12), "length"); };
 /* Snap a beam position to the step as it reads in the chosen origin. */
-const snapShown = (x, step) => typed(snap(shown(x), step));
+const snapShown = (/** @type {number} */ x, /** @type {number} */ step) => typed(snap(shown(x), step));
 
+/** @param {string} key @param {number} x */
 function moveHandle(key, x) {
   const L = state.length;
   x = Math.min(L, Math.max(0, x));
   const i = +key.slice(1);
   const target = key[0] === "s" ? state.supports[i] : state.loads[i];
   if (!target) return;
-  target.x = x;
-  const input = document.querySelector(`[data-field="${key[0] === "s" ? "supports" : "loads"}.${i}.x"]`);
-  if (input) input.value = tidy(showX(x));
+  // Only supports, point forces and couples have handles, and each has an x.
+  /** @type {{ x: number }} */ (target).x = x;
+  const input = document.querySelector(/** @type {"input"} */ (`[data-field="${key[0] === "s" ? "supports" : "loads"}.${i}.x"]`));
+  if (input) input.value = dom(tidy(showX(x)));
   update({ keepForm: true });
 }
 
+/** @param {PointerEvent} ev */
 function pointerX(ev) {
   const r = $("plots").getBoundingClientRect();
-  const { ml, mr, W, L } = layout;
+  // Only called while a figure is drawn.
+  const { ml, mr, W, L } = /** @type {Fig} */ (layout);
   return ((ev.clientX - r.left) / r.width * W - ml) / (W - ml - mr) * L;
 }
 
 function wire() {
   const host = $("plots");
   host.addEventListener("pointerdown", (ev) => {
-    const h = ev.target.closest("[data-key]");
+    const h = /** @type {Element} */ (ev.target).closest(/** @type {"g"} */ ("[data-key]"));
     if (!h || !layout) return;
-    active = h.dataset.key;
+    active = h.dataset.key ?? null;
     h.classList.add("active");
     host.setPointerCapture(ev.pointerId);
     ev.preventDefault();
@@ -3319,40 +3670,46 @@ function wire() {
     if (!layout) return;
     if (active) {
       moveHandle(active, snapShown(pointerX(ev), stepFor(state.length)));
-      const again = host.querySelector(`[data-key="${active}"]`);
+      const again = host.querySelector(/** @type {"g"} */ (`[data-key="${active}"]`));
       if (again) again.classList.add("active");
       return;
     }
     setCursor(snapEvent(pointerX(ev), 6));
   });
   const end = () => {
-    if (active) { const h = host.querySelector(`[data-key="${active}"]`); if (h) h.classList.remove("active"); }
+    if (active) { const h = host.querySelector(/** @type {"g"} */ (`[data-key="${active}"]`)); if (h) h.classList.remove("active"); }
     active = null;
     if (handStale) renderHand();
   };
   host.addEventListener("pointerup", end);
   host.addEventListener("pointercancel", end);
   host.addEventListener("keydown", (ev) => {
-    const h = ev.target.closest("[data-key]");
+    const t = /** @type {Element} */ (ev.target), h = t.closest(/** @type {"g"} */ ("[data-key]"));
     const L = state.length, step = stepFor(L) / (ev.shiftKey ? 10 : 1);
     if (h) {
-      const key = h.dataset.key, i = +key.slice(1);
-      const cur = (key[0] === "s" ? state.supports[i] : state.loads[i]).x;
-      const next = { ArrowLeft: cur - step, ArrowDown: cur - step, ArrowRight: cur + step, ArrowUp: cur + step, Home: 0, End: L }[ev.key];
+      // Handles are drawn only for supports and for point forces and couples, which have an x.
+      const key = /** @type {string} */ (h.dataset.key), i = +key.slice(1);
+      const cur = /** @type {{ x: number }} */ (key[0] === "s" ? state.supports[i] : state.loads[i]).x;
+      /** @type {Record<string, number>} */
+      const moves = { ArrowLeft: cur - step, ArrowDown: cur - step, ArrowRight: cur + step, ArrowUp: cur + step, Home: 0, End: L };
+      const next = moves[ev.key];
       if (next === undefined) return;
       ev.preventDefault();
       moveHandle(key, ev.key === "Home" || ev.key === "End" ? next : snapShown(next, step));
       return;
     }
-    if (ev.target.classList && ev.target.classList.contains("plotarea") && result) {
+    if (t.classList && t.classList.contains("plotarea") && result) {
+      // The cursor is placed whenever a beam is solved.
+      const c = /** @type {number} */ (cursor);
       const evs = eventsOf().map((e) => e.x);
+      /** @type {number | undefined} */
       let next;
-      if (ev.key === "ArrowLeft" || ev.key === "ArrowDown") next = snapShown(cursor - step, step);
-      else if (ev.key === "ArrowRight" || ev.key === "ArrowUp") next = snapShown(cursor + step, step);
+      if (ev.key === "ArrowLeft" || ev.key === "ArrowDown") next = snapShown(c - step, step);
+      else if (ev.key === "ArrowRight" || ev.key === "ArrowUp") next = snapShown(c + step, step);
       else if (ev.key === "Home") next = 0;
       else if (ev.key === "End") next = result.model.length;
-      else if (ev.key === "PageDown") next = evs.find((x) => x > cursor + 1e-12) ?? result.model.length;
-      else if (ev.key === "PageUp") next = [...evs].reverse().find((x) => x < cursor - 1e-12) ?? 0;
+      else if (ev.key === "PageDown") next = evs.find((x) => x > c + 1e-12) ?? result.model.length;
+      else if (ev.key === "PageUp") next = [...evs].reverse().find((x) => x < c - 1e-12) ?? 0;
       if (next === undefined) return;
       ev.preventDefault();
       setCursor(next);
@@ -3370,9 +3727,9 @@ function wire() {
     const p = D.presets.find((x) => x.id === presetSel.value);
     if (p) { state = fromPreset(p); cursor = null; update(); }
   });
-  for (const b of document.querySelectorAll("[data-ends]")) {
+  for (const b of document.querySelectorAll(/** @type {"button"} */ ("[data-ends]"))) {
     b.addEventListener("click", () => {
-      const [left, right] = b.dataset.ends.split(",");
+      const [left, right] = /** @type {[Support["kind"], Support["kind"] | undefined]} */ (/** @type {string} */ (b.dataset.ends).split(","));
       const L = state.length;
       const interior = state.supports.filter((s) => s.x > 0 && s.x < L);
       state.supports = [{ kind: left, x: 0 }, ...interior, ...(right ? [{ kind: right, x: L }] : [])];
@@ -3381,11 +3738,15 @@ function wire() {
     });
   }
   // Where each support and load sat when this length edit began: at an end, or at a typed position.
+  /** @typedef {{ item: Record<string, any>, key: string, field: string, end?: 0 | 1 | null, at?: number }} Attachment a support or load end, and where it sat */
+  /** @type {Attachment[] | null} */
   let lengthEdit = null;
   $("length").addEventListener("input", () => {
     const v = $("length").value === "" ? NaN : takeX(Number($("length").value), state, "length");
     if (!lengthEdit) {
-      const L = attachmentLength, items = [];
+      const L = attachmentLength;
+      /** @type {Attachment[]} */
+      const items = [];
       state.supports.forEach((s, i) => items.push({ item: s, key: "x", field: `supports.${i}` }));
       state.loads.forEach((l, i) => { for (const key of l.kind === "dist" ? ["x1", "x2"] : ["x"]) items.push({ item: l, key, field: `loads.${i}` }); });
       for (const e of items) { const x = e.item[e.key]; e.end = x === 0 ? 0 : x === L ? 1 : null; e.at = shown(x, L); }
@@ -3397,12 +3758,12 @@ function wire() {
     if (Number.isFinite(v) && v > 0) {
       attachmentLength = v;
       for (const { item, key, field, end, at } of lengthEdit) {
-        const x = end === 0 ? 0 : end === 1 ? v : typed(at, v);
+        const x = end === 0 ? 0 : end === 1 ? v : typed(/** @type {number} */ (at), v);
         if (x === item[key] && !offset()) continue;
         item[key] = x;
         // From mid-span a left-end entry keeps its place on the beam but reads differently, so refresh it too.
-        const input = document.querySelector(`[data-field="${field}.${key}"]`);
-        if (input) input.value = tidy(showX(x));
+        const input = document.querySelector(/** @type {"input"} */ (`[data-field="${field}.${key}"]`));
+        if (input) input.value = dom(tidy(showX(x)));
       }
     }
 
@@ -3434,10 +3795,10 @@ function wire() {
     state.supports.push({ kind: "pin", x: +x.toPrecision(10) });
     state.preset = null;
     update();
-    const inputs = document.querySelectorAll("#supports input");
+    const inputs = document.querySelectorAll(/** @type {"input"} */ ("#supports input"));
     if (inputs.length) inputs[inputs.length - 1].focus();
   });
-  for (const b of document.querySelectorAll("[data-add]")) {
+  for (const b of document.querySelectorAll(/** @type {"button"} */ ("[data-add]"))) {
     b.addEventListener("click", () => {
       const L = state.length, k = b.dataset.add;
       const q = round1(-5e3, "distributed");
@@ -3446,7 +3807,7 @@ function wire() {
           : { kind: "dist", x1: 0, x2: L, q1: q, q2: q });
       state.preset = null;
       update();
-      const inputs = document.querySelectorAll("#loads .item:last-child input");
+      const inputs = document.querySelectorAll(/** @type {"input"} */ ("#loads .item:last-child input"));
       if (inputs.length) inputs[0].focus();
     });
   }
@@ -3510,7 +3871,7 @@ function wire() {
 }
 
 function staticText() {
-  const list = (id, items) => { const ul = $(id); for (const t of items) { const li = document.createElement("li"); li.textContent = t; ul.append(li); } };
+  const list = (/** @type {string} */ id, /** @type {string[]} */ items) => { const ul = $(id); for (const t of items) { const li = document.createElement("li"); li.textContent = t; ul.append(li); } };
   $("method-text").textContent = D.method;
   list("conventions", D.conventions);
   list("assumptions", D.assumptions);
@@ -3534,8 +3895,8 @@ function staticText() {
 function registerTools() {
   const mc = (typeof document !== "undefined" && document.modelContext) || (typeof navigator !== "undefined" && navigator.modelContext);
   if (!mc) return;
-  const result_ = (obj) => ({ content: [{ type: "text", text: JSON.stringify(obj) }] });
-  const summary = (r) => {
+  const result_ = (/** @type {unknown} */ obj) => ({ content: [{ type: "text", text: JSON.stringify(obj) }] });
+  const summary = (/** @type {Result} */ r) => {
     const ex = B.extremes(r);
     return {
       units: "SI: m, N, N·m; deflection m; slope rad",
@@ -3545,7 +3906,7 @@ function registerTools() {
       points: eventsOfModel(r).map((x) => B.at(r, x)),
     };
   };
-  const eventsOfModel = (r) => [...new Set([0, r.model.length, ...r.model.supports.map((s) => s.x), ...r.model.loads.flatMap((l) => (l.kind === "dist" ? [l.x1, l.x2] : [l.x]))])].sort((a, b) => a - b);
+  const eventsOfModel = (/** @type {Result} */ r) => [...new Set([0, r.model.length, ...r.model.supports.map((s) => s.x), ...r.model.loads.flatMap((l) => (l.kind === "dist" ? [l.x1, l.x2] : [l.x]))])].sort((a, b) => a - b);
   const modelSchema = {
     type: "object",
     properties: {
@@ -3558,9 +3919,9 @@ function registerTools() {
     required: ["length", "supports", "loads", "material", "section"],
   };
   mc.registerTool({ name: "get_metadata", description: "Return the method, units, sign conventions, assumptions, example beams, NASTRAN export notes and sources for this beam solver.", inputSchema: { type: "object", properties: {}, additionalProperties: false }, annotations: { readOnlyHint: true }, async execute() { return result_({ title: D.title, method: D.method, units: D.units, unitConventions: Object.values(B.UNIT_SYSTEMS), pageUnits: units.id, conventions: D.conventions, assumptions: D.assumptions, presets: D.presets.map((p) => ({ id: p.id, label: p.label, note: p.note })), nastran: D.nastran, sources: D.sources }); } });
-  mc.registerTool({ name: "get_current_beam", description: "Return the beam currently on the page (SI units) with its reactions, extremes and values at every support and load.", inputSchema: { type: "object", properties: {}, additionalProperties: false }, annotations: { readOnlyHint: true }, async execute() { try { const r = B.solve(modelOf(state)); return result_({ model: r.model, ...summary(r) }); } catch (e) { return result_({ error: e.message }); } } });
-  mc.registerTool({ name: "solve_beam", description: "Solve a beam given in SI units (supports pin or fixed; loads point, moment or dist) and return reactions, extremes and values at supports and loads. Does not change the page.", inputSchema: modelSchema, annotations: { readOnlyHint: true }, async execute(i) { try { return result_(summary(B.solve(i))); } catch (e) { return result_({ error: e.message, field: e.field || null }); } } });
-  mc.registerTool({ name: "export_nastran_bdf", description: "Return the MSC Nastran SOL 101 bulk data deck (.bdf text) for a beam given in SI units, or for the page's beam when no model is given. The deck's numbers are written in `units` (default: the page's unit convention).", inputSchema: { type: "object", properties: { model: modelSchema, units: { type: "string", enum: Object.keys(B.UNIT_SYSTEMS), description: "Consistent unit convention for the deck's numbers" } }, additionalProperties: false }, annotations: { readOnlyHint: true }, async execute(i) { try { return result_({ bdf: B.exportBdf(i && i.model ? i.model : modelOf(state), { units: (i && i.units) || units.id }) }); } catch (e) { return result_({ error: e.message }); } } });
+  mc.registerTool({ name: "get_current_beam", description: "Return the beam currently on the page (SI units) with its reactions, extremes and values at every support and load.", inputSchema: { type: "object", properties: {}, additionalProperties: false }, annotations: { readOnlyHint: true }, async execute() { try { const r = B.solve(modelOf(state)); return result_({ model: r.model, ...summary(r) }); } catch (e) { return result_({ error: /** @type {Error} */ (e).message }); } } });
+  mc.registerTool({ name: "solve_beam", description: "Solve a beam given in SI units (supports pin or fixed; loads point, moment or dist) and return reactions, extremes and values at supports and loads. Does not change the page.", inputSchema: modelSchema, annotations: { readOnlyHint: true }, async execute(i) { try { return result_(summary(B.solve(i))); } catch (e) { return result_({ error: /** @type {Error} */ (e).message, field: /** @type {{ field?: string }} */ (e).field || null }); } } });
+  mc.registerTool({ name: "export_nastran_bdf", description: "Return the MSC Nastran SOL 101 bulk data deck (.bdf text) for a beam given in SI units, or for the page's beam when no model is given. The deck's numbers are written in `units` (default: the page's unit convention).", inputSchema: { type: "object", properties: { model: modelSchema, units: { type: "string", enum: Object.keys(B.UNIT_SYSTEMS), description: "Consistent unit convention for the deck's numbers" } }, additionalProperties: false }, annotations: { readOnlyHint: true }, async execute(i) { try { return result_({ bdf: B.exportBdf(i && i.model ? i.model : modelOf(state), { units: (i && i.units) || units.id }) }); } catch (e) { return result_({ error: /** @type {Error} */ (e).message }); } } });
 }
 
 /* ---------- start ---------- */

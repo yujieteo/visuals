@@ -4,7 +4,7 @@ An interactive shear-force and bending-moment diagram creator for straight Euler
 
 ## Where changes go
 
-The standalone repository [yujieteo/beamdiag](https://github.com/yujieteo/beamdiag) is where this visualisation and its tests develop and where CI runs them. `visuals/beamdiag/` in [yujieteo/site](https://github.com/yujieteo/site/tree/main/visuals/beamdiag) is a port of its page files, refreshed when the visualisation is updated, and the site runs no logic tests for it. Porting copies the folder minus `tests/` and `.github/`. It also leaves out the development-only `docs/`, `.gitignore` and `.no-mistakes.yaml`, so AGENTS.md and SKILLS.md must not link into any of them (the site checks that their links resolve). [README.md](README.md) lists every file here and its role.
+The standalone repository [yujieteo/beamdiag](https://github.com/yujieteo/beamdiag) is where this visualisation and its tests develop and where CI runs them. `visuals/beamdiag/` in [yujieteo/site](https://github.com/yujieteo/site/tree/main/visuals/beamdiag) is a port of its page files, refreshed when the visualisation is updated, and the site runs no logic tests for it. Porting copies the folder minus `tests/` and `.github/`. It also leaves out the development-only `docs/`, `.gitignore`, `.no-mistakes.yaml` and the type-check tooling (`package.json`, `package-lock.json`, `tsconfig.json`, `types/`, `beamdswitch.d.ts`, `scripts/extract-inline.mjs`, `.typecheck/` and `node_modules/`), so AGENTS.md and SKILLS.md must not link into any of them (the site checks that their links resolve). [README.md](README.md) lists every file here and its role.
 
 Every change follows the site's [add-visualization playbook](https://github.com/yujieteo/site/blob/main/skills/playbooks/add-visualization.md):
 
@@ -23,12 +23,15 @@ python3 reference.py          # rebuild reference.json after editing fixtures.js
 python3 reference.py --check  # fail if reference.json is stale
 ```
 
-Before opening a pull request, run the whole suite, as CI (`.github/workflows/ci.yml`) does on every push and pull request:
+Before opening a pull request, run the whole suite and the type check, as CI (`.github/workflows/ci.yml`) does on every push and pull request:
 
 ```sh
 node --test tests/*.test.mjs
 python3 -m unittest discover -s tests -p 'test_*.py' -v
+npm ci && npm run typecheck
 ```
+
+The type check is TypeScript's `tsc` over JSDoc types, with nothing emitted: `scripts/extract-inline.mjs` first copies the built page's own inline scripts (the data and the UI) into `.typecheck/inline/` (ignored by Git; each copy keeps `index.html`'s line numbers), then `tsc` checks them, `engine.js`, `handcalc.js` and the tests as `tsconfig.json` sets out. Fix a type error in `template.html` or the source it names and rebuild. `types/page.d.ts` declares the page's globals and `beamdswitch.d.ts` types the unedited `beamdswitch.js` copy.
 
 `tests/browser.test.mjs` drags handles in Chrome and lays out every preset's deck in beamdswitch's own page (`tests/fixtures/beamdswitch/beamdswitch.html`); it is skipped unless `BEAMDIAG_BROWSER_URL` points at a Chrome started with remote debugging, as CI does. To run it locally, start Chrome the way `.github/workflows/ci.yml` does (`--headless=new --remote-debugging-port=9227 '--remote-allow-origins=*'`) and set `BEAMDIAG_BROWSER_URL=http://127.0.0.1:9227`. `docs/verification.md` lists what each test checks. In yujieteo/site the only beamdiag checks are the site's integration tests: the catalogue stub `data/visuals/beamdiag.yaml` points into the folder and names the tools the page registers, the published copy equals the port, and the folder docs keep their links inside the folder.
 
@@ -44,7 +47,7 @@ python3 -m unittest discover -s tests -p 'test_*.py' -v
 
 - `index.html` is one self-contained HTML file with no network requests; it works from `file://` and offline.
 - The engine solves in SI (m, N, Pa); the page converts to and from the chosen unit convention, and the WebMCP tools take and return SI. Loads are positive upward, couples positive counter-clockwise, and M is positive when sagging.
-- Tests use Node's built-in runner (`node --test`) and Python's `unittest` only; never add Vitest, Jest, a `package.json` or another test framework.
+- Tests use Node's built-in runner (`node --test`) and Python's `unittest` only; never add Vitest, Jest or another test framework. `package.json` and `package-lock.json` exist only to pin the type-check tooling (TypeScript and the Node type definitions); add no runtime dependencies or test framework to them.
 - `beamdswitch.js` is a verbatim copy of yujieteo/site's `templates/beamdswitch.js` and is inlined unchanged; the tests check it against `tests/fixtures/beamdswitch/template.js`. When the site's template changes, copy it to both and rebuild. Anything beamdiag adds to its decks, such as the Hand calculations section, lives in `handcalc.js`, never in `beamdswitch.js`. Every deck declares the narration voice `bf_emma` in its front matter.
 - WebMCP tools stay read-only (`readOnlyHint: true`), never change the page, and keep their names equal to `webmcp_tools` in `data/visuals/beamdiag.yaml` in yujieteo/site.
 - The page's breadcrumb links back to the site's Visuals page (`../../visuals.html`).

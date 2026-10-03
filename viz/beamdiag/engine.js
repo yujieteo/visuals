@@ -24,22 +24,44 @@
  * exactly from the nearest event on the left. None of this depends on the
  * number of elements per segment, which only sets the NASTRAN mesh.
  */
-(function (root, factory) {
+(function (/** @type {{ BeamDiag?: unknown }} */ root, factory) {
   const api = factory();
   if (typeof module === "object" && module.exports) module.exports = api;
   else root.BeamDiag = api;
 })(typeof self !== "undefined" ? self : this, function () {
   "use strict";
 
+  /** @typedef {"pin" | "fixed"} SupportKind */
+  /** @typedef {{ kind: SupportKind, x: number }} Support */
+  /** @typedef {{ kind: "point", x: number, F: number }} PointLoad */
+  /** @typedef {{ kind: "moment", x: number, C: number }} MomentLoad */
+  /** @typedef {{ kind: "dist", x1: number, x2: number, q1: number, q2: number }} DistLoad */
+  /** @typedef {PointLoad | MomentLoad | DistLoad} Load */
+  /** @typedef {{ A: number, I: number, Iy: number, J: number, c: number | null }} Section */
+  /** @typedef {{ length: number, material: { E: number, nu: number }, section: Section, supports: Support[], loads: Load[], divisions: number }} Model */
+  /** @typedef {"length" | "force" | "stress" | "moment" | "distributed" | "area" | "inertia" | "rigidity" | "angle"} Quantity */
+  /** @typedef {Readonly<{ id: string, label: string, ascii: string, factor: Readonly<Record<Quantity, number>>, symbol: Readonly<Record<Quantity, string>> }>} UnitSystem */
+  /** @typedef {string | UnitSystem} Units a unit system or its id */
+  /** @typedef {{ kind: SupportKind, x: number, Fy: number, Mz: number }} Reaction */
+  /** @typedef {{ x: number, v: number, theta: number }} Displacement */
+  /** @typedef {{ Fy: number, Mz: number, scaleF: number, scaleM: number }} Equilibrium */
+  /** @typedef {{ x: number, value: number }} Extreme */
+  /** @typedef {{ V: Extreme, M: Extreme, v: Extreme }} Extremes */
+  /** @typedef {{ model: Model, reactions: Reaction[], displacements: Displacement[], equilibrium: Equilibrium, extremes?: Extremes }} Result */
+  /** @typedef {{ x: number, V: number, M: number, v: number, theta: number }} Sample */
+  /** @typedef {"left" | "right"} Side */
+
   const SUPPORT_KINDS = ["pin", "fixed"];
 
   class ModelError extends Error {
+    /** @param {string} message @param {string} [field] */
     constructor(message, field) {
       super(message);
       this.name = "ModelError";
       this.field = field || null;
     }
   }
+  /** @type {(message: string, field?: string) => never} */
   const fail = (message, field) => { throw new ModelError(message, field); };
 
   /* ---------- unit conventions ---------- */
@@ -49,38 +71,48 @@
      system without extra factors. Other quantities are derived from length and force.
      `ascii` names the system in NASTRAN comments, which should stay plain ASCII. */
   const LBF = 4.4482216152605, INCH = 0.0254; // exact by definition
-  const UNIT_SYSTEMS = Object.freeze(Object.fromEntries([
+  /** @type {Readonly<Record<string, UnitSystem>>} */
+  const UNIT_SYSTEMS = Object.freeze(Object.fromEntries(/** @type {{ id: string, label: string, length: [number, string], force: [number, string], stress: [number, string], ascii: string }[]} */ ([
     { id: "kN-m", label: "SI: kN, m, kPa", length: [1, "m"], force: [1e3, "kN"], stress: [1e3, "kPa"], ascii: "kN, m, kPa (kN/m2)" },
     { id: "N-m", label: "SI: N, m, Pa", length: [1, "m"], force: [1, "N"], stress: [1, "Pa"], ascii: "N, m, Pa (N/m2)" },
     { id: "N-mm", label: "SI: N, mm, MPa", length: [1e-3, "mm"], force: [1, "N"], stress: [1e6, "MPa"], ascii: "N, mm, MPa (N/mm2)" },
     { id: "lbf-in", label: "US customary: lbf, in, psi", length: [INCH, "in"], force: [LBF, "lbf"], stress: [LBF / INCH ** 2, "psi"], ascii: "lbf, in, psi (lbf/in2)" },
     { id: "kip-in", label: "US customary: kip, in, ksi", length: [INCH, "in"], force: [1e3 * LBF, "kip"], stress: [1e3 * LBF / INCH ** 2, "ksi"], ascii: "kip, in, ksi (kip/in2)" },
-  ].map((u) => {
+  ]).map((u) => {
     const [l, L] = u.length, [f, F] = u.force, [p, P] = u.stress;
+    /** @type {Record<Quantity, number>} */
     const factor = { length: l, force: f, stress: p, moment: f * l, distributed: f / l, area: l * l, inertia: l ** 4, rigidity: f * l * l, angle: 1 };
+    /** @type {Record<Quantity, string>} */
     const symbol = { length: L, force: F, stress: P, moment: `${F}·${L}`, distributed: `${F}/${L}`, area: `${L}²`, inertia: `${L}⁴`, rigidity: `${F}·${L}²`, angle: "rad" };
     return [u.id, Object.freeze({ id: u.id, label: u.label, ascii: u.ascii, factor: Object.freeze(factor), symbol: Object.freeze(symbol) })];
   })));
   const DEFAULT_UNITS = "N-mm";
   const SI = UNIT_SYSTEMS["N-m"];
 
+  /** @param {Units | undefined} units @returns {UnitSystem} */
   function unitSystem(units) {
     const u = typeof units === "string" ? UNIT_SYSTEMS[units] : units;
-    if (!u || !UNIT_SYSTEMS[u.id]) fail(`Unknown unit convention ${JSON.stringify(units && units.id || units)}; choose one of ${Object.keys(UNIT_SYSTEMS).join(", ")}.`, "units");
+    if (!u || !UNIT_SYSTEMS[u.id]) return fail(`Unknown unit convention ${JSON.stringify(units && /** @type {UnitSystem} */ (units).id || units)}; choose one of ${Object.keys(UNIT_SYSTEMS).join(", ")}.`, "units");
     return u;
   }
   /* SI value → number in `units`, and back. */
+  /** @param {number} value @param {Quantity} quantity @param {Units} units */
   const toUnits = (value, quantity, units) => value / unitSystem(units).factor[quantity];
+  /** @param {number} value @param {Quantity} quantity @param {Units} units */
   const fromUnits = (value, quantity, units) => value * unitSystem(units).factor[quantity];
 
   /* Re-express a validated SI model in `units` (both directions via `convert`). */
+  /** @param {Model} model @param {Units} units @param {(value: number, quantity: Quantity, units: UnitSystem) => number} [convert] @returns {Model} */
   function scaleModel(model, units, convert = toUnits) {
-    const u = unitSystem(units), c = (v, q) => (v == null ? v : convert(v, q, u)), x = (v) => c(v, "length");
+    const u = unitSystem(units);
+    /** @type {<T extends number | null>(v: T, q: Quantity) => T} */
+    const c = (v, q) => /** @type {typeof v} */ (v == null ? v : convert(v, q, u));
+    const x = (/** @type {number} */ v) => c(v, "length");
     const { section: s } = model;
     return {
       ...model, length: x(model.length),
       material: { ...model.material, E: c(model.material.E, "stress") },
-      section: { ...s, A: c(s.A, "area"), I: c(s.I, "inertia"), Iy: c(s.Iy, "inertia"), J: c(s.J, "inertia"), c: x(s.c) },
+      section: { ...s, A: c(s.A, "area"), I: c(s.I, "inertia"), Iy: c(s.Iy, "inertia"), J: c(s.J, "inertia"), c: c(s.c, "length") },
       supports: model.supports.map((sp) => ({ ...sp, x: x(sp.x) })),
       loads: model.loads.map((l) => (l.kind === "point" ? { ...l, x: x(l.x), F: c(l.F, "force") }
         : l.kind === "moment" ? { ...l, x: x(l.x), C: c(l.C, "moment") }
@@ -88,8 +120,9 @@
     };
   }
 
+  /** @param {unknown} value @param {string} label @param {string} field @returns {number} */
   function number(value, label, field, { positive = false, min = -Infinity, max = Infinity } = {}) {
-    if (typeof value !== "number" || !Number.isFinite(value)) fail(`${label} must be a finite number.`, field);
+    if (typeof value !== "number" || !Number.isFinite(value)) return fail(`${label} must be a finite number.`, field);
     if (positive && !(value > 0)) fail(`${label} must be greater than zero.`, field);
     if (value < min || value > max) fail(`${label} must be between ${min} and ${max}.`, field);
     return value;
@@ -97,15 +130,21 @@
 
   /* Check and normalise an SI model; throws ModelError naming the offending field.
      `units` only sets how lengths are written in the messages. */
+  /**
+   * @param {any} input an SI model from the page, a WebMCP tool or a test, untrusted: every field is checked here
+   * @param {{ units?: Units }} [options]
+   * @returns {Model}
+   */
   function validate(input, { units = SI } = {}) {
     if (!input || typeof input !== "object") fail("A beam model is required.");
     const len = lengthText(units);
     const L = number(input.length, "Beam length", "length", { positive: true });
     if (L < 1e-3 || L > 1e4) fail(`Beam length must be between ${len(1e-3)} and ${len(1e4)}.`, "length");
+    /** @param {unknown} value @param {string} label @param {string} field */
     const at = (value, label, field) => {
-      number(value, label, field);
-      if (value < 0 || value > L) fail(`${label} must lie on the beam, between 0 and ${len(L)}.`, field);
-      return value;
+      const v = number(value, label, field);
+      if (v < 0 || v > L) fail(`${label} must lie on the beam, between 0 and ${len(L)}.`, field);
+      return v;
     };
     const material = input.material || {};
     const E = number(material.E, "Young's modulus E", "material.E", { positive: true });
@@ -124,7 +163,8 @@
       fail("Elements per segment must be a whole number, at least 1.", "divisions");
 
     if (!Array.isArray(input.supports) || input.supports.length === 0) fail("Add at least one support.", "supports");
-    const supports = input.supports.map((s, i) => {
+    /** @type {Support[]} */
+    const supports = input.supports.map((/** @type {any} */ s, /** @type {number} */ i) => {
       if (!SUPPORT_KINDS.includes(s && s.kind)) fail(`Support ${i + 1} must be a pin or fixed support.`, `supports.${i}.kind`);
       return { kind: s.kind, x: at(s.x, `Support ${i + 1} position`, `supports.${i}.x`) };
     });
@@ -137,7 +177,8 @@
       fail("Mechanism: a single pin lets the beam rotate freely. Add a second support or make it fixed.", "supports");
 
     if (!Array.isArray(input.loads)) fail("Loads must be a list.", "loads");
-    const loads = input.loads.map((l, i) => {
+    /** @type {Load[]} */
+    const loads = input.loads.map((/** @type {any} */ l, /** @type {number} */ i) => {
       const label = `Load ${i + 1}`;
       switch (l && l.kind) {
         case "point":
@@ -159,6 +200,7 @@
   }
 
   /* Positions where something happens: ends, supports, point actions, load ends. */
+  /** @param {Model} model @param {Units} [units] */
   function events(model, units = SI) {
     const xs = [0, model.length, ...model.supports.map((s) => s.x)];
     for (const l of model.loads) xs.push(...(l.kind === "dist" ? [l.x1, l.x2] : [l.x]));
@@ -169,6 +211,7 @@
     return unique;
   }
 
+  /** @param {Model} model */
   function mesh(model) {
     const ev = events(model), nodes = [ev[0]];
     for (let i = 1; i < ev.length; i++) {
@@ -179,6 +222,7 @@
   }
 
   /* Distributed-load intensity at x, taking the load starting at x (side "right") or ending there ("left"). */
+  /** @param {Model} model @param {number} x @param {Side} [side] */
   function intensity(model, x, side = "right") {
     let q = 0;
     for (const l of model.loads) {
@@ -191,12 +235,14 @@
 
   /* Symmetric banded matrix: row i keeps K[i][i..i+BAND]. Beam DOFs only couple within one element, so BAND = 3. */
   const BAND = 3;
-  const banded = (n) => Array.from({ length: n }, () => new Float64Array(BAND + 1));
+  const banded = (/** @type {number} */ n) => Array.from({ length: n }, () => new Float64Array(BAND + 1));
+  /** @param {Float64Array[]} K @param {number} i @param {number} j */
   const entry = (K, i, j) => (Math.abs(i - j) > BAND ? 0 : i <= j ? K[i][j - i] : K[j][i - j]);
 
   /* Solve K u = f for symmetric positive definite banded K by LDLᵀ elimination.
      The system is first scaled to a unit diagonal, which makes the pivot test independent of
      units and element lengths; a vanishing scaled pivot means a mechanism. */
+  /** @param {Float64Array[]} K @param {number[]} f */
   function solveBanded(K, f) {
     const n = f.length, d = K.map((row) => 1 / Math.sqrt(row[0]));
     if (d.some((v) => !(v > 0 && Number.isFinite(v))))
@@ -222,22 +268,28 @@
 
   /* Hermite shape functions on an element of length l at ξ ∈ [0, 1] (values and x-derivatives),
      ordered v_i, θ_i, v_j, θ_j. */
+  /** @param {number} l @param {number} t */
   const hermite = (l, t) => [1 - 3 * t * t + 2 * t ** 3, l * (t - 2 * t * t + t ** 3), 3 * t * t - 2 * t ** 3, l * (t ** 3 - t * t)];
+  /** @param {number} l @param {number} t */
   const hermiteSlope = (l, t) => [(6 * t * t - 6 * t) / l, 1 - 4 * t + 3 * t * t, (6 * t - 6 * t * t) / l, 3 * t * t - 2 * t];
   const GAUSS5 = [[-0.9061798459386640, 0.2369268850561891], [-0.5384693101056831, 0.4786286704993665], [0, 0.5688888888888889],
     [0.5384693101056831, 0.4786286704993665], [0.9061798459386640, 0.2369268850561891]];
 
+  /** @param {unknown} input @param {{ units?: Units }} [options] @returns {Result} */
   function solve(input, { units = SI } = {}) {
     const model = validate(input, { units }), EI = model.material.E * model.section.I;
     // Stiffness stations: the ends and every support. Loads between them enter as consistent nodal loads.
     const stations = [...new Set([0, model.length, ...model.supports.map((s) => s.x)])].sort((a, b) => a - b);
     const n = stations.length * 2, K = banded(n), f = Array(n).fill(0);
-    const where = new Map(stations.map((x, i) => [x, i])), index = (x) => where.get(x);
-    const element = (x) => { // the element with stations[e] < x < stations[e + 1]
+    const where = new Map(stations.map((x, i) => [x, i])), index = (/** @type {number} */ x) => where.get(x);
+    // Every support is a station.
+    const station = (/** @type {number} */ x) => /** @type {number} */ (where.get(x));
+    const element = (/** @type {number} */ x) => { // the element with stations[e] < x < stations[e + 1]
       let lo = 0, hi = stations.length - 2;
       while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (stations[mid] < x) lo = mid; else hi = mid - 1; }
       return lo;
     };
+    /** @param {number} e @param {number[]} weights @param {number} value */
     const spread = (e, weights, value) => weights.forEach((w, i) => { f[2 * e + i] += w * value; });
 
     for (let e = 0; e < stations.length - 1; e++) {
@@ -267,8 +319,8 @@
 
     const fixed = new Set();
     for (const s of model.supports) {
-      fixed.add(2 * index(s.x));
-      if (s.kind === "fixed") fixed.add(2 * index(s.x) + 1);
+      fixed.add(2 * station(s.x));
+      if (s.kind === "fixed") fixed.add(2 * station(s.x) + 1);
     }
     // Dropping constrained DOFs keeps the free system banded with the same BAND.
     const free = [...Array(n).keys()].filter((i) => !fixed.has(i));
@@ -280,21 +332,23 @@
     }
     if (u.some((v) => !Number.isFinite(v))) fail("The solution overflowed; check that E, I and the loads use consistent units.", "section.I");
 
-    const residual = (i) => {
+    const residual = (/** @type {number} */ i) => {
       let s = -f[i];
       for (let j = Math.max(0, i - BAND); j <= Math.min(n - 1, i + BAND); j++) s += entry(K, i, j) * u[j];
       return s;
     };
     const reactions = model.supports.map((s) => {
-      const i = index(s.x);
+      const i = station(s.x);
       return { kind: s.kind, x: s.x, Fy: residual(2 * i), Mz: s.kind === "fixed" ? residual(2 * i + 1) : 0 };
     }).sort((a, b) => a.x - b.x);
 
     // Deflection at every event: stations take the solved values; other events integrate M/EI
     // exactly from the previous event (nothing happens strictly between two events).
-    const result = { model, reactions, displacements: [] };
+    // The equilibrium is added once the displacements are known.
+    const result = /** @type {Result} */ ({ model, reactions, displacements: /** @type {Displacement[]} */ ([]) });
     for (const x of events(model)) {
-      const i = index(x), prev = result.displacements.at(-1);
+      // x = 0 is a station, so every other event has one before it.
+      const i = index(x), prev = /** @type {Displacement} */ (result.displacements.at(-1));
       result.displacements.push(i !== undefined ? { x, v: u[2 * i], theta: u[2 * i + 1] } : { x, ...integrate(result, prev, x) });
     }
     result.equilibrium = equilibrium(result);
@@ -302,9 +356,11 @@
   }
 
   /* Resultant force and moment about x = 0 of all loads and reactions (should vanish). */
+  /** @param {Result} result @returns {Equilibrium} */
   function equilibrium(result) {
     const { model, reactions } = result;
     let Fy = 0, Mz = 0, scaleF = 0, scaleM = 0;
+    /** @param {number} F @param {number} x */
     const add = (F, x, C = 0) => { Fy += F; Mz += F * x + C; scaleF += Math.abs(F); scaleM += Math.abs(F * x) + Math.abs(C); };
     for (const r of reactions) add(r.Fy, r.x, r.Mz);
     for (const l of model.loads) {
@@ -321,9 +377,10 @@
   }
 
   /* Exact internal forces at x from the left free body. side "left" gives the limit x⁻, "right" gives x⁺. */
+  /** @param {Result} result @param {number} x @param {Side} [side] */
   function internal(result, x, side = "right") {
     const { model, reactions } = result;
-    const incl = (a) => (side === "right" ? a <= x : a < x);
+    const incl = (/** @type {number} */ a) => (side === "right" ? a <= x : a < x);
     let V = 0, M = 0;
     for (const r of reactions) if (incl(r.x)) { V += r.Fy; M += r.Fy * (x - r.x) - r.Mz; }
     for (const l of model.loads) {
@@ -343,6 +400,7 @@
   const GAUSS = [[-Math.sqrt(3 / 5), 5 / 9], [0, 8 / 9], [Math.sqrt(3 / 5), 5 / 9]];
 
   /* Deflection and slope at x: values at the events, integrated exactly from M/EI between them. */
+  /** @param {Result} result @param {number} x @returns {{ v: number, theta: number }} */
   function deflection(result, x) {
     const d = result.displacements;
     // Binary search for the segment containing x (the last one whose start is at or before x).
@@ -354,6 +412,7 @@
 
   /* v and θ at x from their values at an earlier point `from` with no event between: θ' = M/EI, v' = θ.
      M is at most cubic there, so 3-point Gauss integrates M and (x − t)M exactly. */
+  /** @param {Result} result @param {Displacement} from @param {number} x @returns {{ v: number, theta: number }} */
   function integrate(result, from, x) {
     const EI = result.model.material.E * result.model.section.I, x0 = from.x, s = x - x0, { v, theta } = from;
     if (s === 0) return { v, theta };
@@ -367,6 +426,7 @@
   }
 
   /* Values at x with both one-sided limits of V and M. */
+  /** @param {Result} result @param {number} x */
   function at(result, x) {
     const L = result.model.length;
     const left = x > 0 ? internal(result, x, "left") : { V: 0, M: 0 };
@@ -377,8 +437,11 @@
   /* Mesh-independent plot samples: about `count` regular points plus per-segment critical points
      and event limits. Each segment runs from its right limit at the start to its left limit at the
      end, so jumps appear as two points at the same x. */
+  /** @param {Result} result @returns {Sample[]} */
   function diagram(result, count = 800) {
-    const ev = result.displacements.map((d) => d.x), L = result.model.length, pts = [];
+    const ev = result.displacements.map((d) => d.x), L = result.model.length;
+    /** @type {Sample[]} */
+    const pts = [];
     for (let e = 0; e < ev.length - 1; e++) {
       const a = ev[e], b = ev[e + 1], n = Math.max(2, Math.ceil(count * (b - a) / L));
       const xs = new Set(criticalPoints(result, a, b));
@@ -391,6 +454,7 @@
     return [{ x: 0, V: 0, M: 0, ...deflection(result, 0) }, ...pts, { x: L, V: 0, M: 0, ...deflection(result, L) }];
   }
 
+  /** @param {Result} result @param {number} a @param {number} b */
   function criticalPoints(result, a, b) {
     const model = result.model, h = b - a, xs = [a, b];
     const ra = internal(result, a, "right"), qa = intensity(model, a, "right"), qb = intensity(model, b, "left");
@@ -403,6 +467,7 @@
     })();
     const shearRoots = roots.filter((s) => s > 0 && s < h).map((s) => a + s).sort((x, y) => x - y);
     xs.push(...shearRoots);
+    /** @param {number} lo @param {number} hi @param {(x: number) => number} value */
     const bisect = (lo, hi, value) => {
       let vlo = value(lo);
       for (let k = 0; k < 60; k++) {
@@ -415,14 +480,15 @@
       }
       return (lo + hi) / 2;
     };
-    const moment = (x) => internal(result, x, x === b ? "left" : "right").M;
+    const moment = (/** @type {number} */ x) => internal(result, x, x === b ? "left" : "right").M;
+    /** @type {number[]} */
     const momentRoots = [], partitions = [a, ...shearRoots, b];
     for (let i = 0; i < partitions.length - 1; i++) {
       const lo = partitions[i], hi = partitions[i + 1];
       if (moment(lo) === 0) momentRoots.push(lo);
       if (moment(lo) * moment(hi) < 0) momentRoots.push(bisect(lo, hi, moment));
     }
-    const slope = (x) => deflection(result, x).theta;
+    const slope = (/** @type {number} */ x) => deflection(result, x).theta;
     const slopePartitions = [a, ...momentRoots.filter((x) => x > a && x < b), b];
     for (let i = 0; i < slopePartitions.length - 1; i++) {
       const lo = slopePartitions[i], hi = slopePartitions[i + 1];
@@ -432,19 +498,27 @@
     return xs;
   }
 
+  /** @param {Result} result @returns {Extremes} */
   function extremes(result) {
+    /** @type {Record<"V" | "M" | "v", Extreme | null>} */
     const best = { V: null, M: null, v: null };
     for (const p of diagram(result).slice(1, -1)) {
-      for (const key of ["V", "M", "v"]) {
+      for (const key of /** @type {const} */ (["V", "M", "v"])) {
         const value = p[key];
         if (!best[key] || Math.abs(value) > Math.abs(best[key].value) + 1e-12 * Math.abs(value)) best[key] = { x: p.x, value };
       }
     }
-    return best;
+    // A solved beam has interior samples, so every extreme is set.
+    return /** @type {Extremes} */ (best);
   }
 
   /* Section properties (m, m², m⁴) from a shape. Bending is about the horizontal axis, depth along y. */
+  /**
+   * @param {any} spec a shape and its dimensions from the page or a WebMCP tool, untrusted: every field is checked here
+   * @returns {Section}
+   */
   function sectionProperties(spec) {
+    /** @param {unknown} v @param {string} label @param {string} field */
     const pos = (v, label, field) => number(v, label, field, { positive: true });
     switch (spec && spec.shape) {
       case "rect": {
@@ -479,6 +553,7 @@
   }
 
   /* Degree of static indeterminacy for transverse loading: reaction components minus the two equilibrium equations. */
+  /** @param {{ kind: string }[]} supports */
   function indeterminacy(supports) {
     return supports.reduce((n, s) => n + (s.kind === "fixed" ? 2 : 1), 0) - 2;
   }
@@ -487,6 +562,7 @@
 
   /* A real in the fewest characters that still read back as exactly the same double,
    * e.g. 6. 0.3 -40000. 2.E11 4.456-4; null when that takes more than `width` characters. */
+  /** @param {number} x @param {number} width @returns {string | null} */
   function exactReal(x, width) {
     if (x === 0) return "0.";
     const [mant, exp] = Math.abs(x).toExponential().split("e"), e = +exp, sign = x < 0 ? "-" : "";
@@ -504,6 +580,7 @@
   }
 
   /* A real for a 16-character large field: exact when it fits, otherwise rounded to as many digits as fit. */
+  /** @param {number} x @returns {string} */
   function nastranReal(x) {
     for (let digits = 17; ; digits--) {
       const text = exactReal(digits === 17 ? x : Number(x.toPrecision(digits)), 16);
@@ -512,22 +589,27 @@
   }
 
   /* Fields are {int}, {real} or a literal string (blank = ""). */
-  const int = (n) => ({ int: n });
-  const real = (x) => ({ real: x });
+  /** @typedef {{ int: number } | { real: number } | string | null | undefined} Field */
+  const int = (/** @type {number} */ n) => ({ int: n });
+  const real = (/** @type {number} */ x) => ({ real: x });
+  /** @param {Field} v */
   function smallField(v) {
     if (v && typeof v === "object" && "int" in v) return String(v.int);
     if (v && typeof v === "object" && "real" in v) return exactReal(v.real, 8);
     return v == null ? "" : String(v);
   }
+  /** @param {Field} v @returns {string} */
   function largeField(v) {
     if (v && typeof v === "object" && "real" in v) return nastranReal(v.real);
-    return smallField(v);
+    // Only a real can fail to fit a field.
+    return /** @type {string} */ (smallField(v));
   }
-  const fitsSmall = (fields) => fields.every((v) => { const s = smallField(v); return s !== null && s.length <= 8; });
+  const fitsSmall = (/** @type {Field[]} */ fields) => fields.every((v) => { const s = smallField(v); return s !== null && s.length <= 8; });
 
   /* One small-field entry: the name, then eight 8-character fields per line; continuations start blank. */
+  /** @param {string} name @param {Field[]} fields fields that fit eight characters (cardGroup checks) */
   function smallEntry(name, fields) {
-    const out = [], values = fields.map(smallField);
+    const out = [], values = /** @type {string[]} */ (fields.map(smallField));
     for (let i = 0; i < Math.max(values.length, 1); i += 8) {
       const head = i === 0 ? name.padEnd(8) : "".padEnd(8);
       out.push((head + values.slice(i, i + 8).map((v) => v.padEnd(8)).join("")).trimEnd());
@@ -536,6 +618,7 @@
   }
 
   /* One large-field entry: NAME* then four 16-character fields per line. */
+  /** @param {string} name @param {Field[]} fields */
   function largeEntry(name, fields) {
     const out = [], values = fields.map(largeField);
     for (const v of values) if (v.length > 16) throw new Error(`Field ${v} is wider than 16 characters.`);
@@ -548,23 +631,26 @@
 
   /* Cards of one type share a format: small field unless some value needs more than
    * eight characters to stay exact, then large field for the whole group. */
+  /** @param {string} name @param {Field[][]} rows */
   function cardGroup(name, rows) {
     const entry = rows.every(fitsSmall) ? smallEntry : largeEntry;
     return rows.flatMap((fields) => entry(name, fields));
   }
   /* A "$" line naming the columns of a small-field card. */
-  const columns = (...names) => ("$" + names[0].padEnd(7) + names.slice(1).map((n) => n.padEnd(8)).join("")).trimEnd();
+  const columns = (/** @type {string[]} */ ...names) => ("$" + names[0].padEnd(7) + names.slice(1).map((n) => n.padEnd(8)).join("")).trimEnd();
 
-  const count = (n, noun) => `${n} ${noun}${n === 1 ? "" : "s"}`;
+  const count = (/** @type {number} */ n, /** @type {string} */ noun) => `${n} ${noun}${n === 1 ? "" : "s"}`;
 
   /* Build a NASTRAN deck that encodes exactly the model the browser solved. */
   /* The input is SI, like every other function here; the deck's numbers are written in `units`. */
+  /** @param {unknown} input @param {{ title?: unknown, units?: Units }} [options] */
   function exportBdf(input, { title = "BEAMDIAG LINEAR STATIC", units = SI } = {}) {
     // Fifteen digits drop the last-bit noise a conversion leaves (5e-3 m² is 5000 mm², not 5000.000000000001).
     const u = unitSystem(units), model = scaleModel(validate(input, { units: u }), u, (v, q) => +toUnits(v, q, u).toPrecision(15)), nodes = mesh(model);
     const hasLoad = model.loads.some((l) => (l.kind === "point" && l.F !== 0) || (l.kind === "moment" && l.C !== 0) || (l.kind === "dist" && (l.q1 !== 0 || l.q2 !== 0)));
     if (!hasLoad) fail("Add a non-zero load before exporting a NASTRAN deck.", "loads");
-    const ids = new Map(nodes.map((x, i) => [x, i + 1])), gid = (x) => ids.get(x);
+    // Every support and point load sits on a mesh node.
+    const ids = new Map(nodes.map((x, i) => [x, i + 1])), gid = (/** @type {number} */ x) => /** @type {number} */ (ids.get(x));
     const safeTitle = String(title).replace(/[^A-Za-z0-9 _.,()+\-]/g, " ").slice(0, 60).trim() || "BEAMDIAG";
     const { material: mat, section: sec } = model, SPC = 1, LOAD = 2;
     const lines = [
@@ -608,22 +694,23 @@
       "$ Pin: 12 (T1, T2). Fixed: 126 (T1, T2, R3).",
       columns("SPC1", "SID", "C", "G1", "G2", "G3", "G4", "G5", "G6"),
     ];
-    for (const [kind, c] of [["pin", 12], ["fixed", 126]]) {
+    for (const [kind, c] of /** @type {[SupportKind, number][]} */ ([["pin", 12], ["fixed", 126]])) {
       const grids = model.supports.filter((s) => s.kind === kind).map((s) => gid(s.x)).sort((a, b) => a - b);
       if (grids.length) lines.push(...smallEntry("SPC1", [int(SPC), int(c), ...grids.map(int)]));
     }
     lines.push("$", "$ ---- Loads ----");
-    const forces = model.loads.filter((l) => l.kind === "point" && l.F !== 0);
+    const forces = model.loads.filter(/** @returns {l is PointLoad} */ (l) => l.kind === "point" && l.F !== 0);
     if (forces.length) lines.push(columns("FORCE", "SID", "G", "CID", "F", "N1", "N2", "N3"),
       ...cardGroup("FORCE", forces.map((l) => [int(LOAD), int(gid(l.x)), int(0), real(l.F), real(0), real(1), real(0)])));
-    const moments = model.loads.filter((l) => l.kind === "moment" && l.C !== 0);
+    const moments = model.loads.filter(/** @returns {l is MomentLoad} */ (l) => l.kind === "moment" && l.C !== 0);
     if (moments.length) lines.push(columns("MOMENT", "SID", "G", "CID", "M", "N1", "N2", "N3"),
       ...cardGroup("MOMENT", moments.map((l) => [int(LOAD), int(gid(l.x)), int(0), real(l.C), real(0), real(0), real(1)])));
     // One PLOAD1 per element under each distributed load, with the intensities at the element ends.
+    /** @type {Field[][]} */
     const ploads = [];
     for (const l of model.loads) {
       if (l.kind !== "dist" || (l.q1 === 0 && l.q2 === 0)) continue;
-      const q = (x) => l.q1 + (l.q2 - l.q1) * (x - l.x1) / (l.x2 - l.x1);
+      const q = (/** @type {number} */ x) => l.q1 + (l.q2 - l.q1) * (x - l.x1) / (l.x2 - l.x1);
       for (let e = 0; e < nodes.length - 1; e++) {
         const a = nodes[e], b = nodes[e + 1];
         if (a >= l.x1 && b <= l.x2) ploads.push([int(LOAD), int(e + 1), "FY", "FR", real(0), real(q(a)), real(1), real(q(b))]);
@@ -637,11 +724,14 @@
   /* ---------- number formatting, shared by the page and the beamdswitch report ---------- */
   /* Each unit convention puts values on a different scale (a deflection is 0.004 m or 4 mm),
      so very large and very small magnitudes switch to powers of ten. */
+  /** @param {number} x @param {number} n */
   const plain = (x, n) => String(+x.toPrecision(n)).replace("-", "−");
+  /** @param {number} x @param {number} n */
   const pow10 = (x, n) => {
     const [m, e] = x.toExponential(n - 1).split("e");
-    return `${plain(+m, n)}×10${e.replace("+", "").replace("-", "⁻").replace(/\d/g, (c) => "⁰¹²³⁴⁵⁶⁷⁸⁹"[c])}`;
+    return `${plain(+m, n)}×10${e.replace("+", "").replace("-", "⁻").replace(/\d/g, (c) => "⁰¹²³⁴⁵⁶⁷⁸⁹"[Number(c)])}`;
   };
+  /** @param {number} x */
   const nf = (x, digits = 3) => {
     if (!Number.isFinite(x)) return "—";
     const a = Math.abs(x);
@@ -651,20 +741,21 @@
     const d = a >= 1000 ? 0 : a >= 100 ? 1 : a >= 10 ? 2 : digits;
     return x.toLocaleString("en-GB", { minimumFractionDigits: d, maximumFractionDigits: d }).replace("-", "−");
   };
+  /** @param {number} x */
   const sig = (x, n = 4) => {
     if (!Number.isFinite(x)) return "—";
     const a = Math.abs(x);
     return a === 0 || (a >= 1e-4 && a < 1e7) ? plain(x, n) : pow10(x, n);
   };
-  const sci = (x) => {
+  const sci = (/** @type {number} */ x) => {
     if (!Number.isFinite(x)) return "—";
     const a = Math.abs(x);
     return a === 0 || (a >= 1e-2 && a < 1e6) ? plain(x, 4) : pow10(x, 4);
   };
   // Figure labels: plain digits below `big`, otherwise n significant figures × a power of ten, so a
   // label stays a few characters long at any load magnitude in any unit convention.
-  const short = (x, n = 3, big = 1e6) => (Number.isFinite(x) && Math.abs(x) >= big ? pow10(x, n) : sig(x, n));
-  const shortNf = (x, digits) => (Number.isFinite(x) && Math.abs(x) >= 1e6 ? pow10(x, 4) : nf(x, digits));
+  const short = (/** @type {number} */ x, n = 3, big = 1e6) => (Number.isFinite(x) && Math.abs(x) >= big ? pow10(x, n) : sig(x, n));
+  const shortNf = (/** @type {number} */ x, /** @type {number} */ digits = 3) => (Number.isFinite(x) && Math.abs(x) >= 1e6 ? pow10(x, 4) : nf(x, digits));
   const format = Object.freeze({ plain, pow10, nf, sig, sci, short, shortNf });
 
   /* ---------- beamdswitch report ----------
@@ -678,6 +769,7 @@
 
   /* A position measured from the left end, re-measured from `origin` ("left" or "mid") as the page
      shows it. Round-off of order 1e-12·L reads as exactly mid-span rather than as 10⁻¹⁴ mm. */
+  /** @param {number} x @param {number} L @param {string} origin */
   function fromOrigin(x, L, origin) {
     if (origin !== "mid") return x;
     const s = x - L / 2;
@@ -685,18 +777,20 @@
   }
 
   /* Relative out-of-balance of loads and reactions, as the page reports it. */
-  const residual = (eq) => Math.max(Math.abs(eq.Fy) / Math.max(eq.scaleF, 1e-300), Math.abs(eq.Mz) / Math.max(eq.scaleM, 1e-300));
+  const residual = (/** @type {Equilibrium} */ eq) => Math.max(Math.abs(eq.Fy) / Math.max(eq.scaleF, 1e-300), Math.abs(eq.Mz) / Math.max(eq.scaleM, 1e-300));
   /* Span over largest deflection, as in "L/360"; "∞" when the beam does not deflect. */
-  const spanRatio = (L, v) => (Math.abs(v) > 0 ? String(Math.round(L / Math.abs(v))) : "∞");
+  const spanRatio = (/** @type {number} */ L, /** @type {number} */ v) => (Math.abs(v) > 0 ? String(Math.round(L / Math.abs(v))) : "∞");
 
+  /** @type {Record<string, [string, string]>} */
   const SPOKEN_UNITS = {
     m: ["metre", "metres"], mm: ["millimetre", "millimetres"], in: ["inch", "inches"],
     N: ["newton", "newtons"], kN: ["kilonewton", "kilonewtons"], lbf: ["pound-force", "pounds-force"], kip: ["kip", "kips"],
     Pa: ["pascal", "pascals"], kPa: ["kilopascal", "kilopascals"], MPa: ["megapascal", "megapascals"],
     psi: ["pound per square inch", "pounds per square inch"], ksi: ["kip per square inch", "kips per square inch"],
   };
+  /** @param {UnitSystem} u @param {Quantity} quantity */
   function spokenUnit(u, quantity, plural = true) {
-    const w = (sym, many) => SPOKEN_UNITS[sym][many ? 1 : 0], L = u.symbol.length, F = u.symbol.force;
+    const w = (/** @type {string} */ sym, /** @type {boolean} */ many) => SPOKEN_UNITS[sym][many ? 1 : 0], L = u.symbol.length, F = u.symbol.force;
     switch (quantity) {
       case "moment": return `${w(F, false)} ${w(L, plural)}`;
       case "distributed": return `${w(F, plural)} per ${w(L, false)}`;
@@ -708,23 +802,25 @@
     }
   }
   const SUPERSCRIPT = "⁰¹²³⁴⁵⁶⁷⁸⁹";
-  const exponent = (e) => (e.startsWith("⁻") ? "-" : "") + [...e.replace("⁻", "")].map((c) => SUPERSCRIPT.indexOf(c)).join("");
+  const exponent = (/** @type {string} */ e) => (e.startsWith("⁻") ? "-" : "") + [...e.replace("⁻", "")].map((c) => SUPERSCRIPT.indexOf(c)).join("");
   /* A number as the page writes it (−1,234 or 1.5×10⁻⁴), read aloud or typeset. */
-  const sayNumber = (t) => t.replace(/^−/, "minus ").replace(/×10([⁻⁰¹²³⁴⁵⁶⁷⁸⁹]+)$/, (_, e) => ` times ten to the ${exponent(e).replace("-", "minus ")}`);
-  const texNumber = (t) => t.replace(/^−/, "-").replace(/,/g, "{,}").replace(/×10([⁻⁰¹²³⁴⁵⁶⁷⁸⁹]+)$/, (_, e) => `\\times 10^{${exponent(e)}}`);
-  const texUnit = (sym) => `\\mathrm{${sym.replace(/·/g, "\\cdot ").replace(/²/g, "^2").replace(/³/g, "^3").replace(/⁴/g, "^4")}}`;
+  const sayNumber = (/** @type {string} */ t) => t.replace(/^−/, "minus ").replace(/×10([⁻⁰¹²³⁴⁵⁶⁷⁸⁹]+)$/, (_, e) => ` times ten to the ${exponent(e).replace("-", "minus ")}`);
+  const texNumber = (/** @type {string} */ t) => t.replace(/^−/, "-").replace(/,/g, "{,}").replace(/×10([⁻⁰¹²³⁴⁵⁶⁷⁸⁹]+)$/, (_, e) => `\\times 10^{${exponent(e)}}`);
+  const texUnit = (/** @type {string} */ sym) => `\\mathrm{${sym.replace(/·/g, "\\cdot ").replace(/²/g, "^2").replace(/³/g, "^3").replace(/⁴/g, "^4")}}`;
 
   /* The narration voice every beam deck declares. */
   const VOICE = "bf_emma";
   const speech = Object.freeze({ sayNumber, texNumber, texUnit, spokenUnit, VOICE });
 
   const NUMBER_WORDS = ["no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"];
+  /** @type {Record<string, string>} */
   const SHAPE_NAMES = { rect: "solid rectangle", circle: "solid circle", tube: "circular tube", custom: "custom section" };
   /* "two supports", "one load": a small count in words. */
-  const counted = (n, one, many) => `${NUMBER_WORDS[n] ?? n} ${n === 1 ? one : many}`;
+  const counted = (/** @type {number} */ n, /** @type {string} */ one, /** @type {string} */ many) => `${NUMBER_WORDS[n] ?? n} ${n === 1 ? one : many}`;
 
   /* The method frame: how the reactions follow, for a beam statically indeterminate to degree deg
      (its supports give r = deg + 2 reaction components). */
+  /** @param {number} deg @returns {import("./beamdswitch.js").Frame} */
   function methodFrame(deg) {
     const r = deg + 2;
     if (deg <= 0) return {
@@ -765,18 +861,24 @@
 
   /* The solver's V, M and v in units u, measured from `origin`, as beamdswitch plot expressions
      written with Macaulay brackets from the reactions and the loads, and the x range they span. */
+  /** @param {Result} result @param {UnitSystem} u @param {string} origin */
   function macaulayCurves(result, u, origin) {
-    const show = (si, q) => toUnits(si, q, u);
+    const show = (/** @type {number} */ si, /** @type {Quantity} */ q) => toUnits(si, q, u);
     const d = scaleModel(result.model, u), Ld = d.length, o = origin === "mid" ? Ld / 2 : 0, eps = 1e-9 * Ld;
-    const num = (v) => String(+v.toPrecision(12));
-    const shift = (a) => { const s = a - o; return s === 0 ? "x" : s > 0 ? `x - ${num(s)}` : `x + ${num(-s)}`; };
-    const mac = (a, n) => `max(0, ${shift(a)})^${n}`;
-    const step = (a) => `min(1, max(0, (${shift(a)})/${num(eps)} + 1))`; // 1 from a on: V and M just right of a
-    const sum = (terms) => terms.filter(([c]) => c !== 0).map(([c, t], i) => `${i ? (c < 0 ? " - " : " + ") : c < 0 ? "-" : ""}${num(Math.abs(c))}${t ? `*${t}` : ""}`).join("") || "0";
+    const num = (/** @type {number} */ v) => String(+v.toPrecision(12));
+    const shift = (/** @type {number} */ a) => { const s = a - o; return s === 0 ? "x" : s > 0 ? `x - ${num(s)}` : `x + ${num(-s)}`; };
+    const mac = (/** @type {number} */ a, /** @type {number} */ n) => `max(0, ${shift(a)})^${n}`;
+    const step = (/** @type {number} */ a) => `min(1, max(0, (${shift(a)})/${num(eps)} + 1))`; // 1 from a on: V and M just right of a
+    const sum = (/** @type {[number, string][]} */ terms) => terms.filter(([c]) => c !== 0).map(([c, t], i) => `${i ? (c < 0 ? " - " : " + ") : c < 0 ? "-" : ""}${num(Math.abs(c))}${t ? `*${t}` : ""}`).join("") || "0";
     // A point action at the right end only affects the diagram at x = L itself, where the page shows the left limit.
-    const inside = (a) => a < Ld;
+    const inside = (/** @type {number} */ a) => a < Ld;
     const reacts = result.reactions.map((re) => ({ x: toUnits(re.x, "length", u), Fy: show(re.Fy, "force"), Mz: show(re.Mz, "moment") })).filter((re) => inside(re.x));
-    const Vt = [], Mt = [], vt = [];
+    /** @type {[number, string][]} */
+    const Vt = [];
+    /** @type {[number, string][]} */
+    const Mt = [];
+    /** @type {[number, string][]} */
+    const vt = [];
     const EId = d.material.E * d.section.I, start = result.displacements[0];
     vt.push([show(start.v, "length"), ""], [start.theta, o ? `(${shift(0)})` : "x"]);
     for (const re of reacts) {
@@ -799,32 +901,41 @@
     return { V: sum(Vt), M: sum(Mt), v: sum(vt), x: [num(-o), num(Ld - o)] };
   }
 
+  /**
+   * @typedef {object} ReportOptions
+   * @property {Units} [units]
+   * @property {string} [origin] "left" or "mid"
+   * @property {unknown} [title]
+   * @property {{ shape?: string, label?: string, dims?: [string, number, Quantity][] }} [section]
+   * @property {{ label?: string }} [material]
+   */
+  /** @param {Result} result @param {ReportOptions} [options] */
   function beamReport(result, { units = DEFAULT_UNITS, origin = "left", title = "", section = {}, material = {} } = {}) {
     const u = unitSystem(units), m = result.model, L = m.length, ex = result.extremes || extremes(result);
-    const sym = (q) => u.symbol[q], show = (si, q) => toUnits(si, q, u);
+    const sym = (/** @type {Quantity} */ q) => u.symbol[q], show = (/** @type {number} */ si, /** @type {Quantity} */ q) => toUnits(si, q, u);
     const mid = origin === "mid";
-    const X = (x) => show(fromOrigin(x, L, origin), "length");
-    const text = (t, q) => `${t} ${sym(q)}`;
-    const say = (t, q) => `${sayNumber(t)} ${spokenUnit(u, q, !/^−?1$/.test(t))}`;
-    const tex = (t, q) => `${texNumber(t)}\\ ${texUnit(sym(q))}`;
-    const v4 = (si, q) => sig(show(si, q), 4);
-    const pos = (x) => text(sig(X(x)), "length"), sayPos = (x) => `x equals ${say(sig(X(x)), "length")}`;
+    const X = (/** @type {number} */ x) => show(fromOrigin(x, L, origin), "length");
+    const text = (/** @type {string} */ t, /** @type {Quantity} */ q) => `${t} ${sym(q)}`;
+    const say = (/** @type {string} */ t, /** @type {Quantity} */ q) => `${sayNumber(t)} ${spokenUnit(u, q, !/^−?1$/.test(t))}`;
+    const tex = (/** @type {string} */ t, /** @type {Quantity} */ q) => `${texNumber(t)}\\ ${texUnit(sym(q))}`;
+    const v4 = (/** @type {number} */ si, /** @type {Quantity} */ q) => sig(show(si, q), 4);
+    const pos = (/** @type {number} */ x) => text(sig(X(x)), "length"), sayPos = (/** @type {number} */ x) => `x equals ${say(sig(X(x)), "length")}`;
     const unitsSpoken = `${spokenUnit(u, "force")}, ${spokenUnit(u, "length")} and ${spokenUnit(u, "stress")}`;
     const deg = indeterminacy(m.supports), EI = m.material.E * m.section.I, resid = residual(result.equilibrium);
-    const stress = m.section.c ? Math.abs(ex.M.value) * m.section.c / m.section.I : null;
+    const c = m.section.c, stress = c ? Math.abs(ex.M.value) * c / m.section.I : null;
     const ratio = spanRatio(L, ex.v.value);
-    const kind = (s) => (s.kind === "pin" ? "pinned support" : "fixed support");
+    const kind = (/** @type {{ kind: SupportKind }} */ s) => (s.kind === "pin" ? "pinned support" : "fixed support");
 
     /* ----- set-up ----- */
-    const loadText = (l) => (l.kind === "point" ? `point force ${text(v4(l.F, "force"), "force")} at x = ${pos(l.x)}`
+    const loadText = (/** @type {Load} */ l) => (l.kind === "point" ? `point force ${text(v4(l.F, "force"), "force")} at x = ${pos(l.x)}`
       : l.kind === "moment" ? `couple ${text(v4(l.C, "moment"), "moment")} at x = ${pos(l.x)}`
         : `distributed ${l.q1 === l.q2 ? text(v4(l.q1, "distributed"), "distributed") : `${v4(l.q1, "distributed")} → ${text(v4(l.q2, "distributed"), "distributed")}`} from x = ${pos(l.x1)} to ${pos(l.x2)}`);
-    const updown = (v) => (v < 0 ? "downward " : v > 0 ? "upward " : "");
-    const loadSaid = (l) => (l.kind === "point" ? `a ${updown(l.F)}point force of ${say(v4(Math.abs(l.F), "force"), "force")} at ${sayPos(l.x)}`
+    const updown = (/** @type {number} */ v) => (v < 0 ? "downward " : v > 0 ? "upward " : "");
+    const loadSaid = (/** @type {Load} */ l) => (l.kind === "point" ? `a ${updown(l.F)}point force of ${say(v4(Math.abs(l.F), "force"), "force")} at ${sayPos(l.x)}`
       : l.kind === "moment" ? `a ${l.C < 0 ? "clockwise " : l.C > 0 ? "counter-clockwise " : ""}couple of ${say(v4(Math.abs(l.C), "moment"), "moment")} at ${sayPos(l.x)}`
         : l.q1 === l.q2 ? `a uniform ${updown(l.q1)}load of ${say(v4(Math.abs(l.q1), "distributed"), "distributed")} from ${sayPos(l.x1)} to ${say(sig(X(l.x2)), "length")}`
           : `a distributed load varying from ${say(v4(l.q1, "distributed"), "distributed")} at ${sayPos(l.x1)} to ${say(v4(l.q2, "distributed"), "distributed")} at ${sayPos(l.x2)}`);
-    const list = (items) => (items.length < 2 ? items.join("") : `${items.slice(0, -1).join(", ")} and ${items.at(-1)}`);
+    const list = (/** @type {string[]} */ items) => (items.length < 2 ? items.join("") : `${items.slice(0, -1).join(", ")} and ${items.at(-1)}`);
     const fromWhere = mid ? "mid-span, negative to the left" : "the left end";
     const beamFrame = {
       title: `The beam: L = ${text(v4(L, "length"), "length")} on ${counted(m.supports.length, "support", "supports")}, with ${counted(m.loads.length, "load", "loads")}`,
@@ -854,7 +965,7 @@
         `- Units: ${u.label}, one consistent convention for every input and result.`,
       ].join("\n"),
       narration: [
-        `The section is a ${SHAPE_NAMES[section.shape] || "custom section"}${saidDims.length ? `, ${list(saidDims)}` : ""}, with a second moment of area of ${say(sci(show(m.section.I, "inertia")), "inertia")}.`,
+        `The section is a ${SHAPE_NAMES[section.shape ?? ""] || "custom section"}${saidDims.length ? `, ${list(saidDims)}` : ""}, with a second moment of area of ${say(sci(show(m.section.I, "inertia")), "inertia")}.`,
         `The material is ${material.label ? material.label.replace(/\s*\(.*\)$/, "").toLowerCase() : "a custom material"}, with a Young's modulus of ${say(v4(m.material.E, "stress"), "stress")}.`,
         `So the flexural rigidity E I is ${say(sci(show(EI, "rigidity")), "rigidity")}.`,
         `Every number in this talk is in ${unitsSpoken}.`,
@@ -881,7 +992,7 @@
 
     /* ----- results ----- */
     const reactionRows = result.reactions.map((re, i) => `| ${i + 1}, ${re.kind === "pin" ? "pin" : "fixed"} | ${sig(X(re.x))} | ${shortNf(show(re.Fy, "force"))} | ${re.kind === "fixed" ? shortNf(show(re.Mz, "moment")) : "—"} |`);
-    const reactionSaid = (re) => {
+    const reactionSaid = (/** @type {Reaction} */ re) => {
       const F = shortNf(show(Math.abs(re.Fy), "force")), push = re.Fy < 0 ? "pulls down with" : "pushes up with";
       let s = `The ${kind(re)} at ${sayPos(re.x)} ${push} ${say(F, "force")}`;
       if (re.kind === "fixed") s += `, and resists with a ${re.Mz < 0 ? "clockwise" : "counter-clockwise"} moment of ${say(shortNf(show(Math.abs(re.Mz), "moment")), "moment")}`;
@@ -901,7 +1012,7 @@
 
     // Plots: the solver's V, M and v in the page's units and origin, as Macaulay brackets.
     const curves = macaulayCurves(result, u, origin);
-    const plot = (ylabel, curve) => ({ x: curves.x, xlabel: `x (${sym("length")}), from ${mid ? "mid-span" : "the left end"}`, ylabel, curves: [curve] });
+    const plot = (/** @type {string} */ ylabel, /** @type {string} */ curve) => ({ x: curves.x, xlabel: `x (${sym("length")}), from ${mid ? "mid-span" : "the left end"}`, ylabel, curves: [curve] });
 
     const V = sig(show(ex.V.value, "force"), 4), M = sig(show(ex.M.value, "moment"), 4), vmax = sig(show(ex.v.value, "length"), 4);
     const sense = ex.M.value >= 0 ? "sagging" : "hogging";
@@ -926,7 +1037,7 @@
         "Next, the bending moment.",
         "It is the running integral of the shear, so it peaks where the shear crosses zero or jumps.",
         `The largest moment is ${say(M, "moment")}, ${sense}, at ${sayPos(ex.M.x)}.`,
-        ...(stress != null ? [`With the extreme fibre ${say(sig(show(m.section.c, "length")), "length")} from the neutral axis, that is a peak bending stress of ${say(sig(show(stress, "stress"), 4), "stress")}.`] : []),
+        ...(stress != null && c ? [`With the extreme fibre ${say(sig(show(c, "length")), "length")} from the neutral axis, that is a peak bending stress of ${say(sig(show(stress, "stress"), 4), "stress")}.`] : []),
       ].join(" "),
     };
     const deflectionFrame = {
@@ -981,10 +1092,11 @@
     };
   }
 
+  /** @param {number} x */
   function fmt(x) {
     return Number.isInteger(x) ? String(x) : String(+x.toPrecision(6));
   }
-  const lengthText = (units) => { const u = unitSystem(units); return (x) => `${fmt(toUnits(x, "length", u))} ${u.symbol.length}`; };
+  const lengthText = (/** @type {Units} */ units) => { const u = unitSystem(units); return (/** @type {number} */ x) => `${fmt(toUnits(x, "length", u))} ${u.symbol.length}`; };
 
   return { SUPPORT_KINDS, UNIT_SYSTEMS, DEFAULT_UNITS, toUnits, fromUnits, scaleModel, ModelError, sectionProperties, indeterminacy, validate, mesh, solve, internal, deflection, at, diagram, extremes, exportBdf, smallEntry, largeEntry, exactReal, nastranReal, format, speech, fromOrigin, residual, spanRatio, intensity, beamReport };
 });

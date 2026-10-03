@@ -12,20 +12,34 @@ const T = require("../beamdswitch.js");
 const H = require("../handcalc.js");
 const raw = require("../raw.json");
 const { sig, sci, shortNf } = B.format;
+/** @typedef {ReturnType<typeof B.solve>} Result */
+/** @typedef {Parameters<typeof B.toUnits>[1]} Quantity */
+/** @typedef {import("./fixtures/beamdswitch/deck.mjs").DeckNode} DeckNode */
+/** @typedef {Extract<DeckNode, { type: "div" }>} DeckDiv */
+/** @typedef {{ id: string, label: string, length: number, material: string, section: object, supports: object[], loads: object[] }} Preset */
+/** @typedef {{ id: string, label: string }} Material */
+/** @template T @param {T | undefined | null} x @param {string} what @returns {T} */
+const found = (x, what) => { assert.ok(x, what); return x; };
 
+/** @type {{ shape: string, label: string, dims: [string, number, Quantity][] }} */
 const SECTION = { shape: "rect", label: "Solid rectangle b × h", dims: [["Width b", 0.1, "length"], ["Depth h", 0.2, "length"]] };
+/** @param {Preset} p */
 function solvePreset(p) {
-  const material = raw.materials.find((m) => m.id === p.material);
+  /** @type {Material} */
+  const material = found(raw.materials.find((/** @type {Material} */ m) => m.id === p.material), p.material);
   const r = B.solve({ length: p.length, material, section: B.sectionProperties(p.section), supports: p.supports, loads: p.loads });
-  r.extremes = B.extremes(r);
-  return { r, material };
+  const extremes = B.extremes(r);
+  r.extremes = extremes;
+  return { r: { ...r, extremes }, material };
 }
+/** @param {Preset} p @param {string} units @param {string} origin */
 function deckFor(p, units, origin) {
   const { r, material } = solvePreset(p);
   const md = H.deck(H.beamReport(r, { units, origin, at: p.length / 3, title: p.label, section: SECTION, material: { label: material.label } }));
   return { r, md, deck: parseDeck(md) };
 }
 /* Beams beyond the presets: a right-end fixed support, actions at both ends, a trapezoidal load, an overhang, no load. */
+/** @type {Preset[]} */
 const EXTRA = [
   { id: "right-cantilever", label: "Right-hand cantilever", length: 4, supports: [{ kind: "fixed", x: 4 }],
     loads: [{ kind: "point", x: 0, F: -3000 }, { kind: "moment", x: 4, C: 2000 }, { kind: "dist", x1: 1, x2: 4, q1: -1000, q2: -4000 }] },
@@ -34,12 +48,14 @@ const EXTRA = [
   { id: "unloaded", label: "Unloaded beam", length: 3, supports: [{ kind: "pin", x: 0 }, { kind: "pin", x: 3 }], loads: [] },
 ].map((p) => ({ ...p, material: "timber", section: { shape: "rect", b: 0.05, h: 0.15 } }));
 /* Every preset and extra beam in every unit convention, from both origins. */
-const CASES = [...raw.presets, ...EXTRA].flatMap((p) => Object.keys(B.UNIT_SYSTEMS).flatMap((units) => ["left", "mid"].map((origin) => ({ p, units, origin }))));
+const CASES = [.../** @type {Preset[]} */ (raw.presets), ...EXTRA].flatMap((p) => Object.keys(B.UNIT_SYSTEMS).flatMap((units) => ["left", "mid"].map((origin) => ({ p, units, origin }))));
+/** @param {DeckNode[]} children @param {string} name @param {DeckDiv[]} [out] @returns {DeckDiv[]} */
 const divs = (children, name, out = []) => {
   for (const c of children) if (c.type === "div") { if (c.name === name) out.push(c); divs(c.children, name, out); }
   return out;
 };
-const textOf = (node) => node.children.filter((c) => c.type === "md").map((c) => c.text).join("\n");
+/** @param {DeckDiv} node */
+const textOf = (node) => node.children.flatMap((c) => (c.type === "md" ? [c.text] : [])).join("\n");
 
 test("beamdswitch.js is the site's shared template, unchanged", () => {
   assert.equal(readFileSync(new URL("../beamdswitch.js", import.meta.url), "utf8"), readFileSync(new URL("./fixtures/beamdswitch/template.js", import.meta.url), "utf8"));
@@ -60,7 +76,7 @@ test("the deck for every preset, unit convention and origin parses in beamdswitc
     const plots = deck.frames.flatMap((f) => divs(f.children, "plot"));
     assert.equal(plots.length, 3, `${what}: shear, moment and deflection plots`);
     for (const plot of plots) assert.deepEqual(parsePlot(textOf(plot)).errors, [], what);
-    const last = deck.frames.at(-1);
+    const last = found(deck.frames.at(-1), what);
     assert.equal(last.section, "Checks and takeaway", what);
     assert.equal(divs(last.children, "key").length, 1, `${what}: ends on a ::: key`);
   }
@@ -70,7 +86,7 @@ test("every frame has its own narration, written as plain spoken prose", () => {
   for (const { p, units, origin } of CASES) {
     const { md, deck } = deckFor(p, units, origin), what = `${p.id} ${units} ${origin}`;
     // Written in the deck, not filled in by beamdswitch's defaults: one ::: narration per slide.
-    assert.equal(md.match(/^::: narration$/gm).length, deck.frames.length, what);
+    assert.equal(md.match(/^::: narration$/gm)?.length, deck.frames.length, what);
     for (const f of deck.frames) {
       assert.ok(splitSentences(f.narration).length > 0, `${what}: "${f.title}" is narrated`);
       assert.doesNotMatch(f.narration, /[$\\`*_#|<>×⁰¹²³⁴⁵⁶⁷⁸⁹⁻]/, `${what}: "${f.title}" reads as speech`);
@@ -83,14 +99,17 @@ test("the plotted shear, moment and deflection are the solver's own, in the chos
     const { r, deck } = deckFor(p, units, origin), what = `${p.id} ${units} ${origin}`;
     const L = r.model.length, o = origin === "mid" ? L / 2 : 0;
     const [V, M, v] = deck.frames.flatMap((f) => divs(f.children, "plot")).map((d) => parsePlot(textOf(d)));
-    const toX = (x) => B.toUnits(x - o, "length", units);
+    const toX = (/** @type {number} */ x) => B.toUnits(x - o, "length", units);
     assert.deepEqual(V.x.map((x) => +x.toPrecision(9)), [toX(0), toX(L)].map((x) => +x.toPrecision(9)), what);
     // Sample between events, clear of the jumps.
-    const ev = r.displacements.map((d) => d.x), xs = [];
+    const ev = r.displacements.map((d) => d.x);
+    /** @type {number[]} */
+    const xs = [];
     for (let i = 1; i < ev.length; i++) for (const t of [0.01, 0.25, 0.5, 0.75, 0.99]) xs.push(ev[i - 1] + t * (ev[i] - ev[i - 1]));
     const scale = { V: Math.abs(r.extremes.V.value), M: Math.abs(r.extremes.M.value), v: Math.abs(r.extremes.v.value) };
     for (const x of xs) {
       const exact = B.internal(r, x, "right"), dv = B.deflection(r, x).v, xd = toX(x);
+      /** @param {import("./fixtures/beamdswitch/plot.mjs").PlotSpec} curve @param {number} si @param {Quantity} quantity @param {"V" | "M" | "v"} key */
       const close = (curve, si, quantity, key) => {
         const got = curve.curves[0].f(xd), want = B.toUnits(si, quantity, units), tol = 1e-7 * B.toUnits(scale[key], quantity, units);
         assert.ok(Math.abs(got - want) <= tol, `${what} ${key}(${xd}) = ${got}, solver ${want}`);
@@ -105,10 +124,11 @@ test("the plotted shear, moment and deflection are the solver's own, in the chos
 test("the numbers in the deck are the solver's results, in the page's own digits", () => {
   for (const { p, units, origin } of CASES) {
     const { r, md, deck } = deckFor(p, units, origin), what = `${p.id} ${units} ${origin}`;
-    const u = B.UNIT_SYSTEMS[units], show = (si, q) => B.toUnits(si, q, u), ex = r.extremes;
-    const at = (x) => `${sig(show(B.fromOrigin(x, r.model.length, origin), "length"))} ${u.symbol.length}`;
-    const frame = (re) => deck.frames.find((f) => re.test(f.title));
-    const parse = (t) => Number(t.replace("−", "-").replace(/,/g, "").replace(/×10([⁻⁰¹²³⁴⁵⁶⁷⁸⁹]+)$/, (_, e) => `e${[...e].map((c) => (c === "⁻" ? "-" : "⁰¹²³⁴⁵⁶⁷⁸⁹".indexOf(c))).join("")}`));
+    const u = B.UNIT_SYSTEMS[units], show = (/** @type {number} */ si, /** @type {Quantity} */ q) => B.toUnits(si, q, u), ex = r.extremes;
+    const at = (/** @type {number} */ x) => `${sig(show(B.fromOrigin(x, r.model.length, origin), "length"))} ${u.symbol.length}`;
+    const frame = (/** @type {RegExp} */ re) => found(deck.frames.find((f) => re.test(f.title)), `${what}: a frame titled ${re}`);
+    const parse = (/** @type {string} */ t) => Number(t.replace("−", "-").replace(/,/g, "").replace(/×10([⁻⁰¹²³⁴⁵⁶⁷⁸⁹]+)$/, (_, /** @type {string} */ e) => `e${[...e].map((c) => (c === "⁻" ? "-" : "⁰¹²³⁴⁵⁶⁷⁸⁹".indexOf(c))).join("")}`));
+    /** @param {string} text @param {number} si @param {Quantity} quantity @param {string} label */
     const near = (text, si, quantity, label) => {
       const want = show(si, quantity);
       assert.ok(Math.abs(parse(text) - want) <= 5e-4 * Math.abs(want) + 1e-300, `${what} ${label}: ${text} vs ${want}`);
@@ -126,14 +146,14 @@ test("the numbers in the deck are the solver's results, in the page's own digits
     });
 
     // Extremes: title, equation and takeaway carry the page's four significant figures and location.
-    for (const [key, quantity, word] of [["V", "force", "shear"], ["M", "moment", "moment"], ["v", "length", "deflection"]]) {
+    for (const [key, quantity, word] of /** @type {["V" | "M" | "v", Quantity, string][]} */ ([["V", "force", "shear"], ["M", "moment", "moment"], ["v", "length", "deflection"]])) {
       const value = sig(show(ex[key].value, quantity), 4);
       const f = frame(new RegExp(`^Largest ${word}: `));
       assert.ok(f.title.startsWith(`Largest ${word}: ${value} ${u.symbol[quantity]}`) && f.title.includes(`at x = ${at(ex[key].x)}`), `${what}: ${f.title}`);
       near(value, ex[key].value, quantity, word);
     }
     assert.ok(frame(/^Largest deflection/).title.endsWith(`(L/${B.spanRatio(r.model.length, ex.v.value)})`), what);
-    const stress = Math.abs(ex.M.value) * r.model.section.c / r.model.section.I;
+    const stress = Math.abs(ex.M.value) * /** @type {number} */ (r.model.section.c) / r.model.section.I;
     assert.ok(md.includes(`Peak bending stress ${sig(show(stress, "stress"), 4)} ${u.symbol.stress}.`), what);
     assert.ok(md.includes(`relative error ${sci(B.residual(r.equilibrium))}.`), what);
     const deg = B.indeterminacy(r.model.supports);
@@ -142,7 +162,7 @@ test("the numbers in the deck are the solver's results, in the page's own digits
 });
 
 test("the narration reads the numbers in the chosen units", () => {
-  const p = raw.presets.find((x) => x.id === "fixed-fixed-point");
+  const p = found(raw.presets.find((/** @type {Preset} */ x) => x.id === "fixed-fixed-point"), "fixed-fixed-point");
   const { r, deck } = deckFor(p, "kN-m", "mid");
   const said = deck.frames.map((f) => f.narration).join(" ");
   const [left] = r.reactions;
@@ -150,7 +170,7 @@ test("the narration reads the numbers in the chosen units", () => {
   assert.match(said, /The beam is 6 metres long, with x measured from mid-span, so it runs from minus 3 metres to 3 metres\./);
   assert.match(said, /a downward point force of 40 kilonewtons at x equals minus 1 metre\./);
   assert.ok(said.includes(`the largest bending moment is minus ${sig(Math.abs(r.extremes.M.value) / 1e3, 4)} kilonewton metres, hogging`), said);
-  const mm = deckFor(raw.presets.find((x) => x.id === "pin-pin-udl"), "N-mm", "left").deck.frames.map((f) => f.narration).join(" ");
+  const mm = deckFor(found(raw.presets.find((/** @type {Preset} */ x) => x.id === "pin-pin-udl"), "pin-pin-udl"), "N-mm", "left").deck.frames.map((f) => f.narration).join(" ");
   assert.match(mm, /a uniform downward load of 10 newtons per millimetre from x equals 0 millimetres to 6000 millimetres/);
   assert.match(mm, /second moment of area of 6\.667 times ten to the 7 millimetres to the fourth/);
 });
@@ -180,31 +200,35 @@ test("the beamdswitch button saves the page's beam as a deck whose numbers match
     const md = await file.blob.text(), deck = parseDeck(md);
     assert.ok(deck.frames.every((f) => f.narration), what);
     // The headline results under the figure: value and location, as the page shows them.
-    const stats = p.document.getElementById("stats").children.map((li) => [li.children[0].textContent, li.children[1].textContent]);
+    /** @type {[string, string][]} */
+    const stats = p.document.getElementById("stats").children.map((/** @type {import("./page-harness.mjs").Element} */ li) => [li.children[0].textContent, li.children[1].textContent]);
     for (const [big, small] of stats.slice(1, 4)) {
-      const where = small.match(/at x = (.+?)(?: \(|$)/)[1];
+      const where = found(small.match(/at x = (.+?)(?: \(|$)/), `${what}: ${small}`)[1];
       assert.ok(deck.frames.some((f) => f.title.includes(big) && f.title.includes(`at x = ${where}`)), `${what}: ${big} at ${where}`);
     }
-    assert.ok(md.includes(stats.find(([, s]) => s.startsWith("peak bending stress"))[0]), what);
+    assert.ok(md.includes(found(stats.find(([, s]) => s.startsWith("peak bending stress")), what)[0]), what);
     // Each reaction the page lists appears in the deck's reaction table with the same digits.
     for (const li of p.document.getElementById("reactions").children) {
-      const [, x, F, Mz] = li.children[1].textContent.match(/at (\S+) \S+: (\S+) \S+(?:, (\S+) \S+)?$/);
+      const [, x, F, Mz] = found(li.children[1].textContent.match(/at (\S+) \S+: (\S+) \S+(?:, (\S+) \S+)?$/), `${what}: ${li.children[1].textContent}`);
       assert.ok(new RegExp(`^\\| \\d+, (pin|fixed) \\| ${x} \\| ${F} \\| ${Mz ?? "—"} \\|$`, "m").test(md), `${what}: ${li.children[1].textContent}`);
     }
   }
 });
 
 test("the deck is titled after a preset only while the beam is still that preset", async () => {
-  const preset = raw.presets.find((x) => x.id === "continuous");
-  const titled = async (p) => { assert.match(await p.save("save-beamdswitch"), /^Saved/); return parseDeck(await p.saved.at(-1).blob.text()).meta.title; };
-  const removeFirst = (id) => (p) => p.document.getElementById(id).children[0].children[1].dispatch("click");
+  /** @typedef {Awaited<ReturnType<typeof page>>} Page */
+  /** @type {Preset} */
+  const preset = found(raw.presets.find((/** @type {Preset} */ x) => x.id === "continuous"), "continuous");
+  const titled = async (/** @type {Page} */ p) => { assert.match(await p.save("save-beamdswitch"), /^Saved/); return parseDeck(await found(p.saved.at(-1), "a saved deck").blob.text()).meta.title; };
+  const removeFirst = (/** @type {string} */ id) => (/** @type {Page} */ p) => p.document.getElementById(id).children[0].children[1].dispatch("click");
+  /** @type {Record<string, (p: Page) => void>} */
   const edits = {
     "add support": (p) => p.document.getElementById("add-support").dispatch("click"),
     "add point load": (p) => p.buttons[0].dispatch("click"),
     "remove support": removeFirst("supports"),
     "remove load": removeFirst("loads"),
     "change section shape": (p) => p.choose("shape", "circle"),
-    "change material": (p) => p.choose("material", raw.materials.find((m) => m.id !== preset.material).id),
+    "change material": (p) => p.choose("material", found(raw.materials.find((/** @type {Material} */ m) => m.id !== preset.material), "another material").id),
   };
   for (const [what, edit] of Object.entries(edits)) {
     const p = await page();
@@ -218,14 +242,15 @@ test("the deck is titled after a preset only while the beam is still that preset
 });
 
 test("Copy deck copies the same deck the beamdswitch button saves, without downloading", async () => {
+  /** @type {string[]} */
   const copied = [];
-  const p = await page({ navigator: { clipboard: { writeText: async (t) => { copied.push(t); } } } });
+  const p = await page({ navigator: { clipboard: { writeText: async (/** @type {string} */ t) => { copied.push(t); } } } });
   assert.equal(await p.save("copy-beamdswitch"), "Copied the beamdswitch deck: paste it into beamdswitch.");
   assert.equal(p.saved.length, 0);
   assert.equal(copied.length, 1);
   assert.equal(parseDeck(copied[0]).meta.title, `Beam analysis: ${raw.presets[0].label}`);
   assert.match(await p.save("save-beamdswitch"), /^Saved/);
-  assert.equal(await p.saved.at(-1).blob.text(), copied[0]);
+  assert.equal(await found(p.saved.at(-1), "a saved deck").blob.text(), copied[0]);
 });
 
 test("Copy deck says so when the clipboard is blocked", async () => {
