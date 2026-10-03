@@ -132,6 +132,15 @@ python3 -m unittest discover -s tests -p 'test_*.py'
 node --test tests/*.test.mjs
 ```
 
+The JavaScript templates in `scripts/templates/` and the Node tests are type-checked JavaScript: `tsc` checks their
+JSDoc types and emits nothing. TypeScript is a development-only tool pinned in `package.json`; there is no build step
+of its own and no test framework. The builders drop the annotations when they inline a template
+(`strip_types()` in `scripts/page_parts.py`), so the pages are byte for byte what they would be without them:
+
+```sh
+npm ci && npm run typecheck
+```
+
 Pages with a narrated beamdswitch report (the beamdswitch and Copy deck buttons)
 keep `viz/<slug>/beamdswitch.js`, an unchanged copy of the site's
 `templates/beamdswitch.js`, and `viz/<slug>/report.js`, which builds the report

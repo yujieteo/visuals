@@ -38070,13 +38070,14 @@ mark{background:var(--surface);color:var(--fg);outline:2px solid var(--hl);borde
       return h("li", {}, [(d.top ? "" : d.function + ": ") + d.category + " " + q(d.text) + extra,
         n.children ? h("ul", {}, n.children.map(outlineList)) : null]);
     }
-    els.tree.append(
+    // append() would print a null as the text "null": the list of marks is left out when there is none.
+    els.tree.append(...[
       h("p", { class: "hint", id: "tree-help" }, "Each node shows Function: Category. Selecting here selects the same constituent in the sentence above; arrow keys move as in the sentence."),
       h("div", { class: "tree-wrap", tabindex: "-1" }, h("div", { class: "tree-canvas", style: "width:" + lay.width + "px;height:" + lay.height + "px" }, [svg, nodesBox])),
       els.treeMarks ? h("div", { class: "tree-punct" }, [h("p", { class: "hint" }, "Punctuation, attached to constituent boundaries rather than drawn as part of the tree:"), els.treeMarks]) : null,
       h("details", { class: "subdisc" }, [h("summary", {}, "Key to labels and notation"), key,
         ...[...notes].map((k) => h("p", { class: "small-text" }, D.labels.notation[k]))]),
-      h("details", { class: "subdisc" }, [h("summary", {}, "Text version of the tree"), h("ul", { class: "outline-text" }, outlineList(e.tree))]));
+      h("details", { class: "subdisc" }, [h("summary", {}, "Text version of the tree"), h("ul", { class: "outline-text" }, outlineList(e.tree))])].filter((x) => x !== null));
   }
 
   function highlightNav() {

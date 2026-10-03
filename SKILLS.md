@@ -18,7 +18,7 @@ One standalone page per story: `data/<slug>/` (unchanged source + `meta.json`) -
 - Never commit credentials, host details, private paths, or deployment config. Never write an absolute user-home path (macOS or Linux home prefix) in any file; `build.py --verify` scans every file for it.
 - `viz/<slug>/index.html` and root `index.html` are generated: never hand-edit; change data, `design-tokens.json`, or the builder, then regenerate.
 - Every `viz/<slug>/beamdswitch.js` stays byte-identical to yujieteo/site `templates/beamdswitch.js`.
-- Tests use `node --test` and Python `unittest` only; the test-cost rules are in `.agents/skills/visuals-verify-ci/SKILL.md`.
+- Tests use `node --test` and Python `unittest` only; the test-cost rules are in `.agents/skills/visuals-verify-ci/SKILL.md`. `package.json` only pins TypeScript for `npm run typecheck` (README Verification).
 - Do not edit another repo, push, or deploy unless asked.
 
 ## Playbook: load one sub-skill by task

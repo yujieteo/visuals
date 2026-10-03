@@ -1,20 +1,44 @@
 /* Orient: the interface. Every change goes through OrientLogic.apply; this file only renders and routes events. */
 (function () {
   "use strict";
+  /**
+   * @typedef {import("./ooda-orientation-logic.js").State} State
+   * @typedef {import("./ooda-orientation-logic.js").Data} Data
+   * @typedef {import("./ooda-orientation-logic.js").Item} Item
+   * @typedef {import("./ooda-orientation-logic.js").Orientation} Orientation
+   * @typedef {import("./ooda-orientation-logic.js").Workspace} Workspace
+   * @typedef {import("./ooda-orientation-logic.js").Move} Move
+   * @typedef {import("./ooda-orientation-logic.js").Fragment} Fragment
+   * @typedef {import("./ooda-orientation-logic.js").Command} Command
+   * @typedef {string[][]} Options pairs of value and label
+   * @typedef {Record<string, string | number | boolean | null | undefined>} Attrs
+   * @typedef {ReturnType<typeof OrientLogic.contrast>[number]} ContrastRow
+   * @typedef {ReturnType<typeof OrientLogic.diagnostics>[number]} Diagnostic
+   * @typedef {{ kept: { text: string }[], destroyed: { text: string }[], created: { text: string }[] }} Kdc
+   */
+  /** @type {Data} */
+  // @ts-expect-error the generated page always holds its #oo-data block
   const D = JSON.parse(document.getElementById("oo-data").textContent);
   const L = window.OrientLogic;
   L.init(D);
+  /** A page element by id. @param {string | null | undefined} id @returns {any} the page shell holds every id looked up here, of whichever element type */
+  // @ts-expect-error a missing id is stringified and finds nothing, as the callers expect
   const $ = (id) => document.getElementById(id);
   const app = $("app"), announcer = $("announce");
+  /** @param {unknown} t */
+  // @ts-expect-error the pattern matches only the five keys of the table
   const esc = (t) => String(t == null ? "" : t).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
   const TYPE = new Map(D.itemTypes.map((t) => [t.id, t]));
   const OPS = new Map(D.operations.map((o) => [o.id, o]));
   const STAGES = D.stages.map((s) => s.id);
+  /** @type {Record<string, [string, string]>} */
   const LEDGER = { observed: ["obs", "Observed"], inferred: ["inf", "Inferred"], unknown: ["unk", "Unknown"] };
   const MAC = /Mac|iPhone|iPad/.test((typeof navigator !== "undefined" && (navigator.platform || navigator.userAgent)) || "");
   const MOD = MAC ? "⌘" : "Ctrl";
 
-  let S = L.blank(), store = null, storeMsg = "";
+  let S = L.blank(), /** @type {Storage | null} */ store = null, storeMsg = "";
+  /** @type {{ edit: { kind: string, id: string } | null, op: string | null, error: { at: string, message: string } | null, draft: Record<string, Record<string, any>>,
+   *   inspect: string | null, allDims: boolean, moreQ: boolean, flash: string | null, animate: string | null, pending: boolean }} */
   const view = { edit: null, op: null, error: null, draft: {}, inspect: null, allDims: false, moreQ: false, flash: null, animate: null, pending: false };
 
   /* ---------- storage ---------- */
@@ -26,8 +50,10 @@
   } else storeMsg = L.MSG.storage;
   function persist() { if (store && !L.save(store, S)) storeMsg = L.MSG.storage; }
 
+  /** @param {string} msg */
   function announce(msg) { announcer.textContent = ""; setTimeout(() => { announcer.textContent = msg; }, 30); }
 
+  /** @param {Command} cmd @param {string | null} [msg] @param {{ at?: string, soft?: boolean }} [opts] @returns {string | boolean | null} the id, true, or null on an error */
   function commit(cmd, msg, opts) {
     const r = L.apply(S, cmd);
     if (r.error) {
@@ -50,32 +76,49 @@
   document.addEventListener("pointerup", () => { setTimeout(() => { pointer = false; flush(); }, 60); }, true);
 
   /* ---------- small builders ---------- */
+  /** @param {Attrs} [o] */
   const attrs = (o) => Object.entries(o || {}).filter(([, v]) => v !== null && v !== undefined && v !== false).map(([k, v]) => (v === true ? " " + k : " " + k + '="' + esc(v) + '"')).join("");
+  /** @param {string} act @param {string} label @param {Attrs} [o] */
   const btn = (act, label, o) => '<button type="button" data-act="' + act + '"' + attrs(Object.assign({ "data-k": act + ":" + ((o && o["data-id"]) || "") }, o)) + ">" + label + "</button>";
+  /** @param {string} form @param {string} name @param {any} [dflt] @returns {any} the draft value, or the default */
   const draft = (form, name, dflt) => { const d = view.draft[form]; return d && name in d ? d[name] : dflt; };
+  /** @param {string} form @param {string} name @param {string} labelText @param {unknown} [value] @param {{ big?: boolean, a?: Attrs }} [o] */
   const field = (form, name, labelText, value, o) => {
     const id = form + "-" + name, v = draft(form, name, value == null ? "" : value), big = o && o.big;
     return '<label for="' + id + '">' + labelText + "</label>" + (big
       ? '<textarea id="' + id + '" name="' + name + '" rows="2"' + attrs(o && o.a) + ">" + esc(v) + "</textarea>"
       : '<input id="' + id + '" name="' + name + '" value="' + esc(v) + '"' + attrs(o && o.a) + ">");
   };
+  /** @param {string} form @param {string} name @param {string} labelText @param {Options} options @param {unknown} value @param {Attrs} [o] */
   const select = (form, name, labelText, options, value, o) => {
     const id = form + "-" + name, v = draft(form, name, value);
     return (labelText ? '<label for="' + id + '">' + labelText + "</label>" : "") + '<select id="' + id + '" name="' + name + '"' + attrs(o) + ">" +
       options.map(([k, t]) => '<option value="' + esc(k) + '"' + (k === v ? " selected" : "") + ">" + esc(t) + "</option>").join("") + "</select>";
   };
+  /** @param {string} form @param {string} name @param {string} legend @param {Options} options @param {unknown} [value] */
   const radios = (form, name, legend, options, value) => '<fieldset><legend>' + legend + '</legend><div class="opts">' + options.map(([k, t]) =>
     '<label class="opt"><input type="radio" name="' + name + '" value="' + esc(k) + '" id="' + form + "-" + name + "-" + k + '" data-redraw="' + form + '"' + (draft(form, name, value) === k ? " checked" : "") + "> " + esc(t) + "</label>").join("") + "</div></fieldset>";
+  /** @type {Options} */
   const yn = [["yes", "Yes"], ["no", "No"], ["unsure", "Unsure"]];
+  /** @param {string} at */
   const errFor = (at) => (view.error && view.error.at === at ? '<p class="err" role="alert">' + esc(view.error.message) + "</p>" : "");
+  /** @param {string} id */
   const item = (id) => S.items.find((i) => i.id === id);
+  /** @param {string | null | undefined} id */
   const orient = (id) => S.orientations.find((o) => o.id === id);
+  /** @param {string} t */
+  // @ts-expect-error every item type is in the data
   const typeLabel = (t) => TYPE.get(t).label;
+  /** @param {Item | undefined} i */
   const live = (i) => i && i.status !== "withdrawn";
+  /** @param {string} text */
   const empty = (text) => '<p class="empty">' + text + "</p>";
+  /** @param {string} q */
+  // @ts-expect-error every qualifier is in the data
   const qualLabel = (q) => D.qualifiers.find((x) => x.id === q).label;
 
   /* ---------- items ---------- */
+  /** @param {Item} it @param {boolean} [ro] read only */
   function itemRow(it, ro) {
     const led = LEDGER[it.ledger];
     const tags = ['<span class="tag ' + led[0] + '">' + led[1] + "</span>"].concat(it.type === "unknown" ? [] : ['<span class="tag">' + esc(typeLabel(it.type)) + "</span>"]);
@@ -113,6 +156,7 @@
   /* ---------- regions ---------- */
   function reality() {
     const items = S.items.filter(live);
+    /** @param {string} title @param {Item[]} list @param {string} none */
     const col = (title, list, none) => "<div><h3>" + title + " <span class=\"muted\">" + list.length + "</span></h3>" + (list.length ? '<ul class="list">' + list.map((i) => itemRow(i)).join("") + "</ul>" : empty(none)) + "</div>";
     const types = D.itemTypes.map((t) => [t.id, t.label]);
     const ty = draft("add", "type", "signal"), T = TYPE.get(ty);
@@ -123,6 +167,7 @@
       col("Contradictions", items.filter((i) => i.type === "contradiction"), "Nothing currently contradicts this orientation. That does not mean it is correct. Continue testing it.") +
       col("Unknowns", items.filter((i) => i.ledger === "unknown"), "What observation would most change your view?") + "</div>" +
       '<form data-form="add" class="add">' + "<div>" + select("add", "type", "Type", types, ty, { "data-redraw": "add" }) + "</div><div>" +
+      // @ts-expect-error every item type is in the data
       (T.fixed ? '<label for="add-ledger-fixed">Ledger</label><input id="add-ledger-fixed" value="' + LEDGER[T.ledger][1] + '" readonly>' : select("add", "ledger", "Ledger", [["inferred", "Inferred"], ["observed", "Observed"]], "inferred")) +
       '</div><div class="grow">' + field("add", "text", "Statement", "") + '</div><div class="go"><button type="submit" class="primary">Add</button></div></form>' + errFor("item") + errFor("contradiction") + stageNav("reality") + "</section>";
   }
@@ -133,8 +178,10 @@
       field("sit", "intent", "Intent: what are you trying to preserve, cause, avoid, discover or change?", intent ? intent.text : "", { a: { "data-sit": "intent" } }) + "</div></div>";
   }
 
+  /** @param {Orientation} o @param {string} form @param {boolean} ro */
   function orientationFields(o, form, ro) {
     const dis = ro ? { disabled: true } : {};
+    /** @param {import("./ooda-orientation-logic.js").Field} name @param {string} text @param {boolean} [big] */
     const f = (name, text, big) => field(form, name, text, o[name], { big, a: Object.assign({ "data-field": name, "data-oid": o.id }, dis) });
     const bounds = S.items.filter((i) => live(i) && i.type === "boundary");
     return '<div class="grid2"><div>' + f("inside", "Model: what story explains the situation? (I think this situation is primarily…)", true) + "</div><div>" +
@@ -145,12 +192,14 @@
       f("falsifier", "What observation would make this orientation substantially less credible?") + "</div></div>";
   }
 
+  /** @param {Orientation} o */
   function roFields(o) {
     const rows = [["Model", o.inside], ["Because", o.explains], ["Key constraint or opportunity", o.matters], ["Prediction", o.observe], ["Causal mechanism", o.mechanism],
       ["Opens the move", o.move], ["Fails to explain", o.fails], ["Key assumption", o.keyAssumption], ["Boundary", L.boundaryText(S, o)], ["Less credible if", o.falsifier || "Hard to test"], ["Confidence", o.confidence]];
     return '<dl class="ro">' + rows.filter((r) => r[1]).map((r) => "<dt>" + r[0] + "</dt><dd>" + esc(r[1]) + "</dd>").join("") + "</dl>" + basisBlock(o);
   }
 
+  /** @param {Orientation} o @param {boolean} ro */
   function rests(o, ro) {
     const groups = [["Signals", ["signal"]], ["Assumptions and claims", ["assumption", "interpretation", "causal"]], ["Constraints and resources", ["constraint", "resource"]],
       ["Boundary, actors, objects", ["boundary", "actor", "object", "function", "intention"]], ["Unknowns", ["unknown"]]];
@@ -164,18 +213,23 @@
     return html || empty("Add signals, assumptions and constraints in the Reality ledger; then tick the ones this orientation rests on.");
   }
 
+  /** @param {Orientation} o */
   function basisBlock(o) {
     return '<ul class="basis" aria-label="Empirical basis">' + L.basisText(L.basis(S, o)).map((t) => "<li>" + esc(t) + "</li>").join("") + "</ul>";
   }
 
+  /** @param {Diagnostic[]} list */
   function diagList(list) {
     return list.length ? '<ul class="diag">' + list.map((d) => "<li><b>" + esc(d.title) + ".</b> " + esc(d.message) + (d.detail ? ' <span class="muted">' + esc(d.detail) + "</span>" : "") + "</li>").join("") + "</ul>" : "";
   }
+  /** @param {string} id */
   function raoNote(id) {
     const n = D.methodology.rao.find((x) => x.id === id);
+    // @ts-expect-error every note id the page names is in the data
     return '<details class="note"><summary>' + esc(n.title) + "</summary><p>" + esc(n.text) + '</p><p class="prov">' + esc(n.basis) + " See Examples and sources below.</p></details>";
   }
 
+  /** @param {Orientation} o */
   function orientationNormal(o) {
     const ro = L.locked(S, o);
     const act = S.actions.find((a) => a.orientation === o.id && a.status !== "draft");
@@ -183,6 +237,7 @@
     const hi = S.tempo === "high";
     return '<div data-stage="model">' +
       '<p class="statement" id="or-' + o.id + '" data-statement="' + o.id + '">' + esc(L.statement(o)) + "</p>" +
+      // @ts-expect-error a locked orientation has a started or done action
       (ro ? '<p class="hint">Frozen while ' + L.labelOf(S, act.id) + " relies on it. Past versions stay in the lineage; reorient to revise it.</p>" : '<p class="hint">Editable until an action relying on it starts.</p>') +
       situationBlock() + (ro ? roFields(o) : orientationFields(o, "o", false) +
       '<div class="grid2"><div>' + select("o", "confidence", "Confidence (a self-rating, not evidence)", [["tenuous", "Tenuous"], ["working", "Working"], ["strong", "Strong"]], o.confidence, { "data-field": "confidence", "data-oid": o.id }) +
@@ -198,14 +253,18 @@
       (mem.length ? '<div class="panel" data-stage="model"><h3>Deep Memory</h3><ul class="diag mem">' + mem.map((m) => "<li><b>Before.</b> " + esc(m.text) + "</li>").join("") + "</ul></div>" : "");
   }
 
+  /** @param {Move} m */
   function moveView(m) {
     const op = OPS.get(m.op), res = item(m.result);
     const cur = m.targets.map(item);
+    // @ts-expect-error a move's operation and targets exist
     return '<dl class="move">' + (cur.length ? "<dt>Current " + esc(typeLabel(cur[0].type)) + '</dt><dd class="gone">' + cur.map((c) => esc(c.text)).join("; ") + "</dd>" : "<dt>Operation</dt><dd>" + esc(op.label) + "</dd>") +
       "<dt>Challenge</dt><dd>" + esc(m.challenge) + "</dd><dt>Replacement</dt><dd class=\"new\">" + esc(res ? res.text : "") + "</dd></dl>";
   }
 
+  /** @param {Workspace} ws @param {Fragment[]} frags */
   function opForm(ws, frags) {
+    // @ts-expect-error the operation form is drawn only while an operation is chosen
     const op = OPS.get(view.op);
     if (!op) return "";
     const pool = frags.filter((f) => f.kind !== "destroyed" && op.targets.includes(f.item.type));
@@ -222,9 +281,12 @@
       '<div class="row"><button type="submit" class="primary">Record move</button>' + btn("cancel-op", "Cancel") + "</div></form>";
   }
 
+  /** @param {Workspace} ws @param {Fragment[]} frags */
   function destroyStep(ws, frags) {
     const cap = ws.deep ? 8 : 3;
     let picker = "";
+    /** @param {string} id @param {string} [why] */
+    // @ts-expect-error every operation id the page offers is in the data
     const opBtn = (id, why) => { const op = OPS.get(id); return '<button type="button" data-act="op" data-id="' + id + '" data-k="op:' + id + '" aria-pressed="' + (view.op === id) + '">' + esc(op.label) + (why ? '<span class="why">' + esc(why) + "</span>" : "") + "</button>"; };
     if (ws.mode === "guided") picker = '<div class="ops">' + L.guided(S).map((g) => opBtn(g.op, g.why)).join("") + "</div>";
     else if (ws.mode === "manual") picker = D.families.map((f) => "<h4>" + esc(f.label) + '</h4><div class="ops">' + D.operations.filter((o) => o.family === f.id && (!o.deep || ws.deep)).map((o) => opBtn(o.id, o.challenge)).join("") + "</div>").join("") +
@@ -234,19 +296,25 @@
     return '<div class="step" data-stage="destroy" id="destroy"><h3>Destroy ' + (ws.deep ? '<span class="tag red">deep reset</span>' : "") + "</h3>" +
       '<p class="hint">' + ws.moves.length + " of " + cap + " moves. " + (ws.deep ? "A deep reset may also destroy intent." : "One to three meaningful moves; use Deep reset for broader destruction.") + "</p>" +
       '<div class="modes" role="group" aria-label="Destruction mode">' + modes.map(([k, t]) => '<button type="button" data-act="wsmode" data-id="' + k + '" data-k="wsmode:' + k + '" aria-pressed="' + (ws.mode === k) + '">' + t + "</button>").join("") + "</div>" +
+      // @ts-expect-error the mode is always one of the data's modes
       picker + opForm(ws, frags) + (S.mode !== "environment" ? '<details class="note"><summary>Prompts for ' + esc(D.modes.find((m) => m.id === S.mode).label.toLowerCase()) + "</summary><ul>" + D.modes.find((m) => m.id === S.mode).prompts.map((p) => "<li>" + esc(p) + "</li>").join("") + "</ul></details>" : "") +
       (ws.moves.length ? "<h4>Moves</h4>" + ws.moves.map((m) => '<div class="panel">' + moveView(m) + btn("unmove", "Undo move", { class: "link", "data-id": m.id }) + "</div>").join("") : "") + "</div>";
   }
 
+  /** @param {Kdc} parts @param {boolean} anim @param {string} [caption] */
   function kdc(parts, anim, caption) {
+    /** @param {string} cls @param {string} title @param {{ text: string }[]} xs */
     const col = (cls, title, xs) => '<div class="' + cls + '"><h4>' + title + "</h4>" + (xs.length ? "<ul>" + xs.map((x) => "<li>" + esc(x.text) + ' <span class="sr">(' + title.toLowerCase() + ")</span></li>").join("") + "</ul>" : '<p class="muted">Nothing</p>') + "</div>";
     return '<div class="kdc' + (anim ? " anim" : "") + '" role="group" aria-label="' + esc(caption || "Kept, destroyed and created") + '">' + col("k", "KEPT", parts.kept) + col("d", "DESTROYED", parts.destroyed) + col("c", "CREATED", parts.created) + "</div>";
   }
 
+  /** @param {Fragment[]} frags */
   function candidateForm(frags) {
     const prompts = L.creationPrompts(S), avail = frags.filter((f) => f.kind !== "destroyed");
     const chosen = draft("cand", "from", null);
     const bounds = avail.filter((f) => f.item.type === "boundary");
+    /** @param {Data["dimensions"][number]} d */
+    // @ts-expect-error tag() is called only for dimensions with tags
     const tag = (d) => select("cand", d.id, d.label, [["", "—"]].concat(d.tags.map((t) => [t, t])), "");
     return "<h4>Prompts, not conclusions</h4>" + (prompts.length ? '<ul class="list">' + prompts.map((p) => '<li class="panel"><span class="tag">' + esc(p.label) + "</span><p>" + esc(p.text) + "</p>" + btn("use-prompt", "Build from these fragments", { class: "link", "data-id": p.id }) + "</li>").join("") + "</ul>" : empty("Make a destructive move first; its replacement becomes a fragment to build from.")) +
       '<form data-form="cand" class="panel" id="cand-form"><h4>New candidate orientation</h4>' +
@@ -260,15 +328,19 @@
       errFor("candidate") + '<div class="row"><button type="submit" class="primary">Add candidate</button><span class="hint">At most four active candidates.</span></div></form>';
   }
 
+  /** @param {ContrastRow} c @param {Diagnostic[]} diags */
   function candCard(c, diags) {
     const o = orient(c.id), flags = diags.filter((d) => d.target === c.id);
     return '<div class="cand' + (c.current ? " cur" : "") + '" id="or-' + c.id + '"><div class="meta"><span class="tag ' + (c.current ? "blue" : "") + '">' + c.label + (c.current ? " · current" : " · candidate") + "</span>" + (c.hardToTest ? ' <span class="tag red">Hard to test</span>' : "") + "</div>" +
+      // @ts-expect-error every contrast row is an orientation
       "<p>" + esc(c.statement) + "</p>" + (c.boundary ? '<p class="hint">Boundary: ' + esc(c.boundary) + "</p>" : "") + (o.creation && o.creation.from && o.creation.from.length ? '<p class="hint">Built from: ' + o.creation.from.map((id) => esc((item(id) || {}).text)).join("; ") + "</p>" : "") +
       diagList(flags) + (c.current ? "" : btn("drop", "Drop candidate", { class: "link", "data-id": c.id })) + "</div>";
   }
 
+  /** @param {ContrastRow[]} rows */
   function compareStep(rows) {
     const dims = S.tempo === "high" && !view.allDims ? D.dimensions.filter((d) => ["explained", "contradictions", "speed"].includes(d.id)) : D.dimensions;
+    /** @param {Record<string, any>} r a contrast row, read by dimension id @param {{ id: string }} d */
     const cell = (r, d) => { const v = r[d.id]; return Array.isArray(v) ? (v.length ? "<ul>" + v.map((x) => "<li>" + esc(x) + "</li>").join("") + "</ul>" : '<span class="muted">—</span>') : v ? '<span class="tag">' + esc(v) + "</span>" : '<span class="muted">not tagged</span>'; };
     let html = '<div class="step" data-stage="compare" id="compare"><h3>Contrast</h3>';
     if (rows.length < 2) return html + empty("Destroy one assumption, boundary, goal, category or object-function to create an alternative. A serious comparison needs at least two orientations.") + "</div>";
@@ -286,7 +358,8 @@
   }
 
   function orientationRegion() {
-    const o = L.current(S), ws = S.workspace;
+    // @ts-expect-error the regions are drawn only once a situation has an adopted orientation
+    const /** @type {Orientation} */ o = L.current(S), ws = S.workspace;
     let body;
     if (!ws) body = orientationNormal(o);
     else {
@@ -305,7 +378,8 @@
   }
 
   function actionRegion() {
-    const o = L.current(S), a = L.currentAction(S), rd = L.readiness(S);
+    // @ts-expect-error as above
+    const /** @type {Orientation} */ o = L.current(S), a = L.currentAction(S), rd = L.readiness(S);
     const p = a && a.prediction && S.predictions.find((x) => x.id === a.prediction);
     const strip = '<ol class="decision" aria-label="Decision record">' +
       '<li class="' + (rd.orientation ? "" : "miss") + '"><b>DECISION</b>' + L.label(S, o) + ": " + esc(o.inside || "state the model first") + "</li>" +
@@ -318,12 +392,13 @@
       body = '<p class="sentence" id="ac-' + a.id + '">' + esc(L.actionSentence(S, a)) + '</p><p><span class="tag">' + esc(a.type) + '</span> Started. The prediction is frozen.</p><div class="row">' + btn("goto-observe", "Record what happened", { class: "primary" }) + "</div>";
     } else {
       const F = "act", hi = S.tempo === "high";
-      const c = a ? a.consistency : {}, ty = draft(F, "type", a ? a.type : "probe"), same = draft(F, "sameUnderAll", c.sameUnderAll || "");
+      const /** @type {Partial<import("./ooda-orientation-logic.js").Consistency>} */ c = a ? a.consistency : {}, ty = draft(F, "type", a ? a.type : "probe"), same = draft(F, "sameUnderAll", c.sameUnderAll || "");
       const cheap = ty === "probe" || ty === "wait" || hi;
       const mode = D.modes.find((m) => m.id === S.mode);
       const relies = L.itemsOf(S, o).filter((i) => i.type !== "signal");
       body = (a ? '<p class="sentence" id="ac-' + a.id + '">' + esc(L.actionSentence(S, a)) + "</p>" : "") +
         '<form data-form="act" class="stack">' + radios(F, "type", "Action type", D.actionTypes.map((t) => [t.id, t.label]), ty) +
+        // @ts-expect-error the action type is always one of the data's
         '<p class="hint">' + esc(D.actionTypes.find((t) => t.id === ty).help) + "</p>" +
         field(F, "text", "Because I currently believe " + esc(L.statement(o).replace(/^I think /, "").split(" because ")[0]) + ", I will…", a ? a.text : "", { big: true }) +
         field(F, "expected", "…and I expect to observe:", L.expectedOf(S, a)) + field(F, "reconsider", "Reconsider if:", a ? a.reconsider : "") +
@@ -335,6 +410,7 @@
         (cheap ? '<p class="note"><b>Act now</b> is reasonable: the action is cheap, reversible or the tempo is high, so it can itself serve as the discriminating experiment.</p>'
           : '<p class="note">What could you observe next that would distinguish this orientation from the alternatives?</p>') +
         (ty === "commitment" ? '<p class="note"><b>Commitment.</b> Hard to reverse: it needs a clear reconsideration trigger' + (o.confidence === "tenuous" ? ", and this orientation's confidence is only tenuous" : "") + ".</p>" : "") +
+        // @ts-expect-error the mode is always one of the data's modes
         (S.mode !== "environment" ? '<fieldset><legend>Change the information environment: what the other side can…</legend><div class="opts">' + D.infoEnvironment.map((x) => '<label class="opt"><input type="checkbox" name="info" value="' + x + '" id="ai-' + x.replace(/ /g, "-") + '"' + (draft(F, "info", a ? a.info : []).includes(x) ? " checked" : "") + "> " + x + "</label>").join("") + '</div><ul class="hint">' + mode.prompts.map((q) => "<li>" + esc(q) + "</li>").join("") + "</ul></fieldset>" : "") +
         errFor("action") + errFor("editAction") + errFor("start") +
         '<div class="row"><button type="submit" class="' + (a ? "" : "primary") + '">' + (a ? "Save changes" : "Save action") + "</button>" + (a ? btn("start", "Start action", { class: "primary", "data-id": a.id }) : "") +
@@ -344,7 +420,9 @@
     return '<section id="act" class="region action" data-stage="act" aria-labelledby="h-act"><h2 id="h-act">Action <span class="tag">one move this loop</span></h2>' + strip + diagList(diags) + body + stageNav() + "</section>";
   }
 
+  /** @param {string} before @param {string} reality @param {string} interp */
   function triad(before, reality, interp) {
+    /** @param {string} t */
     const lf = (t) => (/^[A-Z][a-z]/.test(t || "") ? t[0].toLowerCase() + t.slice(1) : t || "");
     return '<div class="triad"><div class="before"><b>BEFORE ACTING</b>I expected ' + esc(lf(before)) + '</div><div><b>REALITY</b>' + esc(reality || "not yet recorded") + "</div><div><b>INTERPRETATION</b>" + esc(interp || "—") + "</div></div>";
   }
@@ -355,6 +433,7 @@
     if (a) {
       const F = "out", p = a.prediction && S.predictions.find((x) => x.id === a.prediction), o = orient(a.orientation);
       const assumptions = L.itemsOf(S, o).filter((i) => i.type === "assumption" || i.type === "causal");
+      // @ts-expect-error an outcome form is drawn only for a started action, which follows an orientation
       const fits = S.orientations.filter((x) => x.status !== "superseded" || x.id === o.id);
       form = '<form data-form="out" class="stack" id="outcome-form"><p class="sentence">' + esc(L.actionSentence(S, a)) + "</p>" +
         (p ? triad(p.original || p.text, draft(F, "observed", ""), draft(F, "interpretation", "")) : "") +
@@ -379,6 +458,7 @@
       const ac = S.actions.find((x) => x.id === r.action), p = ac && ac.prediction && S.predictions.find((x) => x.id === ac.prediction);
       return '<li class="panel" id="oc-' + r.id + '"><h4>' + L.label(S, r) + " · loop " + r.loop + " · after " + L.label(S, ac) + "</h4>" + triad(p ? p.original || p.text : "—", r.observed, r.interpretation) +
         (r.surprise ? "<p><b>Surprise.</b> " + esc(r.surprise) + "</p>" : "") + (r.absent ? "<p><b>Did not happen.</b> " + esc(r.absent) + "</p>" : "") +
+        // @ts-expect-error every attribution is in the data
         '<p class="hint">' + [r.effect && "Effect: " + r.effect, r.attribution && "Explained by: " + D.attributions.find((x) => x.id === r.attribution).label, r.changedEnvironment === "yes" && "Changed the environment"].filter(Boolean).join(" · ") + "</p></li>";
     }).join("") + "</ul>" : "";
     return '<section id="observe" class="region" data-stage="observe" aria-labelledby="h-observe"><h2 id="h-observe">Observe</h2>' + form +
@@ -395,14 +475,17 @@
       const t = S.history.find((h) => h.kind === "transition" && h.to === ins.id);
       detail = '<div class="panel" id="inspect"><h3>' + L.label(S, ins) + " · " + ins.status + " · loop " + ins.loop + ' <span class="tag">read-only</span></h3><p class="statement hist">' + esc(L.statement(ins)) + "</p>" +
         (L.boundaryText(S, ins) ? "<p>Boundary: " + esc(L.boundaryText(S, ins)) + "</p>" : "") + "<p>Falsifier: " + esc(ins.falsifier || "Hard to test") + "</p>" + basisBlock(ins) +
+        // @ts-expect-error a transition in the history has a signature
         (t ? kdc(L.signature(S, t.id), false, "Transition into " + L.label(S, ins)) + (t.note ? "<p><b>Why.</b> " + esc(t.note) + "</p>" : "") : "") +
         '<ul class="list">' + L.itemsOf(S, ins).map((i) => itemRow(i, true)).join("") + "</ul>" + btn("close-inspect", "Back to the current orientation") + "</div>";
     }
     return '<section id="lineage" class="region" data-stage="observe" aria-labelledby="h-lineage"><h2 id="h-lineage">Lineage <span class="tag">append-only</span></h2>' +
       '<ol class="tree">' + rows.map((r) => {
         const o = orient(r.id);
+        // @ts-expect-error every lineage row is an orientation
         return '<li class="st-' + r.status + '" id="or-' + r.id + '" style="padding-left:' + r.depth * 1.25 + 'rem"><span class="lab">' + (r.depth ? "└ " : "") + r.label + '</span><span class="tag ' + (r.status === "adopted" ? "blue" : r.status === "rejected" ? "" : "") + '">' + r.status + '</span><span class="gist">' + esc(o.inside || "untitled") + "</span>" + btn("inspect", "Inspect", { class: "small", "data-id": r.id }) + "</li>";
       }).join("") + "</ol>" + detail +
+      // @ts-expect-error the last transition has a signature
       (last && !ins ? "<h3>" + L.signature(S, last.id).from + " → " + L.signature(S, last.id).to + "</h3>" + kdc(L.signature(S, last.id), view.animate === last.id, "Latest transition") + (last.note ? "<p><b>Why.</b> " + esc(last.note) + "</p>" : "") : "") +
       (!last ? empty("When an orientation changes, what was kept, destroyed and created appears here.") : "") + "</section>";
   }
@@ -411,6 +494,7 @@
     return '<section id="examples" class="region" data-stage="reality" aria-labelledby="h-examples"><h2 id="h-examples">Examples</h2><ul class="cards">' +
       D.examples.map((e) => '<li id="ex-' + e.id + '"><b>' + esc(e.title) + "</b><p>" + esc(e.purpose) + '</p><p class="prov">' + esc(D.provenance[e.provenance].label) + ": " + esc(e.note) + "</p>" + btn("example", "Load this worked example", { class: "small", "data-id": e.id }) + "</li>").join("") + "</ul>" +
       '<h3>Short cards</h3><p class="hint">Applications and interpretations from Yu Jie Teo\'s OODA notes, not quotations from Boyd.</p><ul class="cards">' +
+      // @ts-expect-error every card names an operation in the data
       D.cards.map((c) => '<li id="card-' + c.id + '"><b>' + esc(c.title) + "</b><p>" + esc(c.lesson) + "</p><p>" + esc(c.text) + '</p><p class="prov">Suggested operation: ' + esc(OPS.get(c.op).label) + "</p>" + btn("card", "Start from this card", { class: "small", "data-id": c.id }) + "</li>").join("") + "</ul></section>";
   }
 
@@ -420,6 +504,7 @@
       '<div class="row"><button type="submit" class="primary">Start blank</button>' + btn("example", "Try an example", { "data-id": "stalled-project" }) + btn("how", "How this works", { class: "link" }) + "</div></form></section>" + examplesBlock();
   }
 
+  /** @param {string} [stage] */
   function stageNav(stage) {
     const i = STAGES.indexOf(S.uiPreferences.stage);
     return '<nav class="stagenav" aria-label="Stage">' + (i > 0 ? btn("prev", "← " + esc(D.stages[i - 1].label)) : "<span></span>") + (i < STAGES.length - 1 ? btn("next", esc(D.stages[i + 1].label) + " →", { class: "primary" }) : "") + "</nav>";
@@ -431,6 +516,7 @@
       (ws && ["destroy", "create", "compare"].includes(s.id) ? ' class="ws"' : "") + ">" + esc(s.label) + "</button></li>").join("") + "</ol></nav>";
   }
 
+  /** @param {boolean} full */
   function toolbar(full) {
     return '<div class="bar" role="toolbar" aria-label="Planner">' + '<button type="button" class="search" data-act="palette" data-k="palette:" aria-keyshortcuts="Control+K Meta+K"><span>Search or run a command</span><kbd>' + MOD + " K</kbd></button>" +
       (full ? btn("new", "New") + btn("export", "Export JSON") : "") + btn("import", "Import JSON") + (full ? btn("copy-md", "Copy Markdown") + btn("reset", "Reset", { class: "danger" }) : "") + (full ?
@@ -442,6 +528,7 @@
   /* ---------- render ---------- */
   function render() {
     const a = document.activeElement;
+    // @ts-expect-error activeElement is an HTML element here
     const key = a && app.contains && app.contains(a) ? a.id || (a.dataset && a.dataset.k) : null;
     const y = window.scrollY;
     const started = S.orientations.length > 0;
@@ -466,11 +553,16 @@
   }
 
   /* ---------- forms ---------- */
+  /** A form control's value by name; for a group of radios, the checked one's. @param {any} form a page form, read by control name @param {string} name @returns {string} */
   const val = (form, name) => { const el = form.elements[name]; return el ? (el.length !== undefined && !el.tagName ? [...el].filter((x) => x.checked).map((x) => x.value).join("") : el.value) : ""; };
+  /** @param {any} form a page form @param {string} name @returns {string[]} */
   const checked = (form, name) => [...form.querySelectorAll('input[name="' + name + '"]:checked')].map((x) => x.value);
+  /** @param {any} form a page form @param {string} name @returns {string} */
   const radio = (form, name) => { const x = form.querySelector('input[name="' + name + '"]:checked'); return x ? x.value : ""; };
+  /** @param {string} name */
   const done = (name) => { delete view.draft[name]; };
 
+  /** @param {any} form the submitted page form, read by control name */
   function submit(form) {
     const kind = form.dataset.form, id = form.dataset.id;
     if (kind === "start") {
@@ -486,10 +578,14 @@
       const cmd = kind === "withdraw" ? { do: "withdraw", id, reason: val(form, "reason") } : { do: "resolve", id, status: kind === "dismiss" ? "dismissed" : "resolved", reason: val(form, "reason") };
       if (commit(cmd, kind === "withdraw" ? "Item withdrawn; it stays in history" : "Contradiction " + (kind === "dismiss" ? "dismissed" : "resolved"), { at: kind })) { view.edit = null; done(kind); render(); }
     } else if (kind === "mv") {
+      // @ts-expect-error the move form is submitted only while an operation is chosen
       const op = OPS.get(view.op);
+      // @ts-expect-error as above
       const targets = op.multi ? checked(form, "targets") : form.elements.target ? [val(form, "target")] : [];
+      // @ts-expect-error as above
       if (commit({ do: "move", op: op.id, targets, challenge: val(form, "challenge"), replacement: { type: val(form, "rtype"), text: val(form, "replacement") } }, "Move recorded: replacement added as a fragment")) { view.op = null; done("mv"); render(); }
     } else if (kind === "cand") {
+      /** @type {Command} */
       const c = { do: "candidate", from: checked(form, "from"), boundary: val(form, "boundary"), prompt: draft("cand", "prompt", ""), tags: {} };
       for (const f of ["inside", "matters", "explains", "fails", "keyAssumption", "observe", "move", "mechanism", "falsifier"]) c[f] = val(form, f);
       for (const d of D.dimensions.filter((x) => x.tags)) c.tags[d.id] = val(form, d.id);
@@ -498,10 +594,13 @@
       if (oid) { done("cand"); view.flash = "or-" + oid; render(); }
     } else if (kind === "adopt") {
       const f = "adopt-" + id;
+      // @ts-expect-error the adopt form names an open candidate
       if (val(form, "falsifier") !== (orient(id).falsifier || "") && !commit({ do: "orient", id, falsifier: val(form, "falsifier") }, null, { at: "adopt" })) return;
       const o = orient(id);
+      // @ts-expect-error as above
       const ev = o.items.filter((i) => { const it = item(i); return it && (it.ledger === "observed"); });
       const prev = L.current(S);
+      // @ts-expect-error a reorientation is open, so an orientation is adopted
       if (commit({ do: "adopt", id, note: val(form, "note"), evidence: ev }, L.label(S, o) + " adopted provisionally; " + L.label(S, prev) + " stays in the lineage")) {
         done(f); view.animate = S.history.filter((h) => h.kind === "transition").slice(-1)[0].id; render(); go("act");
       }
@@ -513,31 +612,40 @@
       if (ok) done("act");
       return !!ok;
     } else if (kind === "out") {
+      // @ts-expect-error the outcome form is drawn only for a started action
       const a = S.actions.find((x) => x.status === "started"), o = orient(a.orientation);
       const weak = [], strong = [];
       for (const i of L.itemsOf(S, o)) { const v = form.elements["as-" + i.id] && form.elements["as-" + i.id].value; if (v === "weaker") weak.push(i.id); if (v === "stronger") strong.push(i.id); }
+      // @ts-expect-error as above
       const c = { do: "outcome", action: a.id, observed: val(form, "observed"), surprise: val(form, "surprise"), absent: val(form, "absent"), changedEnvironment: radio(form, "changed"),
         effect: radio(form, "effect"), attribution: val(form, "attribution"), weakened: weak, strengthened: strong, betterFit: val(form, "fit"), reorient: val(form, "reorient"), interpretation: val(form, "interpretation"),
+        // @ts-expect-error as above
         predictions: a.prediction ? [{ id: a.prediction, status: radio(form, "pstatus") || "unresolved" }] : [] };
       if (commit(c, "Outcome recorded. Back to orientation: do you have a reason to reorient?")) { done("out"); go("model"); }
     } else if (kind === "pred") {
       commit({ do: "editPrediction", id, text: val(form, "text") }, "Prediction updated", { at: "editPrediction" });
     }
   }
+  /** @param {string} id */
   function focusFirst(id) { const el = $(id); if (el) el.focus(); }
 
   /* ---------- navigation ---------- */
+  /** @param {string} stage @param {string} [anchor] */
   function go(stage, anchor) {
     if (S.orientations.length && stage !== S.uiPreferences.stage) commit({ do: "stage", stage });
     const el = $(anchor || { reality: "reality", model: "orient", destroy: S.workspace ? "destroy" : "test", create: S.workspace ? "create" : "orient", compare: S.workspace ? "compare" : "orient", act: "act", observe: "observe" }[stage]);
     if (el && el.scrollIntoView) el.scrollIntoView({ block: "start" });
   }
+  /** @param {number} d */
   function step(d) { const i = STAGES.indexOf(S.uiPreferences.stage) + d; if (i >= 0 && i < STAGES.length) { go(STAGES[i]); announce("Stage: " + D.stages[i].label); } }
 
+  /** @param {string} id */
   function loadExample(id) {
     const e = D.examples.find((x) => x.id === id);
+    // @ts-expect-error every example id the page offers is in the data
     confirmReplace(() => { S = L.replay(e).state; S = L.apply(S, { do: "stage", stage: "model" }).state; persist(); view.inspect = null; render(); announce("Loaded the worked example: " + e.title); go("model"); });
   }
+  /** @param {() => void} then */
   function confirmReplace(then) {
     if (!S.orientations.length) { then(); return; }
     dialog("Replace this situation?", '<p>This replaces the current situation in this browser. Export JSON first if you want to keep it.</p><div class="row"><button type="button" class="primary" id="dlg-yes">Replace it</button><button type="button" id="dlg-no">Cancel</button></div>', (d) => {
@@ -546,17 +654,19 @@
     });
   }
 
-  app.addEventListener("submit", (e) => { e.preventDefault(); submit(e.target); });
-  app.addEventListener("input", (e) => {
+  app.addEventListener("submit", (/** @type {Event & { target: any }} delegated: the target is whichever control fired */ e) => { e.preventDefault(); submit(e.target); });
+  app.addEventListener("input", (/** @type {Event & { target: any }} delegated: the target is whichever control fired */ e) => {
     const f = e.target.form, n = e.target.name;
     if (f && f.dataset.form && n && e.target.type !== "checkbox") (view.draft[f.dataset.form] = view.draft[f.dataset.form] || {})[n] = e.target.value;
   });
-  app.addEventListener("change", (e) => {
+  app.addEventListener("change", (/** @type {Event & { target: any }} delegated: the target is whichever control fired */ e) => {
     const t = e.target, act = t.dataset.act, id = t.dataset.id;
     if (t.dataset.field) {
+      /** @type {Command} */
       const c = { do: "orient", id: t.dataset.oid };
       c[t.dataset.field] = t.value;
       const r = commit(c, null, { soft: true, at: "orient" });
+      // @ts-expect-error the field belongs to an existing orientation
       if (r) for (const el of app.querySelectorAll('[data-statement="' + t.dataset.oid + '"]')) el.textContent = L.statement(orient(t.dataset.oid));
       return;
     }
@@ -565,7 +675,9 @@
     else if (act === "confidence") commit({ do: "edit", id, confidence: t.value }, "Confidence updated");
     else if (act === "tested") commit({ do: "edit", id, tested: t.checked }, t.checked ? "Constraint marked tested as fixed" : "Constraint marked untested");
     else if (act === "uses") {
+      // @ts-expect-error as above
       const o = orient(t.dataset.oid), items = t.checked ? o.items.concat([id]) : o.items.filter((x) => x !== id);
+      // @ts-expect-error as above
       commit({ do: "orient", id: o.id, items, boundary: items.includes(o.boundary) ? o.boundary : "" }, null, { at: "orient" });
     } else if (act === "tempo") commit({ do: "tempo", value: t.value }, "Tempo " + t.value + (t.value === "high" ? ": prompts compressed. Faster is not better if the model is wrong." : ""));
     else if (act === "mode") commit({ do: "mode", value: t.value }, "Situation mode changed");
@@ -577,10 +689,11 @@
       render();
     } else if (t.form && t.form.dataset.form === "cand" && t.name === "from") view.draft.cand = Object.assign(view.draft.cand || {}, { from: checked(t.form, "from") });
   });
-  app.addEventListener("click", (e) => {
+  app.addEventListener("click", (/** @type {Event & { target: any }} delegated: the target is whichever control fired */ e) => {
     const b = e.target.closest && e.target.closest("[data-act]");
     if (!b || b.tagName !== "BUTTON") return;
     const act = b.dataset.act, id = b.dataset.id;
+    /** @type {Record<string, () => unknown>} */
     const H = {
       palette: () => openPalette(b), new: () => run("new"), export: () => run("export"), import: () => run("import"), "copy-md": () => run("copy-markdown"), reset: () => run("reset"), how: () => run("how"),
       stage: () => go(id), prev: () => step(-1), next: () => step(1),
@@ -596,26 +709,31 @@
       deep: () => { if (commit({ do: "reorient", deep: true }, "Deep reset: intent, boundaries, actors, categories, causal claims and constraints can all be destroyed")) go("destroy"); },
       wsmode: () => commit({ do: "wsmode", mode: id }, "Destruction mode: " + id),
       jolt: () => commit({ do: "jolt" }, "Another jolt"),
+      // @ts-expect-error every operation id the page offers is in the data
       op: () => { view.op = id; view.draft.mv = {}; view.error = null; render(); focusFirst(OPS.get(id).targets.length ? (OPS.get(id).multi ? "" : "mv-target") : "mv-replacement"); const f = $("op-form"); if (f) f.scrollIntoView({ block: "nearest" }); },
       "cancel-op": () => { view.op = null; render(); },
       unmove: () => commit({ do: "unmove", id }, "Move undone; its replacement is withdrawn"),
+      // @ts-expect-error every prompt id the page offers is current
       "use-prompt": () => { const p = L.creationPrompts(S).find((x) => x.id === id); view.draft.cand = Object.assign(view.draft.cand || {}, { from: p.from, prompt: p.id }); render(); focusFirst("cand-inside"); },
       drop: () => commit({ do: "drop", id }, "Candidate dropped; it stays in the lineage"),
       retain: () => { if (commit({ do: "retain" }, "Current orientation retained")) go("act"); },
       "all-dims": () => { view.allDims = !view.allDims; render(); },
       "more-q": () => { view.moreQ = true; render(); },
+      // @ts-expect-error the start button is drawn inside its action form, for the current action
       start: () => { const f = b.form; if (f && submit(f) && commit({ do: "start", id: L.currentAction(S).id }, "Action started. The prediction is frozen.")) go("observe"); },
       "goto-observe": () => go("observe"),
       inspect: () => { view.inspect = id; render(); const el = $("inspect"); if (el) { el.scrollIntoView({ block: "start" }); el.setAttribute("tabindex", "-1"); el.focus({ preventScroll: true }); } announce("Inspecting " + L.labelOf(S, id) + "; the current orientation is unchanged"); },
       "close-inspect": () => { view.inspect = null; render(); },
       example: () => loadExample(id),
+      // @ts-expect-error every card id the page offers is in the data
       card: () => { const c = D.cards.find((x) => x.id === id); confirmReplace(() => { S = L.apply(L.blank(), { do: "new", title: c.seed, description: c.text + " (From the card “" + c.title + "”, an application from Yu Jie Teo's OODA notes.)" }).state; persist(); render(); announce("Started from the card " + c.title); }); },
     };
     if (H[act]) { e.preventDefault(); H[act](); }
   });
 
   /* ---------- dialogs ---------- */
-  let invoker = null;
+  let /** @type {any} the element that had focus before a dialog, refocused if still there */ invoker = null;
+  /** @param {string} title @param {string} html @param {(d: any) => void} [ready] the dialog, a page <dialog> */
   function dialog(title, html, ready) {
     const d = $("dlg");
     if (!d.open) invoker = document.activeElement;
@@ -626,10 +744,12 @@
     const f = d.querySelector("textarea,input,button:not(#dlg-close)");
     if (f) f.focus();
   }
+  // @ts-expect-error the fallback is the toolbar's search button
   function restoreFocus() { if (invoker && invoker.isConnected && invoker.focus) invoker.focus(); else { const s = document.querySelector(".bar .search"); if (s) s.focus(); } }
   $("dlg").addEventListener("close", restoreFocus);
   $("dlg-close").addEventListener("click", () => $("dlg").close());
 
+  /** @param {string} title @param {string} text @param {string} note @param {string} [filename] */
   function textDialog(title, text, note, filename) {
     dialog(title, "<p>" + note + '</p><label for="dlg-text">Text</label><textarea id="dlg-text" readonly>' + esc(text) + '</textarea><div class="row">' + (filename ? '<button type="button" class="primary" id="dlg-dl">Download file</button>' : "") + '<button type="button" id="dlg-copy">Copy</button><span id="dlg-msg" class="hint" role="status"></span></div>', () => {
       const ta = $("dlg-text");
@@ -638,6 +758,7 @@
       $("dlg-copy").addEventListener("click", async () => { $("dlg-msg").textContent = (await copy(text)) ? "Copied." : "Copying was blocked: the text is selected; copy it with " + MOD + " C."; ta.focus(); ta.select(); });
     });
   }
+  /** @param {string} name @param {string} text @param {string} [type] */
   function download(name, text, type) {
     const url = URL.createObjectURL(new Blob([text], { type: type || "text/markdown" }));
     const a = document.createElement("a");
@@ -645,9 +766,12 @@
     document.body.append(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
+  /** @param {string} text */
   async function copy(text) { try { await navigator.clipboard.writeText(text); return true; } catch (e) { return false; } }
 
+  /** @param {string} cmd */
   function run(cmd) {
+    /** @type {Record<string, () => unknown>} */
     const C = {
       "add-signal": () => addOf("signal"), "add-assumption": () => addOf("assumption"), "add-contradiction": () => addOf("contradiction"),
       reorient: () => { if (needSit() && commit({ do: "reorient", deep: false }, "Reorientation started")) go("destroy"); },
@@ -662,8 +786,8 @@
       export: () => textDialog("Export JSON", L.exportJSON(S), "The lossless archive of this situation (schema version " + L.SCHEMA + "). Download it, or copy the text.", "orient-situation.json"),
       "copy-markdown": async () => { const md = L.markdown(S); if (await copy(md)) announce("Markdown copied"); else textDialog("Copy Markdown", md, "Copying was blocked. Select the text below and copy it."); },
       import: () => dialog("Import JSON", '<p>Choose an exported file or paste its text. Your current situation is replaced only if the file is valid.</p><label for="imp-file">File</label><input type="file" id="imp-file" accept="application/json,.json"><label for="imp-text">Or paste JSON</label><textarea id="imp-text"></textarea><p id="imp-msg" class="err" role="alert"></p><div class="row"><button type="button" class="primary" id="imp-go">Import</button></div>', (d) => {
-        const go_ = (text) => { const r = L.importText(text); if (!r.ok) { $("imp-msg").textContent = r.message; return; } S = r.state; persist(); view.inspect = null; d.close(); render(); announce(r.migrated ? "Imported and migrated from an older version" : "Situation imported"); };
-        $("imp-file").addEventListener("change", (e) => { const f = e.target.files[0]; if (!f) return; const rd = new FileReader(); rd.onload = () => go_(rd.result); rd.onerror = () => { $("imp-msg").textContent = L.MSG.invalid; }; rd.readAsText(f); });
+        const go_ = (/** @type {unknown} */ text) => { const r = L.importText(text); if (!r.ok) { $("imp-msg").textContent = r.message; return; } S = r.state; persist(); view.inspect = null; d.close(); render(); announce(r.migrated ? "Imported and migrated from an older version" : "Situation imported"); };
+        $("imp-file").addEventListener("change", (/** @type {Event & { target: HTMLInputElement & { files: FileList } }} */ e) => { const f = e.target.files[0]; if (!f) return; const rd = new FileReader(); rd.onload = () => go_(rd.result); rd.onerror = () => { $("imp-msg").textContent = L.MSG.invalid; }; rd.readAsText(f); });
         $("imp-go").addEventListener("click", () => go_($("imp-text").value));
       }),
       how: () => dialog("How this works", $("how-src").innerHTML),
@@ -671,11 +795,13 @@
     if (C[cmd]) C[cmd]();
   }
   function needSit() { if (!S.orientations.length) { announce("Start a situation first."); focusFirst("start-title"); return false; } return true; }
+  /** @param {string} type */
   function addOf(type) { if (!needSit()) return; view.draft.add = { type }; go("reality"); render(); focusFirst("add-text"); }
 
   /* ---------- palette ---------- */
   const pal = $("palette"), pin = $("pal-input"), plist = $("pal-list");
-  let results = [], sel = 0, palInvoker = null;
+  let /** @type {ReturnType<typeof OrientLogic.search>["results"]} */ results = [], sel = 0, /** @type {any} */ palInvoker = null;
+  /** @param {Element | null} [from] */
   function openPalette(from) {
     palInvoker = from || document.activeElement;
     pin.value = "";
@@ -696,11 +822,14 @@
     const li = $("pal-" + sel);
     if (li && li.scrollIntoView) li.scrollIntoView({ block: "nearest" });
   }
+  /** @param {number} i */
   function choose(i) {
     const r = results[i];
     if (!r) return;
     pal.close();
     if (r.kind === "command") { run(r.id); return; }
+    /** @type {{ stage: string, id: string | null, inspect: string | null }} */
+    // @ts-expect-error every record the palette lists has a target
     const nav = L.navigate(S, r);
     if (nav.stage === "example") { const el = $(r.id.replace(/^ex-/, "ex-")); if (!S.orientations.length || el) { view.flash = r.id; render(); } return; }
     if (nav.stage === "method") { const t = $(nav.id); if (t) { const det = t.closest("details"); if (det) det.open = true; t.classList.add("flash"); t.scrollIntoView({ block: "center" }); t.setAttribute("tabindex", "-1"); t.focus(); } return; }
@@ -711,14 +840,14 @@
     render();
   }
   pin.addEventListener("input", draw);
-  pin.addEventListener("keydown", (e) => {
+  pin.addEventListener("keydown", (/** @type {KeyboardEvent} */ e) => {
     if (e.key === "ArrowDown") { e.preventDefault(); sel = Math.min(results.length - 1, sel + 1); mark(); }
     else if (e.key === "ArrowUp") { e.preventDefault(); sel = Math.max(0, sel - 1); mark(); }
     else if (e.key === "Home") { e.preventDefault(); sel = 0; mark(); }
     else if (e.key === "End") { e.preventDefault(); sel = results.length - 1; mark(); }
     else if (e.key === "Enter") { e.preventDefault(); choose(sel); }
   });
-  plist.addEventListener("click", (e) => { const li = e.target.closest && e.target.closest("li"); if (li) choose(Number(li.id.slice(4))); });
+  plist.addEventListener("click", (/** @type {Event & { target: any }} delegated */ e) => { const li = e.target.closest && e.target.closest("li"); if (li) choose(Number(li.id.slice(4))); });
   pal.addEventListener("close", () => { if (!view.flash && palInvoker && palInvoker.isConnected && palInvoker.focus && !pal.dataset.keep) palInvoker.focus(); });
   $("pal-close").addEventListener("click", () => pal.close());
 
@@ -726,6 +855,7 @@
   document.addEventListener("keydown", (e) => {
     const k = e.key, mod = e.ctrlKey || e.metaKey;
     if (mod && !e.altKey && !e.shiftKey && (k === "k" || k === "K")) { e.preventDefault(); if (pal.open) pal.close(); else openPalette(document.activeElement); return; }
+    // @ts-expect-error a key event's target is an element
     const t = e.target, typing = t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
     if (typing || pal.open || $("dlg").open || !S.orientations.length) return;
     if (mod && k === "Enter") { e.preventDefault(); step(1); }
@@ -755,7 +885,9 @@
   $("copy-beamdswitch").addEventListener("click", async () => { const t = deckText(); if (await copy(t)) status.textContent = "Copied the deck."; else textDialog("Copy deck", t, "Copying was blocked. Select the text below and copy it."); });
 
   /* ---------- read-only tools for agents ---------- */
-  const result = (x) => ({ content: [{ type: "text", text: JSON.stringify(x) }] });
+  const result = (/** @type {unknown} */ x) => ({ content: [{ type: "text", text: JSON.stringify(x) }] });
+  /** @type {ModelContext | undefined} */
+  // @ts-expect-error false when there is no document, which the ?. calls skip
   const mc = (typeof document !== "undefined" && document.modelContext) || (typeof navigator !== "undefined" && navigator.modelContext);
   mc?.registerTool({ name: "get_data", description: "Return the planner's built-in material: destruction operations, worked examples, cards and methodology.", inputSchema: { type: "object", properties: {}, additionalProperties: false }, annotations: { readOnlyHint: true }, async execute() { return result({ operations: D.operations, examples: D.examples.map((e) => ({ id: e.id, title: e.title, purpose: e.purpose })), cards: D.cards, methodology: D.methodology, truncated: false }); } });
   mc?.registerTool({ name: "get_metadata", description: "Return the title, sources and provenance classes.", inputSchema: { type: "object", properties: {}, additionalProperties: false }, annotations: { readOnlyHint: true }, async execute() { return result({ title: document.title, sources: D.sources, provenance: D.provenance, schemaVersion: L.SCHEMA, truncated: false }); } });

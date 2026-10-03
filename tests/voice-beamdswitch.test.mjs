@@ -10,7 +10,7 @@ const EXPORTING = [
   "fpl-expected-goals", "graduate-employment-survey", "haze-singapore", "manchester-city-finances", "marvell", "multi-armed-bandit", "ooda-orientation", "panw",
   "singapore-covid-governance-hindsight", "social-values-surveydata", "tourist-attractions",
 ];
-const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
+const read = (/** @type {string} */ path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 const pages = readdirSync(new URL("../viz/", import.meta.url), { withFileTypes: true })
   .filter((d) => d.isDirectory() && readdirSync(new URL(`../viz/${d.name}/`, import.meta.url)).includes("index.html"))
   .map((d) => d.name)

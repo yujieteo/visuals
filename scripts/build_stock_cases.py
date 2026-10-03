@@ -6,6 +6,7 @@ from html import escape
 from pathlib import Path
 
 from gallery import write_gallery
+from page_parts import strip_types
 from style_guide import THEME_SCRIPT, root_css
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -94,7 +95,7 @@ def render(slug, case, raw, rows, fetched):
     case_json = json.dumps(deck_case(case, raw, rows, fetched), separators=(",", ":"), ensure_ascii=False).replace("</", "<\\/")
     source = SEC.format(cik=case["cik"])
     template = (ROOT / "viz" / slug / "beamdswitch.js").read_text()
-    report_js = REPORT_JS.read_text()
+    report_js = strip_types(REPORT_JS.read_text())
     return f'''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="{escape(case['headline'])}"><title>{escape(case['title'])}</title>{THEME_SCRIPT}<style>
 {root_css(TOKENS)}*{{box-sizing:border-box}}body{{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 var(--sans);letter-spacing:-.011em;-webkit-font-smoothing:antialiased}}main,footer{{width:min(72rem,calc(100% - 2rem));margin:auto}}main{{padding:clamp(1.25rem,5vw,3rem) 0 1.5rem}}h1{{max-width:20ch;margin:.35rem 0 .8rem;font-size:clamp(2rem,6vw,3.25rem);font-weight:700;line-height:1.04;letter-spacing:-.045em}}p{{max-width:76ch}}.muted,footer{{color:var(--muted)}}.chart{{border-top:1px solid var(--border);margin-top:2rem;padding-top:1rem}}button{{border:1px solid var(--control);border-radius:999px;background:var(--bg);padding:.25rem .8rem;min-height:2.25rem;color:var(--fg);font:inherit;font-size:.875rem;cursor:pointer}}button:hover{{background:var(--surface)}}button:focus-visible{{outline:2px solid var(--focus);outline-offset:2px}}button[aria-pressed=true]{{border-color:var(--fg);background:var(--fg);color:var(--bg)}}svg{{display:block;width:100%;height:auto;margin-top:.8rem}}.grid{{stroke:var(--grid)}}.bar{{fill:var(--c1)}}.axis{{fill:var(--muted);font:14px var(--mono);font-variant-numeric:tabular-nums}}.value{{fill:var(--fg);font:600 14px var(--mono);font-variant-numeric:tabular-nums}}.contexts{{display:grid;grid-template-columns:repeat(auto-fit,minmax(16rem,1fr));gap:1rem;margin-top:2rem}}.contexts article{{border-top:1px solid var(--border)}}.contexts h2{{font-size:1.125rem;font-weight:600;letter-spacing:-.015em}}footer{{padding:1.5rem 0 3rem;border-top:1px solid var(--border);font-size:.875rem}}a{{color:inherit}}@media(max-width:600px){{button{{min-height:2.75rem;padding:.25rem .9rem}}footer a{{display:inline-block;padding:.7rem 0}}}}.deck-row{{display:flex;flex-wrap:wrap;gap:.35rem .5rem;align-items:center;margin:1rem 0 0}}.deck-hint{{margin:.4rem 0 0;font-size:.875rem}}
 </style></head><body><main><h1>{escape(case['headline'])}</h1><p class="muted">Audited annual revenue and operating cash flow from SEC Company Facts. Select a measure. This is descriptive information, not investment advice.</p><div class="deck-row"><button type="button" id="save-beamdswitch" title="Save a narrated Markdown talk about these figures, to open in beamdswitch">beamdswitch</button> <button type="button" id="copy-beamdswitch" title="Copy the narrated Markdown talk, to paste into beamdswitch">Copy deck</button> <span id="deck-status" class="muted" role="status"></span></div><p class="muted deck-hint">{DECK_HINT}</p><section class="chart" aria-label="Annual fundamentals chart"><div><button type="button" data-metric="revenue" aria-pressed="true">Revenue</button> <button type="button" data-metric="cash_margin" aria-pressed="false">Operating cash margin</button></div><svg id="chart" viewBox="0 0 960 380" role="img"><title>Annual revenue or operating cash-flow margin</title><desc>Choose revenue or operating cash margin.</desc></svg></section><section class="contexts" aria-label="Company context"><article><h2>Competitors</h2><p>{escape(case['competitors'])}</p></article><article><h2>Macro</h2><p>{escape(case['macro'])}</p></article><article><h2>SWOT</h2><p>{escape(case['swot'])}</p></article></section></main><footer>Source: <a href="{source}">SEC Company Facts for {escape(raw['entityName'])}</a>. Fetched {fetched}. Fiscal years end on the dates in the source data.</footer><script id="beamdswitch">
@@ -128,7 +129,7 @@ def verify():
         html = (ROOT / "viz" / slug / "index.html").read_text()
         assert html.count("<h1>") == 1 and html.count("<svg") == 1 and html.count("<script") == 4 and THEME_SCRIPT in html
         assert f'<script id="beamdswitch">\n{(ROOT / "viz" / slug / "beamdswitch.js").read_text()}</script>' in html
-        assert f'<script id="report">\n{REPORT_JS.read_text()}</script>' in html
+        assert f'<script id="report">\n{strip_types(REPORT_JS.read_text())}</script>' in html
         assert 'id="save-beamdswitch"' in html and 'id="copy-beamdswitch"' in html
         assert html == render(slug, case, raw, rows, json.loads((ROOT / "data" / slug / "meta.json").read_text())["fetched"])
         assert "<script src=" not in html and "toon(" not in html and html.count("mc?.registerTool") == 3 and html.count("readOnlyHint:true") == 3
