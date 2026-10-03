@@ -10,10 +10,10 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parents[1] / "scripts"))
 import refresh_kit  # noqa: E402
 import stock_cases  # noqa: E402
-from build import CASE  # noqa: E402
 
 
 def refresh(source, folder, args):
+    from build import CASE  # here, so an import error is a TOON failed report
     return stock_cases.refresh(source, folder, CASE)
 
 
