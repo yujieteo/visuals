@@ -4,4 +4,4 @@
 
 The page stays under 150,000 bytes; `--verify` checks it. Randomness comes only from the seeded xoshiro128** generator, whose state is saved: never use `Math.random`. The hours plan uses no randomness; its chances are computed by quadrature. Experiments and hours plans are stored only in `localStorage`, under separate keys (`multi-armed-bandit:v1`, `multi-armed-bandit:hours:v1`).
 
-Its tests are in `tests/`, imported with their history from [yujieteo/multi-armed-bandit](https://github.com/yujieteo/multi-armed-bandit); `tests/multi-armed-bandit-page.test.mjs` drives the page in headless Chrome. Rules for every visual: [SKILLS.md](../../SKILLS.md).
+Its tests are in `tests/`, imported with their history from [yujieteo/multi-armed-bandit](https://github.com/yujieteo/multi-armed-bandit); `tests/multi-armed-bandit-page.test.mjs` drives the page in headless Chrome, only in CI: `visual.json` runs the tests through `scripts/with_chrome.py`, and the test skips without `MULTI_ARMED_BANDIT_BROWSER_URL`. Rules for every visual: [SKILLS.md](../../SKILLS.md).

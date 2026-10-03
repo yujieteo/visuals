@@ -24,6 +24,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 REPO = ROOT.parents[1]
 sys.path.insert(0, str(REPO / "scripts"))
+from page_parts import compact  # noqa: E402
 from style_guide import THEME_SCRIPT, root_css  # noqa: E402
 
 SLUG = "multi-armed-bandit"
@@ -128,16 +129,6 @@ def check_contrast(tokens):
             assert ratio >= minimum, f"{mode}: {fg} on {bg} is {ratio:.2f}, below {minimum}"
             rows.append((mode, fg, bg, round(ratio, 2)))
     return rows
-
-
-def compact(js):
-    """Drops whole-line comments, blank lines and indentation. The sources use no template literals or
-    line continuations, so every statement is unchanged; tests run the compacted code the page ships."""
-    out = re.sub(r"^[ \t]*/\*[\s\S]*?\*/[ \t]*\n", "", js, flags=re.M)
-    lines = [ln.strip() for ln in out.split("\n")]
-    out = "\n".join(ln for ln in lines if ln and not ln.startswith("//"))
-    assert "`" not in out and not re.search(r"\\$", out, re.M), "compact() cannot handle template literals or continuations"
-    return out
 
 
 def css(tokens):

@@ -3,19 +3,31 @@
  * is stored under its own key, apart from the experiment. */
 (function () {
   "use strict";
-  const H = HoursLogic, D = JSON.parse(document.getElementById("mab-data").textContent);
+  /**
+   * @typedef {import("./hours-logic.js").State} State
+   * @typedef {import("./multi-armed-bandit-logic.js").PageData} PageData
+   * @typedef {ReturnType<typeof HoursLogic.view>} View
+   * @typedef {{ name: HTMLInputElement, nameErr: HTMLParagraphElement, w: HTMLInputElement, wErr: HTMLParagraphElement, x: HTMLInputElement,
+   *   xErr: HTMLParagraphElement, n: HTMLTableCellElement, mean: HTMLTableCellElement, ci: HTMLTableCellElement, pb: HTMLTableCellElement,
+   *   ts: HTMLTableCellElement, ucb: HTMLTableCellElement, rm: HTMLButtonElement, tr: HTMLTableRowElement }} RowCells
+   */
+  // @ts-expect-error the generated page always holds its #mab-data block
+  const H = HoursLogic, /** @type {PageData} */ D = JSON.parse(document.getElementById("mab-data").textContent);
   const KEY = "multi-armed-bandit:hours:v1", FILE = "multi-armed-bandit-hours";
   const { $, el, svg, say, isoToday, openStore, download } = BanditPage;
 
   /* ---- State and storage ---- */
   const { store, saved } = openStore(KEY);
-  let S, saveTimer = 0, viewOf = null, viewMemo = null, visible = false;
+  let /** @type {State} */ S, /** @type {ReturnType<typeof setTimeout> | number} */ saveTimer = 0, /** @type {State | null} */ viewOf = null, /** @type {View | null} */ viewMemo = null, visible = false;
+  /** @returns {View} */
+  // @ts-expect-error viewMemo is set whenever viewOf is
   const view = () => (viewOf === S ? viewMemo : (viewMemo = H.view(viewOf = S)));
   function boot() {
     let msg = store ? "" : "Autosave is unavailable in this browser context; use Export JSON to keep your plan.";
     if (saved) {
       const r = H.parse(saved);
       if (r.error) msg = "Saved plan could not be restored (" + r.error + "); started a blank plan.";
+      // @ts-expect-error a parse without an error has a state
       else { S = r.state; msg = "Restored your autosaved plan."; }
     }
     if (!S) { S = H.blank(D); save(); }
@@ -30,12 +42,14 @@
     }, 300);
   }
   const edited = () => ![H.fromExample(D), H.blank(D)].some((x) => H.serialise(x) === H.serialise(S));
+  /** @param {State} next @param {boolean} [force] */
   function commit(next, force) {
     S = next;
     render(force);
     save();
   }
-  let pending = null;
+  let /** @type {{ yes: () => void, back?: HTMLElement } | null} */ pending = null;
+  /** @param {string} text @param {() => void} yes @param {HTMLElement} [back] */
   function ask(text, yes, back) {
     if (!edited()) return yes();
     pending = { yes, back };
@@ -43,6 +57,7 @@
     $("h-confirm").hidden = false;
     $("h-confirm-yes").focus();
   }
+  /** @param {boolean} ok */
   function settle(ok) {
     const p = pending;
     pending = null;
@@ -52,19 +67,26 @@
   }
 
   /* ---- Rendering ---- */
+  /** @type {Map<string, RowCells>} */
   const rowEls = new Map();
   let rowIds = "";
   const active = () => document.activeElement;
+  /** @param {string} id */
   const idx = (id) => S.activities.findIndex((a) => a.id === id);
+  /** @param {string} id @returns {string | undefined} */
   const nameOf = (id) => (S.activities.find((a) => a.id === id) || {}).name;
+  /** @param {HTMLInputElement[]} inputs @param {unknown} bad */
   function invalid(inputs, bad) { for (const x of inputs) x.setAttribute("aria-invalid", bad ? "true" : "false"); }
   function buildRows() {
     const body = $("ht-body");
     body.textContent = "";
     rowEls.clear();
     S.activities.forEach((a) => {
-      const tr = el("tr"), c = {};
+      const tr = el("tr"), /** @type {any} filled in one cell at a time below, then kept as RowCells */ c = {};
+      /** @param {string} label @param {string} [cls] */
       const cell = (label, cls) => { const td = el("td", { "data-label": label }); if (cls) td.className = cls; tr.append(td); return td; };
+      /** @param {string} id @param {string} err @param {boolean} [numeric] */
+      // @ts-expect-error the empty object adds no attribute, so no attribute is undefined
       const input = (id, err, numeric) => el("input", Object.assign({ type: "text", id: id + "-" + a.id, autocomplete: "off", "aria-describedby": err + "-" + a.id }, numeric ? { inputmode: "numeric" } : {}));
       c.name = input("hn", "herr-name"); c.nameErr = el("p", { class: "err", id: "herr-name-" + a.id });
       cell("Activity", "wide").append(c.name, c.nameErr);
@@ -80,6 +102,7 @@
         c.nameErr.textContent = r.error || ""; invalid([c.name], r.error);
         if (r.state && !r.unchanged) commit(r.state);
       });
+      /** @param {"worthwhile" | "notWorthwhile"} field @param {HTMLInputElement} input @param {HTMLParagraphElement} err */
       const count = (field, input, err) => input.addEventListener("change", () => {
         const r = H.setCount(S, idx(a.id), field, input.value);
         err.textContent = r.error || ""; invalid([input], r.error);
@@ -90,6 +113,7 @@
       c.rm.addEventListener("click", () => {
         const name = nameOf(a.id), r = H.removeActivity(S, idx(a.id));
         if (r.error) return say(r.error, $("h-status"));
+        // @ts-expect-error a command without an error returns a state
         commit(r.state);
         $("h-add").focus();
         say("Removed " + name + "; plan recalculated.", $("h-status"));
@@ -100,6 +124,7 @@
     });
     rowIds = S.activities.map((a) => a.id).join();
   }
+  /** @param {boolean} [force] */
   function render(force) {
     const V = view();
     const ex = S.basis !== "blank";
@@ -109,12 +134,15 @@
     $("h-clear").hidden = !ex;
     if (rowIds !== S.activities.map((a) => a.id).join()) buildRows();
     V.rows.forEach((r, i) => {
+      /** @type {RowCells} */
+      // @ts-expect-error buildRows() has just made a row for every activity
       const c = rowEls.get(r.id), a = S.activities[i];
       c.name.setAttribute("aria-label", "Name of activity " + (i + 1));
       c.w.setAttribute("aria-label", "Worthwhile blocks for " + r.name);
       c.x.setAttribute("aria-label", "Not-worthwhile blocks for " + r.name);
       c.rm.setAttribute("aria-label", "Remove " + r.name);
       c.rm.disabled = S.activities.length <= H.LIMITS.minActivities;
+      /** @param {HTMLInputElement} x */
       const keep = (x) => !force && (active() === x || x.getAttribute("aria-invalid") === "true");
       if (!keep(c.name)) c.name.value = r.name;
       if (!keep(c.w)) c.w.value = String(a.worthwhile);
@@ -133,6 +161,7 @@
     const hours = $("h-hours");
     if (force || (active() !== hours && hours.getAttribute("aria-invalid") !== "true")) hours.value = String(S.hours);
     if (force) { $("e-hours").textContent = ""; hours.setAttribute("aria-invalid", "false"); }
+    /** @param {"thompson" | "ucb"} k */
     const plan = (k) => V.rows.filter((r) => r[k]).sort((a, b) => b[k] - a[k]).map((r) => r.name + " " + r[k] + " h").join(" · ");
     $("h-ts-pick").textContent = plan("thompson");
     $("h-ts-why").textContent = V.tsWhy;
@@ -144,14 +173,18 @@
     for (const x of V.sensitivity) sens.append(el("li", null, x));
     if (visible || force) chart(V);
   }
+  /** @param {View} V */
   function chart(V) {
     const w = $("h-chart").clientWidth, W = Math.max(280, Math.min(1100, w || 640)), left = Math.min(170, W * 0.34), right = 64, rowH = 38, top = 6;
+    // @ts-expect-error at most 168 hours, so one of the steps, up to 250, always covers the top
     const most = Math.max(1, ...V.rows.map((r) => Math.max(r.thompson, r.ucb))), step = [1, 2, 5, 10, 20, 50].find((u) => u * 5 >= most), max = step * Math.ceil(most / step);
     const Ht = top + V.rows.length * rowH + 28;
+    /** @param {number} h */
     const x = (h) => left + (W - left - right) * h / max;
     const g = svg("svg", { viewBox: "0 0 " + W + " " + Ht, role: "img", "aria-labelledby": "hc-title hc-desc" });
     g.append(svg("title", { id: "hc-title" }, "Planned hours per activity: Thompson Sampling and UCB1"),
       svg("desc", { id: "hc-desc" }, V.rows.map((r) => r.name + ": Thompson " + r.text.thompson + ", UCB1 " + r.text.ucb).join("; ") + ". The table lists every value."));
+    // @ts-expect-error step is set, as above
     for (let h = 0; h <= max; h += step) {
       const xx = x(h);
       g.append(svg("line", { x1: xx, x2: xx, y1: top, y2: Ht - 22, class: "grid" }), svg("text", { x: xx, y: Ht - 6, "text-anchor": "middle", class: "ax" }, h + " h"));
@@ -168,6 +201,7 @@
   }
 
   /* ---- Exports ---- */
+  /** @param {string} label @param {string} text */
   function showText(label, text) {
     $("h-export-label").textContent = label;
     $("h-export-text").value = text;
@@ -177,6 +211,7 @@
     $("h-add").addEventListener("click", () => {
       const r = H.addActivity(S);
       if (r.error) return say(r.error, $("h-status"));
+      // @ts-expect-error a command without an error returns a state
       commit(r.state);
       const a = S.activities[S.activities.length - 1];
       $("hn-" + a.id).focus();
@@ -208,7 +243,7 @@
       try { download(FILE + ".json", text, "application/json"); say("Exported " + FILE + ".json. If no download appears, select the text under Export as text.", $("h-store")); }
       catch (e) { $("h-fallback").open = true; say("Saving is not allowed here; select the text under Export as text instead.", $("h-store")); }
     });
-    $("h-import").addEventListener("change", (ev) => {
+    $("h-import").addEventListener("change", (/** @type {Event & { target: HTMLInputElement }} */ ev) => {
       const file = ev.target.files && ev.target.files[0];
       if (!file) return;
       const reader = new FileReader();
@@ -216,13 +251,14 @@
         ev.target.value = "";
         const r = H.parse(String(reader.result));
         if (r.error) return say("Import rejected: " + r.error + " Your current plan is unchanged.", $("h-store"));
+        // @ts-expect-error an import without an error has a state
         ask("Replace your edited plan with the imported file?", () => { commit(r.state, true); say("Imported " + file.name + ".", $("h-store")); }, $("h-import"));
       };
       reader.onerror = () => say("The file could not be read.", $("h-store"));
       reader.readAsText(file);
     });
     $("h-example").addEventListener("click", () => ask("Load the fictional example and discard your edited plan?", () => { commit(H.fromExample(D), true); say("Loaded the fictional example plan.", $("h-store")); }, $("h-example")));
-    const toBlank = (btn) => () => ask("Start a blank plan and discard your edited plan?", () => { commit(H.blank(D), true); $("hn-a1").focus(); say("Started a blank plan with two activities and no blocks.", $("h-store")); }, btn);
+    const toBlank = (/** @type {HTMLElement} */ btn) => () => ask("Start a blank plan and discard your edited plan?", () => { commit(H.blank(D), true); $("hn-a1").focus(); say("Started a blank plan with two activities and no blocks.", $("h-store")); }, btn);
     $("h-clear").addEventListener("click", toBlank($("h-clear")));
     $("h-blank").addEventListener("click", toBlank($("h-blank")));
     if (typeof ResizeObserver !== "undefined") {
@@ -249,5 +285,5 @@
   boot();
   wire();
   render(true);
-  self.HoursPage = { snapshot, shown(on) { visible = on; if (on) chart(view()); } };
+  self.HoursPage = { snapshot, shown(/** @type {boolean} */ on) { visible = on; if (on) chart(view()); } };
 })();

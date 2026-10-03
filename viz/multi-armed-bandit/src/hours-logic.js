@@ -19,10 +19,20 @@
  * experiment's. Its basis says where it came from: "blank" for a plan started blank (the default),
  * "example" for the fictional example as loaded and "edited" for the example after any change.
  */
+/**
+ * @typedef {import("./multi-armed-bandit-logic.js").PageData} PageData
+ * @typedef {{ id: string, name: string, worthwhile: number, notWorthwhile: number }} Activity
+ * @typedef {"worthwhile" | "notWorthwhile"} CountField
+ * @typedef {"blank" | "example" | "edited"} Basis
+ * @typedef {{ format: string, version: number, basis: Basis, hours: number, activities: Activity[], nextId: number }} State
+ * @typedef {{ state: State, unchanged?: boolean, error?: undefined } | { error: string, state?: undefined, unchanged?: undefined }} Change
+ * @typedef {{ s: number, f: number, n: number }} Evidence
+ * @typedef {{ mean: number, bonus: number, score: number }} UcbScore
+ */
 (function (root, factory) {
   if (typeof module === "object" && module.exports) module.exports = factory;
   else root.HoursLogic = factory(root.BanditLogic);
-})(typeof self !== "undefined" ? self : this, function (L) {
+})(typeof self !== "undefined" ? self : this, /** @param {typeof import("./multi-armed-bandit-logic.js")} L */ function (L) {
   "use strict";
 
   const FORMAT = "multi-armed-bandit-hours", VERSION = 1, PIECES = 16;
@@ -30,29 +40,36 @@
   const GL = [[0, 0.5688888888888889], [-0.5384693101056831, 0.4786286704993665], [0.5384693101056831, 0.4786286704993665],
     [-0.906179845938664, 0.23692688505618908], [0.906179845938664, 0.23692688505618908]];
   const BASES = ["blank", "example", "edited"];
+  /** @type {Record<string, string>} */
   const COUNTS = { worthwhile: "Worthwhile blocks", notWorthwhile: "Not-worthwhile blocks" };
+  /** @template T @param {T} x @returns {T} */
   const clone = (x) => JSON.parse(JSON.stringify(x));
   const WHOLE = /^\d+$/;
 
   /* ---- State ---- */
+  /** @param {PageData} D @returns {State} */
   function fromExample(D) {
     const ex = D.hours;
     const activities = ex.activities.map((a, i) => ({ id: "a" + (i + 1), name: a.name, worthwhile: a.worthwhile, notWorthwhile: a.notWorthwhile }));
     return { format: FORMAT, version: VERSION, basis: "example", hours: ex.hours, activities, nextId: activities.length + 1 };
   }
   /* A blank plan: two activities with no blocks. */
+  /** @param {PageData} D @returns {State} */
   function blank(D) {
     const activities = [1, 2].map((i) => ({ id: "a" + i, name: "Activity " + i, worthwhile: 0, notWorthwhile: 0 }));
     return { format: FORMAT, version: VERSION, basis: "blank", hours: D.hours.hours, activities, nextId: 3 };
   }
+  /** @param {State} s */
   const touched = (s) => { if (s.basis === "example") s.basis = "edited"; return s; };
 
   /* ---- Validation: an error message, or null ---- */
+  /** @param {string | number} raw @param {number} lo @param {number} hi @param {string} what */
   function wholeError(raw, lo, hi, what) {
     const s = String(raw).trim();
     if (!WHOLE.test(s) || +s < lo || +s > hi) return what + " must be a whole number from " + L.group(lo) + " to " + L.group(hi) + ".";
     return null;
   }
+  /** @param {{ activities: { name: string }[] }} state @param {number} index @param {unknown} raw */
   function nameError(state, index, raw) {
     const s = String(raw == null ? "" : raw).trim();
     if (!s) return "Activity name is required.";
@@ -60,9 +77,11 @@
     if (state.activities.some((a, i) => i !== index && a.name.trim().toLowerCase() === s.toLowerCase())) return "Activity names must be unique, ignoring case.";
     return null;
   }
+  /** @param {string} field worthwhile or notWorthwhile @param {string | number} raw */
   const countError = (field, raw) => wholeError(raw, 0, LIMITS.maxBlocks, COUNTS[field]);
 
   /* ---- Commands return { state } with a new state, or { error }; they never change their input ---- */
+  /** @param {State} state @param {number} index @param {unknown} raw @returns {Change} */
   function rename(state, index, raw) {
     const e = nameError(state, index, raw);
     if (e) return { error: e };
@@ -72,6 +91,7 @@
     return { state: touched(s) };
   }
   /* Sets one count, worthwhile or notWorthwhile. */
+  /** @param {State} state @param {number} index @param {CountField} field @param {string | number} raw @returns {Change} */
   function setCount(state, index, field, raw) {
     const e = countError(field, raw);
     if (e) return { error: e };
@@ -80,6 +100,7 @@
     a[field] = v;
     return { state: touched(s) };
   }
+  /** @param {State} state @param {string | number} raw @returns {Change} */
   function setHours(state, raw) {
     const e = wholeError(raw, LIMITS.minHours, LIMITS.maxHours, "Hours available");
     if (e) return { error: e };
@@ -88,15 +109,17 @@
     s.hours = hours;
     return { state: touched(s) };
   }
+  /** @param {State} state @returns {Change} */
   function addActivity(state) {
     if (state.activities.length >= LIMITS.maxActivities) return { error: "At most " + LIMITS.maxActivities + " activities." };
     const s = clone(state);
-    let n = s.activities.length + 1, name;
+    let n = s.activities.length + 1, /** @type {string} */ name;
     do { name = "Activity " + n; n += 1; } while (s.activities.some((a) => a.name.toLowerCase() === name.toLowerCase()));
     s.activities.push({ id: "a" + s.nextId, name, worthwhile: 0, notWorthwhile: 0 });
     s.nextId += 1;
     return { state: touched(s) };
   }
+  /** @param {State} state @param {number} index @returns {Change} */
   function removeActivity(state, index) {
     if (state.activities.length <= LIMITS.minActivities) return { error: "At least " + LIMITS.minActivities + " activities are needed." };
     const s = clone(state); s.activities.splice(index, 1);
@@ -105,8 +128,10 @@
 
   /* ---- Model ---- */
   /* Successes s, failures f and blocks n of one activity. */
+  /** @param {{ worthwhile: number, notWorthwhile: number }} a @returns {Evidence} */
   const evidence = (a) => ({ s: a.worthwhile, f: a.notWorthwhile, n: a.worthwhile + a.notWorthwhile });
   /* Probability that each Beta(alpha, beta) gives the highest draw: P_i = integral of pdf_i * prod_{j != i} CDF_j. */
+  /** @param {number[][]} params Beta (alpha, beta) pairs @returns {number[]} */
   function probBest(params) {
     const cuts = [0, 1];
     for (const [a, b] of params) {
@@ -132,6 +157,7 @@
     return out.map((x) => x / sum);
   }
   /* Whole hours proportional to shares, summing to H: floors, then the largest remainders (ties to the first). */
+  /** @param {number[]} shares @param {number} H @returns {number[]} */
   function apportion(shares, H) {
     const q = shares.map((p) => p * H), out = q.map(Math.floor);
     let left = H - out.reduce((t, x) => t + x, 0);
@@ -140,8 +166,10 @@
     return out;
   }
   /* UCB1 hour by hour; returns the hours and each activity's score after the last planned hour. */
+  /** @param {Evidence[]} ev @param {number} H @returns {{ hours: number[], order: number[], scores: (UcbScore | null)[] }} */
   function ucbPlan(ev, H) {
-    const n = ev.map((e) => e.n), mean = ev.map((e) => (e.n ? e.s / e.n : 0)), hours = ev.map(() => 0), order = [];
+    const n = ev.map((e) => e.n), mean = ev.map((e) => (e.n ? e.s / e.n : 0)), hours = ev.map(() => 0), /** @type {number[]} */ order = [];
+    /** @param {number} i @param {number} T */
     const score = (i, T) => mean[i] + Math.sqrt(2 * Math.log(T) / n[i]);
     for (let h = 0; h < H; h += 1) {
       let best = n.findIndex((x) => x === 0);
@@ -155,12 +183,17 @@
     const T = n.reduce((t, x) => t + x, 0);
     return { hours, order, scores: n.map((x, i) => (x ? { mean: mean[i], bonus: Math.sqrt(2 * Math.log(T) / x), score: score(i, T) } : null)) };
   }
+  /** @param {number} h */
   const hrs = (h) => h + (h === 1 ? " hour" : " hours");
+  /** @param {number} s @param {number} n */
   const share = (s, n) => (n ? L.pct(s / n) : "No blocks");
+  /** @param {Activity} a */
   const evidenceText = (a) => L.group(a.worthwhile) + " worthwhile, " + L.group(a.notWorthwhile) + " not";
+  /** @param {string[]} xs */
   const list = (xs) => (xs.length < 2 ? xs.join("") : xs.slice(0, -1).join(", ") + " and " + xs[xs.length - 1]);
 
   /* Every number the page, the Markdown plan and the tools show, formatted once. */
+  /** @param {State} state */
   function view(state) {
     const H = state.hours;
     const ev = state.activities.map(evidence);
@@ -184,6 +217,7 @@
       (untried.length ? list(untried) + (untried.length === 1 ? " has" : " have") + " no blocks yet, so " + (untried.length === 1 ? "it gets" : "they get") + " the first hours. " : "") +
       byUcb[0].name + " gets the most, " + byUcb[0].text.ucb + ". The scores are not probabilities.";
     const diff = rows.reduce((t, r) => t + Math.abs(r.thompson - r.ucb), 0) / 2;
+    /** @param {"thompson" | "ucb"} k */
     const used = (k) => rows.filter((r) => r[k] > 0).length;
     const agreement = diff === 0 ? "Both methods give the same plan." : "The plans differ by " + hrs(diff) + ": Thompson Sampling uses " + used("thompson") + " of the " + rows.length +
       " activities and UCB1 " + used("ucb") + ". Thompson Sampling gives hours in proportion to each activity's chance of being best; UCB1 gives each hour to the highest optimistic score, so it keeps going to one activity until its shrinking bonus lets another overtake it.";
@@ -200,9 +234,12 @@
   }
 
   /* ---- Markdown plan ---- */
+  /** @param {unknown} s */
   const cell = (s) => String(s).replace(/\s+/g, " ").trim().replace(/[\\\x60*_<>|[\]]/g, "\\$&");
+  /** @param {State} state @param {ReturnType<typeof view>} V @param {PageData} D @param {string} date */
   function markdown(state, V, D, date) {
     const ex = D.hours, rows = V.rows;
+    /** @param {string[]} head @param {string[][]} body @param {number[]} [left] */
     const table = (head, body, left) => "| " + head.join(" | ") + " |\n|" + head.map((h, i) => (i && !(left || []).includes(i) ? " ---: |" : " --- |")).join("") + "\n" + body.map((r) => "| " + r.join(" | ") + " |").join("\n");
     const basis = { blank: "Counts entered by the user in a plan started blank.", example: "Fictional example counts, for illustration only; not real data.",
       edited: "The fictional example, edited by the user; counts left unchanged are still fictional." }[state.basis];
@@ -226,13 +263,16 @@
   }
 
   /* ---- Import and storage validation ---- */
+  /** Throws the first problem with an imported document. @param {any} doc untrusted JSON, checked field by field here */
   function check(doc) {
+    /** @param {string} m @returns {never} */
     const fail = (m) => { throw new Error(m); };
     if (!doc || typeof doc !== "object" || Array.isArray(doc)) fail("The file is not a JSON object.");
     if (doc.format !== FORMAT) fail("This is not a multi-armed bandit hours plan file.");
     if (doc.version !== VERSION) fail("Unsupported version " + JSON.stringify(doc.version) + "; this page reads version " + VERSION + ".");
     if (!BASES.includes(doc.basis)) fail("Invalid plan basis; it must be \"blank\", \"example\" or \"edited\".");
     if (!Number.isInteger(doc.hours) || wholeError(String(doc.hours), LIMITS.minHours, LIMITS.maxHours, "Hours available")) fail(wholeError(String(doc.hours), LIMITS.minHours, LIMITS.maxHours, "Hours available") || "Hours available must be a whole number.");
+    /** @type {any[]} untrusted, checked below */
     const as = doc.activities;
     if (!Array.isArray(as) || as.length < LIMITS.minActivities || as.length > LIMITS.maxActivities) fail("A plan needs " + LIMITS.minActivities + " to " + LIMITS.maxActivities + " activities.");
     const ids = new Set();
@@ -251,13 +291,17 @@
     if (!Number.isInteger(doc.nextId) || doc.nextId <= Math.max.apply(null, as.map((a) => +a.id.slice(1)))) fail("Invalid next activity id.");
   }
   /* Parses and fully validates a document; returns { state } or { error }. Never partial. */
+  /** @param {string} text @returns {{ state: State, error?: undefined } | { error: string, state?: undefined }} */
   function parse(text) {
+    /** @type {State} valid once check() passes */
     let doc;
     try { doc = JSON.parse(text); } catch (e) { return { error: "The file is not valid JSON." }; }
+    // @ts-expect-error check() throws only Error objects
     try { check(doc); } catch (e) { return { error: e.message }; }
     return { state: { format: FORMAT, version: VERSION, basis: doc.basis, hours: doc.hours,
       activities: doc.activities.map((a) => ({ id: a.id, name: a.name.trim(), worthwhile: a.worthwhile, notWorthwhile: a.notWorthwhile})), nextId: doc.nextId } };
   }
+  /** @param {State} state */
   const serialise = (state) => JSON.stringify(state, null, 2);
 
   return { FORMAT, VERSION, PIECES, LIMITS, fromExample, blank, nameError, countError, rename, setCount, setHours,

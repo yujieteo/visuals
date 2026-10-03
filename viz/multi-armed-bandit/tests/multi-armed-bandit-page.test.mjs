@@ -5,13 +5,12 @@
    saves the Markdown plan, exports JSON that imports back, survives a reload through localStorage and
    starts blank again; the experiment tab is
    unchanged by it; and nothing overflows a 320 px viewport. Chrome is driven over the DevTools protocol with Node's built-in WebSocket, so nothing is
-   installed. Set CHROME_PATH to choose the browser; without one the test is skipped locally and fails in CI. */
+   installed. Run against an isolated Chrome started with --remote-debugging-port=9227 (CI starts a headless one through
+   scripts/with_chrome.py): MULTI_ARMED_BANDIT_BROWSER_URL=http://127.0.0.1:9227 node --test tests/multi-armed-bandit-page.test.mjs.
+   Without that variable the test is skipped, so a local check never drives a browser. */
 import test from "node:test";
 import assert from "node:assert/strict";
-import { spawn, execFileSync } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { readFileSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import vm from "node:vm";
 
@@ -26,32 +25,14 @@ vm.runInContext(script("mab-logic"), ctx);
 vm.runInContext(script("hours-logic"), ctx);
 const H = ctx.HoursLogic;
 
-function findChrome() {
-  if (process.env.CHROME_PATH) return process.env.CHROME_PATH;
-  const mac = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
-  if (existsSync(mac)) return mac;
-  for (const name of ["google-chrome", "google-chrome-stable", "chromium", "chromium-browser"]) {
-    try { return execFileSync("which", [name], { encoding: "utf8" }).trim(); } catch { /* next */ }
-  }
-  return null;
-}
-const CHROME = findChrome();
-if (!CHROME && process.env.CI) throw new Error("no Chrome found for the end-to-end page test; set CHROME_PATH");
+const BROWSER = process.env.MULTI_ARMED_BANDIT_BROWSER_URL;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-/* Launch Chrome, open the page in a fresh tab, and return evaluate() plus the page's exceptions and requests. */
+/* Open the page in a fresh tab, in a browser context of its own, of the running Chrome, and return evaluate() plus the page's exceptions and requests. */
 async function openPage(url = URL_) {
-  const dir = mkdtempSync(join(tmpdir(), "multi-armed-bandit-page-"));
-  const args = ["--headless=new", "--remote-debugging-port=0", `--user-data-dir=${dir}`, "--no-first-run",
-    "--no-default-browser-check", "--disable-gpu", "--disable-extensions", "about:blank"];
-  if (process.platform === "linux") args.unshift("--no-sandbox");
-  const proc = spawn(CHROME, args, { stdio: "ignore" });
-  const portFile = join(dir, "DevToolsActivePort");
-  for (let i = 0; i < 200 && !existsSync(portFile); i++) await sleep(50);
-  await sleep(50);
-  const [port, path] = readFileSync(portFile, "utf8").split("\n");
-  const ws = new WebSocket(`ws://127.0.0.1:${port}${path}`);
+  const { webSocketDebuggerUrl } = await (await fetch(`${BROWSER}/json/version`)).json();
+  const ws = new WebSocket(webSocketDebuggerUrl);
   await new Promise((resolve, reject) => { ws.onopen = resolve; ws.onerror = reject; });
   let id = 0;
   const pending = new Map(), exceptions = [], requests = [];
@@ -68,7 +49,8 @@ async function openPage(url = URL_) {
     pending.set(++id, { resolve, reject });
     ws.send(JSON.stringify({ id, method, params, sessionId }));
   });
-  const { targetId } = await send("Target.createTarget", { url: "about:blank" });
+  const { browserContextId } = await send("Target.createBrowserContext");
+  const { targetId } = await send("Target.createTarget", { url: "about:blank", browserContextId });
   const { sessionId } = await send("Target.attachToTarget", { targetId, flatten: true });
   const s = (method, params) => send(method, params, sessionId);
   await s("Runtime.enable"); await s("Page.enable"); await s("Network.enable");
@@ -87,10 +69,8 @@ async function openPage(url = URL_) {
     await s("Input.dispatchKeyEvent", { type: "keyUp", key: k, code });
   };
   const close = async () => {
-    try { await send("Browser.close"); } catch { /* already gone */ }
+    try { await send("Target.disposeBrowserContext", { browserContextId }); } catch { /* already gone */ }
     ws.close();
-    await new Promise((r) => { if (proc.exitCode !== null) r(); else { proc.once("exit", r); setTimeout(() => { proc.kill("SIGKILL"); r(); }, 3000); } });
-    rmSync(dir, { recursive: true, force: true });
   };
   return { evaluate, until, key, send: s, exceptions, requests, close };
 }
@@ -99,7 +79,7 @@ const text = (id) => `document.getElementById(${JSON.stringify(id)}).textContent
 const shown = (id) => `!document.getElementById(${JSON.stringify(id)}).hidden`;
 const set = (id, value) => `(() => { const e = document.getElementById(${JSON.stringify(id)}); e.value = ${JSON.stringify(String(value))}; e.dispatchEvent(new Event("change", { bubbles: true })); })()`;
 const cells = (col) => `[...document.querySelectorAll("#ht-body tr")].map((tr) => tr.children[${col}].textContent)`;
-const skip = !CHROME && "no Chrome found; set CHROME_PATH";
+const skip = !BROWSER && "set MULTI_ARMED_BANDIT_BROWSER_URL to a Chrome DevTools address";
 
 test("the hours tab plans next week's hours in a real browser from file://", { skip }, async () => {
   const page = await openPage();

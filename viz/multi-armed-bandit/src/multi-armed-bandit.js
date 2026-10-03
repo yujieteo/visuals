@@ -2,7 +2,19 @@
  * deck comes from BanditReport (report.js) written by Beamdswitch.deck (beamdswitch.js). */
 (function () {
   "use strict";
-  const L = BanditLogic, D = JSON.parse(document.getElementById("mab-data").textContent);
+  /**
+   * @typedef {import("./multi-armed-bandit-logic.js").State} State
+   * @typedef {import("./multi-armed-bandit-logic.js").Sim} Sim
+   * @typedef {import("./multi-armed-bandit-logic.js").Snapshot} Snapshot
+   * @typedef {import("./multi-armed-bandit-logic.js").PageData} PageData
+   * @typedef {ReturnType<typeof BanditLogic.view>} View
+   * @typedef {ReturnType<typeof BanditLogic.simView>} SimView
+   * @typedef {{ radio: HTMLInputElement, name: HTMLInputElement, err: HTMLParagraphElement, s: HTMLInputElement, n: HTMLInputElement,
+   *   f: HTMLTableCellElement, rate: HTMLTableCellElement, mean: HTMLTableCellElement, ci: HTMLTableCellElement, smp: HTMLTableCellElement,
+   *   ucb: HTMLTableCellElement, rm: HTMLButtonElement, tr: HTMLTableRowElement }} RowCells
+   */
+  // @ts-expect-error the generated page always holds its #mab-data block
+  const L = BanditLogic, /** @type {PageData} */ D = JSON.parse(document.getElementById("mab-data").textContent);
   const KEY = "multi-armed-bandit:v1", SLUG = "multi-armed-bandit";
   const { $, el, svg, say, isoToday, openStore, download } = BanditPage;
   const now = () => (typeof performance !== "undefined" ? performance.now() : 0);
@@ -12,15 +24,19 @@
 
   /* ---- Storage: optional; every access is guarded ---- */
   const { store, saved } = openStore(KEY);
-  let S, sim, undo = [], running = false, timer = 0, saveTimer = 0, simKey = "";
-  let viewOf = null, viewMemo = null;
+  let /** @type {State} */ S, /** @type {Sim} */ sim, /** @type {Snapshot[]} */ undo = [], running = false, /** @type {ReturnType<typeof setTimeout> | number} */ timer = 0, /** @type {ReturnType<typeof setTimeout> | number} */ saveTimer = 0, simKey = "";
+  let /** @type {State | null} */ viewOf = null, /** @type {View | null} */ viewMemo = null;
+  /** @returns {View} */
+  // @ts-expect-error viewMemo is set whenever viewOf is
   const view = () => (viewOf === S ? viewMemo : (viewMemo = L.view(viewOf = S)));
+  /** @param {State} s */
   const keyOf = (s) => JSON.stringify([s.simulation.probabilities, s.simulation.budget, s.simulation.seed, s.prior]);
   function boot() {
     let msg = store ? "" : "Autosave is unavailable in this browser context; use Export JSON to keep your work.";
     if (saved) {
       const r = L.parse(saved);
       if (r.error) msg = "Saved work could not be restored (" + r.error + "); started from the website example.";
+      // @ts-expect-error a parse without an error has a state and a simulation
       else { S = r.state; sim = r.sim; msg = "Restored your autosaved experiment."; }
     }
     if (!S) { S = L.fromTemplate(D, "website", freshSeed()); sim = L.simCreate(S); save(); }
@@ -36,11 +52,12 @@
     }, 300);
   }
   function edited() {
-    const t = L.fromTemplate(D, S.template, 1), pick = (s) => JSON.stringify([s.title, s.success, s.unit, s.prior, s.variants.map((v) => [v.name, v.successes, v.trials])]);
+    const t = L.fromTemplate(D, S.template, 1), /** @type {(s: State) => string} */ pick = (s) => JSON.stringify([s.title, s.success, s.unit, s.prior, s.variants.map((v) => [v.name, v.successes, v.trials])]);
     return pick(t) !== pick(S);
   }
 
   /* ---- Committing changes ---- */
+  /** @param {State} next @param {{ clearUndo?: boolean, force?: boolean }} [opts] */
   function commit(next, opts) {
     S = next;
     const o = opts || {};
@@ -56,6 +73,7 @@
     render(o.force);
     save();
   }
+  /** @param {State} next @param {Sim | null | undefined} nextSim @param {string} msg */
   function replace(next, nextSim, msg) {
     pause();
     S = next; sim = nextSim || L.simCreate(next); simKey = keyOf(S); undo = [];
@@ -64,7 +82,8 @@
     save();
     say(msg, $("store-status"));
   }
-  let pending = null;
+  let /** @type {{ yes: () => void, back?: HTMLElement } | null} */ pending = null;
+  /** @param {string} text @param {() => void} yes @param {HTMLElement} [back] */
   function ask(text, yes, back) {
     if (!edited()) return yes();
     pending = { yes, back };
@@ -72,6 +91,7 @@
     $("confirm").hidden = false;
     $("confirm-yes").focus();
   }
+  /** @param {boolean} ok */
   function settle(ok) {
     const p = pending;
     pending = null;
@@ -81,9 +101,12 @@
   }
 
   /* ---- Experiment rendering ---- */
+  /** @type {Record<string, string>} */
   const FIELDS = { title: "f-title", success: "f-success", unit: "f-unit" };
+  /** @type {Map<string, RowCells>} */
   const rowEls = new Map();
   let rowIds = "";
+  /** @param {HTMLInputElement} input @param {string} errId @param {string | null | undefined} msg */
   function setErr(input, errId, msg) {
     $(errId).textContent = msg || "";
     input.setAttribute("aria-invalid", msg ? "true" : "false");
@@ -93,7 +116,8 @@
     body.textContent = "";
     rowEls.clear();
     S.variants.forEach((v, i) => {
-      const tr = el("tr"), c = {};
+      const tr = el("tr"), /** @type {any} filled in one cell at a time below, then kept as RowCells */ c = {};
+      /** @param {string} label @param {string} [cls] */
       const cell = (label, cls) => { const td = el("td", { "data-label": label }); if (cls) td.className = cls; tr.append(td); return td; };
       c.radio = el("input", { type: "radio", name: "sel", value: v.id });
       const hit = el("label", { class: "hit" });
@@ -117,6 +141,7 @@
         setErr(c.name, "err-" + v.id, r.error);
         if (r.state) commit(r.state);
       });
+      /** @param {HTMLInputElement} input */
       const counts = (input) => () => {
         const idx = S.variants.findIndex((x) => x.id === v.id), r = L.setCounts(S, idx, c.s.value, c.n.value);
         $("err-" + v.id).textContent = r.error || "";
@@ -128,6 +153,7 @@
       c.rm.addEventListener("click", () => {
         const name = nameOf(v.id), r = L.removeVariant(S, S.variants.findIndex((x) => x.id === v.id));
         if (r.error) return say(r.error, $("vt-status"));
+        // @ts-expect-error a command without an error returns a state
         commit(r.state, { clearUndo: true });
         $("add-variant").focus();
         say("Removed " + name + ".", $("vt-status"));
@@ -138,8 +164,10 @@
     });
     rowIds = S.variants.map((v) => v.id).join();
   }
+  /** @param {string | null} id @returns {string | undefined} */
   const nameOf = (id) => (S.variants.find((v) => v.id === id) || {}).name;
   const active = () => document.activeElement;
+  /** @param {boolean} [force] */
   function renderExperiment(force) {
     const V = view();
     $("template").value = S.template;
@@ -150,11 +178,14 @@
     $("template-note").textContent = t ? t.note : "";
     for (const f in FIELDS) {
       const input = $(FIELDS[f]);
+      // @ts-expect-error FIELDS names only the text fields of the state
       if (force || active() !== input) { if (force || input.getAttribute("aria-invalid") !== "true") input.value = S[f]; }
       if (force) setErr(input, "e-" + f, "");
     }
     if (rowIds !== S.variants.map((v) => v.id).join()) buildRows();
     V.rows.forEach((r, i) => {
+      /** @type {RowCells} */
+      // @ts-expect-error buildRows() has just made a row for every variant
       const c = rowEls.get(r.id);
       c.radio.checked = S.selected === r.id;
       c.radio.setAttribute("aria-label", "Select " + r.name + " for the next trial");
@@ -198,20 +229,24 @@
     for (const h of L.hints(S, V)) hints.append(el("li", null, h));
     for (const x of ["prior-a", "prior-b"]) {
       const input = $(x);
+      // @ts-expect-error the id ends in a or b, a key of the prior
       if (force || (active() !== input && input.getAttribute("aria-invalid") !== "true")) input.value = String(S.prior[x.slice(-1)]);
       if (force) setErr(input, "e-prior", "");
     }
     $("prior-text").textContent = "Current prior: " + V.priorText + ", applied independently to every variant.";
     plotIntervals(V);
   }
+  /** @param {string} id */
   function width(id) {
     const w = $(id).clientWidth;
     return Math.max(280, Math.min(1100, w || 640));
   }
+  /** @param {View} V */
   function plotIntervals(V) {
     const W = width("ci-plot"), left = Math.min(150, W * 0.32), right = 16, rowH = 30, top = 8, H = top + V.rows.length * rowH + 30;
     const maxHi = Math.max.apply(null, V.rows.map((r) => Math.max(r.hi, r.sample)));
     const xmax = maxHi > 0.5 ? 1 : Math.min(1, Math.ceil((maxHi + 0.02) * 10) / 10);
+    /** @param {number} v */
     const x = (v) => left + (W - left - right) * v / xmax;
     const g = svg("svg", { viewBox: "0 0 " + W + " " + H, role: "img", "aria-labelledby": "ci-title ci-desc" });
     g.append(svg("title", { id: "ci-title" }, "95% credible intervals, posterior means and Thompson samples"),
@@ -245,20 +280,24 @@
     });
     simIds = S.variants.map((v) => v.id).join();
   }
+  /** @param {Event} [ev] */
   function simSettings(ev) {
     const r = L.setSimulation(S, { probabilities: S.variants.map((v) => $("p-" + v.id).value), budget: $("sim-budget").value, seed: $("sim-seed").value });
     for (const e of document.querySelectorAll("#panel-sim input")) e.setAttribute("aria-invalid", "false");
     $("e-sim").textContent = r.error || "";
     if (r.error) {
+      // @ts-expect-error any other field is "p" followed by the variant index
       const bad = r.field === "budget" ? $("sim-budget") : r.field === "seed" ? $("sim-seed") : $("p-" + S.variants[+r.field.slice(1)].id);
       bad.setAttribute("aria-invalid", "true");
       return;
     }
     if (r.unchanged) return;
     const had = sim.methods.ts.pulls > 0;
+    // @ts-expect-error a command without an error returns a state
     commit(r.state);
     if (!had) say("Simulation settings applied.", $("sim-status"));
   }
+  /** @param {boolean} [force] */
   function renderSim(force) {
     if (simIds !== S.variants.map((v) => v.id).join()) buildSimInputs();
     const names = S.variants.map((v) => v.name), c = S.simulation;
@@ -268,6 +307,7 @@
       if (force || (active() !== input && input.getAttribute("aria-invalid") !== "true")) input.value = String(+(c.probabilities[j] * 100).toFixed(6));
     });
     for (const [x, v] of [["sim-budget", c.budget], ["sim-seed", c.seed]]) {
+      // @ts-expect-error x is the id, the first item of each pair
       const input = $(x);
       if (force || (active() !== input && input.getAttribute("aria-invalid") !== "true")) input.value = String(v);
     }
@@ -298,11 +338,14 @@
     }
     plotSim(V);
   }
+  /** @param {SimView} V */
   function plotSim(V) {
     const W = width("sim-chart"), H = Math.round(Math.max(220, Math.min(360, W * 0.5))), l = 48, r = 92, t = 10, b = 34;
     const top = Math.max(1, Math.ceil(sim.budget * sim.best), ...V.methods.map((m) => m.successes));
+    // @ts-expect-error one of the steps, up to ten times the magnitude, always covers the top
     const mag = Math.pow(10, Math.floor(Math.log10(top / 4))), unit = [1, 2, 2.5, 5, 10].map((f) => f * mag).find((u) => u * 4 >= top), ymax = unit * 4;
-    const x = (i) => l + (W - l - r) * i / sim.budget, y = (v) => H - b - (H - b - t) * v / ymax;
+    /** @param {number} i */
+    const x = (i) => l + (W - l - r) * i / sim.budget, /** @type {(v: number) => number} */ y = (v) => H - b - (H - b - t) * v / ymax;
     const g = svg("svg", { viewBox: "0 0 " + W + " " + H, role: "img", "aria-labelledby": "sc-title sc-desc" });
     g.append(svg("title", { id: "sc-title" }, "Cumulative successes by pull"),
       svg("desc", { id: "sc-desc" }, V.started ? V.methods.map((m) => m.label + ": " + m.text.successes + " successes after " + m.text.pulls + " pulls").join("; ") + ". The table below lists every value." : "No pulls yet."));
@@ -313,6 +356,7 @@
     }
     g.append(svg("text", { x: (l + W - r) / 2, y: H - 1, "text-anchor": "middle", class: "ax" }, "Pulls per method"));
     const step = Math.max(1, Math.floor(sim.budget / (W - l - r)));
+    /** @type {{ x: number, y: number, t: string }[]} */
     const ends = [];
     for (const m of V.methods) {
       const curve = sim.methods[m.id].curve;
@@ -374,6 +418,7 @@
   }
 
   /* ---- Exports ---- */
+  /** @param {string} label @param {string} text */
   function showText(label, text) {
     $("export-label").textContent = label;
     $("export-text").value = text;
@@ -385,6 +430,7 @@
   function wireExports() {
     $("save-beamdswitch").addEventListener("click", () => {
       let text;
+      // @ts-expect-error deckText() throws only Error objects
       try { text = deckText(); } catch (e) { return say("The deck could not be written: " + e.message, $("deck-status")); }
       showText("Deck Markdown (" + SLUG + "-beamdswitch.md)", text);
       try { download(SLUG + "-beamdswitch.md", text, "text/markdown"); say("Saved " + SLUG + "-beamdswitch.md. If no download appears, select the text under Export as text.", $("deck-status")); }
@@ -392,6 +438,7 @@
     });
     $("copy-beamdswitch").addEventListener("click", async () => {
       let text;
+      // @ts-expect-error deckText() throws only Error objects
       try { text = deckText(); } catch (e) { return say("The deck could not be written: " + e.message, $("deck-status")); }
       showText("Deck Markdown (" + SLUG + "-beamdswitch.md)", text);
       try { await navigator.clipboard.writeText(text); say("Copied the deck. Paste it into beamdswitch.", $("deck-status")); }
@@ -403,7 +450,7 @@
       try { download("multi-armed-bandit-experiment.json", text, "application/json"); say("Exported multi-armed-bandit-experiment.json. If no download appears, select the text under Export as text.", $("store-status")); }
       catch (e) { $("fallback").open = true; say("Saving is not allowed here; select the text under Export as text instead.", $("store-status")); }
     });
-    $("import-json").addEventListener("change", (ev) => {
+    $("import-json").addEventListener("change", (/** @type {Event & { target: HTMLInputElement }} */ ev) => {
       const file = ev.target.files && ev.target.files[0];
       if (!file) return;
       const reader = new FileReader();
@@ -411,6 +458,7 @@
         ev.target.value = "";
         const r = L.parse(String(reader.result));
         if (r.error) return say("Import rejected: " + r.error + " Your current experiment is unchanged.", $("store-status"));
+        // @ts-expect-error an import without an error has a state and a simulation
         ask("Replace your edited experiment with the imported file?", () => replace(r.state, r.sim, "Imported " + file.name + "."), $("import-json"));
       };
       reader.onerror = () => say("The file could not be read.", $("store-status"));
@@ -420,8 +468,10 @@
   }
 
   /* ---- Wiring ---- */
+  /** @param {boolean} [force] */
   function render(force) { renderExperiment(force); renderSim(force); }
   const TABS = ["exp", "sim", "hrs"];
+  /** @param {string} id @param {boolean} [focus] */
   function selectTab(id, focus) {
     for (const t of TABS) {
       const on = t === id;
@@ -436,13 +486,14 @@
   function wire() {
     for (const t of TABS) {
       $("tab-" + t).addEventListener("click", () => selectTab(t));
-      $("tab-" + t).addEventListener("keydown", (e) => {
+      $("tab-" + t).addEventListener("keydown", (/** @type {KeyboardEvent} */ e) => {
         const k = e.key, i = TABS.indexOf(t), n = TABS.length;
         const to = k === "Home" ? TABS[0] : k === "End" ? TABS[n - 1] : k === "ArrowRight" ? TABS[(i + 1) % n] : k === "ArrowLeft" ? TABS[(i + n - 1) % n] : "";
         if (to) { e.preventDefault(); selectTab(to, true); }
       });
     }
     $("template").addEventListener("change", () => {
+      // @ts-expect-error the select offers only the templates
       const id = $("template").value, label = D.templates.find((x) => x.id === id).label;
       $("template").value = S.template;
       ask("Replace your edited experiment with the " + label + " template?", () => { replace(L.fromTemplate(D, id, freshSeed()), null, "Loaded the " + label + " template."); $("template").focus(); }, $("template"));
@@ -450,6 +501,7 @@
     $("confirm-yes").addEventListener("click", () => settle(true));
     $("confirm-no").addEventListener("click", () => settle(false));
     for (const f in FIELDS) $(FIELDS[f]).addEventListener("change", () => {
+      // @ts-expect-error FIELDS names only the text fields of the state
       const r = L.setText(S, f, $(FIELDS[f]).value);
       setErr($(FIELDS[f]), "e-" + f, r.error);
       if (r.state) commit(r.state);
@@ -457,23 +509,26 @@
     $("add-variant").addEventListener("click", () => {
       const r = L.addVariant(S);
       if (r.error) return say(r.error, $("vt-status"));
+      // @ts-expect-error a command without an error returns a state
       commit(r.state, { clearUndo: true });
       const v = S.variants[S.variants.length - 1];
       $("name-" + v.id).focus();
       say("Added " + v.name + " with no trials; recommendations recalculated.", $("vt-status"));
     });
-    const pick = (which) => () => {
+    const pick = (/** @type {"ts" | "ucb"} */ which) => () => {
       const id = view()[which].id, r = L.select(S, id);
+      // @ts-expect-error a command without an error returns a state
       commit(r.state);
       say("Selected " + nameOf(id) + " for the next trial.", $("record-status"));
     };
     $("ts-select").addEventListener("click", pick("ts"));
     $("ucb-select").addEventListener("click", pick("ucb"));
-    const rec = (ok) => () => {
+    const rec = (/** @type {boolean} */ ok) => () => {
       const before = L.snapshot(S), r = L.record(S, ok);
       if (r.error) return say(r.error, $("record-status"));
       undo.push(before);
       if (undo.length > 200) undo.shift();
+      // @ts-expect-error a command without an error returns a state
       commit(r.state);
       const V = view();
       say("Recorded a " + (ok ? "success" : "failure") + " for " + nameOf(S.selected) + ". Thompson now recommends " + V.ts.name + "; UCB1 recommends " + V.ucb.name + ".", $("record-status"));
@@ -513,7 +568,7 @@
   function tools() {
     const mc = (typeof document !== "undefined" && document.modelContext) || (typeof navigator !== "undefined" && navigator.modelContext);
     if (!mc) return;
-    const result = (x) => ({ content: [{ type: "text", text: JSON.stringify(x) }] });
+    const result = (/** @type {unknown} */ x) => ({ content: [{ type: "text", text: JSON.stringify(x) }] });
     const snapshot = () => {
       const V = view();
       return { experiment: { title: S.title, success: S.success, unit: S.unit, template: S.template, evidence: S.basis, prior: V.priorText,
@@ -524,8 +579,9 @@
     };
     mc.registerTool({ name: "get_data", description: "Return the committed experiment, both recommendations, the simulation results and next week's hours plan, as shown on the page.", inputSchema: { type: "object", properties: {}, additionalProperties: false }, annotations: { readOnlyHint: true }, async execute() { return result(snapshot()); } });
     mc.registerTool({ name: "get_metadata", description: "Return the page title, templates, assumptions, limits and method references.", inputSchema: { type: "object", properties: {}, additionalProperties: false }, annotations: { readOnlyHint: true }, async execute() { return result({ title: document.title, url: "https://teoyujie.org/visuals/multi-armed-bandit/", format: L.FORMAT, version: L.VERSION, templates: D.templates.map((t) => ({ id: t.id, label: t.label, fictional: t.fictional })), assumptions: D.assumptions, references: D.references, limits: L.LIMITS, hours: self.HoursLogic ? { format: HoursLogic.FORMAT, version: HoursLogic.VERSION, assumptions: D.hours.assumptions, limits: HoursLogic.LIMITS } : null }); } });
-    mc.registerTool({ name: "query", description: "Find variants in the current experiment, or templates, whose name contains the text; read-only.", inputSchema: { type: "object", properties: { text: { type: "string" } }, additionalProperties: false }, annotations: { readOnlyHint: true }, async execute(input) {
+    mc.registerTool({ name: "query", description: "Find variants in the current experiment, or templates, whose name contains the text; read-only.", inputSchema: { type: "object", properties: { text: { type: "string" } }, additionalProperties: false }, annotations: { readOnlyHint: true }, async execute(/** @type {{ text?: string } | undefined} */ input) {
       const q = String((input && input.text) || "").trim().toLowerCase(), snap = snapshot();
+      // @ts-expect-error variant and template records differ, but every one has the name the filter reads
       const all = snap.experiment.variants.map((v) => Object.assign({ type: "variant" }, v)).concat(D.templates.map((t) => ({ type: "template", id: t.id, name: t.label, fictional: t.fictional })));
       const hits = all.filter((x) => !q || x.name.toLowerCase().includes(q));
       return result({ results: hits.slice(0, 50), total: hits.length, truncated: hits.length > 50 });
