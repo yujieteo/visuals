@@ -197,8 +197,7 @@
     let theta = Math.abs(Ixy) <= 1e-13 * scaleI ? (Ix >= Iy ? 0 : Math.PI / 2) : 0.5 * Math.atan2(-2 * Ixy, Ix - Iy);
     if (theta > Math.PI / 2) theta -= Math.PI;
     if (theta <= -Math.PI / 2) theta += Math.PI;
-    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
-    for (const q of solids) { x0 = Math.min(x0, q.box.x0); x1 = Math.max(x1, q.box.x1); y0 = Math.min(y0, q.box.y0); y1 = Math.max(y1, q.box.y1); }
+    const { x0, x1, y0, y1 } = G.unionBox(solids.map((q) => q.box));
     const Ip = Ix + Iy;
     // Values at rounding-error level of the section's own scale are reported as exactly 0.
     const L = Math.hypot(x1 - x0, y1 - y0);

@@ -136,13 +136,7 @@ function sizeCanvas() {
   return false;
 }
 function fit() {
-  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
-  for (const p of draft.parts) {
-    const g = partGeom(p);
-    if (!g) continue;
-    const b = boxOf(g.contours);
-    x0 = Math.min(x0, b.x0); x1 = Math.max(x1, b.x1); y0 = Math.min(y0, b.y0); y1 = Math.max(y1, b.y1);
-  }
+  let { x0, x1, y0, y1 } = G.unionBox(draft.parts.map(partGeom).filter(Boolean).map((g) => boxOf(g.contours)));
   if (!Number.isFinite(x0)) { x0 = -100; x1 = 100; y0 = -100; y1 = 100; }
   const w = Math.max(x1 - x0, 1), hh = Math.max(y1 - y0, 1);
   const pad = 0.14;
@@ -879,9 +873,11 @@ function download(name, blob) {
   a.click();
   setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
 }
+/* Exports and share links need a model that computes. */
+function requireModel() { if (failure) throw new Error(`Fix the model first: ${failure.message}`); }
 const slug = () => (draft.title || "section").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "section";
 function fullResult() {
-  if (failure) throw new Error(`Fix the model first: ${failure.message}`);
+  requireModel();
   if (!plasticResult || plasticStale) runPlastic();
   return plasticResult || L.compute(draft, { accuracy: ACCURACY });
 }
@@ -996,7 +992,7 @@ function renderHand() {
 $("hand-details").addEventListener("toggle", renderHand);
 function handStatus(msg) { $("hand-status").textContent = msg; }
 function handText() {
-  if (failure) throw new Error(`Fix the model first: ${failure.message}`);
+  requireModel();
   return L.buildHandMarkdown(fullResult());
 }
 $("save-hand").addEventListener("click", () => {
@@ -1049,7 +1045,7 @@ function decodeModel(text) {
   return L.section.normalize(L.yaml.parse(new TextDecoder().decode(bytes)));
 }
 $("share").addEventListener("click", guarded(() => {
-  if (failure) throw new Error(`Fix the model first: ${failure.message}`);
+  requireModel();
   const url = `${location.href.split("#")[0]}#model=${encodeModel(L.section.normalize(draft))}`;
   history.replaceState(null, "", url);
   if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(() => status("Share link copied."), () => status("Share link is in the address bar."));

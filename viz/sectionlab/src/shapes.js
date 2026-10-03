@@ -25,6 +25,8 @@
   const RECT_CORNERS = ["bottom left", "bottom right", "top right", "top left"];
 
   const need = (cond, message) => { if (!cond) throw new RangeError(message); };
+  /* Resize a shape given by width b and depth h to a new bounding box. */
+  const scaleBH = (d, sx, sy) => ({ ...d, b: d.b * sx, h: d.h * sy });
 
   /* Centre the bounding box of vertex lists on the origin. */
   function centreVerts(lists) {
@@ -51,7 +53,7 @@
         const b = d.b / 2, h = d.h / 2;
         return polygonShape([[-b, -h], [b, -h], [b, h], [-b, h]], r, RECT_CORNERS);
       },
-      resize: (d, sx, sy) => ({ ...d, b: d.b * sx, h: d.h * sy }),
+      resize: scaleBH,
     },
     circle: {
       label: "Circle", family: "solid", phase: 1, locked: true,
@@ -126,7 +128,7 @@
         const inner = polygonShape([[-bi, -hi], [bi, -hi], [bi, hi], [-bi, hi]], r.slice(4, 8), names.slice(4, 8), "Inner corner");
         return { contours: [outer.contours[0], G.reverseContour(inner.contours[0])], corners: [...outer.corners, ...inner.corners] };
       },
-      resize: (d, sx, sy) => ({ ...d, b: d.b * sx, h: d.h * sy }),
+      resize: scaleBH,
     },
     chs: {
       label: "Circular hollow", family: "hollow", phase: 1, locked: true,
@@ -154,7 +156,7 @@
         const b = d.b / 2, h = d.h / 2, w = d.tw / 2, f = h - d.tf;
         return polygonShape([[-b, -h], [b, -h], [b, -f], [w, -f], [w, f], [b, f], [b, h], [-b, h], [-b, f], [-w, f], [-w, -f], [-b, -f]], r, this.corners());
       },
-      resize: (d, sx, sy) => ({ ...d, b: d.b * sx, h: d.h * sy }),
+      resize: scaleBH,
     },
     channel: {
       label: "Channel", family: "rolled", phase: 2,
@@ -168,7 +170,7 @@
         const [v] = centreVerts([[[0, 0], [d.b, 0], [d.b, d.tf], [d.tw, d.tf], [d.tw, d.h - d.tf], [d.b, d.h - d.tf], [d.b, d.h], [0, d.h]]]);
         return polygonShape(v, r, this.corners());
       },
-      resize: (d, sx, sy) => ({ ...d, b: d.b * sx, h: d.h * sy }),
+      resize: scaleBH,
     },
     angle: {
       label: "Angle", family: "rolled", phase: 2,
@@ -180,7 +182,7 @@
         const [v] = centreVerts([[[0, 0], [d.b, 0], [d.b, d.t], [d.t, d.t], [d.t, d.h], [0, d.h]]]);
         return polygonShape(v, r, this.corners());
       },
-      resize: (d, sx, sy) => ({ ...d, b: d.b * sx, h: d.h * sy }),
+      resize: scaleBH,
     },
     tee: {
       label: "Tee", family: "rolled", phase: 2,
@@ -194,7 +196,7 @@
         const [v] = centreVerts([[[-d.tw / 2, 0], [d.tw / 2, 0], [d.tw / 2, d.h - d.tf], [d.b / 2, d.h - d.tf], [d.b / 2, d.h], [-d.b / 2, d.h], [-d.b / 2, d.h - d.tf], [-d.tw / 2, d.h - d.tf]]]);
         return polygonShape(v, r, this.corners());
       },
-      resize: (d, sx, sy) => ({ ...d, b: d.b * sx, h: d.h * sy }),
+      resize: scaleBH,
     },
     zed: {
       label: "Z section", family: "rolled", phase: 2,
@@ -225,7 +227,7 @@
         const b = d.b / 2, h = d.h / 2, p = d.tb / 2, q = d.th / 2;
         return polygonShape([[b, -p], [b, p], [q, p], [q, h], [-q, h], [-q, p], [-b, p], [-b, -p], [-q, -p], [-q, -h], [q, -h], [q, -p]], r, this.corners());
       },
-      resize: (d, sx, sy) => ({ ...d, b: d.b * sx, h: d.h * sy }),
+      resize: scaleBH,
     },
 
     /* ---------- phase 3: cold-formed thin-walled shapes (outer dimensions, wall t, inside bend radius ri) ---------- */
@@ -241,7 +243,7 @@
         need(b > t && h > t, "Wall t must be less than both legs.");
         return coldFormed([[0, 0, R], [b, 0, 0], [b, t, 0], [t, t, ri], [t, h, 0], [0, h, 0]]);
       },
-      resize: (d, sx, sy) => ({ ...d, b: d.b * sx, h: d.h * sy }),
+      resize: scaleBH,
     },
     cfchannel: {
       label: "Cold-formed channel", family: "cold-formed", phase: 3,
@@ -261,7 +263,7 @@
           : [[b, 0, 0], [0, 0, R], [0, h, R], [b, h, 0], [b, h - t, 0], [t, h - t, ri], [t, t, ri], [b, t, 0]];
         return coldFormed(pts);
       },
-      resize: (d, sx, sy) => ({ ...d, b: d.b * sx, h: d.h * sy }),
+      resize: scaleBH,
     },
     cfzed: {
       label: "Cold-formed Z", family: "cold-formed", phase: 3,

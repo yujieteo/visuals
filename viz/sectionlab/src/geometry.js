@@ -146,6 +146,20 @@
 
   const area = (contours) => moments(contours, { ni: 1, nj: 1 })[0][0];
 
+  /* The angles base + k·2π that an arc segment sweeps through: where it is tangent to a direction. */
+  function arcAnglesAt(s, base) {
+    const a = Math.min(s.t0, s.t1), b = Math.max(s.t0, s.t1), out = [];
+    for (let k = Math.ceil((a - base) / TAU); base + k * TAU <= b; k++) out.push(base + k * TAU);
+    return out;
+  }
+
+  /* The smallest box holding every given box ({ x0, x1, y0, y1 }); infinite bounds when there are none. */
+  function unionBox(boxes) {
+    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+    for (const b of boxes) { x0 = Math.min(x0, b.x0); x1 = Math.max(x1, b.x1); y0 = Math.min(y0, b.y0); y1 = Math.max(y1, b.y1); }
+    return { x0, x1, y0, y1 };
+  }
+
   /* Extent of the region along direction (dx, dy): max and min of x·dx + y·dy over the boundary. */
   function extent(contours, dx = 0, dy = 1) {
     let lo = Infinity, hi = -Infinity;
@@ -155,13 +169,7 @@
     for (const k of contours) for (const s of k) {
       take(segStart(s)); take(segEnd(s));
       if (s.type === "arc") {
-        const a = Math.min(s.t0, s.t1), b = Math.max(s.t0, s.t1);
-        for (const t0 of [dir, dir + Math.PI]) {
-          for (let k2 = Math.ceil((a - t0) / TAU); t0 + k2 * TAU <= b; k2++) {
-            const t = t0 + k2 * TAU;
-            take([s.c[0] + s.r * Math.cos(t), s.c[1] + s.r * Math.sin(t)]);
-          }
-        }
+        for (const base of [dir, dir + Math.PI]) for (const t of arcAnglesAt(s, base)) take([s.c[0] + s.r * Math.cos(t), s.c[1] + s.r * Math.sin(t)]);
       }
     }
     return { lo: lo / len, hi: hi / len };
@@ -178,10 +186,7 @@
     for (const k of contours) for (const s of k) {
       out.push(segStart(s)[1], segEnd(s)[1]);
       if (s.type === "arc") {
-        const a = Math.min(s.t0, s.t1), b = Math.max(s.t0, s.t1);
-        for (const t0 of [Math.PI / 2, -Math.PI / 2]) {
-          for (let k2 = Math.ceil((a - t0) / TAU); t0 + k2 * TAU <= b; k2++) out.push(s.c[1] + s.r * Math.sin(t0 + k2 * TAU));
-        }
+        for (const base of [Math.PI / 2, -Math.PI / 2]) for (const t of arcAnglesAt(s, base)) out.push(s.c[1] + s.r * Math.sin(t));
       }
     }
     return out;
@@ -412,7 +417,7 @@
 
   return {
     line, arc, circle, segStart, segEnd, reverseContour, transformSegment, transformContours, toFrame, quarterTurn,
-    moments, area, extent, bbox, breakLevels, filletedPolygon, polygonize, signedArea, triangulate,
+    moments, area, extent, bbox, unionBox, breakLevels, filletedPolygon, polygonize, signedArea, triangulate,
     convexIntersectionArea, polyRegion, regionIntersectionArea, regionArea, svgPath,
   };
 });

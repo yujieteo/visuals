@@ -380,11 +380,7 @@
   const LIGHT = { bg: "#ffffff", fg: "#1d1d1f", muted: "#6e6e73", grid: "#e8e8ed", fill: "#c9d7ee", stroke: "#2a5ca8", void: "#ffffff", axis: "#eb6834", curve: "#2a78d6", ref: "#6e6e73", mark: "#1d1d1f" };
   const MATERIAL_FILLS = ["#c9d7ee", "#f3d2c1", "#cfe8d9", "#e6d5f0", "#f5e6b8", "#d6e4e8"];
 
-  function figureBox(parts) {
-    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
-    for (const q of parts) { const b = G.bbox(q.contours); x0 = Math.min(x0, b.x0); x1 = Math.max(x1, b.x1); y0 = Math.min(y0, b.y0); y1 = Math.max(y1, b.y1); }
-    return { x0, x1, y0, y1 };
-  }
+  const figureBox = (parts) => G.unionBox(parts.map((q) => G.bbox(q.contours)));
 
   /* parts: [{ contours, void, fillIndex }]; returns an SVG string. */
   function sectionSvg(report, { width = 480, height = 400, colors = LIGHT, font = "Helvetica, Arial, sans-serif" } = {}) {

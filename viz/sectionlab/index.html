@@ -45,6 +45,8 @@ section{margin-top:clamp(2.5rem,7vw,4rem);padding-top:1.25rem;border-top:1px sol
 select,input[type="number"],input[type="text"]{border:1px solid var(--control);background:var(--bg);border-radius:var(--r);padding:.3rem .5rem;min-height:2.25rem;font-size:.875rem;min-width:0;width:100%}
 input[type="number"]{font-variant-numeric:tabular-nums}
 [aria-invalid="true"]{border-color:var(--bad)!important;box-shadow:0 0 0 1px var(--bad)}
+/* WebKit counts a long selected option (a material name) past the select's box in the page's scroll width; clip it. */
+select{overflow:hidden;text-overflow:ellipsis}
 .toolbar select{width:auto;max-width:100%}
 .app{display:grid;gap:1.25rem 1.75rem;grid-template-columns:minmax(0,1fr) minmax(0,22rem);align-items:start}
 @media (max-width:62rem){.app{grid-template-columns:minmax(0,1fr)}}
@@ -479,6 +481,20 @@ const ACCURACY = {"generated_by":"reference/torsion_accuracy.py","reference":"Pr
 
   const area = (contours) => moments(contours, { ni: 1, nj: 1 })[0][0];
 
+  /* The angles base + k·2π that an arc segment sweeps through: where it is tangent to a direction. */
+  function arcAnglesAt(s, base) {
+    const a = Math.min(s.t0, s.t1), b = Math.max(s.t0, s.t1), out = [];
+    for (let k = Math.ceil((a - base) / TAU); base + k * TAU <= b; k++) out.push(base + k * TAU);
+    return out;
+  }
+
+  /* The smallest box holding every given box ({ x0, x1, y0, y1 }); infinite bounds when there are none. */
+  function unionBox(boxes) {
+    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+    for (const b of boxes) { x0 = Math.min(x0, b.x0); x1 = Math.max(x1, b.x1); y0 = Math.min(y0, b.y0); y1 = Math.max(y1, b.y1); }
+    return { x0, x1, y0, y1 };
+  }
+
   /* Extent of the region along direction (dx, dy): max and min of x·dx + y·dy over the boundary. */
   function extent(contours, dx = 0, dy = 1) {
     let lo = Infinity, hi = -Infinity;
@@ -488,13 +504,7 @@ const ACCURACY = {"generated_by":"reference/torsion_accuracy.py","reference":"Pr
     for (const k of contours) for (const s of k) {
       take(segStart(s)); take(segEnd(s));
       if (s.type === "arc") {
-        const a = Math.min(s.t0, s.t1), b = Math.max(s.t0, s.t1);
-        for (const t0 of [dir, dir + Math.PI]) {
-          for (let k2 = Math.ceil((a - t0) / TAU); t0 + k2 * TAU <= b; k2++) {
-            const t = t0 + k2 * TAU;
-            take([s.c[0] + s.r * Math.cos(t), s.c[1] + s.r * Math.sin(t)]);
-          }
-        }
+        for (const base of [dir, dir + Math.PI]) for (const t of arcAnglesAt(s, base)) take([s.c[0] + s.r * Math.cos(t), s.c[1] + s.r * Math.sin(t)]);
       }
     }
     return { lo: lo / len, hi: hi / len };
@@ -511,10 +521,7 @@ const ACCURACY = {"generated_by":"reference/torsion_accuracy.py","reference":"Pr
     for (const k of contours) for (const s of k) {
       out.push(segStart(s)[1], segEnd(s)[1]);
       if (s.type === "arc") {
-        const a = Math.min(s.t0, s.t1), b = Math.max(s.t0, s.t1);
-        for (const t0 of [Math.PI / 2, -Math.PI / 2]) {
-          for (let k2 = Math.ceil((a - t0) / TAU); t0 + k2 * TAU <= b; k2++) out.push(s.c[1] + s.r * Math.sin(t0 + k2 * TAU));
-        }
+        for (const base of [Math.PI / 2, -Math.PI / 2]) for (const t of arcAnglesAt(s, base)) out.push(s.c[1] + s.r * Math.sin(t));
       }
     }
     return out;
@@ -745,7 +752,7 @@ const ACCURACY = {"generated_by":"reference/torsion_accuracy.py","reference":"Pr
 
   return {
     line, arc, circle, segStart, segEnd, reverseContour, transformSegment, transformContours, toFrame, quarterTurn,
-    moments, area, extent, bbox, breakLevels, filletedPolygon, polygonize, signedArea, triangulate,
+    moments, area, extent, bbox, unionBox, breakLevels, filletedPolygon, polygonize, signedArea, triangulate,
     convexIntersectionArea, polyRegion, regionIntersectionArea, regionArea, svgPath,
   };
 });
@@ -777,6 +784,8 @@ const ACCURACY = {"generated_by":"reference/torsion_accuracy.py","reference":"Pr
   const RECT_CORNERS = ["bottom left", "bottom right", "top right", "top left"];
 
   const need = (cond, message) => { if (!cond) throw new RangeError(message); };
+  /* Resize a shape given by width b and depth h to a new bounding box. */
+  const scaleBH = (d, sx, sy) => ({ ...d, b: d.b * sx, h: d.h * sy });
 
   /* Centre the bounding box of vertex lists on the origin. */
   function centreVerts(lists) {
@@ -803,7 +812,7 @@ const ACCURACY = {"generated_by":"reference/torsion_accuracy.py","reference":"Pr
         const b = d.b / 2, h = d.h / 2;
         return polygonShape([[-b, -h], [b, -h], [b, h], [-b, h]], r, RECT_CORNERS);
       },
-      resize: (d, sx, sy) => ({ ...d, b: d.b * sx, h: d.h * sy }),
+      resize: scaleBH,
     },
     circle: {
       label: "Circle", family: "solid", phase: 1, locked: true,
@@ -878,7 +887,7 @@ const ACCURACY = {"generated_by":"reference/torsion_accuracy.py","reference":"Pr
         const inner = polygonShape([[-bi, -hi], [bi, -hi], [bi, hi], [-bi, hi]], r.slice(4, 8), names.slice(4, 8), "Inner corner");
         return { contours: [outer.contours[0], G.reverseContour(inner.contours[0])], corners: [...outer.corners, ...inner.corners] };
       },
-      resize: (d, sx, sy) => ({ ...d, b: d.b * sx, h: d.h * sy }),
+      resize: scaleBH,
     },
     chs: {
       label: "Circular hollow", family: "hollow", phase: 1, locked: true,
@@ -906,7 +915,7 @@ const ACCURACY = {"generated_by":"reference/torsion_accuracy.py","reference":"Pr
         const b = d.b / 2, h = d.h / 2, w = d.tw / 2, f = h - d.tf;
         return polygonShape([[-b, -h], [b, -h], [b, -f], [w, -f], [w, f], [b, f], [b, h], [-b, h], [-b, f], [-w, f], [-w, -f], [-b, -f]], r, this.corners());
       },
-      resize: (d, sx, sy) => ({ ...d, b: d.b * sx, h: d.h * sy }),
+      resize: scaleBH,
     },
     channel: {
       label: "Channel", family: "rolled", phase: 2,
@@ -920,7 +929,7 @@ const ACCURACY = {"generated_by":"reference/torsion_accuracy.py","reference":"Pr
         const [v] = centreVerts([[[0, 0], [d.b, 0], [d.b, d.tf], [d.tw, d.tf], [d.tw, d.h - d.tf], [d.b, d.h - d.tf], [d.b, d.h], [0, d.h]]]);
         return polygonShape(v, r, this.corners());
       },
-      resize: (d, sx, sy) => ({ ...d, b: d.b * sx, h: d.h * sy }),
+      resize: scaleBH,
     },
     angle: {
       label: "Angle", family: "rolled", phase: 2,
@@ -932,7 +941,7 @@ const ACCURACY = {"generated_by":"reference/torsion_accuracy.py","reference":"Pr
         const [v] = centreVerts([[[0, 0], [d.b, 0], [d.b, d.t], [d.t, d.t], [d.t, d.h], [0, d.h]]]);
         return polygonShape(v, r, this.corners());
       },
-      resize: (d, sx, sy) => ({ ...d, b: d.b * sx, h: d.h * sy }),
+      resize: scaleBH,
     },
     tee: {
       label: "Tee", family: "rolled", phase: 2,
@@ -946,7 +955,7 @@ const ACCURACY = {"generated_by":"reference/torsion_accuracy.py","reference":"Pr
         const [v] = centreVerts([[[-d.tw / 2, 0], [d.tw / 2, 0], [d.tw / 2, d.h - d.tf], [d.b / 2, d.h - d.tf], [d.b / 2, d.h], [-d.b / 2, d.h], [-d.b / 2, d.h - d.tf], [-d.tw / 2, d.h - d.tf]]]);
         return polygonShape(v, r, this.corners());
       },
-      resize: (d, sx, sy) => ({ ...d, b: d.b * sx, h: d.h * sy }),
+      resize: scaleBH,
     },
     zed: {
       label: "Z section", family: "rolled", phase: 2,
@@ -977,7 +986,7 @@ const ACCURACY = {"generated_by":"reference/torsion_accuracy.py","reference":"Pr
         const b = d.b / 2, h = d.h / 2, p = d.tb / 2, q = d.th / 2;
         return polygonShape([[b, -p], [b, p], [q, p], [q, h], [-q, h], [-q, p], [-b, p], [-b, -p], [-q, -p], [-q, -h], [q, -h], [q, -p]], r, this.corners());
       },
-      resize: (d, sx, sy) => ({ ...d, b: d.b * sx, h: d.h * sy }),
+      resize: scaleBH,
     },
 
     /* ---------- phase 3: cold-formed thin-walled shapes (outer dimensions, wall t, inside bend radius ri) ---------- */
@@ -993,7 +1002,7 @@ const ACCURACY = {"generated_by":"reference/torsion_accuracy.py","reference":"Pr
         need(b > t && h > t, "Wall t must be less than both legs.");
         return coldFormed([[0, 0, R], [b, 0, 0], [b, t, 0], [t, t, ri], [t, h, 0], [0, h, 0]]);
       },
-      resize: (d, sx, sy) => ({ ...d, b: d.b * sx, h: d.h * sy }),
+      resize: scaleBH,
     },
     cfchannel: {
       label: "Cold-formed channel", family: "cold-formed", phase: 3,
@@ -1013,7 +1022,7 @@ const ACCURACY = {"generated_by":"reference/torsion_accuracy.py","reference":"Pr
           : [[b, 0, 0], [0, 0, R], [0, h, R], [b, h, 0], [b, h - t, 0], [t, h - t, ri], [t, t, ri], [b, t, 0]];
         return coldFormed(pts);
       },
-      resize: (d, sx, sy) => ({ ...d, b: d.b * sx, h: d.h * sy }),
+      resize: scaleBH,
     },
     cfzed: {
       label: "Cold-formed Z", family: "cold-formed", phase: 3,
@@ -1288,8 +1297,7 @@ const ACCURACY = {"generated_by":"reference/torsion_accuracy.py","reference":"Pr
     let theta = Math.abs(Ixy) <= 1e-13 * scaleI ? (Ix >= Iy ? 0 : Math.PI / 2) : 0.5 * Math.atan2(-2 * Ixy, Ix - Iy);
     if (theta > Math.PI / 2) theta -= Math.PI;
     if (theta <= -Math.PI / 2) theta += Math.PI;
-    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
-    for (const q of solids) { x0 = Math.min(x0, q.box.x0); x1 = Math.max(x1, q.box.x1); y0 = Math.min(y0, q.box.y0); y1 = Math.max(y1, q.box.y1); }
+    const { x0, x1, y0, y1 } = G.unionBox(solids.map((q) => q.box));
     const Ip = Ix + Iy;
     // Values at rounding-error level of the section's own scale are reported as exactly 0.
     const L = Math.hypot(x1 - x0, y1 - y0);
@@ -2578,11 +2586,7 @@ const ACCURACY = {"generated_by":"reference/torsion_accuracy.py","reference":"Pr
   const LIGHT = { bg: "#ffffff", fg: "#1d1d1f", muted: "#6e6e73", grid: "#e8e8ed", fill: "#c9d7ee", stroke: "#2a5ca8", void: "#ffffff", axis: "#eb6834", curve: "#2a78d6", ref: "#6e6e73", mark: "#1d1d1f" };
   const MATERIAL_FILLS = ["#c9d7ee", "#f3d2c1", "#cfe8d9", "#e6d5f0", "#f5e6b8", "#d6e4e8"];
 
-  function figureBox(parts) {
-    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
-    for (const q of parts) { const b = G.bbox(q.contours); x0 = Math.min(x0, b.x0); x1 = Math.max(x1, b.x1); y0 = Math.min(y0, b.y0); y1 = Math.max(y1, b.y1); }
-    return { x0, x1, y0, y1 };
-  }
+  const figureBox = (parts) => G.unionBox(parts.map((q) => G.bbox(q.contours)));
 
   /* parts: [{ contours, void, fillIndex }]; returns an SVG string. */
   function sectionSvg(report, { width = 480, height = 400, colors = LIGHT, font = "Helvetica, Arial, sans-serif" } = {}) {
@@ -3645,13 +3649,7 @@ function sizeCanvas() {
   return false;
 }
 function fit() {
-  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
-  for (const p of draft.parts) {
-    const g = partGeom(p);
-    if (!g) continue;
-    const b = boxOf(g.contours);
-    x0 = Math.min(x0, b.x0); x1 = Math.max(x1, b.x1); y0 = Math.min(y0, b.y0); y1 = Math.max(y1, b.y1);
-  }
+  let { x0, x1, y0, y1 } = G.unionBox(draft.parts.map(partGeom).filter(Boolean).map((g) => boxOf(g.contours)));
   if (!Number.isFinite(x0)) { x0 = -100; x1 = 100; y0 = -100; y1 = 100; }
   const w = Math.max(x1 - x0, 1), hh = Math.max(y1 - y0, 1);
   const pad = 0.14;
@@ -4388,9 +4386,11 @@ function download(name, blob) {
   a.click();
   setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
 }
+/* Exports and share links need a model that computes. */
+function requireModel() { if (failure) throw new Error(`Fix the model first: ${failure.message}`); }
 const slug = () => (draft.title || "section").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "section";
 function fullResult() {
-  if (failure) throw new Error(`Fix the model first: ${failure.message}`);
+  requireModel();
   if (!plasticResult || plasticStale) runPlastic();
   return plasticResult || L.compute(draft, { accuracy: ACCURACY });
 }
@@ -4505,7 +4505,7 @@ function renderHand() {
 $("hand-details").addEventListener("toggle", renderHand);
 function handStatus(msg) { $("hand-status").textContent = msg; }
 function handText() {
-  if (failure) throw new Error(`Fix the model first: ${failure.message}`);
+  requireModel();
   return L.buildHandMarkdown(fullResult());
 }
 $("save-hand").addEventListener("click", () => {
@@ -4558,7 +4558,7 @@ function decodeModel(text) {
   return L.section.normalize(L.yaml.parse(new TextDecoder().decode(bytes)));
 }
 $("share").addEventListener("click", guarded(() => {
-  if (failure) throw new Error(`Fix the model first: ${failure.message}`);
+  requireModel();
   const url = `${location.href.split("#")[0]}#model=${encodeModel(L.section.normalize(draft))}`;
   history.replaceState(null, "", url);
   if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(() => status("Share link copied."), () => status("Share link is in the address bar."));
