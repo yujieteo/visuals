@@ -14,7 +14,7 @@ in a browser, then:
 python3 scripts/check.py <slug>        # one visual's checks, from its folder
 python3 scripts/check.py --changed     # the visuals your branch changes (against origin/main)
 python3 scripts/check.py --all         # every visual
-python3 scripts/check_repo.py          # every visual.json, the folder rules, no absolute home paths
+python3 scripts/check_repo.py          # every visual.json, the folder rules, no absolute home paths, no tracked artifacts
 python3 scripts/build_catalogue.py     # build/catalogue.json and build/index.html, a gallery to browse
 python3 scripts/sync_template.py <site>/templates/beamdswitch.js  # copy the site's report template into every visual that carries it
 ```
@@ -37,7 +37,7 @@ builder template's, as `typecheck.page` says), less the blocks its `visual.json`
 | `viz/<slug>/e2e/` | Its browser checks: `manifest.json` and, when it has them, the fuller `full.test.mjs`. |
 | `viz/<slug>/beamdswitch.js`, `report.js` | The site's unchanged beamdswitch report template and the page's report, for pages that export a narrated deck. |
 | `viz/<slug>/SKILLS.md`, `AGENTS.md` | How an agent uses the page and its WebMCP tools; what is specific to changing it. |
-| `scripts/check.py`, `changed.py`, `check_repo.py`, `build_catalogue.py`, `typecheck.mjs`, `with_chrome.py`, `sync_template.py` | The shared tooling: per-visual checks, the changed-visual selection, the repository check, the generated catalogue, the type-check extractor, the headless Chrome a visual's browser tests use in CI, the beamdswitch template sync. |
+| `scripts/check.py`, `changed.py`, `check_repo.py`, `rules.py`, `deadcode.mjs`, `build_catalogue.py`, `typecheck.mjs`, `with_chrome.py`, `sync_template.py` | The shared tooling: per-visual checks, the changed-visual selection, the repository check, the deterministic rules, the dead-code check, the generated catalogue, the type-check extractor, the headless Chrome a visual's browser tests use in CI, the beamdswitch template sync. |
 | `scripts/page_parts.py`, `style_guide.py`, `stock_cases.py`, `templates/` | Modules the builders share. |
 | `design-tokens.json` | Shared colours, spacing, radius and fonts; `style_guide` holds the light and dark tokens of the shared visual style guide. |
 | `tests/` | Tests of the shared tooling only. |
@@ -51,11 +51,15 @@ builder template's, as `typecheck.page` says), less the blocks its `visual.json`
 
 `scripts/check.py` runs each visual's checks from its own folder: its builder's
 `--verify`, its `tests/*.test.{mjs,cjs}` with `node --test`, its
-`tests/test_*.py` with unittest, its type check, and a check that
+`tests/test_*.py` with unittest, its type check, a check that
 `visual.json` and `SKILLS.md` name exactly the WebMCP tools the page
-registers. CI runs them only for the visuals a change touches, each in its own
-job, and runs every visual when shared tooling changes. `.no-mistakes.yaml`
-pins the gate's test step to the same scoped commands.
+registers, and the deterministic rules of `scripts/rules.py` and
+`scripts/deadcode.mjs`: the beamdswitch template copies, the page's requests,
+colour contrast in both themes, and dead or duplicated code
+([docs/monorepo.md](docs/monorepo.md#checks)). CI runs them only for the
+visuals a change touches, each in its own job, and runs every visual when
+shared tooling changes. `.no-mistakes.yaml` pins the gate's test step to the
+same scoped commands.
 
 ## Generated outputs
 

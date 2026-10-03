@@ -20,7 +20,8 @@ import { fileURLToPath } from "node:url";
 
 /** The checks every visual gets. */
 export const BASELINE_CHECKS = /** @type {const} */ ([
-  "opens", "runtime-errors", "console-errors", "network", "file-url", "overflow-320", "primary-control",
+  "opens", "runtime-errors", "console-errors", "network", "file-url", "overflow-320", "overflow-390", "primary-control",
+  "numeric-text",
 ]);
 
 /** The fuller section-28 checks, written per visual in its e2e/full.test.js. */

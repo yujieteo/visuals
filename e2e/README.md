@@ -57,7 +57,9 @@ Everything is chosen by environment variables:
 | `network` | every request stays inside the artifact's folder; anything else is refused and counted, and no request of its own fails |
 | `file-url` | from `file://` it loads with no errors and no requests (only for visuals that say they work offline or from `file://`) |
 | `overflow-320` | nothing scrolls sideways in a 320 px viewport |
+| `overflow-390` | nothing scrolls sideways when the same page is then 390 px wide, a common phone width |
 | `primary-control` | operating its primary control changes what the reader sees (URL, text, form values, ARIA state, SVG or canvas) |
+| `numeric-text` | no visible text reads `NaN`, `Infinity` or `undefined`, as the page opens and after each visible number field and slider (up to 12) is set to its minimum, its maximum, 0 when in range and, for a number field, empty; an error that driving raises counts here |
 
 The primary control comes from the visual's manifest, or else the first
 visible slider, select, number field, tab, radio, checkbox, button or

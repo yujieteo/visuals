@@ -7,14 +7,23 @@ For each viz/<slug>/, in order:
   python   python3 -m unittest discover over tests/test_*.py, when there are any
   types    scripts/typecheck.mjs, when the folder has a tsconfig.json
   tools    visual.json's webmcp_tools and SKILLS.md's WebMCP tools table name exactly the tools the page
-           registers (at least them, and agree with each other, when some are registered in a loop)
-"checks" in visual.json replaces build, node and python with its own commands, run from the folder.
+           registers or defines (at least them, and agree with each other, when some are registered in a loop)
+  template every copy of the site's beamdswitch template matches scripts/templates/beamdswitch.sha256
+  requests the page requests only the files the site publishes beside it, never notes.md
+  contrast the page's colour tokens meet WCAG contrast in both themes
+  pydead   unused imports and locals, and definitions made twice, in the folder's Python
+  sourcetests  tests whose every assertion checks the page's source text instead of running its code
+  deadcode unused locals and imports, unreachable code and duplicate declarations in the page's inline
+           scripts and its test modules (scripts/deadcode.mjs, with the type checker)
+"checks" in visual.json replaces build, node and python with its own commands, run from the folder; the
+steps after them always run. scripts/rules.py says what each rule checks, and visual.json "allow" lists the
+findings a visual keeps on purpose.
 
 Usage: scripts/check.py SLUG... | --all | --changed [BASE] [--require-typecheck]
 
 --changed selects the visuals scripts/changed.py finds changed against BASE (default origin/main, else
-main). The type check needs `npm ci` at the repository root; without it the step is skipped unless
---require-typecheck (CI) makes that a failure. A failing visual never stops the others.
+main). The type check and the dead-code check need `npm ci` at the repository root; without it they are
+skipped unless --require-typecheck (CI) makes that a failure. A failing visual never stops the others.
 """
 import argparse
 import os
@@ -25,9 +34,14 @@ import sys
 import time
 
 import changed
+import rules
 from visuals import ROOT, VIZ, metadata
 
 REGISTERED = re.compile(r"registerTool\(\{\s*name:\s*['\"](\w+)['\"]")
+# Tools registered another way: tool objects in a list ({ name: "x", description: ... }), or a helper whose
+# first parameter is the name it registers (const tool = (name, description, ...) => mc.registerTool({ name, ...).
+DEFINED = re.compile(r"\bname:\s*['\"](\w+)['\"]\s*,\s*description\s*:")
+HELPER = re.compile(r"\b(?:const|let|var)\s+(\w+)\s*=\s*\(\s*name\b[^)]*\)\s*=>[^;]{0,200}?registerTool\(\{\s*name\b")
 DOCUMENTED = re.compile(r"^\| `(\w+)` \|", re.M)
 TSC = ROOT / "node_modules" / "typescript" / "package.json"
 
@@ -50,14 +64,21 @@ def tools_problems(folder, data):
 
     A page that registers every tool literally (registerTool({name: ...})) must declare exactly those. When
     it also registers others another way, such as from a list in a loop, the literal ones are only a lower
-    bound: visual.json and SKILLS.md must then name them and agree with each other.
+    bound: visual.json and SKILLS.md must then name them and agree with each other. A page that registers
+    none literally must declare exactly the tools it defines, as { name, description } objects or through
+    a helper that takes the name first.
     """
     html = (folder / "index.html").read_text(encoding="utf-8")
     literal = REGISTERED.findall(html)
     registered = set(literal)
+    complete = len(literal) == html.count("registerTool(")
+    if not registered and "registerTool(" in html:
+        registered = set(DEFINED.findall(html))
+        for helper in HELPER.findall(html):
+            registered |= set(re.findall(rf"\b{helper}\(\s*['\"](\w+)['\"]", html))
+        complete = True
     if not registered:
         return None
-    complete = len(literal) == html.count("registerTool(")
     declared = set(data.get("webmcp_tools", []))
     problems = []
     if complete and declared != registered:
@@ -73,6 +94,24 @@ def tools_problems(folder, data):
         elif not complete and documented != declared:
             problems.append(f"SKILLS.md documents {sorted(documented)} != visual.json webmcp_tools {sorted(declared)}")
     return problems
+
+
+def rule_steps(folder, data):
+    """(name, problems) for each static rule that applies to the folder, its allowed findings removed."""
+    html = (folder / "index.html").read_text(encoding="utf-8")
+    allow = data.get("allow", {})
+    steps = []
+    if (folder / "beamdswitch.js").is_file():
+        steps.append(("template", rules.template_problems(folder)))
+    for name, key, problems in (
+        ("requests", "requests", rules.request_problems(html, data)),
+        ("contrast", "contrast", rules.contrast_problems(html)),
+        ("pydead", "python", rules.python_folder_problems(folder)),
+        ("sourcetests", "sourcetests", rules.source_tests_problems(folder)),
+    ):
+        left, stale = rules.allowed(problems, allow.get(key))
+        steps.append((name, left + [f'visual.json allow.{key} lists "{entry}", which no longer occurs; remove it' for entry in stale]))
+    return steps
 
 
 def run(name, argv, folder, log):
@@ -106,6 +145,18 @@ def check(slug, require_typecheck=False):
             log.append(("types", "FAIL", 0.0))
         else:
             log.append(("types", "skipped (npm ci)", 0.0))
+    for name, problems in rule_steps(folder, data):
+        for problem in problems:
+            print(f"[{slug}] {name}: {problem}", file=sys.stderr)
+        log.append((name, "FAIL" if problems else "ok", 0.0))
+    if TSC.is_file():
+        print(f"[{slug}] deadcode: scripts/deadcode.mjs {slug}", flush=True)
+        run("deadcode", ["node", str(ROOT / "scripts" / "deadcode.mjs"), slug], ROOT, log)
+    elif require_typecheck:
+        print(f"[{slug}] deadcode: typescript is not installed; run npm ci", file=sys.stderr)
+        log.append(("deadcode", "FAIL", 0.0))
+    else:
+        log.append(("deadcode", "skipped (npm ci)", 0.0))
     problems = tools_problems(folder, data)
     if problems is None:
         log.append(("tools", "skipped (none registered literally)", 0.0))
