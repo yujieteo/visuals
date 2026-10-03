@@ -4,4 +4,4 @@
 
 `build.py` holds only this page's words (`CASE`); the shared `scripts/stock_cases.py` and `scripts/templates/stock-cases-report.js`, listed in `uses` in `visual.json`, render it and the other stock pages.
 
-Its logic, deck and browser tests still run in [yujieteo/marvell](https://github.com/yujieteo/marvell) until that repository is imported here with its history. Rules for every visual: [SKILLS.md](../../SKILLS.md).
+Its tests are in `tests/`, imported with their history from [yujieteo/marvell](https://github.com/yujieteo/marvell). Rules for every visual: [SKILLS.md](../../SKILLS.md).

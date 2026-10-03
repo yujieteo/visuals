@@ -4,4 +4,4 @@
 
 Refresh the data first with `python3 fetch.py` (data.gov.sg, no key needed); the builder also rewrites `meta.json`.
 
-Its logic, deck and browser tests still run in [yujieteo/haze-singapore](https://github.com/yujieteo/haze-singapore) until that repository is imported here with its history. Rules for every visual: [SKILLS.md](../../SKILLS.md).
+Its tests are in `tests/`, imported with their history from [yujieteo/haze-singapore](https://github.com/yujieteo/haze-singapore). Rules for every visual: [SKILLS.md](../../SKILLS.md).
