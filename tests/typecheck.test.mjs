@@ -1,7 +1,9 @@
 // scripts/typecheck.mjs: which inline scripts the shared extractor copies out for tsc, and where their lines map.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, mkdtempSync, rmSync, symlinkSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { cell, extract, parse, summarize, toPage } from "../scripts/typecheck.mjs";
@@ -134,5 +136,19 @@ test("a missing path, an unknown ref, an unknown visual or option is a usage err
     const run = spawnSync(process.execPath, [script, "--summary", ...args], { encoding: "utf8" });
     assert.equal(run.status, 2, args.join(" "));
     assert.ok(run.stdout.startsWith(`verdict: error\nerror: ${message}`), run.stdout);
+  }
+});
+
+test("--file finds a page's inline scripts when the repository is reached through a symlink", { skip: !installed && "npm ci not run" }, () => {
+  const dir = mkdtempSync(join(tmpdir(), "typecheck-"));
+  const link = join(dir, "repo");
+  symlinkSync(fileURLToPath(new URL("../", import.meta.url)), link);
+  try {
+    const args = ["scripts/typecheck.mjs", "--summary", "work-lanyards", "--scoped", "--file", "viz/work-lanyards/index.html"];
+    const run = spawnSync(process.execPath, args, { cwd: link, env: { ...process.env, PWD: link }, encoding: "utf8" });
+    assert.notEqual(run.status, 2, run.stdout);
+    assert.match(run.stdout, /^verdict: (pass|fail)\b/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
   }
 });

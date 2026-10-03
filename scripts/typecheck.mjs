@@ -19,7 +19,7 @@
 // Exit 0: no error counted; 1: an error counted, or projects left out without --scoped; 2: usage or
 // environment error (no tsc, a missing path, an unknown ref, a filter or slug that matches nothing).
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 const ROOT = new URL("../", import.meta.url);
@@ -254,10 +254,12 @@ function summary(argv) {
     found.push(...parse(`${run.stdout}\n${run.stderr}`, project, run.status));
   }
   if (file) {
-    const listed = projects.flatMap((project) => spawnSync(TSC, ["-p", project, "--listFilesOnly"], { cwd: fileURLToPath(ROOT), encoding: "utf8", maxBuffer: 1 << 28 }).stdout.split("\n"));
-    const want = fileURLToPath(new URL(file, ROOT));
+    // tsc lists paths under the working directory it was given (a symlinked one too), so compare real paths.
+    const listed = projects.flatMap((project) => spawnSync(TSC, ["-p", project, "--listFilesOnly"], { cwd: fileURLToPath(ROOT), encoding: "utf8", maxBuffer: 1 << 28 }).stdout.split("\n").filter((path) => path.trim()).map((path) => realpathSync(path.trim())));
+    const want = realpathSync(fileURLToPath(new URL(file, ROOT)));
     const inline = /^viz\/[^/]+\//.exec(file);
-    const inProject = projects.includes(file) || listed.some((path) => path.trim() === want || (inline && path.trim().startsWith(fileURLToPath(new URL(`${inline[0]}.typecheck/inline/`, ROOT)))));
+    const inlines = inline && `${realpathSync(fileURLToPath(new URL(inline[0], ROOT)))}/.typecheck/inline/`;
+    const inProject = projects.includes(file) || listed.some((path) => path === want || (inlines && path.startsWith(inlines)));
     if (!inProject) throw new UsageError(`--file ${file} is in none of the checked tsc projects, so the filter matches nothing`);
   }
   const header = (/** @type {string} */ path) => {
