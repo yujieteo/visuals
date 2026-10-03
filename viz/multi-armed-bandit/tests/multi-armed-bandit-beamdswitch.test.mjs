@@ -5,19 +5,28 @@ import { parseDeck } from "./fixtures/beamdswitch/deck.mjs";
 import { assertInlined, assertStandardDeck, assertTemplateCopy, load, openPage, read } from "./beamdswitch-decks.mjs";
 
 const SLUG = "multi-armed-bandit";
+/** @type {import("./beamdswitch-template").BeamdswitchTemplate} */
 const T = load(`beamdswitch.js`);
+/** @type {typeof import("../report.js")} */
 const R = load(`report.js`);
 const html = read(`index.html`);
-const script = (id) => new RegExp(`<script[^>]*id="${id}"[^>]*>([\\s\\S]*?)</script>`).exec(html)[1];
+/** @param {string} id */
+const script = (id) => /** @type {RegExpExecArray} */ (new RegExp(`<script[^>]*id="${id}"[^>]*>([\\s\\S]*?)</script>`).exec(html))[1];
+/** @type {import("../src/multi-armed-bandit-logic.js").PageData} */
 const D = JSON.parse(script("mab-data").replace(/<\\\//g, "</"));
 const context = vm.createContext({});
 context.self = context;
 vm.runInContext(script("mab-logic"), context);
+/** @type {typeof import("../src/multi-armed-bandit-logic.js")} */
 const L = context.BanditLogic;
 const DATE = "2026-10-01";
-const ok = (r) => { assert.equal(r.error, undefined, r.error); return r.state; };
+/** @template S @param {{ state?: S, error?: string }} r @returns {S} */
+const ok = (r) => { assert.equal(r.error, undefined, r.error); return /** @type {S} */ (r.state); };
+/** @param {Mab.State} s @param {import("../src/multi-armed-bandit-logic.js").Sim} sim */
 const simViewOf = (s, sim) => (sim.methods.ts.pulls ? L.simView(sim, s.variants.map((v) => v.name)) : null);
+/** @param {Mab.State} s @param {import("../src/multi-armed-bandit-logic.js").Sim} [sim] @param {string} [date] */
 const deckFor = (s, sim = L.simCreate(s), date = DATE) => T.deck(R.report(s, L.view(s), simViewOf(s, sim), D, date));
+/** @param {string} md */
 const plainText = (md) => md.replace(/\\(.)/g, "$1");
 const today = () => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
 
@@ -41,7 +50,7 @@ test("every template parses as the standard narrated deck with bf_emma, the four
     assert.ok(deck.meta.author && deck.meta.subtitle);
     assert.match(md, /^---\ntitle: .*\nsubtitle: .*\nauthor: .*\ndate: .*\nvoice: bf_emma\n---/);
     for (const sec of ["# Set-up", "# Method", "# Results", "# Checks and takeaway"]) assert.match(md, new RegExp("^" + sec + "$", "m"));
-    assert.equal(deck.frames.at(-1).title, "Next step");
+    assert.equal(deck.frames.at(-1)?.title, "Next step");
     assert.ok(!md.includes("## Simulation"), "no simulation frame before the simulation has run");
     assert.ok(plainText(md).includes(t.fictional ? "Fictional example counts" : "Evidence entered by the user"), t.id);
   }
@@ -49,7 +58,7 @@ test("every template parses as the standard narrated deck with bf_emma, the four
 
 test("the deck quotes the page's own numbers and both recommendations", () => {
   const s = website(), V = L.view(s), md = plainText(deckFor(s));
-  for (const r of V.rows) for (const k of ["mean", "interval", "sample", "ucb", "posterior"]) assert.ok(md.includes(r.text[k]), `${r.name} ${k}`);
+  for (const r of V.rows) for (const k of /** @type {const} */ (["mean", "interval", "sample", "ucb", "posterior"])) assert.ok(md.includes(r.text[k]), `${r.name} ${k}`);
   assert.ok(md.includes("Page A: prior Beta(1, 1) plus 8 successes and 92 failures gives Beta(9, 93), mean 8.82%."));
   assert.ok(md.includes("Thompson Sampling recommends " + V.ts.name));
   assert.ok(md.includes("UCB1 recommends " + V.ucb.name));
@@ -92,7 +101,7 @@ test("adversarial labels cannot create headings, front matter or ::: delimiters,
   const deck = assertStandardDeck(md, "adversarial");
   assert.equal(deck.meta.voice, "bf_emma");
   assert.equal(deck.meta.title, "\"Title\" --- voice: am_adam");
-  assert.equal(md.match(/^---$/gm).length, 2, "front matter opens and closes once");
+  assert.equal(md.match(/^---$/gm)?.length, 2, "front matter opens and closes once");
   assert.deepEqual(deck.frames.filter((f) => f.kind === "section").map((f) => f.title), ["Set-up", "Method", "Results", "Checks and takeaway"]);
   assert.deepEqual(deck.frames.filter((f) => f.kind === "frame").map((f) => f.title),
     ["The experiment", "Assumptions", "Thompson Sampling", "UCB1", "Evidence", "Scores behind the recommendations", "Recommendations", "Simulation", "Hand check", "Next step"]);
@@ -110,7 +119,7 @@ test("the page's Save deck and Copy deck export the deck of the restored experim
   const s = ok(L.select(website(), "v2"));
   const sim = L.simCreate(s);
   const stored = L.serialise(s, sim);
-  const localStorage = { getItem: (k) => (k === "multi-armed-bandit:v1" ? stored : null), setItem() {}, removeItem() {} };
+  const localStorage = { getItem: (/** @type {string} */ k) => (k === "multi-armed-bandit:v1" ? stored : null), setItem() {}, removeItem() {} };
   const page = await openPage(SLUG, { globals: { localStorage } });
   const expected = deckFor(s, sim, today());
   await page.click("save-beamdswitch");
@@ -124,13 +133,14 @@ test("the page's Save deck and Copy deck export the deck of the restored experim
 });
 
 test("the page registers exactly three read-only WebMCP tools that report the committed state", async () => {
-  const s = website(), stored = L.serialise(s, L.simCreate(s)), tools = [];
+  const s = website(), stored = L.serialise(s, L.simCreate(s)), /** @type {ModelContextTool[]} */ tools = [];
   const localStorage = { getItem: () => stored, setItem() {}, removeItem() {} };
-  const navigator = { modelContext: { registerTool: (t) => tools.push(t) }, clipboard: { writeText: async () => {} } };
+  const navigator = { modelContext: { registerTool: (/** @type {ModelContextTool} */ t) => tools.push(t) }, clipboard: { writeText: async () => {} } };
   await openPage(SLUG, { globals: { localStorage, navigator } });
   assert.deepEqual(tools.map((t) => t.name), ["get_data", "get_metadata", "query"]);
-  for (const t of tools) assert.equal(t.annotations.readOnlyHint, true);
-  const call = async (name, input) => JSON.parse((await tools.find((t) => t.name === name).execute(input)).content[0].text);
+  for (const t of tools) assert.equal(/** @type {{ readOnlyHint?: boolean }} */ (t.annotations).readOnlyHint, true);
+  /** @param {string} name @param {object} [input] @returns {Promise<any>} the tool's JSON result */
+  const call = async (name, input) => JSON.parse(/** @type {{ content: { text: string }[] }} */ (await /** @type {ModelContextTool} */ (tools.find((t) => t.name === name)).execute(input)).content[0].text);
   const data = await call("get_data");
   const V = L.view(s);
   assert.equal(data.experiment.variants[0].posteriorMean, "8.82%");
@@ -141,7 +151,7 @@ test("the page registers exactly three read-only WebMCP tools that report the co
   assert.equal(meta.url, "https://teoyujie.org/visuals/multi-armed-bandit/");
   assert.equal(meta.templates.length, 5);
   const q = await call("query", { text: "page b" });
-  assert.deepEqual(q.results.map((r) => [r.type, r.name]), [["variant", "Page B"]]);
+  assert.deepEqual(q.results.map((/** @type {{ type: string, name: string }} */ r) => [r.type, r.name]), [["variant", "Page B"]]);
   assert.equal((await call("query", {})).total, 8);
   assert.equal(L.serialise(s, L.simCreate(s)), stored, "the tools change nothing");
 });
@@ -159,28 +169,31 @@ test("the deck groups large counts as the page does", () => {
   assert.equal(V.totalText, "2,000,020");
   assert.ok(md.includes("Completed trials: 2,000,020"), "grouped total");
   assert.ok(md.includes("plus 250,000 successes and 750,000 failures gives"), "grouped hand check");
-  assert.match(parseDeck(deckFor(s)).frames.find((f) => f.title === "Hand check").narration, /250,000 successes and 750,000 failures/);
+  assert.match(parseDeck(deckFor(s)).frames.find((f) => f.title === "Hand check")?.narration ?? "", /250,000 successes and 750,000 failures/);
 });
 
 test("a fresh session is autosaved, so a reload restores the same Thompson samples", async () => {
-  const writes = [], tools = [];
-  const now = (fn) => { fn(); return 0; };
-  await openPage(SLUG, { globals: { setTimeout: now, localStorage: { getItem: () => null, setItem: (k, v) => writes.push([k, v]), removeItem() {} } } });
+  /** @type {[string, string][]} */
+  const writes = [];
+  /** @type {ModelContextTool[]} */
+  const tools = [];
+  const now = (/** @type {() => void} */ fn) => { fn(); return 0; };
+  await openPage(SLUG, { globals: { setTimeout: now, localStorage: { getItem: () => null, setItem: (/** @type {string} */ k, /** @type {string} */ v) => writes.push([k, v]), removeItem() {} } } });
   assert.ok(writes.length > 0, "the fresh session was saved");
   assert.deepEqual([...new Set(writes.map(([k]) => k))].sort(), ["multi-armed-bandit:hours:v1", "multi-armed-bandit:v1"], "the experiment and the hours plan are saved under their own keys");
-  const [, stored] = writes.filter(([k]) => k === "multi-armed-bandit:v1").at(-1), r = L.parse(stored);
+  const [, stored] = /** @type {[string, string]} */ (writes.filter(([k]) => k === "multi-armed-bandit:v1").at(-1)), r = L.parse(stored);
   assert.equal(r.error, undefined);
-  const navigator = { modelContext: { registerTool: (t) => tools.push(t) }, clipboard: { writeText: async () => {} } };
+  const navigator = { modelContext: { registerTool: (/** @type {ModelContextTool} */ t) => tools.push(t) }, clipboard: { writeText: async () => {} } };
   await openPage(SLUG, { globals: { navigator, localStorage: { getItem: () => stored, setItem() {}, removeItem() {} } } });
-  const data = JSON.parse((await tools[0].execute()).content[0].text);
-  assert.deepEqual(data.experiment.variants.map((v) => v.thompsonSample), JSON.parse(JSON.stringify(L.view(r.state).rows.map((x) => x.text.sample))));
+  const data = JSON.parse(/** @type {{ content: { text: string }[] }} */ (await tools[0].execute()).content[0].text);
+  assert.deepEqual(data.experiment.variants.map((/** @type {{ thompsonSample: string }} */ v) => v.thompsonSample), JSON.parse(JSON.stringify(L.view(/** @type {Mab.State} */ (r.state)).rows.map((x) => x.text.sample))));
 });
 
 test("invalid prior and simulation inputs keep the entered text while their error stands", async () => {
   const s = website(), stored = L.serialise(s, L.simCreate(s));
   const page = await openPage(SLUG, { globals: { localStorage: { getItem: () => stored, setItem() {}, removeItem() {} } } });
-  const input = (id) => page.run(`document.getElementById(${JSON.stringify(id)})`);
-  const enter = async (id, v) => { input(id).value = v; await input(id).dispatch("change"); };
+  const input = (/** @type {string} */ id) => page.run(`document.getElementById(${JSON.stringify(id)})`);
+  const enter = async (/** @type {string} */ id, /** @type {string} */ v) => { input(id).value = v; await input(id).dispatch("change"); };
   await enter("prior-b", "500");
   assert.equal(input("prior-b").getAttribute("aria-invalid"), "true");
   await page.click("btn-resample");

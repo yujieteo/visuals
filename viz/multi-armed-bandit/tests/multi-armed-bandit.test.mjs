@@ -6,16 +6,22 @@ import test from "node:test";
 import vm from "node:vm";
 
 const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
-const script = (id) => html.match(new RegExp(`<script[^>]*id="${id}"[^>]*>([\\s\\S]*?)</script>`))[1];
+/** @param {string} id */
+const script = (id) => /** @type {RegExpMatchArray} */ (html.match(new RegExp(`<script[^>]*id="${id}"[^>]*>([\\s\\S]*?)</script>`)))[1];
+/** @type {import("../src/multi-armed-bandit-logic.js").PageData} */
 const D = JSON.parse(script("mab-data").replace(/<\\\//g, "</"));
 const context = vm.createContext({});
 context.self = context;
 vm.runInContext(script("mab-logic"), context);
+/** @type {typeof import("../src/multi-armed-bandit-logic.js")} */
 const L = context.BanditLogic;
+/** @param {unknown} x */
 const plain = (x) => JSON.parse(JSON.stringify(x));
+/** @param {number} a @param {number} b @param {number} tol @param {string} what */
 const near = (a, b, tol, what) => assert.ok(Math.abs(a - b) <= tol, `${what}: ${a} vs ${b}`);
 const website = (seed = 7) => L.fromTemplate(D, "website", seed);
-const ok = (r) => { assert.equal(r.error, undefined, r.error); return r.state; };
+/** @template S @param {{ state?: S, error?: string }} r @returns {S} */
+const ok = (r) => { assert.equal(r.error, undefined, r.error); return /** @type {S} */ (r.state); };
 
 test("templates match the spec: fictional website counts A 8/100, B 12/100, C 3/20, custom starts at zero", () => {
   const s = website();
@@ -87,11 +93,12 @@ test("quantiles at supported extremes are finite, ordered and within [0,1]", () 
   s = ok(L.setPrior(s, "0.1", "100"));
   s = ok(L.setCounts(s, 0, "1000000", "1000000"));
   s = ok(L.setCounts(s, 1, "0", "1000000"));
-  for (const r of L.view(s).rows) for (const k of ["mean", "lo", "hi", "sample"]) assert.ok(Number.isFinite(r[k]) && r[k] >= 0 && r[k] <= 1, k);
+  for (const r of L.view(s).rows) for (const k of /** @type {const} */ (["mean", "lo", "hi", "sample"])) assert.ok(Number.isFinite(r[k]) && r[k] >= 0 && r[k] <= 1, k);
 });
 
 test("UCB1: two variants with 5/10 each score 0.5 + sqrt(2 ln 20 / 10); untried first; stable ties; scores above 1 are not capped", () => {
   const u = L.ucb([{ successes: 5, trials: 10 }, { successes: 5, trials: 10 }]);
+  // @ts-expect-error both variants have trials, so both have scores
   near(u.scores[0].score, 0.5 + Math.sqrt(2 * Math.log(20) / 10), 1e-15, "score");
   assert.equal(u.best, 0, "ties go to the first in display order");
   const t = L.ucb([{ successes: 9, trials: 10 }, { successes: 0, trials: 0 }, { successes: 0, trials: 0 }]);
@@ -107,7 +114,9 @@ test("UCB1: two variants with 5/10 each score 0.5 + sqrt(2 ln 20 / 10); untried 
   s = ok(L.setCounts(s, 2, "0", "1"));
   const W = L.view(s);
   assert.equal(W.ucb.index, 0, "tie between two 1/1 variants keeps the first");
+  // @ts-expect-error every variant has trials here, so every one has a score
   near(W.rows[0].ucb.score, 1 + Math.sqrt(2 * Math.log(3)), 1e-12, "uncapped");
+  // @ts-expect-error as above
   assert.ok(W.rows[0].ucb.score > 1);
   assert.equal(W.rows[0].text.ucb, (1 + Math.sqrt(2 * Math.log(3))).toFixed(4));
   assert.doesNotMatch(W.ucb.why, /probability of/);
@@ -126,12 +135,12 @@ test("the seeded generator's serialised state round-trips", () => {
   const s = ok(L.select(website(9), "v2"));
   const r = L.parse(L.serialise(s, L.simCreate(s)));
   assert.deepEqual(plain(r.state), plain(s));
-  assert.deepEqual(plain(L.resample(L.clone(r.state))), plain(L.resample(L.clone(s))), "the next draws continue identically");
+  assert.deepEqual(plain(L.resample(L.clone(/** @type {Mab.State} */ (r.state)))), plain(L.resample(L.clone(s))), "the next draws continue identically");
 });
 
 test("recording, undo and resampling: only the intended state changes", () => {
   let s = website(11);
-  assert.match(L.canRecord(s), /Select a variant/);
+  assert.match(L.canRecord(s) ?? "", /Select a variant/);
   s = ok(L.select(s, "v3"));
   const before = L.snapshot(s), samples = s.variants.map((v) => v.sample);
   const r = ok(L.record(s, true));
@@ -151,10 +160,10 @@ test("recording, undo and resampling: only the intended state changes", () => {
   assert.deepEqual(n.variants.map((v) => v.sample), samples, "renaming never resamples");
   // Recording is disabled at the count limit, and before success is defined.
   let m = ok(L.select(ok(L.setCounts(s, 0, "5", "1000000")), "v1"));
-  assert.match(L.canRecord(m), /limit/);
+  assert.match(L.canRecord(m) ?? "", /limit/);
   assert.ok(L.record(m, true).error);
   const c = ok(L.select(L.fromTemplate(D, "custom", 1), "v1"));
-  assert.match(L.canRecord(c), /Define/);
+  assert.match(L.canRecord(c) ?? "", /Define/);
 });
 
 test("invalid inputs are rejected without touching the committed experiment", () => {
@@ -162,10 +171,10 @@ test("invalid inputs are rejected without touching the committed experiment", ()
   for (const [s1, n1] of [["5", "4"], ["-1", "3"], ["1.5", "3"], ["", "3"], ["1", "1000001"], ["abc", "2"], ["1e3", "2000"]]) assert.ok(L.setCounts(s, 0, s1, n1).error, `${s1}/${n1}`);
   assert.equal(L.rename(s, 0, "page b").error, "Variant names must be unique, ignoring case.");
   assert.ok(L.rename(s, 0, "   ").error);
-  assert.match(L.rename(s, 0, "x".repeat(81)).error, /80/);
+  assert.match(L.rename(s, 0, "x".repeat(81)).error ?? "", /80/);
   assert.ok(L.setText(s, "title", "").error);
-  assert.match(L.setText(s, "success", "y".repeat(301)).error, /300/);
-  assert.match(L.setText(s, "unit", "z".repeat(121)).error, /120/);
+  assert.match(L.setText(s, "success", "y".repeat(301)).error ?? "", /300/);
+  assert.match(L.setText(s, "unit", "z".repeat(121)).error ?? "", /120/);
   for (const v of ["0.09", "100.1", "abc", "", "NaN", "Infinity"]) assert.ok(L.setPrior(s, v, "1").error, v);
   assert.equal(JSON.stringify(s), frozen);
   // Two to ten variants; added variants get unique names and a 10% simulation default.
@@ -184,12 +193,14 @@ test("invalid inputs are rejected without touching the committed experiment", ()
   assert.equal(x.variants[0].name, "<img src=x onerror=alert(1)>");
 });
 
+/** @param {Mab.State} s @param {number[]} chunks */
 function runSim(s, chunks) {
   const sim = L.simCreate(s);
   for (const c of chunks) for (let i = 0; i < c; i += 1) L.simStep(sim);
   while (L.simStep(sim));
   return sim;
 }
+/** @param {import("../src/multi-armed-bandit-logic.js").Sim} sim */
 const summary = (sim) => JSON.stringify(Object.fromEntries(Object.entries(sim.methods).map(([k, m]) => [k, [m.successes, m.trials, m.total, m.regret, m.curve]])));
 
 test("the simulation is deterministic across step, run and pause/resume, and replays from its pull count", () => {
@@ -254,6 +265,7 @@ test("equal probabilities give zero expected regret; probability 0 always fails 
 test("simulation settings validate their limits and a change resets progress", () => {
   const s = L.clone(website(1));
   s.simulation.pulls = 10;
+  /** @param {object} [o] */
   const raws = (o) => Object.assign({ probabilities: ["8", "12", "15"], budget: "1000", seed: "42" }, o);
   assert.equal(L.setSimulation(s, raws()).unchanged, true);
   for (const bad of [{ probabilities: ["-1", "12", "15"] }, { probabilities: ["101", "1", "1"] }, { budget: "2" }, { budget: "2001" }, { seed: "4294967296" }, { seed: "-1" }, { seed: "1.5" }])
@@ -278,6 +290,7 @@ test("a full 2,000-pull run per method finishes well within one second", () => {
 test("JSON import is fully validated and never partial", () => {
   const s = ok(L.select(website(3), "v1")), good = JSON.parse(L.serialise(s, L.simCreate(s)));
   assert.equal(L.parse(JSON.stringify(good)).error, undefined);
+  /** @param {(d: any) => void} mutate the parsed document, untyped so a test can break any field @param {RegExp} [re] */
   const bad = (mutate, re) => {
     const d = JSON.parse(JSON.stringify(good));
     mutate(d);
@@ -330,13 +343,14 @@ test("next-step hints follow the state", () => {
 });
 
 test("the shared page helpers: storage that throws reads as unavailable, saved text is returned, dates are local ISO", () => {
-  const src = /<script id="page-helpers">([\s\S]*?)<\/script>/.exec(html)[1];
-  const run = (window) => { const c = { window, Date: class extends Date { constructor() { super(2026, 0, 5, 9); } } }; c.self = c; vm.createContext(c); vm.runInContext(src, c); return c.BanditPage; };
+  const src = /** @type {RegExpExecArray} */ (/<script id="page-helpers">([\s\S]*?)<\/script>/.exec(html))[1];
+  /** @param {object} window @returns {typeof BanditPage} */
+  const run = (window) => { const /** @type {any} */ c = { window, Date: class extends Date { constructor() { super(2026, 0, 5, 9); } } }; c.self = c; vm.createContext(c); vm.runInContext(src, c); return c.BanditPage; };
   const blocked = run({ get localStorage() { throw new Error("SecurityError"); } });
   assert.deepEqual({ ...blocked.openStore("k") }, { store: null, saved: null });
   const throwsOnRead = run({ localStorage: { getItem() { throw new Error("denied"); } } });
   assert.equal(throwsOnRead.openStore("k").store, null);
-  const ls = { getItem: (k) => (k === "k" ? "{\"v\":1}" : null) };
+  const ls = { getItem: (/** @type {string} */ k) => (k === "k" ? "{\"v\":1}" : null) };
   const ok = run({ localStorage: ls }).openStore("k");
   assert.equal(ok.store, ls);
   assert.equal(ok.saved, "{\"v\":1}");

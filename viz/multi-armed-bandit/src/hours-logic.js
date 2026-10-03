@@ -29,6 +29,7 @@
  * @typedef {{ s: number, f: number, n: number }} Evidence
  * @typedef {{ mean: number, bonus: number, score: number }} UcbScore
  */
+/** @template F @param {any} root the global object @param {F} factory */
 (function (root, factory) {
   if (typeof module === "object" && module.exports) module.exports = factory;
   else root.HoursLogic = factory(root.BanditLogic);

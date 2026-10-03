@@ -5,11 +5,14 @@ import vm from "node:vm";
 
 // The page inlines its pure logic as <script id="eg-logic"> and its data as JSON; run both directly.
 const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
-const script = (id) => html.match(new RegExp(`<script[^>]*id="${id}"[^>]*>([\\s\\S]*?)</script>`))[1];
+/** @param {string} id */
+const script = (id) => /** @type {RegExpMatchArray} */ (html.match(new RegExp(`<script[^>]*id="${id}"[^>]*>([\\s\\S]*?)</script>`)))[1];
 const dataText = script("eg-data");
+/** @type {GrammarData} */
 const D = JSON.parse(dataText);
 const context = vm.createContext({});
 vm.runInContext(script("eg-logic"), context);
+/** @type {EGLogicApi} */
 const L = context.EGLogic;
 const idx = L.index(D);
 
@@ -88,7 +91,7 @@ test("word and phrase levels are separately inspectable, and the top level has n
 });
 
 test("sentence strip, inspector and tree are derived from the same nodes", () => {
-  const measure = (s) => s.length * 7;
+  const measure = (/** @type {string} */ s) => s.length * 7;
   for (const e of D.examples) {
     const map = idx.nodes.get(e.id);
     const lay = L.layout(idx, e.id, measure);
@@ -96,11 +99,11 @@ test("sentence strip, inspector and tree are derived from the same nodes", () =>
     for (const [id, v] of map) {
       const d = L.describe(idx, e.id, id);
       assert.equal(d.text, L.textOf(e, v.node));
-      if (v.node.children) assert.deepEqual(d.contains.map((k) => k.id), v.node.children.map((k) => k.id));
-      if (v.node.word !== undefined) assert.equal(lay.pos.get(id).text, e.tokens[v.node.word].t);
+      if (v.node.children) assert.deepEqual(d.contains.map((/** @type {{ id: string }} */ k) => k.id), v.node.children.map((k) => k.id));
+      if (v.node.word !== undefined) assert.equal(lay.pos.get(id)?.text, e.tokens[v.node.word].t);
     }
     // Every word token is a selectable leaf, punctuation never is.
-    const leaves = [...map.values()].filter((v) => v.node.word !== undefined).map((v) => v.node.word).sort((a, b) => a - b);
+    const leaves = [...map.values()].filter((v) => v.node.word !== undefined).map((v) => /** @type {number} */ (v.node.word)).sort((a, b) => a - b);
     assert.deepEqual(leaves, e.tokens.map((t, i) => (t.k === "w" ? i : -1)).filter((i) => i >= 0));
     // Unfolding everything shows every phrase node; the selected node's ancestors are always visible.
     const all = L.visibleBands(idx, e.id, L.maxDepth(idx, e.id), e.tree.id);
@@ -110,11 +113,12 @@ test("sentence strip, inspector and tree are derived from the same nodes", () =>
   }
 });
 
+/** @param {string} ex @param {string} id */
 const target = (ex, id) => idx.nodes.get(ex).has(id) || !!L.markOf(idx, ex, id);
 
 test("contrasts and concept references resolve to real nodes or punctuation marks", () => {
   for (const k of D.contrasts) {
-    for (const side of ["a", "b"]) assert.ok(target(k[side].ex, k[side].node), k.id);
+    for (const side of /** @type {const} */ (["a", "b"])) assert.ok(target(k[side].ex, k[side].node), k.id);
     assert.ok(k.concepts.length > 0);
   }
   for (const c of D.concepts) for (const i of c.items) assert.ok(target(i.ex, i.node), `${c.id} -> ${i.ex}@${i.node}`);
@@ -153,7 +157,7 @@ test("word structures: the word is the top, its pieces are parts of it, and spel
 });
 
 test("punctuation marks: each one is selectable, attached to a constituent, and traversable", () => {
-  const marked = D.examples.filter((e) => e.marks);
+  const marked = /** @type {(Example & { marks: Mark[] })[]} */ (D.examples.filter((e) => e.marks));
   assert.ok(marked.length >= 10);
   for (const e of marked) {
     const ids = new Set(e.marks.map((m) => m.id));
@@ -173,7 +177,7 @@ test("punctuation marks: each one is selectable, attached to a constituent, and 
       if (m.pair) assert.equal(d.pair.id, m.pair);
       assert.match(L.announce(d), /^Punctuation: /);
       // The constituent it marks lists it.
-      assert.ok(L.describe(idx, e.id, m.bounds).punctuation.some((x) => x.id === m.id), `${e.id}: ${m.bounds} lists ${m.id}`);
+      assert.ok(L.describe(idx, e.id, m.bounds).punctuation.some((/** @type {{ id: string }} */ x) => x.id === m.id), `${e.id}: ${m.bounds} lists ${m.id}`);
     }
   }
   const comma = L.describe(idx, "kim-my-neighbour", "m1");
@@ -209,20 +213,23 @@ test("search finds canonical names, aliases, abbreviations and example words, an
   assert.ok(L.search(idx, "NP").results.some((r) => r.type === "abbreviation" && r.concept === "noun-phrase-structure"));
   const cake = L.search(idx, "cake").results;
   assert.ok(cake.some((r) => r.type === "example" && r.example === "cake-which-baked"));
-  for (const r of cake) if (r.type === "example") assert.ok(idx.examples.get(r.example).concepts.includes(r.concept));
+  for (const r of cake) if (r.type === "example") assert.ok(idx.examples.get(/** @type {string} */ (r.example)).concepts.includes(r.concept));
 });
 
 test("emitted page registers three read-only tools without requiring a DOM", () => {
+  /** @type {any} a stand-in that answers every property, call and construction with itself */
   const inert = new Proxy(function () {}, {
     get: (_, key) => (key === Symbol.toPrimitive ? () => 0 : key === Symbol.iterator ? [][Symbol.iterator].bind([]) : key === "then" ? undefined : inert),
     set: () => true,
     apply: () => inert,
     construct: () => inert,
   });
+  /** @type {Map<string, ModelContextTool>} */
   const tools = new Map();
+  /** @type {any} */
   const ctx = vm.createContext({
-    navigator: { modelContext: { registerTool(tool) { assert.equal(tools.has(tool.name), false); tools.set(tool.name, tool); } } },
-    document: new Proxy({ modelContext: undefined, title: "t", getElementById: (id) => (id === "eg-data" ? { textContent: dataText } : inert) }, { get: (t, k) => (k in t ? t[k] : inert) }),
+    navigator: { modelContext: { registerTool(/** @type {ModelContextTool} */ tool) { assert.equal(tools.has(tool.name), false); tools.set(tool.name, tool); } } },
+    document: new Proxy({ modelContext: undefined, title: "t", getElementById: (/** @type {string} */ id) => (id === "eg-data" ? { textContent: dataText } : inert) }, { get: (/** @type {Record<string | symbol, unknown>} */ t, k) => (k in t ? t[k] : inert) }),
     location: { hash: "" },
     getComputedStyle: () => ({ fontFamily: "serif" }),
     addEventListener: () => {},
@@ -235,11 +242,12 @@ test("emitted page registers three read-only tools without requiring a DOM", () 
   ctx.window.EGLogic = ctx.EGLogic;
   vm.runInContext(script("eg-ui"), ctx);
   assert.deepEqual([...tools.keys()].sort(), ["get_data", "get_metadata", "query"]);
-  for (const tool of tools.values()) assert.equal(tool.annotations.readOnlyHint, true);
+  for (const tool of tools.values()) assert.equal(/** @type {{ readOnlyHint?: boolean }} */ (tool.annotations).readOnlyHint, true);
 });
 
 test("Ctrl+K and Cmd+K go to search, except while typing in a text field", () => {
-  const key = (over, target = { tagName: "BODY" }) => L.isSearchShortcut({ key: "k", ctrlKey: false, metaKey: false, altKey: false, shiftKey: false, target, ...over });
+  /** @param {object} over @param {{ tagName: string, type?: string }} [target] */
+  const key = (over, target = { tagName: "BODY" }) => L.isSearchShortcut(/** @type {any} a stand-in event with only the fields the shortcut reads */ ({ key: "k", ctrlKey: false, metaKey: false, altKey: false, shiftKey: false, target, ...over }));
   assert.equal(key({ ctrlKey: true }), true);
   assert.equal(key({ metaKey: true }), true);
   assert.equal(key({ ctrlKey: true, key: "K" }), true, "with Caps Lock on");

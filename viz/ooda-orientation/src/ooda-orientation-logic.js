@@ -48,6 +48,7 @@
  *   tempo: string, mode: string, items: Item[], orientations: Orientation[], predictions: Prediction[], actions: Action[], outcomes: Outcome[],
  *   history: HistoryEntry[], links: Link[], workspace: Workspace | null, uiPreferences: { stage: string } }} State
  * @typedef {Record<string, any>} Command a command's fields, each checked by the case that reads it
+ * @typedef {Pick<Storage, "getItem" | "setItem" | "removeItem">} StoreLike the browser storage the planner saves to, as far as it uses it
  * @typedef {{ code: string, message: string }} CommandError
  * @typedef {{ id: string, kind: string, item: Item, move?: string, from?: string[] }} Fragment
  * @typedef {{ kind: string, type: string, id: string, title: string, text: string, location: string, keys?: string, ledger?: string,
@@ -925,7 +926,7 @@
   }
 
   /* Ranks: 0 exact title, 1 title starts with the phrase, 2 phrase contained, 3 every token present, 4 some tokens. */
-  /** @param {State} s @param {string} query @param {number} [limit] */
+  /** @param {State} s @param {string} query @param {number} [limit] @returns {{ results: (SearchRecord & { rank?: number })[], total: number }} */
   function search(s, query, limit) {
     const q = norm(query), all = records(s);
     if (!q) return { results: all.filter((r) => r.kind === "command").slice(0, limit || 50), total: COMMANDS.length };
@@ -1096,11 +1097,11 @@
     if (!st || check(st).length) return { ok: false, message: MSG.invalid };
     return { ok: true, state: st, migrated: v.schemaVersion !== SCHEMA };
   }
-  /** @param {Storage} storage @param {State} s */
+  /** @param {StoreLike} storage @param {State} s */
   function save(storage, s) {
     try { storage.setItem(KEY, JSON.stringify(s)); return true; } catch (e) { return false; }
   }
-  /** @param {Storage} storage @returns {{ state: State | null, message?: string, unavailable?: boolean }} */
+  /** @param {StoreLike} storage @returns {{ state: State | null, message?: string, unavailable?: boolean }} */
   function load(storage) {
     let text;
     try { text = storage.getItem(KEY); } catch (e) { return { state: null, message: MSG.storage, unavailable: true }; }
@@ -1108,7 +1109,7 @@
     const r = importText(text);
     return r.ok ? { state: r.state } : { state: null, message: r.message };
   }
-  /** @param {Storage} storage */
+  /** @param {StoreLike} storage */
   function clear(storage) { try { storage.removeItem(KEY); return true; } catch (e) { return false; } }
 
   /* ---------- Markdown ---------- */

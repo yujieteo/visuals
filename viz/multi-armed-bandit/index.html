@@ -663,6 +663,7 @@ parse, serialise, clone };
  * never changes it. The user's own words are escaped so they cannot open a heading, a ::: div or front
  * matter. Every deck is narrated by bf_emma.
  */
+/** @param {any} root the global object @param {() => any} factory */
 (function (root, factory) {
   const api = factory();
   if (typeof module === "object" && module.exports) module.exports = api;
@@ -671,23 +672,32 @@ parse, serialise, clone };
   "use strict";
 
   const VOICE = "bf_emma";
+  /** @param {unknown} s */
   const clean = (s) => String(s == null ? "" : s).replace(/\s+/g, " ").trim();
+  /** @param {unknown} s */
   const bare = (s) => clean(s).replace(/[.!?;:,]+$/, "");
   /* Markdown body text: the user's words are literal, never markup. */
+  /** @param {unknown} s */
   const md = (s) => clean(s).replace(/[\\`*_$<>|#[\]~]/g, "\\$&");
   /* Front matter values: one line; a value wrapped in matching quotes keeps them. */
+  /** @param {unknown} s */
   const front = (s) => { const t = clean(s); return /^(["']).*\1$/.test(t) ? (t[0] === '"' ? "'" + t + "'" : '"' + t + '"') : t; };
   /* Narration is read aloud: no markup, maths or symbols. */
+  /** @param {unknown} s */
   const speak = (s) => clean(String(s == null ? "" : s).replace(/<(?=\d)/g, "less than ").replace(/>(?=\d)/g, "more than ").replace(/&/g, " and ").replace(/%/g, " percent").replace(/[→↓]/g, ", then ").replace(/[−–—]/g, ", ")
     .replace(/[$\\`*_#|<>×⁰¹²³⁴⁵⁶⁷⁸⁹⁻≈·∠°σ£€µ★▲[\]{}~^]/g, " ")).replace(/\s+([,.;:!?])/g, "$1").replace(/,\s*,/g, ",");
+  /** @param {unknown} s */
   const sentence = (s) => { const t = bare(s); return t ? t + "." : ""; };
+  /** @param {string[]} xs */
   const list = (xs) => xs.map((x) => "- " + x).join("\n");
+  /** @type {Record<string, [string, string]>} */
   const BASIS = {
     fictional: ["Fictional example counts, for illustration only; not real data.", "The counts are a fictional example, for illustration only."],
     mixed: ["Starts from fictional example counts and includes the user's edits or recorded outcomes; not purely real data.", "The counts started as a fictional example and include later edits or recorded outcomes, so they are not purely real data."],
     entered: ["Evidence entered by the user.", "The counts are evidence entered by the user."],
   };
 
+  /** @param {Mab.State} state @param {Mab.View} V @param {Mab.SimView | null} simV @param {Mab.PageData} D @param {string} date @returns {Mab.Report} */
   function report(state, V, simV, D, date) {
     const S = state, title = clean(S.title) || "Multi-armed bandit experiment";
     const success = clean(S.success), unit = clean(S.unit);
@@ -709,6 +719,7 @@ parse, serialise, clone };
         "$T$ is the total of completed trials across all variants. A variant with no trials is recommended first, in display order, so the logarithm of zero never arises. Ties go to the first variant in display order. The score is not a probability and is not capped at 1."].join("\n"),
         narration: "UCB1 adds an exploration bonus to each variant's observed success rate. The bonus is larger for variants with fewer trials. Any variant with no trials is tried first. The score is not a probability and can exceed one." },
     ];
+    /** @type {Mab.Frame[]} */
     const results = [
       { title: "Evidence", body: list(V.rows.map((r) => "**" + md(r.name) + "**: " + r.text.successes + " successes in " + r.text.trials + " trials (" + r.text.rate + "); posterior " + r.text.posterior + ", mean " + r.text.mean + ", 95% interval " + r.text.interval)),
         narration: V.rows.map((r) => speak(bare(r.name)) + " has " + r.text.successes + " successes in " + r.text.trials + " trials, with posterior mean " + speak(r.text.mean) + ".").join(" ") },
@@ -744,6 +755,8 @@ parse, serialise, clone };
       setup, method, results, checks,
     };
   }
+  /** @param {Mab.View["rows"][number]} r */
+  // @ts-expect-error L4 is called only for a variant with trials, which has a score
   const L4 = (r) => "observed rate " + r.ucb.mean.toFixed(4) + " plus bonus " + r.ucb.bonus.toFixed(4) + " gives score " + r.ucb.score.toFixed(4) + ".";
 
   return { VOICE, report, speak, md, front };

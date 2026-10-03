@@ -8,6 +8,7 @@
  * own, which were checked against the publisher's contents pages; the analyses were not checked against
  * the book's text, and the deck says so.
  */
+/** @param {any} root the global object @param {() => any} factory */
 (function (root, factory) {
   const api = factory();
   if (typeof module === "object" && module.exports) module.exports = api;
@@ -20,21 +21,30 @@
   const HONEST = "Teaching examples and explanations are original illustrative examples written for this page; they are not taken from the book. " +
     "Analyses follow the book's framework as known to the author and have not yet been checked against the book's text.";
 
+  /** @param {string} s */
   const q = (s) => "“" + s + "”";
+  /** @param {string} s */
   const lower = (s) => s.charAt(0).toLowerCase() + s.slice(1);
+  /** @param {string} s */
   const article = (s) => (/^[aeiou]/i.test(s) ? "an " : "a ") + s;
+  /** @param {string[]} xs */
   const list = (xs) => (xs.length < 2 ? xs.join("") : xs.slice(0, -1).join(", ") + " and " + xs[xs.length - 1]);
   const NUMBERS = ["no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"];
+  /** @param {Reference} r */
   const refText = (r) => r.label + (r.page ? " (p. " + r.page + ")" : "");
   /* Markdown body text: the data's * (ungrammatical) and __ (gap) are literal, not emphasis. */
+  /** @param {unknown} s */
   const md = (s) => String(s).replace(/[\\`*_$<]/g, "\\$&");
   /* Narration is read aloud: a starred example is said as "not ...", and a gap as "a gap". */
+  /** @param {unknown} s */
   const speak = (s) => String(s).replace(/\s*\(__\)/g, "").replace(/__/g, "a gap").replace(/\(\*/g, "(not ")
     .replace(/&/g, " and ").replace(/[*$\\`_#|<>·]/g, "").replace(/\s+/g, " ").trim();
   /* A sentence named inside narration, without its final stop. */
+  /** @param {unknown} s */
   const bare = (s) => speak(s).replace(/[.!?]+$/, "");
 
   /* The inspector's fields for one constituent or punctuation mark, as the page lists them. */
+  /** @param {Record<string, any>} d an inspector description (EGLogic.describe) */
   function fields(d) {
     if (d.level === "mark") {
       const rows = ["- Indicator: " + d.category + " (" + d.indicator + ")",
@@ -48,7 +58,7 @@
     rows.push(d.top ? "- Function: none at this level; this is the top-level unit of the example."
       : "- Function: **" + d.function + "** in the " + d.container.category.toLowerCase() + " " + q(md(d.container.text)));
     if (d.head) rows.push("- Head: " + q(md(d.head.text)) + " (" + d.head.category.toLowerCase() + ")");
-    if (d.contains) rows.push("- Contains: " + d.contains.map((k) => k.function + ": " + k.category + " " + q(md(k.text))).join("; "));
+    if (d.contains) rows.push("- Contains: " + d.contains.map((/** @type {Record<string, any>} */ k) => k.function + ": " + k.category + " " + q(md(k.text))).join("; "));
     if (d.construction) rows.push("- Construction: " + md(d.construction));
     if (d.form) rows.push("- Form / feature: " + md(d.form));
     if (d.anchor) rows.push("- Anchor: supplement to " + q(md(d.anchor.text)) + "; it is not a dependent of it.");
@@ -56,11 +66,12 @@
     if (d.fused) rows.push("- Fusion: one expression with two functions at once (" + d.function.toLowerCase() + ").");
     if (d.antecedent) rows.push("- Antecedent: " + q(md(d.antecedent.text)) + ", the expression this one takes its interpretation from.");
     if (d.spelling) rows.push("- Spelling: the base " + q(md(d.spelling.base)) + " is written " + q(md(d.text)) + " here (" + d.spelling.alt + ").");
-    if (d.punctuation) rows.push("- Punctuation: " + d.punctuation.map((m) => "the " + m.name + " " + q(md(m.text)) + " marks " + m.side + " it").join("; "));
+    if (d.punctuation) rows.push("- Punctuation: " + d.punctuation.map((/** @type {Record<string, any>} */ m) => "the " + m.name + " " + q(md(m.text)) + " marks " + m.side + " it").join("; "));
     return rows.join("\n");
   }
 
   /* The text version of the tree, as the page's Tree view gives it. */
+  /** @param {Index} idx @param {EGLogicApi} L @param {Example} e @param {GNode} n @param {number} depth @returns {string} */
   function outline(idx, L, e, n, depth) {
     const d = L.describe(idx, e.id, n.id);
     const extra = (n.gap ? " — gap, understood via " + q(md(d.gap.text)) : "") + (n.anchor ? " — supplement anchored to " + q(md(d.anchor.text)) : "") +
@@ -74,9 +85,12 @@
     return lines.join("\n");
   }
 
+  /** @param {Record<string, any>} k one part of a description's contains */
   const spokenPart = (k) => lower(k.function) + ", " + article(lower(k.category)) + (k.text === "__" ? "" : ", " + speak(k.text));
 
+  /** @param {Index} idx @param {EGLogicApi} L @param {Contrast} k @returns {Deck.Frame} */
   function contrastFrame(idx, L, k) {
+    /** @param {"a" | "b"} s */
     const side = (s) => {
       const e = idx.examples.get(k[s].ex), d = L.describe(idx, e.id, k[s].node);
       const what = d.level === "mark" ? "**" + d.category + "**, marking " + d.marks.side + " " + q(md(d.marks.text))
@@ -91,6 +105,7 @@
     };
   }
 
+  /** @param {Index} idx @param {EGLogicApi} L @param {string} conceptId @returns {Deck.Report} */
   function report(idx, L, conceptId) {
     const D = idx.D, c = idx.concepts.get(conceptId);
     if (!c) throw new Error("Unknown concept: " + conceptId);
@@ -111,12 +126,14 @@
       : " Look at " + speak(d.text) + ". Its category is " + lower(d.category) + role + (d.head ? " Its head is " + speak(d.head.text) + "." : "");
 
     const top = L.describe(idx, e.id, e.tree.id);
+    /** @type {Deck.Frame[]} */
     const results = [{ title: "Why this analysis?", body: md(e.explanation), narration: speak(e.explanation) }];
     if (e.predict) results.push({ title: "Try it", body: md(e.predict.question) + "\n\n**Answer.** " + md(e.predict.answer),
       narration: "Try it yourself. " + speak(e.predict.question) + " " + speak(e.predict.answer) });
     if (c.note) results.push({ title: "Technical note", body: md(c.note) + (c.references.length > 1 ? "\n\nAlso: " + c.references.slice(1).map(refText).join("; ") + "." : ""),
       narration: speak(c.note) });
 
+    /** @type {Deck.Frame[]} */
     const checks = D.contrasts.filter((k) => k.concepts.includes(c.id)).map((k) => contrastFrame(idx, L, k));
     checks.push({ title: "How far to trust this", body: HONEST + "\n\nTerminology and framework follow " + BOOK + " by " + D.book.authors + " (" + D.book.publisher + ", " + D.book.year + ").",
       narration: HONEST });

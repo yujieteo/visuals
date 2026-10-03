@@ -6,19 +6,29 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import vm from "node:vm";
 import { openPage } from "./beamdswitch-decks.mjs";
+/** @typedef {import("../src/hours-logic.js").State} HoursState */
 
 const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
-const script = (id) => html.match(new RegExp(`<script[^>]*id="${id}"[^>]*>([\\s\\S]*?)</script>`))[1];
+/** @param {string} id */
+const script = (id) => /** @type {RegExpMatchArray} */ (html.match(new RegExp(`<script[^>]*id="${id}"[^>]*>([\\s\\S]*?)</script>`)))[1];
+/** @type {import("../src/multi-armed-bandit-logic.js").PageData} */
 const D = JSON.parse(script("mab-data").replace(/<\\\//g, "</"));
 const context = vm.createContext({});
 context.self = context;
 vm.runInContext(script("mab-logic"), context);
 vm.runInContext(script("hours-logic"), context);
-const L = context.BanditLogic, H = context.HoursLogic;
+/** @type {typeof import("../src/multi-armed-bandit-logic.js")} */
+const L = context.BanditLogic;
+/** @type {ReturnType<typeof import("../src/hours-logic.js")>} */
+const H = context.HoursLogic;
+/** @param {unknown} x */
 const plain = (x) => JSON.parse(JSON.stringify(x));
+/** @param {number} a @param {number} b @param {number} tol @param {string} what */
 const near = (a, b, tol, what) => assert.ok(Math.abs(a - b) <= tol, `${what}: ${a} vs ${b}`);
-const ok = (r) => { assert.equal(r.error, undefined, r.error); return r.state; };
+/** @template S @param {{ state?: S, error?: string }} r @returns {S} */
+const ok = (r) => { assert.equal(r.error, undefined, r.error); return /** @type {S} */ (r.state); };
 const example = () => H.fromExample(D);
+/** @param {number[]} xs */
 const sum = (xs) => xs.reduce((t, x) => t + x, 0);
 const today = () => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
 
@@ -44,7 +54,7 @@ test("basis: a plan starts blank, two activities with no blocks, and stays blank
   assert.equal(b.hours, D.hours.hours);
   b = ok(H.setCount(ok(H.addActivity(ok(H.rename(b, 0, "Reading")))), 0, "worthwhile", "4"));
   assert.equal(b.basis, "blank");
-  assert.equal(b.activities.at(-1).id, "a3");
+  assert.equal(b.activities.at(-1)?.id, "a3");
   assert.match(H.markdown(b, H.view(b), D, "2026-10-02"), /Counts entered by the user in a plan started blank\./);
 });
 
@@ -59,6 +69,7 @@ test("basis: the loaded example is labelled fictional until changed", () => {
 });
 
 test("basis: any change to the example makes it the edited example, which stays fictional", () => {
+  /** @type {((s: HoursState) => { state?: HoursState, error?: string })[]} */
   const edits = [(s) => H.setCount(s, 3, "notWorthwhile", "2"), (s) => H.rename(s, 0, "Maths"), (s) => H.setHours(s, "30"), (s) => H.addActivity(s), (s) => H.removeActivity(s, 0)];
   for (const e of edits) assert.equal(ok(e(example())).basis, "edited", String(e));
   const s = ok(edits[0](example()));
@@ -107,7 +118,9 @@ test("UCB1 hour by hour: hand-computed scores, untried activities first, planned
   const one = H.ucbPlan([{ s: 1, f: 1, n: 2 }, { s: 1, f: 0, n: 1 }], 1);
   assert.deepEqual(plain(one.hours), [0, 1]);
   // After it, B counts 2 blocks with share 1 and T = 4.
+  // @ts-expect-error both activities have blocks, so both have scores
   near(one.scores[1].score, 1 + Math.sqrt(2 * Math.log(4) / 2), 1e-12, "B after one planned hour");
+  // @ts-expect-error as above
   near(one.scores[0].score, 0.5 + Math.sqrt(2 * Math.log(4) / 2), 1e-12, "A after one planned hour");
   const fresh = H.ucbPlan([{ s: 5, f: 0, n: 5 }, { s: 0, f: 0, n: 0 }, { s: 0, f: 0, n: 0 }], 2);
   assert.deepEqual(plain(fresh.order), [1, 2], "untried activities get the first hours, in display order");
@@ -122,6 +135,7 @@ test("the example's plan: both methods use exactly the hours, Thompson follows c
   assert.equal(sum(V.rows.map((r) => r.ucb)), 20);
   assert.deepEqual(V.rows.map((r) => r.thompson), plain(H.apportion(V.rows.map((r) => r.probBest), 20)));
   const notes = V.rows.find((r) => r.name === "Notes"), fpl = V.rows.find((r) => r.name === "FPL");
+  assert.ok(notes && fpl);
   assert.equal(notes.text.posterior, "Beta(6, 2)");
   assert.equal(notes.mean, 6 / 8);
   assert.equal(notes.text.mean, "75.0%");
@@ -138,30 +152,33 @@ test("the example's plan: both methods use exactly the hours, Thompson follows c
 test("sensitivity: one more not-worthwhile block for the leader never gives it more Thompson hours", () => {
   for (const s of [example(), ok(H.setCount(ok(H.setCount(example(), 2, "worthwhile", "20")), 2, "notWorthwhile", "1"))]) {
     const V = H.view(s), lead = V.rows.find((r) => r.name === V.lead);
+    assert.ok(lead);
     const m = /would give it (\d+) hours? instead of (\d+) hours?/.exec(V.sensitivity[0]);
     assert.ok(m, V.sensitivity[0]);
     assert.equal(+m[2], lead.thompson);
     const worse = H.clone(s);
-    worse.activities.find((x) => x.name === V.lead).notWorthwhile += 1;
-    assert.equal(+m[1], H.view(worse).rows.find((r) => r.name === V.lead).thompson);
+    const worseLead = worse.activities.find((x) => x.name === V.lead);
+    assert.ok(worseLead);
+    worseLead.notWorthwhile += 1;
+    assert.equal(+m[1], H.view(worse).rows.find((r) => r.name === V.lead)?.thompson);
     assert.ok(+m[1] <= +m[2], V.lead);
   }
 });
 
 test("input validation: names, block counts and hours", () => {
   const s = example();
-  assert.match(H.rename(s, 0, " ").error, /required/);
-  assert.match(H.rename(s, 0, "notes").error, /unique/);
-  assert.match(H.rename(s, 0, "x".repeat(61)).error, /at most 60/);
+  assert.match(H.rename(s, 0, " ").error ?? "", /required/);
+  assert.match(H.rename(s, 0, "notes").error ?? "", /unique/);
+  assert.match(H.rename(s, 0, "x".repeat(61)).error ?? "", /at most 60/);
   assert.equal(ok(H.rename(s, 0, "  Maths  ")).activities[0].name, "Maths");
-  assert.match(H.setCount(s, 0, "worthwhile", "-1").error, /Worthwhile blocks must be a whole number from 0 to 10,000/);
-  assert.match(H.setCount(s, 0, "notWorthwhile", "2.5").error, /Not-worthwhile blocks/);
-  assert.match(H.setCount(s, 0, "worthwhile", "10001").error, /10,000/);
+  assert.match(H.setCount(s, 0, "worthwhile", "-1").error ?? "", /Worthwhile blocks must be a whole number from 0 to 10,000/);
+  assert.match(H.setCount(s, 0, "notWorthwhile", "2.5").error ?? "", /Not-worthwhile blocks/);
+  assert.match(H.setCount(s, 0, "worthwhile", "10001").error ?? "", /10,000/);
   assert.equal(H.setCount(s, 0, "worthwhile", "12").unchanged, true);
   const b = ok(H.setCount(s, 0, "worthwhile", " 3 "));
   assert.deepEqual([b.activities[0].worthwhile, b.activities[0].notWorthwhile], [3, 4]);
   assert.equal(b.basis, "edited");
-  for (const bad of ["0", "169", "2.5", "", "ten"]) assert.match(H.setHours(s, bad).error, /Hours available must be a whole number from 1 to 168/, bad);
+  for (const bad of ["0", "169", "2.5", "", "ten"]) assert.match(H.setHours(s, bad).error ?? "", /Hours available must be a whole number from 1 to 168/, bad);
   assert.equal(ok(H.setHours(s, "40")).hours, 40);
   assert.equal(H.serialise(s), H.serialise(example()), "commands never change their input");
 });
@@ -171,12 +188,12 @@ test("adding and removing activities: 2 to 12, unique default names, new activit
   s = ok(H.addActivity(s));
   assert.deepEqual(plain(s.activities.at(-1)), { id: "a6", name: "Activity 6", worthwhile: 0, notWorthwhile: 0 });
   const V = H.view(s);
-  assert.ok(V.rows.at(-1).ucb >= 1, "UCB1 gives an untried activity at least one hour");
+  assert.ok(/** @type {number} */ (V.rows.at(-1)?.ucb) >= 1, "UCB1 gives an untried activity at least one hour");
   assert.match(V.ucbWhy, /Activity 6 has no blocks yet, so it gets the first hours/);
   while (s.activities.length < 12) s = ok(H.addActivity(s));
-  assert.match(H.addActivity(s).error, /At most 12/);
+  assert.match(H.addActivity(s).error ?? "", /At most 12/);
   while (s.activities.length > 2) s = ok(H.removeActivity(s, 0));
-  assert.match(H.removeActivity(s, 0).error, /At least 2/);
+  assert.match(H.removeActivity(s, 0).error ?? "", /At least 2/);
   assert.equal(sum(H.view(s).rows.map((r) => r.thompson)), 20);
 });
 
@@ -185,9 +202,10 @@ test("JSON round trip, and imports that are rejected whole", () => {
   const r = H.parse(H.serialise(s));
   assert.deepEqual(plain(r.state), plain(s));
   const doc = () => JSON.parse(H.serialise(s));
+  /** @param {(d: any) => void} mutate the parsed document, untyped so a test can break any field @param {RegExp} pattern */
   const reject = (mutate, pattern) => { const d = doc(); mutate(d); const out = H.parse(JSON.stringify(d)); assert.match(out.error || "", pattern); assert.equal(out.state, undefined); };
-  assert.match(H.parse("{").error, /not valid JSON/);
-  assert.match(H.parse("[]").error, /not a JSON object/);
+  assert.match(H.parse("{").error ?? "", /not valid JSON/);
+  assert.match(H.parse("[]").error ?? "", /not a JSON object/);
   reject((d) => { d.format = "multi-armed-bandit"; }, /not a multi-armed bandit hours plan/);
   reject((d) => { d.version = 2; }, /Unsupported version 2/);
   reject((d) => { d.basis = "real"; }, /Invalid plan basis/);
@@ -201,8 +219,8 @@ test("JSON round trip, and imports that are rejected whole", () => {
   reject((d) => { d.activities[0].notWorthwhile = -1; }, /Activity 1: /);
   reject((d) => { d.nextId = 2; }, /next activity id/);
   // An experiment file is not a plan, and a plan is not an experiment.
-  assert.match(H.parse(L.serialise(L.fromTemplate(D, "website", 3))).error, /not a multi-armed bandit hours plan/);
-  assert.match(L.parse(H.serialise(s)).error, /not a multi-armed bandit experiment/);
+  assert.match(H.parse(L.serialise(L.fromTemplate(D, "website", 3))).error ?? "", /not a multi-armed bandit hours plan/);
+  assert.match(L.parse(H.serialise(s)).error ?? "", /not a multi-armed bandit experiment/);
 });
 
 test("the Markdown plan follows Inputs, Assumptions, Derived quantities, Result, Sensitivity, Notes and quotes the view", () => {
@@ -225,10 +243,10 @@ test("the Markdown plan follows Inputs, Assumptions, Derived quantities, Result,
 });
 
 test("the page saves, copies, exports and restores the plan under its own key, and get_data reports it", async () => {
-  const s = ok(H.setHours(ok(H.setCount(ok(H.setCount(example(), 2, "worthwhile", "7")), 2, "notWorthwhile", "1")), "12")), stored = H.serialise(s), tools = [];
+  const s = ok(H.setHours(ok(H.setCount(ok(H.setCount(example(), 2, "worthwhile", "7")), 2, "notWorthwhile", "1")), "12")), stored = H.serialise(s), /** @type {ModelContextTool[]} */ tools = [];
   const exp = L.fromTemplate(D, "website", 4), expStored = L.serialise(exp, L.simCreate(exp));
-  const localStorage = { getItem: (k) => (k === "multi-armed-bandit:hours:v1" ? stored : k === "multi-armed-bandit:v1" ? expStored : null), setItem() {}, removeItem() {} };
-  const navigator = { modelContext: { registerTool: (t) => tools.push(t) }, clipboard: { writeText: async () => {} } };
+  const localStorage = { getItem: (/** @type {string} */ k) => (k === "multi-armed-bandit:hours:v1" ? stored : k === "multi-armed-bandit:v1" ? expStored : null), setItem() {}, removeItem() {} };
+  const navigator = { modelContext: { registerTool: (/** @type {ModelContextTool} */ t) => tools.push(t) }, clipboard: { writeText: async () => {} } };
   const page = await openPage("multi-armed-bandit", { globals: { localStorage, navigator } });
   const md = H.markdown(s, H.view(s), D, today());
   await page.click("h-save-md");
@@ -236,28 +254,30 @@ test("the page saves, copies, exports and restores the plan under its own key, a
   await page.click("h-export");
   assert.equal(page.saved[1].name, "multi-armed-bandit-hours.json");
   assert.deepEqual(plain(H.parse(page.saved[1].text).state), plain(s));
-  const data = JSON.parse((await tools.find((t) => t.name === "get_data").execute()).content[0].text);
+  const data = JSON.parse(/** @type {{ content: { text: string }[] }} */ (await /** @type {ModelContextTool} */ (tools.find((t) => t.name === "get_data")).execute()).content[0].text);
   assert.equal(data.hours.hours, 12);
-  assert.deepEqual(data.hours.activities.map((a) => [a.name, a.thompsonHours, a.ucb1Hours]), plain(H.view(s).rows.map((r) => [r.name, r.thompson, r.ucb])));
+  assert.deepEqual(data.hours.activities.map((/** @type {{ name: string, thompsonHours: number, ucb1Hours: number }} */ a) => [a.name, a.thompsonHours, a.ucb1Hours]), plain(H.view(s).rows.map((r) => [r.name, r.thompson, r.ucb])));
   assert.equal(data.experiment.variants[0].posteriorMean, "8.82%", "the experiment is untouched");
-  const meta = JSON.parse((await tools.find((t) => t.name === "get_metadata").execute()).content[0].text);
+  const meta = JSON.parse(/** @type {{ content: { text: string }[] }} */ (await /** @type {ModelContextTool} */ (tools.find((t) => t.name === "get_metadata")).execute()).content[0].text);
   assert.equal(meta.hours.format, "multi-armed-bandit-hours");
   assert.deepEqual(meta.hours.assumptions, D.hours.assumptions);
 });
 
 test("the page starts a blank plan when the saved plan is invalid, and says so", async () => {
+  /** @type {[string, string][]} */
   const writes = [];
-  const page = await openPage("multi-armed-bandit", { globals: { setTimeout: (fn) => { fn(); return 0; }, localStorage: { getItem: (k) => (k === "multi-armed-bandit:hours:v1" ? "{\"format\":\"x\"}" : null), setItem: (k, v) => writes.push([k, v]), removeItem() {} } } });
+  const page = await openPage("multi-armed-bandit", { globals: { setTimeout: (/** @type {() => void} */ fn) => { fn(); return 0; }, localStorage: { getItem: (/** @type {string} */ k) => (k === "multi-armed-bandit:hours:v1" ? "{\"format\":\"x\"}" : null), setItem: (/** @type {string} */ k, /** @type {string} */ v) => writes.push([k, v]), removeItem() {} } } });
   assert.match(page.run(`document.getElementById("h-store").textContent`), /^Saved plan could not be restored \(This is not a multi-armed bandit hours plan file\.\); started a blank plan\.$/);
   const plan = writes.filter(([k]) => k === "multi-armed-bandit:hours:v1").at(-1);
-  assert.equal(plan[1], H.serialise(H.blank(D)));
+  assert.equal(plan?.[1], H.serialise(H.blank(D)));
 });
 
 test("the page starts blank; Load example shows the fictional example and Clear example returns to blank", async () => {
+  /** @type {[string, string][]} */
   const writes = [];
-  const page = await openPage("multi-armed-bandit", { globals: { setTimeout: (fn) => { fn(); return 0; }, localStorage: { getItem: () => null, setItem: (k, v) => writes.push([k, v]), removeItem() {} } } });
+  const page = await openPage("multi-armed-bandit", { globals: { setTimeout: (/** @type {() => void} */ fn) => { fn(); return 0; }, localStorage: { getItem: () => null, setItem: (/** @type {string} */ k, /** @type {string} */ v) => writes.push([k, v]), removeItem() {} } } });
   const shown = () => page.run(`[document.getElementById("h-basis").textContent, document.getElementById("h-note").textContent, document.getElementById("h-clear").hidden]`);
-  const last = () => writes.filter(([k]) => k === "multi-armed-bandit:hours:v1").at(-1)[1];
+  const last = () => writes.filter(([k]) => k === "multi-armed-bandit:hours:v1").at(-1)?.[1];
   assert.deepEqual(plain(shown()), ["Your own plan", "", true]);
   assert.equal(last(), H.serialise(H.blank(D)));
   await page.click("h-example");

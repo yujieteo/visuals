@@ -11,12 +11,16 @@ import { TEMPLATE_PATH, assertVoice, read } from "./beamdswitch-decks.mjs";
 const EXPORTING = ["multi-armed-bandit"];
 const pages = ["multi-armed-bandit"];
 
+/** @param {string} title */
 const frame = (title) => ({ title, body: "A body.", narration: `This is ${title}.` });
+/** @param {object} meta @returns {import("./beamdswitch-template").BeamdswitchReport} */
 const report = (meta) => ({
   meta: { title: "A report", ...meta }, narration: "A report.",
   setup: [frame("Set-up")], method: [frame("Method")], results: [frame("Results")], checks: [{ ...frame("Checks"), key: "The key." }],
 });
+/** @param {string} html */
 const inlined = (html) => /<script id="beamdswitch">\n([\s\S]*?)<\/script>/.exec(html)?.[1];
+/** @param {string} source @returns {import("./beamdswitch-template").BeamdswitchTemplate} */
 function templateOf(source) {
   const context = vm.createContext({});
   context.self = context;
@@ -33,7 +37,7 @@ test("the shared template defaults the voice to bf_emma and keeps one the report
   assert.equal(T.DEFAULT_VOICE, "bf_emma");
   for (const meta of [{}, { voice: "" }, { voice: "  " }]) assert.equal(parseDeck(T.deck(report(meta))).meta.voice, "bf_emma", JSON.stringify(meta));
   assert.equal(parseDeck(T.deck(report({ voice: "bf_isabella" }))).meta.voice, "bf_isabella");
-  assert.equal(T.deck(report({})).match(/^voice:/gm).length, 1);
+  assert.equal(T.deck(report({})).match(/^voice:/gm)?.length, 1);
 });
 
 for (const slug of pages) {

@@ -5,17 +5,25 @@ import { parseDeck } from "./fixtures/beamdswitch/deck.mjs";
 import { assertButtonsExport, assertDeckButtons, assertInlined, assertStandardDeck, assertTemplateCopy, load, openPage, read } from "./beamdswitch-decks.mjs";
 
 const SLUG = "ooda-orientation";
+/** @type {import("./beamdswitch-template").BeamdswitchTemplate} */
 const T = load(`beamdswitch.js`);
+/** @type {typeof import("../report.js")} */
 const R = load(`report.js`);
 const html = read(`index.html`);
-const script = (id) => new RegExp(`<script[^>]*id="${id}"[^>]*>([\\s\\S]*?)</script>`).exec(html)[1];
+/** @param {string} id */
+const script = (id) => /** @type {RegExpExecArray} */ (new RegExp(`<script[^>]*id="${id}"[^>]*>([\\s\\S]*?)</script>`).exec(html))[1];
+/** @type {Orient.Data} */
 const D = JSON.parse(script("oo-data").replace(/<\\\//g, "</"));
 const context = vm.createContext({});
 vm.runInContext(script("oo-logic"), context);
+/** @type {Orient.Logic} */
 const L = context.OrientLogic;
 L.init(D);
-const state = (id, upto) => L.replay(D.examples.find((e) => e.id === id), upto).state;
+/** @param {string} id @param {number} [upto] */
+const state = (id, upto) => L.replay(/** @type {import("../src/ooda-orientation-logic.js").Example} */ (D.examples.find((e) => e.id === id)), upto).state;
+/** @param {Orient.State} s */
 const deckFor = (s) => T.deck(R.report(s, L, D));
+/** @param {string} md */
 const plainText = (md) => md.replace(/\\(.)/g, "$1");
 
 test("the site's shared beamdswitch template is the copy the page inlines", () => {
@@ -29,7 +37,7 @@ test("a situation restored from storage is what beamdswitch saves and Copy deck 
   for (const id of ["stalled-project", "southwest"]) {
     const s = state(id);
     const stored = JSON.stringify(s);
-    const localStorage = { getItem: (k) => (k === L.KEY ? stored : null), setItem() {}, removeItem() {} };
+    const localStorage = { getItem: (/** @type {string} */ k) => (k === L.KEY ? stored : null), setItem() {}, removeItem() {} };
     const page = await openPage(SLUG, { globals: { localStorage } });
     await assertButtonsExport(page, SLUG, deckFor(s));
   }

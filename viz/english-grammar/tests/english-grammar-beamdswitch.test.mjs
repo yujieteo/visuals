@@ -4,16 +4,23 @@ import vm from "node:vm";
 import { assertButtonsExport, assertDeckButtons, assertInlined, assertStandardDeck, assertTemplateCopy, load, openPage, read } from "./beamdswitch-decks.mjs";
 
 const SLUG = "english-grammar";
+/** @type {import("./beamdswitch-template").BeamdswitchTemplate} */
 const T = load(`beamdswitch.js`);
+/** @type {typeof import("../report.js")} */
 const R = load(`report.js`);
 const html = read(`index.html`);
-const script = (id) => new RegExp(`<script[^>]*id="${id}"[^>]*>([\\s\\S]*?)</script>`).exec(html)[1];
+/** @param {string} id */
+const script = (id) => /** @type {RegExpExecArray} */ (new RegExp(`<script[^>]*id="${id}"[^>]*>([\\s\\S]*?)</script>`).exec(html))[1];
+/** @type {GrammarData} */
 const D = JSON.parse(script("eg-data").replace(/<\\\//g, "</"));
 const context = vm.createContext({});
 vm.runInContext(script("eg-logic"), context);
+/** @type {EGLogicApi} */
 const L = context.EGLogic;
 const idx = L.index(D);
+/** @type {{ chapters: Chapter[] }} */
 const raw = JSON.parse(read(`raw.json`));
+/** @param {string} id */
 const deckFor = (id) => T.deck(R.report(idx, L, id));
 // A spread of lessons: the start page's concept, ones with and without contrasts, notes, gaps and supplements.
 const SOME = ["category-and-function", "subject", "complements-and-adjuncts", "relative-clauses", "fused-relatives", "supplementation", "passive",
@@ -64,7 +71,7 @@ test("a lesson's deck is built from that concept's own content", () => {
 });
 
 test("each deck keeps the page's note that the analyses were not checked against the book", () => {
-  const foot = /<footer class="foot">([\s\S]*?)<\/footer>/.exec(html)[1];
+  const foot = /** @type {RegExpExecArray} */ (/<footer class="foot">([\s\S]*?)<\/footer>/.exec(html))[1];
   assert.ok(foot.includes(R.HONEST.replace(/'/g, "&#x27;")) || foot.includes(R.HONEST), "the deck's note is the page footer's, word for word");
   for (const c of D.concepts) {
     const md = deckFor(c.id);
