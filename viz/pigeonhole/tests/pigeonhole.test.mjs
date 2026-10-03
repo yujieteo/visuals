@@ -4,13 +4,25 @@ import vm from "node:vm";
 import { assertButtonsExport, assertInlined, assertStandardDeck, assertTemplateCopy, openPage, read } from "./data-visuals-beamdswitch.mjs";
 
 const html = read("index.html");
-const block = (id) => new RegExp(`<script id="${id}">\\n([\\s\\S]*?)</script>`).exec(html)[1];
-const P = (() => { const ctx = {}; ctx.self = ctx; vm.runInNewContext(block("pigeonhole-engine"), ctx); return ctx.Pigeonhole; })();
+/** @param {string} id */
+const block = (id) => /** @type {RegExpExecArray} */ (new RegExp(`<script id="${id}">\\n([\\s\\S]*?)</script>`).exec(html))[1];
+/** @type {typeof import("../.typecheck/inline/pigeonhole-engine.js")} the engine, as extracted for the type check */
+const P = (() => {
+  /** @type {Record<string, any>} */
+  const ctx = {};
+  ctx.self = ctx;
+  vm.runInNewContext(block("pigeonhole-engine"), ctx);
+  return ctx.Pigeonhole;
+})();
 const T = (await import("node:module")).createRequire(import.meta.url)("./fixtures/beamdswitch/template.js");
+/** @param {unknown} v */
 const plain = (v) => JSON.parse(JSON.stringify(v));
+/** @param {number} x @param {number} y */
 const near = (x, y, e = 1e-9, what = "") => assert.ok(Math.abs(x - y) <= e, `${what} ${x} ≈ ${y}`);
+/** @param {number[]} xs */
 const sum = (xs) => xs.reduce((a, b) => a + b, 0);
 /* A deterministic pseudo-random sequence for property checks. */
+/** @param {number} seed */
 function lcg(seed) { let s = seed; return () => { s = (s * 1103515245 + 12345) % 2147483648; return s / 2147483648; }; }
 
 test("the page's own self-tests all pass", () => {
@@ -20,6 +32,7 @@ test("the page's own self-tests all pass", () => {
 });
 
 test("ceil and floor bounds and the balanced configuration for the worked examples", () => {
+  /** @type {[number, number, number, number, number[] | null][]} */
   const cases = [
     [23, 5, 5, 4, [5, 5, 5, 4, 4]],
     [13, 4, 4, 3, [4, 3, 3, 3]],
@@ -135,6 +148,7 @@ test("graph average degree is 2|E|/|V|, and the hull contains the barycentre", (
   assert.equal(a.sum, 2 * g.edges.length);
   near(a.average, 16 / 6);
   const rnd = lcg(5);
+  /** @type {[number, number][]} */
   let edges = [];
   for (let t = 0; t < 200; t++) {
     edges = P.toggleEdge(edges, Math.floor(rnd() * 6), Math.floor(rnd() * 6));
@@ -148,7 +162,7 @@ test("graph average degree is 2|E|/|V|, and the hull contains the barycentre", (
   assert.equal(h.length, 6, "the inner point is not a vertex of the hull");
   assert.ok(P.inHull(P.centroid(P.HULL.points), h));
   for (let t = 0; t < 200; t++) {
-    const ps = Array.from({ length: 3 + Math.floor(rnd() * 6) }, () => [rnd(), rnd()]);
+    const ps = Array.from({ length: 3 + Math.floor(rnd() * 6) }, () => /** @type {[number, number]} */ ([rnd(), rnd()]));
     assert.ok(P.inHull(P.centroid(ps), P.hull(ps)) || P.hull(ps).length < 3);
   }
 });
@@ -232,8 +246,8 @@ test("with Preserve total on, add, remove and randomise are disabled and leave t
   page.run("PigeonholeApp.enter('lab')");
   const units = () => plain(page.run("PigeonholeApp.state().lab.units"));
   const acts = ["lab-add", "lab-sub", "lab-rand"];
-  const disabled = (a) => page.run(`document.querySelector('#panel [data-act="${a}"]').disabled`);
-  const press = (a) => page.run(`document.getElementById("app").listeners.click.forEach((fn) => fn({ target: { closest: () => ({ dataset: { act: ${JSON.stringify(a)} }, disabled: false }) } }))`);
+  const disabled = (/** @type {string} */ a) => page.run(`document.querySelector('#panel [data-act="${a}"]').disabled`);
+  const press = (/** @type {string} */ a) => page.run(`document.getElementById("app").listeners.click.forEach((fn) => fn({ target: { closest: () => ({ dataset: { act: ${JSON.stringify(a)} }, disabled: false }) } }))`);
   page.run(`document.getElementById("app").listeners.change.forEach((fn) => fn({ target: { type: "checkbox", checked: true, dataset: { in: "lab-lock" } } }))`);
   assert.equal(page.run("PigeonholeApp.state().lab.lock"), true);
   assert.match(page.run(`document.getElementById("lab-out").innerHTML`), /Unlock the total to add, remove or randomise values\./);
@@ -286,13 +300,15 @@ test("every scene's deck opens in beamdswitch as the standard narrated template"
 });
 
 test("the page boots, its WebMCP tools answer, and the deck buttons export the scene as set", async () => {
-  const network = [], record = (what) => function () { network.push(what); };
+  /** @type {string[]} */
+  const network = [];
+  const record = (/** @type {string} */ what) => function () { network.push(what); };
   const page = await openPage("pigeonhole", { hash: "#general", globals: { fetch: record("fetch"), XMLHttpRequest: record("XMLHttpRequest"), WebSocket: record("WebSocket") } });
   const tools = page.run("PigeonholeTools");
   // The site checks these names against its catalogue stub (data/visuals/pigeonhole.yaml); here they are listed.
-  assert.deepEqual(plain(tools.map((t) => t.name)), ["get_metadata", "get_current_state", "compute_bounds", "analyze_values", "run_self_tests"]);
+  assert.deepEqual(plain(tools.map((/** @type {{ name: string }} */ t) => t.name)), ["get_metadata", "get_current_state", "compute_bounds", "analyze_values", "run_self_tests"]);
   for (const t of tools) assert.equal(t.annotations.readOnlyHint, true);
-  const call = async (name, args = {}) => JSON.parse((await tools.find((t) => t.name === name).execute(args)).content[0].text);
+  const call = async (/** @type {string} */ name, args = {}) => JSON.parse((await tools.find((/** @type {{ name: string }} */ t) => t.name === name).execute(args)).content[0].text);
   assert.equal((await call("get_metadata")).url, "https://teoyujie.org/visuals/pigeonhole");
   const st = await call("get_current_state");
   assert.equal(st.scene, "general");
@@ -307,7 +323,7 @@ test("the page boots, its WebMCP tools answer, and the deck buttons export the s
   near(aw.weighted_mean, 33 / 7);
   assert.ok((await call("analyze_values", { values: [1, 2], weights: [1] })).error);
   assert.ok((await call("analyze_values", { values: [] })).error);
-  assert.ok((await call("run_self_tests")).every((t) => t.pass));
+  assert.ok((await call("run_self_tests")).every((/** @type {{ pass: boolean }} */ t) => t.pass));
   // Distribute evenly through the page's own state, then export.
   page.run("PigeonholeApp.state().gen.counts = [5, 5, 5, 4, 4]");
   const snap = plain(page.run("PigeonholeApp.snapshot()"));
@@ -319,8 +335,8 @@ test("the page boots, its WebMCP tools answer, and the deck buttons export the s
 // The step controls of the jump and synthesis scenes, and the capped bars of the contradiction pictures.
 test("the step buttons walk the jump and synthesis scenes, and capping bars sends the excess to the tray", async () => {
   const page = await openPage("pigeonhole", { hash: "#jump" });
-  const press = (a) => page.run(`document.getElementById("app").listeners.click.forEach((fn) => fn({ target: { closest: () => ({ dataset: { act: ${JSON.stringify(a)} }, disabled: false }) } }))`);
-  const state = (path) => plain(page.run(`PigeonholeApp.state().${path}`));
+  const press = (/** @type {string} */ a) => page.run(`document.getElementById("app").listeners.click.forEach((fn) => fn({ target: { closest: () => ({ dataset: { act: ${JSON.stringify(a)} }, disabled: false }) } }))`);
+  const state = (/** @type {string} */ path) => plain(page.run(`PigeonholeApp.state().${path}`));
   page.run("PigeonholeApp.enter('jump')");
   press("j-fwd"); press("j-fwd");
   assert.equal(state("jstep"), 2);

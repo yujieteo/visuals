@@ -15,6 +15,7 @@ when JavaScript is off.
 | `index.html` | The whole tool. `<script id="pigeonhole-engine">` is the pure core (`self.Pigeonhole`): ⌈N/k⌉ and ⌊N/k⌋ in integer arithmetic, the balanced configuration, the counting obstructions, balancing moves, means, deviations, weighted means and convex combinations, liquid equalisation, the lock-total rule (whole units, so the total is exact), graph degrees, the walking-speed partitions, the convex hull, the examples, scenes and challenges, the beamdswitch report and the self-tests. It has no DOM, storage, clock, randomness or network use. `<script id="pigeonhole-ui">` is the page: the SVG stage and its deterministic, interruptible tweens, the scenes, the command palette, the concept map, the remembered scene, theme and Advanced setting (`localStorage`, optional) and the five read-only WebMCP tools. `<script id="beamdswitch">` is `beamdswitch.js` inlined unchanged. Edit this file directly. |
 | `beamdswitch.js` | The site's standard report template, a verbatim copy of yujieteo/site's `templates/beamdswitch.js`. |
 | `raw.json` | Catalogue data, published as `data.json`: the scenes, modes, examples, challenges, starting values and the worked bounds. The page never fetches it; the test says when it has drifted from the engine. |
+| `package.json`, `package-lock.json`, `tsconfig.json`, `.gitignore`, `scripts/extract-inline.mjs`, `types/page.d.ts` | Development-only type-check tooling: `npm run typecheck` copies the page's own inline scripts out of `index.html` into `.typecheck/inline/` (gitignored), then runs the pinned TypeScript over their JSDoc types and those in `scripts/` and `tests/`. `types/page.d.ts` declares the globals the inline scripts share. Not ported to the site. |
 | `AGENTS.md`, `SKILLS.md` | Notes for coding agents changing the tool, and for agents using it. |
 | `LICENSE` | MIT. |
 
@@ -56,6 +57,6 @@ deck of the scene as set, parsed with beamdswitch's own parser.
 `tests/data-visuals-beamdswitch.mjs` holds the deck checks and the stand-in
 DOM, and `tests/fixtures/beamdswitch/` holds read-only copies of
 beamdswitch's deck parser and the site's `templates/beamdswitch.js` and
-`templates/beamdswitch-report.md`. The tests and CI live in
+`templates/beamdswitch-report.md`, with `deck.d.mts` typing the parser for the type check. The tests and CI live in
 [yujieteo/pigeonhole](https://github.com/yujieteo/pigeonhole); the site's
 `visuals/pigeonhole/` is a port of the page files without them.

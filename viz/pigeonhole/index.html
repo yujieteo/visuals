@@ -468,59 +468,75 @@ textarea#copy-box{width:100%;min-height:8rem;font:.8rem var(--mono);margin-top:.
   const api = factory();
   if (typeof module === "object" && module.exports) module.exports = api;
   else root.Pigeonhole = api;
-})(typeof self !== "undefined" ? self : this, function () {
+})(/** @type {Window} */ (typeof self !== "undefined" ? self : this), function () {
   "use strict";
 
-  const isInt = (n) => Number.isInteger(n);
+  /** @typedef {[number, number]} Pair a point (x, y) or an edge (a, b) */
+  /** @typedef {{ title: string, counts: number[], N: number, k: number, noun?: string, box?: string, values?: undefined }} CountScene */
+  /** @typedef {{ title: string, values: number[], weights?: number[], counts?: undefined }} ValueScene */
+  /** @typedef {{ title: string, body: string, narration: string, key?: string }} Frame */
+  /** @typedef {{ setup: Frame[], method: Frame[], results: Frame[], checks: Frame[], subtitle: string }} Frames */
+
+  const isInt = (/** @type {unknown} */ n) => Number.isInteger(n);
+  /** @param {unknown} x @returns {x is number} */
   const isNum = (x) => typeof x === "number" && Number.isFinite(x);
-  const sum = (xs) => xs.reduce((a, b) => a + b, 0);
-  const mean = (xs) => (xs.length ? sum(xs) / xs.length : NaN);
-  const minOf = (xs) => Math.min(...xs);
-  const maxOf = (xs) => Math.max(...xs);
+  const sum = (/** @type {number[]} */ xs) => xs.reduce((a, b) => a + b, 0);
+  const mean = (/** @type {number[]} */ xs) => (xs.length ? sum(xs) / xs.length : NaN);
+  const minOf = (/** @type {number[]} */ xs) => Math.min(...xs);
+  const maxOf = (/** @type {number[]} */ xs) => Math.max(...xs);
   const EPS = 1e-9;
+  /** @param {number} a @param {number} b */
   const near = (a, b, e = EPS) => Math.abs(a - b) <= e * Math.max(1, Math.abs(a), Math.abs(b));
   /* Up to two decimals, trailing zeros dropped: 4.6, 4.43, 12. */
+  /** @param {number} x */
   function fmt(x, d = 2) {
     if (!isNum(x)) return "–";
     const t = (Math.round(x * 10 ** d) / 10 ** d).toFixed(d), s = d > 0 ? t.replace(/\.?0+$/, "") : t;
     return s === "-0" ? "0" : s.replace("-", "−");
   }
-  const list = (xs, d = 2) => xs.map((x) => fmt(x, d)).join(", ");
+  const list = (/** @type {number[]} */ xs, d = 2) => xs.map((x) => fmt(x, d)).join(", ");
 
   /* ---------- counting: N objects in k boxes ---------- */
+  /** @param {number} N @param {number} k */
   function check(N, k) {
     if (!isInt(N) || N < 0) throw new Error("N must be a whole number, 0 or more.");
     if (!isInt(k) || k < 1) throw new Error("k must be a whole number, 1 or more.");
   }
   /* The average occupancy N/k and its integer rounding: ⌈N/k⌉ and ⌊N/k⌋ in exact integer arithmetic. */
+  /** @param {number} N @param {number} k */
   function bounds(N, k) {
     check(N, k);
     const floor = Math.floor(N / k), rem = N - floor * k, ceil = rem ? floor + 1 : floor;
     return { N, k, avg: N / k, floor, ceil, rem, divides: rem === 0 };
   }
   /* The most balanced configuration: N mod k boxes hold ⌈N/k⌉ and the rest ⌊N/k⌋, largest first. */
+  /** @param {number} N @param {number} k */
   function balanced(N, k) {
     const b = bounds(N, k);
     return Array.from({ length: k }, (_, i) => (i < b.rem ? b.ceil : b.floor));
   }
   /* The ordinary principle: at most one per box fits at most k objects. */
+  /** @param {number} N @param {number} k */
   function obstruction(N, k) {
     check(N, k);
     return { N, k, capacity: k, fits: N <= k, forced: N > k ? 2 : null };
   }
   /* Generalised maximum: if every box held at most ⌈N/k⌉ − 1, the total could reach only k(⌈N/k⌉ − 1) < N. */
+  /** @param {number} N @param {number} k */
   function maxContradiction(N, k) {
     const b = bounds(N, k), cap = b.ceil - 1, total = k * cap;
     return { N, k, cap, total, short: N - total, contradiction: total < N };
   }
   /* Generalised minimum: if every box held at least ⌊N/k⌋ + 1, the total would be at least k(⌊N/k⌋ + 1) > N. */
+  /** @param {number} N @param {number} k */
   function minContradiction(N, k) {
     const b = bounds(N, k), floorPlus = b.floor + 1, total = k * floorPlus;
     return { N, k, floorPlus, total, excess: total - N, contradiction: total > N };
   }
-  const argmax = (xs) => xs.reduce((best, x, i) => (x > xs[best] ? i : best), 0);
-  const argmin = (xs) => xs.reduce((best, x, i) => (x < xs[best] ? i : best), 0);
+  const argmax = (/** @type {number[]} */ xs) => xs.reduce((best, x, i) => (x > xs[best] ? i : best), 0);
+  const argmin = (/** @type {number[]} */ xs) => xs.reduce((best, x, i) => (x < xs[best] ? i : best), 0);
   /* One balancing move: one unit from the first fullest box to the first emptiest, while they differ by more than 1. */
+  /** @param {number[]} ns */
   function balanceStep(ns) {
     if (!ns.length) return null;
     const from = argmax(ns), to = argmin(ns);
@@ -531,8 +547,11 @@ textarea#copy-box{width:100%;min-height:8rem;font:.8rem var(--mono);margin-top:.
     return { from, to, next };
   }
   /* Repeated balancing moves. The total never changes, the maximum never rises, and it ends at ⌈N/k⌉ with the minimum at ⌊N/k⌋. */
+  /** @param {number[]} ns */
   function balanceSequence(ns, limit = 10000) {
-    const states = [ns.slice()], moves = [];
+    /** @type {{ from: number, to: number }[]} */
+    const moves = [];
+    const states = [ns.slice()];
     let cur = ns.slice();
     for (let i = 0; i < limit; i++) {
       const s = balanceStep(cur);
@@ -544,21 +563,23 @@ textarea#copy-box{width:100%;min-height:8rem;font:.8rem var(--mono);margin-top:.
     return { states, moves, final: cur };
   }
   /* The states to show in the minimax animation: only those where the maximum or minimum changed, plus the ends. */
+  /** @param {number[]} ns */
   function balanceMilestones(ns) {
     const { states } = balanceSequence(ns), out = [states[0]];
     for (let i = 1; i < states.length; i++) {
-      const a = out.at(-1), b = states[i];
+      const a = out[out.length - 1], b = states[i];
       if (i === states.length - 1 || maxOf(b) !== maxOf(a) || minOf(b) !== minOf(a)) out.push(b);
     }
     return out;
   }
 
   /* ---------- averages ---------- */
+  /** @param {number[]} xs */
   function stats(xs) {
     if (!xs.length || !xs.every(isNum)) throw new Error("Give at least one finite number.");
     const n = xs.length, s = sum(xs), m = s / n, lo = minOf(xs), hi = maxOf(xs);
     const allEqual = xs.every((x) => near(x, xs[0]));
-    const mark = (x) => (near(x, m) ? "equal" : x > m ? "above" : "below");
+    const mark = (/** @type {number} */ x) => (near(x, m) ? "equal" : x > m ? "above" : "below");
     return {
       n, sum: s, mean: m, min: lo, max: hi, allEqual, marks: xs.map(mark),
       above: xs.filter((x) => mark(x) === "above").length, below: xs.filter((x) => mark(x) === "below").length,
@@ -567,11 +588,13 @@ textarea#copy-box{width:100%;min-height:8rem;font:.8rem var(--mono);margin-top:.
     };
   }
   /* d_i = x_i − x̄, or w_i(x_i − x̄_w) given weights. Their sum is 0 up to rounding: Σd = Σx − n·x̄ = 0. */
+  /** @param {number[]} xs @param {number[]} [ws] */
   function deviations(xs, ws) {
     const m = ws ? weightedMean(xs, ws).mean : mean(xs), d = xs.map((x, i) => (ws ? ws[i] : 1) * (x - m));
     const pos = sum(d.filter((x) => x > 0)), neg = sum(d.filter((x) => x < 0));
     return { mean: m, d, sum: sum(d), positive: pos, negative: neg, min: minOf(d), max: maxOf(d) };
   }
+  /** @param {number[]} xs @param {number[]} ws */
   function weightedMean(xs, ws) {
     if (xs.length !== ws.length || !xs.length) throw new Error("Give one weight per value.");
     if (!ws.every((w) => isNum(w) && w > 0)) throw new Error("Weights must be positive.");
@@ -579,17 +602,20 @@ textarea#copy-box{width:100%;min-height:8rem;font:.8rem var(--mono);margin-top:.
     return { mean: m, totalWeight: W, area: m * W, deviation: sum(xs.map((x, i) => ws[i] * (x - m))), min: minOf(xs), max: maxOf(xs) };
   }
   /* A convex combination Σλᵢxᵢ with λᵢ ≥ 0 and Σλᵢ = 1 (the weights are normalised first). */
+  /** @param {number[]} xs @param {number[]} lambdas */
   function convexCombination(xs, lambdas) {
     if (!lambdas.every((l) => isNum(l) && l >= 0) || !(sum(lambdas) > 0)) throw new Error("Weights must be 0 or more and not all 0.");
     const L = sum(lambdas), l = lambdas.map((x) => x / L), v = sum(xs.map((x, i) => x * l[i]));
     return { value: v, lambdas: l, min: minOf(xs), max: maxOf(xs), inside: minOf(xs) - EPS <= v && v <= maxOf(xs) + EPS };
   }
   /* Liquid equalisation at time t ∈ [0, 1]: each level moves a fraction t of the way to the mean, so the volume never changes. */
+  /** @param {number[]} xs @param {number} t */
   function equalise(xs, t) {
     const m = mean(xs);
     return xs.map((x) => (t >= 1 ? m : x + t * (m - x)));
   }
   /* Excess above the mean equals the deficit below it: the area that flows. */
+  /** @param {number[]} xs */
   function flow(xs) {
     const { positive, negative } = deviations(xs);
     return { excess: positive, deficit: -negative };
@@ -598,10 +624,12 @@ textarea#copy-box{width:100%;min-height:8rem;font:.8rem var(--mono);margin-top:.
   /* ---------- lock-total: values in whole units (the page's units are tenths) ---------- */
   /* Set unit i to target, moving the opposite change into the other values, spread as evenly as their limits allow.
    * Integer arithmetic, so the total is preserved exactly. The target is clamped to what the others can absorb. */
+  /** @param {number[]} units @param {number} i @param {number} target */
   function lockTotal(units, i, target, lo = 0, hi = Infinity) {
     if (!units.every(isInt) || !isInt(target)) throw new Error("Lock-total works in whole units.");
     const out = units.slice(), others = out.map((_, j) => j).filter((j) => j !== i);
     if (!others.length) return { units: out, moved: out.map(() => 0), clamped: target !== out[i] };
+    /** @param {number} j @param {number} dir */
     const room = (j, dir) => (dir < 0 ? out[j] - lo : hi - out[j]);
     const want = Math.max(lo, Math.min(hi, target)) - out[i], dir = want > 0 ? -1 : 1;
     const cap = sum(others.map((j) => room(j, dir)));
@@ -622,17 +650,21 @@ textarea#copy-box{width:100%;min-height:8rem;font:.8rem var(--mono);margin-top:.
   }
 
   /* ---------- graphs ---------- */
+  /** @param {number} n @param {Pair[]} edges */
   function degrees(n, edges) {
     const d = Array(n).fill(0);
     for (const [a, b] of edges) { d[a] += 1; d[b] += 1; }
     return d;
   }
   /* The handshake lemma: Σ deg = 2|E|, so the average degree is 2|E|/|V|. */
+  /** @param {number} n @param {Pair[]} edges */
   function averageDegree(n, edges) {
     const d = degrees(n, edges);
     return { degrees: d, sum: sum(d), twiceEdges: 2 * edges.length, average: (2 * edges.length) / n };
   }
+  /** @param {number} a @param {number} b */
   const edgeKey = (a, b) => (a < b ? `${a}-${b}` : `${b}-${a}`);
+  /** @param {Pair[]} edges @param {number} a @param {number} b @returns {Pair[]} */
   function toggleEdge(edges, a, b) {
     if (a === b) return edges;
     const k = edgeKey(a, b), has = edges.some(([x, y]) => edgeKey(x, y) === k);
@@ -640,14 +672,19 @@ textarea#copy-box{width:100%;min-height:8rem;font:.8rem var(--mono);margin-top:.
   }
 
   /* ---------- geometry ---------- */
+  /** @param {Pair} p @param {Pair} q */
   const dist = (p, q) => Math.hypot(p[0] - q[0], p[1] - q[1]);
+  /** @param {Pair[]} ps @returns {Pair} */
   const centroid = (ps) => [mean(ps.map((p) => p[0])), mean(ps.map((p) => p[1]))];
   /* Andrew's monotone chain, counter-clockwise, collinear points dropped. */
+  /** @param {Pair[]} ps */
   function hull(ps) {
-    const pts = ps.map((p) => [p[0], p[1]]).sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+    const pts = ps.map((p) => /** @type {Pair} */ ([p[0], p[1]])).sort((a, b) => a[0] - b[0] || a[1] - b[1]);
     if (pts.length < 3) return pts;
+    /** @param {Pair} o @param {Pair} a @param {Pair} b */
     const cross = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
-    const half = (src) => {
+    const half = (/** @type {Pair[]} */ src) => {
+      /** @type {Pair[]} */
       const h = [];
       for (const p of src) {
         while (h.length >= 2 && cross(h[h.length - 2], h[h.length - 1], p) <= 0) h.pop();
@@ -658,6 +695,7 @@ textarea#copy-box{width:100%;min-height:8rem;font:.8rem var(--mono);margin-top:.
     };
     return [...half(pts), ...half(pts.slice().reverse())];
   }
+  /** @param {Pair} p @param {Pair[]} h */
   function inHull(p, h) {
     if (h.length < 3) return false;
     for (let i = 0; i < h.length; i++) {
@@ -670,8 +708,9 @@ textarea#copy-box{width:100%;min-height:8rem;font:.8rem var(--mono);margin-top:.
   /* ---------- continuous time: 10 km in 2 hours ---------- */
   /* v(t) = 5 + 3 sin(πt) km/h for t in hours: it starts and ends at 5, peaks at 8 and dips to 2, and ∫₀² v dt = 10 exactly. */
   const SPEED = { T: 2, distance: 10, average: 5, peak: 8, trough: 2 };
-  const speed = (t) => 5 + 3 * Math.sin(Math.PI * t);
+  const speed = (/** @type {number} */ t) => 5 + 3 * Math.sin(Math.PI * t);
   /* The exact average speed on each of n equal intervals: (1/Δ)∫ v dt. Each is a real distance over a real time. */
+  /** @param {number} n */
   function intervalAverages(n) {
     if (!isInt(n) || n < 1) throw new Error("n must be a whole number, 1 or more.");
     const dt = SPEED.T / n;
@@ -680,6 +719,7 @@ textarea#copy-box{width:100%;min-height:8rem;font:.8rem var(--mono);margin-top:.
       return 5 + (3 * (Math.cos(Math.PI * a) - Math.cos(Math.PI * b))) / (Math.PI * dt);
     });
   }
+  /** @param {number} n */
   function partition(n) {
     const v = intervalAverages(n), dt = SPEED.T / n;
     return { n, dt, v, distance: sum(v.map((x) => x * dt)), mean: mean(v), min: minOf(v), max: maxOf(v) };
@@ -696,15 +736,16 @@ textarea#copy-box{width:100%;min-height:8rem;font:.8rem var(--mono);margin-top:.
     workload: { title: "Tasks and workers", N: 100, k: 9, noun: "task", box: "worker", labels: ["W1", "W2", "W3", "W4", "W5", "W6", "W7", "W8", "W9"] },
     graph: {
       title: "Degrees in a graph", n: 6,
-      edges: [[0, 1], [0, 2], [0, 3], [0, 4], [1, 2], [2, 3], [3, 4], [4, 5]],
-      pos: [[0.5, 0.12], [0.16, 0.32], [0.22, 0.78], [0.62, 0.86], [0.86, 0.5], [0.94, 0.14]],
+      edges: /** @type {Pair[]} */ ([[0, 1], [0, 2], [0, 3], [0, 4], [1, 2], [2, 3], [3, 4], [4, 5]]),
+      pos: /** @type {Pair[]} */ ([[0.5, 0.12], [0.16, 0.32], [0.22, 0.78], [0.62, 0.86], [0.86, 0.5], [0.94, 0.14]]),
       labels: ["a", "b", "c", "d", "e", "f"],
     },
-    distances: { title: "Distances from a point", origin: [0.5, 0.5], points: [[0.82, 0.48], [0.62, 0.18], [0.2, 0.3], [0.3, 0.8], [0.66, 0.74]], labels: ["P1", "P2", "P3", "P4", "P5"] },
+    distances: { title: "Distances from a point", origin: /** @type {Pair} */ ([0.5, 0.5]), points: /** @type {Pair[]} */ ([[0.82, 0.48], [0.62, 0.18], [0.2, 0.3], [0.3, 0.8], [0.66, 0.74]]), labels: ["P1", "P2", "P3", "P4", "P5"] },
     time: { title: "Speed over a walk", ...SPEED, partitions: [1, 2, 4, 8, 16, 32, 64] },
   };
   const LOPSIDED = [6, 5, 2, 1];
   const COUNTERS = { lowerBound: [23, 0, 0, 0, 0], notAValue: [1, 2], countsDiffer: [0, 0, 0, 0, 10] };
+  /** @type {{ id: string, prompt: string, options: string[], answer: number, notes?: Record<number, string>, explain: string }[]} */
   const CHALLENGES = [
     { id: "A", prompt: "101 objects are placed into 10 boxes. What must be true?", options: ["Some box has ≥ 10", "Some box has ≥ 11", "Some box has ≥ 12", "Every box has ≥ 11"], answer: 1,
       notes: { 0: "That is true as well, since a box with 11 has at least 10, but it is weaker than what the total forces." },
@@ -752,18 +793,19 @@ textarea#copy-box{width:100%;min-height:8rem;font:.8rem var(--mono);margin-top:.
   const LAB = { start: [3, 7, 1, 11, 6, 9], min: 0, max: 12, step: 0.1, maxBars: 12 };
   const WEIGHTED = { values: [3, 7, 4, 9], weights: [3, 1, 2, 1] };
   const MASS = { points: [1, 2.5, 3, 7, 9], lambdas: [1, 1, 1, 1, 1] };
-  const HULL = { points: [[0.2, 0.3], [0.45, 0.12], [0.8, 0.25], [0.88, 0.7], [0.55, 0.88], [0.15, 0.7], [0.5, 0.5]] };
+  const HULL = { points: /** @type {Pair[]} */ ([[0.2, 0.3], [0.45, 0.12], [0.8, 0.25], [0.88, 0.7], [0.55, 0.88], [0.15, 0.7], [0.5, 0.5]]) };
 
   /* ---------- the deck for beamdswitch: a plain report of the scene as set ---------- */
-  const oneLine = (s) => String(s ?? "").replace(/\s+/g, " ").trim();
+  const oneLine = (/** @type {unknown} */ s) => String(s ?? "").replace(/\s+/g, " ").trim();
   /* Spoken numbers: −1.5 → minus 1.5 */
-  const sayNum = (x, d = 2) => fmt(x, d).replace("−", "minus ");
-  const sayList = (xs, d = 2) => {
+  const sayNum = (/** @type {number} */ x, d = 2) => fmt(x, d).replace("−", "minus ");
+  const sayList = (/** @type {number[]} */ xs, d = 2) => {
     const w = xs.map((x) => sayNum(x, d));
-    return w.length > 1 ? `${w.slice(0, -1).join(", ")} and ${w.at(-1)}` : w.join("");
+    return w.length > 1 ? `${w.slice(0, -1).join(", ")} and ${w[w.length - 1]}` : w.join("");
   };
-  const bullet = (xs) => xs.map((x) => `- ${x}`).join("\n");
+  const bullet = (/** @type {string[]} */ xs) => xs.map((x) => `- ${x}`).join("\n");
 
+  /** @param {CountScene} s @returns {Frames} */
   function countFrames(s) {
     const b = bounds(s.N, s.k), ns = s.counts, placed = sum(ns), mx = maxOf(ns), mn = minOf(ns), bal = balanced(s.N, s.k), mc = maxContradiction(s.N, s.k);
     const full = placed === s.N, noun = s.noun || "object", nouns = `${noun === "person" ? "people" : `${noun}s`}`, box = s.box || "box", boxes = box === "box" ? "boxes" : `${box}s`;
@@ -798,14 +840,15 @@ textarea#copy-box{width:100%;min-height:8rem;font:.8rem var(--mono);margin-top:.
     return { setup, method, results, checks, subtitle: `Some ${box} holds at least ${b.ceil}` };
   }
 
+  /** @param {ValueScene} s @returns {Frames} */
   function realFrames(s) {
     const xs = s.values, ws = s.weights;
     const st = stats(xs), wm = ws ? weightedMean(xs, ws) : null, m = wm ? wm.mean : st.mean, dv = deviations(xs, ws);
     const bar = wm ? "\\bar x_w" : "\\bar x";
     const setup = [
       { title: `${st.n} values${wm ? " with weights" : ""}`,
-        body: bullet([`Values: ${list(xs)}`, ...(wm ? [`Weights: ${list(ws)}`] : []), wm ? `Invariant: $\\sum_i w_i (x_i - \\bar x_w) = 0$` : `Invariant: $\\sum_i x_i = n\\bar x = ${fmt(st.sum)}$`]),
-        narration: `The values are ${sayList(xs)}.${wm ? ` Their weights are ${sayList(ws)}.` : ""} Their ${wm ? "weighted " : ""}average is ${sayNum(m)}.` },
+        body: bullet([`Values: ${list(xs)}`, ...(ws ? [`Weights: ${list(ws)}`] : []), wm ? `Invariant: $\\sum_i w_i (x_i - \\bar x_w) = 0$` : `Invariant: $\\sum_i x_i = n\\bar x = ${fmt(st.sum)}$`]),
+        narration: `The values are ${sayList(xs)}.${ws ? ` Their weights are ${sayList(ws)}.` : ""} Their ${wm ? "weighted " : ""}average is ${sayNum(m)}.` },
     ];
     const method = [
       { title: "An average cannot exceed every term or fall below every term",
@@ -834,6 +877,7 @@ textarea#copy-box{width:100%;min-height:8rem;font:.8rem var(--mono);margin-top:.
   }
 
   /* s: { scene, title, counts + N + k (+ noun, box) for counting scenes, or values (+ weights) for the rest }. */
+  /** @param {CountScene | ValueScene} s */
   function report(s) {
     const f = s.counts ? countFrames(s) : realFrames(s);
     return {
@@ -845,8 +889,10 @@ textarea#copy-box{width:100%;min-height:8rem;font:.8rem var(--mono);margin-top:.
 
   /* ---------- self-tests (run on every load; the Node tests run them too) ---------- */
   function selfTests() {
-    const out = [], t = (name, pass) => out.push({ name, pass: !!pass });
-    const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+    /** @type {{ name: string, pass: boolean }[]} */
+    const out = [];
+    const t = (/** @type {string} */ name, /** @type {unknown} */ pass) => out.push({ name, pass: !!pass });
+    const same = (/** @type {unknown} */ a, /** @type {unknown} */ b) => JSON.stringify(a) === JSON.stringify(b);
     t("23 objects in 5 boxes: ⌈23/5⌉ = 5, balanced 5, 5, 5, 4, 4", bounds(23, 5).ceil === 5 && same(balanced(23, 5), [5, 5, 5, 4, 4]));
     t("13 socks in 4 drawers: 4, 3, 3, 3", same(balanced(13, 4), [4, 3, 3, 3]));
     t("25 people in 12 months: some month has at least 3", bounds(25, 12).ceil === 3);
@@ -881,62 +927,78 @@ textarea#copy-box{width:100%;min-height:8rem;font:.8rem var(--mono);margin-top:.
 <script id="pigeonhole-ui">
 (function () {
 "use strict";
-const P = self.Pigeonhole, $ = (id) => document.getElementById(id), app = $("app");
+/** @typedef {[number, number]} Pair */
+/** @typedef {{ from: number, to: number }} Flow */
+/** @typedef {{ N: number, k: number, counts: number[], labels?: string[], noun?: string, box?: string, flow?: Flow | null }} CountModel */
+/** @typedef {{ get(): number[], set(i: number, v: number): void, min: number, max: number, step: number }} HeightModel */
+/** @typedef {{ id: string, v: number, text: string | string[] }} Line */
+/** @typedef {{ values: number[], labels?: string[], morph?: number, dev?: number, ymax?: number, cap?: number, lines?: Line[], tray?: number,
+ *   marks?: string[], tags?: string[] | null, fmtv?: string, yname?: string, xname?: string, flows?: Flow[], ghost?: number[] | null,
+ *   widths?: number[], gap?: number, area?: number, shade?: boolean, banner?: string | null, bannerWarn?: boolean, trayWarn?: boolean,
+ *   curve?: number[][], fallI?: number, fall?: number, cursor?: boolean, mean?: number, f?: (x: number) => string }} View
+ * The stage's picture; realView also reads mean and f from it. */
+/** @typedef {(CountModel & { values?: undefined, weights?: undefined }) | { values: number[], weights?: number[], counts?: undefined }} SceneData */
+/** @typedef {{ draw(): string, down(x: number, y: number): ((x: number, y: number) => void) | null, hover?(x: number, y: number): void, key?(e: KeyboardEvent): boolean }} Aux */
+/** @typedef {{ hint?: string, input?: "place" | "move" | "height" | null, line?: boolean, family?: string, model?: () => CountModel | HeightModel, data(): SceneData,
+ *   panel(): string, enter?(): void, update?(): void, view(): View, frame?(v: View): void, aux?: Aux }} Scene */
+const P = self.Pigeonhole, $ = (/** @type {string} */ id) => /** @type {HTMLElement} */ (document.getElementById(id)), app = $("app");
 $("nojs").hidden = true;
 app.hidden = false;
 $("tools").hidden = false;
 const fmt = P.fmt;
-const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+const esc = (/** @type {unknown} */ s) => String(s).replace(/[&<>"']/g, (c) => (/** @type {Record<string, string>} */ ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }))[c]);
 const now = () => (typeof performance !== "undefined" && performance.now ? performance.now() : Date.now());
-const raf = (f) => (typeof requestAnimationFrame === "function" ? requestAnimationFrame(f) : setTimeout(f, 16));
+const raf = (/** @type {() => void} */ f) => (typeof requestAnimationFrame === "function" ? requestAnimationFrame(f) : setTimeout(f, 16));
 const reduced = () => { try { return !!matchMedia("(prefers-reduced-motion: reduce)").matches; } catch { return false; } };
 const store = {
-  get(k) { try { return localStorage.getItem(`pigeonhole:${k}`); } catch { return null; } },
-  set(k, v) { try { localStorage.setItem(`pigeonhole:${k}`, v); } catch { /* storage is optional */ } },
+  get(/** @type {string} */ k) { try { return localStorage.getItem(`pigeonhole:${k}`); } catch { return null; } },
+  set(/** @type {string} */ k, /** @type {string} */ v) { try { localStorage.setItem(`pigeonhole:${k}`, v); } catch { /* storage is optional */ } },
 };
-const say = (text) => { $("live").textContent = text; };
-const set = (id, html) => { const e = $(id); if (e) e.innerHTML = html; };
+const say = (/** @type {string} */ text) => { $("live").textContent = text; };
+const set = (/** @type {string} */ id, /** @type {unknown} */ html) => { const e = $(id); if (e) e.innerHTML = String(html); };
 
 /* ---------- maths markup (HTML, no external renderer) ---------- */
-const V_ = (s) => `<i>${s}</i>`;
-const sub = (b, s) => `${b}<sub>${s}</sub>`;
-const frac = (a, b) => `<span class="frac"><span>${a}</span><span>${b}</span></span>`;
+const V_ = (/** @type {string} */ s) => `<i>${s}</i>`;
+const sub = (/** @type {unknown} */ b, /** @type {unknown} */ s) => `${b}<sub>${s}</sub>`;
+const frac = (/** @type {unknown} */ a, /** @type {unknown} */ b) => `<span class="frac"><span>${a}</span><span>${b}</span></span>`;
 const xbar = `<span class="ov"><i>x</i></span>`;
 const xbarw = `${xbar}<sub><i>w</i></sub>`;
 const ni = sub(V_("n"), V_("i")), xi = sub(V_("x"), V_("i")), di = sub(V_("d"), V_("i")), wi = sub(V_("w"), V_("i"));
 const NK = frac(V_("N"), V_("k"));
-const boxed = (s) => `<span class="boxed">${s}</span>`;
-const eq = (s, cls = "") => `<p class="eq ${cls}">${s}</p>`;
+const boxed = (/** @type {string} */ s) => `<span class="boxed">${s}</span>`;
+const eq = (/** @type {string} */ s, cls = "") => `<p class="eq ${cls}">${s}</p>`;
 const SUBS = "₀₁₂₃₄₅₆₇₈₉";
-const xsub = (i, b = "x") => b + String(i + 1).replace(/\d/g, (d) => SUBS[d]);
-const sumOf = (xs) => xs.map((x) => fmt(x)).join(" + ");
+const xsub = (/** @type {number} */ i, b = "x") => b + String(i + 1).replace(/\d/g, (d) => SUBS[+d]);
+const sumOf = (/** @type {number[]} */ xs) => xs.map((x) => fmt(x)).join(" + ");
+/** @param {number} n @param {string} one @param {string} many */
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 
 /* ---------- state ---------- */
 const SC = Object.fromEntries(P.SCENES.map((s) => [s.id, s]));
 const GUIDED = P.SCENES.filter((s) => s.guided).map((s) => s.id);
 const EX = P.EXAMPLES;
+/** @param {{ N: number, k: number, labels: string[], noun: string, box: string }} ex @returns {CountModel} */
 const countModel = (ex) => ({ N: ex.N, k: ex.k, counts: Array(ex.k).fill(0), labels: ex.labels, noun: ex.noun, box: ex.box });
 function defaults() {
   return {
     scene: "pigeonhole", advanced: false, unlocked: false, proof: "visual", cursor: 0,
-    pg: { N: 4, k: 4, counts: [0, 0, 0, 0], noun: "pigeon", box: "box" },
-    gen: { N: 23, k: 5, counts: [0, 0, 0, 0, 0] }, genView: "boxes", forced: false,
-    cons: { n: 7, N: 31, counts: P.balanced(31, 7) },
-    mm: { counts: P.LOPSIDED.slice(), trail: [P.LOPSIDED.slice()], flow: null },
+    pg: /** @type {CountModel} */ ({ N: 4, k: 4, counts: [0, 0, 0, 0], noun: "pigeon", box: "box" }),
+    gen: /** @type {CountModel} */ ({ N: 23, k: 5, counts: [0, 0, 0, 0, 0] }), genView: "boxes", forced: /** @type {false | "max" | "min"} */ (false),
+    cons: /** @type {{ n: number, N: number, counts: number[], flow?: Flow | null }} */ ({ n: 7, N: 31, counts: P.balanced(31, 7) }),
+    mm: { counts: P.LOPSIDED.slice(), trail: [P.LOPSIDED.slice()], flow: /** @type {Flow | null} */ (null) },
     xs: P.REAL_EXAMPLE.slice(), jstep: 0,
-    line: 4, side: "max", pushed: false, lq: false, dev: false, before: null,
-    syn: { step: 0, m: { N: 11, k: 4, counts: [0, 0, 0, 0] } },
+    line: 4, side: "max", pushed: false, lq: false, dev: false, before: /** @type {number[] | null} */ (null),
+    syn: { step: 0, m: /** @type {CountModel} */ ({ N: 11, k: 4, counts: [0, 0, 0, 0] }) },
     socks: countModel(EX.socks), months: countModel(EX.months), workload: countModel(EX.workload), capped: false,
     exams: EX.exams.values.slice(), examsPushed: false,
-    graph: { edges: EX.graph.edges.map((e) => e.slice()), sel: null, cur: 0, hover: null },
-    dist: { points: EX.distances.points.map((p) => p.slice()), cur: 0 },
+    graph: { edges: EX.graph.edges.map((e) => /** @type {Pair} */ (e.slice())), sel: /** @type {number | null} */ (null), cur: 0, hover: /** @type {number | null} */ (null) },
+    dist: { points: EX.distances.points.map((p) => /** @type {Pair} */ (p.slice())), cur: 0 },
     time: { i: 2 },
     w: { values: P.WEIGHTED.values.slice(), weights: P.WEIGHTED.weights.slice() },
     mass: { points: P.MASS.points.slice(), lambdas: P.MASS.lambdas.slice(), cur: 0 },
-    hull: { points: P.HULL.points.map((p) => p.slice()), cur: 0 },
-    lab: { units: P.LAB.start.map((x) => Math.round(x * 10)), lock: false, seed: 1, flows: null },
-    ch: { id: "A", picked: {}, shown: {} },
+    hull: { points: P.HULL.points.map((p) => /** @type {Pair} */ (p.slice())), cur: 0 },
+    lab: { units: P.LAB.start.map((x) => Math.round(x * 10)), lock: false, seed: 1, flows: /** @type {Flow[] | null} */ (null) },
+    ch: { id: "A", picked: /** @type {Record<string, number>} */ ({}), shown: /** @type {Record<string, boolean>} */ ({}) },
   };
 }
 let S = defaults();
@@ -944,7 +1006,8 @@ S.advanced = store.get("advanced") === "1";
 S.unlocked = store.get("unlocked") === "1";
 
 /* ---------- the stage: one persistent row of containers ---------- */
-const G = { W: 760, H: 340, l: 46, r: 104, t: 44, b: 44 };
+/** @type {{ W: number, H: number, l: number, r: number, t: number, b: number, pw: number, ph: number, y0: number }} */
+const G = { W: 760, H: 340, l: 46, r: 104, t: 44, b: 44, pw: 0, ph: 0, y0: 0 };
 const fitPlot = () => { G.pw = G.W - G.l - G.r; G.ph = G.H - G.t - G.b; G.y0 = G.H - G.b; };
 fitPlot();
 /* On a narrow screen the stage draws in fewer, larger units so its text stays readable. */
@@ -957,12 +1020,14 @@ function sizeStage() {
   $("stage").setAttribute("viewBox", `0 0 ${G.W} ${G.H}`);
   draw();
 }
+/** @param {number} x */
 function niceStep(x) {
   if (!(x > 0)) return 1;
   const p = 10 ** Math.floor(Math.log10(x)), f = x / p;
   return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * p;
 }
-const niceTop = (v) => { const s = niceStep(v / 5); return Math.max(s, Math.ceil(v / s - 1e-9) * s); };
+const niceTop = (/** @type {number} */ v) => { const s = niceStep(v / 5); return Math.max(s, Math.ceil(v / s - 1e-9) * s); };
+/** @param {number} n @param {number[] | undefined} widths @param {number | undefined} gapOpt */
 function layout(n, widths, gapOpt) {
   const ws = widths || Array(n).fill(1), Wt = P.sum(ws) || 1;
   const gap = gapOpt ?? Math.min(20, (G.pw / Math.max(n, 1)) * 0.3);
@@ -975,17 +1040,20 @@ function layout(n, widths, gapOpt) {
   }
   return out;
 }
-let V = null, T = null, tok = 0, geo = null, focused = false;
-const ease = (p) => (p < 0.5 ? 4 * p * p * p : 1 - (-2 * p + 2) ** 3 / 2);
+/** @typedef {{ slots: ReturnType<typeof layout>, yOf: (v: number) => number, ymax: number }} Geo */
+let V = /** @type {View | null} */ (null), T = /** @type {View | null} */ (null), tok = 0, geo = /** @type {Geo | null} */ (null), focused = false;
+const ease = (/** @type {number} */ p) => (p < 0.5 ? 4 * p * p * p : 1 - (-2 * p + 2) ** 3 / 2);
+/** @param {View} a @param {View} b @param {number} e @returns {View} */
 function lerpView(a, b, e) {
   const o = Object.assign({}, b);
-  for (const k of ["morph", "dev", "ymax", "fall", "area"]) if (typeof a[k] === "number" && typeof b[k] === "number") o[k] = a[k] + (b[k] - a[k]) * e;
-  for (const k of ["values", "ghost", "widths"]) if (a[k] && b[k] && a[k].length === b[k].length) o[k] = b[k].map((v, i) => a[k][i] + (v - a[k][i]) * e);
-  if (a.lines && b.lines) o.lines = b.lines.map((l) => { const f = a.lines.find((x) => x.id === l.id); return f ? { ...l, v: f.v + (l.v - f.v) * e } : l; });
+  for (const k of /** @type {const} */ (["morph", "dev", "ymax", "fall", "area"])) { const x = a[k], y = b[k]; if (typeof x === "number" && typeof y === "number") o[k] = x + (y - x) * e; }
+  for (const k of /** @type {const} */ (["values", "ghost", "widths"])) { const x = a[k], y = b[k]; if (x && y && x.length === y.length) o[k] = y.map((v, i) => x[i] + (v - x[i]) * e); }
+  if (a.lines && b.lines) o.lines = b.lines.map((l) => { const f = /** @type {Line[]} */ (a.lines).find((x) => x.id === l.id); return f ? { ...l, v: f.v + (l.v - f.v) * e } : l; });
   return o;
 }
 /* Tween the stage to a target view. Deterministic (fixed duration and easing) and interruptible: a newer call takes
    over from wherever the picture is. Reduced motion, or ms = 0, jumps straight to the target. */
+/** @param {View} target */
 function setView(target, ms = 450) {
   const my = ++tok;
   T = target;
@@ -995,7 +1063,7 @@ function setView(target, ms = 450) {
     const step = () => {
       if (my !== tok) return res(false);
       const p = Math.min(1, (now() - t0) / ms);
-      V = p >= 1 ? T : lerpView(A, T, ease(p));
+      V = p >= 1 ? T : lerpView(A, /** @type {View} */ (T), ease(p));
       draw();
       if (p < 1) raf(step); else res(true);
     };
@@ -1007,12 +1075,12 @@ function finishTween() { tok++; if (T) { V = T; draw(); } }
 function draw() {
   if (!V) return;
   const n = V.values.length, ymax = V.ymax || 1, m = V.morph ?? 2, dev = V.dev || 0;
-  const yOf = (v) => G.y0 - (v / ymax) * G.ph, f1 = (x) => Math.round(x * 10) / 10;
+  const yOf = (/** @type {number} */ v) => G.y0 - (v / ymax) * G.ph, f1 = (/** @type {number} */ x) => Math.round(x * 10) / 10;
   const slots = layout(n, V.widths, V.gap);
   const ml = (V.lines || []).find((l) => l.id === "mean"), mv = ml ? ml.v : n ? P.mean(V.values) : 0;
   geo = { slots, yOf, ymax };
   const o = [];
-  const tick = (v, label) => { const y = f1(yOf(v)); o.push(`<line class="ax" x1="${G.l}" x2="${G.W - G.r}" y1="${y}" y2="${y}"/><text class="tick" x="${G.l - 6}" y="${y + 4}" text-anchor="end">${label}</text>`); };
+  const tick = (/** @type {number} */ v, /** @type {string} */ label) => { const y = f1(yOf(v)); o.push(`<line class="ax" x1="${G.l}" x2="${G.W - G.r}" y1="${y}" y2="${y}"/><text class="tick" x="${G.l - 6}" y="${y + 4}" text-anchor="end">${label}</text>`); };
   const axA = Math.max(0, Math.min(1, m));
   if (axA > 0.01) {
     const step = niceStep(ymax / 5);
@@ -1111,14 +1179,17 @@ function draw() {
 /* ---------- sequences: multi-step animations any user action can interrupt ---------- */
 let seq = 0;
 const cancelSeq = () => { seq++; };
-const wait = (ms) => new Promise((r) => setTimeout(r, reduced() ? 0 : ms));
+const wait = (/** @type {number} */ ms) => new Promise((r) => setTimeout(r, reduced() ? 0 : ms));
+/** @template R @param {(alive: () => boolean) => R} fn */
 function sequence(fn) { const my = ++seq; return fn(() => my === seq); }
 /* Drop one object into box i, falling from the top. */
+/** @param {number} i @param {number} ms */
 function dropView(i, ms) {
   const t = scene().view();
   V = Object.assign({}, V && V.values.length === t.values.length ? V : t, { values: t.values, tray: t.tray, fallI: i, fall: 0 });
   return setView(Object.assign(t, { fallI: i, fall: 1 }), ms);
 }
+/** @param {CountModel} m @param {number[]} order @param {() => boolean} alive @param {number} ms */
 async function dropAll(m, order, alive, ms) {
   for (const i of order) {
     if (!alive() || P.sum(m.counts) >= m.N) return;
@@ -1128,11 +1199,15 @@ async function dropAll(m, order, alive, ms) {
   }
 }
 /* The emptiest box first: the adversary's best attempt to avoid crowding. */
+/** @param {CountModel} m */
 function evenOrder(m) {
-  const c = m.counts.slice(), out = [];
+  /** @type {number[]} */
+  const out = [];
+  const c = m.counts.slice();
   for (let t = P.sum(c); t < m.N; t++) { const i = P.argmin(c); c[i] += 1; out.push(i); }
   return out;
 }
+/** @param {{ counts: number[], flow?: Flow | null }} m @param {() => boolean} alive */
 async function balanceAnimated(m, alive, ms = 380) {
   for (;;) {
     if (!alive()) return;
@@ -1146,28 +1221,35 @@ async function balanceAnimated(m, alive, ms = 380) {
 }
 
 /* ---------- shared pieces of the scenes ---------- */
+/** @param {string} act @param {string} label @param {{ primary?: boolean, small?: boolean, id?: string, data?: Record<string, unknown>, pressed?: boolean }} [o] */
 const btn = (act, label, o = {}) => `<button type="button" class="btn${o.primary ? " primary" : ""}${o.small ? " small" : ""}"${o.id ? ` id="${o.id}"` : ""} data-act="${act}"${o.data ? Object.entries(o.data).map(([k, v]) => ` data-${k}="${esc(v)}"`).join("") : ""}${o.pressed !== undefined ? ` aria-pressed="${o.pressed}"` : ""}>${label}</button>`;
-const row = (...xs) => `<div class="row">${xs.join("")}</div>`;
+const row = (/** @type {string[]} */ ...xs) => `<div class="row">${xs.join("")}</div>`;
+/** @param {string} label @param {[string, string, boolean, string][]} items */
 const seg = (label, items) => `<div class="seg" role="group" aria-label="${esc(label)}">${items.map(([act, text, on, data]) => `<button type="button" data-act="${act}"${data ? ` data-id="${data}"` : ""} aria-pressed="${!!on}">${text}</button>`).join("")}</div>`;
+/** @param {number} v @param {string[]} [text] @returns {Line} */
 const meanLine = (v, text) => ({ id: "mean", v, text: text || ["average", `= ${fmt(v)}`] });
-const nkLine = (b) => meanLine(b.avg, ["average", `N/k = ${fmt(b.avg)}`]);
+const nkLine = (/** @type {{ avg: number }} */ b) => meanLine(b.avg, ["average", `N/k = ${fmt(b.avg)}`]);
 const PLACE_HINT = "Tap a box to drop the next object in. Drag one to another box, or up to the tray to take it out. Keys: ←/→ choose, ↑ drop, ↓ take out.";
 const LAB_RESHAPE = ["lab-add", "lab-sub", "lab-rand"];
 const HEIGHT_HINT = "Drag a bar's top to change it. Keys: ←/→ choose a bar, ↑/↓ change it (Shift for bigger steps).";
 const MOVE_HINT = "Drag an object from one box to another. Keys: ←/→ choose a box, ↑ take one from the fullest box, ↓ give one to the emptiest.";
 const READ_HINT = "Keys: ←/→ read each bar.";
+/** @type {Record<string, [string, string, [string, string] | null]>} */
 const CALLOUTS = {
   which: ["Pigeonhole does not say which box", `It proves existence: <span class="q">∃</span>${V_("i")} with ${ni} ≥ 2. Another placement crowds another box.`, null],
   lower: ["A lower bound on the maximum, not its value", `max ${ni} ≥ ⌈${NK}⌉ holds for every distribution, but 23 = 23 + 0 + 0 + 0 + 0 has maximum 23. Equality describes the most balanced distribution.`, ["show-lower", "Show 23 + 0 + 0 + 0 + 0"]],
   value: ["The average need not be one of the values", `1 and 2 average 1.5, yet 1 &lt; 1.5 &lt; 2.`, ["show-value", "Show 1, 2"]],
   counts: ["Above and below do not mean equally many", `0, 0, 0, 0, 10 average 2: four values lie below and only one above. The theorem asserts existence, not balanced counts.`, ["show-counts", "Show 0, 0, 0, 0, 10"]],
 };
-const callout = (id) => { const [t, b, a] = CALLOUTS[id]; return `<div class="callout"><strong>${t}</strong>${b}${a ? `<div class="row" style="margin-top:.35rem">${btn(a[0], a[1], { small: true })}</div>` : ""}</div>`; };
+const callout = (/** @type {string} */ id) => { const [t, b, a] = CALLOUTS[id]; return `<div class="callout"><strong>${t}</strong>${b}${a ? `<div class="row" style="margin-top:.35rem">${btn(a[0], a[1], { small: true })}</div>` : ""}</div>`; };
+/** @type {Record<string, string>} */
 const ARROW = { above: "↑", below: "↓", equal: "=" };
+/** @param {number[]} values @param {number} avg @param {(c: number) => string} [f] */
 function thresholdMarks(values, avg, f = (c) => String(c)) {
   const marks = values.map((c) => (P.near(c, avg) ? "equal" : c > avg ? "above" : "below"));
   return { marks, tags: values.map((c, i) => `${ARROW[marks[i]]} ${f(c)}`) };
 }
+/** @param {CountModel} m @param {Partial<View>} [o] @returns {View} */
 function countView(m, o = {}) {
   const b = P.bounds(m.N, m.k), tray = m.N - P.sum(m.counts), cap = Math.max(2, b.ceil, ...m.counts);
   return Object.assign({
@@ -1175,6 +1257,7 @@ function countView(m, o = {}) {
     ymax: niceTop(cap + 0.8), cap, lines: [], tray, marks: [], tags: null, fmtv: "int", yname: "count", flows: m.flow ? [m.flow] : [],
   }, o);
 }
+/** @param {number[]} xs @param {Partial<View>} [o] @returns {View} */
 function realView(xs, o = {}) {
   const m = o.mean ?? P.mean(xs), mk = thresholdMarks(xs, m, o.f || fmt);
   return Object.assign({
@@ -1183,35 +1266,40 @@ function realView(xs, o = {}) {
   }, o);
 }
 /* Bars capped at some level (the contradiction pictures): the removed units wait in the tray, their old heights ghosted. */
+/** @param {CountModel} m @param {number[]} vals @param {boolean} on @param {Line} line @param {string} banner */
 function cappedView(m, vals, on, line, banner) {
   return countView(m, { values: vals, morph: 1, ghost: on ? m.counts.slice() : null, tray: m.N - P.sum(vals), trayWarn: on,
     lines: [line], ...thresholdMarks(vals, line.v), banner: on ? banner : null, bannerWarn: true });
 }
 /* The plane of draggable points (distances, convex hull): the unit square drawn 360 × 300 in the 400 × 340 aux picture. */
-const planeX = (p) => 20 + p[0] * 360, planeY = (p) => 20 + p[1] * 300;
-const placedAll = (m) => P.sum(m.counts) === m.N;
-const ensurePlaced = (m) => { if (!placedAll(m)) m.counts = P.balanced(m.N, m.k); };
-const forceBelow = (xs, c, lo = 0, gap = 0.3) => xs.map((x) => (x >= c ? Math.max(lo, c - gap) : x));
-const forceAbove = (xs, c, hi = 10, gap = 0.3) => xs.map((x) => (x <= c ? Math.min(hi, c + gap) : x));
+const planeX = (/** @type {Pair} */ p) => 20 + p[0] * 360, planeY = (/** @type {Pair} */ p) => 20 + p[1] * 300;
+const placedAll = (/** @type {CountModel} */ m) => P.sum(m.counts) === m.N;
+const ensurePlaced = (/** @type {CountModel} */ m) => { if (!placedAll(m)) m.counts = P.balanced(m.N, m.k); };
+const forceBelow = (/** @type {number[]} */ xs, /** @type {number} */ c, lo = 0, gap = 0.3) => xs.map((x) => (x >= c ? Math.max(lo, c - gap) : x));
+const forceAbove = (/** @type {number[]} */ xs, /** @type {number} */ c, hi = 10, gap = 0.3) => xs.map((x) => (x <= c ? Math.min(hi, c + gap) : x));
+/** @type {HeightModel} */
 const xsModel = { get: () => S.xs, set(i, v) { S.xs[i] = v; S.pushed = false; S.lq = false; }, min: 0, max: 10, step: 0.1 };
 
 /* Proof modes for the averages scenes, with the scene's own numbers. */
 const PROOFS = [["visual", "Visual"], ["contradiction", "Contradiction"], ["algebra", "Algebra"], ["oneline", "One line"]];
 const proofBlock = () => `<div class="proof" id="proof"><h3>Proof</h3><div class="tabs" role="group" aria-label="Proof mode" id="proof-tabs"></div><div id="proof-body"></div></div>`;
+/** @param {number[] | undefined} xs */
 function proofUpdate(xs) {
   if (!xs || !xs.length) return;
   set("proof-tabs", PROOFS.map(([id, l]) => btn("proof", l, { small: true, data: { id }, pressed: S.proof === id })).join(""));
   const st = P.stats(xs), n = st.n;
-  const body = {
+  const body = /** @type {Record<string, string>} */ ({
     visual: `<p>Redistribute mass until every bar equals the mean. The common level is the total shared equally: ${xbar} = ${fmt(st.sum)}/${n} = ${fmt(st.mean)}. A bar that gave liquid was above ${xbar}; a bar that received was below.</p>${row(btn("watch-liquid", "Watch it equalise", { small: true }))}`,
     contradiction: `${eq(`${xi} &lt; ${xbar} for all ${V_("i")} &nbsp;⟹&nbsp; Σ ${xi} &lt; ${V_("n")}${xbar} = Σ ${xi}`)}<p>Impossible: here Σ ${xi} = ${fmt(st.sum)} and ${V_("n")}${xbar} = ${n} · ${fmt(st.mean)} = ${fmt(n * st.mean)}. Reverse every inequality for the minimum.</p>${row(btn("watch-contra", "Watch the contradiction", { small: true }))}`,
     algebra: `<p>Since min ${xi} ≤ ${sub(V_("x"), V_("j"))} ≤ max ${xi} for every ${V_("j")}, summing gives</p>${eq(`${V_("n")} min ${xi} ≤ Σ ${xi} ≤ ${V_("n")} max ${xi}`)}${eq(`${n} · ${fmt(st.min)} = ${fmt(n * st.min)} ≤ ${fmt(st.sum)} ≤ ${n} · ${fmt(st.max)} = ${fmt(n * st.max)}`)}<p>Divide by ${V_("n")}:</p>${eq(boxed(`min ${xi} ≤ ${xbar} ≤ max ${xi}`))}`,
     oneline: `${eq("An average cannot exceed every term or be smaller than every term.")}`,
-  }[S.proof];
+  })[S.proof];
   set("proof-body", body);
 }
 /* A step-by-step animation (the integer-to-real jump and the synthesis): Play advances, any other action pauses.
    show(k, ms) jumps to step k; Play uses advance(k, alive) instead, so a step can animate in more detail. */
+/** @param {string} prefix @param {string[]} steps @param {() => number} get @param {(k: number, ms: number) => Promise<unknown>} show
+ *  @param {(k: number, alive: () => boolean) => Promise<unknown>} [advance] */
 function stepper(prefix, steps, get, show, advance = (k) => show(k, 900)) {
   const last = steps.length - 1;
   const play = () => sequence(async (alive) => {
@@ -1234,7 +1322,9 @@ function stepper(prefix, steps, get, show, advance = (k) => show(k, 900)) {
 const JUMP = ["Counts in boxes", "Stack each box into a column", "Fill the columns: integer bars", "Forget integrality: real heights", "Draw the average line", "Something is at least the average; something is at most it"];
 const SYN = ["Eleven objects", "Drop them into four boxes", "Stack them", "Replace stacks by integer bars", "Let the heights become real", "Draw the average line", "One principle"];
 const SYN_REAL = [3.6, 2.1, 3.3, 2];
+/** @param {number} k @param {number} ms */
 function jumpGo(k, ms) { S.jstep = k; if (k >= 5) unlock(); refreshText(); return setView(scene().view(), ms); }
+/** @param {number} k @param {number} ms */
 function synGo(k, ms) { const m = S.syn.m; S.syn.step = k; m.counts = k === 0 ? [0, 0, 0, 0] : P.balanced(11, 4); if (k >= 6) unlock(); refreshText(); return setView(scene().view(), ms); }
 const jumpSteps = stepper("j", JUMP, () => S.jstep, jumpGo);
 /* Playing into step 1 drops the eleven objects one by one instead of jumping to the balanced boxes. */
@@ -1407,7 +1497,7 @@ const SCN = {
     update() {
       const xs = S.xs, st = P.stats(xs), n = st.n, c = S.line, at = Math.abs(c - st.mean) < 0.05, below = S.side === "max";
       set("imp-line-o", fmt(c));
-      const imp = $("imp-line"); if (imp && document.activeElement !== imp) imp.value = c;
+      const imp = /** @type {HTMLInputElement} */ ($("imp-line")); if (imp && document.activeElement !== imp) imp.value = String(c);
       const lt = below ? "&lt;" : "&gt;", word = below ? "below" : "above";
       set("imp-push", `Force every bar ${word} the line`);
       let h = `<p>Could every bar lie ${word} the average? ${below ? "" : "(The minimum principle.) "}Move the dotted line, then force every bar ${word} it.</p>`;
@@ -1439,7 +1529,7 @@ const SCN = {
       set("lq-out", `${eq(`${xbar} = ${frac(`total ${fmt(st.sum)}`, `${st.n} vessels`)} = ${fmt(st.mean)}`)}<p>The average is exactly the common height obtained by redistributing the total equally. ${st.allEqual ? "Here every level already equals the average: perfect balance." : `So, as the values are not all equal, there must initially be some excess above the average (hatched, ${fmt(fl.excess)}) and some deficit below it (dotted, ${fmt(fl.deficit)}), and they are equal.`}</p>`);
       proofUpdate(S.xs);
     },
-    frame(v) { const e = $("lq-vol"); if (e) e.textContent = fmt(P.sum(v.values)); },
+    frame(/** @type {View} */ v) { const e = $("lq-vol"); if (e) e.textContent = fmt(P.sum(v.values)); },
     view() {
       const xs = S.lq ? P.equalise(S.xs, 1) : S.xs, m = P.mean(S.xs);
       return realView(xs, { mean: m, shade: !S.lq, ghost: S.lq ? S.xs.slice() : null, banner: S.lq ? "every level = x̄" : null });
@@ -1449,7 +1539,7 @@ const SCN = {
     hint: HEIGHT_HINT, input: "height", model: () => xsModel, data: () => ({ values: S.xs }), family: "dev",
     panel: () => `${row(seg("Show", [["dev", "Values", !S.dev, "0"], ["dev", "Deviations from average", S.dev, "1"]]))}<div id="dv-out"></div>${callout("counts")}${proofBlock()}`,
     update() {
-      const d = P.deviations(S.xs), sg = (x) => (P.near(x, 0, 1e-9) ? "0" : x > 0 ? `+${fmt(x)}` : fmt(x));
+      const d = P.deviations(S.xs), sg = (/** @type {number} */ x) => (P.near(x, 0, 1e-9) ? "0" : x > 0 ? `+${fmt(x)}` : fmt(x));
       set("dv-out", `<p>${di} = ${xi} − ${xbar}: ${d.d.map(sg).join(", ")}</p>${eq(`Σ ${di} = ${sg(d.positive)} ${fmt(d.negative).replace("−", "− ")} = 0`)}
         <p>If some deviation is positive, some deviation must be negative, unless all deviations vanish:</p>${eq(boxed(`min ${di} ≤ 0 ≤ max ${di}`))}<p>Adding ${xbar}:</p>${eq(boxed(`min ${xi} ≤ ${xbar} ≤ max ${xi}`))}
         <p class="note">The continuous analogue of pigeonhole balancing: surplus and deficit cancel exactly, as objects above and below the average did.</p>`);
@@ -1458,7 +1548,7 @@ const SCN = {
     view() {
       const xs = S.xs, m = P.mean(xs);
       if (!S.dev) return realView(xs);
-      const mk = thresholdMarks(xs, m), sg = (x) => (P.near(x, m) ? "0" : x > m ? `+${fmt(x - m)}` : fmt(x - m));
+      const mk = thresholdMarks(xs, m), sg = (/** @type {number} */ x) => (P.near(x, m) ? "0" : x > m ? `+${fmt(x - m)}` : fmt(x - m));
       return realView(xs, { dev: 1, tags: xs.map((x, i) => `${ARROW[mk.marks[i]]} ${sg(x)}`), lines: [meanLine(m, ["d = 0", `(x̄ = ${fmt(m)})`])], yname: "deviation" });
     },
   },
@@ -1520,7 +1610,7 @@ const SCN = {
   }),
   exams: {
     hint: "Drag a score. Keys: ←/→ choose a student, ↑/↓ change the score.", input: "height",
-    model: () => ({ get: () => S.exams, set(i, v) { S.exams[i] = v; S.examsPushed = false; }, min: 0, max: 100, step: 1 }),
+    model: () => ({ get: () => S.exams, set(/** @type {number} */ i, /** @type {number} */ v) { S.exams[i] = v; S.examsPushed = false; }, min: 0, max: 100, step: 1 }),
     data: () => ({ values: S.exams }),
     panel: () => `${row(btn("ex-push", "Could every student score below the average?", { primary: true }), btn("ex-back", "Restore"))}<div id="exm-out"></div>`,
     update() {
@@ -1553,13 +1643,13 @@ const SCN = {
     view() {
       const d = graphDeg(), avg = (2 * S.graph.edges.length) / EX.graph.n, h = S.graph.hover;
       const v = realView(d, { ymax: 6, labels: EX.graph.labels, f: (x) => fmt(x, 0), lines: [meanLine(avg, ["average", `2|E|/|V| = ${fmt(avg)}`])], yname: "degree" });
-      if (h !== null) v.marks = v.marks.map((mk, i) => (i === h ? "hot" : mk));
+      if (h !== null) v.marks = /** @type {string[]} */ (v.marks).map((mk, i) => (i === h ? "hot" : mk));
       return v;
     },
     aux: {
       draw() {
         const g = S.graph, L = EX.graph.labels, d = graphDeg(), avg = (2 * g.edges.length) / EX.graph.n, mk = thresholdMarks(d, avg).marks, h = g.hover;
-        const X = (p) => 34 + p[0] * 332, Y = (p) => 30 + p[1] * 280, pos = EX.graph.pos;
+        const X = (/** @type {Pair} */ p) => 34 + p[0] * 332, Y = (/** @type {Pair} */ p) => 30 + p[1] * 280, pos = EX.graph.pos;
         const o = g.edges.map(([a, b]) => `<line class="edge ${h === a || h === b ? "hot" : ""}" x1="${X(pos[a])}" y1="${Y(pos[a])}" x2="${X(pos[b])}" y2="${Y(pos[b])}"/>`);
         pos.forEach((p, i) => {
           o.push(`<circle class="vtx ${mk[i]} ${g.sel === i ? "sel" : ""} ${h === i ? "hot" : ""}" cx="${X(p)}" cy="${Y(p)}" r="18"/><text x="${X(p)}" y="${Y(p) + 5}" text-anchor="middle" font-weight="700">${L[i]}</text><text class="tick" x="${X(p)}" y="${Y(p) + 33}" text-anchor="middle">deg ${d[i]} ${ARROW[mk[i]]}</text>`);
@@ -1568,10 +1658,10 @@ const SCN = {
         if (g.sel !== null) o.push(`<text class="tick" x="10" y="16">${L[g.sel]} selected: click another vertex</text>`);
         return o.join("");
       },
-      hit(x, y) { const pos = EX.graph.pos; return pos.findIndex((p) => Math.hypot(34 + p[0] * 332 - x, 30 + p[1] * 280 - y) < 26); },
-      down(x, y) { const i = this.hit(x, y); if (i >= 0) clickVertex(i); return null; },
-      hover(x, y) { const i = this.hit(x, y), h = i >= 0 ? i : null; if (h !== S.graph.hover) { S.graph.hover = h; refresh(0); } },
-      key(e) {
+      hit(/** @type {number} */ x, /** @type {number} */ y) { const pos = EX.graph.pos; return pos.findIndex((p) => Math.hypot(34 + p[0] * 332 - x, 30 + p[1] * 280 - y) < 26); },
+      down(/** @type {number} */ x, /** @type {number} */ y) { const i = this.hit(x, y); if (i >= 0) clickVertex(i); return null; },
+      hover(/** @type {number} */ x, /** @type {number} */ y) { const i = this.hit(x, y), h = i >= 0 ? i : null; if (h !== S.graph.hover) { S.graph.hover = h; refresh(0); } },
+      key(/** @type {KeyboardEvent} */ e) {
         const g = S.graph, n = EX.graph.n;
         if (e.key === "ArrowRight" || e.key === "ArrowDown") g.cur = (g.cur + 1) % n;
         else if (e.key === "ArrowLeft" || e.key === "ArrowUp") g.cur = (g.cur - 1 + n) % n;
@@ -1623,14 +1713,14 @@ const SCN = {
   },
   weighted: {
     hint: HEIGHT_HINT, input: "height", family: "weighted",
-    model: () => ({ get: () => S.w.values, set(i, v) { S.w.values[i] = v; }, min: 0, max: 10, step: 0.1 }),
+    model: () => ({ get: () => S.w.values, set(/** @type {number} */ i, /** @type {number} */ v) { S.w.values[i] = v; }, min: 0, max: 10, step: 0.1 }),
     data: () => ({ values: S.w.values, weights: S.w.weights }),
     panel: () => `<p>A bar with value ${xi} and weight ${wi} is a rectangle of height ${xi} and width ${wi}. The weighted average is the uniform height with the same total area.</p>
       <div class="sliders">${S.w.values.map((x, i) => `<label for="w-x-${i}">${xsub(i)}</label><input type="range" id="w-x-${i}" data-in="w-x" data-i="${i}" min="0" max="10" step="0.1" value="${x}"><output id="w-x-${i}-o"></output><label for="w-w-${i}">${xsub(i, "w")}</label><input type="range" id="w-w-${i}" data-in="w-w" data-i="${i}" min="0.5" max="4" step="0.5" value="${S.w.weights[i]}"><output id="w-w-${i}-o"></output>`).join("")}</div>
       ${row(btn("w-equal", "Equal weights"), btn("w-reset", "Reset"))}<div id="w-out"></div>`,
     update() {
       const { values: xs, weights: ws } = S.w, wm = P.weightedMean(xs, ws);
-      xs.forEach((x, i) => { set(`w-x-${i}-o`, fmt(x)); set(`w-w-${i}-o`, fmt(ws[i])); const a = $(`w-x-${i}`); if (a && document.activeElement !== a) a.value = x; });
+      xs.forEach((x, i) => { set(`w-x-${i}-o`, fmt(x)); set(`w-w-${i}-o`, fmt(ws[i])); const a = /** @type {HTMLInputElement} */ ($(`w-x-${i}`)); if (a && document.activeElement !== a) a.value = String(x); });
       set("w-out", `${eq(`${xbarw} = ${frac(`Σ ${wi}${xi}`, `Σ ${wi}`)} = ${frac(`area ${fmt(wm.area)}`, `width ${fmt(wm.totalWeight)}`)} = ${fmt(wm.mean)}`)}<p class="note">The unweighted average would be ${fmt(P.mean(xs))}.</p>${eq(boxed(`min ${xi} = ${fmt(wm.min)} ≤ ${xbarw} = ${fmt(wm.mean)} ≤ max ${xi} = ${fmt(wm.max)}`))}${eq(`Σ ${wi}(${xi} − ${xbarw}) = ${fmt(Math.abs(wm.deviation) < 1e-9 ? 0 : wm.deviation, 6)}`)}<p>Area above the line equals the gap below it: the same argument with width as weight.</p>`);
     },
     view() { const wm = P.weightedMean(S.w.values, S.w.weights).mean; return realView(S.w.values, { widths: S.w.weights, gap: 6, mean: wm, area: wm, lines: [meanLine(wm, ["weighted avg", `x̄w = ${fmt(wm)}`])] }); },
@@ -1658,7 +1748,9 @@ const SCN = {
     aux: {
       draw() {
         const ms = S.mass, ok = ms.lambdas.some((l) => l > 0), c = ok ? P.convexCombination(ms.points, ms.lambdas).value : null;
-        const X = (v) => 30 + v * 34, y = 190, lo = P.minOf(ms.points), hi = P.maxOf(ms.points), o = [];
+        /** @type {string[]} */
+        const o = [];
+        const X = (/** @type {number} */ v) => 30 + v * 34, y = 190, lo = P.minOf(ms.points), hi = P.maxOf(ms.points);
         o.push(`<rect x="${X(lo)}" y="${y - 50}" width="${X(hi) - X(lo)}" height="6" fill="var(--above)" opacity=".5"/><text class="tick" x="${X(lo)}" y="${y - 58}">[min, max] = [${fmt(lo)}, ${fmt(hi)}]</text>`);
         o.push(`<line class="base" x1="${X(0)}" x2="${X(10)}" y1="${y}" y2="${y}"/>`);
         for (let v = 0; v <= 10; v++) o.push(`<line class="ax" x1="${X(v)}" x2="${X(v)}" y1="${y - 4}" y2="${y + 4}"/><text class="tick" x="${X(v)}" y="${y + 20}" text-anchor="middle">${v}</text>`);
@@ -1669,8 +1761,8 @@ const SCN = {
         if (c !== null) o.push(`<path class="bary" d="M${X(c)} ${y + 4} l-10 18 h20 z"/><text class="lbl-mean" x="${X(c)}" y="${y + 52}" text-anchor="middle">balance ${fmt(c)}</text>`);
         return o.join("");
       },
-      down(x) { const ms = S.mass, i = P.argmin(ms.points.map((p) => Math.abs(30 + p * 34 - x))); if (Math.abs(30 + ms.points[i] * 34 - x) > 20) return null; ms.cur = i; return (x2) => { ms.points[i] = Math.round(Math.max(0, Math.min(10, (x2 - 30) / 34)) * 10) / 10; refresh(0); }; },
-      key(e) {
+      down(/** @type {number} */ x) { const ms = S.mass, i = P.argmin(ms.points.map((p) => Math.abs(30 + p * 34 - x))); if (Math.abs(30 + ms.points[i] * 34 - x) > 20) return null; ms.cur = i; return (/** @type {number} */ x2) => { ms.points[i] = Math.round(Math.max(0, Math.min(10, (x2 - 30) / 34)) * 10) / 10; refresh(0); }; },
+      key(/** @type {KeyboardEvent} */ e) {
         const ms = S.mass;
         if (/^[1-9]$/.test(e.key) && +e.key <= ms.points.length) ms.cur = +e.key - 1;
         else if (e.key === "ArrowLeft" || e.key === "ArrowRight") ms.points[ms.cur] = Math.round(Math.max(0, Math.min(10, ms.points[ms.cur] + (e.key === "ArrowLeft" ? -0.1 : 0.1) * (e.shiftKey ? 10 : 1))) * 10) / 10;
@@ -1707,7 +1799,7 @@ const SCN = {
       set("lab-out", `${eq(`<span class="dn">${fmt(st.min)}</span> ≤ <span class="eqc">${fmt(st.mean)}</span> ≤ <span class="up">${fmt(st.max)}</span>`)}${S.lab.lock
         ? `<p>Total locked at ${fmt(st.sum)}: dragging one bar up pushes the others down (arrows show the flow), so the average line stays fixed. This is ${eq(`Σ (${xi} − ${xbar}) = 0`, "left")}</p><p class="note">Unlock the total to add, remove or randomise values.</p>`
         : `<p class="note">Add, drag and remove values; the mean line follows. Turn on Preserve total to hold the average fixed.</p>`}`);
-      for (const a of LAB_RESHAPE) { const b = document.querySelector(`#panel [data-act="${a}"]`); if (b) b.disabled = S.lab.lock; }
+      for (const a of LAB_RESHAPE) { const b = /** @type {HTMLButtonElement | null} */ (document.querySelector(`#panel [data-act="${a}"]`)); if (b) b.disabled = S.lab.lock; }
       proofUpdate(xs);
     },
     view() { return realView(S.lab.units.map((u) => u / 10), { ymax: P.LAB.max, flows: S.lab.flows || [] }); },
@@ -1716,7 +1808,7 @@ const SCN = {
     hint: READ_HINT, input: null, data: () => chData(),
     panel: () => `<div class="tabs" role="group" aria-label="Challenge" id="ch-tabs"></div><div id="ch-body"></div>`,
     update() {
-      const c = P.CHALLENGES.find((x) => x.id === S.ch.id), pick = S.ch.picked[c.id];
+      const c = /** @type {(typeof P.CHALLENGES)[number]} */ (P.CHALLENGES.find((x) => x.id === S.ch.id)), pick = S.ch.picked[c.id];
       set("ch-tabs", P.CHALLENGES.map((x) => btn("ch-tab", `Challenge ${x.id}`, { small: true, data: { id: x.id }, pressed: x.id === S.ch.id })).join(""));
       const fb = pick === undefined ? "" : c.notes && c.notes[pick] ? `<div class="callout"><strong>${c.notes[pick]}</strong>${c.explain}</div>` : pick === c.answer ? `<p class="okbox">That is what the total forces.</p><p>${c.explain}</p>` : `<div class="callout"><strong>Compare that with what the total forces.</strong>${c.explain}</div>`;
       set("ch-body", `<h3>${c.prompt}</h3><div class="opts">${c.options.map((o, i) => btn("ch-pick", `${String.fromCharCode(65 + i)}. ${o}`, { data: { i }, pressed: pick === i })).join("")}</div>${fb}${row(btn("ch-show", S.ch.shown[c.id] ? "Back to the question picture" : "Show it on the bars"))}`);
@@ -1724,7 +1816,7 @@ const SCN = {
     view() { return chView(); },
   },
 };
-const scene = () => SCN[S.scene];
+const scene = () => /** @type {Record<string, Scene>} */ (SCN)[S.scene];
 const repanel = () => set("panel", scene().panel());
 
 function genFields() {
@@ -1734,6 +1826,7 @@ function consModel() { const c = S.cons; return { N: c.N, k: c.n, counts: c.coun
 function mmModel() { const c = S.mm.counts; return { N: P.sum(c), k: c.length, counts: c, flow: S.mm.flow }; }
 const graphDeg = () => P.degrees(EX.graph.n, S.graph.edges);
 const distVals = () => S.dist.points.map((p) => P.dist(p, EX.distances.origin) * 10);
+/** @param {number} i */
 function clickVertex(i) {
   const g = S.graph, L = EX.graph.labels;
   if (g.sel === null) { g.sel = i; say(`Vertex ${L[i]} selected. Choose another vertex.`); }
@@ -1748,11 +1841,14 @@ function clickVertex(i) {
   refresh(300);
 }
 /* A plane of draggable points (distances, convex hull). */
+/** @param {() => { points: Pair[], cur: number }} get @param {() => string[]} labels @param {(o: string[]) => void} extra @returns {Aux} */
 function pointsAux(get, labels, extra) {
   const X = planeX, Y = planeY;
   return {
     draw() {
-      const s = get(), L = labels(), o = [];
+      /** @type {string[]} */
+      const o = [];
+      const s = get(), L = labels();
       s.points.forEach((p, i) => o.push(`<circle class="pt ${auxFocused && s.cur === i ? "cur" : ""}" cx="${X(p)}" cy="${Y(p)}" r="9"/><text x="${X(p) + 12}" y="${Y(p) - 10}" font-weight="600">${L[i]}</text>`));
       extra(o);
       return o.join("");
@@ -1764,7 +1860,7 @@ function pointsAux(get, labels, extra) {
       return (x2, y2) => { s.points[i] = [Math.max(0, Math.min(1, (x2 - 20) / 360)), Math.max(0, Math.min(1, (y2 - 20) / 300))]; refresh(0); };
     },
     key(e) {
-      const s = get(), d = e.shiftKey ? 0.1 : 0.02, mv = { ArrowLeft: [-d, 0], ArrowRight: [d, 0], ArrowUp: [0, -d], ArrowDown: [0, d] }[e.key];
+      const s = get(), d = e.shiftKey ? 0.1 : 0.02, mv = /** @type {Record<string, Pair>} */ ({ ArrowLeft: [-d, 0], ArrowRight: [d, 0], ArrowUp: [0, -d], ArrowDown: [0, d] })[e.key];
       if (/^[1-9]$/.test(e.key) && +e.key <= s.points.length) s.cur = +e.key - 1;
       else if (mv) { const p = s.points[s.cur]; s.points[s.cur] = [Math.max(0, Math.min(1, p[0] + mv[0])), Math.max(0, Math.min(1, p[1] + mv[1]))]; }
       else return false;
@@ -1774,6 +1870,7 @@ function pointsAux(get, labels, extra) {
     },
   };
 }
+/** @param {"socks" | "months" | "workload"} key @param {{ act: string, bars?: boolean, text: (m: CountModel, b: ReturnType<typeof P.bounds>) => string }} o */
 function countExample(key, o) {
   return {
     hint: PLACE_HINT, input: "place", model: () => S[key], data: () => S[key],
@@ -1790,38 +1887,42 @@ function countExample(key, o) {
     key,
   };
 }
+/** @param {number} i @param {number} v */
 function labSet(i, v) {
   const L = S.lab, target = Math.round(v * 10);
   if (!L.lock) { L.units[i] = Math.max(0, Math.min(P.LAB.max * 10, target)); L.flows = null; return; }
   const r = P.lockTotal(L.units, i, target, 0, P.LAB.max * 10);
   L.units = r.units;
   const giver = r.moved[i] > 0;
-  L.flows = r.moved.map((d, j) => (j !== i && d !== 0 ? (giver ? { from: j, to: i } : { from: i, to: j }) : null)).filter(Boolean);
+  L.flows = /** @type {Flow[]} */ (r.moved.map((d, j) => (j !== i && d !== 0 ? (giver ? { from: j, to: i } : { from: i, to: j }) : null)).filter(Boolean));
 }
+/** @type {CountModel} */
+const CH_A = { N: 101, k: 10, counts: P.balanced(101, 10) };
+/** @type {Record<string, { values: number[], ymax: number }>} */
 const CH = {
-  A: { m: { N: 101, k: 10, counts: P.balanced(101, 10) } },
   B: { values: [12, 20, 17, 15, 22, 14, 19, 17], ymax: 25 },
   C: { values: [19, 10, 12, 9, 10], ymax: 20 },
   D: { values: [7, 7, 7, 7], ymax: 10 },
 };
 function chData() {
-  const id = S.ch.id, c = CH[id], shown = S.ch.shown[id];
-  if (id === "A") return { ...c.m, noun: "object" };
+  const id = S.ch.id, shown = S.ch.shown[id];
+  if (id === "A") return { ...CH_A, noun: "object" };
   if (id === "D" && shown) return { values: [7, 7, 7, 5] };
-  return { values: c.values };
+  return { values: CH[id].values };
 }
 function chView() {
-  const id = S.ch.id, c = CH[id], shown = !!S.ch.shown[id];
+  const id = S.ch.id, shown = !!S.ch.shown[id];
   if (id === "A") {
-    const m = c.m, b = P.bounds(m.N, m.k);
+    const m = CH_A, b = P.bounds(m.N, m.k);
     return cappedView(m, shown ? m.counts.map((x) => Math.min(x, b.floor)) : m.counts.slice(), shown, meanLine(b.avg, ["average", `101/10 = ${fmt(b.avg)}`]), "10 · 10 = 100 < 101");
   }
+  const c = CH[id];
   if (id === "B") {
     const f = shown ? c.values.map((x) => (x >= 17 ? 16.6 : x)) : c.values;
     return realView(f, { mean: 17, ymax: c.ymax, ghost: shown ? c.values.slice() : null, lines: [meanLine(17, ["given average", "= 17"])], banner: shown ? `Σ = ${fmt(P.sum(f))} < 8 · 17 = 136` : null, bannerWarn: true });
   }
   if (id === "C") {
-    const m = 12, mk = thresholdMarks(c.values, m), sg = (x) => (x === m ? "0" : x > m ? `+${x - m}` : `−${m - x}`);
+    const m = 12, mk = thresholdMarks(c.values, m), sg = (/** @type {number} */ x) => (x === m ? "0" : x > m ? `+${x - m}` : `−${m - x}`);
     const out = realView(c.values, { ymax: c.ymax, dev: shown ? 1 : 0, lines: [meanLine(m, shown ? ["d = 0", "(average 12)"] : ["average", "= 12"])], banner: shown ? "Σ d = +7 − 7 = 0" : null });
     if (shown) out.tags = c.values.map((x, i) => `${ARROW[mk.marks[i]]} ${sg(x)}`);
     return out;
@@ -1835,6 +1936,7 @@ let auxFocused = false;
 function unlock() { if (!S.unlocked) { S.unlocked = true; store.set("unlocked", "1"); } $("card").hidden = false; }
 function dmap() {
   const m = S.gen, b = P.bounds(m.N, m.k);
+  /** @param {string} s @param {string} [live] */
   const nd = (s, live) => `<div class="nd">${s}${live ? ` <span class="live">${live}</span>` : ""}</div>`, ar = (s = "↓") => `<div class="ar" aria-hidden="true">${s}</div>`;
   return `<div class="dmap">${nd(`${V_("N")} discrete objects distributed among ${V_("k")} boxes`, `(here ${m.N} and ${m.k})`)}${ar()}${nd(`occupancies ${sub(V_("n"), 1)}, …, ${sub(V_("n"), V_("k"))} with ${sub(V_("n"), 1)} + ⋯ + ${sub(V_("n"), V_("k"))} = ${V_("N")}`)}${ar()}
     ${nd(`average occupancy = ${NK}`, `= ${fmt(b.avg)}`)}${ar("↙ ↘")}
@@ -1842,6 +1944,7 @@ function dmap() {
     ${ar()}${nd("forget integrality")}${ar()}${nd(`<b>min ${xi} ≤ ${xbar} ≤ max ${xi}</b>`)}</div>`;
 }
 const DEV_SCENES = new Set(["deviations"]);
+/** @param {Scene} sc @param {SceneData} d */
 function family(sc, d) {
   if (sc.family) return sc.family;
   if (d.counts) return "count";
@@ -1850,7 +1953,7 @@ function family(sc, d) {
   return "sum";
 }
 function chrome() {
-  const sc = scene(), d = sc.data(), stats = [], cell = (k, v) => `<div><dt>${k}</dt><dd>${v}</dd></div>`;
+  const sc = scene(), d = sc.data(), stats = [], cell = (/** @type {string} */ k, /** @type {unknown} */ v) => `<div><dt>${k}</dt><dd>${v}</dd></div>`;
   let chain = "";
   if (d.counts) {
     const b = P.bounds(d.N, d.k), p = P.sum(d.counts);
@@ -1871,14 +1974,14 @@ function chrome() {
     ["dev", "Deviations: zero total deviation", `Σ (${xi} − ${xbar}) = 0`],
     ["weighted", "Weighted averages", `Σ ${wi}(${xi} − ${xbarw}) = 0`],
   ];
-  const trim = (xs) => (xs.length > 7 ? [...xs.slice(0, 6), "…"] : xs).join(" + ");
-  const live = (id) => {
+  const trim = (/** @type {string[]} */ xs) => (xs.length > 7 ? [...xs.slice(0, 6), "…"] : xs).join(" + ");
+  const live = (/** @type {string} */ id) => {
     if (id !== fam) return "";
     if (d.counts) return `${trim(d.counts.map(String))} = ${P.sum(d.counts)}${P.sum(d.counts) < d.N ? ` of ${d.N}` : ""}`;
     const st = P.stats(d.values);
     if (id === "sum") return `${fmt(st.sum)} = ${st.n} · ${fmt(st.mean)}`;
     if (id === "dev") { const dv = P.deviations(d.values); return `${trim(dv.d.map((x) => (x > 1e-9 ? "+" : "") + fmt(x)))} = 0`; }
-    const wm = P.weightedMean(d.values, d.weights);
+    const wm = P.weightedMean(d.values, /** @type {number[]} */ (d.weights));
     return `= ${fmt(Math.abs(wm.deviation) < 1e-9 ? 0 : wm.deviation, 6)}`;
   };
   set("inv-list", INV.map(([id, l, f], i) => `${i ? `<li class="arrow" aria-hidden="true">↓</li>` : ""}<li class="${id === fam ? "on" : ""}"${id === fam ? ' aria-current="true"' : ""}><span class="lbl">${l}</span><span class="val">${f}${live(id) ? ` <span class="muted">(${live(id)})</span>` : ""}</span></li>`).join(""));
@@ -1887,7 +1990,7 @@ function chrome() {
 }
 const MAIN = ["pigeons", "loads", "averages", "applications"];
 function renderModes() {
-  const cur = SC[S.scene].mode, b = (m) => `<button type="button" data-act="mode" data-id="${m.id}" aria-pressed="${m.id === cur}">${m.label}</button>`;
+  const cur = SC[S.scene].mode, b = (/** @type {{ id: string, label: string }} */ m) => `<button type="button" data-act="mode" data-id="${m.id}" aria-pressed="${m.id === cur}">${m.label}</button>`;
   set("modes", P.MODES.filter((m) => MAIN.includes(m.id)).map(b).join(""));
   set("modes-more", `<div class="seg">${P.MODES.filter((m) => !MAIN.includes(m.id) && (m.id !== "advanced" || S.advanced)).map(b).join("")}</div>`);
 }
@@ -1896,16 +1999,17 @@ function renderChips() {
   const mode = SC[S.scene].mode;
   set("scenes", P.SCENES.filter((s) => s.mode === mode).map((s) => `<span role="listitem"><button type="button" class="chip" data-act="go" data-id="${s.id}"${s.id === S.scene ? ' aria-current="step"' : ""}>${s.guided ? `<span class="n">${GUIDED.indexOf(s.id) + 1}</span>` : ""}${esc(s.title)}</button></span>`).join(""));
   const o = order(), i = o.indexOf(S.scene);
-  $("prev").disabled = i <= 0;
-  $("next").disabled = i >= o.length - 1;
+  /** @type {HTMLButtonElement} */ ($("prev")).disabled = i <= 0;
+  /** @type {HTMLButtonElement} */ ($("next")).disabled = i >= o.length - 1;
   $("next").textContent = i >= 0 && i < o.length - 1 ? `Next idea →` : "The end";
   $("next").title = i >= 0 && i < o.length - 1 ? `Next: ${SC[o[i + 1]].title}` : "";
 }
 function refreshText() { const sc = scene(); if (sc.update) sc.update(); chrome(); if (sc.aux) $("aux").innerHTML = sc.aux.draw(); }
 function refresh(ms = 380) { refreshText(); return setView(scene().view(), ms); }
+/** @param {string} id @param {{ ms?: number, announce?: boolean }} [opts] */
 function enter(id, opts = {}) {
   if (!SC[id]) return;
-  if (SC[id].mode === "advanced" && !S.advanced) { S.advanced = true; store.set("advanced", "1"); $("advanced").checked = true; }
+  if (SC[id].mode === "advanced" && !S.advanced) { S.advanced = true; store.set("advanced", "1"); /** @type {HTMLInputElement} */ ($("advanced")).checked = true; }
   cancelSeq();
   S.scene = id; S.cursor = 0; S.forced = false; S.pushed = false; S.examsPushed = false; S.lq = false; S.capped = false; S.lab.flows = null;
   const sc = scene();
@@ -1931,17 +2035,20 @@ function reset() {
 }
 
 /* ---------- actions ---------- */
+/** @param {CountModel} m @param {number} N @param {number} k */
 function resizeCounts(m, N, k) {
   m.N = N; m.k = k;
   m.counts = Array.from({ length: k }, (_, i) => m.counts[i] || 0);
   if (P.sum(m.counts) > N) m.counts = Array(k).fill(0);
   m.flow = null;
 }
+/** @param {unknown} v @param {number} lo @param {number} hi @param {number} d */
 const clampInt = (v, lo, hi, d) => { const n = Math.round(Number(v)); return Number.isFinite(n) ? Math.max(lo, Math.min(hi, n)) : d; };
+/** @param {() => void} set1 */
 function forceThen(set1) { cancelSeq(); set1(); return refresh(900); }
 const ACT = {
-  mode: (b) => enter(P.SCENES.find((s) => s.mode === b.dataset.id).id),
-  go: (b) => enter(b.dataset.id),
+  mode: (/** @type {HTMLElement} */ b) => enter(/** @type {(typeof P.SCENES)[number]} */ (P.SCENES.find((s) => s.mode === b.dataset.id)).id),
+  go: (/** @type {HTMLElement} */ b) => enter(/** @type {string} */ (b.dataset.id)),
   "pg-add": () => { if (S.pg.N >= 12) return say("Twelve pigeons is the most here."); S.pg.N += 1; say(`${S.pg.N} pigeons, ${S.pg.k} boxes.`); refresh(); },
   "pg-sub": () => { const m = S.pg; if (m.N <= 1) return; m.N -= 1; if (P.sum(m.counts) > m.N) m.counts[P.argmax(m.counts)] -= 1; say(`${m.N} pigeons, ${m.k} boxes.`); refresh(); },
   "pg-clear": () => { cancelSeq(); S.pg.counts = Array(S.pg.k).fill(0); refresh(); },
@@ -1963,7 +2070,7 @@ const ACT = {
   }),
   "g-clear": () => { cancelSeq(); S.gen.counts = Array(S.gen.k).fill(0); S.gen.flow = null; refresh(); },
   "g-one": () => { cancelSeq(); const m = S.gen; m.counts = m.counts.map((_, i) => (i ? 0 : m.N)); m.flow = null; refresh(600); say(`All ${m.N} in one box: the maximum is ${m.N}, far above ⌈N/k⌉.`); },
-  view: (b) => { S.genView = b.dataset.id; repanel(); refresh(800); },
+  view: (/** @type {HTMLElement} */ b) => { S.genView = /** @type {string} */ (b.dataset.id); repanel(); refresh(800); },
   "max-force": () => forceThen(() => { S.forced = "max"; }),
   "min-force": () => forceThen(() => { S.forced = "min"; }),
   "force-off": () => forceThen(() => { S.forced = false; }),
@@ -2000,7 +2107,7 @@ const ACT = {
   "mm-lop": () => { cancelSeq(); const N = P.sum(S.mm.counts), c = S.mm.counts.map((_, i) => (i ? 0 : N)); S.mm = { counts: c, trail: [c.slice()], flow: null }; refresh(600); },
   ...jumpSteps.actions,
   ...synSteps.actions,
-  side: (b) => { S.side = b.dataset.id; S.pushed = false; repanel(); refresh(600); },
+  side: (/** @type {HTMLElement} */ b) => { S.side = /** @type {string} */ (b.dataset.id); S.pushed = false; repanel(); refresh(600); },
   "imp-mean": () => { S.line = Math.round(P.mean(S.xs) * 10) / 10; S.pushed = false; refresh(500); },
   "imp-push": () => forceThen(() => { S.pushed = true; }),
   "imp-off": () => forceThen(() => { S.pushed = false; }),
@@ -2015,17 +2122,17 @@ const ACT = {
     say(`Every level is now ${fmt(m)}, and the total ${fmt(P.sum(xs))} has not changed.`);
   }),
   "lq-back": () => forceThen(() => { S.lq = false; }),
-  dev: (b) => { S.dev = b.dataset.id === "1"; repanel(); refresh(900); },
+  dev: (/** @type {HTMLElement} */ b) => { S.dev = b.dataset.id === "1"; repanel(); refresh(900); },
   "eqv-flat": () => { cancelSeq(); if (!P.stats(S.xs).allEqual) S.before = S.xs.slice(); const m = P.mean(S.xs); S.xs = S.xs.map(() => m); refresh(900); },
   "eqv-back": () => { cancelSeq(); S.xs = (S.before || P.REAL_EXAMPLE).slice(); refresh(900); },
   "show-lower": () => { S.gen = { N: 23, k: 5, counts: [23, 0, 0, 0, 0] }; enter("general"); },
   "show-value": () => { S.before = S.xs.slice(); S.xs = [...P.COUNTERS.notAValue]; enter("equality"); },
   "show-counts": () => { S.before = S.xs.slice(); S.xs = [...P.COUNTERS.countsDiffer]; S.dev = false; enter("deviations"); },
-  proof: (b) => { S.proof = b.dataset.id; proofUpdate(scene().data().values); },
+  proof: (/** @type {HTMLElement} */ b) => { S.proof = /** @type {string} */ (b.dataset.id); proofUpdate(scene().data().values); },
   "watch-liquid": () => { enter("liquid"); ACT["lq-go"](); },
   "watch-contra": () => { S.side = "max"; S.line = Math.round(P.mean(S.xs) * 10) / 10; enter("impossible"); setTimeout(() => ACT["imp-push"](), reduced() ? 0 : 700); },
   "ex-play": () => sequence(async (alive) => {
-    const m = scene().model();
+    const m = /** @type {CountModel} */ (/** @type {() => CountModel} */ (scene().model)());
     if (S.scene === "workload") {
       m.counts = Array(m.k).fill(0);
       S.capped = false;
@@ -2039,14 +2146,14 @@ const ACT = {
     refresh(200);
     await dropAll(m, evenOrder(m), alive, m.N > 20 ? 130 : 220);
   }),
-  "ex-clear": () => { cancelSeq(); const m = scene().model(); m.counts = Array(m.k).fill(0); S.capped = false; refresh(); },
+  "ex-clear": () => { cancelSeq(); const m = /** @type {() => CountModel} */ (scene().model)(); m.counts = Array(m.k).fill(0); S.capped = false; refresh(); },
   "wl-cap": () => { cancelSeq(); ensurePlaced(S.workload); S.capped = !S.capped; repanel(); refresh(900); },
   "ex-push": () => forceThen(() => { S.examsPushed = true; }),
   "ex-back": () => forceThen(() => { S.examsPushed = false; }),
-  "gr-reset": () => { S.graph.edges = EX.graph.edges.map((e) => e.slice()); S.graph.sel = null; refresh(600); },
+  "gr-reset": () => { S.graph.edges = EX.graph.edges.map((e) => /** @type {Pair} */ (e.slice())); S.graph.sel = null; refresh(600); },
   "gr-clear": () => { S.graph.edges = []; S.graph.sel = null; refresh(600); },
-  "ds-reset": () => { S.dist.points = EX.distances.points.map((p) => p.slice()); refresh(600); },
-  "hl-reset": () => { S.hull.points = P.HULL.points.map((p) => p.slice()); refresh(600); },
+  "ds-reset": () => { S.dist.points = EX.distances.points.map((p) => /** @type {Pair} */ (p.slice())); refresh(600); },
+  "hl-reset": () => { S.hull.points = P.HULL.points.map((p) => /** @type {Pair} */ (p.slice())); refresh(600); },
   "w-equal": () => { S.w.weights = S.w.weights.map(() => 1); repanel(); refresh(700); },
   "w-reset": () => { S.w = { values: P.WEIGHTED.values.slice(), weights: P.WEIGHTED.weights.slice() }; repanel(); refresh(700); },
   "m-equal": () => { S.mass.lambdas = S.mass.lambdas.map(() => 1); repanel(); refresh(600); },
@@ -2062,15 +2169,17 @@ const ACT = {
   },
   "lab-eq": () => { const L = S.lab; L.units = P.balanced(P.sum(L.units), L.units.length); L.flows = null; refresh(1400); say(`Equalised to the nearest tenth: the total ${fmt(P.sum(L.units) / 10)} is unchanged.`); },
   "lab-reset": () => { S.lab = { units: P.LAB.start.map((x) => Math.round(x * 10)), lock: S.lab.lock, seed: 1, flows: null }; refresh(700); },
-  "ch-tab": (b) => { S.ch.id = b.dataset.id; refresh(700); },
-  "ch-pick": (b) => { S.ch.picked[S.ch.id] = +b.dataset.i; refreshText(); },
+  "ch-tab": (/** @type {HTMLElement} */ b) => { S.ch.id = /** @type {string} */ (b.dataset.id); refresh(700); },
+  "ch-pick": (/** @type {HTMLElement} */ b) => { S.ch.picked[S.ch.id] = +/** @type {string} */ (b.dataset.i); refreshText(); },
   "ch-show": () => { S.ch.shown[S.ch.id] = !S.ch.shown[S.ch.id]; refresh(1000); },
 };
 app.addEventListener("click", (e) => {
-  const b = e.target && e.target.closest ? e.target.closest("[data-act]") : null;
-  if (!b || b.disabled || !ACT[b.dataset.act]) return;
-  ACT[b.dataset.act](b);
+  const t = /** @type {Element | null} */ (e.target), b = /** @type {HTMLButtonElement | null} */ (t && t.closest ? t.closest("[data-act]") : null);
+  const act = /** @type {Record<string, (b: HTMLElement) => unknown>} */ (ACT)[/** @type {string} */ (b && b.dataset.act)];
+  if (!b || b.disabled || !act) return;
+  act(b);
 });
+/** @type {Record<string, (t: HTMLInputElement) => void>} */
 const INPUT = {
   "g-N": (t) => { resizeCounts(S.gen, clampInt(t.value, 1, 60, S.gen.N), S.gen.k); refresh(); },
   "g-k": (t) => { resizeCounts(S.gen, S.gen.N, clampInt(t.value, 1, 12, S.gen.k)); refresh(); },
@@ -2078,15 +2187,15 @@ const INPUT = {
   "c-N": (t) => { S.cons.N = clampInt(t.value, 1, 60, 31); S.cons.counts = P.balanced(S.cons.N, S.cons.n); S.cons.flow = null; refresh(250); },
   "imp-line": (t) => { S.line = Math.round(Number(t.value) * 10) / 10; S.pushed = false; refresh(0); },
   "t-n": (t) => { S.time.i = clampInt(t.value, 0, EX.time.partitions.length - 1, 2); refresh(500); },
-  "w-x": (t) => { S.w.values[+t.dataset.i] = Number(t.value); refresh(0); },
-  "w-w": (t) => { S.w.weights[+t.dataset.i] = Number(t.value); refresh(200); },
-  "m-l": (t) => { S.mass.lambdas[+t.dataset.i] = Number(t.value); refresh(200); },
+  "w-x": (t) => { S.w.values[+/** @type {string} */ (t.dataset.i)] = Number(t.value); refresh(0); },
+  "w-w": (t) => { S.w.weights[+/** @type {string} */ (t.dataset.i)] = Number(t.value); refresh(200); },
+  "m-l": (t) => { S.mass.lambdas[+/** @type {string} */ (t.dataset.i)] = Number(t.value); refresh(200); },
   "lab-lock": (t) => { S.lab.lock = !!t.checked; S.lab.flows = null; refresh(0); say(S.lab.lock ? `Total locked at ${fmt(P.sum(S.lab.units) / 10)}.` : "Total unlocked."); },
 };
-app.addEventListener("input", (e) => { const t = e.target; if (t && t.dataset && INPUT[t.dataset.in] && t.type !== "number" && t.type !== "checkbox") INPUT[t.dataset.in](t); });
-app.addEventListener("change", (e) => { const t = e.target; if (t && t.dataset && INPUT[t.dataset.in]) INPUT[t.dataset.in](t); });
+app.addEventListener("input", (e) => { const t = /** @type {HTMLInputElement | null} */ (e.target); if (t && t.dataset && INPUT[/** @type {string} */ (t.dataset.in)] && t.type !== "number" && t.type !== "checkbox") INPUT[/** @type {string} */ (t.dataset.in)](t); });
+app.addEventListener("change", (e) => { const t = /** @type {HTMLInputElement | null} */ (e.target); if (t && t.dataset && INPUT[/** @type {string} */ (t.dataset.in)]) INPUT[/** @type {string} */ (t.dataset.in)](t); });
 $("advanced").addEventListener("change", () => {
-  S.advanced = $("advanced").checked;
+  S.advanced = /** @type {HTMLInputElement} */ ($("advanced")).checked;
   store.set("advanced", S.advanced ? "1" : "0");
   if (!S.advanced && SC[S.scene].mode === "advanced") enter("equality"); else { renderModes(); renderChips(); }
 });
@@ -2094,20 +2203,23 @@ $("prev").addEventListener("click", () => { const o = order(), i = o.indexOf(S.s
 $("next").addEventListener("click", () => { const o = order(), i = o.indexOf(S.scene); if (i < o.length - 1) enter(o[i + 1]); });
 
 /* ---------- pointer and keyboard on the stage ---------- */
+/** @param {Element} svg @param {{ clientX: number, clientY: number }} e @param {number} W @param {number} H @returns {Pair} */
 function svgPoint(svg, e, W, H) {
   const r = svg.getBoundingClientRect();
   return [((e.clientX - r.left) * W) / (r.width || W), ((e.clientY - r.top) * H) / (r.height || H)];
 }
-const slotAt = (x) => (geo ? geo.slots.findIndex((s) => x >= s.x0 && x < s.x1) : -1);
-const valueAt = (y) => (geo ? ((G.y0 - y) / G.ph) * geo.ymax : 0);
+const slotAt = (/** @type {number} */ x) => (geo ? geo.slots.findIndex((s) => x >= s.x0 && x < s.x1) : -1);
+const valueAt = (/** @type {number} */ y) => (geo ? ((G.y0 - y) / G.ph) * geo.ymax : 0);
+/** @param {number} i @param {number} v */
 function setHeight(i, v) {
-  const md = scene().model(), st = md.step;
+  const md = /** @type {() => HeightModel} */ (scene().model)(), st = md.step;
   md.set(i, Math.round(Math.max(md.min, Math.min(md.max, v)) / st) * st);
 }
+/** @param {CountModel} m @param {number} from @param {number} to */
 function moveUnit(m, from, to) {
   if (from === to || m.counts[from] <= 0) return false;
   m.counts[from] -= 1; m.counts[to] += 1;
-  if (m === S.mm || S.scene === "minimax") S.mm.trail.push(S.mm.counts.slice());
+  if (S.scene === "minimax") S.mm.trail.push(S.mm.counts.slice());
   m.flow = { from, to };
   return true;
 }
@@ -2117,6 +2229,7 @@ function describe() {
   const tag = V.tags && V.tags[i] ? V.tags[i].replace("↑", "above the average,").replace("↓", "below the average,").replace("=", "equal to the average,").replace("★", "at the forced maximum,") : fmt(v);
   say(`${lb}: ${tag}${V.tray ? `. ${V.tray} still to place.` : ""}`);
 }
+/** @type {{ kind: "line" } | { kind: "height", i: number } | { kind: "place" | "move", i: number, x: number, y: number, moved: boolean } | null} */
 let drag = null;
 const stage = $("stage");
 stage.addEventListener("pointerdown", (e) => {
@@ -2124,7 +2237,7 @@ stage.addEventListener("pointerdown", (e) => {
   const [x, y] = svgPoint(stage, e, G.W, G.H), i = slotAt(x);
   cancelSeq();
   const test = sc.line && V && (V.lines || []).find((l) => l.id === "test");
-  if (test && Math.abs(geo.yOf(test.v) - y) < 14 && x > G.l) drag = { kind: "line" };
+  if (test && Math.abs(/** @type {Geo} */ (geo).yOf(test.v) - y) < 14 && x > G.l) drag = { kind: "line" };
   else if (i < 0 || !sc.input) return;
   else if (sc.input === "height") { drag = { kind: "height", i }; setHeight(i, valueAt(y)); refresh(0); }
   else drag = { kind: sc.input, i, x, y, moved: false };
@@ -2142,12 +2255,13 @@ stage.addEventListener("pointermove", (e) => {
   else if (drag.kind === "height") { setHeight(drag.i, valueAt(y)); refresh(0); }
   else if (Math.hypot(x - drag.x, y - drag.y) > 8) drag.moved = true;
 });
+/** @param {PointerEvent} e */
 function endDrag(e) {
   if (!drag) return;
   const d = drag, sc = scene();
   drag = null;
   if (d.kind === "height" || d.kind === "line") { if (S.lab.flows) { S.lab.flows = null; refresh(300); } describe(); return; }
-  const [x, y] = svgPoint(stage, e, G.W, G.H), j = slotAt(x), m = sc.model();
+  const [x, y] = svgPoint(stage, e, G.W, G.H), j = slotAt(x), m = /** @type {() => CountModel} */ (sc.model)();
   if (!d.moved) {
     if (d.kind === "place") {
       if (P.sum(m.counts) < m.N) { m.counts[d.i] += 1; m.flow = null; refreshText(); dropView(d.i, 260); describe(); }
@@ -2155,7 +2269,7 @@ function endDrag(e) {
     }
     return;
   }
-  if (d.kind === "place" && y < G.t - 6 && m.counts[d.i] > 0) { m.counts[d.i] -= 1; m.flow = null; refresh(300); say(`Took one out of ${(V.labels || [])[d.i] || "the box"}.`); return; }
+  if (d.kind === "place" && y < G.t - 6 && m.counts[d.i] > 0) { m.counts[d.i] -= 1; m.flow = null; refresh(300); say(`Took one out of ${(/** @type {View} */ (V).labels || [])[d.i] || "the box"}.`); return; }
   if (j >= 0 && moveUnit(m, d.i, j)) { S.cursor = j; refresh(350); describe(); }
 }
 stage.addEventListener("pointerup", endDrag);
@@ -2163,20 +2277,21 @@ stage.addEventListener("pointercancel", () => { drag = null; });
 stage.addEventListener("pointerleave", () => { if (S.scene === "graph" && !drag && S.graph.hover !== null) { S.graph.hover = null; refresh(0); } });
 stage.addEventListener("focus", () => { focused = true; draw(); });
 stage.addEventListener("blur", () => { focused = false; draw(); });
+/** @param {number} dir @param {boolean} big */
 function bump(dir, big) {
   const sc = scene(), i = S.cursor;
   if (sc.input === "place") {
-    const m = sc.model();
+    const m = /** @type {() => CountModel} */ (sc.model)();
     if (dir > 0) { if (P.sum(m.counts) >= m.N) { say("Nothing left to place."); return true; } m.counts[i] += 1; m.flow = null; refreshText(); dropView(i, 240); }
     else { if (m.counts[i] <= 0) { say("That box is empty."); return true; } m.counts[i] -= 1; m.flow = null; refresh(250); }
   } else if (sc.input === "move") {
-    const m = sc.model(), others = m.counts.map((_, j) => j).filter((j) => j !== i);
+    const m = /** @type {() => CountModel} */ (sc.model)(), others = m.counts.map((_, j) => j).filter((j) => j !== i);
     if (!others.length) return true;
     if (dir > 0) { const f = others.reduce((a, j) => (m.counts[j] > m.counts[a] ? j : a), others[0]); if (!moveUnit(m, f, i)) say("No other box has anything to give."); }
     else { const t = others.reduce((a, j) => (m.counts[j] < m.counts[a] ? j : a), others[0]); if (!moveUnit(m, i, t)) say("That box is empty."); }
     refresh(300);
   } else if (sc.input === "height") {
-    const md = sc.model();
+    const md = /** @type {() => HeightModel} */ (sc.model)();
     setHeight(i, md.get()[i] + dir * md.step * (big ? 10 : 1));
     refresh(150);
   } else return false;
@@ -2200,6 +2315,7 @@ stage.addEventListener("keydown", (e) => {
   if (moved) { if (S.scene === "graph") { S.graph.hover = S.cursor; refresh(0); } else draw(); describe(); }
 });
 const aux = $("aux");
+/** @type {((x: number, y: number) => void) | null} */
 let auxDrag = null;
 aux.addEventListener("pointerdown", (e) => {
   const sc = scene();
@@ -2223,9 +2339,13 @@ aux.addEventListener("focus", () => { auxFocused = true; refreshText(); });
 aux.addEventListener("blur", () => { auxFocused = false; refreshText(); });
 
 /* ---------- command palette (Cmd/Ctrl+K), concept map and theme ---------- */
+/** @type {Element | null} */
 let opener = null;
+/** @param {string} id @param {string} focusId */
 function openOverlay(id, focusId) { opener = document.activeElement; $(id).hidden = false; const f = $(focusId); if (f && f.focus) f.focus(); }
-function closeOverlay(id) { $(id).hidden = true; if (opener && opener.focus) opener.focus(); opener = null; }
+/** @param {string} id */
+function closeOverlay(id) { $(id).hidden = true; const o = /** @type {HTMLElement | null} */ (opener); if (o && o.focus) o.focus(); opener = null; }
+/** @returns {[string, () => unknown][]} */
 const COMMANDS = () => [
   ["Pigeonhole principle", () => enter("pigeonhole")],
   ["Generalised pigeonhole", () => enter("general")],
@@ -2245,17 +2365,18 @@ const COMMANDS = () => [
   ["Concept map", () => openMap()],
   ["Switch colour theme", () => cycleTheme()],
   ["Reset", () => reset()],
-  ...P.SCENES.filter((s) => s.mode !== "advanced" || S.advanced).map((s) => [`Go to ${s.title}`, () => enter(s.id)]),
+  ...P.SCENES.filter((s) => s.mode !== "advanced" || S.advanced).map((s) => /** @type {[string, () => unknown]} */ ([`Go to ${s.title}`, () => enter(s.id)])),
 ];
-let palItems = [], palSel = 0;
+let palItems = /** @type {[string, () => unknown][]} */ ([]), palSel = 0;
 function palRender() {
-  const q = $("pal-input").value.toLowerCase().trim().split(/\s+/).filter(Boolean);
+  const q = /** @type {HTMLInputElement} */ ($("pal-input")).value.toLowerCase().trim().split(/\s+/).filter(Boolean);
   palItems = COMMANDS().filter(([l]) => q.every((w) => l.toLowerCase().includes(w)));
   palSel = Math.min(palSel, Math.max(0, palItems.length - 1));
   set("pal-list", palItems.length ? palItems.map(([l], i) => `<li role="option" id="pal-${i}" data-i="${i}" aria-selected="${i === palSel}">${esc(l)}</li>`).join("") : `<li role="option" aria-disabled="true" class="muted">No matching command</li>`);
   $("pal-input").setAttribute("aria-activedescendant", palItems.length ? `pal-${palSel}` : "");
 }
-function openPalette() { $("pal-input").value = ""; palSel = 0; palRender(); openOverlay("palette", "pal-input"); }
+function openPalette() { /** @type {HTMLInputElement} */ ($("pal-input")).value = ""; palSel = 0; palRender(); openOverlay("palette", "pal-input"); }
+/** @param {number} i */
 function runPal(i) { const it = palItems[i]; if (!it) return; closeOverlay("palette"); it[1](); }
 $("open-palette").addEventListener("click", openPalette);
 $("pal-input").addEventListener("input", () => { palSel = 0; palRender(); });
@@ -2264,11 +2385,12 @@ $("pal-input").addEventListener("keydown", (e) => {
   else if (e.key === "ArrowUp") { palSel = Math.max(0, palSel - 1); palRender(); e.preventDefault(); }
   else if (e.key === "Enter") { runPal(palSel); e.preventDefault(); }
 });
-$("pal-list").addEventListener("click", (e) => { const li = e.target.closest ? e.target.closest("li[data-i]") : null; if (li) runPal(+li.dataset.i); });
+$("pal-list").addEventListener("click", (e) => { const t = /** @type {Element} */ (e.target), li = /** @type {HTMLElement | null} */ (t.closest ? t.closest("li[data-i]") : null); if (li) runPal(+/** @type {string} */ (li.dataset.i)); });
 $("palette").addEventListener("click", (e) => { if (e.target === $("palette")) closeOverlay("palette"); });
+/** @type {Record<string, string>} */
 const CMAP = { pigeonhole: "Pigeonhole Principle", general: "Generalised Pigeonhole", threshold: "Average occupancy", max: "Maximum principle", min: "Minimum principle", jump: "min ≤ mean ≤ max", weighted: "Weighted averages", mass: "Convex combinations", hull: "Convex hull" };
 function openMap() {
-  const n = (id) => `<button type="button" data-map="${id}"${id === S.scene ? ' aria-current="true"' : ""}>${CMAP[id]}</button>`, ar = (s = "↓") => `<div class="ar" aria-hidden="true">${s}</div>`;
+  const n = (/** @type {string} */ id) => `<button type="button" data-map="${id}"${id === S.scene ? ' aria-current="true"' : ""}>${CMAP[id]}</button>`, ar = (s = "↓") => `<div class="ar" aria-hidden="true">${s}</div>`;
   set("cmap", `${n("pigeonhole")}${ar()}${n("general")}${ar()}${n("threshold")}${ar("↙ ↘")}<div class="two">${n("max")}${n("min")}</div>${ar("↘ ↙")}${n("jump")}${ar()}${n("weighted")}${ar()}${n("mass")}${ar()}${n("hull")}`);
   openOverlay("map", "close-map");
 }
@@ -2276,10 +2398,11 @@ $("open-map").addEventListener("click", openMap);
 $("close-map").addEventListener("click", () => closeOverlay("map"));
 $("map").addEventListener("click", (e) => {
   if (e.target === $("map")) return closeOverlay("map");
-  const b = e.target.closest ? e.target.closest("[data-map]") : null;
-  if (b) { closeOverlay("map"); enter(b.dataset.map); }
+  const t = /** @type {Element} */ (e.target), b = /** @type {HTMLElement | null} */ (t.closest ? t.closest("[data-map]") : null);
+  if (b) { closeOverlay("map"); enter(/** @type {string} */ (b.dataset.map)); }
 });
 const THEMES = ["auto", "light", "dark"];
+/** @param {string} t */
 function applyTheme(t) {
   const root = document.documentElement;
   if (t === "auto") { if (root.removeAttribute) root.removeAttribute("data-theme"); } else root.setAttribute("data-theme", t);
@@ -2300,17 +2423,20 @@ document.addEventListener("keydown", (e) => {
 });
 
 /* ---------- Copy deck and the beamdswitch download ---------- */
+/** @returns {{ scene: string, title: string } & Parameters<typeof P.report>[0]} */
 function snapshot() {
   const d = scene().data(), base = { scene: S.scene, title: SC[S.scene].title };
   if (d.counts) return { ...base, N: d.N, k: d.k, counts: d.counts.slice(), noun: d.noun || "object", box: d.box || "box" };
   return d.weights ? { ...base, values: d.values.slice(), weights: d.weights.slice() } : { ...base, values: d.values.slice() };
 }
+/** @param {string} text @param {string} okMsg */
 async function copy(text, okMsg) {
-  const status = $("share-status"), box = $("copy-box");
+  const status = $("share-status"), box = /** @type {HTMLTextAreaElement} */ ($("copy-box"));
   try { await navigator.clipboard.writeText(text); status.textContent = okMsg; box.hidden = true; }
   catch { box.hidden = false; box.value = text; box.focus(); box.select(); status.textContent = "Copying is blocked here: the text is selected below, so copy it yourself."; }
 }
 const deck = () => self.Beamdswitch.deck(P.report(snapshot()));
+/** @param {Blob} blob @param {string} name */
 function save(blob, name) {
   const url = URL.createObjectURL(blob), a = document.createElement("a");
   a.href = url; a.download = name;
@@ -2325,14 +2451,16 @@ $("save-beamdswitch").addEventListener("click", async () => {
 $("copy-beamdswitch").addEventListener("click", () => copy(deck(), "Copied the beamdswitch deck: paste it into beamdswitch."));
 
 /* ---------- WebMCP: read-only tools for agents ---------- */
-const result = (v) => ({ content: [{ type: "text", text: JSON.stringify(v) }] });
+const result = (/** @type {unknown} */ v) => ({ content: [{ type: "text", text: JSON.stringify(v) }] });
 const ro = { readOnlyHint: true }, none = { type: "object", properties: {}, additionalProperties: false };
+/** @param {number[]} values @param {number[]} [weights] */
 function analyse(values, weights) {
   const st = P.stats(values), dv = P.deviations(values), wm = weights ? P.weightedMean(values, weights) : null, m = wm ? wm.mean : st.mean;
   return { n: st.n, sum: st.sum, mean: st.mean, weighted_mean: wm ? wm.mean : null, min: st.min, max: st.max, deviations: dv.d, sum_of_deviations: dv.sum,
     weighted_deviation: wm ? wm.deviation : null, weak: st.min <= m + P.EPS && m <= st.max + P.EPS, strict: !st.allEqual && st.min < m && m < st.max,
     all_equal: st.allEqual, above_average: st.above, below_average: st.below };
 }
+/** @param {number} N @param {number} k */
 function boundsOf(N, k) {
   const b = P.bounds(N, k), mc = P.maxContradiction(N, k), nc = P.minContradiction(N, k);
   return { N, k, average: b.avg, ceil: b.ceil, floor: b.floor, balanced: P.balanced(N, k),
@@ -2351,14 +2479,14 @@ const tools = [
     } },
   { name: "compute_bounds", description: "For N objects in k boxes: the average N/k, the forced maximum ceil(N/k), the forced minimum floor(N/k), the most balanced configuration and the counting check behind them.", annotations: ro,
     inputSchema: { type: "object", properties: { N: { type: "integer", minimum: 0 }, k: { type: "integer", minimum: 1 } }, required: ["N", "k"], additionalProperties: false },
-    async execute(i) {
+    async execute(/** @type {{ N: number, k: number }} */ i) {
       if (!Number.isInteger(i.N) || i.N < 0 || !Number.isInteger(i.k) || i.k < 1) return result({ error: "N must be a whole number 0 or more and k a whole number 1 or more." });
       if (i.k > 100000) return result({ error: "k must be at most 100000." });
       return result(boundsOf(i.N, i.k));
     } },
   { name: "analyze_values", description: "For a list of numbers (optionally with positive weights): the average, minimum and maximum, the deviations and their zero sum, and whether min ≤ average ≤ max holds weakly and strictly.", annotations: ro,
     inputSchema: { type: "object", properties: { values: { type: "array", items: { type: "number" }, minItems: 1 }, weights: { type: "array", items: { type: "number", exclusiveMinimum: 0 } } }, required: ["values"], additionalProperties: false },
-    async execute(i) {
+    async execute(/** @type {{ values: number[], weights?: number[] }} */ i) {
       const ok = Array.isArray(i.values) && i.values.length > 0 && i.values.every((x) => typeof x === "number" && Number.isFinite(x));
       if (!ok) return result({ error: "values must be a non-empty list of finite numbers." });
       if (i.weights !== undefined && !(Array.isArray(i.weights) && i.weights.length === i.values.length && i.weights.every((w) => typeof w === "number" && w > 0 && Number.isFinite(w)))) return result({ error: "weights must be one positive number per value." });
@@ -2367,18 +2495,18 @@ const tools = [
   { name: "run_self_tests", description: "Run the built-in deterministic self-tests.", inputSchema: none, annotations: ro,
     async execute() { return result(P.selfTests()); } },
 ];
-self.PigeonholeTools = tools;
-self.PigeonholeApp = { snapshot, enter: (id) => enter(id, { ms: 0 }), state: () => S };
-const mc = (typeof document !== "undefined" && document.modelContext) || (typeof navigator !== "undefined" && navigator.modelContext);
+Object.assign(self, { PigeonholeTools: tools, PigeonholeApp: { snapshot, enter: (/** @type {string} */ id) => enter(id, { ms: 0 }), state: () => S } });
+/** @typedef {{ modelContext?: { registerTool?: (tool: (typeof tools)[number]) => void } }} WithModelContext */
+const mc = (typeof document !== "undefined" && /** @type {Document & WithModelContext} */ (document).modelContext) || (typeof navigator !== "undefined" && /** @type {Navigator & WithModelContext} */ (navigator).modelContext);
 if (mc && typeof mc.registerTool === "function") for (const t of tools) mc.registerTool(t);
 
 /* ---------- boot ---------- */
 applyTheme(siteTheme());
-$("advanced").checked = S.advanced;
+/** @type {HTMLInputElement} */ ($("advanced")).checked = S.advanced;
 const isMac = /Mac|iPhone|iPad/.test((typeof navigator !== "undefined" && (navigator.platform || navigator.userAgent)) || "");
 $("kbd-k").textContent = isMac ? "⌘K" : "Ctrl K";
 const fromHash = String((typeof location !== "undefined" && location.hash) || "").slice(1), saved = store.get("scene");
-enter(SC[fromHash] ? fromHash : SC[saved] ? saved : "pigeonhole", { ms: 0, announce: false });
+enter(SC[fromHash] ? fromHash : saved && SC[saved] ? saved : "pigeonhole", { ms: 0, announce: false });
 sizeStage();
 if (typeof addEventListener === "function") addEventListener("resize", sizeStage);
 })();
