@@ -62,6 +62,15 @@ test("tsc --pretty false output parses into errors, continuation lines joined", 
   assert.deepEqual(errors[2], { file: "scripts/a.mjs", line: 2, col: 4, code: "TS2322", message: "Type 'string' is not assignable to type 'number'. The expected type comes from property 'n'." });
 });
 
+test("an error that names no file, or a failed run with no error found, is counted at its project", () => {
+  const errors = parse("error TS18003: No inputs were found in config file 'viz/b/tsconfig.json'.\n", "viz/b/tsconfig.json", 2);
+  assert.deepEqual(errors, [{ file: "viz/b/tsconfig.json", line: 0, col: 0, code: "TS18003", message: "No inputs were found in config file 'viz/b/tsconfig.json'." }]);
+  const [crash] = parse("RangeError: Maximum call stack size exceeded\n", "tsconfig.json", 1);
+  assert.deepEqual([crash.file, crash.code], ["tsconfig.json", "exit"]);
+  assert.deepEqual(parse("", "tsconfig.json", 0), []);
+  for (const list of [errors, [crash]]) assert.match(summarize(list, base).text, /^verdict: fail\n/);
+});
+
 test("an error in an extracted inline script moves to its page line; other errors stay", () => {
   const [, , , inline] = parse(OUTPUT);
   const header = () => '// index.html:40, <script id="engine">: extracted for type checking only.';

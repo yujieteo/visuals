@@ -94,18 +94,23 @@ function typecheck(slug) {
 /** @typedef {{ file: string, line: number, col: number, code: string, message: string }} TscError */
 
 /**
- * The errors in `tsc --pretty false` output; a message's indented continuation lines join its first line.
+ * The errors in one project's `tsc --pretty false` output; a message's indented continuation lines join its
+ * first line. An error that names no file (error TS18003: No inputs were found ...) is put at the project, and
+ * a non-zero exit with no error found becomes one, so a failed tsc run never counts as clean.
  * @param {string} output
+ * @param {string} [project] the tsconfig.json the output is from
+ * @param {number | null} [status] tsc's exit status (null when a signal stopped it)
  * @returns {TscError[]}
  */
-export function parse(output) {
+export function parse(output, project = "tsconfig.json", status = 0) {
   /** @type {TscError[]} */
   const errors = [];
   for (const line of output.split(/\r?\n/)) {
-    const m = /^(.+?)\((\d+),(\d+)\): error (TS\d+): (.*)$/.exec(line);
-    if (m) errors.push({ file: m[1].replaceAll("\\", "/"), line: Number(m[2]), col: Number(m[3]), code: m[4], message: m[5] });
+    const m = /^(?:(.+?)\((\d+),(\d+)\): )?error (TS\d+): (.*)$/.exec(line);
+    if (m) errors.push({ file: m[1]?.replaceAll("\\", "/") ?? project, line: Number(m[2] ?? 0), col: Number(m[3] ?? 0), code: m[4], message: m[5] });
     else if (errors.length && /^\s+\S/.test(line)) errors[errors.length - 1].message += ` ${line.trim()}`;
   }
+  if (status !== 0 && !errors.length) errors.push({ file: project, line: 0, col: 0, code: "exit", message: `tsc exited ${status ?? "on a signal"} with no error it could parse; read the log` });
   return errors;
 }
 
@@ -240,23 +245,26 @@ function summary(argv) {
   }
   for (const project of projects) if (project !== "tsconfig.json") prepare(project.split("/")[1]);
   let output = "";
+  /** @type {TscError[]} */
+  const found = [];
   for (const project of projects) {
     const run = spawnSync(TSC, ["-p", project, "--pretty", "false"], { cwd: fileURLToPath(ROOT), encoding: "utf8", maxBuffer: 1 << 28 });
     if (run.error) throw new UsageError(`tsc did not run: ${run.error.message}`);
     output += `### tsc -p ${project} (exit ${run.status})\n${run.stdout}${run.stderr}`;
+    found.push(...parse(`${run.stdout}\n${run.stderr}`, project, run.status));
   }
   if (file) {
     const listed = projects.flatMap((project) => spawnSync(TSC, ["-p", project, "--listFilesOnly"], { cwd: fileURLToPath(ROOT), encoding: "utf8", maxBuffer: 1 << 28 }).stdout.split("\n"));
     const want = fileURLToPath(new URL(file, ROOT));
     const inline = /^viz\/[^/]+\//.exec(file);
-    const inProject = listed.some((path) => path.trim() === want || (inline && path.trim().startsWith(fileURLToPath(new URL(`${inline[0]}.typecheck/inline/`, ROOT)))));
+    const inProject = projects.includes(file) || listed.some((path) => path.trim() === want || (inline && path.trim().startsWith(fileURLToPath(new URL(`${inline[0]}.typecheck/inline/`, ROOT)))));
     if (!inProject) throw new UsageError(`--file ${file} is in none of the checked tsc projects, so the filter matches nothing`);
   }
   const header = (/** @type {string} */ path) => {
     const url = new URL(path, ROOT);
     return existsSync(url) ? readFileSync(url, "utf8").split("\n", 1)[0] : undefined;
   };
-  const errors = parse(output).map((error) => toPage(error, header));
+  const errors = found.map((error) => toPage(error, header));
   mkdirSync(new URL("build/logs/", ROOT), { recursive: true });
   const log = `build/logs/typecheck-${new Date().toISOString().replace(/[:.]/g, "-")}.log`;
   writeFileSync(new URL(log, ROOT), output);
