@@ -26,7 +26,7 @@ viz/<slug>/            one visual, self-contained
   SKILLS.md            how an agent uses the page and its WebMCP tools
   AGENTS.md            at most a few lines specific to changing this visual
 scripts/               shared tooling: changed.py, check.py, build_catalogue.py, check_repo.py,
-                       typecheck.mjs, and the builders' shared modules (page_parts, style_guide, stock_cases)
+                       typecheck.mjs, with_chrome.py, and the builders' shared modules (page_parts, style_guide, stock_cases)
 schema/visual.schema.json   what visual.json may hold
 tests/                 tests of the shared tooling only
 package.json           pins typescript and @types/node, nothing else
@@ -35,9 +35,10 @@ tsconfig.base.json     compiler options every visual's tsconfig.json extends
 
 `visual.json` carries the site's catalogue fields (`title`, `summary`, `source_url`, `fetched`, `data`,
 `webmcp_tools`, `tags`, `category`, optional `links`, `assets`, `downloads`) and the tooling fields: `checks`
-(commands run from the folder, when the defaults do not fit), `typecheck` (the `index.html` inline
-script ids the extractor skips: a builder's inlined copies of `src/*.js`, checked from `src/`, and the
-byte-identical `beamdswitch` and `report` templates), `uses` (shared files outside `viz/` the visual depends on, so changing one runs only its users) and
+(commands run from the folder, when the defaults do not fit), `typecheck` (what the shared extractor
+reads: `page`, the HTML when not `index.html`, such as a builder's template; and `skip`, the inline blocks
+it leaves out, by id or by the folder file they copy: a builder's inlined `src/*.js`, checked from `src/`,
+and the byte-identical `beamdswitch` and `report` templates), `uses` (shared files outside `viz/` the visual depends on, so changing one runs only its users) and
 `published: false` for a visual the site does not publish. The folder name is the slug.
 
 ## Checks
@@ -45,9 +46,10 @@ byte-identical `beamdswitch` and `report` templates), `uses` (shared files outsi
 `python3 scripts/check.py <slug>...` (or `--changed [base]`, `--all`) runs, from each visual's folder:
 `build.py --verify` when there is a builder, its `tests/*.test.{mjs,cjs}` with `node --test`, its
 `tests/test_*.py` with unittest, its `tsconfig.json` with `tsc` after the shared extractor copies the page's
-inline scripts, less the ones `typecheck.skip` names, into `.typecheck/inline/`, which that `tsconfig.json`
-includes, and a check that `visual.json` and `SKILLS.md` name exactly the WebMCP tools the page
-registers. `checks` in `visual.json` replaces the first three. `python3 scripts/check_repo.py` is the fast
+inline scripts, less the ones `typecheck.skip` names and blocks holding only a build placeholder, into
+`.typecheck/inline/<id>.js` (`script-<n>.js` for the n-th, unnamed, `<script>`), which that `tsconfig.json` includes, and a check that `visual.json` and `SKILLS.md`
+name exactly the WebMCP tools the page registers (at least the literally registered ones, when the page
+registers others in a loop). `checks` in `visual.json` replaces the first three. `python3 scripts/check_repo.py` is the fast
 repository-wide check: every `visual.json` against the schema, the folder rules and the absolute-path scan.
 
 `scripts/changed.py` decides what a change runs: a path in `viz/<slug>/` selects that visual; a path a

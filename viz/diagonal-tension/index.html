@@ -1,0 +1,1978 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" href="data:,">
+<meta name="description" content="A one-file finite-element comparison of an aluminium skin-and-stringer panel in shear, with and without a bonded doubler: plane-stress quadrilaterals and axial bars solved by sparse conjugate gradient in a Web Worker, principal tension, shear and von Mises maps on one colour scale, mass, compliance, probe, region and stringer-force changes, a self-check and JSON, CSV and beamdswitch exports. Linear elastic, pre-buckling. Runs offline.">
+<title>Diagonal Tension: Skin, Stringers and Doubler</title>
+<script id="site-theme">try { var t = localStorage.getItem("theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (e) {}</script>
+<style>
+:root{--bg:#ffffff;--fg:#1d1d1f;--muted:#6e6e73;--faint:#a1a1a6;--surface:#f5f5f7;--border:#d2d2d7;--control:#86868b;--grid:#e8e8ed;--axis:#86868b;--focus:#0071e3;--on-focus:#ffffff;--c1:#2a78d6;--c2:#eb6834;--c3:#8a4fd8;--c4:#0f8b8d;--hl:#c43d2f;--ok:#1a7f4b;--warn:#9a6700;--bad:#c4261d;--shadow:rgb(0 0 0 / .16);--doubler:var(--c3);--displaced:var(--c4);--sans:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;--mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;--math:"Cambria Math","STIX Two Math","Latin Modern Math",Cambria,"Times New Roman",serif;--text-xs:.75rem;--text-sm:.875rem;--text-lg:1.125rem;--space-1:.25rem;--space-2:.5rem;--space-3:.75rem;--space-4:1rem;--space-6:1.5rem;--space-8:2rem;--r:.5rem;--fade-duration:200ms;--fade-ease:cubic-bezier(.2,0,0,1);color-scheme:light dark}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--faint:#6e6e73;--surface:#2c2c2e;--border:#48484a;--control:#8e8e93;--grid:#333336;--axis:#8e8e93;--focus:#2997ff;--on-focus:#1d1d1f;--c1:#3987e5;--c2:#d95926;--c3:#a77bf0;--c4:#3bb6b8;--hl:#ff6961;--ok:#30c07a;--warn:#e3b341;--bad:#ff6961;--shadow:rgb(0 0 0 / .6)}}
+:root[data-theme="dark"]{--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--faint:#6e6e73;--surface:#2c2c2e;--border:#48484a;--control:#8e8e93;--grid:#333336;--axis:#8e8e93;--focus:#2997ff;--on-focus:#1d1d1f;--c1:#3987e5;--c2:#d95926;--c3:#a77bf0;--c4:#3bb6b8;--hl:#ff6961;--ok:#30c07a;--warn:#e3b341;--bad:#ff6961;--shadow:rgb(0 0 0 / .6);color-scheme:dark}
+:root[data-theme="light"]{color-scheme:light}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:1rem/1.55 var(--sans);letter-spacing:-.011em;-webkit-font-smoothing:antialiased}
+main{width:min(100% - 2rem,80rem);margin:auto;padding:clamp(1.25rem,5vw,3rem) 0 3rem}
+a{color:var(--focus)}
+.eyebrow{display:flex;flex-wrap:wrap;gap:var(--space-1) .9rem;margin:0;color:var(--muted);font:600 var(--text-xs)/1.4 var(--mono);letter-spacing:.06em;text-transform:uppercase}
+.eyebrow a{color:inherit;text-decoration:none}
+.eyebrow a:hover{text-decoration:underline}
+h1{max-width:20ch;margin:.35rem 0 .8rem;font-size:clamp(2rem,6vw,3.25rem);font-weight:700;line-height:1.04;letter-spacing:-.045em}
+h2{margin:0 0 var(--space-2);font-size:var(--text-lg);font-weight:600;letter-spacing:-.015em}
+h3{margin:var(--space-4) 0 var(--space-2);font-size:1rem;font-weight:600}
+.lede{max-width:66ch;margin:0 0 var(--space-4);font-size:var(--text-lg)}
+.note{margin:var(--space-1) 0 0;color:var(--muted);font-size:var(--text-sm)}
+.label,legend{color:var(--muted);font:600 var(--text-xs)/1.4 var(--mono);letter-spacing:.06em;text-transform:uppercase}
+.num,output,input[type="number"]{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.card{min-width:0;padding:var(--space-4);border:1px solid var(--border);border-radius:var(--r);background:var(--bg)}
+.inset{padding:var(--space-3);border-radius:var(--r);background:var(--surface)}
+.callout{max-width:72ch;padding:var(--space-3) var(--space-4);border:1px solid var(--border);border-left:3px solid var(--focus);border-radius:var(--r);font-size:var(--text-sm)}
+.callout p{margin:0 0 var(--space-2)}
+.callout p:last-child{margin:0}
+button,input,select,textarea{font:inherit;color:inherit;letter-spacing:inherit}
+button{display:inline-flex;align-items:center;justify-content:center;gap:.35rem;min-height:2.25rem;padding:.25rem .8rem;border:1px solid var(--control);border-radius:999px;background:var(--bg);color:var(--fg);font-size:var(--text-sm);white-space:nowrap;cursor:pointer}
+button:hover{background:var(--surface)}
+button[aria-pressed="true"]{border-color:var(--fg);background:var(--fg);color:var(--bg)}
+button.primary{border-color:var(--focus);background:var(--focus);color:var(--on-focus)}
+button:disabled{border-color:var(--grid);background:var(--bg);color:var(--faint);cursor:default}
+input:not([type="range"]):not([type="checkbox"]):not([type="radio"]),select,textarea{min-height:2.25rem;padding:.35rem .6rem;border:1px solid var(--control);border-radius:var(--r);background:var(--bg)}
+input[type="checkbox"]{accent-color:var(--focus)}
+input[aria-invalid="true"]{border-color:var(--bad);outline:1px solid var(--bad)}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.seg{display:inline-flex;flex-wrap:wrap;overflow:hidden;border:1px solid var(--control);border-radius:1.2rem}
+.seg>button{min-height:2.1rem;border:0;border-radius:0}
+@media (pointer:coarse){button,select,input:not([type="checkbox"]),.seg>button{min-height:2.75rem}}
+a,button,input,select,summary{transition-property:color,background-color,border-color,opacity;transition-duration:var(--fade-duration);transition-timing-function:var(--fade-ease)}
+@media (prefers-reduced-motion:reduce){:root{--fade-duration:0ms}*,*::before,*::after{animation:none!important;transition:none!important}}
+@media print{:root:root{--bg:#ffffff;--fg:#1d1d1f;--muted:#6e6e73;--faint:#a1a1a6;--surface:#f5f5f7;--border:#d2d2d7;--control:#86868b;--grid:#e8e8ed;--axis:#86868b;--focus:#0071e3;--c1:#2a78d6;--c2:#eb6834;--c3:#8a4fd8;--c4:#0f8b8d;--hl:#c43d2f;--ok:#1a7f4b;--warn:#9a6700;--bad:#c4261d;color-scheme:light}.no-print{display:none!important}}
+/* Domain rules */
+.toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-2);margin:var(--space-6) 0 var(--space-4);padding:var(--space-3) 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.toolbar .sep{flex:1 1 0}
+#status{min-height:1.55em;margin:0 0 var(--space-4);font-size:var(--text-sm)}
+#status.ok{color:var(--ok)}#status.bad{color:var(--bad)}#status.warn{color:var(--fg)}
+.lab{display:grid;grid-template-columns:minmax(0,1fr) minmax(18rem,22rem);gap:var(--space-6);align-items:start}
+@media (max-width:56rem){.lab{grid-template-columns:minmax(0,1fr)}}
+.layers{display:flex;flex-wrap:wrap;gap:var(--space-2) var(--space-4);align-items:center;margin:0 0 var(--space-3)}
+.layers label{display:inline-flex;align-items:center;gap:.35rem;font-size:var(--text-sm)}
+.views{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,20rem),1fr));gap:var(--space-4)}
+figure{min-width:0;margin:0}
+figcaption{margin:0 0 var(--space-1);font-size:var(--text-sm);font-weight:600}
+canvas.panel{display:block;width:100%;height:auto;cursor:crosshair;touch-action:manipulation}
+.legend{display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-2);margin:var(--space-3) 0 0;font-size:var(--text-sm)}
+.legend .bar{flex:1 1 10rem;min-width:8rem;height:.75rem;border:1px solid var(--border);border-radius:2px}
+.legend .num{font-size:var(--text-xs)}
+.stale-flag{display:none;margin:var(--space-2) 0 0;padding:var(--space-2) var(--space-3);border:1px solid var(--warn);border-radius:var(--r);font-size:var(--text-sm)}
+.is-stale .stale-flag{display:block}
+.is-stale canvas.panel,.is-stale #cmp-wrap{opacity:.5}
+fieldset{min-width:0;margin:0 0 var(--space-4);padding:0;border:0}
+fieldset:last-child{margin:0}
+legend{margin:0 0 var(--space-2);padding:0}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-2)}
+.f{display:flex;min-width:0;flex-direction:column;gap:.15rem;font-size:var(--text-sm)}
+.f input{width:100%}
+.str-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:var(--space-2);align-items:end;margin:0 0 var(--space-2)}
+.errors{margin:var(--space-2) 0 0;padding-left:1.1rem;color:var(--bad);font-size:var(--text-sm)}
+.errors:empty{display:none}
+.tbl{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:var(--text-sm)}
+th,td{padding:.35rem .5rem;border-bottom:1px solid var(--border);text-align:right;vertical-align:top}
+th:first-child,td:first-child{text-align:left}
+thead th{color:var(--muted);font:600 var(--text-xs)/1.4 var(--mono);letter-spacing:.06em;text-transform:uppercase}
+td.num{white-space:nowrap}
+.probe-in{display:flex;flex-wrap:wrap;gap:var(--space-2);align-items:end;margin:var(--space-2) 0}
+.probe-in .f{width:7.5rem}
+.checks{margin:var(--space-2) 0 0;padding-left:1.2rem;font-size:var(--text-sm)}
+.checks li{margin:0 0 var(--space-1)}
+.pass{color:var(--ok);font-weight:600}.fail{color:var(--bad);font-weight:600}
+details{margin:var(--space-3) 0}
+summary{cursor:pointer;font-weight:600}
+pre{overflow-x:auto;max-height:20rem;padding:var(--space-3);border-radius:var(--r);background:var(--surface);font:var(--text-xs)/1.5 var(--mono)}
+textarea{width:100%;min-height:8rem;font:var(--text-xs)/1.5 var(--mono)}
+.secondary{display:flex;flex-wrap:wrap;gap:var(--space-2);align-items:center}
+.math{font-family:var(--math)}
+section.block{margin:var(--space-8) 0 0}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <p class="eyebrow"><a href="../../visuals.html">Visuals</a><span>Structures</span><span>Finite elements</span><span>Works offline</span></p>
+  <h1>Diagonal Tension: Skin, Stringers and Doubler</h1>
+  <p class="lede">At the same applied shear load, what changes when a doubler is added to an aluminium skin-and-stringer panel? This page meshes the panel, solves both variants with a finite-element model in your browser and compares them.</p>
+  <div class="callout">
+    <p><strong>Linear elastic, pre-buckling model.</strong> It calculates diagonal principal tension and how stress redistributes. It does not calculate a post-buckling tension field, stringer bending or crippling, fastener slip or one-sided doubler bending: those need further element formulations and validation. Background: <a href="https://ntrs.nasa.gov/citations/19930083335">NACA, diagonal tension</a>.</p>
+    <p>The example uses demonstration values (E = 70,000 MPa, ν = 0.33, 2,700 kg/m³). Alloy allowables are yours to supply. Variant A is skin plus stringers; variant B adds the doubler. Both use the same mesh, restraints and load.</p>
+  </div>
+</header>
+<noscript><p class="callout">The finite-element solver, the panel views and the comparison need JavaScript. Without it, the page still describes the model: a rectangular aluminium skin of four-node plane-stress quadrilaterals, longitudinal stringers as axial bars sharing skin nodes, and a doubler modelled as a local increase in membrane thickness, loaded by a uniform shear flow on all four edges and restrained only against rigid-body motion.</p></noscript>
+
+<div class="toolbar no-print" role="toolbar" aria-label="Analysis">
+  <button type="button" class="primary" id="run" title="Mesh, solve A and B, and compare (Ctrl+Enter)">Run comparison</button>
+  <button type="button" id="cancel" disabled title="Stop the solve (Escape)">Cancel</button>
+  <button type="button" id="refine" title="Halve the element size">Refine mesh</button>
+  <button type="button" id="reset" title="Restore the demonstration example">Reset</button>
+  <span class="sep"></span>
+  <button type="button" id="export-model" title="Save the model as JSON: inputs, units, assumptions, mesh and solver diagnostics">Export model</button>
+  <button type="button" id="export-results" title="Save the comparison as CSV: results, units, assumptions, mesh and solver diagnostics">Export results</button>
+</div>
+<p id="status" role="status" aria-live="polite"></p>
+
+<div class="lab" id="lab">
+  <section class="card" aria-labelledby="visual-h" id="visual">
+    <h2 id="visual-h">Panel views, A and B</h2>
+    <div class="layers no-print">
+      <div class="seg" role="group" aria-label="Colour field">
+        <button type="button" data-field="none" aria-pressed="false">Mesh only</button>
+        <button type="button" data-field="s1" aria-pressed="true">Principal tension σ1</button>
+        <button type="button" data-field="txy" aria-pressed="false">Shear τxy</button>
+        <button type="button" data-field="vm" aria-pressed="false">von Mises</button>
+      </div>
+      <label><input type="checkbox" id="lay-mesh" name="lay-mesh" checked> Mesh</label>
+      <label><input type="checkbox" id="lay-dirs" name="lay-dirs"> Principal directions</label>
+      <label><input type="checkbox" id="lay-disp" name="lay-disp"> Displaced shape</label>
+      <label><input type="checkbox" id="lay-regions" name="lay-regions" checked> Comparison regions</label>
+    </div>
+    <div class="views">
+      <figure><figcaption>A · skin + stringers</figcaption><canvas class="panel" id="view-A" role="img" aria-label="Variant A"></canvas></figure>
+      <figure><figcaption>B · skin + stringers + doubler</figcaption><canvas class="panel" id="view-B" role="img" aria-label="Variant B"></canvas></figure>
+    </div>
+    <div class="legend" id="legend" aria-live="polite"></div>
+    <p class="stale-flag" id="stale-flag"><strong>Results are stale.</strong> The inputs changed after the last run; run the comparison again before reading or exporting results.</p>
+    <p class="note" id="view-note"></p>
+    <h3>Probe</h3>
+    <p class="note">Tap or click either view, or type a point. Values are the unsmoothed stresses at the nearest Gauss point and the displacement at the point.</p>
+    <div class="probe-in">
+      <label class="f">x (mm)<input type="number" id="probe-x" name="probe-x" step="any" value="350"></label>
+      <label class="f">y (mm)<input type="number" id="probe-y" name="probe-y" step="any" value="150"></label>
+    </div>
+    <div class="tbl"><table id="probe-table" aria-label="Probe readout"><thead><tr><th scope="col">At the probe</th><th scope="col">A</th><th scope="col">B</th></tr></thead><tbody></tbody></table></div>
+  </section>
+
+  <aside class="card no-print" aria-labelledby="controls-h" id="controls">
+    <h2 id="controls-h">Inputs</h2>
+    <p class="note">Millimetres, newtons, megapascals and kilograms.</p>
+    <form id="inputs" novalidate>
+      <fieldset><legend>Skin panel</legend>
+        <div class="grid2">
+          <label class="f">Length L (mm)<input type="number" step="any" data-field="panel.L"></label>
+          <label class="f">Width W (mm)<input type="number" step="any" data-field="panel.W"></label>
+          <label class="f">Thickness t (mm)<input type="number" step="any" data-field="panel.t"></label>
+        </div>
+      </fieldset>
+      <fieldset><legend>Stringers along x</legend>
+        <div id="stringers"></div>
+        <button type="button" id="add-stringer">Add stringer</button>
+      </fieldset>
+      <fieldset><legend>Doubler</legend>
+        <div class="grid2">
+          <label class="f">Corner x0 (mm)<input type="number" step="any" data-field="doubler.x0"></label>
+          <label class="f">Corner y0 (mm)<input type="number" step="any" data-field="doubler.y0"></label>
+          <label class="f">Length (mm)<input type="number" step="any" data-field="doubler.Lx"></label>
+          <label class="f">Width (mm)<input type="number" step="any" data-field="doubler.Ly"></label>
+          <label class="f">Thickness t_d (mm)<input type="number" step="any" data-field="doubler.t"></label>
+        </div>
+      </fieldset>
+      <fieldset><legend>Aluminium (demonstration)</legend>
+        <div class="grid2">
+          <label class="f">E (MPa)<input type="number" step="any" data-field="material.E"></label>
+          <label class="f">Poisson ratio ν<input type="number" step="any" data-field="material.nu"></label>
+          <label class="f">Density (kg/m³)<input type="number" step="any" data-field="material.rho"></label>
+        </div>
+      </fieldset>
+      <fieldset><legend>Shear load</legend>
+        <div class="grid2">
+          <label class="f">Shear flow q (N/mm)<input type="number" step="any" data-field="load.q"></label>
+        </div>
+        <p class="note" id="load-note"></p>
+      </fieldset>
+      <fieldset><legend>Mesh and comparison regions</legend>
+        <div class="grid2">
+          <label class="f">Element size (mm)<input type="number" step="any" data-field="mesh.h"></label>
+          <label class="f">Excluded zone (mm)<input type="number" step="any" data-field="regions.exclude"></label>
+          <label class="f">Edge band (mm)<input type="number" step="any" data-field="regions.band"></label>
+        </div>
+        <p class="note" id="mesh-note"></p>
+      </fieldset>
+      <ul class="errors" id="errors" aria-live="polite"></ul>
+    </form>
+  </aside>
+</div>
+
+<section class="block" aria-labelledby="cmp-h" id="comparison">
+  <h2 id="cmp-h">What the doubler changes</h2>
+  <p class="note">B minus A at the same load. Stresses are unsmoothed Gauss-point values; region maxima leave out the hatched excluded zones. A percentage is shown only where the A value is nonzero.</p>
+  <div class="tbl" id="cmp-wrap"><table id="cmp-table"><thead><tr><th scope="col">Quantity</th><th scope="col">A</th><th scope="col">B</th><th scope="col">Change</th><th scope="col">Change %</th></tr></thead><tbody></tbody></table></div>
+  <p class="note" id="cmp-note"></p>
+</section>
+
+<section class="block" aria-labelledby="checks-h">
+  <h2 id="checks-h">Self-check</h2>
+  <p class="note">Patch test, a bar against FL/EA, pure shear at 45°, equilibrium, linear scaling, zero and full-panel doublers, added mass, three-level mesh convergence and closed-form reference panels, solved in the worker.</p>
+  <div class="secondary no-print"><button type="button" id="selftest">Run self-check</button><span id="selftest-badge" class="note"></span></div>
+  <ol class="checks" id="selftest-list"></ol>
+</section>
+
+<section class="block" aria-labelledby="method-h">
+  <h2 id="method-h">Method and assumptions</h2>
+  <details open><summary>How the panel is solved</summary>
+    <ol class="note">
+      <li>A structured, conforming mesh is split at every stringer and doubler edge; each node has two translations. No skin element is duplicated: inside the doubler, the element thickness is t + t_d in variant B.</li>
+      <li>Quadrilateral stiffness: isotropic plane stress, D = E/(1 − ν²)[1 ν 0; ν 1 0; 0 0 (1 − ν)/2], with 2 × 2 Gauss integration. Bars: EA/L along their direction.</li>
+      <li>The global sparse stiffness and force vector are assembled, the restrained degrees of freedom eliminated, and the system solved by conjugate gradient with diagonal preconditioning. Non-positive curvature, non-finite values, the iteration limit and a failed residual check stop the run; a failed solve shows no results.</li>
+      <li>Recovered: displacements, reactions, bar axial forces and the stresses at every Gauss point.</li>
+      <li>From σx, σy and τxy: m = (σx + σy)/2, r = hypot((σx − σy)/2, τxy), σ1 = m + r, σ2 = m − r, θ1 = ½ atan2(2τxy, σx − σy), von Mises = √(σx² − σxσy + σy² + 3τxy²). Tension is positive.</li>
+    </ol>
+  </details>
+  <details><summary>Assumptions and limits</summary><ul class="note" id="assumptions"></ul></details>
+  <details><summary>Solver diagnostics</summary><pre id="diagnostics">No run yet.</pre></details>
+</section>
+
+<section class="block no-print" aria-labelledby="talk-h">
+  <h2 id="talk-h">Talk</h2>
+  <div class="secondary">
+    <button type="button" id="save-beamdswitch" disabled title="Save a narrated Markdown talk about this comparison, to open in beamdswitch">beamdswitch</button>
+    <button type="button" id="copy-beamdswitch" disabled title="Copy the same beamdswitch deck to the clipboard">Copy deck</button>
+  </div>
+  <p class="note">Available after a validated run: a narrated Markdown deck (voice bf_emma) of the set-up, method, results and checks, every number as shown here. Open it in <a href="https://teoyujie.org/visuals/beamdswitch/">beamdswitch</a> for slides, narration and a video. Beamdswitch is not needed to run the analysis.</p>
+  <div id="fallback" hidden><p class="note" id="fallback-msg"></p><textarea id="fallback-text" readonly aria-label="Text to copy"></textarea></div>
+</section>
+</main>
+<script id="dt-engine">
+/* Diagonal tension: the numeric core. A linear elastic, pre-buckling membrane model of a rectangular
+   aluminium skin with longitudinal stringers, solved twice on one mesh: A = skin + stringers and
+   B = A + a bonded rectangular doubler (a local increase in membrane thickness). Four-node plane-stress
+   quadrilaterals with 2 x 2 Gauss integration, two-node axial bars, a sparse CSR stiffness, prescribed
+   degrees of freedom eliminated, and a Jacobi-preconditioned conjugate-gradient solve. No DOM,
+   storage, clock or randomness: the page, its Web Worker and the Node tests all run this same text.
+   Units: mm, N, MPa (N/mm²), kg; density is entered in kg/m³. Tension is positive. */
+/** The page's inputs, in mm, N, MPa and kg/m³.
+    @typedef {{ panel: { L: number, W: number, t: number }, stringers: { y: number, A: number }[],
+      doubler: { x0: number, y0: number, Lx: number, Ly: number, t: number }, material: { E: number, nu: number, rho: number },
+      load: { q: number }, mesh: { h: number }, regions: { exclude: number, band: number } }} State */
+/** @typedef {{ field: string, message: string }} FieldError */
+/** @typedef {{ s1: number, s2: number, theta1: number, vm: number, r: number }} Principal */
+/** One model for solve(): nodes, quadrilaterals with their thicknesses, bars with their areas, material, prescribed
+    degrees of freedom and their values, and nodal forces.
+    @typedef {{ coords: Float64Array, quads: Int32Array, thick: Float64Array, bars: Int32Array, barA: Float64Array,
+      E: number, nu: number, fixed: Int32Array, fixedVal: Float64Array, f: Float64Array }} Model */
+/** @typedef {{ maxIterations?: number, relTol?: number, onProgress?: ((p: { iteration: number, residual: number }) => void) | null }} SolveOptions */
+/** @typedef {{ ndof: number, rowPtr: Int32Array, cols: Int32Array, vals: Float64Array, nnz: number }} Assembled */
+/** @typedef {{ n: number, rowPtr: Int32Array, cols: Int32Array, vals: Float64Array }} Csr */
+/** @typedef {{ Fx: number, Fy: number, Mz: number, forceScale: number, relForce: number, relMoment: number }} Equilibrium */
+/** Solver diagnostics; a failed solve has only those found before it stopped.
+    @typedef {{ nodes: number, dofs: number, quads: number, bars: number, fixedDofs: number, nnz: number, freeDofs: number,
+      iterations: number, relResidual: number, trueResidual: number, equilibrium: Equilibrium }} Diagnostics */
+/** A solve: displacements, reactions, Gauss-point coordinates and stresses, bar forces, [compliance fᵀu, strain
+    energy] and diagnostics; or the reason it failed.
+    @typedef {{ ok: true, u: Float64Array, R: Float64Array, gp: Float64Array, sig: Float64Array, barN: Float64Array,
+      scalars: Float64Array, diag: Diagnostics }} Solution
+    @typedef {{ ok: false, error: { code: string, message: string }, diag: Partial<Diagnostics> }} SolveFailure */
+/** buildModel(): the conforming grid, both variants' thicknesses, the stringer bars, loads and restraints.
+    @typedef {{ xs: number[], ys: number[], nx: number, ny: number, coords: Float64Array, quads: Int32Array,
+      inDoubler: Uint8Array, tA: Float64Array, tB: Float64Array, bars: Int32Array, barA: Float64Array, barStringer: Int32Array,
+      stringerY: number[], stringerA: number[], f: Float64Array, fixed: Int32Array, fixedVal: Float64Array,
+      restraints: { node: number, x: number, y: number, dofs: string[] }[], totals: { q: number, vertical: number, horizontal: number } }} BuiltModel */
+/** @typedef {{ id: string, label: string, x: number, y: number, kind: string }} ProbePoint */
+/** @typedef {{ gauss: number, element: number, point: number, x: number, y: number, t: number, sx: number, sy: number,
+      txy: number, s1: number, s2: number, theta1Deg: number, vm: number }} GaussRecord */
+/** A fixed probe: the displacement there and the nearest Gauss point's stresses.
+    @typedef {ProbePoint & { ux: number, uy: number, u: number, gauss: number, element: number, t: number, sx: number,
+      sy: number, txy: number, s1: number, s2: number, theta1Deg: number, vm: number, gx: number, gy: number }} Probe */
+/** @typedef {{ value: number, gauss: number, element: number, x: number, y: number }} Extreme */
+/** A comparison region's maxima; null where the region holds no Gauss point.
+    @typedef {{ label: string, gaussPoints: number, s1: Extreme | null, vm: Extreme | null, tau: Extreme | null }} RegionSummary */
+/** @typedef {{ y: number, A: number, Nmax: number, Nmin: number, Nmid: number, maxAbs: number }} StringerForce */
+/** @typedef {{ variant: string, mass: { skin: number, stringers: number, total: number }, probes: Probe[],
+      regions: Record<string, RegionSummary>, stringers: StringerForce[], diagnostics: Diagnostics, compliance: number, energy: number }} Summary */
+/** @typedef {{ id: string, label: string, unit: string, a: number, b: number, delta: number, pct: number | null }} Row */
+/** @typedef {{ elementSize: number, nodes: number, quads: number, bars: number, doublerElements: number, xLines: number,
+      yLines: number, minEdge: number, maxEdge: number, maxAspect: number }} MeshSummary */
+/** A validated comparison of variants A and B on one mesh and load.
+    @typedef {{ ok: true, state: State, model: BuiltModel, A: Solution, B: Solution, region: Uint8Array,
+      summary: { A: Summary, B: Summary }, rows: Row[], mesh: MeshSummary }} Comparison */
+/** A comparison that failed validation or a solve; it carries no results.
+    @typedef {{ ok: false, stage: "validate", errors: FieldError[], error?: undefined }
+      | { ok: false, stage: "solve", variant: string, error: { code: string, message: string }, diag: Partial<Diagnostics>, state: State }} ComparisonFailure */
+/** Diagnostics as exported, rounded to eight significant figures (null where not finite).
+    @typedef {{ nodes: number, dofs: number, freeDofs: number, quads: number, bars: number, nnz: number, iterations: number,
+      relResidual: number | null, trueResidual: number | null, relTol: number,
+      equilibrium: { Fx: number | null, Fy: number | null, Mz: number | null, relForce: number | null, relMoment: number | null } }} ExportedDiagnostics */
+/** @typedef {{ stage: string, variant?: string, iteration?: number, residual?: number }} Progress */
+/** @typedef {{ id: string, name: string, pass: boolean, detail: string }} SelfTest */
+/** The engine, published as self.DiagonalTension.
+    @typedef {{ VERSION: number, VISUAL: string, UNITS: Record<string, string>, LIMITS: { maxNodes: number, maxIterations: number, relTol: number, residualCheck: number, maxStringers: number },
+      CONVERGENCE: { levels: number[], displacementTol: number, stressTol: number, note: string }, ASSUMPTIONS: string[],
+      META: Record<string, unknown> & { example: string }, NACA: string, REGIONS: ({ id: string, label: string } | null)[],
+      defaultState(): State, normalize(input: unknown): State, validate(input: unknown): { ok: boolean, errors: FieldError[], state: State },
+      gridLines(a: number, b: number, required: number[], h: number): number[], meshLines(s: State): { xs: number[], ys: number[] },
+      estimateNodes(s: State): number, buildModel(s: State): BuiltModel, solve(m: Model, opts?: SolveOptions): Solution | SolveFailure,
+      principal(sx: number, sy: number, txy: number): Principal, regionOf(x: number, y: number, s: State): number,
+      probePoints(s: State): ProbePoint[], probeAt(res: Comparison, variant: "A" | "B", x: number, y: number): GaussRecord & { at: { x: number, y: number }, ux: number, uy: number, u: number, region: string },
+      displacementAt(mdl: BuiltModel, u: Float64Array, x: number, y: number): { ux: number, uy: number, mag: number, element: number },
+      nearestGauss(mdl: BuiltModel, gp: Float64Array, x: number, y: number): number,
+      runComparison(input: unknown, onProgress?: ((p: Progress) => void) | null, opts?: SolveOptions): Comparison | ComparisonFailure,
+      comparisonRows(SA: Summary, SB: Summary, s: State): Row[], modelJSON(input: unknown, res: Comparison | ComparisonFailure | null): string,
+      resultsCSV(res: Comparison): string, diagnosticsOf(res: Comparison): { solver: string, A: ExportedDiagnostics, B: ExportedDiagnostics },
+      beamdswitchReport(res: Comparison | ComparisonFailure | null): Record<string, unknown>, selfTests(): SelfTest[],
+      fmt(x: number | null | undefined, d?: number): string, fmtPct(p: number | null): string, fmtSigned(x: number, d?: number): string }} Engine */
+(/** @param {typeof globalThis} root */ function (root) {
+  "use strict";
+
+  const VERSION = 1;
+  const VISUAL = "diagonal-tension";
+  const UNITS = {
+    length: "mm", force: "N", stress: "MPa", mass: "kg", density: "kg/m³", area: "mm²",
+    shearFlow: "N/mm", displacement: "mm", energy: "N·mm", angle: "degrees",
+  };
+  /* Browser benchmark (Chrome 154 on an Apple M5, the example at element sizes 5 and 2.5 mm): 9,801
+     nodes solve both variants in 0.9 s and 38,801 nodes in 6.5 s, each variant converging in about
+     2,400 conjugate-gradient iterations. maxNodes keeps the largest run near ten seconds there and
+     under a minute on a slow machine; maxIterations is eight times the largest count seen, so only a
+     badly conditioned model reaches it. Cancel stops any run. */
+  const LIMITS = { maxNodes: 40000, maxIterations: 20000, relTol: 1e-10, residualCheck: 1e-7, maxStringers: 20 };
+  const CONVERGENCE = {
+    levels: [40, 20, 10],
+    displacementTol: 0.01,
+    stressTol: 0.05,
+    note: "Three uniform element sizes on the demonstration model, variant B. Between the two finest meshes, fixed-probe displacements and compliance change by at most displacementTol (relative) and the comparison-region maxima of principal tension by at most stressTol. Displacement and compliance changes must shrink under refinement; region maxima, sampled at Gauss points, may oscillate within stressTol.",
+  };
+  const ASSUMPTIONS = [
+    "Linear elastic, small displacement, pre-buckling membrane model: it gives the diagonal principal tension and how stress redistributes, not a post-buckling tension field.",
+    "Skin: four-node plane-stress quadrilaterals, 2 x 2 Gauss integration, isotropic E and Poisson ratio.",
+    "Stringers: two-node axial bars (EA/L) on skin nodes along x, running the full panel length; no bending, crippling or eccentricity.",
+    "Doubler: the same material as the skin, perfectly attached, modelled as a local increase in membrane thickness; no fastener slip or one-sided bending.",
+    "Load: a uniform shear flow q on all four edges, integrated consistently into nodal forces; the load is self-equilibrated and identical for both variants.",
+    "Restraints: minimal in-plane supports that remove rigid-body motion only: ux = uy = 0 at (0, 0) and uy = 0 at (L, 0).",
+    "Comparisons use unsmoothed Gauss-point stresses. Zones within the exclusion distance of the panel edges and of each doubler corner are excluded: point and corner stresses there are singular or load-introduction effects, not converged strength.",
+    "Material values are demonstration inputs, not alloy allowables; supply allowables yourself.",
+  ];
+  const NACA = "https://ntrs.nasa.gov/citations/19930083335";
+
+  /** @returns {State} */
+  function defaultState() {
+    return {
+      panel: { L: 600, W: 400, t: 1 },
+      stringers: [{ y: 100, A: 50 }, { y: 200, A: 50 }, { y: 300, A: 50 }],
+      doubler: { x0: 200, y0: 100, Lx: 200, Ly: 200, t: 1 },
+      material: { E: 70000, nu: 0.33, rho: 2700 },
+      load: { q: 50 },
+      mesh: { h: 20 },
+      regions: { exclude: 40, band: 50 },
+    };
+  }
+
+  const META = {
+    visual: VISUAL,
+    title: "Diagonal Tension: Skin, Stringers and Doubler",
+    version: VERSION,
+    question: "At the same applied shear load, what changes when a doubler is added to an aluminium skin-and-stringer panel?",
+    units: UNITS,
+    assumptions: ASSUMPTIONS,
+    limits: LIMITS,
+    convergence: CONVERGENCE,
+    reference: NACA,
+    regions: {
+      excluded: "Within the exclusion distance of a panel edge or of a doubler corner.",
+      doubler: "Inside the doubler outline (patch interior).",
+      band: "Skin outside the doubler, within the band width of its outline (doubler edges).",
+      skin: "All other skin (surrounding skin).",
+    },
+    probes: {
+      P1: "Free corner (L, W): displacement.",
+      P2: "Doubler centre: displacement.",
+      P3: "Inside the patch at (x0 + Lx/2, y0 + Ly/4): stress at the nearest Gauss point.",
+      P4: "Skin beside the patch at (x0 + Lx + band/2, y0 + Ly/4), or, where that is outside the panel, at (x0 - band/2, y0 + Ly/4), (x0 + Lx/2, y0 + Ly + band/2) or (x0 + Lx/2, y0 - band/2): stress at the nearest Gauss point. Left out when the doubler leaves no skin beside it.",
+    },
+    example: "Demonstration values: 600 x 400 x 1 mm skin; stringers at y = 100, 200 and 300 mm, 50 mm² each; a central 200 x 200 x 1 mm doubler; E = 70,000 MPa, nu = 0.33, density 2,700 kg/m³; q = 50 N/mm; element size 20 mm.",
+  };
+
+  /* ---------- formatting ---------- */
+  /** @param {number | null | undefined} x @param {number} [d] significant figures */
+  function fmt(x, d = 4) {
+    if (x === null || x === undefined || !Number.isFinite(x)) return "—";
+    if (x === 0) return "0";
+    const a = Math.abs(x);
+    if (a >= 1e6 || a < 1e-4) return x.toExponential(d - 1).replace("e+", "e");
+    const s = Number(x.toPrecision(d));
+    return (Object.is(s, -0) ? 0 : s).toLocaleString("en-GB", { maximumFractionDigits: 10 });
+  }
+  const fmtPct = (/** @type {number | null} */ p) => (p === null || !Number.isFinite(p) ? "—" : `${p >= 0 ? "+" : "−"}${fmt(Math.abs(p), 3)}%`);
+  const fmtSigned = (/** @type {number} */ x, d = 4) => (Number.isFinite(x) && x < 0 ? `−${fmt(-x, d)}` : fmt(x, d));
+
+  /* ---------- stress transformation (the specification's formulas) ---------- */
+  /** @param {number} sx @param {number} sy @param {number} txy @returns {Principal} */
+  function principal(sx, sy, txy) {
+    const m = (sx + sy) / 2;
+    const r = Math.hypot((sx - sy) / 2, txy);
+    return {
+      s1: m + r,
+      s2: m - r,
+      theta1: 0.5 * Math.atan2(2 * txy, sx - sy),
+      vm: Math.sqrt(sx * sx - sx * sy + sy * sy + 3 * txy * txy),
+      r,
+    };
+  }
+
+  /* ---------- validation ---------- */
+  const isNum = (/** @type {unknown} */ v) => typeof v === "number" && Number.isFinite(v);
+  /** Fills missing blocks from the defaults and converts numeric strings; other values become NaN for validate().
+      @param {unknown} input @returns {State} */
+  function normalize(input) {
+    const d = defaultState(), s = /** @type {Record<string, any>} */ (input && typeof input === "object" ? input : {});
+    /** @type {(blk: keyof State, keys: string[]) => any} */
+    const pick = (blk, keys) => { const o = /** @type {Record<string, number>} */ ({}); for (const k of keys) o[k] = s[blk] && s[blk][k] !== undefined ? toNum(s[blk][k]) : /** @type {Record<string, number>} */ (d[blk])[k]; return o; };
+    return {
+      panel: pick("panel", ["L", "W", "t"]),
+      stringers: Array.isArray(s.stringers) ? s.stringers.map((/** @type {any} */ x) => ({ y: toNum(x && x.y), A: toNum(x && x.A) })) : d.stringers,
+      doubler: pick("doubler", ["x0", "y0", "Lx", "Ly", "t"]),
+      material: pick("material", ["E", "nu", "rho"]),
+      load: pick("load", ["q"]),
+      mesh: pick("mesh", ["h"]),
+      regions: pick("regions", ["exclude", "band"]),
+    };
+  }
+  /** @param {unknown} v */
+  function toNum(v) { if (typeof v === "number") return v; if (typeof v === "string" && v.trim() !== "") return Number(v); return NaN; }
+
+  /** @param {unknown} input @returns {{ ok: boolean, errors: FieldError[], state: State }} */
+  function validate(input) {
+    /** @type {FieldError[]} */
+    const errors = [];
+    const s = normalize(input);
+    const err = (/** @type {string} */ field, /** @type {string} */ message) => errors.push({ field, message });
+    /** @type {(v: number, field: string, label: string) => void} */
+    const pos = (v, field, label) => { if (!isNum(v)) err(field, `${label} must be a number.`); else if (!(v > 0)) err(field, `${label} must be positive.`); };
+    /** @type {(v: number, field: string, label: string) => void} */
+    const nonneg = (v, field, label) => { if (!isNum(v)) err(field, `${label} must be a number.`); else if (v < 0) err(field, `${label} must not be negative.`); };
+    pos(s.panel.L, "panel.L", "Panel length L");
+    pos(s.panel.W, "panel.W", "Panel width W");
+    pos(s.panel.t, "panel.t", "Skin thickness t");
+    pos(s.material.E, "material.E", "Young's modulus E");
+    if (!isNum(s.material.nu)) err("material.nu", "Poisson's ratio must be a number.");
+    else if (!(s.material.nu > -1 && s.material.nu < 0.5)) err("material.nu", "Poisson's ratio must lie between −1 and 0.5 (exclusive) for plane stress.");
+    nonneg(s.material.rho, "material.rho", "Density");
+    if (!isNum(s.load.q)) err("load.q", "Shear flow q must be a number.");
+    else if (s.load.q === 0) err("load.q", "Shear flow q must not be zero: there would be nothing to compare.");
+    pos(s.mesh.h, "mesh.h", "Element size");
+    nonneg(s.regions.exclude, "regions.exclude", "Exclusion distance");
+    pos(s.regions.band, "regions.band", "Edge band width");
+    const { L, W } = s.panel;
+    if (s.stringers.length > LIMITS.maxStringers) err("stringers", `At most ${LIMITS.maxStringers} stringers.`);
+    s.stringers.forEach((st, i) => {
+      const f = `stringers.${i}`;
+      if (!isNum(st.y)) err(`${f}.y`, `Stringer ${i + 1}: position y must be a number.`);
+      else if (isNum(W) && (st.y < 0 || st.y > W)) err(`${f}.y`, `Stringer ${i + 1}: y must lie on the panel, 0 to ${fmt(W)} mm.`);
+      nonneg(st.A, `${f}.A`, `Stringer ${i + 1}: area`);
+    });
+    const ys = s.stringers.map((x) => x.y).filter(isNum).sort((a, b) => a - b);
+    for (let i = 1; i < ys.length; i++) if (ys[i] - ys[i - 1] <= 1e-9 * (W || 1)) err("stringers", `Two stringers share y = ${fmt(ys[i])} mm; combine their areas into one.`);
+    const dbl = s.doubler;
+    nonneg(dbl.x0, "doubler.x0", "Doubler x0");
+    nonneg(dbl.y0, "doubler.y0", "Doubler y0");
+    pos(dbl.Lx, "doubler.Lx", "Doubler length");
+    pos(dbl.Ly, "doubler.Ly", "Doubler width");
+    nonneg(dbl.t, "doubler.t", "Doubler thickness");
+    const tol = 1e-9;
+    if ([dbl.x0, dbl.Lx, L].every(isNum) && dbl.x0 + dbl.Lx > L * (1 + tol)) err("doubler.Lx", `The doubler must lie inside the panel: x0 + length = ${fmt(dbl.x0 + dbl.Lx)} mm exceeds L = ${fmt(L)} mm.`);
+    if ([dbl.y0, dbl.Ly, W].every(isNum) && dbl.y0 + dbl.Ly > W * (1 + tol)) err("doubler.Ly", `The doubler must lie inside the panel: y0 + width = ${fmt(dbl.y0 + dbl.Ly)} mm exceeds W = ${fmt(W)} mm.`);
+    if (!errors.length) {
+      const n = estimateNodes(s);
+      if (n > LIMITS.maxNodes) err("mesh.h", `This element size gives ${n.toLocaleString("en-GB")} nodes; the limit is ${LIMITS.maxNodes.toLocaleString("en-GB")} (set from browser benchmarks). Increase the element size.`);
+    }
+    return { ok: errors.length === 0, errors, state: s };
+  }
+
+  /* ---------- mesh ---------- */
+  /* Grid lines from a to b through every required coordinate, each gap split into equal parts no
+     longer than h. Required lines closer than 1e-9 of the span merge, so no element is degenerate. */
+  /** @param {number} a @param {number} b @param {number[]} required */
+  function gridKeys(a, b, required) {
+    const tol = 1e-9 * (b - a);
+    const pts = [a, b, ...required].map((v) => Math.min(b, Math.max(a, v))).sort((p, q) => p - q);
+    const keys = [a];
+    for (const p of pts) if (p - keys[keys.length - 1] > tol) keys.push(p);
+    keys[keys.length - 1] = b;
+    return keys;
+  }
+  const gapParts = (/** @type {number} */ gap, /** @type {number} */ h) => Math.max(1, Math.ceil(gap / h - 1e-9));
+  /** @param {number} a @param {number} b @param {number[]} required @param {number} h */
+  function gridLines(a, b, required, h) {
+    const keys = gridKeys(a, b, required), out = [a];
+    for (let k = 1; k < keys.length; k++) {
+      const gap = keys[k] - keys[k - 1], n = gapParts(gap, h);
+      for (let i = 1; i <= n; i++) out.push(i === n ? keys[k] : keys[k - 1] + (gap * i) / n);
+    }
+    return out;
+  }
+  /* The number of grid lines gridLines would return, counted without building them. */
+  /** @param {number} a @param {number} b @param {number[]} required @param {number} h */
+  function gridCount(a, b, required, h) {
+    const keys = gridKeys(a, b, required);
+    let n = 1;
+    for (let k = 1; k < keys.length; k++) n += gapParts(keys[k] - keys[k - 1], h);
+    return n;
+  }
+  /** @param {State} s @returns {{ x: [number, number, number[]], y: [number, number, number[]] }} */
+  const meshRequired = (s) => ({
+    x: [0, s.panel.L, [s.doubler.x0, s.doubler.x0 + s.doubler.Lx]],
+    y: [0, s.panel.W, [s.doubler.y0, s.doubler.y0 + s.doubler.Ly, ...s.stringers.map((x) => x.y)]],
+  });
+  /** @param {State} s */
+  function meshLines(s) { const r = meshRequired(s); return { xs: gridLines(...r.x, s.mesh.h), ys: gridLines(...r.y, s.mesh.h) }; }
+  /** @param {State} s */
+  function estimateNodes(s) { const r = meshRequired(s); return gridCount(...r.x, s.mesh.h) * gridCount(...r.y, s.mesh.h); }
+  const nearestIndex = (/** @type {number[]} */ arr, /** @type {number} */ v) => { let best = 0; for (let i = 1; i < arr.length; i++) if (Math.abs(arr[i] - v) < Math.abs(arr[best] - v)) best = i; return best; };
+
+  /* The panel's conforming structured mesh, loads and restraints, shared by both variants. Node
+     (i, j) is j * nx + i; element (i, j) is j * (nx - 1) + i with corners counter-clockwise from its
+     lower left. tA and tB are the membrane thicknesses of variants A and B. */
+  /** @param {State} s @returns {BuiltModel} */
+  function buildModel(s) {
+    const { L, W, t } = s.panel, d = s.doubler;
+    const { xs, ys } = meshLines(s);
+    const nx = xs.length, ny = ys.length, nn = nx * ny, ex = nx - 1, ne = ex * (ny - 1);
+    const coords = new Float64Array(2 * nn);
+    for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) { const n = j * nx + i; coords[2 * n] = xs[i]; coords[2 * n + 1] = ys[j]; }
+    const quads = new Int32Array(4 * ne), inDoubler = new Uint8Array(ne), tA = new Float64Array(ne), tB = new Float64Array(ne);
+    for (let j = 0; j < ny - 1; j++) for (let i = 0; i < ex; i++) {
+      const e = j * ex + i, n0 = j * nx + i;
+      quads.set([n0, n0 + 1, n0 + nx + 1, n0 + nx], 4 * e);
+      const cx = (xs[i] + xs[i + 1]) / 2, cy = (ys[j] + ys[j + 1]) / 2;
+      inDoubler[e] = cx > d.x0 && cx < d.x0 + d.Lx && cy > d.y0 && cy < d.y0 + d.Ly ? 1 : 0;
+      tA[e] = t;
+      tB[e] = t + (inDoubler[e] ? d.t : 0);
+    }
+    const sorted = s.stringers.map((st, k) => ({ ...st, k })).sort((a, b) => a.y - b.y);
+    const nb = sorted.length * ex, bars = new Int32Array(2 * nb), barA = new Float64Array(nb), barStringer = new Int32Array(nb);
+    sorted.forEach((st, si) => {
+      const j = nearestIndex(ys, st.y);
+      for (let i = 0; i < ex; i++) { const b = si * ex + i; bars[2 * b] = j * nx + i; bars[2 * b + 1] = j * nx + i + 1; barA[b] = st.A; barStringer[b] = si; }
+    });
+    const f = new Float64Array(2 * nn), q = s.load.q;
+    /** @type {(nodes: number[], dof: number, sign: number) => void} */
+    const edge = (nodes, dof, sign) => {
+      for (let k = 0; k + 1 < nodes.length; k++) {
+        const a = nodes[k], b = nodes[k + 1];
+        const len = Math.hypot(coords[2 * b] - coords[2 * a], coords[2 * b + 1] - coords[2 * a + 1]);
+        f[2 * a + dof] += (sign * q * len) / 2;
+        f[2 * b + dof] += (sign * q * len) / 2;
+      }
+    };
+    const row = (/** @type {number} */ j) => Array.from({ length: nx }, (_, i) => j * nx + i), col = (/** @type {number} */ i) => Array.from({ length: ny }, (_, j) => j * nx + i);
+    edge(row(0), 0, -1);        // bottom edge: shear flow in −x
+    edge(row(ny - 1), 0, 1);    // top edge: +x
+    edge(col(0), 1, -1);        // left edge: −y
+    edge(col(nx - 1), 1, 1);    // right edge: +y
+    const fixed = new Int32Array([0, 1, 2 * (nx - 1) + 1]), fixedVal = new Float64Array(3);
+    return {
+      xs, ys, nx, ny, coords, quads, inDoubler, tA, tB, bars, barA, barStringer,
+      stringerY: sorted.map((x) => ys[nearestIndex(ys, x.y)]), stringerA: sorted.map((x) => x.A),
+      f, fixed, fixedVal,
+      restraints: [{ node: 0, x: 0, y: 0, dofs: ["ux", "uy"] }, { node: nx - 1, x: L, y: 0, dofs: ["uy"] }],
+      totals: { q, vertical: q * W, horizontal: q * L },
+    };
+  }
+
+  /* ---------- element stiffness ---------- */
+  const G = 1 / Math.sqrt(3);
+  const GP = [[-G, -G], [G, -G], [G, G], [-G, G]];
+  /** @param {number} E @param {number} nu */
+  function dMatrix(E, nu) { const c = E / (1 - nu * nu); return [c, c * nu, 0, c * nu, c, 0, 0, 0, (c * (1 - nu)) / 2]; }
+  /* Shape-function derivatives at one Gauss point: fills dx, dy (length 4) and returns det J. */
+  /** @param {number[]} X @param {number[]} Y @param {number} xi @param {number} eta @param {number[]} dx @param {number[]} dy */
+  function shapeDerivs(X, Y, xi, eta, dx, dy) {
+    const nxi = [-(1 - eta) / 4, (1 - eta) / 4, (1 + eta) / 4, -(1 + eta) / 4];
+    const neta = [-(1 - xi) / 4, -(1 + xi) / 4, (1 + xi) / 4, (1 - xi) / 4];
+    let xx = 0, yx = 0, xe = 0, ye = 0;
+    for (let a = 0; a < 4; a++) { xx += nxi[a] * X[a]; yx += nxi[a] * Y[a]; xe += neta[a] * X[a]; ye += neta[a] * Y[a]; }
+    const det = xx * ye - yx * xe;
+    for (let a = 0; a < 4; a++) { dx[a] = (ye * nxi[a] - yx * neta[a]) / det; dy[a] = (-xe * nxi[a] + xx * neta[a]) / det; }
+    return det;
+  }
+  /** @param {number[]} X @param {number[]} Y @param {number} t @param {number[]} D @param {Float64Array} Ke */
+  function quadStiffness(X, Y, t, D, Ke) {
+    Ke.fill(0);
+    const dx = [0, 0, 0, 0], dy = [0, 0, 0, 0], B = new Float64Array(24), DB = new Float64Array(24);
+    for (const [xi, eta] of GP) {
+      const det = shapeDerivs(X, Y, xi, eta, dx, dy);
+      B.fill(0);
+      for (let a = 0; a < 4; a++) { B[2 * a] = dx[a]; B[8 + 2 * a + 1] = dy[a]; B[16 + 2 * a] = dy[a]; B[16 + 2 * a + 1] = dx[a]; }
+      for (let r = 0; r < 3; r++) for (let c = 0; c < 8; c++) DB[8 * r + c] = D[3 * r] * B[c] + D[3 * r + 1] * B[8 + c] + D[3 * r + 2] * B[16 + c];
+      const w = det * t;
+      for (let i = 0; i < 8; i++) for (let j = 0; j < 8; j++) Ke[8 * i + j] += w * (B[i] * DB[j] + B[8 + i] * DB[8 + j] + B[16 + i] * DB[16 + j]);
+    }
+  }
+
+  /* ---------- checks before assembly ---------- */
+  /** The first reason the model cannot be solved, or null. @param {Model} m @returns {{ code: string, message: string } | null} */
+  function checkModel(m) {
+    const nn = m.coords.length / 2, nq = m.quads.length / 4, nb = m.bars.length / 2;
+    const X = [0, 0, 0, 0], Y = [0, 0, 0, 0], dx = [0, 0, 0, 0], dy = [0, 0, 0, 0];
+    for (let e = 0; e < nq; e++) {
+      for (let a = 0; a < 4; a++) { const n = m.quads[4 * e + a]; X[a] = m.coords[2 * n]; Y[a] = m.coords[2 * n + 1]; }
+      const scale = (X[2] - X[0]) ** 2 + (Y[2] - Y[0]) ** 2 + (X[3] - X[1]) ** 2 + (Y[3] - Y[1]) ** 2;
+      if (!(scale > 0)) return { code: "degenerate", message: `Element ${e} is degenerate: its corners coincide.` };
+      for (let a = 0; a < 4; a++) {
+        const p = (a + 3) % 4, n = (a + 1) % 4;
+        const cross = (X[n] - X[a]) * (Y[p] - Y[a]) - (Y[n] - Y[a]) * (X[p] - X[a]);
+        if (cross <= 1e-10 * scale) return { code: cross < 0 ? "inverted" : "degenerate", message: `Element ${e} is ${cross < 0 ? "inverted or non-convex" : "degenerate"} at corner ${a}: its nodes must run counter-clockwise around a convex quadrilateral.` };
+      }
+      for (const [xi, eta] of GP) if (!(shapeDerivs(X, Y, xi, eta, dx, dy) > 0)) return { code: "inverted", message: `Element ${e} has a non-positive Jacobian at a Gauss point.` };
+      if (!(m.thick[e] > 0) || !Number.isFinite(m.thick[e])) return { code: "thickness", message: `Element ${e} needs a positive thickness.` };
+    }
+    for (let b = 0; b < nb; b++) {
+      const i = m.bars[2 * b], j = m.bars[2 * b + 1];
+      if (!(Math.hypot(m.coords[2 * j] - m.coords[2 * i], m.coords[2 * j + 1] - m.coords[2 * i + 1]) > 0)) return { code: "degenerate", message: `Bar ${b} has zero length.` };
+      if (!(m.barA[b] >= 0)) return { code: "area", message: `Bar ${b} needs a non-negative area.` };
+    }
+    // Connectivity through elements that carry stiffness: one component holding every node.
+    const parent = Int32Array.from({ length: nn }, (_, i) => i);
+    const findRoot = (/** @type {number} */ i) => { while (parent[i] !== i) { parent[i] = parent[parent[i]]; i = parent[i]; } return i; };
+    const join = (/** @type {number} */ a, /** @type {number} */ b) => { const ra = findRoot(a), rb = findRoot(b); if (ra !== rb) parent[ra] = rb; };
+    const used = new Uint8Array(nn);
+    for (let e = 0; e < nq; e++) for (let a = 0; a < 4; a++) { used[m.quads[4 * e + a]] = 1; if (a) join(m.quads[4 * e], m.quads[4 * e + a]); }
+    for (let b = 0; b < nb; b++) if (m.barA[b] > 0) { used[m.bars[2 * b]] = used[m.bars[2 * b + 1]] = 1; join(m.bars[2 * b], m.bars[2 * b + 1]); }
+    for (let n = 0; n < nn; n++) if (!used[n]) return { code: "disconnected", message: `Node ${n} is attached to no element with stiffness: the mesh is disconnected.` };
+    const r0 = findRoot(0);
+    for (let n = 1; n < nn; n++) if (findRoot(n) !== r0) return { code: "disconnected", message: `The mesh is disconnected: node ${n} is not connected to node 0.` };
+    // The restraints must remove the three in-plane rigid-body motions.
+    let cx = 0, cy = 0, sc = 0;
+    for (const d of m.fixed) { const n = d >> 1; cx += m.coords[2 * n]; cy += m.coords[2 * n + 1]; }
+    cx /= m.fixed.length || 1; cy /= m.fixed.length || 1;
+    for (let n = 0; n < nn; n++) sc = Math.max(sc, Math.abs(m.coords[2 * n] - cx), Math.abs(m.coords[2 * n + 1] - cy));
+    const Gm = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+    for (const d of m.fixed) {
+      const n = d >> 1, x = (m.coords[2 * n] - cx) / (sc || 1), y = (m.coords[2 * n + 1] - cy) / (sc || 1);
+      const r = d & 1 ? [0, 1, x] : [1, 0, -y];
+      for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) Gm[3 * i + j] += r[i] * r[j];
+    }
+    const det3 = Gm[0] * (Gm[4] * Gm[8] - Gm[5] * Gm[7]) - Gm[1] * (Gm[3] * Gm[8] - Gm[5] * Gm[6]) + Gm[2] * (Gm[3] * Gm[7] - Gm[4] * Gm[6]);
+    if (!(det3 > 1e-9)) return { code: "singular", message: "The restraints do not remove all rigid-body motion (two translations and a rotation): the stiffness matrix is singular." };
+    return null;
+  }
+
+  /* ---------- sparse assembly ---------- */
+  /** @param {Model} m @param {number[]} D @returns {Assembled} */
+  function assemble(m, D) {
+    const nn = m.coords.length / 2, nq = m.quads.length / 4, nb = m.bars.length / 2;
+    const nbr = Array.from({ length: nn }, (_, n) => [n]);
+    const link = (/** @type {number} */ a, /** @type {number} */ b) => { if (!nbr[a].includes(b)) nbr[a].push(b); };
+    for (let e = 0; e < nq; e++) for (let a = 0; a < 4; a++) for (let b = 0; b < 4; b++) link(m.quads[4 * e + a], m.quads[4 * e + b]);
+    for (let b = 0; b < nb; b++) { link(m.bars[2 * b], m.bars[2 * b + 1]); link(m.bars[2 * b + 1], m.bars[2 * b]); }
+    for (const l of nbr) l.sort((a, b) => a - b);
+    const ndof = 2 * nn, rowPtr = new Int32Array(ndof + 1);
+    for (let n = 0; n < nn; n++) { rowPtr[2 * n + 1] = rowPtr[2 * n] + 2 * nbr[n].length; rowPtr[2 * n + 2] = rowPtr[2 * n + 1] + 2 * nbr[n].length; }
+    const nnz = rowPtr[ndof], cols = new Int32Array(nnz), vals = new Float64Array(nnz);
+    for (let n = 0; n < nn; n++) for (let c = 0; c < 2; c++) { let p = rowPtr[2 * n + c]; for (const k of nbr[n]) { cols[p++] = 2 * k; cols[p++] = 2 * k + 1; } }
+    /** @type {(na: number, nbn: number, ca: number, cb: number, v: number) => void} */
+    const add = (na, nbn, ca, cb, v) => { const r = 2 * na + ca, idx = nbr[na].indexOf(nbn); vals[rowPtr[r] + 2 * idx + cb] += v; };
+    const Ke = new Float64Array(64), X = [0, 0, 0, 0], Y = [0, 0, 0, 0];
+    for (let e = 0; e < nq; e++) {
+      for (let a = 0; a < 4; a++) { const n = m.quads[4 * e + a]; X[a] = m.coords[2 * n]; Y[a] = m.coords[2 * n + 1]; }
+      quadStiffness(X, Y, m.thick[e], D, Ke);
+      for (let a = 0; a < 4; a++) for (let b = 0; b < 4; b++) for (let ca = 0; ca < 2; ca++) for (let cb = 0; cb < 2; cb++) add(m.quads[4 * e + a], m.quads[4 * e + b], ca, cb, Ke[8 * (2 * a + ca) + 2 * b + cb]);
+    }
+    for (let b = 0; b < nb; b++) {
+      const i = m.bars[2 * b], j = m.bars[2 * b + 1];
+      const dxl = m.coords[2 * j] - m.coords[2 * i], dyl = m.coords[2 * j + 1] - m.coords[2 * i + 1], L = Math.hypot(dxl, dyl);
+      const k = (m.E * m.barA[b]) / L, c = dxl / L, s = dyl / L, kk = [c * c, c * s, c * s, s * s];
+      for (const [p, q, sg] of [[i, i, 1], [j, j, 1], [i, j, -1], [j, i, -1]]) for (let ca = 0; ca < 2; ca++) for (let cb = 0; cb < 2; cb++) add(p, q, ca, cb, sg * k * kk[2 * ca + cb]);
+    }
+    return { ndof, rowPtr, cols, vals, nnz };
+  }
+  /** y = K x. @param {Csr} K @param {Float64Array} x @param {Float64Array} y */
+  function csrMul(K, x, y) {
+    for (let r = 0; r < K.n; r++) { let s = 0; for (let p = K.rowPtr[r]; p < K.rowPtr[r + 1]; p++) s += K.vals[p] * x[K.cols[p]]; y[r] = s; }
+  }
+
+  /* ---------- solver ---------- */
+  /** @param {string} code @param {string} message @param {Partial<Diagnostics>} diag @returns {SolveFailure} */
+  function fail(code, message, diag) { return { ok: false, error: { code, message }, diag }; }
+
+  /* Solve one model: { coords, quads, thick, bars, barA, E, nu, fixed, fixedVal, f }. Returns the
+     displacements, reactions, Gauss-point stresses, bar forces, energy and diagnostics, or ok: false
+     with the reason. A failed solve returns no results to display. */
+  /** @param {Model} m @param {SolveOptions} [opts] @returns {Solution | SolveFailure} */
+  function solve(m, opts = {}) {
+    const maxIter = opts.maxIterations || LIMITS.maxIterations, relTol = opts.relTol || LIMITS.relTol, onProgress = opts.onProgress || null;
+    const nn = m.coords.length / 2, nq = m.quads.length / 4, nb = m.bars.length / 2;
+    // Filled in as the solve proceeds; complete once it succeeds.
+    const diag = /** @type {Diagnostics} */ ({ nodes: nn, dofs: 2 * nn, quads: nq, bars: nb, fixedDofs: m.fixed.length });
+    if (!(m.E > 0) || !(m.nu > -1 && m.nu < 0.5)) return fail("material", "Invalid material: E must be positive and Poisson's ratio between −1 and 0.5.", diag);
+    if (nn > LIMITS.maxNodes) return fail("limit", `The mesh has ${nn} nodes; the limit is ${LIMITS.maxNodes}.`, diag);
+    const bad = checkModel(m);
+    if (bad) return fail(bad.code, bad.message, diag);
+    const D = dMatrix(m.E, m.nu), K = assemble(m, D);
+    const ndof = K.ndof;
+    diag.nnz = K.nnz;
+    // Eliminate the prescribed degrees of freedom.
+    const isFixed = new Uint8Array(ndof), up = new Float64Array(ndof);
+    m.fixed.forEach((d, k) => { isFixed[d] = 1; up[d] = m.fixedVal[k] || 0; });
+    /** @type {number[]} */
+    const free = [];
+    const map = new Int32Array(ndof).fill(-1);
+    for (let d = 0; d < ndof; d++) if (!isFixed[d]) { map[d] = free.length; free.push(d); }
+    const nf = free.length;
+    diag.freeDofs = nf;
+    const rp = new Int32Array(nf + 1);
+    for (let r = 0; r < nf; r++) { let c = 0; const d = free[r]; for (let p = K.rowPtr[d]; p < K.rowPtr[d + 1]; p++) if (map[K.cols[p]] >= 0) c++; rp[r + 1] = rp[r] + c; }
+    const rc = new Int32Array(rp[nf]), rv = new Float64Array(rp[nf]), b = new Float64Array(nf), dg = new Float64Array(nf);
+    for (let r = 0; r < nf; r++) {
+      const d = free[r]; let q = rp[r]; b[r] = m.f[d];
+      for (let p = K.rowPtr[d]; p < K.rowPtr[d + 1]; p++) {
+        const c = map[K.cols[p]];
+        if (c >= 0) { rc[q] = c; rv[q] = K.vals[p]; if (c === r) dg[r] = K.vals[p]; q++; } else b[r] -= K.vals[p] * up[K.cols[p]];
+      }
+    }
+    for (let r = 0; r < nf; r++) if (!(dg[r] > 0)) return fail("singular", `Degree of freedom ${free[r]} has no stiffness: the stiffness matrix is singular.`, diag);
+    const Kr = { n: nf, rowPtr: rp, cols: rc, vals: rv };
+    // Jacobi-preconditioned conjugate gradient.
+    const x = new Float64Array(nf), r = Float64Array.from(b), z = new Float64Array(nf), p = new Float64Array(nf), Ap = new Float64Array(nf);
+    const dot = (/** @type {Float64Array} */ u, /** @type {Float64Array} */ v) => { let s = 0; for (let i = 0; i < u.length; i++) s += u[i] * v[i]; return s; };
+    const bnorm = Math.sqrt(dot(b, b));
+    let iter = 0, rel = 0;
+    if (!Number.isFinite(bnorm)) return fail("nonfinite", "The load vector is not finite.", diag);
+    if (bnorm > 0) {
+      for (let i = 0; i < nf; i++) { z[i] = r[i] / dg[i]; p[i] = z[i]; }
+      let rz = dot(r, z);
+      rel = 1;
+      for (iter = 1; iter <= maxIter; iter++) {
+        csrMul(Kr, p, Ap);
+        const pAp = dot(p, Ap);
+        let pDp = 0;
+        for (let i = 0; i < nf; i++) pDp += p[i] * p[i] * dg[i];
+        if (!Number.isFinite(pAp)) return fail("nonfinite", `Non-finite value in the conjugate-gradient iteration ${iter}.`, { ...diag, iterations: iter });
+        if (!(pAp > 1e-13 * pDp)) return fail("curvature", `Non-positive curvature (pᵀKp ≤ 0) at iteration ${iter}: the stiffness matrix is singular or indefinite.`, { ...diag, iterations: iter });
+        const alpha = rz / pAp;
+        for (let i = 0; i < nf; i++) { x[i] += alpha * p[i]; r[i] -= alpha * Ap[i]; }
+        rel = Math.sqrt(dot(r, r)) / bnorm;
+        if (!Number.isFinite(rel)) return fail("nonfinite", `Non-finite residual at iteration ${iter}.`, { ...diag, iterations: iter });
+        if (onProgress && iter % 200 === 0) onProgress({ iteration: iter, residual: rel });
+        if (rel <= relTol) break;
+        for (let i = 0; i < nf; i++) z[i] = r[i] / dg[i];
+        const rzNew = dot(r, z), beta = rzNew / rz;
+        rz = rzNew;
+        for (let i = 0; i < nf; i++) p[i] = z[i] + beta * p[i];
+      }
+      if (iter > maxIter) return fail("iterations", `The conjugate-gradient solve did not converge in ${maxIter} iterations (relative residual ${rel.toExponential(2)}). Coarsen the mesh or check the model.`, { ...diag, iterations: maxIter, relResidual: rel });
+    }
+    // Check the true residual, not only the recurrence.
+    const Kx = new Float64Array(nf);
+    csrMul(Kr, x, Kx);
+    let rr = 0;
+    for (let i = 0; i < nf; i++) rr += (b[i] - Kx[i]) ** 2;
+    const trueRel = bnorm > 0 ? Math.sqrt(rr) / bnorm : 0;
+    diag.iterations = iter; diag.relResidual = rel; diag.trueResidual = trueRel;
+    if (!(trueRel <= LIMITS.residualCheck)) return fail("residual", `The solution fails the residual check: ‖f − Ku‖/‖f‖ = ${trueRel.toExponential(2)}.`, diag);
+    // Recover displacements, reactions, energy, bar forces and Gauss-point stresses.
+    const u = Float64Array.from(up);
+    for (let i = 0; i < nf; i++) u[free[i]] = x[i];
+    for (let i = 0; i < ndof; i++) if (!Number.isFinite(u[i])) return fail("nonfinite", "Non-finite displacement.", diag);
+    const Ku = new Float64Array(ndof);
+    csrMul({ n: ndof, rowPtr: K.rowPtr, cols: K.cols, vals: K.vals }, u, Ku);
+    const R = new Float64Array(ndof);
+    let work = 0, energy2 = 0, fx = 0, fy = 0, mz = 0, scale = 0;
+    for (let n = 0; n < nn; n++) for (let c = 0; c < 2; c++) {
+      const d = 2 * n + c;
+      if (isFixed[d]) R[d] = Ku[d] - m.f[d];
+      work += m.f[d] * u[d];
+      energy2 += u[d] * Ku[d];
+      const tot = m.f[d] + R[d];
+      if (c === 0) { fx += tot; mz -= m.coords[2 * n + 1] * tot; } else { fy += tot; mz += m.coords[2 * n] * tot; }
+      scale += Math.abs(m.f[d]) + Math.abs(R[d]);
+    }
+    let size = 0;
+    for (let n = 0; n < nn; n++) size = Math.max(size, Math.abs(m.coords[2 * n]), Math.abs(m.coords[2 * n + 1]));
+    /* Loop results leave this function through typed arrays and property stores, never as double
+       fields of an object literal: under concurrent recompilation, V8 in Node 26 was seen to share
+       such a field's number box between the A and B results, so A reported B's compliance. */
+    const sums = Float64Array.of(work, energy2 / 2, fx, fy, mz, scale, size);
+    const eq = /** @type {Equilibrium} */ ({});
+    eq.Fx = sums[2]; eq.Fy = sums[3]; eq.Mz = sums[4]; eq.forceScale = sums[5];
+    eq.relForce = sums[5] ? Math.hypot(sums[2], sums[3]) / sums[5] : 0;
+    eq.relMoment = sums[5] ? Math.abs(sums[4]) / (sums[5] * (sums[6] || 1)) : 0;
+    diag.equilibrium = eq;
+    const gp = new Float64Array(8 * nq), sig = new Float64Array(12 * nq);
+    const X = [0, 0, 0, 0], Y = [0, 0, 0, 0], dx = [0, 0, 0, 0], dy = [0, 0, 0, 0];
+    for (let e = 0; e < nq; e++) {
+      for (let a = 0; a < 4; a++) { const n = m.quads[4 * e + a]; X[a] = m.coords[2 * n]; Y[a] = m.coords[2 * n + 1]; }
+      GP.forEach(([xi, eta], k) => {
+        shapeDerivs(X, Y, xi, eta, dx, dy);
+        const N = [(1 - xi) * (1 - eta) / 4, (1 + xi) * (1 - eta) / 4, (1 + xi) * (1 + eta) / 4, (1 - xi) * (1 + eta) / 4];
+        let ex = 0, ey = 0, gxy = 0, px = 0, py = 0;
+        for (let a = 0; a < 4; a++) {
+          const n = m.quads[4 * e + a], ux = u[2 * n], uy = u[2 * n + 1];
+          ex += dx[a] * ux; ey += dy[a] * uy; gxy += dy[a] * ux + dx[a] * uy; px += N[a] * X[a]; py += N[a] * Y[a];
+        }
+        const o = 3 * (4 * e + k);
+        sig[o] = D[0] * ex + D[1] * ey; sig[o + 1] = D[3] * ex + D[4] * ey; sig[o + 2] = D[8] * gxy;
+        gp[2 * (4 * e + k)] = px; gp[2 * (4 * e + k) + 1] = py;
+      });
+    }
+    const barN = new Float64Array(nb);
+    for (let b2 = 0; b2 < nb; b2++) {
+      const i = m.bars[2 * b2], j = m.bars[2 * b2 + 1];
+      const dxl = m.coords[2 * j] - m.coords[2 * i], dyl = m.coords[2 * j + 1] - m.coords[2 * i + 1], L = Math.hypot(dxl, dyl);
+      barN[b2] = ((m.E * m.barA[b2]) / L) * (((u[2 * j] - u[2 * i]) * dxl + (u[2 * j + 1] - u[2 * i + 1]) * dyl) / L);
+    }
+    // scalars: [compliance fᵀu, strain energy ½uᵀKu].
+    return { ok: true, u, R, gp, sig, barN, scalars: sums.subarray(0, 2), diag };
+  }
+
+  /* ---------- the comparison ---------- */
+  /** 0 excluded, 1 patch interior, 2 skin at the doubler edges, 3 surrounding skin.
+      @param {number} x @param {number} y @param {State} s */
+  function regionOf(x, y, s) {
+    const { L, W } = s.panel, d = s.doubler, c = s.regions.exclude;
+    if (Math.min(x, L - x, y, W - y) < c) return 0;
+    for (const [cx, cy] of [[d.x0, d.y0], [d.x0 + d.Lx, d.y0], [d.x0 + d.Lx, d.y0 + d.Ly], [d.x0, d.y0 + d.Ly]]) if (Math.hypot(x - cx, y - cy) < c) return 0;
+    if (x > d.x0 && x < d.x0 + d.Lx && y > d.y0 && y < d.y0 + d.Ly) return 1;
+    const ddx = Math.max(d.x0 - x, 0, x - d.x0 - d.Lx), ddy = Math.max(d.y0 - y, 0, y - d.y0 - d.Ly);
+    return Math.hypot(ddx, ddy) <= s.regions.band ? 2 : 3;
+  }
+  const REGIONS = [null, { id: "doubler", label: "patch interior" }, { id: "band", label: "skin at doubler edges" }, { id: "skin", label: "surrounding skin" }];
+
+  /** @param {State} s @returns {ProbePoint[]} */
+  function probePoints(s) {
+    const { L, W } = s.panel, d = s.doubler, b = s.regions.band / 2;
+    const beside = [[d.x0 + d.Lx + b, d.y0 + d.Ly / 4], [d.x0 - b, d.y0 + d.Ly / 4], [d.x0 + d.Lx / 2, d.y0 + d.Ly + b], [d.x0 + d.Lx / 2, d.y0 - b]]
+      .find(([x, y]) => x >= 0 && x <= L && y >= 0 && y <= W);
+    return [
+      { id: "P1", label: "free corner", x: L, y: W, kind: "displacement" },
+      { id: "P2", label: "doubler centre", x: d.x0 + d.Lx / 2, y: d.y0 + d.Ly / 2, kind: "displacement" },
+      { id: "P3", label: "inside the patch", x: d.x0 + d.Lx / 2, y: d.y0 + d.Ly / 4, kind: "stress" },
+      ...(beside ? [{ id: "P4", label: "skin beside the patch", x: beside[0], y: beside[1], kind: "stress" }] : []),
+    ];
+  }
+  /** @param {number[]} arr @param {number} v */
+  function cellOf(arr, v) { let lo = 0, hi = arr.length - 2; if (v <= arr[0]) return 0; if (v >= arr[arr.length - 1]) return hi; while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (arr[mid] <= v) lo = mid; else hi = mid - 1; } return lo; }
+  /* Displacement at (x, y) by the bilinear shape functions of the element containing it. */
+  /** @param {BuiltModel} mdl @param {Float64Array} u @param {number} x @param {number} y */
+  function displacementAt(mdl, u, x, y) {
+    const i = cellOf(mdl.xs, x), j = cellOf(mdl.ys, y), nx = mdl.nx;
+    const a = (x - mdl.xs[i]) / (mdl.xs[i + 1] - mdl.xs[i]), b = (y - mdl.ys[j]) / (mdl.ys[j + 1] - mdl.ys[j]);
+    const n = [j * nx + i, j * nx + i + 1, (j + 1) * nx + i + 1, (j + 1) * nx + i], w = [(1 - a) * (1 - b), a * (1 - b), a * b, (1 - a) * b];
+    let ux = 0, uy = 0;
+    for (let k = 0; k < 4; k++) { ux += w[k] * u[2 * n[k]]; uy += w[k] * u[2 * n[k] + 1]; }
+    return { ux, uy, mag: Math.hypot(ux, uy), element: j * (nx - 1) + i };
+  }
+  /* The Gauss point nearest (x, y): searched in the containing element and its neighbours, ties to the lower index. */
+  /** @param {BuiltModel} mdl @param {Float64Array} gp @param {number} x @param {number} y */
+  function nearestGauss(mdl, gp, x, y) {
+    const ci = cellOf(mdl.xs, x), cj = cellOf(mdl.ys, y), ex = mdl.nx - 1, ey = mdl.ny - 1;
+    let best = -1, bd = Infinity;
+    for (let j = Math.max(0, cj - 1); j <= Math.min(ey - 1, cj + 1); j++) for (let i = Math.max(0, ci - 1); i <= Math.min(ex - 1, ci + 1); i++) {
+      const e = j * ex + i;
+      for (let k = 0; k < 4; k++) { const g = 4 * e + k, dd = Math.hypot(gp[2 * g] - x, gp[2 * g + 1] - y); if (dd < bd - 1e-12 || (Math.abs(dd - bd) <= 1e-12 && g < best)) { bd = dd; best = g; } }
+    }
+    return best;
+  }
+  /** @param {BuiltModel} mdl @param {Solution} sol @param {Float64Array} thick @param {number} g @returns {GaussRecord} */
+  function gaussRecord(mdl, sol, thick, g) {
+    const sx = sol.sig[3 * g], sy = sol.sig[3 * g + 1], txy = sol.sig[3 * g + 2], pr = principal(sx, sy, txy);
+    return { gauss: g, element: g >> 2, point: g & 3, x: sol.gp[2 * g], y: sol.gp[2 * g + 1], t: thick[g >> 2], sx, sy, txy, s1: pr.s1, s2: pr.s2, theta1Deg: (pr.theta1 * 180) / Math.PI, vm: pr.vm };
+  }
+  /* Everything one variant reports at a point: the nearest Gauss point's stresses and the displacement there. */
+  /** @param {Comparison} res @param {"A" | "B"} variant @param {number} x @param {number} y */
+  function probeAt(res, variant, x, y) {
+    const mdl = res.model, sol = res[variant], thick = variant === "A" ? mdl.tA : mdl.tB;
+    const g = nearestGauss(mdl, sol.gp, x, y), rec = gaussRecord(mdl, sol, thick, g), d = displacementAt(mdl, sol.u, x, y);
+    return { ...rec, at: { x, y }, ux: d.ux, uy: d.uy, u: d.mag, region: REGIONS[res.region[g]]?.id ?? "excluded" };
+  }
+
+  /** @param {State} s @param {BuiltModel} mdl @param {Solution} sol @param {Float64Array} thick @param {Uint8Array} region @param {string} variant
+      @returns {Summary} */
+  function summarize(s, mdl, sol, thick, region, variant) {
+    const rho = s.material.rho * 1e-9;
+    let vol = 0;
+    const ex = mdl.nx - 1;
+    for (let e = 0; e < thick.length; e++) { const i = e % ex, j = (e - i) / ex; vol += (mdl.xs[i + 1] - mdl.xs[i]) * (mdl.ys[j + 1] - mdl.ys[j]) * thick[e]; }
+    let barVol = 0;
+    for (let b = 0; b < mdl.barA.length; b++) barVol += mdl.barA[b] * Math.abs(mdl.coords[2 * mdl.bars[2 * b + 1]] - mdl.coords[2 * mdl.bars[2 * b]]);
+    const mass = { skin: rho * vol, stringers: rho * barVol, total: rho * (vol + barVol) };
+    const probes = probePoints(s).map((p) => {
+      const d = displacementAt(mdl, sol.u, p.x, p.y), g = nearestGauss(mdl, sol.gp, p.x, p.y);
+      return { ...p, ux: d.ux, uy: d.uy, u: d.mag, ...pick(gaussRecord(mdl, sol, thick, g), ["gauss", "element", "t", "sx", "sy", "txy", "s1", "s2", "theta1Deg", "vm"]), gx: sol.gp[2 * g], gy: sol.gp[2 * g + 1] };
+    });
+    /** @type {Record<string, RegionSummary>} */
+    const regions = {};
+    for (let r = 1; r <= 3; r++) {
+      /** @type {Extreme | null} */
+      let s1 = null, vm = null, tau = null;
+      let count = 0;
+      for (let g = 0; g < region.length; g++) if (region[g] === r) {
+        count++;
+        const pr = principal(sol.sig[3 * g], sol.sig[3 * g + 1], sol.sig[3 * g + 2]), at = (/** @type {number} */ v) => ({ value: v, gauss: g, element: g >> 2, x: sol.gp[2 * g], y: sol.gp[2 * g + 1] });
+        if (!s1 || pr.s1 > s1.value) s1 = at(pr.s1);
+        if (!vm || pr.vm > vm.value) vm = at(pr.vm);
+        if (!tau || Math.abs(sol.sig[3 * g + 2]) > tau.value) tau = at(Math.abs(sol.sig[3 * g + 2]));
+      }
+      const reg = /** @type {{ id: string, label: string }} */ (REGIONS[r]);
+      regions[reg.id] = { label: reg.label, gaussPoints: count, s1, vm, tau };
+    }
+    /** @type {StringerForce[]} */
+    const stringers = [];
+    const nS = mdl.stringerY.length;
+    for (let k = 0; k < nS; k++) {
+      let max = -Infinity, min = Infinity, mid = 0;
+      for (let i = 0; i < ex; i++) {
+        const b = k * ex + i, N = sol.barN[b];
+        max = Math.max(max, N); min = Math.min(min, N);
+        if (mdl.xs[i] <= s.panel.L / 2 && s.panel.L / 2 < mdl.xs[i + 1]) mid = N;
+      }
+      stringers.push({ y: mdl.stringerY[k], A: mdl.stringerA[k], Nmax: max, Nmin: min, Nmid: mid, maxAbs: Math.max(Math.abs(max), Math.abs(min)) });
+    }
+    // compliance and energy are stored after the literal; see solve() on V8 sharing number boxes.
+    const out = /** @type {Summary} */ ({ variant, mass, probes, regions, stringers, diagnostics: sol.diag });
+    out.compliance = sol.scalars[0]; out.energy = sol.scalars[1];
+    return out;
+  }
+  /** @type {<T extends object, K extends keyof T>(o: T, keys: K[]) => Pick<T, K>} */
+  const pick = (o, keys) => { const r = /** @type {Pick<typeof o, typeof keys[number]>} */ ({}); for (const k of keys) r[k] = o[k]; return r; };
+
+  /* A value below 1e-8 of its physical scale is solver round-off: it is reported as 0, and a change
+     from a zero baseline has no percentage. */
+  const NOISE = 1e-8;
+  /** @param {number} a @param {number} b @param {number} scale */
+  function change(a, b, scale) {
+    const snap = (/** @type {number} */ x) => (Math.abs(x) <= NOISE * scale ? 0 : x);
+    const a0 = snap(a), b0 = snap(b), delta = snap(b - a);
+    return { a: a0, b: b0, delta, pct: a0 !== 0 ? (100 * delta) / Math.abs(a0) : null };
+  }
+  /** @param {Summary} SA @param {Summary} SB @param {State} s @returns {Row[]} */
+  function comparisonRows(SA, SB, s) {
+    /** @type {Row[]} */
+    const rows = [];
+    /** @type {(id: string, label: string, unit: string, a: number, b: number, scale: number) => void} */
+    const row = (id, label, unit, a, b, scale) => rows.push({ id, label, unit, ...change(a, b, scale) });
+    const tau = Math.abs(s.load.q) / s.panel.t, force = Math.abs(s.load.q) * Math.max(s.panel.L, s.panel.W);
+    row("mass", "Mass", "kg", SA.mass.total, SB.mass.total, Math.max(SA.mass.total, SB.mass.total));
+    row("compliance", "Compliance fᵀu = 2U", "N·mm", SA.compliance, SB.compliance, Math.abs(SA.compliance));
+    const P = (/** @type {Summary} */ sm, /** @type {string} */ id) => /** @type {Probe} */ (sm.probes.find((p) => p.id === id));
+    row("P1.u", "Displacement |u|, P1 free corner", "mm", P(SA, "P1").u, P(SB, "P1").u, P(SA, "P1").u);
+    row("P2.u", "Displacement |u|, P2 doubler centre", "mm", P(SA, "P2").u, P(SB, "P2").u, P(SA, "P1").u);
+    row("P3.txy", "Shear τxy, P3 inside the patch", "MPa", P(SA, "P3").txy, P(SB, "P3").txy, tau);
+    if (P(SA, "P4")) row("P4.txy", "Shear τxy, P4 skin beside the patch", "MPa", P(SA, "P4").txy, P(SB, "P4").txy, tau);
+    for (const id of ["doubler", "band", "skin"]) {
+      const a = SA.regions[id].s1, b = SB.regions[id].s1;
+      if (a && b) row(`max.s1.${id}`, `Max σ1, ${SA.regions[id].label}`, "MPa", a.value, b.value, tau);
+    }
+    SA.stringers.forEach((st, k) => row(`stringer.${k}`, `Stringer y = ${fmt(st.y)} mm, max |N|`, "N", st.maxAbs, SB.stringers[k].maxAbs, force));
+    return rows;
+  }
+
+  /* Validate, mesh, solve A then B on the same mesh and load, and compare. onProgress receives
+     { stage, variant, iteration, residual }. Returns ok: false with errors or the failed solve. */
+  /** @param {unknown} input @param {((p: Progress) => void) | null} [onProgress] @param {SolveOptions} [opts]
+      @returns {Comparison | ComparisonFailure} */
+  function runComparison(input, onProgress, opts = {}) {
+    const v = validate(input);
+    if (!v.ok) return { ok: false, stage: "validate", errors: v.errors };
+    const s = v.state;
+    const progress = (/** @type {Progress} */ p) => { if (onProgress) onProgress(p); };
+    progress({ stage: "mesh" });
+    const mdl = buildModel(s);
+    const common = { coords: mdl.coords, quads: mdl.quads, bars: mdl.bars, barA: mdl.barA, E: s.material.E, nu: s.material.nu, fixed: mdl.fixed, fixedVal: mdl.fixedVal, f: mdl.f };
+    // Built up field by field and returned only once complete, with ok set last.
+    const out = /** @type {Comparison} */ (/** @type {unknown} */ ({ ok: false, state: s, model: mdl }));
+    for (const variant of /** @type {const} */ (["A", "B"])) {
+      progress({ stage: "solve", variant });
+      const sol = solve({ ...common, thick: variant === "A" ? mdl.tA : mdl.tB }, { ...opts, onProgress: (p) => progress({ stage: "solve", variant, ...p }) });
+      if (!sol.ok) return { ok: false, stage: "solve", variant, error: sol.error, diag: sol.diag, state: s };
+      out[variant] = sol;
+    }
+    progress({ stage: "compare" });
+    const region = new Uint8Array(mdl.quads.length);
+    for (let g = 0; g < region.length; g++) region[g] = regionOf(out.A.gp[2 * g], out.A.gp[2 * g + 1], s);
+    out.region = region;
+    out.summary = { A: summarize(s, mdl, out.A, mdl.tA, region, "A"), B: summarize(s, mdl, out.B, mdl.tB, region, "B") };
+    out.rows = comparisonRows(out.summary.A, out.summary.B, s);
+    // Integrity: the reported compliance must still be fᵀu of the displacements it came from.
+    for (const k of /** @type {const} */ (["A", "B"])) {
+      let w = 0;
+      for (let i = 0; i < mdl.f.length; i++) w += mdl.f[i] * out[k].u[i];
+      const got = [out[k].scalars[0], out.summary[k].compliance, /** @type {Row} */ (out.rows.find((x) => x.id === "compliance"))[k === "A" ? "a" : "b"]];
+      if (got.some((v) => !(Math.abs(v - w) <= 1e-9 * Math.abs(w)))) return { ok: false, stage: "solve", variant: k, error: { code: "integrity", message: `Internal consistency check failed: the compliance of ${k} does not match fᵀu. Run again.` }, diag: out[k].diag, state: s };
+    }
+    out.mesh = meshSummary(s, mdl);
+    out.ok = true;
+    return out;
+  }
+  /** @param {State} s @param {BuiltModel} mdl @returns {MeshSummary} */
+  function meshSummary(s, mdl) {
+    const ex = mdl.nx - 1, ey = mdl.ny - 1;
+    let hmin = Infinity, hmax = 0, aspect = 1;
+    for (let i = 0; i < ex; i++) for (let j = 0; j < ey; j++) {
+      const a = mdl.xs[i + 1] - mdl.xs[i], b = mdl.ys[j + 1] - mdl.ys[j];
+      hmin = Math.min(hmin, a, b); hmax = Math.max(hmax, a, b); aspect = Math.max(aspect, a / b, b / a);
+    }
+    let doublerEls = 0;
+    for (const v of mdl.inDoubler) doublerEls += v;
+    return { elementSize: s.mesh.h, nodes: mdl.nx * mdl.ny, quads: ex * ey, bars: mdl.barA.length, doublerElements: doublerEls, xLines: mdl.nx, yLines: mdl.ny, minEdge: hmin, maxEdge: hmax, maxAspect: aspect };
+  }
+
+  /* ---------- exports ---------- */
+  const r8 = (/** @type {number} */ x) => (Number.isFinite(x) ? Number(x.toPrecision(8)) : null);
+  /** @param {Comparison} res */
+  function diagnosticsOf(res) {
+    /** @type {(d: Diagnostics) => ExportedDiagnostics} */
+    const one = (d) => ({ nodes: d.nodes, dofs: d.dofs, freeDofs: d.freeDofs, quads: d.quads, bars: d.bars, nnz: d.nnz, iterations: d.iterations, relResidual: r8(d.relResidual), trueResidual: r8(d.trueResidual), relTol: LIMITS.relTol, equilibrium: { Fx: r8(d.equilibrium.Fx), Fy: r8(d.equilibrium.Fy), Mz: r8(d.equilibrium.Mz), relForce: r8(d.equilibrium.relForce), relMoment: r8(d.equilibrium.relMoment) } });
+    return { solver: "Jacobi-preconditioned conjugate gradient on the reduced sparse (CSR) stiffness", A: one(res.A.diag), B: one(res.B.diag) };
+  }
+  /** @param {unknown} input @param {Comparison | ComparisonFailure | null} res */
+  function modelJSON(input, res) {
+    const v = validate(input), s = v.state;
+    /** @type {Record<string, unknown>} */
+    const out = { schemaVersion: VERSION, visual: VISUAL, units: UNITS, assumptions: ASSUMPTIONS, limits: LIMITS, reference: NACA, state: s };
+    if (v.ok) {
+      const mdl = buildModel(s);
+      out.mesh = { ...meshSummary(s, mdl), xs: mdl.xs.map(r8), ys: mdl.ys.map(r8), restraints: mdl.restraints, load: { shearFlow: s.load.q, totalPerVerticalEdge: r8(mdl.totals.vertical), totalPerHorizontalEdge: r8(mdl.totals.horizontal) } };
+    } else out.validation = v.errors;
+    out.diagnostics = res && res.ok ? diagnosticsOf(res) : null;
+    return JSON.stringify(out, null, 2) + "\n";
+  }
+  const csvCell = (/** @type {unknown} */ v) => { const t = typeof v === "number" ? (Number.isFinite(v) ? String(r8(v)) : "") : v === null || v === undefined ? "" : String(v); return /[",\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t; };
+  /** @param {Comparison} res */
+  function resultsCSV(res) {
+    /** @type {string[]} */
+    const lines = [];
+    const s = res.state;
+    const put = (/** @type {unknown[]} */ ...cells) => lines.push(cells.map(csvCell).join(","));
+    put("# Diagonal tension: A = skin + stringers, B = A + doubler; same mesh, restraints and load");
+    put("# units", Object.entries(UNITS).map(([k, u]) => `${k} ${u}`).join("; "));
+    ASSUMPTIONS.forEach((a, i) => put(`# assumption ${i + 1}`, a));
+    put("# input", `L=${s.panel.L} W=${s.panel.W} t=${s.panel.t} | stringers ${s.stringers.map((x) => `y=${x.y} A=${x.A}`).join("; ") || "none"} | doubler x0=${s.doubler.x0} y0=${s.doubler.y0} Lx=${s.doubler.Lx} Ly=${s.doubler.Ly} t=${s.doubler.t} | E=${s.material.E} nu=${s.material.nu} rho=${s.material.rho} | q=${s.load.q} | h=${s.mesh.h} | exclude=${s.regions.exclude} band=${s.regions.band}`);
+    const m = res.mesh;
+    put("# mesh", `${m.nodes} nodes, ${m.quads} quadrilaterals, ${m.bars} bars, ${m.doublerElements} doubler elements, edges ${r8(m.minEdge)} to ${r8(m.maxEdge)} mm, max aspect ${r8(m.maxAspect)}`);
+    const dg = diagnosticsOf(res);
+    for (const k of /** @type {const} */ (["A", "B"])) put(`# solver ${k}`, `${dg.solver}: ${dg[k].iterations} iterations, relative residual ${dg[k].relResidual}, true residual ${dg[k].trueResidual}, equilibrium force ${dg[k].equilibrium.relForce} moment ${dg[k].equilibrium.relMoment}`);
+    put("quantity", "unit", "A", "B", "change", "change_percent");
+    for (const r of res.rows) put(r.label, r.unit, r.a, r.b, r.delta, r.pct);
+    put("");
+    put("probe", "variant", "x", "y", "gauss_x", "gauss_y", "element", "thickness_mm", "ux_mm", "uy_mm", "sx_MPa", "sy_MPa", "txy_MPa", "s1_MPa", "s2_MPa", "theta1_deg", "von_mises_MPa");
+    for (const k of /** @type {const} */ (["A", "B"])) for (const p of res.summary[k].probes) put(p.id, k, p.x, p.y, p.gx, p.gy, p.element, p.t, p.ux, p.uy, p.sx, p.sy, p.txy, p.s1, p.s2, p.theta1Deg, p.vm);
+    put("");
+    put("region", "variant", "gauss_points", "max_s1_MPa", "max_s1_x", "max_s1_y", "max_von_mises_MPa", "max_abs_txy_MPa");
+    for (const k of /** @type {const} */ (["A", "B"])) for (const [id, r] of Object.entries(res.summary[k].regions)) put(id, k, r.gaussPoints, r.s1 && r.s1.value, r.s1 && r.s1.x, r.s1 && r.s1.y, r.vm && r.vm.value, r.tau && r.tau.value);
+    put("");
+    put("stringer_y_mm", "area_mm2", "variant", "N_max_N", "N_min_N", "N_midspan_N");
+    for (let i = 0; i < res.summary.A.stringers.length; i++) for (const k of /** @type {const} */ (["A", "B"])) { const st = res.summary[k].stringers[i]; put(st.y, st.A, k, st.Nmax, st.Nmin, st.Nmid); }
+    return lines.join("\n") + "\n";
+  }
+
+  /* ---------- beamdswitch report (built only from a validated run) ---------- */
+  const say = (/** @type {number} */ x, d = 3) => { const t = fmt(Math.abs(x), d).replace(/,/g, ""); return (x < 0 ? "minus " : "") + t; };
+  /** @param {Comparison | ComparisonFailure | null} res */
+  function beamdswitchReport(res) {
+    if (!res || !res.ok) throw new Error("Run the comparison first: the report needs a validated solve.");
+    const s = res.state, A = res.summary.A, B = res.summary.B, row = (/** @type {string} */ id) => res.rows.find((r) => r.id === id);
+    // Every comparison has the mass, compliance and P3 rows; P4 and the region rows depend on the geometry.
+    const mass = /** @type {Row} */ (row("mass")), comp = /** @type {Row} */ (row("compliance")), p3 = /** @type {Row} */ (row("P3.txy")), p4 = row("P4.txy");
+    const reg = /** @type {{ id: string, r: Row, label: string }[]} */ (["doubler", "band", "skin"].map((id) => ({ id, r: row(`max.s1.${id}`), label: A.regions[id].label })).filter((x) => x.r));
+    const tau0 = s.load.q / s.panel.t;
+    const eq = Math.max(res.A.diag.equilibrium.relForce, res.B.diag.equilibrium.relForce);
+    const strRows = A.stringers.map((st, k) => ({ st, r: /** @type {Row} */ (row(`stringer.${k}`)) }));
+    const strTable = strRows.map(({ st, r }) => `| ${fmt(st.y)} | ${fmt(st.A)} | ${fmt(r.a)} | ${fmt(r.b)} |`).join("\n");
+    const size = (/** @type {{ r: Row }} */ x) => (x.r.pct == null ? -Infinity : Math.abs(x.r.pct)), biggest = reg.slice().sort((a, b) => size(b) - size(a))[0];
+    return {
+      meta: { title: "Diagonal tension: skin, stringers and a doubler", subtitle: `At q = ${fmt(s.load.q)} N/mm, adding a ${fmt(s.doubler.Lx)} × ${fmt(s.doubler.Ly)} × ${fmt(s.doubler.t)} mm doubler`, voice: "bf_emma" },
+      narration: `A linear elastic comparison of an aluminium panel in shear, with and without a doubler, at the same load. Lengths are in millimetres, forces in newtons and stresses in megapascals.`,
+      setup: [
+        {
+          title: `The panel: ${fmt(s.panel.L)} × ${fmt(s.panel.W)} × ${fmt(s.panel.t)} mm skin with ${s.stringers.length} stringer${s.stringers.length === 1 ? "" : "s"}`,
+          body: `- Stringers along x at y = ${s.stringers.map((x) => fmt(x.y)).join(", ") || "none"} mm, areas ${s.stringers.map((x) => fmt(x.A)).join(", ") || "none"} mm²\n- Doubler at x0 = ${fmt(s.doubler.x0)}, y0 = ${fmt(s.doubler.y0)} mm, ${fmt(s.doubler.Lx)} × ${fmt(s.doubler.Ly)} × ${fmt(s.doubler.t)} mm, same material, perfectly attached\n- E = ${fmt(s.material.E)} MPa, ν = ${fmt(s.material.nu)}, density ${fmt(s.material.rho)} kg/m³ (demonstration values)\n- Shear flow q = ${fmt(s.load.q)} N/mm on every edge; restraints ux = uy = 0 at (0, 0) and uy = 0 at (L, 0)`,
+          notes: "Variant A is skin plus stringers; variant B adds the doubler. Both use the same mesh, restraints and load. Material values are demonstration inputs, not allowables.",
+          narration: `The skin is ${say(s.panel.L)} by ${say(s.panel.W)} millimetres and ${say(s.panel.t)} millimetre thick, with ${s.stringers.length} stringers running along its length. The doubler is ${say(s.doubler.Lx)} by ${say(s.doubler.Ly)} millimetres and ${say(s.doubler.t)} millimetre thick. A shear flow of ${say(s.load.q)} newtons per millimetre acts on every edge, the same for both variants.`,
+        },
+      ],
+      method: [
+        {
+          title: `Plane-stress quadrilaterals and axial bars on one ${res.mesh.nodes}-node mesh`,
+          body: `- ${res.mesh.quads} four-node quadrilaterals (2 × 2 Gauss points), ${res.mesh.bars} axial bars, mesh split at every stringer and doubler edge\n- Doubler: local membrane thickness t + t_d\n- Sparse stiffness, prescribed degrees of freedom eliminated, Jacobi-preconditioned conjugate gradient\n\n$$ m = \\tfrac{\\sigma_x + \\sigma_y}{2},\\quad r = \\sqrt{\\left(\\tfrac{\\sigma_x - \\sigma_y}{2}\\right)^2 + \\tau_{xy}^2},\\quad \\sigma_{1,2} = m \\pm r $$`,
+          notes: "This is a pre-buckling model: it gives the diagonal principal tension and how stress redistributes, not a post-buckling tension field, stringer crippling, fastener slip or one-sided doubler bending.",
+          narration: `The skin is meshed with four node plane stress elements and the stringers with axial bars, on ${res.mesh.nodes} nodes. Both variants are solved by a preconditioned conjugate gradient method, and principal stresses come from the unsmoothed Gauss point stresses.`,
+        },
+      ],
+      results: [
+        {
+          title: `Mass ${fmtPct(mass.pct)}, compliance ${fmtPct(comp.pct)}`,
+          body: `| Quantity | A | B | Change |\n|---|---|---|---|\n| Mass (kg) | ${fmt(mass.a)} | ${fmt(mass.b)} | ${fmtPct(mass.pct)} |\n| Compliance fᵀu (N·mm) | ${fmt(comp.a)} | ${fmt(comp.b)} | ${fmtPct(comp.pct)} |\n| τxy at P3, inside the patch (MPa) | ${fmtSigned(p3.a)} | ${fmtSigned(p3.b)} | ${fmtPct(p3.pct)} |${p4 ? `\n| τxy at P4, skin beside it (MPa) | ${fmtSigned(p4.a)} | ${fmtSigned(p4.b)} | ${fmtPct(p4.pct)} |` : ""}`,
+          narration: `The doubler adds ${say(mass.b - mass.a)} kilograms and ${comp.delta < 0 ? "lowers" : comp.delta > 0 ? "raises" : "leaves"} the compliance${comp.delta ? ` by ${say(Math.abs(comp.pct ?? 0))} percent` : " unchanged"}. Inside the patch the shear stress goes from ${say(p3.a)} to ${say(p3.b)} megapascals${p4 ? `; in the skin beside it, from ${say(p4.a)} to ${say(p4.b)}` : ""}.`,
+        },
+        {
+          title: `Principal tension by region: ${reg.map((x) => `${x.label} ${fmtPct(x.r.pct)}`).join(", ")}`,
+          body: `| Region | Max σ1, A (MPa) | Max σ1, B (MPa) | Change |\n|---|---|---|---|\n${reg.map((x) => `| ${x.label} | ${fmt(x.r.a)} | ${fmt(x.r.b)} | ${fmtPct(x.r.pct)} |`).join("\n")}\n\nExcluded: within ${fmt(s.regions.exclude)} mm of the panel edges and of each doubler corner.`,
+          notes: "Lower stress inside the patch can shift stress elsewhere: read the doubler-edge band and the surrounding skin, not only the patch.",
+          narration: `${reg.map((x) => `In the ${x.label}, the largest principal tension goes from ${say(x.r.a)} to ${say(x.r.b)} megapascals.`).join(" ")} Zones next to the panel edges and the doubler corners are excluded, because stresses there are singular.`,
+        },
+        {
+          title: "Stringer axial forces",
+          body: A.stringers.length ? `| y (mm) | A (mm²) | max abs N, A (N) | max abs N, B (N) |\n|---|---|---|---|\n${strTable}` : "- No stringers in this model.",
+          narration: A.stringers.length ? `The largest stringer force is ${say(Math.max(...strRows.map((x) => x.r.a)))} newtons without the doubler and ${say(Math.max(...strRows.map((x) => x.r.b)))} newtons with it: the stringers collect load where the doubler edges meet them.` : "This model has no stringers.",
+        },
+      ],
+      checks: [
+        {
+          title: "Equilibrium and convergence of both solves",
+          body: `- A: ${res.A.diag.iterations} CG iterations, true residual ${res.A.diag.trueResidual.toExponential(1)}\n- B: ${res.B.diag.iterations} CG iterations, true residual ${res.B.diag.trueResidual.toExponential(1)}\n- Force balance of loads and reactions, relative: ${eq.toExponential(1)}\n- Uniform-skin reference: τ = q/t = ${fmt(tau0)} MPa`,
+          narration: `Both solves converged, and the loads and reactions balance ${eq < 1e-9 ? "to better than one part in a billion" : `to within ${say(eq * 100, 2)} percent`}. Without a doubler the skin is in pure shear at ${say(tau0)} megapascals, which is the closed form value.`,
+        },
+        {
+          title: "Takeaway",
+          key: `At q = ${fmt(s.load.q)} N/mm the doubler adds ${fmt(mass.b - mass.a)} kg (${fmtPct(mass.pct)}) and changes compliance by ${fmtPct(comp.pct)}; the largest change in principal tension is in the ${biggest ? biggest.label : "panel"} (${biggest ? fmtPct(biggest.r.pct) : "—"}).`,
+          narration: `The doubler adds ${say(mass.b - mass.a)} kilograms. It lowers stress inside the patch, but check the doubler edges and the stringers, where load moves.`,
+        },
+      ],
+    };
+  }
+
+  /* ---------- self-check ---------- */
+  /** @returns {SelfTest[]} */
+  function selfTests() {
+    /** @type {SelfTest[]} */
+    const out = [];
+    /** @type {(id: string, name: string, pass: unknown, detail: string) => void} */
+    const check = (id, name, pass, detail) => out.push({ id, name, pass: !!pass, detail });
+    const relErr = (/** @type {number} */ a, /** @type {number} */ b) => Math.abs(a - b) / Math.max(Math.abs(b), 1e-300);
+    const general = (/** @type {Omit<Model, "fixedVal">} */ o) => solve({ fixedVal: new Float64Array(o.fixed.length), ...o });
+
+    // 1. Patch test (MacNeal and Harder 1985): five distorted elements, linear boundary displacements.
+    {
+      /** @type {[number, number][]} */
+      const P = [[0, 0], [0.24, 0], [0.24, 0.12], [0, 0.12], [0.04, 0.02], [0.18, 0.03], [0.16, 0.08], [0.08, 0.08]];
+      const quads = [[0, 1, 5, 4], [1, 2, 6, 5], [2, 3, 7, 6], [3, 0, 4, 7], [4, 5, 6, 7]];
+      const E = 1e6, nu = 0.25, field = (/** @type {number} */ x, /** @type {number} */ y) => [1e-3 * (x + y / 2), 1e-3 * (y + x / 2)];
+      const fixed = [], val = [];
+      for (const n of [0, 1, 2, 3]) { const [ux, uy] = field(...P[n]); fixed.push(2 * n, 2 * n + 1); val.push(ux, uy); }
+      const r = solve({ coords: Float64Array.from(P.flat()), quads: Int32Array.from(quads.flat()), thick: new Float64Array(5).fill(0.001), bars: new Int32Array(0), barA: new Float64Array(0), E, nu, fixed: Int32Array.from(fixed), fixedVal: Float64Array.from(val), f: new Float64Array(16) });
+      const c = E / (1 - nu * nu), exact = [c * (1e-3 + nu * 1e-3), c * (nu * 1e-3 + 1e-3), (c * (1 - nu) / 2) * 1e-3];
+      let eu = 0, es = 0;
+      if (r.ok) {
+        for (const n of [4, 5, 6, 7]) { const [ux, uy] = field(...P[n]); eu = Math.max(eu, relErr(r.u[2 * n], ux), relErr(r.u[2 * n + 1], uy)); }
+        for (let g = 0; g < 20; g++) for (let k = 0; k < 3; k++) es = Math.max(es, relErr(r.sig[3 * g + k], exact[k]));
+      }
+      check("patch", "Patch test: distorted five-element patch reproduces a uniform strain exactly", r.ok && eu < 1e-8 && es < 1e-8, r.ok ? `interior displacement error ${eu.toExponential(1)}, stress error ${es.toExponential(1)} (σx = σy = ${fmt(exact[0])}, τxy = ${fmt(exact[2])})` : r.error.message);
+    }
+    // 2. A bar: u = FL/EA, along x and along y.
+    {
+      const E = 70000, A = 50, L = 1000, F = 1000;
+      const along = (/** @type {"x" | "y"} */ dir) => {
+        const coords = dir === "x" ? [0, 0, L, 0] : [0, 0, 0, L];
+        const r = general({ coords: Float64Array.from(coords), quads: new Int32Array(0), thick: new Float64Array(0), bars: Int32Array.from([0, 1]), barA: Float64Array.from([A]), E, nu: 0.3, fixed: Int32Array.from(dir === "x" ? [0, 1, 3] : [0, 1, 2]), f: Float64Array.from(dir === "x" ? [0, 0, F, 0] : [0, 0, 0, F]) });
+        return r.ok ? { u: r.u[dir === "x" ? 2 : 3], N: r.barN[0], error: "" } : { u: NaN, N: NaN, error: r.error.message };
+      };
+      const ex = (F * L) / (E * A), bx = along("x"), by = along("y");
+      check("bar", "Bar: tip displacement FL/EA along x and along y", !bx.error && !by.error && relErr(bx.u, ex) < 1e-12 && relErr(by.u, ex) < 1e-12 && relErr(bx.N, F) < 1e-12, bx.error || by.error || `u = ${fmt(bx.u, 6)} and ${fmt(by.u, 6)} mm; FL/EA = ${fmt(ex, 6)} mm; N = ${fmt(bx.N)} N`);
+    }
+    // 3. Pure shear: principal stresses ±|τ| at 45 degrees, from the formulas and from the solved panel.
+    {
+      const f1 = principal(0, 0, 50), f2 = principal(0, 0, -30);
+      const formula = Math.abs(f1.s1 - 50) < 1e-12 && Math.abs(f1.s2 + 50) < 1e-12 && Math.abs((f1.theta1 * 180) / Math.PI - 45) < 1e-12 && Math.abs(f2.s1 - 30) < 1e-12 && Math.abs(f2.s2 + 30) < 1e-12 && Math.abs((f2.theta1 * 180) / Math.PI + 45) < 1e-12;
+      const s = defaultState(); s.doubler.t = 0; s.mesh.h = 50;
+      const r = runComparison(s);
+      let worst = 0;
+      if (r.ok) for (let g = 0; g < r.A.sig.length / 3; g++) {
+        const p = principal(r.A.sig[3 * g], r.A.sig[3 * g + 1], r.A.sig[3 * g + 2]);
+        worst = Math.max(worst, Math.abs(p.s1 - 50) / 50, Math.abs(p.s2 + 50) / 50, Math.abs((p.theta1 * 180) / Math.PI - 45) / 45);
+      }
+      check("shear", "Pure shear: σ1 = +|τ|, σ2 = −|τ|, θ1 = ±45° (formulas and the solved panel at q/t = 50 MPa)", formula && r.ok && worst < 1e-7, r.ok ? `largest relative deviation over ${r.A.sig.length / 3} Gauss points ${worst.toExponential(1)}` : "solve failed");
+    }
+    // 4. Closed-form reference: skin with stringers in pure shear, γ = q/(tG), corner ux = γW.
+    {
+      const s = defaultState(); s.mesh.h = 40;
+      const r = runComparison(s), G2 = s.material.E / (2 * (1 + s.material.nu)), gamma = s.load.q / s.panel.t / G2, want = gamma * s.panel.W;
+      const P1 = r.ok ? r.summary.A.probes[0] : null, N = r.ok ? Math.max(...r.summary.A.stringers.map((x) => x.maxAbs)) : NaN;
+      check("reference-shear", "Reference (theory of elasticity): variant A is uniform pure shear, corner ux = qW/(tG), stringers unloaded", P1 && relErr(P1.ux, want) < 1e-7 && Math.abs(P1.uy) < 1e-9 * want && N < 1e-6 * s.load.q * s.panel.L, P1 ? `ux = ${fmt(P1.ux, 7)} mm vs qW/(tG) = ${fmt(want, 7)} mm; max stringer |N| = ${N.toExponential(1)} N` : "solve failed");
+    }
+    // 5. Closed-form reference: a full-length doubler strip, skin and stringers stretched by δ; reaction = Eδ/L (tW + t_d L_y + ΣA).
+    {
+      const s = defaultState(); s.mesh.h = 50; s.doubler = { x0: 0, y0: 100, Lx: 600, Ly: 200, t: 1.5 };
+      const mdl = buildModel(s), delta = 0.3, fixed = [], val = [];
+      for (let j = 0; j < mdl.ny; j++) { const a = j * mdl.nx, b = a + mdl.nx - 1; fixed.push(2 * a, 2 * b); val.push(0, delta); }
+      fixed.push(1); val.push(0);
+      const r = solve({ coords: mdl.coords, quads: mdl.quads, thick: mdl.tB, bars: mdl.bars, barA: mdl.barA, E: s.material.E, nu: s.material.nu, fixed: Int32Array.from(fixed), fixedVal: Float64Array.from(val), f: new Float64Array(mdl.coords.length) });
+      let reac = 0;
+      if (r.ok) for (let j = 0; j < mdl.ny; j++) reac += r.R[2 * (j * mdl.nx + mdl.nx - 1)];
+      const want = (s.material.E * delta / s.panel.L) * (s.panel.t * s.panel.W + s.doubler.t * s.doubler.Ly + s.stringers.reduce((a, x) => a + x.A, 0));
+      check("reference-stretch", "Reference (bar theory): stretched panel with a full-length doubler strip, end reaction Eδ/L (tW + t_d L_y + ΣA)", r.ok && relErr(reac, want) < 1e-7, r.ok ? `reaction ${fmt(reac, 7)} N vs ${fmt(want, 7)} N` : r.error.message);
+    }
+    // 6. Equilibrium and linear load scaling.
+    const base = defaultState(); base.mesh.h = 40;
+    const r1 = runComparison(base);
+    {
+      const eq = r1.ok ? Math.max(r1.A.diag.equilibrium.relForce, r1.B.diag.equilibrium.relForce, r1.A.diag.equilibrium.relMoment, r1.B.diag.equilibrium.relMoment) : NaN;
+      check("equilibrium", "Equilibrium: loads plus reactions sum to zero force and moment (A and B)", r1.ok && eq < 1e-9, r1.ok ? `largest relative imbalance ${eq.toExponential(1)}` : "solve failed");
+      const s2 = defaultState(); s2.mesh.h = 40; s2.load.q *= 2;
+      const r2 = runComparison(s2);
+      let worst = 0;
+      if (r1.ok && r2.ok) for (let i = 0; i < r1.B.u.length; i++) worst = Math.max(worst, Math.abs(r2.B.u[i] - 2 * r1.B.u[i]));
+      const umax = r1.ok ? Math.max(...r1.B.u.map(Math.abs)) : 1;
+      check("scaling", "Linear scaling: doubling q doubles every displacement and quadruples the energy", r1.ok && r2.ok && worst / umax < 1e-7 && relErr(r2.B.scalars[1], 4 * r1.B.scalars[1]) < 1e-7, r1.ok && r2.ok ? `largest deviation ${(worst / umax).toExponential(1)} of max |u|` : "solve failed");
+    }
+    // 7. Zero doubler thickness: A and B identical.
+    {
+      const s = defaultState(); s.mesh.h = 40; s.doubler.t = 0;
+      const r = runComparison(s);
+      let d = 0;
+      if (r.ok) for (let i = 0; i < r.A.u.length; i++) d = Math.max(d, Math.abs(r.A.u[i] - r.B.u[i]));
+      check("zero-doubler", "Zero doubler thickness: variants A and B are identical", r.ok && d === 0 && r.rows.every((x) => x.delta === 0), r.ok ? `largest displacement difference ${d}` : "solve failed");
+    }
+    // 8. A full-panel doubler matches a uniformly thicker skin.
+    {
+      const s = defaultState(); s.mesh.h = 40; s.doubler = { x0: 0, y0: 0, Lx: 600, Ly: 400, t: 0.8 };
+      const u = defaultState(); u.mesh.h = 40; u.panel.t = 1.8; u.doubler = { ...s.doubler, t: 0 };
+      const rd = runComparison(s), ru = runComparison(u);
+      let d = 0, m = 0;
+      if (rd.ok && ru.ok) for (let i = 0; i < rd.B.u.length; i++) { d = Math.max(d, Math.abs(rd.B.u[i] - ru.A.u[i])); m = Math.max(m, Math.abs(ru.A.u[i])); }
+      check("full-doubler", "Full-panel doubler (t_d = 0.8 mm) matches a uniform 1.8 mm skin", rd.ok && ru.ok && d <= 1e-9 * m && relErr(rd.summary.B.mass.total, ru.summary.A.mass.total) < 1e-12, rd.ok && ru.ok ? `largest displacement difference ${d.toExponential(1)} mm; masses ${fmt(rd.summary.B.mass.total, 6)} and ${fmt(ru.summary.A.mass.total, 6)} kg` : "solve failed");
+    }
+    // 9. Added mass = density × doubler volume (kg/m³ × mm³ × 1e-9).
+    if (r1.ok) {
+      const d = base.doubler, want = base.material.rho * d.Lx * d.Ly * d.t * 1e-9, got = r1.summary.B.mass.total - r1.summary.A.mass.total;
+      check("mass", "Added mass equals density × doubler volume (kg/m³ × mm³ × 10⁻⁹)", relErr(got, want) < 1e-12, `${fmt(got, 6)} kg vs ${fmt(want, 6)} kg`);
+    }
+    // 10. Mesh convergence over three levels (variant B).
+    {
+      const levels = CONVERGENCE.levels.map((h) => { const s = defaultState(); s.mesh.h = h; return runComparison(s); });
+      if (levels.every(/** @returns {r is Comparison} */ (/** @type {Comparison | ComparisonFailure} */ r) => r.ok)) {
+        // The region maxima are null only for a region without Gauss points, which the example never has.
+        const q = (/** @type {Comparison} */ r) => ({
+          P1: r.summary.B.probes[0].u, P2: r.summary.B.probes[1].u, compliance: r.summary.B.compliance,
+          doubler: /** @type {Extreme} */ (r.summary.B.regions.doubler.s1).value, band: /** @type {Extreme} */ (r.summary.B.regions.band.s1).value, skin: /** @type {Extreme} */ (r.summary.B.regions.skin.s1).value,
+        });
+        const [a, b, c] = levels.map(q);
+        /** @type {string[]} */
+        const parts = [];
+        /** @type {boolean[]} */
+        const ok = [];
+        for (const k of /** @type {(keyof typeof a)[]} */ (Object.keys(a))) {
+          const d12 = Math.abs(b[k] - a[k]) / Math.abs(c[k]), d23 = Math.abs(c[k] - b[k]) / Math.abs(c[k]);
+          const global = ["P1", "P2", "compliance"].includes(k);
+          ok.push(d23 <= (global ? CONVERGENCE.displacementTol : CONVERGENCE.stressTol) && (!global || d23 <= d12));
+          parts.push(`${k} ${fmt(100 * d12, 2)}% → ${fmt(100 * d23, 2)}%`);
+        }
+        check("convergence", `Mesh convergence, element size ${CONVERGENCE.levels.join(", ")} mm: probe displacements and compliance within ${100 * CONVERGENCE.displacementTol}%, region maxima of σ1 within ${100 * CONVERGENCE.stressTol}%, displacement changes shrinking`, ok.every(Boolean), parts.join("; "));
+      } else check("convergence", "Mesh convergence", false, "a mesh level failed to solve");
+    }
+    // 11. Failures are detected and never returned as results.
+    {
+      const coords = Float64Array.from([0, 0, 1, 0, 1, 1, 0, 1]), f = Float64Array.from([0, 0, 1, 0, 0, 0, 0, 0]);
+      const one = (/** @type {Partial<Model>} */ o) => general({ coords, quads: Int32Array.from([0, 1, 2, 3]), thick: Float64Array.from([1]), bars: new Int32Array(0), barA: new Float64Array(0), E: 1000, nu: 0.3, fixed: Int32Array.from([0, 1, 3]), f, ...o });
+      const inverted = one({ quads: Int32Array.from([0, 3, 2, 1]) }), loose = one({ fixed: Int32Array.from([0, 1]) });
+      const split = general({ coords: Float64Array.from([0, 0, 1, 0, 1, 1, 0, 1, 3, 0, 4, 0]), quads: Int32Array.from([0, 1, 2, 3]), thick: Float64Array.from([1]), bars: Int32Array.from([4, 5]), barA: Float64Array.from([1]), E: 1000, nu: 0.3, fixed: Int32Array.from([0, 1, 3, 8, 9]), f: new Float64Array(12) });
+      const capped = runComparison(defaultState(), null, { maxIterations: 3 });
+      const bad = validate({ ...defaultState(), doubler: { x0: 500, y0: 100, Lx: 200, Ly: 200, t: 1 } });
+      check("failures", "Inverted elements, missing restraints, disconnected meshes, iteration limits and doublers off the panel are rejected", !inverted.ok && inverted.error.code === "inverted" && !loose.ok && loose.error.code === "singular" && !split.ok && split.error.code === "disconnected" && !capped.ok && capped.error?.code === "iterations" && !bad.ok, [inverted, loose, split, capped].map((r) => (r.ok ? "accepted" : r.error?.code)).join(", ") + (bad.ok ? ", off-panel doubler accepted" : ", off-panel doubler rejected"));
+    }
+    return out;
+  }
+
+  /** @type {Engine} */
+  const api = {
+    VERSION, VISUAL, UNITS, LIMITS, CONVERGENCE, ASSUMPTIONS, META, NACA, REGIONS,
+    defaultState, normalize, validate, gridLines, meshLines, estimateNodes, buildModel, solve, principal, regionOf, probePoints, probeAt,
+    displacementAt, nearestGauss, runComparison, comparisonRows, modelJSON, resultsCSV, diagnosticsOf, beamdswitchReport, selfTests,
+    fmt, fmtPct, fmtSigned,
+  };
+  root.DiagonalTension = api;
+})(typeof self !== "undefined" ? self : this);
+</script>
+<script id="dt-beamdswitch">
+/* The standard beamdswitch report template, shared by every visualisation.
+ *
+ * beamdswitch (https://teoyujie.org/visuals/beamdswitch/) turns one Markdown deck into slides, a
+ * handout, narration and a video. `deck(report)` writes a report in its deck syntax, always in the
+ * same order (templates/beamdswitch-report.md shows the skeleton):
+ *
+ *   front matter and title slide
+ *   # Set-up               what was modelled, its units and conventions
+ *   # Method               how the tool solved it
+ *   # Results              the numbers, with key equations and plots
+ *   # Checks and takeaway  what confirms the numbers, ending on one ::: key frame
+ *
+ * A report is plain data, so it can be built and tested without a page:
+ *   { meta: { title, subtitle, author, date, voice }, narration, notes,
+ *     setup, method, results, checks: [frame, ...] }
+ * and each frame is
+ *   { title, body, narration, notes, key, plot: { x: [a, b], xlabel, ylabel, curves: ["expr", ...] } }
+ * `body` is Markdown (LaTeX maths in $...$ or $$...$$); `narration` is plain spoken prose, one
+ * caption per sentence; `key`, `plot` and `notes` are optional. Every frame must be narrated, and
+ * the last checks frame must carry a key. The visualisation supplies every number already
+ * formatted, so the deck says exactly what its page shows. Every deck names its narrator: `meta.voice`
+ * when the visualisation picks one, else DEFAULT_VOICE, beamdswitch's British female default.
+ */
+(function (root, factory) {
+  const api = factory();
+  if (typeof module === "object" && module.exports) module.exports = api;
+  else root.Beamdswitch = api;
+})(typeof self !== "undefined" ? self : this, function () {
+  "use strict";
+
+  const DEFAULT_VOICE = "bf_emma";
+  const SECTIONS = [["setup", "Set-up"], ["method", "Method"], ["results", "Results"], ["checks", "Checks and takeaway"]];
+
+  const oneLine = (s) => String(s ?? "").replace(/\s+/g, " ").trim();
+  /* Markdown lines that would end a frame or a div early are refused rather than written. */
+  function block(text, what) {
+    const s = String(text ?? "").replace(/\r\n?/g, "\n").trim();
+    for (const line of s.split("\n"))
+      if (/^#{1,2}\s/.test(line) || /^\s*:{3,}/.test(line)) throw new Error(`${what} must not contain a heading or a ::: line: ${line}`);
+    return s;
+  }
+  /* Narration is read aloud: no maths, markup or line structure. */
+  function spoken(text, what) {
+    const s = oneLine(text);
+    if (!s) throw new Error(`${what} needs a narration.`);
+    if (/[$\\`*_#|<>]/.test(s)) throw new Error(`${what} narration must be plain spoken prose: ${s}`);
+    return s;
+  }
+  const div = (name, text) => [`::: ${name}`, text, ":::"];
+
+  function frame(f, where) {
+    const title = oneLine(f.title), what = `Frame "${title}" in ${where}`;
+    if (!title) throw new Error(`A frame in ${where} needs a title.`);
+    const out = [`## ${title}`, ""];
+    if (f.body) out.push(block(f.body, what), "");
+    if (f.plot) {
+      const p = f.plot, lines = [`x: ${p.x[0]}, ${p.x[1]}`];
+      if (p.xlabel) lines.push(`xlabel: ${oneLine(p.xlabel)}`);
+      if (p.ylabel) lines.push(`ylabel: ${oneLine(p.ylabel)}`);
+      for (const c of p.curves) lines.push(`y = ${oneLine(c)}`);
+      out.push(...div("plot", lines.join("\n")), "");
+    }
+    if (f.key) out.push(...div("key", block(f.key, what)), "");
+    if (f.notes) out.push(...div("notes", block(f.notes, what)), "");
+    out.push(...div("narration", spoken(f.narration, what)), "");
+    return out;
+  }
+
+  function deck(report) {
+    const meta = report.meta || {};
+    if (!oneLine(meta.title)) throw new Error("The report needs a title.");
+    const checks = report.checks || [];
+    if (!checks.length || !checks.at(-1).key) throw new Error("The last checks frame must carry a ::: key.");
+    const fm = { ...meta, voice: oneLine(meta.voice) || DEFAULT_VOICE };
+    const out = ["---"];
+    for (const k of ["title", "subtitle", "author", "date", "voice"]) if (oneLine(fm[k])) out.push(`${k}: ${oneLine(fm[k])}`);
+    out.push("---", "");
+    if (report.notes) out.push(...div("notes", block(report.notes, "The title slide")), "");
+    out.push(...div("narration", spoken(report.narration, "The title slide")), "");
+    SECTIONS.forEach(([id, title], i) => {
+      const frames = report[id] || [];
+      if (!frames.length) throw new Error(`The ${title} section needs at least one frame.`);
+      out.push(`# ${title}`, "", ...div("narration", `Part ${i + 1}. ${title}.`), "");
+      for (const f of frames) out.push(...frame(f, title));
+    });
+    return out.join("\n");
+  }
+
+  return { DEFAULT_VOICE, SECTIONS, deck };
+});
+</script>
+<script type="text/plain" id="dt-worker">
+/* The Web Worker's message loop. The page builds the worker from a Blob of the dt-engine script
+   followed by this one, so the worker runs exactly the engine the tests load. Cancel terminates it. */
+self.onmessage = function (event) {
+  const msg = event.data || {}, DT = self.DiagonalTension;
+  try {
+    if (msg.cmd === "compare") {
+      const res = DT.runComparison(msg.state, (p) => self.postMessage({ type: "progress", id: msg.id, progress: p }));
+      self.postMessage({ type: "result", id: msg.id, result: res });
+    } else if (msg.cmd === "selftest") {
+      self.postMessage({ type: "selftest", id: msg.id, tests: DT.selfTests() });
+    } else self.postMessage({ type: "error", id: msg.id, message: `Unknown command ${msg.cmd}` });
+  } catch (err) {
+    self.postMessage({ type: "error", id: msg.id, message: String((err && /** @type {Error} */ (err).message) || err) });
+  }
+};
+</script>
+<script id="dt-ui">
+/* The page: inputs, the worker, the two panel views, the comparison table, probes, exports and the
+   WebMCP tools. All numbers come from the engine (self.DiagonalTension); this script only draws them. */
+(function () {
+  "use strict";
+  /** @typedef {{ post(m: object): void, stop(): void }} PageWorker */
+  /** A message from the worker (dt-worker).
+      @typedef {{ type: string, id?: number, progress?: Progress, result?: Comparison | ComparisonFailure, tests?: SelfTest[], message?: string }} WorkerMessage */
+  // Every id looked up below is in the page, so the lookups are never null.
+  const DT = self.DiagonalTension, $ = (/** @type {string} */ id) => /** @type {HTMLElement} */ (document.getElementById(id));
+  const button = (/** @type {string} */ id) => /** @type {HTMLButtonElement} */ ($(id));
+  const input = (/** @type {string} */ id) => /** @type {HTMLInputElement} */ ($(id));
+  /** @type {{ field: string, mesh: boolean, dirs: boolean, disp: boolean, regions: boolean }} */
+  const view = { field: "s1", mesh: true, dirs: false, disp: false, regions: true };
+  let inputs = DT.defaultState();
+  /** @type {Comparison | null} */
+  let results = null;
+  /** @type {ComparisonFailure | null} */
+  let lastError = null;
+  /** @type {PageWorker | null} */
+  let worker = null;
+  /** @type {{ id: number, cmd: string, sent: string } | null} */
+  let running = null;
+  let stale = false, job = 0, probe = { x: 350, y: 150 };
+
+  /* ---------- inputs ---------- */
+  /** @type {(o: object, path: string) => any} */
+  const getPath = (o, path) => path.split(".").reduce((/** @type {any} */ a, k) => (a == null ? a : a[k]), o);
+  /** @param {any} o a state, walked by a dotted path such as "stringers.0.y" @param {string} path @param {number} v */
+  function setPath(o, path, v) { const ks = path.split("."); let a = o; for (let i = 0; i < ks.length - 1; i++) a = a[ks[i]]; a[ks[ks.length - 1]] = v; }
+  const parse = (/** @type {HTMLInputElement} */ el) => (el.value.trim() === "" ? NaN : Number(el.value));
+  function renderStringers() {
+    const box = $("stringers");
+    box.replaceChildren();
+    inputs.stringers.forEach((st, i) => {
+      const row = document.createElement("div");
+      row.className = "str-row";
+      row.innerHTML = `<label class="f">Stringer ${i + 1} y (mm)<input type="number" step="any" data-field="stringers.${i}.y"></label><label class="f">Area (mm²)<input type="number" step="any" data-field="stringers.${i}.A"></label><button type="button" data-remove="${i}" aria-label="Remove stringer ${i + 1}">Remove</button>`;
+      box.appendChild(row);
+    });
+  }
+  function fillInputs() {
+    renderStringers();
+    for (const el of document.querySelectorAll("#inputs input[data-field]")) { if (!(el instanceof HTMLInputElement)) continue; const f = el.dataset.field ?? ""; const v = getPath(inputs, f); el.value = Number.isFinite(v) ? String(v) : ""; el.name = f; }
+    validateLive();
+  }
+  /** @returns {State} */
+  function readInputs() {
+    const s = JSON.parse(JSON.stringify(inputs));
+    for (const el of document.querySelectorAll("#inputs input[data-field]")) if (el instanceof HTMLInputElement) setPath(s, el.dataset.field ?? "", parse(el));
+    return s;
+  }
+  function validateLive() {
+    const v = DT.validate(readInputs()), bad = new Set(v.errors.map((e) => e.field));
+    for (const el of document.querySelectorAll("#inputs input[data-field]")) {
+      if (!(el instanceof HTMLInputElement)) continue;
+      const f = el.dataset.field ?? "", hit = bad.has(f) || (f.startsWith("stringers.") && bad.has("stringers"));
+      if (hit) el.setAttribute("aria-invalid", "true"); else el.removeAttribute("aria-invalid");
+    }
+    const ul = $("errors");
+    ul.replaceChildren(...v.errors.map((e) => { const li = document.createElement("li"); li.textContent = e.message; return li; }));
+    notes(v);
+    return v;
+  }
+  /** @param {{ ok: boolean, state: State }} v */
+  function notes(v) {
+    const s = v.state, { L, W } = s.panel, q = s.load.q;
+    $("load-note").textContent = Number.isFinite(q * L * W) ? `On every edge, the same for A and B: ${DT.fmt(Math.abs(q) * W)} N on each vertical edge, ${DT.fmt(Math.abs(q) * L)} N on each horizontal edge; resultant force and moment zero. Without a doubler τ = q/t = ${DT.fmt(q / s.panel.t)} MPa.` : "";
+    $("mesh-note").textContent = v.ok ? `${DT.estimateNodes(s)} nodes (limit ${DT.LIMITS.maxNodes.toLocaleString("en-GB")}). Hatched zones within the excluded distance of the panel edges and doubler corners are left out of region maxima.` : "";
+  }
+  function markStale() {
+    if (results && !stale) { stale = true; }
+    $("lab").classList.toggle("is-stale", stale);
+    $("comparison").classList.toggle("is-stale", stale);
+    exportsEnabled();
+    draw();
+  }
+  function onInput() { inputs = readInputs(); validateLive(); markStale(); }
+
+  /* ---------- worker ---------- */
+  /* A fresh Blob worker running the engine text and the dt-worker script; stop() terminates it. */
+  /** @param {(m: WorkerMessage) => void} onMessage @param {(message: string) => void} onError @returns {PageWorker} */
+  function spawn(onMessage, onError) {
+    const src = `${$("dt-engine").textContent}\n${$("dt-worker").textContent}`;
+    const url = URL.createObjectURL(new Blob([src], { type: "text/javascript" }));
+    let w;
+    try { w = new Worker(url); } catch (err) { URL.revokeObjectURL(url); throw new Error(`Web Workers are required to run the solver and are unavailable here (${/** @type {Error} */ (err).message})`); }
+    w.onmessage = (e) => onMessage(e.data);
+    w.onerror = (e) => { e.preventDefault(); onError(e.message || "unknown error"); };
+    return { post: (/** @type {object} */ m) => w.postMessage(m), stop() { w.terminate(); URL.revokeObjectURL(url); } };
+  }
+  function stopWorker() { if (worker) worker.stop(); worker = null; }
+  /* Run one page command in a fresh worker, replacing any running one. */
+  /** @param {string} cmd @param {{ state?: State }} payload */
+  function dispatch(cmd, payload) {
+    finish();
+    const id = ++job;
+    running = { id, cmd, sent: JSON.stringify(payload.state ?? null) };
+    button("cancel").disabled = false;
+    button("run").disabled = true;
+    button("selftest").disabled = true;
+    try {
+      worker = spawn(onWorker, (message) => { finish(); status(`The worker failed: ${message}. Inputs are kept; no results are shown.`, "bad"); });
+      worker.post({ cmd, id, ...payload });
+    } catch (err) {
+      finish();
+      status(`${/** @type {Error} */ (err).message}. Inputs are kept; nothing was solved.`, "bad");
+    }
+  }
+  function finish() { running = null; stopWorker(); button("cancel").disabled = true; button("run").disabled = false; button("selftest").disabled = false; }
+  /** @param {WorkerMessage} m */
+  function onWorker(m) {
+    if (!running || m.id !== running.id) return;
+    if (m.type === "progress") {
+      const p = /** @type {Progress} */ (m.progress);
+      status(p.stage === "mesh" ? "Meshing…" : p.stage === "compare" ? "Comparing…" : `Solving variant ${p.variant}${p.iteration ? `: iteration ${p.iteration}, residual ${/** @type {number} */ (p.residual).toExponential(1)}` : "…"}`, "warn");
+      return;
+    }
+    const r = running;
+    finish();
+    if (m.type === "result") acceptResult(m.result ?? null, r.sent);
+    else if (m.type === "selftest") showSelfTests(m.tests ?? []);
+    else status(`Error: ${m.message}. Inputs are kept; no results are shown.`, "bad");
+  }
+  function run() {
+    inputs = readInputs();
+    const v = validateLive();
+    if (!v.ok) { status(`Fix ${v.errors.length} input${v.errors.length === 1 ? "" : "s"} first; nothing was solved.`, "bad"); $("errors").scrollIntoView({ block: "nearest" }); return; }
+    status("Starting…", "warn");
+    dispatch("compare", { state: inputs });
+  }
+  function cancel() {
+    if (!running) return;
+    const what = running.cmd;
+    finish();
+    status(what === "compare" ? "Cancelled. Inputs are kept; the previous results, if any, are unchanged." : "Self-check cancelled.", "warn");
+  }
+  /** @param {Comparison | ComparisonFailure | null} r @param {string} sent the inputs the run was asked for, as JSON */
+  function acceptResult(r, sent) {
+    if (!r || !r.ok) {
+      results = null; stale = false; lastError = r;
+      const why = r && r.stage === "validate" ? r.errors.map((e) => e.message).join(" ") : r && r.stage === "solve" ? `Variant ${r.variant}: ${r.error.message}` : "unknown failure";
+      status(`The solve failed, so no results are shown. ${why} Inputs are kept.`, "bad");
+      $("diagnostics").textContent = JSON.stringify(r && r.stage === "solve" && r.diag ? { failed: r.error, diagnostics: r.diag } : r, null, 2);
+      $("lab").classList.remove("is-stale"); $("comparison").classList.remove("is-stale");
+      renderTable(); draw(); renderProbe(); exportsEnabled();
+      return;
+    }
+    results = r; stale = JSON.stringify(readInputs()) !== sent; lastError = null;
+    $("lab").classList.toggle("is-stale", stale); $("comparison").classList.toggle("is-stale", stale);
+    status(`Solved A in ${r.A.diag.iterations} and B in ${r.B.diag.iterations} conjugate-gradient iterations on ${r.mesh.nodes} nodes; both residual checks and equilibrium pass.`, "ok");
+    $("diagnostics").textContent = JSON.stringify({ mesh: r.mesh, ...DT.diagnosticsOf(r) }, null, 2);
+    renderTable(); draw(); renderProbe(); exportsEnabled();
+  }
+  /** @param {string} text @param {string} [kind] */
+  function status(text, kind) { const el = $("status"); el.textContent = text; el.className = kind || ""; }
+
+  /* ---------- comparison table ---------- */
+  function renderTable() {
+    const tb = /** @type {HTMLTableElement} */ ($("cmp-table")).tBodies[0];
+    tb.replaceChildren();
+    if (!results) { $("cmp-note").textContent = "Run the comparison to fill the table."; return; }
+    for (const r of results.rows) {
+      const tr = document.createElement("tr");
+      tr.dataset.row = r.id;
+      tr.innerHTML = '<th scope="row"></th><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td>';
+      tr.cells[0].textContent = `${r.label} (${r.unit})`;
+      tr.cells[1].textContent = DT.fmtSigned(r.a);
+      tr.cells[2].textContent = DT.fmtSigned(r.b);
+      tr.cells[3].textContent = r.delta === 0 ? "0" : `${r.delta > 0 ? "+" : "−"}${DT.fmt(Math.abs(r.delta))}`;
+      tr.cells[4].textContent = DT.fmtPct(r.pct);
+      tb.appendChild(tr);
+    }
+    const B = results.summary.B.regions;
+    $("cmp-note").textContent = `Region maxima at: ${["doubler", "band", "skin"].map((k) => ({ label: B[k].label, s1: B[k].s1 })).flatMap(({ label, s1 }) => (s1 ? [`${label} (${DT.fmt(s1.x)}, ${DT.fmt(s1.y)}) mm, element ${s1.element}`] : [])).join("; ")} in B. Read the doubler edges and the stringers as well as the patch: the load the patch attracts comes from somewhere.`;
+  }
+
+  /* ---------- drawing ---------- */
+  const token = (/** @type {string} */ name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  /** @param {string} hex a colour token, #rrggbb or rgb()/rgba() @returns {number[]} */
+  function rgb(hex) {
+    const m = /^#?([0-9a-f]{6})$/i.exec(hex || "");
+    if (!m) { const c = /rgba?\(([^)]+)\)/.exec(hex || ""); return c ? c[1].split(/[ ,/]+/).slice(0, 3).map(Number) : [128, 128, 128]; }
+    const n = parseInt(m[1], 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  }
+  /** @type {(a: number[], b: number[], t: number) => string} */
+  const mix = (a, b, t) => `rgb(${a.map((v, i) => Math.round(b[i] + (v - b[i]) * t)).join(",")})`;
+  /** @param {Solution} sol @param {number} g @param {string} field */
+  function fieldValue(sol, g, field) {
+    const sx = sol.sig[3 * g], sy = sol.sig[3 * g + 1], txy = sol.sig[3 * g + 2];
+    if (field === "txy") return txy;
+    const p = DT.principal(sx, sy, txy);
+    return field === "vm" ? p.vm : p.s1;
+  }
+  /* One colour scale for A and B, from the comparison-region Gauss points of both variants. */
+  /** @typedef {{ lo: number, hi: number, diverging: boolean, clipped: boolean }} Scale */
+  /** @param {string} field @returns {Scale | null} */
+  function scaleFor(field) {
+    if (!results || field === "none") return null;
+    let lo = Infinity, hi = -Infinity, alo = Infinity, ahi = -Infinity;
+    for (const k of /** @type {const} */ (["A", "B"])) for (let g = 0; g < results.region.length; g++) {
+      const v = fieldValue(results[k], g, field);
+      alo = Math.min(alo, v); ahi = Math.max(ahi, v);
+      if (results.region[g]) { lo = Math.min(lo, v); hi = Math.max(hi, v); }
+    }
+    if (!(hi >= lo)) { lo = alo; hi = ahi; }
+    if (field === "txy") { const m = Math.max(Math.abs(lo), Math.abs(hi)) || 1; return { lo: -m, hi: m, diverging: true, clipped: alo < -m || ahi > m }; }
+    if (hi - lo < 1e-9 * Math.max(Math.abs(hi), 1)) { lo -= 1; hi += 1; }
+    return { lo, hi, diverging: false, clipped: alo < lo || ahi > hi };
+  }
+  /** @typedef {{ bg: number[], c1: number[], c2: number[] }} Palette */
+  /** @param {number} v @param {Scale} sc @param {Palette} pal */
+  function colourOf(v, sc, pal) {
+    if (sc.diverging) { const t = Math.max(-1, Math.min(1, v / sc.hi)); return t < 0 ? mix(pal.c1, pal.bg, -t) : mix(pal.c2, pal.bg, t); }
+    const t = Math.max(0, Math.min(1, (v - sc.lo) / (sc.hi - sc.lo)));
+    return mix(pal.c1, pal.bg, 0.12 + 0.88 * t);
+  }
+  /** @type {Record<string, string>} */
+  const FIELD_LABEL = { s1: "Principal tension σ1 (MPa)", txy: "Shear stress τxy (MPa)", vm: "von Mises stress (MPa)" };
+  /** @param {number} x */
+  function niceScale(x) { if (!(x > 0)) return 1; const p = 10 ** Math.floor(Math.log10(x)), m = x / p; return (m >= 5 ? 5 : m >= 2 ? 2 : 1) * p; }
+  function dispScale() {
+    if (!results) return 0;
+    let um = 0;
+    for (const k of /** @type {const} */ (["A", "B"])) for (let i = 0; i < results[k].u.length; i++) um = Math.max(um, Math.abs(results[k].u[i]));
+    const { L, W } = results.state.panel;
+    return um > 0 ? niceScale((0.06 * Math.max(L, W)) / um) : 0;
+  }
+  function geometry() { const v = DT.validate(results && !stale ? results.state : inputs); return v.ok ? v.state : results ? results.state : null; }
+  function draw() {
+    const sc = scaleFor(view.field), ds = view.disp ? dispScale() : 0;
+    for (const k of /** @type {const} */ (["A", "B"])) drawView(/** @type {MappedCanvas} */ ($(`view-${k}`)), k, sc, ds);
+    legend(sc, ds);
+  }
+  /** A view canvas, carrying the drawing's mapping from panel to CSS pixels for the probe.
+      @typedef {HTMLCanvasElement & { _map?: { pad: number, k2: number, W: number, L: number } }} MappedCanvas */
+  /** @param {MappedCanvas} canvas @param {"A" | "B"} k @param {Scale | null} sc @param {number} ds displacement magnification */
+  function drawView(canvas, k, sc, ds) {
+    if (!canvas.getContext) return;
+    const s = results ? results.state : geometry();
+    const ctx = /** @type {CanvasRenderingContext2D} */ (canvas.getContext("2d")), dpr = self.devicePixelRatio || 1, cssW = Math.max(200, canvas.clientWidth || 300);
+    const pad = 30;
+    if (!s) { canvas.width = cssW * dpr; canvas.height = 120 * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, cssW, 120); return; }
+    const { L, W } = s.panel, k2 = (cssW - 2 * pad) / L, cssH = Math.round(W * k2 + 2 * pad);
+    canvas.width = Math.round(cssW * dpr); canvas.height = Math.round(cssH * dpr); canvas.style.height = `${cssH}px`;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, cssW, cssH);
+    const X = (/** @type {number} */ x) => pad + x * k2, Y = (/** @type {number} */ y) => pad + (W - y) * k2;
+    canvas._map = { pad, k2, W, L };
+    const pal = { bg: rgb(token("--bg")), c1: rgb(token("--c1")), c2: rgb(token("--c2")) };
+    const col = { fg: token("--fg"), muted: token("--muted"), faint: token("--faint"), border: token("--border"), surface: token("--surface"), doubler: token("--c3"), disp: token("--c4"), hl: token("--hl"), bg: token("--bg") };
+    // sol is read only where res is set.
+    const d = s.doubler, res = results, sol = /** @type {Solution} */ (res ? res[k] : null);
+    // Field: each element as four cells, one per Gauss point (no smoothing).
+    if (res && sc) {
+      const xs = res.model.xs, ys = res.model.ys, ex = xs.length - 1;
+      for (let e = 0; e < res.region.length / 4; e++) {
+        const i = e % ex, j = (e - i) / ex, xm = (xs[i] + xs[i + 1]) / 2, ym = (ys[j] + ys[j + 1]) / 2;
+        const corners = [[xs[i], ys[j]], [xs[i + 1], ys[j]], [xs[i + 1], ys[j + 1]], [xs[i], ys[j + 1]]];
+        for (let g = 0; g < 4; g++) {
+          const [cx, cy] = corners[g];
+          ctx.fillStyle = colourOf(fieldValue(sol, 4 * e + g, view.field), sc, pal);
+          const x0 = Math.min(X(cx), X(xm)), y0 = Math.min(Y(cy), Y(ym));
+          ctx.fillRect(x0 - 0.25, y0 - 0.25, Math.abs(X(xm) - X(cx)) + 0.5, Math.abs(Y(ym) - Y(cy)) + 0.5);
+        }
+      }
+    } else { ctx.fillStyle = col.surface; ctx.fillRect(X(0), Y(W), L * k2, W * k2); }
+    // Mesh lines.
+    const xs = res ? res.model.xs : DT.meshLines(s).xs, ys = res ? res.model.ys : DT.meshLines(s).ys;
+    if (view.mesh) {
+      ctx.strokeStyle = col.faint; ctx.globalAlpha = 0.55; ctx.lineWidth = 0.5; ctx.beginPath();
+      const stride = Math.max(1, Math.ceil(3 / (k2 * (xs[1] - xs[0] || 1))));
+      xs.forEach((x, i) => { if (i % stride === 0 || i === xs.length - 1) { ctx.moveTo(X(x), Y(0)); ctx.lineTo(X(x), Y(W)); } });
+      ys.forEach((y, j) => { if (j % stride === 0 || j === ys.length - 1) { ctx.moveTo(X(0), Y(y)); ctx.lineTo(X(L), Y(y)); } });
+      ctx.stroke(); ctx.globalAlpha = 1;
+    }
+    // Excluded zones: hatched band along the edges and discs at the doubler corners.
+    const c = s.regions.exclude;
+    if (c > 0) {
+      ctx.save(); ctx.beginPath();
+      ctx.rect(X(0), Y(W), L * k2, W * k2);
+      const ix0 = X(Math.min(c, L / 2)), ix1 = X(Math.max(L - c, L / 2)), iy0 = Y(Math.max(W - c, W / 2)), iy1 = Y(Math.min(c, W / 2));
+      ctx.moveTo(ix0, iy0); ctx.lineTo(ix0, iy1); ctx.lineTo(ix1, iy1); ctx.lineTo(ix1, iy0); ctx.closePath();
+      for (const [cx, cy] of [[d.x0, d.y0], [d.x0 + d.Lx, d.y0], [d.x0 + d.Lx, d.y0 + d.Ly], [d.x0, d.y0 + d.Ly]]) { ctx.moveTo(X(cx) + c * k2, Y(cy)); ctx.arc(X(cx), Y(cy), c * k2, 0, 2 * Math.PI); }
+      ctx.clip("nonzero");
+      ctx.strokeStyle = col.muted; ctx.lineWidth = 1; ctx.globalAlpha = 0.6; ctx.beginPath();
+      for (let x = -W * k2; x < L * k2 + W * k2; x += 7) { ctx.moveTo(X(0) + x, Y(0)); ctx.lineTo(X(0) + x + W * k2, Y(W)); }
+      ctx.stroke(); ctx.restore(); ctx.globalAlpha = 1;
+    }
+    // Comparison regions: the doubler-edge band outline.
+    if (view.regions) {
+      const b = s.regions.band;
+      ctx.strokeStyle = col.muted; ctx.setLineDash([4, 3]); ctx.lineWidth = 1; ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(X(d.x0 - b), Y(d.y0 + d.Ly + b), (d.Lx + 2 * b) * k2, (d.Ly + 2 * b) * k2, b * k2); else ctx.rect(X(d.x0 - b), Y(d.y0 + d.Ly + b), (d.Lx + 2 * b) * k2, (d.Ly + 2 * b) * k2);
+      ctx.stroke(); ctx.setLineDash([]);
+    }
+    // Doubler outline: solid where present (B), dashed footprint in A.
+    ctx.strokeStyle = col.doubler; ctx.lineWidth = 2; ctx.setLineDash(k === "A" ? [6, 3] : []);
+    ctx.strokeRect(X(d.x0), Y(d.y0 + d.Ly), d.Lx * k2, d.Ly * k2); ctx.setLineDash([]);
+    // Stringers.
+    ctx.strokeStyle = col.fg; ctx.lineWidth = 2.5; ctx.beginPath();
+    for (const st of s.stringers) if (st.A > 0) { ctx.moveTo(X(0), Y(st.y)); ctx.lineTo(X(L), Y(st.y)); }
+    ctx.stroke();
+    ctx.lineWidth = 1; ctx.setLineDash([2, 3]); ctx.beginPath();
+    for (const st of s.stringers) if (!(st.A > 0)) { ctx.moveTo(X(0), Y(st.y)); ctx.lineTo(X(L), Y(st.y)); }
+    ctx.stroke(); ctx.setLineDash([]);
+    // Panel outline.
+    ctx.strokeStyle = col.fg; ctx.lineWidth = 1; ctx.strokeRect(X(0), Y(W), L * k2, W * k2);
+    // Principal directions at Gauss points: all four in cells of 32 px or more, else one per element,
+    // every few elements, so glyphs stay about 18 px apart; hidden where σ1 ≈ σ2.
+    if (res && view.dirs) {
+      const ex = xs.length - 1, cell = Math.min(xs[1] - xs[0], ys[1] - ys[0]) * k2, all = cell >= 32, stride = all ? 1 : Math.max(1, Math.ceil(18 / Math.max(cell, 1)));
+      ctx.lineCap = "round";
+      for (let e = 0; e < res.region.length / 4; e++) {
+        const i = e % ex, j = (e - i) / ex;
+        if (i % stride || j % stride) continue;
+        for (let g = 0; g < 4; g++) {
+          if (!all && g) break;
+          const gi = 4 * e + g, p = DT.principal(sol.sig[3 * gi], sol.sig[3 * gi + 1], sol.sig[3 * gi + 2]);
+          if (p.r < 0.02 * Math.max(Math.abs(p.s1), Math.abs(p.s2)) || p.r === 0) continue;
+          const px = X(sol.gp[2 * gi]), py = Y(sol.gp[2 * gi + 1]), len = Math.min(7, (all ? 0.21 : 0.42) * cell * stride), c1 = Math.cos(p.theta1), s1 = Math.sin(p.theta1);
+          ctx.strokeStyle = col.fg; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(px - len * c1, py + len * s1); ctx.lineTo(px + len * c1, py - len * s1); ctx.stroke();
+          ctx.strokeStyle = col.muted; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(px - 0.5 * len * s1, py - 0.5 * len * c1); ctx.lineTo(px + 0.5 * len * s1, py + 0.5 * len * c1); ctx.stroke();
+        }
+      }
+    }
+    // Displaced shape, amplified.
+    if (res && ds > 0) {
+      const nx = xs.length, u = sol.u, P = (/** @type {number} */ i, /** @type {number} */ j) => { const n = j * nx + i; return [X(xs[i] + ds * u[2 * n]), Y(ys[j] + ds * u[2 * n + 1])]; };
+      const step = Math.max(1, Math.round(xs.length / 12));
+      ctx.strokeStyle = col.disp; ctx.lineWidth = 1.5; ctx.beginPath();
+      for (let j = 0; j < ys.length; j += (j + step < ys.length - 1 || j === ys.length - 1 ? step : ys.length - 1 - j) || 1) { for (let i = 0; i < nx; i++) { const [a, b] = P(i, j); i ? ctx.lineTo(a, b) : ctx.moveTo(a, b); } if (j === ys.length - 1) break; }
+      for (let i = 0; i < nx; i += (i + step < nx - 1 || i === nx - 1 ? step : nx - 1 - i) || 1) { for (let j = 0; j < ys.length; j++) { const [a, b] = P(i, j); j ? ctx.lineTo(a, b) : ctx.moveTo(a, b); } if (i === nx - 1) break; }
+      ctx.stroke();
+    }
+    // Restraints: a pin at (0, 0), a roller at (L, 0).
+    ctx.fillStyle = col.fg; ctx.strokeStyle = col.fg; ctx.lineWidth = 1;
+    const tri = (/** @type {number} */ x, /** @type {number} */ y) => { ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - 7, y + 11); ctx.lineTo(x + 7, y + 11); ctx.closePath(); ctx.fill(); };
+    tri(X(0), Y(0)); ctx.fillRect(X(0) - 10, Y(0) + 12, 20, 2);
+    tri(X(L), Y(0)); ctx.beginPath(); ctx.arc(X(L) - 4, Y(0) + 15, 2.5, 0, 2 * Math.PI); ctx.arc(X(L) + 4, Y(0) + 15, 2.5, 0, 2 * Math.PI); ctx.stroke();
+    // Shear-flow arrows on the edges.
+    const q = s.load.q, sg = q >= 0 ? 1 : -1, arrow = (/** @type {number} */ x1, /** @type {number} */ y1, /** @type {number} */ x2, /** @type {number} */ y2) => { ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); const a = Math.atan2(y2 - y1, x2 - x1); ctx.lineTo(x2 - 6 * Math.cos(a - 0.45), y2 - 6 * Math.sin(a - 0.45)); ctx.moveTo(x2, y2); ctx.lineTo(x2 - 6 * Math.cos(a + 0.45), y2 - 6 * Math.sin(a + 0.45)); ctx.stroke(); };
+    ctx.strokeStyle = col.muted; ctx.lineWidth = 1.2;
+    for (const f of [0.3, 0.7]) {
+      arrow(X(L * f) - 14 * sg, Y(W) - 9, X(L * f) + 14 * sg, Y(W) - 9);
+      arrow(X(L * f) + 14 * sg, Y(0) + 9, X(L * f) - 14 * sg, Y(0) + 9);
+      arrow(X(L) + 9, Y(W * f) + 14 * sg, X(L) + 9, Y(W * f) - 14 * sg);
+      arrow(X(0) - 9, Y(W * f) - 14 * sg, X(0) - 9, Y(W * f) + 14 * sg);
+    }
+    ctx.fillStyle = col.muted; ctx.font = `12px ${token("--sans") || "sans-serif"}`;
+    ctx.fillText(`q = ${DT.fmt(q)} N/mm`, X(0), 13);
+    // Fixed probes and the user's probe.
+    ctx.font = `11px ${token("--mono") || "monospace"}`;
+    for (const p of DT.probePoints(s)) {
+      ctx.fillStyle = col.bg; ctx.strokeStyle = col.fg; ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.arc(X(p.x), Y(p.y), 3.5, 0, 2 * Math.PI); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = col.fg; ctx.fillText(p.id, Math.min(X(p.x) + 5, cssW - 20), Math.max(Y(p.y) - 5, 10));
+    }
+    if (res) {
+      ctx.strokeStyle = col.hl; ctx.lineWidth = 2;
+      const px = X(probe.x), py = Y(probe.y);
+      ctx.beginPath(); ctx.moveTo(px - 8, py); ctx.lineTo(px + 8, py); ctx.moveTo(px, py - 8); ctx.lineTo(px, py + 8); ctx.stroke();
+    }
+    canvas.setAttribute("aria-label", describe(k, sc));
+  }
+  /** @param {"A" | "B"} k @param {Scale | null} sc */
+  function describe(k, sc) {
+    if (!results) return `Variant ${k}: panel geometry; no results yet.`;
+    const R = results.summary[k].regions;
+    return `Variant ${k}${stale ? " (stale)" : ""}: ${view.field === "none" ? "mesh" : FIELD_LABEL[view.field]} on a scale from ${DT.fmt(sc ? sc.lo : 0)} to ${DT.fmt(sc ? sc.hi : 0)}. Max σ1: ${["doubler", "band", "skin"].flatMap((r) => { const m = R[r].s1; return m ? [`${R[r].label} ${DT.fmt(m.value)} MPa`] : []; }).join(", ")}.`;
+  }
+  /** @param {Scale | null} sc @param {number} ds */
+  function legend(sc, ds) {
+    const el = $("legend");
+    el.replaceChildren();
+    const s = results ? results.state : geometry();
+    const note = $("view-note");
+    if (!results || !sc) {
+      el.textContent = results ? "Mesh only." : "Run the comparison to colour the panels.";
+    } else {
+      const pal = { bg: rgb(token("--bg")), c1: rgb(token("--c1")), c2: rgb(token("--c2")) };
+      const stops = Array.from({ length: 9 }, (_, i) => colourOf(sc.lo + ((sc.hi - sc.lo) * i) / 8, sc, pal));
+      const lab = document.createElement("span"); lab.textContent = `${FIELD_LABEL[view.field]}, same scale for A and B:`;
+      const lo = document.createElement("span"); lo.className = "num"; lo.textContent = DT.fmtSigned(sc.lo);
+      const bar = document.createElement("span"); bar.className = "bar"; bar.style.background = `linear-gradient(to right, ${stops.join(", ")})`;
+      const hi = document.createElement("span"); hi.className = "num"; hi.textContent = DT.fmtSigned(sc.hi);
+      el.append(lab, lo, bar, hi);
+    }
+    /** @type {string[]} */
+    const parts = [];
+    if (s) parts.push(`Restraints: ux = uy = 0 at (0, 0) and uy = 0 at (${DT.fmt(s.panel.L)}, 0), removing rigid-body motion only. Load: q = ${DT.fmt(s.load.q)} N/mm on all edges, ${DT.fmt(Math.abs(s.load.q) * s.panel.W)} N per vertical edge and ${DT.fmt(Math.abs(s.load.q) * s.panel.L)} N per horizontal edge, identical for A and B.`);
+    if (results && sc) parts.push(`Unsmoothed: each element is drawn as four cells, one per Gauss point. The scale spans the comparison regions${sc.clipped ? "; values in the hatched excluded zones beyond it are clipped" : ""}.`);
+    if (results && ds > 0) parts.push(`Displaced shape: displacements × ${DT.fmt(ds)}.`);
+    parts.push("Purple outline: the doubler (dashed in A, where it is absent). Dashed grey: the doubler-edge band. Hatched: excluded zones. Thick lines: stringers.");
+    note.textContent = parts.join(" ");
+  }
+
+  /* ---------- probe ---------- */
+  function renderProbe() {
+    const tb = /** @type {HTMLTableElement} */ ($("probe-table")).tBodies[0];
+    tb.replaceChildren();
+    if (!results) { const tr = document.createElement("tr"); tr.innerHTML = '<td colspan="3">Run the comparison to probe the panels.</td>'; tb.appendChild(tr); return; }
+    const { L, W } = results.state.panel, x = Math.min(L, Math.max(0, probe.x)), y = Math.min(W, Math.max(0, probe.y));
+    const a = DT.probeAt(results, "A", x, y), b = DT.probeAt(results, "B", x, y);
+    // Round-off below 1e-8 of the load's stress q/t (or of the largest displacement) is shown as 0.
+    const s = results.state, tau = Math.abs(s.load.q) / s.panel.t, um = Math.max(results.summary.A.probes[0].u, results.summary.B.probes[0].u);
+    for (const p of [a, b]) { for (const k of /** @type {const} */ (["sx", "sy", "txy", "s1", "s2", "vm"])) if (Math.abs(p[k]) < 1e-8 * tau) p[k] = 0; for (const k of /** @type {const} */ (["ux", "uy"])) if (Math.abs(p[k]) < 1e-8 * um) p[k] = 0; }
+    /** @type {[string, (p: ReturnType<Engine["probeAt"]>) => string][]} */
+    const rows = [
+      ["Gauss point x, y (mm)", (p) => `${DT.fmt(p.x)}, ${DT.fmt(p.y)}`],
+      ["Element ID", (p) => String(p.element)],
+      ["Region", (p) => p.region],
+      ["Thickness (mm)", (p) => DT.fmt(p.t)],
+      ["σx (MPa)", (p) => DT.fmtSigned(p.sx)], ["σy (MPa)", (p) => DT.fmtSigned(p.sy)], ["τxy (MPa)", (p) => DT.fmtSigned(p.txy)],
+      ["σ1 (MPa)", (p) => DT.fmtSigned(p.s1)], ["σ2 (MPa)", (p) => DT.fmtSigned(p.s2)], ["θ1 (degrees)", (p) => DT.fmtSigned(p.theta1Deg)],
+      ["von Mises (MPa)", (p) => DT.fmt(p.vm)], ["ux at the point (mm)", (p) => DT.fmtSigned(p.ux)], ["uy at the point (mm)", (p) => DT.fmtSigned(p.uy)],
+    ];
+    for (const [name, f] of rows) { const tr = document.createElement("tr"); tr.innerHTML = '<th scope="row"></th><td class="num"></td><td class="num"></td>'; tr.cells[0].textContent = name; tr.cells[1].textContent = f(a); tr.cells[2].textContent = f(b); tb.appendChild(tr); }
+  }
+  /** @param {MouseEvent} ev */
+  function probeFromEvent(ev) {
+    const c = /** @type {MappedCanvas} */ (ev.currentTarget), m = c._map;
+    if (!m || !results) return;
+    const r = c.getBoundingClientRect(), x = (ev.clientX - r.left - m.pad) / m.k2, y = m.W - (ev.clientY - r.top - m.pad) / m.k2;
+    probe = { x: Math.round(Math.min(m.L, Math.max(0, x)) * 10) / 10, y: Math.round(Math.min(m.W, Math.max(0, y)) * 10) / 10 };
+    input("probe-x").value = String(probe.x); input("probe-y").value = String(probe.y);
+    renderProbe(); draw();
+  }
+
+  /* ---------- self-check ---------- */
+  /** @param {SelfTest[]} tests */
+  function showSelfTests(tests) {
+    const ol = $("selftest-list"), passed = tests.filter((t) => t.pass).length;
+    ol.replaceChildren(...tests.map((t) => { const li = document.createElement("li"); const b = document.createElement("span"); b.className = t.pass ? "pass" : "fail"; b.textContent = t.pass ? "PASS" : "FAIL"; li.append(b, ` ${t.name}. `, t.detail || ""); li.dataset.check = t.id; return li; }));
+    $("selftest-badge").textContent = `${passed} of ${tests.length} checks pass.`;
+    $("selftest-badge").className = passed === tests.length ? "pass" : "fail";
+    status(passed === tests.length ? `Self-check: all ${tests.length} checks pass.` : `Self-check: ${tests.length - passed} of ${tests.length} checks fail.`, passed === tests.length ? "ok" : "bad");
+  }
+
+  /* ---------- exports ---------- */
+  /** @param {string} name @param {string} text @param {string} type */
+  function download(name, text, type) {
+    const url = URL.createObjectURL(new Blob([text], { type }));
+    const a = document.createElement("a");
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+  }
+  const valid = () => !!results && !stale;
+  function exportsEnabled() { button("save-beamdswitch").disabled = !valid(); button("copy-beamdswitch").disabled = !valid(); }
+  function exportModel() {
+    const text = DT.modelJSON(readInputs(), valid() ? results : null);
+    try { download("diagonal-tension-model.json", text, "application/json"); status(`Saved diagonal-tension-model.json${valid() ? " with the solver diagnostics" : " (no current run, so no diagnostics)"}.`, "ok"); }
+    catch (err) { showFallback(`Could not save (${/** @type {Error} */ (err).message}); the JSON is below.`, text); }
+  }
+  function exportResults() {
+    if (!valid()) { status(results ? "The results are stale: run the comparison again before exporting." : "Run the comparison first: there are no results to export.", "bad"); return; }
+    const text = DT.resultsCSV(/** @type {Comparison} */ (results));
+    try { download("diagonal-tension-results.csv", text, "text/csv"); status("Saved diagonal-tension-results.csv.", "ok"); }
+    catch (err) { showFallback(`Could not save (${/** @type {Error} */ (err).message}); the CSV is below.`, text); }
+  }
+  const deckText = () => Beamdswitch.deck(DT.beamdswitchReport(results));
+  function saveDeck() {
+    if (!valid()) return;
+    try { download("diagonal-tension-beamdswitch.md", deckText(), "text/markdown"); status("Saved diagonal-tension-beamdswitch.md: open it in beamdswitch.", "ok"); }
+    catch (err) { status(`Could not save: ${/** @type {Error} */ (err).message}. Use Copy deck instead.`, "bad"); }
+  }
+  async function copyDeck() {
+    if (!valid()) return;
+    const text = deckText();
+    try {
+      if (!navigator.clipboard || !navigator.clipboard.writeText) throw new Error("no clipboard API");
+      await navigator.clipboard.writeText(text);
+      status("Copied the beamdswitch deck: paste it into beamdswitch.", "ok");
+    } catch (err) { showFallback("Clipboard access is blocked; the deck is selected below. Press Ctrl+C or ⌘C.", text); }
+  }
+  /** @param {string} msg @param {string} text */
+  function showFallback(msg, text) { $("fallback").hidden = false; $("fallback-msg").textContent = msg; const ta = /** @type {HTMLTextAreaElement} */ ($("fallback-text")); ta.value = text; ta.focus(); ta.select(); }
+
+  /* ---------- WebMCP tools ---------- */
+  /** The parts of a comparison the WebMCP tools return. @param {Comparison | ComparisonFailure | null} r */
+  function lite(r) {
+    if (!r || !r.ok) return r ? { ok: false, stage: r.stage, errors: r.stage === "validate" ? r.errors : undefined, error: r.error } : null;
+    return { ok: true, state: r.state, mesh: r.mesh, rows: r.rows, probes: { A: r.summary.A.probes, B: r.summary.B.probes }, regions: { A: r.summary.A.regions, B: r.summary.B.regions }, stringers: { A: r.summary.A.stringers, B: r.summary.B.stringers }, mass: { A: r.summary.A.mass, B: r.summary.B.mass }, diagnostics: DT.diagnosticsOf(r) };
+  }
+  const TOOL_TIMEOUT_S = 300;
+  function registerTools() {
+    /** WebMCP (document.modelContext, or navigator.modelContext in earlier drafts); not yet in the DOM types.
+        @typedef {{ registerTool?(tool: { name: string, description: string, inputSchema: object, annotations: object, execute(input?: any): Promise<object> }): void }} ModelContext */
+    const mc = /** @type {ModelContext | undefined} */ ((typeof document !== "undefined" && /** @type {any} */ (document).modelContext) || (typeof navigator !== "undefined" && /** @type {any} */ (navigator).modelContext));
+    if (!mc || !mc.registerTool) return;
+    const out = (/** @type {unknown} */ o) => ({ content: [{ type: "text", text: JSON.stringify(o) }] });
+    const empty = { type: "object", properties: {}, additionalProperties: false };
+    const stateSchema = {
+      type: "object",
+      description: "A diagonal-tension model state; missing blocks take the demonstration values (600 x 400 x 1 mm skin, stringers at y = 100, 200, 300 mm of 50 mm², a central 200 x 200 x 1 mm doubler, E = 70000 MPa, nu = 0.33, 2700 kg/m³, q = 50 N/mm, element size 20 mm). Units mm, N, MPa, kg/m³.",
+      properties: {
+        panel: { type: "object", description: "{L, W, t} in mm" },
+        stringers: { type: "array", description: "[{y (mm), A (mm²)}], along x over the full length" },
+        doubler: { type: "object", description: "{x0, y0 (lower-left corner), Lx, Ly, t} in mm" },
+        material: { type: "object", description: "{E (MPa), nu, rho (kg/m³)}" },
+        load: { type: "object", description: "{q}: shear flow in N/mm on all four edges" },
+        mesh: { type: "object", description: "{h}: target element size in mm" },
+        regions: { type: "object", description: "{exclude, band} in mm" },
+      },
+    };
+    mc.registerTool({ name: "get_metadata", description: "Return the question, units, assumptions, limits, convergence tolerances, comparison regions and probes of this diagonal-tension panel comparison.", inputSchema: empty, annotations: { readOnlyHint: true }, async execute() { return out(DT.META); } });
+    mc.registerTool({ name: "get_current_state", description: "Return the page's inputs, whether the shown results are stale, and the last valid comparison: rows, probes, region maxima, stringer forces, mass and solver diagnostics.", inputSchema: empty, annotations: { readOnlyHint: true }, async execute() { return out({ state: readInputs(), stale, results: lite(results), lastError: lite(lastError) }); } });
+    /* Each call runs in its own worker, apart from the page's job, and ends it on the answer or the timeout. */
+    /** @type {(msg: { cmd: string, state?: object }) => Promise<WorkerMessage>} */
+    const ask = (msg) => new Promise((resolve) => {
+      /** @type {PageWorker | null} */
+      let w = null;
+      /** @type {ReturnType<typeof setTimeout> | undefined} */
+      let timer;
+      const done = (/** @type {WorkerMessage} */ m) => { clearTimeout(timer); if (w) w.stop(); resolve(m); };
+      try { w = spawn((m) => { if (m.type !== "progress") done(m); }, (message) => done({ type: "error", message: `The worker failed: ${message}` })); }
+      catch (err) { done({ type: "error", message: /** @type {Error} */ (err).message }); return; }
+      timer = setTimeout(() => done({ type: "error", message: `No answer within ${TOOL_TIMEOUT_S} s; the worker was stopped` }), TOOL_TIMEOUT_S * 1000);
+      /** @type {PageWorker} */ (w).post({ ...msg, id: 0 });
+    });
+    mc.registerTool({ name: "run_comparison", description: "Mesh and solve variants A (skin + stringers) and B (+ doubler) for a state in a separate worker, without changing the page or its running job, and return the comparison, or validation or solver errors.", inputSchema: stateSchema, annotations: { readOnlyHint: true }, async execute(input) {
+      const m = await ask({ cmd: "compare", state: { ...DT.defaultState(), ...(input || {}) } });
+      return out(m.type === "result" ? lite(m.result ?? null) : { ok: false, error: m.message });
+    } });
+    mc.registerTool({ name: "run_self_tests", description: "Run the self-check (patch test, bar FL/EA, pure shear, equilibrium, scaling, zero and full-panel doublers, added mass, mesh convergence, closed-form references, failure detection) in a separate worker, without changing the page, and return each result.", inputSchema: empty, annotations: { readOnlyHint: true }, async execute() {
+      const m = await ask({ cmd: "selftest" }), t = /** @type {SelfTest[]} */ (m.tests);
+      return out(m.type === "selftest" ? { passed: t.filter((x) => x.pass).length, total: t.length, results: t } : { ok: false, error: m.message });
+    } });
+  }
+
+  /* ---------- wiring ---------- */
+  function init() {
+    fillInputs();
+    const list = $("assumptions");
+    list.replaceChildren(...DT.ASSUMPTIONS.map((a) => { const li = document.createElement("li"); li.textContent = a; return li; }));
+    $("inputs").addEventListener("input", onInput);
+    $("inputs").addEventListener("submit", (e) => { e.preventDefault(); run(); });
+    $("stringers").addEventListener("click", (e) => {
+      const t = /** @type {HTMLElement | null} */ (e.target), i = t && t.dataset ? t.dataset.remove : undefined;
+      if (i === undefined) return;
+      inputs = readInputs(); inputs.stringers.splice(Number(i), 1); fillInputs(); markStale();
+    });
+    $("add-stringer").addEventListener("click", () => {
+      inputs = readInputs();
+      const W = Number.isFinite(inputs.panel.W) ? inputs.panel.W : 400;
+      inputs.stringers.push({ y: Math.round(W / 2 + 25 * inputs.stringers.length) % Math.max(1, Math.round(W)), A: 50 });
+      fillInputs(); markStale();
+    });
+    $("run").addEventListener("click", run);
+    $("cancel").addEventListener("click", cancel);
+    $("refine").addEventListener("click", () => {
+      inputs = readInputs();
+      if (!(inputs.mesh.h > 0)) { status("Set a positive element size before refining.", "bad"); return; }
+      inputs.mesh.h = inputs.mesh.h / 2; fillInputs(); markStale();
+      const v = DT.validate(inputs);
+      if (v.ok) run(); else status(`Refining would exceed the limits: ${v.errors[0].message}`, "bad");
+    });
+    $("reset").addEventListener("click", () => { cancel(); inputs = DT.defaultState(); probe = { x: 350, y: 150 }; input("probe-x").value = "350"; input("probe-y").value = "150"; fillInputs(); markStale(); run(); });
+    $("export-model").addEventListener("click", exportModel);
+    $("export-results").addEventListener("click", exportResults);
+    $("save-beamdswitch").addEventListener("click", saveDeck);
+    $("copy-beamdswitch").addEventListener("click", copyDeck);
+    $("selftest").addEventListener("click", () => { status("Running the self-check…", "warn"); dispatch("selftest", {}); });
+    for (const b of document.querySelectorAll("[data-field]")) if (b instanceof HTMLButtonElement) b.addEventListener("click", () => {
+      view.field = b.dataset.field ?? "";
+      for (const o of document.querySelectorAll("button[data-field]")) o.setAttribute("aria-pressed", String(o === b));
+      draw();
+    });
+    for (const [id, key] of /** @type {const} */ ([["lay-mesh", "mesh"], ["lay-dirs", "dirs"], ["lay-disp", "disp"], ["lay-regions", "regions"]])) $(id).addEventListener("change", (e) => { view[key] = /** @type {HTMLInputElement} */ (e.target).checked; draw(); });
+    for (const id of ["probe-x", "probe-y"]) $(id).addEventListener("input", () => { const x = parse(input("probe-x")), y = parse(input("probe-y")); if (Number.isFinite(x) && Number.isFinite(y)) { probe = { x, y }; renderProbe(); draw(); } });
+    for (const k of ["A", "B"]) /** @type {HTMLCanvasElement} */ ($(`view-${k}`)).addEventListener("click", probeFromEvent);
+    document.addEventListener("keydown", (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") { e.preventDefault(); run(); }
+      else if (e.key === "Escape" && running) { e.preventDefault(); cancel(); }
+    });
+    if ("matchMedia" in self) { const mq = matchMedia("(prefers-color-scheme: dark)"); if ("addEventListener" in mq) mq.addEventListener("change", draw); }
+    if (self.MutationObserver) new MutationObserver(draw).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    if (self.ResizeObserver) new ResizeObserver(() => draw()).observe($("view-A"));
+    renderTable(); renderProbe(); exportsEnabled(); draw();
+    registerTools();
+    run();
+  }
+  init();
+})();
+</script>
+</body>
+</html>

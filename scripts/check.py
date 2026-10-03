@@ -7,7 +7,7 @@ For each viz/<slug>/, in order:
   python   python3 -m unittest discover over tests/test_*.py, when there are any
   types    scripts/typecheck.mjs, when the folder has a tsconfig.json
   tools    visual.json's webmcp_tools and SKILLS.md's WebMCP tools table name exactly the tools the page
-           registers
+           registers (at least them, and agree with each other, when some are registered in a loop)
 "checks" in visual.json replaces build, node and python with its own commands, run from the folder.
 
 Usage: scripts/check.py SLUG... | --all | --changed [BASE] [--require-typecheck]
@@ -46,19 +46,32 @@ def default_checks(folder):
 
 
 def tools_problems(folder, data):
-    """Where visual.json or SKILLS.md disagrees with the tools the page registers."""
-    registered = set(REGISTERED.findall((folder / "index.html").read_text(encoding="utf-8")))
+    """Where visual.json or SKILLS.md disagrees with the tools the page registers.
+
+    A page that registers every tool literally (registerTool({name: ...})) must declare exactly those. When
+    it also registers others another way, such as from a list in a loop, the literal ones are only a lower
+    bound: visual.json and SKILLS.md must then name them and agree with each other.
+    """
+    html = (folder / "index.html").read_text(encoding="utf-8")
+    literal = REGISTERED.findall(html)
+    registered = set(literal)
     if not registered:
         return None
+    complete = len(literal) == html.count("registerTool(")
+    declared = set(data.get("webmcp_tools", []))
     problems = []
-    if set(data.get("webmcp_tools", [])) != registered:
-        problems.append(f"visual.json webmcp_tools {sorted(data.get('webmcp_tools', []))} != registered {sorted(registered)}")
+    if complete and declared != registered:
+        problems.append(f"visual.json webmcp_tools {sorted(declared)} != registered {sorted(registered)}")
+    elif not complete and not registered <= declared:
+        problems.append(f"visual.json webmcp_tools {sorted(declared)} lacks registered {sorted(registered - declared)}")
     skills = folder / "SKILLS.md"
     if skills.is_file() and "## WebMCP tools" in (text := skills.read_text(encoding="utf-8")):
         section = re.split(r"^## ", text.split("## WebMCP tools", 1)[1], maxsplit=1, flags=re.M)[0]
         documented = set(DOCUMENTED.findall(section))
-        if documented != registered:
+        if complete and documented != registered:
             problems.append(f"SKILLS.md documents {sorted(documented)} != registered {sorted(registered)}")
+        elif not complete and documented != declared:
+            problems.append(f"SKILLS.md documents {sorted(documented)} != visual.json webmcp_tools {sorted(declared)}")
     return problems
 
 
