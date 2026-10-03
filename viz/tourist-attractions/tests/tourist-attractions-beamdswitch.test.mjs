@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import vm from "node:vm";
 import { assertButtonsExport, assertDeckButtons, assertInlined, assertStandardDeck, assertTemplateCopy, load, openPage, read } from "./beamdswitch-decks.mjs";
 
 const SLUG = "tourist-attractions";
@@ -7,22 +8,9 @@ const T = load(`beamdswitch.js`);
 const R = load(`report.js`);
 const meta = JSON.parse(read(`meta.json`));
 
-// The page loads d3 from a CDN; the tests stand in csvParse and csvFormat and absorb every drawing call.
-function csvParse(text, row = (d) => d) {
-  const records = [];
-  let field = "", record = [], quoted = false;
-  for (let i = 0; i < text.length; i++) {
-    const c = text[i];
-    if (quoted) { if (c === '"' && text[i + 1] === '"') { field += '"'; i++; } else if (c === '"') quoted = false; else field += c; }
-    else if (c === '"') quoted = true;
-    else if (c === ",") { record.push(field); field = ""; }
-    else if (c === "\n") { record.push(field); records.push(record); record = []; field = ""; }
-    else field += c;
-  }
-  if (field || record.length) { record.push(field); records.push(record); }
-  const [head, ...body] = records;
-  return body.map((r) => row(Object.fromEntries(head.map((h, i) => [h, r[i] ?? ""]))));
-}
+// The page inlines d3 7.9.0 (<script id="d3">). Its CSV parser and formatter run for real; every drawing call goes to
+// a stand-in, as the stand-in DOM cannot lay out an SVG.
+const realD3 = vm.runInContext(/<script id="d3">\n([\s\S]*?)<\/script>/.exec(read("index.html"))[1] + ";d3", vm.createContext({}));
 // Every other d3 call returns the same chainable stand-in, as d3 selections and scales chain.
 const chain = new Proxy(function () {}, {
   get: (_, key) => (key === Symbol.toPrimitive ? () => 0 : key === Symbol.iterator ? [][Symbol.iterator].bind([]) : key === "then" ? undefined : chain),
@@ -30,8 +18,10 @@ const chain = new Proxy(function () {}, {
   apply: () => chain,
   construct: () => chain,
 });
-const d3 = new Proxy({ csvParse, csvFormat: () => "" }, { get: (t, k) => (k in t ? t[k] : chain) });
-const page = await openPage(SLUG, { globals: { d3 } });
+// csvParse returns this realm's array, so the page's rows compare with plain arrays.
+const csvParse = (text, row) => Array.from(realD3.csvParse(text, row));
+const d3 = new Proxy({ csvParse, csvFormat: realD3.csvFormat }, { get: (t, k) => (k in t ? t[k] : chain) });
+const page = await openPage(SLUG, { globals: { d3 }, skip: ["d3"] });
 const html = page.html;
 const D = { rows: page.run("rows"), terms: page.run("terms"), medianLon: page.run("medianLon"), medianLat: page.run("medianLat"), described: 106, source: meta.source, fetched: meta.fetched };
 

@@ -107,8 +107,9 @@ function element(tag, store = {}) {
 // Runs a built page's scripts in the stand-in DOM. The page's own <button>s stand in with their attributes,
 // data-* and text, found by id or by a [data-*] selector. click(id) clicks a button and waits for its handlers;
 // saved holds each downloaded file's text and
-// copied each clipboard write; run(code) evaluates code in the page's global scope. globals adds stand-ins (such as d3).
-export async function openPage(slug, { globals = {} } = {}) {
+// copied each clipboard write; run(code) evaluates code in the page's global scope. globals adds stand-ins (such as d3),
+// and skip names <script id> blocks to leave unrun when a stand-in replaces them.
+export async function openPage(slug, { globals = {}, skip = [] } = {}) {
   const html = read(`index.html`);
   const byId = new Map(), bySelector = new Map(), urls = new Map(), created = [], saved = [], copied = [];
   for (const m of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)) {
@@ -155,7 +156,10 @@ export async function openPage(slug, { globals = {} } = {}) {
     ...globals,
   });
   context.window = context.self = context.globalThis = context;
-  for (const m of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)) if (!/\bsrc=|type="application\/json"/.test(m[1])) vm.runInContext(m[2], context);
+  for (const m of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)) {
+    if (/\bsrc=|type="application\/json"/.test(m[1]) || skip.includes(/\bid="([^"]+)"/.exec(m[1])?.[1])) continue;
+    vm.runInContext(m[2], context);
+  }
   const click = async (id) => { await get(byId, id).dispatch("click"); await new Promise((r) => setImmediate(r)); };
   return { html, run: (code) => vm.runInContext(code, context), click, saved, copied };
 }
