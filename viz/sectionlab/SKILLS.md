@@ -15,7 +15,6 @@ pieces fit, then open only the playbook that matches the task.
 | Change how properties, torsion or plastic results are computed | [Change the engine](playbooks/change-engine.md) |
 | Run or extend the checks; regenerate reference data | [Verify](playbooks/verify.md) |
 | Change the Markdown, YAML, PDF, PNG, print or share-link output | [Change an export](playbooks/change-export.md) |
-| Publish a new version on the host site | [Deploy to the site](playbooks/deploy-to-site.md) |
 
 Reference notes:
 
@@ -28,5 +27,5 @@ Rules that apply to every task:
 1. Units are mm, MPa, N and N·mm. Never add unit conversions inside the engine.
 2. `index.html` is generated: edit `template.html`, `src/` or `raw.json`, then run `python build.py`.
 3. The page must keep its "verify independently" notice and must never be described as design-code compliant.
-4. The repository is ported to the site as `visuals/sectionlab/`, minus `tests/` and `.github/`: nothing may refer to files outside it.
+4. The folder is self-contained: nothing in it may refer to files outside it.
 5. Every change ends with the [Verify](playbooks/verify.md) playbook passing.

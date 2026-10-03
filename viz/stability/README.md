@@ -36,10 +36,8 @@ worked examples, the FE and secant cross-checks, validation, exports and the
 page's WebMCP tools), `tests/beamdswitch.test.mjs` (Node: every tab's
 beamdswitch deck, parsed with beamdswitch's own parsers, and the copy of the
 shared template) and `tests/test_stability.py` (Python: build reproducibility
-and the self-test under Node). They develop and run here, in this repository's
-CI; `visuals/stability/` in yujieteo/site is a port of the page files without
-`tests/` or `.github/`. The page runs the same self-test on every load and
-shows a pass/fail badge.
+and the self-test under Node). The page runs the same self-test on every load
+and shows a pass/fail badge.
 
 Values are stored in N, mm and MPa whatever units are displayed, so exported
 files stay valid; `displayUnits` in a file only restores the SI/US switch.

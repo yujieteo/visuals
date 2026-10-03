@@ -4,7 +4,7 @@ Build an essay out of Toulmin arguments, one argument per tab, each with its
 claim, grounds, warrant, backing, qualifier and rebuttals on one page. A
 pilot-style checklist and four prompts guide the draft; the outputs are a
 read-only paragraph in two orderings, a narrated
-[beamdswitch](../beamdswitch/README.md) Markdown deck and a JSON file that
+[beamdswitch](https://teoyujie.org/visuals/beamdswitch/) Markdown deck and a JSON file that
 imports back unchanged. `index.html` is one self-contained file with no
 dependencies, no network access and no build step, and it works from `file://`
 and inside a sandboxed iframe.

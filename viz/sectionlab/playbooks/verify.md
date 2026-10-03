@@ -1,6 +1,7 @@
 # Verify
 
-Run from the repository root. Every command must pass; CI runs the same commands.
+Run from this folder. Every command must pass; `python3 ../../scripts/check.py sectionlab`
+runs them (with `build.py --check` in place of the build) as CI does.
 
 ```sh
 python build.py                                     # index.html is generated
