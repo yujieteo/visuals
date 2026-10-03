@@ -932,8 +932,10 @@ function fmt(x, sig) {
   var s = String(Number(x.toPrecision(sig || 4)));
   return s === '-0' ? '0' : s;
 }
+/* z with a part below 1e-9 of |z| set to 0, so a numerically real pole is written as real. */
+function snapParts(z) { var m = cabs(z); return { re: Math.abs(z.re) < 1e-9 * m ? 0 : z.re, im: Math.abs(z.im) < 1e-9 * m ? 0 : z.im }; }
 function fmtC(z, sig, unit) {
-  var m = cabs(z), re = Math.abs(z.re) < 1e-9 * m ? 0 : z.re, im = Math.abs(z.im) < 1e-9 * m ? 0 : z.im;
+  var p = snapParts(z), re = p.re, im = p.im;
   if (im === 0) return fmt(re, sig);
   var ims = fmt(Math.abs(im), sig) + (unit || 'j');
   if (re === 0) return (im < 0 ? '-' : '') + ims;
@@ -1514,6 +1516,14 @@ function poleRow(a, loop, sig) {
 }
 
 /* ---------- Markdown record ---------- */
+/* Every requirement some closed-loop pole fails at this K, each named once, in the order met. */
+function failingRequirements(at) {
+  var failing = [];
+  at.poles.forEach(function (a) { a.fails.forEach(function (f) { if (failing.indexOf(f) < 0) failing.push(f); }); });
+  return failing;
+}
+/* The parser's per-field hints as "G: …" lines. */
+function hintLines(analysis) { return Object.keys(analysis.hints || {}).map(function (f) { return f + ': ' + analysis.hints[f].join(' '); }); }
 function recordJson(inputs) {
   var r = inputs.requirements || {};
   return {
@@ -1564,8 +1574,7 @@ function exportMarkdown(inputs, opts) {
   var reqs = analysis.scan.requirements;
   L.push('| Requirement | Value |', '|---|---|', '| ' + REQ_LABELS.stability + ' | always on |');
   REQ_KEYS.forEach(function (key) { if (reqs[key] !== undefined) L.push('| ' + REQ_LABELS[key] + ' | ' + fmt(reqs[key], S) + (key === 'zetaMin' ? '' : key === 'settlingTime' ? ' s (Re(s) ≤ ' + fmt(-4 / reqs[key], S) + ')' : ' rad/s') + ' |'); });
-  var failing = [];
-  atk.poles.forEach(function (a) { a.fails.forEach(function (f) { if (failing.indexOf(f) < 0) failing.push(f); }); });
+  var failing = failingRequirements(atk);
   L.push('', '- Verdict at K = ' + fmt(k, S) + ': ' + (atk.pass ? 'PASS' : 'FAIL (' + failing.map(function (f) { return REQ_LABELS[f]; }).join(', ') + ')'));
   L.push('- ' + verdictText(analysis, S));
   if (loop.mode === 'z' && analysis.scan.active.length) L.push('- The region is mapped to the z-plane through z = exp(s·T).');
@@ -1579,7 +1588,7 @@ function exportMarkdown(inputs, opts) {
     });
   }
   L.push('', '## Warnings', '');
-  var hintList = Object.keys(analysis.hints || {}).map(function (f) { return f + ': ' + analysis.hints[f].join(' '); });
+  var hintList = hintLines(analysis);
   if (!analysis.warnings.length && !hintList.length) L.push('None.');
   analysis.warnings.forEach(function (w) { L.push('- ' + (w.level === 'hazard' ? 'HAZARD: ' : w.level === 'warn' ? 'Warning: ' : 'Note: ') + w.text); });
   hintList.forEach(function (h) { L.push('- Input hint, ' + h); });
@@ -1831,7 +1840,7 @@ function sayNumber(text) {
 }
 // A point of the plane said as fmtC writes it: "-0.3337 + 0.5623j" is said "minus 0.3337 plus 0.5623 j".
 function sayComplex(z, sig) {
-  var m = cabs(z), re = Math.abs(z.re) < 1e-9 * m ? 0 : z.re, im = Math.abs(z.im) < 1e-9 * m ? 0 : z.im;
+  var p = snapParts(z), re = p.re, im = p.im;
   if (im === 0) return sayNumber(fmt(re, sig));
   var ims = sayNumber(fmt(Math.abs(im), sig)) + ' j';
   if (re === 0) return (im < 0 ? 'minus ' : '') + ims;
@@ -1853,8 +1862,7 @@ function locusReport(inputs, opts) {
   var plane = z ? 'z-plane' : 's-plane', n = orderOf(loop.den), m = orderOf(loop.num);
   var code = function (s) { return mdCode(s); };
   var count = function (q, one, many) { return q + ' ' + (q === 1 ? one : many); };
-  var failing = [];
-  atk.poles.forEach(function (a) { a.fails.forEach(function (f) { if (failing.indexOf(f) < 0) failing.push(f); }); });
+  var failing = failingRequirements(atk);
   var verdict = scan.active.length ? (atk.pass ? 'PASS' : 'FAIL') : (atk.stable ? 'Stable' : 'Unstable');
   var intervalSaid = function (iv) {
     if (iv.toKMax) return (iv.lo === 0 ? 'every gain above 0' : 'gains above ' + sayNumber(fmt(iv.lo, S))) + ', up to the end of the sweep at ' + sayNumber(fmt(iv.hi, S));
@@ -1949,7 +1957,7 @@ function locusReport(inputs, opts) {
   ];
 
   var tests = runSelfTests(), passedCases = tests.cases.filter(function (c) { return c.checks.every(function (q) { return q.pass; }); }).length;
-  var hintList = Object.keys(analysis.hints || {}).map(function (f) { return f + ': ' + analysis.hints[f].join(' '); });
+  var hintList = hintLines(analysis);
   var warnCount = analysis.warnings.length + hintList.length;
   var checks = [
     {
@@ -2166,6 +2174,11 @@ if (typeof document !== 'undefined') (function () {
   /* ----- readouts ----- */
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function badge(cls, text) { return '<span class="badge ' + cls + '">' + esc(text) + '</span>'; }
+  /* PASS or FAIL when requirements are set, else Stable or Unstable. */
+  function verdictHtml(at) {
+    var good = analysis.scan.active.length ? at.pass : at.stable;
+    return '<span class="' + (good ? 'pass' : 'fail') + '">' + (analysis.scan.active.length ? (at.pass ? 'PASS' : 'FAIL') : (at.stable ? 'Stable' : 'Unstable')) + '</span>';
+  }
   function renderBadges() {
     if (!atk) { $('badges').innerHTML = badge('warn', 'Input error'); return; }
     var active = analysis.scan.active.length, h = '';
@@ -2179,9 +2192,8 @@ if (typeof document !== 'undefined') (function () {
   }
   function renderReadouts() {
     var loop = analysis.loop, x = loop.x, ann = analysis.annotations, z = loop.mode === 'z', h = '';
-    var failing = [];
-    atk.poles.forEach(function (a) { a.fails.forEach(function (f) { if (failing.indexOf(f) < 0) failing.push(f); }); });
-    h += '<div class="verdict"><strong>' + (analysis.scan.active.length ? (atk.pass ? '<span class="pass">PASS</span>' : '<span class="fail">FAIL</span>') : (atk.stable ? '<span class="pass">Stable</span>' : '<span class="fail">Unstable</span>')) + '</strong> at K = ' + fmt(atk.k, SIG) +
+    var failing = failingRequirements(atk);
+    h += '<div class="verdict"><strong>' + verdictHtml(atk) + '</strong> at K = ' + fmt(atk.k, SIG) +
       (failing.length ? ' — failing: ' + esc(failing.map(function (f) { return REQ_LABELS[f]; }).join(', ')) : '') + '<br>' + esc(verdictText(analysis, SIG)) + '</div>';
     h += '<h3 class="hint" style="margin-top:.6rem">Closed-loop poles</h3><div class="tablewrap"><table><thead><tr><th>Pole ' + x + '</th>' + (z ? '<th>s = ln(z)/T</th>' : '') + '<th class="num">ζ</th><th class="num">ωn (rad/s)</th><th>Status</th></tr></thead><tbody>';
     atk.poles.forEach(function (a) {
@@ -2211,7 +2223,7 @@ if (typeof document !== 'undefined') (function () {
     pins.forEach(function (p, i) {
       var at = closedLoopAt(analysis, p.k, inputs.requirements), d = dominant(at), r = d ? poleRow(d, analysis.loop, SIG) : null;
       h += '<tr><td>' + (i + 1) + '</td><td class="num"><button type="button" class="small" data-setk="' + i + '" aria-label="Set K to pin ' + (i + 1) + '">' + fmt(p.k, SIG) + '</button></td><td class="mono">' + (r ? esc(r.pole) : '—') + '</td><td class="num">' + (r ? r.zeta : '—') + '</td><td class="num">' + (r ? r.wn : '—') + '</td><td>' +
-        (analysis.scan.active.length ? (at.pass ? '<span class="pass">PASS</span>' : '<span class="fail">FAIL</span>') : (at.stable ? '<span class="pass">Stable</span>' : '<span class="fail">Unstable</span>')) +
+        verdictHtml(at) +
         '</td><td><button type="button" class="small" data-unpin="' + i + '" aria-label="Remove pin ' + (i + 1) + '">✕</button></td></tr>';
     });
     $('pins').innerHTML = h + '</tbody></table>';
@@ -2253,6 +2265,7 @@ if (typeof document !== 'undefined') (function () {
     view.cx += before.re - after.re; view.cy += before.im - after.im;
     userMoved = true; regionCache = null; draw();
   }
+  function zoomCentre(f) { var d = size(); zoomAt(f, d.w / 2, d.h / 2); }
   function niceStep(raw) { var e = Math.pow(10, Math.floor(Math.log10(raw))), f = raw / e; return (f < 1.5 ? 1 : f < 3.5 ? 2 : f < 7.5 ? 5 : 10) * e; }
   var colors = {};
   function readColors() {
@@ -2440,8 +2453,8 @@ if (typeof document !== 'undefined') (function () {
     var dim = size(), step = 0.1 * Math.min(dim.w, dim.h) / view.ppu, used = true;
     if (e.key === 'ArrowLeft') view.cx -= step; else if (e.key === 'ArrowRight') view.cx += step;
     else if (e.key === 'ArrowUp') view.cy += step; else if (e.key === 'ArrowDown') view.cy -= step;
-    else if (e.key === '+' || e.key === '=') { zoomAt(1.25, dim.w / 2, dim.h / 2); e.preventDefault(); return; }
-    else if (e.key === '-' || e.key === '_') { zoomAt(0.8, dim.w / 2, dim.h / 2); e.preventDefault(); return; }
+    else if (e.key === '+' || e.key === '=') { zoomCentre(1.25); e.preventDefault(); return; }
+    else if (e.key === '-' || e.key === '_') { zoomCentre(0.8); e.preventDefault(); return; }
     else if (e.key === 'f' || e.key === 'F') fitView();
     else used = false;
     if (used) { e.preventDefault(); userMoved = e.key.toLowerCase() !== 'f'; regionCache = null; draw(); }
@@ -2455,6 +2468,7 @@ if (typeof document !== 'undefined') (function () {
     var el = $(id), grow = function () { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight + 2, 220) + 'px'; };
     el.addEventListener('input', grow); grow();
   });
+  function refreshFields(ids) { (ids || ['fC', 'fG', 'fH']).forEach(function (id) { $(id).dispatchEvent(new Event('input')); }); }
   function setMode(m) {
     if (inputs.mode === m) return;
     var c = readControls(); inputs = c; inputs.mode = m;
@@ -2477,22 +2491,25 @@ if (typeof document !== 'undefined') (function () {
   });
   $('kMaxAuto').addEventListener('click', function () { $('kMax').value = ''; recompute(); });
   $('fitBtn').addEventListener('click', function () { fitView(); draw(); });
-  $('zoomIn').addEventListener('click', function () { var d = size(); zoomAt(1.25, d.w / 2, d.h / 2); });
-  $('zoomOut').addEventListener('click', function () { var d = size(); zoomAt(0.8, d.w / 2, d.h / 2); });
+  $('zoomIn').addEventListener('click', function () { zoomCentre(1.25); });
+  $('zoomOut').addEventListener('click', function () { zoomCentre(0.8); });
   $('gridBtn').addEventListener('click', function () { showGrid = !showGrid; $('gridBtn').setAttribute('aria-pressed', String(showGrid)); draw(); });
-  function loadInputs(next) { inputs = clone(next); syncControls(); ['fC', 'fG', 'fH'].forEach(function (id) { $(id).dispatchEvent(new Event('input')); }); recompute({ fit: true }); }
+  function loadInputs(next) { inputs = clone(next); syncControls(); refreshFields(); recompute({ fit: true }); }
   EXAMPLES.forEach(function (ex, i) { var o = document.createElement('option'); o.value = String(i); o.textContent = ex.label; $('examples').appendChild(o); });
   $('examples').addEventListener('change', function () { var v = $('examples').value; if (v !== '') loadInputs(EXAMPLES[Number(v)].inputs); $('examples').value = ''; });
   $('resetBtn').addEventListener('click', function () { loadInputs(EXAMPLES[0].inputs); });
 
   /* ----- export and import ----- */
+  function download(text, name) {
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([text], { type: 'text/markdown' })); a.download = name; document.body.appendChild(a); a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 0);
+  }
   function markdown() { return exportMarkdown(inputs, { analysis: analysis, date: new Date().toISOString().slice(0, 10) }); }
   function ioStatus(msg) { $('ioStatus').textContent = (inputsValid ? '' : 'The fields have an error, so the record holds the last valid loop. ') + msg; }
   $('exportBtn').addEventListener('click', function () {
     if (!analysis) return;
-    var blob = new Blob([markdown()], { type: 'text/markdown' }), a = document.createElement('a');
-    a.href = URL.createObjectURL(blob); a.download = 'root-locus-check.md'; document.body.appendChild(a); a.click();
-    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 0);
+    download(markdown(), 'root-locus-check.md');
     ioStatus('Downloaded root-locus-check.md.');
   });
   $('copyBtn').addEventListener('click', function () {
@@ -2508,9 +2525,7 @@ if (typeof document !== 'undefined') (function () {
     var text = reportDeck(), name = 'root-locus-beamdswitch.md';
     if (!text) { ioStatus('Fix the loop first: there is no analysis to save.'); return; }
     try {
-      var a = document.createElement('a');
-      a.href = URL.createObjectURL(new Blob([text], { type: 'text/markdown' })); a.download = name; document.body.appendChild(a); a.click();
-      setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 0);
+      download(text, name);
       ioStatus('Saved ' + name + ': open it in beamdswitch.');
     } catch (e) {
       return clipboardWrite(text).then(function () { ioStatus('Copied the beamdswitch deck, as saving is blocked here: paste it into beamdswitch.'); }, function () { ioStatus('Could not save or copy the beamdswitch deck here.'); });
@@ -2573,7 +2588,7 @@ if (typeof document !== 'undefined') (function () {
     else if (b.dataset.use !== undefined) {
       var ex = helpExamples[Number(b.dataset.use)];
       $(ex[2] === 'C' ? 'fC' : 'fG').value = ex[0];
-      $('help').close(); ['fC', 'fG'].forEach(function (id) { $(id).dispatchEvent(new Event('input')); }); recompute({ fit: true });
+      $('help').close(); refreshFields(['fC', 'fG']); recompute({ fit: true });
     }
   });
   $('helpBtn').addEventListener('click', function () { if ($('help').showModal) $('help').showModal(); else $('help').setAttribute('open', ''); });
@@ -2593,7 +2608,7 @@ if (typeof document !== 'undefined') (function () {
   var resizeTimer = null;
   window.addEventListener('resize', function () { clearTimeout(resizeTimer); resizeTimer = setTimeout(function () { regionCache = null; if (!userMoved) fitView(); draw(); }, 100); });
   syncControls();
-  ['fC', 'fG', 'fH'].forEach(function (id) { $(id).dispatchEvent(new Event('input')); });
+  refreshFields();
   recompute({ fit: true });
   if (/[?&]selftest\b/.test(location.search)) { $('testSec').open = true; runTests(); $('testSec').scrollIntoView({ block: 'start' }); }
 })();
