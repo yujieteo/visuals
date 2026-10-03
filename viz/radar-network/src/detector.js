@@ -183,12 +183,12 @@
         else if (sw === 1 || (sw === 2 && pulses === 1)) { const pdv = Math.exp(-eta / (1 + rhoN)); r = { pd: pdv, q: -Math.expm1(-eta / (1 + rhoN)) }; method = "closed form exp(-eta/(1+rho_N)): the dwell amplitude is complex Gaussian"; check = "exact"; }
         else if (sw === 3 || (sw === 4 && pulses === 1)) { const c = 1 + rhoN / 2, e = Math.exp(-eta / c), pdv = e * (1 + (eta * (c - 1)) / (c * c)); r = { pd: pdv, q: 1 - pdv }; method = "closed form exp(-eta/c)(1 + eta(c-1)/c^2), c = 1 + rho_N/2"; check = "exact"; }
         else {
-          const a = coherentAlignedPerPulse(kind, pulses, rho1, eta, 0.01);
+          const a = coherentAlignedPerPulse(kind, pulses, rho1, eta, 0.005);
           r = a; method = "conditional rho_coh = rho1 (sum sqrt x_m)^2 / N, averaged over the FFT-convolved distribution of the amplitude sum";
           if (doCheck) {
-            const b = coherentAlignedPerPulse(kind, pulses, rho1, eta, 0.02);
-            check = `grid 0.01 vs 0.02: |dPd| = ${N.sig(Math.abs(a.pd - b.pd), 2)}`;
-          } else check = "grid 0.01 (check on request)";
+            const b = coherentAlignedPerPulse(kind, pulses, rho1, eta, 0.01);
+            check = `grid 0.005 vs 0.01: |dPd| = ${N.sig(Math.abs(a.pd - b.pd), 2)}`;
+          } else check = "grid 0.005 (check on request)";
         }
       } else {
         if (sw === 2) { const pdv = Math.exp(-eta / (1 + rho1)); r = { pd: pdv, q: -Math.expm1(-eta / (1 + rho1)) }; method = "closed form exp(-eta/(1+rho1)): the per-pulse random phasors sum to CN(0, rho1)"; check = "exact"; }

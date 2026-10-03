@@ -169,5 +169,26 @@
     };
   }
 
-  return { SCENARIO_DATE, report, say };
+  /**
+   * The human-readable Markdown record of the current state: scenario, inputs, assumptions, derived quantities,
+   * result, sensitivity and notes. The numbers are the snapshot's, as on the page.
+   */
+  function markdown(scn, ctx) {
+    const snap = ctx.snapshot, t = snap.t, P = scn.processing;
+    const ok = snap.links.filter((l) => l.status === "ok");
+    const best = [...ok].sort((a, b) => b.margin_dB - a.margin_dB)[0];
+    const out = [`# Scenario: radar network at t = ${fixed(t, 3)} s`, "", `${scn.view.example ? `Example: ${scn.view.example}. ` : ""}${scn.radars.length} radars, ${scn.targets.length} targets, ${snap.links.length} links. Seed ${scn.seed}. Model ${scn.modelVersion}, digest ${snap.digest}.`, "", "## Inputs", ""];
+    out.push("| Object | x (km) | y (km) | z (m) | v (m/s) |", "|---|---|---|---|---|");
+    for (const o of [...scn.radars, ...scn.targets]) { const k = M.kinematics(o, t); out.push(`| ${o.id} | ${km(k.p[0])} | ${km(k.p[1])} | ${fixed(k.p[2], 1)} | ${C.vecTxt(k.v, 1, 4)} |`); }
+    out.push("", `- Detector: ${P.integration} integration, Swerling ${P.swerling}, scattering phase ${P.phase.mode}, P_fa ${txt(P.pfa)} per cell, required P_d ${P.pdRequired}`, `- Echo loss ${P.echoLoss_dB} dB; clutter ${scn.environment.clutter.enabled ? "on" : "off"}; direct paths ${scn.environment.directPath.enabled ? `on, ${scn.environment.directPath.cancellation_dB} dB cancellation` : "off"}`, "", "## Assumptions", "",
+      "- All absolute values (power, gains, losses, RCS, clutter) are synthetic.", "- Analytic probabilities assume thermal noise only.", "- The NASA F-117 model curves are separate evidence and enter no result.", "", "## Derived quantities", "",
+      "| Link | Type | P_r (dBm) | ρ₁ (dB) | Margin (dB) | P_d | Delay (μs) | Doppler (Hz) | Status |", "|---|---|---|---|---|---|---|---|---|");
+    for (const l of snap.links) out.push(`| ${l.id} | ${l.type} | ${l.PrdBm === null ? "—" : fixed(l.PrdBm, 2)} | ${l.rho1_dB === null ? "—" : fixed(l.rho1_dB, 2)} | ${l.margin_dB === null ? "—" : fixed(l.margin_dB, 2)} | ${l.pdText} | ${txt(l.tau_us, 5)} | ${fixed(l.fD, 1)} | ${l.status === "ok" ? "valid" : `${statusWords[l.status]}: ${l.reasons.join("; ")}`} |`);
+    out.push("", "## Result", "", best ? `Best margin: ${best.id}, ${fixed(best.margin_dB, 2)} dB (P_d ${best.pdText}). ${ok.filter((l) => l.margin_dB >= 0).length} of ${snap.links.length} links meet the required SNR.` : "No link is valid at this time.", "",
+      "## Sensitivity", "", "- Twice the monostatic range: −12.04 dB of received power.", "- 1 dB more loss or 1 dB less gain: 1 dB less margin.", `- Coherent integration of ${scn.radars[0]?.tx.pulses ?? "N"} pulses adds ${fixed(10 * Math.log10(scn.radars[0]?.tx.pulses ?? 1), 2)} dB to the integrated SNR.`, "",
+      "## Notes", "", ...(ctx.references ?? []).map((r) => `- ${r.title}: published ${r.published} ${r.units}, this model ${txt(r.computed, 8)} ${r.units}, ${r.pass ? "pass" : "FAIL"}`), "- MATLAB was not executed for this record; detector fixtures from MATLAB are unverified.", "");
+    return out.join("\n");
+  }
+
+  return { SCENARIO_DATE, report, markdown, say };
 });

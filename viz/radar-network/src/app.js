@@ -852,9 +852,16 @@
     try {
       const src = WORKER_SCRIPTS.map((id) => document.getElementById(id).textContent).join("\n;\n");
       const url = URL.createObjectURL(new Blob([src], { type: "text/javascript" }));
-      app.worker = new Worker(url);
-      URL.revokeObjectURL(url);
-      app.worker.addEventListener("error", () => { app.workerFailed = true; app.worker = null; });
+      const w = new Worker(url);
+      // Keep the blob URL until the worker answers: some engines load it after the constructor returns.
+      app.workerUrl = url;
+      w.addEventListener("error", (e) => {
+        if (e && e.preventDefault) e.preventDefault();
+        app.workerFailed = true; app.worker = null;
+        try { URL.revokeObjectURL(url); } catch (err) { /* already gone */ }
+        if (app.onWorkerFail) app.onWorkerFail();
+      });
+      app.worker = w;
     } catch (e) { app.workerFailed = true; app.worker = null; }
     return app.worker;
   }
@@ -863,33 +870,33 @@
     if (app.job) cancelJob();
     const token = { cancelled: false };
     app.job = token;
-    const w = getWorker();
     const model = S.clone(scn()); delete model.view;
+    const mainThread = async () => {
+      let result;
+      if (job.type === "channel") {
+        const plan = G.planChannel(model, job.rx, job.tx, job.t0);
+        if (!plan.ok) result = { ok: false, reasons: plan.reasons };
+        else result = await G.runChannel(plan, { progress: onProgress, cancelled: async () => { await new Promise((r) => setTimeout(r, 0)); return token.cancelled; } }, job.opts);
+      } else result = G.combineSites(model, job.t0, job.opts);
+      if (token.cancelled) throw new Error("cancelled");
+      return result;
+    };
     return new Promise((resolve, reject) => {
-      const finish = (ok, val) => { if (app.job === token) app.job = null; (ok ? resolve : reject)(val); };
-      if (w) {
-        token.terminate = () => { w.terminate(); app.worker = null; finish(false, new Error("cancelled")); };
-        const onMsg = (e) => {
-          const m = e.data;
-          if (m.id !== job.id) return;
-          if (m.type === "progress") onProgress(m.done, m.total);
-          else { w.removeEventListener("message", onMsg); if (m.type === "result") finish(true, m.result); else finish(false, new Error(m.message)); }
-        };
-        w.addEventListener("message", onMsg);
-        w.postMessage({ ...job, scn: model });
-      } else {
-        (async () => {
-          try {
-            let result;
-            if (job.type === "channel") {
-              const plan = G.planChannel(model, job.rx, job.tx, job.t0);
-              if (!plan.ok) result = { ok: false, reasons: plan.reasons };
-              else result = await G.runChannel(plan, { progress: onProgress, cancelled: async () => { await new Promise((r) => setTimeout(r, 0)); return token.cancelled; } }, job.opts);
-            } else result = G.combineSites(model, job.t0, job.opts);
-            if (token.cancelled) finish(false, new Error("cancelled")); else finish(true, result);
-          } catch (e) { finish(false, e); }
-        })();
-      }
+      const finish = (ok, val) => { if (app.job === token) app.job = null; app.onWorkerFail = null; (ok ? resolve : reject)(val); };
+      const fallback = () => { mainThread().then((r) => finish(true, r), (e) => finish(false, e)); };
+      const w = getWorker();
+      if (!w) { fallback(); return; }
+      token.terminate = () => { w.terminate(); app.worker = null; finish(false, new Error("cancelled")); };
+      app.onWorkerFail = () => { token.terminate = null; if (!token.cancelled) fallback(); };
+      const onMsg = (e) => {
+        const m = e.data;
+        if (m.id !== job.id) return;
+        if (app.workerUrl) { try { URL.revokeObjectURL(app.workerUrl); } catch (err) { /* already gone */ } app.workerUrl = null; }
+        if (m.type === "progress") onProgress(m.done, m.total);
+        else { w.removeEventListener("message", onMsg); if (m.type === "result") finish(true, m.result); else finish(false, new Error(m.message)); }
+      };
+      w.addEventListener("message", onMsg);
+      w.postMessage({ ...job, scn: model });
     });
   }
   function cancelJob() {
@@ -968,22 +975,34 @@
     });
     return window.Beamdswitch.deck(rep);
   }
+  function markdownRecord() {
+    const s = scn();
+    return RP.markdown(s, { snapshot: CA.snapshot(s, view().time_s, { digest: S.modelDigest(s) }), references: CK.references(DATA.references) });
+  }
+  function downloadMarkdown() { U.download("radar-network-record.md", markdownRecord(), "text/markdown"); notice("Downloaded radar-network-record.md."); }
+  async function copyMarkdown() { const ok = await U.copy(markdownRecord()); notice(ok ? "Markdown copied." : "Copy failed: use Download Markdown.", ok ? "" : "err"); }
   function downloadReport() { try { U.download("radar-network-beamdswitch.md", reportMarkdown(), "text/markdown"); notice("Downloaded radar-network-beamdswitch.md."); } catch (e) { notice(`Report failed: ${e.message}`, "err"); } }
   async function copyReport() { try { const ok = await U.copy(reportMarkdown()); notice(ok ? "Report copied." : "Copy failed: use Download report.", ok ? "" : "err"); } catch (e) { notice(`Report failed: ${e.message}`, "err"); } }
 
   /* ===== IMPORT ===== */
   function openImport() { $("#import-errors").textContent = ""; $("#import-text").value = ""; $("#import-file").value = ""; $("#import-dialog").showModal(); }
   async function applyImport() {
+    const dlg = $("#import-dialog");
     let text = $("#import-text").value;
     const f = $("#import-file").files[0];
     if (f) text = await f.text();
     const res = S.importJson(text);
-    if (!res.ok) { $("#import-errors").textContent = `Import refused; the current scene stays. ${res.errors.map((e) => `${e.path}: ${e.message}`).join("; ")}`; return; }
+    if (!res.ok) {
+      $("#import-errors").textContent = `Import refused; the current scene stays. ${res.errors.map((e) => `${e.path}: ${e.message}`).join("; ")}`;
+      if (!dlg.open) { dlg.showModal(); }
+      return;
+    }
     const before = S.clone(scn());
     app.scn = res.state;
     app.history.push("Import JSON", before);
     app.sampled = null; app.sampledAll.clear(); app.combo = null;
-    $("#import-dialog").close();
+    if (dlg.open) dlg.close();
+    $("#import-file").value = "";
     $("#example-select").value = view().example || "";
     syncTimeInputs();
     modelChanged();
@@ -998,7 +1017,7 @@
     for (const id of M.linkIds(s)) out.push({ kind: "link", label: `Link ${id}`, run: () => { selectLink(id); openCalc(id, true); $(`#row-${cssId(id)}`)?.scrollIntoView({ block: "nearest" }); } });
     for (const t of TABS) out.push({ kind: "view", label: `View: ${$(`#tab-${t}`).textContent}`, run: () => setTab(t) });
     for (const ex of DATA.examples.examples) out.push({ kind: "example", label: `Example: ${ex.title}`, run: () => loadExample(ex.id) });
-    const cmds = [["Play or pause", () => setPlaying(!app.playing)], ["Restart time", () => setTime(0)], ["Calculate dwell", () => { setTab("rd"); calculateDwell(false); }], ["Calculate all channels", () => { setTab("rd"); calculateDwell(true); }], ["Cancel calculation", cancelJob], ["Export JSON", exportJson], ["Import JSON", openImport], ["Download beamdswitch report", downloadReport], ["Copy beamdswitch report", copyReport], ["Undo", undo], ["Redo", redo], ["Reset scene", resetScene], ["Fit scene", fitCamera], ["Expand all calculations", () => expandAll(true)], ["Collapse all calculations", () => expandAll(false)], ["Keyboard shortcuts", () => $("#shortcut-dialog").showModal()]];
+    const cmds = [["Play or pause", () => setPlaying(!app.playing)], ["Restart time", () => setTime(0)], ["Calculate dwell", () => { setTab("rd"); calculateDwell(false); }], ["Calculate all channels", () => { setTab("rd"); calculateDwell(true); }], ["Cancel calculation", cancelJob], ["Export JSON", exportJson], ["Import JSON", openImport], ["Download beamdswitch report", downloadReport], ["Download Markdown record", downloadMarkdown], ["Copy Markdown record", copyMarkdown], ["Copy beamdswitch report", copyReport], ["Undo", undo], ["Redo", redo], ["Reset scene", resetScene], ["Fit scene", fitCamera], ["Expand all calculations", () => expandAll(true)], ["Collapse all calculations", () => expandAll(false)], ["Keyboard shortcuts", () => $("#shortcut-dialog").showModal()]];
     for (const [label, run] of cmds) out.push({ kind: "command", label, run });
     for (const d of $$("#controls [data-path]")) {
       const lab = d.closest("label")?.querySelector("span")?.textContent || d.dataset.path;
@@ -1074,6 +1093,9 @@
     $("#export-json").addEventListener("click", exportJson);
     $("#import-json").addEventListener("click", openImport);
     $("#import-apply").addEventListener("click", applyImport);
+    $("#import-file").addEventListener("change", () => { if ($("#import-file").files[0]) applyImport(); });
+    $("#md-download").addEventListener("click", downloadMarkdown);
+    $("#md-copy").addEventListener("click", copyMarkdown);
     $("#import-cancel").addEventListener("click", () => $("#import-dialog").close());
     $("#report-download").addEventListener("click", downloadReport);
     $("#report-copy").addEventListener("click", copyReport);
