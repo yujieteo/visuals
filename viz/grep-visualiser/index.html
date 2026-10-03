@@ -1,0 +1,2675 @@
+<!doctype html>
+<!-- Grep Visualiser. One self-contained page: no dependencies, no relative URLs,
+     no network requests. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; worker-src blob:; connect-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" href="data:,">
+<meta name="description" content="See what ripgrep, GNU grep, PowerShell and VS Code would match for a pattern: dialect translation with honest confidence levels, each engine's line model and line endings, a compare-all view, generated bash and PowerShell commands and a live replace preview. Runs locally; nothing is sent.">
+<title>Grep Visualiser</title>
+<script id="site-theme">try { var t = localStorage.getItem("theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (e) {}</script>
+<style>
+:root{--bg:#fff;--fg:#1d1d1f;--muted:#6e6e73;--surface:#f5f5f7;--border:#d2d2d7;--control:#86868b;--grid:#e8e8ed;--focus:#0071e3;--c1:#2a78d6;--mark:rgba(42,120,214,.22);--mark-edge:#2a78d6;--rep:rgba(26,127,100,.22);--ok:#1a7f4b;--bad:#c4261d;--warn:#9a6700;--sans:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;--mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;--r:.5rem;color-scheme:light dark}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--surface:#2c2c2e;--border:#48484a;--control:#8e8e93;--grid:#333336;--focus:#2997ff;--c1:#5aa2f0;--mark:rgba(90,162,240,.30);--mark-edge:#5aa2f0;--rep:rgba(60,197,154,.28);--ok:#30c07a;--bad:#ff6961;--warn:#e3b341}}
+:root[data-theme="dark"]{--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--surface:#2c2c2e;--border:#48484a;--control:#8e8e93;--grid:#333336;--focus:#2997ff;--c1:#5aa2f0;--mark:rgba(90,162,240,.30);--mark-edge:#5aa2f0;--rep:rgba(60,197,154,.28);--ok:#30c07a;--bad:#ff6961;--warn:#e3b341;color-scheme:dark}
+:root[data-theme="light"]{color-scheme:light}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 var(--sans);letter-spacing:-.011em;-webkit-font-smoothing:antialiased}
+main{width:min(100% - 2rem,90rem);margin:auto;padding:clamp(1.25rem,5vw,3rem) 0 calc(3rem + env(safe-area-inset-bottom))}
+h1{font-size:clamp(2rem,6vw,3.25rem);line-height:1.04;letter-spacing:-.045em;margin:.35rem 0 .8rem}
+h2{font-size:1.05rem;letter-spacing:-.02em;margin:0;line-height:1.25}
+h3{font:600 .72rem/1.4 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:1rem 0 .4rem}
+p{margin:.5rem 0;max-width:72ch}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+code,kbd{font-family:var(--mono);font-size:.9em}
+.eyebrow{font:600 .75rem/1.4 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0;display:flex;flex-wrap:wrap;gap:.25rem .9rem}
+.lede{font-size:1.125rem;max-width:68ch}
+.muted{color:var(--muted)}
+.targets{font:.8rem/1.5 var(--mono);color:var(--muted);margin:.2rem 0 0}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.35rem;border:1px solid var(--control);background:var(--bg);border-radius:999px;padding:.2rem .75rem;min-height:2.1rem;font-size:.8125rem;white-space:nowrap}
+@media (hover:hover){.btn:hover{background:var(--surface)}}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.small{min-height:1.8rem;padding:.05rem .6rem;font-size:.78rem}
+.presets{display:flex;flex-wrap:wrap;gap:.4rem;margin:1.25rem 0 1rem;padding:.6rem 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);align-items:center}
+.seg{display:inline-flex;flex-wrap:wrap;border:1px solid var(--control);border-radius:1.1rem;overflow:hidden;max-width:100%}
+.seg label{display:inline-flex;align-items:center;cursor:pointer;font-size:.8125rem;min-height:2.1rem;padding:0 .75rem;position:relative}
+.seg input{position:absolute;opacity:0;width:1px;height:1px}
+.seg label:has(input:checked){background:var(--fg);color:var(--bg);font-weight:600}
+.seg label:has(input:focus-visible){outline:2px solid var(--focus);outline-offset:-2px}
+.check{display:inline-flex;gap:.4rem;align-items:center;font-size:.85rem;min-height:1.9rem}
+.check code{font-weight:600}
+.check.disabled{opacity:.5}
+.layout{display:grid;gap:1.25rem 1.75rem;grid-template-columns:minmax(0,26rem) minmax(0,1fr);align-items:start}
+@media (max-width:62rem){.layout{grid-template-columns:minmax(0,1fr)}}
+.col{display:flex;flex-direction:column;gap:1rem;min-width:0}
+fieldset{border:1px solid var(--border);border-radius:var(--r);padding:.65rem .8rem .8rem;margin:0;min-width:0}
+legend{font:600 .72rem/1.4 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:0 .3rem}
+.f{display:flex;flex-direction:column;gap:.2rem;min-width:0;font-size:.8125rem;margin:.35rem 0}
+.f>span{color:var(--muted);font-size:.78rem}
+input[type="text"],input[type="number"],select,textarea{border:1px solid var(--control);background:var(--bg);border-radius:var(--r);padding:.3rem .5rem;min-height:2.1rem;font-size:.875rem;min-width:0;width:100%}
+input.code,textarea{font:.875rem/1.45 var(--mono)}
+input[type="number"]{width:4.5rem}
+textarea{min-height:12rem;resize:vertical;white-space:pre;overflow-wrap:normal;overflow-x:auto}
+[aria-invalid="true"]{border-color:var(--bad);box-shadow:0 0 0 1px var(--bad)}
+.checks{display:grid;grid-template-columns:repeat(auto-fill,minmax(7.5rem,1fr));gap:.1rem .6rem}
+.nums{display:flex;flex-wrap:wrap;gap:.4rem .9rem;align-items:center;margin-top:.4rem;font-size:.85rem}
+.nums label{display:inline-flex;gap:.35rem;align-items:center}
+.patrow{display:flex;gap:.35rem;align-items:center;margin:.25rem 0}
+.patrow input{flex:1}
+.hint{font-size:.78rem;color:var(--muted);margin:.3rem 0 0}
+.unsupported{font-size:.8rem;color:var(--bad);margin:.3rem 0 0;overflow-wrap:anywhere}
+.files{display:flex;flex-wrap:wrap;gap:.3rem;align-items:center;margin-bottom:.4rem}
+.files .tab{border:1px solid var(--control);border-radius:.4rem;padding:.1rem .5rem;font:.78rem var(--mono);background:var(--bg);min-height:1.8rem}
+.files .tab[aria-selected="true"]{background:var(--fg);color:var(--bg)}
+.filebar{display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;margin:.35rem 0}
+.filebar input{width:auto;flex:1 1 10rem}
+.card{border:1px solid var(--border);border-radius:var(--r);padding:.65rem .8rem .8rem;min-width:0;display:flex;flex-direction:column;gap:.45rem}
+.card>header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:.3rem .6rem}
+.status{display:flex;flex-wrap:wrap;gap:.35rem .6rem;align-items:center;font-size:.85rem}
+.level{display:inline-flex;align-items:center;border-radius:999px;padding:.1rem .6rem;font:600 .72rem var(--mono);border:1px solid currentColor;letter-spacing:.03em;text-transform:uppercase}
+.level.exact{color:var(--ok)}
+.level.differs{color:var(--warn)}
+.level.cannot,.level.error,.level.timeout{color:var(--bad)}
+.notes{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.25rem;font-size:.83rem}
+.notes li{border-left:3px solid var(--border);padding:.05rem .55rem}
+.notes li.differs{border-left-color:var(--warn)}
+.notes li.bad{border-left-color:var(--bad)}
+pre{margin:0;font:.8125rem/1.5 var(--mono);white-space:pre;overflow:auto;max-height:28rem;background:var(--surface);border-radius:.35rem;padding:.5rem .6rem;min-width:0;tab-size:4}
+pre.wrap{white-space:pre-wrap;overflow-wrap:anywhere}
+pre .pre{color:var(--muted)}
+pre .ctx{color:var(--muted)}
+pre .sep{color:var(--muted)}
+mark{background:var(--mark);color:inherit;border-radius:2px;box-shadow:inset 0 -2px 0 var(--mark-edge)}
+mark.empty{display:inline-block;width:2px;margin:0 -1px;background:var(--mark-edge);box-shadow:none;vertical-align:text-bottom;height:1.1em}
+mark.rep{background:var(--rep);box-shadow:inset 0 -2px 0 var(--ok)}
+.cr{color:var(--warn);font-size:.8em}
+.regex{font:.8rem/1.45 var(--mono);overflow-wrap:anywhere;color:var(--muted);margin:0}
+.regex b{color:var(--fg);font-weight:600}
+.cmd{display:flex;gap:.4rem;align-items:flex-start}
+.cmd pre{flex:1;white-space:pre-wrap;overflow-wrap:anywhere}
+.tablewrap{overflow-x:auto;max-width:100%}
+table{border-collapse:collapse;width:100%;font-size:.8125rem;font-variant-numeric:tabular-nums}
+th,td{padding:.3rem .5rem;border-bottom:1px solid var(--grid);text-align:right;vertical-align:top}
+th{font:600 .68rem/1.3 var(--mono);letter-spacing:.04em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border)}
+th:first-child,td:first-child,td.l,th.l{text-align:left}
+tr.diff td{background:color-mix(in srgb,var(--warn) 12%,transparent)}
+.demos{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,17rem),1fr));gap:.6rem}
+.demo{border:1px solid var(--border);border-radius:var(--r);padding:.55rem .7rem;background:var(--bg);text-align:left;display:flex;flex-direction:column;gap:.2rem;font-size:.83rem}
+@media (hover:hover){.demo:hover{background:var(--surface)}}
+.demo b{font-size:.9rem}
+.demo span{color:var(--muted)}
+dl.explain{display:grid;grid-template-columns:minmax(0,9rem) minmax(0,1fr);gap:.25rem .8rem;font-size:.83rem;margin:.4rem 0}
+dl.explain dt{font-family:var(--mono);font-weight:600;overflow-wrap:anywhere}
+dl.explain dd{margin:0}
+details>summary{cursor:pointer;font:600 .78rem var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted);padding:.3rem 0}
+.badge{display:inline-flex;align-items:center;border-radius:999px;padding:.15rem .65rem;font:600 .75rem var(--mono);border:1px solid currentColor;background:none}
+.badge.pass{color:var(--ok)}
+.badge.fail{color:var(--bad)}
+.selftests{list-style:none;padding:0;margin:.4rem 0;font-size:.8rem;display:flex;flex-direction:column;gap:.15rem}
+.selftests b{font-family:var(--mono);font-size:.7rem;margin-right:.35rem}
+.selftests .pass b{color:var(--ok)}
+.selftests .fail b{color:var(--bad)}
+.notice{font-size:.83rem;color:var(--warn);margin:0}
+footer{margin-top:3rem;padding-top:1rem;border-top:1px solid var(--border);font-size:.8125rem;color:var(--muted);display:flex;flex-wrap:wrap;gap:.3rem 1.2rem;align-items:center}
+.visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <p class="eyebrow"><span>Visuals</span><span>Tools</span><span>Runs locally</span></p>
+  <h1>Grep Visualiser</h1>
+  <p class="lede">Paste some text, type a pattern and see what ripgrep, GNU grep, PowerShell and VS Code would match. Each dialect is translated to a JavaScript regex, with an honest label where the emulation differs from the real engine or cannot be done at all.</p>
+  <p class="targets" id="targets"></p>
+</header>
+
+<div class="presets" role="radiogroup" aria-label="Preset">
+  <span class="seg" id="preset-seg"></span>
+  <label class="check"><input type="checkbox" id="compare"> Compare all</label>
+</div>
+
+<div class="layout">
+  <div class="col">
+    <fieldset>
+      <legend>Pattern</legend>
+      <div id="patterns"></div>
+      <button class="btn small" type="button" id="add-pattern">Add -e pattern</button>
+      <div class="f" id="repl-wrap">
+        <span id="repl-label">Replacement</span>
+        <input type="text" class="code" id="replacement" spellcheck="false" autocomplete="off" autocapitalize="off">
+        <p class="hint" id="repl-hint"></p>
+      </div>
+    </fieldset>
+    <fieldset>
+      <legend id="flags-legend">Flags</legend>
+      <div id="flags"></div>
+      <div class="f" id="typed-wrap">
+        <label for="typed">Type flags, then Enter</label>
+        <input type="text" class="code" id="typed" spellcheck="false" autocomplete="off" autocapitalize="off" placeholder="-i -A 2 --crlf">
+        <p class="unsupported" id="unsupported" role="status"></p>
+      </div>
+    </fieldset>
+    <fieldset>
+      <legend>Line endings</legend>
+      <span class="seg" id="eol-seg">
+        <label><input type="radio" name="eol" value="lf">LF</label><label><input type="radio" name="eol" value="crlf">CRLF</label><label><input type="radio" name="eol" value="pasted">As pasted</label>
+      </span>
+      <p class="hint" id="eol-hint"></p>
+    </fieldset>
+  </div>
+
+  <div class="col">
+    <section class="card" aria-labelledby="t-input">
+      <header><h2 id="t-input">Input</h2><span class="muted" id="input-size"></span></header>
+      <div class="files" role="tablist" aria-label="Files" id="file-tabs"></div>
+      <div class="filebar">
+        <label class="visually-hidden" for="file-name">File name</label>
+        <input type="text" class="code" id="file-name" spellcheck="false" autocomplete="off">
+        <button class="btn small" type="button" id="add-file">Add file</button>
+        <button class="btn small" type="button" id="remove-file">Remove file</button>
+      </div>
+      <label class="visually-hidden" for="text">Input text</label>
+      <textarea id="text" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
+      <p class="notice" id="input-notice" hidden></p>
+      <h3>Matches in this file</h3>
+      <pre id="highlight" aria-label="Input with matches highlighted"></pre>
+    </section>
+
+    <section class="card" aria-labelledby="t-result">
+      <header><h2 id="t-result">Result</h2><span class="status" id="status" role="status"></span></header>
+      <p class="regex" id="regex"></p>
+      <p class="hint" id="model"></p>
+      <ul class="notes" id="notes"></ul>
+      <h3 id="output-title">Output</h3>
+      <pre id="output"></pre>
+      <p class="notice" id="cap-notice" hidden></p>
+    </section>
+
+    <section class="card" aria-labelledby="t-replace">
+      <header><h2 id="t-replace">Replace preview</h2></header>
+      <p class="hint" id="replace-msg"></p>
+      <ul class="notes" id="replace-notes"></ul>
+      <pre id="replace-out" hidden></pre>
+    </section>
+
+    <section class="card" aria-labelledby="t-command">
+      <header><h2 id="t-command">Command</h2><span class="seg" id="shell-seg"><label><input type="radio" name="shell" value="bash">bash</label><label><input type="radio" name="shell" value="pwsh">PowerShell</label></span></header>
+      <div class="cmd"><pre id="command" class="wrap"></pre><button class="btn small" type="button" id="copy">Copy</button></div>
+      <p class="hint" id="command-hint"></p>
+    </section>
+
+    <section class="card" aria-labelledby="t-compare" id="compare-card" hidden>
+      <header><h2 id="t-compare">Compare all presets</h2></header>
+      <p class="hint">The same pattern and input through every preset, each with its own flags. Highlighted rows match a different set of spans from the majority.</p>
+      <div class="tablewrap"><table><thead><tr><th class="l">Preset</th><th class="l">Confidence</th><th>Matches</th><th>Lines</th><th class="l">Same as most?</th></tr></thead><tbody id="compare-body"></tbody></table></div>
+    </section>
+  </div>
+</div>
+
+<section aria-labelledby="t-demos">
+  <h3 id="t-demos">Counter-example demos</h3>
+  <div class="demos" id="demos"></div>
+</section>
+
+<section aria-labelledby="t-explain">
+  <details id="explain-details"><summary id="t-explain">Flags explainer</summary><div id="explain"></div></details>
+  <details id="selftest-details"><summary>Self-test</summary><ul class="selftests" id="selftests"></ul></details>
+</section>
+
+<footer>
+  <span id="version"></span>
+  <span id="build"></span>
+  <span>Runs locally, nothing is sent.</span>
+  <button class="badge" type="button" id="selftest-badge">Self-test…</button>
+</footer>
+</main>
+
+<script id="grep-engine">
+(function (root) {
+"use strict";
+/* Grep Visualiser engine: dialect translators, matching models, flag handling,
+   command quoting and replace engines. Pure functions only: no DOM, no storage,
+   no clock, no randomness and no network. The page, the Web Worker and the Node
+   tests all load this same block (`self.GrepViz` in the browser). */
+
+const VERSION = "1.0.0";
+const BUILD_DATE = "2026-10-01";
+const MAX_INPUT_BYTES = 2 * 1024 * 1024;
+const MAX_HIGHLIGHTS = 5000;
+const TIMEOUT_MS = 1500;
+
+// Every non-JavaScript dialect is emitted as a JavaScript RegExp in `v` mode,
+// which gives nested classes and set operations (Rust `&&`/`--`, .NET `-[...]`).
+const HAS_V = (() => { try { new RegExp("[[a-z]--[aeiou]]", "v"); return true; } catch (e) { return false; } })();
+// Scoped case-insensitivity, such as `a(?i)b`, needs RegExp modifiers `(?i:...)`.
+const HAS_MODIFIERS = (() => { try { new RegExp("(?i:a)"); return true; } catch (e) { return false; } })();
+
+const PRESETS = [
+  { id: "rg", label: "ripgrep 14", short: "rg", target: "ripgrep 14" },
+  { id: "grep", label: "GNU grep 3.x", short: "grep", target: "GNU grep 3.x" },
+  { id: "pwsh", label: "PowerShell 7", short: "PowerShell", target: "PowerShell 7 (.NET regex)" },
+  { id: "vsfind", label: "VS Code Find", short: "VS Code Find", target: "current VS Code, Find widget (Ctrl+F)" },
+  { id: "vssearch", label: "VS Code Search", short: "VS Code Search", target: "current VS Code, Search panel (Ctrl+Shift+F)" },
+];
+const PRESET_IDS = PRESETS.map((p) => p.id);
+
+function defaultOptions() {
+  return {
+    rg: { case: "sensitive", w: false, x: false, F: false, v: false, o: false, c: false, l: false, n: false, U: false, P: false, crlf: false, r: false, A: null, B: null, C: null, globs: [], types: [], shell: "bash" },
+    grep: { matcher: "G", i: false, w: false, x: false, v: false, o: false, c: false, l: false, n: false, z: false, A: null, B: null, C: null, shell: "bash" },
+    pwsh: { mode: "select", CaseSensitive: false, SimpleMatch: false, NotMatch: false, AllMatches: false, Context: null, replQuote: "single" },
+    vsfind: { matchCase: false, wholeWord: false, regex: true, preserveCase: false, replace: false },
+    vssearch: { matchCase: false, wholeWord: false, regex: true, preserveCase: false, replace: false, include: "", exclude: "" },
+  };
+}
+
+/* ---------- small helpers ---------- */
+const cpLen = (s, i) => (s.codePointAt(i) > 0xffff ? 2 : 1);
+const isAlnum = (c) => /^[A-Za-z0-9]$/.test(c);
+// One code point as a source fragment that is valid inside and outside a class in `v` mode.
+const litJs = (ch) => (isAlnum(ch) ? ch : "\\u{" + ch.codePointAt(0).toString(16) + "}");
+const clone = (x) => JSON.parse(JSON.stringify(x));
+
+class PatternError extends Error {}
+class CannotEmulate extends Error {}
+
+/* ---------- character sets per engine ---------- */
+// Class contents (no brackets) so they nest inside other `v`-mode classes.
+const SET = {
+  digitU: "\\p{Nd}",
+  digitA: "0-9",
+  spaceU: "\\p{White_Space}",
+  spaceNet: "\\f\\n\\r\\t\\v\\x85\\p{Z}",
+  wordRust: "\\p{Alphabetic}\\p{M}\\p{Nd}\\p{Pc}\\p{Join_Control}",
+  wordU: "\\p{L}\\p{N}_",
+  wordNet: "\\p{L}\\p{Mn}\\p{Nd}\\p{Pc}",
+  hspace: "\\t\\p{Zs}",
+  vspace: "\\n\\v\\f\\r\\x85\\u2028\\u2029",
+};
+const POSIX_ASCII = {
+  alpha: "A-Za-z", digit: "0-9", alnum: "0-9A-Za-z", upper: "A-Z", lower: "a-z",
+  space: "\\t\\n\\v\\f\\r\\x20", blank: "\\t\\x20", punct: "\\x21-\\x2F\\x3A-\\x40\\x5B-\\x60\\x7B-\\x7E",
+  print: "\\x20-\\x7E", graph: "\\x21-\\x7E", cntrl: "\\x00-\\x1F\\x7F", xdigit: "0-9A-Fa-f", word: "0-9A-Za-z_", ascii: "\\x00-\\x7F",
+};
+// GNU grep in a UTF-8 locale (glibc isw* classes; [:digit:] and [:xdigit:] stay ASCII)
+// and PCRE2 with UCP. Approximations of glibc's tables, noted where used.
+const POSIX_UNI = {
+  alpha: "\\p{Alphabetic}", digit: "0-9", alnum: "\\p{Alphabetic}0-9", upper: "\\p{Uppercase}", lower: "\\p{Lowercase}",
+  space: "\\p{White_Space}", blank: "\\t\\p{Zs}", punct: "\\p{P}\\p{S}", print: "[^\\p{C}\\p{Zl}\\p{Zp}]",
+  graph: "[^\\p{White_Space}\\p{C}]", cntrl: "\\p{Cc}", xdigit: "0-9A-Fa-f", word: "\\p{L}\\p{N}_", ascii: "\\x00-\\x7F",
+};
+
+// Anchors as lookarounds so no engine depends on JavaScript's own `m` flag, whose `$`
+// also stops before `\r`, U+2028 and U+2029.
+const A = {
+  textStart: "(?<![\\s\\S])",
+  textEnd: "(?![\\s\\S])",
+  lfStart: "(?<![^\\n])",
+  lfEnd: "(?![^\\n])",
+  crlfStart: "(?:(?<![^\\r\\n])(?!(?<=\\r)\\n))",
+  crlfEnd: "(?:(?![^\\r\\n])(?!(?<=\\r)\\n))",
+  finalNlEnd: "(?=\\n?(?![\\s\\S]))",
+  any: "[\\s\\S]",
+};
+
+/* ---------- Unicode properties ---------- */
+const GC_NAMES = new Set("L Lu Ll Lt Lm Lo LC M Mn Mc Me N Nd Nl No P Pc Pd Ps Pe Pi Pf Po S Sm Sc Sk So Z Zs Zl Zp C Cc Cf Cs Co Cn".split(" "));
+function validProp(body) { try { new RegExp("\\p{" + body + "}", "u"); return true; } catch (e) { return false; } }
+function propBody(name, dialect) {
+  const n = name.trim();
+  if (dialect === "dotnet") {
+    if (/^Is/.test(n)) throw new CannotEmulate(`.NET Unicode block \\p{${n}} has no JavaScript equivalent`);
+    if (GC_NAMES.has(n)) return n;
+    throw new PatternError(`.NET does not know the Unicode property {${n}}`);
+  }
+  const m = /^(sc|script|scx|script_extensions|gc|general_category)\s*[=:]\s*(.+)$/i.exec(n);
+  const tc = (s) => s.split(/[ _-]+/).map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join("_");
+  const cands = [];
+  if (m) {
+    const key = { sc: "Script", script: "Script", scx: "Script_Extensions", script_extensions: "Script_Extensions", gc: "General_Category", general_category: "General_Category" }[m[1].toLowerCase()];
+    cands.push(`${key}=${m[2]}`, `${key}=${tc(m[2])}`);
+  } else {
+    cands.push(n, tc(n), `Script=${n}`, `Script=${tc(n)}`);
+  }
+  for (const c of cands) if (validProp(c)) return c;
+  throw new CannotEmulate(`Unicode property \\p{${n}} has no JavaScript equivalent here`);
+}
+
+/* ---------- the parser ----------
+   Parses one pattern of a dialect into a small tree:
+   lit {ch, ci} · set {js, ci} · raw {js} · group {type, look, name, alts} ·
+   quant {node, min, max, lazy} · bref {num | name, ci}.
+   ctx: {dialect, host: rg|grep|vscode|pwsh, crlf, z, vsNewline}. */
+function parsePattern(src, ctx, baseFlags) {
+  const d = ctx.dialect;
+  const posix = d === "bre" || d === "ere";
+  const cs = Array.from(src);
+  const len = cs.length;
+  let i = 0;
+  const issues = { differs: [], notes: [] };
+  const differs = (m) => { if (!issues.differs.includes(m)) issues.differs.push(m); };
+  const note = (m) => { if (!issues.notes.includes(m)) issues.notes.push(m); };
+  const groups = [];
+  const lits = [];
+  const rootNode = { k: "group", type: "nc", alts: [[]] };
+  const stack = [{ node: rootNode, flags: Object.assign({ i: false, m: false, s: false, x: false, U: false, R: false, n: false }, baseFlags) }];
+  const top = () => stack[stack.length - 1];
+  const seq = () => { const t = top().node; return t.alts[t.alts.length - 1]; };
+  const fl = () => top().flags;
+  const push = (n) => { seq().push(n); return n; };
+  const lit = (ch) => { lits.push(ch); return push({ k: "lit", ch, ci: fl().i }); };
+  const setNode = (js) => push({ k: "set", js, ci: fl().i });
+  const raw = (js) => push({ k: "raw", js });
+  const peek = (o = 0) => cs[i + o];
+  const wordSet = () => (d === "rust" ? SET.wordRust : d === "dotnet" ? SET.wordNet : SET.wordU);
+  const W = () => "[" + wordSet() + "]";
+  const bound = {
+    b: () => `(?:(?<=${W()})(?!${W()})|(?<!${W()})(?=${W()}))`,
+    B: () => `(?:(?<=${W()})(?=${W()})|(?<!${W()})(?!${W()}))`,
+    start: () => `(?:(?<!${W()})(?=${W()}))`,
+    end: () => `(?:(?<=${W()})(?!${W()}))`,
+    startHalf: () => `(?<!${W()})`,
+    endHalf: () => `(?!${W()})`,
+  };
+  const anchorStart = () => {
+    const f = fl();
+    if (posix) return A.textStart;
+    if (!f.m) return A.textStart;
+    return f.R || ctx.crlf ? A.crlfStart : A.lfStart;
+  };
+  const anchorEnd = () => {
+    const f = fl();
+    if (posix) return A.textEnd;
+    if (f.m) return f.R || ctx.crlf ? A.crlfEnd : A.lfEnd;
+    return d === "rust" ? A.textEnd : A.finalNlEnd;
+  };
+  const dot = () => {
+    const f = fl();
+    if (posix) return ctx.z ? A.any : "[^\\n]";
+    if (f.s) return A.any;
+    if ((d === "rust" || (d === "pcre2" && ctx.host !== "grep")) && (f.R || ctx.crlf)) return "[^\\r\\n]";
+    return "[^\\n]";
+  };
+  const escSet = (letter) => {
+    const lower = letter.toLowerCase();
+    let c = null;
+    if (lower === "d") c = d === "pcre2" && ctx.host === "grep" ? SET.digitA : posix ? null : SET.digitU;
+    else if (lower === "w") c = wordSet();
+    else if (lower === "s") c = d === "dotnet" ? SET.spaceNet : SET.spaceU;
+    else if (lower === "h" && d === "pcre2") c = SET.hspace;
+    else if (lower === "v" && d === "pcre2") c = SET.vspace;
+    if (c === null) return null;
+    return letter === lower ? `[${c}]` : `[^${c}]`;
+  };
+
+  function readUntil(close) {
+    let s = "";
+    while (i < len && cs[i] !== close) s += cs[i++];
+    if (i >= len) throw new PatternError(`missing ${close}`);
+    i++;
+    return s;
+  }
+  function readHex(max) {
+    let s = "";
+    while (s.length < max && i < len && /[0-9A-Fa-f]/.test(cs[i])) s += cs[i++];
+    return s;
+  }
+  function codePoint(hexStr, what) {
+    const v = parseInt(hexStr, 16);
+    if (!hexStr || !(v >= 0 && v <= 0x10ffff)) throw new PatternError(`invalid ${what} escape`);
+    return String.fromCodePoint(v);
+  }
+
+  // A single character escape shared by classes and the main pattern. Returns a
+  // character, or null when the escape is not a single character.
+  function charEscape(c, inClass) {
+    switch (c) {
+      case "t": return "\t";
+      case "n": return "\n";
+      case "r": return "\r";
+      case "f": return "\f";
+      case "v": return d === "pcre2" ? null : "\v";
+      case "a": return "\x07";
+      case "e": return "\x1b";
+      case "0":
+        if (d === "rust") throw new PatternError("octal escapes are not supported by Rust regex");
+        { let s = ""; while (s.length < 2 && /[0-7]/.test(peek() || "")) s += cs[i++]; return String.fromCodePoint(parseInt(s || "0", 8)); }
+      case "x": {
+        if (peek() === "{") { i++; const h = readHex(8); if (peek() !== "}") throw new PatternError("unclosed \\x{"); i++; return codePoint(h, "\\x{...}"); }
+        const h = readHex(2);
+        if (h.length === 0) { if (d === "pcre2") return "\0"; throw new PatternError("incomplete \\x escape"); }
+        if (h.length < 2 && d !== "pcre2") throw new PatternError("\\x needs two hex digits");
+        return codePoint(h, "\\x");
+      }
+      case "u":
+        if (d === "rust" || d === "dotnet") {
+          if (d === "rust" && peek() === "{") { i++; const h = readHex(8); if (peek() !== "}") throw new PatternError("unclosed \\u{"); i++; return codePoint(h, "\\u{...}"); }
+          const h = readHex(4); if (h.length !== 4) throw new PatternError("\\u needs four hex digits"); return codePoint(h, "\\u");
+        }
+        return undefined;
+      case "U":
+        if (d === "rust") {
+          if (peek() === "{") { i++; const h = readHex(8); if (peek() !== "}") throw new PatternError("unclosed \\U{"); i++; return codePoint(h, "\\U{...}"); }
+          const h = readHex(8); if (h.length !== 8) throw new PatternError("\\U needs eight hex digits"); return codePoint(h, "\\U");
+        }
+        return undefined;
+      case "o":
+        if (d === "pcre2" && peek() === "{") { i++; const s = readUntil("}"); if (!/^[0-7]+$/.test(s)) throw new PatternError("invalid \\o{...}"); return String.fromCodePoint(parseInt(s, 8)); }
+        return undefined;
+      case "c":
+        if (d === "pcre2" || d === "dotnet") { const x = cs[i++]; if (!x || !/[A-Za-z@\[\\\]^_?]/.test(x)) throw new PatternError("invalid \\c escape"); return String.fromCharCode(x.toUpperCase().charCodeAt(0) ^ 0x40); }
+        return undefined;
+      case "b": return inClass && d !== "rust" ? "\b" : null;
+      default: return undefined;
+    }
+  }
+
+  function propEscape(letter) {
+    let name;
+    if (peek() === "{") { i++; name = readUntil("}"); }
+    else if (d !== "dotnet" && peek() && /[A-Za-z]/.test(peek())) name = cs[i++];
+    else throw new PatternError(`\\${letter} needs a property name`);
+    let neg = letter === "P";
+    if (d === "pcre2" && name.startsWith("^")) { neg = !neg; name = name.slice(1); }
+    const body = propBody(name, d);
+    return (neg ? "\\P{" : "\\p{") + body + "}";
+  }
+
+  /* ----- classes: POSIX bracket expressions ----- */
+  function posixClassName(tableKind) {
+    // at "[:" ... ":]"; i points at "["
+    const start = i;
+    let j = i + 2, name = "";
+    while (j < len && /[a-z^]/.test(cs[j])) name += cs[j++];
+    if (cs[j] !== ":" || cs[j + 1] !== "]") { i = start; return null; }
+    i = j + 2;
+    let neg = false;
+    if (name.startsWith("^")) {
+      if (d === "rust" || d === "pcre2") { neg = true; name = name.slice(1); }
+      else throw new PatternError(`invalid character class [:${name}:]`);
+    }
+    const table = tableKind === "ascii" ? POSIX_ASCII : POSIX_UNI;
+    let content = table[name];
+    if (!content || (posix && (name === "word" || name === "ascii"))) throw new PatternError(`invalid character class [:${name}:]`);
+    if (d === "pcre2" && ctx.host !== "grep" && name === "digit") content = SET.digitU;
+    if (tableKind === "ascii") note(`[:${name}:] is ASCII-only in Rust regex`);
+    return (neg ? "[^" : "[") + content + "]";
+  }
+
+  function parsePosixBracket() {
+    i++; // [
+    let neg = false;
+    if (peek() === "^") { neg = true; i++; }
+    const items = [];
+    let first = true;
+    for (;;) {
+      if (i >= len) throw new PatternError("unmatched [, [^, [:, [., or [=");
+      const c = cs[i];
+      if (c === "]" && !first) { i++; break; }
+      first = false;
+      if (c === "[" && peek(1) === ":") {
+        const s = posixClassName("uni");
+        if (s) { items.push({ set: s }); note("POSIX classes follow a UTF-8 locale (glibc) here; C locale grep is ASCII-only"); continue; }
+      }
+      let ch;
+      if (c === "[" && (peek(1) === "=" || peek(1) === ".")) {
+        const kind = peek(1); i += 2; let s = "";
+        while (i < len && !(cs[i] === kind && cs[i + 1] === "]")) s += cs[i++];
+        if (i >= len) throw new PatternError("unmatched [= or [.");
+        i += 2;
+        if (Array.from(s).length !== 1) throw new CannotEmulate(`multi-character collating element [${kind}${s}${kind}]`);
+        if (kind === "=") note(`equivalence class [=${s}=] is emulated as the single character ${s}`);
+        ch = s;
+      } else { ch = c; i++; }
+      if (peek() === "-" && peek(1) !== "]" && peek(1) !== undefined) {
+        i++;
+        let hi = cs[i++];
+        if (hi === "[" && (peek() === "." || peek() === "=")) { const kind = cs[i++]; hi = cs[i++]; if (cs[i] !== kind || cs[i + 1] !== "]") throw new PatternError("bad range end"); i += 2; }
+        if (hi.codePointAt(0) < ch.codePointAt(0)) throw new PatternError("invalid range end");
+        items.push({ lo: ch, hi });
+        lits.push(ch, hi);
+      } else { items.push({ ch }); lits.push(ch); }
+    }
+    return (neg ? "[^" : "[") + items.map(itemJs).join("") + "]";
+  }
+  function itemJs(it) {
+    if (it.set) return it.set;
+    if (it.lo !== undefined) return litJs(it.lo) + "-" + litJs(it.hi);
+    return litJs(it.ch);
+  }
+
+  /* ----- classes: Perl-style (Rust, PCRE2, .NET) ----- */
+  function parsePerlClass() {
+    i++; // [
+    let neg = false;
+    if (peek() === "^") { neg = true; i++; }
+    const operands = [];
+    const ops = [];
+    let items = [];
+    let first = true;
+    const classItem = () => {
+      // returns {ch} or {set}
+      const c = cs[i];
+      if (c === "\\") {
+        i++;
+        const e = cs[i++];
+        if (e === undefined) throw new PatternError("trailing backslash in class");
+        if (d === "pcre2" && e === "Q") { let s = ""; while (i < len && !(cs[i] === "\\" && cs[i + 1] === "E")) s += cs[i++]; if (i < len) i += 2; return { multi: Array.from(s) }; }
+        if (d === "pcre2" && e === "E") return { none: true };
+        const s = /[dDwWsShHvV]/.test(e) ? escSet(e) : null;
+        if (s) return { set: s };
+        if (e === "p" || e === "P") return { set: propEscape(e) };
+        const ch = charEscape(e, true);
+        if (typeof ch === "string") return { ch };
+        if (isAlnum(e)) throw new PatternError(`unrecognized escape \\${e} in class`);
+        if (d === "rust" && e.codePointAt(0) > 0x7f) throw new PatternError(`unrecognized escape \\${e} in class`);
+        return { ch: e };
+      }
+      if (c === "[" && peek(1) === ":" && (d === "rust" || d === "pcre2")) {
+        const s = posixClassName(d === "rust" ? "ascii" : "uni");
+        if (s) return { set: s };
+      }
+      if (c === "[" && d === "rust") return { set: parsePerlClass() };
+      i++;
+      return { ch: c };
+    };
+    for (;;) {
+      if (i >= len) throw new PatternError("unclosed character class");
+      const c = cs[i];
+      if (c === "]" && !first) { i++; break; }
+      first = false;
+      if (d === "rust" && ((c === "&" && peek(1) === "&") || (c === "-" && peek(1) === "-") || (c === "~" && peek(1) === "~"))) {
+        operands.push(items); ops.push(c + c); items = []; i += 2; continue;
+      }
+      if (d === "dotnet" && c === "-" && peek(1) === "[" && items.length) {
+        i++;
+        const sub = parsePerlClass();
+        if (peek() !== "]") throw new PatternError("a subtraction must be the last element in a character class");
+        i++;
+        const body = (neg ? "[^" : "[") + items.map(itemJs).join("") + "]";
+        return `[${body}--${sub}]`;
+      }
+      const it = classItem();
+      if (it.none) continue;
+      if (it.multi) { for (const ch of it.multi) { items.push({ ch }); lits.push(ch); } continue; }
+      if (it.ch !== undefined && peek() === "-" && peek(1) !== "]" && peek(1) !== undefined && !(d === "rust" && peek(1) === "-")) {
+        const save = i;
+        i++;
+        const hi = classItem();
+        if (hi.ch === undefined) {
+          if (d === "rust" || d === "dotnet") throw new PatternError("invalid range in character class");
+          i = save; items.push(it); lits.push(it.ch); continue; // PCRE2: "-" before a class is literal
+        }
+        if (hi.ch.codePointAt(0) < it.ch.codePointAt(0)) throw new PatternError("range out of order in character class");
+        items.push({ lo: it.ch, hi: hi.ch }); lits.push(it.ch, hi.ch);
+        continue;
+      }
+      if (it.ch !== undefined) lits.push(it.ch);
+      items.push(it);
+    }
+    operands.push(items);
+    const bodyOf = (its) => "[" + its.map(itemJs).join("") + "]";
+    let acc = bodyOf(operands[0]);
+    for (let k = 0; k < ops.length; k++) {
+      if (ops[k] === "~~") throw new CannotEmulate("symmetric difference ~~ in a class has no JavaScript equivalent");
+      acc = `[${acc}${ops[k]}${bodyOf(operands[k + 1])}]`;
+    }
+    if (!ops.length) return (neg ? "[^" : "[") + operands[0].map(itemJs).join("") + "]";
+    return neg ? `[^${acc}]` : acc;
+  }
+
+  /* ----- quantifiers ----- */
+  function readInterval(closeSeq) {
+    // at the char after "{" (or after "\{" for BRE). Returns {min,max} or null.
+    const save = i;
+    let a = "", b = "", comma = false;
+    while (i < len && /[0-9]/.test(cs[i])) a += cs[i++];
+    if (cs[i] === ",") { comma = true; i++; while (i < len && /[0-9]/.test(cs[i])) b += cs[i++]; }
+    const close = closeSeq === "\\}" ? cs[i] === "\\" && cs[i + 1] === "}" : cs[i] === "}";
+    if (!close || (a === "" && (!comma || b === "" )) ) {
+      if (!(close && a === "" && comma && b === "" && posix)) { i = save; return null; }
+    }
+    if (a === "" && d === "rust") { i = save; return null; }
+    if (a === "" && d === "dotnet") { i = save; return null; }
+    i += closeSeq.length;
+    const min = a === "" ? 0 : +a;
+    const max = comma ? (b === "" ? Infinity : +b) : min;
+    if (max < min) throw new PatternError("invalid content of {} (min > max)");
+    if (min > 65535 || (max !== Infinity && max > 65535)) throw new PatternError("repetition count too large");
+    return { min, max };
+  }
+  function applyQuant(min, max, allowSuffix) {
+    const s = seq();
+    const prev = s[s.length - 1];
+    if (!prev || prev.k === "anchorBarrier") {
+      if (posix) { lit(cs[i - 1] === "}" ? "{" : cs[i - 1]); return; }
+      throw new PatternError("quantifier does not follow a repeatable item");
+    }
+    let lazy = false;
+    if (allowSuffix) {
+      if (peek() === "?") { lazy = true; i++; }
+      else if (peek() === "+") {
+        if (d === "pcre2") throw new CannotEmulate("possessive quantifiers (*+, ++, ?+) cannot be emulated in JavaScript");
+        throw new PatternError("nested quantifier");
+      }
+    }
+    if (fl().U) lazy = !lazy;
+    s[s.length - 1] = { k: "quant", node: prev, min, max, lazy };
+  }
+
+  /* ----- groups ----- */
+  function openGroup(node, flags) {
+    push(node);
+    stack.push({ node, flags: Object.assign({}, fl(), flags || {}) });
+  }
+  function capGroup(name) {
+    const g = { k: "group", type: "cap", name: name || null, alts: [[]] };
+    groups.push(g);
+    return g;
+  }
+  function checkName(name) {
+    if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(name)) {
+      if (d === "dotnet" && /^[0-9]+$/.test(name)) throw new CannotEmulate(`numbered group name (?<${name}>...) cannot be emulated`);
+      throw new PatternError(`invalid group name "${name}"`);
+    }
+    return name;
+  }
+  function parseFlagString(s) {
+    const allowed = d === "rust" ? "imsUuxR" : d === "pcre2" ? "imnsxUJ" : "imnsx";
+    const out = {};
+    let on = true;
+    for (const c of s) {
+      if (c === "-") { on = false; continue; }
+      if (c === "^" && d === "pcre2") { Object.assign(out, { i: false, m: false, n: false, s: false, x: false }); continue; }
+      if (!allowed.includes(c)) throw new PatternError(`unknown inline flag (?${s})`);
+      if (c === "u") { if (!on) throw new CannotEmulate("(?-u) byte-oriented Rust regex cannot be emulated"); continue; }
+      if (c === "J") throw new CannotEmulate("(?J) duplicate group names cannot be emulated");
+      out[c] = on;
+    }
+    return out;
+  }
+  function perlGroupOpen() {
+    i++; // (
+    if (peek() === "*") {
+      if (d === "pcre2") throw new CannotEmulate("PCRE2 verbs such as (*SKIP) or (*UTF) cannot be emulated");
+      throw new PatternError("quantifier does not follow a repeatable item");
+    }
+    if (peek() !== "?") {
+      if (d === "dotnet" && fl().n) openGroup({ k: "group", type: "nc", alts: [[]] });
+      else openGroup(capGroup(null));
+      return;
+    }
+    i++; // ?
+    const c = peek();
+    const rustNoLook = () => differs("real rg rejects look-around without -P (it prints an error and suggests --pcre2); the matches shown are what JavaScript would find");
+    if (c === ":") { i++; openGroup({ k: "group", type: "nc", alts: [[]] }); return; }
+    if (c === "=" || c === "!") { i++; if (d === "rust") rustNoLook(); openGroup({ k: "group", type: "look", look: c, alts: [[]] }); return; }
+    if (c === "<" && (peek(1) === "=" || peek(1) === "!")) {
+      i += 2; if (d === "rust") rustNoLook();
+      openGroup({ k: "group", type: "look", look: "<" + cs[i - 1], alts: [[]] }); return;
+    }
+    if (c === ">") { if (d === "rust") throw new PatternError("atomic groups are not supported by Rust regex"); throw new CannotEmulate("atomic groups (?>...) cannot be emulated in JavaScript"); }
+    if (c === "|") { if (d === "pcre2") throw new CannotEmulate("branch reset groups (?|...) cannot be emulated"); throw new PatternError("unknown group (?|"); }
+    if (c === "#") { if (d === "rust") throw new PatternError("(?# comments are not supported by Rust regex"); readUntil(")"); return; }
+    if (c === "(") { if (d === "rust") throw new PatternError("conditionals are not supported by Rust regex"); throw new CannotEmulate("conditional groups (?(...)...) cannot be emulated"); }
+    if (c === "R" || c === "&" || /[0-9+\-]/.test(c) && /[0-9]/.test(c === "+" || c === "-" ? peek(1) || "" : c)) {
+      if (d === "pcre2") throw new CannotEmulate("recursion and subroutine calls ((?R), (?1), (?&name)) cannot be emulated");
+      if (c !== "-") throw new PatternError("unknown group construct");
+    }
+    if (c === "C" && d === "pcre2") throw new CannotEmulate("callouts (?C) cannot be emulated");
+    if (c === "P") {
+      const n = peek(1);
+      if (n === "<") { i += 2; const name = checkName(readUntil(">")); openGroup(capGroup(name)); return; }
+      if (n === "=" && d === "pcre2") { i += 2; const name = readUntil(")"); push({ k: "bref", name, ci: fl().i }); return; }
+      if (n === ">" && d === "pcre2") throw new CannotEmulate("subroutine calls (?P>name) cannot be emulated");
+      throw new PatternError("unknown (?P construct");
+    }
+    if (c === "<" || c === "'") {
+      if (c === "'" && d === "rust") throw new PatternError("(?'name') is not supported by Rust regex");
+      i++;
+      const name = readUntil(c === "<" ? ">" : "'");
+      if (name.includes("-")) {
+        if (d === "dotnet") throw new CannotEmulate(".NET balancing groups (?<a-b>...) cannot be emulated");
+        throw new PatternError("invalid group name");
+      }
+      openGroup(capGroup(checkName(name)));
+      return;
+    }
+    // inline flags: (?flags) or (?flags:...)
+    let s = "";
+    while (i < len && cs[i] !== ")" && cs[i] !== ":") s += cs[i++];
+    if (i >= len) throw new PatternError("unclosed group");
+    const f = parseFlagString(s);
+    if (cs[i] === ")") { i++; Object.assign(fl(), f); return; }
+    i++; // :
+    openGroup({ k: "group", type: "nc", alts: [[]] }, f);
+  }
+  function closeGroup(msg) {
+    if (stack.length === 1) throw new PatternError(msg || "unopened group");
+    stack.pop();
+  }
+
+  /* ----- backrefs ----- */
+  function numericBackref(first) {
+    let s = first;
+    if (d !== "bre" && d !== "ere") while (/[0-9]/.test(peek() || "")) s += cs[i++];
+    if (d === "rust") differs("real rg rejects backreferences without -P (it prints an error); the matches shown are what JavaScript would find");
+    push({ k: "bref", num: +s, ci: fl().i });
+  }
+
+  /* ----- escapes outside classes ----- */
+  function perlEscape() {
+    i++; // backslash
+    const e = cs[i++];
+    if (e === undefined) throw new PatternError("pattern may not end with a trailing backslash");
+    if (/[1-9]/.test(e)) return numericBackref(e);
+    if (e === "k" && (d === "pcre2" || d === "dotnet")) {
+      const o = cs[i++]; const close = { "<": ">", "'": "'", "{": "}" }[o];
+      if (!close || (o === "{" && d === "dotnet")) throw new PatternError("malformed \\k");
+      const name = readUntil(close);
+      if (/^[0-9]+$/.test(name)) return push({ k: "bref", num: +name, ci: fl().i });
+      return push({ k: "bref", name, ci: fl().i });
+    }
+    if (e === "g" && d === "pcre2") {
+      let ref;
+      if (peek() === "{") { i++; ref = readUntil("}"); } else if (peek() === "<" || peek() === "'") throw new CannotEmulate("subroutine calls \\g<...> cannot be emulated"); else { ref = ""; if (peek() === "-" || peek() === "+") ref += cs[i++]; while (/[0-9]/.test(peek() || "")) ref += cs[i++]; }
+      if (/^-[0-9]+$/.test(ref)) { const n = groups.length + 1 + +ref; if (n < 1) throw new PatternError("reference to non-existent subpattern"); return push({ k: "bref", num: n, ci: fl().i }); }
+      if (/^[0-9]+$/.test(ref)) return push({ k: "bref", num: +ref, ci: fl().i });
+      if (/^\+/.test(ref)) throw new CannotEmulate("forward relative references cannot be emulated");
+      return push({ k: "bref", name: ref, ci: fl().i });
+    }
+    const s = /[dDwWsShHvV]/.test(e) ? escSet(e) : null;
+    if (s) return setNode(s);
+    if (e === "p" || e === "P") return setNode(propEscape(e));
+    switch (e) {
+      case "b":
+        if (d === "rust" && peek() === "{") {
+          i++; const k = readUntil("}");
+          const m = { start: bound.start, end: bound.end, "start-half": bound.startHalf, "end-half": bound.endHalf }[k];
+          if (!m) throw new PatternError(`unknown word boundary \\b{${k}}`);
+          return raw(m());
+        }
+        return raw(bound.b());
+      case "B": return raw(bound.B());
+      case "A": return raw(A.textStart);
+      case "z": return raw(A.textEnd);
+      case "Z": if (d === "rust") throw new PatternError("\\Z is not supported by Rust regex; use \\z"); return raw(A.finalNlEnd);
+      case "<": if (d === "rust") return raw(bound.start()); return lit("<");
+      case ">": if (d === "rust") return raw(bound.end()); return lit(">");
+      case "G": if (d === "rust") throw new PatternError("\\G is not supported by Rust regex"); throw new CannotEmulate("\\G (continue at the previous match end) cannot be emulated");
+      case "K": if (d === "pcre2") throw new CannotEmulate("\\K (reset match start) cannot be emulated"); break;
+      case "X": if (d === "pcre2") throw new CannotEmulate("\\X (extended grapheme cluster) cannot be emulated"); break;
+      case "C": if (d === "pcre2") throw new CannotEmulate("\\C (single code unit) cannot be emulated"); break;
+      case "R": if (d === "pcre2") { note("\\R is emulated without its atomic grouping"); return raw("(?:\\r\\n|[" + SET.vspace + "])"); } break;
+      case "N": if (d === "pcre2" && peek() !== "{") return raw("[^\\n]"); break;
+      case "Q":
+        if (d === "pcre2") { while (i < len && !(cs[i] === "\\" && cs[i + 1] === "E")) lit(cs[i++]); if (i < len) i += 2; return; }
+        break;
+      case "E": if (d === "pcre2") return;
+        break;
+    }
+    const ch = charEscape(e, false);
+    if (typeof ch === "string") {
+      if (ch === "\n" && ctx.vsNewline) { lits.push("\n"); return raw("(?:\\r?\\n)"); }
+      return lit(ch);
+    }
+    if (isAlnum(e)) throw new PatternError(`unrecognized escape \\${e}`);
+    if (d === "rust" && e.codePointAt(0) > 0x7f) throw new PatternError(`unrecognized escape \\${e}`);
+    return lit(e);
+  }
+
+  /* ----- POSIX (GNU grep BRE/ERE) main loop step ----- */
+  // Tracks whether the previous token opens a context in which `*` and `^` are special.
+  let posixAtStart = true;
+  function posixEscape() {
+    i++;
+    const e = cs[i++];
+    if (e === undefined) throw new PatternError("trailing backslash");
+    const wasStart = posixAtStart;
+    posixAtStart = false;
+    if (d === "bre") {
+      if (e === "(") { openGroup(capGroup(null)); posixAtStart = true; return; }
+      if (e === ")") { closeGroup("Unmatched ) or \\)"); return; }
+      if (e === "|") { top().node.alts.push([]); posixAtStart = true; return; }
+      if (e === "{") { const q = readInterval("\\}"); if (!q) throw new PatternError("Unmatched \\{"); if (wasStart) throw new PatternError("Invalid preceding regular expression"); return applyQuant(q.min, q.max, false); }
+      if (e === "+" || e === "?") { if (wasStart) return lit(e); return applyQuant(e === "+" ? 1 : 0, e === "+" ? Infinity : 1, false); }
+      if (e === "}") return lit("}");
+    }
+    if (/[1-9]/.test(e)) return numericBackref(e);
+    const s = /[wWsS]/.test(e) ? escSet(e) : null;
+    if (s) return setNode(s);
+    switch (e) {
+      case "<": return raw(bound.start());
+      case ">": return raw(bound.end());
+      case "b": return raw(bound.b());
+      case "B": return raw(bound.B());
+      case "`": return raw(A.textStart);
+      case "'": return raw(A.textEnd);
+    }
+    if (/[.*\[\]^$\\\/]/.test(e) || (d === "ere" && /[+?{}()|]/.test(e)) || (d === "bre" && /[+?{}()|]/.test(e))) return lit(e);
+    note(`GNU grep 3.8+ warns "stray \\ before ${e}" and matches ${e} literally`);
+    return lit(e);
+  }
+  function posixStep() {
+    const c = cs[i];
+    if (c === "\\") return posixEscape();
+    if (c === "[") { const js = parsePosixBracket(); setNode(js); posixAtStart = false; return; }
+    if (c === ".") { i++; raw(dot()); posixAtStart = false; return; }
+    if (c === "*") {
+      i++;
+      if (posixAtStart) { lit("*"); posixAtStart = false; return; }
+      return applyQuant(0, Infinity, false);
+    }
+    if (c === "^") {
+      i++;
+      if (d === "ere" || posixAtStart) { raw(A.textStart); seq().push({ k: "anchorBarrier" }); posixAtStart = true; return; }
+      lit("^"); return;
+    }
+    if (c === "$") {
+      i++;
+      const next = cs[i];
+      const atEnd = next === undefined || (d === "bre" && next === "\\" && (cs[i + 1] === ")" || cs[i + 1] === "|")) || (d === "ere" && (next === ")" || next === "|"));
+      if (d === "ere" || atEnd) raw(A.textEnd); else lit("$");
+      posixAtStart = false; return;
+    }
+    if (d === "ere") {
+      if (c === "(") { i++; openGroup(capGroup(null)); posixAtStart = true; return; }
+      if (c === ")") { i++; closeGroup("Unmatched ) or \\)"); posixAtStart = false; return; }
+      if (c === "|") { i++; top().node.alts.push([]); posixAtStart = true; return; }
+      if (c === "+" || c === "?") { i++; if (posixAtStart) { lit(c); posixAtStart = false; return; } return applyQuant(c === "+" ? 1 : 0, c === "+" ? Infinity : 1, false); }
+      if (c === "{") {
+        i++;
+        if (posixAtStart) { lit("{"); posixAtStart = false; return; }
+        const q = readInterval("}");
+        if (!q) { lit("{"); return; }
+        return applyQuant(q.min, q.max, false);
+      }
+    }
+    i++; lit(c); posixAtStart = false;
+  }
+
+  /* ----- Perl-style main loop step ----- */
+  function perlStep() {
+    const c = cs[i];
+    if (fl().x) {
+      if (/\s/.test(c)) { i++; return; }
+      if (c === "#") { while (i < len && cs[i] !== "\n") i++; return; }
+    }
+    switch (c) {
+      case "\\": return perlEscape();
+      case "[": setNode(parsePerlClass()); return;
+      case "(": return perlGroupOpen();
+      case ")": i++; return closeGroup(d === "dotnet" ? "Too many )'s" : "unopened group");
+      case "|": i++; top().node.alts.push([]); return;
+      case ".": i++; raw(dot()); return;
+      case "^": i++; raw(anchorStart()); return;
+      case "$": i++; raw(anchorEnd()); return;
+      case "*": i++; return applyQuant(0, Infinity, true);
+      case "+": i++; return applyQuant(1, Infinity, true);
+      case "?": i++; return applyQuant(0, 1, true);
+      case "{": {
+        i++;
+        const q = readInterval("}");
+        if (q) return applyQuant(q.min, q.max, true);
+        if (d === "rust") throw new PatternError("repetition quantifier expects a valid decimal");
+        lit("{"); return;
+      }
+      default:
+        i++;
+        if (c === "\n" && ctx.vsNewline) { lits.push(c); raw("(?:\\r?\\n)"); return; }
+        lit(c);
+    }
+  }
+
+  if (ctx.fixed) {
+    for (const c of cs) lit(c);
+  } else {
+    while (i < len) {
+      if (posix) posixStep(); else perlStep();
+    }
+    if (stack.length > 1) throw new PatternError(posix ? "Unmatched ( or \\(" : d === "dotnet" ? "Not enough )'s" : "unclosed group");
+  }
+  // anchorBarrier nodes only guard BRE `^*`; drop them.
+  const strip = (n) => { if (n.k === "group") n.alts = n.alts.map((a) => a.filter((x) => x.k !== "anchorBarrier").map(strip)); if (n.k === "quant") n.node = strip(n.node); return n; };
+  strip(rootNode);
+  return { root: rootNode, groups, lits, issues };
+}
+
+/* ---------- numbering and emission ---------- */
+function walk(n, f) { f(n); if (n.k === "group") n.alts.forEach((a) => a.forEach((x) => walk(x, f))); if (n.k === "quant") walk(n.node, f); }
+
+function numberGroups(root, dialect) {
+  const caps = [];
+  walk(root, (n) => { if (n.k === "group" && n.type === "cap") caps.push(n); });
+  caps.forEach((g, k) => { g.js = k + 1; });
+  // .NET numbers unnamed groups first, then named groups, each left to right.
+  const order = dialect === "dotnet" ? caps.filter((g) => !g.name).concat(caps.filter((g) => g.name)) : caps;
+  const groupMap = {};
+  order.forEach((g, k) => { g.num = k + 1; groupMap[k + 1] = g.js; });
+  const names = {};
+  for (const g of caps) {
+    if (!g.name) continue;
+    if (names[g.name] !== undefined) throw new CannotEmulate(`duplicate group name "${g.name}"`);
+    names[g.name] = g.js;
+  }
+  return { groupMap, names, count: caps.length };
+}
+
+function emitTree(root, info, globalCI) {
+  const wrapCI = (js, ci) => {
+    if (ci === undefined || ci === globalCI) return js;
+    if (!HAS_MODIFIERS) throw new CannotEmulate("mixed case sensitivity inside one pattern needs RegExp modifiers, which this browser lacks");
+    return (ci ? "(?i:" : "(?-i:") + js + ")";
+  };
+  const emit = (n) => {
+    switch (n.k) {
+      case "lit": return wrapCI(litJs(n.ch), n.ci);
+      case "set": return wrapCI(n.js, n.ci);
+      case "raw": return n.js;
+      case "bref": {
+        let js;
+        if (n.name !== undefined) {
+          if (info.names[n.name] === undefined) throw new PatternError(`reference to non-existent group "${n.name}"`);
+          js = "\\k<" + n.name + ">";
+        } else {
+          const g = info.groupMap[n.num];
+          if (g === undefined) throw new PatternError(`reference to non-existent group ${n.num}`);
+          js = "(?:\\" + g + ")";
+        }
+        return wrapCI(js, n.ci);
+      }
+      case "group": {
+        const body = n.alts.map((a) => a.map(emit).join("")).join("|");
+        if (n.type === "cap") return (n.name ? "(?<" + n.name + ">" : "(") + body + ")";
+        if (n.type === "look") return "(?" + n.look + body + ")";
+        return "(?:" + body + ")";
+      }
+      case "quant": {
+        let inner = emit(n.node);
+        const single = n.node.k === "lit" && !inner.startsWith("(?");
+        if (!single && !(n.node.k === "set" && !inner.startsWith("(?")) && !(n.node.k === "group" && n.node.type !== "look")) inner = "(?:" + inner + ")";
+        let q;
+        if (n.min === 0 && n.max === Infinity) q = "*";
+        else if (n.min === 1 && n.max === Infinity) q = "+";
+        else if (n.min === 0 && n.max === 1) q = "?";
+        else if (n.max === Infinity) q = `{${n.min},}`;
+        else if (n.min === n.max) q = `{${n.min}}`;
+        else q = `{${n.min},${n.max}}`;
+        return inner + q + (n.lazy ? "?" : "");
+      }
+    }
+    return "";
+  };
+  return emit(root);
+}
+
+function caseValues(root) {
+  const vals = new Set();
+  walk(root, (n) => { if ((n.k === "lit" || n.k === "set" || n.k === "bref") && n.ci !== undefined) vals.add(n.ci); });
+  return vals;
+}
+
+/* ---------- presets → translation ---------- */
+function vsLookaroundOrBackref(p) { return /\(\?<?[=!]|\\[1-9]|\\k</.test(p); }
+function jsEscape(s) { return s.replace(/[\\{}*+?|^$.[\]()]/g, "\\$&"); }
+// VS Code's strings.createRegExp: whole word adds \b only next to a word character of the source.
+function vsWholeWordWrap(src) {
+  let out = src;
+  if (!/\B/.test(src.charAt(0))) out = "\\b" + out;
+  if (!/\B/.test(src.charAt(src.length - 1))) out = out + "\\b";
+  return out;
+}
+function vsFindMultiline(src) {
+  for (let k = 0; k < src.length; k++) {
+    const c = src[k];
+    if (c === "\n") return true;
+    if (c === "\\") { k++; const n = src[k]; if (n === "n" || n === "r" || n === "W") return true; }
+  }
+  return false;
+}
+
+function engineLabel(preset, o) {
+  if (preset === "rg") return o.P ? "rg -P (PCRE2)" : "rg (Rust regex)";
+  if (preset === "grep") return { G: "grep (basic regex)", E: "grep -E (extended regex)", F: "grep -F (fixed strings)", P: "grep -P (PCRE2)" }[o.matcher];
+  if (preset === "pwsh") return o.mode === "select" ? "Select-String (.NET regex)" : `-${o.mode} (.NET regex)`;
+  if (preset === "vsfind") return "VS Code Find (JavaScript regex)";
+  return "VS Code Search (ripgrep)";
+}
+function realName(preset, o) {
+  if (preset === "rg") return o.P ? "rg -P" : "rg";
+  if (preset === "grep") return o.matcher === "P" ? "grep -P" : "grep";
+  if (preset === "pwsh") return ".NET";
+  if (preset === "vsfind") return "VS Code Find";
+  return "VS Code Search";
+}
+
+/* compile(preset, options, patterns) → translation record:
+   { ok, level: exact|differs|cannot|error, message, differs[], notes[], source, flags,
+     groupMap, names, groupCount, model, modelText, dialect, engine } */
+function compile(preset, opts, patterns) {
+  const o = opts;
+  const pats = (patterns && patterns.length ? patterns : [""]).map(String);
+  const rec = { preset, engine: engineLabel(preset, o), real: realName(preset, o), level: "exact", differs: [], notes: [], message: "", source: "", flags: "", groupMap: {}, names: {}, groupCount: 0, model: "lines", modelText: "" };
+  try {
+    if (!HAS_V && preset !== "vsfind") throw new CannotEmulate("this browser lacks the RegExp v flag that the translator needs");
+    if (preset === "vsfind") return compileVsFind(rec, o, pats[0]);
+    let dialect, ctx, flags = {}, fixed = false, multiline = false;
+    let wrapWord = null, wrapLine = false;
+    if (preset === "rg") {
+      dialect = o.P ? "pcre2" : "rust";
+      ctx = { dialect, host: "rg", crlf: !!o.crlf };
+      fixed = !!o.F;
+      flags = { m: true, i: o.case === "i" };
+      multiline = !!o.U;
+      if (o.w) wrapWord = true;
+      if (o.x) wrapLine = true;
+      rec.model = multiline ? "multiline" : "lines";
+      rec.modelText = multiline
+        ? "rg -U: the regex runs over the whole file, so a match may span lines; each line it touches is printed."
+        : "rg: line by line. A match cannot cross a line ending; a literal \\n in the pattern is an error without -U.";
+      if (o.crlf) rec.notes.push("--crlf: $ matches before \\r\\n and . does not match \\r.");
+    } else if (preset === "grep") {
+      dialect = { G: "bre", E: "ere", P: "pcre2", F: "bre" }[o.matcher];
+      fixed = o.matcher === "F";
+      ctx = { dialect, host: "grep", z: !!o.z };
+      flags = { i: !!o.i, m: false };
+      if (o.w) wrapWord = true;
+      if (o.x) wrapLine = true;
+      rec.model = o.z ? "records" : "lines";
+      rec.modelText = o.z
+        ? "grep -z: input records end in NUL, not newline, so the pasted text is one record; newlines are ordinary characters and . matches them."
+        : "grep: line by line; the \\r of a CRLF line is an ordinary character before the end of the line.";
+      if (o.matcher === "P" && pats.length > 1) rec.notes.push("grep -P with several -e patterns needs grep 3.7 or later.");
+      if (o.w && o.matcher !== "F") rec.notes.push("grep -w retries shorter and later matches when one fails the word test; the look-around wrap used here matches the usual cases.");
+    } else if (preset === "pwsh") {
+      dialect = "dotnet";
+      ctx = { dialect, host: "pwsh" };
+      if (o.mode === "select") {
+        fixed = !!o.SimpleMatch;
+        flags = { i: !o.CaseSensitive };
+        rec.model = "pslines";
+        rec.modelText = "Select-String: line by line. It reads the file with ReadLine, which strips \\r\\n, \\n and \\r, so $ works on CRLF files.";
+      } else {
+        flags = { i: o.mode !== "cmatch" };
+        rec.model = "whole";
+        rec.modelText = `-${o.mode}: the whole string (Get-Content -Raw) is one subject. Without (?m), ^ is its start and $ its end or before a final \\n, so $ fails before \\r\\n.`;
+      }
+    } else if (preset === "vssearch") {
+      const hasNl = o.regex && /\\n|\n/.test(pats[0]);
+      let p = pats[0];
+      if (!o.regex) {
+        if (o.wholeWord) p = vsWholeWordWrap(jsEscape(p));
+        else fixed = true;
+      } else if (o.wholeWord) p = vsWholeWordWrap(p);
+      dialect = o.regex && vsLookaroundOrBackref(pats[0]) ? "pcre2" : "rust";
+      if (dialect === "pcre2") rec.notes.push("VS Code falls back to PCRE2 (rg -P) because the pattern uses look-around or a backreference.");
+      ctx = { dialect, host: "vscode", crlf: true, vsNewline: hasNl };
+      flags = { m: true, i: !o.matchCase };
+      multiline = hasNl;
+      rec.model = multiline ? "multiline" : "lines";
+      rec.modelText = multiline
+        ? "VS Code Search: the pattern contains \\n, so VS Code runs rg --multiline and rewrites \\n as \\r?\\n."
+        : "VS Code Search runs ripgrep line by line. It is emulated with rg --crlf semantics, so $ works on CRLF files.";
+      if (!o.matchCase) rec.notes.push("Match Case off passes --ignore-case (not smart case).");
+      if (o.wholeWord) rec.notes.push("Whole Word adds \\b only where the pattern starts or ends with a word character.");
+      pats.length = 1; pats[0] = p;
+    }
+    rec.dialect = dialect;
+    if (fixed) ctx.fixed = true;
+    const parseAll = (fl) => pats.map((p) => parsePattern(p, ctx, fl));
+    let parsed = parseAll(flags);
+    if (preset === "rg" && o.case === "S") {
+      const upper = parsed.some((r) => r.lits.some((c) => c !== c.toLowerCase()));
+      if (!upper) { flags = Object.assign({}, flags, { i: true }); parsed = parseAll(flags); }
+      rec.notes.push(upper ? "-S smart case: the pattern has an uppercase letter, so the search is case-sensitive." : "-S smart case: the pattern is all lowercase, so the search ignores case.");
+    }
+    for (const r of parsed) { r.issues.differs.forEach((m) => rec.differs.includes(m) || rec.differs.push(m)); r.issues.notes.forEach((m) => rec.notes.includes(m) || rec.notes.push(m)); }
+    if (preset === "rg" && !o.U && parsed.some((r) => r.lits.includes("\n"))) throw new PatternError("the literal \"\\n\" is not allowed in a regex; consider enabling multiline mode with -U (--multiline)");
+    if (preset === "rg" && o.P && dialect === "pcre2") pcreLookbehindCheck(pats, rec);
+    // Combine several -e patterns as an alternation, numbering groups across them.
+    let root = parsed.length === 1 ? parsed[0].root : { k: "group", type: "nc", alts: parsed.map((r) => [r.root]) };
+    const Wset = dialect === "rust" ? SET.wordRust : dialect === "dotnet" ? SET.wordNet : SET.wordU;
+    if (wrapWord) {
+      root = { k: "group", type: "nc", alts: [[{ k: "raw", js: `(?<![${Wset}])` }, root, { k: "raw", js: `(?![${Wset}])` }]] };
+      if (preset === "rg") rec.notes.push("-w uses half word boundaries (rg 14): no word character just before or after the match.");
+    }
+    if (wrapLine) {
+      const st = preset === "rg" ? (o.crlf ? A.crlfStart : A.lfStart) : A.textStart;
+      const en = preset === "rg" ? (o.crlf ? A.crlfEnd : A.lfEnd) : A.textEnd;
+      root = { k: "group", type: "nc", alts: [[{ k: "raw", js: st }, root, { k: "raw", js: en }]] };
+    }
+    const info = numberGroups(root, dialect);
+    const cv = caseValues(root);
+    const globalCI = cv.size ? [...cv][0] : !!flags.i;
+    rec.source = emitTree(root, info, globalCI);
+    rec.flags = "g" + (globalCI ? "i" : "") + "v";
+    rec.groupMap = info.groupMap; rec.names = info.names; rec.groupCount = info.count;
+    try { new RegExp(rec.source, rec.flags); } catch (e) { throw new PatternError("translation failed: " + e.message); }
+    if (rec.differs.length) rec.level = "differs";
+    return rec;
+  } catch (e) {
+    if (e instanceof CannotEmulate) { rec.level = "cannot"; rec.message = e.message; return rec; }
+    if (e instanceof PatternError) { rec.level = "error"; rec.message = e.message; return rec; }
+    throw e;
+  }
+}
+
+function pcreLookbehindCheck(pats, rec) {
+  for (const p of pats) if (/\(\?<[=!][^)]*[*+]|\(\?<[=!][^)]*\{[0-9]+,\}/.test(p)) {
+    rec.differs.push("real PCRE2 rejects unbounded look-behind (\"lookbehind assertion is not fixed length\"); JavaScript accepts it");
+  }
+}
+
+function compileVsFind(rec, o, p) {
+  rec.dialect = "js";
+  const src = o.regex ? p : jsEscape(p);
+  rec.source = src;
+  rec.flags = "g" + (o.matchCase ? "" : "i") + "mu";
+  rec.multiline = vsFindMultiline(src);
+  rec.model = "document";
+  rec.modelText = rec.multiline
+    ? "VS Code Find: the pattern contains \\n, \\r or \\W, so it searches the whole document (with LF line endings) and a match may span lines."
+    : "VS Code Find: JavaScript regex with the m flag, searched line by line because the pattern has no \\n, \\r or \\W. Line endings do not matter.";
+  if (o.regex && /\[\[:[a-z]+:\]/.test(p)) rec.notes.push("JavaScript has no POSIX classes: [[:alpha:]] is the set [:alph followed by a lone ], which VS Code's u-flag regex rejects.");
+  if (o.wholeWord) rec.notes.push("Whole Word checks VS Code's word separators on each side, not \\b.");
+  try { new RegExp(src, rec.flags); } catch (e) { rec.level = "error"; rec.message = e.message.replace(/^Invalid regular expression: /, ""); return rec; }
+  const probe = new RegExp("(?:" + src + ")|", "u");
+  rec.groupCount = probe.exec("").length - 1;
+  for (let k = 1; k <= rec.groupCount; k++) rec.groupMap[k] = k;
+  const nm = /\(\?<([A-Za-z_$][\w$]*)>/g; let m;
+  while ((m = nm.exec(src))) rec.names[m[1]] = null;
+  return rec;
+}
+
+/* ---------- line endings and input ---------- */
+// "As pasted" keeps the ending detected in the last paste; textareas always hold LF.
+function applyEol(text, mode, pastedEol) {
+  const lf = String(text).replace(/\r\n?/g, "\n");
+  const crlf = mode === "crlf" || (mode === "pasted" && pastedEol === "crlf");
+  return crlf ? lf.replace(/\n/g, "\r\n") : lf;
+}
+function detectEol(text) {
+  const crlf = (text.match(/\r\n/g) || []).length;
+  const lf = (text.match(/\n/g) || []).length - crlf;
+  if (crlf && !lf) return "crlf";
+  if (crlf && lf) return "mixed";
+  return "lf";
+}
+
+// Splits text into lines: [{start, end, next}] where end excludes the terminator.
+function splitLines(text, mode) {
+  const out = [];
+  let start = 0;
+  const n = text.length;
+  if (mode === "nul") {
+    while (start < n) { let e = text.indexOf("\0", start); if (e < 0) e = n; out.push({ start, end: e, next: Math.min(e + 1, n) }); start = e + 1; }
+    return out;
+  }
+  if (mode === "ps") {
+    const re = /\r\n|\n|\r/g; let m;
+    while ((m = re.exec(text))) { out.push({ start, end: m.index, next: m.index + m[0].length }); start = m.index + m[0].length; }
+    if (start < n) out.push({ start, end: n, next: n });
+    return out;
+  }
+  while (start < n) { let e = text.indexOf("\n", start); if (e < 0) e = n; out.push({ start, end: e, next: Math.min(e + 1, n) }); start = e + 1; }
+  return out;
+}
+
+/* ---------- globs and file types ---------- */
+function globToRegExp(glob) {
+  let s = "", k = 0;
+  const g = Array.from(glob);
+  let brace = 0;
+  while (k < g.length) {
+    const c = g[k];
+    if (c === "*") {
+      if (g[k + 1] === "*") { k += 2; if (g[k] === "/") { k++; s += "(?:.*/)?"; } else s += ".*"; continue; }
+      s += "[^/]*";
+    } else if (c === "?") s += "[^/]";
+    else if (c === "[") {
+      const end = g.indexOf("]", k + 2);
+      if (end < 0) s += "\\[";
+      else { let body = g.slice(k + 1, end).join(""); if (body[0] === "!") body = "^" + body.slice(1); s += "[" + body.replace(/\\/g, "\\\\") + "]"; k = end; }
+    } else if (c === "{") { s += "(?:"; brace++; }
+    else if (c === "}" && brace) { s += ")"; brace--; }
+    else if (c === "," && brace) s += "|";
+    else s += c.replace(/[\\^$.*+?()[\]{}|\/]/g, "\\$&");
+    k++;
+  }
+  return new RegExp("^" + s + "$");
+}
+function globMatch(glob, path) {
+  const target = glob.includes("/") ? path.replace(/^\.\//, "") : path.split("/").pop();
+  return globToRegExp(glob.replace(/^\//, "")).test(target);
+}
+// A subset of `rg --type-list`.
+const RG_TYPES = {
+  c: ["*.[chH]", "*.[chH].in", "*.cats"], cpp: ["*.[ChH]", "*.cc", "*.cpp", "*.cxx", "*.hh", "*.hpp", "*.hxx", "*.inl"], cs: ["*.cs"], css: ["*.css", "*.scss"],
+  go: ["*.go"], html: ["*.htm", "*.html", "*.ejs"], java: ["*.java", "*.jsp"], js: ["*.js", "*.jsx", "*.mjs", "*.cjs", "*.vue"], json: ["*.json", "composer.lock"],
+  markdown: ["*.markdown", "*.md", "*.mdown", "*.mdwn", "*.mkd", "*.mkdn", "*.mdx"], md: ["*.markdown", "*.md", "*.mdown", "*.mdwn", "*.mkd", "*.mkdn", "*.mdx"],
+  ps: ["*.cdxml", "*.ps1", "*.ps1xml", "*.psd1", "*.psm1"], py: ["*.py", "*.pyi"], rust: ["*.rs"], sh: ["*.bash", "*.sh", "*.zsh", ".bashrc", ".zshrc"],
+  toml: ["*.toml", "Cargo.lock"], ts: ["*.ts", "*.tsx", "*.cts", "*.mts"], txt: ["*.txt"], xml: ["*.xml", "*.xml.dist"], yaml: ["*.yaml", "*.yml"],
+};
+function selectFiles(preset, o, files) {
+  const notes = [];
+  if (preset === "rg" && files.length > 1) {
+    for (const t of o.types || []) if (!RG_TYPES[t]) throw new PatternError(`unrecognized file type: ${t}`);
+    const pos = (o.globs || []).filter((g) => g && !g.startsWith("!"));
+    const neg = (o.globs || []).filter((g) => g && g.startsWith("!")).map((g) => g.slice(1));
+    return {
+      files: files.map((f) => {
+        let keep = true;
+        if (pos.length && !pos.some((g) => globMatch(g, f.name))) keep = false;
+        if (neg.some((g) => globMatch(g, f.name))) keep = false;
+        if ((o.types || []).length && !o.types.some((t) => RG_TYPES[t].some((g) => globMatch(g, f.name)))) keep = false;
+        return keep;
+      }),
+      notes,
+    };
+  }
+  if (preset === "vssearch") {
+    const list = (s) => String(s || "").split(",").map((x) => x.trim()).filter(Boolean);
+    const inc = list(o.include), exc = list(o.exclude);
+    return { files: files.map((f) => (!inc.length || inc.some((g) => globMatch(g, f.name))) && !exc.some((g) => globMatch(g, f.name))), notes };
+  }
+  return { files: files.map(() => true), notes };
+}
+
+/* ---------- replacement syntaxes ---------- */
+// ripgrep -r (Rust Captures::expand): $name is the longest run of [A-Za-z0-9_];
+// all digits make it a group number, so "$10" is group 10 even when only group 1 exists.
+function expandRust(repl, g) {
+  let out = "", k = 0;
+  while (k < repl.length) {
+    const c = repl[k];
+    if (c !== "$") { out += c; k++; continue; }
+    if (repl[k + 1] === "$") { out += "$"; k += 2; continue; }
+    let name = null, end = k + 1;
+    if (repl[k + 1] === "{") {
+      const close = repl.indexOf("}", k + 2);
+      if (close > k + 2 && /^[A-Za-z0-9_]+$/.test(repl.slice(k + 2, close))) { name = repl.slice(k + 2, close); end = close + 1; }
+    } else {
+      const m = /^[A-Za-z0-9_]+/.exec(repl.slice(k + 1));
+      if (m) { name = m[0]; end = k + 1 + m[0].length; }
+    }
+    if (name === null) { out += "$"; k++; continue; }
+    const v = /^[0-9]+$/.test(name) ? g.num(+name) : g.name(name);
+    out += v === undefined || v === null ? "" : v;
+    k = end;
+  }
+  return out;
+}
+// .NET Regex.Replace substitutions: $number reads all digits and is literal text
+// when that group does not exist; ${name} names a group; $$ $& $` $' $+ $_.
+function expandDotnet(repl, g, ctx) {
+  let out = "", k = 0;
+  while (k < repl.length) {
+    const c = repl[k];
+    if (c !== "$") { out += c; k++; continue; }
+    const n = repl[k + 1];
+    if (n === "$") { out += "$"; k += 2; continue; }
+    if (n === "&") { out += g.num(0) || ""; k += 2; continue; }
+    if (n === "`") { out += ctx.before; k += 2; continue; }
+    if (n === "'") { out += ctx.after; k += 2; continue; }
+    if (n === "_") { out += ctx.input; k += 2; continue; }
+    if (n === "+") { out += ctx.last || ""; k += 2; continue; }
+    if (n === "{") {
+      const close = repl.indexOf("}", k + 2);
+      const name = close > 0 ? repl.slice(k + 2, close) : "";
+      if (/^[0-9]+$/.test(name) && g.has(+name)) { out += g.num(+name) || ""; k = close + 1; continue; }
+      if (/^[A-Za-z_][A-Za-z0-9_]*$/.test(name) && g.hasName(name)) { out += g.name(name) || ""; k = close + 1; continue; }
+      out += "$"; k++; continue;
+    }
+    const m = /^[0-9]+/.exec(repl.slice(k + 1));
+    if (m && g.has(+m[0])) { out += g.num(+m[0]) || ""; k += 1 + m[0].length; continue; }
+    out += "$"; k++;
+  }
+  return out;
+}
+// VS Code's replace pattern: \n \t \\ escapes, $0/$& whole match, $n and $nn (two digits,
+// falling back like VS Code's _substitute), ${n}, $$, and case modifiers \u \U \l \L \E
+// that apply to the next group substitution only; \E cancels them.
+function parseVsReplace(repl) {
+  const pieces = [];
+  let lit = "", ops = [];
+  const flush = () => { if (lit) { pieces.push({ lit }); lit = ""; } };
+  let k = 0;
+  while (k < repl.length) {
+    const c = repl[k];
+    if (c === "\\" && k + 1 < repl.length) {
+      const n = repl[k + 1];
+      if (n === "n") { lit += "\n"; k += 2; continue; }
+      if (n === "t") { lit += "\t"; k += 2; continue; }
+      if (n === "\\") { lit += "\\"; k += 2; continue; }
+      if ("uUlL".includes(n)) { ops.push(n); k += 2; continue; }
+      if (n === "E") { ops = []; k += 2; continue; }
+      lit += c; k++; continue;
+    }
+    if (c === "$" && k + 1 < repl.length) {
+      const n = repl[k + 1];
+      if (n === "$") { lit += "$"; k += 2; continue; }
+      if (n === "&") { flush(); pieces.push({ group: 0, ops }); ops = []; k += 2; continue; }
+      if (n === "{") { const m = /^\{([0-9]+)\}/.exec(repl.slice(k + 1)); if (m) { flush(); pieces.push({ group: +m[1], ops }); ops = []; k += 1 + m[0].length; continue; } }
+      if (/[0-9]/.test(n)) {
+        let digits = n;
+        if (/[0-9]/.test(repl[k + 2] || "")) digits += repl[k + 2];
+        flush(); pieces.push({ group: +digits, ops }); ops = []; k += 1 + digits.length; continue;
+      }
+    }
+    lit += c; k++;
+  }
+  flush();
+  return pieces;
+}
+function vsSubstitute(index, groups) {
+  if (index === 0) return groups[0];
+  let rem = "";
+  while (index > 0) {
+    if (index < groups.length) return (groups[index] || "") + rem;
+    rem = String(index % 10) + rem;
+    index = Math.floor(index / 10);
+  }
+  return "$" + rem;
+}
+function applyCaseOps(s, ops) {
+  if (!ops.length) return s;
+  let out = "", k = 0;
+  const chars = Array.from(s);
+  let mode = null;
+  let opIdx = 0;
+  for (const ch of chars) {
+    let c = ch;
+    if (opIdx < ops.length) {
+      const op = ops[opIdx];
+      if (op === "u") { c = ch.toUpperCase(); opIdx++; out += c; k++; continue; }
+      if (op === "l") { c = ch.toLowerCase(); opIdx++; out += c; k++; continue; }
+      if (op === "U" || op === "L") { mode = op; opIdx++; }
+    }
+    if (mode === "U") c = ch.toUpperCase();
+    else if (mode === "L") c = ch.toLowerCase();
+    out += c; k++;
+  }
+  return out;
+}
+// VS Code's buildReplaceStringWithCasePreserved.
+function preserveCase(matchText, pattern) {
+  if (!matchText) return pattern;
+  const spec = (ch) => matchText.includes(ch) && pattern.includes(ch) && matchText.split(ch).length === pattern.split(ch).length;
+  const hy = spec("-"), us = spec("_");
+  if (hy !== us) {
+    const ch = hy ? "-" : "_";
+    const m = matchText.split(ch);
+    return pattern.split(ch).map((p, k) => preserveCase(m[k], p)).join(ch);
+  }
+  if (matchText.toUpperCase() === matchText) return pattern.toUpperCase();
+  if (matchText.toLowerCase() === matchText) return pattern.toLowerCase();
+  const first = matchText[0];
+  if (first.toLowerCase() !== first && pattern.length) return pattern[0].toUpperCase() + pattern.slice(1);
+  if (first.toUpperCase() !== first && pattern.length) return pattern[0].toLowerCase() + pattern.slice(1);
+  return pattern;
+}
+function expandVscode(repl, groups, opts) {
+  if (!opts.regex) return opts.preserveCase ? preserveCase(groups[0], repl) : repl;
+  const pieces = parseVsReplace(repl);
+  if (pieces.every((p) => p.lit !== undefined)) {
+    const s = pieces.map((p) => p.lit).join("");
+    return opts.preserveCase ? preserveCase(groups[0], s) : s;
+  }
+  // VS Code applies Preserve Case only to a replace string without substitutions.
+  return pieces.map((p) => (p.lit !== undefined ? p.lit : applyCaseOps(vsSubstitute(p.group, groups), p.ops))).join("");
+}
+
+/* ---------- shell quoting ---------- */
+function bashQuote(s) {
+  s = String(s);
+  if (/^[A-Za-z0-9_@%+=:,.\/-]+$/.test(s)) return s;
+  return "'" + s.replace(/'/g, "'\\''") + "'";
+}
+// PowerShell single-quoted string: nothing expands; a quote (including the curly
+// quotes PowerShell also accepts) is escaped by doubling it.
+function psSingleQuote(s) { return "'" + String(s).replace(/['\u2018\u2019\u201A\u201B]/g, "$&$&") + "'"; }
+// An argument to a native command or a cmdlet from PowerShell 7.3+ (Standard argument passing).
+function psArg(s) {
+  s = String(s);
+  if (/^[A-Za-z0-9_.\/:=+-]+$/.test(s) && !/^[-@]/.test(s)) return s;
+  return psSingleQuote(s);
+}
+// A double-quoted PowerShell string whose value is exactly s: backtick-escapes ` $ " and control characters.
+function psDoubleQuote(s) {
+  return '"' + String(s).replace(/[`$"\u201C\u201D\u201E]/g, "`$&").replace(/\n/g, "`n").replace(/\r/g, "`r").replace(/\t/g, "`t").replace(/\0/g, "`0") + '"';
+}
+// The value PowerShell produces from the source text between double quotes: backtick
+// escapes are processed and $variables expand. Variables are empty here ($1 is not a
+// regex group in PowerShell, it is an undefined variable), and $(...) is not evaluated.
+function psExpandDouble(src) {
+  let out = "", k = 0; const notes = [];
+  const esc = { n: "\n", r: "\r", t: "\t", "0": "\0", a: "\x07", b: "\b", e: "\x1b", f: "\f", v: "\v" };
+  while (k < src.length) {
+    const c = src[k];
+    if (c === "`") {
+      const n = src[k + 1];
+      if (n === undefined) { out += "`"; k++; continue; }
+      if (n === "u" && src[k + 2] === "{") { const close = src.indexOf("}", k + 3); if (close > 0) { out += String.fromCodePoint(parseInt(src.slice(k + 3, close), 16)); k = close + 1; continue; } }
+      out += esc[n] !== undefined ? esc[n] : n; k += 2; continue;
+    }
+    if (c === '"' && src[k + 1] === '"') { out += '"'; k += 2; continue; }
+    if (c === "$") {
+      const n = src[k + 1];
+      if (n === "{") { const close = src.indexOf("}", k + 2); if (close > 0) { notes.push(`\${${src.slice(k + 2, close)}} expanded as an empty PowerShell variable`); k = close + 1; continue; } }
+      if (n === "(") { let depth = 0, j = k + 1; for (; j < src.length; j++) { if (src[j] === "(") depth++; else if (src[j] === ")" && --depth === 0) break; } notes.push("$(...) subexpressions are not evaluated here; treated as empty"); k = j + 1; continue; }
+      const m = /^[A-Za-z0-9_?:]+/.exec(src.slice(k + 1));
+      if (m) { notes.push(`$${m[0]} expanded as an empty PowerShell variable`); k += 1 + m[0].length; continue; }
+      out += "$"; k++; continue;
+    }
+    out += c; k++;
+  }
+  return { value: out, notes };
+}
+
+/* ---------- commands ---------- */
+function buildCommand(preset, o, patterns, files, replacement, shell) {
+  const pats = (patterns && patterns.length ? patterns : [""]).map(String);
+  const names = files.map((f) => f.name);
+  if (preset === "rg" || preset === "grep") {
+    const sh = shell || o.shell || "bash";
+    const q = sh === "pwsh" ? psArg : bashQuote;
+    const a = [preset];
+    if (preset === "rg") {
+      if (o.case === "i") a.push("-i"); else if (o.case === "S") a.push("-S");
+      for (const f of ["w", "x", "F", "v", "o", "c", "l", "n", "U", "P"]) if (o[f]) a.push("-" + f);
+      if (o.crlf) a.push("--crlf");
+    } else {
+      if (o.matcher !== "G") a.push("-" + o.matcher);
+      for (const f of ["i", "w", "x", "v", "o", "c", "l", "n", "z"]) if (o[f]) a.push("-" + f);
+    }
+    for (const f of ["A", "B", "C"]) if (o[f] !== null && o[f] !== undefined && o[f] !== "") a.push("-" + f, String(o[f]));
+    if (pats.length > 1 || /^-/.test(pats[0])) for (const p of pats) a.push("-e", q(p));
+    else a.push(q(pats[0]));
+    if (preset === "rg" && o.r) a.push("-r", q(replacement || ""));
+    if (preset === "rg" && names.length > 1) {
+      for (const g of o.globs || []) if (g) a.push("-g", q(g));
+      for (const t of o.types || []) if (t) a.push("-t", q(t));
+    }
+    // rg searches the working directory when several files exist: -g and -t only filter
+    // files found by walking directories, never paths named on the command line.
+    if (!(preset === "rg" && names.length > 1)) for (const n of names) a.push(q(n));
+    return a.join(" ");
+  }
+  if (preset === "pwsh") {
+    const path = names.map(psSingleQuote).join(",");
+    const pat = psSingleQuote(pats[0]);
+    if (o.mode === "select") {
+      const a = ["Select-String", "-LiteralPath", path, "-Pattern", pat];
+      if (o.CaseSensitive) a.push("-CaseSensitive");
+      if (o.SimpleMatch) a.push("-SimpleMatch");
+      if (o.NotMatch) a.push("-NotMatch");
+      if (o.AllMatches) a.push("-AllMatches");
+      if (o.Context) a.push("-Context", o.Context.join(","));
+      return a.join(" ");
+    }
+    const subject = `(Get-Content -Raw -LiteralPath ${psSingleQuote(names[0])})`;
+    if (o.mode === "replace") {
+      const r = o.replQuote === "double" ? '"' + fixDoubleSource(replacement || "") + '"' : psSingleQuote(replacement || "");
+      return `${subject} -replace ${pat}, ${r}`;
+    }
+    return `${subject} -${o.mode} ${pat}; $Matches`;
+  }
+  const toggles = [o.matchCase && "Match Case", o.wholeWord && "Whole Word", o.regex && "Regex", o.preserveCase && "Preserve Case"].filter(Boolean);
+  const parts = [preset === "vsfind" ? "Find (Ctrl+F)" : "Search (Ctrl+Shift+F)", "pattern: " + pats[0], "toggles: " + (toggles.join(", ") || "none")];
+  if (o.replace) parts.push("replace: " + (replacement || ""));
+  if (preset === "vssearch" && o.include) parts.push("files to include: " + o.include);
+  if (preset === "vssearch" && o.exclude) parts.push("files to exclude: " + o.exclude);
+  return parts.join("\n");
+}
+// The replacement typed for double quotes is PowerShell source; escape a bare " so the command stays one string.
+function fixDoubleSource(src) {
+  let out = "";
+  for (let k = 0; k < src.length; k++) {
+    const c = src[k];
+    if (c === "`" && k + 1 < src.length) { out += c + src[k + 1]; k++; continue; }
+    out += c === '"' ? '`"' : c;
+  }
+  return out;
+}
+
+/* ---------- flags typed as text ---------- */
+function tokenizeArgs(s) {
+  const out = []; let cur = null, k = 0;
+  while (k < s.length) {
+    const c = s[k];
+    if (/\s/.test(c)) { if (cur !== null) { out.push(cur); cur = null; } k++; continue; }
+    if (c === "'" || c === '"') { const end = s.indexOf(c, k + 1); const part = end < 0 ? s.slice(k + 1) : s.slice(k + 1, end); cur = (cur || "") + part; k = end < 0 ? s.length : end + 1; continue; }
+    cur = (cur || "") + c; k++;
+  }
+  if (cur !== null) out.push(cur);
+  return out;
+}
+const RG_BOOL = { i: "ignore-case", S: "smart-case", w: "word-regexp", x: "line-regexp", F: "fixed-strings", v: "invert-match", o: "only-matching", c: "count", l: "files-with-matches", n: "line-number", U: "multiline", P: "pcre2" };
+const GREP_BOOL = { i: "ignore-case", w: "word-regexp", x: "line-regexp", F: "fixed-strings", E: "extended-regexp", P: "perl-regexp", G: "basic-regexp", v: "invert-match", o: "only-matching", c: "count", l: "files-with-matches", n: "line-number", z: "null-data" };
+const VALUE_FLAGS = { A: "after-context", B: "before-context", C: "context", e: "regexp", g: "glob", t: "type", r: "replace" };
+// Applies typed flags to a copy of the options. Returns {opts, patterns, unsupported[]}.
+function parseFlags(preset, text, opts, patterns) {
+  const o = clone(opts);
+  const pats = patterns.slice();
+  const unsupported = [];
+  const toks = tokenizeArgs(String(text || ""));
+  const newPats = [];
+  const setBool = (letter) => {
+    if (preset === "rg") {
+      if (letter === "i") o.case = "i"; else if (letter === "S") o.case = "S"; else o[letter] = true;
+    } else if (letter === "E" || letter === "P" || letter === "F" || letter === "G") o.matcher = letter;
+    else o[letter] = true;
+  };
+  const setValue = (letter, v, tok) => {
+    if (v === undefined) { unsupported.push(tok + " (needs a value)"); return; }
+    if ("ABC".includes(letter)) { if (!/^[0-9]+$/.test(v)) { unsupported.push(`${tok} ${v}`); return; } o[letter] = +v; }
+    else if (letter === "e") newPats.push(v);
+    else if (letter === "g") o.globs = (o.globs || []).concat(v);
+    else if (letter === "t") o.types = (o.types || []).concat(v);
+    else if (letter === "r") o.r = { value: v };
+  };
+  if (preset === "rg" || preset === "grep") {
+    const bools = preset === "rg" ? RG_BOOL : GREP_BOOL;
+    const values = preset === "rg" ? "ABCegtr" : "ABCe";
+    for (let k = 0; k < toks.length; k++) {
+      const t = toks[k];
+      if (t === "--crlf" && preset === "rg") { o.crlf = true; continue; }
+      if (t.startsWith("--")) {
+        const [name, inline] = t.slice(2).split(/=(.*)/s);
+        const b = Object.keys(bools).find((x) => bools[x] === name);
+        if (b) { setBool(b); continue; }
+        const v = Object.keys(VALUE_FLAGS).find((x) => VALUE_FLAGS[x] === name && values.includes(x));
+        if (v) { setValue(v, inline !== undefined ? inline : toks[++k], t); continue; }
+        unsupported.push(t); continue;
+      }
+      if (/^-[A-Za-z]/.test(t)) {
+        const letters = t.slice(1);
+        for (let j = 0; j < letters.length; j++) {
+          const L = letters[j];
+          if (values.includes(L)) { const rest = letters.slice(j + 1); setValue(L, rest !== "" ? rest : toks[++k], "-" + L); break; }
+          if (bools[L]) setBool(L); else unsupported.push("-" + L);
+        }
+        continue;
+      }
+      unsupported.push(t);
+    }
+  } else if (preset === "pwsh") {
+    const names = { casesensitive: "CaseSensitive", simplematch: "SimpleMatch", notmatch: "NotMatch", allmatches: "AllMatches" };
+    for (let k = 0; k < toks.length; k++) {
+      const t = toks[k];
+      const key = t.replace(/^-/, "").toLowerCase();
+      if (t.startsWith("-") && names[key]) { o[names[key]] = true; continue; }
+      if (t.startsWith("-") && key === "context") {
+        const v = toks[++k];
+        const m = /^([0-9]+)(?:,([0-9]+))?$/.exec(v || "");
+        if (!m) { unsupported.push("-Context " + (v || "")); continue; }
+        o.Context = [+m[1], m[2] === undefined ? +m[1] : +m[2]]; continue;
+      }
+      if (t.startsWith("-") && ["match", "cmatch", "replace"].includes(key)) { o.mode = key; continue; }
+      if (t.startsWith("-") && key === "selectstring") { o.mode = "select"; continue; }
+      unsupported.push(t);
+    }
+  } else if (toks.length) unsupported.push(...toks);
+  let replacement;
+  if (o.r && typeof o.r === "object") { replacement = o.r.value; o.r = true; }
+  const outPats = newPats.length ? (pats.length === 1 && pats[0] === "" ? newPats : pats.concat(newPats)) : pats;
+  return { opts: o, patterns: outPats, unsupported, replacement };
+}
+
+/* ---------- running ---------- */
+function makeGroups(m, rec) {
+  return {
+    num: (n) => (n === 0 ? m[0] : rec.groupMap[n] !== undefined ? m[rec.groupMap[n]] : undefined),
+    has: (n) => n === 0 || rec.groupMap[n] !== undefined,
+    name: (s) => (m.groups ? m.groups[s] : undefined),
+    hasName: (s) => !!m.groups && Object.prototype.hasOwnProperty.call(m.groups, s),
+  };
+}
+function engineGroupsArray(m, rec) {
+  const out = [m[0]];
+  for (let k = 1; k <= rec.groupCount; k++) out.push(m[rec.groupMap[k]]);
+  return out;
+}
+function* execAll(re, s, from, to) {
+  re.lastIndex = from || 0;
+  const end = to === undefined ? s.length : to;
+  while (re.lastIndex <= end) {
+    const m = re.exec(s);
+    if (!m || m.index > end) return;
+    yield m;
+    if (m[0] === "") re.lastIndex = m.index + (m.index < s.length ? cpLen(s, m.index) : 1);
+  }
+}
+
+// run(request) → result. request: {preset, options, patterns, files:[{name,text}], replacement}
+// Every file text already has its line endings applied (applyEol).
+function run(req) {
+  const preset = req.preset;
+  const o = req.options[preset];
+  const patterns = req.patterns && req.patterns.length ? req.patterns : [""];
+  const files = req.files || [];
+  const rec = compile(preset, o, preset === "rg" || preset === "grep" ? patterns : [patterns[0]]);
+  const result = { preset, translation: rec, files: [], rows: [], replace: null, totals: { matches: 0, lines: 0, files: 0 }, capped: false, notes: [] };
+  const unusedPats = (preset === "pwsh" || preset === "vsfind" || preset === "vssearch") && patterns.filter((p) => p !== "").length > 1;
+  if (unusedPats) result.notes.push("This preset takes one pattern; only the first is used.");
+  if (rec.level === "cannot" || rec.level === "error") return result;
+  let sel;
+  try { sel = selectFiles(preset, o, files); } catch (e) { if (e instanceof PatternError) { rec.level = "error"; rec.message = e.message; return result; } throw e; }
+  const re = new RegExp(rec.source, rec.flags);
+  let budget = MAX_HIGHLIGHTS;
+  const multi = files.length > 1;
+  files.forEach((f, fi) => {
+    const fr = { name: f.name, searched: sel.files[fi], matches: [], matchCount: 0, lineCount: 0, lines: [] };
+    result.files.push(fr);
+    if (!fr.searched) return;
+    const keep = (s, e, m) => { fr.matchCount++; if (budget > 0) { budget--; fr.matches.push({ s, e, g: engineGroupsArray(m, rec).map((x) => (x === undefined ? null : x)), m }); } else result.capped = true; };
+    if (rec.model === "lines" || rec.model === "pslines" || rec.model === "records") searchLines(preset, o, rec, re, f.text, fr, keep);
+    else if (rec.model === "multiline") searchMultiline(preset, o, re, f.text, fr, keep);
+    else if (rec.model === "whole") searchWhole(o, re, f.text, fr, keep);
+    else if (rec.model === "document") searchDocument(o, rec, re, f.text, fr, keep);
+    result.totals.matches += fr.matchCount;
+    result.totals.lines += fr.lineCount;
+    if (fr.lineCount > 0 || fr.matchCount > 0) result.totals.files++;
+  });
+  result.rows = formatOutput(preset, o, rec, result, files, multi);
+  result.replace = replacePreview(preset, o, rec, result, files, req.replacement || "");
+  // The worker posts results; RegExp match arrays do not survive structured clone well.
+  for (const fr of result.files) { for (const x of fr.matches) delete x.m; for (const l of fr.lines) delete l.ms; }
+  return result;
+}
+
+/* The matching models. Each fills fr.lines and fr.lineCount for one file and passes every match to keep(start, end, match). */
+// Line by line (rg, grep, Select-String) or NUL-separated records (grep -z); a match cannot cross a line.
+function searchLines(preset, o, rec, re, text, fr, keep) {
+  const lines = splitLines(text, rec.model === "pslines" ? "ps" : rec.model === "records" ? "nul" : "lf");
+  const firstOnly = preset === "pwsh" && !o.AllMatches;
+  lines.forEach((ln, idx) => {
+    const sub = text.slice(ln.start, ln.end);
+    const ms = [];
+    for (const m of execAll(re, sub)) { ms.push(m); if (firstOnly) break; }
+    ln.no = idx + 1;
+    ln.hit = ms.length > 0;
+    ln.ms = ms.map((m) => ({ s: ln.start + m.index, e: ln.start + m.index + m[0].length, m }));
+  });
+  fr.lines = lines;
+  const invert = preset === "rg" ? o.v : preset === "grep" ? o.v : preset === "pwsh" ? o.NotMatch : false;
+  for (const ln of lines) {
+    ln.sel = invert ? !ln.hit : ln.hit;
+    if (ln.sel) fr.lineCount++;
+    if (!invert) for (const x of ln.ms) keep(x.s, x.e, x.m);
+  }
+}
+// rg -U and multiline VS Code Search: the regex runs over the whole file and every line a match touches is selected.
+function searchMultiline(preset, o, re, text, fr, keep) {
+  const lines = splitLines(text, "lf");
+  lines.forEach((ln, idx) => { ln.no = idx + 1; ln.ms = []; ln.hit = false; });
+  fr.lines = lines;
+  let li = 0;
+  for (const m of execAll(re, text)) {
+    const s = m.index, e = m.index + m[0].length;
+    keep(s, e, m);
+    while (li < lines.length - 1 && lines[li].next <= s) li++;
+    let lj = li;
+    while (lj < lines.length - 1 && lines[lj].next < e) lj++;
+    for (let k = li; k <= lj; k++) lines[k].hit = true;
+    lines[li].ms.push({ s, e, m });
+  }
+  const invert = preset === "rg" && o.v;
+  for (const ln of lines) { ln.sel = invert ? !ln.hit : ln.hit; if (ln.sel) fr.lineCount++; }
+}
+// PowerShell -match and -replace: the whole string is one subject; -match stops at the first match.
+function searchWhole(o, re, text, fr, keep) {
+  const ms = [];
+  for (const m of execAll(re, text)) { ms.push(m); if (o.mode !== "replace") break; }
+  for (const m of ms) keep(m.index, m.index + m[0].length, m);
+  fr.lineCount = ms.length ? 1 : 0;
+}
+// VS Code Find: VS Code's view of the file is its lines joined with \n; offsets map back to the text.
+function searchDocument(o, rec, re, text, fr, keep) {
+  const lines = splitLines(text, "ps");
+  const view = lines.map((l) => text.slice(l.start, l.end)).join("\n");
+  const viewStarts = []; let acc = 0;
+  for (const l of lines) { viewStarts.push(acc); acc += l.end - l.start + 1; }
+  // The index of the line holding view offset vpos.
+  const lineAt = (vpos) => {
+    let lo = 0, hi = lines.length - 1;
+    while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (viewStarts[mid] <= vpos) lo = mid; else hi = mid - 1; }
+    return lo;
+  };
+  const toText = (vpos) => {
+    const lo = lineAt(vpos);
+    if (!lines.length) return vpos;
+    const col = vpos - viewStarts[lo];
+    const l = lines[lo];
+    return col > l.end - l.start ? l.next : l.start + col;
+  };
+  const ranges = rec.multiline ? [[0, view.length]] : lines.map((l, k) => [viewStarts[k], viewStarts[k] + l.end - l.start]);
+  const hitLines = new Set();
+  for (const [a, b] of ranges) {
+    const sub = rec.multiline ? view : view.slice(a, b);
+    for (const m of execAll(re, sub)) {
+      const vs = (rec.multiline ? 0 : a) + m.index, ve = vs + m[0].length;
+      if (o.wholeWord && !vsWholeWordOk(view, vs, ve)) continue;
+      keep(toText(vs), toText(ve), m);
+      hitLines.add(lineAt(vs));
+    }
+  }
+  lines.forEach((l, k) => { l.no = k + 1; l.sel = hitLines.has(k); });
+  fr.lines = lines;
+  fr.lineCount = hitLines.size;
+}
+
+const VS_SEPARATORS = "`~!@#$%^&*()-=+[{]}\\|;:'\",.<>/?";
+function vsIsSep(ch) { return ch === undefined || ch === "" || VS_SEPARATORS.includes(ch) || /\s/.test(ch); }
+// VS Code Find's whole-word test: a word separator (or the text edge) on each side,
+// or a match that itself starts/ends with a separator.
+function vsWholeWordOk(text, s, e) {
+  const left = s === 0 || vsIsSep(text[s - 1]) || vsIsSep(text[s]);
+  const right = e === text.length || vsIsSep(text[e]) || (e > s && vsIsSep(text[e - 1]));
+  return left && right;
+}
+
+/* Output rows: {kind: match|context|sep|info|count|file, prefix, text, spans:[[a,b]]} (spans relative to text). */
+function formatOutput(preset, o, rec, result, files, multi) {
+  const rows = [];
+  const add = (r) => { if (rows.length >= MAX_HIGHLIGHTS) { result.capped = true; return; } rows.push(r); };
+  if (preset === "rg" || preset === "grep") formatGrepRows(preset, o, result, files, multi, add);
+  else if (preset === "pwsh") formatPwshRows(o, rec, result, files, add);
+  else if (preset === "vsfind" || preset === "vssearch") formatVsCodeRows(result, files, add);
+  return rows;
+}
+// rg and grep: -l file names, -c counts, -o matched parts, or matching lines with -A/-B/-C context and "--" separators.
+function formatGrepRows(preset, o, result, files, multi, add) {
+  const invert = o.v;
+  const z = preset === "grep" && o.z;
+  const sepCh = z ? "␀" : "";
+  const nameOf = (fr) => fr.name;
+  if (o.l) { for (const fr of result.files) if (fr.searched && fr.lineCount > 0) add({ kind: "file", prefix: "", text: nameOf(fr) + sepCh, spans: [] }); return; }
+  if (o.c) {
+    for (const fr of result.files) {
+      if (!fr.searched) continue;
+      if (preset === "rg" && fr.lineCount === 0) continue;
+      add({ kind: "count", prefix: multi ? nameOf(fr) + ":" : "", text: String(fr.lineCount), spans: [] });
+    }
+    return;
+  }
+  const A0 = o.C !== null && o.C !== undefined ? +o.C : 0;
+  const after = o.A !== null && o.A !== undefined ? +o.A : A0;
+  const before = o.B !== null && o.B !== undefined ? +o.B : A0;
+  let lastPrinted = null, lastFile = null;
+  for (const fr of result.files) {
+    if (!fr.searched || fr.lineCount === 0) continue;
+    const lines = fr.lines;
+    const pre = (ln, sep) => (multi ? nameOf(fr) + sep : "") + (o.n ? ln.no + sep : "");
+    if (o.o) {
+      if (invert) continue;
+      for (const x of fr.matches) {
+        if (x.e === x.s) continue;
+        const ln = lines.find((l) => x.s >= l.start && x.s < l.next);
+        add({ kind: "match", prefix: ln ? pre(ln, ":") : "", text: textOf(files, fr, x.s, x.e) + sepCh, spans: [[0, x.e - x.s]] });
+      }
+      continue;
+    }
+    const printed = new Set();
+    // Selected lines; with -U that is every line a match touches.
+    const want = [];
+    lines.forEach((ln, k) => { if (ln.sel) want.push(k); });
+    const ctxSet = new Set();
+    for (const k of want) { for (let j = Math.max(0, k - before); j <= Math.min(lines.length - 1, k + after); j++) ctxSet.add(j); }
+    const order = [...ctxSet].sort((a, b) => a - b);
+    const wantSet = new Set(want);
+    for (const k of order) {
+      if (printed.has(k)) continue;
+      if ((before || after) && lastPrinted !== null && (lastFile !== fr.name || k > lastPrinted + 1)) add({ kind: "sep", prefix: "", text: "--", spans: [] });
+      const ln = lines[k];
+      const isMatch = wantSet.has(k);
+      const t = files[result.files.indexOf(fr)].text.slice(ln.start, ln.end);
+      const spans = isMatch && !invert ? spansOfLine(fr, ln) : [];
+      add({ kind: isMatch ? "match" : "context", prefix: pre(ln, isMatch ? ":" : "-"), text: t + sepCh, spans, lineStart: ln.start, file: fr.name });
+      printed.add(k); lastPrinted = k; lastFile = fr.name;
+    }
+  }
+}
+// Select-String: MatchInfo lines with optional -Context; -match: True or False and the $Matches table; -replace prints nothing here.
+function formatPwshRows(o, rec, result, files, add) {
+  if (o.mode === "select") {
+    for (const fr of result.files) {
+      const lines = fr.lines;
+      const pre = o.Context ? o.Context[0] : 0, post = o.Context ? o.Context[1] : 0;
+      const text = files[result.files.indexOf(fr)].text;
+      const show = new Set();
+      lines.forEach((ln, k) => { if (ln.sel) for (let j = Math.max(0, k - pre); j <= Math.min(lines.length - 1, k + post); j++) show.add(j); });
+      for (const k of [...show].sort((a, b) => a - b)) {
+        const ln = lines[k];
+        if (ln.sel) add({ kind: "match", prefix: `${o.Context ? "> " : ""}${fr.name}:${ln.no}:`, text: text.slice(ln.start, ln.end), spans: o.NotMatch ? [] : spansOfLine(fr, ln) });
+        else add({ kind: "context", prefix: `  ${fr.name}:${ln.no}:`, text: text.slice(ln.start, ln.end), spans: [] });
+      }
+    }
+    return;
+  }
+  if (o.mode === "replace") return;
+  const fr = result.files[0];
+  const hit = fr && fr.matchCount > 0;
+  add({ kind: "info", prefix: "", text: hit ? "True" : "False", spans: [] });
+  if (!hit) return;
+  const x = fr.matches[0];
+  add({ kind: "info", prefix: "", text: "", spans: [] });
+  add({ kind: "info", prefix: "", text: "$Matches", spans: [] });
+  const names = Object.keys(rec.names);
+  const nameNums = new Set(names.map((n) => rec.names[n]));
+  const entries = [];
+  for (const n of names) if (x.g && rec.names[n] !== undefined) { const eng = Object.keys(rec.groupMap).find((k) => rec.groupMap[k] === rec.names[n]); const v = x.g[+eng]; if (v !== null && v !== undefined) entries.push([n, v]); }
+  for (let k = rec.groupCount; k >= 1; k--) { if (nameNums.has(rec.groupMap[k])) continue; const v = x.g[k]; if (v !== null && v !== undefined) entries.push([String(k), v]); }
+  entries.push(["0", x.g[0]]);
+  for (const [n, v] of entries) add({ kind: "match", prefix: n.padEnd(6) + " ", text: v, spans: [[0, v.length]] });
+}
+// VS Code: each file with its match count, then its matching lines.
+function formatVsCodeRows(result, files, add) {
+  for (const fr of result.files) {
+    if (!fr.searched || fr.matchCount === 0) continue;
+    const text = files[result.files.indexOf(fr)].text;
+    add({ kind: "file", prefix: "", text: `${fr.name} (${fr.matchCount})`, spans: [] });
+    for (const ln of fr.lines) {
+      if (!ln.sel) continue;
+      add({ kind: "match", prefix: `  ${ln.no}: `, text: text.slice(ln.start, ln.end), spans: spansOfLine(fr, ln) });
+    }
+  }
+}
+// The highlighted spans of one output line, relative to its start; an empty match counts when it sits inside the line.
+function spansOfLine(fr, ln) {
+  return fr.matches.filter((x) => x.s < ln.next && x.e > ln.start || (x.s === x.e && x.s >= ln.start && x.s <= ln.end)).map((x) => [Math.max(x.s, ln.start) - ln.start, Math.min(x.e, ln.end) - ln.start]);
+}
+function textOf(files, fr, s, e) { const f = files.find((x) => x.name === fr.name); return f.text.slice(s, e); }
+
+/* Replace preview in each engine's own syntax. */
+function replacePreview(preset, o, rec, result, files, replacement) {
+  if (preset === "grep") return { available: false, message: "grep has no replace." };
+  if (preset === "rg" && !o.r) return { available: false, message: "Turn on -r to preview rg's replacement output." };
+  if (preset === "pwsh" && o.mode !== "replace") return { available: false, message: o.mode === "select" ? "Select-String has no replace; use the -replace operator." : `-${o.mode} does not replace; use the -replace operator.` };
+  if ((preset === "vsfind" || preset === "vssearch") && !o.replace) return { available: false, message: "Open the replace field to preview VS Code's Replace All." };
+  const out = { available: true, rows: [], notes: [], replacement };
+  const reSrc = new RegExp(rec.source, rec.flags);
+  if (preset === "pwsh") {
+    let value = replacement;
+    if (o.replQuote === "double") {
+      const x = psExpandDouble(fixDoubleSource(replacement));
+      value = x.value;
+      out.notes.push(...x.notes);
+      if (x.notes.length) out.notes.push("Double quotes let PowerShell expand $ before -replace sees the string; use single quotes for $1 and ${name}.");
+    }
+    out.psValue = value;
+    const f = files[0];
+    const text = f ? f.text : "";
+    let last = 0, res = "";
+    const spans = [];
+    for (const m of execAll(reSrc, text)) {
+      const g = makeGroups(m, rec);
+      let lastGroup = "";
+      for (let k = rec.groupCount; k >= 1; k--) { const v = g.num(k); if (v !== undefined) { lastGroup = v; break; } }
+      const rep = expandDotnet(value, g, { before: text.slice(0, m.index), after: text.slice(m.index + m[0].length), input: text, last: lastGroup });
+      res += text.slice(last, m.index);
+      spans.push([res.length, res.length + rep.length]);
+      res += rep;
+      last = m.index + m[0].length;
+    }
+    res += text.slice(last);
+    out.rows = rowsFromText(res, spans);
+    return out;
+  }
+  if (preset === "rg") {
+    // rg prints the matching lines with each match replaced (or only the replacements with -o).
+    for (const fr of result.files) {
+      if (!fr.searched || fr.matchCount === 0) continue;
+      const text = files[result.files.indexOf(fr)].text;
+      const multi = files.length > 1;
+      const pre = (no) => (multi ? fr.name + ":" : "") + (o.n ? no + ":" : "");
+      const printedLines = fr.lines.filter((l) => l.sel);
+      const byLine = new Map();
+      for (const x of fr.matches) {
+        const ln = fr.lines.find((l) => x.s >= l.start && x.s < l.next) || fr.lines[fr.lines.length - 1];
+        if (!byLine.has(ln)) byLine.set(ln, []);
+        byLine.get(ln).push(x);
+      }
+      for (const ln of printedLines) {
+        const xs = byLine.get(ln) || [];
+        if (o.o) {
+          for (const x of xs) { const rep = expandRust(replacement, rgGroups(x, rec)); out.rows.push({ kind: "match", prefix: pre(ln.no), text: rep, spans: [[0, rep.length]] }); }
+          continue;
+        }
+        if (!xs.length) continue;
+        let endLine = ln;
+        for (const x of xs) { const l2 = fr.lines.find((l) => x.e > l.start && x.e <= l.next) || ln; if (l2.end > endLine.end) endLine = l2; }
+        let res = "", last = ln.start; const spans = [];
+        for (const x of xs) { const rep = expandRust(replacement, rgGroups(x, rec)); res += text.slice(last, x.s); spans.push([res.length, res.length + rep.length]); res += rep; last = x.e; }
+        res += text.slice(last, Math.max(endLine.end, last));
+        out.rows.push({ kind: "match", prefix: pre(ln.no), text: res, spans });
+      }
+    }
+    return out;
+  }
+  // VS Code Replace All over each searched file.
+  for (const fr of result.files) {
+    if (!fr.searched) continue;
+    const f = files[result.files.indexOf(fr)];
+    const eol = f.text.includes("\r\n") ? "\r\n" : "\n";
+    let res = "", last = 0; const spans = [];
+    for (const x of fr.matches) {
+      let rep = expandVscode(replacement, x.g.map((v) => (v === null ? undefined : v)), o);
+      rep = rep.replace(/\r?\n/g, eol);
+      res += f.text.slice(last, x.s); spans.push([res.length, res.length + rep.length]); res += rep; last = x.e;
+    }
+    res += f.text.slice(last);
+    if (preset === "vssearch" && files.length > 1) out.rows.push({ kind: "file", prefix: "", text: fr.name, spans: [] });
+    out.rows.push(...rowsFromText(res, spans));
+  }
+  if (o.preserveCase && o.regex && /\$|\\[uUlLE]/.test(replacement)) out.notes.push("VS Code applies Preserve Case only when the replace string has no $ group or case modifier.");
+  return out;
+}
+function rgGroups(x, rec) {
+  const g = x.g;
+  return { num: (n) => (n < g.length ? (g[n] === null ? undefined : g[n]) : undefined), name: (s) => { const j = rec.names[s]; if (j === undefined) return undefined; const k = Object.keys(rec.groupMap).find((e) => rec.groupMap[e] === j); return g[+k] === null ? undefined : g[+k]; } };
+}
+function rowsFromText(text, spans) {
+  const rows = [];
+  let start = 0;
+  const parts = text.split("\n");
+  parts.forEach((p, k) => {
+    if (k === parts.length - 1 && p === "" && parts.length > 1) return;
+    const end = start + p.length;
+    const sp = spans.filter(([a, b]) => b > start && a < end || (a === b && a >= start && a <= end)).map(([a, b]) => [Math.max(a, start) - start, Math.min(b, end) - start]);
+    rows.push({ kind: "text", prefix: String(k + 1).padStart(3) + "  ", text: p, spans: sp });
+    start = end + 1;
+  });
+  return rows;
+}
+
+/* ---------- compare all ---------- */
+// Each preset's result reduced to match spans in each file's text, for comparison.
+function signature(result) {
+  if (!result || result.translation.level === "cannot" || result.translation.level === "error") return null;
+  return result.files.map((f) => (f.searched ? f.matches.map((x) => x.s + "-" + x.e).join(",") : "-")).join("|");
+}
+function compareSummary(results) {
+  const sigs = results.map(signature);
+  const counts = {};
+  for (const s of sigs) if (s !== null) counts[s] = (counts[s] || 0) + 1;
+  const majority = Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0];
+  return results.map((r, k) => ({
+    preset: r.preset,
+    level: r.translation.level,
+    matches: r.totals.matches,
+    lines: r.totals.lines,
+    differs: sigs[k] !== null && majority !== undefined && sigs[k] !== majority,
+    unavailable: sigs[k] === null,
+  }));
+}
+
+/* ---------- metadata and self-test ---------- */
+const META = {
+  title: "Grep Visualiser",
+  version: VERSION,
+  buildDate: BUILD_DATE,
+  targets: PRESETS.map((p) => ({ id: p.id, label: p.label, target: p.target })),
+  limits: { maxInputBytes: MAX_INPUT_BYTES, maxHighlights: MAX_HIGHLIGHTS, timeoutMs: TIMEOUT_MS },
+  confidence: {
+    exact: "Translated to JavaScript; believed to match the real engine.",
+    differs: "Runs, but a known divergence from the real engine is listed.",
+    cannot: "Cannot emulate here: no result is produced.",
+    error: "The real engine rejects the pattern too.",
+  },
+  models: {
+    rg: "Line by line; -U over the whole file. --crlf makes $ match before \\r\\n.",
+    grep: "Line by line; -z makes NUL the record separator.",
+    pwsh: "Select-String line by line (ReadLine strips \\r\\n); -match, -cmatch and -replace on the whole string.",
+    vsfind: "The document with LF line endings; line by line unless the pattern has \\n, \\r or \\W.",
+    vssearch: "ripgrep line by line with VS Code's toggles; --multiline when the pattern has \\n; PCRE2 for look-around and backreferences.",
+  },
+  flags: {
+    rg: "-i -S -w -x -F -v -o -c -l -n -A -B -C -U -P -r --crlf -e, -g and -t when several files exist",
+    grep: "-i -w -x -F -E -P -v -o -c -l -n -A -B -C -z -e",
+    pwsh: "Select-String -CaseSensitive -SimpleMatch -NotMatch -AllMatches -Context; -match, -cmatch, -replace",
+    vsfind: "Match Case, Whole Word, Regex, Preserve Case",
+    vssearch: "Match Case, Whole Word, Regex, Preserve Case, files to include and exclude",
+  },
+  replace: {
+    rg: "-r: $1, ${1}, $name; $1 followed by digits is read as group 10 and up",
+    grep: "grep has no replace",
+    pwsh: "-replace: $1, ${name}, $$; single quotes stop PowerShell's $ expansion, double quotes do not",
+    vsfind: "$1, ${1}, $&, case modifiers \\u \\U \\l \\L \\E, Preserve Case",
+    vssearch: "$1, ${1}, $&, case modifiers \\u \\U \\l \\L \\E, Preserve Case",
+  },
+};
+
+function baseRequest(preset, patterns, text, patch) {
+  const options = defaultOptions();
+  if (patch) Object.assign(options[preset], patch);
+  return { preset, options, patterns, files: [{ name: "input.txt", text }], replacement: "" };
+}
+function countOf(preset, patterns, text, patch) { return run(baseRequest(preset, patterns, text, patch)).totals.matches; }
+function levelOf(preset, patterns, patch) { return compile(preset, Object.assign(defaultOptions()[preset], patch || {}), patterns).level; }
+
+function selfTests() {
+  const t = [];
+  const check = (name, fn) => { try { const r = fn(); t.push({ name, pass: r === true, detail: r === true ? "" : String(r) }); } catch (e) { t.push({ name, pass: false, detail: e.message }); } };
+  const eq = (a, b) => (a === b ? true : `got ${JSON.stringify(a)}, expected ${JSON.stringify(b)}`);
+  check("BRE: + is a literal, \\+ repeats", () => eq([countOf("grep", ["a+"], "aa\na+\n"), countOf("grep", ["a\\+"], "aa\n")].join(), "1,1"));
+  check("ERE: + repeats", () => eq(countOf("grep", ["a+"], "aa\na+\n", { matcher: "E" }), 2));
+  check("POSIX [[:alpha:]] in grep is Unicode (UTF-8 locale)", () => eq(countOf("grep", ["[[:alpha:]]"], "é\n"), 1));
+  check("POSIX [[:alpha:]] in rg is ASCII-only", () => eq(countOf("rg", ["[[:alpha:]]+"], "é\n"), 0));
+  check("rg \\d is Unicode, VS Code Find \\d is ASCII", () => eq([countOf("rg", ["\\d"], "٣\n"), countOf("vsfind", ["\\d"], "٣\n")].join(), "1,0"));
+  check(".NET \\w is Unicode", () => eq(countOf("pwsh", ["^\\w+$"], "naïve\n"), 1));
+  check("(?P<name>) translates", () => eq(levelOf("rg", ["(?P<y>\\d{4})"]), "exact"));
+  check("grep \\< \\> are word edges", () => eq(countOf("grep", ["\\<cat\\>"], "cat concat cats\n"), 1));
+  check(".NET atomic group cannot be emulated", () => eq(levelOf("pwsh", ["(?>a+)b"]), "cannot"));
+  check(".NET balancing group cannot be emulated", () => eq(levelOf("pwsh", ["(?<o-c>x)"]), "cannot"));
+  check("PCRE2 recursion cannot be emulated", () => eq(levelOf("rg", ["\\((?:[^()]|(?R))*\\)"], { P: true }), "cannot"));
+  check("rg look-around without -P differs", () => eq(levelOf("rg", ["foo(?=bar)"]), "differs"));
+  check("CRLF: rg $ fails without --crlf", () => eq([countOf("rg", ["o$"], "foo\r\n"), countOf("rg", ["o$"], "foo\r\n", { crlf: true })].join(), "0,1"));
+  check("rg -r: $10 is group 10", () => eq(expandRust("$10", { num: (n) => (n === 1 ? "A" : undefined), name: () => undefined }), ""));
+  check("rg -r: ${1}0 is group 1 then 0", () => eq(expandRust("${1}0", { num: (n) => (n === 1 ? "A" : undefined), name: () => undefined }), "A0"));
+  check("PowerShell: double quotes expand $1 to nothing", () => eq(psExpandDouble("$1-x").value, "-x"));
+  check("PowerShell: single quotes double an embedded quote", () => eq(psSingleQuote("it's"), "'it''s'"));
+  check("bash: single quote escaping", () => eq(bashQuote("it's $HOME"), "'it'\\''s $HOME'"));
+  check("VS Code \\u$1 upper-cases the first letter", () => eq(expandVscode("\\u$1", ["ab", "ab"], { regex: true }), "Ab"));
+  check("VS Code Preserve Case", () => eq(preserveCase("Foo", "bar") + preserveCase("FOO", "bar"), "BarBAR"));
+  check("No network APIs in the engine", () => { const src = run.toString() + compile.toString() + parsePattern.toString(); return NETWORK_TOKENS.every((k) => !src.includes(k)) ? true : "network token found"; });
+  return t;
+}
+// Built by concatenation so that this list does not trip its own scan.
+const NETWORK_TOKENS = ["fet" + "ch(", "XMLHttp" + "Request", "Web" + "Socket", "Event" + "Source", "send" + "Beacon", "import" + "Scripts", "RTCPeer" + "Connection", "http" + "://", "https" + "://"];
+
+const api = {
+  VERSION, BUILD_DATE, MAX_INPUT_BYTES, MAX_HIGHLIGHTS, TIMEOUT_MS, HAS_V, HAS_MODIFIERS, PRESETS, PRESET_IDS, META, NETWORK_TOKENS, RG_TYPES,
+  defaultOptions, compile, parsePattern, run, applyEol, detectEol, splitLines, globMatch, selectFiles,
+  expandRust, expandDotnet, expandVscode, parseVsReplace, preserveCase, applyCaseOps,
+  bashQuote, psSingleQuote, psDoubleQuote, psArg, psExpandDouble, fixDoubleSource, buildCommand, parseFlags, tokenizeArgs,
+  compareSummary, signature, vsWholeWordOk, selfTests,
+};
+root.GrepViz = api;
+})(typeof self !== "undefined" ? self : this);
+</script>
+<script id="grep-ui">
+(function () {
+"use strict";
+const G = self.GrepViz;
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+
+/* ---------- storage and clipboard (both optional) ---------- */
+const STORE_KEY = "grep-visualiser-v1";
+const store = {
+  get() { try { return JSON.parse(localStorage.getItem(STORE_KEY) || "null"); } catch (e) { return null; } },
+  set(v) { try { localStorage.setItem(STORE_KEY, JSON.stringify(v)); } catch (e) { /* storage blocked or full: ignore */ } },
+};
+
+/* ---------- flags explainer data ---------- */
+const HELP = {
+  rg: [
+    ["-i", "Ignore case."], ["-S", "Smart case: ignore case unless the pattern has an uppercase letter."], ["-w", "Whole words: no word character just before or after the match."],
+    ["-x", "Whole lines: the match must span the line."], ["-F", "Fixed string: the pattern is literal text."], ["-v", "Invert: print lines that do not match."],
+    ["-o", "Only the matched parts, one per line."], ["-c", "Count matching lines per file."], ["-l", "List files with a match."], ["-n", "Line numbers."],
+    ["-A/-B/-C", "Lines of context after, before, or both."], ["-U", "Multiline: the regex sees the whole file, so matches may cross lines."],
+    ["-P", "Use PCRE2 instead of Rust regex: look-around and backreferences, but backtracking."], ["-r", "Replace each match in the output (the file is not changed)."],
+    ["--crlf", "Treat \\r\\n as a line ending, so $ matches before \\r\\n."], ["-e", "Add a pattern; several are combined with OR."],
+    ["-g", "Include (or !exclude) files by glob. Applies when rg walks a directory, so it needs several files here."], ["-t", "Include files of a type such as md, py, js, rust."],
+  ],
+  grep: [
+    ["-E", "Extended regex: + ? | ( ) { } are special without a backslash."], ["-F", "Fixed strings."], ["-P", "Perl-compatible regex (PCRE2)."], ["(basic)", "Default: + ? | ( ) { } are literals; \\+ \\? \\| \\( \\) \\{ \\} are special."],
+    ["-i", "Ignore case."], ["-w", "Whole words."], ["-x", "Whole lines."], ["-v", "Invert."], ["-o", "Only the matched parts."], ["-c", "Count matching lines."],
+    ["-l", "List files with a match."], ["-n", "Line numbers."], ["-A/-B/-C", "Context lines."], ["-z", "Records end in NUL instead of newline, so a pattern can span lines."], ["-e", "Add a pattern."],
+  ],
+  pwsh: [
+    ["Select-String", "Searches line by line, case-insensitive by default, and reports the first match on each line."], ["-CaseSensitive", "Match case."],
+    ["-SimpleMatch", "Literal text instead of a regex."], ["-NotMatch", "Lines that do not match."], ["-AllMatches", "Record every match on a line, not only the first."],
+    ["-Context", "Lines before and after each match (one number, or two separated by a comma)."], ["-match", "Tests the whole string (case-insensitive) and fills $Matches from the first match."],
+    ["-cmatch", "Case-sensitive -match."], ["-replace", "Replaces every match in the whole string; $1 and ${name} refer to groups."],
+  ],
+  vsfind: [
+    ["Match Case", "Case-sensitive search (Alt+C)."], ["Whole Word", "The match must sit between VS Code word separators (Alt+W)."], ["Regex", "JavaScript regex; off means literal text (Alt+R)."],
+    ["Preserve Case", "Replace keeps the case pattern of each match (Alt+P in the replace field)."], ["Replace", "Show the replace field and preview Replace All."],
+  ],
+  vssearch: [
+    ["Match Case", "Passes --case-sensitive to ripgrep; off passes --ignore-case."], ["Whole Word", "Adds \\b where the pattern starts or ends with a word character."],
+    ["Regex", "ripgrep's Rust regex, or PCRE2 when the pattern uses look-around or backreferences; off means literal text."], ["Preserve Case", "As in Find."],
+    ["Replace", "Show the replace field and preview Replace All."], ["files to include/exclude", "Comma-separated globs such as *.md, src/**."],
+  ],
+};
+
+/* ---------- counter-example demos ---------- */
+const DEMOS = [
+  { title: "BRE: + is a literal", why: "In basic grep, + matches a plus sign. Use \\+ or grep -E.", preset: "grep", patterns: ["ab+c"], text: "abbc\nab+c\n", eol: "lf" },
+  { title: "CRLF and $", why: "rg matches $ only before \\n, so the \\r of a CRLF line gets in the way. Turn on --crlf.", preset: "rg", patterns: ["done$"], text: "task one done\ntask two not done yet\n", eol: "crlf" },
+  { title: "rg -r: $10 is group 10", why: "$10 reads as group 10, which is empty. Write ${1}0.", preset: "rg", patterns: ["v(\\d)"], text: "v1 and v2\n", opts: { r: true }, replacement: "$10" },
+  { title: "PowerShell double quotes eat $1", why: "\"$2 $1\" expands two empty PowerShell variables before -replace runs. Use single quotes.", preset: "pwsh", patterns: ["(\\w+) (\\w+)"], text: "Ada Lovelace", opts: { mode: "replace", replQuote: "double" }, replacement: "$2 $1" },
+  { title: "Look-around in default rg", why: "Rust regex has no look-around: real rg rejects this unless you pass -P.", preset: "rg", patterns: ["foo(?=bar)"], text: "foobar\nfoobaz\n" },
+  { title: "Catastrophic backtracking", why: "A backtracking engine explores 2^n ways to split the a's. Real rg does not backtrack.", preset: "rg", patterns: ["(a+)+$"], text: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa!\n" },
+  { title: "Unicode \\d", why: "rg and .NET count Arabic-Indic digits as \\d; JavaScript (VS Code Find) does not.", preset: "vsfind", patterns: ["\\d+"], text: "price ٣٤٥ or 345\n", compare: true },
+  { title: "POSIX class in .NET", why: ".NET has no [[:digit:]]: it is the set [:digt followed by a literal ].", preset: "pwsh", patterns: ["[[:digit:]]+"], text: "7 apples\n:] and t]\n" },
+  { title: ".NET numbers named groups last", why: "In .NET, $1 is the first unnamed group even when a named group comes first.", preset: "pwsh", patterns: ["(?<year>\\d{4})-(\\d\\d)"], text: "2026-10", opts: { mode: "replace" }, replacement: "$1 / $2" },
+  { title: "Select-String: first match per line", why: "Without -AllMatches, Select-String records only the first match on each line.", preset: "pwsh", patterns: ["\\d"], text: "a1 b2 c3\n" },
+  { title: "VS Code Preserve Case", why: "Each match keeps its own case pattern in the replacement.", preset: "vsfind", patterns: ["color"], text: "color Color COLOR\n", opts: { replace: true, preserveCase: true }, replacement: "colour" },
+  { title: "\\< in grep, rg and -P", why: "grep's \\< is a word start, and so is rg's (regex 1.10), but in PCRE2 it is a literal <.", preset: "grep", patterns: ["\\<cat"], text: "cat concat <cat\n", compare: true },
+];
+
+const SAMPLE = "2026-10-01 INFO  started build v1.0.0\n2026-10-01 WARN  cache miss for key=user:42\n2026-10-01 ERROR build failed: exit code 2\nnaïve café ٣٤٥ price: $30\n";
+
+/* ---------- state ---------- */
+function defaultState() {
+  return { preset: "rg", compare: false, patterns: ["\\d+"], replacement: "", eol: "lf", files: [{ name: "input.txt", text: SAMPLE, pastedEol: "lf" }], active: 0, options: G.defaultOptions() };
+}
+let state = defaultState();
+function loadState() {
+  const s = store.get();
+  if (!s || typeof s !== "object") return;
+  try {
+    const d = defaultState();
+    const o = G.defaultOptions();
+    for (const p of G.PRESET_IDS) if (s.options && s.options[p]) Object.assign(o[p], s.options[p]);
+    state = {
+      preset: G.PRESET_IDS.includes(s.preset) ? s.preset : d.preset,
+      compare: !!s.compare,
+      patterns: Array.isArray(s.patterns) && s.patterns.length ? s.patterns.map(String) : d.patterns,
+      replacement: typeof s.replacement === "string" ? s.replacement : "",
+      eol: ["lf", "crlf", "pasted"].includes(s.eol) ? s.eol : "lf",
+      files: Array.isArray(s.files) && s.files.length ? s.files.map((f) => ({ name: String(f.name || "input.txt"), text: String(f.text || ""), pastedEol: f.pastedEol === "crlf" ? "crlf" : "lf" })) : d.files,
+      active: 0,
+      options: o,
+    };
+  } catch (e) { state = defaultState(); }
+}
+let saveTimer = 0;
+function save() { clearTimeout(saveTimer); saveTimer = setTimeout(() => store.set(state), 300); }
+
+/* ---------- worker with a timeout ---------- */
+// The engine source is this page's own grep-engine script element, run in a Worker built
+// from a Blob (CSP worker-src blob:). Without Worker support the run happens inline, with
+// no timeout protection; the status line says so.
+const engineSource = $("grep-engine").textContent;
+const workerBody = engineSource + "\n;self.onmessage = function (e) { var d = e.data; try { self.postMessage({ id: d.id, result: self.GrepViz.run(d.req) }); } catch (err) { self.postMessage({ id: d.id, error: String((err && err.message) || err) }); } };";
+let worker = null, workerUrl = null, workerBroken = false, seq = 0;
+const pending = new Map();
+function newWorker() {
+  try {
+    if (!workerUrl) workerUrl = URL.createObjectURL(new Blob([workerBody], { type: "text/javascript" }));
+    const w = new Worker(workerUrl);
+    w.onmessage = (e) => { const p = pending.get(e.data.id); if (p) { pending.delete(e.data.id); clearTimeout(p.timer); p.resolve(e.data); } };
+    w.onerror = (e) => { e.preventDefault(); workerBroken = true; for (const [id, p] of pending) { clearTimeout(p.timer); pending.delete(id); p.resolve(runInline(p.req)); } };
+    return w;
+  } catch (e) { workerBroken = true; return null; }
+}
+function runInline(req) { try { return { result: G.run(req), inline: true }; } catch (err) { return { error: String(err.message || err), inline: true }; } }
+function cancelAll() {
+  if (!pending.size) return;
+  for (const [, p] of pending) { clearTimeout(p.timer); p.resolve({ cancelled: true }); }
+  pending.clear();
+  if (worker) worker.terminate();
+  worker = null;
+}
+function runJob(req) {
+  if (workerBroken) return Promise.resolve(runInline(req));
+  if (!worker) worker = newWorker();
+  if (!worker) return Promise.resolve(runInline(req));
+  return new Promise((resolve) => {
+    const id = ++seq;
+    const timer = setTimeout(() => {
+      pending.delete(id);
+      // A regex stuck backtracking cannot be interrupted: drop the whole worker.
+      worker.terminate(); worker = null;
+      for (const [, p] of pending) { clearTimeout(p.timer); p.resolve({ cancelled: true }); }
+      pending.clear();
+      resolve({ timeout: true });
+    }, G.TIMEOUT_MS);
+    pending.set(id, { resolve, timer, req });
+    worker.postMessage({ id, req });
+  });
+}
+
+/* ---------- effective request ---------- */
+function effectiveFiles() {
+  return state.files.map((f) => ({ name: f.name, text: G.applyEol(f.text, state.eol, f.pastedEol) }));
+}
+function request(preset) {
+  return { preset, options: state.options, patterns: state.patterns, files: effectiveFiles(), replacement: state.replacement };
+}
+
+/* ---------- rendering helpers ---------- */
+function visible(s) {
+  return esc(s).replace(/\r/g, '<span class="cr" title="carriage return">␍</span>').replace(/\0/g, '<span class="cr" title="NUL">␀</span>');
+}
+function withSpans(text, spans, cls) {
+  if (!spans || !spans.length) return visible(text);
+  const sorted = spans.slice().sort((a, b) => a[0] - b[0]);
+  let out = "", last = 0;
+  for (const [a, b] of sorted) {
+    if (a < last) continue;
+    out += visible(text.slice(last, a));
+    out += b > a ? `<mark${cls ? ` class="${cls}"` : ""}>${visible(text.slice(a, b))}</mark>` : '<mark class="empty" title="empty match"></mark>';
+    last = b;
+  }
+  return out + visible(text.slice(last));
+}
+function renderRows(rows, cls) {
+  return rows.map((r) => {
+    const pre = r.prefix ? `<span class="pre">${esc(r.prefix)}</span>` : "";
+    if (r.kind === "sep") return `<span class="sep">${esc(r.text)}</span>`;
+    if (r.kind === "context") return `${pre}<span class="ctx">${visible(r.text)}</span>`;
+    return pre + withSpans(r.text, r.spans, cls);
+  }).join("\n");
+}
+function presetLabel(id) { return G.PRESETS.find((p) => p.id === id).label; }
+
+/* ---------- controls ---------- */
+function buildPresetTabs() {
+  $("preset-seg").innerHTML = G.PRESETS.map((p) => `<label><input type="radio" name="preset" value="${p.id}">${esc(p.label)}</label>`).join("");
+  for (const r of document.querySelectorAll('input[name="preset"]')) r.addEventListener("change", () => { state.preset = r.value; $("unsupported").textContent = ""; refreshControls(); schedule(); });
+  $("targets").textContent = "Targets: " + G.PRESETS.map((p) => p.target).join(" · ");
+}
+function cb(key, label, checked, title, disabled) {
+  return `<label class="check${disabled ? " disabled" : ""}" title="${esc(title || "")}"><input type="checkbox" name="opt-${key}" data-opt="${key}"${checked ? " checked" : ""}${disabled ? " disabled" : ""}><code>${esc(label)}</code></label>`;
+}
+function num(key, label, value) {
+  return `<label title="${esc(label)}"><code>${esc(label)}</code><input type="number" name="num-${key}" min="0" max="99" data-num="${key}" value="${value === null || value === undefined ? "" : value}"></label>`;
+}
+function seg(name, items, value) {
+  return `<span class="seg">${items.map(([v, l]) => `<label><input type="radio" name="${name}" data-radio="${name}" value="${v}"${v === value ? " checked" : ""}>${esc(l)}</label>`).join("")}</span>`;
+}
+const helpOf = (preset, flag) => { const h = HELP[preset].find((x) => x[0] === flag); return h ? h[1] : ""; };
+
+function refreshControls() {
+  const p = state.preset;
+  const o = state.options[p];
+  for (const r of document.querySelectorAll('input[name="preset"]')) r.checked = r.value === p;
+  $("compare").checked = state.compare;
+  // patterns
+  const multi = p === "rg" || p === "grep";
+  const pats = multi ? state.patterns : [state.patterns[0] || ""];
+  $("patterns").innerHTML = pats.map((v, k) => `<div class="patrow"><label class="visually-hidden" for="pat-${k}">Pattern ${k + 1}</label><input type="text" class="code" id="pat-${k}" name="pattern-${k}" data-pat="${k}" spellcheck="false" autocomplete="off" autocapitalize="off" value="${esc(v)}" placeholder="pattern">${k > 0 ? `<button class="btn small" type="button" data-rmpat="${k}" aria-label="Remove pattern ${k + 1}">×</button>` : ""}</div>`).join("");
+  $("add-pattern").hidden = !multi;
+  if (!multi && state.patterns.length > 1) $("patterns").insertAdjacentHTML("beforeend", `<p class="hint">This preset takes one pattern; the other ${state.patterns.length - 1} -e pattern(s) are kept for rg and grep.</p>`);
+  // flags
+  let h = "";
+  const multiFile = state.files.length > 1;
+  if (p === "rg") {
+    h += seg("rgcase", [["sensitive", "case-sensitive"], ["i", "-i"], ["S", "-S"]], o.case);
+    h += '<div class="checks" style="margin-top:.4rem">' + ["w", "x", "F", "v", "o", "c", "l", "n", "U", "P"].map((f) => cb(f, "-" + f, o[f], helpOf("rg", "-" + f))).join("") + cb("crlf", "--crlf", o.crlf, helpOf("rg", "--crlf")) + cb("r", "-r", o.r, helpOf("rg", "-r")) + "</div>";
+    h += '<div class="nums">' + num("A", "-A", o.A) + num("B", "-B", o.B) + num("C", "-C", o.C) + "</div>";
+    h += `<div class="f"><span>-g globs (space-separated, !glob excludes)${multiFile ? "" : " · needs several files"}</span><input type="text" class="code" name="globs" data-list="globs" value="${esc((o.globs || []).join(" "))}"${multiFile ? "" : " disabled"}></div>`;
+    h += `<div class="f"><span>-t types (${Object.keys(G.RG_TYPES).join(", ")})${multiFile ? "" : " · needs several files"}</span><input type="text" class="code" name="types" data-list="types" value="${esc((o.types || []).join(" "))}"${multiFile ? "" : " disabled"}></div>`;
+  } else if (p === "grep") {
+    h += seg("grepmatcher", [["G", "basic"], ["E", "-E"], ["F", "-F"], ["P", "-P"]], o.matcher);
+    h += '<div class="checks" style="margin-top:.4rem">' + ["i", "w", "x", "v", "o", "c", "l", "n", "z"].map((f) => cb(f, "-" + f, o[f], helpOf("grep", "-" + f))).join("") + "</div>";
+    h += '<div class="nums">' + num("A", "-A", o.A) + num("B", "-B", o.B) + num("C", "-C", o.C) + "</div>";
+  } else if (p === "pwsh") {
+    h += seg("pwshmode", [["select", "Select-String"], ["match", "-match"], ["cmatch", "-cmatch"], ["replace", "-replace"]], o.mode);
+    const sel = o.mode === "select";
+    h += '<div class="checks" style="margin-top:.4rem">' + ["CaseSensitive", "SimpleMatch", "NotMatch", "AllMatches"].map((f) => cb(f, "-" + f, o[f], helpOf("pwsh", "-" + f), !sel)).join("") + "</div>";
+    h += `<div class="nums"><label title="${esc(helpOf("pwsh", "-Context"))}"><code>-Context</code><input type="number" min="0" max="99" name="context-before" data-ctx="0" value="${o.Context ? o.Context[0] : ""}"${sel ? "" : " disabled"}>,<input type="number" min="0" max="99" name="context-after" data-ctx="1" value="${o.Context ? o.Context[1] : ""}"${sel ? "" : " disabled"}></label></div>`;
+  } else {
+    h += '<div class="checks">' + [["matchCase", "Match Case"], ["wholeWord", "Whole Word"], ["regex", "Regex"], ["preserveCase", "Preserve Case"], ["replace", "Replace"]].map(([k, l]) => cb(k, l, o[k], helpOf(p, l))).join("") + "</div>";
+    if (p === "vssearch") {
+      h += `<div class="f"><span>files to include</span><input type="text" class="code" name="include" data-text="include" value="${esc(o.include)}" placeholder="*.md, src/**"></div>`;
+      h += `<div class="f"><span>files to exclude</span><input type="text" class="code" name="exclude" data-text="exclude" value="${esc(o.exclude)}"></div>`;
+    }
+  }
+  $("flags").innerHTML = h;
+  $("flags-legend").textContent = p === "vsfind" || p === "vssearch" ? "Toggles" : p === "pwsh" ? "Cmdlet and operators" : "Flags";
+  $("typed-wrap").hidden = !(p === "rg" || p === "grep" || p === "pwsh");
+  $("typed").placeholder = p === "pwsh" ? "-AllMatches -Context 1,2" : p === "grep" ? "-E -i -A 2" : "-i -A 2 --crlf";
+  // replacement
+  const replOn = (p === "rg" && o.r) || (p === "pwsh" && o.mode === "replace") || ((p === "vsfind" || p === "vssearch") && o.replace);
+  $("repl-wrap").hidden = !replOn;
+  $("replacement").value = state.replacement;
+  $("repl-label").textContent = p === "rg" ? "Replacement (-r)" : p === "pwsh" ? (o.replQuote === "double" ? "Replacement: source text between double quotes" : "Replacement (sent in single quotes)") : "Replace";
+  $("repl-hint").innerHTML = p === "rg" ? "<code>$1</code>, <code>${1}</code>, <code>$name</code>, <code>$$</code>. <code>$1</code> followed by digits is read as group 10 and up."
+    : p === "pwsh" ? seg("replquote", [["single", "single quotes"], ["double", "double quotes"]], o.replQuote) + " <code>$1</code>, <code>${name}</code>, <code>$$</code>, <code>$&amp;</code>."
+    : "<code>$1</code>, <code>${1}</code>, <code>$&amp;</code>, <code>\\n</code>, case modifiers <code>\\u \\U \\l \\L \\E</code>.";
+  // shell
+  const shellable = p === "rg" || p === "grep";
+  $("shell-seg").hidden = !shellable;
+  for (const r of document.querySelectorAll('input[name="shell"]')) r.checked = shellable && r.value === o.shell;
+  // eol
+  for (const r of document.querySelectorAll('input[name="eol"]')) r.checked = r.value === state.eol;
+  const f = state.files[state.active];
+  $("eol-hint").textContent = state.eol === "pasted" ? `Last paste into ${f.name} used ${f.pastedEol === "crlf" ? "CRLF" : "LF"} line endings.` : state.eol === "crlf" ? "Every line ends in \\r\\n (shown as ␍)." : "Every line ends in \\n.";
+  // files
+  $("file-tabs").innerHTML = state.files.map((x, k) => `<button type="button" role="tab" class="tab" data-file="${k}" aria-selected="${k === state.active}">${esc(x.name)}</button>`).join("");
+  $("file-name").value = f.name;
+  $("remove-file").disabled = state.files.length < 2;
+  if ($("text").value !== f.text) $("text").value = f.text;
+  $("compare-card").hidden = !state.compare;
+  renderExplain();
+  save();
+}
+
+function wireControls() {
+  $("flags").addEventListener("change", (e) => {
+    const t = e.target, o = state.options[state.preset];
+    if (t.dataset.opt) o[t.dataset.opt] = t.checked;
+    else if (t.dataset.num) o[t.dataset.num] = t.value === "" ? null : Math.max(0, Math.min(99, parseInt(t.value, 10) || 0));
+    else if (t.dataset.ctx !== undefined) {
+      const inputs = $("flags").querySelectorAll("[data-ctx]");
+      const a = inputs[0].value, b = inputs[1].value;
+      o.Context = a === "" && b === "" ? null : [parseInt(a || "0", 10) || 0, b === "" ? parseInt(a || "0", 10) || 0 : parseInt(b, 10) || 0];
+    } else if (t.dataset.radio === "rgcase") o.case = t.value;
+    else if (t.dataset.radio === "grepmatcher") o.matcher = t.value;
+    else if (t.dataset.radio === "pwshmode") o.mode = t.value;
+    else return;
+    refreshControls(); schedule();
+  });
+  $("flags").addEventListener("input", (e) => {
+    const t = e.target, o = state.options[state.preset];
+    if (t.dataset.list) { o[t.dataset.list] = t.value.split(/\s+/).filter(Boolean); save(); schedule(); }
+    else if (t.dataset.text) { o[t.dataset.text] = t.value; save(); schedule(); }
+  });
+  $("repl-wrap").addEventListener("change", (e) => { if (e.target.dataset.radio === "replquote") { state.options.pwsh.replQuote = e.target.value; refreshControls(); schedule(); } });
+  $("patterns").addEventListener("input", (e) => { const k = e.target.dataset.pat; if (k === undefined) return; state.patterns[+k] = e.target.value; save(); schedule(); });
+  $("patterns").addEventListener("click", (e) => { const k = e.target.dataset.rmpat; if (k === undefined) return; state.patterns.splice(+k, 1); refreshControls(); schedule(); });
+  $("add-pattern").addEventListener("click", () => { state.patterns.push(""); refreshControls(); const inputs = $("patterns").querySelectorAll("input"); inputs[inputs.length - 1].focus(); });
+  $("replacement").addEventListener("input", (e) => { state.replacement = e.target.value; save(); schedule(); });
+  $("compare").addEventListener("change", (e) => { state.compare = e.target.checked; refreshControls(); schedule(); });
+  for (const r of document.querySelectorAll('input[name="eol"]')) r.addEventListener("change", () => { state.eol = r.value; refreshControls(); schedule(); });
+  for (const r of document.querySelectorAll('input[name="shell"]')) r.addEventListener("change", () => { state.options[state.preset].shell = r.value; save(); renderCommand(); });
+  $("typed").addEventListener("keydown", (e) => {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    const p = state.preset;
+    const out = G.parseFlags(p, $("typed").value, state.options[p], state.patterns);
+    state.options[p] = out.opts;
+    state.patterns = out.patterns;
+    if (out.replacement !== undefined) state.replacement = out.replacement;
+    $("unsupported").textContent = out.unsupported.length ? "Not supported here: " + out.unsupported.join(" ") : "";
+    $("typed").value = "";
+    refreshControls(); schedule();
+  });
+  // files
+  $("file-tabs").addEventListener("click", (e) => { const k = e.target.dataset.file; if (k === undefined) return; state.active = +k; refreshControls(); const r = last && last.result; renderHighlight(r && r.translation.level !== "cannot" && r.translation.level !== "error" ? r : null); });
+  $("file-name").addEventListener("change", (e) => {
+    const name = e.target.value.trim();
+    if (!name || state.files.some((f, k) => k !== state.active && f.name === name)) { e.target.value = state.files[state.active].name; return; }
+    state.files[state.active].name = name; refreshControls(); schedule();
+  });
+  $("add-file").addEventListener("click", () => {
+    let n = state.files.length + 1, name;
+    do { name = `file${n++}.txt`; } while (state.files.some((f) => f.name === name));
+    state.files.push({ name, text: "", pastedEol: "lf" }); state.active = state.files.length - 1; refreshControls(); schedule(); $("text").focus();
+  });
+  $("remove-file").addEventListener("click", () => { if (state.files.length < 2) return; state.files.splice(state.active, 1); state.active = Math.max(0, state.active - 1); refreshControls(); schedule(); });
+  $("text").addEventListener("paste", (e) => {
+    // Textareas normalise pasted \r\n to \n, so record the ending before that happens.
+    try { const t = e.clipboardData && e.clipboardData.getData("text/plain"); if (t) { state.files[state.active].pastedEol = G.detectEol(t) === "lf" ? "lf" : "crlf"; } } catch (err) { /* clipboard data unavailable */ }
+  });
+  $("text").addEventListener("input", () => {
+    let v = $("text").value;
+    const bytes = new TextEncoder().encode(v).length;
+    const others = state.files.reduce((s, f, k) => s + (k === state.active ? 0 : new TextEncoder().encode(f.text).length), 0);
+    const room = G.MAX_INPUT_BYTES - others;
+    if (bytes > room) {
+      let lo = 0, hi = v.length;
+      while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (new TextEncoder().encode(v.slice(0, mid)).length <= room) lo = mid; else hi = mid - 1; }
+      v = v.slice(0, lo); $("text").value = v;
+      showInputNotice(`Input is capped at about 2 MB in total; the text was cut to fit.`);
+    } else showInputNotice("");
+    state.files[state.active].text = v;
+    refreshEolHint(); save(); schedule();
+  });
+  $("copy").addEventListener("click", async () => {
+    const text = $("command").textContent;
+    let ok = false;
+    try { await navigator.clipboard.writeText(text); ok = true; } catch (e) { ok = false; }
+    if (!ok) {
+      try { const r = document.createRange(); r.selectNodeContents($("command")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); ok = document.execCommand("copy"); } catch (e) { ok = false; }
+    }
+    $("copy").textContent = ok ? "Copied" : "Select and copy";
+    setTimeout(() => { $("copy").textContent = "Copy"; }, 1500);
+  });
+  $("selftest-badge").addEventListener("click", () => { $("selftest-details").open = true; $("selftest-details").scrollIntoView({ block: "start" }); });
+}
+function refreshEolHint() {
+  const f = state.files[state.active];
+  if (state.eol === "pasted") $("eol-hint").textContent = `Last paste into ${f.name} used ${f.pastedEol === "crlf" ? "CRLF" : "LF"} line endings.`;
+}
+function showInputNotice(msg) { $("input-notice").hidden = !msg; $("input-notice").textContent = msg; }
+
+/* ---------- running and rendering ---------- */
+let timer = 0, runId = 0;
+let last = null;
+function schedule() { clearTimeout(timer); timer = setTimeout(runAll, 120); }
+async function runAll() {
+  const id = ++runId;
+  cancelAll();
+  renderCommand();
+  const size = effectiveFiles().reduce((s, f) => s + f.text.length, 0);
+  $("input-size").textContent = `${state.files.length} file${state.files.length > 1 ? "s" : ""} · ${size.toLocaleString()} characters`;
+  $("status").innerHTML = '<span class="muted">running…</span>';
+  const main = await runJob(request(state.preset));
+  if (id !== runId) return;
+  if (main.cancelled) { schedule(); return; }
+  last = main;
+  renderMain(main);
+  if (state.compare) {
+    const rows = [];
+    for (const p of G.PRESET_IDS) {
+      const r = p === state.preset ? main : await runJob(request(p));
+      if (id !== runId) return;
+      if (r.cancelled) { schedule(); return; }
+      rows.push({ preset: p, r });
+    }
+    renderCompare(rows);
+  }
+}
+
+function timeoutText(preset) {
+  const o = state.options[preset];
+  const base = `The emulator timed out after ${G.TIMEOUT_MS / 1000} s: JavaScript's regex engine backtracks, and this pattern makes it try an exponential number of paths.`;
+  const rustLike = (preset === "rg" && !o.P) || (preset === "vssearch" && !/\(\?<?[=!]|\\[1-9]|\\k</.test(state.patterns[0] || ""));
+  if (rustLike) return base + " Real rg would not backtrack catastrophically: Rust regex runs in linear time.";
+  if (preset === "rg" || preset === "vssearch" || (preset === "grep" && o.matcher === "P")) return base + " Real -P (PCRE2) is a backtracking engine and could, until it hits PCRE2's match limit and reports an error.";
+  if (preset === "grep") return base + " Real GNU grep matches basic and extended regexes without this blow-up (backreferences aside).";
+  if (preset === "pwsh") return base + " Real .NET regex backtracks too and could hang: PowerShell sets no match timeout.";
+  return base + " VS Code Find uses this same JavaScript engine, so it could hang the same way.";
+}
+
+function renderMain(res) {
+  const p = state.preset;
+  const status = $("status"), notes = $("notes"), out = $("output");
+  $("cap-notice").hidden = true;
+  if (res.timeout) {
+    status.innerHTML = '<span class="level timeout">timed out</span>';
+    $("regex").textContent = "";
+    $("model").textContent = "";
+    notes.innerHTML = `<li class="bad">${esc(timeoutText(p))}</li>`;
+    out.textContent = ""; renderReplace(null); renderHighlight(null);
+    return;
+  }
+  if (res.error) {
+    status.innerHTML = '<span class="level error">error</span>';
+    notes.innerHTML = `<li class="bad">${esc(res.error)}</li>`;
+    out.textContent = ""; renderReplace(null); renderHighlight(null);
+    return;
+  }
+  const r = res.result, t = r.translation;
+  const levelText = { exact: "translated", differs: "differs", cannot: "cannot emulate here", error: "pattern error" }[t.level];
+  let s = `<span class="level ${t.level}">${esc(levelText)}</span><span class="muted">${esc(t.engine)}</span>`;
+  if (t.level !== "cannot" && t.level !== "error") s += `<span><b>${r.totals.matches}</b> match${r.totals.matches === 1 ? "" : "es"} · ${r.totals.lines} line${r.totals.lines === 1 ? "" : "s"}${state.files.length > 1 ? ` · ${r.totals.files} file${r.totals.files === 1 ? "" : "s"}` : ""}</span>`;
+  if (res.inline) s += '<span class="muted">(no Worker: ran without the timeout)</span>';
+  status.innerHTML = s;
+  $("regex").innerHTML = t.source ? `JavaScript: <b>/${esc(t.source)}/${esc(t.flags)}</b>` : "";
+  $("model").textContent = t.modelText || "";
+  const items = [];
+  if (t.level === "cannot") items.push(`<li class="bad"><b>Cannot emulate here:</b> ${esc(t.message)}. No result is shown rather than a wrong one.</li>`);
+  if (t.level === "error") items.push(`<li class="bad"><b>Pattern error:</b> ${esc(t.message)}.</li>`);
+  for (const d of t.differs) items.push(`<li class="differs"><b>Differs from real ${esc(t.real)}:</b> ${esc(d)}.</li>`);
+  for (const n of t.notes.concat(r.notes)) items.push(`<li>${esc(n)}</li>`);
+  notes.innerHTML = items.join("");
+  if (t.level === "cannot" || t.level === "error") { out.textContent = ""; renderReplace(null); renderHighlight(null); return; }
+  $("output-title").textContent = p === "pwsh" && state.options.pwsh.mode !== "select" ? "Output" : p.startsWith("vs") ? "Results" : "Output (as piped)";
+  out.innerHTML = r.rows.length ? renderRows(r.rows) : '<span class="muted">(no output)</span>';
+  if (p === "pwsh" && state.options.pwsh.mode === "replace") out.innerHTML = '<span class="muted">(see the replace preview)</span>';
+  if (r.capped) { $("cap-notice").hidden = false; $("cap-notice").textContent = `Highlights stop after ${G.MAX_HIGHLIGHTS.toLocaleString()} matches; the counts above are complete.`; }
+  renderReplace(r);
+  renderHighlight(r);
+}
+
+function renderReplace(r) {
+  const msg = $("replace-msg"), outEl = $("replace-out"), notes = $("replace-notes");
+  notes.innerHTML = "";
+  if (!r) { msg.textContent = "No preview."; outEl.hidden = true; return; }
+  const rp = r.replace;
+  if (!rp.available) { msg.textContent = rp.message; outEl.hidden = true; return; }
+  const p = state.preset;
+  msg.innerHTML = p === "rg" ? "rg prints the matching lines with each match replaced; the file is unchanged." : p === "pwsh" ? `-replace returns the whole string. PowerShell passes the replacement <code>${esc(JSON.stringify(rp.psValue))}</code> to .NET.` : "The document after Replace All.";
+  notes.innerHTML = rp.notes.map((n) => `<li class="differs"><b>Trap:</b> ${esc(n)}</li>`).join("");
+  outEl.hidden = false;
+  outEl.innerHTML = rp.rows.length ? renderRows(rp.rows, "rep") : '<span class="muted">(no output)</span>';
+}
+
+function renderHighlight(r) {
+  const f = state.files[state.active];
+  const text = G.applyEol(f.text, state.eol, f.pastedEol);
+  const el = $("highlight");
+  if (!r) { el.innerHTML = visible(text) || '<span class="muted">(empty)</span>'; return; }
+  const fr = r.files[state.active];
+  if (!fr || !fr.searched) { el.innerHTML = `<span class="muted">(${esc(f.name)} is not searched with the current file filters)</span>\n` + visible(text); return; }
+  const spans = fr.matches.map((x) => [x.s, x.e]);
+  el.innerHTML = withSpans(text, spans) || '<span class="muted">(empty)</span>';
+}
+
+function renderCommand() {
+  const p = state.preset;
+  const o = state.options[p];
+  const cmd = G.buildCommand(p, o, p === "rg" || p === "grep" ? state.patterns : [state.patterns[0] || ""], state.files, state.replacement, o.shell);
+  $("command").textContent = cmd;
+  const hints = {
+    rg: state.files.length > 1 ? "Run in a directory holding these files: rg searches the working directory, and -g and -t filter only files it finds by walking, never paths named on the command line." : o.shell === "pwsh" ? "Quoted for PowerShell 7.3+: single quotes, with an embedded ' doubled." : "Quoted for bash: single quotes, with an embedded ' written as '\\''.",
+    grep: o.shell === "pwsh" ? "Quoted for PowerShell 7.3+: single quotes, with an embedded ' doubled." : "Quoted for bash: single quotes, with an embedded ' written as '\\''.",
+    pwsh: "Single quotes stop $ expansion and backtick escapes; an embedded ' is doubled.",
+    vsfind: "VS Code has no command line for this; these are the widget settings.",
+    vssearch: "VS Code runs ripgrep with these settings.",
+  };
+  $("command-hint").textContent = hints[p];
+}
+
+function renderCompare(rows) {
+  const summary = G.compareSummary(rows.map((x) => (x.r.result ? x.r.result : { preset: x.preset, translation: { level: x.r.timeout ? "timeout" : "error" }, totals: { matches: 0, lines: 0 }, files: [] })));
+  $("compare-body").innerHTML = summary.map((s, k) => {
+    const x = rows[k].r;
+    const level = x.timeout ? "timeout" : s.level;
+    const label = { exact: "translated", differs: "differs", cannot: "cannot emulate here", error: "pattern error", timeout: "timed out" }[level];
+    const same = s.unavailable || x.timeout ? "—" : s.differs ? "differs" : "same";
+    return `<tr class="${s.differs ? "diff" : ""}"><td>${esc(presetLabel(s.preset))}${s.preset === state.preset ? " <span class=\"muted\">(current)</span>" : ""}</td><td class="l"><span class="level ${level}">${esc(label)}</span></td><td>${s.unavailable || x.timeout ? "—" : s.matches}</td><td>${s.unavailable || x.timeout ? "—" : s.lines}</td><td class="l">${same}</td></tr>`;
+  }).join("");
+}
+
+function renderExplain() {
+  const p = state.preset;
+  const t = G.META;
+  $("explain").innerHTML = `<p><b>${esc(presetLabel(p))}</b> · ${esc(t.models[p])}</p><dl class="explain">${HELP[p].map(([f, d]) => `<dt>${esc(f)}</dt><dd>${esc(d)}</dd>`).join("")}</dl><p class="hint">Replace syntax: ${esc(t.replace[p])}. Any other flag shows “not supported here”.</p><p class="hint">Confidence: <b>translated</b> — ${esc(t.confidence.exact)} <b>differs</b> — ${esc(t.confidence.differs)} <b>cannot emulate here</b> — ${esc(t.confidence.cannot)}</p>`;
+}
+
+function buildDemos() {
+  $("demos").innerHTML = DEMOS.map((d, k) => `<button type="button" class="demo" data-demo="${k}"><b>${esc(d.title)}</b><span>${esc(presetLabel(d.preset))}</span><span>${esc(d.why)}</span></button>`).join("");
+  $("demos").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-demo]");
+    if (!b) return;
+    loadDemo(DEMOS[+b.dataset.demo]);
+    $("t-input").scrollIntoView({ block: "start" });
+  });
+}
+function loadDemo(d) {
+  state.preset = d.preset;
+  state.patterns = d.patterns.slice();
+  state.replacement = d.replacement || "";
+  state.options = G.defaultOptions();
+  if (d.opts) Object.assign(state.options[d.preset], d.opts);
+  state.files = [{ name: "input.txt", text: d.text, pastedEol: "lf" }];
+  state.active = 0;
+  state.eol = d.eol || "lf";
+  state.compare = !!d.compare;
+  $("unsupported").textContent = "";
+  refreshControls(); schedule();
+}
+
+/* ---------- self-test ---------- */
+function runSelfTests() {
+  const t = G.selfTests();
+  // The page itself must make no network requests: check what the browser recorded.
+  try {
+    const entries = performance.getEntriesByType("resource").filter((e) => !/^(data|blob):/.test(e.name));
+    t.push({ name: "The page loaded no network resources", pass: entries.length === 0, detail: entries.map((e) => e.name).join(", ") });
+  } catch (e) { t.push({ name: "The page loaded no network resources", pass: true, detail: "Resource Timing unavailable" }); }
+  const uiSrc = $("grep-ui").textContent;
+  t.push({ name: "No network APIs in the page script", pass: G.NETWORK_TOKENS.every((k) => !uiSrc.includes(k) && !engineSource.includes(k)), detail: "" });
+  const pass = t.filter((x) => x.pass).length;
+  const b = $("selftest-badge");
+  b.textContent = `Self-test ${pass}/${t.length}`;
+  b.className = "badge " + (pass === t.length ? "pass" : "fail");
+  $("selftests").innerHTML = t.map((x) => `<li class="${x.pass ? "pass" : "fail"}"><b>${x.pass ? "PASS" : "FAIL"}</b>${esc(x.name)}${x.detail ? ` <span class="muted">(${esc(x.detail)})</span>` : ""}</li>`).join("");
+  return t;
+}
+
+/* ---------- WebMCP tools ---------- */
+function registerTools() {
+  const mc = (typeof document !== "undefined" && document.modelContext) || (typeof navigator !== "undefined" && navigator.modelContext);
+  if (!mc) return;
+  const out = (obj) => ({ content: [{ type: "text", text: JSON.stringify(obj) }] });
+  const empty = { type: "object", properties: {}, additionalProperties: false };
+  const runSchema = {
+    type: "object",
+    properties: {
+      preset: { type: "string", enum: G.PRESET_IDS, description: "rg, grep, pwsh (PowerShell 7), vsfind (VS Code Find) or vssearch (VS Code Search)." },
+      patterns: { type: "array", items: { type: "string" }, description: "Patterns; rg and grep combine several like -e; other presets use the first." },
+      text: { type: "string", description: "Input text (one file named input.txt)." },
+      eol: { type: "string", enum: ["lf", "crlf"], description: "Line endings applied to the text (default lf)." },
+      options: { type: "object", description: "Options for the preset, merged over the defaults: rg {case: sensitive|i|S, w, x, F, v, o, c, l, n, U, P, crlf, r, A, B, C}; grep {matcher: G|E|F|P, i, w, x, v, o, c, l, n, z, A, B, C}; pwsh {mode: select|match|cmatch|replace, CaseSensitive, SimpleMatch, NotMatch, AllMatches, Context: [before, after], replQuote: single|double}; vsfind/vssearch {matchCase, wholeWord, regex, preserveCase, replace}." },
+      replacement: { type: "string", description: "Replacement in the preset's own syntax." },
+    },
+    required: ["preset", "patterns", "text"],
+  };
+  const reqOf = (i) => {
+    const options = G.defaultOptions();
+    Object.assign(options[i.preset], i.options || {});
+    return { preset: i.preset, options, patterns: i.patterns, files: [{ name: "input.txt", text: G.applyEol(i.text || "", i.eol === "crlf" ? "crlf" : "lf") }], replacement: i.replacement || "" };
+  };
+  const brief = (r) => ({ translation: r.translation, totals: r.totals, output: r.rows.map((x) => x.prefix + x.text), replace: r.replace && r.replace.available ? r.replace.rows.map((x) => x.text) : r.replace && r.replace.message, matches: r.files.map((f) => ({ file: f.name, spans: f.matches.map((x) => [x.s, x.e]) })) });
+  mc.registerTool({ name: "get_metadata", description: "Return the Grep Visualiser's presets and target versions, confidence levels, matching models, supported flags and replace syntaxes.", inputSchema: empty, annotations: { readOnlyHint: true }, async execute() { return out(G.META); } });
+  mc.registerTool({ name: "get_current_state", description: "Return the page's current preset, patterns, options, files, line-ending mode and the latest result (translation, counts, output).", inputSchema: empty, annotations: { readOnlyHint: true }, async execute() {
+    return out({ state: { preset: state.preset, patterns: state.patterns, replacement: state.replacement, eol: state.eol, options: state.options[state.preset], files: state.files.map((f) => ({ name: f.name, characters: f.text.length })) }, result: last && last.result ? brief(last.result) : last });
+  } });
+  mc.registerTool({ name: "run_pattern", description: "Run a pattern through one preset without changing the page: the JavaScript translation and its confidence (exact, differs, cannot, error), match spans, the tool's output and the replace preview. Runs in the page's worker with the 1.5 s timeout.", inputSchema: runSchema, annotations: { readOnlyHint: true }, async execute(i) {
+    if (!G.PRESET_IDS.includes(i.preset)) return out({ error: "unknown preset" });
+    const r = await runJob(reqOf(i));
+    if (r.timeout) return out({ timeout: true, message: timeoutText(i.preset) });
+    if (r.error || r.cancelled) return out({ error: r.error || "cancelled by a newer run" });
+    return out(brief(r.result));
+  } });
+  mc.registerTool({ name: "build_command", description: "Return the command for a preset, pattern and options, quoted for bash or PowerShell.", inputSchema: Object.assign({}, runSchema, { properties: Object.assign({}, runSchema.properties, { shell: { type: "string", enum: ["bash", "pwsh"] } }), required: ["preset", "patterns"] }), annotations: { readOnlyHint: true }, async execute(i) {
+    const req = reqOf(i);
+    return out({ command: G.buildCommand(i.preset, req.options[i.preset], i.patterns, req.files, i.replacement || "", i.shell) });
+  } });
+  mc.registerTool({ name: "run_self_tests", description: "Run the self-test (dialect translation, matching models, line endings, quoting and replace syntaxes, no network use) and return each result.", inputSchema: empty, annotations: { readOnlyHint: true }, async execute() { const t = runSelfTests(); return out({ passed: t.filter((x) => x.pass).length, total: t.length, results: t }); } });
+}
+
+/* ---------- start ---------- */
+function start() {
+  $("version").textContent = "v" + G.VERSION;
+  $("build").textContent = "Built " + G.BUILD_DATE;
+  loadState();
+  buildPresetTabs();
+  buildDemos();
+  wireControls();
+  refreshControls();
+  runSelfTests();
+  registerTools();
+  runAll();
+}
+start();
+})();
+</script>
+</body>
+</html>
