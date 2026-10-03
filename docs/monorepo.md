@@ -26,7 +26,7 @@ viz/<slug>/            one visual, self-contained
   SKILLS.md            how an agent uses the page and its WebMCP tools
   AGENTS.md            at most a few lines specific to changing this visual
 scripts/               shared tooling: changed.py, check.py, build_catalogue.py, check_repo.py,
-                       typecheck.mjs, and the builders' shared modules (page_parts, style_guide, stock_cases)
+                       typecheck.mjs, with_chrome.py, and the builders' shared modules (page_parts, style_guide, stock_cases)
 schema/visual.schema.json   what visual.json may hold
 tests/                 tests of the shared tooling only
 package.json           pins typescript and @types/node, nothing else

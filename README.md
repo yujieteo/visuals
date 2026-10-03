@@ -35,7 +35,7 @@ builder template's, as `typecheck.page` says), less the blocks its `visual.json`
 | `viz/<slug>/tests/` | The visual's own tests. |
 | `viz/<slug>/beamdswitch.js`, `report.js` | The site's unchanged beamdswitch report template and the page's report, for pages that export a narrated deck. |
 | `viz/<slug>/SKILLS.md`, `AGENTS.md` | How an agent uses the page and its WebMCP tools; what is specific to changing it. |
-| `scripts/check.py`, `changed.py`, `check_repo.py`, `build_catalogue.py`, `typecheck.mjs` | The shared tooling: per-visual checks, the changed-visual selection, the repository check, the generated catalogue, the type-check extractor. |
+| `scripts/check.py`, `changed.py`, `check_repo.py`, `build_catalogue.py`, `typecheck.mjs`, `with_chrome.py` | The shared tooling: per-visual checks, the changed-visual selection, the repository check, the generated catalogue, the type-check extractor, the headless Chrome a visual's browser tests use in CI. |
 | `scripts/page_parts.py`, `style_guide.py`, `stock_cases.py`, `templates/` | Modules the builders share. |
 | `design-tokens.json` | Shared colours, spacing, radius and fonts; `style_guide` holds the light and dark tokens of the shared visual style guide. |
 | `tests/` | Tests of the shared tooling only. |
