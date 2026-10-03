@@ -41,6 +41,8 @@ class CatalogueTest(unittest.TestCase):
             "missing asset": ("alpha", metadata(assets=["probly.csv"]), ("index.html", "raw.json"), "asset is missing"),
             "missing used file": ("alpha", metadata(uses=["scripts/nothing.py"]), ("index.html", "raw.json"), "uses names a missing path"),
             "not a slug": ("Alpha_1", metadata(), ("index.html", "raw.json"), "not a lowercase hyphenated slug"),
+            "missing typecheck page": ("alpha", metadata(typecheck={"page": "src/template.html"}), ("index.html", "raw.json"), "typecheck page is missing"),
+            "missing skipped file": ("alpha", metadata(typecheck={"skip": ["engine.js"]}), ("index.html", "raw.json"), "typecheck skip names a missing file"),
         }
         for name, (slug, data, files, expected) in cases.items():
             with self.subTest(name), Layout() as layout:

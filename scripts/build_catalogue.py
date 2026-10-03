@@ -67,6 +67,13 @@ def folder_errors(folder, data, root=ROOT):
     for path in data.get("uses", []):
         if isinstance(path, str) and not (root / path).exists():
             errors.append(f"{slug}: uses names a missing path: {path}")
+    typecheck = data.get("typecheck") if isinstance(data.get("typecheck"), dict) else {}
+    page = typecheck.get("page")
+    if isinstance(page, str) and not (folder / page).is_file():
+        errors.append(f"{slug}: typecheck page is missing: {page}")
+    for entry in typecheck.get("skip", []):
+        if isinstance(entry, str) and entry.endswith(".js") and not (folder / entry).is_file():
+            errors.append(f"{slug}: typecheck skip names a missing file: {entry}")
     return errors
 
 

@@ -26,3 +26,15 @@ test("line k of an extracted file is line (start + k - 2) of the page", () => {
   const lines = engine.text.split("\n"), pageLines = page.split("\n");
   assert.equal(lines[2], pageLines[4 + 3 - 2 - 1]);
 });
+
+test("a block identical to a skipped folder file, or holding only a build placeholder, is left out", () => {
+  const html = [
+    "<script>const shared = 1;</script>",
+    "<script>@@ENGINE@@</script>",
+    "<script>/*@UI@*/</script>",
+    '<script type="application/javascript">ownCode();</script>',
+  ].join("\n");
+  const files = extract(html, "src/template.html", [], ["const shared = 1;"]);
+  assert.deepEqual(files.map((f) => f.name), ["01-script-1.js"]);
+  assert.match(files[0].text, /^\/\/ src\/template\.html:4, <script type="application\/javascript">: [^\n]*\nownCode\(\);$/);
+});

@@ -37,6 +37,17 @@ class ToolsTest(unittest.TestCase):
             (folder / "SKILLS.md").write_text(skills("get_data", "query"), encoding="utf-8")
             self.assertIn("SKILLS.md documents", tools_problems(folder, metadata())[0])
 
+    def test_tools_registered_in_a_loop_make_the_literal_ones_a_lower_bound(self):
+        with Layout() as layout:
+            folder = layout.visual("alpha")
+            (folder / "index.html").write_text(
+                '<script>for (const t of TOOLS) mc.registerTool(t);mc.registerTool({name:"get_data"})</script>', encoding="utf-8")
+            declared = metadata(webmcp_tools=["get_data", "get_metadata", "query"])
+            self.assertEqual(tools_problems(folder, declared), [])
+            self.assertIn("lacks registered ['get_data']", tools_problems(folder, metadata(webmcp_tools=["a", "b", "c"]))[0])
+            (folder / "SKILLS.md").write_text(skills("get_data", "query"), encoding="utf-8")
+            self.assertIn("!= visual.json webmcp_tools", tools_problems(folder, declared)[0])
+
     def test_a_page_registering_no_literal_tools_is_not_checked(self):
         with Layout() as layout:
             folder = layout.visual("alpha")
