@@ -14,11 +14,16 @@ NLB, Tampines Regional Library (this file):
 onePA, the Tampines community clubs (onepa.py says how): the People's Association's cooking and baking
 courses and events at every Tampines CC, with each class's published onePA page as its booking link.
 
-Then write data.json and run build.py, which inlines it into index.html. Nothing is invented: a field a
-source does not publish is left out, and every booking link is one the source publishes, never a
-constructed URL.
+Then write data.json, set visual.json's "fetched" to the Singapore date of the retrieval, run build.py, which
+inlines it into index.html, and print what changed against the previous data.json, ready for a pull request.
+Nothing is invented: a field a source does not publish is left out, and every booking link is one the source
+publishes, never a constructed URL.
 
-Usage: python3 refresh.py [--no-pages] [--now ISO8601]
+Nothing is written when a class's own page failed to load (its seats would be missing; --allow-partial writes
+anyway), or when the result looks broken: NLB lists no event, onePA has no Tampines club, or the classes kept
+fall to less than half of the previous data.json's (--force writes anyway; say why in the pull request).
+
+Usage: python3 refresh.py [--no-pages] [--allow-partial] [--force] [--now ISO8601]
 """
 import argparse
 import html
@@ -312,7 +317,7 @@ def booking_ok(url):
     return bool(re.match(r"https://(?:%s)/" % "|".join(re.escape(host) for host in BOOKING_HOSTS), url))
 
 
-def fetch_nlb(read_pages):
+def fetch_nlb(read_pages, failures):
     listing = fetch_listing()
     pages = {}
     if read_pages:
@@ -325,6 +330,7 @@ def fetch_nlb(read_pages):
                 try:
                     pages[str(raw["eventId"])] = registration(request(url))
                 except OSError as error:
+                    failures.append(url)
                     print(f"{url}: {error}; registration left out", file=sys.stderr)
     return build_nlb(listing, pages)
 
@@ -342,7 +348,7 @@ def search_all(body_for):
             return out
 
 
-def fetch_onepa(today, read_pages):
+def fetch_onepa(today, read_pages, failures):
     clubs = onepa.tampines_clubs(json.loads(request(f"{onepa.API}/search/outlets", tries=3)))
     courses = [item for category in onepa.FOOD_CATEGORIES for item in search_all(lambda skip, c=category: onepa.course_search(c, today, skip))]
     events = [item for club in clubs for item in search_all(lambda skip, c=club["name"]: onepa.event_search(c, today, skip))
@@ -366,6 +372,7 @@ def fetch_onepa(today, read_pages):
             try:
                 details[code] = onepa.page_details(request(urls[code]), code)
             except OSError as error:
+                failures.append(urls[code])
                 print(f"{urls[code]}: {error}; sessions left out", file=sys.stderr)
     vacancies = {}
     for at in range(0, len(class_ids), 20):
@@ -376,19 +383,87 @@ def fetch_onepa(today, read_pages):
     return build_onepa(clubs, courses, events, urls, details, vacancies)
 
 
+def problems(data, previous):
+    """Why data looks like a broken run rather than the sources' news: [] when it can be written."""
+    nlb, pa = data["sources"]
+    found = []
+    if not nlb.get("listed"):
+        found.append("NLB lists no event at Tampines")
+    if not pa.get("clubs"):
+        found.append("onePA lists no Tampines community club")
+    if previous and len(data["events"]) * 2 < len(previous["events"]):
+        found.append(f"{len(data['events'])} classes kept, less than half of the previous {len(previous['events'])}")
+    return found
+
+
+def set_fetched(text, day):
+    """visual.json's text with only its "fetched" date changed."""
+    out, count = re.subn(r'("fetched"\s*:\s*)"[^"]*"', lambda match: f'{match.group(1)}"{day}"', text, count=1)
+    if not count:
+        raise SystemExit('visual.json has no "fetched" field')
+    return out
+
+
+def seats(item):
+    """A class's registration as one phrase, such as "open, 7 left"."""
+    reg = item.get("registration") or {}
+    return ", ".join(part for part in (reg.get("status"), f"{reg['seats_left']} left" if "seats_left" in reg else None) if part) or "no notice"
+
+
+def summary(previous, data):
+    """What changed from previous to data, as Markdown lines for a pull request."""
+    old = {item["id"]: item for item in (previous or {}).get("events", [])}
+    new = {item["id"]: item for item in data["events"]}
+    nlb, pa = data["sources"]
+    before = {source["id"]: source for source in (previous or {}).get("sources", [])}
+    clubs = ", ".join(f"{club['name']} {club['kept']}" for club in pa.get("clubs", []))
+    lines = [f"Retrieved {data['retrieved']} (previous {(previous or {}).get('retrieved', 'none')}).",
+             f"- NLB: {nlb['kept']} kept of {nlb['listed']} listed (previous {before.get('nlb', {}).get('kept', 0)} of {before.get('nlb', {}).get('listed', 0)}).",
+             f"- onePA: {pa['kept']} kept (previous {before.get('onepa', {}).get('kept', 0)}); by club: {clubs or 'none'}."]
+    lines += [f"- Added: {key} {new[key]['title']} ({new[key].get('start', '')[:10]})" for key in new if key not in old]
+    lines += [f"- Removed: {key} {old[key]['title']} ({old[key].get('start', '')[:10]})" for key in old if key not in new]
+    lines += [f"- Registration: {key} {new[key]['title']}: {seats(old[key])} -> {seats(new[key])}"
+              for key in new if key in old and seats(old[key]) != seats(new[key])]
+    if len(lines) == 3:
+        lines.append("- No class added, removed or changed in places.")
+    return lines
+
+
+def save(data, failures, allow_partial=False, force=False, here=None):
+    """Write data.json and visual.json's "fetched" unless the run was partial or looks broken; the change summary."""
+    if failures and not allow_partial:
+        raise SystemExit(f"{len(failures)} class page(s) failed to load, so their places would be missing; nothing written. "
+                         "Run again later, or pass --allow-partial to write without them.")
+    here = here or HERE
+    path = here / "data.json"
+    previous = json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
+    if (found := problems(data, previous)) and not force:
+        raise SystemExit(f"Refusing to write data.json: {'; '.join(found)}. Pass --force if the sources really say so.")
+    visual = here / "visual.json"
+    day = datetime.fromisoformat(data["retrieved"]).astimezone(SGT).date().isoformat()
+    fetched = set_fetched(visual.read_text(encoding="utf-8"), day)
+    path.write_text(json.dumps(data, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    visual.write_text(fetched, encoding="utf-8")
+    return summary(previous, data)
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--no-pages", action="store_true", help="skip reading each class's own page (no seats or sessions)")
+    parser.add_argument("--allow-partial", action="store_true", help="write even when some class pages failed to load")
+    parser.add_argument("--force", action="store_true", help="write even when the result looks broken (no listing, no clubs, or a shrink by more than half)")
     parser.add_argument("--now", help="the retrieval time to record, ISO 8601 (default: now)")
     args = parser.parse_args(argv)
     now = datetime.fromisoformat(args.now) if args.now else datetime.now(SGT).replace(microsecond=0)
-    nlb = fetch_nlb(not args.no_pages)
-    pa = fetch_onepa(now.astimezone(SGT).date().isoformat(), not args.no_pages)
+    failures = []
+    nlb = fetch_nlb(not args.no_pages, failures)
+    pa = fetch_onepa(now.astimezone(SGT).date().isoformat(), not args.no_pages, failures)
     data = build(nlb, pa, now)
-    (HERE / "data.json").write_text(json.dumps(data, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    changes = save(data, failures, args.allow_partial, args.force)
     print(f"data.json: {len(nlb[0])} NLB classes of {nlb[1]['listed']} listed, {len(pa[0])} onePA classes at the Tampines clubs, retrieved {data['retrieved']}")
     import build as page_builder
     page_builder.main([])
+    print("\n".join(changes))
 
 
 if __name__ == "__main__":
