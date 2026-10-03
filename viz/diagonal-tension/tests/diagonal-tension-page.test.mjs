@@ -66,6 +66,8 @@ async function openBrowser(downloads) {
   const requests = [];
   /** @type {string[]} */
   const done = [];
+  /** Resolves when the page fires its load event, so no check reads the DOM before #status exists. */
+  let loaded = () => {};
   ws.onmessage = (ev) => {
     const msg = JSON.parse(ev.data);
     if (msg.id && pending.has(msg.id)) {
@@ -75,6 +77,7 @@ async function openBrowser(downloads) {
     } else if (msg.method === "Runtime.exceptionThrown") exceptions.push(msg.params.exceptionDetails.exception?.description ?? msg.params.exceptionDetails.text);
     else if (msg.method === "Network.requestWillBeSent") requests.push(msg.params.request.url);
     else if (msg.method === "Browser.downloadProgress" && msg.params.state === "completed") done.push(msg.params.guid);
+    else if (msg.method === "Page.loadEventFired") loaded();
   };
   /** A DevTools protocol command; its result's shape depends on the method, so it is left open.
       @param {string} method @param {object} [params] @param {string} [sessionId] @returns {Promise<any>} */
@@ -90,7 +93,9 @@ async function openBrowser(downloads) {
   await send("Network.enable", {}, sessionId);
   // Offline before the file is opened.
   await send("Network.emulateNetworkConditions", { offline: true, latency: 0, downloadThroughput: -1, uploadThroughput: -1 }, sessionId);
+  const load = new Promise((resolve) => { loaded = () => resolve(undefined); });
   await send("Page.navigate", { url: pathToFileURL(PAGE).href }, sessionId);
+  await load;
   /** @param {string} expression @returns {Promise<any>} the value, returned by value */
   const evaluate = async (expression) => {
     const r = await send("Runtime.evaluate", { expression, awaitPromise: true, returnByValue: true, userGesture: true }, sessionId);
