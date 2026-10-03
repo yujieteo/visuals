@@ -75,6 +75,8 @@ input[type=range]::-moz-range-thumb{width:2rem;height:2rem;border-radius:50%;bor
 input[type=range].unanswered::-webkit-slider-thumb{opacity:0}
 input[type=range].unanswered::-moz-range-thumb{opacity:0}
 input[type=range]:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:var(--r)}
+.slow{margin:0;font-size:.8125rem;font-weight:600;color:var(--focus)}
+#hasty{max-width:none}
 .acts{display:grid;gap:.25rem;margin:.75rem 0 0;font-size:.9375rem}
 .acts p{margin:0;overflow-wrap:anywhere}
 .acts b{font-weight:600}
@@ -154,6 +156,7 @@ pre{margin:0;max-height:40dvh;overflow:auto;padding:.6rem .75rem;border:1px soli
     <button type="button" class="btn quiet" id="export-open">Export</button>
   </div>
   <section class="card" id="card" aria-labelledby="prop">
+    <p class="slow" id="slow" hidden>High impact: take your time</p>
     <h1 class="prop" id="prop"><span class="sr" id="qnum"></span><span id="prop-text"></span></h1>
     <p class="ctx" id="ctx"></p>
     <div class="answer">
@@ -164,6 +167,13 @@ pre{margin:0;max-height:40dvh;overflow:auto;padding:.6rem .75rem;border:1px soli
         <div class="ends" aria-hidden="true"><span>0%</span><span>100%</span></div>
       </div>
       <p class="sr" id="hint">Use the arrow keys to choose, then press Enter to save.</p>
+    </div>
+    <div class="confirm" id="hasty" hidden role="alertdialog" aria-labelledby="hasty-text">
+      <p id="hasty-text"></p>
+      <div class="row">
+        <button type="button" class="btn primary" id="hasty-save">Save</button>
+        <button type="button" class="btn quiet" id="hasty-again">Think again</button>
+      </div>
     </div>
     <div class="acts">
       <p id="high"><b>High →</b> <span></span></p>
@@ -547,6 +557,16 @@ function skip(state, now) {
   advance(s);
   return { state: s, advanced: !end, end };
 }
+// Effort: a slow card is one whose action_impact is SLOW_IMPACT or more. Version 1 has no field for expected time, so
+// the flag is derived from the score the generator already writes. A first answer to a slow card sooner than SLOW_MS
+// after it was shown is hasty: the page asks before saving it. Revisions and other cards are never held up.
+const SLOW_IMPACT = 80, SLOW_MS = 8000;
+const slowCard = (q) => q.action_impact >= SLOW_IMPACT;
+function hasty(state, now) {
+  const q = state.doc.questions[state.current], id = q.question_id;
+  if (!slowCard(q) || stateOf(state, id) === "answered") return false;
+  return now - (state.displayed[id] ?? now) < SLOW_MS;
+}
 function back(state) { const s = clone(state); if (s.current > 0) s.current -= 1; return s; }
 function counts(state) {
   const c = { answered: 0, skipped: 0, unseen: 0, total: total(state) };
@@ -619,7 +639,7 @@ function keyProbability(key, choice) {
 
 root.Calibrator = {
   encode, decode, ToonError, SchemaError, FORMAT, VERSION, FIELDS, EXPORT_FIELDS, ORIGINS, SCORES, STATES,
-  validateSession, parseSession, newState, display, answer, skip, back, counts, stateOf, isLast,
+  validateSession, parseSession, newState, display, answer, skip, back, SLOW_IMPACT, SLOW_MS, slowCard, hasty, counts, stateOf, isLast,
   exportDocument, exportToon, markExported, unfinished, serialize, deserialize, pointerProbability, keyProbability,
 };
 })(typeof self !== "undefined" ? self : globalThis);
@@ -714,6 +734,8 @@ $("guard-replace").addEventListener("click", () => {
 const range = $("range"), track = range.parentElement;
 // choice: the probability on screen, or null while the question is untouched. drag: the pointer choosing it.
 let choice = null, drag = null, keyed = false;
+// held: a hasty first answer to a slow card, { p, at }, waiting for Save or Think again; null otherwise.
+let held = null;
 function render(fade) {
   const q = S.doc.questions[S.current], n = S.current + 1, total = S.doc.questions.length;
   const r = S.responses[q.question_id], st = C.stateOf(S, q.question_id);
@@ -723,6 +745,8 @@ function render(fade) {
   $("ctx").textContent = q.context; $("ctx").hidden = !q.context;
   $("high").lastElementChild.textContent = q.high_action;
   $("low").lastElementChild.textContent = q.low_action;
+  $("slow").hidden = !C.slowCard(q);
+  held = null; $("hasty").hidden = true;
   const answered = st === "answered";
   choice = answered ? r.final_probability : null;
   range.classList.toggle("unanswered", !answered);
@@ -757,7 +781,21 @@ function go(next, focus = true) {
 function commit() {
   if (choice == null) return;
   clearTimeout(advanceTimer);
-  const p = choice, res = C.answer(S, p, now());
+  const p = choice, t = now();
+  if (C.hasty(S, t)) {
+    // Hold the answer, timed when it was given, until the person confirms it.
+    const secs = Math.max(1, Math.round((t - S.displayed[S.doc.questions[S.current].question_id]) / 1000));
+    held = { p, at: t };
+    $("hasty-text").textContent = `This is a high-impact card and you answered in ${secs} s. Save ${p}%?`;
+    $("hasty-save").textContent = `Save ${p}%`;
+    $("hasty").hidden = false; $("hasty-save").focus({ preventScroll: true });
+    return;
+  }
+  record(p, t);
+}
+// Save p as the current card's answer, given at time t.
+function record(p, t) {
+  const res = C.answer(S, p, t);
   S = res.state; save();
   choose(p);
   if (res.first) {
@@ -774,6 +812,7 @@ const under = (e) => { const b = range.getBoundingClientRect(); return C.pointer
 track.addEventListener("pointerdown", (e) => {
   if (e.button !== 0) return;
   e.preventDefault(); clearTimeout(advanceTimer);
+  held = null; $("hasty").hidden = true;
   drag = e.pointerId; keyed = false;
   try { track.setPointerCapture(e.pointerId); } catch {}
   range.focus({ preventScroll: true });
@@ -797,6 +836,14 @@ range.addEventListener("blur", () => {
   const r = S.responses[S.doc.questions[S.current].question_id];
   if (r?.state === "answered" && choice !== r.final_probability) commit(); else render(false);
 });
+$("hasty-save").addEventListener("click", () => {
+  if (!held) return;
+  const { p, at } = held;
+  held = null; $("hasty").hidden = true;
+  record(p, at);
+});
+// Think again: nothing is saved and the card is untouched again.
+$("hasty-again").addEventListener("click", () => { render(false); range.focus({ preventScroll: true }); });
 $("back").addEventListener("click", () => { clearTimeout(advanceTimer); go(C.back(S), false); });
 $("skip").addEventListener("click", () => {
   clearTimeout(advanceTimer);

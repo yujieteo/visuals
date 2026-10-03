@@ -2,6 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import vm from "node:vm";
+import { execFileSync } from "node:child_process";
+import { checkSession, polarity } from "../scripts/polarity.mjs";
 
 const read = (path) => fs.readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 const html = read("index.html");
@@ -258,4 +260,62 @@ test("the codec reads every escape toon.py writes and rejects any other; a table
     const broken = { ...doc, [t]: [1, ...doc[t].slice(1)] };
     assert.throws(() => C.validateSession(broken), /: not a row$/, t);
   }
+});
+
+test("slow cards: a hasty first answer to a high action_impact card is held for confirmation, nothing else is", () => {
+  const s = start(), [q1, , q3] = s.doc.questions;
+  assert.deepEqual([q1.action_impact, C.slowCard(q1), q3.action_impact, C.slowCard(q3)], [90, true, 72, false]);
+  assert.equal(C.SLOW_IMPACT, 80);
+  assert.equal(C.SLOW_MS, 8000);
+  // Shown at T0: under 8 s is hasty, 8 s or more is not.
+  assert.equal(C.hasty(s, T0 + 2000), true);
+  assert.equal(C.hasty(s, T0 + 7999), true);
+  assert.equal(C.hasty(s, T0 + 8000), false);
+  // A revision is never held, however quick, and neither is a card below the threshold.
+  const answered = C.back(C.answer(s, 70, T0 + 9000).state);
+  assert.equal(C.hasty(C.display(answered, T0 + 10000), T0 + 10500), false);
+  let low = s;
+  for (let i = 0; i < 2; i++) low = C.skip(low, T0).state;
+  low = C.display(low, T0 + 100);
+  assert.equal(C.hasty(low, T0 + 200), false);
+  // Confirming keeps the time the answer was given, so the latency is the real one.
+  const kept = C.answer(s, 64, T0 + 3000).state.responses[q1.question_id];
+  assert.equal(kept.latency_ms, 3000);
+  // The page asks before saving, and only through the engine's check.
+  assert.match(html, /<div class="confirm" id="hasty" hidden role="alertdialog"/);
+  assert.match(html, /if \(C\.hasty\(S, t\)\) \{/);
+  assert.match(html, /\$\("slow"\)\.hidden = !C\.slowCard\(q\);/);
+});
+
+test("old sessions and saved progress stay valid: every published session imports, and no field was added", () => {
+  for (const f of fs.readdirSync(new URL("../sessions/", import.meta.url))) {
+    const doc = C.parseSession(read(`sessions/${f}`));
+    assert.ok(doc.questions.length > 0, f);
+  }
+  assert.deepEqual(plain(C.FIELDS), JSON.parse(read("raw.json")).import_fields);
+  // A state saved before slow cards existed restores and exports unchanged.
+  const s = C.answer(start(), 30, T0 + 1000).state;
+  assert.equal(C.exportToon(C.deserialize(C.serialize(s)), T0 + 2000), C.exportToon(s, T0 + 2000));
+});
+
+test("polarity check: the swapped cards of session 1 are flagged, sound cards are not", () => {
+  const card = (proposition, high_action, low_action) => ({ question_id: "x", proposition, high_action, low_action });
+  // Session 1 had ten swapped cards. The word check finds eight; the other two (-041, -071) need reading.
+  const s1 = C.parseSession(read("sessions/2026-10-02.toon"));
+  const flagged = checkSession(s1).map((f) => f.question_id);
+  for (const n of ["001", "030", "044", "048", "050", "088", "098", "099"]) assert.ok(flagged.includes(`cal-20261002-${n}`), n);
+  assert.ok(flagged.length <= 10, "few false flags");
+  assert.equal(checkSession(C.parseSession(sample)).length, 0);
+  // The same card the right way round, and the double negative ("would deleting X lose anything").
+  assert.equal(polarity(card("Will the ports still look worth porting in a month?", "keep porting at this pace", "pause porting")), null);
+  assert.match(polarity(card("Will the ports still look worth porting in a month?", "pause porting", "keep porting")), /high action would reduce/);
+  assert.equal(polarity(card("Would deleting the unused tools lose me anything?", "keep them", "delete them")), null);
+  assert.match(polarity(card("Would deleting the unused tools lose me anything?", "delete them", "keep them")), /argues to continue/);
+  assert.equal(polarity(card("Should I stop project X before investing another ten hours?", "stop X", "continue X")), null);
+  // Two actions in the same direction, or with no recognised verb, are never flagged.
+  assert.equal(polarity(card("Is the walk worth it?", "write it down", "ask again next week")), null);
+  // The script runs offline and exits 1 when it flags a card, 0 when it does not.
+  const run = (f) => { try { execFileSync("node", ["scripts/polarity.mjs", f], { cwd: new URL("..", import.meta.url) }); return 0; } catch (e) { return e.status; } };
+  assert.equal(run("sample-session.toon"), 0);
+  assert.equal(run("sessions/2026-10-02.toon"), 1);
 });
