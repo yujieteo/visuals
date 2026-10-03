@@ -107,6 +107,8 @@ th:first-child,td:first-child,td.l,th.l{text-align:left}
 .tests li.fail b{color:var(--bad)}
 .io{display:grid;gap:.6rem;grid-template-columns:minmax(0,1fr)}
 .io .row{display:flex;flex-wrap:wrap;gap:.35rem;align-items:center}
+/* A file input is as wide as its button and file name; let it shrink to a 320 px screen. */
+input[type=file]{max-width:100%;min-width:0}
 textarea{min-height:6rem;font:.8rem var(--mono)}
 .status{font-size:.8125rem;color:var(--muted);min-height:1.2em}
 .notes{font-size:.875rem;padding-left:1.1rem}
@@ -399,7 +401,7 @@ function figures(n) { $("plots").innerHTML = Array.from({ length: n }, (_, i) =>
 /* ---------- Rendering per tab ---------- */
 const C = { a: "var(--c1)", b: "var(--c2)", c: "var(--c3)", d: "var(--c4)", fg: "var(--fg)", muted: "var(--faint)", bad: "var(--bad)" };
 function stat(label, value, neg) { return `<li class="${neg ? "neg" : ""}"><b>${esc(value)}</b><span>${esc(label)}</span></li>`; }
-const ms = (v) => (v === null || v === undefined || !Number.isFinite(v) ? "—" : (v >= 0 ? "+" : "") + fmt(v));
+const ms = S.marginText;
 
 function renderColumn(x, r) {
   const s = (q) => (v) => showVal(v, q);
@@ -535,11 +537,17 @@ function reportDeck() {
   if (!last.result || last.result.error) return null;
   return { text: Beamdswitch.deck(S.report(state.tab, current(), { displayUnits: state.units })), name: `stability-${state.tab}-beamdswitch.md` };
 }
+/* The deck to save or copy, or null after saying why there is none. */
+function deckOrSay(verb) {
+  let deck;
+  try { deck = reportDeck(); } catch (e) { say(`Could not write the deck: ${e.message}`); return null; }
+  if (!deck) say(`Fix the inputs first: there is no result to ${verb}.`);
+  return deck;
+}
 /* A blocked download fails silently, so the page cannot fall back on its own: Copy deck is the explicit fallback. */
 function saveReport() {
-  let deck;
-  try { deck = reportDeck(); } catch (e) { say(`Could not write the deck: ${e.message}`); return; }
-  if (!deck) { say("Fix the inputs first: there is no result to save."); return; }
+  const deck = deckOrSay("save");
+  if (!deck) return;
   try {
     download({ text: deck.text, name: deck.name, type: "text/markdown" });
     say(`Saved ${deck.name}: open it in beamdswitch.`);
@@ -548,9 +556,8 @@ function saveReport() {
   }
 }
 async function copyReport() {
-  let deck;
-  try { deck = reportDeck(); } catch (e) { say(`Could not write the deck: ${e.message}`); return; }
-  if (!deck) { say("Fix the inputs first: there is no result to copy."); return; }
+  const deck = deckOrSay("copy");
+  if (!deck) return;
   say((await copyText(deck.text)) ? "Copied the beamdswitch deck: paste it into beamdswitch." : "Could not copy the beamdswitch deck: the clipboard is blocked here.");
 }
 function importDoc(text) {

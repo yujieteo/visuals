@@ -881,8 +881,7 @@
     const val = (v, q = "none") => (v === null || v === undefined ? "—" : typeof v === "string" ? v : `${n(v, q)}${unitLabel(q, sys) ? " " + unitLabel(q, sys) : ""}`);
     const say = (v, q = "none") => { const t = n(v, q); return q === "none" ? sayNumber(t) : `${sayNumber(t)} ${spokenUnit(q, sys, !/^-?1$/.test(t))}`; };
     const tex = (v, q = "none") => `${texNumber(n(v, q))}${unitLabel(q, sys) ? `\\ \\mathrm{${unitLabel(q, sys).replace(/·/g, "\\cdot ").replace(/²/g, "^2").replace(/⁴/g, "^4")}}` : ""}`;
-    // The page's margin-of-safety text, signed.
-    const ms = (v) => (v === null || v === undefined || !Number.isFinite(v) ? "—" : (v >= 0 ? "+" : "") + fmt(v));
+    const ms = marginText;
     const sayMs = (v) => `${v < 0 ? "minus" : "plus"} ${sayNumber(fmt(Math.abs(v)))}`;
     const unitsText = sys === "SI" ? "N, mm, MPa" : "lbf, in, ksi";
     const unitsSaid = `${spokenUnit("force", sys)}, ${spokenUnit("length", sys)} and ${spokenUnit("stress", sys)}`;
@@ -1397,6 +1396,8 @@
     if (a !== 0 && (a >= 1e6 || a < 1e-3)) return x.toExponential(3);
     return String(+x.toPrecision(4));
   }
+  /* A margin of safety as the page and the deck write it: signed, or "—" when there is none. */
+  function marginText(v) { return v === null || v === undefined || !Number.isFinite(v) ? "—" : (v >= 0 ? "+" : "") + fmt(v); }
 
   return {
     SCHEMA_VERSION, DISCLAIMER, QUANTITIES, SOURCES, FIT, MATERIAL_PRESETS, K_PRESETS, TABS, TAB_LABELS, INPUT_UNITS,
@@ -1405,6 +1406,6 @@
     columnStrength, tangentModulusStress, solveColumn, columnCurve,
     beamColumnState, beamColumnMax, solveBeamColumn, beamColumnCurves, endsForK, feBuckling, jacobiEigenvalues, cholesky,
     ksClosed, shearPlasticity, solveShear, kFactor, idtAngle, wagner, solveDiagonal, diagonalCurves,
-    defaults, normalise, solve, resultRows, exportJSON, importJSON, exportMarkdown, report, tn2661Example, tn2661Case, selfTests, fmt,
+    defaults, normalise, solve, resultRows, exportJSON, importJSON, exportMarkdown, report, tn2661Example, tn2661Case, selfTests, fmt, marginText,
   };
 });
