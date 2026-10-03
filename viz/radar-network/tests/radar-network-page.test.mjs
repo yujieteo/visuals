@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import vm from "node:vm";
 import { assertInlined, read } from "./beamdswitch-helpers.mjs";
 
 const html = read("index.html");
@@ -26,8 +27,6 @@ test("MathJax 4.1.3 and the Fira font are embedded from the checked vendor files
   const files = manifest.packages[1].files.filter((f) => f.path.endsWith(".woff2"));
   assert.equal(Object.keys(woff).length, files.length);
   for (const f of files) assert.equal(woff[f.path.split("/").pop()], `data:font/woff2;base64,${bytes(`vendor/${f.path}`).toString("base64")}`);
-  assert.match(html, /output: \{ font: "mathjax-fira" \}/);
-  assert.match(html, /require: function \(url\)/, "a loader that never fetches");
   assert.ok(html.includes("Apache License"), "MathJax licence in the page");
   assert.ok(html.includes("SIL OPEN FONT LICENSE"), "Fira Math licence in the page");
 });
@@ -41,7 +40,18 @@ test("no external runtime resource", () => {
   // browser checks count requests. Outside the vendored blocks no CDN name appears at all.
   const own = html.replace(/<script id="mathjax-(files|core)">[\s\S]*?<\/script>/g, "");
   assert.doesNotMatch(own, /cdnjs|jsdelivr|unpkg|googleapis/);
-  assert.match(html, /paths: \{ mathjax: "embedded:mathjax"/);
+});
+
+test("the MathJax configuration uses the Fira font and loads only embedded files", () => {
+  const loaded = [];
+  const window = { MathJaxEmbedded: { "mathjax-fira/chtml.js": () => loaded.push("fira") } };
+  vm.runInNewContext(/<script id="mathjax-config">([\s\S]*?)<\/script>/.exec(html)[1], { window });
+  const { loader, output } = window.MathJax;
+  assert.equal(output.font, "mathjax-fira");
+  for (const path of Object.values(loader.paths)) assert.match(path, /^embedded:/);
+  loader.require("embedded:mathjax-fira/chtml.js");
+  assert.deepEqual(loaded, ["fira"]);
+  assert.throws(() => loader.require("https://cdn.jsdelivr.net/npm/mathjax@4/input/tex/extensions/ams.js"), /not embedded in this page/);
 });
 
 test("metadata, theme script, no-JavaScript content and the data file", () => {

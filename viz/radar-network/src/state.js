@@ -224,6 +224,7 @@
       if (a.gainMode === "aperture" && !(a.aperture_m2 > 0)) err(`${at}.antenna.aperture_m2`, "aperture must be positive");
       if (!finite(a.peakGain_dBi)) err(`${at}.antenna.peakGain_dBi`, "gain must be finite (values below 0 dBi are allowed)");
       if (a.mode === "directional" && !(a.beamwidth_deg > 0 && a.floor_dB >= 0)) err(`${at}.antenna`, "beamwidth must be positive and the floor nonnegative");
+      if (a.mode === "imported") for (const p of validateTable(a.pattern, "pattern")) err(`${at}.antenna.pattern`, p);
       if (a.pointing?.mode === "track" && !scn.targets.some((tg) => tg.id === a.pointing.target)) err(`${at}.antenna.pointing.target`, "tracked target does not exist");
       if (!(r.leakage.isolation_dB >= 0 && r.leakage.cancellation_dB >= 0)) err(`${at}.leakage`, "isolation and cancellation must be nonnegative");
     }

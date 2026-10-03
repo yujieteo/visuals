@@ -873,11 +873,10 @@
     return app.worker;
   }
   /** Run a job { type: "channel" | "combine", ... } in the worker, or on the main thread with yields. */
-  function runJob(job, onProgress) {
+  function runJob(job, model, onProgress) {
     if (app.job) cancelJob();
     const token = { cancelled: false };
     app.job = token;
-    const model = S.clone(scn()); delete model.view;
     const mainThread = async () => {
       let result;
       if (job.type === "channel") {
@@ -916,23 +915,25 @@
     renderTab();
   }
   let jobSeq = 0;
+  /** The semantic model a job runs on, without view state, captured when the job starts. */
+  function jobModel() { const model = S.clone(scn()); delete model.view; return model; }
   /** Calculate the dwell of one channel at the current time (or each channel when all is true). */
   async function calculateDwell(all = false) {
     const s = scn(), t0 = view().time_s, ch = view().channel;
     const list = all ? s.radars.flatMap((rx) => s.radars.filter((tx) => tx.tx.carrier_Hz === rx.tx.carrier_Hz).map((tx) => ({ rx: rx.id, tx: tx.id }))) : [ch];
     const ordered = all ? [ch, ...list.filter((c) => !(c.rx === ch.rx && c.tx === ch.tx))] : list; // selected channel first
-    const pfa = s.processing.pfa;
     for (let i = 0; i < ordered.length; i++) {
       const c = ordered[i];
-      const job = { id: ++jobSeq, type: "channel", rx: c.rx, tx: c.tx, t0, opts: { pfa, pulse: 0 } };
+      const model = jobModel(), digest = S.modelDigest(model);
+      const job = { id: ++jobSeq, type: "channel", rx: c.rx, tx: c.tx, t0, opts: { pfa: model.processing.pfa, pulse: 0 } };
       app.progress = { label: `${c.rx} with the ${c.tx} filter (${i + 1} of ${ordered.length})`, done: 0, total: 1 };
       let result;
       try {
-        const pending = runJob(job, (d, tot) => { app.progress = { ...app.progress, done: d, total: tot }; if (RN.views) RN.views.progress(api); });
+        const pending = runJob(job, model, (d, tot) => { app.progress = { ...app.progress, done: d, total: tot }; if (RN.views) RN.views.progress(api); });
         renderTab(); // after the job exists, so Cancel is enabled
         result = await pending;
       } catch (e) { app.progress = null; notice(e.message === "cancelled" ? "Calculation cancelled." : `Calculation failed: ${e.message}`, "err"); renderTab(); return; }
-      const rec = { rx: c.rx, tx: c.tx, t0, result, digest: app.digest, dwellDigest: S.dwellDigest(s, { t0, rx: c.rx, tx: c.tx }), stale: false, params: S.clone(s) };
+      const rec = { rx: c.rx, tx: c.tx, t0, result, digest, dwellDigest: S.dwellDigest(model, { t0, rx: c.rx, tx: c.tx }), stale: digest !== app.digest, params: model };
       if (result.ok) { app.sampledAll.set(`${c.rx}>${c.tx}`, rec); if (c.rx === ch.rx && c.tx === ch.tx) app.sampled = rec; app.perf.dwellMs = result.ms; }
       else if (c.rx === ch.rx && c.tx === ch.tx) app.sampled = rec;
     }
@@ -946,11 +947,12 @@
     if (net.mode === "separate") return notice("Site combination is set to separate results. Choose ideal calibration or explicit errors in the Network controls.");
     const job = { id: ++jobSeq, type: "combine", t0: view().time_s, opts: { target: net.target, transmitter: net.transmitter, receivers: net.receivers, mode: net.mode, errors: net.errors } };
     app.progress = { label: "coherent site combination", done: 0, total: 1 };
+    const model = jobModel(), digest = S.modelDigest(model);
     try {
-      const pending = runJob(job, () => {});
+      const pending = runJob(job, model, () => {});
       renderTab();
       const result = await pending;
-      app.combo = { result, digest: app.digest, stale: false, t0: job.t0 };
+      app.combo = { result, digest, stale: digest !== app.digest, t0: job.t0 };
     } catch (e) { notice(e.message === "cancelled" ? "Calculation cancelled." : `Combination failed: ${e.message}`, "err"); }
     app.progress = null;
     renderTab();

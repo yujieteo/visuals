@@ -60,6 +60,12 @@ test("import refuses bad documents and names the reason", () => {
   f.state.targets[0].rcs.mode = "table";
   f.state.targets[0].rcs.table = { geometry: "monostatic", frequency_Hz: 10e9, units: "dBsm", az_deg: [0, 1], el_deg: [0, 1], values_m2: [[1, 1], [1, 1]], provenance: { source: "x" } };
   assert.match(S.importJson(JSON.stringify(f)).errors.map((x) => x.message).join(), /m2/);
+  const g = JSON.parse(S.exportJson(fresh()));
+  g.state.radars[0].antenna.mode = "imported";
+  g.state.radars[0].antenna.pattern = { units: "dBi", interpolation: "bilinear in dB", az_deg: [-5, 5], el_deg: [-5, 0, 5], gain_dBi: [[30, 30], [30, 30]], provenance: { source: "x" } };
+  const gErrors = S.importJson(JSON.stringify(g)).errors;
+  assert.ok(gErrors.some((x) => x.path === "radars.R1.antenna.pattern" && /frequency_Hz/.test(x.message)), "pattern without a frequency");
+  assert.ok(gErrors.some((x) => x.path === "radars.R1.antenna.pattern" && /grid/.test(x.message)), "ragged pattern grid");
 });
 
 test("every example loads, validates, and resets to the same state and seed", () => {
