@@ -3122,7 +3122,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         { label: "Equation", tex: "P_r=\\frac{P_tG_tG_r\\lambda^2\\sigma_b}{(4\\pi)^3R_t^2R_r^2L}" },
         { label: "Substitution", tex: `P_r=\\frac{${tex(pw.Pt)}\\cdot${tex(pw.Gt)}\\cdot${tex(pw.Gr)}\\cdot(${tex(pw.lambda)})^2\\cdot${tex(pw.sigma)}}{(4\\pi)^3\\cdot(${tex(g.Rt)})^2\\cdot(${tex(g.Rr)})^2\\cdot${tex(pw.L)}}` },
         { label: "Numerator and denominator", tex: `\\frac{${tex(pw.num)}}{${tex(pw.den)}}=${tex(pw.Pr)}\\ \\mathrm{W}` },
-        { label: "Result", tex: `P_r=${tex(pw.Pr)}\\ \\mathrm{W}=${fixedTex(pw.PrdBm, 2)}\\ \\mathrm{dBm}` },
+        { label: "Result", tex: `P_r=${tex(pw.Pr)}\\ \\mathrm{W}=${fixedTex(pw.PrdBm, 2)}\\ \\mathrm{dBm}`, note: pw.Pr === 0 ? "Zero power: a factor in the numerator is zero (RCS, gain or transmit power). 0 W is −∞ dBm." : undefined },
       ] : [{ label: "Result", text: `Not calculated: ${L.reasons.join("; ")}` }],
     });
     const sn = L.snr, det = L.detector;
@@ -4253,7 +4253,7 @@ self.onmessage = async (e) => {
   /* ===== COHERENT COMPARISON ===== */
   function phasorSvg(rows, sum) {
     const R = 110, all = rows.map((r) => Math.hypot(r[0], r[1])).concat([Math.hypot(sum[0], sum[1])]), k = (0.9 * R) / Math.max(...all, 1e-12);
-    let s = `<svg class="chart phasor" viewBox="${-R} ${-R} ${2 * R} ${2 * R}" role="img" aria-label="Phasors of each aligned channel and their sum"><circle cx="0" cy="0" r="${R - 2}" class="context" fill="none" style="stroke:var(--grid)"/><line x1="${-R}" x2="${R}" y1="0" y2="0" style="stroke:var(--axis)"/><line y1="${-R}" y2="${R}" x1="0" x2="0" style="stroke:var(--axis)"/>`;
+    let s = `<svg class="chart phasor" viewBox="${-R} ${-R} ${2 * R} ${2 * R}" role="img" aria-label="Phasors of each aligned channel and their sum"><circle cx="0" cy="0" r="${R - 2}" style="fill:none;stroke:var(--grid)"/><line x1="${-R}" x2="${R}" y1="0" y2="0" style="stroke:var(--axis)"/><line y1="${-R}" y2="${R}" x1="0" x2="0" style="stroke:var(--axis)"/>`;
     const colors = ["var(--c1)", "var(--c2)", "var(--c3)", "var(--c4)"], dashes = ["", "6 3", "2 3", "8 3 2 3"];
     let x = 0, y = 0;
     rows.forEach((r, i) => { const nx = x + r[0] * k, ny = y - r[1] * k; s += `<line x1="${x}" y1="${y}" x2="${nx}" y2="${ny}" style="stroke:${colors[i % 4]};stroke-width:2" stroke-dasharray="${dashes[i % 4]}"/>`; x = nx; y = ny; });
@@ -4822,6 +4822,13 @@ self.onmessage = async (e) => {
       if (L.labels) prims.push({ kind: "text", p: st.p, text: `${tg.id}${tg.rcs.mode !== "constant" ? " (" + tg.rcs.mode + " RCS)" : ""}`, style: { fill: col.fg, font: col.font } });
     }
     if (L.surfaces) surfacePrims(prims, col);
+    // Move mode: the edit plane through the selected object, 10 km square, so the drag direction is visible.
+    if (v.mode === "move" && v.selectedObject) {
+      const o = M.objectState(s, v.selectedObject, t).p, e = 5e3;
+      const corners = v.editPlane === "XY" ? [[-e, -e, 0], [e, -e, 0], [e, e, 0], [-e, e, 0]] : v.editPlane === "XZ" ? [[-e, 0, -e], [e, 0, -e], [e, 0, e], [-e, 0, e]] : [[0, -e, -e], [0, e, -e], [0, e, e], [0, -e, e]];
+      prims.push({ kind: "poly", pts: corners.map((c) => N.vadd(o, c)), style: { stroke: col.hl, fill: col.hl, alpha: 0.12, dash: [4, 3] } });
+      prims.push({ kind: "text", p: N.vadd(o, corners[2]), text: `${v.editPlane} edit plane`, style: { fill: col.fg, font: col.font } });
+    }
     ctx.font = col.font;
     scene.picks = V.draw(ctx, proj, prims, { font: col.font });
     ctx.fillStyle = col.muted;
@@ -5375,10 +5382,11 @@ self.onmessage = async (e) => {
       const c = ordered[i];
       const job = { id: ++jobSeq, type: "channel", rx: c.rx, tx: c.tx, t0, opts: { pfa, pulse: 0 } };
       app.progress = { label: `${c.rx} with the ${c.tx} filter (${i + 1} of ${ordered.length})`, done: 0, total: 1 };
-      renderTab();
       let result;
       try {
-        result = await runJob(job, (d, tot) => { app.progress = { ...app.progress, done: d, total: tot }; if (RN.views) RN.views.progress(api); });
+        const pending = runJob(job, (d, tot) => { app.progress = { ...app.progress, done: d, total: tot }; if (RN.views) RN.views.progress(api); });
+        renderTab(); // after the job exists, so Cancel is enabled
+        result = await pending;
       } catch (e) { app.progress = null; notice(e.message === "cancelled" ? "Calculation cancelled." : `Calculation failed: ${e.message}`, "err"); renderTab(); return; }
       const rec = { rx: c.rx, tx: c.tx, t0, result, digest: app.digest, dwellDigest: S.dwellDigest(s, { t0, rx: c.rx, tx: c.tx }), stale: false, params: S.clone(s) };
       if (result.ok) { app.sampledAll.set(`${c.rx}>${c.tx}`, rec); if (c.rx === ch.rx && c.tx === ch.tx) app.sampled = rec; app.perf.dwellMs = result.ms; }
@@ -5394,9 +5402,10 @@ self.onmessage = async (e) => {
     if (net.mode === "separate") return notice("Site combination is set to separate results. Choose ideal calibration or explicit errors in the Network controls.");
     const job = { id: ++jobSeq, type: "combine", t0: view().time_s, opts: { target: net.target, transmitter: net.transmitter, receivers: net.receivers, mode: net.mode, errors: net.errors } };
     app.progress = { label: "coherent site combination", done: 0, total: 1 };
-    renderTab();
     try {
-      const result = await runJob(job, () => {});
+      const pending = runJob(job, () => {});
+      renderTab();
+      const result = await pending;
       app.combo = { result, digest: app.digest, stale: false, t0: job.t0 };
     } catch (e) { notice(e.message === "cancelled" ? "Calculation cancelled." : `Combination failed: ${e.message}`, "err"); }
     app.progress = null;
@@ -5413,7 +5422,7 @@ self.onmessage = async (e) => {
         processing: { pulses: r.result.pulses, samples: r.result.Nw, Fs: r.result.Fs, window: r.result.window, eta: r.result.eta, matchedFilter: "unit energy", noise: r.result.noise },
         detections: r.result.detections, cellsTotal: r.result.cellsTotal, ms: r.result.ms,
         cells: r.result.cells.map((c) => ({ id: c.id, lag: c.lag, bin: c.bin, thermalSnr: c.thermalSnr, clutter: c.clutterPower, interference: c.interferencePower, noise: c.noisePower, sinr: c.sinr, statistic: c.statistic, detected: c.detected })),
-        parameters: r.stale ? r.params : undefined,
+        parameters: (({ view: _v, ...model }) => model)(r.params),
       });
     }
     return out;

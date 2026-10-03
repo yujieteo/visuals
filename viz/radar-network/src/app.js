@@ -366,6 +366,13 @@
       if (L.labels) prims.push({ kind: "text", p: st.p, text: `${tg.id}${tg.rcs.mode !== "constant" ? " (" + tg.rcs.mode + " RCS)" : ""}`, style: { fill: col.fg, font: col.font } });
     }
     if (L.surfaces) surfacePrims(prims, col);
+    // Move mode: the edit plane through the selected object, 10 km square, so the drag direction is visible.
+    if (v.mode === "move" && v.selectedObject) {
+      const o = M.objectState(s, v.selectedObject, t).p, e = 5e3;
+      const corners = v.editPlane === "XY" ? [[-e, -e, 0], [e, -e, 0], [e, e, 0], [-e, e, 0]] : v.editPlane === "XZ" ? [[-e, 0, -e], [e, 0, -e], [e, 0, e], [-e, 0, e]] : [[0, -e, -e], [0, e, -e], [0, e, e], [0, -e, e]];
+      prims.push({ kind: "poly", pts: corners.map((c) => N.vadd(o, c)), style: { stroke: col.hl, fill: col.hl, alpha: 0.12, dash: [4, 3] } });
+      prims.push({ kind: "text", p: N.vadd(o, corners[2]), text: `${v.editPlane} edit plane`, style: { fill: col.fg, font: col.font } });
+    }
     ctx.font = col.font;
     scene.picks = V.draw(ctx, proj, prims, { font: col.font });
     ctx.fillStyle = col.muted;
@@ -919,10 +926,11 @@
       const c = ordered[i];
       const job = { id: ++jobSeq, type: "channel", rx: c.rx, tx: c.tx, t0, opts: { pfa, pulse: 0 } };
       app.progress = { label: `${c.rx} with the ${c.tx} filter (${i + 1} of ${ordered.length})`, done: 0, total: 1 };
-      renderTab();
       let result;
       try {
-        result = await runJob(job, (d, tot) => { app.progress = { ...app.progress, done: d, total: tot }; if (RN.views) RN.views.progress(api); });
+        const pending = runJob(job, (d, tot) => { app.progress = { ...app.progress, done: d, total: tot }; if (RN.views) RN.views.progress(api); });
+        renderTab(); // after the job exists, so Cancel is enabled
+        result = await pending;
       } catch (e) { app.progress = null; notice(e.message === "cancelled" ? "Calculation cancelled." : `Calculation failed: ${e.message}`, "err"); renderTab(); return; }
       const rec = { rx: c.rx, tx: c.tx, t0, result, digest: app.digest, dwellDigest: S.dwellDigest(s, { t0, rx: c.rx, tx: c.tx }), stale: false, params: S.clone(s) };
       if (result.ok) { app.sampledAll.set(`${c.rx}>${c.tx}`, rec); if (c.rx === ch.rx && c.tx === ch.tx) app.sampled = rec; app.perf.dwellMs = result.ms; }
@@ -938,9 +946,10 @@
     if (net.mode === "separate") return notice("Site combination is set to separate results. Choose ideal calibration or explicit errors in the Network controls.");
     const job = { id: ++jobSeq, type: "combine", t0: view().time_s, opts: { target: net.target, transmitter: net.transmitter, receivers: net.receivers, mode: net.mode, errors: net.errors } };
     app.progress = { label: "coherent site combination", done: 0, total: 1 };
-    renderTab();
     try {
-      const result = await runJob(job, () => {});
+      const pending = runJob(job, () => {});
+      renderTab();
+      const result = await pending;
       app.combo = { result, digest: app.digest, stale: false, t0: job.t0 };
     } catch (e) { notice(e.message === "cancelled" ? "Calculation cancelled." : `Combination failed: ${e.message}`, "err"); }
     app.progress = null;
@@ -957,7 +966,7 @@
         processing: { pulses: r.result.pulses, samples: r.result.Nw, Fs: r.result.Fs, window: r.result.window, eta: r.result.eta, matchedFilter: "unit energy", noise: r.result.noise },
         detections: r.result.detections, cellsTotal: r.result.cellsTotal, ms: r.result.ms,
         cells: r.result.cells.map((c) => ({ id: c.id, lag: c.lag, bin: c.bin, thermalSnr: c.thermalSnr, clutter: c.clutterPower, interference: c.interferencePower, noise: c.noisePower, sinr: c.sinr, statistic: c.statistic, detected: c.detected })),
-        parameters: r.stale ? r.params : undefined,
+        parameters: (({ view: _v, ...model }) => model)(r.params),
       });
     }
     return out;

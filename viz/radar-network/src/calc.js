@@ -101,7 +101,7 @@
         { label: "Equation", tex: "P_r=\\frac{P_tG_tG_r\\lambda^2\\sigma_b}{(4\\pi)^3R_t^2R_r^2L}" },
         { label: "Substitution", tex: `P_r=\\frac{${tex(pw.Pt)}\\cdot${tex(pw.Gt)}\\cdot${tex(pw.Gr)}\\cdot(${tex(pw.lambda)})^2\\cdot${tex(pw.sigma)}}{(4\\pi)^3\\cdot(${tex(g.Rt)})^2\\cdot(${tex(g.Rr)})^2\\cdot${tex(pw.L)}}` },
         { label: "Numerator and denominator", tex: `\\frac{${tex(pw.num)}}{${tex(pw.den)}}=${tex(pw.Pr)}\\ \\mathrm{W}` },
-        { label: "Result", tex: `P_r=${tex(pw.Pr)}\\ \\mathrm{W}=${fixedTex(pw.PrdBm, 2)}\\ \\mathrm{dBm}` },
+        { label: "Result", tex: `P_r=${tex(pw.Pr)}\\ \\mathrm{W}=${fixedTex(pw.PrdBm, 2)}\\ \\mathrm{dBm}`, note: pw.Pr === 0 ? "Zero power: a factor in the numerator is zero (RCS, gain or transmit power). 0 W is −∞ dBm." : undefined },
       ] : [{ label: "Result", text: `Not calculated: ${L.reasons.join("; ")}` }],
     });
     const sn = L.snr, det = L.detector;

@@ -318,7 +318,7 @@
   /* ===== COHERENT COMPARISON ===== */
   function phasorSvg(rows, sum) {
     const R = 110, all = rows.map((r) => Math.hypot(r[0], r[1])).concat([Math.hypot(sum[0], sum[1])]), k = (0.9 * R) / Math.max(...all, 1e-12);
-    let s = `<svg class="chart phasor" viewBox="${-R} ${-R} ${2 * R} ${2 * R}" role="img" aria-label="Phasors of each aligned channel and their sum"><circle cx="0" cy="0" r="${R - 2}" class="context" fill="none" style="stroke:var(--grid)"/><line x1="${-R}" x2="${R}" y1="0" y2="0" style="stroke:var(--axis)"/><line y1="${-R}" y2="${R}" x1="0" x2="0" style="stroke:var(--axis)"/>`;
+    let s = `<svg class="chart phasor" viewBox="${-R} ${-R} ${2 * R} ${2 * R}" role="img" aria-label="Phasors of each aligned channel and their sum"><circle cx="0" cy="0" r="${R - 2}" style="fill:none;stroke:var(--grid)"/><line x1="${-R}" x2="${R}" y1="0" y2="0" style="stroke:var(--axis)"/><line y1="${-R}" y2="${R}" x1="0" x2="0" style="stroke:var(--axis)"/>`;
     const colors = ["var(--c1)", "var(--c2)", "var(--c3)", "var(--c4)"], dashes = ["", "6 3", "2 3", "8 3 2 3"];
     let x = 0, y = 0;
     rows.forEach((r, i) => { const nx = x + r[0] * k, ny = y - r[1] * k; s += `<line x1="${x}" y1="${y}" x2="${nx}" y2="${ny}" style="stroke:${colors[i % 4]};stroke-width:2" stroke-dasharray="${dashes[i % 4]}"/>`; x = nx; y = ny; });

@@ -102,6 +102,19 @@ await fullSuite("radar-network", {
     await s.page.waitForSelector(".rd-canvas", { timeout: 60_000 });
     const withDwell = await saved(s.page, () => s.page.locator("#report-download").click());
     assert.match(withDwell.text, /## Sampled dwell: R1 with the R1 filter/);
+    // A model edit makes the stored dwell stale until it is recalculated.
+    await editPower(s.page);
+    await s.page.locator("#tab-rd").click();
+    assert.match(await s.page.locator("#panel-rd .stale").innerText(), /Result from previous parameters/);
+    const staleDeck = await saved(s.page, () => s.page.locator("#report-download").click());
+    assert.match(staleDeck.text, /\(previous parameters\)/);
+    // A running calculation cancels and leaves the controls responsive.
+    await s.page.getByRole("button", { name: "Calculate all channels" }).click();
+    await s.page.getByRole("button", { name: "Cancel" }).first().click();
+    await s.page.waitForFunction(() => /cancelled|calculated/i.test(document.getElementById("notice")?.textContent ?? ""));
+    await s.page.locator("#play").click();
+    assert.equal(await s.page.locator("#play").getAttribute("aria-pressed"), "true", "the scene controls still respond");
+    await s.page.locator("#play").click();
   }),
 
   "dark-mode": async (ctx) => {
