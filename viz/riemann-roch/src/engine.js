@@ -29,6 +29,15 @@
   }
   const choose = (n, k) => { if (k < 0 || k > n) return 0; let r = 1; for (let i = 1; i <= k; i++) r = (r * (n - k + i)) / i; return Math.round(r); };
   const pow = (v, e) => (e === 0 ? "" : e === 1 ? v : v + sup(e));
+  /* The monomial xⁱyʲ as text, "1" when both exponents are 0. */
+  const mono = (i, j = 0) => pow("x", i) + pow("y", j) || "1";
+  /* "²³" → "23": superscript digits read back as ordinary digits. */
+  const SUP_DIGITS = "⁰¹²³⁴⁵⁶⁷⁸⁹";
+  const fromSup = (m) => m.split("").map((c) => SUP_DIGITS.indexOf(c)).join("");
+  /* A point's coordinates rounded to 10⁻⁶, so nearby computations of one point share a key. */
+  const coordKey = (a, b) => `${Math.round(a * 1e6) / 1e6},${Math.round(b * 1e6) / 1e6}`;
+  /* The sign that leads the n-th term of a written sum: "−" or nothing first, then " − " or " + ". */
+  const signed = (n, c) => (n === 0 ? (c < 0 ? "−" : "") : c < 0 ? " − " : " + ");
 
   /* ---------- complex numbers ---------- */
   const cx = (re, im = 0) => ({ re, im });
@@ -157,7 +166,7 @@
   /* ---------- P¹ ---------- */
   /* Points: { inf: true } or a complex number { re, im }. */
   const INF = Object.freeze({ inf: true });
-  const p1key = (p) => (p.inf ? "∞" : `${Math.round(p.re * 1e6) / 1e6},${Math.round((p.im || 0) * 1e6) / 1e6}`);
+  const p1key = (p) => (p.inf ? "∞" : coordKey(p.re, p.im || 0));
   const p1name = (p) => (p.inf ? "∞" : `[${cfmt(cx(p.re, p.im || 0))}]`);
   const p1str = (D) => divStr(D, p1name);
   /* A rational function c·∏(x − aᵢ)^mᵢ with complex aᵢ. */
@@ -224,18 +233,20 @@
   const ecf = (E, x) => x * x * x + E.a * x + E.b;
   const ecDisc = (E) => -16 * (4 * E.a ** 3 + 27 * E.b ** 2);
   const ecSmooth = (E) => Math.abs(4 * E.a ** 3 + 27 * E.b ** 2) > 1e-9;
-  const eckey = (P) => (P.inf ? "O" : `${Math.round(P.x * 1e6) / 1e6},${Math.round(P.y * 1e6) / 1e6}`);
+  const eckey = (P) => (P.inf ? "O" : coordKey(P.x, P.y));
   const ecname = (P) => (P.inf ? "O" : `(${fmt(P.x, 3)}, ${fmt(P.y, 3)})`);
   const ecstr = (D) => divStr(D, (p) => (p.inf ? "O" : `[${ecname(p)}]`));
   const ecOn = (E, P, tol = 1e-6) => P.inf || Math.abs(P.y * P.y - ecf(E, P.x)) < tol * Math.max(1, Math.abs(P.y * P.y));
   const ecEq = (P, Q, tol = 1e-7) => (P.inf || Q.inf ? !!P.inf && !!Q.inf : Math.abs(P.x - Q.x) < tol * Math.max(1, Math.abs(P.x)) && Math.abs(P.y - Q.y) < tol * Math.max(1, Math.abs(P.y)));
   const ecNeg = (P) => (P.inf ? O : { x: P.x, y: -P.y });
+  /* Slope of the chord through P and Q, or of the tangent at P. */
+  const slope = (E, P, Q, tangent) => (tangent ? (3 * P.x * P.x + E.a) / (2 * P.y) : (Q.y - P.y) / (Q.x - P.x));
   function ecAdd(E, P, Q) {
     if (P.inf) return Q;
     if (Q.inf) return P;
     if (Math.abs(P.x - Q.x) < 1e-12 * Math.max(1, Math.abs(P.x)) && Math.abs(P.y + Q.y) < 1e-9 * Math.max(1, Math.abs(P.y))) return O;
     const same = Math.abs(P.x - Q.x) < 1e-12 * Math.max(1, Math.abs(P.x));
-    const lam = same ? (3 * P.x * P.x + E.a) / (2 * P.y) : (Q.y - P.y) / (Q.x - P.x);
+    const lam = slope(E, P, Q, same);
     const x = lam * lam - P.x - Q.x, y = lam * (P.x - x) - P.y;
     return { x, y };
   }
@@ -250,7 +261,7 @@
     const S = ecAdd(E, P, Q), R = ecNeg(S);
     if (R.inf) return { vertical: true, R: O, divisor: normalize([{ p: P, n: 1 }, { p: Q, n: 1 }, { p: O, n: -2 }], eckey),
       equation: `x = ${fmt(P.x)}`, relation: "P + Q ∼ 2O, so Q = −P" };
-    const same = ecEq(P, Q), lam = same ? (3 * P.x * P.x + E.a) / (2 * P.y) : (Q.y - P.y) / (Q.x - P.x), nu = P.y - lam * P.x;
+    const lam = slope(E, P, Q, ecEq(P, Q)), nu = P.y - lam * P.x;
     return { vertical: false, R, lambda: lam, nu, divisor: normalize([{ p: P, n: 1 }, { p: Q, n: 1 }, { p: R, n: 1 }, { p: O, n: -3 }], eckey),
       equation: `y = ${pstr([nu, lam])}`, relation: "P + Q + R ∼ 3O", sum: S };
   }
@@ -271,7 +282,7 @@
     if (n < 0) return out;
     for (let pole = 0; pole <= n; pole++) for (let j = 0; j <= 1; j++) {
       const r = pole - 3 * j;
-      if (r >= 0 && r % 2 === 0) out.push({ i: r / 2, j, pole, label: (r / 2 ? pow("x", r / 2) : "") + (j ? "y" : "") || "1" });
+      if (r >= 0 && r % 2 === 0) out.push({ i: r / 2, j, pole, label: mono(r / 2, j) });
     }
     return out;
   }
@@ -368,7 +379,6 @@
       description: kinds[n] || (n >= 5 ? `E ↪ P${sup(n - 1)}: an elliptic normal curve of degree ${n}` : "no sections"),
       branchPoints: n === 2 ? [...proots([E.b, E.a, 0, 1]).map((z) => cfmt(cx(z.re, Math.abs(z.im) < 1e-9 ? 0 : z.im))), "∞"] : [] };
   }
-  /* Riemann–Hurwitz for x : E → P¹ (§47): 2·1 − 2 = 2(−2) + 4. */
 
   /* ---------- hyperelliptic curves y² = f(x) ---------- */
   function hyperGenus(degf) {
@@ -381,18 +391,18 @@
     const g = hyperGenus(degf), odd = degf % 2 === 1, out = [];
     if (odd) {
       for (let pole = 0; pole <= n; pole++) {
-        if (pole % 2 === 0) out.push({ kind: "x", i: pole / 2, pole, label: pole ? pow("x", pole / 2) : "1" });
-        else if (pole >= 2 * g + 1) { const j = (pole - 2 * g - 1) / 2; out.push({ kind: "y", j, pole, label: (j ? pow("x", j) : "") + "y" }); }
+        if (pole % 2 === 0) out.push({ kind: "x", i: pole / 2, pole, label: mono(pole / 2) });
+        else if (pole >= 2 * g + 1) { const j = (pole - 2 * g - 1) / 2; out.push({ kind: "y", j, pole, label: mono(j, 1) }); }
       }
       return { g, odd, point: "∞", divisor: `${n}∞`, deg: n, basis: out, ell: out.length, poles: out.map((b) => b.pole) };
     }
-    for (let i = 0; i <= n; i++) out.push({ kind: "x", i, pole: i, label: i ? pow("x", i) : "1" });
-    for (let j = 0; j <= n - g - 1; j++) out.push({ kind: "y", j, pole: j + g + 1, label: (j ? pow("x", j) : "") + "y" });
+    for (let i = 0; i <= n; i++) out.push({ kind: "x", i, pole: i, label: mono(i) });
+    for (let j = 0; j <= n - g - 1; j++) out.push({ kind: "y", j, pole: j + g + 1, label: mono(j, 1) });
     return { g, odd, point: "∞₊ + ∞₋", divisor: `${n}(∞₊ + ∞₋)`, deg: 2 * n, basis: out, ell: n < 0 ? 0 : out.length, poles: out.map((b) => b.pole) };
   }
   /* The hyperelliptic canonical system: K ∼ (2g − 2)∞ = (g − 1)·(x)_∞, ω_i = xⁱ dx/y. */
   function hyperCanonical(g) {
-    const basis = Array.from({ length: g }, (_, i) => ({ i, label: i ? pow("x", i) : "1", differential: `${i ? pow("x", i) + " " : ""}dx/y` }));
+    const basis = Array.from({ length: g }, (_, i) => ({ i, label: mono(i), differential: `${i ? pow("x", i) + " " : ""}dx/y` }));
     return { g, K: g === 1 ? "0" : `${2 * g - 2}∞`, degK: 2 * g - 2, ell: g, basis, target: g - 1,
       map: g === 1 ? "constant" : g === 2 ? "C → P¹, 2 : 1 — the hyperelliptic double cover x" : `C → P${sup(g - 1)}, 2 : 1 onto a rational normal curve of degree ${g - 1}`,
       degreeOfMap: g >= 2 ? 2 : 0, imageDegree: g >= 2 ? g - 1 : 0 };
@@ -433,6 +443,7 @@
   const weierstrassWeight = (gs) => gs.reduce((s, x, i) => s + x - (i + 1), 0);
 
   /* ---------- smooth plane curves ---------- */
+  /* "+ 0" turns the −0 of d = 1 into 0. */
   const planeGenus = (d) => ((d - 1) * (d - 2)) / 2 + 0;
   function adjunction(d) {
     const g = planeGenus(d);
@@ -444,24 +455,25 @@
   /* Holomorphic differentials of a smooth plane curve: xⁱyʲ dx / F_y with i + j ≤ d − 3. */
   function planeDifferentials(d) {
     const out = [];
-    for (let s = 0; s <= d - 3; s++) for (let j = 0; j <= s; j++) { const i = s - j; out.push(((i ? pow("x", i) : "") + (j ? pow("y", j) : "") || "1") + " dx/F_y"); }
+    for (let s = 0; s <= d - 3; s++) for (let j = 0; j <= s; j++) out.push(mono(s - j, j) + " dx/F_y");
     return out;
   }
 
   /* ---------- polynomials in three variables (homogeneous forms) ---------- */
   /* A form is a Map "i,j,k" → coefficient for xⁱ yʲ zᵏ. */
   const fkey = (i, j, k) => `${i},${j},${k}`;
+  const exps = (key) => key.split(",").map(Number);
   function form(terms) { const m = new Map(); for (const [c, i, j, k] of terms) m.set(fkey(i, j, k), (m.get(fkey(i, j, k)) || 0) + c); return m; }
-  function fmul(A, B) { const m = new Map(); for (const [a, ca] of A) { const [i, j, k] = a.split(",").map(Number); for (const [b, cb] of B) { const [p, q, r] = b.split(",").map(Number), key = fkey(i + p, j + q, k + r); m.set(key, (m.get(key) || 0) + ca * cb); } } return m; }
+  function fmul(A, B) { const m = new Map(); for (const [a, ca] of A) { const [i, j, k] = exps(a); for (const [b, cb] of B) { const [p, q, r] = exps(b), key = fkey(i + p, j + q, k + r); m.set(key, (m.get(key) || 0) + ca * cb); } } return m; }
   function fadd(A, B, s = 1) { const m = new Map(A); for (const [b, c] of B) m.set(b, (m.get(b) || 0) + s * c); return m; }
   function fpow(A, e) { let r = form([[1, 0, 0, 0]]); for (let t = 0; t < e; t++) r = fmul(r, A); return r; }
-  function fdeg(A) { let d = -Infinity; for (const [k, c] of A) if (c !== 0) d = Math.max(d, k.split(",").map(Number).reduce((a, b) => a + b, 0)); return d; }
+  function fdeg(A) { let d = -Infinity; for (const [k, c] of A) if (c !== 0) d = Math.max(d, exps(k).reduce((a, b) => a + b, 0)); return d; }
   /* Substitute x, y, z by linear forms. */
-  function fsubst(A, X, Y, Z) { let r = new Map(); for (const [key, c] of A) { if (!c) continue; const [i, j, k] = key.split(",").map(Number); r = fadd(r, fmul(fmul(fpow(X, i), fpow(Y, j)), fpow(Z, k)), c); } return r; }
-  function fevalC(A, x, y, z) { let s = cx(0); for (const [key, c] of A) { if (!c) continue; const [i, j, k] = key.split(",").map(Number); let t = cx(c); for (let a = 0; a < i; a++) t = cmul(t, x); for (let a = 0; a < j; a++) t = cmul(t, y); for (let a = 0; a < k; a++) t = cmul(t, z); s = cadd(s, t); } return s; }
+  function fsubst(A, X, Y, Z) { let r = new Map(); for (const [key, c] of A) { if (!c) continue; const [i, j, k] = exps(key); r = fadd(r, fmul(fmul(fpow(X, i), fpow(Y, j)), fpow(Z, k)), c); } return r; }
+  function fevalC(A, x, y, z) { let s = cx(0); for (const [key, c] of A) { if (!c) continue; const [i, j, k] = exps(key); let t = cx(c); for (let a = 0; a < i; a++) t = cmul(t, x); for (let a = 0; a < j; a++) t = cmul(t, y); for (let a = 0; a < k; a++) t = cmul(t, z); s = cadd(s, t); } return s; }
   const feval = (A, x, y, z = 1) => fevalC(A, cx(x), cx(y), cx(z)).re;
   /* Coefficient of yᵐ as a binary form in (x, z), stored as an ascending array in t = x/z of fixed degree. */
-  function ycoeff(A, m, deg) { const p = new Array(deg - m + 1).fill(0); for (const [key, c] of A) { const [i, j] = key.split(",").map(Number); if (j === m) p[i] += c; } return p; }
+  function ycoeff(A, m, deg) { const p = new Array(deg - m + 1).fill(0); for (const [key, c] of A) { const [i, j] = exps(key); if (j === m) p[i] += c; } return p; }
   /* Determinant of a matrix of univariate polynomials, exactly as polynomial arithmetic (DP over row subsets). */
   function polyDet(M) {
     const n = M.length;
@@ -559,7 +571,7 @@
       let clean = true;
       const points = fibres.map((fb) => {
         const xs = fb.zinf ? cx(1) : fb.t, zs = fb.zinf ? cx(0) : cx(1);
-        const ypoly = (A, deg) => { const re = new Array(deg + 1).fill(0), im = new Array(deg + 1).fill(0); for (const [key, c] of A) { const [i, j, kk] = key.split(",").map(Number); let t = cx(c); for (let a = 0; a < i; a++) t = cmul(t, xs); for (let a = 0; a < kk; a++) t = cmul(t, zs); re[j] += t.re; im[j] += t.im; } return { re, im }; };
+        const ypoly = (A, deg) => { const re = new Array(deg + 1).fill(0), im = new Array(deg + 1).fill(0); for (const [key, c] of A) { const [i, j, kk] = exps(key); let t = cx(c); for (let a = 0; a < i; a++) t = cmul(t, xs); for (let a = 0; a < kk; a++) t = cmul(t, zs); re[j] += t.re; im[j] += t.im; } return { re, im }; };
         const fy = ypoly(F2, d), gy = ypoly(G2, e);
         const scale = (y) => Math.max(1, ...gy.re.map(Math.abs), ...gy.im.map(Math.abs)) * Math.max(1, cabs(y)) ** e;
         const cand = complexRoots(fy).filter((y) => cabs(evalCpoly(gy, y)) < 1e-6 * scale(y));
@@ -609,9 +621,9 @@
   /* The Weierstrass cubic y²z = x³ + axz² + bz³ as a form. */
   const cubicForm = (E) => form([[1, 0, 2, 1], [-1, 3, 0, 0], [-E.a, 1, 0, 2], [-E.b, 0, 0, 3]]);
   function formStr(A, vars = ["x", "y", "z"]) {
-    const terms = [...A.entries()].filter(([, c]) => Math.abs(c) > 1e-12).map(([k, c]) => [k.split(",").map(Number), c]).sort((p, q) => q[0][0] - p[0][0] || q[0][1] - p[0][1]);
+    const terms = [...A.entries()].filter(([, c]) => Math.abs(c) > 1e-12).map(([k, c]) => [exps(k), c]).sort((p, q) => q[0][0] - p[0][0] || q[0][1] - p[0][1]);
     if (!terms.length) return "0";
-    return terms.map(([[i, j, k], c], n) => { const mon = pow(vars[0], i) + pow(vars[1], j) + pow(vars[2], k), mag = Math.abs(c), co = Math.abs(mag - 1) < 1e-9 && mon ? "" : fmt(mag); return (n === 0 ? (c < 0 ? "−" : "") : c < 0 ? " − " : " + ") + co + mon; }).join("");
+    return terms.map(([[i, j, k], c], n) => { const mon = pow(vars[0], i) + pow(vars[1], j) + pow(vars[2], k), mag = Math.abs(c), co = Math.abs(mag - 1) < 1e-9 && mon ? "" : fmt(mag); return signed(n, c) + co + mon; }).join("");
   }
 
   /* ---------- projective relations among sections ---------- */
@@ -651,7 +663,7 @@
   function relationStr(vec, mons, vars = VARS) {
     const big = Math.max(...vec.map(Math.abs)), lead = vec.find((c) => Math.abs(c) > 1e-6 * big), s = 1 / lead;
     const parts = vec.map((c, i) => [c * s, mons[i]]).filter(([c]) => Math.abs(c) > 1e-6);
-    return parts.map(([c, e], n) => { const mon = e.map((ex, i) => pow(vars[i], ex)).join(""), mag = Math.abs(c), co = Math.abs(mag - 1) < 1e-6 ? "" : fmt(mag); return (n === 0 ? (c < 0 ? "−" : "") : c < 0 ? " − " : " + ") + co + mon; }).join("") + " = 0";
+    return parts.map(([c, e], n) => { const mon = e.map((ex, i) => pow(vars[i], ex)).join(""), mag = Math.abs(c), co = Math.abs(mag - 1) < 1e-6 ? "" : fmt(mag); return signed(n, c) + co + mon; }).join("") + " = 0";
   }
   /* §22/48: sample E, map by [1 : x : y], and recover the cubic relation. Coefficients normalised so Y²Z has 1. */
   function ecImagePoints(E, n = 3, count = 24) {
@@ -678,7 +690,7 @@
   function veronese(d, count = 3 * d + 6) {
     const pts = Array.from({ length: count }, (_, k) => { const x = -2 + (4 * k) / (count - 1) + 0.013 * k; return Array.from({ length: d + 1 }, (_, i) => x ** i); });
     const q = d >= 2 ? relations(pts, 2, 1e-10) : { dimension: 0, kernel: [], monomials: [] };
-    return { d, target: d, basis: Array.from({ length: d + 1 }, (_, i) => (i ? pow("x", i) : "1")), points: pts, quadrics: q.dimension, expectedQuadrics: choose(d + 2, 2) - (2 * d + 1),
+    return { d, target: d, basis: Array.from({ length: d + 1 }, (_, i) => mono(i)), points: pts, quadrics: q.dimension, expectedQuadrics: choose(d + 2, 2) - (2 * d + 1),
       name: ["a point", "the line P¹ itself", "the conic XZ = Y²", "the twisted cubic", "the rational normal quartic"][d] || `the rational normal curve of degree ${d}`,
       quadricEquations: d === 2 ? q.kernel.map((v) => relationStr(v, q.monomials)) : minors(d) };
   }
@@ -694,7 +706,6 @@
   /* On E the whole tower is exact: ℓ is known for every divisor. */
   function ecStages(E, D, P = null, Q = null) {
     const d = degree(D), ell = ecEll(E, D), S = ecSum(E, D);
-    const bpf = d >= 2 || (d === 0 && S.inf) ;
     const basePoint = d === 1 ? S : null;
     const res = { deg: d, ell, basePointFree: d >= 2 || (d === 0 && S.inf), basePoint, separatesPoints: d >= 3, separatesTangents: d >= 3, veryAmple: d >= 3,
       why: d <= 0 ? "ℓ(D) ≤ 1: the map is constant (or undefined)." : d === 1 ? `|D| = {one effective divisor}: every section vanishes at the point ${ecname(S)}, a base point.`
@@ -703,7 +714,6 @@
       const DPQ = normalize([...D, { p: P, n: -1 }, { p: Q, n: -1 }], eckey), sep = ecEll(E, DPQ) === ell - 2;
       res.pair = { separated: sep, why: sep ? "some section vanishes at P but not at Q" : "every section vanishing at P also vanishes at Q: P and Q collapse under φ_D" };
     }
-    void bpf;
     return res;
   }
   /* General criteria on a genus-g curve (Hartshorne IV.3.1–3.2). */
@@ -739,7 +749,7 @@
   /* ---------- symbolic computation mode (§53) ---------- */
   /* Parse a polynomial in x with integer or decimal coefficients: "x^5 - x + 1", "x³ − 2x". */
   function parsePoly(text) {
-    let s = String(text).replace(/[−–]/g, "-").replace(/\s+/g, "").replace(/\*\*/g, "^").replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹]+/g, (m) => "^" + m.split("").map((c) => "⁰¹²³⁴⁵⁶⁷⁸⁹".indexOf(c)).join(""));
+    let s = String(text).replace(/[−–]/g, "-").replace(/\s+/g, "").replace(/\*\*/g, "^").replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹]+/g, (m) => "^" + fromSup(m));
     if (!s) throw new Error("Empty polynomial.");
     if (!/^[-+]/.test(s)) s = "+" + s;
     const coeffs = [];
@@ -848,9 +858,9 @@
     if (c.type === "elliptic") {
       const E = { a: c.a, b: c.b }, D = normalize(state.divisor || [], eckey), d = degree(D), ell = ecEll(E, D), S = ecSum(E, D);
       const atO = D.every((t) => t.p.inf);
-      const basis = atO ? ecBasisAtO(d) : null;
+      const basis = atO ? ecBasisAtO(d) : null, mapD = d >= 1 ? ecMap(E, d) : null;
       Object.assign(out, { g: 1, D, divisor: ecstr(D), deg: d, ell, exact: true, basis: basis ? basis.map((b) => b.label) : null, poles: basis ? basis.map((b) => b.pole) : null, sum: S, sumText: ecname(S), rr: riemannRoch(ell, d, 1), K: "0", degK: 0, nonspecial: d > 0,
-        stages: ecStages(E, D), map: d >= 1 ? { target: d - 1, ...ecMap(E, d), description: atO ? ecMap(E, d).description : `${ecMap(E, d).description.split(":")[0]}; D ∼ ${d - 1}O + [${ecname(S)}], so φ_D is φ_${d}O up to a translation of E` } : { target: -1, description: ell ? "constant" : "L(D) = 0: no map" },
+        stages: ecStages(E, D), map: d >= 1 ? { target: d - 1, ...mapD, description: atO ? mapD.description : `${mapD.description.split(":")[0]}; D ∼ ${d - 1}O + [${ecname(S)}], so φ_D is φ_${d}O up to a translation of E` } : { target: -1, description: ell ? "constant" : "L(D) = 0: no map" },
         basisNote: atO ? null : `D is not supported at O, so the page states ℓ(D) = ${ell} from Riemann–Roch and the group law (sum of D = ${ecname(S)}) instead of writing a basis.` });
       return out;
     }
@@ -902,7 +912,7 @@
     }
     throw new Error(`Unknown curve type ${c.type}`);
   }
-  const hkey = (p) => (p.inf === true ? "∞" : p.inf === "+" ? "∞₊" : p.inf === "-" ? "∞₋" : `${Math.round(p.x * 1e6) / 1e6},${Math.round(p.y * 1e6) / 1e6}`);
+  const hkey = (p) => (p.inf === true ? "∞" : p.inf === "+" ? "∞₊" : p.inf === "-" ? "∞₋" : coordKey(p.x, p.y));
   const hname = (p) => (p.inf ? hkey(p) : `(${fmt(p.x, 3)}, ${fmt(p.y, 3)})`);
   function hstr(D) {
     const nP = D.find((t) => t.p.inf === "+"), nM = D.find((t) => t.p.inf === "-");
@@ -923,7 +933,7 @@
   function planeBasis(d, n) {
     /* Monomials xⁱyʲ (i + j ≤ n) with the multiples of F removed: for n ≥ d drop those divisible by the leading monomial. */
     const out = [];
-    for (let s = 0; s <= n; s++) for (let j = 0; j <= s; j++) { const i = s - j; if (n >= d && j >= d) continue; out.push((i ? pow("x", i) : "") + (j ? pow("y", j) : "") || "1"); }
+    for (let s = 0; s <= n; s++) for (let j = 0; j <= s; j++) { if (n >= d && j >= d) continue; out.push(mono(s - j, j)); }
     return out;
   }
 
@@ -976,11 +986,11 @@
     const c = state.curve;
     if (c.type === "P1") return { name: "the projective line", math: "\\mathbf P^1" };
     if (c.type === "elliptic") return { name: `the elliptic curve y squared equals x cubed ${c.a < 0 ? "minus" : "plus"} ${Math.abs(c.a)} x ${c.b < 0 ? "minus" : "plus"} ${Math.abs(c.b)}`, math: `y^2 = x^3 ${c.a < 0 ? "-" : "+"} ${Math.abs(c.a)}x ${c.b < 0 ? "-" : "+"} ${Math.abs(c.b)}` };
-    if (c.type === "hyperelliptic") return { name: `a hyperelliptic curve of genus ${r.g}`, math: `y^2 = ${pstr(c.f).replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹]+/g, (m) => "^{" + m.split("").map((ch) => "⁰¹²³⁴⁵⁶⁷⁸⁹".indexOf(ch)).join("") + "}").replace(/−/g, "-")}` };
+    if (c.type === "hyperelliptic") return { name: `a hyperelliptic curve of genus ${r.g}`, math: `y^2 = ${pstr(c.f).replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹]+/g, (m) => "^{" + fromSup(m) + "}").replace(/−/g, "-")}` };
     if (c.type === "plane") return { name: `a smooth plane curve of degree ${c.d}`, math: `\\deg C = ${c.d}` };
     return { name: `an abstract curve of genus ${c.g}`, math: `g = ${c.g}` };
   }
-  const tex = (s) => String(s).replace(/−/g, "-").replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹]+/g, (m) => "^{" + m.split("").map((ch) => "⁰¹²³⁴⁵⁶⁷⁸⁹".indexOf(ch)).join("") + "}").replace(/∞/g, "\\infty ").replace(/ℓ/g, "\\ell");
+  const tex = (s) => String(s).replace(/−/g, "-").replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹]+/g, (m) => "^{" + fromSup(m) + "}").replace(/∞/g, "\\infty ").replace(/ℓ/g, "\\ell");
   function report(state) {
     const r = analyse(state), cw = curveWords(state, r), date = state.date || "";
     const ellText = r.exact ? String(r.ell) : `between ${r.range.min} and ${r.range.max}`;
