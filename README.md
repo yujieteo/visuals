@@ -15,6 +15,7 @@ python3 scripts/check.py <slug>        # one visual's checks, from its folder
 python3 scripts/check.py --changed     # the visuals your branch changes (against origin/main)
 python3 scripts/check.py --all         # every visual
 python3 scripts/check_repo.py          # every visual.json, the folder rules, no absolute home paths, no tracked artifacts
+python3 scripts/refresh.py <slug>      # refresh one visual's data from its source; --dry-run writes nothing
 python3 scripts/build_catalogue.py     # build/catalogue.json and build/index.html, a gallery to browse
 python3 scripts/sync_template.py <site>/templates/beamdswitch.js  # copy the site's report template into every visual that carries it
 python3 scripts/new_visual.py <slug> --title "..." --summary "..." [--mathjax]  # a new visual with every mechanical part

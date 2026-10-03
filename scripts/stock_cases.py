@@ -1,14 +1,18 @@
 """The shared builder of the stock cash-conversion pages (airbnb, arm, marvell, panw).
 
-Each page's folder holds its data (raw.json, SEC company facts; meta.json), its beamdswitch.js and a
-build.py with its own CASE (name, ticker, CIK and the page's words), which calls main() here. The
+Each page's folder holds its data (raw.json, SEC company facts; meta.json), its beamdswitch.js, a
+build.py with its own CASE (name, ticker, CIK and the page's words), which calls main() here, and a
+refresh.py, which calls refresh() here. A refresh sends SEC the contact in the SEC_CONTACT environment
+variable as its User-Agent, as SEC's fair-access policy asks; it is never committed. The
 narrated report scripts/templates/stock-cases-report.js is shared by all four and inlined unchanged.
 """
 import argparse
 import json
+import os
 from html import escape
 from pathlib import Path
 
+import refresh_kit
 from page_parts import strip_types
 from style_guide import THEME_SCRIPT, root_css
 
@@ -24,6 +28,7 @@ DECK_HINT = ("The beamdswitch button saves the measure you pick below as a narra
 SEC = "https://data.sec.gov/api/xbrl/companyfacts/CIK{cik:010d}.json"
 REVENUE = "RevenueFromContractWithCustomerExcludingAssessedTax"
 CASH = "NetCashProvidedByUsedInOperatingActivities"
+CONTACT = "SEC_CONTACT"  # the environment variable with the name and email SEC's User-Agent must declare
 
 
 def annual_facts(raw, tag):
@@ -40,15 +45,20 @@ def annual_facts(raw, tag):
 
 def rows_for(folder, case):
     raw = json.loads((folder / "raw.json").read_text())
+    return raw, rows_of(raw, folder.name)
+
+
+def rows_of(raw, name):
+    """The latest four fiscal years that have both annual revenue and operating cash flow."""
     revenue, cash = annual_facts(raw, REVENUE), annual_facts(raw, CASH)
     ends = sorted(set(revenue) & set(cash))[-4:]
-    assert len(ends) == 4, f"{folder.name}: expected four annual revenue and cash-flow pairs"
+    assert len(ends) == 4, f"{name}: expected four annual revenue and cash-flow pairs"
     rows = []
     for end in ends:
         rev, ocf = revenue[end], cash[end]
         rows.append({"fy": end[:4], "end": end, "revenue": rev["val"], "operating_cash_flow": ocf["val"],
                      "cash_margin": round(100 * ocf["val"] / rev["val"], 1), "filed": max(rev["filed"], ocf["filed"])})
-    return raw, rows
+    return rows
 
 
 def toon(rows):
@@ -107,11 +117,40 @@ def verify(folder, case):
     print(f"verified: {case['ticker']}, 4 audited annual rows, 1 interactive SVG, 3 read-only tools and a beamdswitch deck")
 
 
+def refresh(source, folder, case):
+    """refresh_kit's Update for one stock page: SEC's company facts as served, checked for the four rows the page shows."""
+    url = SEC.format(cik=case["cik"])
+    contact = os.environ.get(CONTACT, "").strip()
+    refresh_kit.require(contact, f"{CONTACT} is not set: SEC asks for a name and email in the User-Agent, such as {CONTACT}='Jane Tan jane@example.com'")
+    text = source.text(url, headers={"User-Agent": contact})
+    raw = refresh_kit.parse_json(url, text)
+    refresh_kit.require(isinstance(raw, dict) and str(raw.get("cik", "")).lstrip("0") == str(case["cik"]),
+                        f"{url}: not the company facts of CIK {case['cik']}")
+    try:
+        rows = rows_of(raw, folder.name)
+    except (AssertionError, KeyError, TypeError, ValueError, ZeroDivisionError) as error:
+        raise refresh_kit.Failed(f"{url}: no four annual {REVENUE} and {CASH} pairs ({error or type(error).__name__})") from error
+    try:
+        old = {row["fy"]: row for row in rows_for(folder, case)[1]}
+    except (OSError, AssertionError, KeyError, TypeError, ValueError):
+        old = {}  # no current data to compare with: every row is new
+    new = {row["fy"]: row for row in rows}
+    shown = ("revenue", "operating_cash_flow", "cash_margin")
+    changes = [{"kind": "added", "item": f"FY{fy}", "detail": f"revenue {new[fy]['revenue']}, cash margin {new[fy]['cash_margin']}%"} for fy in new if fy not in old]
+    changes += [{"kind": "removed", "item": f"FY{fy}", "detail": "older than the latest four years"} for fy in old if fy not in new]
+    changes += [{"kind": "changed", "item": f"FY{fy}", "detail": "; ".join(f"{key} {old[fy][key]} -> {new[fy][key]}" for key in shown if old[fy][key] != new[fy][key])}
+                for fy in new if fy in old and any(old[fy][key] != new[fy][key] for key in shown)]
+    notes = ["The headline and summary in build.py's CASE and visual.json are fixed text: check them against the new rows."] if changes else []
+    day = refresh_kit.today(source)
+    return refresh_kit.Update(files={"raw.json": text}, fetched=day, changes=changes, build=["build.py", "--fetched", day], notes=notes, source=url)
+
+
 def main(folder, case):
     """Build the page in ``folder`` from ``case`` (or only check it with --verify), then verify it."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--verify", action="store_true")
-    parser.add_argument("--fetched", default="2026-09-28")
+    parser.add_argument("--fetched", default=json.loads((folder / "meta.json").read_text())["fetched"],
+                        help="the date of raw.json (default: meta.json's, so a rebuild keeps it)")
     args = parser.parse_args()
     if not args.verify:
         write(folder, case, args.fetched)

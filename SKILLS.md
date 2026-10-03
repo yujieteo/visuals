@@ -16,6 +16,33 @@ What a visual must be (artifact contract, state and export, interaction and acce
 3. Put its tests in its own `tests/` (`*.test.mjs` for `node --test`, `test_*.py` for unittest). A test reads only its own folder and the shared tooling, never another visual's folder: CI runs it on a checkout without them. A test runs the page's code and asserts on what it does; the `sourcetests` step fails a test that only searches the page's source text. Time any test you add and keep it fast.
 4. Check it: `python3 scripts/check.py <slug>`, then `python3 scripts/check.py --changed` for everything the branch touches. Run `npm ci` once first, so the type and dead-code checks run too. Fix a failure; do not add it to `allow` in `visual.json` unless the finding is deliberate, and then say why in the pull request.
 
+## Refresh data
+
+Refresh a visual's data with one command, never by hand: `python3 scripts/refresh.py <slug>`. Each folder with a `refresh.py` has a refresh.
+
+1. Run `python3 scripts/refresh.py <slug>`. It reads the source, checks the data against the visual's schema and compares it with the current data. Then it writes the changed data and `visual.json`'s `fetched`, runs the builder and prints a TOON summary. Add `--dry-run` to print the summary and write nothing.
+2. Read the summary. Its `notes` say what the new numbers can make false, such as fixed claims in a builder.
+3. Read the diff of the page, run `python3 scripts/check.py <slug>`, and put the summary in the pull request. A data-only refresh takes CI only (Review by risk, below).
+
+The exit code is 2, and nothing is written, when the source fails, answers empty or with a bot check, or the data does not match the schema. When the builder fails after the write, every file in the folder goes back to what it was. Never get past a bot check: try again later.
+
+The stock pages (`airbnb`, `arm`, `marvell`, `panw`) read SEC, which asks for a name and an email in the User-Agent. Set them in the `SEC_CONTACT` environment variable, such as `SEC_CONTACT='Jane Tan jane@example.com'`. Never commit them. If `SEC_CONTACT` is not set, the refresh exits 2 and names the variable.
+
+A new refresh is `viz/<slug>/refresh.py` with a `refresh(source, folder, args)` that reads only through `source` and returns a `refresh_kit.Update`; `scripts/refresh_kit.py` says what each field means. Its tests replay recorded answers with `refresh_kit.Replay`, never the network, and the visual lists `scripts/refresh_kit.py` in `uses`. `tampines-library-events` is the one exception: its sources are JSON POST searches, so it reads them with its own `request()`, and its tests mock that function.
+
+These visuals have data from an outside source but no refresh script, because a person must do the steps:
+
+| Visual | Why a person refreshes it |
+| --- | --- |
+| `fpl-expected-goals` | No builder: the page text tells the story of one dated gameweek snapshot, so new data needs new text. |
+| `tampines-food-map`, `tampines-food` | The ratings come from Google Maps in a browser, and the picks from food guides that a person reads. |
+| `work-lanyards` | A hand-made snapshot of Amazon.sg listings, which answer a script with a bot check. |
+| `social-values-surveydata`, `graduate-employment-survey`, `tourist-attractions` | A provided dataset of one survey wave. A new wave is a new dataset, and the claims in `build.py` are about this one. |
+| `manchester-city-finances` | The figures come from published accounts and news articles that a person reads. |
+| `vgc-protect-fakeout-pivot-trainer` | The team list of one finished tournament: the data does not change. |
+
+The other visuals use fixed sources, such as papers, books or their own examples, so they have no refresh.
+
 ## What the checks decide
 
 These rules are scripts, so do not check them by reading. `scripts/check.py` runs them for each visual, CI runs them for each changed visual, and [docs/monorepo.md](docs/monorepo.md#checks) lists each step.
@@ -88,4 +115,4 @@ To make a visual by hand instead, create `viz/<slug>/` with `index.html`, the da
 
 ## Review by risk
 
-The diff decides how a pull request is reviewed. A data-only change (a visual's data and the page its builder regenerates from it), a documentation-only change, or a mechanical one takes CI only: open a plain pull request and land it once its CI passes on that commit. Mechanical means moving or copying already-reviewed content without changing its logic, tests or tooling: a byte-identical import of a repository's main with its history, a regenerated file, a copied page, a template synced by `scripts/sync_template.py`. Anything that touches a page's logic, a builder, `src/`, tests, CI or shared tooling keeps the full no-mistakes pipeline, and so does an import that also edits logic, tests or tooling to fit the monorepo.
+The diff decides how a pull request is reviewed. A data-only change (a visual's data and the page its builder regenerates from it, such as a `scripts/refresh.py` run), a documentation-only change, or a mechanical one takes CI only: open a plain pull request and land it once its CI passes on that commit. Mechanical means moving or copying already-reviewed content without changing its logic, tests or tooling: a byte-identical import of a repository's main with its history, a regenerated file, a copied page, a template synced by `scripts/sync_template.py`. Anything that touches a page's logic, a builder, `src/`, tests, CI or shared tooling keeps the full no-mistakes pipeline, and so does an import that also edits logic, tests or tooling to fit the monorepo.

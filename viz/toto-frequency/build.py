@@ -2,7 +2,7 @@
 """Count how often each TOTO ball was drawn and embed the result in index.html.
 
 Inputs, checked in next to this file:
-  draws.csv       one row per draw from Singapore Pools (written by fetch.py)
+  draws.csv       one row per draw from Singapore Pools (written by refresh.py)
   beamdswitch.js  the site's standard beamdswitch report template, unchanged
   report.js       the page's numbers as a beamdswitch report
 
@@ -35,7 +35,7 @@ BANDS = [
     {"id": "b3", "label": "More than 10", "min": 11, "max": None},
 ]
 METHOD = [
-    "Each row is one TOTO draw as Singapore Pools publishes it: the draw list names every draw and its date, and each draw's own results page gives the six winning numbers and the additional number. fetch.py read those pages on the retrieval date; no draw was typed by hand.",
+    "Each row is one TOTO draw as Singapore Pools publishes it: the draw list names every draw and its date, and each draw's own results page gives the six winning numbers and the additional number. refresh.py read those pages on the retrieval date; no draw was typed by hand.",
     "A window counts back from the latest draw in the data: 3 months, 6 months or 1 year means every draw dated after the same calendar day that many months earlier, up to and including the latest draw.",
     "A ball's count is the number of draws in the window whose six winning numbers include it. The additional number is drawn after them and is excluded from that count.",
     "Colour bands follow the counts asked for: 3 or fewer, more than 3 (4 or 5), more than 5 (6 to 10) and more than 10 (11 or more).",
@@ -84,7 +84,7 @@ def read_draws():
     draws.sort(key=lambda d: d["draw_no"], reverse=True)
     numbers = [d["draw_no"] for d in draws]
     if numbers != list(range(numbers[0], numbers[0] - len(numbers), -1)):
-        fail("draw numbers have a gap; run fetch.py again")
+        fail("draw numbers have a gap; run refresh.py again")
     if [d["date"] for d in draws] != sorted((d["date"] for d in draws), reverse=True):
         fail("draw dates are out of order")
     return draws
@@ -99,7 +99,7 @@ def window_summary(draws, latest, wid, label, months):
     after = months_before(latest, months)
     inside = [d for d in draws if date.fromisoformat(d["date"]) > after]
     if date.fromisoformat(draws[-1]["date"]) > after:
-        fail(f"draws.csv does not reach back {label}; run fetch.py again")
+        fail(f"draws.csv does not reach back {label}; run refresh.py again")
     return {
         "id": wid,
         "label": label,

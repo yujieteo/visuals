@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build the Singapore haze map from committed data.gov.sg PSI/PM2.5 responses.
 
-Run fetch.py first to refresh raw.json. This builder reads that file plus the
+Run refresh.py to refresh raw.json. This builder reads that file plus the
 URA planning-area boundary GeoJSON, then writes index.html and meta.json.
 """
 import argparse
