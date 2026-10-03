@@ -1,0 +1,509 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" href="data:,">
+<meta name="description" content="Place fasteners on a canvas or in a table and get the shear, axial and area centroids, polar moment J, Ixx, Iyy, Ixy and principal axes, then distribute a general 3D eccentric load to every fastener by the elastic method. Runs offline in your browser.">
+<title>Fastener Pattern CG Tracker</title>
+<script id="site-theme">try { var t = localStorage.getItem("theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (e) {}</script>
+<style>
+:root{--bg:#fff;--fg:#1d1d1f;--muted:#6e6e73;--faint:#a1a1a6;--surface:#f5f5f7;--border:#d2d2d7;--control:#86868b;--grid:#e8e8ed;--focus:#0071e3;--shear:#2a78d6;--axial:#eb6834;--area:#1baf7a;--load:#8e44ad;--reaction:#1d1d1f;--tension:#eb6834;--bad:#c4261d;--warn:#b26b00;--note:#2a78d6;--ok:#1b8a5a;--sans:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;--mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;--r:.5rem;color-scheme:light dark}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--faint:#6e6e73;--surface:#2c2c2e;--border:#48484a;--control:#8e8e93;--grid:#333336;--focus:#2997ff;--shear:#3987e5;--axial:#e0763f;--area:#199e70;--load:#b77fdc;--reaction:#f5f5f7;--tension:#e0763f;--bad:#ff6961;--warn:#e5a13a;--note:#5aa2f0;--ok:#3cc98a}}
+:root[data-theme="dark"]{--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--faint:#6e6e73;--surface:#2c2c2e;--border:#48484a;--control:#8e8e93;--grid:#333336;--focus:#2997ff;--shear:#3987e5;--axial:#e0763f;--area:#199e70;--load:#b77fdc;--reaction:#f5f5f7;--tension:#e0763f;--bad:#ff6961;--warn:#e5a13a;--note:#5aa2f0;--ok:#3cc98a;color-scheme:dark}
+:root[data-theme="light"]{color-scheme:light}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 var(--sans);letter-spacing:-.011em;-webkit-font-smoothing:antialiased}
+main{width:min(100% - 2rem,80rem);margin:auto;padding:clamp(1.25rem,5vw,3rem) 0 3rem}
+a{color:inherit;text-underline-offset:.18em}
+h1{font-size:clamp(2rem,6vw,3.25rem);line-height:1.04;letter-spacing:-.045em;margin:.35rem 0 .8rem;max-width:20ch}
+h2{font-size:1.4rem;letter-spacing:-.02em;margin:0 0 .35rem;line-height:1.2}
+h3{font:600 .72rem/1.4 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 .5rem}
+p{margin:.5rem 0;max-width:70ch}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+button:disabled{cursor:not-allowed;opacity:.5}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.eyebrow{font:600 .75rem/1.4 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0;display:flex;flex-wrap:wrap;gap:.25rem .9rem}
+.eyebrow a{text-decoration:none}
+.eyebrow a:hover{text-decoration:underline}
+.lede{font-size:1.125rem;max-width:66ch}
+.muted{color:var(--muted)}
+.small{font-size:.875rem}
+.prelim{font-size:.875rem;border-left:3px solid var(--warn);padding:.2rem .7rem;margin:.75rem 0}
+section{margin-top:clamp(2rem,6vw,3.25rem);padding-top:1.25rem;border-top:1px solid var(--border)}
+.btn{display:inline-flex;align-items:center;gap:.35rem;border:1px solid var(--control);background:var(--bg);border-radius:999px;padding:.25rem .8rem;min-height:2.25rem;font-size:.875rem;white-space:nowrap}
+@media (hover:hover){.btn:hover:not(:disabled){background:var(--surface)}}
+.btn[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.btn.primary{background:var(--fg);color:var(--bg);border-color:var(--fg);font-weight:600}
+.btn.danger{color:var(--bad)}
+.toolbar{display:flex;flex-wrap:wrap;gap:.6rem 1.1rem;align-items:center;margin:1.25rem 0 .75rem;padding:.6rem 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.group{display:flex;flex-wrap:wrap;gap:.35rem;align-items:center;min-width:0}
+.label{font:600 .7rem var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-right:.2rem}
+select,input[type="number"],input[type="text"]{border:1px solid var(--control);background:var(--bg);border-radius:var(--r);padding:.3rem .5rem;min-height:2.25rem;font-size:.875rem;min-width:0;width:100%}
+input[type="number"]{font-variant-numeric:tabular-nums}
+.toolbar select,.toolbar input{width:auto}
+#name{width:min(18rem,100%)}
+#precision{width:4.2rem}
+[aria-invalid="true"]{border-color:var(--bad)!important;box-shadow:0 0 0 1px var(--bad)}
+.seg{display:inline-flex;border:1px solid var(--control);border-radius:999px;overflow:hidden}
+.seg button{border:0;background:var(--bg);padding:.25rem .8rem;min-height:2.25rem;font-size:.875rem}
+.seg button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
+.banner{border:1px solid var(--bad);border-radius:var(--r);padding:.55rem .8rem;margin:.5rem 0;font-size:.9rem;display:flex;flex-wrap:wrap;gap:.5rem;align-items:center}
+.banner[hidden]{display:none}
+.app{display:grid;gap:1.25rem 1.75rem;grid-template-columns:minmax(0,1fr) minmax(0,23rem);align-items:start}
+@media (max-width:62rem){.app{grid-template-columns:minmax(0,1fr)}}
+.figure{margin:0;min-width:0}
+.stage{position:relative;border:1px solid var(--border);border-radius:calc(var(--r)*1.5);overflow:hidden;background:var(--bg)}
+#canvas{display:block;width:100%;height:clamp(20rem,58vh,36rem);touch-action:none;cursor:crosshair}
+#canvas:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
+.canvas-tools{display:flex;flex-wrap:wrap;gap:.4rem .9rem;align-items:center;margin:.6rem 0}
+.canvas-tools input[type="number"]{width:5.5rem}
+.legend{display:flex;flex-wrap:wrap;gap:.3rem 1rem;list-style:none;margin:.5rem 0 0;padding:0;font-size:.8125rem;color:var(--muted)}
+.legend li{display:flex;align-items:center;gap:.35rem}
+.legend svg{flex:none}
+.hint{font-size:.8125rem;color:var(--muted);margin:.35rem 0 0}
+.panel{display:flex;flex-direction:column;gap:1rem;min-width:0}
+.card{border:1px solid var(--border);border-radius:calc(var(--r)*1.5);padding:.85rem;min-width:0}
+.row{display:grid;gap:.4rem;grid-template-columns:repeat(2,minmax(0,1fr));align-items:end}
+.row+.row{margin-top:.5rem}
+.row.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+label.f{display:flex;flex-direction:column;gap:.15rem;font-size:.75rem;color:var(--muted);min-width:0}
+label.f[hidden]{display:none}
+label.f span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.note{font-size:.8125rem;color:var(--muted);margin:.35rem 0 0}
+.convention{display:flex;gap:.8rem;align-items:center}
+.convention svg{flex:none}
+.convention ul{margin:0;padding-left:1rem;font-size:.8125rem;color:var(--muted)}
+details.gen>summary{cursor:pointer;font-weight:600;font-size:.9rem;min-height:2.25rem;display:flex;align-items:center}
+.gen .body{border:1px solid var(--border);border-radius:var(--r);padding:.7rem;margin-top:.3rem}
+.gen .actions{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.6rem}
+.table-wrap{position:relative;overflow-x:auto;margin-top:.5rem;border:1px solid var(--border);border-radius:var(--r)}
+table{border-collapse:collapse;width:100%;font-size:.8125rem}
+th,td{text-align:left;padding:.35rem .5rem;border-bottom:1px solid var(--grid);vertical-align:middle}
+th{font-weight:600;background:var(--surface);white-space:nowrap}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+#fastener-table{min-width:58rem}
+#fastener-table input{min-height:1.9rem;padding:.15rem .35rem}
+#fastener-table td{padding:.2rem .3rem}
+#fastener-table tr.selected td{background:color-mix(in srgb,var(--focus) 12%,transparent)}
+#fastener-table input.override{border-color:var(--axial);font-weight:600}
+#fastener-table input::placeholder{color:var(--faint)}
+.results-grid{display:grid;gap:1.25rem;grid-template-columns:repeat(auto-fit,minmax(min(100%,22rem),1fr))}
+.stale{opacity:.35}
+.tag{display:inline-block;font:600 .68rem var(--mono);letter-spacing:.03em;border:1px solid var(--border);border-radius:999px;padding:0 .45rem;margin-left:.3rem;color:var(--muted);white-space:nowrap}
+.tag.unloading{color:var(--axial);border-color:var(--axial)}
+.tag.tension{color:var(--tension)}
+.issues{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.45rem}
+.issues li{border-left:3px solid var(--border);padding:.15rem .6rem;font-size:.875rem}
+.issues li.error{border-color:var(--bad)}
+.issues li.warning{border-color:var(--warn)}
+.issues li.note{border-color:var(--note)}
+.issues .id{font:600 .75rem var(--mono);margin-right:.35rem}
+.issues li.error .id{color:var(--bad)}
+.issues li.warning .id{color:var(--warn)}
+.issues li.note .id{color:var(--note)}
+.issues .detail{display:block;color:var(--muted)}
+.issues button.link{border:0;background:none;padding:0;text-decoration:underline;color:inherit;font:inherit}
+.counts{display:flex;gap:.8rem;font-size:.8125rem;color:var(--muted);margin:0 0 .5rem}
+.pass{color:var(--ok);font-weight:600}
+.fail{color:var(--bad);font-weight:600}
+.blocked{border:1px dashed var(--bad);border-radius:var(--r);padding:.8rem;color:var(--muted)}
+.verify-case>summary{cursor:pointer}
+code{font:.875em var(--mono)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+dialog{border:1px solid var(--border);border-radius:calc(var(--r)*1.5);background:var(--bg);color:var(--fg);max-width:min(30rem,calc(100% - 2rem))}
+dialog::backdrop{background:rgb(0 0 0/.35)}
+dialog .actions{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.8rem}
+.method li{margin:.3rem 0}
+.trace-pick{max-width:18rem}
+#trace h3{margin:1.4rem 0 .3rem}
+#trace h4{font-size:1rem;margin:1rem 0 .3rem;letter-spacing:-.01em}
+#trace ul{margin:.3rem 0;padding-left:1.2rem;max-width:70ch}
+.hand-tools{align-items:flex-end}
+.msg{font-size:.8125rem;color:var(--muted);min-height:1.2em;margin:.35rem 0}
+.msg.ok{color:var(--ok)}
+.msg.bad{color:var(--bad)}
+#fallback textarea{width:100%;min-height:10rem;font:.8125rem/1.4 var(--mono);background:var(--surface);color:var(--fg);border:1px solid var(--control);border-radius:var(--r);padding:.5rem}
+#print-report{display:none}
+@media print{
+  :root{color-scheme:light}
+  body{background:#fff;color:#1d1d1f;font-size:10pt}
+  body>main,dialog,#storage-banner{display:none!important}
+  #print-report{display:block!important;color:#1d1d1f}
+  #print-report h1{font-size:18pt;margin:.2rem 0}
+  #print-report h2{font-size:12pt;margin:0 0 .3rem;border-bottom:1px solid #d2d2d7;padding-bottom:.15rem}
+  #print-report h3{font:600 8pt/1.4 monospace;text-transform:uppercase;letter-spacing:.05em;color:#6e6e73;margin:.5rem 0 .2rem}
+  #print-report .r-sec{break-inside:avoid;page-break-inside:avoid;margin:0 0 .6rem}
+  #print-report .r-sec[data-section="trace"],#print-report .r-sec[data-section="warnings"],#print-report .r-sec[data-section="inputs"]{break-inside:auto}
+  #print-report .r-sec[data-section="trace"] table,#print-report .r-sec[data-section="inputs"] table{break-inside:avoid}
+  #print-report table{border-collapse:collapse;width:100%;font-size:8pt;margin:.2rem 0}
+  #print-report th,#print-report td{border-bottom:1px solid #e8e8ed;padding:.12rem .3rem;text-align:left;vertical-align:top}
+  #print-report th{background:#f5f5f7}
+  #print-report td.num,#print-report th.num{text-align:right;font-variant-numeric:tabular-nums}
+  #print-report .r-conv{display:flex;gap:1rem;align-items:center}
+  #print-report .r-diagram svg{width:100%;height:auto;max-height:120mm}
+  #print-report .r-prelim{border-left:3px solid #b26b00;padding-left:.5rem}
+  #print-report .r-eyebrow{font:600 8pt monospace;color:#6e6e73;margin:0}
+  #print-report .r-foot{border-top:1px solid #d2d2d7;margin-top:.6rem;padding-top:.3rem;font-size:8pt}
+  #print-report .r-refs{margin:.2rem 0;padding-left:1.2rem}
+}
+.plate-block+.plate-block{margin-top:.8rem;padding-top:.6rem;border-top:1px solid var(--grid)}
+.plate-block h4{margin:0 0 .3rem;font-size:.85rem;display:flex;align-items:center;gap:.4rem;flex-wrap:wrap}
+label.check{display:flex;align-items:center;gap:.45rem;font-weight:600;font-size:.9rem;min-height:2.25rem;cursor:pointer}
+label.check input{width:1.05rem;height:1.05rem;margin:0}
+.sub{border-left:2px solid var(--grid);padding-left:.7rem;margin:.1rem 0 .6rem}
+.sub[hidden]{display:none}
+details.torque{margin-top:.5rem}
+#override-editor .row{margin-top:.4rem}
+#override-editor h4{margin:.8rem 0 .2rem;font-size:.85rem}
+input.override{border-color:var(--axial);font-weight:600}
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(11rem,1fr));gap:.6rem 1.25rem;margin:.5rem 0;padding:0;list-style:none}
+.stats-row li{border-top:1px solid var(--border);padding-top:.4rem;min-width:0}
+.stats-row b{display:block;font-size:1.3rem;letter-spacing:-.03em;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.stats-row span{font-size:.8125rem;color:var(--muted)}
+.presets{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.5rem}
+.formula{font:.8125rem var(--mono);color:var(--fg)}
+.inline-issue{display:inline-block;font:600 .66rem var(--mono);border-radius:999px;padding:0 .4rem;margin-left:.3rem;border:1px solid currentColor;vertical-align:middle;white-space:nowrap}
+.inline-issue.error{color:var(--bad)}
+.inline-issue.warning{color:var(--warn)}
+.inline-issue.note{color:var(--note)}
+.critical{border:1px solid var(--border);border-left:4px solid var(--axial);border-radius:var(--r);padding:.6rem .8rem;margin:.5rem 0 1rem;font-size:.95rem}
+.critical b.ms{font-size:1.25rem;font-variant-numeric:tabular-nums}
+.ms-neg{color:var(--bad);font-weight:600}
+td.status{color:var(--muted);font-size:.78rem}
+#fastener-rows th .inline-issue{margin-left:.2rem}
+.method{max-width:78ch}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <p class="eyebrow"><a href="../../visuals.html">Visuals</a><span>Structural engineering</span><span>Runs offline in your browser</span></p>
+  <h1>Fastener Pattern CG Tracker</h1>
+  <p class="lede">Place a fastener group on the canvas or in the table. The page reports its shear, axial and area centroids, polar moment J, Ixx, Iyy, Ixy and principal axes, reduces a general 3D load applied anywhere to the group, and shares it among the fasteners by the elastic method. Key in shear and tension allowables to get each fastener's exact load-scale-factor margin of safety under a shear-tension interaction, and the critical fastener. Every number is recalculated as you edit.</p>
+  <p class="prelim"><b>Preliminary sizing — verify against the governing specification.</b> The tool ships no allowables and follows no single design code.</p>
+</header>
+
+<div class="toolbar" role="group" aria-label="Pattern">
+  <div class="group"><label class="label" for="name">Pattern</label><input id="name" type="text" autocomplete="off"></div>
+  <div class="group" role="group" aria-label="Unit system"><span class="label">Units</span>
+    <span class="seg"><button type="button" data-units="N-mm" aria-pressed="true">N, mm</button><button type="button" data-units="in-lbf" aria-pressed="false">lbf, in</button></span>
+  </div>
+  <div class="group"><label class="label" for="precision">Sig. figs</label><input id="precision" type="number" min="1" max="15" step="1"></div>
+  <div class="group"><button class="btn" type="button" id="new-example">New from example</button></div>
+</div>
+
+<div class="toolbar" role="group" aria-label="Library and files">
+  <div class="group"><label class="label" for="library">Library</label><select id="library" aria-describedby="library-note"></select>
+    <button class="btn" type="button" id="lib-load">Load</button><button class="btn" type="button" id="lib-save">Save</button><button class="btn danger" type="button" id="lib-delete">Delete</button></div>
+  <div class="group"><span class="label">File</span>
+    <button class="btn" type="button" id="import">Import JSON or Markdown…</button><input id="import-file" type="file" accept=".json,.md,.markdown,application/json,text/markdown,text/plain" hidden>
+    <button class="btn" type="button" id="export-json">Export JSON</button><button class="btn" type="button" id="export-md">Export Markdown report</button></div>
+</div>
+<p id="library-note" class="note">The working pattern autosaves in this browser on every edit, separately from the named library.</p>
+<div id="storage-banner" class="banner" role="alert" hidden><span id="storage-message"></span><button class="btn" type="button" id="storage-export">Export JSON</button></div>
+
+<div class="app">
+  <div class="figure">
+    <div class="stage">
+      <canvas id="canvas" tabindex="0" role="application" aria-label="Fastener pattern. Click empty space to add a fastener, drag a fastener or the load point to move it. With a fastener selected, arrow keys move it by the snap step and Delete removes it." aria-describedby="canvas-status"></canvas>
+    </div>
+    <p id="canvas-status" class="sr" aria-live="polite"></p>
+    <ul class="legend" id="legend" aria-label="Legend"></ul>
+    <div class="canvas-tools">
+      <div class="group"><button class="btn" type="button" id="snap" aria-pressed="true">Snap to grid</button><label class="label" for="snap-step">Step</label><input id="snap-step" type="number" min="0" step="any"><span class="small muted" data-unit="length"></span></div>
+      <div class="group"><button class="btn" type="button" id="add-fastener">+ Fastener</button><button class="btn danger" type="button" id="delete-fastener" disabled>Delete selected</button><button class="btn" type="button" id="fit-plate">Fit plate to pattern</button></div>
+    </div>
+    <p class="hint">Click empty space to add a fastener; drag a fastener or the load point P to move it. Arrow keys move the selected fastener by one snap step (Shift ×10); Delete removes it.</p>
+
+    <details class="gen" id="generators">
+      <summary>Generators: rectangular array, staggered rows, bolt circle, mirror</summary>
+      <div class="body">
+        <div class="row"><label class="f"><span>Generator</span><select id="gen-kind">
+          <option value="rect">Rectangular array</option><option value="stagger">Staggered rows</option><option value="circle">Bolt circle</option><option value="mirror">Mirror</option>
+        </select></label><span></span></div>
+        <div id="gen-fields"></div>
+        <p id="gen-error" class="note" role="alert"></p>
+        <div class="actions" id="gen-actions">
+          <button class="btn primary" type="button" id="gen-replace">Replace pattern</button>
+          <button class="btn" type="button" id="gen-append">Add to pattern</button>
+        </div>
+      </div>
+    </details>
+  </div>
+
+  <div class="panel">
+    <div class="card">
+      <h3>Sign convention</h3>
+      <div class="convention">
+        <svg width="112" height="104" viewBox="0 0 112 104" role="img" aria-label="Right-handed axes: x right, y up, z toward the viewer; positive Mz counter-clockwise">
+          <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
+          <g stroke="currentColor" fill="none" stroke-width="1.6">
+            <line x1="30" y1="74" x2="96" y2="74" marker-end="url(#ah)"/>
+            <line x1="30" y1="74" x2="30" y2="10" marker-end="url(#ah)"/>
+            <circle cx="30" cy="74" r="6"/>
+            <path d="M58 44 A16 16 0 1 1 74 60" marker-end="url(#ah)" stroke="var(--load)"/>
+          </g>
+          <circle cx="30" cy="74" r="1.8" fill="currentColor"/>
+          <g font-family="var(--mono)" font-size="11" fill="currentColor">
+            <text x="98" y="92" text-anchor="end">x</text><text x="38" y="14">y</text><text x="8" y="94">z</text><text x="76" y="30" fill="var(--load)">+Mz</text>
+          </g>
+        </svg>
+        <ul>
+          <li>Right-handed: x right, y up, z toward you.</li>
+          <li>Faying surface z = 0; fasteners at (x, y).</li>
+          <li>+Fz is tension (pulls the loaded plate away).</li>
+          <li>Moments by the right-hand rule; +Mz is CCW.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Load</h3>
+      <div class="row three">
+        <label class="f"><span>Point x (<i data-unit="length"></i>)</span><input type="number" step="any" data-path="load.point.x"></label>
+        <label class="f"><span>Point y (<i data-unit="length"></i>)</span><input type="number" step="any" data-path="load.point.y"></label>
+        <label class="f"><span>Point z (<i data-unit="length"></i>)</span><input type="number" step="any" data-path="load.point.z"></label>
+      </div>
+      <div class="row three">
+        <label class="f"><span>Fx (<i data-unit="force"></i>)</span><input type="number" step="any" data-path="load.Fx"></label>
+        <label class="f"><span>Fy (<i data-unit="force"></i>)</span><input type="number" step="any" data-path="load.Fy"></label>
+        <label class="f"><span>Fz (<i data-unit="force"></i>)</span><input type="number" step="any" data-path="load.Fz"></label>
+      </div>
+      <div class="row three">
+        <label class="f"><span>Mx (<i data-unit="moment"></i>)</span><input type="number" step="any" data-path="load.Mx"></label>
+        <label class="f"><span>My (<i data-unit="moment"></i>)</span><input type="number" step="any" data-path="load.My"></label>
+        <label class="f"><span>Mz (<i data-unit="moment"></i>)</span><input type="number" step="any" data-path="load.Mz"></label>
+      </div>
+      <div class="row">
+        <label class="f"><span>Loaded plate</span><select id="applied-plate" data-path="load.appliedPlate"></select></label>
+        <span></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Methods</h3>
+      <div class="row">
+        <label class="f"><span>Axial method</span><select data-path="settings.axialMethod">
+          <option value="centroid">(a) Centroid neutral axis</option>
+          <option value="contact-edge">(b) Contact edge, tension only</option>
+        </select></label>
+        <label class="f"><span>Design basis</span><select data-path="settings.designBasis">
+          <option value="elastic">Elastic</option>
+          <option value="icr">ICR (needs ICR enabled)</option>
+        </select></label>
+      </div>
+      <div class="sub" id="contact-edge-box" data-show-method="contact-edge">
+        <div class="row">
+          <label class="f"><span>Contact plate</span><select id="edge-plate" data-path="settings.contactEdge.plateId"></select></label>
+          <label class="f"><span>Contact edge (neutral axis)</span><select data-path="settings.contactEdge.edge">
+            <option value="yMin">Bottom, y = yMin</option><option value="yMax">Top, y = yMax</option>
+            <option value="xMin">Left, x = xMin</option><option value="xMax">Right, x = xMax</option>
+          </select></label>
+        </div>
+        <div class="presets"><button class="btn" type="button" id="edge-suggest">Use the compressive-side edge</button></div>
+        <p class="note" id="edge-note">Fasteners on the far side of the edge carry T = M_L·ka·d/Σ(ka·d²); the rest carry none. v1 needs zero moment about the axis perpendicular to the edge (E-012).</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Group defaults</h3>
+      <div class="row">
+        <label class="f"><span>Area A (<i data-unit="area"></i>)</span><input type="number" step="any" data-path="defaults.area"></label>
+        <label class="f"><span>Diameter D (<i data-unit="length"></i>)</span><input type="number" step="any" data-path="defaults.diameter"></label>
+      </div>
+      <div class="row">
+        <label class="f"><span>Shear stiffness ks</span><input type="number" step="any" data-path="defaults.ks"></label>
+        <label class="f"><span>Axial stiffness ka</span><input type="number" step="any" data-path="defaults.ka"></label>
+      </div>
+      <div class="row">
+        <label class="f"><span>Shear allowable Fs (<i data-unit="force"></i>)</span><input type="number" step="any" data-path="defaults.shearAllowable" placeholder="not entered"></label>
+        <label class="f"><span>Tension allowable Ft (<i data-unit="force"></i>)</span><input type="number" step="any" data-path="defaults.tensionAllowable" placeholder="not entered"></label>
+      </div>
+      <p class="note">Fasteners use these unless a table cell overrides them (bold). Clearing a cell returns it to the default. The tool ships no allowables: a check without one is not evaluated.</p>
+    </div>
+
+    <div class="card" id="interaction-card">
+      <h3>Shear-tension interaction</h3>
+      <p class="note formula">IF(k) = (k·Rs / Fs)<sup>a</sup> + (k·Rt / Ft)<sup>b</sup>; MS = k* − 1 where IF(k*) = 1.</p>
+      <div class="row">
+        <label class="f"><span>Shear exponent a</span><input type="number" step="any" data-path="settings.interaction.a"></label>
+        <label class="f"><span>Tension exponent b</span><input type="number" step="any" data-path="settings.interaction.b"></label>
+      </div>
+      <div class="presets" role="group" aria-label="Interaction presets">
+        <button class="btn" type="button" data-preset="elliptical" aria-pressed="false">Elliptical (2, 2)</button>
+        <button class="btn" type="button" data-preset="linear" aria-pressed="false">Linear (1, 1)</button>
+      </div>
+      <p class="note">MS is the exact multiplier on the whole applied load at which IF reaches 1. With (a, b) ≠ (1, 1) it differs from 1/IF − 1 (W-006); the plain IF(1) is shown beside it.</p>
+    </div>
+
+    <div class="card" id="icr-card">
+      <h3>ICR method</h3>
+      <label class="check"><input type="checkbox" data-path="settings.icr.enabled"> <span>Instantaneous centre of rotation</span></label>
+      <div class="sub" data-show="settings.icr.enabled">
+        <p class="note">In-plane shear only (Fx, Fy, Mz,s); ks, tension, prying and preload never enter. The governing fastener (smallest Δmax/ρ) reaches Δmax; the others deform in proportion to their distance from the ICR.</p>
+        <label class="f"><span>Load-deformation model</span><select data-path="settings.icr.model">
+          <option value="crawford-kulak">Crawford-Kulak: R = Rult(1 − e^(−μΔ))^λ</option>
+          <option value="elastic-plastic">Elastic-perfectly-plastic: R = Rult·min(Δ/Δy, 1)</option>
+        </select></label>
+        <div class="row three">
+          <label class="f"><span>Rult (<i data-unit="force"></i>)</span><input type="number" step="any" data-path="defaults.icr.rult" placeholder="required"></label>
+          <label class="f"><span>Δmax (<i data-unit="length"></i>)</span><input type="number" step="any" data-path="defaults.icr.deltaMax"></label>
+          <label class="f" data-show-model="elastic-plastic"><span>Δy (<i data-unit="length"></i>)</span><input type="number" step="any" data-path="defaults.icr.deltaY" placeholder="required"></label>
+          <label class="f" data-show-model="crawford-kulak"><span>μ (<i data-unit="invLength"></i>)</span><input type="number" step="any" data-path="defaults.icr.mu"></label>
+          <label class="f" data-show-model="crawford-kulak"><span>λ</span><input type="number" step="any" data-path="defaults.icr.lambda"></label>
+        </div>
+        <p class="note">μ = 0.3937/mm, λ = 0.55 and Δmax = 8.6 mm are the metric equivalents of the common structural-bolt curve: editable defaults, not recommendations (N-008). Choose the ICR design basis under Methods to run the checks on ICR reactions.</p>
+      </div>
+    </div>
+
+    <div class="card" id="tension-card">
+      <h3>Prying and preload</h3>
+      <label class="check"><input type="checkbox" data-path="settings.prying.enabled"> <span>Prying (T-stub)</span></label>
+      <div class="sub" data-show="settings.prying.enabled">
+        <p class="note formula">b' = b − D/2, a' = min(a, 1.25b) + D/2, ρ = b'/a', δ = 1 − d_h/p, t_c = √(4Bb'/(pFp)), α' = (1/δ)[(T/B)(t_c/t)² − 1] ∈ [0, 1], Q = Bδα'ρ(t/t_c)²</p>
+        <div class="row">
+          <label class="f"><span>b, bolt line to web (<i data-unit="length"></i>)</span><input type="number" step="any" data-path="defaults.prying.b"></label>
+          <label class="f"><span>a, edge distance (<i data-unit="length"></i>)</span><input type="number" step="any" data-path="defaults.prying.a"></label>
+        </div>
+        <div class="row">
+          <label class="f"><span>p, tributary width (<i data-unit="length"></i>)</span><input type="number" step="any" data-path="defaults.prying.p"></label>
+          <label class="f"><span>d_h, hole diameter (<i data-unit="length"></i>)</span><input type="number" step="any" data-path="defaults.prying.holeDiameter"></label>
+        </div>
+        <p class="note" id="spacing-hint"></p>
+        <div class="row">
+          <label class="f"><span>B, bolt strength (<i data-unit="force"></i>)</span><input type="number" step="any" data-path="defaults.prying.boltStrengthB"></label>
+          <label class="f"><span>Manual factor (overrides T-stub)</span><input type="number" step="any" data-path="defaults.prying.manualFactor" placeholder="none"></label>
+        </div>
+        <p class="note">Flange thickness t and flange strength Fp come from the loaded plate (Plates card). A manual factor f makes the bolt tension f·T (W-012).</p>
+      </div>
+      <label class="check"><input type="checkbox" data-path="settings.preload.enabled"> <span>Preload</span></label>
+      <div class="sub" data-show="settings.preload.enabled">
+        <p class="note formula">F_b = max(P_max + φT, T) + Q; clamp = P_min − (1 − φ)T; separation at T = P_min/(1 − φ)</p>
+        <div class="row three">
+          <label class="f"><span>P_max (<i data-unit="force"></i>)</span><input type="number" step="any" data-path="defaults.preload.pMax"></label>
+          <label class="f"><span>P_min (<i data-unit="force"></i>)</span><input type="number" step="any" data-path="defaults.preload.pMin"></label>
+          <label class="f"><span>φ, load share</span><input type="number" step="any" data-path="defaults.preload.phi" placeholder="required"></label>
+        </div>
+        <details class="gen torque">
+          <summary>Torque calculator, T = K·D·P</summary>
+          <div class="row three">
+            <label class="f"><span>Torque (<i data-unit="moment"></i>)</span><input type="number" step="any" id="tq-torque"></label>
+            <label class="f"><span>Nut factor K</span><input type="number" step="any" id="tq-k" placeholder="keyed"></label>
+            <label class="f"><span>D (<i data-unit="length"></i>)</span><input type="number" step="any" id="tq-d"></label>
+          </div>
+          <p class="note" id="tq-out" role="status"></p>
+          <div class="presets"><button class="btn" type="button" data-torque="pMax">Fill P_max</button><button class="btn" type="button" data-torque="pMin">Fill P_min</button></div>
+        </details>
+        <p class="note">φ is required and has no default. Friction slip is not evaluated (N-005).</p>
+      </div>
+      <div id="override-editor"></div>
+    </div>
+
+    <div class="card">
+      <h3>Plates</h3>
+      <div id="plates"></div>
+      <div class="presets"><button class="btn" type="button" id="add-plate">+ Second plate</button></div>
+      <p class="note">Up to two plates, as axis-aligned rectangles. Every fastener passes through every plate. Fbr (bearing stress) or a direct bearing allowable, Fsu (shear-out stress) and the minimum e/D are keyed per plate; a blank allowable leaves that check not evaluated. The loaded plate's thickness and Fp feed prying.</p>
+    </div>
+  </div>
+</div>
+
+<section aria-labelledby="table-h">
+  <h2 id="table-h">Fasteners</h2>
+  <p class="muted small">Every cell is keyboard-editable. Blank override cells use the group default shown in grey.</p>
+  <div class="table-wrap"><table id="fastener-table">
+    <thead><tr><th scope="col">id</th><th scope="col">Label</th><th scope="col">x (<i data-unit="length"></i>)</th><th scope="col">y (<i data-unit="length"></i>)</th><th scope="col">A (<i data-unit="area"></i>)</th><th scope="col">ks</th><th scope="col">ka</th><th scope="col">D (<i data-unit="length"></i>)</th><th scope="col">Fs (<i data-unit="force"></i>)</th><th scope="col">Ft (<i data-unit="force"></i>)</th><th scope="col"><span class="sr">Remove</span></th></tr></thead>
+    <tbody id="fastener-rows"></tbody>
+  </table></div>
+</section>
+
+<section aria-labelledby="warnings-h">
+  <h2 id="warnings-h">Warnings</h2>
+  <p class="counts" id="issue-counts"></p>
+  <ul class="issues" id="issues" aria-live="polite"></ul>
+</section>
+
+<section aria-labelledby="results-h">
+  <h2 id="results-h">Results</h2>
+  <div id="results"></div>
+</section>
+
+<section aria-labelledby="trace-h">
+  <h2 id="trace-h">Hand calculations</h2>
+  <p>The current pattern worked by hand, step by step: each formula, the solver's own numbers substituted into it, and the solver's result, in the pattern's units. The group steps (centroids, J, Ixx, Iyy, Ixy, load reduction, every fastener's shear and tension, margins and equilibrium) come first; the calculation trace works one fastener through, the governing one unless you pick another. The ICR solve is iterative, so its method and result are stated rather than derived.</p>
+  <div class="toolbar hand-tools" role="group" aria-label="Hand calculations">
+    <label class="f trace-pick"><span>Worked fastener…</span><select id="trace-fastener"></select></label>
+    <div class="group"><button class="btn" type="button" id="hand-save" title="Save the hand calculations as Markdown; beamdswitch also opens the file as a narrated deck">Save Markdown</button><button class="btn" type="button" id="hand-copy" title="Copy the same Markdown to the clipboard">Copy Markdown</button></div>
+  </div>
+  <p class="msg" id="hand-msg" role="status" aria-live="polite"></p>
+  <div id="trace"></div>
+</section>
+
+<section aria-labelledby="reports-h">
+  <h2 id="reports-h">Reports</h2>
+  <p>The PDF and Markdown reports carry the tool version, the verification set and tolerance, the full warnings list and the line <i>Preliminary sizing — verify against the governing specification.</i> The PDF is the full report (with the calculation trace for the governing fastener); the Markdown has the same sections as tables plus the exact inputs. The PNG is the annotated pattern diagram only, with legend and scale, at 2×.</p>
+  <div class="toolbar" role="group" aria-label="Reports">
+    <div class="group"><label class="label" for="page-size">Page</label><select id="page-size" data-path="settings.pageSize"><option value="A4">A4</option><option value="Letter">Letter</option></select></div>
+    <div class="group"><button class="btn primary" type="button" id="print-report-btn">Print / Save as PDF</button><button class="btn" type="button" id="export-png">Download PNG</button></div>
+    <div class="group"><button class="btn" type="button" id="save-beamdswitch" title="Save a narrated Markdown talk about this pattern, with the hand calculations, to open in beamdswitch">beamdswitch</button><button class="btn" type="button" id="copy-beamdswitch" title="Copy the same beamdswitch deck to the clipboard, to paste into beamdswitch">Copy deck</button></div>
+  </div>
+  <p class="note">The beamdswitch deck is a narrated talk about this pattern for <a href="https://teoyujie.org/visuals/beamdswitch/">beamdswitch</a> (slides, handout and video): set-up, method, results with the hand calculations slide by slide, and checks.</p>
+  <p class="msg" id="io-msg" role="status" aria-live="polite"></p>
+  <div id="fallback" hidden><label class="f"><span id="fallback-label">Copy the text below</span><textarea id="fallback-text" readonly spellcheck="false"></textarea></label></div>
+</section>
+
+<section aria-labelledby="verify-h">
+  <h2 id="verify-h">Verification</h2>
+  <p>Runs the hand-calculation cases, property tests and published-reference cases from the specification on this page's own solver. The same cases run in the repository's test suite.</p>
+  <p>The published-reference cases use openly readable sources, not the current AISC Manual: VR-02 compares ICR coefficients with Table 13.1 of the <a href="https://www.boltcouncil.org/files/2ndEditionGuide.pdf">Kulak, Fisher and Struik <i>Guide to Design Criteria for Bolted and Riveted Joints</i>, 2nd ed.</a> (reprinted from the AISC Manual, 8th ed., 1980) to 2% or the table's rounding; VR-03 checks the ICR side and coefficient against Examples 1 and 2 of <a href="https://ej.aisc.org/index.php/engj/article/download/378/377">Brandt, AISC Engineering Journal, 1982</a>; VR-01 checks the T-stub prying equations against the Guide's Eqs. 17.8 to 17.12 and 17.18, which have no numerical worked example. The ICR coefficients have not been checked against the current AISC Manual's tables, nor the prying procedure against its current form.</p>
+  <button class="btn primary" type="button" id="run-verify">Run verification</button>
+  <div id="verify-results"></div>
+</section>
+
+<section class="method" aria-labelledby="method-h">
+  <h2 id="method-h">Method</h2>
+  <ul>
+    <li><b>Three centroids</b>, always reported separately: shear Cs (weighted by ks; the headline CG), axial Ca (weighted by ka) and area Cg (weighted by A).</li>
+    <li><b>J</b> = Σ ks(u² + v²) about Cs. <b>Ixx</b> = Σ ka q², <b>Iyy</b> = Σ ka p², <b>Ixy</b> = Σ ka p q about Ca. Principal values I₁,₂ = (Ixx + Iyy)/2 ± √(((Ixx − Iyy)/2)² + Ixy²); θp = ½ atan2(−2Ixy, Ixx − Iyy), CCW from +x to the I₁ axis. Section properties are in length² × weight.</li>
+    <li><b>Load reduction</b> from P = (xp, yp, zp) to Q on z = 0 with r = P − Q: Mx,Q = Mx + ry Fz − zp Fy; My,Q = My + zp Fx − rx Fz; Mz,Q = Mz + rx Fy − ry Fx. Shear and torsion reduce to Cs, axial load and bending to Ca.</li>
+    <li><b>Elastic in-plane shear</b>: direct Rd = F ks/Σks; torsional Rtx = −Mz,s ks v / J, Rty = +Mz,s ks u / J.</li>
+    <li><b>Axial method (a)</b>, rigid plate with the neutral axis through Ca: D = Ixx Iyy − Ixy², θx = (Iyy Mx,a + Ixy My,a)/D, θy = (Ixy Mx,a + Ixx My,a)/D, T = ka(Fz/Ka + θx q − θy p). Negative T is unloading (clamp-up), shown as computed.</li>
+    <li><b>Interaction</b>: IF(k) = (k Rs/Fs)^a + (k Rt/Ft)^b with separate exponents a and b (presets: elliptical (2, 2), the default, and linear (1, 1)). Rt is the positive tension; unloading counts as zero (N-006). The margin is the exact load scale factor, MS = k* − 1 with IF(k*) = 1, found by a bracketed Brent search (tolerance 1e-12 on k, 200 iterations); a failed solve shows “MS not computed” (W-008) and never a substitute number. For a = b = 1 it equals 1/IF − 1. The governing MS of a fastener is its lowest margin across modes, and the critical fastener has the lowest governing MS.</li>
+    <li><b>Prying</b> (T-stub, keyed B and Fp, no code factor built in) applies only to positive external tension T: a is limited to 1.25·b; b' = b − D/2, a' = a + D/2, ρ = b'/a', δ = 1 − d_h/p, t_c = √(4Bb'/(pFp)), α' = (1/δ)[(T/B)(t_c/t)² − 1] clamped to [0, 1], Q = Bδα'ρ(t/t_c)². t and Fp are the loaded plate's thickness and flange strength. A manual amplification factor f replaces the T-stub with a bolt tension f·T (W-012).</li>
+    <li><b>Preload</b> P_max, P_min and load-sharing factor φ (required, 0 &lt; φ &lt; 1): F_b = max(P_max + φT, T) + Q, clamp force P_min − (1 − φ)T, separation load P_min/(1 − φ). Once clamp force reaches zero the joint is separated (W-013). F_b replaces the tension in the interaction and is re-evaluated at every load multiplier k; preload itself does not scale. Clamp force is reported but no friction-slip capacity is claimed (N-005). With preload off the tension is T + Q.</li>
+    <li><b>Plates</b> (up to two, axis-aligned rectangles): every fastener is checked against every plate and the governing plate is reported. Bearing R_br,allow = Fbr·D·t (or a keyed direct-load allowable), MS = R_br,allow/Rs − 1. Tear-out casts a ray from the fastener along its bearing direction to the plate edge, giving e; capacity = 2·t·(e − D/2)·Fsu and MS = capacity/Rs − 1; e/D below the keyed minimum is W-011. The bearing direction is −R in the loaded plate (it is pushed along the load, so the fastener bears on the trailing side of the hole) and +R in the other plate. Geometry checks: a fastener outside a plate (E-004), fasteners closer than their diameter (E-005), edge distance below D/2 (E-006), and a load point outside the loaded plate (W-009).</li>
+    <li><b>Axial method (b), contact edge</b>: the selected plate edge L is the neutral axis and fasteners act in tension only. With d the distance from L on the tension side, T = M_L·ka·d/Σ(ka·d²), where M_L is the moment about L (reduced to the projection of Ca onto L, so it includes the Fz lever) that puts the far side in tension. The contact reaction is C = ΣT − Fz. M_L ≤ 0 gives no tension (W-010: wrong edge), and C &lt; 0 means no contact (W-021: use method (a)). In v1 the moment about the axis perpendicular to L must be zero (E-012).</li>
+    <li><b>ICR method</b> (in-plane shear only; ks, tension, prying, preload and Fz never enter). Crawford-Kulak R = Rult(1 − e^(−μΔ))^λ or elastic-perfectly-plastic R = Rult·min(Δ/Δy, 1) with fracture at Δmax. Deformation is proportional to the distance ρ from the ICR, Δᵢ = Δmax,gov·ρᵢ/ρ_gov, where the governing fastener has the smallest Δmax/ρ. The search is anchored on the Rult-weighted centroid of the fasteners, which does not depend on ks (it equals Cs for uniform ks and Rult). The ICR is searched on the line through that point perpendicular to the load direction, at a distance from the load's line of action on the side that gives the rotation sense (both sides of the reference point are scanned), where moment and force equilibrium give the same ultimate load (bracketed Brent search, normalised moment residual 1e-6, 200 iterations). For an asymmetric group whose force perpendicular to the load does not vanish on that line, the ICR is refined off it by a damped Newton iteration so all three equilibrium equations hold. A pure moment starts at the reference point; a load is a uniform translation only when the uniform translation loads also balance its moment, and a zero in-plane load gives zero ICR shear. γ_ult = P_u/|F| scales the whole load with its eccentricity kept; γ_ult − 1 is an ultimate capacity, not comparable to the allowable-based MS. The reactions at the applied load are the ultimate reactions divided by γ_ult (proportional scaling convention, W-015). A search that does not converge shows "not converged" with its residual and no partial numbers (W-014), and the elastic result remains.</li>
+    <li><b>Design basis</b>: elastic (default) or ICR selects which in-plane shear feeds the interaction, bearing and tear-out checks. The tension side always comes from the elastic or contact-edge distribution.</li>
+    <li><b>Equilibrium closure</b> (ΣR = F, ΣM = M for shear and axial) is checked on every calculation to a 1e-9 relative residual; a failure blocks the results.</li>
+    <li>Unit switching converts stored values in place to 12 significant figures (1 in = 25.4 mm, 1 lbf = 4.4482216152605 N). Imports keep the file's unit system.</li>
+  </ul>
+</section>
+</main>
+
+<div id="print-report" aria-hidden="true"></div>
+<style id="page-style">@page{size:A4;margin:14mm}</style>
+
+<dialog id="collision">
+  <form method="dialog">
+    <h2>Name already in the library</h2>
+    <p id="collision-text"></p>
+    <div class="actions">
+      <button class="btn primary" value="overwrite">Overwrite</button>
+      <button class="btn" value="keep">Keep both</button>
+      <button class="btn" value="cancel">Cancel</button>
+    </div>
+  </form>
+</dialog>
+
+<script id="fcg-beamdswitch">
+/*@BEAMDSWITCH@*/
+</script>
+<script>
+/*@APP@*/
+</script>
+</body>
+</html>
