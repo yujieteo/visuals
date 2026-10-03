@@ -72,6 +72,30 @@ focusable chart mark that is not an export, theme or help control.
 user-visible interface (roles, accessible names, stable ids, `data-testid`
 and URL state) and asserts on application state, not screenshots.
 
+## One page, for agents: page-axi
+
+`bin/page-axi.js` (the `page-axi` bin of this package) checks one page in one call and prints one TOON verdict,
+so an agent does not hand-write browser probes:
+
+```sh
+node e2e/bin/page-axi.js check mohr                         # a visual, staged as the site publishes it
+node e2e/bin/page-axi.js check viz/mohr --viewport 390 --themes dark
+node e2e/bin/page-axi.js check path/to/page.html
+node e2e/bin/page-axi.js check http://localhost:8000/visuals/mohr/
+```
+
+It loads the page once for each viewport (default 390, 768 and 1440 px) and theme (default light and dark, as
+`prefers-color-scheme`) in one headless Chromium, with the instrumented page of `lib/browser.js` and the probes of
+`lib/checks.js`, and saves a screenshot of each load. Its checks are `opens`, `console`, `network`, `overflow`,
+`numeric-text` (with each number field and slider driven to its limits once), `contrast` (the token rule of
+`scripts/rules.py`, through `scripts/page_rules.py`) and `webmcp-tools` (the tools the page registers at run time,
+at least 3, against `visual.json` and `SKILLS.md`). Stdout gets the verdict, failed checks first; `run.json` beside
+the screenshots (`build/page-axi/<name>/`, emptied at the start of each run) gets every error and request of
+each load. Exit 0 when every check passes, 1 when one fails, 2 for a usage or environment error: an unknown slug, a
+missing path, a folder without `index.html`, or no Chromium. A failure that a manifest records
+as a known finding still fails, and its evidence says so. `npm run test:page-axi` runs it on the fixtures in
+`tests/fixtures/page-axi/`.
+
 ## Manifests and findings
 
 A visual's `e2e/manifest.json` holds everything specific to it, so workers each owning a visual never edit
@@ -130,8 +154,9 @@ node scripts/record-findings.js results
 | `lib/full.js` | the runner and shared assertions for the full checks |
 | `lib/kit.js` | every full check of a generated visual, through the controls the shared kit gives its page |
 | `lib/manifest.js` | finds and reads each visual's manifest |
+| `lib/page-axi.js`, `bin/page-axi.js` | page-axi, the one-call check of one page |
 | `lib/results.js`, `scripts/` | results, findings, timings and fetching the site |
-| `tests/` | the baseline suite, and the harness's own tests with their fixtures |
+| `tests/` | the baseline suite, the harness's and page-axi's own tests, with their fixtures |
 | `site/<slug>/` | the manifests and full checks of the visuals the site keeps itself |
 
 ## Licence

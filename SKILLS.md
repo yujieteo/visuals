@@ -14,7 +14,7 @@ What a visual must be (artifact contract, state and export, interaction and acce
 1. Work inside `viz/<slug>/` only. Edit the data, `src/` or `build.py` and run `python3 build.py` when the folder has a builder (it regenerates `index.html`; never hand-edit a generated page); otherwise edit `index.html` directly.
 2. Keep `visual.json` true: its `webmcp_tools` and the WebMCP tools table in `SKILLS.md` name exactly the tools the page registers, and `fetched` is the date of the data. `schema/visual.schema.json` says what each field means.
 3. Put its tests in its own `tests/` (`*.test.mjs` for `node --test`, `test_*.py` for unittest). A test reads only its own folder and the shared tooling, never another visual's folder: CI runs it on a checkout without them. A test runs the page's code and asserts on what it does; the `sourcetests` step fails a test that only searches the page's source text. Time any test you add and keep it fast.
-4. Check it: `python3 scripts/check.py <slug>`, then `python3 scripts/check.py --changed` for everything the branch touches. Run `npm ci` once first, so the type and dead-code checks run too. Fix a failure; do not add it to `allow` in `visual.json` unless the finding is deliberate, and then say why in the pull request.
+4. Check it: `python3 scripts/check.py <slug>`, and `node e2e/bin/page-axi.js check <slug>` for the page in a browser, then `python3 scripts/check.py --changed` for everything the branch touches. Run `npm ci` once first, so the type and dead-code checks run too. Fix a failure; do not add it to `allow` in `visual.json` unless the finding is deliberate, and then say why in the pull request.
 
 ## Refresh data
 
@@ -63,6 +63,14 @@ These rules are scripts, so do not check them by reading. `scripts/check.py` run
 Review still decides what no script can: whether the mathematics, data and wording are right, whether a test covers the behaviour that matters, whether two different-looking pieces of code are the same rule, and the manual acceptance pass of the `interactive-visual-spec` skill.
 
 ## Browser checks
+
+To check a page in a browser, use one call, not hand-written `chrome-devtools-axi` open, resize, screenshot, console and `scrollWidth` probes:
+
+```sh
+node e2e/bin/page-axi.js check <slug|path|url> [--viewport 390,768,1440] [--themes light,dark]
+```
+
+It stages the visual as the site publishes it, opens it in one headless Chromium for each viewport and theme, and closes the browser at the end. It prints one TOON verdict: the failed checks first (`opens`, `console`, `network`, `overflow`, `numeric-text`, `contrast`, `webmcp-tools`), the screenshot paths, the path of `run.json` with the full evidence, and the next steps. Exit 0 means every check passed, 1 means a check failed, and 2 means a usage or environment error, such as a slug or path that names no page. Run `cd e2e && npm ci && npx playwright install chromium` once first. Read the screenshots it names. Do not read `run.json` unless a check failed.
 
 A visual's browser checks are its `e2e/manifest.json` (how to drive it, checks that do not apply, known findings) and, when it has them, its fuller checks `e2e/full.test.mjs`; the shared harness is `e2e/` ([e2e/README.md](e2e/README.md)). CI runs them only when the visual changes, one job per browser project, and every visual's once a day. Record a run's failures in the manifests with `e2e/scripts/record-findings.js`; the combined findings list is generated, never committed.
 
