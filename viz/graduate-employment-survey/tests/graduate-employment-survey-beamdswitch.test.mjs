@@ -3,12 +3,14 @@ import test from "node:test";
 import { assertButtonsExport, assertDeckButtons, assertInlined, assertStandardDeck, assertTemplateCopy, load, openPage, read } from "./beamdswitch-decks.mjs";
 
 const SLUG = "graduate-employment-survey";
+/** @type {import("./beamdswitch-template").BeamdswitchTemplate} */
 const T = load(`beamdswitch.js`);
+/** @type {typeof import("../report.js")} */
 const R = load(`report.js`);
 const meta = JSON.parse(read(`meta.json`));
 const html = read(`index.html`);
-const rows = JSON.parse(/const rows=(\[\[.*?\]\]),medians=/.exec(html)[1].replace(/<\\\//g, "</"));
-const medians = JSON.parse(/,medians=(\[\[.*?\]\]),svg=/.exec(html)[1]);
+const rows = JSON.parse(/** @type {RegExpExecArray} */ (/const rows=(\[\[.*?\]\]),medians=/.exec(html))[1].replace(/<\\\//g, "</"));
+const medians = JSON.parse(/** @type {RegExpExecArray} */ (/,medians=(\[\[.*?\]\]),svg=/.exec(html))[1]);
 const md = T.deck(R.report({ rows, medians, source: meta.source, fetched: meta.fetched }));
 
 test("the site's shared beamdswitch template is the copy the page inlines", () => {
@@ -30,12 +32,14 @@ test("the deck parses in beamdswitch into the standard template, narrated on eve
 // The premiums, recomputed from the committed survey CSV rather than the page's embedded rows.
 function fromSource() {
   const lines = read(`raw.csv`).replace(/^﻿/, "").trim().split(/\r?\n/);
+  /** @param {string} line */
   const split = (line) => [...line.matchAll(/("(?:[^"]|"")*"|[^,]*)(?:,|$)/g)].map((m) => m[1].replace(/^"|"$/g, "").replace(/""/g, '"')).slice(0, 12);
   const head = split(lines[0]), records = lines.slice(1).map((l) => Object.fromEntries(split(l).map((v, i) => [head[i], v])));
+  /** @param {Record<string, string>} r */
   const salary = (r) => (r.gross_monthly_median === "" || !Number.isFinite(+r.gross_monthly_median) ? null : +r.gross_monthly_median);
   const kept = records.filter((r) => salary(r) !== null), years = [...new Set(kept.map((r) => +r.year))].sort((a, b) => a - b);
-  const base = Object.fromEntries(years.map((y) => [y, R.median(kept.filter((r) => +r.year === y).map(salary))]));
-  const points = kept.map((r) => ({ year: +r.year, university: r.university, degree: r.degree, salary: salary(r), premium: (salary(r) / base[r.year] - 1) * 100, computing: /computing/i.test(r.degree) }));
+  const base = Object.fromEntries(years.map((y) => [y, R.median(kept.filter((r) => +r.year === y).map((r) => /** @type {number} */ (salary(r))))]));
+  const points = kept.map((r) => ({ year: +r.year, university: r.university, degree: r.degree, salary: /** @type {number} */ (salary(r)), premium: (/** @type {number} */ (salary(r)) / base[r.year] - 1) * 100, computing: /computing/i.test(r.degree) }));
   return { years, points, computingMedian: years.map((y) => [y, R.median(points.filter((p) => p.year === y && p.computing).map((p) => p.premium))]) };
 }
 
