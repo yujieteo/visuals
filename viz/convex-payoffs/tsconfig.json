@@ -1,22 +1,19 @@
-// Type-checked JavaScript: tsc checks the JSDoc types in this repository's own JavaScript and emits
-// nothing; `npm ci && npm run typecheck` runs it. Checked: report.js, the tests, and the page's own inline
-// scripts, from the copies scripts/extract-inline.mjs writes to .typecheck/inline/ (each keeps
-// index.html's line numbers); types/page.d.ts declares the globals they share. Left out: beamdswitch.js,
-// an unchanged copy of yujieteo/site's templates/beamdswitch.js typed by beamdswitch.d.ts, its inlined
-// copy, and beamdswitch's vendored parsers in tests/fixtures/, typed by their .d.mts files.
+// This visual's type-checked JavaScript, one tsc project of its own: scripts/typecheck.mjs (run per visual
+// by scripts/check.py after npm ci at the repository root) copies the page's inline scripts into
+// .typecheck/inline/, less the blocks visual.json "typecheck" skips, then runs tsc on this file.
+// Compiler options come from ../../tsconfig.base.json.
 {
-  "compilerOptions": {
-    "allowJs": true,
-    "checkJs": true,
-    "noEmit": true,
-    "strict": true,
-    "target": "ES2023",
-    "lib": ["ES2023", "DOM", "DOM.Iterable"],
-    "module": "preserve",
-    "moduleResolution": "bundler",
-    "types": ["node"],
-    "skipLibCheck": true
-  },
-  "include": ["types/*.d.ts", "beamdswitch.d.ts", "report.js", "scripts/*.mjs", "tests/**/*.mjs", "tests/**/*.d.mts", ".typecheck/inline/*.js"],
-  "exclude": ["tests/fixtures/beamdswitch/*.mjs"]
+  "extends": "../../tsconfig.base.json",
+  "include": [
+    "types/*.d.ts",
+    "beamdswitch.d.ts",
+    "report.js",
+    "scripts/*.mjs",
+    "tests/**/*.mjs",
+    "tests/**/*.d.mts",
+    ".typecheck/inline/*.js"
+  ],
+  "exclude": [
+    "tests/fixtures/beamdswitch/*.mjs"
+  ]
 }

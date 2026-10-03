@@ -521,9 +521,8 @@ def build_model(raw, concepts, examples, meta):
             "route": concepts["route"], "confusions": concepts["confusions"]}
 
 
-def validate(model, raw, meta):
-    """Integrity checks over the whole corpus. Returns a summary of counts."""
-    chapters = model["chapters"]
+def validate_chapters(chapters):
+    """Chapters 1-20 with contiguous page ranges and ordered sections inside them."""
     assert [c["n"] for c in chapters] == list(range(1, 21)), "chapters must be numbered 1-20"
     for a, b in zip(chapters, chapters[1:]):
         assert a["pages"][1] + 1 == b["pages"][0], f"chapter page ranges must be contiguous ({a['n']}, {b['n']})"
@@ -536,18 +535,10 @@ def validate(model, raw, meta):
         assert pages == sorted(pages), f"section pages out of order in chapter {c['n']}"
         assert all(c["pages"][0] <= p <= c["pages"][1] for p in pages), f"section page outside chapter {c['n']}"
 
-    concepts, examples = model["concepts"], model["examples"]
-    cids = [c["id"] for c in concepts]
-    assert len(cids) == len(set(cids)), "duplicate concept id"
-    eids = [e["id"] for e in examples]
-    assert len(eids) == len(set(eids)), "duplicate example id"
-    assert CONCEPT_RANGE[0] <= len(concepts) <= CONCEPT_RANGE[1], f"{len(concepts)} concepts, outside {CONCEPT_RANGE}"
-    assert EXAMPLE_RANGE[0] <= len(examples) <= EXAMPLE_RANGE[1], f"{len(examples)} examples, outside {EXAMPLE_RANGE}"
-    names = {c["name"].lower() for c in concepts}
-    assert len(names) == len(concepts), "concept names must be unique"
-    by_ex = {e["id"]: e for e in examples}
-    nodes = {e["id"]: flatten(e["tree"]) for e in examples}
-    targets = {e["id"]: set(nodes[e["id"]]) | {m["id"] for m in e["marks"]} for e in examples}  # nodes and punctuation marks
+
+def validate_concepts(concepts, by_ex, targets, cids, names):
+    """Each concept cites known examples and nodes, links to other concepts and has no colliding alias.
+    Returns the examples the concepts use and each alias with the concepts that declare it."""
     used = set()
     seen_alias = {}
     for c in concepts:
@@ -564,8 +555,12 @@ def validate(model, raw, meta):
         for a in c.get("aliases", []):
             assert a.lower() not in names, f"alias {a!r} of {c['id']} collides with a canonical concept name"
             seen_alias.setdefault(a.lower(), []).append(c["id"])
-    unused = set(eids) - used
-    assert not unused, f"examples not used by any concept: {sorted(unused)}"
+    return used, seen_alias
+
+
+def validate_examples(examples, nodes, targets, contrasts):
+    """Each example is explained, has a known focus, and its tree leaves cover every word once;
+    identical texts are allowed only as the two sides of a contrast."""
     for e in examples:
         assert e["explanation"].strip(), f"example {e['id']} needs an explanation"
         assert re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", e["id"]), f"bad example id {e['id']}"
@@ -581,15 +576,23 @@ def validate(model, raw, meta):
         texts.setdefault(e["text"], []).append(e["id"])
     for text, ids in texts.items():
         if len(ids) > 1:  # identical text is allowed only for a declared structural ambiguity (a contrast)
-            assert any({k["a"]["ex"], k["b"]["ex"]} == set(ids) for k in model["contrasts"]), f"duplicate example text {text!r} without a contrast"
-    kids = [k["id"] for k in model["contrasts"]]
+            assert any({k["a"]["ex"], k["b"]["ex"]} == set(ids) for k in contrasts), f"duplicate example text {text!r} without a contrast"
+
+
+def validate_contrasts(contrasts, by_ex, targets):
+    """Contrast ids are unique and each compares two different examples at known nodes."""
+    kids = [k["id"] for k in contrasts]
     assert len(kids) == len(set(kids)), "duplicate contrast id"
-    for k in model["contrasts"]:
+    for k in contrasts:
         for side in ("a", "b"):
             assert k[side]["ex"] in by_ex and k[side]["node"] in targets[k[side]["ex"]], f"contrast {k['id']} has a bad target"
         assert k["a"]["ex"] != k["b"]["ex"], f"contrast {k['id']} compares an example with itself"
         assert k["concepts"], f"contrast {k['id']} is not reachable from any concept"
         assert k["explanation"].strip()
+
+
+def validate_route(model, concepts, cids):
+    """The beginner route and the common confusions point at real concepts and their examples."""
     route = [r["concept"] for r in model["route"]]
     assert ROUTE_RANGE[0] <= len(route) <= ROUTE_RANGE[1], "beginner route must have 10-12 stops"
     assert len(set(route)) == len(route) and all(r in cids for r in route), "route stops must be unique concepts"
@@ -597,6 +600,29 @@ def validate(model, raw, meta):
         assert f["concept"] in cids, f"confusion {f['label']} points to unknown concept"
         concept = next(c for c in concepts if c["id"] == f["concept"])
         assert f["example"] in {i["ex"] for i in concept["items"]}, f"confusion {f['label']} example is not in its concept"
+
+
+def validate(model, raw, meta):
+    """Integrity checks over the whole corpus. Returns a summary of counts."""
+    validate_chapters(model["chapters"])
+    concepts, examples = model["concepts"], model["examples"]
+    cids = [c["id"] for c in concepts]
+    assert len(cids) == len(set(cids)), "duplicate concept id"
+    eids = [e["id"] for e in examples]
+    assert len(eids) == len(set(eids)), "duplicate example id"
+    assert CONCEPT_RANGE[0] <= len(concepts) <= CONCEPT_RANGE[1], f"{len(concepts)} concepts, outside {CONCEPT_RANGE}"
+    assert EXAMPLE_RANGE[0] <= len(examples) <= EXAMPLE_RANGE[1], f"{len(examples)} examples, outside {EXAMPLE_RANGE}"
+    names = {c["name"].lower() for c in concepts}
+    assert len(names) == len(concepts), "concept names must be unique"
+    by_ex = {e["id"]: e for e in examples}
+    nodes = {e["id"]: flatten(e["tree"]) for e in examples}
+    targets = {e["id"]: set(nodes[e["id"]]) | {m["id"] for m in e["marks"]} for e in examples}  # nodes and punctuation marks
+    used, seen_alias = validate_concepts(concepts, by_ex, targets, cids, names)
+    unused = set(eids) - used
+    assert not unused, f"examples not used by any concept: {sorted(unused)}"
+    validate_examples(examples, nodes, targets, model["contrasts"])
+    validate_contrasts(model["contrasts"], by_ex, targets)
+    validate_route(model, concepts, cids)
     assert set(meta) >= {"slug", "source_url", "fetched", "key_file_used", "assumptions"}
     assert meta["slug"] == SLUG and re.fullmatch(r"\d{4}-\d{2}-\d{2}", meta["fetched"])
     covered_chapters = {c["location"]["chapter"] for c in concepts}

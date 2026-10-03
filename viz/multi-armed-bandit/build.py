@@ -6,8 +6,8 @@ Thompson Sampling (one shared Beta prior) and UCB1 recommendations from the user
 a seeded simulation comparing them with equal allocation. The authored material (templates with
 fictional counts, assumptions, method references) lives in raw.json. The page is assembled from
 src/multi-armed-bandit.css, src/multi-armed-bandit-logic.js (pure numerics, state and simulation, also
-run by tests/multi-armed-bandit.test.mjs) and src/multi-armed-bandit.js (interface), with the colours of
-src/design-tokens.json. beamdswitch.js (the site's shared report template, unchanged) and report.js (the
+run by tests/multi-armed-bandit.test.mjs) and src/multi-armed-bandit.js (interface), with the colours of the
+repository's design-tokens.json. beamdswitch.js (the site's shared report template, unchanged) and report.js (the
 experiment as a report) are inlined as they are, so the page makes no request at runtime. --verify
 re-runs every check and compares the committed page without writing.
 
@@ -17,16 +17,19 @@ re-runs every check and compares the committed page without writing.
 import argparse
 import json
 import re
+import sys
 from html import escape
 from pathlib import Path
 
-from style_guide import THEME_SCRIPT, root_css
-
 ROOT = Path(__file__).resolve().parent
+REPO = ROOT.parents[1]
+sys.path.insert(0, str(REPO / "scripts"))
+from style_guide import THEME_SCRIPT, root_css  # noqa: E402
+
 SLUG = "multi-armed-bandit"
 VIZ = ROOT / "index.html"
 SRC = ROOT / "src"
-TOKENS = SRC / "design-tokens.json"
+TOKENS = REPO / "design-tokens.json"
 CSS_TEMPLATE = SRC / "multi-armed-bandit.css"
 LOGIC_TEMPLATE = SRC / "multi-armed-bandit-logic.js"
 JS_TEMPLATE = SRC / "multi-armed-bandit.js"

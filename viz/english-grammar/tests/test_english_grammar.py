@@ -1,40 +1,15 @@
 import copy
 import json
-import shutil
 import subprocess
 import sys
-import tempfile
 import unittest
 from pathlib import Path
 
-REPO = Path(__file__).resolve().parents[1]
-SLUG = "english-grammar"
-PAGE_FILES = ("index.html", "beamdswitch.js", "report.js")
-DATA_FILES = ("concepts.json", "examples.json", "meta.json", "raw.json", "review.md")
+FOLDER = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(FOLDER))
+sys.dont_write_bytecode = True
 
-
-def lay_out(root):
-    """Lay this repository out as scripts/build_english_grammar.py expects (the yujieteo/visuals layout):
-    scripts/, design-tokens.json, viz/<slug>/ holding the page files and data/<slug>/ holding the data files."""
-    shutil.copytree(REPO / "scripts", root / "scripts", ignore=shutil.ignore_patterns("__pycache__"))
-    shutil.copy(REPO / "design-tokens.json", root / "design-tokens.json")
-    (root / "viz" / SLUG).mkdir(parents=True)
-    (root / "data" / SLUG).mkdir(parents=True)
-    for name in PAGE_FILES:
-        shutil.copy(REPO / name, root / "viz" / SLUG / name)
-    for name in DATA_FILES:
-        shutil.copy(REPO / name, root / "data" / SLUG / name)
-
-
-ROOT = Path(tempfile.mkdtemp(prefix="english-grammar-"))
-lay_out(ROOT)
-sys.path.insert(0, str(ROOT / "scripts"))
-
-import build_english_grammar as eg  # noqa: E402
-
-
-def tearDownModule():
-    shutil.rmtree(ROOT, ignore_errors=True)
+import build as eg  # noqa: E402  (this folder's builder, which imports the repository's shared scripts/)
 
 
 def corpus():
@@ -58,16 +33,12 @@ class EnglishGrammarTest(unittest.TestCase):
         self.assertGreater(summary["antecedents"], 0)
 
     def test_build_is_reproducible_and_verifies(self):
-        with tempfile.TemporaryDirectory() as directory:
-            work = Path(directory)
-            lay_out(work)
-            builder = work / "scripts" / "build_english_grammar.py"
-            subprocess.run([sys.executable, str(builder)], check=True, capture_output=True)
-            first = (work / "viz" / eg.SLUG / "index.html").read_bytes()
-            subprocess.run([sys.executable, str(builder)], check=True, capture_output=True)
-            self.assertEqual(first, (work / "viz" / eg.SLUG / "index.html").read_bytes())
-            self.assertEqual(first, (REPO / "index.html").read_bytes())
-            subprocess.run([sys.executable, str(builder), "--verify"], check=True, capture_output=True)
+        raw, concepts, examples, meta = corpus()
+        tokens = json.loads(eg.TOKENS.read_text(encoding="utf-8"))
+        first = eg.render(eg.build_model(raw, concepts, examples, meta), raw, meta, tokens)
+        self.assertEqual(first, eg.render(eg.build_model(raw, concepts, examples, meta), raw, meta, tokens))
+        self.assertEqual(first, (FOLDER / "index.html").read_text(encoding="utf-8"))
+        subprocess.run([sys.executable, str(FOLDER / "build.py"), "--verify"], check=True, capture_output=True)
 
     def test_tokens_and_punctuation(self):
         tokens = eg.tokenize("Kim's bike, my neighbour – fixed.")
@@ -177,7 +148,7 @@ class EnglishGrammarTest(unittest.TestCase):
             self.assertGreaterEqual(ratio, 4.5 if "text" in what else 3.0, f"{mode} {what}")
 
     def test_page_is_offline_small_and_has_metadata(self):
-        html = (ROOT / "viz" / eg.SLUG / "index.html").read_text(encoding="utf-8")
+        html = (FOLDER / "index.html").read_text(encoding="utf-8")
         model = eg.build_model(*corpus())
         eg.verify_page(html, model)
         self.assertLess(len(html.encode("utf-8")), 1_000_000)
