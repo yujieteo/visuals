@@ -1,29 +1,38 @@
 #!/usr/bin/env python3
-"""Regenerate data.json: the hands-on classes NLB lists at Tampines Regional Library, then rebuild the page.
+"""Regenerate data.json: cooking, maker-lab and other hands-on classes in Tampines, then rebuild the page.
 
+Two public sources, read one request at a time with no login:
+
+NLB, Tampines Regional Library (this file):
 1. POST the National Library Board's public events search, /main/api/Event/EventFilter (the JSON the
    nlb.gov.sg "What's On" events page reads), for branch TRL (NLB's "Tampines Library", Tampines Regional
    Library at Our Tampines Hub), paging until every listed event is in.
-2. Keep cooking, maker-lab and other hands-on classes (categorise() says how) and list the rest as
-   excluded by title only.
+2. Keep cooking, maker-lab and other hands-on classes (categorise() says how); list the rest by title.
 3. For each kept event, read its published GoLibrary page (the listing's own link, nlb.libcal.com) for the
    registration notice and seats, waiting the 10 s that site's robots.txt asks between requests.
-4. Write data.json and run build.py, which inlines it into index.html.
 
-Nothing is invented: a field the source does not publish is left out, and every booking link is the
-listing's own "link" value, never a constructed URL. Public pages only, no login, one request at a time.
+onePA, the Tampines community clubs (onepa.py says how): the People's Association's cooking and baking
+courses and events at every Tampines CC, with each class's published onePA page as its booking link.
 
-Usage: python3 refresh.py [--offline LISTING.json] [--no-pages] [--now ISO8601]
+Then write data.json and run build.py, which inlines it into index.html. Nothing is invented: a field a
+source does not publish is left out, and every booking link is one the source publishes, never a
+constructed URL.
+
+Usage: python3 refresh.py [--no-pages] [--now ISO8601] [--cache DIR]
 """
 import argparse
+import hashlib
 import html
 import json
 import re
 import sys
 import time
+import urllib.error
 import urllib.request
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+
+import onepa
 
 HERE = Path(__file__).resolve().parent
 SGT = timezone(timedelta(hours=8))
@@ -34,7 +43,10 @@ PAGE_SIZE = 50
 API_DELAY = 3  # seconds between listing pages
 PAGE_DELAY = 10  # nlb.libcal.com robots.txt: Crawl-delay 10
 USER_AGENT = "tampines-library-events-refresh/1 (+https://teoyujie.org/visuals/tampines-library-events/)"
-BOOKING_HOSTS = ("nlb.libcal.com", "www.nlb.gov.sg", "go.gov.sg")
+ONEPA_DELAY = 5  # seconds between onePA page requests
+ONEPA_SEARCH_DELAY = 10  # seconds between onePA searches, which its bot protection limits
+BOOKING_HOSTS = ("nlb.libcal.com", "www.nlb.gov.sg", "go.gov.sg", "www.onepa.gov.sg")
+LIBRARY = "Tampines Regional Library"
 
 HANDS_ON_TYPES = {"Workshop", "Experience"}
 MAKER = re.compile(r"\b(makeit|makers?|makerspace|3d|laser|sewing|discovertech|robot\w*|electronics?|circuits?|boson|micro:?bit|soldering|tinker\w*|coding|makedo|arduino)\b", re.I)
@@ -43,7 +55,7 @@ COOK_TEXT = re.compile(r"\b(cooking|cook-along|baking|recipes?|meal demonstratio
 CRAFT_TITLE = re.compile(r"\b(hands-on|craft\w*|diy|calligraphy|painting|drawing|pottery|origami|gardening|cyanotype)\b", re.I)
 CATEGORIES = [
     {"id": "cooking", "label": "Cooking & food",
-     "rule": "A workshop whose title names cooking, baking, recipes or a kitchen, or whose description describes cooking, baking, recipes or a meal or food demonstration."},
+     "rule": "At the library, a workshop whose title names cooking, baking, recipes or a kitchen, or whose description describes cooking, baking, recipes or a meal or food demonstration. " + onepa.RULE},
     {"id": "maker", "label": "Maker lab",
      "rule": "A workshop whose title names MakeIT, makers, 3D printing, laser cutting, sewing, electronics, robotics, coding or DiscoverTech."},
     {"id": "hands-on", "label": "Other hands-on",
@@ -120,6 +132,8 @@ def event(raw, category, matched):
     start, end = local(dates.get("startDateTime")), local(dates.get("endDateTime"))
     out = {
         "id": str(raw["eventId"]),
+        "source": "nlb",
+        "organiser": "NLB",
         "title": raw["title"].strip(),
         "category": category,
         "matched": matched,
@@ -136,6 +150,7 @@ def event(raw, category, matched):
         "free": raw.get("isFree") if isinstance(raw.get("isFree"), bool) else None,
         "language": (raw.get("nlbLanguage") or {}).get("name") if isinstance(raw.get("nlbLanguage"), dict) else None,
         "venue": (raw.get("location") or {}).get("venue"),
+        "venue_group": LIBRARY,
         "description": short_description(text),
         "booking_url": raw.get("link"),
     }
@@ -173,13 +188,45 @@ def registration(page):
     return found
 
 
-def request(url, body=None):
-    headers = {"User-Agent": USER_AGENT, "Accept": "application/json" if body else "text/html"}
+class Blocked(RuntimeError):
+    """A source answered with a bot check instead of its page: stop, never try to get past it."""
+
+
+CACHE = None  # a folder of saved responses (--cache), so a rerun while developing repeats no request
+
+
+def request(url, body=None, tries=1):
+    """One GET, or a JSON POST when ``body`` is given; up to ``tries`` attempts a minute apart on a server error.
+    With --cache, a response saved by an earlier run is read back instead of asking again."""
+    if CACHE is not None:
+        key = hashlib.sha256(json.dumps([url, body], sort_keys=True).encode()).hexdigest()[:24]
+        saved = CACHE / f"{key}.txt"
+        if saved.is_file():
+            return saved.read_text(encoding="utf-8")
+        text = request_live(url, body, tries)
+        saved.write_text(text, encoding="utf-8")
+        return text
+    return request_live(url, body, tries)
+
+
+def request_live(url, body=None, tries=1):
+    headers = {"User-Agent": USER_AGENT, "Accept": "application/json" if body is not None else "text/html, application/xml"}
+    data = None
     if body is not None:
         headers["Content-Type"] = "application/json"
-        body = json.dumps(body).encode()
-    with urllib.request.urlopen(urllib.request.Request(url, data=body, headers=headers), timeout=60) as response:
-        return response.read().decode("utf-8")
+        data = json.dumps(body).encode()
+    for attempt in range(tries):
+        try:
+            with urllib.request.urlopen(urllib.request.Request(url, data=data, headers=headers), timeout=120) as response:
+                text = response.read().decode("utf-8")
+            if re.search(r"_Incapsula_Resource|x-amzn-waf|<title>[^<]*(?:Just a moment|Attention Required)", text[:2000]):
+                raise Blocked(f"{url} answered with a bot check instead of its content; try again later")
+            return text
+        except (urllib.error.HTTPError, TimeoutError) as error:
+            if attempt + 1 == tries or (isinstance(error, urllib.error.HTTPError) and error.code < 500):
+                raise
+            time.sleep(60)
+    raise AssertionError("unreachable")
 
 
 def query(offset):
@@ -204,8 +251,8 @@ def fetch_listing():
         time.sleep(API_DELAY)
 
 
-def build(listing, pages, now):
-    """data.json's content from the raw listing and {event id: registration} read from the event pages."""
+def build_nlb(listing, pages):
+    """(classes, source entry) from NLB's raw listing and {event id: registration} read from the event pages."""
     kept, excluded = [], []
     for raw in listing:
         category, why = categorise(raw, plain(raw.get("description")))
@@ -222,36 +269,70 @@ def build(listing, pages, now):
                              "event_type": (raw.get("nlbEventType") or {}).get("name"),
                              "start": local(dates.get("startDateTime")).isoformat() if dates.get("startDateTime") else None,
                              "reason": why})
-    kept.sort(key=lambda item: (item.get("start") or "", item["id"]))
     excluded.sort(key=lambda item: (item.get("start") or "", item["id"]))
-    return {
-        "schema_version": 1,
-        "library": {"name": "Tampines Regional Library", "nlb_name": "Tampines Library", "branch_code": BRANCH,
-                    "address": next((raw["location"]["address"] for raw in listing if (raw.get("location") or {}).get("address")), None)},
-        "retrieved": now.isoformat(timespec="seconds"),
-        "source": {"listing_url": LISTING_URL, "api_url": API_URL, "api_query": query(0),
-                   "registration": "Each kept event's GoLibrary page, the listing's own link (nlb.libcal.com), read for its registration notice."},
-        "categories": CATEGORIES,
-        "listed": len(listing),
-        "events": kept,
+    source = {
+        "id": "nlb", "organiser": "NLB", "name": "National Library Board", "venue": LIBRARY, "nlb_name": "Tampines Library", "branch_code": BRANCH,
+        "address": next((raw["location"]["address"] for raw in listing if (raw.get("location") or {}).get("address")), None),
+        "listing_url": LISTING_URL, "api_url": API_URL, "api_query": query(0),
+        "registration": "Each kept event's GoLibrary page, the listing's own link (nlb.libcal.com), read for its registration notice.",
+        "listed": len(listing), "kept": len(kept),
         "excluded": [{key: value for key, value in item.items() if value is not None} for item in excluded],
     }
+    return kept, {key: value for key, value in source.items() if value is not None}
+
+
+def build_onepa(clubs, courses, events, urls, details, vacancies):
+    """(classes, source entry) from onePA's open cooking and baking courses (island-wide; those at a Tampines club
+    are kept), the Tampines clubs' current events, the sitemaps' {code: URL}, {code: page details} and
+    {class id: (places left, class size)}."""
+    names = {club["name"] for club in clubs}
+    counts = {name: {"events_listed": 0, "kept": 0} for name in names}
+    kept, seen, at_clubs = [], set(), 0
+    for item in courses + events:
+        code = onepa.code_of(item)
+        club = item.get("outlet_name") or ""
+        if code in seen or club not in names:
+            continue
+        seen.add(code)
+        if item.get("type") == "Event":
+            counts[club]["events_listed"] += 1
+        else:
+            at_clubs += 1
+        if not onepa.food(item)[0]:
+            continue
+        class_id = str(((item.get("xp") or {}).get("Class") or {}).get("Id") or "").upper()
+        url = urls.get(code)
+        made = onepa.event(item, url if url and booking_ok(url) else None, details.get(code, {}), vacancies.get(class_id), short_description)
+        if made.get("start"):
+            kept.append(made)
+            counts[club]["kept"] += 1
+    source = {
+        "id": "onepa", "organiser": "onePA", "name": "People's Association (onePA)", "listing_url": onepa.LISTING_URL,
+        "api_url": f"{onepa.API}/search/query", "categories": list(onepa.FOOD_CATEGORIES),
+        "registration": "Places left from onePA's course vacancy service and event tickets; each booking link is the class's page as onePA's sitemaps publish it.",
+        "rule": onepa.RULE,
+        "courses_open": len({onepa.code_of(item) for item in courses}), "courses_at_clubs": at_clubs,
+        "clubs": [{**club, **counts[club["name"]]} for club in clubs],
+        "kept": len(kept),
+    }
+    return kept, source
+
+
+def build(nlb, onepa_part, now):
+    """data.json's content: both sources' classes in start order, and what each source listed and kept."""
+    events = sorted(nlb[0] + onepa_part[0], key=lambda item: (item.get("start") or "", item["id"]))
+    return {"schema_version": 2, "retrieved": now.isoformat(timespec="seconds"), "categories": CATEGORIES,
+            "sources": [nlb[1], onepa_part[1]], "events": events}
 
 
 def booking_ok(url):
     return bool(re.match(r"https://(?:%s)/" % "|".join(re.escape(host) for host in BOOKING_HOSTS), url))
 
 
-def main(argv=None):
-    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    parser.add_argument("--offline", metavar="LISTING.json", help="read the raw listing from a file instead of the API")
-    parser.add_argument("--no-pages", action="store_true", help="skip reading the event pages (no registration status)")
-    parser.add_argument("--now", help="the retrieval time to record, ISO 8601 (default: now)")
-    args = parser.parse_args(argv)
-    now = datetime.fromisoformat(args.now) if args.now else datetime.now(SGT).replace(microsecond=0)
-    listing = json.loads(Path(args.offline).read_text(encoding="utf-8")) if args.offline else fetch_listing()
+def fetch_nlb(read_pages):
+    listing = fetch_listing()
     pages = {}
-    if not args.no_pages:
+    if read_pages:
         for raw in listing:
             category, _ = categorise(raw, plain(raw.get("description")))
             url = raw.get("link")
@@ -262,9 +343,72 @@ def main(argv=None):
                     pages[str(raw["eventId"])] = registration(request(url))
                 except OSError as error:
                     print(f"{url}: {error}; registration left out", file=sys.stderr)
-    data = build(listing, pages, now)
+    return build_nlb(listing, pages)
+
+
+def search_all(body_for):
+    """Every result of one onePA search, page by page, ONEPA_SEARCH_DELAY apart."""
+    out, skip = [], 0
+    while True:
+        time.sleep(ONEPA_SEARCH_DELAY)
+        widget = (json.loads(request(f"{onepa.API}/search/query", body_for(skip))).get("widgets") or [{}])[0]
+        content = widget.get("content") or []
+        out += content
+        skip += len(content)
+        if not content or skip >= (widget.get("total_item") or 0):
+            return out
+
+
+def fetch_onepa(today, read_pages):
+    clubs = onepa.tampines_clubs(json.loads(request(f"{onepa.API}/search/outlets", tries=3)))
+    courses = [item for category in onepa.FOOD_CATEGORIES for item in search_all(lambda skip, c=category: onepa.course_search(c, today, skip))]
+    events = [item for club in clubs for item in search_all(lambda skip, c=club["name"]: onepa.event_search(c, today, skip))
+              if item.get("outlet_name") == club["name"]]
+    names = {club["name"] for club in clubs}
+    kept = [item for item in courses + events if item.get("outlet_name") in names and onepa.food(item)[0]]
+    urls = {}
+    for name in onepa.SITEMAPS:
+        time.sleep(ONEPA_DELAY)
+        urls.update(onepa.sitemap_urls(request(f"{onepa.BASE}/sitemap/sitemap-{name}.xml", tries=3)))
+    details, class_ids, seen = {}, [], set()
+    for item in kept:
+        code = onepa.code_of(item)
+        if code in seen:
+            continue
+        seen.add(code)
+        if (class_id := ((item.get("xp") or {}).get("Class") or {}).get("Id")):
+            class_ids.append(class_id)
+        if read_pages and urls.get(code):
+            time.sleep(ONEPA_DELAY)
+            try:
+                details[code] = onepa.page_details(request(urls[code]), code)
+            except OSError as error:
+                print(f"{urls[code]}: {error}; sessions left out", file=sys.stderr)
+    vacancies = {}
+    for at in range(0, len(class_ids), 20):
+        time.sleep(ONEPA_DELAY)
+        answer = json.loads(request(f"{onepa.API}/Products/GetCourseVacancy", class_ids[at:at + 20]))
+        for row in (answer.get("response") or {}).get("classVacancyList") or []:
+            vacancies[str(row["classId"]).upper()] = (row["vacancy"], row["maxVacancy"])
+    return build_onepa(clubs, courses, events, urls, details, vacancies)
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    parser.add_argument("--no-pages", action="store_true", help="skip reading each class's own page (no seats or sessions)")
+    parser.add_argument("--now", help="the retrieval time to record, ISO 8601 (default: now)")
+    parser.add_argument("--cache", metavar="DIR", help="save every response in DIR and reuse saved ones (for development; never commit it)")
+    args = parser.parse_args(argv)
+    global CACHE
+    if args.cache:
+        CACHE = Path(args.cache)
+        CACHE.mkdir(parents=True, exist_ok=True)
+    now = datetime.fromisoformat(args.now) if args.now else datetime.now(SGT).replace(microsecond=0)
+    nlb = fetch_nlb(not args.no_pages)
+    pa = fetch_onepa(now.astimezone(SGT).date().isoformat(), not args.no_pages)
+    data = build(nlb, pa, now)
     (HERE / "data.json").write_text(json.dumps(data, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
-    print(f"data.json: {len(data['events'])} of {data['listed']} listed events kept, retrieved {data['retrieved']}")
+    print(f"data.json: {len(nlb[0])} NLB classes of {nlb[1]['listed']} listed, {len(pa[0])} onePA classes at the Tampines clubs, retrieved {data['retrieved']}")
     import build as page_builder
     page_builder.main([])
 

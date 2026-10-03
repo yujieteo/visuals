@@ -75,14 +75,14 @@ test("the page lists the upcoming classes with their official booking links, and
     const first = await evaluate(READ);
     assert.deepEqual(first.ids, upcoming.map((e) => e.id), "every upcoming class, in start order");
     assert.ok(first.ids.length > 0);
-    assert.equal(first.books.length, upcoming.length, "each class has a Book on NLB link");
+    assert.equal(first.books.length, upcoming.length, "each class has a Book on NLB or Book on onePA link");
     for (const book of first.books) {
       const e = data.events.find((x) => x.id === book.id);
       assert.equal(book.href, e?.booking_url, "the link is the snapshot's, unchanged");
-      assert.match(book.href, /^https:\/\/(nlb\.libcal\.com|www\.nlb\.gov\.sg|go\.gov\.sg)\//);
+      assert.match(book.href, e?.source === "onepa" ? /^https:\/\/www\.onepa\.gov\.sg\// : /^https:\/\/(nlb\.libcal\.com|www\.nlb\.gov\.sg|go\.gov\.sg)\//);
       assert.equal(book.target, "_blank");
       assert.match(book.rel, /noopener/);
-      assert.match(book.text, /^Book on NLB/);
+      assert.match(book.text, e?.source === "onepa" ? /^Book on onePA/ : /^Book on NLB/);
     }
     const asOf = await evaluate(`document.getElementById("asof").textContent`);
     assert.match(asOf, /^Data as of \w{3} \d{1,2} \w{3} \d{4}, \d{2}:\d{2} Singapore time\./);
@@ -93,7 +93,19 @@ test("the page lists the upcoming classes with their official booking links, and
     assert.deepEqual(noMaker.ids, upcoming.filter((e) => e.category !== "maker").map((e) => e.id));
     assert.match(noMaker.hash, /cat=cooking,hands-on/);
 
-    // Price: no class in the snapshot is paid, so Paid empties the list and says so.
+    // Organiser and venue: onePA alone, then one community club, then back to every source.
+    const onePA = await evaluate(`(() => { document.getElementById("reset").click(); document.querySelector('#organiser button[data-org="onepa"]').click(); return ${READ}; })()`);
+    assert.deepEqual(onePA.ids, upcoming.filter((e) => e.source === "onepa").map((e) => e.id));
+    assert.ok(onePA.ids.length > 0, "the snapshot has upcoming onePA classes");
+    assert.match(onePA.hash, /org=onepa/);
+    const club = /** @type {string} */ (upcoming.find((e) => e.source === "onepa")?.venue_group);
+    const atClub = await evaluate(`(() => { const s = document.getElementById("venue"); s.value = ${JSON.stringify(club)}; s.dispatchEvent(new Event("change")); return ${READ}; })()`);
+    assert.deepEqual(atClub.ids, upcoming.filter((e) => e.source === "onepa" && e.venue_group === club).map((e) => e.id));
+    const library = await evaluate(`(() => { document.getElementById("reset").click(); const s = document.getElementById("venue"); s.value = "Tampines Regional Library"; s.dispatchEvent(new Event("change")); return ${READ}; })()`);
+    assert.deepEqual(library.ids, upcoming.filter((e) => e.venue_group === "Tampines Regional Library").map((e) => e.id));
+    await evaluate(`(() => { document.getElementById("reset").click(); document.querySelector('#categories button[data-category="maker"]').click(); })()`);
+
+    // Price: Paid keeps the classes with a fee.
     const paid = await evaluate(`(() => { document.querySelector('#price button[data-price="paid"]').click(); return ${READ}; })()`);
     assert.deepEqual(paid.ids, upcoming.filter((e) => e.category !== "maker" && e.free === false).map((e) => e.id));
     if (!paid.ids.length) assert.match(paid.empty.join(" "), /No class matches/);
@@ -125,17 +137,22 @@ test("the page lists the upcoming classes with their official booking links, and
 });
 
 test("a deep link restores the filters and marks the linked class", { skip: !browser, timeout: 30000 }, async () => {
-  const target = upcoming[0];
-  const page = await openPage(`#cat=${target.category}&price=free&event=${target.id}`);
+  // A onePA class, linked with its own source, club and price, as "Link to this class" would.
+  const target = upcoming.find((e) => e.source === "onepa") || upcoming[0];
+  const price = target.free ? "free" : "paid";
+  const page = await openPage(`#cat=${target.category}&org=${target.source}&venue=${encodeURIComponent(String(target.venue_group))}&price=${price}&event=${target.id}`);
   try {
     const view = await page.evaluate(`(() => ({ ...${READ},
       pressed: [...document.querySelectorAll("#categories button[aria-pressed=true]")].map((b) => b.dataset.category),
       price: document.querySelector("#price button[aria-pressed=true]").dataset.price,
+      organiser: document.querySelector("#organiser button[aria-pressed=true]").dataset.org,
+      venue: document.getElementById("venue").value,
       selected: [...document.querySelectorAll("#list article.selected")].map((a) => a.dataset.id) }))()`);
     assert.deepEqual(view.pressed, [target.category]);
-    assert.equal(view.price, "free");
+    assert.deepEqual([view.price, view.organiser, view.venue], [price, target.source, target.venue_group]);
     assert.deepEqual(view.selected, [target.id]);
-    assert.deepEqual(view.ids, upcoming.filter((e) => e.category === target.category && e.free === true).map((e) => e.id));
+    assert.deepEqual(view.ids, upcoming.filter((e) => e.category === target.category && e.source === target.source
+      && e.venue_group === target.venue_group && e.free === target.free).map((e) => e.id));
     assert.deepEqual(page.errors, []);
   } finally {
     await page.close();
