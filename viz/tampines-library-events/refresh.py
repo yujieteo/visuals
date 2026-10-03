@@ -14,18 +14,19 @@ NLB, Tampines Regional Library (this file):
 onePA, the Tampines community clubs (onepa.py says how): the People's Association's cooking and baking
 courses and events at every Tampines CC, with each class's published onePA page as its booking link.
 
-Then write data.json, set visual.json's "fetched" to the Singapore date of the retrieval, run build.py, which
-inlines it into index.html, and print what changed against the previous data.json, ready for a pull request.
-Nothing is invented: a field a source does not publish is left out, and every booking link is one the source
-publishes, never a constructed URL.
+Then print what changed against the previous data.json, ready for a pull request, as scripts/refresh_kit.py
+does for every visual. With --apply, write data.json, set visual.json's "fetched" to the Singapore date of the
+retrieval and run build.py, which inlines it into index.html. Nothing is invented: a field a source does not
+publish is left out, and every booking link is one the source publishes, never a constructed URL.
 
-Nothing is written when a class's own page failed to load (its seats would be missing; --allow-partial writes
-anyway), or when the result looks broken: NLB lists no event, onePA has no Tampines club, or the classes kept
-fall to less than half of the previous data.json's (--force writes anyway; say why in the pull request).
+Nothing is written, and the exit code is 2, when a source fails or answers with a bot check, when a class's own
+page failed to load (its seats would be missing; --allow-partial writes anyway), or when the result looks
+broken: NLB lists no event, onePA has no Tampines club, or the classes kept fall to less than half of the
+previous data.json's (--force writes anyway; say why in the pull request).
 
-Usage: python3 refresh.py [--no-pages] [--allow-partial] [--force] [--now ISO8601]
+Usage: python3 refresh.py [--check | --apply] [--no-pages] [--allow-partial] [--force] [--now ISO8601]
+   or: python3 ../../scripts/refresh.py tampines-library-events [the same flags]
 """
-import argparse
 import html
 import json
 import re
@@ -36,9 +37,11 @@ import urllib.request
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-import onepa
-
 HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parents[1] / "scripts"))
+import onepa  # noqa: E402
+import refresh_kit  # noqa: E402
+
 SGT = timezone(timedelta(hours=8))
 LISTING_URL = "https://www.nlb.gov.sg/main/whats-on/events"
 API_URL = "https://www.nlb.gov.sg/main/api/Event/EventFilter"
@@ -192,7 +195,7 @@ def registration(page):
     return found
 
 
-class Blocked(RuntimeError):
+class Blocked(refresh_kit.Failed):
     """A source answered with a bot check instead of its page: stop, never try to get past it."""
 
 
@@ -396,14 +399,6 @@ def problems(data, previous):
     return found
 
 
-def set_fetched(text, day):
-    """visual.json's text with only its "fetched" date changed."""
-    out, count = re.subn(r'("fetched"\s*:\s*)"[^"]*"', lambda match: f'{match.group(1)}"{day}"', text, count=1)
-    if not count:
-        raise SystemExit('visual.json has no "fetched" field')
-    return out
-
-
 def seats(item):
     """A class's registration as one phrase, such as "open, 7 left"."""
     reg = item.get("registration") or {}
@@ -411,60 +406,66 @@ def seats(item):
 
 
 def summary(previous, data):
-    """What changed from previous to data, as Markdown lines for a pull request."""
+    """What changed from previous to data, as (kind, item, detail) rows for a pull request."""
     old = {item["id"]: item for item in (previous or {}).get("events", [])}
     new = {item["id"]: item for item in data["events"]}
     nlb, pa = data["sources"]
     before = {source["id"]: source for source in (previous or {}).get("sources", [])}
     clubs = ", ".join(f"{club['name']} {club['kept']}" for club in pa.get("clubs", []))
-    lines = [f"Retrieved {data['retrieved']} (previous {(previous or {}).get('retrieved', 'none')}).",
-             f"- NLB: {nlb['kept']} kept of {nlb['listed']} listed (previous {before.get('nlb', {}).get('kept', 0)} of {before.get('nlb', {}).get('listed', 0)}).",
-             f"- onePA: {pa['kept']} kept (previous {before.get('onepa', {}).get('kept', 0)}); by club: {clubs or 'none'}."]
-    lines += [f"- Added: {key} {new[key]['title']} ({new[key].get('start', '')[:10]})" for key in new if key not in old]
-    lines += [f"- Removed: {key} {old[key]['title']} ({old[key].get('start', '')[:10]})" for key in old if key not in new]
-    lines += [f"- Registration: {key} {new[key]['title']}: {seats(old[key])} -> {seats(new[key])}"
-              for key in new if key in old and seats(old[key]) != seats(new[key])]
-    if len(lines) == 3:
-        lines.append("- No class added, removed or changed in places.")
-    return lines
+    rows = [{"kind": "source", "item": "NLB", "detail": f"{nlb['kept']} kept of {nlb['listed']} listed (previous {before.get('nlb', {}).get('kept', 0)} of {before.get('nlb', {}).get('listed', 0)})"},
+            {"kind": "source", "item": "onePA", "detail": f"{pa['kept']} kept (previous {before.get('onepa', {}).get('kept', 0)}); by club: {clubs or 'none'}"}]
+    rows += [{"kind": "added", "item": f"{key} {new[key]['title']}", "detail": new[key].get("start", "")[:10]} for key in new if key not in old]
+    rows += [{"kind": "removed", "item": f"{key} {old[key]['title']}", "detail": old[key].get("start", "")[:10]} for key in old if key not in new]
+    rows += [{"kind": "registration", "item": f"{key} {new[key]['title']}", "detail": f"{seats(old[key])} -> {seats(new[key])}"}
+             for key in new if key in old and seats(old[key]) != seats(new[key])]
+    return rows
 
 
-def save(data, failures, allow_partial=False, force=False, here=None):
-    """Write data.json and visual.json's "fetched" unless the run was partial or looks broken; the change summary."""
+def guard(data, failures, previous, allow_partial=False, force=False):
+    """Failed unless data can be written: the run was complete and the result does not look broken."""
     if failures and not allow_partial:
-        raise SystemExit(f"{len(failures)} class page(s) failed to load, so their places would be missing; nothing written. "
-                         "Run again later, or pass --allow-partial to write without them.")
-    here = here or HERE
-    path = here / "data.json"
-    previous = json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
+        raise refresh_kit.Failed(f"{len(failures)} class page(s) failed to load, so their places would be missing; nothing written. "
+                                 "Run again later, or pass --allow-partial to write without them.")
     if (found := problems(data, previous)) and not force:
-        raise SystemExit(f"Refusing to write data.json: {'; '.join(found)}. Pass --force if the sources really say so.")
-    visual = here / "visual.json"
+        raise refresh_kit.Failed(f"Refusing to write data.json: {'; '.join(found)}. Pass --force if the sources really say so.")
+
+
+def text_of(data):
+    return json.dumps(data, ensure_ascii=False, indent=1) + "\n"
+
+
+def same(previous, data):
+    """Whether two snapshots list the same classes and sources, whenever each was retrieved."""
+    return previous is not None and {**previous, "retrieved": None} == {**data, "retrieved": None}
+
+
+def update(data, failures, folder, allow_partial=False, force=False):
+    """refresh_kit's Update for data: the previous data.json unchanged when the sources say the same."""
+    text = refresh_kit.read(folder, "data.json")
+    previous = json.loads(text) if text else None
+    guard(data, failures, previous, allow_partial, force)
     day = datetime.fromisoformat(data["retrieved"]).astimezone(SGT).date().isoformat()
-    fetched = set_fetched(visual.read_text(encoding="utf-8"), day)
-    path.write_text(json.dumps(data, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
-    visual.write_text(fetched, encoding="utf-8")
-    return summary(previous, data)
+    return refresh_kit.Update(files={"data.json": text if same(previous, data) else text_of(data)}, fetched=day,
+                              changes=summary(previous, data), source=LISTING_URL)
 
 
-def main(argv=None):
-    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+def add_arguments(parser):
     parser.add_argument("--no-pages", action="store_true", help="skip reading each class's own page (no seats or sessions)")
     parser.add_argument("--allow-partial", action="store_true", help="write even when some class pages failed to load")
     parser.add_argument("--force", action="store_true", help="write even when the result looks broken (no listing, no clubs, or a shrink by more than half)")
-    parser.add_argument("--now", help="the retrieval time to record, ISO 8601 (default: now)")
-    args = parser.parse_args(argv)
-    now = datetime.fromisoformat(args.now) if args.now else datetime.now(SGT).replace(microsecond=0)
+
+
+def refresh(source, folder, args):
+    now = source.now
     failures = []
-    nlb = fetch_nlb(not args.no_pages, failures)
-    pa = fetch_onepa(now.astimezone(SGT).date().isoformat(), not args.no_pages, failures)
+    try:
+        nlb = fetch_nlb(not getattr(args, "no_pages", False), failures)
+        pa = fetch_onepa(now.astimezone(SGT).date().isoformat(), not getattr(args, "no_pages", False), failures)
+    except (OSError, ValueError, KeyError, TypeError) as error:
+        raise refresh_kit.Failed(f"a source failed or changed its format: {type(error).__name__}: {error}") from error
     data = build(nlb, pa, now)
-    changes = save(data, failures, args.allow_partial, args.force)
-    print(f"data.json: {len(nlb[0])} NLB classes of {nlb[1]['listed']} listed, {len(pa[0])} onePA classes at the Tampines clubs, retrieved {data['retrieved']}")
-    import build as page_builder
-    page_builder.main([])
-    print("\n".join(changes))
+    return update(data, failures, folder, getattr(args, "allow_partial", False), getattr(args, "force", False))
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(refresh_kit.main(slug=HERE.name))
