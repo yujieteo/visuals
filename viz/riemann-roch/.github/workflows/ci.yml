@@ -1,0 +1,26 @@
+# CI for the Divisors, Linear Systems & Riemann–Roch Laboratory. This repository is where the laboratory and its
+# tests develop; the site's visuals/riemann-roch/ is a port of the page files and runs none of these tests. There
+# is no Python test, so the steps check that index.html and raw.json are fresh, run every tests/*.test.mjs and
+# tests/*.test.cjs, and type-check the JavaScript.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: node build.mjs --check
+      - run: node --test 'tests/*.test.{mjs,cjs}'
+      - name: Type-check JavaScript
+        run: npm ci && npm run typecheck
