@@ -11,7 +11,7 @@ def strip_types(js):
     whole-line JSDoc blocks (/** ... */), whole-line `// @ts-expect-error` notes, and inline JSDoc comments such as
     `let /** @type {State} */ S` (with the one space after them). Everything else is kept byte for byte, so a page
     built from an annotated template is the page built from the unannotated one. Templates use /** only for types."""
-    out = re.sub(r"^[ \t]*/\*\*[\s\S]*?\*/[ \t]*\n", "", js, flags=re.M)
+    out = re.sub(r"^[ \t]*/\*\*(?:(?!\*/)[\s\S])*\*/[ \t]*\n", "", js, flags=re.M)
     out = re.sub(r"^[ \t]*// @ts-expect-error\b.*\n", "", out, flags=re.M)
     return re.sub(r"/\*\*[\s\S]*?\*/ ?", "", out)
 
@@ -20,7 +20,7 @@ def compact(js):
     """Drops type annotations (strip_types), whole-line comments, blank lines and indentation. The sources use no
     template literals or line continuations, so every statement is unchanged; tests run the compacted code the page
     ships."""
-    out = re.sub(r"^[ \t]*/\*[\s\S]*?\*/[ \t]*\n", "", strip_types(js), flags=re.M)
+    out = re.sub(r"^[ \t]*/\*(?:(?!\*/)[\s\S])*\*/[ \t]*\n", "", strip_types(js), flags=re.M)
     lines = [ln.strip() for ln in out.split("\n")]
     out = "\n".join(ln for ln in lines if ln and not ln.startswith("//"))
     assert "`" not in out and not re.search(r"\\$", out, re.M), "compact() cannot handle template literals or continuations"

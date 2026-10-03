@@ -47,6 +47,12 @@ class PagePartsTest(unittest.TestCase):
             "  /* an ordinary comment stays */ list.push(`${t.a}`); // so does this one\n})();\n"
         ))
 
+    def test_a_leading_jsdoc_with_code_after_it_keeps_the_code(self):
+        src = "  /** @type {number} */ let a = 1;\n  go(a);\n  /** @param {string} s */\n  function f(s) {}\n"
+        self.assertEqual(strip_types(src), "  let a = 1;\n  go(a);\n  function f(s) {}\n")
+        src = "/* note */ let a = 1;\ngo(a);\n/* block */\nf(a);\n"
+        self.assertEqual(compact(src), "/* note */ let a = 1;\ngo(a);\nf(a);")
+
     def test_compact_drops_type_annotations_too(self):
         src = "/** @param {number} a */\nconst f = (a) => {\n  let /** @type {number} */ b = a;\n  return b;\n};\n"
         self.assertEqual(compact(src), "const f = (a) => {\nlet b = a;\nreturn b;\n};")
