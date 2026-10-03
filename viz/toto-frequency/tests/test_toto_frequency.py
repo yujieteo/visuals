@@ -33,6 +33,29 @@ class TotoFrequencyTest(unittest.TestCase):
             for name in ("raw.json", "index.html"):
                 self.assertEqual((copy / name).read_text(encoding="utf-8"), (VIZ / name).read_text(encoding="utf-8"), name)
 
+    def test_window_and_ball_helpers(self):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("toto_build", VIZ / "build.py")
+        build = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(build)
+        # A month back from the 31st lands on the last day of a shorter month.
+        self.assertEqual(build.months_before(date(2026, 3, 31), 1), date(2026, 2, 28))
+        self.assertEqual(build.months_before(date(2024, 5, 31), 3), date(2024, 2, 29))
+        self.assertEqual(build.months_before(date(2026, 1, 15), 12), date(2025, 1, 15))
+        draws = [{"draw_no": 3, "date": "2026-03-10", "winning": [1, 2, 3, 4, 5, 6]},
+                 {"draw_no": 2, "date": "2026-02-10", "winning": [1, 7, 8, 9, 10, 11]},
+                 {"draw_no": 1, "date": "2025-12-01", "winning": [1, 2, 12, 13, 14, 15]}]
+        window = build.window_summary(draws, date(2026, 3, 10), "3m", "3 months", 3)
+        self.assertEqual(window, {"id": "3m", "label": "3 months", "after": "2025-12-10",
+                                  "first_draw": {"draw_no": 2, "date": "2026-02-10"}, "draws": 2,
+                                  "average_per_ball": round(6 * 2 / 49, 2)})
+        with self.assertRaises(SystemExit):
+            build.window_summary(draws[:2], date(2026, 3, 10), "3m", "3 months", 3)
+        self.assertEqual(build.ball_record(1, draws, [window]), {
+            "number": 1, "counts": {"3m": 2}, "bands": {"3m": "b0"}, "last_drawn": {"draw_no": 3, "date": "2026-03-10"}})
+        self.assertEqual(build.ball_record(2, draws, [window])["counts"], {"3m": 1})
+        self.assertIsNone(build.ball_record(49, draws, [window])["last_drawn"])
+
     def test_builder_verifies_the_committed_page(self):
         result = subprocess.run([sys.executable, str(VIZ / "build.py"), "--verify"], capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, result.stderr)

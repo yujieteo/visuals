@@ -83,8 +83,9 @@ function element(tag, store = {}) {
 }
 
 // Runs a built page's scripts in the stand-in DOM. click(id) clicks a button and waits for its handlers;
-// saved holds each downloaded file's text and copied each clipboard write.
-export async function openPage(slug) {
+// saved holds each downloaded file's text and copied each clipboard write. A modelContext, if given,
+// receives the page's WebMCP tool registrations.
+export async function openPage(slug, { modelContext } = {}) {
   const html = read("index.html");
   const byId = new Map(), bySelector = new Map(), urls = new Map(), created = [], saved = [], copied = [];
   for (const m of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)) {
@@ -93,7 +94,7 @@ export async function openPage(slug) {
   }
   const get = (map, key) => { if (!map.has(key)) map.set(key, element("div")); return map.get(key); };
   const document = element("document", {
-    body: element("body"), documentElement: element("html"), activeElement: null, modelContext: undefined,
+    body: element("body"), documentElement: element("html"), activeElement: null, modelContext,
     getElementById: (id) => get(byId, id),
     createTextNode: (text) => element("#text", { textContent: String(text), nodeType: 3 }),
     querySelector: (s) => (/^#[\w-]+$/.test(s) ? get(byId, s.slice(1)) : get(bySelector, s)),

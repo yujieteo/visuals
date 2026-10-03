@@ -94,38 +94,41 @@ def band_of(count):
     return next(b["id"] for b in BANDS if count >= b["min"] and (b["max"] is None or count <= b["max"]))
 
 
+def window_summary(draws, latest, wid, label, months):
+    """One look-back window: every draw after the same calendar day `months` before the latest draw."""
+    after = months_before(latest, months)
+    inside = [d for d in draws if date.fromisoformat(d["date"]) > after]
+    if date.fromisoformat(draws[-1]["date"]) > after:
+        fail(f"draws.csv does not reach back {label}; run fetch.py again")
+    return {
+        "id": wid,
+        "label": label,
+        "after": after.isoformat(),
+        "first_draw": {"draw_no": inside[-1]["draw_no"], "date": inside[-1]["date"]},
+        "draws": len(inside),
+        "average_per_ball": round(PICKS * len(inside) / len(BALLS), 2),
+    }
+
+
+def ball_record(n, kept, windows):
+    """Ball n's count and band in each window, and the newest draw that included it."""
+    ball = {"number": n, "counts": {}, "bands": {}, "last_drawn": None}
+    for w in windows:
+        count = sum(n in d["winning"] for d in kept if d["date"] > w["after"])
+        ball["counts"][w["id"]] = count
+        ball["bands"][w["id"]] = band_of(count)
+    hit = next((d for d in kept if n in d["winning"]), None)
+    if hit:
+        ball["last_drawn"] = {"draw_no": hit["draw_no"], "date": hit["date"]}
+    return ball
+
+
 def build():
     draws = read_draws()
     latest = date.fromisoformat(draws[0]["date"])
-    windows = []
-    for wid, label, months in WINDOWS:
-        after = months_before(latest, months)
-        inside = [d for d in draws if date.fromisoformat(d["date"]) > after]
-        if date.fromisoformat(draws[-1]["date"]) > after:
-            fail(f"draws.csv does not reach back {label}; run fetch.py again")
-        windows.append({
-            "id": wid,
-            "label": label,
-            "after": after.isoformat(),
-            "first_draw": {"draw_no": inside[-1]["draw_no"], "date": inside[-1]["date"]},
-            "draws": len(inside),
-            "average_per_ball": round(PICKS * len(inside) / len(BALLS), 2),
-        })
-    longest = windows[-1]["after"]
-    kept = [d for d in draws if d["date"] > longest]
-
-    balls = []
-    for n in BALLS:
-        ball = {"number": n, "counts": {}, "bands": {}, "last_drawn": None}
-        for w in windows:
-            inside = [d for d in kept if d["date"] > w["after"]]
-            count = sum(n in d["winning"] for d in inside)
-            ball["counts"][w["id"]] = count
-            ball["bands"][w["id"]] = band_of(count)
-        hit = next((d for d in kept if n in d["winning"]), None)
-        if hit:
-            ball["last_drawn"] = {"draw_no": hit["draw_no"], "date": hit["date"]}
-        balls.append(ball)
+    windows = [window_summary(draws, latest, *window) for window in WINDOWS]
+    kept = [d for d in draws if d["date"] > windows[-1]["after"]]
+    balls = [ball_record(n, kept, windows) for n in BALLS]
     for w in windows:
         total = sum(b["counts"][w["id"]] for b in balls)
         if total != PICKS * w["draws"]:
@@ -149,26 +152,25 @@ def build():
     }
 
 
+def replace_block(page, opening, content):
+    """Replace the body of the one script block that starts with `opening`."""
+    page, found = re.subn(rf"({re.escape(opening)}).*?(</script>)",
+                          lambda m: m.group(1) + content + m.group(2), page, count=1, flags=re.S)
+    if not found:
+        fail(f"index.html has no {opening} block")
+    return page
+
+
 def render(dataset):
     raw = json.dumps(dataset, ensure_ascii=False, indent=1) + "\n"
     page = (HERE / "index.html").read_text(encoding="utf-8")
     block = json.dumps(dataset, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
-    page, found = re.subn(
-        r'(<script id="dataset" type="application/json">).*?(</script>)',
-        lambda m: m.group(1) + block + m.group(2), page, count=1, flags=re.S,
-    )
-    if not found:
-        fail('index.html has no <script id="dataset" type="application/json"> block')
+    page = replace_block(page, '<script id="dataset" type="application/json">', block)
     for block_id, name in (("beamdswitch", "beamdswitch.js"), ("report", "report.js")):
         script = (HERE / name).read_text(encoding="utf-8")
         if "</script" in script:
             fail(f"{name} must not contain </script")
-        page, found = re.subn(
-            rf'(<script id="{block_id}">).*?(</script>)',
-            lambda m: m.group(1) + "\n" + script + m.group(2), page, count=1, flags=re.S,
-        )
-        if not found:
-            fail(f'index.html has no <script id="{block_id}"> block')
+        page = replace_block(page, f'<script id="{block_id}">', "\n" + script)
     return raw, page
 
 

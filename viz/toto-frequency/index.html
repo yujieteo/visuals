@@ -427,6 +427,10 @@ const drawsIn = (wid) => D.draws.filter((d) => d.date > WINDOW[wid].after);
 // Rank 1 = most drawn; tied balls share a rank.
 const ranked = (wid) => TotoReport.ranked(D, wid);
 const rankOf = (wid) => Object.fromEntries(ranked(wid).map((r) => [r.ball.number, r.rank]));
+const average = (w) => w.average_per_ball.toFixed(1);
+const lastDrawn = (b) => (b.last_drawn ? `Last drawn ${fmtDate(b.last_drawn.date)}` : "Not drawn in the last year");
+// A filter chip: a toggle button that re-renders after its choice is applied.
+const chip = (pressed, choose, ...kids) => h("button", { type: "button", class: "chip", "aria-pressed": String(pressed), onclick: () => { choose(); render(); } }, ...kids);
 
 function header() {
   $("as-of").textContent = `Data to ${fmtDate(D.latest_draw.date)}`;
@@ -440,23 +444,25 @@ function stats() {
   $("stats").replaceChildren(
     h("li", null, h("b", { text: String(w.draws) }), h("span", { text: `draws in the last ${w.label}, ${fmtDate(w.first_draw.date)} to ${fmtDate(D.latest_draw.date)}` })),
     h("li", null, h("b", { text: best.map((r) => r.ball.number).join(", ") }), h("span", { text: `drawn most, ${plural(best[0].count, "time")} each` })),
-    h("li", null, h("b", { text: w.average_per_ball.toFixed(1) }), h("span", { text: "times per ball if the draws were spread evenly (6 × draws ÷ 49)" })),
+    h("li", null, h("b", { text: average(w) }), h("span", { text: "times per ball if the draws were spread evenly (6 × draws ÷ 49)" })),
     h("li", null, h("b", { text: String(D.balls.filter((b) => b.counts[state.window] === 0).length) }), h("span", { text: "balls not drawn at all in this window" })),
   );
 }
 
 function chips() {
   $("window-chips").replaceChildren($("window-chips").firstElementChild, ...D.windows.map((w) =>
-    h("button", { type: "button", class: "chip", "aria-pressed": String(state.window === w.id), onclick: () => { state.window = w.id; render(); } }, `Last ${w.label}`, h("span", { class: "n", text: String(w.draws) }))));
+    chip(state.window === w.id, () => { state.window = w.id; }, `Last ${w.label}`, h("span", { class: "n", text: String(w.draws) }))));
   $("sort-chips").replaceChildren($("sort-chips").firstElementChild,
-    ...[["number", "Ball number"], ["most", "Most drawn first"]].map(([id, label]) =>
-      h("button", { type: "button", class: "chip", "aria-pressed": String(state.sort === id), onclick: () => { state.sort = id; render(); } }, label)));
+    ...[["number", "Ball number"], ["most", "Most drawn first"]].map(([id, label]) => chip(state.sort === id, () => { state.sort = id; }, label)));
   const tally = (id) => D.balls.filter((b) => b.bands[state.window] === id).length;
   $("band-chips").replaceChildren($("band-chips").firstElementChild,
-    h("button", { type: "button", class: "chip", "aria-pressed": String(state.band == null), onclick: () => { state.band = null; render(); } }, "All"),
-    ...[...D.bands].reverse().map((b) =>
-      h("button", { type: "button", class: "chip", "aria-pressed": String(state.band === b.id), title: `${bandText(b)} times`, onclick: () => { state.band = state.band === b.id ? null : b.id; render(); } },
-        h("span", { class: `swatch sw-${b.id}`, "aria-hidden": "true" }), b.label, h("span", { class: "n", text: String(tally(b.id)) }))));
+    chip(state.band == null, () => { state.band = null; }, "All"),
+    ...[...D.bands].reverse().map((b) => {
+      const button = chip(state.band === b.id, () => { state.band = state.band === b.id ? null : b.id; },
+        h("span", { class: `swatch sw-${b.id}`, "aria-hidden": "true" }), b.label, h("span", { class: "n", text: String(tally(b.id)) }));
+      button.title = `${bandText(b)} times`;
+      return button;
+    }));
 }
 
 function key() {
@@ -467,7 +473,7 @@ function key() {
 function statusLine() {
   const w = WINDOW[state.window];
   const lit = state.band ? D.balls.filter((b) => b.bands[state.window] === state.band).length : 49;
-  const parts = [h("strong", { text: `Last ${w.label}` }), `: ${plural(w.draws, "draw")}, average ${w.average_per_ball.toFixed(1)} per ball.`];
+  const parts = [h("strong", { text: `Last ${w.label}` }), `: ${plural(w.draws, "draw")}, average ${average(w)} per ball.`];
   if (state.band) parts.push(` Highlighting ${plural(lit, "ball")} drawn ${bandText(BAND[state.band])} times.`);
   $("status").replaceChildren(...parts);
 }
@@ -507,7 +513,7 @@ function detail() {
   const ranks = rankOf(state.window);
   el.replaceChildren(
     h("h3", { text: `Ball ${b.number}` }),
-    h("p", { class: "small", style: "margin:.15rem 0 0", text: `${describe(b)} — rank ${ranks[b.number]} of 49. The even-spread average is ${WINDOW[state.window].average_per_ball.toFixed(1)}.` }),
+    h("p", { class: "small", style: "margin:.15rem 0 0", text: `${describe(b)} — rank ${ranks[b.number]} of 49. The even-spread average is ${average(WINDOW[state.window])}.` }),
     h("dl", null,
       ...D.windows.flatMap((w) => [h("dt", { text: `Last ${w.label}` }), h("dd", { text: `${plural(b.counts[w.id], "time")} of ${w.draws} draws · ${BAND[b.bands[w.id]].label.toLowerCase()}` })]),
       h("dt", { text: "Last drawn" }), h("dd", { text: b.last_drawn ? `Draw ${b.last_drawn.draw_no}, ${fmtDate(b.last_drawn.date)}` : "Not in the last year" }),
@@ -545,8 +551,8 @@ function showTip(b, target) {
   tip.replaceChildren(
     h("div", { class: "t-head", text: `Ball ${b.number}` }),
     h("div", null, h("span", { class: "t-big", text: String(b.counts[state.window]) }), h("span", { class: "soft", text: ` of ${w.draws} draws, last ${w.label}` })),
-    h("div", { class: "soft", text: `${BAND[b.bands[state.window]].label} · average ${w.average_per_ball.toFixed(1)}` }),
-    h("div", { class: "soft", text: b.last_drawn ? `Last drawn ${fmtDate(b.last_drawn.date)}` : "Not drawn in the last year" }),
+    h("div", { class: "soft", text: `${BAND[b.bands[state.window]].label} · average ${average(w)}` }),
+    h("div", { class: "soft", text: lastDrawn(b) }),
   );
   const r = target.getBoundingClientRect();
   tip.classList.add("on");
@@ -599,10 +605,29 @@ header(); method(); key(); render();
 const result = (v) => ({ content: [{ type: "text", text: JSON.stringify(v) }] });
 const mc = (typeof document !== "undefined" && document.modelContext) || (typeof navigator !== "undefined" && navigator.modelContext);
 const windowSchema = { type: "string", enum: D.windows.map((w) => w.id), description: "3m, 6m or 1y, counted back from the latest draw" };
-mc?.registerTool({ name: "get_metadata", description: "Return what this page counts, the latest draw, the windows (with draw counts and date ranges), the colour bands, the method, the randomness caveat and the sources.", inputSchema: { type: "object", properties: {}, additionalProperties: false }, annotations: { readOnlyHint: true }, async execute() { return result({ title: D.title, as_of: D.as_of, latest_draw: D.latest_draw, windows: D.windows, bands: D.bands, method: D.method, random_note: D.random_note, sources: D.sources, truncated: false }); } });
-mc?.registerTool({ name: "get_ball_counts", description: "Return how many draws in a window included each ball 1-49 as a winning number, with its band and rank. Sort by ball number or most drawn first. Past counts do not predict future draws.", inputSchema: { type: "object", properties: { window: windowSchema, sort: { type: "string", enum: ["number", "most"] }, limit: { type: "integer", minimum: 1, maximum: 49 } }, required: ["window"], additionalProperties: false }, annotations: { readOnlyHint: true }, async execute(i) { const rows = ranked(i.window); if (i.sort !== "most") rows.sort((a, b) => a.ball.number - b.ball.number); const limit = i.limit || 49; return result({ window: WINDOW[i.window], returned: Math.min(limit, 49), truncated: limit < 49, balls: rows.slice(0, limit).map((r) => ({ number: r.ball.number, count: r.count, rank: r.rank, band: BAND[r.ball.bands[i.window]].label })), note: D.random_note, next_steps: ["Use get_ball with a number for every window and its draw dates."] }); } });
-mc?.registerTool({ name: "get_ball", description: "Return one ball's counts in every window, when it was last drawn and the draws that included it in the last year.", inputSchema: { type: "object", properties: { number: { type: "integer", minimum: 1, maximum: 49 } }, required: ["number"], additionalProperties: false }, annotations: { readOnlyHint: true }, async execute({ number }) { const b = BALL[number]; if (!b) return result({ error: "number must be 1 to 49" }); return result({ ball: b, draws: D.draws.filter((d) => d.winning.includes(number)).map((d) => ({ draw_no: d.draw_no, date: d.date, source_url: d.source_url })), note: D.random_note, truncated: false }); } });
-mc?.registerTool({ name: "list_draws", description: "List the draws in a window, newest first, with winning numbers, additional number and the Singapore Pools results page for each.", inputSchema: { type: "object", properties: { window: windowSchema, limit: { type: "integer", minimum: 1, maximum: 200 } }, required: ["window"], additionalProperties: false }, annotations: { readOnlyHint: true }, async execute(i) { const rows = drawsIn(i.window); const limit = i.limit || rows.length; return result({ total: rows.length, returned: Math.min(limit, rows.length), truncated: rows.length > limit, draws: rows.slice(0, limit) }); } });
+const tool = (name, description, properties, required, execute) => mc?.registerTool({ name, description,
+  inputSchema: { type: "object", properties, ...(required.length && { required }), additionalProperties: false }, annotations: { readOnlyHint: true }, execute });
+tool("get_metadata", "Return what this page counts, the latest draw, the windows (with draw counts and date ranges), the colour bands, the method, the randomness caveat and the sources.", {}, [],
+  async () => result({ title: D.title, as_of: D.as_of, latest_draw: D.latest_draw, windows: D.windows, bands: D.bands, method: D.method, random_note: D.random_note, sources: D.sources, truncated: false }));
+tool("get_ball_counts", "Return how many draws in a window included each ball 1-49 as a winning number, with its band and rank. Sort by ball number or most drawn first. Past counts do not predict future draws.",
+  { window: windowSchema, sort: { type: "string", enum: ["number", "most"] }, limit: { type: "integer", minimum: 1, maximum: 49 } }, ["window"], async (i) => {
+    const rows = ranked(i.window);
+    if (i.sort !== "most") rows.sort((a, b) => a.ball.number - b.ball.number);
+    const limit = i.limit || 49;
+    return result({ window: WINDOW[i.window], returned: Math.min(limit, 49), truncated: limit < 49,
+      balls: rows.slice(0, limit).map((r) => ({ number: r.ball.number, count: r.count, rank: r.rank, band: BAND[r.ball.bands[i.window]].label })),
+      note: D.random_note, next_steps: ["Use get_ball with a number for every window and its draw dates."] });
+  });
+tool("get_ball", "Return one ball's counts in every window, when it was last drawn and the draws that included it in the last year.", { number: { type: "integer", minimum: 1, maximum: 49 } }, ["number"], async ({ number }) => {
+  const b = BALL[number];
+  if (!b) return result({ error: "number must be 1 to 49" });
+  return result({ ball: b, draws: D.draws.filter((d) => d.winning.includes(number)).map((d) => ({ draw_no: d.draw_no, date: d.date, source_url: d.source_url })), note: D.random_note, truncated: false });
+});
+tool("list_draws", "List the draws in a window, newest first, with winning numbers, additional number and the Singapore Pools results page for each.",
+  { window: windowSchema, limit: { type: "integer", minimum: 1, maximum: 200 } }, ["window"], async (i) => {
+    const rows = drawsIn(i.window), limit = i.limit || rows.length;
+    return result({ total: rows.length, returned: Math.min(limit, rows.length), truncated: rows.length > limit, draws: rows.slice(0, limit) });
+  });
 })();
 </script>
 </body>
