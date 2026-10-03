@@ -1,33 +1,37 @@
 ---
-name: generate-visualization
-description: Router for the visuals repo: create, refresh, edit, or verify a story-first, dependency-free visualization. Load the matching sub-skill only.
+name: visuals
+description: Work in the visuals monorepo - add, change, refresh or check one visual in viz/<slug>/, or change the shared tooling - with the rules every change here keeps.
 ---
 
-# Visuals router
+# Visuals
 
-One standalone page per story: `data/<slug>/` (unchanged source + `meta.json`) -> `scripts/build*.py` -> `viz/<slug>/index.html` + root `index.html` gallery. Layout and commands: `README.md`.
+Every visual is one folder, `viz/<slug>/`: its page `index.html`, its data, its builder and sources when the page is generated, its own tests and its `visual.json`. Shared tooling lives once in `scripts/`. Why it is laid out this way: [docs/monorepo.md](docs/monorepo.md). Commands: [README.md](README.md). A folder's own `AGENTS.md` adds at most a few lines specific to it; read it before changing that visual.
 
-## Where each visualization develops
+What a visual must be (artifact contract, state and export, interaction and accessibility, pedagogy, visual grammar, test ownership, definition of done) is the [`interactive-visual-spec`](https://github.com/yujieteo/skills/tree/main/interactive-visual-spec) skill, and the story-first workflow from a dataset is [`generate-visualization`](https://github.com/yujieteo/skills/tree/main/generate-visualization), both in yujieteo/skills. Follow them; this file covers only this repository.
 
-- The 18 slugs in `MIRRORS` in `tests/test_mirror_docs.py` develop in their standalone `yujieteo/<repo>` repository, which holds their logic, deck and end-to-end tests and CI. `viz/<slug>/` and `data/<slug>/` are byte-for-byte ports of its page and data files (listed in that folder's `AGENTS.md`), and `viz/<slug>/AGENTS.md` stays identical to that repository's copy. A page with a builder is still generated here: change the data or builder, regenerate, copy the result into the standalone repository and pass its tests before landing here. `convex-payoffs` and `fpl-expected-goals` have no builder: edit them in their repository and port the files unchanged.
-- yujieteo/site publishes each of those pages (except `tampines-food-map`, an older version of the site's own `tampines-food` page that the site does not publish) at the commit of this repository pinned in its `data/visuals/<slug>.pin`. Land the change here first; updating the pin is a site pull request.
-- The three slugs in `EXCLUDED` are stale copies: their current versions live in yujieteo/site `visuals/`. Do not develop them here.
+## Change one visual
 
-## Always
+1. Work inside `viz/<slug>/` only. Edit the data, `src/` or `build.py` and run `python3 build.py` when the folder has a builder (it regenerates `index.html`; never hand-edit a generated page); otherwise edit `index.html` directly.
+2. Keep `visual.json` true: its `webmcp_tools` and the WebMCP tools table in `SKILLS.md` name exactly the tools the page registers, and `fetched` is the date of the data. `schema/visual.schema.json` says what each field means.
+3. Put its tests in its own `tests/` (`*.test.mjs` for `node --test`, `test_*.py` for unittest). A test reads only its own folder and the shared tooling, never another visual's folder: CI runs it on a checkout without them. Time any test you add and keep it fast.
+4. Check it: `python3 scripts/check.py <slug>`, then `python3 scripts/check.py --changed` for everything the branch touches.
 
-- Never commit credentials, host details, private paths, or deployment config. Never write an absolute user-home path (macOS or Linux home prefix) in any file; `build.py --verify` scans every file for it.
-- `viz/<slug>/index.html` and root `index.html` are generated: never hand-edit; change data, `design-tokens.json`, or the builder, then regenerate.
-- Every `viz/<slug>/beamdswitch.js` stays byte-identical to yujieteo/site `templates/beamdswitch.js`.
-- Tests use `node --test` and Python `unittest` only; the test-cost rules are in `.agents/skills/visuals-verify-ci/SKILL.md`. `package.json` only pins TypeScript for `npm run typecheck` (README Verification).
-- Do not edit another repo, push, or deploy unless asked.
+## Add a visual
 
-## Playbook: load one sub-skill by task
+Create `viz/<slug>/` with `index.html`, the data file, `visual.json` (copy a neighbour's and change every field) and its tests. Nothing else lists the visuals: CI, the catalogue and the site find the folder. Stdlib Python builders import the shared modules from `scripts/` (`page_parts`, `style_guide`, `stock_cases`) and read `design-tokens.json`; a builder for several pages lives in `scripts/` and each page lists it in `uses`.
 
-| Task | Load |
-| --- | --- |
-| Add a new visualization from a dataset, site, or API | `.agents/skills/visuals-new-visualization/SKILL.md` |
-| Refresh data or regenerate an existing page or gallery | `.agents/skills/visuals-refresh-data/SKILL.md` |
-| Change page markup, design tokens, interactions, or model-context tools | `.agents/skills/visuals-page-conventions/SKILL.md` |
-| Run verifiers, fix a failing check, edit CI, document a new builder | `.agents/skills/visuals-verify-ci/SKILL.md` |
+## Change shared tooling
 
-Quick check for any change: `for s in scripts/build*.py; do python3 "$s" --verify || break; done`
+`scripts/`, `schema/`, `tests/` (the tooling's own tests), `design-tokens.json`, `package.json`, the tsconfig files and CI are shared: a change there runs every visual's checks. Run `python3 scripts/check_repo.py`, the tooling tests (`python3 -m unittest discover -s tests -p 'test_*.py'` and `node --test tests/*.test.mjs`), `npm ci && npm run typecheck`, and `python3 scripts/check.py --all`.
+
+## Rules
+
+- Pages are single files that work offline: inline CSS, data and JavaScript, no external requests, mobile friendly, and a page works without `modelContext`; WebMCP tools are read-only.
+- Generated files are never committed: the catalogue and gallery come from `python3 scripts/build_catalogue.py` into the ignored `build/`. Never add a hand-maintained list of visuals anywhere.
+- Every `viz/<slug>/beamdswitch.js` stays byte-identical to yujieteo/site `templates/beamdswitch.js`, and decks declare `voice: bf_emma` unless the report names another.
+- Tests use `node --test` and Python `unittest` only; `package.json` pins the type-check tooling and nothing else.
+- Never commit credentials, host details or deployment config, and never write an absolute user-home path in any file; `scripts/check_repo.py` scans for one.
+
+## Review by risk
+
+The diff decides how a pull request is reviewed. A data-only change (a visual's data and the page its builder regenerates from it), a documentation-only change, or a mechanical one (importing a repository, regenerated files, a copied page or template) takes CI only: open a plain pull request and land it once its CI passes on that commit. Anything that touches a page's logic, a builder, `src/`, tests, CI or shared tooling keeps the full no-mistakes pipeline.

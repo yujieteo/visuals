@@ -6,26 +6,28 @@ import json
 import math
 import re
 import statistics
+import sys
 from collections import Counter, defaultdict
 from html import escape, unescape
 from pathlib import Path
-from gallery import render_gallery
-from page_parts import deck_buttons_js
-from style_guide import THEME_SCRIPT, root_css
 
-ROOT = Path(__file__).resolve().parents[1]
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
+from page_parts import deck_buttons_js  # noqa: E402
+from style_guide import THEME_SCRIPT, root_css  # noqa: E402
+
 SLUG = "tourist-attractions"
-RAW = ROOT / "data" / SLUG / "raw.json"
-META = ROOT / "data" / SLUG / "meta.json"
+RAW = HERE / "raw.json"
+META = HERE / "meta.json"
 TOKENS = ROOT / "design-tokens.json"
-VIZ = ROOT / "viz" / SLUG / "index.html"
-TEMPLATE = ROOT / "viz" / SLUG / "beamdswitch.js"
-REPORT = ROOT / "viz" / SLUG / "report.js"
-# D3 7.9.0 exactly as the jsdelivr CDN serves dist/d3.min.js (ISC, scripts/vendor/d3-LICENSE), inlined so the
+VIZ = HERE / "index.html"
+TEMPLATE = HERE / "beamdswitch.js"
+REPORT = HERE / "report.js"
+# D3 7.9.0 exactly as the jsdelivr CDN serves dist/d3.min.js (ISC, vendor/d3-LICENSE), inlined so the
 # page needs no network request and works offline and from file://.
-D3 = ROOT / "scripts" / "vendor" / "d3-7.9.0.min.js"
+D3 = HERE / "vendor" / "d3-7.9.0.min.js"
 BEAMDSWITCH_URL = "https://teoyujie.org/visuals/beamdswitch/"
-GALLERY = ROOT / "index.html"
 EXPECTED_COUNT = 109
 EXPECTED_DESCRIBED = 106
 TERM_LIMIT = 40
@@ -185,7 +187,6 @@ def verify(raw, meta, rows, term_rows, median_lon, median_lat):
     assert by_term["museum"] == {"term": "museum", "documents": "14", "nw": "5", "ne": "6", "sw": "2", "se": "1"}
     assert by_term["heritage"]["documents"] == "12"
     html = VIZ.read_text()
-    gallery = GALLERY.read_text()
     embedded_rows = re.search(r"const csvData=`(.*?)`;", html, re.S)
     embedded_terms = re.search(r"const termCsvData=`(.*?)`;", html, re.S)
     assert embedded_rows and len(list(csv.DictReader(io.StringIO(embedded_rows.group(1))))) == EXPECTED_COUNT
@@ -198,11 +199,8 @@ def verify(raw, meta, rows, term_rows, median_lon, median_lat):
         assert f'name:"{name}"' in html
     assert html.count("annotations:{readOnlyHint:true}") == 4
     assert 'id="cloud"' in html and 'id="marketing-summary"' in html and '.attr("class","term")' in html and '.attr("class","region-label")' in html
-    assert "mc?.registerTool" in html and f'href="viz/{SLUG}/index.html"' in gallery
+    assert "mc?.registerTool" in html
     assert meta["key_file_used"] is None and re.fullmatch(r"\d{4}-\d{2}-\d{2}", meta["fetched"])
-    # node_modules holds the type-check tooling npm installs (package.json), not this repository's files.
-    tracked_text = "\n".join(path.read_text(errors="ignore") for path in ROOT.rglob("*") if path.is_file() and not {".git", "__pycache__", "node_modules"} & set(path.parts))
-    assert not re.search(r"/(?:Users|home)/[^/\s]+/", tracked_text)
     assert Counter((row["longitude"], row["latitude"]) for row in rows).most_common(1)[0][1] > 1 and any(float(row["offset_x"]) or float(row["offset_y"]) for row in rows)
     print("verified: 109 points, 106 descriptions, 40 ranked terms, exact coordinates and term sets, museum 14 (5/6/2/1), heritage 12, 2 compact CSVs, 4 read-only tools, a narrated beamdswitch deck")
 
@@ -216,7 +214,6 @@ def main():
     if not args.verify:
         VIZ.parent.mkdir(parents=True, exist_ok=True)
         VIZ.write_text(render_viz(rows, term_rows, median_lon, median_lat, meta, tokens))
-        GALLERY.write_text(render_gallery())
     verify(raw, meta, rows, term_rows, median_lon, median_lat)
 
 

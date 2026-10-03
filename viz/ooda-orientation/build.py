@@ -4,37 +4,38 @@
 Orient is a Boyd-inspired OODA planner in which orientation is the central activity. Its built-in
 material (operation catalogue, guided rules, random jolts, creation prompts, diagnostics, the three
 worked examples as replayable command scripts, the short cards, methodology and sources) lives in
-data/ooda-orientation/raw.json. The page is assembled from scripts/templates/ooda-orientation.css,
-ooda-orientation-logic.js (pure state machine, also run by yujieteo/ooda-orientation's tests/ooda-orientation.test.mjs) and
-ooda-orientation.js (interface). viz/ooda-orientation/beamdswitch.js (the site's shared report
-template, unchanged) and viz/ooda-orientation/report.js (the situation as a report) are inlined as
-they are. The no-JavaScript worksheet and the worked examples are rendered here from the same data.
---verify re-runs every check and compares the committed page and gallery without writing.
+raw.json. The page is assembled from src/ooda-orientation.css, src/ooda-orientation-logic.js (pure
+state machine, also run by yujieteo/ooda-orientation's tests/ooda-orientation.test.mjs) and
+src/ooda-orientation.js (interface). beamdswitch.js (the site's shared report template, unchanged)
+and report.js (the situation as a report) are inlined as they are. The no-JavaScript worksheet and the worked examples are rendered here from the same data.
+--verify re-runs every check and compares the committed page without writing.
 
-    python3 scripts/build_ooda_orientation.py
-    python3 scripts/build_ooda_orientation.py --verify
+    python3 build.py
+    python3 build.py --verify
 """
 import argparse
 import json
 import re
+import sys
 from html import escape
 from pathlib import Path
 
-from gallery import render_gallery
-from page_parts import compact
-from style_guide import THEME_SCRIPT, contrast, root_css
 
-ROOT = Path(__file__).resolve().parents[1]
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
+from page_parts import compact  # noqa: E402
+from style_guide import THEME_SCRIPT, contrast, root_css  # noqa: E402
+
 SLUG = "ooda-orientation"
-DATA = ROOT / "data" / SLUG
-VIZ = ROOT / "viz" / SLUG / "index.html"
-GALLERY = ROOT / "index.html"
+DATA = HERE
+VIZ = HERE / "index.html"
 TOKENS = ROOT / "design-tokens.json"
-CSS_TEMPLATE = ROOT / "scripts" / "templates" / "ooda-orientation.css"
-JS_TEMPLATE = ROOT / "scripts" / "templates" / "ooda-orientation.js"
-LOGIC_TEMPLATE = ROOT / "scripts" / "templates" / "ooda-orientation-logic.js"
-DECK_TEMPLATE = ROOT / "viz" / SLUG / "beamdswitch.js"
-DECK_REPORT = ROOT / "viz" / SLUG / "report.js"
+CSS_TEMPLATE = HERE / "src" / "ooda-orientation.css"
+JS_TEMPLATE = HERE / "src" / "ooda-orientation.js"
+LOGIC_TEMPLATE = HERE / "src" / "ooda-orientation-logic.js"
+DECK_TEMPLATE = HERE / "beamdswitch.js"
+DECK_REPORT = HERE / "report.js"
 BEAMDSWITCH_URL = "https://teoyujie.org/visuals/beamdswitch/"
 
 TITLE = "Orient: destroy the wrong model, act from the better one — Yu Jie Teo"
@@ -356,10 +357,8 @@ def main():
     if not args.verify:
         VIZ.parent.mkdir(parents=True, exist_ok=True)
         VIZ.write_text(html, encoding="utf-8")
-        GALLERY.write_text(render_gallery(ROOT), encoding="utf-8")
     else:
         assert VIZ.read_text(encoding="utf-8") == html, "viz/ooda-orientation/index.html is stale: rerun the builder"
-        assert GALLERY.read_text(encoding="utf-8") == render_gallery(ROOT), "index.html gallery is stale"
     size = verify_page(VIZ.read_text(encoding="utf-8"), raw)
     print(f"verified: {summary['operations']} destruction operations, {summary['examples']} worked examples, {summary['cards']} cards, "
           f"{summary['sources']} sources, {len(pairs)} contrast pairs, {size / 1000:.0f} kB "

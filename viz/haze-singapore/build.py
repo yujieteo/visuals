@@ -1,31 +1,31 @@
 #!/usr/bin/env python3
 """Build the Singapore haze map from committed data.gov.sg PSI/PM2.5 responses.
 
-Run scripts/fetch_haze.py first to refresh data/haze-singapore/raw.json. This
-builder reads that file plus the URA planning-area boundary GeoJSON, then
-writes viz/haze-singapore/index.html, the root gallery and the README row.
+Run fetch.py first to refresh raw.json. This builder reads that file plus the
+URA planning-area boundary GeoJSON, then writes index.html and meta.json.
 """
 import argparse
 import json
 import math
 import re
+import sys
 from html import escape
 from pathlib import Path
-from gallery import render_gallery
-from page_parts import deck_buttons_js
-from style_guide import THEME_SCRIPT, root_css
 
-ROOT = Path(__file__).resolve().parents[1]
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
+from page_parts import deck_buttons_js  # noqa: E402
+from style_guide import THEME_SCRIPT, root_css  # noqa: E402
+
 SLUG = "haze-singapore"
-RAW = ROOT / "data" / SLUG / "raw.json"
-BOUNDARY = ROOT / "data" / SLUG / "boundary.geojson"
-META = ROOT / "data" / SLUG / "meta.json"
+RAW = HERE / "raw.json"
+BOUNDARY = HERE / "boundary.geojson"
+META = HERE / "meta.json"
 TOKENS = ROOT / "design-tokens.json"
-VIZ = ROOT / "viz" / SLUG / "index.html"
-TEMPLATE = ROOT / "viz" / SLUG / "beamdswitch.js"
-REPORT = ROOT / "viz" / SLUG / "report.js"
-GALLERY = ROOT / "index.html"
-README = ROOT / "README.md"
+VIZ = HERE / "index.html"
+TEMPLATE = HERE / "beamdswitch.js"
+REPORT = HERE / "report.js"
 TITLE = "Singapore haze, region by region"
 PSI_URL = "https://api-open.data.gov.sg/v2/real-time/api/psi"
 PM25_URL = "https://api-open.data.gov.sg/v2/real-time/api/pm25"
@@ -466,20 +466,6 @@ def render(model, meta, tokens):
             f'<script>{js}</script></body></html>\n')
 
 
-README_ROW = f"| `{SLUG}` | `scripts/build_haze_singapore.py` | TITLE_PLACEHOLDER |"
-
-
-def render_readme(current):
-    row = README_ROW.replace("TITLE_PLACEHOLDER", "Where and when Singapore's air turned hazy")
-    lines = [ln for ln in current.splitlines() if not ln.startswith(f"| `{SLUG}` |")]
-    start = next(i for i, ln in enumerate(lines) if ln.startswith("| Slug | Builder | Story |")) + 2
-    end = start
-    while end < len(lines) and lines[end].startswith("| `"):
-        end += 1
-    rows = sorted(lines[start:end] + [row], key=lambda ln: ln.split("`")[1])
-    return "\n".join(lines[:start] + rows + lines[end:]) + "\n"
-
-
 # --------------------------------------------------------------- main ----
 
 def build_model(raw, boundary):
@@ -559,8 +545,6 @@ def verify(model, meta, raw, boundary):
     assert "fetch(" not in html and "XMLHttpRequest" not in html
     assert html.count("mc?.registerTool") == 3 and html.count("readOnlyHint:true") == 3
     assert 'type="range"' in html and 'id="play"' in html and 'id="legend"' in html
-    assert f'href="viz/{SLUG}/index.html"' in GALLERY.read_text()
-    assert f"| `{SLUG}` |" in README.read_text() and README.read_text() == render_readme(README.read_text())
     print(f"verified: {s['hours']:,} hourly readings x 5 regions x 3 measures, peak PSI {s['peak_psi']} ({s['peak_region']}, {s['peak_stamp'][:16]}), "
           f"{len(boundary['features'])} planning areas in 5 regions, 3 read-only tools, a narrated beamdswitch deck, zero external assets")
 
@@ -579,8 +563,6 @@ def main():
     META.write_text(json.dumps(meta, indent=2, ensure_ascii=False) + "\n")
     VIZ.parent.mkdir(parents=True, exist_ok=True)
     VIZ.write_text(render(model, meta, json.loads(TOKENS.read_text())))
-    GALLERY.write_text(render_gallery())
-    README.write_text(render_readme(README.read_text()))
     verify(model, meta, raw, boundary)
 
 

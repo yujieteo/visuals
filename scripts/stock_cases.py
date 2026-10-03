@@ -1,11 +1,14 @@
-#!/usr/bin/env python3
-"""Build four compact, source-backed stock fundamentals visualizations."""
+"""The shared builder of the stock cash-conversion pages (airbnb, arm, marvell, panw).
+
+Each page's folder holds its data (raw.json, SEC company facts; meta.json), its beamdswitch.js and a
+build.py with its own CASE (name, ticker, CIK and the page's words), which calls main() here. The
+narrated report scripts/templates/stock-cases-report.js is shared by all four and inlined unchanged.
+"""
 import argparse
 import json
 from html import escape
 from pathlib import Path
 
-from gallery import write_gallery
 from page_parts import strip_types
 from style_guide import THEME_SCRIPT, root_css
 
@@ -19,36 +22,6 @@ DECK_HINT = ("The beamdswitch button saves the measure you pick below as a narra
              '<a href="https://teoyujie.org/visuals/beamdswitch/">beamdswitch</a> to get slides, a handout, narration and a video. '
              "Copy deck puts the same deck on the clipboard, to paste into beamdswitch.")
 SEC = "https://data.sec.gov/api/xbrl/companyfacts/CIK{cik:010d}.json"
-CASES = {
-    "panw": {
-        "name": "Palo Alto Networks", "title": "Palo Alto Networks cash conversion", "ticker": "PANW", "cik": 1327567,
-        "headline": "Palo Alto Networks’ cash generation has stayed above 39% of revenue as its security platform scales.",
-        "competitors": "CrowdStrike, Fortinet, Cisco and Zscaler compete across endpoint, network and cloud security.",
-        "macro": "Enterprise security budgets, cloud adoption and breach risk support demand. IT-budget pauses and vendor consolidation are counterweights.",
-        "swot": "Strength: platform breadth. Weakness: execution across many products. Opportunity: AI security. Threat: intense platform competition.",
-    },
-    "marvell": {
-        "name": "Marvell", "title": "Marvell cash conversion", "ticker": "MRVL", "cik": 1835632,
-        "headline": "Marvell’s revenue rebounded in fiscal 2026, while operating cash flow remained a smaller share of sales than at the prior peak.",
-        "competitors": "Broadcom, Nvidia, AMD, Intel and custom-silicon suppliers compete in data-center and networking semiconductors.",
-        "macro": "AI data-center capex and networking upgrades can lift demand. Semiconductor inventory cycles and concentrated customers add volatility.",
-        "swot": "Strength: data-infrastructure portfolio. Weakness: cyclicality. Opportunity: custom AI silicon. Threat: pricing and execution pressure from larger rivals.",
-    },
-    "airbnb": {
-        "name": "Airbnb", "title": "Airbnb cash conversion", "ticker": "ABNB", "cik": 1559720,
-        "headline": "Airbnb’s revenue has grown while operating cash flow has remained above one-third of sales in each of the latest four years.",
-        "competitors": "Booking Holdings, Expedia, hotels and local vacation-rental platforms compete for guests, hosts and marketing traffic.",
-        "macro": "Disposable income, cross-border travel and currency movements shape bookings. Regulation and a softer travel cycle can constrain supply and demand.",
-        "swot": "Strength: global host network. Weakness: regulatory exposure. Opportunity: underpenetrated international travel. Threat: hotel and OTA competition.",
-    },
-    "arm": {
-        "name": "Arm", "title": "Arm cash conversion", "ticker": "ARM", "cik": 1973239,
-        "headline": "Arm’s fiscal 2026 revenue reached $4.92B and operating cash flow margin rose to 31.0% after a fiscal 2025 dip.",
-        "competitors": "RISC-V ecosystems, Intel, AMD and architecture-license alternatives compete for computing design wins.",
-        "macro": "Smartphone replacement, cloud capex and AI inference broaden chip-design demand. Royalty timing and customer concentration can move results sharply.",
-        "swot": "Strength: pervasive instruction-set ecosystem. Weakness: licensing concentration. Opportunity: data-center CPUs and edge AI. Threat: RISC-V adoption.",
-    },
-}
 REVENUE = "RevenueFromContractWithCustomerExcludingAssessedTax"
 CASH = "NetCashProvidedByUsedInOperatingActivities"
 
@@ -65,11 +38,11 @@ def annual_facts(raw, tag):
     return by_end
 
 
-def rows_for(slug, case):
-    raw = json.loads((ROOT / "data" / slug / "raw.json").read_text())
+def rows_for(folder, case):
+    raw = json.loads((folder / "raw.json").read_text())
     revenue, cash = annual_facts(raw, REVENUE), annual_facts(raw, CASH)
     ends = sorted(set(revenue) & set(cash))[-4:]
-    assert len(ends) == 4, f"{slug}: expected four annual revenue and cash-flow pairs"
+    assert len(ends) == 4, f"{folder.name}: expected four annual revenue and cash-flow pairs"
     rows = []
     for end in ends:
         rev, ocf = revenue[end], cash[end]
@@ -90,11 +63,12 @@ def deck_case(case, raw, rows, fetched):
             "fetched": fetched, "rows": rows}
 
 
-def render(slug, case, raw, rows, fetched):
+def render(folder, case, raw, rows, fetched):
+    slug = folder.name
     payload = json.dumps(rows, separators=(",", ":")).replace("</", "<\\/")
     case_json = json.dumps(deck_case(case, raw, rows, fetched), separators=(",", ":"), ensure_ascii=False).replace("</", "<\\/")
     source = SEC.format(cik=case["cik"])
-    template = (ROOT / "viz" / slug / "beamdswitch.js").read_text()
+    template = (folder / "beamdswitch.js").read_text()
     report_js = strip_types(REPORT_JS.read_text())
     return f'''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="{escape(case['headline'])}"><title>{escape(case['title'])}</title>{THEME_SCRIPT}<style>
 {root_css(TOKENS)}*{{box-sizing:border-box}}body{{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 var(--sans);letter-spacing:-.011em;-webkit-font-smoothing:antialiased}}main,footer{{width:min(72rem,calc(100% - 2rem));margin:auto}}main{{padding:clamp(1.25rem,5vw,3rem) 0 1.5rem}}h1{{max-width:20ch;margin:.35rem 0 .8rem;font-size:clamp(2rem,6vw,3.25rem);font-weight:700;line-height:1.04;letter-spacing:-.045em}}p{{max-width:76ch}}.muted,footer{{color:var(--muted)}}.chart{{border-top:1px solid var(--border);margin-top:2rem;padding-top:1rem}}button{{border:1px solid var(--control);border-radius:999px;background:var(--bg);padding:.25rem .8rem;min-height:2.25rem;color:var(--fg);font:inherit;font-size:.875rem;cursor:pointer}}button:hover{{background:var(--surface)}}button:focus-visible{{outline:2px solid var(--focus);outline-offset:2px}}button[aria-pressed=true]{{border-color:var(--fg);background:var(--fg);color:var(--bg)}}svg{{display:block;width:100%;height:auto;margin-top:.8rem}}.grid{{stroke:var(--grid)}}.bar{{fill:var(--c1)}}.axis{{fill:var(--muted);font:14px var(--mono);font-variant-numeric:tabular-nums}}.value{{fill:var(--fg);font:600 14px var(--mono);font-variant-numeric:tabular-nums}}.contexts{{display:grid;grid-template-columns:repeat(auto-fit,minmax(16rem,1fr));gap:1rem;margin-top:2rem}}.contexts article{{border-top:1px solid var(--border)}}.contexts h2{{font-size:1.125rem;font-weight:600;letter-spacing:-.015em}}footer{{padding:1.5rem 0 3rem;border-top:1px solid var(--border);font-size:.875rem}}a{{color:inherit}}@media(max-width:600px){{button{{min-height:2.75rem;padding:.25rem .9rem}}footer a{{display:inline-block;padding:.7rem 0}}}}.deck-row{{display:flex;flex-wrap:wrap;gap:.35rem .5rem;align-items:center;margin:1rem 0 0}}.deck-hint{{margin:.4rem 0 0;font-size:.875rem}}
@@ -110,45 +84,35 @@ const result=text=>({{content:[{{type:'text',text}}]}}),mc=(document.modelContex
 </script></body></html>\n'''
 
 
-def write(fetched):
-    for slug, case in CASES.items():
-        raw, rows = rows_for(slug, case)
-        path = ROOT / "viz" / slug / "index.html"
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(render(slug, case, raw, rows, fetched))
-        (ROOT / "data" / slug / "meta.json").write_text(json.dumps({"slug": slug, "source_url": SEC.format(cik=case["cik"]), "fetched": fetched, "key_file_used": False}, indent=2) + "\n")
-    write_gallery()
+def write(folder, case, fetched):
+    raw, rows = rows_for(folder, case)
+    (folder / "index.html").write_text(render(folder, case, raw, rows, fetched))
+    (folder / "meta.json").write_text(json.dumps({"slug": folder.name, "source_url": SEC.format(cik=case["cik"]), "fetched": fetched, "key_file_used": False}, indent=2) + "\n")
 
 
-def verify():
-    for slug, case in CASES.items():
-        raw, rows = rows_for(slug, case)
-        assert raw["cik"] == case["cik"] or str(raw["cik"]).lstrip("0") == str(case["cik"])
-        assert len(rows) == 4 and all(r["revenue"] > 0 for r in rows)
-        assert all(r["cash_margin"] == round(100 * r["operating_cash_flow"] / r["revenue"], 1) for r in rows)
-        html = (ROOT / "viz" / slug / "index.html").read_text()
-        assert html.count("<h1>") == 1 and html.count("<svg") == 1 and html.count("<script") == 4 and THEME_SCRIPT in html
-        assert f'<script id="beamdswitch">\n{(ROOT / "viz" / slug / "beamdswitch.js").read_text()}</script>' in html
-        assert f'<script id="report">\n{strip_types(REPORT_JS.read_text())}</script>' in html
-        assert 'id="save-beamdswitch"' in html and 'id="copy-beamdswitch"' in html
-        assert html == render(slug, case, raw, rows, json.loads((ROOT / "data" / slug / "meta.json").read_text())["fetched"])
-        assert "<script src=" not in html and "toon(" not in html and html.count("mc?.registerTool") == 3 and html.count("readOnlyHint:true") == 3
-        assert all(f'name:\'{tool}\'' in html for tool in ("get_data", "get_metadata", "query"))
-        assert "data-metric" in html and "SWOT" in html and "not investment advice" in html
-    index = (ROOT / "index.html").read_text()
-    assert all(f'viz/{page.parent.name}/index.html' in index for page in (ROOT / "viz").glob("*/index.html"))
-    print("verified: 4 cases, 4 audited annual rows each, 1 interactive SVG and 3 read-only tools and a beamdswitch deck per page")
+def verify(folder, case):
+    raw, rows = rows_for(folder, case)
+    assert raw["cik"] == case["cik"] or str(raw["cik"]).lstrip("0") == str(case["cik"])
+    assert len(rows) == 4 and all(r["revenue"] > 0 for r in rows)
+    assert all(r["cash_margin"] == round(100 * r["operating_cash_flow"] / r["revenue"], 1) for r in rows)
+    html = (folder / "index.html").read_text()
+    assert html.count("<h1>") == 1 and html.count("<svg") == 1 and html.count("<script") == 4 and THEME_SCRIPT in html
+    assert f'<script id="beamdswitch">\n{(folder / "beamdswitch.js").read_text()}</script>' in html
+    assert f'<script id="report">\n{strip_types(REPORT_JS.read_text())}</script>' in html
+    assert 'id="save-beamdswitch"' in html and 'id="copy-beamdswitch"' in html
+    assert html == render(folder, case, raw, rows, json.loads((folder / "meta.json").read_text())["fetched"])
+    assert "<script src=" not in html and "toon(" not in html and html.count("mc?.registerTool") == 3 and html.count("readOnlyHint:true") == 3
+    assert all(f'name:\'{tool}\'' in html for tool in ("get_data", "get_metadata", "query"))
+    assert "data-metric" in html and "SWOT" in html and "not investment advice" in html
+    print(f"verified: {case['ticker']}, 4 audited annual rows, 1 interactive SVG, 3 read-only tools and a beamdswitch deck")
 
 
-def main():
+def main(folder, case):
+    """Build the page in ``folder`` from ``case`` (or only check it with --verify), then verify it."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--verify", action="store_true")
     parser.add_argument("--fetched", default="2026-09-28")
     args = parser.parse_args()
     if not args.verify:
-        write(args.fetched)
-    verify()
-
-
-if __name__ == "__main__":
-    main()
+        write(folder, case, args.fetched)
+    verify(folder, case)

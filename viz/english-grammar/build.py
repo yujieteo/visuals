@@ -3,7 +3,7 @@
 
 An offline grammar laboratory following the analysis in The Cambridge Grammar
 of the English Language (Huddleston & Pullum et al., 2002). Every sentence,
-analysis and explanation is authored in data/english-grammar/:
+analysis and explanation is authored in this folder:
 
   raw.json       verified chapter and section outline of the book
   concepts.json  concepts, beginner route and Common confusions
@@ -13,37 +13,39 @@ analysis and explanation is authored in data/english-grammar/:
 The builder expands each bracketed tree into hierarchical JSON with token spans,
 validates the whole corpus (including the three special structures that are not ordinary
 constituent trees: word-internal structure, punctuation marks attached to constituent
-boundaries, and antecedent links), and renders viz/english-grammar/index.html from
-scripts/templates/english-grammar.css, english-grammar-logic.js (pure logic, also
-run by yujieteo/english-grammar's tests/english-grammar.test.mjs) and english-grammar.js (interface). Each concept page offers its
-lesson as a narrated beamdswitch deck: viz/english-grammar/beamdswitch.js (the site's shared report
-template, unchanged) and viz/english-grammar/report.js (one concept as a report) are inlined as they are.
+boundaries, and antecedent links), and renders index.html from src/english-grammar.css,
+src/english-grammar-logic.js (pure logic, also run by yujieteo/english-grammar's
+tests/english-grammar.test.mjs) and src/english-grammar.js (interface). Each concept page offers its
+lesson as a narrated beamdswitch deck: beamdswitch.js (the site's shared report template, unchanged)
+and report.js (one concept as a report) are inlined as they are.
 --verify re-runs every check, including the style-guide contrast pairs, and compares the committed page.
 
-    python3 scripts/build_english_grammar.py
-    python3 scripts/build_english_grammar.py --verify
+    python3 build.py
+    python3 build.py --verify
 """
 import argparse
 import json
 import re
+import sys
 from html import escape
 from pathlib import Path
 
-from gallery import render_gallery
-from style_guide import THEME_SCRIPT, contrast, root_css
-from page_parts import strip_types
 
-ROOT = Path(__file__).resolve().parents[1]
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
+from page_parts import strip_types  # noqa: E402
+from style_guide import THEME_SCRIPT, contrast, root_css  # noqa: E402
+
 SLUG = "english-grammar"
-DATA = ROOT / "data" / SLUG
-VIZ = ROOT / "viz" / SLUG / "index.html"
-GALLERY = ROOT / "index.html"
+DATA = HERE
+VIZ = HERE / "index.html"
 TOKENS = ROOT / "design-tokens.json"
-CSS_TEMPLATE = ROOT / "scripts" / "templates" / "english-grammar.css"
-JS_TEMPLATE = ROOT / "scripts" / "templates" / "english-grammar.js"
-LOGIC_TEMPLATE = ROOT / "scripts" / "templates" / "english-grammar-logic.js"
-DECK_TEMPLATE = ROOT / "viz" / SLUG / "beamdswitch.js"
-DECK_REPORT = ROOT / "viz" / SLUG / "report.js"
+CSS_TEMPLATE = HERE / "src" / "english-grammar.css"
+JS_TEMPLATE = HERE / "src" / "english-grammar.js"
+LOGIC_TEMPLATE = HERE / "src" / "english-grammar-logic.js"
+DECK_TEMPLATE = HERE / "beamdswitch.js"
+DECK_REPORT = HERE / "report.js"
 BEAMDSWITCH_URL = "https://teoyujie.org/visuals/beamdswitch/"
 
 DISPLAY_TITLE = "How English Grammar Works"
@@ -773,10 +775,8 @@ def main():
     if not args.verify:
         VIZ.parent.mkdir(parents=True, exist_ok=True)
         VIZ.write_text(html, encoding="utf-8")
-        GALLERY.write_text(render_gallery(ROOT), encoding="utf-8")
     else:
         assert VIZ.read_text(encoding="utf-8") == html, "viz/english-grammar/index.html is stale: rerun the builder"
-        assert GALLERY.read_text(encoding="utf-8") == render_gallery(ROOT), "index.html gallery is stale"
     verify_page(VIZ.read_text(encoding="utf-8"), model)
     size = len(html.encode("utf-8"))
     print(f"verified: {summary['concepts']} concepts across {summary['chapters']} chapters, {summary['examples']} examples "

@@ -2,20 +2,22 @@
 import argparse
 import csv
 import json
+import sys
 from pathlib import Path
-from gallery import render_gallery
-from page_parts import deck_buttons_js
-from style_guide import THEME_SCRIPT, root_css
 
-ROOT = Path(__file__).resolve().parents[1]
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
+from page_parts import deck_buttons_js  # noqa: E402
+from style_guide import THEME_SCRIPT, root_css  # noqa: E402
+
 SLUG = "singapore-covid-governance-hindsight"
-RAW = ROOT / "data" / SLUG / "raw.csv"
-META = ROOT / "data" / SLUG / "meta.json"
+RAW = HERE / "raw.csv"
+META = HERE / "meta.json"
 TOKENS = ROOT / "design-tokens.json"
-VIZ = ROOT / "viz" / SLUG / "index.html"
-TEMPLATE = ROOT / "viz" / SLUG / "beamdswitch.js"
-REPORT = ROOT / "viz" / SLUG / "report.js"
-GALLERY = ROOT / "index.html"
+VIZ = HERE / "index.html"
+TEMPLATE = HERE / "beamdswitch.js"
+REPORT = HERE / "report.js"
 FIELDS = ["id", "analyst", "published", "kind", "statement", "source_url", "later_record", "outcome_date", "outcome_source_url", "evidence_class", "evidence_basis", "limitation"]
 
 PAGE = """<!doctype html>
@@ -61,7 +63,6 @@ def verify(rows, meta):
     assert 'id="save-beamdswitch"' in document and 'id="copy-beamdswitch"' in document
     assert "<script src=" not in document and document.count("mc?.registerTool") == 3
     assert all(f'name:"{name}"' in document for name in ("get_data", "get_metadata", "query"))
-    assert f'href="viz/{SLUG}/index.html"' in GALLERY.read_text(encoding="utf-8")
     print("verified: 4 source pairs, 1 direct outcome, 3 related policy records, one interactive matrix, 3 read-only tools, a narrated beamdswitch deck, no external assets")
 
 def main():
@@ -73,7 +74,6 @@ def main():
     if not args.verify:
         VIZ.parent.mkdir(parents=True, exist_ok=True)
         VIZ.write_text(render(rows, json.loads(TOKENS.read_text(encoding="utf-8")), meta), encoding="utf-8")
-        GALLERY.write_text(render_gallery(), encoding="utf-8")
     verify(rows, meta)
 
 if __name__ == "__main__":

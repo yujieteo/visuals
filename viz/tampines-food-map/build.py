@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build the Tampines hub food map from committed research data.
 
-Inputs in data/tampines-food-map/:
+Inputs in this folder:
   raw.json      guide-featured places with Google Maps ratings, guide quotes,
                 review summaries and the dishes mapped to HPB SGFoodID items
   sgfoodid.json unchanged HPB SGFoodID food-detail API responses
@@ -10,7 +10,7 @@ Inputs in data/tampines-food-map/:
 Ranking: eligible places (guide-featured, sells mains, open on Google Maps and
 inside one of the three malls) sorted by Google Maps rating, then by the number
 of guides that feature them, then by name. The top 20 are shown.
-Writes viz/tampines-food-map/index.html, meta.json and the root gallery.
+Writes index.html and meta.json.
 """
 import argparse
 import json
@@ -19,18 +19,17 @@ import re
 import statistics
 from html import escape
 from pathlib import Path
-from gallery import render_gallery
 
-ROOT = Path(__file__).resolve().parents[1]
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parents[1]
 SLUG = "tampines-food-map"
-DATA = ROOT / "data" / SLUG
+DATA = HERE
 RAW = DATA / "raw.json"
 SGFOODID = DATA / "sgfoodid.json"
 OSM = DATA / "osm.json"
 META = DATA / "meta.json"
 TOKENS = ROOT / "design-tokens.json"
-VIZ = ROOT / "viz" / SLUG / "index.html"
-GALLERY = ROOT / "index.html"
+VIZ = HERE / "index.html"
 TITLE = "Where to eat in Tampines hub"
 TOP_N = 20
 MALLS = {"Tampines Mall": 166194030, "Century Square": 166194031, "Tampines 1": 166194476}
@@ -473,7 +472,6 @@ def verify(model, meta, raw, sg):
     for name in ("get_data", "get_metadata", "query"):
         assert f'name:"{name}"' in html
     assert html.count('class="card"') == TOP_N and "Estimate, " in html and "OpenStreetMap" in html
-    assert f'href="viz/{SLUG}/index.html"' in GALLERY.read_text(encoding="utf-8")
     print(f"verified: {TOP_N} ranked places ({', '.join(f'{m} {n}' for m, n in s['by_mall'].items())}), "
           f"{s['dishes']} mains with HPB estimates (median {s['median_kcal']} kcal), {len(closed)} guide picks excluded, "
           "inline OSM map, 3 read-only tools, zero external assets")
@@ -491,7 +489,6 @@ def main():
         META.write_text(json.dumps(meta, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         VIZ.parent.mkdir(parents=True, exist_ok=True)
         VIZ.write_text(render(model, meta, json.loads(TOKENS.read_text(encoding="utf-8"))), encoding="utf-8")
-        GALLERY.write_text(render_gallery(), encoding="utf-8")
     verify(model, json.loads(META.read_text(encoding="utf-8")), raw, sg)
 
 

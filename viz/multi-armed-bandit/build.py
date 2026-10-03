@@ -4,39 +4,40 @@
 A practitioner tool for choosing the next trial among variants with uncertain binary success rates:
 Thompson Sampling (one shared Beta prior) and UCB1 recommendations from the user's own evidence, and
 a seeded simulation comparing them with equal allocation. The authored material (templates with
-fictional counts, assumptions, method references) lives in data/multi-armed-bandit/raw.json. The page
-is assembled from scripts/templates/multi-armed-bandit.css, multi-armed-bandit-logic.js (pure numerics,
-state and simulation, also run by yujieteo/multi-armed-bandit's tests/multi-armed-bandit.test.mjs) and multi-armed-bandit.js
-(interface). viz/multi-armed-bandit/beamdswitch.js (the site's shared report template, unchanged) and
-viz/multi-armed-bandit/report.js (the experiment as a report) are inlined as they are, so the page
-makes no request at runtime. --verify re-runs every check and compares the committed page and
-gallery without writing.
+fictional counts, assumptions, method references) lives in raw.json. The page is assembled from
+src/multi-armed-bandit.css, src/multi-armed-bandit-logic.js (pure numerics, state and simulation, also
+run by yujieteo/multi-armed-bandit's tests/multi-armed-bandit.test.mjs) and src/multi-armed-bandit.js
+(interface). beamdswitch.js (the site's shared report template, unchanged) and report.js (the
+experiment as a report) are inlined as they are, so the page makes no request at runtime. --verify
+re-runs every check and compares the committed page without writing.
 
-    python3 scripts/build_multi_armed_bandit.py
-    python3 scripts/build_multi_armed_bandit.py --verify
+    python3 build.py
+    python3 build.py --verify
 """
 import argparse
 import json
 import re
+import sys
 from html import escape
 from pathlib import Path
 
-from gallery import render_gallery
-from page_parts import compact
-from style_guide import contrast
 
-ROOT = Path(__file__).resolve().parents[1]
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
+from page_parts import compact  # noqa: E402
+from style_guide import contrast  # noqa: E402
+
 SLUG = "multi-armed-bandit"
-DATA = ROOT / "data" / SLUG
-VIZ = ROOT / "viz" / SLUG / "index.html"
-GALLERY = ROOT / "index.html"
+DATA = HERE
+VIZ = HERE / "index.html"
 TOKENS = ROOT / "design-tokens.json"
-TEMPLATES = ROOT / "scripts" / "templates"
+TEMPLATES = HERE / "src"
 CSS_TEMPLATE = TEMPLATES / "multi-armed-bandit.css"
 LOGIC_TEMPLATE = TEMPLATES / "multi-armed-bandit-logic.js"
 JS_TEMPLATE = TEMPLATES / "multi-armed-bandit.js"
-DECK_TEMPLATE = ROOT / "viz" / SLUG / "beamdswitch.js"
-DECK_REPORT = ROOT / "viz" / SLUG / "report.js"
+DECK_TEMPLATE = HERE / "beamdswitch.js"
+DECK_REPORT = HERE / "report.js"
 BEAMDSWITCH_URL = "https://teoyujie.org/visuals/beamdswitch/"
 GALLERY_URL = "https://teoyujie.org/visuals/"
 
@@ -306,10 +307,8 @@ def main():
     if not args.verify:
         VIZ.parent.mkdir(parents=True, exist_ok=True)
         VIZ.write_text(html, encoding="utf-8")
-        GALLERY.write_text(render_gallery(ROOT), encoding="utf-8")
     else:
         assert VIZ.read_text(encoding="utf-8") == html, "viz/multi-armed-bandit/index.html is stale: rerun the builder"
-        assert GALLERY.read_text(encoding="utf-8") == render_gallery(ROOT), "index.html gallery is stale"
     size = verify_page(VIZ.read_text(encoding="utf-8"), raw)
     print(f"verified: {summary['templates']} templates, {len(pairs)} contrast pairs, {size} bytes "
           f"(budget {SIZE_LIMIT}), zero external requests")

@@ -2,20 +2,22 @@
 import argparse
 import csv
 import json
+import sys
 from html import escape
 from pathlib import Path
-from gallery import render_gallery
-from style_guide import THEME_SCRIPT, root_css
 
-ROOT = Path(__file__).resolve().parents[1]
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
+from style_guide import THEME_SCRIPT, root_css  # noqa: E402
+
 SLUG = "manchester-city-finances"
-RAW = ROOT / "data" / SLUG / "raw.csv"
-META = ROOT / "data" / SLUG / "meta.json"
-VIZ = ROOT / "viz" / SLUG / "index.html"
+RAW = HERE / "raw.csv"
+META = HERE / "meta.json"
+VIZ = HERE / "index.html"
 # The site's shared beamdswitch report template (copied unchanged) and this page's report, both inlined.
-TEMPLATE = ROOT / "viz" / SLUG / "beamdswitch.js"
-REPORT = ROOT / "viz" / SLUG / "report.js"
-GALLERY = ROOT / "index.html"
+TEMPLATE = HERE / "beamdswitch.js"
+REPORT = HERE / "report.js"
 
 
 def render(rows, meta, tokens):
@@ -54,7 +56,6 @@ def verify(rows):
     assert f'<script id="beamdswitch">\n{template}</script>' in html, 'the page inlines beamdswitch.js unchanged'
     assert f'<script id="report">\n{report}</script>' in html, 'the page inlines report.js unchanged'
     assert 'id="save-beamdswitch"' in html and 'id="copy-beamdswitch"' in html
-    assert f'href="viz/{SLUG}/index.html"' in GALLERY.read_text(encoding='utf-8')
     print('verified: 9 timeline records, 6 alleged periods, separate CAS event, 2 filed-account points, 3 read-only tools, beamdswitch and Copy deck buttons')
 
 
@@ -67,7 +68,6 @@ def main():
     if not args.verify:
         VIZ.parent.mkdir(parents=True, exist_ok=True)
         VIZ.write_text(render(rows, json.loads(META.read_text()), json.loads((ROOT / 'design-tokens.json').read_text())), encoding='utf-8')
-        GALLERY.write_text(render_gallery(), encoding='utf-8')
     verify(rows)
 
 

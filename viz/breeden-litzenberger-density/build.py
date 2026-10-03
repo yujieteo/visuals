@@ -13,22 +13,24 @@ import argparse
 import json
 import math
 import re
+import sys
 from html import escape
 from pathlib import Path
-from gallery import render_gallery
-from style_guide import THEME_SCRIPT, root_css
 
-ROOT = Path(__file__).resolve().parents[1]
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
+from style_guide import THEME_SCRIPT, root_css  # noqa: E402
+
 SLUG = "breeden-litzenberger-density"
-RAW = ROOT / "data" / SLUG / "raw.json"
-META = ROOT / "data" / SLUG / "meta.json"
+RAW = HERE / "raw.json"
+META = HERE / "meta.json"
 TOKENS = ROOT / "design-tokens.json"
-VIZ = ROOT / "viz" / SLUG / "index.html"
+VIZ = HERE / "index.html"
 # The narrated report: the site's standard beamdswitch template, copied unchanged, and the page's
 # report, which fills it from the strike and half-width shown. Both are inlined verbatim.
-BEAMDSWITCH_JS = ROOT / "viz" / SLUG / "beamdswitch.js"
-REPORT_JS = ROOT / "viz" / SLUG / "report.js"
-GALLERY = ROOT / "index.html"
+BEAMDSWITCH_JS = HERE / "beamdswitch.js"
+REPORT_JS = HERE / "report.js"
 
 
 def phi(x):
@@ -226,7 +228,6 @@ def verify(raw, model, meta):
                    "delta", "Dirac", "Breeden", "synthetic Black-Scholes"]:
         assert needle.lower() in html.lower()
     assert "prefers-reduced-motion" in html and "reset" in html.lower()
-    assert f'href="viz/{SLUG}/index.html"' in GALLERY.read_text()
     print("verified: Breeden-Litzenberger density 0.019724, butterflies converge, "
           "one inline SVG, 3 read-only tools, a beamdswitch deck, zero external assets")
 
@@ -359,7 +360,6 @@ def main():
     if not args.verify:
         VIZ.parent.mkdir(parents=True, exist_ok=True)
         VIZ.write_text(render(model, meta, json.loads(TOKENS.read_text())))
-        GALLERY.write_text(render_gallery())
     verify(raw, model, meta)
 
 

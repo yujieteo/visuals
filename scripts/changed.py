@@ -21,7 +21,7 @@ from visuals import ROOT, VIZ, folders, visuals
 
 # Paths that change no visual's behaviour: the repository-wide job still checks them.
 DOCS_FILES = {"LICENSE", ".gitignore", ".gitattributes", ".github/pull_request_template.md"}
-DOCS_DIRS = ("docs/",)
+DOCS_DIRS = ("docs/", ".agents/")
 
 
 def is_docs(path):

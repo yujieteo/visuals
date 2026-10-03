@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Fetch daily PSI and PM2.5 responses from the public data.gov.sg real-time API.
 
-Writes data/haze-singapore/raw.json with each daily response unchanged, keyed
+Writes raw.json beside it with each daily response unchanged, keyed
 by endpoint and date. No API key is needed; the script paces requests and
 retries when the public rate limit answers 429.
 """
@@ -13,8 +13,7 @@ import urllib.request
 from datetime import date, timedelta
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-RAW = ROOT / "data" / "haze-singapore" / "raw.json"
+RAW = Path(__file__).resolve().parent / "raw.json"
 BASE = "https://api-open.data.gov.sg/v2/real-time/api/"
 ENDPOINTS = ("psi", "pm25")
 

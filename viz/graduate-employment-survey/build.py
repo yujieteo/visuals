@@ -5,22 +5,24 @@ import json
 import math
 import re
 import statistics
+import sys
 from html import escape
 from pathlib import Path
-from gallery import render_gallery
-from page_parts import deck_buttons_js
-from style_guide import THEME_SCRIPT, root_css
 
-ROOT = Path(__file__).resolve().parents[1]
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
+from page_parts import deck_buttons_js  # noqa: E402
+from style_guide import THEME_SCRIPT, root_css  # noqa: E402
+
 SLUG = "graduate-employment-survey"
-RAW = ROOT / "data" / SLUG / "raw.csv"
-META = ROOT / "data" / SLUG / "meta.json"
+RAW = HERE / "raw.csv"
+META = HERE / "meta.json"
 TOKENS = ROOT / "design-tokens.json"
-VIZ = ROOT / "viz" / SLUG / "index.html"
-TEMPLATE = ROOT / "viz" / SLUG / "beamdswitch.js"
-REPORT = ROOT / "viz" / SLUG / "report.js"
+VIZ = HERE / "index.html"
+TEMPLATE = HERE / "beamdswitch.js"
+REPORT = HERE / "report.js"
 BEAMDSWITCH_URL = "https://teoyujie.org/visuals/beamdswitch/"
-GALLERY = ROOT / "index.html"
 FIELDS = [
     "year", "university", "school", "degree", "employment_rate_overall",
     "employment_rate_ft_perm", "basic_monthly_mean", "basic_monthly_median",
@@ -118,7 +120,6 @@ def verify(rows, points, computing_medians, meta):
     assert 'tabindex:index===0?"0":"-1"' in html and 'event.key==="Home"' in html
     assert ".innerHTML" not in html and "node.textContent=value" in html
     assert html.count("mc?.registerTool") == 3 and html.count("readOnlyHint:true") == 3
-    assert f'href="viz/{SLUG}/index.html"' in GALLERY.read_text()
     assert meta == {"slug": SLUG, "source": "Singapore Graduate Employment Survey", "fetched": "2026-09-27", "key_file_used": False}
     poison = points[0].copy()
     poison[1] = '<img src=x onerror="alert(1)">'
@@ -142,7 +143,6 @@ def main():
     if not args.verify:
         VIZ.parent.mkdir(parents=True, exist_ok=True)
         VIZ.write_text(render(points, computing_medians, meta, tokens))
-        GALLERY.write_text(render_gallery())
     verify(rows, points, computing_medians, meta)
 
 

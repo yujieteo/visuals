@@ -4,27 +4,29 @@
 The page pairs a stylised circadian alertness curve (clearly labelled as a
 summary of published chronobiology findings, not one dataset) with measured
 email-interruption numbers from workplace studies. Every measured number is
-grounded in a cited source recorded in data/<slug>/raw.json and meta.json.
+grounded in a cited source recorded in raw.json and meta.json.
 """
 import argparse
 import json
 import re
+import sys
 from html import escape
 from pathlib import Path
-from gallery import render_gallery
-from style_guide import THEME_SCRIPT, root_css
 
-ROOT = Path(__file__).resolve().parents[1]
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
+from style_guide import THEME_SCRIPT, root_css  # noqa: E402
+
 SLUG = "energy-email-productivity"
-RAW = ROOT / "data" / SLUG / "raw.json"
-META = ROOT / "data" / SLUG / "meta.json"
+RAW = HERE / "raw.json"
+META = HERE / "meta.json"
 TOKENS = ROOT / "design-tokens.json"
-VIZ = ROOT / "viz" / SLUG / "index.html"
+VIZ = HERE / "index.html"
 # The site's shared beamdswitch report template (copied unchanged) and this page's report, both inlined.
-TEMPLATE = ROOT / "viz" / SLUG / "beamdswitch.js"
-REPORT = ROOT / "viz" / SLUG / "report.js"
+TEMPLATE = HERE / "beamdswitch.js"
+REPORT = HERE / "report.js"
 BEAMDSWITCH_URL = "https://teoyujie.org/visuals/beamdswitch/"
-GALLERY = ROOT / "index.html"
 
 # Stylised alertness anchors (hour, relative alertness 0-100), summarising the
 # cited circadian pattern: a daytime rise, an early-to-mid afternoon dip, a
@@ -160,7 +162,6 @@ def verify(records, meta):
     for url in [*meta["sources"], BEAMDSWITCH_URL]:
         stripped = stripped.replace(url, "")
     assert not re.search(r'''(?:src|href)=["']https?://''', stripped)
-    assert f'href="viz/{SLUG}/index.html"' in GALLERY.read_text(encoding="utf-8")
     print("verified: 6 evidence records (4 measured, 2 curve sources), one inline SVG, one stylised curve, 3 read-only tools, beamdswitch and Copy deck buttons, zero external assets")
 
 
@@ -173,7 +174,6 @@ def main():
     if not args.verify:
         VIZ.parent.mkdir(parents=True, exist_ok=True)
         VIZ.write_text(render(records, meta, json.loads(TOKENS.read_text(encoding="utf-8"))), encoding="utf-8")
-        GALLERY.write_text(render_gallery(), encoding="utf-8")
     verify(records, meta)
 
 

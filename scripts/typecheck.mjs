@@ -13,14 +13,15 @@ const ROOT = new URL("../", import.meta.url);
 
 /**
  * The page's own inline scripts, in page order, as files to type-check: blocks with a src, a data type
- * (anything but text/javascript, text/plain or module) or a skipped id are left out. Line k of a file's
- * text after its first line is line (start + k - 1) of the page, so tsc's line numbers map straight back.
+ * (anything but text/javascript, text/plain or module) or a skipped id are left out. Each file starts with
+ * a one-line header naming the page line of its <script> tag, start; its line k is page line start + k - 2.
  * @param {string} html
  * @param {string} page the page's name, for the header comment
  * @param {string[]} [skip] ids of blocks to leave out
  * @returns {{ name: string, text: string }[]}
  */
 export function extract(html, page, skip = []) {
+  /** @type {{ name: string, text: string }[]} */
   const files = [];
   for (const m of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)) {
     const attrs = m[1];

@@ -81,7 +81,8 @@ def check(slug, require_typecheck=False):
         return [("visual.json", "FAIL", 0.0)]
     steps = [(f"check {i + 1}", command) for i, command in enumerate(data["checks"])] if "checks" in data else default_checks(folder)
     for name, argv in steps:
-        print(f"[{slug}] {name}: {argv if isinstance(argv, str) else shlex.join(argv)}", flush=True)
+        shown = argv if isinstance(argv, str) else shlex.join(["python3" if arg == sys.executable else arg for arg in argv])
+        print(f"[{slug}] {name}: {shown}", flush=True)
         run(name, argv, folder, log)
     if (folder / "tsconfig.json").is_file():
         if TSC.is_file():

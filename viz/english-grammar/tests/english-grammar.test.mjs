@@ -52,7 +52,7 @@ class El {
 }
 
 test("the Tree panel of an example without punctuation appends no null", async () => {
-  const html = await readFile(new URL("../viz/english-grammar/index.html", import.meta.url), "utf8");
+  const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
   /** @param {string} id */
   const script = (id) => {
     const m = new RegExp(`<script[^>]*id="${id}"[^>]*>([\\s\\S]*?)</script>`).exec(html);

@@ -3,21 +3,23 @@ import argparse
 import csv
 import json
 import re
+import sys
 from html import escape
 from pathlib import Path
-from gallery import render_gallery
-from page_parts import deck_buttons_js
-from style_guide import THEME_SCRIPT, root_css
 
-ROOT = Path(__file__).resolve().parents[1]
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
+from page_parts import deck_buttons_js  # noqa: E402
+from style_guide import THEME_SCRIPT, root_css  # noqa: E402
+
 SLUG = "social-values-surveydata"
-RAW = ROOT / "data" / SLUG / "raw.csv"
-META = ROOT / "data" / SLUG / "meta.json"
+RAW = HERE / "raw.csv"
+META = HERE / "meta.json"
 TOKENS = ROOT / "design-tokens.json"
-VIZ = ROOT / "viz" / SLUG / "index.html"
-TEMPLATE = ROOT / "viz" / SLUG / "beamdswitch.js"
-REPORT = ROOT / "viz" / SLUG / "report.js"
-GALLERY = ROOT / "index.html"
+VIZ = HERE / "index.html"
+TEMPLATE = HERE / "beamdswitch.js"
+REPORT = HERE / "report.js"
 SOURCE_URL = "https://data.gov.sg/datasets/d_05fffefe9045d234eb140d7db0acdeb9/view"
 AGE_ORDER = ["16-19", "20-24", "25-34", "35-44", "45-54", "55-64", "65-75"]
 COLUMNS = [
@@ -98,7 +100,6 @@ def verify(source_rows, rows, meta):
     assert all(f'name:"{name}"' in html for name in ("get_data", "get_metadata", "query"))
     assert "pointerenter" in html and 'addEventListener("focus"' in html and 'addEventListener("click"' in html
     assert "cross-sectional survey cannot separate age from cohort, retirement, income, or questionnaire effects" in html
-    assert f'href="viz/{SLUG}/index.html"' in GALLERY.read_text()
     print("verified: 3,076 source rows, 7 weighted age aggregates, gaps 0.09 and 1.07, one inline SVG, 3 read-only tools, a narrated beamdswitch deck, zero external assets")
 
 
@@ -113,7 +114,6 @@ def main():
     if not args.verify:
         VIZ.parent.mkdir(parents=True, exist_ok=True)
         VIZ.write_text(render(rows, meta, json.loads(TOKENS.read_text())))
-        GALLERY.write_text(render_gallery())
     verify(source_rows, rows, meta)
 
 
