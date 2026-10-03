@@ -6,15 +6,96 @@
  * same states, in the same order, as frames whose formulas reveal one `. . .` at a time.
  * No DOM. In the browser this is `self.GFLab` (it reads `self.GF`); in Node it requires engine.js.
  */
+/** @typedef {GFTypes.Rat} Rat */
+/** @typedef {GFTypes.Exact} Exact */
+/** @typedef {bigint | Rat} Coef  a coefficient: an integer count, or a rational for EGFs and probabilities */
+/**
+ * A lesson's parameter values, keyed by parameter name. Each value is one of the choices its spec lists, a
+ * number or a string, and each lesson reads its own parameters by name, so the values stay untyped here.
+ * @typedef {Record<string, any>} Params
+ */
+/** @typedef {{ label: string, values: (number | string)[], def: number | string, valid?: (v: any, p: Params) => boolean }} ParamSpec */
+/** @typedef {{ id: string, stage: string, title: string, tex: string[], text: string, say: string }} State  one step of a lesson */
+/** @typedef {{ name: string, gf: string, other: string, method: string, pass: boolean, tol?: number }} Check */
+/** @typedef {{ items: unknown[], total: number }} ObjectList  the first objects of a size, and how many there are */
+/**
+ * @typedef {object} LessonFields
+ * @property {string} id
+ * @property {string} sayProblem
+ * @property {number} level
+ * @property {string} hash
+ * @property {string[]} aliases
+ * @property {string} title
+ * @property {string} nav
+ * @property {string} branch
+ * @property {number} difficulty
+ * @property {string[]} prerequisites
+ * @property {string[]} related
+ * @property {string[]} techniques
+ * @property {string} gfType
+ * @property {string} visual
+ * @property {string} problem
+ * @property {string} discreteModel
+ * @property {string} when
+ * @property {string} key
+ * @property {{ def: number, min: number, max: number } | null} n
+ * @property {string | null} gfName
+ * @property {(p: Params) => string} [closed]
+ * @property {(N: number, p: Params) => Coef[]} [coeffs]
+ * @property {((n: number, p: Params) => Coef) | null} [enumerate]
+ * @property {string} [enumLabel]
+ * @property {(n: number, p: Params) => ObjectList} [objects]
+ * @property {(n: number, v: Coef, p: Params) => string} [answer]
+ * @property {(p: Params) => Record<string, string>} [reps]
+ * @property {(n: number, p: Params) => Check[]} [checks]
+ * @property {boolean} [analytic]
+ * @property {Record<string, ParamSpec>} [params]
+ * @property {boolean | ((p: Params) => boolean)} [egf]
+ * @property {string} [variable]
+ * @property {boolean} [optional]
+ */
+/**
+ * A lesson. Its states take n as null only when the lesson has no n; the lessons that read n declare it a number.
+ * @typedef {LessonFields & { states(p: Params, n: number | null): State[] }} Lesson
+ */
+/**
+ * @typedef {object} Problem  one rung of the problem ladder
+ * @property {number} k
+ * @property {string} say
+ * @property {string} title
+ * @property {string} lesson
+ * @property {Params} [params]
+ * @property {string} technique
+ * @property {number} difficulty
+ * @property {string} problem
+ * @property {string} visualHint
+ * @property {{ n: number, value?: Exact, approx?: boolean, lesson?: string }} ask
+ * @property {(n: number) => Exact} [answerFn]
+ * @property {string[]} hints
+ * @property {string} solution
+ */
+/** @typedef {{ page: "lesson", id: string, n: number | null, params: Params, unknown?: string }} LessonRoute  n is null for a lesson without one */
+/** @typedef {{ page: "problem", k: number }} ProblemRoute */
+/** @typedef {{ page: "compare", id?: string }} CompareRoute */
+/** @typedef {{ page: "fourier", N?: number }} FourierRoute */
+/** @typedef {{ page: "problems" | "sandbox" | "map" | "techniques" | "confusions" }} PlainRoute */
+/** @typedef {LessonRoute | ProblemRoute | CompareRoute | FourierRoute | PlainRoute} Route  the page a hash names */
+/** @typedef {{ page: "lesson", id?: string, n?: number | null, params?: Params } | Exclude<Route, LessonRoute>} RouteRef  a link to a page; a lesson link may leave out n and parameters */
+/** @typedef {{ kind: string, label: string, route: RouteRef, text: string }} SearchEntry */
+/** @typedef {GFTypes.BeamdswitchFrame & { _state?: { lesson: string, state: string, n?: number | null, params?: Params } }} Frame  a deck frame, with the lab state it shows */
+/** @typedef {{ meta: { title: string, subtitle?: string, voice?: string }, narration: string, notes?: string, setup: Frame[], method: Frame[], results: Frame[], checks: Frame[] }} Report */
+/** @typedef {{ kind: string, title: string, subtitle?: string, section?: string } & Partial<Frame>} Slide */
 (function (root, factory) {
   const G = typeof module === "object" && module.exports ? require("./engine.js") : root.GF;
   const api = factory(G);
   if (typeof module === "object" && module.exports) module.exports = api;
   else root.GFLab = api;
-})(typeof self !== "undefined" ? self : this, function (G) {
+})(typeof self !== "undefined" ? self : this, /** @param {typeof GF} G */ function (G) {
   "use strict";
   const { B, Q, qstr, fmtInt } = G;
+  /** @param {Exact} x */
   const val = (x) => (G.isQ(x) ? qstr(x) : fmtInt(x));
+  /** @param {number} n */
   const range = (n) => Array.from({ length: n }, (_, i) => i);
 
   /* The stages of the lab's cycle; a deck puts object states in Set-up and encode/manipulate states in Method. */
@@ -34,11 +115,15 @@
     { id: "extended", title: "Extensions and synthesis" },
   ];
 
+  /** @type {Record<string, Rat>} */
   const ALPHAS = { "1/2": Q(1, 2), "2/3": Q(2, 3), "1": Q(1), "3/2": Q(3, 2), "2": Q(2), "3": Q(3) };
+  /** @param {number} N */
   const fibShift = (N) => G.fibonacciGF(N + 1).slice(1); // 1, 1, 2, 3, 5, …: a_n = F_{n+1}
+  /** @param {unknown[]} arr @param {number} [max] @returns {ObjectList} */
   const objList = (arr, max = 60) => ({ items: arr.slice(0, max), total: arr.length });
 
   /* ---------- lessons ---------- */
+  /** @type {Lesson[]} */
   const LESSONS = [
     {
       id: "ogf", sayProblem: "Encode the constant sequence one, one, one, as a single formal power series.", level: 0, hash: "ogf", aliases: ["what-is-a-gf", "sequence-encoding"], title: "What is a generating function?", nav: "Encoding", branch: "ogf", difficulty: 1,
@@ -51,7 +136,7 @@
       coeffs: (N) => G.seriesFrom([], N).map(() => 1n),
       enumerate: (n) => BigInt(G.compositionsList([1], n).length), enumLabel: "rows of n unit blocks, listed",
       objects: (n) => objList([n === 0 ? "∅" : "▪".repeat(n)]),
-      answer: (n, v) => `There is ${fmtInt(v)} object of size ${n}, so the coefficient of x${G.sup(n)} is ${fmtInt(v)}.`,
+      answer: (n, v) => `There is ${val(v)} object of size ${n}, so the coefficient of x${G.sup(n)} is ${val(v)}.`,
       reps: () => ({ sequence: "1, 1, 1, 1, …", series: "1 + x + x² + x³ + ⋯", closed: "1/(1 − x)", recurrence: "a₀ = 1, aₙ = aₙ₋₁", class: "SEQ(Z) with one object per size", roots: "finite truncation: values at roots of unity in the Fourier lab", asymptotic: "aₙ = 1" }),
       states: () => [
         { id: "strip", stage: "object", title: "A sequence is a strip of coefficients", tex: ["a_0, a_1, a_2, \\ldots = 1, 1, 1, \\ldots"], text: "Each bar of the strip is one number a_n, the count of objects of size n.", say: "Start with the sequence one, one, one, and so on. Each entry counts the objects of one size." },
@@ -75,7 +160,7 @@
       coeffs: (N) => G.seriesFrom([], N).map(() => 1n),
       enumerate: (n) => BigInt(G.compositionsList([1], n).length), enumLabel: "compositions into unit parts, listed",
       objects: (n) => objList(G.compositionsList([1], n).map((c) => (c.length ? c.map(() => "▪").join("") : "∅"))),
-      answer: (n, v) => `There is exactly ${fmtInt(v)} way to build ${n} from unit pieces.`,
+      answer: (n, v) => `There is exactly ${val(v)} way to build ${n} from unit pieces.`,
       reps: () => ({ sequence: "1, 1, 1, …", series: "1 + x + x² + ⋯", closed: "1/(1 − x)", recurrence: "aₙ = aₙ₋₁", class: "SEQ(Z)", asymptotic: "pole at x = 1, aₙ = 1ⁿ" }),
       states: (p) => [
         { id: "blocks", stage: "object", title: "Repeated blocks", tex: ["\\text{one piece} \\mapsto x"], text: "One unit piece has size 1, so it is encoded by x.", say: "One unit piece has size one, so it becomes x." },
@@ -99,7 +184,7 @@
       coeffs: (N, p) => G.shift(fibShift(N), p.k, N),
       enumerate: (n, p) => (n < p.k ? 0n : BigInt(G.compositionsList([1, 2], n - p.k).length)), enumLabel: "compositions of n − k into 1s and 2s, listed",
       objects: (n, p) => objList(n < p.k ? [] : G.compositionsList([1, 2], n - p.k).map((c) => "···".slice(0, p.k) + "|" + (c.join("+") || "∅"))),
-      answer: (n, v, p) => `[x${G.sup(n)}] x${G.sup(p.k)}A(x) = a${G.subs(Math.max(n - p.k, 0))}${n < p.k ? " (none: n < k)" : ""} = ${fmtInt(v)}.`,
+      answer: (n, v, p) => `[x${G.sup(n)}] x${G.sup(p.k)}A(x) = a${G.subs(Math.max(n - p.k, 0))}${n < p.k ? " (none: n < k)" : ""} = ${val(v)}.`,
       reps: (p) => ({ sequence: `${"0, ".repeat(p.k)}1, 1, 2, 3, 5, …`, series: `x${G.sup(p.k)} + x${G.sup(p.k + 1)} + 2x${G.sup(p.k + 2)} + ⋯`, closed: `x${G.sup(p.k)}/(1 − x − x²)`, recurrence: `bₙ = aₙ₋${G.subs(p.k)}` }),
       states: (p) => [
         { id: "strip", stage: "object", title: "The strip of A(x)", tex: ["A(x) = 1 + x + 2x^2 + 3x^3 + 5x^4 + \\cdots"], text: "Here aₙ = Fₙ₊₁, the number of ways to write n as an ordered sum of 1s and 2s.", say: "Take the strip one, one, two, three, five, the Fibonacci numbers shifted by one." },
@@ -120,7 +205,7 @@
       coeffs: (N, p) => (p.mode === "A + B" ? G.add(G.evenGF(N), G.oddGF(N), N) : G.notMultipleOf3GF(N)),
       enumerate: (n, p) => (p.mode === "A + B" ? 1n : n % 3 === 0 ? 0n : 1n), enumLabel: "direct test of the pile size",
       objects: (n, p) => objList(p.mode === "A + B" || n % 3 ? [(n % 2 ? "B: " : "A: ") + ("▪".repeat(n) || "∅")] : []),
-      answer: (n, v) => `${fmtInt(v)} allowed pile${v === 1n ? "" : "s"} of size ${n}.`,
+      answer: (n, v) => `${val(v)} allowed pile${v === 1n ? "" : "s"} of size ${n}.`,
       reps: () => ({ sequence: "0, 1, 1, 0, 1, 1, 0, …", series: "x + x² + x⁴ + x⁵ + ⋯", closed: "1/(1 − x) − 1/(1 − x³)" }),
       states: () => [
         { id: "types", stage: "object", title: "Two disjoint types", tex: ["A(x) = \\frac{1}{1-x^2}, \\quad B(x) = \\frac{x}{1-x^2}"], text: "Even piles are encoded by 1 + x² + x⁴ + ⋯ and odd piles by x + x³ + ⋯.", say: "Even piles and odd piles are two disjoint types, each with its own generating function." },
@@ -139,7 +224,7 @@
       coeffs: (N) => G.xDerivative(G.seriesFrom([], N).map(() => 1n)),
       enumerate: (n) => BigInt(n), enumLabel: "marked blocks, counted one by one",
       objects: (n) => objList(range(n).map((i) => "▪".repeat(i) + "◆" + "▪".repeat(n - 1 - i))),
-      answer: (n, v) => `${fmtInt(v)} ways to mark one block in a pile of ${n}.`,
+      answer: (n, v) => `${val(v)} ways to mark one block in a pile of ${n}.`,
       reps: () => ({ sequence: "0, 1, 2, 3, …", series: "x + 2x² + 3x³ + ⋯", closed: "x/(1 − x)²", recurrence: "aₙ = aₙ₋₁ + 1", class: "pile with one marked atom (pointing)" }),
       states: () => [
         { id: "start", stage: "object", title: "Start from the constant strip", tex: ["A(x) = \\sum_{n\\ge0} x^n = \\frac{1}{1-x}"], text: "Every coefficient is 1.", say: "Start from the constant strip, one over one minus x." },
@@ -160,7 +245,7 @@
       coeffs: (N) => G.fibonacciGF(N),
       enumerate: (n) => G.fibonacciDP(n + 1)[n], enumLabel: "dynamic-programming recurrence",
       objects: (n) => objList(n === 0 ? [] : G.compositionsList([1, 2], n - 1).map((c) => c.map((s) => (s === 1 ? "□" : "▭")).join("") || "∅")),
-      answer: (n, v) => `F${G.subs(n)} = ${fmtInt(v)}.`,
+      answer: (n, v) => `F${G.subs(n)} = ${val(v)}.`,
       reps: () => ({ sequence: "0, 1, 1, 2, 3, 5, 8, …", series: "x + x² + 2x³ + 3x⁴ + ⋯", closed: "x/(1 − x − x²)", recurrence: "Fₙ = Fₙ₋₁ + Fₙ₋₂", class: "tilings by squares and dominoes", matrix: "[[1,1],[1,0]]ⁿ", asymptotic: "Fₙ ∼ φⁿ/√5" }),
       states: () => [
         { id: "sequence", stage: "object", title: "The sequence", tex: ["F_n:\\ 0, 1, 1, 2, 3, 5, 8, 13, \\ldots"], text: "Fₙ also counts tilings of a strip of length n − 1 by squares and dominoes.", say: "The Fibonacci numbers start zero, one, one, two, three, five, eight." },
@@ -182,7 +267,7 @@
       n: { def: 10, min: 0, max: 40 }, gfName: "F(x)", closed: () => "\\frac{1}{\\sqrt5}\\left(\\frac{1}{1-\\varphi x} - \\frac{1}{1-\\psi x}\\right)",
       coeffs: (N) => G.fibonacciGF(N),
       enumerate: (n) => G.binet(n), enumLabel: "Binet's formula, exact in ℚ(√5)",
-      answer: (n, v) => `F${G.subs(n)} = (φ${G.sup(n)} − ψ${G.sup(n)})/√5 = ${fmtInt(v)}.`,
+      answer: (n, v) => `F${G.subs(n)} = (φ${G.sup(n)} − ψ${G.sup(n)})/√5 = ${val(v)}.`,
       reps: () => ({ closed: "x/(1 − x − x²) = (1/√5)(1/(1 − φx) − 1/(1 − ψx))", sequence: "Fₙ = (φⁿ − ψⁿ)/√5", asymptotic: "Fₙ ∼ φⁿ/√5 (pole 1/φ ≈ 0.618)" }),
       states: () => [
         { id: "factor", stage: "encode", title: "Factor the denominator into poles", tex: ["1 - x - x^2 = (1-\\varphi x)(1-\\psi x), \\quad \\varphi = \\frac{1+\\sqrt5}{2},\\ \\psi = \\frac{1-\\sqrt5}{2}"], text: "The poles are at x = 1/φ ≈ 0.618 and x = 1/ψ ≈ −1.618.", say: "Factor the denominator. The poles sit at one over phi and one over psi." },
@@ -202,8 +287,9 @@
       coeffs: (N) => G.mul(G.seriesFrom([], N).map(() => 1n), G.seriesFrom([], N).map(() => 1n), N),
       enumerate: (n) => BigInt(range(n + 1).length), enumLabel: "lattice points on i + j = n, listed",
       objects: (n) => objList(range(n + 1).map((i) => `(${i}, ${n - i})`)),
-      answer: (n, v) => `${fmtInt(v)} ordered pairs (i, j) with i + j = ${n}.`,
+      answer: (n, v) => `${val(v)} ordered pairs (i, j) with i + j = ${n}.`,
       reps: () => ({ sequence: "1, 2, 3, 4, …", series: "1 + 2x + 3x² + ⋯", closed: "1/(1 − x)²", class: "SEQ(Z) × SEQ(Z)", matrix: "product grid aᵢbⱼ" }),
+      /** @param {Params} p @param {number} n */
       states: (p, n) => [
         { id: "two", stage: "object", title: "Two sequences", tex: ["A(x) = \\sum a_n x^n, \\qquad B(x) = \\sum b_n x^n"], text: "Here aₙ = bₙ = 1: one way to choose each coordinate.", say: "Take two sequences, here both all ones." },
         { id: "grid", stage: "manipulate", title: "Multiply: the product grid", tex: ["A(x)B(x) = \\sum_n \\left(\\sum_{k=0}^{n} a_k b_{n-k}\\right) x^n"], text: "Every product aᵢbⱼ sits in cell (i, j) and lands on x^{i+j}.", say: "Multiply. Every product of a term from each series sits in a grid cell and lands on the power i plus j." },
@@ -222,8 +308,9 @@
       coeffs: (N, p) => G.coinChangeGF(denoms(p), N),
       enumerate: (n, p) => BigInt(G.coinSolutions(denoms(p), n).length), enumLabel: "solutions of Σ cᵢdᵢ = n, listed",
       objects: (n, p) => objList(G.coinSolutions(denoms(p), n).map((t) => t.map((c, i) => `${c}×${denoms(p)[i]}`).join(" + "))),
-      answer: (n, v, p) => `${fmtInt(v)} ways to make ${n} from coins ${denoms(p).join(", ")}.`,
+      answer: (n, v, p) => `${val(v)} ways to make ${n} from coins ${denoms(p).join(", ")}.`,
       reps: (p) => ({ series: G.seriesText(G.coinChangeGF(denoms(p), 9)), closed: `1/${denoms(p).map((d) => `(1 − x${d === 1 ? "" : G.sup(d)})`).join("")}`, class: denoms(p).map((d) => `SEQ(Z${G.sup(d)})`).join(" × ") }),
+      /** @param {Params} p @param {number} n */
       states: (p, n) => [
         { id: "tracks", stage: "object", title: "Independent tracks", tex: denoms(p).map((d) => `\\text{${d}-cent: } 1 + ${xp(d)} + ${xp(2 * d)} + \\cdots = \\frac{1}{1-${xp(d)}}`), text: "Each denomination is its own repeatable track; the amount it contributes is a multiple of its value.", say: "Each kind of coin is an independent track that can be used any number of times." },
         { id: "product", stage: "manipulate", title: "Multiply the tracks", tex: [`C(x) = ${denoms(p).map((d) => `\\frac{1}{1-${xp(d)}}`).join("\\,")}`], text: "Choosing a point on each track and adding the amounts is exactly the Cauchy product.", say: "Choosing an amount on each track and adding them up is a product of generating functions." },
@@ -242,7 +329,7 @@
       coeffs: (N, p) => G.compositionsGF(partsOf(p), N),
       enumerate: (n, p) => BigInt(G.compositionsList(partsOf(p), n).length), enumLabel: "compositions, listed one by one",
       objects: (n, p) => objList(G.compositionsList(partsOf(p), n, 200).map((c) => c.join("+") || "∅")),
-      answer: (n, v, p) => `${fmtInt(v)} compositions of ${n} with parts ${partsOf(p).join(", ")}.`,
+      answer: (n, v, p) => `${val(v)} compositions of ${n} with parts ${partsOf(p).join(", ")}.`,
       reps: (p) => ({ series: G.seriesText(G.compositionsGF(partsOf(p), 9)), closed: `1/(1 − (${partsOf(p).map((s) => (s === 1 ? "x" : "x" + G.sup(s))).join(" + ")}))`, recurrence: `sₙ = ${partsOf(p).map((s) => `sₙ₋${G.subs(s)}`).join(" + ")}`, class: "SEQ(parts)" }),
       states: (p) => [
         { id: "tiles", stage: "object", title: "Compositions as tiles", tex: ["3 = 1+1+1 = 1+2 = 2+1 = 3"], text: "A composition is a row of tiles; order matters.", say: "A composition is a row of tiles, and the order of the tiles matters." },
@@ -261,7 +348,7 @@
       closed: (p) => BUILDS[p.build].tex, coeffs: (N, p) => BUILDS[p.build].coeffs(N),
       enumerate: (n, p) => BigInt(BUILDS[p.build].list(n).length), enumLabel: "objects built and listed",
       objects: (n, p) => objList(BUILDS[p.build].list(n)),
-      answer: (n, v, p) => `${fmtInt(v)} objects of size ${n} in ${p.build}.`,
+      answer: (n, v, p) => `${val(v)} objects of size ${n} in ${p.build}.`,
       reps: (p) => ({ class: p.build, closed: BUILDS[p.build].text, series: G.seriesText(BUILDS[p.build].coeffs(9)) }),
       states: (p) => [
         { id: "atoms", stage: "object", title: "Atoms and operators", tex: ["\\text{CHOICE} \\mapsto A+B,\\quad \\text{PAIR} \\mapsto AB,\\quad \\text{SEQUENCE} \\mapsto \\frac{1}{1-A}"], text: "An atom Z has size 1 and generating function x.", say: "Atoms have size one and become x. Three operators build everything else." },
@@ -280,7 +367,7 @@
       coeffs: (N) => G.compositionsAllGF(N),
       enumerate: (n) => BigInt(G.compositionsList(range(n).map((i) => i + 1), n).length), enumLabel: "outer slots filled with inner blocks, listed",
       objects: (n) => objList(G.compositionsList(range(n).map((i) => i + 1), n).map((c) => c.map((s) => `[${"•".repeat(s)}]`).join("") || "∅")),
-      answer: (n, v) => `${fmtInt(v)} = ${n ? `2${G.sup(n - 1)}` : "1"} nested objects of size ${n}.`,
+      answer: (n, v) => `${val(v)} = ${n ? `2${G.sup(n - 1)}` : "1"} nested objects of size ${n}.`,
       reps: () => ({ closed: "A(B(x)) with A(u) = 1/(1 − u), B(x) = x/(1 − x)", series: "1 + x + 2x² + 4x³ + 8x⁴ + ⋯", class: "SEQ(SEQ≥1(Z))", sequence: "1, 1, 2, 4, 8, … = 2ⁿ⁻¹" }),
       states: () => [
         { id: "outer", stage: "object", title: "Outer structure with slots", tex: ["A(u) = \\frac{1}{1-u} \\quad \\text{(a row of slots)}"], text: "The outer structure only says how many slots there are and in what order.", say: "The outer structure is a row of slots." },
@@ -300,7 +387,7 @@
       coeffs: (N) => G.catalanGF(N),
       enumerate: (n) => (n <= 12 ? BigInt(G.balancedParens(n).length) : G.catalanClosed(n)), enumLabel: "balanced strings listed (closed form beyond n = 12)",
       objects: (n) => objList(n <= 7 ? G.balancedParens(n) : []),
-      answer: (n, v) => `C${G.subs(n)} = ${fmtInt(v)} binary trees with ${n} internal nodes.`,
+      answer: (n, v) => `C${G.subs(n)} = ${val(v)} binary trees with ${n} internal nodes.`,
       reps: () => ({ sequence: "1, 1, 2, 5, 14, 42, …", series: "1 + x + 2x² + 5x³ + 14x⁴ + ⋯", closed: "(1 − √(1 − 4x))/(2x)", recurrence: "Cₙ₊₁ = Σ CₖCₙ₋ₖ", class: "C = ε + Z × C × C", asymptotic: "Cₙ ∼ 4ⁿ/(√π n^{3/2})" }),
       states: () => [
         { id: "tree", stage: "object", title: "A binary tree grows recursively", tex: ["\\mathcal{C} = \\varepsilon + \\mathcal{Z}\\times\\mathcal{C}\\times\\mathcal{C}"], text: "Each internal root contributes one x and two subtrees.", say: "A binary tree is empty, or a root with two subtrees." },
@@ -323,8 +410,9 @@
       egf: (p) => p.phi !== "(1+u)^2",
       enumerate: (n, p) => (p.phi === "(1+u)^2" ? (n >= p.k ? G.toBig(G.lagrange([1, 2, 1], n, p.k)) : 0n) : n <= 5 ? G.rootedLabelledTrees(n) : cayleyByLagrange(n)),
       enumLabel: "Lagrange's formula (and brute-force trees for n ≤ 5, labelled case)",
-      answer: (n, v, p) => (p.phi === "(1+u)^2" ? `[x${G.sup(n)}]T${p.k === 1 ? "" : G.sup(p.k)} = ${p.k}/${n} · [u${G.sup(n - p.k)}](1 + u)${G.sup(2 * n)} = ${fmtInt(v)}.` : `${fmtInt(v)} = ${n}${G.sup(n - 1)} rooted labelled trees on ${n} vertices.`),
+      answer: (n, v, p) => (p.phi === "(1+u)^2" ? `[x${G.sup(n)}]T${p.k === 1 ? "" : G.sup(p.k)} = ${p.k}/${n} · [u${G.sup(n - p.k)}](1 + u)${G.sup(2 * n)} = ${val(v)}.` : `${val(v)} = ${n}${G.sup(n - 1)} rooted labelled trees on ${n} vertices.`),
       reps: () => ({ closed: "T = x(1 + T)², T = C − 1", class: "T = Z × (1 + T)²", sequence: "1, 2, 5, 14, 42, … (Catalan)" }),
+      /** @param {Params} p @param {number} n */
       states: (p, n) => [
         { id: "implicit", stage: "object", title: "An implicit equation", tex: [p.phi === "(1+u)^2" ? "T(x) = x\\,\\phi(T(x)), \\quad \\phi(u) = (1+u)^2" : "T(x) = x\\,e^{T(x)}"], text: "A root (x) with an ordered pair of optional subtrees φ(T).", say: "The tree is a root times phi of T, an implicit equation." },
         { id: "unfold", stage: "encode", title: "Unfold the substitutions", tex: ["T \\to x\\phi(T) \\to x\\phi(x\\phi(T)) \\to \\cdots"], text: "Iterating fixes one more coefficient each time; this is the fixed-point computation the lab uses as a cross-check.", say: "Substituting the equation into itself fixes one more coefficient each time." },
@@ -352,7 +440,7 @@
       egf: (p) => p.view === "labelled",
       enumerate: (n, p) => (p.view === "labelled" ? BigInt(G.permutations(Math.min(n, 8)).length) * (n > 8 ? G.factorial(n) / G.factorial(8) : 1n) : 1n), enumLabel: "label assignments enumerated (n ≤ 8)",
       objects: (n, p) => objList(p.view === "labelled" && n <= 4 ? G.permutations(n).map((q) => q.map((i) => i + 1).join(" ")) : ["•".repeat(n) || "∅"]),
-      answer: (n, v, p) => (p.view === "labelled" ? `${fmtInt(v)} = ${n}! labelled rows; the EGF coefficient is ${fmtInt(v)}/${n}! = 1.` : `${fmtInt(v)} unlabelled row of size ${n}.`),
+      answer: (n, v, p) => (p.view === "labelled" ? `${val(v)} = ${n}! labelled rows; the EGF coefficient is ${val(v)}/${n}! = 1.` : `${val(v)} unlabelled row of size ${n}.`),
       reps: () => ({ sequence: "aₙ = n!: 1, 1, 2, 6, 24, …", series: "Σ n! xⁿ/n! = Σ xⁿ", closed: "1/(1 − x) as an EGF" }),
       states: () => [
         { id: "atoms", stage: "object", title: "Three labelled atoms", tex: ["\\{1, 2, 3\\} \\Rightarrow 3! = 6 \\text{ rows}"], text: "One unlabelled shape explodes into n! labelled objects.", say: "Take three atoms. Once they carry labels, one row becomes six." },
@@ -371,8 +459,9 @@
       coeffs: (N) => G.arrangementsGF(N),
       enumerate: (n) => (n <= 12 ? G.arrangementsEnumerated(n) : G.arrangementsGF(n + 1)[n]), enumLabel: "every (subset, order) pair enumerated",
       objects: (n) => objList(n <= 4 ? G.arrangementsList(n).map((r) => `(${r.join(" ")}) | {${range(n).map((i) => i + 1).filter((i) => !r.includes(i)).join(",")}}`) : []),
-      answer: (n, v) => `${fmtInt(v)} labelled splits of {1…${n}}.`,
+      answer: (n, v) => `${val(v)} labelled splits of {1…${n}}.`,
       reps: () => ({ sequence: "1, 2, 5, 16, 65, 326, …", series: "Σ cₙxⁿ/n!", closed: "eˣ/(1 − x)", class: "SEQ(Z) ⋆ SET(Z)" }),
+      /** @param {Params} p @param {number} n */
       states: (p, n) => [
         { id: "dots", stage: "object", title: `Start with ${n} labelled dots`, tex: [`\\{1, \\ldots, ${n}\\} = L \\sqcup R`.replace("\\sqcup", "\\cup")], text: "Choose k labels for the left (A) structure; the remaining n − k go right.", say: "Start with labelled dots and choose which ones go to the left structure." },
         { id: "binomial", stage: "manipulate", title: "The split appears as a binomial", tex: ["c_n = \\sum_{k} \\binom{n}{k} a_k b_{n-k}"], text: "There are C(n, k) ways to choose the left labels; then aₖ and bₙ₋ₖ structures on them.", say: "There are n choose k ways to choose the left labels, then an A structure and a B structure." },
@@ -392,7 +481,7 @@
       coeffs: (N, p) => (p.kind.startsWith("cycles") ? G.permutationsByExpFormula(N) : G.bellByExpFormula(N)),
       enumerate: (n, p) => (n <= 8 ? BigInt(p.kind.startsWith("cycles") ? G.permutations(n).length : G.setPartitions(n).length) : p.kind.startsWith("cycles") ? G.factorial(n) : G.bellByExpFormula(n + 1)[n]), enumLabel: "objects enumerated (n ≤ 8)",
       objects: (n, p) => objList(n <= 4 ? (p.kind.startsWith("cycles") ? G.permutations(n).map((q) => G.cyclesOf(q).map((c) => `(${c.map((i) => i + 1).join(" ")})`).join("")) : G.setPartitions(n).map((s) => blocksText(s))) : []),
-      answer: (n, v, p) => `${fmtInt(v)} ${p.kind.startsWith("cycles") ? "permutations" : "set partitions"} of ${n} labels.`,
+      answer: (n, v, p) => `${val(v)} ${p.kind.startsWith("cycles") ? "permutations" : "set partitions"} of ${n} labels.`,
       reps: (p) => (p.kind.startsWith("cycles") ? { class: "PERM = SET(CYC)", closed: "exp(Σ xⁿ/n) = 1/(1 − x)", sequence: "n!: 1, 1, 2, 6, 24, …" } : { class: "SETPART = SET(SET≥1(Z))", closed: "exp(eˣ − 1)", sequence: "Bell: 1, 1, 2, 5, 15, 52, …" }),
       states: (p) => [
         { id: "islands", stage: "object", title: "Connected components as islands", tex: [p.kind.startsWith("cycles") ? "C(x) = \\sum_{n\\ge1} (n-1)!\\frac{x^n}{n!} = \\log\\frac{1}{1-x}" : "C(x) = e^x - 1"], text: "Each island is one connected component: a cycle, or a block.", say: "Each island is one connected component." },
@@ -411,7 +500,7 @@
       closed: () => "\\exp\\left(\\sum_{k\\ge1}\\frac{x^k}{k}\\right) = \\frac{1}{1-x}",
       coeffs: (N) => range(N).map((n) => G.factorial(n)),
       enumerate: (n) => (n <= 8 ? BigInt(G.permutations(n).length) : G.factorial(n)), enumLabel: "permutations enumerated (n ≤ 8)",
-      answer: (n, v) => `${fmtInt(v)} permutations; by cycles: ${G.stirling1(n + 1)[n].map(fmtInt).join(", ")}.`,
+      answer: (n, v) => `${val(v)} permutations; by cycles: ${G.stirling1(n + 1)[n].map(fmtInt).join(", ")}.`,
       reps: () => ({ class: "PERM = SET(CYC)", closed: "1/(1 − x) (EGF)", matrix: "Stirling numbers c(n, k)", recurrence: "c(n+1, k) = n c(n, k) + c(n, k − 1)" }),
       states: () => [
         { id: "arrows", stage: "object", title: "A permutation as arrows", tex: ["1 \\to 4 \\to 2 \\to 1, \\qquad 3 \\to 5 \\to 3"], text: "Following arrows from any label returns to it: a cycle.", say: "Follow the arrows from any label and you come back to it. That loop is a cycle." },
@@ -528,6 +617,7 @@
       closed: (p) => polyTex(fourierVec(p.N)), coeffs: (N, p) => G.seriesFrom(fourierVec(p.N), N), enumerate: null,
       answer: (n, v, p) => `a${G.subs(n % p.N)} = (1/${p.N})Σ A(ωᵏ)ω^{−k·${n % p.N}} = ${qstr(G.idftExact(G.dftExact(fourierVec(p.N), p.N))[n % p.N])}.`,
       reps: (p) => ({ sequence: `[${fourierVec(p.N).join(", ")}]`, roots: G.dftExact(fourierVec(p.N), p.N).map((z) => G.zExactString(z, p.N)).join("; ") }),
+      /** @param {Params} p @param {number} n */
       states: (p, n) => [
         { id: "formula", stage: "manipulate", title: "Average against the conjugate phasors", tex: ["a_n = \\frac1N\\sum_{k=0}^{N-1} A(\\omega^k)\\,\\omega^{-kn}"], text: "Multiplying by ω^{−kn} rotates the wanted coefficient back to the positive axis; everything else cancels.", say: "Multiply each value by the reverse rotation and average. Only coefficient n survives." },
         { id: "compare", stage: "manipulate", title: "Two kinds of coefficient extraction", tex: ["\\text{ordinary GF: } [x^n]A(x)", "\\text{finite cyclic GF: average } A(\\omega^k)\\omega^{-kn} \\text{ over roots of unity}"], text: "The inverse DFT is the roots-of-unity filter with m = N, applied to xⁿ's residue class.", say: "This is the roots of unity filter again. Filtering and the inverse transform are the same phenomenon." },
@@ -565,7 +655,7 @@
       n: { def: 2, min: 0, max: 4 }, params: { size: { label: "transform length", values: [8, 16, 64, 1024], def: 8 } }, gfName: "A(x)B(x)",
       closed: () => "(1+2x+3x^2)(4+5x+6x^2)", coeffs: (N) => G.seriesFrom(G.mul([1n, 2n, 3n], [4n, 5n, 6n]), N),
       enumerate: (n) => G.multiplyByDFT([1, 2, 3], [4, 5, 6])[n] ?? 0n, enumLabel: "evaluate → multiply → interpolate, exact",
-      answer: (n, v) => `[x${G.sup(n)}] = ${fmtInt(v)}; product 4 + 13x + 28x² + 27x³ + 18x⁴.`,
+      answer: (n, v) => `[x${G.sup(n)}] = ${val(v)}; product 4 + 13x + 28x² + 27x³ + 18x⁴.`,
       reps: (p) => ({ sequence: "[4, 13, 28, 27, 18]", closed: "(1 + 2x + 3x²)(4 + 5x + 6x²)", matrix: `naive: ${p.size}² = ${p.size * p.size} products; FFT: (N/2)log₂N = ${(p.size / 2) * Math.log2(p.size)} twiddle products` }),
       states: () => [
         { id: "naive", stage: "manipulate", title: "Coefficient method: O(n²)", tex: ["c_n = \\sum_k a_k b_{n-k}"], text: "Every pair of coefficients meets once.", say: "The direct method multiplies every pair of coefficients." },
@@ -586,7 +676,7 @@
       coeffs: (N) => G.no11GF(N),
       enumerate: (n) => (n <= 16 ? BigInt(G.no11Strings(n).length) : G.transferCounts(n + 1)[n]), enumLabel: "all 2ⁿ strings filtered (n ≤ 16)",
       objects: (n) => objList(n <= 8 ? G.no11Strings(n).map((s) => s || "ε") : []),
-      answer: (n, v) => `${fmtInt(v)} strings of length ${n} avoid 11.`,
+      answer: (n, v) => `${val(v)} strings of length ${n} avoid 11.`,
       reps: () => ({ matrix: "M = [[1, 1], [1, 0]]", recurrence: "sₙ = sₙ₋₁ + sₙ₋₂", closed: "(1 + x)/(1 − x − x²)", sequence: "1, 2, 3, 5, 8, 13, …", class: "words accepted by a 2-state automaton" }),
       states: () => [
         { id: "automaton", stage: "object", title: "A finite-state automaton", tex: ["\\text{state 0: last bit 0 (or empty)}, \\quad \\text{state 1: last bit 1}"], text: "From state 0 you may write 0 or 1; from state 1 only 0.", say: "Two states remember the last bit. After a one, only a zero is allowed." },
@@ -603,12 +693,12 @@
       when: "Use an infinite product when each part size can be chosen independently any number of times.",
       key: "Each part size k contributes 1 + xᵏ + x²ᵏ + ⋯; the product over all k is Π 1/(1 − xᵏ).",
       n: { def: 6, min: 0, max: 40 }, params: { kind: { label: "parts", values: ["any", "distinct", "odd", "at most 3"], def: "any" } }, gfName: "P(x)",
-      closed: (p) => ({ any: "\\prod_{k\\ge1}\\frac{1}{1-x^k}", distinct: "\\prod_{k\\ge1}(1+x^k)", odd: "\\prod_{k\\ge1}\\frac{1}{1-x^{2k-1}}", "at most 3": "\\frac{1}{(1-x)(1-x^2)(1-x^3)}" })[p.kind],
+      closed: (p) => /** @type {Record<string, string>} */ ({ any: "\\prod_{k\\ge1}\\frac{1}{1-x^k}", distinct: "\\prod_{k\\ge1}(1+x^k)", odd: "\\prod_{k\\ge1}\\frac{1}{1-x^{2k-1}}", "at most 3": "\\frac{1}{(1-x)(1-x^2)(1-x^3)}" })[p.kind],
       coeffs: (N, p) => partGF(p.kind, N),
       enumerate: (n, p) => (n <= 30 ? BigInt(partList(p.kind, n).length) : partGF(p.kind, n + 1)[n]), enumLabel: "partitions listed (n ≤ 30)",
       objects: (n, p) => objList(n <= 12 ? partList(p.kind, n).map((q) => q.join("+") || "∅") : []),
-      answer: (n, v, p) => `p${p.kind === "any" ? "" : `_${p.kind}`}(${n}) = ${fmtInt(v)}.`,
-      reps: (p) => ({ closed: { any: "Π 1/(1 − xᵏ)", distinct: "Π (1 + xᵏ)", odd: "Π 1/(1 − x²ᵏ⁻¹)", "at most 3": "1/((1 − x)(1 − x²)(1 − x³))" }[p.kind], series: G.seriesText(partGF(p.kind, 10)) }),
+      answer: (n, v, p) => `p${p.kind === "any" ? "" : `_${p.kind}`}(${n}) = ${val(v)}.`,
+      reps: (p) => ({ closed: /** @type {Record<string, string>} */ ({ any: "Π 1/(1 − xᵏ)", distinct: "Π (1 + xᵏ)", odd: "Π 1/(1 − x²ᵏ⁻¹)", "at most 3": "1/((1 − x)(1 − x²)(1 − x³))" })[p.kind], series: G.seriesText(partGF(p.kind, 10)) }),
       states: () => [
         { id: "ferrers", stage: "object", title: "Ferrers diagrams", tex: ["5 + 3 + 2 + 1 = 11"], text: "A partition is a multiset of parts, drawn as rows of dots.", say: "A partition is drawn as rows of dots, longest first." },
         { id: "factor", stage: "encode", title: "One factor per part size", tex: ["1 + x^k + x^{2k} + x^{3k} + \\cdots = \\frac{1}{1-x^k}"], text: "Choosing how many parts of size k is a geometric series in xᵏ.", say: "For each part size k, choosing how many copies is a geometric series in x to the k." },
@@ -626,7 +716,7 @@
       coeffs: (N) => G.partitionsGF(N, { distinct: true }),
       enumerate: (n) => (n <= 40 ? BigInt(G.partitionsList(n, { odd: true }).length) : G.partitionsGF(n + 1, { parts: "odd" })[n]), enumLabel: "odd-part partitions listed",
       objects: (n) => objList(n <= 12 ? G.partitionsList(n, { distinct: true }).map((q) => q.join("+") || "∅") : []),
-      answer: (n, v) => `${fmtInt(v)} distinct-part partitions = ${fmtInt(v)} odd-part partitions of ${n}.`,
+      answer: (n, v) => `${val(v)} distinct-part partitions = ${val(v)} odd-part partitions of ${n}.`,
       reps: () => ({ closed: "Π(1 + xᵏ) = Π 1/(1 − x²ᵏ⁻¹)", series: G.seriesText(G.partitionsGF(10, { distinct: true })) }),
       states: () => [
         { id: "two", stage: "object", title: "Two families", tex: ["D(x) = \\prod_{k\\ge1}(1+x^k), \\quad O(x) = \\prod_{k\\ge1}\\frac{1}{1-x^{2k-1}}"], text: "Distinct parts: each size used at most once. Odd parts: only odd sizes, any multiplicity.", say: "One family uses each part at most once. The other uses only odd parts." },
@@ -707,7 +797,7 @@
       n: { def: 4, min: 0, max: 14 }, gfName: "\\Delta A(t)", closed: () => "\\frac{1}{1-x-y} \\to \\sum_n \\binom{2n}{n}t^n = \\frac{1}{\\sqrt{1-4t}}",
       coeffs: (N) => G.centralBinomials(N),
       enumerate: (n) => G.latticeGrid(n + 1)[n][n], enumLabel: "paths counted by lattice dynamic programming",
-      answer: (n, v) => `[x${G.sup(n)}y${G.sup(n)}] = C(${2 * n}, ${n}) = ${fmtInt(v)} paths.`,
+      answer: (n, v) => `[x${G.sup(n)}y${G.sup(n)}] = C(${2 * n}, ${n}) = ${val(v)} paths.`,
       reps: () => ({ closed: "1/(1 − x − y)", matrix: "a_{m,n} = C(m + n, m)", sequence: "diagonal 1, 2, 6, 20, 70, …" }),
       states: () => [
         { id: "lattice", stage: "object", title: "Coefficients on the lattice", tex: ["A(x,y) = \\sum a_{m,n}x^my^n = \\frac{1}{1-x-y}"], text: "Cell (m, n) holds the number of paths to it.", say: "Put each coefficient on its lattice point." },
@@ -733,26 +823,43 @@
   ];
 
   /* ---------- small helpers used by the lessons ---------- */
+  /** @param {number} d */
   const xp = (d) => (d === 1 ? "x" : `x^{${d}}`);
   /* A comma-separated choice such as "1, 2, 5" as numbers. */
+  /** @param {string} text */
   const numList = (text) => text.split(",").map((s) => Number(s.trim()));
+  /** @param {Params} p */
   const denoms = (p) => numList(p.coins);
+  /** @param {Params} p */
   const partsOf = (p) => numList(p.parts);
-  function blocksText(s) { const blocks = []; s.forEach((b, i) => { (blocks[b] ??= []).push(i + 1); }); return blocks.map((b) => `{${b.join(",")}}`).join(""); }
+  /** Restricted growth string → its blocks, as "{1,3}{2}". @param {number[]} s */
+  function blocksText(s) { const blocks = /** @type {number[][]} */ ([]); s.forEach((b, i) => { (blocks[b] ??= []).push(i + 1); }); return blocks.map((b) => `{${b.join(",")}}`).join(""); }
   /* n! [xⁿ]T for T = x e^T, by Lagrange: n! · (1/n) [u^{n−1}] e^{nu} = n! · n^{n−1}/(n · (n−1)!), exactly. */
+  /** @param {number} n */
   function cayleyByLagrange(n) { return G.toBig(G.qmul(Q(G.factorial(n)), G.qdiv(Q(B(n) ** B(n - 1), G.factorial(n - 1)), Q(n)))); }
+  /** @param {number} n */
   function harmonic(n) { let h = Q(0); for (let k = 1; k <= n; k++) h = G.qadd(h, Q(1, k)); return h; }
+  /** @param {Exact} q @param {number} n */
   function qpow(q, n) { let r = Q(1); for (let i = 0; i < n; i++) r = G.qmul(r, q); return r; }
+  /** @param {Params} p */
   function filterPoly(p) { return p.poly.startsWith("(") ? range(13).map((k) => G.binom(12, k)) : range(12).map(() => 1n); }
+  /** @param {number} N */
   function fourierVec(N) { return range(N).map((i) => i + 1); }
+  /** @param {number} N */
   function cycA(N) { return range(N).map((i) => B(i + 1)); }
+  /** @param {number} N */
   function cycB(N) { return range(N).map((i) => (i < 2 ? 1n : 0n)); }
+  /** @param {number[]} a */
   function polyTex(a) { return a.map((c, n) => `${n && c >= 0 ? "+" : ""}${c === 1 && n ? "" : c}${n === 0 ? "" : n === 1 ? "x" : `x^{${n}}`}`).join(" "); }
   /* Each partition kind as options for the product (partitionsGF) and for the enumeration (partitionsList); any other kind is unrestricted. */
+  /** @type {Record<string, [Parameters<typeof G.partitionsGF>[1], Parameters<typeof G.partitionsList>[1]]>} */
   const PART_KINDS = { distinct: [{ distinct: true }, { distinct: true }], odd: [{ parts: "odd" }, { odd: true }], "at most 3": [{ maxPart: 3 }, { maxPart: 3 }] };
+  /** @param {string} kind @param {number} N */
   const partGF = (kind, N) => G.partitionsGF(N, (PART_KINDS[kind] || [])[0]);
+  /** @param {string} kind @param {number} n */
   const partList = (kind, n) => G.partitionsList(n, (PART_KINDS[kind] || [])[1]);
   /* Exact DFT checks shared by the Fourier lessons: IDFT(DFT(a)) = a, and the float phasor sums agree. */
+  /** @param {number} N @returns {Check[]} */
   function fourierChecks(N) {
     const a = fourierVec(N), v = G.dftExact(a, N), back = G.idftExact(v, N), f = G.dftFloat(a, N);
     const err = Math.max(...v.map((z, k) => G.cabs(G.csub(G.zToComplex(z, N), f[k]))));
@@ -763,6 +870,7 @@
   }
 
   /* Constructions for the symbolic-combinatorics builder: each with its GF and an object lister. */
+  /** @type {Record<string, { tex: string, text: string, coeffs: (N: number) => bigint[], list: (n: number) => string[] }>} */
   const BUILDS = {
     "SEQ(Z + Z²)": { tex: "\\frac{1}{1-(x+x^2)}", text: "1/(1 − x − x²)", coeffs: (N) => G.compositionsGF([1, 2], N), list: (n) => G.compositionsList([1, 2], n).map((c) => c.map((s) => (s === 1 ? "Z" : "Z²")).join(" ") || "ε") },
     "PAIR(SEQ(Z), SEQ(Z))": { tex: "\\frac{1}{1-x}\\cdot\\frac{1}{1-x}", text: "1/(1 − x)²", coeffs: (N) => G.mul(G.seriesFrom([], N).map(() => 1n), G.seriesFrom([], N).map(() => 1n), N), list: (n) => range(n + 1).map((i) => `(${"Z".repeat(i) || "ε"}, ${"Z".repeat(n - i) || "ε"})`) },
@@ -772,26 +880,40 @@
 
   /* ---------- lesson access ---------- */
   const byId = new Map(LESSONS.map((l) => [l.id, l]));
-  const lesson = (id) => byId.get(id);
-  function defaults(l) { const p = {}; for (const [k, spec] of Object.entries(l.params || {})) p[k] = spec.def; return p; }
+  /** @param {string | undefined} id */
+  const lesson = (id) => (id === undefined ? undefined : byId.get(id));
+  /**
+   * The lesson with this id, for ids the curriculum itself names; an unknown id is an error.
+   * @param {string} id
+   */
+  const known = (id) => { const l = byId.get(id); if (!l) throw new Error(`Unknown lesson: ${id}`); return l; };
+  /** @param {Lesson} l @returns {Params} */
+  function defaults(l) { const p = /** @type {Params} */ ({}); for (const [k, spec] of Object.entries(l.params || {})) p[k] = spec.def; return p; }
   /* Parameters with every value checked against the lesson's choices. */
+  /** @param {Lesson} l @param {Record<string, unknown>} [given] @returns {Params} */
   function params(l, given = {}) {
     const p = defaults(l);
     for (const [k, spec] of Object.entries(l.params || {})) if (k in given) { const v = spec.values.find((x) => String(x) === String(given[k])); if (v !== undefined) p[k] = v; }
     /* A choice that depends on another (residue r < modulus m) falls back to its first valid value. */
-    for (const [k, spec] of Object.entries(l.params || {})) if (spec.valid && !spec.valid(p[k], p)) p[k] = spec.values.find((x) => spec.valid(x, p));
+    for (const [k, spec] of Object.entries(l.params || {})) { const valid = spec.valid; if (valid && !valid(p[k], p)) p[k] = spec.values.find((x) => valid(x, p)); }
     return p;
   }
   /* The largest n a lesson offers: a finite vector of length N has coefficients 0 … N − 1. */
-  function nMax(l, p = {}) { return l.gfType === "finite" && p.N && l.id !== "fft" ? p.N - 1 : l.n.max; }
+  /** @param {Lesson} l @param {Params} [p] */
+  function nMax(l, p = {}) { return l.gfType === "finite" && p.N && l.id !== "fft" ? p.N - 1 : /** @type {NonNullable<Lesson["n"]>} */ (l.n).max; } // only lessons with an n reach here
+  /** @param {Lesson} l @param {unknown} n @param {Params} [p] */
   function clampN(l, n, p) { if (!l.n) return null; const v = Number.isFinite(Number(n)) ? Math.round(Number(n)) : l.n.def; return Math.min(nMax(l, p || defaults(l)), Math.max(l.n.min, v)); }
+  /** @param {Lesson} l @param {Params} p */
   const isEgf = (l, p) => (typeof l.egf === "function" ? l.egf(p) : !!l.egf);
   /* Coefficients a₀ … a_{N−1} of the lesson's generating function (BigInt or rational). */
+  /** @param {Lesson} l @param {Params} p @param {number} N @returns {Coef[]} */
   function coefficients(l, p, N) { return l.coeffs ? l.coeffs(N, p) : []; }
+  /** @param {Lesson} l @param {Params} p @param {number} n */
   function coefficient(l, p, n) { const a = coefficients(l, p, n + 1); return a[n] ?? 0n; }
 
   /* ---------- the verification engine ---------- */
   /* Every check the lab can run for a lesson at size n: the GF coefficient against its independent count, then the lesson's own checks. */
+  /** @param {Lesson} l @param {Params} p @param {number} n @returns {Check[]} */
   function verify(l, p, n) {
     const out = [];
     if (l.coeffs && l.enumerate) {
@@ -803,6 +925,7 @@
   }
 
   /* ---------- the problem ladder (section 10) ---------- */
+  /** @type {Problem[]} */
   const PROBLEMS = [
     { k: 1, say: "Find the generating function of the constant sequence.", title: "Encode 1, 1, 1, …", lesson: "geometric-series", technique: "geometric series", difficulty: 1, problem: "Find the generating function of the constant sequence 1, 1, 1, ….", visualHint: "Watch the truncated tape 1 + x + ⋯ + x^N fold up.", ask: { n: 9 }, hints: ["Write the sum term by term: what is the coefficient of every power?", "Multiply the truncation 1 + x + ⋯ + x^N by (1 − x).", "Everything telescopes to 1 − x^{N+1}."], solution: "\\frac{1}{1-x}" },
     { k: 2, say: "Find the generating function of zero, zero, one, one, one.", title: "Encode 0, 0, 1, 1, …", lesson: "shift", params: { k: 2 }, technique: "shifting", difficulty: 1, problem: "Find the generating function of 0, 0, 1, 1, 1, ….", visualHint: "Slide the constant strip two places right.", ask: { n: 5, lesson: "ogf-shifted" }, hints: ["Compare with 1, 1, 1, ….", "The strip has moved right by two places.", "Multiplying by x^k shifts by k."], solution: "\\frac{x^2}{1-x}", answerFn: (n) => (n >= 2 ? 1n : 0n) },
@@ -828,14 +951,16 @@
     { k: 22, say: "Count lattice paths from the origin to five, five.", title: "Multivariate lattice paths", lesson: "multivariate", technique: "multivariate GF", difficulty: 5, problem: "How many E/N lattice paths from (0, 0) to (5, 5)?", visualHint: "Select the diagonal of the coefficient lattice.", ask: { n: 5 }, hints: ["A(x, y) = 1/(1 − x − y).", "a_{m,n} = C(m + n, m).", "Diagonal: C(2n, n)."], solution: "\\binom{10}{5} = 252" },
   ];
   /* The expected answer for a problem's coefficient question, from the lesson engine. */
+  /** @param {Problem} pr @returns {Exact} */
   function problemAnswer(pr) {
     if (pr.ask.value !== undefined) return pr.ask.value;
     if (pr.answerFn) return pr.answerFn(pr.ask.n);
-    const l = lesson(pr.lesson);
+    const l = known(pr.lesson);
     if (pr.ask.approx) return G.catalanClosed(pr.ask.n);
     return coefficient(l, params(l, pr.params || {}), pr.ask.n);
   }
   /* Accept "13", "1/6", "−5" (true minus); approximate questions accept within 1%. */
+  /** @param {Problem} pr @param {unknown} text */
   function checkAnswer(pr, text) {
     const s = String(text || "").trim().replace(/−/g, "-").replace(/\s+/g, "");
     const want = problemAnswer(pr);
@@ -843,7 +968,7 @@
     if (pr.ask.approx) {
       const x = Number(s.replace(/×10\^?/, "e"));
       if (!Number.isFinite(x)) return { ok: false, reason: "Enter a number, for example 9e56." };
-      const r = x / G.bigRatio(B(want), 1n);
+      const r = x / G.bigRatio(B(/** @type {bigint} */ (want)), 1n); // approximate answers are integers (Catalan numbers)
       return { ok: Math.abs(r - 1) <= 0.01, reason: `within 1%: ratio ${G.fmtNum(r, 4)}` };
     }
     if (!m) return { ok: false, reason: "Enter an integer or a fraction such as 1/6." };
@@ -863,14 +988,16 @@
   /* ---------- concept-map index, aliases and hash routes ---------- */
   const TECHNIQUES = ["sequence encoding", "coefficient extraction", "geometric series", "shifting", "differentiation", "integration", "addition", "subtraction", "Cauchy product", "convolution", "partial fractions", "recurrence solving", "rational generating functions", "combinatorial sum", "combinatorial product", "sequence construction", "composition", "implicit equations", "Lagrange inversion", "ordinary generating functions", "exponential generating functions", "labelled product", "exponential formula", "marking", "bivariate generating functions", "probability generating functions", "roots-of-unity filters", "DFT", "inverse DFT", "cyclic convolution", "convolution theorem", "FFT decomposition", "transfer matrices", "integer partitions", "q-series", "singularity analysis", "Cauchy coefficient formula", "saddle-point intuition", "multivariate coefficient extraction"];
   /* The lesson that teaches each technique first. */
+  /** @param {string} t */
   const techniqueLesson = (t) => LESSONS.find((l) => l.techniques.includes(t));
-  const PAGES = ["problems", "compare", "fourier", "sandbox", "confusions", "map", "techniques"];
+  const PAGES = /** @type {string[]} */ (["problems", "compare", "fourier", "sandbox", "confusions", "map", "techniques"]);
+  /** @param {RouteRef | null | undefined} route */
   function hashFor(route) {
     if (!route || route.page === "lesson") {
       const l = lesson(route?.id) || LESSONS[0], q = [];
       const p = params(l, route?.params || {}), n = l.n ? clampN(l, route?.n ?? l.n.def, p) : null;
-      if (n !== null && n !== l.n.def) q.push(`n=${n}`);
-      for (const [k, v] of Object.entries(p)) if (String(v) !== String(l.params[k].def)) q.push(`${k}=${encodeURIComponent(v)}`);
+      if (n !== null && l.n && n !== l.n.def) q.push(`n=${n}`);
+      for (const [k, v] of Object.entries(p)) if (String(v) !== String(l.params?.[k].def)) q.push(`${k}=${encodeURIComponent(v)}`);
       return `#${l.hash}${q.length ? "?" + q.join("&") : ""}`;
     }
     if (route.page === "problem") return `#problem-${route.k}`;
@@ -878,24 +1005,27 @@
     if (route.page === "fourier" && route.N && route.N !== 4) return `#fourier?N=${route.N}`;
     return `#${route.page}`;
   }
+  /** @param {unknown} hash @returns {Route} */
   function parseHash(hash) {
-    const raw = String(hash || "").replace(/^#/, ""), [path, query = ""] = raw.split("?"), q = {};
+    const raw = String(hash || "").replace(/^#/, ""), [path, query = ""] = raw.split("?"), q = /** @type {Record<string, string>} */ ({});
     for (const part of query.split("&").filter(Boolean)) { const [k, v = ""] = part.split("="); try { q[decodeURIComponent(k)] = decodeURIComponent(v); } catch { q[k] = v; } }
-    if (!path) return { page: "lesson", id: LESSONS[0].id, n: LESSONS[0].n.def, params: defaults(LESSONS[0]) };
-    let m;
-    if ((m = /^problem-(\d+)$/.exec(path)) && PROBLEMS.some((p) => p.k === Number(m[1]))) return { page: "problem", k: Number(m[1]) };
-    if ((m = /^compare(?:\/([a-z-]+))?$/.exec(path))) return { page: "compare", id: COMPARISONS.some((c) => c.id === m[1]) ? m[1] : "ogf-egf" };
+    if (!path) return { page: "lesson", id: LESSONS[0].id, n: LESSONS[0].n?.def ?? null, params: defaults(LESSONS[0]) };
+    const pm = /^problem-(\d+)$/.exec(path);
+    if (pm && PROBLEMS.some((p) => p.k === Number(pm[1]))) return { page: "problem", k: Number(pm[1]) };
+    const cm = /^compare(?:\/([a-z-]+))?$/.exec(path);
+    if (cm) return { page: "compare", id: COMPARISONS.some((c) => c.id === cm[1]) ? cm[1] : "ogf-egf" };
     if (path === "fourier" || path === "transform" || path === "fourier-lab") return { page: "fourier", N: [2, 3, 4, 8].includes(Number(q.N)) ? Number(q.N) : 4 };
-    if (PAGES.includes(path)) return { page: path };
+    if (PAGES.includes(path)) return { page: /** @type {PlainRoute["page"]} */ (path) }; // compare and fourier matched above
     const l = LESSONS.find((x) => x.hash === path || x.id === path || (x.aliases || []).includes(path));
-    if (!l) return { page: "lesson", id: LESSONS[0].id, n: LESSONS[0].n.def, params: defaults(LESSONS[0]), unknown: path };
+    if (!l) return { page: "lesson", id: LESSONS[0].id, n: LESSONS[0].n?.def ?? null, params: defaults(LESSONS[0]), unknown: path };
     const p = params(l, q);
     return { page: "lesson", id: l.id, n: l.n ? clampN(l, q.n ?? l.n.def, p) : null, params: p };
   }
 
   /* ---------- search / command palette index ---------- */
+  /** @returns {SearchEntry[]} */
   function searchIndex() {
-    const out = [];
+    const out = /** @type {SearchEntry[]} */ ([]);
     for (const l of LESSONS) out.push({ kind: "lesson", label: `Level ${l.level}: ${l.title}`, route: { page: "lesson", id: l.id }, text: [l.title, l.nav, l.hash, ...(l.aliases || []), ...l.techniques, l.gfType, l.problem, l.discreteModel, l.when].join(" ") });
     for (const t of TECHNIQUES) { const l = techniqueLesson(t); if (l) out.push({ kind: "technique", label: t, route: { page: "lesson", id: l.id }, text: `${t} ${l.title}` }); }
     for (const p of PROBLEMS) out.push({ kind: "problem", label: `Problem ${p.k}: ${p.title}`, route: { page: "problem", k: p.k }, text: `${p.title} ${p.technique} ${p.problem}` });
@@ -904,6 +1034,7 @@
     return out;
   }
   /* Rank entries by how well every query word matches; stable for ties. */
+  /** @param {unknown} query @param {number} [limit] */
   function search(query, limit = 12) {
     const words = String(query || "").toLowerCase().split(/\s+/).filter(Boolean), idx = searchIndex();
     if (!words.length) return idx.slice(0, limit);
@@ -912,7 +1043,7 @@
       let score = 0;
       for (const w of words) { if (label.includes(w)) score += 3; else if (text.includes(w)) score += 1; else return null; }
       return { e, score: score + (label.startsWith(words[0]) ? 1 : 0) + (e.kind === "lesson" ? 0.5 : 0), i };
-    }).filter(Boolean).sort((a, b) => b.score - a.score || a.i - b.i).slice(0, limit).map((x) => x.e);
+    }).filter((x) => x !== null).sort((a, b) => b.score - a.score || a.i - b.i).slice(0, limit).map((x) => x.e);
   }
 
   /* ---------- common confusions (section 35) ---------- */
@@ -929,8 +1060,10 @@
 
   /* ---------- beamdswitch reports: the same states, in the same order, as frames ---------- */
   /* Lesson TeX inside the deck's $$…$$; inline $…$ in prose stays as written. */
+  /** @param {string} t */
   const disp = (t) => `$$ ${t} $$`;
   /* A frame body: each formula on its own reveal step, then the text, then the state comment. */
+  /** @param {State} s @param {Lesson} l @param {Params} p @param {number | null} n */
   function stateBody(s, l, p, n) {
     const parts = [];
     s.tex.forEach((t, i) => { if (i) parts.push(". . ."); parts.push(disp(t)); });
@@ -938,6 +1071,7 @@
     parts.push(stateComment(l, s.id, p, n));
     return parts.join("\n\n");
   }
+  /** @param {Lesson} l @param {string} state @param {Params} p @param {number | null | undefined} n */
   function stateComment(l, state, p, n) {
     const lines = ["<!-- beam-md-switch", `lesson: ${l.hash}`, `state: ${state}`];
     if (n !== null && n !== undefined) lines.push(`n: ${n}`);
@@ -946,49 +1080,60 @@
     return lines.join("\n");
   }
   /* Spoken numbers: digits are fine; rationals are read as "a over b". */
+  /** @param {Exact} v */
   const say = (v) => val(v).replace(/−/g, "minus ").replace(/(\d+)\/(\d+)/g, "$1 over $2");
   /* The lesson's spoken one-liner, safe for narration. */
+  /** @param {Lesson} l */
   const spokenKey = (l) => `${l.title}. ${l.when}`.replace(/[$\\`*_#|<>×⁰¹²³⁴⁵⁶⁷⁸⁹⁻·∠°σ]/g, " ").replace(/\s+/g, " ");
 
+  /** @param {Lesson} l @param {Params} p @param {number} n */
   function coefficientTable(l, p, n) {
     const N = Math.min(Math.max(n + 1, 8), 12), a = coefficients(l, p, N);
     return [`| n | ${range(a.length).join(" | ")} |`, `| --- | ${a.map(() => "---").join(" | ")} |`, `| ${isEgf(l, p) ? "aₙ (EGF counts)" : "aₙ"} | ${a.map(val).join(" | ")} |`].join("\n");
   }
   /* Frames for one lesson at (p, n), grouped by the template's four sections. */
+  /** @param {Lesson} l @param {Params} p @param {number | null} n */
   function lessonFrames(l, p, n) {
-    const states = l.states(p, n), setup = [], method = [], results = [], checks = [];
+    const states = l.states(p, n), setup = /** @type {Frame[]} */ ([]), method = /** @type {Frame[]} */ ([]), results = /** @type {Frame[]} */ ([]), checks = /** @type {Frame[]} */ ([]);
     setup.push({ title: `Problem: ${l.title}`, body: [l.problem, ". . .", `**Discrete model.** ${l.discreteModel}`, stateComment(l, "problem", p, n)].join("\n\n"), narration: l.sayProblem, _state: { lesson: l.id, state: "problem", n, params: p } });
     for (const s of states) (s.stage === "object" ? setup : method).push({ title: s.title, body: stateBody(s, l, p, n), narration: s.say, _state: { lesson: l.id, state: s.id, n, params: p } });
-    if (!method.length) method.push(setup.pop());
+    if (!method.length) method.push(/** @type {Frame} */ (setup.pop())); // setup always holds the problem frame
     if (l.coeffs && n !== null) {
       const v = coefficient(l, p, n);
-      results.push({ title: `Read the coefficient: n = ${n}`, body: [disp(`[x^{${n}}]\\,${l.gfName} = ${texVal(v)}`), ". . .", coefficientTable(l, p, n), ". . .", l.answer(n, v, p), stateComment(l, "read", p, n)].join("\n\n"), narration: `The coefficient for n equal to ${n} is ${say(v)}.`, _state: { lesson: l.id, state: "read", n, params: p } });
+      results.push({ title: `Read the coefficient: n = ${n}`, body: [disp(`[x^{${n}}]\\,${l.gfName} = ${texVal(v)}`), ". . .", coefficientTable(l, p, n), ". . .", l.answer?.(n, v, p), stateComment(l, "read", p, n)].join("\n\n"), narration: `The coefficient for n equal to ${n} is ${say(v)}.`, _state: { lesson: l.id, state: "read", n, params: p } });
     } else results.push({ title: "The answer", body: [l.key, stateComment(l, "answer", p, n)].join("\n\n"), narration: spokenKey(l), _state: { lesson: l.id, state: "answer", n, params: p } });
     const v = n === null ? verifyAll() : verify(l, p, n);
     const passed = v.filter((c) => c.pass).length;
     checks.push({ title: `Verified: ${passed} of ${v.length} checks agree`, body: [v.length ? v.map((c) => `- ${c.pass ? "✓" : "✗"} ${c.name}: ${c.gf} vs ${c.other} (${c.method})`).join("\n") : "- This lesson's numbers are verified in the lessons it links."].join("\n\n") + "\n\n" + stateComment(l, "verify", p, n), narration: `${passed} of ${v.length} independent checks agree.`, _state: { lesson: l.id, state: "verify", n, params: p } });
-    checks.push({ title: "When to use this", body: `- ${l.when}\n- Related: ${l.related.map((id) => lesson(id) ? lesson(id).title : COMPARE_TITLES[id] || id).join(", ")}`, key: l.key, narration: spokenKey(l), _state: { lesson: l.id, state: "takeaway", n, params: p } });
+    checks.push({ title: "When to use this", body: `- ${l.when}\n- Related: ${l.related.map((id) => lesson(id)?.title ?? (COMPARE_TITLES[id] || id)).join(", ")}`, key: l.key, narration: spokenKey(l), _state: { lesson: l.id, state: "takeaway", n, params: p } });
     return { setup, method, results, checks };
   }
+  /** @type {Record<string, string>} */
   const COMPARE_TITLES = { "ogf-egf": "OGF vs EGF lab", "character-table": "character table (Fourier lab)" };
+  /** @param {Exact} v */
   const texVal = (v) => (G.isQ(v) ? (v.d === 1n ? v.n.toString() : `\\frac{${v.n}}{${v.d}}`) : B(v).toString());
+  /** @param {string} id @param {Record<string, unknown>} [given] @param {unknown} [nGiven] */
   function lessonReport(id, given = {}, nGiven) {
-    const l = lesson(id), p = params(l, given), n = l.n ? clampN(l, nGiven ?? l.n.def, p) : null;
+    const l = known(id), p = params(l, given), n = l.n ? clampN(l, nGiven ?? l.n.def, p) : null;
     return { meta: { title: `Generating Functions Lab: ${l.title}`, subtitle: `Level ${l.level}. ${l.key}`, voice: "bf_emma" }, narration: `Generating Functions Lab, level ${l.level}: ${l.title}. We follow one problem from the objects to the coefficient and check the answer.`, notes: "Every frame follows the lab's cycle: problem, discrete object, encode, manipulate, read the coefficient, verify.", ...lessonFrames(l, p, n) };
   }
+  /** @param {number} k */
   function problemReport(k) {
-    const pr = PROBLEMS.find((x) => x.k === k), l = lesson(pr.lesson), p = params(l, pr.params || {}), want = problemAnswer(pr);
+    const pr = PROBLEMS.find((x) => x.k === k);
+    if (!pr) throw new Error(`Unknown problem: ${k}`);
+    const l = known(pr.lesson), p = params(l, pr.params || {}), want = problemAnswer(pr);
     return {
       meta: { title: `Generating Functions Lab, problem ${pr.k}: ${pr.title}`, subtitle: `${pr.technique}, difficulty ${pr.difficulty} of 5`, voice: "bf_emma" },
       narration: `Problem ${pr.k}. ${pr.title}. Try it before each hint appears.`,
       setup: [{ title: pr.title, body: `${pr.problem}\n\n. . .\n\n**Visual hint.** ${pr.visualHint}`, narration: pr.say, _state: { lesson: l.id, state: "problem", n: pr.ask.n, params: p } }],
       method: pr.hints.map((h, i) => ({ title: `Hint ${i + 1}`, body: `${h}\n\n${stateComment(l, `hint-${i + 1}`, p, pr.ask.n)}`, narration: `Hint ${i + 1}.`, _state: { lesson: l.id, state: l.states(p, pr.ask.n)[Math.min(i, l.states(p, pr.ask.n).length - 1)].id, n: pr.ask.n, params: p } })),
-      results: [{ title: "Solution", body: disp(pr.solution), narration: `The answer for n equal to ${pr.ask.n} is ${pr.ask.approx ? "about " + G.fmtNum(G.bigRatio(B(want), 1n), 3).replace(/×10/, " times ten to the power ").replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹⁻]/g, (c) => "0123456789-"["⁰¹²³⁴⁵⁶⁷⁸⁹⁻".indexOf(c)]) : say(want)}.`, _state: { lesson: l.id, state: "read", n: pr.ask.n, params: p } }],
-      checks: [{ title: "Check", body: verify(l, p, l.n ? clampN(l, pr.ask.n, p) : 0).map((c) => `- ${c.pass ? "✓" : "✗"} ${c.name}: ${c.gf} vs ${c.other}`).join("\n") || "- Checked in the linked lesson.", key: `${pr.technique}: ${l.when}`, narration: spokenKey(l), _state: { lesson: l.id, state: "verify", n: pr.ask.n, params: p } }],
+      results: [{ title: "Solution", body: disp(pr.solution), narration: `The answer for n equal to ${pr.ask.n} is ${pr.ask.approx ? "about " + G.fmtNum(G.bigRatio(B(/** @type {bigint} */ (want)), 1n), 3).replace(/×10/, " times ten to the power ").replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹⁻]/g, (c) => "0123456789-"["⁰¹²³⁴⁵⁶⁷⁸⁹⁻".indexOf(c)]) : say(want)}.`, _state: { lesson: l.id, state: "read", n: pr.ask.n, params: p } }],
+      checks: [{ title: "Check", body: verify(l, p, l.n ? clampN(l, pr.ask.n, p) ?? 0 : 0).map((c) => `- ${c.pass ? "✓" : "✗"} ${c.name}: ${c.gf} vs ${c.other}`).join("\n") || "- Checked in the linked lesson.", key: `${pr.technique}: ${l.when}`, narration: spokenKey(l), _state: { lesson: l.id, state: "verify", n: pr.ask.n, params: p } }],
     };
   }
   /* The full core deck: one frame per lesson, its key formula revealed after its problem. */
   function fullReport() {
+    /** @param {Lesson} l */
     const lessonFrame = (l) => { const p = defaults(l), n = l.n ? l.n.def : null, s = l.states(p, n), last = s[s.length - 1]; return { title: `${l.level}. ${l.title}`, body: [l.problem, ". . .", ...last.tex.map(disp), ". . .", l.key, stateComment(l, last.id, p, n)].join("\n\n"), narration: `${spokenKey(l)}`, _state: { lesson: l.id, state: last.id, n, params: p } }; };
     const all = verifyAll(), passed = all.filter((c) => c.pass).length;
     return {
@@ -1008,6 +1153,7 @@
     };
   }
   /* Every lesson's checks at its default state. */
+  /** @returns {(Check & { lesson: string })[]} */
   function verifyAll() {
     const out = [];
     for (const l of LESSONS) if (l.n) for (const c of verify(l, defaults(l), l.n.def)) out.push({ lesson: l.id, ...c });
@@ -1015,9 +1161,10 @@
   }
 
   /* The deck frames in presentation order, with the section dividers, for the in-page presentation. */
+  /** @param {Report} report @returns {Slide[]} */
   function slides(report) {
-    const out = [{ kind: "title", title: report.meta.title, subtitle: report.meta.subtitle }];
-    for (const [id, title] of [["setup", "Set-up"], ["method", "Method"], ["results", "Results"], ["checks", "Checks and takeaway"]]) {
+    const out = /** @type {Slide[]} */ ([{ kind: "title", title: report.meta.title, subtitle: report.meta.subtitle }]);
+    for (const [id, title] of /** @type {["setup" | "method" | "results" | "checks", string][]} */ ([["setup", "Set-up"], ["method", "Method"], ["results", "Results"], ["checks", "Checks and takeaway"]])) {
       out.push({ kind: "section", title });
       for (const f of report[id]) out.push({ kind: "frame", section: title, ...f });
     }
@@ -1025,8 +1172,10 @@
   }
 
   /* ---------- self-test: every lesson's checks at several sizes, plus the canonical numbers ---------- */
+  /** @returns {{ name: string, pass: boolean, detail: string }[]} */
   function selfTests() {
-    const out = [];
+    const out = /** @type {{ name: string, pass: boolean, detail: string }[]} */ ([]);
+    /** @param {string} name @param {unknown} pass @param {string} [detail] */
     const t = (name, pass, detail = "") => out.push({ name, pass: !!pass, detail });
     for (const l of LESSONS) {
       if (!l.n) continue;

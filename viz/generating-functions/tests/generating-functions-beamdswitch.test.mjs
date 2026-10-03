@@ -8,12 +8,17 @@ import vm from "node:vm";
 import { assertSharedTemplate, checkDeck, divs } from "./beamdswitch-deck-checks.mjs";
 
 const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
-const script = (id) => new RegExp(`<script id="${id}">\\n([\\s\\S]*?)\\n</script>`).exec(html)[1];
+/** @param {string} id */
+const script = (id) => /** @type {RegExpExecArray} */ (new RegExp(`<script id="${id}">\\n([\\s\\S]*?)\\n</script>`).exec(html))[1];
 const ctx = vm.createContext({});
 ctx.self = ctx;
 for (const id of ["gf-engine", "gf-lessons", "gf-beamdswitch"]) vm.runInContext(script(id), ctx);
-const L = ctx.GFLab, T = ctx.Beamdswitch;
+/** @type {typeof import("../lessons.js")} */
+const L = ctx.GFLab;
+/** @type {import("./beamdswitch-template").BeamdswitchTemplate} */
+const T = ctx.Beamdswitch;
 // Engine values come from another vm realm; compare them as plain JSON.
+/** @param {unknown} a @param {unknown} b @param {string} [msg] */
 const deq = (a, b, msg) => assert.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)), msg);
 
 /* Every lesson at its defaults, then every value of every parameter it offers. */
@@ -21,6 +26,7 @@ const CASES = L.LESSONS.flatMap((l) => [
   { l, p: L.defaults(l), what: `${l.hash} defaults` },
   ...Object.entries(l.params || {}).flatMap(([k, spec]) => spec.values.map((v) => ({ l, p: { ...L.defaults(l), [k]: v }, what: `${l.hash} ${k}=${v}` }))),
 ]);
+/** The beam-md-switch state comments of a deck, as key/value maps. @param {string} md */
 const comments = (md) => [...md.matchAll(/<!-- beam-md-switch\n([\s\S]*?)\n-->/g)].map((m) => Object.fromEntries(m[1].split("\n").map((line) => line.split(/: (.*)/s).slice(0, 2))));
 
 test("the page inlines the site's shared beamdswitch template unchanged", () => {
@@ -32,7 +38,7 @@ test("every lesson deck opens in beamdswitch as the standard template, narrated 
     const md = T.deck(L.lessonReport(l.id, p)), deck = checkDeck(md, what);
     assert.equal(deck.meta.voice, "bf_emma", what);
     assert.equal(deck.meta.title, `Generating Functions Lab: ${l.title}`, what);
-    assert.equal(divs(deck.frames.at(-1).children, "key").length, 1, `${what}: ends on the takeaway`);
+    assert.equal(divs(deck.frames[deck.frames.length - 1].children, "key").length, 1, `${what}: ends on the takeaway`);
   }
 });
 

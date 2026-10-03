@@ -6,24 +6,50 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
 
+/** @param {string} p */
 const read = (p) => readFileSync(new URL(`../${p}`, import.meta.url), "utf8");
 const html = read("index.html");
-const script = (id) => new RegExp(`<script id="${id}">\\n([\\s\\S]*?)\\n</script>`).exec(html)[1];
+/** @param {string} id */
+const script = (id) => /** @type {RegExpExecArray} */ (new RegExp(`<script id="${id}">\\n([\\s\\S]*?)\\n</script>`).exec(html))[1];
 const ctx = vm.createContext({});
 ctx.self = ctx;
 vm.runInContext(script("gf-engine"), ctx);
 vm.runInContext(script("gf-lessons"), ctx);
-const G = ctx.GF, L = ctx.GFLab;
+/** @type {typeof import("../engine.js")} */
+const G = ctx.GF;
+/** @type {typeof import("../lessons.js")} */
+const L = ctx.GFLab;
+/** @param {Iterable<bigint | number>} a */
 const big = (a) => Array.from(a, (x) => x.toString());
 // Engine values come from another vm realm; compare them as plain JSON.
+/** @param {unknown} a @param {unknown} b @param {string} [msg] */
 const deq = (a, b, msg) => assert.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)), msg);
+/** @param {string} id */
+const lessonOf = (id) => {
+  const l = L.lesson(id);
+  if (!l) assert.fail(`no lesson ${id}`);
+  return l;
+};
+/** @param {number} k */
+const problemOf = (k) => {
+  const pr = L.PROBLEMS.find((p) => p.k === k);
+  if (!pr) assert.fail(`no problem ${k}`);
+  return pr;
+};
+/** The lesson route a hash names. @param {string} hash */
+const lessonRoute = (hash) => {
+  const r = L.parseHash(hash);
+  if (r.page !== "lesson") assert.fail(`${hash} names no lesson`);
+  return r;
+};
+/** @param {import("../engine.js").Exact[]} a */
 const qs = (a) => a.map((q) => G.qstr(q));
 
 test("the page inlines engine.js, lessons.js and ui.js unchanged", () => {
   assert.equal(script("gf-engine"), read("engine.js").trimEnd());
   assert.equal(script("gf-lessons"), read("lessons.js").trimEnd());
   assert.equal(script("gf-ui"), read("ui.js").trimEnd());
-  deq(JSON.parse(/self\.GF_DATA = (.*);\n<\/script>/.exec(html)[1]), JSON.parse(read("raw.json")));
+  deq(JSON.parse(/** @type {RegExpExecArray} */ (/self\.GF_DATA = (.*);\n<\/script>/.exec(html))[1]), JSON.parse(read("raw.json")));
 });
 
 test("raw.json is the curriculum's own metadata (regenerate with node raw.mjs > raw.json)", async () => {
@@ -53,34 +79,38 @@ test("series truncation, shift, derivative, integral and convolution", () => {
 
 test("Fibonacci: the GF x/(1 − x − x²) agrees with the DP recurrence, and Binet exactly", () => {
   const N = 60, gf = G.fibonacciGF(N);
-  const dp = [0n, 1n]; while (dp.length < N) dp.push(dp.at(-1) + dp.at(-2));
+  const dp = [0n, 1n]; while (dp.length < N) dp.push(dp[dp.length - 1] + dp[dp.length - 2]);
   deq(big(gf), big(dp));
   assert.equal(gf[50], 12586269025n);
   for (let n = 0; n < 40; n++) assert.equal(G.binet(n), dp[n], `Binet n = ${n}`);
-  const l = L.lesson("fibonacci");
+  const l = lessonOf("fibonacci");
   for (let n = 0; n <= 30; n++) assert.ok(L.verify(l, {}, n).every((c) => c.pass), `lesson checks at n = ${n}`);
 });
 
 test("coin change with 1, 2, 5: n = 12 gives 13, against brute-force enumeration", () => {
+  /** @param {number} n */
   const brute = (n) => { let c = 0; for (let x = 0; x <= n; x++) for (let y = 0; 2 * y <= n; y++) for (let z = 0; 5 * z <= n; z++) if (x + 2 * y + 5 * z === n) c++; return c; };
   const gf = G.coinChangeGF([1, 2, 5], 41);
   assert.equal(gf[12], 13n);
   assert.equal(brute(12), 13);
   for (let n = 0; n <= 40; n++) assert.equal(Number(gf[n]), brute(n), `n = ${n}`);
-  assert.equal(L.coefficient(L.lesson("coin-change"), L.defaults(L.lesson("coin-change")), 12), 13n);
+  assert.equal(L.coefficient(lessonOf("coin-change"), L.defaults(lessonOf("coin-change")), 12), 13n);
 });
 
 test("compositions with parts 1–3, binary strings avoiding 11 (transfer matrix), Catalan and Lagrange inversion", () => {
   // Compositions: enumerate every ordered sum by recursion written here.
+  /** @param {number} n @returns {number} */
   const comps = (n) => (n === 0 ? 1 : [1, 2, 3].reduce((s, p) => s + (p <= n ? comps(n - p) : 0), 0));
   const cg = G.compositionsGF([1, 2, 3], 16);
   for (let n = 0; n < 16; n++) assert.equal(Number(cg[n]), comps(n));
   assert.equal(cg[7], 44n);
   // Binary strings with no 11: brute force over all 2^n strings; transfer matrix; rational GF.
+  /** @param {number} n */
   const no11 = (n) => { let c = 0; for (let m = 0; m < 2 ** n; m++) if (!(m & (m >> 1))) c++; return c; };
   const tm = G.transferCounts(16), rg = G.no11GF(16);
   for (let n = 0; n < 16; n++) { assert.equal(Number(tm[n]), no11(n), `transfer n = ${n}`); assert.equal(rg[n], tm[n]); }
   // Catalan: balanced strings by brute force over all 2^(2n) bracket strings.
+  /** @param {number} n */
   const balanced = (n) => { let c = 0; for (let m = 0; m < 2 ** (2 * n); m++) { let d = 0, ok = true; for (let i = 0; i < 2 * n; i++) { d += (m >> i) & 1 ? 1 : -1; if (d < 0) { ok = false; break; } } if (ok && d === 0) c++; } return c; };
   const cat = G.catalanGF(12);
   deq(big(cat.slice(0, 7)), ["1", "1", "2", "5", "14", "42", "132"]);
@@ -178,9 +208,9 @@ test("asymptotics (Levels 29–30) agree within their stated tolerances", () => 
   const F = G.fibonacciDP(31);
   assert.ok(Math.abs(Number(F[30]) / G.fibonacciEstimate(30) - 1) < 1e-10);
   // [xⁿ] 1/(1 − αx) = αⁿ exactly.
-  assert.equal(G.qstr(L.coefficient(L.lesson("singularities"), { alpha: "3/2" }, 5)), "243/32");
+  assert.equal(G.qstr(L.coefficient(lessonOf("singularities"), { alpha: "3/2" }, 5)), "243/32");
   // Level 30: [xⁿ](1 − x)^{−α} ∼ n^{α−1}/Γ(α); relative error ≈ α(α−1)/(2n), so allow (|α(α−1)|/2 + 0.01)·1.05/n.
-  for (const [a, alpha] of [["1/2", G.Q(1, 2)], ["3/2", G.Q(3, 2)], ["2", G.Q(2)], ["3", G.Q(3)]]) for (const n of [100, 400, 1000]) {
+  for (const [a, alpha] of /** @type {[string, import("../engine.js").Rat][]} */ ([["1/2", G.Q(1, 2)], ["3/2", G.Q(3, 2)], ["2", G.Q(2)], ["3", G.Q(3)]])) for (const n of [100, 400, 1000]) {
     const r = G.qnum(G.risingCoefficient(alpha, n)) / G.singularityEstimate(alpha, n), al = G.qnum(alpha);
     assert.ok(Math.abs(r - 1) <= ((Math.abs(al * (al - 1)) / 2 + 0.01) * 1.05) / n, `α = ${a}, n = ${n}: ratio ${r}`);
   }
@@ -200,7 +230,7 @@ test("every lesson's verification passes at every offered parameter, and the in-
   const t = L.selfTests();
   assert.ok(t.length >= 300, `${t.length} self-tests`);
   deq(t.filter((x) => !x.pass).map((x) => `${x.name}: ${x.detail}`), []);
-  for (const l of L.LESSONS) if (l.gfName) for (const n of [l.n.min, l.n.def, L.nMax(l, L.defaults(l))]) {
+  for (const l of L.LESSONS) if (l.gfName && l.n) for (const n of [l.n.min, l.n.def, L.nMax(l, L.defaults(l))]) {
     const checks = L.verify(l, L.defaults(l), n);
     assert.ok(checks.length >= 1 || ["finite-vectors", "dft", "inverse-dft"].includes(l.id) || !l.enumerate, `${l.id} has a check at n = ${n}`);
     assert.ok(checks.every((c) => c.pass), `${l.id} at n = ${n}`);
@@ -216,9 +246,9 @@ test("the curriculum: 34 levels in order, the spec's technique index, the 22-pro
   for (const t of L.TECHNIQUES) assert.ok(L.techniqueLesson(t), t);
   assert.equal(L.PROBLEMS.length, 22);
   const expected = { 7: "13", 8: "44", 9: "21", 12: "132", 13: "65", 15: "1/6", 16: "4", 17: "3", 18: "5", 19: "28", 20: "42", 22: "252" };
-  for (const [k, want] of Object.entries(expected)) { const pr = L.PROBLEMS.find((p) => p.k === Number(k)); assert.equal(G.isQ(L.problemAnswer(pr)) ? G.qstr(L.problemAnswer(pr)) : L.problemAnswer(pr).toString(), want, `problem ${k}`); assert.ok(L.checkAnswer(pr, want).ok); }
+  for (const [k, want] of Object.entries(expected)) { const pr = problemOf(Number(k)); assert.equal(G.isQ(L.problemAnswer(pr)) ? G.qstr(L.problemAnswer(pr)) : L.problemAnswer(pr).toString(), want, `problem ${k}`); assert.ok(L.checkAnswer(pr, want).ok); }
   assert.ok(!L.checkAnswer(L.PROBLEMS[6], "12").ok);
-  assert.ok(L.checkAnswer(L.PROBLEMS.find((p) => p.k === 21), "8.9e56").ok, "C₁₀₀ ≈ 8.97 × 10⁵⁶ within 1%");
+  assert.ok(L.checkAnswer(problemOf(21), "8.9e56").ok, "C₁₀₀ ≈ 8.97 × 10⁵⁶ within 1%");
   for (const pr of L.PROBLEMS) { assert.ok(pr.hints.length >= 3, `problem ${pr.k} hints`); assert.ok(!pr.hints[0].includes(pr.solution), `problem ${pr.k}: the first hint does not give the formula`); }
 });
 
@@ -227,25 +257,26 @@ test("deep links: every lesson, alias and problem has a stable fragment that rou
     const r = L.parseHash(`#${h}`);
     assert.equal(r.page, "lesson", h); assert.ok(!r.unknown, h);
   }
-  assert.equal(L.parseHash("#recurrence").id, "fibonacci");
+  assert.equal(lessonRoute("#recurrence").id, "fibonacci");
   for (const l of L.LESSONS) {
-    const r = L.parseHash(`#${l.hash}`);
+    const r = lessonRoute(`#${l.hash}`);
     assert.equal(r.id, l.id);
     assert.equal(L.hashFor(r), `#${l.hash}`);
     for (const [k, spec] of Object.entries(l.params || {})) for (const v of spec.values) { if (spec.valid && !spec.valid(v, r.params)) continue; const r2 = { ...r, params: { ...r.params, [k]: v } }; r2.n = L.clampN(l, r2.n, r2.params); deq(JSON.parse(JSON.stringify(L.parseHash(L.hashFor(r2)))), JSON.parse(JSON.stringify(r2)), `${l.hash} ${k}=${v}`); }
   }
-  assert.equal(L.parseHash("#roots-of-unity?m=3&r=5").params.r, 0, "a residue r ≥ m falls back to r = 0");
-  assert.equal(L.parseHash("#roots-of-unity?m=6&r=5").params.r, 5);
+  assert.equal(lessonRoute("#roots-of-unity?m=3&r=5").params.r, 0, "a residue r ≥ m falls back to r = 0");
+  assert.equal(lessonRoute("#roots-of-unity?m=6&r=5").params.r, 5);
   deq(L.parseHash("#coin-change?n=12"), { page: "lesson", id: "coin-change", n: 12, params: { coins: "1, 2, 5" } });
-  assert.equal(L.parseHash("#coin-change?n=999").n, 40, "n is clamped");
-  assert.equal(L.parseHash("#dft?n=7").n, 3, "finite vectors clamp n to N − 1");
-  assert.equal(L.parseHash("#nonsense").unknown, "nonsense");
+  assert.equal(lessonRoute("#coin-change?n=999").n, 40, "n is clamped");
+  assert.equal(lessonRoute("#dft?n=7").n, 3, "finite vectors clamp n to N − 1");
+  assert.equal(lessonRoute("#nonsense").unknown, "nonsense");
   for (const p of L.PROBLEMS) deq(L.parseHash(L.hashFor({ page: "problem", k: p.k })), { page: "problem", k: p.k });
   deq(L.parseHash("#compare/linear-cyclic"), { page: "compare", id: "linear-cyclic" });
   deq(L.parseHash("#fourier?N=8"), { page: "fourier", N: 8 });
 });
 
 test("search finds techniques, problems, formulas and aliases", () => {
+  /** @param {string} q */
   const top = (q) => L.search(q, 5).map((e) => e.label);
   assert.match(top("coin change")[0], /Coin change/);
   assert.match(top("roots of unity")[0], /roots-of-unity/i);

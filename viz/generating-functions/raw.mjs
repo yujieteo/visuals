@@ -4,6 +4,18 @@ import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
 const L = require("./lessons.js");
 
+/**
+ * The value a curriculum reference names; a dangling reference stops the build.
+ * @template T
+ * @param {T | undefined} value
+ * @param {string} what
+ * @returns {T}
+ */
+const named = (value, what) => {
+  if (value === undefined) throw new Error(`raw.mjs: no ${what}`);
+  return value;
+};
+
 export function rawData() {
   return {
     title: "Generating Functions Lab",
@@ -17,8 +29,8 @@ export function rawData() {
       exactness: "Counting uses exact integers and rationals; roots-of-unity values are exact in ℤ[ζ_N]; floating point only for pictures and asymptotics, with stated tolerances.",
     },
     levels: L.LESSONS.map((l) => ({ level: l.level, id: l.id, fragment: `#${l.hash}`, aliases: (l.aliases || []).map((a) => `#${a}`), title: l.title, branch: l.branch, techniques: l.techniques, gf_type: l.gfType, when_to_use: l.when, key: l.key, optional: !!l.optional })),
-    problems: L.PROBLEMS.map((p) => ({ k: p.k, fragment: `#problem-${p.k}`, title: p.title, technique: p.technique, difficulty: p.difficulty, lesson: L.lesson(p.lesson).hash, problem: p.problem })),
-    techniques: L.TECHNIQUES.map((t) => ({ technique: t, lesson: L.techniqueLesson(t).hash })),
+    problems: L.PROBLEMS.map((p) => ({ k: p.k, fragment: `#problem-${p.k}`, title: p.title, technique: p.technique, difficulty: p.difficulty, lesson: named(L.lesson(p.lesson), `lesson ${p.lesson}`).hash, problem: p.problem })),
+    techniques: L.TECHNIQUES.map((t) => ({ technique: t, lesson: named(L.techniqueLesson(t), `lesson teaching ${t}`).hash })),
     pages: ["#problems", "#compare", "#fourier", "#sandbox", "#map", "#techniques", "#confusions"],
     spec_corrections: [
       "Spec §2 and Level 2 call 1, 1, 2, 3, 5, 8 'Fibonacci(n)'; with F₀ = 0 (as Level 5 uses) that strip is aₙ = Fₙ₊₁, so the lab labels it that way.",
