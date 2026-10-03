@@ -4,4 +4,4 @@
 
 `build.py` holds only this page's words (`CASE`); the shared `scripts/stock_cases.py` and `scripts/templates/stock-cases-report.js`, listed in `uses` in `visual.json`, render it and the other stock pages.
 
-Its tests are in `tests/`, imported with their history from [yujieteo/arm](https://github.com/yujieteo/arm). Rules for every visual: [SKILLS.md](../../SKILLS.md).
+Its tests are in `tests/`, imported with their history from yujieteo/arm (now deleted) into yujieteo/visuals. Rules for every visual: [SKILLS.md](../../SKILLS.md).

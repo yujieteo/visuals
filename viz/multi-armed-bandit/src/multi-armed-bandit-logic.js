@@ -1,7 +1,7 @@
 /* Pure logic for the multi-armed-bandit page: numerics, state, validation and the simulation.
  *
  * No DOM. The page inlines this file (compacted) as <script id="mab-logic">, and
- * yujieteo/multi-armed-bandit's tests/multi-armed-bandit.test.mjs runs that shipped copy. Everything is deterministic given a
+ * tests/multi-armed-bandit.test.mjs runs that shipped copy. Everything is deterministic given a
  * generator state:
  *
  *   Generator  xoshiro128** (Blackman and Vigna), four 32-bit words of state, seeded by splitmix32

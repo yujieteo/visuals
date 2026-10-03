@@ -4,4 +4,4 @@
 
 The builder validates the whole corpus, one stage per part (chapters, concepts, examples, contrasts, route), each naming what is wrong; `tests/test_english_grammar.py` checks every rejection. The page must stay under 1 MB; `--verify` checks it.
 
-Its tests are in `tests/`, imported with their history from [yujieteo/english-grammar](https://github.com/yujieteo/english-grammar). Rules for every visual: [SKILLS.md](../../SKILLS.md).
+Its tests are in `tests/`, imported with their history from yujieteo/english-grammar (now deleted) into yujieteo/visuals. Rules for every visual: [SKILLS.md](../../SKILLS.md).

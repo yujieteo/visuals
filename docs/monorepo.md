@@ -109,7 +109,8 @@ procedure of porting a change into the site.
 
 ## Browser checks
 
-The technical E2E checks moved here from yujieteo/technical-e2e with their history: each visual's manifest
+The technical E2E checks moved here from yujieteo/technical-e2e in one squash commit (the archived
+yujieteo/technical-e2e keeps the commit-level history): each visual's manifest
 and fuller checks into its folder (`viz/<slug>/e2e/`), the shared harness to `e2e/`. CI runs a visual's
 browser checks only when it changes, so a failure or recorded finding stays with its visual, and runs every
 visual's once a day against new browser releases, with the two visuals the site keeps itself (their checks
