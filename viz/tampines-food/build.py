@@ -25,6 +25,7 @@ import csv
 import json
 import re
 import sys
+from collections import Counter
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -153,6 +154,64 @@ def nutrition_for(row, yeo, fndds):
     }
 
 
+def check_outlet(row, guides, listings, mall_by_name):
+    """Fail on any row that names an unknown cuisine, mall, status or guide, or disagrees with its mall's directory."""
+    oid = row["id"]
+    if row["cuisine"] not in dict(CUISINES):
+        fail(f"{oid}: unknown cuisine {row['cuisine']!r}")
+    if row["mall"] not in mall_by_name:
+        fail(f"{oid}: unknown mall {row['mall']!r}")
+    if row["status"] not in STATUSES:
+        fail(f"{oid}: unknown status {row['status']!r}")
+    mentions = row["mentions"].split(";")
+    for guide in mentions + [row["dish_named_by"]]:
+        if guide not in guides:
+            fail(f"{oid}: unknown guide {guide!r}")
+    if row["dish_named_by"] not in mentions:
+        fail(f"{oid}: dish_named_by must be one of its mentions")
+    if len(set(mentions)) != len(mentions):
+        fail(f"{oid}: a guide is listed twice")
+    _, directory = mall_by_name[row["mall"]]
+    if row["status"] == "open" and directory:
+        listed = [l for l in listings if l["mall"] == row["mall"]
+                  and l["name"] == row["directory_name"] and l["status"] != "opening soon"]
+        if len(listed) != 1:
+            fail(f"{oid}: {row['directory_name']!r} is not listed once in the {row['mall']} directory")
+        if listed[0]["unit"] != row["unit"]:
+            fail(f"{oid}: unit {row['unit']} differs from the directory's {listed[0]['unit']}")
+
+
+def outlet_record(row, guides, mall_id):
+    mentions = row["mentions"].split(";")
+    dated = sorted(mentions, key=lambda g: guides[g]["published"], reverse=True)
+    return {
+        "id": row["id"], "name": row["name"], "mall": mall_id, "venue": row["venue"], "unit": row["unit"],
+        "cuisine": row["cuisine"], "dish": row["dish"], "dish_named_by": row["dish_named_by"],
+        "publishers": len({guides[g]["publisher"] for g in mentions}), "guides": len(mentions),
+        "latest_mention": guides[dated[0]]["published"], "mentions": dated,
+    }
+
+
+def mall_record(mall_id, name, directory, top, excluded, listings):
+    here = [o for o in top if o["mall"] == mall_id]
+    gone = [o["name"] for o in excluded if o["mall"] == mall_id and o["status"] == "closed"]
+    counts = {
+        "hawkers_street": sum(o["venue"] == "Hawkers' Street" for o in here),
+        "hawker_centre": sum(o["venue"].startswith("Hawker Centre") for o in here),
+        "closed_count": _number_word(len(gone)),
+        "closed_names": _join(gone),
+    }
+    cuisine_counts = Counter(o["cuisine"] for o in here)
+    return {
+        "id": mall_id, "name": name,
+        "directory": directory,
+        "fnb_listings": sum(l["mall"] == name and l["status"] != "opening soon" for l in listings) if directory else None,
+        "in_top": len(here),
+        "cuisines": sorted(cuisine_counts.items(), key=lambda kv: (-kv[1], kv[0])),
+        "summary": MALL_SUMMARIES[mall_id].format(**counts),
+    }
+
+
 def build():
     sources = json.loads((HERE / "sources.json").read_text(encoding="utf-8"))
     guides = {g["id"]: g for g in sources["guides"]}
@@ -160,88 +219,34 @@ def build():
     listings = read_csv("directories.csv")
     yeo = {r["dish_as_published"]: r for r in read_csv("yeo2021.csv")}
     fndds = {(r["fdc_id"], r["portion_description"]): r for r in read_csv("fndds.csv")}
-    cuisine_ids = {c for c, _ in CUISINES}
     mall_by_name = {name: (mall_id, directory) for mall_id, name, directory in MALLS}
 
     candidates, excluded = [], []
     for row in read_csv("outlets.csv"):
-        oid = row["id"]
-        if row["cuisine"] not in cuisine_ids:
-            fail(f"{oid}: unknown cuisine {row['cuisine']!r}")
-        if row["mall"] not in mall_by_name:
-            fail(f"{oid}: unknown mall {row['mall']!r}")
-        if row["status"] not in STATUSES:
-            fail(f"{oid}: unknown status {row['status']!r}")
-        mentions = row["mentions"].split(";")
-        for guide in mentions + [row["dish_named_by"]]:
-            if guide not in guides:
-                fail(f"{oid}: unknown guide {guide!r}")
-        if row["dish_named_by"] not in mentions:
-            fail(f"{oid}: dish_named_by must be one of its mentions")
-        if len(set(mentions)) != len(mentions):
-            fail(f"{oid}: a guide is listed twice")
+        check_outlet(row, guides, listings, mall_by_name)
         mall_id, directory = mall_by_name[row["mall"]]
-        listed = [l for l in listings if l["mall"] == row["mall"]
-                  and l["name"] == row["directory_name"] and l["status"] != "opening soon"]
-        if row["status"] == "open" and directory:
-            if len(listed) != 1:
-                fail(f"{oid}: {row['directory_name']!r} is not listed once in the {row['mall']} directory")
-            if listed[0]["unit"] != row["unit"]:
-                fail(f"{oid}: unit {row['unit']} differs from the directory's {listed[0]['unit']}")
-        publishers = sorted({guides[g]["publisher"] for g in mentions})
-        dated = sorted(mentions, key=lambda g: guides[g]["published"], reverse=True)
-        outlet = {
-            "id": oid, "name": row["name"], "mall": mall_id, "venue": row["venue"], "unit": row["unit"],
-            "cuisine": row["cuisine"], "dish": row["dish"], "dish_named_by": row["dish_named_by"],
-            "publishers": len(publishers), "guides": len(mentions),
-            "latest_mention": guides[dated[0]]["published"], "mentions": dated,
-        }
+        outlet = outlet_record(row, guides, mall_id)
         if row["status"] != "open":
             outlet["reason"] = row["nutrition_note"]
             outlet["status"] = row["status"]
             excluded.append(outlet)
             continue
-        if len(publishers) < MIN_PUBLISHERS:
-            fail(f"{oid}: fewer than {MIN_PUBLISHERS} publishers")
+        if outlet["publishers"] < MIN_PUBLISHERS:
+            fail(f"{row['id']}: fewer than {MIN_PUBLISHERS} publishers")
         outlet["presence"] = (
             {"checked_by": directory, "listed_as": row["directory_name"], "as_of": directories[directory]["retrieved"]}
             if directory else {"checked_by": "guides", "latest_mention": outlet["latest_mention"]}
         )
-        outlet["_row"] = row
-        candidates.append(outlet)
+        candidates.append((outlet, row))
 
-    candidates.sort(key=lambda o: (-o["publishers"], -o["guides"], _neg_date(o["latest_mention"]), o["name"].lower()))
-    for rank, outlet in enumerate(candidates, 1):
+    candidates.sort(key=lambda c: (-c[0]["publishers"], -c[0]["guides"], _neg_date(c[0]["latest_mention"]), c[0]["name"].lower()))
+    for rank, (outlet, _) in enumerate(candidates, 1):
         outlet["rank"] = rank
-    top, rest = candidates[:TOP], candidates[TOP:]
-    if len(top) != TOP:
-        fail(f"only {len(top)} open candidates; need {TOP}")
-    for outlet in top:
-        outlet["nutrition"] = nutrition_for(outlet.pop("_row"), yeo, fndds)
-    for outlet in rest:
-        del outlet["_row"]
-
-    malls = []
-    for mall_id, name, directory in MALLS:
-        here = [o for o in top if o["mall"] == mall_id]
-        gone = [o["name"] for o in excluded if o["mall"] == mall_id and o["status"] == "closed"]
-        counts = {
-            "hawkers_street": sum(o["venue"] == "Hawkers' Street" for o in here),
-            "hawker_centre": sum(o["venue"].startswith("Hawker Centre") for o in here),
-            "closed_count": _number_word(len(gone)),
-            "closed_names": _join(gone),
-        }
-        cuisine_counts = {}
-        for o in here:
-            cuisine_counts[o["cuisine"]] = cuisine_counts.get(o["cuisine"], 0) + 1
-        malls.append({
-            "id": mall_id, "name": name,
-            "directory": directory,
-            "fnb_listings": sum(l["mall"] == name and l["status"] != "opening soon" for l in listings) if directory else None,
-            "in_top": len(here),
-            "cuisines": sorted(cuisine_counts.items(), key=lambda kv: (-kv[1], kv[0])),
-            "summary": MALL_SUMMARIES[mall_id].format(**counts),
-        })
+    if len(candidates) < TOP:
+        fail(f"only {len(candidates)} open candidates; need {TOP}")
+    for outlet, row in candidates[:TOP]:
+        outlet["nutrition"] = nutrition_for(row, yeo, fndds)
+    top, rest = [o for o, _ in candidates[:TOP]], [o for o, _ in candidates[TOP:]]
 
     used = {g for o in top for g in o["mentions"]}
     return {
@@ -251,7 +256,7 @@ def build():
         "calorie_method": CALORIE_METHOD,
         "map": json.loads((HERE / "map.json").read_text(encoding="utf-8")),
         "cuisines": [{"id": c, "label": label} for c, label in CUISINES],
-        "malls": malls,
+        "malls": [mall_record(mall_id, name, directory, top, excluded, listings) for mall_id, name, directory in MALLS],
         "outlets": top,
         "next_in_line": [{k: o[k] for k in ("rank", "name", "mall", "publishers", "guides", "latest_mention")} for o in rest],
         "excluded": excluded,
@@ -279,27 +284,26 @@ def _join(names):
     return ", ".join(names[:-1]) + " and " + names[-1]
 
 
+def replace_block(page, opening, content):
+    """Replace the body of the one script block that starts with `opening`."""
+    new_page, count = re.subn(rf"({re.escape(opening)}).*?(</script>)",
+                              lambda m: m.group(1) + content + m.group(2), page, count=1, flags=re.S)
+    if count != 1:
+        fail(f"index.html has no {opening} block")
+    return new_page
+
+
 def render(dataset):
     raw = json.dumps(dataset, ensure_ascii=False, indent=1) + "\n"
     page = (HERE / "index.html").read_text(encoding="utf-8")
     block = json.dumps(dataset, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
-    new_page, count = re.subn(
-        r'(<script id="dataset" type="application/json">).*?(</script>)',
-        lambda m: m.group(1) + block + m.group(2), page, count=1, flags=re.S,
-    )
-    if count != 1:
-        fail('index.html has no <script id="dataset" type="application/json"> block')
+    page = replace_block(page, '<script id="dataset" type="application/json">', block)
     for block_id, name in (("beamdswitch", "beamdswitch.js"), ("report", "report.js")):
         script = (HERE / name).read_text(encoding="utf-8")
         if "</script" in script:
             fail(f"{name} must not contain </script")
-        new_page, count = re.subn(
-            rf'(<script id="{block_id}">).*?(</script>)',
-            lambda m: m.group(1) + "\n" + script + m.group(2), new_page, count=1, flags=re.S,
-        )
-        if count != 1:
-            fail(f'index.html has no <script id="{block_id}"> block')
-    return raw, new_page
+        page = replace_block(page, f'<script id="{block_id}">', "\n" + script)
+    return raw, page
 
 
 def main():

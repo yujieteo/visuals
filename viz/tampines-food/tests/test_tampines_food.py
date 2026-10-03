@@ -33,6 +33,42 @@ class TampinesFoodTest(unittest.TestCase):
             for name in ("raw.json", "index.html"):
                 self.assertEqual((copy / name).read_text(encoding="utf-8"), (VIZ / name).read_text(encoding="utf-8"), name)
 
+    def test_builder_refuses_inconsistent_outlets_and_a_page_without_its_blocks(self):
+        def build_with(edit):
+            with tempfile.TemporaryDirectory() as directory:
+                copy = Path(directory) / "tampines-food"
+                shutil.copytree(VIZ, copy, ignore=shutil.ignore_patterns("__pycache__", ".git", ".github", "tests"))
+                edit(copy)
+                return subprocess.run([sys.executable, str(copy / "build.py")], capture_output=True, text=True)
+
+        def edit_outlet(change):
+            def edit(copy):
+                rows = read_csv("outlets.csv")
+                open_row = next(r for r in rows if r["status"] == "open" and r["mall"] == "Tampines 1")
+                change(open_row)
+                with open(copy / "outlets.csv", "w", newline="", encoding="utf-8") as handle:
+                    writer = csv.DictWriter(handle, fieldnames=list(rows[0]), lineterminator="\n")
+                    writer.writeheader()
+                    writer.writerows(rows)
+            return edit
+
+        cases = {
+            "unknown cuisine": edit_outlet(lambda r: r.update(cuisine="martian")),
+            "unknown status": edit_outlet(lambda r: r.update(status="maybe")),
+            "unknown guide": edit_outlet(lambda r: r.update(mentions=r["mentions"] + ";no-such-guide")),
+            "guide listed twice": edit_outlet(lambda r: r.update(mentions=r["mentions"] + ";" + r["mentions"].split(";")[0])),
+            "dish named by another guide": edit_outlet(lambda r: r.update(dish_named_by=next(
+                g["id"] for g in json.loads((VIZ / "sources.json").read_text())["guides"] if g["id"] not in r["mentions"].split(";")))),
+            "unit differs from directory": edit_outlet(lambda r: r.update(unit="#99-99")),
+            "no report block": lambda copy: (copy / "index.html").write_text(
+                (VIZ / "index.html").read_text(encoding="utf-8").replace('<script id="report">', "<script>"), encoding="utf-8"),
+        }
+        for label, edit in cases.items():
+            with self.subTest(label):
+                result = build_with(edit)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("build.py:", result.stderr)
+
     def test_builder_verifies_the_committed_page(self):
         result = subprocess.run([sys.executable, str(VIZ / "build.py"), "--verify"], capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, result.stderr)

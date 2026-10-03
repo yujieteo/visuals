@@ -576,6 +576,7 @@ function h(tag, attrs, ...kids) {
 const { fmtDate, kcalOf, plural, nutritionText } = TampinesReport;
 const matches = (o, cuisine = state.cuisine, mall = state.mall) => (!cuisine || o.cuisine === cuisine) && (!mall || o.mall === mall);
 const visible = () => D.outlets.filter((o) => matches(o));
+const countWhere = (cuisine, mall) => D.outlets.filter((o) => matches(o, cuisine, mall)).length;
 const where = (o) => [o.venue.includes(MALL[o.mall].name) ? null : MALL[o.mall].name, o.venue, o.unit].filter(Boolean).join(" · ");
 
 // ---- Tooltip (pointer hover and keyboard focus; touch uses the inline panels instead) ----
@@ -657,17 +658,16 @@ function chip(key, label, count, pressed, onClick, tipBuild) {
 function renderFilters() {
   const cuisineRow = document.getElementById("cuisine-chips");
   const label = cuisineRow.firstElementChild;
-  const chips = [chip("cuisine:", "All", D.outlets.filter((o) => matches(o, null, state.mall)).length, !state.cuisine, () => setFilter("cuisine", null), () => cuisineTip(null))];
-  for (const c of D.cuisines) {
-    const n = D.outlets.filter((o) => matches(o, c.id, state.mall)).length;
-    chips.push(chip("cuisine:" + c.id, c.label, n, state.cuisine === c.id, () => setFilter("cuisine", state.cuisine === c.id ? null : c.id), () => cuisineTip(c.id)));
-  }
-  cuisineRow.replaceChildren(label, ...chips);
+  cuisineRow.replaceChildren(label,
+    chip("cuisine:", "All", countWhere(null, state.mall), !state.cuisine, () => setFilter("cuisine", null), () => cuisineTip(null)),
+    ...D.cuisines.map((c) => chip("cuisine:" + c.id, c.label, countWhere(c.id, state.mall), state.cuisine === c.id,
+      () => setFilter("cuisine", state.cuisine === c.id ? null : c.id), () => cuisineTip(c.id))));
   const mallRow = document.getElementById("mall-chips");
   const mallLabel = mallRow.firstElementChild;
   mallRow.replaceChildren(mallLabel,
-    chip("mall:", "All", D.outlets.filter((o) => matches(o, state.cuisine, null)).length, !state.mall, () => setFilter("mall", null)),
-    ...D.malls.map((m) => chip("mall:" + m.id, m.name, D.outlets.filter((o) => matches(o, state.cuisine, m.id)).length, state.mall === m.id, () => setFilter("mall", state.mall === m.id ? null : m.id))));
+    chip("mall:", "All", countWhere(state.cuisine, null), !state.mall, () => setFilter("mall", null)),
+    ...D.malls.map((m) => chip("mall:" + m.id, m.name, countWhere(state.cuisine, m.id), state.mall === m.id,
+      () => setFilter("mall", state.mall === m.id ? null : m.id))));
   const shown = visible();
   const status = document.getElementById("status");
   const parts = [state.cuisine && CUISINE[state.cuisine], state.mall && MALL[state.mall].name].filter(Boolean);
@@ -732,6 +732,9 @@ function renderList() {
 const mapSvg = document.getElementById("food-map");
 const mapLetters = Object.fromEntries(Object.keys(D.map.geometry.malls).map((name, i) => [name, String.fromCharCode(65 + i)]));
 const floorOf = (o) => o.unit.match(/^#(B?\d+)-/)?.[1] || "?";
+// Basements sort below ground level: B2, B1, 1, 2 ...
+const floorOrder = (floor) => (floor.startsWith("B") ? -Number(floor.slice(1)) : Number(floor));
+const floorLabel = (floor) => (floor.startsWith("B") || floor === "?" ? floor : "L" + Number(floor));
 function mapTip(o) {
   return [h("div", { class: "t-head", text: `#${o.rank} ${o.name}` }),
     h("div", { class: "soft", text: where(o) }), h("div", { text: o.dish }),
@@ -814,11 +817,11 @@ function renderMap() {
   document.getElementById("map-directories").replaceChildren(...D.malls.filter((mall) => shown.some((o) => o.mall === mall.id)).map((mall) => {
     const outlets = shown.filter((o) => o.mall === mall.id);
     const letter = mapLetters[mall.name];
-    const floors = [...new Set(outlets.map(floorOf))].sort((a, b) => (a.startsWith("B") ? -Number(a.slice(1)) : Number(a)) - (b.startsWith("B") ? -Number(b.slice(1)) : Number(b)));
+    const floors = [...new Set(outlets.map(floorOf))].sort((a, b) => floorOrder(a) - floorOrder(b));
     return h("article", { class: "map-directory" + (letter ? "" : " unplotted"), "aria-labelledby": "map-directory-" + mall.id },
       h("h3", { id: "map-directory-" + mall.id, text: `${letter ? letter + " · " : "Unplotted · "}${mall.name}` }),
       ...floors.map((floor) => h("div", { class: "map-floor" },
-        h("span", { class: "map-floor-label", text: floor.startsWith("B") ? floor : floor === "?" ? "?" : "L" + Number(floor) }),
+        h("span", { class: "map-floor-label", text: floorLabel(floor) }),
         h("div", { class: "map-ranks" }, ...outlets.filter((o) => floorOf(o) === floor).map((o) => {
           const button = h("button", { type: "button", class: "map-rank", id: "map-rank-" + o.id, "data-outlet": o.id,
             "aria-pressed": String(state.mapOutlet === o.id), "aria-controls": "map-detail",
@@ -992,10 +995,28 @@ renderMethod();
 const result = (v) => ({ content: [{ type: "text", text: JSON.stringify(v) }] });
 const mc = (typeof document !== "undefined" && document.modelContext) || (typeof navigator !== "undefined" && navigator.modelContext);
 const filterSchema = { cuisine: { type: "string", enum: D.cuisines.map((c) => c.id) }, mall: { type: "string", enum: D.malls.map((m) => m.id) } };
-mc?.registerTool({ name: "get_metadata", description: "Return what this page ranks, the as-of date, the ranking and calorie methods, the cuisines and malls (with summaries), and every source.", inputSchema: { type: "object", properties: {}, additionalProperties: false }, annotations: { readOnlyHint: true }, async execute() { return result({ title: D.title, as_of: D.as_of, method: D.method, calorie_method: D.calorie_method, cuisines: D.cuisines, malls: D.malls, sources: D.sources, truncated: false }); } });
-mc?.registerTool({ name: "query_outlets", description: "List the top-50 outlets in rank order, optionally filtered by cuisine id and mall id.", inputSchema: { type: "object", properties: { ...filterSchema, limit: { type: "integer", minimum: 1, maximum: 50 } }, additionalProperties: false }, annotations: { readOnlyHint: true }, async execute(i) { const rows = D.outlets.filter((o) => matches(o, i.cuisine || null, i.mall || null)); const limit = i.limit || 50; return result({ total: rows.length, returned: Math.min(limit, rows.length), truncated: rows.length > limit, outlets: rows.slice(0, limit).map((o) => ({ rank: o.rank, id: o.id, name: o.name, mall: o.mall, unit: o.unit, cuisine: o.cuisine, dish: o.dish, publishers: o.publishers, energy_kcal_estimate: kcalOf(o) })), next_steps: ["Use get_outlet with an id for guides, presence check and nutrition."] }); } });
-mc?.registerTool({ name: "get_outlet", description: "Return one outlet with the guides that recommend it, how its presence was checked and its dish's nutrition estimate.", inputSchema: { type: "object", properties: { id: { type: "string" } }, required: ["id"], additionalProperties: false }, annotations: { readOnlyHint: true }, async execute({ id }) { const o = D.outlets.find((x) => x.id === id); if (!o) return result({ error: "unknown id", next_steps: ["Use query_outlets to list ids."] }); return result({ outlet: o, guides: o.mentions.map((g) => GUIDE[g]), truncated: false }); } });
-mc?.registerTool({ name: "get_calorie_breakdown", description: "Return estimated energy, carbohydrate, protein and fat for each signature dish, optionally filtered by cuisine and mall. Dishes without a fixed portion are listed separately with the reason.", inputSchema: { type: "object", properties: filterSchema, additionalProperties: false }, annotations: { readOnlyHint: true }, async execute(i) { const rows = D.outlets.filter((o) => matches(o, i.cuisine || null, i.mall || null)); return result({ estimates: rows.filter((o) => kcalOf(o) != null).map((o) => ({ rank: o.rank, id: o.id, dish: o.dish, outlet: o.name, ...o.nutrition })), not_estimable: rows.filter((o) => kcalOf(o) == null).map((o) => ({ rank: o.rank, id: o.id, dish: o.dish, outlet: o.name, reason: o.nutrition.reason })), note: "All figures are estimates for reference dishes, not measurements of these outlets' food.", truncated: false }); } });
+const filtered = (i) => D.outlets.filter((o) => matches(o, i.cuisine || null, i.mall || null));
+const tool = (name, description, properties, execute, required) => mc?.registerTool({ name, description,
+  inputSchema: { type: "object", properties, ...(required && { required }), additionalProperties: false }, annotations: { readOnlyHint: true }, execute });
+tool("get_metadata", "Return what this page ranks, the as-of date, the ranking and calorie methods, the cuisines and malls (with summaries), and every source.", {},
+  async () => result({ title: D.title, as_of: D.as_of, method: D.method, calorie_method: D.calorie_method, cuisines: D.cuisines, malls: D.malls, sources: D.sources, truncated: false }));
+tool("query_outlets", "List the top-50 outlets in rank order, optionally filtered by cuisine id and mall id.", { ...filterSchema, limit: { type: "integer", minimum: 1, maximum: 50 } }, async (i) => {
+  const rows = filtered(i), limit = i.limit || 50;
+  return result({ total: rows.length, returned: Math.min(limit, rows.length), truncated: rows.length > limit,
+    outlets: rows.slice(0, limit).map((o) => ({ rank: o.rank, id: o.id, name: o.name, mall: o.mall, unit: o.unit, cuisine: o.cuisine, dish: o.dish, publishers: o.publishers, energy_kcal_estimate: kcalOf(o) })),
+    next_steps: ["Use get_outlet with an id for guides, presence check and nutrition."] });
+});
+tool("get_outlet", "Return one outlet with the guides that recommend it, how its presence was checked and its dish's nutrition estimate.", { id: { type: "string" } }, async ({ id }) => {
+  const o = D.outlets.find((x) => x.id === id);
+  if (!o) return result({ error: "unknown id", next_steps: ["Use query_outlets to list ids."] });
+  return result({ outlet: o, guides: o.mentions.map((g) => GUIDE[g]), truncated: false });
+}, ["id"]);
+tool("get_calorie_breakdown", "Return estimated energy, carbohydrate, protein and fat for each signature dish, optionally filtered by cuisine and mall. Dishes without a fixed portion are listed separately with the reason.", filterSchema, async (i) => {
+  const rows = filtered(i);
+  return result({ estimates: rows.filter((o) => kcalOf(o) != null).map((o) => ({ rank: o.rank, id: o.id, dish: o.dish, outlet: o.name, ...o.nutrition })),
+    not_estimable: rows.filter((o) => kcalOf(o) == null).map((o) => ({ rank: o.rank, id: o.id, dish: o.dish, outlet: o.name, reason: o.nutrition.reason })),
+    note: "All figures are estimates for reference dishes, not measurements of these outlets' food.", truncated: false });
+});
 })();
 </script>
 </body>
