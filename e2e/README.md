@@ -30,7 +30,7 @@ npm ci
 npx playwright install chromium firefox webkit   # or one of them
 npm run fetch-targets                            # clones yujieteo/site and yujieteo/visuals into .cache/
 npm run test:baseline                            # every visual, every project
-npm run test:full                                # the fuller checks for the representative visuals
+npm run test:full                                # the fuller checks for the visuals in tests/full/
 npm run test:harness                             # the harness itself, no browser
 npm run typecheck
 ```
@@ -74,11 +74,11 @@ The primary control comes from the visual's manifest, or else the first
 visible slider, select, number field, tab, radio, checkbox, button or
 focusable chart mark that is not an export, theme or help control.
 
-**Full checks, for representative visuals** (`tests/full/<slug>.test.js`):
+**Full checks, per visual** (`tests/full/<slug>.test.js`):
 `url-state`, `back-forward`, `keyboard`, `command-palette` (Cmd/Ctrl+K),
 `reset`, `json-round-trip`, `markdown-export`, `beamdswitch-export`,
-`dark-mode` and `reduced-motion`, written for `generating-functions`,
-`motives-periods` and `snake-lemma`. Each drives the visual through its
+`dark-mode` and `reduced-motion`, written for each visual with a file in
+`tests/full/`. Each drives the visual through its
 user-visible interface (roles, accessible names, stable ids, `data-testid`
 and URL state) and asserts on application state, not screenshots.
 
