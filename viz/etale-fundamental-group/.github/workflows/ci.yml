@@ -1,0 +1,24 @@
+# CI for the Étale Fundamental Group laboratory. This repository is where the laboratory and its
+# tests develop; the site's visuals/etale-fundamental-group/ is a port of the page files and runs
+# none of these tests. There is no Python test. build.mjs --check fails when index.html or raw.json
+# is stale, then every tests/*.test.mjs runs.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: node build.mjs --check
+      - run: node --test 'tests/*.test.mjs'
