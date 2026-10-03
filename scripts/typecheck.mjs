@@ -14,8 +14,9 @@
 // --summary runs tsc --pretty false on the shared tooling and every visual with a tsconfig.json (or only the
 // named ones), writes tsc's full output to build/logs/, and prints one TOON verdict: totals, errors by code
 // and by file, the first N errors in a stable order, and next steps. An error in an extracted inline script
-// is reported at its page line. --file and --since filter the errors shown; the verdict and the exit code
-// still count every error in every project unless --scoped, and then the output says how much lies outside.
+// is reported at its page line. --file and --since filter the errors shown, but never an error that names no
+// file (a failed tsc run, put at its project); the verdict and the exit code still count every error in
+// every project unless --scoped, and then the output says how much lies outside.
 // Exit 0: no error counted; 1: an error counted, or projects left out without --scoped; 2: usage or
 // environment error (no tsc, a missing path, an unknown ref, a filter or slug that matches nothing).
 import { spawnSync } from "node:child_process";
@@ -152,14 +153,15 @@ export function table(name, fields, rows) {
 
 /**
  * The summary of every error: counts by code and by file (most first, then by name), the first `first` in
- * place order, and the scope: `shown` keeps the errors a filter selects. The verdict counts every error
+ * place order, and the scope: `shown` keeps the errors a filter selects, and every error that names no file
+ * (line 0, put at its project) is kept, so a filter never hides a failed tsc run. The verdict counts every error
  * unless `scoped`, and an unchecked project fails it unless `scoped`.
  * @param {TscError[]} errors
  * @param {{ shown?: (e: TscError) => boolean, first?: number, scoped?: boolean, filter?: string, projects: number, total: number, log: string }} opts
  */
 export function summarize(errors, { shown = () => true, first = 20, scoped = false, filter = "", projects, total, log }) {
   const all = [...errors].sort(byPlace);
-  const kept = all.filter(shown);
+  const kept = all.filter((e) => e.line === 0 || shown(e));
   const counted = scoped ? kept : all;
   const unchecked = total - projects;
   const fail = counted.length > 0 || (!scoped && unchecked > 0);

@@ -106,6 +106,16 @@ test("a filter shows its errors but the verdict counts every error unless scoped
   assert.equal(summarize(errors.slice(1), { ...base, shown, filter: "file=viz/b/tests/x.mjs" }).code, 1);
 });
 
+test("a filter never hides an error that names no file, so a failed tsc run fails even a scoped verdict", () => {
+  const errors = [...parse("", "viz/x/tsconfig.json", 1), ...parse("error TS18003: No inputs were found in config file 'viz/y/tsconfig.json'.\n", "viz/y/tsconfig.json", 2)];
+  const shown = (/** @type {{ file: string }} */ e) => e.file === "viz/x/index.html";
+  const { text, code } = summarize(errors, { ...base, shown, scoped: true, filter: "file=viz/x/index.html" });
+  assert.equal(code, 1);
+  assert.match(text, /^verdict: fail /);
+  assert.match(text, /\ntotals\{errors,files\}:\n {2}2,2\n/);
+  assert.match(text, /\n {2}"viz\/x\/tsconfig\.json:0",exit,/);
+});
+
 test("projects left unchecked fail the verdict unless scoped", () => {
   assert.equal(summarize([], { ...base, projects: 1 }).code, 1);
   assert.match(summarize([], { ...base, projects: 1 }).text, /2 project\(s\) were not checked/);
