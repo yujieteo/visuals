@@ -5,14 +5,22 @@ import { assertButtonsExport, assertInlined, assertStandardDeck, assertTemplateC
 import { render } from "../build.mjs";
 
 const html = read("index.html");
-const block = (id) => new RegExp(`<script id="${id}">\\n([\\s\\S]*?)</script>`).exec(html)[1];
+/** @param {string} id */
+const block = (id) => /** @type {RegExpExecArray} */ (new RegExp(`<script id="${id}">\\n([\\s\\S]*?)</script>`).exec(html))[1];
+/** @type {{ self?: unknown, RiemannRoch?: typeof RiemannRoch }} */
 const ctx = {}; ctx.self = ctx; vm.runInNewContext(block("riemann-roch-engine"), ctx);
-const RR = ctx.RiemannRoch;
+/* The engine from the built page, typed as the page's (types/page.d.ts). */
+const RR = /** @type {typeof RiemannRoch} */ (ctx.RiemannRoch);
 const T = (await import("node:module")).createRequire(import.meta.url)("./fixtures/beamdswitch/template.js");
-const plain = (v) => JSON.parse(JSON.stringify(v));
-const close = (a, b, tol, what) => assert.ok(Math.abs(a - b) <= tol, `${what}: ${a} vs ${b} (tol ${tol})`);
+const plain = (/** @type {unknown} */ v) => JSON.parse(JSON.stringify(v));
+const close = (/** @type {number} */ a, /** @type {number} */ b, /** @type {number} */ tol, /** @type {string} */ what) => assert.ok(Math.abs(a - b) <= tol, `${what}: ${a} vs ${b} (tol ${tol})`);
 const INF = RR.INF, O = RR.O, E = { a: -1, b: 1 }, E3 = { a: -1, b: 0 }; // E3: three real roots
-const onE = (C, x, s = 1) => ({ x, y: s * Math.sqrt(RR.ecf(C, x)) });
+const onE = (/** @type {{ a: number, b: number }} */ C, /** @type {number} */ x, s = 1) => ({ x, y: s * Math.sqrt(RR.ecf(C, x)) });
+/* A preset or a minimum computation the test names: it must exist. */
+const preset = (/** @type {string} */ id) => { const p = RR.PRESETS.find((x) => x.id === id); assert.ok(p, id); return p; };
+const computation = (/** @type {string} */ id) => { const c = RR.minimumComputations().find((x) => x.id === id); assert.ok(c, id); return c; };
+/* The largest real root of a cubic, which always has one. */
+const e1Of = (/** @type {{ a: number, b: number }} */ C) => { const e = RR.ecCubicRoots(C).at(-1); assert.ok(e !== undefined); return e; };
 
 test("the page is built from its sources and is one offline file", () => {
   const out = render();
@@ -91,7 +99,7 @@ test("E: ℓ(D) = deg D for positive degree, and in degree 0 exactly the princip
 
 test("E ≅ Pic⁰(E): the chord construction is a group law and the Abel–Jacobi map turns it into addition", () => {
   for (const C of [E, E3, { a: 2, b: 3 }]) {
-    const e1 = RR.ecCubicRoots(C).at(-1), pts = [onE(C, e1 + 0.3), onE(C, e1 + 1.1, -1), onE(C, e1 + 2.7), onE(C, e1 + 0.05, -1)];
+    const e1 = e1Of(C), pts = [onE(C, e1 + 0.3), onE(C, e1 + 1.1, -1), onE(C, e1 + 2.7), onE(C, e1 + 0.05, -1)];
     for (const p of pts) assert.ok(RR.ecOn(C, p));
     const [P, Q, R] = pts;
     const L = RR.ecLine(C, P, Q);
@@ -110,7 +118,7 @@ test("E ≅ Pic⁰(E): the chord construction is a group law and the Abel–Jaco
   assert.equal(RR.ecAbel(E3, S).component, 0);
   const u = (RR.ecAbel(E3, A).u + RR.ecAbel(E3, B).u) % 1, v = RR.ecAbel(E3, S).u;
   assert.ok(Math.min(Math.abs(u - v), 1 - Math.abs(u - v)) < 1e-8);
-  assert.ok(RR.minimumComputations().find((c) => c.id === "pic0").ok);
+  assert.ok(computation("pic0").ok);
 });
 
 test("|2O| is a double cover E → P¹ and |3O| recovers the Weierstrass cubic", () => {
@@ -125,16 +133,17 @@ test("|2O| is a double cover E → P¹ and |3O| recovers the Weierstrass cubic",
   for (const C of [E, E3, { a: -2, b: 0.5 }, { a: 3, b: -7 }, { a: 0, b: 2 }]) {
     const c = RR.recoverCubic(C);
     assert.equal(c.dimension, 1, "exactly one cubic relation among 1, x, y");
+    assert.ok(c.ok);
     close(c.a, C.a, 1e-6, "a"); close(c.b, C.b, 1e-6, "b"); close(c.x3, 1, 1e-6, "x³"); assert.ok(c.residual < 1e-6, "no other monomials");
   }
   assert.equal(RR.recoverCubic(E).equation, "y²z = x³ − xz² + z³");
   assert.equal(RR.relations(RR.ecImagePoints(E, 4).points, 2).dimension, 2, "|4O|: the image in P³ lies on two quadrics");
   const st2 = RR.ecStages(E, [{ p: O, n: 2 }], onE(E, 1.5), onE(E, 1.5, -1));
-  assert.deepEqual([st2.basePointFree, st2.separatesPoints, st2.pair.separated, st2.veryAmple], [true, false, false, false], "|2O| collapses P and −P");
-  assert.equal(RR.ecStages(E, [{ p: O, n: 2 }], onE(E, 1.5), onE(E, 2)).pair.separated, true);
+  assert.deepEqual([st2.basePointFree, st2.separatesPoints, st2.pair?.separated, st2.veryAmple], [true, false, false, false], "|2O| collapses P and −P");
+  assert.equal(RR.ecStages(E, [{ p: O, n: 2 }], onE(E, 1.5), onE(E, 2)).pair?.separated, true);
   const st1 = RR.ecStages(E, [{ p: O, n: 1 }]);
   assert.ok(st1.basePoint && st1.basePoint.inf, "|O| has a base point at O");
-  assert.ok(RR.ecStages(E, [{ p: O, n: 3 }], onE(E, 1.5), onE(E, 1.5, -1)).pair.separated);
+  assert.ok(RR.ecStages(E, [{ p: O, n: 3 }], onE(E, 1.5), onE(E, 1.5, -1)).pair?.separated);
 });
 
 test("hyperelliptic y² = f(x): bases xⁱ and y·xʲ, Riemann–Roch, gaps and the canonical system", () => {
@@ -142,7 +151,7 @@ test("hyperelliptic y² = f(x): bases xⁱ and y·xʲ, Riemann–Roch, gaps and 
     const degf = 2 * g + 1;
     for (let n = 0; n <= 4 * g + 3; n++) {
       const b = RR.hyperBasis(degf, n);
-      for (const t of b.basis) assert.equal(t.pole, t.kind === "x" ? 2 * t.i : 2 * t.j + 2 * g + 1);
+      for (const t of b.basis) assert.equal(t.pole, t.kind === "x" ? 2 * /** @type {number} */ (t.i) : 2 * /** @type {number} */ (t.j) + 2 * g + 1);
       assert.equal(new Set(b.poles).size, b.ell, "distinct pole orders at ∞");
       if (n > 2 * g - 2) assert.equal(b.ell, n + 1 - g, `ℓ(${n}∞) = n + 1 − g on genus ${g}`);
       assert.ok(RR.riemannRoch(b.ell, n, g).holds);
@@ -180,7 +189,7 @@ test("Riemann–Hurwitz: genus from branch points", () => {
   assert.equal(RR.riemannHurwitz({ degree: 3, gTarget: 0, ramification: [3, 3, 3] }).g, 1, "a cyclic triple cover branched at three points is elliptic");
   assert.equal(RR.riemannHurwitz({ degree: 2, gTarget: 1, ramification: [] }).g, 1, "unramified double covers of E are elliptic");
   assert.equal(RR.riemannHurwitz({ degree: 2, gTarget: 0, ramification: [2, 2, 2] }).valid, false);
-  assert.equal(RR.minimumComputations().find((c) => c.id === "rh").value, "2g − 2 = 2(−2) + 6 = 2, so g = 2");
+  assert.equal(computation("rh").value, "2g − 2 = 2(−2) + 6 = 2, so g = 2");
 });
 
 test("smooth plane curves: genus, adjunction and ℓ(nH)", () => {
@@ -202,7 +211,7 @@ test("smooth plane curves: genus, adjunction and ℓ(nH)", () => {
 });
 
 test("Bézout: intersection multiplicities add up to d·e", () => {
-  const P = RR.PLANE, names = ["line", "conic", "cubic", "quartic"];
+  const P = RR.PLANE, names = /** @type {(keyof typeof P)[]} */ (["line", "conic", "cubic", "quartic"]);
   for (const a of names) for (const b of names) {
     if (a === b) continue;
     const r = RR.intersect(P[a].F, P[b].F);
@@ -210,7 +219,7 @@ test("Bézout: intersection multiplicities add up to d·e", () => {
   }
   assert.equal(RR.intersect(P.conic.F, P.conic.F).common, true, "a common component has no finite count");
   const t = RR.intersect(RR.lineForm(0, 1, -1), P.conic.F);
-  assert.deepEqual(plain(t.points.map((p) => [p.m, p.x.re, p.y.re])), [[2, 0, 1]], "y = 1 is tangent to x² + y² = 1: one point of multiplicity 2");
+  assert.deepEqual(plain(t.points.map((p) => (p.affine ? [p.m, p.x.re, p.y.re] : null))), [[2, 0, 1]], "y = 1 is tangent to x² + y² = 1: one point of multiplicity 2");
   const s = RR.intersect(RR.lineForm(0, 2, -1), P.conic.F);
   assert.deepEqual(plain(s.points.map((p) => p.m)), [1, 1], "moving the line splits it into two transverse points");
   assert.deepEqual(plain(RR.intersect(P.conic.F, P.cubic.F).points.map((p) => p.m).sort()), [2, 4], "circle and y² = x³ − x: tangent at (1, 0) and of order 4 at (−1, 0)");
@@ -219,9 +228,11 @@ test("Bézout: intersection multiplicities add up to d·e", () => {
   assert.equal(v.total, 3);
   assert.ok(v.points.some((p) => !p.affine && p.m === 1), "the vertical line meets E at O = [0 : 1 : 0]");
   /* the chord through P, Q meets E at the third point R of the group law */
-  const Pp = onE(E, 1), Qq = onE(E, 3, -1), L = RR.ecLine(E, Pp, Qq), I = RR.intersect(RR.lineForm(-L.lambda, 1, -L.nu), RR.cubicForm(E));
+  const Pp = onE(E, 1), Qq = onE(E, 3, -1), L = RR.ecLine(E, Pp, Qq);
+  assert.ok(!L.vertical && !L.R.inf, "the chord is not vertical");
+  const R = L.R, I = RR.intersect(RR.lineForm(-L.lambda, 1, -L.nu), RR.cubicForm(E));
   assert.equal(I.total, 3);
-  assert.ok(I.points.some((p) => p.affine && Math.abs(p.x.re - L.R.x) < 1e-6 && Math.abs(p.y.re - L.R.y) < 1e-6));
+  assert.ok(I.points.some((p) => p.affine && Math.abs(p.x.re - R.x) < 1e-6 && Math.abs(p.y.re - R.y) < 1e-6));
 });
 
 test("Riemann–Roch on an abstract curve: deg K = 2g − 2, the nonspecial regime and Clifford", () => {
@@ -250,13 +261,13 @@ test("canonical maps: genus 2 is a double cover, quartics embed, hyperelliptic c
   assert.deepEqual([h3.degreeOfMap, h3.imageDegree], [2, 2], "2 : 1 onto a conic: 2 · 2 = 4 = deg K");
   const n4 = RR.canonicalMap(4, false);
   assert.deepEqual([n4.embedding, n4.imageDegree, n4.target], [true, 6, 3]);
-  for (let g = 2; g <= 4; g++) { const h = RR.canonicalMap(g, true); assert.equal(h.degreeOfMap * h.imageDegree, 2 * g - 2); }
+  for (let g = 2; g <= 4; g++) { const h = RR.canonicalMap(g, true); assert.equal((h.degreeOfMap ?? NaN) * (h.imageDegree ?? NaN), 2 * g - 2); }
   const v = RR.veronese(2);
   assert.deepEqual(plain(v.quadricEquations), ["XZ − Y² = 0"], "the conic XZ = Y²");
   for (let d = 2; d <= 5; d++) { const x = RR.veronese(d); assert.equal(x.quadrics, x.expectedQuadrics, `rational normal curve of degree ${d}`); assert.equal(x.quadricEquations.length, x.expectedQuadrics); }
-  const g2 = RR.analyse(RR.PRESETS.find((p) => p.id === "k2").state);
+  const g2 = RR.analyse(preset("k2").state);
   assert.deepEqual(plain(g2.basis), ["1", "x"]); assert.equal(g2.canonical, true); assert.equal(g2.map.degreeOfMap, 2);
-  const six = RR.analyse(RR.PRESETS.find((p) => p.id === "six").state);
+  const six = RR.analyse(preset("six").state);
   assert.equal(six.g, 2); assert.equal(six.branchPoints, 6);
 });
 
@@ -267,7 +278,7 @@ test("computation mode parses curves and divisors and refuses what it cannot do"
   const k = RR.compute("y² = x⁷ − x", "K");
   assert.deepEqual([k.g, k.ell], [3, 3]); assert.deepEqual(plain(k.differentials), ["dx/y", "x dx/y", "x² dx/y"]);
   const e = RR.compute("y^2 = x^3 - 2x + 1", "4O");
-  assert.ok(e.curve.weierstrass); assert.deepEqual(plain(e.basis), ["1", "x", "y", "x²"]);
+  assert.ok(e.curve.type !== "P1" && e.curve.weierstrass); assert.deepEqual(plain(e.basis), ["1", "x", "y", "x²"]);
   const p = RR.compute("P1", "2[0] + [1] - [inf]");
   assert.equal(p.ell, 3); assert.equal(p.deg, 2);
   assert.equal(RR.compute("P1", "K").ell, 0, "ℓ(K) = 0 on P¹");
@@ -285,7 +296,7 @@ test("every minimum computation of the specification holds, and raw.json agrees"
   for (const c of mc) assert.ok(c.ok, c.claim);
   const raw = JSON.parse(read("raw.json"));
   assert.deepEqual(raw.minimum_computations, plain(mc));
-  assert.deepEqual(raw.presets.map((p) => p.id), plain(RR.PRESETS.map((p) => p.id)));
+  assert.deepEqual(raw.presets.map((/** @type {{ id: string }} */ p) => p.id), plain(RR.PRESETS.map((p) => p.id)));
   assert.equal(RR.PRESETS.length, 11);
   for (const p of RR.PRESETS) { const a = RR.analyse(p.state); assert.ok(a.exact, p.id); assert.ok(a.rr.holds, p.id); }
   assert.equal(RR.REFERENCES.length, 4);
@@ -308,19 +319,19 @@ test("the page boots, its WebMCP tools answer, and the deck buttons export the p
   assert.equal(page.run('document.getElementById("app").hidden'), false, "the app replaces the no-JavaScript text");
   assert.equal(page.run('document.getElementById("nojs").hidden'), true);
   const tools = page.run("RiemannRochTools");
-  assert.deepEqual(plain(tools.map((t) => t.name)), ["get_metadata", "get_current_state", "compute_linear_system", "apply_riemann_hurwitz", "run_minimum_computations"]);
+  assert.deepEqual(plain(tools.map((/** @type {WebMcpTool} */ t) => t.name)), ["get_metadata", "get_current_state", "compute_linear_system", "apply_riemann_hurwitz", "run_minimum_computations"]);
   for (const t of tools) assert.equal(t.annotations.readOnlyHint, true);
-  const call = async (name, args = {}) => JSON.parse((await tools.find((t) => t.name === name).execute(args)).content[0].text);
+  const call = async (/** @type {string} */ name, args = {}) => JSON.parse((await tools.find((/** @type {WebMcpTool} */ t) => t.name === name).execute(args)).content[0].text);
   assert.equal((await call("get_metadata")).url, "https://teoyujie.org/visuals/riemann-roch");
   const st = await call("get_current_state");
   assert.deepEqual([st.divisor, st.ell, st.basis], ["3∞", 4, ["1", "x", "x²", "x³"]]);
   assert.deepEqual((await call("compute_linear_system", { curve: "y^2 = x^3 - x + 1", divisor: "3O" })).basis, ["1", "x", "y"]);
   assert.equal((await call("compute_linear_system", { curve: "elephant", divisor: "3O" })).ok, false);
   assert.equal((await call("apply_riemann_hurwitz", { degree: 2, ramification: [2, 2, 2, 2, 2, 2] })).g, 2);
-  assert.ok((await call("run_minimum_computations")).every((c) => c.ok));
+  assert.ok((await call("run_minimum_computations")).every((/** @type {{ ok: boolean }} */ c) => c.ok));
   for (const p of RR.PRESETS) page.run(`RiemannRochPage.loadPreset(${JSON.stringify(p.id)})`);
   for (const c of ["P1", "elliptic", "hyperelliptic", "plane", "abstract"]) page.run(`RiemannRochPage.setCurve(${JSON.stringify(c)})`);
   page.run('RiemannRochPage.loadPreset("e-3o")');
   assert.deepEqual((await call("get_current_state")).basis, ["1", "x", "y"]);
-  await assertButtonsExport(page, "riemann-roch", T.deck(RR.report(RR.PRESETS.find((p) => p.id === "e-3o").state)));
+  await assertButtonsExport(page, "riemann-roch", T.deck(RR.report(preset("e-3o").state)));
 });

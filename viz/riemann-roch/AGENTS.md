@@ -4,7 +4,7 @@ A computational laboratory for algebraic curves: choose a curve, place a divisor
 
 ## Source of truth
 
-The standalone repository [yujieteo/riemann-roch](https://github.com/yujieteo/riemann-roch) is where this visualisation and its tests develop and where CI runs them; it is the source of truth. `visuals/riemann-roch/` in [yujieteo/site](https://github.com/yujieteo/site/tree/main/visuals/riemann-roch) is a port of its page files, refreshed when the visualisation is updated, and the site runs no logic tests for it. Porting copies the folder minus `tests/` and `.github/`. AGENTS.md and SKILLS.md must therefore not link into either (the site checks that their links resolve).
+The standalone repository [yujieteo/riemann-roch](https://github.com/yujieteo/riemann-roch) is where this visualisation and its tests develop and where CI runs them; it is the source of truth. `visuals/riemann-roch/` in [yujieteo/site](https://github.com/yujieteo/site/tree/main/visuals/riemann-roch) is a port of its page files, refreshed when the visualisation is updated, and the site runs no logic tests for it. Porting copies the folder minus `tests/`, `.github/` and the type-check tooling (`package.json`, `package-lock.json`, `tsconfig.json`, `.gitignore`, `scripts/`, `types/`, and the generated `node_modules/` and `.typecheck/`). AGENTS.md and SKILLS.md must therefore not link into either (the site checks that their links resolve).
 
 ## Files and data
 
@@ -20,9 +20,12 @@ From the repository root:
 node build.mjs            # write index.html and raw.json
 node build.mjs --check    # fail if they are stale
 node --test 'tests/*.test.{mjs,cjs}'
+npm ci && npm run typecheck
 ```
 
-CI (`.github/workflows/ci.yml`) runs `node build.mjs --check` and the tests on every push and pull request: `tests/riemann-roch.test.mjs` covers freshness, every minimum computation (L(D) bases, ℓ(D) against Riemann–Roch, the group law and Abel–Jacobi, |2O| and |3O|, Riemann–Hurwitz, plane-curve genus, Bézout, gaps, canonical maps), the computation mode, the narrated decks and the WebMCP tools in a stand-in DOM. In yujieteo/site the only checks for this folder are the site's integration tests: the published copy, the catalogue stub and the folder docs. When the site's `templates/beamdswitch.js` changes, copy it to both `beamdswitch.js` and `tests/fixtures/beamdswitch/template.js`, then rebuild.
+`npm run typecheck` runs tsc over the JSDoc types (`tsconfig.json`: `checkJs`, `strict`, no output). It covers the engine and page code in `src/` (checked at their sources, which `build.mjs` inlines into `index.html`), `build.mjs`, `tests/*.mjs`, and `src/template.html`'s own inline script, which `scripts/extract-inline.mjs` copies into `.typecheck/inline/` first; `types/page.d.ts` declares the global `RiemannRoch` the page shares (`src/engine.js` also exports it to Node for this). It leaves out the read-only copies: `beamdswitch.js` and `tests/fixtures/beamdswitch/` (`deck.d.mts` types the parser).
+
+CI (`.github/workflows/ci.yml`) runs `node build.mjs --check`, the tests and `npm run typecheck` on every push and pull request: `tests/riemann-roch.test.mjs` covers freshness, every minimum computation (L(D) bases, ℓ(D) against Riemann–Roch, the group law and Abel–Jacobi, |2O| and |3O|, Riemann–Hurwitz, plane-curve genus, Bézout, gaps, canonical maps), the computation mode, the narrated decks and the WebMCP tools in a stand-in DOM. In yujieteo/site the only checks for this folder are the site's integration tests: the published copy, the catalogue stub and the folder docs. When the site's `templates/beamdswitch.js` changes, copy it to both `beamdswitch.js` and `tests/fixtures/beamdswitch/template.js`, then rebuild.
 
 ## Workflow
 
@@ -30,7 +33,7 @@ Every change follows the site's [add-visualization playbook](https://github.com/
 
 1. Change and test it here first: run the commands above and check the page end to end in a browser.
 2. Run the first no-mistakes pass in this repository. It also checks the page in a shallow clone of yujieteo/site (`git clone --depth 1 https://github.com/yujieteo/site`) with the change ported in; build and browse only this page there, never the site's full build or test suite.
-3. Once this repository's pull request merges, port the page files byte for byte into `visuals/riemann-roch/` in yujieteo/site (this repository minus `tests/` and `.github/`) and run the second no-mistakes pass on that pull request, which runs only the site-level tests.
+3. Once this repository's pull request merges, port the page files byte for byte into `visuals/riemann-roch/` in yujieteo/site (this repository minus `tests/`, `.github/` and the type-check tooling) and run the second no-mistakes pass on that pull request, which runs only the site-level tests.
 
 Logic, end-to-end and other heavy tests live here, where they run only when this tool changes; the site adds none for it, so its test time stays flat.
 
@@ -39,5 +42,5 @@ Logic, end-to-end and other heavy tests live here, where they run only when this
 - `index.html` is one self-contained HTML file with no dependencies and no network access (a Content-Security-Policy forbids it).
 - Bases are written only where they are exact; everything else is labelled as a Riemann–Roch or Clifford bound. The page never invents a basis.
 - References are cited at chapter level only.
-- Tests use Node's built-in `node --test` runner only; never add Vitest, Jest or a `package.json`.
+- Tests use Node's built-in `node --test` runner only; never add Vitest, Jest or another test framework. `package.json` exists only to pin the type-check tooling (TypeScript and `@types/node`, development-only, no runtime dependencies).
 - The beamdswitch deck is written with the unchanged shared template (`beamdswitch.js`, a copy of `templates/beamdswitch.js`, inlined as `<script id="beamdswitch">`) and declares `voice: bf_emma` in its front matter.

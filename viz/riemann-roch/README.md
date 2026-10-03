@@ -24,9 +24,10 @@ JavaScript is off.
 | `beamdswitch.js` | The site's standard report template, a verbatim copy of `templates/beamdswitch.js`. |
 | `build.mjs` | Inlines everything into `index.html` and writes `raw.json`. Never edit those two by hand. |
 | `raw.json` | Catalogue data, published as `data.json`: presets, the minimum computations and their live results, references. |
+| `package.json`, `package-lock.json`, `tsconfig.json`, `.gitignore`, `scripts/extract-inline.mjs`, `types/` | Development-only type-check tooling: `npm run typecheck` copies the page's own inline scripts into `.typecheck/inline/` (gitignored), then runs the pinned TypeScript over the JSDoc types. Not ported to the site. |
 | `AGENTS.md`, `SKILLS.md` | Notes for coding agents, and how an agent uses the page and its WebMCP tools. |
 | `tests/` | The tests, with read-only copies of beamdswitch's deck parser and the site's template and report skeleton in `tests/fixtures/beamdswitch/`. Not ported to the site. |
-| `.github/workflows/ci.yml` | CI: the freshness check and the tests on every push and pull request. Not ported to the site. |
+| `.github/workflows/ci.yml` | CI: the freshness check, the tests and the type-check on every push and pull request. Not ported to the site. |
 
 Rebuild after editing anything under `src/`:
 
@@ -63,7 +64,7 @@ Gauss–Legendre quadrature).
 
 This repository, [yujieteo/riemann-roch](https://github.com/yujieteo/riemann-roch), is where the
 laboratory and its tests develop; `visuals/riemann-roch/` in yujieteo/site is a port of its page
-files (this repository minus `tests/` and `.github/`) and runs none of these tests. From the root:
+files (this repository minus `tests/`, `.github/` and the type-check tooling) and runs none of these tests. From the root:
 
 ```sh
 node --test 'tests/*.test.{mjs,cjs}'

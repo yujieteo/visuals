@@ -15,15 +15,17 @@ import { fileURLToPath } from "node:url";
 import vm from "node:vm";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const read = (p) => readFileSync(join(HERE, p), "utf8");
+const read = (/** @type {string} */ p) => readFileSync(join(HERE, p), "utf8");
 
 export function render() {
+  /** @type {Record<string, string>} */
   const parts = { STYLE: read("src/style.css"), BEAMDSWITCH: read("beamdswitch.js"), ENGINE: read("src/engine.js"), UI: read("src/ui.js") };
   for (const [k, v] of Object.entries(parts)) if (/<\/(script|style)/i.test(v)) throw new Error(`${k} must not contain a closing script or style tag`);
   const html = read("src/template.html").replace(/@@(STYLE|BEAMDSWITCH|ENGINE|UI)@@/g, (_, k) => parts[k]);
+  /** @type {{ self?: unknown, RiemannRoch?: typeof RiemannRoch }} */
   const ctx = {}; ctx.self = ctx;
   vm.runInNewContext(parts.ENGINE, ctx);
-  const RR = ctx.RiemannRoch;
+  const RR = /** @type {typeof RiemannRoch} the engine sets it */ (ctx.RiemannRoch);
   const raw = {
     title: "Divisors, Linear Systems & Riemann–Roch Laboratory",
     url: "https://teoyujie.org/visuals/riemann-roch",

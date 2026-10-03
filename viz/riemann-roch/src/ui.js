@@ -3,64 +3,95 @@
 (function () {
 "use strict";
 const RR = self.RiemannRoch;
-const $ = (id) => document.getElementById(id);
-const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+/** @typedef {ReturnType<typeof RR.analyse>} Analysis */
+/** @typedef {{ X: (x: number) => number, Y: (y: number) => number, ix: (px: number) => number, iy: (py: number) => number, W: number, H: number, x0: number, x1: number, y0: number, y1: number }} Frame */
+/** @typedef {[number, number]} XY */
+/** @typedef {{ x: number, y: number }} RRAffine an affine point of E */
+/* The page's markup has every id the script looks up. */
+const $ = (/** @type {string} */ id) => /** @type {HTMLElement} */ (document.getElementById(id));
+/** @type {Record<string, string>} */
+const ESCAPES = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
+const esc = (/** @type {unknown} */ s) => String(s).replace(/[&<>"']/g, (c) => ESCAPES[c]);
 const fmt = RR.fmt, sup = RR.sup;
 const reduced = () => { try { return matchMedia("(prefers-reduced-motion: reduce)").matches; } catch { return false; } };
-const store = { get(k) { try { return localStorage.getItem(k); } catch { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch { /* storage blocked */ } } };
-const on = (id, ev, fn) => $(id).addEventListener(ev, fn);
+const store = { get(/** @type {string} */ k) { try { return localStorage.getItem(k); } catch { return null; } }, set(/** @type {string} */ k, /** @type {string} */ v) { try { localStorage.setItem(k, v); } catch { /* storage blocked */ } } };
+const on = (/** @type {string} */ id, /** @type {string} */ ev, /** @type {(e: any) => void} the event's own type, per listener */ fn) => $(id).addEventListener(ev, fn);
 /* The button an event happened in, if any (delegated click handlers). */
-const buttonOf = (e) => (e.target.closest && e.target.closest("button")) || null;
+const buttonOf = (/** @type {Event} */ e) => { const t = /** @type {Element} */ (e.target); return /** @type {HTMLButtonElement | null} */ ((t.closest && t.closest("button")) || null); };
+/** @type {Record<string, string>} */
 const TITLES = {};
+/** @param {string} id @param {string} html */
 function draw(id, html) {
+
   const s = $(id);
   if (!(id in TITLES)) { const t = s.querySelector("title"); TITLES[id] = (t && typeof t.textContent === "string" && t.textContent) || ""; }
   s.innerHTML = (TITLES[id] ? `<title>${esc(TITLES[id])}</title>` : "") + html;
 }
 /* Affine frame: data box → SVG box. */
+/** @param {number} x0 @param {number} x1 @param {number} y0 @param {number} y1 @param {number} W @param {number} H @returns {Frame} */
 function frame(x0, x1, y0, y1, W, H, pad = 16) {
   const sx = (W - 2 * pad) / (x1 - x0), sy = (H - 2 * pad) / (y1 - y0);
   return { X: (x) => pad + (x - x0) * sx, Y: (y) => H - pad - (y - y0) * sy, ix: (px) => x0 + (px - pad) / sx, iy: (py) => y0 + (H - pad - py) / sy, W, H, x0, x1, y0, y1 };
 }
-const path = (pts, F) => pts.length ? "M" + pts.map(([x, y]) => `${F.X(x).toFixed(1)} ${F.Y(y).toFixed(1)}`).join("L") : "";
+const path = (/** @type {number[][]} */ pts, /** @type {Frame} */ F) => pts.length ? "M" + pts.map(([x, y]) => `${F.X(x).toFixed(1)} ${F.Y(y).toFixed(1)}`).join("L") : "";
+/** @param {Element} svg @param {{ clientX: number, clientY: number }} ev @returns {XY} */
 function svgXY(svg, ev) {
   const r = svg.getBoundingClientRect(), vb = (svg.getAttribute("viewBox") || "0 0 640 420").split(" ").map(Number);
   return [((ev.clientX - r.left) / (r.width || 1)) * vb[2], ((ev.clientY - r.top) / (r.height || 1)) * vb[3]];
 }
 /* Marching squares for the real locus of F(x, y) = 0. */
+/** @param {(x: number, y: number) => number} fn @param {number} x0 @param {number} x1 @param {number} y0 @param {number} y1 @returns {XY[][]} */
 function contour(fn, x0, x1, y0, y1, nx = 120, ny = 120) {
-  const segs = [], dx = (x1 - x0) / nx, dy = (y1 - y0) / ny, v = [];
+  /** @type {XY[][]} */
+  const segs = [];
+  /** @type {number[][]} */
+  const v = [];
+  const dx = (x1 - x0) / nx, dy = (y1 - y0) / ny;
   for (let i = 0; i <= nx; i++) { v.push([]); for (let j = 0; j <= ny; j++) v[i].push(fn(x0 + i * dx, y0 + j * dy)); }
-  const lerp = (a, b, fa, fb) => a + ((b - a) * fa) / (fa - fb);
+  const lerp = (/** @type {number} */ a, /** @type {number} */ b, /** @type {number} */ fa, /** @type {number} */ fb) => a + ((b - a) * fa) / (fa - fb);
   for (let i = 0; i < nx; i++) for (let j = 0; j < ny; j++) {
     const xa = x0 + i * dx, ya = y0 + j * dy, f = [v[i][j], v[i + 1][j], v[i + 1][j + 1], v[i][j + 1]];
-    const P = [[xa, ya], [xa + dx, ya], [xa + dx, ya + dy], [xa, ya + dy]], cut = [];
+    const P = [[xa, ya], [xa + dx, ya], [xa + dx, ya + dy], [xa, ya + dy]];
+    /** @type {XY[]} */
+    const cut = [];
     for (let k = 0; k < 4; k++) { const a = P[k], b = P[(k + 1) % 4], fa = f[k], fb = f[(k + 1) % 4]; if ((fa < 0) !== (fb < 0)) cut.push([lerp(a[0], b[0], fa, fb), lerp(a[1], b[1], fa, fb)]); }
     if (cut.length === 2) segs.push(cut); else if (cut.length === 4) segs.push([cut[0], cut[1]], [cut[2], cut[3]]);
   }
   return segs;
 }
-const segPath = (segs, F) => segs.map(([a, b]) => `M${F.X(a[0]).toFixed(1)} ${F.Y(a[1]).toFixed(1)}L${F.X(b[0]).toFixed(1)} ${F.Y(b[1]).toFixed(1)}`).join("");
+const segPath = (/** @type {XY[][]} */ segs, /** @type {Frame} */ F) => segs.map(([a, b]) => `M${F.X(a[0]).toFixed(1)} ${F.Y(a[1]).toFixed(1)}L${F.X(b[0]).toFixed(1)} ${F.Y(b[1]).toFixed(1)}`).join("");
 /* Projection of 3D points with a rotation (yaw, pitch). */
+/** @param {number[]} p @param {{ yaw: number, pitch: number }} rot */
 function proj3(p, rot) {
   const [x, y, z] = p, cy = Math.cos(rot.yaw), sy = Math.sin(rot.yaw), cp = Math.cos(rot.pitch), sp = Math.sin(rot.pitch);
   const x1 = cy * x + sy * z, z1 = -sy * x + cy * z, y1 = cp * y - sp * z1, z2 = sp * y + cp * z1;
   return [x1, y1, z2];
 }
+/** @type {Record<string, { yaw: number, pitch: number }>} */
 const ROT = { "map-svg": { yaw: 0.6, pitch: 0.35 }, "ver-svg": { yaw: 0.6, pitch: 0.35 } };
+/** @param {string} id @param {() => void} redraw */
 function rotatable(id, redraw) {
-  const s = $(id); let drag = null;
+  const s = $(id);
+  /** @type {XY | null} */
+  let drag = null;
   s.addEventListener("pointerdown", (e) => { drag = [e.clientX, e.clientY]; try { s.setPointerCapture(e.pointerId); } catch { /* not capturable */ } });
   s.addEventListener("pointermove", (e) => { if (!drag) return; const r = ROT[id]; r.yaw += (e.clientX - drag[0]) * 0.01; r.pitch = Math.max(-1.4, Math.min(1.4, r.pitch + (e.clientY - drag[1]) * 0.01)); drag = [e.clientX, e.clientY]; redraw(); });
   s.addEventListener("pointerup", () => { drag = null; });
-  s.addEventListener("keydown", (e) => { const r = ROT[id], k = { ArrowLeft: [-0.1, 0], ArrowRight: [0.1, 0], ArrowUp: [0, -0.1], ArrowDown: [0, 0.1] }[e.key]; if (!k) return; e.preventDefault(); r.yaw += k[0]; r.pitch = Math.max(-1.4, Math.min(1.4, r.pitch + k[1])); redraw(); });
+  s.addEventListener("keydown", (e) => { const r = ROT[id], k = /** @type {Record<string, XY>} */ ({ ArrowLeft: [-0.1, 0], ArrowRight: [0.1, 0], ArrowUp: [0, -0.1], ArrowDown: [0, 0.1] })[e.key]; if (!k) return; e.preventDefault(); r.yaw += k[0]; r.pitch = Math.max(-1.4, Math.min(1.4, r.pitch + k[1])); redraw(); });
 }
 /* Draw a 3D polyline set (already centred and scaled to about [−1, 1]³) with axes. */
+/**
+ * @param {string} id
+ * @param {{ pts: number[][], dots?: boolean, cls?: string, r?: number }[]} lines
+ * @param {{ yaw: number, pitch: number }} rot
+ * @param {{ H?: number, scale?: number, labels?: string[] }} [opts]
+ */
 function draw3(id, lines, rot, opts = {}) {
   const W = 360, H = opts.H || 300, s = opts.scale || 100, cx = W / 2, cy = H / 2;
-  const P = (p) => { const q = proj3(p, rot); return [cx + s * q[0], cy - s * q[1], q[2]]; };
+  const P = (/** @type {number[]} */ p) => { const q = proj3(p, rot); return [cx + s * q[0], cy - s * q[1], q[2]]; };
   let out = "";
-  for (const [ax, lab] of [[[1.2, 0, 0], opts.labels?.[0] || "X₁"], [[0, 1.2, 0], opts.labels?.[1] || "X₂"], [[0, 0, 1.2], opts.labels?.[2] || "X₃"]]) {
+  for (const [ax, lab] of /** @type {[number[], string][]} */ ([[[1.2, 0, 0], opts.labels?.[0] || "X₁"], [[0, 1.2, 0], opts.labels?.[1] || "X₂"], [[0, 0, 1.2], opts.labels?.[2] || "X₃"]])) {
+
     const a = P([0, 0, 0]), b = P(ax); out += `<line class="axis" x1="${a[0].toFixed(1)}" y1="${a[1].toFixed(1)}" x2="${b[0].toFixed(1)}" y2="${b[1].toFixed(1)}"/><text class="lblm" x="${b[0].toFixed(1)}" y="${b[1].toFixed(1)}">${esc(lab)}</text>`;
   }
   for (const L of lines) {
@@ -73,16 +104,36 @@ function draw3(id, lines, rot, opts = {}) {
 
 /* ================= state ================= */
 const LETTERS = "PQRSTUVWABCDEFGHJKLMN";
+/**
+ * A point of whichever curve is selected (P¹, E, the hyperelliptic curve, or a spot on the abstract curve's
+ * picture); each curve's code reads its own coordinates.
+ * @typedef {any} LabPoint
+ */
+/** @typedef {{ p: LabPoint, n: number, label: string }} LabTerm a divisor term as the page holds it */
+/**
+ * The laboratory state: the curve and its parameters, a divisor for each curve that takes drawn points (P1, elliptic,
+ * hyperelliptic, abstract), and what is selected and shown.
+ * @typedef {{
+ *   curve: string, p1view: string, E: { a: number, b: number }, hyper: { g: number, even: boolean, f: number[] },
+ *   plane: { d: number, n: number, c: number }, abs: { g: number, kind: string, deg: number },
+ *   div: Record<string, LabTerm[]>,
+ *   sign: number, sel: number, layers: Record<string, boolean>, fnSel: number | null, rrFocus: string | null, preset: string | null,
+ * }} LabState
+ */
+/** @type {LabState} */
 const ST = {
   curve: "P1", p1view: "sphere", E: { a: -1, b: 1 }, hyper: { g: 2, even: false, f: [0, 4, 0, -5, 0, 1] }, plane: { d: 4, n: 1, c: 0.3 }, abs: { g: 2, kind: "points", deg: 3 },
   div: { P1: [{ p: RR.INF, n: 3, label: "∞" }], elliptic: [{ p: RR.O, n: 3, label: "O" }], hyperelliptic: [{ p: { inf: true }, n: 3, label: "∞" }], abstract: [{ p: { u: 0.3, v: 0.5 }, n: 2, label: "P" }, { p: { u: 0.62, v: 0.4 }, n: 1, label: "Q" }] },
   sign: 1, sel: 0, layers: { curve: true, divisor: true, functions: true, linsys: true, map: true }, fnSel: null, rrFocus: null, preset: "p1-3inf",
 };
-const hyperRoots = (n) => Array.from({ length: n }, (_, i) => Math.round((i - (n - 1) / 2) * (n > 6 ? 0.55 : 0.8) * 100) / 100);
-const fromRoots = (rs) => rs.reduce((p, r) => { const q = new Array(p.length + 1).fill(0); p.forEach((c, i) => { q[i + 1] += c; q[i] -= r * c; }); return q; }, [1]);
+const hyperRoots = (/** @type {number} */ n) => Array.from({ length: n }, (_, i) => Math.round((i - (n - 1) / 2) * (n > 6 ? 0.55 : 0.8) * 100) / 100);
+const fromRoots = (/** @type {number[]} */ rs) => rs.reduce((/** @type {number[]} */ p, r) => { const q = new Array(p.length + 1).fill(0); p.forEach((c, i) => { q[i + 1] += c; q[i] -= r * c; }); return q; }, [1]);
+/** @param {number} g @param {boolean} even */
 function setHyperGenus(g, even) { ST.hyper = { g, even, f: fromRoots(hyperRoots(even ? 2 * g + 2 : 2 * g + 1)).map((c) => Math.round(c * 1e6) / 1e6) }; ST.div.hyperelliptic = even ? [{ p: { inf: "+" }, n: g, label: "∞₊" }, { p: { inf: "-" }, n: g, label: "∞₋" }] : [{ p: { inf: true }, n: 2 * g + 1, label: "∞" }]; }
 const hyperOdd = () => (ST.hyper.f.length - 1) % 2 === 1;
-const keyOf = () => ({ P1: RR.p1key, elliptic: RR.eckey, hyperelliptic: RR.hkey }[ST.curve] || ((p) => `${p.u},${p.v}`));
+/** @returns {(p: LabPoint) => string} */
+const keyOf = () => (/** @type {Record<string, (p: LabPoint) => string>} */ ({ P1: RR.p1key, elliptic: RR.eckey, hyperelliptic: RR.hkey })[ST.curve] || ((p) => `${p.u},${p.v}`));
+/** @returns {Parameters<typeof RR.analyse>[0]} */
 function labState() {
   const c = ST.curve;
   if (c === "P1") return { curve: { type: "P1" }, divisor: ST.div.P1.map(({ p, n }) => ({ p, n })) };
@@ -91,10 +142,14 @@ function labState() {
   if (c === "plane") return { curve: { type: "plane", d: ST.plane.d }, divisor: { hyper: ST.plane.n } };
   return { curve: { type: "abstract", g: ST.abs.g }, divisor: ST.abs.kind === "points" ? { kind: "points", points: ST.div.abstract.map(({ p, n, label }) => ({ p, n, label })) } : { kind: ST.abs.kind, deg: ST.abs.deg } };
 }
-let A = null; // the current analysis
+/** @type {Analysis} */
+let A = /** @type {Analysis} */ (/** @type {unknown} */ (null)); // the current analysis, set by update() before anything draws
+/** @param {LabTerm[]} list */
 function nextLabel(list) { const used = new Set(list.map((t) => t.label)); return [...LETTERS].find((l) => !used.has(l)) || "P"; }
 function currentList() { return ST.div[ST.curve]; }
+/** @param {LabPoint} p @param {number} n @param {string} [label] */
 function addPoint(p, n, label) {
+
   const list = currentList(); if (!list) return;
   const k = keyOf()(p), hit = list.findIndex((t) => keyOf()(t.p) === k);
   if (hit >= 0) { list[hit].n += n; ST.sel = hit; if (!list[hit].n) { list.splice(hit, 1); ST.sel = 0; } }
@@ -106,7 +161,9 @@ function addPoint(p, n, label) {
 const GH = 420;
 /* P¹ as a sphere: rotation about the x-axis by TILT so ∞ (north pole) leans towards the viewer. */
 const TILT = 0.42, YAW = 0.55, SC = [320, 215], SR = 170;
+/** @param {number[]} point a point of the unit sphere @returns {[number, number, number]} screen x, y and depth */
 function sph2scr([X0, Y0, Z]) { const X = Math.cos(YAW) * X0 - Math.sin(YAW) * Y0, Y = Math.sin(YAW) * X0 + Math.cos(YAW) * Y0; const y = Math.cos(TILT) * Y - Math.sin(TILT) * Z, z = Math.sin(TILT) * Y + Math.cos(TILT) * Z; return [SC[0] + SR * X, SC[1] - SR * z, -y]; }
+/** @param {number} px @param {number} py @returns {[number, number, number] | null} */
 function scr2sph(px, py) {
   const X = (px - SC[0]) / SR, zz = -(py - SC[1]) / SR, r2 = X * X + zz * zz;
   if (r2 > 1) return null;
@@ -116,17 +173,24 @@ function scr2sph(px, py) {
 }
 const PF = frame(-4, 4, -2.4, 2.4, 560, GH, 24); // complex-plane chart; ∞ sits outside at the right
 const INF_XY = [600, 60];
+/** @typedef {{ x: number, y: number, back?: boolean, clipped?: boolean }} ScreenPoint */
+/** @param {LabPoint} p @returns {ScreenPoint} */
 function p1pos(p) {
   if (ST.p1view === "sphere") { const s = sph2scr(RR.toSphere(p)); return { x: s[0], y: s[1], back: s[2] < 0 }; }
   if (p.inf) return { x: INF_XY[0], y: INF_XY[1] };
   const x = PF.X(p.re), y = PF.Y(p.im || 0);
   return { x: Math.max(8, Math.min(552, x)), y: Math.max(8, Math.min(GH - 8, y)), clipped: x < 8 || x > 552 || y < 8 || y > GH - 8 };
 }
-function ecFrame() { const r = RR.ecCubicRoots(ST.E), lo = Math.min(-2, r[0] - 0.6), hi = Math.max(3, r.at(-1) + 2.2); const ym = Math.sqrt(Math.max(1, RR.ecf(ST.E, hi))) * 1.05; return frame(lo, hi, -Math.min(ym, 6), Math.min(ym, 6), 560, GH, 24); }
+function ecFrame() { const r = RR.ecCubicRoots(ST.E), lo = Math.min(-2, r[0] - 0.6), hi = Math.max(3, /** @type {number} a cubic has a real root */ (r.at(-1)) + 2.2); const ym = Math.sqrt(Math.max(1, RR.ecf(ST.E, hi))) * 1.05; return frame(lo, hi, -Math.min(ym, 6), Math.min(ym, 6), 560, GH, 24); }
 const OXY = [600, 40];
 function hyperFrame() { const rs = RR.realRoots(ST.hyper.f); const lo = (rs[0] ?? -2) - 0.7, hi = (rs.at(-1) ?? 2) + (hyperOdd() ? 0.9 : 0.7); let ym = 0.5; for (let i = 0; i <= 200; i++) { const x = lo + ((hi - lo) * i) / 200, v = RR.peval(ST.hyper.f, x); if (v > 0) ym = Math.max(ym, Math.sqrt(v)); } ym = Math.min(ym * 1.1, 6); return frame(lo, hi, -ym, ym, 560, GH, 24); }
+/** @param {Frame} F */
 function hyperLocus(F) {
-  const f = ST.hyper.f, N = 500, br = [[], []]; let cur = null; const parts = [];
+  const f = ST.hyper.f, N = 500, br = [[], []];
+  /** @type {XY[] | null} */
+  let cur = null;
+  /** @type {XY[][]} */
+  const parts = [];
   for (let i = 0; i <= N; i++) {
     const x = F.x0 + ((F.x1 - F.x0) * i) / N, v = RR.peval(f, x);
     if (v >= 0) { if (!cur) { cur = []; parts.push(cur); } cur.push([x, Math.sqrt(v)]); } else cur = null;
@@ -134,11 +198,16 @@ function hyperLocus(F) {
   void br;
   return parts;
 }
-function planeF(d) { return { 1: (x, y) => y - 0, 2: (x, y) => x * x + y * y - 1, 3: (x, y) => y * y - x * x * x + x, 4: (x, y) => x ** 4 + y ** 4 - 1 }[d] || ((x, y) => x ** 4 + y ** 4 - 1); }
+/** @typedef {(x: number, y: number) => number} PlaneFn */
+/** @param {number} d @returns {PlaneFn} */
+function planeF(d) { return /** @type {Record<number, PlaneFn>} */ ({ 1: (x, y) => y - 0, 2: (x, y) => x * x + y * y - 1, 3: (x, y) => y * y - x * x * x + x, 4: (x, y) => x ** 4 + y ** 4 - 1 })[d] || ((x, y) => x ** 4 + y ** 4 - 1); }
+/** @type {Record<number, string>} */
 const PLANE_NAME = { 1: "line y = 0", 2: "conic x² + y² = 1", 3: "cubic y² = x³ − x", 4: "quartic x⁴ + y⁴ = 1" };
+/** @type {Record<number, keyof typeof RR.PLANE>} */
 const PLANE_FORM = { 1: "line", 2: "conic", 3: "cubic", 4: "quartic" };
 const planeFrame = () => frame(-2, 2, -1.6, 1.6, 640, GH, 24);
 /* Abstract genus-g surface: a long rounded body with g holes. */
+/** @param {number} g @param {number} cx @param {number} cy @param {number} w @param {number} h */
 function surfaceSvg(g, cx, cy, w, h, cls = "surf") {
   let out = `<rect class="${cls}" x="${cx - w / 2}" y="${cy - h / 2}" width="${w}" height="${h}" rx="${h / 2}"/>`;
   for (let k = 0; k < g; k++) {
@@ -150,6 +219,7 @@ function surfaceSvg(g, cx, cy, w, h, cls = "surf") {
 const ABS = { cx: 320, cy: 210, w: 560, h: 220 };
 
 /* Where a divisor point sits on screen (null if it cannot be drawn on this picture). */
+/** @param {LabPoint} p @returns {ScreenPoint | null} */
 function pointXY(p) {
   const c = ST.curve;
   if (c === "P1") return p1pos(p);
@@ -159,8 +229,11 @@ function pointXY(p) {
   return null;
 }
 /* Stacked markers: filled dots for positive coefficients, rings for poles, a label with the multiplicity. */
+/** @param {number} x @param {number} y @param {number} n @param {string} label @param {{ up?: boolean, back?: boolean, sel?: boolean }} [opts] */
 function marker(x, y, n, label, opts = {}) {
-  const k = Math.abs(n), cls = n > 0 ? "pos" : "neg", out = [], shown = Math.min(k, 5);
+  const k = Math.abs(n), cls = n > 0 ? "pos" : "neg", shown = Math.min(k, 5);
+  /** @type {string[]} */
+  const out = [];
   for (let i = 0; i < shown; i++) out.push(`<circle class="${cls}" cx="${(x + (i - (shown - 1) / 2) * 9).toFixed(1)}" cy="${(y - (opts.up ? 12 : 0)).toFixed(1)}" r="${n > 0 ? 5.5 : 5}" ${opts.back ? 'opacity=".45"' : ""}/>`);
   if (opts.sel) out.push(`<circle class="sel" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${12 + shown * 3}"/>`);
   out.push(`<text class="lbl" x="${(x + 10 + shown * 4.5).toFixed(1)}" y="${(y - 8).toFixed(1)}">${esc((n > 0 ? "+" : "−") + (k > 1 ? k : "") + label)}</text>`);
@@ -173,10 +246,11 @@ function drawGeo() {
     if (ST.p1view === "sphere") {
       if (L.curve) {
         g += `<circle cx="${SC[0]}" cy="${SC[1]}" r="${SR}" fill="var(--bg)" stroke="var(--curve)" stroke-width="1.8"/>`;
-        for (const lat of [-0.66, -0.33, 0, 0.33, 0.66]) { const pts = []; for (let k = 0; k <= 72; k++) { const t = (2 * Math.PI * k) / 72, r = Math.sqrt(1 - lat * lat); pts.push(sph2scr([r * Math.cos(t), r * Math.sin(t), lat])); } g += `<path class="grid" d="M${pts.map((p) => p[0].toFixed(1) + " " + p[1].toFixed(1)).join("L")}"/>`; }
+        for (const lat of [-0.66, -0.33, 0, 0.33, 0.66]) { /** @type {number[][]} */ const pts = []; for (let k = 0; k <= 72; k++) { const t = (2 * Math.PI * k) / 72, r = Math.sqrt(1 - lat * lat); pts.push(sph2scr([r * Math.cos(t), r * Math.sin(t), lat])); } g += `<path class="grid" d="M${pts.map((p) => p[0].toFixed(1) + " " + p[1].toFixed(1)).join("L")}"/>`; }
+        /** @type {number[][]} */
         const real = []; for (let k = 0; k <= 120; k++) { const t = (2 * Math.PI * k) / 120; real.push(sph2scr([Math.sin(t), 0, Math.cos(t)])); }
         g += `<path class="curve" d="M${real.map((p) => p[0].toFixed(1) + " " + p[1].toFixed(1)).join("L")}" stroke-dasharray="none" opacity=".75"/>`;
-        for (const [p, lab] of [[RR.cx(0), "0"], [RR.cx(1), "1"], [RR.cx(-1), "−1"], [RR.INF, "∞"], [RR.cx(0, 1), "i"]]) { const s = sph2scr(RR.toSphere(p)); g += `<text class="lblm" x="${(s[0] + 6).toFixed(1)}" y="${(s[1] + 14).toFixed(1)}" opacity="${s[2] < 0 ? 0.5 : 1}">${lab}</text>`; }
+        for (const [p, lab] of /** @type {[LabPoint, string][]} */ ([[RR.cx(0), "0"], [RR.cx(1), "1"], [RR.cx(-1), "−1"], [RR.INF, "∞"], [RR.cx(0, 1), "i"]])) { const s = sph2scr(RR.toSphere(p)); g += `<text class="lblm" x="${(s[0] + 6).toFixed(1)}" y="${(s[1] + 14).toFixed(1)}" opacity="${s[2] < 0 ? 0.5 : 1}">${lab}</text>`; }
       }
       caption = "The Riemann sphere P¹(ℂ): ∞ is the north pole, 0 the south pole; the dark great circle is ℝ ∪ {∞}. Click the front of the sphere to place a point.";
     } else {
@@ -200,7 +274,7 @@ function drawGeo() {
     const F = hyperFrame();
     if (L.curve) {
       g += `<line class="axis" x1="${F.X(F.x0)}" y1="${F.Y(0)}" x2="${F.X(F.x1)}" y2="${F.Y(0)}"/>`;
-      for (const part of hyperLocus(F)) { const pts = [...part.slice().reverse(), ...part.map(([x, y]) => [x, -y])]; g += `<path class="curve" d="${path(pts, F)}"/>`; }
+      for (const part of hyperLocus(F)) { const pts = [...part.slice().reverse(), ...part.map(([x, y]) => /** @type {XY} */ ([x, -y]))]; g += `<path class="curve" d="${path(pts, F)}"/>`; }
       for (const r of RR.realRoots(ST.hyper.f)) g += `<circle class="branch" cx="${F.X(r).toFixed(1)}" cy="${F.Y(0).toFixed(1)}" r="4.5"/>`;
       if (hyperOdd()) g += `<circle cx="${OXY[0]}" cy="${OXY[1]}" r="16" fill="var(--bg)" stroke="var(--curve)" stroke-width="1.6"/><text x="${OXY[0] - 6}" y="${OXY[1] + 5}" font-size="15">∞</text>`;
       else g += `<circle cx="${OXY[0]}" cy="${OXY[1]}" r="15" fill="var(--bg)" stroke="var(--curve)"/><text x="${OXY[0] - 9}" y="${OXY[1] + 5}" font-size="13">∞₊</text><circle cx="${OXY[0]}" cy="${OXY[1] + 50}" r="15" fill="var(--bg)" stroke="var(--curve)"/><text x="${OXY[0] - 9}" y="${OXY[1] + 55}" font-size="13">∞₋</text>`;
@@ -217,7 +291,7 @@ function drawGeo() {
     if (L.divisor) {
       g += `<line class="curve2" x1="${F.X(-2)}" y1="${F.Y(lc)}" x2="${F.X(2)}" y2="${F.Y(lc)}" stroke-dasharray="6 4"/><text class="lblm" x="${F.X(-1.95)}" y="${F.Y(lc) - 6}">H: y = ${fmt(lc, 3)}</text>`;
       const ix = RR.intersect(RR.PLANE[PLANE_FORM[d]].F, RR.lineForm(0, 100, -Math.round(lc * 100)));
-      for (const p of ix.points) if (p.real && p.affine) g += marker(F.X(p.x.re), F.Y(p.y.re), ST.plane.n * p.m, "");
+      for (const p of ix.points) if (p.real && p.x && p.y) g += marker(F.X(p.x.re), F.Y(p.y.re), ST.plane.n * p.m, "");
       const nreal = ix.points.filter((p) => p.real && p.affine).reduce((s, p) => s + p.m, 0);
       caption = `${PLANE_NAME[d]} (real locus). D = ${ST.plane.n}H, drawn as ${ST.plane.n}·(C ∩ H) with H the dashed line: ${nreal} of the ${d} intersection points are real here, the rest complex. Click to move the line.`;
     }
@@ -242,7 +316,7 @@ function drawGeo() {
 }
 function kOverlay() {
   const c = ST.curve;
-  const ring = (x, y, txt) => `<circle cx="${x}" cy="${y}" r="24" fill="none" stroke="var(--fn)" stroke-width="3" stroke-dasharray="4 3"/><text class="lbl" x="${x - 30}" y="${y + 42}" style="fill:var(--fn);font-weight:700">${esc(txt)}</text>`;
+  const ring = (/** @type {number} */ x, /** @type {number} */ y, /** @type {string} */ txt) => `<circle cx="${x}" cy="${y}" r="24" fill="none" stroke="var(--fn)" stroke-width="3" stroke-dasharray="4 3"/><text class="lbl" x="${x - 30}" y="${y + 42}" style="fill:var(--fn);font-weight:700">${esc(txt)}</text>`;
   if (c === "P1") { const q = p1pos(RR.INF); return ring(q.x, q.y, "K = div(dx) = −2∞"); }
   if (c === "elliptic") return `<text class="lbl" x="40" y="40" style="fill:var(--fn);font-weight:700">K = div(dx/y) = 0: dx/y has no zeros or poles</text>`;
   if (c === "hyperelliptic") return hyperOdd() ? ring(OXY[0], OXY[1], `K = ${A.K}`) : ring(OXY[0], OXY[1] + 25, `K = ${A.K}`);
@@ -250,14 +324,20 @@ function kOverlay() {
   return `<text class="lbl" x="40" y="40" style="fill:var(--fn);font-weight:700">K: ${2 * ST.abs.g - 2} points (zeros of a holomorphic differential)</text>`;
 }
 function basePointsXY() {
-  const c = ST.curve, out = [];
+  const c = ST.curve;
+  /** @type {ScreenPoint[]} */
+  const out = [];
   if (c === "elliptic" && A.stages && A.stages.basePoint) { const q = pointXY(A.stages.basePoint); if (q) out.push(q); }
   if (c === "hyperelliptic" && A.basePoints && A.basePoints.length) out.push({ x: OXY[0], y: OXY[1] });
   return out;
 }
 
 /* ================= geometry interaction ================= */
-let dragging = null, downAt = null;
+/** @type {number | null} */
+let dragging = null;
+/** @type {XY | null} */
+let downAt = null;
+/** @param {number} px @param {number} py */
 function hitPoint(px, py) {
   const list = currentList(); if (!list || (ST.curve === "abstract" && ST.abs.kind !== "points")) return -1;
   let best = -1, bd = 18;
@@ -265,12 +345,15 @@ function hitPoint(px, py) {
   return best;
 }
 /* The curve point under (px, py), or null. */
+/** @param {number} px @param {number} py @returns {LabPoint | null} */
 function snap(px, py) {
+
   const c = ST.curve;
   if (c === "P1") {
     if (ST.p1view === "sphere") {
       const s = scr2sph(px, py); if (!s) return null;
-      const p = RR.fromSphere(s); return p.inf || Math.hypot(p.re, p.im) > 60 ? RR.INF : RR.cx(Math.round(p.re * 100) / 100, Math.round(p.im * 100) / 100);
+      // fromSphere gives ∞ or a full complex number.
+      const p = /** @type {{ inf: true } | { inf?: undefined, re: number, im: number }} */ (RR.fromSphere(s)); return p.inf || Math.hypot(p.re, p.im) > 60 ? RR.INF : RR.cx(Math.round(p.re * 100) / 100, Math.round(p.im * 100) / 100);
     }
     if (Math.hypot(px - INF_XY[0], py - INF_XY[1]) < 22) return RR.INF;
     if (px > 560) return null;
@@ -287,7 +370,10 @@ function snap(px, py) {
   if (c === "hyperelliptic") {
     if (Math.hypot(px - OXY[0], py - OXY[1]) < 22) return hyperOdd() ? { inf: true } : { inf: "+" };
     if (!hyperOdd() && Math.hypot(px - OXY[0], py - OXY[1] - 50) < 22) return { inf: "-" };
-    const F = hyperFrame(); let best = null, bd = 30;
+    const F = hyperFrame();
+    /** @type {{ x: number, y: number } | null} */
+    let best = null;
+    let bd = 30;
     for (const part of hyperLocus(F)) for (const [x, y] of part) for (const s of [1, -1]) { const d = Math.hypot(F.X(x) - px, F.Y(s * y) - py); if (d < bd) { bd = d; best = { x, y: s * y }; } }
     return best;
   }
@@ -298,6 +384,7 @@ function snap(px, py) {
   }
   return null;
 }
+/** @param {PointerEvent} ev */
 function geoDown(ev) {
   const [px, py] = svgXY($("geo-svg"), ev);
   if (ST.curve === "plane") { ST.plane.c = Math.round(planeFrame().iy(py) * 100) / 100; update(); return; }
@@ -308,6 +395,7 @@ function geoDown(ev) {
   const p = snap(px, py); if (!p) return;
   addPoint(p, ev.shiftKey ? -1 : ST.sign);
 }
+/** @param {PointerEvent} ev */
 function geoMove(ev) {
   if (dragging === null) return;
   const [px, py] = svgXY($("geo-svg"), ev), p = snap(px, py), list = currentList();
@@ -319,16 +407,19 @@ function geoUp() {
   if (dragging !== null) { const list = currentList(); ST.div[ST.curve] = RR.normalize(list, keyOf()).map((t) => ({ ...t, label: t.label || nextLabel(list) })); }
   dragging = null; downAt = null;
 }
+/** @param {WheelEvent} ev */
 function geoWheel(ev) {
   const [px, py] = svgXY($("geo-svg"), ev), hit = hitPoint(px, py); if (hit < 0) return;
   ev.preventDefault(); changeMult(hit, ev.deltaY < 0 ? 1 : -1);
 }
+/** @param {number} i @param {number} by */
 function changeMult(i, by) {
   const list = currentList(); if (!list || !list[i]) return;
   list[i].n += by; ST.sel = i;
   if (!list[i].n) { list.splice(i, 1); ST.sel = Math.max(0, i - 1); }
   ST.preset = null; update();
 }
+/** @param {number} dx @param {number} dy */
 function nudge(dx, dy) {
   const list = currentList(), t = list && list[ST.sel]; if (!t) return;
   const c = ST.curve;
@@ -338,6 +429,7 @@ function nudge(dx, dy) {
   else if (c === "abstract") t.p = { u: Math.min(0.95, Math.max(0.05, t.p.u + dx * 0.02)), v: Math.min(0.9, Math.max(0.1, t.p.v - dy * 0.03)) };
   ST.preset = null; update();
 }
+/** @param {KeyboardEvent} ev */
 function geoKey(ev) {
   const list = currentList();
   const k = ev.key;
@@ -351,7 +443,9 @@ function geoKey(ev) {
 }
 
 /* ================= side panel ================= */
+/** @type {[string, string][]} */
 const CURVE_BUTTONS = [["P1", "P¹ — sphere / line + ∞"], ["elliptic", "Elliptic y² = x³ + ax + b"], ["hyperelliptic", "Hyperelliptic y² = f(x)"], ["plane", "Smooth plane curve"], ["abstract", "Abstract genus g"]];
+/** @param {string} c */
 function setCurve(c) { ST.curve = c; ST.sel = 0; ST.fnSel = null; ST.rrFocus = null; ST.preset = null; renderSide(); update(); }
 function renderSide() {
   $("curve-pick").innerHTML = CURVE_BUTTONS.map(([k, t]) => `<button type="button" data-curve="${k}" aria-pressed="${ST.curve === k}">${esc(t)}</button>`).join("");
@@ -374,7 +468,7 @@ function renderDivControls() {
       h += `<div class="seg" role="group" aria-label="Click adds" style="margin:.2rem 0"><button type="button" data-sign="1" aria-pressed="${ST.sign === 1}">click: +P ●</button><button type="button" data-sign="-1" aria-pressed="${ST.sign === -1}">click: −P ○</button></div>`;
       const list = currentList();
       h += `<div class="stack" role="list">${list.map((t, i) => `<div role="listitem" style="display:flex;gap:.25rem;align-items:center"><button type="button" class="btn sm" data-selpt="${i}" aria-pressed="${i === ST.sel}" style="flex:1;justify-content:flex-start">${esc(t.label)} ${t.n > 0 ? "●" : "○"}×${Math.abs(t.n)}</button><button type="button" class="btn sm" data-mult="${i}:1" aria-label="Increase multiplicity of ${esc(t.label)}">+</button><button type="button" class="btn sm" data-mult="${i}:-1" aria-label="Decrease multiplicity of ${esc(t.label)}">−</button></div>`).join("")}</div>`;
-      const quick = { P1: [["∞", "+∞"], ["0", "+[0]"], ["1", "+[1]"]], elliptic: [["O", "+O"]], hyperelliptic: hyperOdd() ? [["inf", "+∞"]] : [["pm", "+(∞₊ + ∞₋)"]], abstract: [] }[c];
+      const quick = /** @type {Record<string, [string, string][]>} */ ({ P1: [["∞", "+∞"], ["0", "+[0]"], ["1", "+[1]"]], elliptic: [["O", "+O"]], hyperelliptic: hyperOdd() ? [["inf", "+∞"]] : [["pm", "+(∞₊ + ∞₋)"]], abstract: [] })[c];
       h += `<div class="seg" style="margin-top:.35rem">${quick.map(([k, t]) => `<button type="button" data-quick="${k}">${t}</button>`).join("")}<button type="button" data-clear="1">clear</button></div>`;
       if (c === "P1") h += `<label class="row">add point <input type="text" id="p1-add" placeholder="e.g. 2, -1.5, inf" style="max-width:8rem"><button type="button" class="btn sm" id="p1-add-go">add</button></label>`;
       if (c === "elliptic" || c === "hyperelliptic") h += `<label class="row">add point at x = <input type="number" id="xy-add" step="0.1" style="width:5rem"><button type="button" class="btn sm" id="xy-add-go">add</button></label>`;
@@ -382,8 +476,9 @@ function renderDivControls() {
   }
   $("div-controls").innerHTML = h;
 }
+/** @param {MouseEvent} ev */
 function sideClick(ev) {
-  const b = ev.target.closest ? ev.target.closest("button") : null; if (!b) return;
+  const target = /** @type {Element} */ (ev.target), b = /** @type {HTMLButtonElement | null} */ (target.closest ? target.closest("button") : null); if (!b) return;
   const d = b.dataset || {};
   if (d.curve) setCurve(d.curve);
   else if (d.p1view) { ST.p1view = d.p1view; renderSide(); update(); }
@@ -399,40 +494,43 @@ function sideClick(ev) {
     else if (q === "inf") addPoint({ inf: true }, ST.sign, "∞");
     else if (q === "pm") { addPoint({ inf: "+" }, ST.sign, "∞₊"); addPoint({ inf: "-" }, ST.sign, "∞₋"); }
   } else if (b.id === "p1-add-go") {
-    const s = $("p1-add").value.trim(); if (/^inf|∞$/i.test(s)) addPoint(RR.INF, ST.sign, "∞"); else { const m = /^(-?[\d.]+)?\s*(?:([+-])\s*([\d.]*)i)?$/.exec(s.replace(/−/g, "-").replace(/\s/g, "")); if (m && (m[1] || m[2])) addPoint(RR.cx(Number(m[1] || 0), m[2] ? (m[2] === "-" ? -1 : 1) * Number(m[3] || 1) : 0), ST.sign); }
+    const s = /** @type {HTMLInputElement} */ ($("p1-add")).value.trim(); if (/^inf|∞$/i.test(s)) addPoint(RR.INF, ST.sign, "∞"); else { const m = /^(-?[\d.]+)?\s*(?:([+-])\s*([\d.]*)i)?$/.exec(s.replace(/−/g, "-").replace(/\s/g, "")); if (m && (m[1] || m[2])) addPoint(RR.cx(Number(m[1] || 0), m[2] ? (m[2] === "-" ? -1 : 1) * Number(m[3] || 1) : 0), ST.sign); }
   } else if (b.id === "xy-add-go") {
-    const x = Number($("xy-add").value), v = ST.curve === "elliptic" ? RR.ecf(ST.E, x) : RR.peval(ST.hyper.f, x);
+    const x = Number(/** @type {HTMLInputElement} */ ($("xy-add")).value), v = ST.curve === "elliptic" ? RR.ecf(ST.E, x) : RR.peval(ST.hyper.f, x);
     if (Number.isFinite(x) && v >= 0) addPoint({ x, y: Math.sqrt(v) }, ST.sign); else $("geo-caption").textContent = `No real point at x = ${fmt(x)}: the curve's point there is complex (y² = ${fmt(v)} < 0).`;
   }
 }
+/** @param {Event} ev */
 function sideInput(ev) {
-  const t = ev.target, id = t.id;
+  const t = /** @type {HTMLInputElement} the control that changed */ (ev.target), id = t.id;
   if (id === "ec-a" || id === "ec-b") {
-    const a = Number($("ec-a").value), b = Number($("ec-b").value);
+    const a = Number(/** @type {HTMLInputElement} */ ($("ec-a")).value), b = Number(/** @type {HTMLInputElement} */ ($("ec-b")).value);
     if (!Number.isFinite(a) || !Number.isFinite(b)) return;
     if (!RR.ecSmooth({ a, b })) { $("ec-msg").textContent = "4a³ + 27b² = 0: singular cubic, not an elliptic curve. Keeping the last smooth one."; return; }
     ST.E = { a, b }; ST.div.elliptic = ST.div.elliptic.filter((t) => t.p.inf); ST.preset = null; $("ec-msg").textContent = `Δ = ${fmt(RR.ecDisc(ST.E))}`; update(); return;
   }
-  if (id === "hy-g" || id === "hy-even") { setHyperGenus(Number($("hy-g").value), $("hy-even").checked); ST.preset = null; renderSide(); update(); return; }
+  if (id === "hy-g" || id === "hy-even") { setHyperGenus(Number(/** @type {HTMLInputElement} */ ($("hy-g")).value), /** @type {HTMLInputElement} */ ($("hy-even")).checked); ST.preset = null; renderSide(); update(); return; }
   if (id === "pl-d") { ST.plane.d = Number(t.value); ST.preset = null; update(); return; }
-  if (id === "pl-n") { ST.plane.n = Number(t.value); t.previousElementSibling.textContent = t.value; ST.preset = null; update(); return; }
+  if (id === "pl-n") { ST.plane.n = Number(t.value); /** @type {Element} its output */ (t.previousElementSibling).textContent = t.value; ST.preset = null; update(); return; }
   if (id === "ab-g") { ST.abs.g = Number(t.value); ST.preset = null; renderSide(); update(); return; }
   if (id === "ab-kind") { ST.abs.kind = t.value; ST.preset = null; renderDivControls(); update(); return; }
-  if (id === "ab-deg") { ST.abs.deg = Number(t.value); t.previousElementSibling.textContent = t.value; ST.preset = null; update(); }
+  if (id === "ab-deg") { ST.abs.deg = Number(t.value); /** @type {Element} its output */ (t.previousElementSibling).textContent = t.value; ST.preset = null; update(); }
 }
+/** @param {string} id */
 function loadPreset(id) {
   const p = RR.PRESETS.find((x) => x.id === id); if (!p) return;
-  const s = p.state, c = s.curve.type;
+  // Each preset writes its divisor in its own curve's form.
+  const s = p.state, c = s.curve.type, dv = /** @type {any} */ (s.divisor);
   ST.curve = c; ST.preset = id; ST.sel = 0; ST.fnSel = null; ST.rrFocus = id === "k2" || id === "k3" ? "K" : null;
-  if (c === "P1") ST.div.P1 = s.divisor.map((t) => ({ p: t.p, n: t.n, label: t.p.inf ? "∞" : RR.fmt(t.p.re) }));
-  if (c === "elliptic") { ST.E = { a: s.curve.a, b: s.curve.b }; ST.div.elliptic = s.divisor.map((t) => ({ p: t.p, n: t.n, label: "O" })); }
-  if (c === "hyperelliptic") {
-    const f = s.curve.f, odd = (f.length - 1) % 2 === 1, n = s.divisor.atInfinity;
+  if (c === "P1") ST.div.P1 = dv.map((/** @type {LabTerm} */ t) => ({ p: t.p, n: t.n, label: t.p.inf ? "∞" : RR.fmt(t.p.re) }));
+  if (s.curve.type === "elliptic") { ST.E = { a: s.curve.a, b: s.curve.b }; ST.div.elliptic = dv.map((/** @type {LabTerm} */ t) => ({ p: t.p, n: t.n, label: "O" })); }
+  if (s.curve.type === "hyperelliptic") {
+    const f = s.curve.f, odd = (f.length - 1) % 2 === 1, n = dv.atInfinity;
     ST.hyper = { g: RR.hyperGenus(f.length - 1), even: !odd, f: f.slice() };
     ST.div.hyperelliptic = odd ? [{ p: { inf: true }, n, label: "∞" }] : [{ p: { inf: "+" }, n, label: "∞₊" }, { p: { inf: "-" }, n, label: "∞₋" }];
   }
-  if (c === "plane") { ST.plane.d = s.curve.d; ST.plane.n = s.divisor.hyper; }
-  if (c === "abstract") { ST.abs.g = s.curve.g; ST.abs.kind = s.divisor.kind; ST.abs.deg = s.divisor.deg; }
+  if (s.curve.type === "plane") { ST.plane.d = s.curve.d; ST.plane.n = dv.hyper; }
+  if (s.curve.type === "abstract") { ST.abs.g = s.curve.g; ST.abs.kind = dv.kind; ST.abs.deg = dv.deg; }
   renderSide(); update();
   const lab = $("lab"); if (lab.scrollIntoView) lab.scrollIntoView({ behavior: reduced() ? "auto" : "smooth", block: "start" });
 }
@@ -443,7 +541,7 @@ function exprHtml() {
   if (c === "plane" || (c === "abstract" && ST.abs.kind !== "points")) return `D = ${esc(A.divisor)}`;
   const list = RR.normalize(currentList(), keyOf());
   if (!list.length) return "D = 0";
-  const nm = (t) => (t.label || "P");
+  const nm = (/** @type {{ label?: string }} */ t) => (t.label || "P");
   return "D = " + list.map((t, i) => { const a = Math.abs(t.n), s = t.n < 0 ? "−" : "+"; return `${i === 0 ? (t.n < 0 ? "−" : "") : ` ${s} `}<span class="${t.n > 0 ? "pos" : "neg"}">${a > 1 ? a : ""}${esc(nm(t))}</span>`; }).join("");
 }
 function pointsText() {
@@ -464,7 +562,7 @@ function renderDivisorPanel() {
 }
 function sectionsHtml() {
   const c = ST.curve; let h = "";
-  const big = (v) => `<p class="rr"><span class="dv">ℓ(D)</span><span class="lb">h⁰(𝒪(D))</span> = <b style="font-family:var(--sans);font-size:1.6rem">${v}</b></p>`;
+  const big = (/** @type {unknown} */ v) => `<p class="rr"><span class="dv">ℓ(D)</span><span class="lb">h⁰(𝒪(D))</span> = <b style="font-family:var(--sans);font-size:1.6rem">${v}</b></p>`;
   if (c === "P1") {
     const D = RR.normalize(currentList(), RR.p1key), atInf = D.length === 1 && D[0].p.inf && D[0].n >= 0;
     h += `<p class="small">Condition: <span class="math">${esc(A.condition)}</span></p>`;
@@ -479,22 +577,23 @@ function sectionsHtml() {
   }
   if (c === "hyperelliptic" && A.basis && A.poles) h += `<p class="small">${hyperOdd() ? `ord∞ x = −2, ord∞ y = −${2 * A.g + 1}` : `x has a simple pole at each of ∞₊, ∞₋; y a pole of order ${A.g + 1} at each`}. Pole orders of the basis: ${A.poles.join(", ") || "—"}.</p>`;
   if (A.exact) h += big(A.ell); else h += big(`${A.range.min} … ${A.range.max}`);
-  if (A.basis && A.basis.length) h += `<p class="small" style="margin-bottom:0">Basis${c === "P1" ? " (click one to see its zeros and poles)" : ""}:</p><div class="basis">${A.basis.map((b, i) => c === "P1" ? `<button type="button" data-fn="${i}" aria-pressed="${ST.fnSel === i}">${esc(b)}</button>` : `<span class="chip">${esc(b)}</span>`).join("")}</div>`;
+  if (A.basis && A.basis.length) h += `<p class="small" style="margin-bottom:0">Basis${c === "P1" ? " (click one to see its zeros and poles)" : ""}:</p><div class="basis">${A.basis.map((/** @type {string} */ b, /** @type {number} */ i) => c === "P1" ? `<button type="button" data-fn="${i}" aria-pressed="${ST.fnSel === i}">${esc(b)}</button>` : `<span class="chip">${esc(b)}</span>`).join("")}</div>`;
   else if (A.exact && A.ell === 0) h += `<p class="small">L(D) = 0: no nonzero function has poles bounded by D.</p>`;
   if (A.basisNote) h += `<p class="note">${esc(A.basisNote)}</p>`;
-  if (c === "plane") h += `<p class="small">ℓ(nH) = C(n+2, 2) − C(n−d+2, 2): forms of degree n modulo multiples of F (exact, since H¹(P², 𝒪(n − d)) = 0).</p><div class="basis">${A.basis.map((b) => `<span class="chip">${esc(b)}</span>`).join("")}</div>`;
+  if (c === "plane") h += `<p class="small">ℓ(nH) = C(n+2, 2) − C(n−d+2, 2): forms of degree n modulo multiples of F (exact, since H¹(P², 𝒪(n − d)) = 0).</p><div class="basis">${A.basis.map((/** @type {string} */ b) => `<span class="chip">${esc(b)}</span>`).join("")}</div>`;
   return h;
 }
 function renderSections() { $("sections").innerHTML = sectionsHtml(); }
 function renderRR() {
   const g = A.g, d = A.deg, f = ST.rrFocus;
-  const term = (k, dv, lb, val) => `<button type="button" data-rr="${k}" aria-pressed="${f === k}"><span class="dv">${dv}</span><span class="lb">${lb}</span></button>`;
+  const term = (/** @type {string} */ k, /** @type {string} */ dv, /** @type {string} */ lb) => `<button type="button" data-rr="${k}" aria-pressed="${f === k}"><span class="dv">${dv}</span><span class="lb">${lb}</span></button>`;
   let h = `<div class="rr">${term("ell", "ℓ(D)", "h⁰(𝒪(D))")} − ${term("ellKD", "ℓ(K − D)", "h¹(𝒪(D))")} = ${term("deg", "deg D", "deg 𝒪(D)")} + 1 − ${term("g", "g", "g")}  <span class="small muted">with</span> ${term("K", "K", "ω<sub>C</sub>")}</div>`;
   if (A.rr) {
     const r = A.rr;
     h += `<div class="balance" style="margin:.5rem 0"><div>sections<b>${r.ell}</b>ℓ(D)</div><div>obstruction<b>${r.ellKD}</b>ℓ(K − D)</div><div>degree + topology<b>${r.chi}</b>${d} + 1 − ${g}</div></div>`;
     h += `<p>${r.nonspecial ? `<span class="badge ok">Nonspecial divisor</span>` : `<span class="badge warn">Special divisor</span>`} ${d > 2 * g - 2 ? `<span class="small">deg D = ${fmt(d)} > 2g − 2 = ${fmt(2 * g - 2)}, so deg(K − D) < 0 and K − D has no sections.</span>` : r.ellKD > 0 ? `<span class="small">ℓ(K − D) = ${r.ellKD} > 0: holomorphic differentials vanish on D.</span>` : ""}</p>`;
   } else h += `<p class="small"><span class="badge warn">Special range</span> ${esc(A.range.why)}</p>`;
+  /** @type {Record<string, string>} */
   const why = {
     ell: `ℓ(D): ${A.exact ? `${A.ell} independent functions` : "bounded, not forced"} — see the sections panel.`,
     ellKD: `ℓ(K − D): differentials ω with div(ω) ≥ D, the obstruction (Serre dual to h¹(𝒪(D))). ${A.rr ? `Here ${A.rr.ellKD}.` : ""}`,
@@ -522,14 +621,14 @@ function renderLinsys() {
 /* ================= the map φ_D ================= */
 function drawMap() {
   const c = ST.curve, rot = ROT["map-svg"]; let g = "", cap = "";
-  const twoD = (pts, F, cls = "img") => `<path class="${cls}" d="${path(pts, F)}"/>`;
+  const twoD = (/** @type {number[][]} */ pts, /** @type {Frame} */ F, cls = "img") => `<path class="${cls}" d="${path(pts, F)}"/>`;
   if (!ST.layers.map) { draw("map-svg", `<text class="lblm" x="20" y="40">Map layer hidden</text>`); $("map-caption").textContent = ""; return; }
   if (c === "P1") {
     const d = A.deg;
     if (d < 1) { g = `<text class="lbl" x="20" y="40">${d === 0 ? "φ_D is constant: a single point" : "L(D) = 0: no map"}</text>`; cap = ""; }
     else if (d === 1) { const F = frame(-3, 3, -1, 1, 360, 300, 20); g = `<line class="img" x1="${F.X(-3)}" y1="${F.Y(0)}" x2="${F.X(3)}" y2="${F.Y(0)}"/><text class="lbl" x="20" y="40">P¹ → P¹, an isomorphism</text>`; cap = "Degree 1: the line itself."; }
-    else if (d === 2) { const F = frame(-2.2, 2.2, -0.5, 4.8, 360, 300, 20), pts = []; for (let i = 0; i <= 100; i++) { const x = -2.2 + (4.4 * i) / 100; pts.push([x, x * x]); } g = twoD(pts, F) + `<text class="lbl" x="16" y="24">XZ = Y² in the chart X = 1: Z = Y²</text>`; g += imagePointsP1(F, (x) => [x, x * x]); cap = "Degree 2: the conic, image of [1 : x : x²]."; }
-    else { const pts = []; for (let i = 0; i <= 160; i++) { const x = -1.6 + (3.2 * i) / 160; pts.push([x / 1.6, x * x / 2.56 - 0.5, (x ** 3) / 4.1]); } g = draw3("map-svg", [{ pts }], rot, { labels: ["x", "x²", "x³"] }); cap = `Degree ${d}: ${d === 3 ? "the twisted cubic" : `the rational normal curve, projected to the coordinates x, x², x³`} (drag or use arrow keys to rotate).`; }
+    else if (d === 2) { const F = frame(-2.2, 2.2, -0.5, 4.8, 360, 300, 20); /** @type {XY[]} */ const pts = []; for (let i = 0; i <= 100; i++) { const x = -2.2 + (4.4 * i) / 100; pts.push([x, x * x]); } g = twoD(pts, F) + `<text class="lbl" x="16" y="24">XZ = Y² in the chart X = 1: Z = Y²</text>`; g += imagePointsP1(F, (x) => [x, x * x]); cap = "Degree 2: the conic, image of [1 : x : x²]."; }
+    else { /** @type {number[][]} */ const pts = []; for (let i = 0; i <= 160; i++) { const x = -1.6 + (3.2 * i) / 160; pts.push([x / 1.6, x * x / 2.56 - 0.5, (x ** 3) / 4.1]); } g = draw3("map-svg", [{ pts }], rot, { labels: ["x", "x²", "x³"] }); cap = `Degree ${d}: ${d === 3 ? "the twisted cubic" : `the rational normal curve, projected to the coordinates x, x², x³`} (drag or use arrow keys to rotate).`; }
   } else if (c === "elliptic") {
     const n = A.deg, E = ST.E, F0 = ecFrame();
     if (n <= 0 || !A.ell) g = `<text class="lbl" x="20" y="40">${A.ell ? "constant map" : "L(D) = 0: no map"}</text>`;
@@ -546,19 +645,21 @@ function drawMap() {
       for (const comp of RR.ecRealLocus(E, F0.x0, F0.x1)) g += `<path class="img" d="${path([...comp.upper.slice().reverse(), ...comp.lower].filter(([, y]) => Math.abs(y) <= F0.y1 * 1.2), F)}${comp.closed ? "Z" : ""}"/>`;
       g += `<text class="lbl" x="12" y="22">image in the chart z = 1:</text><text class="lbl" x="12" y="40" style="fill:var(--map);font-weight:700">${esc(cub.equation)}</text>`;
       cap = "|3O|: P ↦ [1 : x : y]. The equation is recovered from the image by finding the cubic form vanishing on sampled image points (a null-space computation), not typed in.";
-    } else { const pts = []; const r = RR.ecCubicRoots(E).at(-1); for (let i = -80; i <= 80; i++) { const x = r + (i / 80) ** 2 * 2.2, y = Math.sign(i) * Math.sqrt(Math.max(0, RR.ecf(E, x))); pts.push([x / 3 - 0.3, y / 6, (x * x) / 12 - 0.4]); } g = draw3("map-svg", [{ pts }], rot, { labels: ["x", "y", "x²"] }); cap = `E ↪ P${sup(n - 1)}: degree-${n} elliptic normal curve, projected to (x, y, x²); real branch through O only (drag to rotate).`; }
+    } else { /** @type {number[][]} */ const pts = []; const r = /** @type {number} a cubic has a real root */ (RR.ecCubicRoots(E).at(-1)); for (let i = -80; i <= 80; i++) { const x = r + (i / 80) ** 2 * 2.2, y = Math.sign(i) * Math.sqrt(Math.max(0, RR.ecf(E, x))); pts.push([x / 3 - 0.3, y / 6, (x * x) / 12 - 0.4]); } g = draw3("map-svg", [{ pts }], rot, { labels: ["x", "y", "x²"] }); cap = `E ↪ P${sup(n - 1)}: degree-${n} elliptic normal curve, projected to (x, y, x²); real branch through O only (drag to rotate).`; }
     if (A.basisNote && n >= 2) cap += " " + "D is not supported at O: the picture is φ_{nO}, which differs from φ_D by a translation of E.";
   } else if (c === "hyperelliptic") {
     if (!A.exact || !A.basis || A.ell < 2) g = `<text class="lbl" x="20" y="40">${A.exact ? (A.ell === 1 ? "constant map" : "no sections") : "sections not written for this divisor"}</text>`;
     else {
-      const b = RR.hyperBasis(ST.hyper.f.length - 1, A.n), coordsOf = (x, y) => b.basis.slice(1).map((t) => (t.kind === "x" ? x ** t.i : x ** t.j * y));
-      const F0 = hyperFrame(), parts = hyperLocus(F0), lines = [];
+      const b = RR.hyperBasis(ST.hyper.f.length - 1, A.n), coordsOf = (/** @type {number} */ x, /** @type {number} */ y) => b.basis.slice(1).map((t) => (t.kind === "x" ? x ** /** @type {number} an x-term has i */ (t.i) : x ** /** @type {number} a y-term has j */ (t.j) * y));
+      const F0 = hyperFrame(), parts = hyperLocus(F0);
+      /** @type {number[][][]} */
+      const lines = [];
       for (const part of parts) for (const s of [1, -1]) lines.push(part.map(([x, y]) => coordsOf(x, s * y)));
       const flat = lines.flat(), k = flat[0]?.length || 0;
       if (k === 1) { const xs = flat.map((p) => p[0]), F = frame(Math.min(...xs) - 0.3, Math.max(...xs) + 0.3, -1, 1, 360, 300, 20); g = `<line class="img" x1="${F.X(F.x0)}" y1="${F.Y(0)}" x2="${F.X(F.x1)}" y2="${F.Y(0)}"/>` + RR.realRoots(ST.hyper.f).map((r) => `<circle class="branch" cx="${F.X(r)}" cy="${F.Y(0)}" r="5"/>`).join("") + `<text class="lbl" x="16" y="40">C → P¹, 2 : 1 (x)</text>`; cap = "Two sheets fold onto the x-line, branched at the roots of f (orange)."; }
       else {
         const lo = [0, 1, 2].map((i) => Math.min(...flat.map((p) => p[i] ?? 0))), hi = [0, 1, 2].map((i) => Math.max(...flat.map((p) => p[i] ?? 0)));
-        const norm = (p) => [0, 1, 2].map((i) => (hi[i] > lo[i] ? (2 * ((p[i] ?? 0) - lo[i])) / (hi[i] - lo[i]) - 1 : 0) * 0.9);
+        const norm = (/** @type {number[]} */ p) => [0, 1, 2].map((i) => (hi[i] > lo[i] ? (2 * ((p[i] ?? 0) - lo[i])) / (hi[i] - lo[i]) - 1 : 0) * 0.9);
         g = k === 2 ? (() => { const F = frame(-1, 1, -1, 1, 360, 300, 22); return lines.map((L) => `<path class="img" d="${path(L.map(norm).map(([x, y]) => [x, y]), F)}"/>`).join(""); })() : draw3("map-svg", lines.map((L) => ({ pts: L.map(norm) })), rot, { labels: b.basis.slice(1, 4).map((t) => t.label) });
         cap = `Image of the real points under [${b.basis.map((t) => t.label).join(" : ")}]${k > 3 ? ", projected to the first three affine coordinates" : ""}${b.basis.some((t) => t.kind === "y") ? "" : " — powers of x only: both sheets land on the same curve, 2 : 1"}${k >= 3 ? " (drag to rotate)" : ""}.`;
       }
@@ -571,6 +672,7 @@ function drawMap() {
   } else { g = `<text class="lbl" x="20" y="40">${esc(A.map?.description || "")}</text>`; cap = A.exact ? `|D| ≅ P${sup(Math.max(0, A.ell - 1))}` : ""; }
   draw("map-svg", g); $("map-caption").textContent = cap;
 }
+/** @param {Frame} F @param {(x: number) => number[]} fn */
 function imagePointsP1(F, fn) {
   let g = "";
   for (const t of RR.normalize(currentList(), RR.p1key)) if (!t.p.inf && !t.p.im) { const [X, Y] = fn(t.p.re); if (X >= F.x0 && X <= F.x1 && Y <= F.y1) g += `<circle class="${t.n > 0 ? "pos" : "neg"}" cx="${F.X(X)}" cy="${F.Y(Y)}" r="5"/>`; }
@@ -578,9 +680,9 @@ function imagePointsP1(F, fn) {
 }
 /* ================= pipeline strip ================= */
 function renderPipe() {
-  const short = (s, n = 26) => (s.length > n ? s.slice(0, n - 1) + "…" : s);
+  const short = (/** @type {string} */ s, n = 26) => (s.length > n ? s.slice(0, n - 1) + "…" : s);
   const items = [
-    ["lab", "CURVE", `${({ P1: "P¹", elliptic: "E", hyperelliptic: "y² = f(x)", plane: `plane, d = ${ST.plane.d}`, abstract: "abstract" })[ST.curve]}, g = ${A.g}`],
+    ["lab", "CURVE", `${/** @type {Record<string, string>} */ ({ P1: "P¹", elliptic: "E", hyperelliptic: "y² = f(x)", plane: `plane, d = ${ST.plane.d}`, abstract: "abstract" })[ST.curve]}, g = ${A.g}`],
     ["panel-divisor", "DIVISOR", short(A.divisor)],
     ["panel-sections", "L(D)", A.basis && A.basis.length ? short(`⟨${A.basis.join(", ")}⟩`) : A.exact ? (A.ell ? "dimension only" : "0") : "bounded"],
     ["panel-sections", "ℓ(D)", A.exact ? String(A.ell) : `${A.range.min}…${A.range.max}`],
@@ -595,13 +697,14 @@ function renderLayers() {
   const all = names.every(([k]) => ST.layers[k]);
   $("layers").innerHTML = names.map(([k, t]) => `<button type="button" class="btn sm" data-layer="${k}" aria-pressed="${ST.layers[k]}">${t}</button>`).join("") + `<button type="button" class="btn sm" data-layer="all" aria-pressed="${all}">All</button>`;
   $("map-box").hidden = !ST.layers.map;
+  /** @type {Record<string, string>} */
   const howto = { P1: "Click: +P (shift-click or the −P mode: a pole) · drag to move · scroll on a point: multiplicity · keyboard: arrows move, +/− multiplicity, [ ] select, Delete removes.", plane: "Click to move the hyperplane H; set n in the side panel.", abstract: "Click the surface to add points; scroll or +/− for multiplicity." };
   $("howto").textContent = howto[ST.curve] || howto.P1;
 }
 /* ================= update ================= */
 function update() {
   A = RR.analyse(labState());
-  if (ST.curve === "P1") A.basisF = RR.p1Basis(labState().divisor).basis.map((b) => b.f);
+  if (ST.curve === "P1") A.basisF = RR.p1Basis(/** @type {LabTerm[]} the P¹ divisor */ (labState().divisor)).basis.map((b) => b.f);
   if (ST.fnSel !== null && (!A.basis || ST.fnSel >= A.basis.length)) ST.fnSel = null;
   renderLayers(); renderDivisorPanel(); renderSections(); renderRR(); renderLinsys(); drawGeo(); drawMap(); renderPipe();
   renderDivList();
@@ -617,8 +720,10 @@ function renderDivList() {
 
 /* ================= modules ================= */
 /* --- rational functions --- */
+/** @type {Record<string, number>} */
 const FN = { a: 0, m: 2, b: 1, n: 3 };
-function fnObj() { const fs = []; if (FN.m) fs.push({ a: RR.cx(FN.a), m: FN.m }); if (FN.n) fs.push({ a: RR.cx(FN.b), m: -FN.n }); return { c: 1, factors: fs }; }
+/** @returns {Parameters<typeof RR.p1div>[0]} */
+function fnObj() { /** @type {Parameters<typeof RR.p1div>[0]["factors"]} */ const fs = []; if (FN.m) fs.push({ a: RR.cx(FN.a), m: FN.m }); if (FN.n) fs.push({ a: RR.cx(FN.b), m: -FN.n }); return { c: 1, factors: fs }; }
 function renderFn() {
   $("fn-controls").innerHTML = `<label class="row">zero a = <output>${FN.a}</output><input type="range" id="fn-a" min="-3" max="3" step="0.5" value="${FN.a}"></label><label class="row">order m = <output>${FN.m}</output><input type="range" id="fn-m" min="0" max="4" value="${FN.m}"></label><label class="row">pole b = <output>${FN.b}</output><input type="range" id="fn-b" min="-3" max="3" step="0.5" value="${FN.b}"></label><label class="row">order n = <output>${FN.n}</output><input type="range" id="fn-n" min="0" max="4" value="${FN.n}"></label><div class="seg"><button type="button" data-fnex="1">x − a</button><button type="button" data-fnex="2">(x − a)/(x − b)</button><button type="button" data-fnex="3">(x − a)²/(x − b)³</button></div>`;
   drawFn();
@@ -635,15 +740,20 @@ function drawFn() {
   renderEligibility();
 }
 function renderLocalOrder() {
-  const m = Number($("lo-m").value); $("lo-m-out").textContent = m;
-  const F = frame(-1, 1, -3, 3, 360, 180, 14), pts = [];
+  const m = Number(/** @type {HTMLInputElement} */ ($("lo-m")).value); $("lo-m-out").textContent = String(m);
+  const F = frame(-1, 1, -3, 3, 360, 180, 14);
+  /** @type {(XY | null)[]} */
+  const pts = [];
   for (let i = 0; i <= 200; i++) { const t = -1 + (2 * i) / 200; if (Math.abs(t) < 1e-9 && m < 0) { pts.push(null); continue; } const v = Math.max(-3.2, Math.min(3.2, t ** m * (1 + 0.3 * t))); pts.push([t, v]); }
-  const segs = []; let cur = []; for (const p of pts) { if (!p) { if (cur.length) segs.push(cur); cur = []; } else cur.push(p); } if (cur.length) segs.push(cur);
+  /** @type {XY[][]} */
+  const segs = [];
+  /** @type {XY[]} */
+  let cur = []; for (const p of pts) { if (!p) { if (cur.length) segs.push(cur); cur = []; } else cur.push(p); } if (cur.length) segs.push(cur);
   draw("lo-svg", `<line class="axis" x1="${F.X(-1)}" y1="${F.Y(0)}" x2="${F.X(1)}" y2="${F.Y(0)}"/><line class="axis" x1="${F.X(0)}" y1="${F.Y(-3)}" x2="${F.X(0)}" y2="${F.Y(3)}"/>${segs.map((s) => `<path class="curve2" d="${path(s, F)}"/>`).join("")}<text class="lblm" x="${F.X(0) + 4}" y="${F.Y(-3) - 2}">t = 0 (P)</text>`);
   $("lo-out").textContent = m > 0 ? `m = ${m} > 0: f = t${sup(m)}u(t) vanishes at P — a zero of order ${m}.` : m === 0 ? "m = 0: f = u(t) with u(0) ≠ 0 — a unit at P, neither zero nor pole." : `m = ${m} < 0: f = t${sup(m)}u(t) blows up at P — a pole of order ${-m}.`;
 }
 function renderEligibility() {
-  let D; try { D = RR.parseDivisor($("el-d").value, { type: "P1" }); } catch (e) { $("el-out").innerHTML = `<p class="small" style="color:var(--bad)">${esc(e.message)}</p>`; return; }
+  let D; try { D = RR.parseDivisor(/** @type {HTMLInputElement} */ ($("el-d")).value, { type: "P1" }); } catch (e) { $("el-out").innerHTML = `<p class="small" style="color:var(--bad)">${esc(/** @type {Error} */ (e).message)}</p>`; return; }
   const Dv = D.divisor || (D.atInfinity !== undefined ? [{ p: RR.INF, n: D.atInfinity }] : [{ p: RR.INF, n: -2 }]);
   const f = fnObj(), el = RR.p1Eligibility(f, Dv);
   $("el-out").innerHTML = `<table><thead><tr><th scope="col">P</th><th scope="col">ord<sub>P</sub>(f)</th><th scope="col">D(P)</th><th scope="col">total</th><th scope="col"></th></tr></thead><tbody>${el.rows.map((r) => `<tr><td>${esc(r.point)}</td><td class="num">${r.ord}</td><td class="num">${r.D}</td><td class="num">${r.total}</td><td>${r.ok ? "✓" : "✗"}</td></tr>`).join("")}</tbody></table><p class="expr">f ${el.member ? "∈" : "∉"} L(D) <span class="badge ${el.member ? "ok" : "bad"}">${el.member ? "allowed" : "not allowed"}</span></p>`;
@@ -651,25 +761,26 @@ function renderEligibility() {
 /* --- linear equivalence --- */
 function renderEquiv() {
   let D1, D2;
-  try { D1 = RR.parseDivisor($("eq-d").value, { type: "P1" }).divisor; D2 = RR.parseDivisor($("eq-d2").value, { type: "P1" }).divisor; } catch (e) { $("eq-out").innerHTML = `<p class="small" style="color:var(--bad)">${esc(e.message)} (write points in brackets, e.g. 2[0] + [inf])</p>`; return; }
+  try { D1 = RR.parseDivisor(/** @type {HTMLInputElement} */ ($("eq-d")).value, { type: "P1" }).divisor; D2 = RR.parseDivisor(/** @type {HTMLInputElement} */ ($("eq-d2")).value, { type: "P1" }).divisor; } catch (e) { $("eq-out").innerHTML = `<p class="small" style="color:var(--bad)">${esc(/** @type {Error} */ (e).message)} (write points in brackets, e.g. 2[0] + [inf])</p>`; return; }
   if (!D1 || !D2) { $("eq-out").innerHTML = `<p class="small">Write both as sums of points, e.g. 2[0] + [inf].</p>`; return; }
   const d1 = RR.degree(D1), d2 = RR.degree(D2), diff = RR.normalize([...D1, ...RR.dneg(D2)], RR.p1key);
   let h = `<p class="small">deg D = ${d1}, deg D′ = ${d2}.</p>`;
   if (d1 !== d2) h += `<p><span class="badge bad">Not equivalent</span> Principal divisors have degree 0, so the degree is an invariant of the class.</p>`;
   else {
-    const f = { c: 1, factors: diff.filter((t) => !t.p.inf).map((t) => ({ a: t.p, m: t.n })) }, check = RR.p1str(RR.p1div(f)) === RR.p1str(diff);
+    const f = { c: 1, factors: /** @type {{ p: { re: number, im?: number }, n: number }[]} the finite points */ (diff.filter((t) => !t.p.inf)).map((t) => ({ a: t.p, m: t.n })) }, check = RR.p1str(RR.p1div(f)) === RR.p1str(diff);
     h += `<pre class="flow">D  = ${esc(RR.p1str(D1))}\n│  add div(f), f = ${esc(RR.p1fstr(f))}\n▼\nD′ = ${esc(RR.p1str(D2))}</pre><p class="small">D − D′ = ${esc(RR.p1str(diff) || "0")} = div(f) ${check ? "✓" : "✗"} — on P¹ the factor at ∞ is free, so every degree-0 divisor is principal.</p><p><span class="badge ok">D ∼ D′</span></p>`;
   }
   $("eq-out").innerHTML = h;
-  const F = { X: (d) => 40 + (d + 1) * 62 }; let g = `<line class="axis" x1="20" y1="170" x2="350" y2="170"/>`;
+  const F = { X: (/** @type {number} */ d) => 40 + (d + 1) * 62 }; let g = `<line class="axis" x1="20" y1="170" x2="350" y2="170"/>`;
+  /** @type {Record<number, string[]>} */
   const ex = { "-1": ["−[∞]", "−[0]", "[1] − 2[3]"], 0: ["0", "[0] − [∞]", "[2] − [1]"], 1: ["[∞]", "[0]", "2[1] − [3]"], 2: ["2[∞]", "[0] + [1]", "3[2] − [∞]"], 3: ["3[∞]", "[0]+[1]+[2]", "4[1] − [0]"], 4: ["4[∞]", "2[0]+2[1]", "…"] };
   for (let d = -1; d <= 4; d++) { g += `<circle class="pos" cx="${F.X(d)}" cy="170" r="6"/><text class="lbl" x="${F.X(d) - 5}" y="192">${d}</text>`; ex[d].forEach((s, i) => { g += `<text class="lblm" x="${F.X(d) - 24}" y="${40 + i * 30}">${esc(s)}</text><line stroke="var(--border)" x1="${F.X(d)}" y1="${46 + i * 30}" x2="${F.X(d)}" y2="162"/>`; }); }
-  for (const [D, lab] of [[D1, "D"], [D2, "D′"]]) { const d = RR.degree(D); if (d >= -1 && d <= 4) g += `<text class="lbl" x="${F.X(d) - 8}" y="150" style="fill:var(--focus);font-weight:700">${lab}</text>`; }
+  for (const [D, lab] of /** @type {[LabTerm[], string][]} */ ([[D1, "D"], [D2, "D′"]])) { const d = RR.degree(D); if (d >= -1 && d <= 4) g += `<text class="lbl" x="${F.X(d) - 8}" y="150" style="fill:var(--focus);font-weight:700">${lab}</text>`; }
   draw("pic-svg", g);
 }
 /* --- Riemann–Roch balance --- */
 function renderBalance() {
-  const g = Number($("bal-g").value), d = Number($("bal-d").value); $("bal-g-out").textContent = g; $("bal-d-out").textContent = d;
+  const g = Number(/** @type {HTMLInputElement} */ ($("bal-g")).value), d = Number(/** @type {HTMLInputElement} */ ($("bal-d")).value); $("bal-g-out").textContent = String(g); $("bal-d-out").textContent = String(d);
   const r = RR.rrRange(d, g);
   $("bal-out").innerHTML = `<div class="balance"><div>sections ℓ(D)<b>${r.exact ? r.min : `${r.min}…${r.max}`}</b></div><div>obstruction ℓ(K − D)<b>${r.exact ? r.min - (d + 1 - g) : `${r.min - (d + 1 - g)}…${r.max - (d + 1 - g)}`}</b></div><div>deg D + 1 − g<b>${d + 1 - g}</b></div></div><p>${r.regime === "nonspecial" ? `<span class="badge ok">Nonspecial divisor</span>` : r.regime === "negative" ? `<span class="badge info">No sections</span>` : `<span class="badge warn">Special range: 0 ≤ deg D ≤ 2g − 2</span>`} <span class="small">${esc(r.why)}</span></p>`;
   const F = frame(-3, 14, -1, 12, 560, 220, 28); let s = `<line class="axis" x1="${F.X(-3)}" y1="${F.Y(0)}" x2="${F.X(14)}" y2="${F.Y(0)}"/><line class="axis" x1="${F.X(0)}" y1="${F.Y(-1)}" x2="${F.X(0)}" y2="${F.Y(12)}"/>`;
@@ -689,7 +800,7 @@ function renderElliptic() {
     for (const comp of RR.ecRealLocus(E, F0.x0, F0.x1)) g += `<path class="curve" d="${path([...comp.upper.slice().reverse(), ...comp.lower].map(([x, y]) => [x, y * 0.5 + F0.y1 * 0.45]).filter(([, y]) => y < F0.y1), F)}"/>`;
     g += `<line class="img" x1="${F.X(F0.x0)}" y1="${F.Y(-1.1)}" x2="${F.X(F0.x1)}" y2="${F.Y(-1.1)}"/>`;
     for (const r of roots) g += `<circle class="branch" cx="${F.X(r)}" cy="${F.Y(-1.1)}" r="5"/><line stroke="var(--warn)" stroke-dasharray="2 3" x1="${F.X(r)}" y1="${F.Y(F0.y1 * 0.45)}" x2="${F.X(r)}" y2="${F.Y(-1.1)}"/>`;
-    const x = roots.at(-1) + 0.9, y = Math.sqrt(RR.ecf(E, x)); for (const s of [1, -1]) g += `<circle class="pos" cx="${F.X(x)}" cy="${F.Y(s * y * 0.5 + F0.y1 * 0.45)}" r="4"/><line stroke="var(--map)" stroke-dasharray="3 3" x1="${F.X(x)}" y1="${F.Y(s * y * 0.5 + F0.y1 * 0.45)}" x2="${F.X(x)}" y2="${F.Y(-1.1)}"/>`;
+    const x = /** @type {number} a cubic has a real root */ (roots.at(-1)) + 0.9, y = Math.sqrt(RR.ecf(E, x)); for (const s of [1, -1]) g += `<circle class="pos" cx="${F.X(x)}" cy="${F.Y(s * y * 0.5 + F0.y1 * 0.45)}" r="4"/><line stroke="var(--map)" stroke-dasharray="3 3" x1="${F.X(x)}" y1="${F.Y(s * y * 0.5 + F0.y1 * 0.45)}" x2="${F.X(x)}" y2="${F.Y(-1.1)}"/>`;
     g += `<text class="lblm" x="8" y="${F.Y(-1.1) + 18}">P¹: x</text><text class="lblm" x="${F.X(x) + 6}" y="${F.Y(-1.1) - 6}">P, −P</text>`;
     draw("e2-svg", g);
     const m2 = RR.ecMap(E, 2), rh = RR.riemannHurwitz({ degree: 2, gTarget: 0, ramification: [2, 2, 2, 2] });
@@ -704,7 +815,7 @@ function renderElliptic() {
   renderGroupLaw();
 }
 function glPoints() {
-  const E = ST.E; let up = Number($("gl-p").value), uq = Number($("gl-q").value);
+  const E = ST.E; let up = Number(/** @type {HTMLInputElement} */ ($("gl-p")).value), uq = Number(/** @type {HTMLInputElement} */ ($("gl-q")).value);
   if (up < 0.004 || up > 0.996) up = 0.004; if (uq < 0.004 || uq > 0.996) uq = 0.996 - 0.002;
   const P = RR.ecFromAbel(E, up, 0); let Q = RR.ecFromAbel(E, uq, 0);
   if (Math.abs(up - uq) < 0.002) Q = P; else if (Math.abs(up + uq - 1) < 0.003) Q = RR.ecNeg(P);
@@ -714,19 +825,20 @@ function renderGroupLaw() {
   const E = ST.E, { P, Q, up, uq } = glPoints(), L = RR.ecLine(E, P, Q), S = RR.ecAdd(E, P, Q), F0 = ecFrame(), F = frame(F0.x0, F0.x1, F0.y0, F0.y1, 360, 300, 14);
   let g = "";
   for (const comp of RR.ecRealLocus(E, F0.x0, F0.x1)) g += `<path class="curve" d="${path([...comp.upper.slice().reverse(), ...comp.lower].filter(([, y]) => Math.abs(y) <= F0.y1 * 1.2), F)}${comp.closed ? "Z" : ""}"/>`;
-  if (L.vertical) g += `<line class="curve2" x1="${F.X(P.x)}" y1="${F.Y(F0.y0)}" x2="${F.X(P.x)}" y2="${F.Y(F0.y1)}"/>`;
+  // A chord needs affine points, so P is one here.
+  if (L.vertical) g += `<line class="curve2" x1="${F.X(/** @type {RRAffine} */ (P).x)}" y1="${F.Y(F0.y0)}" x2="${F.X(/** @type {RRAffine} */ (P).x)}" y2="${F.Y(F0.y1)}"/>`;
   else { g += `<line class="curve2" x1="${F.X(F0.x0)}" y1="${F.Y(L.nu + L.lambda * F0.x0)}" x2="${F.X(F0.x1)}" y2="${F.Y(L.nu + L.lambda * F0.x1)}"/>`; if (!L.R.inf && !S.inf) g += `<line stroke="var(--muted)" stroke-dasharray="4 3" x1="${F.X(L.R.x)}" y1="${F.Y(L.R.y)}" x2="${F.X(S.x)}" y2="${F.Y(S.y)}"/>`; }
-  const pt = (X, lab, cls = "pos") => (X.inf ? "" : `<circle class="${cls}" cx="${F.X(X.x)}" cy="${F.Y(X.y)}" r="5.5"/><text class="lbl" x="${F.X(X.x) + 7}" y="${F.Y(X.y) - 7}">${lab}</text>`);
+  const pt = (/** @type {ReturnType<typeof RR.ecNeg>} */ X, /** @type {string} */ lab, cls = "pos") => (X.inf ? "" : `<circle class="${cls}" cx="${F.X(X.x)}" cy="${F.Y(X.y)}" r="5.5"/><text class="lbl" x="${F.X(X.x) + 7}" y="${F.Y(X.y) - 7}">${lab}</text>`);
   g += pt(P, "P") + pt(Q, RR.ecEq(P, Q) ? "" : "Q") + (L.R.inf ? "" : pt(L.R, "R", "neg")) + (S.inf ? "" : pt(S, "P ⊕ Q = −R", "zero"));
   draw("gl-svg", `<g clip-path="none">${g}</g>`);
   /* torus with the Abel–Jacobi images */
   const Tc = [180, 105], Rb = 120, rb = 42, tilt = 0.42, roots = RR.ecCubicRoots(E);
-  const tp = (th, ph) => [Tc[0] + (Rb + rb * Math.cos(ph)) * Math.cos(th), Tc[1] + (Rb + rb * Math.cos(ph)) * Math.sin(th) * Math.sin(tilt) - rb * Math.sin(ph) * Math.cos(tilt)];
+  const tp = (/** @type {number} */ th, /** @type {number} */ ph) => [Tc[0] + (Rb + rb * Math.cos(ph)) * Math.cos(th), Tc[1] + (Rb + rb * Math.cos(ph)) * Math.sin(th) * Math.sin(tilt) - rb * Math.sin(ph) * Math.cos(tilt)];
   let t = "";
-  const ring = (ph, cls, w = 1) => { const pts = []; for (let k = 0; k <= 96; k++) pts.push(tp((2 * Math.PI * k) / 96, ph)); return `<path class="${cls}" stroke-width="${w}" d="M${pts.map((p) => p[0].toFixed(1) + " " + p[1].toFixed(1)).join("L")}"/>`; };
+  const ring = (/** @type {number} */ ph, /** @type {string} */ cls, w = 1) => { const pts = []; for (let k = 0; k <= 96; k++) pts.push(tp((2 * Math.PI * k) / 96, ph)); return `<path class="${cls}" stroke-width="${w}" d="M${pts.map((p) => p[0].toFixed(1) + " " + p[1].toFixed(1)).join("L")}"/>`; };
   t += `<ellipse cx="${Tc[0]}" cy="${Tc[1]}" rx="${Rb + rb}" ry="${(Rb + rb) * Math.sin(tilt) + rb * Math.cos(tilt)}" fill="var(--soft)" stroke="var(--curve)" stroke-width="1.4"/><ellipse cx="${Tc[0]}" cy="${Tc[1]}" rx="${Rb - rb}" ry="${Math.max(4, (Rb - rb) * Math.sin(tilt) - rb * Math.cos(tilt) * 0.2)}" fill="var(--surface)" stroke="var(--curve)" stroke-width="1.2"/>`;
   t += ring(0, "curve", 2.2); if (roots.length === 3) t += ring(Math.PI, "curve", 1.4);
-  const mk = (u, lab, cls) => { const q = tp(2 * Math.PI * u + Math.PI / 2, 0); return `<circle class="${cls}" cx="${q[0].toFixed(1)}" cy="${q[1].toFixed(1)}" r="5.5"/><text class="lbl" x="${(q[0] + 7).toFixed(1)}" y="${(q[1] - 6).toFixed(1)}">${lab}</text>`; };
+  const mk = (/** @type {number} */ u, /** @type {string} */ lab, /** @type {string} */ cls) => { const q = tp(2 * Math.PI * u + Math.PI / 2, 0); return `<circle class="${cls}" cx="${q[0].toFixed(1)}" cy="${q[1].toFixed(1)}" r="5.5"/><text class="lbl" x="${(q[0] + 7).toFixed(1)}" y="${(q[1] - 6).toFixed(1)}">${lab}</text>`; };
   const uS = S.inf ? 0 : RR.ecAbel(E, S).u, uP = RR.ecAbel(E, P).u, uQ = RR.ecAbel(E, Q).u;
   t += mk(0, "O", "imgpt") + mk(uP, "P", "pos") + mk(uQ, "Q", "pos") + mk(uS, "P ⊕ Q", "zero");
   t += `<text class="lblm" x="8" y="214">real circle(s) of C/Λ, u = ∫ dx/y from O</text>`;
@@ -736,63 +848,68 @@ function renderGroupLaw() {
 }
 /* --- hyperelliptic and Riemann–Hurwitz --- */
 function renderBranch() {
-  const b = Number($("br").value), t = Number($("morph").value); $("br-out").textContent = b;
+  const b = Number(/** @type {HTMLInputElement} */ ($("br")).value), t = Number(/** @type {HTMLInputElement} */ ($("morph")).value); $("br-out").textContent = String(b);
   const dc = RR.doubleCover(b); let g = "";
-  const sheet = (cy, op) => { let s = `<ellipse class="sheet" cx="200" cy="${cy}" rx="170" ry="34" opacity="${op}"/>`; for (let k = 0; k < b; k++) s += `<circle class="branch" cx="${60 + (k * 280) / Math.max(1, b - 1)}" cy="${cy}" r="5" opacity="${op}"/>`; for (let k = 0; k + 1 < b; k += 2) s += `<line stroke="var(--warn)" stroke-width="3" x1="${60 + (k * 280) / Math.max(1, b - 1)}" y1="${cy}" x2="${60 + ((k + 1) * 280) / Math.max(1, b - 1)}" y2="${cy}" opacity="${op}"/>`; return s; };
+  const sheet = (/** @type {number} */ cy, /** @type {number} */ op) => { let s = `<ellipse class="sheet" cx="200" cy="${cy}" rx="170" ry="34" opacity="${op}"/>`; for (let k = 0; k < b; k++) s += `<circle class="branch" cx="${60 + (k * 280) / Math.max(1, b - 1)}" cy="${cy}" r="5" opacity="${op}"/>`; for (let k = 0; k + 1 < b; k += 2) s += `<line stroke="var(--warn)" stroke-width="3" x1="${60 + (k * 280) / Math.max(1, b - 1)}" y1="${cy}" x2="${60 + ((k + 1) * 280) / Math.max(1, b - 1)}" y2="${cy}" opacity="${op}"/>`; return s; };
   g += sheet(70, 1 - t) + sheet(150, 1 - t);
   g += `<text class="lblm" x="20" y="22" opacity="${1 - t}">two copies of P¹, cut between pairs of branch points and glued crosswise</text><ellipse class="sheet" cx="200" cy="230" rx="150" ry="14"/><text class="lblm" x="30" y="252">P¹ (base)</text>`;
-  if (dc.ok) g += `<g opacity="${t}">${surfaceSvg(dc.g, 200, 110, 360, 120)}</g><text class="lbl" x="420" y="110" opacity="${t}">genus ${dc.g}</text>`;
+  if (dc.ok) g += `<g opacity="${t}">${surfaceSvg(/** @type {number} an even b gives a genus */ (dc.g), 200, 110, 360, 120)}</g><text class="lbl" x="420" y="110" opacity="${t}">genus ${dc.g}</text>`;
   else g += `<text class="lbl" x="400" y="110" style="fill:var(--bad)">odd b: no smooth</text><text class="lbl" x="400" y="128" style="fill:var(--bad)">compact double cover</text>`;
   draw("br-svg", g + `<text class="schematic" x="440" y="245" style="fill:var(--warn)">SCHEMATIC</text>`);
-  $("br-calc").innerHTML = dc.ok ? `<table><tbody><tr><td>two sheets of the sphere</td><td class="num">2·(2·0 − 2) = −4</td></tr><tr><td>branching contribution Σ(e − 1)</td><td class="num">+${b}</td></tr><tr><th scope="row">Euler / genus result 2g − 2</th><td class="num">${dc.terms.euler}</td></tr></tbody></table><p class="expr">g(C) = ${dc.g}</p><p class="small">${[2, 4, 6, 8, 10].map((k) => `${k} branch points → genus ${k / 2 - 1}`).join(" · ")}</p>` : `<p class="small">${esc(dc.why)}</p>`;
-  const n = Number($("rh-n").value) || 1, gt = Number($("rh-g").value) || 0, es = $("rh-e").value.split(/[,\s]+/).filter(Boolean).map(Number).filter((x) => Number.isFinite(x));
+  $("br-calc").innerHTML = dc.ok ? `<table><tbody><tr><td>two sheets of the sphere</td><td class="num">2·(2·0 − 2) = −4</td></tr><tr><td>branching contribution Σ(e − 1)</td><td class="num">+${b}</td></tr><tr><th scope="row">Euler / genus result 2g − 2</th><td class="num">${/** @type {{ euler: number }} */ (dc.terms).euler}</td></tr></tbody></table><p class="expr">g(C) = ${dc.g}</p><p class="small">${[2, 4, 6, 8, 10].map((k) => `${k} branch points → genus ${k / 2 - 1}`).join(" · ")}</p>` : `<p class="small">${esc(dc.why)}</p>`;
+  const n = Number(/** @type {HTMLInputElement} */ ($("rh-n")).value) || 1, gt = Number(/** @type {HTMLInputElement} */ ($("rh-g")).value) || 0, es = /** @type {HTMLInputElement} */ ($("rh-e")).value.split(/[,\s]+/).filter(Boolean).map(Number).filter((x) => Number.isFinite(x));
   const rh = RR.riemannHurwitz({ degree: n, gTarget: gt, ramification: es });
   $("rh-out").innerHTML = `<p class="math">R = Σ(e<sub>P</sub> − 1)P, deg R = ${rh.degR}</p><p class="expr">${esc(rh.text)}</p><p>${rh.valid ? `<span class="badge ok">consistent</span>` : `<span class="badge bad">impossible</span> <span class="small">${es.some((e) => e > n) ? "an index e_P exceeds the degree" : "the Euler characteristic must be even and g ≥ 0"}</span>`}</p>`;
 }
 /* --- linear systems --- */
 function renderVeronese() {
-  const d = Number($("ver-d").value); $("ver-d-out").textContent = d;
+  const d = Number(/** @type {HTMLInputElement} */ ($("ver-d")).value); $("ver-d-out").textContent = String(d);
   const v = RR.veronese(d); let g;
   if (d === 1) { g = `<line class="img" x1="30" y1="150" x2="310" y2="150"/><text class="lbl" x="30" y="40">P¹ → P¹: the line</text>`; }
-  else if (d === 2) { const F = frame(-2, 2, -0.4, 4.2, 340, 260, 18), pts = []; for (let i = 0; i <= 100; i++) { const x = -2 + (4 * i) / 100; pts.push([x, x * x]); } g = `<path class="img" d="${path(pts, F)}"/><text class="lbl" x="14" y="22">XZ = Y² (chart X = 1)</text>`; }
-  else { const pts = []; for (let i = 0; i <= 160; i++) { const x = -1.5 + (3 * i) / 160; pts.push([x / 1.5, (d === 3 ? x * x : x ** 4 / 2.5) / 2.25 - 0.5, (x ** 3) / 3.4]); } g = draw3("ver-svg", [{ pts }], ROT["ver-svg"], { labels: ["x", d === 3 ? "x²" : "x⁴", "x³"], H: 260 }); }
+  else if (d === 2) { const F = frame(-2, 2, -0.4, 4.2, 340, 260, 18); /** @type {XY[]} */ const pts = []; for (let i = 0; i <= 100; i++) { const x = -2 + (4 * i) / 100; pts.push([x, x * x]); } g = `<path class="img" d="${path(pts, F)}"/><text class="lbl" x="14" y="22">XZ = Y² (chart X = 1)</text>`; }
+  else { /** @type {number[][]} */ const pts = []; for (let i = 0; i <= 160; i++) { const x = -1.5 + (3 * i) / 160; pts.push([x / 1.5, (d === 3 ? x * x : x ** 4 / 2.5) / 2.25 - 0.5, (x ** 3) / 3.4]); } g = draw3("ver-svg", [{ pts }], ROT["ver-svg"], { labels: ["x", d === 3 ? "x²" : "x⁴", "x³"], H: 260 }); }
   draw("ver-svg", g);
   const form = Array.from({ length: d + 1 }, (_, i) => `s${d - i > 0 ? (d - i > 1 ? sup(d - i) : "") : ""}${i ? "t" + (i > 1 ? sup(i) : "") : ""}`.replace(/^s⁰|^$/, "") || "1").map((s) => (s.startsWith("t") || s.startsWith("s") ? s : s));
   $("ver-out").innerHTML = `L(${d}∞) = ⟨${v.basis.join(", ")}⟩, ℓ = ${d + 1}: [s : t] ↦ [${form.join(" : ")}], image ${esc(v.name)}. Quadrics through the image: ${v.quadrics} (expected ${v.expectedQuadrics})${v.quadricEquations.length ? ": " + esc(v.quadricEquations.join(", ")) : ""}.`;
 }
 function renderStages() {
-  const E = ST.E, n = Number($("st-n").value); $("st-n-out").textContent = n;
-  let up = Number($("st-p").value), uq = Number($("st-q").value);
+  const E = ST.E, n = Number(/** @type {HTMLInputElement} */ ($("st-n")).value); $("st-n-out").textContent = String(n);
+  let up = Number(/** @type {HTMLInputElement} */ ($("st-p")).value), uq = Number(/** @type {HTMLInputElement} */ ($("st-q")).value);
   if (up < 0.004 || up > 0.996) up = 0.004; if (uq < 0.004 || uq > 0.996) uq = 0.992;
   const P = RR.ecFromAbel(E, up, 0); let Q = RR.ecFromAbel(E, uq, 0);
   if (Math.abs(up + uq - 1) < 0.004) Q = RR.ecNeg(P);
   const D = [{ p: RR.O, n }], st = RR.ecStages(E, D, P, Q);
-  const rows = [["base-point free", st.basePointFree, st.basePoint ? `base point at ${RR.ecname(st.basePoint)}` : "ℓ(D − P) = ℓ(D) − 1 for every P"], ["separates points", st.separatesPoints, n === 2 ? "fails exactly for pairs with P + Q ∼ 2O, i.e. Q = −P" : ""], [`separates this P, Q`, st.pair.separated, st.pair.why], ["separates tangent directions", st.separatesTangents, n === 2 ? "fails at the four 2-torsion points (O and the roots of the cubic): ramification" : ""], ["very ample → embedding", st.veryAmple, n >= 3 ? `deg ${n} ≥ 2g + 1 = 3` : ""]];
+  /** @type {[string, boolean, string][]} */
+  const rows = [["base-point free", st.basePointFree, st.basePoint ? `base point at ${RR.ecname(st.basePoint)}` : "ℓ(D − P) = ℓ(D) − 1 for every P"], ["separates points", st.separatesPoints, n === 2 ? "fails exactly for pairs with P + Q ∼ 2O, i.e. Q = −P" : ""], [`separates this P, Q`, /** @type {NonNullable<typeof st.pair>} P and Q were given */ (st.pair).separated, /** @type {NonNullable<typeof st.pair>} */ (st.pair).why], ["separates tangent directions", st.separatesTangents, n === 2 ? "fails at the four 2-torsion points (O and the roots of the cubic): ramification" : ""], ["very ample → embedding", st.veryAmple, n >= 3 ? `deg ${n} ≥ 2g + 1 = 3` : ""]];
   $("st-ladder").innerHTML = rows.map(([k, v, why]) => `<li class="${v ? "ok" : "no"}">${esc(k)}${why ? ` <span class="tiny muted">— ${esc(why)}</span>` : ""}</li>`).join("");
   $("st-out").innerHTML = `ℓ(${n}O) = ${st.ell}; P = ${esc(RR.ecname(P))}, Q = ${esc(RR.ecname(Q))}. Set Q to the mirror position of P (sliders summing to 1) to see |2O| collapse P and −P.`;
 }
 /* --- plane curves --- */
 function renderPlane() {
   $("pg-table").innerHTML = `<table><thead><tr><th scope="col">d</th><th scope="col">g</th><th scope="col">deg K = d(d − 3)</th><th scope="col">2g − 2</th></tr></thead><tbody>${[1, 2, 3, 4, 5, 6].map((d) => `<tr ${ST.curve === "plane" && ST.plane.d === d ? 'style="background:var(--soft)"' : ""}><td class="num">${d}</td><td class="num">${RR.planeGenus(d)}</td><td class="num">${d * (d - 3)}</td><td class="num">${2 * RR.planeGenus(d) - 2}</td></tr>`).join("")}</tbody></table>`;
-  const d = Number($("adj-d").value); $("adj-d-out").textContent = d;
+  const d = Number(/** @type {HTMLInputElement} */ ($("adj-d")).value); $("adj-d-out").textContent = String(d);
   const a = RR.adjunction(d);
   $("adj").textContent = `K_C = (K_P² + C)|_C,   K_P² = −3H,   C ∼ ${d}H\n    = (−3H + ${d}H)|_C = ${d - 3}H|_C\ndeg K_C = ${d - 3} · deg(H|_C) = ${d - 3} · ${d} = ${a.degK}\n2g − 2 = ${a.degK}  ⇒  g = ${a.g} = (${d} − 1)(${d} − 2)/2${d === 4 ? "\nd = 4: K_C = H|_C — the plane embedding is the canonical map" : ""}\nholomorphic differentials: ${RR.planeDifferentials(d).join(", ") || "none"}`;
   renderIntersect();
 }
 function renderIntersect() {
-  const A_ = RR.PLANE[$("ix-a").value] ? $("ix-a").value : "cubic", B_ = RR.PLANE[$("ix-b").value] ? $("ix-b").value : "line", isLine = B_ === "line";
+  const PLANE = /** @type {Record<string, typeof RR.PLANE.line | undefined>} */ (RR.PLANE);
+  const A_ = PLANE[/** @type {HTMLInputElement} */ ($("ix-a")).value] ? /** @type {HTMLInputElement} */ ($("ix-a")).value : "cubic", B_ = PLANE[/** @type {HTMLInputElement} */ ($("ix-b")).value] ? /** @type {HTMLInputElement} */ ($("ix-b")).value : "line", isLine = B_ === "line";
+  const curveA = /** @type {typeof RR.PLANE.line} a known curve */ (PLANE[A_]), curveB = /** @type {typeof RR.PLANE.line} */ (PLANE[B_]);
   $("ix-m-row").hidden = !isLine; $("ix-c-row").hidden = !isLine;
-  const m = Number($("ix-m").value), c = Number($("ix-c").value); $("ix-m-out").textContent = m; $("ix-c-out").textContent = c;
-  const FA = RR.PLANE[A_].F, FB = isLine ? RR.lineForm(-Math.round(m * 10), 10, -Math.round(c * 10)) : RR.PLANE[B_].F;
-  const fa = planeF(RR.PLANE[A_].d), fb = isLine ? (x, y) => y - m * x - c : planeF(RR.PLANE[B_].d);
+  const m = Number(/** @type {HTMLInputElement} */ ($("ix-m")).value), c = Number(/** @type {HTMLInputElement} */ ($("ix-c")).value); $("ix-m-out").textContent = String(m); $("ix-c-out").textContent = String(c);
+  const FA = curveA.F, FB = isLine ? RR.lineForm(-Math.round(m * 10), 10, -Math.round(c * 10)) : curveB.F;
+  /** @type {PlaneFn} */
+  const fa = planeF(curveA.d), fb = isLine ? (/** @type {number} */ x, /** @type {number} */ y) => y - m * x - c : planeF(curveB.d);
   const F = frame(-2.2, 2.2, -1.8, 1.8, 360, 300, 12);
   let g = `<line class="axis" x1="${F.X(-2.2)}" y1="${F.Y(0)}" x2="${F.X(2.2)}" y2="${F.Y(0)}"/><line class="axis" x1="${F.X(0)}" y1="${F.Y(-1.8)}" x2="${F.X(0)}" y2="${F.Y(1.8)}"/><path class="curve" d="${segPath(contour(fa, -2.2, 2.2, -1.8, 1.8, 130, 110), F)}"/><path class="curve2" d="${segPath(contour(fb, -2.2, 2.2, -1.8, 1.8, 130, 110), F)}"/>`;
   if (A_ === B_) { draw("ix-svg", g); $("ix-out").innerHTML = `<p><span class="badge bad">Common component</span> Bézout needs curves with no common component.</p>`; draw("ix-zoom", ""); return; }
   const ix = RR.intersect(FA, FB);
+  /** @type {(typeof ix.points)[number] & { affine: true } | null} */
   let zoomPt = null;
   for (const p of ix.points) if (p.real && p.affine) { g += `<circle class="${p.m > 1 ? "neg" : "pos"}" cx="${F.X(p.x.re)}" cy="${F.Y(p.y.re)}" r="${4 + 2 * p.m}"/><text class="lbl" x="${F.X(p.x.re) + 8}" y="${F.Y(p.y.re) - 8}">${p.m}</text>`; if (!zoomPt || p.m > zoomPt.m) zoomPt = p; }
   draw("ix-svg", g);
-  const desc = (p) => (p.affine ? `(${RR.fmt(p.x.re, 3)}${Math.abs(p.x.im) > 1e-9 ? (p.x.im < 0 ? " − " : " + ") + RR.fmt(Math.abs(p.x.im), 3) + "i" : ""}, ${RR.fmt(p.y.re, 3)}${Math.abs(p.y.im) > 1e-9 ? (p.y.im < 0 ? " − " : " + ") + RR.fmt(Math.abs(p.y.im), 3) + "i" : ""})` : "at infinity");
+  const desc = (/** @type {(typeof ix.points)[number]} */ p) => (p.affine ? `(${RR.fmt(p.x.re, 3)}${Math.abs(p.x.im) > 1e-9 ? (p.x.im < 0 ? " − " : " + ") + RR.fmt(Math.abs(p.x.im), 3) + "i" : ""}, ${RR.fmt(p.y.re, 3)}${Math.abs(p.y.im) > 1e-9 ? (p.y.im < 0 ? " − " : " + ") + RR.fmt(Math.abs(p.y.im), 3) + "i" : ""})` : "at infinity");
   $("ix-out").innerHTML = `<div class="tablewrap"><table><thead><tr><th scope="col">point</th><th scope="col">kind</th><th scope="col">I<sub>P</sub></th></tr></thead><tbody>${ix.points.map((p) => `<tr><td class="num">${esc(desc(p))}</td><td>${p.affine ? (p.real ? "real" : "complex") : "on the line at ∞"}${p.m > 1 ? " · tangent" : ""}</td><td class="num">${p.m}</td></tr>`).join("")}</tbody></table></div><p class="expr">Σ I<sub>P</sub> = ${ix.total} = ${ix.d} · ${ix.e} <span class="badge ${ix.total === ix.bezout ? "ok" : "bad"}">Bézout</span></p>`;
   if (zoomPt) { const r = 0.22, Z = frame(zoomPt.x.re - r * 2.4, zoomPt.x.re + r * 2.4, zoomPt.y.re - r, zoomPt.y.re + r, 360, 140, 6); draw("ix-zoom", `<path class="curve" d="${segPath(contour(fa, Z.x0, Z.x1, Z.y0, Z.y1, 120, 60), Z)}"/><path class="curve2" d="${segPath(contour(fb, Z.x0, Z.x1, Z.y0, Z.y1, 120, 60), Z)}"/><circle class="${zoomPt.m > 1 ? "neg" : "pos"}" cx="${Z.X(zoomPt.x.re)}" cy="${Z.Y(zoomPt.y.re)}" r="5"/><text class="lbl" x="8" y="16">zoom ×10: I = ${zoomPt.m} ${zoomPt.m > 1 ? "(tangency)" : "(transverse)"}</text>`); }
   else draw("ix-zoom", `<text class="lblm" x="10" y="20">No real affine intersection to zoom on.</text>`);
@@ -814,22 +931,25 @@ function renderCanonical() {
   draw("cm-svg", g);
 }
 /* --- computation mode --- */
+/** @type {ReturnType<typeof RR.compute> | null} */
 let CP = null;
 function runCompute() {
-  try { CP = RR.compute($("cp-curve").value, $("cp-div").value); }
-  catch (e) { CP = null; $("cp-out").innerHTML = `<p class="small" style="color:var(--bad)">${esc(e.message)}</p><p class="tiny muted">Unsupported requests are not guessed: write P1 or y^2 = f(x) with f square-free of degree ≥ 3, and a divisor n∞, nO, K, or (on P¹) a sum like 2[0] + [1] − [inf].</p>`; return; }
+  try { CP = RR.compute(/** @type {HTMLInputElement} */ ($("cp-curve")).value, /** @type {HTMLInputElement} */ ($("cp-div")).value); }
+  catch (e) { CP = null; $("cp-out").innerHTML = `<p class="small" style="color:var(--bad)">${esc(/** @type {Error} */ (e).message)}</p><p class="tiny muted">Unsupported requests are not guessed: write P1 or y^2 = f(x) with f square-free of degree ≥ 3, and a divisor n∞, nO, K, or (on P¹) a sum like 2[0] + [1] − [inf].</p>`; return; }
   const r = CP;
-  $("cp-out").innerHTML = `<dl class="kv"><dt>curve</dt><dd>${esc(r.curve.label)}${r.curve.weierstrass ? " (Weierstrass form)" : ""}</dd><dt>genus</dt><dd>${r.g}</dd><dt>divisor</dt><dd>${esc(r.divisor)}, degree ${r.deg}</dd><dt>basis of L(D)</dt><dd><div class="basis">${r.basis.length ? r.basis.map((b) => `<span class="chip">${esc(b)}</span>`).join("") : "—"}</div></dd>${r.poles ? `<dt>pole orders</dt><dd>${r.poles.join(", ") || "—"}</dd>` : ""}${r.differentials ? `<dt>differentials</dt><dd>${esc(r.differentials.join(", "))}</dd>` : ""}<dt>ℓ(D)</dt><dd><b>${r.ell}</b></dd><dt>Riemann–Roch</dt><dd>${esc(r.rr.text)}${r.rr.nonspecial ? " · nonspecial" : " · special"}</dd></dl><p class="note">${esc(r.note)}</p>${r.curve.type !== "P1" || r.divisor ? `<button type="button" class="btn sm" id="cp-load">Load into the laboratory</button>` : ""}`;
+  $("cp-out").innerHTML = `<dl class="kv"><dt>curve</dt><dd>${esc(r.curve.label)}${r.curve.type !== "P1" && r.curve.weierstrass ? " (Weierstrass form)" : ""}</dd><dt>genus</dt><dd>${r.g}</dd><dt>divisor</dt><dd>${esc(r.divisor)}, degree ${r.deg}</dd><dt>basis of L(D)</dt><dd><div class="basis">${r.basis.length ? r.basis.map((b) => `<span class="chip">${esc(b)}</span>`).join("") : "—"}</div></dd>${r.poles ? `<dt>pole orders</dt><dd>${r.poles.join(", ") || "—"}</dd>` : ""}${r.differentials ? `<dt>differentials</dt><dd>${esc(r.differentials.join(", "))}</dd>` : ""}<dt>ℓ(D)</dt><dd><b>${r.ell}</b></dd><dt>Riemann–Roch</dt><dd>${esc(r.rr.text)}${r.rr.nonspecial ? " · nonspecial" : " · special"}</dd></dl><p class="note">${esc(r.note)}</p>${r.curve.type !== "P1" || r.divisor ? `<button type="button" class="btn sm" id="cp-load">Load into the laboratory</button>` : ""}`;
 }
 function loadCompute() {
   if (!CP) return;
-  const c = CP.curve, D = (() => { try { return RR.parseDivisor($("cp-div").value, c); } catch { return null; } })();
+  const c = CP.curve, D = (() => { try { return RR.parseDivisor(/** @type {HTMLInputElement} */ ($("cp-div")).value, c); } catch { return null; } })();
   if (!D) return;
-  if (c.type === "P1") { ST.curve = "P1"; ST.div.P1 = D.canonical ? [{ p: RR.INF, n: -2, label: "∞" }] : D.atInfinity !== undefined ? [{ p: RR.INF, n: D.atInfinity, label: "∞" }] : D.divisor.map((t) => ({ ...t, label: t.p.inf ? "∞" : RR.fmt(t.p.re) })); }
-  else if (c.weierstrass) { ST.curve = "elliptic"; ST.E = { a: c.a, b: c.b }; ST.div.elliptic = [{ p: RR.O, n: D.canonical ? 0 : D.atInfinity, label: "O" }].filter((t) => t.n); }
-  else { ST.curve = "hyperelliptic"; const odd = c.degf % 2 === 1, n = D.canonical ? (odd ? 2 * c.g - 2 : c.g - 1) : D.atInfinity; ST.hyper = { g: c.g, even: !odd, f: c.f.slice() }; ST.div.hyperelliptic = odd ? [{ p: { inf: true }, n, label: "∞" }] : [{ p: { inf: "+" }, n, label: "∞₊" }, { p: { inf: "-" }, n, label: "∞₋" }]; }
+  if (c.type === "P1") { ST.curve = "P1"; ST.div.P1 = D.canonical ? [{ p: RR.INF, n: -2, label: "∞" }] : D.atInfinity !== undefined ? [{ p: RR.INF, n: D.atInfinity, label: "∞" }] : /** @type {NonNullable<typeof D.divisor>} the third form */ (D.divisor).map((t) => ({ ...t, label: t.p.inf ? "∞" : RR.fmt(t.p.re) })); }
+  // Off P¹ the divisor is K or n∞, and a Weierstrass curve has its a and b.
+  else if (c.weierstrass) { ST.curve = "elliptic"; ST.E = { a: /** @type {number} */ (c.a), b: /** @type {number} */ (c.b) }; ST.div.elliptic = [{ p: RR.O, n: D.canonical ? 0 : /** @type {number} */ (D.atInfinity), label: "O" }].filter((t) => t.n); }
+  else { ST.curve = "hyperelliptic"; const odd = c.degf % 2 === 1, n = D.canonical ? (odd ? 2 * c.g - 2 : c.g - 1) : /** @type {number} */ (D.atInfinity); ST.hyper = { g: c.g, even: !odd, f: c.f.slice() }; ST.div.hyperelliptic = odd ? [{ p: { inf: true }, n, label: "∞" }] : [{ p: { inf: "+" }, n, label: "∞₊" }, { p: { inf: "-" }, n, label: "∞₋" }]; }
   ST.preset = null; ST.sel = 0; renderSide(); update(); const lab = $("lab"); if (lab.scrollIntoView) lab.scrollIntoView({ behavior: reduced() ? "auto" : "smooth" });
 }
+/** @type {[string, number[], number][]} */
 const SG = [["O on an elliptic curve", [2, 3], 1], ["∞ on y² = f₅(x), genus 2", [2, 5], 2], ["∞ on y² = f₇(x), genus 3", [2, 7], 3], ["a general point, genus 3", [4, 5, 6, 7], 3], ["a general point, genus 4", [5, 6, 7, 8, 9], 4]];
 let SGi = 0;
 function renderSemigroup() {
@@ -840,10 +960,11 @@ function renderSemigroup() {
 }
 /* --- function field --- */
 function renderValuation() {
-  const n0 = Number($("vv-0").value), n1 = Number($("vv-1").value), ni = Number($("vv-i").value);
-  $("vv-0-out").textContent = n0; $("vv-1-out").textContent = n1; $("vv-i-out").textContent = ni;
+  const n0 = Number(/** @type {HTMLInputElement} */ ($("vv-0")).value), n1 = Number(/** @type {HTMLInputElement} */ ($("vv-1")).value), ni = Number(/** @type {HTMLInputElement} */ ($("vv-i")).value);
+  $("vv-0-out").textContent = String(n0); $("vv-1-out").textContent = String(n1); $("vv-i-out").textContent = String(ni);
   const R = 6, lat = RR.valuationLattice(n0, n1, ni, R), F = frame(-R - 0.5, R + 0.5, -R - 0.5, R + 0.5, 320, 320, 14), deg = n0 + n1 + ni;
   let g = "";
+  /** @type {never[]} */
   const poly = []; for (let a = -R; a <= R; a++) for (let b = -R; b <= R; b++) void 0;
   void poly;
   g += `<rect class="halfplane" x="${F.X(-n0)}" y="${F.Y(R + 0.5)}" width="${F.X(R + 0.5) - F.X(-n0)}" height="${F.Y(-R - 0.5) - F.Y(R + 0.5)}" opacity=".6"/><rect class="halfplane" x="${F.X(-R - 0.5)}" y="${F.Y(R + 0.5)}" width="${F.X(R + 0.5) - F.X(-R - 0.5)}" height="${F.Y(-n1) - F.Y(R + 0.5)}" opacity=".6"/>`;
@@ -857,7 +978,7 @@ function renderValuation() {
 }
 /* --- advanced --- */
 function renderClifford() {
-  const g = Number($("cl-g").value), h = $("cl-h").checked; $("cl-g-out").textContent = g;
+  const g = Number(/** @type {HTMLInputElement} */ ($("cl-g")).value), h = /** @type {HTMLInputElement} */ ($("cl-h")).checked; $("cl-g-out").textContent = String(g);
   const data = RR.cliffordData(g, h), F = frame(0, 2 * g + 2, 0, g + 3.5, 340, 240, 24);
   let s = `<line class="axis" x1="${F.X(0)}" y1="${F.Y(0)}" x2="${F.X(2 * g + 2)}" y2="${F.Y(0)}"/><line class="axis" x1="${F.X(0)}" y1="${F.Y(0)}" x2="${F.X(0)}" y2="${F.Y(g + 3.5)}"/>`;
   s += `<rect x="${F.X(0)}" y="${F.Y(g + 3.5)}" width="${F.X(2 * g - 2) - F.X(0)}" height="${F.Y(0) - F.Y(g + 3.5)}" fill="var(--soft2)"/>`;
@@ -867,12 +988,13 @@ function renderClifford() {
   draw("cl-svg", s);
 }
 function renderJacobian() {
-  const g = Number($("jac-g").value), u = Number($("jac-p").value); $("jac-g-out").textContent = g;
+  const g = Number(/** @type {HTMLInputElement} */ ($("jac-g")).value), u = Number(/** @type {HTMLInputElement} */ ($("jac-p")).value); $("jac-g-out").textContent = String(g);
   let s = "";
   if (g === 1) {
     const E = ST.E, P = RR.ecFromAbel(E, Math.min(0.996, Math.max(0.004, u)), 0), a = RR.ecAbel(E, P).u, F0 = ecFrame(), F = frame(F0.x0, F0.x1, F0.y0, F0.y1, 170, 200, 8);
     for (const comp of RR.ecRealLocus(E, F0.x0, F0.x1)) s += `<path class="curve" d="${path([...comp.upper.slice().reverse(), ...comp.lower].filter(([, y]) => Math.abs(y) <= F0.y1 * 1.2), F)}${comp.closed ? "Z" : ""}"/>`;
-    s += `<circle class="pos" cx="${F.X(P.x)}" cy="${F.Y(P.y)}" r="5"/><circle cx="255" cy="100" r="70" fill="none" stroke="var(--map)" stroke-width="2"/><circle class="imgpt" cx="${255 + 70 * Math.cos(2 * Math.PI * a - Math.PI / 2)}" cy="${100 + 70 * Math.sin(2 * Math.PI * a - Math.PI / 2)}" r="6"/><text class="lblm" x="210" y="190">J(E): real circle</text><text class="lbl" x="150" y="105">↦</text>`;
+    // u is kept off 0, so P is an affine point.
+    s += `<circle class="pos" cx="${F.X(/** @type {RRAffine} */ (P).x)}" cy="${F.Y(/** @type {RRAffine} */ (P).y)}" r="5"/><circle cx="255" cy="100" r="70" fill="none" stroke="var(--map)" stroke-width="2"/><circle class="imgpt" cx="${255 + 70 * Math.cos(2 * Math.PI * a - Math.PI / 2)}" cy="${100 + 70 * Math.sin(2 * Math.PI * a - Math.PI / 2)}" r="6"/><text class="lblm" x="210" y="190">J(E): real circle</text><text class="lbl" x="150" y="105">↦</text>`;
     $("jac-out").textContent = `P ↦ [P − O] ↦ u(P) = ${fmt(a, 4)} of the real period: a bijection — in genus one the Jacobian is the curve.`;
   } else {
     for (let k = 0; k < g; k++) { const cx = 45 + k * (250 / Math.max(1, g - 1 || 1)) + (g === 1 ? 125 : 0), th = 2 * Math.PI * ((k + 1) * u + 0.17 * k) - Math.PI / 2; s += `<circle cx="${cx}" cy="100" r="34" fill="none" stroke="var(--map)" stroke-width="2"/><circle class="imgpt" cx="${cx + 34 * Math.cos(th)}" cy="${100 + 34 * Math.sin(th)}" r="5"/><text class="lblm" x="${cx - 14}" y="155">factor ${k + 1}</text>`; }
@@ -882,8 +1004,9 @@ function renderJacobian() {
   draw("jac-svg", s);
 }
 function renderSym() {
-  const g = Number($("sym-g").value), d = Number($("sym-d").value); $("sym-g-out").textContent = g; $("sym-d-out").textContent = d;
-  const big = d > 2 * g - 2, fib = big ? d - g : null;
+  const g = Number(/** @type {HTMLInputElement} */ ($("sym-g")).value), d = Number(/** @type {HTMLInputElement} */ ($("sym-d")).value); $("sym-g-out").textContent = String(g); $("sym-d-out").textContent = String(d);
+  // fib is used only when big.
+  const big = d > 2 * g - 2, fib = big ? d - g : 0;
   $("sym-out").innerHTML = `<p class="math">Sym${sup(d)}(C) → Pic${sup(d)}(C), D ↦ [D]: fibre over [D] = |D| = P${big ? sup(fib) : "^{ℓ(D) − 1}"}</p><p>dim Sym${sup(d)} C = ${d}, dim Pic${sup(d)} C = g = ${g}.</p><p>${big ? `deg ${d} > 2g − 2 = ${2 * g - 2}: ℓ(D) = d + 1 − g = ${d + 1 - g} for every D, so the Abel map is a projective bundle with fibres P${sup(fib)} (dimension d − g = ${fib}) — ${d} = ${g} + ${fib}.` : d < g ? `d < g: the image W${RR.sub(d)} ⊂ Pic${sup(d)} has dimension ${d}; a general fibre is a single divisor.` : `special range: fibres jump; generically ℓ(D) = ${Math.max(1, d + 1 - g)} on the image, larger over special classes (e.g. K).`}</p>`;
   let s = `<rect x="40" y="20" width="260" height="110" rx="12" fill="var(--soft)" stroke="var(--curve)"/><text class="lbl" x="50" y="40">Sym${sup(d)}(C)</text><line class="curve" x1="40" y1="190" x2="300" y2="190"/><text class="lbl" x="50" y="210">Pic${sup(d)}(C) (dim ${g})</text>`;
   for (let k = 0; k < 6; k++) { const x = 70 + k * 42, h = big ? 20 + 12 * Math.min(fib, 6) : k === 2 ? 70 : 12; s += `<line stroke="var(--map)" stroke-width="3" x1="${x}" y1="${120 - h}" x2="${x}" y2="120"/><line stroke="var(--muted)" stroke-dasharray="2 3" x1="${x}" y1="122" x2="${x}" y2="188"/><circle class="imgpt" cx="${x}" cy="190" r="3.5"/>`; }
@@ -896,6 +1019,7 @@ function renderBundles() {
   $("sheaf").innerHTML = `<p><b>Sheaf picture of 𝒪(${d}∞) on P¹.</b> Cover P¹ by U₀ = {x ≠ ∞} and U₁ = {x ≠ 0} (coordinate w = 1/x on U₁). A section is a pair of local functions s₀ ∈ k[x], s₁ ∈ k[w] with</p><p class="math">s₀ = g₀₁ · s₁,  g₀₁ = x${sup(d)} on U₀ ∩ U₁.</p><p>So s₀ is a polynomial whose quotient by x${sup(d)} is a polynomial in 1/x: deg s₀ ≤ ${d}. Collapsing back: H⁰(P¹, 𝒪(${d}∞)) = ⟨1, x, …, x${sup(d)}⟩, dimension ${d + 1} — the same space L(${d}∞) the laboratory found by searching.</p><p class="tiny muted">Advanced preview; the divisor story above never needs it.</p>`;
 }
 /* --- concept map and synthesis --- */
+/** @type {[string, number, number, string][]} */
 const NODES = [["points", 320, 24, "m-functions"], ["divisors", 320, 82, "lab"], ["rational functions", 170, 140, "m-functions"], ["line bundles", 470, 140, "m-advanced"], ["principal divisors", 170, 200, "m-pic"], ["H⁰(C, L)", 470, 200, "m-advanced"], ["Riemann–Roch", 320, 258, "m-rr"], ["linear systems", 320, 312, "m-linsys"], ["maps to Pⁿ", 320, 366, "panel-map"], ["embeddings", 190, 410, "m-elliptic"], ["covers", 450, 410, "m-hyper"], ["adjunction", 110, 452, "m-plane"], ["Riemann–Hurwitz", 530, 452, "m-hyper"], ["curves", 320, 452, "lab"]];
 const EDGES = [[0, 1], [1, 2], [1, 3], [2, 4], [3, 5], [4, 6], [5, 6], [6, 7], [7, 8], [8, 9], [8, 10], [9, 11], [10, 12], [11, 13], [12, 13]];
 function renderConcept() {
@@ -905,11 +1029,13 @@ function renderConcept() {
   draw("concept-svg", s);
 }
 const SYN = ["CURVE", "DIVISOR", "𝒪(D)", "H⁰(C, 𝒪(D))", "BASIS s₀…sₙ", "P ↦ [s₀(P) : … : sₙ(P)]", "PROJECTIVE IMAGE", "NEW GEOMETRY"];
-let synStep = 0, synTimer = null;
+let synStep = 0;
+/** @type {ReturnType<typeof setInterval> | null} */
+let synTimer = null;
 function renderSynthText() {
   $("synth").innerHTML = SYN.map((s, i) => `<span class="${i <= synStep ? "on" : ""}">${esc(s)}</span>`).join("");
   const texts = [
-    `Begin with the curve: ${({ P1: "P¹", elliptic: "the elliptic curve E", hyperelliptic: "a hyperelliptic curve", plane: "a smooth plane curve", abstract: "an abstract curve" })[ST.curve]}, genus ${A.g}.`,
+    `Begin with the curve: ${/** @type {Record<string, string>} */ ({ P1: "P¹", elliptic: "the elliptic curve E", hyperelliptic: "a hyperelliptic curve", plane: "a smooth plane curve", abstract: "an abstract curve" })[ST.curve]}, genus ${A.g}.`,
     `Place a divisor: D = ${A.divisor}, degree ${A.deg}.`,
     `D opens into the line bundle 𝒪(D).`,
     `Its global sections H⁰(C, 𝒪(D)) = L(D) have dimension ${A.exact ? A.ell : `${A.range.min}…${A.range.max}`}.`,
@@ -924,18 +1050,21 @@ function synthPlay() {
   if (synTimer) { clearInterval(synTimer); synTimer = null; $("synth-play").textContent = "Play"; return; }
   if (reduced()) { synStep = SYN.length - 1; renderSynthText(); return; }
   synStep = 0; renderSynthText(); $("synth-play").textContent = "Pause";
-  synTimer = setInterval(() => { synStep++; if (synStep >= SYN.length - 1) { synStep = SYN.length - 1; clearInterval(synTimer); synTimer = null; $("synth-play").textContent = "Play"; } renderSynthText(); }, 1400);
+  synTimer = setInterval(() => { synStep++; if (synStep >= SYN.length - 1) { synStep = SYN.length - 1; clearInterval(/** @type {ReturnType<typeof setInterval>} this interval */ (synTimer)); synTimer = null; $("synth-play").textContent = "Play"; } renderSynthText(); }, 1400);
 }
 /* --- §65 checklist --- */
+/** @type {Record<string, string | null>} */
 const CHECK_PRESET = { "p1-L": "p1-3inf", "e-ell": "e-2o", "e-2o": "e-2o", "e-3o": "e-3o", cubic: "e-3o", rh: "six", plane: "quartic", k2: "k2", quartic: "quartic", pic0: null };
 function renderChecklist() {
   $("checklist").innerHTML = RR.minimumComputations().map((c) => `<li><span class="${c.ok ? "tick" : "cross"}">${c.ok ? "✓" : "✗"}</span><span><b>${esc(c.claim)}</b><br><span class="small muted">${esc(c.value)}</span></span><button type="button" class="btn sm" data-check="${c.id}">${CHECK_PRESET[c.id] ? "Load" : "Show"}</button></li>`).join("");
   $("refs").innerHTML = RR.REFERENCES.map((r) => `<li><b>${esc(r.text)}</b> — ${esc(r.where)}</li>`).join("");
 }
-function renderModulesFromLab() { renderElliptic(); renderStages(); renderBundles(); if ($("jac-g").value === "1") renderJacobian(); }
+function renderModulesFromLab() { renderElliptic(); renderStages(); renderBundles(); if (/** @type {HTMLInputElement} */ ($("jac-g")).value === "1") renderJacobian(); }
+/** @param {string} id */
 function goTo(id) { const e = $(id); if (e && e.scrollIntoView) e.scrollIntoView({ behavior: reduced() ? "auto" : "smooth", block: "start" }); }
 
 /* ================= palette ================= */
+/** @type {[string, () => void][]} */
 const COMMANDS = [
   ["draw P1", () => setCurve("P1")], ["draw elliptic curve", () => setCurve("elliptic")], ["draw genus 2 curve", () => loadPreset("g2")], ["draw hyperelliptic curve", () => setCurve("hyperelliptic")], ["draw plane curve", () => setCurve("plane")], ["draw abstract genus g curve", () => setCurve("abstract")],
   ["add divisor", () => { goTo("lab"); try { $("geo-svg").focus(); } catch { /* not focusable */ } }], ["compute degree", () => goTo("panel-divisor")], ["compute div(f)", () => goTo("m-functions")], ["compute L(D)", () => goTo("panel-sections")], ["compute ℓ(D)", () => goTo("panel-sections")],
@@ -943,21 +1072,25 @@ const COMMANDS = [
   ["show Jacobian", () => goTo("m-advanced")], ["show Abel Jacobi", () => goTo("m-advanced")], ["show branch points", () => goTo("m-hyper")], ["apply Riemann Hurwitz", () => goTo("m-hyper")], ["show Bezout", () => goTo("m-plane")], ["show intersection multiplicity", () => goTo("m-plane")],
   ["show group law", () => goTo("m-elliptic")], ["canonical map laboratory", () => goTo("m-canonical")], ["computation mode", () => goTo("m-compute")], ["Weierstrass gaps", () => goTo("m-compute")], ["valuation vectors", () => goTo("m-field")], ["Clifford explorer", () => goTo("m-advanced")], ["symmetric powers / master diagram", () => goTo("m-advanced")], ["concept map", () => goTo("m-concept")], ["final synthesis", () => { goTo("m-concept"); synthPlay(); }], ["minimum computations checklist", () => goTo("m-check")], ["references", () => goTo("m-refs")],
   ["toggle line-bundle notation", () => setNotation(!document.body.classList.contains("bundle"))],
-  ...RR.PRESETS.map((p) => [`preset: ${p.title}`, () => loadPreset(p.id)]),
+  ...RR.PRESETS.map((p) => /** @type {[string, () => void]} */ ([`preset: ${p.title}`, () => loadPreset(p.id)])),
 ];
 let palSel = 0;
-function palItems() { const q = $("pal-q").value.toLowerCase().replace(/[^a-z0-9ℓφ¹ ]/g, " ").split(/\s+/).filter(Boolean); return COMMANDS.filter(([t]) => q.every((w) => t.toLowerCase().includes(w))); }
+function palItems() { const q = /** @type {HTMLInputElement} */ ($("pal-q")).value.toLowerCase().replace(/[^a-z0-9ℓφ¹ ]/g, " ").split(/\s+/).filter(Boolean); return COMMANDS.filter(([t]) => q.every((w) => t.toLowerCase().includes(w))); }
 function renderPal() { const it = palItems(); palSel = Math.min(palSel, Math.max(0, it.length - 1)); $("pal-list").innerHTML = it.map(([t], i) => `<li role="option" data-cmd="${esc(t)}" aria-selected="${i === palSel}">${esc(t)}</li>`).join("") || `<li>No command</li>`; }
-function openPal() { const d = $("palette"); $("pal-q").value = ""; palSel = 0; renderPal(); try { d.showModal(); } catch { d.setAttribute("open", ""); } try { $("pal-q").focus(); } catch { /* focus blocked */ } }
-function runCmd(t) { const c = COMMANDS.find(([x]) => x === t); try { $("palette").close(); } catch { /* not open */ } if (c) c[1](); }
+function openPal() { const d = /** @type {HTMLDialogElement} */ ($("palette")); /** @type {HTMLInputElement} */ ($("pal-q")).value = ""; palSel = 0; renderPal(); try { d.showModal(); } catch { d.setAttribute("open", ""); } try { $("pal-q").focus(); } catch { /* focus blocked */ } }
+/** @param {string | undefined} t */
+function runCmd(t) { const c = COMMANDS.find(([x]) => x === t); try { /** @type {HTMLDialogElement} */ ($("palette")).close(); } catch { /* not open */ } if (c) c[1](); }
 
 /* ================= notation and theme ================= */
+/** @param {boolean} bundle */
 function setNotation(bundle) { document.body.classList.toggle("bundle", bundle); $("nt-div").setAttribute("aria-pressed", String(!bundle)); $("nt-lb").setAttribute("aria-pressed", String(bundle)); store.set("rr-notation", bundle ? "bundle" : "divisor"); }
 const THEMES = ["auto", "light", "dark"];
+/** @param {string} t */
 function setTheme(t) { if (t === "auto") document.documentElement.removeAttribute("data-theme"); else document.documentElement.setAttribute("data-theme", t); $("theme").textContent = `Theme: ${t}`; try { if (t === "auto") localStorage.removeItem("theme"); else localStorage.setItem("theme", t); } catch { /* storage blocked */ } }
 
 /* ================= beamdswitch deck ================= */
 const deck = () => self.Beamdswitch.deck(RR.report(labState()));
+/** @param {Blob} blob @param {string} name */
 function save(blob, name) { const url = URL.createObjectURL(blob), a = document.createElement("a"); a.href = url; a.download = name; document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000); }
 
 /* ================= wiring ================= */
@@ -965,15 +1098,15 @@ $("nojs").hidden = true; $("app").hidden = false;
 on("curve-pick", "click", sideClick); on("curve-params", "click", sideClick); on("div-controls", "click", sideClick); on("presets", "click", sideClick);
 on("curve-params", "change", sideInput); on("curve-params", "input", (e) => { if (e.target.id === "hy-g" || e.target.id === "ab-g") { const o = e.target.previousElementSibling; if (o) o.textContent = e.target.value; } });
 on("div-controls", "change", sideInput); on("div-controls", "input", (e) => { if (e.target.id === "pl-n" || e.target.id === "ab-deg") sideInput(e); });
-on("layers", "click", (e) => { const b = buttonOf(e); if (!b) return; const k = b.dataset.layer; if (k === "all") { const all = Object.values(ST.layers).every(Boolean); for (const x in ST.layers) ST.layers[x] = !all || x === "curve"; } else ST.layers[k] = !ST.layers[k]; update(); });
+on("layers", "click", (e) => { const b = buttonOf(e); if (!b) return; const k = /** @type {string} every layer button names its layer */ (b.dataset.layer); if (k === "all") { const all = Object.values(ST.layers).every(Boolean); for (const x in ST.layers) ST.layers[x] = !all || x === "curve"; } else ST.layers[k] = !ST.layers[k]; update(); });
 const geo = $("geo-svg"); geo.setAttribute("tabindex", "0");
 geo.addEventListener("pointerdown", geoDown); geo.addEventListener("pointermove", geoMove); geo.addEventListener("pointerup", geoUp); geo.addEventListener("pointercancel", geoUp);
 geo.addEventListener("wheel", geoWheel, { passive: false }); geo.addEventListener("keydown", geoKey);
 on("sections", "click", (e) => { const b = buttonOf(e); if (!b || b.dataset.fn === undefined) return; const i = Number(b.dataset.fn); ST.fnSel = ST.fnSel === i ? null : i; update(); });
-on("rr", "click", (e) => { const b = buttonOf(e); if (!b) return; const k = b.dataset.rr; ST.rrFocus = ST.rrFocus === k ? null : k; if (k === "ell") goTo("panel-sections"); if (k === "deg") goTo("panel-divisor"); update(); });
+on("rr", "click", (e) => { const b = buttonOf(e); if (!b) return; const k = b.dataset.rr ?? null; ST.rrFocus = ST.rrFocus === k ? null : k; if (k === "ell") goTo("panel-sections"); if (k === "deg") goTo("panel-divisor"); update(); });
 rotatable("map-svg", drawMap); rotatable("ver-svg", renderVeronese);
 on("fn-controls", "input", (e) => { const id = e.target.id; if (!id) return; FN[id.slice(3)] = Number(e.target.value); const o = e.target.previousElementSibling; if (o) o.textContent = e.target.value; drawFn(); renderValuation(); });
-on("fn-controls", "click", (e) => { const b = buttonOf(e); if (!b || !b.dataset.fnex) return; Object.assign(FN, { 1: { a: 1, m: 1, b: 0, n: 0 }, 2: { a: 1, m: 1, b: -1, n: 1 }, 3: { a: 0, m: 2, b: 1, n: 3 } }[b.dataset.fnex]); renderFn(); renderValuation(); });
+on("fn-controls", "click", (e) => { const b = buttonOf(e); if (!b || !b.dataset.fnex) return; Object.assign(FN, /** @type {Record<string, Record<string, number>>} */ ({ 1: { a: 1, m: 1, b: 0, n: 0 }, 2: { a: 1, m: 1, b: -1, n: 1 }, 3: { a: 0, m: 2, b: 1, n: 3 } })[b.dataset.fnex]); renderFn(); renderValuation(); });
 on("lo-m", "input", renderLocalOrder); on("el-d", "input", renderEligibility);
 on("eq-d", "input", renderEquiv); on("eq-d2", "input", renderEquiv);
 on("bal-g", "input", renderBalance); on("bal-d", "input", renderBalance);
@@ -989,11 +1122,11 @@ on("sg-pick", "click", (e) => { const b = buttonOf(e); if (b) { SGi = Number(b.d
 for (const id of ["vv-0", "vv-1", "vv-i"]) on(id, "input", renderValuation);
 on("cl-g", "input", renderClifford); on("cl-h", "change", renderClifford);
 for (const id of ["jac-g", "jac-p"]) on(id, "input", renderJacobian); for (const id of ["sym-g", "sym-d"]) on(id, "input", renderSym);
-const conceptGo = (e) => { const n = e.target.closest && e.target.closest("[data-go]"); if (n) goTo(n.getAttribute("data-go")); };
+const conceptGo = (/** @type {Event} */ e) => { const t = /** @type {Element} */ (e.target), n = t.closest && t.closest("[data-go]"); if (n) goTo(/** @type {string} */ (n.getAttribute("data-go"))); };
 on("concept-svg", "click", conceptGo); on("concept-svg", "keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); conceptGo(e); } });
 on("synth-play", "click", synthPlay); on("synth-step", "click", () => { synStep = (synStep + 1) % SYN.length; renderSynthText(); });
 on("open-synthesis", "click", () => { goTo("m-concept"); synthPlay(); });
-on("checklist", "click", (e) => { const b = buttonOf(e); if (!b) return; const p = CHECK_PRESET[b.dataset.check]; if (p) loadPreset(p); else goTo("m-elliptic"); });
+on("checklist", "click", (e) => { const b = buttonOf(e); if (!b) return; const p = CHECK_PRESET[/** @type {string} */ (b.dataset.check)]; if (p) loadPreset(p); else goTo("m-elliptic"); });
 on("nt-div", "click", () => setNotation(false)); on("nt-lb", "click", () => setNotation(true));
 on("theme", "click", () => { const cur = document.documentElement.getAttribute("data-theme") || "auto"; setTheme(THEMES[(THEMES.indexOf(cur) + 1) % 3]); });
 on("open-palette", "click", openPal);
@@ -1014,9 +1147,9 @@ on("copy-beamdswitch", "click", async () => {
 $("modnav").innerHTML = [["m-functions", "Functions"], ["m-pic", "Pic"], ["m-rr", "Riemann–Roch"], ["m-elliptic", "Elliptic"], ["m-hyper", "Hyperelliptic & RH"], ["m-linsys", "Linear systems"], ["m-plane", "Plane curves"], ["m-canonical", "Canonical maps"], ["m-compute", "Compute"], ["m-field", "Function field"], ["m-advanced", "Advanced"], ["m-concept", "Concept map"], ["m-check", "§65 checklist"], ["m-refs", "References"]].map(([id, t]) => `<a href="#${id}">${t}</a>`).join("");
 
 /* ================= WebMCP: read-only tools for agents ================= */
-const result = (v) => ({ content: [{ type: "text", text: JSON.stringify(v) }] });
+const result = (/** @type {unknown} */ v) => ({ content: [{ type: "text", text: JSON.stringify(v) }] });
 const ro = { readOnlyHint: true }, none = { type: "object", properties: {}, additionalProperties: false };
-const plain = (v) => JSON.parse(JSON.stringify(v, (k, x) => (k === "basisF" || k === "D" ? undefined : x)));
+const plain = (/** @type {unknown} */ v) => JSON.parse(JSON.stringify(v, (k, x) => (k === "basisF" || k === "D" ? undefined : x)));
 const tools = [
   { name: "get_metadata", description: "Return what the Riemann–Roch laboratory supports: curve types, the symbolic cases, worked presets, the minimum computations and references.", inputSchema: none, annotations: ro,
     async execute() { return result({ title: document.title, url: "https://teoyujie.org/visuals/riemann-roch", curves: Object.keys(RR.CURVES), symbolic: ["P¹: any divisor", "Weierstrass elliptic curves: D = nO", "y² = f(x): D = n∞ or n(∞₊ + ∞₋)", "smooth plane curves: D = nH"], presets: RR.PRESETS.map((p) => ({ id: p.id, title: p.title })), references: RR.REFERENCES }); } },
@@ -1024,21 +1157,22 @@ const tools = [
     async execute() { const a = plain(A); return result({ curve: labState().curve, divisor: a.divisor, degree: a.deg, genus: a.g, ell: a.ell, exact: a.exact, range: a.range ?? null, basis: a.basis ?? null, pole_orders: a.poles ?? null, riemann_roch: a.rr ?? null, canonical: { K: a.K, degree: a.degK }, map: a.map ?? null, note: a.basisNote ?? null }); } },
   { name: "compute_linear_system", description: "Compute L(D), ℓ(D) and the Riemann–Roch check symbolically for P1 or y^2 = f(x) (Weierstrass cubics included) and a divisor such as 3inf, 3O, K or (on P1) 2[0] + [1] - [inf]. Unsupported input is refused, never guessed. Does not change the page.", annotations: ro,
     inputSchema: { type: "object", properties: { curve: { type: "string", maxLength: 200 }, divisor: { type: "string", maxLength: 200 } }, required: ["curve", "divisor"], additionalProperties: false },
-    async execute(i) { try { const r = RR.compute(String(i.curve || "").slice(0, 200), String(i.divisor || "").slice(0, 200)); return result({ ok: true, curve: r.curve.label, genus: r.g, divisor: r.divisor, degree: r.deg, basis: r.basis, pole_orders: r.poles ?? null, ell: r.ell, riemann_roch: r.rr.text, nonspecial: r.rr.nonspecial, note: r.note }); } catch (e) { return result({ ok: false, error: e.message }); } } },
+    async execute(/** @type {{ curve?: string, divisor?: string }} */ i) { try { const r = RR.compute(String(i.curve || "").slice(0, 200), String(i.divisor || "").slice(0, 200)); return result({ ok: true, curve: r.curve.label, genus: r.g, divisor: r.divisor, degree: r.deg, basis: r.basis, pole_orders: r.poles ?? null, ell: r.ell, riemann_roch: r.rr.text, nonspecial: r.rr.nonspecial, note: r.note }); } catch (e) { return result({ ok: false, error: /** @type {Error} */ (e).message }); } } },
   { name: "apply_riemann_hurwitz", description: "Apply Riemann–Hurwitz 2g_C − 2 = n(2g_D − 2) + Σ(e_P − 1) to a cover of degree n of a genus-g_D curve with the given ramification indices. Does not change the page.", annotations: ro,
     inputSchema: { type: "object", properties: { degree: { type: "integer", minimum: 1, maximum: 50 }, target_genus: { type: "integer", minimum: 0, maximum: 50 }, ramification: { type: "array", items: { type: "integer", minimum: 1 }, maxItems: 200 } }, required: ["degree"], additionalProperties: false },
-    async execute(i) { return result(RR.riemannHurwitz({ degree: i.degree, gTarget: i.target_genus || 0, ramification: i.ramification || [] })); } },
+    async execute(/** @type {{ degree: number, target_genus?: number, ramification?: number[] }} */ i) { return result(RR.riemannHurwitz({ degree: i.degree, gTarget: i.target_genus || 0, ramification: i.ramification || [] })); } },
   { name: "run_minimum_computations", description: "Run the page's required computations (L(d∞) on P¹, ℓ(D) = deg D on E, |2O|, |3O|, the recovered cubic, hyperelliptic genus, plane-curve genus, the genus-2 canonical map, the plane quartic, E ≅ Pic⁰E) and report each result.", inputSchema: none, annotations: ro,
     async execute() { return result(RR.minimumComputations()); } },
 ];
-self.RiemannRochTools = tools;
-self.RiemannRochPage = { state: ST, labState, loadPreset, setCurve, deck, analysis: () => A };
+const page = /** @type {typeof self & { RiemannRochTools?: typeof tools, RiemannRochPage?: object }} */ (self);
+page.RiemannRochTools = tools;
+page.RiemannRochPage = { state: ST, labState, loadPreset, setCurve, deck, analysis: () => A };
 const mc = (typeof document !== "undefined" && document.modelContext) || (typeof navigator !== "undefined" && navigator.modelContext);
 if (mc && typeof mc.registerTool === "function") for (const t of tools) mc.registerTool(t);
 
 /* ================= boot ================= */
 setNotation(store.get("rr-notation") === "bundle");
-setTheme(["light", "dark"].includes(store.get("theme")) ? store.get("theme") : "auto");
+setTheme(["light", "dark"].includes(/** @type {string} */ (store.get("theme"))) ? /** @type {string} */ (store.get("theme")) : "auto");
 renderSide(); update();
 renderFn(); renderLocalOrder(); renderEquiv(); renderBalance(); renderBranch(); renderVeronese(); renderPlane(); renderCanonical(); runCompute(); renderSemigroup(); renderValuation(); renderClifford(); renderJacobian(); renderSym(); renderConcept(); renderChecklist();
 })();
