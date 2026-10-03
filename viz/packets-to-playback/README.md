@@ -56,8 +56,9 @@ input) with a scan for NaN and Infinity, determinism for the fixed seed,
 cumulants from the derivatives of W against direct moments, the exact Gaussian
 AR(1) action, Gaussian block aggregation staying Gaussian while a heavy tail
 does not, the truncated projection, the quartic expansion, the bottleneck,
-`raw.json` and the stub. It also boots the page in `node:vm` against a
-stand-in DOM to check the WebMCP tools, Reset, and that the beamdswitch and
-Copy deck buttons export the deck of the page as set, parsed with
-beamdswitch's own parser. `tests/site-theme.test.mjs` checks the site-theme
-script and that an explicit Dark or Light choice gets the matching palette.
+the bounded memo behind the engine's caches, `raw.json` and the stub. It
+also boots the page in `node:vm` against a stand-in DOM to check the WebMCP
+tools, Reset, and that the beamdswitch and Copy deck buttons export the deck
+of the page as set, parsed with beamdswitch's own parser.
+`tests/site-theme.test.mjs` checks the site-theme script and that an
+explicit Dark or Light choice gets the matching palette.

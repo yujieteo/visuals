@@ -317,3 +317,14 @@ test("the page boots, its WebMCP tools answer, Reset restores the default, and t
   page.run(`document.getElementById("app").listeners.click[0]({ target: { closest: () => ({ dataset: { act: "reset" }, id: "" }) } })`);
   assert.deepEqual((await call("get_current_state")).scenario, plain(P.defaults()));
 });
+
+test("memoised results are reused, and a cache that overflows recomputes the same values", () => {
+  const x = { preset: "football", mbps: 6.3 };
+  const first = P.flow(x);
+  assert.equal(P.flow(x), first, "the same scenario returns the cached flow");
+  const levels = JSON.stringify(first.levels.map((l) => [l.sd, l.rho, l.exkurt]));
+  for (let i = 0; i < 20; i++) P.flow({ preset: "football", mbps: 10 + i }); // more keys than the cache holds
+  const again = P.flow(x);
+  assert.notEqual(again, first, "the overflowed cache was emptied");
+  assert.equal(JSON.stringify(again.levels.map((l) => [l.sd, l.rho, l.exkurt])), levels);
+});

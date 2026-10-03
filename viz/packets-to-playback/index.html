@@ -611,6 +611,15 @@ svg .hl{stroke-width:4}
     const n = typeof v === "number" ? v : typeof v === "string" && v.trim() ? Number(v) : NaN;
     return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : fallback;
   }
+  /* A bounded memo: the cached value for key, or make()'s, stored after emptying a cache above limit entries. */
+  function cached(cache, limit, key, make) {
+    let v = cache.get(key);
+    if (v) return v;
+    v = make();
+    if (cache.size > limit) cache.clear();
+    cache.set(key, v);
+    return v;
+  }
 
   /* ---------- special functions ---------- */
   /* Complementary error function with relative error below 1.2e-7 everywhere (Numerical Recipes erfcc). */
@@ -700,11 +709,8 @@ svg .hl{stroke-width:4}
   /* Student-t quantile at latent z, tabulated once per nu on z in [0, 7] (step 1/32) by bisection
      on the accurate upper tail, then interpolated: the transform is monotone and odd. */
   const tTables = new Map();
-  function tTable(nu) {
-    const key = nu.toFixed(2);
-    let tab = tTables.get(key);
-    if (tab) return tab;
-    tab = new Float64Array(225);
+  const tTable = (nu) => cached(tTables, 16, nu.toFixed(2), () => {
+    const tab = new Float64Array(225);
     for (let i = 1; i < tab.length; i++) {
       const target = 0.5 * erfc(i / 32 / Math.SQRT2);
       let lo = 0, hi = 1;
@@ -712,10 +718,8 @@ svg .hl{stroke-width:4}
       for (let k = 0; k < 80; k++) { const mid = 0.5 * (lo + hi); if (studentTail(mid, nu) > target) lo = mid; else hi = mid; }
       tab[i] = 0.5 * (lo + hi);
     }
-    if (tTables.size > 16) tTables.clear();
-    tTables.set(key, tab);
     return tab;
-  }
+  });
   function tQuantileAtZ(z, tab) {
     const a = Math.min(Math.abs(z), 7) * 32, i = Math.min(Math.floor(a), tab.length - 2), f = a - i, v = tab[i] + (tab[i + 1] - tab[i]) * f;
     return z < 0 ? -v : v;
@@ -799,18 +803,15 @@ svg .hl{stroke-width:4}
   const segCache = new Map();
   /* MODEL.segments consecutive segments of `per` windows each: their mean relative throughputs, sorted. */
   function segmentSample(m, per) {
-    const mm = family(m), key = `${modelKey(mm)}|${per}`;
-    let out = segCache.get(key);
-    if (out) return out;
+    const mm = family(m);
+    return cached(segCache, 24, `${modelKey(mm)}|${per}`, () => {
     const K = MODEL.segments, x = trace(mm, K * per, MODEL.seed), seg = new Float64Array(K);
     for (let k = 0; k < K; k++) { let s = 0; for (let i = 0; i < per; i++) s += x[k * per + i]; seg[k] = s / per; }
     seg.sort();
     let inv = 0;
     for (const v of seg) inv += 1 / v;
-    out = { sorted: seg, invMean: inv / K, mean: mean(seg) };
-    if (segCache.size > 24) segCache.clear();
-    segCache.set(key, out);
-    return out;
+    return { sorted: seg, invMean: inv / K, mean: mean(seg) };
+    });
   }
   /* Fraction of a sorted sample below t, interpolated between order statistics. */
   function ecdf(a, t) {
@@ -964,9 +965,8 @@ svg .hl{stroke-width:4}
      statistics and KL to the Gaussian (the estimated coarse-grained distribution), the couplings of the
      truncated Gaussian AR(1) projection, and what that projection predicts for the next level. */
   function flow(x) {
-    const s = scenario(x), m = modelOf(s), key = `${modelKey(m)}|${s.mbps}`;
-    let f = flowCache.get(key);
-    if (f) return f;
+    const s = scenario(x), m = modelOf(s);
+    return cached(flowCache, 16, `${modelKey(m)}|${s.mbps}`, () => {
     let v = trace(m);
     for (let i = 0; i < v.length; i++) v[i] *= s.mbps;
     const levels = [];
@@ -976,10 +976,8 @@ svg .hl{stroke-width:4}
         predicted: st.deterministic ? { sd: 0, rho: 0, exkurt: 0 } : { sd: st.sd * Math.sqrt((1 + st.rho) / 2), rho: (st.rho * (1 + st.rho)) / 2, exkurt: 0 }, few: v.length < 128 });
       if (l < MODEL.levels) v = blockAverage(v);
     }
-    f = { levels, loss: { g: s.loss / (1 - s.loss) } };
-    if (flowCache.size > 16) flowCache.clear();
-    flowCache.set(key, f);
-    return f;
+    return { levels, loss: { g: s.loss / (1 - s.loss) } };
+    });
   }
   /* What a controller that kept only the Gaussian AR(1) couplings estimated at level l would predict for
      this rung's stall risk, against the full synthetic model. Coarser than a segment, it can only use the
@@ -1005,6 +1003,8 @@ svg .hl{stroke-width:4}
     { id: "kurtosis", label: "Excess kurtosis", cumulant: 4, meaning: "Rare extreme windows beyond a Gaussian" },
   ];
   const eigen = (n) => Math.pow(2, 1 - n / 2);
+  /* Geometric mean of per-step ratios, each floored at 1e-6. */
+  const geoMean = (r) => Math.exp(mean(r.map((q) => Math.log(Math.max(1e-6, q)))));
   function classify(ratio, tol = 0.12) { return ratio > 1 + tol ? "relevant" : ratio < 1 - tol ? "irrelevant" : "marginal"; }
   function scaling(x) {
     const lv = flow(x).levels, out = [];
@@ -1017,12 +1017,12 @@ svg .hl{stroke-width:4}
         // Measured ratio per step from the trace, a geometric mean over levels where the value is not noise.
         const r = [];
         for (let i = 0; i + 1 < series.length && i < 4; i++) if (Math.abs(series[i]) > 0.05) r.push(Math.abs(series[i + 1]) / Math.abs(series[i]));
-        ratio = r.length ? Math.exp(mean(r.map((q) => Math.log(Math.max(1e-6, q))))) : theory;
+        ratio = r.length ? geoMean(r) : theory;
       } else if (o.id === "variance") {
         // Variance under the sqrt 2 normalisation: (1 + rho) per step at the finest level; marginal once blocks exceed the correlation time.
         const r = [];
         for (let i = 0; i + 1 < lv.length && i < 4; i++) if (!lv[i].deterministic) r.push((2 * lv[i + 1].sd * lv[i + 1].sd) / (lv[i].sd * lv[i].sd));
-        ratio = r.length ? Math.exp(mean(r.map((q) => Math.log(Math.max(1e-6, q))))) : 1;
+        ratio = r.length ? geoMean(r) : 1;
       }
       out.push({ ...o, theory, theoryClass: classify(theory), measured: ratio, measuredClass: classify(ratio), series });
     }
@@ -1035,9 +1035,8 @@ svg .hl{stroke-width:4}
      "stable" uses a symmetric Pareto tail of index MODEL.stableAlpha (< 2, infinite variance), normalised
      either by sqrt 2 (the Gaussian rule) or by 2^(1/a) (the stable rule). */
   function clt(x, kind = "finite") {
-    const s = scenario(x), m = modelOf(s), key = `${kind}|${modelKey(m)}`;
-    let out = cltCache.get(key);
-    if (out) return out;
+    const s = scenario(x), m = modelOf(s);
+    return cached(cltCache, 8, `${kind}|${modelKey(m)}`, () => {
     const N = MODEL.clt, r = rng(MODEL.seed + 7), g = normals(MODEL.seed + 7);
     let v = new Float64Array(N);
     const a = MODEL.stableAlpha;
@@ -1051,15 +1050,14 @@ svg .hl{stroke-width:4}
     const norm = kind === "stable" ? Math.pow(2, 1 / a) : Math.SQRT2, levels = [];
     for (let l = 0; l <= MODEL.levels; l++) {
       const st = stats(v), sorted = Float64Array.from(v).sort(), iqr = quantile(sorted, 0.75) - quantile(sorted, 0.25);
+      const median = quantile(sorted, 0.5);
       let far = 0;
-      for (const y of v) if (Math.abs(y - quantile(sorted, 0.5)) > 4 * iqr / 1.349) far++;
+      for (const y of v) if (Math.abs(y - median) > 4 * iqr / 1.349) far++;
       levels.push({ level: l, n: v.length, sd: st.sd, skew: st.skew, exkurt: st.exkurt, iqr, tailFraction: far / v.length, data: v });
       if (l < MODEL.levels) { const w = new Float64Array(v.length >> 1); for (let i = 0; i < w.length; i++) w[i] = (v[2 * i] + v[2 * i + 1]) / norm; v = w; }
     }
-    out = { kind, norm, levels, gaussianTailFraction: 2 * Phi(-4) };
-    if (cltCache.size > 8) cltCache.clear();
-    cltCache.set(key, out);
-    return out;
+    return { kind, norm, levels, gaussianTailFraction: 2 * Phi(-4) };
+    });
   }
 
   /* ---------- generating functions and sources ---------- */
@@ -1139,6 +1137,12 @@ svg .hl{stroke-width:4}
     return e;
   }
   const binOf = (edges, v) => { let i = 0; while (i < edges.length && v > edges[i]) i++; return i; };
+  /* How many times each value occurs. */
+  function tally(values) {
+    const counts = new Map();
+    for (const v of values) counts.set(v, (counts.get(v) || 0) + 1);
+    return counts;
+  }
   function entropyBits(counts, n) {
     let h = 0, k = 0;
     for (const c of counts.values()) if (c > 0) { const p = c / n; h -= p * Math.log2(p); k++; }
@@ -1146,9 +1150,7 @@ svg .hl{stroke-width:4}
   }
   function bottleneck(x) {
     const s = scenario(x), m = modelOf(s), rung = RUNGS.find((r) => r.id === evaluate(x).chosen.id);
-    const key = `${modelKey(m)}|${s.mbps}|${s.buffer}|${s.segment}|${s.loss}|${rung.id}`;
-    let out = ibCache.get(key);
-    if (out) return out;
+    return cached(ibCache, 8, `${modelKey(m)}|${s.mbps}|${s.buffer}|${s.segment}|${s.loss}|${rung.id}`, () => {
     const N = MODEL.histories, P = MODEL.past, per = windowsPer(s.segment), r = rng(MODEL.seed + 11), g = normals(MODEL.seed + 13);
     const models = REGIMES.map((re) => regimeModel(m, re.id)), fs = models.map(transform);
     const yb = yBins(s), size = rung.mbps * s.segment / (1 - s.loss);
@@ -1178,14 +1180,10 @@ svg .hl{stroke-width:4}
     const pY = new Float64Array(nY);
     for (let h = 0; h < train; h++) pY[ys[h]]++;
     for (let i = 0; i < nY; i++) pY[i] = (pY[i] + 0.5) / (train + 0.5 * nY);
-    let hY = 0; const yAll = new Map();
-    for (let h = 0; h < N; h++) yAll.set(ys[h], (yAll.get(ys[h]) || 0) + 1);
-    hY = entropyBits(yAll, N);
+    const hY = entropyBits(tally(ys), N);
     const results = CANDIDATES.map((c) => {
       const zc = new Int32Array(N);
       for (let h = 0; h < N; h++) { let code = 0; for (const p of c.parts) code = code * BINS[p] + codes[p][h]; zc[h] = code; }
-      const all = new Map();
-      for (let h = 0; h < N; h++) all.set(zc[h], (all.get(zc[h]) || 0) + 1);
       const tab = new Map();
       for (let h = 0; h < train; h++) { let row = tab.get(zc[h]); if (!row) tab.set(zc[h], (row = new Float64Array(nY + 1))); row[ys[h]]++; row[nY]++; }
       const kappa = 2;
@@ -1195,12 +1193,10 @@ svg .hl{stroke-width:4}
         gain += Math.log2(q / pY[ys[h]]);
       }
       const cells = c.parts.reduce((p, k) => p * BINS[k], 1);
-      return { ...c, cells, iZX: Math.max(0, entropyBits(all, N)), iZY: Math.max(0, gain / (N - train)), maxZX: Math.log2(cells) };
+      return { ...c, cells, iZX: Math.max(0, entropyBits(tally(zc), N)), iZY: Math.max(0, gain / (N - train)), maxZX: Math.log2(cells) };
     });
-    out = { rung: rung.id, histories: N, train, yLabels: yb.labels, hY, candidates: results, regimes: REGIMES };
-    if (ibCache.size > 8) ibCache.clear();
-    ibCache.set(key, out);
-    return out;
+    return { rung: rung.id, histories: N, train, yLabels: yb.labels, hY, candidates: results, regimes: REGIMES };
+    });
   }
   /* The bottleneck choice among the candidates: minimise I(Z;X) - beta I(Z;Y). */
   function ibChoice(ib, beta) {
@@ -1215,12 +1211,13 @@ svg .hl{stroke-width:4}
      with probability `loss` (seeded). Capped for drawing; the cap says how many are drawn. */
   function packets(x, windows = 2, cap = 480) {
     const s = scenario(x), v = flow(s).levels[0].data, r = rng(MODEL.seed + 17), out = [];
+    const inWindow = (w) => Math.max(1, Math.round((v[w] * WINDOW * 1000) / MODEL.packetKbit));
     let total = 0;
-    for (let w = 0; w < windows; w++) total += Math.max(1, Math.round((v[w] * WINDOW * 1000) / MODEL.packetKbit));
+    for (let w = 0; w < windows; w++) total += inWindow(w);
     const every = Math.max(1, Math.ceil(total / cap));
     let i = 0;
     for (let w = 0; w < windows; w++) {
-      const k = Math.max(1, Math.round((v[w] * WINDOW * 1000) / MODEL.packetKbit));
+      const k = inWindow(w);
       for (let j = 0; j < k; j++, i++) {
         const lost = r() < s.loss, t = (w + (j + 0.5 * r()) / k) * WINDOW;
         if (i % every === 0) out.push({ t, lost, window: w });
