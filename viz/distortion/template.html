@@ -1,0 +1,1057 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Structural Distortion Explorer</title>
+<meta name="description" content="A qualitative, exaggerated 3D view of how axial load, shear, torsion and bending distort a patch of skin on thin-walled structures.">
+<script id="site-theme">try { var t = localStorage.getItem("theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (e) {}</script>
+<style>
+:root{--bg:#ffffff;--fg:#1d1d1f;--muted:#6e6e73;--faint:#a1a1a6;--surface:#f5f5f7;--border:#d2d2d7;--control:#86868b;--grid:#e8e8ed;--axis:#86868b;--focus:#0071e3;--on-focus:#ffffff;--c1:#2a78d6;--c2:#eb6834;--c3:#8a4fd8;--c4:#0f8b8d;--hl:#c43d2f;--ok:#1a7f4b;--warn:#9a6700;--bad:#c4261d;--shadow:rgb(0 0 0/.16);--sans:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;--mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;--math:"Cambria Math","STIX Two Math","Latin Modern Math",Cambria,"Times New Roman",serif;--fade-duration:200ms;--fade-ease:cubic-bezier(0.2,0,0,1);--stage:var(--surface);--panel:var(--bg);--panel-2:var(--bg);--amber:var(--warn);--tension:var(--hl);--compression:var(--c1);--ghost:var(--c1);--steel:var(--axis);--r:.5rem;color-scheme:light dark}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--faint:#6e6e73;--surface:#2c2c2e;--border:#48484a;--control:#8e8e93;--grid:#333336;--axis:#8e8e93;--focus:#2997ff;--on-focus:#1d1d1f;--c1:#3987e5;--c2:#d95926;--c3:#a77bf0;--c4:#3bb6b8;--hl:#ff6961;--ok:#30c07a;--warn:#e3b341;--bad:#ff6961;--shadow:rgb(0 0 0/.6)}}
+:root[data-theme="dark"]{--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--faint:#6e6e73;--surface:#2c2c2e;--border:#48484a;--control:#8e8e93;--grid:#333336;--axis:#8e8e93;--focus:#2997ff;--on-focus:#1d1d1f;--c1:#3987e5;--c2:#d95926;--c3:#a77bf0;--c4:#3bb6b8;--hl:#ff6961;--ok:#30c07a;--warn:#e3b341;--bad:#ff6961;--shadow:rgb(0 0 0/.6);color-scheme:dark}
+:root[data-theme="light"]{color-scheme:light}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  background: var(--bg); color: var(--fg);
+  font: 14px/1.45 var(--sans); letter-spacing: -0.011em; -webkit-font-smoothing: antialiased;
+  display: grid; grid-template-rows: auto 1fr; overflow: hidden;
+}
+header { position: relative; z-index: 5; padding: 10px 16px 8px; border-bottom: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: baseline; }
+#about { margin-left: auto; }
+#about summary { cursor: pointer; color: var(--fg); font-size: 13px; font-weight: 600; list-style: none; border: 1px solid var(--control); border-radius: 999px; padding: 4px 12px; background: var(--bg); }
+#about summary::-webkit-details-marker { display: none; }
+#about[open] summary { border-color: var(--fg); background: var(--fg); color: var(--bg); }
+#about .about-body { position: absolute; right: 16px; top: calc(100% + 6px); width: min(560px, calc(100vw - 32px)); max-height: min(72vh, 640px); overflow: auto; padding: 4px 18px 14px; background: var(--panel); border: 1px solid var(--border); border-radius: var(--r); box-shadow: 0 8px 24px var(--shadow); font-size: 13.5px; }
+.about-body h2 { font-size: 14px; margin: 14px 0 4px; }
+.about-body p, .about-body ul { margin: 4px 0; }
+.about-body ul { padding-left: 18px; }
+.tag { display: inline-block; font: 600 11px/1.5 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; padding: 0 6px; border-radius: 99px; border: 1px solid var(--border); color: var(--muted); vertical-align: 1px; }
+.tag.assumed { color: var(--amber); border-color: var(--amber); }
+#legend { position: absolute; left: 12px; top: 12px; max-width: min(300px, calc(100% - 24px)); padding: 8px 10px; background: var(--panel); border: 1px solid var(--border); border-radius: var(--r); box-shadow: 0 8px 24px var(--shadow); font-size: 12px; }
+#legend .row { display: flex; flex-wrap: wrap; gap: 2px 10px; }
+#legend .fx { margin-top: 5px; color: var(--muted); }
+#legend .fx span { white-space: nowrap; }
+.sym { display: inline-block; width: 14px; height: 10px; border-radius: 2px; vertical-align: -1px; margin-right: 4px; }
+.presets { display: grid; gap: 6px; }
+.presets button { text-align: left; border-radius: var(--r); }
+.presets button[aria-pressed=true] { border-color: var(--fg); background: var(--fg); color: var(--bg); }
+#hint { margin: 8px 0 0; font-size: 12.5px; color: var(--muted); }
+#hint:empty { display: none; }
+#sheet-handle { display: none; }
+h1 { font-size: 18px; margin: 0; font-weight: 700; letter-spacing: -0.02em; }
+.disclaimer { color: var(--muted); margin: 0; font-size: 13px; }
+main { display: grid; grid-template-columns: minmax(0, 1fr) 340px; min-height: 0; }
+#stage { position: relative; min-width: 0; min-height: 0; background: var(--stage); overflow: hidden; }
+#view { display: block; width: 100%; height: 100%; touch-action: none; outline: none; }
+#view:focus-visible { box-shadow: inset 0 0 0 2px var(--focus); }
+#nogl { position: absolute; inset: 0; display: none; place-items: center; padding: 24px; text-align: center; color: var(--muted); }
+#nogl p { max-width: 34em; }
+.nogl #nogl { display: grid; }
+.nogl #view, .nogl #legend { display: none; }
+#panel { background: var(--panel); border-left: 1px solid var(--border); overflow-y: auto; padding: 12px 16px 24px; min-height: 0; }
+fieldset { border: 0; margin: 0 0 14px; padding: 0; min-width: 0; }
+legend { font: 600 12px/1.4 var(--mono); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 0 0 6px; padding: 0; }
+.seg { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.seg label { display: block; position: relative; }
+.seg input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.seg span { display: block; padding: 7px 8px; border: 1px solid var(--control); border-radius: 999px; text-align: center; background: var(--bg); cursor: pointer; }
+.seg input:checked + span { border-color: var(--fg); background: var(--fg); color: var(--bg); font-weight: 600; }
+.seg input:focus-visible + span { outline: 2px solid var(--focus); outline-offset: 2px; }
+.slider { margin: 0 0 10px; transition: opacity 0.2s; }
+.slider .row { display: flex; justify-content: space-between; gap: 8px; }
+.slider output { color: var(--muted); font: 12.5px var(--mono); font-variant-numeric: tabular-nums; text-align: right; }
+.slider.dim { opacity: 0.38; }
+.track { position: relative; }
+.crit { position: absolute; top: 25px; width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 7px solid var(--fg); transform: translateX(-50%); pointer-events: none; }
+.slider.has-crit { margin-bottom: 16px; }
+#buckle-status { margin: 0 0 12px; font-size: 12.5px; color: var(--muted); }
+#buckle-status strong { color: var(--fg); font-weight: 600; }
+input[type=range] { width: 100%; margin: 4px 0 0; accent-color: var(--focus); height: 22px; }
+input[type=range]:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
+button, select { font: inherit; color: var(--fg); background: var(--bg); border: 1px solid var(--control); border-radius: 999px; padding: 6px 12px; cursor: pointer; }
+select { border-radius: var(--r); }
+button:hover, select:hover { background: var(--surface); }
+button:focus-visible, select:focus-visible, summary:focus-visible, input[type=checkbox]:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.toggles label { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; cursor: pointer; }
+.toggles input { width: 16px; height: 16px; accent-color: var(--focus); margin: 0; }
+.toggles label.dim { opacity: 0.38; cursor: default; }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.note { color: var(--muted); font-size: 12.5px; margin: 4px 0 0; }
+#inset { position: absolute; left: 12px; bottom: 12px; width: 236px; background: var(--panel); border: 1px solid var(--border); border-radius: var(--r); box-shadow: 0 8px 24px var(--shadow); }
+#inset-toggle { width: 100%; display: flex; justify-content: space-between; align-items: center; border: 0; background: transparent; border-radius: var(--r); padding: 7px 10px; font-weight: 600; font-size: 13px; }
+#inset-toggle .chev { transition: transform 0.2s; }
+#inset-toggle[aria-expanded=false] .chev { transform: rotate(-90deg); }
+#inset-body { padding: 0 10px 8px; }
+#inset-body[hidden] { display: none; }
+#inset-canvas { display: block; width: 100%; aspect-ratio: 1; }
+#inset-text { margin: 4px 0 0; font-size: 12px; color: var(--muted); }
+.key { display: inline-flex; align-items: center; gap: 4px; margin-right: 8px; }
+.sw { display: inline-block; width: 14px; height: 3px; border-radius: 2px; }
+#maplegend { position: absolute; right: 12px; top: 12px; width: 190px; padding: 8px 10px; background: var(--panel); border: 1px solid var(--border); border-radius: var(--r); box-shadow: 0 8px 24px var(--shadow); font-size: 12px; }
+#maplegend[hidden] { display: none; }
+#maplegend .bar { height: 10px; border-radius: 3px; margin: 5px 0 3px; }
+#maplegend .ends { display: flex; justify-content: space-between; color: var(--muted); }
+.select-row { display: grid; gap: 4px; margin: 0 0 10px; }
+.axis-label { position: absolute; font-size: 12px; color: var(--muted); pointer-events: none; transform: translate(-50%, -50%); }
+@media (max-width: 760px) {
+  body { grid-template-rows: auto minmax(0, 1fr); }
+  header { padding: 8px 16px 6px; }
+  h1 { font-size: 16px; }
+  .disclaimer { font-size: 12px; }
+  main { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) var(--peek); }
+  :root { --peek: 36vh; }
+  #panel { position: fixed; left: 0; right: 0; bottom: 0; height: 80vh; z-index: 4; border-left: 0; border-top: 1px solid var(--border); border-radius: 14px 14px 0 0; box-shadow: 0 8px 24px var(--shadow); padding-top: 0; transform: translateY(calc(80vh - var(--peek))); transition: transform 0.25s ease; }
+  #panel.open { transform: translateY(0); }
+  #sheet-handle { display: flex; position: sticky; top: 0; z-index: 1; width: calc(100% + 32px); margin: 0 -16px 8px; justify-content: center; align-items: center; gap: 8px; padding: 10px 0 8px; border: 0; border-radius: 14px 14px 0 0; background: var(--panel); font-size: 12px; color: var(--muted); touch-action: none; }
+  #sheet-handle::before { content: ""; width: 40px; height: 5px; border-radius: 3px; background: var(--border); }
+  #inset { width: 150px; left: 8px; bottom: 8px; }
+  #inset-text { display: none; }
+  #inset-toggle { font-size: 12px; padding: 5px 8px; }
+  #legend { left: 8px; top: 8px; padding: 6px 8px; font-size: 11px; max-width: calc(100% - 16px); }
+  #legend .fx { display: none; }
+  #maplegend { right: 8px; top: auto; bottom: 8px; width: 150px; font-size: 11px; }
+}
+@media (prefers-reduced-motion: reduce) { :root { --fade-duration: 0ms; } * { transition: none !important; animation: none !important; } }
+@media print{:root:root{--bg:#ffffff;--fg:#1d1d1f;--muted:#6e6e73;--faint:#a1a1a6;--surface:#f5f5f7;--border:#d2d2d7;--control:#86868b;--grid:#e8e8ed;--axis:#86868b;--focus:#0071e3;--on-focus:#ffffff;--c1:#2a78d6;--c2:#eb6834;--c3:#8a4fd8;--c4:#0f8b8d;--hl:#c43d2f;--ok:#1a7f4b;--warn:#9a6700;--bad:#c4261d;--shadow:rgb(0 0 0/.16);color-scheme:light}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Structural Distortion Explorer</h1>
+  <p class="disclaimer" id="disclaimer">Exaggerated, qualitative visualisation. Not to scale, no units.</p>
+  <details id="about">
+    <summary>What am I looking at?</summary>
+    <div class="about-body">
+      <p>A small square of skin, the amber <strong>unit patch</strong>, sits on a thin-walled structure. Loads distort the structure; the patch shows what that does to the skin under it. Everything is exaggerated and nothing has units: the shapes are qualitatively right, not calibrated.</p>
+      <p>The pale-blue wireframe is the undeformed <strong>ghost</strong>; the grey body is the deformed shape. The tube, box and I-beam are cantilevers clamped at the dark block and loaded at the free end; the panel is loaded in its own plane along its edges.</p>
+      <h2>The four effects</h2>
+      <ul>
+        <li><strong>Tension and compression</strong> <span class="tag">analytic</span> stretch or shorten the member uniformly; the Poisson effect <span class="tag">analytic</span> thins it in tension and swells it in compression.</li>
+        <li><strong>Shear</strong> <span class="tag">analytic</span> slides one side of the patch past the other: a square becomes a rhombus, stretched along one diagonal and shortened along the other. Rotate the patch to 45° to see those diagonals directly. Transverse shear follows the thin-walled shear flow, strongest in the webs.</li>
+        <li><strong>Torsion</strong> <span class="tag">analytic</span> twists each section about the shear centre (Saint-Venant), putting closed skins in shear. Open sections such as the I-beam also <strong>warp</strong> <span class="tag">analytic</span>: the flange tips slide along the span in opposite directions (Vlasov). Restraining warping at the clamp holds them there and stiffens the beam. The circular tube does not warp.</li>
+        <li><strong>Bending</strong> <span class="tag">analytic</span> curves the member with plane sections staying plane (Euler-Bernoulli): one side stretches, the other shortens. In the box flanges <strong>shear lag</strong> <span class="tag assumed">assumed shape</span> makes the strain peak next to the webs.</li>
+      </ul>
+      <h2>Buckling <span class="tag assumed">assumed shape</span></h2>
+      <p>Thin plates in compression or shear stay flat up to a critical load, marked ▲ on the slider, and then wrinkle: diagonal waves along the tension diagonal in shear, square waves in compression. The panel skin, the box walls and the I-beam web can buckle; the tube stays smooth. Stringers and frames split the panel into smaller plates, which raises the threshold and shortens the waves. The wave shapes and the thresholds are assumed, not solved: thresholds keep the right order but are squeezed so each case buckles within the slider range.</p>
+      <h2>The inset</h2>
+      <p>The flattened patch, with rigid rotation removed and its shape change enlarged: dashed ghost, amber deformed outline, principal directions as <span style="color:var(--tension)">red</span> (stretching) and <span style="color:var(--compression)">blue</span> (shortening) arrows, and the shear angle γ as an arc. It shows the membrane strain of the wall; wrinkles appear in 3D only.</p>
+      <h2>Controls</h2>
+      <p>Drag to orbit, scroll or pinch to zoom, right-drag or two fingers to pan; with the view focused, the arrow keys pan and Shift with an arrow key orbits. Drag the patch, or tap the body to move it; the patch sliders do the same from the keyboard. Colour maps are scaled to the largest value shown, so they show pattern and sign, not size.</p>
+    </div>
+  </details>
+</header>
+<main>
+  <section id="stage" aria-label="3D view">
+    <canvas id="view" tabindex="0" aria-label="3D view of the deformed structure. Drag or use the arrow keys to orbit, scroll or pinch to zoom."></canvas>
+    <div id="nogl" role="alert"><p><strong>This view needs WebGL, which this browser has turned off or does not support.</strong><br>Turn on hardware acceleration or try another modern browser. The controls still work.</p></div>
+    <div id="axis-labels" aria-hidden="true"></div>
+    <div id="legend" aria-label="Legend">
+      <div class="row">
+        <span><span class="sym" style="border:1px solid var(--ghost)"></span>undeformed</span>
+        <span><span class="sym" style="background:var(--steel)"></span>deformed</span>
+        <span><span class="sym" style="border:2px solid var(--amber)"></span>unit patch</span>
+      </div>
+      <div class="fx" id="effects" aria-live="polite"></div>
+    </div>
+    <div id="maplegend" hidden aria-live="polite"><strong id="ml-title"></strong><div class="bar" id="ml-bar"></div><div class="ends"><span id="ml-lo"></span><span id="ml-mid"></span><span id="ml-hi"></span></div></div>
+    <section id="inset" aria-label="Unit patch in 2D">
+      <button type="button" id="inset-toggle" aria-expanded="true" aria-controls="inset-body"><span>Unit patch, flattened</span><span class="chev" aria-hidden="true">▾</span></button>
+      <div id="inset-body">
+        <canvas id="inset-canvas" role="img" aria-label="Unit patch before and after deformation"></canvas>
+        <p id="inset-text" aria-live="polite"></p>
+      </div>
+    </section>
+  </section>
+  <aside id="panel" aria-label="Controls">
+    <button type="button" id="sheet-handle" aria-expanded="false" aria-controls="panel">Controls</button>
+    <fieldset>
+      <legend>Try this</legend>
+      <div class="presets" id="presets"></div>
+      <p id="hint" aria-live="polite"></p>
+    </fieldset>
+    <fieldset>
+      <legend>Structure</legend>
+      <div class="seg" id="structure">
+        <label><input type="radio" name="structure" value="tube" checked><span>Circular tube</span></label>
+        <label><input type="radio" name="structure" value="box"><span>Rectangular box</span></label>
+        <label><input type="radio" name="structure" value="ibeam"><span>I-beam</span></label>
+        <label><input type="radio" name="structure" value="panel"><span>Stiffened panel</span></label>
+      </div>
+    </fieldset>
+    <fieldset id="loads">
+      <legend>Loads</legend>
+    </fieldset>
+    <p id="buckle-status" aria-live="polite"></p>
+    <fieldset id="patch">
+      <legend>Unit patch</legend>
+      <p class="note" style="margin:0 0 8px">Drag the amber patch on the body, or tap the body to move it there.</p>
+    </fieldset>
+    <fieldset>
+      <legend>View</legend>
+      <div id="view-sliders"></div>
+      <div class="select-row">
+        <label for="contour">Colour map</label>
+        <select id="contour">
+          <option value="none">None</option>
+          <option value="shear">Shear strain</option>
+          <option value="axial">Axial strain</option>
+          <option value="warping">Warping displacement</option>
+        </select>
+      </div>
+      <div class="toggles">
+        <label><input type="checkbox" id="t-stringers" checked> Stringers (panel)</label>
+        <label><input type="checkbox" id="t-frames" checked> Frames (panel)</label>
+        <label><input type="checkbox" id="t-restraint"> Restrain warping at the clamp</label>
+        <label><input type="checkbox" id="t-arrows" checked> Load arrows</label>
+        <label><input type="checkbox" id="t-axes" checked> Axes triad</label>
+        <label><input type="checkbox" id="t-autoplay"> Auto-play the loads</label>
+      </div>
+      <p class="note" id="motion-note" hidden>Auto-play is off because your system asks for reduced motion.</p>
+      <div class="actions"><button type="button" id="reset">Reset</button><button type="button" id="reset-view">Reset view</button></div>
+    </fieldset>
+    <fieldset>
+      <legend>Narrated talk</legend>
+      <div class="actions"><button type="button" id="save-beamdswitch" title="Save a narrated Markdown talk about this view, to open in beamdswitch">beamdswitch</button><button type="button" id="copy-beamdswitch" title="Copy the same beamdswitch deck to the clipboard, to paste into beamdswitch">Copy deck</button></div>
+      <p class="note" id="deck-status" role="status"></p>
+      <p class="note">Saves the set loads as a narrated talk: a Markdown deck with the set-up, method, results and checks, in the words shown here, and a spoken narration on every slide. Open it in <a href="https://teoyujie.org/visuals/beamdswitch/">beamdswitch</a> to get slides, a handout, narration and a video. Copy deck puts the same deck on the clipboard to paste into beamdswitch, for when the browser blocks the download.</p>
+    </fieldset>
+  </aside>
+</main>
+<script>/*@THREE@*/</script>
+<script>/*@KINEMATICS@*/</script>
+<script>/*@BEAMDSWITCH@*/</script>
+<script>
+(() => {
+"use strict";
+const META = /*@DATA@*/;
+const D = window.Distortion;
+const $ = (id) => document.getElementById(id);
+const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
+/* ---------- Colour scales ---------- */
+const hexRGB = (h) => { const n = parseInt(h.replace("#", ""), 16); return [(n >> 16 & 255) / 255, (n >> 8 & 255) / 255, (n & 255) / 255]; };
+const hex = (c) => `rgb(${c.map((x) => Math.round(x * 255)).join(",")})`;
+const lin = (c) => c.map((x) => (x <= 0.04045 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4)));
+let DIV = [], SEQ = [];
+function setScales() {
+  const bg = hexRGB(css("--bg")), c1 = hexRGB(css("--c1"));
+  DIV = [hexRGB(css("--compression")), bg, hexRGB(css("--tension"))];
+  SEQ = [0.15, 0.35, 0.55, 0.8, 1].map((f) => bg.map((x, i) => x + (c1[i] - x) * f));
+}
+setScales();
+const mix = (a, b, f) => a.map((x, i) => x + (b[i] - x) * f);
+function diverging(t) { t = Math.max(-1, Math.min(1, t)); return lin(t < 0 ? mix(DIV[1], DIV[0], -t) : mix(DIV[1], DIV[2], t)); }
+function sequential(t) { t = Math.max(0, Math.min(1, t)) * (SEQ.length - 1); const i = Math.min(Math.floor(t), SEQ.length - 2); return lin(mix(SEQ[i], SEQ[i + 1], t - i)); }
+
+/* ---------- State ---------- */
+const state = D.defaultState();
+const ui = { arrows: true, axes: true, contour: "none", autoplay: false, play: 1 };
+/* What is drawn: the set loads, scaled by the auto-play factor when it runs. */
+function viewState() {
+  if (!ui.autoplay) return state;
+  const loads = {};
+  for (const k of D.LOADS) loads[k] = state.loads[k] * ui.play;
+  return { ...state, loads };
+}
+let model = D.buildModel(state.structure);
+
+/* ---------- Controls ---------- */
+/* The words for loads, strains and buckling live in kinematics.js, shared with the beamdswitch report. */
+const { LOAD_UI, loadText, strainWord, shearWord, alongWord, onsetText } = D;
+function slider(parent, id, label, min, max, step, value) {
+  const wrap = document.createElement("div");
+  wrap.className = "slider"; wrap.id = `w-${id}`;
+  wrap.innerHTML = `<div class="row"><label for="s-${id}">${label}</label><output id="o-${id}" for="s-${id}"></output></div>
+    <div class="track"><input type="range" id="s-${id}" min="${min}" max="${max}" step="${step}" value="${value}"></div>`;
+  parent.appendChild(wrap);
+  return wrap.querySelector("input");
+}
+for (const k of D.LOADS) slider($("loads"), k, LOAD_UI[k].label, -1, 1, 0.01, 0);
+slider($("view-sliders"), "exaggeration", "Exaggeration", 0.5, 3, 0.1, 1);
+slider($("patch"), "along", "Position along the span", 0, 1, 0.005, 0.5);
+slider($("patch"), "around", "Position around the section", 0, 1, 0.002, 0);
+slider($("patch"), "angle", "Rotation", 0, 90, 1, 0);
+
+function critMarkers() {
+  const crit = D.criticalLoads(model, state);
+  for (const k of D.LOADS) {
+    const track = $(`s-${k}`).parentElement;
+    for (const m of track.querySelectorAll(".crit")) m.remove();
+    const marks = [crit[k].neg != null ? -crit[k].neg : null, crit[k].pos].filter((x) => x != null);
+    for (const x of marks) {
+      const m = document.createElement("span");
+      m.className = "crit"; m.title = "Buckling starts beyond this mark (this load alone)";
+      m.style.left = `calc(8px + (100% - 16px) * ${(x + 1) / 2})`;
+      track.appendChild(m);
+    }
+    $(`w-${k}`).classList.toggle("has-crit", marks.length > 0);
+    const s = $(`s-${k}`), base = s.getAttribute("aria-valuetext") || "";
+    if (marks.length) s.setAttribute("aria-valuetext", `${base}; ${onsetText(crit, k)}`);
+  }
+  buckleStatus();
+}
+
+function setHTML(id, html) { if ($(id).innerHTML !== html) $(id).innerHTML = html; }
+function buckleStatus() {
+  const P = D.prepare(model, viewState()), b = D.bucklingState(P).filter((x) => x.buckled);
+  const fx = D.activeEffects(P).map((e) => {
+    const m = META.effects.find((x) => x.id === e.id);
+    return `<span>${m ? m.label : e.id}${e.basis === "assumed" ? ' <span class="tag assumed">assumed</span>' : ""}</span>`;
+  });
+  setHTML("effects", fx.length ? `Showing: ${fx.join(" · ")}` : "No load: move a load slider or try a preset.");
+  const names = [...new Set(b.map((x) => x.name))];
+  setHTML("buckle-status", model.structure === "tube"
+    ? "The tube stays smooth: its buckling is not modelled."
+    : `${names.length ? `<strong>Buckled:</strong> ${names.join(", ")}.` : "No buckling."} ▲ on a slider marks where buckling starts for that load alone.`);
+}
+
+function syncControls() {
+  for (const r of document.querySelectorAll("input[name=structure]")) r.checked = r.value === state.structure;
+  for (const k of D.LOADS) {
+    const s = $(`s-${k}`), applies = D.APPLIES[k].includes(state.structure);
+    s.value = state.loads[k];
+    const text = applies ? loadText(k, state.loads[k]) : "not used here";
+    $(`o-${k}`).textContent = text; s.setAttribute("aria-valuetext", text);
+    s.disabled = !applies; $(`w-${k}`).classList.toggle("dim", !applies);
+  }
+  $("s-exaggeration").value = state.exaggeration;
+  const ex = `${Number(state.exaggeration).toFixed(1)}×`;
+  $("o-exaggeration").textContent = ex; $("s-exaggeration").setAttribute("aria-valuetext", ex);
+  $("t-arrows").checked = ui.arrows; $("t-axes").checked = ui.axes; $("t-autoplay").checked = ui.autoplay;
+  $("t-restraint").checked = !!state.warpingRestraint; $("contour").value = ui.contour;
+  const panel = state.structure === "panel";
+  for (const [id, on] of [["t-stringers", panel], ["t-frames", panel], ["t-restraint", !panel]]) {
+    $(id).disabled = !on; $(id).closest("label").classList.toggle("dim", !on);
+  }
+  $("t-stringers").checked = state.stringers; $("t-frames").checked = state.frames;
+  critMarkers();
+  const ps = D.slidersFromPatch(model, state.patch);
+  $("s-along").value = ps.along; $("s-around").value = ps.around; $("s-angle").value = ps.angle;
+  const w = model.walls[state.patch.wall];
+  const where = alongWord(ps.along);
+  $("o-along").textContent = where; $("s-along").setAttribute("aria-valuetext", where);
+  $("o-around").textContent = w.name.toLowerCase(); $("s-around").setAttribute("aria-valuetext", `on the ${w.name.toLowerCase()}`);
+  $("o-angle").textContent = `${Math.round(state.patch.angle)}°`; $("s-angle").setAttribute("aria-valuetext", `${Math.round(state.patch.angle)} degrees`);
+}
+
+$("panel").addEventListener("input", (ev) => {
+  const t = ev.target;
+  if (t.name === "structure") setStructure(t.value);
+  else if (t.id.startsWith("s-")) {
+    const k = t.id.slice(2);
+    if (k === "exaggeration") state.exaggeration = Number(t.value);
+    else if (k === "along" || k === "around" || k === "angle") state.patch = D.patchFromSliders(model, Number($("s-along").value), Number($("s-around").value), Number($("s-angle").value));
+    else state.loads[k] = Number(t.value);
+  } else if (t.id === "t-arrows") ui.arrows = t.checked;
+  else if (t.id === "t-restraint") state.warpingRestraint = t.checked;
+  else if (t.id === "t-stringers") state.stringers = t.checked;
+  else if (t.id === "t-autoplay") setAutoplay(t.checked);
+  else if (t.id === "t-frames") state.frames = t.checked;
+  else if (t.id === "contour") ui.contour = t.value;
+  else if (t.id === "t-axes") ui.axes = t.checked;
+  refresh();
+});
+$("reset").addEventListener("click", () => {
+  const s = state.structure;
+  Object.assign(state, D.defaultState(), { structure: s, patch: D.defaultPatch(s) });
+  ui.contour = "none";
+  setAutoplay(false); showPreset(null);
+  if (three) three.frame();
+  refresh();
+});
+$("reset-view").addEventListener("click", () => { if (three) three.frame(); });
+
+/* ---------- Presets ---------- */
+for (const p of D.PRESETS) {
+  const b = document.createElement("button");
+  b.type = "button"; b.textContent = p.title; b.dataset.preset = p.id; b.setAttribute("aria-pressed", "false");
+  $("presets").appendChild(b);
+}
+$("presets").addEventListener("click", (ev) => {
+  const b = ev.target.closest("[data-preset]");
+  if (b) applyPreset(b.dataset.preset);
+});
+function showPreset(id) {
+  for (const b of $("presets").children) b.setAttribute("aria-pressed", String(b.dataset.preset === id));
+  const p = D.PRESETS.find((x) => x.id === id);
+  $("hint").textContent = p ? p.hint : "";
+}
+function applyPreset(id) {
+  const r = D.presetState(id), changed = r.state.structure !== state.structure;
+  Object.assign(state, r.state);
+  ui.contour = r.contour;
+  showPreset(id);
+  if (changed) { model = D.buildModel(state.structure); if (three) three.rebuild(); }
+  if (three) three.frame(r.view);
+  refresh();
+}
+
+document.addEventListener("keydown", (ev) => {
+  if (ev.key === "Escape" && $("about").open) { $("about").open = false; $("about").querySelector("summary").focus(); }
+});
+
+/* ---------- Auto-play ---------- */
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)");
+function motionPolicy() {
+  $("t-autoplay").disabled = reduceMotion.matches;
+  $("t-autoplay").closest("label").classList.toggle("dim", reduceMotion.matches);
+  $("motion-note").hidden = !reduceMotion.matches;
+  if (reduceMotion.matches) setAutoplay(false);
+}
+let playStart = 0, lastFrame = 0;
+function setAutoplay(on) {
+  on = on && !reduceMotion.matches;
+  if (on === ui.autoplay) return;
+  ui.autoplay = on; ui.play = 1;
+  $("t-autoplay").checked = on;
+  for (const id of ["buckle-status", "effects", "inset-text"]) $(id).setAttribute("aria-live", on ? "off" : "polite");
+  if (on) { playStart = performance.now(); requestAnimationFrame(tick); }
+  else refresh();
+}
+function tick(now) {
+  if (!ui.autoplay) return;
+  if (now - lastFrame > 33) { // about 30 frames a second is plenty and spares phones
+    lastFrame = now;
+    ui.play = 0.5 - 0.5 * Math.cos((2 * Math.PI * (now - playStart)) / 5000);
+    if (three) three.update();
+    drawInset();
+    buckleStatus();
+  }
+  requestAnimationFrame(tick);
+}
+reduceMotion.addEventListener("change", motionPolicy);
+
+/* ---------- Mobile bottom sheet ---------- */
+{
+  const handle = $("sheet-handle"), panel = $("panel");
+  const setOpen = (open) => { panel.classList.toggle("open", open); handle.setAttribute("aria-expanded", String(open)); handle.textContent = open ? "Hide controls" : "Controls"; };
+  let y0 = null;
+  handle.addEventListener("pointerdown", (ev) => { y0 = ev.clientY; handle.setPointerCapture(ev.pointerId); });
+  handle.addEventListener("pointerup", (ev) => {
+    if (y0 === null) return;
+    const dy = ev.clientY - y0; y0 = null;
+    setOpen(dy < -24 ? true : dy > 24 ? false : !panel.classList.contains("open"));
+  });
+  handle.addEventListener("keydown", (ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); setOpen(!panel.classList.contains("open")); } });
+}
+
+function setStructure(s) {
+  if (s === state.structure) return;
+  state.structure = s; model = D.buildModel(s);
+  state.patch = D.placePatch(model, D.defaultPatch(s));
+  showPreset(null);
+  if (three) three.rebuild();
+}
+
+/* ---------- 3D view ---------- */
+function hasWebGL() {
+  try { const c = document.createElement("canvas"); return !!(window.WebGLRenderingContext && (c.getContext("webgl2") || c.getContext("webgl"))); }
+  catch { return false; }
+}
+
+const three = hasWebGL() && window.THREE ? createView() : null;
+if (!three) document.body.classList.add("nogl");
+
+function createView() {
+  const T = window.THREE;
+  const canvas = $("view"), stage = $("stage");
+  let renderer;
+  try { renderer = new T.WebGLRenderer({ canvas, antialias: true }); } catch { return null; }
+  const small = Math.min(window.innerWidth, window.innerHeight) < 700;
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, small ? 1.5 : 2));
+  const scene = new T.Scene();
+  const camera = new T.PerspectiveCamera(38, 1, 0.05, 200);
+  const controls = new T.OrbitControls(camera, canvas);
+  controls.enableDamping = false;
+  controls.listenToKeyEvents(canvas);
+
+  scene.add(new T.HemisphereLight(0xffffff, 0x404850, 1.2));
+  const sun = new T.DirectionalLight(0xffffff, 2.0); sun.position.set(4, 8, 6); scene.add(sun);
+  const fill = new T.DirectionalLight(0xffffff, 0.5); fill.position.set(-5, -3, -4); scene.add(fill);
+
+  const bodyMat = new T.MeshStandardMaterial({ color: 0x8d949e, roughness: 0.55, metalness: 0.15, side: T.DoubleSide,
+    polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
+  const mapMat = bodyMat.clone(); mapMat.color.set(0xffffff); mapMat.vertexColors = true; mapMat.metalness = 0; mapMat.roughness = 0.75;
+  const gridMat = new T.LineBasicMaterial({ color: 0x2b2f35, transparent: true, opacity: 0.45 });
+  const ghostMat = new T.LineBasicMaterial({ color: 0x9cc3ff, transparent: true, opacity: 0.5 });
+  const clampMat = new T.MeshStandardMaterial({ color: 0x3b4048, roughness: 0.9, metalness: 0 });
+
+  const patchMat = new T.MeshStandardMaterial({ color: 0x000000, emissive: 0xffb000, roughness: 1, metalness: 0, side: T.DoubleSide });
+  let body = null, ghost = null, grid = null, clampBlock = null, arrows = null, axes = null, patch = null;
+  const labels = $("axis-labels");
+
+  function themeColours() {
+    scene.background = new T.Color(css("--stage"));
+    const light = css("--bg").toLowerCase() === "#ffffff";
+    gridMat.color.set(css("--axis")); gridMat.opacity = light ? 0.35 : 0.5;
+    bodyMat.color.set(css("--steel"));
+    ghostMat.color.set(css("--ghost"));
+    patchMat.emissive.set(css("--amber"));
+    if (axes) axes.children[0].material.color.set(css("--muted"));
+    setScales();
+  }
+  themeColours();
+
+  /* One mesh per wall: outer and inner faces, the end rims and, for open
+   * walls, the side rims. Each vertex remembers its (u, v, zeta); closed walls
+   * repeat the seam column (v = 0 and v = length) so the uv used for picking
+   * never jumps, and the seam normals are averaged after each update. */
+  function wallGeometry(wall) {
+    const params = [], index = [], seams = [];
+    const nv = wall.nv, nu = wall.nu, vc = nv + 1;
+    const uAt = (i) => wall.u0 + (wall.u1 - wall.u0) * i / nu;
+    const vAt = (j) => wall.v0 + (wall.v1 - wall.v0) * j / nv;
+    const h = wall.t / 2;
+    const add = (u, v, z) => { params.push(u, v, z); return params.length / 3 - 1; };
+    const quad = (a, b, c, d) => index.push(a, b, c, a, c, d);
+    for (const z of [h, -h]) {
+      const base = params.length / 3;
+      for (let i = 0; i <= nu; i++) for (let j = 0; j < vc; j++) add(uAt(i), vAt(j), z);
+      const id = (i, j) => base + i * vc + j;
+      for (let i = 0; i < nu; i++) for (let j = 0; j < nv; j++) quad(id(i, j), id(i + 1, j), id(i + 1, j + 1), id(i, j + 1));
+      if (wall.closed) for (let i = 0; i <= nu; i++) seams.push(id(i, 0), id(i, nv));
+    }
+    for (const i of [0, nu]) { // end rims
+      const base = params.length / 3;
+      for (let j = 0; j < vc; j++) { add(uAt(i), vAt(j), h); add(uAt(i), vAt(j), -h); }
+      for (let j = 0; j < nv; j++) { const a = base + 2 * j, b = a + 2; quad(a, b, b + 1, a + 1); }
+    }
+    if (!wall.closed) for (const j of [0, nv]) { // side rims
+      const base = params.length / 3;
+      for (let i = 0; i <= nu; i++) { add(uAt(i), vAt(j), h); add(uAt(i), vAt(j), -h); }
+      for (let i = 0; i < nu; i++) { const a = base + 2 * i, b = a + 2; quad(a, b, b + 1, a + 1); }
+    }
+    const g = new T.BufferGeometry();
+    g.setAttribute("position", new T.BufferAttribute(new Float32Array(params.length), 3));
+    const uv = new Float32Array(params.length / 3 * 2);
+    for (let k = 0; k < params.length / 3; k++) { uv[2 * k] = params[3 * k]; uv[2 * k + 1] = params[3 * k + 1]; }
+    g.setAttribute("uv", new T.BufferAttribute(uv, 2));
+    g.setAttribute("color", new T.BufferAttribute(new Float32Array(params.length), 3));
+    g.setIndex(index);
+    g.userData.params = Float32Array.from(params);
+    g.userData.seams = seams;
+    return g;
+  }
+
+  /* Faint surface grid: lines at fixed u (rings) and fixed v (generators). */
+  function gridParams(m) {
+    const segs = [];
+    const along = m.grid.along, around = m.grid.around;
+    const gridWalls = m.walls.filter((w) => !w.noGrid), total = gridWalls.reduce((a, w) => a + w.v1 - w.v0, 0);
+    for (const wall of gridWalls) {
+      const faces = wall.closed ? [1] : [1, -1];
+      const off = wall.t / 2 + 0.004;
+      const nvSeg = Math.max(8, Math.round(wall.nv / 2)), nuSeg = Math.round(wall.nu / 2);
+      const perWall = Math.max(2, Math.round(around * (wall.v1 - wall.v0) / total));
+      for (const f of faces) {
+        for (let k = 0; k <= along; k++) {
+          const u = wall.u0 + (wall.u1 - wall.u0) * k / along;
+          for (let j = 0; j < nvSeg; j++) {
+            const v0 = wall.v0 + (wall.v1 - wall.v0) * j / nvSeg, v1 = wall.v0 + (wall.v1 - wall.v0) * (j + 1) / nvSeg;
+            segs.push(wall.id, u, v0, f * off, wall.id, u, v1, f * off);
+          }
+        }
+        const lines = wall.closed ? perWall : perWall + 1;
+        for (let k = 0; k < lines; k++) {
+          const v = wall.v0 + (wall.v1 - wall.v0) * k / (wall.closed ? perWall : perWall);
+          for (let i = 0; i < nuSeg; i++) {
+            const u0 = wall.u0 + (wall.u1 - wall.u0) * i / nuSeg, u1 = wall.u0 + (wall.u1 - wall.u0) * (i + 1) / nuSeg;
+            segs.push(wall.id, u0, v, f * off, wall.id, u1, v, f * off);
+          }
+        }
+      }
+    }
+    return Float32Array.from(segs);
+  }
+
+  function lineObject(params, material) {
+    const g = new T.BufferGeometry();
+    g.setAttribute("position", new T.BufferAttribute(new Float32Array(params.length / 4 * 3), 3));
+    g.userData.params = params;
+    return new T.LineSegments(g, material);
+  }
+
+  function fillLines(obj, P) {
+    const p = obj.geometry.userData.params, pos = obj.geometry.attributes.position.array;
+    for (let i = 0, k = 0; i < p.length; i += 4, k += 3) {
+      const w = model.walls[p[i]];
+      const q = P ? D.deform(P, w, p[i + 1], p[i + 2], p[i + 3]) : refPoint(w, p[i + 1], p[i + 2], p[i + 3]);
+      pos[k] = q[0]; pos[k + 1] = q[1]; pos[k + 2] = q[2];
+    }
+    obj.geometry.attributes.position.needsUpdate = true;
+    obj.geometry.computeBoundingSphere();
+  }
+  const refPoint = (w, u, v, z) => { const r = D.reference(w, u, v, z); return [r.x, r.y, r.z]; };
+
+  function disposeGroup(obj) {
+    if (!obj) return;
+    scene.remove(obj);
+    obj.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
+  }
+
+  function rebuild() {
+    for (const o of [body, ghost, grid, clampBlock, arrows, axes, patch]) disposeGroup(o);
+    patch = new T.Mesh(new T.BufferGeometry(), patchMat); scene.add(patch);
+    body = new T.Group();
+    for (const wall of model.walls) {
+      const mesh = new T.Mesh(wallGeometry(wall), bodyMat);
+      mesh.userData.wall = wall.id;
+      body.add(mesh);
+    }
+    scene.add(body);
+    const gp = gridParams(model);
+    grid = lineObject(gp, gridMat); scene.add(grid);
+    ghost = lineObject(gp, ghostMat); fillLines(ghost, null); scene.add(ghost);
+    // clamp block behind the support (the panel is loaded on its edges instead)
+    clampBlock = new T.Mesh(boxGeometry(0.25, 1.8, 2.0), clampMat);
+    clampBlock.position.set(-0.125 - 0.02, 0, 0);
+    clampBlock.visible = model.structure !== "panel";
+    scene.add(clampBlock);
+    axes = axesTriad(model.structure === "panel" ? [-2.3, -1.25, 0] : [-0.3, 1.05, 1.05]); scene.add(axes);
+    arrows = new T.Group(); scene.add(arrows);
+    frame();
+    refresh();
+  }
+
+  function boxGeometry(dx, dy, dz) {
+    const g = new T.BufferGeometry();
+    const x = dx / 2, y = dy / 2, z = dz / 2;
+    const v = [[-x, -y, -z], [x, -y, -z], [x, y, -z], [-x, y, -z], [-x, -y, z], [x, -y, z], [x, y, z], [-x, y, z]];
+    const faces = [[0, 1, 2, 3], [5, 4, 7, 6], [4, 0, 3, 7], [1, 5, 6, 2], [3, 2, 6, 7], [4, 5, 1, 0]];
+    const pos = [];
+    for (const f of faces) for (const k of [0, 1, 2, 0, 2, 3]) pos.push(...v[f[k]]);
+    g.setAttribute("position", new T.BufferAttribute(new Float32Array(pos), 3));
+    g.computeVertexNormals();
+    return g;
+  }
+
+  function axesTriad(o) {
+    const g = new T.Group(), len = 0.7;
+    const geo = new T.BufferGeometry();
+    geo.setAttribute("position", new T.BufferAttribute(new Float32Array([
+      ...o, o[0] + len, o[1], o[2], ...o, o[0], o[1] + len, o[2], ...o, o[0], o[1], o[2] + len]), 3));
+    g.add(new T.LineSegments(geo, new T.LineBasicMaterial({ color: new T.Color(css("--muted")) })));
+    g.userData.tips = [["x", [o[0] + len + 0.12, o[1], o[2]]], ["y", [o[0], o[1] + len + 0.12, o[2]]], ["z", [o[0], o[1], o[2] + len + 0.12]]];
+    return g;
+  }
+
+  function frame(view) {
+    const L = model.length;
+    if (model.structure === "panel") { controls.target.set(0, 0, 0); camera.position.set(3.0, 2.6, 4.4); }
+    else if (view === "top") { controls.target.set(L / 2, 0, 0); camera.position.set(L / 2 + 1.2, 7.4, 3.6); }
+    else { controls.target.set(L / 2, 0, 0); camera.position.set(L / 2 + 4.2, 3.2, 7.2); }
+    // back off on narrow (portrait) views so the whole member stays in frame
+    const aspect = (stage.clientWidth || 1) / (stage.clientHeight || 1);
+    if (aspect < 1.3) camera.position.sub(controls.target).multiplyScalar(Math.min(2.4, 1.3 / aspect)).add(controls.target);
+    camera.near = 0.05; camera.far = 200; camera.updateProjectionMatrix();
+    controls.update();
+  }
+
+  function updateArrows(P) {
+    arrows.clear();
+    if (!ui.arrows) return;
+    const L = model.length, col = new T.Color(css("--muted"));
+    const tipC = D.axisPoint(P, L);
+    const add = (dir, origin, len) => arrows.add(new T.ArrowHelper(new T.Vector3(...dir).normalize(), new T.Vector3(...origin), len, col, 0.18, 0.1));
+    const { axial, shear, torsion, bending, inplane } = viewState().loads;
+    if (model.structure === "panel") {
+      const G = D.GEOM.panel, ha = G.A / 2 * (1 + P.epsA), hb = G.B / 2;
+      if (Math.abs(axial) > 0.02) for (const s of [1, -1]) {
+        const len = 0.3 + 0.5 * Math.abs(axial), x0 = s * (ha + 0.1) + (axial > 0 ? 0 : s * len);
+        add([s * Math.sign(axial), 0, 0], [x0, 0, 0], len);
+      }
+      if (Math.abs(inplane) > 0.02) {
+        const q = Math.sign(inplane), len = 0.4 + 0.6 * Math.abs(inplane);
+        add([0, q, 0], [ha + 0.18, -len / 2, 0], len); add([0, -q, 0], [-ha - 0.18, len / 2, 0], len);
+        add([q, 0, 0], [-len / 2, hb + 0.18, 0], len); add([-q, 0, 0], [len / 2, -hb - 0.18, 0], len);
+      }
+      return;
+    }
+    if (Math.abs(axial) > 0.02) add([Math.sign(axial), 0, 0], [tipC[0] + (axial > 0 ? 0.15 : 1.05), tipC[1], tipC[2]], 0.3 + 0.6 * Math.abs(axial));
+    if (Math.abs(shear) > 0.02) add([0, Math.sign(shear), 0], [tipC[0] + 0.35, tipC[1] - Math.sign(shear) * 1.1, tipC[2]], 0.3 + 0.6 * Math.abs(shear));
+    if (Math.abs(bending) > 0.02) add([0, Math.sign(bending), 0], [tipC[0] + 0.6, tipC[1] - Math.sign(bending) * 1.1, tipC[2]], 0.3 + 0.6 * Math.abs(bending));
+    if (Math.abs(torsion) > 0.02) arrows.add(torsionArc(tipC, Math.sign(torsion), col));
+  }
+
+  function torsionArc(c, sign, col) {
+    const g = new T.Group(), r = 1.0, pts = [], n = 40, a0 = -0.2, a1 = 4.4;
+    for (let i = 0; i < n; i++) {
+      const a = a0 + (a1 - a0) * i / (n - 1), b = a0 + (a1 - a0) * (i + 1) / (n - 1);
+      if (i === n - 1) break;
+      pts.push(c[0] + 0.35, c[1] + r * Math.sin(a), c[2] + r * Math.cos(a), c[0] + 0.35, c[1] + r * Math.sin(b), c[2] + r * Math.cos(b));
+    }
+    const geo = new T.BufferGeometry(); geo.setAttribute("position", new T.BufferAttribute(new Float32Array(pts), 3));
+    g.add(new T.LineSegments(geo, new T.LineBasicMaterial({ color: col })));
+    const end = sign > 0 ? a0 : a1, dirSign = -sign;
+    const p = new T.Vector3(c[0] + 0.35, c[1] + r * Math.sin(end), c[2] + r * Math.cos(end));
+    const d = new T.Vector3(0, Math.cos(end), -Math.sin(end)).multiplyScalar(dirSign);
+    g.add(new T.ArrowHelper(d, p, 0.01, col, 0.2, 0.12));
+    return g;
+  }
+
+  function update() {
+    const P = D.prepare(model, viewState());
+    for (const mesh of body.children) {
+      const wall = model.walls[mesh.userData.wall];
+      const g = mesh.geometry, pr = g.userData.params, pos = g.attributes.position.array;
+      for (let i = 0; i < pr.length; i += 3) {
+        const q = D.deform(P, wall, pr[i], pr[i + 1], pr[i + 2]);
+        pos[i] = q[0]; pos[i + 1] = q[1]; pos[i + 2] = q[2];
+      }
+      g.attributes.position.needsUpdate = true;
+      g.computeVertexNormals(); g.computeBoundingSphere();
+      const nrm = g.attributes.normal.array, sm = g.userData.seams;
+      for (let k = 0; k < sm.length; k += 2) {
+        const a = 3 * sm[k], b = 3 * sm[k + 1];
+        for (let c = 0; c < 3; c++) nrm[a + c] = nrm[b + c] = (nrm[a + c] + nrm[b + c]) / 2;
+      }
+    }
+    colourMap(P);
+    fillLines(grid, P);
+    updatePatch(P);
+    updateArrows(P);
+    axes.visible = ui.axes;
+    render();
+  }
+
+  /* Colour maps: membrane strain or warping at each (u, v), shared by the
+   * vertices through the thickness. Diverging maps are scaled by the largest
+   * magnitude on the body, so they show pattern and sign, not size. */
+  function colourMap(P) {
+    const mode = ui.contour;
+    for (const mesh of body.children) {
+      mesh.material = mode === "none" ? bodyMat : mapMat;
+      const kind = model.walls[mesh.userData.wall].kind;
+      mesh.visible = kind === "stringer" ? state.stringers : kind === "frame" ? state.frames : true;
+    }
+    const legend = $("maplegend");
+    if (mode === "none") { legend.hidden = true; return; }
+    const values = [];
+    let peak = 0;
+    for (const mesh of body.children) {
+      const wall = model.walls[mesh.userData.wall], pr = mesh.geometry.userData.params, cache = new Map(), vals = new Float32Array(pr.length / 3);
+      for (let i = 0; i < pr.length; i += 3) {
+        const key = `${pr[i]},${pr[i + 1]}`;
+        let val = cache.get(key);
+        if (val === undefined) { val = D.fieldValue(P, wall, pr[i], pr[i + 1], mode); cache.set(key, val); }
+        vals[i / 3] = val; peak = Math.max(peak, Math.abs(val));
+      }
+      values.push(vals);
+    }
+    const flat = peak < 1e-6;
+    body.children.forEach((mesh, k) => {
+      const col = mesh.geometry.attributes.color.array, vals = values[k];
+      for (let i = 0; i < vals.length; i++) {
+        const c = mode === "warping" ? sequential(flat ? 0 : Math.abs(vals[i]) / peak) : diverging(flat ? 0 : vals[i] / peak);
+        col[3 * i] = c[0]; col[3 * i + 1] = c[1]; col[3 * i + 2] = c[2];
+      }
+      mesh.geometry.attributes.color.needsUpdate = true;
+    });
+    const titles = { shear: "Shear strain", axial: "Axial strain", warping: "Warping displacement" };
+    $("ml-title").textContent = titles[mode] + (flat ? ": none here" : "");
+    $("ml-bar").style.background = mode === "warping" ? `linear-gradient(90deg, ${SEQ.map((c) => hex(c)).join(", ")})` : `linear-gradient(90deg, ${hex(DIV[0])}, ${hex(DIV[1])}, ${hex(DIV[2])})`;
+    const ends = { shear: ["one way", "", "other way"], axial: ["compression", "0", "tension"], warping: ["none", "", "most"] }[mode];
+    $("ml-lo").textContent = ends[0]; $("ml-mid").textContent = ends[1]; $("ml-hi").textContent = ends[2];
+    legend.hidden = false;
+  }
+
+  /* The amber 4 x 4 grid as thin ribbons lying on the deformed outer face:
+   * WebGL draws lines one pixel wide, so ribbons are what make it bold. */
+  function updatePatch(P) {
+    const p = state.patch, w = model.walls[p.wall], lines = D.patchParamLines(model, p);
+    const zeta = p.side * (w.t / 2 + 0.006), pos = [];
+    lines.forEach((line, k) => {
+      const edge = k < 2 || k >= lines.length - 2, hw = edge ? 0.02 : 0.011;
+      const pts = line.map(([u, v], i) => {
+        const a = line[Math.max(0, i - 1)], b = line[Math.min(line.length - 1, i + 1)];
+        const du = b[0] - a[0], dv = b[1] - a[1], l = Math.hypot(du, dv) || 1;
+        return [D.deform(P, w, u - dv / l * hw, v + du / l * hw, zeta), D.deform(P, w, u + dv / l * hw, v - du / l * hw, zeta)];
+      });
+      for (let i = 0; i + 1 < pts.length; i++) pos.push(...pts[i][0], ...pts[i][1], ...pts[i + 1][1], ...pts[i][0], ...pts[i + 1][1], ...pts[i + 1][0]);
+    });
+    patch.geometry.dispose();
+    patch.geometry = new T.BufferGeometry();
+    patch.geometry.setAttribute("position", new T.BufferAttribute(new Float32Array(pos), 3));
+    patch.geometry.computeVertexNormals();
+  }
+
+  /* Picking: the uv attribute carries (u, v); the face's zeta gives the side. */
+  const ray = new T.Raycaster(), ndc = new T.Vector2();
+  function pick(ev) {
+    const r = canvas.getBoundingClientRect();
+    ndc.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
+    ray.setFromCamera(ndc, camera);
+    const hit = ray.intersectObjects(body.children.filter((m) => m.visible), false)[0];
+    if (!hit || !hit.uv) return null;
+    const pr = hit.object.geometry.userData.params, f = hit.face;
+    const zs = pr[3 * f.a + 2] + pr[3 * f.b + 2] + pr[3 * f.c + 2];
+    return { wall: hit.object.userData.wall, u: hit.uv.x, v: hit.uv.y, side: zs >= 0 ? 1 : -1 };
+  }
+  function nearPatch(h) {
+    const p = state.patch, w = model.walls[p.wall];
+    if (!h || h.wall !== p.wall || h.side !== p.side) return false;
+    let dv = Math.abs(h.v - p.v);
+    if (w.closed) dv = Math.min(dv, w.path.length - dv);
+    return Math.abs(h.u - p.u) < D.PATCH * 0.75 && dv < D.PATCH * 0.75;
+  }
+  const movePatch = (h) => {
+    if (!D.patchFaces(model).some((f) => f.wall === h.wall)) return;
+    state.patch = D.placePatch(model, { ...h, angle: state.patch.angle }); refresh();
+  };
+  let drag = null;
+  stage.addEventListener("pointerdown", (ev) => {
+    if (ev.target !== canvas || ev.button !== 0) return;
+    const h = pick(ev);
+    drag = { x: ev.clientX, y: ev.clientY, hit: h, moving: nearPatch(h) };
+    if (drag.moving) { controls.enabled = false; canvas.setPointerCapture(ev.pointerId); }
+  }, true);
+  canvas.addEventListener("pointermove", (ev) => {
+    if (!drag || !drag.moving) return;
+    const h = pick(ev);
+    if (h) movePatch(h);
+  });
+  const release = (ev) => {
+    if (!drag) return;
+    if (drag.moving) controls.enabled = true;
+    else if (drag.hit && ev.type === "pointerup" && Math.hypot(ev.clientX - drag.x, ev.clientY - drag.y) < 6) movePatch(drag.hit);
+    drag = null;
+  };
+  canvas.addEventListener("pointerup", release);
+  canvas.addEventListener("pointercancel", release);
+
+  function resize() {
+    const w = stage.clientWidth, h = stage.clientHeight;
+    if (!w || !h) return;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h; camera.updateProjectionMatrix();
+    render();
+  }
+
+  const v3 = new T.Vector3();
+  function placeLabels() {
+    labels.textContent = "";
+    if (!ui.axes) return;
+    const w = stage.clientWidth, h = stage.clientHeight;
+    for (const [name, p] of axes.userData.tips) {
+      v3.set(...p).project(camera);
+      if (v3.z > 1) continue;
+      const el = document.createElement("span");
+      el.className = "axis-label"; el.textContent = name;
+      el.style.left = `${(v3.x + 1) / 2 * w}px`; el.style.top = `${(1 - v3.y) / 2 * h}px`;
+      labels.appendChild(el);
+    }
+  }
+
+  let queued = false;
+  function render() {
+    if (queued) return;
+    queued = true;
+    requestAnimationFrame(() => { queued = false; renderer.render(scene, camera); placeLabels(); });
+  }
+  controls.addEventListener("change", render);
+  new ResizeObserver(resize).observe(stage);
+
+  return { rebuild, update, render, resize, frame, themeColours, scene, camera, renderer };
+}
+
+/* ---------- 2D inset ---------- */
+/* The patch flattened into its own frame (a1 to the right, a2 up), rigid
+ * rotation removed. The shape change is enlarged and softly limited so small
+ * strains show and large ones stay readable: the inset is qualitative too. */
+const INSET_GAIN = 4, INSET_LIMIT = 0.32;
+const soften = (e) => INSET_LIMIT * Math.tanh((INSET_GAIN * e) / INSET_LIMIT);
+function insetShape(st) {
+  const { e11, e22, e12 } = st.patch, ev = D.eig2(e11, e12, e22);
+  const c = Math.cos(ev.angle), s = Math.sin(ev.angle);
+  const l = ev.values.map((x) => Math.sqrt(Math.max(0.05, 1 + 2 * soften(x))));
+  // U = Q diag(l) Q^T
+  const U = [c * c * l[0] + s * s * l[1], c * s * (l[0] - l[1]), s * s * l[0] + c * c * l[1]];
+  return { U, ev, soft: ev.values.map(soften) };
+}
+let insetOpen = true;
+$("inset-toggle").addEventListener("click", () => {
+  insetOpen = !insetOpen;
+  $("inset-toggle").setAttribute("aria-expanded", String(insetOpen));
+  $("inset-body").hidden = !insetOpen;
+  if (insetOpen) drawInset();
+});
+function drawInset() {
+  if (!insetOpen) return;
+  const cv = $("inset-canvas"), dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const size = cv.clientWidth || 200;
+  if (cv.width !== Math.round(size * dpr)) { cv.width = cv.height = Math.round(size * dpr); }
+  const g = cv.getContext("2d");
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  g.clearRect(0, 0, size, size);
+  const P = D.prepare(model, viewState()), st = D.patchStrain(P, state.patch), sh = insetShape(st);
+  const col = { amber: css("--amber"), ghost: css("--ghost"), t: css("--tension"), c: css("--compression"), muted: css("--muted") };
+  const small = size < 180, k = size * (small ? 0.22 : 0.26), cx = size / 2, cy = size / 2 + (small ? 6 : 0);
+  const map = (x, y) => { const X = sh.U[0] * x + sh.U[1] * y, Y = sh.U[1] * x + sh.U[2] * y; return [cx + k * X, cy - k * Y]; };
+  const sq = [[-1, -1], [1, -1], [1, 1], [-1, 1]];
+  // member axis indicator (x along the span, as seen on the patch)
+  const a = (state.patch.angle * Math.PI) / 180;
+  g.strokeStyle = col.muted; g.fillStyle = col.muted; g.lineWidth = 1;
+  const sx = Math.cos(-a), sy = -Math.sin(-a);
+  const ix = small ? 14 : 26, iy = small ? 12 : 26, il = small ? 9 : 14;
+  g.beginPath(); g.moveTo(ix - il * sx, iy - il * sy); g.lineTo(ix + il * sx, iy + il * sy); g.stroke();
+  g.font = `11px ${css("--sans")}`; g.fillText("span", ix + il + 5, iy + 4);
+  // ghost
+  g.setLineDash([4, 3]); g.strokeStyle = col.ghost; g.lineWidth = 1.2;
+  g.strokeRect(cx - k, cy - k, 2 * k, 2 * k); g.setLineDash([]);
+  // deformed grid and outline
+  g.strokeStyle = col.amber; g.globalAlpha = 0.45; g.lineWidth = 1;
+  for (let i = 1; i < 4; i++) {
+    const f = -1 + i / 2;
+    g.beginPath(); g.moveTo(...map(f, -1)); g.lineTo(...map(f, 1)); g.stroke();
+    g.beginPath(); g.moveTo(...map(-1, f)); g.lineTo(...map(1, f)); g.stroke();
+  }
+  g.globalAlpha = 1; g.lineWidth = 2.2; g.beginPath();
+  sq.forEach((p, i) => (i ? g.lineTo(...map(...p)) : g.moveTo(...map(...p)))); g.closePath(); g.stroke();
+  // shear-angle arc at the lower-left corner, between the deformed edges
+  const o = map(-1, -1), e1 = map(1, -1), e2 = map(-1, 1);
+  const a1 = Math.atan2(e1[1] - o[1], e1[0] - o[0]), a2 = Math.atan2(e2[1] - o[1], e2[0] - o[0]);
+  const gam = st.shearAngle;
+  if (Math.abs(gam) > 0.002) {
+    const r = k * 0.75, ref = a1 - Math.PI / 2; // where the edge would be without shear
+    g.strokeStyle = col.muted; g.lineWidth = 1; g.setLineDash([2, 2]);
+    g.beginPath(); g.moveTo(...o); g.lineTo(o[0] + r * 1.25 * Math.cos(ref), o[1] + r * 1.25 * Math.sin(ref)); g.stroke(); g.setLineDash([]);
+    g.strokeStyle = col.amber; g.lineWidth = 1.6; g.beginPath();
+    g.arc(o[0], o[1], r, Math.min(ref, a2), Math.max(ref, a2)); g.stroke();
+    g.fillStyle = col.amber; g.font = `italic 13px ${css("--math")}`;
+    const mid = (ref + a2) / 2, lx = o[0] + (r + 9) * Math.cos(mid) - 4, ly = o[1] + (r + 9) * Math.sin(mid) + 4;
+    g.fillText("γ", Math.max(2, lx), ly);
+  }
+  // principal arrows: red stretches outward, blue shortens inward
+  const arrow = (x0, y0, x1, y1, colr) => {
+    g.strokeStyle = g.fillStyle = colr; g.lineWidth = 2.4;
+    g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke();
+    const an = Math.atan2(y1 - y0, x1 - x0), hl = 7;
+    g.beginPath(); g.moveTo(x1, y1);
+    g.lineTo(x1 - hl * Math.cos(an - 0.45), y1 - hl * Math.sin(an - 0.45));
+    g.lineTo(x1 - hl * Math.cos(an + 0.45), y1 - hl * Math.sin(an + 0.45)); g.closePath(); g.fill();
+  };
+  const peak = Math.max(1e-9, ...sh.soft.map(Math.abs));
+  st.principal.forEach((pd, i) => {
+    const e = sh.soft[i];
+    if (Math.abs(e) < 0.002) return;
+    const len = k * (0.35 + 0.5 * Math.abs(e) / peak) * Math.min(1, Math.abs(e) / 0.02 + 0.3);
+    const dx = Math.cos(pd.angle), dy = -Math.sin(pd.angle), r0 = k * 1.05, colr = e > 0 ? col.t : col.c;
+    for (const sg of [1, -1]) {
+      const bx = cx + sg * dx * r0 * 0.25, by = cy + sg * dy * r0 * 0.25;
+      if (e > 0) arrow(bx, by, bx + sg * dx * len, by + sg * dy * len, colr);
+      else arrow(bx + sg * dx * len, by + sg * dy * len, bx, by, colr);
+    }
+  });
+  const pr = st.principal;
+  $("inset-text").innerHTML =
+    `<span class="key"><span class="sw" style="background:${col.t}"></span>tension</span><span class="key"><span class="sw" style="background:${col.c}"></span>compression</span><br>` +
+    `Along the patch edge a1: ${strainWord(st.patch.e11)}. Across, a2: ${strainWord(st.patch.e22)}. ` +
+    `Shear angle γ: ${shearWord(gam)}.`;
+  $("inset-canvas").setAttribute("aria-label", `Unit patch: principal ${pr[0].value > 0.002 ? "stretching" : "no stretching"}, principal ${pr[1].value < -0.002 ? "shortening" : "no shortening"}, shear angle ${Math.abs(gam) < 0.002 ? "none" : "present"}.`);
+}
+
+/* ---------- Refresh ---------- */
+/* Controls update at once; the geometry once per frame, however many input
+ * events arrive, so a slow phone never queues up stale redraws. */
+let pending = false;
+function refresh() {
+  syncControls();
+  if (pending) return;
+  pending = true;
+  requestAnimationFrame(() => {
+    pending = false;
+    if (three) three.update();
+    drawInset();
+  });
+}
+new ResizeObserver(() => drawInset()).observe($("inset"));
+function themeChanged() { if (three) three.themeColours(); refresh(); }
+matchMedia("(prefers-color-scheme: light)").addEventListener("change", themeChanged);
+new MutationObserver(themeChanged).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+/* ---------- beamdswitch deck ----------
+   The report template is beamdswitch.js; kinematics.js fills it from the set loads (not the
+   auto-play frame), in the words the page shows. */
+const deckText = () => Beamdswitch.deck(D.report(model, state, META, { colourMap: ui.contour }));
+const deckSay = (msg) => { $("deck-status").textContent = msg; };
+/* A blocked download fails silently, so the page cannot fall back on its own: Copy deck is the explicit fallback. */
+$("save-beamdswitch").addEventListener("click", () => {
+  const text = deckText(), name = `distortion-${state.structure}-beamdswitch.md`;
+  try {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([text], { type: "text/markdown" })); a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    deckSay(`Saved ${name}: open it in beamdswitch.`);
+  } catch (e) {
+    deckSay(`Could not save: ${e.message}. Use Copy deck instead.`);
+  }
+});
+$("copy-beamdswitch").addEventListener("click", async () => {
+  try { await navigator.clipboard.writeText(deckText()); deckSay("Copied the beamdswitch deck: paste it into beamdswitch."); }
+  catch (e) { deckSay("Could not copy the beamdswitch deck: the clipboard is blocked here."); }
+});
+
+/* ---------- WebMCP tools ---------- */
+function currentView() {
+  const P = D.prepare(model, state), st = D.patchStrain(P, state.patch);
+  return {
+    title: META.title, disclaimer: META.disclaimer,
+    structure: state.structure, loads: { ...state.loads }, exaggeration: state.exaggeration,
+    warpingRestraint: state.warpingRestraint, stringers: state.stringers, frames: state.frames,
+    colourMap: ui.contour, patch: { ...D.slidersFromPatch(model, state.patch), wall: model.walls[state.patch.wall].name },
+    patchStrain: {
+      frame: "patch edges a1 (at the rotation angle from the span) and a2; unit-free and exaggerated",
+      a1: st.patch.e11, a2: st.patch.e22, shearAngle: st.shearAngle,
+      principal: st.principal.map((p) => ({ value: p.value, angleFromA1Deg: (p.angle * 180) / Math.PI, kind: p.value >= 0 ? "tension" : "compression" })),
+    },
+    buckling: D.bucklingState(P), bucklingOnset: D.criticalLoads(model, state),
+    effects: D.activeEffects(P).map((e) => ({ ...e, ...(META.effects.find((x) => x.id === e.id) || {}) })),
+  };
+}
+function setView(i) {
+  i = i || {};
+  if (i.preset) { applyPreset(i.preset); }
+  if (i.structure && D.STRUCTURES.includes(i.structure) && i.structure !== state.structure) setStructure(i.structure);
+  if (i.loads) for (const k of D.LOADS) if (typeof i.loads[k] === "number") state.loads[k] = Math.max(-1, Math.min(1, i.loads[k]));
+  if (typeof i.exaggeration === "number") state.exaggeration = Math.max(0.5, Math.min(3, i.exaggeration));
+  for (const k of ["warpingRestraint", "stringers", "frames"]) if (typeof i[k] === "boolean") state[k] = i[k];
+  if (i.colourMap && ["none", "shear", "axial", "warping"].includes(i.colourMap)) ui.contour = i.colourMap;
+  if (i.patch) {
+    const cur = D.slidersFromPatch(model, state.patch), p = { ...cur, ...i.patch };
+    state.patch = D.patchFromSliders(model, p.along, p.around, p.angle);
+  }
+  refresh();
+  return currentView();
+}
+function registerTools() {
+  const mc = (typeof document !== "undefined" && document.modelContext) || (typeof navigator !== "undefined" && navigator.modelContext);
+  if (!mc) return;
+  const out = (obj) => ({ content: [{ type: "text", text: JSON.stringify(obj) }] });
+  const empty = { type: "object", properties: {}, additionalProperties: false };
+  mc.registerTool({ name: "get_metadata", description: "Return what the Structural Distortion Explorer shows: its disclaimer (exaggerated, qualitative, no units), the structures, every effect with whether it is analytic or an assumed shape, the presets and the inlined three.js release.", inputSchema: empty, annotations: { readOnlyHint: true },
+    async execute() { return out({ ...META, presets: D.PRESETS.map(({ id, title, hint }) => ({ id, title, hint })) }); } });
+  mc.registerTool({ name: "get_current_view", description: "Return the structure, loads (unit-free, -1 to 1), toggles, unit-patch position and its strain (principal directions, shear angle), which plates have buckled and each load's buckling onset, and the effects on show.", inputSchema: empty, annotations: { readOnlyHint: true },
+    async execute() { return out(currentView()); } });
+  mc.registerTool({ name: "set_view", description: "Change the page: a preset id, or any of structure (tube, box, ibeam, panel), loads {axial, shear, torsion, bending, inplane} each -1 to 1, exaggeration 0.5 to 3, warpingRestraint, stringers, frames, colourMap (none, shear, axial, warping) and patch {along 0-1, around 0-1, angle 0-90}. Returns the new view.",
+    inputSchema: { type: "object", properties: {
+      preset: { type: "string", enum: D.PRESETS.map((p) => p.id) },
+      structure: { type: "string", enum: D.STRUCTURES },
+      loads: { type: "object", properties: Object.fromEntries(D.LOADS.map((k) => [k, { type: "number", minimum: -1, maximum: 1 }])) },
+      exaggeration: { type: "number", minimum: 0.5, maximum: 3 },
+      warpingRestraint: { type: "boolean" }, stringers: { type: "boolean" }, frames: { type: "boolean" },
+      colourMap: { type: "string", enum: ["none", "shear", "axial", "warping"] },
+      patch: { type: "object", properties: { along: { type: "number" }, around: { type: "number" }, angle: { type: "number" } } },
+    } },
+    async execute(i) { return out(setView(i)); } });
+}
+
+motionPolicy();
+if (three) three.rebuild(); else refresh();
+registerTools();
+})();
+</script>
+</body>
+</html>
