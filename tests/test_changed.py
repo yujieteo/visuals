@@ -53,11 +53,15 @@ class SelectTest(unittest.TestCase):
     def test_the_browser_harness_runs_every_visuals_browser_checks_and_no_other_checks(self):
         for path in ("e2e/lib/targets.js", "e2e/tests/baseline.test.js", "e2e/package.json", "e2e/package-lock.json", "e2e/scripts/findings.js"):
             self.assertEqual(self.select(path), [], path)
-            self.assertEqual(self.browser(path), [("alpha", False), ("beta", False), ("gamma", False)], path)
+            self.assertEqual(self.browser(path), [("alpha", False), ("beta", False), ("gamma", False), ("", True)], path)
+
+    def test_the_browser_harness_tests_every_site_visual_in_one_job_only(self):
+        jobs = self.browser("e2e/lib/full.js", "e2e/site/beamdswitch/full.test.js")
+        self.assertEqual(jobs, [("alpha", False), ("beta", False), ("gamma", False), ("", True)])
 
     def test_ci_runs_every_check(self):
         self.assertEqual(self.select(".github/workflows/ci.yml"), ["alpha", "beta", "gamma"])
-        self.assertEqual(self.browser(".github/workflows/ci.yml"), [("alpha", False), ("beta", False), ("gamma", False)])
+        self.assertEqual(self.browser(".github/workflows/ci.yml"), [("alpha", False), ("beta", False), ("gamma", False), ("", True)])
 
     def test_shared_tooling_the_harness_does_not_use_runs_no_browser_checks(self):
         for path in ("scripts/check.py", "package.json", "package-lock.json", "schema/visual.schema.json", "tests/test_changed.py"):

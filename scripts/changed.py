@@ -7,8 +7,9 @@ tests of the tooling, package.json, CI) and selects every visual.
 
 The browser checks are chosen apart: a selected visual runs its own, and a path in e2e/site/<slug>/ runs
 the browser checks of that visual the site keeps itself. The browser harness (the rest of e2e/) and CI run
-every visual's browser checks but select no visual's other checks; the rest of the shared tooling, which the
-harness does not use, runs no browser checks.
+every visual's browser checks, every visual the site keeps included; the harness selects no visual's other
+checks, while CI, like the rest of the shared tooling, selects them all. The rest of the shared tooling,
+which the harness does not use, runs no browser checks.
 
 Usage: scripts/changed.py [--base REF] [--github-output]
 
@@ -108,7 +109,7 @@ def browser(paths, root=ROOT):
     existing, selected, site, shared = scan(paths, root)
     tooling = [path for path in shared if path.startswith(BROWSER_TOOLING)]
     if tooling:
-        return browser_jobs(existing, site), shared_reason(tooling)
+        return browser_jobs(existing, every_site_visual=True), shared_reason(tooling)
     return browser_jobs(selected, site), ("changed visuals" if selected or site else "no visual changed")
 
 
