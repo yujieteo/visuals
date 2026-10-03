@@ -117,16 +117,21 @@ export async function openSession(browser, project, allowedPrefix, extra = {}) {
 /**
  * Wait for a page to finish loading and settle: load event, fonts, two frames
  * and a short quiet period for boot-time scripts. A page may reload itself
- * once while booting (a cross-origin-isolation service worker does), so a
- * navigation during the wait starts it again.
+ * while booting (a cross-origin-isolation service worker does, several times
+ * in Firefox), so a navigation during the wait starts it again, for up to 30 s,
+ * and a page that loads coi-serviceworker in a secure context is not settled
+ * until the worker controls it and it is cross-origin isolated, since until
+ * then a reload is still to come.
  * @param {import("playwright").Page} page
  * @param {string} [ready] a selector that marks the page as booted
  */
 export async function settle(page, ready) {
-  for (let attempt = 0; ; attempt++) {
+  const deadline = Date.now() + 30_000;
+  for (;;) {
     try {
       await page.waitForLoadState("load", { timeout: 30_000 });
       if (ready) await page.waitForSelector(ready, { timeout: 15_000 });
+      await page.waitForFunction(() => !document.querySelector('script[src$="coi-serviceworker.js"]') || !isSecureContext || !!navigator.serviceWorker?.controller && crossOriginIsolated, null, { timeout: 15_000 });
       await page.evaluate(() => new Promise((resolve) => {
         const fonts = /** @type {any} */ (document).fonts;
         const frames = () => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(resolve, 150)));
@@ -134,7 +139,7 @@ export async function settle(page, ready) {
       }));
       return;
     } catch (error) {
-      if (attempt >= 2 || !/context was destroyed|navigat/i.test(String(error))) throw error;
+      if (Date.now() > deadline || !/context was destroyed|navigat/i.test(String(error))) throw error;
     }
   }
 }

@@ -2,14 +2,21 @@
 
 Failures the suite has found in the visuals, generated from the `findings` in `manifest/*.json` by `npm run findings`; do not edit by hand. Each runs as a todo test, so it is reported on every run without failing CI. The owner repository fixes the visual; when a fix lands there and reaches the site, delete the finding from the manifest (or rerun `scripts/record-findings.js` on a fresh run) and regenerate this file.
 
-67 findings across 28 visuals, 8 marked flaky.
+110 findings across 35 visuals, 8 marked flaky.
 
 | Visual | Check | Browsers | Status | Evidence | Owner |
 | --- | --- | --- | --- | --- | --- |
 | bayes | markdown-export | * | finding | no Copy Markdown control: the page keeps a whole scenario (hypothesis, starting estimate, evidence and their judgements) but its only Markdown output is the beamdswitch presentation deck | yujieteo/bayes |
+| beamdswitch | back-forward | * | finding | frames rewrite the hash with history.replaceState, so Back leaves the page instead of returning to the previous frame | yujieteo/beamdswitch |
+| beamdswitch | command-palette | * | finding | Cmd/Ctrl+K opens nothing: no [role=dialog], [role=combobox] or open <dialog> (/ and O open the frame overview search) | yujieteo/beamdswitch |
+| beamdswitch | json-round-trip | * | finding | no control saves the view as JSON to import again (the deck saves and opens as Markdown) | yujieteo/beamdswitch |
+| beamdswitch | reduced-motion | * | finding | still moves under reduced motion: div#progress transition 0.15s; fixed in https://github.com/yujieteo/beamdswitch/pull/9; reaches the site when it re-vendors beamdswitch | yujieteo/beamdswitch |
+| beamdswitch | reset | * | finding | no Reset control: no button named Reset returns the player to its first frame (Sample replaces the editor with the sample deck, which is re-choosing an example, not Reset) | yujieteo/beamdswitch |
 | breeden-litzenberger-density | markdown-export | * | finding | no Copy Markdown control: the page holds a session (a strike, a butterfly half-width and the densities they give) but its only Markdown output is the beamdswitch presentation deck and its copy | yujieteo/breeden-litzenberger |
 | breeden-litzenberger-density | overflow-320 | firefox-desktop | finding | scrollWidth 365 > clientWidth 320: th (right 365 px); td (right 365 px) | yujieteo/visuals |
 | calibrator | markdown-export | * | finding | no Copy Markdown control: the page keeps an answered session but exports it only as TOON, with no Markdown of the session state | yujieteo/calibrator |
+| connes-qft | back-forward | * | finding | views rewrite the hash with history.replaceState, so Back leaves the page instead of returning to the previous view | yujieteo/connes-qft |
+| connes-qft | json-round-trip | * | finding | no control saves the view as JSON to import again | yujieteo/connes-qft |
 | convexity-action-engine | markdown-export | * | finding | no Copy Markdown control: the page keeps a context and a decision history but its only Markdown output is the beamdswitch presentation deck | yujieteo/convexity-action-engine |
 | delta-cohomology | markdown-export | * | finding | no Copy Markdown control: the page holds a session (a space, a ring of coefficients, an orientation and a place in the guided tour) but its only Markdown output is the beamdswitch presentation deck | yujieteo/delta-cohomology |
 | distortion | markdown-export | * | finding | no Copy Markdown control: the page holds a session (a structure, five loads, presets and view settings) but its only Markdown output is the beamdswitch presentation deck | yujieteo/distortion |
@@ -70,6 +77,42 @@ Failures the suite has found in the visuals, generated from the `findings` in `m
 | snake-lemma | markdown-export | * | finding | no Markdown export of the session state (view, example lifts, lab moves); its only Markdown control is the beamdswitch deck | yujieteo/snake-lemma |
 | stability | overflow-320 | chromium-desktop, chromium-mobile, webkit-desktop, webkit-mobile | finding | scrollWidth 349 > clientWidth 320: table#fit-table (right 473 px); thead (right 473 px); tr (right 473 px); th.l (right 473 px) | yujieteo/stability |
 | stability | reset | * | finding | no Reset control: after changing an input, only re-choosing a material preset or importing a JSON file restores known inputs, which is not Reset | yujieteo/stability |
+| subsidy-atlas | url-state | * | finding | the URL does not change when the view changes: the page keeps no URL state | yujieteo/subsidy-atlas |
+| subsidy-atlas | back-forward | * | finding | history.length does not grow when the view changes, so Back leaves the page | yujieteo/subsidy-atlas |
+| subsidy-atlas | command-palette | * | finding | Cmd/Ctrl+K opens nothing: no [role=dialog], [role=combobox] or open <dialog> | yujieteo/subsidy-atlas |
+| subsidy-atlas | json-round-trip | * | finding | no control saves the view as JSON to import again (data.json is the dataset, not the filter state) | yujieteo/subsidy-atlas |
+| subsidy-atlas | markdown-export | * | finding | no control exports the view as Markdown: the only Markdown is the narrated beamdswitch deck | yujieteo/subsidy-atlas |
+| tampines-food | url-state | * | finding | the URL does not change when the view changes: the page keeps no URL state | yujieteo/tampines-food |
+| tampines-food | back-forward | * | finding | history.length does not grow when the view changes, so Back leaves the page | yujieteo/tampines-food |
+| tampines-food | command-palette | * | finding | Cmd/Ctrl+K opens nothing: no [role=dialog], [role=combobox] or open <dialog> | yujieteo/tampines-food |
+| tampines-food | reset | * | finding | no Reset control: no button named Reset; choosing All in each chip row clears the filters | yujieteo/tampines-food |
+| tampines-food | json-round-trip | * | finding | no control saves the view as JSON to import again | yujieteo/tampines-food |
+| tampines-food | markdown-export | * | finding | no control exports the view as Markdown: the only Markdown is the narrated beamdswitch deck | yujieteo/tampines-food |
+| toto-frequency | url-state | * | finding | the URL does not change when the view changes: the page keeps no URL state | yujieteo/toto-frequency |
+| toto-frequency | back-forward | * | finding | history.length does not grow when the view changes, so Back leaves the page | yujieteo/toto-frequency |
+| toto-frequency | command-palette | * | finding | Cmd/Ctrl+K opens nothing: no [role=dialog], [role=combobox] or open <dialog> | yujieteo/toto-frequency |
+| toto-frequency | reset | * | finding | no Reset control: no button named Reset | yujieteo/toto-frequency |
+| toto-frequency | json-round-trip | * | finding | no control saves the view as JSON to import again | yujieteo/toto-frequency |
+| toto-frequency | markdown-export | * | finding | no control exports the view as Markdown: the only Markdown is the narrated beamdswitch deck | yujieteo/toto-frequency |
+| toulmin | url-state | * | finding | the URL does not change when the view changes: the page keeps no URL state (the draft lives in localStorage) | yujieteo/toulmin |
+| toulmin | back-forward | * | finding | history.length does not grow when the view changes, so Back leaves the page | yujieteo/toulmin |
+| toulmin | command-palette | * | finding | Cmd/Ctrl+K opens nothing: no [role=dialog], [role=combobox] or open <dialog> | yujieteo/toulmin |
+| toulmin | markdown-export | * | finding | no control exports the view as Markdown: the only Markdown is the narrated beamdswitch deck | yujieteo/toulmin |
 | tourist-attractions | network | * | finding | unexpected https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js | yujieteo/visuals |
 | tourist-attractions | primary-control | * | finding | no control changed the page (click "Show all results": no change; click "Zoom in": no change; click "Zoom out": no change) | yujieteo/visuals |
 | tourist-attractions | runtime-errors | * | finding | ReferenceError: d3 is not defined \| at http://127.0.0.1:<port>/tourist-attractions/:381:12 | yujieteo/visuals |
+| tourist-attractions | url-state | * | finding | the URL does not change when the view changes: the page keeps no URL state; on the published copy D3 also fails to load from cdn.jsdelivr.net (ReferenceError: d3 is not defined) | yujieteo/tourist-attractions |
+| tourist-attractions | back-forward | * | finding | history.length does not grow when the view changes, so Back leaves the page; on the published copy D3 also fails to load from cdn.jsdelivr.net (ReferenceError: d3 is not defined) | yujieteo/tourist-attractions |
+| tourist-attractions | keyboard | * | finding | ReferenceError: d3 is not defined: the published copy loads D3 from cdn.jsdelivr.net, which the suite refuses, so its controls never start; inlining D3 (https://github.com/yujieteo/visuals/pull/35, https://github.com/yujieteo/tourist-attractions/pull/3) makes this check pass once the site pin moves | yujieteo/visuals |
+| tourist-attractions | command-palette | * | finding | Cmd/Ctrl+K opens nothing: no [role=dialog], [role=combobox] or open <dialog>; on the published copy D3 also fails to load from cdn.jsdelivr.net (ReferenceError: d3 is not defined) | yujieteo/tourist-attractions |
+| tourist-attractions | reset | * | finding | ReferenceError: d3 is not defined: the published copy loads D3 from cdn.jsdelivr.net, which the suite refuses, so its controls never start; inlining D3 (https://github.com/yujieteo/visuals/pull/35, https://github.com/yujieteo/tourist-attractions/pull/3) makes this check pass once the site pin moves | yujieteo/visuals |
+| tourist-attractions | json-round-trip | * | finding | no control saves the view as JSON to import again; on the published copy D3 also fails to load from cdn.jsdelivr.net (ReferenceError: d3 is not defined) | yujieteo/tourist-attractions |
+| tourist-attractions | markdown-export | * | finding | no control exports the view as Markdown: the only Markdown is the narrated beamdswitch deck | yujieteo/tourist-attractions |
+| tourist-attractions | beamdswitch-export | * | finding | ReferenceError: d3 is not defined: the published copy loads D3 from cdn.jsdelivr.net, which the suite refuses, so its controls never start; inlining D3 (https://github.com/yujieteo/visuals/pull/35, https://github.com/yujieteo/tourist-attractions/pull/3) makes this check pass once the site pin moves | yujieteo/visuals |
+| tourist-attractions | reduced-motion | * | finding | ReferenceError: d3 is not defined: the published copy loads D3 from cdn.jsdelivr.net, which the suite refuses, so its controls never start; inlining D3 (https://github.com/yujieteo/visuals/pull/35, https://github.com/yujieteo/tourist-attractions/pull/3) makes this check pass once the site pin moves | yujieteo/visuals |
+| vgc-protect-fakeout-pivot-trainer | url-state | * | finding | the URL does not change when the view changes: the page keeps no URL state | yujieteo/vgc-trainer |
+| vgc-protect-fakeout-pivot-trainer | back-forward | * | finding | history.length does not grow when the view changes, so Back leaves the page | yujieteo/vgc-trainer |
+| vgc-protect-fakeout-pivot-trainer | command-palette | * | finding | Cmd/Ctrl+K opens nothing: no [role=dialog], [role=combobox] or open <dialog> | yujieteo/vgc-trainer |
+| vgc-protect-fakeout-pivot-trainer | json-round-trip | * | finding | no control saves the view as JSON to import again | yujieteo/vgc-trainer |
+| vgc-protect-fakeout-pivot-trainer | markdown-export | * | finding | no control exports the analysis as Markdown | yujieteo/vgc-trainer |
+| vgc-protect-fakeout-pivot-trainer | beamdswitch-export | * | finding | no control exports a beamdswitch deck | yujieteo/vgc-trainer |
