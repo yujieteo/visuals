@@ -14,9 +14,11 @@ on:
 permissions:
   contents: read
 
+# A newer push to a pull request replaces its run (its diff against the base includes the older one). Each push
+# to main tests only the visuals it changed, so every one gets its own group and is never cancelled or dropped.
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   plan:
