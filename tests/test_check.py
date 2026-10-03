@@ -171,6 +171,15 @@ class ToonTest(unittest.TestCase):
             out, code = toon(layout, "--changed", "HEAD")
         self.assertEqual((code, out.splitlines()[1]), (2, "error: --changed HEAD: the change selects no visual, so the filter matches nothing"))
 
+    def test_require_typecheck_without_typescript_is_an_environment_error(self):
+        out, code = toon(self.layout(), "alpha", "--scoped", "--require-typecheck")
+        self.assertEqual((code, out.splitlines()), (2, [
+            "verdict: error",
+            "error: --require-typecheck: typescript is not installed",
+            "help[1]{next}:",
+            '  "Run `npm ci` at the repository root, then run this command again"',
+        ]))
+
     def test_scoped_needs_toon(self):
         with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as raised:
             main(["alpha", "--scoped"])

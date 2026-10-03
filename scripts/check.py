@@ -33,7 +33,8 @@ and first file:line, then counts and next steps; every step's full output goes t
 the verdict names. Without a selection it checks every visual. With SLUGs or --changed the verdict still
 follows every visual, so the visuals left unchecked fail it, unless --scoped accepts a verdict on the
 selection only, which the output then says, with how many visuals lie outside. Exit 0 pass, 1 fail, 2 usage
-or environment error: an unknown visual, an unknown BASE, or a --changed that selects no visual.
+or environment error: an unknown visual, an unknown BASE, a --changed that selects no visual, or
+--require-typecheck without typescript installed.
 """
 import argparse
 import contextlib
@@ -297,6 +298,8 @@ def toon_main(args):
         slugs, reason = list(dict.fromkeys(args.slugs)), "named"
     else:
         slugs, reason = every, "every visual"
+    if args.require_typecheck and not TSC.is_file():
+        return usage("--require-typecheck: typescript is not installed", "Run `npm ci` at the repository root, then run this command again")
     logs = ROOT / "build" / "logs"
     logs.mkdir(parents=True, exist_ok=True)
     log_path = logs / f"check-{datetime.datetime.now().strftime('%Y%m%dT%H%M%S%f')}.log"
@@ -319,9 +322,9 @@ def toon_main(args):
     return toon(results, slugs, len(every), args.scoped, reason, log_path)
 
 
-def usage(message):
+def usage(message, next="Run `python3 scripts/check.py --toon` for every visual, or name a folder in viz/"):
     print(f"verdict: error\nerror: {message}")
-    print(table("help", ["next"], [["Run `python3 scripts/check.py --toon` for every visual, or name a folder in viz/"]]))
+    print(table("help", ["next"], [[next]]))
     return 2
 
 
