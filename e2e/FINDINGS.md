@@ -2,11 +2,17 @@
 
 Failures the suite has found in the visuals, generated from the `findings` in `manifest/*.json` by `npm run findings`; do not edit by hand. Each runs as a todo test, so it is reported on every run without failing CI. The owner repository fixes the visual; when a fix lands there and reaches the site, delete the finding from the manifest (or rerun `scripts/record-findings.js` on a fresh run) and regenerate this file.
 
-20 findings across 11 visuals, 7 marked flaky.
+26 findings across 16 visuals, 7 marked flaky.
 
 | Visual | Check | Browsers | Status | Evidence | Owner |
 | --- | --- | --- | --- | --- | --- |
+| bayes | markdown-export | * | finding | no Copy Markdown control: the page keeps a whole scenario (hypothesis, starting estimate, evidence and their judgements) but its only Markdown output is the beamdswitch presentation deck | yujieteo/bayes |
+| breeden-litzenberger-density | markdown-export | * | finding | no Copy Markdown control: the page holds a session (a strike, a butterfly half-width and the densities they give) but its only Markdown output is the beamdswitch presentation deck and its copy | yujieteo/breeden-litzenberger |
 | breeden-litzenberger-density | overflow-320 | firefox-desktop | finding | scrollWidth 365 > clientWidth 320: th (right 365 px); td (right 365 px) | yujieteo/visuals |
+| calibrator | markdown-export | * | finding | no Copy Markdown control: the page keeps an answered session but exports it only as TOON, with no Markdown of the session state | yujieteo/calibrator |
+| convexity-action-engine | markdown-export | * | finding | no Copy Markdown control: the page keeps a context and a decision history but its only Markdown output is the beamdswitch presentation deck | yujieteo/convexity-action-engine |
+| delta-cohomology | markdown-export | * | finding | no Copy Markdown control: the page holds a session (a space, a ring of coefficients, an orientation and a place in the guided tour) but its only Markdown output is the beamdswitch presentation deck | yujieteo/delta-cohomology |
+| distortion | markdown-export | * | finding | no Copy Markdown control: the page holds a session (a structure, five loads, presets and view settings) but its only Markdown output is the beamdswitch presentation deck | yujieteo/distortion |
 | entropy-combinatorics | markdown-export | * | finding | no Copy Markdown of the reader's session state (revealed hints, solved problems, laboratory settings); Copy Markdown in the BeamMD Switch menu copies a presentation deck | yujieteo/entropy-combinatorics |
 | etale-fundamental-group | markdown-export | * | finding | no Markdown export of the laboratory's state (object, view and sliders); its only Markdown export is the beamdswitch deck | yujieteo/etale-fundamental-group |
 | everyday-actions | markdown-export | * | finding | no Markdown export of the reconsideration ledger, the page's own session state; its only Markdown export is the beamdswitch deck of the charts | yujieteo/everyday-actions |
