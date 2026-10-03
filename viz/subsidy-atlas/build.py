@@ -1,17 +1,25 @@
 """Build a self-contained, offline-friendly Subsidy Atlas from curated data."""
 import argparse
 import json
+from datetime import date
 from html import escape
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
+FILTERS = [('category', 'Categories'), ('subsidiser', 'Subsidisers'), ('depth', 'Depths'), ('stage', 'Stages')]
+# Short matrix column heads; the full depth label is the tooltip.
+SHORT_DEPTH = {'free': 'Free', 'partial': 'Capped', 'near-cost': 'At cost', 'unknown': 'Unknown'}
+
+
+def cite(source):
+    date_label = source['published'] or 'undated; accessed ' + source['accessed']
+    return (f'<a class="cite" href="{escape(source["url"], quote=True)}">'
+            f'{escape(source["title"])} ({escape(date_label)})</a>')
 
 
 def citations(data, ids):
-    return ' '.join(f'<a class="cite" href="{escape(data["sources"][id]["url"], quote=True)}">'
-                    f'{escape(data["sources"][id]["title"])} '
-                    f'({escape(data["sources"][id]["published"] or "undated; accessed " + data["sources"][id]["accessed"])})</a>' for id in ids)
+    return ' '.join(cite(data['sources'][id]) for id in ids)
 
 
 def claim(data, label, block):
@@ -19,8 +27,7 @@ def claim(data, label, block):
 
 
 def validate(data):
-    from datetime import date
-
+    """Refuse to render unsourced claims, unknown vocabulary, future-dated sources or unflagged forecasts."""
     as_of = date.fromisoformat(data['as_of'])
     vocab = data['vocabulary']
     ids = [entry['id'] for entry in data['entries']] + [pick['id'] for pick in data['forecasts']]
@@ -33,6 +40,7 @@ def validate(data):
             raise ValueError('Source accessed after the review date')
         if source['published'] and date.fromisoformat(source['published']) > as_of:
             raise ValueError('Source published after the review date')
+
     def sourced(block):
         if not block['text'] or not block['sources'] or any(id not in data['sources'] for id in block['sources']):
             raise ValueError('Claim missing source')
@@ -53,34 +61,56 @@ def validate(data):
             sourced(signal)
 
 
+def read_scripts():
+    """The inlined scripts; a literal </script would end the inline script early."""
+    scripts = {name: (HERE / name).read_text() for name in ('engine.js', 'beamdswitch.js')}
+    for name, script in scripts.items():
+        if '</script' in script:
+            raise ValueError(f'{name} must not contain </script')
+    return scripts
+
+
+def filter_controls(vocab):
+    return ''.join(f'<label>{escape(label)}<select name="{key}"><option value="">All {escape(label.lower())}</option>'
+                   + ''.join(f'<option value="{id}">{escape(text)}</option>' for id, text in vocab[key].items())
+                   + '</select></label>' for key, label in FILTERS)
+
+
+def product_card(data, entry):
+    vocab = data['vocabulary']
+    stage = vocab['stage'][entry['stage']]
+    cats = ' / '.join(vocab['category'][cat] for cat in entry['categories'])
+    return f'''<details id="{entry['id']}" data-product="{entry['id']}" class="product">
+<summary><span class="eyebrow">{escape(cats)} · {escape(stage)}</span><span class="name">{escape(entry['name'])}</span><span class="metric">{escape(entry['metric'])}</span><span class="tags">{escape(vocab['subsidiser'][entry['subsidiser']])} · {escape(vocab['depth'][entry['depth']])}</span><span class="more">Evidence & catches <span aria-hidden="true">↗</span></span></summary>
+<div class="detail">{claim(data, 'What the evidence establishes', entry['evidence'])}{claim(data, 'Subsidy depth — denominator matters', entry['depth_note'])}{claim(data, 'Window / lifecycle', entry['duration'])}{claim(data, 'The catch', entry['caution'])}
+</div></details>'''
+
+
+def matrix_grid(vocab):
+    """The depth × lifecycle buttons; engine.js fills in the counts."""
+    grid = '<div class="matrix-head"><span>Lifecycle ↓<br>Depth →</span>' + ''.join(f'<span title="{escape(vocab["depth"][id])}">{SHORT_DEPTH[id]}</span>' for id in vocab['depth']) + '</div>'
+    for stage, label in vocab['stage'].items():
+        grid += f'<div class="matrix-row" {"data-history-row" if stage == "historical" else ""}><span>{escape(label)}</span>'
+        grid += ''.join(f'<button type="button" data-depth="{depth}" data-stage="{stage}">—</button>' for depth in vocab['depth']) + '</div>'
+    return grid
+
+
+def forecast_article(data, pick):
+    return f'''<article class="forecast"><p class="eyebrow">Speculative · not an announced future deal</p><h3>{escape(pick['name'])}</h3><p>{escape(pick['reasoning'])}</p>
+{''.join(claim(data, 'Observed signals', signal) for signal in pick['signals'])}<h4>What would change the call</h4><p>{escape(pick['changes'])}</p></article>'''
+
+
 def render(data):
     validate(data)
     vocab = data['vocabulary']
     tokens = (ROOT / 'static/css/style.css').read_text().split('\n* {', 1)[0]
     css = (HERE / 'style.css').read_text()
-    engine = (HERE / 'engine.js').read_text()
-    beamdswitch = (HERE / 'beamdswitch.js').read_text()
-    for name, script in (('engine.js', engine), ('beamdswitch.js', beamdswitch)):
-        if '</script' in script:
-            raise ValueError(f'{name} must not contain </script')
-    options = ''.join(f'<label>{escape(label)}<select name="{key}"><option value="">All {escape(label.lower())}</option>'
-                      + ''.join(f'<option value="{id}">{escape(text)}</option>' for id, text in vocab[key].items())
-                      + '</select></label>' for key, label in [('category', 'Categories'), ('subsidiser', 'Subsidisers'), ('depth', 'Depths'), ('stage', 'Stages')])
-    cards = []
-    for entry in data['entries']:
-        stage = vocab['stage'][entry['stage']]
-        cats = ' / '.join(vocab['category'][cat] for cat in entry['categories'])
-        cards.append(f'''<details id="{entry['id']}" data-product="{entry['id']}" class="product">
-<summary><span class="eyebrow">{escape(cats)} · {escape(stage)}</span><span class="name">{escape(entry['name'])}</span><span class="metric">{escape(entry['metric'])}</span><span class="tags">{escape(vocab['subsidiser'][entry['subsidiser']])} · {escape(vocab['depth'][entry['depth']])}</span><span class="more">Evidence & catches <span aria-hidden="true">↗</span></span></summary>
-<div class="detail">{claim(data, 'What the evidence establishes', entry['evidence'])}{claim(data, 'Subsidy depth — denominator matters', entry['depth_note'])}{claim(data, 'Window / lifecycle', entry['duration'])}{claim(data, 'The catch', entry['caution'])}
-</div></details>''')
-    short = {'free': 'Free', 'partial': 'Capped', 'near-cost': 'At cost', 'unknown': 'Unknown'}
-    chart = '<div class="matrix-head"><span>Lifecycle ↓<br>Depth →</span>' + ''.join(f'<span title="{escape(vocab["depth"][id])}">{short[id]}</span>' for id in vocab['depth']) + '</div>'
-    for stage, label in vocab['stage'].items():
-        chart += f'<div class="matrix-row" {"data-history-row" if stage == "historical" else ""}><span>{escape(label)}</span>'
-        chart += ''.join(f'<button type="button" data-depth="{depth}" data-stage="{stage}">—</button>' for depth in vocab['depth']) + '</div>'
-    forecasts = ''.join(f'''<article class="forecast"><p class="eyebrow">Speculative · not an announced future deal</p><h3>{escape(pick['name'])}</h3><p>{escape(pick['reasoning'])}</p>
-{''.join(claim(data, 'Observed signals', signal) for signal in pick['signals'])}<h4>What would change the call</h4><p>{escape(pick['changes'])}</p></article>''' for pick in data['forecasts'])
+    scripts = read_scripts()
+    engine, beamdswitch = scripts['engine.js'], scripts['beamdswitch.js']
+    options = filter_controls(vocab)
+    cards = [product_card(data, entry) for entry in data['entries']]
+    chart = matrix_grid(vocab)
+    forecasts = ''.join(forecast_article(data, pick) for pick in data['forecasts'])
     encoded = json.dumps(data, ensure_ascii=False, separators=(',', ':')).replace('<', '\\u003c')
     return f'''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Find provider-funded trials, policy rebates and loss-leader products. Sourced evidence, historical lessons and separately labelled speculative picks."><link rel="icon" href="data:,"><title>Subsidy Atlas · Who pays for cheap?</title><script id="site-theme">try {{ var t = localStorage.getItem("theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; }} catch (e) {{}}</script><style>{tokens}\n{css}</style></head><body>
 <a class="skip" href="#catalogue">Skip to catalogue</a>

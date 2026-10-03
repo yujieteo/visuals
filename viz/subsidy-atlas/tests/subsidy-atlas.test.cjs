@@ -16,9 +16,12 @@ function loadBrowserAtlas(modelContext) {
       setAttribute(name, value) { attributes[name] = value; }, getAttribute: name => attributes[name]};
   }));
   const listeners = {};
+  const presets = ['llm', 'free', 'policy', 'history'].map(preset => ({dataset: {preset},
+    addEventListener(type, listener) { this.click = listener; }}));
   const nodes = {
     'atlas-data': {textContent: JSON.stringify(data)},
-    filters: {elements: {namedItem: name => fields[name]}, addEventListener() {}},
+    filters: {elements: {namedItem: name => fields[name]}, addEventListener() {},
+      reset() { for (const field of Object.values(fields)) Object.assign(field, {value: '', checked: false}); }},
     matrix: {querySelectorAll: () => buttons, querySelector: () => nodes.history,
       addEventListener(type, listener) { listeners[type] = listener; }},
     catalogue: {focus() {}}, history: {}, count: {}, empty: {},
@@ -27,12 +30,12 @@ function loadBrowserAtlas(modelContext) {
   const document = {
     modelContext,
     getElementById: id => nodes[id],
-    querySelectorAll: selector => selector === '[data-product]' ? cards : [],
+    querySelectorAll: selector => ({'[data-product]': cards, '[data-preset]': presets})[selector] || [],
   };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../engine.js'), 'utf8'),
     {document, navigator: {}});
   const click = button => listeners.click({target: button});
-  return {cards, nodes, fields, buttons, click};
+  return {cards, nodes, fields, buttons, presets, click};
 }
 
 test('document WebMCP registers and executes all three read-only tools without navigator WebMCP', async () => {
@@ -104,6 +107,25 @@ test('matrix cells stay navigable: selecting moves between cells and reselecting
   assert.deepEqual(pressed(), []);
   assert.deepEqual([fields.depth.value, fields.stage.value], ['', '']);
   assert.deepEqual(visible(), filterEntries(data, {category: 'llm', includeHistorical: true}).map(entry => entry.id));
+});
+
+test('quick presets replace every filter with exactly their own and update the count', () => {
+  const {cards, nodes, fields, presets} = loadBrowserAtlas(undefined);
+  const expected = {llm: {category: 'llm'}, free: {depth: 'free'}, policy: {stage: 'tapering'},
+    history: {stage: 'historical', includeHistorical: true}};
+  for (const preset of presets) {
+    fields.q.value = 'leftover';
+    fields.subsidiser.value = 'government';
+    preset.click();
+    const filters = {q: '', category: '', subsidiser: '', depth: '', stage: '', includeHistorical: false, ...expected[preset.dataset.preset]};
+    assert.deepEqual(Object.fromEntries(Object.entries(fields).map(([name, field]) =>
+      [name, name === 'includeHistorical' ? field.checked : field.value])), filters, preset.dataset.preset);
+    const entries = filterEntries(data, filters);
+    assert.ok(entries.length > 0, preset.dataset.preset);
+    assert.deepEqual(cards.filter(card => !card.hidden).map(card => card.dataset.product), entries.map(entry => entry.id));
+    const current = entries.filter(entry => entry.stage !== 'historical').length;
+    assert.equal(nodes.count.textContent, `${entries.length} of ${data.entries.length} records · ${current} current programmes / reported incentives`);
+  }
 });
 
 test('current catalogue excludes old loss reports and forecasts', () => {

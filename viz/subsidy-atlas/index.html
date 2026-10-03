@@ -214,8 +214,9 @@
 });
 </script><script>(function (root) {
   'use strict';
+  const FILTER_KEYS = ['category', 'subsidiser', 'depth', 'stage'];
   function filterEntries(data, filters = {}) {
-    for (const key of ['category', 'subsidiser', 'depth', 'stage']) {
+    for (const key of FILTER_KEYS) {
       if (filters[key] && !Object.hasOwn(data.vocabulary[key], filters[key])) {
         throw new Error(`Unknown ${key}: ${filters[key]}`);
       }
@@ -236,6 +237,11 @@
       Object.keys(data.vocabulary.depth).map(depth => ({stage, depth,
         ids: entries.filter(entry => entry.stage === stage && entry.depth === depth).map(entry => entry.id)})));
   }
+  /* The overview counts every depth × lifecycle cell, so it ignores the depth and stage filters. */
+  const overview = (data, filters) => matrix(data, filterEntries(data, {...filters, depth: '', stage: ''}));
+  const currentCount = entries => entries.filter(entry => entry.stage !== 'historical').length;
+  const countLine = (data, entries) =>
+    `${entries.length} of ${data.entries.length} records · ${currentCount(entries)} current programmes / reported incentives`;
   function getProduct(data, id) {
     return data.entries.find(entry => entry.id === id) || data.forecasts.find(entry => entry.id === id) || null;
   }
@@ -258,14 +264,14 @@
   };
   function report(data, filters = {}) {
     const vocab = data.vocabulary, entries = filterEntries(data, filters);
-    const current = entries.filter(entry => entry.stage !== 'historical').length;
-    const count = `${entries.length} of ${data.entries.length} records · ${current} current programmes / reported incentives`;
+    const current = currentCount(entries);
+    const count = countLine(data, entries);
     const active = [filters.q && filters.q.trim() && `search “${md(filters.q.trim())}”`,
-      ...['category', 'subsidiser', 'depth', 'stage'].filter(key => filters[key]).map(key => md(vocab[key][filters[key]]))].filter(Boolean);
+      ...FILTER_KEYS.filter(key => filters[key]).map(key => md(vocab[key][filters[key]]))].filter(Boolean);
     const scope = active.length ? active.join(' · ') : 'all records';
     const history = filters.includeHistorical ? 'historical evidence included' : 'historical evidence hidden (not current deals)';
     const stages = Object.keys(vocab.stage).filter(stage => filters.includeHistorical || stage !== 'historical');
-    const cells = matrix(data, filterEntries(data, {...filters, depth: '', stage: ''}));
+    const cells = overview(data, filters);
     const label = (key, id) => say(vocab[key][id].replace(' / ', ' or ')).toLowerCase();
     const ids = [...new Set(entries.flatMap(entry => ['evidence', 'depth_note', 'duration', 'caution'].flatMap(key => entry[key].sources)))];
     const card = entry => ({
@@ -355,9 +361,9 @@
     const entries = filterEntries(data, filters);
     const ids = new Set(entries.map(entry => entry.id));
     cards.forEach(card => { card.hidden = !ids.has(card.dataset.product); });
-    document.getElementById('count').textContent = `${entries.length} of ${data.entries.length} records · ${entries.filter(entry => entry.stage !== 'historical').length} current programmes / reported incentives`;
+    document.getElementById('count').textContent = countLine(data, entries);
     document.getElementById('empty').hidden = entries.length > 0;
-    const cells = matrix(data, filterEntries(data, {...filters, depth: '', stage: ''}));
+    const cells = overview(data, filters);
     for (const button of chart.querySelectorAll('button')) {
       const cell = cells.find(cell => cell.depth === button.dataset.depth && cell.stage === button.dataset.stage);
       const selected = cell.depth === filters.depth && cell.stage === filters.stage;
@@ -376,13 +382,11 @@
   });
   form.addEventListener('submit', event => event.preventDefault());
   form.addEventListener('reset', () => { setTimeout(render, 0); });
+  const PRESETS = {llm: {category: 'llm'}, free: {depth: 'free'}, policy: {stage: 'tapering'}, history: {stage: 'historical'}};
   document.querySelectorAll('[data-preset]').forEach(button => button.addEventListener('click', () => {
     form.reset();
-    const preset = button.dataset.preset;
-    if (preset === 'llm') field('category').value = 'llm';
-    if (preset === 'free') field('depth').value = 'free';
-    if (preset === 'policy') field('stage').value = 'tapering';
-    if (preset === 'history') { field('stage').value = 'historical'; field('includeHistorical').checked = true; }
+    for (const [name, value] of Object.entries(PRESETS[button.dataset.preset])) field(name).value = value;
+    field('includeHistorical').checked = button.dataset.preset === 'history';
     render();
   }));
   chart.addEventListener('click', event => {
@@ -403,7 +407,7 @@
         execute: async () => ({as_of: data.as_of, vocabulary: data.vocabulary, sources: data.sources})},
       {name: 'search_products', description: 'Search evidenced products. Historical evidence excluded unless includeHistorical is true. Forecasts are separate.',
         inputSchema: {type: 'object', properties: {q: {type: 'string'}, includeHistorical: {type: 'boolean'},
-          ...Object.fromEntries(['category', 'subsidiser', 'depth', 'stage'].map(key => [key, {type: 'string', enum: Object.keys(data.vocabulary[key])}]))}, additionalProperties: false},
+          ...Object.fromEntries(FILTER_KEYS.map(key => [key, {type: 'string', enum: Object.keys(data.vocabulary[key])}]))}, additionalProperties: false},
         execute: async filters => ({as_of: data.as_of, entries: filterEntries(data, filters)})},
       {name: 'get_product', description: 'Get one evidenced product or explicitly speculative forecast by its ID, with source references.',
         inputSchema: {type: 'object', properties: {id: {type: 'string'}}, required: ['id'], additionalProperties: false},
