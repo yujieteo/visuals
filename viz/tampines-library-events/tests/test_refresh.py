@@ -5,7 +5,9 @@ The records below are cut down from NLB's EventFilter response and GoLibrary (Li
 """
 import io
 import json
+import shutil
 import sys
+import tempfile
 import unittest
 from unittest import mock
 from datetime import datetime
@@ -273,6 +275,106 @@ class Requests(unittest.TestCase):
         challenge = '<html>\r\n<head>\r\n<META NAME="robots" CONTENT="noindex,nofollow">\r\n<script src="/_Incapsula_Resource?SWJIYLWA=1"></script>'
         with self.answer(challenge), self.assertRaises(refresh.Blocked):
             refresh.request("https://www.onepa.gov.sg/-api/search/query", {"searchKeyword": ""})
+
+
+class Guards(unittest.TestCase):
+    """What refresh.py writes, or refuses to write, once the sources have answered: in a copy of this folder."""
+
+    NOW = datetime.fromisoformat("2026-10-05T09:00:00+08:00")
+
+    def setUp(self):
+        self.dir = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.dir)
+        shutil.copy(HERE / "visual.json", self.dir / "visual.json")
+
+    def data(self, listing=(LASER, EAT, STORY), outlets=OUTLETS, now=NOW):
+        nlb = refresh.build_nlb(list(listing), {"5974092": {"status": "open", "seats_left": 3}})
+        clubs = onepa.tampines_clubs(outlets)
+        pa = refresh.build_onepa(clubs, [BREAD, WEEKLY], [{**RECIPES, "outlet_name": "Tampines East CC"}], onepa.sitemap_urls(SITEMAP), {}, {})
+        return refresh.build(nlb, pa, now)
+
+    def previous(self, data):
+        (self.dir / "data.json").write_text(json.dumps(data, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+
+    def files(self):
+        return {path.name: path.read_bytes() for path in self.dir.iterdir()}
+
+    def refused(self, *args, **kwargs):
+        before = self.files()
+        with self.assertRaises(SystemExit) as caught:
+            refresh.save(*args, here=self.dir, **kwargs)
+        self.assertEqual(self.files(), before, "a refused run writes nothing")
+        return str(caught.exception.code)
+
+    def test_a_class_page_that_fails_is_counted(self):
+        with mock.patch.object(refresh, "fetch_listing", return_value=[LASER, STORY]), mock.patch.object(refresh.time, "sleep"), \
+                mock.patch.object(refresh, "request", side_effect=refresh.urllib.error.URLError("timed out")), \
+                mock.patch("sys.stderr", io.StringIO()):
+            failures = []
+            kept, _ = refresh.fetch_nlb(True, failures)
+        self.assertEqual(failures, [LASER["link"]])
+        self.assertNotIn("registration", kept[0])
+
+    def test_a_partial_run_exits_non_zero_and_writes_nothing(self):
+        self.previous(self.data())
+        def nlb(read_pages, failures):
+            failures.append("https://nlb.libcal.com/event/5974092")
+            return refresh.build_nlb([LASER, EAT], {})
+        def pa(today, read_pages, failures):
+            return refresh.build_onepa(onepa.tampines_clubs(OUTLETS), [BREAD], [], {}, {}, {})
+        with mock.patch.object(refresh, "HERE", self.dir), mock.patch.object(refresh, "fetch_nlb", nlb), mock.patch.object(refresh, "fetch_onepa", pa):
+            before = self.files()
+            with self.assertRaises(SystemExit) as caught:
+                refresh.main(["--now", "2026-10-05T09:00:00+08:00"])
+            self.assertNotIn(caught.exception.code, (0, None))
+            self.assertEqual(self.files(), before)
+            with mock.patch("build.main") as page_builder, mock.patch("sys.stdout", io.StringIO()):
+                refresh.main(["--now", "2026-10-05T09:00:00+08:00", "--allow-partial"])
+            page_builder.assert_called_once()
+        self.assertEqual(json.loads((self.dir / "data.json").read_text())["retrieved"], "2026-10-05T09:00:00+08:00")
+
+    def test_an_empty_nlb_listing_is_refused_unless_forced(self):
+        data = self.data(listing=())
+        self.assertIn("NLB lists no event", self.refused(data, []))
+        refresh.save(data, [], force=True, here=self.dir)
+        self.assertEqual(json.loads((self.dir / "data.json").read_text()), data)
+
+    def test_no_tampines_club_on_onepa_is_refused(self):
+        self.assertIn("no Tampines community club", self.refused(self.data(outlets={"data": []}), []))
+
+    def test_a_shrink_by_more_than_half_is_refused(self):
+        self.previous(self.data())  # 5 classes: 2 NLB, 3 onePA
+        shrunk = self.data()
+        shrunk["events"] = shrunk["events"][:2]
+        self.assertIn("2 classes kept, less than half of the previous 5", self.refused(shrunk, []))
+        refresh.save(self.data(listing=(STORY,)), [], here=self.dir)  # 3 of 5 is a quiet week, not a broken run
+
+    def test_fetched_becomes_the_singapore_date_of_the_retrieval_and_nothing_else_changes(self):
+        before = (self.dir / "visual.json").read_text()
+        refresh.save(self.data(now=datetime.fromisoformat("2026-10-04T20:00:00+00:00")), [], here=self.dir)
+        after = (self.dir / "visual.json").read_text()
+        self.assertEqual(json.loads(after)["fetched"], "2026-10-05", "20:00 UTC is the next morning in Singapore")
+        self.assertEqual(after.replace('"fetched": "2026-10-05"', ""), before.replace(f'"fetched": "{json.loads(before)["fetched"]}"', ""))
+        self.assertEqual(refresh.set_fetched('{\n  "fetched":"2026-01-01",\n  "x": 1\n}\n', "2026-10-05"), '{\n  "fetched":"2026-10-05",\n  "x": 1\n}\n')
+
+    def test_the_summary_lists_added_removed_and_changed_classes(self):
+        old = self.data(listing=(LASER, STORY))
+        new = self.data(listing=(EAT, STORY))
+        new["events"] = [{**e, "registration": {"status": "full"}} if e["id"] == "onepa-c027244088" else e for e in new["events"]]
+        lines = refresh.summary(old, new)
+        self.assertIn("- NLB: 1 kept of 2 listed (previous 1 of 2).", lines)
+        self.assertIn("- Added: 5975969 Come, Let's Eat | TOYLC26 (2026-10-04)", lines)
+        self.assertIn("- Removed: 5974092 Laser Cutting Starter Session @ Tampines Library | MakeIT (2026-10-04)", lines)
+        self.assertIn("- Registration: onepa-c027244088 Breadmaking: no notice -> full", lines)
+        self.assertEqual(refresh.summary(old, old)[-1], "- No class added, removed or changed in places.")
+
+    def test_the_same_answers_build_the_same_bytes(self):
+        first, second = (json.dumps(self.data(), ensure_ascii=False, indent=1) for _ in range(2))
+        self.assertEqual(first, second)
+        refresh.save(self.data(), [], here=self.dir)
+        written = (self.dir / "data.json").read_bytes()
+        refresh.save(self.data(), [], here=self.dir)
+        self.assertEqual((self.dir / "data.json").read_bytes(), written)
 
 
 class Snapshot(unittest.TestCase):
