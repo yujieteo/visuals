@@ -1,0 +1,5 @@
+# Hands-on classes at Tampines Regional Library
+
+`refresh.py` regenerates `data.json` from NLB's public events search (`/main/api/Event/EventFilter`, branch `TRL`) and each kept class's GoLibrary page (nlb.libcal.com, 10 s apart as its robots.txt asks), then runs `build.py`, which writes only the `events-data` block and the no-JavaScript list of `index.html`; edit the rest of `index.html` directly. `events-model` is the pure core (`self.TampinesEvents`: no DOM, clock or network), `events-ui` the page and WebMCP tools.
+
+Never invent a class, a field or a link: a booking link is the listing's own `link`, and what NLB does not publish stays missing. `tests/test_refresh.py` checks the categorising and parsing offline, `tests/model.test.mjs` the model and the snapshot, and `tests/browser.test.mjs` drives the page in headless Chrome when `TAMPINES_EVENTS_BROWSER_URL` names one (`scripts/with_chrome.py` starts one in CI) and skips otherwise. Rules for every visual: [SKILLS.md](../../SKILLS.md).
