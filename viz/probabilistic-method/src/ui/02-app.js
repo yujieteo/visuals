@@ -24,13 +24,13 @@ function openModule(id, extra = {}) {
   Object.assign(S, { view: "lab", module: id, P: { ...PM.defaults(mod), seed: S.P ? S.P.seed : PM.DEFAULT_SEED }, labStep: null, hl: null, j: null, signs: null, focus: "", deck: false, frame: 0, step: 0, asym: false }, extra);
   evaluateNow(); render(); writeHash(); window.scrollTo(0, 0);
 }
+/* New parameters or seed: drop the step, sign and highlight state that belonged to the old object, then redraw. */
+function changeLab(P) { S.P = P; S.labStep = null; S.signs = null; S.hl = null; evaluateNow(); updateLab(); writeHash(); }
 function setParam(key, value) {
-  const mod = PM.moduleById(S.module), p = mod.params.find((x) => x.key === key);
-  S.P = mod.coerce ? mod.coerce({ ...S.P, [key]: PM.coerceParam(p, value) }) : { ...S.P, [key]: PM.coerceParam(p, value) };
-  S.labStep = null; S.signs = null; S.hl = null;
-  evaluateNow(); updateLab(); writeHash();
+  const mod = PM.moduleById(S.module), p = mod.params.find((x) => x.key === key), P = { ...S.P, [key]: PM.coerceParam(p, value) };
+  changeLab(mod.coerce ? mod.coerce(P) : P);
 }
-function setSeed(seed) { S.P = { ...S.P, seed: ((seed % 4294967296) + 4294967296) % 4294967296 }; S.labStep = null; S.signs = null; S.hl = null; evaluateNow(); updateLab(); writeHash(); }
+function setSeed(seed) { changeLab({ ...S.P, seed: ((seed % 4294967296) + 4294967296) % 4294967296 }); }
 
 /* ---------- small helpers ---------- */
 

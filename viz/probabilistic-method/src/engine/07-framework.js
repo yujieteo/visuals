@@ -95,6 +95,10 @@ function summarise(E, values) {
 /* ---------- decks: the shared beamdswitch template, and the full course ---------- */
 
 const B = () => (typeof Beamdswitch !== "undefined" ? Beamdswitch : self.Beamdswitch);
+/* The live page's link to this exact lab state: the address a deck tells the reader to reproduce it from. */
+const labUrl = (E) => `${URL_BASE}${stateHash({ view: "lab", module: E.mod.id, P: E.P })}`;
+/* A report's frames in deck order. */
+const reportFrames = (R) => [...R.setup, ...R.method, ...R.results, ...R.checks];
 function frameWithScene(E, f) {
   const body = [sceneComment(E.mod.id, f.focus, E.P, focusLabel(E, f.focus)), f.body].filter(Boolean).join("\n\n");
   return { title: f.title, body, narration: f.narration, notes: f.notes, key: f.key };
@@ -111,7 +115,7 @@ function focusLabel(E, scene) {
 function techniqueReport(E) {
   const s = E.mod.story(E.P, E.A, E.I), wrap = (arr) => arr.map((f) => frameWithScene(E, f));
   return { meta: { title: s.title, subtitle: s.subtitle, author: "The Probabilistic Method Atlas", voice: "bf_emma" }, narration: s.narration,
-    notes: `Scene state: module ${E.mod.id}, seed ${E.P.seed}. Reproduce at ${URL_BASE}${stateHash({ view: "lab", module: E.mod.id, P: E.P })}`,
+    notes: `Scene state: module ${E.mod.id}, seed ${E.P.seed}. Reproduce at ${labUrl(E)}`,
     setup: wrap(s.setup), method: wrap(s.method), results: wrap(s.results), checks: wrap(s.checks) };
 }
 function techniqueDeck(E) { return B().deck(techniqueReport(E)); }
@@ -132,7 +136,7 @@ function writeFrame(f) {
 /* One technique's frame on its own, as a standalone one-slide deck. */
 function slideMarkdown(E, index) {
   const frames = deckFrames(E), f = frames[Math.max(0, Math.min(frames.length - 1, index))], R = techniqueReport(E);
-  const all = [...R.setup, ...R.method, ...R.results, ...R.checks], g = all[frames.indexOf(f)];
+  const g = reportFrames(R)[frames.indexOf(f)];
   return ["---", `title: ${oneLine(R.meta.title)}`, "voice: bf_emma", "---", "", "::: narration", oneLine(R.narration), ":::", "", ...writeFrame(g)].join("\n");
 }
 /* The full course deck: one # section per technique, in course order, at each module's default parameters and the given seed. */
@@ -142,13 +146,13 @@ function courseDeck(seed = DEFAULT_SEED) {
   COURSE.forEach((id, i) => {
     const mod = moduleById(id), E = evaluate(mod, { ...defaults(mod), seed }), R = techniqueReport(E);
     out.push(`# ${mod.title}`, "", "::: narration", `Part ${i + 1}. ${mod.title.replace(/[–—]/g, " ")}.`, ":::", "");
-    for (const f of [...R.setup, ...R.method, ...R.results, ...R.checks]) out.push(...writeFrame(f));
+    for (const f of reportFrames(R)) out.push(...writeFrame(f));
   });
   return out.join("\n");
 }
 /* The Beam MD Switch sequence: every deck state of the technique, decoded into words. */
 function switchSequence(E) {
-  const frames = deckFrames(E), lines = [`# Beam MD Switch sequence: ${E.mod.title}`, "", `Reproduce: ${URL_BASE}${stateHash({ view: "lab", module: E.mod.id, P: E.P })}`, ""];
+  const frames = deckFrames(E), lines = [`# Beam MD Switch sequence: ${E.mod.title}`, "", `Reproduce: ${labUrl(E)}`, ""];
   frames.forEach((f, i) => {
     for (let s = 0; s < f.steps; s++) {
       lines.push(`<!-- beam-md-switch`, "visual: probabilistic-method", `module: ${E.mod.id}`, `scene: ${f.focus}`, `frame: ${i}`, `switch: ${s}`, `seed: ${E.P.seed}`,
@@ -165,6 +169,8 @@ const SYMBOLS = { le: "≤", leq: "≤", ge: "≥", geq: "≥", ne: "≠", neq: 
   mid: "|", in: "∈", dots: "…", ldots: "…", cdots: "⋯", approx: "≈", ll: "≪", gg: "≫", emptyset: "∅", Pr: "Pr", ln: "ln", log: "log", exp: "exp", max: "max", min: "min", "|": "‖", "{": "{", "}": "}", ",": " ", ";": " ", "!": "", quad: "  ", qquad: "    ", " ": " ", partial: "∂" };
 const SUPS = { 0: "⁰", 1: "¹", 2: "²", 3: "³", 4: "⁴", 5: "⁵", 6: "⁶", 7: "⁷", 8: "⁸", 9: "⁹", "+": "⁺", "-": "⁻", "−": "⁻", "(": "⁽", ")": "⁾", n: "ⁿ", i: "ⁱ", k: "ᵏ", t: "ᵗ", r: "ʳ", d: "ᵈ", m: "ᵐ" };
 const SUBS = { 0: "₀", 1: "₁", 2: "₂", 3: "₃", 4: "₄", 5: "₅", 6: "₆", 7: "₇", 8: "₈", 9: "₉", "+": "₊", "-": "₋", i: "ᵢ", j: "ⱼ", k: "ₖ", n: "ₙ", e: "ₑ", m: "ₘ", t: "ₜ", r: "ᵣ", s: "ₛ", p: "ₚ", x: "ₓ" };
+/* A term set off as one unit: brackets once it is longer than one character, as in (n−1)/2 or √(2k). */
+const unit = (t) => (t.length > 1 ? `(${t})` : t);
 function texToText(src) {
   let s = String(src);
   const group = (str, i) => { if (str[i] !== "{") return [str[i] || "", i + 1]; let d = 0, j = i; for (; j < str.length; j++) { if (str[j] === "{") d++; else if (str[j] === "}") { d--; if (!d) break; } } return [str.slice(i + 1, j), j + 1]; };
@@ -174,9 +180,9 @@ function texToText(src) {
     const c = s[i];
     if (c === "\\") {
       const m = /^\\([A-Za-z]+|.)/.exec(s.slice(i)), name = m[1]; i += m[0].length;
-      if (name === "frac" || name === "tfrac" || name === "dfrac") { const [a, j] = arg(s, i); const [b, k] = arg(s, j); i = k; const ta = texToText(a), tb = texToText(b); if (ta === "1" && tb === "2") out += "½"; else out += (ta.length > 1 ? `(${ta})` : ta) + "/" + (tb.length > 1 ? `(${tb})` : tb); continue; }
+      if (name === "frac" || name === "tfrac" || name === "dfrac") { const [a, j] = arg(s, i); const [b, k] = arg(s, j); i = k; const ta = texToText(a), tb = texToText(b); if (ta === "1" && tb === "2") out += "½"; else out += unit(ta) + "/" + unit(tb); continue; }
       if (name === "binom") { const [a, j] = arg(s, i); const [b, k] = arg(s, j); i = k; out += `C(${texToText(a)},${texToText(b)})`; continue; }
-      if (name === "sqrt") { const [a, j] = arg(s, i); i = j; const t = texToText(a); out += "√" + (t.length > 1 ? `(${t})` : t); continue; }
+      if (name === "sqrt") { const [a, j] = arg(s, i); i = j; out += "√" + unit(texToText(a)); continue; }
       if (name === "rm") continue;
       if (name === "text") { const [a, j] = arg(s, i); i = j; out += a; continue; }
       if (["operatorname", "mathrm", "boxed", "mathbb", "mathcal"].includes(name)) { const [a, j] = arg(s, i); i = j; out += texToText(a); continue; }
@@ -189,7 +195,7 @@ function texToText(src) {
     }
     if (c === "^" || c === "_") {
       const [a, j] = arg(s, i + 1); i = j; const t = texToText(a), map = c === "^" ? SUPS : SUBS;
-      out += [...t].every((ch) => map[ch]) ? [...t].map((ch) => map[ch]).join("") : (c === "^" ? "^" : "_") + (t.length > 1 ? `(${t})` : t); continue;
+      out += [...t].every((ch) => map[ch]) ? [...t].map((ch) => map[ch]).join("") : c + unit(t); continue;
     }
     if (c === "{" || c === "}") { i++; continue; }
     out += c; i++;

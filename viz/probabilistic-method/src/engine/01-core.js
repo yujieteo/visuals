@@ -8,20 +8,23 @@ const PM = {};
 /* ---------- formatting ---------- */
 
 const MINUS = "−";
+/* The three number writers below (page, LaTeX, speech) share one shape: integers below 10⁹ stay whole, magnitudes
+ * below `small` or from 10⁹ up go to scientific notation, and the rest keep `sig` significant figures. */
+const wholeNumber = (x) => Number.isInteger(x) && Math.abs(x) < 1e9;
+const scientific = (a, small) => a !== 0 && (a < small || a >= 1e9);
+/* |x| in scientific notation: the trimmed mantissa and the exponent. */
+function mantissaExponent(a, sig) { const [m, e] = a.toExponential(sig - 1).split("e"); return [trimZeros(m), Number(e)]; }
+/* |x| to sig significant figures, never in exponent form, trailing zeros dropped. */
+function significant(a, sig) { const s = a.toPrecision(sig); return trimZeros(s.includes("e") ? String(Number(s)) : s); }
 /* Significant-figure formatting with a true minus sign; integers stay integers. */
 function fmt(x, sig = 4) {
   if (x === null || x === undefined || Number.isNaN(x)) return "—";
   if (x === Infinity) return "∞";
   if (x === -Infinity) return MINUS + "∞";
-  if (Number.isInteger(x) && Math.abs(x) < 1e9) return (x < 0 ? MINUS : "") + String(Math.abs(x)).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-  const a = Math.abs(x);
-  if (a !== 0 && (a < 1e-4 || a >= 1e9)) {
-    const [m, e] = a.toExponential(sig - 1).split("e");
-    return (x < 0 ? MINUS : "") + trimZeros(m) + "×10" + superscript(Number(e));
-  }
-  let s = a.toPrecision(sig);
-  if (s.includes("e")) s = String(Number(s));
-  return (x < 0 ? MINUS : "") + trimZeros(s);
+  const sign = x < 0 ? MINUS : "", a = Math.abs(x);
+  if (wholeNumber(x)) return sign + String(a).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  if (scientific(a, 1e-4)) { const [m, e] = mantissaExponent(a, sig); return sign + m + "×10" + superscript(e); }
+  return sign + significant(a, sig);
 }
 function trimZeros(s) { return s.includes(".") ? s.replace(/0+$/, "").replace(/\.$/, "") : s; }
 const SUP = { "-": "⁻", 0: "⁰", 1: "¹", 2: "²", 3: "³", 4: "⁴", 5: "⁵", 6: "⁶", 7: "⁷", 8: "⁸", 9: "⁹" };
@@ -29,23 +32,19 @@ function superscript(n) { return String(n).split("").map((c) => SUP[c] ?? c).joi
 /* Plain ASCII-ish number for Markdown and LaTeX: 1.234e-5 becomes 1.234 \times 10^{-5}. */
 function tex(x, sig = 4) {
   if (x === Infinity) return "\\infty";
-  if (Number.isInteger(x) && Math.abs(x) < 1e9) return String(x);
-  const a = Math.abs(x);
-  if (a !== 0 && (a < 1e-4 || a >= 1e9)) {
-    const [m, e] = a.toExponential(sig - 1).split("e");
-    return (x < 0 ? "-" : "") + trimZeros(m) + " \\times 10^{" + Number(e) + "}";
-  }
-  return (x < 0 ? "-" : "") + trimZeros(a.toPrecision(sig).includes("e") ? String(Number(a.toPrecision(sig))) : a.toPrecision(sig));
+  if (x === -Infinity) return "-\\infty";
+  if (wholeNumber(x)) return String(x);
+  const sign = x < 0 ? "-" : "", a = Math.abs(x);
+  if (scientific(a, 1e-4)) { const [m, e] = mantissaExponent(a, sig); return sign + m + " \\times 10^{" + e + "}"; }
+  return sign + significant(a, sig);
 }
 /* A number as it is read aloud: no symbols, so it can go into ::: narration. */
 function spokenNumber(x, sig = 3) {
-  if (Number.isInteger(x) && Math.abs(x) < 1e9) return (x < 0 ? "minus " : "") + String(Math.abs(x));
-  const a = Math.abs(x);
-  if (a !== 0 && (a < 1e-3 || a >= 1e9)) {
-    const [m, e] = a.toExponential(sig - 1).split("e");
-    return (x < 0 ? "minus " : "") + trimZeros(m) + " times ten to the " + (Number(e) < 0 ? "minus " : "") + Math.abs(Number(e));
-  }
-  return (x < 0 ? "minus " : "") + trimZeros(a.toPrecision(sig).includes("e") ? String(Number(a.toPrecision(sig))) : a.toPrecision(sig));
+  const sign = x < 0 ? "minus " : "", a = Math.abs(x);
+  if (a === Infinity) return sign + "infinity";
+  if (wholeNumber(x)) return sign + String(a);
+  if (scientific(a, 1e-3)) { const [m, e] = mantissaExponent(a, sig); return sign + m + " times ten to the " + (e < 0 ? "minus " : "") + Math.abs(e); }
+  return sign + significant(a, sig);
 }
 const pct = (x, sig = 3) => fmt(100 * x, sig) + "%";
 

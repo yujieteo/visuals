@@ -45,6 +45,17 @@ test("the built-in self-tests pass", () => {
 
 /* ---------- §85: mathematical utilities ---------- */
 
+test("numbers are written the same way on the page, in LaTeX and aloud", () => {
+  const cases = [
+    [0, "0", "0", "0"], [-1234567, "−1,234,567", "-1234567", "minus 1234567"], [1e9, "1×10⁹", "1 \\times 10^{9}", "1 times ten to the 9"],
+    [123456.789, "123500", "123500", "123000"], [-0.000012345, "−1.234×10⁻⁵", "-1.234 \\times 10^{-5}", "minus 1.23 times ten to the minus 5"],
+    [0.0005, "0.0005", "0.0005", "5 times ten to the minus 4"], [1 / 3, "0.3333", "0.3333", "0.333"],
+    [Infinity, "∞", "\\infty", "infinity"], [-Infinity, "−∞", "-\\infty", "minus infinity"],
+  ];
+  for (const [x, page, latex, spoken] of cases) deq([PM.fmt(x), PM.tex(x), PM.spokenNumber(x)], [page, latex, spoken], String(x));
+  assert.equal(PM.fmt(NaN), "—");
+});
+
 test("combinations", () => {
   assert.equal(PM.choose(10, 5), 252);
   assert.equal(PM.choose(52, 5), 2598960);
