@@ -50,6 +50,22 @@ test("the page registers exactly the WebMCP tools that visual.json names, each r
   assert.deepEqual(v.selected_sample.sample, R.ordered(R.seriesFor(D, "fig-5-11", "original"))[3]);
 });
 
+// The static record is generated public output (build.py): the no-JavaScript and print view of every argument and source.
+test("the static record holds every argument with all 6 components, every source, and no double full stop", () => {
+  const m = /<!-- static-record -->([\s\S]*?)<!-- \/static-record -->/.exec(html);
+  assert.ok(m, "index.html holds the generated static record");
+  const decode = (s) => s.replace(/&#x27;|&#39;/g, "'").replace(/&quot;/g, '"').replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
+  const record = decode(m[1]);
+  const text = decode(m[1].replace(/<[^>]+>/g, " "));
+  for (const c of D.claims) for (const k of R.TOULMIN) assert.ok(text.includes(c[k]), `${c.id} ${k}`);
+  for (const s of D.sources) {
+    assert.ok(record.includes(`href="${s.url}"`), `${s.id}: the link`);
+    assert.ok(text.includes(s.title), `${s.id}: the full title`);
+  }
+  for (const im of D.images) assert.ok(text.includes(im.credit), `${im.id}: the credit`);
+  assert.doesNotMatch(text, /[^.]\.\.(\s|$)/, "no double full stop");
+});
+
 const sampleAt = (figure, role, x) => ({ figure, role, index: R.ordered(R.seriesFor(D, figure, role)).findIndex((p) => p[0] === x) });
 
 test("view checks keep valid values and reset stale ones with a notice", () => {
