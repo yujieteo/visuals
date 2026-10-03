@@ -6,6 +6,7 @@ deck the way beamdswitch itself does. Do not edit them here.
 | File | Copied from |
 | --- | --- |
 | `deck.mjs` | yujieteo/site `tests/fixtures/beamdswitch/` (vendored there from beamdswitch `src/deck.js` at commit 7dfd98d) |
+| `deck.d.mts` | yujieteo/site `tests/fixtures/beamdswitch/`: the types the type checker reads in place of `deck.mjs` |
 | `report-template.md` | yujieteo/site `templates/beamdswitch-report.md`, the standard report skeleton whose `#` sections every deck follows |
 | `beamdswitch.js` | yujieteo/site `templates/beamdswitch.js` (voice defaults to `bf_emma`), the copy the root `beamdswitch.js` is compared against |
 
