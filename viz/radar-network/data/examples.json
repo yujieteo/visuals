@@ -1,0 +1,120 @@
+{
+  "note": "Named, resettable examples from the same model. Each starts from the default scene or a small fixture, then sets explicit values (path, value). Paths address radars and targets by id. An example reset restores its seed and parameters.",
+  "examples": [
+    {
+      "id": "monostatic-scaling",
+      "title": "Monostatic scaling",
+      "question": "Why does twice the range reduce received power by a factor of 16?",
+      "fixture": {
+        "radars": [{ "id": "M1", "x_km": 0, "y_km": 0, "z_km": 0.1, "vx_mps": 0, "vy_mps": 0, "vz_mps": 0, "waveform": "lfm_up" }],
+        "targets": [
+          { "id": "A", "x_km": 20, "y_km": 0, "z_km": 0.1, "vx_mps": 0, "vy_mps": 0, "vz_mps": 0, "yaw_deg": 0, "yaw_rate_deg_s": 0 },
+          { "id": "B", "x_km": 40, "y_km": 0, "z_km": 0.1, "vx_mps": 0, "vy_mps": 0, "vz_mps": 0, "yaw_deg": 0, "yaw_rate_deg_s": 0 }
+        ]
+      },
+      "set": [["radars.M1.antenna.mode", "uniform"], ["environment.clutter.enabled", false], ["environment.directPath.enabled", false]],
+      "select": "M1>M1:A",
+      "compare": ["M1>M1:A", "M1>M1:B"],
+      "explain": "Both targets have the same RCS and gains. B is at twice the range of A, so R⁴ is 16 times larger and P_r is one sixteenth (−12.04 dB)."
+    },
+    {
+      "id": "equal-delay",
+      "title": "Equal delay, unequal power",
+      "question": "How can equal path sums give different path products?",
+      "fixture": {
+        "radars": [
+          { "id": "S1", "x_km": -10, "y_km": 0, "z_km": 0, "vx_mps": 0, "vy_mps": 0, "vz_mps": 0, "waveform": "lfm_up" },
+          { "id": "S2", "x_km": 10, "y_km": 0, "z_km": 0, "vx_mps": 0, "vy_mps": 0, "vz_mps": 0, "waveform": "lfm_up" }
+        ],
+        "targets": [
+          { "id": "A", "x_km": 0, "y_km": 10, "z_km": 0, "vx_mps": 0, "vy_mps": 0, "vz_mps": 0, "yaw_deg": 0, "yaw_rate_deg_s": 0 },
+          { "id": "B", "x_km": 5, "y_km": 9.354143466934854, "z_km": 0, "vx_mps": 0, "vy_mps": 0, "vz_mps": 0, "yaw_deg": 0, "yaw_rate_deg_s": 0 }
+        ]
+      },
+      "set": [["radars.S1.antenna.mode", "uniform"], ["radars.S2.antenna.mode", "uniform"], ["environment.clutter.enabled", false], ["environment.directPath.enabled", false]],
+      "select": "S1>S2:A",
+      "compare": ["S1>S2:A", "S1>S2:B"],
+      "explain": "Both targets lie on the same constant-delay ellipse (R_t + R_r = 28.28 km), so their echo delays match. The path products differ (200 km² and 187.5 km²), so B returns about 0.56 dB more power."
+    },
+    {
+      "id": "doppler-null",
+      "title": "Bistatic Doppler null",
+      "question": "How can a moving target have zero bistatic Doppler?",
+      "fixture": {
+        "radars": [
+          { "id": "S1", "x_km": -10, "y_km": 0, "z_km": 0, "vx_mps": 0, "vy_mps": 0, "vz_mps": 0, "waveform": "lfm_up" },
+          { "id": "S2", "x_km": 10, "y_km": 0, "z_km": 0, "vx_mps": 0, "vy_mps": 0, "vz_mps": 0, "waveform": "lfm_up" }
+        ],
+        "targets": [
+          { "id": "A", "x_km": -3, "y_km": 0, "z_km": 0, "vx_mps": 100, "vy_mps": 0, "vz_mps": 0, "yaw_deg": 0, "yaw_rate_deg_s": 0 }
+        ]
+      },
+      "set": [["radars.S1.antenna.mode", "uniform"], ["radars.S2.antenna.mode", "uniform"], ["scene.duration_s", 60], ["environment.clutter.enabled", false], ["environment.directPath.enabled", false]],
+      "select": "S1>S2:A",
+      "compare": ["S1>S2:A", "S1>S1:A"],
+      "explain": "The target moves along the baseline between the sites. One path gets longer at the rate the other gets shorter, so R_t + R_r stays constant and f_D = 0. The monostatic link from S1 still sees Doppler. The target stays inside the segment and outside the 100 m far-field bound for the 60 s scene."
+    },
+    {
+      "id": "gain-contour",
+      "title": "Gain contour crossing",
+      "question": "How does antenna direction change power without a range change?",
+      "fixture": {
+        "radars": [{ "id": "M1", "x_km": 0, "y_km": 0, "z_km": 0.1, "vx_mps": 0, "vy_mps": 0, "vz_mps": 0, "waveform": "lfm_up" }],
+        "targets": [{ "id": "A", "x_km": 30, "y_km": 0, "z_km": 0.1, "vx_mps": 0, "vy_mps": 0, "vz_mps": 0, "yaw_deg": 0, "yaw_rate_deg_s": 0 }]
+      },
+      "set": [["radars.M1.antenna.pointing", { "mode": "body", "az_deg": 0, "el_deg": 0 }], ["radars.M1.orientation.yaw_deg", -30], ["radars.M1.orientation.rates_dps", [0.5, 0, 0]], ["environment.clutter.enabled", false], ["environment.directPath.enabled", false]],
+      "select": "M1>M1:A",
+      "explain": "The radar and the target do not move, so the range is constant. The antenna turns at 0.5°/s from 30° off the target. The two-way gain changes by up to 60 dB as the beam passes; the 30 dB floor holds it outside the main beam."
+    },
+    {
+      "id": "aspect-response",
+      "title": "Aspect response",
+      "question": "How does synthetic orientation-dependent RCS change the margin?",
+      "set": [["targets.T4.rcs.mode", "analytic"], ["radars.R3.antenna.pointing", { "mode": "track", "target": "T4" }]],
+      "select": "R3>R3:T4",
+      "explain": "T4 turns at 3°/s. With the synthetic aspect response, the RCS changes with the body-frame direction to R3, so the margin changes although R3 tracks the target. This is a synthetic sensitivity model, not an electromagnetic scattering solution."
+    },
+    {
+      "id": "integration",
+      "title": "Integration",
+      "question": "How do coherent and noncoherent integration differ?",
+      "set": [["processing.integration", "coherent"]],
+      "select": "R1>R1:T3",
+      "compareIntegration": true,
+      "explain": "Coherent integration sums 64 complex samples after phase compensation: N identical aligned pulses give N times the SNR. Noncoherent integration sums squared magnitudes: it needs more single-pulse SNR for the same Pd and Pfa."
+    },
+    {
+      "id": "direct-path",
+      "title": "Direct-path interference",
+      "question": "How do cancellation and filter sidelobes change the received map?",
+      "set": [["environment.directPath.cancellation_dB", 30], ["processing.window", "rect"]],
+      "select": "R1>R2:T3",
+      "channel": { "rx": "R2", "tx": "R1" },
+      "explain": "R2 receives R1's pulse along the 40 km baseline. With 30 dB cancellation the residual direct path and its range sidelobes cover part of the range-Doppler map. Increase the cancellation to see the map clear. The cancellation factor is an assumption, not a simulated adaptive canceller."
+    },
+    {
+      "id": "coherence-errors",
+      "title": "Coherence errors",
+      "question": "How do phase and delay errors change the complex sum?",
+      "set": [["network.mode", "error"], ["network.target", "T3"], ["network.transmitter", "R1"], ["network.receivers", ["R1", "R2", "R3"]], ["network.errors.R2.phase_deg", 90]],
+      "select": "R1>R2:T3",
+      "explain": "Three receivers use R1's waveform for T3. A 90° residual phase on R2 reduces the coherent sum. Equal weights and independent receiver noise give the denominator w^H C_n w = 3."
+    },
+    {
+      "id": "frequency-constant-gain",
+      "title": "Frequency convention: constant gain",
+      "question": "What changes when gain stays fixed, versus physical aperture stays fixed?",
+      "set": [["radars.R1.tx.carrier_Hz", 4e9], ["radars.R2.tx.carrier_Hz", 4e9], ["radars.R3.tx.carrier_Hz", 4e9]],
+      "select": "R1>R1:T3",
+      "explain": "Gain is fixed at 30 dBi. P_r scales with λ², so 4 GHz gives (10/4)² = 6.25 times (7.96 dB) more power than 10 GHz for the same RCS."
+    },
+    {
+      "id": "frequency-constant-aperture",
+      "title": "Frequency convention: constant aperture",
+      "question": "What changes when gain stays fixed, versus physical aperture stays fixed?",
+      "set": [["radars.R1.tx.carrier_Hz", 4e9], ["radars.R2.tx.carrier_Hz", 4e9], ["radars.R3.tx.carrier_Hz", 4e9], ["radars.R1.antenna.gainMode", "aperture"], ["radars.R2.antenna.gainMode", "aperture"], ["radars.R3.antenna.gainMode", "aperture"]],
+      "select": "R1>R1:T3",
+      "explain": "Effective aperture is fixed at the value that gives 30 dBi at 10 GHz. G = 4π A_eff/λ², so each gain falls by 7.96 dB at 4 GHz. G_t G_r λ² then scales as 1/λ²: P_r is 7.96 dB lower than at 10 GHz. The beamwidth input stays fixed in this synthetic pattern."
+    }
+  ]
+}

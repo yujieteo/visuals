@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" href="data:,">
+<title>Radar network: the range equation in a moving 3D scene</title>
+<meta name="description" content="Three moving radars and four moving targets in a 3D scene. Every one of the 36 transmitter-receiver-target links shows its radar equation, SNR, detector threshold, required SNR, margin, delay and Doppler, with sampled range-Doppler processing, clutter, interference and coherent site combination. Synthetic values; published MathWorks reference cases.">
+<link rel="canonical" href="https://teoyujie.org/visuals/radar-network/">
+<meta property="og:title" content="Radar network: the range equation in a moving 3D scene">
+<meta property="og:description" content="36 radar links with every calculation exposed: power, SNR, threshold, margin, delay, Doppler and range-Doppler maps.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://teoyujie.org/visuals/radar-network/">
+<script id="site-theme">try { var t = localStorage.getItem("theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (e) {}</script>
+<style>
+{{STYLE}}
+</style>
+</head>
+<body>
+<dialog id="import-dialog" aria-labelledby="import-h">
+  <h2 id="import-h">Import a scenario</h2>
+  <p class="note">Choose a radar-network-scenario.json file (it imports at once) or paste its text. The page checks the schema, units, domain and finite values; the current scene stays if the check fails.</p>
+  <p><input id="import-file" type="file" accept="application/json,.json" aria-label="Scenario file"></p>
+  <textarea id="import-text" rows="6" style="width:100%" aria-label="Scenario JSON text"></textarea>
+  <p id="import-errors" class="err" role="alert"></p>
+  <p><button id="import-apply" type="button" class="primary">Import</button> <button id="import-cancel" type="button">Cancel</button></p>
+</dialog>
+<main>
+<header>
+  <p class="eyebrow"><a href="../../visuals.html">Visuals</a><span>Radar</span><span>Works offline</span></p>
+  <h1>Radar network: the range equation in 3D</h1>
+  <p class="lede">Three moving radars and four moving targets give 36 links, one for each transmitter, receiver and target. Each link shows its radar equation, numbers, SNR, detector threshold, required SNR and margin. Move the objects or the time and see which factor changes the result.</p>
+  <div class="callout">
+    <p class="note" style="margin:0">All absolute values are synthetic: power, gains, losses, RCS and the clutter patches. Only the carriers (4, 10 and 17 GHz) come from the supplied evidence. The NASA F-117 model curves stay in a separate evidence panel. Their magnitude reference is not stated, so they never enter a power or range result.</p>
+  </div>
+</header>
+<noscript><p class="callout"><strong>Interaction needs JavaScript.</strong> Without it this page shows the initial scene and its 36 link results as a static table below. The 3D scene, the calculations, the time controls and the exports need JavaScript.</p></noscript>
+
+<div class="toolbar no-print" role="toolbar" aria-label="Scenario">
+  <label>Example <select id="example-select" aria-label="Example"></select></label>
+  <button id="example-reset" type="button" title="Restore the selected example's parameters and seed">Reset example</button>
+  <span class="seg" role="group" aria-label="View preset">
+    <button type="button" data-preset="geometry" aria-pressed="true">Geometry</button>
+    <button type="button" data-preset="signal" aria-pressed="false">Signal processing</button>
+    <button type="button" data-preset="network" aria-pressed="false">Network comparison</button>
+  </span>
+  <span class="grow"></span>
+  <button id="open-palette" type="button" aria-keyshortcuts="Control+K Meta+K">Search <kbd>⌘K</kbd></button>
+  <button id="undo" type="button" aria-keyshortcuts="Control+Z">Undo</button>
+  <button id="redo" type="button" aria-keyshortcuts="Control+Shift+Z">Redo</button>
+  <button id="reset" type="button">Reset scene</button>
+  <button id="export-json" type="button">Export JSON</button>
+  <button id="import-json" type="button">Import JSON</button>
+  <button id="md-download" type="button">Download Markdown</button>
+  <button id="md-copy" type="button">Copy Markdown</button>
+  <button id="report-download" type="button">Download beamdswitch report</button>
+  <button id="report-copy" type="button">Copy beamdswitch report</button>
+  <button id="shortcuts" type="button" aria-keyshortcuts="?">Shortcuts</button>
+</div>
+<p id="notice" class="notice" role="status" aria-live="polite"></p>
+
+<section class="timebar no-print" aria-label="Time">
+  <button id="play" type="button" aria-pressed="false" aria-keyshortcuts="Space">Play</button>
+  <button id="restart" type="button">Restart</button>
+  <button id="step-back" type="button" aria-label="Step back">−step</button>
+  <button id="step-fwd" type="button" aria-label="Step forward">+step</button>
+  <button id="dwell-step" type="button" title="Advance by one dwell (N / PRF)">+dwell</button>
+  <label class="field-inline">Step <select id="step-size" aria-label="Step size"><option value="0.001">1 ms</option><option value="0.01" selected>10 ms</option><option value="1">1 s</option></select></label>
+  <label class="field-inline">Rate <select id="rate" aria-label="Playback rate"><option value="0.25">0.25×</option><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option></select></label>
+  <input id="time-slider" type="range" min="0" max="120" step="0.001" value="0" aria-label="Scene time (s)">
+  <label class="field-inline">t (s) <input id="time-num" class="time-num" type="number" min="0" max="120" step="0.001" value="0" aria-label="Scene time in seconds"></label>
+</section>
+
+<div class="lab">
+  <section class="scene-wrap" aria-labelledby="scene-h">
+    <h2 id="scene-h" class="sr-only">3D scene</h2>
+    <canvas id="scene" tabindex="0" role="img" aria-label="3D scene of the radars, targets, beams and paths. Use the link table and the numeric controls as complete alternatives." aria-describedby="scene-desc"></canvas>
+    <p id="scene-desc" class="sr-only"></p>
+    <div id="scene-fallback" class="scene-fallback card" hidden>The 3D renderer is not available in this browser. The link table, the numeric controls and every calculation still work.</div>
+    <div class="scene-tools no-print">
+      <span class="seg" role="group" aria-label="Pointer mode">
+        <button type="button" data-mode="rotate" aria-pressed="true">Rotate view</button>
+        <button type="button" data-mode="move" aria-pressed="false">Move object</button>
+      </span>
+      <span class="seg" role="group" aria-label="Edit plane">
+        <button type="button" data-plane="XY" aria-pressed="true">XY</button>
+        <button type="button" data-plane="XZ" aria-pressed="false">XZ</button>
+        <button type="button" data-plane="YZ" aria-pressed="false">YZ</button>
+      </span>
+      <span class="group" role="group" aria-label="Camera">
+        <button type="button" data-cam="fit">Fit</button>
+        <button type="button" data-cam="home">Home</button>
+        <button type="button" data-cam="top">Top</button>
+        <button type="button" data-cam="front">Front</button>
+        <button type="button" data-cam="side">Side</button>
+        <button type="button" id="projection" aria-pressed="false">Orthographic</button>
+      </span>
+      <span class="group" role="group" aria-label="Camera steps">
+        <button type="button" data-orbit="-15,0" aria-label="Rotate left">⟲</button>
+        <button type="button" data-orbit="15,0" aria-label="Rotate right">⟳</button>
+        <button type="button" data-orbit="0,10" aria-label="Tilt up">↑</button>
+        <button type="button" data-orbit="0,-10" aria-label="Tilt down">↓</button>
+        <button type="button" data-pan="-1,0" aria-label="Pan left">◁</button>
+        <button type="button" data-pan="1,0" aria-label="Pan right">▷</button>
+        <button type="button" data-pan="0,1" aria-label="Pan forward">△</button>
+        <button type="button" data-pan="0,-1" aria-label="Pan back">▽</button>
+        <button type="button" data-zoom="0.8" aria-label="Zoom in">＋</button>
+        <button type="button" data-zoom="1.25" aria-label="Zoom out">−</button>
+      </span>
+      <span class="group" role="group" aria-label="Selection">
+        <button type="button" id="center-sel">Centre selected</button>
+        <button type="button" id="follow-sel" aria-pressed="false">Follow selected</button>
+        <button type="button" id="isolate-sel" aria-pressed="false">Isolate selected links</button>
+        <button type="button" id="clear-sel">Clear selection</button>
+      </span>
+    </div>
+    <div class="layers no-print" role="group" aria-label="Layers">
+      <label><input type="checkbox" data-layer="beams" checked> Beams</label>
+      <label><input type="checkbox" data-layer="paths" checked> Paths</label>
+      <label><input type="checkbox" data-layer="trails" checked> Trails</label>
+      <label><input type="checkbox" data-layer="labels" checked> Labels</label>
+      <label><input type="checkbox" data-layer="clutter" checked> Clutter</label>
+      <label><input type="checkbox" data-layer="surfaces"> Threshold surfaces</label>
+      <label><input type="checkbox" data-layer="velocity" checked> Velocity vectors</label>
+      <label class="field-inline">Surface <select id="surface-kind" aria-label="Threshold surface model"><option value="frozen">Frozen parameters</option><option value="active">Active model (range cuts)</option></select></label>
+    </div>
+    <p class="legend" aria-hidden="true">
+      <span><svg width="14" height="14"><rect x="2" y="2" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2"/></svg> radar</span>
+      <span><svg width="14" height="14"><path d="M7 1 L13 12 L1 12 Z" fill="none" stroke="currentColor" stroke-width="2"/></svg> target</span>
+      <span><svg width="26" height="8"><line x1="0" y1="4" x2="26" y2="4" stroke="currentColor" stroke-width="2"/></svg> monostatic path</span>
+      <span><svg width="26" height="8"><line x1="0" y1="4" x2="26" y2="4" stroke="currentColor" stroke-width="2" stroke-dasharray="6 3"/></svg> bistatic path</span>
+      <span><svg width="14" height="14"><rect x="3" y="3" width="8" height="8" fill="currentColor" opacity="0.4"/></svg> clutter patch</span>
+    </p>
+    <p class="gesture no-print"><strong>Gestures:</strong> drag to rotate (or move the selected object in Move mode, in the chosen plane); Shift-drag or two fingers to pan; wheel or pinch to zoom; tap an object to select it. The buttons above do the same without precise pointing. Arrow keys rotate the focused scene; <kbd>+</kbd> and <kbd>−</kbd> zoom.</p>
+  </section>
+
+  <div class="side">
+    <section id="selected" class="card selected" aria-labelledby="selected-h" aria-live="polite">
+      <h2 id="selected-h">Selected link</h2>
+      <div id="selected-body"><p class="note">Select a link in the table or the scene.</p></div>
+    </section>
+    <section aria-labelledby="table-h">
+      <h2 id="table-h">Links</h2>
+      <div class="table-tools no-print">
+        <button id="expand-all" type="button">Expand all</button>
+        <button id="collapse-all" type="button">Collapse all</button>
+        <button id="expand-selected" type="button">Expand selected</button>
+        <input id="calc-search" type="search" placeholder="Search links and calculations" aria-label="Search links and calculations">
+      </div>
+      <div class="table-scroll">
+        <table id="link-table" aria-describedby="table-note">
+          <thead><tr><th scope="col">Link (tx&gt;rx:target)</th><th scope="col">Type</th><th scope="col" class="num">P<sub>r</sub> (dBm)</th><th scope="col" class="num">ρ<sub>1</sub> (dB)</th><th scope="col" class="num">Margin (dB)</th><th scope="col" class="num">P<sub>d</sub></th><th scope="col" class="num">Delay (μs)</th><th scope="col" class="num">Doppler (Hz)</th><th scope="col">Validity</th></tr></thead>
+          <tbody id="link-body">
+{{STATIC_ROWS}}
+          </tbody>
+        </table>
+      </div>
+      <p id="table-note" class="note">ρ<sub>1</sub> is the single-pulse matched-filter SNR. Margin is ρ<sub>1</sub> minus the required single-pulse SNR for the detector settings. An inactive or invalid link keeps its row and its reason; its result is never replaced by zero. {{BUILD_NOTE}}</p>
+    </section>
+  </div>
+</div>
+
+<nav class="tabs no-print" role="tablist" aria-label="Views">
+  <button role="tab" id="tab-time" aria-controls="panel-time" aria-selected="true">Time plot</button>
+  <button role="tab" id="tab-signal" aria-controls="panel-signal" aria-selected="false" tabindex="-1">Received signal</button>
+  <button role="tab" id="tab-rd" aria-controls="panel-rd" aria-selected="false" tabindex="-1">Range–Doppler</button>
+  <button role="tab" id="tab-amb" aria-controls="panel-amb" aria-selected="false" tabindex="-1">Ambiguity</button>
+  <button role="tab" id="tab-coherent" aria-controls="panel-coherent" aria-selected="false" tabindex="-1">Coherent comparison</button>
+  <button role="tab" id="tab-evidence" aria-controls="panel-evidence" aria-selected="false" tabindex="-1">Evidence</button>
+  <button role="tab" id="tab-checks" aria-controls="panel-checks" aria-selected="false" tabindex="-1">Reference checks</button>
+  <button role="tab" id="tab-learn" aria-controls="panel-learn" aria-selected="false" tabindex="-1">Examples and exercises</button>
+</nav>
+<section id="panel-time" class="tabpanel" role="tabpanel" aria-labelledby="tab-time"></section>
+<section id="panel-signal" class="tabpanel" role="tabpanel" aria-labelledby="tab-signal" hidden></section>
+<section id="panel-rd" class="tabpanel" role="tabpanel" aria-labelledby="tab-rd" hidden></section>
+<section id="panel-amb" class="tabpanel" role="tabpanel" aria-labelledby="tab-amb" hidden></section>
+<section id="panel-coherent" class="tabpanel" role="tabpanel" aria-labelledby="tab-coherent" hidden></section>
+<section id="panel-evidence" class="tabpanel" role="tabpanel" aria-labelledby="tab-evidence" hidden></section>
+<section id="panel-checks" class="tabpanel" role="tabpanel" aria-labelledby="tab-checks" hidden></section>
+<section id="panel-learn" class="tabpanel" role="tabpanel" aria-labelledby="tab-learn" hidden></section>
+
+<section class="controls no-print" aria-labelledby="controls-h">
+  <hr class="rule">
+  <h2 id="controls-h">Controls</h2>
+  <p class="note">Every value in the scene has a numeric control here. Edits pause time, enter the undo history with their time, and recalculate the analytic results at once. Sampled results then show “Result from previous parameters” until you recalculate.</p>
+  <div id="controls"></div>
+</section>
+
+<section aria-labelledby="about-h">
+  <hr class="rule">
+  <h2 id="about-h">Model, sources and limits</h2>
+  <div id="about">{{STATIC_ABOUT}}</div>
+</section>
+
+<footer>
+  <p>Radar network visualiser · model {{MODEL_VERSION}} · scenario schema {{SCHEMA_VERSION}} · MathJax {{MATHJAX_VERSION}} with Fira Math, embedded (licences in the page source and below) · beamdswitch template {{TEMPLATE_SHA}}.</p>
+</footer>
+</main>
+
+<dialog id="palette" aria-label="Search">
+  <label for="palette-input" class="label">Search objects, links, parameters, views and commands</label>
+  <input id="palette-input" type="search" autocomplete="off" style="width:100%" aria-controls="palette-list" aria-activedescendant="">
+  <ul id="palette-list" role="listbox" aria-label="Results"></ul>
+  <p class="note">↑ ↓ to move, Enter to run, Escape to close.</p>
+</dialog>
+<dialog id="shortcut-dialog" aria-labelledby="shortcut-h">
+  <h2 id="shortcut-h">Keyboard shortcuts</h2>
+  <table>
+    <tbody>
+      <tr><td><kbd>⌘K</kbd> / <kbd>Ctrl K</kbd></td><td>Search objects, links, parameters, views and commands</td></tr>
+      <tr><td><kbd>Space</kbd></td><td>Play or pause (outside text fields)</td></tr>
+      <tr><td><kbd>Escape</kbd></td><td>Cancel a gesture or close a panel</td></tr>
+      <tr><td><kbd>Ctrl Z</kbd> / <kbd>Ctrl Shift Z</kbd></td><td>Undo / redo</td></tr>
+      <tr><td><kbd>,</kbd> <kbd>.</kbd></td><td>Step time back / forward</td></tr>
+      <tr><td><kbd>D</kbd></td><td>Open or close the selected link's calculation</td></tr>
+      <tr><td>Arrow keys</td><td>Rotate the focused scene; move through range-Doppler cells on the focused map</td></tr>
+      <tr><td><kbd>+</kbd> <kbd>−</kbd></td><td>Zoom the focused scene</td></tr>
+      <tr><td><kbd>?</kbd></td><td>This list</td></tr>
+    </tbody>
+  </table>
+  <form method="dialog"><button>Close</button></form>
+</dialog>
+
+
+<script type="application/json" id="radar-data">{{DATA}}</script>
+{{SCRIPTS}}
+{{MATHJAX}}
+</body>
+</html>
