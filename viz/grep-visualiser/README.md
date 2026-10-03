@@ -9,7 +9,7 @@ network access and no build step, and it works from `file://`.
 | --- | --- |
 | `index.html` | The whole tool. `<script id="grep-engine">` is the pure core: dialect translators, matching models, flag parsing, command quoting, the replace engines and the self-test. It has no DOM, storage, clock, randomness or network use, and it is `self.GrepViz` in the page and in its Web Worker. `<script id="grep-ui">` is the page, the worker runner and the WebMCP tools. Edit this file directly. |
 | `raw.json` | Published metadata: the engine's `META` (presets, confidence levels, matching models, flags and replace syntaxes). It must equal `META`, and the test says when it has drifted. |
-| `AGENTS.md` | Notes for coding agents: where changes go (the standalone repository, where this visualisation and its tests develop; yujieteo/site holds a port of the page files), how to build and test, and the conventions. |
+| `AGENTS.md` | What is specific to changing the tool. |
 | `SKILLS.md` | For agents using the tool: its tasks, inputs, read-only WebMCP tools, exports and a worked example. |
 | `LICENSE` | MIT. |
 

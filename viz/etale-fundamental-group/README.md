@@ -77,8 +77,8 @@ built files are current, the mathematics above, the results table against the
 specification, the chapter-level citations, the self-contained page, the WebMCP
 tools against the catalogue stub, and the beamdswitch and Copy deck buttons with
 beamdswitch's own deck parser. `tests/beamdswitch-deck-checks.mjs` and the
-read-only copies in `tests/fixtures/beamdswitch/` support the deck checks. From the
-repository root:
+read-only copies in `tests/fixtures/beamdswitch/` support the deck checks. From this
+folder:
 
 ```sh
 node --test 'tests/*.test.mjs'

@@ -45,20 +45,17 @@ node --test tests/distortion.test.mjs   # kinematics, presets, artefact and buil
 node --test tests/beamdswitch.test.mjs  # the beamdswitch deck, read with beamdswitch's parsers
 ```
 
-The tests use Node's built-in runner, so the repository needs no `package.json`.
-This repository is where the explorer and its tests develop, and its CI runs
-them; `visuals/distortion/` in [yujieteo/site](https://github.com/yujieteo/site/tree/main/visuals/distortion)
-is a port of the page files without `tests/` or `.github/`.
+The tests use Node's built-in runner; yujieteo/visuals CI runs them when this folder changes.
 
 ## three.js
 
-`vendor/three.min.js` is generated once, outside this repository, and checked
+`vendor/three.min.js` is generated once, outside this folder, and checked
 in; the licence text heads the file. To regenerate it (for example to move to a
 newer release), in an empty directory:
 
 ```sh
 npm pack three@0.186.1 && mkdir -p node_modules/three && tar xzf three-0.186.1.tgz -C node_modules/three --strip-components 1
-cp <this repository>/vendor/three-entry.mjs entry.mjs
+cp <this folder>/vendor/three-entry.mjs entry.mjs
 npx esbuild@0.25.10 entry.mjs --bundle --minify --format=iife --global-name=THREE --legal-comments=none --outfile=three.min.js
 ```
 

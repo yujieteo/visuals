@@ -39,9 +39,6 @@ L = [Q,P,R], a the diagonal loop at w.
 
 ## Tests
 
-The tests live in [yujieteo/delta-cohomology](https://github.com/yujieteo/delta-cohomology), where CI
-runs them; the site's `visuals/delta-cohomology/` is a port of the page files without `tests/`.
-
 `tests/delta-cohomology.test.mjs` (Node's built-in runner) checks the derived
 matrices against the stated ones, ∂₁∂₂ = 0 and δ¹δ⁰ = 0 for every orientation
 choice, the cohomology table over ℤ, 𝔽₂ and 𝔽₃ (with the Smith factor 2 checked

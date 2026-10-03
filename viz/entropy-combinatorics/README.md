@@ -62,10 +62,7 @@ and several differ from the engine's: for example C(10,3) = 120 against
 
 ## Tests
 
-The tests live in this repository,
-[yujieteo/entropy-combinatorics](https://github.com/yujieteo/entropy-combinatorics),
-and its CI runs them; `visuals/entropy-combinatorics/` in yujieteo/site is a
-port of the page files without them. `tests/entropy-combinatorics.test.mjs`
+`tests/entropy-combinatorics.test.mjs`
 runs with Node's built-in runner (`node --test 'tests/*.test.mjs'`). It
 checks that `index.html` and `raw.json` are the current build; the engine on
 tables, the binomial, multinomial and set-system bounds, Shearer and its

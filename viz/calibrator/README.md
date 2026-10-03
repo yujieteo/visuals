@@ -16,7 +16,7 @@ requests; it works offline and from `file://`.
 | `sample-session.toon` | A five-question sample session in the import schema, for trying the page and as a target for the generator. |
 | `sessions/` | Generated sessions ready to paste, one `YYYY-MM-DD.toon` per session. |
 | `docs/generation-policy.md` | The canonical policy an external generator follows to choose, write, rank and resolve a session's cards, and how answers are read. |
-| `AGENTS.md` | Notes for coding agents: where changes go, how to test, how to port to yujieteo/site, conventions. |
+| `AGENTS.md` | What is specific to changing the tool. |
 | `SKILLS.md` | For agents using the page: its tasks, the read-only WebMCP tools and the workflow. |
 | `LICENSE` | MIT. |
 
