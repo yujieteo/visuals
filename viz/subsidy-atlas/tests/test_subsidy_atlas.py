@@ -12,12 +12,10 @@ from html.parser import HTMLParser
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-# build.py reads the site's static/css/style.css two directories up, so build in a copy laid out like the site:
-# <work>/visuals/subsidy-atlas/ beside <work>/static/css/style.css (the fixture copy).
+# Build in a copy, so a test never rewrites the folder's own files.
 WORK = Path(tempfile.mkdtemp(prefix='subsidy-atlas-'))
-HERE = WORK / 'visuals' / 'subsidy-atlas'
+HERE = WORK / 'subsidy-atlas'
 shutil.copytree(ROOT, HERE, ignore=shutil.ignore_patterns('__pycache__', '.git', '.github', 'tests'))
-shutil.copytree(ROOT / 'tests' / 'fixtures' / 'static', WORK / 'static')
 spec = importlib.util.spec_from_file_location('subsidy_atlas_build', HERE / 'build.py')
 builder = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(builder)

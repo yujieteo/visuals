@@ -6,7 +6,6 @@ from html import escape
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-ROOT = HERE.parents[1]
 FILTERS = [('category', 'Categories'), ('subsidiser', 'Subsidisers'), ('depth', 'Depths'), ('stage', 'Stages')]
 # Short matrix column heads; the full depth label is the tooltip.
 SHORT_DEPTH = {'free': 'Free', 'partial': 'Capped', 'near-cost': 'At cost', 'unknown': 'Unknown'}
@@ -103,7 +102,7 @@ def forecast_article(data, pick):
 def render(data):
     validate(data)
     vocab = data['vocabulary']
-    tokens = (ROOT / 'static/css/style.css').read_text().split('\n* {', 1)[0]
+    tokens = (HERE / 'site-tokens.css').read_text().split('\n* {', 1)[0]
     css = (HERE / 'style.css').read_text()
     scripts = read_scripts()
     engine, beamdswitch = scripts['engine.js'], scripts['beamdswitch.js']
@@ -136,7 +135,7 @@ def main():
     target = HERE / 'index.html'
     if args.verify:
         if target.read_text() != expected:
-            raise SystemExit('Stale Subsidy Atlas: run visuals/subsidy-atlas/build.py')
+            raise SystemExit('Stale Subsidy Atlas: run python3 build.py')
     else:
         target.write_text(expected)
 

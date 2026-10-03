@@ -2,8 +2,7 @@
 
 A self-contained consumer guide with 15 sourced records, a depth × lifecycle
 count matrix, four filters, search, and three separately flagged speculative
-watchlist picks. Published at `/visuals/subsidy-atlas/index.html` by the normal
-site build.
+watchlist picks, published at `/visuals/subsidy-atlas/`.
 
 ## Update the evidence
 
@@ -19,12 +18,11 @@ python3 build.py
 python3 build.py --verify
 ```
 
-`build.py` reads the design tokens from yujieteo/site's `static/css/style.css`,
-two directories up, so run it inside `visuals/subsidy-atlas/` of a site checkout
-(the tests lay out a copy beside `tests/fixtures/static/css/style.css`). The
-site's build copies the generated source HTML and publishes `raw.json` as
-`data.json`. The HTML embeds all styles, JavaScript and data; external URLs are
-citations, not assets. Design tokens come from `static/css/style.css`.
+`build.py` inlines the design tokens from `site-tokens.css`, the head of
+yujieteo/site's `static/css/style.css` up to its first `* {` rule; refresh it
+when the site's tokens change. The site publishes the generated HTML and
+`raw.json` as `data.json`. The HTML embeds all styles, JavaScript and data;
+external URLs are citations, not assets.
 
 ## Evidence boundaries
 
@@ -55,18 +53,14 @@ is the site's standard template (`templates/beamdswitch.js`, unchanged), which
 
 ## Verify
 
-From the root of a yujieteo/subsidy-atlas checkout, as CI does:
-
-```sh
-node --test 'tests/*.test.{mjs,cjs}'
-python3 -m unittest discover -s tests -p 'test_*.py'
-```
+`python3 ../../scripts/check.py subsidy-atlas` runs `build.py --verify`, the
+Node tests and the Python tests; CI runs them on every change to this folder.
 
 Python tests validate the serialized dataset, source references, fixed
 vocabularies, speculation boundaries, reproducibility and generated HTML.
 Node tests execute filtering, matrix drilldown, detail retrieval and the
-site-theme script that applies the reader's Light or Dark choice. All are
-included in normal CI. Invalid claim references or unflagged forecasts also
-prevent the visualization builder from rendering.
+site-theme script that applies the reader's Light or Dark choice. Invalid
+claim references or unflagged forecasts also prevent the visualization builder
+from rendering.
 
 Real-browser evidence and screenshots: [verification](https://github.com/yujieteo/site/blob/main/docs/subsidy-atlas/verification.md) in yujieteo/site.
