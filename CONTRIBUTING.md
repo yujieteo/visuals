@@ -10,7 +10,10 @@ page. See `README.md` for the layout and commands and `SKILLS.md` for the rules.
    `index.html`), or `index.html` itself when the folder has no builder.
 2. Keep `visual.json` in step with the page, and the visual's tests in its own
    `tests/`.
-3. Check: `python3 scripts/check.py <slug>`.
+3. Check: `npm ci` once, then `python3 scripts/check.py <slug>`. It runs the
+   visual's tests and the rules that need no reading: the beamdswitch template
+   copies, the page's requests, colour contrast, and dead code. Fix what it
+   reports; `allow` in `visual.json` is only for a finding kept on purpose.
 
 ## Add a visual
 
@@ -24,3 +27,6 @@ Nothing else needs an edit: CI, the catalogue and the site find the folder.
 - A test reads only its own visual's folder and the shared tooling.
 - Never commit credentials, host details, private paths, or deployment
   configuration, and never write an absolute user-home path (macOS or Linux home prefix) in any file.
+- Never commit `__pycache__/`, `*.pyc`, `.DS_Store` or AppleDouble `._*` files;
+  `python3 scripts/check_repo.py` fails on them. On macOS, run `tar` with
+  `COPYFILE_DISABLE=1`.

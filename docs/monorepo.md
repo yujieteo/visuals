@@ -50,9 +50,25 @@ and the byte-identical `beamdswitch` and `report` templates), `uses` (shared fil
 `tests/test_*.py` with unittest, its `tsconfig.json` with `tsc` after the shared extractor copies the page's
 inline scripts, less the ones `typecheck.skip` names and blocks holding only a build placeholder, into
 `.typecheck/inline/<id>.js` (`script-<n>.js` for the n-th, unnamed, `<script>`), which that `tsconfig.json` includes, and a check that `visual.json` and `SKILLS.md`
-name exactly the WebMCP tools the page registers (at least the literally registered ones, when the page
-registers others in a loop). `checks` in `visual.json` replaces the first three. `python3 scripts/check_repo.py` is the fast
-repository-wide check: every `visual.json` against the schema, the folder rules and the absolute-path scan.
+name exactly the WebMCP tools the page registers or defines (at least the literally registered ones, when the page
+registers others in a loop). `checks` in `visual.json` replaces the first three. Then, for every visual, the
+deterministic rules that replaced review by reading (`scripts/rules.py`, `scripts/deadcode.mjs`):
+
+| Step | Fails when |
+| --- | --- |
+| `template` | a copy of the beamdswitch template (`beamdswitch.js`, its test fixtures, the block the page inlines) differs from the SHA-256 `scripts/sync_template.py` records in `scripts/templates/beamdswitch.sha256` |
+| `requests` | the page requests a URL outside its published files (`index.html`, `data.json`, `assets`): another origin, an absolute or parent path, or `notes.md` |
+| `contrast` | a text token (`--fg`, `--muted`, `--focus`, `--hl`, `--ok`, `--warn`, `--bad`) is below 4.5:1 on `--bg`, `--control` or a series colour below 3:1, a control is outlined in a token below 3:1 (such as `--border`), in either theme, or the two dark-theme blocks disagree |
+| `pydead` | the folder's Python has an unused import or local, or defines a function or class twice |
+| `deadcode` | tsc finds an unused local or import, unreachable code, or a `let`, `const` or class declared twice in the page's inline scripts (one global scope, as the browser runs them) or its test modules; it needs `npm ci` |
+| `sourcetests` | never: it reports tests whose every assertion checks the page's source text instead of running its code |
+
+A finding a visual keeps on purpose goes in `visual.json` `allow`, under the check's name, exactly as the
+check prints it; an entry that no longer matches a finding fails, so the list shrinks as the code is fixed.
+`python3 scripts/check_repo.py` is the fast repository-wide check: every `visual.json` against the schema
+(which requires at least 3 `webmcp_tools`), the folder rules, the absolute-path scan, no tracked `__pycache__`,
+`*.pyc`, `.DS_Store` or AppleDouble `._*` file with `.gitignore` keeping them out, and no unused or duplicated
+Python in `scripts/` and `tests/`. The tooling's own `tsconfig.json` fails on unused locals and unreachable code.
 
 `scripts/changed.py` decides what a change runs: a path in `viz/<slug>/` selects that visual; a path a
 visual lists in `uses` selects its users; documentation (`*.md` at the root or in `e2e/`, `docs/`) selects

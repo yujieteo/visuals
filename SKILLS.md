@@ -13,8 +13,25 @@ What a visual must be (artifact contract, state and export, interaction and acce
 
 1. Work inside `viz/<slug>/` only. Edit the data, `src/` or `build.py` and run `python3 build.py` when the folder has a builder (it regenerates `index.html`; never hand-edit a generated page); otherwise edit `index.html` directly.
 2. Keep `visual.json` true: its `webmcp_tools` and the WebMCP tools table in `SKILLS.md` name exactly the tools the page registers, and `fetched` is the date of the data. `schema/visual.schema.json` says what each field means.
-3. Put its tests in its own `tests/` (`*.test.mjs` for `node --test`, `test_*.py` for unittest). A test reads only its own folder and the shared tooling, never another visual's folder: CI runs it on a checkout without them. Time any test you add and keep it fast.
-4. Check it: `python3 scripts/check.py <slug>`, then `python3 scripts/check.py --changed` for everything the branch touches.
+3. Put its tests in its own `tests/` (`*.test.mjs` for `node --test`, `test_*.py` for unittest). A test reads only its own folder and the shared tooling, never another visual's folder: CI runs it on a checkout without them. A test runs the page's code and asserts on what it does; a test that only searches the page's source text is reported by the `sourcetests` step. Time any test you add and keep it fast.
+4. Check it: `python3 scripts/check.py <slug>`, then `python3 scripts/check.py --changed` for everything the branch touches. Run `npm ci` once first, so the type and dead-code checks run too. Fix a failure; do not add it to `allow` in `visual.json` unless the finding is deliberate, and then say why in the pull request.
+
+## What the checks decide
+
+These rules are scripts, so do not check them by reading. `scripts/check.py` runs them for each visual, CI runs them for each changed visual, and [docs/monorepo.md](docs/monorepo.md#checks) lists each step.
+
+| Rule | Step |
+| --- | --- |
+| A generated page matches its builder, across Node versions | `build` (`build.py --verify` on CI's Node 22) |
+| `visual.json` and `SKILLS.md` name exactly the WebMCP tools the page registers, at least 3 | `tools`, and the schema in `scripts/check_repo.py` |
+| Every `beamdswitch.js` copy is the site's template | `template` (`scripts/templates/beamdswitch.sha256`) |
+| The page requests only its own published files, never `notes.md` | `requests`, and the browser check `network` |
+| Colour tokens meet WCAG contrast in both themes; no control is outlined in `--border` | `contrast` |
+| No unused imports or locals, unreachable code, or names declared twice | `deadcode` (JavaScript, with tsc), `pydead` (Python) |
+| No `__pycache__`, `*.pyc`, `.DS_Store` or AppleDouble `._*` file is tracked | `scripts/check_repo.py` |
+| No horizontal overflow at 320 px or 390 px; no NaN, Infinity or undefined shown at any input's limits | the browser checks `overflow-320`, `overflow-390`, `numeric-text` |
+
+Review still decides what no script can: whether the mathematics, data and wording are right, whether a test covers the behaviour that matters, whether two different-looking pieces of code are the same rule, and the manual acceptance pass of the `interactive-visual-spec` skill.
 
 ## Browser checks
 
@@ -26,15 +43,15 @@ Create `viz/<slug>/` with `index.html`, the data file, `visual.json` (copy a nei
 
 ## Change shared tooling
 
-`scripts/`, `schema/`, `tests/` (the tooling's own tests), `design-tokens.json`, `package.json`, the tsconfig files and CI are shared: a change there runs every visual's checks. Run `python3 scripts/check_repo.py`, the tooling tests (`python3 -m unittest discover -s tests -p 'test_*.py'` and `node --test tests/*.test.mjs`), `npm ci && npm run typecheck`, and `python3 scripts/check.py --all`.
+`scripts/`, `schema/`, `tests/` (the tooling's own tests), `design-tokens.json`, `package.json`, the tsconfig files and CI are shared: a change there runs every visual's checks. Run `python3 scripts/check_repo.py`, `npm ci && npm run typecheck`, the tooling tests (`python3 -m unittest discover -s tests -p 'test_*.py'` and `node --test tests/*.test.mjs`), and `python3 scripts/check.py --all`. A new check goes in `scripts/rules.py` (or the browser harness, for a check that needs a browser), runs no network, replays at least one past finding in its tests, and fixes or lists in `allow` every existing violation.
 
 ## Rules
 
 - Pages are single files that work offline: inline CSS, data and JavaScript, no external requests, mobile friendly, and a page works without `modelContext`; WebMCP tools are read-only.
 - Generated files are never committed: the catalogue and gallery come from `python3 scripts/build_catalogue.py` into the ignored `build/`. Never add a hand-maintained list of visuals anywhere.
-- Every `viz/<slug>/beamdswitch.js` stays byte-identical to yujieteo/site `templates/beamdswitch.js`, and decks declare `voice: bf_emma` unless the report names another. Never re-copy a changed template by hand: run the "Sync beamdswitch template" workflow with the site branch that changes it (or `python3 scripts/sync_template.py <site>/templates/beamdswitch.js`), open the pull request its summary links, and merge it before the site's change.
+- Every `viz/<slug>/beamdswitch.js` stays byte-identical to yujieteo/site `templates/beamdswitch.js` (the `template` step compares each copy with the SHA-256 in `scripts/templates/beamdswitch.sha256`), and decks declare `voice: bf_emma` unless the report names another. Never re-copy a changed template by hand: run the "Sync beamdswitch template" workflow with the site branch that changes it (or `python3 scripts/sync_template.py <site>/templates/beamdswitch.js`, which also records the new SHA-256), open the pull request its summary links, and merge it before the site's change.
 - Tests use `node --test` and Python `unittest` only; `package.json` pins the type-check tooling and nothing else.
-- Never commit credentials, host details or deployment config, and never write an absolute user-home path in any file; `scripts/check_repo.py` scans for one.
+- Never commit credentials, host details or deployment config, and never write an absolute user-home path in any file; `scripts/check_repo.py` scans for one, and for tracked build or OS files. On macOS, make an archive with `COPYFILE_DISABLE=1 tar ...`, or it holds AppleDouble `._*` files.
 
 ## Review by risk
 
