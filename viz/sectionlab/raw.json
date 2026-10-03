@@ -1,0 +1,198 @@
+{
+  "title": "Sectionlab",
+  "summary": "Build a cross-section from library shapes and get its elastic section properties, torsion constant where a verified formula exists, and a Ramberg–Osgood moment–curvature curve, all computed in the browser.",
+  "version": "1.0.0",
+  "licence": "MIT",
+  "units": {
+    "length": "mm",
+    "stress": "MPa (N/mm²)",
+    "force": "N",
+    "moment": "N·mm",
+    "area": "mm²",
+    "second_moment": "mm⁴",
+    "curvature": "1/mm"
+  },
+  "notice": "Verify independently. These results come from this page's own calculation and are not a design-code compliance check.",
+  "method": [
+    "Every part is an exact boundary of straight lines and circular arcs. Area, first and second moments come from Green's theorem on that boundary, integrated by 16-point Gauss–Legendre quadrature (exact on lines; far below rounding error on arcs split to at most 22.5°).",
+    "Composite sections use modular ratios n = E / E_base: each solid part is weighted by its n and each void by −n of the solid part that contains it. All properties are about the transformed centroid.",
+    "Q_x is the first moment of the part of the section above the centroidal x axis about that axis (equal to the part below); Q_y is the same beside the centroidal y axis. Both are exact because Green's theorem restricted to one side of a line needs no extra boundary.",
+    "A torsion constant is shown only for a single library shape with a formula checked against a numerical Prandtl stress-function solution (linear finite elements with Richardson extrapolation). Each result states its measured accuracy.",
+    "Plastic bending integrates Ramberg–Osgood stresses over strips of the exact geometry, with plane sections and the strain referred to the elastic centroid. The curve runs to the curvature at which the first fibre of any part reaches that material's ε_lim; the moment there is the allowable moment.",
+    "M_p is the fully plastic moment of the σ0.2 stress block (σ = +σ0.2 in tension and −σ0.2 in compression either side of the plastic neutral axis) and M_el the linear-elastic moment at which the first fibre reaches σ0.2, both at N = 0 with the same axis and mode; Z_p = M_p / σ0.2 and the shape factor M_p / M_el are therefore section properties independent of N. With an axial force, M_p(N) and M_el(N) are the same moments at the applied axial force N (about the elastic centroid, so for unsymmetric or mixed sections they can exceed the N = 0 values); the M–κ curve and M_lim are always at the applied N."
+  ],
+  "conventions": [
+    "x to the right and y up; angles counter-clockwise from x.",
+    "Positive moment and curvature compress the +v side of the bending axis (for bending about x: the top, as in sagging).",
+    "Axial force N is positive in tension and acts at the elastic (transformed) centroid.",
+    "Principal axis 1 carries the larger second moment I_1; θ is the angle from x to axis 1.",
+    "S_x+ uses the extreme fibre above the centroid and S_x− the one below; S_y+ right and S_y− left."
+  ],
+  "assumptions": [
+    "Solid parts may touch but not overlap. A void must lie wholly inside one solid part and takes that part's material; voids may not overlap each other.",
+    "The modular ratio uses the tension modulus E of each material.",
+    "Torsion is given only for a single part with no voids; composite sections and sections with voids show n/a.",
+    "Bredt–Batho is used for rectangular hollow sections only when the wall is uniform (each inner corner radius equals the outer radius minus t, or both are 0) and t is at most 0.1 of the smaller outside dimension.",
+    "The thin-walled (Vlasov) torsion constant J = (1/3) Σ L t³ over the wall mid-lines is used for I, channel, Z, tee, angle and cross sections only with sharp corners, walls up to 0.15 of the smaller outside dimension and the thicker wall at most 1.4 times the thinner; root fillets add 6–20% torsional stiffness the formula leaves out, so rolled shapes with fillets show n/a.",
+    "Cold-formed shapes have one uniform wall t, and every 90° bend has inside radius ri and outside radius ri + t about the same centre; free ends are square. Dimensions b, h, c and f are outer dimensions. Their bend radii come from ri, so they have no separately editable corners.",
+    "For cold-formed shapes the thin-walled torsion constant J = L t³/3 uses the developed mid-line length L (bends included) and is given for t up to 0.1 of the smaller of b and h.",
+    "Rolled shapes have parallel flanges (no tapered flanges); a root fillet is a concave corner radius, and flange toes are convex corner radii.",
+    "Mode (b) rotates the neutral axis so the moment about the perpendicular axis is zero; mode (a) keeps it parallel to the bending axis and reports the cross moment that needs.",
+    "Z_p is given only when every solid part has the same material with equal tension and compression σ0.2; otherwise M_p is reported.",
+    "Z_p and the shape factor are computed at N = 0; only M_p(N), M_el(N), the M–κ curve and M_lim are at the applied axial force N.",
+    "Material presets are illustrative Ramberg–Osgood parameters, not certified data."
+  ],
+  "materials": [
+    { "id": "s355", "name": "Carbon steel S355 (illustrative)", "E": 210000, "sigma02": 355, "n": 25, "eps_lim": 0.015 },
+    { "id": "ss304", "name": "Austenitic stainless 1.4301 (illustrative)", "E": 200000, "sigma02": 230, "n": 6, "eps_lim": 0.02 },
+    { "id": "al6061", "name": "Aluminium 6061-T6 (illustrative)", "E": 70000, "sigma02": 240, "n": 25, "eps_lim": 0.01 },
+    { "id": "al6063", "name": "Aluminium 6063-T6 (illustrative)", "E": 70000, "sigma02": 170, "n": 15, "eps_lim": 0.01 }
+  ],
+  "presets": [
+    {
+      "id": "tee-hole",
+      "label": "Tee with a bolt hole",
+      "note": "A flange on a web with a 6 mm hole in the web: the void is subtracted from the web.",
+      "model": {
+        "sectionlab": 1,
+        "title": "Tee with a bolt hole",
+        "materials": [{ "id": "s355", "name": "Carbon steel S355 (illustrative)", "E": 210000, "sigma02": 355, "n": 25, "eps_lim": 0.015 }],
+        "E_base": 210000,
+        "parts": [
+          { "id": "flange", "shape": "rect", "dims": { "b": 200, "h": 20 }, "radii": [0, 0, 5, 5], "x": 0, "y": 110, "orientation": 0, "material": "s355", "void": false },
+          { "id": "web", "shape": "rect", "dims": { "b": 12, "h": 200 }, "radii": [0, 0, 0, 0], "x": 0, "y": 0, "orientation": 0, "material": "s355", "void": false },
+          { "id": "hole", "shape": "circle", "dims": { "d": 6 }, "x": 0, "y": -40, "orientation": 0, "material": null, "void": true }
+        ],
+        "plastic": { "axis": "x", "N": 0, "solve": "zero-cross" }
+      }
+    },
+    {
+      "id": "rhs",
+      "label": "Rectangular hollow section 200 × 100 × 8",
+      "note": "A cold-formed style box with outer corner radius 2t and inner radius t; torsion by Bredt–Batho.",
+      "model": {
+        "sectionlab": 1,
+        "title": "RHS 200 × 100 × 8",
+        "materials": [{ "id": "s355", "name": "Carbon steel S355 (illustrative)", "E": 210000, "sigma02": 355, "n": 25, "eps_lim": 0.015 }],
+        "parts": [
+          { "id": "box", "shape": "rhs", "dims": { "b": 100, "h": 200, "t": 8 }, "radii": [16, 16, 16, 16, 8, 8, 8, 8], "x": 0, "y": 0, "orientation": 0, "material": "s355", "void": false }
+        ],
+        "plastic": { "axis": "x", "N": 0, "solve": "zero-cross" }
+      }
+    },
+    {
+      "id": "ipe",
+      "label": "Rolled I-section (IPE 300 proportions)",
+      "note": "Parallel-flange I with 15 mm root fillets. J is n/a because the thin-walled formula is verified only for sharp corners and a thicker wall at most 1.4 times the thinner, and this section has root fillets and tf/tw = 1.51.",
+      "model": {
+        "sectionlab": 1,
+        "title": "I 300 × 150 × 7.1 × 10.7",
+        "materials": [{ "id": "s355", "name": "Carbon steel S355 (illustrative)", "E": 210000, "sigma02": 355, "n": 25, "eps_lim": 0.015 }],
+        "parts": [
+          { "id": "beam", "shape": "ishape", "dims": { "b": 150, "h": 300, "tf": 10.7, "tw": 7.1 }, "radii": [0, 0, 0, 15, 15, 0, 0, 0, 0, 15, 15, 0], "x": 0, "y": 0, "orientation": 0, "material": "s355", "void": false }
+        ],
+        "plastic": { "axis": "x", "N": 0, "solve": "zero-cross" }
+      }
+    },
+    {
+      "id": "girder",
+      "label": "Welded girder with a rolled channel cap",
+      "note": "A mono-symmetric plate girder built from three plates with a channel on the top flange: built-up and rolled parts in one section.",
+      "model": {
+        "sectionlab": 1,
+        "title": "Plate girder with channel cap",
+        "materials": [{ "id": "s355", "name": "Carbon steel S355 (illustrative)", "E": 210000, "sigma02": 355, "n": 25, "eps_lim": 0.015 }],
+        "parts": [
+          { "id": "top", "shape": "rect", "dims": { "b": 200, "h": 16 }, "radii": [0, 0, 0, 0], "x": 0, "y": 292, "orientation": 0, "material": "s355", "void": false },
+          { "id": "web", "shape": "rect", "dims": { "b": 10, "h": 568 }, "radii": [0, 0, 0, 0], "x": 0, "y": 0, "orientation": 0, "material": "s355", "void": false },
+          { "id": "bottom", "shape": "rect", "dims": { "b": 300, "h": 20 }, "radii": [0, 0, 0, 0], "x": 0, "y": -294, "orientation": 0, "material": "s355", "void": false },
+          { "id": "cap", "shape": "channel", "dims": { "b": 75, "h": 220, "tf": 11, "tw": 7 }, "radii": [0, 0, 0, 11, 11, 0, 0, 0], "x": 0, "y": 337.5, "orientation": 90, "material": "s355", "void": false }
+        ],
+        "plastic": { "axis": "x", "N": 0, "solve": "zero-cross" }
+      }
+    },
+    {
+      "id": "purlin",
+      "label": "Cold-formed lipped channel purlin",
+      "note": "A 200 × 75 × 20 × 2 lipped channel with 3 mm inside bends; J by the thin-walled formula over the developed mid-line.",
+      "model": {
+        "sectionlab": 1,
+        "title": "Lipped channel 200 × 75 × 20 × 2",
+        "materials": [{ "id": "s355", "name": "Carbon steel S355 (illustrative)", "E": 210000, "sigma02": 355, "n": 25, "eps_lim": 0.015 }],
+        "parts": [
+          { "id": "purlin", "shape": "cfchannel", "dims": { "h": 200, "b": 75, "c": 20, "t": 2, "ri": 3 }, "radii": [], "x": 0, "y": 0, "orientation": 0, "material": "s355", "void": false }
+        ],
+        "plastic": { "axis": "x", "N": 0, "solve": "zero-cross" }
+      }
+    },
+    {
+      "id": "chs",
+      "label": "Circular hollow section 168.3 × 8",
+      "note": "Exact torsion constant; a stainless steel law shows gradual yielding.",
+      "model": {
+        "sectionlab": 1,
+        "title": "CHS 168.3 × 8",
+        "materials": [{ "id": "ss304", "name": "Austenitic stainless 1.4301 (illustrative)", "E": 200000, "sigma02": 230, "n": 6, "eps_lim": 0.02 }],
+        "parts": [
+          { "id": "tube", "shape": "chs", "dims": { "d": 168.3, "t": 8 }, "x": 0, "y": 0, "orientation": 0, "material": "ss304", "void": false }
+        ],
+        "plastic": { "axis": "x", "N": 0, "solve": "zero-cross" }
+      }
+    },
+    {
+      "id": "composite",
+      "label": "Steel plate on an aluminium box",
+      "note": "Two materials: properties are transformed to E_base with modular ratios, and each part yields by its own law.",
+      "model": {
+        "sectionlab": 1,
+        "title": "Steel plate on an aluminium box",
+        "materials": [
+          { "id": "al6061", "name": "Aluminium 6061-T6 (illustrative)", "E": 70000, "sigma02": 240, "n": 25, "eps_lim": 0.01 },
+          { "id": "s355", "name": "Carbon steel S355 (illustrative)", "E": 210000, "sigma02": 355, "n": 25, "eps_lim": 0.015 }
+        ],
+        "E_base": 70000,
+        "parts": [
+          { "id": "box", "shape": "rhs", "dims": { "b": 120, "h": 160, "t": 6 }, "radii": [12, 12, 12, 12, 6, 6, 6, 6], "x": 0, "y": 0, "orientation": 0, "material": "al6061", "void": false },
+          { "id": "plate", "shape": "rect", "dims": { "b": 160, "h": 12 }, "radii": [0, 0, 0, 0], "x": 0, "y": 86, "orientation": 0, "material": "s355", "void": false }
+        ],
+        "plastic": { "axis": "x", "N": 0, "solve": "zero-cross" }
+      }
+    },
+    {
+      "id": "angle",
+      "label": "Unequal angle from two plates",
+      "note": "An unsymmetric section: in mode (b) the neutral axis rotates so that bending about x has no cross moment.",
+      "model": {
+        "sectionlab": 1,
+        "title": "Angle 150 × 90 × 10 from plates",
+        "materials": [{ "id": "s355", "name": "Carbon steel S355 (illustrative)", "E": 210000, "sigma02": 355, "n": 25, "eps_lim": 0.015 }],
+        "parts": [
+          { "id": "leg-v", "shape": "rect", "dims": { "b": 10, "h": 150 }, "radii": [0, 0, 5, 5], "x": 5, "y": 75, "orientation": 0, "material": "s355", "void": false },
+          { "id": "leg-h", "shape": "rect", "dims": { "b": 80, "h": 10 }, "radii": [0, 0, 5, 0], "x": 50, "y": 5, "orientation": 0, "material": "s355", "void": false }
+        ],
+        "plastic": { "axis": "x", "N": 0, "solve": "zero-cross" }
+      }
+    },
+    {
+      "id": "rect-axial",
+      "label": "Solid rectangle with axial load",
+      "note": "Bending with a compressive axial force; the plastic neutral axis moves off the centroid.",
+      "model": {
+        "sectionlab": 1,
+        "title": "Rectangle 100 × 200 with N = −1 MN",
+        "materials": [{ "id": "s355", "name": "Carbon steel S355 (illustrative)", "E": 210000, "sigma02": 355, "n": 25, "eps_lim": 0.015 }],
+        "parts": [
+          { "id": "bar", "shape": "rect", "dims": { "b": 100, "h": 200 }, "radii": [0, 0, 0, 0], "x": 0, "y": 0, "orientation": 0, "material": "s355", "void": false }
+        ],
+        "plastic": { "axis": "x", "N": -1000000, "solve": "zero-cross" }
+      }
+    }
+  ],
+  "sources": [
+    { "label": "Green's theorem for area moments of regions bounded by lines and circular arcs (standard vector calculus)" },
+    { "label": "Saint-Venant torsion: exact solutions for the circle, equilateral triangle and semicircle, and the series for the rectangle (theory of elasticity; no handbook tables are cited)" },
+    { "label": "Bredt–Batho thin-walled closed-section torsion" },
+    { "label": "Vlasov thin-walled open-section theory: the Saint-Venant constant of an open section from its wall mid-lines" },
+    { "label": "Ramberg, W. and Osgood, W. R. (1943), Description of stress–strain curves by three parameters, NACA Technical Note 902" }
+  ]
+}

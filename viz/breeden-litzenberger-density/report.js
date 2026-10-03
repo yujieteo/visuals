@@ -6,14 +6,30 @@
  * report that the standard template (beamdswitch.js, `Beamdswitch.deck`) writes as a narrated
  * Markdown deck. The page calls the same reading, so the deck and the chart cannot drift apart.
  */
-(function (root, factory) {
+(function (/** @type {any} */ root, factory) {
   const api = factory();
   if (typeof module === "object" && module.exports) module.exports = api;
   else root.BLReport = api;
 })(typeof self !== "undefined" ? self : this, function () {
   "use strict";
+  /** @typedef {[number, number, number]} CurvePoint a strike, its call price and its density */
+  /**
+   * The page's data: the model, the curves it draws and the cross-check table as it prints it.
+   * @typedef {object} PageData
+   * @property {{ S0: number, r: number, sigma: number, T: number, erT: number, K_min: number, K_max: number, step: number, slider: { K_min: number, K_max: number } }} MODEL
+   * @property {CurvePoint[]} CURVES
+   * @property {{ delta: string, price: string, est: string }[]} XCHECK
+   * @property {{ title: string, url: string }[]} SOURCES
+   * @property {number | string} K0
+   * @property {string} P0
+   * @property {string} C0
+   * @property {string} CPP
+   * @property {string} D2
+   * @property {string} FETCHED
+   */
 
   /* The value of column col (1 = call price, 2 = density) at strike K, interpolated on the grid. */
+  /** @param {CurvePoint[]} CURVES @param {number} K @param {1 | 2} col */
   function at(CURVES, K, col) {
     let lo = 0, hi = CURVES.length - 1;
     while (lo <= hi) { const m = (lo + hi) >> 1, c = CURVES[m][0]; if (c < K) lo = m + 1; else if (c > K) hi = m - 1; else return CURVES[m][col]; }
@@ -26,6 +42,7 @@
   }
 
   /* The butterfly at K with half-width D: its second difference, density estimate and the closed form. */
+  /** @param {PageData} P @param {number} K @param {number} D */
   function reading(P, K, D) {
     const cL = at(P.CURVES, K - D, 1), cK = at(P.CURVES, K, 1), cR = at(P.CURVES, K + D, 1);
     const secondDiff = cL - 2 * cK + cR;
@@ -33,9 +50,10 @@
   }
 
   /* Plain decimals for a plot expression: no binary noise such as 0.030000000000000002. */
-  const num = (x) => String(Number(x.toPrecision(12)));
-  const pct = (x) => num(x * 100) + "%";
+  const num = (/** @type {number} */ x) => String(Number(x.toPrecision(12)));
+  const pct = (/** @type {number} */ x) => num(x * 100) + "%";
 
+  /** @param {PageData} P @param {{ K?: number, D?: number }} [view] @returns {import("./beamdswitch.js").Report} */
   function report(P, view = {}) {
     const M = P.MODEL, K = view.K ?? 100, D = view.D ?? 2, r = reading(P, K, D);
     const est = r.est.toFixed(5), pK = r.pK.toFixed(5), sd = r.secondDiff.toFixed(4), dd = (D * D).toFixed(2);
@@ -96,6 +114,7 @@
         ...P.XCHECK.map((x) => `| ${x.delta} | ${x.price} | ${x.est} |`),
         `| Black–Scholes p(${P.K0}) | | ${P.P0} |`,
       ].join("\n"),
+      // @ts-expect-error finest is XCHECK.at(-1), and the cross-check table is never empty.
       narration: `At a strike of ${P.K0}, the butterfly estimate moves from ${widest.est} with a half-width of ${widest.delta} to ${finest.est} with a half-width of ${finest.delta}, closing on the Black-Scholes density of ${P.P0}.`,
     }];
 
