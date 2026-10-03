@@ -15,44 +15,15 @@
    */
   // @ts-expect-error the generated page always holds its #mab-data block
   const L = BanditLogic, /** @type {PageData} */ D = JSON.parse(document.getElementById("mab-data").textContent);
-  const KEY = "multi-armed-bandit:v1", SLUG = "multi-armed-bandit", NS = "http://www.w3.org/2000/svg";
-  /** A page element by id. @param {string} id @returns {any} the generated page holds every id looked up here, as an input, button, table body, details or other element */
-  const $ = (id) => document.getElementById(id);
-  /**
-     * @template {keyof HTMLElementTagNameMap} K
-     * @param {K} tag @param {Record<string, string> | null} [attrs] @param {string} [text]
-     * @returns {HTMLElementTagNameMap[K]}
-     */
-  const el = (tag, attrs, text) => {
-    const e = document.createElement(tag);
-    // @ts-expect-error attrs is set whenever the loop has a key to read
-    for (const k in attrs || {}) e.setAttribute(k, attrs[k]);
-    if (text != null) e.textContent = text;
-    return e;
-  };
-  /** @param {string} tag @param {Record<string, string | number>} attrs @param {string} [text] */
-  const svg = (tag, attrs, text) => {
-    const e = document.createElementNS(NS, tag);
-    // @ts-expect-error setAttribute stringifies the numeric attributes
-    for (const k in attrs) e.setAttribute(k, attrs[k]);
-    if (text != null) e.textContent = text;
-    return e;
-  };
+  const KEY = "multi-armed-bandit:v1", SLUG = "multi-armed-bandit";
+  const { $, el, svg, say, isoToday, openStore, download } = BanditPage;
   const now = () => (typeof performance !== "undefined" ? performance.now() : 0);
   function freshSeed() {
     try { return crypto.getRandomValues(new Uint32Array(1))[0]; } catch (e) { return 2654435769; }
   }
-  /** @param {string} msg @param {HTMLElement} [where] */
-  function say(msg, where) {
-    if (where) where.textContent = msg;
-    const a = $("announce");
-    a.textContent = "";
-    setTimeout(() => { a.textContent = msg; }, 30);
-  }
 
   /* ---- Storage: optional; every access is guarded ---- */
-  let /** @type {Storage | null} */ store = null;
-  try { store = window.localStorage; store.getItem(KEY); } catch (e) { store = null; }
+  const { store, saved } = openStore(KEY);
   let /** @type {State} */ S, /** @type {Sim} */ sim, /** @type {Snapshot[]} */ undo = [], running = false, /** @type {ReturnType<typeof setTimeout> | number} */ timer = 0, /** @type {ReturnType<typeof setTimeout> | number} */ saveTimer = 0, simKey = "";
   let /** @type {State | null} */ viewOf = null, /** @type {View | null} */ viewMemo = null;
   /** @returns {View} */
@@ -62,7 +33,6 @@
   const keyOf = (s) => JSON.stringify([s.simulation.probabilities, s.simulation.budget, s.simulation.seed, s.prior]);
   function boot() {
     let msg = store ? "" : "Autosave is unavailable in this browser context; use Export JSON to keep your work.";
-    const saved = store && (function () { try { return store.getItem(KEY); } catch (e) { return null; } })();
     if (saved) {
       const r = L.parse(saved);
       if (r.error) msg = "Saved work could not be restored (" + r.error + "); started from the website example.";
@@ -448,26 +418,14 @@
   }
 
   /* ---- Exports ---- */
-  /** @param {string} name @param {string} text @param {string} type */
-  function download(name, text, type) {
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(new Blob([text], { type }));
-    a.download = name;
-    document.body.append(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-  }
   /** @param {string} label @param {string} text */
   function showText(label, text) {
     $("export-label").textContent = label;
     $("export-text").value = text;
   }
   function deckText() {
-    const d = new Date();
-    const iso = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
     const simV = sim.methods.ts.pulls ? L.simView(sim, S.variants.map((v) => v.name)) : null;
-    return Beamdswitch.deck(BanditReport.report(S, view(), simV, D, iso));
+    return Beamdswitch.deck(BanditReport.report(S, view(), simV, D, isoToday()));
   }
   function wireExports() {
     $("save-beamdswitch").addEventListener("click", () => {
@@ -512,9 +470,10 @@
   /* ---- Wiring ---- */
   /** @param {boolean} [force] */
   function render(force) { renderExperiment(force); renderSim(force); }
+  const TABS = ["exp", "sim", "hrs"];
   /** @param {string} id @param {boolean} [focus] */
   function selectTab(id, focus) {
-    for (const t of ["exp", "sim"]) {
+    for (const t of TABS) {
       const on = t === id;
       $("tab-" + t).setAttribute("aria-selected", on ? "true" : "false");
       $("tab-" + t).tabIndex = on ? 0 : -1;
@@ -522,13 +481,14 @@
     }
     if (focus) $("tab-" + id).focus();
     render();
+    if (self.HoursPage) self.HoursPage.shown(id === "hrs");
   }
   function wire() {
-    for (const t of ["exp", "sim"]) {
+    for (const t of TABS) {
       $("tab-" + t).addEventListener("click", () => selectTab(t));
       $("tab-" + t).addEventListener("keydown", (/** @type {KeyboardEvent} */ e) => {
-        const k = e.key;
-        const to = k === "Home" ? "exp" : k === "End" ? "sim" : k === "ArrowRight" || k === "ArrowLeft" ? (t === "exp" ? "sim" : "exp") : "";
+        const k = e.key, i = TABS.indexOf(t), n = TABS.length;
+        const to = k === "Home" ? TABS[0] : k === "End" ? TABS[n - 1] : k === "ArrowRight" ? TABS[(i + 1) % n] : k === "ArrowLeft" ? TABS[(i + n - 1) % n] : "";
         if (to) { e.preventDefault(); selectTab(to, true); }
       });
     }
@@ -615,10 +575,10 @@
         variants: V.rows.map((r) => ({ name: r.name, successes: r.successes, failures: r.failures, trials: r.trials, observedRate: r.text.rate, posteriorMean: r.text.mean, interval95: r.text.interval, thompsonSample: r.text.sample, ucbScore: r.text.ucb })),
         selected: nameOf(S.selected) || null },
         recommendations: { thompson: { variant: V.ts.name, sample: V.ts.value, why: V.ts.why }, ucb1: { variant: V.ucb.name, score: V.ucb.value, why: V.ucb.why }, agree: V.agree },
-        simulation: L.simView(sim, S.variants.map((v) => v.name)) };
+        simulation: L.simView(sim, S.variants.map((v) => v.name)), hours: self.HoursPage ? self.HoursPage.snapshot() : null };
     };
-    mc.registerTool({ name: "get_data", description: "Return the committed experiment, both recommendations and the simulation results, as shown on the page.", inputSchema: { type: "object", properties: {}, additionalProperties: false }, annotations: { readOnlyHint: true }, async execute() { return result(snapshot()); } });
-    mc.registerTool({ name: "get_metadata", description: "Return the page title, templates, assumptions, limits and method references.", inputSchema: { type: "object", properties: {}, additionalProperties: false }, annotations: { readOnlyHint: true }, async execute() { return result({ title: document.title, url: "https://teoyujie.org/visuals/multi-armed-bandit/", format: L.FORMAT, version: L.VERSION, templates: D.templates.map((t) => ({ id: t.id, label: t.label, fictional: t.fictional })), assumptions: D.assumptions, references: D.references, limits: L.LIMITS }); } });
+    mc.registerTool({ name: "get_data", description: "Return the committed experiment, both recommendations, the simulation results and next week's hours plan, as shown on the page.", inputSchema: { type: "object", properties: {}, additionalProperties: false }, annotations: { readOnlyHint: true }, async execute() { return result(snapshot()); } });
+    mc.registerTool({ name: "get_metadata", description: "Return the page title, templates, assumptions, limits and method references.", inputSchema: { type: "object", properties: {}, additionalProperties: false }, annotations: { readOnlyHint: true }, async execute() { return result({ title: document.title, url: "https://teoyujie.org/visuals/multi-armed-bandit/", format: L.FORMAT, version: L.VERSION, templates: D.templates.map((t) => ({ id: t.id, label: t.label, fictional: t.fictional })), assumptions: D.assumptions, references: D.references, limits: L.LIMITS, hours: self.HoursLogic ? { format: HoursLogic.FORMAT, version: HoursLogic.VERSION, assumptions: D.hours.assumptions, limits: HoursLogic.LIMITS } : null }); } });
     mc.registerTool({ name: "query", description: "Find variants in the current experiment, or templates, whose name contains the text; read-only.", inputSchema: { type: "object", properties: { text: { type: "string" } }, additionalProperties: false }, annotations: { readOnlyHint: true }, async execute(/** @type {{ text?: string } | undefined} */ input) {
       const q = String((input && input.text) || "").trim().toLowerCase(), snap = snapshot();
       // @ts-expect-error variant and template records differ, but every one has the name the filter reads

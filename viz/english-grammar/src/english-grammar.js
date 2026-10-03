@@ -115,7 +115,7 @@
     btn.addEventListener("click", () => setChapter(ch.n, btn.getAttribute("aria-expanded") !== "true"));
     outline.append(h("li", { class: "chapter" }, [btn, list]));
   });
-  /** @param {string} n @param {boolean} open */
+  /** @param {number} n @param {boolean} open */
   function setChapter(n, open) {
     const btn = outline.querySelector('[aria-controls="ch-' + n + '"]');
     if (!btn) return;

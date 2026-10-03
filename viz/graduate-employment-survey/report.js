@@ -6,6 +6,9 @@
  * (beamdswitch.js, `Beamdswitch.deck`) writes as a narrated Markdown deck. Every number is formatted
  * as the chart, its tooltips and its axis show it.
  */
+/** @typedef {[number, string, string, number, number, boolean]} Row  year, university, degree, gross monthly median, premium (%), computing title */
+/** @typedef {[number, number]} YearPremium  year and the computing-titled degrees' median premium (%) */
+/** @typedef {{ rows: Row[], medians: YearPremium[], source: string, fetched: string }} PageData */
 (function (root, factory) {
   const api = factory();
   if (typeof module === "object" && module.exports) module.exports = api;
@@ -14,22 +17,31 @@
   "use strict";
 
   /* The page's own formats: premiums signed to 1 place, salaries as whole dollars. */
+  /** @param {number} v */
   const pct = (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)}%`;
+  /** @param {number} v */
   const dollars = (v) => `$${Math.round(v).toLocaleString("en-US")}`;
+  /** @param {number} v */
   const sayPct = (v) => `${v >= 0 ? "plus" : "minus"} ${Math.abs(v).toFixed(1)} percent`;
+  /** @param {number} v */
   const sayDollars = (v) => `${Math.round(v).toLocaleString("en-US")} dollars`;
   /* Markdown text: characters beamdswitch would read as maths or markup are escaped. */
+  /** @param {unknown} s */
   const md = (s) => String(s ?? "").replace(/\s+/g, " ").trim().replace(/[\\$*_`|<>[\]]/g, "\\$&");
+  /** @param {unknown} s */
   const say = (s) => String(s ?? "").replace(/&/g, " and ").replace(/[“”"]/g, "").replace(/[$\\`*_#|<>[\]()]/g, " ").replace(/\s+/g, " ").trim();
+  /** @param {number[]} xs */
   const median = (xs) => { const s = [...xs].sort((a, b) => a - b), m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
 
+  /** @param {PageData} D @returns {Deck.Report} */
   function report(D) {
     const rows = D.rows, medians = D.medians, years = [...new Set(rows.map((d) => d[0]))].sort((a, b) => a - b);
-    const first = medians[0], last = medians.at(-1), computing = rows.filter((d) => d[5]);
+    const first = medians[0], last = medians[medians.length - 1], computing = rows.filter((d) => d[5]);
+    /** @param {number} y @param {boolean} [onlyComputing] */
     const inYear = (y, onlyComputing) => rows.filter((d) => d[0] === y && (!onlyComputing || d[5]));
     const universities = new Set(rows.map((d) => d[1])).size;
     const lastTop = [...inYear(last[0], true)].sort((a, b) => b[4] - a[4]).slice(0, 5);
-    const lastAll = [...inYear(last[0])].sort((a, b) => b[4] - a[4]), lastRank = (d) => lastAll.indexOf(d) + 1;
+    const lastAll = [...inYear(last[0])].sort((a, b) => b[4] - a[4]), lastRank = (/** @type {Row} */ d) => lastAll.indexOf(d) + 1;
 
     const setup = [{
       title: `The data: ${rows.length} degree salaries from ${years[0]} to ${years.at(-1)}`,

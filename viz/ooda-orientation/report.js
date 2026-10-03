@@ -8,6 +8,7 @@
  * several loops it follows only the current lineage (the chain of adopted orientations), so abandoned
  * branches appear only as the candidates each transition rejected. Every deck is narrated by bf_emma.
  */
+/** @param {any} root the global object @param {() => any} factory */
 (function (root, factory) {
   const api = factory();
   if (typeof module === "object" && module.exports) module.exports = api;
@@ -16,34 +17,49 @@
   "use strict";
 
   const VOICE = "bf_emma";
+  /** @param {unknown} s */
   const clean = (s) => String(s == null ? "" : s).replace(/\s+/g, " ").trim();
+  /** @param {unknown} s */
   const bare = (s) => clean(s).replace(/[.!?;:,]+$/, "");
   /* Markdown body text: the user's words are literal, never markup. */
+  /** @param {unknown} s */
   const md = (s) => clean(s).replace(/[\\`*_$<>|#[\]]/g, "\\$&").replace(/^:::/, "\\:::");
   /* Narration is read aloud: no markup, maths or symbols. */
+  /** @param {unknown} s */
   const speak = (s) => clean(String(s == null ? "" : s).replace(/&/g, " and ").replace(/%/g, " percent").replace(/[→↓]/g, ", then ").replace(/[−–—]/g, ", ")
     .replace(/[$\\`*_#|<>×⁰¹²³⁴⁵⁶⁷⁸⁹⁻≈·∠°σ£€µ[\]{}~^]/g, " ")).replace(/\s+([,.;:!?])/g, "$1").replace(/,\s*,/g, ",");
+  /** @param {unknown} s */
   const sentence = (s) => { const t = bare(s); return t ? t + "." : ""; };
+  /** @param {string[]} xs @param {string} none */
   const list = (xs, none) => (xs.length ? xs.map((x) => "- " + md(x)).join("\n") : none);
+  /** @param {string[]} xs */
   const spokenList = (xs) => (xs.length < 2 ? xs.join("") : xs.slice(0, -1).join("; ") + "; and " + xs[xs.length - 1]);
+  /** @param {number} n @param {string} one @param {string} many */
   const count = (n, one, many) => (n === 0 ? "no " + many : n === 1 ? "one " + one : n + " " + many);
 
+  /** @param {Orient.State} state @param {Orient.Logic} L @param {Orient.Data} D @returns {Orient.Report} */
   function report(state, L, D) {
     const S = state, o = L.current(S);
     if (!o) throw new Error("Start a situation before exporting a deck.");
     const chain = L.currentLineage(S);
-    const transitions = chain.slice(1).map((x) => S.history.find((h) => h.kind === "transition" && h.to === x.id)).filter(Boolean);
+    const transitions = /** @type {Orient.Transition[]} */ (chain.slice(1).map((x) => S.history.find((h) => h.kind === "transition" && h.to === x.id)).filter(Boolean));
+    /** @param {string} id */
     const item = (id) => S.items.find((i) => i.id === id);
     const live = S.items.filter((i) => i.status !== "withdrawn");
     const intent = S.intent && item(S.intent);
     const title = clean(S.situation.title) || "Untitled situation";
+    // @ts-expect-error the state's mode is one of the page data's modes
     const mode = D.modes.find((m) => m.id === S.mode).label;
+    /** @param {string} id */
+    // @ts-expect-error every recorded move names one of the page data's operations
     const opLabel = (id) => D.operations.find((x) => x.id === id).label;
 
     const observed = live.filter((i) => i.ledger === "observed" && i.type !== "contradiction");
     const inferred = live.filter((i) => i.ledger === "inferred" && i.type !== "intention");
     const unknown = live.filter((i) => i.ledger === "unknown");
     const contradictions = S.items.filter((i) => i.type === "contradiction");
+    /** @param {Orient.Item} i */
+    // @ts-expect-error every recorded provenance is one of the page data's qualifiers
     const qual = (i) => i.text + (i.provenance.length ? " (" + i.provenance.map((q) => D.qualifiers.find((x) => x.id === q).label).join(", ") + ")" : "");
 
     const setup = [
@@ -57,6 +73,7 @@
     ];
 
     const first = chain[0];
+    /** @type {Orient.Frame[]} */
     const method = [
       { title: "The original orientation, " + L.label(S, first), body: md(L.statement(first)) + (L.boundaryText(S, first) ? "\n\nBoundary: " + md(L.boundaryText(S, first)) : ""),
         narration: "The starting orientation. " + speak(L.statement(first)) },
@@ -69,14 +86,15 @@
     }
     for (const t of transitions) {
       const from = L.labelOf(S, t.from), to = L.labelOf(S, t.to);
+      // @ts-expect-error filter(Boolean) keeps only the items found, and a move with no result item reads as ""
       const moves = t.moves.map((m) => ({ op: opLabel(m.op), targets: m.targets.map(item).filter(Boolean).map((i) => i.text), challenge: m.challenge, result: (item(m.result) || {}).text || "" }));
       method.push({ title: "Destruction: " + from + " to " + to, body: moves.length ? moves.map((m) => "- **" + md(m.op) + "**" + (m.targets.length ? ": " + md(m.targets.join("; ")) : "") + "\n  - Challenge: " + md(m.challenge) + "\n  - Replacement: " + md(m.result)).join("\n") : "No explicit move: the new orientation rearranged existing fragments.",
         narration: moves.length ? spokenList(moves.map((m) => speak(m.op) + (m.targets.length ? ", applied to " + speak(m.targets.join(", and ")) : "") + ", replaced by " + speak(bare(m.result)))) + "." : "No explicit destructive move was recorded for this transition." });
-      const sig = L.signature(S, t.id), names = (xs) => xs.map((i) => i.text);
+      const sig = /** @type {NonNullable<ReturnType<Orient.Logic["signature"]>>} */ (L.signature(S, t.id)), names = (/** @type {{ text: string }[]} */ xs) => xs.map((i) => i.text);
       method.push({ title: "Fragments: kept, destroyed, created", body: ["**Kept**", list(names(sig.kept), "- Nothing"), "", "**Destroyed**", list(names(sig.destroyed), "- Nothing"), "", "**Created**", list(names(sig.created), "- Nothing")].join("\n"),
         narration: "Moving from " + from + " to " + to + ", " + count(sig.kept.length, "fragment was", "fragments were") + " kept, " + count(sig.destroyed.length, "was", "were") + " destroyed and " + count(sig.created.length, "was", "were") + " created." +
           (sig.destroyed.length ? " Destroyed: " + speak(spokenList(names(sig.destroyed).map(bare))) + "." : "") + (sig.created.length ? " Created: " + speak(spokenList(names(sig.created).map(bare))) + "." : "") });
-      const cands = [t.to].concat(t.rejected).map((id) => S.orientations.find((x) => x.id === id));
+      const cands = /** @type {Orient.Orientation[]} */ ([t.to].concat(t.rejected).map((id) => S.orientations.find((x) => x.id === id)));
       method.push({ title: "Candidate orientations", body: cands.map((c) => "- **" + L.label(S, c) + (c.id === t.to ? " (adopted provisionally)" : " (rejected)") + "**: " + md(L.statement(c)) + (c.falsifier ? "\n  - Would be less credible if: " + md(c.falsifier) : "\n  - Hard to test")).join("\n"),
         narration: count(cands.length, "candidate was", "candidates were") + " contrasted. " + spokenList(cands.map((c) => L.label(S, c) + (c.id === t.to ? ", adopted provisionally, " : ", rejected, ") + "held that the situation is " + speak(bare(c.inside) || "unstated"))) + "." });
     }

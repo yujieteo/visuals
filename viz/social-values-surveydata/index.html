@@ -110,13 +110,19 @@
   const HEADLINE = "Older residents feel more connected, but less interested in shaping Singapore’s future.";
   const CAVEAT = "This cross-sectional survey cannot separate age from cohort, retirement, income, or questionnaire effects.";
   /* The page's own formats: means to 2 places, shares to 1 place, weighted respondents to 1 place. */
-  const mean = (v) => v.toFixed(2), share = (v) => `${(v * 100).toFixed(1)}%`, people = (v) => v.toFixed(1);
-  const gap = (r) => (r[2] - r[3]).toFixed(2);
-  const age = (a) => a.replace("-", "–"), sayAge = (a) => a.replace("-", " to ");
-  const sayShare = (v) => `${(v * 100).toFixed(1)} percent`;
+  /**
+   * One age group: [age_group, weighted_n, connection_mean, future_mean, connection_share_8_10, future_share_8_10].
+   * @typedef {[string, number, number, number, number, number]} Row
+   */
+  const mean = (/** @type {number} */ v) => v.toFixed(2), share = (/** @type {number} */ v) => `${(v * 100).toFixed(1)}%`, people = (/** @type {number} */ v) => v.toFixed(1);
+  const gap = (/** @type {Row} */ r) => (r[2] - r[3]).toFixed(2);
+  const age = (/** @type {string} */ a) => a.replace("-", "–"), sayAge = (/** @type {string} */ a) => a.replace("-", " to ");
+  const sayShare = (/** @type {number} */ v) => `${(v * 100).toFixed(1)} percent`;
 
+  /** @param {{ rows: Row[], source_url: string, fetched: string }} D the page's data @returns {BeamdswitchReport} */
   function report(D) {
-    const rows = D.rows, first = rows[0], last = rows.at(-1);
+
+    const rows = D.rows, first = rows[0], last = /** @type {Row} */ (rows.at(-1));
     const total = rows.reduce((s, r) => s + r[1], 0);
     const peakConn = rows.reduce((a, r) => (r[2] > a[2] ? r : a)), lowFut = rows.reduce((a, r) => (r[3] < a[3] ? r : a));
 

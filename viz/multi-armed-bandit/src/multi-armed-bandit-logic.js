@@ -25,7 +25,9 @@
  *   variants: Variant[], selected: string | null, nextId: number, rng: Rng, simulation: SimSettings }} State
  * @typedef {{ id: string, label: string, note: string, title: string, success: string, unit: string, fictional?: boolean,
  *   variants: { name: string, successes: number, trials: number }[] }} Template
- * @typedef {{ templates: Template[], assumptions: unknown, references: unknown }} PageData
+ * @typedef {{ label: string, note: string, hours: number, activities: { name: string, worthwhile: number, notWorthwhile: number }[],
+ *   assumptions: string[], next: string[] }} HoursData
+ * @typedef {{ templates: Template[], assumptions: string[], references: unknown, hours: HoursData }} PageData
  * @typedef {{ state: State, unchanged?: boolean, error?: undefined, field?: undefined } | { error: string, field?: string, state?: undefined, unchanged?: undefined }} Change
  * @typedef {{ mean: number, bonus: number, score: number }} UcbScore
  * @typedef {{ successes: number[], trials: number[], pulls: number, total: number, regret: number, curve: number[], regretCurve: number[] }} MethodRun
@@ -557,7 +559,7 @@
     if (doc.simulation.thompsonRng && doc.simulation.thompsonRng.join() !== sim.rng.join()) return { error: "The simulation progress does not match its seed and settings." };
     return { state, sim };
   }
-  /** @param {State} state @param {Sim | null | undefined} sim */
+  /** @param {State} state @param {Sim | null} [sim] */
   function serialise(state, sim) {
     const s = clone(state);
     if (sim) s.simulation.thompsonRng = sim.rng.slice();
