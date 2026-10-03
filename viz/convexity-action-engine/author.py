@@ -557,7 +557,7 @@ EVIDENCE = {
     "daydream": [("killingsworth2010", "related")], "meditate": [("killingsworth2010", "related")],
     "think-about-what-you-would-regret-not-doing": [("gilovich1995", "related"), ("richardson2023", "related")],
 }
-EA_DIR = Path(__file__).resolve().parent.parent / "everyday-actions"
+EA_DIR = Path(__file__).resolve().parent / "everyday-actions"
 
 
 def load_inputs():

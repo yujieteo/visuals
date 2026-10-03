@@ -11,8 +11,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 VIZ = ROOT
-# author.py reads its sibling visualisation everyday-actions; the tests supply a fixture copy beside a copy of this repository.
-EA = ROOT / "tests" / "fixtures" / "everyday-actions"
+EA = ROOT / "everyday-actions"
 
 _VOID_TAGS = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr"}
 
@@ -64,8 +63,6 @@ class ConvexityActionEngineTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             copy = Path(directory) / "convexity-action-engine"
             shutil.copytree(VIZ, copy, ignore=shutil.ignore_patterns("__pycache__", ".git", ".github", "tests"))
-            # author.py reads the day-reconstruction table and evidence shared with everyday-actions.
-            shutil.copytree(EA, Path(directory) / "everyday-actions")
             subprocess.run([sys.executable, str(copy / "author.py")], check=True, capture_output=True)
             subprocess.run([sys.executable, str(copy / "build.py")], check=True, capture_output=True)
             for name in ("raw.json", "index.html", "actions.csv", "aliases.csv", "sources.csv"):
@@ -75,7 +72,6 @@ class ConvexityActionEngineTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             copy = Path(directory) / "convexity-action-engine"
             shutil.copytree(VIZ, copy, ignore=shutil.ignore_patterns("__pycache__", ".git", ".github", "tests"))
-            shutil.copytree(EA, Path(directory) / "everyday-actions")
             result = subprocess.run([sys.executable, str(copy / "build.py"), "--verify"], capture_output=True, text=True)
             self.assertEqual(result.returncode, 0, result.stderr)
 
