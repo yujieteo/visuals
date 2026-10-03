@@ -69,21 +69,30 @@ await fullSuite("stealth-rcs", {
     await s.page.keyboard.press("Enter");
     assert.match(await s.page.evaluate(() => location.hash), /z=/, "the zoom button works from the keyboard");
     // "Next sample" reaches every sample of every trace in order, also where 2 dots share one azimuth.
+    // WebKit stops URL updates after 100 history changes in one page, so the walk reloads the page every 90 steps.
     const base = s.page.url().split("#")[0];
     for (const figure of ["fig-5-10", "fig-5-11", "fig-5-12"]) for (const role of ["original", "reconstructed"]) {
-      await s.page.goto(`${base}#a=F117&f=${figure}&tr=${role}&s=${figure}:${role}:0`);
-      await s.page.reload();
-      await s.page.waitForSelector("#next-sample");
-      const walk = await s.page.evaluate(() => {
-        const seen = [];
-        for (let k = 0; k < 600; k++) {
-          const i = Number((new URLSearchParams(location.hash.slice(1)).get("s") ?? "").split(":")[2]);
-          if (seen.length && seen[seen.length - 1].i === i) break;
-          seen.push({ i, phi: Number(/φ = (\d+\.\d+)°/.exec(/** @type {HTMLElement} */ (document.getElementById("readout")).innerText)?.[1]) });
-          /** @type {HTMLButtonElement} */ (document.getElementById("next-sample")).click();
-        }
-        return seen;
-      });
+      /** @type {{ i: number, phi: number }[]} */
+      const walk = [];
+      for (let start = 0; ; ) {
+        await s.page.goto(`${base}#a=F117&f=${figure}&tr=${role}&s=${figure}:${role}:${start}`);
+        await s.page.reload();
+        await s.page.waitForSelector("#next-sample");
+        const part = await s.page.evaluate(() => {
+          /** @type {{ i: number, phi: number }[]} */
+          const seen = [];
+          for (let k = 0; k < 90; k++) {
+            const i = Number((new URLSearchParams(location.hash.slice(1)).get("s") ?? "").split(":")[2]);
+            if (seen.length && seen[seen.length - 1].i === i) break;
+            seen.push({ i, phi: Number(/φ = (\d+\.\d+)°/.exec(/** @type {HTMLElement} */ (document.getElementById("readout")).innerText)?.[1]) });
+            /** @type {HTMLButtonElement} */ (document.getElementById("next-sample")).click();
+          }
+          return seen;
+        });
+        walk.push(...(start ? part.slice(1) : part));
+        if (part.length < 90) break;
+        start = part[part.length - 1].i;
+      }
       const count = await s.page.evaluate(([f, r]) => {
         const R = /** @type {any} */ (window).RcsReport;
         return R.ordered(R.seriesFor(JSON.parse(/** @type {HTMLElement} */ (document.getElementById("dataset")).textContent ?? ""), f, r)).length;
