@@ -15,7 +15,7 @@ sandboxed iframe, and it shows a worked example when JavaScript is off.
 | `probly.csv` | The survey file exactly as published (zonination/perceptions at commit `51207062`, sha256 `235c1b22…4ee9`); the test checks the embedded answers against it. |
 | `LICENSE` | MIT for the page; the survey data's own MIT notice (copyright 2016 Zoni Nation); Kent's essay is a US government work. |
 | `raw.json` | Catalogue data, published as `data.json`: the Kent scale, the survey answers, the initial scenario, examples, teaching presets, units, limits and wording thresholds. The page never fetches it; the test says when it has drifted from the engine. |
-| `AGENTS.md` | Notes for coding agents: where changes go (the standalone repository, where this visualisation and its tests develop; yujieteo/site holds a port of the page files), how to build and test, how to port to yujieteo/site, and the conventions. |
+| `AGENTS.md` | What is specific to changing the tool. |
 | `SKILLS.md` | For agents using the tool: its tasks, inputs, read-only WebMCP tools, exports and a worked example. |
 
 ## Probability language

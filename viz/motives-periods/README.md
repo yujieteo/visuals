@@ -42,7 +42,7 @@ point counts (K₄ also at q = 11, beyond the page), state validation and round 
 sources, the Markdown export, the no-JavaScript text and the WebMCP tools in a stand-in DOM.
 `tests/beamdswitch.test.mjs` parses the decks with beamdswitch’s own parsers (read-only copies in
 `tests/fixtures/beamdswitch/`). `tests/motives-periods-page.test.mjs` drives the page in headless
-Chrome from `file://`; until a dedicated technical E2E repository exists, it stands in for one.
+Chrome from `file://`.
 
 The K₄ point count q⁵ + q³ − q² was fitted from q = 2, 3, 5, 7, 11, 13 and confirmed at q = 17 and 19
 when the page was built; the page counts q ≤ 7 live and the tests count q = 11.

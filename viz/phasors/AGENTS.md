@@ -1,41 +1,9 @@
-# Phasor and Impedance Visualiser: notes for coding agents
+# Phasor and Impedance Visualiser
 
-What a series or parallel RLC circuit does in sinusoidal steady state: a rotating phasor diagram, the impedance (and admittance) plane, waveforms and an optional power triangle, with every number in a readout. Live at <https://teoyujie.org/visuals/phasors/>; its data is
-published at <https://teoyujie.org/visuals/phasors/data.json>.
+No build step: edit `index.html`. `<script id="ph-engine">` is the pure core (`self.Phasors`): it makes no DOM, storage, clock, randomness, `Intl` or locale calls, so its report and deck are byte-for-byte deterministic. It builds the beamdswitch deck itself.
 
-## Where changes go
+`raw.json` must equal the engine's `META` and `defaultInputs()`; the test fails when it drifts. `index.html` stays under 120 KB; the test enforces it.
 
-The standalone repository [yujieteo/phasors](https://github.com/yujieteo/phasors) is where this visualisation and its tests develop and where CI runs them. `visuals/phasors/` in [yujieteo/site](https://github.com/yujieteo/site/tree/main/visuals/phasors) is a port of its page files, refreshed when the visualisation is updated, and the site runs no logic tests for it. Porting copies the folder minus `tests/` and `.github/`. The copy is byte for byte, so AGENTS.md and SKILLS.md must not link into either. `README.md` lists every file here and its role.
+Files hold canonical units only: Ω, H, F, Hz, V (RMS) and degrees.
 
-Change and test here first, then port. The site's [add-visualization playbook](https://github.com/yujieteo/site/blob/main/skills/playbooks/add-visualization.md) owns the procedure: run this repository's tests, an end-to-end check of the page in a browser and the first no-mistakes pass here; then port the page files into yujieteo/site and run the second pass there with site-level tests only. Logic and browser tests stay here, never in the site; time every test you add (`time node --test tests/<file>`).
-
-## Build, test and verify
-
-Run these from the root of the yujieteo/phasors checkout. There is no build step: edit `index.html` directly. Check this tool alone with:
-
-```sh
-node --test tests/phasors.test.mjs
-```
-
-Before opening a pull request, run the whole suite, as CI (`.github/workflows/ci.yml`) does on every push and pull request:
-
-```sh
-node --test 'tests/*.test.{mjs,cjs}'
-```
-
-## Data and tests
-
-- `raw.json`: published metadata (`META`: scope, conventions, ranges, presets, default state, degenerate cases, sources), `schemaVersion` and the default inputs as `example`; it must equal the engine's `META` and `defaultInputs()`, and the test fails when it drifts.
-- Inside `index.html`: `<script id="ph-engine">` (pure core, `self.Phasors`: circuit, formatter, diagram scenes, SVG, hash, JSON, report, deck and self-tests) and `<script id="ph-ui">` (page, animation and WebMCP tools).
-- `tests/phasors.test.mjs`: the self-tests, the hand-calculated default, presets, degenerate cases, range corners, formatter boundaries, hash and JSON round trips, deck and report structure and determinism, the WebMCP tools and that no network request is attempted.
-
-## Conventions
-
-- One self-contained `index.html`: no external scripts, stylesheets, fonts or network requests. It works offline.
-- The engine makes no DOM, storage, clock, randomness, `Intl` or locale calls, so its report and deck are byte-for-byte deterministic.
-- `index.html` stays under 120 KB; the test enforces it.
-- Files hold canonical units only: Ω, H, F, Hz, V (RMS) and degrees.
-- Tests use Node's built-in runner (`node --test`) only; never add Vitest, Jest, a `package.json` or another test framework.
-- The engine builds the beamdswitch deck itself and declares the narration voice `bf_emma` in its front matter; `tests/phasors.test.mjs` and the site's `tests/beamdswitch-voice.test.mjs` check it.
-- WebMCP tools stay read-only (`readOnlyHint: true`), never change the page, and keep their names equal to `webmcp_tools` in `data/visuals/phasors.yaml` in yujieteo/site.
-- `LICENSE` is MIT (Copyright (c) 2026 Yu Jie Teo).
+Its tests are in `tests/`; `python3 ../../scripts/check.py phasors` runs its checks. Rules for every visual: [SKILLS.md](../../SKILLS.md).

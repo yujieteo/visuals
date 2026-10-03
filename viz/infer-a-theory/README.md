@@ -22,7 +22,7 @@ worked example when JavaScript is off.
 | `probly.csv` | The survey answers as published (zonination/perceptions at commit 5120706, sha256 `235c1b22…4ee9`); the page embeds the same numbers and a test keeps them equal. |
 | `raw.json` | Catalogue data, published as `data.json`: operators, defaults, limits, the worked example, the dictionary and the phrase-data provenance. The page never fetches it; the test says when it has drifted from the engine. |
 | `LICENSE` | MIT for the page; the survey's MIT notice; Kent's essay is a US government work. |
-| `AGENTS.md` | Notes for coding agents: where changes go (the standalone repository, where this visualisation and its tests develop; yujieteo/site holds a port of the page files), how to build and test, and the conventions. |
+| `AGENTS.md` | What is specific to changing the tool. |
 | `SKILLS.md` | For agents using the tool: its tasks, inputs, read-only WebMCP tools, exports and a worked example. |
 
 ## Probability language

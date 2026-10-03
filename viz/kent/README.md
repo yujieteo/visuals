@@ -56,6 +56,4 @@ Brier score, URL state, the simulated readers, phrase detection, the composer,
 a stand-in DOM to check the WebMCP tools and that the beamdswitch and Copy deck
 buttons export the deck of the page as set, parsed with beamdswitch's own parser
 (read-only copies of it and of the site's shared template are in
-`tests/fixtures/beamdswitch/`). CI runs them on every push and pull request; the
-site's copy in `visuals/kent/` runs none of them, and the site checks only the
-catalogue stub and the port.
+`tests/fixtures/beamdswitch/`). yujieteo/visuals CI runs them when this folder changes.

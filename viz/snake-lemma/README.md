@@ -69,9 +69,6 @@ the Chase Lab's move generation and the exactness chases it can run; URL
 round-trips; that every preset and an exported lab chase parse with beamdswitch's
 own parser, keep the reveal order and are deterministic; the challenge language;
 that the page is built from its sources; and, booting the page against a stand-in
-DOM, the WebMCP tools and the export buttons. Run them from the repository root
-with `node --test 'tests/*.test.{mjs,cjs}'`. They live in
-[yujieteo/snake-lemma](https://github.com/yujieteo/snake-lemma) with read-only copies of
-beamdswitch's deck parser and the site's shared template in `tests/fixtures/beamdswitch/`,
-and its CI runs them; the site's `visuals/snake-lemma/` is a port of the page files
-and carries no tests.
+DOM, the WebMCP tools and the export buttons. Run them from this folder
+with `node --test 'tests/*.test.{mjs,cjs}'`. Read-only copies of
+beamdswitch's deck parser and the site's shared template are in `tests/fixtures/beamdswitch/`.

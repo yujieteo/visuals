@@ -11,7 +11,7 @@ Published at `https://teoyujie.org/visuals/phasors`.
 | --- | --- |
 | `index.html` | The whole tool. `<script id="site-theme">` in the head applies the reader's site-wide Light or Dark choice (`localStorage` key `theme`) before paint. `<script id="ph-engine">` is the pure core (circuit, formatter, diagram scenes, SVG, hash, JSON, report, deck, self-tests; no DOM, storage, clock, randomness, `Intl` or locale calls; `self.Phasors` in the browser). `<script id="ph-ui">` is the page, the animation and the WebMCP tools. Edit this file directly. |
 | `raw.json` | Published metadata (`META`: scope, conventions, ranges, presets, default state, degenerate cases, sources), `schemaVersion` and the default inputs as `example`; must equal the engine's `META` and `defaultInputs()`. |
-| `AGENTS.md` | Notes for coding agents: where changes go (the standalone repository, where this visualisation and its tests develop; yujieteo/site holds a port of the page files), how to build and test, and the conventions. |
+| `AGENTS.md` | What is specific to changing the tool. |
 | `SKILLS.md` | For agents using the tool: its tasks, inputs, read-only WebMCP tools, exports and a worked example. |
 | `LICENSE` | MIT. |
 
