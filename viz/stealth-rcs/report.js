@@ -35,14 +35,17 @@
   const err = (e) => e.toFixed(1);
   const seriesFor = (D, figure, role) => D.series.find((s) => s.figure_id === figure && s.trace_role === role);
   const samplesOf = (s) => s.segments.flat();
+  /* A series' samples ordered by x, then y: a dotted trace can have 2 samples at one x. */
+  const ordered = (s) => samplesOf(s).slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const position = (s) => (s.trace_role === "reconstructed" ? "exact sample position" : "centre of a printed dot");
 
-  /* The view's selected sample as { series, sample: [x, y, e] }, or null. */
+  /* The view's selected sample as { series, sample: [x, y, e], index }, or null. A sample is its index in ordered(series). */
   function selectedSample(D, view) {
     if (!view.sample) return null;
     const s = seriesFor(D, view.sample.figure, view.sample.role);
-    if (!s) return null;
-    const hit = samplesOf(s).find((p) => p[0] === view.sample.x);
-    return hit ? { series: s, sample: hit } : null;
+    if (!s || !Number.isInteger(view.sample.index)) return null;
+    const hit = ordered(s)[view.sample.index];
+    return hit ? { series: s, sample: hit, index: view.sample.index } : null;
   }
 
   /* The aircraft whose curve panel the view shows: the aircraft filter, else the selected claim's aircraft. */
@@ -93,7 +96,7 @@
     }
     if (raw.sample) {
       const s = raw.sample;
-      const cand = { figure: s.figure, role: s.role, x: Number(s.x) };
+      const cand = { figure: s.figure, role: s.role, index: /^\d+$/.test(String(s.index)) ? Number(s.index) : NaN };
       const okFigure = cand.figure === view.frequency || (view.compare === "condition" && cand.figure === view.compare_frequency);
       if (okFigure && view.traces.includes(cand.role) && selectedSample(D, { sample: cand })) view.sample = cand;
       else notices.push("The selected sample is not in the curves shown. The page cleared the selection.");
@@ -167,7 +170,7 @@
         `**Evidence type:** ${md(I.type[c.evidence_type].label)}. ${md(I.disclosure[c.disclosure].label)}.`, "",
         `**Conditions not stated:** ${md(c.conditions_not_stated)}`].join("\n"),
       notes: [`Result: ${r.label}.`, `Assessed scope: ${md(c.assessed_scope)}`,
-        ...c.sources.map((s) => `Source: ${md(I.source[s.source_id].title)}. ${md(s.locator)}. ${I.source[s.source_id].url}`),
+        ...c.sources.map((s) => `Source: ${md(I.source[s.source_id].title)}. ${sentence(md(s.locator))} ${I.source[s.source_id].url}`),
         ...c.sources.map((s) => `Quotation: “${md(s.quote)}”`)].join("\n"),
       narration: TOULMIN.map((k) => `${LABEL[k]}. ${sentence(say(c[k]))}`).join(" ") + ` Result. ${say(r.label)}. ${say(c.do_not_infer)}`,
     };
@@ -207,7 +210,7 @@
     const mode = view.compare === "condition" ? `Condition comparison: the changed condition is the frequency, ${cond(seriesFor(D, view.frequency, "original")).frequency} and ${cond(seriesFor(D, view.compare_frequency, "original")).frequency}.`
       : view.traces.length === 2 ? "Method comparison: original and reconstructed traces from the same figure and test record." : "One trace.";
     const sel = selectedSample(D, view);
-    const readout = sel ? `${sel.series.role_label}, figure ${sel.series.figure}: φ = ${deg(sel.sample[0])}° (exact sample position), magnitude ${db(sel.sample[1])} dB ± ${err(sel.sample[2])} dB extraction error. Approximate value read from the printed figure, not a measurement value.` : "No sample selected.";
+    const readout = sel ? `${sel.series.role_label}, figure ${sel.series.figure}: φ = ${deg(sel.sample[0])}° (${position(sel.series)}), magnitude ${db(sel.sample[1])} dB ± ${err(sel.sample[2])} dB extraction error. Approximate value read from the printed figure, not a measurement value.` : "No sample selected.";
     const viewFrame = {
       title: `Selected view: ${ds.title}`,
       body: [...head,
@@ -235,7 +238,7 @@
     };
     const ts = tableSeries(D, view);
     const rows = [];
-    const pts = samplesOf(ts).filter((p) => inZoom(view, p)).sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+    const pts = ordered(ts).filter((p) => inZoom(view, p));
     const gaps = ts.gaps.filter((g) => g.to >= view.zoom[0] && g.from <= view.zoom[1]);
     const events = [...pts.map((p) => ({ x: p[0], row: `| ${deg(p[0])} | ${db(p[1])} | ± ${err(p[2])} | Extracted |` })),
       ...gaps.map((g) => ({ x: g.from, row: `| ${deg(g.from)} to ${deg(g.to)} | No value | | Gap: ${md(g.reason)} |` }))].sort((a, b) => a.x - b.x);
@@ -268,7 +271,7 @@
     return {
       title: "Rights and image credits",
       body: [...D.images.map((im) => `- ${md(I.aircraft[im.aircraft_id].name)} photograph: ${md(im.credit)}. DVIDS Photo ID ${im.photo_id}, VIRIN ${im.virin}. PUBLIC DOMAIN. <${im.source_url}>`),
-        "", ...D.rights.map((r) => `- ${md(r.asset)}: ${md(r.notice)} Permitted use: ${md(r.permitted_uses)}. Restrictions: ${md(r.restrictions)}`),
+        "", ...D.rights.map((r) => `- ${md(r.asset)}: ${md(r.notice)} Permitted use: ${sentence(md(r.permitted_uses))} Restrictions: ${md(r.restrictions)}`),
         "", `> ${md(I.rights["R-DVIDS-PD"].disclaimer)}`,
         "", ...D.other_numerical_evidence.map((n) => `- Not reproduced: ${link(I.source[n.source_id].title, I.source[n.source_id].url)}. ${md(n.reason)}`)].join("\n"),
       notes: "This export has no images. It names the photographs and their credits. It copies no ETRI or IEEE curve.",
@@ -282,7 +285,7 @@
       body: "- The public sources support the design accounts and the NASA model comparison within their stated limits.\n- One manufacturer test claim cannot be verified from public evidence.\n- No source here gives the RCS of a service aircraft. The page does not rank the aircraft.",
       key: "Public evidence supports design accounts and one model comparison. It gives no RCS value for a service aircraft and no ranking.",
       notes: "Do not strengthen any claim beyond its qualifier.",
-      narration: "The public sources support the design accounts and the NASA model comparison within their limits. One manufacturer test claim cannot be verified. No source here gives the RCS of a service aircraft, and the page does not rank the aircraft.",
+      narration: "The public sources support the design accounts and the NASA model comparison within their limits. One manufacturer test claim cannot be verified from public evidence. No source here gives the RCS of a service aircraft, and the page does not rank the aircraft.",
     };
   }
 
@@ -316,5 +319,5 @@
     return out.join("\n").replace(/\n{3,}/g, "\n\n");
   }
 
-  return { TOULMIN, index, db, deg, err, seriesFor, samplesOf, selectedSample, plotAircraft, hasCurve, defaults, normalizeView, visibleSeries, tableSeries, report, markdown, say, md };
+  return { TOULMIN, index, db, deg, err, seriesFor, samplesOf, ordered, position, selectedSample, plotAircraft, hasCurve, defaults, normalizeView, visibleSeries, tableSeries, report, markdown, say, md, sentence };
 });

@@ -243,6 +243,11 @@ def esc(s):
     return html.escape(str(s), quote=True)
 
 
+def stop(s):
+    s = str(s)
+    return s if s.endswith((".", "!", "?")) else s + "."
+
+
 def static_record(d):
     src = {s["id"]: s for s in d["sources"]}
     res = {r["id"]: r for r in d["results"]}
@@ -250,7 +255,7 @@ def static_record(d):
     air = {a["id"]: a for a in d["aircraft"]}
     out = ['<section id="static-record" class="static-record" aria-labelledby="static-record-h">',
            '<h2 id="static-record-h">All arguments and sources</h2>',
-           f'<p class="muted">Dataset version {esc(d["dataset_version"])}. Assessment date {esc(d["assessment_date"])}.</p>']
+           f'<p class="muted">Dataset version {esc(stop(d["dataset_version"]))} Assessment date {esc(stop(d["assessment_date"]))}</p>']
     for a in d["aircraft"]:
         out.append(f'<h3>{esc(a["full_name"])}</h3>')
         for c in (c for c in d["claims"] if c["aircraft_id"] == a["id"]):
@@ -258,18 +263,18 @@ def static_record(d):
             out.append(f'<article class="static-claim"><h4>{esc(c["id"])}: {esc(c["title"])}</h4><dl>')
             for part in TOULMIN:
                 out.append(f'<dt>{part.capitalize()}</dt><dd>{esc(c[part])}</dd>')
-            out.append(f'<dt>Result</dt><dd>{esc(r["symbol"])} {esc(r["label"])}. {esc(c["do_not_infer"])}</dd>')
+            out.append(f'<dt>Result</dt><dd>{esc(r["symbol"])} {esc(stop(r["label"]))} {esc(c["do_not_infer"])}</dd>')
             out.append(f'<dt>Evidence type</dt><dd>{esc(typ[c["evidence_type"]]["label"])}</dd>')
             out.append(f'<dt>Assessed scope</dt><dd>{esc(c["assessed_scope"])}</dd>')
             out.append(f'<dt>Conditions not stated</dt><dd>{esc(c["conditions_not_stated"])}</dd>')
             for s in c["sources"]:
                 so = src[s["source_id"]]
-                out.append(f'<dt>Source</dt><dd>{esc(so["title"])}, {esc(so["author"])}, {esc(so["date"] or "date not stated")}. {esc(s["locator"])}. <a href="{esc(so["url"])}">{esc(so["url"])}</a></dd>')
+                out.append(f'<dt>Source</dt><dd>{esc(so["title"])}, {esc(so["author"])}, {esc(stop(so["date"] or "date not stated"))} {esc(stop(s["locator"]))} <a href="{esc(so["url"])}">{esc(so["url"])}</a></dd>')
             out.append('</dl></article>')
     out.append('<h3>Sources</h3><ol class="static-sources">')
     for s in d["sources"]:
         access = s["access"]
-        line = f'{esc(s["title"])}. {esc(s["author"])}. {esc(s["origin"])}. Date: {esc(s["date"] or "not stated")}. <a href="{esc(s["url"])}">{esc(s["url"])}</a>. Accessed {esc(access["date"])}: {esc(access["direct"])}.'
+        line = f'{esc(stop(s["title"]))} {esc(stop(s["author"]))} {esc(stop(s["origin"]))} Date: {esc(stop(s["date"] or "not stated"))} <a href="{esc(s["url"])}">{esc(s["url"])}</a>. Accessed {esc(access["date"])}: {esc(stop(access["direct"]))}'
         if access.get("checked_copy"):
             line += f' Checked copy: <a href="{esc(access["checked_copy"])}">{esc(access["checked_copy"])}</a>.'
         if s.get("file_hash"):
@@ -277,11 +282,11 @@ def static_record(d):
         out.append(f'<li id="static-{esc(s["id"])}">{line}</li>')
     out.append('</ol><h3>Image credits and rights</h3><ul>')
     for im in d["images"]:
-        out.append(f'<li>{esc(air[im["aircraft_id"]]["name"])}: {esc(im["credit"])}. DVIDS Photo ID {esc(im["photo_id"])}, VIRIN {esc(im["virin"])}. <a href="{esc(im["source_url"])}">{esc(im["source_url"])}</a>. PUBLIC DOMAIN.</li>')
+        out.append(f'<li>{esc(air[im["aircraft_id"]]["name"])}: {esc(stop(im["credit"]))} DVIDS Photo ID {esc(im["photo_id"])}, VIRIN {esc(stop(im["virin"]))} <a href="{esc(im["source_url"])}">{esc(im["source_url"])}</a>. PUBLIC DOMAIN.</li>')
     out.append('</ul>')
     for r in d["rights"]:
-        out.append(f'<p><strong>{esc(r["asset"])}</strong>: {esc(r["notice"])} Permitted use: {esc(r["permitted_uses"])}. Restrictions: {esc(r["restrictions"])}.{(" " + esc(r["disclaimer"])) if r.get("disclaimer") else ""}</p>')
-    out.append(f'<p>{esc(d["datasets"][0]["transfer_limit"])} Units: {esc(UNITS)}. {esc(REFERENCE)}. Experimental uncertainty not stated.</p>')
+        out.append(f'<p><strong>{esc(r["asset"])}</strong>: {esc(r["notice"])} Permitted use: {esc(stop(r["permitted_uses"]))} Restrictions: {esc(stop(r["restrictions"]))}{(" " + esc(r["disclaimer"])) if r.get("disclaimer") else ""}</p>')
+    out.append(f'<p>{esc(d["datasets"][0]["transfer_limit"])} Units: {esc(stop(UNITS))} {esc(stop(REFERENCE))} Experimental uncertainty not stated.</p>')
     out.append('</section>')
     return "\n".join(out)
 

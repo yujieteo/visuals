@@ -12,12 +12,13 @@ const T = require("../beamdswitch.js");
 const R = require("../report.js");
 const D = require("../raw.json");
 const base = R.defaults(D);
+const sampleAt = (figure, role, x) => ({ figure, role, index: R.ordered(R.seriesFor(D, figure, role)).findIndex((p) => p[0] === x) });
 const VIEWS = [
   base,
   { ...base, aircraft: "F35", claim: "F35-2" },
   { ...base, aircraft: "B2", evidence: "official_statement", result: "supported", claim: "B2-2" },
-  { ...base, frequency: "fig-5-12", compare: "condition", compare_frequency: "fig-5-10", traces: ["reconstructed"], zoom: [181.5, 183], sample: { figure: "fig-5-12", role: "reconstructed", x: 182.25 } },
-  { ...base, traces: ["original"], sample: { figure: "fig-5-11", role: "original", x: R.seriesFor(D, "fig-5-11", "original").segments[2][0][0] } },
+  { ...base, frequency: "fig-5-12", compare: "condition", compare_frequency: "fig-5-10", traces: ["reconstructed"], zoom: [181.5, 183], sample: sampleAt("fig-5-12", "reconstructed", 182.25) },
+  { ...base, traces: ["original"], sample: { figure: "fig-5-11", role: "original", index: R.ordered(R.seriesFor(D, "fig-5-11", "original")).indexOf(R.seriesFor(D, "fig-5-11", "original").segments[2][0]) } },
   { ...base, result: "cannot_verify" },
 ];
 const deckFor = (v) => T.deck(R.report(D, v));
@@ -92,6 +93,24 @@ test("the selected view: its sample table, units, reference and the clipped gap"
   assert.match(f35, /## Selected view: no eligible curve for the F-35/);
   assert.ok(f35.includes("https://iris.unibas.it/retrieve/"));
   assert.doesNotMatch(f35, /## Sample table/);
+  // A dotted trace's sample is the centre of a printed dot, in the deck and in the Markdown record.
+  for (const text of [deckFor(VIEWS[4]), R.markdown(D, VIEWS[4])]) {
+    assert.match(text, /\(centre of a printed dot\), magnitude/);
+    assert.doesNotMatch(text, /exact sample position/);
+  }
+});
+
+test("narration keeps the qualifier of the visible text", () => {
+  const takeaway = R.report(D, base).checks.at(-1);
+  assert.match(takeaway.body, /cannot be verified from public evidence/);
+  assert.match(takeaway.narration, /cannot be verified from public evidence/);
+});
+
+test("both exports hold the full title of every source and no double full stop", () => {
+  for (const text of [deckFor(base), R.markdown(D, base)]) {
+    for (const s of D.sources) assert.ok(text.includes(R.md(s.title)), s.id);
+    assert.doesNotMatch(text, /[^.]\.\.(\s|$)/);
+  }
 });
 
 test("the Markdown record uses the same frames without narration", () => {

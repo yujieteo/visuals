@@ -24,7 +24,7 @@ await fullSuite("stealth-rcs", {
     assert.equal(await chip(s.page, "F22").getAttribute("aria-pressed"), "true");
     assert.notEqual(await s.page.evaluate(() => location.href), before, "the aircraft filter is in the URL");
     // A shared link restores the view: aircraft, claim, frequency, zoom and selected sample.
-    const link = await ctx.open("#a=F117&c=F117-2&f=fig-5-12&z=181.50,183.00&s=fig-5-12:reconstructed:182.25");
+    const link = await ctx.open("#a=F117&c=F117-2&f=fig-5-12&z=181.50,183.00&s=fig-5-12:reconstructed:357");
     try {
       assert.equal(await chip(link.page, "F117").getAttribute("aria-pressed"), "true");
       assert.equal(await freq(link.page, "fig-5-12").getAttribute("aria-pressed"), "true");
@@ -68,6 +68,29 @@ await fullSuite("stealth-rcs", {
     await s.page.locator("#zoom-in").focus();
     await s.page.keyboard.press("Enter");
     assert.match(await s.page.evaluate(() => location.hash), /z=/, "the zoom button works from the keyboard");
+    // "Next sample" reaches every sample of every trace in order, also where 2 dots share one azimuth.
+    const base = s.page.url().split("#")[0];
+    for (const figure of ["fig-5-10", "fig-5-11", "fig-5-12"]) for (const role of ["original", "reconstructed"]) {
+      await s.page.goto(`${base}#a=F117&f=${figure}&tr=${role}&s=${figure}:${role}:0`);
+      await s.page.reload();
+      await s.page.waitForSelector("#next-sample");
+      const walk = await s.page.evaluate(() => {
+        const seen = [];
+        for (let k = 0; k < 600; k++) {
+          const i = Number((new URLSearchParams(location.hash.slice(1)).get("s") ?? "").split(":")[2]);
+          if (seen.length && seen[seen.length - 1].i === i) break;
+          seen.push({ i, phi: Number(/φ = (\d+\.\d+)°/.exec(/** @type {HTMLElement} */ (document.getElementById("readout")).innerText)?.[1]) });
+          /** @type {HTMLButtonElement} */ (document.getElementById("next-sample")).click();
+        }
+        return seen;
+      });
+      const count = await s.page.evaluate(([f, r]) => {
+        const R = /** @type {any} */ (window).RcsReport;
+        return R.ordered(R.seriesFor(JSON.parse(/** @type {HTMLElement} */ (document.getElementById("dataset")).textContent ?? ""), f, r)).length;
+      }, [figure, role]);
+      assert.deepEqual(walk.map((w) => w.i), [...Array(count).keys()], `${figure} ${role}: every sample once, in order`);
+      assert.ok(walk.every((w, k) => !k || walk[k - 1].phi <= w.phi), `${figure} ${role}: azimuth never goes back`);
+    }
   }),
 
   "command-palette": (ctx) => using(ctx.open, async (s) => {
@@ -83,7 +106,7 @@ await fullSuite("stealth-rcs", {
 
   "json-round-trip": (ctx) => jsonRoundTrip(ctx.open, async (page) => { await freq(page, "fig-5-10").click(); await page.locator("#next-sample").click(); }, state),
 
-  "markdown-export": (ctx) => markdownExport(ctx.open, (page) => page.locator("#next-sample").click(), "exact sample position", "#save-beamdswitch, #copy-beamdswitch"),
+  "markdown-export": (ctx) => markdownExport(ctx.open, (page) => page.locator("#next-sample").click(), "centre of a printed dot", "#save-beamdswitch, #copy-beamdswitch"),
 
   "beamdswitch-export": (ctx) => using(ctx.open, async (s) => {
     const file = await saved(s.page, () => s.page.locator("#save-beamdswitch").click());
@@ -93,7 +116,30 @@ await fullSuite("stealth-rcs", {
     for (const id of ["F117-1", "F117-2", "F22-1", "F22-2", "F35-1", "F35-2", "B2-1", "B2-2"]) assert.ok(file.text.includes(`${id}:`), id);
   }),
 
-  "dark-mode": (ctx) => assertDarkMode(ctx),
+  // Rendering modes: the colour scheme, print, no script, and the short source titles of the summary views.
+  "dark-mode": async (ctx) => {
+    await assertDarkMode(ctx);
+    await using(ctx.open, async (s) => {
+      const title = await s.page.locator('[data-source="SRC-NASA-CR-191378"] strong').innerText();
+      assert.equal(title, "A Very Efficient RCS Data Compression and Reconstruction Technique (NASA-CR-191378-VOL-4)", "the source panel shows the full title");
+      const short = s.page.locator('#matrix-body [data-source-link="SRC-NASA-CR-191378"]').first();
+      const shortText = await short.innerText();
+      assert.ok(shortText.length < title.length && shortText.includes("…") && shortText.endsWith("(NASA-CR-191378-VOL-4)"), shortText);
+      assert.match(await s.page.locator('[data-argument] [data-source-link="SRC-NASA-CR-191378"]').innerText(), /…/);
+      const hash = await s.page.evaluate(() => location.hash);
+      await short.click();
+      assert.equal(await s.page.evaluate(() => document.activeElement?.id), "src-SRC-NASA-CR-191378", "a short title leads to the full title");
+      assert.equal(await s.page.evaluate(() => location.hash), hash, "the view stays");
+      assert.ok(!(await s.page.locator("#static-record").isVisible()), "with script, the screen shows the interactive page");
+      await s.page.emulateMedia({ media: "print" });
+      assert.ok(await s.page.locator("#static-record").isVisible(), "print shows every argument and source");
+      assert.ok(!(await s.page.locator("#sources-section").isVisible()));
+      assert.ok((await s.page.locator("#static-record").innerText()).includes(title), "print holds the full title");
+      await s.page.emulateMedia({ media: "screen" });
+      await s.page.evaluate(() => document.documentElement.classList.remove("js"));
+      assert.ok(await s.page.locator("#static-record").isVisible(), "without script, the static record shows");
+    });
+  },
 
   "reduced-motion": (ctx) => assertReducedMotion(ctx, async (page) => {
     await chip(page, "F117").click();
