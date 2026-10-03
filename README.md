@@ -31,7 +31,7 @@ builder template's, as `typecheck.page` says), less the blocks its `visual.json`
 | `viz/<slug>/index.html` | The page the site publishes at `teoyujie.org/visuals/<slug>/`. |
 | `viz/<slug>/visual.json` | The visual's metadata: its catalogue entry (title, summary, source, fetch date, data file, WebMCP tools, tags), and optionally its own check commands, type-check settings and the shared files it `uses`. `schema/visual.schema.json` defines it. |
 | `viz/<slug>/raw.json`, `raw.csv`, `meta.json`, ... | The unchanged source data (published as `data.json`) and its provenance. |
-| `viz/<slug>/build.py`, `src/` | The builder and page sources, for a generated page; `python3 build.py --verify` checks the committed page and writes nothing. |
+| `viz/<slug>/build.py` (or `build.mjs`), `src/` | The builder and page sources, for a generated page; `python3 build.py --verify` (or the check its `visual.json` names) checks the committed page and writes nothing. |
 | `viz/<slug>/tests/` | The visual's own tests. |
 | `viz/<slug>/beamdswitch.js`, `report.js` | The site's unchanged beamdswitch report template and the page's report, for pages that export a narrated deck. |
 | `viz/<slug>/SKILLS.md`, `AGENTS.md` | How an agent uses the page and its WebMCP tools; what is specific to changing it. |
