@@ -34,7 +34,9 @@ def main(argv):
         sys.exit(subprocess.run(command).returncode)
     port = free_port()
     url = f"http://127.0.0.1:{port}"
-    with tempfile.TemporaryDirectory() as profile:
+    # Chrome's helper processes can still be writing into the profile as the browser exits, so a cleanup
+    # error must not replace the command's own exit status.
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as profile:
         browser = subprocess.Popen([chrome, "--headless=new", f"--remote-debugging-port={port}", "--remote-allow-origins=*",
                                     "--no-sandbox", "--disable-gpu", f"--user-data-dir={profile}", "about:blank"],
                                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)

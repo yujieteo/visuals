@@ -3,21 +3,22 @@
 /**
  * The page's data (data/english-grammar, built into the page) and the index over it.
  * @typedef {{ t: string, k: string, g?: boolean }} Token
- * @typedef {{ id: string, cat: string, fn?: string, span?: [number, number], children?: GNode[], word?: string, gap?: string, head?: string,
+ * @typedef {{ id: string, cat: string, fn?: string, span?: [number, number], children?: GNode[], word?: number, gap?: string, head?: string,
  *   cx?: string, form?: string, anchor?: string, ante?: string, alt?: string, base?: string, at?: number, _w?: number }} GNode
  * @typedef {{ id: string, i: number, name: string, class: string, use: string, side: string, bounds: string, pair?: string }} Mark
- * @typedef {{ id: string, kind: string, text: string, tokens: Token[], tree: GNode, marks?: Mark[], concepts: string[], explanation: string,
+ * @typedef {{ id: string, kind: string, text: string, tokens: Token[], tree: GNode, focus: string, marks?: Mark[], concepts: string[], explanation: string,
  *   context?: string, usage?: string, predict?: { node: string, question: string, answer: string } }} Example
  * @typedef {{ ex: string, node: string }} Item
- * @typedef {{ chapter: string, label: string, section?: string, page?: number }} Reference
+ * @typedef {{ chapter: number, label: string, section?: string, page?: number }} Reference
  * @typedef {{ id: string, name: string, references: Reference[], items: Item[], abbr?: string[], aliases?: string[], orientation: string,
  *   note?: string, related: string[] }} Concept
- * @typedef {{ n: string, title: string, sections: { id: string, title: string, page: number }[] }} Chapter
- * @typedef {{ concepts: string[], a: Item, b: Item, explanation: string }} Contrast
+ * @typedef {{ n: number, title: string, sections: { id: string, title: string, page: number }[] }} Chapter
+ * @typedef {{ id: string, concepts: string[], a: Item, b: Item, explanation: string }} Contrast
  * @typedef {{ concepts: Concept[], examples: Example[], route: { concept: string, orientation: string }[], chapters: Chapter[],
  *   confusions: { label: string, concept: string, example: string, orientation: string }[], contrasts: Contrast[], start: string,
  *   labels: { categories: Record<string, string>, functions: Record<string, string>, notation: Record<string, string> },
- *   key: string, book: unknown, verification: unknown, checked: unknown, assumptions: unknown }} GrammarData
+ *   title: string, key: string, book: { title: string, authors: string, publisher: string, year: number }, verification: unknown, checked: unknown,
+ *   assumptions: unknown }} GrammarData
  * @typedef {{ node: GNode, parent: string | null, depth: number }} Placed
  */
 /**
@@ -27,7 +28,7 @@
  */
 /**
  * @typedef {{ D: GrammarData, concepts: SureMap<string, Concept & { order: number }>, examples: SureMap<string, Example>,
- *   nodes: SureMap<string, SureMap<string, Placed>>, marks: SureMap<string, Map<string, Mark>>, chapterConcepts: SureMap<string, string[]>,
+ *   nodes: SureMap<string, SureMap<string, Placed>>, marks: SureMap<string, Map<string, Mark>>, chapterConcepts: SureMap<number, string[]>,
  *   route: string[] }} Index
  * @typedef {{ concept: string, example: string | null, view: string | null, valid: boolean, invalid?: boolean, start?: boolean, raw?: string }} HashState
  * @typedef {{ type: string, concept: string, example?: string, label: string, detail: string, score: number }} SearchResult

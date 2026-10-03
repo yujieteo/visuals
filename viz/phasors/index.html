@@ -1,0 +1,1352 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" href="data:,">
+<title>Phasor and Impedance Visualiser</title>
+<meta name="description" content="A series or parallel RLC circuit in sinusoidal steady state: a rotating phasor diagram, the impedance and admittance planes, waveforms and the power triangle, with every number shown. Exports a Markdown report, a beamdswitch deck, JSON and SVG. Runs offline.">
+<meta property="og:title" content="Phasor and Impedance Visualiser">
+<meta property="og:description" content="See what a series or parallel RLC circuit does in AC steady state: rotating phasors, impedance and admittance planes, waveforms and power, with every number shown.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://teoyujie.org/visuals/phasors">
+<meta property="og:site_name" content="Yu Jie Teo">
+<meta name="twitter:card" content="summary">
+<link rel="canonical" href="https://teoyujie.org/visuals/phasors">
+<script id="site-theme">try { var t = localStorage.getItem("theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (e) {}</script>
+<style>
+:root{--bg:#fff;--fg:#1d1d1f;--muted:#6e6e73;--faint:#a1a1a6;--surface:#f5f5f7;--border:#d2d2d7;--control:#86868b;--grid:#e8e8ed;--focus:#0071e3;--c1:#2a78d6;--c2:#eb6834;--c3:#8a4fd8;--c4:#0f8b8d;--ok:#1a7f4b;--bad:#c4261d;--warn:#9a6700;--sans:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;--mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;--r:.6rem;color-scheme:light dark}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--faint:#6e6e73;--surface:#2c2c2e;--border:#48484a;--control:#8e8e93;--grid:#333336;--focus:#2997ff;--c1:#3987e5;--c2:#d95926;--c3:#a77bf0;--c4:#3bb6b8;--ok:#30c07a;--bad:#ff6961;--warn:#e3b341}}
+:root[data-theme="dark"]{--bg:#1d1d1f;--fg:#f5f5f7;--muted:#a1a1a6;--faint:#6e6e73;--surface:#2c2c2e;--border:#48484a;--control:#8e8e93;--grid:#333336;--focus:#2997ff;--c1:#3987e5;--c2:#d95926;--c3:#a77bf0;--c4:#3bb6b8;--ok:#30c07a;--bad:#ff6961;--warn:#e3b341;color-scheme:dark}
+:root[data-theme="light"]{color-scheme:light}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 var(--sans);letter-spacing:-.011em;-webkit-font-smoothing:antialiased}
+main{width:min(100% - 2rem,82rem);margin:auto;padding:clamp(1.25rem,5vw,3rem) 0 calc(3rem + env(safe-area-inset-bottom))}
+a{color:inherit;text-underline-offset:.18em}
+h1{font-size:clamp(2rem,6vw,3.25rem);line-height:1.04;letter-spacing:-.045em;margin:.35rem 0 .8rem;max-width:20ch}
+h2{font-size:1rem;letter-spacing:-.01em;margin:0;line-height:1.3}
+h3{font:600 .72rem/1.4 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:1.1rem 0 .5rem}
+p{margin:.5rem 0;max-width:72ch}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.eyebrow{font:600 .75rem/1.4 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0;display:flex;flex-wrap:wrap;gap:.25rem .9rem}
+.eyebrow a{text-decoration:none}
+.eyebrow a:hover{text-decoration:underline}
+.lede{font-size:1.125rem;max-width:66ch}
+.banner{border:1px solid var(--border);border-left:4px solid var(--c1);border-radius:var(--r);padding:.6rem .9rem;margin:1rem 0 0;font-size:.9375rem;display:flex;flex-wrap:wrap;gap:.4rem 1rem;align-items:center;justify-content:space-between}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.35rem;border:1px solid var(--control);background:var(--bg);border-radius:999px;padding:.25rem .85rem;min-height:2.75rem;font-size:.875rem;white-space:nowrap;text-decoration:none}
+@media (hover:hover){.btn:hover{background:var(--surface)}}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.primary{background:var(--fg);color:var(--bg);border-color:var(--fg);min-width:6.5rem}
+.badge{display:inline-flex;align-items:center;min-height:2.75rem;border-radius:999px;padding:.2rem .9rem;font:600 .8rem var(--mono);border:1px solid currentColor;background:none;color:var(--muted)}
+.badge.pass{color:var(--ok)}
+.badge.fail{color:var(--bad)}
+.layout{display:grid;gap:1.5rem 2rem;grid-template-columns:minmax(0,23rem) minmax(0,1fr);align-items:start;margin-top:1.5rem}
+@media (max-width:64rem){.layout{grid-template-columns:minmax(0,1fr)}}
+.controls{display:flex;flex-direction:column;gap:.9rem;min-width:0}
+fieldset{border:1px solid var(--border);border-radius:var(--r);padding:.6rem .8rem .8rem;margin:0;min-width:0}
+legend{font:600 .72rem/1.4 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:0 .3rem}
+.seg{display:inline-flex;border:1px solid var(--control);border-radius:999px;overflow:hidden}
+.seg label{display:inline-flex;align-items:center;cursor:pointer;font-size:.875rem;min-height:2.75rem;padding:0 1rem;position:relative}
+.seg input{position:absolute;opacity:0;width:1px;height:1px}
+.seg label:has(input:checked){background:var(--fg);color:var(--bg);font-weight:600}
+.seg label:has(input:focus-visible){outline:2px solid var(--focus);outline-offset:-2px}
+.q{display:grid;grid-template-columns:auto minmax(0,1fr);gap:.1rem .6rem;align-items:center;padding:.35rem 0;border-top:1px solid var(--grid)}
+.q:first-of-type{border-top:0}
+.q .name{display:flex;align-items:center;gap:.35rem;min-height:2.75rem;font-weight:600;min-width:4.5rem}
+.q .name input{width:1.25rem;height:1.25rem;margin:0;accent-color:var(--fg)}
+.q input[type="text"]{border:1px solid var(--control);background:var(--bg);border-radius:var(--r);padding:.3rem .55rem;min-height:2.75rem;font-size:.9375rem;width:100%;min-width:0;font-variant-numeric:tabular-nums}
+.q input[type="range"]{grid-column:1/-1;width:100%;min-height:2.75rem;margin:0;accent-color:var(--c1)}
+.q .hint{grid-column:1/-1;font:.75rem var(--mono);color:var(--muted);display:flex;justify-content:space-between;gap:.5rem;flex-wrap:wrap}
+.q.off input[type="text"],.q.off input[type="range"]{opacity:.45}
+.err{grid-column:1/-1;font-size:.8125rem;color:var(--bad);margin:0}
+.err:empty{display:none}
+[aria-invalid="true"]{border-color:var(--bad)!important;box-shadow:0 0 0 1px var(--bad)}
+.row{display:flex;flex-wrap:wrap;gap:.45rem;align-items:center}
+.check{display:inline-flex;gap:.5rem;align-items:center;min-height:2.75rem;font-size:.9375rem}
+.check input{width:1.25rem;height:1.25rem;margin:0;accent-color:var(--fg)}
+.note{font-size:.8125rem;color:var(--muted);margin:.35rem 0 0}
+.msg{font-size:.875rem;margin:.35rem 0 0;min-height:1.3em}
+.msg.bad{color:var(--bad)}
+.msg.ok{color:var(--ok)}
+.scrub{display:grid;grid-template-columns:auto minmax(0,1fr);gap:.4rem .7rem;align-items:center}
+.scrub input{width:100%;min-height:2.75rem;margin:0;accent-color:var(--c2)}
+.scrub output{grid-column:1/-1;font:.8125rem var(--mono);color:var(--muted)}
+.date{display:flex;flex-direction:column;gap:.2rem;font-size:.875rem;margin-bottom:.5rem}
+.date input{border:1px solid var(--control);background:var(--bg);border-radius:var(--r);padding:.3rem .55rem;min-height:2.75rem;width:100%}
+.filebtn{position:relative;overflow:hidden}
+.filebtn input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
+.filebtn:has(input:focus-visible){outline:2px solid var(--focus);outline-offset:2px}
+.results{min-width:0;display:flex;flex-direction:column;gap:1rem}
+.sentence{font-size:1.25rem;font-weight:600;letter-spacing:-.02em;margin:0;min-height:1.6em;max-width:none}
+.warnings{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.3rem;font-size:.875rem}
+.warnings li{border-left:3px solid var(--warn);padding:.15rem .6rem}
+.views{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
+@media (max-width:44rem){.views{grid-template-columns:minmax(0,1fr)}}
+.card{border:1px solid var(--border);border-radius:var(--r);padding:.6rem .7rem .7rem;min-width:0;display:flex;flex-direction:column;gap:.35rem}
+.card.wide{grid-column:1/-1}
+.card.wide svg{max-width:44rem;margin:0 auto}
+.card[hidden]{display:none}
+.card header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:.2rem .6rem}
+.card header small{font:.72rem var(--mono);color:var(--muted)}
+.card svg{display:block;width:100%;height:auto;overflow:visible}
+svg text{font-family:var(--sans)}
+.a-v{fill:var(--c1);stroke:var(--c1)}.a-i{fill:var(--c2);stroke:var(--c2)}.a-r{fill:var(--c4);stroke:var(--c4)}.a-l{fill:var(--c3);stroke:var(--c3)}.a-c,.a-muted{fill:var(--muted);stroke:var(--muted)}.a-fg{fill:var(--fg);stroke:var(--fg)}
+.s-v{stroke:var(--c1);color:var(--c1)}.s-i{stroke:var(--c2);color:var(--c2)}.s-r{stroke:var(--c4)}.s-l{stroke:var(--c3)}.s-c,.s-muted{stroke:var(--muted)}.s-fg{stroke:var(--fg)}.s-faint{stroke:var(--faint)}.s-grid{stroke:var(--grid)}
+.t-fg{fill:var(--fg)}.t-muted{fill:var(--muted)}
+svg .dim{opacity:.18}
+svg [data-k]{transition:opacity .15s}
+.tablewrap{overflow-x:auto;max-width:100%}
+table{border-collapse:collapse;width:100%;font-size:.875rem;font-variant-numeric:tabular-nums}
+th,td{padding:.4rem .5rem;border-bottom:1px solid var(--grid);text-align:left;vertical-align:top}
+td:last-child{text-align:right;font-family:var(--mono);font-size:.8125rem;overflow-wrap:anywhere}
+tbody th{font:600 .68rem/1.3 var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);padding-top:.9rem}
+tr[data-k]{cursor:default}
+tr[data-k]:hover,tr[data-k]:focus{background:var(--surface)}
+tr[data-k]:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
+details>summary{cursor:pointer;font:600 .8rem var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:.5rem 0;min-height:2.75rem}
+.selftests{list-style:none;padding:0;margin:.5rem 0;font-size:.8125rem;display:flex;flex-direction:column;gap:.3rem}
+.selftests b{font-family:var(--mono);font-size:.72rem;margin-right:.35rem}
+.selftests .pass b{color:var(--ok)}
+.selftests .fail b{color:var(--bad)}
+.selftests small{display:block;color:var(--muted);font-family:var(--mono);overflow-wrap:anywhere}
+footer{margin-top:3rem;padding-top:1rem;border-top:1px solid var(--border);font-size:.8125rem;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
+@media print{.controls,details{display:none}.layout{display:block}}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <p class="eyebrow"><a href="../../visuals.html">Visuals</a><span>Circuits</span><span>Works offline</span></p>
+  <h1>Phasor and Impedance Visualiser</h1>
+  <p class="lede">Drive a series or parallel RLC circuit with a sine wave and watch what it does: the element voltages or branch currents add up as rotating arrows, the impedance and admittance planes show why, and the waveforms show the resulting lag or lead. Every number is on the page, so it also works as a checker.</p>
+  <div class="banner" role="note"><span>Textbook steady-state AC with ideal components: no transients, no source impedance, no losses beyond R.</span><button class="badge" type="button" id="selftest-badge" aria-describedby="selftest-title">Self-tests…</button></div>
+</header>
+
+<div class="layout">
+<section class="controls" aria-label="Circuit controls">
+  <fieldset>
+    <legend>Connection</legend>
+    <div class="seg" role="radiogroup" aria-label="Connection"><label><input type="radio" name="mode" value="series">Series</label><label><input type="radio" name="mode" value="parallel">Parallel</label></div>
+  </fieldset>
+  <fieldset id="elements">
+    <legend>Elements</legend>
+  </fieldset>
+  <fieldset id="source">
+    <legend>Source</legend>
+  </fieldset>
+  <fieldset>
+    <legend>Presets</legend>
+    <div class="row" id="presets"></div>
+    <label class="check"><input type="checkbox" id="tri"> Power triangle</label>
+  </fieldset>
+  <fieldset>
+    <legend>Animation</legend>
+    <div class="scrub">
+      <button class="btn primary" type="button" id="play" aria-pressed="false">Play</button>
+      <input type="range" id="wt" min="0" max="360" step="1" value="0" aria-label="ωt, the rotation angle, in degrees">
+      <output id="wt-out" for="wt">ωt = 0.000 rad (0°)</output>
+    </div>
+    <p class="note" id="slowed">Slowed: one turn every 6 s, whatever the real frequency.</p>
+  </fieldset>
+  <fieldset>
+    <legend>Export and import</legend>
+    <label class="date">Deck date (optional, plain text) <input type="text" id="date" autocomplete="off" maxlength="40" placeholder="for example 1 October 2026"></label>
+    <p class="err" id="date-err" role="alert"></p>
+    <div class="row">
+      <button class="btn" type="button" id="dl-md">Markdown report</button>
+      <button class="btn" type="button" id="dl-deck">beamdswitch deck</button>
+      <button class="btn" type="button" id="dl-json">JSON</button>
+      <span class="btn filebtn">Import JSON<input type="file" id="import" accept=".json,application/json" aria-label="Import a JSON circuit file"></span>
+    </div>
+    <p class="note"><a href="../beamdswitch/index.html">Open beamdswitch, then drop the file in</a></p>
+    <div class="row" style="margin-top:.5rem">
+      <button class="btn" type="button" data-svg="phasor">Phasor SVG</button>
+      <button class="btn" type="button" data-svg="impedance">Impedance SVG</button>
+      <button class="btn" type="button" data-svg="admittance" hidden>Admittance SVG</button>
+      <button class="btn" type="button" data-svg="waveform">Waveform SVG</button>
+      <button class="btn" type="button" data-svg="power" hidden>Power SVG</button>
+    </div>
+    <p class="msg" id="io-msg" role="status"></p>
+  </fieldset>
+</section>
+
+<section class="results" aria-label="Results">
+  <p class="sentence" id="sentence" aria-live="polite"></p>
+  <ul class="warnings" id="warnings"></ul>
+  <div class="views">
+    <figure class="card" id="card-phasor" style="margin:0"><header><h2>Phasor diagram</h2><small id="ph-cap"></small></header><svg id="svg-phasor" role="img" viewBox="0 0 360 360"></svg></figure>
+    <figure class="card" id="card-impedance" style="margin:0"><header><h2>Impedance plane</h2><small id="im-cap"></small></header><svg id="svg-impedance" role="img" viewBox="0 0 360 280"></svg></figure>
+    <figure class="card" id="card-admittance" style="margin:0" hidden><header><h2>Admittance plane</h2><small>parallel mode</small></header><svg id="svg-admittance" role="img" viewBox="0 0 360 280"></svg></figure>
+    <figure class="card" id="card-power" style="margin:0" hidden><header><h2>Power triangle</h2><small>W, var, VA</small></header><svg id="svg-power" role="img" viewBox="0 0 360 280"></svg></figure>
+    <figure class="card wide" id="card-waveform" style="margin:0"><header><h2>Waveforms</h2><small>v(t) and i(t), per unit of peak</small></header><svg id="svg-waveform" role="img" viewBox="0 0 480 220"></svg></figure>
+  </div>
+  <h3>Readout</h3>
+  <p class="note">Hover, tap or focus a row to highlight its arrows.</p>
+  <div class="tablewrap"><table id="readout" aria-label="Readout"></table></div>
+  <details id="selftest-details">
+    <summary id="selftest-title">Self-tests</summary>
+    <p class="note">Run on every load. Tolerance 1e-9 relative unless stated.</p>
+    <ul class="selftests" id="selftests"></ul>
+    <button class="btn" type="button" id="selftest-run">Run again</button>
+  </details>
+</section>
+</div>
+
+<footer>
+  <p>Standard steady-state AC circuit analysis (phasors, impedance, complex power), as in any first circuits text such as Alexander and Sadiku, <i>Fundamentals of Electric Circuits</i>, chapters 9 to 11 and 14. The page stores nothing except the circuit in the URL hash.</p>
+</footer>
+<noscript><p>This tool needs JavaScript.</p></noscript>
+</main>
+<script id="ph-engine">
+(function (root) {
+"use strict";
+/* Pure core: no DOM, storage, clock, randomness, Intl or locale calls. Everything here is
+   deterministic, so the report, deck and SVG snapshots are the same bytes in Node and every browser. */
+const KIND = "phasors-circuit";
+const SCHEMA_VERSION = 1;
+const TAU = 2 * Math.PI;
+const EL = ["R", "L", "C"];
+const NUM = ["R", "L", "C", "f", "V"];
+const OHM = "\u03a9", MU = "\u00b5", DEG = "\u00b0", MINUS = "\u2212";
+const RANGES = {
+  R: { min: 0.1, max: 10000, unit: OHM, name: "Resistance" },
+  L: { min: 1e-6, max: 10, unit: "H", name: "Inductance" },
+  C: { min: 1e-9, max: 0.01, unit: "F", name: "Capacitance" },
+  f: { min: 1, max: 1e6, unit: "Hz", name: "Frequency" },
+  V: { min: 0.1, max: 1000, unit: "V", name: "Source voltage (RMS)" },
+};
+const inputs = (mode, on, R, L, C, f, V) => ({ mode, R_on: on.includes("R"), L_on: on.includes("L"), C_on: on.includes("C"), R, L, C, f, V });
+const PRESETS = [
+  { id: "resistive", name: "Resistive", inputs: inputs("series", "R", 100, 0.01, 1e-6, 1000, 10) },
+  { id: "inductive", name: "Inductive", inputs: inputs("series", "RL", 100, 0.01, 1e-6, 2000, 10) },
+  { id: "capacitive", name: "Capacitive", inputs: inputs("series", "RC", 100, 0.01, 1e-6, 1000, 10) },
+  { id: "series-resonance", name: "Series resonance", inputs: inputs("series", "RLC", 10, 0.01, 1e-6, 1591.55, 10) },
+  { id: "parallel-resonance", name: "Parallel resonance", inputs: inputs("parallel", "RLC", 1000, 0.01, 1e-6, 1591.55, 10) },
+];
+const defaultInputs = () => inputs("series", "RLC", 100, 0.01, 1e-6, 2400, 10);
+const defaultState = () => ({ inputs: defaultInputs(), displayOptions: { powerTriangle: false }, export: { date: "", voice: "bf_emma" } });
+const cloneState = (s) => ({ inputs: Object.assign({}, s.inputs), displayOptions: Object.assign({}, s.displayOptions), export: Object.assign({}, s.export) });
+
+const META = {
+  title: "Phasor and Impedance Visualiser",
+  schema: KIND,
+  url: "https://teoyujie.org/visuals/phasors",
+  scope: "A series or parallel RLC circuit driven by an ideal sinusoidal voltage source, in sinusoidal steady state: impedance and admittance, element voltages or branch currents as phasors, waveforms, real, reactive and apparent power, resonance and quality factor. Ideal components only; no sweeps, transients, source impedance or three-phase.",
+  conventions: [
+    "Imaginary unit j; amplitudes are RMS; the source voltage is the reference at 0 degrees.",
+    "Angles in degrees, positive counter-clockwise, normalised to (-180, 180].",
+    "phi = arg Z. phi > 0 is inductive (current lags voltage); phi < 0 is capacitive (current leads). The current phasor is at -phi.",
+    "Series: Z = R + j(omega L - 1/(omega C)). Parallel: Y = 1/R + j(omega C - 1/(omega L)), Z = 1/Y. An element switched off is absent (removed from the loop or its branch removed).",
+    "P = V I cos phi, Q = V I sin phi (positive inductive), S = V I, power factor = cos phi, lagging when inductive and leading when capacitive.",
+    "f0 = 1/(2 pi sqrt(LC)) when L and C are both on; quality factor Q_f = omega0 L / R (series) or R / (omega0 L) (parallel) when R, L and C are all on.",
+    "v(t) = sqrt(2) V sin(omega t), i(t) = sqrt(2) I sin(omega t - phi); waveforms are drawn per unit of their own peak.",
+    "Canonical units in every file: ohm, H, F, Hz, V (RMS), degrees.",
+  ],
+  ranges: RANGES,
+  presets: PRESETS,
+  defaultState: defaultState(),
+  degenerate: [
+    "Series with L and C on and R off at f0 (|Z| < 1e-9 ohm): current, element voltages, S and Q are unbounded; phi and the power factor are undefined.",
+    "Parallel with L and C on and R off at f0 (|Y| < 1e-12 S): impedance unbounded, total current 0; phi and the power factor are undefined.",
+    "Only one element on: f0, Q_f and the resonance comparison read 'needs L and C'.",
+  ],
+  sources: [
+    "Standard steady-state AC circuit analysis, as in C. K. Alexander and M. N. O. Sadiku, Fundamentals of Electric Circuits, chapters 9 to 11 and 14.",
+  ],
+};
+
+/* ---------- number formatting ---------- */
+// A positive finite number as 12 significant decimal digits: a = d[0].d[1..11] x 10^e.
+// toExponential is exactly specified by ECMAScript, and 12 digits absorbs last-bit trig differences.
+function digits12(a) {
+  const m = /^(\d)\.(\d{11})e([+-]\d+)$/.exec(a.toExponential(11));
+  return { d: m[1] + m[2], e: +m[3] };
+}
+const bump = (s) => { let out = "", carry = 1; for (let k = s.length - 1; k >= 0; k--) { const v = s.charCodeAt(k) - 48 + carry; carry = v > 9 ? 1 : 0; out = String(v % 10) + out; } return carry ? "1" + out : out; };
+// Round to n significant figures, half up on the 12-digit decimal.
+function roundSig(a, n) {
+  const { d, e } = digits12(a);
+  let h = d.slice(0, n);
+  if (n < 12 && d.charCodeAt(n) >= 53) h = bump(h);
+  return h.length > n ? { h: h.slice(0, n), e: e + 1 } : { h, e };
+}
+// Digit string h read as h[0].h[1..] x 10^e, written out in plain decimal.
+function place(h, e) {
+  const k = e + 1;
+  if (k <= 0) return "0." + "0".repeat(-k) + h;
+  if (k >= h.length) return h + "0".repeat(k - h.length);
+  return h.slice(0, k) + "." + h.slice(k);
+}
+// Fixed decimals, half up on the 12-digit decimal; never "-0.00".
+function fixed(x, dp, minus) {
+  const neg = x < 0, a = Math.abs(x);
+  let n = "0";
+  if (a > 0) {
+    const { d, e } = digits12(a), keep = e + 1 + dp;
+    if (keep === 0) n = d.charCodeAt(0) >= 53 ? "1" : "0";
+    else if (keep > 0) { n = keep >= 12 ? d + "0".repeat(keep - 12) : d.slice(0, keep); if (keep < 12 && d.charCodeAt(keep) >= 53) n = bump(n); }
+  }
+  if (dp > 0) { n = n.padStart(dp + 1, "0"); n = n.slice(0, n.length - dp) + "." + n.slice(n.length - dp); }
+  return (neg && /[1-9]/.test(n) ? (minus || "-") : "") + n;
+}
+const PREFIX = { "-12": "p", "-9": "n", "-6": MU, "-3": "m", "0": "", "3": "k", "6": "M", "9": "G" };
+// 3 significant figures with a fixed SI prefix table; no exponent notation, ever.
+function siParts(x, trim, n) {
+  if (x === 0) return { neg: false, num: "0", p: "" };
+  const { h, e } = roundSig(Math.abs(x), n || 3);
+  const p = Math.min(9, Math.max(-12, Math.floor(e / 3) * 3));
+  let num = place(h, e - p);
+  if (trim && num.includes(".")) num = num.replace(/0+$/, "").replace(/\.$/, "");
+  return { neg: x < 0, num, p: PREFIX[p] };
+}
+function si(x, unit, o) {
+  o = o || {};
+  const s = siParts(x, o.trim, o.digits);
+  return (s.neg ? (o.minus || "-") : "") + s.num + " " + s.p + unit;
+}
+// 12 significant digits, trailing zeros trimmed, no exponent: the canonical number text in files.
+function plain(x) {
+  if (x === 0) return "0";
+  const { d, e } = digits12(Math.abs(x));
+  return (x < 0 ? "-" : "") + place(d.replace(/0+$/, "") || "0", e);
+}
+const round12 = (x) => (typeof x === "number" && x !== 0 && Number.isFinite(x) ? Number(x.toPrecision(12)) : x === 0 ? 0 : x);
+const normDeg = (a) => { let r = a % 360; if (r <= -180) r += 360; if (r > 180) r -= 360; return r; };
+function ang(deg, minus) { const s = fixed(normDeg(deg), 1, minus); return s === (minus || "-") + "180.0" ? "180.0" : s; }
+
+// Parse "4.7k", "10m", "2.2u", "1 kHz", "100 ohm": number, optional SI prefix, optional unit.
+const PREF_EXP = { p: -12, n: -9, u: -6, [MU]: -6, "\u03bc": -6, m: -3, "": 0, k: 3, K: 3, M: 6, G: 9 };
+function parseSI(text, unit) {
+  const units = { R: "(?:ohms?|\u03a9|\u2126)", L: "H", C: "F", f: "Hz", V: "V" }[unit] || "";
+  const re = new RegExp("^\\s*([+-]?(?:\\d+\\.?\\d*|\\.\\d+))(?:[eE]([+-]?\\d+))?\\s*([pnu\u00b5\u03bcmkKMG]?)\\s*" + (units ? "(?:" + units + ")?" : "") + "\\s*$", "i".repeat(0));
+  const m = re.exec(String(text));
+  if (!m) return NaN;
+  const e = (m[2] ? +m[2] : 0) + PREF_EXP[m[3]];
+  return Number(m[1] + "e" + e);
+}
+
+/* ---------- validation ---------- */
+function validateInputs(inp) {
+  const errors = [];
+  if (!inp || typeof inp !== "object") return [{ field: "inputs", message: "must be an object" }];
+  if (inp.mode !== "series" && inp.mode !== "parallel") errors.push({ field: "mode", message: "must be \"series\" or \"parallel\"" });
+  for (const k of EL) if (typeof inp[k + "_on"] !== "boolean") errors.push({ field: k + "_on", message: "must be true or false" });
+  for (const k of NUM) {
+    const v = inp[k], r = RANGES[k];
+    if (typeof v !== "number" || !Number.isFinite(v)) errors.push({ field: k, message: "must be a number" });
+    else if (v < r.min || v > r.max) errors.push({ field: k, message: `must be between ${plain(r.min)} and ${plain(r.max)} ${r.unit}` });
+  }
+  if (!errors.length && !inp.R_on && !inp.L_on && !inp.C_on) errors.push({ field: "R_on", message: "at least one of R, L and C must be on" });
+  return errors;
+}
+// Missing fields take the default state (for the analyze_circuit tool).
+function completeInputs(partial) {
+  const d = defaultInputs(), out = {};
+  for (const k of Object.keys(d)) out[k] = partial && partial[k] !== undefined ? partial[k] : d[k];
+  return out;
+}
+
+/* ---------- the circuit ---------- */
+const polar = (mag, deg) => ({ mag, deg });
+const rect = (p) => ({ re: p.mag * Math.cos(p.deg * Math.PI / 180), im: p.mag * Math.sin(p.deg * Math.PI / 180) });
+function compute(inp) {
+  const series = inp.mode === "series";
+  const on = { R: !!inp.R_on, L: !!inp.L_on, C: !!inp.C_on };
+  const w = TAU * inp.f, V = inp.V;
+  const lc = on.L && on.C;
+  const r = {
+    mode: inp.mode, on, omega: w, f: inp.f, V, R: inp.R, L: inp.L, C: inp.C,
+    unbounded: null, lc, count: EL.filter((k) => on[k]).length,
+    Z: null, Zmag: null, Y: null, Ymag: null, phi: null, I: null, parts: [],
+    P: null, Q: null, S: null, pf: null, pfLabel: null, f0: null, Qf: null, w0: null,
+  };
+  if (series) {
+    const R = on.R ? inp.R : 0, XL = on.L ? w * inp.L : 0, XC = on.C ? 1 / (w * inp.C) : 0, X = XL - XC;
+    const Zmag = Math.sqrt(R * R + X * X);
+    r.XL = XL; r.XC = XC; r.Z = { re: R, im: X }; r.Zmag = Zmag;
+    r.el = { R: { re: R, im: 0 }, L: { re: 0, im: XL }, C: { re: 0, im: -XC } };
+    if (Zmag < 1e-9) {
+      r.unbounded = "current";
+      r.parts = [on.R && { k: "R", mag: 0, deg: 0 }, on.L && { k: "L", mag: null, deg: null }, on.C && { k: "C", mag: null, deg: null }].filter(Boolean);
+      r.P = 0;
+    } else {
+      const phi = Math.atan2(X, R) * 180 / Math.PI, I = V / Zmag;
+      r.phi = phi; r.I = I; r.Y = { re: R / (Zmag * Zmag), im: -X / (Zmag * Zmag) }; r.Ymag = 1 / Zmag;
+      r.parts = [on.R && { k: "R", mag: I * R, deg: -phi }, on.L && { k: "L", mag: I * XL, deg: 90 - phi }, on.C && { k: "C", mag: I * XC, deg: -90 - phi }].filter(Boolean);
+      r.P = I * I * R; r.Q = I * I * X; r.S = V * I;
+    }
+  } else {
+    const G = on.R ? 1 / inp.R : 0, BC = on.C ? w * inp.C : 0, BL = on.L ? 1 / (w * inp.L) : 0, B = BC - BL;
+    const Ymag = Math.sqrt(G * G + B * B);
+    r.BC = BC; r.BL = BL; r.Y = { re: G, im: B }; r.Ymag = Ymag;
+    r.el = { R: { re: G, im: 0 }, C: { re: 0, im: BC }, L: { re: 0, im: -BL } };
+    r.parts = [on.R && { k: "R", mag: V * G, deg: 0 }, on.C && { k: "C", mag: V * BC, deg: 90 }, on.L && { k: "L", mag: V * BL, deg: -90 }].filter(Boolean);
+    r.P = V * V * G;
+    if (Ymag < 1e-12) {
+      r.unbounded = "impedance"; r.I = 0; r.Q = 0; r.S = 0;
+    } else {
+      const phi = Math.atan2(-B, G) * 180 / Math.PI;
+      r.phi = phi; r.I = V * Ymag; r.Zmag = 1 / Ymag; r.Z = { re: G / (Ymag * Ymag), im: -B / (Ymag * Ymag) };
+      r.Q = -V * V * B; r.S = V * r.I;
+    }
+  }
+  if (r.phi !== null) {
+    const rad = r.phi * Math.PI / 180;
+    r.pf = Math.cos(rad);
+    r.pfLabel = Math.abs(rad) < 1e-9 ? "unity" : r.phi > 0 ? "lagging" : "leading";
+  }
+  if (lc) {
+    r.w0 = 1 / Math.sqrt(inp.L * inp.C); r.f0 = r.w0 / TAU;
+    if (on.R) r.Qf = series ? r.w0 * inp.L / inp.R : inp.R / (r.w0 * inp.L);
+  }
+  return r;
+}
+function analyze(inp) {
+  const errors = validateInputs(inp);
+  if (errors.length) { const e = new Error(errors.map((x) => `${x.field} ${x.message}`).join("; ")); e.errors = errors; throw e; }
+  return compute(inp);
+}
+
+/* ---------- words ---------- */
+const partName = (mode, k) => (mode === "series" ? "V_" + k : "I_" + (k === "R" ? "G" : k));
+function sentence(r, ascii) {
+  const deg = ascii ? " degrees" : DEG;
+  if (r.unbounded === "current") return "Resonance: current unbounded. With no resistance the inductor and capacitor voltages cancel, so nothing limits the current.";
+  if (r.unbounded === "impedance") return "Resonance: impedance unbounded. The inductor and capacitor branch currents cancel, so the source supplies no current.";
+  const a = fixed(Math.abs(r.phi), 1);
+  if (a === "0.0") return r.lc ? "Current is in phase with voltage: at resonance the inductive and capacitive parts cancel." : "Current is in phase with voltage: resistive.";
+  return r.phi > 0 ? `Current lags voltage by ${a}${deg}: inductive.` : `Current leads voltage by ${a}${deg}: capacitive.`;
+}
+function resonanceNote(r) {
+  if (!r.lc) return "needs L and C";
+  const ratio = r.f / r.f0, s = fixed(ratio, 3);
+  if (s === "1.000") return "f = f0: at resonance";
+  return `f / f0 = ${placeSig(ratio)}: ${ratio > 1 ? "above resonance" : "below resonance"}`;
+}
+const placeSig = (x) => { const { h, e } = roundSig(Math.abs(x), 3); return place(h, e); };
+const title = (s) => {
+  const i = s.inputs, on = EL.filter((k) => i[k + "_on"]).join("");
+  return `${i.mode === "series" ? "Series" : "Parallel"} ${on} at ${si(i.f, "Hz")}`;
+};
+
+/* ---------- canonical results ---------- */
+function canonical(obj) {
+  return JSON.stringify(obj, (k, v) => (typeof v === "number" ? round12(v) : v), 2) + "\n";
+}
+function results(r) {
+  const c = (z) => (z ? { re: z.re, im: z.im } : null);
+  return {
+    mode: r.mode, omega: r.omega,
+    Z: c(r.Z), Zmag: r.Zmag, Y: c(r.Y), Ymag: r.Ymag, phiDeg: r.phi === null ? null : normDeg(r.phi),
+    I: r.unbounded === "current" ? null : r.I,
+    phasors: r.parts.map((p) => ({ name: partName(r.mode, p.k), magnitude: p.mag, angleDeg: p.deg === null ? null : normDeg(p.deg) })),
+    P: r.P, Q: r.Q, S: r.S, powerFactor: r.pf, powerFactorLabel: r.pfLabel,
+    f0: r.f0, qualityFactor: r.Qf,
+    flags: { unbounded: r.unbounded, lc: r.lc, singleElement: r.count === 1 },
+    sentence: sentence(r, false),
+    warnings: r.unbounded ? [r.unbounded === "current" ? "Resonance: current unbounded" : "Resonance: impedance unbounded"] : [],
+  };
+}
+
+/* ---------- diagrams as scenes (primitives with fixed ids) ---------- */
+const PAL = { bg: "#ffffff", fg: "#1d1d1f", muted: "#6e6e73", faint: "#a1a1a6", grid: "#e8e8ed", v: "#2a78d6", i: "#eb6834", r: "#0f8b8d", l: "#8a4fd8", c: "#6e6e73" };
+const SANS = "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif";
+const EL_CLS = { R: "r", L: "l", C: "c" };
+const rad = (d) => d * Math.PI / 180;
+const pt = (cx, cy, s, re, im) => [cx + s * re, cy - s * im];
+// SVG coordinates are written with two fixed decimals, so the same scene is the same bytes everywhere.
+const px = (v) => fixed(v, 2);
+function arrowD(x1, y1, x2, y2) {
+  const dx = x2 - x1, dy = y2 - y1, L = Math.sqrt(dx * dx + dy * dy);
+  if (L < 0.5) return "";
+  const ux = dx / L, uy = dy / L, h = Math.min(10, L * 0.45), wd = h * 0.42;
+  const bx = x2 - ux * h, by = y2 - uy * h;
+  return `M${px(x1)} ${px(y1)}L${px(bx)} ${px(by)}M${px(x2)} ${px(y2)}L${px(bx - uy * wd)} ${px(by + ux * wd)}L${px(bx + uy * wd)} ${px(by - ux * wd)}Z`;
+}
+// A label beside the middle of a segment, on its left (counter-clockwise) side.
+// With `away` = [x, y], the side is chosen to face away from that point (a figure's centroid).
+function labelAt(x1, y1, x2, y2, off, away) {
+  const dx = x2 - x1, dy = y2 - y1, L = Math.sqrt(dx * dx + dy * dy) || 1, mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+  if (away && dy * (mx - away[0]) - dx * (my - away[1]) < 0) off = -off;
+  const nx = dy / L * Math.sign(off);
+  return [mx + dy / L * off, my - dx / L * off + 4, nx > 0.6 ? "start" : nx < -0.6 ? "end" : "middle"];
+}
+const centroid = (xy) => { let x = 0, y = 0; for (const q of xy) { x += q[0]; y += q[1]; } return [x / xy.length, y / xy.length]; };
+function arcD(cx, cy, r, a1, a2) {
+  let d = normDeg(a2 - a1);
+  if (Math.abs(d) < 0.5) return "";
+  const [x1, y1] = [cx + r * Math.cos(rad(a1)), cy - r * Math.sin(rad(a1))], [x2, y2] = [cx + r * Math.cos(rad(a1 + d)), cy - r * Math.sin(rad(a1 + d))];
+  return `M${px(x1)} ${px(y1)}A${px(r)} ${px(r)} 0 0 ${d > 0 ? 0 : 1} ${px(x2)} ${px(y2)}`;
+}
+// Nice 1-2-5 scale-bar value near `raw`, found from decimal digits (no logarithms).
+function nice(raw) {
+  const { d, e } = digits12(raw), m = Number(d[0] + "." + d.slice(1));
+  const k = m < 1.5 ? 1 : m < 3.5 ? 2 : m < 7.5 ? 5 : 10;
+  return Number(k + "e" + e);
+}
+const T = (id, x, y, s, o) => Object.assign({ t: "text", id, x, y, s }, o || {});
+const A = (id, x1, y1, x2, y2, cls, key) => ({ t: "arrow", id, x1, y1, x2, y2, cls, key });
+const Ln = (id, x1, y1, x2, y2, cls, o) => Object.assign({ t: "line", id, x1, y1, x2, y2, cls }, o || {});
+function scaleBar(prefix, x, y, pxPerUnit, unit, label, cls) {
+  const n = nice(60 / pxPerUnit), len = n * pxPerUnit;
+  return [Ln(prefix + "-bar", x, y, x + len, y, cls || "fg", { w: 2 }), Ln(prefix + "-bar-l", x, y - 4, x, y + 4, cls || "fg", { w: 2 }), Ln(prefix + "-bar-r", x + len, y - 4, x + len, y + 4, cls || "fg", { w: 2 }),
+    T(prefix + "-bar-t", x + len + 6, y + 4, `${label} ${si(n, unit, { trim: true })}`, { cls: "muted", size: 11 })];
+}
+const SUB = (name) => { const i = name.indexOf("_"); return i < 0 ? { s: name } : { s: name.slice(0, i), sub: name.slice(i + 1) }; };
+
+function phasorScene(r, wt) {
+  const W = 360, H = 360, cx = 180, cy = 172, fit = 142, series = r.mode === "series";
+  const p = [];
+  p.push(Ln("ph-ax-x", 16, cy, W - 16, cy, "grid"), Ln("ph-ax-y", cx, 16, cx, H - 44, "grid"), T("ph-ax-re", W - 16, cy - 6, "Re", { cls: "muted", size: 11, anchor: "end" }), T("ph-ax-im", cx + 6, 26, "Im", { cls: "muted", size: 11 }));
+  const unit = series ? "V" : "A", other = series ? "A" : "V";
+  const total = series ? { mag: r.V, deg: 0 } : r.unbounded ? { mag: 0, deg: 0 } : { mag: r.I, deg: -r.phi };
+  const chain = r.unbounded === "current" ? [] : r.parts;
+  let max = total.mag;
+  { let re = 0, im = 0; for (const q of chain) { const z = rect(q); re += z.re; im += z.im; max = Math.max(max, Math.sqrt(re * re + im * im)); } }
+  const s = max > 0 ? fit / max : 1;
+  // Chain tip to tail, then the total from the origin.
+  const tot = rect({ mag: total.mag, deg: total.deg + wt }), [tx, ty] = pt(cx, cy, s, tot.re, tot.im);
+  const verts = [[cx, cy], [tx, ty]];
+  { let a = 0, b = 0; for (const q of chain) { const z = rect({ mag: q.mag, deg: q.deg + wt }); a += z.re; b += z.im; verts.push(pt(cx, cy, s, a, b)); } }
+  const g = centroid(verts);
+  let re = 0, im = 0, afterFirst = null;
+  for (const q of chain) {
+    const z = rect({ mag: q.mag, deg: q.deg + wt });
+    const [x1, y1] = pt(cx, cy, s, re, im); re += z.re; im += z.im; const [x2, y2] = pt(cx, cy, s, re, im);
+    if (!afterFirst) afterFirst = [x2, y2];
+    const id = "ph-arrow-" + q.k.toLowerCase(), [lx, ly, la] = labelAt(x1, y1, x2, y2, 12, g);
+    p.push(A(id, x1, y1, x2, y2, EL_CLS[q.k], q.k), T(id + "-t", lx, ly, "", Object.assign(SUB(partName(r.mode, q.k)), { key: q.k, anchor: la })));
+  }
+  if (chain.length > 1 && r.lc && afterFirst && series && r.on.R) p.push(Ln("ph-closure", afterFirst[0], afterFirst[1], tx, ty, "faint", { dash: true }));
+  const tk = series ? "V" : "I", tcls = series ? "v" : "i";
+  { const [lx, ly, la] = labelAt(cx + (tx - cx) * 0.6, cy + (ty - cy) * 0.6, tx, ty, 12, chain.length ? g : null); p.push(A("ph-arrow-" + tk.toLowerCase(), cx, cy, tx, ty, tcls, tk), T("ph-arrow-" + tk.toLowerCase() + "-t", lx, ly, total.mag > 0 ? tk : tk + " = 0", { key: tk, anchor: la, weight: 600 })); }
+  // The other quantity on its own scale.
+  const ok = series ? "I" : "V", ocls = series ? "i" : "v", olen = fit * 0.72;
+  let oDeg = series ? -r.phi : 0, oMag = series ? r.I : r.V;
+  if (r.unbounded === "current") { oDeg = 0; oMag = null; }
+  const od = rect({ mag: olen, deg: oDeg + wt }), [ox, oy] = [cx + od.re, cy - od.im];
+  { const [lx, ly, la] = labelAt(cx + (ox - cx) * 0.6, cy + (oy - cy) * 0.6, ox, oy, 12, [cx + (tx - cx) * 0.6, cy + (ty - cy) * 0.6]); p.push(A("ph-arrow-" + ok.toLowerCase(), cx, cy, ox, oy, ocls, ok), T("ph-arrow-" + ok.toLowerCase() + "-t", lx, ly, oMag === null ? "I unbounded" : ok, { key: ok, anchor: la, weight: 600 })); }
+  // Angle arc from the voltage to the current, labelled phi.
+  if (r.phi !== null) {
+    const rr = fit * 0.3, a1 = wt, a2 = wt - r.phi, mid = rad((a1 + a1 + normDeg(a2 - a1)) / 2);
+    p.push({ t: "path", id: "ph-arc", d: arcD(cx, cy, rr, a1, a2), cls: "faint", key: "phi" }, T("ph-arc-t", cx + (rr + 12) * Math.cos(mid), cy - (rr + 12) * Math.sin(mid) + 4, Math.abs(normDeg(r.phi)) < 0.5 ? "" : "\u03c6", { cls: "muted", anchor: "middle", key: "phi" }));
+  }
+  p.push(...scaleBar("ph-sv", 16, H - 30, s, unit, series ? "V scale" : "I scale"));
+  const oText = oMag === null ? "I unbounded, drawn clamped" : `${ok} scale: arrow = ${si(oMag, other, { trim: true })}`;
+  p.push(T("ph-so-t", 16, H - 10, oText, { cls: "muted", size: 11 }));
+  return { id: "ph", W, H, prims: p };
+}
+
+function planeScene(id, pts, total, axes, labels, keys, cls, unbounded) {
+  const W = 360, H = 280, pad = 34, padX = 72;
+  const p = [];
+  let x0 = 0, x1 = 0, y0 = 0, y1 = 0;
+  for (const q of pts.concat([total || { re: 0, im: 0 }])) { x0 = Math.min(x0, q.re); x1 = Math.max(x1, q.re); y0 = Math.min(y0, q.im); y1 = Math.max(y1, q.im); }
+  const w = x1 - x0, h = y1 - y0;
+  const s = Math.min(w > 0 ? (W - 2 * padX) / w : Infinity, h > 0 ? (H - 2 * pad - 20) / h : Infinity);
+  const sc = Number.isFinite(s) ? s : 1;
+  const ox = W / 2 - sc * (x0 + x1) / 2, oy = (H - 20) / 2 + sc * (y0 + y1) / 2;
+  p.push(Ln(id + "-ax-x", 10, oy, W - 10, oy, "grid"), Ln(id + "-ax-y", ox, 10, ox, H - 28, "grid"),
+    T(id + "-ax-xt", W - 10, oy + (oy > H - 50 ? -6 : 15), axes[0], { cls: "muted", size: 11, anchor: "end" }), T(id + "-ax-yt", ox - 6, 20, axes[1], { cls: "muted", size: 11, anchor: "end" }));
+  if (unbounded) { p.push(T(id + "-msg", W - 10, H - 34, unbounded, { anchor: "end", weight: 600 })); }
+  const g = centroid([[ox, oy]].concat(pts.concat(total ? [total] : []).map((q) => pt(ox, oy, sc, q.re, q.im))));
+  let prev = { re: 0, im: 0 };
+  pts.forEach((q, n) => {
+    const [xa, ya] = pt(ox, oy, sc, prev.re, prev.im), [xb, yb] = pt(ox, oy, sc, q.re, q.im);
+    const aid = `${id}-arrow-${keys[n].toLowerCase()}${n}`, [lx, ly, la] = labelAt(xa, ya, xb, yb, 12, g);
+    if (arrowD(xa, ya, xb, yb)) p.push(A(aid, xa, ya, xb, yb, cls[n], keys[n]), T(aid + "-t", lx, ly, "", Object.assign(SUB(labels[n]), { key: keys[n], anchor: la })));
+    prev = q;
+  });
+  if (total) {
+    const [xb, yb] = pt(ox, oy, sc, total.re, total.im), k = keys[keys.length - 1];
+    const [lx, ly, la] = labelAt(ox, oy, xb, yb, 12, g);
+    p.push(A(`${id}-arrow-${k.toLowerCase()}`, ox, oy, xb, yb, "fg", k), T(`${id}-arrow-${k.toLowerCase()}-t`, lx, ly, labels[labels.length - 1], { key: k, anchor: la, weight: 600 }));
+    const a = Math.atan2(total.im, total.re) * 180 / Math.PI;
+    if (Math.abs(a) >= 0.5 && total.re > 0) {
+      const rr = 30, mid = rad(a / 2);
+      p.push({ t: "path", id: id + "-arc", d: arcD(ox, oy, rr, 0, a), cls: "faint", key: "phi" }, T(id + "-arc-t", ox + (rr + 10) * Math.cos(mid), oy - (rr + 10) * Math.sin(mid) + 4, id === "ad" ? MINUS + "\u03c6" : "\u03c6", { cls: "muted", anchor: "middle", key: "phi" }));
+    }
+  }
+  return { p, sc };
+}
+// The switched-on elements' values laid tip to tail in `order`: the running sums, their labels, keys and
+// classes, with the total's label and key last.
+function elementChain(r, order, names, total) {
+  const pts = [], labels = [], keys = [], cls = [];
+  let re = 0, im = 0;
+  for (const k of order) if (r.on[k]) { const z = r.el[k]; re += z.re; im += z.im; pts.push({ re, im }); labels.push(names[k]); keys.push(k); cls.push(EL_CLS[k]); }
+  labels.push(total); keys.push(total);
+  return { pts, labels, keys, cls };
+}
+function impedanceScene(r) {
+  const W = 360, H = 280, unit = OHM;
+  let out;
+  if (r.mode === "series") {
+    const { pts, labels, keys, cls } = elementChain(r, EL, { R: "R", L: "jX_L", C: MINUS + "jX_C" }, "Z");
+    out = planeScene("im", pts, r.unbounded ? null : r.Z, ["R", "jX"], labels, keys, cls, r.unbounded ? "|Z| = 0: current unbounded" : "");
+  } else if (r.unbounded) {
+    out = planeScene("im", [], null, ["R", "jX"], ["Z"], ["Z"], [], "Z unbounded");
+  } else {
+    const pts = [{ re: r.Z.re, im: 0 }, { re: r.Z.re, im: r.Z.im }];
+    out = planeScene("im", pts, r.Z, ["R", "jX"], ["R_s", "jX_s", "Z"], ["Z", "Z", "Z"], ["muted", "muted"], "");
+  }
+  out.p.push(...scaleBar("im-s", 16, H - 12, out.sc, unit, "scale"));
+  return { id: "im", W, H, prims: out.p };
+}
+function admittanceScene(r) {
+  const W = 360, H = 280, { pts, labels, keys, cls } = elementChain(r, ["R", "C", "L"], { R: "G", C: "jB_C", L: MINUS + "jB_L" }, "Y");
+  const out = planeScene("ad", pts, r.unbounded ? null : r.Y, ["G", "jB"], labels, keys, cls, r.unbounded ? "Y = 0: impedance unbounded" : "");
+  out.p.push(...scaleBar("ad-s", 16, H - 12, out.sc, "S", "scale"));
+  return { id: "ad", W, H, prims: out.p };
+}
+
+const PI_LABELS = ["0", "\u03c0/2", "\u03c0", "3\u03c0/2", "2\u03c0"];
+const curveCache = {};
+function waveScene(r, wt) {
+  const W = 480, H = 220, cx = 80, cy = 104, R = 70, x0 = 172, x1 = 466, A0 = 70;
+  const p = [];
+  const phi = r.phi === null ? 0 : r.phi;
+  const hasI = r.unbounded === null;
+  const X = (t) => x0 + (x1 - x0) * t / TAU, Y = (v) => cy - A0 * v;
+  p.push({ t: "circle", id: "wf-wheel", cx, cy, r: R, cls: "grid", fill: "none" }, Ln("wf-wheel-x", cx - R - 8, cy, cx + R + 8, cy, "grid"),
+    Ln("wf-ax-x", x0, cy, x1, cy, "grid"), Ln("wf-ax-y", x0, cy - A0 - 8, x0, cy + A0 + 8, "grid"));
+  PI_LABELS.forEach((s, n) => { const x = X(n * Math.PI / 2); p.push(Ln("wf-tick" + n, x, cy + A0 + 4, x, cy + A0 + 10, "muted"), T("wf-tick" + n + "-t", x, cy + A0 + 24, s, { cls: "muted", size: 11, anchor: "middle" })); });
+  p.push(T("wf-ax-t", x1, H - 4, "\u03c9t (rad)", { cls: "muted", size: 11, anchor: "end" }), T("wf-ax-yt", x0 - 6, cy - A0 + 4, "+1", { cls: "muted", size: 11, anchor: "end" }), T("wf-ax-yb", x0 - 6, cy + A0 + 4, MINUS + "1", { cls: "muted", size: 11, anchor: "end" }));
+  const curve = (id, shift, cls, key) => {
+    const c = curveCache[id];
+    let d = c && c.shift === shift ? c.d : "";
+    if (!d) {
+      for (let n = 0; n <= 120; n++) { const t = TAU * n / 120; d += (n ? "L" : "M") + fixed(X(t), 2) + " " + fixed(Y(Math.sin(t - shift)), 2); }
+      curveCache[id] = { shift, d };
+    }
+    p.push({ t: "path", id, d, cls, key, w: 2.25 });
+  };
+  curve("wf-v", 0, "v", "V");
+  if (hasI) curve("wf-i", rad(phi), "i", "I");
+  p.push(T("wf-v-t", X(Math.PI / 2), Y(1) - 6, "v(t)", { key: "V", anchor: "middle" }));
+  // i(t) is labelled below its trough, so the two labels never collide.
+  if (hasI) { const ti = (((3 * Math.PI / 2 + rad(phi)) % TAU) + TAU) % TAU; p.push(T("wf-i-t", r.I === 0 ? X(Math.PI) : X(ti), r.I === 0 ? cy - 6 : Y(-1) + 16, r.I === 0 ? "i(t) = 0" : "i(t)", { key: "I", anchor: "middle" })); }
+  // The marker at the current omega t, the rotating unit phasors and their projections.
+  const u = ((wt % 360) + 360) % 360, t = rad(u);
+  p.push(Ln("wf-marker", X(t), cy - A0 - 8, X(t), cy + A0 + 8, "faint"));
+  const tip = (deg, scale) => [cx + R * scale * Math.cos(rad(deg)), cy - R * scale * Math.sin(rad(deg))];
+  const [vx, vy] = tip(u, 1);
+  p.push(A("wf-arrow-v", cx, cy, vx, vy, "v", "V"), Ln("wf-proj-v", vx, vy, X(t), Y(Math.sin(t)), "faint", { dash: true }), { t: "circle", id: "wf-dot-v", cx: X(t), cy: Y(Math.sin(t)), r: 4, cls: "v", key: "V" });
+  if (hasI) {
+    const m = r.I === 0 ? 0 : 1, [ix, iy] = tip(u - phi, m * 0.999);
+    p.push(A("wf-arrow-i", cx, cy, ix, iy, "i", "I"), Ln("wf-proj-i", ix, iy, X(t), Y(m * Math.sin(t - rad(phi))), "faint", { dash: true }), { t: "circle", id: "wf-dot-i", cx: X(t), cy: Y(m * Math.sin(t - rad(phi))), r: 4, cls: "i", key: "I" });
+  }
+  const pk = `peaks: v ${si(Math.SQRT2 * r.V, "V")}, i ${r.unbounded === "current" ? "unbounded" : si(Math.SQRT2 * r.I, "A")}`;
+  p.push(T("wf-peaks", x1, 14, pk, { cls: "muted", size: 11, anchor: "end" }));
+  return { id: "wf", W, H, prims: p };
+}
+
+function powerScene(r) {
+  const W = 360, H = 280;
+  if (r.unbounded === "current") return { id: "pw", W, H, prims: [T("pw-msg", W / 2, H / 2, "S and Q unbounded at resonance", { anchor: "middle", weight: 600 })] };
+  const pts = [{ re: r.P, im: 0 }, { re: r.P, im: r.Q }];
+  const out = planeScene("pw", pts, { re: r.P, im: r.Q }, ["P (W)", "Q (var)"], [`P ${si(r.P, "W", { minus: MINUS })}`, `Q ${si(r.Q, "var", { minus: MINUS })}`, `S ${si(r.S, "VA")}`], ["P", "Q", "S"], ["r", "l"], r.S === 0 ? "No power: no current flows" : "");
+  // Plane labels come through SUB(); the power labels have no subscripts.
+  return { id: "pw", W, H, prims: out.p };
+}
+
+/* ---------- SVG serialisation ---------- */
+const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+const COLOR = { v: "v", i: "i", r: "r", l: "l", c: "c", fg: "fg", muted: "muted", faint: "faint", grid: "grid" };
+// Attributes that change with omega t; the page updates exactly these each frame.
+function dynAttrs(q) {
+  if (q.t === "arrow") return { d: arrowD(q.x1, q.y1, q.x2, q.y2) };
+  if (q.t === "line") return { x1: px(q.x1), y1: px(q.y1), x2: px(q.x2), y2: px(q.y2) };
+  if (q.t === "text") return q.anchor ? { x: px(q.x), y: px(q.y), "text-anchor": q.anchor } : { x: px(q.x), y: px(q.y) };
+  if (q.t === "circle") return { cx: px(q.cx), cy: px(q.cy), r: px(q.r) };
+  if (q.t === "path") return { d: q.d };
+  return {};
+}
+function primSVG(q, explicit) {
+  const col = (c) => (explicit ? PAL[COLOR[c] || "fg"] : null);
+  const attrs = [`id="${q.id}"`];
+  if (q.key) attrs.push(`data-k="${q.key}"`);
+  const da = dynAttrs(q);
+  for (const k of Object.keys(da)) attrs.push(`${k}="${esc(da[k])}"`);
+  const cls = q.cls || "fg";
+  if (q.t === "text") {
+    if (explicit) attrs.push(`fill="${col(cls)}"`); else attrs.push(`class="t-${cls}"`);
+    attrs.push(`font-size="${q.size || 13}"`);
+    if (q.weight) attrs.push(`font-weight="${q.weight}"`);
+    const body = esc(q.s) + (q.sub ? `<tspan font-size="${fixed((q.size || 13) * 0.75, 2)}" dy="3">${esc(q.sub)}</tspan>` : "");
+    return `<text ${attrs.join(" ")}>${body}</text>`;
+  }
+  if (q.t === "arrow") { attrs.push(explicit ? `fill="${col(cls)}" stroke="${col(cls)}"` : `class="a-${cls}"`, `stroke-width="2.25"`, `stroke-linejoin="round"`, `stroke-linecap="round"`); return `<path ${attrs.join(" ")}/>`; }
+  const w = q.w || (cls === "grid" ? 1 : 1.5);
+  const fill = q.t === "circle" && q.fill !== "none" ? (explicit ? col(cls) : null) : "none";
+  if (explicit) attrs.push(`stroke="${col(cls)}"`, `fill="${fill || "none"}"`); else attrs.push(`class="s-${cls}${q.t === "circle" && q.fill !== "none" ? " f" : ""}"`, `fill="${fill === "none" ? "none" : "currentColor"}"`);
+  attrs.push(`stroke-width="${w}"`);
+  if (q.dash) attrs.push(`stroke-dasharray="4 4"`);
+  const tag = q.t === "line" ? "line" : q.t === "circle" ? "circle" : "path";
+  return `<${tag} ${attrs.join(" ")}/>`;
+}
+function svgInner(scene, explicit) { return scene.prims.map((q) => primSVG(q, explicit)).join("\n"); }
+// A standalone SVG file (deck snapshots are drawn 1.3 times larger, to read on a 1280 x 720 slide): the palette resolved to explicit colours on an opaque white background.
+function svgDoc(scene, label, scale) {
+  const k = scale || 1;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${scene.W} ${scene.H}" width="${fixed(scene.W * k, 0)}" height="${fixed(scene.H * k, 0)}" font-family="${esc(SANS)}">\n<title>${esc(label)}</title>\n<rect width="${scene.W}" height="${scene.H}" fill="${PAL.bg}"/>\n${svgInner(scene, true)}\n</svg>\n`;
+}
+
+/* ---------- accessible descriptions ---------- */
+const WORDS = { V: "volts", A: "amps", [OHM]: "ohms", S: "siemens", H: "henries", F: "farads", Hz: "hertz", W: "watts", var: "vars", VA: "volt-amperes", "rad/s": "radians per second" };
+const PWORD = { p: "pico", n: "nano", [MU]: "micro", m: "milli", "": "", k: "kilo", M: "mega", G: "giga" };
+function say(x, unit) {
+  if (x === null) return "unbounded";
+  const s = siParts(x);
+  let u = PWORD[s.p] + WORDS[unit];
+  if (unit === OHM) u = s.p === "k" ? "kilohms" : s.p === "M" ? "megohms" : PWORD[s.p] + "ohms";
+  return (s.neg ? "minus " : "") + s.num + " " + u;
+}
+const sayDeg = (d) => { const s = ang(d); return s[0] === "-" ? `minus ${s.slice(1)} degrees` : `${s} degrees`; };
+function describe(kind, r) {
+  const mode = r.mode === "series" ? "series" : "parallel", on = EL.filter((k) => r.on[k]).join("");
+  if (kind === "phasor") {
+    const cur = r.unbounded === "current" ? "current unbounded" : `current ${say(r.I, "A")}${r.phi === null ? "" : " at " + sayDeg(-r.phi)}`;
+    return `Phasor diagram, ${mode} ${on}: V ${say(r.V, "V")} at 0 degrees, ${cur}. ` + r.parts.map((q) => `${partName(r.mode, q.k).replace("_", " ")} ${say(q.mag, r.mode === "series" ? "V" : "A")}${q.deg === null ? "" : " at " + sayDeg(q.deg)}`).join(", ") + ".";
+  }
+  if (kind === "impedance") return r.unbounded ? `Impedance plane: ${r.unbounded === "current" ? "Z is zero, current unbounded, angle undefined" : "Z unbounded"}.` : `Impedance plane: Z = ${say(r.Z.re, OHM)} resistance plus ${say(r.Z.im, OHM)} reactance, magnitude ${say(r.Zmag, OHM)} at ${sayDeg(r.phi)}.`;
+  if (kind === "admittance") return r.unbounded ? "Admittance plane: Y is zero, impedance unbounded." : `Admittance plane: Y = ${say(r.Y.re, "S")} conductance plus ${say(r.Y.im, "S")} susceptance, magnitude ${say(r.Ymag, "S")}.`;
+  if (kind === "waveform") return `Waveforms over one cycle, per unit of peak: v(t) peak ${say(Math.SQRT2 * r.V, "V")}; ` + (r.unbounded === "current" ? "current unbounded." : r.I === 0 ? "no current." : `i(t) peak ${say(Math.SQRT2 * r.I, "A")}, shifted by ${sayDeg(r.phi)}.`);
+  return r.unbounded === "current" ? "Power triangle: S and Q unbounded." : `Power triangle: P ${say(r.P, "W")}, Q ${say(r.Q, "var")}, S ${say(r.S, "VA")}.`;
+}
+
+/* ---------- state: hash and JSON ---------- */
+const HASH_KEYS = ["mode", "R_on", "L_on", "C_on", "R", "L", "C", "f", "V", "tri"];
+function toHash(s) {
+  const i = s.inputs, b = (v) => (v ? "1" : "0");
+  const v = { mode: i.mode, R_on: b(i.R_on), L_on: b(i.L_on), C_on: b(i.C_on), R: String(i.R), L: String(i.L), C: String(i.C), f: String(i.f), V: String(i.V), tri: b(s.displayOptions.powerTriangle) };
+  return HASH_KEYS.map((k) => k + "=" + v[k]).join("&");
+}
+// Per-field fallback: every missing or invalid field takes its default and is named in `fallback`.
+function fromHash(hash) {
+  const s = defaultState(), got = {}, fallback = [];
+  for (const part of String(hash || "").replace(/^#/, "").split("&")) { const n = part.indexOf("="); if (n > 0) got[part.slice(0, n)] = part.slice(n + 1); }
+  if (!Object.keys(got).length) return { state: s, fallback: [] };
+  for (const k of HASH_KEYS) {
+    const v = got[k];
+    if (k === "mode") { if (v === "series" || v === "parallel") s.inputs.mode = v; else fallback.push(k); }
+    else if (k === "tri") { if (v === "0" || v === "1") s.displayOptions.powerTriangle = v === "1"; else fallback.push(k); }
+    else if (k.endsWith("_on")) { if (v === "0" || v === "1") s.inputs[k] = v === "1"; else fallback.push(k); }
+    else { const x = v === undefined || v === "" ? NaN : Number(v); if (Number.isFinite(x) && x >= RANGES[k].min && x <= RANGES[k].max) s.inputs[k] = x; else fallback.push(k); }
+  }
+  if (!s.inputs.R_on && !s.inputs.L_on && !s.inputs.C_on) { for (const k of ["R_on", "L_on", "C_on"]) { s.inputs[k] = true; if (!fallback.includes(k)) fallback.push(k); } }
+  return { state: s, fallback };
+}
+function toJSON(s) {
+  const i = s.inputs;
+  return canonicalExact({
+    kind: KIND, schemaVersion: SCHEMA_VERSION,
+    inputs: { mode: i.mode, R_on: i.R_on, L_on: i.L_on, C_on: i.C_on, R: i.R, L: i.L, C: i.C, f: i.f, V: i.V },
+    displayOptions: { powerTriangle: !!s.displayOptions.powerTriangle },
+    export: { date: s.export.date, voice: s.export.voice },
+  });
+}
+// Inputs are written exactly (shortest round-trip form), so an import restores the same doubles.
+const canonicalExact = (o) => JSON.stringify(o, null, 2) + "\n";
+const DATE_RE = /^[ -~]{0,40}$/;
+function validDate(d) { return typeof d === "string" && DATE_RE.test(d) && !/[:#]|^\s|\s$/.test(d); }
+function fromJSON(text) {
+  let o;
+  try { o = JSON.parse(text); } catch (e) { throw new Error("Not valid JSON."); }
+  if (!o || typeof o !== "object" || o.kind !== KIND) throw new Error(`Not a phasors circuit file (kind must be "${KIND}").`);
+  if (typeof o.schemaVersion !== "number" || o.schemaVersion > SCHEMA_VERSION) throw new Error(`This file has schemaVersion ${o.schemaVersion}; this page reads version ${SCHEMA_VERSION} or older.`);
+  if (o.schemaVersion < 1) throw new Error("Unknown schemaVersion.");
+  const i = o.inputs || {}, inp = { mode: i.mode, R_on: i.R_on, L_on: i.L_on, C_on: i.C_on, R: i.R, L: i.L, C: i.C, f: i.f, V: i.V };
+  const errors = validateInputs(inp);
+  if (errors.length) throw new Error("Invalid inputs: " + errors.map((x) => `${x.field} ${x.message}`).join("; ") + ".");
+  const d = o.displayOptions || {}, x = o.export || {};
+  if (d.powerTriangle !== undefined && typeof d.powerTriangle !== "boolean") throw new Error("displayOptions.powerTriangle must be true or false.");
+  const date = x.date === undefined ? "" : x.date, voice = x.voice === undefined ? "bf_emma" : x.voice;
+  if (!validDate(date)) throw new Error("export.date must be plain ASCII text of at most 40 characters, without : or #.");
+  if (typeof voice !== "string" || !/^[a-z]{2}_[a-z]+$/.test(voice)) throw new Error("export.voice must look like bf_emma.");
+  return { inputs: inp, displayOptions: { powerTriangle: !!d.powerTriangle }, export: { date, voice } };
+}
+
+/* ---------- base64 (no btoa, no Buffer) ---------- */
+function utf8(s) {
+  const out = [];
+  for (const ch of s) {
+    const c = ch.codePointAt(0);
+    if (c < 0x80) out.push(c);
+    else if (c < 0x800) out.push(0xc0 | c >> 6, 0x80 | c & 63);
+    else if (c < 0x10000) out.push(0xe0 | c >> 12, 0x80 | c >> 6 & 63, 0x80 | c & 63);
+    else out.push(0xf0 | c >> 18, 0x80 | c >> 12 & 63, 0x80 | c >> 6 & 63, 0x80 | c & 63);
+  }
+  return out;
+}
+const B64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+function base64(s) {
+  const b = utf8(s);
+  let o = "";
+  for (let n = 0; n < b.length; n += 3) {
+    const x = b[n] << 16 | (b[n + 1] || 0) << 8 | (b[n + 2] || 0);
+    o += B64[x >> 18 & 63] + B64[x >> 12 & 63] + (n + 1 < b.length ? B64[x >> 6 & 63] : "=") + (n + 2 < b.length ? B64[x & 63] : "=");
+  }
+  return o;
+}
+
+/* ---------- Markdown report (UTF-8) ---------- */
+const disp = (x, unit) => si(x, unit);
+function readoutRows(r, o) {
+  // [group, label, value text, canonical text, key]; shared by the page table and the report.
+  const U = (x, unit) => (x === null ? "unbounded" : si(x, unit, o));
+  const Cx = (z, unit) => (z ? `${si(z.re, unit, o)} ${z.im < 0 ? (o && o.minus) || "-" : "+"} j${si(Math.abs(z.im), unit)}` : "unbounded");
+  const Pl = (mag, deg, unit) => `${si(mag, unit, o)} \u2220 ${ang(deg, o && o.minus)}${DEG}`;
+  const series = r.mode === "series", rows = [];
+  rows.push(["Source", "\u03c9", U(r.omega, "rad/s"), plain(r.omega) + " rad/s", "V"]);
+  rows.push(["Source", "V (RMS)", Pl(r.V, 0, "V"), plain(r.V) + " V", "V"]);
+  const zero = series && r.unbounded;
+  rows.push(["Impedance", "Z", r.Z && !zero ? Cx(r.Z, OHM) : zero ? "0 " + OHM + " (current unbounded)" : "unbounded", r.Z && !zero ? `${plain(r.Z.re)} + j(${plain(r.Z.im)}) ${OHM}` : zero ? "0" : "unbounded", "Z"]);
+  rows.push(["Impedance", "|Z| \u2220 \u03c6", r.phi !== null ? Pl(r.Zmag, r.phi, OHM) : zero ? "0 " + OHM : "unbounded", r.phi !== null ? `${plain(r.Zmag)} ${OHM}` : zero ? "0" : "unbounded", "Z"]);
+  rows.push(["Impedance", "Y", r.Y && !(series && r.unbounded) ? Cx(r.Y, "S") : "unbounded", r.Y && !(series && r.unbounded) ? `${plain(r.Y.re)} + j(${plain(r.Y.im)}) S` : "unbounded", "Y"]);
+  rows.push(["Impedance", "|Y| \u2220 " + ((o && o.minus) || "-") + "\u03c6", r.phi !== null ? Pl(r.Ymag, -r.phi, "S") : r.unbounded === "impedance" ? "0 S" : "unbounded", r.phi !== null ? `${plain(r.Ymag)} S` : r.unbounded === "impedance" ? "0" : "unbounded", "Y"]);
+  rows.push(["Impedance", "\u03c6", r.phi !== null ? `${ang(r.phi, o && o.minus)}${DEG}` : "undefined", r.phi !== null ? plain(r.phi) + DEG : "undefined", "phi"]);
+  rows.push(["Currents and voltages", "I", r.unbounded === "current" ? "unbounded" : r.phi !== null ? Pl(r.I, -r.phi, "A") : "0 A", r.unbounded === "current" ? "unbounded" : plain(r.I) + " A", "I"]);
+  for (const q of r.parts) {
+    const unit = series ? "V" : "A";
+    rows.push(["Currents and voltages", partName(r.mode, q.k), q.mag === null ? "unbounded" : Pl(q.mag, q.deg, unit), q.mag === null ? "unbounded" : plain(q.mag) + " " + unit, q.k]);
+  }
+  rows.push(["Power", "P", U(r.P, "W"), r.P === null ? "unbounded" : plain(r.P) + " W", "P"]);
+  rows.push(["Power", "Q", U(r.Q, "var"), r.Q === null ? "unbounded" : plain(r.Q) + " var", "Q"]);
+  rows.push(["Power", "S", U(r.S, "VA"), r.S === null ? "unbounded" : plain(r.S) + " VA", "S"]);
+  rows.push(["Power", "Power factor", r.pf === null ? "undefined" : `${fixed(r.pf, 3)} ${r.pfLabel}`, r.pf === null ? "undefined" : plain(r.pf), "phi"]);
+  rows.push(["Resonance", "f\u2080", r.lc ? U(r.f0, "Hz") : "needs L and C", r.lc ? plain(r.f0) + " Hz" : "needs L and C", ""]);
+  rows.push(["Resonance", "Quality factor Q_f", r.Qf !== null ? placeSig(r.Qf) : r.lc ? "needs R, L and C" : "needs L and C", r.Qf !== null ? plain(r.Qf) : "-", ""]);
+  rows.push(["Resonance", "f relative to f\u2080", resonanceNote(r).replace("f0", "f\u2080").replace("f0", "f\u2080"), r.lc ? plain(r.f / r.f0) : "-", ""]);
+  return rows;
+}
+function buildReport(s) {
+  const r = compute(s.inputs), i = s.inputs, L = [];
+  L.push(`# Phasor and impedance report: ${title(s)}`, "", "Ideal components, sinusoidal steady state. Amplitudes are RMS and the source voltage is the reference at 0\u00b0.", "");
+  L.push("## Circuit and conventions", "", "| Item | Value |", "| --- | --- |");
+  L.push(`| Mode | ${i.mode} |`);
+  for (const k of EL) L.push(`| ${k} | ${i[k + "_on"] ? si(i[k], RANGES[k].unit) + " (" + plain(i[k]) + " " + RANGES[k].unit + ")" : "off"} |`);
+  L.push(`| f | ${si(i.f, "Hz")} (${plain(i.f)} Hz), \u03c9 = ${si(r.omega, "rad/s")} |`);
+  L.push(`| V | ${si(i.V, "V")} RMS at 0\u00b0 (${plain(i.V)} V) |`);
+  L.push("| Conventions | j is the imaginary unit; RMS amplitudes; angles in degrees, counter-clockwise positive; \u03c6 = arg Z, positive when inductive |", "");
+  L.push("## Results", "", "| Group | Quantity | Value (3 s.f.) | Canonical |", "| --- | --- | --- | --- |");
+  for (const row of readoutRows(r)) L.push(`| ${row[0]} | ${row[1]} | ${row[2]} | ${row[3]} |`);
+  L.push("", "## In words", "", sentence(r, false), "");
+  L.push("## Notes", "", "- Values are rounded to 12 significant digits, then shown to 3 significant figures with an SI prefix; the canonical column keeps 12 digits.",
+    "- An element that is off is absent: removed from the loop in series, its branch removed in parallel.",
+    "- Waveforms: v(t) = \u221a2 V sin(\u03c9t), i(t) = \u221a2 I sin(\u03c9t - \u03c6).",
+    "- Generated by the Phasor and Impedance Visualiser, https://teoyujie.org/visuals/phasors");
+  return (L.join("\n") + "\n").normalize("NFC");
+}
+
+/* ---------- beamdswitch deck (ASCII only) ---------- */
+const TEXP = { p: "\\mathrm{p}", n: "\\mathrm{n}", [MU]: "\\mu", m: "\\mathrm{m}", "": "", k: "\\mathrm{k}", M: "\\mathrm{M}", G: "\\mathrm{G}" };
+const TEXU = { [OHM]: "\\Omega", V: "\\mathrm{V}", A: "\\mathrm{A}", H: "\\mathrm{H}", F: "\\mathrm{F}", Hz: "\\mathrm{Hz}", S: "\\mathrm{S}", W: "\\mathrm{W}", var: "\\mathrm{var}", VA: "\\mathrm{VA}", "rad/s": "\\mathrm{rad/s}" };
+function tq(x, unit) { if (x === null) return "\\text{unbounded}"; const s = siParts(x); return (s.neg ? "-" : "") + s.num + "\\ " + TEXP[s.p] + TEXU[unit]; }
+const tn = (x) => { const s = siParts(x); return (s.neg ? "-" : "") + s.num + TEXP[s.p]; };
+const tdeg = (d) => ang(d) + "^\\circ";
+const tpolar = (mag, deg, unit) => `${tq(mag, unit)} \\angle ${tdeg(deg)}`;
+const tcplx = (z, unit) => `${tq(z.re, unit)} ${z.im < 0 ? "-" : "+"} j\\,${tq(Math.abs(z.im), unit)}`;
+function block(name, lines) { return [`::: ${name}`].concat(lines, [":::"]); }
+function frame(L, notes, narration) { L.push(""); L.push(...block("notes", notes)); L.push(""); L.push(...block("narration", narration)); }
+function snapshot(scene, alt, label) { return `![${alt}](data:image/svg+xml;base64,${base64(svgDoc(scene, label, 1.3))})`; }
+const TEX_SUB = (name) => name.replace(/_(\w)/, "_{$1}");
+function buildDeck(s) {
+  const r = compute(s.inputs), i = s.inputs, series = r.mode === "series", L = [];
+  const onL = EL.filter((k) => r.on[k]);
+  const lead = sentence(r, true);
+  L.push("---", `title: ${title(s)}`, "subtitle: Steady-state phasor and impedance analysis", "author: Yu Jie Teo");
+  if (s.export.date) L.push(`date: ${s.export.date}`);
+  L.push(`voice: ${s.export.voice}`, "---");
+  const circuitWords = `a ${series ? "series" : "parallel"} circuit of ${onL.map((k) => ({ R: "a resistor", L: "an inductor", C: "a capacitor" })[k]).join(onL.length > 2 ? ", " : " and ").replace(/, (an? \w+)$/, " and $1")}`;
+  frame(L, [`Circuit: ${title(s)}. Driven at ${say(i.V, "V")} RMS from an ideal source.`, "Goal: read the phase and the magnitudes off three linked pictures."],
+    [`${title(s).replace(/ at .*$/, "")} circuit at ${say(i.f, "Hz")}. We will find its impedance, draw its phasors, and see what the phase shift means for the current and the power.`.replace(/^Series /, "A series ").replace(/^Parallel /, "A parallel ")]);
+  // Circuit
+  L.push("", "# Circuit", "", "## The circuit and its conventions", "");
+  L.push(`- ${series ? "Series" : "Parallel"} connection: ${onL.map((k) => `$${k} = ${tq(i[k], RANGES[k].unit)}$`).join(", ")}.`);
+  L.push(`- Source: $V = ${tq(i.V, "V")}$ RMS at $0^\\circ$, $f = ${tq(i.f, "Hz")}$, $\\omega = 2\\pi f = ${tq(r.omega, "rad/s")}$.`);
+  L.push("- $j$ is the imaginary unit, $j^2 = -1$; angles in degrees, counter-clockwise positive.");
+  frame(L, ["All amplitudes are RMS. The source voltage is the reference phasor, at zero degrees.", "An element that is off is absent from the circuit."],
+    [`This is ${circuitWords}. ` + onL.map((k) => `${k} is ${say(i[k], RANGES[k].unit)}`).join(", ") + `. The source gives ${say(i.V, "V")} RMS at ${say(i.f, "Hz")}, so omega, two pi f, is ${say(r.omega, "rad/s")}. We write j for the imaginary unit and measure angles counter-clockwise.`]);
+  // Impedance
+  L.push("", "# Impedance", "", "## Impedance of each element", "");
+  const elLines = [];
+  if (r.on.R) elLines.push(`$$Z_R = R = ${tq(i.R, OHM)}$$`);
+  if (r.on.L) elLines.push(`$$Z_L = j\\omega L = j\\,${tq(r.omega * i.L, OHM)}$$`);
+  if (r.on.C) elLines.push(`$$Z_C = \\frac{1}{j\\omega C} = -j\\,${tq(1 / (r.omega * i.C), OHM)}$$`);
+  L.push(...block("block Element impedances", elLines));
+  frame(L, ["A resistor is real; an inductor is positive imaginary and grows with frequency; a capacitor is negative imaginary and shrinks with frequency."],
+    [onL.map((k) => k === "R" ? `The resistor's impedance is just its resistance, ${say(i.R, OHM)}.` : k === "L" ? `The inductor's impedance is j omega L, ${say(r.omega * i.L, OHM)} along the positive imaginary axis.` : `The capacitor's impedance is one over j omega C, ${say(1 / (r.omega * i.C), OHM)} along the negative imaginary axis.`).join(" ")]);
+  L.push("", "## Adding them up", "");
+  const m = [];
+  if (series) {
+    m.push("$$Z = " + onL.map((k) => ({ R: "R", L: "j\\omega L", C: "\\frac{1}{j\\omega C}" })[k]).join(" + ") + "$$");
+    m.push("$$Z = " + onL.map((k, n) => k === "R" ? tn(i.R) : k === "L" ? `${n ? "+ " : ""}j${tn(r.omega * i.L)}` : `- j${tn(1 / (r.omega * i.C))}`).join(" ").replace(/^(\S+) (?=[+-])/, "$1 ") + `\\ \\Omega$$`);
+    if (r.unbounded) m.push("$$Z = 0\\ \\Omega \\quad \\text{(current unbounded)}$$");
+    else { m.push(`$$Z = ${tcplx(r.Z, OHM)}$$`); m.push(`$$Z = ${tpolar(r.Zmag, r.phi, OHM)}$$`); }
+  } else {
+    m.push("$$Y = " + ["R", "C", "L"].filter((k) => r.on[k]).map((k) => ({ R: "\\frac{1}{R}", C: "j\\omega C", L: "\\frac{1}{j\\omega L}" })[k]).join(" + ") + "$$");
+    m.push("$$Y = " + ["R", "C", "L"].filter((k) => r.on[k]).map((k, n) => k === "R" ? tn(r.el.R.re) : k === "C" ? `${n ? "+ " : ""}j${tn(r.BC)}` : `- j${tn(r.BL)}`).join(" ") + `\\ \\mathrm{S}$$`);
+    if (r.unbounded) { m.push("$$Y = 0\\ \\mathrm{S}$$"); m.push("$$Z = 1/Y \\quad \\text{is unbounded}$$"); }
+    else { m.push(`$$Y = ${tpolar(r.Ymag, -r.phi, "S")}$$`); m.push(`$$Z = \\frac{1}{Y} = ${tpolar(r.Zmag, r.phi, OHM)}$$`); }
+  }
+  L.push(...block("morph", m), "", ". . .", "");
+  L.push(...block("key", [lead]));
+  frame(L, [series ? "In series the impedances add." : "In parallel the admittances add; invert at the end.", "Each line of the morph is one step: say it as it appears."],
+    [(series ? (r.unbounded ? "Adding the impedances, the inductive and capacitive parts cancel exactly and there is no resistance, so the total impedance is zero and the current is unbounded." : `Adding the impedances gives ${say(r.Z.re, OHM)} of resistance and ${say(r.Z.im, OHM)} of reactance. In polar form that is ${say(r.Zmag, OHM)} at an angle phi of ${sayDeg(r.phi)}.`)
+      : (r.unbounded ? "Adding the admittances, the capacitive and inductive parts cancel exactly and there is no conductance, so the admittance is zero and the impedance is unbounded." : `Adding the admittances gives ${say(r.Ymag, "S")} at ${sayDeg(-r.phi)}. Inverting, the impedance is ${say(r.Zmag, OHM)} at an angle phi of ${sayDeg(r.phi)}.`)) + " " + lead]);
+  // Phasors
+  const unit = series ? "V" : "A";
+  L.push("", "# Phasors", "", "## Phasor diagram", "");
+  L.push("::: columns", "::: column", snapshot(phasorScene(r, 0), "Phasor diagram at omega t = 0", describe("phasor", r)), ":::", "::: column");
+  L.push("| Phasor | Magnitude | Angle |", "| --- | --- | --- |");
+  L.push(`| $V$ | $${tq(r.V, "V")}$ | $0^\\circ$ |`);
+  L.push(`| $I$ | $${r.unbounded === "current" ? "\\text{unbounded}" : tq(r.I, "A")}$ | $${r.phi === null ? "\\text{undefined}" : tdeg(-r.phi)}$ |`);
+  for (const q of r.parts) L.push(`| $${TEX_SUB(partName(r.mode, q.k))}$ | $${q.mag === null ? "\\text{unbounded}" : tq(q.mag, unit)}$ | $${q.deg === null ? "\\text{undefined}" : tdeg(q.deg)}$ |`);
+  L.push(":::", ":::");
+  frame(L, [series ? "The element voltages are drawn tip to tail and close on the source voltage. The current has its own scale." : "The branch currents are drawn tip to tail and close on the total current. The voltage has its own scale."],
+    [series ? (r.unbounded ? "The resistor is absent, and the inductor and capacitor voltages are equal and opposite, so they close on the source voltage only in the limit of an unbounded current." : `The current is ${say(r.I, "A")}, at ${sayDeg(-r.phi)}. The element voltages add tip to tail to the source voltage of ${say(r.V, "V")}. ` + r.parts.map((q) => `The ${({ R: "resistor", L: "inductor", C: "capacitor" })[q.k]} voltage is ${say(q.mag, "V")}.`).join(" ") + (r.on.L && r.parts.find((q) => q.k === "L").mag > r.V ? " Notice that the inductor voltage is larger than the source voltage." : ""))
+      : (r.unbounded ? "The capacitor and inductor branch currents are equal and opposite, so they close on a total current of zero. " : `The branch currents add tip to tail to the total current of ${say(r.I, "A")}, at ${sayDeg(-r.phi)}. `) + r.parts.map((q) => `The ${({ R: "resistor", L: "inductor", C: "capacitor" })[q.k]} branch carries ${say(q.mag, "A")}.`).join(" ")]);
+  L.push("", series ? "## Impedance plane" : "## Admittance and impedance planes", "");
+  if (series) L.push(snapshot(impedanceScene(r), "Impedance plane", describe("impedance", r)), "", r.unbounded ? "$|Z| = 0$: current unbounded." : `$Z = ${tcplx(r.Z, OHM)} = ${tpolar(r.Zmag, r.phi, OHM)}$`);
+  else {
+    L.push("::: columns", "::: column", snapshot(admittanceScene(r), "Admittance plane", describe("admittance", r)), ":::", "::: column", snapshot(impedanceScene(r), "Impedance plane", describe("impedance", r)), ":::", ":::", "");
+    L.push(r.unbounded ? "$Y = 0$: impedance unbounded." : `$Y = ${tcplx(r.Y, "S")}$, $Z = ${tcplx(r.Z, OHM)} = ${tpolar(r.Zmag, r.phi, OHM)}$`);
+  }
+  frame(L, ["These planes do not rotate: they describe the circuit, not a moment in time."],
+    [series ? (r.unbounded ? "On the impedance plane, the inductive and capacitive reactances cancel and there is no resistance, so the impedance sits at the origin." : `On the impedance plane, resistance runs along the horizontal axis and reactance up the vertical axis. The total impedance points at ${sayDeg(r.phi)}.`)
+      : (r.unbounded ? "On the admittance plane the capacitive and inductive susceptances cancel and there is no conductance, so the admittance is zero and the impedance is unbounded." : `On the admittance plane conductance runs along the horizontal axis and susceptance up the vertical axis. Its equivalent series impedance is ${say(r.Z.re, OHM)} of resistance and ${say(r.Z.im, OHM)} of reactance.`)]);
+  // Waveforms
+  L.push("", "# Waveforms", "", "## Voltage and current over one cycle", "");
+  const pl = ["x: 0, 6.283185", "y: -1.2, 1.2", "xlabel: omega t (rad)", "ylabel: per unit of peak", "y = sin(x)"];
+  if (r.unbounded === null) {
+    const ph = r.I === 0 ? null : rad(r.phi);
+    if (ph === null) pl.push("y = 0*x");
+    else { const t = fixed(Math.abs(ph), 6); pl.push(t === "0.000000" ? "y = sin(x)" : `y = sin(x ${ph > 0 ? "-" : "+"} ${t})`); }
+  }
+  L.push(...block("plot", pl), "");
+  L.push(`Blue: $v(t)$, peak $\\sqrt{2}\\,V = ${tq(Math.SQRT2 * r.V, "V")}$. ` + (r.unbounded === "current" ? "The current is unbounded." : r.I === 0 ? "No current flows." : `Orange: $i(t)$, peak $\\sqrt{2}\\,I = ${tq(Math.SQRT2 * r.I, "A")}$.`));
+  frame(L, ["Both curves are scaled to their own peak so the shift is visible whatever the amplitudes."],
+    [`The voltage peaks at ${say(Math.SQRT2 * r.V, "V")}. ` + (r.unbounded === "current" ? "The current is unbounded, so it is not drawn." : r.I === 0 ? "No current flows from the source." : `The current peaks at ${say(Math.SQRT2 * r.I, "A")}. ${r.phi > 0.05 ? "The current curve is shifted right: it lags." : r.phi < -0.05 ? "The current curve is shifted left: it leads." : "The two curves line up: they are in phase."}`)]);
+  // Power
+  if (s.displayOptions.powerTriangle) {
+    L.push("", "# Power", "", "## The power triangle", "");
+    L.push("::: columns", "::: column", snapshot(powerScene(r), "Power triangle", describe("power", r)), ":::", "::: column");
+    L.push("| Quantity | Value |", "| --- | --- |", `| $P$ | $${tq(r.P, "W")}$ |`, `| $Q$ | $${tq(r.Q, "var")}$ |`, `| $S$ | $${tq(r.S, "VA")}$ |`, `| $\\varphi$ | $${r.phi === null ? "\\text{undefined}" : tdeg(r.phi)}$ |`, `| Power factor | ${r.pf === null ? "undefined" : fixed(r.pf, 3) + " " + r.pfLabel} |`, ":::", ":::");
+    frame(L, ["P is what the resistor dissipates; Q is exchanged with the inductor and capacitor every cycle; S is what the source must supply."],
+      [r.unbounded === "current" ? "At this resonance the apparent and reactive powers are unbounded." : `The real power is ${say(r.P, "W")}, the reactive power ${say(r.Q, "var")} and the apparent power ${say(r.S, "VA")}. ` + (r.pf === null ? "The power factor is undefined." : `The power factor is ${fixed(r.pf, 3)}, ${r.pfLabel}.`)]);
+  }
+  // Key results
+  L.push("", "# What to remember", "", "## Key results", "");
+  L.push(...block("key", [lead]));
+  if (r.lc) { L.push(""); L.push(...block("alert Check", [`$f_0 = \\dfrac{1}{2\\pi\\sqrt{LC}} = ${tq(r.f0, "Hz")}$` + (r.Qf !== null ? `, quality factor $Q_f = ${placeSig(r.Qf)}$.` : "."), `Here $f / f_0 = ${placeSig(r.f / r.f0)}$.`])); }
+  frame(L, ["Close on the phase: it decides whether current lags or leads, and how much of S is real power."],
+    [lead.replace(/ by ([\d.]+) degrees/, " by $1 degrees") + (r.lc ? ` Resonance is at ${say(r.f0, "Hz")}` + (r.Qf !== null ? `, with a quality factor of ${placeSig(r.Qf)}.` : ".") : "")]);
+  return L.join("\n").replace(/\n{3,}/g, "\n\n") + "\n";
+}
+
+/* ---------- structure checks (self-test and Node test) ---------- */
+function checkDeck(text) {
+  const bad = [];
+  if (/[^\x09\x0a\x20-\x7e]/.test(text)) bad.push("non-ASCII character");
+  if (text.includes("\r")) bad.push("CR line ending");
+  if (!text.endsWith("\n") || text.endsWith("\n\n")) bad.push("must end with exactly one newline");
+  const lines = text.split("\n");
+  if (lines[0] !== "---") bad.push("front matter must open the file");
+  const fmEnd = lines.indexOf("---", 1);
+  if (fmEnd < 0) bad.push("front matter not closed");
+  else for (const l of lines.slice(1, fmEnd)) if (!/^(title|subtitle|author|institute|date|voice): \S.*$/.test(l)) bad.push("bad front matter line: " + l);
+  let depth = 0;
+  for (const l of lines) { if (/^::: \S/.test(l)) depth++; else if (l === ":::") { depth--; if (depth < 0) bad.push("unbalanced ::: close"); } }
+  if (depth !== 0) bad.push("unbalanced ::: fences");
+  for (const l of lines) { const bare = l.replace(/\$\$[^$]*\$\$/g, ""); if ((bare.match(/\$/g) || []).length % 2) bad.push("unpaired $ in: " + l.slice(0, 60)); }
+  if (/\\infty/.test(text)) bad.push("contains \\infty");
+  const frames = text.split(/\n(?=## )/).slice(1);
+  if (!frames.length) bad.push("no frames");
+  for (const f of frames) {
+    const body = f.split(/\n(?=# )/)[0];
+    if (!/\n::: notes\n/.test(body) || !/\n::: narration\n/.test(body)) bad.push("frame without notes and narration: " + f.split("\n")[0]);
+  }
+  const head = text.slice(0, text.indexOf("\n# "));
+  if (!/\n::: notes\n/.test(head) || !/\n::: narration\n/.test(head)) bad.push("title notes or narration missing");
+  if (/NaN|Infinity/.test(text)) bad.push("NaN or Infinity in text");
+  return bad;
+}
+function checkReport(text) {
+  const bad = [];
+  if (text.includes("\r")) bad.push("CR line ending");
+  if (text.charCodeAt(0) === 0xfeff) bad.push("BOM");
+  if (!text.endsWith("\n") || text.endsWith("\n\n")) bad.push("must end with exactly one newline");
+  if (text !== text.normalize("NFC")) bad.push("not NFC");
+  if (/NaN|Infinity|\de[+-]?\d/.test(text)) bad.push("NaN, Infinity or exponent notation");
+  if (!text.startsWith("# ")) bad.push("no title");
+  return bad;
+}
+
+/* ---------- self-tests ---------- */
+const errDetail = (w) => (w <= 1e-9 ? "worst relative error within 1e-9" : "worst relative error " + plain(w));
+function selfTests() {
+  const out = [], relOK = (a, b, tol) => Math.abs(a - b) <= (tol || 1e-9) * Math.max(1, Math.abs(b));
+  const add = (name, pass, detail, tol) => out.push({ name, pass: !!pass, detail: detail || "", tolerance: tol || "1e-9 relative" });
+  const mk = (o) => Object.assign(defaultInputs(), o);
+  const spread = [];
+  for (const mode of ["series", "parallel"]) for (const on of ["RLC", "RL", "RC", "LC", "R", "L", "C"]) for (const f of [7, 2400, 9e5]) spread.push(inputs(mode, on, 47, 0.0033, 2.2e-7, f, 230));
+  // 1
+  { const i = mk({ R: 22 }); i.f = 1 / (TAU * Math.sqrt(i.L * i.C)); const r = compute(i); add("Series RLC at f0: Z = R, phi = 0", relOK(r.Z.re, 22) && Math.abs(r.Z.im) < 1e-9 * 22 && Math.abs(r.phi) < 1e-9, `Z = ${plain(r.Z.re)} + j(${plain(r.Z.im)}), phi = ${plain(r.phi)} deg`); }
+  // 2
+  { const L = compute(inputs("series", "L", 1, 0.01, 1e-6, 1000, 10)), C = compute(inputs("series", "C", 1, 0.01, 1e-6, 1000, 10)), R = compute(inputs("series", "R", 100, 0.01, 1e-6, 1000, 10));
+    const pL = compute(inputs("parallel", "L", 1, 0.01, 1e-6, 1000, 10)), pC = compute(inputs("parallel", "C", 1, 0.01, 1e-6, 1000, 10));
+    add("Pure inductor phi = +90, capacitor -90, resistor 0 (series and parallel)", relOK(L.phi, 90) && relOK(C.phi, -90) && R.phi === 0 && relOK(pL.phi, 90) && relOK(pC.phi, -90), `${plain(L.phi)}, ${plain(C.phi)}, ${plain(R.phi)}`); }
+  // 3
+  { let worst = 0; for (const i of spread) { const r = compute(i); if (r.S !== null) worst = Math.max(worst, Math.abs(r.S * r.S - (r.P * r.P + r.Q * r.Q)) / Math.max(1e-300, r.S * r.S)); }
+    add(`S^2 = P^2 + Q^2 over ${spread.length} circuits`, worst <= 1e-9, errDetail(worst)); }
+  // 4
+  { let worst = 0; for (const i of spread) { const r = compute(i); if (r.unbounded) continue; let re = 0, im = 0; for (const q of r.parts) { const z = rect(q); re += z.re; im += z.im; } const tot = i.mode === "series" ? { re: r.V, im: 0 } : rect({ mag: r.I, deg: -r.phi }); const m = Math.sqrt(tot.re * tot.re + tot.im * tot.im); worst = Math.max(worst, Math.sqrt((re - tot.re) ** 2 + (im - tot.im) ** 2) / m); }
+    add("Phasor closure: components sum to the total (V in series, I in parallel)", worst <= 1e-9, errDetail(worst)); }
+  // 5
+  { let worst = 0; for (const f of [10, 1000, 50000]) { const sr = compute(inputs("series", "RLC", 5, 1e-3, 1e-5, f, 1)), pr = compute(inputs("parallel", "RLC", 1 / 5, 1e-5, 1e-3, f, 1)); worst = Math.max(worst, Math.abs(pr.Y.re - sr.Z.re) / sr.Zmag, Math.abs(pr.Y.im - sr.Z.im) / sr.Zmag); }
+    add("Duality: parallel (G = R, C = L, L = C) gives Y equal to the series Z", worst <= 1e-9, errDetail(worst)); }
+  // 6
+  { const r = compute(defaultInputs()), vl = r.parts.find((q) => q.k === "L");
+    const pass = si(r.Z.re, OHM) === "100 " + OHM && si(r.Z.im, OHM) === "84.5 " + OHM && si(r.Zmag, OHM) === "131 " + OHM && ang(r.phi) === "40.2" && si(r.I, "A") === "76.4 mA" && si(vl.mag, "V") === "11.5 V" && r.pfLabel === "lagging";
+    add("Default state: Z = 100 + j84.5 ohm, |Z| = 131 ohm, phi = 40.2 deg inductive, I = 76.4 mA, V_L = 11.5 V", pass, `Z = ${plain(r.Z.re)} + j${plain(r.Z.im)}, phi = ${plain(r.phi)}, I = ${plain(r.I)}, V_L = ${plain(vl.mag)}`, "3 significant figures"); }
+  // 7
+  { const s = mk({ R_on: false }); s.f = 1 / (TAU * Math.sqrt(s.L * s.C)); const a = compute(s);
+    const p = Object.assign({}, s, { mode: "parallel" }), b = compute(p);
+    const finite = (r) => JSON.stringify(results(r)).indexOf("null") >= 0 && !/NaN|Infinity/.test(JSON.stringify(results(r), (k, v) => (typeof v === "number" && !Number.isFinite(v) ? "Infinity" : v)));
+    let clean = true; for (const i of spread) { const t = JSON.stringify(results(compute(i)), (k, v) => (typeof v === "number" && !Number.isFinite(v) ? "BAD" : v)); if (t.includes("BAD")) clean = false; }
+    add("Resonance and off cases return flags, never NaN or infinity", a.unbounded === "current" && b.unbounded === "impedance" && b.I === 0 && finite(a) && finite(b) && clean, `series: ${a.unbounded}, parallel: ${b.unbounded}`); }
+  // 8
+  { const s = defaultState(); s.inputs = inputs("parallel", "RC", 4700, 0.022, 3.3e-7, 60, 230); s.displayOptions.powerTriangle = true; s.export.date = "1 October 2026";
+    const back = fromJSON(toJSON(s));
+    add("JSON export then import reproduces identical state and outputs", toJSON(back) === toJSON(s) && buildReport(back) === buildReport(s) && buildDeck(back) === buildDeck(s)); }
+  // 9
+  { const probs = []; for (const p of PRESETS) for (const tri of [false, true]) { const s = defaultState(); s.inputs = Object.assign({}, p.inputs); s.displayOptions.powerTriangle = tri; probs.push(...checkDeck(buildDeck(s)), ...checkReport(buildReport(s))); }
+    const u = defaultState(); u.inputs.R_on = false; u.inputs.f = 1 / (TAU * Math.sqrt(u.inputs.L * u.inputs.C)); u.displayOptions.powerTriangle = true; probs.push(...checkDeck(buildDeck(u)), ...checkReport(buildReport(u)));
+    add("Deck and report structure: fences balanced, $ paired, notes and narration per frame, front matter, ASCII deck", !probs.length, probs.slice(0, 3).join("; "), "exact"); }
+  // 10
+  { const s = defaultState(); s.displayOptions.powerTriangle = true;
+    add("Determinism: report and deck built twice are byte-identical", buildReport(s) === buildReport(cloneState(s)) && buildDeck(s) === buildDeck(cloneState(s)), "", "exact"); }
+  return out;
+}
+
+root.Phasors = {
+  KIND, SCHEMA_VERSION, META, RANGES, PRESETS, TAU, EL, HASH_KEYS, OHM, MU, MINUS,
+  defaultInputs, defaultState, cloneState, completeInputs, validateInputs, validDate, parseSI,
+  compute, analyze, results, sentence, resonanceNote, readoutRows, partName, title,
+  si, siParts, fixed, plain, ang, normDeg, round12, digits12, nice,
+  phasorScene, impedanceScene, admittanceScene, waveScene, powerScene, dynAttrs, primSVG, svgInner, svgDoc, describe,
+  toHash, fromHash, toJSON, fromJSON, canonical, base64, utf8,
+  buildReport, buildDeck, checkDeck, checkReport, selfTests,
+};
+})(typeof self !== "undefined" ? self : this);
+</script>
+<script id="ph-ui">
+(function () {
+"use strict";
+const P = self.Phasors;
+const $ = (id) => document.getElementById(id);
+const UNIT = { R: P.OHM, L: "H", C: "F", f: "Hz", V: "V" };
+const LABEL = { R: "R", L: "L", C: "C", f: "f", V: "V" };
+const SPAN = {};
+for (const k of Object.keys(P.RANGES)) SPAN[k] = [Math.log10(P.RANGES[k].min), Math.log10(P.RANGES[k].max)];
+const reduce = (() => { try { return matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) { return false; } })();
+
+let state = P.defaultState(), res = P.compute(state.inputs);
+let wt = 0, playing = !reduce, raf = 0, last = null, pageHidden = false, onScreen = true;
+const els = {};
+
+/* ---------- controls ---------- */
+const disp = (x, unit) => P.si(x, unit, { minus: P.MINUS });
+const fieldText = (x, unit) => P.si(x, unit, { digits: 6, trim: true });
+const toSlider = (k, v) => String(Math.round(1000 * (Math.log10(v) - SPAN[k][0]) / (SPAN[k][1] - SPAN[k][0])));
+function fromSlider(k, s) {
+  const r = P.RANGES[k], raw = Math.pow(10, SPAN[k][0] + (SPAN[k][1] - SPAN[k][0]) * s / 1000);
+  return Math.min(r.max, Math.max(r.min, Number(raw.toPrecision(3))));
+}
+function buildQuantity(parent, k, toggle) {
+  const r = P.RANGES[k], row = document.createElement("div");
+  row.className = "q"; row.id = "q-" + k;
+  row.innerHTML = (toggle ? `<label class="name"><input type="checkbox" id="on-${k}"> ${LABEL[k]}</label>` : `<label class="name" for="in-${k}">${LABEL[k]}</label>`) +
+    `<input type="text" id="in-${k}" inputmode="text" autocomplete="off" spellcheck="false" aria-describedby="hint-${k} err-${k}"${toggle ? ` aria-label="${r.name}"` : ` aria-label="${r.name}"`}>` +
+    `<input type="range" id="sl-${k}" min="0" max="1000" step="1" aria-label="${r.name} (logarithmic slider)">` +
+    `<div class="hint" id="hint-${k}"><span>${disp(r.min, r.unit)} to ${disp(r.max, r.unit)}</span><span id="extra-${k}"></span></div><p class="err" id="err-${k}" role="alert"></p>`;
+  parent.appendChild(row);
+  const field = $("in-" + k), slider = $("sl-" + k);
+  field.addEventListener("change", () => {
+    const v = P.parseSI(field.value, k);
+    if (!Number.isFinite(v) || v < r.min || v > r.max) {
+      field.setAttribute("aria-invalid", "true");
+      $("err-" + k).textContent = Number.isFinite(v) ? `Out of range: ${r.name} must be ${disp(r.min, r.unit)} to ${disp(r.max, r.unit)}. Kept ${disp(state.inputs[k], r.unit)}.` : `Could not read "${field.value}". Use a number with an optional prefix, such as 4.7k, 10m or 2.2u. Kept ${disp(state.inputs[k], r.unit)}.`;
+      return;
+    }
+    set({ [k]: v });
+  });
+  slider.addEventListener("input", () => { dragging(); set({ [k]: fromSlider(k, +slider.value) }, { fromSlider: k }); });
+  if (toggle) $("on-" + k).addEventListener("change", (e) => {
+    const want = e.target.checked, on = P.EL.filter((x) => x !== k && state.inputs[x + "_on"]);
+    if (!want && !on.length) { e.target.checked = true; $("err-" + k).textContent = "At least one element must stay on."; return; }
+    set({ [k + "_on"]: want });
+  });
+}
+let dragUntil = 0;
+const dragging = () => { dragUntil = Date.now() + 600; };
+
+function syncControls(opts) {
+  const i = state.inputs;
+  for (const r of document.querySelectorAll('input[name="mode"]')) r.checked = r.value === i.mode;
+  for (const k of ["R", "L", "C", "f", "V"]) {
+    const field = $("in-" + k);
+    if (!(opts && opts.keepField === k)) field.value = fieldText(i[k], UNIT[k]);
+    field.removeAttribute("aria-invalid");
+    $("err-" + k).textContent = "";
+    if (!(opts && opts.fromSlider === k)) $("sl-" + k).value = toSlider(k, i[k]);
+    $("sl-" + k).setAttribute("aria-valuetext", disp(i[k], UNIT[k]));
+    if (P.EL.includes(k)) { $("on-" + k).checked = i[k + "_on"]; $("q-" + k).classList.toggle("off", !i[k + "_on"]); }
+  }
+  $("extra-f").textContent = "ω = 2πf = " + disp(res.omega, "rad/s");
+  $("extra-R").textContent = i.mode === "parallel" ? "G = 1/R = " + disp(1 / i.R, "S") : "";
+  $("tri").checked = state.displayOptions.powerTriangle;
+  if ($("date") !== document.activeElement) $("date").value = state.export.date;
+}
+
+function set(patch, opts) {
+  Object.assign(state.inputs, patch);
+  hashNote = "";
+  update(opts);
+}
+
+/* ---------- drawing ---------- */
+const SVG_IDS = { phasor: "svg-phasor", impedance: "svg-impedance", admittance: "svg-admittance", waveform: "svg-waveform", power: "svg-power" };
+function scene(kind, r, angle) {
+  if (kind === "phasor") return P.phasorScene(r, angle);
+  if (kind === "impedance") return P.impedanceScene(r);
+  if (kind === "admittance") return P.admittanceScene(r);
+  if (kind === "waveform") return P.waveScene(r, angle);
+  return P.powerScene(r);
+}
+const shown = (kind) => kind === "admittance" ? res.mode === "parallel" : kind === "power" ? state.displayOptions.powerTriangle : true;
+function rebuild() {
+  for (const kind of Object.keys(SVG_IDS)) {
+    const svg = $(SVG_IDS[kind]), card = $("card-" + kind), btn = document.querySelector(`[data-svg="${kind}"]`);
+    card.hidden = !shown(kind); if (btn) btn.hidden = !shown(kind);
+    if (!shown(kind)) continue;
+    svg.innerHTML = P.svgInner(scene(kind, res, wt), false);
+    svg.setAttribute("aria-label", P.describe(kind, res));
+    if (kind === "phasor" || kind === "waveform") {
+      const map = {};
+      for (const el of svg.querySelectorAll("[id]")) map[el.id] = { el, last: {} };
+      els[kind] = map;
+    }
+  }
+  $("ph-cap").textContent = res.mode === "series" ? "V_R, V_L, V_C tip to tail; I on its own scale" : "I_G, I_C, I_L tip to tail; V on its own scale";
+  $("im-cap").textContent = res.mode === "series" ? "impedance triangle" : "equivalent series form";
+  applyHighlight();
+}
+// Per frame: only attribute writes, never a layout read.
+function frame() {
+  for (const kind of ["phasor", "waveform"]) {
+    const map = els[kind]; if (!map) continue;
+    for (const q of scene(kind, res, wt).prims) {
+      const slot = map[q.id]; if (!slot) continue;
+      const a = P.dynAttrs(q);
+      for (const k in a) if (slot.last[k] !== a[k]) { slot.el.setAttribute(k, a[k]); slot.last[k] = a[k]; }
+    }
+  }
+  const deg = Math.round(wt) % 360;
+  $("wt").value = String(deg);
+  $("wt-out").textContent = `ωt = ${P.fixed(wt * Math.PI / 180, 3)} rad (${deg}°)`;
+}
+
+/* ---------- animation ---------- */
+function tick(ts) {
+  raf = 0;
+  if (!playing || pageHidden || !onScreen) { last = null; return; }
+  if (last !== null) wt = (wt + (ts - last) * 0.06) % 360;
+  last = ts;
+  frame();
+  raf = requestAnimationFrame(tick);
+}
+function kick() { if (!raf && playing && !pageHidden && onScreen) { last = null; raf = requestAnimationFrame(tick); } }
+function setPlaying(p) {
+  playing = p;
+  $("play").textContent = p ? "Pause" : "Play";
+  $("play").setAttribute("aria-pressed", String(p));
+  if (p) kick();
+}
+
+/* ---------- readout, sentence, highlight ---------- */
+let highlighted = null;
+function applyHighlight() {
+  for (const kind of Object.keys(SVG_IDS)) for (const el of $(SVG_IDS[kind]).querySelectorAll("[data-k]")) el.classList.toggle("dim", highlighted !== null && el.getAttribute("data-k") !== highlighted);
+}
+function highlight(k) { if (k === highlighted) return; highlighted = k || null; applyHighlight(); }
+const escH = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+const sub = (s) => escH(s).replace(/_(\w+)/, "<sub>$1</sub>");
+function readout() {
+  const rows = P.readoutRows(res, { minus: P.MINUS });
+  let html = "", group = "";
+  for (const [g, label, value, , key] of rows) {
+    if (g !== group) { html += (group ? "</tbody>" : "") + `<tbody><tr><th colspan="2" scope="rowgroup">${escH(g)}</th></tr>`; group = g; }
+    html += `<tr${key ? ` data-k="${key}" tabindex="0"` : ""}><td>${sub(label)}</td><td>${escH(value)}</td></tr>`;
+  }
+  $("readout").innerHTML = html + "</tbody>";
+}
+let annTimer = 0, lastAnn = 0, wanted = "";
+function announce(text) {
+  wanted = text;
+  if ($("sentence").textContent === text) return;
+  const wait = 500 - (Date.now() - lastAnn);
+  if (wait <= 0 && Date.now() > dragUntil) { $("sentence").textContent = text; lastAnn = Date.now(); return; }
+  if (!annTimer) annTimer = setTimeout(() => { annTimer = 0; lastAnn = Date.now(); $("sentence").textContent = wanted; }, Math.max(wait, 500));
+}
+
+/* ---------- state plumbing ---------- */
+let hashTimer = 0;
+function writeHash() {
+  clearTimeout(hashTimer);
+  hashTimer = setTimeout(() => {
+    try { history.replaceState(null, "", "#" + P.toHash(state)); } catch (e) { ioMsg("The URL could not be updated here (the embedding page blocks it); use JSON to save the circuit.", "bad"); }
+  }, 350);
+}
+function update(opts) {
+  res = P.compute(state.inputs);
+  syncControls(opts);
+  rebuild();
+  frame();
+  readout();
+  announce(P.sentence(res, false));
+  const w = P.results(res).warnings;
+  $("warnings").innerHTML = hashNote ? `<li>${escH(hashNote)}</li>` : "";
+  for (const x of w) $("warnings").insertAdjacentHTML("beforeend", `<li>${escH(x)}</li>`);
+  writeHash();
+}
+let hashNote = "";
+function loadHash() {
+  let h = "";
+  try { h = location.hash; } catch (e) { h = ""; }
+  const { state: s, fallback } = P.fromHash(h);
+  s.export = state.export;
+  state = s;
+  hashNote = fallback.length ? `The link had missing or invalid values for ${fallback.join(", ")}; the defaults were used for those.` : "";
+}
+
+/* ---------- files ---------- */
+function ioMsg(text, cls) { const m = $("io-msg"); m.textContent = text; m.className = "msg" + (cls ? " " + cls : ""); }
+function save(name, text, type) {
+  try {
+    const url = URL.createObjectURL(new Blob([text], { type }));
+    const a = document.createElement("a");
+    a.href = url; a.download = name; a.rel = "noopener";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    ioMsg(`Downloaded ${name}.`, "ok");
+  } catch (e) { ioMsg(`Downloads are blocked here, so ${name} could not be saved.`, "bad"); }
+}
+function wireIO() {
+  $("dl-md").addEventListener("click", () => save("phasors-report.md", P.buildReport(state), "text/markdown;charset=utf-8"));
+  $("dl-deck").addEventListener("click", () => save("phasors-deck.md", P.buildDeck(state), "text/markdown;charset=utf-8"));
+  $("dl-json").addEventListener("click", () => save("phasors-circuit.json", P.toJSON(state), "application/json"));
+  for (const b of document.querySelectorAll("[data-svg]")) b.addEventListener("click", () => {
+    const kind = b.getAttribute("data-svg");
+    save(`phasors-${kind === "admittance" ? "admittance" : kind === "power" ? "power" : kind}.svg`, P.svgDoc(scene(kind, res, wt), P.describe(kind, res)), "image/svg+xml");
+  });
+  $("import").addEventListener("change", async (e) => {
+    const f = e.target.files && e.target.files[0]; e.target.value = "";
+    if (!f) return;
+    try {
+      const s = P.fromJSON(await f.text());
+      state = s; hashNote = "";
+      update();
+      ioMsg(`Imported ${f.name}.`, "ok");
+    } catch (err) { ioMsg(`Could not import ${f.name}: ${err.message}`, "bad"); }
+  });
+  $("date").addEventListener("input", () => {
+    const d = $("date").value;
+    if (P.validDate(d)) { state.export.date = d; $("date").removeAttribute("aria-invalid"); $("date-err").textContent = ""; }
+    else { $("date").setAttribute("aria-invalid", "true"); $("date-err").textContent = "Plain ASCII text only, up to 40 characters, no : or #, no leading or trailing space. The last valid date is kept."; }
+  });
+}
+
+/* ---------- self-tests ---------- */
+function runSelfTests() {
+  let t;
+  try { t = P.selfTests(); } catch (e) { t = [{ name: "Self-test run", pass: false, detail: e.message, tolerance: "" }]; }
+  const passed = t.filter((x) => x.pass).length, b = $("selftest-badge");
+  b.textContent = `Self-tests ${passed}/${t.length} ${passed === t.length ? "pass" : "FAIL"}`;
+  b.className = "badge " + (passed === t.length ? "pass" : "fail");
+  $("selftests").innerHTML = t.map((x) => `<li class="${x.pass ? "pass" : "fail"}"><b>${x.pass ? "PASS" : "FAIL"}</b>${escH(x.name)}<small>tolerance: ${escH(x.tolerance)}${x.detail ? "; " + escH(x.detail) : ""}</small></li>`).join("");
+  return t;
+}
+
+/* ---------- WebMCP ---------- */
+function registerTools() {
+  const mc = (typeof document !== "undefined" && document.modelContext) || (typeof navigator !== "undefined" && navigator.modelContext);
+  if (!mc || typeof mc.registerTool !== "function") return;
+  const out = (obj) => ({ content: [{ type: "text", text: P.canonical(obj) }] });
+  const empty = { type: "object", properties: {}, additionalProperties: false };
+  const num = (d) => ({ type: "number", description: d });
+  const circuit = {
+    type: "object",
+    description: "A circuit in canonical units (ohm, H, F, Hz, V RMS). Missing fields take the default state (series RLC, R 100 ohm, L 10 mH, C 1 uF, f 2400 Hz, V 10 V).",
+    properties: { mode: { type: "string", enum: ["series", "parallel"] }, R_on: { type: "boolean" }, L_on: { type: "boolean" }, C_on: { type: "boolean" }, R: num("ohm, 0.1 to 10000"), L: num("H, 1e-6 to 10"), C: num("F, 1e-9 to 0.01"), f: num("Hz, 1 to 1e6"), V: num("V RMS, 0.1 to 1000") },
+  };
+  const tools = [
+    { name: "get_metadata", description: "Return the scope, conventions, presets, input ranges, default state and sources of the phasor and impedance visualiser.", inputSchema: empty, run: () => P.META },
+    { name: "get_current_circuit", description: "Return the circuit on the page (canonical inputs and display options) with every readout value, flags and warnings.", inputSchema: empty, run: () => ({ kind: P.KIND, schemaVersion: P.SCHEMA_VERSION, inputs: state.inputs, displayOptions: state.displayOptions, results: P.results(res) }) },
+    { name: "analyze_circuit", description: "Analyse a series or parallel RLC circuit in sinusoidal steady state without changing the page: impedance, admittance, phase, phasors, power, resonance and quality factor. Returns validation errors instead when the input is invalid.", inputSchema: circuit,
+      run: (input) => { const i = P.completeInputs(input || {}), errors = P.validateInputs(i); return errors.length ? { errors } : { inputs: i, results: P.results(P.compute(i)) }; } },
+    { name: "run_self_tests", description: "Run the self-tests (resonance, pure elements, power, phasor closure, duality, default figures, degenerate cases, JSON round trip, deck and report structure, determinism) and return each result.", inputSchema: empty, run: () => { const t = P.selfTests(); return { passed: t.filter((x) => x.pass).length, total: t.length, results: t }; } },
+  ];
+  for (const t of tools) {
+    try { mc.registerTool({ name: t.name, description: t.description, inputSchema: t.inputSchema, annotations: { readOnlyHint: true }, async execute(input) { return out(t.run(input)); } }); } catch (e) { /* the host refused one tool; keep the rest */ }
+  }
+}
+
+/* ---------- start ---------- */
+function start() {
+  buildQuantity($("elements"), "R", true); buildQuantity($("elements"), "L", true); buildQuantity($("elements"), "C", true);
+  buildQuantity($("source"), "f", false); buildQuantity($("source"), "V", false);
+  for (const r of document.querySelectorAll('input[name="mode"]')) r.addEventListener("change", () => set({ mode: r.value }));
+  for (const p of P.PRESETS) {
+    const b = document.createElement("button");
+    b.className = "btn"; b.type = "button"; b.textContent = p.name;
+    b.addEventListener("click", () => { state.inputs = Object.assign({}, p.inputs); hashNote = ""; update(); });
+    $("presets").appendChild(b);
+  }
+  $("tri").addEventListener("change", () => { state.displayOptions.powerTriangle = $("tri").checked; update(); });
+  $("play").addEventListener("click", () => setPlaying(!playing));
+  $("wt").addEventListener("input", () => { wt = +$("wt").value; last = null; frame(); });
+  const table = $("readout");
+  const rowKey = (e) => { const tr = e.target.closest && e.target.closest("tr[data-k]"); return tr ? tr.getAttribute("data-k") : null; };
+  table.addEventListener("mouseover", (e) => highlight(rowKey(e)));
+  table.addEventListener("mouseleave", () => highlight(null));
+  table.addEventListener("focusin", (e) => highlight(rowKey(e)));
+  table.addEventListener("focusout", () => highlight(null));
+  table.addEventListener("click", (e) => highlight(rowKey(e)));
+  $("selftest-badge").addEventListener("click", () => { $("selftest-details").open = true; $("selftest-title").scrollIntoView({ block: "start" }); $("selftest-title").focus(); });
+  $("selftest-run").addEventListener("click", runSelfTests);
+  wireIO();
+  loadHash();
+  addEventListener("hashchange", () => { loadHash(); update(); });
+  document.addEventListener("visibilitychange", () => { pageHidden = document.hidden; kick(); });
+  try {
+    const seen = new Set();
+    const io = new IntersectionObserver((entries) => { for (const e of entries) { if (e.isIntersecting) seen.add(e.target); else seen.delete(e.target); } onScreen = seen.size > 0; kick(); });
+    io.observe($("card-phasor")); io.observe($("card-waveform"));
+  } catch (e) { onScreen = true; }
+  update();
+  setPlaying(playing);
+  runSelfTests();
+  registerTools();
+}
+if (typeof document !== "undefined" && document.readyState === "loading") document.addEventListener("DOMContentLoaded", start); else start();
+})();
+</script>
+</body>
+</html>
