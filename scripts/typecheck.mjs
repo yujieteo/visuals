@@ -1,6 +1,6 @@
 // Type-check visuals, each as its own tsc project, so one visual's globals and errors never reach another's.
 // For each viz/<slug>/ with a tsconfig.json (which extends ../../tsconfig.base.json): copy the page's own
-// inline <script> blocks, in page order, into viz/<slug>/.typecheck/inline/ (ignored by Git), where that
+// inline <script> blocks, in page order, into viz/<slug>/.typecheck/inline/<id>.js (ignored by Git), where that
 // tsconfig.json includes them (".typecheck/inline/*.js") as global scripts, then run the pinned tsc on it.
 // visual.json "typecheck" says what to read and what to leave out: "page" is the HTML the scripts come
 // from (index.html when absent; a builder's template when the page inlines src/ files tsc checks directly),
@@ -18,10 +18,12 @@ const ROOT = new URL("../", import.meta.url);
 const PLACEHOLDER = /^\s*(?:@@[A-Z_]+@@|\/\*@[A-Z_]+@\*\/)\s*$/;
 
 /**
- * The page's own inline scripts, in page order, as files to type-check. Left out: blocks with a src, a
- * data type (anything but text/javascript, application/javascript, text/plain or module), a skipped id,
- * text identical to a skipped file's (``files``, trimmed), or only a placeholder. Each file starts with a
- * one-line header naming the page line of its <script> tag, start; its line k is page line start + k - 2.
+ * The page's own inline scripts, in page order, as files to type-check, each named after its block's id,
+ * or script-<n> for the n-th <script> tag when it has none, so tests and .d.ts files can import one by
+ * name. Left out: blocks with a src, a data type (anything but text/javascript, application/javascript,
+ * text/plain or module), a skipped id, text identical to a skipped file's (``files``, trimmed), or only a
+ * placeholder. Each file starts with a one-line header naming the page line of its <script> tag, start;
+ * its line k is page line start + k - 2.
  * @param {string} html
  * @param {string} page the page's name, for the header comment
  * @param {string[]} [skip] ids of blocks to leave out
@@ -31,14 +33,15 @@ const PLACEHOLDER = /^\s*(?:@@[A-Z_]+@@|\/\*@[A-Z_]+@\*\/)\s*$/;
 export function extract(html, page, skip = [], files = []) {
   /** @type {{ name: string, text: string }[]} */
   const out = [];
+  let n = 0;
   for (const m of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)) {
     const attrs = m[1], body = m[2];
-    const id = /\bid="([^"]+)"/.exec(attrs)?.[1] ?? `script-${out.length + 1}`;
+    n++;
+    const id = /\bid="([^"]+)"/.exec(attrs)?.[1] ?? `script-${n}`;
     if (/\bsrc=/.test(attrs) || /\btype="(?!text\/plain"|text\/javascript"|application\/javascript"|module")/.test(attrs)) continue;
     if (skip.includes(id) || files.includes(body.trim()) || PLACEHOLDER.test(body)) continue;
     const line = html.slice(0, (m.index ?? 0) + m[0].indexOf(">") + 1).split("\n").length;
-    const name = `${String(out.length + 1).padStart(2, "0")}-${id}.js`;
-    out.push({ name, text: `// ${page}:${line}, <script${attrs}>: extracted for type checking only.\n${body}` });
+    out.push({ name: `${id}.js`, text: `// ${page}:${line}, <script${attrs}>: extracted for type checking only.\n${body}` });
   }
   return out;
 }

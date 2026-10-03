@@ -15,9 +15,9 @@ const page = [
   '<script type="module" id="ui">export {};</script>',
 ].join("\n");
 
-test("only the page's own JavaScript blocks are extracted, in page order, minus skipped ids", () => {
+test("only the page's own JavaScript blocks are extracted, in page order, minus skipped ids, named by id or position", () => {
   const files = extract(page, "index.html", ["beamdswitch"]);
-  assert.deepEqual(files.map((f) => f.name), ["01-engine.js", "02-script-2.js", "03-ui.js"]);
+  assert.deepEqual(files.map((f) => f.name), ["engine.js", "script-5.js", "ui.js"]);
   assert.match(files[0].text, /^\/\/ index\.html:4, <script id="engine">: extracted for type checking only\.\n\nconst a = 1;\n$/);
 });
 
@@ -35,6 +35,6 @@ test("a block identical to a skipped folder file, or holding only a build placeh
     '<script type="application/javascript">ownCode();</script>',
   ].join("\n");
   const files = extract(html, "src/template.html", [], ["const shared = 1;"]);
-  assert.deepEqual(files.map((f) => f.name), ["01-script-1.js"]);
+  assert.deepEqual(files.map((f) => f.name), ["script-4.js"]);
   assert.match(files[0].text, /^\/\/ src\/template\.html:4, <script type="application\/javascript">: [^\n]*\nownCode\(\);$/);
 });

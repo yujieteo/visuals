@@ -47,7 +47,7 @@ and the byte-identical `beamdswitch` and `report` templates), `uses` (shared fil
 `build.py --verify` when there is a builder, its `tests/*.test.{mjs,cjs}` with `node --test`, its
 `tests/test_*.py` with unittest, its `tsconfig.json` with `tsc` after the shared extractor copies the page's
 inline scripts, less the ones `typecheck.skip` names and blocks holding only a build placeholder, into
-`.typecheck/inline/`, which that `tsconfig.json` includes, and a check that `visual.json` and `SKILLS.md`
+`.typecheck/inline/<id>.js` (`script-<n>.js` for the n-th, unnamed, `<script>`), which that `tsconfig.json` includes, and a check that `visual.json` and `SKILLS.md`
 name exactly the WebMCP tools the page registers (at least the literally registered ones, when the page
 registers others in a loop). `checks` in `visual.json` replaces the first three. `python3 scripts/check_repo.py` is the fast
 repository-wide check: every `visual.json` against the schema, the folder rules and the absolute-path scan.

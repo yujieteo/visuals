@@ -1,6 +1,6 @@
 // The globals the page's scripts share: the engine script (<script id="fr-engine">) publishes self.FreqResponse,
 // which the UI script reads. npm run typecheck copies the page's scripts to .typecheck/inline/ first.
-declare var FreqResponse: typeof import("../.typecheck/inline/02-fr-engine.js");
+declare var FreqResponse: typeof import("../.typecheck/inline/fr-engine.js");
 
 // WebMCP: the browser's model-context API, where a page registers read-only tools for agents.
 interface ModelContextTool {
