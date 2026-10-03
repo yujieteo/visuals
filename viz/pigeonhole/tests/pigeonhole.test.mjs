@@ -315,3 +315,34 @@ test("the page boots, its WebMCP tools answer, and the deck buttons export the s
   await assertButtonsExport(page, "pigeonhole", T.deck(P.report(snap)));
   assert.deepEqual(network, [], "the page makes no network requests");
 });
+
+// The step controls of the jump and synthesis scenes, and the capped bars of the contradiction pictures.
+test("the step buttons walk the jump and synthesis scenes, and capping bars sends the excess to the tray", async () => {
+  const page = await openPage("pigeonhole", { hash: "#jump" });
+  const press = (a) => page.run(`document.getElementById("app").listeners.click.forEach((fn) => fn({ target: { closest: () => ({ dataset: { act: ${JSON.stringify(a)} }, disabled: false }) } }))`);
+  const state = (path) => plain(page.run(`PigeonholeApp.state().${path}`));
+  page.run("PigeonholeApp.enter('jump')");
+  press("j-fwd"); press("j-fwd");
+  assert.equal(state("jstep"), 2);
+  press("j-back");
+  assert.equal(state("jstep"), 1);
+  press("j-end");
+  assert.equal(state("jstep"), 5);
+  press("j-fwd");
+  assert.equal(state("jstep"), 5, "Step → stops at the last step");
+  assert.equal(state("unlocked"), true, "reaching the end of the jump unlocks the theorem card");
+  page.run("PigeonholeApp.enter('synthesis')");
+  press("s-fwd");
+  assert.equal(state("syn.step"), 1);
+  assert.deepEqual(state("syn.m.counts"), [3, 3, 3, 2], "stepping (not playing) jumps straight to the balanced boxes");
+  press("s-back");
+  assert.deepEqual([state("syn.step"), state("syn.m.counts")], [0, [0, 0, 0, 0]]);
+  press("s-end");
+  assert.equal(state("syn.step"), 6);
+  page.run("PigeonholeApp.enter('max')");
+  press("max-force");
+  assert.equal(state("forced"), "max");
+  assert.match(page.run(`document.getElementById("max-out").innerHTML`), /5 · 4 = 20 &lt; 23/);
+  press("force-off");
+  assert.equal(state("forced"), false);
+});

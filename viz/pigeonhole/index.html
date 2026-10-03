@@ -763,7 +763,6 @@ textarea#copy-box{width:100%;min-height:8rem;font:.8rem var(--mono);margin-top:.
     return w.length > 1 ? `${w.slice(0, -1).join(", ")} and ${w.at(-1)}` : w.join("");
   };
   const bullet = (xs) => xs.map((x) => `- ${x}`).join("\n");
-  const COUNT_KIND = new Set(["pigeonhole", "general", "threshold", "max", "min", "constructor", "minimax", "socks", "months", "workload"]);
 
   function countFrames(s) {
     const b = bounds(s.N, s.k), ns = s.counts, placed = sum(ns), mx = maxOf(ns), mn = minOf(ns), bal = balanced(s.N, s.k), mc = maxContradiction(s.N, s.k);
@@ -872,10 +871,10 @@ textarea#copy-box{width:100%;min-height:8rem;font:.8rem var(--mono);margin-top:.
     EPS, fmt, list, sum, mean, minOf, maxOf, near, argmax, argmin,
     bounds, balanced, obstruction, maxContradiction, minContradiction, balanceStep, balanceSequence, balanceMilestones,
     stats, deviations, weightedMean, convexCombination, equalise, flow, lockTotal,
-    degrees, averageDegree, toggleEdge, edgeKey, dist, centroid, hull, inHull,
+    degrees, averageDegree, toggleEdge, dist, centroid, hull, inHull,
     SPEED, speed, intervalAverages, partition,
-    REAL_EXAMPLE, INTEGER_SHADOW, MONTHS, EXAMPLES, LOPSIDED, COUNTERS, CHALLENGES, SCENES, MODES, LAB, WEIGHTED, MASS, HULL, COUNT_KIND,
-    report, sayNum, selfTests,
+    REAL_EXAMPLE, INTEGER_SHADOW, MONTHS, EXAMPLES, LOPSIDED, COUNTERS, CHALLENGES, SCENES, MODES, LAB, WEIGHTED, MASS, HULL,
+    report, selfTests,
   };
 });
 </script>
@@ -946,14 +945,15 @@ S.unlocked = store.get("unlocked") === "1";
 
 /* ---------- the stage: one persistent row of containers ---------- */
 const G = { W: 760, H: 340, l: 46, r: 104, t: 44, b: 44 };
-G.pw = G.W - G.l - G.r; G.ph = G.H - G.t - G.b; G.y0 = G.H - G.b;
+const fitPlot = () => { G.pw = G.W - G.l - G.r; G.ph = G.H - G.t - G.b; G.y0 = G.H - G.b; };
+fitPlot();
 /* On a narrow screen the stage draws in fewer, larger units so its text stays readable. */
 function sizeStage() {
   const w = $("stage").clientWidth, narrow = typeof w === "number" && w > 0 && w < 600;
   const W = narrow ? 430 : 760;
   if (W === G.W) return;
   Object.assign(G, narrow ? { W, H: 360, l: 34, r: 86 } : { W, H: 340, l: 46, r: 104 });
-  G.pw = G.W - G.l - G.r; G.ph = G.H - G.t - G.b; G.y0 = G.H - G.b;
+  fitPlot();
   $("stage").setAttribute("viewBox", `0 0 ${G.W} ${G.H}`);
   draw();
 }
@@ -1150,6 +1150,7 @@ const btn = (act, label, o = {}) => `<button type="button" class="btn${o.primary
 const row = (...xs) => `<div class="row">${xs.join("")}</div>`;
 const seg = (label, items) => `<div class="seg" role="group" aria-label="${esc(label)}">${items.map(([act, text, on, data]) => `<button type="button" data-act="${act}"${data ? ` data-id="${data}"` : ""} aria-pressed="${!!on}">${text}</button>`).join("")}</div>`;
 const meanLine = (v, text) => ({ id: "mean", v, text: text || ["average", `= ${fmt(v)}`] });
+const nkLine = (b) => meanLine(b.avg, ["average", `N/k = ${fmt(b.avg)}`]);
 const PLACE_HINT = "Tap a box to drop the next object in. Drag one to another box, or up to the tray to take it out. Keys: ←/→ choose, ↑ drop, ↓ take out.";
 const LAB_RESHAPE = ["lab-add", "lab-sub", "lab-rand"];
 const HEIGHT_HINT = "Drag a bar's top to change it. Keys: ←/→ choose a bar, ↑/↓ change it (Shift for bigger steps).";
@@ -1162,9 +1163,10 @@ const CALLOUTS = {
   counts: ["Above and below do not mean equally many", `0, 0, 0, 0, 10 average 2: four values lie below and only one above. The theorem asserts existence, not balanced counts.`, ["show-counts", "Show 0, 0, 0, 0, 10"]],
 };
 const callout = (id) => { const [t, b, a] = CALLOUTS[id]; return `<div class="callout"><strong>${t}</strong>${b}${a ? `<div class="row" style="margin-top:.35rem">${btn(a[0], a[1], { small: true })}</div>` : ""}</div>`; };
+const ARROW = { above: "↑", below: "↓", equal: "=" };
 function thresholdMarks(values, avg, f = (c) => String(c)) {
   const marks = values.map((c) => (P.near(c, avg) ? "equal" : c > avg ? "above" : "below"));
-  return { marks, tags: values.map((c, i) => `${{ above: "↑", below: "↓", equal: "=" }[marks[i]]} ${f(c)}`) };
+  return { marks, tags: values.map((c, i) => `${ARROW[marks[i]]} ${f(c)}`) };
 }
 function countView(m, o = {}) {
   const b = P.bounds(m.N, m.k), tray = m.N - P.sum(m.counts), cap = Math.max(2, b.ceil, ...m.counts);
@@ -1180,6 +1182,13 @@ function realView(xs, o = {}) {
     lines: [meanLine(m, ["average", `x̄ = ${fmt(m)}`])], marks: mk.marks, tags: mk.tags, tray: 0, fmtv: "real",
   }, o);
 }
+/* Bars capped at some level (the contradiction pictures): the removed units wait in the tray, their old heights ghosted. */
+function cappedView(m, vals, on, line, banner) {
+  return countView(m, { values: vals, morph: 1, ghost: on ? m.counts.slice() : null, tray: m.N - P.sum(vals), trayWarn: on,
+    lines: [line], ...thresholdMarks(vals, line.v), banner: on ? banner : null, bannerWarn: true });
+}
+/* The plane of draggable points (distances, convex hull): the unit square drawn 360 × 300 in the 400 × 340 aux picture. */
+const planeX = (p) => 20 + p[0] * 360, planeY = (p) => 20 + p[1] * 300;
 const placedAll = (m) => P.sum(m.counts) === m.N;
 const ensurePlaced = (m) => { if (!placedAll(m)) m.counts = P.balanced(m.N, m.k); };
 const forceBelow = (xs, c, lo = 0, gap = 0.3) => xs.map((x) => (x >= c ? Math.max(lo, c - gap) : x));
@@ -1201,16 +1210,22 @@ function proofUpdate(xs) {
   }[S.proof];
   set("proof-body", body);
 }
-/* A step-by-step animation (the integer-to-real jump and the synthesis): Play advances, any other action pauses. */
-function stepper(prefix, steps, get, go) {
+/* A step-by-step animation (the integer-to-real jump and the synthesis): Play advances, any other action pauses.
+   show(k, ms) jumps to step k; Play uses advance(k, alive) instead, so a step can animate in more detail. */
+function stepper(prefix, steps, get, show, advance = (k) => show(k, 900)) {
+  const last = steps.length - 1;
+  const play = () => sequence(async (alive) => {
+    if (get() >= last) await advance(0, alive);
+    while (alive() && get() < last) { await advance(get() + 1, alive); if (alive()) await wait(650); }
+  });
   return {
     controls: () => `<ol class="steps" id="${prefix}-steps"></ol>${row(btn(`${prefix}-back`, "← Step"), btn(`${prefix}-play`, "Play", { primary: true, id: `${prefix}-play` }), btn(`${prefix}-fwd`, "Step →"), btn(`${prefix}-end`, "Show the end"))}`,
     list: () => set(`${prefix}-steps`, steps.map((s, i) => `<li class="${i === get() ? "now" : i > get() ? "later" : ""}">${s}</li>`).join("")),
-    async play() {
-      await sequence(async (alive) => {
-        if (get() >= steps.length - 1) await go(0, true, alive);
-        while (alive() && get() < steps.length - 1) { await go(get() + 1, true, alive); if (alive()) await wait(650); }
-      });
+    actions: {
+      [`${prefix}-back`]: () => { cancelSeq(); if (get() > 0) show(get() - 1, 900); },
+      [`${prefix}-fwd`]: () => { cancelSeq(); if (get() < last) show(get() + 1, 900); },
+      [`${prefix}-end`]: () => { cancelSeq(); show(last, 0); },
+      [`${prefix}-play`]: play,
     },
   };
 }
@@ -1219,20 +1234,16 @@ function stepper(prefix, steps, get, go) {
 const JUMP = ["Counts in boxes", "Stack each box into a column", "Fill the columns: integer bars", "Forget integrality: real heights", "Draw the average line", "Something is at least the average; something is at most it"];
 const SYN = ["Eleven objects", "Drop them into four boxes", "Stack them", "Replace stacks by integer bars", "Let the heights become real", "Draw the average line", "One principle"];
 const SYN_REAL = [3.6, 2.1, 3.3, 2];
-const jumpSteps = stepper("j", JUMP, () => S.jstep, async (k, anim) => { S.jstep = k; if (k >= 5) unlock(); refreshText(); await setView(scene().view(), anim ? 900 : 0); });
-const synSteps = stepper("s", SYN, () => S.syn.step, async (k, anim, alive) => {
+function jumpGo(k, ms) { S.jstep = k; if (k >= 5) unlock(); refreshText(); return setView(scene().view(), ms); }
+function synGo(k, ms) { const m = S.syn.m; S.syn.step = k; m.counts = k === 0 ? [0, 0, 0, 0] : P.balanced(11, 4); if (k >= 6) unlock(); refreshText(); return setView(scene().view(), ms); }
+const jumpSteps = stepper("j", JUMP, () => S.jstep, jumpGo);
+/* Playing into step 1 drops the eleven objects one by one instead of jumping to the balanced boxes. */
+const synSteps = stepper("s", SYN, () => S.syn.step, synGo, (k, alive) => {
   const m = S.syn.m;
-  if (k === 1 && anim && P.sum(m.counts) < m.N) {
-    S.syn.step = 1;
-    refreshText();
-    await dropAll(m, evenOrder(m), alive || (() => true), 170);
-    return;
-  }
-  S.syn.step = k;
-  m.counts = k === 0 ? [0, 0, 0, 0] : P.balanced(11, 4);
-  if (k >= 6) unlock();
+  if (k !== 1 || P.sum(m.counts) >= m.N) return synGo(k, 900);
+  S.syn.step = 1;
   refreshText();
-  await setView(scene().view(), anim ? 900 : 0);
+  return dropAll(m, evenOrder(m), alive, 170);
 });
 
 const SCN = {
@@ -1297,7 +1308,7 @@ const SCN = {
     },
     view() {
       const m = S.gen, b = P.bounds(m.N, m.k), bars = S.genView === "bars";
-      return countView(m, { morph: bars ? 1 : 0, lines: bars ? [meanLine(b.avg, ["average", `N/k = ${fmt(b.avg)}`])] : [], ...(bars ? thresholdMarks(m.counts, b.avg) : {}) });
+      return countView(m, { morph: bars ? 1 : 0, lines: bars ? [nkLine(b)] : [], ...(bars ? thresholdMarks(m.counts, b.avg) : {}) });
     },
   },
   max: {
@@ -1314,9 +1325,7 @@ const SCN = {
     },
     view() {
       const m = S.gen, b = P.bounds(m.N, m.k), cap = b.ceil - 1, on = S.forced === "max";
-      const vals = on ? m.counts.map((c) => Math.min(c, cap)) : m.counts.slice();
-      return countView(m, { values: vals, morph: 1, ghost: on ? m.counts.slice() : null, tray: on ? m.N - P.sum(vals) : 0, trayWarn: on,
-        lines: [meanLine(b.avg, ["average", `N/k = ${fmt(b.avg)}`])], ...thresholdMarks(vals, b.avg), banner: on ? "total too small" : null, bannerWarn: true });
+      return cappedView(m, on ? m.counts.map((c) => Math.min(c, cap)) : m.counts.slice(), on, nkLine(b), "total too small");
     },
   },
   min: {
@@ -1336,7 +1345,7 @@ const SCN = {
       const vals = on ? m.counts.map((c) => Math.max(c, b.floor + 1)) : m.counts.slice();
       const pair = hi === lo ? thresholdMarks(vals, b.avg) : { marks: vals.map((_, i) => (i === hi ? "above" : i === lo ? "below" : "")), tags: vals.map((c, i) => (i === hi ? `↑ max ${c}` : i === lo ? `↓ min ${c}` : String(c))) };
       return countView(m, { values: vals, morph: 1, ghost: on ? m.counts.slice() : null, cap: b.floor + 1, ymax: niceTop(Math.max(b.floor + 1, ...m.counts) + 0.8),
-        lines: [meanLine(b.avg, ["average", `N/k = ${fmt(b.avg)}`])], ...(on ? thresholdMarks(vals, b.avg) : pair), banner: on ? "total too large" : null, bannerWarn: true });
+        lines: [nkLine(b)], ...(on ? thresholdMarks(vals, b.avg) : pair), banner: on ? "total too large" : null, bannerWarn: true });
     },
   },
   constructor: {
@@ -1366,7 +1375,7 @@ const SCN = {
         ${eq(boxed(`min<sub>Σ${ni}=${V_("N")}</sub> max ${ni} = ⌈${NK}⌉ = ⌈${m.N}/${m.k}⌉ = ${b.ceil}`))}${eq(boxed(`max<sub>Σ${ni}=${V_("N")}</sub> min ${ni} = ⌊${NK}⌋ = ${b.floor}`))}
         <p class="note">This is pigeonhole reasoning as optimisation: the bound ⌈${NK}⌉ is exactly the best the balancer can do.</p>`);
     },
-    view() { const m = mmModel(), b = P.bounds(m.N, m.k); return countView(m, { morph: 1, lines: [meanLine(b.avg, ["average", `N/k = ${fmt(b.avg)}`])], ...thresholdMarks(m.counts, b.avg) }); },
+    view() { const m = mmModel(), b = P.bounds(m.N, m.k); return countView(m, { morph: 1, lines: [nkLine(b)], ...thresholdMarks(m.counts, b.avg) }); },
   },
   jump: {
     hint: READ_HINT, input: null, data: () => ({ values: S.xs }),
@@ -1450,7 +1459,7 @@ const SCN = {
       const xs = S.xs, m = P.mean(xs);
       if (!S.dev) return realView(xs);
       const mk = thresholdMarks(xs, m), sg = (x) => (P.near(x, m) ? "0" : x > m ? `+${fmt(x - m)}` : fmt(x - m));
-      return realView(xs, { dev: 1, tags: xs.map((x, i) => `${{ above: "↑", below: "↓", equal: "=" }[mk.marks[i]]} ${sg(x)}`), lines: [meanLine(m, ["d = 0", `(x̄ = ${fmt(m)})`])], yname: "deviation" });
+      return realView(xs, { dev: 1, tags: xs.map((x, i) => `${ARROW[mk.marks[i]]} ${sg(x)}`), lines: [meanLine(m, ["d = 0", `(x̄ = ${fmt(m)})`])], yname: "deviation" });
     },
   },
   why: {
@@ -1458,7 +1467,7 @@ const SCN = {
     enter() { ensurePlaced(S.gen); },
     panel: () => `<h3>Why is this pigeonhole?</h3><div id="why-map"></div><h3>Conceptual distinctions</h3>${["which", "lower", "value", "counts"].map(callout).join("")}`,
     update() { set("why-map", dmap()); },
-    view() { const m = S.gen, b = P.bounds(m.N, m.k); return countView(m, { morph: 1, lines: [meanLine(b.avg, ["average", `N/k = ${fmt(b.avg)}`])], ...thresholdMarks(m.counts, b.avg) }); },
+    view() { const m = S.gen, b = P.bounds(m.N, m.k); return countView(m, { morph: 1, lines: [nkLine(b)], ...thresholdMarks(m.counts, b.avg) }); },
   },
   equality: {
     hint: HEIGHT_HINT, input: "height", model: () => xsModel, data: () => ({ values: S.xs }),
@@ -1553,7 +1562,7 @@ const SCN = {
         const X = (p) => 34 + p[0] * 332, Y = (p) => 30 + p[1] * 280, pos = EX.graph.pos;
         const o = g.edges.map(([a, b]) => `<line class="edge ${h === a || h === b ? "hot" : ""}" x1="${X(pos[a])}" y1="${Y(pos[a])}" x2="${X(pos[b])}" y2="${Y(pos[b])}"/>`);
         pos.forEach((p, i) => {
-          o.push(`<circle class="vtx ${mk[i]} ${g.sel === i ? "sel" : ""} ${h === i ? "hot" : ""}" cx="${X(p)}" cy="${Y(p)}" r="18"/><text x="${X(p)}" y="${Y(p) + 5}" text-anchor="middle" font-weight="700">${L[i]}</text><text class="tick" x="${X(p)}" y="${Y(p) + 33}" text-anchor="middle">deg ${d[i]} ${{ above: "↑", below: "↓", equal: "=" }[mk[i]]}</text>`);
+          o.push(`<circle class="vtx ${mk[i]} ${g.sel === i ? "sel" : ""} ${h === i ? "hot" : ""}" cx="${X(p)}" cy="${Y(p)}" r="18"/><text x="${X(p)}" y="${Y(p) + 5}" text-anchor="middle" font-weight="700">${L[i]}</text><text class="tick" x="${X(p)}" y="${Y(p) + 33}" text-anchor="middle">deg ${d[i]} ${ARROW[mk[i]]}</text>`);
           if (auxFocused && g.cur === i) o.push(`<circle class="cursor" cx="${X(p)}" cy="${Y(p)}" r="25"/>`);
         });
         if (g.sel !== null) o.push(`<text class="tick" x="10" y="16">${L[g.sel]} selected: click another vertex</text>`);
@@ -1586,7 +1595,7 @@ const SCN = {
     },
     view() { return realView(distVals(), { ymax: 8, labels: EX.distances.labels, yname: "distance", lines: [meanLine(P.mean(distVals()), ["average A", `= ${fmt(P.mean(distVals()))}`])] }); },
     aux: pointsAux(() => S.dist, () => EX.distances.labels, (o) => {
-      const O = EX.distances.origin, X = (p) => 20 + p[0] * 360, Y = (p) => 20 + p[1] * 300, d = distVals();
+      const O = EX.distances.origin, X = planeX, Y = planeY, d = distVals();
       S.dist.points.forEach((p, i) => o.push(`<line class="seg" x1="${X(O)}" y1="${Y(O)}" x2="${X(p)}" y2="${Y(p)}"/><text class="tick" x="${(X(O) + X(p)) / 2 + 6}" y="${(Y(O) + Y(p)) / 2 - 4}">${fmt(d[i], 1)}</text>`));
       o.push(`<circle class="origin" cx="${X(O)}" cy="${Y(O)}" r="7"/><text x="${X(O) - 14}" y="${Y(O) + 20}" font-weight="700">O</text>`);
     }),
@@ -1682,7 +1691,7 @@ const SCN = {
     },
     view() { const xs = S.hull.points.map((p) => p[0] * 10); return realView(xs, { labels: S.hull.points.map((_, i) => `P${i + 1}`), yname: "x-coordinate" }); },
     aux: pointsAux(() => S.hull, () => S.hull.points.map((_, i) => `P${i + 1}`), (o) => {
-      const X = (p) => 20 + p[0] * 360, Y = (p) => 20 + p[1] * 300, h = P.hull(S.hull.points), c = P.centroid(S.hull.points);
+      const X = planeX, Y = planeY, h = P.hull(S.hull.points), c = P.centroid(S.hull.points);
       o.unshift(`<polygon class="hullp" points="${h.map((p) => `${X(p)},${Y(p)}`).join(" ")}"/>`);
       o.push(`<circle class="bary" cx="${X(c)}" cy="${Y(c)}" r="7"/><text class="lbl-mean" x="${X(c) + 10}" y="${Y(c) - 8}">x̄</text>`);
     }),
@@ -1716,6 +1725,7 @@ const SCN = {
   },
 };
 const scene = () => SCN[S.scene];
+const repanel = () => set("panel", scene().panel());
 
 function genFields() {
   return `<div class="row"><label class="field">Objects ${V_("N")} <input type="number" id="g-N" data-in="g-N" min="1" max="60" value="${S.gen.N}"></label><label class="field">Boxes ${V_("k")} <input type="number" id="g-k" data-in="g-k" min="1" max="12" value="${S.gen.k}"></label></div>`;
@@ -1739,7 +1749,7 @@ function clickVertex(i) {
 }
 /* A plane of draggable points (distances, convex hull). */
 function pointsAux(get, labels, extra) {
-  const X = (p) => 20 + p[0] * 360, Y = (p) => 20 + p[1] * 300;
+  const X = planeX, Y = planeY;
   return {
     draw() {
       const s = get(), L = labels(), o = [];
@@ -1772,8 +1782,8 @@ function countExample(key, o) {
     view() {
       const m = S[key], b = P.bounds(m.N, m.k), full = placedAll(m);
       if (o.bars) {
-        const cap = S.capped && key === "workload", vals = cap ? m.counts.map((c) => Math.min(c, b.floor)) : m.counts.slice();
-        return countView(m, { values: vals, morph: 1, ghost: cap ? m.counts.slice() : null, tray: m.N - P.sum(vals), trayWarn: cap, lines: [meanLine(b.avg, ["average", `N/k = ${fmt(b.avg)}`])], ...thresholdMarks(vals, b.avg), banner: cap ? `${m.k} · ${b.floor} = ${m.k * b.floor} < ${m.N}` : null, bannerWarn: true });
+        const cap = S.capped && key === "workload";
+        return cappedView(m, cap ? m.counts.map((c) => Math.min(c, b.floor)) : m.counts.slice(), cap, nkLine(b), `${m.k} · ${b.floor} = ${m.k * b.floor} < ${m.N}`);
       }
       return countView(m, { marks: full ? m.counts.map((c) => (c >= b.ceil ? "hot" : "")) : [], tags: full ? m.counts.map((c) => (c >= b.ceil ? `★ ${c}` : String(c))) : null });
     },
@@ -1803,8 +1813,8 @@ function chData() {
 function chView() {
   const id = S.ch.id, c = CH[id], shown = !!S.ch.shown[id];
   if (id === "A") {
-    const m = c.m, b = P.bounds(m.N, m.k), vals = shown ? m.counts.map((x) => Math.min(x, b.floor)) : m.counts.slice();
-    return countView(m, { values: vals, morph: 1, ghost: shown ? m.counts.slice() : null, tray: m.N - P.sum(vals), trayWarn: shown, lines: [meanLine(b.avg, ["average", `101/10 = ${fmt(b.avg)}`])], ...thresholdMarks(vals, b.avg), banner: shown ? "10 · 10 = 100 < 101" : null, bannerWarn: true });
+    const m = c.m, b = P.bounds(m.N, m.k);
+    return cappedView(m, shown ? m.counts.map((x) => Math.min(x, b.floor)) : m.counts.slice(), shown, meanLine(b.avg, ["average", `101/10 = ${fmt(b.avg)}`]), "10 · 10 = 100 < 101");
   }
   if (id === "B") {
     const f = shown ? c.values.map((x) => (x >= 17 ? 16.6 : x)) : c.values;
@@ -1813,7 +1823,7 @@ function chView() {
   if (id === "C") {
     const m = 12, mk = thresholdMarks(c.values, m), sg = (x) => (x === m ? "0" : x > m ? `+${x - m}` : `−${m - x}`);
     const out = realView(c.values, { ymax: c.ymax, dev: shown ? 1 : 0, lines: [meanLine(m, shown ? ["d = 0", "(average 12)"] : ["average", "= 12"])], banner: shown ? "Σ d = +7 − 7 = 0" : null });
-    if (shown) out.tags = c.values.map((x, i) => `${{ above: "↑", below: "↓", equal: "=" }[mk.marks[i]]} ${sg(x)}`);
+    if (shown) out.tags = c.values.map((x, i) => `${ARROW[mk.marks[i]]} ${sg(x)}`);
     return out;
   }
   const vals = shown ? [7, 7, 7, 5] : c.values, m = P.mean(vals);
@@ -1953,7 +1963,7 @@ const ACT = {
   }),
   "g-clear": () => { cancelSeq(); S.gen.counts = Array(S.gen.k).fill(0); S.gen.flow = null; refresh(); },
   "g-one": () => { cancelSeq(); const m = S.gen; m.counts = m.counts.map((_, i) => (i ? 0 : m.N)); m.flow = null; refresh(600); say(`All ${m.N} in one box: the maximum is ${m.N}, far above ⌈N/k⌉.`); },
-  view: (b) => { S.genView = b.dataset.id; set("panel", scene().panel()); refresh(800); },
+  view: (b) => { S.genView = b.dataset.id; repanel(); refresh(800); },
   "max-force": () => forceThen(() => { S.forced = "max"; }),
   "min-force": () => forceThen(() => { S.forced = "min"; }),
   "force-off": () => forceThen(() => { S.forced = false; }),
@@ -1988,15 +1998,9 @@ const ACT = {
   }),
   "mm-reset": () => { cancelSeq(); S.mm = { counts: P.LOPSIDED.slice(), trail: [P.LOPSIDED.slice()], flow: null }; refresh(600); },
   "mm-lop": () => { cancelSeq(); const N = P.sum(S.mm.counts), c = S.mm.counts.map((_, i) => (i ? 0 : N)); S.mm = { counts: c, trail: [c.slice()], flow: null }; refresh(600); },
-  "j-back": () => { cancelSeq(); if (S.jstep > 0) jumpGo(S.jstep - 1); },
-  "j-fwd": () => { cancelSeq(); if (S.jstep < JUMP.length - 1) jumpGo(S.jstep + 1); },
-  "j-end": () => { cancelSeq(); jumpGo(JUMP.length - 1, 0); },
-  "j-play": () => jumpSteps.play(),
-  "s-back": () => { cancelSeq(); if (S.syn.step > 0) synGo(S.syn.step - 1); },
-  "s-fwd": () => { cancelSeq(); if (S.syn.step < SYN.length - 1) synGo(S.syn.step + 1); },
-  "s-end": () => { cancelSeq(); synGo(SYN.length - 1, 0); },
-  "s-play": () => synSteps.play(),
-  side: (b) => { S.side = b.dataset.id; S.pushed = false; set("panel", scene().panel()); refresh(600); },
+  ...jumpSteps.actions,
+  ...synSteps.actions,
+  side: (b) => { S.side = b.dataset.id; S.pushed = false; repanel(); refresh(600); },
   "imp-mean": () => { S.line = Math.round(P.mean(S.xs) * 10) / 10; S.pushed = false; refresh(500); },
   "imp-push": () => forceThen(() => { S.pushed = true; }),
   "imp-off": () => forceThen(() => { S.pushed = false; }),
@@ -2011,7 +2015,7 @@ const ACT = {
     say(`Every level is now ${fmt(m)}, and the total ${fmt(P.sum(xs))} has not changed.`);
   }),
   "lq-back": () => forceThen(() => { S.lq = false; }),
-  dev: (b) => { S.dev = b.dataset.id === "1"; set("panel", scene().panel()); refresh(900); },
+  dev: (b) => { S.dev = b.dataset.id === "1"; repanel(); refresh(900); },
   "eqv-flat": () => { cancelSeq(); if (!P.stats(S.xs).allEqual) S.before = S.xs.slice(); const m = P.mean(S.xs); S.xs = S.xs.map(() => m); refresh(900); },
   "eqv-back": () => { cancelSeq(); S.xs = (S.before || P.REAL_EXAMPLE).slice(); refresh(900); },
   "show-lower": () => { S.gen = { N: 23, k: 5, counts: [23, 0, 0, 0, 0] }; enter("general"); },
@@ -2036,17 +2040,17 @@ const ACT = {
     await dropAll(m, evenOrder(m), alive, m.N > 20 ? 130 : 220);
   }),
   "ex-clear": () => { cancelSeq(); const m = scene().model(); m.counts = Array(m.k).fill(0); S.capped = false; refresh(); },
-  "wl-cap": () => { cancelSeq(); ensurePlaced(S.workload); S.capped = !S.capped; set("panel", scene().panel()); refresh(900); },
+  "wl-cap": () => { cancelSeq(); ensurePlaced(S.workload); S.capped = !S.capped; repanel(); refresh(900); },
   "ex-push": () => forceThen(() => { S.examsPushed = true; }),
   "ex-back": () => forceThen(() => { S.examsPushed = false; }),
   "gr-reset": () => { S.graph.edges = EX.graph.edges.map((e) => e.slice()); S.graph.sel = null; refresh(600); },
   "gr-clear": () => { S.graph.edges = []; S.graph.sel = null; refresh(600); },
   "ds-reset": () => { S.dist.points = EX.distances.points.map((p) => p.slice()); refresh(600); },
   "hl-reset": () => { S.hull.points = P.HULL.points.map((p) => p.slice()); refresh(600); },
-  "w-equal": () => { S.w.weights = S.w.weights.map(() => 1); set("panel", scene().panel()); refresh(700); },
-  "w-reset": () => { S.w = { values: P.WEIGHTED.values.slice(), weights: P.WEIGHTED.weights.slice() }; set("panel", scene().panel()); refresh(700); },
-  "m-equal": () => { S.mass.lambdas = S.mass.lambdas.map(() => 1); set("panel", scene().panel()); refresh(600); },
-  "m-reset": () => { S.mass = { points: P.MASS.points.slice(), lambdas: P.MASS.lambdas.slice(), cur: 0 }; set("panel", scene().panel()); refresh(600); },
+  "w-equal": () => { S.w.weights = S.w.weights.map(() => 1); repanel(); refresh(700); },
+  "w-reset": () => { S.w = { values: P.WEIGHTED.values.slice(), weights: P.WEIGHTED.weights.slice() }; repanel(); refresh(700); },
+  "m-equal": () => { S.mass.lambdas = S.mass.lambdas.map(() => 1); repanel(); refresh(600); },
+  "m-reset": () => { S.mass = { points: P.MASS.points.slice(), lambdas: P.MASS.lambdas.slice(), cur: 0 }; repanel(); refresh(600); },
   "lab-add": () => { const L = S.lab; if (L.lock) return; if (L.units.length >= P.LAB.maxBars) return say("Twelve values is the most here."); L.units.push(50); L.flows = null; refresh(400); },
   "lab-sub": () => { const L = S.lab; if (L.lock || L.units.length <= 1) return; L.units.pop(); L.flows = null; S.cursor = Math.min(S.cursor, L.units.length - 1); refresh(400); },
   "lab-rand": () => {
@@ -2062,8 +2066,6 @@ const ACT = {
   "ch-pick": (b) => { S.ch.picked[S.ch.id] = +b.dataset.i; refreshText(); },
   "ch-show": () => { S.ch.shown[S.ch.id] = !S.ch.shown[S.ch.id]; refresh(1000); },
 };
-function jumpGo(k, ms = 900) { S.jstep = k; if (k >= 5) unlock(); refreshText(); return setView(scene().view(), ms); }
-function synGo(k, ms = 900) { const m = S.syn.m; S.syn.step = k; m.counts = k === 0 ? [0, 0, 0, 0] : P.balanced(11, 4); if (k >= 6) unlock(); refreshText(); return setView(scene().view(), ms); }
 app.addEventListener("click", (e) => {
   const b = e.target && e.target.closest ? e.target.closest("[data-act]") : null;
   if (!b || b.disabled || !ACT[b.dataset.act]) return;
