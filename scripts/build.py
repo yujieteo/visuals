@@ -200,7 +200,8 @@ def verify(raw, meta, rows, term_rows, median_lon, median_lat):
     assert 'id="cloud"' in html and 'id="marketing-summary"' in html and '.attr("class","term")' in html and '.attr("class","region-label")' in html
     assert "mc?.registerTool" in html and f'href="viz/{SLUG}/index.html"' in gallery
     assert meta["key_file_used"] is None and re.fullmatch(r"\d{4}-\d{2}-\d{2}", meta["fetched"])
-    tracked_text = "\n".join(path.read_text(errors="ignore") for path in ROOT.rglob("*") if path.is_file() and ".git" not in path.parts and "__pycache__" not in path.parts)
+    # node_modules holds the type-check tooling npm installs (package.json), not this repository's files.
+    tracked_text = "\n".join(path.read_text(errors="ignore") for path in ROOT.rglob("*") if path.is_file() and not {".git", "__pycache__", "node_modules"} & set(path.parts))
     assert not re.search(r"/(?:Users|home)/[^/\s]+/", tracked_text)
     assert Counter((row["longitude"], row["latitude"]) for row in rows).most_common(1)[0][1] > 1 and any(float(row["offset_x"]) or float(row["offset_y"]) for row in rows)
     print("verified: 109 points, 106 descriptions, 40 ranked terms, exact coordinates and term sets, museum 14 (5/6/2/1), heritage 12, 2 compact CSVs, 4 read-only tools, a narrated beamdswitch deck")

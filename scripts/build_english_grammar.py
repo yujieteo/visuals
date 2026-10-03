@@ -31,6 +31,7 @@ from pathlib import Path
 
 from gallery import render_gallery
 from style_guide import THEME_SCRIPT, contrast, root_css
+from page_parts import strip_types
 
 ROOT = Path(__file__).resolve().parents[1]
 SLUG = "english-grammar"
@@ -685,8 +686,8 @@ def render(model, raw, meta, tokens):
     spacing = ";".join(f"--s{i}:{step}rem" for i, step in enumerate(tokens["spacing_rem"]))
     css = css.replace("%%root_css%%", root_css(tokens, f"--r:{tokens['radius']};--w:{tokens['content_width']};{spacing}"))
     assert "%%" not in css, "unreplaced CSS token"
-    js = JS_TEMPLATE.read_text(encoding="utf-8")
-    logic = LOGIC_TEMPLATE.read_text(encoding="utf-8")
+    js = strip_types(JS_TEMPLATE.read_text(encoding="utf-8"))
+    logic = strip_types(LOGIC_TEMPLATE.read_text(encoding="utf-8"))
     payload = json.dumps(data, ensure_ascii=False, indent=1).replace("</", "<\\/")
     start = next(e for e in model["examples"] if e["id"] == START_EXAMPLE)
     book = raw["book"]

@@ -9,6 +9,51 @@
  * Diagnostics, triggers, Deep Memory, search and exports are deterministic functions of the state.
  * init(D) hands it the page's built-in data (data/ooda-orientation/raw.json).
  */
+/**
+ * The page's built-in data (data/ooda-orientation/raw.json), as far as the logic reads it.
+ * @typedef {{ id: string, label: string, ledger: string, fixed?: boolean }} ItemType
+ * @typedef {{ id: string, label: string, targets: string[], multi?: boolean, deep?: boolean, creates: string, challenge: string, family: string }} Operation
+ * @typedef {{ id: string, title: string, purpose: string, note: string, provenance: string, steps: (Command & { as?: string })[] }} Example
+ * @typedef {{ id: string, title: string, text: string, basis?: string }} Note
+ * @typedef {{ itemTypes: ItemType[], operations: Operation[], interpretiveMarkers: string[], qualifiers: { id: string, label: string }[],
+ *   dimensions: { id: string, label: string, question?: string, tags?: string[] }[], modes: { id: string, label: string, help: string, prompts: string[] }[],
+ *   stages: { id: string, label: string }[], jolts: { op: string, prompt: string }[],
+ *   actionTypes: { id: string, label: string, help: string }[], infoEnvironment: string[], attributions: { id: string, label: string }[],
+ *   triggers: { id: string, label: string }[], provenance: Record<string, { label: string, about: string }>,
+ *   sources: { id: string, class: string, title: string, note: string }[],
+ *   diagnostics: { id: string, title: string, message: string }[], guided: { when: string, ops: string[], why: string }[],
+ *   creation: { id: string, label: string, text: string, a: string, b: string }[], examples: Example[],
+ *   cards: { id: string, title: string, lesson: string, text: string, op: string, seed: string }[], families: { id: string, label: string }[],
+ *   methodology: { why: Note[], rao: Note[] } }} Data
+ *
+ * The planner state (plain JSON).
+ * @typedef {{ id: string, type: string, text: string, ledger: string, provenance: string[], status: string, confidence: string, refs: string[],
+ *   loop: number, origin: Record<string, unknown> | null, tested?: boolean, surprise?: boolean, reason?: string }} Item
+ * @typedef {"inside" | "explains" | "fails" | "matters" | "keyAssumption" | "observe" | "move" | "mechanism" | "falsifier"} Field
+ * @typedef {{ id: string, parent: string | null, status: string, loop: number, boundary: string | null, items: string[], confidence: string,
+ *   tags: Record<string, string>, creation: { kind: string, from: string[], prompt: string, workspace?: string }, reason?: string } & Record<Field, string>} Orientation
+ * @typedef {{ id: string, orientation: string, action: string | null, text: string, locked: boolean, original: string | null, status: string,
+ *   result: string, interpretation: string }} Prediction
+ * @typedef {{ follows: string, sameUnderAll: string, dominates: string, discriminator: string }} Consistency
+ * @typedef {{ id: string, orientation: string, type: string, text: string, prediction: string | null, reconsider: string, refs: string[],
+ *   consistency: Consistency, info: string[], status: string, loop: number }} Action
+ * @typedef {{ id: string, action: string, loop: number, observed: string, surprise: string, absent: string, changedEnvironment: string,
+ *   weakened: string[], strengthened: string[], betterFit: string, reorient: string, interpretation: string, attribution: string, effect: string,
+ *   signals: string[] }} Outcome
+ * @typedef {{ id: string, kind: string, loop: number } & Record<string, any>} HistoryEntry an append-only record whose fields depend on its kind
+ * @typedef {{ id: string, from: string, to: string, kind: string }} Link
+ * @typedef {{ id: string, op: string, targets: string[], challenge: string, result: string }} Move
+ * @typedef {{ id: string, from: string, deep: boolean, mode: string, jolt: number, moves: Move[], candidates: string[] }} Workspace
+ * @typedef {{ schemaVersion: number, seq: number, loop: number, situation: { title: string, description: string }, intent: string | null,
+ *   tempo: string, mode: string, items: Item[], orientations: Orientation[], predictions: Prediction[], actions: Action[], outcomes: Outcome[],
+ *   history: HistoryEntry[], links: Link[], workspace: Workspace | null, uiPreferences: { stage: string } }} State
+ * @typedef {Record<string, any>} Command a command's fields, each checked by the case that reads it
+ * @typedef {{ code: string, message: string }} CommandError
+ * @typedef {{ id: string, kind: string, item: Item, move?: string, from?: string[] }} Fragment
+ * @typedef {{ kind: string, type: string, id: string, title: string, text: string, location: string, keys?: string, ledger?: string,
+ *   loop?: number | null, target?: { stage: string, id: string | null, inspect?: string | null } }} SearchRecord
+ */
+/** @param {any} root the global object @param {() => any} factory */
 (function (root, factory) {
   const api = factory();
   if (typeof module === "object" && module.exports) module.exports = api;
@@ -23,14 +68,17 @@
   const PRED_STATUS = ["pending", "observed", "partial", "not-observed", "unresolved"];
   const O_STATUS = ["adopted", "candidate", "rejected", "superseded"];
   const A_STATUS = ["draft", "started", "done", "abandoned"];
+  /** @type {Field[]} */
   const FIELDS = ["inside", "explains", "fails", "matters", "keyAssumption", "observe", "move", "mechanism", "falsifier"];
   const MSG = {
     invalid: "This file is not a valid Orient state. Your current situation has not been changed.",
     future: "This file was created by a newer version of Orient and cannot be opened safely here.",
     storage: "Browser storage is unavailable. The planner will still work, but refresh will lose unsaved changes. Export JSON to keep the situation.",
   };
-  let D = null, TYPES = new Map(), OPS = new Map(), MARKERS = null;
+  // @ts-expect-error init(D) sets these before any other function runs
+  let /** @type {Data} */ D = null, /** @type {Map<string, ItemType>} */ TYPES = new Map(), /** @type {Map<string, Operation>} */ OPS = new Map(), /** @type {RegExp} */ MARKERS = null;
 
+  /** @param {Data} data */
   function init(data) {
     D = data;
     TYPES = new Map(D.itemTypes.map((t) => [t.id, t]));
@@ -39,17 +87,30 @@
   }
 
   /* ---------- helpers ---------- */
+  /** @template T @param {T} x @returns {T} */
   const clone = (x) => JSON.parse(JSON.stringify(x));
+  /** @param {unknown} t */
   const clean = (t) => String(t == null ? "" : t).replace(/\s+/g, " ").trim();
+  /**
+   * The record with this id. Ids drawn from the state name existing records, as apply() and check() keep them; an id from a
+   * command is checked against undefined before use.
+   * @template {{ id: string }} T @param {T[]} list @param {unknown} id @returns {T}
+   */
+  // @ts-expect-error see above
   const find = (list, id) => list.find((x) => x.id === id);
+  /** @template T @param {T[]} xs */
   const uniq = (xs) => xs.filter((x, i) => xs.indexOf(x) === i);
+  /** @param {unknown} t */
   const bare = (t) => clean(t).replace(/[.!?;:,]+$/, "");
+  /** @param {unknown} t */
   const lowerFirst = (t) => { const s = bare(t); return /^[A-Z][a-z]/.test(s) ? s[0].toLowerCase() + s.slice(1) : s; };
   const STOP = new Set("a an the of to in on for and or is are be been we our us i my me it its this that these those with by as at from not only will would can could do does into than then there their they them who what".split(" "));
+  /** @param {unknown} t */
   function tokens(t) {
     return String(t || "").toLowerCase().replace(/[’']/g, "").split(/[^a-z0-9]+/)
       .filter((w) => w && !STOP.has(w)).map((w) => (w.length > 4 ? w.replace(/(ing|ed|es|s)$/, "") : w));
   }
+  /** @param {unknown} x @param {unknown} y */
   function similar(x, y) {
     const A = new Set(tokens(x)), B = new Set(tokens(y));
     if (!A.size && !B.size) return true;
@@ -57,11 +118,15 @@
     for (const w of A) if (B.has(w)) inter += 1;
     return inter / (A.size + B.size - inter) >= 0.6;
   }
+  /** @param {State} s @param {string} p */
   function nid(s, p) { s.seq += 1; return p + s.seq; }
+  /** @param {State} s @param {string} kind @param {Record<string, unknown>} data */
   function log(s, kind, data) { s.history.push(Object.assign({ id: nid(s, "h"), kind, loop: s.loop }, data)); }
+  /** @param {string} code @param {string} message @returns {CommandError} */
   const err = (code, message) => ({ code, message });
 
   /* ---------- state ---------- */
+  /** @returns {State} */
   function blank() {
     return {
       schemaVersion: SCHEMA, seq: 0, loop: 1,
@@ -70,27 +135,41 @@
       workspace: null, uiPreferences: { stage: "reality" },
     };
   }
+  /** @param {State} s */
   const current = (s) => s.orientations.find((o) => o.status === "adopted") || null;
+  /** @param {State} s @param {Orientation | Prediction | Action | Outcome | undefined} x */
   const label = (s, x) => {
     for (const [list, p] of [[s.orientations, "O"], [s.predictions, "P"], [s.actions, "A"], [s.outcomes, "R"]]) {
+      // @ts-expect-error x is one of the four kinds of record, so it is looked for in each list
       const i = list.indexOf(x);
+      // @ts-expect-error p is the prefix, the second item of each pair
       if (i >= 0) return p + (p === "O" ? i : i + 1);
     }
     return "";
   };
+  /** @param {State} s @param {string} id */
   const labelOf = (s, id) => label(s, find(s.orientations, id) || find(s.predictions, id) || find(s.actions, id) || find(s.outcomes, id));
+  /** @param {Action} a */
   const open = (a) => a.status === "draft" || a.status === "started";
+  /** @param {State} s @param {Orientation | null | undefined} o */
   const locked = (s, o) => !!o && s.actions.some((a) => a.orientation === o.id && (a.status === "started" || a.status === "done"));
+  /** @param {Item | undefined} i @returns {i is Item} */
+  // @ts-expect-error undefined is falsy, as the predicate says
   const live = (i) => i && i.status !== "withdrawn";
+  /** @param {State} s @param {Orientation | null | undefined} o @param {string} [type] @returns {Item[]} */
   const itemsOf = (s, o, type) => (o ? o.items.map((id) => find(s.items, id)).filter((i) => live(i) && (!type || i.type === type)) : []);
 
+  /** @param {State} s @param {string | null} parent @param {string} status @param {Orientation["creation"]} creation @returns {Orientation} */
   function newOrientation(s, parent, status, creation) {
+    /** @type {Orientation} */
+    // @ts-expect-error the loop below fills in the text fields
     const o = { id: nid(s, "o"), parent, status, loop: s.loop, boundary: null, items: [], confidence: "tenuous", tags: {}, creation };
     for (const f of FIELDS) o[f] = "";
     s.orientations.push(o);
     return o;
   }
 
+  /** @param {State} s @param {Command} c @param {Record<string, unknown> | null} [origin] @returns {Item} */
   function makeItem(s, c, origin) {
     const T = TYPES.get(c.type);
     if (!T) throw err("bad-type", "Unknown item type: " + c.type);
@@ -102,8 +181,9 @@
       if (c.ledger !== "observed" && c.ledger !== "inferred") throw err("bad-ledger", "Choose observed or inferred.");
       ledger = c.ledger;
     }
-    const quals = uniq((c.quals || []).filter((q) => D.qualifiers.some((x) => x.id === q)));
-    const refs = (c.refs || []).filter((id) => find(s.items, id) || find(s.orientations, id));
+    const quals = uniq((c.quals || []).filter((/** @type {string} */ q) => D.qualifiers.some((x) => x.id === q)));
+    const refs = (c.refs || []).filter((/** @type {string} */ id) => find(s.items, id) || find(s.orientations, id));
+    /** @type {Item} */
     const it = {
       id: nid(s, "i"), type: c.type, text, ledger, provenance: quals,
       status: c.type === "contradiction" ? "open" : c.type === "assumption" ? "untested" : "active",
@@ -115,6 +195,7 @@
     return it;
   }
 
+  /** @param {State} s @param {Orientation | null | undefined} o */
   function contradictionsOf(s, o) {
     if (!o) return [];
     return s.items.filter((c) => c.type === "contradiction" && c.status === "open" &&
@@ -122,8 +203,10 @@
   }
 
   /* ---------- reorientation workspace ---------- */
+  /** @param {Workspace | null} ws */
   function destroyedIds(ws) { return uniq(ws ? ws.moves.flatMap((m) => m.targets) : []); }
 
+  /** @param {State} s @returns {Fragment[]} */
   function fragments(s) {
     const ws = s.workspace, o = current(s);
     if (!ws || !o) return [];
@@ -144,30 +227,36 @@
   }
 
   /* ---------- commands ---------- */
+  /** @param {State} state @param {Command} [command] @returns {{ state: State, id?: string | null, error?: CommandError }} */
   function apply(state, command) {
     const s = clone(state);
     try {
       const id = run(s, command || {});
       return { state: s, id };
     } catch (e) {
+      // @ts-expect-error only err() objects carry a code
       if (e && e.code) return { state, error: e };
       throw e;
     }
   }
 
+  /** @param {State} s @param {string} [id] */
   function needOrientation(s, id) {
     const o = id ? find(s.orientations, id) : current(s);
     if (!o) throw err("no-orientation", "There is no such orientation.");
     return o;
   }
+  /** @param {State} s @param {string[] | undefined} ids @param {string} what */
   function checkIds(s, ids, what) {
     for (const id of ids || []) if (!find(s.items, id)) throw err("bad-ref", what + " refers to an item that does not exist.");
     return uniq(ids || []);
   }
+  /** @param {State} s @param {Orientation} o @param {Command} c */
   function setFields(s, o, c) {
     for (const f of FIELDS) if (f in c) o[f] = clean(c[f]);
     if ("confidence" in c) { if (!CONFIDENCE.includes(c.confidence)) throw err("bad-confidence", "Confidence is tenuous, working or strong."); o.confidence = c.confidence; }
     if ("tags" in c) {
+      /** @type {Record<string, string>} */
       const tags = {};
       for (const d of D.dimensions) if (d.tags && c.tags && d.tags.includes(c.tags[d.id])) tags[d.id] = c.tags[d.id];
       o.tags = tags;
@@ -184,6 +273,7 @@
     }
   }
 
+  /** @param {State} s @param {Command} c @returns {string | null} the id the command made or changed */
   function run(s, c) {
     const o0 = current(s);
     switch (c.do) {
@@ -233,6 +323,7 @@
         if (!it) throw err("bad-ref", "There is no such item.");
         if ("ledger" in c && c.ledger !== it.ledger) {
           if (c.ledger === "observed") throw err("observation-integrity", "An inference cannot become an observation by relabelling. Use “Record as observed” to add a separate observation with its source.");
+          // @ts-expect-error every stored item has a known type
           if (TYPES.get(it.type).fixed || c.ledger !== "inferred") throw err("bad-ledger", "This item type has a fixed ledger kind.");
           it.ledger = "inferred";
         }
@@ -374,6 +465,8 @@
         const ws = s.workspace;
         const o = find(s.orientations, c.id);
         if (!ws || !o || o.status !== "candidate" || !ws.candidates.includes(o.id)) throw err("bad-ref", "Adopt one of the open candidates.");
+        /** @type {Orientation} */
+        // @ts-expect-error a reorientation is open only while an orientation is adopted
         const prev = current(s);
         const rejected = ws.candidates.filter((id) => id !== o.id && find(s.orientations, id).status === "candidate");
         for (const id of rejected) find(s.orientations, id).status = "rejected";
@@ -419,8 +512,9 @@
         if (s.actions.some(open)) throw err("one-action", "Finish or edit the current action first: one meaningful next move per loop.");
         if (!D.actionTypes.some((t) => t.id === c.type)) throw err("bad-type", "Choose probe, maneuver, commitment or wait.");
         if (!clean(c.text)) throw err("empty", "Say what you will do.");
+        /** @type {Action} */
         const a = { id: nid(s, "a"), orientation: o.id, type: c.type, text: clean(c.text), prediction: null, reconsider: clean(c.reconsider),
-          refs: checkIds(s, c.refs, "The action"), consistency: consistency(c.consistency), info: (c.info || []).filter((x) => D.infoEnvironment.includes(x)), status: "draft", loop: s.loop };
+          refs: checkIds(s, c.refs, "The action"), consistency: consistency(c.consistency), info: (c.info || []).filter((/** @type {string} */ x) => D.infoEnvironment.includes(x)), status: "draft", loop: s.loop };
         s.actions.push(a);
         if (clean(c.expected)) a.prediction = addPrediction(s, o.id, a.id, c.expected).id;
         log(s, "action", { action: a.id, orientation: o.id });
@@ -435,7 +529,7 @@
         if ("reconsider" in c) a.reconsider = clean(c.reconsider);
         if ("refs" in c) a.refs = checkIds(s, c.refs, "The action");
         if ("consistency" in c) a.consistency = consistency(c.consistency);
-        if ("info" in c) a.info = (c.info || []).filter((x) => D.infoEnvironment.includes(x));
+        if ("info" in c) a.info = (c.info || []).filter((/** @type {string} */ x) => D.infoEnvironment.includes(x));
         if ("expected" in c) {
           const p = a.prediction && find(s.predictions, a.prediction);
           if (p) p.text = clean(c.expected);
@@ -481,6 +575,7 @@
         if (!clean(c.observed)) throw err("empty", "Say what happened.");
         const attribution = D.attributions.some((x) => x.id === c.attribution) ? c.attribution : "";
         const effect = ["achieved", "partial", "not"].includes(c.effect) ? c.effect : "";
+        /** @type {Outcome} */
         const r = { id: nid(s, "r"), action: a.id, loop: s.loop, observed: clean(c.observed), surprise: clean(c.surprise), absent: clean(c.absent),
           changedEnvironment: ["yes", "no", "unsure"].includes(c.changedEnvironment) ? c.changedEnvironment : "unsure",
           weakened: checkIds(s, c.weakened, "The outcome"), strengthened: checkIds(s, c.strengthened, "The outcome"),
@@ -517,11 +612,14 @@
     }
   }
 
+  /** @param {Partial<Consistency>} [c] @returns {Consistency} */
   function consistency(c) {
+    /** @param {any} v any stored or imported value; only yes, no and unsure are kept @returns {string} */
     const yn = (v) => (["yes", "no", "unsure"].includes(v) ? v : "");
     c = c || {};
     return { follows: yn(c.follows), sameUnderAll: yn(c.sameUnderAll), dominates: yn(c.dominates), discriminator: clean(c.discriminator) };
   }
+  /** @param {State} s @param {string} orientation @param {string | null} action @param {unknown} text @returns {Prediction} */
   function addPrediction(s, orientation, action, text) {
     const p = { id: nid(s, "p"), orientation, action, text: clean(text), locked: false, original: null, status: "pending", result: "", interpretation: "" };
     s.predictions.push(p);
@@ -529,18 +627,25 @@
   }
 
   /* ---------- reading the state ---------- */
+  /** @param {Orientation} o */
   function statement(o) {
+    /** @param {unknown} x */
     const f = (x) => bare(x) || "…";
     return "I think this situation is primarily " + f(o.inside) + " because " + f(o.explains) + ". The key constraint or opportunity is " + f(o.matters) + ". Therefore I expect " + f(o.observe) + ".";
   }
+  /** @param {Orientation} o */
   function claim(o) { return "the situation is primarily " + (bare(o.inside) || "…"); }
+  /** @param {State} s @param {Action} a */
   function actionSentence(s, a) {
     const o = find(s.orientations, a.orientation), p = a.prediction && find(s.predictions, a.prediction);
     return "Because I currently believe " + (o ? claim(o) : "…") + ", I will " + (lowerFirst(a.text) || "…") + ", and I expect to observe " + (p ? lowerFirst(p.text) : "…") + ".";
   }
+  /** @param {State} s @param {Action | null | undefined} a */
   const expectedOf = (s, a) => { const p = a && a.prediction && find(s.predictions, a.prediction); return p ? p.text : ""; };
+  /** @param {State} s @returns {Action | null} */
   const currentAction = (s) => s.actions.filter(open).slice(-1)[0] || null;
 
+  /** @param {State} s @param {Orientation} o */
   function basis(s, o) {
     const its = itemsOf(s, o);
     const preds = s.predictions.filter((p) => p.orientation === o.id);
@@ -554,7 +659,9 @@
       failed: preds.filter((p) => p.status === "not-observed").length,
     };
   }
+  /** @param {ReturnType<typeof basis>} b */
   function basisText(b) {
+    /** @param {number} k @param {string} one @param {string} many */
     const n = (k, one, many) => k + " " + (k === 1 ? one : many);
     const out = [n(b.supporting, "supporting observation", "supporting observations"), n(b.contradictions, "contradiction", "contradictions"),
       n(b.untested, "untested assumption", "untested assumptions"), n(b.observed, "successful prediction", "successful predictions")];
@@ -563,12 +670,15 @@
     if (b.weakened) out.push(n(b.weakened, "weakened assumption", "weakened assumptions"));
     return out;
   }
+  /** @param {State} s @param {Orientation} o */
   const outcomesOf = (s, o) => s.outcomes.filter((r) => { const a = find(s.actions, r.action); return a && a.orientation === o.id; });
 
+  /** @param {State} s @returns {{ id: string, label: string, detail: string }[]} */
   function triggers(s) {
-    const o = current(s), out = [];
+    const o = current(s), /** @type {{ id: string, label: string, detail: string }[]} */ out = [];
     if (!o) return out;
-    const has = new Set(o.items), add = (id, detail) => out.push({ id, label: D.triggers.find((t) => t.id === id).label, detail });
+    // @ts-expect-error every trigger id is in the data
+    const has = new Set(o.items), /** @type {(id: string, detail: string) => number} */ add = (id, detail) => out.push({ id, label: D.triggers.find((t) => t.id === id).label, detail });
     const surprises = s.items.filter((i) => i.surprise && i.status === "active" && !has.has(i.id));
     if (surprises.length) add("surprise", surprises.map((i) => i.text).join("; "));
     const failed = s.predictions.filter((p) => p.orientation === o.id && p.status === "not-observed");
@@ -588,17 +698,24 @@
     return out;
   }
 
+  /** @param {State} s @param {Orientation} o */
   function boundaryText(s, o) { const b = o.boundary && find(s.items, o.boundary); return b ? b.text : ""; }
+  /** @param {State} s @param {Orientation} a @param {Orientation} b */
   function equivalent(s, a, b) {
+    /** @param {Orientation} o */
     const as = (o) => itemsOf(s, o).filter((i) => i.type === "assumption" || i.type === "causal").map((i) => i.text).sort().join(" | ");
     return similar(boundaryText(s, a), boundaryText(s, b)) && similar(as(a), as(b)) && similar(a.mechanism, b.mechanism) && similar(a.move, b.move);
   }
+  /** @param {State} s */
   const activeCandidates = (s) => (s.workspace ? s.workspace.candidates.map((id) => find(s.orientations, id)).filter((o) => o.status === "candidate") : []);
 
+  /** @param {State} s @returns {{ rule: string, title: string, message: string, target: string, detail: string }[]} */
   function diagnostics(s) {
-    const out = [], o = current(s);
+    const /** @type {ReturnType<typeof diagnostics>} */ out = [], o = current(s);
+    /** @param {string} rule @param {string} target @param {string} [detail] */
     const add = (rule, target, detail) => {
       const d = D.diagnostics.find((x) => x.id === rule);
+      // @ts-expect-error every rule id is in the data
       out.push({ rule, title: d.title, message: d.message, target, detail: detail || "" });
     };
     const cands = activeCandidates(s);
@@ -608,6 +725,7 @@
         if (equivalent(s, pool[i], pool[j])) add("rewording", pool[j].id, label(s, pool[j]) + " and " + label(s, pool[i]) + " share the same boundary, assumptions, mechanism and move.");
     if (pool.length >= 2) {
       const bs = pool.map((x) => boundaryText(s, x));
+      // @ts-expect-error the pool is not empty only when an orientation is adopted
       if (bs[0] && bs.every((b) => similar(b, bs[0]))) add("boundary-lock", o.id, "Shared boundary: " + bs[0]);
     }
     for (const x of o ? [o, ...cands] : []) if (!bare(x.falsifier)) add("untestable", x.id, label(s, x) + " is hard to test.");
@@ -633,10 +751,13 @@
     return out;
   }
 
+  /** @param {State} s @param {Orientation | null | undefined} o @returns {{ kind: string, orientation: string, item: string | null, text: string }[]} */
   function deepMemory(s, o) {
+    /** @type {ReturnType<typeof deepMemory>} */
     const out = [];
     if (!o) return out;
     const before = s.orientations.filter((p) => p.id !== o.id && (p.status === "superseded" || p.status === "rejected"));
+    /** @type {{ id: string | null, text: string }[]} */
     const mine = itemsOf(s, o).filter((i) => ["assumption", "causal", "interpretation"].includes(i.type)).map((i) => ({ id: i.id, text: i.text }));
     if (bare(o.keyAssumption)) mine.push({ id: null, text: o.keyAssumption });
     const seen = new Set();
@@ -658,33 +779,41 @@
     return out;
   }
 
+  /** @param {State} s @returns {{ op: string, why: string }[]} */
   function guided(s) {
     const o = current(s), ws = s.workspace;
     if (!o) return [];
     const trig = new Set(triggers(s).map((t) => t.id)), diag = new Set(diagnostics(s).map((d) => d.rule));
+    /** @type {Record<string, boolean>} */
     const cond = {
       contradiction: contradictionsOf(s, o).length > 0, "boundary-lock": diag.has("boundary-lock"), "action-failures": trig.has("action-failures"),
       "no-falsifier": !bare(o.falsifier), "untested-constraint": itemsOf(s, o, "constraint").some((k) => !k.tested), stale: trig.has("stale"),
       tempo: trig.has("tempo"), objects: itemsOf(s, o).some((i) => i.type === "object" || i.type === "function"), always: true,
     };
+    /** @type {ReturnType<typeof guided>} */
     const out = [];
     for (const g of D.guided) {
       if (!cond[g.when]) continue;
       for (const id of g.ops) {
         const op = OPS.get(id);
+        // @ts-expect-error every operation the data names exists
         if (out.length < 3 && !out.some((x) => x.op === id) && (!op.deep || (ws && ws.deep))) out.push({ op: id, why: g.why });
       }
     }
     return out;
   }
+  /** @param {State} s */
   const jolt = (s) => D.jolts[(s.workspace ? s.workspace.jolt : 0) % D.jolts.length];
 
+  /** @param {State} s @returns {{ id: string, label: string, text: string, from: string[] }[]} */
   function creationPrompts(s) {
     const frags = fragments(s).filter((f) => f.kind !== "destroyed");
     if (!frags.length) return [];
     const o = current(s), created = frags.filter((f) => f.kind === "created");
     const openRefs = new Set(contradictionsOf(s, o).flatMap((c) => c.refs));
+    // @ts-expect-error fragments exist only while an orientation is adopted
     const unexplained = frags.filter((f) => f.item.type === "signal" && (!o.items.includes(f.id) || openRefs.has(f.id) || f.item.surprise));
+    /** @param {string} type @param {Fragment[]} pool */
     const pick = (type, pool) => (type === "unexplained" ? unexplained[0] : pool.find((f) => f.item.type === type));
     const out = [];
     for (const t of D.creation) {
@@ -695,6 +824,7 @@
     return out;
   }
 
+  /** @param {State} s */
   function contrast(s) {
     const o = current(s);
     if (!o) return [];
@@ -713,14 +843,18 @@
     });
   }
 
+  /** @param {State} s */
   function readiness(s) {
     const o = current(s), a = currentAction(s);
     return { orientation: !!(o && bare(o.inside)), action: !!a, expected: !!(a && bare(expectedOf(s, a))), reconsider: !!(a && a.reconsider) };
   }
 
   /* The lineage tree: every orientation under its parent, in creation order, with the transition into it. */
+  /** @param {State} s */
   function lineage(s) {
+    /** @type {{ id: string, label: string, status: string, depth: number, loop: number, transition: HistoryEntry | null }[]} */
     const rows = [];
+    /** @param {string | null} parent @param {number} depth */
     const walk = (parent, depth) => {
       for (const o of s.orientations.filter((x) => x.parent === parent)) {
         rows.push({ id: o.id, label: label(s, o), status: o.status, depth, loop: o.loop, transition: s.history.find((h) => h.kind === "transition" && h.to === o.id) || null });
@@ -730,15 +864,18 @@
     walk(null, 0);
     return rows;
   }
+  /** @param {State} s */
   function currentLineage(s) {
     const chain = [];
     for (let o = current(s); o; o = o.parent ? find(s.orientations, o.parent) : null) chain.unshift(o);
     return chain;
   }
   /* Kept / Destroyed / Created for one transition, resolved to items. Presentation options never change it. */
+  /** @param {State} s @param {string} transitionId */
   function signature(s, transitionId) {
     const t = s.history.find((h) => h.id === transitionId && h.kind === "transition");
     if (!t) return null;
+    /** @param {string[]} ids */
     const res = (ids) => ids.map((id) => find(s.items, id)).filter(Boolean).map((i) => ({ id: i.id, type: i.type, text: i.text }));
     return { from: labelOf(s, t.from), to: labelOf(s, t.to), kept: res(t.kept), destroyed: res(t.destroyed), created: res(t.created) };
   }
@@ -751,8 +888,10 @@
     ["show-predictions", "Show prediction ledger", "predictions expected"], ["new", "New situation", "start blank"], ["import", "Import JSON", "load file"],
     ["export", "Export JSON", "save download archive"], ["copy-markdown", "Copy Markdown", "share export"], ["reset", "Reset", "clear delete"], ["how", "How this works", "help method ooda"],
   ];
+  /** @param {unknown} t */
   const norm = (t) => String(t || "").toLowerCase().replace(/[’']/g, "").replace(/[^a-z0-9]+/g, " ").trim();
 
+  /** @param {State} s @returns {SearchRecord[]} */
   function records(s) {
     const out = [];
     const o = current(s);
@@ -763,6 +902,7 @@
         if (!live(it)) continue;
         const T = TYPES.get(it.type);
         const where = it.type === "contradiction" || it.ledger !== "inferred" ? "Reality ledger" : o.items.includes(it.id) ? "Current orientation" : "Reality ledger · inferred";
+        // @ts-expect-error every stored item has a known type
         out.push({ kind: "record", type: it.type === "signal" ? "Signal" : T.label, ledger: it.ledger, id: it.id, title: it.text, text: it.provenance.join(" "), location: where, loop: null, target: { stage: it.ledger === "inferred" ? "model" : "reality", id: it.id } });
       }
       for (const x of s.orientations) {
@@ -778,16 +918,19 @@
     }
     for (const e of D.examples) out.push({ kind: "record", type: "Example", id: "ex-" + e.id, title: e.title, text: e.purpose + " " + e.note, location: "Examples", target: { stage: "example", id: e.id } });
     for (const c of D.cards) out.push({ kind: "record", type: "Example card", id: "card-" + c.id, title: c.title, text: c.lesson + " " + c.text, location: "Examples · from the author's OODA notes", target: { stage: "example", id: "card-" + c.id } });
+    // @ts-expect-error every operation names a family in the data
     for (const op of D.operations) out.push({ kind: "record", type: "Destruction operation", id: "op-" + op.id, title: op.label, text: op.challenge + " " + D.families.find((f) => f.id === op.family).label, location: "Method", target: { stage: "method", id: "op-" + op.id } });
     for (const m of D.methodology.why.concat(D.methodology.rao)) out.push({ kind: "record", type: "Help", id: m.id, title: m.title, text: m.text, location: "Why this works this way", target: { stage: "method", id: m.id } });
     return out;
   }
 
   /* Ranks: 0 exact title, 1 title starts with the phrase, 2 phrase contained, 3 every token present, 4 some tokens. */
+  /** @param {State} s @param {string} query @param {number} [limit] */
   function search(s, query, limit) {
     const q = norm(query), all = records(s);
     if (!q) return { results: all.filter((r) => r.kind === "command").slice(0, limit || 50), total: COMMANDS.length };
     const qt = q.split(" ");
+    /** @type {{ r: SearchRecord, tier: number, hits: number, i: number }[]} */
     const scored = [];
     all.forEach((r, i) => {
       const t = norm(r.title), h = norm(r.title + " " + r.text + " " + (r.keys || "") + " " + r.type), words = h.split(" ");
@@ -806,11 +949,15 @@
     return { results: scored.slice(0, limit || 50).map((x) => Object.assign({ rank: x.tier }, x.r)), total: scored.length };
   }
   /* Where a result lives. A pure description of a view; it never changes the planner state. */
+  /** @param {State} s @param {SearchRecord | null | undefined} rec */
   function navigate(s, rec) { return rec && rec.target ? { stage: rec.target.stage, id: rec.target.id, inspect: rec.target.inspect || null } : null; }
 
   /* ---------- import, export, persistence ---------- */
+  /** The problems with an imported state; empty when it is valid. @param {any} st untrusted JSON, checked field by field here @returns {string[]} */
   function check(st) {
+    /** @type {string[]} */
     const bad = [];
+    /** @param {unknown} ok @param {string} what */
     const need = (ok, what) => { if (!ok) bad.push(what); };
     if (!st || typeof st !== "object" || Array.isArray(st)) return ["not an object"];
     need(st.schemaVersion === SCHEMA, "schemaVersion");
@@ -825,6 +972,7 @@
     for (const k of ["items", "orientations", "predictions", "actions", "outcomes", "history", "links"])
       for (const x of st[k]) { need(x && typeof x.id === "string" && !ids.has(x.id), "unique id " + (x && x.id)); ids.add(x && x.id); }
     if (bad.length) return bad;
+    /** @param {{ id: string }[]} list @param {unknown} id */
     const has = (list, id) => list.some((x) => x.id === id);
     for (const it of st.items) {
       const T = TYPES.get(it.type);
@@ -836,7 +984,7 @@
     for (const o of st.orientations) {
       need(O_STATUS.includes(o.status) && Array.isArray(o.items), "orientation " + o.id);
       need(o.parent === null || has(st.orientations, o.parent), "parent of " + o.id);
-      need((o.items || []).every((id) => has(st.items, id)) && (o.boundary === null || has(st.items, o.boundary)), "items of " + o.id);
+      need((o.items || []).every((/** @type {string} */ id) => has(st.items, id)) && (o.boundary === null || has(st.items, o.boundary)), "items of " + o.id);
       for (const f of FIELDS) need(typeof o[f] === "string", f + " of " + o.id);
       if (o.status === "adopted") adopted += 1;
     }
@@ -848,6 +996,7 @@
     }
     for (const a of st.actions) {
       need(A_STATUS.includes(a.status) && has(st.orientations, a.orientation) && (a.prediction === null || has(st.predictions, a.prediction)), "action " + a.id);
+      // @ts-expect-error an unknown orientation reads as {}, whose status is undefined
       need(a.status !== "draft" || (find(st.orientations, a.orientation) || {}).status === "adopted", "draft action " + a.id + " follows the adopted orientation");
     }
     need(st.actions.filter(open).length <= 1, "one open action");
@@ -855,29 +1004,36 @@
     for (const h of st.history) if (h.kind === "transition") need(has(st.orientations, h.from) && has(st.orientations, h.to), "lineage edge " + h.id);
     if (st.workspace) {
       const w = st.workspace;
-      need(has(st.orientations, w.from) && Array.isArray(w.moves) && Array.isArray(w.candidates) && w.candidates.every((id) => has(st.orientations, id)) && w.moves.every((m) => has(st.items, m.result)), "workspace");
+      need(has(st.orientations, w.from) && Array.isArray(w.moves) && Array.isArray(w.candidates) && w.candidates.every((/** @type {string} */ id) => has(st.orientations, id)) && w.moves.every((/** @type {Move} */ m) => has(st.items, m.result)), "workspace");
     }
     return bad;
   }
 
   /* schemaVersion 1 was the planner's first draft format: items carried `kind` and `observed: true | false | null`,
    * orientations a `statement` object and a free-text boundary, predictions `frozen`, actions `kind`. */
+  /** @type {Record<number, (v: any) => State>} */
   const MIGRATIONS = {
+    /** @param {any} v a schema version 1 document @returns {State} */
     1(v) {
       const s = blank();
       s.situation = { title: String(v.situation && v.situation.title || ""), description: String(v.situation && v.situation.description || "") };
       if (v.situation && TEMPOS.includes(v.situation.tempo)) s.tempo = v.situation.tempo;
       if (v.situation && D.modes.some((m) => m.id === v.situation.mode)) s.mode = v.situation.mode;
+      /** @type {string[]} */
       const used = [];
+      /** @param {string} id */
       const keep = (id) => { used.push(id); return id; };
       for (const i of v.items || []) {
+        /** @type {ItemType} */
+        // @ts-expect-error "interpretation" is always an item type
         const T = TYPES.get(i.kind) || TYPES.get("interpretation");
         const ledger = T.fixed ? T.ledger : i.observed === true ? "observed" : "inferred";
-        s.items.push({ id: keep(String(i.id)), type: T.id, text: clean(i.text), ledger, provenance: (i.notes || []).filter((q) => D.qualifiers.some((x) => x.id === q)),
+        s.items.push({ id: keep(String(i.id)), type: T.id, text: clean(i.text), ledger, provenance: (i.notes || []).filter((/** @type {string} */ q) => D.qualifiers.some((x) => x.id === q)),
           status: T.id === "contradiction" ? "open" : T.id === "assumption" ? "untested" : "active", confidence: T.id === "assumption" ? "working" : "", refs: [], loop: 1, origin: null });
         if (T.id === "constraint") s.items[s.items.length - 1].tested = false;
       }
       let n = 0;
+      /** @param {string} p */
       const fresh = (p) => { let id; do { n += 1; id = p + "m" + n; } while (used.includes(id)); return keep(id); };
       if (clean(v.intent)) {
         s.intent = fresh("i");
@@ -885,6 +1041,8 @@
       }
       for (const o of v.orientations || []) {
         const st = o.statement || {};
+        /** @type {Orientation} */
+        // @ts-expect-error the loop below fills in the text fields
         const x = { id: keep(String(o.id)), parent: o.parent == null ? null : String(o.parent), status: O_STATUS.includes(o.status) ? o.status : "superseded", loop: 1,
           boundary: null, items: (o.assumptions || []).map(String), confidence: "tenuous", tags: {}, creation: { kind: "migrated", from: [], prompt: "" } };
         for (const f of FIELDS) x[f] = "";
@@ -914,6 +1072,7 @@
       return s;
     },
   };
+  /** @param {any} v an imported document of any schema version @returns {State | null} */
   function migrate(v) {
     let x = v;
     while (x && Number.isInteger(x.schemaVersion) && x.schemaVersion < SCHEMA) {
@@ -924,7 +1083,9 @@
     return x;
   }
 
+  /** @param {State} s */
   function exportJSON(s) { return JSON.stringify(s, null, 1) + "\n"; }
+  /** @param {unknown} text @returns {{ ok: true, state: State, migrated: boolean, message?: undefined } | { ok: false, message: string, state?: undefined, migrated?: undefined }} */
   function importText(text) {
     let v;
     try { v = JSON.parse(String(text)); } catch (e) { return { ok: false, message: MSG.invalid }; }
@@ -935,9 +1096,11 @@
     if (!st || check(st).length) return { ok: false, message: MSG.invalid };
     return { ok: true, state: st, migrated: v.schemaVersion !== SCHEMA };
   }
+  /** @param {Storage} storage @param {State} s */
   function save(storage, s) {
     try { storage.setItem(KEY, JSON.stringify(s)); return true; } catch (e) { return false; }
   }
+  /** @param {Storage} storage @returns {{ state: State | null, message?: string, unavailable?: boolean }} */
   function load(storage) {
     let text;
     try { text = storage.getItem(KEY); } catch (e) { return { state: null, message: MSG.storage, unavailable: true }; }
@@ -945,17 +1108,23 @@
     const r = importText(text);
     return r.ok ? { state: r.state } : { state: null, message: r.message };
   }
+  /** @param {Storage} storage */
   function clear(storage) { try { storage.removeItem(KEY); return true; } catch (e) { return false; } }
 
   /* ---------- Markdown ---------- */
+  /** @param {State} s */
   function markdown(s) {
     const o = current(s), L = [];
+    /** @param {Item} i */
+    // @ts-expect-error every stored item and qualifier is in the data
     const it = (i) => (i.type === "signal" ? "" : "[" + TYPES.get(i.type).label + "] ") + i.text + (i.provenance.length ? " (" + i.provenance.map((q) => D.qualifiers.find((x) => x.id === q).label).join(", ") + ")" : "") + (i.status === "weakened" ? " — weakened" : i.status === "supported" ? " — supported" : "");
+    /** @param {string[]} xs @param {string} empty */
     const list = (xs, empty) => (xs.length ? xs.map((x) => "- " + x) : ["- " + empty]);
     const items = s.items.filter(live);
     L.push("# " + (s.situation.title || "Untitled situation"), "");
     if (s.situation.description) L.push(s.situation.description, "");
     const intent = s.intent && find(s.items, s.intent);
+    // @ts-expect-error the mode is always one of the data's modes
     L.push("Intent: " + (intent ? intent.text : "not stated") + " · Tempo: " + s.tempo + " · Mode: " + D.modes.find((m) => m.id === s.mode).label + " · Loop " + s.loop, "");
     L.push("## Current reality", "", "### Observed", ...list(items.filter((i) => i.ledger === "observed" && i.type !== "contradiction").map(it), "Nothing recorded"), "");
     L.push("### Inferred", ...list(items.filter((i) => i.ledger === "inferred").map(it), "Nothing recorded"), "");
@@ -968,7 +1137,8 @@
       const b = boundaryText(s, x);
       if (b) L.push("", "Boundary: " + b);
       if (row.transition) {
-        const sig = signature(s, row.transition.id), names = (xs) => xs.map((i) => i.text).join("; ") || "nothing";
+        const sig = signature(s, row.transition.id), /** @type {(xs: { text: string }[]) => string} */ names = (xs) => xs.map((i) => i.text).join("; ") || "nothing";
+        // @ts-expect-error the row's transition is in the history
         L.push("", "From " + sig.from + ": kept " + names(sig.kept) + ". Destroyed " + names(sig.destroyed) + ". Created " + names(sig.created) + ".");
         if (row.transition.note) L.push("", "Why: " + row.transition.note);
       }
@@ -1002,16 +1172,20 @@
 
   /* Replays a worked example: its steps are ordinary commands whose "as" names stand for the ids they create. */
   const REFKEYS = ["id", "targets", "refs", "items", "from", "evidence", "action", "boundary", "betterFit", "weakened", "strengthened", "orientation"];
+  /** @param {Example} example @param {number | null} [upto] */
   function replay(example, upto) {
     let s = blank();
-    const alias = {}, steps = example.steps.slice(0, upto == null ? example.steps.length : upto);
+    const /** @type {Record<string, string>} */ alias = {}, steps = example.steps.slice(0, upto == null ? example.steps.length : upto);
+    /** @param {unknown} v @returns {unknown} */
     const res = (v) => (Array.isArray(v) ? v.map(res) : typeof v === "string" && alias[v] ? alias[v] : v);
     for (const step of steps) {
+      /** @type {Command} */
       const c = {};
       for (const [k, v] of Object.entries(step)) if (k !== "as") c[k] = REFKEYS.includes(k) ? res(v) : v;
       const r = apply(s, c);
       if (r.error) throw new Error(example.id + " step " + step.do + ": " + r.error.message);
       s = r.state;
+      // @ts-expect-error a command that succeeds returns the id it made
       if (step.as) alias[step.as] = r.id;
     }
     return { state: s, alias };

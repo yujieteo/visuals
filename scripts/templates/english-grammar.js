@@ -1,19 +1,39 @@
 /* Interface for the grammar laboratory. Logic lives in EGLogic (english-grammar-logic.js). */
+/**
+ * The laboratory's elements, made by renderConcept() and renderExample().
+ * @typedef {{ rail: HTMLUListElement, example: HTMLElement, why: HTMLDetailsElement, compare: HTMLDetailsElement, tree: HTMLDetailsElement,
+ *   strip: HTMLDivElement, stripWrap: HTMLDivElement, inspector: HTMLElement, treeNodes?: HTMLDivElement, treeMarks?: HTMLUListElement | null,
+ *   depthControls: { unfold: HTMLButtonElement, fold: HTMLButtonElement, all: HTMLButtonElement, depthNote: HTMLSpanElement } }} Els
+ * @typedef {Node | string | null | undefined | false} Kid
+ */
 (function () {
   "use strict";
   const L = window.EGLogic;
+  /** @type {GrammarData} */
+  // @ts-expect-error the generated page always holds its #eg-data block
   const D = JSON.parse(document.getElementById("eg-data").textContent);
   const idx = L.index(D);
+  /** @type {HTMLElement} */
+  // @ts-expect-error the page shell has #app
   const app = document.getElementById("app");
   const narrow = window.matchMedia("(max-width: 56rem)");
   const NS = "http://www.w3.org/2000/svg";
 
+  /** @type {{ concept: string, example: string, node: string, view: string | null, depth: number, showAll: boolean, navOpen: boolean, notice: string, start?: boolean, explicitExample?: boolean }} */
+  // @ts-expect-error applyHash() sets the concept, example and node before anything reads them
   const state = { concept: null, example: null, node: null, view: null, depth: 1, showAll: false, navOpen: !narrow.matches, notice: "" };
 
   /* ---------- small DOM helpers ---------- */
+  /**
+     * An element with attributes (class, text, on* listeners, booleans) and children.
+     * @template {keyof HTMLElementTagNameMap} K
+     * @param {K} tag @param {Record<string, any> | null} [attrs] values of several kinds, as above @param {Kid | Kid[]} [kids]
+     * @returns {HTMLElementTagNameMap[K]}
+     */
   function h(tag, attrs, kids) {
     const el = document.createElement(tag);
     for (const k in attrs || {}) {
+      // @ts-expect-error attrs is set whenever the loop has a key
       const v = attrs[k];
       if (v === null || v === undefined || v === false) continue;
       if (k === "class") el.className = v;
@@ -24,8 +44,11 @@
     (Array.isArray(kids) ? kids : kids === undefined ? [] : [kids]).forEach((k) => { if (k !== null && k !== undefined && k !== false) el.append(k); });
     return el;
   }
+  /** @param {string} text */
   function q(text) { return "“" + text + "”"; }
+  /** @param {Kid | Kid[]} label @param {string} hash @param {Record<string, any>} [attrs] */
   function link(label, hash, attrs) { return h("a", Object.assign({ href: hash }, attrs || {}), label); }
+  /** @param {Reference} r */
   function refText(r) { return r.label + (r.page ? " (p. " + r.page + ")" : ""); }
 
   /* ---------- static frame ---------- */
@@ -52,9 +75,11 @@
   const lab = h("main", { id: "lab", class: "lab", tabindex: "-1" });
   const live = h("div", { class: "sr-only", "aria-live": "polite", role: "status" });
   app.append(h("div", { class: "toolbar" }, [toggle]), h("div", { class: "layout" }, [nav, lab]), live);
+  // @ts-expect-error the page shell has its no-script #static block
   document.getElementById("static").remove();
   app.hidden = false;
 
+  /** @param {string} text */
   function say(text) { live.textContent = ""; window.setTimeout(() => { live.textContent = text; }, 30); }
 
   /* ---------- navigator ---------- */
@@ -68,17 +93,21 @@
       return;
     }
     const list = h("ul", { class: "sections", id: "ch-" + ch.n, hidden: true });
+    /** @type {Map<string, string[]>} */
     const groups = new Map();
     ids.forEach((id) => {
       const ref = idx.concepts.get(id).references[0], key = ref.section || "";
       if (!groups.has(key)) groups.set(key, []);
+      // @ts-expect-error the line above has made the group
       groups.get(key).push(id);
     });
+    /** @param {string} k */
     const order = (k) => (k ? k.split(".").map((x) => x.padStart(3, "0")).join(".") : "999");
     [...groups.keys()].sort((a, b) => order(a).localeCompare(order(b))).forEach((key) => {
       const sec = ch.sections.find((s) => s.id === key);
       const head = sec ? "§" + sec.id + " " + sec.title + " (p. " + sec.page + ")" : "Chapter " + ch.n + " (section not cited)";
       list.append(h("li", { class: "section" }, [h("span", { class: "section-name" }, head),
+        // @ts-expect-error every sorted key is a group
         h("ul", {}, groups.get(key).map((id) => h("li", {}, link(idx.concepts.get(id).name, "#" + id, { "data-concept": id }))))]));
     });
     const btn = h("button", { type: "button", class: "chapter-btn", "aria-expanded": "false", "aria-controls": "ch-" + ch.n },
@@ -86,10 +115,12 @@
     btn.addEventListener("click", () => setChapter(ch.n, btn.getAttribute("aria-expanded") !== "true"));
     outline.append(h("li", { class: "chapter" }, [btn, list]));
   });
+  /** @param {string} n @param {boolean} open */
   function setChapter(n, open) {
     const btn = outline.querySelector('[aria-controls="ch-' + n + '"]');
     if (!btn) return;
     btn.setAttribute("aria-expanded", String(open));
+    // @ts-expect-error every chapter button controls its list
     document.getElementById("ch-" + n).hidden = !open;
   }
 
@@ -99,17 +130,20 @@
     results.textContent = "";
     if (!r.query) { results.append(h("p", { class: "hint" }, "Type a term such as object, determiner or gerund, or a word from an example such as cake.")); return; }
     if (!r.results.length) { results.append(h("p", {}, "No matches for " + q(r.query) + ". Try a familiar term, an abbreviation such as NP, or browse the chapters below.")); return; }
+    /** @type {Record<string, string>} */
     const kind = { concept: "Concept", alias: "Familiar term, not a book term", abbreviation: "Abbreviation", example: "Example" };
+    // @ts-expect-error a search with results has a total
     results.append(h("p", { class: "hint" }, r.total + (r.total === 1 ? " match" : " matches") + (r.total > r.results.length ? ", showing " + r.results.length : "")),
       h("ul", { class: "result-list" }, r.results.map((x) => h("li", {}, link([h("span", { class: "r-label" }, x.label), h("span", { class: "r-kind" }, kind[x.type] + (x.type === "concept" ? " · " + x.detail : " → " + x.detail))],
         "#" + x.concept + (x.example ? "/" + x.example : ""), { "data-concept": x.concept })))));
   }
   searchInput.addEventListener("input", renderResults);
-  searchInput.addEventListener("keydown", (ev) => {
+  searchInput.addEventListener("keydown", (/** @type {KeyboardEvent} */ ev) => {
     if (ev.key === "ArrowDown") { const a = results.querySelector("a"); if (a) { ev.preventDefault(); a.focus(); } }
   });
-  results.addEventListener("keydown", (ev) => {
+  results.addEventListener("keydown", (/** @type {KeyboardEvent} */ ev) => {
     if (ev.key !== "ArrowDown" && ev.key !== "ArrowUp") return;
+    // @ts-expect-error indexOf of any element: -1 when focus is elsewhere
     const all = [...results.querySelectorAll("a")], i = all.indexOf(document.activeElement);
     if (i < 0) return;
     ev.preventDefault();
@@ -119,6 +153,7 @@
   renderResults();
 
   /* Drawer (phones) and collapsible sidebar (desktop) */
+  /** @param {boolean} open @param {HTMLElement | null} [focusTarget] @param {boolean} [quiet] */
   function setNav(open, focusTarget, quiet) {
     state.navOpen = open;
     toggle.setAttribute("aria-expanded", String(open));
@@ -126,11 +161,13 @@
     if (narrow.matches) {
       if (open) { nav.setAttribute("role", "dialog"); nav.setAttribute("aria-modal", "true"); nav.setAttribute("aria-labelledby", "nav-title"); }
       else { nav.removeAttribute("role"); nav.removeAttribute("aria-modal"); nav.removeAttribute("aria-labelledby"); }
+      // @ts-expect-error the page shell has .top and .foot
       lab.inert = open; document.querySelector(".top").inert = open; document.querySelector(".foot").inert = open;
       if (quiet) return;
       if (open) (focusTarget || searchInput).focus();
       else toggle.focus();
     } else {
+      // @ts-expect-error as above
       lab.inert = false; document.querySelector(".top").inert = false; document.querySelector(".foot").inert = false;
       nav.removeAttribute("role"); nav.removeAttribute("aria-modal");
       if (open && focusTarget) focusTarget.focus();
@@ -138,7 +175,7 @@
   }
   toggle.addEventListener("click", () => setNav(!state.navOpen));
   closeBtn.addEventListener("click", () => setNav(false));
-  document.addEventListener("keydown", (ev) => {
+  document.addEventListener("keydown", (/** @type {KeyboardEvent} */ ev) => {
     /* Ctrl+K (Cmd+K on macOS) jumps to search, opening the navigator or the Concepts drawer first. */
     if (L.isSearchShortcut(ev)) {
       ev.preventDefault();
@@ -149,35 +186,43 @@
     }
     if (ev.key === "Escape" && narrow.matches && state.navOpen) { ev.preventDefault(); setNav(false); }
     if (ev.key === "Tab" && narrow.matches && state.navOpen) {
-      const f = [...nav.querySelectorAll("a[href], button, input")].filter((el) => !el.closest("[hidden]"));
+      // @ts-expect-error links, buttons and inputs are HTML elements
+      const /** @type {HTMLElement[]} */ f = [...nav.querySelectorAll("a[href], button, input")].filter((el) => !el.closest("[hidden]"));
       if (!f.length) return;
       if (ev.shiftKey && document.activeElement === f[0]) { ev.preventDefault(); f[f.length - 1].focus(); }
       else if (!ev.shiftKey && document.activeElement === f[f.length - 1]) { ev.preventDefault(); f[0].focus(); }
     }
   });
   nav.addEventListener("click", (ev) => {
+    // @ts-expect-error a click lands on an element
     const a = ev.target.closest("a[href^='#']");
     if (a && narrow.matches && state.navOpen) setNav(false);
   });
   narrow.addEventListener("change", () => setNav(!narrow.matches, null, true));
 
   /* ---------- laboratory ---------- */
+  /** @type {Els} */
+  // @ts-expect-error renderConcept() and renderExample() make every element before it is read
   let els = {};
 
   /* beamdswitch: each concept page saves or copies its lesson as a narrated Markdown deck. The report
      template is beamdswitch.js; report.js fills it from the concept shown. */
-  const deckBox = document.getElementById("deck"), deckStatus = document.getElementById("deck-status");
+  // @ts-expect-error the page shell has the deck row
+  const /** @type {HTMLElement} */ deckBox = document.getElementById("deck"), /** @type {HTMLElement} */ deckStatus = document.getElementById("deck-status");
   const deck = () => window.Beamdswitch.deck(window.EGReport.report(idx, L, state.concept));
+  /** @param {string} text @param {string} name */
   function saveDeck(text, name) {
     const url = URL.createObjectURL(new Blob([text], { type: "text/markdown" })), a = document.createElement("a");
     a.href = url; a.download = name; document.body.append(a); a.click(); a.remove();
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
+  // @ts-expect-error the deck row has its buttons
   document.getElementById("save-beamdswitch").addEventListener("click", () => {
     const name = "english-grammar-" + state.concept + "-beamdswitch.md";
     try { saveDeck(deck(), name); deckStatus.textContent = "Saved " + name + ": open it in beamdswitch."; }
     catch (e) { deckStatus.textContent = "Could not save the beamdswitch deck here: use Copy deck instead."; }
   });
+  // @ts-expect-error as above
   document.getElementById("copy-beamdswitch").addEventListener("click", async () => {
     try { await navigator.clipboard.writeText(deck()); deckStatus.textContent = "Copied the beamdswitch deck: paste it into beamdswitch."; }
     catch (e) { deckStatus.textContent = "Could not copy the beamdswitch deck here: use the beamdswitch button to save it."; }
@@ -191,6 +236,7 @@
       lab.append(h("section", { class: "start", "aria-labelledby": "start-h" }, [
         h("h2", { id: "start-h", class: "start-h" }, "Start here"),
         h("p", {}, "One tiny sentence shows the key distinction. Select a word, then the bracket above it: the word and the phrase get different answers."),
+        // @ts-expect-error the navigator has #browse-h
         h("button", { type: "button", class: "btn", onclick: () => { setNav(true, document.getElementById("browse-h")); document.getElementById("browse-h").scrollIntoView({ block: "start" }); } }, "Browse CGEL")]));
     }
     const ri = idx.route.indexOf(c.id);
@@ -222,6 +268,7 @@
     [els.compare, els.tree].forEach((d) => d.addEventListener("toggle", () => {
       const view = d.open ? d.dataset.view : (state.view === d.dataset.view ? null : state.view);
       if (d.open) { (d === els.tree ? els.compare : els.tree).open = false; }
+      // @ts-expect-error both disclosures carry data-view
       if (view !== state.view) { state.view = view; pushHash(); }
       if (d === els.tree && d.open) renderTree();
     }));
@@ -235,6 +282,7 @@
     const c = idx.concepts.get(state.concept);
     els.rail.textContent = "";
     const shown = state.showAll ? c.items : c.items.slice(0, 4);
+    // @ts-expect-error the current example is one of the concept's items
     if (!shown.some((i) => i.ex === state.example)) shown.push(c.items.find((i) => i.ex === state.example));
     shown.forEach((item) => {
       const e = idx.examples.get(item.ex), current = item.ex === state.example;
@@ -243,11 +291,13 @@
     });
     if (c.items.length > shown.length) {
       els.rail.append(h("li", {}, h("button", { type: "button", class: "more-btn", onclick: () => {
+        // @ts-expect-error rail buttons are HTML elements
         state.showAll = true; renderRail(); const b = els.rail.querySelectorAll(".rail-btn")[4]; if (b) b.focus();
       } }, "Show more examples (" + (c.items.length - shown.length) + ")")));
     }
   }
 
+  /** @param {string} exId @param {boolean} [fromRail] */
   function chooseExample(exId, fromRail) {
     if (exId === state.example) return;
     state.example = exId;
@@ -255,7 +305,7 @@
     pushHash();
     applyExample();
     if (fromRail) {
-      const b = els.rail.querySelector('[data-ex="' + exId + '"]');
+      const /** @type {HTMLElement | null} */ b = els.rail.querySelector('[data-ex="' + exId + '"]');
       if (b) b.focus();
       say("Showing example: " + idx.examples.get(exId).text);
     }
@@ -266,6 +316,7 @@
     state.example = item.ex;
     state.node = item.node;
     state.depth = Math.max(1, Math.min(L.maxDepth(idx, item.ex), 1));
+    // @ts-expect-error as above
     els.rail.querySelectorAll(".rail-btn").forEach((b) => { if (b.dataset.ex === state.example) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current"); });
     renderExample();
     renderCompare();
@@ -295,6 +346,7 @@
     if (e.predict) {
       const ans = h("p", { class: "answer", hidden: true }, e.predict.answer);
       const btn = h("button", { type: "button", class: "btn small", "aria-expanded": "false" }, "Reveal the analysis");
+      // @ts-expect-error inside "if (e.predict)"
       btn.addEventListener("click", () => { ans.hidden = false; btn.setAttribute("aria-expanded", "true"); btn.disabled = true; select(e.predict.node, false); });
       els.example.append(h("div", { class: "predict" }, [h("p", {}, [h("span", { class: "tag" }, "Try it"), " " + e.predict.question]), btn, ans]));
     }
@@ -305,6 +357,7 @@
     if (els.tree.open) renderTree();
   }
 
+  /** @param {number} d */
   function setDepth(d) {
     const max = L.maxDepth(idx, state.example);
     state.depth = Math.max(0, Math.min(max, d));
@@ -318,20 +371,27 @@
     const strip = els.strip, hadFocus = strip.contains(document.activeElement);
     strip.textContent = "";
     const gaps = [...map.values()].filter((v) => v.node.gap).map((v) => v.node);
-    const col = new Map(), slots = [];
+    /** @typedef {{ gap: GNode, token?: undefined, i?: undefined } | { token: Token, i: number, gap?: undefined }} Slot */
+    const /** @type {Map<string | number, number>} */ col = new Map(), /** @type {Slot[]} */ slots = [];
     e.tokens.forEach((t, i) => {
       gaps.filter((g) => g.at === i).forEach((g) => { col.set("g:" + g.id, slots.length + 1); slots.push({ gap: g }); });
       col.set(i, slots.length + 1); slots.push({ token: t, i: i });
     });
+    // @ts-expect-error a gap carries its position
     gaps.filter((g) => g.at >= e.tokens.length).forEach((g) => { col.set("g:" + g.id, slots.length + 1); slots.push({ gap: g }); });
     const bands = L.visibleBands(idx, e.id, state.depth, state.node);
     const rows = Math.max(...bands.map((b) => b.depth)) + 1;
     strip.style.gridTemplateColumns = "repeat(" + slots.length + ", max-content)";
+    /** @param {GNode} n @returns {[number, number]} */
     const colOf = (n) => {
+      // @ts-expect-error every gap and token has a column
       if (n.gap) return [col.get("g:" + n.id), col.get("g:" + n.id) + 1];
+      // @ts-expect-error as above, and a band covers tokens
       let a = col.get(n.span[0]), b = col.get(n.span[1] - 1) + 1;
       // A gap at a phrase's edge belongs to the innermost phrase containing it.
+      // @ts-expect-error as above
       gaps.forEach((g) => { if (contains(n, g)) { const c = col.get("g:" + g.id); a = Math.min(a, c); b = Math.max(b, c + 1); } });
+      // @ts-expect-error as above: every column is known
       return [a, b];
     };
     bands.forEach((b) => {
@@ -347,6 +407,7 @@
         else strip.append(h("span", { class: "punct", style: "grid-column:" + style.gridColumn + ";grid-row:" + style.gridRow, "aria-hidden": "true" }, s.token.t));
       }
       else {
+        // @ts-expect-error every word token has its leaf node
         const leaf = [...map.values()].find((v) => v.node.word === s.i).node;
         strip.append(nodeButton(e, leaf, "word", style));
       }
@@ -360,21 +421,26 @@
   }
 
   /* A punctuation mark is selectable like a word, but it is not a constituent: selecting it shows what it marks. */
+  /** @param {Example} e @param {Mark} m @param {{ gridColumn?: string, gridRow?: string }} style */
   function markButton(e, m, style) {
     const sel = m.id === state.node, d = L.describe(idx, e.id, m.id);
     const btn = h("button", { type: "button", class: "word mark" + (sel ? " selected" : ""), "data-node": m.id, tabindex: sel ? "0" : "-1",
       "aria-current": sel ? "true" : null, "aria-label": L.announce(d) });
+    // @ts-expect-error a style with a column has a row
     if (style.gridColumn) { btn.style.gridColumn = style.gridColumn; btn.style.gridRow = style.gridRow; }
     btn.append(h("span", { class: "w" }, e.tokens[m.i].t), h("span", { class: "wl" }, "mark"));
     btn.addEventListener("click", () => select(m.id, false));
+    // @ts-expect-error a mark button sits in the strip or the tree's list of marks
     btn.addEventListener("keydown", (ev) => keyNav(ev, btn.closest(".tree-marks") || btn.parentElement));
     return btn;
   }
 
+  /** @param {GNode} n @param {GNode} target @returns {boolean} */
   function contains(n, target) {
     return (n.children || []).some((k) => k === target || contains(k, target));
   }
 
+  /** @param {Example} e @param {GNode} n @param {string} kind @param {{ gridColumn: string, gridRow: string }} style */
   function nodeButton(e, n, kind, style) {
     const sel = n.id === state.node, d = L.describe(idx, e.id, n.id);
     const label = (n.fn ? n.fn + ": " : "") + n.cat;
@@ -385,14 +451,18 @@
     btn.style.gridRow = style.gridRow;
     if (kind === "band") btn.append(h("span", { class: "band-label" }, label));
     else {
+      // @ts-expect-error a word node indexes its token
       btn.append(h("span", { class: "w" }, n.gap ? "__" : e.tokens[n.word].t), h("span", { class: "wl" }, n.cat));
     }
     btn.addEventListener("click", () => select(n.id, false));
+    // @ts-expect-error a node button sits in the strip
     btn.addEventListener("keydown", (ev) => keyNav(ev, btn.parentElement));
     return btn;
   }
 
+  /** @param {KeyboardEvent} ev @param {HTMLElement} container */
   function keyNav(ev, container) {
+    /** @type {string | undefined} */
     const dir = { ArrowUp: "up", ArrowDown: "down", ArrowLeft: "left", ArrowRight: "right", Home: "home" }[ev.key];
     if (!dir) return;
     ev.preventDefault();
@@ -400,12 +470,14 @@
     if (next !== state.node) select(next, true, container);
   }
 
+  /** @param {HTMLElement | null | undefined} container */
   function focusNode(container) {
-    const b = container && container.querySelector('[data-node="' + state.node + '"]');
+    const /** @type {HTMLElement | null | undefined} */ b = container && container.querySelector('[data-node="' + state.node + '"]');
     if (b) b.focus({ preventScroll: false });
   }
 
   /* Select a node everywhere (strip, tree, inspector); move focus only within the container in use. */
+  /** @param {string} nodeId @param {boolean} keepFocus @param {HTMLElement} [container] */
   function select(nodeId, keepFocus, container) {
     const active = document.activeElement;
     const where = els.treeNodes && (els.treeNodes.contains(active) || (els.treeMarks && els.treeMarks.contains(active))) ? "tree" : els.inspector.contains(active) ? "inspector" : null;
@@ -424,10 +496,13 @@
     const d = L.describe(idx, state.example, state.node);
     const ins = els.inspector;
     ins.textContent = "";
+    // @ts-expect-error the level is one of these seven
     const levelName = { word: "word", part: "part of a word", mark: "punctuation mark", phrase: "phrase", clause: "clause", coordination: "coordination", gap: "gap (understood element)" }[d.level];
     ins.append(h("h4", { id: "insp-h" }, [h("span", { class: "tag" }, "Selected " + levelName), " " + q(d.text)]));
     const dl = h("dl", { class: "fields" });
+    /** @param {string} term @param {Kid | Kid[]} value */
     const row = (term, value) => dl.append(h("div", { class: "field" }, [h("dt", {}, term), h("dd", {}, value)]));
+    /** @param {string} id @param {string} label */
     const jump = (id, label) => h("button", { type: "button", class: "linkish", onclick: () => select(id, false) }, label);
     if (d.level === "mark") {
       row("Indicator", d.category + " (" + d.indicator + ")");
@@ -442,7 +517,7 @@
     if (d.top) row("Function", "None at this level: this is the top-level unit of the example, not part of a larger structure.");
     else row("Function", [h("strong", {}, d.function), " in the " + d.container.category.toLowerCase() + " " + q(d.container.text)]);
     if (d.head) row("Head", [q(d.head.text), " (" + d.head.category.toLowerCase() + ")"]);
-    if (d.contains) row("Contains", h("ul", { class: "contains" }, d.contains.map((k) => h("li", {}, [h("button", { type: "button", class: "linkish", onclick: () => select(k.id, false) }, k.function + ": " + k.category), " " + q(k.text)]))));
+    if (d.contains) row("Contains", h("ul", { class: "contains" }, d.contains.map((/** @type {Record<string, string>} */ k) => h("li", {}, [h("button", { type: "button", class: "linkish", onclick: () => select(k.id, false) }, k.function + ": " + k.category), " " + q(k.text)]))));
     if (d.construction) row("Construction", d.construction);
     if (d.form) row("Form / feature", d.form);
     if (d.anchor) row("Anchor", ["Supplement to " + q(d.anchor.text) + "; it is not a dependent of it."]);
@@ -450,7 +525,7 @@
     if (d.fused) row("Fusion", "One expression with two functions at once (" + d.function.toLowerCase() + ").");
     if (d.antecedent) row("Antecedent", [jump(d.antecedent.id, q(d.antecedent.text)), ": the expression this one takes its interpretation from (a link, not a branch of the tree)."]);
     if (d.spelling) row("Spelling", "The base " + q(d.spelling.base) + " is written " + q(d.text) + " here (" + d.spelling.alt + ").");
-    if (d.punctuation) row("Punctuation", h("ul", { class: "contains" }, d.punctuation.map((m) => h("li", {}, [jump(m.id, "The " + m.name + " " + q(m.text)), " marks " + m.side + " it"]))));
+    if (d.punctuation) row("Punctuation", h("ul", { class: "contains" }, d.punctuation.map((/** @type {Record<string, string>} */ m) => h("li", {}, [jump(m.id, "The " + m.name + " " + q(m.text)), " marks " + m.side + " it"]))));
     ins.append(dl);
   }
 
@@ -460,15 +535,17 @@
     els.compare.hidden = !ks.length;
     els.compare.querySelectorAll(":scope > :not(summary)").forEach((x) => x.remove());
     if (!ks.length) return;
+    // @ts-expect-error booleans subtract as 0 and 1: contrasts using the current example sort first
     ks.sort((a, b) => (b.a.ex === state.example || b.b.ex === state.example) - (a.a.ex === state.example || a.b.ex === state.example));
     ks.forEach((k) => {
+      /** @param {"a" | "b"} side */
       const card = (side) => {
         const e = idx.examples.get(k[side].ex), d = L.describe(idx, e.id, k[side].node), span = L.spanOf(idx, e.id, k[side].node);
         const sent = h("p", { class: "sentence small" });
         e.tokens.forEach((t, i) => {
           const inside = span && i >= span[0] && i < span[1];
           const piece = (L.spaceBefore(e.tokens[i - 1], t) ? " " : "") + t.t;
-          if (inside) { const last = sent.lastChild; if (last && last.tagName === "MARK") last.textContent += piece; else { if (piece.startsWith(" ")) sent.append(" "); sent.append(h("mark", {}, piece.trim())); } }
+          if (inside) { const /** @type {any} the last text or element appended */ last = sent.lastChild; if (last && last.tagName === "MARK") last.textContent += piece; else { if (piece.startsWith(" ")) sent.append(" "); sent.append(h("mark", {}, piece.trim())); } }
           else sent.append(piece);
         });
         const concept = e.concepts.includes(state.concept) ? state.concept : e.concepts[0];
@@ -483,6 +560,7 @@
 
   /* CGEL-style tree, synchronised with the strip, plus a text outline. */
   const measureCtx = document.createElement("canvas").getContext && document.createElement("canvas").getContext("2d");
+  /** @param {string} text */
   function measure(text) {
     if (measureCtx) { measureCtx.font = "13px " + getComputedStyle(document.body).fontFamily; return Math.ceil(measureCtx.measureText(text).width); }
     return text.length * 7.5;
@@ -492,13 +570,17 @@
     els.tree.querySelectorAll(":scope > :not(summary)").forEach((x) => x.remove());
     const lay = L.layout(idx, e.id, measure);
     const svg = document.createElementNS(NS, "svg");
+    // @ts-expect-error setAttribute stringifies the numbers
     svg.setAttribute("width", lay.width); svg.setAttribute("height", lay.height); svg.setAttribute("aria-hidden", "true"); svg.setAttribute("class", "tree-lines");
     const nodesBox = h("div", { class: "tree-nodes", role: "group", "aria-label": "Tree of " + q(e.text), "aria-describedby": "tree-help" });
     nodesBox.style.width = lay.width + "px"; nodesBox.style.height = lay.height + "px";
     for (const [id, v] of map) {
+      /** @type {Box} */
+      // @ts-expect-error the layout places every node
       const p = lay.pos.get(id);
       if (v.parent) {
         const pp = lay.pos.get(v.parent), line = document.createElementNS(NS, "line");
+        // @ts-expect-error setAttribute stringifies the numbers
         line.setAttribute("x1", pp.x); line.setAttribute("y1", pp.y + 40); line.setAttribute("x2", p.x); line.setAttribute("y2", p.y);
         svg.append(line);
       }
@@ -533,6 +615,7 @@
     })) : null;
     const key = h("dl", { class: "tree-key" }, [...used].map((f) => h("div", {}, [h("dt", {}, f), h("dd", {}, D.labels.functions[f])]))
       .concat([...cats].map((c) => h("div", {}, [h("dt", {}, c), h("dd", {}, D.labels.categories[c])]))));
+    /** @param {GNode} n @returns {HTMLLIElement} */
     function outlineList(n) {
       const d = L.describe(idx, e.id, n.id);
       const extra = (n.gap ? " — gap, understood via " + q(d.gap.text) : "") + (n.anchor ? " — supplement anchored to " + q(d.anchor.text) : "") +
@@ -540,13 +623,14 @@
       return h("li", {}, [(d.top ? "" : d.function + ": ") + d.category + " " + q(d.text) + extra,
         n.children ? h("ul", {}, n.children.map(outlineList)) : null]);
     }
-    els.tree.append(
+    // append() would print a null as the text "null": the list of marks is left out when there is none.
+    els.tree.append(...[
       h("p", { class: "hint", id: "tree-help" }, "Each node shows Function: Category. Selecting here selects the same constituent in the sentence above; arrow keys move as in the sentence."),
       h("div", { class: "tree-wrap", tabindex: "-1" }, h("div", { class: "tree-canvas", style: "width:" + lay.width + "px;height:" + lay.height + "px" }, [svg, nodesBox])),
       els.treeMarks ? h("div", { class: "tree-punct" }, [h("p", { class: "hint" }, "Punctuation, attached to constituent boundaries rather than drawn as part of the tree:"), els.treeMarks]) : null,
       h("details", { class: "subdisc" }, [h("summary", {}, "Key to labels and notation"), key,
         ...[...notes].map((k) => h("p", { class: "small-text" }, D.labels.notation[k]))]),
-      h("details", { class: "subdisc" }, [h("summary", {}, "Text version of the tree"), h("ul", { class: "outline-text" }, outlineList(e.tree))]));
+      h("details", { class: "subdisc" }, [h("summary", {}, "Text version of the tree"), h("ul", { class: "outline-text" }, outlineList(e.tree))])].filter((x) => x !== null));
   }
 
   function highlightNav() {
@@ -565,6 +649,7 @@
     if (location.hash !== h2) { applying = true; location.hash = h2; }
   }
 
+  /** @param {boolean} initial */
   function applyHash(initial) {
     const s = L.parseHash(location.hash, idx), hadNotice = !!state.notice, wasStart = state.start;
     state.notice = s.invalid ? "The link #" + s.raw + " does not match anything in this version, so the closest useful page is shown instead." : "";
@@ -578,12 +663,14 @@
       state.example = item.ex; state.node = item.node; state.depth = 1;
       renderConcept();
       els.tree.open = s.view === "tree"; els.compare.open = s.view === "compare" && !els.compare.hidden;
+      // @ts-expect-error renderConcept() has just made #concept-h
       if (!initial) document.getElementById("concept-h").focus();
       say("Concept: " + idx.concepts.get(state.concept).name);
     } else {
       if (example !== state.example) {
         const inRail = els.rail.contains(document.activeElement);
         state.example = example; applyExample(); renderRail();
+        // @ts-expect-error rail buttons are HTML elements
         if (inRail || document.activeElement === document.body) { const b = els.rail.querySelector('[aria-current="true"]'); if (b) b.focus(); }
       }
       state.view = s.view;
@@ -600,9 +687,11 @@
   applyHash(true);
 
   /* ---------- read-only tools for model context ---------- */
-  const result = (v) => ({ content: [{ type: "text", text: JSON.stringify(v) }] });
+  const result = (/** @type {unknown} */ v) => ({ content: [{ type: "text", text: JSON.stringify(v) }] });
+  /** @type {ModelContext | undefined} */
+  // @ts-expect-error false when there is no document, which the ?. calls skip
   const mc = (typeof document !== "undefined" && document.modelContext) || (typeof navigator !== "undefined" && navigator.modelContext);
   mc?.registerTool({ name: "get_data", description: "Return the concepts, CGEL chapter outline, and example sentences with their analyses.", inputSchema: { type: "object", properties: {}, additionalProperties: false }, annotations: { readOnlyHint: true }, async execute() { return result({ chapters: D.chapters, concepts: D.concepts, examples: D.examples.map((e) => ({ id: e.id, text: e.text, concepts: e.concepts })), truncated: true, next_steps: ["Use query with an example id for its full analysis."] }); } });
   mc?.registerTool({ name: "get_metadata", description: "Return the key message, source book, verification notes and assumptions.", inputSchema: { type: "object", properties: {}, additionalProperties: false }, annotations: { readOnlyHint: true }, async execute() { return result({ title: document.title, key_message: D.key, book: D.book, verification: D.verification, checked: D.checked, assumptions: D.assumptions, truncated: false }); } });
-  mc?.registerTool({ name: "query", description: "Search concepts, aliases and examples, or return one example's full analysis by id.", inputSchema: { type: "object", properties: { text: { type: "string" }, example: { type: "string" } }, additionalProperties: false }, annotations: { readOnlyHint: true }, async execute(input = {}) { if (input.example) { const e = idx.examples.get(input.example); return result(e ? { example: e, truncated: false } : { error: "unknown example", next_steps: ["Call get_data for example ids."] }); } const r = L.search(idx, input.text || "", 50); return result({ results: r.results, total: r.total || 0, truncated: (r.total || 0) > r.results.length }); } });
+  mc?.registerTool({ name: "query", description: "Search concepts, aliases and examples, or return one example's full analysis by id.", inputSchema: { type: "object", properties: { text: { type: "string" }, example: { type: "string" } }, additionalProperties: false }, annotations: { readOnlyHint: true }, async execute(/** @type {{ text?: string, example?: string }} */ input = {}) { if (input.example) { const e = idx.examples.get(input.example); return result(e ? { example: e, truncated: false } : { error: "unknown example", next_steps: ["Call get_data for example ids."] }); } const r = L.search(idx, input.text || "", 50); return result({ results: r.results, total: r.total || 0, truncated: (r.total || 0) > r.results.length }); } });
 })();
