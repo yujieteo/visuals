@@ -10,11 +10,14 @@ import test from "node:test";
 import vm from "node:vm";
 
 const html = readFileSync(new URL("../diagonal-tension.html", import.meta.url), "utf8");
-const ctx = {}; ctx.self = ctx; vm.createContext(ctx);
-vm.runInContext(/<script id="dt-engine">([\s\S]*?)<\/script>/.exec(html)[1], ctx);
-const DT = ctx.DiagonalTension;
+/** @type {{ self?: object, DiagonalTension?: Engine }} */
+const ctx = {};
+ctx.self = ctx; vm.createContext(ctx);
+vm.runInContext(/** @type {RegExpExecArray} */ (/<script id="dt-engine">([\s\S]*?)<\/script>/.exec(html))[1], ctx);
+const DT = /** @type {Engine} */ (ctx.DiagonalTension);
 
 /* ---------- the independent dense solver ---------- */
+/** Solves A x = b by Gaussian elimination with partial pivoting. @param {number[][]} A @param {number[]} b */
 function denseSolve(A, b) {
   const n = b.length, M = A.map((row, i) => [...row, b[i]]);
   for (let c = 0; c < n; c++) {
@@ -29,6 +32,7 @@ function denseSolve(A, b) {
 }
 /* A rectangle of half-sides a, b centred at (xc, yc): N_i = (1 + ξ ξ_i)(1 + η η_i)/4 with ξ = (x − xc)/a. */
 const CORNERS = [[-1, -1], [1, -1], [1, 1], [-1, 1]];
+/** @param {number} a @param {number} b @param {number} xi @param {number} eta */
 function rectB(a, b, xi, eta) {
   const B = [new Array(8).fill(0), new Array(8).fill(0), new Array(8).fill(0)];
   CORNERS.forEach(([si, ti], i) => {
@@ -37,6 +41,7 @@ function rectB(a, b, xi, eta) {
   });
   return B;
 }
+/** @param {number} a @param {number} b @param {number} t @param {number} E @param {number} nu */
 function rectStiffness(a, b, t, E, nu) {
   const c = E / (1 - nu * nu), D = [[c, c * nu, 0], [c * nu, c, 0], [0, 0, (c * (1 - nu)) / 2]];
   const g = [-Math.sqrt(0.6), 0, Math.sqrt(0.6)], w = [5 / 9, 8 / 9, 5 / 9];
@@ -52,6 +57,7 @@ function rectStiffness(a, b, t, E, nu) {
   return { K, D };
 }
 /* The whole panel, from the same inputs the page takes. */
+/** @param {State} s @param {boolean} withDoubler */
 function referencePanel(s, withDoubler) {
   const xs = [...DT.meshLines(s).xs], ys = [...DT.meshLines(s).ys], nx = xs.length, ny = ys.length, n = 2 * nx * ny;
   const K = Array.from({ length: n }, () => new Array(n).fill(0)), f = new Array(n).fill(0), { E, nu } = s.material, d = s.doubler;
@@ -79,15 +85,19 @@ function referencePanel(s, withDoubler) {
   const x = denseSolve(free.map((r) => free.map((c) => K[r][c])), free.map((r) => f[r]));
   const u = new Array(n).fill(0);
   free.forEach((r, i) => { u[r] = x[i]; });
-  const g = 1 / Math.sqrt(3), stress = [];
+  /** @typedef {{ x: number, y: number }} Point */
+  /** @type {(number[] | Point)[]} */
+  const stress = [];
+  const g = 1 / Math.sqrt(3);
   for (const e of elems) for (const [xi, eta] of [[-g, -g], [g, -g], [g, g], [-g, g]]) {
     const B = rectB(e.a, e.b, xi, eta), ue = e.nodes.flatMap((nd) => [u[2 * nd], u[2 * nd + 1]]);
     const eps = B.map((row) => row.reduce((acc, v, k) => acc + v * ue[k], 0));
     stress.push(e.D.map((row) => row.reduce((acc, v, k) => acc + v * eps[k], 0)), { x: e.xc + xi * e.a, y: e.yc + eta * e.b });
   }
-  return { u, stress: stress.filter(Array.isArray), points: stress.filter((p) => !Array.isArray(p)) };
+  return { u, stress: stress.filter((p) => Array.isArray(p)), points: stress.filter(/** @returns {p is Point} */ (p) => !Array.isArray(p)) };
 }
 
+/** @type {[string, State][]} */
 const PANELS = [
   ["60 × 40 panel, one stringer, an off-centre doubler", { panel: { L: 60, W: 40, t: 1 }, stringers: [{ y: 20, A: 10 }], doubler: { x0: 20, y0: 20, Lx: 20, Ly: 20, t: 0.8 }, material: { E: 70000, nu: 0.33, rho: 2700 }, load: { q: 12 }, mesh: { h: 20 }, regions: { exclude: 5, band: 5 } }],
   ["90 × 50 panel, two stringers, a doubler on an edge, unequal cells", { panel: { L: 90, W: 50, t: 1.2 }, stringers: [{ y: 10, A: 25 }, { y: 35, A: 5 }], doubler: { x0: 0, y0: 15, Lx: 37, Ly: 35, t: 2 }, material: { E: 72000, nu: 0.3, rho: 2780 }, load: { q: -20 }, mesh: { h: 12 }, regions: { exclude: 5, band: 5 } }],
@@ -95,8 +105,8 @@ const PANELS = [
 
 for (const [what, s] of PANELS) test(`the page's solve matches an independent dense solve: ${what}`, () => {
   const r = DT.runComparison(s);
-  assert.equal(r.ok, true, JSON.stringify(r.errors || r.error));
-  for (const [variant, withDoubler] of [["A", false], ["B", true]]) {
+  assert.ok(r.ok, JSON.stringify(r.ok ? undefined : r.stage === "validate" ? r.errors : r.error));
+  for (const [variant, withDoubler] of /** @type {const} */ ([["A", false], ["B", true]])) {
     const ref = referencePanel(s, withDoubler);
     const umax = Math.max(...ref.u.map(Math.abs));
     assert.ok(umax > 0);
@@ -116,17 +126,22 @@ test("a cantilever under parabolic end shear converges to the Timoshenko-Goodier
   //   v = νPxy²/(2EI) + Px³/(6EI) − Pl²x/(2EI) + Pl³/(3EI).
   // The built-in end takes this u, v; the loaded end takes the parabolic shear traction; the edges y = ±c are free.
   const l = 48, c = 6, E = 1000, nu = 0.25, P = 1, I = (2 * c ** 3) / 3, G = E / (2 * (1 + nu));
-  const U = (x, y) => -(P * x * x * y) / (2 * E * I) - (nu * P * y ** 3) / (6 * E * I) + (P * y ** 3) / (6 * I * G) + ((P * l * l) / (2 * E * I) - (P * c * c) / (2 * I * G)) * y;
-  const V = (x, y) => (nu * P * x * y * y) / (2 * E * I) + (P * x ** 3) / (6 * E * I) - (P * l * l * x) / (2 * E * I) + (P * l ** 3) / (3 * E * I);
-  const run = (nx, ny) => {
+  const U = (/** @type {number} */ x, /** @type {number} */ y) => -(P * x * x * y) / (2 * E * I) - (nu * P * y ** 3) / (6 * E * I) + (P * y ** 3) / (6 * I * G) + ((P * l * l) / (2 * E * I) - (P * c * c) / (2 * I * G)) * y;
+  const V = (/** @type {number} */ x, /** @type {number} */ y) => (nu * P * x * y * y) / (2 * E * I) + (P * x ** 3) / (6 * E * I) - (P * l * l * x) / (2 * E * I) + (P * l ** 3) / (3 * E * I);
+  const run = (/** @type {number} */ nx, /** @type {number} */ ny) => {
+    /** @type {number[]} */
     const coords = [];
     for (let j = 0; j <= ny; j++) for (let i = 0; i <= nx; i++) {
       const y = -c + (2 * c * j) / ny, skew = i > 0 && i < nx ? 0.2 * (l / nx) * (y / c) * (i % 2 ? 1 : -1) : 0;
       coords.push((l * i) / nx + skew, y);
     }
-    const quads = [], node = (i, j) => j * (nx + 1) + i;
+    /** @type {number[]} */
+    const quads = [];
+    const node = (/** @type {number} */ i, /** @type {number} */ j) => j * (nx + 1) + i;
     for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) quads.push(node(i, j), node(i + 1, j), node(i + 1, j + 1), node(i, j + 1));
-    const f = new Array(2 * (nx + 1) * (ny + 1)).fill(0), fixed = [], val = [];
+    /** @type {number[]} */
+    const fixed = [], val = [];
+    const f = new Array(2 * (nx + 1) * (ny + 1)).fill(0);
     // Consistent nodal forces of t_y = P(c² − y²)/(2I) on x = 0, by two-point Gauss (exact for this cubic).
     const g = 1 / Math.sqrt(3);
     for (let j = 0; j < ny; j++) {
@@ -139,14 +154,14 @@ test("a cantilever under parabolic end shear converges to the Timoshenko-Goodier
     }
     for (let j = 0; j <= ny; j++) { const n = node(nx, j), y = coords[2 * n + 1]; fixed.push(2 * n, 2 * n + 1); val.push(U(l, y), V(l, y)); }
     const r = DT.solve({ coords: Float64Array.from(coords), quads: Int32Array.from(quads), thick: new Float64Array(nx * ny).fill(1), bars: new Int32Array(0), barA: new Float64Array(0), E, nu, fixed: Int32Array.from(fixed), fixedVal: Float64Array.from(val), f: Float64Array.from(f) });
-    assert.equal(r.ok, true, r.error && r.error.message);
+    assert.ok(r.ok, !r.ok ? r.error.message : undefined);
     return r.u[2 * node(0, ny / 2) + 1];
   };
   const exact = (P * l ** 3) / (3 * E * I);
   assert.ok(Math.abs(V(0, 0) - exact) < 1e-12);
   const v = [[8, 2], [16, 4], [32, 8], [64, 16]].map(([nx, ny]) => run(nx, ny)), err = v.map((x) => Math.abs(x - exact) / exact);
   for (let k = 1; k < err.length; k++) assert.ok(err[k] < err[k - 1], `errors shrink: ${err}`);
-  assert.ok(err.at(-1) < 0.01, `64 × 16 mesh within 1% of Pl³/(3EI) = ${exact}: ${v.at(-1)}`);
+  assert.ok(err[err.length - 1] < 0.01, `64 × 16 mesh within 1% of Pl³/(3EI) = ${exact}: ${v.at(-1)}`);
   // Bilinear elements converge at second order in displacement: halving h divides the error by about 4.
   assert.ok(err[2] / err[3] > 3, `rate: ${err[2] / err[3]}`);
 });

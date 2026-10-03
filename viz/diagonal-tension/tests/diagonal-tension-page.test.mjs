@@ -19,10 +19,11 @@ import { checkDeck } from "./beamdswitch-deck-checks.mjs";
 
 const PAGE = fileURLToPath(new URL("../diagonal-tension.html", import.meta.url));
 const html = readFileSync(PAGE, "utf8");
+/** @type {{ self?: object, DiagonalTension?: Engine }} */
 const ctx = vm.createContext({});
 ctx.self = ctx;
-vm.runInContext(/<script id="dt-engine">([\s\S]*?)<\/script>/.exec(html)[1], ctx);
-const DT = ctx.DiagonalTension;
+vm.runInContext(/** @type {RegExpExecArray} */ (/<script id="dt-engine">([\s\S]*?)<\/script>/.exec(html))[1], ctx);
+const DT = /** @type {Engine} */ (ctx.DiagonalTension);
 
 function findChrome() {
   if (process.env.CHROME_PATH) return process.env.CHROME_PATH;
@@ -35,13 +36,14 @@ function findChrome() {
 }
 const CHROME = findChrome();
 if (!CHROME && process.env.CI) throw new Error("no Chrome found for the end-to-end page test; set CHROME_PATH");
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const sleep = (/** @type {number} */ ms) => new Promise((r) => setTimeout(r, ms));
 
+/** @param {string} downloads */
 async function openBrowser(downloads) {
   const dir = mkdtempSync(join(tmpdir(), "dt-page-"));
   const args = ["--headless=new", "--remote-debugging-port=0", `--user-data-dir=${dir}`, "--no-first-run", "--no-default-browser-check", "--disable-gpu", "--disable-extensions", "about:blank"];
   if (process.platform === "linux") args.unshift("--no-sandbox");
-  const proc = spawn(CHROME, args, { stdio: "ignore" });
+  const proc = spawn(/** @type {string} */ (CHROME), args, { stdio: "ignore" });
   const portFile = join(dir, "DevToolsActivePort");
   for (let i = 0; i < 200 && !existsSync(portFile); i++) await sleep(50);
   await sleep(50);
@@ -49,17 +51,26 @@ async function openBrowser(downloads) {
   const ws = new WebSocket(`ws://127.0.0.1:${port}${path}`);
   await new Promise((resolve, reject) => { ws.onopen = resolve; ws.onerror = reject; });
   let id = 0;
-  const pending = new Map(), exceptions = [], requests = [], done = [];
+  /** @type {Map<number, { resolve(result: any): void, reject(err: Error): void }>} */
+  const pending = new Map();
+  /** @type {string[]} */
+  const exceptions = [];
+  /** @type {string[]} */
+  const requests = [];
+  /** @type {string[]} */
+  const done = [];
   ws.onmessage = (ev) => {
     const msg = JSON.parse(ev.data);
     if (msg.id && pending.has(msg.id)) {
-      const { resolve, reject } = pending.get(msg.id);
+      const { resolve, reject } = /** @type {{ resolve(result: any): void, reject(err: Error): void }} */ (pending.get(msg.id));
       pending.delete(msg.id);
       msg.error ? reject(new Error(msg.error.message)) : resolve(msg.result);
     } else if (msg.method === "Runtime.exceptionThrown") exceptions.push(msg.params.exceptionDetails.exception?.description ?? msg.params.exceptionDetails.text);
     else if (msg.method === "Network.requestWillBeSent") requests.push(msg.params.request.url);
     else if (msg.method === "Browser.downloadProgress" && msg.params.state === "completed") done.push(msg.params.guid);
   };
+  /** A DevTools protocol command; its result's shape depends on the method, so it is left open.
+      @param {string} method @param {object} [params] @param {string} [sessionId] @returns {Promise<any>} */
   const send = (method, params = {}, sessionId) => new Promise((resolve, reject) => {
     pending.set(++id, { resolve, reject });
     ws.send(JSON.stringify({ id, method, params, sessionId }));
@@ -73,31 +84,33 @@ async function openBrowser(downloads) {
   // Offline before the file is opened.
   await send("Network.emulateNetworkConditions", { offline: true, latency: 0, downloadThroughput: -1, uploadThroughput: -1 }, sessionId);
   await send("Page.navigate", { url: pathToFileURL(PAGE).href }, sessionId);
+  /** @param {string} expression @returns {Promise<any>} the value, returned by value */
   const evaluate = async (expression) => {
     const r = await send("Runtime.evaluate", { expression, awaitPromise: true, returnByValue: true, userGesture: true }, sessionId);
     if (r.exceptionDetails) throw new Error(r.exceptionDetails.exception?.description ?? r.exceptionDetails.text);
     return r.result.value;
   };
+  /** @param {string} expression @param {string} what */
   const until = async (expression, what, ms = 20000) => {
     for (let t = 0; t < ms; t += 25) { if (await evaluate(expression)) return; await sleep(25); }
     assert.fail(`timed out waiting for ${what}: ${await evaluate(`document.getElementById("status").textContent`)}`);
   };
-  const metrics = (width) => send("Emulation.setDeviceMetricsOverride", { width, height: 900, deviceScaleFactor: 1, mobile: width < 500 }, sessionId);
+  const metrics = (/** @type {number} */ width) => send("Emulation.setDeviceMetricsOverride", { width, height: 900, deviceScaleFactor: 1, mobile: width < 500 }, sessionId);
   const close = async () => {
     try { await send("Browser.close"); } catch { /* already gone */ }
     ws.close();
-    await new Promise((r) => { if (proc.exitCode !== null) r(); else { proc.once("exit", r); setTimeout(() => { proc.kill("SIGKILL"); r(); }, 3000); } });
+    await new Promise((/** @type {(v?: unknown) => void} */ r) => { if (proc.exitCode !== null) r(); else { proc.once("exit", r); setTimeout(() => { proc.kill("SIGKILL"); r(); }, 3000); } });
     rmSync(dir, { recursive: true, force: true });
   };
   return { evaluate, until, metrics, exceptions, requests, done, close };
 }
 
-const $v = (id) => `document.getElementById(${JSON.stringify(id)})`;
-const setField = (field, value) => `(() => { const el = document.querySelector('#inputs input[data-field="${field}"]'); el.value = ${JSON.stringify(String(value))}; el.dispatchEvent(new Event("input", { bubbles: true })); })()`;
+const $v = (/** @type {string} */ id) => `document.getElementById(${JSON.stringify(id)})`;
+const setField = (/** @type {string} */ field, /** @type {unknown} */ value) => `(() => { const el = document.querySelector('#inputs input[data-field="${field}"]'); el.value = ${JSON.stringify(String(value))}; el.dispatchEvent(new Event("input", { bubbles: true })); })()`;
 const STATUS = `${$v("status")}.textContent`;
 const TABLE = `[...document.querySelectorAll("#cmp-table tbody tr")].map((tr) => [...tr.cells].map((c) => c.textContent))`;
-const expectedTable = (s) => DT.runComparison(s).rows.map((r) => [`${r.label} (${r.unit})`, DT.fmtSigned(r.a), DT.fmtSigned(r.b), r.delta === 0 ? "0" : `${r.delta > 0 ? "+" : "−"}${DT.fmt(Math.abs(r.delta))}`, DT.fmtPct(r.pct)]);
-const plain = (x) => JSON.parse(JSON.stringify(x));
+const expectedTable = (/** @type {State} */ s) => /** @type {Comparison} */ (DT.runComparison(s)).rows.map((r) => [`${r.label} (${r.unit})`, DT.fmtSigned(r.a), DT.fmtSigned(r.b), r.delta === 0 ? "0" : `${r.delta > 0 ? "+" : "−"}${DT.fmt(Math.abs(r.delta))}`, DT.fmtPct(r.pct)]);
+const plain = (/** @type {unknown} */ x) => JSON.parse(JSON.stringify(x));
 
 test("offline from file://, a fresh browser meshes, solves, compares and exports (interim technical E2E)", { skip: !CHROME && "no Chrome found; set CHROME_PATH" }, async () => {
   const downloads = join(process.env.DT_DOWNLOAD_DIR || "/tmp/diagonal-tension-v1/downloads", `page-test-${process.pid}`);
@@ -181,7 +194,7 @@ test("offline from file://, a fresh browser meshes, solves, compares and exports
     assert.equal(model.mesh.nodes, 651);
     assert.ok(model.diagnostics.B.iterations > 0);
     const r = DT.runComparison(DT.defaultState());
-    assert.equal(readFileSync(join(downloads, "diagonal-tension-results.csv"), "utf8"), DT.resultsCSV(r));
+    assert.equal(readFileSync(join(downloads, "diagonal-tension-results.csv"), "utf8"), DT.resultsCSV(/** @type {Comparison} */ (r)));
     const deck = readFileSync(join(downloads, "diagonal-tension-beamdswitch.md"), "utf8");
     assert.equal(checkDeck(deck, "the saved deck").meta.voice, "bf_emma");
 

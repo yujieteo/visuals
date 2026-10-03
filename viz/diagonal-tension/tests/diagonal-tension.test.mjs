@@ -6,15 +6,30 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import vm from "node:vm";
 
-const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
+const read = (/** @type {string} */ path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 const html = read("diagonal-tension.html");
-const script = (id) => new RegExp(`<script(?: type="text/plain")? id="${id}">([\\s\\S]*?)</script>`).exec(html)[1];
-const load = () => { const ctx = {}; ctx.self = ctx; vm.createContext(ctx); vm.runInContext(script("dt-engine"), ctx); return ctx.DiagonalTension; };
+/** @param {string} id @returns {string} the text of the page's script with that id */
+const script = (id) => /** @type {RegExpExecArray} */ (new RegExp(`<script(?: type="text/plain")? id="${id}">([\\s\\S]*?)</script>`).exec(html))[1];
+/** @returns {Engine} */
+const load = () => {
+  /** @type {{ self?: object, DiagonalTension?: Engine }} */
+  const ctx = {};
+  ctx.self = ctx; vm.createContext(ctx); vm.runInContext(script("dt-engine"), ctx); return /** @type {Engine} */ (ctx.DiagonalTension);
+};
 const DT = load();
-const J = (x) => JSON.parse(JSON.stringify(x));
-const rel = (a, b) => Math.abs(a - b) / Math.max(Math.abs(b), 1e-300);
+const J = (/** @type {unknown} */ x) => JSON.parse(JSON.stringify(x));
+const rel = (/** @type {number} */ a, /** @type {number} */ b) => Math.abs(a - b) / Math.max(Math.abs(b), 1e-300);
+/** @typedef {(s: State) => void} Edit */
+/** @param {Edit} [edit] */
 const state = (edit) => { const s = DT.defaultState(); if (edit) edit(s); return s; };
-const solved = (edit) => { const r = DT.runComparison(state(edit)); assert.equal(r.ok, true, JSON.stringify(r.error || r.errors)); return r; };
+/** @param {Edit} [edit] @returns {Comparison} */
+const solved = (edit) => { const r = DT.runComparison(state(edit)); assert.equal(r.ok, true, JSON.stringify(r.ok ? undefined : r.stage === "validate" ? r.errors : r.error)); return /** @type {Comparison} */ (r); };
+/** The error code of a solve that must fail. @param {Solution | SolveFailure} r */
+const solveError = (r) => { assert.equal(r.ok, false); return /** @type {SolveFailure} */ (r).error.code; };
+/** The comparison row with this id, which must exist. @param {Comparison} r @param {string} id */
+const row = (r, id) => { const x = r.rows.find((y) => y.id === id); assert.ok(x, id); return x; };
+/** The largest principal tension in a region, which must hold Gauss points. @param {Comparison} r @param {string} id */
+const extreme = (r, id) => { const m = r.summary.B.regions[id].s1; assert.ok(m, id); return m.value; };
 
 test("the in-page self-check passes every check", () => {
   const t = DT.selfTests();
@@ -35,10 +50,11 @@ test("the demonstration example opens with the specified values", () => {
 });
 
 test("acceptance: uniform-strain patch test (MacNeal-Harder distorted patch)", () => {
+  /** @type {[number, number][]} */
   const P = [[0, 0], [0.24, 0], [0.24, 0.12], [0, 0.12], [0.04, 0.02], [0.18, 0.03], [0.16, 0.08], [0.08, 0.08]];
   const quads = [0, 1, 5, 4, 1, 2, 6, 5, 2, 3, 7, 6, 3, 0, 4, 7, 4, 5, 6, 7];
   // A field with all three strain components, applied on the boundary only.
-  const field = (x, y) => [2e-3 * x - 1e-3 * y, 0.5e-3 * x + 3e-3 * y];
+  const field = (/** @type {number} */ x, /** @type {number} */ y) => [2e-3 * x - 1e-3 * y, 0.5e-3 * x + 3e-3 * y];
   const fixed = [], val = [];
   for (const n of [0, 1, 2, 3]) { fixed.push(2 * n, 2 * n + 1); val.push(...field(...P[n])); }
   const E = 1e6, nu = 0.25;
@@ -85,7 +101,7 @@ test("acceptance: pure shear gives principal stresses ±|τ| at 45 degrees", () 
 
 test("acceptance: force and moment equilibrium, and linear load scaling", () => {
   const r1 = solved(), r3 = solved((s) => { s.load.q = -150; });
-  for (const k of ["A", "B"]) {
+  for (const k of /** @type {const} */ (["A", "B"])) {
     const e = r1[k].diag.equilibrium;
     assert.ok(e.relForce < 1e-10 && e.relMoment < 1e-10, `${k}: ${JSON.stringify(e)}`);
     // The applied shear flow is self-equilibrated, so the minimal restraints carry no load.
@@ -129,16 +145,16 @@ test("acceptance: added mass is density × doubler volume, kg/m³ × mm³ × 10�
   // The example: 2700 kg/m³ × 200 × 200 × 1 mm³ = 0.108 kg; skin 0.648 kg; stringers 3 × 50 × 600 mm³ → 0.243 kg.
   const r = solved();
   assert.ok(rel(r.summary.A.mass.total, 0.891) < 1e-12 && rel(r.summary.B.mass.total, 0.999) < 1e-12);
-  assert.ok(rel(r.rows.find((x) => x.id === "mass").pct, (100 * 0.108) / 0.891) < 1e-12);
+  assert.ok(rel(/** @type {number} */ (row(r, "mass").pct), (100 * 0.108) / 0.891) < 1e-12);
 });
 
 test("acceptance: three mesh levels converge fixed-probe displacements and region stresses within the declared tolerances", () => {
   const { levels, displacementTol, stressTol } = DT.CONVERGENCE;
   assert.deepEqual([...levels], [40, 20, 10]);
   const runs = levels.map((h) => solved((s) => { s.mesh.h = h; }));
-  const pick = (r) => ({ P1: r.summary.B.probes[0].u, P2: r.summary.B.probes[1].u, compliance: r.summary.B.compliance, doubler: r.summary.B.regions.doubler.s1.value, band: r.summary.B.regions.band.s1.value, skin: r.summary.B.regions.skin.s1.value, P3: r.summary.B.probes[2].txy, P4: r.summary.B.probes[3].txy });
+  const pick = (/** @type {Comparison} */ r) => ({ P1: r.summary.B.probes[0].u, P2: r.summary.B.probes[1].u, compliance: r.summary.B.compliance, doubler: extreme(r, "doubler"), band: extreme(r, "band"), skin: extreme(r, "skin"), P3: r.summary.B.probes[2].txy, P4: r.summary.B.probes[3].txy });
   const [a, b, c] = runs.map(pick);
-  for (const k of Object.keys(a)) {
+  for (const k of /** @type {(keyof typeof a)[]} */ (Object.keys(a))) {
     const d12 = Math.abs(b[k] - a[k]) / Math.abs(c[k]), d23 = Math.abs(c[k] - b[k]) / Math.abs(c[k]);
     const global = ["P1", "P2", "compliance"].includes(k);
     assert.ok(d23 <= (global ? displacementTol : stressTol), `${k}: ${d23}`);
@@ -151,34 +167,35 @@ test("acceptance: three mesh levels converge fixed-probe displacements and regio
 test("acceptance: failed solves are detected and return no results", () => {
   const capped = DT.runComparison(state(), null, { maxIterations: 5 });
   assert.equal(capped.ok, false);
-  assert.equal(capped.error.code, "iterations");
-  assert.equal(capped.A, undefined);
-  assert.equal(capped.rows, undefined);
+  assert.equal(capped.error?.code, "iterations");
+  assert.equal(/** @type {Record<string, unknown>} */ (capped).A, undefined);
+  assert.equal(/** @type {Record<string, unknown>} */ (capped).rows, undefined);
   const sq = { coords: Float64Array.from([0, 0, 1, 0, 1, 1, 0, 1]), quads: Int32Array.from([0, 1, 2, 3]), thick: Float64Array.from([1]), bars: new Int32Array(0), barA: new Float64Array(0), E: 1000, nu: 0.3, fixed: Int32Array.from([0, 1, 3]), fixedVal: new Float64Array(3), f: Float64Array.from([0, 0, 1, 0, 0, 0, 0, 0]) };
   assert.equal(DT.solve(sq).ok, true);
-  assert.equal(DT.solve({ ...sq, quads: Int32Array.from([0, 3, 2, 1]) }).error.code, "inverted");
-  assert.equal(DT.solve({ ...sq, coords: Float64Array.from([0, 0, 1, 0, 1, 0, 0, 1]) }).error.code, "degenerate");
-  assert.equal(DT.solve({ ...sq, fixed: Int32Array.from([0, 1]), fixedVal: new Float64Array(2) }).error.code, "singular");
-  assert.equal(DT.solve({ ...sq, fixed: Int32Array.from([0, 2, 4]), fixedVal: new Float64Array(3) }).error.code, "singular", "three parallel restraints leave a translation free");
+  assert.equal(solveError(DT.solve({ ...sq, quads: Int32Array.from([0, 3, 2, 1]) })), "inverted");
+  assert.equal(solveError(DT.solve({ ...sq, coords: Float64Array.from([0, 0, 1, 0, 1, 0, 0, 1]) })), "degenerate");
+  assert.equal(solveError(DT.solve({ ...sq, fixed: Int32Array.from([0, 1]), fixedVal: new Float64Array(2) })), "singular");
+  assert.equal(solveError(DT.solve({ ...sq, fixed: Int32Array.from([0, 2, 4]), fixedVal: new Float64Array(3) })), "singular", "three parallel restraints leave a translation free");
   const orphan = DT.solve({ ...sq, coords: Float64Array.from([0, 0, 1, 0, 1, 1, 0, 1, 5, 5]), f: new Float64Array(10) });
-  assert.equal(orphan.error.code, "disconnected");
+  assert.equal(solveError(orphan), "disconnected");
   const zeroBar = DT.solve({ ...sq, coords: Float64Array.from([0, 0, 1, 0, 1, 1, 0, 1, 2, 0]), bars: Int32Array.from([1, 4]), barA: Float64Array.from([0]), f: new Float64Array(10) });
-  assert.equal(zeroBar.error.code, "disconnected", "a node held only by a zero-area bar is disconnected");
-  assert.equal(DT.solve({ ...sq, f: Float64Array.from([0, 0, NaN, 0, 0, 0, 0, 0]) }).error.code, "nonfinite");
-  assert.equal(DT.solve({ ...sq, E: -1 }).error.code, "material");
+  assert.equal(solveError(zeroBar), "disconnected", "a node held only by a zero-area bar is disconnected");
+  assert.equal(solveError(DT.solve({ ...sq, f: Float64Array.from([0, 0, NaN, 0, 0, 0, 0, 0]) })), "nonfinite");
+  assert.equal(solveError(DT.solve({ ...sq, E: -1 })), "material");
 });
 
 test("inputs: positive dimensions and E, valid Poisson ratio, non-negative areas and doubler thickness, geometry inside the panel", () => {
+  /** @param {Edit} [edit] */
   const errs = (edit) => DT.validate(state(edit)).errors.map((e) => e.field);
   assert.deepEqual(J(errs()), []);
-  for (const [edit, field] of [
+  for (const [edit, field] of /** @type {[Edit, string][]} */ ([
     [(s) => { s.panel.L = 0; }, "panel.L"], [(s) => { s.panel.W = -5; }, "panel.W"], [(s) => { s.panel.t = NaN; }, "panel.t"],
     [(s) => { s.material.E = 0; }, "material.E"], [(s) => { s.material.nu = 0.5; }, "material.nu"], [(s) => { s.material.nu = -1; }, "material.nu"],
     [(s) => { s.stringers[1].A = -1; }, "stringers.1.A"], [(s) => { s.stringers[0].y = 401; }, "stringers.0.y"], [(s) => { s.stringers[2].y = 100; }, "stringers"],
     [(s) => { s.doubler.t = -0.1; }, "doubler.t"], [(s) => { s.doubler.x0 = 450; }, "doubler.Lx"], [(s) => { s.doubler.y0 = 250; }, "doubler.Ly"],
     [(s) => { s.doubler.Lx = 0; }, "doubler.Lx"], [(s) => { s.doubler.x0 = -1; }, "doubler.x0"], [(s) => { s.load.q = 0; }, "load.q"],
     [(s) => { s.mesh.h = 0; }, "mesh.h"], [(s) => { s.mesh.h = 2; }, "mesh.h"], [(s) => { s.regions.band = 0; }, "regions.band"],
-  ]) assert.ok(errs(edit).includes(field), `${field}: ${errs(edit)}`);
+  ])) assert.ok(errs(edit).includes(field), `${field}: ${errs(edit)}`);
   // Zero stringer area and zero doubler thickness are allowed, for comparison checks.
   assert.deepEqual(J(errs((s) => { s.stringers[0].A = 0; s.doubler.t = 0; })), []);
   const r = solved((s) => { s.stringers = [{ y: 0, A: 0 }, { y: 400, A: 20 }]; s.doubler = { x0: 0, y0: 0, Lx: 120, Ly: 80, t: 2 }; s.mesh.h = 40; });
@@ -230,7 +247,7 @@ test("results: regions, probes and stringer forces are defined geometrically and
   // P4 moves to a side of the patch that has skin, and is left out when none does.
   const flush = solved((x) => { x.doubler.x0 = 400; });
   const p4 = flush.summary.B.probes.find((p) => p.id === "P4");
-  assert.deepEqual([p4.x, p4.y, p4.t], [375, 150, 1]);
+  assert.deepEqual([p4?.x, p4?.y, p4?.t], [375, 150, 1]);
   const full = solved((x) => { x.doubler = { x0: 0, y0: 0, Lx: 600, Ly: 400, t: 1 }; });
   assert.deepEqual(J(full.summary.B.probes.map((p) => p.id)), ["P1", "P2", "P3"]);
   assert.equal(full.rows.find((x) => x.id === "P4.txy"), undefined);
@@ -242,12 +259,11 @@ test("results: regions, probes and stringer forces are defined geometrically and
   const [s1, s2, s3] = r.summary.B.stringers;
   assert.ok(s1.maxAbs > 100 && rel(s1.maxAbs, s3.maxAbs) < 1e-6 && s2.maxAbs < 1e-6);
   // Lower stress inside the patch, higher in the skin at its edges: the table shows both.
-  const row = (id) => r.rows.find((x) => x.id === id);
-  assert.ok(row("max.s1.doubler").delta < 0 && row("max.s1.band").delta > 0);
-  assert.equal(row("stringer.0").pct, null, "no percentage from a zero baseline");
-  assert.ok(row("compliance").pct < 0 && row("mass").pct > 0);
+  assert.ok(row(r, "max.s1.doubler").delta < 0 && row(r, "max.s1.band").delta > 0);
+  assert.equal(row(r, "stringer.0").pct, null, "no percentage from a zero baseline");
+  assert.ok(/** @type {number} */ (row(r, "compliance").pct) < 0 && /** @type {number} */ (row(r, "mass").pct) > 0);
   // Energy: U = ½ fᵀu.
-  for (const k of ["A", "B"]) assert.ok(rel(r[k].scalars[1], r[k].scalars[0] / 2) < 1e-8 && r.summary[k].energy === r[k].scalars[1] && r.summary[k].compliance === r[k].scalars[0]);
+  for (const k of /** @type {const} */ (["A", "B"])) assert.ok(rel(r[k].scalars[1], r[k].scalars[0] / 2) < 1e-8 && r.summary[k].energy === r[k].scalars[1] && r.summary[k].compliance === r[k].scalars[0]);
   // Probing at a point reports coordinates, element, thickness, stresses and the region.
   const p = DT.probeAt(r, "B", 350, 150);
   for (const key of ["x", "y", "element", "t", "sx", "sy", "txy", "s1", "s2", "theta1Deg", "vm", "ux", "uy", "region"]) assert.ok(key in p, key);
@@ -273,27 +289,33 @@ test("artifact: one self-contained file, published byte-identical as index.html,
 });
 
 test("engine: runs without a clock, randomness, storage or DOM, and gives byte-identical output", () => {
-  const ctx = {}; ctx.self = ctx; vm.createContext(ctx);
+  /** @type {{ self?: object, DiagonalTension?: Engine }} */
+  const ctx = {};
+  ctx.self = ctx; vm.createContext(ctx);
   vm.runInContext(`Math.random = () => { throw new Error("Math.random"); }; Date = new Proxy(Date, { construct() { throw new Error("Date"); }, apply() { throw new Error("Date"); }, get(t, k) { throw new Error("Date." + String(k)); } });`, ctx);
   vm.runInContext(script("dt-engine"), ctx);
   for (const g of ["document", "window", "localStorage", "navigator"]) assert.equal(vm.runInContext(`typeof ${g}`, ctx), "undefined");
-  const E = ctx.DiagonalTension, once = () => { const r = E.runComparison(E.defaultState()); return [E.modelJSON(E.defaultState(), r), E.resultsCSV(r), JSON.stringify(E.beamdswitchReport(r))]; };
+  const E = /** @type {Engine} */ (ctx.DiagonalTension), once = () => { const r = E.runComparison(E.defaultState()); return [E.modelJSON(E.defaultState(), r), E.resultsCSV(/** @type {Comparison} */ (r)), JSON.stringify(E.beamdswitchReport(r))]; };
   assert.deepEqual(once(), once());
   assert.deepEqual(once()[1], DT.resultsCSV(solved()));
 });
 
 test("worker: the Blob worker runs the engine text and the dt-worker script", () => {
+  /** @type {Record<string, any>[]} the messages the worker script posts, read field by field */
   const posted = [];
-  const ctx = { postMessage: (m) => posted.push(m) };
+  /** @type {{ postMessage(m: object): void, self?: object, onmessage?: (e: { data: object }) => void }} */
+  const ctx = { postMessage: (m) => { posted.push(m); } };
   ctx.self = ctx; vm.createContext(ctx);
+  const send = (/** @type {object} */ data) => /** @type {NonNullable<typeof ctx.onmessage>} */ (ctx.onmessage)({ data });
   vm.runInContext(`${script("dt-engine")}\n${script("dt-worker")}`, ctx);
-  ctx.onmessage({ data: { cmd: "compare", id: 7, state: DT.defaultState() } });
+  send({ cmd: "compare", id: 7, state: DT.defaultState() });
   const result = posted.find((m) => m.type === "result");
+  assert.ok(result);
   assert.equal(result.id, 7); assert.equal(result.result.ok, true);
   assert.ok(posted.some((m) => m.type === "progress" && m.progress.stage === "solve" && m.progress.variant === "B"));
   assert.deepEqual(J(result.result.rows), J(solved().rows), "the worker's result is the engine's");
-  ctx.onmessage({ data: { cmd: "compare", id: 8, state: state((s) => { s.panel.W = 0; }) } });
-  assert.equal(posted.at(-1).result.stage, "validate");
-  ctx.onmessage({ data: { cmd: "nope", id: 9 } });
-  assert.equal(posted.at(-1).type, "error");
+  send({ cmd: "compare", id: 8, state: state((s) => { s.panel.W = 0; }) });
+  assert.equal(posted[posted.length - 1].result.stage, "validate");
+  send({ cmd: "nope", id: 9 });
+  assert.equal(posted[posted.length - 1].type, "error");
 });

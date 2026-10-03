@@ -247,7 +247,77 @@ section.block{margin:var(--space-8) 0 0}
    degrees of freedom eliminated, and a Jacobi-preconditioned conjugate-gradient solve. No DOM,
    storage, clock or randomness: the page, its Web Worker and the Node tests all run this same text.
    Units: mm, N, MPa (N/mm²), kg; density is entered in kg/m³. Tension is positive. */
-(function (root) {
+/** The page's inputs, in mm, N, MPa and kg/m³.
+    @typedef {{ panel: { L: number, W: number, t: number }, stringers: { y: number, A: number }[],
+      doubler: { x0: number, y0: number, Lx: number, Ly: number, t: number }, material: { E: number, nu: number, rho: number },
+      load: { q: number }, mesh: { h: number }, regions: { exclude: number, band: number } }} State */
+/** @typedef {{ field: string, message: string }} FieldError */
+/** @typedef {{ s1: number, s2: number, theta1: number, vm: number, r: number }} Principal */
+/** One model for solve(): nodes, quadrilaterals with their thicknesses, bars with their areas, material, prescribed
+    degrees of freedom and their values, and nodal forces.
+    @typedef {{ coords: Float64Array, quads: Int32Array, thick: Float64Array, bars: Int32Array, barA: Float64Array,
+      E: number, nu: number, fixed: Int32Array, fixedVal: Float64Array, f: Float64Array }} Model */
+/** @typedef {{ maxIterations?: number, relTol?: number, onProgress?: ((p: { iteration: number, residual: number }) => void) | null }} SolveOptions */
+/** @typedef {{ ndof: number, rowPtr: Int32Array, cols: Int32Array, vals: Float64Array, nnz: number }} Assembled */
+/** @typedef {{ n: number, rowPtr: Int32Array, cols: Int32Array, vals: Float64Array }} Csr */
+/** @typedef {{ Fx: number, Fy: number, Mz: number, forceScale: number, relForce: number, relMoment: number }} Equilibrium */
+/** Solver diagnostics; a failed solve has only those found before it stopped.
+    @typedef {{ nodes: number, dofs: number, quads: number, bars: number, fixedDofs: number, nnz: number, freeDofs: number,
+      iterations: number, relResidual: number, trueResidual: number, equilibrium: Equilibrium }} Diagnostics */
+/** A solve: displacements, reactions, Gauss-point coordinates and stresses, bar forces, [compliance fᵀu, strain
+    energy] and diagnostics; or the reason it failed.
+    @typedef {{ ok: true, u: Float64Array, R: Float64Array, gp: Float64Array, sig: Float64Array, barN: Float64Array,
+      scalars: Float64Array, diag: Diagnostics }} Solution
+    @typedef {{ ok: false, error: { code: string, message: string }, diag: Partial<Diagnostics> }} SolveFailure */
+/** buildModel(): the conforming grid, both variants' thicknesses, the stringer bars, loads and restraints.
+    @typedef {{ xs: number[], ys: number[], nx: number, ny: number, coords: Float64Array, quads: Int32Array,
+      inDoubler: Uint8Array, tA: Float64Array, tB: Float64Array, bars: Int32Array, barA: Float64Array, barStringer: Int32Array,
+      stringerY: number[], stringerA: number[], f: Float64Array, fixed: Int32Array, fixedVal: Float64Array,
+      restraints: { node: number, x: number, y: number, dofs: string[] }[], totals: { q: number, vertical: number, horizontal: number } }} BuiltModel */
+/** @typedef {{ id: string, label: string, x: number, y: number, kind: string }} ProbePoint */
+/** @typedef {{ gauss: number, element: number, point: number, x: number, y: number, t: number, sx: number, sy: number,
+      txy: number, s1: number, s2: number, theta1Deg: number, vm: number }} GaussRecord */
+/** A fixed probe: the displacement there and the nearest Gauss point's stresses.
+    @typedef {ProbePoint & { ux: number, uy: number, u: number, gauss: number, element: number, t: number, sx: number,
+      sy: number, txy: number, s1: number, s2: number, theta1Deg: number, vm: number, gx: number, gy: number }} Probe */
+/** @typedef {{ value: number, gauss: number, element: number, x: number, y: number }} Extreme */
+/** A comparison region's maxima; null where the region holds no Gauss point.
+    @typedef {{ label: string, gaussPoints: number, s1: Extreme | null, vm: Extreme | null, tau: Extreme | null }} RegionSummary */
+/** @typedef {{ y: number, A: number, Nmax: number, Nmin: number, Nmid: number, maxAbs: number }} StringerForce */
+/** @typedef {{ variant: string, mass: { skin: number, stringers: number, total: number }, probes: Probe[],
+      regions: Record<string, RegionSummary>, stringers: StringerForce[], diagnostics: Diagnostics, compliance: number, energy: number }} Summary */
+/** @typedef {{ id: string, label: string, unit: string, a: number, b: number, delta: number, pct: number | null }} Row */
+/** @typedef {{ elementSize: number, nodes: number, quads: number, bars: number, doublerElements: number, xLines: number,
+      yLines: number, minEdge: number, maxEdge: number, maxAspect: number }} MeshSummary */
+/** A validated comparison of variants A and B on one mesh and load.
+    @typedef {{ ok: true, state: State, model: BuiltModel, A: Solution, B: Solution, region: Uint8Array,
+      summary: { A: Summary, B: Summary }, rows: Row[], mesh: MeshSummary }} Comparison */
+/** A comparison that failed validation or a solve; it carries no results.
+    @typedef {{ ok: false, stage: "validate", errors: FieldError[], error?: undefined }
+      | { ok: false, stage: "solve", variant: string, error: { code: string, message: string }, diag: Partial<Diagnostics>, state: State }} ComparisonFailure */
+/** Diagnostics as exported, rounded to eight significant figures (null where not finite).
+    @typedef {{ nodes: number, dofs: number, freeDofs: number, quads: number, bars: number, nnz: number, iterations: number,
+      relResidual: number | null, trueResidual: number | null, relTol: number,
+      equilibrium: { Fx: number | null, Fy: number | null, Mz: number | null, relForce: number | null, relMoment: number | null } }} ExportedDiagnostics */
+/** @typedef {{ stage: string, variant?: string, iteration?: number, residual?: number }} Progress */
+/** @typedef {{ id: string, name: string, pass: boolean, detail: string }} SelfTest */
+/** The engine, published as self.DiagonalTension.
+    @typedef {{ VERSION: number, VISUAL: string, UNITS: Record<string, string>, LIMITS: { maxNodes: number, maxIterations: number, relTol: number, residualCheck: number, maxStringers: number },
+      CONVERGENCE: { levels: number[], displacementTol: number, stressTol: number, note: string }, ASSUMPTIONS: string[],
+      META: Record<string, unknown> & { example: string }, NACA: string, REGIONS: ({ id: string, label: string } | null)[],
+      defaultState(): State, normalize(input: unknown): State, validate(input: unknown): { ok: boolean, errors: FieldError[], state: State },
+      gridLines(a: number, b: number, required: number[], h: number): number[], meshLines(s: State): { xs: number[], ys: number[] },
+      estimateNodes(s: State): number, buildModel(s: State): BuiltModel, solve(m: Model, opts?: SolveOptions): Solution | SolveFailure,
+      principal(sx: number, sy: number, txy: number): Principal, regionOf(x: number, y: number, s: State): number,
+      probePoints(s: State): ProbePoint[], probeAt(res: Comparison, variant: "A" | "B", x: number, y: number): GaussRecord & { at: { x: number, y: number }, ux: number, uy: number, u: number, region: string },
+      displacementAt(mdl: BuiltModel, u: Float64Array, x: number, y: number): { ux: number, uy: number, mag: number, element: number },
+      nearestGauss(mdl: BuiltModel, gp: Float64Array, x: number, y: number): number,
+      runComparison(input: unknown, onProgress?: ((p: Progress) => void) | null, opts?: SolveOptions): Comparison | ComparisonFailure,
+      comparisonRows(SA: Summary, SB: Summary, s: State): Row[], modelJSON(input: unknown, res: Comparison | ComparisonFailure | null): string,
+      resultsCSV(res: Comparison): string, diagnosticsOf(res: Comparison): { solver: string, A: ExportedDiagnostics, B: ExportedDiagnostics },
+      beamdswitchReport(res: Comparison | ComparisonFailure | null): Record<string, unknown>, selfTests(): SelfTest[],
+      fmt(x: number | null | undefined, d?: number): string, fmtPct(p: number | null): string, fmtSigned(x: number, d?: number): string }} Engine */
+(/** @param {typeof globalThis} root */ function (root) {
   "use strict";
 
   const VERSION = 1;
@@ -280,6 +350,7 @@ section.block{margin:var(--space-8) 0 0}
   ];
   const NACA = "https://ntrs.nasa.gov/citations/19930083335";
 
+  /** @returns {State} */
   function defaultState() {
     return {
       panel: { L: 600, W: 400, t: 1 },
@@ -318,6 +389,7 @@ section.block{margin:var(--space-8) 0 0}
   };
 
   /* ---------- formatting ---------- */
+  /** @param {number | null | undefined} x @param {number} [d] significant figures */
   function fmt(x, d = 4) {
     if (x === null || x === undefined || !Number.isFinite(x)) return "—";
     if (x === 0) return "0";
@@ -326,10 +398,11 @@ section.block{margin:var(--space-8) 0 0}
     const s = Number(x.toPrecision(d));
     return (Object.is(s, -0) ? 0 : s).toLocaleString("en-GB", { maximumFractionDigits: 10 });
   }
-  const fmtPct = (p) => (p === null || !Number.isFinite(p) ? "—" : `${p >= 0 ? "+" : "−"}${fmt(Math.abs(p), 3)}%`);
-  const fmtSigned = (x, d = 4) => (Number.isFinite(x) && x < 0 ? `−${fmt(-x, d)}` : fmt(x, d));
+  const fmtPct = (/** @type {number | null} */ p) => (p === null || !Number.isFinite(p) ? "—" : `${p >= 0 ? "+" : "−"}${fmt(Math.abs(p), 3)}%`);
+  const fmtSigned = (/** @type {number} */ x, d = 4) => (Number.isFinite(x) && x < 0 ? `−${fmt(-x, d)}` : fmt(x, d));
 
   /* ---------- stress transformation (the specification's formulas) ---------- */
+  /** @param {number} sx @param {number} sy @param {number} txy @returns {Principal} */
   function principal(sx, sy, txy) {
     const m = (sx + sy) / 2;
     const r = Math.hypot((sx - sy) / 2, txy);
@@ -343,13 +416,16 @@ section.block{margin:var(--space-8) 0 0}
   }
 
   /* ---------- validation ---------- */
-  const isNum = (v) => typeof v === "number" && Number.isFinite(v);
+  const isNum = (/** @type {unknown} */ v) => typeof v === "number" && Number.isFinite(v);
+  /** Fills missing blocks from the defaults and converts numeric strings; other values become NaN for validate().
+      @param {unknown} input @returns {State} */
   function normalize(input) {
-    const d = defaultState(), s = input && typeof input === "object" ? input : {};
-    const pick = (blk, keys) => { const o = {}; for (const k of keys) o[k] = s[blk] && s[blk][k] !== undefined ? toNum(s[blk][k]) : d[blk][k]; return o; };
+    const d = defaultState(), s = /** @type {Record<string, any>} */ (input && typeof input === "object" ? input : {});
+    /** @type {(blk: keyof State, keys: string[]) => any} */
+    const pick = (blk, keys) => { const o = /** @type {Record<string, number>} */ ({}); for (const k of keys) o[k] = s[blk] && s[blk][k] !== undefined ? toNum(s[blk][k]) : /** @type {Record<string, number>} */ (d[blk])[k]; return o; };
     return {
       panel: pick("panel", ["L", "W", "t"]),
-      stringers: Array.isArray(s.stringers) ? s.stringers.map((x) => ({ y: toNum(x && x.y), A: toNum(x && x.A) })) : d.stringers,
+      stringers: Array.isArray(s.stringers) ? s.stringers.map((/** @type {any} */ x) => ({ y: toNum(x && x.y), A: toNum(x && x.A) })) : d.stringers,
       doubler: pick("doubler", ["x0", "y0", "Lx", "Ly", "t"]),
       material: pick("material", ["E", "nu", "rho"]),
       load: pick("load", ["q"]),
@@ -357,12 +433,18 @@ section.block{margin:var(--space-8) 0 0}
       regions: pick("regions", ["exclude", "band"]),
     };
   }
+  /** @param {unknown} v */
   function toNum(v) { if (typeof v === "number") return v; if (typeof v === "string" && v.trim() !== "") return Number(v); return NaN; }
 
+  /** @param {unknown} input @returns {{ ok: boolean, errors: FieldError[], state: State }} */
   function validate(input) {
-    const s = normalize(input), errors = [];
-    const err = (field, message) => errors.push({ field, message });
+    /** @type {FieldError[]} */
+    const errors = [];
+    const s = normalize(input);
+    const err = (/** @type {string} */ field, /** @type {string} */ message) => errors.push({ field, message });
+    /** @type {(v: number, field: string, label: string) => void} */
     const pos = (v, field, label) => { if (!isNum(v)) err(field, `${label} must be a number.`); else if (!(v > 0)) err(field, `${label} must be positive.`); };
+    /** @type {(v: number, field: string, label: string) => void} */
     const nonneg = (v, field, label) => { if (!isNum(v)) err(field, `${label} must be a number.`); else if (v < 0) err(field, `${label} must not be negative.`); };
     pos(s.panel.L, "panel.L", "Panel length L");
     pos(s.panel.W, "panel.W", "Panel width W");
@@ -405,6 +487,7 @@ section.block{margin:var(--space-8) 0 0}
   /* ---------- mesh ---------- */
   /* Grid lines from a to b through every required coordinate, each gap split into equal parts no
      longer than h. Required lines closer than 1e-9 of the span merge, so no element is degenerate. */
+  /** @param {number} a @param {number} b @param {number[]} required */
   function gridKeys(a, b, required) {
     const tol = 1e-9 * (b - a);
     const pts = [a, b, ...required].map((v) => Math.min(b, Math.max(a, v))).sort((p, q) => p - q);
@@ -413,7 +496,8 @@ section.block{margin:var(--space-8) 0 0}
     keys[keys.length - 1] = b;
     return keys;
   }
-  const gapParts = (gap, h) => Math.max(1, Math.ceil(gap / h - 1e-9));
+  const gapParts = (/** @type {number} */ gap, /** @type {number} */ h) => Math.max(1, Math.ceil(gap / h - 1e-9));
+  /** @param {number} a @param {number} b @param {number[]} required @param {number} h */
   function gridLines(a, b, required, h) {
     const keys = gridKeys(a, b, required), out = [a];
     for (let k = 1; k < keys.length; k++) {
@@ -423,23 +507,28 @@ section.block{margin:var(--space-8) 0 0}
     return out;
   }
   /* The number of grid lines gridLines would return, counted without building them. */
+  /** @param {number} a @param {number} b @param {number[]} required @param {number} h */
   function gridCount(a, b, required, h) {
     const keys = gridKeys(a, b, required);
     let n = 1;
     for (let k = 1; k < keys.length; k++) n += gapParts(keys[k] - keys[k - 1], h);
     return n;
   }
+  /** @param {State} s @returns {{ x: [number, number, number[]], y: [number, number, number[]] }} */
   const meshRequired = (s) => ({
     x: [0, s.panel.L, [s.doubler.x0, s.doubler.x0 + s.doubler.Lx]],
     y: [0, s.panel.W, [s.doubler.y0, s.doubler.y0 + s.doubler.Ly, ...s.stringers.map((x) => x.y)]],
   });
+  /** @param {State} s */
   function meshLines(s) { const r = meshRequired(s); return { xs: gridLines(...r.x, s.mesh.h), ys: gridLines(...r.y, s.mesh.h) }; }
+  /** @param {State} s */
   function estimateNodes(s) { const r = meshRequired(s); return gridCount(...r.x, s.mesh.h) * gridCount(...r.y, s.mesh.h); }
-  const nearestIndex = (arr, v) => { let best = 0; for (let i = 1; i < arr.length; i++) if (Math.abs(arr[i] - v) < Math.abs(arr[best] - v)) best = i; return best; };
+  const nearestIndex = (/** @type {number[]} */ arr, /** @type {number} */ v) => { let best = 0; for (let i = 1; i < arr.length; i++) if (Math.abs(arr[i] - v) < Math.abs(arr[best] - v)) best = i; return best; };
 
   /* The panel's conforming structured mesh, loads and restraints, shared by both variants. Node
      (i, j) is j * nx + i; element (i, j) is j * (nx - 1) + i with corners counter-clockwise from its
      lower left. tA and tB are the membrane thicknesses of variants A and B. */
+  /** @param {State} s @returns {BuiltModel} */
   function buildModel(s) {
     const { L, W, t } = s.panel, d = s.doubler;
     const { xs, ys } = meshLines(s);
@@ -462,6 +551,7 @@ section.block{margin:var(--space-8) 0 0}
       for (let i = 0; i < ex; i++) { const b = si * ex + i; bars[2 * b] = j * nx + i; bars[2 * b + 1] = j * nx + i + 1; barA[b] = st.A; barStringer[b] = si; }
     });
     const f = new Float64Array(2 * nn), q = s.load.q;
+    /** @type {(nodes: number[], dof: number, sign: number) => void} */
     const edge = (nodes, dof, sign) => {
       for (let k = 0; k + 1 < nodes.length; k++) {
         const a = nodes[k], b = nodes[k + 1];
@@ -470,7 +560,7 @@ section.block{margin:var(--space-8) 0 0}
         f[2 * b + dof] += (sign * q * len) / 2;
       }
     };
-    const row = (j) => Array.from({ length: nx }, (_, i) => j * nx + i), col = (i) => Array.from({ length: ny }, (_, j) => j * nx + i);
+    const row = (/** @type {number} */ j) => Array.from({ length: nx }, (_, i) => j * nx + i), col = (/** @type {number} */ i) => Array.from({ length: ny }, (_, j) => j * nx + i);
     edge(row(0), 0, -1);        // bottom edge: shear flow in −x
     edge(row(ny - 1), 0, 1);    // top edge: +x
     edge(col(0), 1, -1);        // left edge: −y
@@ -488,8 +578,10 @@ section.block{margin:var(--space-8) 0 0}
   /* ---------- element stiffness ---------- */
   const G = 1 / Math.sqrt(3);
   const GP = [[-G, -G], [G, -G], [G, G], [-G, G]];
+  /** @param {number} E @param {number} nu */
   function dMatrix(E, nu) { const c = E / (1 - nu * nu); return [c, c * nu, 0, c * nu, c, 0, 0, 0, (c * (1 - nu)) / 2]; }
   /* Shape-function derivatives at one Gauss point: fills dx, dy (length 4) and returns det J. */
+  /** @param {number[]} X @param {number[]} Y @param {number} xi @param {number} eta @param {number[]} dx @param {number[]} dy */
   function shapeDerivs(X, Y, xi, eta, dx, dy) {
     const nxi = [-(1 - eta) / 4, (1 - eta) / 4, (1 + eta) / 4, -(1 + eta) / 4];
     const neta = [-(1 - xi) / 4, -(1 + xi) / 4, (1 + xi) / 4, (1 - xi) / 4];
@@ -499,6 +591,7 @@ section.block{margin:var(--space-8) 0 0}
     for (let a = 0; a < 4; a++) { dx[a] = (ye * nxi[a] - yx * neta[a]) / det; dy[a] = (-xe * nxi[a] + xx * neta[a]) / det; }
     return det;
   }
+  /** @param {number[]} X @param {number[]} Y @param {number} t @param {number[]} D @param {Float64Array} Ke */
   function quadStiffness(X, Y, t, D, Ke) {
     Ke.fill(0);
     const dx = [0, 0, 0, 0], dy = [0, 0, 0, 0], B = new Float64Array(24), DB = new Float64Array(24);
@@ -513,6 +606,7 @@ section.block{margin:var(--space-8) 0 0}
   }
 
   /* ---------- checks before assembly ---------- */
+  /** The first reason the model cannot be solved, or null. @param {Model} m @returns {{ code: string, message: string } | null} */
   function checkModel(m) {
     const nn = m.coords.length / 2, nq = m.quads.length / 4, nb = m.bars.length / 2;
     const X = [0, 0, 0, 0], Y = [0, 0, 0, 0], dx = [0, 0, 0, 0], dy = [0, 0, 0, 0];
@@ -535,8 +629,8 @@ section.block{margin:var(--space-8) 0 0}
     }
     // Connectivity through elements that carry stiffness: one component holding every node.
     const parent = Int32Array.from({ length: nn }, (_, i) => i);
-    const findRoot = (i) => { while (parent[i] !== i) { parent[i] = parent[parent[i]]; i = parent[i]; } return i; };
-    const join = (a, b) => { const ra = findRoot(a), rb = findRoot(b); if (ra !== rb) parent[ra] = rb; };
+    const findRoot = (/** @type {number} */ i) => { while (parent[i] !== i) { parent[i] = parent[parent[i]]; i = parent[i]; } return i; };
+    const join = (/** @type {number} */ a, /** @type {number} */ b) => { const ra = findRoot(a), rb = findRoot(b); if (ra !== rb) parent[ra] = rb; };
     const used = new Uint8Array(nn);
     for (let e = 0; e < nq; e++) for (let a = 0; a < 4; a++) { used[m.quads[4 * e + a]] = 1; if (a) join(m.quads[4 * e], m.quads[4 * e + a]); }
     for (let b = 0; b < nb; b++) if (m.barA[b] > 0) { used[m.bars[2 * b]] = used[m.bars[2 * b + 1]] = 1; join(m.bars[2 * b], m.bars[2 * b + 1]); }
@@ -560,10 +654,11 @@ section.block{margin:var(--space-8) 0 0}
   }
 
   /* ---------- sparse assembly ---------- */
+  /** @param {Model} m @param {number[]} D @returns {Assembled} */
   function assemble(m, D) {
     const nn = m.coords.length / 2, nq = m.quads.length / 4, nb = m.bars.length / 2;
     const nbr = Array.from({ length: nn }, (_, n) => [n]);
-    const link = (a, b) => { if (!nbr[a].includes(b)) nbr[a].push(b); };
+    const link = (/** @type {number} */ a, /** @type {number} */ b) => { if (!nbr[a].includes(b)) nbr[a].push(b); };
     for (let e = 0; e < nq; e++) for (let a = 0; a < 4; a++) for (let b = 0; b < 4; b++) link(m.quads[4 * e + a], m.quads[4 * e + b]);
     for (let b = 0; b < nb; b++) { link(m.bars[2 * b], m.bars[2 * b + 1]); link(m.bars[2 * b + 1], m.bars[2 * b]); }
     for (const l of nbr) l.sort((a, b) => a - b);
@@ -571,6 +666,7 @@ section.block{margin:var(--space-8) 0 0}
     for (let n = 0; n < nn; n++) { rowPtr[2 * n + 1] = rowPtr[2 * n] + 2 * nbr[n].length; rowPtr[2 * n + 2] = rowPtr[2 * n + 1] + 2 * nbr[n].length; }
     const nnz = rowPtr[ndof], cols = new Int32Array(nnz), vals = new Float64Array(nnz);
     for (let n = 0; n < nn; n++) for (let c = 0; c < 2; c++) { let p = rowPtr[2 * n + c]; for (const k of nbr[n]) { cols[p++] = 2 * k; cols[p++] = 2 * k + 1; } }
+    /** @type {(na: number, nbn: number, ca: number, cb: number, v: number) => void} */
     const add = (na, nbn, ca, cb, v) => { const r = 2 * na + ca, idx = nbr[na].indexOf(nbn); vals[rowPtr[r] + 2 * idx + cb] += v; };
     const Ke = new Float64Array(64), X = [0, 0, 0, 0], Y = [0, 0, 0, 0];
     for (let e = 0; e < nq; e++) {
@@ -586,20 +682,24 @@ section.block{margin:var(--space-8) 0 0}
     }
     return { ndof, rowPtr, cols, vals, nnz };
   }
+  /** y = K x. @param {Csr} K @param {Float64Array} x @param {Float64Array} y */
   function csrMul(K, x, y) {
     for (let r = 0; r < K.n; r++) { let s = 0; for (let p = K.rowPtr[r]; p < K.rowPtr[r + 1]; p++) s += K.vals[p] * x[K.cols[p]]; y[r] = s; }
   }
 
   /* ---------- solver ---------- */
+  /** @param {string} code @param {string} message @param {Partial<Diagnostics>} diag @returns {SolveFailure} */
   function fail(code, message, diag) { return { ok: false, error: { code, message }, diag }; }
 
   /* Solve one model: { coords, quads, thick, bars, barA, E, nu, fixed, fixedVal, f }. Returns the
      displacements, reactions, Gauss-point stresses, bar forces, energy and diagnostics, or ok: false
      with the reason. A failed solve returns no results to display. */
+  /** @param {Model} m @param {SolveOptions} [opts] @returns {Solution | SolveFailure} */
   function solve(m, opts = {}) {
     const maxIter = opts.maxIterations || LIMITS.maxIterations, relTol = opts.relTol || LIMITS.relTol, onProgress = opts.onProgress || null;
     const nn = m.coords.length / 2, nq = m.quads.length / 4, nb = m.bars.length / 2;
-    const diag = { nodes: nn, dofs: 2 * nn, quads: nq, bars: nb, fixedDofs: m.fixed.length };
+    // Filled in as the solve proceeds; complete once it succeeds.
+    const diag = /** @type {Diagnostics} */ ({ nodes: nn, dofs: 2 * nn, quads: nq, bars: nb, fixedDofs: m.fixed.length });
     if (!(m.E > 0) || !(m.nu > -1 && m.nu < 0.5)) return fail("material", "Invalid material: E must be positive and Poisson's ratio between −1 and 0.5.", diag);
     if (nn > LIMITS.maxNodes) return fail("limit", `The mesh has ${nn} nodes; the limit is ${LIMITS.maxNodes}.`, diag);
     const bad = checkModel(m);
@@ -610,7 +710,9 @@ section.block{margin:var(--space-8) 0 0}
     // Eliminate the prescribed degrees of freedom.
     const isFixed = new Uint8Array(ndof), up = new Float64Array(ndof);
     m.fixed.forEach((d, k) => { isFixed[d] = 1; up[d] = m.fixedVal[k] || 0; });
-    const map = new Int32Array(ndof).fill(-1), free = [];
+    /** @type {number[]} */
+    const free = [];
+    const map = new Int32Array(ndof).fill(-1);
     for (let d = 0; d < ndof; d++) if (!isFixed[d]) { map[d] = free.length; free.push(d); }
     const nf = free.length;
     diag.freeDofs = nf;
@@ -628,7 +730,7 @@ section.block{margin:var(--space-8) 0 0}
     const Kr = { n: nf, rowPtr: rp, cols: rc, vals: rv };
     // Jacobi-preconditioned conjugate gradient.
     const x = new Float64Array(nf), r = Float64Array.from(b), z = new Float64Array(nf), p = new Float64Array(nf), Ap = new Float64Array(nf);
-    const dot = (u, v) => { let s = 0; for (let i = 0; i < u.length; i++) s += u[i] * v[i]; return s; };
+    const dot = (/** @type {Float64Array} */ u, /** @type {Float64Array} */ v) => { let s = 0; for (let i = 0; i < u.length; i++) s += u[i] * v[i]; return s; };
     const bnorm = Math.sqrt(dot(b, b));
     let iter = 0, rel = 0;
     if (!Number.isFinite(bnorm)) return fail("nonfinite", "The load vector is not finite.", diag);
@@ -687,7 +789,7 @@ section.block{margin:var(--space-8) 0 0}
        fields of an object literal: under concurrent recompilation, V8 in Node 26 was seen to share
        such a field's number box between the A and B results, so A reported B's compliance. */
     const sums = Float64Array.of(work, energy2 / 2, fx, fy, mz, scale, size);
-    const eq = {};
+    const eq = /** @type {Equilibrium} */ ({});
     eq.Fx = sums[2]; eq.Fy = sums[3]; eq.Mz = sums[4]; eq.forceScale = sums[5];
     eq.relForce = sums[5] ? Math.hypot(sums[2], sums[3]) / sums[5] : 0;
     eq.relMoment = sums[5] ? Math.abs(sums[4]) / (sums[5] * (sums[6] || 1)) : 0;
@@ -720,6 +822,8 @@ section.block{margin:var(--space-8) 0 0}
   }
 
   /* ---------- the comparison ---------- */
+  /** 0 excluded, 1 patch interior, 2 skin at the doubler edges, 3 surrounding skin.
+      @param {number} x @param {number} y @param {State} s */
   function regionOf(x, y, s) {
     const { L, W } = s.panel, d = s.doubler, c = s.regions.exclude;
     if (Math.min(x, L - x, y, W - y) < c) return 0;
@@ -730,6 +834,7 @@ section.block{margin:var(--space-8) 0 0}
   }
   const REGIONS = [null, { id: "doubler", label: "patch interior" }, { id: "band", label: "skin at doubler edges" }, { id: "skin", label: "surrounding skin" }];
 
+  /** @param {State} s @returns {ProbePoint[]} */
   function probePoints(s) {
     const { L, W } = s.panel, d = s.doubler, b = s.regions.band / 2;
     const beside = [[d.x0 + d.Lx + b, d.y0 + d.Ly / 4], [d.x0 - b, d.y0 + d.Ly / 4], [d.x0 + d.Lx / 2, d.y0 + d.Ly + b], [d.x0 + d.Lx / 2, d.y0 - b]]
@@ -741,8 +846,10 @@ section.block{margin:var(--space-8) 0 0}
       ...(beside ? [{ id: "P4", label: "skin beside the patch", x: beside[0], y: beside[1], kind: "stress" }] : []),
     ];
   }
+  /** @param {number[]} arr @param {number} v */
   function cellOf(arr, v) { let lo = 0, hi = arr.length - 2; if (v <= arr[0]) return 0; if (v >= arr[arr.length - 1]) return hi; while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (arr[mid] <= v) lo = mid; else hi = mid - 1; } return lo; }
   /* Displacement at (x, y) by the bilinear shape functions of the element containing it. */
+  /** @param {BuiltModel} mdl @param {Float64Array} u @param {number} x @param {number} y */
   function displacementAt(mdl, u, x, y) {
     const i = cellOf(mdl.xs, x), j = cellOf(mdl.ys, y), nx = mdl.nx;
     const a = (x - mdl.xs[i]) / (mdl.xs[i + 1] - mdl.xs[i]), b = (y - mdl.ys[j]) / (mdl.ys[j + 1] - mdl.ys[j]);
@@ -752,6 +859,7 @@ section.block{margin:var(--space-8) 0 0}
     return { ux, uy, mag: Math.hypot(ux, uy), element: j * (nx - 1) + i };
   }
   /* The Gauss point nearest (x, y): searched in the containing element and its neighbours, ties to the lower index. */
+  /** @param {BuiltModel} mdl @param {Float64Array} gp @param {number} x @param {number} y */
   function nearestGauss(mdl, gp, x, y) {
     const ci = cellOf(mdl.xs, x), cj = cellOf(mdl.ys, y), ex = mdl.nx - 1, ey = mdl.ny - 1;
     let best = -1, bd = Infinity;
@@ -761,17 +869,21 @@ section.block{margin:var(--space-8) 0 0}
     }
     return best;
   }
+  /** @param {BuiltModel} mdl @param {Solution} sol @param {Float64Array} thick @param {number} g @returns {GaussRecord} */
   function gaussRecord(mdl, sol, thick, g) {
     const sx = sol.sig[3 * g], sy = sol.sig[3 * g + 1], txy = sol.sig[3 * g + 2], pr = principal(sx, sy, txy);
     return { gauss: g, element: g >> 2, point: g & 3, x: sol.gp[2 * g], y: sol.gp[2 * g + 1], t: thick[g >> 2], sx, sy, txy, s1: pr.s1, s2: pr.s2, theta1Deg: (pr.theta1 * 180) / Math.PI, vm: pr.vm };
   }
   /* Everything one variant reports at a point: the nearest Gauss point's stresses and the displacement there. */
+  /** @param {Comparison} res @param {"A" | "B"} variant @param {number} x @param {number} y */
   function probeAt(res, variant, x, y) {
     const mdl = res.model, sol = res[variant], thick = variant === "A" ? mdl.tA : mdl.tB;
     const g = nearestGauss(mdl, sol.gp, x, y), rec = gaussRecord(mdl, sol, thick, g), d = displacementAt(mdl, sol.u, x, y);
-    return { ...rec, at: { x, y }, ux: d.ux, uy: d.uy, u: d.mag, region: REGIONS[res.region[g]] ? REGIONS[res.region[g]].id : "excluded" };
+    return { ...rec, at: { x, y }, ux: d.ux, uy: d.uy, u: d.mag, region: REGIONS[res.region[g]]?.id ?? "excluded" };
   }
 
+  /** @param {State} s @param {BuiltModel} mdl @param {Solution} sol @param {Float64Array} thick @param {Uint8Array} region @param {string} variant
+      @returns {Summary} */
   function summarize(s, mdl, sol, thick, region, variant) {
     const rho = s.material.rho * 1e-9;
     let vol = 0;
@@ -784,19 +896,25 @@ section.block{margin:var(--space-8) 0 0}
       const d = displacementAt(mdl, sol.u, p.x, p.y), g = nearestGauss(mdl, sol.gp, p.x, p.y);
       return { ...p, ux: d.ux, uy: d.uy, u: d.mag, ...pick(gaussRecord(mdl, sol, thick, g), ["gauss", "element", "t", "sx", "sy", "txy", "s1", "s2", "theta1Deg", "vm"]), gx: sol.gp[2 * g], gy: sol.gp[2 * g + 1] };
     });
+    /** @type {Record<string, RegionSummary>} */
     const regions = {};
     for (let r = 1; r <= 3; r++) {
-      let s1 = null, vm = null, tau = null, count = 0;
+      /** @type {Extreme | null} */
+      let s1 = null, vm = null, tau = null;
+      let count = 0;
       for (let g = 0; g < region.length; g++) if (region[g] === r) {
         count++;
-        const pr = principal(sol.sig[3 * g], sol.sig[3 * g + 1], sol.sig[3 * g + 2]), at = (v) => ({ value: v, gauss: g, element: g >> 2, x: sol.gp[2 * g], y: sol.gp[2 * g + 1] });
+        const pr = principal(sol.sig[3 * g], sol.sig[3 * g + 1], sol.sig[3 * g + 2]), at = (/** @type {number} */ v) => ({ value: v, gauss: g, element: g >> 2, x: sol.gp[2 * g], y: sol.gp[2 * g + 1] });
         if (!s1 || pr.s1 > s1.value) s1 = at(pr.s1);
         if (!vm || pr.vm > vm.value) vm = at(pr.vm);
         if (!tau || Math.abs(sol.sig[3 * g + 2]) > tau.value) tau = at(Math.abs(sol.sig[3 * g + 2]));
       }
-      regions[REGIONS[r].id] = { label: REGIONS[r].label, gaussPoints: count, s1, vm, tau };
+      const reg = /** @type {{ id: string, label: string }} */ (REGIONS[r]);
+      regions[reg.id] = { label: reg.label, gaussPoints: count, s1, vm, tau };
     }
-    const nS = mdl.stringerY.length, stringers = [];
+    /** @type {StringerForce[]} */
+    const stringers = [];
+    const nS = mdl.stringerY.length;
     for (let k = 0; k < nS; k++) {
       let max = -Infinity, min = Infinity, mid = 0;
       for (let i = 0; i < ex; i++) {
@@ -806,27 +924,33 @@ section.block{margin:var(--space-8) 0 0}
       }
       stringers.push({ y: mdl.stringerY[k], A: mdl.stringerA[k], Nmax: max, Nmin: min, Nmid: mid, maxAbs: Math.max(Math.abs(max), Math.abs(min)) });
     }
-    const out = { variant, mass, probes, regions, stringers, diagnostics: sol.diag };
+    // compliance and energy are stored after the literal; see solve() on V8 sharing number boxes.
+    const out = /** @type {Summary} */ ({ variant, mass, probes, regions, stringers, diagnostics: sol.diag });
     out.compliance = sol.scalars[0]; out.energy = sol.scalars[1];
     return out;
   }
-  const pick = (o, keys) => { const r = {}; for (const k of keys) r[k] = o[k]; return r; };
+  /** @type {<T extends object, K extends keyof T>(o: T, keys: K[]) => Pick<T, K>} */
+  const pick = (o, keys) => { const r = /** @type {Pick<typeof o, typeof keys[number]>} */ ({}); for (const k of keys) r[k] = o[k]; return r; };
 
   /* A value below 1e-8 of its physical scale is solver round-off: it is reported as 0, and a change
      from a zero baseline has no percentage. */
   const NOISE = 1e-8;
+  /** @param {number} a @param {number} b @param {number} scale */
   function change(a, b, scale) {
-    const snap = (x) => (Math.abs(x) <= NOISE * scale ? 0 : x);
+    const snap = (/** @type {number} */ x) => (Math.abs(x) <= NOISE * scale ? 0 : x);
     const a0 = snap(a), b0 = snap(b), delta = snap(b - a);
     return { a: a0, b: b0, delta, pct: a0 !== 0 ? (100 * delta) / Math.abs(a0) : null };
   }
+  /** @param {Summary} SA @param {Summary} SB @param {State} s @returns {Row[]} */
   function comparisonRows(SA, SB, s) {
+    /** @type {Row[]} */
     const rows = [];
+    /** @type {(id: string, label: string, unit: string, a: number, b: number, scale: number) => void} */
     const row = (id, label, unit, a, b, scale) => rows.push({ id, label, unit, ...change(a, b, scale) });
     const tau = Math.abs(s.load.q) / s.panel.t, force = Math.abs(s.load.q) * Math.max(s.panel.L, s.panel.W);
     row("mass", "Mass", "kg", SA.mass.total, SB.mass.total, Math.max(SA.mass.total, SB.mass.total));
     row("compliance", "Compliance fᵀu = 2U", "N·mm", SA.compliance, SB.compliance, Math.abs(SA.compliance));
-    const P = (sm, id) => sm.probes.find((p) => p.id === id);
+    const P = (/** @type {Summary} */ sm, /** @type {string} */ id) => /** @type {Probe} */ (sm.probes.find((p) => p.id === id));
     row("P1.u", "Displacement |u|, P1 free corner", "mm", P(SA, "P1").u, P(SB, "P1").u, P(SA, "P1").u);
     row("P2.u", "Displacement |u|, P2 doubler centre", "mm", P(SA, "P2").u, P(SB, "P2").u, P(SA, "P1").u);
     row("P3.txy", "Shear τxy, P3 inside the patch", "MPa", P(SA, "P3").txy, P(SB, "P3").txy, tau);
@@ -841,16 +965,19 @@ section.block{margin:var(--space-8) 0 0}
 
   /* Validate, mesh, solve A then B on the same mesh and load, and compare. onProgress receives
      { stage, variant, iteration, residual }. Returns ok: false with errors or the failed solve. */
+  /** @param {unknown} input @param {((p: Progress) => void) | null} [onProgress] @param {SolveOptions} [opts]
+      @returns {Comparison | ComparisonFailure} */
   function runComparison(input, onProgress, opts = {}) {
     const v = validate(input);
     if (!v.ok) return { ok: false, stage: "validate", errors: v.errors };
     const s = v.state;
-    const progress = (p) => { if (onProgress) onProgress(p); };
+    const progress = (/** @type {Progress} */ p) => { if (onProgress) onProgress(p); };
     progress({ stage: "mesh" });
     const mdl = buildModel(s);
     const common = { coords: mdl.coords, quads: mdl.quads, bars: mdl.bars, barA: mdl.barA, E: s.material.E, nu: s.material.nu, fixed: mdl.fixed, fixedVal: mdl.fixedVal, f: mdl.f };
-    const out = { ok: false, state: s, model: mdl };
-    for (const variant of ["A", "B"]) {
+    // Built up field by field and returned only once complete, with ok set last.
+    const out = /** @type {Comparison} */ (/** @type {unknown} */ ({ ok: false, state: s, model: mdl }));
+    for (const variant of /** @type {const} */ (["A", "B"])) {
       progress({ stage: "solve", variant });
       const sol = solve({ ...common, thick: variant === "A" ? mdl.tA : mdl.tB }, { ...opts, onProgress: (p) => progress({ stage: "solve", variant, ...p }) });
       if (!sol.ok) return { ok: false, stage: "solve", variant, error: sol.error, diag: sol.diag, state: s };
@@ -863,16 +990,17 @@ section.block{margin:var(--space-8) 0 0}
     out.summary = { A: summarize(s, mdl, out.A, mdl.tA, region, "A"), B: summarize(s, mdl, out.B, mdl.tB, region, "B") };
     out.rows = comparisonRows(out.summary.A, out.summary.B, s);
     // Integrity: the reported compliance must still be fᵀu of the displacements it came from.
-    for (const k of ["A", "B"]) {
+    for (const k of /** @type {const} */ (["A", "B"])) {
       let w = 0;
       for (let i = 0; i < mdl.f.length; i++) w += mdl.f[i] * out[k].u[i];
-      const got = [out[k].scalars[0], out.summary[k].compliance, out.rows.find((x) => x.id === "compliance")[k === "A" ? "a" : "b"]];
+      const got = [out[k].scalars[0], out.summary[k].compliance, /** @type {Row} */ (out.rows.find((x) => x.id === "compliance"))[k === "A" ? "a" : "b"]];
       if (got.some((v) => !(Math.abs(v - w) <= 1e-9 * Math.abs(w)))) return { ok: false, stage: "solve", variant: k, error: { code: "integrity", message: `Internal consistency check failed: the compliance of ${k} does not match fᵀu. Run again.` }, diag: out[k].diag, state: s };
     }
     out.mesh = meshSummary(s, mdl);
     out.ok = true;
     return out;
   }
+  /** @param {State} s @param {BuiltModel} mdl @returns {MeshSummary} */
   function meshSummary(s, mdl) {
     const ex = mdl.nx - 1, ey = mdl.ny - 1;
     let hmin = Infinity, hmax = 0, aspect = 1;
@@ -886,13 +1014,17 @@ section.block{margin:var(--space-8) 0 0}
   }
 
   /* ---------- exports ---------- */
-  const r8 = (x) => (Number.isFinite(x) ? Number(x.toPrecision(8)) : null);
+  const r8 = (/** @type {number} */ x) => (Number.isFinite(x) ? Number(x.toPrecision(8)) : null);
+  /** @param {Comparison} res */
   function diagnosticsOf(res) {
+    /** @type {(d: Diagnostics) => ExportedDiagnostics} */
     const one = (d) => ({ nodes: d.nodes, dofs: d.dofs, freeDofs: d.freeDofs, quads: d.quads, bars: d.bars, nnz: d.nnz, iterations: d.iterations, relResidual: r8(d.relResidual), trueResidual: r8(d.trueResidual), relTol: LIMITS.relTol, equilibrium: { Fx: r8(d.equilibrium.Fx), Fy: r8(d.equilibrium.Fy), Mz: r8(d.equilibrium.Mz), relForce: r8(d.equilibrium.relForce), relMoment: r8(d.equilibrium.relMoment) } });
     return { solver: "Jacobi-preconditioned conjugate gradient on the reduced sparse (CSR) stiffness", A: one(res.A.diag), B: one(res.B.diag) };
   }
+  /** @param {unknown} input @param {Comparison | ComparisonFailure | null} res */
   function modelJSON(input, res) {
     const v = validate(input), s = v.state;
+    /** @type {Record<string, unknown>} */
     const out = { schemaVersion: VERSION, visual: VISUAL, units: UNITS, assumptions: ASSUMPTIONS, limits: LIMITS, reference: NACA, state: s };
     if (v.ok) {
       const mdl = buildModel(s);
@@ -901,10 +1033,13 @@ section.block{margin:var(--space-8) 0 0}
     out.diagnostics = res && res.ok ? diagnosticsOf(res) : null;
     return JSON.stringify(out, null, 2) + "\n";
   }
-  const csvCell = (v) => { const t = typeof v === "number" ? (Number.isFinite(v) ? String(r8(v)) : "") : v === null || v === undefined ? "" : String(v); return /[",\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t; };
+  const csvCell = (/** @type {unknown} */ v) => { const t = typeof v === "number" ? (Number.isFinite(v) ? String(r8(v)) : "") : v === null || v === undefined ? "" : String(v); return /[",\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t; };
+  /** @param {Comparison} res */
   function resultsCSV(res) {
-    const s = res.state, lines = [];
-    const put = (...cells) => lines.push(cells.map(csvCell).join(","));
+    /** @type {string[]} */
+    const lines = [];
+    const s = res.state;
+    const put = (/** @type {unknown[]} */ ...cells) => lines.push(cells.map(csvCell).join(","));
     put("# Diagonal tension: A = skin + stringers, B = A + doubler; same mesh, restraints and load");
     put("# units", Object.entries(UNITS).map(([k, u]) => `${k} ${u}`).join("; "));
     ASSUMPTIONS.forEach((a, i) => put(`# assumption ${i + 1}`, a));
@@ -912,33 +1047,35 @@ section.block{margin:var(--space-8) 0 0}
     const m = res.mesh;
     put("# mesh", `${m.nodes} nodes, ${m.quads} quadrilaterals, ${m.bars} bars, ${m.doublerElements} doubler elements, edges ${r8(m.minEdge)} to ${r8(m.maxEdge)} mm, max aspect ${r8(m.maxAspect)}`);
     const dg = diagnosticsOf(res);
-    for (const k of ["A", "B"]) put(`# solver ${k}`, `${dg.solver}: ${dg[k].iterations} iterations, relative residual ${dg[k].relResidual}, true residual ${dg[k].trueResidual}, equilibrium force ${dg[k].equilibrium.relForce} moment ${dg[k].equilibrium.relMoment}`);
+    for (const k of /** @type {const} */ (["A", "B"])) put(`# solver ${k}`, `${dg.solver}: ${dg[k].iterations} iterations, relative residual ${dg[k].relResidual}, true residual ${dg[k].trueResidual}, equilibrium force ${dg[k].equilibrium.relForce} moment ${dg[k].equilibrium.relMoment}`);
     put("quantity", "unit", "A", "B", "change", "change_percent");
     for (const r of res.rows) put(r.label, r.unit, r.a, r.b, r.delta, r.pct);
     put("");
     put("probe", "variant", "x", "y", "gauss_x", "gauss_y", "element", "thickness_mm", "ux_mm", "uy_mm", "sx_MPa", "sy_MPa", "txy_MPa", "s1_MPa", "s2_MPa", "theta1_deg", "von_mises_MPa");
-    for (const k of ["A", "B"]) for (const p of res.summary[k].probes) put(p.id, k, p.x, p.y, p.gx, p.gy, p.element, p.t, p.ux, p.uy, p.sx, p.sy, p.txy, p.s1, p.s2, p.theta1Deg, p.vm);
+    for (const k of /** @type {const} */ (["A", "B"])) for (const p of res.summary[k].probes) put(p.id, k, p.x, p.y, p.gx, p.gy, p.element, p.t, p.ux, p.uy, p.sx, p.sy, p.txy, p.s1, p.s2, p.theta1Deg, p.vm);
     put("");
     put("region", "variant", "gauss_points", "max_s1_MPa", "max_s1_x", "max_s1_y", "max_von_mises_MPa", "max_abs_txy_MPa");
-    for (const k of ["A", "B"]) for (const [id, r] of Object.entries(res.summary[k].regions)) put(id, k, r.gaussPoints, r.s1 && r.s1.value, r.s1 && r.s1.x, r.s1 && r.s1.y, r.vm && r.vm.value, r.tau && r.tau.value);
+    for (const k of /** @type {const} */ (["A", "B"])) for (const [id, r] of Object.entries(res.summary[k].regions)) put(id, k, r.gaussPoints, r.s1 && r.s1.value, r.s1 && r.s1.x, r.s1 && r.s1.y, r.vm && r.vm.value, r.tau && r.tau.value);
     put("");
     put("stringer_y_mm", "area_mm2", "variant", "N_max_N", "N_min_N", "N_midspan_N");
-    for (let i = 0; i < res.summary.A.stringers.length; i++) for (const k of ["A", "B"]) { const st = res.summary[k].stringers[i]; put(st.y, st.A, k, st.Nmax, st.Nmin, st.Nmid); }
+    for (let i = 0; i < res.summary.A.stringers.length; i++) for (const k of /** @type {const} */ (["A", "B"])) { const st = res.summary[k].stringers[i]; put(st.y, st.A, k, st.Nmax, st.Nmin, st.Nmid); }
     return lines.join("\n") + "\n";
   }
 
   /* ---------- beamdswitch report (built only from a validated run) ---------- */
-  const say = (x, d = 3) => { const t = fmt(Math.abs(x), d).replace(/,/g, ""); return (x < 0 ? "minus " : "") + t; };
+  const say = (/** @type {number} */ x, d = 3) => { const t = fmt(Math.abs(x), d).replace(/,/g, ""); return (x < 0 ? "minus " : "") + t; };
+  /** @param {Comparison | ComparisonFailure | null} res */
   function beamdswitchReport(res) {
     if (!res || !res.ok) throw new Error("Run the comparison first: the report needs a validated solve.");
-    const s = res.state, A = res.summary.A, B = res.summary.B, row = (id) => res.rows.find((r) => r.id === id);
-    const mass = row("mass"), comp = row("compliance"), p3 = row("P3.txy"), p4 = row("P4.txy");
-    const reg = ["doubler", "band", "skin"].map((id) => ({ id, r: row(`max.s1.${id}`), label: A.regions[id].label })).filter((x) => x.r);
+    const s = res.state, A = res.summary.A, B = res.summary.B, row = (/** @type {string} */ id) => res.rows.find((r) => r.id === id);
+    // Every comparison has the mass, compliance and P3 rows; P4 and the region rows depend on the geometry.
+    const mass = /** @type {Row} */ (row("mass")), comp = /** @type {Row} */ (row("compliance")), p3 = /** @type {Row} */ (row("P3.txy")), p4 = row("P4.txy");
+    const reg = /** @type {{ id: string, r: Row, label: string }[]} */ (["doubler", "band", "skin"].map((id) => ({ id, r: row(`max.s1.${id}`), label: A.regions[id].label })).filter((x) => x.r));
     const tau0 = s.load.q / s.panel.t;
     const eq = Math.max(res.A.diag.equilibrium.relForce, res.B.diag.equilibrium.relForce);
-    const strRows = A.stringers.map((st, k) => ({ st, r: row(`stringer.${k}`) }));
+    const strRows = A.stringers.map((st, k) => ({ st, r: /** @type {Row} */ (row(`stringer.${k}`)) }));
     const strTable = strRows.map(({ st, r }) => `| ${fmt(st.y)} | ${fmt(st.A)} | ${fmt(r.a)} | ${fmt(r.b)} |`).join("\n");
-    const size = (x) => (x.r.pct == null ? -Infinity : Math.abs(x.r.pct)), biggest = reg.slice().sort((a, b) => size(b) - size(a))[0];
+    const size = (/** @type {{ r: Row }} */ x) => (x.r.pct == null ? -Infinity : Math.abs(x.r.pct)), biggest = reg.slice().sort((a, b) => size(b) - size(a))[0];
     return {
       meta: { title: "Diagonal tension: skin, stringers and a doubler", subtitle: `At q = ${fmt(s.load.q)} N/mm, adding a ${fmt(s.doubler.Lx)} × ${fmt(s.doubler.Ly)} × ${fmt(s.doubler.t)} mm doubler`, voice: "bf_emma" },
       narration: `A linear elastic comparison of an aluminium panel in shear, with and without a doubler, at the same load. Lengths are in millimetres, forces in newtons and stresses in megapascals.`,
@@ -992,17 +1129,21 @@ section.block{margin:var(--space-8) 0 0}
   }
 
   /* ---------- self-check ---------- */
+  /** @returns {SelfTest[]} */
   function selfTests() {
+    /** @type {SelfTest[]} */
     const out = [];
+    /** @type {(id: string, name: string, pass: unknown, detail: string) => void} */
     const check = (id, name, pass, detail) => out.push({ id, name, pass: !!pass, detail });
-    const relErr = (a, b) => Math.abs(a - b) / Math.max(Math.abs(b), 1e-300);
-    const general = (o) => solve({ fixedVal: new Float64Array(o.fixed.length), ...o });
+    const relErr = (/** @type {number} */ a, /** @type {number} */ b) => Math.abs(a - b) / Math.max(Math.abs(b), 1e-300);
+    const general = (/** @type {Omit<Model, "fixedVal">} */ o) => solve({ fixedVal: new Float64Array(o.fixed.length), ...o });
 
     // 1. Patch test (MacNeal and Harder 1985): five distorted elements, linear boundary displacements.
     {
+      /** @type {[number, number][]} */
       const P = [[0, 0], [0.24, 0], [0.24, 0.12], [0, 0.12], [0.04, 0.02], [0.18, 0.03], [0.16, 0.08], [0.08, 0.08]];
       const quads = [[0, 1, 5, 4], [1, 2, 6, 5], [2, 3, 7, 6], [3, 0, 4, 7], [4, 5, 6, 7]];
-      const E = 1e6, nu = 0.25, field = (x, y) => [1e-3 * (x + y / 2), 1e-3 * (y + x / 2)];
+      const E = 1e6, nu = 0.25, field = (/** @type {number} */ x, /** @type {number} */ y) => [1e-3 * (x + y / 2), 1e-3 * (y + x / 2)];
       const fixed = [], val = [];
       for (const n of [0, 1, 2, 3]) { const [ux, uy] = field(...P[n]); fixed.push(2 * n, 2 * n + 1); val.push(ux, uy); }
       const r = solve({ coords: Float64Array.from(P.flat()), quads: Int32Array.from(quads.flat()), thick: new Float64Array(5).fill(0.001), bars: new Int32Array(0), barA: new Float64Array(0), E, nu, fixed: Int32Array.from(fixed), fixedVal: Float64Array.from(val), f: new Float64Array(16) });
@@ -1017,10 +1158,10 @@ section.block{margin:var(--space-8) 0 0}
     // 2. A bar: u = FL/EA, along x and along y.
     {
       const E = 70000, A = 50, L = 1000, F = 1000;
-      const along = (dir) => {
+      const along = (/** @type {"x" | "y"} */ dir) => {
         const coords = dir === "x" ? [0, 0, L, 0] : [0, 0, 0, L];
         const r = general({ coords: Float64Array.from(coords), quads: new Int32Array(0), thick: new Float64Array(0), bars: Int32Array.from([0, 1]), barA: Float64Array.from([A]), E, nu: 0.3, fixed: Int32Array.from(dir === "x" ? [0, 1, 3] : [0, 1, 2]), f: Float64Array.from(dir === "x" ? [0, 0, F, 0] : [0, 0, 0, F]) });
-        return r.ok ? { u: r.u[dir === "x" ? 2 : 3], N: r.barN[0] } : { error: r.error.message };
+        return r.ok ? { u: r.u[dir === "x" ? 2 : 3], N: r.barN[0], error: "" } : { u: NaN, N: NaN, error: r.error.message };
       };
       const ex = (F * L) / (E * A), bx = along("x"), by = along("y");
       check("bar", "Bar: tip displacement FL/EA along x and along y", !bx.error && !by.error && relErr(bx.u, ex) < 1e-12 && relErr(by.u, ex) < 1e-12 && relErr(bx.N, F) < 1e-12, bx.error || by.error || `u = ${fmt(bx.u, 6)} and ${fmt(by.u, 6)} mm; FL/EA = ${fmt(ex, 6)} mm; N = ${fmt(bx.N)} N`);
@@ -1042,8 +1183,8 @@ section.block{margin:var(--space-8) 0 0}
     {
       const s = defaultState(); s.mesh.h = 40;
       const r = runComparison(s), G2 = s.material.E / (2 * (1 + s.material.nu)), gamma = s.load.q / s.panel.t / G2, want = gamma * s.panel.W;
-      const P1 = r.ok && r.summary.A.probes[0], N = r.ok ? Math.max(...r.summary.A.stringers.map((x) => x.maxAbs)) : NaN;
-      check("reference-shear", "Reference (theory of elasticity): variant A is uniform pure shear, corner ux = qW/(tG), stringers unloaded", r.ok && relErr(P1.ux, want) < 1e-7 && Math.abs(P1.uy) < 1e-9 * want && N < 1e-6 * s.load.q * s.panel.L, r.ok ? `ux = ${fmt(P1.ux, 7)} mm vs qW/(tG) = ${fmt(want, 7)} mm; max stringer |N| = ${N.toExponential(1)} N` : "solve failed");
+      const P1 = r.ok ? r.summary.A.probes[0] : null, N = r.ok ? Math.max(...r.summary.A.stringers.map((x) => x.maxAbs)) : NaN;
+      check("reference-shear", "Reference (theory of elasticity): variant A is uniform pure shear, corner ux = qW/(tG), stringers unloaded", P1 && relErr(P1.ux, want) < 1e-7 && Math.abs(P1.uy) < 1e-9 * want && N < 1e-6 * s.load.q * s.panel.L, P1 ? `ux = ${fmt(P1.ux, 7)} mm vs qW/(tG) = ${fmt(want, 7)} mm; max stringer |N| = ${N.toExponential(1)} N` : "solve failed");
     }
     // 5. Closed-form reference: a full-length doubler strip, skin and stringers stretched by δ; reaction = Eδ/L (tW + t_d L_y + ΣA).
     {
@@ -1095,14 +1236,18 @@ section.block{margin:var(--space-8) 0 0}
     // 10. Mesh convergence over three levels (variant B).
     {
       const levels = CONVERGENCE.levels.map((h) => { const s = defaultState(); s.mesh.h = h; return runComparison(s); });
-      if (levels.every((r) => r.ok)) {
-        const q = (r) => ({
+      if (levels.every(/** @returns {r is Comparison} */ (/** @type {Comparison | ComparisonFailure} */ r) => r.ok)) {
+        // The region maxima are null only for a region without Gauss points, which the example never has.
+        const q = (/** @type {Comparison} */ r) => ({
           P1: r.summary.B.probes[0].u, P2: r.summary.B.probes[1].u, compliance: r.summary.B.compliance,
-          doubler: r.summary.B.regions.doubler.s1.value, band: r.summary.B.regions.band.s1.value, skin: r.summary.B.regions.skin.s1.value,
+          doubler: /** @type {Extreme} */ (r.summary.B.regions.doubler.s1).value, band: /** @type {Extreme} */ (r.summary.B.regions.band.s1).value, skin: /** @type {Extreme} */ (r.summary.B.regions.skin.s1).value,
         });
         const [a, b, c] = levels.map(q);
-        const parts = [], ok = [];
-        for (const k of Object.keys(a)) {
+        /** @type {string[]} */
+        const parts = [];
+        /** @type {boolean[]} */
+        const ok = [];
+        for (const k of /** @type {(keyof typeof a)[]} */ (Object.keys(a))) {
           const d12 = Math.abs(b[k] - a[k]) / Math.abs(c[k]), d23 = Math.abs(c[k] - b[k]) / Math.abs(c[k]);
           const global = ["P1", "P2", "compliance"].includes(k);
           ok.push(d23 <= (global ? CONVERGENCE.displacementTol : CONVERGENCE.stressTol) && (!global || d23 <= d12));
@@ -1114,16 +1259,17 @@ section.block{margin:var(--space-8) 0 0}
     // 11. Failures are detected and never returned as results.
     {
       const coords = Float64Array.from([0, 0, 1, 0, 1, 1, 0, 1]), f = Float64Array.from([0, 0, 1, 0, 0, 0, 0, 0]);
-      const one = (o) => general({ coords, quads: Int32Array.from([0, 1, 2, 3]), thick: Float64Array.from([1]), bars: new Int32Array(0), barA: new Float64Array(0), E: 1000, nu: 0.3, fixed: Int32Array.from([0, 1, 3]), f, ...o });
+      const one = (/** @type {Partial<Model>} */ o) => general({ coords, quads: Int32Array.from([0, 1, 2, 3]), thick: Float64Array.from([1]), bars: new Int32Array(0), barA: new Float64Array(0), E: 1000, nu: 0.3, fixed: Int32Array.from([0, 1, 3]), f, ...o });
       const inverted = one({ quads: Int32Array.from([0, 3, 2, 1]) }), loose = one({ fixed: Int32Array.from([0, 1]) });
       const split = general({ coords: Float64Array.from([0, 0, 1, 0, 1, 1, 0, 1, 3, 0, 4, 0]), quads: Int32Array.from([0, 1, 2, 3]), thick: Float64Array.from([1]), bars: Int32Array.from([4, 5]), barA: Float64Array.from([1]), E: 1000, nu: 0.3, fixed: Int32Array.from([0, 1, 3, 8, 9]), f: new Float64Array(12) });
       const capped = runComparison(defaultState(), null, { maxIterations: 3 });
       const bad = validate({ ...defaultState(), doubler: { x0: 500, y0: 100, Lx: 200, Ly: 200, t: 1 } });
-      check("failures", "Inverted elements, missing restraints, disconnected meshes, iteration limits and doublers off the panel are rejected", !inverted.ok && inverted.error.code === "inverted" && !loose.ok && loose.error.code === "singular" && !split.ok && split.error.code === "disconnected" && !capped.ok && capped.error.code === "iterations" && !bad.ok, [inverted, loose, split, capped].map((r) => (r.ok ? "accepted" : r.error.code)).join(", ") + (bad.ok ? ", off-panel doubler accepted" : ", off-panel doubler rejected"));
+      check("failures", "Inverted elements, missing restraints, disconnected meshes, iteration limits and doublers off the panel are rejected", !inverted.ok && inverted.error.code === "inverted" && !loose.ok && loose.error.code === "singular" && !split.ok && split.error.code === "disconnected" && !capped.ok && capped.error?.code === "iterations" && !bad.ok, [inverted, loose, split, capped].map((r) => (r.ok ? "accepted" : r.error?.code)).join(", ") + (bad.ok ? ", off-panel doubler accepted" : ", off-panel doubler rejected"));
     }
     return out;
   }
 
+  /** @type {Engine} */
   const api = {
     VERSION, VISUAL, UNITS, LIMITS, CONVERGENCE, ASSUMPTIONS, META, NACA, REGIONS,
     defaultState, normalize, validate, gridLines, meshLines, estimateNodes, buildModel, solve, principal, regionOf, probePoints, probeAt,
@@ -1238,7 +1384,7 @@ self.onmessage = function (event) {
       self.postMessage({ type: "selftest", id: msg.id, tests: DT.selfTests() });
     } else self.postMessage({ type: "error", id: msg.id, message: `Unknown command ${msg.cmd}` });
   } catch (err) {
-    self.postMessage({ type: "error", id: msg.id, message: String((err && err.message) || err) });
+    self.postMessage({ type: "error", id: msg.id, message: String((err && /** @type {Error} */ (err).message) || err) });
   }
 };
 </script>
@@ -1247,15 +1393,32 @@ self.onmessage = function (event) {
    WebMCP tools. All numbers come from the engine (self.DiagonalTension); this script only draws them. */
 (function () {
   "use strict";
-  const DT = self.DiagonalTension, $ = (id) => document.getElementById(id);
+  /** @typedef {{ post(m: object): void, stop(): void }} PageWorker */
+  /** A message from the worker (dt-worker).
+      @typedef {{ type: string, id?: number, progress?: Progress, result?: Comparison | ComparisonFailure, tests?: SelfTest[], message?: string }} WorkerMessage */
+  // Every id looked up below is in the page, so the lookups are never null.
+  const DT = self.DiagonalTension, $ = (/** @type {string} */ id) => /** @type {HTMLElement} */ (document.getElementById(id));
+  const button = (/** @type {string} */ id) => /** @type {HTMLButtonElement} */ ($(id));
+  const input = (/** @type {string} */ id) => /** @type {HTMLInputElement} */ ($(id));
+  /** @type {{ field: string, mesh: boolean, dirs: boolean, disp: boolean, regions: boolean }} */
   const view = { field: "s1", mesh: true, dirs: false, disp: false, regions: true };
   let inputs = DT.defaultState();
-  let results = null, stale = false, lastError = null, worker = null, job = 0, running = null, probe = { x: 350, y: 150 };
+  /** @type {Comparison | null} */
+  let results = null;
+  /** @type {ComparisonFailure | null} */
+  let lastError = null;
+  /** @type {PageWorker | null} */
+  let worker = null;
+  /** @type {{ id: number, cmd: string, sent: string } | null} */
+  let running = null;
+  let stale = false, job = 0, probe = { x: 350, y: 150 };
 
   /* ---------- inputs ---------- */
-  const getPath = (o, path) => path.split(".").reduce((a, k) => (a == null ? a : a[k]), o);
+  /** @type {(o: object, path: string) => any} */
+  const getPath = (o, path) => path.split(".").reduce((/** @type {any} */ a, k) => (a == null ? a : a[k]), o);
+  /** @param {any} o a state, walked by a dotted path such as "stringers.0.y" @param {string} path @param {number} v */
   function setPath(o, path, v) { const ks = path.split("."); let a = o; for (let i = 0; i < ks.length - 1; i++) a = a[ks[i]]; a[ks[ks.length - 1]] = v; }
-  const parse = (el) => (el.value.trim() === "" ? NaN : Number(el.value));
+  const parse = (/** @type {HTMLInputElement} */ el) => (el.value.trim() === "" ? NaN : Number(el.value));
   function renderStringers() {
     const box = $("stringers");
     box.replaceChildren();
@@ -1268,18 +1431,20 @@ self.onmessage = function (event) {
   }
   function fillInputs() {
     renderStringers();
-    for (const el of document.querySelectorAll("#inputs input[data-field]")) { const v = getPath(inputs, el.dataset.field); el.value = Number.isFinite(v) ? String(v) : ""; el.name = el.dataset.field; }
+    for (const el of document.querySelectorAll("#inputs input[data-field]")) { if (!(el instanceof HTMLInputElement)) continue; const f = el.dataset.field ?? ""; const v = getPath(inputs, f); el.value = Number.isFinite(v) ? String(v) : ""; el.name = f; }
     validateLive();
   }
+  /** @returns {State} */
   function readInputs() {
     const s = JSON.parse(JSON.stringify(inputs));
-    for (const el of document.querySelectorAll("#inputs input[data-field]")) setPath(s, el.dataset.field, parse(el));
+    for (const el of document.querySelectorAll("#inputs input[data-field]")) if (el instanceof HTMLInputElement) setPath(s, el.dataset.field ?? "", parse(el));
     return s;
   }
   function validateLive() {
     const v = DT.validate(readInputs()), bad = new Set(v.errors.map((e) => e.field));
     for (const el of document.querySelectorAll("#inputs input[data-field]")) {
-      const f = el.dataset.field, hit = bad.has(f) || (f.startsWith("stringers.") && bad.has("stringers"));
+      if (!(el instanceof HTMLInputElement)) continue;
+      const f = el.dataset.field ?? "", hit = bad.has(f) || (f.startsWith("stringers.") && bad.has("stringers"));
       if (hit) el.setAttribute("aria-invalid", "true"); else el.removeAttribute("aria-invalid");
     }
     const ul = $("errors");
@@ -1287,6 +1452,7 @@ self.onmessage = function (event) {
     notes(v);
     return v;
   }
+  /** @param {{ ok: boolean, state: State }} v */
   function notes(v) {
     const s = v.state, { L, W } = s.panel, q = s.load.q;
     $("load-note").textContent = Number.isFinite(q * L * W) ? `On every edge, the same for A and B: ${DT.fmt(Math.abs(q) * W)} N on each vertical edge, ${DT.fmt(Math.abs(q) * L)} N on each horizontal edge; resultant force and moment zero. Without a doubler τ = q/t = ${DT.fmt(q / s.panel.t)} MPa.` : "";
@@ -1303,44 +1469,47 @@ self.onmessage = function (event) {
 
   /* ---------- worker ---------- */
   /* A fresh Blob worker running the engine text and the dt-worker script; stop() terminates it. */
+  /** @param {(m: WorkerMessage) => void} onMessage @param {(message: string) => void} onError @returns {PageWorker} */
   function spawn(onMessage, onError) {
     const src = `${$("dt-engine").textContent}\n${$("dt-worker").textContent}`;
     const url = URL.createObjectURL(new Blob([src], { type: "text/javascript" }));
     let w;
-    try { w = new Worker(url); } catch (err) { URL.revokeObjectURL(url); throw new Error(`Web Workers are required to run the solver and are unavailable here (${err.message})`); }
+    try { w = new Worker(url); } catch (err) { URL.revokeObjectURL(url); throw new Error(`Web Workers are required to run the solver and are unavailable here (${/** @type {Error} */ (err).message})`); }
     w.onmessage = (e) => onMessage(e.data);
     w.onerror = (e) => { e.preventDefault(); onError(e.message || "unknown error"); };
-    return { post: (m) => w.postMessage(m), stop() { w.terminate(); URL.revokeObjectURL(url); } };
+    return { post: (/** @type {object} */ m) => w.postMessage(m), stop() { w.terminate(); URL.revokeObjectURL(url); } };
   }
   function stopWorker() { if (worker) worker.stop(); worker = null; }
   /* Run one page command in a fresh worker, replacing any running one. */
+  /** @param {string} cmd @param {{ state?: State }} payload */
   function dispatch(cmd, payload) {
     finish();
     const id = ++job;
     running = { id, cmd, sent: JSON.stringify(payload.state ?? null) };
-    $("cancel").disabled = false;
-    $("run").disabled = true;
-    $("selftest").disabled = true;
+    button("cancel").disabled = false;
+    button("run").disabled = true;
+    button("selftest").disabled = true;
     try {
       worker = spawn(onWorker, (message) => { finish(); status(`The worker failed: ${message}. Inputs are kept; no results are shown.`, "bad"); });
       worker.post({ cmd, id, ...payload });
     } catch (err) {
       finish();
-      status(`${err.message}. Inputs are kept; nothing was solved.`, "bad");
+      status(`${/** @type {Error} */ (err).message}. Inputs are kept; nothing was solved.`, "bad");
     }
   }
-  function finish() { running = null; stopWorker(); $("cancel").disabled = true; $("run").disabled = false; $("selftest").disabled = false; }
+  function finish() { running = null; stopWorker(); button("cancel").disabled = true; button("run").disabled = false; button("selftest").disabled = false; }
+  /** @param {WorkerMessage} m */
   function onWorker(m) {
     if (!running || m.id !== running.id) return;
     if (m.type === "progress") {
-      const p = m.progress;
-      status(p.stage === "mesh" ? "Meshing…" : p.stage === "compare" ? "Comparing…" : `Solving variant ${p.variant}${p.iteration ? `: iteration ${p.iteration}, residual ${p.residual.toExponential(1)}` : "…"}`, "warn");
+      const p = /** @type {Progress} */ (m.progress);
+      status(p.stage === "mesh" ? "Meshing…" : p.stage === "compare" ? "Comparing…" : `Solving variant ${p.variant}${p.iteration ? `: iteration ${p.iteration}, residual ${/** @type {number} */ (p.residual).toExponential(1)}` : "…"}`, "warn");
       return;
     }
     const r = running;
     finish();
-    if (m.type === "result") acceptResult(m.result, r.sent);
-    else if (m.type === "selftest") showSelfTests(m.tests);
+    if (m.type === "result") acceptResult(m.result ?? null, r.sent);
+    else if (m.type === "selftest") showSelfTests(m.tests ?? []);
     else status(`Error: ${m.message}. Inputs are kept; no results are shown.`, "bad");
   }
   function run() {
@@ -1356,12 +1525,13 @@ self.onmessage = function (event) {
     finish();
     status(what === "compare" ? "Cancelled. Inputs are kept; the previous results, if any, are unchanged." : "Self-check cancelled.", "warn");
   }
+  /** @param {Comparison | ComparisonFailure | null} r @param {string} sent the inputs the run was asked for, as JSON */
   function acceptResult(r, sent) {
     if (!r || !r.ok) {
       results = null; stale = false; lastError = r;
-      const why = r && r.errors ? r.errors.map((e) => e.message).join(" ") : r && r.error ? `Variant ${r.variant}: ${r.error.message}` : "unknown failure";
+      const why = r && r.stage === "validate" ? r.errors.map((e) => e.message).join(" ") : r && r.stage === "solve" ? `Variant ${r.variant}: ${r.error.message}` : "unknown failure";
       status(`The solve failed, so no results are shown. ${why} Inputs are kept.`, "bad");
-      $("diagnostics").textContent = JSON.stringify(r && r.diag ? { failed: r.error, diagnostics: r.diag } : r, null, 2);
+      $("diagnostics").textContent = JSON.stringify(r && r.stage === "solve" && r.diag ? { failed: r.error, diagnostics: r.diag } : r, null, 2);
       $("lab").classList.remove("is-stale"); $("comparison").classList.remove("is-stale");
       renderTable(); draw(); renderProbe(); exportsEnabled();
       return;
@@ -1372,11 +1542,12 @@ self.onmessage = function (event) {
     $("diagnostics").textContent = JSON.stringify({ mesh: r.mesh, ...DT.diagnosticsOf(r) }, null, 2);
     renderTable(); draw(); renderProbe(); exportsEnabled();
   }
+  /** @param {string} text @param {string} [kind] */
   function status(text, kind) { const el = $("status"); el.textContent = text; el.className = kind || ""; }
 
   /* ---------- comparison table ---------- */
   function renderTable() {
-    const tb = $("cmp-table").tBodies[0];
+    const tb = /** @type {HTMLTableElement} */ ($("cmp-table")).tBodies[0];
     tb.replaceChildren();
     if (!results) { $("cmp-note").textContent = "Run the comparison to fill the table."; return; }
     for (const r of results.rows) {
@@ -1391,17 +1562,20 @@ self.onmessage = function (event) {
       tb.appendChild(tr);
     }
     const B = results.summary.B.regions;
-    $("cmp-note").textContent = `Region maxima at: ${["doubler", "band", "skin"].filter((k) => B[k].s1).map((k) => `${B[k].label} (${DT.fmt(B[k].s1.x)}, ${DT.fmt(B[k].s1.y)}) mm, element ${B[k].s1.element}`).join("; ")} in B. Read the doubler edges and the stringers as well as the patch: the load the patch attracts comes from somewhere.`;
+    $("cmp-note").textContent = `Region maxima at: ${["doubler", "band", "skin"].map((k) => ({ label: B[k].label, s1: B[k].s1 })).flatMap(({ label, s1 }) => (s1 ? [`${label} (${DT.fmt(s1.x)}, ${DT.fmt(s1.y)}) mm, element ${s1.element}`] : [])).join("; ")} in B. Read the doubler edges and the stringers as well as the patch: the load the patch attracts comes from somewhere.`;
   }
 
   /* ---------- drawing ---------- */
-  const token = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  const token = (/** @type {string} */ name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  /** @param {string} hex a colour token, #rrggbb or rgb()/rgba() @returns {number[]} */
   function rgb(hex) {
     const m = /^#?([0-9a-f]{6})$/i.exec(hex || "");
     if (!m) { const c = /rgba?\(([^)]+)\)/.exec(hex || ""); return c ? c[1].split(/[ ,/]+/).slice(0, 3).map(Number) : [128, 128, 128]; }
     const n = parseInt(m[1], 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
   }
+  /** @type {(a: number[], b: number[], t: number) => string} */
   const mix = (a, b, t) => `rgb(${a.map((v, i) => Math.round(b[i] + (v - b[i]) * t)).join(",")})`;
+  /** @param {Solution} sol @param {number} g @param {string} field */
   function fieldValue(sol, g, field) {
     const sx = sol.sig[3 * g], sy = sol.sig[3 * g + 1], txy = sol.sig[3 * g + 2];
     if (field === "txy") return txy;
@@ -1409,10 +1583,12 @@ self.onmessage = function (event) {
     return field === "vm" ? p.vm : p.s1;
   }
   /* One colour scale for A and B, from the comparison-region Gauss points of both variants. */
+  /** @typedef {{ lo: number, hi: number, diverging: boolean, clipped: boolean }} Scale */
+  /** @param {string} field @returns {Scale | null} */
   function scaleFor(field) {
     if (!results || field === "none") return null;
     let lo = Infinity, hi = -Infinity, alo = Infinity, ahi = -Infinity;
-    for (const k of ["A", "B"]) for (let g = 0; g < results.region.length; g++) {
+    for (const k of /** @type {const} */ (["A", "B"])) for (let g = 0; g < results.region.length; g++) {
       const v = fieldValue(results[k], g, field);
       alo = Math.min(alo, v); ahi = Math.max(ahi, v);
       if (results.region[g]) { lo = Math.min(lo, v); hi = Math.max(hi, v); }
@@ -1422,41 +1598,49 @@ self.onmessage = function (event) {
     if (hi - lo < 1e-9 * Math.max(Math.abs(hi), 1)) { lo -= 1; hi += 1; }
     return { lo, hi, diverging: false, clipped: alo < lo || ahi > hi };
   }
+  /** @typedef {{ bg: number[], c1: number[], c2: number[] }} Palette */
+  /** @param {number} v @param {Scale} sc @param {Palette} pal */
   function colourOf(v, sc, pal) {
     if (sc.diverging) { const t = Math.max(-1, Math.min(1, v / sc.hi)); return t < 0 ? mix(pal.c1, pal.bg, -t) : mix(pal.c2, pal.bg, t); }
     const t = Math.max(0, Math.min(1, (v - sc.lo) / (sc.hi - sc.lo)));
     return mix(pal.c1, pal.bg, 0.12 + 0.88 * t);
   }
+  /** @type {Record<string, string>} */
   const FIELD_LABEL = { s1: "Principal tension σ1 (MPa)", txy: "Shear stress τxy (MPa)", vm: "von Mises stress (MPa)" };
+  /** @param {number} x */
   function niceScale(x) { if (!(x > 0)) return 1; const p = 10 ** Math.floor(Math.log10(x)), m = x / p; return (m >= 5 ? 5 : m >= 2 ? 2 : 1) * p; }
   function dispScale() {
     if (!results) return 0;
     let um = 0;
-    for (const k of ["A", "B"]) for (let i = 0; i < results[k].u.length; i++) um = Math.max(um, Math.abs(results[k].u[i]));
+    for (const k of /** @type {const} */ (["A", "B"])) for (let i = 0; i < results[k].u.length; i++) um = Math.max(um, Math.abs(results[k].u[i]));
     const { L, W } = results.state.panel;
     return um > 0 ? niceScale((0.06 * Math.max(L, W)) / um) : 0;
   }
   function geometry() { const v = DT.validate(results && !stale ? results.state : inputs); return v.ok ? v.state : results ? results.state : null; }
   function draw() {
     const sc = scaleFor(view.field), ds = view.disp ? dispScale() : 0;
-    for (const k of ["A", "B"]) drawView($(`view-${k}`), k, sc, ds);
+    for (const k of /** @type {const} */ (["A", "B"])) drawView(/** @type {MappedCanvas} */ ($(`view-${k}`)), k, sc, ds);
     legend(sc, ds);
   }
+  /** A view canvas, carrying the drawing's mapping from panel to CSS pixels for the probe.
+      @typedef {HTMLCanvasElement & { _map?: { pad: number, k2: number, W: number, L: number } }} MappedCanvas */
+  /** @param {MappedCanvas} canvas @param {"A" | "B"} k @param {Scale | null} sc @param {number} ds displacement magnification */
   function drawView(canvas, k, sc, ds) {
     if (!canvas.getContext) return;
     const s = results ? results.state : geometry();
-    const ctx = canvas.getContext("2d"), dpr = self.devicePixelRatio || 1, cssW = Math.max(200, canvas.clientWidth || 300);
+    const ctx = /** @type {CanvasRenderingContext2D} */ (canvas.getContext("2d")), dpr = self.devicePixelRatio || 1, cssW = Math.max(200, canvas.clientWidth || 300);
     const pad = 30;
     if (!s) { canvas.width = cssW * dpr; canvas.height = 120 * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, cssW, 120); return; }
     const { L, W } = s.panel, k2 = (cssW - 2 * pad) / L, cssH = Math.round(W * k2 + 2 * pad);
     canvas.width = Math.round(cssW * dpr); canvas.height = Math.round(cssH * dpr); canvas.style.height = `${cssH}px`;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, cssW, cssH);
-    const X = (x) => pad + x * k2, Y = (y) => pad + (W - y) * k2;
+    const X = (/** @type {number} */ x) => pad + x * k2, Y = (/** @type {number} */ y) => pad + (W - y) * k2;
     canvas._map = { pad, k2, W, L };
     const pal = { bg: rgb(token("--bg")), c1: rgb(token("--c1")), c2: rgb(token("--c2")) };
     const col = { fg: token("--fg"), muted: token("--muted"), faint: token("--faint"), border: token("--border"), surface: token("--surface"), doubler: token("--c3"), disp: token("--c4"), hl: token("--hl"), bg: token("--bg") };
-    const d = s.doubler, res = results, sol = res ? res[k] : null;
+    // sol is read only where res is set.
+    const d = s.doubler, res = results, sol = /** @type {Solution} */ (res ? res[k] : null);
     // Field: each element as four cells, one per Gauss point (no smoothing).
     if (res && sc) {
       const xs = res.model.xs, ys = res.model.ys, ex = xs.length - 1;
@@ -1532,7 +1716,7 @@ self.onmessage = function (event) {
     }
     // Displaced shape, amplified.
     if (res && ds > 0) {
-      const nx = xs.length, u = sol.u, P = (i, j) => { const n = j * nx + i; return [X(xs[i] + ds * u[2 * n]), Y(ys[j] + ds * u[2 * n + 1])]; };
+      const nx = xs.length, u = sol.u, P = (/** @type {number} */ i, /** @type {number} */ j) => { const n = j * nx + i; return [X(xs[i] + ds * u[2 * n]), Y(ys[j] + ds * u[2 * n + 1])]; };
       const step = Math.max(1, Math.round(xs.length / 12));
       ctx.strokeStyle = col.disp; ctx.lineWidth = 1.5; ctx.beginPath();
       for (let j = 0; j < ys.length; j += (j + step < ys.length - 1 || j === ys.length - 1 ? step : ys.length - 1 - j) || 1) { for (let i = 0; i < nx; i++) { const [a, b] = P(i, j); i ? ctx.lineTo(a, b) : ctx.moveTo(a, b); } if (j === ys.length - 1) break; }
@@ -1541,11 +1725,11 @@ self.onmessage = function (event) {
     }
     // Restraints: a pin at (0, 0), a roller at (L, 0).
     ctx.fillStyle = col.fg; ctx.strokeStyle = col.fg; ctx.lineWidth = 1;
-    const tri = (x, y) => { ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - 7, y + 11); ctx.lineTo(x + 7, y + 11); ctx.closePath(); ctx.fill(); };
+    const tri = (/** @type {number} */ x, /** @type {number} */ y) => { ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - 7, y + 11); ctx.lineTo(x + 7, y + 11); ctx.closePath(); ctx.fill(); };
     tri(X(0), Y(0)); ctx.fillRect(X(0) - 10, Y(0) + 12, 20, 2);
     tri(X(L), Y(0)); ctx.beginPath(); ctx.arc(X(L) - 4, Y(0) + 15, 2.5, 0, 2 * Math.PI); ctx.arc(X(L) + 4, Y(0) + 15, 2.5, 0, 2 * Math.PI); ctx.stroke();
     // Shear-flow arrows on the edges.
-    const q = s.load.q, sg = q >= 0 ? 1 : -1, arrow = (x1, y1, x2, y2) => { ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); const a = Math.atan2(y2 - y1, x2 - x1); ctx.lineTo(x2 - 6 * Math.cos(a - 0.45), y2 - 6 * Math.sin(a - 0.45)); ctx.moveTo(x2, y2); ctx.lineTo(x2 - 6 * Math.cos(a + 0.45), y2 - 6 * Math.sin(a + 0.45)); ctx.stroke(); };
+    const q = s.load.q, sg = q >= 0 ? 1 : -1, arrow = (/** @type {number} */ x1, /** @type {number} */ y1, /** @type {number} */ x2, /** @type {number} */ y2) => { ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); const a = Math.atan2(y2 - y1, x2 - x1); ctx.lineTo(x2 - 6 * Math.cos(a - 0.45), y2 - 6 * Math.sin(a - 0.45)); ctx.moveTo(x2, y2); ctx.lineTo(x2 - 6 * Math.cos(a + 0.45), y2 - 6 * Math.sin(a + 0.45)); ctx.stroke(); };
     ctx.strokeStyle = col.muted; ctx.lineWidth = 1.2;
     for (const f of [0.3, 0.7]) {
       arrow(X(L * f) - 14 * sg, Y(W) - 9, X(L * f) + 14 * sg, Y(W) - 9);
@@ -1569,11 +1753,13 @@ self.onmessage = function (event) {
     }
     canvas.setAttribute("aria-label", describe(k, sc));
   }
+  /** @param {"A" | "B"} k @param {Scale | null} sc */
   function describe(k, sc) {
     if (!results) return `Variant ${k}: panel geometry; no results yet.`;
     const R = results.summary[k].regions;
-    return `Variant ${k}${stale ? " (stale)" : ""}: ${view.field === "none" ? "mesh" : FIELD_LABEL[view.field]} on a scale from ${DT.fmt(sc ? sc.lo : 0)} to ${DT.fmt(sc ? sc.hi : 0)}. Max σ1: ${["doubler", "band", "skin"].filter((r) => R[r].s1).map((r) => `${R[r].label} ${DT.fmt(R[r].s1.value)} MPa`).join(", ")}.`;
+    return `Variant ${k}${stale ? " (stale)" : ""}: ${view.field === "none" ? "mesh" : FIELD_LABEL[view.field]} on a scale from ${DT.fmt(sc ? sc.lo : 0)} to ${DT.fmt(sc ? sc.hi : 0)}. Max σ1: ${["doubler", "band", "skin"].flatMap((r) => { const m = R[r].s1; return m ? [`${R[r].label} ${DT.fmt(m.value)} MPa`] : []; }).join(", ")}.`;
   }
+  /** @param {Scale | null} sc @param {number} ds */
   function legend(sc, ds) {
     const el = $("legend");
     el.replaceChildren();
@@ -1590,6 +1776,7 @@ self.onmessage = function (event) {
       const hi = document.createElement("span"); hi.className = "num"; hi.textContent = DT.fmtSigned(sc.hi);
       el.append(lab, lo, bar, hi);
     }
+    /** @type {string[]} */
     const parts = [];
     if (s) parts.push(`Restraints: ux = uy = 0 at (0, 0) and uy = 0 at (${DT.fmt(s.panel.L)}, 0), removing rigid-body motion only. Load: q = ${DT.fmt(s.load.q)} N/mm on all edges, ${DT.fmt(Math.abs(s.load.q) * s.panel.W)} N per vertical edge and ${DT.fmt(Math.abs(s.load.q) * s.panel.L)} N per horizontal edge, identical for A and B.`);
     if (results && sc) parts.push(`Unsmoothed: each element is drawn as four cells, one per Gauss point. The scale spans the comparison regions${sc.clipped ? "; values in the hatched excluded zones beyond it are clipped" : ""}.`);
@@ -1600,14 +1787,15 @@ self.onmessage = function (event) {
 
   /* ---------- probe ---------- */
   function renderProbe() {
-    const tb = $("probe-table").tBodies[0];
+    const tb = /** @type {HTMLTableElement} */ ($("probe-table")).tBodies[0];
     tb.replaceChildren();
     if (!results) { const tr = document.createElement("tr"); tr.innerHTML = '<td colspan="3">Run the comparison to probe the panels.</td>'; tb.appendChild(tr); return; }
     const { L, W } = results.state.panel, x = Math.min(L, Math.max(0, probe.x)), y = Math.min(W, Math.max(0, probe.y));
     const a = DT.probeAt(results, "A", x, y), b = DT.probeAt(results, "B", x, y);
     // Round-off below 1e-8 of the load's stress q/t (or of the largest displacement) is shown as 0.
     const s = results.state, tau = Math.abs(s.load.q) / s.panel.t, um = Math.max(results.summary.A.probes[0].u, results.summary.B.probes[0].u);
-    for (const p of [a, b]) { for (const k of ["sx", "sy", "txy", "s1", "s2", "vm"]) if (Math.abs(p[k]) < 1e-8 * tau) p[k] = 0; for (const k of ["ux", "uy"]) if (Math.abs(p[k]) < 1e-8 * um) p[k] = 0; }
+    for (const p of [a, b]) { for (const k of /** @type {const} */ (["sx", "sy", "txy", "s1", "s2", "vm"])) if (Math.abs(p[k]) < 1e-8 * tau) p[k] = 0; for (const k of /** @type {const} */ (["ux", "uy"])) if (Math.abs(p[k]) < 1e-8 * um) p[k] = 0; }
+    /** @type {[string, (p: ReturnType<Engine["probeAt"]>) => string][]} */
     const rows = [
       ["Gauss point x, y (mm)", (p) => `${DT.fmt(p.x)}, ${DT.fmt(p.y)}`],
       ["Element ID", (p) => String(p.element)],
@@ -1619,16 +1807,18 @@ self.onmessage = function (event) {
     ];
     for (const [name, f] of rows) { const tr = document.createElement("tr"); tr.innerHTML = '<th scope="row"></th><td class="num"></td><td class="num"></td>'; tr.cells[0].textContent = name; tr.cells[1].textContent = f(a); tr.cells[2].textContent = f(b); tb.appendChild(tr); }
   }
+  /** @param {MouseEvent} ev */
   function probeFromEvent(ev) {
-    const c = ev.currentTarget, m = c._map;
+    const c = /** @type {MappedCanvas} */ (ev.currentTarget), m = c._map;
     if (!m || !results) return;
     const r = c.getBoundingClientRect(), x = (ev.clientX - r.left - m.pad) / m.k2, y = m.W - (ev.clientY - r.top - m.pad) / m.k2;
     probe = { x: Math.round(Math.min(m.L, Math.max(0, x)) * 10) / 10, y: Math.round(Math.min(m.W, Math.max(0, y)) * 10) / 10 };
-    $("probe-x").value = probe.x; $("probe-y").value = probe.y;
+    input("probe-x").value = String(probe.x); input("probe-y").value = String(probe.y);
     renderProbe(); draw();
   }
 
   /* ---------- self-check ---------- */
+  /** @param {SelfTest[]} tests */
   function showSelfTests(tests) {
     const ol = $("selftest-list"), passed = tests.filter((t) => t.pass).length;
     ol.replaceChildren(...tests.map((t) => { const li = document.createElement("li"); const b = document.createElement("span"); b.className = t.pass ? "pass" : "fail"; b.textContent = t.pass ? "PASS" : "FAIL"; li.append(b, ` ${t.name}. `, t.detail || ""); li.dataset.check = t.id; return li; }));
@@ -1638,6 +1828,7 @@ self.onmessage = function (event) {
   }
 
   /* ---------- exports ---------- */
+  /** @param {string} name @param {string} text @param {string} type */
   function download(name, text, type) {
     const url = URL.createObjectURL(new Blob([text], { type }));
     const a = document.createElement("a");
@@ -1646,23 +1837,23 @@ self.onmessage = function (event) {
     setTimeout(() => URL.revokeObjectURL(url), 2000);
   }
   const valid = () => !!results && !stale;
-  function exportsEnabled() { $("save-beamdswitch").disabled = !valid(); $("copy-beamdswitch").disabled = !valid(); }
+  function exportsEnabled() { button("save-beamdswitch").disabled = !valid(); button("copy-beamdswitch").disabled = !valid(); }
   function exportModel() {
     const text = DT.modelJSON(readInputs(), valid() ? results : null);
     try { download("diagonal-tension-model.json", text, "application/json"); status(`Saved diagonal-tension-model.json${valid() ? " with the solver diagnostics" : " (no current run, so no diagnostics)"}.`, "ok"); }
-    catch (err) { showFallback(`Could not save (${err.message}); the JSON is below.`, text); }
+    catch (err) { showFallback(`Could not save (${/** @type {Error} */ (err).message}); the JSON is below.`, text); }
   }
   function exportResults() {
     if (!valid()) { status(results ? "The results are stale: run the comparison again before exporting." : "Run the comparison first: there are no results to export.", "bad"); return; }
-    const text = DT.resultsCSV(results);
+    const text = DT.resultsCSV(/** @type {Comparison} */ (results));
     try { download("diagonal-tension-results.csv", text, "text/csv"); status("Saved diagonal-tension-results.csv.", "ok"); }
-    catch (err) { showFallback(`Could not save (${err.message}); the CSV is below.`, text); }
+    catch (err) { showFallback(`Could not save (${/** @type {Error} */ (err).message}); the CSV is below.`, text); }
   }
   const deckText = () => Beamdswitch.deck(DT.beamdswitchReport(results));
   function saveDeck() {
     if (!valid()) return;
     try { download("diagonal-tension-beamdswitch.md", deckText(), "text/markdown"); status("Saved diagonal-tension-beamdswitch.md: open it in beamdswitch.", "ok"); }
-    catch (err) { status(`Could not save: ${err.message}. Use Copy deck instead.`, "bad"); }
+    catch (err) { status(`Could not save: ${/** @type {Error} */ (err).message}. Use Copy deck instead.`, "bad"); }
   }
   async function copyDeck() {
     if (!valid()) return;
@@ -1673,18 +1864,22 @@ self.onmessage = function (event) {
       status("Copied the beamdswitch deck: paste it into beamdswitch.", "ok");
     } catch (err) { showFallback("Clipboard access is blocked; the deck is selected below. Press Ctrl+C or ⌘C.", text); }
   }
-  function showFallback(msg, text) { $("fallback").hidden = false; $("fallback-msg").textContent = msg; const ta = $("fallback-text"); ta.value = text; ta.focus(); ta.select(); }
+  /** @param {string} msg @param {string} text */
+  function showFallback(msg, text) { $("fallback").hidden = false; $("fallback-msg").textContent = msg; const ta = /** @type {HTMLTextAreaElement} */ ($("fallback-text")); ta.value = text; ta.focus(); ta.select(); }
 
   /* ---------- WebMCP tools ---------- */
+  /** The parts of a comparison the WebMCP tools return. @param {Comparison | ComparisonFailure | null} r */
   function lite(r) {
-    if (!r || !r.ok) return r ? { ok: false, stage: r.stage, errors: r.errors, error: r.error } : null;
+    if (!r || !r.ok) return r ? { ok: false, stage: r.stage, errors: r.stage === "validate" ? r.errors : undefined, error: r.error } : null;
     return { ok: true, state: r.state, mesh: r.mesh, rows: r.rows, probes: { A: r.summary.A.probes, B: r.summary.B.probes }, regions: { A: r.summary.A.regions, B: r.summary.B.regions }, stringers: { A: r.summary.A.stringers, B: r.summary.B.stringers }, mass: { A: r.summary.A.mass, B: r.summary.B.mass }, diagnostics: DT.diagnosticsOf(r) };
   }
   const TOOL_TIMEOUT_S = 300;
   function registerTools() {
-    const mc = (typeof document !== "undefined" && document.modelContext) || (typeof navigator !== "undefined" && navigator.modelContext);
+    /** WebMCP (document.modelContext, or navigator.modelContext in earlier drafts); not yet in the DOM types.
+        @typedef {{ registerTool?(tool: { name: string, description: string, inputSchema: object, annotations: object, execute(input?: any): Promise<object> }): void }} ModelContext */
+    const mc = /** @type {ModelContext | undefined} */ ((typeof document !== "undefined" && /** @type {any} */ (document).modelContext) || (typeof navigator !== "undefined" && /** @type {any} */ (navigator).modelContext));
     if (!mc || !mc.registerTool) return;
-    const out = (o) => ({ content: [{ type: "text", text: JSON.stringify(o) }] });
+    const out = (/** @type {unknown} */ o) => ({ content: [{ type: "text", text: JSON.stringify(o) }] });
     const empty = { type: "object", properties: {}, additionalProperties: false };
     const stateSchema = {
       type: "object",
@@ -1702,20 +1897,24 @@ self.onmessage = function (event) {
     mc.registerTool({ name: "get_metadata", description: "Return the question, units, assumptions, limits, convergence tolerances, comparison regions and probes of this diagonal-tension panel comparison.", inputSchema: empty, annotations: { readOnlyHint: true }, async execute() { return out(DT.META); } });
     mc.registerTool({ name: "get_current_state", description: "Return the page's inputs, whether the shown results are stale, and the last valid comparison: rows, probes, region maxima, stringer forces, mass and solver diagnostics.", inputSchema: empty, annotations: { readOnlyHint: true }, async execute() { return out({ state: readInputs(), stale, results: lite(results), lastError: lite(lastError) }); } });
     /* Each call runs in its own worker, apart from the page's job, and ends it on the answer or the timeout. */
+    /** @type {(msg: { cmd: string, state?: object }) => Promise<WorkerMessage>} */
     const ask = (msg) => new Promise((resolve) => {
-      let w = null, timer = 0;
-      const done = (m) => { clearTimeout(timer); if (w) w.stop(); resolve(m); };
+      /** @type {PageWorker | null} */
+      let w = null;
+      /** @type {ReturnType<typeof setTimeout> | undefined} */
+      let timer;
+      const done = (/** @type {WorkerMessage} */ m) => { clearTimeout(timer); if (w) w.stop(); resolve(m); };
       try { w = spawn((m) => { if (m.type !== "progress") done(m); }, (message) => done({ type: "error", message: `The worker failed: ${message}` })); }
-      catch (err) { done({ type: "error", message: err.message }); return; }
+      catch (err) { done({ type: "error", message: /** @type {Error} */ (err).message }); return; }
       timer = setTimeout(() => done({ type: "error", message: `No answer within ${TOOL_TIMEOUT_S} s; the worker was stopped` }), TOOL_TIMEOUT_S * 1000);
-      w.post({ ...msg, id: 0 });
+      /** @type {PageWorker} */ (w).post({ ...msg, id: 0 });
     });
     mc.registerTool({ name: "run_comparison", description: "Mesh and solve variants A (skin + stringers) and B (+ doubler) for a state in a separate worker, without changing the page or its running job, and return the comparison, or validation or solver errors.", inputSchema: stateSchema, annotations: { readOnlyHint: true }, async execute(input) {
       const m = await ask({ cmd: "compare", state: { ...DT.defaultState(), ...(input || {}) } });
-      return out(m.type === "result" ? lite(m.result) : { ok: false, error: m.message });
+      return out(m.type === "result" ? lite(m.result ?? null) : { ok: false, error: m.message });
     } });
     mc.registerTool({ name: "run_self_tests", description: "Run the self-check (patch test, bar FL/EA, pure shear, equilibrium, scaling, zero and full-panel doublers, added mass, mesh convergence, closed-form references, failure detection) in a separate worker, without changing the page, and return each result.", inputSchema: empty, annotations: { readOnlyHint: true }, async execute() {
-      const m = await ask({ cmd: "selftest" }), t = m.tests;
+      const m = await ask({ cmd: "selftest" }), t = /** @type {SelfTest[]} */ (m.tests);
       return out(m.type === "selftest" ? { passed: t.filter((x) => x.pass).length, total: t.length, results: t } : { ok: false, error: m.message });
     } });
   }
@@ -1728,7 +1927,7 @@ self.onmessage = function (event) {
     $("inputs").addEventListener("input", onInput);
     $("inputs").addEventListener("submit", (e) => { e.preventDefault(); run(); });
     $("stringers").addEventListener("click", (e) => {
-      const i = e.target && e.target.dataset ? e.target.dataset.remove : undefined;
+      const t = /** @type {HTMLElement | null} */ (e.target), i = t && t.dataset ? t.dataset.remove : undefined;
       if (i === undefined) return;
       inputs = readInputs(); inputs.stringers.splice(Number(i), 1); fillInputs(); markStale();
     });
@@ -1747,25 +1946,25 @@ self.onmessage = function (event) {
       const v = DT.validate(inputs);
       if (v.ok) run(); else status(`Refining would exceed the limits: ${v.errors[0].message}`, "bad");
     });
-    $("reset").addEventListener("click", () => { cancel(); inputs = DT.defaultState(); probe = { x: 350, y: 150 }; $("probe-x").value = 350; $("probe-y").value = 150; fillInputs(); markStale(); run(); });
+    $("reset").addEventListener("click", () => { cancel(); inputs = DT.defaultState(); probe = { x: 350, y: 150 }; input("probe-x").value = "350"; input("probe-y").value = "150"; fillInputs(); markStale(); run(); });
     $("export-model").addEventListener("click", exportModel);
     $("export-results").addEventListener("click", exportResults);
     $("save-beamdswitch").addEventListener("click", saveDeck);
     $("copy-beamdswitch").addEventListener("click", copyDeck);
     $("selftest").addEventListener("click", () => { status("Running the self-check…", "warn"); dispatch("selftest", {}); });
-    for (const b of document.querySelectorAll("[data-field]")) if (b.tagName === "BUTTON") b.addEventListener("click", () => {
-      view.field = b.dataset.field;
+    for (const b of document.querySelectorAll("[data-field]")) if (b instanceof HTMLButtonElement) b.addEventListener("click", () => {
+      view.field = b.dataset.field ?? "";
       for (const o of document.querySelectorAll("button[data-field]")) o.setAttribute("aria-pressed", String(o === b));
       draw();
     });
-    for (const [id, key] of [["lay-mesh", "mesh"], ["lay-dirs", "dirs"], ["lay-disp", "disp"], ["lay-regions", "regions"]]) $(id).addEventListener("change", (e) => { view[key] = e.target.checked; draw(); });
-    for (const id of ["probe-x", "probe-y"]) $(id).addEventListener("input", () => { const x = parse($("probe-x")), y = parse($("probe-y")); if (Number.isFinite(x) && Number.isFinite(y)) { probe = { x, y }; renderProbe(); draw(); } });
-    for (const k of ["A", "B"]) $(`view-${k}`).addEventListener("click", probeFromEvent);
+    for (const [id, key] of /** @type {const} */ ([["lay-mesh", "mesh"], ["lay-dirs", "dirs"], ["lay-disp", "disp"], ["lay-regions", "regions"]])) $(id).addEventListener("change", (e) => { view[key] = /** @type {HTMLInputElement} */ (e.target).checked; draw(); });
+    for (const id of ["probe-x", "probe-y"]) $(id).addEventListener("input", () => { const x = parse(input("probe-x")), y = parse(input("probe-y")); if (Number.isFinite(x) && Number.isFinite(y)) { probe = { x, y }; renderProbe(); draw(); } });
+    for (const k of ["A", "B"]) /** @type {HTMLCanvasElement} */ ($(`view-${k}`)).addEventListener("click", probeFromEvent);
     document.addEventListener("keydown", (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key === "Enter") { e.preventDefault(); run(); }
       else if (e.key === "Escape" && running) { e.preventDefault(); cancel(); }
     });
-    if (self.matchMedia) { const mq = matchMedia("(prefers-color-scheme: dark)"); if (mq.addEventListener) mq.addEventListener("change", draw); }
+    if ("matchMedia" in self) { const mq = matchMedia("(prefers-color-scheme: dark)"); if ("addEventListener" in mq) mq.addEventListener("change", draw); }
     if (self.MutationObserver) new MutationObserver(draw).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
     if (self.ResizeObserver) new ResizeObserver(() => draw()).observe($("view-A"));
     renderTable(); renderProbe(); exportsEnabled(); draw();
