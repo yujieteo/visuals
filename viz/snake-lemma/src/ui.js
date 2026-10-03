@@ -333,7 +333,10 @@ function render(o = {}) {
   if (o.say !== false) announce(o.say || (blocked && info.idx === blocked.index - 1 && o.tried ? blocked.message : state.say || ""));
   if (o.focus && ui.kbd) $("step-title").focus();
 }
+/* The ℤ example's lift, endpoint and coset in its table. */
+function showChase(r) { $("z-lift").textContent = SL.fmtPair(r.lift); $("z-end").textContent = SL.fmtInt(r.a); $("z-coset").textContent = `[${r.coset}]`; }
 const shortTitle = (s) => s.title.replace(/^Exactness at /, "").replace(/^Start with /, "start ").slice(0, 34);
+/* The diagram parts the given hypotheses flash. */
 function depOf(uses) {
   const dep = { objects: [], morphisms: [], squares: [] };
   for (const h of uses || []) { const f = SL.hyp(h).flash; for (const k of Object.keys(dep)) dep[k].push(...(f[k] || [])); }
@@ -455,7 +458,7 @@ function renderModeControls() {
       <p class="tiny muted" id="k-help">Arrow keys change k by one; the lift is (k, c′). No dragging needed.</p>
       <table><thead><tr><th>lift</th><th>endpoint</th><th>coset</th></tr></thead><tbody><tr><td class="math" id="z-lift"></td><td class="math" id="z-end"></td><td class="math" id="z-coset"></td></tr></tbody></table>`;
     const r = SL.Z.chase(st.c, st.k);
-    $("z-lift").textContent = SL.fmtPair(r.lift); $("z-end").textContent = SL.fmtInt(r.a); $("z-coset").textContent = `[${r.coset}]`;
+    showChase(r);
     $("z-check").textContent = zCheck();
   } else if (st.mode === "proof") {
     box.innerHTML = "";
@@ -625,7 +628,7 @@ $("mode-controls").addEventListener("change", (e) => {
 function updateExample() {
   const r = SL.Z.chase(st.c, st.k);
   $("k-read").textContent = SL.fmtInt(st.k);
-  $("z-lift").textContent = SL.fmtPair(r.lift); $("z-end").textContent = SL.fmtInt(r.a); $("z-coset").textContent = `[${r.coset}]`;
+  showChase(r);
   const state = SL.exampleState(st.c, st.k);
   renderDiagram($("diagram"), viewOf(state), { off: st.off, persistent: true });
   $("algebra").innerHTML = state.tex.map((t) => `<div data-refs="${refsOf(SL.uni(t))}">${esc(SL.uni(t))}</div>`).join("");
@@ -691,16 +694,18 @@ function showTip(g) {
   tip.style.top = `${r.bottom + window.scrollY + 8}px`;
 }
 const hideTip = () => { $("tip").hidden = true; };
-$("diagram").addEventListener("pointerover", (e) => { const g = e.target.closest(".d-tok[data-token]"); if (g) showTip(g); });
-$("diagram").addEventListener("pointerout", (e) => { if (e.target.closest(".d-tok[data-token]")) hideTip(); });
-$("diagram").addEventListener("focusin", (e) => { const g = e.target.closest(".d-tok[data-token]"); if (g) showTip(g); });
+/* The diagram token an event happened on, if any. */
+const tokenOf = (e) => e.target.closest(".d-tok[data-token]");
+$("diagram").addEventListener("pointerover", (e) => { const g = tokenOf(e); if (g) showTip(g); });
+$("diagram").addEventListener("pointerout", (e) => { if (tokenOf(e)) hideTip(); });
+$("diagram").addEventListener("focusin", (e) => { const g = tokenOf(e); if (g) showTip(g); });
 $("diagram").addEventListener("focusout", hideTip);
 $("diagram").addEventListener("click", (e) => {
-  const g = e.target.closest(".d-tok[data-token]");
+  const g = tokenOf(e);
   if (g && st.mode === "lab") { const b = $("lab").querySelector("button[data-move]"); if (b) b.focus(); announce("Moves for this element are listed under Possible moves."); }
 });
 $("diagram").addEventListener("keydown", (e) => {
-  const g = e.target.closest(".d-tok[data-token]");
+  const g = tokenOf(e);
   if (!g || (e.key !== "Enter" && e.key !== " ")) return;
   e.preventDefault();
   if (st.mode === "lab") { const b = $("lab").querySelector("button[data-move]"); if (b) b.focus(); } else { showTip(g); announce($("tip").textContent); }

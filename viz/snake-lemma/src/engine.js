@@ -624,7 +624,7 @@
     const m = moves.find((x) => x.id === moveId);
     if (!m) return null;
     const off = new Set(offList || []);
-    const lab = structuredCloneSafe(lab0), t = lab.token, E = t.x, n = lab.ops.length + 1;
+    const lab = JSON.parse(JSON.stringify(lab0)), /* a plain deep copy: labs are JSON data */ t = lab.token, E = t.x, n = lab.ops.length + 1;
     const rec = { op: m.id, kind: m.kind, label: m.label, uses: [...m.uses], before: { obj: t.obj, x: show(E) }, facts: [], chain: null, choice: !!m.choice };
     const note = (f) => { const g = addFact(lab, { ...f, uses: f.uses || m.uses }, n); rec.facts.push(g.id); return g; };
     if (m.kind === "apply") {
@@ -677,7 +677,6 @@
     lab.ops.push(m.id);
     return lab;
   }
-  function structuredCloneSafe(v) { return JSON.parse(JSON.stringify(v)); }
 
   /* Replay a list of move ids from a start; moves that are not (or no longer) legal end the replay. */
   function labReplay(start, ops, offList) {
