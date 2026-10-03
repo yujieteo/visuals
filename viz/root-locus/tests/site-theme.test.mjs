@@ -11,10 +11,12 @@ test("the site-theme script comes before every style and only reads the site's t
   const m = /<script id="site-theme">([\s\S]*?)<\/script>/.exec(html);
   assert.ok(m, "site-theme script");
   assert.ok(m.index < html.indexOf("<style"), "site-theme precedes the first style");
-  for (const [stored, expected] of [["dark", "dark"], ["light", "light"], ["sepia", undefined], [null, undefined]]) {
+  for (const [stored, expected] of /** @type {[string | null, string | undefined][]} */ ([["dark", "dark"], ["light", "light"], ["sepia", undefined], [null, undefined]])) {
+    /** @type {unknown[][]} */
     const calls = [];
+    /** @type {Record<string, string>} */
     const dataset = {};
-    const localStorage = new Proxy({}, { get: (_, k) => (k === "getItem" ? (key) => { calls.push(["getItem", key]); return stored; } : () => calls.push([k])) });
+    const localStorage = new Proxy({}, { get: (_, k) => (k === "getItem" ? (/** @type {string} */ key) => { calls.push(["getItem", key]); return stored; } : () => calls.push([k])) });
     vm.runInNewContext(m[1], { localStorage, document: { documentElement: { dataset } } });
     assert.deepEqual(calls, [["getItem", "theme"]]);
     assert.equal(dataset.theme, expected, String(stored));
@@ -23,8 +25,10 @@ test("the site-theme script comes before every style and only reads the site's t
 });
 
 // Every declaration under a selector, merged across all of the page's style blocks.
+/** @param {string} selector @returns {Record<string, string>} */
 const tokens = (selector) => {
   const css = [...html.matchAll(/<style>([\s\S]*?)<\/style>/g)].map((m) => m[1]).join("\n");
+  /** @type {Record<string, string>} */
   const out = {};
   let at = css.indexOf(selector);
   while (at !== -1) {

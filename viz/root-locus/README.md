@@ -12,6 +12,7 @@ browser.
 | `index.html` | The whole tool: one self-contained page with inline CSS and vanilla JS, no network requests. A one-line `site-theme` script in the head applies the reader's site-wide Light or Dark choice before paint; the first body script is `beamdswitch.js`, pasted in unchanged; the second starts with the numeric core, then `if (typeof module !== 'undefined') module.exports = {…}`, then UI code that only runs when a `document` exists. |
 | `beamdswitch.js` | The standard beamdswitch report template (`deck(report)` writes a report as a beamdswitch Markdown deck); a copy of the site's shared [`templates/beamdswitch.js`](https://github.com/yujieteo/site/blob/main/templates/beamdswitch.js), kept identical, and identical to the page's first body script, by the tests |
 | `raw.json` | Method notes, examples and the verification table (published as `data.json`); the tests check its examples match the page. |
+| `package.json`, `package-lock.json`, `tsconfig.json`, `.gitignore`, `scripts/extract-inline.mjs`, `types/` | Development-only type-check tooling: `npm run typecheck` copies the page's own scripts into `.typecheck/inline/` (gitignored), then runs the pinned TypeScript over their JSDoc types and the tests'. Not ported to the site. |
 
 There is no build step: edit `index.html` directly. When `templates/beamdswitch.js` changes, copy it
 here and paste it over the page's first body script.
@@ -33,6 +34,8 @@ Light and Dark theme blocks. Run them all with:
 ```sh
 node --test 'tests/*.test.{mjs,cjs}'
 ```
+
+The JSDoc types are checked with `npm ci && npm run typecheck`, as CI does.
 
 ## beamdswitch deck
 

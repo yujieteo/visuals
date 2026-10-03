@@ -375,13 +375,23 @@ var MAX_ORDER = 12;
 var SWEEP_LIMIT = 20000;
 
 /* ---------- complex numbers ---------- */
+/** @typedef {{ re: number, im: number }} Complex */
+/** @typedef {number[]} Poly ascending real coefficients: p[k] multiplies x^k */
+/** @param {number} re @param {number} [im] @returns {Complex} */
 function cx(re, im) { return { re: re, im: im || 0 }; }
+/** @param {Complex} a @param {Complex} b */
 function cadd(a, b) { return cx(a.re + b.re, a.im + b.im); }
+/** @param {Complex} a @param {Complex} b */
 function csub(a, b) { return cx(a.re - b.re, a.im - b.im); }
+/** @param {Complex} a @param {Complex} b */
 function cmul(a, b) { return cx(a.re * b.re - a.im * b.im, a.re * b.im + a.im * b.re); }
+/** @param {Complex} a @param {number} k */
 function cscale(a, k) { return cx(a.re * k, a.im * k); }
+/** @param {Complex} a */
 function cconj(a) { return cx(a.re, -a.im); }
+/** @param {Complex} a */
 function cabs(a) { return Math.hypot(a.re, a.im); }
+/** @param {Complex} a @param {Complex} b */
 function cdiv(a, b) {
   if (Math.abs(b.re) >= Math.abs(b.im)) {
     if (b.re === 0) return cx(NaN, NaN);
@@ -391,36 +401,54 @@ function cdiv(a, b) {
   var r2 = b.re / b.im, d2 = b.re * r2 + b.im;
   return cx((a.re * r2 + a.im) / d2, (a.im * r2 - a.re) / d2);
 }
+/** @param {Complex} a */
 function cexp(a) { var e = Math.exp(a.re); return cx(e * Math.cos(a.im), e * Math.sin(a.im)); }
+/** @param {Complex} a */
 function clog(a) { return cx(Math.log(cabs(a)), Math.atan2(a.im, a.re)); }
+/** @param {Complex} a @param {Complex} b */
 function cdist(a, b) { return Math.hypot(a.re - b.re, a.im - b.im); }
 
 /* ---------- real polynomials: ascending coefficient arrays, p[k] multiplies x^k ---------- */
+/** @param {ArrayLike<number>} p */
 function maxAbs(p) { var m = 0; for (var i = 0; i < p.length; i++) m = Math.max(m, Math.abs(p[i])); return m; }
+/** @param {Poly} p @param {number} [rel] */
 function ptrim(p, rel) {
   var lim = (rel || 0) * maxAbs(p), n = p.length;
   while (n > 1 && Math.abs(p[n - 1]) <= lim) n--;
   return p.slice(0, Math.max(n, 1));
 }
+/** @param {Poly} a @param {Poly} b */
 function padd(a, b) { var n = Math.max(a.length, b.length), r = []; for (var i = 0; i < n; i++) r.push((a[i] || 0) + (b[i] || 0)); return ptrim(r); }
+/** @param {Poly} a @param {number} k */
 function pscale(a, k) { return ptrim(a.map(function (c) { return c * k; })); }
+/** @param {Poly} a @param {Poly} b */
 function psub(a, b) { return padd(a, pscale(b, -1)); }
+/** @param {Poly} a @param {Poly} b @returns {Poly} */
 function pmul(a, b) {
   var r = new Array(a.length + b.length - 1).fill(0);
   for (var i = 0; i < a.length; i++) for (var j = 0; j < b.length; j++) r[i + j] += a[i] * b[j];
   return ptrim(r);
 }
+/** @param {Poly} a @param {number} n */
 function ppow(a, n) { var r = [1]; for (var i = 0; i < n; i++) r = pmul(r, a); return r; }
+/** @param {Poly} p */
 function pder(p) { var r = []; for (var i = 1; i < p.length; i++) r.push(i * p[i]); return r.length ? r : [0]; }
+/** @param {Poly} p @param {number} x */
 function pevalR(p, x) { var v = 0; for (var i = p.length - 1; i >= 0; i--) v = v * x + p[i]; return v; }
+/** @param {Poly} p @param {Complex} z */
 function pevalC(p, z) {
   var re = 0, im = 0;
   for (var i = p.length - 1; i >= 0; i--) { var t = re * z.re - im * z.im + p[i]; im = re * z.im + im * z.re; re = t; }
   return cx(re, im);
 }
+/** @param {Poly} p */
 function lead(p) { var q = ptrim(p); return q[q.length - 1]; }
+/** @param {Complex[]} roots @returns {Poly} */
 function pfromRoots(roots) {
-  var re = [1], im = [0];
+  /** @type {number[]} */
+  var re = [1];
+  /** @type {number[]} */
+  var im = [0];
   roots.forEach(function (r) {
     var nr = new Array(re.length + 1).fill(0), ni = new Array(re.length + 1).fill(0);
     for (var i = 0; i < re.length; i++) {
@@ -433,7 +461,9 @@ function pfromRoots(roots) {
 }
 
 /* ---------- roots: balanced companion matrix + Francis QR (hqr), Durand-Kerner fallback ---------- */
+/** @param {number} a @param {number} b */
 function sign(a, b) { return b >= 0 ? Math.abs(a) : -Math.abs(a); }
+/** @param {number[][]} a a 1-indexed square matrix @param {number} n */
 function balance(a, n) {
   var RADIX = 2, sqrdx = 4, done = false;
   while (!done) {
@@ -455,8 +485,10 @@ function balance(a, n) {
     }
   }
 }
+/** @param {number[][]} a 1-indexed Hessenberg matrix @param {number} n @param {number[]} wr @param {number[]} wi */
 function hqr(a, n, wr, wi) {
-  var nn, m, l, k, j, its, i, mmin, z = 0, y, x, w, v, u, t, s, r = 0, q = 0, p = 0, anorm = 0;
+  /** @type {number} */ var nn, m, l, k, j, its, i, mmin, y, x, w, v, u, t, s;
+  var z = 0, r = 0, q = 0, p = 0, anorm = 0;
   for (i = 1; i <= n; i++) for (j = Math.max(i - 1, 1); j <= n; j++) anorm += Math.abs(a[i][j]);
   nn = n; t = 0;
   while (nn >= 1) {
@@ -534,8 +566,11 @@ function hqr(a, n, wr, wi) {
     } while (l < nn - 1);
   }
 }
+/** @param {Poly} c @returns {Complex[]} */
 function durandKerner(c) {
-  var n = c.length - 1, a = c.map(function (v) { return v / c[n]; }), z = [], i, it;
+  var n = c.length - 1, a = c.map(function (v) { return v / c[n]; }), i, it;
+  /** @type {Complex[]} */
+  var z = [];
   var R = 1 + maxAbs(a.slice(0, n));
   for (i = 0; i < n; i++) z.push(cscale(cexp(cx(0, 2 * Math.PI * i / n + 0.4)), R));
   for (it = 0; it < 2000; it++) {
@@ -551,6 +586,7 @@ function durandKerner(c) {
   }
   return z;
 }
+/** @param {Poly} p @param {Complex} r */
 function polish(p, r) {
   var dp = pder(p);
   for (var it = 0; it < 3; it++) {
@@ -563,9 +599,12 @@ function polish(p, r) {
   return r;
 }
 /* All roots of a real polynomial. Exact zero low-order coefficients give roots exactly at 0. */
+/** @param {Poly} p @returns {Complex[]} */
 function proots(p) {
   p = ptrim(p, 1e-14);
-  var roots = [], k = 0;
+  /** @type {Complex[]} */
+  var roots = [];
+  var k = 0;
   while (k < p.length - 1 && p[k] === 0) { roots.push(cx(0, 0)); k++; }
   var q = p.slice(k), n = q.length - 1, i;
   if (n <= 0) return roots;
@@ -581,11 +620,15 @@ function proots(p) {
     }
     return roots;
   }
-  var a = [], wr = new Array(n + 1).fill(0), wi = new Array(n + 1).fill(0);
+  /** @type {number[][]} */
+  var a = [];
+  var wr = new Array(n + 1).fill(0), wi = new Array(n + 1).fill(0);
   for (i = 0; i <= n; i++) a.push(new Array(n + 1).fill(0));
   for (var j = 1; j <= n; j++) a[1][j] = -q[n - j] / q[n];
   for (i = 2; i <= n; i++) a[i][i - 1] = 1;
+  /** @type {Complex[]} */
   var found;
+
   try {
     balance(a, n); hqr(a, n, wr, wi);
     found = [];
@@ -599,12 +642,17 @@ function proots(p) {
 }
 
 /* ---------- small dense linear algebra ---------- */
-function eye(n) { var I = []; for (var i = 0; i < n; i++) { I.push(new Array(n).fill(0)); I[i][i] = 1; } return I; }
+/** @param {number} n */
+function eye(n) { /** @type {number[][]} */ var I = []; for (var i = 0; i < n; i++) { I.push(new Array(n).fill(0)); I[i][i] = 1; } return I; }
+/** @param {number[][]} A @param {number[][]} B */
 function matmul(A, B) {
-  var n = A.length, m = B[0].length, k = B.length, R = [];
+  var n = A.length, m = B[0].length, k = B.length;
+  /** @type {number[][]} */
+  var R = [];
   for (var i = 0; i < n; i++) { R.push(new Array(m).fill(0)); for (var l = 0; l < k; l++) { var a = A[i][l]; if (a) for (var j = 0; j < m; j++) R[i][j] += a * B[l][j]; } }
   return R;
 }
+/** @param {number[][]} A @param {number[][]} B */
 function matsolve(A, B) {
   var n = A.length, m = B[0].length, M = A.map(function (r, i) { return r.concat(B[i]); });
   for (var c = 0; c < n; c++) {
@@ -620,6 +668,7 @@ function matsolve(A, B) {
   return M.map(function (row, i) { return row.slice(n).map(function (v) { return v / M[i][i]; }); });
 }
 /* Matrix exponential by scaling and squaring with a degree-6 Pade approximant (Golub and Van Loan, algorithm 11.3.1). */
+/** @param {number[][]} A */
 function expm(A) {
   var n = A.length, norm = 0, i, j;
   for (i = 0; i < n; i++) { var rs = 0; for (j = 0; j < n; j++) rs += Math.abs(A[i][j]); norm = Math.max(norm, rs); }
@@ -640,8 +689,11 @@ function expm(A) {
   return E;
 }
 /* Solve (zI - A) x = b for complex z. */
+/** @param {number[][]} A @param {number[]} b @param {Complex} z @returns {Complex[]} */
 function resolvent(A, b, z) {
-  var n = A.length, M = [], i, j, r;
+  var n = A.length, i, j, r;
+  /** @type {Complex[][]} */
+  var M = [];
   for (i = 0; i < n; i++) { M.push([]); for (j = 0; j < n; j++) M[i].push(cx(i === j ? z.re - A[i][j] : -A[i][j], i === j ? z.im : 0)); M[i].push(cx(b[i], 0)); }
   for (var c = 0; c < n; c++) {
     var piv = c;
@@ -662,10 +714,33 @@ function resolvent(A, b, z) {
 }
 
 /* ---------- input parser: a small hand-written Python subset. Nothing is ever passed to eval. ---------- */
-function InputError(message, pos) { this.message = message; this.pos = pos; }
+/* An input error at a position in the field's text. (A class, as TypeScript 7 no longer reads ES5 constructor functions.) */
+class InputError {
+  /** @param {string} message @param {number} pos */
+  constructor(message, pos) { this.message = message; this.pos = pos; }
+}
+/**
+ * A token of a field's text.
+ * @typedef {{ t: "num", v: Complex, text: string, pos: number }
+ *   | { t: "name", v: string, text: string, pos: number } | { t: "str", v: string, text: string, pos: number }
+ *   | { t: "op", v: string, text: string, pos: number }
+ *   | { t: "nl" | "eof", text: string, pos: number, v?: undefined }} Token
+ */
+/**
+ * What an expression evaluates to: a number, a string, a list, or a transfer function in x (null for a constant).
+ * @typedef {{ k: "num", v: Complex } | { k: "str", v: string } | { k: "list", items: Value[] }
+ *   | { k: "tf", x: string | null, num: Complex[], den: Complex[] }} Value
+ */
+/** @typedef {Extract<Value, { k: "tf" }>} TfValue */
+/** @param {Token} tok */
 function show(tok) { return tok.t === 'eof' ? 'end of input' : tok.t === 'nl' ? 'line break' : '`' + tok.text + '`'; }
+/** @param {string} src */
 function tokenize(src) {
-  var toks = [], i = 0, depth = 0, hints = [], m;
+  /** @type {Token[]} */
+  var toks = [];
+  /** @type {string[]} */
+  var hints = [];
+  var i = 0, depth = 0, m;
   while (i < src.length) {
     var ch = src[i], rest = src.slice(i);
     if (ch === ' ' || ch === '\t' || ch === '\r') { i++; continue; }
@@ -674,7 +749,7 @@ function tokenize(src) {
       var text = m[0], imag = /[jJ]$/.test(text), val = parseFloat(imag ? text.slice(0, -1) : text);
       var after = src[i + text.length];
       if (after && /[A-Za-z_]/.test(after)) {
-        var word = /^[A-Za-z_]\w*/.exec(src.slice(i + text.length))[0];
+        var word = /** @type {RegExpExecArray} a letter starts a word */ (/^[A-Za-z_]\w*/.exec(src.slice(i + text.length)))[0];
         throw new InputError('Unexpected `' + word + '` after the number `' + text + '`: write `' + text + '*' + word + '` to multiply', i + text.length);
       }
       if (after === '.') throw new InputError('Unexpected `.` after the number `' + text + '`', i + text.length);
@@ -707,216 +782,255 @@ function tokenize(src) {
 }
 
 /* complex polynomials (ascending) used while evaluating expressions */
+/** @param {Complex[]} p */
 function cpTrim(p) { var n = p.length; while (n > 1 && p[n - 1].re === 0 && p[n - 1].im === 0) n--; return p.slice(0, n); }
+/** @param {Complex[]} a @param {Complex[]} b */
 function cpAdd(a, b) { var r = []; for (var i = 0; i < Math.max(a.length, b.length); i++) r.push(cadd(a[i] || cx(0), b[i] || cx(0))); return cpTrim(r); }
+/** @param {Complex[]} a @param {Complex[]} b */
 function cpMul(a, b) {
   var r = []; for (var i = 0; i < a.length + b.length - 1; i++) r.push(cx(0));
   for (i = 0; i < a.length; i++) for (var j = 0; j < b.length; j++) r[i + j] = cadd(r[i + j], cmul(a[i], b[j]));
   return cpTrim(r);
 }
+/** @param {Complex[]} a @param {Complex} k */
 function cpScale(a, k) { return cpTrim(a.map(function (c) { return cmul(c, k); })); }
+/** @param {Complex[]} a */
 function cpIsZero(a) { return a.every(function (c) { return c.re === 0 && c.im === 0; }); }
+/** @param {Complex[]} a @param {Complex[]} b */
 function cpEqual(a, b) { a = cpTrim(a); b = cpTrim(b); return a.length === b.length && a.every(function (c, i) { return c.re === b[i].re && c.im === b[i].im; }); }
 
+/** @type {Record<string, number>} */
 var RESERVED = { tf: 1, zpk: 1, pi: 1 };
-function Evaluator(opts) {
-  this.variable = opts.variable;   // 's' or 'z': the only symbol this field may use
-  this.field = opts.field || 'field';
-  this.env = {};
+/* Evaluates one field's text. (A class, as TypeScript 7 no longer reads ES5 constructor functions.) */
+class Evaluator {
+  /** @param {{ variable: string, field?: string }} opts */
+  constructor(opts) {
+    this.variable = opts.variable;   // 's' or 'z': the only symbol this field may use
+    this.field = opts.field || 'field';
+    /** @type {Record<string, Value>} */
+    this.env = {};
+  }
+  /** @param {string} name @param {number} pos */
+  symbolError(name, pos) {
+    if (this.variable === 's') return new InputError('`' + name + '` is not available here: ' + this.field + ' is entered in s' + (name === 'z' ? ' (z is used for C and H in z-mode)' : ''), pos);
+    return new InputError('`' + name + '` is not available here: in z-mode ' + this.field + ' is entered in z (only G is entered in s and discretised)', pos);
+  }
+  /** @param {string} op @param {Value} a @param {Value} b @param {{ text: string, pos: number }} tok @returns {Value} */
+  arith(op, a, b, tok) {
+    if (a.k === 'list' || b.k === 'list') throw new InputError('Lists cannot be used with `' + tok.text + '`; wrap coefficients in tf(num, den)', tok.pos);
+    if (a.k === 'str' || b.k === 'str') throw new InputError('Strings cannot be used with `' + tok.text + '`; write tf(\'' + this.variable + '\') for the symbol', tok.pos);
+    if (a.k === 'num' && b.k === 'num') {
+      if (op === '+') return { k: 'num', v: cadd(a.v, b.v) };
+      if (op === '-') return { k: 'num', v: csub(a.v, b.v) };
+      if (op === '*') return { k: 'num', v: cmul(a.v, b.v) };
+      if (cabs(b.v) === 0) throw new InputError('Division by zero at `/`', tok.pos);
+      return { k: 'num', v: cdiv(a.v, b.v) };
+    }
+    // Lists and strings were refused above, so both are numbers or transfer functions.
+    var A = /** @type {TfValue} */ (tfOf(a)), B = /** @type {TfValue} */ (tfOf(b));
+    if (A.x && B.x && A.x !== B.x) throw new InputError('Cannot mix s and z in one expression', tok.pos);
+    var x = A.x || B.x, num, den;
+    if (op === '+' || op === '-') {
+      var bn = op === '-' ? cpScale(B.num, cx(-1)) : B.num;
+      if (cpEqual(A.den, B.den)) { num = cpAdd(A.num, bn); den = A.den; }
+      else { num = cpAdd(cpMul(A.num, B.den), cpMul(bn, A.den)); den = cpMul(A.den, B.den); }
+    } else if (op === '*') { num = cpMul(A.num, B.num); den = cpMul(A.den, B.den); }
+    else {
+      if (cpIsZero(B.num)) throw new InputError('Division by zero at `/`', tok.pos);
+      num = cpMul(A.num, B.den); den = cpMul(A.den, B.num);
+    }
+    return { k: 'tf', x: x, num: num, den: den };
+  }
+  /** @param {Value} a @param {Value} b @param {{ text: string, pos: number }} tok @returns {Value} */
+  power(a, b, tok) {
+    if (b.k !== 'num' || b.v.im !== 0) throw new InputError('The exponent after `' + tok.text + '` must be a real number', tok.pos);
+    var n = b.v.re;
+    if (a.k === 'num') {
+      if (a.v.im === 0 && (a.v.re >= 0 || Number.isInteger(n))) return { k: 'num', v: cx(Math.pow(a.v.re, n), 0) };
+      if (!Number.isInteger(n)) throw new InputError('A complex number can only be raised to a whole power', tok.pos);
+      var r = cx(1); for (var i = 0; i < Math.abs(n); i++) r = cmul(r, a.v);
+      return { k: 'num', v: n < 0 ? cdiv(cx(1), r) : r };
+    }
+    if (a.k !== 'tf') throw new InputError('Only numbers and transfer functions can be raised to a power with `' + tok.text + '`', tok.pos);
+    if (!Number.isInteger(n)) throw new InputError('Powers of ' + a.x + ' must be whole numbers, not ' + n, tok.pos);
+    if (Math.abs(n) > 2 * MAX_ORDER) throw new InputError('The power ' + n + ' is too large (the order limit is ' + MAX_ORDER + ')', tok.pos);
+    var num = [cx(1)], den = [cx(1)];
+    for (var k = 0; k < Math.abs(n); k++) { num = cpMul(num, a.num); den = cpMul(den, a.den); }
+    if (n < 0) { if (cpIsZero(num)) throw new InputError('Division by zero in a negative power', tok.pos); var t = num; num = den; den = t; }
+    return { k: 'tf', x: a.x, num: num, den: den };
+  }
+  /** @param {string} src @returns {{ value: Value, hints: string[] }} */
+  run(src) {
+    var lexed = tokenize(src), toks = lexed.toks, pos = 0, self = this, last = null, lastAssigned = null;
+    function peek() { return toks[pos]; }
+    function next() { return toks[pos++]; }
+    /** @param {Token} tok @param {string} v */
+    function isOp(tok, v) { return tok.t === 'op' && tok.v === v; }
+    /** @param {string} v */
+    function expect(v) {
+      var tok = next();
+      if (!isOp(tok, v)) throw new InputError('Expected `' + v + '` but found ' + show(tok), tok.pos);
+      return tok;
+    }
+    /** @param {Value | undefined} value @param {string} what @param {{ pos: number }} tok @returns {Complex[]} */
+    function numberList(value, what, tok) {
+      if (!value || value.k !== 'list') throw new InputError(what + ' must be a list such as [1, 2]', tok.pos);
+      return value.items.map(function (item) {
+        if (item.k !== 'num') throw new InputError('Every entry of ' + what + ' must be a number', tok.pos);
+        return item.v;
+      });
+    }
+    /** @param {Value[]} args @param {{ pos: number }} tok @returns {Value} */
+    function callTf(args, tok) {
+      if (args.length === 1 && args[0].k === 'str') {
+        var sym = args[0].v;
+        if (sym !== 's' && sym !== 'z') throw new InputError('tf() accepts only \'s\' or \'z\', not \'' + sym + '\'', tok.pos);
+        if (sym !== self.variable) throw self.symbolError(sym, tok.pos);
+        return { k: 'tf', x: sym, num: [cx(0), cx(1)], den: [cx(1)] };
+      }
+      if (args.length === 1 && args[0].k === 'num') return args[0];
+      if (args.length !== 2) throw new InputError('tf takes tf(\'' + self.variable + '\') or tf(num, den), e.g. tf([1], [1, 2])', tok.pos);
+      var num = numberList(args[0], 'num', tok), den = numberList(args[1], 'den', tok);
+      if (!den.length) throw new InputError('`den` is empty: it needs at least one pole coefficient, e.g. [1, 2] for ' + self.variable + ' + 2', tok.pos);
+      if (!num.length) throw new InputError('`num` is empty: give at least one coefficient, e.g. [1]', tok.pos);
+      if (den.every(function (c) { return cabs(c) === 0; })) throw new InputError('`den` is all zeros', tok.pos);
+      return { k: 'tf', x: self.variable, num: cpTrim(num.slice().reverse()), den: cpTrim(den.slice().reverse()) };
+    }
+    /** @param {Value[]} args @param {{ pos: number }} tok @returns {Value} */
+    function callZpk(args, tok) {
+      if (args.length !== 3) throw new InputError('zpk takes three arguments: zpk([zeros], [poles], gain)', tok.pos);
+      var zeros = numberList(args[0], 'zeros', tok), poles = numberList(args[1], 'poles', tok);
+      if (args[2].k !== 'num') throw new InputError('The gain in zpk must be a number', tok.pos);
+      /** @param {Complex[]} rs */
+      function fromRoots(rs) { var p = [cx(1)]; rs.forEach(function (r) { p = cpMul(p, [cscale(r, -1), cx(1)]); }); return p; }
+      return { k: 'tf', x: self.variable, num: cpScale(fromRoots(zeros), args[2].v), den: fromRoots(poles) };
+    }
+    /** @returns {Value} */
+    function primary() {
+      var tok = next();
+      /** @type {Value} */
+      var value;
+      if (tok.t === 'num') value = { k: 'num', v: tok.v };
+      else if (tok.t === 'str') value = { k: 'str', v: tok.v };
+      else if (tok.t === 'name') {
+        var name = tok.v;
+        if (name[0] === '_') throw new InputError('Names starting with `_` are not allowed: `' + name + '`', tok.pos);
+        if (isOp(peek(), '(')) {
+          if (name !== 'tf' && name !== 'zpk') {
+            if (Object.prototype.hasOwnProperty.call(self.env, name) || name === 's' || name === 'z' || name === 'pi') throw new InputError('`' + name + '` cannot be called; only tf(...) and zpk(...) are functions', tok.pos);
+            throw new InputError('Unknown name `' + name + '`; the functions are tf and zpk', tok.pos);
+          }
+          next();
+          var args = [];
+          while (!isOp(peek(), ')')) {
+            if (peek().t === 'name' && isOp(toks[pos + 1], '=')) throw new InputError('Keyword arguments such as `' + peek().v + '=` are not supported', peek().pos);
+            args.push(expr());
+            if (isOp(peek(), ',')) next(); else break;
+          }
+          expect(')');
+          value = name === 'tf' ? callTf(args, tok) : callZpk(args, tok);
+        } else if (Object.prototype.hasOwnProperty.call(self.env, name)) value = self.env[name];
+        else if (name === 's' || name === 'z') {
+          if (name !== self.variable) throw self.symbolError(name, tok.pos);
+          value = { k: 'tf', x: name, num: [cx(0), cx(1)], den: [cx(1)] };
+        } else if (name === 'pi') value = { k: 'num', v: cx(Math.PI) };
+        else if (name === 'tf' || name === 'zpk') throw new InputError('`' + name + '` must be called, e.g. ' + (name === 'tf' ? 'tf([1], [1, 2])' : 'zpk([-1], [0, -2], 3)'), tok.pos);
+        else throw new InputError('Unknown name `' + name + '`', tok.pos);
+      } else if (isOp(tok, '(')) { value = expr(); expect(')'); }
+      else if (isOp(tok, '[')) {
+        var items = [];
+        while (!isOp(peek(), ']')) { items.push(expr()); if (isOp(peek(), ',')) next(); else break; }
+        expect(']');
+        value = { k: 'list', items: items };
+      } else throw new InputError('Unexpected ' + show(tok), tok.pos);
+      var after = peek();
+      if (isOp(after, '(')) throw new InputError('Unexpected `(`: calls are only allowed on tf and zpk; write `*` to multiply', after.pos);
+      if (isOp(after, '[')) throw new InputError('Indexing with `[` is not allowed', after.pos);
+      if (after.t === 'num' || after.t === 'name' || after.t === 'str') throw new InputError('Unexpected ' + show(after) + ': write `*` to multiply', after.pos);
+      return value;
+    }
+    /** @returns {Value} */
+    function power() {
+      var base = primary();
+      if (isOp(peek(), '**')) { var tok = next(); return self.power(base, unary(), tok); }
+      return base;
+    }
+    /** @returns {Value} */
+    function unary() {
+      var tok = peek();
+      if (isOp(tok, '-') || isOp(tok, '+')) {
+        next();
+        var v = unary();
+        if (tok.v === '+') return v;
+        return self.arith('*', { k: 'num', v: cx(-1) }, v, tok);
+      }
+      return power();
+    }
+    /** @returns {Value} */
+    function term() {
+      var v = unary();
+      while (isOp(peek(), '*') || isOp(peek(), '/')) { var tok = /** @type {Extract<Token, { t: "op" }>} the operator just peeked */ (next()); v = self.arith(tok.v, v, unary(), tok); }
+      return v;
+    }
+    /** @returns {Value} */
+    function expr() {
+      var v = term();
+      while (isOp(peek(), '+') || isOp(peek(), '-')) { var tok = /** @type {Extract<Token, { t: "op" }>} the operator just peeked */ (next()); v = self.arith(tok.v, v, term(), tok); }
+      return v;
+    }
+    while (peek().t !== 'eof') {
+      if (peek().t === 'nl') { next(); continue; }
+      if (peek().t === 'name' && isOp(toks[pos + 1], '=')) {
+        var target = /** @type {Extract<Token, { t: "name" }>} the name just peeked */ (next()); next();
+
+        if (target.v[0] === '_') throw new InputError('Names starting with `_` are not allowed: `' + target.v + '`', target.pos);
+        if (RESERVED[target.v]) throw new InputError('`' + target.v + '` is built in and cannot be assigned', target.pos);
+        var val = expr();
+        self.env[target.v] = val; lastAssigned = val; last = null;
+      } else { last = expr(); }
+      var endTok = peek();
+      if (endTok.t !== 'nl' && endTok.t !== 'eof') throw new InputError('Unexpected ' + show(endTok), endTok.pos);
+    }
+    var result = last;
+    if (!result && lastAssigned && (lastAssigned.k === 'tf' || lastAssigned.k === 'num')) result = lastAssigned;
+    if (!result && (this.env.num || this.env.den)) {
+      if (!this.env.den) throw new InputError('`den` is missing: add a line such as den = [1, 2]', src.length);
+      if (!this.env.num) throw new InputError('`num` is missing: add a line such as num = [1]', src.length);
+      result = callTf([this.env.num, this.env.den], { pos: src.length });
+    }
+    if (!result) result = lastAssigned;
+    if (!result) return { value: { k: 'num', v: cx(1) }, hints: lexed.hints };
+    if (result.k === 'list') throw new InputError('A bare list is ambiguous: use tf(num, den), or set num = [...] and den = [...] on separate lines', src.length);
+    if (result.k === 'str') throw new InputError('A string is not a transfer function; write tf(\'' + this.variable + '\')', src.length);
+    return { value: result, hints: lexed.hints };
+  }
 }
-Evaluator.prototype.symbolError = function (name, pos) {
-  if (this.variable === 's') return new InputError('`' + name + '` is not available here: ' + this.field + ' is entered in s' + (name === 'z' ? ' (z is used for C and H in z-mode)' : ''), pos);
-  return new InputError('`' + name + '` is not available here: in z-mode ' + this.field + ' is entered in z (only G is entered in s and discretised)', pos);
-};
+/** @param {Value} value @returns {TfValue | null} */
 function tfOf(value) {
+
   if (value.k === 'tf') return value;
   if (value.k === 'num') return { k: 'tf', x: null, num: [value.v], den: [cx(1)] };
   return null;
 }
-Evaluator.prototype.arith = function (op, a, b, tok) {
-  if (a.k === 'list' || b.k === 'list') throw new InputError('Lists cannot be used with `' + tok.text + '`; wrap coefficients in tf(num, den)', tok.pos);
-  if (a.k === 'str' || b.k === 'str') throw new InputError('Strings cannot be used with `' + tok.text + '`; write tf(\'' + this.variable + '\') for the symbol', tok.pos);
-  if (a.k === 'num' && b.k === 'num') {
-    if (op === '+') return { k: 'num', v: cadd(a.v, b.v) };
-    if (op === '-') return { k: 'num', v: csub(a.v, b.v) };
-    if (op === '*') return { k: 'num', v: cmul(a.v, b.v) };
-    if (cabs(b.v) === 0) throw new InputError('Division by zero at `/`', tok.pos);
-    return { k: 'num', v: cdiv(a.v, b.v) };
-  }
-  var A = tfOf(a), B = tfOf(b);
-  if (A.x && B.x && A.x !== B.x) throw new InputError('Cannot mix s and z in one expression', tok.pos);
-  var x = A.x || B.x, num, den;
-  if (op === '+' || op === '-') {
-    var bn = op === '-' ? cpScale(B.num, cx(-1)) : B.num;
-    if (cpEqual(A.den, B.den)) { num = cpAdd(A.num, bn); den = A.den; }
-    else { num = cpAdd(cpMul(A.num, B.den), cpMul(bn, A.den)); den = cpMul(A.den, B.den); }
-  } else if (op === '*') { num = cpMul(A.num, B.num); den = cpMul(A.den, B.den); }
-  else {
-    if (cpIsZero(B.num)) throw new InputError('Division by zero at `/`', tok.pos);
-    num = cpMul(A.num, B.den); den = cpMul(A.den, B.num);
-  }
-  return { k: 'tf', x: x, num: num, den: den };
-};
-Evaluator.prototype.power = function (a, b, tok) {
-  if (b.k !== 'num' || b.v.im !== 0) throw new InputError('The exponent after `' + tok.text + '` must be a real number', tok.pos);
-  var n = b.v.re;
-  if (a.k === 'num') {
-    if (a.v.im === 0 && (a.v.re >= 0 || Number.isInteger(n))) return { k: 'num', v: cx(Math.pow(a.v.re, n), 0) };
-    if (!Number.isInteger(n)) throw new InputError('A complex number can only be raised to a whole power', tok.pos);
-    var r = cx(1); for (var i = 0; i < Math.abs(n); i++) r = cmul(r, a.v);
-    return { k: 'num', v: n < 0 ? cdiv(cx(1), r) : r };
-  }
-  if (a.k !== 'tf') throw new InputError('Only numbers and transfer functions can be raised to a power with `' + tok.text + '`', tok.pos);
-  if (!Number.isInteger(n)) throw new InputError('Powers of ' + a.x + ' must be whole numbers, not ' + n, tok.pos);
-  if (Math.abs(n) > 2 * MAX_ORDER) throw new InputError('The power ' + n + ' is too large (the order limit is ' + MAX_ORDER + ')', tok.pos);
-  var num = [cx(1)], den = [cx(1)];
-  for (var k = 0; k < Math.abs(n); k++) { num = cpMul(num, a.num); den = cpMul(den, a.den); }
-  if (n < 0) { if (cpIsZero(num)) throw new InputError('Division by zero in a negative power', tok.pos); var t = num; num = den; den = t; }
-  return { k: 'tf', x: a.x, num: num, den: den };
-};
-Evaluator.prototype.run = function (src) {
-  var lexed = tokenize(src), toks = lexed.toks, pos = 0, self = this, last = null, lastAssigned = null;
-  function peek() { return toks[pos]; }
-  function next() { return toks[pos++]; }
-  function isOp(tok, v) { return tok.t === 'op' && tok.v === v; }
-  function expect(v) {
-    var tok = next();
-    if (!isOp(tok, v)) throw new InputError('Expected `' + v + '` but found ' + show(tok), tok.pos);
-    return tok;
-  }
-  function numberList(value, what, tok) {
-    if (!value || value.k !== 'list') throw new InputError(what + ' must be a list such as [1, 2]', tok.pos);
-    return value.items.map(function (item) {
-      if (item.k !== 'num') throw new InputError('Every entry of ' + what + ' must be a number', tok.pos);
-      return item.v;
-    });
-  }
-  function callTf(args, tok) {
-    if (args.length === 1 && args[0].k === 'str') {
-      var sym = args[0].v;
-      if (sym !== 's' && sym !== 'z') throw new InputError('tf() accepts only \'s\' or \'z\', not \'' + sym + '\'', tok.pos);
-      if (sym !== self.variable) throw self.symbolError(sym, tok.pos);
-      return { k: 'tf', x: sym, num: [cx(0), cx(1)], den: [cx(1)] };
-    }
-    if (args.length === 1 && args[0].k === 'num') return args[0];
-    if (args.length !== 2) throw new InputError('tf takes tf(\'' + self.variable + '\') or tf(num, den), e.g. tf([1], [1, 2])', tok.pos);
-    var num = numberList(args[0], 'num', tok), den = numberList(args[1], 'den', tok);
-    if (!den.length) throw new InputError('`den` is empty: it needs at least one pole coefficient, e.g. [1, 2] for ' + self.variable + ' + 2', tok.pos);
-    if (!num.length) throw new InputError('`num` is empty: give at least one coefficient, e.g. [1]', tok.pos);
-    if (den.every(function (c) { return cabs(c) === 0; })) throw new InputError('`den` is all zeros', tok.pos);
-    return { k: 'tf', x: self.variable, num: cpTrim(num.slice().reverse()), den: cpTrim(den.slice().reverse()) };
-  }
-  function callZpk(args, tok) {
-    if (args.length !== 3) throw new InputError('zpk takes three arguments: zpk([zeros], [poles], gain)', tok.pos);
-    var zeros = numberList(args[0], 'zeros', tok), poles = numberList(args[1], 'poles', tok);
-    if (args[2].k !== 'num') throw new InputError('The gain in zpk must be a number', tok.pos);
-    function fromRoots(rs) { var p = [cx(1)]; rs.forEach(function (r) { p = cpMul(p, [cscale(r, -1), cx(1)]); }); return p; }
-    return { k: 'tf', x: self.variable, num: cpScale(fromRoots(zeros), args[2].v), den: fromRoots(poles) };
-  }
-  function primary() {
-    var tok = next(), value;
-    if (tok.t === 'num') value = { k: 'num', v: tok.v };
-    else if (tok.t === 'str') value = { k: 'str', v: tok.v };
-    else if (tok.t === 'name') {
-      var name = tok.v;
-      if (name[0] === '_') throw new InputError('Names starting with `_` are not allowed: `' + name + '`', tok.pos);
-      if (isOp(peek(), '(')) {
-        if (name !== 'tf' && name !== 'zpk') {
-          if (Object.prototype.hasOwnProperty.call(self.env, name) || name === 's' || name === 'z' || name === 'pi') throw new InputError('`' + name + '` cannot be called; only tf(...) and zpk(...) are functions', tok.pos);
-          throw new InputError('Unknown name `' + name + '`; the functions are tf and zpk', tok.pos);
-        }
-        next();
-        var args = [];
-        while (!isOp(peek(), ')')) {
-          if (peek().t === 'name' && isOp(toks[pos + 1], '=')) throw new InputError('Keyword arguments such as `' + peek().v + '=` are not supported', peek().pos);
-          args.push(expr());
-          if (isOp(peek(), ',')) next(); else break;
-        }
-        expect(')');
-        value = name === 'tf' ? callTf(args, tok) : callZpk(args, tok);
-      } else if (Object.prototype.hasOwnProperty.call(self.env, name)) value = self.env[name];
-      else if (name === 's' || name === 'z') {
-        if (name !== self.variable) throw self.symbolError(name, tok.pos);
-        value = { k: 'tf', x: name, num: [cx(0), cx(1)], den: [cx(1)] };
-      } else if (name === 'pi') value = { k: 'num', v: cx(Math.PI) };
-      else if (name === 'tf' || name === 'zpk') throw new InputError('`' + name + '` must be called, e.g. ' + (name === 'tf' ? 'tf([1], [1, 2])' : 'zpk([-1], [0, -2], 3)'), tok.pos);
-      else throw new InputError('Unknown name `' + name + '`', tok.pos);
-    } else if (isOp(tok, '(')) { value = expr(); expect(')'); }
-    else if (isOp(tok, '[')) {
-      var items = [];
-      while (!isOp(peek(), ']')) { items.push(expr()); if (isOp(peek(), ',')) next(); else break; }
-      expect(']');
-      value = { k: 'list', items: items };
-    } else throw new InputError('Unexpected ' + show(tok), tok.pos);
-    var after = peek();
-    if (isOp(after, '(')) throw new InputError('Unexpected `(`: calls are only allowed on tf and zpk; write `*` to multiply', after.pos);
-    if (isOp(after, '[')) throw new InputError('Indexing with `[` is not allowed', after.pos);
-    if (after.t === 'num' || after.t === 'name' || after.t === 'str') throw new InputError('Unexpected ' + show(after) + ': write `*` to multiply', after.pos);
-    return value;
-  }
-  function power() {
-    var base = primary();
-    if (isOp(peek(), '**')) { var tok = next(); return self.power(base, unary(), tok); }
-    return base;
-  }
-  function unary() {
-    var tok = peek();
-    if (isOp(tok, '-') || isOp(tok, '+')) {
-      next();
-      var v = unary();
-      if (tok.v === '+') return v;
-      return self.arith('*', { k: 'num', v: cx(-1) }, v, tok);
-    }
-    return power();
-  }
-  function term() {
-    var v = unary();
-    while (isOp(peek(), '*') || isOp(peek(), '/')) { var tok = next(); v = self.arith(tok.v, v, unary(), tok); }
-    return v;
-  }
-  function expr() {
-    var v = term();
-    while (isOp(peek(), '+') || isOp(peek(), '-')) { var tok = next(); v = self.arith(tok.v, v, term(), tok); }
-    return v;
-  }
-  while (peek().t !== 'eof') {
-    if (peek().t === 'nl') { next(); continue; }
-    if (peek().t === 'name' && isOp(toks[pos + 1], '=')) {
-      var target = next(); next();
-      if (target.v[0] === '_') throw new InputError('Names starting with `_` are not allowed: `' + target.v + '`', target.pos);
-      if (RESERVED[target.v]) throw new InputError('`' + target.v + '` is built in and cannot be assigned', target.pos);
-      var val = expr();
-      self.env[target.v] = val; lastAssigned = val; last = null;
-    } else { last = expr(); }
-    var endTok = peek();
-    if (endTok.t !== 'nl' && endTok.t !== 'eof') throw new InputError('Unexpected ' + show(endTok), endTok.pos);
-  }
-  var result = last;
-  if (!result && lastAssigned && (lastAssigned.k === 'tf' || lastAssigned.k === 'num')) result = lastAssigned;
-  if (!result && (this.env.num || this.env.den)) {
-    if (!this.env.den) throw new InputError('`den` is missing: add a line such as den = [1, 2]', src.length);
-    if (!this.env.num) throw new InputError('`num` is missing: add a line such as num = [1]', src.length);
-    result = callTf([this.env.num, this.env.den], { pos: src.length });
-  }
-  if (!result) result = lastAssigned;
-  if (!result) return { value: { k: 'num', v: cx(1) }, hints: lexed.hints };
-  if (result.k === 'list') throw new InputError('A bare list is ambiguous: use tf(num, den), or set num = [...] and den = [...] on separate lines', src.length);
-  if (result.k === 'str') throw new InputError('A string is not a transfer function; write tf(\'' + this.variable + '\')', src.length);
-  return { value: result, hints: lexed.hints };
-};
 /* Parse one field (C, G or H) into a normalised real rational function num/den (ascending, den monic). */
+/**
+ * One field parsed: a real rational function num/den (ascending, den monic), or the error and where it is.
+ * @typedef {{ ok: true, num: Poly, den: Poly, hints: string[] } | { ok: false, error: string, pos: number }} ParsedField
+ */
+/** @param {unknown} src @param {string} variable @param {string} field @returns {ParsedField} */
 function parseField(src, variable, field) {
   src = src == null ? '' : String(src);
   try {
-    var out = new Evaluator({ variable: variable, field: field }).run(src), T = tfOf(out.value);
-    var all = T.num.concat(T.den), big = Math.max.apply(null, all.map(cabs));
-    if (all.some(function (c) { return !isFinite(c.re) || !isFinite(c.im); })) throw new InputError('The expression overflows to a non-finite number', src.length);
-    if (all.some(function (c) { return Math.abs(c.im) > 1e-9 * big; })) throw new InputError('The coefficients are complex: complex poles and zeros must come in conjugate pairs, e.g. zpk([], [-1+2j, -1-2j], 5)', src.length);
+    // run() refuses lists and strings, so the value is a number or a transfer function.
+    var out = new Evaluator({ variable: variable, field: field }).run(/** @type {string} */ (src)), T = /** @type {TfValue} */ (tfOf(out.value));
+    var all = T.num.concat(T.den), big = Math.max.apply(null, all.map(cabs)), len = /** @type {string} */ (src).length;
+    if (all.some(function (c) { return !isFinite(c.re) || !isFinite(c.im); })) throw new InputError('The expression overflows to a non-finite number', len);
+    if (all.some(function (c) { return Math.abs(c.im) > 1e-9 * big; })) throw new InputError('The coefficients are complex: complex poles and zeros must come in conjugate pairs, e.g. zpk([], [-1+2j, -1-2j], 5)', len);
     var num = ptrim(T.num.map(function (c) { return c.re; }), 1e-14), den = ptrim(T.den.map(function (c) { return c.re; }), 1e-14);
-    if (num.every(function (c) { return c === 0; })) throw new InputError(field + ' is zero, so the loop is open', src.length);
+    if (num.every(function (c) { return c === 0; })) throw new InputError(field + ' is zero, so the loop is open', len);
     var dl = den[den.length - 1];
     num = num.map(function (c) { return c / dl; }); den = den.map(function (c) { return c / dl; });
-    if (den.length - 1 > MAX_ORDER || num.length - 1 > MAX_ORDER) throw new InputError(field + ' has order ' + (Math.max(den.length, num.length) - 1) + '; the limit is ' + MAX_ORDER + ' so the roots stay reliable', src.length);
+    if (den.length - 1 > MAX_ORDER || num.length - 1 > MAX_ORDER) throw new InputError(field + ' has order ' + (Math.max(den.length, num.length) - 1) + '; the limit is ' + MAX_ORDER + ' so the roots stay reliable', len);
     return { ok: true, num: num, den: den, hints: out.hints };
   } catch (e) {
     if (e instanceof InputError) return { ok: false, error: e.message, pos: e.pos };
@@ -925,6 +1039,7 @@ function parseField(src, variable, field) {
 }
 
 /* ---------- number and polynomial formatting ---------- */
+/** @param {number | null | undefined} x @param {number} [sig] */
 function fmt(x, sig) {
   if (x === null || x === undefined || Number.isNaN(x)) return '—';
   if (!isFinite(x)) return x > 0 ? '∞' : '-∞';
@@ -933,7 +1048,9 @@ function fmt(x, sig) {
   return s === '-0' ? '0' : s;
 }
 /* z with a part below 1e-9 of |z| set to 0, so a numerically real pole is written as real. */
+/** @param {Complex} z */
 function snapParts(z) { var m = cabs(z); return { re: Math.abs(z.re) < 1e-9 * m ? 0 : z.re, im: Math.abs(z.im) < 1e-9 * m ? 0 : z.im }; }
+/** @param {Complex} z @param {number} [sig] @param {string} [unit] */
 function fmtC(z, sig, unit) {
   var p = snapParts(z), re = p.re, im = p.im;
   if (im === 0) return fmt(re, sig);
@@ -941,6 +1058,7 @@ function fmtC(z, sig, unit) {
   if (re === 0) return (im < 0 ? '-' : '') + ims;
   return fmt(re, sig) + (im < 0 ? ' - ' : ' + ') + ims;
 }
+/** @param {Poly} p @param {string} x @param {number} [sig] */
 function polyStr(p, x, sig) {
   p = ptrim(p);
   var big = maxAbs(p), out = '';
@@ -956,11 +1074,17 @@ function polyStr(p, x, sig) {
 /* Roots with multiplicity: a group of k nearby roots is one k-fold root when it is no wider than the eps^(1/k) scatter
    of a true k-fold root and the polynomial and its first k - 1 derivatives vanish at the group's centre, found by
    Newton on the (k - 1)th derivative (where the root is simple). */
+/** @param {Poly} p @returns {{ r: Complex, mult: number }[]} */
 function rootsWithMultiplicity(p) {
-  var roots = proots(p).sort(function (a, b) { return b.re - a.re || b.im - a.im; }), used = roots.map(function () { return false; }), out = [];
-  var ders = [p], absD;
+  var roots = proots(p).sort(function (a, b) { return b.re - a.re || b.im - a.im; }), used = roots.map(function () { return false; });
+  /** @type {{ r: Complex, mult: number }[]} */
+  var out = [];
+  var ders = [p];
+  /** @type {number[][]} */
+  var absD;
   for (var d = 1; d <= roots.length; d++) ders.push(pder(ders[d - 1]));
   absD = ders.map(function (q) { return q.map(Math.abs); });
+  /** @param {Complex} c @param {number} k */
   function vanishes(c, k) {
     if (!isFinite(c.re) || !isFinite(c.im)) return false;
     for (var j = 0; j < k; j++) if (!(cabs(pevalC(ders[j], c)) <= 1e-8 * Math.max(pevalR(absD[j], cabs(c)), 1e-300))) return false;
@@ -968,6 +1092,7 @@ function rootsWithMultiplicity(p) {
   }
   roots.forEach(function (r, i) {
     if (used[i]) return;
+    /** @type {number[]} */
     var near = [];
     roots.forEach(function (q, j) { if (!used[j]) near.push(j); });
     near.sort(function (a, b) { return cdist(roots[a], r) - cdist(roots[b], r); });
@@ -994,12 +1119,17 @@ function rootsWithMultiplicity(p) {
 }
 /* Factor text: real roots as (x - r), conjugate pairs as quadratics, repeats (one multiplicity cluster) as powers.
    Distinct roots that print alike at sig figures get more figures, so they are never shown as one repeated root. */
+/** @param {Poly} p @param {string} x @param {number} sig */
 function factorTerms(p, x, sig) {
-  var clusters = rootsWithMultiplicity(ptrim(p)), items;
+  var clusters = rootsWithMultiplicity(ptrim(p));
+  /** @type {{ text: string, mult: number }[]} */
+  var items = [];
   for (var s = sig; ; s++) {
     items = [];
     clusters.forEach(function (it) {
-      var r = it.r, sc = Math.max(1, cabs(r)), text;
+      var r = it.r, sc = Math.max(1, cabs(r));
+      /** @type {string} */
+      var text;
       if (Math.abs(r.im) <= 1e-7 * sc) text = Math.abs(r.re) <= 1e-12 * sc ? x : '(' + x + (r.re < 0 ? ' + ' : ' - ') + fmt(Math.abs(r.re), s) + ')';
       else if (r.im > 0) text = '(' + polyStr([r.re * r.re + r.im * r.im, -2 * r.re, 1], x, s) + ')';
       else return;
@@ -1009,6 +1139,7 @@ function factorTerms(p, x, sig) {
   }
   return items.map(function (it) { return it.mult > 1 ? it.text + '**' + it.mult : it.text; });
 }
+/** @param {Poly} num @param {Poly} den @param {string} x @param {number} sig */
 function factoredStr(num, den, x, sig) {
   num = ptrim(num); den = ptrim(den);
   var gain = lead(num) / lead(den), nf = factorTerms(num, x, sig), df = factorTerms(den, x, sig);
@@ -1021,6 +1152,7 @@ function factoredStr(num, den, x, sig) {
   if (!df.length) return top;
   return top + ' / ' + (df.length === 1 ? df[0] : '(' + df.join('*') + ')');
 }
+/** @param {Poly} num @param {Poly} den @param {string} x @param {number} [sig] */
 function ratStr(num, den, x, sig) {
   var d = ptrim(den);
   if (d.length === 1) return polyStr(pscale(num, 1 / d[0]), x, sig);
@@ -1028,33 +1160,53 @@ function ratStr(num, den, x, sig) {
 }
 
 /* ---------- discretisation of G(s) and delay ---------- */
+/** @typedef {{ num: Poly, den: Poly }} Rational */
+/** @param {Poly} num @param {Poly} den @returns {Rational} */
 function monic(num, den) { var l = lead(den); return { num: ptrim(num.map(function (c) { return c / l; })), den: ptrim(den.map(function (c) { return c / l; })) }; }
+/**
+ * G(z) from G(s), with the worst mismatch against the exact sampled plant (null when it matches).
+ * @typedef {Rational & { mismatch?: { rel: number, dc: boolean } | null, gainMatchedAt?: number | null }} Discretised
+ */
+/** @param {Poly} num @param {Poly} den @param {number} T @returns {Discretised} */
 function zohDiscretise(num, den, T) {
   var nd = monic(num, den); num = nd.num; den = nd.den;
   var n = den.length - 1;
   if (n === 0) return { num: [num[0]], den: [1] };
-  var dd = num.length - 1 === n ? num[n] : 0, b = psub(num, pscale(den, dd)), i, j;
+  var dd = num.length - 1 === n ? num[n] : 0, b = psub(num, pscale(den, dd));
+  /** @type {number} */
+  var i;
+  /** @type {number} */
+  var j;
+  /** @type {number[][]} */
   var M = [];
   for (i = 0; i <= n; i++) M.push(new Array(n + 1).fill(0));
   for (i = 0; i < n - 1; i++) M[i][i + 1] = T;
   for (j = 0; j < n; j++) M[n - 1][j] = -den[j] * T;
   M[n - 1][n] = T;
-  var E = expm(M), Phi = [], Gam = [];
+  var E = expm(M);
+  /** @type {number[][]} */
+  var Phi = [];
+  /** @type {number[]} */
+  var Gam = [];
   for (i = 0; i < n; i++) { Phi.push(E[i].slice(0, n)); Gam.push(E[i][n]); }
+  /** @type {Complex[]} */
   var zp = [];
   rootsWithMultiplicity(den).forEach(function (it) { var e = cexp(cscale(it.r, T)); for (var q = 0; q < it.mult; q++) zp.push(e); });
   var denz = pfromRoots(zp), Mpts = n + 1;
   var rho = 1.25 * Math.max(1, Math.max.apply(null, zp.map(cabs)));
+  /** @param {Complex} z */
   function exact(z) {
     var xres = resolvent(Phi, Gam, z), g = cx(dd, 0);
     for (var q = 0; q < n; q++) g = cadd(g, cscale(xres[q], b[q] || 0));
     return g;
   }
+  /** @type {{ th: number, v: Complex }[]} */
   var vals = [];
   for (var k = 0; k < Mpts; k++) {
     var th = 2 * Math.PI * k / Mpts + Math.PI / Mpts, z = cscale(cexp(cx(0, th)), rho);
     vals.push({ th: th, v: cmul(exact(z), pevalC(denz, z)) });
   }
+  /** @type {number[]} */
   var numz = [];
   for (j = 0; j < Mpts; j++) {
     var acc = cx(0);
@@ -1064,8 +1216,10 @@ function zohDiscretise(num, den, T) {
   if (dd === 0) numz[n] = 0;
   var big = maxAbs(numz);
   numz = ptrim(numz.map(function (c) { return Math.abs(c) < 1e-12 * big ? 0 : c; }));
+  /** @type {{ z: Complex, want: Complex, dc?: boolean }[]} */
   var checks = [0, 1, 2].map(function (q) { var zc = cscale(cexp(cx(0, 2 * Math.PI * q / Mpts + 0.37)), rho); return { z: zc, want: exact(zc) }; });
   if (den[0] !== 0 && num[0] !== 0) checks.push({ z: cx(1), want: cx(num[0] / den[0]), dc: true });
+  /** @type {{ rel: number, dc: boolean } | null} */
   var worst = null;
   checks.forEach(function (c) {
     var got = cdiv(pevalC(numz, c.z), pevalC(denz, c.z)), rel = cabs(csub(got, c.want)) / cabs(c.want);
@@ -1073,8 +1227,10 @@ function zohDiscretise(num, den, T) {
   });
   return { num: numz, den: denz, mismatch: worst };
 }
+/** @param {Poly} num @param {Poly} den @param {number} T @returns {Discretised} */
 function tustinDiscretise(num, den, T) {
   var n = ptrim(den).length - 1, w = 2 / T;
+  /** @param {Poly} p */
   function map(p) {
     var r = [0];
     for (var k = 0; k < p.length; k++) if (p[k]) r = padd(r, pscale(pmul(ppow([-1, 1], k), ppow([1, 1], n - k)), p[k] * Math.pow(w, k)));
@@ -1082,12 +1238,17 @@ function tustinDiscretise(num, den, T) {
   }
   return monic(map(num), map(den));
 }
+/** @param {Poly} num @param {Poly} den @param {number} T @returns {Discretised} */
 function matchedDiscretise(num, den, T) {
-  var poles = proots(den), zeros = proots(num), n = poles.length, m = zeros.length, info = null;
+  var poles = proots(den), zeros = proots(num), n = poles.length, m = zeros.length;
+  /** @type {number | null} */
+  var info = null;
   var zp = poles.map(function (p) { return cexp(cscale(p, T)); });
   var zz = zeros.map(function (q) { return cexp(cscale(q, T)); });
   for (var i = 0; i < n - m; i++) zz.push(cx(-1));
-  var N0 = pfromRoots(zz), D0 = pfromRoots(zp), k;
+  var N0 = pfromRoots(zz), D0 = pfromRoots(zp);
+  /** @type {number} */
+  var k;
   var atOrigin = Math.abs(den[0]) <= 1e-12 * maxAbs(den) || Math.abs(num[0]) <= 1e-12 * maxAbs(num);
   if (!atOrigin) k = (num[0] / den[0]) / (pevalR(N0, 1) / pevalR(D0, 1));
   else {
@@ -1098,11 +1259,14 @@ function matchedDiscretise(num, den, T) {
     k = (ratio.re < 0 ? -1 : 1) * cabs(ratio);
     info = w0;
   }
+  /** @type {Discretised} */
   var out = monic(pscale(N0, k), D0);
   out.gainMatchedAt = info;
   return out;
 }
+/** @param {number} Td @param {number} order */
 function padeApprox(Td, order) {
+  /** @param {number} v */
   function fact(v) { var r = 1; for (var i = 2; i <= v; i++) r *= i; return r; }
   var num = [], den = [];
   for (var k = 0; k <= order; k++) {
@@ -1113,9 +1277,23 @@ function padeApprox(Td, order) {
 }
 
 /* ---------- inputs ---------- */
+/** @type {Record<string, string>} */
 var METHODS = { zoh: 'ZOH', tustin: 'Tustin', matched: 'matched pole-zero' };
 var REQ_KEYS = ['zetaMin', 'wnMin', 'wnMax', 'settlingTime'];
+/** @type {Record<string, string>} */
 var REQ_LABELS = { stability: 'strict stability', zetaMin: 'minimum damping ratio ζmin', wnMin: 'minimum natural frequency ωn,min', wnMax: 'maximum natural frequency ωn,max', settlingTime: 'settling time Ts (2%)' };
+/**
+ * The page's inputs, as a session record holds them: the mode, sample time and method, the C, G and H fields, the
+ * delay, K max and the chosen K, the requirements and pinned gains. Values arrive from people and agents, so
+ * every number is checked where it is read.
+ * @typedef {{
+ *   schema_version: number, mode: string, sampleTime: number | string | null, method: string | null,
+ *   fields: { C: string, G: string, H: string }, delay: { value: number, padeOrder: number },
+ *   kMax: number | string | null, k: number, requirements: Requirements, pins: { k: number }[],
+ * }} Inputs
+ */
+/** @typedef {{ zetaMin?: number | string | null, wnMin?: number | string | null, wnMax?: number | string | null, settlingTime?: number | string | null }} Requirements */
+/** @returns {Inputs} */
 function blankInputs() {
   return {
     schema_version: SCHEMA_VERSION, mode: 's', sampleTime: null, method: null,
@@ -1123,11 +1301,17 @@ function blankInputs() {
     requirements: { zetaMin: null, wnMin: null, wnMax: null, settlingTime: null }, pins: []
   };
 }
+/** @param {{ [K in keyof Inputs]?: Partial<Inputs[K]> | Inputs[K] }} over */
 function exampleInputs(over) {
   var b = blankInputs();
+  /** @type {Record<string, any>} the inputs, filled key by key from over */
+  var bk = b;
+  /** @type {Record<string, any>} */
+  var o = over;
   Object.keys(over).forEach(function (key) {
-    if (key === 'fields' || key === 'delay' || key === 'requirements') Object.assign(b[key], over[key]); else b[key] = over[key];
+    if (key === 'fields' || key === 'delay' || key === 'requirements') Object.assign(bk[key], o[key]); else bk[key] = o[key];
   });
+
   return b;
 }
 var EXAMPLES = [
@@ -1142,16 +1326,41 @@ var EXAMPLES = [
 ];
 
 /* ---------- build the loop L = K*C*G*H ---------- */
+/** @param {Poly} num @param {Poly} den */
 function isProper(num, den) { return ptrim(num).length <= ptrim(den).length; }
+/** @param {Poly} p */
 function orderOf(p) { return ptrim(p).length - 1; }
+/** @typedef {{ kind: string, level: string, text: string }} Warning */
+/**
+ * The open loop L = K·C·G·H: its fields, poles and zeros, and what the checks found. T is the sample time in the
+ * z-plane and null in the s-plane.
+ * @typedef {{
+ *   ok: true, mode: string, x: string, T: number | null, method: string | null,
+ *   delay: { kind: "samples", n: number } | { kind: "pade", Td: number, order: number },
+ *   fields: { C: Rational, G: Rational, H: Rational, Gs: Rational, Gz: Discretised | null },
+ *   num: Poly, den: Poly, poles: Complex[], zeros: Complex[], scale: number, warnings: Warning[],
+ *   hints: Record<string, string[]>, errors: Record<string, string>,
+ * }} Loop
+ */
+/** @param {Inputs} inputs @returns {Loop | { ok: false, errors: Record<string, string>, hints: Record<string, string[]> }} */
 function buildLoop(inputs) {
-  var mode = inputs.mode === 'z' ? 'z' : 's', x = mode, errors = {}, hints = {}, warnings = [];
-  var src = inputs.fields || {}, parsed = {};
+  var mode = inputs.mode === 'z' ? 'z' : 's', x = mode;
+  /** @type {Record<string, string>} */
+  var errors = {};
+  /** @type {Record<string, string[]>} */
+  var hints = {};
+  /** @type {Warning[]} */
+  var warnings = [];
+  /** @type {Record<string, string>} */
+  var src = inputs.fields || {};
+  /** @type {Record<string, ParsedField>} */
+  var parsed = {};
   [['C', x], ['G', 's'], ['H', x]].forEach(function (f) {
     var r = parseField(src[f[0]], f[1], f[0]);
     parsed[f[0]] = r;
     if (!r.ok) errors[f[0]] = r.error; else if (r.hints.length) hints[f[0]] = r.hints;
   });
+  /** @type {number | null} */
   var T = null;
   if (mode === 'z') {
     T = Number(inputs.sampleTime);
@@ -1164,20 +1373,29 @@ function buildLoop(inputs) {
   if (mode === 's' && dv > 0 && !(Number.isInteger(padeOrder) && padeOrder >= 1 && padeOrder <= 4)) errors.delay = 'The Padé order must be 1, 2, 3 or 4';
   if (Object.keys(errors).length) return { ok: false, errors: errors, hints: hints };
 
-  var C = parsed.C, Gs = { num: parsed.G.num, den: parsed.G.den }, H = parsed.H, G = Gs, Gz = null, method = null, delayInfo;
+  // No field failed, so each one parsed.
+  var C = /** @type {Rational} */ (parsed.C), Gs = { num: /** @type {Rational} */ (parsed.G).num, den: /** @type {Rational} */ (parsed.G).den }, H = /** @type {Rational} */ (parsed.H), G = Gs;
+  /** @type {Discretised | null} */
+  var Gz = null;
+  /** @type {string | null} */
+  var method = null;
+  /** @type {Loop["delay"]} */
+  var delayInfo;
   if (mode === 'z') {
-    method = METHODS[inputs.method] ? inputs.method : 'zoh';
+    var Ts = /** @type {number} set above for the z-plane */ (T);
+
+    method = inputs.method && METHODS[inputs.method] ? inputs.method : 'zoh';
     if (!isProper(Gs.num, Gs.den)) {
       errors.G = 'G(s) is improper: its numerator order ' + orderOf(Gs.num) + ' exceeds its denominator order ' + orderOf(Gs.den) + '. A proper plant (at least as many poles as zeros) is needed before discretisation.';
       return { ok: false, errors: errors, hints: hints };
     }
-    Gz = method === 'zoh' ? zohDiscretise(Gs.num, Gs.den, T) : method === 'tustin' ? tustinDiscretise(Gs.num, Gs.den, T) : matchedDiscretise(Gs.num, Gs.den, T);
+    Gz = method === 'zoh' ? zohDiscretise(Gs.num, Gs.den, Ts) : method === 'tustin' ? tustinDiscretise(Gs.num, Gs.den, Ts) : matchedDiscretise(Gs.num, Gs.den, Ts);
     if (Gz.mismatch) warnings.push({ kind: 'discretisation', level: 'warn', text: 'ZOH check: the coefficients of G(z) differ from the exact sampled plant by ' + (isFinite(Gz.mismatch.rel) ? fmt(Gz.mismatch.rel * 100, 2) + '%' : 'a non-finite amount') + (Gz.mismatch.dc ? ' in the DC gain' : ' off the fitting points') + '. Repeated or clustered poles close to z = 1 make the polynomial form ill-conditioned; the z-plane locus may be wrong. Try a larger T or a lower-order plant.' });
     if (Gz.gainMatchedAt) warnings.push({ kind: 'discretisation', level: 'info', text: 'Matched pole-zero: G has a pole or zero at s = 0, so the gain is matched at ω = ' + fmt(Gz.gainMatchedAt, 4) + ' rad/s instead of DC.' });
     G = { num: Gz.num, den: dv > 0 ? pmul(Gz.den, ppow([0, 1], dv)) : Gz.den };
     delayInfo = { kind: 'samples', n: dv };
     proots(Gs.den).forEach(function (p) {
-      if (cabs(p) * T > Math.PI && p.im >= 0) warnings.push({ kind: 'sampling', level: 'warn', text: 'G(s) has a pole at s = ' + fmtC(p, 4) + ' with |s| = ' + fmt(cabs(p), 4) + ' rad/s above the Nyquist frequency π/T = ' + fmt(Math.PI / T, 4) + ' rad/s: the sampling is too coarse for this mode.' });
+      if (cabs(p) * Ts > Math.PI && p.im >= 0) warnings.push({ kind: 'sampling', level: 'warn', text: 'G(s) has a pole at s = ' + fmtC(p, 4) + ' with |s| = ' + fmt(cabs(p), 4) + ' rad/s above the Nyquist frequency π/T = ' + fmt(Math.PI / Ts, 4) + ' rad/s: the sampling is too coarse for this mode.' });
     });
   } else {
     delayInfo = { kind: 'pade', Td: dv, order: padeOrder };
@@ -1190,7 +1408,7 @@ function buildLoop(inputs) {
   var num = pmul(pmul(C.num, G.num), H.num), den = pmul(pmul(C.den, G.den), H.den);
   var nd = monic(num, den); num = nd.num; den = nd.den;
   if (!isProper(num, den)) {
-    var who = ['G', 'C', 'H'].find(function (f) { var q = f === 'G' ? G : parsed[f]; return !isProper(q.num, q.den); }) || 'G';
+    var who = ['G', 'C', 'H'].find(function (f) { var q = f === 'G' ? G : /** @type {Rational} */ (parsed[f]); return !isProper(q.num, q.den); }) || 'G';
     errors[who] = 'The loop L = K·C·G·H is improper: numerator order ' + orderOf(num) + ' exceeds denominator order ' + orderOf(den) + ' (more zeros than poles), so branches would come in from infinity. Add poles (for example a filter) or check the expression.';
     return { ok: false, errors: errors, hints: hints };
   }
@@ -1203,17 +1421,20 @@ function buildLoop(inputs) {
     return { ok: false, errors: errors, hints: hints };
   }
   ['G', 'C', 'H'].forEach(function (f) {
-    var q = f === 'G' ? Gs : parsed[f];
+    var q = f === 'G' ? Gs : /** @type {Rational} */ (parsed[f]);
     if (!isProper(q.num, q.den)) warnings.push({ kind: 'improper', level: 'warn', text: f + ' is improper on its own (more zeros than poles), so it is not realisable by itself; the loop L is still proper.' });
   });
   var poles = proots(den), zeros = proots(num);
   var scale = Math.max.apply(null, [mode === 'z' ? 1 : 0].concat(poles.map(cabs), zeros.map(cabs)));
   if (!(scale > 0)) scale = 1;
+  /** @type {Loop} */
   var loop = { ok: true, mode: mode, x: x, T: T, method: method, delay: delayInfo, fields: { C: C, G: G, H: H, Gs: Gs, Gz: Gz }, num: num, den: den, poles: poles, zeros: zeros, scale: scale, warnings: warnings, hints: hints, errors: {} };
   checkCancellations(loop);
   return loop;
 }
+/** @param {Complex} p @param {string} mode */
 function isUnstablePoint(p, mode) { return mode === 'z' ? cabs(p) >= 1 - 1e-12 : p.re >= -1e-12 * Math.max(1, cabs(p)); }
+/** @param {Loop} loop */
 function checkCancellations(loop) {
   var used = loop.poles.map(function () { return false; }), x = loop.x;
   loop.zeros.forEach(function (z) {
@@ -1231,15 +1452,33 @@ function checkCancellations(loop) {
 }
 
 /* ---------- analytic annotations ---------- */
+/** @param {Complex} r @param {number} scale */
 function isRealRoot(r, scale) { return Math.abs(r.im) <= 1e-7 * Math.max(1, scale, cabs(r)); }
+/** @param {Loop} loop @param {Complex} x */
 function gainAt(loop, x) { return cdiv(cscale(pevalC(loop.den, x), -1), pevalC(loop.num, x)); }
+/** @param {Complex} K @param {number} big */
 function acceptGain(K, big) { return isFinite(K.re) && K.re > 1e-12 * Math.max(1, big) && Math.abs(K.im) <= 1e-6 * Math.max(1e-12, Math.abs(K.re)); }
 /* Chebyshev polynomials of the second kind in power form. */
+/** @param {number} k @returns {Poly} */
 function chebU(k) { var a = [1], b = [0, 2]; if (k === 0) return a; for (var i = 1; i < k; i++) { var c = psub(pmul([0, 2], b), a); a = b; b = c; } return b; }
+/**
+ * What the locus shows analytically: asymptotes, breakaway and break-in points, stability-boundary crossings and the
+ * real-axis segments.
+ * @typedef {{
+ *   asymptotes: { count: number, centroid: number, angles: number[] } | null,
+ *   breakpoints: { x: number, k: number, kind: string }[], crossings: { point: Complex, k: number, omega: number }[],
+ *   segments: number[][], alongBoundary: boolean,
+ * }} Annotations
+ */
+/** @param {Loop} loop @returns {Annotations} */
 function annotate(loop) {
-  var N = loop.num, D = loop.den, n = orderOf(D), m = orderOf(N), out = { asymptotes: null, breakpoints: [], crossings: [], segments: [], alongBoundary: false };
+  var N = loop.num, D = loop.den, n = orderOf(D), m = orderOf(N);
+  /** @type {Annotations} */
+  var out = { asymptotes: null, breakpoints: [], crossings: [], segments: [], alongBoundary: false };
   if (n > m) {
-    var sumP = -D[n - 1] / D[n], sumZ = m > 0 ? -N[m - 1] / N[m] : 0, positive = N[m] / D[n] > 0, angles = [];
+    var sumP = -D[n - 1] / D[n], sumZ = m > 0 ? -N[m - 1] / N[m] : 0, positive = N[m] / D[n] > 0;
+    /** @type {number[]} */
+    var angles = [];
     for (var q = 0; q < n - m; q++) angles.push(((positive ? 2 * q + 1 : 2 * q) * 180 / (n - m)) % 360);
     out.asymptotes = { count: n - m, centroid: (sumP - sumZ) / (n - m), angles: angles.sort(function (a, b) { return a - b; }) };
   }
@@ -1260,6 +1499,7 @@ function annotate(loop) {
     out.breakpoints.sort(function (a, b) { return b.x - a.x; });
   }
   // stability-boundary crossings
+  /** @param {Complex} pt @param {number} omega */
   function addCrossing(pt, omega) {
     var K = gainAt(loop, pt);
     if (!acceptGain(K, 1e-12)) return;
@@ -1268,7 +1508,7 @@ function annotate(loop) {
   }
   if (loop.mode === 's') {
     // D(jw) = DR(w) + j DI(w); Im(D conj N) = DI*NR - DR*NI is a real polynomial in w
-    var split = function (p) { var re = [], im = []; p.forEach(function (c, k) { var r = k % 4; re.push(r === 0 ? c : r === 2 ? -c : 0); im.push(r === 1 ? c : r === 3 ? -c : 0); }); return { re: ptrim(re), im: ptrim(im) }; };
+    var split = function (/** @type {Poly} */ p) { var re = /** @type {number[]} */ ([]), im = /** @type {number[]} */ ([]); p.forEach(function (c, k) { var r = k % 4; re.push(r === 0 ? c : r === 2 ? -c : 0); im.push(r === 1 ? c : r === 3 ? -c : 0); }); return { re: ptrim(re), im: ptrim(im) }; };
     var Ds = split(D), Ns = split(N), P = ptrim(psub(pmul(Ds.im, Ns.re), pmul(Ds.re, Ns.im)), 1e-13);
     if (maxAbs(P) === 0 || (P.length === 1 && Math.abs(P[0]) <= 1e-13 * maxAbs(D) * maxAbs(N))) out.alongBoundary = true;
     else proots(P).forEach(function (r) {
@@ -1278,7 +1518,9 @@ function annotate(loop) {
     });
   } else {
     // Im(D(e^{jθ}) conj N(e^{jθ})) = sinθ * P(cosθ), with P built from Chebyshev U polynomials
-    var cc = {}, lo = -(N.length - 1), hi = D.length - 1, Pz = [0];
+    /** @type {Record<number, number>} */
+    var cc = {};
+    var lo = -(N.length - 1), hi = D.length - 1, Pz = [0];
     D.forEach(function (d, k) { N.forEach(function (nn, l) { cc[k - l] = (cc[k - l] || 0) + d * nn; }); });
     for (var mm = 1; mm <= Math.max(hi, -lo); mm++) {
       var coef = (cc[mm] || 0) - (cc[-mm] || 0);
@@ -1286,20 +1528,24 @@ function annotate(loop) {
     }
     Pz = ptrim(Pz, 1e-13);
     addCrossing(cx(1, 0), 0);
-    addCrossing(cx(-1, 0), Math.PI / loop.T);
+    var T = /** @type {number} the z-plane has a sample time */ (loop.T);
+    addCrossing(cx(-1, 0), Math.PI / T);
     if (maxAbs(Pz) === 0) out.alongBoundary = true;
     else proots(Pz).forEach(function (r) {
       if (!isRealRoot(r, 1) || r.re <= -1 || r.re >= 1) return;
       var th = Math.acos(r.re);
-      addCrossing(cexp(cx(0, th)), th / loop.T);
+      addCrossing(cexp(cx(0, th)), th / T);
     });
   }
   out.crossings.sort(function (a, b) { return a.k - b.k; });
   // real-axis segments on the locus for K > 0
   var pts = loop.poles.concat(loop.zeros).filter(function (r) { return isRealRoot(r, loop.scale); }).map(function (r) { return r.re; }).sort(function (a, b) { return a - b; });
+  /** @type {number[]} */
   var uniq = [];
   pts.forEach(function (v) { if (!uniq.length || Math.abs(v - uniq[uniq.length - 1]) > 1e-9 * Math.max(1, Math.abs(v))) uniq.push(v); });
-  var edges = [-Infinity].concat(uniq, [Infinity]), segs = [];
+  var edges = [-Infinity].concat(uniq, [Infinity]);
+  /** @type {number[][]} */
+  var segs = [];
   for (var i = 0; i + 1 < edges.length; i++) {
     var a = edges[i], b = edges[i + 1], mid = !isFinite(a) && !isFinite(b) ? 0 : !isFinite(a) ? b - loop.scale - 1 : !isFinite(b) ? a + loop.scale + 1 : (a + b) / 2;
     var Nv = pevalR(N, mid), K = -pevalR(D, mid) / Nv;
@@ -1312,15 +1558,19 @@ function annotate(loop) {
 }
 
 /* ---------- K-sweep with root tracking ---------- */
+/** @param {number} v */
 function niceCeil(v) {
   if (!(v > 0) || !isFinite(v)) return 1;
   var e = Math.floor(Math.log10(v)), f = v / Math.pow(10, e);
   var g = f <= 1 + 1e-9 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10;
   return Number((g * Math.pow(10, e)).toPrecision(12));
 }
+/** @param {Loop} loop @param {Annotations} ann */
 function autoKMax(loop, ann) {
   var ks = ann.breakpoints.map(function (b) { return b.k; }).concat(ann.crossings.map(function (c) { return c.k; })).filter(function (k) { return k > 0 && isFinite(k); });
-  var kAnn = ks.length ? 3 * Math.max.apply(null, ks) : 0, kFar;
+  var kAnn = ks.length ? 3 * Math.max.apply(null, ks) : 0;
+  /** @type {number} */
+  var kFar;
   if (ann.asymptotes) {
     var th = ann.asymptotes.angles[0] * Math.PI / 180, R = 2.5 * loop.scale + Math.abs(ann.asymptotes.centroid);
     var p = cx(ann.asymptotes.centroid + R * Math.cos(th), R * Math.sin(th));
@@ -1334,9 +1584,12 @@ function autoKMax(loop, ann) {
   }
   return niceCeil(Math.max(kAnn, kFar, 1e-9));
 }
+/** @param {Loop} loop @param {number} k */
 function charPoly(loop, k) { return padd(loop.den, pscale(loop.num, k)); }
+/** @param {Loop} loop @param {number} k */
 function rootsAt(loop, k) { return proots(charPoly(loop, k)); }
 /* Minimum-cost assignment (Hungarian algorithm); returns col index for each row. */
+/** @param {number[][]} cost @returns {number[]} */
 function hungarian(cost) {
   var n = cost.length, INF = 1e300, u = new Array(n + 1).fill(0), v = new Array(n + 1).fill(0), p = new Array(n + 1).fill(0), way = new Array(n + 1).fill(0);
   for (var i = 1; i <= n; i++) {
@@ -1360,23 +1613,35 @@ function hungarian(cost) {
   return ans;
 }
 /* Match new roots to the previous row by nearest neighbour (optimal assignment) and check continuity. */
+/** @typedef {(Complex | null)[]} RootRow the closed-loop roots at one K, in branch order (null for a branch at infinity) */
+/** @param {RootRow} prev @param {Complex[]} found @param {number} scale @returns {{ row: RootRow, ok: boolean }} */
 function matchRoots(prev, found, scale) {
-  var n = prev.length, BIG = 1e12, cost = [], cols = found.slice();
+  var n = prev.length, BIG = 1e12;
+  /** @type {number[][]} */
+  var cost = [];
+  /** @type {RootRow} */
+  var cols = found.slice();
   while (cols.length < n) cols.push(null);
   for (var i = 0; i < n; i++) {
-    cost.push(cols.map(function (c) { return prev[i] && c ? Math.pow(cdist(prev[i], c), 2) : prev[i] || c ? BIG : 0; }));
+    var pv = prev[i];
+    cost.push(cols.map(function (c) { return pv && c ? Math.pow(cdist(pv, c), 2) : pv || c ? BIG : 0; }));
   }
   var asg = hungarian(cost), row = asg.map(function (j) { return cols[j]; }), ok = true;
   for (i = 0; i < n; i++) {
     if (!prev[i] || !row[i]) { if (!!prev[i] !== !!row[i]) ok = false; continue; }
-    var d = cdist(prev[i], row[i]), sep = Infinity;
-    for (var j = 0; j < n; j++) if (j !== i && prev[j]) sep = Math.min(sep, cdist(prev[i], prev[j]));
-    if (d > Math.max(scale / 150, 0.05 * cabs(prev[i])) || d > 0.35 * sep) ok = false;
+    var pi = /** @type {Complex} */ (prev[i]), d = cdist(pi, /** @type {Complex} */ (row[i])), sep = Infinity;
+    for (var j = 0; j < n; j++) { var pj = prev[j]; if (j !== i && pj) sep = Math.min(sep, cdist(pi, pj)); }
+    if (d > Math.max(scale / 150, 0.05 * cabs(pi)) || d > 0.35 * sep) ok = false;
   }
   return { row: row, ok: ok };
 }
+/** @typedef {{ ks: number[], rows: RootRow[], limited: boolean, kMax: number }} Locus */
+/** @param {Loop} loop @param {number} kMax @param {number[]} [mandatory] @returns {Locus} */
 function sweepLocus(loop, kMax, mandatory) {
-  var n = orderOf(loop.den), ks = [0], rows = [], limited = false;
+  var n = orderOf(loop.den), ks = [0], limited = false;
+  /** @type {RootRow[]} */
+  var rows = [];
+  /** @type {RootRow} */
   var start = rootsAt(loop, 0);
   while (start.length < n) start.push(null);
   rows.push(start);
@@ -1397,24 +1662,41 @@ function sweepLocus(loop, kMax, mandatory) {
 }
 
 /* ---------- requirements ---------- */
+/** @typedef {Record<string, number>} ActiveRequirements the set requirements by key (zetaMin, wnMin, wnMax, settlingTime), as numbers */
+/** @param {Requirements | null | undefined} reqs @returns {ActiveRequirements} */
 function activeRequirements(reqs) {
-  var r = reqs || {}, out = {};
+  /** @type {Record<string, unknown>} */
+  var r = reqs || {};
+  /** @type {Record<string, number>} */
+  var out = {};
   REQ_KEYS.forEach(function (key) { var v = r[key]; if (v !== null && v !== undefined && v !== '' && isFinite(Number(v))) out[key] = Number(v); });
   return out;
 }
+/** @typedef {{ mode: string, T: number | null, scale: number }} PlaneContext */
+/**
+ * @param {Complex} p @param {ActiveRequirements} reqs @param {PlaneContext} ctx
+ * @returns {{ pole: Complex, s: Complex, zeta: number, wn: number, sigma: number, stable: boolean, violations: Record<string, number>, fails: string[], pass: boolean }}
+ */
 function assessPole(p, reqs, ctx) {
-  var s, stable, stabV, tol = 1e-10;
+  /** @type {Complex} */
+  var s;
+  /** @type {boolean} */
+  var stable;
+  /** @type {number} */
+  var stabV;
+  var tol = 1e-10;
   if (ctx.mode === 'z') {
     var r = cabs(p);
     stable = r < 1 - tol;
     stabV = stable ? 0 : Math.max(r - 1 + tol, 1e-12);
-    s = r === 0 ? cx(-Infinity, 0) : cscale(clog(p), 1 / ctx.T);
+    s = r === 0 ? cx(-Infinity, 0) : cscale(clog(p), 1 / /** @type {number} the z-plane has a sample time */ (ctx.T));
   } else {
     s = p;
     stable = p.re < -tol * Math.max(1, ctx.scale);
     stabV = stable ? 0 : Math.max((p.re + tol * Math.max(1, ctx.scale)) / ctx.scale, 1e-12);
   }
   var wn = s.re === -Infinity ? Infinity : cabs(s), zeta = s.re === -Infinity ? 1 : wn > 0 ? -s.re / wn : NaN;
+  /** @type {Record<string, number>} */
   var v = { stability: Math.min(stabV, 10) };
   if (reqs.zetaMin !== undefined) v.zetaMin = isNaN(zeta) ? 0 : Math.max(0, reqs.zetaMin - zeta);
   if (reqs.wnMin !== undefined) v.wnMin = Math.max(0, (reqs.wnMin - wn) / reqs.wnMin);
@@ -1423,16 +1705,24 @@ function assessPole(p, reqs, ctx) {
   var fails = Object.keys(v).filter(function (key) { return v[key] > 0; });
   return { pole: p, s: s, zeta: zeta, wn: wn, sigma: s.re, stable: stable, violations: v, fails: fails, pass: fails.length === 0 };
 }
+/** @param {RootRow} roots @param {ActiveRequirements} reqs @param {PlaneContext} ctx */
 function assessRoots(roots, reqs, ctx) {
-  var list = roots.filter(Boolean).map(function (p) { return assessPole(p, reqs, ctx); }), sums = {}, score = 0;
+  var list = roots.filter(function (p) { return p !== null; }).map(function (p) { return assessPole(p, reqs, ctx); });
+  /** @type {Record<string, number>} */
+  var sums = {};
+  var score = 0;
   list.forEach(function (a) { Object.keys(a.violations).forEach(function (key) { sums[key] = (sums[key] || 0) + a.violations[key]; score += a.violations[key]; }); });
   return { poles: list, pass: list.every(function (a) { return a.pass; }), stable: list.every(function (a) { return a.stable; }), sums: sums, score: score };
 }
+/** @param {Loop} loop @returns {PlaneContext} */
 function ctxOf(loop) { return { mode: loop.mode, T: loop.T, scale: loop.scale }; }
+/** @param {Loop} loop @param {Locus} locus @param {Requirements} reqsIn */
 function scanRequirements(loop, locus, reqsIn) {
   var reqs = activeRequirements(reqsIn), ctx = ctxOf(loop), kMax = locus.kMax;
   var samples = locus.ks.map(function (k, i) { var a = assessRoots(locus.rows[i], reqs, ctx); return { k: k, pass: a.pass, score: a.score, sums: a.sums }; });
+  /** @param {number} k */
   function passAt(k) { return assessRoots(rootsAt(loop, k), reqs, ctx).pass; }
+  /** @param {number} lo @param {number} hi @param {boolean} loPass */
   function edge(lo, hi, loPass) {
     for (var it = 0; it < 200 && hi - lo > 1e-13 * Math.max(hi, 1e-300); it++) {
       var mid = 0.5 * (lo + hi);
@@ -1440,32 +1730,43 @@ function scanRequirements(loop, locus, reqsIn) {
     }
     return 0.5 * (lo + hi);
   }
-  var intervals = [], open = null;
+  /** @type {{ lo: number, hi: number, toKMax?: boolean }[]} */
+  var intervals = [];
+  var open = /** @type {{ lo: number } | null} */ (null);
   samples.forEach(function (smp, i) {
     if (i === 0) { if (smp.pass) open = { lo: 0 }; return; }
     var prev = samples[i - 1];
     if (smp.pass !== prev.pass) {
       var b = edge(prev.k, smp.k, prev.pass);
-      if (smp.pass) open = { lo: b }; else { intervals.push({ lo: open.lo, hi: b }); open = null; }
+      if (smp.pass) open = { lo: b }; else { intervals.push({ lo: /** @type {{ lo: number }} a failing sample after a passing one closes an open interval */ (open).lo, hi: b }); open = null; }
     }
   });
   if (open) intervals.push({ lo: open.lo, hi: kMax, toKMax: true });
   intervals.forEach(function (iv) { if (iv.lo < 1e-8 * kMax) iv.lo = 0; });
+  /** @type {{ requirements: ActiveRequirements, active: string[], intervals: typeof intervals, nearest: { k: number, binding: string, failing: string[] } | null }} */
   var result = { requirements: reqs, active: Object.keys(reqs), intervals: intervals, nearest: null };
   if (!intervals.length) {
-    var best = null;
+    var best = /** @type {(typeof samples)[number] | null} */ (null);
     samples.forEach(function (smp) { if (smp.k > 0 && (!best || smp.score < best.score)) best = smp; });
     if (best) {
-      var keys = Object.keys(best.sums).filter(function (key) { return best.sums[key] > 0; });
-      keys.sort(function (a, b) { return best.sums[b] - best.sums[a]; });
+      var sums = best.sums;
+      var keys = Object.keys(sums).filter(function (key) { return sums[key] > 0; });
+      keys.sort(function (a, b) { return sums[b] - sums[a]; });
       result.nearest = { k: best.k, binding: keys[0] || 'stability', failing: keys };
     }
   }
   return result;
 }
+/** @param {Complex} point @param {Requirements} reqsIn @param {Loop} loop */
 function inRegion(point, reqsIn, loop) { return assessPole(point, activeRequirements(reqsIn), ctxOf(loop)).pass; }
 
 /* ---------- full analysis ---------- */
+/**
+ * The full analysis of a loop: annotations, the K sweep and the requirement scan.
+ * @typedef {{ ok: true, loop: Loop, annotations: Annotations, kMax: number, kMaxAuto: number, locus: Locus, scan: ReturnType<typeof scanRequirements>, warnings: Warning[], hints: Record<string, string[]> }} Analysis
+ */
+/** @typedef {{ ok: false, errors: Record<string, string>, hints: Record<string, string[]> }} Failure */
+/** @param {Inputs} inputs @returns {Analysis | Failure} */
 function analyze(inputs) {
   var loop = buildLoop(inputs);
   if (!loop.ok) return { ok: false, errors: loop.errors, hints: loop.hints || {} };
@@ -1477,14 +1778,17 @@ function analyze(inputs) {
   if (locus.limited) warnings.push({ kind: 'sweep', level: 'warn', text: 'The K sweep hit its limit of ' + SWEEP_LIMIT + ' samples before K max; the drawn locus stops at K = ' + fmt(locus.ks[locus.ks.length - 1], 4) + '.' });
   if (ann.alongBoundary) warnings.push({ kind: 'boundary', level: 'warn', text: 'Part of the locus runs along the ' + (loop.mode === 'z' ? 'unit circle' : 'imaginary axis') + ', so there is no single crossing gain.' });
   if (loop.mode === 'z') {
-    var r = activeRequirements(inputs.requirements), ny = Math.PI / loop.T;
+    var Tz = /** @type {number} the z-plane has a sample time */ (loop.T);
+    var r = activeRequirements(inputs.requirements), ny = Math.PI / Tz;
     if (r.wnMax !== undefined && r.wnMax > ny) warnings.push({ kind: 'sampling', level: 'warn', text: 'ωn,max = ' + fmt(r.wnMax, 4) + ' rad/s exceeds the Nyquist frequency π/T = ' + fmt(ny, 4) + ' rad/s; above it the z-plane cannot tell frequencies apart.' });
     if (r.wnMin !== undefined && r.wnMin >= ny) warnings.push({ kind: 'sampling', level: 'warn', text: 'ωn,min = ' + fmt(r.wnMin, 4) + ' rad/s is at or above the Nyquist frequency π/T = ' + fmt(ny, 4) + ' rad/s: the sampling is too coarse to represent this requirement.' });
-    if (r.settlingTime !== undefined && r.settlingTime < 10 * loop.T) warnings.push({ kind: 'sampling', level: 'warn', text: 'Ts = ' + fmt(r.settlingTime, 4) + ' s spans only ' + fmt(r.settlingTime / loop.T, 3) + ' samples: the sampling is too coarse to represent this settling time well.' });
+    if (r.settlingTime !== undefined && r.settlingTime < 10 * Tz) warnings.push({ kind: 'sampling', level: 'warn', text: 'Ts = ' + fmt(r.settlingTime, 4) + ' s spans only ' + fmt(r.settlingTime / Tz, 3) + ' samples: the sampling is too coarse to represent this settling time well.' });
   }
   var scan = scanRequirements(loop, locus, inputs.requirements);
   return { ok: true, loop: loop, annotations: ann, kMax: kMax, kMaxAuto: kAuto, locus: locus, scan: scan, warnings: warnings, hints: loop.hints };
 }
+/** @typedef {ReturnType<typeof assessPole>} PoleAssessment */
+/** @param {Analysis} analysis @param {number} k @param {Requirements} reqsIn */
 function closedLoopAt(analysis, k, reqsIn) {
   var loop = analysis.loop, F = loop.fields;
   var roots = rootsAt(loop, k), a = assessRoots(roots, activeRequirements(reqsIn), ctxOf(loop));
@@ -1493,13 +1797,17 @@ function closedLoopAt(analysis, k, reqsIn) {
   var l = lead(td);
   return { k: k, poles: a.poles, stable: a.stable, pass: a.pass, T: { num: pscale(tn, 1 / l), den: pscale(td, 1 / l) } };
 }
+/** @typedef {ReturnType<typeof closedLoopAt>} ClosedLoop */
+/** @param {ClosedLoop} atk */
 function dominant(atk) { return atk.poles[0] || null; }
 
 /* ---------- intervals and verdict text ---------- */
+/** @param {{ lo: number, hi: number, toKMax?: boolean }} iv @param {number} sig */
 function intervalText(iv, sig) {
   if (iv.toKMax) return (iv.lo === 0 ? '0 < K' : 'K > ' + fmt(iv.lo, sig)) + ' (up to K max = ' + fmt(iv.hi, sig) + ', the end of the sweep)';
   return fmt(iv.lo, sig) + ' < K < ' + fmt(iv.hi, sig);
 }
+/** @param {Analysis} analysis @param {number} sig */
 function verdictText(analysis, sig) {
   var scan = analysis.scan;
   if (scan.intervals.length) return (scan.active.length ? 'Gains meeting all requirements: ' : 'Stable gains: ') + scan.intervals.map(function (iv) { return intervalText(iv, sig); }).join('; ');
@@ -1507,23 +1815,29 @@ function verdictText(analysis, sig) {
   return (scan.active.length ? 'No gain meets all requirements' : 'No gain in 0 < K ≤ ' + fmt(analysis.kMax, sig) + ' is stable') +
     (near ? '. Nearest miss at K = ' + fmt(near.k, sig) + '; binding requirement: ' + REQ_LABELS[near.binding] + (near.failing.length > 1 ? ' (also failing: ' + near.failing.slice(1).map(function (key) { return REQ_LABELS[key]; }).join(', ') + ')' : '') : '') + '.';
 }
+/** @param {Annotations["crossings"][number]} c @param {Loop} loop @param {number} sig */
 function crossingText(c, loop, sig) {
   if (loop.mode === 'z') return 'K = ' + fmt(c.k, sig) + ' at z = ' + fmtC(c.point, sig) + (c.point.im ? ' (and conjugate)' : '') + ', ω = ' + fmt(c.omega, sig) + ' rad/s';
   return 'K = ' + fmt(c.k, sig) + ' at ω = ' + fmt(c.omega, sig) + ' rad/s (s = ' + (c.omega ? '±' + fmt(c.omega, sig) + 'j' : '0') + ')';
 }
+/** @param {PoleAssessment} a @param {Loop} loop @param {number} sig */
 function poleRow(a, loop, sig) {
   return { pole: fmtC(a.pole, sig), s: loop.mode === 'z' ? (isFinite(a.s.re) ? fmtC(a.s, sig) : '-∞') : null, zeta: fmt(a.zeta, sig), wn: fmt(a.wn, sig), stable: a.stable };
 }
 
 /* ---------- Markdown record ---------- */
 /* Every requirement some closed-loop pole fails at this K, each named once, in the order met. */
+/** @param {ClosedLoop} at */
 function failingRequirements(at) {
+  /** @type {string[]} */
   var failing = [];
   at.poles.forEach(function (a) { a.fails.forEach(function (f) { if (failing.indexOf(f) < 0) failing.push(f); }); });
   return failing;
 }
 /* The parser's per-field hints as "G: …" lines. */
-function hintLines(analysis) { return Object.keys(analysis.hints || {}).map(function (f) { return f + ': ' + analysis.hints[f].join(' '); }); }
+/** @param {{ hints?: Record<string, string[]> }} analysis */
+function hintLines(analysis) { var hints = analysis.hints || {}; return Object.keys(hints).map(function (f) { return f + ': ' + hints[f].join(' '); }); }
+/** @param {Inputs} inputs */
 function recordJson(inputs) {
   var r = inputs.requirements || {};
   return {
@@ -1536,34 +1850,39 @@ function recordJson(inputs) {
     pins: (inputs.pins || []).map(function (p) { return { k: Number(p.k) }; })
   };
 }
+/** @param {unknown} s */
 function mdCode(s) { return '`' + String(s).replace(/`/g, "'").replace(/\|/g, '\\|').replace(/\n/g, '; ') + '`'; }
+/** @param {Inputs} inputs @param {{ analysis?: Analysis | Failure, date?: string }} [opts] */
 function exportMarkdown(inputs, opts) {
   opts = opts || {};
-  var analysis = opts.analysis || analyze(inputs);
+  const analysis = opts.analysis || analyze(inputs);
   if (!analysis.ok) throw new Error('Cannot export: ' + Object.keys(analysis.errors).map(function (key) { return key + ': ' + analysis.errors[key]; }).join('; '));
   var S = 6, loop = analysis.loop, x = loop.x, F = loop.fields, ann = analysis.annotations, k = Number(inputs.k), atk = closedLoopAt(analysis, k, inputs.requirements);
+  /** @type {ReturnType<typeof recordJson> & { kMax: number | null }} */
   var json = recordJson(inputs);
   json.kMax = analysis.kMax;
+  /** @type {string[]} */
   var L = [];
   L.push('# Root locus design check', '', 'Date: ' + (opts.date || new Date().toISOString().slice(0, 10)), '');
   L.push('## Mode', '');
   if (loop.mode === 's') L.push('- Plane: s-plane (continuous time)');
-  else L.push('- Plane: z-plane (discrete time)', '- Sample time: T = ' + fmt(loop.T, S) + ' s', '- Discretisation of G: ' + METHODS[loop.method]);
+  else L.push('- Plane: z-plane (discrete time)', '- Sample time: T = ' + fmt(loop.T, S) + ' s', '- Discretisation of G: ' + METHODS[/** @type {string} the z-plane has a method */ (loop.method)]);
   if (loop.delay.kind === 'pade') L.push(loop.delay.Td > 0 ? '- Delay: Td = ' + fmt(loop.delay.Td, S) + ' s, Padé approximation of order ' + loop.delay.order + ' (adds ' + loop.delay.order + ' right-half-plane zeros)' : '- Delay: none');
   else L.push(loop.delay.n > 0 ? '- Delay: n = ' + loop.delay.n + (loop.delay.n === 1 ? ' sample' : ' samples') + ', factor z**-' + loop.delay.n + ' (exact)' : '- Delay: none');
   L.push('', '## Loop', '', 'Open loop L = K·C·G·H. Polynomials are normalised so each denominator is monic.', '');
   L.push('| Block | Entered | Numerator | Denominator | Factored form |', '|---|---|---|---|---|');
+  /** @param {string} name @param {string | null} entered @param {Rational} nd @param {string} v */
   function row(name, entered, nd, v) { L.push('| ' + name + ' | ' + (entered == null ? '' : mdCode(entered)) + ' | ' + mdCode(polyStr(nd.num, v, S)) + ' | ' + mdCode(polyStr(nd.den, v, S)) + ' | ' + mdCode(factoredStr(nd.num, nd.den, v, S)) + ' |'); }
   row('C(' + x + ')', inputs.fields.C, F.C, x);
-  if (loop.mode === 'z') { row('G(s)', inputs.fields.G, F.Gs, 's'); row('G(z), ' + METHODS[loop.method], null, F.Gz, 'z'); }
-  else row('G(s)' + (loop.delay.Td > 0 ? ' with Padé delay' : ''), inputs.fields.G, F.G, 's');
+  if (loop.mode === 'z') { row('G(s)', inputs.fields.G, F.Gs, 's'); row('G(z), ' + METHODS[/** @type {string} */ (loop.method)], null, /** @type {Discretised} the z-plane discretised G */ (F.Gz), 'z'); }
+  else row('G(s)' + (loop.delay.kind === 'pade' && loop.delay.Td > 0 ? ' with Padé delay' : ''), inputs.fields.G, F.G, 's');
   row('H(' + x + ')', inputs.fields.H, F.H, x);
   row('L(' + x + ')/K', null, { num: loop.num, den: loop.den }, x);
   L.push('', '## Chosen gain and closed loop', '', '- K = ' + fmt(k, S), '- Closed loop T(' + x + ') = K·C·G / (1 + K·C·G·H) = ' + mdCode(ratStr(atk.T.num, atk.T.den, x, S)), '- Factored: ' + mdCode(factoredStr(atk.T.num, atk.T.den, x, S)), '- Stability at this K: ' + (atk.stable ? 'Stable' : 'Unstable'));
   L.push('', '## Closed-loop poles at K = ' + fmt(k, S), '');
   if (loop.mode === 'z') { L.push('| Pole z | Equivalent s = ln(z)/T | Damping ratio ζ | Natural frequency ωn (rad/s) | Stable |', '|---|---|---|---|---|'); }
   else L.push('| Pole s | Damping ratio ζ | Natural frequency ωn (rad/s) | Stable |', '|---|---|---|---|');
-  atk.poles.forEach(function (a) { var r = poleRow(a, loop, S); L.push('| ' + [r.pole].concat(loop.mode === 'z' ? [r.s] : [], [r.zeta, r.wn, r.stable ? 'yes' : 'no']).join(' | ') + ' |'); });
+  atk.poles.forEach(function (a) { var r = poleRow(a, loop, S); L.push('| ' + /** @type {(string | null)[]} */ ([r.pole]).concat(loop.mode === 'z' ? [r.s] : [], [r.zeta, r.wn, r.stable ? 'yes' : 'no']).join(' | ') + ' |'); });
   L.push('', '## Locus annotations', '');
   L.push('- Critical K (' + (loop.mode === 'z' ? 'unit-circle' : 'imaginary-axis') + ' crossings): ' + (ann.crossings.length ? ann.crossings.map(function (c) { return crossingText(c, loop, S); }).join('; ') : 'none for K > 0'));
   L.push('- Breakaway and break-in points: ' + (ann.breakpoints.length ? ann.breakpoints.map(function (b) { return b.kind + ' at ' + x + ' = ' + fmt(b.x, S) + ' (K = ' + fmt(b.k, S) + ')'; }).join('; ') : 'none on the real axis'));
@@ -1597,18 +1916,22 @@ function exportMarkdown(inputs, opts) {
 }
 
 /* ---------- import ---------- */
+/** @param {any} obj parsed JSON from a record, checked key by key below @returns {Inputs} */
 function validateRecord(obj) {
+  /** @param {string} msg @returns {never} */
   function fail(msg) { throw new InputError(msg, 0); }
+  /** @template {boolean} [O=false] @param {unknown} v @param {string} name @param {O} [opt] @returns {O extends true ? number | null : number} */
   function num(v, name, opt) {
-    if (v === null && opt) return null;
+    if (v === null && opt) return /** @type {any} null only when opt allows it */ (null);
     if (typeof v !== 'number' || !isFinite(v)) fail('`' + name + '` must be a number' + (opt ? ' or null' : ''));
-    return v;
+    return /** @type {any} a finite number */ (v);
   }
   if (!obj || typeof obj !== 'object' || Array.isArray(obj)) fail('The record must be a JSON object');
   var allowed = ['schema_version', 'mode', 'sampleTime', 'method', 'fields', 'delay', 'kMax', 'k', 'requirements', 'pins'];
   Object.keys(obj).forEach(function (key) { if (allowed.indexOf(key) < 0) fail('Unknown key `' + key + '`'); });
   if (obj.schema_version !== SCHEMA_VERSION) fail('Unsupported schema_version ' + JSON.stringify(obj.schema_version) + ': this tool reads version ' + SCHEMA_VERSION + '.');
   if (obj.mode !== 's' && obj.mode !== 'z') fail('`mode` must be "s" or "z"');
+  /** @type {Record<string, any>} filled key by key from the record */
   var out = blankInputs();
   out.mode = obj.mode;
   if (obj.mode === 'z') {
@@ -1646,89 +1969,109 @@ function validateRecord(obj) {
   }
   if (obj.pins !== undefined) {
     if (!Array.isArray(obj.pins)) fail('`pins` must be a list');
-    out.pins = obj.pins.map(function (p, i) {
+    out.pins = obj.pins.map(function (/** @type {any} a pin from the record */ p, /** @type {number} */ i) {
       if (!p || typeof p !== 'object') fail('pin ' + (i + 1) + ' must be an object like {"k": 2}');
       var kk = num(p.k, 'pins[' + i + '].k');
       if (kk < 0) fail('pin ' + (i + 1) + ' has a negative K');
       return { k: kk };
     });
   }
-  return out;
+  return /** @type {Inputs} */ (out);
 }
+/** @param {unknown} text @returns {{ ok: true, inputs: Inputs } | { ok: false, error: string }} */
 function parseRecord(text) {
   try {
-    text = String(text == null ? '' : text).trim();
-    if (!text) throw new InputError('The record is empty', 0);
+    var str = String(text == null ? '' : text).trim();
+    if (!str) throw new InputError('The record is empty', 0);
     var body;
-    if (text[0] === '{') body = text;
+    if (str[0] === '{') body = str;
     else {
-      var m = /```json[^\n]*\n([\s\S]*?)\n```/.exec(text);
+      var m = /```json[^\n]*\n([\s\S]*?)\n```/.exec(str);
       if (!m) throw new InputError('No fenced ```json block was found in the Markdown', 0);
       body = m[1];
     }
     var obj;
-    try { obj = JSON.parse(body); } catch (e) { throw new InputError('The JSON block is malformed: ' + e.message, 0); }
+    try { obj = JSON.parse(body); } catch (e) { throw new InputError('The JSON block is malformed: ' + /** @type {Error} */ (e).message, 0); }
     return { ok: true, inputs: validateRecord(obj) };
   } catch (e) {
     if (e instanceof InputError) return { ok: false, error: e.message };
     throw e;
   }
 }
+/** @param {Inputs} [inputs] @returns {{ inputs: Inputs }} */
 function createSession(inputs) { return { inputs: JSON.parse(JSON.stringify(inputs || EXAMPLES[0].inputs)) }; }
 /* Validate and fully recompute an imported record before anything changes; on any error the session is returned untouched. */
+/** @param {{ inputs: Inputs }} session @param {unknown} text */
 function applyImport(session, text) {
   var parsed = parseRecord(text);
   if (!parsed.ok) return { session: session, error: parsed.error };
-  var a = analyze(parsed.inputs);
+  const a = analyze(parsed.inputs);
   if (!a.ok) return { session: session, error: 'The imported inputs do not compute: ' + Object.keys(a.errors).map(function (key) { return key + ': ' + a.errors[key]; }).join('; ') };
   if (parsed.inputs.k > a.kMax) return { session: session, error: 'The imported K = ' + parsed.inputs.k + ' exceeds K max = ' + a.kMax };
   return { session: { inputs: parsed.inputs }, error: null };
 }
 
 /* ---------- built-in verification (section 8), shared by the page panel and Node ---------- */
+/** @param {Parameters<typeof exampleInputs>[0]} over */
 function withInputs(over) { return exampleInputs(over); }
+/** @param {Locus} locus @param {number} scale */
 function branchSwaps(locus, scale) {
   var swaps = 0;
   for (var t = 1; t < locus.rows.length; t++) {
     var a = locus.rows[t - 1], b = locus.rows[t];
     for (var i = 0; i < b.length; i++) {
-      if (!a[i] || !b[i]) continue;
-      var own = cdist(b[i], a[i]);
+      var ai = a[i], bi = b[i];
+      if (!ai || !bi) continue;
+      var own = cdist(bi, ai);
       for (var j = 0; j < b.length; j++) {
-        if (j === i || !a[j]) continue;
-        if (cdist(a[i], a[j]) <= 1e-6 * scale) continue;
-        if (cdist(b[i], a[j]) < 0.5 * own) { swaps++; break; }
+        var aj = a[j];
+        if (j === i || !aj) continue;
+        if (cdist(ai, aj) <= 1e-6 * scale) continue;
+        if (cdist(bi, aj) < 0.5 * own) { swaps++; break; }
       }
     }
   }
   return swaps;
 }
+/**
+ * @typedef {{ label: string, expected: string, computed: string, tol: string, pass: boolean }} SelfCheck
+ * @typedef {{ name: string, checks: SelfCheck[], pass?: boolean }} SelfCase
+ */
+/** @returns {{ pass: boolean, cases: SelfCase[] }} */
 function runSelfTests() {
+  /** @type {SelfCase[]} */
   var cases = [];
+  /** @param {string} name @returns {SelfCase} */
   function newCase(name) { var c = { name: name, checks: [] }; cases.push(c); return c; }
+  /* The analysis of a loop these cases expect to compute; one that does not fails inside guard. */
+  var analyzed = /** @type {(inputs: Inputs) => Analysis} */ (analyze);
+  /** @param {SelfCase} c @param {string} label @param {unknown} computed @param {number} expected @param {number} tol */
   function near(c, label, computed, expected, tol) {
     var ok = typeof computed === 'number' && isFinite(computed) && Math.abs(computed - expected) <= tol;
     c.checks.push({ label: label, expected: fmt(expected, 6), computed: typeof computed === 'number' ? fmt(computed, 6) : String(computed), tol: '±' + fmt(tol, 2), pass: ok });
   }
+  /** @param {SelfCase} c @param {string} label @param {unknown} cond @param {string} expected @param {string} computed */
   function truth(c, label, cond, expected, computed) { c.checks.push({ label: label, expected: expected, computed: computed, tol: '', pass: !!cond }); }
-  function guard(c, fn) { try { fn(); } catch (e) { truth(c, 'runs without an exception', false, 'no error', String(e && e.message || e)); } }
+  /** @param {SelfCase} c @param {() => void} fn */
+  function guard(c, fn) { try { fn(); } catch (e) { truth(c, 'runs without an exception', false, 'no error', String(e && /** @type {Error} */ (e).message || e)); } }
 
   var c1 = newCase('L = K/(s(s+1)(s+2))');
   guard(c1, function () {
-    var a = analyze(withInputs({ fields: { G: '1 / (s * (s + 1) * (s + 2))' } })), cr = a.annotations.crossings.find(function (c) { return c.omega > 0; }) || {};
+    var a = analyzed(withInputs({ fields: { G: '1 / (s * (s + 1) * (s + 2))' } })), cr = a.annotations.crossings.find(function (c) { return c.omega > 0; }) || /** @type {Partial<Annotations["crossings"][number]>} */ ({});
     near(c1, 'critical K', cr.k, 6, 1e-6);
     near(c1, 'crossing frequency ω (rad/s)', cr.omega, Math.SQRT2, 1e-6);
-    var bp = a.annotations.breakpoints.find(function (b) { return b.kind === 'breakaway'; }) || {};
+    var bp = a.annotations.breakpoints.find(function (b) { return b.kind === 'breakaway'; }) || /** @type {Partial<Annotations["breakpoints"][number]>} */ ({});
     near(c1, 'breakaway s', bp.x, -1 + 1 / Math.sqrt(3), 1e-6);
     near(c1, 'breakaway K', bp.k, 2 / (3 * Math.sqrt(3)), 1e-6);
-    near(c1, 'asymptote centroid', a.annotations.asymptotes.centroid, -1, 1e-9);
-    truth(c1, 'asymptote angles (degrees)', a.annotations.asymptotes.angles.map(function (v) { return Math.round(v * 1e6) / 1e6; }).join(',') === '60,180,300', '60, 180, 300', a.annotations.asymptotes.angles.map(function (v) { return fmt(v, 6); }).join(', '));
+    var asy = /** @type {NonNullable<Annotations["asymptotes"]>} third order over no zeros */ (a.annotations.asymptotes);
+    near(c1, 'asymptote centroid', asy.centroid, -1, 1e-9);
+    truth(c1, 'asymptote angles (degrees)', asy.angles.map(function (v) { return Math.round(v * 1e6) / 1e6; }).join(',') === '60,180,300', '60, 180, 300', asy.angles.map(function (v) { return fmt(v, 6); }).join(', '));
     near(c1, 'upper end of the stable K interval', (a.scan.intervals[0] || {}).hi, 6, 1e-6);
   });
   var c2 = newCase('L = K(s+3)/(s(s+1))');
   guard(c2, function () {
-    var a = analyze(withInputs({ fields: { G: '(s + 3) / (s * (s + 1))' } })), b = a.annotations.breakpoints;
-    var ba = b.find(function (p) { return p.kind === 'breakaway'; }) || {}, bi = b.find(function (p) { return p.kind === 'break-in'; }) || {};
+    var a = analyzed(withInputs({ fields: { G: '(s + 3) / (s * (s + 1))' } })), b = a.annotations.breakpoints;
+    var ba = b.find(function (p) { return p.kind === 'breakaway'; }) || /** @type {Partial<Annotations["breakpoints"][number]>} */ ({}), bi = b.find(function (p) { return p.kind === 'break-in'; }) || /** @type {Partial<Annotations["breakpoints"][number]>} */ ({});
     near(c2, 'breakaway s', ba.x, -3 + Math.sqrt(6), 1e-6);
     near(c2, 'breakaway K', ba.k, 5 - 2 * Math.sqrt(6), 1e-6);
     near(c2, 'break-in s', bi.x, -3 - Math.sqrt(6), 1e-6);
@@ -1736,16 +2079,16 @@ function runSelfTests() {
   });
   var c3 = newCase('G = 1/(s+1), z-mode, ZOH, T = 1');
   guard(c3, function () {
-    var a = analyze(withInputs({ mode: 'z', sampleTime: 1, method: 'zoh', fields: { G: '1 / (s + 1)' } })), Gz = a.loop.fields.Gz;
+    var a = analyzed(withInputs({ mode: 'z', sampleTime: 1, method: 'zoh', fields: { G: '1 / (s + 1)' } })), Gz = /** @type {Discretised} the z-plane discretises G */ (a.loop.fields.Gz);
     near(c3, 'G(z) numerator', Gz.num[0], 1 - Math.exp(-1), 1e-9);
     near(c3, 'G(z) pole', -Gz.den[0], Math.exp(-1), 1e-12);
     truth(c3, 'G(z) orders', Gz.num.length === 1 && Gz.den.length === 2, '0.63212/(z - 0.36788)', factoredStr(Gz.num, Gz.den, 'z', 5));
-    var cr = a.annotations.crossings.find(function (c) { return Math.abs(c.point.re + 1) < 1e-9; }) || {};
+    var cr = a.annotations.crossings.find(function (c) { return Math.abs(c.point.re + 1) < 1e-9; }) || /** @type {Partial<Annotations["crossings"][number]>} */ ({});
     near(c3, 'unit-circle crossing at z = -1: K', cr.k, (1 + Math.exp(-1)) / (1 - Math.exp(-1)), 1e-9);
   });
   var c4 = newCase('G = (s+1)/(s(s+2)), no breakaway');
   guard(c4, function () {
-    var a = analyze(withInputs({ fields: { G: '(s + 1) / (s * (s + 2))' } })), sg = a.annotations.segments;
+    var a = analyzed(withInputs({ fields: { G: '(s + 1) / (s * (s + 2))' } })), sg = a.annotations.segments;
     truth(c4, 'no real breakaway point', a.annotations.breakpoints.length === 0, 'none', a.annotations.breakpoints.length ? a.annotations.breakpoints.map(function (b) { return fmt(b.x, 6); }).join(', ') : 'none');
     var text = sg.map(function (s) { return '(' + fmt(s[0], 6) + ', ' + fmt(s[1], 6) + ')'; }).join(' ');
     truth(c4, 'real-axis segments', text === '(-∞, -2) (-1, 0)', '(-∞, -2) (-1, 0)', text);
@@ -1764,7 +2107,7 @@ function runSelfTests() {
   });
   var c7 = newCase('Parser rejects unsafe or unknown input');
   guard(c7, function () {
-    [['__import__(\'os\')', /__import__/], ['s.real', /Attribute access/], ['foo * s', /Unknown name `foo`/], ['exec(\'1\')', /Unknown name `exec`/], ['(s+1)[0]', /Indexing/]].forEach(function (t) {
+    /** @type {[string, RegExp][]} */ ([['__import__(\'os\')', /__import__/], ['s.real', /Attribute access/], ['foo * s', /Unknown name `foo`/], ['exec(\'1\')', /Unknown name `exec`/], ['(s+1)[0]', /Indexing/]]).forEach(function (t) {
       var r = parseField(t[0], 's', 'G');
       truth(c7, t[0], !r.ok && t[1].test(r.error), 'rejected naming the token', r.ok ? 'accepted' : r.error);
     });
@@ -1786,21 +2129,23 @@ function runSelfTests() {
   var c9 = newCase('Root order is stable across the sweep');
   guard(c9, function () {
     [['1 / (s + 1)**3', 'triple pole'], ['1 / (s + 1)**2', 'double pole'], ['(s + 3) / (s * (s + 1))', 'breakaway and break-in'], ['1 / (s * (s + 1) * (s + 2))', 'third order']].forEach(function (t) {
-      var a = analyze(withInputs({ fields: { G: t[0] } })), sw = branchSwaps(a.locus, a.loop.scale);
+      var a = analyzed(withInputs({ fields: { G: t[0] } })), sw = branchSwaps(a.locus, a.loop.scale);
       truth(c9, t[1] + ': branch swaps', sw === 0, '0', String(sw));
     });
-    var a3 = analyze(withInputs({ fields: { G: '1 / (s + 1)**3' } })), drift = 0;
+    var a3 = analyzed(withInputs({ fields: { G: '1 / (s + 1)**3' } })), drift = 0;
     for (var j = 0; j < 3; j++) {
-      var ref = null;
+      var ref = /** @type {number | null} */ (null);
       a3.locus.rows.forEach(function (row, t) {
         if (a3.locus.ks[t] < 1e-4 * a3.kMax) return;
-        var ang = Math.atan2(row[j].im, row[j].re + 1);
+        var rj = /** @type {Complex} all three branches stay finite */ (row[j]);
+        var ang = Math.atan2(rj.im, rj.re + 1);
         if (ref === null) ref = ang; else drift = Math.max(drift, Math.abs(Math.atan2(Math.sin(ang - ref), Math.cos(ang - ref))));
       });
     }
     near(c9, 'triple pole: each branch keeps its ray (max angle drift, rad)', drift, 0, 1e-3);
-    var a2 = analyze(withInputs({ fields: { G: '(s + 3) / (s * (s + 1))' } })), last = a2.locus.rows[a2.locus.rows.length - 1];
-    var toZero = last.filter(function (r) { return cdist(r, cx(-3)) < 0.3; }).length, far = last.filter(function (r) { return r.re < -20 && Math.abs(r.im) < 1e-9; }).length;
+    var a2 = analyzed(withInputs({ fields: { G: '(s + 3) / (s * (s + 1))' } })), last = a2.locus.rows[a2.locus.rows.length - 1];
+    var finite = last.filter(function (r) { return r !== null; });
+    var toZero = finite.filter(function (r) { return cdist(r, cx(-3)) < 0.3; }).length, far = finite.filter(function (r) { return r.re < -20 && Math.abs(r.im) < 1e-9; }).length;
     truth(c9, 'break-in: at K max one branch is near the zero at -3, the other runs left along the axis', toZero === 1 && far === 1, '1 and 1', toZero + ' and ' + far);
   });
   var c10 = newCase('Discretisation and delay');
@@ -1831,14 +2176,16 @@ function runSelfTests() {
    opts.analysis reuses the page's analysis. Returns null when the loop cannot be analysed. */
 var REPORT_SIG = 4;
 // "1.5e-7" is said "1.5 times ten to the minus 7"; "-0.5" is said "minus 0.5"; "∞" is said "infinity".
-function sayNumber(text) {
-  text = String(text);
+/** @param {unknown} value */
+function sayNumber(value) {
+  var text = String(value);
   if (text === '∞' || text === '-∞') return (text[0] === '-' ? 'minus ' : '') + 'infinity';
   var m = /^(-?)(\d+(?:\.\d+)?)(?:e([+-]?\d+))?$/.exec(text);
   if (!m) return text;
   return (m[1] ? 'minus ' : '') + m[2] + (m[3] == null ? '' : ' times ten to the ' + (Number(m[3]) < 0 ? 'minus ' : '') + Math.abs(Number(m[3])));
 }
 // A point of the plane said as fmtC writes it: "-0.3337 + 0.5623j" is said "minus 0.3337 plus 0.5623 j".
+/** @param {Complex} z @param {number} sig */
 function sayComplex(z, sig) {
   var p = snapParts(z), re = p.re, im = p.im;
   if (im === 0) return sayNumber(fmt(re, sig));
@@ -1846,25 +2193,28 @@ function sayComplex(z, sig) {
   if (re === 0) return (im < 0 ? 'minus ' : '') + ims;
   return sayNumber(fmt(re, sig)) + (im < 0 ? ' minus ' : ' plus ') + ims;
 }
+/** @type {Record<string, (v: number) => string>} */
 var SPOKEN_REQS = {
   zetaMin: function (v) { return 'a damping ratio of at least ' + sayNumber(fmt(v, REPORT_SIG)); },
   wnMin: function (v) { return 'a natural frequency of at least ' + sayNumber(fmt(v, REPORT_SIG)) + ' radians per second'; },
   wnMax: function (v) { return 'a natural frequency of at most ' + sayNumber(fmt(v, REPORT_SIG)) + ' radians per second'; },
   settlingTime: function (v) { return 'a 2 percent settling time of at most ' + sayNumber(fmt(v, REPORT_SIG)) + ' seconds'; }
 };
+/** @type {Record<string, string>} */
 var SPOKEN_REQ_NAMES = { stability: 'stability', zetaMin: 'the minimum damping ratio', wnMin: 'the minimum natural frequency', wnMax: 'the maximum natural frequency', settlingTime: 'the settling time' };
+/** @param {Inputs} inputs @param {{ analysis?: Analysis | Failure }} [opts] @returns {BeamdswitchReport | null} */
 function locusReport(inputs, opts) {
   opts = opts || {};
-  var analysis = opts.analysis || analyze(inputs);
+  const analysis = opts.analysis || analyze(inputs);
   if (!analysis.ok) return null;
   var S = REPORT_SIG, loop = analysis.loop, x = loop.x, z = loop.mode === 'z', F = loop.fields, ann = analysis.annotations;
   var k = Number(inputs.k), atk = closedLoopAt(analysis, k, inputs.requirements), scan = analysis.scan, reqs = scan.requirements;
   var plane = z ? 'z-plane' : 's-plane', n = orderOf(loop.den), m = orderOf(loop.num);
-  var code = function (s) { return mdCode(s); };
-  var count = function (q, one, many) { return q + ' ' + (q === 1 ? one : many); };
+  var code = function (/** @type {unknown} */ s) { return mdCode(s); };
+  var count = function (/** @type {number} */ q, /** @type {string} */ one, /** @type {string} */ many) { return q + ' ' + (q === 1 ? one : many); };
   var failing = failingRequirements(atk);
   var verdict = scan.active.length ? (atk.pass ? 'PASS' : 'FAIL') : (atk.stable ? 'Stable' : 'Unstable');
-  var intervalSaid = function (iv) {
+  var intervalSaid = function (/** @type {{ lo: number, hi: number, toKMax?: boolean }} */ iv) {
     if (iv.toKMax) return (iv.lo === 0 ? 'every gain above 0' : 'gains above ' + sayNumber(fmt(iv.lo, S))) + ', up to the end of the sweep at ' + sayNumber(fmt(iv.hi, S));
     return 'gains between ' + sayNumber(fmt(iv.lo, S)) + ' and ' + sayNumber(fmt(iv.hi, S));
   };
@@ -1873,21 +2223,22 @@ function locusReport(inputs, opts) {
     : (scan.active.length ? 'No gain meets every requirement' : 'No gain up to ' + sayNumber(fmt(analysis.kMax, S)) + ' is stable') +
       (scan.nearest ? '; the nearest miss is at K equals ' + sayNumber(fmt(scan.nearest.k, S)) + ', where ' + SPOKEN_REQ_NAMES[scan.nearest.binding] + ' binds.' : '.');
 
+  /** @type {[string, string | null, Rational, string][]} */
   var blockRows = [['C(' + x + ')', inputs.fields.C, F.C, x]];
-  if (z) blockRows.push(['G(s)', inputs.fields.G, F.Gs, 's'], ['G(z), ' + METHODS[loop.method], null, F.Gz, 'z']);
-  else blockRows.push(['G(s)' + (loop.delay.Td > 0 ? ' with Padé delay' : ''), inputs.fields.G, F.G, 's']);
+  if (z) blockRows.push(['G(s)', inputs.fields.G, F.Gs, 's'], ['G(z), ' + METHODS[/** @type {string} the z-plane has a method */ (loop.method)], null, /** @type {Discretised} the z-plane discretises G */ (F.Gz), 'z']);
+  else blockRows.push(['G(s)' + (loop.delay.kind === 'pade' && loop.delay.Td > 0 ? ' with Padé delay' : ''), inputs.fields.G, F.G, 's']);
   blockRows.push(['H(' + x + ')', inputs.fields.H, F.H, x], ['L(' + x + ')/K', null, { num: loop.num, den: loop.den }, x]);
   var delayText = loop.delay.kind === 'pade'
     ? (loop.delay.Td > 0 ? 'Td = ' + fmt(loop.delay.Td, S) + ' s, Padé order ' + loop.delay.order : 'none')
     : (loop.delay.n > 0 ? 'n = ' + loop.delay.n + (loop.delay.n === 1 ? ' sample' : ' samples') + ', z**-' + loop.delay.n : 'none');
-  var openSaid = function (list) { return list.map(function (p) { return sayComplex(p, S); }).join(', '); };
+  var openSaid = function (/** @type {Complex[]} */ list) { return list.map(function (p) { return sayComplex(p, S); }).join(', '); };
 
   var setup = [
     {
       title: 'The loop: L(' + x + ') = K · ' + code(factoredStr(loop.num, loop.den, x, S)),
       body: ['| Block | Entered | Factored form |', '| --- | --- | --- |'].concat(blockRows.map(function (b) {
         return '| ' + b[0] + ' | ' + (b[1] == null ? '—' : code(b[1])) + ' | ' + code(factoredStr(b[2].num, b[2].den, b[3], S)) + ' |';
-      }), ['', '- Plane: ' + (z ? 'z-plane (discrete time), T = ' + fmt(loop.T, S) + ' s, G discretised by ' + METHODS[loop.method] : 's-plane (continuous time)'),
+      }), ['', '- Plane: ' + (z ? 'z-plane (discrete time), T = ' + fmt(loop.T, S) + ' s, G discretised by ' + METHODS[/** @type {string} */ (loop.method)] : 's-plane (continuous time)'),
         '- Delay: ' + delayText, '- Open loop: ' + count(n, 'pole', 'poles') + ', ' + count(m, 'zero', 'zeros') + '; polynomials normalised so each denominator is monic']).join('\n'),
       notes: 'Open loop L = K·C·G·H, with K ≥ 0. In the z-plane, G is entered in s and discretised; C and H are entered in z.',
       narration: 'The open loop is the gain K times the compensator, the plant and the feedback path, checked in the ' + plane + '. ' +
@@ -1932,7 +2283,7 @@ function locusReport(inputs, opts) {
     }
   ];
 
-  var d = dominant(atk), dr = d && poleRow(d, loop, S);
+  var d = dominant(atk), dr = /** @type {ReturnType<typeof poleRow>} read only when d is set */ (d && poleRow(d, loop, S));
   var results = [
     {
       title: 'Closed-loop poles at K = ' + fmt(k, S) + ': ' + verdict,
@@ -1986,6 +2337,7 @@ function locusReport(inputs, opts) {
   };
 }
 
+/** @param {Inputs} inputs */
 function summarize(inputs) {
   var a = analyze(inputs);
   if (!a.ok) return { ok: false, errors: a.errors };
@@ -2002,8 +2354,10 @@ function summarize(inputs) {
     verdict: verdictText(a, S), warnings: a.warnings.map(function (w) { return w.level + ': ' + w.text; })
   };
 }
+/** @param {Record<string, any> | null | undefined} partial an agent's partial inputs, checked by validateRecord afterwards */
 function mergeInputs(partial) {
   var base = blankInputs(), p = partial || {};
+  /** @type {Record<string, any>} */
   var rec = Object.assign({}, recordJson(base), p, { schema_version: SCHEMA_VERSION });
   rec.fields = Object.assign({}, base.fields, p.fields || {});
   rec.delay = Object.assign({}, base.delay, p.delay || {});
@@ -2012,6 +2366,7 @@ function mergeInputs(partial) {
   if (rec.mode === 'z') { if (rec.sampleTime == null) rec.sampleTime = 1; if (rec.method == null) rec.method = 'zoh'; }
   return rec;
 }
+/** @param {() => Inputs} getInputs */
 function webmcpTools(getInputs) {
   var inputSchema = {
     type: 'object', additionalProperties: false,
@@ -2024,11 +2379,13 @@ function webmcpTools(getInputs) {
       pins: { type: 'array', items: { type: 'object', properties: { k: { type: 'number' } } } }
     }
   };
+  /** @param {Record<string, any>} input */
   function fromPartial(input) {
     var v = validateRecordSafe(mergeInputs(input));
     return v.ok ? summarize(v.inputs) : { ok: false, errors: { record: v.error } };
   }
   var empty = { type: 'object', properties: {}, additionalProperties: false };
+  /** @type {{ name: string, description: string, inputSchema: object, run: (input: Record<string, any>) => unknown }[]} */
   var defs = [
     { name: 'get_metadata', description: 'Describe the root locus design-check tool: input syntax, modes, discretisation methods, requirements, record schema and examples.', inputSchema: empty,
       run: function () { return { title: 'Root locus design check', schema_version: SCHEMA_VERSION, maxOrder: MAX_ORDER, syntax: 'Python subset: numbers, complex literals like 1+2j, lists, s, z, pi, tf(num, den), tf(\'s\'), zpk(zeros, poles, gain), + - * / ** and parentheses; num = [...] and den = [...] on separate lines.', methods: METHODS, requirements: REQ_LABELS, examples: EXAMPLES }; } },
@@ -2043,13 +2400,14 @@ function webmcpTools(getInputs) {
   ];
   return defs.map(function (d) {
     return { name: d.name, description: d.description, inputSchema: d.inputSchema, annotations: { readOnlyHint: true },
-      execute: function (input) {
+      execute: function (/** @type {Record<string, any> | undefined} the agent's arguments */ input) {
         var out;
-        try { out = d.run(input || {}); } catch (e) { out = { ok: false, error: String(e && e.message || e) }; }
+        try { out = d.run(input || {}); } catch (e) { out = { ok: false, error: String(e && /** @type {Error} */ (e).message || e) }; }
         return Promise.resolve({ content: [{ type: 'text', text: JSON.stringify(out) }] });
       } };
   });
 }
+/** @param {unknown} obj @returns {{ ok: true, inputs: Inputs } | { ok: false, error: string }} */
 function validateRecordSafe(obj) {
   try { return { ok: true, inputs: validateRecord(obj) }; } catch (e) { if (e instanceof InputError) return { ok: false, error: e.message }; throw e; }
 }
@@ -2067,14 +2425,32 @@ if (typeof module !== 'undefined') module.exports = {
 
 /* ===== Page UI (browser only) ===== */
 if (typeof document !== 'undefined') (function () {
-  var $ = function (id) { return document.getElementById(id); };
+  /**
+   * One of the page's controls: an input, select, text area or details element. Each caller uses what its element
+   * has, and the markup holds every id the script looks up.
+   * @typedef {HTMLInputElement & { open: boolean }} Control
+   */
+  var $ = function (/** @type {string} */ id) { return /** @type {Control} */ (document.getElementById(id)); };
+  /** @template T @param {T} o @returns {T} */
   var clone = function (o) { return JSON.parse(JSON.stringify(o)); };
   var SIG = 4, DECADES = 5;
-  var inputs = clone(EXAMPLES[0].inputs), analysis = null, atk = null, view = null, userMoved = false, showGrid = true;
-  var hover = null, pendingTimer = null, inputsValid = true, regionCache = null;
-  var canvas = $('plot'), ctx2 = canvas.getContext('2d'), tip = $('tip');
+  var inputs = clone(EXAMPLES[0].inputs), userMoved = false, showGrid = true;
+  /* The last valid analysis, the closed loop at the chosen K, and the plot's centre and pixels per unit. Each is null
+     until the first valid loop; the event handlers check for that, and everything else runs after it. */
+  var analysis = /** @type {Analysis} */ (/** @type {unknown} */ (null));
+  var atk = /** @type {ClosedLoop} */ (/** @type {unknown} */ (null));
+  var view = /** @type {{ cx: number, cy: number, ppu: number }} */ (/** @type {unknown} */ (null));
+  /** @type {{ point: Complex, k: number } | null} */
+  var hover = null;
+  /** @type {ReturnType<typeof setTimeout> | undefined} */
+  var pendingTimer;
+  var inputsValid = true;
+  /** @type {HTMLCanvasElement | null} */
+  var regionCache = null;
+  var canvas = /** @type {HTMLCanvasElement} */ (document.getElementById('plot')), ctx2 = /** @type {CanvasRenderingContext2D} */ (canvas.getContext('2d')), tip = $('tip');
 
   /* ----- controls <-> inputs ----- */
+  /** @param {Control} el */
   function numOrNull(el) { if (el.validity && el.validity.badInput) return NaN; var v = el.value.trim(); if (v === '') return null; var n = Number(v); return isFinite(n) ? n : NaN; }
   function syncControls() {
     $('fC').value = inputs.fields.C; $('fG').value = inputs.fields.G; $('fH').value = inputs.fields.H;
@@ -2085,30 +2461,35 @@ if (typeof document !== 'undefined') (function () {
     $('hC').innerHTML = 'Defaults to 1. Example: <code>' + (z ? '(z - 0.9) / (z - 1)' : '(s + 2) / (s + 10)') + '</code>';
     $('fH').placeholder = '1';
     $('hH').innerHTML = 'Defaults to 1 (unity feedback). Example: <code>' + (z ? '0.5 / (z - 0.5)' : '1 / (0.1*s + 1)') + '</code>';
-    $('sampleTime').value = inputs.sampleTime == null ? '' : inputs.sampleTime;
+    $('sampleTime').value = inputs.sampleTime == null ? '' : String(inputs.sampleTime);
     $('sampleTime').disabled = !z; $('method').disabled = !z;
     $('method').value = inputs.method || 'zoh';
     $('discHint').textContent = z ? 'G(s) is converted to G(z) with the chosen method.' : 'Switch to the z-plane to discretise G. C and H are then entered in z.';
     $('delayS').hidden = z; $('padeNote').hidden = z; $('delayZ').hidden = !z;
-    $('delayTd').value = !z && inputs.delay.value ? inputs.delay.value : '';
-    $('delayN').value = z && inputs.delay.value ? inputs.delay.value : '';
+    $('delayTd').value = !z && inputs.delay.value ? String(inputs.delay.value) : '';
+    $('delayN').value = z && inputs.delay.value ? String(inputs.delay.value) : '';
     $('padeOrder').value = String(inputs.delay.padeOrder || 2);
-    ['zetaMin', 'wnMin', 'wnMax', 'settlingTime'].forEach(function (k) { $(k).value = inputs.requirements[k] == null ? '' : inputs.requirements[k]; });
-    $('kMax').value = inputs.kMax == null ? '' : inputs.kMax;
+    /** @type {Record<string, unknown>} */
+    var req = inputs.requirements;
+    ['zetaMin', 'wnMin', 'wnMax', 'settlingTime'].forEach(function (k) { $(k).value = req[k] == null ? '' : String(req[k]); });
+    $('kMax').value = inputs.kMax == null ? '' : String(inputs.kMax);
     if (z) $('discSec').open = true;
     if (inputs.delay.value) $('delaySec').open = true;
-    if (REQ_KEYS.some(function (k) { return inputs.requirements[k] != null; })) $('reqSec').open = true;
+    if (REQ_KEYS.some(function (k) { return req[k] != null; })) $('reqSec').open = true;
   }
   function readControls() {
     var c = clone(inputs), z = c.mode === 'z';
+    /** @type {Record<string, number | null>} the requirements as the controls read them */
+    var creq = /** @type {any} */ (c.requirements);
     c.fields = { C: $('fC').value, G: $('fG').value, H: $('fH').value };
     if (z) { c.sampleTime = numOrNull($('sampleTime')); c.method = $('method').value; }
     var dv = z ? numOrNull($('delayN')) : numOrNull($('delayTd'));
     c.delay = { value: dv == null ? 0 : dv, padeOrder: Number($('padeOrder').value) };
-    ['zetaMin', 'wnMin', 'wnMax', 'settlingTime'].forEach(function (k) { c.requirements[k] = numOrNull($(k)); });
+    ['zetaMin', 'wnMin', 'wnMax', 'settlingTime'].forEach(function (k) { creq[k] = numOrNull($(k)); });
     c.kMax = numOrNull($('kMax'));
     return c;
   }
+  /** @param {Record<string, any>} r the requirements as read from the controls: numbers, NaN or null */
   function requirementError(r) {
     for (var i = 0; i < REQ_KEYS.length; i++) {
       var k = REQ_KEYS[i], v = r[k];
@@ -2122,15 +2503,19 @@ if (typeof document !== 'undefined') (function () {
 
   /* ----- compute ----- */
   function schedule() { clearTimeout(pendingTimer); pendingTimer = setTimeout(recompute, 300); }
+  /** @param {string | null} id @param {string} errId @param {string | undefined} msg */
   function setFieldError(id, errId, msg) {
     $(errId).textContent = msg || '';
     if (id) $(id).setAttribute('aria-invalid', msg ? 'true' : 'false');
   }
+  /** @param {{ fit?: boolean }} [opts] */
   function recompute(opts) {
     opts = opts || {};
     clearTimeout(pendingTimer);
     var cand = readControls(), rErr = requirementError(cand.requirements);
-    var a = rErr ? null : analyze(cand), errs = a && !a.ok ? a.errors : {};
+    var a = rErr ? null : analyze(cand);
+    /** @type {Record<string, string>} */
+    var errs = a && !a.ok ? a.errors : {};
     setFieldError('fC', 'eC', errs.C); setFieldError('fG', 'eG', errs.G); setFieldError('fH', 'eH', errs.H);
     setFieldError('sampleTime', 'eT', errs.sampleTime); setFieldError(null, 'eD', errs.delay); setFieldError('kMax', 'eK', errs.kMax);
     setFieldError(null, 'eR', rErr);
@@ -2152,29 +2537,38 @@ if (typeof document !== 'undefined') (function () {
     if (opts.fit || !userMoved || !view) fitView();
     updateK(inputs.k, true);
   }
+  /** @param {string} f @param {Inputs} cand @param {string[] | undefined} hints */
   function echoField(f, cand, hints) {
-    var r = parseField(cand.fields[f], f === 'G' || cand.mode === 's' ? 's' : 'z', f), el = $('x' + f);
+    var r = parseField(/** @type {Record<string, string>} */ (cand.fields)[f], f === 'G' || cand.mode === 's' ? 's' : 'z', f), el = $('x' + f);
     if (!r.ok) { el.textContent = ''; return; }
     var v = f === 'G' || cand.mode === 's' ? 's' : 'z';
     el.textContent = f + '(' + v + ') = ' + factoredStr(r.num, r.den, v, SIG) + (hints && hints.length ? '   · ' + hints.join(' ') : '');
   }
+  /** @param {number} k @param {number} kMax */
   function kToSlider(k, kMax) { if (!(k > 0)) return 0; return Math.max(1, Math.min(1000, Math.round(1000 * (1 + Math.log10(k / kMax) / DECADES)))); }
+  /** @param {number} pos @param {number} kMax */
   function sliderToK(pos, kMax) { return pos <= 0 ? 0 : kMax * Math.pow(10, (pos / 1000 - 1) * DECADES); }
+  /** @param {unknown} k @param {boolean} [fromCompute] */
   function updateK(k, fromCompute) {
     if (!analysis) return;
-    k = Math.max(0, Math.min(analysis.kMax, Number(k) || 0));
-    inputs.k = k;
-    $('kSlider').value = kToSlider(k, analysis.kMax);
-    if (document.activeElement !== $('kBox') || fromCompute) $('kBox').value = Number(k.toPrecision(6));
-    $('kSlider').setAttribute('aria-valuetext', 'K = ' + fmt(k, SIG));
-    atk = closedLoopAt(analysis, k, inputs.requirements);
+    var kk = Math.max(0, Math.min(analysis.kMax, Number(k) || 0));
+    inputs.k = kk;
+    $('kSlider').value = String(kToSlider(kk, analysis.kMax));
+    if (document.activeElement !== $('kBox') || fromCompute) $('kBox').value = String(Number(kk.toPrecision(6)));
+    $('kSlider').setAttribute('aria-valuetext', 'K = ' + fmt(kk, SIG));
+    atk = closedLoopAt(analysis, kk, inputs.requirements);
     renderBadges(); renderReadouts(); renderPins(); draw();
   }
 
   /* ----- readouts ----- */
-  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  /** @type {Record<string, string>} */
+  var ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' };
+  /** @param {unknown} s */
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return ESCAPES[c]; }); }
+  /** @param {string} cls @param {string} text */
   function badge(cls, text) { return '<span class="badge ' + cls + '">' + esc(text) + '</span>'; }
   /* PASS or FAIL when requirements are set, else Stable or Unstable. */
+  /** @param {ClosedLoop} at */
   function verdictHtml(at) {
     var good = analysis.scan.active.length ? at.pass : at.stable;
     return '<span class="' + (good ? 'pass' : 'fail') + '">' + (analysis.scan.active.length ? (at.pass ? 'PASS' : 'FAIL') : (at.stable ? 'Stable' : 'Unstable')) + '</span>';
@@ -2203,14 +2597,15 @@ if (typeof document !== 'undefined') (function () {
     h += '</tbody></table></div>';
     h += '<h3 class="hint" style="margin-top:.6rem">Loop and closed loop</h3><ul class="plain">';
     h += '<li><strong>L(' + x + ')</strong> = K · <span class="mono">' + esc(factoredStr(loop.num, loop.den, x, SIG)) + '</span></li>';
-    if (z) h += '<li><strong>G(z)</strong>, ' + esc(METHODS[loop.method]) + ' = <span class="mono">' + esc(factoredStr(loop.fields.Gz.num, loop.fields.Gz.den, 'z', SIG)) + '</span>' + (loop.delay.n ? ' · z**-' + loop.delay.n : '') + '</li>';
+    if (z) h += '<li><strong>G(z)</strong>, ' + esc(METHODS[/** @type {string} */ (loop.method)]) + ' = <span class="mono">' + esc(factoredStr(/** @type {Discretised} */ (loop.fields.Gz).num, /** @type {Discretised} */ (loop.fields.Gz).den, 'z', SIG)) + '</span>' + (loop.delay.kind === 'samples' && loop.delay.n ? ' · z**-' + loop.delay.n : '') + '</li>';
     h += '<li><strong>T(' + x + ')</strong> at K = ' + fmt(atk.k, SIG) + ' = <span class="mono">' + esc(factoredStr(atk.T.num, atk.T.den, x, SIG)) + '</span></li></ul>';
     h += '<h3 class="hint" style="margin-top:.6rem">Locus</h3><ul class="plain">';
     h += '<li>Critical K: ' + esc(ann.crossings.length ? ann.crossings.map(function (c) { return crossingText(c, loop, SIG); }).join('; ') : 'no ' + (z ? 'unit-circle' : 'imaginary-axis') + ' crossing for 0 < K ≤ ∞') + '</li>';
     h += '<li>Breakaway / break-in: ' + esc(ann.breakpoints.length ? ann.breakpoints.map(function (b) { return b.kind + ' ' + x + ' = ' + fmt(b.x, SIG) + ' (K = ' + fmt(b.k, SIG) + ')'; }).join('; ') : 'none on the real axis') + '</li>';
     h += '<li>Asymptotes: ' + esc(ann.asymptotes ? 'centroid ' + fmt(ann.asymptotes.centroid, SIG) + ', angles ' + ann.asymptotes.angles.map(function (v) { return fmt(v, SIG) + '°'; }).join(', ') : 'none (as many zeros as poles)') + '</li>';
     h += '<li>K max = ' + fmt(analysis.kMax, SIG) + (inputs.kMax == null ? ' (auto)' : '') + '</li></ul>';
-    var hints = Object.keys(analysis.hints || {}).map(function (f) { return { level: 'info', text: f + ': ' + analysis.hints[f].join(' ') }; });
+    var hs = analysis.hints || {};
+    var hints = Object.keys(hs).map(function (f) { return { kind: 'hint', level: 'info', text: f + ': ' + hs[f].join(' ') }; });
     var ws = analysis.warnings.concat(hints);
     h += '<h3 class="hint" style="margin-top:.6rem">Warnings</h3>' + (ws.length ? '<ul class="plain warnlist">' + ws.map(function (w) { return '<li class="' + w.level + '">' + (w.level === 'hazard' ? 'HAZARD: ' : w.level === 'warn' ? 'Warning: ' : 'Note: ') + esc(w.text) + '</li>'; }).join('') + '</ul>' : '<p class="hint">None.</p>');
     $('readouts').innerHTML = h;
@@ -2228,19 +2623,24 @@ if (typeof document !== 'undefined') (function () {
     });
     $('pins').innerHTML = h + '</tbody></table>';
   }
+  /** @param {number} k */
   function addPin(k) {
     if (!inputs.pins.some(function (p) { return Math.abs(p.k - k) <= 1e-12 * Math.max(1, k); })) inputs.pins.push({ k: k });
     $('pinSec').open = true;
   }
 
   /* ----- plot geometry ----- */
+  /** @typedef {{ w: number, h: number, dpr: number }} Dim */
+  /** @returns {Dim} */
   function size() {
     var r = canvas.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
     var w = Math.max(1, Math.round(r.width)), h = Math.max(1, Math.round(r.height));
     if (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(h * dpr)) { canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr); regionCache = null; }
     return { w: w, h: h, dpr: dpr };
   }
+  /** @param {Complex} p @param {Dim} dim */
   function toScreen(p, dim) { return { x: dim.w / 2 + (p.re - view.cx) * view.ppu, y: dim.h / 2 - (p.im - view.cy) * view.ppu }; }
+  /** @param {number} sx @param {number} sy @param {Dim} dim */
   function toWorld(sx, sy, dim) { return cx(view.cx + (sx - dim.w / 2) / view.ppu, view.cy - (sy - dim.h / 2) / view.ppu); }
   function fitView() {
     if (!analysis) return;
@@ -2258,6 +2658,7 @@ if (typeof document !== 'undefined') (function () {
     view = { cx: (x0 + x1) / 2, cy: 0, ppu: ppu };
     userMoved = false; regionCache = null;
   }
+  /** @param {number} f @param {number} sx @param {number} sy */
   function zoomAt(f, sx, sy) {
     var dim = size(), before = toWorld(sx, sy, dim);
     view.ppu = Math.max(1e-9, Math.min(1e12, view.ppu * f));
@@ -2265,8 +2666,11 @@ if (typeof document !== 'undefined') (function () {
     view.cx += before.re - after.re; view.cy += before.im - after.im;
     userMoved = true; regionCache = null; draw();
   }
+  /** @param {number} f */
   function zoomCentre(f) { var d = size(); zoomAt(f, d.w / 2, d.h / 2); }
+  /** @param {number} raw */
   function niceStep(raw) { var e = Math.pow(10, Math.floor(Math.log10(raw))), f = raw / e; return (f < 1.5 ? 1 : f < 3.5 ? 2 : f < 7.5 ? 5 : 10) * e; }
+  /** @type {Record<string, string>} */
   var colors = {};
   function readColors() {
     var cs = getComputedStyle(document.documentElement);
@@ -2275,13 +2679,14 @@ if (typeof document !== 'undefined') (function () {
   }
 
   /* ----- drawing ----- */
+  /** @param {Dim} dim */
   function drawRegion(dim) {
     if (!analysis.scan.active.length) { $('regionLegend').hidden = true; return; }
     $('regionLegend').hidden = false;
     var step = 4, cw = Math.ceil(dim.w / step), ch = Math.ceil(dim.h / step);
     if (!regionCache) {
       var off = document.createElement('canvas'); off.width = cw; off.height = ch;
-      var octx = off.getContext('2d'); octx.fillStyle = colors.region;
+      var octx = /** @type {CanvasRenderingContext2D} */ (off.getContext('2d')); octx.fillStyle = colors.region;
       for (var j = 0; j < ch; j++) for (var i = 0; i < cw; i++) {
         if (inRegion(toWorld((i + 0.5) * step, (j + 0.5) * step, dim), inputs.requirements, analysis.loop)) octx.fillRect(i, j, 1, 1);
       }
@@ -2290,7 +2695,9 @@ if (typeof document !== 'undefined') (function () {
     ctx2.imageSmoothingEnabled = false;
     ctx2.drawImage(regionCache, 0, 0, cw * step, ch * step);
   }
+  /** @param {{ x: number, y: number }} a @param {{ x: number, y: number }} b */
   function line(a, b) { ctx2.beginPath(); ctx2.moveTo(a.x, a.y); ctx2.lineTo(b.x, b.y); ctx2.stroke(); }
+  /** @param {Dim} dim */
   function drawAxes(dim) {
     var stepW = niceStep(90 / view.ppu), tl = toWorld(0, 0, dim), br = toWorld(dim.w, dim.h, dim);
     ctx2.lineWidth = 1; ctx2.strokeStyle = colors.grid; ctx2.fillStyle = colors.muted; ctx2.font = '11px ' + getComputedStyle(document.body).fontFamily;
@@ -2305,11 +2712,13 @@ if (typeof document !== 'undefined') (function () {
     ctx2.fillText(analysis.loop.mode === 'z' ? 'Re z' : 'Re s (1/s)', dim.w - 70, ly);
     ctx2.fillText(analysis.loop.mode === 'z' ? 'Im z' : 'Im s (rad/s)', lx, 12);
   }
+  /** @param {(Complex | null)[]} pts @param {Dim} dim */
   function polyline(pts, dim) {
     ctx2.beginPath(); var started = false;
     pts.forEach(function (p) { if (!p) { started = false; return; } var q = toScreen(p, dim); if (!started) { ctx2.moveTo(q.x, q.y); started = true; } else ctx2.lineTo(q.x, q.y); });
     ctx2.stroke();
   }
+  /** @param {Dim} dim */
   function drawDampingGrid(dim) {
     var loop = analysis.loop, zetas = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9];
     ctx2.save(); ctx2.strokeStyle = colors.faint; ctx2.fillStyle = colors.faint; ctx2.lineWidth = 0.8; ctx2.setLineDash([2, 4]);
@@ -2327,7 +2736,7 @@ if (typeof document !== 'undefined') (function () {
         var t = toScreen(cx(-r * Math.cos(Math.PI / 4), r * Math.sin(Math.PI / 4)), dim); ctx2.fillText('ωn ' + fmt(r, 3), t.x - 10, t.y - 3);
       }
     } else {
-      var T = loop.T, ny = Math.PI / T;
+      var T = /** @type {number} the z-plane has a sample time */ (loop.T), ny = Math.PI / T;
       zetas.forEach(function (zt) {
         var pts = [], k = Math.sqrt(1 - zt * zt);
         for (var i = 0; i <= 120; i++) { var wd = ny * i / 120, s = cx(-zt / k * wd, wd); pts.push(cexp(cscale(s, T))); }
@@ -2343,6 +2752,7 @@ if (typeof document !== 'undefined') (function () {
     }
     ctx2.restore();
   }
+  /** @param {string} kind @param {Complex} p @param {Dim} dim @param {string} color @param {number} [sizePx] */
   function marker(kind, p, dim, color, sizePx) {
     var q = toScreen(p, dim), s = sizePx || 6;
     ctx2.save(); ctx2.strokeStyle = color; ctx2.fillStyle = color; ctx2.lineWidth = 2;
@@ -2366,7 +2776,8 @@ if (typeof document !== 'undefined') (function () {
     if (ann.asymptotes) {
       ctx2.save(); ctx2.setLineDash([6, 5]); ctx2.strokeStyle = colors.muted; ctx2.lineWidth = 1;
       var L = 4 * Math.max(dim.w, dim.h) / view.ppu + Math.abs(ann.asymptotes.centroid - view.cx) + Math.abs(view.cy);
-      ann.asymptotes.angles.forEach(function (a) { var t = a * Math.PI / 180; polyline([cx(ann.asymptotes.centroid), cx(ann.asymptotes.centroid + L * Math.cos(t), L * Math.sin(t))], dim); });
+      var asy = ann.asymptotes;
+      asy.angles.forEach(function (a) { var t = a * Math.PI / 180; polyline([cx(asy.centroid), cx(asy.centroid + L * Math.cos(t), L * Math.sin(t))], dim); });
       ctx2.restore();
     }
     var pal = [colors.b1, colors.b2, colors.b3, colors.b4, colors.b5, colors.b6], rows = analysis.locus.rows;
@@ -2389,8 +2800,9 @@ if (typeof document !== 'undefined') (function () {
   }
 
   /* ----- hover, pin, pan and zoom ----- */
+  /** @param {number} sx @param {number} sy */
   function nearestLocus(sx, sy) {
-    var dim = size(), best = null, bd = 28 * 28, L = analysis.locus;
+    var dim = size(), best = /** @type {{ point: Complex, k: number } | null} */ (null), bd = 28 * 28, L = analysis.locus;
     for (var t = 0; t < L.rows.length; t++) for (var j = 0; j < L.rows[t].length; j++) {
       var p = L.rows[t][j]; if (!p) continue;
       var q = toScreen(p, dim), d = (q.x - sx) * (q.x - sx) + (q.y - sy) * (q.y - sy);
@@ -2398,6 +2810,7 @@ if (typeof document !== 'undefined') (function () {
     }
     return best;
   }
+  /** @param {{ point: Complex, k: number } | null} h @param {number} sx @param {number} sy */
   function showTip(h, sx, sy) {
     if (!h) { tip.hidden = true; return; }
     var a = assessPole(h.point, {}, ctxOf(analysis.loop)), z = analysis.loop.mode === 'z';
@@ -2407,14 +2820,24 @@ if (typeof document !== 'undefined') (function () {
     tip.style.left = Math.min(Math.max(4, sx + 14), W - tw - 4) + 'px';
     tip.style.top = Math.min(Math.max(4, sy + 14), H - th - 4) + 'px';
   }
-  var pointers = new Map(), gesture = null;
+  /** @type {Map<number, { x: number, y: number }>} */
+  var pointers = new Map();
+  /** @typedef {{ x: number, y: number }} Pt */
+  /**
+   * The gesture in progress: a tap or pan from start to last, or a two-finger pinch at a distance. A pinch has no
+   * start or last, and the handlers read those only for taps and pans.
+   * @typedef {{ kind: string, start: Pt, last: Pt, t?: number, type?: string, dist: number }} Gesture
+   */
+  /** @type {Gesture | null} */
+  var gesture = null;
+  /** @param {{ clientX: number, clientY: number }} e */
   function local(e) { var r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
   canvas.addEventListener('pointerdown', function (e) {
     if (!analysis) return;
     canvas.setPointerCapture(e.pointerId);
     pointers.set(e.pointerId, local(e));
-    if (pointers.size === 1) gesture = { kind: 'tap', start: local(e), last: local(e), t: Date.now(), type: e.pointerType };
-    else if (pointers.size === 2) { var ps = Array.from(pointers.values()); gesture = { kind: 'pinch', dist: Math.hypot(ps[0].x - ps[1].x, ps[0].y - ps[1].y) }; }
+    if (pointers.size === 1) gesture = /** @type {Gesture} */ ({ kind: 'tap', start: local(e), last: local(e), t: Date.now(), type: e.pointerType });
+    else if (pointers.size === 2) { var ps = Array.from(pointers.values()); gesture = /** @type {Gesture} */ ({ kind: 'pinch', dist: Math.hypot(ps[0].x - ps[1].x, ps[0].y - ps[1].y) }); }
   });
   canvas.addEventListener('pointermove', function (e) {
     if (!analysis) return;
@@ -2434,6 +2857,7 @@ if (typeof document !== 'undefined') (function () {
     }
     if (e.pointerType === 'mouse' && !pointers.size) { hover = nearestLocus(p.x, p.y); showTip(hover, p.x, p.y); draw(); }
   });
+  /** @param {PointerEvent} e */
   function endPointer(e) {
     if (!pointers.has(e.pointerId)) return;
     pointers.delete(e.pointerId);
@@ -2442,7 +2866,7 @@ if (typeof document !== 'undefined') (function () {
       if (h) { addPin(h.k); hover = h; updateK(h.k, true); showTip(h, p.x, p.y); }
     }
     if (pointers.size === 0) gesture = null;
-    else if (pointers.size === 1) { var only = Array.from(pointers.values())[0]; gesture = { kind: 'pan', start: only, last: only }; }
+    else if (pointers.size === 1) { var only = Array.from(pointers.values())[0]; gesture = /** @type {Gesture} */ ({ kind: 'pan', start: only, last: only }); }
   }
   canvas.addEventListener('pointerup', endPointer);
   canvas.addEventListener('pointercancel', function (e) { pointers.delete(e.pointerId); if (!pointers.size) gesture = null; });
@@ -2468,7 +2892,9 @@ if (typeof document !== 'undefined') (function () {
     var el = $(id), grow = function () { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight + 2, 220) + 'px'; };
     el.addEventListener('input', grow); grow();
   });
+  /** @param {string[]} [ids] */
   function refreshFields(ids) { (ids || ['fC', 'fG', 'fH']).forEach(function (id) { $(id).dispatchEvent(new Event('input')); }); }
+  /** @param {string} m */
   function setMode(m) {
     if (inputs.mode === m) return;
     var c = readControls(); inputs = c; inputs.mode = m;
@@ -2480,12 +2906,12 @@ if (typeof document !== 'undefined') (function () {
   $('modeS').addEventListener('click', function () { setMode('s'); });
   $('modeZ').addEventListener('click', function () { setMode('z'); });
   $('kSlider').addEventListener('input', function () { if (analysis) updateK(sliderToK(Number($('kSlider').value), analysis.kMax)); });
-  $('kBox').addEventListener('change', function () { var v = numOrNull($('kBox')); if (analysis && v !== null && isFinite(v) && v >= 0) updateK(v, true); else if (analysis) $('kBox').value = Number(inputs.k.toPrecision(6)); });
+  $('kBox').addEventListener('change', function () { var v = numOrNull($('kBox')); if (analysis && v !== null && isFinite(v) && v >= 0) updateK(v, true); else if (analysis) $('kBox').value = String(Number(inputs.k.toPrecision(6))); });
   $('kBox').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('kBox').dispatchEvent(new Event('change')); });
   $('pinBtn').addEventListener('click', function () { if (analysis) { addPin(inputs.k); renderPins(); draw(); } });
   $('clearPins').addEventListener('click', function () { inputs.pins = []; renderPins(); draw(); });
   $('pins').addEventListener('click', function (e) {
-    var b = e.target.closest('button'); if (!b) return;
+    var b = /** @type {Element} */ (e.target).closest('button'); if (!b) return;
     if (b.dataset.unpin !== undefined) { inputs.pins.splice(Number(b.dataset.unpin), 1); renderPins(); draw(); }
     else if (b.dataset.setk !== undefined) updateK(inputs.pins[Number(b.dataset.setk)].k, true);
   });
@@ -2494,18 +2920,21 @@ if (typeof document !== 'undefined') (function () {
   $('zoomIn').addEventListener('click', function () { zoomCentre(1.25); });
   $('zoomOut').addEventListener('click', function () { zoomCentre(0.8); });
   $('gridBtn').addEventListener('click', function () { showGrid = !showGrid; $('gridBtn').setAttribute('aria-pressed', String(showGrid)); draw(); });
+  /** @param {Inputs} next */
   function loadInputs(next) { inputs = clone(next); syncControls(); refreshFields(); recompute({ fit: true }); }
   EXAMPLES.forEach(function (ex, i) { var o = document.createElement('option'); o.value = String(i); o.textContent = ex.label; $('examples').appendChild(o); });
   $('examples').addEventListener('change', function () { var v = $('examples').value; if (v !== '') loadInputs(EXAMPLES[Number(v)].inputs); $('examples').value = ''; });
   $('resetBtn').addEventListener('click', function () { loadInputs(EXAMPLES[0].inputs); });
 
   /* ----- export and import ----- */
+  /** @param {string} text @param {string} name */
   function download(text, name) {
     var a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([text], { type: 'text/markdown' })); a.download = name; document.body.appendChild(a); a.click();
     setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 0);
   }
   function markdown() { return exportMarkdown(inputs, { analysis: analysis, date: new Date().toISOString().slice(0, 10) }); }
+  /** @param {string} msg */
   function ioStatus(msg) { $('ioStatus').textContent = (inputsValid ? '' : 'The fields have an error, so the record holds the last valid loop. ') + msg; }
   $('exportBtn').addEventListener('click', function () {
     if (!analysis) return;
@@ -2520,6 +2949,7 @@ if (typeof document !== 'undefined') (function () {
   });
   /* ----- beamdswitch deck: the report template lives in the beamdswitch script above; locusReport fills it ----- */
   function reportDeck() { var report = analysis && locusReport(inputs, { analysis: analysis }); return report && Beamdswitch.deck(report); }
+  /** @param {string} text */
   function clipboardWrite(text) { return navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(text) : Promise.reject(new Error('no clipboard')); }
   function saveDeck() {
     var text = reportDeck(), name = 'root-locus-beamdswitch.md';
@@ -2538,6 +2968,7 @@ if (typeof document !== 'undefined') (function () {
   }
   $('saveDeckBtn').addEventListener('click', saveDeck);
   $('copyDeckBtn').addEventListener('click', copyDeck);
+  /** @param {string} text @param {string} source */
   function doImport(text, source) {
     var r = applyImport({ inputs: inputs }, text);
     if (r.error) { $('importErr').textContent = 'Import failed (' + source + '): ' + r.error + ' The current check is unchanged.'; $('ioSec').open = true; return; }
@@ -2545,6 +2976,7 @@ if (typeof document !== 'undefined') (function () {
     loadInputs(r.session.inputs);
     ioStatus('Imported the record from ' + source + '; results were recomputed.');
   }
+  /** @param {File | undefined} file */
   function readFile(file) {
     if (!file) return;
     if (file.size > 2e6) { $('importErr').textContent = 'Import failed: the file is larger than 2 MB. The current check is unchanged.'; return; }
@@ -2553,10 +2985,10 @@ if (typeof document !== 'undefined') (function () {
     fr.onerror = function () { $('importErr').textContent = 'Import failed: the file could not be read. The current check is unchanged.'; };
     fr.readAsText(file);
   }
-  $('importFile').addEventListener('change', function () { readFile($('importFile').files[0]); $('importFile').value = ''; });
+  $('importFile').addEventListener('change', function () { readFile(/** @type {FileList} */ ($('importFile').files)[0]); $('importFile').value = ''; });
   $('importBtn').addEventListener('click', function () { doImport($('importText').value, 'pasted text'); });
   var dz = $('dropZone');
-  ['dragenter', 'dragover'].forEach(function (t) { document.addEventListener(t, function (e) { e.preventDefault(); if (e.target === dz || dz.contains(e.target)) dz.classList.add('over'); }); });
+  ['dragenter', 'dragover'].forEach(function (t) { document.addEventListener(t, function (e) { e.preventDefault(); if (e.target === dz || dz.contains(/** @type {Node | null} */ (e.target))) dz.classList.add('over'); }); });
   document.addEventListener('dragleave', function (e) { if (e.target === dz) dz.classList.remove('over'); });
   document.addEventListener('drop', function (e) { e.preventDefault(); dz.classList.remove('over'); var f = e.dataTransfer && e.dataTransfer.files[0]; if (f) { $('ioSec').open = true; readFile(f); } });
 
@@ -2583,20 +3015,22 @@ if (typeof document !== 'undefined') (function () {
   ];
   $('helpExamples').innerHTML = helpExamples.map(function (e, i) { return '<div class="ex"><div><code>' + esc(e[0]) + '</code><div class="hint">' + esc(e[1]) + '</div></div><button type="button" class="small" data-copy="' + i + '">Copy</button><button type="button" class="small" data-use="' + i + '">Use as ' + (e[2] || 'G') + '</button></div>'; }).join('');
   $('helpExamples').addEventListener('click', function (e) {
-    var b = e.target.closest('button'); if (!b) return;
-    if (b.dataset.copy !== undefined) { var t = helpExamples[Number(b.dataset.copy)][0]; if (navigator.clipboard) navigator.clipboard.writeText(t).then(function () { b.textContent = 'Copied'; }, function () { b.textContent = 'Select and copy'; }); }
+    var b = /** @type {HTMLButtonElement | null} */ (/** @type {Element} */ (e.target).closest('button')); if (!b) return;
+    var btn = b;
+    if (btn.dataset.copy !== undefined) { var t = helpExamples[Number(b.dataset.copy)][0]; if (navigator.clipboard) navigator.clipboard.writeText(t).then(function () { btn.textContent = 'Copied'; }, function () { btn.textContent = 'Select and copy'; }); }
     else if (b.dataset.use !== undefined) {
       var ex = helpExamples[Number(b.dataset.use)];
       $(ex[2] === 'C' ? 'fC' : 'fG').value = ex[0];
-      $('help').close(); refreshFields(['fC', 'fG']); recompute({ fit: true });
+      /** @type {HTMLDialogElement} */ (document.getElementById('help')).close(); refreshFields(['fC', 'fG']); recompute({ fit: true });
     }
   });
-  $('helpBtn').addEventListener('click', function () { if ($('help').showModal) $('help').showModal(); else $('help').setAttribute('open', ''); });
+  $('helpBtn').addEventListener('click', function () { var help = /** @type {HTMLDialogElement} */ (document.getElementById('help')); if (help.showModal) help.showModal(); else help.setAttribute('open', ''); });
 
   /* ----- WebMCP ----- */
   (function registerTools() {
-    var mc = document.modelContext || (typeof navigator !== 'undefined' && navigator.modelContext);
-    if (!mc || typeof mc.registerTool !== 'function') return;
+    var found = document.modelContext || (typeof navigator !== 'undefined' && navigator.modelContext);
+    if (!found || typeof found.registerTool !== 'function') return;
+    var mc = found;
     webmcpTools(function () { return inputs; }).forEach(function (t) { try { mc.registerTool(t); } catch (e) { /* tool already registered */ } });
   })();
 
@@ -2605,7 +3039,8 @@ if (typeof document !== 'undefined') (function () {
   var mq = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
   if (mq && mq.addEventListener) mq.addEventListener('change', function () { readColors(); draw(); });
   if (window.matchMedia && window.matchMedia('(max-width: 759px)').matches) { $('pinSec').open = false; }
-  var resizeTimer = null;
+  /** @type {ReturnType<typeof setTimeout> | undefined} */
+  var resizeTimer;
   window.addEventListener('resize', function () { clearTimeout(resizeTimer); resizeTimer = setTimeout(function () { regionCache = null; if (!userMoved) fitView(); draw(); }, 100); });
   syncControls();
   refreshFields();

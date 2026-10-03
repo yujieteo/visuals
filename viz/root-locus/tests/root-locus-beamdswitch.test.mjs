@@ -5,16 +5,27 @@ import { createRequire } from "node:module";
 import vm from "node:vm";
 import { checkDeck, standIn, TEMPLATE } from "./beamdswitch-deck-checks.mjs";
 
-const require = createRequire(import.meta.url);
-const T = require("../beamdswitch.js");
+const load = createRequire(import.meta.url);
+/** @type {BeamdswitchApi} */
+const T = load("../beamdswitch.js");
 const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
 const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => m[1]);
 // The second script is the numeric core; its module.exports guard loads it in Node.
-const R = (() => { const module = { exports: {} }; vm.runInNewContext(scripts[1], { module, console }); return module.exports; })();
+/** @typedef {typeof import("../.typecheck/inline/script-3.js")} Core the page's numeric core, typed from its extracted copy */
+/** @type {Core} */
+const R = (() => { const module = { exports: {} }; vm.runInNewContext(scripts[1], { module, console }); return /** @type {Core} */ (module.exports); })();
+/** @template T @param {T} v @returns {T} */
 const plain = (v) => structuredClone(v);
 
-const withK = (ex, over) => ({ ...plain(R.EXAMPLES.find((e) => e.id === ex).inputs), ...over });
+/** @typedef {Parameters<Core["analyze"]>[0]} Inputs */
+/* An example the test names: it must exist. */
+const example = (/** @type {string} */ id) => { const e = R.EXAMPLES.find((x) => x.id === id); assert.ok(e, id); return e; };
+/** @param {string} ex @param {Partial<Inputs>} over @returns {Inputs} */
+const withK = (ex, over) => ({ ...plain(example(ex).inputs), ...over });
+/* The analysis of a loop that computes. */
+const analyzed = (/** @type {Inputs} */ inputs) => { const a = R.analyze(inputs); assert.ok(a.ok, "the loop computes"); return a; };
 /* Every example, plus loops that reach the remaining branches: unstable, failing a requirement, a manual K max, a pole at the origin. */
+/** @type {Record<string, Inputs>} */
 const LOOPS = {
   ...Object.fromEntries(R.EXAMPLES.map((e) => [e.id, plain(e.inputs)])),
   unstable: withK("type1-third-order", { k: 20 }),
@@ -23,18 +34,21 @@ const LOOPS = {
   "pole at the origin": withK("type1-third-order", { k: 0 }),
   "no requirement met": withK("type1-third-order", { requirements: { zetaMin: null, wnMin: null, wnMax: null, settlingTime: 0.5 } }),
 };
-const deckFor = (inputs) => T.deck(R.locusReport(inputs));
+/* The deck of a loop that computes. */
+const deckFor = (/** @type {Inputs} */ inputs) => { const report = R.locusReport(inputs); assert.ok(report, "the loop computes"); return T.deck(report); };
+/* The blob saved by a download the test expects. */
+const blobOf = (/** @type {{ blob: Blob | undefined } | undefined} */ file) => { assert.ok(file && file.blob, "a file was saved"); return file.blob; };
 
 test("the deck for every loop parses in beamdswitch into the standard template, narrated on every slide", () => {
   for (const [name, inputs] of Object.entries(LOOPS)) {
     const deck = checkDeck(deckFor(inputs), name);
-    assert.match(deck.meta.title, /^Root locus design check: [sz]-plane loop with \d+ poles? and \d+ zeros?$/, name);
+    assert.match(deck.meta.title ?? "", /^Root locus design check: [sz]-plane loop with \d+ poles? and \d+ zeros?$/, name);
   }
 });
 
 test("the numbers in the deck are the analysis's, at the page's four significant figures", () => {
   for (const [name, inputs] of Object.entries(LOOPS)) {
-    const a = R.analyze(inputs), md = deckFor(inputs), loop = a.loop, z = loop.mode === "z";
+    const a = analyzed(inputs), md = deckFor(inputs), loop = a.loop, z = loop.mode === "z";
     const atk = R.closedLoopAt(a, inputs.k, inputs.requirements);
     for (const p of atk.poles) {
       const r = { pole: R.fmtC(p.pole, 4), s: z ? (Number.isFinite(p.s.re) ? R.fmtC(p.s, 4) : "-∞") : null, zeta: R.fmt(p.zeta, 4), wn: R.fmt(p.wn, 4) };
@@ -52,7 +66,7 @@ test("the numbers in the deck are the analysis's, at the page's four significant
 });
 
 test("the narration reads the loop in words", () => {
-  const said = (inputs) => checkDeck(deckFor(inputs), "narration").frames.map((f) => f.narration).join(" ");
+  const said = (/** @type {Inputs} */ inputs) => checkDeck(deckFor(inputs), "narration").frames.map((f) => f.narration).join(" ");
   const pi = said(LOOPS["pi-requirements"]);
   assert.match(pi, /It has 3 poles, at 0, minus 4, minus 1, and 1 zero, at minus 0\.5\./);
   assert.match(pi, /with a damping ratio of at least 0\.5, and a 2 percent settling time of at most 10 seconds\./);
@@ -71,8 +85,9 @@ test("a loop that cannot be analysed has no report", () => {
 
 /* ---------- the page's buttons ---------- */
 // Timers run at once, so the page's debounced recompute happens before the next line.
+/** @param {Parameters<typeof standIn>[0]} [opts] */
 function page(opts) {
-  const p = standIn({ ...opts, globals: { setTimeout: (fn) => { fn(); return 0; } } });
+  const p = standIn({ ...opts, globals: { setTimeout: (/** @type {() => void} */ fn) => { fn(); return 0; } } });
   p.run(html);
   return p;
 }
@@ -86,16 +101,16 @@ test("the beamdswitch button saves the page's check as a deck whose numbers matc
     assert.equal(p.$("ioStatus").textContent, "Saved root-locus-beamdswitch.md: open it in beamdswitch.", what);
     const [file] = p.saved;
     assert.equal(file.name, "root-locus-beamdswitch.md");
-    assert.equal(file.blob.type, "text/markdown");
-    const md = await file.blob.text();
+    assert.equal(blobOf(file).type, "text/markdown");
+    const md = await blobOf(file).text();
     checkDeck(md, what);
     // Each closed-loop pole the page lists is a row of the deck's pole table, with the same digits.
     const rows = [...p.$("readouts").innerHTML.matchAll(/<tr><td class="mono">([\s\S]*?)<\/tr>/g)].map((m) => [...("<td>" + m[1]).matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map((c) => c[1].replace(/<[^>]+>/g, "")));
     assert.ok(rows.length > 0, what);
     for (const row of rows) assert.ok(md.includes(`| ${row.slice(0, -1).join(" | ")} |`), `${what}: ${row}`);
-    const verdict = p.$("readouts").innerHTML.match(/<br>([^<]*)<\/div>/)[1];
+    const verdict = /** @type {RegExpMatchArray} the page writes a verdict */ (p.$("readouts").innerHTML.match(/<br>([^<]*)<\/div>/))[1];
     assert.ok(md.includes(`- ${verdict.replace(/&lt;/g, "<").replace(/&gt;/g, ">")}`), `${what}: ${verdict}`);
-    assert.equal(md, T.deck(R.locusReport(R.EXAMPLES[i].inputs)), `${what}: the page's deck is the example's`);
+    assert.equal(md, deckFor(R.EXAMPLES[i].inputs), `${what}: the page's deck is the example's`);
   }
 });
 
@@ -104,7 +119,7 @@ test("Copy deck copies the same deck, and saving falls back to the clipboard whe
   await p.$("copyDeckBtn").fire("click");
   assert.equal(p.$("ioStatus").textContent, "Copied the beamdswitch deck: paste it into beamdswitch.");
   await p.$("saveDeckBtn").fire("click");
-  assert.equal(p.copied[0], await p.saved[0].blob.text());
+  assert.equal(p.copied[0], await blobOf(p.saved[0]).text());
 
   const blocked = page({ saveFails: true });
   await blocked.$("saveDeckBtn").fire("click");
@@ -120,12 +135,12 @@ test("Copy deck copies the same deck, and saving falls back to the clipboard whe
 
 test("while a field has an error the deck holds the last valid loop, and says so", async () => {
   const p = page();
-  const before = T.deck(R.locusReport(R.EXAMPLES[0].inputs));
+  const before = deckFor(R.EXAMPLES[0].inputs);
   Object.assign(p.$("fG"), { value: "1 / (s +" });
   await p.$("fG").fire("input");
   await p.$("saveDeckBtn").fire("click");
   assert.equal(p.$("ioStatus").textContent, "The fields have an error, so the record holds the last valid loop. Saved root-locus-beamdswitch.md: open it in beamdswitch.");
-  assert.equal(await p.saved[0].blob.text(), before);
+  assert.equal(await blobOf(p.saved[0]).text(), before);
 });
 
 test("the page inlines the site's shared beamdswitch template unchanged", () => {
