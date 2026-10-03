@@ -21,6 +21,9 @@ TOKENS = ROOT / "design-tokens.json"
 VIZ = ROOT / "viz" / SLUG / "index.html"
 TEMPLATE = ROOT / "viz" / SLUG / "beamdswitch.js"
 REPORT = ROOT / "viz" / SLUG / "report.js"
+# D3 7.9.0 exactly as the jsdelivr CDN serves dist/d3.min.js (ISC, scripts/vendor/d3-LICENSE), inlined so the
+# page needs no network request and works offline and from file://.
+D3 = ROOT / "scripts" / "vendor" / "d3-7.9.0.min.js"
 BEAMDSWITCH_URL = "https://teoyujie.org/visuals/beamdswitch/"
 GALLERY = ROOT / "index.html"
 EXPECTED_COUNT = 109
@@ -124,7 +127,9 @@ def render_viz(rows, term_rows, median_lon, median_lat, meta, tokens):
     data = js_template(csv_text(rows, FIELDS))
     term_data = js_template(csv_text(term_rows, TERM_FIELDS))
     deck_js = DECK_JS.replace("__DESCRIBED__", str(EXPECTED_DESCRIBED)).replace("__SOURCE__", json.dumps(meta["source"])).replace("__FETCHED__", json.dumps(meta["fetched"]))
-    template, report = TEMPLATE.read_text(), REPORT.read_text()
+    template, report, d3 = TEMPLATE.read_text(), REPORT.read_text(), D3.read_text()
+    if "</script" in d3.lower():
+        raise SystemExit(f"{D3.name} must not contain </script")
     return f'''<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="data:,"><meta name="description" content="See which words recur in {EXPECTED_DESCRIBED} descriptions of Singapore tourist attractions and where the described places are located."><title>How Singapore attractions are marketed</title>{THEME_SCRIPT}
 <style>
@@ -134,7 +139,8 @@ def render_viz(rows, term_rows, median_lon, median_lat, meta, tokens):
 <section class="controls" aria-label="Visualization controls"><label><span>Search attractions</span><input id="search" type="search" autocomplete="off" placeholder="Name, address, overview, or hours"></label><button id="reset" type="button">Reset all</button><button id="show-all" type="button">Show all results</button></section><div class="layout"><section class="map-panel" aria-labelledby="map-heading"><h2 id="map-heading">Where the language appears</h2><div class="map-wrap"><div class="zoom-ctl"><button id="zoom-in" type="button" aria-label="Zoom in">+</button><button id="zoom-out" type="button" aria-label="Zoom out">&minus;</button></div><svg id="map" viewBox="0 0 800 560" role="img"><title>Marketing language and attraction locations</title><desc>{len(rows)} points plotted by longitude and latitude with median quadrant lines. Word and search filters update the points, result list, and region counts.</desc></svg></div></section><aside class="side-panel" aria-label="Attraction results"><p id="count" class="result-count" aria-live="polite"></p><ol id="results" class="results"></ol><article id="details" class="details" aria-live="polite"><h2>Choose an attraction</h2><p class="empty">Select a point or result to view its full source overview.</p></article></aside></div></main><footer>Source: {escape(meta['source'])}. Fetched {meta['fetched']}.</footer>
 <script id="beamdswitch">
 {template}</script><script id="report">
-{report}</script><script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script><script>
+{report}</script><script id="d3">
+{d3}</script><script>
 const csvData=`{data}`;const termCsvData=`{term_data}`;
 const rows=d3.csvParse(csvData,d=>({{...d,longitude:+d.longitude,latitude:+d.latitude,offset_x:+d.offset_x,offset_y:+d.offset_y,marketing_terms:d.marketing_terms?d.marketing_terms.split("|"):[]}}));const terms=d3.csvParse(termCsvData,d=>({{...d,documents:+d.documents,nw:+d.nw,ne:+d.ne,sw:+d.sw,se:+d.se}}));
 const state={{query:"",term:null,selection:null,visibleLimit:24,zoom:d3.zoomIdentity}};const byId=new Map(rows.map(d=>[d.id,d]));const medianLon={median_lon!r},medianLat={median_lat!r};
@@ -185,7 +191,7 @@ def verify(raw, meta, rows, term_rows, median_lon, median_lat):
     assert embedded_rows and len(list(csv.DictReader(io.StringIO(embedded_rows.group(1))))) == EXPECTED_COUNT
     assert embedded_terms and len(list(csv.DictReader(io.StringIO(embedded_terms.group(1))))) == TERM_LIMIT
     assert html == render_viz(rows, term_rows, median_lon, median_lat, meta, json.loads(TOKENS.read_text())), "the page is out of date; run the builder"
-    assert html.count("<script src=") == 1 and "d3@7.9.0" in html and html.count("<script") == 5 and THEME_SCRIPT in html
+    assert "<script src=" not in html and f'<script id="d3">\n{D3.read_text()}</script>' in html and html.count("<script") == 5 and THEME_SCRIPT in html
     assert f'<script id="beamdswitch">\n{TEMPLATE.read_text()}</script>' in html and f'<script id="report">\n{REPORT.read_text()}</script>' in html
     assert 'id="save-beamdswitch"' in html and 'id="copy-beamdswitch"' in html
     for name in ("get_data", "get_metadata", "query", "get_marketing_terms"):

@@ -7,7 +7,7 @@ description: Use the How Singapore attractions are marketed visualisation and it
 
 Which words recur in 106 descriptions of Singapore tourist attractions, and where the described places are, as a word cloud beside a map.
 
-Open `index.html` in a browser, or https://teoyujie.org/visuals/tourist-attractions/. It loads d3 from jsDelivr, so the chart and tools need network access. Development guide: [AGENTS.md](AGENTS.md).
+Open `index.html` in a browser, or https://teoyujie.org/visuals/tourist-attractions/. d3 is inlined, so it works offline. Development guide: [AGENTS.md](AGENTS.md).
 
 ## Tasks
 
