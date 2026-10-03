@@ -1,16 +1,19 @@
 // page-axi end to end in headless Chromium, on two fixture pages: one that passes every check and one that
 // fails each of them. CI runs it in the chromium-desktop browser jobs (npm run test:page-axi).
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { test } from "node:test";
+import { after, test } from "node:test";
 import { REPO } from "../lib/manifest.js";
 import { main } from "../lib/page-axi.js";
 
 const GOOD = fileURLToPath(new URL("fixtures/page-axi/good", import.meta.url));
 const BAD = fileURLToPath(new URL("fixtures/page-axi/bad", import.meta.url));
 const OUT = join(REPO, "build", "page-axi");
+const TMP = mkdtempSync(join(tmpdir(), "page-axi-test-"));
+after(() => rmSync(TMP, { recursive: true, force: true }));
 
 /**
  * Run page-axi and capture what it prints.
@@ -58,4 +61,13 @@ test("a broken page fails each check it breaks, failures first, exit 1, with the
   assert.match(result.out, /Open .*390-light\.png to see the overflow at 390 px/);
   const log = JSON.parse(readFileSync(join(out, "run.json"), "utf8"));
   assert.deepEqual(log.loads[0].errors, ["console bad page: a console error"]);
+});
+
+test("a page whose folder and file names need URL encoding opens and passes", async () => {
+  const folder = join(TMP, "my page #1");
+  cpSync(GOOD, folder, { recursive: true });
+  cpSync(join(folder, "index.html"), join(folder, "the page.html"));
+  const result = await run(["check", join(folder, "the page.html"), "--viewport", "390", "--themes", "light"]);
+  assert.equal(result.code, 0, result.out);
+  assert.match(result.out, /loads: 1\n/);
 });

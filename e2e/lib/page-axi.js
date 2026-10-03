@@ -12,6 +12,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, dirname, join, relative, resolve, sep } from "node:path";
+import { fileURLToPath } from "node:url";
 import { discoverVisualsRepo } from "./catalogue.js";
 import { REPO, loadManifest } from "./manifest.js";
 
@@ -155,12 +156,12 @@ export function resolveTarget(raw, { repo = REPO, cwd = process.cwd() } = {}) {
     return { kind: "url", name, visual: bySlug.get(name) ?? null, folder: null, entry: "", url: url.href };
   }
   if (SLUG.test(raw) && bySlug.has(raw)) return { kind: "slug", name: raw, visual: /** @type {Visual} */ (bySlug.get(raw)), folder: join(repo, "viz", raw), entry: "index.html", url: null };
-  const path = resolve(cwd, raw.startsWith("file://") ? new URL(raw).pathname : raw);
+  const path = resolve(cwd, raw.startsWith("file://") ? fileURLToPath(raw) : raw);
   if (!existsSync(path)) {
     const near = visuals.map((v) => v.slug).filter((s) => distance(s, raw) <= Math.max(2, Math.floor(raw.length / 4)) || s.includes(raw)).slice(0, 5);
     throw new UsageError(SLUG.test(raw) ? `no visual viz/${raw}/ and no file or folder ${raw}` : `no file or folder ${raw}`, [
       ...near.length ? [`Did you mean ${near.join(", ")}?`] : [],
-      "Run `fd -d 1 -t d . viz` to list the visuals",
+      "Run `ls viz` to list the visuals",
     ]);
   }
   const isDir = statSync(path).isDirectory();
@@ -337,7 +338,8 @@ export function verdictRows({ loads, drive, rules, declared, manifest = {} }) {
   }
   for (const row of rows) {
     const names = MANIFEST_NAMES[row.check] ?? [];
-    const known = (manifest.findings ?? []).filter((f) => names.includes(f.check) && (f.projects.includes("*") || f.projects.some((p) => p.startsWith("chromium"))));
+    const known = (manifest.findings ?? []).filter((f) => names.includes(f.check) && (f.projects.includes("*") || f.projects.some((p) => p.startsWith("chromium")))
+      && (!/^overflow-\d+$/.test(f.check) || row.where.split(" ").some((w) => w.startsWith(`${f.check.slice("overflow-".length)}/`))));
     if (row.status === "fail" && known.length) row.evidence = `known ${known[0].check} finding in e2e/manifest.json; ${row.evidence}`;
   }
   const order = { fail: 0, skip: 1, pass: 2 };
@@ -476,9 +478,9 @@ export async function runCheck(options, { repo = REPO, cwd = process.cwd() } = {
       allowed = url.replace(/[^/]*$/, "");
     } else {
       const { serveArtifacts } = await import("./server.js");
-      server = await serveArtifacts(new Map([[target.name, /** @type {string} */ (folder)]]));
-      allowed = server.urlFor(target.name);
-      url = allowed + (target.entry === "index.html" ? "" : target.entry);
+      server = await serveArtifacts(new Map([["page", /** @type {string} */ (folder)]]));
+      allowed = server.urlFor("page");
+      url = allowed + (target.entry === "index.html" ? "" : encodeURIComponent(target.entry));
     }
 
     try {

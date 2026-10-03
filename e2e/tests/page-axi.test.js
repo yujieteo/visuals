@@ -1,10 +1,10 @@
 // page-axi without a browser: the command line, the page it resolves (every target that names no page is a
 // usage error, exit 2, never an empty pass), the verdict rows and the TOON output.
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { test } from "node:test";
 import { REPO } from "../lib/manifest.js";
 import { UsageError, hints, main, parseArgs, resolveTarget, scalar, toon, verdictRows } from "../lib/page-axi.js";
@@ -59,6 +59,15 @@ test("a slug, a visual's folder or index.html, another folder, an HTML file and 
   assert.deepEqual([path.kind, path.name, path.entry, path.visual], ["path", "good", "index.html", null]);
   const file = resolveTarget(join(GOOD, "index.html"), { repo: VISUALS, cwd });
   assert.deepEqual([file.kind, file.entry], ["path", "index.html"]);
+  const spaced = mkdtempSync(join(tmpdir(), "page-axi-"));
+  try {
+    mkdirSync(join(spaced, "my page"));
+    writeFileSync(join(spaced, "my page", "index.html"), "<p>x</p>\n");
+    const fromUrl = resolveTarget(pathToFileURL(join(spaced, "my page", "index.html")).href, { repo: VISUALS, cwd });
+    assert.deepEqual([fromUrl.kind, fromUrl.name, fromUrl.entry], ["path", "my page", "index.html"]);
+  } finally {
+    rmSync(spaced, { recursive: true, force: true });
+  }
   const url = resolveTarget("https://example.org/visuals/delta/", { repo: VISUALS, cwd });
   assert.deepEqual([url.kind, url.name, url.url, url.visual?.slug], ["url", "delta", "https://example.org/visuals/delta/", "delta"]);
 });
@@ -85,7 +94,7 @@ test("no false pass: an unknown slug, a missing path, a folder without a page, a
 test("main exits 2 with a TOON error and a hint for a page that does not exist, before it launches a browser", async () => {
   const { code, out } = await run(["check", "no-such-visual-anywhere"], { repo: REPO, cwd: REPO });
   assert.equal(code, 2);
-  assert.match(out, /^error: no visual viz\/no-such-visual-anywhere\/ and no file or folder no-such-visual-anywhere\nhelp\[1\]:\n {2}Run `fd -d 1 -t d \. viz` to list the visuals\n$/);
+  assert.match(out, /^error: no visual viz\/no-such-visual-anywhere\/ and no file or folder no-such-visual-anywhere\nhelp\[1\]:\n {2}Run `ls viz` to list the visuals\n$/);
   assert.equal((await run(["check", "--viewport", "1"])).code, 2);
   const help = await run(["--help"]);
   assert.equal(help.code, 0);
@@ -147,6 +156,15 @@ test("a failure the manifest records as a known finding says so and still fails"
   const row = verdictRows({ loads: [load({ requests: ["refused https://cdn.example.org/p.jpg"] })], drive: DRIVE, rules: RULES, declared: null, manifest })[0];
   assert.deepEqual([row.check, row.status], ["network", "fail"]);
   assert.match(row.evidence, /^known network finding in e2e\/manifest.json; refused/);
+});
+
+test("a known overflow finding labels only an overflow at the width it names", () => {
+  const manifest = { findings: [{ check: "overflow-390", projects: ["*"], status: /** @type {const} */ ("finding"), evidence: "a wide table" }] };
+  const overflowAt = (/** @type {number} */ viewport) => verdictRows({ loads: [load({ viewport, overflow: { scrollWidth: viewport + 100, clientWidth: viewport, culprits: [] } })], drive: DRIVE, rules: RULES, declared: null, manifest })[0];
+  assert.match(overflowAt(390).evidence, /^known overflow-390 finding/);
+  const wide = overflowAt(768);
+  assert.deepEqual([wide.check, wide.status], ["overflow", "fail"]);
+  assert.match(wide.evidence, /^scrollWidth 868 > clientWidth 768/);
 });
 
 test("hints point at the screenshot of the first overflow and at the log", () => {
