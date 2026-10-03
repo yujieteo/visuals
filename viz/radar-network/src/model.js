@@ -476,8 +476,24 @@
     };
   }
 
+  /* ===== PUBLISHED REFERENCE CASES ===== */
+  /** Evaluate one published MathWorks case with this model's own equations. */
+  function referenceCheck(rc) {
+    const i = rc.inputs, lambda = wavelength(i.f_Hz), Gt = dbToLin(i.Gt_dB), Gr = dbToLin(i.Gr_dB), L = dbToLin(i.L_dB);
+    let computed;
+    if (rc.kind === "snr") {
+      const eq = radarEquation({ Pt: i.Pt_W, Gt, Gr, lambda, sigma: i.sigma_m2, Rt: i.Rt_m, Rr: i.Rr_m, L });
+      computed = linToDb(pulseSnr({ Pr: eq.Pr, tau: i.tau_s, Ts: i.Ts_K, Lmf: 1 }));
+    } else {
+      const K = (i.Pt_W * Gt * Gr * lambda * lambda * i.sigma_m2 * i.tau_s) / (FOUR_PI_CUBED * K_B * i.Ts_K * L * dbToLin(i.snr_dB));
+      computed = Math.pow(K, 0.25);
+    }
+    const diff = computed - rc.published;
+    return { id: rc.id, computed, published: rc.published, diff, tolerance: rc.tolerance, pass: Math.abs(diff) <= rc.tolerance, units: rc.units };
+  }
+
   return {
-    MODEL_VERSION, FOUR_PI_CUBED,
+    MODEL_VERSION, FOUR_PI_CUBED, referenceCheck,
     kinematics, attitude, bodyToWorld, mulMV, mulMtV, dirFromAzEl, azElFromDir, objectState, breakpoints,
     wavelength, peakGain, boresight, gainToward, bilinear,
     aspectQ, rcs,

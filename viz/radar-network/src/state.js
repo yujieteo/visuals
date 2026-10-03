@@ -34,7 +34,7 @@
       orientation: { yaw_deg: 0, pitch_deg: 0, roll_deg: 0, rates_dps: [0, 0, 0], waypoints: [] },
       tx: { enabled: true, power_W: P.peakPower_W, carrier_Hz: P.carrier_Hz, waveform: wf.waveform, chirp: wf.chirp, pulse_s: P.pulse_s, bandwidth_Hz: P.bandwidth_Hz, prf_Hz: P.prf_Hz, pulses: P.pulses, offset_s: 0 },
       rx: { enabled: true, tempMode: "system", systemTemp_K: P.systemTemp_K, antennaTemp_K: 290, noiseFigure_dB: 3, refTemp_K: 290, sampleRate_Hz: P.sampleRate_Hz, window_s: P.window_s.slice(), noiseBandwidth_Hz: P.noiseBandwidth_Hz, mfLoss_dB: P.mfLoss_dB },
-      antenna: { mode: "directional", gainMode: "gain", peakGain_dBi: P.peakGain_dBi, aperture_m2: (N.dbToLin(P.peakGain_dBi) * lambda10 * lambda10) / (4 * Math.PI), beamwidth_deg: P.beamwidth_deg, floor_dB: P.sidelobeFloor_dB, pointing: { mode: "fixed", az_deg: 0, el_deg: 0 }, farField_m: P.farField_m, pattern: null },
+      antenna: { mode: "directional", gainMode: "gain", peakGain_dBi: P.peakGain_dBi, aperture_m2: Number(((N.dbToLin(P.peakGain_dBi) * lambda10 * lambda10) / (4 * Math.PI)).toPrecision(12)), beamwidth_deg: P.beamwidth_deg, floor_dB: P.sidelobeFloor_dB, pointing: { mode: "fixed", az_deg: 0, el_deg: 0 }, farField_m: P.farField_m, pattern: null },
       leakage: { isolation_dB: P.selfIsolation_dB, cancellation_dB: P.selfCancellation_dB },
     };
   }
@@ -50,7 +50,9 @@
   function aimAt(radar, point) {
     const d = N.vsub(point, radar.trajectory.position_m);
     const ae = M.azElFromDir(N.vunit(d));
-    radar.antenna.pointing = { mode: "fixed", az_deg: ae.az, el_deg: ae.el };
+    // Rounded to 1e-9 degrees: trigonometric functions may differ in the last bit between JavaScript engines.
+    const r9 = (x) => Math.round(x * 1e9) / 1e9;
+    radar.antenna.pointing = { mode: "fixed", az_deg: r9(ae.az), el_deg: r9(ae.el) };
   }
   /** The sparse synthetic patch grid; each phase is fixed, drawn once from the seeded stream of its id. */
   function clutterPatches(cl, seed) {
