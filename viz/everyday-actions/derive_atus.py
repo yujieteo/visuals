@@ -21,7 +21,6 @@ import datetime
 import sys
 from pathlib import Path
 
-import pandas as pd
 import rdata
 
 YEARS = (2014, 2015, 2016)
