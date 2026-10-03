@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""Builder and verifier for the multi-armed-bandit visualization.
+"""Builder and verifier for the multi-armed-bandit page.
 
 A practitioner tool for choosing the next trial among variants with uncertain binary success rates:
 Thompson Sampling (one shared Beta prior) and UCB1 recommendations from the user's own evidence, and
 a seeded simulation comparing them with equal allocation. The authored material (templates with
 fictional counts, assumptions, method references) lives in raw.json. The page is assembled from
 src/multi-armed-bandit.css, src/multi-armed-bandit-logic.js (pure numerics, state and simulation, also
-run by yujieteo/multi-armed-bandit's tests/multi-armed-bandit.test.mjs) and src/multi-armed-bandit.js
-(interface). beamdswitch.js (the site's shared report template, unchanged) and report.js (the
+run by tests/multi-armed-bandit.test.mjs) and src/multi-armed-bandit.js (interface), with the colours of
+src/design-tokens.json. beamdswitch.js (the site's shared report template, unchanged) and report.js (the
 experiment as a report) are inlined as they are, so the page makes no request at runtime. --verify
 re-runs every check and compares the committed page without writing.
 
@@ -17,27 +17,24 @@ re-runs every check and compares the committed page without writing.
 import argparse
 import json
 import re
-import sys
 from html import escape
 from pathlib import Path
 
+from style_guide import THEME_SCRIPT, root_css
 
-HERE = Path(__file__).resolve().parent
-ROOT = HERE.parents[1]
-sys.path.insert(0, str(ROOT / "scripts"))
-from page_parts import compact  # noqa: E402
-from style_guide import contrast  # noqa: E402
-
+ROOT = Path(__file__).resolve().parent
 SLUG = "multi-armed-bandit"
-DATA = HERE
-VIZ = HERE / "index.html"
-TOKENS = ROOT / "design-tokens.json"
-TEMPLATES = HERE / "src"
-CSS_TEMPLATE = TEMPLATES / "multi-armed-bandit.css"
-LOGIC_TEMPLATE = TEMPLATES / "multi-armed-bandit-logic.js"
-JS_TEMPLATE = TEMPLATES / "multi-armed-bandit.js"
-DECK_TEMPLATE = HERE / "beamdswitch.js"
-DECK_REPORT = HERE / "report.js"
+VIZ = ROOT / "index.html"
+SRC = ROOT / "src"
+TOKENS = SRC / "design-tokens.json"
+CSS_TEMPLATE = SRC / "multi-armed-bandit.css"
+LOGIC_TEMPLATE = SRC / "multi-armed-bandit-logic.js"
+JS_TEMPLATE = SRC / "multi-armed-bandit.js"
+HOURS_LOGIC = SRC / "hours-logic.js"
+HOURS_JS = SRC / "hours.js"
+PAGE_HELPERS = SRC / "page-helpers.js"
+DECK_TEMPLATE = ROOT / "beamdswitch.js"
+DECK_REPORT = ROOT / "report.js"
 BEAMDSWITCH_URL = "https://teoyujie.org/visuals/beamdswitch/"
 GALLERY_URL = "https://teoyujie.org/visuals/"
 
@@ -45,19 +42,19 @@ TITLE = "Multi-armed Bandit: Thompson Sampling and UCB"
 DESCRIPTION = ("Choose the next trial among variants with uncertain success rates: Thompson Sampling and UCB1 "
                "recommendations from your own success/failure counts, with a seeded simulation of how they explore.")
 CANONICAL = "https://teoyujie.org/visuals/multi-armed-bandit/"
-SIZE_LIMIT = 100 * 1024
+SIZE_LIMIT = 150_000  # the canonical specification's indicative budget for an ordinary visual
 
-# Page-scoped additions to design-tokens.json: control borders that reach 3:1, and the dark palette.
-LIGHT_EXTRA = {"mark_text": "#0062c4", "control": "#86868b", "eq": "#6e6e73", "on_mark": "#ffffff", "mark_soft": "#eef5fd"}
-DARK = {"background": "#161617", "foreground": "#f5f5f7", "secondary": "#a1a1a6", "surface": "#232326", "border": "#48484c",
-        "control": "#8e8e93", "focus": "#3d9bff", "mark": "#3d9bff", "mark_text": "#3d9bff", "selected": "#ff7b6b", "eq": "#a1a1a6", "on_mark": "#0b0b0c",
-        "mark_soft": "#14263b"}
+# The page's roles as aliases of the style guide's tokens (design-tokens.json "style_guide"): Thompson Sampling
+# is series 1, UCB1 series 2, equal allocation the muted grey; the selected-row fill is 8% of series 1.
+ALIASES = "--mark:var(--c1);--sel:var(--c2);--eq:var(--muted);--mtext:var(--focus);--on-mark:var(--on-focus);" \
+    "--soft:color-mix(in srgb,var(--c1) 8%,var(--bg))"
+SOFT_SHARE = 0.08
 FICTIONAL = {"website": [("Page A", 8, 100), ("Page B", 12, 100), ("Page C", 3, 20)]}
 
 
 def load():
-    raw = json.loads((DATA / "raw.json").read_text(encoding="utf-8"))
-    meta = json.loads((DATA / "meta.json").read_text(encoding="utf-8"))
+    raw = json.loads((ROOT / "raw.json").read_text(encoding="utf-8"))
+    meta = json.loads((ROOT / "meta.json").read_text(encoding="utf-8"))
     return raw, meta
 
 
@@ -77,14 +74,41 @@ def validate(raw, meta):
             assert t["id"] == "custom" and len(t["variants"]) == 3 and all(v["trials"] == 0 for v in t["variants"])
     assert "assessment horizon" in raw["templates"][2]["success"] and "response horizon" in raw["templates"][3]["success"]
     assert len(raw["assumptions"]) >= 4 and len(raw["references"]) == 3
+    h = raw["hours"]
+    assert [a["name"] for a in h["activities"]] == ["Mathematics", "Structural engineering", "FPL", "Notes", "Agent work"], "hours example activities"
+    assert "Fictional" in h["note"] and 1 <= h["hours"] <= 168 and len(h["assumptions"]) >= 4 and h["next"]
+    for a in h["activities"]:
+        assert all(isinstance(a[k], int) and 0 <= a[k] <= 10000 for k in ("worthwhile", "notWorthwhile")), a["name"]
+        assert set(a) == {"name", "worthwhile", "notWorthwhile"}, a["name"]
     assert meta["slug"] == SLUG and re.fullmatch(r"\d{4}-\d{2}-\d{2}", meta["fetched"]) and meta["key_file_used"] is False
     return {"templates": len(ids)}
 
 
+def luminance(hex_color):
+    rgb = [int(hex_color[i:i + 2], 16) / 255 for i in (1, 3, 5)]
+    lin = [c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4 for c in rgb]
+    return 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2]
+
+
+def contrast(a, b):
+    la, lb = sorted((luminance(a), luminance(b)), reverse=True)
+    return (la + 0.05) / (lb + 0.05)
+
+
+def mix(color, base, share):
+    a, b = (int(color[i:i + 2], 16) for i in (1, 3, 5)), (int(base[i:i + 2], 16) for i in (1, 3, 5))
+    return "#" + "".join(f"{round(x * share + y * (1 - share)):02x}" for x, y in zip(a, b))
+
+
 def palettes(tokens):
-    light = dict(tokens["colors"])
-    light.update(LIGHT_EXTRA)
-    return {"light": light, "dark": dict(DARK)}
+    out = {}
+    for mode in ("light", "dark"):
+        g = tokens["style_guide"][mode]
+        out[mode] = {"background": g["bg"], "foreground": g["fg"], "secondary": g["muted"], "surface": g["surface"],
+                     "control": g["control"], "focus": g["focus"], "mark_text": g["focus"], "on_mark": g["on-focus"],
+                     "mark": g["c1"], "selected": g["c2"], "eq": g["muted"], "bad": g["bad"],
+                     "mark_soft": mix(g["c1"], g["bg"], SOFT_SHARE)}
+    return out
 
 
 def check_contrast(tokens):
@@ -92,9 +116,9 @@ def check_contrast(tokens):
     rows = []
     pairs = [("foreground", "background", 4.5), ("foreground", "surface", 4.5), ("foreground", "mark_soft", 4.5),
              ("secondary", "background", 4.5), ("secondary", "surface", 4.5), ("secondary", "mark_soft", 4.5),
-             ("mark_text", "background", 4.5), ("mark_text", "surface", 4.5), ("mark_text", "mark_soft", 4.5), ("mark", "background", 3),
-             ("selected", "background", 4.5), ("selected", "surface", 4.5), ("selected", "mark_soft", 4.5), ("on_mark", "mark", 4.5), ("focus", "background", 3),
-             ("control", "background", 3), ("eq", "background", 3), ("eq", "surface", 3)]
+             ("mark_text", "background", 4.5), ("mark", "background", 3), ("mark", "surface", 3), ("selected", "background", 3),
+             ("bad", "background", 4.5), ("on_mark", "focus", 4.5), ("focus", "background", 3),
+             ("control", "background", 3), ("control", "surface", 3), ("eq", "background", 3), ("eq", "surface", 3)]
     for mode, p in palettes(tokens).items():
         for fg, bg, minimum in pairs:
             ratio = contrast(p[fg], p[bg])
@@ -103,19 +127,34 @@ def check_contrast(tokens):
     return rows
 
 
+def compact(js):
+    """Drops whole-line comments, blank lines and indentation. The sources use no template literals or
+    line continuations, so every statement is unchanged; tests run the compacted code the page ships."""
+    out = re.sub(r"^[ \t]*/\*[\s\S]*?\*/[ \t]*\n", "", js, flags=re.M)
+    lines = [ln.strip() for ln in out.split("\n")]
+    out = "\n".join(ln for ln in lines if ln and not ln.startswith("//"))
+    assert "`" not in out and not re.search(r"\\$", out, re.M), "compact() cannot handle template literals or continuations"
+    return out
+
+
 def css(tokens):
     text = CSS_TEMPLATE.read_text(encoding="utf-8")
-    rep = {"font_sans": tokens["font_sans"], "font_mono": tokens["font_mono"], "radius": tokens["radius"], "content_width": tokens["content_width"]}
+    rep = {"root_css": root_css(tokens, f"{ALIASES};--r:{tokens['radius']}"), "content_width": tokens["content_width"]}
     for i, step in enumerate(tokens["spacing_rem"]):
         rep[f"s{i}"] = f"{step}rem"
-    for mode, p in palettes(tokens).items():
-        for k, v in p.items():
-            rep[k if mode == "light" else f"dark_{k}"] = v
     for key, value in rep.items():
         text = text.replace(f"%%{key}%%", value)
     assert "%%" not in text, "unreplaced CSS token"
-    text = re.sub(r"\n", "", text)
-    return text
+    return text.replace("\n", "")
+
+
+def items_html(texts):
+    return "".join(f"<li>{escape(t)}</li>" for t in texts)
+
+
+def table_head(columns):
+    """Header cells from (label, numeric) pairs; numeric columns are right-aligned."""
+    return "".join(f'<th scope="col"{" class=\"n\"" if n else ""}>{escape(h)}</th>' for h, n in columns)
 
 
 def refs_html(raw):
@@ -127,8 +166,7 @@ def refs_html(raw):
 
 def about_html(raw, suffix):
     """Assumptions, references and next steps: in the experiment tab and in the no-JavaScript page."""
-    items = "".join(f"<li>{escape(a)}</li>" for a in raw["assumptions"])
-    return (f'<section aria-labelledby="h-about{suffix}"><h2 id="h-about{suffix}">Assumptions, references and next steps</h2><ul>{items}</ul>'
+    return (f'<section aria-labelledby="h-about{suffix}"><h2 id="h-about{suffix}">Assumptions, references and next steps</h2><ul>{items_html(raw["assumptions"])}</ul>'
             '<p class="note">If the success definition, the audience or the environment changes, start a new experiment instead of adding to this one.</p>'
             '<p class="note">Next steps: follow either recommendation for one trial, record the outcome once it is resolved, and look again. '
             'Neither method declares an experiment finished or a variant conclusively best.</p>'
@@ -143,15 +181,21 @@ FORMULAS = ('<p>For a variant with <i>s</i> successes and <i>f</i> failures, and
             'A UCB1 score is not a probability and is never capped at 1. Intervals are computed numerically from the regularised incomplete beta function, not by a normal approximation.</p>')
 
 
+HOURS_NOJS = ('<p><strong>Next week\'s hours.</strong> The hours tab treats each activity as a variant and each past hour-block as one trial, '
+              'worthwhile or not, with the prior Beta(1, 1). Thompson Sampling gives each '
+              'activity the hours times its probability of the highest posterior draw; UCB1 gives the hours one at a time to the highest score, counting '
+              'each planned hour as one more block.</p>')
+
+
 def nojs_html(raw):
     return (f'<div id="nojs" class="nojs"><p><strong>The interactive tool needs JavaScript.</strong> Without it, here is how the calculations work.</p>{FORMULAS}'
             '<p><strong>Worked Beta update.</strong> 8 successes in 100 trials (92 failures) with the prior Beta(1, 1) gives the posterior Beta(9, 93), '
-            'whose mean is 9/102 ≈ 8.82%.</p>' + about_html(raw, "-static") + "</div>")
+            'whose mean is 9/102 ≈ 8.82%.</p>' + HOURS_NOJS + about_html(raw, "-static") + "</div>")
 
 
 def experiment_html(raw):
     options = "".join(f'<option value="{escape(t["id"])}">{escape(t["label"])}{" (fictional counts)" if t["fictional"] else ""}</option>' for t in raw["templates"])
-    head = "".join(f'<th scope="col"{" class=\"n\"" if n else ""}>{escape(h)}</th>' for h, n in [
+    head = table_head([
         ("Select", 0), ("Name", 0), ("Successes", 0), ("Trials", 0), ("Failures", 1), ("Observed rate", 1), ("Posterior mean", 1),
         ("95% credible interval", 1), ("Thompson sample", 1), ("UCB1 score", 1), ("", 0)])
     field = lambda fid, key, label, tag="input": (
@@ -228,6 +272,51 @@ def simulation_html():
 </section>'''
 
 
+def hours_html(raw):
+    h = raw["hours"]
+    head = table_head([
+        ("Activity", 0), ("Worthwhile blocks", 0), ("Not-worthwhile blocks", 0), ("Past blocks", 1),
+        ("Posterior mean", 1), ("95% credible interval", 1), ("Chance best", 1), ("Thompson hours", 1), ("UCB1 hours", 1), ("", 0)])
+    return f'''<section role="tabpanel" id="panel-hrs" aria-labelledby="tab-hrs" hidden>
+<h2>Next week's hours</h2>
+<p class="note">List the activities you could spend next week's hours on and, for each, how many past hour-blocks felt worthwhile and how many did not. Each activity is a variant and each block a trial; the page recommends how to split the hours by Thompson Sampling, with UCB1 alongside. This plan is saved separately from your experiment.</p>
+<p><span id="h-basis" class="badge"></span> <span id="h-note" class="note"></span></p>
+<div class="row"><button type="button" id="h-example">Load example</button><button type="button" id="h-clear" hidden>Clear example</button></div>
+<section aria-labelledby="h-acts"><h3 id="h-acts">1. Activities and past blocks</h3>
+<p class="note">Enter how many past one-hour blocks of each activity felt worthwhile and how many did not. Counts are whole numbers up to 10,000.</p>
+<div class="tw"><table id="ht"><caption class="sr">Activities, their past blocks, posterior summaries and planned hours</caption><thead><tr>{head}</tr></thead><tbody id="ht-body"></tbody></table></div>
+<div class="row"><button type="button" id="h-add">Add activity</button><span id="h-count" class="note"></span></div>
+<p id="h-status" class="status" role="status"></p>
+</section>
+<section aria-labelledby="h-plan"><h3 id="h-plan">2. Hours and plan</h3>
+<div class="field"><label for="h-hours">Hours available next week (whole hours, 1 to 168)</label><input type="text" inputmode="numeric" id="h-hours" autocomplete="off" aria-describedby="e-hours"><p class="err" id="e-hours"></p></div>
+<div id="h-chart"></div>
+<ul class="legend" aria-hidden="true"><li><svg viewBox="0 0 32 8"><rect class="bar-ts" x="0" y="0" width="32" height="8"/></svg>Thompson Sampling (solid)</li><li><svg viewBox="0 0 32 8"><rect class="bar-ucb" x="1" y="1" width="30" height="6"/></svg>UCB1 (outline)</li></ul>
+<div class="recs"><div class="rec ts"><h4>Thompson Sampling plan</h4><p class="pick" id="h-ts-pick"></p><p id="h-ts-why"></p></div>
+<div class="rec ucb"><h4>UCB1 plan</h4><p class="pick" id="h-ucb-pick"></p><p id="h-ucb-why"></p></div></div>
+<p id="h-agree" class="callout"></p>
+<h4>Sensitivity</h4><ul id="h-sens" class="hints"></ul>
+</section>
+<details><summary>3. How the hours are split</summary>
+<p class="formula">s = worthwhile blocks, f = not-worthwhile blocks
+posterior = Beta(1 + s, 1 + f)
+chance best = P(this activity's draw is the highest) = ∫ pdf(x) · Π other CDFs(x) dx
+Thompson hours = hours × chance best, rounded to whole hours by largest remainder
+UCB1: for each hour in turn, the highest s/n + √(2 ln T / n) gets it; then n += 1 and T += 1</p>
+<p class="note">Thompson Sampling would give each hour to the activity with the highest random draw from its posterior; the plan uses each activity's expected share of those hours, computed by numerical integration, so the same evidence always gives the same plan. UCB1 counts every planned hour as one more block with the same worthwhile share, so its exploration bonus shrinks as hours are added. An activity with no blocks gets UCB1's first hours. Ties go to the first activity.</p>
+<h4>Assumptions</h4><ul>{items_html(h["assumptions"])}</ul>
+<h4>Next steps</h4><ul>{items_html(h["next"])}</ul>
+</details>
+<section aria-labelledby="h-save"><h3 id="h-save">4. Save, export and import</h3>
+<p class="note">The plan autosaves in this browser when storage is available. Nothing is uploaded.</p>
+<div class="row"><button type="button" id="h-save-md" class="primary">Save plan (Markdown)</button><button type="button" id="h-copy-md">Copy plan</button><button type="button" id="h-export">Export JSON</button><label class="filebtn">Import JSON<input type="file" id="h-import" accept="application/json,.json"></label><button type="button" id="h-blank">Start blank</button></div>
+<div id="h-confirm" class="confirm" hidden role="alertdialog" aria-labelledby="h-confirm-text"><p id="h-confirm-text"></p><div class="row"><button type="button" id="h-confirm-yes" class="primary">Replace</button><button type="button" id="h-confirm-no">Keep current</button></div></div>
+<p id="h-store" class="status" role="status"></p>
+<details id="h-fallback"><summary>Export as text</summary><label for="h-export-text" id="h-export-label">Last export</label><textarea id="h-export-text" readonly placeholder="Use Save plan, Copy plan or Export JSON; the text appears here to select and copy."></textarea></details>
+</section>
+</section>'''
+
+
 def render(raw, meta, tokens):
     payload = json.dumps(raw, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
     return f'''<!doctype html>
@@ -239,7 +328,7 @@ def render(raw, meta, tokens):
 <meta property="og:title" content="{escape(TITLE)}">
 <meta property="og:description" content="{escape(DESCRIPTION)}">
 <meta property="og:url" content="{CANONICAL}">
-<style>{css(tokens)}</style></head>
+{THEME_SCRIPT}<style>{css(tokens)}</style></head>
 <body><a class="skip" href="#main">Skip to the tool</a>
 <main id="main" tabindex="-1">
 <p class="back"><a href="{GALLERY_URL}">← All visuals</a></p>
@@ -247,9 +336,10 @@ def render(raw, meta, tokens):
 <p class="lede">Choose the next trial among variants with uncertain success rates. Enter comparable success/failure evidence, compare what Thompson Sampling and UCB1 recommend, record each resolved outcome, and use the seeded simulation to see how the methods explore.</p>
 {nojs_html(raw)}
 <div id="app" hidden>
-<div role="tablist" aria-label="Views"><button type="button" role="tab" id="tab-exp" aria-controls="panel-exp" aria-selected="true">My experiment</button><button type="button" role="tab" id="tab-sim" aria-controls="panel-sim" aria-selected="false" tabindex="-1">Simulation</button></div>
+<div role="tablist" aria-label="Views"><button type="button" role="tab" id="tab-exp" aria-controls="panel-exp" aria-selected="true">My experiment</button><button type="button" role="tab" id="tab-sim" aria-controls="panel-sim" aria-selected="false" tabindex="-1">Simulation</button><button type="button" role="tab" id="tab-hrs" aria-controls="panel-hrs" aria-selected="false" tabindex="-1">Next week's hours</button></div>
 {experiment_html(raw)}
 {simulation_html()}
+{hours_html(raw)}
 </div>
 </main>
 <footer><p>Templates use fictional counts for illustration. Everything runs in this page; nothing is uploaded. Content checked on {escape(meta["fetched"])}.</p><p><a href="{GALLERY_URL}">All visuals</a></p></footer>
@@ -258,7 +348,10 @@ def render(raw, meta, tokens):
 <script id="mab-logic">{compact(LOGIC_TEMPLATE.read_text(encoding="utf-8"))}</script>
 <script id="beamdswitch">\n{DECK_TEMPLATE.read_text(encoding="utf-8")}</script>
 <script id="report">\n{DECK_REPORT.read_text(encoding="utf-8")}</script>
+<script id="hours-logic">{compact(HOURS_LOGIC.read_text(encoding="utf-8"))}</script>
+<script id="page-helpers">{compact(PAGE_HELPERS.read_text(encoding="utf-8"))}</script>
 <script id="mab-ui">{compact(JS_TEMPLATE.read_text(encoding="utf-8"))}</script>
+<script id="hours-ui">{compact(HOURS_JS.read_text(encoding="utf-8"))}</script>
 </body></html>
 '''
 
@@ -280,7 +373,7 @@ def verify_page(html, raw):
     assert '<meta property="og:type" content="website">' in html and f'<meta property="og:url" content="{CANONICAL}">' in html
     assert f'<link rel="canonical" href="{CANONICAL}">' in html and 'name="viewport"' in html
     assert html.count("<main") == 1 and f'<a href="{GALLERY_URL}">← All visuals</a>' in html
-    assert ">My experiment</button>" in html and ">Simulation</button>" in html
+    assert ">My experiment</button>" in html and ">Simulation</button>" in html and ">Next week's hours</button>" in html
     assert "Beta(9, 93)" in html and "9/102" in html, "no-JavaScript worked example"
     assert "@media (prefers-reduced-motion:reduce)" in html and "@media (prefers-color-scheme:dark)" in html
     assert f'<script id="beamdswitch">\n{DECK_TEMPLATE.read_text(encoding="utf-8")}</script>' in html
@@ -290,7 +383,7 @@ def verify_page(html, raw):
     data = json.loads(re.search(r'<script type="application/json" id="mab-data">([\s\S]*?)</script>', html).group(1).replace("<\\/", "</"))
     assert data == raw, "embedded data differs from raw.json"
     size = len(html.encode("utf-8"))
-    assert size <= SIZE_LIMIT, f"page is {size} bytes, above the {SIZE_LIMIT}-byte (100 KiB) budget"
+    assert size <= SIZE_LIMIT, f"page is {size} bytes, above the {SIZE_LIMIT}-byte budget"
     return size
 
 
@@ -305,10 +398,9 @@ def main():
     html = render(raw, meta, tokens)
     assert html == render(*load(), tokens), "render is not deterministic"
     if not args.verify:
-        VIZ.parent.mkdir(parents=True, exist_ok=True)
         VIZ.write_text(html, encoding="utf-8")
     else:
-        assert VIZ.read_text(encoding="utf-8") == html, "viz/multi-armed-bandit/index.html is stale: rerun the builder"
+        assert VIZ.read_text(encoding="utf-8") == html, "index.html is stale: rerun python3 build.py"
     size = verify_page(VIZ.read_text(encoding="utf-8"), raw)
     print(f"verified: {summary['templates']} templates, {len(pairs)} contrast pairs, {size} bytes "
           f"(budget {SIZE_LIMIT}), zero external requests")
