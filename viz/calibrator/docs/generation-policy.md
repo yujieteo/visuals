@@ -108,7 +108,7 @@ outside the session.
 | `context` | Briefly state the opportunity, mechanism and uncertainty. For a sacrifice, name the supported conflict. Label an inferred problem as a hypothesis. |
 | `high_action` | A concrete next step that makes sense if the proposition is likely true, with a date or bounded trial, naming a human or agent executor when relevant. |
 | `low_action` | A coherent alternative if the proposition is likely false: keep the baseline, defer, drop, reduce the trial or investigate. Check that the two actions are not swapped. |
-| Ranking scores | Keep the five required 0–100 scores. They are the generator's judgements, not measured expected utility. Order the cards by the selection policy above; novelty and adversariality cannot dominate it. |
+| Ranking scores | Keep the five required 0–100 scores. An `action_impact` of 80 or more makes a slow card (below), so reserve it for the cards whose answer would change a consequential action. They are the generator's judgements, not measured expected utility. Order the cards by the selection policy above; novelty and adversariality cannot dominate it. |
 | `origin`, `explore_exploit` | Use the existing categories honestly. An external method is not necessarily recent news; its source keeps its actual date. |
 | `resolution_rule`, `resolution_horizon` | Define the observable result, the evidence needed and the assessment date, naming the exact forecast being resolved. |
 | Resolution fields | New cards are `unresolved` with `null` outcome and evidence. Resolve later only when the specified evidence exists. |
@@ -122,6 +122,16 @@ experiment may be sensible at both high and low confidence, so the two actions n
 
 Done when each card reads consistently from proposition through actions to resolution and needs
 no undocumented reading of the slider.
+
+### Effort per card
+
+Answer time should follow the stakes in both directions. Version 1 has no field for expected time,
+so the page derives it from `action_impact`: a card scoring 80 or more is a slow card, marked
+*High impact: take your time*, and a first answer to it within 8 seconds of the card appearing
+asks for confirmation before it is saved. Other cards should be answerable at a glance, so keep
+their wording short and their context to one or two sentences. Give 80 or more only to the
+decision-changing cards, roughly one in ten; scoring everything high makes the prompt a nag that
+is clicked through. The time to answer is a measure of effort, not of the answer's quality.
 
 ### 5. Resolve observable outcomes honestly
 
@@ -170,7 +180,12 @@ benefits stay explicitly uncertain.
    - a novel but costly distraction loses to a stronger familiar action;
    - a sacrifice can target an exciting project while the health baseline is preserved;
    - a completed activity does not resolve a health-benefit forecast;
-   - no card has its high and low actions reversed.
+   - no card has its high and low actions reversed. Run `node scripts/polarity.mjs <session.toon>`
+     before publishing and read every card it flags; it needs no network and exits 1 when it
+     flags any. It is a word heuristic: it found eight of the first session's ten swapped cards
+     and flags about one or two sound cards per hundred, so it narrows the review and never
+     replaces it, and a flagged card is rewritten only after reading it. A cheap model pass over
+     every proposition and its two actions may be added on top, also only to flag.
 4. The generation summary, outside the session, lists priorities, sources, duplicates removed,
    uncertainties and any shortfall in strong candidates.
 

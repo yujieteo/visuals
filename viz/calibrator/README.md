@@ -15,6 +15,7 @@ requests; it works offline and from `file://`.
 | `raw.json` | Catalogue data, published as `data.json` on the site: the schema's format, version, table fields, origins, scores and states. The page never fetches it; the tests fail when it drifts from the engine. |
 | `sample-session.toon` | A five-question sample session in the import schema, for trying the page and as a target for the generator. |
 | `sessions/` | Generated sessions ready to paste, one `YYYY-MM-DD.toon` per session. |
+| `scripts/polarity.mjs` | The offline polarity check run before a session is published: `node scripts/polarity.mjs <session.toon>` lists the cards whose high and low actions look swapped, and exits 1 when it flags any. A word heuristic with no network use; it flags cards for reading and never rewrites one. |
 | `docs/generation-policy.md` | The canonical policy an external generator follows to choose, write, rank and resolve a session's cards, and how answers are read. |
 | `AGENTS.md` | What is specific to changing the tool. |
 | `SKILLS.md` | For agents using the page: its tasks, the read-only WebMCP tools and the workflow. |
@@ -28,7 +29,9 @@ requests; it works offline and from `file://`.
 2. Copy the TOON, open Calibrator, tap **Paste Session** (or **Import .toon**).
 3. Move the slider: the first release saves the probability and moves to the next question.
    **Back** revisits; moving the slider there revises the final probability but never the first.
-   **Skip** is one tap.
+   **Skip** is one tap. A card with `action_impact` of 80 or more is marked *High impact: take
+   your time*, and a first answer to it within 8 seconds asks **Save** or **Think again** before
+   it is saved.
 4. **Export** (top right, any time; it opens by itself after the last question) shows the
    answered, skipped and unseen counts. **Copy TOON** copies the answered session.
 5. Give it to the crewmate, which appends it to `raw.toon` and writes only consequential notes
@@ -77,7 +80,7 @@ claims[K]{question_id,source_id,claim}:
 | | `context` | Text, may be empty (`""`). One short line shown under the proposition. |
 | | `high_action`, `low_action` | Required. Shown as “High →” and “Low →”. |
 | | `origin` | `news`, `notes`, `project`, `calibration` (previous calibration) or `synthesis` (contradiction or synthesis). |
-| | `info_gain`, `action_impact`, `novelty`, `adversariality`, `relevance` | Generator scores, numbers from 0 to 100. Used only to rank; never shown. |
+| | `info_gain`, `action_impact`, `novelty`, `adversariality`, `relevance` | Generator scores, numbers from 0 to 100. Used to rank and never shown, except that an `action_impact` of 80 or more marks a slow card (see Workflow). |
 | | `explore_exploit` | `explore` or `exploit`. |
 | | `resolution_rule`, `resolution_horizon` | Required text: how the question resolves automatically, and by when (a date or a phrase such as `next session`). |
 | | `resolution_status` | `unresolved` or `resolved`. A new question is `unresolved`. |
@@ -138,7 +141,9 @@ build turns each answered question into one Corpus Record, `calibration:<questio
 the engine from `index.html` and checks only: valid session import, invalid TOON rejection
 (unknown escapes and non-object table rows included), the unanswered state, first-answer capture,
 auto-advance, Back and revision preservation, Skip, the answered/skipped/unseen distinction, local
-persistence serialization and the export round-trip.
+persistence serialization, the export round-trip, the slow-card confirmation, that every file in
+`sessions/` still imports, and the polarity check against the ten swapped cards of the first
+session.
 `tests/fixtures/` holds a read-only copy of the site's `scripts/toon.py` and the TOON files it
 wrote (`python3 tests/fixtures/make_fixtures.py` regenerates them, and `sample-session.toon`);
 the tests require the page's codec to write them byte for byte. There are deliberately no browser
