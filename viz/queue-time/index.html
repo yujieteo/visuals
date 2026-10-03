@@ -432,6 +432,9 @@ select{min-height:2.75rem;border:1px solid var(--control);border-radius:var(--r)
 
   /* ---------- words ---------- */
   const plural = (n, one, many = one + "s") => `${n} ${n === 1 ? one : many}`;
+  const persons = (n) => plural(n, "person", "people");
+  /* A food range in whole minutes: "12–20 min". */
+  const minuteRange = (lo, hi) => `${lo}–${hi} min`;
   const lower = (t) => t.charAt(0).toLowerCase() + t.slice(1);
   const cap = (t) => t.charAt(0).toUpperCase() + t.slice(1);
   const and = (xs) => (xs.length < 2 ? xs.join("") : `${xs.slice(0, -1).join(", ")} and ${xs.at(-1)}`);
@@ -487,7 +490,7 @@ select{min-height:2.75rem;border:1px solid var(--control);border-radius:var(--r)
   }
   /* The text equivalent of the queue diagram. */
   function describe(e) {
-    const s = e.s, base = `${plural(s.people, "person", "people")} ahead${s.structure === "separate" ? " in your line" : ""}, ${plural(s.counters, "counter")}`;
+    const s = e.s, base = `${persons(s.people)} ahead${s.structure === "separate" ? " in your line" : ""}, ${plural(s.counters, "counter")}`;
     if (e.kind === "stopped") return `${base}. The queue is not moving.`;
     return `${base}${e.kind === "next" ? ". You are next," : ","} estimated wait ${speak(span(e.lo, e.hi))}.`;
   }
@@ -518,17 +521,19 @@ select{min-height:2.75rem;border:1px solid var(--control);border-radius:var(--r)
     const s = scenario(x), c = servers(s);
     if (!c || !(actual >= 0.05)) return null;
     const unit = estimate({ ...s, pace: "custom", custom: 1 }).mean;
-    const minutes = Math.min(LIMITS.pace[1], Math.max(LIMITS.pace[0], actual / unit));
+    const minutes = clampPace(actual / unit);
     return { minutes, throughput: c / minutes, counters: c, pace: `Observed pace: about ${paceText(minutes)}`, rate: c > 1 ? `Observed throughput: about ${rateText(c / minutes)}` : "" };
   }
+  /* A measured pace, held to the range a pace may take. */
+  const clampPace = (m) => Math.min(LIMITS.pace[1], Math.max(LIMITS.pace[0], m));
   /* Tapping "Someone finished" while watching: people served across all counters over the time watched. */
   function observed(o, now, x) {
     if (!o) return null;
     const min = Math.max(0, ((o.end ?? now) - o.start) / 60000), n = o.taps | 0;
-    const text = `${plural(n, "person", "people")} served in ${clock(min)}`;
+    const text = `${persons(n)} served in ${clock(min)}`;
     if (!n || min < 0.25) return { text, minutes: null };
     const c = scenario(x).counters, rate = n / min;
-    return { text, rate, rateText: rateText(rate), minutes: c ? Math.min(LIMITS.pace[1], Math.max(LIMITS.pace[0], c / rate)) : null };
+    return { text, rate, rateText: rateText(rate), minutes: c ? clampPace(c / rate) : null };
   }
 
   /* Timers store a start timestamp only: elapsed time is now minus start, so a locked phone,
@@ -603,12 +608,12 @@ select{min-height:2.75rem;border:1px solid var(--control);border-radius:var(--r)
       });
     }
     return {
-      meta: { title: `Queue time: ${plural(s.people, "person", "people")} ahead, ${plural(c, "counter")}`, subtitle: whereNow.replace(/\.$/, "") },
+      meta: { title: `Queue time: ${persons(s.people)} ahead, ${plural(c, "counter")}`, subtitle: whereNow.replace(/\.$/, "") },
       narration: "This talk estimates how long a queue will take, from the people ahead, the counters open and the pace. Times are in minutes.",
       setup: [{
-        title: `The queue: ${plural(s.people, "person", "people")} ahead, ${plural(c, "counter")} open`,
+        title: `The queue: ${persons(s.people)} ahead, ${plural(c, "counter")} open`,
         body: list([`People waiting ahead${shared ? "" : " in your line"}: ${s.people}`, `Counters open: ${c}, ${shared ? "fed by one shared line" : "each with its own line"}`, `Pace: ${PACE_LABEL[s.pace]}, about ${paceText(s.minutes)} at a counter`, ...(marked.length ? [`Marked: ${marked.map((p) => `${p[1]} ${p[0]}`).join(", ")}; the rest typical`] : [])]),
-        narration: `There ${s.people === 1 ? "is" : "are"} ${plural(s.people, "person", "people")} waiting ahead${shared ? "" : " in your line"}, and ${plural(c, "counter")} ${c === 1 ? "is" : "are"} open${shared ? ", sharing one line" : ", each with its own line"}. Each person takes about ${speak(paceText(s.minutes))} at a counter.`,
+        narration: `There ${s.people === 1 ? "is" : "are"} ${persons(s.people)} waiting ahead${shared ? "" : " in your line"}, and ${plural(c, "counter")} ${c === 1 ? "is" : "are"} open${shared ? ", sharing one line" : ", each with its own line"}. Each person takes about ${speak(paceText(s.minutes))} at a counter.`,
       }],
       method: [{
         title: "Counters work in parallel, and service times vary",
@@ -621,25 +626,26 @@ select{min-height:2.75rem;border:1px solid var(--control);border-radius:var(--r)
       results,
       checks: [
         { title: "Assumptions behind the estimate", body: list(ASSUMPTIONS), narration: "The estimate assumes first come, first served, counters of similar speed, no priority lane and no long interruptions. People joining behind you do not change your wait." },
-        { title: "Takeaway", key: e.kind === "stopped" ? whereNow : `${h.head}, ${lower(h.sub)}, with ${plural(s.people, "person", "people")} ahead at ${plural(c, "counter")}.`, narration: speak(whereNow) },
+        { title: "Takeaway", key: e.kind === "stopped" ? whereNow : `${h.head}, ${lower(h.sub)}, with ${persons(s.people)} ahead at ${plural(c, "counter")}.`, narration: speak(whereNow) },
       ],
     };
   }
   function foodReport(st) {
-    const g = foodRange(st.food), f = g.f, v = visible(st.food), range = `${g.lo}–${g.hi} min`, results = [];
-    if (st.fDone) results.push({ title: `Expected ${st.fDone.lo}–${st.fDone.hi} min, actual ${dur(st.fDone.actual)}`, body: list([`Expected: ${st.fDone.lo}–${st.fDone.hi} min`, `Actual: ${dur(st.fDone.actual)}`, foodStatus(st.fDone.actual, st.fDone)]), narration: `The expected wait was ${speak(`${st.fDone.lo}–${st.fDone.hi} min`)} and the food arrived after ${speak(dur(st.fDone.actual))}.` });
+    const g = foodRange(st.food), f = g.f, v = visible(st.food), range = minuteRange(g.lo, g.hi), results = [];
+    const done = st.fDone, was = done && minuteRange(done.lo, done.hi), whatIf = g.whatIf && minuteRange(g.whatIf.lo, g.whatIf.hi);
+    if (done) results.push({ title: `Expected ${was}, actual ${dur(done.actual)}`, body: list([`Expected: ${was}`, `Actual: ${dur(done.actual)}`, foodStatus(done.actual, done)]), narration: `The expected wait was ${speak(was)} and the food arrived after ${speak(dur(done.actual))}.` });
     else results.push({ title: `Expected around ${range}`, body: list([`Expected around ${range}`, "Compare the time you have waited with this range; there is no countdown"]), narration: `The order is expected around ${speak(range)}.` });
-    if (g.whatIf) results.push({ title: `What if: ${lower(g.whatIf.text)}, perhaps ${g.whatIf.lo}–${g.whatIf.hi} min`, body: list([`${g.whatIf.text}: perhaps ${g.whatIf.lo}–${g.whatIf.hi} min`, "A guess to explore, not a measurement"]), narration: `${g.whatIf.text}, the wait might be ${speak(`${g.whatIf.lo}–${g.whatIf.hi} min`)}. That is a guess, not a measurement.` });
+    if (g.whatIf) results.push({ title: `What if: ${lower(g.whatIf.text)}, perhaps ${whatIf}`, body: list([`${g.whatIf.text}: perhaps ${whatIf}`, "A guess to explore, not a measurement"]), narration: `${g.whatIf.text}, the wait might be ${speak(whatIf)}. That is a guess, not a measurement.` });
     if (f.visible && v.rate) results.push({ title: `From the orders watched: about ${dur(v.mid)} more`, body: list([watchedText(v), `About ${dur(v.mid)} more, likely ${span(v.lo, v.hi)}`]), narration: `From the orders watched, your order is about ${speak(dur(v.mid))} away, likely ${speak(span(v.lo, v.hi))}.` });
     return {
-      meta: { title: `Food order: expected around ${range}`, subtitle: st.fDone ? `Actual ${dur(st.fDone.actual)}` : "Elapsed time against the expected range" },
+      meta: { title: `Food order: expected around ${range}`, subtitle: done ? `Actual ${dur(done.actual)}` : "Elapsed time against the expected range" },
       narration: "This talk compares a food order's wait with the wait you expected. Times are in minutes.",
       setup: [{ title: `The order: expected about ${dur(f.minutes)}`, body: list([`Expected wait: ${dur(f.minutes)}`, `Order complexity (what if): ${f.complexity}`, `How busy it looks (what if): ${f.busy}`, ...(f.visible ? [`Orders seen: ${f.ahead} ahead, ${f.done} done in ${dur(f.watched)}`] : [])]), narration: `You expect the order to take about ${speak(dur(f.minutes))}.` }],
       method: [{ title: "Elapsed time is compared with an expected range", body: list([`Expected range: ${MODEL.spread[0]} to ${MODEL.spread[1]} times the expected wait, rounded`, "The kitchen is not modelled: its stations, staff and tickets stay unknown", "Seen orders use only the rate at which orders came out"]), narration: "The expected range runs from a little under to a little over the wait you expect. The kitchen itself is not modelled. When you count orders, only the rate at which they come out is used." }],
       results,
       checks: [
         { title: "Limits of a food estimate", body: list(["Kitchens batch, reorder and parallelise work you cannot see", "Complexity and busyness are what-ifs, not measurements", "A countdown appears only from orders you watched finish"]), narration: "Kitchens batch and reorder work you cannot see, so the range is a guide, not a promise." },
-        { title: "Takeaway", key: st.fDone ? `Expected ${st.fDone.lo}–${st.fDone.hi} min; the food took ${dur(st.fDone.actual)}.` : `Expect around ${range}, and compare the time you have waited with it.`, narration: st.fDone ? `The food took ${speak(dur(st.fDone.actual))}, against an expected ${speak(`${st.fDone.lo}–${st.fDone.hi} min`)}.` : `Expect around ${speak(range)}.` },
+        { title: "Takeaway", key: done ? `Expected ${was}; the food took ${dur(done.actual)}.` : `Expect around ${range}, and compare the time you have waited with it.`, narration: done ? `The food took ${speak(dur(done.actual))}, against an expected ${speak(was)}.` : `Expect around ${speak(range)}.` },
       ],
     };
   }
@@ -648,7 +654,7 @@ select{min-height:2.75rem;border:1px solid var(--control);border-radius:var(--r)
   return {
     PACES, PACE_LABEL, WEIGHTS, FOOD_PRESETS, COMPLEXITY, BUSY, LIMITS, MODEL, ASSUMPTIONS,
     clamp, defaults, foodDefaults, scenario, servers, estimate, headline, describe, roughRule, compare, names, backEstimate, observed,
-    startTimer, elapsed, clock, dur, span, speak, plural, paceText, rateText, food, foodRange, foodStatus, visible, watchedText, report,
+    startTimer, elapsed, clock, dur, span, speak, plural, cap, minuteRange, paceText, rateText, food, foodRange, foodStatus, visible, watchedText, report,
   };
 });
 </script>
@@ -691,8 +697,8 @@ function controls(p) {
 $("a-controls").innerHTML = controls("a");
 $("b-controls").innerHTML = controls("b");
 $("f-presets").innerHTML = Q.FOOD_PRESETS.map((m) => pill("expected", m, `${m} min`, 'data-food="expected"')).join("") + pill("expected", "custom", "Custom", 'data-food="expected"');
-$("f-complexity").innerHTML = Object.keys(Q.COMPLEXITY).map((k) => pill("complexity", k, k[0].toUpperCase() + k.slice(1), 'data-food="complexity"')).join("");
-$("f-busy").innerHTML = Object.keys(Q.BUSY).map((k) => pill("busy", k, k[0].toUpperCase() + k.slice(1), 'data-food="busy"')).join("");
+$("f-complexity").innerHTML = Object.keys(Q.COMPLEXITY).map((k) => pill("complexity", k, Q.cap(k), 'data-food="complexity"')).join("");
+$("f-busy").innerHTML = Object.keys(Q.BUSY).map((k) => pill("busy", k, Q.cap(k), 'data-food="busy"')).join("");
 
 let force = false;
 const setVal = (el, v) => { if (el && (force || document.activeElement !== el) && el.value !== String(v)) el.value = v; };
@@ -744,7 +750,7 @@ function diagram(s) {
 }
 function renderWeights(s) {
   const n = Math.min(s.people, Q.MODEL.maxWeights);
-  block($("weights"), n ? Array.from({ length: n }, (_, i) => `<label>Person ${i + 1}${i ? "" : " (next)"}<select name="weight-${i + 1}" data-w="${i}">${Object.keys(Q.WEIGHTS).map((k) => `<option value="${k}">${k[0].toUpperCase() + k.slice(1)}</option>`).join("")}</select></label>`).join("") + (s.people > n ? `<p class="hint">The other ${s.people - n} count as typical.</p>` : "") : '<p class="hint">Nobody is ahead of you.</p>');
+  block($("weights"), n ? Array.from({ length: n }, (_, i) => `<label>Person ${i + 1}${i ? "" : " (next)"}<select name="weight-${i + 1}" data-w="${i}">${Object.keys(Q.WEIGHTS).map((k) => `<option value="${k}">${Q.cap(k)}</option>`).join("")}</select></label>`).join("") + (s.people > n ? `<p class="hint">The other ${s.people - n} count as typical.</p>` : "") : '<p class="hint">Nobody is ahead of you.</p>');
   for (const sel of $("weights").querySelectorAll("select")) sel.value = s.weights[+sel.dataset.w] || "typical";
 }
 function renderQueue() {
@@ -753,7 +759,7 @@ function renderQueue() {
   $("q-sub").textContent = h.sub;
   $("q-desc").textContent = Q.describe(e);
   const viz = diagram(s);
-  if ($("q-viz").dataset.html !== viz) { $("q-viz").dataset.html = viz; $("q-viz").innerHTML = viz; }
+  block($("q-viz"), viz);
   check("structure", s.structure);
   renderWeights(s);
 
@@ -793,7 +799,7 @@ function renderQueue() {
 
 /* ---------- food ---------- */
 function renderFood() {
-  const g = Q.foodRange(S.food), f = g.f, t = S.fTimer, d = S.fDone, range = `${g.lo}–${g.hi} min`;
+  const g = Q.foodRange(S.food), f = g.f, t = S.fTimer, d = S.fDone, range = Q.minuteRange(g.lo, g.hi);
   check("expected", f.expected); check("complexity", f.complexity); check("busy", f.busy);
   setVal($("f-custom"), f.expected === "custom" ? f.minutes : "");
   $("f-custom").placeholder = String(f.minutes);
@@ -803,12 +809,12 @@ function renderFood() {
   const el = d ? d.actual : Q.elapsed(t, now()), lo = d ? d.lo : g.lo, hi = d ? d.hi : g.hi;
   $("f-label").textContent = d ? "Actual wait" : t ? "Waiting for your order" : "Expected around";
   $("f-head").textContent = d ? Q.dur(d.actual) : t ? `${Q.clock(el)} elapsed` : range;
-  $("f-sub").textContent = d ? `Expected ${lo}–${hi} min` : t ? `Expected around ${range}` : "Start waiting when you order, or enter the time so far under More options.";
+  $("f-sub").textContent = d ? `Expected ${Q.minuteRange(lo, hi)}` : t ? `Expected around ${range}` : "Start waiting when you order, or enter the time so far under More options.";
   $("f-status").textContent = t || d ? Q.foodStatus(el, { lo, hi }) : "";
   const max = Math.max(hi * 1.4, el * 1.1, 1), pct = (v) => `${Math.min(100, (v / max) * 100).toFixed(1)}%`;
   const viz = `<div class="track"><span class="band" style="left:${pct(lo)};width:${pct(hi - lo)}"></span>${t || d ? `<span class="mark" style="left:${pct(el)}"></span>` : ""}</div><div class="ends"><span>0</span><span>${Math.round(max)} min</span></div>`;
-  if ($("f-viz").dataset.html !== viz) { $("f-viz").dataset.html = viz; $("f-viz").innerHTML = viz; }
-  $("f-whatif").textContent = g.whatIf ? `${g.whatIf.text}: perhaps ${g.whatIf.lo}–${g.whatIf.hi} min. A guess to explore, not a measurement.` : "";
+  block($("f-viz"), viz);
+  $("f-whatif").textContent = g.whatIf ? `${g.whatIf.text}: perhaps ${Q.minuteRange(g.whatIf.lo, g.whatIf.hi)}. A guess to explore, not a measurement.` : "";
   const v = Q.visible(S.food);
   $("f-visible").textContent = !f.visible ? "" : v.rate ? `From the orders you counted (${Q.watchedText(v)}): about ${Q.dur(v.mid)} more, likely ${Q.span(v.lo, v.hi)}.` : "Count at least 2 completed orders to estimate from what you can see.";
   if (t) {
