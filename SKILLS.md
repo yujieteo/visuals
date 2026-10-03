@@ -30,6 +30,8 @@ These rules are scripts, so do not check them by reading. `scripts/check.py` run
 | No unused imports or locals, unreachable code, or names declared twice | `deadcode` (JavaScript, with tsc), `pydead` (Python) |
 | No `__pycache__`, `*.pyc`, `.DS_Store` or AppleDouble `._*` file is tracked | `scripts/check_repo.py` |
 | No horizontal overflow at 320 px or 390 px; no NaN, Infinity or undefined shown at any input's limits | the browser checks `overflow-320`, `overflow-390`, `numeric-text` |
+| A page's vendored block (`<script data-vendor>`, the embedded MathJax) is the bundle of `scripts/vendor/`, and the vendored files are unchanged | `vendor`, and `scripts/check_repo.py` (`scripts/vendor/mathjax/SOURCES.json`) |
+| A generated visual holds the generator's current mechanical files | `generated` (`scripts/new_visual.py --check`) |
 
 Review still decides what no script can: whether the mathematics, data and wording are right, whether a test covers the behaviour that matters, whether two different-looking pieces of code are the same rule, and the manual acceptance pass of the `interactive-visual-spec` skill.
 
@@ -39,7 +41,38 @@ A visual's browser checks are its `e2e/manifest.json` (how to drive it, checks t
 
 ## Add a visual
 
-Create `viz/<slug>/` with `index.html`, the data file, `visual.json` (copy a neighbour's and change every field) and its tests. Nothing else lists the visuals: CI, the catalogue and the site find the folder. Stdlib Python builders import the shared modules from `scripts/` (`page_parts`, `style_guide`, `stock_cases`) and read `design-tokens.json`; a builder for several pages lives in `scripts/` and each page lists it in `uses`.
+Generate it, then write only the domain:
+
+```sh
+python3 scripts/new_visual.py <slug> --title "Title" --summary "One line for the catalogue." [--mathjax] [--3d]
+```
+
+It writes a complete `viz/<slug>/` that passes `scripts/check.py`, CI and its browser checks with no edit: a damped-oscillator starter that shows every mechanical part working. Replace the starter with the domain (the list below), run `python3 build.py` in the folder, and check it. `--mathjax` embeds MathJax 4.1.3 with its Fira font and their licences; `--3d` adds the kit's 3D view, whose camera is part of the state. `--help` lists the catalogue options (subject, category, tags, source URL, date, `--unpublished`). The same arguments always give the same bytes. `viz/visual-skeleton/` is the generator's output, committed unchanged (`published: false`), so CI and the daily browser run test it.
+
+| Mechanical part of the specification | Where a generated visual gets it | What checks it |
+| --- | --- | --- |
+| Folder layout, `visual.json` with its `uses` and `typecheck`, `generated.json` | `scripts/new_visual.py` | `scripts/check_repo.py` (schema), `generated` |
+| One self-contained offline page: metadata, canonical URL, Open Graph, `Visuals` link, no-JS text, print (§2, §3, §23, §39, §40) | `scripts/kit/shell.html`, built by `scripts/visual_build.py` from `build.py` | `build`, `requests`, browser `network`, `file-url` |
+| Style guide tokens, both themes, the site's theme script (§7) | `scripts/kit/style-tokens.css` (yujieteo/skills, recorded in `scripts/kit/SOURCES.json`), `scripts/style_guide.py` | `contrast`, browser `dark-mode` |
+| Versioned state, URL fragment, Back and Forward, Reset, JSON import and export with validation (§5, §12, §13, §14) | `scripts/kit/kit.js` (`VisualKit`), inlined unchanged | `tests/<slug>-kit.test.mjs` (`scripts/kit/checks.mjs`), browser `url-state`, `back-forward`, `reset`, `json-round-trip` |
+| At least 3 read-only WebMCP tools | the kit's `get_metadata`, `get_state`, `get_markdown`, and the starter's `get_example` | `tools`, schema |
+| Cmd/Ctrl+K palette, keyboard and touch controls (§9, §10) | the kit | browser `command-palette`, `keyboard`, `overflow-320` |
+| `beamdswitch.js` unchanged, and the `deck(report)` and Markdown exports (§14, §15) | `scripts/templates/beamdswitch.js` copied byte for byte (source and SHA-256 in `generated.json`); the kit calls `Beamdswitch.deck(report)` | `template`, `tests/<slug>-kit.test.mjs` (deck parse with beamdswitch's parser), browser `markdown-export`, `beamdswitch-export` |
+| MathJax 4.1.3 with Fira Math, offline, with licences (`--mathjax`) | `scripts/vendor/mathjax/`, inlined as one `data-vendor` block by `scripts/visual_kit.py` | `vendor`, `scripts/check_repo.py`, browser `network`, `file-url` |
+| Type check, dead code, tests and browser checks wired into CI | `tsconfig.json`, `types/globals.d.ts`, `tests/`, `e2e/manifest.json`, `e2e/full.test.mjs` (`e2e/lib/kit.js`) | `types`, `deadcode`, `node`, CI's visual and browser jobs, which find the folder |
+
+What stays manual, in files the generator writes once and never rewrites:
+
+- the domain model: `src/model.js` (state fields, schema version, examples with stable ids, `derive`) and `raw.json`;
+- the views: `src/view.js` (render, controls, the domain's WebMCP tools and palette commands), `src/body.html`, `src/style.css`;
+- the pedagogy and the exports' content: the lede, the order of the explanation, and `report.js` (the report `deck(report)` writes);
+- the domain's tests: `tests/<slug>-model.test.mjs` (fixtures and invariants, §36 and §37) and what `e2e/full.test.mjs` changes;
+- `SKILLS.md`, `AGENTS.md` and the catalogue fields of `visual.json`;
+- the review that no script makes: the mathematics, the data, the wording and the manual acceptance pass.
+
+`python3 scripts/new_visual.py --check <slug>...` (or `--all`) reports where a visual's mechanical parts differ from the current generator's, and `--update <slug>...` rewrites a generated visual's mechanical files and rebuilds its page; neither writes a domain file. A visual made by hand is reported by the mechanical parts it lacks; `--update` refuses it. A change to `scripts/kit/`, `scripts/visual_build.py`, `scripts/visual_kit.py`, `scripts/vendor/` or the beamdswitch template fails each generated visual's `build` or `generated` step until `--update` runs for it.
+
+To make a visual by hand instead, create `viz/<slug>/` with `index.html`, the data file, `visual.json` (copy a neighbour's and change every field) and its tests. Nothing else lists the visuals: CI, the catalogue and the site find the folder. Stdlib Python builders import the shared modules from `scripts/` (`page_parts`, `style_guide`, `stock_cases`) and read `design-tokens.json`; a builder for several pages lives in `scripts/` and each page lists it in `uses`.
 
 ## Change shared tooling
 

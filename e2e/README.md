@@ -103,6 +103,8 @@ node scripts/record-findings.js results
 
 - Assert on application and DOM state through stable, user-visible handles: roles, accessible names, ids,
   `data-testid`, URL state. Never layout selectors such as `div:nth-child(7)`, and never screenshots alone.
+- A visual that `scripts/new_visual.py` generated runs every full check through the kit's shared controls with
+  `kitSuite` from `lib/kit.js`; its `e2e/full.test.mjs` names only how to change its view.
 - Teach the suite a visual's primary control with `"primary"` in its manifest. To add fuller checks, copy
   another visual's `e2e/full.test.mjs`, drive the visual through its roles, names and URL state, and skip
   in its manifest, with a reason, each check that does not apply.
@@ -126,6 +128,7 @@ node scripts/record-findings.js results
 | `lib/checks.js` | the in-page probes: state fingerprint, primary-control choice, overflow |
 | `lib/baseline.js` | the baseline checks |
 | `lib/full.js` | the runner and shared assertions for the full checks |
+| `lib/kit.js` | every full check of a generated visual, through the controls the shared kit gives its page |
 | `lib/manifest.js` | finds and reads each visual's manifest |
 | `lib/results.js`, `scripts/` | results, findings, timings and fetching the site |
 | `tests/` | the baseline suite, and the harness's own tests with their fixtures |

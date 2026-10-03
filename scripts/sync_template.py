@@ -7,7 +7,9 @@ the site changes templates/beamdswitch.js, all of those change the same way, so 
 visual whose beamdswitch.js differs from the new template and replaces that old text, and its SHA-256, with
 the new ones in every file of the visual's folder. Visuals without a beamdswitch.js are left alone. It also
 records the template's SHA-256 in scripts/templates/beamdswitch.sha256, which scripts/check.py compares every
-copy with, so a copy edited by hand fails its visual's checks without a site checkout.
+copy with, so a copy edited by hand fails its visual's checks without a site checkout, and the template itself in
+scripts/templates/beamdswitch.js, the copy scripts/new_visual.py writes into a new visual. A generated visual's
+generated.json records the template's SHA-256, which the replacement above updates with its copy.
 
 Usage: scripts/sync_template.py TEMPLATE
 
@@ -22,6 +24,7 @@ from visuals import ROOT, folders
 
 COPY = "beamdswitch.js"
 RECORD = Path("scripts", "templates", "beamdswitch.sha256")
+TEMPLATE = Path("scripts", "templates", "beamdswitch.js")
 SKIPPED = {"node_modules", ".typecheck"}
 
 
@@ -40,9 +43,11 @@ def stale(template, root=ROOT):
 
 
 def record(template, root=ROOT):
-    """Write the template's SHA-256 where scripts/check.py reads it."""
+    """Write the template's SHA-256 where scripts/check.py reads it, and the template where scripts/new_visual.py
+    copies it from."""
     path = root / RECORD
     path.parent.mkdir(parents=True, exist_ok=True)
+    (root / TEMPLATE).write_text(template, encoding="utf-8")
     path.write_text(f"{sha256(template)}  the SHA-256 of yujieteo/site templates/beamdswitch.js, written by scripts/sync_template.py\n", encoding="utf-8")
 
 

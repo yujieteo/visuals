@@ -15,6 +15,8 @@ For each viz/<slug>/, in order:
   sourcetests  tests whose every assertion checks the page's source text instead of running its code
   deadcode unused locals and imports, unreachable code and duplicate declarations in the page's inline
            scripts and its test modules (scripts/deadcode.mjs, with the type checker)
+  vendor   every vendored block of the page (data-vendor) is the bundle built from scripts/vendor/, unchanged
+  generated  a visual scripts/new_visual.py generated holds its current mechanical files (new_visual.py --check)
 "checks" in visual.json replaces build, node and python with its own commands, run from the folder; the
 steps after them always run. scripts/rules.py says what each rule checks, and visual.json "allow" lists the
 findings a visual keeps on purpose.
@@ -34,6 +36,7 @@ import sys
 import time
 
 import changed
+import new_visual
 import rules
 from visuals import ROOT, VIZ, metadata
 
@@ -103,6 +106,10 @@ def rule_steps(folder, data):
     steps = []
     if (folder / "beamdswitch.js").is_file():
         steps.append(("template", rules.template_problems(folder)))
+    if "data-vendor=" in html:
+        steps.append(("vendor", rules.vendor_problems(html)))
+    if (folder / "generated.json").is_file():
+        steps.append(("generated", new_visual.drift(folder, page=False)))
     for name, key, problems in (
         ("requests", "requests", rules.request_problems(html, data)),
         ("contrast", "contrast", rules.contrast_problems(html)),

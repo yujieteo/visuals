@@ -6,7 +6,8 @@
 // from (index.html when absent; a builder's template when the page inlines src/ files tsc checks directly),
 // and "skip" names blocks by id, or by a folder file whose inlined copy is left out (an entry ending in .js,
 // such as the beamdswitch template that must stay byte-identical to the site's). A block holding only a
-// build placeholder, such as @@ENGINE@@ or /*@UI@*/, is always left out.
+// build placeholder, such as @@ENGINE@@ or /*@UI@*/, and a vendored block (data-vendor, such as the MathJax that
+// scripts/visual_build.py embeds; scripts/rules.py checks it is unchanged) are always left out.
 // Usage: node scripts/typecheck.mjs SLUG...   (after npm ci; scripts/check.py runs it per visual)
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -21,8 +22,8 @@ const PLACEHOLDER = /^\s*(?:@@[A-Z_]+@@|\/\*@[A-Z_]+@\*\/)\s*$/;
  * The page's own inline scripts, in page order, as files to type-check, each named after its block's id,
  * or script-<n> for the n-th <script> tag when it has none, so tests and .d.ts files can import one by
  * name. Left out: blocks with a src, a data type (anything but text/javascript, application/javascript,
- * text/plain or module), a skipped id, text identical to a skipped file's (``files``, trimmed), or only a
- * placeholder. Each file starts with a one-line header naming the page line of its <script> tag, start;
+ * text/plain or module), a data-vendor attribute, a skipped id, text identical to a skipped file's (``files``,
+ * trimmed), or only a placeholder. Each file starts with a one-line header naming the page line of its <script> tag, start;
  * its line k is page line start + k - 2.
  * @param {string} html
  * @param {string} page the page's name, for the header comment
@@ -38,7 +39,7 @@ export function extract(html, page, skip = [], files = []) {
     const attrs = m[1], body = m[2];
     n++;
     const id = /\bid="([^"]+)"/.exec(attrs)?.[1] ?? `script-${n}`;
-    if (/\bsrc=/.test(attrs) || /\btype="(?!text\/plain"|text\/javascript"|application\/javascript"|module")/.test(attrs)) continue;
+    if (/\bsrc=/.test(attrs) || /\bdata-vendor=/.test(attrs) || /\btype="(?!text\/plain"|text\/javascript"|application\/javascript"|module")/.test(attrs)) continue;
     if (skip.includes(id) || files.includes(body.trim()) || PLACEHOLDER.test(body)) continue;
     const line = html.slice(0, (m.index ?? 0) + m[0].indexOf(">") + 1).split("\n").length;
     out.push({ name: `${id}.js`, text: `// ${page}:${line}, <script${attrs}>: extracted for type checking only.\n${body}` });

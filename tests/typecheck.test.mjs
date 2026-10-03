@@ -38,3 +38,8 @@ test("a block identical to a skipped folder file, or holding only a build placeh
   assert.deepEqual(files.map((f) => f.name), ["script-4.js"]);
   assert.match(files[0].text, /^\/\/ src\/template\.html:4, <script type="application\/javascript">: [^\n]*\nownCode\(\);$/);
 });
+
+test("a vendored block (data-vendor) is left out: scripts/rules.py checks it is the vendored bundle instead", () => {
+  const html = ['<script id="mathjax" data-vendor="mathjax-4.1.3">window.MathJax = {};</script>', '<script id="own">ownCode();</script>'].join("\n");
+  assert.deepEqual(extract(html, "index.html").map((f) => f.name), ["own.js"]);
+});

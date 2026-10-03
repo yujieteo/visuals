@@ -45,6 +45,10 @@ class SyncTemplateTest(unittest.TestCase):
         recorded = (self.layout.root / "scripts" / "templates" / "beamdswitch.sha256").read_text(encoding="utf-8")
         self.assertEqual(recorded.split()[0], sha256(NEW))
 
+    def test_the_template_is_kept_where_the_generator_copies_it_from(self):
+        sync(NEW, self.layout.root)
+        self.assertEqual((self.layout.root / "scripts" / "templates" / "beamdswitch.js").read_text(encoding="utf-8"), NEW)
+
     def test_a_folder_without_its_own_copy_is_left_alone_even_when_a_file_holds_the_old_text(self):
         sync(NEW, self.layout.root)
         self.assertEqual((self.plain / "notes.txt").read_text(encoding="utf-8"), OLD)
