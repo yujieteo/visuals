@@ -20,6 +20,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
+from page_parts import strip_types  # noqa: E402
 from style_guide import THEME_SCRIPT, root_css  # noqa: E402
 
 SLUG = "breeden-litzenberger-density"
@@ -28,7 +29,8 @@ META = HERE / "meta.json"
 TOKENS = ROOT / "design-tokens.json"
 VIZ = HERE / "index.html"
 # The narrated report: the site's standard beamdswitch template, copied unchanged, and the page's
-# report, which fills it from the strike and half-width shown. Both are inlined verbatim.
+# report, which fills it from the strike and half-width shown. The template is inlined verbatim and the
+# report without its JSDoc types (strip_types), so the page is the one built from the unannotated report.
 BEAMDSWITCH_JS = HERE / "beamdswitch.js"
 REPORT_JS = HERE / "report.js"
 
@@ -173,7 +175,7 @@ def render(model, meta, tokens):
         ("@@P0_AT_D2@@", p0_at_d2),
         ("@@DECK_JSON@@", deck_json),
         ("@@BEAMDSWITCH_JS@@", BEAMDSWITCH_JS.read_text()),
-        ("@@REPORT_JS@@", REPORT_JS.read_text()),
+        ("@@REPORT_JS@@", strip_types(REPORT_JS.read_text())),
     ]:
         html = html.replace(token, value)
     return html
@@ -216,7 +218,7 @@ def verify(raw, model, meta):
     assert html.count("<h1>") == 1 and html.count("<svg") == 1 and html.count("<section") >= 1
     assert html.count("<script") == 4 and THEME_SCRIPT in html and "<script src=" not in html
     assert f'<script id="beamdswitch">\n{BEAMDSWITCH_JS.read_text()}</script>' in html
-    assert f'<script id="report">\n{REPORT_JS.read_text()}</script>' in html
+    assert f'<script id="report">\n{strip_types(REPORT_JS.read_text())}</script>' in html
     assert 'id="save-beamdswitch"' in html and 'id="copy-beamdswitch"' in html
     stripped = html
     for url in [meta["source_url"], "https://teoyujie.org/visuals/beamdswitch/"] + [s["url"] for s in meta["sources"]]:

@@ -1,18 +1,25 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { SLUG, assertBlockedSave, assertInlined, assertStandardDeck, assertTemplateCopy, load, openPage, read } from "./finance-beamdswitch-checks.mjs";
+import { SLUG, assertBlockedSave, assertInlined, assertStandardDeck, assertTemplateCopy, load, openPage, read, stripTypes } from "./finance-beamdswitch-checks.mjs";
 
 const html = read("index.html");
-const { Beamdswitch, BLReport } = load(read("beamdswitch.js"), read("report.js"));
+// The scripts as the page runs them, loaded into one context: the template and the report.
+const context = load(read("beamdswitch.js"), read("report.js"));
+const Beamdswitch = /** @type {typeof import("../beamdswitch.js")} */ (context.Beamdswitch);
+const BLReport = /** @type {typeof import("../report.js")} */ (context.BLReport);
+/** @typedef {Parameters<typeof BLReport.report>[0]} PageData */
 const WIDTHS = [0.5, 1, 2, 5];
 const controls = () => ({ ".seg button": WIDTHS.map((d) => ({ d: String(d) })) });
 // The page's model, curves and cross-check table, as a run of the page holds them.
+/** @type {PageData} */
 const P = JSON.parse(JSON.stringify(openPage(controls()).run("P")));
 const VIEWS = [65, 80.5, 100, 123, 145].flatMap((K) => WIDTHS.map((D) => ({ K, D })));
-const deckFor = (v) => Beamdswitch.deck(BLReport.report(P, v));
-const what = (v) => `K=${v.K} D=${v.D}`;
+/** @typedef {{ K: number, D: number }} View */
+const deckFor = (/** @type {View} */ v) => Beamdswitch.deck(BLReport.report(P, v));
+const what = (/** @type {View} */ v) => `K=${v.K} D=${v.D}`;
 
 // The closed-form Black-Scholes density, computed here from the model, not from the page.
+/** @param {number} K @param {PageData["MODEL"]} model */
 const density = (K, { S0, r, sigma, T }) => {
   const d2 = (Math.log(S0 / K) + (r - sigma * sigma / 2) * T) / (sigma * Math.sqrt(T));
   return Math.exp(-d2 * d2 / 2) / Math.sqrt(2 * Math.PI) / (K * sigma * Math.sqrt(T));
@@ -21,7 +28,7 @@ const density = (K, { S0, r, sigma, T }) => {
 test("the site's beamdswitch template is the copy the page inlines, with its report", () => {
   assertTemplateCopy();
   assertInlined(html, "beamdswitch", read("beamdswitch.js"));
-  assertInlined(html, "report", read("report.js"));
+  assertInlined(html, "report", stripTypes(read("report.js")));
 });
 
 test("every strike and half-width's deck parses in beamdswitch as the standard template, narrated on every slide", () => {
@@ -37,7 +44,7 @@ test("the deck's numbers are the page's: its read-out, its cross-check table, an
     assert.ok(md.includes(`## At K = ${v.K} with Δ = ${v.D}: butterfly density ${r.est.toFixed(5)}, Black–Scholes density ${r.pK.toFixed(5)}`), what(v));
     assert.ok(Math.abs(r.pK - density(v.K, P.MODEL)) < 1e-6, `${what(v)}: the drawn density is the closed form`);
     // The plot's expression is the same closed form.
-    const plotted = /y = (.+)/.exec(md)[1];
+    const plotted = /y = (.+)/.exec(md)?.[1] ?? "";
     assert.ok(plotted.includes(`ln(${P.MODEL.S0}/x) + 0.03`) && plotted.includes("x*0.2*sqrt(2*pi)"), plotted);
     for (const x of P.XCHECK) assert.ok(md.includes(`| ${x.delta} | ${x.price} | ${x.est} |`), `${what(v)}: Δ = ${x.delta}`);
     assert.ok(md.includes(`$$ C(100) = 10.4506, \\quad C''(100) = 0.018762, \\quad e^{rT} C''(100) = 0.019724 $$`), what(v));
@@ -61,8 +68,8 @@ test("the beamdswitch button saves, and Copy deck copies, the deck of the strike
 test("a blocked download points to Copy deck without touching the clipboard", () => assertBlockedSave(controls()));
 
 test("at() hits grid strikes exactly, interpolates linearly between them and clamps outside the grid", () => {
-  const C = P.CURVES, [lo, hi] = [C[0], C.at(-1)], i = C.length >> 1;
-  for (const col of [1, 2]) {
+  const C = P.CURVES, [lo, hi] = [C[0], C[C.length - 1]], i = C.length >> 1;
+  for (const col of /** @type {const} */ ([1, 2])) {
     assert.equal(BLReport.at(C, C[i][0], col), C[i][col]);
     const mid = (C[i][0] + C[i + 1][0]) / 2;
     assert.ok(Math.abs(BLReport.at(C, mid, col) - (C[i][col] + C[i + 1][col]) / 2) < 1e-12, `column ${col} midpoint`);
