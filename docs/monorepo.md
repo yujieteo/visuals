@@ -82,7 +82,7 @@ workflow (`.github/workflows/template.yml`, run by hand with the site branch) ru
 `scripts/sync_template.py`, which replaces the old text and its hash in every file of each visual that
 carries an older copy, and pushes the result to a branch whose pull request CI checks visual by visual. It
 lands before the site's change, whose tests compare the site's template with these copies. The same script
-runs locally, and `--check` lists the visuals that differ. Publishing stays a deploy of the site, which CI
+runs locally. Publishing stays a deploy of the site, which CI
 never does; the site's CI builds against this repository's `main` daily, so a change here that breaks the
 site shows within a day.
 

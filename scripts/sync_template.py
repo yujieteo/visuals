@@ -7,15 +7,13 @@ the site changes templates/beamdswitch.js, all of those change the same way, so 
 visual whose beamdswitch.js differs from the new template and replaces that old text, and its SHA-256, with
 the new ones in every file of the visual's folder. Visuals without a beamdswitch.js are left alone.
 
-Usage: scripts/sync_template.py TEMPLATE [--check]
+Usage: scripts/sync_template.py TEMPLATE
 
 TEMPLATE is the site's templates/beamdswitch.js (a path, such as ../site/templates/beamdswitch.js).
---check writes nothing and fails, naming the visuals that carry another template, when there are any.
 The "Sync beamdswitch template" workflow runs it in CI and pushes the result to a branch.
 """
 import argparse
 import hashlib
-import sys
 from pathlib import Path
 
 from visuals import ROOT, folders
@@ -66,17 +64,8 @@ def sync(template, root=ROOT):
 def main(argv=None, root=ROOT):
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("template", type=Path, help="the site's templates/beamdswitch.js")
-    parser.add_argument("--check", action="store_true", help="fail, naming the visuals that differ, instead of writing")
     args = parser.parse_args(argv)
     template = args.template.read_text(encoding="utf-8")
-    if args.check:
-        behind = sorted(stale(template, root))
-        if behind:
-            print(f"{len(behind)} visual(s) carry another beamdswitch template: {', '.join(behind)}\n"
-                  f"run: python3 scripts/sync_template.py {args.template}", file=sys.stderr)
-            sys.exit(1)
-        print("every visual carries this beamdswitch template")
-        return
     changed = sync(template, root)
     for slug, files in changed.items():
         print(f"{slug}: {', '.join(files)}")
