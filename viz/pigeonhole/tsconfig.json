@@ -1,20 +1,11 @@
-// Type-checked JavaScript: tsc checks the JSDoc types in this repository's own JavaScript and emits nothing.
-// `npm run typecheck` first runs scripts/extract-inline.mjs, which copies the page's own inline scripts out of
-// index.html into .typecheck/inline/ as global scripts; types/page.d.ts declares what the page's globals hold.
-// Left out: beamdswitch.js and tests/fixtures/beamdswitch/, read-only copies of yujieteo/site's template and
-// beamdswitch's parser (and so the inline beamdswitch copy too).
+// This visual's type-checked JavaScript: the tests and the page's own inline scripts, as global scripts; types/page.d.ts
+// declares what the page's globals hold. Left out: the inlined beamdswitch block (visual.json "typecheck" skips it),
+// beamdswitch.js and tests/fixtures/beamdswitch/, read-only copies of yujieteo/site's template and beamdswitch's parser.
+// The tests resolve modules as Node does (nodenext).
+// Compiler options come from the repository's tsconfig.base.json; scripts/typecheck.mjs, which scripts/check.py runs for
+// this visual after npm ci at the root, copies the page's inline scripts to .typecheck/inline/ and runs tsc on this file.
 {
-  "compilerOptions": {
-    "allowJs": true,
-    "checkJs": true,
-    "noEmit": true,
-    "strict": true,
-    "target": "ES2023",
-    "lib": ["ES2023", "DOM", "DOM.Iterable"],
-    "module": "nodenext",
-    "moduleResolution": "nodenext",
-    "types": ["node"],
-    "skipLibCheck": true
-  },
-  "include": ["tests/*.mjs", "scripts/*.mjs", ".typecheck/inline/*.js", "types/*.d.ts"]
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": { "module": "nodenext", "moduleResolution": "nodenext" },
+  "include": ["tests/*.mjs", ".typecheck/inline/*.js", "types/*.d.ts"]
 }

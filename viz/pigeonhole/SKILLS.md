@@ -5,7 +5,7 @@ description: Use Pigeonhole → Averages to compute the forced maximum ⌈N/k⌉
 
 # Use Pigeonhole → Averages
 
-Live at <https://teoyujie.org/visuals/pigeonhole/>. One argument at three levels of abstraction: a fixed global total forces a local extreme. The guided journey runs from the pigeonhole principle through the generalised principle, the balanced configuration, proofs by contradiction, real heights, liquid equalisation and deviations to equality and a synthesis; outside it are a theorem constructor, minimax balancing, seven applications, weighted averages, centre of mass, a convex-hull teaser, a free-play lab and challenges. Runs offline. To change the tool, read [AGENTS.md](AGENTS.md); for the files and scenes, read [README.md](README.md).
+Live at <https://teoyujie.org/visuals/pigeonhole/>. One argument at three levels of abstraction: a fixed global total forces a local extreme. The guided journey runs from the pigeonhole principle through the generalised principle, the balanced configuration, proofs by contradiction, real heights, liquid equalisation and deviations to equality and a synthesis; outside it are a theorem constructor, minimax balancing, seven applications, weighted averages, centre of mass, a convex-hull teaser, a free-play lab and challenges. Runs offline. To change the tool, read [AGENTS.md](AGENTS.md).
 
 ## Tasks
 

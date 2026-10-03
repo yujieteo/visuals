@@ -58,4 +58,4 @@ With no allowables set, its interaction check is `not-evaluated`.
 1. Quote the tool's own numbers; do not re-derive them by hand.
 2. Results are for preliminary sizing and hand-calculation cross-checks, not certified design.
 
-For how the tool is built and tested, see [AGENTS.md](AGENTS.md); for each file's role, [README.md](README.md).
+For how the tool is built and tested, see [AGENTS.md](AGENTS.md).

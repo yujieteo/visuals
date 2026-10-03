@@ -5,7 +5,7 @@ description: Use Diagonal Tension to compare an aluminium skin-and-stringer pane
 
 # Use Diagonal Tension
 
-Live at <https://teoyujie.org/visuals/diagonal-tension/>. A one-file finite-element tool: a rectangular aluminium skin of four-node plane-stress quadrilaterals, longitudinal stringers as axial bars on the skin nodes, and a doubler as a local increase in membrane thickness, loaded by a uniform shear flow on all four edges and held only against rigid-body motion. It solves variant A (skin + stringers) and variant B (A + doubler) on the same mesh and load and compares them. Linear elastic and pre-buckling only. Runs offline. To change the tool, read [AGENTS.md](AGENTS.md); for the model and conventions, read [README.md](README.md).
+Live at <https://teoyujie.org/visuals/diagonal-tension/>. A one-file finite-element tool: a rectangular aluminium skin of four-node plane-stress quadrilaterals, longitudinal stringers as axial bars on the skin nodes, and a doubler as a local increase in membrane thickness, loaded by a uniform shear flow on all four edges and held only against rigid-body motion. It solves variant A (skin + stringers) and variant B (A + doubler) on the same mesh and load and compares them. Linear elastic and pre-buckling only. Runs offline. To change the tool, read [AGENTS.md](AGENTS.md).
 
 ## Tasks
 

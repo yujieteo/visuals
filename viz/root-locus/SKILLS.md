@@ -5,7 +5,7 @@ description: Use the Root locus design check to analyse a continuous or sampled 
 
 # Use the Root locus design check
 
-Live at <https://teoyujie.org/visuals/root-locus/>. Type a compensator C, plant G and feedback path H, see the s-plane or z-plane locus for K ≥ 0, pick K, and check the closed-loop poles against requirements; the check returns the passing K intervals or the binding requirement. Cancellations, improper loops and coarse sampling are flagged. To change the tool, read [AGENTS.md](AGENTS.md); for the method, read [README.md](README.md).
+Live at <https://teoyujie.org/visuals/root-locus/>. Type a compensator C, plant G and feedback path H, see the s-plane or z-plane locus for K ≥ 0, pick K, and check the closed-loop poles against requirements; the check returns the passing K intervals or the binding requirement. Cancellations, improper loops and coarse sampling are flagged. To change the tool, read [AGENTS.md](AGENTS.md).
 
 ## Tasks
 

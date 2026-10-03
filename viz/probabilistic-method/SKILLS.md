@@ -5,7 +5,7 @@ description: Use the Probabilistic Method Atlas to compute a probabilistic-metho
 
 # Use the Probabilistic Method Atlas
 
-Live at <https://teoyujie.org/visuals/probabilistic-method/>. One proof machine (random experiment → observable → dependency → inequality → deterministic consequence) runs through eighteen labs. Each lab has parameters and a seed (default 17), checks its hypotheses, gives the proof steps, runs seeded experiments kept apart from the proof, and exports a narrated deck. Runs offline. To change the atlas, read [AGENTS.md](AGENTS.md); for the files and determinism, read [README.md](README.md).
+Live at <https://teoyujie.org/visuals/probabilistic-method/>. One proof machine (random experiment → observable → dependency → inequality → deterministic consequence) runs through eighteen labs. Each lab has parameters and a seed (default 17), checks its hypotheses, gives the proof steps, runs seeded experiments kept apart from the proof, and exports a narrated deck. Runs offline. To change the atlas, read [AGENTS.md](AGENTS.md).
 
 ## Tasks
 

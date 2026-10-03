@@ -50,7 +50,11 @@ def main(argv):
             sys.exit(subprocess.run(command, env={**os.environ, var: url}).returncode)
         finally:
             browser.terminate()
-            browser.wait(timeout=10)
+            try:
+                browser.wait(timeout=10)
+            except subprocess.TimeoutExpired:
+                browser.kill()
+                browser.wait()
 
 
 if __name__ == "__main__":

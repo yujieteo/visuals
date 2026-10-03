@@ -1,52 +1,5 @@
-# Pigeonhole → Averages: notes for coding agents
+# Pigeonhole → averages
 
-One argument at three levels of abstraction: the pigeonhole principle, the generalised pigeonhole principle (some box holds at least ⌈N/k⌉, some at most ⌊N/k⌋) and the principle of averages (min ≤ mean ≤ max), with a narrated beamdswitch deck. Live at <https://teoyujie.org/visuals/pigeonhole/>; its data is published at <https://teoyujie.org/visuals/pigeonhole/data.json>.
+No build step: edit `index.html` directly. `pigeonhole-engine` is the pure core (`self.Pigeonhole`: no DOM, storage, clock, randomness or network; ⌈N/k⌉ and ⌊N/k⌋ use integer arithmetic), `pigeonhole-ui` the page and WebMCP tools, and `beamdswitch` the inlined `beamdswitch.js`. Every inline script needs an `id`, which names its type-checked copy. The page shows its theorems and proofs with JavaScript off.
 
-## Where changes go
-
-The standalone repository [yujieteo/pigeonhole](https://github.com/yujieteo/pigeonhole) is where this visualisation and its tests develop and where CI runs them. `visuals/pigeonhole/` in [yujieteo/site](https://github.com/yujieteo/site/tree/main/visuals/pigeonhole) is a port of its page files, refreshed when the visualisation is updated, and the site runs no logic tests for it. Porting copies the folder minus `tests/`, `.github/` and the type-check tooling (`package.json`, `package-lock.json`, `tsconfig.json`, `.gitignore`, `scripts/`, `types/`, and the generated `node_modules/` and `.typecheck/`). `README.md` lists every file here and its role.
-
-## Build, test and verify
-
-Run these from the root of the yujieteo/pigeonhole checkout. There is no build step: edit `index.html` directly. Check this tool alone with:
-
-```sh
-node --test tests/pigeonhole.test.mjs
-```
-
-Before opening a pull request, run the whole suite, as CI (`.github/workflows/ci.yml`) does on every push and pull request:
-
-```sh
-node --test 'tests/*.test.{mjs,cjs}'
-npm ci && npm run typecheck
-```
-
-`npm run typecheck` first runs `scripts/extract-inline.mjs`, which copies the page's own inline scripts out of `index.html`, in order, into `.typecheck/inline/<id>.js` (gitignored), then runs tsc over their JSDoc types and those in `scripts/*.mjs` and `tests/*.mjs` (`tsconfig.json`: `checkJs`, `strict`, no output). The extracted blocks are global scripts; `types/page.d.ts` types the `self.Pigeonhole` and `self.Beamdswitch` globals they share, and the tests take the engine's type from its extracted copy. It leaves out the read-only copies (`beamdswitch.js` and so `<script id="beamdswitch">`, `tests/fixtures/beamdswitch/`; `deck.d.mts` types the parser in place of `deck.mjs`). Inline scripts in `index.html` need an `id`, which names their extracted copy.
-
-In yujieteo/site the only Pigeonhole checks are the site's integration tests: the catalogue stub `data/visuals/pigeonhole.yaml` points into the folder and names the tools the page registers, the published copy equals the port, and the folder docs keep their links inside the folder. The page also runs its self-tests through `run_self_tests`.
-
-## Data and tests
-
-- `raw.json`: catalogue data published as `data.json` (scenes, modes, examples, challenges, the real example, the lab's starting values and the worked bounds). The page never fetches it; the test fails when it drifts from the engine.
-- Inside `index.html`: `<script id="pigeonhole-engine">` (pure core, `self.Pigeonhole`), `<script id="pigeonhole-ui">` (page and WebMCP tools) and `<script id="beamdswitch">`.
-- `tests/pigeonhole.test.mjs`: the engine, the worked bounds, `raw.json`, the offline promises, every scene's deck, the WebMCP tools and the beamdswitch and Copy deck buttons. `tests/data-visuals-beamdswitch.mjs` holds the deck checks and a stand-in DOM that boots the page in `node:vm`.
-- `tests/fixtures/beamdswitch/`: read-only copies of beamdswitch's deck parser and the site's `templates/beamdswitch.js` (as `template.js`) and `templates/beamdswitch-report.md`.
-
-## Workflow
-
-Every change follows the site's [add-visualization playbook](https://github.com/yujieteo/site/blob/main/skills/playbooks/add-visualization.md):
-
-1. Change and test it here first: run the commands above and check the page end to end in a browser.
-2. Run the first no-mistakes pass in this repository. It also checks the page in a shallow clone of yujieteo/site (`git clone --depth 1 https://github.com/yujieteo/site`) with the change ported in; build and browse only this page there, never the site's full build or test suite.
-3. Once this repository's pull request merges, port the page files byte for byte into `visuals/pigeonhole/` in yujieteo/site (this repository minus `tests/`, `.github/` and the type-check tooling) and run the second no-mistakes pass on that pull request, which runs only the site-level tests.
-
-Logic, end-to-end and other heavy tests live here, where they run only when this tool changes; the site adds none for it, so its test time stays flat.
-
-## Conventions
-
-- One self-contained `index.html`: no external scripts, stylesheets, fonts or network requests. It works offline, from `file://` and in a sandboxed iframe, and shows the theorems and proofs with JavaScript off.
-- The engine has no DOM, storage, clock, randomness or network use, so Node can load it. ⌈N/k⌉ and ⌊N/k⌋ use integer arithmetic.
-- Tests use Node's built-in runner (`node --test`) only; never add Vitest, Jest or another test framework. `package.json` exists only to pin the type-check tooling (TypeScript and `@types/node`, development-only, no runtime dependencies).
-- `beamdswitch.js` is a verbatim copy of yujieteo/site's `templates/beamdswitch.js` and is inlined unchanged; the tests check it against `tests/fixtures/beamdswitch/template.js`. When the site's template changes, copy it to both and paste it into `<script id="beamdswitch">`. Every deck declares the narration voice `bf_emma` in its front matter.
-- WebMCP tools stay read-only (`readOnlyHint: true`), never change the page, and keep their names equal to `webmcp_tools` in `data/visuals/pigeonhole.yaml` in yujieteo/site.
-- `LICENSE` is MIT (Copyright (c) 2026 Yu Jie Teo).
+`tests/pigeonhole.test.mjs` checks the engine, the worked bounds, `raw.json` against the engine, the offline promises, every scene's deck, the WebMCP tools and the deck buttons; `tests/data-visuals-beamdswitch.mjs` holds the deck checks and the stand-in DOM. Rules for every visual: [SKILLS.md](../../SKILLS.md).

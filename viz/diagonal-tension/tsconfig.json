@@ -1,22 +1,12 @@
-// Type-checked JavaScript: tsc checks the JSDoc types and emits nothing. `npm run typecheck` first copies the page's
-// own inline scripts into .typecheck/inline/ (scripts/extract-inline.mjs), where they are checked as global scripts in
-// page order, then checks them with the tests. The engine's typedefs (State, Comparison, Engine, ...) are global, so the
-// tests use them too; tests/page-globals.d.ts declares the globals the page publishes.
-// Left out: the dt-beamdswitch block and beamdswitch.js, which must stay byte-identical to the site's shared
-// templates/beamdswitch.js; the beamdswitch parsers vendored in tests/fixtures/ stay unedited, typed by their .d.mts files.
+// This visual's type-checked JavaScript: the inline scripts of diagonal-tension.html (visual.json "typecheck" names
+// it; index.html is a byte-identical copy), checked as global scripts in page order, and the tests. The engine's
+// typedefs are global, so the tests use them too; tests/page-globals.d.ts declares the globals the page publishes.
+// Left out: the dt-beamdswitch block and beamdswitch.js, which stay byte-identical to the site's templates/beamdswitch.js,
+// and the beamdswitch parsers vendored in tests/fixtures/, typed by their .d.mts files.
+// Compiler options come from the repository's tsconfig.base.json; scripts/typecheck.mjs, which scripts/check.py runs for
+// this visual after npm ci at the root, copies the page's inline scripts to .typecheck/inline/ and runs tsc on this file.
 {
-  "compilerOptions": {
-    "allowJs": true,
-    "checkJs": true,
-    "noEmit": true,
-    "strict": true,
-    "target": "ES2023",
-    "lib": ["ES2023", "DOM", "DOM.Iterable"],
-    "module": "preserve",
-    "moduleResolution": "bundler",
-    "types": ["node"],
-    "skipLibCheck": true
-  },
-  "include": [".typecheck/inline/*.js", "scripts/*.mjs", "tests/**/*.mjs", "tests/**/*.d.mts", "tests/**/*.d.ts"],
+  "extends": "../../tsconfig.base.json",
+  "include": [".typecheck/inline/*.js", "tests/**/*.mjs", "tests/**/*.d.mts", "tests/**/*.d.ts"],
   "exclude": ["tests/fixtures/beamdswitch/*.mjs"]
 }

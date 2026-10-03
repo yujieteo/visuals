@@ -5,7 +5,7 @@ description: Use the beam diagram creator to solve a straight beam with pinned a
 
 # Use the beam diagram creator
 
-Live at <https://teoyujie.org/visuals/beamdiag/>. Build a straight Euler–Bernoulli beam with pinned and fixed supports anywhere along it, point forces, couples and linearly varying distributed loads, a section and a material; the page solves it by the direct stiffness method in the browser and draws the shear force, bending moment and deflection with labelled axes, then works the same answer by hand, segment by segment. Runs offline. To change the tool, read [AGENTS.md](AGENTS.md); for the files, units and conventions, read [README.md](README.md).
+Live at <https://teoyujie.org/visuals/beamdiag/>. Build a straight Euler–Bernoulli beam with pinned and fixed supports anywhere along it, point forces, couples and linearly varying distributed loads, a section and a material; the page solves it by the direct stiffness method in the browser and draws the shear force, bending moment and deflection with labelled axes, then works the same answer by hand, segment by segment. Runs offline. To change the tool, read [AGENTS.md](AGENTS.md).
 
 ## Tasks
 

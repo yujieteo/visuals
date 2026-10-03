@@ -5,7 +5,7 @@ description: Use the Divisors, Linear Systems & Riemann–Roch Laboratory to com
 
 # Use the Riemann–Roch Laboratory
 
-Live at <https://teoyujie.org/visuals/riemann-roch/>. Choose a curve, draw a divisor (filled points for zeros, rings for poles) and the page runs curve → divisor → L(D) → ℓ(D) → Riemann–Roch → |D| → φ_D : C → Pⁿ. Modules cover principal divisors and Pic, the elliptic group law and E ≅ Pic⁰(E), Riemann–Hurwitz, linear systems, plane curves with an exact Bézout microscope, canonical maps of genus 2, 3 and 4, and a computation mode. Runs offline. To change the laboratory, read [AGENTS.md](AGENTS.md); for what is exact and what is a bound, read [README.md](README.md).
+Live at <https://teoyujie.org/visuals/riemann-roch/>. Choose a curve, draw a divisor (filled points for zeros, rings for poles) and the page runs curve → divisor → L(D) → ℓ(D) → Riemann–Roch → |D| → φ_D : C → Pⁿ. Modules cover principal divisors and Pic, the elliptic group law and E ≅ Pic⁰(E), Riemann–Hurwitz, linear systems, plane curves with an exact Bézout microscope, canonical maps of genus 2, 3 and 4, and a computation mode. Runs offline. To change the laboratory, read [AGENTS.md](AGENTS.md).
 
 ## Tasks
 

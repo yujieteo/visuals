@@ -5,7 +5,7 @@ description: Use FBD Drawer to draw, load, read and export scaled free body diag
 
 # Use FBD Drawer
 
-Live at <https://teoyujie.org/visuals/fbd/>. Draws scaled free body diagrams in which loads are data, not pictures: beams, rods, construction, dimension and leader lines and freeform plates meet at shared joints; point forces, moments, uniform to triangular distributed loads, self-weight and reactions attach to them, with pin, roller and fixed supports. Everything is stored in mm, N and N·mm and entered or shown in SI or imperial, against one rotatable axes triad with engineering and aircraft presets. There is no solver: reactions are drawn, not computed. Works by touch. To change the tool, read [AGENTS.md](AGENTS.md); for the JSON format, read [README.md](README.md).
+Live at <https://teoyujie.org/visuals/fbd/>. Draws scaled free body diagrams in which loads are data, not pictures: beams, rods, construction, dimension and leader lines and freeform plates meet at shared joints; point forces, moments, uniform to triangular distributed loads, self-weight and reactions attach to them, with pin, roller and fixed supports. Everything is stored in mm, N and N·mm and entered or shown in SI or imperial, against one rotatable axes triad with engineering and aircraft presets. There is no solver: reactions are drawn, not computed. Works by touch. To change the tool, read [AGENTS.md](AGENTS.md).
 
 ## Tasks
 

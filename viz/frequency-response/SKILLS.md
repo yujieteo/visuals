@@ -60,4 +60,4 @@ so `closed_loop.verdict` is “marginal”: K = 6 is the critical gain.
 1. Quote the tool's own numbers; do not re-derive them by hand.
 2. Quote the disclaimer with any result. Margin thresholds are user inputs whose pre-filled values are unsourced defaults.
 
-For how the tool is built and tested, see [AGENTS.md](AGENTS.md); for each file's role, [README.md](README.md).
+For how the tool is built and tested, see [AGENTS.md](AGENTS.md).

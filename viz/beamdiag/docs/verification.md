@@ -8,16 +8,8 @@ plus the support conditions (v = 0 at every support, v' = 0 at every fixed
 support), with M(x) written in Macaulay form. Agreement between the two is
 evidence, not a repeated calculation.
 
-Run everything from the repository root:
-
-```sh
-node --test tests/*.test.mjs
-python3 -m unittest discover -s tests -p 'test_*.py' -v
-npm ci && npm run typecheck
-```
-
-CI (`.github/workflows/ci.yml`) runs all three on every push to `main` and every
-pull request.
+`python3 scripts/check.py beamdiag --require-typecheck`, run from the repository root after `npm ci`, runs
+the Node tests, the Python tests and the type check; CI runs them on every change to this folder.
 
 ## What is checked
 

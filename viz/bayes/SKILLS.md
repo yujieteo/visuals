@@ -57,4 +57,4 @@ that the evidence favours the hypothesis clearly.
 1. Quote the tool's own numbers; do not re-derive them by hand.
 2. A phrase in neither source has no numbers: ask for the user's own meaning rather than guessing one.
 
-For how the tool is built and tested, see [AGENTS.md](AGENTS.md); for each file's role, [README.md](README.md).
+For how the tool is built and tested, see [AGENTS.md](AGENTS.md).

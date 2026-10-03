@@ -5,7 +5,7 @@ description: Use the Generating Functions Lab to compute a coefficient of a coun
 
 # Use the Generating Functions Lab
 
-Live at <https://teoyujie.org/visuals/generating-functions/>. Generating functions as a calculus for discrete structures: every lesson runs problem → discrete object → encode → manipulate → read coefficient → answer → verify. Thirty-four levels (31 and 32 optional), a 22-problem ladder with hints, Compare and Transform modes, a Fourier lab, a finite-vector sandbox and a command palette. Runs offline. To change the lab, read [AGENTS.md](AGENTS.md); for the conventions, read [README.md](README.md).
+Live at <https://teoyujie.org/visuals/generating-functions/>. Generating functions as a calculus for discrete structures: every lesson runs problem → discrete object → encode → manipulate → read coefficient → answer → verify. Thirty-four levels (31 and 32 optional), a 22-problem ladder with hints, Compare and Transform modes, a Fourier lab, a finite-vector sandbox and a command palette. Runs offline. To change the lab, read [AGENTS.md](AGENTS.md).
 
 ## Tasks
 

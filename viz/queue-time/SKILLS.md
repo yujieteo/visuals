@@ -55,4 +55,4 @@ minutes, the 10th to 90th percentiles of 400 seeded runs).
 1. Quote the tool's own numbers; do not re-derive them by hand.
 2. What-ifs are never measurements: an estimate of the time left for a food order comes only from orders the visitor counted finishing.
 
-For how the tool is built and tested, see [AGENTS.md](AGENTS.md); for each file's role, [README.md](README.md).
+For how the tool is built and tested, see [AGENTS.md](AGENTS.md).
