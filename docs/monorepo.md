@@ -53,9 +53,14 @@ registers others in a loop). `checks` in `visual.json` replaces the first three.
 repository-wide check: every `visual.json` against the schema, the folder rules and the absolute-path scan.
 
 `scripts/changed.py` decides what a change runs: a path in `viz/<slug>/` selects that visual; a path a
-visual lists in `uses` selects its users; documentation (`*.md` at the root, `docs/`) selects none; anything
-else is shared tooling and selects all. CI computes it against the pull request's base, or the previous
-commit on a push to `main`; `workflow_dispatch` runs everything.
+visual lists in `uses` selects its users; documentation (`*.md` at the root or in `e2e/`, `docs/`) selects
+none; anything else is shared tooling and selects all. Browser checks follow the same selection, except
+that a path in `e2e/site/<slug>/` runs only that site visual's browser checks (cloning yujieteo/site for
+them), the rest of `e2e/` and CI run every visual's browser checks but no other visual check, and other
+shared tooling, which the harness does not use, runs none. Each visual's browser checks get one job per
+browser; when more than 40 visuals are selected they are split into 8 shards. CI computes it against the
+pull request's base, or the previous commit on a push to `main`; `workflow_dispatch` and the daily run run
+everything, the site's own visuals included.
 
 ## Generated, never committed
 

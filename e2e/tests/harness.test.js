@@ -90,6 +90,9 @@ test("sharding splits the visuals into disjoint batches that cover them all", ()
   const shards = [1, 2, 3].map((i) => selectShard(items, { E2E_SHARD: `${i}/3` }).map((x) => x.slug));
   assert.deepEqual(shards, [["a", "d"], ["b", "e"], ["c"]]);
   assert.deepEqual(selectShard(items, { E2E_ONLY: "c, e" }).map((x) => x.slug), ["c", "e"]);
+  const sourced = [{ slug: "a", source: "visuals" }, { slug: "b", source: "site" }, { slug: "c", source: "site" }];
+  assert.deepEqual(selectShard(sourced, { E2E_SOURCE: "site" }).map((x) => x.slug), ["b", "c"]);
+  assert.deepEqual(selectShard(sourced, { E2E_SOURCE: "site", E2E_ONLY: "a,c" }).map((x) => x.slug), ["c"]);
   assert.throws(() => selectShard(items, { E2E_SHARD: "4/3" }), /E2E_SHARD/);
 });
 

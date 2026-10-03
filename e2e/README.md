@@ -37,6 +37,7 @@ Everything is chosen by environment variables:
 | `E2E_BASE_URL` | test artifacts already served at `<base>/<slug>/`, e.g. `http://localhost:8000/visuals` over a built `site/` |
 | `E2E_PROJECTS` | comma-separated projects: `chromium-desktop`, `firefox-desktop`, `webkit-desktop`, `chromium-mobile`, `webkit-mobile` (default all) |
 | `E2E_ONLY` | comma-separated slugs |
+| `E2E_SOURCE` | `site` or `visuals`: only the visuals the site keeps itself, or only this repository's |
 | `E2E_SHARD` | `i/n`: every n-th visual from the i-th, for splitting a run across machines |
 | `E2E_CONCURRENCY` | visuals tested at once per browser (default 4) |
 | `E2E_RESULTS` | write one JSON line per check to `<folder>/<project>.<run>[.<shard>].jsonl` |

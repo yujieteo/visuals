@@ -11,6 +11,7 @@
 //                 visual's own repository), an HTML file, or a URL; name it
 //                 with E2E_SLUG when its folder name is not the slug
 //   E2E_ONLY      comma-separated slugs to keep
+//   E2E_SOURCE    keep only the visuals built in this place: site or visuals
 //   E2E_SHARD     i/n: keep every n-th visual starting at the i-th (1-based)
 import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -53,8 +54,8 @@ function dirFromEnv(name, fallback) {
 }
 
 /**
- * Keep the visuals named by E2E_ONLY and the shard named by E2E_SHARD.
- * @template {{ slug: string }} T
+ * Keep the visuals named by E2E_ONLY, built where E2E_SOURCE says, and the shard named by E2E_SHARD.
+ * @template {{ slug: string, source?: string }} T
  * @param {T[]} items
  * @param {NodeJS.ProcessEnv} [env]
  * @returns {T[]}
@@ -62,6 +63,7 @@ function dirFromEnv(name, fallback) {
 export function selectShard(items, env = process.env) {
   const only = (env.E2E_ONLY ?? "").split(",").map((s) => s.trim()).filter(Boolean);
   let kept = only.length ? items.filter((item) => only.includes(item.slug)) : items;
+  if (env.E2E_SOURCE) kept = kept.filter((item) => item.source === env.E2E_SOURCE);
   const shard = env.E2E_SHARD;
   if (shard) {
     const match = /^(\d+)\/(\d+)$/.exec(shard);
@@ -91,7 +93,7 @@ function adHocVisual(slug, folder) {
 
 /**
  * Resolve the artifacts under test and serve the local ones.
- * @param {{ only?: string[] }} [options] keep just these slugs, whatever E2E_ONLY and E2E_SHARD say
+ * @param {{ only?: string[] }} [options] keep just these slugs, whatever E2E_ONLY, E2E_SOURCE and E2E_SHARD say
  * @returns {Promise<Targets>}
  */
 export async function loadTargets(options = {}) {

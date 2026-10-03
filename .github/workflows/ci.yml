@@ -1,11 +1,12 @@
 # CI tests only what a change touches (docs/monorepo.md). scripts/changed.py maps the diff to the visuals
 # it changes, and each gets its own job on a sparse checkout of the shared tooling plus its own folder, so
-# its checks cannot read another visual's folder and its failure cannot hide or fail another's. The browser
-# jobs run the changed visuals' browser checks (e2e/, each visual's e2e/) in one job per browser project.
-# A change to shared tooling selects every visual. The repository job runs on every change: the shared
-# tooling's tests and type check, every visual.json, and the generated catalogue, kept as an artifact and
-# never committed. A daily run repeats every visual's browser checks, and the site's own, against new
-# browser releases.
+# its checks cannot read another visual's folder and its failure cannot hide or fail another's. Its browser
+# checks (e2e/, its e2e/) get their own job per browser project too; a change to a visual the site keeps runs
+# that visual's (e2e/site/<slug>/). A change to shared tooling selects every visual, and a change to the
+# browser harness every visual's browser checks, in shards when there are too many for a job each. The
+# repository job runs on every change: the shared tooling's tests and type check, every visual.json, and the
+# generated catalogue, kept as an artifact and never committed. A daily run repeats every visual's browser
+# checks, and the site's own, against new browser releases.
 name: CI
 
 on:
@@ -32,6 +33,7 @@ jobs:
     timeout-minutes: 5
     outputs:
       slugs: ${{ steps.changed.outputs.slugs }}
+      browser: ${{ steps.changed.outputs.browser }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -125,22 +127,24 @@ jobs:
         run: python3 scripts/check.py "$SLUG" --require-typecheck
 
   browser:
-    name: Browser ${{ matrix.project }}
+    name: Browser ${{ matrix.job.name }} ${{ matrix.project }}
     needs: plan
-    if: needs.plan.outputs.slugs != '[]'
+    if: needs.plan.outputs.browser != '[]'
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
+        job: ${{ fromJSON(needs.plan.outputs.browser) }}
         project: [chromium-desktop, firefox-desktop, webkit-desktop, chromium-mobile, webkit-mobile]
     defaults:
       run:
         working-directory: e2e
     env:
       E2E_PROJECTS: ${{ matrix.project }}
-      # Every visual on the daily run; otherwise only the changed ones.
-      E2E_ONLY: ${{ github.event_name != 'schedule' && join(fromJSON(needs.plan.outputs.slugs), ',') || '' }}
+      E2E_ONLY: ${{ matrix.job.only }}
+      # The one job that names no visual tests every visual the site keeps itself.
+      E2E_SOURCE: ${{ matrix.job.only == '' && 'site' || '' }}
       E2E_RESULTS: results
       E2E_CONCURRENCY: 4
     steps:
@@ -151,8 +155,8 @@ jobs:
           cache: npm
           cache-dependency-path: e2e/package-lock.json
       - run: npm ci
-      - name: Fetch yujieteo/site, whose own visuals the daily run also tests
-        if: github.event_name == 'schedule'
+      - name: Fetch yujieteo/site, for the visuals it keeps itself
+        if: matrix.job.site
         run: npm run fetch-targets
       - name: Install the browser
         env:
@@ -164,10 +168,14 @@ jobs:
         run: |
           files=()
           if [ -z "$E2E_ONLY" ]; then
-            files=(../viz/*/e2e/full.test.mjs site/*/full.test.js)
+            files=(site/*/full.test.js)
           else
             for slug in ${E2E_ONLY//,/ }; do
-              [ -f "../viz/$slug/e2e/full.test.mjs" ] && files+=("../viz/$slug/e2e/full.test.mjs")
+              if [ -f "../viz/$slug/e2e/full.test.mjs" ]; then
+                files+=("../viz/$slug/e2e/full.test.mjs")
+              elif [ -f "site/$slug/full.test.js" ]; then
+                files+=("site/$slug/full.test.js")
+              fi
             done
           fi
           if [ ${#files[@]} -gt 0 ]; then node --test "${files[@]}"; fi
@@ -179,7 +187,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: browser-results-${{ matrix.project }}
+          name: browser-results-${{ matrix.job.name }}-${{ matrix.project }}
           path: e2e/results/
           if-no-files-found: ignore
 
