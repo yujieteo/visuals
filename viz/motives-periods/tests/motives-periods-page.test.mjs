@@ -43,11 +43,17 @@ async function openPage(url = URL_) {
   if (process.platform === "linux") args.unshift("--no-sandbox");
   const proc = spawn(CHROME, args, { stdio: "ignore" });
   const portFile = join(dir, "DevToolsActivePort");
-  for (let i = 0; i < 200 && !existsSync(portFile); i++) await sleep(50);
-  await sleep(50);
-  const [port, path] = readFileSync(portFile, "utf8").split("\n");
-  const ws = new WebSocket(`ws://127.0.0.1:${port}${path}`);
-  await new Promise((resolve, reject) => { ws.onopen = resolve; ws.onerror = reject; });
+  let ws;
+  try {
+    for (let i = 0; i < 600 && !existsSync(portFile); i++) await sleep(50);
+    await sleep(50);
+    const [port, path] = readFileSync(portFile, "utf8").split("\n");
+    ws = new WebSocket(`ws://127.0.0.1:${port}${path}`);
+    await new Promise((resolve, reject) => { ws.onopen = resolve; ws.onerror = reject; });
+  } catch (err) {
+    proc.kill("SIGKILL"); // a Chrome left running keeps the test process alive until the job times out
+    throw err;
+  }
   let id = 0;
   const pending = new Map(), exceptions = [], requests = [];
   ws.onmessage = (ev) => {

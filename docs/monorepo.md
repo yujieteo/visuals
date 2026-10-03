@@ -25,6 +25,8 @@ viz/<slug>/            one visual, self-contained
   tests/               its own tests (node --test, Python unittest)
   SKILLS.md            how an agent uses the page and its WebMCP tools
   AGENTS.md            at most a few lines specific to changing this visual
+  e2e/                 its browser checks: manifest.json and, when it has them, full.test.mjs
+e2e/                   the shared browser-check harness, and the checks of the visuals the site keeps (site/<slug>/)
 scripts/               shared tooling: changed.py, check.py, build_catalogue.py, check_repo.py,
                        typecheck.mjs, with_chrome.py, and the builders' shared modules (page_parts, style_guide, stock_cases)
 schema/visual.schema.json   what visual.json may hold
@@ -53,9 +55,15 @@ registers others in a loop). `checks` in `visual.json` replaces the first three.
 repository-wide check: every `visual.json` against the schema, the folder rules and the absolute-path scan.
 
 `scripts/changed.py` decides what a change runs: a path in `viz/<slug>/` selects that visual; a path a
-visual lists in `uses` selects its users; documentation (`*.md` at the root, `docs/`) selects none; anything
-else is shared tooling and selects all. CI computes it against the pull request's base, or the previous
-commit on a push to `main`; `workflow_dispatch` runs everything.
+visual lists in `uses` selects its users; documentation (`*.md` at the root or in `e2e/`, `docs/`) selects
+none; anything else is shared tooling and selects all. Browser checks follow the same selection, except
+that a path in `e2e/site/<slug>/` runs only that site visual's browser checks (cloning yujieteo/site for
+them), the rest of `e2e/` and CI run every visual's browser checks, the site's own visuals included (the
+rest of `e2e/` runs no other visual check, while CI runs them all), and other shared tooling, which the
+harness does not use, runs none. Each visual's browser checks get one job per
+browser; when more than 40 visuals are selected they are split into 8 shards. CI computes it against the
+pull request's base, or the previous commit on a push to `main`; `workflow_dispatch` and the daily run run
+everything, the site's own visuals included.
 
 ## Generated, never committed
 
@@ -88,10 +96,11 @@ procedure of porting a change into the site.
 
 ## Browser checks
 
-The technical E2E checks for one visual (its manifest and its full browser test in yujieteo/technical-e2e)
-move into that visual's folder, and the shared harness moves to the root, so a visual's browser checks run
-only when it changes, like its other tests, and a failure or recorded finding stays with its visual. The
-combined findings list is generated in CI from the folders instead of being committed.
+The technical E2E checks moved here from yujieteo/technical-e2e with their history: each visual's manifest
+and fuller checks into its folder (`viz/<slug>/e2e/`), the shared harness to `e2e/`. CI runs a visual's
+browser checks only when it changes, so a failure or recorded finding stays with its visual, and runs every
+visual's once a day against new browser releases, with the two visuals the site keeps itself (their checks
+are in `e2e/site/`). The combined findings list is generated in CI from the manifests, never committed.
 
 ## Review by risk
 
