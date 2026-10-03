@@ -53,7 +53,8 @@ async function openPage(hash = "") {
   // The page reads the clock only through Date.now(): fix it at the snapshot, so "upcoming" means what the data says.
   await send("Page.addScriptToEvaluateOnNewDocument", { source: `Date.now = () => ${NOW};` });
   await send("Page.navigate", { url });
-  await evaluate(`new Promise((resolve) => { const ready = () => document.querySelector("#result-count")?.textContent !== "Loading classes…" ? resolve(null) : setTimeout(ready, 20); ready(); })`);
+  // Ready once the page's own document has loaded, so its inline scripts have rendered (not about:blank, not half-parsed).
+  while (!(await evaluate(`!!document.getElementById("events-ui") && document.readyState === "complete"`))) await new Promise((r) => setTimeout(r, 20));
   const close = async () => { socket.close(); await fetch(`${browser}/json/close/${target.id}`); };
   return { evaluate, errors, requests, close };
 }
