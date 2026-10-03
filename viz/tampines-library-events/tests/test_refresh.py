@@ -312,10 +312,10 @@ class Guards(unittest.TestCase):
         self.assertEqual(self.files(), before, "a refused run writes nothing")
         return str(caught.exception)
 
-    def run_refresh(self, mode, **flags):
+    def run_refresh(self, dry_run=False, **flags):
         args = argparse.Namespace(**{"no_pages": False, "allow_partial": False, "force": False, **flags})
         out = io.StringIO()
-        code = refresh_kit.run(self.SLUG, mode, args, refresh_kit.Replay({}, now=self.NOW), root=self.root, out=out, hook=refresh)
+        code = refresh_kit.run(self.SLUG, dry_run, args, refresh_kit.Replay({}, now=self.NOW), root=self.root, out=out, hook=refresh)
         return code, out.getvalue()
 
     def test_a_class_page_that_fails_is_counted(self):
@@ -336,11 +336,11 @@ class Guards(unittest.TestCase):
             return refresh.build_onepa(onepa.tampines_clubs(OUTLETS), [BREAD], [], {}, {}, {})
         with mock.patch.object(refresh, "fetch_nlb", nlb), mock.patch.object(refresh, "fetch_onepa", pa):
             before = self.files()
-            code, out = self.run_refresh("apply")
+            code, out = self.run_refresh()
             self.assertEqual(code, refresh_kit.FAILED)
             self.assertIn("failed to load", out)
             self.assertEqual(self.files(), before)
-            code, out = self.run_refresh("apply", allow_partial=True)
+            code, out = self.run_refresh(allow_partial=True)
         self.assertEqual(code, 0, out)
         self.assertEqual(json.loads((self.dir / "data.json").read_text())["retrieved"], "2026-10-05T09:00:00+08:00")
         self.assertEqual(json.loads((self.dir / "visual.json").read_text())["fetched"], "2026-10-05")
@@ -351,14 +351,15 @@ class Guards(unittest.TestCase):
         before = self.files()
         with mock.patch.object(refresh, "fetch_nlb", lambda read_pages, failures: refresh.build_nlb([LASER, EAT, STORY], {})), \
                 mock.patch.object(refresh, "fetch_onepa", lambda today, read_pages, failures: refresh.build_onepa(onepa.tampines_clubs(OUTLETS), [BREAD], [], {}, {}, {})):
-            code, out = self.run_refresh("check")
-        self.assertEqual(code, refresh_kit.NEWS)
+            code, out = self.run_refresh(dry_run=True)
+        self.assertEqual(code, 0)
+        self.assertIn("result: changes\n", out)
         self.assertIn('added,"5975969 Come, Let\'s Eat | TOYLC26",2026-10-04', out)
         self.assertEqual(self.files(), before)
 
     def test_a_source_that_fails_exits_2(self):
         with mock.patch.object(refresh, "fetch_listing", side_effect=refresh.urllib.error.HTTPError(refresh.API_URL, 503, "down", {}, None)):
-            code, out = self.run_refresh("apply")
+            code, out = self.run_refresh()
         self.assertEqual(code, refresh_kit.FAILED)
         self.assertIn("HTTPError", out)
 

@@ -7,14 +7,16 @@ A visual opts in with viz/<slug>/refresh.py, which defines
 It reads its sources only through ``source`` (a Source, or a Replay of recorded answers in its tests) and
 never writes: it returns the files it would write, the changes against its current data, the builder to run
 after writing and notes for review. It may also define ``add_arguments(parser)`` for flags of its own.
+tampines-library-events is the one exception to ``source``: its sources are JSON POST searches, so it reads
+them with its own request(), which uses BOT_CHECK, and its tests mock that function.
 
 run() then
   1. fails with exit 2 and writes nothing when a fetch fails, a response is empty or a bot check, or the data
      fails the visual's own schema check (each raises Failed);
   2. compares every file with the one on disk and prints a TOON summary of what would change;
-  3. writes only with --apply: every file, then the visual's builder. When the builder fails, every file in
-     the folder goes back to what it was and the exit code is 2, so a refresh never leaves a partial write.
-Without --apply it is a dry run that exits 0; --check is a dry run that exits 1 when the sources have news.
+  3. writes every changed file, then runs the visual's builder. When the builder fails, every file in the
+     folder goes back to what it was and the exit code is 2, so a refresh never leaves a partial write.
+With --dry-run it stops after step 2 and writes nothing.
 """
 import argparse
 import importlib.util
@@ -33,7 +35,6 @@ from visuals import ROOT, VIZ
 
 SGT = timezone(timedelta(hours=8))
 FAILED = 2  # exit code: no source, an empty answer, a bot check or a schema mismatch
-NEWS = 1  # exit code of --check when the refresh would change a file
 USER_AGENT = "yujieteo-visuals-refresh/1 (+https://teoyujie.org/visuals/)"
 BOT_CHECK = re.compile(r"_Incapsula_Resource|x-amzn-waf|<title>[^<]*(?:Just a moment|Attention Required)", re.I)
 
@@ -62,7 +63,7 @@ class Update:
 
 
 class Source:
-    """The network, as the refreshes see it: paced GETs and JSON POSTs that fail loudly instead of returning nothing."""
+    """The network, as the refreshes see it: paced GETs that fail loudly instead of returning nothing."""
 
     def __init__(self, now=None, user_agent=USER_AGENT):
         self.now = now or datetime.now(SGT).replace(microsecond=0)
@@ -71,18 +72,14 @@ class Source:
     def wait(self, seconds):
         time.sleep(seconds)
 
-    def text(self, url, body=None, headers=None, tries=1, retry=(429, 500, 502, 503, 504), pause=5):
-        """The body of a GET, or of a JSON POST when ``body`` is given; Failed when it is empty or a bot check.
+    def text(self, url, headers=None, tries=1, retry=(429, 500, 502, 503, 504), pause=5):
+        """The body of a GET; Failed when it is empty or a bot check.
 
         A status in ``retry`` is tried again up to ``tries`` times, ``pause`` seconds longer each time."""
         sent = {"User-Agent": self.user_agent, **(headers or {})}
-        data = None
-        if body is not None:
-            sent.setdefault("Content-Type", "application/json")
-            data = json.dumps(body).encode()
         for attempt in range(tries):
             try:
-                with urllib.request.urlopen(urllib.request.Request(url, data=data, headers=sent), timeout=120) as response:
+                with urllib.request.urlopen(urllib.request.Request(url, headers=sent), timeout=120) as response:
                     text = response.read().decode("utf-8")
                 return checked(url, text)
             except urllib.error.HTTPError as error:
@@ -94,12 +91,12 @@ class Source:
             self.wait(pause * (attempt + 1))
         raise Failed(f"{url}: no answer")
 
-    def json(self, url, body=None, **kwargs):
-        return parse_json(url, self.text(url, body, **kwargs))
+    def json(self, url, **kwargs):
+        return parse_json(url, self.text(url, **kwargs))
 
 
 class Replay(Source):
-    """Recorded answers in place of the network, for tests: {url: text}, or {(url, json body): text} for a POST.
+    """Recorded answers in place of the network, for tests: {url: text}.
 
     A request with no recorded answer fails, as a source that is gone does. Each request is kept in ``asked``."""
 
@@ -111,12 +108,11 @@ class Replay(Source):
     def wait(self, seconds):
         pass
 
-    def text(self, url, body=None, headers=None, **kwargs):
-        key = url if body is None else (url, json.dumps(body, sort_keys=True))
-        self.asked.append(key)
-        if key not in self.answers:
+    def text(self, url, headers=None, **kwargs):
+        self.asked.append(url)
+        if url not in self.answers:
             raise Failed(f"{url}: no recorded answer")
-        answer = self.answers[key]
+        answer = self.answers[url]
         if isinstance(answer, Exception):
             raise Failed(f"{url}: {answer}") from answer
         return checked(url, answer)
@@ -207,12 +203,6 @@ def module(folder):
     return loaded
 
 
-def refreshable(root=ROOT):
-    """Every slug whose folder has a refresh.py, sorted."""
-    base = root / VIZ
-    return sorted(path.parent.name for path in base.glob("*/refresh.py")) if base.is_dir() else []
-
-
 def compare(folder, files):
     """One row for each file the refresh owns: its status and size before and after."""
     rows = []
@@ -256,11 +246,11 @@ def write(folder, files, build):
         raise
 
 
-def run(slug, mode="dry-run", args=None, source=None, root=ROOT, out=None, hook=None):
-    """Refresh one visual: print the TOON summary and return the exit code (0, NEWS or FAILED)."""
+def run(slug, dry_run=False, args=None, source=None, root=ROOT, out=None, hook=None):
+    """Refresh one visual: print the TOON summary and return the exit code (0 or FAILED)."""
     out = out or sys.stdout
     folder = root / VIZ / slug
-    report = {"slug": slug, "mode": mode}
+    report = {"slug": slug, "mode": "dry-run" if dry_run else "write"}
     try:
         hook = hook or (module(folder) if folder.is_dir() else None)
         require(hook is not None and hasattr(hook, "refresh"), f"viz/{slug}/refresh.py with a refresh() does not exist; see SKILLS.md, Refresh data")
@@ -277,7 +267,7 @@ def run(slug, mode="dry-run", args=None, source=None, root=ROOT, out=None, hook=
     report.update({"result": "changes" if news else "up-to-date", "source": update.source, "files": rows,
                    "changes": update.changes, "notes": update.notes,
                    "build": " ".join(["python3", *update.build]) if update.build else "none"})
-    if mode == "apply" and news:
+    if news and not dry_run:
         try:
             write(folder, {row["path"]: files[row["path"]] for row in rows if row["status"] != "unchanged"}, update.build)
         except Failed as error:
@@ -285,27 +275,21 @@ def run(slug, mode="dry-run", args=None, source=None, root=ROOT, out=None, hook=
             return FAILED
         report["written"] = "every changed file, then the builder"
     elif news:
-        report["next"] = f"python3 scripts/refresh.py {slug} --apply"
+        report["next"] = f"python3 scripts/refresh.py {slug}"
     print(toon(report), file=out)
-    return NEWS if mode == "check" and news else 0
+    return 0
 
 
 def main(argv=None, slug=None):
-    """The command line: scripts/refresh.py SLUG [--check | --apply], or a visual's own refresh.py, which passes its slug."""
+    """The command line: scripts/refresh.py SLUG [--dry-run], or a visual's own refresh.py, which passes its slug."""
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     if slug is None:
-        parser.add_argument("slug", nargs="?", help="the visual to refresh; omit it with --list")
-        parser.add_argument("--list", action="store_true", help="print the visuals that have a refresh.py")
-    group = parser.add_mutually_exclusive_group()
-    group.add_argument("--check", action="store_true", help="dry run; exit 1 when the sources have news")
-    group.add_argument("--apply", action="store_true", help="write the changed files and run the builder")
+        parser.add_argument("slug", help="the visual to refresh: a folder of viz/ with a refresh.py")
+    parser.add_argument("--dry-run", action="store_true", help="print what would change and write nothing")
     parser.add_argument("--now", help="the retrieval time to record, ISO 8601 with an offset (default: now)")
     argv = sys.argv[1:] if argv is None else argv
     known, _ = parser.parse_known_args(argv)
     slug = slug or known.slug
-    if slug is None or getattr(known, "list", False):
-        print("\n".join(refreshable()))
-        return 0
     hook = module(ROOT / VIZ / slug) if (ROOT / VIZ / slug).is_dir() else None
     if hook is not None and hasattr(hook, "add_arguments"):
         hook.add_arguments(parser)
@@ -313,5 +297,4 @@ def main(argv=None, slug=None):
     now = datetime.fromisoformat(args.now) if args.now else None
     if now is not None and now.tzinfo is None:
         parser.error("--now needs an offset, such as 2026-10-04T09:00:00+08:00")
-    mode = "apply" if args.apply else "check" if args.check else "dry-run"
-    return run(slug, mode, args, Source(now), hook=hook)
+    return run(slug, args.dry_run, args, Source(now), hook=hook)

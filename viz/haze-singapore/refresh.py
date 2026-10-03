@@ -6,8 +6,8 @@ day after the newest one stored, and that newest day again, because it was store
 complete past days are kept as they are. Today is read too, and left out while it has no hour yet. No API key
 is needed; requests are paced and retried when the public rate limit answers 429.
 
-A dry run unless --apply: python3 refresh.py [--check | --apply], or python3 ../../scripts/refresh.py haze-singapore.
-With --apply it writes raw.json and visual.json's "fetched", then build.py writes meta.json and index.html.
+Run python3 refresh.py [--dry-run], or python3 ../../scripts/refresh.py haze-singapore [--dry-run].
+It writes raw.json and visual.json's "fetched", then build.py writes meta.json and index.html.
 """
 import json
 import sys

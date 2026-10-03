@@ -84,7 +84,7 @@ def read_draws():
     draws.sort(key=lambda d: d["draw_no"], reverse=True)
     numbers = [d["draw_no"] for d in draws]
     if numbers != list(range(numbers[0], numbers[0] - len(numbers), -1)):
-        fail("draw numbers have a gap; run refresh.py --apply again")
+        fail("draw numbers have a gap; run refresh.py again")
     if [d["date"] for d in draws] != sorted((d["date"] for d in draws), reverse=True):
         fail("draw dates are out of order")
     return draws
@@ -99,7 +99,7 @@ def window_summary(draws, latest, wid, label, months):
     after = months_before(latest, months)
     inside = [d for d in draws if date.fromisoformat(d["date"]) > after]
     if date.fromisoformat(draws[-1]["date"]) > after:
-        fail(f"draws.csv does not reach back {label}; run refresh.py --apply again")
+        fail(f"draws.csv does not reach back {label}; run refresh.py again")
     return {
         "id": wid,
         "label": label,

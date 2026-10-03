@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Refresh raw.json from SEC Company Facts for the Marvell page with the shared stock-cases refresh (scripts/stock_cases.py).
 
-A dry run unless --apply: python3 refresh.py [--check | --apply], or python3 ../../scripts/refresh.py marvell.
+Run python3 refresh.py [--dry-run], or python3 ../../scripts/refresh.py marvell [--dry-run].
 """
 import sys
 from pathlib import Path

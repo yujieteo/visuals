@@ -2,6 +2,7 @@
 import argparse
 import io
 import json
+import os
 import unittest
 import urllib.error
 from datetime import datetime
@@ -93,36 +94,33 @@ class Run(unittest.TestCase):
     def files(self):
         return {path.name: path.read_bytes() for path in self.folder.iterdir() if path.is_file()}
 
-    def run_refresh(self, answer, mode="dry-run", **flags):
+    def run_refresh(self, answer, dry_run=False, **flags):
         out = io.StringIO()
-        code = refresh_kit.run("demo", mode, argparse.Namespace(**flags), Replay({URL: answer} if answer is not None else {}, now=self.NOW),
+        code = refresh_kit.run("demo", dry_run, argparse.Namespace(**flags), Replay({URL: answer} if answer is not None else {}, now=self.NOW),
                                root=self.layout.root, out=out)
         return code, out.getvalue()
 
-    def test_refreshable_visuals_are_the_folders_with_a_refresh_py(self):
-        self.layout.visual("plain")
-        self.assertEqual(refresh_kit.refreshable(self.layout.root), ["demo"])
-
     def test_a_dry_run_prints_the_changes_and_writes_nothing(self):
         before = self.files()
-        code, out = self.run_refresh('{"rows": ["a", "b"]}')
+        code, out = self.run_refresh('{"rows": ["a", "b"]}', dry_run=True)
         self.assertEqual(code, 0)
         self.assertEqual(self.files(), before)
         self.assertIn("result: changes\n", out)
         self.assertIn("  raw.json,changed,16,21\n", out)
         self.assertIn("  visual.json,changed,", out)
         self.assertIn("  rows,all,\"2\"\n", out)
-        self.assertIn("next: python3 scripts/refresh.py demo --apply", out)
+        self.assertIn("next: python3 scripts/refresh.py demo\n", out)
 
-    def test_check_exits_1_on_news_and_0_when_up_to_date_without_touching_fetched(self):
-        self.assertEqual(self.run_refresh('{"rows": ["a", "b"]}', "check")[0], refresh_kit.NEWS)
-        code, out = self.run_refresh('{"rows": ["a"]}', "check")
+    def test_up_to_date_data_writes_nothing_and_keeps_fetched(self):
+        before = self.files()
+        code, out = self.run_refresh('{"rows": ["a"]}')
         self.assertEqual(code, 0)
         self.assertIn("result: up-to-date\n", out)
         self.assertNotIn("visual.json", out)
+        self.assertEqual(self.files(), before)
 
-    def test_apply_writes_the_files_and_fetched_then_runs_the_builder(self):
-        code, out = self.run_refresh('{"rows": ["a", "b"]}', "apply")
+    def test_a_refresh_writes_the_files_and_fetched_then_runs_the_builder(self):
+        code, out = self.run_refresh('{"rows": ["a", "b"]}')
         self.assertEqual(code, 0, out)
         self.assertEqual((self.folder / "raw.json").read_text(), '{"rows": ["a", "b"]}\n')
         self.assertEqual(json.loads((self.folder / "visual.json").read_text())["fetched"], "2026-10-04")
@@ -133,17 +131,17 @@ class Run(unittest.TestCase):
         before = self.files()
         for answer, reason in ((None, "no recorded answer"), ("", "empty response"), ('{"cols": []}', "no rows list"), ('{"rows": []}', "no row")):
             with self.subTest(answer=answer):
-                code, out = self.run_refresh(answer, "apply")
+                code, out = self.run_refresh(answer)
                 self.assertEqual(code, refresh_kit.FAILED)
                 self.assertIn("result: failed\n", out)
                 self.assertIn(reason, out)
                 self.assertIn("written: nothing", out)
                 self.assertEqual(self.files(), before)
-        self.assertEqual(self.run_refresh('{"rows": []}', "apply", empty_ok=True)[0], 0, "the visual's own flag reaches its refresh")
+        self.assertEqual(self.run_refresh('{"rows": []}', empty_ok=True)[0], 0, "the visual's own flag reaches its refresh")
 
     def test_a_builder_that_fails_puts_every_file_back(self):
         before = self.files()
-        code, out = self.run_refresh('{"rows": ["a", "bad"]}', "apply")
+        code, out = self.run_refresh('{"rows": ["a", "bad"]}')
         self.assertEqual(code, refresh_kit.FAILED)
         self.assertIn("bad row", out)
         self.assertEqual(self.files(), before, "raw.json, visual.json and what the builder wrote are all put back")
@@ -167,6 +165,9 @@ class StockCases(unittest.TestCase):
         self.folder = self.layout.visual("airbnb")
         self.recorded = (FIXTURES / "sec-companyfacts-airbnb.json").read_text(encoding="utf-8")
         self.facts = json.loads(self.recorded)
+        contact = mock.patch.dict(os.environ, {stock_cases.CONTACT: "Jane Tan jane@example.com"})
+        contact.start()
+        self.addCleanup(contact.stop)
 
     def refresh(self, answer):
         return stock_cases.refresh(Replay({self.SEC: answer}), self.folder, self.CASE)
@@ -185,6 +186,16 @@ class StockCases(unittest.TestCase):
         update = self.refresh(self.recorded)
         self.assertEqual([(c["kind"], c["item"]) for c in update.changes], [("added", "FY2025"), ("removed", "FY2021")])
         self.assertIn("fixed text", update.notes[0])
+
+    def test_sec_is_sent_the_contact_and_without_one_nothing_is_asked(self):
+        source = Replay({self.SEC: self.recorded})
+        with mock.patch.object(source, "text", wraps=source.text) as text:
+            stock_cases.refresh(source, self.folder, self.CASE)
+        self.assertEqual(text.call_args.kwargs["headers"], {"User-Agent": "Jane Tan jane@example.com"})
+        source = Replay({self.SEC: self.recorded})
+        with mock.patch.dict(os.environ, {stock_cases.CONTACT: " "}), self.assertRaisesRegex(Failed, "SEC_CONTACT is not set"):
+            stock_cases.refresh(source, self.folder, self.CASE)
+        self.assertEqual(source.asked, [])
 
     def test_another_company_or_missing_tags_fail(self):
         with self.assertRaisesRegex(Failed, "not the company facts of CIK 1559720"):

@@ -15,16 +15,17 @@ onePA, the Tampines community clubs (onepa.py says how): the People's Associatio
 courses and events at every Tampines CC, with each class's published onePA page as its booking link.
 
 Then print what changed against the previous data.json, ready for a pull request, as scripts/refresh_kit.py
-does for every visual. With --apply, write data.json, set visual.json's "fetched" to the Singapore date of the
-retrieval and run build.py, which inlines it into index.html. Nothing is invented: a field a source does not
-publish is left out, and every booking link is one the source publishes, never a constructed URL.
+does for every visual. Then write data.json, set visual.json's "fetched" to the Singapore date of the
+retrieval and run build.py, which inlines it into index.html; --dry-run writes nothing. Nothing is invented:
+a field a source does not publish is left out, and every booking link is one the source publishes, never a
+constructed URL.
 
 Nothing is written, and the exit code is 2, when a source fails or answers with a bot check, when a class's own
 page failed to load (its seats would be missing; --allow-partial writes anyway), or when the result looks
 broken: NLB lists no event, onePA has no Tampines club, or the classes kept fall to less than half of the
 previous data.json's (--force writes anyway; say why in the pull request).
 
-Usage: python3 refresh.py [--check | --apply] [--no-pages] [--allow-partial] [--force] [--now ISO8601]
+Usage: python3 refresh.py [--dry-run] [--no-pages] [--allow-partial] [--force] [--now ISO8601]
    or: python3 ../../scripts/refresh.py tampines-library-events [the same flags]
 """
 import html
@@ -210,7 +211,7 @@ def request(url, body=None, tries=1):
         try:
             with urllib.request.urlopen(urllib.request.Request(url, data=data, headers=headers), timeout=120) as response:
                 text = response.read().decode("utf-8")
-            if re.search(r"_Incapsula_Resource|x-amzn-waf|<title>[^<]*(?:Just a moment|Attention Required)", text[:2000]):
+            if refresh_kit.BOT_CHECK.search(text[:2000]):
                 raise Blocked(f"{url} answered with a bot check instead of its content; try again later")
             return text
         except (urllib.error.HTTPError, TimeoutError) as error:

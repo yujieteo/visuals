@@ -2,11 +2,13 @@
 
 Each page's folder holds its data (raw.json, SEC company facts; meta.json), its beamdswitch.js, a
 build.py with its own CASE (name, ticker, CIK and the page's words), which calls main() here, and a
-refresh.py, which calls refresh() here. The
+refresh.py, which calls refresh() here. A refresh sends SEC the contact in the SEC_CONTACT environment
+variable as its User-Agent, as SEC's fair-access policy asks; it is never committed. The
 narrated report scripts/templates/stock-cases-report.js is shared by all four and inlined unchanged.
 """
 import argparse
 import json
+import os
 from html import escape
 from pathlib import Path
 
@@ -26,6 +28,7 @@ DECK_HINT = ("The beamdswitch button saves the measure you pick below as a narra
 SEC = "https://data.sec.gov/api/xbrl/companyfacts/CIK{cik:010d}.json"
 REVENUE = "RevenueFromContractWithCustomerExcludingAssessedTax"
 CASH = "NetCashProvidedByUsedInOperatingActivities"
+CONTACT = "SEC_CONTACT"  # the environment variable with the name and email SEC's User-Agent must declare
 
 
 def annual_facts(raw, tag):
@@ -117,7 +120,9 @@ def verify(folder, case):
 def refresh(source, folder, case):
     """refresh_kit's Update for one stock page: SEC's company facts as served, checked for the four rows the page shows."""
     url = SEC.format(cik=case["cik"])
-    text = source.text(url)
+    contact = os.environ.get(CONTACT, "").strip()
+    refresh_kit.require(contact, f"{CONTACT} is not set: SEC asks for a name and email in the User-Agent, such as {CONTACT}='Jane Tan jane@example.com'")
+    text = source.text(url, headers={"User-Agent": contact})
     raw = refresh_kit.parse_json(url, text)
     refresh_kit.require(isinstance(raw, dict) and str(raw.get("cik", "")).lstrip("0") == str(case["cik"]),
                         f"{url}: not the company facts of CIK {case['cik']}")

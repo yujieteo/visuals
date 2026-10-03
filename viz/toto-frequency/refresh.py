@@ -10,8 +10,8 @@ draw and reads the page of each draw draws.csv does not have yet, writing one ro
 
 Draws the list marks as cancelled are skipped. Rows already in draws.csv are kept as they are.
 
-A dry run unless --apply: python3 refresh.py [--check | --apply], or python3 ../../scripts/refresh.py toto-frequency.
-With --apply it writes draws.csv and visual.json's "fetched", then build.py writes raw.json and index.html.
+Run python3 refresh.py [--dry-run], or python3 ../../scripts/refresh.py toto-frequency [--dry-run].
+It writes draws.csv and visual.json's "fetched", then build.py writes raw.json and index.html.
 """
 import csv
 import io
