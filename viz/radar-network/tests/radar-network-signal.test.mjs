@@ -3,7 +3,7 @@
 // sums, noise covariance, cancellation and determinism of seeded dwells.
 import assert from "node:assert/strict";
 import test from "node:test";
-import { G, M, N, S, examples, fresh, preset } from "./helpers.mjs";
+import { G, N, S, examples, fresh, preset } from "./helpers.mjs";
 
 const close = (a, b, tol, what) => assert.ok(Math.abs(a - b) <= tol, `${what}: ${a} vs ${b} (tol ${tol})`);
 const lfm = { waveform: "lfm", chirp: "up", pulse_s: 10e-6, bandwidth_Hz: 10e6 };

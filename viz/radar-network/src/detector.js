@@ -40,7 +40,6 @@
   };
   const XMAX = { exp: 45, gamma2: 26 };
   const swerlingFactor = (sw) => (sw === 1 || sw === 2 ? "exp" : sw === 3 || sw === 4 ? "gamma2" : null);
-  const perPulse = (sw) => sw === 2 || sw === 4;
 
   /** Pd of a single complex cell with SNR rho (nonfluctuating): Marcum Q1. */
   function cellPd(rho, eta) {

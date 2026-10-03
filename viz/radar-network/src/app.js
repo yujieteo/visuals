@@ -9,7 +9,7 @@
   "use strict";
   const RN = window.RadarNet;
   const { numerics: N, model: M, state: S, signal: G, calc: CA, report: RP, checks: CK, scene3d: V, ui: U } = RN;
-  const { $, $$, h, esc } = U;
+  const { $, $$, h } = U;
 
   /* ===== DATA ===== */
   const DATA = JSON.parse($("#radar-data").textContent);

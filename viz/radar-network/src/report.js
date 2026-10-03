@@ -14,9 +14,8 @@
   "use strict";
 
   const SCENARIO_DATE = "2026-10-03";
-  const { tex, txt, spoken, spokenFixed, fixed } = C;
+  const { txt, spoken, spokenFixed, fixed } = C;
   const km = (m) => fixed(m / 1000, 3);
-  const spokenKm = (m) => `${spokenFixed(m / 1000, 3)} kilometres`;
   const say = (s) => String(s).replace(/[$\\`*_#|<>×⁰¹²³⁴⁵⁶⁷⁸⁹⁻%&≈]/g, " ").replace(/−/g, "minus ").replace(/\s+/g, " ").trim();
   const statusWords = { ok: "valid", inactive: "inactive", incompatible: "incompatible", "outside-model": "outside the model", invalid: "invalid" };
 

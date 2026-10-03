@@ -314,7 +314,7 @@
   /* ===== CLUTTER PATCHES ===== */
   /** One synthetic ground patch through the same link equation. */
   function patchEcho(scn, patch, txId, rxId, t) {
-    const tx = scn.radars.find((r) => r.id === txId), rx = scn.radars.find((r) => r.id === rxId);
+    const tx = scn.radars.find((r) => r.id === txId);
     const f = tx.tx.carrier_Hz, lambda = wavelength(f);
     const st = objectState(scn, txId, t), sr = objectState(scn, rxId, t);
     const p = patch.position_m;

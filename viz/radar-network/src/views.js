@@ -6,8 +6,8 @@
 (function () {
   "use strict";
   const RN = window.RadarNet;
-  const { numerics: N, detector: DT, model: M, state: S, signal: G, calc: CA, checks: CK, ui: U } = RN;
-  const { $, h, esc } = U;
+  const { numerics: N, model: M, state: S, signal: G, calc: CA, checks: CK, ui: U } = RN;
+  const { $, h } = U;
   const C0 = N.C;
   const fx = CA.fixed, tx = CA.txt;
   const db = (x) => (x > 0 ? 10 * Math.log10(x) : -Infinity);
@@ -117,7 +117,7 @@
     const all = series.flatMap((s) => Array.from(s.y).filter(Number.isFinite));
     let y0 = Math.min(...all), y1 = Math.max(...all);
     if (!(y1 > y0)) { y0 -= 1; y1 += 1; }
-    const X = (i, n) => m.l + (i / Math.max(1, n - 1)) * (w - m.l - m.r), Y = (v) => H - m.b - ((v - y0) / (y1 - y0)) * (H - m.t - m.b);
+    const Y = (v) => H - m.b - ((v - y0) / (y1 - y0)) * (H - m.t - m.b);
     ctx.strokeStyle = U.token("--grid"); ctx.fillStyle = U.token("--muted"); ctx.font = `11px ${U.token("--mono")}`;
     for (let k = 0; k <= 4; k++) { const v = y0 + ((y1 - y0) * k) / 4; ctx.beginPath(); ctx.moveTo(m.l, Y(v)); ctx.lineTo(w - m.r, Y(v)); ctx.stroke(); ctx.fillText(v.toFixed(0), 4, Y(v) + 4); }
     for (let k = 0; k <= 5; k++) { const v = xr[0] + ((xr[1] - xr[0]) * k) / 5; ctx.fillText(v.toFixed(0), m.l + (k / 5) * (w - m.l - m.r) - 8, H - 8); }
