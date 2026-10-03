@@ -14,6 +14,7 @@ in a browser, then:
 python3 scripts/check.py <slug>        # one visual's checks, from its folder
 python3 scripts/check.py --changed     # the visuals your branch changes (against origin/main)
 python3 scripts/check.py --all         # every visual
+node e2e/bin/page-axi.js check <slug>  # open the page headless at 3 widths in both themes: one verdict, screenshots in build/page-axi/<slug>/
 python3 scripts/check_repo.py          # every visual.json, the folder rules, no absolute home paths, no tracked artifacts
 python3 scripts/refresh.py <slug>      # refresh one visual's data from its source; --dry-run writes nothing
 python3 scripts/build_catalogue.py     # build/catalogue.json and build/index.html, a gallery to browse
@@ -42,7 +43,7 @@ builder template's, as `typecheck.page` says), less the blocks its `visual.json`
 | `viz/<slug>/beamdswitch.js`, `report.js` | The site's unchanged beamdswitch report template and the page's report, for pages that export a narrated deck. |
 | `viz/<slug>/SKILLS.md`, `AGENTS.md` | How an agent uses the page and its WebMCP tools; what is specific to changing it. |
 | `viz/<slug>/generated.json` | For a visual `scripts/new_visual.py` wrote: its options, the kit's version and the beamdswitch template's source and SHA-256. |
-| `scripts/check.py`, `changed.py`, `check_repo.py`, `rules.py`, `deadcode.mjs`, `build_catalogue.py`, `typecheck.mjs`, `with_chrome.py`, `sync_template.py` | The shared tooling: per-visual checks, the changed-visual selection, the repository check, the deterministic rules, the dead-code check, the generated catalogue, the type-check extractor, the headless Chrome a visual's browser tests use in CI, the beamdswitch template sync. |
+| `scripts/check.py`, `changed.py`, `check_repo.py`, `rules.py`, `page_rules.py`, `deadcode.mjs`, `build_catalogue.py`, `typecheck.mjs`, `with_chrome.py`, `sync_template.py` | The shared tooling: per-visual checks, the changed-visual selection, the repository check, the deterministic rules, the dead-code check, the static rules page-axi prints, the generated catalogue, the type-check extractor, the headless Chrome a visual's browser tests use in CI, the beamdswitch template sync. |
 | `scripts/page_parts.py`, `style_guide.py`, `stock_cases.py`, `templates/` | Modules the builders share. |
 | `scripts/new_visual.py`, `visual_build.py`, `visual_kit.py`, `kit/`, `vendor/mathjax/` | The generator of new visuals, the builder of their pages, the kit they inline (state, URL, JSON, exports, palette, WebMCP, style tokens, shared tests) and the vendored MathJax 4.1.3 with Fira Math. |
 | `design-tokens.json` | Shared colours, spacing, radius and fonts; `style_guide` holds the light and dark tokens of the shared visual style guide. |
