@@ -459,12 +459,14 @@ const SANS = "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, A
 const EL_CLS = { R: "r", L: "l", C: "c" };
 const rad = (d) => d * Math.PI / 180;
 const pt = (cx, cy, s, re, im) => [cx + s * re, cy - s * im];
+// SVG coordinates are written with two fixed decimals, so the same scene is the same bytes everywhere.
+const px = (v) => fixed(v, 2);
 function arrowD(x1, y1, x2, y2) {
   const dx = x2 - x1, dy = y2 - y1, L = Math.sqrt(dx * dx + dy * dy);
   if (L < 0.5) return "";
   const ux = dx / L, uy = dy / L, h = Math.min(10, L * 0.45), wd = h * 0.42;
-  const bx = x2 - ux * h, by = y2 - uy * h, F = (v) => fixed(v, 2);
-  return `M${F(x1)} ${F(y1)}L${F(bx)} ${F(by)}M${F(x2)} ${F(y2)}L${F(bx - uy * wd)} ${F(by + ux * wd)}L${F(bx + uy * wd)} ${F(by - ux * wd)}Z`;
+  const bx = x2 - ux * h, by = y2 - uy * h;
+  return `M${px(x1)} ${px(y1)}L${px(bx)} ${px(by)}M${px(x2)} ${px(y2)}L${px(bx - uy * wd)} ${px(by + ux * wd)}L${px(bx + uy * wd)} ${px(by - ux * wd)}Z`;
 }
 // A label beside the middle of a segment, on its left (counter-clockwise) side.
 // With `away` = [x, y], the side is chosen to face away from that point (a figure's centroid).
@@ -479,8 +481,7 @@ function arcD(cx, cy, r, a1, a2) {
   let d = normDeg(a2 - a1);
   if (Math.abs(d) < 0.5) return "";
   const [x1, y1] = [cx + r * Math.cos(rad(a1)), cy - r * Math.sin(rad(a1))], [x2, y2] = [cx + r * Math.cos(rad(a1 + d)), cy - r * Math.sin(rad(a1 + d))];
-  const F = (v) => fixed(v, 2);
-  return `M${F(x1)} ${F(y1)}A${F(r)} ${F(r)} 0 0 ${d > 0 ? 0 : 1} ${F(x2)} ${F(y2)}`;
+  return `M${px(x1)} ${px(y1)}A${px(r)} ${px(r)} 0 0 ${d > 0 ? 0 : 1} ${px(x2)} ${px(y2)}`;
 }
 // Nice 1-2-5 scale-bar value near `raw`, found from decimal digits (no logarithms).
 function nice(raw) {
@@ -573,14 +574,20 @@ function planeScene(id, pts, total, axes, labels, keys, cls, unbounded) {
   }
   return { p, sc };
 }
+// The switched-on elements' values laid tip to tail in `order`: the running sums, their labels, keys and
+// classes, with the total's label and key last.
+function elementChain(r, order, names, total) {
+  const pts = [], labels = [], keys = [], cls = [];
+  let re = 0, im = 0;
+  for (const k of order) if (r.on[k]) { const z = r.el[k]; re += z.re; im += z.im; pts.push({ re, im }); labels.push(names[k]); keys.push(k); cls.push(EL_CLS[k]); }
+  labels.push(total); keys.push(total);
+  return { pts, labels, keys, cls };
+}
 function impedanceScene(r) {
   const W = 360, H = 280, unit = OHM;
   let out;
   if (r.mode === "series") {
-    const pts = [], labels = [], keys = [], cls = [];
-    let re = 0, im = 0;
-    for (const k of EL) if (r.on[k]) { const z = r.el[k]; re += z.re; im += z.im; pts.push({ re, im }); labels.push({ R: "R", L: "jX_L", C: MINUS + "jX_C" }[k]); keys.push(k); cls.push(EL_CLS[k]); }
-    labels.push("Z"); keys.push("Z");
+    const { pts, labels, keys, cls } = elementChain(r, EL, { R: "R", L: "jX_L", C: MINUS + "jX_C" }, "Z");
     out = planeScene("im", pts, r.unbounded ? null : r.Z, ["R", "jX"], labels, keys, cls, r.unbounded ? "|Z| = 0: current unbounded" : "");
   } else if (r.unbounded) {
     out = planeScene("im", [], null, ["R", "jX"], ["Z"], ["Z"], [], "Z unbounded");
@@ -592,10 +599,7 @@ function impedanceScene(r) {
   return { id: "im", W, H, prims: out.p };
 }
 function admittanceScene(r) {
-  const W = 360, H = 280, pts = [], labels = [], keys = [], cls = [];
-  let re = 0, im = 0;
-  for (const k of ["R", "C", "L"]) if (r.on[k]) { const z = r.el[k]; re += z.re; im += z.im; pts.push({ re, im }); labels.push({ R: "G", C: "jB_C", L: MINUS + "jB_L" }[k]); keys.push(k); cls.push(EL_CLS[k]); }
-  labels.push("Y"); keys.push("Y");
+  const W = 360, H = 280, { pts, labels, keys, cls } = elementChain(r, ["R", "C", "L"], { R: "G", C: "jB_C", L: MINUS + "jB_L" }, "Y");
   const out = planeScene("ad", pts, r.unbounded ? null : r.Y, ["G", "jB"], labels, keys, cls, r.unbounded ? "Y = 0: impedance unbounded" : "");
   out.p.push(...scaleBar("ad-s", 16, H - 12, out.sc, "S", "scale"));
   return { id: "ad", W, H, prims: out.p };
@@ -656,11 +660,10 @@ const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replac
 const COLOR = { v: "v", i: "i", r: "r", l: "l", c: "c", fg: "fg", muted: "muted", faint: "faint", grid: "grid" };
 // Attributes that change with omega t; the page updates exactly these each frame.
 function dynAttrs(q) {
-  const F = (v) => fixed(v, 2);
   if (q.t === "arrow") return { d: arrowD(q.x1, q.y1, q.x2, q.y2) };
-  if (q.t === "line") return { x1: F(q.x1), y1: F(q.y1), x2: F(q.x2), y2: F(q.y2) };
-  if (q.t === "text") return q.anchor ? { x: F(q.x), y: F(q.y), "text-anchor": q.anchor } : { x: F(q.x), y: F(q.y) };
-  if (q.t === "circle") return { cx: F(q.cx), cy: F(q.cy), r: F(q.r) };
+  if (q.t === "line") return { x1: px(q.x1), y1: px(q.y1), x2: px(q.x2), y2: px(q.y2) };
+  if (q.t === "text") return q.anchor ? { x: px(q.x), y: px(q.y), "text-anchor": q.anchor } : { x: px(q.x), y: px(q.y) };
+  if (q.t === "circle") return { cx: px(q.cx), cy: px(q.cy), r: px(q.r) };
   if (q.t === "path") return { d: q.d };
   return {};
 }

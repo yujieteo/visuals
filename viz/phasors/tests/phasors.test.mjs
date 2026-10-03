@@ -371,3 +371,17 @@ test("the page has the house head and header, and its markup loads nothing exter
   for (const e of els.filter((x) => x.tag === "style")) assert.doesNotMatch(e.text, /@import|url\(/i, "styles load nothing");
   assert.ok(Buffer.byteLength(html) < 120 * 1024, `index.html is ${Buffer.byteLength(html)} bytes`);
 });
+
+test("the impedance and admittance planes lay the switched-on elements tip to tail, ending on the total", () => {
+  const arrows = (scene) => scene.prims.filter((q) => q.t === "arrow").map((q) => q.key);
+  const inp = { ...P.defaultInputs(), mode: "series" };
+  const series = P.compute(inp);
+  assert.deepEqual([...arrows(P.impedanceScene(series))], ["R", "L", "C", "Z"]);
+  const par = P.compute({ ...inp, mode: "parallel" });
+  assert.deepEqual([...arrows(P.admittanceScene(par))], ["R", "C", "L", "Y"]);
+  const rl = P.compute({ ...inp, C_on: false });
+  assert.deepEqual([...arrows(P.impedanceScene(rl))], ["R", "L", "Z"]);
+  // The last element's tip is the total's tip.
+  const sc = P.impedanceScene(series), tip = (k) => sc.prims.find((q) => q.t === "arrow" && q.key === k);
+  assert.deepEqual([tip("C").x2, tip("C").y2].map((v) => v.toFixed(6)), [tip("Z").x2, tip("Z").y2].map((v) => v.toFixed(6)));
+});
