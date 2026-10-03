@@ -385,8 +385,10 @@ const TEMPLATE = {
   active: 0,
   origin: "template",
 };
-/* The template's deliberately unfinished argument (spec 9.1), identified by its claim. */
+/* The template's deliberately unfinished argument (spec 9.1), identified by its claim, keeps its
+   "Your turn" marker until every auto line is clear. */
 const UNFINISHED_CLAIM = TEMPLATE.arguments[2].claim;
+const isUnfinished = (a) => collapse(a.claim) === UNFINISHED_CLAIM && checklist(a).auto.some((l) => !l.clear);
 /* "Toulmin's Harry" example (spec 9.2). */
 const HARRY = {
   format: "toulmin-essay",
@@ -460,20 +462,12 @@ function paragraphLines(a, ordering) {
   const L = LEADINS[ordering === "grounds-first" ? "grounds-first" : "claim-first"];
   const claim = collapse(a.claim), q = stripEnd(a.qualifier), w = collapse(a.warrant), b = collapse(a.backing);
   const gs = groundTexts(a), rs = rebuttalTexts(a);
-  const lines = [];
-  if (ordering === "grounds-first") {
-    if (gs.length) lines.push(L.grounds + " " + gs.join(" "));
-    if (w) lines.push(L.warrant + " " + w);
-    if (b) lines.push(L.backing + " " + b);
-    if (claim) lines.push(q ? `${L.conclude} (${q}): ${claim}` : `${L.conclude}: ${claim}`);
-  } else {
-    if (claim) lines.push(q ? `${claim} (${L.strength} ${q}.)` : claim);
-    if (gs.length) lines.push(L.grounds + " " + gs.join(" "));
-    if (w) lines.push(L.warrant + " " + w);
-    if (b) lines.push(L.backing + " " + b);
-  }
-  if (rs.length) lines.push(L.rebuttals + " " + rs.join(" "));
-  return lines;
+  const support = [gs.length && L.grounds + " " + gs.join(" "), w && L.warrant + " " + w, b && L.backing + " " + b];
+  const lines = ordering === "grounds-first"
+    ? [...support, claim && (q ? `${L.conclude} (${q}): ${claim}` : `${L.conclude}: ${claim}`)]
+    : [claim && (q ? `${claim} (${L.strength} ${q}.)` : claim), ...support];
+  lines.push(rs.length && L.rebuttals + " " + rs.join(" "));
+  return lines.filter(Boolean);
 }
 function paragraph(a, ordering) { return paragraphLines(a, ordering).join("\n"); }
 function essayParagraph(essay, ordering) {
@@ -548,6 +542,54 @@ function listNarration(items, one, many) {
   if (items.length === 1) return `${one} ${narrate(items[0])}`;
   return items.map((x, i) => `${many} ${numberWord(i + 1)}. ${narrate(x)}`).join(" ");
 }
+/* A beamdswitch pause between two items on one slide. */
+const PAUSE = ["", ". . .", ""];
+/* The frames for argument i, exported as part k: its section, then claim, grounds, warrant and
+   backing, qualifier and rebuttals, each frame only when it has content. */
+function argumentFrames(a, i, k) {
+  const label = displayLabel(a, i);
+  const frames = [{ kind: "section", title: label, heading: "# " + escMd(label), body: [], notesPre: [], narration: `${NARRATION.part} ${k + 1}. ${sectionLabel(label)}` }];
+  const frame = (title, body, narration, notesPre = []) => frames.push({ kind: "frame", title, heading: "## " + title, body, notesPre, narration });
+  const claim = collapse(a.claim);
+  if (claim) frame("Claim", ["::: key", lineSafe(escMd(claim)), ":::"], `${NARRATION.claim} ${narrate(claim)}`);
+  const gs = (a.grounds || []).filter((g) => collapse(g.text));
+  if (gs.length) {
+    const body = gs.flatMap((g, j) => [...(j ? PAUSE : []), "- " + escMd(g.text)]);
+    const notesPre = gs.flatMap((g, j) => (collapse(g.source) ? [`Ground ${j + 1} source: ${collapse(g.source)}`] : []));
+    frame("Grounds", body, listNarration(gs.map((g) => g.text), NARRATION.ground, NARRATION.groundN), notesPre);
+  }
+  const w = collapse(a.warrant), b = collapse(a.backing);
+  if (w || b) {
+    const body = [...(w ? ["**Warrant.** " + escMd(w)] : []), ...(w && b ? PAUSE : []), ...(b ? ["**Backing.** " + escMd(b)] : [])];
+    const said = [w && `${NARRATION.warrant} ${narrate(w)}`, b && `${NARRATION.backing} ${narrate(b)}`].filter(Boolean);
+    frame(w && b ? "Warrant and backing" : w ? "Warrant" : "Backing", body, said.join(" "));
+  }
+  const q = collapse(a.qualifier), rs = rebuttalTexts(a);
+  if (q || rs.length) {
+    const body = [...(q ? ["**Qualifier.** " + escMd(q)] : []), ...rs.flatMap((r, j) => [...(q || j ? PAUSE : []), "- " + escMd(r)])];
+    const said = [q && `${NARRATION.qualifier} ${narrate(q)}`, rs.length && listNarration(rs, NARRATION.rebuttal, NARRATION.rebuttalN)].filter(Boolean);
+    frame(q && rs.length ? "Qualifier and rebuttals" : q ? "Qualifier" : "Rebuttals", body, said.join(" "));
+  }
+  return frames.map((f) => Object.assign(f, { arg: i }));
+}
+/* The deck's Markdown: quoted front matter, then each frame's heading, body, narration and notes. */
+function deckMarkdown(frames, totalMs, { title, thesis, author, voice, speed }) {
+  const fm = ["---", `title: "${title}"`];
+  if (thesis) fm.push(`subtitle: "${thesis}"`);
+  if (author) fm.push(`author: "${author}"`);
+  fm.push(`voice: "${voice}"`, `speed: "${speed}"`, "---");
+  const blocks = [fm.join("\n")];
+  for (const f of frames) {
+    if (f.heading) blocks.push(f.heading);
+    if (f.body.length) blocks.push(f.body.join("\n"));
+    blocks.push(`::: narration\n${f.narration}\n:::`);
+    const notes = f.kind === "title"
+      ? [`Estimated total narration: ${formatTotal(totalMs)} at ${TIMING.wpm} words a minute, plus frame lead and tail times.`]
+      : f.notesPre.concat([`Estimated narration: ${formatFrame(f.ms)} (${f.words} ${f.words === 1 ? "word" : "words"}).`]);
+    blocks.push(`::: notes\n${notes.join("\n")}\n:::`);
+  }
+  return blocks.join("\n\n") + "\n";
+}
 function exportDeck(essay, opts) {
   opts = opts || {};
   const meta = essay.essay || {};
@@ -564,62 +606,18 @@ function exportDeck(essay, opts) {
   if (!withClaim.length) return { ok: false, message: MESSAGES.noClaim, text: "", frames: [], totalMs: 0, total: formatTotal(0), warnings, voice, speed };
 
   const title = collapse(meta.title) || "Untitled essay", thesis = collapse(meta.thesis), author = collapse(meta.author);
-  const frames = [];
-  const add = (f) => { const t = frameTiming(f.narration); frames.push(Object.assign(f, t)); };
   const titleNarration = narrate(title).replace(/^[#:`~\s]+/, "") + (thesis ? " " + narrate(thesis) : "");
-  add({ kind: "title", title, heading: null, body: [], notesPre: [], narration: titleNarration, arg: -1 });
-  exported.forEach(({ a, i }, k) => {
-    const label = displayLabel(a, i);
-    add({ kind: "section", title: label, heading: "# " + escMd(label), body: [], notesPre: [], narration: `${NARRATION.part} ${k + 1}. ${sectionLabel(label)}`, arg: i });
-    const claim = collapse(a.claim);
-    if (claim) add({ kind: "frame", title: "Claim", heading: "## Claim", body: ["::: key", lineSafe(escMd(claim)), ":::"], notesPre: [], narration: `${NARRATION.claim} ${narrate(claim)}`, arg: i });
-    const gs = (a.grounds || []).filter((g) => collapse(g.text));
-    if (gs.length) {
-      const body = [];
-      gs.forEach((g, j) => { if (j) body.push("", ". . .", ""); body.push("- " + escMd(g.text)); });
-      const notesPre = [];
-      gs.forEach((g, j) => { if (collapse(g.source)) notesPre.push(`Ground ${j + 1} source: ${collapse(g.source)}`); });
-      add({ kind: "frame", title: "Grounds", heading: "## Grounds", body, notesPre, narration: listNarration(gs.map((g) => g.text), NARRATION.ground, NARRATION.groundN), arg: i });
-    }
-    const w = collapse(a.warrant), b = collapse(a.backing);
-    if (w || b) {
-      const body = [], said = [];
-      if (w) { body.push("**Warrant.** " + escMd(w)); said.push(`${NARRATION.warrant} ${narrate(w)}`); }
-      if (w && b) body.push("", ". . .", "");
-      if (b) { body.push("**Backing.** " + escMd(b)); said.push(`${NARRATION.backing} ${narrate(b)}`); }
-      add({ kind: "frame", title: w && b ? "Warrant and backing" : w ? "Warrant" : "Backing", heading: "## " + (w && b ? "Warrant and backing" : w ? "Warrant" : "Backing"), body, notesPre: [], narration: said.join(" "), arg: i });
-    }
-    const q = collapse(a.qualifier), rs = rebuttalTexts(a);
-    if (q || rs.length) {
-      const body = [], said = [];
-      if (q) { body.push("**Qualifier.** " + escMd(q)); said.push(`${NARRATION.qualifier} ${narrate(q)}`); }
-      rs.forEach((r, j) => { if (q || j) body.push("", ". . .", ""); body.push("- " + escMd(r)); });
-      if (rs.length) said.push(listNarration(rs, NARRATION.rebuttal, NARRATION.rebuttalN));
-      const t = q && rs.length ? "Qualifier and rebuttals" : q ? "Qualifier" : "Rebuttals";
-      add({ kind: "frame", title: t, heading: "## " + t, body, notesPre: [], narration: said.join(" "), arg: i });
-    }
-  });
-  add({ kind: "section", title: "Summary", heading: "# Summary", body: [], notesPre: [], narration: NARRATION.summary, arg: -1 });
-  add({ kind: "frame", title: "Essay at a glance", heading: "## Essay at a glance",
-    body: withClaim.map(({ a, i }) => `- ${escMd(displayLabel(a, i))}: ${escMd(a.claim)}`), notesPre: [],
-    narration: [NARRATION.glance].concat(withClaim.map(({ a }, k) => `${NARRATION.argumentN} ${numberWord(k + 1)}. ${narrate(a.claim)}`)).join(" "), arg: -1 });
+  const frames = [
+    { kind: "title", title, heading: null, body: [], notesPre: [], narration: titleNarration, arg: -1 },
+    ...exported.flatMap(({ a, i }, k) => argumentFrames(a, i, k)),
+    { kind: "section", title: "Summary", heading: "# Summary", body: [], notesPre: [], narration: NARRATION.summary, arg: -1 },
+    { kind: "frame", title: "Essay at a glance", heading: "## Essay at a glance",
+      body: withClaim.map(({ a, i }) => `- ${escMd(displayLabel(a, i))}: ${escMd(a.claim)}`), notesPre: [],
+      narration: [NARRATION.glance].concat(withClaim.map(({ a }, k) => `${NARRATION.argumentN} ${numberWord(k + 1)}. ${narrate(a.claim)}`)).join(" "), arg: -1 },
+  ].map((f) => Object.assign(f, frameTiming(f.narration)));
 
   const totalMs = frames.reduce((t, f) => t + f.ms, 0);
-  const fm = ["---", `title: "${title}"`];
-  if (thesis) fm.push(`subtitle: "${thesis}"`);
-  if (author) fm.push(`author: "${author}"`);
-  fm.push(`voice: "${voice}"`, `speed: "${speed}"`, "---");
-  const blocks = [fm.join("\n")];
-  for (const f of frames) {
-    if (f.heading) blocks.push(f.heading);
-    if (f.body.length) blocks.push(f.body.join("\n"));
-    blocks.push(`::: narration\n${f.narration}\n:::`);
-    const notes = f.kind === "title"
-      ? [`Estimated total narration: ${formatTotal(totalMs)} at ${TIMING.wpm} words a minute, plus frame lead and tail times.`]
-      : f.notesPre.concat([`Estimated narration: ${formatFrame(f.ms)} (${f.words} ${f.words === 1 ? "word" : "words"}).`]);
-    blocks.push(`::: notes\n${notes.join("\n")}\n:::`);
-  }
-  const text = blocks.join("\n\n") + "\n";
+  const text = deckMarkdown(frames, totalMs, { title, thesis, author, voice, speed });
   const perArgument = essay.arguments.map((a, i) => frames.filter((f) => f.arg === i).reduce((t, f) => t + f.ms, 0));
   return {
     ok: true, text, voice, speed, warnings, totalMs, total: formatTotal(totalMs), perArgument,
@@ -657,6 +655,13 @@ function validateEssay(obj) {
     if (v.length > max) fail(`${name} is longer than ${max} characters (${v.length}).`);
     return v;
   };
+  /* A ground or rebuttal list: absent means empty; at most LIMITS.items entries. */
+  const items = (v, n, name) => {
+    if (v === undefined) return [];
+    if (!Array.isArray(v)) fail(`${n}: ${name} must be a list.`);
+    if (v.length > LIMITS.items) fail(`${n} has ${v.length} ${name}; the maximum is ${LIMITS.items}.`);
+    return v;
+  };
   try {
     if (!isObj(obj)) fail("The file does not hold a Toulmin essay object.");
     if (obj.format !== "toulmin-essay") fail('This is not a Toulmin essay file: "format" must be "toulmin-essay".');
@@ -673,12 +678,7 @@ function validateEssay(obj) {
     const args = obj.arguments.map((a, i) => {
       const n = `Argument ${i + 1}`;
       if (!isObj(a)) fail(`${n} must be an object.`);
-      const grounds = a.grounds === undefined ? [] : a.grounds;
-      if (!Array.isArray(grounds)) fail(`${n}: grounds must be a list.`);
-      if (grounds.length > LIMITS.items) fail(`${n} has ${grounds.length} grounds; the maximum is ${LIMITS.items}.`);
-      const rebuttals = a.rebuttals === undefined ? [] : a.rebuttals;
-      if (!Array.isArray(rebuttals)) fail(`${n}: rebuttals must be a list.`);
-      if (rebuttals.length > LIMITS.items) fail(`${n} has ${rebuttals.length} rebuttals; the maximum is ${LIMITS.items}.`);
+      const grounds = items(a.grounds, n, "grounds"), rebuttals = items(a.rebuttals, n, "rebuttals");
       const confirmed = a.confirmed === undefined ? [] : a.confirmed;
       if (!Array.isArray(confirmed) || confirmed.some((k) => typeof k !== "string")) fail(`${n}: confirmed must be a list of checklist names.`);
       return {
@@ -759,7 +759,7 @@ function addHTML(list, n, noun) {
 function argumentHTML(essay, i) {
   const a = essay.arguments[i], n = essay.arguments.length, P = Object.fromEntries(PARTS.map((p) => [p.key, p]));
   const label = displayLabel(a, i);
-  const unfinished = collapse(a.claim) === UNFINISHED_CLAIM && checklist(a).auto.some((l) => !l.clear);
+  const unfinished = isUnfinished(a);
   const grounds = a.grounds.map((g, j) => `<li><label for="g-${j}">Ground ${j + 1} of ${a.grounds.length}</label>`
     + `<textarea id="g-${j}" data-f="g-text" data-i="${j}" maxlength="${LIMITS.text}" rows="2" aria-describedby="c-g-${j}">${h(g.text)}</textarea><p class="count" id="c-g-${j}">${counterText(g.text.length, LIMITS.text)}</p>`
     + `<label for="gs-${j}">Source for ground ${j + 1} (optional)</label><input type="text" id="gs-${j}" data-f="g-src" data-i="${j}" maxlength="${LIMITS.source}" value="${h(g.source)}" aria-describedby="c-gs-${j}"><p class="count" id="c-gs-${j}">${counterText(g.source.length, LIMITS.source)}</p>`
@@ -815,7 +815,7 @@ function argumentRow(a, i) {
 
 root.Toulmin = {
   LIMITS, TIMING, VOICES, SPEED, PARTS, QUALIFIER_CHIPS, AUTO_LINES, CONFIRM_LINES, RESPONSES, HINTS, LEADINS, NARRATION, NUMBER_WORDS, MESSAGES, SOURCES, TEMPLATE, HARRY, COLUMNS,
-  clone, collapse, isEmptyArgument, newArgument, newEssay, nextId, displayLabel,
+  clone, collapse, isEmptyArgument, isUnfinished, newArgument, newEssay, nextId, displayLabel,
   checklist, hints, preflight, paragraphLines, paragraph, essayParagraph,
   splitSentences, countWords, sentenceMs, frameTiming, formatFrame, formatTotal, escMd, narrate, normSpeed, exportDeck,
   slug, toJSON, validateEssay, parseEssayText, argumentRow,
@@ -906,6 +906,7 @@ function closeConfirm(restore) {
 
 /* ---------- rendering ---------- */
 const active = () => essay.arguments[essay.active];
+const nounOf = (list) => (list === "grounds" ? "ground" : "rebuttal");
 function grow(t) { t.style.height = "auto"; t.style.height = t.scrollHeight + 2 + "px"; }
 function renderNotices() {
   const out = [];
@@ -1010,7 +1011,7 @@ function refreshActive() {
   }
   const hl = $("arg-h-label"); if (hl) hl.textContent = T.displayLabel(a, i);
   const fl = $("f-label"); if (fl) fl.placeholder = T.displayLabel(Object.assign({}, a, { label: "" }), i);
-  const mk = $("marker"); if (mk) mk.hidden = !(T.collapse(a.claim) === T.collapse(T.TEMPLATE.arguments[2].claim) && T.checklist(a).auto.some((l) => !l.clear));
+  const mk = $("marker"); if (mk) mk.hidden = !T.isUnfinished(a);
   const cl = $("checklist"); if (cl) cl.innerHTML = V.checklistHTML(a);
   const pr = $("prompts"); if (pr) { const html = V.promptsHTML(a); if (pr.innerHTML !== html) pr.innerHTML = html; pr.hidden = !html; }
   renderParagraph();
@@ -1152,10 +1153,10 @@ const actions = {
     a[list].push(list === "grounds" ? { text: "", source: "" } : "");
     renderPanel(); refreshActive(); edited();
     focusId((list === "grounds" ? "g-" : "r-") + (a[list].length - 1));
-    announce(`Added ${list === "grounds" ? "ground" : "rebuttal"} ${a[list].length} of ${a[list].length}.`);
+    announce(`Added ${nounOf(list)} ${a[list].length} of ${a[list].length}.`);
   },
   "item-remove"(btn) {
-    const a = active(), list = btn.dataset.list, i = +btn.dataset.i, noun = list === "grounds" ? "ground" : "rebuttal";
+    const a = active(), list = btn.dataset.list, i = +btn.dataset.i, noun = nounOf(list);
     a[list].splice(i, 1);
     renderPanel(); refreshActive(); edited();
     const next = document.querySelector(`[data-act=item-remove][data-list=${list}][data-i="${Math.min(i, a[list].length - 1)}"]`);
@@ -1181,14 +1182,14 @@ function togglePanel(id, btn) {
   if (open) { essayWork(); el.querySelector("h2").setAttribute("tabindex", "-1"); }
 }
 function itemMove(btn, dir) {
-  const a = active(), list = btn.dataset.list, i = +btn.dataset.i, j = i + dir, noun = list === "grounds" ? "Ground" : "Rebuttal";
+  const a = active(), list = btn.dataset.list, i = +btn.dataset.i, j = i + dir;
   if (j < 0 || j >= a[list].length) return;
   moveItem(a[list], i, j);
   renderPanel(); refreshActive(); edited();
   const sel = `[data-act=item-${dir < 0 ? "up" : "down"}][data-list=${list}][data-i="${j}"]`;
   const el = document.querySelector(sel);
   (el && !el.disabled ? el : document.querySelector(`[data-act=item-${dir < 0 ? "down" : "up"}][data-list=${list}][data-i="${j}"]`)).focus();
-  announce(`Moved ${noun.toLowerCase()} to position ${j + 1} of ${a[list].length}.`);
+  announce(`Moved ${nounOf(list)} to position ${j + 1} of ${a[list].length}.`);
 }
 document.addEventListener("click", (e) => {
   const btn = e.target.closest("button[data-act]");

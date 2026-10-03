@@ -331,6 +331,21 @@ test("paragraphs: both orderings, lead-ins, qualifier punctuation and empty part
   assert.match(T.essayParagraph(T.TEMPLATE, "grounds-first"), /\n\nArgument 3 \(Make it required\)\.\n[\s\S]*\nWe can conclude: Hospitals should require the checklist rather than leave it optional\.$/);
 });
 
+test("the template's third argument is marked unfinished until every auto line is clear, in the engine and on the page", () => {
+  const third = T.clone(T.TEMPLATE.arguments[2]);
+  assert.equal(T.isUnfinished(third), true);
+  assert.equal(T.isUnfinished(T.TEMPLATE.arguments[0]), false, "a finished argument is not marked");
+  third.claim = "  " + third.claim.replace(/ /g, "  ") + " ";
+  assert.equal(T.isUnfinished(third), true, "whitespace in the claim does not matter");
+  Object.assign(third, { qualifier: "Probably", rebuttals: ["Unless teams treat it as a box-ticking exercise."] });
+  assert.equal(T.isUnfinished(third), false, "clearing the last open auto lines removes the marker");
+  third.qualifier = "";
+  assert.equal(T.isUnfinished(Object.assign(T.clone(third), { claim: "Another claim." })), false, "only the template's claim is marked");
+  const marker = (essay) => /<p class="marker" id="marker"( hidden)?>/.exec(T.view.argumentHTML(essay, essay.active))[1] === undefined;
+  assert.equal(marker(Object.assign(T.clone(T.TEMPLATE), { active: 2 })), true);
+  assert.equal(marker(Object.assign(T.clone(T.TEMPLATE), { active: 0 })), false);
+});
+
 /* ---------- page file checks ---------- */
 
 test("one file within 150 KB, no external requests, no forbidden APIs", () => {
