@@ -9,7 +9,8 @@
 // in CODES. Type errors are scripts/typecheck.mjs's, for the visuals that opt in with a tsconfig.json.
 // A finding the visual keeps on purpose is listed in visual.json "allow": {"deadcode": ["<file>: <message>"]}, where
 // <file> is the page or test file and <message> tsc's text, such as "index.html: 'unused' is declared but
-// its value is never read."; an entry that no longer matches a finding fails, so the list cannot go stale.
+// its value is never read.". An entry names no line, so an edit elsewhere does not break it, and allows one
+// finding: list it twice to allow two. An entry that matches no finding fails, so the list cannot go stale.
 // Usage: node scripts/deadcode.mjs SLUG...   (after npm ci; scripts/check.py runs it per visual)
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, readdirSync, realpathSync, rmSync, writeFileSync } from "node:fs";
@@ -110,21 +111,22 @@ export function deadcode(slug, root = ROOT) {
   // tsc names a file relative to the project, or absolutely when the temporary folder sits behind a symlink.
   const outDir = realpathSync(fileURLToPath(out)), folderDir = realpathSync(fileURLToPath(folder));
   const texts = new Map(blocks.map(({ name, text }) => [resolve(outDir, "inline", name), text]));
-  const seen = new Set();
+  const unused = [...allowed];
   let problems = 0;
   for (const f of findings(run.stdout)) {
     const named = resolve(outDir, f.file), file = existsSync(named) ? realpathSync(named) : named;
     const inline = texts.get(file);
-    const where = inline ? `index.html:${pageLine(inline, f.line)}` : `${relative(folderDir, file)}:${f.line}`;
-    const key = `${where.replace(/:\d+$/, "")}: ${f.message}`;
-    if (allowed.includes(key)) {
-      seen.add(key);
+    const name = inline ? "index.html" : relative(folderDir, file);
+    const line = inline ? pageLine(inline, f.line) : f.line;
+    const entry = unused.indexOf(`${name}: ${f.message}`);
+    if (entry !== -1) {
+      unused.splice(entry, 1);
       continue;
     }
     problems++;
-    console.error(`viz/${slug}/${where}: ${f.kind}: ${f.message} (TS${f.code})`);
+    console.error(`viz/${slug}/${name}:${line}: ${f.kind}: ${f.message} (TS${f.code})`);
   }
-  for (const key of allowed.filter((entry) => !seen.has(entry))) {
+  for (const key of unused) {
     problems++;
     console.error(`viz/${slug}/visual.json: allow.deadcode lists "${key}", which tsc no longer reports; remove it`);
   }

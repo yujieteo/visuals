@@ -12,9 +12,9 @@ For each viz/<slug>/, in order:
   requests the page requests only the files the site publishes beside it, never notes.md
   contrast the page's colour tokens meet WCAG contrast in both themes
   pydead   unused imports and locals, and definitions made twice, in the folder's Python
+  sourcetests  tests whose every assertion checks the page's source text instead of running its code
   deadcode unused locals and imports, unreachable code and duplicate declarations in the page's inline
            scripts and its test modules (scripts/deadcode.mjs, with the type checker)
-  sourcetests  tests that only search the page's source text; reported, never failed
 "checks" in visual.json replaces build, node and python with its own commands, run from the folder; the
 steps after them always run. scripts/rules.py says what each rule checks, and visual.json "allow" lists the
 findings a visual keeps on purpose.
@@ -107,6 +107,7 @@ def rule_steps(folder, data):
         ("requests", "requests", rules.request_problems(html, data)),
         ("contrast", "contrast", rules.contrast_problems(html)),
         ("pydead", "python", rules.python_folder_problems(folder)),
+        ("sourcetests", "sourcetests", rules.source_tests_problems(folder)),
     ):
         left, stale = rules.allowed(problems, allow.get(key))
         steps.append((name, left + [f'visual.json allow.{key} lists "{entry}", which no longer occurs; remove it' for entry in stale]))
@@ -156,10 +157,6 @@ def check(slug, require_typecheck=False):
         log.append(("deadcode", "FAIL", 0.0))
     else:
         log.append(("deadcode", "skipped (npm ci)", 0.0))
-    weak = rules.source_tests_problems(folder)
-    for problem in weak:
-        print(f"[{slug}] sourcetests (report only): {problem}", file=sys.stderr)
-    log.append(("sourcetests", f"report ({len(weak)})" if weak else "ok", 0.0))
     problems = tools_problems(folder, data)
     if problems is None:
         log.append(("tools", "skipped (none registered literally)", 0.0))

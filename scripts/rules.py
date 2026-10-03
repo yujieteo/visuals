@@ -14,15 +14,18 @@ and scripts/check_repo.py the repository-wide ones. No check reads the network.
                 dark-theme blocks agree
   python        unused imports, unused local variables and definitions made twice in the visual's Python
   source-tests  tests whose every assertion checks the page's source text, or a value read out of it, instead
-                of running the code (reported, not failed)
+                of running the code
   artifacts     no tracked __pycache__, *.pyc, .DS_Store or AppleDouble ._* file, and .gitignore keeps them out
 
 A finding a visual keeps on purpose is listed, with its reason in the pull request, in visual.json
-"allow": {"<check>": ["<the problem line>", ...]}; an entry that matches no problem fails, so it cannot go stale.
+"allow": {"<check>": ["<the problem line>", ...]}, without the line number after the file name, so an edit
+elsewhere in the file does not break it. Each entry allows one problem: list it twice to allow two identical
+problems. An entry that matches no problem fails, so it cannot go stale.
 """
 import ast
 import hashlib
 import re
+from collections import Counter
 from pathlib import Path
 
 TEMPLATE_HASH = Path(__file__).resolve().parent / "templates" / "beamdswitch.sha256"
@@ -30,10 +33,22 @@ TEMPLATE_COPIES = ("beamdswitch.js", "tests/fixtures/beamdswitch/beamdswitch.js"
 SKIPPED_DIRS = {"__pycache__", "node_modules", ".typecheck", ".git", ".venv"}
 
 
+LINE = re.compile(r"^([^\s:]+):\d+(?=: )")
+
+
 def allowed(problems, allow):
-    """Split ``problems`` by the visual's allow list: (problems not allowed, allow entries that match none)."""
-    allow = list(allow or [])
-    return [p for p in problems if p not in allow], [entry for entry in allow if entry not in problems]
+    """Split ``problems`` by the visual's allow list: (problems not allowed, allow entries that match none).
+
+    An entry is a problem without the line number after its file name, and allows one problem only."""
+    unused = Counter(allow or [])
+    left = []
+    for problem in problems:
+        key = LINE.sub(r"\1", problem, count=1)
+        if unused[key]:
+            unused[key] -= 1
+        else:
+            left.append(problem)
+    return left, list(unused.elements())
 
 
 # template ---------------------------------------------------------------------------------------------------
@@ -265,7 +280,7 @@ def _body_duplicates(body, where):
     for node in body:
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
             if node.name in seen and not node.decorator_list and not seen[node.name].decorator_list:
-                problems.append(f"{where}:{node.lineno}: {node.name} is defined again (first at line {seen[node.name].lineno})")
+                problems.append(f"{where}:{node.lineno}: {node.name} is defined again in the same scope")
             seen[node.name] = node
         if isinstance(node, ast.ClassDef):
             problems += _body_duplicates(node.body, where)

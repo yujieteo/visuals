@@ -31,7 +31,7 @@ test("a finding's line in an extracted block maps back to the page", () => {
 
 const tsc = existsSync(new URL("node_modules/.bin/tsc", REPO));
 
-test("a visual's unused local and twice-declared constant fail until its allow list names them", { skip: !tsc && "run npm ci first" }, () => {
+test("a visual's unused local and twice-declared constant fail until its allow list names each of them", { skip: !tsc && "run npm ci first" }, () => {
   const root = mkdtempSync(join(tmpdir(), "deadcode-"));
   try {
     const folder = join(root, "viz", "alpha");
@@ -52,7 +52,24 @@ test("a visual's unused local and twice-declared constant fail until its allow l
       "index.html: Cannot redeclare block-scoped variable 'total'.",
       "tests/page.test.mjs: 'readFileSync' is declared but its value is never read.",
     ]);
+    assert.equal(deadcode("alpha", rootUrl), 1, "one entry allows one of the two 'total' declarations");
+    allow([
+      "index.html: 'unused' is declared but its value is never read.",
+      "index.html: Cannot redeclare block-scoped variable 'total'.",
+      "index.html: Cannot redeclare block-scoped variable 'total'.",
+      "tests/page.test.mjs: 'readFileSync' is declared but its value is never read.",
+    ]);
     assert.equal(deadcode("alpha", rootUrl), 0);
+    writeFileSync(join(folder, "index.html"), [
+      "<script>const total = (xs) => { const unused = 1; return xs.length; };</script>",
+      "<script>const total = (xs) => xs.length + 1;</script>",
+      "<script>function later() { const unused = 2; return later; }</script>",
+    ].join("\n"));
+    assert.equal(deadcode("alpha", rootUrl), 1, "a second identical finding elsewhere in the page is not allowed by the first entry");
+    writeFileSync(join(folder, "index.html"), [
+      "<script>const total = (xs) => { const unused = 1; return xs.length; };</script>",
+      "<script>const total = (xs) => xs.length + 1;</script>",
+    ].join("\n"));
     allow(["index.html: 'gone' is declared but its value is never read."]);
     assert.equal(deadcode("alpha", rootUrl), 5, "the four findings, and the allow entry that matches none");
   } finally {

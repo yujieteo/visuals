@@ -24,6 +24,15 @@ class AllowedTest(unittest.TestCase):
         self.assertEqual(rules.allowed(["a", "b"], ["b", "gone"]), (["a"], ["gone"]))
         self.assertEqual(rules.allowed(["a"], None), (["a"], []))
 
+    def test_an_entry_names_no_line_and_allows_one_problem(self):
+        problems = ["build.py:3: import os is unused", "build.py:40: import os is unused"]
+        self.assertEqual(rules.allowed(problems, ["build.py: import os is unused"]), (["build.py:40: import os is unused"], []))
+        self.assertEqual(rules.allowed(problems, ["build.py: import os is unused"] * 2), ([], []))
+        self.assertEqual(rules.allowed(problems[:1], ["build.py: import os is unused"] * 2), ([], ["build.py: import os is unused"]))
+        self.assertEqual(rules.allowed(problems, ["build.py:3: import os is unused"]), (problems, ["build.py:3: import os is unused"]))
+        contrast = "light: .row outlines a control in --border, 1.51:1 on --bg, below 3.0:1; use --control"
+        self.assertEqual(rules.allowed([contrast, contrast], [contrast]), ([contrast], []))
+
 
 class TemplateTest(unittest.TestCase):
     def test_every_copy_must_match_the_recorded_template_and_the_page_must_inline_it(self):
@@ -128,7 +137,7 @@ class PythonTest(unittest.TestCase):
         )
         self.assertEqual(problems, [
             "build.py:3: import pd is unused",
-            "build.py:12: load is defined again (first at line 6)",
+            "build.py:12: load is defined again in the same scope",
             "build.py:8: local unused is assigned but never read",
         ])
 

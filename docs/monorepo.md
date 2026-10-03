@@ -61,10 +61,13 @@ deterministic rules that replaced review by reading (`scripts/rules.py`, `script
 | `contrast` | a text token (`--fg`, `--muted`, `--focus`, `--hl`, `--ok`, `--warn`, `--bad`) is below 4.5:1 on `--bg`, `--control` or a series colour below 3:1, a control is outlined in a token below 3:1 (such as `--border`), in either theme, or the two dark-theme blocks disagree |
 | `pydead` | the folder's Python has an unused import or local, or defines a function or class twice |
 | `deadcode` | tsc finds an unused local or import, unreachable code, or a `let`, `const` or class declared twice in the page's inline scripts (one global scope, as the browser runs them) or its test modules; it needs `npm ci` |
-| `sourcetests` | never: it reports tests whose every assertion checks the page's source text instead of running its code |
+| `sourcetests` | a test's every assertion checks the page's source text, or a value read out of it, instead of running its code |
 
-A finding a visual keeps on purpose goes in `visual.json` `allow`, under the check's name, exactly as the
-check prints it; an entry that no longer matches a finding fails, so the list shrinks as the code is fixed.
+A finding a visual keeps on purpose goes in `visual.json` `allow`, under the check's name, as the check
+prints it but without the line number after the file name, so an edit elsewhere in the file does not break
+the entry. Each entry allows one finding: list it twice to allow two identical findings, so a new finding
+with the same text still fails. An entry that no longer matches a finding fails, so the list shrinks as the
+code is fixed.
 `python3 scripts/check_repo.py` is the fast repository-wide check: every `visual.json` against the schema
 (which requires at least 3 `webmcp_tools`), the folder rules, the absolute-path scan, no tracked `__pycache__`,
 `*.pyc`, `.DS_Store` or AppleDouble `._*` file with `.gitignore` keeping them out, and no unused or duplicated

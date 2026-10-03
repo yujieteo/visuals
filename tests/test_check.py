@@ -77,9 +77,21 @@ class RuleStepsTest(unittest.TestCase):
             steps = dict(rule_steps(folder, metadata()))
             self.assertEqual(steps["pydead"], ["build.py:1: import os is unused"])
             self.assertEqual(steps["requests"], [])
-            steps = dict(rule_steps(folder, metadata(allow={"python": ["build.py:1: import os is unused"], "contrast": ["light: gone"]})))
+            steps = dict(rule_steps(folder, metadata(allow={"python": ["build.py: import os is unused"], "contrast": ["light: gone"]})))
             self.assertEqual(steps["pydead"], [])
             self.assertEqual(steps["contrast"], ['visual.json allow.contrast lists "light: gone", which no longer occurs; remove it'])
+
+    def test_a_test_that_only_reads_the_page_source_fails_unless_allowed(self):
+        with Layout() as layout:
+            folder = layout.visual("alpha", files=("index.html",))
+            (folder / "tests").mkdir(exist_ok=True)
+            (folder / "tests" / "page.test.mjs").write_text(
+                'import { readFileSync } from "node:fs";\nimport assert from "node:assert/strict";\nimport test from "node:test";\n'
+                'const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");\n'
+                'test("the page has a title", () => { assert.match(html, /<title>/); });\n', encoding="utf-8")
+            problem = 'tests/page.test.mjs: test "the page has a title" only checks source text; run the code and assert on what it does'
+            self.assertEqual(dict(rule_steps(folder, metadata()))["sourcetests"], [problem])
+            self.assertEqual(dict(rule_steps(folder, metadata(allow={"sourcetests": [problem]})))["sourcetests"], [])
 
 
 if __name__ == "__main__":

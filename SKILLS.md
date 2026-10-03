@@ -13,7 +13,7 @@ What a visual must be (artifact contract, state and export, interaction and acce
 
 1. Work inside `viz/<slug>/` only. Edit the data, `src/` or `build.py` and run `python3 build.py` when the folder has a builder (it regenerates `index.html`; never hand-edit a generated page); otherwise edit `index.html` directly.
 2. Keep `visual.json` true: its `webmcp_tools` and the WebMCP tools table in `SKILLS.md` name exactly the tools the page registers, and `fetched` is the date of the data. `schema/visual.schema.json` says what each field means.
-3. Put its tests in its own `tests/` (`*.test.mjs` for `node --test`, `test_*.py` for unittest). A test reads only its own folder and the shared tooling, never another visual's folder: CI runs it on a checkout without them. A test runs the page's code and asserts on what it does; a test that only searches the page's source text is reported by the `sourcetests` step. Time any test you add and keep it fast.
+3. Put its tests in its own `tests/` (`*.test.mjs` for `node --test`, `test_*.py` for unittest). A test reads only its own folder and the shared tooling, never another visual's folder: CI runs it on a checkout without them. A test runs the page's code and asserts on what it does; the `sourcetests` step fails a test that only searches the page's source text. Time any test you add and keep it fast.
 4. Check it: `python3 scripts/check.py <slug>`, then `python3 scripts/check.py --changed` for everything the branch touches. Run `npm ci` once first, so the type and dead-code checks run too. Fix a failure; do not add it to `allow` in `visual.json` unless the finding is deliberate, and then say why in the pull request.
 
 ## What the checks decide
@@ -22,7 +22,7 @@ These rules are scripts, so do not check them by reading. `scripts/check.py` run
 
 | Rule | Step |
 | --- | --- |
-| A generated page matches its builder, across Node versions | `build` (`build.py --verify` on CI's Node 22) |
+| A generated page matches its builder on Node 22, the version CI uses; review still decides whether a builder's output changes on other Node versions | `build` (`build.py --verify` on CI's Node 22) |
 | `visual.json` and `SKILLS.md` name exactly the WebMCP tools the page registers, at least 3 | `tools`, and the schema in `scripts/check_repo.py` |
 | Every `beamdswitch.js` copy is the site's template | `template` (`scripts/templates/beamdswitch.sha256`) |
 | The page requests only its own published files, never `notes.md` | `requests`, and the browser check `network` |
