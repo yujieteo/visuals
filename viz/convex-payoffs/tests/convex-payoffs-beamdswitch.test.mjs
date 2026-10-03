@@ -3,16 +3,23 @@ import assert from "node:assert/strict";
 import { SLUG, assertBlockedSave, assertInlined, assertStandardDeck, assertTemplateCopy, load, openPage, read } from "./finance-beamdswitch-checks.mjs";
 
 const html = read("index.html");
-const { Beamdswitch, ConvexReport } = load(read("beamdswitch.js"), read("report.js"));
-const DATA = JSON.parse(read("raw.json")), META = JSON.parse(read("meta.json"));
+// The scripts as the page runs them, loaded into one context: the template and the report.
+const context = load(read("beamdswitch.js"), read("report.js"));
+const Beamdswitch = /** @type {typeof import("../beamdswitch.js")} */ (context.Beamdswitch);
+const ConvexReport = /** @type {typeof import("../report.js")} */ (context.ConvexReport);
+/** @type {{ id: string, label: string, action: string, test: string, why: string, verdict: string, examples: string[] }[]} */
+const DATA = JSON.parse(read("raw.json"));
+/** @type {{ fetched: string, sources: { url: string }[] }} */
+const META = JSON.parse(read("meta.json"));
 const IDS = DATA.map((q) => q.id);
 const cells = () => ({ ".cell": IDS.map((id) => ({ id })) });
-const strip = (s) => s.replace(/<[^>]+>/g, "");
+const strip = (/** @type {string} */ s) => s.replace(/<[^>]+>/g, "");
 
 // The page's data as its deck reads it, taken from a run of the page itself.
 const page0 = openPage(cells());
+/** @type {Parameters<typeof ConvexReport.report>[0]} */
 const PAGE = JSON.parse(JSON.stringify(page0.run("PAGE")));
-const deckFor = (id) => Beamdswitch.deck(ConvexReport.report(PAGE, { id }));
+const deckFor = (/** @type {string} */ id) => Beamdswitch.deck(ConvexReport.report(PAGE, { id }));
 
 test("the site's beamdswitch template is the copy the page inlines, with its report", () => {
   assertTemplateCopy();
@@ -57,3 +64,8 @@ test("the beamdswitch button saves, and Copy deck copies, the deck of the quadra
 });
 
 test("a blocked download points to Copy deck without touching the clipboard", () => assertBlockedSave(cells()));
+
+test("the page starts with no WebMCP and no navigator: registering its tools is skipped, not thrown", () => {
+  // Without navigator the WebMCP lookup was false rather than undefined, and false?.registerTool(...) throws.
+  assert.doesNotThrow(() => openPage(cells(), { noNavigator: true }));
+});

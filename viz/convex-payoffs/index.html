@@ -128,29 +128,41 @@
  * standard template (beamdswitch.js, `Beamdswitch.deck`) writes as a narrated Markdown deck. Every
  * line is the page's own wording; nothing is scored or estimated.
  */
-(function (root, factory) {
+// root is the global object: self in the page, where the report publishes itself for the page script.
+(function (/** @type {any} */ root, factory) {
   const api = factory();
   if (typeof module === "object" && module.exports) module.exports = api;
   else root.ConvexReport = api;
 })(typeof self !== "undefined" ? self : this, function () {
   "use strict";
 
+  /** @typedef {[id: string, label: string, action: string, test: string, why: string, verdict: string, examples: string[]]} Row */
+  /**
+   * The page's data: its four quadrant rows, key message, caveat and research basis.
+   * @typedef {{ title: string, lede: string, message: string, caveat: string, fetched: string, rows: Row[], sources: { cite: string, url: string, text: string }[] }} PageData
+   */
+
   /* A quadrant's place on the page's two axes, from its id ("reversible-upside" and so on). */
+  /** @type {Record<string, string>} */
   const COST = { reversible: "Nearly free failure", costly: "Costly failure" };
+  /** @type {Record<string, string>} */
   const CHANGE = { upside: "more change", flat: "little change" };
+  /** @param {string} id */
   const axes = (id) => { const [cost, change] = id.split("-"); return { cost: COST[cost], change: CHANGE[change] }; };
   const ORDER = ["reversible-flat", "reversible-upside", "costly-flat", "costly-upside"];
 
   /* Markdown text: characters beamdswitch would read as maths or markup are escaped. */
-  const md = (s) => String(s ?? "").replace(/\s+/g, " ").trim().replace(/[\\$*_`|<>[\]]/g, "\\$&");
+  const md = (/** @type {unknown} */ s) => String(s ?? "").replace(/\s+/g, " ").trim().replace(/[\\$*_`|<>[\]]/g, "\\$&");
   /* Narration is read aloud: markup characters are dropped. */
-  const say = (s) => String(s ?? "").replace(/&/g, " and ").replace(/[“”"]/g, "").replace(/[$\\`*_#|<>[\]]/g, " ").replace(/\s+/g, " ").trim();
-  const lower = (s) => s.charAt(0).toLowerCase() + s.slice(1);
-  const end = (s) => (/[.!?]$/.test(s) ? s : s + ".");
+  const say = (/** @type {unknown} */ s) => String(s ?? "").replace(/&/g, " and ").replace(/[“”"]/g, "").replace(/[$\\`*_#|<>[\]]/g, " ").replace(/\s+/g, " ").trim();
+  const lower = (/** @type {string} */ s) => s.charAt(0).toLowerCase() + s.slice(1);
+  const end = (/** @type {string} */ s) => (/[.!?]$/.test(s) ? s : s + ".");
 
+  /** @param {PageData} P @param {{ id?: string }} [view] @returns {import("./beamdswitch.js").Report} */
   function report(P, view = {}) {
     const byId = new Map(P.rows.map((r) => [r[0], r]));
-    const row = byId.get(view.id) || byId.get("reversible-upside");
+    // The page always has the reversible-upside quadrant, its default.
+    const row = /** @type {Row} */ (byId.get(/** @type {string} */ (view.id)) || byId.get("reversible-upside"));
     const [id, label, action, test, why, verdict, examples] = row, at = axes(id);
 
     const setup = [{
@@ -169,10 +181,10 @@
       body: [
         "| Failure cost | Change | Quadrant | Verdict |",
         "| --- | --- | --- | --- |",
-        ...ORDER.map((q) => { const r = byId.get(q), a = axes(q); return `| ${a.cost} | ${a.change} | ${md(r[1])} | ${md(r[5])} |`; }),
+        ...ORDER.map((q) => { const r = /** @type {Row} */ (byId.get(q)), a = axes(q); return `| ${a.cost} | ${a.change} | ${md(r[1])} | ${md(r[5])} |`; }),
       ].join("\n"),
       notes: "A convex bet has a capped downside and an open upside: the reversible probe quadrant.",
-      narration: ORDER.map((q) => { const r = byId.get(q), a = axes(q); return `${a.cost} with ${a.change}: ${lower(say(r[1]))}, verdict ${lower(end(say(r[5])))}`; }).join(" "),
+      narration: ORDER.map((q) => { const r = /** @type {Row} */ (byId.get(q)), a = axes(q); return `${a.cost} with ${a.change}: ${lower(say(r[1]))}, verdict ${lower(end(say(r[5])))}`; }).join(" "),
     }];
 
     const results = [{
@@ -216,20 +228,27 @@
 });
 </script>
 <script>
+/** @typedef {[id: string, label: string, action: string, test: string, why: string, verdict: string, examples: string[]]} Row */
+/** @type {Row[]} */
 const rows=[["reversible-upside","Run a reversible probe","Spend 15 minutes making one specific offer, request, or tiny public artifact that another person can answer or use.","A reply, introduction, or use gives you information or a new next move.","Keep the cost capped while preserving the right to continue only after a signal.","Do this today",["Send one ideal collaborator a one-sentence offer with a yes or no question.","Post a 100-word offer with a waitlist link and count signups.","Ask five target users whether they would use a proposed feature, then record replies."]],["reversible-flat","Do useful maintenance","Tidy a list, rename files, or read without producing a decision point.","It may feel complete, but it rarely creates a new option.","Low downside alone is not enough.","Fine, but not the bet",["Clean a folder without choosing a next action."]],["costly-upside","Make a committed bet","Buy, promise, or build before testing the demand.","It may work, but the loss is hard to reverse.","Split it into a smaller probe first.","Shrink before acting",["Commit to a month of work before one prospective user reacts."]],["costly-flat","Avoid","Spend time or money on an irreversible task with no new information or access.","Even success leaves tomorrow largely unchanged.","This has the worst asymmetry.","Skip",["Buy an expensive tool before checking whether anyone wants the outcome."]]];
-const byId=new Map(rows.map(row=>[row[0],row]));const detail=document.querySelector('#detail');let current='reversible-upside';
-function render(id){const row=byId.get(id);current=id;document.querySelectorAll('.cell').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.id===id)));detail.innerHTML=`<h2>${row[1]}</h2><p class="action">15-minute move. ${row[2]}</p><p><strong>Examples.</strong></p><ul>${row[6].map(example=>`<li>${example}</li>`).join('')}</ul><p><strong>Success looks like.</strong> ${row[3]}</p><p><strong>Reason.</strong> ${row[4]}</p><p><strong>Verdict.</strong> ${row[5]}.</p>`}
-document.querySelectorAll('.cell').forEach(button=>button.addEventListener('click',()=>render(button.dataset.id)));render('reversible-upside');
+// The elements the script asks for are in the page's markup, and every quadrant id is in rows.
+const byId=new Map(rows.map(row=>[row[0],row]));const detail=/** @type {HTMLElement} */(document.querySelector('#detail'));let current='reversible-upside';
+function render(/** @type {string} */ id){const row=/** @type {Row} */(byId.get(id));current=id;document.querySelectorAll(/** @type {'button'} */('.cell')).forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.id===id)));detail.innerHTML=`<h2>${row[1]}</h2><p class="action">15-minute move. ${row[2]}</p><p><strong>Examples.</strong></p><ul>${row[6].map(example=>`<li>${example}</li>`).join('')}</ul><p><strong>Success looks like.</strong> ${row[3]}</p><p><strong>Reason.</strong> ${row[4]}</p><p><strong>Verdict.</strong> ${row[5]}.</p>`}
+document.querySelectorAll(/** @type {'button'} */('.cell')).forEach(button=>button.addEventListener('click',()=>render(/** @type {string} */(button.dataset.id))));render('reversible-upside');
 // The page's own words for the beamdswitch deck; report.js fills the site's report template (beamdswitch.js) with them.
 const PAGE={title:'Find a convex 15-minute bet',fetched:'2026-09-28',rows,lede:'Choose the action that costs little if it fails and opens a meaningful path if it works.',message:'Today, make one concrete offer or tiny public probe. Write one hypothesis, one observable signal, and one next step before you send it.',caveat:'This is a decision heuristic, not a claim that every small bet has positive expected value.',sources:[{cite:'Kerr, Nanda, and Rhodes-Kropf, 2014.',url:'https://pubs.aeaweb.org/doi/10.1257/jep.28.3.25',text:'Their survey frames entrepreneurship as experimentation with low, highly skewed, initially unknowable outcomes.'},{cite:'Koning, Hasan, and Chatterji, 2022.',url:'https://doi.org/10.1287/mnsc.2021.4209',text:'An event study links lower-cost A/B testing to 30 to 100 percent better startup performance after one year.'},{cite:'Camuffo et al., 2020.',url:'https://doi.org/10.1287/mnsc.2018.3249',text:'A randomized trial of 116 startups found better performance, more pivots, and no higher early-stage dropout.'}]};
-const deck=()=>Beamdswitch.deck(ConvexReport.report(PAGE,{id:current})),deckStatus=document.querySelector('#deck-status');
+const deck=()=>Beamdswitch.deck(ConvexReport.report(PAGE,{id:current})),deckStatus=/** @type {HTMLElement} */(document.querySelector('#deck-status'));
+/** @param {Blob} blob @param {string} name */
 function save(blob,name){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)}
-document.querySelector('#save-beamdswitch').addEventListener('click',()=>{const name='convex-payoffs-beamdswitch.md';try{save(new Blob([deck()],{type:'text/markdown'}),name);deckStatus.textContent=`Saved ${name}: open it in beamdswitch.`}catch{deckStatus.textContent='Could not save the beamdswitch deck here: use Copy deck to paste it into beamdswitch.'}});
-document.querySelector('#copy-beamdswitch').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(deck());deckStatus.textContent='Copied the beamdswitch deck: paste it into beamdswitch.'}catch{deckStatus.textContent='Could not copy the beamdswitch deck here: use the beamdswitch button to save it.'}});
-function result(value){return{content:[{type:'text',text:JSON.stringify(value)}]}}const mc=(typeof document!=='undefined'&&document.modelContext)||(typeof navigator!=='undefined'&&navigator.modelContext);
+/** @type {HTMLElement} */(document.querySelector('#save-beamdswitch')).addEventListener('click',()=>{const name='convex-payoffs-beamdswitch.md';try{save(new Blob([deck()],{type:'text/markdown'}),name);deckStatus.textContent=`Saved ${name}: open it in beamdswitch.`}catch{deckStatus.textContent='Could not save the beamdswitch deck here: use Copy deck to paste it into beamdswitch.'}});
+/** @type {HTMLElement} */(document.querySelector('#copy-beamdswitch')).addEventListener('click',async()=>{try{await navigator.clipboard.writeText(deck());deckStatus.textContent='Copied the beamdswitch deck: paste it into beamdswitch.'}catch{deckStatus.textContent='Could not copy the beamdswitch deck here: use the beamdswitch button to save it.'}});
+/** @param {unknown} value */
+function result(value){return{content:[{type:'text',text:JSON.stringify(value)}]}}
+// Undefined, not false, when there is no WebMCP: mc?.registerTool must skip, as false?.registerTool would throw.
+const mc=(typeof document!=='undefined'&&document.modelContext)||(typeof navigator!=='undefined'&&navigator.modelContext)||undefined;
 mc?.registerTool({name:'get_data',description:'Return the four decision-quadrant records.',inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:true},async execute(){return result({total:rows.length,returned:rows.length,truncated:false,columns:['id','label','action','test','why','verdict'],rows,next_steps:['Use query with an id to inspect one quadrant.']})}});
 mc?.registerTool({name:'get_metadata',description:'Return title, sources, and fetch date.',inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:true},async execute(){return result({title:'Find a convex 15-minute bet',fetched:'2026-09-28',sources:['https://pubs.aeaweb.org/doi/10.1257/jep.28.3.25','https://doi.org/10.1287/mnsc.2021.4209','https://doi.org/10.1287/mnsc.2018.3249']})}});
-mc?.registerTool({name:'query',description:'Return one quadrant by id.',inputSchema:{type:'object',properties:{id:{type:'string',enum:rows.map(row=>row[0])}},required:['id'],additionalProperties:false},annotations:{readOnlyHint:true},async execute({id}){const row=byId.get(id);return result({total:row?1:0,returned:row?1:0,truncated:false,row:row||null,next_steps:row?['Choose a concrete action that fits this quadrant.']:['Use one of the listed ids.']})}});
+mc?.registerTool({name:'query',description:'Return one quadrant by id.',inputSchema:{type:'object',properties:{id:{type:'string',enum:rows.map(row=>row[0])}},required:['id'],additionalProperties:false},annotations:{readOnlyHint:true},async execute(/** @type {{ id: string }} */ {id}){const row=byId.get(id);return result({total:row?1:0,returned:row?1:0,truncated:false,row:row||null,next_steps:row?['Choose a concrete action that fits this quadrant.']:['Use one of the listed ids.']})}});
 </script>
 </body>
 </html>
