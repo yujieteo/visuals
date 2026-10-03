@@ -4,7 +4,7 @@ Arm cash conversion: Arm's (ARM) annual revenue and operating cash-flow margin f
 
 Live: <https://teoyujie.org/visuals/arm/>. MIT licence (see `LICENSE`).
 
-This repository is where the visualisation and its tests develop; CI (`.github/workflows/ci.yml`) runs the tests on every push and pull request. [yujieteo/visuals](https://github.com/yujieteo/visuals) holds the copy (`viz/arm/`, `data/arm/`) that [yujieteo/site](https://github.com/yujieteo/site) publishes; see `AGENTS.md` for how changes flow.
+This repository is where the visualisation and its tests develop; CI (`.github/workflows/ci.yml`) runs the tests and the type check on every push and pull request. [yujieteo/visuals](https://github.com/yujieteo/visuals) holds the copy (`viz/arm/`, `data/arm/`) that [yujieteo/site](https://github.com/yujieteo/site) publishes; see `AGENTS.md` for how changes flow.
 
 ## Layout
 
@@ -16,9 +16,11 @@ This repository is where the visualisation and its tests develop; CI (`.github/w
 | `scripts/templates/stock-cases-report.js` | The builder's deck template, which the page inlines. |
 | `tests/` | `node --test` suites, with read-only beamdswitch fixtures under `tests/fixtures/`. |
 | `AGENTS.md`, `SKILLS.md` | Guides for agents changing and using the page. |
+| `package.json`, `package-lock.json`, `tsconfig.json` | Pin and configure the type check (`tsc` over the JSDoc types); no runtime dependencies. |
 
 ## Test
 
 ```sh
 node --test 'tests/*.test.mjs'
+npm ci && npm run typecheck   # type-check the JavaScript with tsc
 ```
