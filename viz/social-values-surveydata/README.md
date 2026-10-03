@@ -4,7 +4,7 @@ Connection rises as appetite to shape the future falls: Weighted survey aggregat
 
 Live: <https://teoyujie.org/visuals/social-values-surveydata/>. MIT licence (see `LICENSE`).
 
-This repository is where the visualisation and its tests develop; CI (`.github/workflows/ci.yml`) runs the tests on every push and pull request. [yujieteo/visuals](https://github.com/yujieteo/visuals) holds the copy (`viz/social-values-surveydata/`, `data/social-values-surveydata/`) that [yujieteo/site](https://github.com/yujieteo/site) publishes; see `AGENTS.md` for how changes flow.
+This repository is where the visualisation and its tests develop; CI (`.github/workflows/ci.yml`) runs the tests and the type check on every push and pull request. [yujieteo/visuals](https://github.com/yujieteo/visuals) holds the copy (`viz/social-values-surveydata/`, `data/social-values-surveydata/`) that [yujieteo/site](https://github.com/yujieteo/site) publishes; see `AGENTS.md` for how changes flow.
 
 ## Layout
 
@@ -15,10 +15,13 @@ This repository is where the visualisation and its tests develop; CI (`.github/w
 | `report.js` | Builds the narrated beamdswitch deck, inlined into the page. |
 | `meta.json`, `raw.csv` | The data, ported to `data/social-values-surveydata/` in yujieteo/visuals. |
 | `tests/` | `node --test` suites, with read-only beamdswitch fixtures under `tests/fixtures/`. |
-| `AGENTS.md`, `SKILLS.md` | Guides for agents changing and using the page. |
+| `package.json`, `package-lock.json`, `tsconfig.json`, `.gitignore`, `types/` | Development-only type-check tooling: `npm run typecheck` runs the pinned TypeScript over the JSDoc types in `report.js` and the tests. Not ported. |
+| `AGENTS.md`, `SKILLS.md` | Guides
+ for agents changing and using the page. |
 
 ## Test
 
 ```sh
 node --test 'tests/*.test.mjs'
+npm ci && npm run typecheck
 ```

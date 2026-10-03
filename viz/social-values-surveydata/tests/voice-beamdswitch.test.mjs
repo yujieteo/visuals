@@ -10,17 +10,20 @@ import { TEMPLATE_PATH, assertVoice, read } from "./beamdswitch-decks.mjs";
 // This repository holds one page; the sweep upstream in yujieteo/visuals covers every exporting page.
 const SLUG = "social-values-surveydata";
 
-const frame = (title) => ({ title, body: "A body.", narration: `This is ${title}.` });
+const frame = (/** @type {string} */ title) => ({ title, body: "A body.", narration: `This is ${title}.` });
+/** @param {BeamdswitchReport["meta"]} meta @returns {BeamdswitchReport} */
 const report = (meta) => ({
   meta: { title: "A report", ...meta }, narration: "A report.",
   setup: [frame("Set-up")], method: [frame("Method")], results: [frame("Results")], checks: [{ ...frame("Checks"), key: "The key." }],
 });
-const inlined = (html) => /<script id="beamdswitch">\n([\s\S]*?)<\/script>/.exec(html)?.[1];
+const inlined = (/** @type {string} */ html) => /<script id="beamdswitch">\n([\s\S]*?)<\/script>/.exec(html)?.[1];
+/** @param {string} source @returns {BeamdswitchApi} */
 function templateOf(source) {
+  /** @type {{ self?: unknown, Beamdswitch?: BeamdswitchApi }} */
   const context = vm.createContext({});
   context.self = context;
   vm.runInContext(source, context);
-  return context.Beamdswitch;
+  return /** @type {BeamdswitchApi} the template sets it */ (context.Beamdswitch);
 }
 
 test("the shared template defaults the voice to bf_emma and keeps one the report names", () => {
@@ -28,11 +31,12 @@ test("the shared template defaults the voice to bf_emma and keeps one the report
   assert.equal(T.DEFAULT_VOICE, "bf_emma");
   for (const meta of [{}, { voice: "" }, { voice: "  " }]) assert.equal(parseDeck(T.deck(report(meta))).meta.voice, "bf_emma", JSON.stringify(meta));
   assert.equal(parseDeck(T.deck(report({ voice: "bf_isabella" }))).meta.voice, "bf_isabella");
-  assert.equal(T.deck(report({})).match(/^voice:/gm).length, 1);
+  assert.equal(T.deck(report({})).match(/^voice:/gm)?.length, 1);
 });
 
 test(`${SLUG}: the page's inlined template writes a voice into every deck`, () => {
   const source = inlined(read(`index.html`));
   assert.equal(source, read(TEMPLATE_PATH), `${SLUG} inlines the shared template`);
+  assert.ok(source !== undefined);
   assertVoice(parseDeck(templateOf(source).deck(report({}))), SLUG);
 });
