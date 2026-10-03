@@ -27,10 +27,12 @@ def noscript_list(data):
     labels = {category["id"]: category["label"] for category in data["categories"]}
     items = []
     for event in data["events"]:
-        when = " ".join(part for part in (event.get("date_label"), event.get("time_label")) if part)
-        book = f' <a href="{escape(event["booking_url"])}">Book on NLB</a>' if event.get("booking_url") else ""
-        items.append(f"<li><strong>{escape(event['title'])}</strong> ({escape(labels.get(event['category'], event['category']))}), "
-                     f"{escape(when)}.{book}</li>")
+        when = " ".join(part for part in (event.get("date_label") or (event.get("start") or "")[:10], event.get("time_label")) if part)
+        where = event.get("venue_group") or event.get("venue")
+        label = "Book on onePA" if event.get("source") == "onepa" else "Book on NLB"
+        book = f' <a href="{escape(event["booking_url"])}">{label}</a>' if event.get("booking_url") else ""
+        items.append(f"<li><strong>{escape(event['title'])}</strong> ({escape(labels.get(event['category'], event['category']))}"
+                     f"{', ' + escape(where) if where else ''}), {escape(when)}.{book}</li>")
     return "\n<ul>\n" + "\n".join(items) + "\n</ul>\n"
 
 
