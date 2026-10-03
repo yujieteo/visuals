@@ -90,16 +90,18 @@
     };
   }
 
-  function megaEvolve(data, state, mon, log) {
-    const target = mon.megaStone;
-    const sp = data.species[target];
-    const hpFrac = mon.hp / mon.maxhp;
+  // The Mega form's stats, types and ability; HP never changes on Mega Evolution.
+  function applyMegaForm(data, mon) {
+    const sp = data.species[mon.megaStone];
     const stats = calcStats(sp.base_stats, mon.sp, mon.nature);
-    stats.hp = mon.maxhp; // HP never changes on Mega Evolution
-    mon.stats = stats; mon.form = target; mon.types = sp.types.slice(); mon.ability = sp.abilities[0];
-    mon.isMega = true; mon.hp = Math.round(hpFrac * mon.maxhp);
+    stats.hp = mon.maxhp;
+    mon.stats = stats; mon.form = mon.megaStone; mon.types = sp.types.slice(); mon.ability = sp.abilities[0]; mon.isMega = true;
+  }
+
+  function megaEvolve(data, state, mon, log) {
+    applyMegaForm(data, mon);
     state.sides[mon.side].megaUsed = true;
-    log.push({ t: "mega", who: mon.key, text: `${mon.species} Mega Evolved into ${target} (${mon.ability})` });
+    log.push({ t: "mega", who: mon.key, text: `${mon.species} Mega Evolved into ${mon.form} (${mon.ability})` });
     onEntryAbility(data, state, mon, log);
   }
 
@@ -108,6 +110,11 @@
     return state.sides[side].active.map((i) => state.sides[side].mons[i]).filter((m) => m && !m.fainted);
   }
   function foeSide(side) { return 1 - side; }
+  // Brought Pokémon that are neither on the field nor fainted: who can switch or pivot in.
+  function benchOf(state, sideIdx) {
+    const side = state.sides[sideIdx];
+    return side.brought.filter((i) => !side.active.includes(i) && !side.mons[i].fainted);
+  }
 
   function applyBoost(data, state, target, boosts, source, log, fromFoe) {
     let lowered = 0;
@@ -190,6 +197,7 @@
       .map((i, slot) => ({ i, slot, m: state.sides[foeSide(mon.side)].mons[i] }))
       .filter((f) => f.m && !f.m.fainted);
     const canMega = mon.megaStone && !mon.isMega && !side.megaUsed;
+    const bench = benchOf(state, mon.side);
     for (const name of mon.moves) {
       const mv = data.moves[name];
       if (name === "Fake Out" && !mon.fresh) continue;
@@ -197,7 +205,6 @@
       if (mv.flags && mv.flags.sound && mon.throatChop) continue;
       const base = { kind: "move", move: name };
       const variants = [];
-      const bench = side.brought.filter((i) => !side.active.includes(i) && !side.mons[i].fainted);
       if (mv.target === "normal") {
         for (const f of foes) {
           if (name === "Parting Shot" && bench.length) for (const b of bench) variants.push({ ...base, target: f.slot, pivot: b });
@@ -209,29 +216,27 @@
         if (canMega) out.push({ ...v, mega: true });
       }
     }
-    for (const i of side.mons.map((m, i) => i)) {
-      const m = side.mons[i];
-      if (m.fainted || side.active.includes(i) || !side.brought.includes(i)) continue;
-      out.push({ kind: "switch", to: i });
-    }
+    side.mons.forEach((m, i) => {
+      if (!m.fainted && !side.active.includes(i) && side.brought.includes(i)) out.push({ kind: "switch", to: i });
+    });
     return out;
   }
 
-  // Joint plans for a side: every pair of per-Pokémon choices, excluding two
-  // Mega Evolutions and two switches into the same Pokémon.
+  // Two partners' choices clash when both Mega Evolve, both switch into the same
+  // Pokémon, or one pivots with Parting Shot while the other switches.
+  function clash(a, b) {
+    if (!a || !b) return false;
+    return (a.mega && b.mega)
+      || (a.kind === "switch" && b.kind === "switch" && a.to === b.to)
+      || (a.move === "Parting Shot" && b.kind === "switch")
+      || (b.move === "Parting Shot" && a.kind === "switch");
+  }
+  // Joint plans for a side: every pair of per-Pokémon choices that do not clash.
   function jointPlans(data, state, sideIdx) {
     const mons = state.sides[sideIdx].active.map((i) => state.sides[sideIdx].mons[i]);
     const per = mons.map((m) => (m && !m.fainted ? choicesFor(data, state, m) : [null]));
     const plans = [];
-    for (const a of per[0] || [null]) {
-      for (const b of per[1] || [null]) {
-        if (a && b && a.mega && b.mega) continue;
-        if (a && b && a.kind === "switch" && b.kind === "switch" && a.to === b.to) continue;
-        if (a && b && a.move === "Parting Shot" && b.kind === "switch") continue;
-        if (a && b && b.move === "Parting Shot" && a.kind === "switch") continue;
-        plans.push([a, b]);
-      }
-    }
+    for (const a of per[0] || [null]) for (const b of per[1] || [null]) if (!clash(a, b)) plans.push([a, b]);
     return plans;
   }
 
@@ -359,10 +364,16 @@
       out.protectCount = 0; out.throatChop = 0;
       log.push({ t: "switchout", who: out.key, text: `${out.form} switched out` });
     }
+    switchIn(data, state, sideIdx, slot, toIdx, log, "came in");
+  }
+
+  // Put side.mons[toIdx] into the slot: it is fresh (Fake Out works again) and its entry ability fires.
+  function switchIn(data, state, sideIdx, slot, toIdx, log, verb) {
+    const side = state.sides[sideIdx];
     side.active[slot] = toIdx;
     const inn = side.mons[toIdx];
     inn.fresh = true; inn.protectCount = 0;
-    log.push({ t: "switchin", who: inn.key, slot, side: sideIdx, hp: inn.hp / inn.maxhp, text: `${inn.form} came in` });
+    log.push({ t: "switchin", who: inn.key, slot, side: sideIdx, hp: inn.hp / inn.maxhp, text: `${inn.form} ${verb}` });
     onEntryAbility(data, state, inn, log);
   }
 
@@ -460,8 +471,7 @@
       if (mv.self_boosts) applyBoost(data, state, mon, mv.self_boosts, mon, log, false);
     }
     if (name === "Parting Shot") {
-      const side = state.sides[a.side];
-      const bench = side.brought.filter((i) => !side.active.includes(i) && !side.mons[i].fainted);
+      const bench = benchOf(state, a.side);
       const to = a.choice.pivot !== undefined && bench.includes(a.choice.pivot) ? a.choice.pivot : bench[0];
       if (to !== undefined && targets.some((t) => !flags.protected.has(t.key))) doSwitch(data, state, a.side, a.slot, to, log);
     }
@@ -521,13 +531,13 @@
     if (mon.fainted) return 0;
     let v = 0.35 + 0.65 * mon.hp / mon.maxhp;
     if (mon.status === "brn") v -= isPhysical(mon) ? 0.15 : 0.05;
-    if (mon.status === "psn") v -= 0.07;
-    if (mon.status === "par") v -= 0.08;
-    if (mon.status === "slp") v -= 0.12;
+    else if (mon.status) v -= STATUS_COST[mon.status] || 0;
     if (mon.fresh && mon.moves.includes("Fake Out")) v += 0.04;
     if (mon.protectCount > 0) v -= 0.02;
     return v;
   }
+  // Value lost to a non-burn status; a burn costs more on a physical attacker (see monValue).
+  const STATUS_COST = { psn: 0.07, par: 0.08, slp: 0.12 };
   function isPhysical(mon) { return mon.stats.atk >= mon.stats.spa; }
 
   function threat(data, state, sideIdx) {
@@ -541,8 +551,8 @@
       for (const name of m.moves) {
         const mv = data.moves[name];
         if (mv.cat === "Status" || name === "Fake Out") continue;
-        const targets = mv.target === "allAdjacentFoes" ? foes : foes.map((f) => [f]);
-        const groups = mv.target === "allAdjacentFoes" ? [foes] : targets;
+        // A spread move hits every foe at once; a single-target move picks its best foe.
+        const groups = mv.target === "allAdjacentFoes" ? [foes] : foes.map((f) => [f]);
         for (const group of groups) {
           let gain = 0;
           for (const f of group) {
@@ -550,11 +560,11 @@
             const avg = (r.min + r.max) / 2 * (mv.acc ? mv.acc / 100 : 1);
             const frac = Math.min(1, avg / f.hp);
             // Knocking out removes the whole Pokémon; chip removes HP value.
-            let g = frac >= 1 ? monValue(f) : 0.65 * avg / f.maxhp;
-            let mine_first = speedOf(state, m) > speedOf(state, f);
-            if (state.trickRoom > 1) mine_first = !mine_first;
-            if (mv.pri > 0) mine_first = true;
-            gain += g * (mine_first ? 1 : 0.75);
+            const g = frac >= 1 ? monValue(f) : 0.65 * avg / f.maxhp;
+            let mineFirst = speedOf(state, m) > speedOf(state, f);
+            if (state.trickRoom > 1) mineFirst = !mineFirst;
+            if (mv.pri > 0) mineFirst = true;
+            gain += g * (mineFirst ? 1 : 0.75);
           }
           best = Math.max(best, gain);
         }
@@ -653,7 +663,7 @@
       };
       for (const [name, st] of Object.entries(spec.state || {})) {
         const m = mons[byName(name)];
-        if (st.mega) { megaEvolveSilently(data, m); side.megaUsed = true; }
+        if (st.mega) { applyMegaForm(data, m); side.megaUsed = true; }
         if (st.hp !== undefined) m.hp = Math.round(st.hp * m.maxhp);
         if (st.fainted) { m.fainted = true; m.hp = 0; }
         if (st.item_used) m.itemUsed = true;
@@ -671,36 +681,18 @@
       const leads = [0, 1].flatMap((s) => actives(state, s));
       leads.sort((a, b) => speedOf(state, b) - speedOf(state, a));
       for (const m of leads) onEntryAbility(data, state, m, log);
-    }
-    if (!position.turn) {
       for (const s of [0, 1]) for (const m of actives(state, s)) m.fresh = true;
     }
     return { state, log };
-  }
-  function megaEvolveSilently(data, mon) {
-    const sp = data.species[mon.megaStone];
-    const stats = calcStats(sp.base_stats, mon.sp, mon.nature);
-    stats.hp = mon.maxhp;
-    mon.stats = stats; mon.form = mon.megaStone; mon.types = sp.types.slice(); mon.ability = sp.abilities[0]; mon.isMega = true;
   }
 
   // Send a replacement into a slot whose Pokémon fainted (between turns).
   function sendIn(data, state, sideIdx, slot, toIdx) {
     const next = clone(state);
     const log = [];
-    const side = next.sides[sideIdx];
-    side.active[slot] = toIdx;
-    const inn = side.mons[toIdx];
-    inn.fresh = true; inn.protectCount = 0;
-    log.push({ t: "switchin", who: inn.key, slot, side: sideIdx, hp: inn.hp / inn.maxhp, text: `${inn.form} was sent in` });
-    onEntryAbility(data, next, inn, log);
+    switchIn(data, next, sideIdx, slot, toIdx, log, "was sent in");
     return { state: next, log };
   }
-  function benchOf(state, sideIdx) {
-    const side = state.sides[sideIdx];
-    return side.brought.filter((i) => !side.active.includes(i) && !side.mons[i].fainted);
-  }
-
   const api = { sendIn, benchOf, calcStats, effectiveness, damageRange, newBattle, resolveTurn, jointPlans, choicesFor, describePlan, describeChoice, evaluate, payoffMatrix, solve, rowStats, speedOf, actives, clone };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   root.VGCEngine = api;

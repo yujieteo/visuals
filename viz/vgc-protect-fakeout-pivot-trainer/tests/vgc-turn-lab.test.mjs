@@ -97,3 +97,84 @@ test("every position solves to legal plans for both sides", () => {
     assert.ok(!rows.some(([a, b]) => a && b && a.mega && b.mega), p.id);
   }
 });
+
+test("joint plans never pair two Megas, two switches into one Pokémon, or a Parting Shot pivot with a switch", () => {
+  for (const p of D.positions) {
+    const { state } = E.newBattle(D, p);
+    for (const side of [0, 1]) {
+      const plans = E.jointPlans(D, state, side);
+      assert.ok(plans.length > 0, p.id);
+      for (const [a, b] of plans) {
+        if (!a || !b) continue;
+        assert.ok(!(a.mega && b.mega), `${p.id}: two Megas`);
+        assert.ok(!(a.kind === "switch" && b.kind === "switch" && a.to === b.to), `${p.id}: one switch target twice`);
+        assert.ok(!(a.move === "Parting Shot" && b.kind === "switch") && !(b.move === "Parting Shot" && a.kind === "switch"), `${p.id}: pivot and switch`);
+      }
+      // Every other pairing of the two Pokémon's own choices is offered.
+      const [m0, m1] = state.sides[side].active.map((i) => state.sides[side].mons[i]);
+      const per = [m0, m1].map((m) => (m && !m.fainted ? E.choicesFor(D, state, m) : [null]));
+      const legal = per[0].flatMap((a) => per[1].filter((b) => !(a && b && ((a.mega && b.mega) || (a.kind === "switch" && b.kind === "switch" && a.to === b.to)
+        || (a.move === "Parting Shot" && b.kind === "switch") || (b.move === "Parting Shot" && a.kind === "switch")))).map((b) => [a, b]));
+      assert.deepEqual(plans, legal, p.id);
+    }
+  }
+});
+
+test("switch options and Parting Shot pivots are exactly the brought, benched, unfainted Pokémon", () => {
+  const { state } = E.newBattle(D, position("veil-endgame"));
+  for (const side of [0, 1]) {
+    const s = state.sides[side];
+    const bench = s.brought.filter((i) => !s.active.includes(i) && !s.mons[i].fainted);
+    assert.deepEqual(E.benchOf(state, side), bench);
+    for (const i of s.active) {
+      const switches = E.choicesFor(D, state, s.mons[i]).filter((c) => c.kind === "switch").map((c) => c.to);
+      assert.deepEqual(switches, bench);
+    }
+  }
+  const { state: start } = E.newBattle(D, position("defiant-tax"));
+  const inc = mon(start, 0, "Incineroar");
+  const pivots = E.choicesFor(D, start, inc).filter((c) => c.move === "Parting Shot").map((c) => c.pivot);
+  assert.deepEqual([...new Set(pivots)], E.benchOf(start, 0));
+});
+
+test("a replacement sent in is fresh, fires its entry ability and leaves the old state untouched", () => {
+  const { state } = E.newBattle(D, position("intimidate-white-herb"));
+  const before = JSON.stringify(state);
+  const bench = E.benchOf(state, 0);
+  const incineroarSlot = slotOf(state, 0, "Incineroar");
+  const out = E.sendIn(D, state, 0, incineroarSlot, bench[0]);
+  assert.equal(JSON.stringify(state), before, "sendIn works on a copy");
+  const inn = out.state.sides[0].mons[bench[0]];
+  assert.equal(out.state.sides[0].active[incineroarSlot], bench[0]);
+  assert.equal(inn.fresh, true);
+  assert.equal(inn.protectCount, 0);
+  assert.equal(out.log[0].t, "switchin");
+  assert.equal(out.log[0].text, `${inn.form} was sent in`);
+  // An Intimidate user re-entering lowers both foes' Attack.
+  const back = E.sendIn(D, out.state, 0, incineroarSlot, state.sides[0].active[incineroarSlot]);
+  assert.ok(back.log.some((e) => e.t === "ability" && e.text.includes("Intimidate")));
+});
+
+test("Mega Evolution keeps HP, takes the Mega form's stats, types and ability, and spends the side's Mega", () => {
+  const { state } = E.newBattle(D, position("mega-choice"));
+  const plans = E.jointPlans(D, state, 0).filter(([a, b]) => (a && a.mega) || (b && b.mega));
+  assert.ok(plans.length > 0);
+  const [plan] = plans;
+  const slot = plan[0] && plan[0].mega ? 0 : 1;
+  const megaMon = state.sides[0].mons[state.sides[0].active[slot]];
+  megaMon.hp = Math.floor(megaMon.maxhp * 0.6);
+  const r = E.resolveTurn(D, state, [plan, E.jointPlans(D, state, 1)[0]], 2);
+  const after = r.state.sides[0].mons[state.sides[0].active[slot]];
+  const target = D.items[megaMon.item].mega, sp = D.species[target];
+  assert.ok(r.log.some((e) => e.t === "mega" && e.text === `${megaMon.species} Mega Evolved into ${target} (${sp.abilities[0]})`));
+  assert.equal(after.form, target);
+  assert.equal(after.isMega, true);
+  assert.deepEqual(after.types, sp.types);
+  assert.equal(after.ability, sp.abilities[0]);
+  assert.equal(after.maxhp, megaMon.maxhp);
+  assert.equal(after.stats.hp, megaMon.maxhp);
+  const megaStats = E.calcStats(sp.base_stats, megaMon.sp, megaMon.nature);
+  for (const s of ["atk", "def", "spa", "spd", "spe"]) assert.equal(after.stats[s], megaStats[s], s);
+  assert.equal(r.state.sides[0].megaUsed, true);
+  assert.ok(E.jointPlans(D, r.state, 0).every(([a, b]) => !(a && a.mega) && !(b && b.mega)), "no second Mega");
+});
