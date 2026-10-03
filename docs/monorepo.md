@@ -12,7 +12,7 @@ and copied the same tooling into every repository.
 | Every test on every change | `scripts/changed.py` maps the diff to the visuals it touches; CI runs one job per touched visual, plus one fast repository-wide job. A change to shared tooling runs every visual. |
 | One visual's tests affecting another's | Each visual's checks run in their own job, from its folder, on a sparse checkout holding only the shared tooling and that folder, so a test that reads another visual's folder fails. Type checks run one `tsc` project per visual. |
 | Merge conflicts between parallel changes | Nothing shared lists the visuals. A visual is added or changed inside its folder only; the catalogue, gallery and any combined list are generated from the folders and never committed. |
-| Mechanical steps done by agents | No ports, pins or manifest entries: the site builds every visual straight from this repository. What remains mechanical runs in CI. |
+| Mechanical steps done by agents | No ports, pins or manifest entries: the site builds every visual straight from this repository. What remains mechanical runs in CI (below). |
 
 ## Layout
 
@@ -72,6 +72,20 @@ and `build/index.html` (a gallery to browse locally). CI builds both on every ru
 artifact. The site reads the folders' `visual.json` itself, so nothing generated is committed and no pull
 request edits a list another one also edits.
 
+## Mechanical steps CI does
+
+With the ports, pins and catalogue stubs gone, one change still repeats across many folders: the site's
+beamdswitch report template, which every narrated visual carries unchanged (its `beamdswitch.js`, its
+tests' fixture copy, the block its page inlines, and in some tests the template's SHA-256) so that each folder
+stays self-contained. When the site changes `templates/beamdswitch.js`, the "Sync beamdswitch template"
+workflow (`.github/workflows/template.yml`, run by hand with the site branch) runs
+`scripts/sync_template.py`, which replaces the old text and its hash in every file of each visual that
+carries an older copy, and pushes the result to a branch whose pull request CI checks visual by visual. It
+lands before the site's change, whose tests compare the site's template with these copies. The same script
+runs locally, and `--check` lists the visuals that differ. Publishing stays a deploy of the site, which CI
+never does; the site's CI builds against this repository's `main` daily, so a change here that breaks the
+site shows within a day.
+
 ## Importing the visual repositories
 
 Each public `yujieteo/<repo>` is imported with its history: `git filter-repo --to-subdirectory-filter
@@ -106,6 +120,6 @@ are in `e2e/site/`). The combined findings list is generated in CI from the mani
 
 Data-only, documentation-only and mechanical changes take CI only, through a plain pull request. Mechanical
 means moving or copying already-reviewed content without changing its logic, tests or tooling: a
-byte-identical import of a repository's main with its history, a regenerated file, a copied page. Anything
+byte-identical import of a repository's main with its history, a regenerated file, a copied page, a template synced by `scripts/sync_template.py`. Anything
 touching a page's logic, a builder, tests, CI or shared tooling keeps the full no-mistakes pipeline, and so
 does an import that also edits logic, tests or tooling to fit the monorepo. The diff decides.
