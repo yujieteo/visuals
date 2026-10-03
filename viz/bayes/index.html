@@ -473,7 +473,9 @@ table{border-collapse:collapse;font-variant-numeric:tabular-nums}
  * KENT_DATA             Sherman Kent's proposed scale, transcribed from the essay (a proposal, not a measurement).
  * EMPIRICAL_PHRASE_DATA Every individual answer from the "Perceptions of Probability" survey, as published.
  * EXAMPLE_SCENARIOS     Six starting points; the numbers in them are illustrative guesses, not data. */
-(function (root) {
+/* `root` is the page's global object (self), on which each script block publishes its API for the next; a
+   property bag of other blocks' values, so it is typed any. */
+(function (/** @type {any} */ root) {
 "use strict";
 const KENT_DATA = {
   source: {
@@ -578,7 +580,7 @@ const EMPIRICAL_PHRASE_DATA = {
 
 /* Starting points. A probability is either a phrase (its default working value) or a number in percent.
  * These are illustrative guesses for a worked example, not measurements; every one can be edited. */
-const P = (phrase) => ({ phrase }), N = (value) => ({ value });
+const P = (/** @type {string} */ phrase) => ({ phrase }), N = (/** @type {number} */ value) => ({ value });
 const EXAMPLE_SCENARIOS = [
   { id: "restaurant", chip: "Restaurant", hypothesis: "The restaurant wait will be longer than 20 minutes.", prior: P("probably not"),
     evidence: [
@@ -626,19 +628,38 @@ root.BayesData = { KENT_DATA, EMPIRICAL_PHRASE_DATA, EXAMPLE_SCENARIOS };
 <script id="bayes-engine">
 /* The pure core (self.Bayes): phrase calibration, Bayes' rule, rounding, wording, the scenario model,
  * the beamdswitch report and the self-checks. No DOM, storage, clock or network use, so Node can load it. */
-(function (root) {
+/** @typedef {{ group: string, centre: number, lo: number, hi: number, printed: string, via: string }} KentRange */
+/** @typedef {{ n: number, values: number[], median: number, mean: number, q1: number, q3: number, p10: number, p90: number, min: number, max: number, bins: number[] }} Stats */
+/** @typedef {{ key: string, label: string, kent: KentRange | null, survey: Stats | null, possible: boolean, note: string | null }} Phrase */
+/** @typedef {{ value: number, basis: string }} Working */
+/** @typedef {{ kind: "one" | "zero" | "finite", value: number } | { kind: "infinite", value: null }} LikelihoodRatio */
+/** @typedef {{ status: "ok" | "undetermined", reason: string | null, prior: number, posterior: number | null, lr: LikelihoodRatio }} Update */
+/** @typedef {Update | { status: "blocked", reason: string, prior: null, posterior: null, lr: null }} Step */
+/** @typedef {{ label: string, lo: number | null, hi: number | null }} Custom */
+/** @typedef {{ phrase: string | null, custom: Custom | null, value: number | null }} Input */
+/** @typedef {{ v: number, lo: number, hi: number, label: string | null, kind: "phrase" | "custom" | "number", chosen: boolean, basis: string, defaultValue: number | null, defaultBasis?: string, spanBasis: string | null }} Resolved */
+/** @typedef {{ text: string, a: Input, b: Input }} Evidence */
+/** @typedef {{ v: number, example: string | null, hypothesis: string, prior: Input, evidence: Evidence[], sel: number, showRange: boolean }} Scenario */
+/** @typedef {{ lo: number | null, hi: number | null }} PosteriorRange */
+/** @typedef {{ name: string, ok: boolean }} Check */
+/** @typedef {{ id: string, chip: string, hypothesis: string, prior: object, note?: string, evidence: { text: string, a: object, b: object }[] }} Example */
+(function (/** @type {any} */ root) {
 "use strict";
 const D = root.BayesData;
-const isNum = (x) => typeof x === "number" && Number.isFinite(x);
+const isNum = (/** @type {unknown} */ x) => typeof x === "number" && Number.isFinite(x);
+/** @param {number} x @param {number} lo @param {number} hi */
 const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
+/** @param {object} o @param {string} k */
 const own = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
 
 /* ---------- survey statistics, computed from the embedded answers ---------- */
 /* Quantile by linear interpolation between ordered answers (R's default, type 7). */
+/** @param {number[]} sorted @param {number} q */
 function quantile(sorted, q) {
   const h = (sorted.length - 1) * q, i = Math.floor(h);
   return i + 1 < sorted.length ? sorted[i] + (h - i) * (sorted[i + 1] - sorted[i]) : sorted[i];
 }
+/** @param {number[]} values @returns {Stats} */
 function stats(values) {
   const s = [...values].sort((x, y) => x - y), bins = Array(10).fill(0);
   for (const v of s) bins[Math.min(9, Math.floor(v / 10))]++;
@@ -647,25 +668,28 @@ function stats(values) {
 }
 
 /* ---------- the merged vocabulary ---------- */
-const norm = (t) => String(t ?? "").toLowerCase().replace(/\.{3}|…/g, " … ").replace(/[“”"'‘’.,!?;:()[\]]/g, " ").replace(/\s+/g, " ").trim();
+const norm = (/** @type {unknown} */ t) => String(t ?? "").toLowerCase().replace(/\.{3}|…/g, " … ").replace(/[“”"'‘’.,!?;:()[\]]/g, " ").replace(/\s+/g, " ").trim();
+/** @type {Map<string, Phrase>} */
 const PHRASES = new Map();
+/** @param {string} label */
 const entry = (label) => {
   const key = norm(label);
   if (!PHRASES.has(key)) PHRASES.set(key, { key, label: key, kent: null, survey: null, possible: false, note: null });
-  return PHRASES.get(key);
+  return /** @type {Phrase} */ (PHRASES.get(key));
 };
 for (const k of D.KENT_DATA.scale) {
   const r = { group: k.phrase, centre: k.centre, lo: k.centre - k.giveOrTake, hi: k.centre + k.giveOrTake, printed: k.printed };
   entry(k.phrase).kent = { ...r, via: "chart" };
   for (const syn of D.KENT_DATA.synonyms[k.phrase] || []) entry(syn).kent = { ...r, via: "synonym" };
 }
-for (const [form, group] of Object.entries(D.KENT_DATA.textForms)) entry(form).kent = { ...PHRASES.get(group).kent, via: "text" };
+for (const [form, group] of Object.entries(D.KENT_DATA.textForms)) entry(form).kent = { .../** @type {KentRange} */ (/** @type {Phrase} */ (PHRASES.get(group)).kent), via: "text" };
 for (const e of D.KENT_DATA.endpoints) entry(e.phrase).kent = { group: e.phrase, centre: e.value, lo: e.value, hi: e.value, printed: e.printed, via: "endpoint" };
 for (const p of D.KENT_DATA.possible) entry(p).possible = true;
 for (const [k, n] of Object.entries(D.KENT_DATA.notes)) entry(k).note = n;
 for (const [label, values] of D.EMPIRICAL_PHRASE_DATA.columns) entry(label).survey = stats(values);
 
 /* The default working value, in the order: survey median, then the middle of Kent's range (his reference point). */
+/** @param {Phrase | null | undefined} ph @returns {Working | null} */
 function working(ph) {
   if (!ph) return null;
   if (ph.survey) return { value: ph.survey.median, basis: "median survey answer" };
@@ -674,23 +698,25 @@ function working(ph) {
   return null;
 }
 /* The interval a phrase stands for, for range propagation: the middle half of survey answers, else Kent's range. */
+/** @param {Phrase | null | undefined} ph */
 function span(ph) {
   if (!ph) return null;
   if (ph.survey) return { lo: ph.survey.q1, hi: ph.survey.q3, basis: "middle half of survey answers" };
   if (ph.kent) return { lo: ph.kent.lo, hi: ph.kent.hi, basis: "Kent's range" };
   return null;
 }
-const numbered = (ph) => !!(ph && (ph.kent || ph.survey));
+const numbered = (/** @type {Phrase | null | undefined} */ ph) => !!(ph && (ph.kent || ph.survey));
 const LIST = [...PHRASES.values()].sort((x, y) => {
   const a = working(x), b = working(y);
   if (!a || !b) return a ? -1 : b ? 1 : x.key.localeCompare(y.key);
   return a.value - b.value || x.key.localeCompare(y.key);
 });
-const lookup = (text) => PHRASES.get(norm(text)) || null;
+const lookup = (/** @type {unknown} */ text) => PHRASES.get(norm(text)) || null;
 
 /* Suggestions for an unknown phrase: shared words first, then shared letter triples. A suggestion is only a
  * pointer to a calibrated phrase; the unknown phrase itself never receives calibration. */
-const grams = (s) => { const t = ` ${s} `, g = new Set(); for (let i = 0; i + 3 <= t.length; i++) g.add(t.slice(i, i + 3)); return g; };
+const grams = (/** @type {string} */ s) => { const t = ` ${s} `, /** @type {Set<string>} */ g = new Set(); for (let i = 0; i + 3 <= t.length; i++) g.add(t.slice(i, i + 3)); return g; };
+/** @param {unknown} text */
 function suggest(text, k = 3) {
   const q = norm(text);
   if (!q) return [];
@@ -706,7 +732,9 @@ function suggest(text, k = 3) {
 /* ---------- Bayes' rule ---------- */
 /* p = prior, a = P(E | H), b = P(E | not H), all in [0, 1]. The direct form a·p / (a·p + b·(1 − p)) is exact
  * for these inputs; the cases where it would divide by zero are reported instead of producing NaN. */
+/** @param {number} p @param {number} a @param {number} b @returns {Update} */
 function update(p, a, b) {
+  /** @type {LikelihoodRatio} */
   const lr = a === b ? { kind: "one", value: 1 } : b === 0 ? { kind: "infinite", value: null } : a === 0 ? { kind: "zero", value: 0 } : { kind: "finite", value: a / b };
   const den = a * p + b * (1 - p);
   if (den === 0) {
@@ -718,7 +746,9 @@ function update(p, a, b) {
   return { status: "ok", reason: null, prior: p, posterior, lr };
 }
 /* Each posterior becomes exactly the next prior. After an undetermined step the rest cannot be computed. */
+/** @param {number | null} p0 @param {{ a: number, b: number }[]} steps */
 function chain(p0, steps) {
+  /** @type {Step[]} */
   const out = [];
   let p = p0;
   for (const s of steps) {
@@ -732,41 +762,46 @@ function chain(p0, steps) {
 /* Range propagation. The posterior rises with the prior and with P(E|H) and falls with P(E|not H), so the low
  * end uses every low prior and P(E|H) with every high P(E|not H), and the high end the reverse. Both ends are
  * computed through the full formula, step by step, never by interpolating in probability. */
+/** @param {{ lo: number, hi: number }} prior @param {{ a: { lo: number, hi: number }, b: { lo: number, hi: number } }[]} steps @returns {PosteriorRange[]} */
 function propagate(prior, steps) {
   const low = chain(prior.lo, steps.map((s) => ({ a: s.a.lo, b: s.b.hi })));
   const high = chain(prior.hi, steps.map((s) => ({ a: s.a.hi, b: s.b.lo })));
   return low.map((l, i) => ({ lo: l.posterior, hi: high[i].posterior }));
 }
 /* Odds for display, from a probability; certain and impossible are named rather than divided by zero. */
+/** @param {number | null} p */
 function odds(p) {
   if (p === null) return { value: null, text: "—" };
   if (p >= 1) return { value: null, text: "1 : 0 (certain)" };
   if (p <= 0) return { value: 0, text: "0 : 1 (ruled out)" };
   return { value: p / (1 - p), text: ratio(p / (1 - p)) };
 }
-const sig = (x) => (x < 10 ? String(Math.round(x * 10) / 10) : Math.round(x).toLocaleString("en-GB"));
+const sig = (/** @type {number} */ x) => (x < 10 ? String(Math.round(x * 10) / 10) : Math.round(x).toLocaleString("en-GB"));
 /* A small whole-number ratio when one fits within 0.5%, such as 2 : 3; otherwise x : 1 or 1 : x. */
+/** @param {number} o */
 function ratio(o) {
   for (let n = 1; n <= 12; n++) { const m = Math.round(o * n); if (m >= 1 && m <= 99 && Math.abs(m / n - o) / o < 0.005) return `${m} : ${n}`; }
   return o >= 1 ? `${sig(o)} : 1` : `1 : ${sig(1 / o)}`;
 }
-const times = (x) => (x < 1.1 ? x.toFixed(2) : sig(x)) + "×";
+const times = (/** @type {number} */ x) => (x < 1.1 ? x.toFixed(2) : sig(x)) + "×";
 
 /* ---------- rounding and wording ---------- */
 /* Approximate display: whole percent, with the ends shown as <1% and >99% unless exactly 0 or 1. */
+/** @param {number | null | undefined} x */
 function pct(x) {
-  if (!isNum(x)) return "—";
+  if (typeof x !== "number" || !isNum(x)) return "—";
   if (x <= 0) return "0%";
   if (x >= 1) return "100%";
   const r = x * 100;
   return r < 1 ? "<1%" : r > 99 ? ">99%" : `${Math.round(r)}%`;
 }
-const approx = (x) => (isNum(x) && x > 0 && x < 1 && x * 100 >= 1 && x * 100 <= 99 ? `≈${pct(x)}` : pct(x));
+const approx = (/** @type {number | null | undefined} */ x) => (typeof x === "number" && isNum(x) && x > 0 && x < 1 && x * 100 >= 1 && x * 100 <= 99 ? `≈${pct(x)}` : pct(x));
 /* An entered value, as typed: up to one decimal. */
-const entered = (v) => `${Math.round(v * 10) / 10}%`;
+const entered = (/** @type {number} */ v) => `${Math.round(v * 10) / 10}%`;
 /* Natural frequency for understanding: "about 7 in 10" when that is close, else in 100 or 1,000. */
+/** @param {number | null | undefined} x */
 function natural(x) {
-  if (!isNum(x)) return "";
+  if (typeof x !== "number" || !isNum(x)) return "";
   if (x <= 0) return "0 in 100";
   if (x >= 1) return "100 in 100";
   const t = Math.round(x * 10);
@@ -779,21 +814,26 @@ function natural(x) {
 }
 /* The survey phrase whose median answer is nearest, as a plain-English gloss of a result (not a calibration). */
 const DESCRIBERS = ["almost no chance", "highly unlikely", "chances are slight", "unlikely", "probably not", "about even", "better than even", "likely", "very good chance", "highly likely", "almost certainly"];
+/** @param {number | null | undefined} x @returns {{ phrase: string, median: number | null } | null} */
 function word(x) {
-  if (!isNum(x)) return null;
+  if (typeof x !== "number" || !isNum(x)) return null;
   if (x <= 0) return { phrase: "ruled out", median: null };
   if (x >= 1) return { phrase: "certain", median: null };
+  /** @type {{ phrase: string, median: number } | null} */
   let best = null;
-  for (const k of DESCRIBERS) { const m = PHRASES.get(k).survey.median; if (!best || Math.abs(m - x * 100) < Math.abs(best.median - x * 100)) best = { phrase: k, median: m }; }
+  // Every describer is a survey phrase, so it has survey statistics.
+  for (const k of DESCRIBERS) { const m = /** @type {Stats} */ (/** @type {Phrase} */ (PHRASES.get(k)).survey).median; if (!best || Math.abs(m - x * 100) < Math.abs(best.median - x * 100)) best = { phrase: k, median: m }; }
   return best;
 }
 /* How far the evidence leans. These thresholds are interface wording, not scientific categories:
  * a ratio within 1.1× either way "tells you very little"; up to 2× "slightly"; up to 5× "clearly";
  * up to 20× "strongly"; beyond that "very strongly". */
+/** @param {number} lr */
 function strength(lr) {
   const r = lr >= 1 ? lr : 1 / lr;
   return r < 1.1 ? "little" : r < 2 ? "slightly" : r < 5 ? "clearly" : r < 20 ? "strongly" : "very strongly";
 }
+/** @param {Step} r */
 function leanText(r) {
   if (!r.lr) return "";
   if (r.lr.kind === "one") return "Equally expected either way";
@@ -802,28 +842,32 @@ function leanText(r) {
   const v = r.lr.value;
   return v >= 1 ? `About ${times(v)} more expected if the hypothesis is true` : `About ${times(1 / v)} more expected if the hypothesis is false`;
 }
+/** @type {Record<string, string>} */
 const REASONS = {
   "impossible-both": "You said this evidence could not appear whether the hypothesis is true or false, yet you saw it. These assumptions cannot determine an update: raise at least one of the two evidence estimates above 0%.",
   "prior-zero-ruled-out": "Your estimate before this evidence was 0%, and you said the evidence could not appear if the hypothesis were false. The two contradict each other, so these assumptions cannot determine an update.",
   "prior-one-ruled-out": "Your estimate before this evidence was 100%, and you said the evidence could not appear if the hypothesis were true. The two contradict each other, so these assumptions cannot determine an update.",
   "earlier": "An earlier step could not be determined, so this one cannot be computed either."
 };
+/** @param {Step} r */
 function explain(r) {
-  if (r.status !== "ok") return REASONS[r.reason];
+  if (r.status !== "ok") return REASONS[/** @type {string} */ (r.reason)];
   const p = r.prior, k = r.lr.kind;
   if (k === "one") return "This evidence does not favour either possibility, so your probability stays the same.";
   if (p === 0) return "Your estimate was 0%, which rules the hypothesis out completely, so no evidence can raise it in this calculation. If you are not truly certain, try a small number such as 1%.";
   if (p === 1) return "Your estimate was 100%, which rules the alternative out completely, so no evidence can lower it in this calculation. If you are not truly certain, try a large number such as 99%.";
   if (k === "infinite") return "By your estimates this evidence could not appear if the hypothesis were false, so it rules the alternative out and the update gives 100%.";
   if (k === "zero") return "By your estimates this evidence could not appear if the hypothesis were true, so it rules the hypothesis out and the update gives 0%.";
-  const s = strength(r.lr.value);
+  // Every other kind has returned above: the ratio is finite.
+  const v = /** @type {number} */ (r.lr.value), s = strength(v);
   if (s === "little") return "This evidence is about equally expected either way, so it tells you very little.";
-  if (r.lr.value > 1) return `This evidence favours the hypothesis ${s}: it is more expected if the hypothesis is true, so your estimate moves ${s === "slightly" ? "up a little" : s === "clearly" ? "upward" : "substantially upward"}.`;
+  if (v > 1) return `This evidence favours the hypothesis ${s}: it is more expected if the hypothesis is true, so your estimate moves ${s === "slightly" ? "up a little" : s === "clearly" ? "upward" : "substantially upward"}.`;
   return `This evidence favours the alternative ${s}: it is more expected if the hypothesis is false, so your estimate moves ${s === "slightly" ? "down a little" : s === "clearly" ? "downward" : "substantially downward"}.`;
 }
 /* Imagine N cases like this one: the natural-frequency version of the same update. Counts are rounded. */
+/** @param {number} p @param {number} a @param {number} b */
 function tree(p, a, b) {
-  const whole = (x) => Math.abs(x * 100 - Math.round(x * 100)) < 1e-9, N = whole(p) && whole(p * a) && whole((1 - p) * b) ? 100 : 1000;
+  const whole = (/** @type {number} */ x) => Math.abs(x * 100 - Math.round(x * 100)) < 1e-9, N = whole(p) && whole(p * a) && whole((1 - p) * b) ? 100 : 1000;
   const h = Math.round(p * N), nh = N - h, eh = Math.round(a * h), enh = Math.round(b * nh);
   return { N, h, nh, eh, enh, seen: eh + enh };
 }
@@ -832,59 +876,72 @@ function tree(p, a, b) {
 /* An input is { phrase, custom, value } in percent. phrase: a calibrated phrase key or null. custom: a phrase the
  * person calibrated themselves ({ label, lo, hi }) or null. value: the working percent, or null to use the
  * phrase's default. */
-const LIMIT = (v) => (isNum(v) ? clamp(v, 0, 100) : null);
+const LIMIT = (/** @type {unknown} */ v) => (typeof v === "number" && isNum(v) ? clamp(v, 0, 100) : null);
+/** @param {any} x an input from storage, a tool or a scenario, untrusted: every field is checked here @returns {Input} */
 function cleanInput(x) {
   const o = x && typeof x === "object" ? x : {};
   const ph = typeof o.phrase === "string" ? lookup(o.phrase) : null;
   const c = o.custom && typeof o.custom === "object" ? o.custom : null;
   const custom = c ? { label: String(c.label ?? "").slice(0, 80), lo: LIMIT(c.lo), hi: LIMIT(c.hi) } : null;
-  const input = { phrase: !custom && numbered(ph) ? ph.key : null, custom, value: LIMIT(o.value) };
+  /** @type {Input} */
+  const input = { phrase: !custom && ph && numbered(ph) ? ph.key : null, custom, value: LIMIT(o.value) };
   if (input.value === null && !input.phrase) input.value = 50;
   return input;
 }
 /* Resolve an input to fractions for the maths, with its interval and a disclosed basis. */
+/** @param {unknown} input @returns {Resolved} */
 function resolve(input) {
   const i = cleanInput(input), ph = i.phrase ? PHRASES.get(i.phrase) : null;
   if (ph) {
-    const w = working(ph), sp = span(ph), v = i.value ?? w.value;
+    // cleanInput keeps only numbered phrases, which always have a working value and a span.
+    const w = /** @type {Working} */ (working(ph)), sp = /** @type {NonNullable<ReturnType<typeof span>>} */ (span(ph)), v = i.value ?? w.value;
     return { v: v / 100, lo: Math.min(sp.lo, v) / 100, hi: Math.max(sp.hi, v) / 100, label: ph.label, kind: "phrase", chosen: i.value !== null,
       basis: i.value !== null ? "your choice" : w.basis, defaultValue: w.value, defaultBasis: w.basis, spanBasis: sp.basis };
   }
+  // Without a phrase, cleanInput always sets a value.
   if (i.custom) {
-    const v = i.value, lo = i.custom.lo ?? v, hi = i.custom.hi ?? v;
+    const v = /** @type {number} */ (i.value), lo = i.custom.lo ?? v, hi = i.custom.hi ?? v;
     return { v: v / 100, lo: Math.min(lo, hi, v) / 100, hi: Math.max(lo, hi, v) / 100, label: i.custom.label || "your phrase", kind: "custom", chosen: true, basis: "your calibration", defaultValue: null, spanBasis: "your range" };
   }
-  return { v: i.value / 100, lo: i.value / 100, hi: i.value / 100, label: null, kind: "number", chosen: true, basis: "your number", defaultValue: null, spanBasis: null };
+  const n = /** @type {number} */ (i.value);
+  return { v: n / 100, lo: n / 100, hi: n / 100, label: null, kind: "number", chosen: true, basis: "your number", defaultValue: null, spanBasis: null };
 }
 /* How an input reads: "likely — interpreted here as 70% (median survey answer)". */
+/** @param {Resolved} r */
 function inputText(r) {
   const n = entered(r.v * 100);
   if (r.kind === "number") return n;
   return `${r.label} — interpreted here as ${n} (${r.basis})`;
 }
 
-const scenarioIds = D.EXAMPLE_SCENARIOS.map((s) => s.id);
+/** @type {Example[]} */
+const EXAMPLES = D.EXAMPLE_SCENARIOS;
+const scenarioIds = EXAMPLES.map((s) => s.id);
+/** @param {string} id @returns {Scenario} */
 function fromExample(id) {
-  const s = D.EXAMPLE_SCENARIOS.find((x) => x.id === id) || D.EXAMPLE_SCENARIOS[0];
+  const s = EXAMPLES.find((x) => x.id === id) || EXAMPLES[0];
   return { v: 1, example: s.id, hypothesis: s.hypothesis, prior: cleanInput(s.prior), evidence: [{ text: s.evidence[0].text, a: cleanInput(s.evidence[0].a), b: cleanInput(s.evidence[0].b) }], sel: 0, showRange: false };
 }
 const defaults = () => fromExample("restaurant");
 const MAX_EVIDENCE = 12;
 /* Sanitise a scenario, such as one read back from storage. Anything unusable falls back to the default. */
+/** @param {any} raw a scenario read back from storage or given to a tool, untrusted: every field is checked here @returns {Scenario} */
 function clean(raw) {
   if (!raw || typeof raw !== "object") return defaults();
   const o = raw, d = defaults();
-  const ev = Array.isArray(o.evidence) ? o.evidence.slice(0, MAX_EVIDENCE).map((e) => ({ text: String(e?.text ?? "").slice(0, 300), a: cleanInput(e?.a), b: cleanInput(e?.b) })) : d.evidence;
+  const ev = Array.isArray(o.evidence) ? o.evidence.slice(0, MAX_EVIDENCE).map((/** @type {any} */ e) => ({ text: String(e?.text ?? "").slice(0, 300), a: cleanInput(e?.a), b: cleanInput(e?.b) })) : d.evidence;
   return { v: 1, example: scenarioIds.includes(o.example) ? o.example : null, hypothesis: typeof o.hypothesis === "string" ? o.hypothesis.slice(0, 300) : d.hypothesis,
     prior: o.prior ? cleanInput(o.prior) : d.prior, evidence: ev, sel: clamp(Number.isInteger(o.sel) ? o.sel : ev.length - 1, 0, Math.max(0, ev.length - 1)), showRange: o.showRange === true };
 }
+/** @param {Scenario} s */
 function suggestions(s) {
-  const ex = D.EXAMPLE_SCENARIOS.find((x) => x.id === s.example);
+  const ex = EXAMPLES.find((x) => x.id === s.example);
   if (!ex) return [];
   const have = new Set(s.evidence.map((e) => e.text));
   return ex.evidence.filter((e) => !have.has(e.text)).map((e) => ({ text: e.text, a: cleanInput(e.a), b: cleanInput(e.b) }));
 }
 /* Everything the page shows, computed from a scenario. */
+/** @param {unknown} state */
 function evaluate(state) {
   const s = clean(state), prior = resolve(s.prior), ev = s.evidence.map((e) => ({ text: e.text, a: resolve(e.a), b: resolve(e.b) }));
   const steps = chain(prior.v, ev.map((e) => ({ a: e.a.v, b: e.b.v })));
@@ -896,28 +953,29 @@ function evaluate(state) {
 }
 /* The probability-language rows as static HTML, for the page without JavaScript (a test keeps it in step). */
 function staticRows() {
-  const pos = (v) => `${Math.round(v * 10) / 10}%`;
+  const pos = (/** @type {number} */ v) => `${Math.round(v * 10) / 10}%`;
   return LIST.filter(numbered).map((ph) => {
     const k = ph.kent, sv = ph.survey;
     const kent = k ? (k.lo === k.hi ? `${k.centre}%` : `${k.lo}–${k.hi}%`) + (k.via === "chart" ? "" : k.via === "endpoint" ? " (end of scale)" : ` (as “${k.group}”)`) : "not listed";
     const surv = sv ? `${pos(sv.median)} (middle half ${pos(sv.q1)}–${pos(sv.q3)}, n = ${sv.n})` : "not asked";
-    const bar = (lo, hi, cls) => `<span class="${cls}" style="left:${lo}%;width:${Math.max(hi - lo, 0.6)}%"></span>`;
+    const bar = (/** @type {number} */ lo, /** @type {number} */ hi, /** @type {string} */ cls) => `<span class="${cls}" style="left:${lo}%;width:${Math.max(hi - lo, 0.6)}%"></span>`;
     return `<tr><th scope="row">${ph.label}</th><td>${kent}</td><td>${surv}</td><td class="sbar-cell" aria-hidden="true"><span class="sbar">${k ? bar(k.lo, k.hi, "sk") : ""}${sv ? bar(sv.q1, sv.q3, "ss") : ""}</span></td></tr>`;
   }).join("\n");
 }
 
 /* ---------- beamdswitch report ---------- */
-const speakPct = (x) => {
-  if (!isNum(x)) return "undetermined";
+const speakPct = (/** @type {number | null | undefined} */ x) => {
+  if (typeof x !== "number" || !isNum(x)) return "undetermined";
   if (x <= 0) return "zero percent";
   if (x >= 1) return "one hundred percent";
   const r = x * 100;
   return r < 1 ? "less than one percent" : r > 99 ? "more than 99 percent" : `about ${Math.round(r)} percent`;
 };
 /* User text goes into the deck as plain words: no Markdown, maths or symbols that beamdswitch would read. */
-const plain = (t) => String(t ?? "").replace(/%/g, " percent").replace(/&/g, " and ").replace(/[$\\`*_#|<>×≈⁰¹²³⁴⁵⁶⁷⁸⁹⁻:]/g, " ").replace(/\s+/g, " ").trim();
-const spokenInput = (r) => (r.kind === "number" ? `${plain(entered(r.v * 100))}` : `${plain(r.label)}, taken as ${plain(entered(r.v * 100))}`);
-const bodyInput = (r) => (r.kind === "number" ? entered(r.v * 100) : `${plain(r.label)} (${entered(r.v * 100)}, ${r.basis})`);
+const plain = (/** @type {unknown} */ t) => String(t ?? "").replace(/%/g, " percent").replace(/&/g, " and ").replace(/[$\\`*_#|<>×≈⁰¹²³⁴⁵⁶⁷⁸⁹⁻:]/g, " ").replace(/\s+/g, " ").trim();
+const spokenInput = (/** @type {Resolved} */ r) => (r.kind === "number" ? `${plain(entered(r.v * 100))}` : `${plain(r.label)}, taken as ${plain(entered(r.v * 100))}`);
+const bodyInput = (/** @type {Resolved} */ r) => (r.kind === "number" ? entered(r.v * 100) : `${plain(r.label)} (${entered(r.v * 100)}, ${r.basis})`);
+/** @param {unknown} state @param {{ ok: boolean }[] | null} [checks] */
 function report(state, checks) {
   const e = evaluate(state), hyp = plain(e.s.hypothesis) || "an unnamed hypothesis", n = e.ev.length;
   const steps = e.ev.map((x, i) => ({ x, r: e.steps[i], g: e.ranges[i] }));
@@ -946,8 +1004,8 @@ function report(state, checks) {
     ],
     results,
     checks: [
-      { title: "What the update assumes", body: `- The evidence items are treated as independent; correlated clues would overstate the change\n- The result follows from the estimates entered, not from data${ok !== null ? `\n- In-page self-checks: ${ok} of ${checks.length} passed` : ""}`,
-        narration: `The calculation treats each piece of evidence as independent, so clues that tell you the same thing would overstate the change. The result follows from the estimates entered, not from data.${ok !== null ? ` The page's ${checks.length} self checks: ${ok} of ${checks.length} passed.` : ""}` },
+      { title: "What the update assumes", body: `- The evidence items are treated as independent; correlated clues would overstate the change\n- The result follows from the estimates entered, not from data${ok !== null ? `\n- In-page self-checks: ${ok} of ${checks?.length} passed` : ""}`,
+        narration: `The calculation treats each piece of evidence as independent, so clues that tell you the same thing would overstate the change. The result follows from the estimates entered, not from data.${ok !== null ? ` The page's ${checks?.length} self checks: ${ok} of ${checks?.length} passed.` : ""}` },
       { title: "Takeaway", key: n ? `Given these estimates, ${approx(e.prior.v)} → ${approx(e.final)}${e.final !== null ? ` (${natural(e.final)})` : ""}` : `Starting estimate ${approx(e.prior.v)}`,
         narration: n ? `Given these estimates, the update takes the hypothesis from ${speakPct(e.prior.v)} to ${speakPct(e.final)}.` : `The starting estimate is ${speakPct(e.prior.v)}, with no evidence yet.` }
     ]
@@ -955,14 +1013,17 @@ function report(state, checks) {
 }
 
 /* ---------- self-checks: deterministic numerical cases, reported to the console by the page ---------- */
+/** @returns {Check[]} */
 function selfTest() {
-  const near = (x, y) => Math.abs(x - y) < 1e-12, out = [];
-  const t = (name, ok) => out.push({ name, ok: !!ok });
+  /** @type {Check[]} */
+  const out = [];
+  const near = (/** @type {number | null} */ x, /** @type {number | null} */ y) => Math.abs(/** @type {number} */ (x) - /** @type {number} */ (y)) < 1e-12;
+  const t = (/** @type {string} */ name, /** @type {unknown} */ ok) => out.push({ name, ok: !!ok });
   t("neutral evidence leaves the prior unchanged", [0.03, 0.27, 0.5, 0.9].every((p) => update(p, 0.4, 0.4).posterior === p));
   const s = update(0.5, 0.75, 0.25);
   t("50% prior with likelihood ratio 3 gives 75%", near(s.posterior, 0.75) && s.lr.value === 3 && odds(0.5).text === "1 : 1" && odds(s.posterior).text === "3 : 1");
-  t("strong positive evidence moves up", update(0.2, 0.9, 0.05).posterior > 0.8);
-  t("strong negative evidence moves down", update(0.8, 0.05, 0.9).posterior < 0.2);
+  t("strong positive evidence moves up", /** @type {number} */ (update(0.2, 0.9, 0.05).posterior) > 0.8);
+  t("strong negative evidence moves down", /** @type {number} */ (update(0.8, 0.05, 0.9).posterior) < 0.2);
   t("0% prior stays 0%", update(0, 0.9, 0.1).posterior === 0);
   t("100% prior stays 100%", update(1, 0.1, 0.9).posterior === 1);
   t("zero likelihood under the hypothesis gives 0%", update(0.6, 0, 0.3).posterior === 0 && update(0.6, 0, 0.3).lr.kind === "zero");
@@ -971,9 +1032,9 @@ function selfTest() {
   t("evidence impossible both ways is undetermined", update(0.4, 0, 0).status === "undetermined");
   t("contradictory certainty is undetermined", update(0, 0.5, 0).status === "undetermined" && update(1, 0, 0.5).status === "undetermined");
   const c = chain(0.3, [{ a: 0.7, b: 0.2 }, { a: 0.4, b: 0.6 }]);
-  t("sequential: each posterior is the next prior", c[1].prior === c[0].posterior && near(c[1].posterior, update(update(0.3, 0.7, 0.2).posterior, 0.4, 0.6).posterior));
+  t("sequential: each posterior is the next prior", c[1].prior === c[0].posterior && near(c[1].posterior, update(/** @type {number} */ (update(0.3, 0.7, 0.2).posterior), 0.4, 0.6).posterior));
   const g = propagate({ lo: 0.2, hi: 0.4 }, [{ a: { lo: 0.6, hi: 0.8 }, b: { lo: 0.1, hi: 0.3 } }])[0];
-  t("range ends are computed independently", near(g.lo, update(0.2, 0.6, 0.3).posterior) && near(g.hi, update(0.4, 0.8, 0.1).posterior) && g.lo < update(0.3, 0.7, 0.2).posterior && g.hi > update(0.3, 0.7, 0.2).posterior);
+  t("range ends are computed independently", near(g.lo, update(0.2, 0.6, 0.3).posterior) && near(g.hi, update(0.4, 0.8, 0.1).posterior) && /** @type {number} */ (g.lo) < /** @type {number} */ (update(0.3, 0.7, 0.2).posterior) && /** @type {number} */ (g.hi) > /** @type {number} */ (update(0.3, 0.7, 0.2).posterior));
   t("rounding never shows NaN or Infinity", [0, 1e-9, 0.004, 0.5, 0.996, 1, null, NaN, Infinity].every((x) => !/NaN|Infinity|undefined/.test(pct(x) + approx(x) + natural(x))));
   return out;
 }
@@ -987,14 +1048,19 @@ root.Bayes = { KENT: D.KENT_DATA, SURVEY: D.EMPIRICAL_PHRASE_DATA, SCENARIOS: D.
 (() => {
 "use strict";
 /* The page: state, rendering and events. Every number comes from Bayes (the engine above). */
-const B = self.Bayes, $ = (id) => document.getElementById(id);
-const esc = (t) => String(t ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
-const clampPct = (v) => Math.min(100, Math.max(0, v));
+/** @typedef {HTMLInputElement & { open: boolean }} Control the page's own elements: inputs, details and plain blocks */
+// Every id the script asks for is in the page's markup.
+const B = self.Bayes, $ = (/** @type {string} */ id) => /** @type {Control} */ (document.getElementById(id));
+/** @type {Record<string, string>} */
+const ENTITIES = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
+const esc = (/** @type {unknown} */ t) => String(t ?? "").replace(/[&<>"']/g, (c) => ENTITIES[c]);
+const clampPct = (/** @type {number} */ v) => Math.min(100, Math.max(0, v));
 const reduced = () => { try { return matchMedia("(prefers-reduced-motion: reduce)").matches; } catch { return true; } };
 $("nojs").hidden = true;
 $("app").hidden = false;
 
 /* ---------- self-checks: reported to the console; the page never depends on them ---------- */
+/** @type {Check[]} */
 const CHECKS = B.selfTest(), failed = CHECKS.filter((c) => !c.ok);
 for (const f of failed) console.error(`Bayes self-check failed: ${f.name}`);
 $("selfcheck").textContent = `In-page self-checks: ${CHECKS.length - failed.length} of ${CHECKS.length} passed.`;
@@ -1003,28 +1069,38 @@ $("selfcheck").textContent = `In-page self-checks: ${CHECKS.length - failed.leng
 const KEY = "bayes:scenario";
 const store = {
   get() { try { return JSON.parse(localStorage.getItem(KEY) || "null"); } catch { return null; } },
-  set(v) { try { localStorage.setItem(KEY, JSON.stringify(v)); } catch { /* storage blocked: carry on without it */ } },
+  set(/** @type {unknown} */ v) { try { localStorage.setItem(KEY, JSON.stringify(v)); } catch { /* storage blocked: carry on without it */ } },
   clear() { try { localStorage.removeItem(KEY); } catch { /* storage blocked */ } },
 };
+/** @type {Scenario} */
 let S = B.clean(store.get() || B.defaults());
 const save = () => store.set(S);
+/** @typedef {"prior" | "a" | "b"} FieldId */
+/** @typedef {{ kind: "possible" | "unknown", text: string, sugg: Phrase[] }} Help */
+/** @type {Record<string, Help | null>} */
 const help = { prior: null, a: null, b: null };   // an unknown phrase awaiting a choice, per field
-const clearHelp = (...ids) => { for (const id of ids) help[id] = null; };
+const clearHelp = (/** @type {string[]} */ ...ids) => { for (const id of ids) help[id] = null; };
+/** @type {{ phrase: string, value: number | null, filter: string }} */
 const X = { phrase: "likely", value: null, filter: "all" };   // the phrase explorer
+/** @type {{ run: () => void, from: HTMLElement } | null} */
 let pending = null;   // an action awaiting confirmation
 
-const core = (s) => JSON.stringify({ h: s.hypothesis, p: s.prior, e: s.evidence });
+const core = (/** @type {Scenario} */ s) => JSON.stringify({ h: s.hypothesis, p: s.prior, e: s.evidence });
 const dirty = () => !S.example || core(S) !== core(B.fromExample(S.example));
 const step = () => S.evidence[S.sel] || null;
-const getInput = (id) => (id === "prior" ? S.prior : step()?.[id]);
-function setInput(id, v) { const c = B.cleanInput(v); if (id === "prior") S.prior = c; else if (step()) step()[id] = c; }
+/** @param {string} id @returns {Input | undefined} */
+const getInput = (id) => (id === "prior" ? S.prior : step()?.[/** @type {"a" | "b"} */ (id)]);
+/** @param {string} id @param {object} v */
+function setInput(id, v) { const c = B.cleanInput(v), st = step(); if (id === "prior") S.prior = c; else if (st) st[/** @type {"a" | "b"} */ (id)] = c; }
 
 /* ---------- controls ---------- */
+/** @type {Record<string, { legend: string, hint: string, slider: string }>} */
 const PF = {
   prior: { legend: "Before seeing any evidence, how likely is your hypothesis?", hint: "A phrase such as “unlikely” or “about even”, or a percentage.", slider: "Starting estimate" },
   a: { legend: "If your hypothesis were true, how likely would you be to see this evidence?", hint: "Think only of the world where the hypothesis is true.", slider: "Chance of the evidence if the hypothesis is true" },
   b: { legend: "If your hypothesis were false, how likely would you be to see the same evidence?", hint: "If your guess were wrong, how surprising would this evidence be?", slider: "Chance of the evidence if the hypothesis is false" },
 };
+/** @param {string} id */
 function pfield(id) {
   return `<fieldset class="pf" id="${id}-pf"><legend>${PF[id].legend}</legend><p class="hint" id="${id}-hint">${PF[id].hint}</p>
 <div class="pf-row"><div class="field grow"><label for="${id}-phrase">In words</label><input id="${id}-phrase" type="text" list="phrase-list" autocomplete="off" spellcheck="false" enterkeyhint="done" data-pf-phrase="${id}" aria-describedby="${id}-basis" placeholder="e.g. likely"></div>
@@ -1036,59 +1112,66 @@ function pfield(id) {
 <p class="basis" id="${id}-basis"></p><p class="legend-line" id="${id}-legend"></p><div id="${id}-custom"></div></fieldset>`;
 }
 for (const id of Object.keys(PF)) $(`${id}-slot`).innerHTML = pfield(id);
-$("phrase-list").innerHTML = B.LIST.map((ph) => `<option value="${esc(ph.label)}"></option>`).join("");
-$("examples").innerHTML = B.SCENARIOS.map((s) => `<button type="button" class="chip" data-act="example" data-id="${s.id}" aria-pressed="false">${s.chip}</button>`).join("");
+$("phrase-list").innerHTML = B.LIST.map((/** @type {Phrase} */ ph) => `<option value="${esc(ph.label)}"></option>`).join("");
+$("examples").innerHTML = B.SCENARIOS.map((/** @type {Example} */ s) => `<button type="button" class="chip" data-act="example" data-id="${s.id}" aria-pressed="false">${s.chip}</button>`).join("");
 
 let force = false;
 /* Run a render or commit that also overwrites the focused control, as after an action that replaces its value. */
-const forced = (fn) => { force = true; fn(); force = false; };
-const setVal = (el, v) => { if (el && (force || document.activeElement !== el) && el.value !== String(v)) el.value = v; };
+const forced = (/** @type {() => void} */ fn) => { force = true; fn(); force = false; };
+const setVal = (/** @type {Control | null} */ el, /** @type {string | number} */ v) => { if (el && (force || document.activeElement !== el) && el.value !== String(v)) el.value = String(v); };
 /* Rebuild a block only when its content changes; when that removes the focused control, focus its replacement. */
+/** @param {HTMLElement} el @param {string} html */
 function block(el, html) {
   if (el.dataset.html === html) return;
-  const a = document.activeElement, had = !!a && el.contains(a), key = had ? a.dataset?.focus : null;
+  const a = /** @type {HTMLElement | null} */ (document.activeElement), had = !!a && el.contains(a), key = had ? a?.dataset?.focus : null;
   el.dataset.html = html;
   el.innerHTML = html;
-  if (had && !el.contains(document.activeElement)) (key && el.querySelector(`[data-focus="${key}"]`) || el.querySelector("button,input") || el).focus?.();
+  if (had && !el.contains(document.activeElement)) (/** @type {HTMLElement} */ (key && el.querySelector(`[data-focus="${key}"]`) || el.querySelector("button,input") || el)).focus?.();
 }
 
 /* ---------- small visuals: positions are percentages, so they follow any container width ---------- */
-const P = (v) => `${clampPct(v)}%`;
+const P = (/** @type {number} */ v) => `${clampPct(v)}%`;
+/** @param {Pick<Phrase, "kent"> & Partial<Phrase> | null | undefined} ph */
 function band(ph, extra = "") {
   if (!ph) return `<span class="b-rule"></span>${extra}`;
   const k = ph.kent, sv = ph.survey;
   let h = `<span class="b-rule"></span>`;
   if (k) h += k.lo === k.hi ? `<span class="b-kent pt" style="left:${P(k.lo)}"></span>` : `<span class="b-kent" style="left:${P(k.lo)};width:${P(k.hi - k.lo)}"></span><span class="b-kc" style="left:${P(k.centre)}"></span>`;
   if (sv) {
-    h += sv.values.map((v) => `<span class="b-dot" style="left:${P(v)}"></span>`).join("");
+    h += sv.values.map((/** @type {number} */ v) => `<span class="b-dot" style="left:${P(v)}"></span>`).join("");
     h += `<span class="b-iqr" style="left:${P(sv.q1)};width:${P(Math.max(sv.q3 - sv.q1, 0.6))}"></span><span class="b-med" style="left:${P(sv.median)}"></span>`;
   }
   return h + extra;
 }
-const kentText = (ph) => {
+const kentText = (/** @type {Phrase | null | undefined} */ ph) => {
   const k = ph?.kent;
   if (!k) return ph?.possible ? "Kent: listed as “possible”, with no odds attached" : "Kent: not listed";
   if (k.via === "endpoint") return `Kent: ${k.printed}`;
   return `Kent: ${k.lo}–${k.hi}%${k.via === "chart" ? "" : ` (as “${k.group}”${k.via === "text" ? ", the form Kent uses in his text" : ""})`}`;
 };
-const r1 = (v) => Math.round(v * 10) / 10;
-const surveyText = (ph) => (ph?.survey ? `Survey: median ${r1(ph.survey.median)}%, middle half ${r1(ph.survey.q1)}–${r1(ph.survey.q3)}% (${ph.survey.n} people)` : "Survey: not asked");
+const r1 = (/** @type {number} */ v) => Math.round(v * 10) / 10;
+const surveyText = (/** @type {Phrase | null | undefined} */ ph) => (ph?.survey ? `Survey: median ${r1(ph.survey.median)}%, middle half ${r1(ph.survey.q1)}–${r1(ph.survey.q3)}% (${ph.survey.n} people)` : "Survey: not asked");
 
 /* ---------- render ---------- */
+/** @param {string} id */
 function renderField(id) {
   const inp = getInput(id);
   if (!inp) return;
-  const r = B.resolve(inp), ph = inp.phrase ? B.PHRASES.get(inp.phrase) : null, h = help[id];
+  /** @type {Resolved} */
+  const r = B.resolve(inp);
+  /** @type {Phrase | null} */
+  const ph = inp.phrase ? B.PHRASES.get(inp.phrase) : null, h = help[id];
   setVal($(`${id}-phrase`), h ? $(`${id}-phrase`).value : ph ? ph.label : inp.custom ? inp.custom.label : "");
   setVal($(`${id}-num`), r1(r.v * 100));
   const range = $(`${id}-range`);
   setVal(range, Math.round(r.v * 100));
   const name = r.kind === "number" ? "your number" : r.label;
   range.setAttribute("aria-valuetext", `${name}: ${B.entered(r.v * 100)}${ph ? `. ${kentText(ph)}. ${surveyText(ph)}` : ""}`);
-  block($(`${id}-band`), band(ph, inp.custom && inp.custom.lo !== null && inp.custom.hi !== null ? `<span class="b-own" style="left:${P(Math.min(inp.custom.lo, inp.custom.hi))};width:${P(Math.abs(inp.custom.hi - inp.custom.lo))}"></span>` : ""));
+  const own = inp.custom, ownLo = own?.lo ?? null, ownHi = own?.hi ?? null;
+  block($(`${id}-band`), band(ph, ownLo !== null && ownHi !== null ? `<span class="b-own" style="left:${P(Math.min(ownLo, ownHi))};width:${P(Math.abs(ownHi - ownLo))}"></span>` : ""));
   let basis;
   if (r.kind === "phrase" && !r.chosen) basis = `Using ${B.approx(r.v)} as the working estimate (${r.basis}). Drag or type to choose what you mean.`;
-  else if (r.kind === "phrase") basis = `${esc(r.label)} — interpreted here as ${B.entered(r.v * 100)} (your choice). <button type="button" class="link" data-act="reset-value" data-pf="${id}" data-focus="rv-${id}">Use ${B.approx(r.defaultValue / 100)} (${r.defaultBasis})</button>`;
+  else if (r.kind === "phrase") basis = `${esc(r.label)} — interpreted here as ${B.entered(r.v * 100)} (your choice). <button type="button" class="link" data-act="reset-value" data-pf="${id}" data-focus="rv-${id}">Use ${B.approx(/** @type {number} */ (r.defaultValue) / 100)} (${r.defaultBasis})</button>`;
   else if (r.kind === "custom") basis = `${esc(r.label)} — interpreted here as ${B.entered(r.v * 100)}. <span class="tag">Your calibration</span>`;
   else basis = `Your number: ${B.entered(r.v * 100)}.`;
   block($(`${id}-basis`), basis);
@@ -1102,17 +1185,20 @@ function renderField(id) {
     const t = esc(h.text);
     block(hp, (h.kind === "possible" ? `<p>Kent lists “${t}” among words of possibility with <b>no odds attached</b>, and the survey did not ask about it, so there is nothing to calibrate it against.</p>`
       : `<p>“${t}” is not in Kent's scale or the survey, so it has no calibration.${h.sugg.length ? " Did you mean:" : ""}</p>`)
-      + `<div class="chips">${(h.kind === "possible" ? [] : h.sugg).map((p) => `<button type="button" class="chip" data-act="pick" data-pf="${id}" data-ph="${esc(p.key)}">${esc(p.label)}${B.numbered(p) ? "" : " (no odds)"}</button>`).join("")}`
+      + `<div class="chips">${(h.kind === "possible" ? [] : h.sugg).map((/** @type {Phrase} */ p) => `<button type="button" class="chip" data-act="pick" data-pf="${id}" data-ph="${esc(p.key)}">${esc(p.label)}${B.numbered(p) ? "" : " (no odds)"}</button>`).join("")}`
       + `<button type="button" class="chip own-btn" data-act="own" data-pf="${id}">Use my own meaning</button></div>`);
   }
 }
 
+/** @typedef {{ s: Scenario, prior: Resolved, ev: { text: string, a: Resolved, b: Resolved }[], steps: Step[], ranges: PosteriorRange[], ambiguous: boolean, final: number | null, finalRange: PosteriorRange }} Evaluation */
 function render() {
+  /** @type {Evaluation} */
   const E = B.evaluate(S);
   S = E.s;
   setVal($("hyp"), S.hypothesis);
-  for (const b of document.querySelectorAll('[data-act="example"]')) b.setAttribute("aria-pressed", String(b.dataset.id === S.example && !dirty()));
-  const ex = B.SCENARIOS.find((x) => x.id === S.example);
+  for (const b of document.querySelectorAll(/** @type {"button"} */ ('[data-act="example"]'))) b.setAttribute("aria-pressed", String(b.dataset.id === S.example && !dirty()));
+  /** @type {Example | undefined} */
+  const ex = B.SCENARIOS.find((/** @type {Example} */ x) => x.id === S.example);
   $("scn-note").textContent = ex?.note || "";
   $("scn-note").hidden = !ex?.note;
   renderField("prior");
@@ -1129,18 +1215,18 @@ function render() {
   }
 
   /* before → after */
-  const r = st ? E.steps[S.sel] : null, before = st ? r.prior : E.prior.v, after = st ? r.posterior : null;
+  const r = st ? E.steps[S.sel] : null, before = r ? r.prior : E.prior.v, after = r ? r.posterior : null;
   $("r-step").textContent = st ? `${n > 1 ? `Evidence ${S.sel + 1}: ` : ""}${S.evidence[S.sel].text || "(no description yet)"}` : "No evidence yet: add some below.";
   $("r-before").textContent = B.approx(before);
   $("r-before-label").textContent = st && S.sel > 0 ? `Before (after evidence ${S.sel})` : "Before";
   const wb = B.word(before), wa = B.word(after);
   $("r-before-w").textContent = wordText(wb);
   $("r-before-n").textContent = B.natural(before);
-  $("r-lean").textContent = st ? (r.status === "ok" ? B.leanText(r) : "Cannot be determined") : "—";
+  $("r-lean").textContent = r ? (r.status === "ok" ? B.leanText(r) : "Cannot be determined") : "—";
   $("r-after").textContent = st ? B.approx(after) : "—";
   $("r-after-w").textContent = st ? wordText(wa) : "";
   $("r-after-n").textContent = st ? B.natural(after) : "";
-  $("r-explain").textContent = st ? (r.status === "ok" ? `Given the estimates you entered, the update gives ${B.approx(after)}. ${B.explain(r)}` : B.explain(r)) : "";
+  $("r-explain").textContent = r ? (r.status === "ok" ? `Given the estimates you entered, the update gives ${B.approx(after)}. ${B.explain(r)}` : B.explain(r)) : "";
   $("r-overall").hidden = !(st && S.sel < n - 1);
   $("r-overall").textContent = st && S.sel < n - 1 ? `After all ${n} pieces of evidence: ${B.approx(E.final)}.` : "";
   const g = st ? E.ranges[S.sel] : { lo: E.prior.lo, hi: E.prior.hi };
@@ -1149,17 +1235,22 @@ function render() {
   $("r-range").innerHTML = !E.ambiguous ? "Every input is an exact number, so there is no range from phrase choices to show."
     : g.lo === null || g.hi === null ? "One end of the range cannot be determined, because at an extreme of your phrase ranges the evidence you saw could not have appeared."
     : `<span class="kv"><span>Working estimate</span><b>${B.approx(st ? after : before)}</b></span><span class="kv"><span>Range from your phrase choices</span><b>${rangeText(g)}</b></span>`;
-  axis(st ? before : null, st ? after : before, S.showRange && E.ambiguous && g.lo !== null && g.hi !== null ? g : null, st ? wa : wb);
-  numbers(E, st, r);
+  axis(st ? before : null, st ? after : before, S.showRange && E.ambiguous && g.lo !== null && g.hi !== null ? { lo: g.lo, hi: g.hi } : null, st ? wa : wb);
+  numbers(E, r);
   trail(E);
   explorer();
-  announce(st && r.status === "ok" ? `After ${n > 1 ? `evidence ${S.sel + 1}` : "the evidence"}: ${B.approx(after)}, ${wordText(wa)}.` : "");
+  announce(r && r.status === "ok" ? `After ${n > 1 ? `evidence ${S.sel + 1}` : "the evidence"}: ${B.approx(after)}, ${wordText(wa)}.` : "");
 }
-const wordText = (w) => (!w ? "" : w.median === null ? (w.phrase === "certain" ? "certain, under these inputs" : "ruled out, under these inputs") : `close to what people meant by “${w.phrase}”`);
-const rangeText = (g) => (B.pct(g.lo) === B.pct(g.hi) ? B.approx(g.lo) : `${B.approx(g.lo)} to ${B.approx(g.hi)}`.replace(/^≈(\d+)% to ≈/, "≈$1–"));
+const wordText = (/** @type {{ phrase: string, median: number | null } | null} */ w) => (!w ? "" : w.median === null ? (w.phrase === "certain" ? "certain, under these inputs" : "ruled out, under these inputs") : `close to what people meant by “${w.phrase}”`);
+const rangeText = (/** @type {PosteriorRange} */ g) => (B.pct(g.lo) === B.pct(g.hi) ? B.approx(g.lo) : `${B.approx(g.lo)} to ${B.approx(g.hi)}`.replace(/^≈(\d+)% to ≈/, "≈$1–"));
 
+/**
+ * @param {number | null} before @param {number | null} after
+ * @param {{ lo: number, hi: number } | null} g @param {{ phrase: string, median: number | null } | null} w
+ */
 function axis(before, after, g, w) {
-  const at = (x) => `${x * 100}%`, side = (x) => (x < 0.12 ? "l" : x > 0.88 ? "r" : "c");
+  const at = (/** @type {number} */ x) => `${x * 100}%`, side = (/** @type {number} */ x) => (x < 0.12 ? "l" : x > 0.88 ? "r" : "c");
+  /** @type {Stats | null} */
   const near = w && w.median !== null ? B.PHRASES.get(w.phrase).survey : null;
   let h = `<span class="ax-rule"></span>`;
   for (const t of [0, 25, 50, 75, 100]) h += `<span class="ax-tick" style="left:${t}%"></span>`;
@@ -1172,13 +1263,14 @@ function axis(before, after, g, w) {
   if (before !== null) h += `<span class="ax-prior" style="left:${at(before)}"></span><span class="ax-lab top ${side(before)}" style="left:${at(before)}">○ before ${B.approx(before)}</span>`;
   if (after !== null) h += `<span class="ax-post" style="left:${at(after)}"></span><span class="ax-lab bot ${side(after)}" style="left:${at(after)}">◆ ${before === null ? "estimate" : "after"} ${B.approx(after)}</span>`;
   block($("r-axis"), h);
-  $("r-axis-legend").textContent = (near ? `Shaded: the middle half of survey answers for “${w.phrase}”. ` : "") + (g ? "Bracket: range from your phrase choices. " : "");
+  $("r-axis-legend").textContent = (near && w ? `Shaded: the middle half of survey answers for “${w.phrase}”. ` : "") + (g ? "Bracket: range from your phrase choices. " : "");
   $("r-axis-text").textContent = after === null ? "The update cannot be determined." : before === null ? `On a 0 to 100% scale, the estimate is ${B.approx(after)}.` : before === after ? `On a 0 to 100% scale, the estimate stays at ${B.approx(after)}.` : `On a 0 to 100% scale, the estimate moves ${after > before ? "up" : "down"} from ${B.approx(before)} to ${B.approx(after)}.`;
 }
 
-function numbers(E, st, r) {
-  if (!st) { block($("r-num"), "<p>Add evidence to see the numbers.</p>"); block($("r-calc"), "<p>Add evidence to see the calculation.</p>"); return; }
-  const e = E.ev[S.sel], x = (v) => (v === null ? "—" : `${Math.round(v * 1000) / 10}%`);
+/** @param {Evaluation} E @param {Step | null} r the selected step, null without evidence */
+function numbers(E, r) {
+  if (!r) { block($("r-num"), "<p>Add evidence to see the numbers.</p>"); block($("r-calc"), "<p>Add evidence to see the calculation.</p>"); return; }
+  const e = E.ev[S.sel], x = (/** @type {number | null} */ v) => (v === null ? "—" : `${Math.round(v * 1000) / 10}%`);
   const t = r.prior !== null ? B.tree(r.prior, e.a.v, e.b.v) : null;
   block($("r-num"), `<table class="nums"><tbody>
 <tr><th scope="row">Before: P(H)</th><td>${x(r.prior)}</td></tr>
@@ -1198,18 +1290,20 @@ ${t && r.status === "ok" ? `<h4>As natural frequencies</h4><p>Imagine ${t.N.toLo
 <p class="small muted">Odds are how many times more likely something is than not. The likelihood ratio is the core of the update: evidence matters according to how differently you would expect to see it if the hypothesis were true and if it were false.</p>`);
 }
 
+/** @param {Evaluation} E */
 function trail(E) {
   const n = S.evidence.length;
   const pts = [E.prior.v, ...E.steps.map((s) => s.posterior)];
   block($("chain"), pts.map((p, i) => `<li${i && i - 1 === S.sel ? ' class="cur"' : ""}><span class="sr">${i ? `after evidence ${i}` : "start"}: </span>${B.approx(p)}</li>`).join(""));
   block($("cards"), S.evidence.map((e, i) => {
     const r = E.steps[i], v = E.ev[i], cur = i === S.sel;
-    const desc = (x) => (x.kind === "number" ? B.entered(x.v * 100) : `${esc(x.label)} (${B.entered(x.v * 100)})`);
+    const desc = (/** @type {Resolved} */ x) => (x.kind === "number" ? B.entered(x.v * 100) : `${esc(x.label)} (${B.entered(x.v * 100)})`);
     return `<li class="card${cur ? " cur" : ""}"${cur ? ' aria-current="step"' : ""}><p class="ct"><span class="muted">Evidence ${i + 1}</span> ${esc(e.text) || '<i class="muted">no description yet</i>'}</p>
 <p class="cs">If true: ${desc(v.a)} · If false: ${desc(v.b)}</p><p class="cr"><b>${B.approx(r.prior)} → ${B.approx(r.posterior)}</b> <span class="muted">${r.status === "ok" ? esc(B.leanText(r)) : "cannot be determined"}</span></p>
 <div class="cbtn"><button type="button" class="btn sm" data-act="edit" data-i="${i}" data-focus="edit-${i}"${cur ? ' aria-pressed="true"' : ""}>${cur ? "Editing" : "Edit"}<span class="sr"> evidence ${i + 1}</span></button><button type="button" class="btn sm quiet" data-act="del" data-i="${i}" data-focus="del-${i}">Delete<span class="sr"> evidence ${i + 1}</span></button></div></li>`;
   }).join(""));
   $("add").disabled = n >= B.MAX_EVIDENCE;
+  /** @type {Evidence[]} */
   const sg = B.suggestions(S);
   block($("sugg"), sg.length && n < B.MAX_EVIDENCE ? `<span class="small muted">Ideas from this example:</span> ${sg.map((x, i) => `<button type="button" class="chip" data-act="add-sug" data-i="${i}" data-focus="sug-${i}">+ ${esc(x.text)}</button>`).join("")}` : "");
   $("correlated").hidden = n < 2;
@@ -1217,11 +1311,13 @@ function trail(E) {
 
 /* ---------- the phrase explorer ---------- */
 function explorer() {
-  const rows = B.LIST.filter((ph) => (X.filter === "survey" ? ph.survey : X.filter === "kent" ? ph.kent || ph.possible : true));
-  for (const b of document.querySelectorAll('[data-act="filter"]')) b.setAttribute("aria-pressed", String(b.dataset.f === X.filter));
+  /** @type {Phrase[]} */
+  const rows = B.LIST.filter((/** @type {Phrase} */ ph) => (X.filter === "survey" ? ph.survey : X.filter === "kent" ? ph.kent || ph.possible : true));
+  for (const b of document.querySelectorAll(/** @type {"button"} */ ('[data-act="filter"]'))) b.setAttribute("aria-pressed", String(b.dataset.f === X.filter));
   block($("x-rows"), rows.map((ph) => `<li><button type="button" class="prow" data-act="xpick" data-ph="${esc(ph.key)}" data-focus="x-${esc(ph.key)}" aria-pressed="${ph.key === X.phrase}">
 <span class="pname">${esc(ph.label)}</span><span class="ptrack" aria-hidden="true">${B.numbered(ph) ? band(ph) : '<span class="b-rule"></span><span class="pnone">no odds attached</span>'}</span>
 <span class="sr">. ${esc(kentText(ph))}. ${esc(surveyText(ph))}.</span></button></li>`).join(""));
+  /** @type {Phrase | undefined} */
   const ph = B.PHRASES.get(X.phrase);
   if (!ph) return;
   setVal($("x-phrase"), ph.label);
@@ -1238,6 +1334,7 @@ function explorer() {
     block($("x-hist"), "");
     $("x-survey").textContent = "The survey did not ask about this phrase, so there are no observed answers to show.";
   }
+  /** @type {Working | null} */
   const w = B.working(ph), v = X.value ?? w?.value ?? 50;
   $("x-you").hidden = !w;
   $("x-nonum").hidden = !!w;
@@ -1248,11 +1345,13 @@ function explorer() {
     block($("x-band"), band(ph));
     $("x-basis").textContent = X.value === null ? `Using ≈${r1(v)}% as the working estimate (${w.basis}).` : `${ph.label} — interpreted here as ${B.entered(v)} (your choice; ${w.basis} is ${r1(w.value)}%).`;
   }
-  for (const b of document.querySelectorAll('[data-act="use"]')) b.disabled = !w || (b.dataset.to !== "prior" && !step());
+  for (const b of document.querySelectorAll(/** @type {"button"} */ ('[data-act="use"]'))) b.disabled = !w || (b.dataset.to !== "prior" && !step());
 }
 
 /* A restrained live region: the result is announced once input settles, not on every slider step. */
-let liveTimer = 0, lastSaid = "";
+/** @type {ReturnType<typeof setTimeout> | undefined} */
+let liveTimer, lastSaid = "";
+/** @param {string} text */
 function announce(text) {
   clearTimeout(liveTimer);
   liveTimer = setTimeout(() => { if (text && text !== lastSaid) { lastSaid = text; $("live").textContent = text; } }, 900);
@@ -1260,23 +1359,27 @@ function announce(text) {
 
 /* ---------- actions ---------- */
 const commit = () => { save(); render(); };
+/** @param {string} id @param {string} text */
 function choosePhrase(id, text) {
   const t = text.trim(), inp = getInput(id);
   if (!inp) return;
   help[id] = null;
   if (!t) { setInput(id, { value: B.resolve(inp).v * 100 }); return commit(); }
+  /** @type {Phrase | null} */
   const ph = B.lookup(t);
-  if (B.numbered(ph)) { if (inp.phrase !== ph.key) setInput(id, { phrase: ph.key }); }
+  if (ph && B.numbered(ph)) { if (inp.phrase !== ph.key) setInput(id, { phrase: ph.key }); }
   else if (inp.custom && B.norm(inp.custom.label) === B.norm(t)) { /* unchanged */ }
   else help[id] = { kind: ph && ph.possible ? "possible" : "unknown", text: t, sugg: B.suggest(t) };
   commit();
 }
+/** @param {string} id @param {number} v */
 function setValue(id, v) {
   const inp = getInput(id);
   if (!inp || !Number.isFinite(v)) return;
   setInput(id, { ...inp, value: clampPct(v) });
   commit();
 }
+/** @param {string} message @param {string} yes @param {() => void} run @param {HTMLElement} from */
 function confirmThen(message, yes, run, from) {
   if (!dirty()) return run();
   pending = { run, from };
@@ -1285,11 +1388,14 @@ function confirmThen(message, yes, run, from) {
   $("confirm").hidden = false;
   $("confirm-yes").focus();
 }
+/** @param {boolean} back */
 function closeConfirm(back) { const p = pending; pending = null; $("confirm").hidden = true; if (back && p?.from?.isConnected) p.from.focus(); }
-const evidenceFrom = (x) => ({ text: x.text, a: B.cleanInput(x.a), b: B.cleanInput(x.b) });
+const evidenceFrom = (/** @type {Evidence} */ x) => ({ text: x.text, a: B.cleanInput(x.a), b: B.cleanInput(x.b) });
+/** @param {Evidence | null} x */
 function addEvidence(x) {
   if (S.evidence.length >= B.MAX_EVIDENCE) return;
-  S.evidence.push(x || { text: "", a: { value: 50 }, b: { value: 50 } });
+  // render() cleans the new step's inputs straight away.
+  S.evidence.push(x || /** @type {Evidence} */ ({ text: "", a: { value: 50 }, b: { value: 50 } }));
   S.sel = S.evidence.length - 1;
   clearHelp("a", "b");
   forced(commit);
@@ -1299,11 +1405,13 @@ function addEvidence(x) {
 
 const app = $("app");
 app.addEventListener("click", (ev) => {
-  const t = ev.target.closest("[data-act]");
+  const t = /** @type {HTMLElement} */ (ev.target).closest(/** @type {"button"} */ ("[data-act]"));
   if (!t) return;
-  const act = t.dataset.act, id = t.dataset.pf;
-  if (act === "example") return confirmThen("Replace your scenario with this example?", "Replace", () => { S = B.fromExample(t.dataset.id); clearHelp("prior", "a", "b"); forced(commit); t.focus(); }, t);
+  // Every data-act control that needs a field, phrase or index carries it.
+  const act = t.dataset.act, id = /** @type {string} */ (t.dataset.pf);
+  if (act === "example") return confirmThen("Replace your scenario with this example?", "Replace", () => { S = B.fromExample(/** @type {string} */ (t.dataset.id)); clearHelp("prior", "a", "b"); forced(commit); t.focus(); }, t);
   if (act === "pick") {
+    /** @type {Phrase} */
     const ph = B.PHRASES.get(t.dataset.ph);
     if (B.numbered(ph)) { help[id] = null; setInput(id, { phrase: ph.key }); }
     else help[id] = { kind: "possible", text: ph.label, sugg: [] };
@@ -1314,32 +1422,34 @@ app.addEventListener("click", (ev) => {
   if (act === "own") {
     const h = help[id], inp = getInput(id);
     help[id] = null;
-    setInput(id, { custom: { label: h ? h.text : "", lo: null, hi: null }, value: B.resolve(inp).v * 100 });
+    setInput(id, { custom: { label: h ? h.text : "", lo: null, hi: null }, value: /** @type {Resolved} */ (B.resolve(inp)).v * 100 });
     commit();
     return $(`${id}-num`).focus();
   }
   if (act === "reset-value") { const inp = getInput(id); setInput(id, { ...inp, value: null }); commit(); return $(`${id}-range`).focus(); }
-  if (act === "edit") { S.sel = +t.dataset.i; clearHelp("a", "b"); forced(commit); return $("ev-text").focus(); }
+  if (act === "edit") { S.sel = Number(t.dataset.i); clearHelp("a", "b"); forced(commit); return $("ev-text").focus(); }
   if (act === "del") {
-    const i = +t.dataset.i;
+    const i = Number(t.dataset.i);
     S.evidence.splice(i, 1);
     if (S.sel >= i && S.sel > 0) S.sel--;
     forced(commit);
-    const next = $("cards").querySelector(`[data-act="edit"][data-i="${Math.min(i, S.evidence.length - 1)}"]`);
+    const next = $("cards").querySelector(/** @type {"button"} */ (`[data-act="edit"][data-i="${Math.min(i, S.evidence.length - 1)}"]`));
     return (next || $("add")).focus();
   }
   if (act === "add") return addEvidence(null);
-  if (act === "add-sug") return addEvidence(evidenceFrom(B.suggestions(S)[+t.dataset.i]));
-  if (act === "filter") { X.filter = t.dataset.f; return render(); }
+  if (act === "add-sug") return addEvidence(evidenceFrom(B.suggestions(S)[Number(t.dataset.i)]));
+  if (act === "filter") { X.filter = /** @type {string} */ (t.dataset.f); return render(); }
   if (act === "xpick") {
-    X.phrase = t.dataset.ph; X.value = null;
+    X.phrase = /** @type {string} */ (t.dataset.ph); X.value = null;
     render();
     $("x-detail").scrollIntoView?.({ block: "nearest", behavior: reduced() ? "auto" : "smooth" });
     $("x-status").textContent = `Showing “${X.phrase}”.`;
     return;
   }
   if (act === "use") {
-    const ph = B.PHRASES.get(X.phrase), to = t.dataset.to, names = { prior: "the starting estimate", a: "“if true”", b: "“if false”" };
+    /** @type {Phrase} */
+    const ph = B.PHRASES.get(X.phrase);
+    const to = /** @type {FieldId} */ (t.dataset.to), names = { prior: "the starting estimate", a: "“if true”", b: "“if false”" };
     help[to] = null;
     setInput(to, { phrase: ph.key, value: X.value });
     commit();
@@ -1356,12 +1466,13 @@ $("reset").addEventListener("click", (ev) => confirmThen("Reset discards your sc
   X.phrase = "likely"; X.value = null;
   forced(render);
   $("hyp").focus();
-}, ev.currentTarget));
+}, /** @type {HTMLElement} */ (ev.currentTarget)));
 
 app.addEventListener("input", (ev) => {
-  const t = ev.target, d = t.dataset;
+  const t = /** @type {HTMLInputElement} */ (ev.target), d = t.dataset;
   if (t.id === "hyp") { S.hypothesis = t.value; return commit(); }
-  if (t.id === "ev-text" && step()) { step().text = t.value; return commit(); }
+  const st = step();
+  if (t.id === "ev-text" && st) { st.text = t.value; return commit(); }
   if (d.pfRange) return setValue(d.pfRange, +t.value);
   if (d.pfNum) { if (t.value.trim() !== "" && Number.isFinite(+t.value)) setValue(d.pfNum, +t.value); return; }
   if (d.pfOwn) {
@@ -1369,7 +1480,7 @@ app.addEventListener("input", (ev) => {
     if (!inp?.custom) return;
     const v = t.value.trim() === "" ? null : +t.value;
     if (v !== null && !Number.isFinite(v)) return;
-    setInput(d.pfOwn, { ...inp, custom: { ...inp.custom, [d.end]: v } });
+    setInput(d.pfOwn, { ...inp, custom: { ...inp.custom, [/** @type {string} */ (d.end)]: v } });
     return commit();
   }
   if (t.id === "x-range" || t.id === "x-num") {
@@ -1379,12 +1490,13 @@ app.addEventListener("input", (ev) => {
   }
 });
 app.addEventListener("change", (ev) => {
-  const t = ev.target, d = t.dataset;
+  const t = /** @type {HTMLInputElement} */ (ev.target), d = t.dataset;
   if (d.pfPhrase) return choosePhrase(d.pfPhrase, t.value);
   /* A blank or unusable number snaps back to the current value; anything else is kept within 0–100. */
   if (d.pfNum || d.pfOwn || t.id === "x-num") { forced(render); return; }
   if (t.id === "show-range") { S.showRange = t.checked; return commit(); }
   if (t.id === "x-phrase") {
+    /** @type {Phrase | null} */
     const ph = B.lookup(t.value);
     if (ph) { X.phrase = ph.key; X.value = null; $("x-status").textContent = ""; }
     else $("x-status").textContent = t.value.trim() ? `“${t.value.trim()}” is not in either source, so it has no calibration. Pick a listed phrase, or type it into an estimate and choose “Use my own meaning”.` : "";
@@ -1392,19 +1504,20 @@ app.addEventListener("change", (ev) => {
   }
 });
 app.addEventListener("keydown", (ev) => {
-  const t = ev.target;
+  const t = /** @type {HTMLInputElement} */ (ev.target);
   if (ev.key === "Enter" && (t.dataset?.pfPhrase || t.id === "x-phrase")) { t.dispatchEvent(new Event("change", { bubbles: true })); return; }
   /* Shift + arrow moves a probability slider in steps of 10. */
   if (t.type === "range" && ev.shiftKey && /^Arrow(Left|Right|Up|Down)$/.test(ev.key)) {
     ev.preventDefault();
     const v = clampPct(Math.round(+t.value) + (/Left|Down/.test(ev.key) ? -10 : 10));
-    t.value = v;
+    t.value = String(v);
     t.dispatchEvent(new Event("input", { bubbles: true }));
   }
 });
 
 /* ---------- beamdswitch deck ---------- */
 const deck = () => self.Beamdswitch.deck(B.report(S, CHECKS));
+/** @param {Blob} blob @param {string} name */
 function saveFile(blob, name) {
   const url = URL.createObjectURL(blob), a = document.createElement("a");
   a.href = url; a.download = name;
@@ -1428,33 +1541,36 @@ $("copy-beamdswitch").addEventListener("click", async () => {
 });
 
 /* ---------- WebMCP: read-only tools for agents ---------- */
-const result = (v) => ({ content: [{ type: "text", text: JSON.stringify(v) }] });
+const result = (/** @type {unknown} */ v) => ({ content: [{ type: "text", text: JSON.stringify(v) }] });
 const ro = { readOnlyHint: true }, none = { type: "object", properties: {}, additionalProperties: false };
-const pc = (x) => (x === null ? null : Math.round(x * 1e6) / 1e4);
-const view = (r) => ({ prior_percent: pc(r.prior), posterior_percent: pc(r.posterior), posterior: r.status === "ok" ? B.approx(r.posterior) : null, status: r.status,
+const pc = (/** @type {number | null} */ x) => (x === null ? null : Math.round(x * 1e6) / 1e4);
+const view = (/** @type {Step} */ r) => ({ prior_percent: pc(r.prior), posterior_percent: pc(r.posterior), posterior: r.status === "ok" ? B.approx(r.posterior) : null, status: r.status,
   likelihood_ratio: r.lr ? (r.lr.kind === "infinite" ? "unbounded" : r.lr.value) : null, prior_odds: B.odds(r.prior).text, posterior_odds: B.odds(r.posterior).text,
   evidence: r.lr ? B.leanText(r) : null, explanation: B.explain(r) });
-const phraseView = (ph) => ({ phrase: ph.label, kent: ph.kent ? { range_percent: [ph.kent.lo, ph.kent.hi], centre_percent: ph.kent.centre, listed_as: ph.kent.group, via: ph.kent.via, note: ph.note } : ph.possible ? "listed by Kent as possible, with no odds" : null,
+const phraseView = (/** @type {Phrase} */ ph) => ({ phrase: ph.label, kent: ph.kent ? { range_percent: [ph.kent.lo, ph.kent.hi], centre_percent: ph.kent.centre, listed_as: ph.kent.group, via: ph.kent.via, note: ph.note } : ph.possible ? "listed by Kent as possible, with no odds" : null,
   survey: ph.survey ? { n: ph.survey.n, median: ph.survey.median, quartiles: [ph.survey.q1, ph.survey.q3], p10_p90: [ph.survey.p10, ph.survey.p90], mean: Math.round(ph.survey.mean * 10) / 10, bins_of_10_points: ph.survey.bins } : null,
   default_working: B.working(ph) });
+/** @param {Record<string, string>} s */
 const src = (s) => ({ title: s.title, authors: s.authors, publication: s.publication, date: s.date, url: s.url, licence: s.licence, measured: s.measured, transformation: s.transformation });
+/** @type {ModelContextTool[]} */
 const tools = [
   { name: "get_metadata", description: "Return what this Bayesian reasoning page does, its two probability-language sources with provenance, the phrase vocabulary and the example scenarios.", inputSchema: none, annotations: ro,
-    async execute() { return result({ title: document.title, url: "https://teoyujie.org/visuals/bayes", sources: { kent: src(B.KENT.source), survey: src(B.SURVEY.source) }, phrases: B.LIST.map((p) => p.label), examples: B.SCENARIOS.map((s) => ({ id: s.id, hypothesis: s.hypothesis })), self_checks: CHECKS }); } },
+    async execute() { return result({ title: document.title, url: "https://teoyujie.org/visuals/bayes", sources: { kent: src(B.KENT.source), survey: src(B.SURVEY.source) }, phrases: B.LIST.map((/** @type {Phrase} */ p) => p.label), examples: B.SCENARIOS.map((/** @type {Example} */ s) => ({ id: s.id, hypothesis: s.hypothesis })), self_checks: CHECKS }); } },
   { name: "get_current_state", description: "Return the page's current hypothesis, starting estimate, each piece of evidence with its two judgements, every posterior in the reasoning trail and the range from phrase choices.", inputSchema: none, annotations: ro,
     async execute() {
+      /** @type {Evaluation} */
       const E = B.evaluate(S);
       return result({ hypothesis: S.hypothesis, prior: B.inputText(E.prior), evidence: E.ev.map((e, i) => ({ text: e.text, if_true: B.inputText(e.a), if_false: B.inputText(e.b), ...view(E.steps[i]), range_from_phrases_percent: [pc(E.ranges[i].lo), pc(E.ranges[i].hi)] })),
         final: B.approx(E.final), trail: [E.prior.v, ...E.steps.map((s) => s.posterior)].map(B.approx), selected: S.sel });
     } },
   { name: "lookup_phrase", description: "Look up a probability phrase: Kent's reference range, the survey's answers (median, quartiles, histogram) and the default working value. Unknown phrases return suggestions, never invented calibration.", annotations: ro,
     inputSchema: { type: "object", properties: { phrase: { type: "string" } }, required: ["phrase"], additionalProperties: false },
-    async execute(i) { const ph = B.lookup(i.phrase); return result(ph ? phraseView(ph) : { phrase: i.phrase, calibrated: false, suggestions: B.suggest(i.phrase).map((p) => p.label) }); } },
+    async execute(i) { const ph = B.lookup(i.phrase); return result(ph ? phraseView(ph) : { phrase: i.phrase, calibrated: false, suggestions: B.suggest(i.phrase).map((/** @type {Phrase} */ p) => p.label) }); } },
   { name: "bayes_update", description: "Update a starting probability with one or more pieces of evidence, each given as the percent chance of seeing it if the hypothesis is true and if it is false. Each posterior becomes the next prior. Same maths as the page.", annotations: ro,
     inputSchema: { type: "object", properties: { prior_percent: { type: "number", minimum: 0, maximum: 100 }, evidence: { type: "array", minItems: 1, maxItems: 50, items: { type: "object", properties: { if_true_percent: { type: "number", minimum: 0, maximum: 100 }, if_false_percent: { type: "number", minimum: 0, maximum: 100 } }, required: ["if_true_percent", "if_false_percent"], additionalProperties: false } } }, required: ["prior_percent", "evidence"], additionalProperties: false },
     async execute(i) {
-      const f = (v) => clampPct(Number(v) || 0) / 100;
-      return result({ steps: B.chain(f(i.prior_percent), (i.evidence || []).map((e) => ({ a: f(e.if_true_percent), b: f(e.if_false_percent) }))).map(view) });
+      const f = (/** @type {unknown} */ v) => clampPct(Number(v) || 0) / 100;
+      return result({ steps: B.chain(f(i.prior_percent), (i.evidence || []).map((/** @type {{ if_true_percent: unknown, if_false_percent: unknown }} */ e) => ({ a: f(e.if_true_percent), b: f(e.if_false_percent) }))).map(view) });
     } },
 ];
 self.BayesTools = tools;

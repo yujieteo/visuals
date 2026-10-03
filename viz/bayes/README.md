@@ -50,3 +50,9 @@ stub, the static reference rows, the page's offline promises, and the
 beamdswitch deck of every example. It also boots the page in `node:vm` against
 a stand-in DOM to call the WebMCP tools and check that the beamdswitch and Copy
 deck buttons export the deck of the scenario as set.
+
+`npm ci && npm run typecheck` type-checks the JavaScript with `tsc` (JSDoc
+types, `tsconfig.json`): the tests, and the page's own inline scripts, which
+`scripts/extract-inline.mjs` copies into `.typecheck/inline/` first. That
+tooling (`package.json`, `package-lock.json`, `tsconfig.json`, `types/` and the
+extractor) is for development only and, like `tests/`, stays in this repository.

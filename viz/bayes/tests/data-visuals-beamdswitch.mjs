@@ -6,8 +6,11 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
 import { parseDeck, splitSentences } from "./fixtures/beamdswitch/deck.mjs";
+/** @import { DeckNode } from "./fixtures/beamdswitch/deck.mjs" */
+/** @typedef {Extract<DeckNode, { type: "div" }>} DeckDiv */
 
 const root = new URL("../", import.meta.url);
+/** @param {string} path */
 export const read = (path) => readFileSync(new URL(path, root), "utf8");
 const skeleton = read("tests/fixtures/beamdswitch/report-template.md");
 export const SECTIONS = [...skeleton.matchAll(/^# (.+)$/gm)].map((m) => m[1]);
@@ -15,6 +18,7 @@ export const SECTIONS = [...skeleton.matchAll(/^# (.+)$/gm)].map((m) => m[1]);
 /* SHA-256 of yujieteo/site templates/beamdswitch.js, the site's standard report template, which the folder's
    beamdswitch.js copies unchanged. */
 const TEMPLATE_SHA256 = "f9ce9c6eb07842a2fa50dd72c828cb53c09f412c6bb1505d825d081b5b4362c7";
+/** @param {string} slug */
 export function assertTemplateCopy(slug) {
   const copy = read("beamdswitch.js");
   assert.equal(createHash("sha256").update(copy).digest("hex"), TEMPLATE_SHA256,
@@ -22,12 +26,14 @@ export function assertTemplateCopy(slug) {
 }
 
 // The page inlines each script verbatim in its own <script id="..."> block.
+/** @param {string} html @param {string} id @param {string} source @param {string} what */
 export function assertInlined(html, id, source, what) {
   const m = new RegExp(`<script id="${id}">\\n([\\s\\S]*?)</script>`).exec(html);
   assert.ok(m, `${what}: the page has a <script id="${id}"> block`);
   assert.equal(m[1], source, `${what}: the page inlines ${id} unchanged`);
 }
 
+/** @param {DeckNode[]} children @param {string} name @param {DeckDiv[]} [out] @returns {DeckDiv[]} */
 const divs = (children, name, out = []) => {
   for (const c of children) if (c.type === "div") { if (c.name === name) out.push(c); divs(c.children, name, out); }
   return out;
@@ -35,38 +41,54 @@ const divs = (children, name, out = []) => {
 
 // The deck opens in beamdswitch as the standard template: title slide, the four sections in order,
 // a narration voice named, every slide narrated in plain spoken prose written in the deck, ending on one ::: key.
+/** @param {string} md @param {string} what */
 export function assertStandardDeck(md, what) {
   const deck = parseDeck(md);
   assert.equal(deck.frames[0].kind, "title", what);
   assert.match(deck.meta.voice ?? "", /^[a-z]{2}_[a-z]+$/, `${what}: names its narration voice`);
   assert.deepEqual(deck.frames.filter((f) => f.kind === "section").map((f) => f.title), SECTIONS, what);
-  assert.equal(md.match(/^::: narration$/gm).length, deck.frames.length, `${what}: one ::: narration per slide`);
+  assert.equal(md.match(/^::: narration$/gm)?.length, deck.frames.length, `${what}: one ::: narration per slide`);
   for (const f of deck.frames) {
     assert.ok(splitSentences(f.narration).length > 0, `${what}: "${f.title}" is narrated`);
     assert.doesNotMatch(f.narration, /[$\\`*_#|<>×⁰¹²³⁴⁵⁶⁷⁸⁹⁻%&≈]/, `${what}: "${f.title}" reads as speech: ${f.narration}`);
   }
   for (const s of SECTIONS) assert.ok(deck.frames.some((f) => f.kind === "frame" && f.section === s), `${what}: ${s} has a frame`);
   const last = deck.frames.at(-1);
+  assert.ok(last, `${what}: has frames`);
   assert.equal(last.section, SECTIONS.at(-1), what);
   assert.equal(divs(last.children, "key").length, 1, `${what}: ends on a ::: key`);
   return deck;
 }
 
+/**
+ * A stand-in element. It answers every property, call and key a page script reaches for, so its type is
+ * any: no narrower type describes a Proxy that is every element, list and function at once.
+ * @typedef {any} StandIn
+ */
+/** @typedef {(event: { type: string, target: StandIn, currentTarget: StandIn, preventDefault(): void, stopPropagation(): void }) => unknown} Listener */
+
 // A permissive stand-in DOM: every element accepts any property, call or listener, and remembers what is set on it.
+/** @param {string | symbol} tag @param {Record<string, unknown>} [store] @returns {StandIn} */
 function element(tag, store = {}) {
-  const listeners = {}, calls = new Map(), kids = new Map();
+  /** @type {Record<string, Listener[]>} */
+  const listeners = {};
+  /** @type {Map<string, StandIn>} */
+  const calls = new Map();
+  /** @type {Map<string | symbol, StandIn>} */
+  const kids = new Map();
+  /** @type {Record<string | symbol, any>} the element's own properties, whatever the page sets on it */
   const own = {
     tagName: String(tag).toUpperCase(), localName: tag, textContent: "", value: "", innerHTML: "", checked: false, hidden: false,
     disabled: false, firstChild: null, lastChild: null, nextSibling: null, previousSibling: null,
     length: 0, dataset: {}, children: [], childNodes: [], then: undefined,
-    listeners, append: (...kids) => { own.children = [...own.children, ...kids]; },
-    addEventListener: (type, fn) => (listeners[type] ??= []).push(fn),
+    listeners, append: (/** @type {unknown[]} */ ...kids) => { own.children = [...own.children, ...kids]; },
+    addEventListener: (/** @type {string} */ type, /** @type {Listener} */ fn) => (listeners[type] ??= []).push(fn),
     removeEventListener() {},
-    setAttribute: (key, v) => { own[key] = String(v); },
-    getAttribute: (key) => (key in own ? String(own[key]) : null),
-    dispatch: (type) => Promise.all((listeners[type] || []).map((fn) => fn({ type, target: self, currentTarget: self, preventDefault() {}, stopPropagation() {} }))),
+    setAttribute: (/** @type {string} */ key, /** @type {unknown} */ v) => { own[key] = String(v); },
+    getAttribute: (/** @type {string} */ key) => (key in own ? String(own[key]) : null),
+    dispatch: (/** @type {string} */ type) => Promise.all((listeners[type] || []).map((fn) => fn({ type, target: self, currentTarget: self, preventDefault() {}, stopPropagation() {} }))),
     [Symbol.iterator]: function* () {},
-    [Symbol.toPrimitive]: (hint) => (hint === "number" ? 0 : ""),
+    [Symbol.toPrimitive]: (/** @type {string} */ hint) => (hint === "number" ? 0 : ""),
     ...store,
   };
   const self = new Proxy(function () {}, {
@@ -88,34 +110,50 @@ function element(tag, store = {}) {
 
 // Runs a built page's scripts in the stand-in DOM. click(id) clicks a button and waits for its handlers;
 // saved holds each downloaded file's text and copied each clipboard write. globals replaces or adds browser globals.
+/**
+ * @param {string} slug
+ * @param {{ hash?: string, search?: string, globals?: Record<string, unknown> }} [options]
+ */
 export async function openPage(slug, { hash = "", search = "", globals = {} } = {}) {
   const html = read("index.html");
-  const byId = new Map(), bySelector = new Map(), urls = new Map(), created = [], saved = [], copied = [];
+  /** @type {Map<string, StandIn>} */
+  const byId = new Map();
+  /** @type {Map<string, StandIn>} */
+  const bySelector = new Map();
+  /** @type {Map<string, Blob>} */
+  const urls = new Map();
+  /** @type {StandIn[]} */
+  const created = [];
+  /** @type {{ name: string, text: string }[]} */
+  const saved = [];
+  /** @type {string[]} */
+  const copied = [];
   for (const m of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)) {
     const id = /\bid="([^"]+)"/.exec(m[1])?.[1];
     if (id) byId.set(id, element("script", { textContent: m[2] }));
   }
+  /** @param {Map<string, StandIn>} map @param {string} key @returns {StandIn} */
   const get = (map, key) => { if (!map.has(key)) map.set(key, element("div")); return map.get(key); };
   const document = element("document", {
     body: element("body"), documentElement: element("html"), activeElement: null, modelContext: undefined,
-    getElementById: (id) => get(byId, id),
-    createTextNode: (text) => element("#text", { textContent: String(text), nodeType: 3 }),
-    querySelector: (s) => (/^#[\w-]+$/.test(s) ? get(byId, s.slice(1)) : get(bySelector, s)),
-    createElement: (tag) => {
+    getElementById: (/** @type {string} */ id) => get(byId, id),
+    createTextNode: (/** @type {unknown} */ text) => element("#text", { textContent: String(text), nodeType: 3 }),
+    querySelector: (/** @type {string} */ s) => (/^#[\w-]+$/.test(s) ? get(byId, s.slice(1)) : get(bySelector, s)),
+    createElement: (/** @type {string} */ tag) => {
       const e = element(tag);
       created.push(e);
-      if (tag === "a") e.click = async () => saved.push({ name: e.download, text: await urls.get(e.href).text() });
+      if (tag === "a") e.click = async () => saved.push({ name: e.download, text: await /** @type {Blob} */ (urls.get(e.href)).text() });
       return e;
     },
   });
   const context = vm.createContext({
     document, console, Intl, Blob, URLSearchParams, TextEncoder, JSON, Math, Date,
-    navigator: { clipboard: { writeText: async (text) => { copied.push(text); } } },
+    navigator: { clipboard: { writeText: async (/** @type {string} */ text) => { copied.push(text); } } },
     location: { hash, search, pathname: `/visuals/${slug}/`, href: `https://teoyujie.org/visuals/${slug}/${hash}` },
     history: { replaceState() {}, pushState() {} },
     localStorage: { getItem: () => null, setItem() {}, removeItem() {} },
-    URL: Object.assign(function (u) { return new URL(u); }, {
-      createObjectURL(blob) { const url = `blob:${urls.size}`; urls.set(url, blob); return url; }, revokeObjectURL() {} }),
+    URL: Object.assign(function (/** @type {string} */ u) { return new URL(u); }, {
+      createObjectURL(/** @type {Blob} */ blob) { const url = `blob:${urls.size}`; urls.set(url, blob); return url; }, revokeObjectURL() {} }),
     setTimeout: () => 0, clearTimeout() {}, setInterval: () => 0, clearInterval() {}, requestAnimationFrame: () => 0, cancelAnimationFrame() {},
     matchMedia: () => element("media", { matches: false }), getComputedStyle: () => element("style"),
     addEventListener() {}, removeEventListener() {}, scrollTo() {}, innerWidth: 1200, innerHeight: 800, scrollX: 0, scrollY: 0, devicePixelRatio: 1,
@@ -124,19 +162,24 @@ export async function openPage(slug, { hash = "", search = "", globals = {} } = 
   });
   context.window = context.self = context.globalThis = context;
   for (const m of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)) if (!/type="application\/json"/.test(m[1])) vm.runInContext(m[2], context);
+  /** @param {string} id */
   const click = async (id) => { await get(byId, id).dispatch("click"); await new Promise((r) => setImmediate(r)); };
   // Clicks the latest drawn control whose attributes and text match, as the page redraws its controls.
+  /** @param {StandIn} e @returns {string} */
   const textOf = (e) => e.textContent + e.children.map(textOf).join("");
+  /** @param {(control: { attr(key: string): string | null, text: string }) => boolean} match */
   const press = async (match) => {
-    const e = created.findLast((x) => x.listeners.click && match({ attr: (k) => x.getAttribute(k), text: textOf(x) }));
+    const e = created.findLast((x) => x.listeners.click && match({ attr: (/** @type {string} */ k) => x.getAttribute(k), text: textOf(x) }));
     assert.ok(e, "the page drew the control");
     await e.dispatch("click");
   };
+  /** @param {string} id @param {unknown} value */
   const change = async (id, value) => { const e = get(byId, id); e.value = value; await e.dispatch("change"); };
-  return { run: (code) => vm.runInContext(code, context), click, press, change, saved, copied };
+  return { run: (/** @type {string} */ code) => vm.runInContext(code, context), click, press, change, saved, copied };
 }
 
 // Clicking beamdswitch downloads the deck of the page as set; Copy deck puts that same deck on the clipboard.
+/** @param {Awaited<ReturnType<typeof openPage>>} page @param {string} slug @param {string} expected */
 export async function assertButtonsExport(page, slug, expected) {
   await page.click("save-beamdswitch");
   assert.deepEqual(page.saved, [{ name: `${slug}-beamdswitch.md`, text: expected }]);

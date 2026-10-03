@@ -5,12 +5,22 @@ import { createHash } from "node:crypto";
 import { assertButtonsExport, assertInlined, assertStandardDeck, assertTemplateCopy, openPage, read } from "./data-visuals-beamdswitch.mjs";
 
 const html = read("index.html");
-const script = (id) => new RegExp(`<script id="${id}">\\n([\\s\\S]*?)</script>`).exec(html)[1];
-const load = () => { const ctx = {}; ctx.self = ctx; vm.runInNewContext(script("bayes-data"), ctx); vm.runInNewContext(script("bayes-engine"), ctx); return ctx.Bayes; };
+/** @param {string} id */
+const script = (id) => {
+  const m = new RegExp(`<script id="${id}">\\n([\\s\\S]*?)</script>`).exec(html);
+  assert.ok(m, `the page has a <script id="${id}"> block`);
+  return m[1];
+};
+// The engine is the page's inline script, which the type checker does not read: its globals come back
+// typed as a vm context's, any.
+const load = () => { const ctx = /** @type {vm.Context} */ ({}); ctx.self = ctx; vm.runInNewContext(script("bayes-data"), ctx); vm.runInNewContext(script("bayes-engine"), ctx); return ctx.Bayes; };
 const B = load();
 const T = (await import("node:module")).createRequire(import.meta.url)("../beamdswitch.js");
+/** @param {unknown} v */
 const plain = (v) => JSON.parse(JSON.stringify(v));
+/** @param {number} x @param {number} y */
 const near = (x, y, tol = 1e-12) => assert.ok(Math.abs(x - y) < tol, `${x} ≈ ${y}`);
+/** @param {number} p @param {number} a @param {number} b */
 const direct = (p, a, b) => (a * p) / (a * p + b * (1 - p));
 
 test("the in-page self-checks all pass", () => {
@@ -47,7 +57,7 @@ test("a 50% prior with likelihood ratio 3 gives odds 1:1 → 3:1 and 75%", () =>
 
 test("sequential evidence: each posterior is exactly the next prior, and editing an earlier step recomputes the rest", () => {
   const s = B.fromExample("restaurant");
-  s.evidence = B.SCENARIOS[0].evidence.map((e) => ({ text: e.text, a: B.cleanInput(e.a), b: B.cleanInput(e.b) }));
+  s.evidence = B.SCENARIOS[0].evidence.map((/** @type {{ text: string, a: object, b: object }} */ e) => ({ text: e.text, a: B.cleanInput(e.a), b: B.cleanInput(e.b) }));
   const e = B.evaluate(s);
   assert.equal(e.steps.length, 3);
   for (let i = 1; i < 3; i++) assert.equal(e.steps[i].prior, e.steps[i - 1].posterior, `step ${i + 1}`);
@@ -150,8 +160,9 @@ test("explanations follow the documented likelihood-ratio thresholds", () => {
 });
 
 test("Kent's scale is embedded as printed in the essay", () => {
-  assert.deepEqual(plain(B.KENT.scale.map((k) => [k.phrase, k.centre, k.giveOrTake])), [
+  assert.deepEqual(plain(B.KENT.scale.map((/** @type {{ phrase: string, centre: number, giveOrTake: number }} */ k) => [k.phrase, k.centre, k.giveOrTake])), [
     ["almost certain", 93, 6], ["probable", 75, 12], ["chances about even", 50, 10], ["probably not", 30, 10], ["almost certainly not", 7, 5]]);
+  /** @param {string} p @returns {any} the parsed copy of an engine value, as untyped as the engine */
   const k = (p) => plain(B.PHRASES.get(p).kent);
   assert.deepEqual([k("probable").lo, k("probable").hi], [63, 87]);
   assert.deepEqual([k("almost certainly not").lo, k("almost certainly not").hi], [2, 12]);
@@ -175,8 +186,8 @@ test("the survey layer is every answer from probly.csv, unchanged, with statisti
   const rows = csv.trim().split("\n").map((l) => l.split(","));
   const head = rows[0], body = rows.slice(1);
   assert.equal(body.length, 46);
-  assert.deepEqual(plain(B.SURVEY.columns.map((c) => c[0])), head);
-  B.SURVEY.columns.forEach(([label, values], j) => assert.deepEqual(plain(values), body.map((r) => Number(r[j])), label));
+  assert.deepEqual(plain(B.SURVEY.columns.map((/** @type {[string, number[]]} */ c) => c[0])), head);
+  B.SURVEY.columns.forEach((/** @type {[string, number[]]} */ [label, values], /** @type {number} */ j) => assert.deepEqual(plain(values), body.map((r) => Number(r[j])), label));
   const s = B.PHRASES.get("likely").survey;
   assert.deepEqual([s.n, s.median, s.q1, s.q3, s.min, s.max], [46, 70, 65, 75, 40, 90]);
   assert.equal(B.PHRASES.get("probably not").survey.median, 26.5);
@@ -188,7 +199,7 @@ test("the survey layer is every answer from probly.csv, unchanged, with statisti
 });
 
 test("phrases: ascending order, disclosed defaults, and no calibration for unknown phrases", () => {
-  const vals = B.LIST.filter(B.numbered).map((p) => B.working(p).value);
+  const vals = B.LIST.filter(B.numbered).map((/** @type {object} */ p) => B.working(p).value);
   assert.deepEqual(plain(vals), plain([...vals].sort((x, y) => x - y)));
   assert.deepEqual(plain(B.working(B.PHRASES.get("likely"))), { value: 70, basis: "median survey answer" });
   assert.deepEqual(plain(B.working(B.PHRASES.get("we estimate"))), { value: 75, basis: "middle of Kent's range" });
@@ -199,8 +210,8 @@ test("phrases: ascending order, disclosed defaults, and no calibration for unkno
     const inp = B.cleanInput({ phrase: p, value: 40 });
     assert.equal(inp.phrase, null, `${p} is never treated as calibrated`);
   }
-  assert.deepEqual(plain(B.suggest("very unlikely").map((p) => p.key).slice(0, 2)), ["unlikely", "highly unlikely"]);
-  assert.ok(!B.suggest("plausible").some((p) => p.key === "impossible"), "no end-of-scale suggestion without a shared word");
+  assert.deepEqual(plain(B.suggest("very unlikely").map((/** @type {{ key: string }} */ p) => p.key).slice(0, 2)), ["unlikely", "highly unlikely"]);
+  assert.ok(!B.suggest("plausible").some((/** @type {{ key: string }} */ p) => p.key === "impossible"), "no end-of-scale suggestion without a shared word");
   const custom = B.resolve({ custom: { label: "pretty plausible", lo: 55, hi: 75 }, value: 65 });
   assert.deepEqual([custom.kind, custom.basis, custom.lo, custom.hi], ["custom", "your calibration", 0.55, 0.75]);
   const r = B.resolve({ phrase: "likely" });
@@ -230,8 +241,8 @@ test("raw.json matches the page", () => {
   assert.deepEqual(raw.initial, plain(B.defaults()));
   assert.equal(raw.url, "https://teoyujie.org/visuals/bayes");
   assert.equal(B.SCENARIOS.length, 6);
-  assert.deepEqual(plain(B.SCENARIOS.map((s) => s.chip)), ["Restaurant", "Delivery", "Rain", "Phishing", "Shopping", "Project"]);
-  for (const s of B.SCENARIOS) for (const e of [s.prior, ...s.evidence.flatMap((x) => [x.a, x.b])]) if (e.phrase) assert.ok(B.numbered(B.lookup(e.phrase)), `${s.id}: ${e.phrase}`);
+  assert.deepEqual(plain(B.SCENARIOS.map((/** @type {{ chip: string }} */ s) => s.chip)), ["Restaurant", "Delivery", "Rain", "Phishing", "Shopping", "Project"]);
+  for (const s of B.SCENARIOS) for (const e of [s.prior, ...s.evidence.flatMap((/** @type {{ a: object, b: object }} */ x) => [x.a, x.b])]) if (e.phrase) assert.ok(B.numbered(B.lookup(e.phrase)), `${s.id}: ${e.phrase}`);
 });
 
 test("the page is one offline file with the metadata and static fallback it promises", () => {
@@ -241,7 +252,7 @@ test("the page is one offline file with the metadata and static fallback it prom
   assert.match(html, /<meta name="description" content="[^"]+">/);
   assert.match(html, /<a href="https:\/\/teoyujie\.org\/visuals\.html">Visuals<\/a>/);
   assert.doesNotMatch(html, /<script[^>]+src=|<link[^>]+rel="stylesheet"|@import|type="module"|@font-face/, "no external scripts, styles or fonts to load");
-  const css = /<style>\n([\s\S]*?)<\/style>/.exec(html)[1], media = (q) => css.split("\n").filter((l) => l.startsWith(`@media (${q})`)).join("\n");
+  const css = /<style>\n([\s\S]*?)<\/style>/.exec(html)?.[1] ?? "", media = (/** @type {string} */ q) => css.split("\n").filter((l) => l.startsWith(`@media (${q})`)).join("\n");
   for (const v of ["--bg", "--fg", "--focus"]) assert.match(media("prefers-color-scheme:dark"), new RegExp(`${v}:#`), `dark theme sets ${v}`);
   const still = css.split("\n").filter((l) => !l.startsWith("@media (prefers-reduced-motion:no-preference)")).join("\n");
   assert.match(media("prefers-reduced-motion:no-preference"), /transition:/);
@@ -253,13 +264,16 @@ test("the page is one offline file with the metadata and static fallback it prom
   assert.ok(html.includes(B.staticRows()), "the static reference rows are the engine's own");
   assert.match(html, /<p class="sr" id="live" aria-live="polite"><\/p>/, "the result is announced in a polite live region");
   assert.match(html, /Runs entirely in your browser\. Nothing you enter is sent anywhere\./);
-  const logic = html.length - script("bayes-data").length - B.staticRows().length;
-  assert.ok(logic < 100_000, `HTML, CSS and logic stay under 100 KB without the embedded data (${logic})`);
+  // The budget guards logic and markup growth, so it leaves out the JSDoc /** */ blocks: types are development-only.
+  const jsdoc = /\/\*\*[\s\S]*?\*\//g, size = (/** @type {string} */ t) => t.replace(jsdoc, "").length;
+  const logic = size(html) - size(script("bayes-data")) - B.staticRows().length;
+  assert.ok(logic < 100_000, `HTML, CSS and logic stay under 100 KB without the embedded data or JSDoc types (${logic})`);
 });
 
-const full = (id) => { const s = B.fromExample(id); s.evidence = B.SCENARIOS.find((x) => x.id === id).evidence.map((e) => ({ text: e.text, a: B.cleanInput(e.a), b: B.cleanInput(e.b) })); s.showRange = true; return s; };
+/** @param {string} id */
+const full = (id) => { const s = B.fromExample(id); s.evidence = B.SCENARIOS.find((/** @type {{ id: string }} */ x) => x.id === id).evidence.map((/** @type {{ text: string, a: object, b: object }} */ e) => ({ text: e.text, a: B.cleanInput(e.a), b: B.cleanInput(e.b) })); s.showRange = true; return s; };
 const odd = { ...B.defaults(), hypothesis: "# 100% *sure* & <b>x</b> $5 | `y`: ::: no", evidence: [{ text: "## ::: 50%", a: { custom: { label: "pretty *plausible*", lo: 40, hi: 80 }, value: 60 }, b: { value: 0 } }] };
-const states = [B.defaults(), ...B.SCENARIOS.map((s) => full(s.id)), { ...B.defaults(), evidence: [] }, { ...B.defaults(), prior: { value: 0 } },
+const states = [B.defaults(), ...B.SCENARIOS.map((/** @type {{ id: string }} */ s) => full(s.id)), { ...B.defaults(), evidence: [] }, { ...B.defaults(), prior: { value: 0 } },
   { ...B.defaults(), evidence: [{ text: "", a: { value: 0 }, b: { value: 0 } }, { text: "next", a: { value: 50 }, b: { value: 20 } }] }, odd];
 
 test("every scenario's deck opens in beamdswitch as the standard narrated template", () => {
@@ -280,14 +294,20 @@ test("every scenario's deck opens in beamdswitch as the standard narrated templa
 
 test("the page boots, its WebMCP tools answer, and the deck buttons export the scenario as set", async () => {
   const page = await openPage("bayes");
+  /** @type {{ name: string, annotations: { readOnlyHint?: boolean }, execute(args: object): Promise<{ content: { text: string }[] }> }[]} */
   const tools = page.run("BayesTools");
   assert.deepEqual(plain(tools.map((t) => t.name)), ["get_metadata", "get_current_state", "lookup_phrase", "bayes_update"]);
   for (const t of tools) assert.equal(t.annotations.readOnlyHint, true);
-  const call = async (name, args = {}) => JSON.parse((await tools.find((t) => t.name === name).execute(args)).content[0].text);
+  /** @param {string} name @returns {Promise<any>} the tool's parsed JSON answer, whatever shape that tool returns */
+  const call = async (name, args = {}) => {
+    const tool = tools.find((t) => t.name === name);
+    assert.ok(tool, `the page registers ${name}`);
+    return JSON.parse((await tool.execute(args)).content[0].text);
+  };
   const meta = await call("get_metadata");
   assert.equal(meta.url, "https://teoyujie.org/visuals/bayes");
   assert.equal(meta.sources.kent.authors, "Sherman Kent");
-  assert.ok(meta.self_checks.every((c) => c.ok));
+  assert.ok(meta.self_checks.every((/** @type {{ ok: boolean }} */ c) => c.ok));
   const state = await call("get_current_state");
   assert.equal(state.prior, "probably not — interpreted here as 26.5% (median survey answer)");
   assert.deepEqual(state.trail, ["≈27%", "≈56%"]);
@@ -299,7 +319,7 @@ test("the page boots, its WebMCP tools answer, and the deck buttons export the s
   assert.deepEqual([up.steps[0].posterior_percent, up.steps[0].prior_odds, up.steps[0].posterior_odds, up.steps[1].status], [75, "1 : 1", "3 : 1", "undetermined"]);
   // Out-of-range or non-numeric percents are clamped to 0–100, as the page clamps its own inputs.
   const clamped = await call("bayes_update", { prior_percent: 150, evidence: [{ if_true_percent: -5, if_false_percent: "x" }, { if_true_percent: 40, if_false_percent: 20 }] });
-  assert.deepEqual(clamped.steps.map((s) => [s.prior_percent, s.status]), [[100, "undetermined"], [null, "blocked"]]);
+  assert.deepEqual(clamped.steps.map((/** @type {{ prior_percent: number | null, status: string }} */ s) => [s.prior_percent, s.status]), [[100, "undetermined"], [null, "blocked"]]);
   const high = await call("bayes_update", { prior_percent: -20, evidence: [{ if_true_percent: 250, if_false_percent: 50 }] });
   assert.deepEqual([high.steps[0].prior_percent, high.steps[0].posterior_percent, high.steps[0].likelihood_ratio], [0, 0, 2]);
   // Change the hypothesis through the page's own input handler, then export.
@@ -308,16 +328,19 @@ test("the page boots, its WebMCP tools answer, and the deck buttons export the s
 });
 
 // Opens the page with the given scenario saved, timers run at once, and every network API recording its use.
+/** @param {object | null} [saved] */
 const boot = async (saved = null) => {
+  /** @type {string[]} */
   const net = [];
+  /** @param {string} name */
   const spy = (name) => function () { net.push(name); };
   const page = await openPage("bayes", { globals: {
     fetch: spy("fetch"), XMLHttpRequest: spy("XMLHttpRequest"), WebSocket: spy("WebSocket"), EventSource: spy("EventSource"),
-    setTimeout: (fn) => { fn(); return 0; },
-    localStorage: { getItem: (k) => (k === "bayes:scenario" && saved ? JSON.stringify(saved) : null), setItem() {}, removeItem() {} },
+    setTimeout: (/** @type {() => void} */ fn) => { fn(); return 0; },
+    localStorage: { getItem: (/** @type {string} */ k) => (k === "bayes:scenario" && saved ? JSON.stringify(saved) : null), setItem() {}, removeItem() {} },
   } });
   page.run("navigator.sendBeacon = () => { throw new Error('sendBeacon'); }");
-  return { page, net, text: (id) => page.run(`document.getElementById(${JSON.stringify(id)}).textContent`) };
+  return { page, net, text: (/** @type {string} */ id) => page.run(`document.getElementById(${JSON.stringify(id)}).textContent`) };
 };
 
 test("booted, the page swaps the no-JavaScript fallback for the app, announces the result and uses no network", async () => {
@@ -345,6 +368,7 @@ test("an undeterminable range end does not blame evidence impossible both ways",
 });
 
 test("the deck reports how many self-checks passed out of how many", () => {
+  /** @param {{ ok: boolean }[]} checks */
   const narr = (checks) => B.report(B.defaults(), checks).checks[0].narration;
   assert.match(narr(B.selfTest()), /The page's (\d+) self checks: \1 of \1 passed\.$/);
   assert.match(narr([{ ok: true }, { ok: false }, { ok: true }]), /The page's 3 self checks: 2 of 3 passed\.$/);
