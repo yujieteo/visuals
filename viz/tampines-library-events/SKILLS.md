@@ -33,7 +33,7 @@ The page keeps the same filters in its URL fragment, for example `#cat=cooking&o
 | Tool | Input | Returns |
 | --- | --- | --- |
 | `get_metadata` | none | The retrieval time, each source (NLB and onePA) with its URLs, venues and how many listings it had and kept, and the three kinds of class with their rules. |
-| `list_classes` | optional `categories`, `organiser`, `venue`, `from`, `to`, `price`, `audience`, `include_past` | The matching classes in start order, each with its organiser, date, time, length, sessions, venue, audiences, ages, fees, places as of the snapshot and `booking_url`. |
+| `list_classes` | optional `categories`, `organiser`, `venue`, `from`, `to`, `price`, `audience`, `include_past` | The matching classes in start order, each with its organiser, date, time, length, sessions, venue, audiences, ages, fees, places as of the snapshot, onePA's registration closing time (`registration_closes`, with `registration_closed` once it has passed) and `booking_url`. |
 | `get_class` | `id`: NLB's event id, or `onepa-` and onePA's class code | One class's details as above, or an error naming the id when the snapshot has no such class. |
 
 ## Exports
