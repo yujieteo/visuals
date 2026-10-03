@@ -18,10 +18,9 @@ Then write data.json and run build.py, which inlines it into index.html. Nothing
 source does not publish is left out, and every booking link is one the source publishes, never a
 constructed URL.
 
-Usage: python3 refresh.py [--no-pages] [--now ISO8601] [--cache DIR]
+Usage: python3 refresh.py [--no-pages] [--now ISO8601]
 """
 import argparse
-import hashlib
 import html
 import json
 import re
@@ -192,24 +191,8 @@ class Blocked(RuntimeError):
     """A source answered with a bot check instead of its page: stop, never try to get past it."""
 
 
-CACHE = None  # a folder of saved responses (--cache), so a rerun while developing repeats no request
-
-
 def request(url, body=None, tries=1):
-    """One GET, or a JSON POST when ``body`` is given; up to ``tries`` attempts a minute apart on a server error.
-    With --cache, a response saved by an earlier run is read back instead of asking again."""
-    if CACHE is not None:
-        key = hashlib.sha256(json.dumps([url, body], sort_keys=True).encode()).hexdigest()[:24]
-        saved = CACHE / f"{key}.txt"
-        if saved.is_file():
-            return saved.read_text(encoding="utf-8")
-        text = request_live(url, body, tries)
-        saved.write_text(text, encoding="utf-8")
-        return text
-    return request_live(url, body, tries)
-
-
-def request_live(url, body=None, tries=1):
+    """One GET, or a JSON POST when ``body`` is given; up to ``tries`` attempts a minute apart on a server error."""
     headers = {"User-Agent": USER_AGENT, "Accept": "application/json" if body is not None else "text/html, application/xml"}
     data = None
     if body is not None:
@@ -397,12 +380,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--no-pages", action="store_true", help="skip reading each class's own page (no seats or sessions)")
     parser.add_argument("--now", help="the retrieval time to record, ISO 8601 (default: now)")
-    parser.add_argument("--cache", metavar="DIR", help="save every response in DIR and reuse saved ones (for development; never commit it)")
     args = parser.parse_args(argv)
-    global CACHE
-    if args.cache:
-        CACHE = Path(args.cache)
-        CACHE.mkdir(parents=True, exist_ok=True)
     now = datetime.fromisoformat(args.now) if args.now else datetime.now(SGT).replace(microsecond=0)
     nlb = fetch_nlb(not args.no_pages)
     pa = fetch_onepa(now.astimezone(SGT).date().isoformat(), not args.no_pages)

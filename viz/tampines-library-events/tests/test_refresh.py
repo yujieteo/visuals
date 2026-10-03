@@ -6,7 +6,6 @@ The records below are cut down from NLB's EventFilter response and GoLibrary (Li
 import io
 import json
 import sys
-import tempfile
 import unittest
 from unittest import mock
 from datetime import datetime
@@ -212,6 +211,24 @@ class OnePA(unittest.TestCase):
         self.assertEqual(e["registration"], {"status": "open", "seats_left": 12, "capacity": 12, "note": "12 of 12 places available on onePA."})
         self.assertEqual(e["booking_url"], "https://www.onepa.gov.sg/courses/breadmaking-c027244088")
 
+    def test_the_age_and_fee_notes_are_only_the_clause_that_names_them(self):
+        cases = [  # remarks as onePA published them on 2026-10-03, then (age_note, fee_note)
+            ("Pls bring along container and $8 ingredient fee payable to Trainer\nparent and Child (3yrs n above) will learn to make cookies",
+             ("parent and Child (3yrs n above)", "Pls bring along container and $8 ingredient fee payable to Trainer")),
+            ("Class is for Children Age 10yrs and above,\nKindly bring along container and $8 ingredient fee payable to Trainer",
+             ("Class is for Children Age 10yrs and above", "Kindly bring along container and $8 ingredient fee payable to Trainer")),
+            ("The class will last about 2 hours. Suitable for kids above 6 years old. Participants need to bring own apron, containers and "
+             "carrier bags for completed products. Ingredient fee of $8.50 to be paid directly to trainer.",
+             ("Suitable for kids above 6 years old", "Ingredient fee of $8.50 to be paid directly to trainer")),
+            ("*Age Requirement: 8 years old & above\n• Ingredient & Material Fee: $12 (Payable to Trainer)",
+             ("Age Requirement: 8 years old & above", "Ingredient & Material Fee: $12 (Payable to Trainer)")),
+            ("Menu\nBring an apron", (None, None)),
+        ]
+        for remarks, expected in cases:
+            item = {**BREAD, "xp": {**BREAD["xp"], "Class": {"RequirementsAndRemarks": remarks}}}
+            e = onepa.event(item, None, {}, None, refresh.short_description)
+            self.assertEqual((e.get("age_note"), e.get("fee_note")), expected, remarks)
+
     def test_a_weekly_course_lists_its_sessions_in_order(self):
         e = onepa.event(WEEKLY, None, onepa.page_details(WEEKLY_PAGE, "c027245039"), (0, 25), refresh.short_description)
         self.assertEqual(e["session_count"], 3)
@@ -256,13 +273,6 @@ class Requests(unittest.TestCase):
         challenge = '<html>\r\n<head>\r\n<META NAME="robots" CONTENT="noindex,nofollow">\r\n<script src="/_Incapsula_Resource?SWJIYLWA=1"></script>'
         with self.answer(challenge), self.assertRaises(refresh.Blocked):
             refresh.request("https://www.onepa.gov.sg/-api/search/query", {"searchKeyword": ""})
-
-    def test_the_cache_answers_a_repeated_request_without_asking_again(self):
-        with tempfile.TemporaryDirectory() as folder, mock.patch.object(refresh, "CACHE", Path(folder)):
-            with self.answer('{"widgets": []}'):
-                first = refresh.request("https://www.onepa.gov.sg/-api/search/outlets")
-            with mock.patch.object(refresh.urllib.request, "urlopen", side_effect=AssertionError("asked again")):
-                self.assertEqual(refresh.request("https://www.onepa.gov.sg/-api/search/outlets"), first)
 
 
 class Snapshot(unittest.TestCase):

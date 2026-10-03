@@ -130,11 +130,11 @@ test("labels say what NLB published and nothing more", () => {
   assert.equal(M.priceText(SAMPLE[0]), "Free");
   assert.equal(M.priceText(SAMPLE[2]), "Paid: the fee is on the NLB page");
   assert.equal(M.priceText(ev({ id: "8" })), "Fee not published");
-  eq(plain(M.statusOf({ status: "open", seats_left: 21 })), { label: "21 seats left", tone: "ok" });
-  eq(plain(M.statusOf({ status: "open", seats_left: 1 })), { label: "1 seat left", tone: "ok" });
-  eq(plain(M.statusOf({ status: "waitlist" })), { label: "Full: waiting list open", tone: "warn" });
-  eq(plain(M.statusOf({ status: "full" })), { label: "Full", tone: "bad" });
-  eq(plain(M.statusOf(undefined)), { label: "Seats not published", tone: "unknown" });
+  eq(plain(M.statusOf({ status: "open", seats_left: 21 }, NOW)), { label: "21 seats left", tone: "ok" });
+  eq(plain(M.statusOf({ status: "open", seats_left: 1 }, NOW)), { label: "1 seat left", tone: "ok" });
+  eq(plain(M.statusOf({ status: "waitlist" }, NOW)), { label: "Full: waiting list open", tone: "warn" });
+  eq(plain(M.statusOf({ status: "full" }, NOW)), { label: "Full", tone: "bad" });
+  eq(plain(M.statusOf(undefined, NOW)), { label: "Seats not published", tone: "unknown" });
   assert.equal(M.sgtDate(Date.parse("2026-10-03T16:30:00Z")), "2026-10-04", "after 4 pm UTC it is the next day in Singapore");
   assert.equal(M.addDays("2026-10-28", 6), "2026-11-03");
 });
@@ -184,8 +184,8 @@ test("onePA classes read with their fees, places, sessions and booking label", (
   assert.equal(M.priceText(CC[0]), "$40 Passion Member · $45 Non Passion Member");
   assert.equal(M.priceText(CC[2]), "Free");
   assert.equal(M.priceText(ev({ id: "9", organiser: "onePA", free: false })), "Paid: the fee is on the onePA page");
-  eq(M.statusOf(CC[0].registration), { label: "7 of 12 places left", tone: "ok" });
-  eq(M.statusOf({ status: "full", seats_left: 0, capacity: 25 }), { label: "Full", tone: "bad" });
+  eq(M.statusOf(CC[0].registration, NOW), { label: "7 of 12 places left", tone: "ok" });
+  eq(M.statusOf({ status: "full", seats_left: 0, capacity: 25 }, NOW), { label: "Full", tone: "bad" });
   assert.equal(M.bookLabel(CC[0]), "Book on onePA");
   assert.equal(M.bookLabel(CC[2]), "Book on NLB");
   assert.equal(M.sessionsText(CC[1]), "3 sessions, Wed 7 Oct 2026 to Wed 11 Nov 2026");
@@ -193,4 +193,20 @@ test("onePA classes read with their fees, places, sessions and booking label", (
   assert.equal(M.sessionsText(ev({ id: "8", session_count: 6 })), "6 sessions");
   const d = M.describe(CC[0], data.categories, NOW);
   eq([d.organiser, d.venue_group, d.capacity, d.fees], ["onePA", "Tampines East CC", 12, CC[0].fees]);
+});
+
+test("a onePA class whose registration has closed says so, though it has not run yet", () => {
+  const cookies = ev({ id: "onepa-c027245435", source: "onepa", organiser: "onePA", category: "cooking", title: "Cookie Decorating",
+    start: "2026-10-24T15:00:00+08:00", end: "2026-10-24T17:00:00+08:00", booking_url: "https://www.onepa.gov.sg/courses/cookie-decorating-c027245435",
+    registration: { status: "open", seats_left: 11, capacity: 12, closes: "2026-10-21T14:59:00+08:00" } });
+  const before = Date.parse("2026-10-21T14:58:00+08:00"), after = Date.parse("2026-10-21T15:00:00+08:00");
+  eq(M.statusOf(cookies.registration, before), { label: "11 of 12 places left", tone: "ok" });
+  eq(M.statusOf(cookies.registration, after), { label: "Registration closed", tone: "unknown" });
+  assert.equal(M.registrationClosed(cookies.registration, before), false);
+  assert.equal(M.registrationClosed(cookies.registration, after), true);
+  assert.equal(M.isPast(cookies, after), false, "it still runs on 24 October");
+  const [open, closed] = [before, after].map((t) => M.describe(cookies, data.categories, t));
+  eq([open.registration_label, open.registration_closed], ["11 of 12 places left", false]);
+  eq([closed.registration_label, closed.registration_closed, closed.registration_closes], ["Registration closed", true, "2026-10-21T14:59:00+08:00"]);
+  assert.equal(M.registrationClosed({ status: "open" }, after), false, "a class without a closing time is never closed by the clock");
 });

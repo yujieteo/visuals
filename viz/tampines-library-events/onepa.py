@@ -27,10 +27,19 @@ SITEMAPS = ("course", "event", "ig")
 
 FOOD_CATEGORIES = ("Culinary", "Pastry & Baking")
 FOOD_TITLE = re.compile(r"\b(cook\w*|culinary|chefs?|bak(?:e|es|ing)|bread\w*|cakes?|cookies?|pastr(?:y|ies)|kueh|dumplings?|desserts?|recipes?|kitchen)\b", re.I)
-AGE_LINE = re.compile(r"[^.!?\n•]*\b\d+\s*(?:yrs?|years?)\b[^.!?\n•]*\.?", re.I)
-FEE_LINE = re.compile(r"[^\n]*\b(?:ingredients?|materials?)\b[^\n]*\bfees?\b[^\n]*|[^\n]*\bfees?\b[^\n]*\b(?:ingredients?|materials?)\b[^\n]*", re.I)
+CLAUSES = re.compile(r"[,;!?\n•]|\.(?!\d)")
+AGE = re.compile(r"[^(]*\([^()]*\b\d+\s*(?:yrs?|years?)\b[^()]*\)|.*\b\d+\s*(?:yrs?|years?)\b.*", re.I)
+FEE = re.compile(r".*\b(?:ingredients?|materials?)\b.*\bfees?\b.*|.*\bfees?\b.*\b(?:ingredients?|materials?)\b.*", re.I)
 RULE = ("A course in onePA's Culinary or Pastry & Baking category at a Tampines community club, or an event there whose "
         "title names cooking, baking, bread, cakes, cookies, pastry, kueh, dumplings, desserts or recipes.")
+
+
+def remark(remarks, pattern):
+    """The first clause of the remarks that ``pattern`` finds, only as far as it reaches, without the punctuation around it."""
+    for part in CLAUSES.split(remarks):
+        if (match := pattern.search(part)):
+            return match.group(0).strip(" \t\r*•-:,.") or None
+    return None
 
 
 def tampines_clubs(outlets):
@@ -172,10 +181,10 @@ def event(item, url, details, vacancy, short_description):
         "event_type": {"InterestGroup": "Interest group"}.get(item.get("type"), item.get("type")),
         "subjects": [s for s in (item.get("categories_level_2"), item.get("categories_level_3")) if s] or list(item.get("categories_level_1") or []),
         "audiences": details.get("audiences") or [],
-        "age_note": next((m.group(0).strip() for m in AGE_LINE.finditer(remarks)), None),
+        "age_note": remark(remarks, AGE),
         "free": (max(prices) == 0) if prices else None,
         "fees": fees,
-        "fee_note": next((m.group(0).strip() for m in FEE_LINE.finditer(remarks)), None),
+        "fee_note": remark(remarks, FEE),
         "language": str(details["language"]).title() if details.get("language") else None,
         "venue": f"{outlet} - {', '.join(rooms)}" if rooms else (details.get("address") or outlet),
         "venue_group": item.get("outlet_name"),

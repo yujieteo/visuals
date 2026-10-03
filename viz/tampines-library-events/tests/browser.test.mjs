@@ -12,6 +12,7 @@ const browser = process.env.TAMPINES_EVENTS_BROWSER_URL;
 const data = JSON.parse(readFileSync(new URL("../data.json", import.meta.url), "utf8"));
 const NOW = Date.parse(data.retrieved);
 const upcoming = data.events.filter((e) => !(Date.parse(e.end || e.start || "") < NOW));
+const bookable = upcoming.filter((e) => !(Date.parse(e.registration?.closes || "") < NOW));
 
 /** @param {string} [hash] */
 async function openPage(hash = "") {
@@ -75,7 +76,7 @@ test("the page lists the upcoming classes with their official booking links, and
     const first = await evaluate(READ);
     assert.deepEqual(first.ids, upcoming.map((e) => e.id), "every upcoming class, in start order");
     assert.ok(first.ids.length > 0);
-    assert.equal(first.books.length, upcoming.length, "each class has a Book on NLB or Book on onePA link");
+    assert.equal(first.books.length, bookable.length, "each class still taking registrations has a Book on NLB or Book on onePA link");
     for (const book of first.books) {
       const e = data.events.find((x) => x.id === book.id);
       assert.equal(book.href, e?.booking_url, "the link is the snapshot's, unchanged");

@@ -511,10 +511,21 @@ code{font-family:var(--mono);font-size:0.85em}
   }
 
   /**
-   * What the class's NLB page said about seats when the snapshot was taken, as a label and a tone.
-   * @param {Registration | undefined} r @returns {{ label: string, tone: "ok" | "warn" | "bad" | "unknown" }}
+   * Whether a class's registration closing time has passed by `now`; one without a closing time never has.
+   * @param {Registration | undefined} r @param {number} now
    */
-  function statusOf(r) {
+  function registrationClosed(r, now) {
+    const t = Date.parse((r && r.closes) || "");
+    return Number.isFinite(t) && t < now;
+  }
+
+  /**
+   * What the class's page said about seats when the snapshot was taken, as a label and a tone; once its
+   * registration closing time has passed by `now`, that registration is closed.
+   * @param {Registration | undefined} r @param {number} now @returns {{ label: string, tone: "ok" | "warn" | "bad" | "unknown" }}
+   */
+  function statusOf(r, now) {
+    if (registrationClosed(r, now)) return { label: "Registration closed", tone: "unknown" };
     switch (r && r.status) {
       case "open": return r && typeof r.seats_left === "number"
         ? { label: typeof r.capacity === "number" ? `${r.seats_left} of ${r.capacity} places left` : `${r.seats_left} ${r.seats_left === 1 ? "seat" : "seats"} left`,
@@ -539,7 +550,7 @@ code{font-family:var(--mono);font-size:0.85em}
    * @param {ClassEvent} e @param {Category[]} categories @param {number} now
    */
   function describe(e, categories, now) {
-    const status = statusOf(e.registration);
+    const status = statusOf(e.registration, now);
     return {
       id: e.id, title: e.title, category: e.category, organiser: e.organiser, venue_group: e.venue_group,
       category_label: (categories.find((c) => c.id === e.category) || { label: e.category }).label,
@@ -547,6 +558,7 @@ code{font-family:var(--mono);font-size:0.85em}
       duration_minutes: e.duration_minutes, session_count: e.session_count, sessions: e.sessions, venue: e.venue,
       audiences: e.audiences || [], age_note: e.age_note, free: e.free, fees: e.fees, fee_note: e.fee_note, price: priceText(e),
       registration_status: e.registration?.status, registration_label: status.label, registration_note: e.registration?.note,
+      registration_closes: e.registration?.closes, registration_closed: registrationClosed(e.registration, now),
       seats_left: e.registration?.seats_left, capacity: e.registration?.capacity, past: isPast(e, now),
       booking_url: bookingOk(e.booking_url) ? e.booking_url : undefined, description: e.description,
     };
@@ -554,7 +566,7 @@ code{font-family:var(--mono);font-size:0.85em}
 
   return {
     CATEGORY_IDS, SHAPES, load, defaults, normalize, encode, decode, sgtDate, dateOf, addDays, isPast, filter, byDay,
-    calendar, counts, audiences, venues, bookLabel, sessionsText, dayLabel, durationText, timeText, priceText, statusOf, bookingOk, describe,
+    calendar, counts, audiences, venues, bookLabel, sessionsText, dayLabel, durationText, timeText, priceText, registrationClosed, statusOf, bookingOk, describe,
   };
 });
 </script>
@@ -674,7 +686,8 @@ code{font-family:var(--mono);font-size:0.85em}
 
   /** @param {ClassEvent} e @param {string} current the selected class's id */
   function card(e, current) {
-    const status = M.statusOf(e.registration);
+    const t = now();
+    const status = M.statusOf(e.registration, t);
     const facts = el("dl", { class: "facts" });
     /** @param {string} k @param {string | undefined} v */
     const fact = (k, v) => { if (v) facts.append(el("dt", {}, [k]), el("dd", {}, [v])); };
@@ -686,14 +699,16 @@ code{font-family:var(--mono);font-size:0.85em}
     fact("Price", M.priceText(e));
     fact("Also", e.fee_note);
     fact("Language", e.language);
-    fact("Seats", e.registration?.note);
+    fact("Seats", M.registrationClosed(e.registration, t) ? undefined : e.registration?.note);
     const when = [M.dayLabel(M.dateOf(e)), M.timeText(e), M.durationText(e.duration_minutes)].filter(Boolean).join(" · ");
     const link = { ...state, event: e.id };
-    const book = M.bookingOk(e.booking_url)
-      ? el("a", { class: "btn primary book", href: /** @type {string} */ (e.booking_url), target: "_blank", rel: "noopener noreferrer", "data-booking": e.id },
-        [M.bookLabel(e), el("span", { "aria-hidden": "true" }, [" ↗"]), el("span", { class: "sr" }, [` ${e.title} (opens in a new tab)`])])
-      : el("span", { class: "note" }, [`No booking link published: see ${e.organiser || "the organiser"}’s listings.`]);
-    const past = M.isPast(e, now());
+    const book = !M.bookingOk(e.booking_url) ? el("span", { class: "note" }, [`No booking link published: see ${e.organiser || "the organiser"}’s listings.`])
+      : M.registrationClosed(e.registration, t)
+      ? el("a", { href: /** @type {string} */ (e.booking_url), target: "_blank", rel: "noopener noreferrer" },
+        [`View on ${e.organiser || "the organiser"}’s page`, el("span", { class: "sr" }, [` ${e.title} (opens in a new tab)`])])
+      : el("a", { class: "btn primary book", href: /** @type {string} */ (e.booking_url), target: "_blank", rel: "noopener noreferrer", "data-booking": e.id },
+        [M.bookLabel(e), el("span", { "aria-hidden": "true" }, [" ↗"]), el("span", { class: "sr" }, [` ${e.title} (opens in a new tab)`])]);
+    const past = M.isPast(e, t);
     return el("article", { class: `event card${e.id === current ? " selected" : ""}${past ? " past" : ""}`, id: `event-${e.id}`, "data-id": e.id, "data-category": e.category, "aria-labelledby": `event-${e.id}-h` }, [
       el("div", { class: "tags" }, [
         el("span", { class: "tag" }, [mark(e.category), LABEL[e.category] || e.category]),
