@@ -5,29 +5,41 @@
  * standard template (beamdswitch.js, `Beamdswitch.deck`) writes as a narrated Markdown deck. Every
  * line is the page's own wording; nothing is scored or estimated.
  */
-(function (root, factory) {
+// root is the global object: self in the page, where the report publishes itself for the page script.
+(function (/** @type {any} */ root, factory) {
   const api = factory();
   if (typeof module === "object" && module.exports) module.exports = api;
   else root.ConvexReport = api;
 })(typeof self !== "undefined" ? self : this, function () {
   "use strict";
 
+  /** @typedef {[id: string, label: string, action: string, test: string, why: string, verdict: string, examples: string[]]} Row */
+  /**
+   * The page's data: its four quadrant rows, key message, caveat and research basis.
+   * @typedef {{ title: string, lede: string, message: string, caveat: string, fetched: string, rows: Row[], sources: { cite: string, url: string, text: string }[] }} PageData
+   */
+
   /* A quadrant's place on the page's two axes, from its id ("reversible-upside" and so on). */
+  /** @type {Record<string, string>} */
   const COST = { reversible: "Nearly free failure", costly: "Costly failure" };
+  /** @type {Record<string, string>} */
   const CHANGE = { upside: "more change", flat: "little change" };
+  /** @param {string} id */
   const axes = (id) => { const [cost, change] = id.split("-"); return { cost: COST[cost], change: CHANGE[change] }; };
   const ORDER = ["reversible-flat", "reversible-upside", "costly-flat", "costly-upside"];
 
   /* Markdown text: characters beamdswitch would read as maths or markup are escaped. */
-  const md = (s) => String(s ?? "").replace(/\s+/g, " ").trim().replace(/[\\$*_`|<>[\]]/g, "\\$&");
+  const md = (/** @type {unknown} */ s) => String(s ?? "").replace(/\s+/g, " ").trim().replace(/[\\$*_`|<>[\]]/g, "\\$&");
   /* Narration is read aloud: markup characters are dropped. */
-  const say = (s) => String(s ?? "").replace(/&/g, " and ").replace(/[“”"]/g, "").replace(/[$\\`*_#|<>[\]]/g, " ").replace(/\s+/g, " ").trim();
-  const lower = (s) => s.charAt(0).toLowerCase() + s.slice(1);
-  const end = (s) => (/[.!?]$/.test(s) ? s : s + ".");
+  const say = (/** @type {unknown} */ s) => String(s ?? "").replace(/&/g, " and ").replace(/[“”"]/g, "").replace(/[$\\`*_#|<>[\]]/g, " ").replace(/\s+/g, " ").trim();
+  const lower = (/** @type {string} */ s) => s.charAt(0).toLowerCase() + s.slice(1);
+  const end = (/** @type {string} */ s) => (/[.!?]$/.test(s) ? s : s + ".");
 
+  /** @param {PageData} P @param {{ id?: string }} [view] @returns {import("./beamdswitch.js").Report} */
   function report(P, view = {}) {
     const byId = new Map(P.rows.map((r) => [r[0], r]));
-    const row = byId.get(view.id) || byId.get("reversible-upside");
+    // The page always has the reversible-upside quadrant, its default.
+    const row = /** @type {Row} */ (byId.get(/** @type {string} */ (view.id)) || byId.get("reversible-upside"));
     const [id, label, action, test, why, verdict, examples] = row, at = axes(id);
 
     const setup = [{
@@ -46,10 +58,10 @@
       body: [
         "| Failure cost | Change | Quadrant | Verdict |",
         "| --- | --- | --- | --- |",
-        ...ORDER.map((q) => { const r = byId.get(q), a = axes(q); return `| ${a.cost} | ${a.change} | ${md(r[1])} | ${md(r[5])} |`; }),
+        ...ORDER.map((q) => { const r = /** @type {Row} */ (byId.get(q)), a = axes(q); return `| ${a.cost} | ${a.change} | ${md(r[1])} | ${md(r[5])} |`; }),
       ].join("\n"),
       notes: "A convex bet has a capped downside and an open upside: the reversible probe quadrant.",
-      narration: ORDER.map((q) => { const r = byId.get(q), a = axes(q); return `${a.cost} with ${a.change}: ${lower(say(r[1]))}, verdict ${lower(end(say(r[5])))}`; }).join(" "),
+      narration: ORDER.map((q) => { const r = /** @type {Row} */ (byId.get(q)), a = axes(q); return `${a.cost} with ${a.change}: ${lower(say(r[1]))}, verdict ${lower(end(say(r[5])))}`; }).join(" "),
     }];
 
     const results = [{
