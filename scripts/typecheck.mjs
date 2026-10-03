@@ -193,6 +193,14 @@ export function summarize(errors, { shown = () => true, first = 20, scoped = fal
   return { text: lines.join("\n"), code: fail ? 1 : 0 };
 }
 
+/**
+ * The real paths of the files in `tsc --listFilesOnly` output, which also holds any syntax or config errors.
+ * @param {string} stdout
+ */
+export function listedFiles(stdout) {
+  return stdout.split("\n").map((line) => line.trim()).filter((path) => path && existsSync(path)).map((path) => realpathSync(path));
+}
+
 /** The slugs of the visuals with a tsconfig.json, sorted. */
 function typedVisuals() {
   return readdirSync(new URL("viz/", ROOT), { withFileTypes: true })
@@ -243,7 +251,12 @@ function summary(argv) {
     changed = new Set(names.split("\n").filter(Boolean));
     if (!changed.size) throw new UsageError(`--since ${since}: no file changed since ${base.slice(0, 12)}, so the filter matches nothing`);
   }
-  for (const project of projects) if (project !== "tsconfig.json") prepare(project.split("/")[1]);
+  /** @type {Map<string, string>} the page each checked visual's inline scripts come from, to its slug */
+  const pages = new Map();
+  for (const project of projects) if (project !== "tsconfig.json") {
+    const slug = project.split("/")[1];
+    pages.set(`viz/${slug}/${prepare(slug).page}`, slug);
+  }
   let output = "";
   /** @type {TscError[]} */
   const found = [];
@@ -255,10 +268,10 @@ function summary(argv) {
   }
   if (file) {
     // tsc lists paths under the working directory it was given (a symlinked one too), so compare real paths.
-    const listed = projects.flatMap((project) => spawnSync(TSC, ["-p", project, "--listFilesOnly"], { cwd: fileURLToPath(ROOT), encoding: "utf8", maxBuffer: 1 << 28 }).stdout.split("\n").filter((path) => path.trim()).map((path) => realpathSync(path.trim())));
+    const listed = projects.flatMap((project) => listedFiles(spawnSync(TSC, ["-p", project, "--listFilesOnly"], { cwd: fileURLToPath(ROOT), encoding: "utf8", maxBuffer: 1 << 28 }).stdout));
     const want = realpathSync(fileURLToPath(new URL(file, ROOT)));
-    const inline = /^viz\/[^/]+\//.exec(file);
-    const inlines = inline && `${realpathSync(fileURLToPath(new URL(inline[0], ROOT)))}/.typecheck/inline/`;
+    const slug = pages.get(file);
+    const inlines = slug && `${realpathSync(fileURLToPath(new URL(`viz/${slug}/`, ROOT)))}/.typecheck/inline/`;
     const inProject = projects.includes(file) || listed.some((path) => path === want || (inlines && path.startsWith(inlines)));
     if (!inProject) throw new UsageError(`--file ${file} is in none of the checked tsc projects, so the filter matches nothing`);
   }

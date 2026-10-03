@@ -1,12 +1,12 @@
 // scripts/typecheck.mjs: which inline scripts the shared extractor copies out for tsc, and where their lines map.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdtempSync, rmSync, symlinkSync } from "node:fs";
+import { existsSync, mkdtempSync, realpathSync, rmSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
-import { cell, extract, parse, summarize, toPage } from "../scripts/typecheck.mjs";
+import { cell, extract, listedFiles, parse, summarize, toPage } from "../scripts/typecheck.mjs";
 
 const page = [
   "<!doctype html><head>",
@@ -129,6 +129,7 @@ test("a missing path, an unknown ref, an unknown visual or option is a usage err
     [["--bogus"], "unknown option --bogus"],
     [["--first", "x"], "--first needs a whole number"],
     [["airbnb", "--file", "README.md"], "--file README.md is in none of the checked tsc projects, so the filter matches nothing"],
+    [["work-lanyards", "--scoped", "--file", "viz/work-lanyards/data.json"], "--file viz/work-lanyards/data.json is in none of the checked tsc projects"],
   ];
   const clean = spawnSync("git", ["status", "--porcelain"], { encoding: "utf8" }).stdout === "";
   if (clean) cases.push([["--since", "HEAD"], "--since HEAD: no file changed since"]);
@@ -151,4 +152,9 @@ test("--file finds a page's inline scripts when the repository is reached throug
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+test("--listFilesOnly output gives the real paths of its files and drops the errors tsc writes beside them", () => {
+  const stdout = ["a.js(1,9): error TS1109: Expression expected.", "error TS18003: No inputs were found in config file 'tsconfig.json'.", `  ${script}`, ""].join("\n");
+  assert.deepEqual(listedFiles(stdout), [realpathSync(script)]);
 });
