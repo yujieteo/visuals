@@ -1,0 +1,88 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Visual",
+  "description": "viz/<slug>/visual.json: one visual's catalogue entry and how its checks run. The folder name is the slug, the page is index.html, and every path is relative to the folder unless it says otherwise.",
+  "type": "object",
+  "required": ["title", "summary", "source_url", "fetched", "data", "webmcp_tools", "tags", "category"],
+  "additionalProperties": false,
+  "properties": {
+    "title": { "type": "string", "minLength": 1 },
+    "summary": { "type": "string", "minLength": 1 },
+    "source_url": { "type": "string", "minLength": 1 },
+    "fetched": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+    "data": {
+      "type": "string",
+      "description": "The data file published beside the page as data.json.",
+      "pattern": "^(?!/)(?!.*\\.\\.)[^/].*\\.(?:csv|json)$"
+    },
+    "webmcp_tools": {
+      "type": "array",
+      "minItems": 3,
+      "items": { "type": "string", "pattern": "^\\w+$" },
+      "uniqueItems": true
+    },
+    "tags": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+      "uniqueItems": true
+    },
+    "category": { "type": "string", "minLength": 1 },
+    "links": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Typed links to other records on the site, which adds the reverse link to each target.",
+      "items": {
+        "type": "object",
+        "required": ["rel", "target"],
+        "additionalProperties": false,
+        "properties": {
+          "rel": { "enum": ["resolves", "extends", "uses", "related"] },
+          "target": { "type": "string", "pattern": "^(?:note|blog|visualization|podcast|video|paper|resource):[A-Za-z0-9._-]+$" }
+        }
+      }
+    },
+    "assets": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Further files of the folder published beside index.html at the same relative path.",
+      "items": { "type": "string", "pattern": "^(?!/)(?!.*\\.\\.).+$" },
+      "uniqueItems": true
+    },
+    "downloads": {
+      "type": "string",
+      "description": "A JSON file whose downloads list (path, https url, sha256, bytes) pins files too large for Git; the site fetches and publishes them.",
+      "pattern": "^(?!/)(?!.*\\.\\.).+\\.json$"
+    },
+    "published": {
+      "type": "boolean",
+      "description": "false for a visual the site does not publish; published when absent."
+    },
+    "uses": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Shared files or folders outside viz/, relative to the repository root, that this visual depends on: a change to one runs the checks of every visual that lists it instead of every visual.",
+      "items": { "type": "string", "pattern": "^(?!/)(?!viz/)(?!.*\\.\\.).+$" },
+      "uniqueItems": true
+    },
+    "checks": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Shell commands run from the folder in place of the default checks (build.py --verify, node --test and unittest over tests/).",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "typecheck": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "How scripts/typecheck.mjs extracts index.html's inline scripts for the folder's tsconfig.json.",
+      "properties": {
+        "skip": {
+          "type": "array",
+          "description": "Ids of inline script blocks left out, such as the inlined beamdswitch template.",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        }
+      }
+    }
+  }
+}

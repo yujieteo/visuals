@@ -1,16 +1,17 @@
 # Per-repo no-mistakes overrides.
 #
-# Pin the Test step to what .github/workflows/verify.yml runs, so the gate
-# tests deterministically instead of handing testing to an agent.
-# Everything here is stdlib Python and node --test: no install step, no network,
-# no browser. CI's type-check (npm ci && npm run typecheck) is left out because
-# it installs TypeScript. no-mistakes honours commands from the default-branch copy of this
-# file only, so changes take effect once merged to main.
+# Pin the Test step to what .github/workflows/ci.yml runs, scoped the same way: the repository-wide
+# check and the shared tooling's tests always, and each visual's own checks only for the visuals the
+# branch changes against origin/main (every visual when shared tooling changed). Everything here is
+# stdlib Python and node --test: no install step, no network, no browser, so the type check (npm ci)
+# is left to CI. no-mistakes honours commands from the default-branch copy of this file only, so
+# changes take effect once merged to main.
 commands:
   test: >-
-    for builder in scripts/build*.py; do python3 "$builder" --verify || exit 1; done &&
+    python3 scripts/check_repo.py &&
     python3 -m unittest discover -s tests -p 'test_*.py' &&
-    node --test tests/*.test.mjs
+    node --test tests/*.test.mjs &&
+    python3 scripts/check.py --changed
 
 test:
   instructions: |

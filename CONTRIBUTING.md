@@ -1,40 +1,26 @@
 # Contributing
 
-Each visualization is one story from one dataset, shipped as a single
-standalone HTML page. See `README.md` for the layout and commands.
+Each visual is one folder, `viz/<slug>/`, shipped as a single standalone HTML
+page. See `README.md` for the layout and commands and `SKILLS.md` for the rules.
 
-## Change an existing visualization
+## Change a visual
 
-The 18 folders listed in `MIRRORS` in `tests/test_mirror_docs.py` develop in
-their standalone `yujieteo/<repo>` repository, which runs their tests; this
-repository holds byte-for-byte ports of their page and data files. The order
-between the two is in `SKILLS.md`.
+1. Change only its folder: the data, `src/` or `build.py` for a generated page
+   (then run `python3 build.py` there; never hand-edit the generated
+   `index.html`), or `index.html` itself when the folder has no builder.
+2. Keep `visual.json` in step with the page, and the visual's tests in its own
+   `tests/`.
+3. Check: `python3 scripts/check.py <slug>`.
 
-1. Change the source data in `data/<slug>/`, `design-tokens.json`, or the
-   builder in `scripts/`. Do not hand-edit `viz/<slug>/index.html` or the root
-   `index.html`; they are generated.
-2. Regenerate: `python3 scripts/<builder>.py` (see the Generation list in
-   `README.md`). Running it twice must leave no further diff.
-3. Verify: `for s in scripts/build*.py; do python3 "$s" --verify || break; done`.
+## Add a visual
 
-## Add a visualization
-
-- Start in a new standalone `yujieteo/<slug>` repository, as yujieteo/site
-  `skills/playbooks/add-visualization.md` describes; add it here only when the
-  site will publish it from this repository.
-- Save the unchanged source as `data/<slug>/raw.csv` or `raw.json`, with a
-  `meta.json` holding the public source label or URL, the ISO fetch date, and
-  whether a key file was used.
-- Add `scripts/build_<slug>.py` (standard library only, with a `--verify` mode),
-  modelled on an existing builder.
-- Add the builder to the README Generation list and a row to the README
-  visualization table (sorted by slug). CI and `.no-mistakes.yaml` verify every
-  `scripts/build*.py` in a loop, so they need no edit.
-- The workflow that agents follow is in `.agents/skills/visuals-new-visualization/SKILL.md`.
+Create `viz/<slug>/` with `index.html`, its data, `visual.json` and its tests.
+Nothing else needs an edit: CI, the catalogue and the site find the folder.
 
 ## Rules
 
 - Pages are self-contained: inline CSS, data, and JavaScript; no external
   assets, and mobile friendly.
+- A test reads only its own visual's folder and the shared tooling.
 - Never commit credentials, host details, private paths, or deployment
   configuration, and never write an absolute user-home path (macOS or Linux home prefix) in any file.

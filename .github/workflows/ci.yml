@@ -1,0 +1,128 @@
+# CI tests only what a change touches (docs/monorepo.md). scripts/changed.py maps the diff to the visuals
+# it changes, and each gets its own job on a sparse checkout of the shared tooling plus its own folder, so
+# its checks cannot read another visual's folder and its failure cannot hide or fail another's. A change to
+# shared tooling selects every visual. The repository job runs on every change: the shared tooling's tests
+# and type check, every visual.json, and the generated catalogue, kept as an artifact and never committed.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A newer push to a pull request replaces its run (its diff against the base includes the older one). Each push
+# to main tests only the visuals it changed, so every one gets its own group and is never cancelled or dropped.
+concurrency:
+  group: ci-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  plan:
+    name: Changed visuals
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      slugs: ${{ steps.changed.outputs.slugs }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: changed
+        name: Select the visuals the change touches
+        env:
+          EVENT: ${{ github.event_name }}
+          BEFORE: ${{ github.event.before }}
+        # A pull request checks out its merge commit, whose first parent is the base branch; a push to main
+        # compares with the commit before it. workflow_dispatch, or a push without a usable before, selects all.
+        run: |
+          case "$EVENT" in
+            pull_request) base=HEAD^1 ;;
+            push) base="$BEFORE" ;;
+            *) base= ;;
+          esac
+          if [ -n "$base" ] && git cat-file -e "$base^{commit}" 2>/dev/null; then
+            python3 scripts/changed.py --base "$base" --github-output
+          else
+            python3 scripts/changed.py --github-output
+          fi
+
+  repository:
+    name: Repository checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Every visual.json against the schema, the folder rules, no absolute home paths
+        run: python3 scripts/check_repo.py
+      - name: Tests of the shared tooling
+        run: |
+          python3 -m unittest discover -s tests -p 'test_*.py'
+          node --test tests/*.test.mjs
+      # tsc checks the JSDoc types of the shared tooling (tsconfig.json), with the versions package.json pins.
+      - name: Type-check the shared tooling
+        run: npm ci && npm run typecheck
+      - name: Generate the catalogue and gallery
+        run: python3 scripts/build_catalogue.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: catalogue
+          path: build/
+
+  visual:
+    name: Visual ${{ matrix.slug }}
+    needs: plan
+    if: needs.plan.outputs.slugs != '[]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        slug: ${{ fromJSON(needs.plan.outputs.slugs) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Root files, the shared tooling and this visual's folder only (cone mode).
+          sparse-checkout: |
+            scripts
+            schema
+            viz/${{ matrix.slug }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install the type checker
+        if: hashFiles(format('viz/{0}/tsconfig.json', matrix.slug)) != ''
+        run: npm ci
+      - name: Check ${{ matrix.slug }}
+        env:
+          SLUG: ${{ matrix.slug }}
+        run: python3 scripts/check.py "$SLUG" --require-typecheck
+
+  # One stable check name for branch protection: it fails when any job above failed or was cancelled.
+  passed:
+    name: CI passed
+    needs: [plan, repository, visual]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - env:
+          PLAN: ${{ needs.plan.result }}
+          REPOSITORY: ${{ needs.repository.result }}
+          VISUAL: ${{ needs.visual.result }}
+        run: |
+          echo "plan=$PLAN repository=$REPOSITORY visual=$VISUAL"
+          [ "$PLAN" = success ] && [ "$REPOSITORY" = success ] && { [ "$VISUAL" = success ] || [ "$VISUAL" = skipped ]; }

@@ -1,4 +1,7 @@
-"""The shared builder helpers emit exactly what the committed pages ship."""
+"""The builders' shared helpers in scripts/page_parts.py and scripts/style_guide.py.
+
+Each builder's --verify checks its own committed page, so these tests read no visual's folder.
+"""
 import sys
 import unittest
 from pathlib import Path
@@ -9,20 +12,14 @@ sys.dont_write_bytecode = True
 from page_parts import compact, deck_buttons_js, strip_types  # noqa: E402
 from style_guide import contrast  # noqa: E402
 
-# Pages whose builder emits the shared deck handlers, and whether they look elements up by id.
-DECK_PAGES = {
-    "graduate-employment-survey": False, "haze-singapore": True, "singapore-covid-governance-hindsight": False,
-    "social-values-surveydata": False, "tourist-attractions": True,
-}
-
-
 class PagePartsTest(unittest.TestCase):
-    def test_deck_handlers_match_each_committed_page(self):
-        for slug, by_id in DECK_PAGES.items():
-            html = (ROOT / "viz" / slug / "index.html").read_text(encoding="utf-8")
-            js = deck_buttons_js(slug, by_id)
-            self.assertEqual(html.count(js), 1, slug)
-            self.assertIn(f'"{slug}-beamdswitch.md"', js)
+    def test_deck_handlers_name_the_slugs_deck_and_look_up_by_id_or_selector(self):
+        by_selector, by_id = deck_buttons_js("some-visual"), deck_buttons_js("some-visual", by_id=True)
+        for js in (by_selector, by_id):
+            self.assertIn('"some-visual-beamdswitch.md"', js)
+        self.assertIn('document.querySelector("#save-beamdswitch")', by_selector)
+        self.assertIn('document.getElementById("copy-beamdswitch")', by_id)
+        self.assertNotIn("getElementById", by_selector)
 
     def test_contrast_is_the_wcag_ratio(self):
         self.assertAlmostEqual(contrast("#000000", "#ffffff"), 21)
