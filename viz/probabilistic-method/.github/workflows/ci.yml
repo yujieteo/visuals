@@ -1,0 +1,26 @@
+# CI for the Probabilistic Method Atlas. This repository is where the atlas and its tests develop;
+# the site's visuals/probabilistic-method/ is a port of the page files and runs none of these tests.
+# There is no Python test. The build script must leave index.html and raw.json unchanged, then every
+# tests/*.test.mjs and tests/*.test.cjs runs, and tsc type-checks the JSDoc with the TypeScript pinned in package.json.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: node build.mjs --check
+      - run: node --test 'tests/*.test.{mjs,cjs}'
+      - name: Type-check JavaScript
+        run: npm ci && npm run typecheck
