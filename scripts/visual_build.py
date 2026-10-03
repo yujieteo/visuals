@@ -6,8 +6,8 @@ kit's shell (scripts/kit/shell.html) with, in order:
   head      the title, description, canonical URL and Open Graph tags from visual.json, and the site's theme script
   style     the style guide's tokens (kit/style-tokens.css), the kit's layout (kit/kit.css), then src/style.css
   body      the eyebrow and title, the toolbar of exports, src/body.html, and the licences when MathJax is embedded
-  scripts   raw.json as <script id="dataset" type="application/json">, then kit/kit.js, kit/view3d.js (--3d),
-            beamdswitch.js, src/model.js, report.js and src/view.js, each unchanged in a <script id> of its own,
+  scripts   raw.json as <script id="dataset" type="application/json">, then kit/kit.js, beamdswitch.js,
+            src/model.js, report.js and src/view.js, each unchanged in a <script id> of its own,
             then the MathJax bundle in <script id="mathjax" data-vendor="mathjax-4.1.3"> (--mathjax)
 
 generated.json says which options the visual was generated with. Everything is inlined: the page requests nothing.
@@ -48,11 +48,9 @@ def page(folder):
     opts = options(folder)
     data = json.loads(read(folder, meta["data"]))
     dataset = json.dumps(data, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
-    blocks = [script("dataset", dataset, "application/json"), script("kit", kit.read(kit.KIT / "kit.js"))]
-    if opts.get("three_d"):
-        blocks.append(script("view3d", kit.read(kit.KIT / "view3d.js")))
-    blocks += [script("beamdswitch", read(folder, "beamdswitch.js")), script("model", read(folder, "src/model.js")),
-               script("report", read(folder, "report.js")), script("view", read(folder, "src/view.js"))]
+    blocks = [script("dataset", dataset, "application/json"), script("kit", kit.read(kit.KIT / "kit.js")),
+              script("beamdswitch", read(folder, "beamdswitch.js")), script("model", read(folder, "src/model.js")),
+              script("report", read(folder, "report.js")), script("view", read(folder, "src/view.js"))]
     if opts.get("mathjax"):
         blocks.append(script("mathjax", kit.mathjax_bundle(), vendor=kit.MATHJAX))
     parts = {

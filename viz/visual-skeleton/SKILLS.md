@@ -5,7 +5,7 @@ description: Use Visual skeleton: the generator's example to explore the view, r
 
 # Use Visual skeleton: the generator's example
 
-Live at <https://teoyujie.org/visuals/visual-skeleton/>. The page scripts/new_visual.py writes for a new visual, with MathJax and the 3D view: a damped oscillator whose state lives in the URL, saves and loads as JSON, and exports a Markdown record and a narrated beamdswitch deck. Works offline. To change the page, read [AGENTS.md](AGENTS.md).
+Live at <https://teoyujie.org/visuals/visual-skeleton/>. The page scripts/new_visual.py writes for a new visual, with MathJax: a damped oscillator whose state lives in the URL, saves and loads as JSON, and exports a Markdown record and a narrated beamdswitch deck. Works offline. To change the page, read [AGENTS.md](AGENTS.md).
 
 ## Tasks
 

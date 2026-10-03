@@ -44,10 +44,10 @@ A visual's browser checks are its `e2e/manifest.json` (how to drive it, checks t
 Generate it, then write only the domain:
 
 ```sh
-python3 scripts/new_visual.py <slug> --title "Title" --summary "One line for the catalogue." [--mathjax] [--3d]
+python3 scripts/new_visual.py <slug> --title "Title" --summary "One line for the catalogue." [--mathjax]
 ```
 
-It writes a complete `viz/<slug>/` that passes `scripts/check.py`, CI and its browser checks with no edit: a damped-oscillator starter that shows every mechanical part working. Replace the starter with the domain (the list below), run `python3 build.py` in the folder, and check it. `--mathjax` embeds MathJax 4.1.3 with its Fira font and their licences; `--3d` adds the kit's 3D view, whose camera is part of the state. `--help` lists the catalogue options (subject, category, tags, source URL, date, `--unpublished`). The same arguments always give the same bytes. `viz/visual-skeleton/` is the generator's output, committed unchanged (`published: false`), so CI and the daily browser run test it.
+It writes a complete `viz/<slug>/` that passes `scripts/check.py`, CI and its browser checks with no edit: a damped-oscillator starter that shows every mechanical part working. Replace the starter with the domain (the list below), run `python3 build.py` in the folder, and check it. `--mathjax` embeds MathJax 4.1.3 with its Fira font and their licences. `--help` lists the catalogue options (subject, category, tags, source URL, date, `--unpublished`). The same arguments always give the same bytes. `viz/visual-skeleton/` is the generator's output, committed unchanged (`published: false`), so CI and the daily browser run test it.
 
 | Mechanical part of the specification | Where a generated visual gets it | What checks it |
 | --- | --- | --- |
@@ -70,7 +70,7 @@ What stays manual, in files the generator writes once and never rewrites:
 - `SKILLS.md`, `AGENTS.md` and the catalogue fields of `visual.json`;
 - the review that no script makes: the mathematics, the data, the wording and the manual acceptance pass.
 
-`python3 scripts/new_visual.py --check <slug>...` (or `--all`) reports where a visual's mechanical parts differ from the current generator's, and `--update <slug>...` rewrites a generated visual's mechanical files and rebuilds its page; neither writes a domain file. A visual made by hand is reported by the mechanical parts it lacks; `--update` refuses it. A change to `scripts/kit/`, `scripts/visual_build.py`, `scripts/visual_kit.py`, `scripts/vendor/` or the beamdswitch template fails each generated visual's `build` or `generated` step until `--update` runs for it.
+`python3 scripts/new_visual.py --check <slug>...` (or `--all`) reports where a generated visual's mechanical parts differ from the current generator's, and `--update <slug>...` rewrites its mechanical files and rebuilds its page; neither writes a domain file. Both refuse a visual made by hand, and `--all` reads only the generated visuals. A change to `scripts/kit/`, `scripts/visual_build.py`, `scripts/visual_kit.py`, `scripts/vendor/` or the beamdswitch template fails each generated visual's `build` or `generated` step until `--update` runs for it.
 
 To make a visual by hand instead, create `viz/<slug>/` with `index.html`, the data file, `visual.json` (copy a neighbour's and change every field) and its tests. Nothing else lists the visuals: CI, the catalogue and the site find the folder. Stdlib Python builders import the shared modules from `scripts/` (`page_parts`, `style_guide`, `stock_cases`) and read `design-tokens.json`; a builder for several pages lives in `scripts/` and each page lists it in `uses`.
 

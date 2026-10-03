@@ -59,9 +59,9 @@ class GenerateTest(unittest.TestCase):
         self.root = self.layout.root
 
     def test_the_same_arguments_give_the_same_bytes(self):
-        first = generated(self.root, "tide-clock", "--3d")
+        first = generated(self.root, "tide-clock", "--mathjax")
         with GeneratorLayout() as other:
-            second = generated(other.root, "tide-clock", "--3d")
+            second = generated(other.root, "tide-clock", "--mathjax")
             self.assertEqual(files(first), files(second))
 
     def test_a_generated_visual_is_valid_passes_its_own_tests_and_every_static_rule(self):
@@ -139,9 +139,17 @@ class DriftTest(unittest.TestCase):
         with self.assertRaises(SystemExit):
             new_visual.update("hand-made", self.layout.root)
 
-    def test_a_hand_made_visual_is_reported_by_the_parts_it_lacks(self):
-        problems = new_visual.hand_made(self.layout.visual("hand-made"))
-        self.assertEqual([p.split(":")[0] for p in problems], ["beamdswitch.js", "theme", "tokens", "tokens", "state", "tests", "e2e", "e2e"])
+    def test_check_reads_only_generated_visuals(self):
+        self.layout.visual("hand-made")
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            self.assertEqual(new_visual.check(["hand-made"], self.layout.root), 1)
+            with self.assertRaises(SystemExit) as done:
+                new_visual.main(["--check", "--all"], self.layout.root)
+        self.assertEqual(done.exception.code, 0)
+        self.assertIn("hand-made: viz/hand-made was not generated", err.getvalue())
+        self.assertIn("tide-clock: no drift", out.getvalue())
+        self.assertNotIn("hand-made", out.getvalue())
 
 
 class ExampleTest(unittest.TestCase):
@@ -150,7 +158,7 @@ class ExampleTest(unittest.TestCase):
         meta = json.loads((folder / "visual.json").read_text(encoding="utf-8"))
         options = json.loads((folder / "generated.json").read_text(encoding="utf-8"))["options"]
         args = [EXAMPLE, "--title", meta["title"], "--summary", meta["summary"], "--subject", options["subject"],
-                "--tags", ",".join(meta["tags"]), "--fetched", meta["fetched"], "--mathjax", "--3d", "--unpublished"]
+                "--tags", ",".join(meta["tags"]), "--fetched", meta["fetched"], "--mathjax", "--unpublished"]
         with GeneratorLayout() as layout:
             fresh = new_visual.generate(new_visual.parse(args), layout.root)
             self.assertEqual(sorted(files(folder)), sorted(files(fresh)))

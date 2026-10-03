@@ -32,7 +32,7 @@ scripts/               shared tooling: changed.py, check.py, build_catalogue.py,
                        typecheck.mjs, with_chrome.py, and the builders' shared modules (page_parts, style_guide, stock_cases)
   new_visual.py        the generator of new visuals, and its drift check and update
   visual_build.py, visual_kit.py, kit/   what a generated page is built from: the shell, the state and export
-                       runtime, the style tokens, the 3D view and the shared tests
+                       runtime, the style tokens and the shared tests
   templates/           the site's beamdswitch template and its parsers, copied unchanged
   vendor/mathjax/      MathJax 4.1.3 and its Fira font, byte for byte, with their licences and SHA-256 list
 schema/visual.schema.json   what visual.json may hold
@@ -96,15 +96,15 @@ everything, the site's own visuals included.
 
 ## Generating a visual
 
-`python3 scripts/new_visual.py <slug> --title ... --summary ... [--mathjax] [--3d]` writes a new visual whose
+`python3 scripts/new_visual.py <slug> --title ... --summary ... [--mathjax]` writes a new visual whose
 mechanical parts come from shared, versioned code instead of copies: its `build.py` calls
 `scripts/visual_build.py`, which inlines the kit (`scripts/kit/`), the style guide's tokens and, with
 `--mathjax`, the vendored MathJax, and its `visual.json` lists those paths in `uses`, so a change to one runs
 only the generated visuals. The one copy is `beamdswitch.js`, which must stay byte-identical to the site's
 template; `generated.json` records its source and SHA-256, and `scripts/sync_template.py` updates both. The
 folder's domain files (model, views, report, data, the domain's tests, `SKILLS.md`, `AGENTS.md`) are written
-once from a starter and never rewritten. `--check` reports drift in the mechanical parts of any visual, and
-`--update` rewrites them for a generated one. `viz/visual-skeleton/` is the generator's output, committed
+once from a starter and never rewritten. `--check` reports drift in the mechanical parts of a generated visual, and
+`--update` rewrites them. `viz/visual-skeleton/` is the generator's output, committed
 unchanged and unpublished, so CI and the daily browser run keep testing what the generator writes.
 
 ## Generated, never committed

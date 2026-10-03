@@ -48,41 +48,10 @@
     const label = svg("text", { class: "axis-title", x: PAD.left, y: PAD.top - 4 }, "Displacement x (m)");
     chart.replaceChildren(...g, ...marks, label);
   }
-{{#three_d}}
-
-  /** The phase path (t, x, dx/dt) in 3D, turned by the camera in the state. @param {Record<string, any>} state @param {any} d */
-  function drawSpace(state, d) {
-    const space = $("space");
-    const camera = { yaw: state.yaw, pitch: state.pitch };
-    /** @param {[number, number, number]} p @returns {[number, number]} */
-    const at = (p) => {
-      const [u, v] = View3D.project(p, camera);
-      return [180 + u * 36, 130 + v * 36];
-    };
-    /** @type {[number, number, number][]} */
-    const points = d.curve.map((/** @type {[number, number]} */ [t, x], /** @type {number} */ i) => {
-      const next = d.curve[Math.min(i + 1, d.curve.length - 1)], prev = d.curve[Math.max(i - 1, 0)];
-      return [t / 2 - 3, x, (next[1] - prev[1]) / (next[0] - prev[0] || 1)];
-    });
-    /** @type {[[number, number, number], [number, number, number]][]} */
-    const ends = [[[-3, 0, 0], [3.5, 0, 0]], [[-3, -2, 0], [-3, 2, 0]], [[-3, 0, -2], [-3, 0, 2]]];
-    const axes = ends.map(([a, b]) => {
-      const [x1, y1] = at(a), [x2, y2] = at(b);
-      return svg("line", { x1, y1, x2, y2 });
-    });
-    const line = points.map((p, i) => `${i ? "L" : "M"}${at(p).map((v) => v.toFixed(1)).join(" ")}`).join("");
-    space.replaceChildren(svg("g", { class: "axis" }), svg("path", { class: "series", d: line }));
-    /** @type {SVGGElement} */ (space.firstChild).append(...axes);
-    $("camera").textContent = `yaw ${state.yaw}°, pitch ${state.pitch}°`;
-  }
-{{/three_d}}
 
   /** Draw everything from the state. @param {Record<string, any>} state @param {any} d */
   function render(state, d) {
     drawChart(state, d);
-{{#three_d}}
-    drawSpace(state, d);
-{{/three_d}}
     $("amplitude-value").textContent = d.text.amplitude;
     $("damping-value").textContent = d.text.damping;
     $("after-one-cycle").textContent = d.text.afterOneCycle;
@@ -130,9 +99,6 @@
         const example = Model.EXAMPLES.find((/** @type {KitExample} */ e) => e.id === b.getAttribute("data-example"));
         if (example) b.addEventListener("click", () => app.set(example.state));
       }
-{{#three_d}}
-      View3D.attach($("space"), app, { yaw: "yaw", pitch: "pitch" });
-{{/three_d}}
     },
   });
 })();

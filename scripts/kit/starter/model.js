@@ -21,10 +21,6 @@
     amplitude: { type: "number", label: "Amplitude a", default: 1, min: 0.5, max: 3, step: 0.1 },
     damping: { type: "number", label: "Damping ratio ζ", default: 0.2, min: 0, max: 1, step: 0.05 },
     envelope: { type: "boolean", label: "Show the envelope", default: true },
-{{#three_d}}
-    yaw: { type: "integer", label: "Camera yaw (degrees)", default: -35, min: -180, max: 180 },
-    pitch: { type: "integer", label: "Camera pitch (degrees)", default: 20, min: -90, max: 90 },
-{{/three_d}}
   };
 
   /** Named states with stable ids (§5, §18). @type {KitExample[]} */

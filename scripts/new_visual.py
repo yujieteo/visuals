@@ -18,8 +18,8 @@ the beamdswitch template's source and SHA-256. The output depends only on the ar
 bytes are the same.
 
 Usage:
-  scripts/new_visual.py SLUG --title TITLE --summary SUMMARY [--mathjax] [--3d] [options]
-  scripts/new_visual.py --check [SLUG... | --all]    report drift in mechanical parts; exit 1 when there is any
+  scripts/new_visual.py SLUG --title TITLE --summary SUMMARY [--mathjax] [options]
+  scripts/new_visual.py --check [SLUG... | --all]    report drift in generated visuals' mechanical parts; exit 1 when there is any
   scripts/new_visual.py --update SLUG...             rewrite a generated visual's mechanical parts and rebuild it
 """
 import argparse
@@ -28,7 +28,6 @@ import json
 import re
 import sys
 
-import rules
 import visual_build
 import visual_kit as kit
 from visuals import ROOT, SLUG, VIZ, folders
@@ -73,7 +72,7 @@ def uses(options):
 
 def typecheck(options):
     """The inline blocks scripts/typecheck.mjs leaves out: each is a file tsconfig.json checks directly."""
-    return {"skip": ["kit", *(["view3d"] if options.get("three_d") else []), "beamdswitch", "model", "report", "view"]}
+    return {"skip": ["kit", "beamdswitch", "model", "report", "view"]}
 
 
 def record(options):
@@ -92,7 +91,7 @@ def mechanical_files(options):
     """{path: text} of every mechanical file but index.html, for a visual generated with ``options``."""
     slug = options["slug"]
     values = {"slug": slug, "title": options["title"]}
-    flags = {"mathjax": options.get("mathjax", False), "three_d": options.get("three_d", False)}
+    flags = {"mathjax": options.get("mathjax", False)}
     out = {}
     for source, target in (("build.py", "build.py"), ("tsconfig.json", "tsconfig.json"),
                            ("types/globals.d.ts", "types/globals.d.ts"), ("kit.test.mjs", f"tests/{slug}-kit.test.mjs")):
@@ -140,9 +139,9 @@ def generate(args, root=ROOT):
     folder = root / VIZ / args.slug
     if folder.exists():
         raise SystemExit(f"viz/{args.slug} exists; --check or --update an existing visual instead")
-    options = {"slug": args.slug, "title": args.title, "subject": args.subject, "mathjax": args.mathjax, "three_d": args.three_d}
+    options = {"slug": args.slug, "title": args.title, "subject": args.subject, "mathjax": args.mathjax}
     values = {"slug": args.slug, "title": args.title, "lede": args.lede or args.summary, "purpose": args.purpose}
-    flags = {"mathjax": args.mathjax, "three_d": args.three_d}
+    flags = {"mathjax": args.mathjax}
     files = {target: render(kit.read(STARTER / source), values, flags) for target, source in starter_files(args.slug).items()}
     files.update(mechanical_files(options))
     files["visual.json"] = json_text(visual_json(args, options))
@@ -187,56 +186,23 @@ def drift(folder, page=True):
     return problems
 
 
-def hand_made(folder):
-    """The mechanical parts a visual that the generator did not write lacks or holds differently, one line each."""
-    from style_guide import THEME_SCRIPT
-    problems = []
-    page = folder / "index.html"
-    html = page.read_text(encoding="utf-8") if page.is_file() else ""
-    head = html.split("</head>", 1)[0]
-    copy = folder / "beamdswitch.js"
-    if not copy.is_file():
-        problems.append("beamdswitch.js: no copy of the site's template, so no deck(report) export")
-    elif copy.read_text(encoding="utf-8") != kit.beamdswitch_template():
-        problems.append("beamdswitch.js: differs from the site's template")
-    if THEME_SCRIPT not in head:
-        problems.append("theme: the site's theme script is not in <head>")
-    guide = json.loads((ROOT / "design-tokens.json").read_text(encoding="utf-8"))["style_guide"]
-    by_theme, _, _ = rules.themes(html)
-    for theme in ("light", "dark"):
-        off = sorted(name for name, value in guide[theme].items() if by_theme[theme].get(name, "").lower() != value.lower())
-        if off:
-            problems.append(f"tokens: {theme} theme lacks or differs from the style guide in --{', --'.join(off[:6])}{' ...' if len(off) > 6 else ''}")
-    if f"<script id=\"kit\">\n{kit.read(kit.KIT / 'kit.js').rstrip(chr(10))}\n</script>" not in html:
-        problems.append("state: does not inline the shared kit (versioned state, URL and JSON import and export, palette, WebMCP)")
-    tests = folder / "tests"
-    if not tests.is_dir() or not rules.test_files(folder):
-        problems.append("tests: no tests/*.test.mjs, *.test.cjs or test_*.py")
-    for name in ("e2e/manifest.json", "e2e/full.test.mjs"):
-        if not (folder / name).is_file():
-            problems.append(f"e2e: no {name}")
-    return problems
-
-
 def check(slugs, root=ROOT):
-    """Print each visual's drift; return the number of visuals with any."""
+    """Print each generated visual's drift; return the number of visuals with any, or that the generator did not write."""
     flagged = 0
     for slug in slugs:
         folder = root / VIZ / slug
-        if not (folder / "visual.json").is_file():
-            print(f"{slug}: no viz/{slug}/visual.json", file=sys.stderr)
+        if not (folder / "generated.json").is_file():
+            print(f"{slug}: viz/{slug} was not generated by {GENERATOR}; --check reads only generated visuals", file=sys.stderr)
             flagged += 1
             continue
-        generated = (folder / "generated.json").is_file()
-        problems = drift(folder) if generated else hand_made(folder)
-        kind = "generated" if generated else "not generated"
+        problems = drift(folder)
         if problems:
             flagged += 1
-            print(f"{slug} ({kind}): {len(problems)} mechanical part(s) drift")
+            print(f"{slug}: {len(problems)} mechanical part(s) drift")
             for problem in problems:
                 print(f"  {problem}")
         else:
-            print(f"{slug} ({kind}): no drift")
+            print(f"{slug}: no drift")
     return flagged
 
 
@@ -262,10 +228,10 @@ def parse(argv):
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0], formatter_class=argparse.RawDescriptionHelpFormatter,
                                      epilog=__doc__.split("Usage:", 1)[1])
     mode = parser.add_mutually_exclusive_group()
-    mode.add_argument("--check", action="store_true", help="report drift in the named visuals' mechanical parts")
+    mode.add_argument("--check", action="store_true", help="report drift in the named generated visuals' mechanical parts")
     mode.add_argument("--update", action="store_true", help="rewrite the named generated visuals' mechanical parts")
     parser.add_argument("slugs", nargs="*", metavar="SLUG")
-    parser.add_argument("--all", action="store_true", help="with --check: every visual")
+    parser.add_argument("--all", action="store_true", help="with --check: every generated visual")
     parser.add_argument("--title", help="the page title (no quotes, backticks, $, <, >, &, *, _, #, |, braces)")
     parser.add_argument("--summary", help="the catalogue summary, also the meta description")
     parser.add_argument("--lede", help="the paragraph under the title (default: the summary)")
@@ -276,7 +242,6 @@ def parse(argv):
     parser.add_argument("--source-url", help="where the data or model comes from (default: the visual's folder on GitHub)")
     parser.add_argument("--fetched", default=datetime.date.today().isoformat(), help="the data's date, YYYY-MM-DD (default: today)")
     parser.add_argument("--mathjax", action="store_true", help="embed MathJax 4.1.3 with its Fira font and licences")
-    parser.add_argument("--3d", dest="three_d", action="store_true", help="add the kit's 3D view (orbit camera in the state)")
     parser.add_argument("--unpublished", action="store_true", help='write "published": false')
     args = parser.parse_args(argv)
     if args.check or args.update:
@@ -305,7 +270,7 @@ def parse(argv):
 def main(argv=None, root=ROOT):
     args = parse(argv)
     if args.check:
-        slugs = [folder.name for folder in folders(root)] if args.all else args.slugs
+        slugs = [folder.name for folder in folders(root) if (folder / "generated.json").is_file()] if args.all else args.slugs
         flagged = check(slugs, root)
         print(f"\n{flagged} of {len(slugs)} visual(s) drift from the generator")
         sys.exit(1 if flagged else 0)

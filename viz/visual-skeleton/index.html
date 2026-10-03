@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="icon" href="data:,">
 <title>Visual skeleton: the generator&#x27;s example</title>
-<meta name="description" content="The page scripts/new_visual.py writes for a new visual, with MathJax and the 3D view: a damped oscillator whose state lives in the URL, saves and loads as JSON, and exports a Markdown record and a narrated beamdswitch deck. Works offline.">
+<meta name="description" content="The page scripts/new_visual.py writes for a new visual, with MathJax: a damped oscillator whose state lives in the URL, saves and loads as JSON, and exports a Markdown record and a narrated beamdswitch deck. Works offline.">
 <link rel="canonical" href="https://teoyujie.org/visuals/visual-skeleton/">
 <meta property="og:title" content="Visual skeleton: the generator&#x27;s example">
-<meta property="og:description" content="The page scripts/new_visual.py writes for a new visual, with MathJax and the 3D view: a damped oscillator whose state lives in the URL, saves and loads as JSON, and exports a Markdown record and a narrated beamdswitch deck. Works offline.">
+<meta property="og:description" content="The page scripts/new_visual.py writes for a new visual, with MathJax: a damped oscillator whose state lives in the URL, saves and loads as JSON, and exports a Markdown record and a narrated beamdswitch deck. Works offline.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://teoyujie.org/visuals/visual-skeleton/">
 <script id="site-theme">try { var t = localStorage.getItem("theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (e) {}</script>
@@ -324,7 +324,6 @@ a, button, input, select, summary, .btn {
 .chart .series { stroke: var(--signal); }
 .examples { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 figure { margin: 0 0 var(--space-4); }
-#space { max-width: 30rem; margin: auto; touch-action: none; cursor: grab; }
 </style>
 </head>
 <body>
@@ -347,16 +346,12 @@ figure { margin: 0 0 var(--space-4); }
 </div>
 <p id="notice" class="callout" role="status" aria-live="polite"></p>
 <p id="export-status" class="note" role="status" aria-live="polite"></p>
-<p class="lede">The page scripts/new_visual.py writes for a new visual, with MathJax and the 3D view: a damped oscillator whose state lives in the URL, saves and loads as JSON, and exports a Markdown record and a narrated beamdswitch deck. Works offline.</p>
+<p class="lede">The page scripts/new_visual.py writes for a new visual, with MathJax: a damped oscillator whose state lives in the URL, saves and loads as JSON, and exports a Markdown record and a narrated beamdswitch deck. Works offline.</p>
 <section class="lab" aria-label="Laboratory">
 <div>
 <figure class="card">
 <figcaption class="label">Displacement over time</figcaption>
 <svg id="chart" class="chart" viewBox="0 0 640 260" role="img" aria-label="Displacement x against time t, with its envelope"></svg>
-</figure>
-<figure class="card">
-<figcaption class="label">Phase path in 3D: time, displacement, velocity. Drag, or focus it and press the arrow keys, to turn it. <span id="camera" class="num"></span></figcaption>
-<svg id="space" class="chart" viewBox="0 0 360 260" role="img" tabindex="0" aria-label="The phase path in three dimensions; arrow keys turn the camera"></svg>
 </figure>
 <div id="formula" class="formula" aria-live="polite"></div>
 </div>
@@ -1106,78 +1101,6 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
   return api;
 });
 </script>
-<script id="view3d">
-/* A small 3D view for generated visuals (scripts/new_visual.py --3d): an orthographic camera that the state
- * holds as two angles, so the URL, JSON and exports restore the same view (§4, §12). It draws into SVG, so the
- * marks take their colours from the style tokens, and it needs no WebGL, library or network.
- *
- *   project(point, camera)   [x, y, z] in model units to [x, y, depth] on screen, for camera { yaw, pitch } in degrees
- *   attach(svg, app, keys)   drag on the SVG, or press the arrow keys while it has focus, to turn the camera; it
- *                            sets the state fields keys.yaw and keys.pitch through app.set(), replacing the
- *                            history entry. Reduced motion changes nothing: the view never moves on its own.
- *
- * scripts/visual_build.py inlines this file unchanged in <script id="view3d">. Node tests load it with require().
- */
-/** @param {any} root the global object @param {() => any} factory */
-(function (root, factory) {
-  const api = factory();
-  if (typeof module === "object" && module.exports) module.exports = api;
-  else root.View3D = api;
-})(/** @type {any} */ (typeof self !== "undefined" ? self : this), function () {
-  "use strict";
-
-  const RAD = Math.PI / 180;
-  const STEP = 5;
-
-  /**
-   * A model point on the screen plane: turn by yaw about the vertical axis z, then tilt by pitch about the
-   * screen's horizontal axis. Screen y grows downwards, as in SVG; depth grows towards the viewer.
-   * @param {[number, number, number]} point @param {{ yaw: number, pitch: number }} camera @returns {[number, number, number]}
-   */
-  function project(point, camera) {
-    const [x, y, z] = point;
-    const cy = Math.cos(camera.yaw * RAD), sy = Math.sin(camera.yaw * RAD);
-    const cp = Math.cos(camera.pitch * RAD), sp = Math.sin(camera.pitch * RAD);
-    const u = cy * x - sy * y;
-    const w = sy * x + cy * y;
-    return [u, -(cp * z - sp * w), sp * z + cp * w];
-  }
-
-  /**
-   * Turn the camera by dragging on `svg` or with the arrow keys while it has focus.
-   * @param {SVGSVGElement} svg @param {{ state: Record<string, any>, set(patch: Record<string, unknown>, mode?: "push" | "replace"): void }} app
-   * @param {{ yaw: string, pitch: string }} keys the state fields that hold the angles
-   */
-  function attach(svg, app, keys) {
-    /** @param {number} dYaw @param {number} dPitch */
-    const turn = (dYaw, dPitch) => {
-      const s = app.state;
-      app.set({ [keys.yaw]: Math.round(((s[keys.yaw] + dYaw + 540) % 360) - 180), [keys.pitch]: Math.round(Math.max(-90, Math.min(90, s[keys.pitch] + dPitch))) }, "replace");
-    };
-    svg.addEventListener("keydown", (e) => {
-      const move = { ArrowLeft: [-STEP, 0], ArrowRight: [STEP, 0], ArrowUp: [0, STEP], ArrowDown: [0, -STEP] }[e.key];
-      if (!move) return;
-      e.preventDefault();
-      turn(move[0], move[1]);
-    });
-    /** @type {{ x: number, y: number } | null} */
-    let from = null;
-    svg.addEventListener("pointerdown", (e) => { from = { x: e.clientX, y: e.clientY }; svg.setPointerCapture(e.pointerId); });
-    svg.addEventListener("pointermove", (e) => {
-      if (!from) return;
-      const dx = e.clientX - from.x, dy = e.clientY - from.y;
-      if (Math.abs(dx) + Math.abs(dy) < 4) return;
-      from = { x: e.clientX, y: e.clientY };
-      turn(dx / 2, -dy / 2);
-    });
-    const stop = () => { from = null; };
-    svg.addEventListener("pointerup", stop);
-    svg.addEventListener("pointercancel", stop);
-  }
-
-  return { project, attach, STEP };
-});
-</script>
 <script id="beamdswitch">
 /* The standard beamdswitch report template, shared by every visualisation.
  *
@@ -1294,8 +1217,6 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
     amplitude: { type: "number", label: "Amplitude a", default: 1, min: 0.5, max: 3, step: 0.1 },
     damping: { type: "number", label: "Damping ratio ζ", default: 0.2, min: 0, max: 1, step: 0.05 },
     envelope: { type: "boolean", label: "Show the envelope", default: true },
-    yaw: { type: "integer", label: "Camera yaw (degrees)", default: -35, min: -180, max: 180 },
-    pitch: { type: "integer", label: "Camera pitch (degrees)", default: 20, min: -90, max: 90 },
   };
 
   /** Named states with stable ids (§5, §18). @type {KitExample[]} */
@@ -1452,36 +1373,9 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
     chart.replaceChildren(...g, ...marks, label);
   }
 
-  /** The phase path (t, x, dx/dt) in 3D, turned by the camera in the state. @param {Record<string, any>} state @param {any} d */
-  function drawSpace(state, d) {
-    const space = $("space");
-    const camera = { yaw: state.yaw, pitch: state.pitch };
-    /** @param {[number, number, number]} p @returns {[number, number]} */
-    const at = (p) => {
-      const [u, v] = View3D.project(p, camera);
-      return [180 + u * 36, 130 + v * 36];
-    };
-    /** @type {[number, number, number][]} */
-    const points = d.curve.map((/** @type {[number, number]} */ [t, x], /** @type {number} */ i) => {
-      const next = d.curve[Math.min(i + 1, d.curve.length - 1)], prev = d.curve[Math.max(i - 1, 0)];
-      return [t / 2 - 3, x, (next[1] - prev[1]) / (next[0] - prev[0] || 1)];
-    });
-    /** @type {[[number, number, number], [number, number, number]][]} */
-    const ends = [[[-3, 0, 0], [3.5, 0, 0]], [[-3, -2, 0], [-3, 2, 0]], [[-3, 0, -2], [-3, 0, 2]]];
-    const axes = ends.map(([a, b]) => {
-      const [x1, y1] = at(a), [x2, y2] = at(b);
-      return svg("line", { x1, y1, x2, y2 });
-    });
-    const line = points.map((p, i) => `${i ? "L" : "M"}${at(p).map((v) => v.toFixed(1)).join(" ")}`).join("");
-    space.replaceChildren(svg("g", { class: "axis" }), svg("path", { class: "series", d: line }));
-    /** @type {SVGGElement} */ (space.firstChild).append(...axes);
-    $("camera").textContent = `yaw ${state.yaw}°, pitch ${state.pitch}°`;
-  }
-
   /** Draw everything from the state. @param {Record<string, any>} state @param {any} d */
   function render(state, d) {
     drawChart(state, d);
-    drawSpace(state, d);
     $("amplitude-value").textContent = d.text.amplitude;
     $("damping-value").textContent = d.text.damping;
     $("after-one-cycle").textContent = d.text.afterOneCycle;
@@ -1524,7 +1418,6 @@ OTHER DEALINGS IN THE FONT SOFTWARE.</pre>
         const example = Model.EXAMPLES.find((/** @type {KitExample} */ e) => e.id === b.getAttribute("data-example"));
         if (example) b.addEventListener("click", () => app.set(example.state));
       }
-      View3D.attach($("space"), app, { yaw: "yaw", pitch: "pitch" });
     },
   });
 })();

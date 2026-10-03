@@ -3,4 +3,3 @@
 declare var VisualKit: typeof import("../../../scripts/kit/kit.js");
 declare var Model: typeof import("../src/model.js");
 declare var Report: typeof import("../report.js");
-declare var View3D: typeof import("../../../scripts/kit/view3d.js");
