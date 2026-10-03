@@ -93,6 +93,22 @@ await fullSuite("snake-lemma", {
     }
   },
 
+  // Section 14: a Markdown copy of the session state, not the beamdswitch deck. If a candidate control
+  // exists it must download Markdown that carries the state as set; a copy is not checked, since the clipboard
+  // cannot be read in every browser. None exists at the time of writing.
+  "markdown-export": async ({ open }) => {
+    const s = await open("#example/integer?lifts=2");
+    try {
+      const candidate = s.page.getByRole("button", { name: /^(export|download|save)\b.*\bmarkdown\b/i }).filter({ hasNotText: /deck|slide|beamdswitch|course|sequence|talk/i });
+      assert.ok(await candidate.count(), "no control exports the session state as Markdown (its Markdown controls are deck exports)");
+      const { text } = await saved(s.page, () => candidate.first().click());
+      assert.match(text, /lifts?\D{0,8}2/, "the Markdown carries the session state as set");
+      assertClean(s);
+    } finally {
+      await s.close();
+    }
+  },
+
   "beamdswitch-export": async ({ open }) => {
     const s = await open();
     try {
