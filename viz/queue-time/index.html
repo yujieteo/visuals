@@ -338,24 +338,37 @@ select{min-height:2.75rem;border:1px solid var(--control);border-radius:var(--r)
  * percentiles (the likely range), so the same inputs always show the same numbers.
  */
 (function (root, factory) {
+
   const api = factory();
   if (typeof module === "object" && module.exports) module.exports = api;
   else root.QueueTime = api;
 })(typeof self !== "undefined" ? self : this, function () {
   "use strict";
+  /**
+   * Untrusted settings, from the page, the URL or an agent: every field is checked before use.
+   * @typedef {{ [key: string]: unknown }} Input
+   */
 
   const PACES = { fast: 1, typical: 2, slow: 4 }; // minutes per person at one counter
+  /** @type {Record<string, string>} */
   const PACE_LABEL = { fast: "Fast", typical: "Typical", slow: "Slow", custom: "Your number", observed: "Observed" };
   const WEIGHTS = { quick: 0.4, typical: 1, slow: 2.5 };
   const FOOD_PRESETS = [10, 15, 20, 30];
   const COMPLEXITY = { simple: 0.8, typical: 1, complex: 1.3 };
   const BUSY = { quiet: 0.85, normal: 1, packed: 1.4 };
+  /** @type {Record<"people" | "counters" | "pace" | "expected" | "elapsed" | "orders" | "minutes", [number, number]>} */
   const LIMITS = { people: [0, 999], counters: [0, 50], pace: [0.05, 120], expected: [1, 240], elapsed: [0, 600], orders: [0, 200], minutes: [0.1, 240] };
   const MODEL = { shape: 3, trials: 400, seed: 20261001, low: 0.1, high: 0.9, maxWeights: 12, spread: [0.8, 1.3] };
   const ASSUMPTIONS = ["First come, first served", "Counters work at roughly the same speed", "Each person's service time varies around the pace", "No priority lane and no long interruptions", "People joining behind you do not change your wait"];
   const UNDER = 57.5 / 60; // below this, a time reads as "under a minute"
 
+  /** @template {object} O @param {O} o @param {unknown} k @returns {k is keyof O & string} */
   const own = (o, k) => typeof k === "string" && Object.prototype.hasOwnProperty.call(o, k);
+  /**
+   * A number from untrusted input, held to its limits; the fallback when it is not a number.
+   * @template F @param {unknown} v @param {keyof typeof LIMITS} key @param {F} fallback @param {boolean} [int]
+   * @returns {number | F}
+   */
   function clamp(v, key, fallback, int) {
     const [lo, hi] = LIMITS[key];
     let n = typeof v === "number" ? v : typeof v === "string" && v.trim() ? Number(v) : NaN;
@@ -363,10 +376,18 @@ select{min-height:2.75rem;border:1px solid var(--control);border-radius:var(--r)
     if (int) n = Math.round(n);
     return Math.min(hi, Math.max(lo, n));
   }
+  /**
+   * The queue as the page holds it; scenario() checks it before use.
+   * @typedef {{ people: number, counters: number, pace: string, custom: number | null, structure: string, weights: string[] }} QueueSettings
+   * @typedef {{ expected: string, custom: number | null, complexity: string, busy: string, visible: boolean, ahead: number, done: number, minutes: number }} FoodSettings
+   */
+  /** @returns {QueueSettings} */
   const defaults = () => ({ people: 8, counters: 2, pace: "typical", custom: null, structure: "shared", weights: [] });
+  /** @returns {FoodSettings} */
   const foodDefaults = () => ({ expected: "15", custom: null, complexity: "typical", busy: "normal", visible: false, ahead: 5, done: 0, minutes: 5 });
 
   /* A queue scenario with every field bounded; `minutes` is the pace in minutes per person. */
+  /** @param {Input} [x] */
   function scenario(x = {}) {
     const pace = own(PACES, x.pace) ? x.pace : (x.pace === "custom" || x.pace === "observed") && clamp(x.custom, "pace", 0) > 0 ? x.pace : "typical";
     return {
@@ -377,8 +398,9 @@ select{min-height:2.75rem;border:1px solid var(--control);border-radius:var(--r)
     };
   }
   /* With separate lines only your own counter serves the people ahead of you. */
-  const servers = (s) => (s.structure === "separate" ? Math.min(1, s.counters) : s.counters);
+  const servers = (/** @type {Scenario} */ s) => (s.structure === "separate" ? Math.min(1, s.counters) : s.counters);
 
+  /** @param {number} seed */
   function rng(seed) {
     let a = seed >>> 0;
     return () => {
@@ -388,7 +410,8 @@ select{min-height:2.75rem;border:1px solid var(--control);border-radius:var(--r)
       return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
     };
   }
-  const sumExp = (r, k) => { let s = 0; for (let i = 0; i < k; i++) s -= Math.log(1 - r()); return s; };
+  const sumExp = (/** @type {() => number} */ r, /** @type {number} */ k) => { let s = 0; for (let i = 0; i < k; i++) s -= Math.log(1 - r()); return s; };
+  /** @param {Float64Array} h @param {number} n @param {number} v */
   function siftDown(h, n, v) {
     let i = 0;
     for (;;) {
@@ -401,6 +424,7 @@ select{min-height:2.75rem;border:1px solid var(--control);border-radius:var(--r)
     h[i] = v;
   }
   /* Sorted waits over the seeded runs. h is a min-heap of the times each counter next frees. */
+  /** @param {number} n @param {number} c @param {number} minutes @param {number[]} w each person's service weight */
   function waits(n, c, minutes, w) {
     const r = rng(MODEL.seed), k = MODEL.shape, out = new Float64Array(MODEL.trials), h = new Float64Array(c);
     for (let t = 0; t < out.length; t++) {
@@ -411,14 +435,17 @@ select{min-height:2.75rem;border:1px solid var(--control);border-radius:var(--r)
     }
     return out.sort();
   }
+  /** @param {ArrayLike<number>} a sorted @param {number} p */
   function quantile(a, p) {
     const i = p * (a.length - 1), lo = Math.floor(i);
     return a[lo] + (a[Math.min(lo + 1, a.length - 1)] - a[lo]) * (i - lo);
   }
+  /** @type {Map<string, { mid: number, lo: number, hi: number, mean: number }>} */
   const memo = new Map();
+  /** @param {Input} x */
   function estimate(x) {
     const s = scenario(x), c = servers(s);
-    if (!c) return { kind: "stopped", s };
+    if (!c) return { kind: /** @type {const} */ ("stopped"), s };
     const key = [s.people, c, s.minutes, s.weights.join()].join("|");
     let e = memo.get(key);
     if (!e) {
@@ -427,19 +454,20 @@ select{min-height:2.75rem;border:1px solid var(--control);border-radius:var(--r)
       if (memo.size > 64) memo.clear();
       memo.set(key, e);
     }
-    return { kind: s.people ? "wait" : "next", s, ...e };
+    return { kind: s.people ? /** @type {const} */ ("wait") : /** @type {const} */ ("next"), s, ...e };
   }
 
   /* ---------- words ---------- */
-  const plural = (n, one, many = one + "s") => `${n} ${n === 1 ? one : many}`;
-  const persons = (n) => plural(n, "person", "people");
+  const plural = (/** @type {number} */ n, /** @type {string} */ one, many = one + "s") => `${n} ${n === 1 ? one : many}`;
+  const persons = (/** @type {number} */ n) => plural(n, "person", "people");
   /* A food range in whole minutes: "12–20 min". */
-  const minuteRange = (lo, hi) => `${lo}–${hi} min`;
-  const lower = (t) => t.charAt(0).toLowerCase() + t.slice(1);
-  const cap = (t) => t.charAt(0).toUpperCase() + t.slice(1);
-  const and = (xs) => (xs.length < 2 ? xs.join("") : `${xs.slice(0, -1).join(", ")} and ${xs.at(-1)}`);
-  const num = (v) => String(+v.toFixed(v < 10 ? 1 : 0));
+  const minuteRange = (/** @type {number} */ lo, /** @type {number} */ hi) => `${lo}–${hi} min`;
+  const lower = (/** @type {string} */ t) => t.charAt(0).toLowerCase() + t.slice(1);
+  const cap = (/** @type {string} */ t) => t.charAt(0).toUpperCase() + t.slice(1);
+  const and = (/** @type {string[]} */ xs) => (xs.length < 2 ? xs.join("") : `${xs.slice(0, -1).join(", ")} and ${xs.at(-1)}`);
+  const num = (/** @type {number} */ v) => String(+v.toFixed(v < 10 ? 1 : 0));
   /* A duration without false precision: seconds under a minute, whole minutes, then hours. */
+  /** @param {number} min */
   function dur(min) {
     if (!(min > 0)) return "0 min";
     const sec = min * 60;
@@ -453,6 +481,7 @@ select{min-height:2.75rem;border:1px solid var(--control);border-radius:var(--r)
     return `${Math.round(min / 60)} h`;
   }
   /* A likely range, rounded outwards so it never looks narrower than it is. */
+  /** @param {number} lo @param {number} hi */
   function span(lo, hi) {
     if (hi < UNDER) return "under a minute";
     if (hi < 59.5) {
@@ -462,12 +491,14 @@ select{min-height:2.75rem;border:1px solid var(--control);border-radius:var(--r)
     const g = hi < 597.5 ? 5 : 60, a = Math.floor(lo / g) * g, b = Math.max(a + g, Math.ceil(hi / g) * g);
     return a < 1 ? `up to ${dur(b)}` : `${dur(a)} – ${dur(b)}`;
   }
+  /** @param {number} m */
   function paceText(m) {
     if (m < UNDER) return `${Math.max(5, Math.round(m * 12) * 5)} s per person`;
     return `${m < 10 ? num(m) : Math.round(m)} min per person`;
   }
-  const rateText = (r) => (r >= 0.5 ? `${num(r)} people per minute` : `${num(r * 60)} people per hour`);
+  const rateText = (/** @type {number} */ r) => (r >= 0.5 ? `${num(r)} people per minute` : `${num(r * 60)} people per hour`);
   /* Elapsed time on a waiting timer: floored, so it never runs ahead of the clock. */
+  /** @param {number} min */
   function clock(min) {
     if (min < 1) return "under a minute";
     if (min < 60) return `${Math.floor(min)} min`;
@@ -475,12 +506,15 @@ select{min-height:2.75rem;border:1px solid var(--control);border-radius:var(--r)
     return m ? `${h} h ${m} min` : `${h} h`;
   }
   /* The same text for a listener: "6–11 min" reads "6 to 11 minutes". */
-  const speak = (t) => String(t)
+  const speak = (/** @type {unknown} */ t) => String(t)
     .replace(/(\d+) h\b/g, (_, n) => `${n} hour${n === "1" ? "" : "s"}`)
     .replace(/(\d+) min\b/g, (_, n) => `${n} minute${n === "1" ? "" : "s"}`)
     .replace(/(\d+) s\b/g, "$1 seconds")
     .replace(/ ?– ?/g, " to ");
 
+  /** @typedef {ReturnType<typeof scenario>} Scenario */
+  /** @typedef {ReturnType<typeof estimate>} Estimate */
+  /** @param {Estimate} e */
   function headline(e) {
     if (e.kind === "stopped") return { head: "Queue is not moving", sub: "No counters are open, so nobody is being served." };
     const r = span(e.lo, e.hi);
@@ -489,16 +523,21 @@ select{min-height:2.75rem;border:1px solid var(--control);border-radius:var(--r)
     return { head: `About ${dur(e.mid)}`, sub: `Likely ${r}` };
   }
   /* The text equivalent of the queue diagram. */
+  /** @param {Estimate} e */
   function describe(e) {
     const s = e.s, base = `${persons(s.people)} ahead${s.structure === "separate" ? " in your line" : ""}, ${plural(s.counters, "counter")}`;
     if (e.kind === "stopped") return `${base}. The queue is not moving.`;
     return `${base}${e.kind === "next" ? ". You are next," : ","} estimated wait ${speak(span(e.lo, e.hi))}.`;
   }
-  const roughRule = (s) => (servers(s) ? (s.people * s.minutes) / servers(s) : null);
+  const roughRule = (/** @type {Scenario} */ s) => (servers(s) ? (s.people * s.minutes) / servers(s) : null);
 
   /* What changed between two queues, and the difference in the middle estimates. Descriptive only. */
+  /** @param {Input} xa @param {Input} xb */
   function compare(xa, xb, names = { a: "the first queue", b: "Queue B" }) {
-    const a = estimate(xa), b = estimate(xb), A = a.s, B = b.s, ch = [], dp = B.people - A.people;
+    const a = estimate(xa), b = estimate(xb), A = a.s, B = b.s;
+    /** @type {string[]} */
+    const ch = [];
+    const dp = B.people - A.people;
     if (dp) ch.push(`${Math.abs(dp)} ${dp > 0 ? "more" : "fewer"} ${Math.abs(dp) === 1 ? "person" : "people"}`);
     if (B.counters !== A.counters) ch.push(`${plural(B.counters, "counter")} instead of ${A.counters}`);
     if (B.structure !== A.structure) ch.push(B.structure === "separate" ? "separate lines instead of one shared line" : "one shared line instead of separate lines");
@@ -517,16 +556,22 @@ select{min-height:2.75rem;border:1px solid var(--control);border-radius:var(--r)
   }
 
   /* The pace that would make the model's average wait equal the wait you measured. */
+  /** @param {Input} x @param {number} actual */
   function backEstimate(x, actual) {
     const s = scenario(x), c = servers(s);
     if (!c || !(actual >= 0.05)) return null;
-    const unit = estimate({ ...s, pace: "custom", custom: 1 }).mean;
+    // c > 0, so the estimate runs and has a mean.
+    const unit = /** @type {{ mean: number }} */ (estimate({ ...s, pace: "custom", custom: 1 })).mean;
     const minutes = clampPace(actual / unit);
     return { minutes, throughput: c / minutes, counters: c, pace: `Observed pace: about ${paceText(minutes)}`, rate: c > 1 ? `Observed throughput: about ${rateText(c / minutes)}` : "" };
   }
   /* A measured pace, held to the range a pace may take. */
-  const clampPace = (m) => Math.min(LIMITS.pace[1], Math.max(LIMITS.pace[0], m));
+  const clampPace = (/** @type {number} */ m) => Math.min(LIMITS.pace[1], Math.max(LIMITS.pace[0], m));
   /* Tapping "Someone finished" while watching: people served across all counters over the time watched. */
+  /**
+   * @param {{ start: number, end?: number | null, taps: number } | null} o the watch: when it started and stopped, and the taps
+   * @param {number} now @param {Input} x
+   */
   function observed(o, now, x) {
     if (!o) return null;
     const min = Math.max(0, ((o.end ?? now) - o.start) / 60000), n = o.taps | 0;
@@ -538,10 +583,11 @@ select{min-height:2.75rem;border:1px solid var(--control);border-radius:var(--r)
 
   /* Timers store a start timestamp only: elapsed time is now minus start, so a locked phone,
      a background tab or a paused page never loses time. */
-  const startTimer = (now, already = 0) => ({ start: now - clamp(already, "elapsed", 0) * 60000 });
-  const elapsed = (t, now) => (t ? Math.max(0, (now - t.start) / 60000) : 0);
+  const startTimer = (/** @type {number} */ now, /** @type {unknown} */ already = 0) => ({ start: now - clamp(already, "elapsed", 0) * 60000 });
+  const elapsed = (/** @type {{ start: number } | null} */ t, /** @type {number} */ now) => (t ? Math.max(0, (now - t.start) / 60000) : 0);
 
   /* ---------- food orders ---------- */
+  /** @param {Input} [x] */
   function food(x = {}) {
     const preset = FOOD_PRESETS.includes(Number(x.expected)) ? String(Number(x.expected)) : null;
     const expected = preset || (x.expected === "custom" && clamp(x.custom, "expected", 0) > 0 ? "custom" : "15");
@@ -553,14 +599,18 @@ select{min-height:2.75rem;border:1px solid var(--control);border-radius:var(--r)
   }
   /* The expected range is 0.8 to 1.3 times the wait you expect. Complexity and busyness are
      what-ifs that scale it; they are never treated as measurements. */
+  /** @param {Input} x */
   function foodRange(x) {
-    const f = food(x), r = (v) => (v >= 30 ? Math.round(v / 5) * 5 : Math.round(v));
-    const pair = (m) => { const lo = Math.max(1, r(f.minutes * m * MODEL.spread[0])); return { lo, hi: Math.max(lo + 1, r(f.minutes * m * MODEL.spread[1])) }; };
-    const m = COMPLEXITY[f.complexity] * BUSY[f.busy], what = [];
+    const f = food(x), r = (/** @type {number} */ v) => (v >= 30 ? Math.round(v / 5) * 5 : Math.round(v));
+    const pair = (/** @type {number} */ m) => { const lo = Math.max(1, r(f.minutes * m * MODEL.spread[0])); return { lo, hi: Math.max(lo + 1, r(f.minutes * m * MODEL.spread[1])) }; };
+    const m = COMPLEXITY[f.complexity] * BUSY[f.busy];
+    /** @type {string[]} */
+    const what = [];
     if (f.complexity !== "typical") what.push(`a ${f.complexity} order`);
     if (f.busy !== "normal") what.push(`a ${f.busy} counter`);
     return { f, ...pair(1), whatIf: m === 1 ? null : { ...pair(m), text: `With ${and(what)}` } };
   }
+  /** @param {number} min @param {{ lo: number, hi: number }} g */
   function foodStatus(min, g) {
     if (min < g.lo) return "Before the expected range";
     if (min <= g.hi) return "Within the expected range";
@@ -570,6 +620,7 @@ select{min-height:2.75rem;border:1px solid var(--control);border-radius:var(--r)
      Your order needs (orders ahead + 1) completions. Gaps between completions vary like service times
      (gamma, shape 3), and the rate measured from m completions is uncertain in the same way, so the
      range narrows as you watch more orders finish. */
+  /** @param {Input} x */
   function visible(x) {
     const f = food(x), k = f.ahead, m = f.done, d = f.watched;
     if (m < 2) return { k, m, d, rate: null };
@@ -579,11 +630,21 @@ select{min-height:2.75rem;border:1px solid var(--control);border-radius:var(--r)
     a.sort();
     return { k, m, d, rate: m / d, mid: quantile(a, 0.5), lo: quantile(a, MODEL.low), hi: quantile(a, MODEL.high) };
   }
-  const watchedText = (v) => `${plural(v.m, "order")} done in ${dur(v.d)}, ${plural(v.k, "order")} ahead`;
+  const watchedText = (/** @type {{ m: number, d: number, k: number }} */ v) => `${plural(v.m, "order")} done in ${dur(v.d)}, ${plural(v.k, "order")} ahead`;
 
   /* ---------- beamdswitch report (filled into templates/beamdswitch.js by the page) ---------- */
-  const list = (xs) => xs.map((x) => `- ${x}`).join("\n");
+  const list = (/** @type {string[]} */ xs) => xs.map((x) => `- ${x}`).join("\n");
+  /**
+   * What the page holds when it exports: the mode, the queue and an optional second one, the finished timers.
+   * @typedef {{
+   *   mode: string, queue: Input, compare: Input | null, observed: boolean, food: Input,
+   *   qDone: { scenario: Input, offset: number, kind: string, lo: number, hi: number, actual: number } | null,
+   *   fDone: { actual: number, lo: number, hi: number } | null,
+   * }} ReportState
+   */
+  /** @param {{ observed: boolean }} st */
   function names(st) { return st.observed ? { a: "the observed queue", b: "the hypothetical" } : { a: "the first queue", b: "Queue B" }; }
+  /** @param {ReportState} st @returns {BeamdswitchReport} */
   function queueReport(st) {
     const e = estimate(st.queue), s = e.s, h = headline(e), c = s.counters, shared = s.structure === "shared";
     const rough = roughRule(s), cEff = servers(s), marked = ["quick", "slow"].map((k) => [k, s.weights.filter((w) => w === k).length]).filter((p) => p[1]);
@@ -630,6 +691,7 @@ select{min-height:2.75rem;border:1px solid var(--control);border-radius:var(--r)
       ],
     };
   }
+  /** @param {ReportState} st @returns {BeamdswitchReport} */
   function foodReport(st) {
     const g = foodRange(st.food), f = g.f, v = visible(st.food), range = minuteRange(g.lo, g.hi), results = [];
     const done = st.fDone, was = done && minuteRange(done.lo, done.hi), whatIf = g.whatIf && minuteRange(g.whatIf.lo, g.whatIf.hi);
@@ -649,7 +711,8 @@ select{min-height:2.75rem;border:1px solid var(--control);border-radius:var(--r)
       ],
     };
   }
-  const report = (st) => (st.mode === "food" ? foodReport(st) : queueReport(st));
+  const report = (/** @type {ReportState} */ st) =>
+ (st.mode === "food" ? foodReport(st) : queueReport(st));
 
   return {
     PACES, PACE_LABEL, WEIGHTS, FOOD_PRESETS, COMPLEXITY, BUSY, LIMITS, MODEL, ASSUMPTIONS,
@@ -662,25 +725,39 @@ select{min-height:2.75rem;border:1px solid var(--control);border-radius:var(--r)
 (() => {
 "use strict";
 /* The page: state, rendering and events. Every number comes from QueueTime (the engine above). */
-const Q = self.QueueTime, $ = (id) => document.getElementById(id), own = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
+/* The page's markup has every id the script looks up. */
+const Q = self.QueueTime, $ = (/** @type {string} */ id) => /** @type {HTMLElement} */ (document.getElementById(id)), own = (/** @type {object} */ o, /** @type {string} */ k) => Object.prototype.hasOwnProperty.call(o, k);
+/** @typedef {ReturnType<typeof Q.defaults>} QueueSettings */
+/** @typedef {{ scenario: QueueSettings, offset: number, kind: string, lo: number, hi: number }} TimerSnap the estimate when the timer started */
 $("nojs").hidden = true;
 $("app").hidden = false;
 
 /* Only the last mode and pace preset are remembered, and only where storage is allowed. */
 const store = {
-  get(k) { try { return localStorage.getItem(`queue-time:${k}`); } catch { return null; } },
-  set(k, v) { try { localStorage.setItem(`queue-time:${k}`, v); } catch { /* storage blocked */ } },
+  get(/** @type {string} */ k) { try { return localStorage.getItem(`queue-time:${k}`); } catch { return null; } },
+  set(/** @type {string} */ k, /** @type {string} */ v) { try { localStorage.setItem(`queue-time:${k}`, v); } catch { /* storage blocked */ } },
 };
+/**
+ * The page state: the mode, the queue and an optional second one, timers (start timestamps) and recorded waits.
+ * @typedef {{
+ *   mode: string, queue: QueueSettings, compare: QueueSettings | null, observed: boolean,
+ *   qTimer: { start: number, snap: TimerSnap } | null, qDone: (TimerSnap & { actual: number }) | null,
+ *   watch: { start: number, taps: number, end: number | null } | null,
+ *   food: ReturnType<typeof Q.foodDefaults>, fTimer: { start: number } | null, fDone: { actual: number, lo: number, hi: number } | null,
+ * }} PageState
+ */
+/** @returns {PageState} */
 const fresh = () => ({ mode: "queue", queue: Q.defaults(), compare: null, observed: false, qTimer: null, qDone: null, watch: null, food: Q.foodDefaults(), fTimer: null, fDone: null });
 let S = fresh();
 if (store.get("mode") === "food") S.mode = "food";
-if (own(Q.PACES, store.get("pace") || "")) S.queue.pace = store.get("pace");
+if (own(Q.PACES, store.get("pace") || "")) S.queue.pace = /** @type {string} */ (store.get("pace"));
 const now = () => Date.now();
-const copy = (o) => ({ ...o, weights: [...o.weights] });
-const scn = (p) => (p === "b" ? S.compare : S.queue);
+const copy = (/** @type {QueueSettings} */ o) => ({ ...o, weights: [...o.weights] });
+const scn = (/** @type {string | undefined} */ p) => (p === "b" ? S.compare : S.queue);
 
 /* ---------- controls ---------- */
-const pill = (name, value, text, data) => `<label class="pill"><input type="radio" name="${name}" value="${value}" ${data}><span>${text}</span></label>`;
+const pill = (/** @type {string} */ name, /** @type {string | number} */ value, /** @type {string} */ text, /** @type {string} */ data) => `<label class="pill"><input type="radio" name="${name}" value="${value}" ${data}><span>${text}</span></label>`;
+/** @param {string} p @param {string} f @param {string} label @param {number} max @param {[string, string]} names @param {string} [hint] */
 function stepper(p, f, label, max, names, hint) {
   const id = `${p}-${f}`, d = `data-scn="${p}" data-f="${f}"`;
   return `<div class="field"><label for="${id}">${label}</label><div class="stepper">`
@@ -688,6 +765,7 @@ function stepper(p, f, label, max, names, hint) {
     + `<input id="${id}" type="number" inputmode="numeric" min="0" max="${max}" step="1" ${d}${hint ? ` aria-describedby="${id}-hint"` : ""}>`
     + `<button type="button" ${d} data-step="1" aria-label="${names[1]}">+</button></div>${hint ? `<p class="hint" id="${id}-hint">${hint}</p>` : ""}</div>`;
 }
+/** @param {string} p */
 function controls(p) {
   return stepper(p, "people", "People ahead", Q.LIMITS.people[1], ["One fewer person ahead", "One more person ahead"], p === "a" ? "Not counting anyone already at a counter" : "")
     + stepper(p, "counters", "Counters open", Q.LIMITS.counters[1], ["One fewer counter", "One more counter"])
@@ -701,34 +779,38 @@ $("f-complexity").innerHTML = Object.keys(Q.COMPLEXITY).map((k) => pill("complex
 $("f-busy").innerHTML = Object.keys(Q.BUSY).map((k) => pill("busy", k, Q.cap(k), 'data-food="busy"')).join("");
 
 let force = false;
-const setVal = (el, v) => { if (el && (force || document.activeElement !== el) && el.value !== String(v)) el.value = v; };
-const check = (name, v) => { for (const r of document.querySelectorAll(`input[name="${name}"]`)) r.checked = r.value === String(v); };
+const setVal = (/** @type {HTMLInputElement} */ el, /** @type {string | number} */ v) => { if (el && (force || document.activeElement !== el) && el.value !== String(v)) el.value = String(v); };
+const check = (/** @type {string} */ name, /** @type {unknown} */ v) => { for (const r of /** @type {NodeListOf<HTMLInputElement>} */ (document.querySelectorAll(`input[name="${name}"]`))) r.checked = r.value === String(v); };
 /* Rebuild a block only when its content changes, so a focused button is not destroyed by a timer tick;
    when a rebuild removes the focused control, focus moves to the block's first control. */
+/** @param {HTMLElement} el @param {string} html */
 function block(el, html) {
   if (el.dataset.html === html) return;
   const had = el.contains(document.activeElement);
   el.dataset.html = html;
   el.innerHTML = html;
-  if (had) el.querySelector("button,input")?.focus();
+  if (had) /** @type {HTMLElement | null} */ (el.querySelector("button,input"))?.focus();
 }
-const actions = (...b) => `<div class="actions">${b.join("")}</div>`;
-const btn = (act, text, cls = "") => `<button type="button" class="btn ${cls}" data-act="${act}">${text}</button>`;
+const actions = (/** @type {string[]} */ ...b) => `<div class="actions">${b.join("")}</div>`;
+const btn = (/** @type {string} */ act, /** @type {string} */ text, cls = "") => `<button type="button" class="btn ${cls}" data-act="${act}">${text}</button>`;
 
 /* ---------- queue ---------- */
+/** @param {string} p */
 function renderScn(p) {
-  const o = scn(p), s = Q.scenario(o);
-  setVal($(`${p}-people`), s.people);
-  setVal($(`${p}-counters`), s.counters);
-  document.querySelector(`label[for="${p}-people"]`).textContent = s.structure === "separate" ? "People ahead in your line" : "People ahead";
+  const o = /** @type {QueueSettings} the queue shown in panel p */ (scn(p)), s = Q.scenario(o);
+  setVal(/** @type {HTMLInputElement} */ ($(`${p}-people`)), s.people);
+  setVal(/** @type {HTMLInputElement} */ ($(`${p}-counters`)), s.counters);
+  /** @type {HTMLElement} */ (document.querySelector(`label[for="${p}-people"]`)).textContent = s.structure === "separate" ? "People ahead in your line" : "People ahead";
   check(`${p}-pace`, s.pace);
-  document.querySelector(`input[name="${p}-pace"][value="observed"]`).closest("label").hidden = s.pace !== "observed";
-  const c = $(`${p}-custom`);
+  /** @type {HTMLElement} */ (/** @type {Element} */ (document.querySelector(`input[name="${p}-pace"][value="observed"]`)).closest("label")).hidden = s.pace !== "observed";
+  const c = /** @type {HTMLInputElement} */ ($(`${p}-custom`));
   setVal(c, s.pace === "custom" || s.pace === "observed" ? +s.minutes.toFixed(2) : "");
   c.placeholder = String(+s.minutes.toFixed(2));
   return Q.estimate(o);
 }
+/** @type {number | null} */
 let lastPeople = null;
+/** @param {ReturnType<typeof Q.scenario>} s */
 function diagram(s) {
   const CAP = 10, shown = Math.min(s.people, CAP), extra = s.people - shown;
   const grown = lastPeople === null ? 0 : Math.max(0, s.people - lastPeople);
@@ -740,7 +822,7 @@ function diagram(s) {
   }
   const lane = `<span class="lane"><span class="more">You</span><i class="dot you"></i>${extra ? `<span class="more">+${extra}</span>` : ""}${dots}</span><span class="arr">→</span>`;
   if (s.structure === "separate" && s.counters > 0) {
-    const others = Math.min(s.counters - 1, 3), faint = (n) => '<i class="dot faint"></i>'.repeat(n);
+    const others = Math.min(s.counters - 1, 3), faint = (/** @type {number} */ n) => '<i class="dot faint"></i>'.repeat(n);
     return `<div class="lanes"><div class="row">${lane}<i class="ctr"></i></div>`
       + [4, 2, 3].slice(0, others).map((n) => `<div class="row"><span class="lane">${faint(n)}</span><span class="arr">→</span><i class="ctr faint"></i></div>`).join("")
       + (s.counters - 1 > others ? `<span class="more">+${s.counters - 1 - others} more lines</span>` : "") + "</div>";
@@ -748,10 +830,11 @@ function diagram(s) {
   const n = s.counters, ctrs = n ? '<i class="ctr"></i>'.repeat(Math.min(n, 6)) + (n > 6 ? `<span class="more">+${n - 6}</span>` : "") : '<i class="ctr off"></i>';
   return `${lane}<span class="ctrs">${ctrs}</span>`;
 }
+/** @param {ReturnType<typeof Q.scenario>} s */
 function renderWeights(s) {
   const n = Math.min(s.people, Q.MODEL.maxWeights);
   block($("weights"), n ? Array.from({ length: n }, (_, i) => `<label>Person ${i + 1}${i ? "" : " (next)"}<select name="weight-${i + 1}" data-w="${i}">${Object.keys(Q.WEIGHTS).map((k) => `<option value="${k}">${Q.cap(k)}</option>`).join("")}</select></label>`).join("") + (s.people > n ? `<p class="hint">The other ${s.people - n} count as typical.</p>` : "") : '<p class="hint">Nobody is ahead of you.</p>');
-  for (const sel of $("weights").querySelectorAll("select")) sel.value = s.weights[+sel.dataset.w] || "typical";
+  for (const sel of $("weights").querySelectorAll("select")) sel.value = s.weights[Number(sel.dataset.w)] || "typical";
 }
 function renderQueue() {
   const e = renderScn("a"), s = e.s, h = Q.headline(e);
@@ -787,12 +870,14 @@ function renderQueue() {
   }
 
   const w = S.watch, o = Q.observed(w, now(), S.queue);
+  // o is null only when nothing is being watched.
   if (!w) block($("observe"), actions(btn("watch-start", "Start observing")));
   else {
-    const use = o.minutes ? `<p class="desc" id="watch-pace"></p>` : '<p class="hint">Tap when each person finishes; a pace appears after the first, once 15 seconds have passed.</p>';
-    block($("observe"), `<p class="status" id="watch-text"></p>${use}` + actions(w.end ? "" : btn("watch-tap", "Someone finished", "primary"), o.minutes ? btn("watch-use", "Use this pace") : "", w.end ? btn("watch-clear", "Clear", "quiet") : btn("watch-stop", "Stop", "quiet")));
-    $("watch-text").textContent = o.text;
-    if (o.minutes) $("watch-pace").textContent = `About ${Q.paceText(o.minutes)} at each counter (${o.rateText} across ${Q.plural(Q.scenario(S.queue).counters, "counter")})`;
+    const ob = /** @type {NonNullable<typeof o>} */ (o);
+    const use = ob.minutes ? `<p class="desc" id="watch-pace"></p>` : '<p class="hint">Tap when each person finishes; a pace appears after the first, once 15 seconds have passed.</p>';
+    block($("observe"), `<p class="status" id="watch-text"></p>${use}` + actions(w.end ? "" : btn("watch-tap", "Someone finished", "primary"), ob.minutes ? btn("watch-use", "Use this pace") : "", w.end ? btn("watch-clear", "Clear", "quiet") : btn("watch-stop", "Stop", "quiet")));
+    $("watch-text").textContent = ob.text;
+    if (ob.minutes) $("watch-pace").textContent = `About ${Q.paceText(ob.minutes)} at each counter (${ob.rateText} across ${Q.plural(Q.scenario(S.queue).counters, "counter")})`;
   }
   return e;
 }
@@ -801,17 +886,17 @@ function renderQueue() {
 function renderFood() {
   const g = Q.foodRange(S.food), f = g.f, t = S.fTimer, d = S.fDone, range = Q.minuteRange(g.lo, g.hi);
   check("expected", f.expected); check("complexity", f.complexity); check("busy", f.busy);
-  setVal($("f-custom"), f.expected === "custom" ? f.minutes : "");
-  $("f-custom").placeholder = String(f.minutes);
+  setVal(/** @type {HTMLInputElement} */ ($("f-custom")), f.expected === "custom" ? f.minutes : "");
+  /** @type {HTMLInputElement} */ ($("f-custom")).placeholder = String(f.minutes);
   $("f-custom-box").hidden = f.expected !== "custom";
-  setVal($("f-ahead"), f.ahead); setVal($("f-done"), f.done); setVal($("f-minutes"), f.watched);
-  $("visible-box").open = f.visible;
+  setVal(/** @type {HTMLInputElement} */ ($("f-ahead")), f.ahead); setVal(/** @type {HTMLInputElement} */ ($("f-done")), f.done); setVal(/** @type {HTMLInputElement} */ ($("f-minutes")), f.watched);
+  /** @type {HTMLDetailsElement} */ ($("visible-box")).open = f.visible;
   const el = d ? d.actual : Q.elapsed(t, now()), lo = d ? d.lo : g.lo, hi = d ? d.hi : g.hi;
   $("f-label").textContent = d ? "Actual wait" : t ? "Waiting for your order" : "Expected around";
   $("f-head").textContent = d ? Q.dur(d.actual) : t ? `${Q.clock(el)} elapsed` : range;
   $("f-sub").textContent = d ? `Expected ${Q.minuteRange(lo, hi)}` : t ? `Expected around ${range}` : "Start waiting when you order, or enter the time so far under More options.";
   $("f-status").textContent = t || d ? Q.foodStatus(el, { lo, hi }) : "";
-  const max = Math.max(hi * 1.4, el * 1.1, 1), pct = (v) => `${Math.min(100, (v / max) * 100).toFixed(1)}%`;
+  const max = Math.max(hi * 1.4, el * 1.1, 1), pct = (/** @type {number} */ v) => `${Math.min(100, (v / max) * 100).toFixed(1)}%`;
   const viz = `<div class="track"><span class="band" style="left:${pct(lo)};width:${pct(hi - lo)}"></span>${t || d ? `<span class="mark" style="left:${pct(el)}"></span>` : ""}</div><div class="ends"><span>0</span><span>${Math.round(max)} min</span></div>`;
   block($("f-viz"), viz);
   $("f-whatif").textContent = g.whatIf ? `${g.whatIf.text}: perhaps ${Q.minuteRange(g.whatIf.lo, g.whatIf.hi)}. A guess to explore, not a measurement.` : "";
@@ -824,6 +909,7 @@ function renderFood() {
   return g;
 }
 
+/** @param {boolean} [final] */
 function render(final) {
   force = !!final;
   const food = S.mode === "food";
@@ -831,13 +917,15 @@ function render(final) {
   $("mode-food").setAttribute("aria-pressed", String(food));
   $("queue-panel").hidden = food;
   $("food-panel").hidden = !food;
-  for (const d of document.querySelectorAll("#more [data-for]")) d.hidden = d.dataset.for !== S.mode;
+  for (const d of /** @type {NodeListOf<HTMLElement>} */ (document.querySelectorAll("#more [data-for]"))) d.hidden = d.dataset.for !== S.mode;
   if (food) renderFood(); else renderQueue();
   force = false;
 }
 
 /* One polite announcement after input settles; timer ticks never announce. */
-let liveTimer = 0;
+/** @type {ReturnType<typeof setTimeout> | undefined} */
+let liveTimer;
+/** @param {string} msg */
 function announce(msg) {
   clearTimeout(liveTimer);
   liveTimer = setTimeout(() => {
@@ -851,26 +939,31 @@ function announce(msg) {
   }, msg ? 50 : 900);
 }
 let say = "";
+/** @param {boolean} [final] */
 function changed(final) { render(final); announce(say); say = ""; }
 
 /* ---------- events ---------- */
+/** @param {number} already minutes already waited */
 function start(already) {
   if (S.mode === "food") { S.fTimer = Q.startTimer(now(), already); S.fDone = null; return; }
-  const e = Q.estimate(S.queue);
+  // A stopped queue has no range, so its lo and hi read as 0.
+  const e = /** @type {{ kind: string, lo?: number, hi?: number }} */ (Q.estimate(S.queue));
   S.qTimer = { ...Q.startTimer(now(), already), snap: { scenario: copy(S.queue), offset: already, kind: e.kind, lo: (e.lo || 0) + already, hi: (e.hi || 0) + already } };
   S.qDone = null;
 }
+/* Each action runs from its own button, which the page draws only in the state the action needs. */
+/** @type {Record<string, (b: HTMLElement) => string | void>} */
 const ACT = {
-  mode(b) { S.mode = b.dataset.mode; store.set("mode", S.mode); },
+  mode(b) { S.mode = /** @type {string} */ (b.dataset.mode); store.set("mode", S.mode); },
   compare() { S.compare = copy(S.queue); S.observed = false; return "b-people"; },
   "compare-close"() { S.compare = null; S.observed = false; return "compare-open"; },
   start() { start(0); },
-  already() { start(Q.clamp($("already").value, "elapsed", 0)); $("more").open = false; return S.mode === "food" ? "f-head" : "q-head"; },
-  served() { const a = Q.elapsed(S.qTimer, now()); S.qDone = { ...S.qTimer.snap, actual: a }; S.qTimer = null; say = `Served after ${Q.speak(Q.dur(a))}.`; },
+  already() { start(Q.clamp(/** @type {HTMLInputElement} */ ($("already")).value, "elapsed", 0)); /** @type {HTMLDetailsElement} */ ($("more")).open = false; return S.mode === "food" ? "f-head" : "q-head"; },
+  served() { const a = Q.elapsed(S.qTimer, now()); S.qDone = { .../** @type {NonNullable<PageState["qTimer"]>} */ (S.qTimer).snap, actual: a }; S.qTimer = null; say = `Served after ${Q.speak(Q.dur(a))}.`; },
   cancel() { S.qTimer = null; },
   "clear-done"() { S.qDone = null; },
   "use-observed"() {
-    const d = S.qDone, back = Q.backEstimate(d.scenario, d.actual - d.offset);
+    const d = /** @type {NonNullable<PageState["qDone"]>} */ (S.qDone), back = Q.backEstimate(d.scenario, d.actual - d.offset);
     if (!back) return;
     S.queue = { ...copy(d.scenario), pace: "observed", custom: back.minutes };
     S.compare = copy(S.queue); S.observed = true; S.qDone = null;
@@ -879,29 +972,31 @@ const ACT = {
   got() { const g = Q.foodRange(S.food), a = Q.elapsed(S.fTimer, now()); S.fDone = { actual: a, lo: g.lo, hi: g.hi }; S.fTimer = null; say = `Food arrived after ${Q.speak(Q.dur(a))}.`; },
   "f-cancel"() { S.fTimer = null; },
   "f-clear"() { S.fDone = null; },
-  "use-actual"() { S.food.expected = "custom"; S.food.custom = Math.max(1, Math.round(S.fDone.actual)); S.fDone = null; },
+  "use-actual"() { S.food.expected = "custom"; S.food.custom = Math.max(1, Math.round(/** @type {NonNullable<PageState["fDone"]>} */ (S.fDone).actual)); S.fDone = null; },
   "watch-start"() { S.watch = { start: now(), taps: 0, end: null }; },
-  "watch-tap"() { S.watch.taps++; },
-  "watch-stop"() { S.watch.end = now(); },
+  "watch-tap"() { /** @type {NonNullable<PageState["watch"]>} */ (S.watch).taps++; },
+  "watch-stop"() { /** @type {NonNullable<PageState["watch"]>} */ (S.watch).end = now(); },
   "watch-clear"() { S.watch = null; },
-  "watch-use"() { const o = Q.observed(S.watch, now(), S.queue); S.watch.end ??= now(); if (o?.minutes) { S.queue.pace = "observed"; S.queue.custom = o.minutes; } },
-  reset() { S = fresh(); lastPeople = null; store.set("mode", "queue"); store.set("pace", "typical"); for (const d of document.querySelectorAll("#app details")) d.open = false; },
+  "watch-use"() { const o = Q.observed(S.watch, now(), S.queue); /** @type {NonNullable<PageState["watch"]>} */ (S.watch).end ??= now(); if (o?.minutes) { S.queue.pace = "observed"; S.queue.custom = o.minutes; } },
+  reset() { S = fresh(); lastPeople = null; store.set("mode", "queue"); store.set("pace", "typical"); for (const d of /** @type {NodeListOf<HTMLDetailsElement>} */ (document.querySelectorAll("#app details"))) d.open = false; },
 };
 const app = $("app");
 app.addEventListener("click", (ev) => {
-  const b = ev.target.closest && ev.target.closest("button[data-step],button[data-act]");
+  const target = /** @type {Element} */ (ev.target), b = /** @type {HTMLElement | null} */ (target.closest && target.closest("button[data-step],button[data-act]"));
   if (!b) return;
   if (b.dataset.step) {
-    const o = scn(b.dataset.scn), f = b.dataset.f;
+    // A stepper belongs to a shown queue and steps its people or counters.
+    const o = /** @type {QueueSettings} */ (scn(b.dataset.scn)), f = /** @type {"people" | "counters"} */ (b.dataset.f);
     o[f] = Q.clamp(o[f] + Number(b.dataset.step), f, o[f], true);
     return changed(true);
   }
-  const focus = ACT[b.dataset.act]?.(b);
+  const focus = ACT[/** @type {string} */ (b.dataset.act)]?.(b);
   changed(true);
   if (!focus) return;
   if (focus.endsWith("head")) $(focus).setAttribute("tabindex", "-1");
   $(focus).focus();
 });
+/** @param {HTMLInputElement} t the control that changed @param {boolean} final */
 function edit(t, final) {
   const d = t.dataset;
   if (final && t.type === "number" && !Number.isFinite(parseFloat(t.value))) return render(true); // restore the last valid value
@@ -910,7 +1005,7 @@ function edit(t, final) {
     if (!o) return;
     if (d.f === "pace" || d.f === "structure") { if (!t.checked) return; o[d.f] = t.value; if (o === S.queue && own(Q.PACES, t.value)) store.set("pace", t.value); }
     else if (d.f === "custom") { const v = Q.clamp(t.value, "pace", null); if (v === null) return; o.custom = v; o.pace = "custom"; }
-    else { const v = Q.clamp(t.value, d.f, null, true); if (v === null) return; o[d.f] = v; }
+    else { const f = /** @type {"people" | "counters"} the number fields */ (d.f); const v = Q.clamp(t.value, f, null, true); if (v === null) return; o[f] = v; }
   } else if (d.food) {
     const f = S.food, k = d.food;
     if (k === "expected" || k === "complexity" || k === "busy") {
@@ -918,7 +1013,7 @@ function edit(t, final) {
       f[k] = t.value;
       if (t.value === "custom") { f.custom ??= Q.foodRange(f).f.minutes; if (final) setTimeout(() => $("f-custom").focus(), 0); }
     } else if (k === "custom") { const v = Q.clamp(t.value, "expected", null); if (v === null) return; f.custom = v; f.expected = "custom"; }
-    else { const v = Q.clamp(t.value, k === "minutes" ? "minutes" : "orders", null, k !== "minutes"); if (v === null) return; f[k] = v; }
+    else { const n = /** @type {"ahead" | "done" | "minutes"} the counted-orders fields */ (k); const v = Q.clamp(t.value, n === "minutes" ? "minutes" : "orders", null, n !== "minutes"); if (v === null) return; f[n] = v; }
   } else if (d.w !== undefined) {
     const w = S.queue.weights;
     while (w.length <= +d.w) w.push("typical");
@@ -926,9 +1021,9 @@ function edit(t, final) {
   } else return;
   changed(final);
 }
-app.addEventListener("input", (ev) => edit(ev.target, false));
-app.addEventListener("change", (ev) => edit(ev.target, true));
-$("visible-box").addEventListener("toggle", () => { if (S.food.visible !== $("visible-box").open) { S.food.visible = $("visible-box").open; changed(); } });
+app.addEventListener("input", (ev) => edit(/** @type {HTMLInputElement} */ (ev.target), false));
+app.addEventListener("change", (ev) => edit(/** @type {HTMLInputElement} */ (ev.target), true));
+$("visible-box").addEventListener("toggle", () => { if (S.food.visible !== /** @type {HTMLDetailsElement} */ ($("visible-box")).open) { S.food.visible = /** @type {HTMLDetailsElement} */ ($("visible-box")).open; changed(); } });
 
 /* Elapsed time is recomputed from timestamps; the interval only refreshes the text. */
 const tick = () => { if (S.qTimer || S.fTimer || (S.watch && !S.watch.end)) render(); };
@@ -937,6 +1032,7 @@ for (const ev of ["visibilitychange", "pageshow", "focus"]) (ev === "visibilityc
 
 /* ---------- beamdswitch deck ---------- */
 const deck = () => self.Beamdswitch.deck(Q.report({ mode: S.mode, queue: S.queue, compare: S.compare, observed: S.observed, qDone: S.qDone, food: S.food, fDone: S.fDone }));
+/** @param {Blob} blob @param {string} name */
 function save(blob, name) {
   const url = URL.createObjectURL(blob), a = document.createElement("a");
   a.href = url; a.download = name;
@@ -960,8 +1056,8 @@ $("copy-beamdswitch").addEventListener("click", async () => {
 });
 
 /* ---------- WebMCP: read-only tools for agents ---------- */
-const result = (v) => ({ content: [{ type: "text", text: JSON.stringify(v) }] });
-const view = (e) => ({ scenario: e.s, ...Q.headline(e), description: Q.describe(e), minutes: e.kind === "stopped" ? null : { middle: +e.mid.toFixed(2), low: +e.lo.toFixed(2), high: +e.hi.toFixed(2) }, rough_rule_minutes: Q.roughRule(e.s) });
+const result = (/** @type {unknown} */ v) => ({ content: [{ type: "text", text: JSON.stringify(v) }] });
+const view = (/** @type {ReturnType<typeof Q.estimate>} */ e) => ({ scenario: e.s, ...Q.headline(e), description: Q.describe(e), minutes: e.kind === "stopped" ? null : { middle: +e.mid.toFixed(2), low: +e.lo.toFixed(2), high: +e.hi.toFixed(2) }, rough_rule_minutes: Q.roughRule(e.s) });
 const ro = { readOnlyHint: true }, none = { type: "object", properties: {}, additionalProperties: false };
 const tools = [
   { name: "get_metadata", description: "Return what this queue and food-wait estimator does, its pace presets, food presets, input limits, model and assumptions.", inputSchema: none, annotations: ro,
@@ -975,15 +1071,15 @@ const tools = [
     } },
   { name: "estimate_queue", description: "Estimate the wait for a queue from the people ahead, the counters open and the pace (a preset or minutes per person), with a likely range. Same model as the page.", annotations: ro,
     inputSchema: { type: "object", properties: { people: { type: "integer", minimum: 0, maximum: 999 }, counters: { type: "integer", minimum: 0, maximum: 50 }, pace: { type: "string", enum: Object.keys(Q.PACES) }, minutes_per_person: { type: "number", minimum: 0.05, maximum: 120 }, structure: { type: "string", enum: ["shared", "separate"] } }, required: ["people", "counters"], additionalProperties: false },
-    async execute(i) { return result(view(Q.estimate({ people: i.people, counters: i.counters, pace: i.minutes_per_person ? "custom" : i.pace || "typical", custom: i.minutes_per_person, structure: i.structure }))); } },
+    async execute(/** @type {{ people: number, counters: number, pace?: string, minutes_per_person?: number, structure?: string }} */ i) { return result(view(Q.estimate({ people: i.people, counters: i.counters, pace: i.minutes_per_person ? "custom" : i.pace || "typical", custom: i.minutes_per_person, structure: i.structure }))); } },
   { name: "estimate_food_wait", description: "Return the expected range for a food order, the what-if range for complexity and busyness, the status for a time already waited, and an estimate from counted orders if given. The kitchen is never modelled.", annotations: ro,
     inputSchema: { type: "object", properties: { expected_minutes: { type: "number", minimum: 1, maximum: 240 }, complexity: { type: "string", enum: Object.keys(Q.COMPLEXITY) }, busy: { type: "string", enum: Object.keys(Q.BUSY) }, elapsed_minutes: { type: "number", minimum: 0, maximum: 600 }, orders_ahead: { type: "integer", minimum: 0, maximum: 200 }, orders_completed: { type: "integer", minimum: 0, maximum: 200 }, minutes_watched: { type: "number", minimum: 0.1, maximum: 240 } }, required: ["expected_minutes"], additionalProperties: false },
-    async execute(i) {
+    async execute(/** @type {{ expected_minutes: number, complexity?: string, busy?: string, elapsed_minutes?: number, orders_ahead?: number, orders_completed?: number, minutes_watched?: number }} */ i) {
       const f = { expected: "custom", custom: i.expected_minutes, complexity: i.complexity, busy: i.busy, visible: i.orders_completed != null, ahead: i.orders_ahead, done: i.orders_completed, minutes: i.minutes_watched }, g = Q.foodRange(f);
       return result({ expected_range_minutes: [g.lo, g.hi], what_if: g.whatIf, status: i.elapsed_minutes == null ? null : Q.foodStatus(i.elapsed_minutes, g), from_counted_orders: f.visible ? Q.visible(f) : null });
     } },
 ];
-self.QueueTimeTools = tools;
+/** @type {typeof self & { QueueTimeTools?: typeof tools }} */ (self).QueueTimeTools = tools;
 const mc = (typeof document !== "undefined" && document.modelContext) || (typeof navigator !== "undefined" && navigator.modelContext);
 if (mc && typeof mc.registerTool === "function") for (const t of tools) mc.registerTool(t);
 

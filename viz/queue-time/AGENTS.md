@@ -5,7 +5,7 @@ published at <https://teoyujie.org/visuals/queue-time/data.json>.
 
 ## Where changes go
 
-The standalone repository [yujieteo/queue-time](https://github.com/yujieteo/queue-time) is where this visualisation and its tests develop and where CI runs them. `visuals/queue-time/` in [yujieteo/site](https://github.com/yujieteo/site/tree/main/visuals/queue-time) is a port of its page files, refreshed when the visualisation is updated, and the site runs no logic tests for it. Porting copies the folder minus `tests/` and `.github/`. `README.md` lists every file here and its role.
+The standalone repository [yujieteo/queue-time](https://github.com/yujieteo/queue-time) is where this visualisation and its tests develop and where CI runs them. `visuals/queue-time/` in [yujieteo/site](https://github.com/yujieteo/site/tree/main/visuals/queue-time) is a port of its page files, refreshed when the visualisation is updated, and the site runs no logic tests for it. Porting copies the folder minus `tests/`, `.github/` and the type-check tooling (`package.json`, `package-lock.json`, `tsconfig.json`, `.gitignore`, `scripts/`, `types/`, and the generated `node_modules/` and `.typecheck/`). `README.md` lists every file here and its role.
 
 ## Build, test and verify
 
@@ -19,14 +19,17 @@ Before opening a pull request, run the whole suite, as CI (`.github/workflows/ci
 
 ```sh
 node --test 'tests/*.test.{mjs,cjs}'
+npm ci && npm run typecheck
 ```
+
+`npm run typecheck` runs tsc over the JSDoc types (`tsconfig.json`: `checkJs`, `strict`, no output). It covers the page's own inline scripts, which `scripts/extract-inline.mjs` copies out of `index.html` into `.typecheck/inline/` first and tsc checks as global scripts, and `tests/*.mjs`; `types/` declares the globals they share. It leaves out the read-only copies: `beamdswitch.js` (and so `<script id="beamdswitch">`) and `tests/fixtures/beamdswitch/` (`deck.d.mts` types the parser).
 
 ## Porting to yujieteo/site
 
 Change and test this repository first, then port it; the site's [add-visualization playbook](https://github.com/yujieteo/site/blob/main/skills/playbooks/add-visualization.md) owns the full workflow.
 
 1. Run the suite above, check the page end to end in a browser (load `index.html`, use what changed, call the WebMCP tools and the exports), and run no-mistakes here.
-2. Copy this repository minus `tests/` and `.github/`, byte for byte, into `visuals/queue-time/` of yujieteo/site, and run no-mistakes again on that pull request, which runs only the site-level tests. Never add logic tests to the site; its test cost must stay flat.
+2. Copy this repository minus `tests/`, `.github/` and the type-check tooling, byte for byte, into `visuals/queue-time/` of yujieteo/site, and run no-mistakes again on that pull request, which runs only the site-level tests. Never add logic tests to the site; its test cost must stay flat.
 
 ## Data and tests
 
@@ -38,7 +41,7 @@ Change and test this repository first, then port it; the site's [add-visualizati
 
 - One self-contained `index.html`: no external scripts, stylesheets, fonts or network requests. It works offline.
 - The engine has no DOM, storage, clock or network use; 400 runs with a fixed seed give the same numbers for the same inputs.
-- Tests use Node's built-in runner (`node --test`) only; never add Vitest, Jest, a `package.json` or another test framework.
+- Tests use Node's built-in runner (`node --test`) only; never add Vitest, Jest or another test framework. `package.json` exists only to pin the type-check tooling (TypeScript and `@types/node`, development-only, no runtime dependencies).
 - `beamdswitch.js` is a verbatim copy of yujieteo/site's `templates/beamdswitch.js` and is inlined unchanged; the tests check the copy against `tests/fixtures/beamdswitch/beamdswitch.js`, and the site's `tests/beamdswitch-voice.test.mjs` checks the port. Every beamdswitch deck declares the narration voice `bf_emma` in its front matter.
 - WebMCP tools stay read-only (`readOnlyHint: true`), never change the page, and keep their names equal to `webmcp_tools` in `data/visuals/queue-time.yaml` in yujieteo/site.
 - `LICENSE` is MIT (Copyright (c) 2026 Yu Jie Teo).

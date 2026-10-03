@@ -4,18 +4,28 @@ import vm from "node:vm";
 import { assertButtonsExport, assertInlined, assertStandardDeck, assertTemplateCopy, openPage, read } from "./data-visuals-beamdswitch.mjs";
 
 const html = read("index.html");
-const engine = /<script id="queue-time-engine">\n([\s\S]*?)<\/script>/.exec(html)[1];
-const load = () => { const ctx = {}; ctx.self = ctx; vm.runInNewContext(engine, ctx); return ctx.QueueTime; };
+const engine = /** @type {RegExpExecArray} */ (/<script id="queue-time-engine">\n([\s\S]*?)<\/script>/.exec(html))[1];
+/* A fresh engine, typed as the page's (types/page.d.ts). */
+/** @returns {typeof QueueTime} */
+const load = () => {
+  /** @type {{ self?: unknown, QueueTime?: typeof QueueTime }} */
+  const ctx = {};
+  ctx.self = ctx; vm.runInNewContext(engine, ctx);
+  return /** @type {typeof QueueTime} */ (ctx.QueueTime);
+};
 const Q = load();
 const T = (await import("node:module")).createRequire(import.meta.url)("../beamdswitch.js");
-const plain = (v) => JSON.parse(JSON.stringify(v));
-const est = (x) => Q.estimate(x);
+const plain = (/** @type {unknown} */ v) => JSON.parse(JSON.stringify(v));
+/* The estimate of a moving queue: most cases here have a counter open. */
+const est = (/** @type {Parameters<typeof Q.estimate>[0]} */ x) => { const e = Q.estimate(x); assert.ok(e.kind !== "stopped", "the queue is moving"); return e; };
+/* The rough rule for a queue with a counter open. */
+const rough = (/** @type {Parameters<typeof Q.roughRule>[0]} */ s) => { const v = Q.roughRule(s); assert.ok(v !== null, "a counter is open"); return v; };
 
 test("the default queue reads as an estimate with a range around the rough rule", () => {
   const e = est(Q.defaults()), h = Q.headline(e);
   assert.equal(e.kind, "wait");
   assert.ok(e.lo < e.mid && e.mid < e.hi, "a central estimate inside a plausible interval");
-  assert.ok(Math.abs(e.mean - Q.roughRule(e.s)) < 1.5, `mean ${e.mean} near the rough rule ${Q.roughRule(e.s)}`);
+  assert.ok(Math.abs(e.mean - rough(e.s)) < 1.5, `mean ${e.mean} near the rough rule ${Q.roughRule(e.s)}`);
   assert.equal(h.head, `About ${Math.round(e.mid)} min`);
   assert.equal(h.sub, `Likely ${Math.floor(e.lo)}–${Math.ceil(e.hi)} min`);
   assert.equal(Q.describe(e), `8 people ahead, 2 counters, estimated wait ${Math.floor(e.lo)} to ${Math.ceil(e.hi)} minutes.`);
@@ -37,7 +47,7 @@ test("edge cases: nobody ahead, no counters, huge queues, spare counters, very f
   assert.equal(zero.kind, "next");
   assert.equal(Q.headline(zero).head, "You’re next");
   assert.match(Q.headline(zero).sub, /^Almost no queue wait/);
-  const stopped = est({ counters: 0 });
+  const stopped = Q.estimate({ counters: 0 });
   assert.equal(stopped.kind, "stopped");
   assert.equal(Q.headline(stopped).head, "Queue is not moving");
   assert.equal(Q.roughRule(stopped.s), null);
@@ -52,7 +62,7 @@ test("edge cases: nobody ahead, no counters, huge queues, spare counters, very f
   assert.equal(big.s.counters, 50);
   assert.ok(Number.isFinite(big.lo) && Number.isFinite(big.hi) && Number.isFinite(big.mean), "a finite range for a huge queue");
   assert.ok(big.lo <= big.mid && big.mid <= big.hi && big.mid > 30);
-  assert.ok(Math.abs(big.mean - Q.roughRule(big.s)) < 2, `mean ${big.mean} near the rough rule ${Q.roughRule(big.s)}`);
+  assert.ok(Math.abs(big.mean - rough(big.s)) < 2, `mean ${big.mean} near the rough rule ${Q.roughRule(big.s)}`);
   assert.match(Q.headline(est({ people: 999, counters: 1 })).head, /^About \d+ h$/);
   const spare = est({ people: 2, counters: 10 });
   assert.ok(spare.mid > 0 && spare.mid < est({ people: 2, counters: 1 }).mid);
@@ -60,7 +70,7 @@ test("edge cases: nobody ahead, no counters, huge queues, spare counters, very f
   assert.equal(fast.head, "Less than a minute");
   assert.doesNotMatch(fast.head + fast.sub, /0\.\d/, "no meaningless decimals");
   for (const bad of [{ people: -5 }, { people: "abc" }, { counters: 1e6 }, { pace: "toString" }, { pace: "custom", custom: -1 }, { weights: "x" }]) {
-    const e = est(bad);
+    const e = Q.estimate(bad);
     assert.ok(e.kind === "stopped" || Number.isFinite(e.mid), JSON.stringify(bad));
   }
   assert.equal(Q.scenario({ people: -5 }).people, 0);
@@ -69,6 +79,7 @@ test("edge cases: nobody ahead, no counters, huge queues, spare counters, very f
 });
 
 test("durations and ranges avoid false precision", () => {
+  /** @type {[number, string][]} */
   const cases = [[0, "0 min"], [0.1, "a few seconds"], [0.5, "30 s"], [0.97, "1 min"], [7.4, "7 min"], [59.6, "1 h"], [75, "1 h 15 min"], [800, "13 h"]];
   for (const [m, t] of cases) assert.equal(Q.dur(m), t, String(m));
   assert.equal(Q.span(0.1, 0.5), "under a minute");
@@ -98,20 +109,23 @@ test("comparisons say what changed and the difference, without judging", () => {
 });
 
 test("back-estimation finds the pace that reproduces the measured wait", () => {
-  for (const [x, actual] of [[Q.defaults(), 10], [{ people: 12, counters: 3 }, 9], [{ people: 3, counters: 1, structure: "separate" }, 4]]) {
+  for (const [x, actual] of /** @type {[Parameters<typeof Q.backEstimate>[0], number][]} */ ([[Q.defaults(), 10], [{ people: 12, counters: 3 }, 9], [{ people: 3, counters: 1, structure: "separate" }, 4]])) {
     const b = Q.backEstimate(x, actual);
+    assert.ok(b, JSON.stringify(x));
     assert.ok(Math.abs(est({ ...x, pace: "observed", custom: b.minutes }).mean - actual) < 1e-6, JSON.stringify(x));
     assert.equal(b.throughput, b.counters / b.minutes);
     assert.match(b.pace, /^Observed pace: about /);
   }
-  assert.equal(Q.backEstimate(Q.defaults(), 10).rate.startsWith("Observed throughput: about "), true);
+  assert.equal(Q.backEstimate(Q.defaults(), 10)?.rate.startsWith("Observed throughput: about "), true);
   assert.equal(Q.backEstimate({ counters: 0 }, 10), null);
   assert.equal(Q.backEstimate(Q.defaults(), 0), null);
   const o = Q.observed({ start: 0, taps: 3, end: 5 * 60000 }, 0, Q.defaults());
+  assert.ok(o && o.minutes !== null);
   assert.equal(o.text, "3 people served in 5 min");
   assert.ok(Math.abs(o.minutes - 2 / 0.6) < 1e-9, "2 counters finishing 0.6 people a minute: about 3.3 min each");
-  assert.equal(Q.observed({ start: 0, taps: 0, end: null }, 60000, Q.defaults()).minutes, null);
+  assert.equal(Q.observed({ start: 0, taps: 0, end: null }, 60000, Q.defaults())?.minutes, null);
   const sep = { ...Q.defaults(), counters: 3, structure: "separate", people: 4 }, watched = Q.observed({ start: 0, taps: 7.5 * 2, end: 10 * 60000 }, 0, sep);
+  assert.ok(watched && watched.minutes !== null);
   assert.ok(Math.abs(watched.minutes - 2) < 1e-9, "taps at all 3 counters, 1.5 people a minute: 2 min each, not 0.67");
   assert.ok(Math.abs(est({ ...sep, pace: "custom", custom: watched.minutes }).mid - 8) < 3, "4 ahead in your own line at 2 min each: about 8 min");
 });
@@ -136,6 +150,7 @@ test("food orders compare elapsed with an expected range and never invent the ki
   assert.deepEqual([Q.foodRange({ expected: "custom", custom: 22 }).lo, Q.foodRange({ expected: "custom", custom: 22 }).hi], [18, 29]);
   assert.equal(Q.foodRange({ expected: "custom", custom: "" }).f.minutes, 15);
   const w = Q.foodRange({ expected: "20", complexity: "complex", busy: "packed" });
+  assert.ok(w.whatIf, "a what-if range");
   assert.equal(w.whatIf.text, "With a complex order and a packed counter");
   assert.ok(w.whatIf.lo > w.lo && w.whatIf.hi > w.hi);
   assert.equal(Q.foodStatus(5, g), "Before the expected range");
@@ -143,8 +158,10 @@ test("food orders compare elapsed with an expected range and never invent the ki
   assert.equal(Q.foodStatus(24, g), "About 4 min past the expected range");
   assert.equal(Q.visible({ ahead: 7, done: 1, minutes: 5 }).rate, null, "one completion is not enough");
   const v = Q.visible({ ahead: 7, done: 3, minutes: 5 });
+  assert.ok(v.rate !== null, "three completions give a rate");
   assert.ok(v.lo < v.mid && v.mid < v.hi && Math.abs(v.mid - 8 / 0.6) < 3);
   const more = Q.visible({ ahead: 7, done: 12, minutes: 20 });
+  assert.ok(more.rate !== null);
   assert.ok(more.hi - more.lo < v.hi - v.lo, "watching more orders narrows the range");
   assert.equal(Q.watchedText(v), "3 orders done in 5 min, 7 orders ahead");
 });
@@ -199,9 +216,9 @@ test("every scenario's deck opens in beamdswitch as the standard narrated templa
 test("the page boots, its WebMCP tools answer, and the deck buttons export the page as set", async () => {
   const page = await openPage("queue-time");
   const tools = page.run("QueueTimeTools");
-  assert.deepEqual(plain(tools.map((t) => t.name)), ["get_metadata", "get_current_state", "estimate_queue", "estimate_food_wait"]);
+  assert.deepEqual(plain(tools.map((/** @type {WebMcpTool} */ t) => t.name)), ["get_metadata", "get_current_state", "estimate_queue", "estimate_food_wait"]);
   for (const t of tools) assert.equal(t.annotations.readOnlyHint, true);
-  const call = async (name, args = {}) => JSON.parse((await tools.find((t) => t.name === name).execute(args)).content[0].text);
+  const call = async (/** @type {string} */ name, args = {}) => JSON.parse((await tools.find((/** @type {WebMcpTool} */ t) => t.name === name).execute(args)).content[0].text);
   assert.equal((await call("get_current_state")).queue.head, Q.headline(est(Q.defaults())).head);
   assert.equal((await call("estimate_queue", { people: 8, counters: 0 })).head, "Queue is not moving");
   assert.equal((await call("estimate_queue", { people: 12, counters: 3, minutes_per_person: 1.5 })).scenario.minutes, 1.5);
