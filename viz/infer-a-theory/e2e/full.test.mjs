@@ -5,8 +5,7 @@
 // URL, has no command palette and no JSON file export, which are recorded as
 // findings.
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
-import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../lib/full.js";
+import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, exportJson, fullSuite, output, saved } from "../../lib/full.js";
 
 /**
  * Wait for the inference the page starts on load to finish ("Done: … theories").
@@ -16,30 +15,6 @@ const inferred = (page) => page.waitForFunction(() => /^Done:/.test(document.get
 
 /** @param {import("playwright").Page} page */
 const firstObservation = (page) => page.locator("#t-0").inputValue();
-
-/**
- * Click a control that saves a file or copies text, and return that text. The
- * clipboard is a stand-in, so no browser asks for permission.
- * @param {import("playwright").Page} page
- * @param {import("playwright").Locator} control
- */
-async function output(page, control) {
-  await page.evaluate(() => {
-    const w = /** @type {Window & { __copied?: string }} */ (window);
-    delete w.__copied;
-    Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: async (/** @type {string} */ t) => { w.__copied = t; } } });
-  });
-  const download = page.waitForEvent("download", { timeout: 5_000 });
-  const copied = page.waitForFunction(() => /** @type {Window & { __copied?: string }} */ (window).__copied, undefined, { timeout: 5_000 });
-  await control.click();
-  const first = await Promise.any([download, copied]);
-  download.catch(() => {});
-  copied.catch(() => {});
-  return "path" in first ? readFile(await first.path(), "utf8") : String(await first.jsonValue());
-}
-
-/** @param {import("playwright").Page} page */
-const exportJson = (page) => page.getByRole("button", { name: /^(save|export|download|copy)\b.*\bjson\b/i });
 
 await fullSuite("infer-a-theory", {
   "url-state": async ({ open }) => {

@@ -5,15 +5,10 @@
 // deck of the view. Assertions avoid anything that depends on the clock, since
 // the page reads the current time in Singapore.
 import assert from "node:assert/strict";
-import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../lib/full.js";
+import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, at, fullSuite, saved } from "../../lib/full.js";
 
 /** @param {import("playwright").Page} page */
 const title = (page) => page.locator("#app h1, #app h2").first().innerText();
-/**
- * @param {import("playwright").Page} page
- * @param {string} hash
- */
-const at = (page, hash) => page.waitForFunction((h) => location.hash === h, hash);
 
 await fullSuite("convexity-action-engine", {
   "url-state": async ({ open }) => {

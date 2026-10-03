@@ -4,8 +4,7 @@
 // the detail panel; the lane and item shown download as a beamdswitch deck.
 // It has no URL state, history, palette, reset, JSON or Markdown export.
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
-import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../lib/full.js";
+import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, exportedMarkdown, fullSuite, saved } from "../../lib/full.js";
 
 /** @param {import("playwright").Page} page */
 const detailTitle = (page) => page.locator("#detail h2").textContent();
@@ -13,28 +12,6 @@ const detailTitle = (page) => page.locator("#detail h2").textContent();
 const items = (page) => page.locator("#chart [role=button]");
 /** @param {import("playwright").Page} page @param {string} lane */
 const lane = (page, lane) => page.locator("#controls button", { hasText: lane });
-/**
- * The Markdown the page exports of its own state, saved as a file or copied:
- * the first button or link named for Markdown or .md that is not the
- * beamdswitch deck.
- * @param {import("playwright").Page} page
- * @returns {Promise<string>}
- */
-async function markdownExport(page) {
-  const name = /^(?!.*(deck|beamdswitch)).*(markdown|\.md\b)/i;
-  const control = page.getByRole("button", { name }).or(page.getByRole("link", { name })).first();
-  assert.ok(await control.count() > 0, "the page offers a Markdown export of its state, separate from the beamdswitch deck");
-  await page.evaluate(() => {
-    if (navigator.clipboard) navigator.clipboard.writeText = async (text) => { /** @type {Window & { e2eCopied?: string }} */ (window).e2eCopied = text; };
-  });
-  const download = page.waitForEvent("download", { timeout: 10_000 }).then(async (d) => readFile(await d.path(), "utf8"));
-  const copied = page.waitForFunction(() => /** @type {Window & { e2eCopied?: string }} */ (window).e2eCopied, null, { timeout: 10_000 })
-    .then((h) => /** @type {Promise<string>} */ (h.jsonValue()));
-  await control.click();
-  const text = await Promise.any([download, copied]).catch(() => assert.fail("the Markdown export neither saved a file nor copied text"));
-  assert.match(text, /^#{1,3} \S/m, "the export is Markdown with a heading");
-  return text;
-}
 
 await fullSuite("manchester-city-finances", {
   keyboard: async ({ open }) => {
@@ -65,7 +42,7 @@ await fullSuite("manchester-city-finances", {
       await lane(s.page, "Filed accounts").click();
       const label = /** @type {string} */ (await items(s.page).last().getAttribute("aria-label"));
       await items(s.page).last().click();
-      const text = await markdownExport(s.page);
+      const text = await exportedMarkdown(s.page);
       assert.ok(text.includes(label), "the export carries the selected item");
       assert.match(text, /Filed accounts/, "the export carries the lane shown");
       assertClean(s);

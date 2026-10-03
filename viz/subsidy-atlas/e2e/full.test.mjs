@@ -6,106 +6,14 @@
 // checks assert the canonical contract and are recorded as findings in
 // manifest/subsidy-atlas.json.
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
-import { isDeepStrictEqual } from "node:util";
-import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../lib/full.js";
+import { assertBeamdswitchDeck, assertDarkMode, assertReducedMotion, fullSuite, jsonRoundTrip, markdownExport, saved, using } from "../../lib/full.js";
 
-/** @typedef {import("../../lib/full.js").Opened} Opened */
-
-/**
- * Open the atlas, run `body`, check it stayed clean, and close it.
- * @param {(suffix?: string) => Promise<Opened>} open
- * @param {(s: Opened) => Promise<void>} body
- * @param {string} [suffix]
- */
-async function using(open, body, suffix = "") {
-  const s = await open(suffix);
-  try {
-    await body(s);
-    assertClean(s);
-  } finally {
-    await s.close();
-  }
-}
 /** @param {import("playwright").Page} page */
 const count = (page) => page.locator("#count").innerText();
 /** @param {import("playwright").Page} page */
 const shown = (page) => page.locator("[data-product]:visible").count();
 /** @param {import("playwright").Page} page */
 const chooseCategory = (page) => page.getByLabel("Categories").selectOption("llm");
-
-/**
- * Read `state` until it deep-equals `expected` or five seconds pass, then assert it does.
- * @param {() => Promise<unknown>} state
- * @param {unknown} expected
- * @param {string} message
- */
-async function settlesTo(state, expected, message) {
-  let actual = await state();
-  for (const end = Date.now() + 5_000; !isDeepStrictEqual(actual, expected) && Date.now() < end;) {
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    actual = await state();
-  }
-  assert.deepEqual(actual, expected, message);
-}
-/**
- * Section 14's JSON round trip, exercised: change the view, export it with a control that names JSON,
- * import the file into a fresh page through a JSON file input, and compare the view's state.
- * @param {(suffix?: string) => Promise<Opened>} open
- * @param {(page: import("playwright").Page) => Promise<void>} change
- * @param {(page: import("playwright").Page) => Promise<unknown>} state
- */
-async function jsonRoundTrip(open, change, state) {
-  const s = await open();
-  try {
-    await change(s.page);
-    const before = await state(s.page);
-    const file = await saved(s.page, () => s.page.getByRole("button", { name: /\bjson\b/i }).first().click({ timeout: 5_000 }));
-    JSON.parse(file.text);
-    const fresh = await open();
-    try {
-      assert.notDeepEqual(await state(fresh.page), before, "the change is visible before the import");
-      await fresh.page.locator('input[type="file"][accept*="json"]').first().setInputFiles({ name: file.name, mimeType: "application/json", buffer: Buffer.from(file.text) }, { timeout: 5_000 });
-      await settlesTo(() => state(fresh.page), before, "importing the exported JSON restores the view");
-      assertClean(fresh);
-    } finally {
-      await fresh.close();
-    }
-    assertClean(s);
-  } finally {
-    await s.close();
-  }
-}
-/**
- * Section 14's Markdown export of the view's own state, exercised: change the view, then a control that
- * names Markdown (never the beamdswitch deck's controls, which `deck` excludes) must save or copy
- * Markdown that carries `marker`, a sign of the changed state that the default view does not show.
- * @param {(suffix?: string) => Promise<Opened>} open
- * @param {(page: import("playwright").Page) => Promise<void>} change
- * @param {string} marker
- * @param {string} deck a selector for the deck controls, which do not count
- */
-async function markdownExport(open, change, marker, deck) {
-  const s = await open();
-  try {
-    assert.ok(!(await s.page.innerText("body")).includes(marker), `the default view does not show ${marker}`);
-    await change(s.page);
-    await s.page.evaluate(() => {
-      const w = /** @type {any} */ (window), clip = navigator.clipboard;
-      if (clip) clip.writeText = async (text) => { w.__copiedMarkdown = text; };
-    });
-    const control = s.page.getByRole("button", { name: /\bmarkdown\b/i }).and(s.page.locator(`:not(${deck})`)).first();
-    const download = s.page.waitForEvent("download", { timeout: 5_000 }).then(async (d) => readFile(/** @type {string} */ (await d.path()), "utf8"), () => null);
-    await control.click({ timeout: 5_000 });
-    const copied = await s.page.waitForFunction(() => /** @type {any} */ (window).__copiedMarkdown, null, { timeout: 5_000 }).then((h) => h.jsonValue(), () => null);
-    const text = (await download) ?? copied;
-    assert.ok(typeof text === "string" && text.length > 0, "the Markdown control saves or copies Markdown");
-    assert.ok(text.includes(marker), `the Markdown reflects the current view (${marker})`);
-    assertClean(s);
-  } finally {
-    await s.close();
-  }
-}
 
 await fullSuite("subsidy-atlas", {
   "url-state": (ctx) => using(ctx.open, async (s) => {

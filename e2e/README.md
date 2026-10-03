@@ -136,7 +136,7 @@ against the site's `main`, and on demand against any site ref.
 | `lib/browser.js` | the browser projects and the instrumented page |
 | `lib/checks.js` | the in-page probes: state fingerprint, primary-control choice, overflow |
 | `lib/baseline.js` | the baseline checks |
-| `lib/full.js` | the runner and shared assertions for the full checks |
+| `lib/full.js` | the runner, shared assertions and shared check helpers for the full checks |
 | `lib/manifest.js`, `manifest/` | per-visual manifests |
 | `lib/results.js`, `scripts/` | results, findings, timings and fetching the targets |
 | `tests/` | the suites, and `tests/fixtures/site/` for the harness tests |

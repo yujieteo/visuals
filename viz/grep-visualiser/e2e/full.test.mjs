@@ -4,8 +4,7 @@
 // keeps no state in the URL and has no command palette, Reset control or file
 // export, which are recorded as findings.
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
-import { assertClean, assertDarkMode, assertReducedMotion, fullSuite } from "../../lib/full.js";
+import { assertClean, assertDarkMode, assertReducedMotion, exportJson, fullSuite, output } from "../../lib/full.js";
 
 /**
  * Type a pattern into the first pattern field and wait for the result to follow it.
@@ -19,35 +18,11 @@ async function search(page, pattern) {
 }
 
 /**
- * Click a control that saves a file or copies text, and return that text. The
- * clipboard is a stand-in, so no browser asks for permission.
- * @param {import("playwright").Page} page
- * @param {import("playwright").Locator} control
- */
-async function output(page, control) {
-  await page.evaluate(() => {
-    const w = /** @type {Window & { __copied?: string }} */ (window);
-    delete w.__copied;
-    Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: async (/** @type {string} */ t) => { w.__copied = t; } } });
-  });
-  const download = page.waitForEvent("download", { timeout: 5_000 });
-  const copied = page.waitForFunction(() => /** @type {Window & { __copied?: string }} */ (window).__copied, undefined, { timeout: 5_000 });
-  await control.click();
-  const first = await Promise.any([download, copied]);
-  download.catch(() => {});
-  copied.catch(() => {});
-  return "path" in first ? readFile(await first.path(), "utf8") : String(await first.jsonValue());
-}
-
-/**
  * The preset labels. Each radio is a 1px invisible input, so a user, and this
  * suite, clicks its label rather than the radio itself.
  * @param {import("playwright").Page} page
  */
 const presets = (page) => page.locator("label:has(input[name=preset])");
-
-/** @param {import("playwright").Page} page */
-const exportJson = (page) => page.getByRole("button", { name: /^(save|export|download|copy)\b.*\bjson\b/i });
 
 await fullSuite("grep-visualiser", {
   "url-state": async ({ open }) => {

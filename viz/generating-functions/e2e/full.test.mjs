@@ -2,34 +2,12 @@
 // URL fragment (#coin-change?n=15), modes push history, Cmd/Ctrl+K opens the
 // command palette and the BeamMD Switch menu exports Markdown decks.
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
-import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite } from "../../lib/full.js";
+import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, output } from "../../lib/full.js";
 
 /** @param {import("playwright").Page} page */
 const heading = (page) => page.locator("main h1, main h2").first().textContent();
 /** @param {import("playwright").Page} page */
 const coefficient = async (page) => /\[x\^?(\d+)\]/.exec(await page.locator("main").innerText())?.[1];
-
-/**
- * Click a control that saves a file or copies text, and return that text. The
- * clipboard is a stand-in, so no browser asks for permission.
- * @param {import("playwright").Page} page
- * @param {import("playwright").Locator} control
- */
-async function output(page, control) {
-  await page.evaluate(() => {
-    const w = /** @type {Window & { __copied?: string }} */ (window);
-    delete w.__copied;
-    Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: async (/** @type {string} */ t) => { w.__copied = t; } } });
-  });
-  const download = page.waitForEvent("download", { timeout: 5_000 });
-  const copied = page.waitForFunction(() => /** @type {Window & { __copied?: string }} */ (window).__copied, undefined, { timeout: 5_000 });
-  await control.click();
-  const first = await Promise.any([download, copied]);
-  download.catch(() => {});
-  copied.catch(() => {});
-  return "path" in first ? readFile(await first.path(), "utf8") : String(await first.jsonValue());
-}
 
 await fullSuite("generating-functions", {
   "url-state": async ({ open }) => {

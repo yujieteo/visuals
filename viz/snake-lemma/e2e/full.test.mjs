@@ -3,15 +3,7 @@
 // arrow keys step the guided proof; Cmd/Ctrl+K opens the command palette;
 // Export writes a beamdswitch deck.
 import assert from "node:assert/strict";
-import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../lib/full.js";
-
-/** @param {import("playwright").Page} page */
-const blur = (page) => page.evaluate(() => /** @type {HTMLElement | null} */ (document.activeElement)?.blur());
-/**
- * @param {import("playwright").Page} page
- * @param {string} hash
- */
-const at = (page, hash) => page.waitForFunction((h) => location.hash === h, hash);
+import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, at, blur, fullSuite, saved } from "../../lib/full.js";
 
 await fullSuite("snake-lemma", {
   "url-state": async ({ open }) => {

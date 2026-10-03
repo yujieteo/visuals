@@ -4,13 +4,8 @@
 // Reset command restores the opening scene; the beamdswitch button saves the
 // scene as a narrated deck.
 import assert from "node:assert/strict";
-import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../lib/full.js";
+import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, at, fullSuite, saved } from "../../lib/full.js";
 
-/**
- * @param {import("playwright").Page} page
- * @param {string} hash
- */
-const at = (page, hash) => page.waitForFunction((h) => location.hash === h, hash);
 /** @param {import("playwright").Page} page */
 const title = async (page) => (await page.locator("#scene-title").textContent()) ?? "";
 /**

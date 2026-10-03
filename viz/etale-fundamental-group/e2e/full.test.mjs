@@ -3,15 +3,13 @@
 // presentation steps with the arrow keys and closes with Escape; the only
 // export is the beamdswitch deck, under the "Export a narrated talk" disclosure.
 import assert from "node:assert/strict";
-import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../lib/full.js";
+import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, blur, fullSuite, saved } from "../../lib/full.js";
 
 /**
  * @param {import("playwright").Page} page
  * @param {string} view
  */
 const viewPressed = (page, view) => page.locator(`#view-seg [data-view=${view}]`).getAttribute("aria-pressed");
-/** @param {import("playwright").Page} page */
-const blur = (page) => page.evaluate(() => /** @type {HTMLElement | null} */ (document.activeElement)?.blur());
 
 await fullSuite("etale-fundamental-group", {
   keyboard: async ({ open }) => {

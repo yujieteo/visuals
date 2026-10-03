@@ -4,20 +4,13 @@
 // presentation and the arrow keys step it; each laboratory has Reset
 // example; the BeamMD Switch menu exports decks of the current lesson.
 import assert from "node:assert/strict";
-import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../lib/full.js";
+import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, at, blur, fullSuite, saved } from "../../lib/full.js";
 
-/**
- * @param {import("playwright").Page} page
- * @param {string} hash
- */
-const at = (page, hash) => page.waitForFunction((h) => location.hash === h, hash);
 /**
  * @param {import("playwright").Page} page
  * @param {string} mode
  */
 const showing = (page, mode) => page.locator(`[data-mode=${mode}][aria-pressed=true]`).waitFor();
-/** @param {import("playwright").Page} page */
-const blur = (page) => page.evaluate(() => /** @type {HTMLElement | null} */ (document.activeElement)?.blur());
 
 await fullSuite("entropy-combinatorics", {
   "url-state": async ({ open }) => {

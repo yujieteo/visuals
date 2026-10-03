@@ -3,8 +3,7 @@
 // and a Reset button; Show why unfolds the derivation; the decision downloads
 // as a narrated beamdswitch deck.
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
-import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../lib/full.js";
+import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, exportedMarkdown, fullSuite, saved } from "../../lib/full.js";
 
 /** @param {import("playwright").Page} page */
 const recommendation = (page) => page.locator("#rec-sub").textContent();
@@ -12,28 +11,6 @@ const recommendation = (page) => page.locator("#rec-sub").textContent();
 const recommendationChanged = (page, not) => page.waitForFunction((n) => document.getElementById("rec-sub")?.textContent !== n, not);
 /** @param {import("playwright").Page} page */
 const variability = (page) => page.locator("input[name=variability]:checked").getAttribute("value");
-/**
- * The Markdown the page exports of its own state, saved as a file or copied:
- * the first button or link named for Markdown or .md that is not the
- * beamdswitch deck.
- * @param {import("playwright").Page} page
- * @returns {Promise<string>}
- */
-async function markdownExport(page) {
-  const name = /^(?!.*(deck|beamdswitch)).*(markdown|\.md\b)/i;
-  const control = page.getByRole("button", { name }).or(page.getByRole("link", { name })).first();
-  assert.ok(await control.count() > 0, "the page offers a Markdown export of its state, separate from the beamdswitch deck");
-  await page.evaluate(() => {
-    if (navigator.clipboard) navigator.clipboard.writeText = async (text) => { /** @type {Window & { e2eCopied?: string }} */ (window).e2eCopied = text; };
-  });
-  const download = page.waitForEvent("download", { timeout: 10_000 }).then(async (d) => readFile(await d.path(), "utf8"));
-  const copied = page.waitForFunction(() => /** @type {Window & { e2eCopied?: string }} */ (window).e2eCopied, null, { timeout: 10_000 })
-    .then((h) => /** @type {Promise<string>} */ (h.jsonValue()));
-  await control.click();
-  const text = await Promise.any([download, copied]).catch(() => assert.fail("the Markdown export neither saved a file nor copied text"));
-  assert.match(text, /^#{1,3} \S/m, "the export is Markdown with a heading");
-  return text;
-}
 
 await fullSuite("packets-to-playback", {
   keyboard: async ({ open }) => {
@@ -79,7 +56,7 @@ await fullSuite("packets-to-playback", {
       await s.page.locator("#in-buffer").press("Enter");
       await recommendationChanged(s.page, before);
       const shown = /** @type {string} */ (await recommendation(s.page)).trim();
-      const text = await markdownExport(s.page);
+      const text = await exportedMarkdown(s.page);
       assert.ok(text.includes(shown), "the export carries the recommendation shown");
       assert.match(text, /\b0\.5\b/, "the export carries the buffer entered");
       assertClean(s);

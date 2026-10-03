@@ -7,25 +7,8 @@
 // assert the canonical contract and are recorded as findings in
 // manifest/toulmin.json.
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
-import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../lib/full.js";
+import { assertBeamdswitchDeck, assertDarkMode, assertReducedMotion, fullSuite, markdownExport, saved, using } from "../../lib/full.js";
 
-/** @typedef {import("../../lib/full.js").Opened} Opened */
-
-/**
- * Open the builder, run `body`, check it stayed clean, and close it.
- * @param {(suffix?: string) => Promise<Opened>} open
- * @param {(s: Opened) => Promise<void>} body
- */
-async function using(open, body) {
-  const s = await open();
-  try {
-    await body(s);
-    assertClean(s);
-  } finally {
-    await s.close();
-  }
-}
 /**
  * @param {import("playwright").Page} page
  * @param {string} act a data-act name
@@ -38,36 +21,6 @@ const openExport = async (page) => {
   await act(page, "toggle-export").click();
   await page.locator("#export").waitFor({ state: "visible" });
 };
-/**
- * Section 14's Markdown export of the view's own state, exercised: change the view, then a control that
- * names Markdown (never the beamdswitch deck's controls, which `deck` excludes) must save or copy
- * Markdown that carries `marker`, a sign of the changed state that the default view does not show.
- * @param {(suffix?: string) => Promise<Opened>} open
- * @param {(page: import("playwright").Page) => Promise<void>} change
- * @param {string} marker
- * @param {string} deck a selector for the deck controls, which do not count
- */
-async function markdownExport(open, change, marker, deck) {
-  const s = await open();
-  try {
-    assert.ok(!(await s.page.innerText("body")).includes(marker), `the default view does not show ${marker}`);
-    await change(s.page);
-    await s.page.evaluate(() => {
-      const w = /** @type {any} */ (window), clip = navigator.clipboard;
-      if (clip) clip.writeText = async (text) => { w.__copiedMarkdown = text; };
-    });
-    const control = s.page.getByRole("button", { name: /\bmarkdown\b/i }).and(s.page.locator(`:not(${deck})`)).first();
-    const download = s.page.waitForEvent("download", { timeout: 5_000 }).then(async (d) => readFile(/** @type {string} */ (await d.path()), "utf8"), () => null);
-    await control.click({ timeout: 5_000 });
-    const copied = await s.page.waitForFunction(() => /** @type {any} */ (window).__copiedMarkdown, null, { timeout: 5_000 }).then((h) => h.jsonValue(), () => null);
-    const text = (await download) ?? copied;
-    assert.ok(typeof text === "string" && text.length > 0, "the Markdown control saves or copies Markdown");
-    assert.ok(text.includes(marker), `the Markdown reflects the current view (${marker})`);
-    assertClean(s);
-  } finally {
-    await s.close();
-  }
-}
 
 await fullSuite("toulmin", {
   "url-state": (ctx) => using(ctx.open, async (s) => {

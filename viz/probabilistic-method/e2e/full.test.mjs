@@ -4,7 +4,7 @@
 // palette; "Reset to defaults" restores a lab; the Export menu copies or saves
 // slide, technique and course decks for beamdswitch.
 import assert from "node:assert/strict";
-import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../lib/full.js";
+import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, blur, fullSuite, saved } from "../../lib/full.js";
 
 /** @param {import("playwright").Page} page */
 const title = (page) => page.locator("#lab-title").textContent();
@@ -13,8 +13,6 @@ const title = (page) => page.locator("#lab-title").textContent();
  * @param {(hash: string) => boolean} test
  */
 const hashIs = (page, test) => page.waitForFunction(`(${test})(location.hash)`);
-/** @param {import("playwright").Page} page */
-const blur = (page) => page.evaluate(() => /** @type {HTMLElement | null} */ (document.activeElement)?.blur());
 
 await fullSuite("probabilistic-method", {
   "url-state": async ({ open }) => {

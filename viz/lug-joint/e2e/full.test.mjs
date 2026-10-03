@@ -5,10 +5,10 @@
 // replaces its history entry rather than adding one, so Back does not step
 // through edits; these are recorded as findings.
 import assert from "node:assert/strict";
-import { readFile, writeFile } from "node:fs/promises";
+import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../lib/full.js";
+import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, output, saved } from "../../lib/full.js";
 
 /**
  * Set a numeric input and let the page recompute.
@@ -26,27 +26,6 @@ const summary = (page) => page.locator("#summary").innerText();
 
 /** @param {import("playwright").Page} page */
 const stateInHash = (page) => page.evaluate(() => JSON.parse(decodeURIComponent(location.hash.replace(/^#s=/, ""))));
-
-/**
- * Click a control that saves a file or copies text, and return that text. The
- * clipboard is a stand-in, so no browser asks for permission.
- * @param {import("playwright").Page} page
- * @param {import("playwright").Locator} control
- */
-async function output(page, control) {
-  await page.evaluate(() => {
-    const w = /** @type {Window & { __copied?: string }} */ (window);
-    delete w.__copied;
-    Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: async (/** @type {string} */ t) => { w.__copied = t; } } });
-  });
-  const download = page.waitForEvent("download", { timeout: 5_000 });
-  const copied = page.waitForFunction(() => /** @type {Window & { __copied?: string }} */ (window).__copied, undefined, { timeout: 5_000 });
-  await control.click();
-  const first = await Promise.any([download, copied]);
-  download.catch(() => {});
-  copied.catch(() => {});
-  return "path" in first ? readFile(await first.path(), "utf8") : String(await first.jsonValue());
-}
 
 await fullSuite("lug-joint", {
   "url-state": async ({ open }) => {

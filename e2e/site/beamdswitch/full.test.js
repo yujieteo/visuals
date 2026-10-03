@@ -7,28 +7,12 @@
 // checks assert the canonical contract and are recorded as findings in
 // manifest/beamdswitch.json.
 import assert from "node:assert/strict";
-import { isDeepStrictEqual } from "node:util";
 import { settle } from "../../lib/browser.js";
-import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../lib/full.js";
+import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, blur, fullSuite, jsonRoundTrip, resetsToDefaults, saved, using } from "../../lib/full.js";
 
 /** @typedef {import("../../lib/full.js").Opened} Opened */
 /** @typedef {import("../../lib/full.js").FullContext} FullContext */
 
-/**
- * Open the player at `suffix`, run `body`, check it stayed clean, and close it.
- * @param {(suffix?: string) => Promise<Opened>} open
- * @param {(s: Opened) => Promise<void>} body
- * @param {string} [suffix]
- */
-async function using(open, body, suffix = "") {
-  const s = await ready(open)(suffix);
-  try {
-    await body(s);
-    assertClean(s);
-  } finally {
-    await s.close();
-  }
-}
 /**
  * `open` for a player ready to use: its counter shows a frame and the
  * narration notice is dismissed.
@@ -57,8 +41,6 @@ const dismissNote = async (page) => {
   const dismiss = page.getByRole("note").getByRole("button", { name: "Dismiss" });
   if (await dismiss.count()) await dismiss.click();
 };
-/** @param {import("playwright").Page} page */
-const blur = (page) => page.evaluate(() => /** @type {HTMLElement | null} */ (document.activeElement)?.blur());
 /**
  * `ctx` whose pages keep their colour scheme. `settle` waits until the site
  * copy's coi-serviceworker has reloaded the page under its control, but
@@ -79,71 +61,8 @@ const controlled = (ctx) => ({
   },
 });
 
-/**
- * Read `state` until it deep-equals `expected` or five seconds pass, then assert it does.
- * @param {() => Promise<unknown>} state
- * @param {unknown} expected
- * @param {string} message
- */
-async function settlesTo(state, expected, message) {
-  let actual = await state();
-  for (const end = Date.now() + 5_000; !isDeepStrictEqual(actual, expected) && Date.now() < end;) {
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    actual = await state();
-  }
-  assert.deepEqual(actual, expected, message);
-}
-/**
- * Section 14's JSON round trip, exercised: change the view, export it with a control that names JSON,
- * import the file into a fresh page through a JSON file input, and compare the view's state.
- * @param {(suffix?: string) => Promise<Opened>} open
- * @param {(page: import("playwright").Page) => Promise<void>} change
- * @param {(page: import("playwright").Page) => Promise<unknown>} state
- */
-async function jsonRoundTrip(open, change, state) {
-  const s = await open();
-  try {
-    await change(s.page);
-    const before = await state(s.page);
-    const file = await saved(s.page, () => s.page.getByRole("button", { name: /\bjson\b/i }).first().click({ timeout: 5_000 }));
-    JSON.parse(file.text);
-    const fresh = await open();
-    try {
-      assert.notDeepEqual(await state(fresh.page), before, "the change is visible before the import");
-      await fresh.page.locator('input[type="file"][accept*="json"]').first().setInputFiles({ name: file.name, mimeType: "application/json", buffer: Buffer.from(file.text) }, { timeout: 5_000 });
-      await settlesTo(() => state(fresh.page), before, "importing the exported JSON restores the view");
-      assertClean(fresh);
-    } finally {
-      await fresh.close();
-    }
-    assertClean(s);
-  } finally {
-    await s.close();
-  }
-}
-/**
- * Reset, exercised: change the view, press the control named Reset, and the view's state must be its
- * initial state again. Re-choosing an example does not count.
- * @param {(suffix?: string) => Promise<Opened>} open
- * @param {(page: import("playwright").Page) => Promise<void>} change
- * @param {(page: import("playwright").Page) => Promise<unknown>} state
- */
-async function resetsToDefaults(open, change, state) {
-  const s = await open();
-  try {
-    const initial = await state(s.page);
-    await change(s.page);
-    assert.notDeepEqual(await state(s.page), initial, "the change is visible before Reset");
-    await s.page.getByRole("button", { name: /^reset\b/i }).first().click({ timeout: 5_000 });
-    await settlesTo(() => state(s.page), initial, "Reset returns the view to its initial state");
-    assertClean(s);
-  } finally {
-    await s.close();
-  }
-}
-
 await fullSuite("beamdswitch", {
-  "url-state": (ctx) => using(ctx.open, async (s) => {
+  "url-state": (ctx) => using(ready(ctx.open), async (s) => {
     assert.equal(await frame(s.page), 3, "#3 opens the third frame");
     await s.page.locator("#b-next").click();
     await s.page.waitForFunction(() => location.hash !== "#3");
@@ -158,13 +77,13 @@ await fullSuite("beamdswitch", {
     }
   }, "#3"),
 
-  "back-forward": (ctx) => using(ctx.open, async (s) => {
+  "back-forward": (ctx) => using(ready(ctx.open), async (s) => {
     const entries = await s.page.evaluate(() => history.length);
     await s.page.locator("#b-next").click();
     assert.ok(await s.page.evaluate(() => history.length) > entries, "moving to another frame adds a history entry for Back to undo");
   }, "#2"),
 
-  keyboard: (ctx) => using(ctx.open, async (s) => {
+  keyboard: (ctx) => using(ready(ctx.open), async (s) => {
     await blur(s.page);
     await s.page.keyboard.press("End");
     const last = await frame(s.page);
@@ -186,7 +105,7 @@ await fullSuite("beamdswitch", {
     assert.equal(await frame(s.page), match, "Enter jumps to the first matching frame");
   }),
 
-  "command-palette": (ctx) => using(ctx.open, async (s) => {
+  "command-palette": (ctx) => using(ready(ctx.open), async (s) => {
     await blur(s.page);
     await s.page.keyboard.press("ControlOrMeta+k");
     const palette = s.page.locator("[role=dialog]:visible, [role=combobox]:visible, dialog[open]");
@@ -200,7 +119,7 @@ await fullSuite("beamdswitch", {
 
   "json-round-trip": (ctx) => jsonRoundTrip(ready(ctx.open), (page) => page.locator("#b-next").click(), (page) => page.locator("#count").innerText()),
 
-  "markdown-export": (ctx) => using(ctx.open, async (s) => {
+  "markdown-export": (ctx) => using(ready(ctx.open), async (s) => {
     const src = await s.page.locator("#src").inputValue();
     await s.page.locator("#src").fill(src.replace(/^title: .*$/m, "title: A marker title for the export"));
     await s.page.waitForTimeout(400);
@@ -211,7 +130,7 @@ await fullSuite("beamdswitch", {
     assert.doesNotMatch(file.text, /^::: /m, "and has no deck blocks: it is continuous Markdown");
   }),
 
-  "beamdswitch-export": (ctx) => using(ctx.open, async (s) => {
+  "beamdswitch-export": (ctx) => using(ready(ctx.open), async (s) => {
     const file = await saved(s.page, () => s.page.locator("#b-save").click());
     assert.match(file.name, /\.md$/);
     assertBeamdswitchDeck(file.text);

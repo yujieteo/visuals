@@ -6,26 +6,8 @@
 // no JSON state file; those checks assert the canonical contract and are
 // recorded as findings in manifest/connes-qft.json.
 import assert from "node:assert/strict";
-import { isDeepStrictEqual } from "node:util";
-import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, saved } from "../../lib/full.js";
+import { assertBeamdswitchDeck, assertClean, assertDarkMode, assertReducedMotion, fullSuite, jsonRoundTrip, saved, using } from "../../lib/full.js";
 
-/** @typedef {import("../../lib/full.js").Opened} Opened */
-
-/**
- * Open the lab at `suffix`, run `body`, check it stayed clean, and close it.
- * @param {(suffix?: string) => Promise<Opened>} open
- * @param {(s: Opened) => Promise<void>} body
- * @param {string} [suffix]
- */
-async function using(open, body, suffix = "") {
-  const s = await open(suffix);
-  try {
-    await body(s);
-    assertClean(s);
-  } finally {
-    await s.close();
-  }
-}
 /** @param {import("playwright").Page} page */
 const title = (page) => page.locator("#s-title").innerText();
 /**
@@ -44,49 +26,6 @@ async function goTo(page, id) {
  * @param {string} act a data-act name
  */
 const act = (page, act) => page.locator(`#controls [data-act="${act}"]`);
-
-/**
- * Read `state` until it deep-equals `expected` or five seconds pass, then assert it does.
- * @param {() => Promise<unknown>} state
- * @param {unknown} expected
- * @param {string} message
- */
-async function settlesTo(state, expected, message) {
-  let actual = await state();
-  for (const end = Date.now() + 5_000; !isDeepStrictEqual(actual, expected) && Date.now() < end;) {
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    actual = await state();
-  }
-  assert.deepEqual(actual, expected, message);
-}
-/**
- * Section 14's JSON round trip, exercised: change the view, export it with a control that names JSON,
- * import the file into a fresh page through a JSON file input, and compare the view's state.
- * @param {(suffix?: string) => Promise<Opened>} open
- * @param {(page: import("playwright").Page) => Promise<void>} change
- * @param {(page: import("playwright").Page) => Promise<unknown>} state
- */
-async function jsonRoundTrip(open, change, state) {
-  const s = await open();
-  try {
-    await change(s.page);
-    const before = await state(s.page);
-    const file = await saved(s.page, () => s.page.getByRole("button", { name: /\bjson\b/i }).first().click({ timeout: 5_000 }));
-    JSON.parse(file.text);
-    const fresh = await open();
-    try {
-      assert.notDeepEqual(await state(fresh.page), before, "the change is visible before the import");
-      await fresh.page.locator('input[type="file"][accept*="json"]').first().setInputFiles({ name: file.name, mimeType: "application/json", buffer: Buffer.from(file.text) }, { timeout: 5_000 });
-      await settlesTo(() => state(fresh.page), before, "importing the exported JSON restores the view");
-      assertClean(fresh);
-    } finally {
-      await fresh.close();
-    }
-    assertClean(s);
-  } finally {
-    await s.close();
-  }
-}
 
 await fullSuite("connes-qft", {
   "url-state": (ctx) => using(ctx.open, async (s) => {
