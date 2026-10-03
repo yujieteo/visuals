@@ -11,7 +11,7 @@ A probability elicitation instrument. Open it at <https://teoyujie.org/visuals/c
 
 | The request is to... | Use |
 | --- | --- |
-| Write a session for the page | The import schema in [README.md](README.md#session-toon-schema); [sample-session.toon](sample-session.toon) is an example |
+| Write a session for the page | The [generation policy](docs/generation-policy.md) for choosing, writing and ranking cards; the import schema in [README.md](README.md#session-toon-schema); [sample-session.toon](sample-session.toon) is an example |
 | Check that a session TOON will import | `validate_session_toon` |
 | Read the schema's tables, fields, origins and states | `get_metadata` |
 | See how far the person has got | `get_session_summary` |

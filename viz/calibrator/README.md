@@ -15,6 +15,7 @@ requests; it works offline and from `file://`.
 | `raw.json` | Catalogue data, published as `data.json` on the site: the schema's format, version, table fields, origins, scores and states. The page never fetches it; the tests fail when it drifts from the engine. |
 | `sample-session.toon` | A five-question sample session in the import schema, for trying the page and as a target for the generator. |
 | `sessions/` | Generated sessions ready to paste, one `YYYY-MM-DD.toon` per session. |
+| `docs/generation-policy.md` | The canonical policy an external generator follows to choose, write, rank and resolve a session's cards, and how answers are read. |
 | `AGENTS.md` | Notes for coding agents: where changes go, how to test, how to port to yujieteo/site, conventions. |
 | `SKILLS.md` | For agents using the page: its tasks, the read-only WebMCP tools and the workflow. |
 | `LICENSE` | MIT. |
@@ -22,7 +23,8 @@ requests; it works offline and from `file://`.
 ## Workflow
 
 1. Ask a crewmate for a new session; it writes a session TOON (below) from `data/notes.md`,
-   the site's `raw.toon`, current public project state and relevant public news.
+   the site's `raw.toon`, current public project state and relevant public news, following the
+   [generation policy](docs/generation-policy.md).
 2. Copy the TOON, open Calibrator, tap **Paste Session** (or **Import .toon**).
 3. Move the slider: the first release saves the probability and moves to the next question.
    **Back** revisits; moving the slider there revises the final probability but never the first.
@@ -30,7 +32,8 @@ requests; it works offline and from `file://`.
 4. **Export** (top right, any time; it opens by itself after the last question) shows the
    answered, skipped and unseen counts. **Copy TOON** copies the answered session.
 5. Give it to the crewmate, which appends it to `raw.toon` and writes only consequential notes
-   (tagged `#calibrator`) to `data/notes.md`.
+   (tagged `#calibrator`) to `data/notes.md`. It reads each probability as a belief, not as a
+   choice of the card's action ([policy](docs/generation-policy.md#reading-and-recording-answers)).
 
 The active session lives in `localStorage` (`calibrator:session`) and is saved after every
 interaction, so closing the page loses nothing. Importing a different session while the current
@@ -42,8 +45,8 @@ Pasting the same `session_id` again resumes it.
 TOON as written by yujieteo/site's `scripts/toon.py`: comma delimiter, two-space indentation, no
 trailing newline, strings quoted only when needed, `null` for missing values, an empty table as
 `name: []`. Every table is a uniform tabular array, so sessions append to `raw.toon` by
-concatenating rows. Question order is the generator's ranking, highest expected value first; it is
-fixed for the session.
+concatenating rows. Question order is the generator's ranking under the [generation policy](docs/generation-policy.md);
+it is fixed for the session.
 
 ### Import (`session.toon`, written by the generator)
 
