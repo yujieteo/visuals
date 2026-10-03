@@ -1,0 +1,24 @@
+# CI for Mohr's Circle Visualiser. This repository is where the tool and its tests develop; the
+# site's visuals/mohr/ is a port of the page files and runs none of these tests. There is no build
+# script and no Python test, so the only step runs every tests/*.test.mjs and tests/*.test.cjs.
+# tests/mohr-page.test.mjs drives the runner's preinstalled Google Chrome headless over the DevTools
+# protocol, so it needs no install step; it fails rather than skips when CI finds no Chrome.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: node --test 'tests/*.test.{mjs,cjs}'
