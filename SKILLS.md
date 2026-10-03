@@ -67,7 +67,7 @@ Review still decides what no script can: whether the mathematics, data and wordi
 To check a page in a browser, use one call, not hand-written `chrome-devtools-axi` open, resize, screenshot, console and `scrollWidth` probes:
 
 ```sh
-node e2e/bin/page-axi.js check <slug|path|url> [--viewport 390,768,1440] [--themes light,dark] [--offline]
+node e2e/bin/page-axi.js check <slug|path|url> [--viewport 390,768,1440] [--themes light,dark]
 ```
 
 It stages the visual as the site publishes it, opens it in one headless Chromium for each viewport and theme, and closes the browser at the end. It prints one TOON verdict: the failed checks first (`opens`, `console`, `network`, `overflow`, `numeric-text`, `contrast`, `webmcp-tools`), the screenshot paths, the path of `run.json` with the full evidence, and the next steps. Exit 0 means every check passed, 1 means a check failed, and 2 means a usage or environment error, such as a slug or path that names no page. Run `cd e2e && npm ci && npx playwright install chromium` once first. Read the screenshots it names. Do not read `run.json` unless a check failed.

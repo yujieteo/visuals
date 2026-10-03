@@ -37,14 +37,15 @@ async function run(argv, where = {}) {
   return { code, out };
 }
 
-test("the command line: defaults, both flag spellings and every malformed value", () => {
-  assert.deepEqual(parseArgs(["check", "mohr"]), { command: "check", target: "mohr", viewports: [390, 768, 1440], themes: ["light", "dark"], offline: false, out: null });
-  assert.deepEqual(parseArgs(["check", "--viewports=320,390,320", "mohr", "--theme", "dark", "--offline", "--out", "o"]),
-    { command: "check", target: "mohr", viewports: [320, 390], themes: ["dark"], offline: true, out: "o" });
+test("the command line: defaults, both options and every malformed value", () => {
+  assert.deepEqual(parseArgs(["check", "mohr"]), { command: "check", target: "mohr", viewports: [390, 768, 1440], themes: ["light", "dark"] });
+  assert.deepEqual(parseArgs(["check", "--viewport=320,390,320", "mohr", "--themes", "dark"]),
+    { command: "check", target: "mohr", viewports: [320, 390], themes: ["dark"] });
   assert.equal(parseArgs([]).command, "help");
   assert.equal(parseArgs(["check", "--help"]).command, "help");
   for (const argv of [["check"], ["check", "a", "b"], ["frob", "a"], ["check", "a", "--viewport"], ["check", "a", "--viewport", "10"],
-    ["check", "a", "--viewport", "390,wide"], ["check", "a", "--themes", "sepia"], ["check", "a", "--bogus"], ["check", "a", "--offline=yes"]]) {
+    ["check", "a", "--viewport", "390,wide"], ["check", "a", "--themes", "sepia"], ["check", "a", "--bogus"], ["check", "a", "--viewports", "390"],
+    ["check", "a", "--theme", "dark"], ["check", "a", "--offline"], ["check", "a", "--out", "o"]]) {
     assert.throws(() => parseArgs(argv), UsageError, argv.join(" "));
   }
 });
@@ -62,7 +63,7 @@ test("a slug, a visual's folder or index.html, another folder, an HTML file and 
   assert.deepEqual([url.kind, url.name, url.url, url.visual?.slug], ["url", "delta", "https://example.org/visuals/delta/", "delta"]);
 });
 
-test("no false pass: an unknown slug, a missing path, a folder without a page, a non-HTML file and an offline URL are usage errors", () => {
+test("no false pass: an unknown slug, a missing path, a folder without a page, and a non-HTML file are usage errors", () => {
   const dir = mkdtempSync(join(tmpdir(), "page-axi-"));
   try {
     writeFileSync(join(dir, "notes.md"), "# notes\n");
@@ -75,7 +76,6 @@ test("no false pass: an unknown slug, a missing path, a folder without a page, a
     for (const [raw, message] of cases) {
       assert.throws(() => resolveTarget(/** @type {string} */ (raw), { repo: VISUALS, cwd: VISUALS }), (e) => e instanceof UsageError && /** @type {RegExp} */ (message).test(e.message), String(raw));
     }
-    assert.throws(() => resolveTarget("https://example.org/x/", { repo: VISUALS, offline: true }), UsageError);
     assert.throws(() => resolveTarget("deltaa", { repo: VISUALS, cwd: VISUALS }), (e) => e instanceof UsageError && e.help[0] === "Did you mean delta?");
   } finally {
     rmSync(dir, { recursive: true, force: true });

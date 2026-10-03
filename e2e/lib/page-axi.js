@@ -12,22 +12,21 @@ import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, dirname, join, relative, resolve, sep } from "node:path";
-import { pathToFileURL } from "node:url";
 import { discoverVisualsRepo } from "./catalogue.js";
 import { REPO, loadManifest } from "./manifest.js";
 
 /** @typedef {import("./catalogue.js").Visual} Visual */
 /** @typedef {import("./manifest.js").Manifest} Manifest */
 
-export const USAGE = `usage: page-axi check <slug|path|url> [--viewport 390,768,1440] [--themes light,dark] [--offline] [--out DIR]
+export const USAGE = `usage: page-axi check <slug|path|url> [--viewport 390,768,1440] [--themes light,dark]
 
   <slug>      a visual in viz/<slug>/, staged as the site publishes it (index.html, data.json, assets)
   <path>      a folder holding index.html, or an HTML file
   <url>       an http(s) page that is already served
-  --viewport  comma-separated widths in px, 200 to 4000 (default 390,768,1440); --viewports is the same
+  --viewport  comma-separated widths in px, 200 to 4000 (default 390,768,1440)
   --themes    light, dark or both (default light,dark), as the reader's prefers-color-scheme
-  --offline   open the page from file:// with no server, as a reader with no network would
-  --out       where screenshots and run.json go (default build/page-axi/<name>/, which the run empties first)
+
+Screenshots and run.json go to build/page-axi/<name>/, which the run empties first.
 
 Checks: opens, console (uncaught errors and console errors), network (requests outside the page's folder are
 refused and counted), overflow (horizontal scroll), numeric-text (NaN, Infinity or undefined shown, also with
@@ -69,8 +68,6 @@ export class UsageError extends Error {
  * @property {string} target
  * @property {number[]} viewports
  * @property {("light" | "dark")[]} themes
- * @property {boolean} offline
- * @property {string | null} out
  */
 
 /**
@@ -80,7 +77,7 @@ export class UsageError extends Error {
  */
 export function parseArgs(argv) {
   /** @type {Options} */
-  const options = { command: "check", target: "", viewports: DEFAULT_VIEWPORTS, themes: ["light", "dark"], offline: false, out: null };
+  const options = { command: "check", target: "", viewports: DEFAULT_VIEWPORTS, themes: ["light", "dark"] };
   if (!argv.length || argv.includes("--help") || argv.includes("-h") || argv[0] === "help") return { ...options, command: "help" };
   const [command, ...rest] = argv;
   if (command !== "check") throw new UsageError(`unknown command "${command}"; the only command is check`);
@@ -94,21 +91,16 @@ export function parseArgs(argv) {
       if (v === undefined || v === "") throw new UsageError(`${flag} needs a value`);
       return v;
     };
-    if (flag === "--viewport" || flag === "--viewports") {
+    if (flag === "--viewport") {
       const raw = value();
       const widths = raw.split(",").map((s) => s.trim());
       if (widths.some((w) => !/^\d+$/.test(w) || Number(w) < 200 || Number(w) > 4000)) throw new UsageError(`--viewport takes widths from 200 to 4000 px, comma-separated: ${raw}`);
       options.viewports = [...new Set(widths.map(Number))];
-    } else if (flag === "--themes" || flag === "--theme") {
+    } else if (flag === "--themes") {
       const raw = value();
       const themes = raw.split(",").map((s) => s.trim());
       if (themes.some((t) => !THEMES.includes(t))) throw new UsageError(`--themes takes light, dark or both: ${raw}`);
       options.themes = /** @type {("light" | "dark")[]} */ ([...new Set(themes)]);
-    } else if (flag === "--offline") {
-      if (inline !== null) throw new UsageError("--offline takes no value");
-      options.offline = true;
-    } else if (flag === "--out") {
-      options.out = value();
     } else if (arg.startsWith("-")) {
       throw new UsageError(`unknown option ${arg}`);
     } else {
@@ -151,14 +143,13 @@ function distance(a, b) {
  * Turn the command line's page into a target: a slug in viz/, a folder or HTML file, or a URL. Anything
  * that names no page is a usage error, never an empty pass.
  * @param {string} raw
- * @param {{ repo?: string, cwd?: string, offline?: boolean }} [where]
+ * @param {{ repo?: string, cwd?: string }} [where]
  * @returns {Target}
  */
-export function resolveTarget(raw, { repo = REPO, cwd = process.cwd(), offline = false } = {}) {
+export function resolveTarget(raw, { repo = REPO, cwd = process.cwd() } = {}) {
   const visuals = existsSync(join(repo, "viz")) ? discoverVisualsRepo(repo) : [];
   const bySlug = new Map(visuals.map((v) => [v.slug, v]));
   if (/^https?:\/\//.test(raw)) {
-    if (offline) throw new UsageError("--offline opens a local page from file://; a URL has no local copy", ["Pass the visual's slug or its folder with --offline"]);
     const url = new URL(raw);
     const name = basename(url.pathname.replace(/\/(index\.html)?$/, "")) || url.hostname;
     return { kind: "url", name, visual: bySlug.get(name) ?? null, folder: null, entry: "", url: url.href };
@@ -441,8 +432,8 @@ export function staticRules(folder, entry) {
  */
 export async function runCheck(options, { repo = REPO, cwd = process.cwd() } = {}) {
   const started = Date.now();
-  const target = resolveTarget(options.target, { repo, cwd, offline: options.offline });
-  const out = resolve(cwd, options.out ?? join(repo, "build", "page-axi", target.name));
+  const target = resolveTarget(options.target, { repo, cwd });
+  const out = join(repo, "build", "page-axi", target.name);
   rmSync(out, { recursive: true, force: true });
   mkdirSync(out, { recursive: true });
   const rules = target.folder ? staticRules(target.folder, target.entry) : null;
@@ -462,7 +453,7 @@ export async function runCheck(options, { repo = REPO, cwd = process.cwd() } = {
   const { brokenNumbers, driveNumbers, overflow } = checksLib;
   const project = /** @type {import("./browser.js").Project} */ (PROJECTS.find((p) => p.name === "chromium-desktop"));
 
-  // Stage a visual as the site publishes it; serve it unless the run is offline or the page is a URL.
+  // Stage a visual as the site publishes it; serve it unless the page is a URL.
   /** @type {string | null} */
   let staging = null;
   /** @type {import("./server.js").StaticServer | null} */
@@ -482,9 +473,6 @@ export async function runCheck(options, { repo = REPO, cwd = process.cwd() } = {
     let allowed;
     if (target.url) {
       url = target.url;
-      allowed = url.replace(/[^/]*$/, "");
-    } else if (options.offline) {
-      url = pathToFileURL(join(/** @type {string} */ (folder), target.entry)).href;
       allowed = url.replace(/[^/]*$/, "");
     } else {
       const { serveArtifacts } = await import("./server.js");
@@ -561,13 +549,13 @@ export async function runCheck(options, { repo = REPO, cwd = process.cwd() } = {
     const page = {
       target: target.name,
       kind: target.kind,
-      url: target.url ?? (options.offline ? `file://.../${target.entry}` : url),
-      mode: options.offline ? "offline (file://)" : target.url ? "remote" : "served (localhost)",
+      url,
+      mode: target.url ? "remote" : "served (localhost)",
       viewports: options.viewports.join(","),
       themes: options.themes.join(","),
       duration_ms: Date.now() - started,
     };
-    writeFileSync(log, JSON.stringify({ page: { ...page, url }, summary, checks, loads, drive, rules, declared }, null, 2));
+    writeFileSync(log, JSON.stringify({ page, summary, checks, loads, drive, rules, declared }, null, 2));
     const logShown = shown(log, cwd);
     return { page, summary, checks: checks.map((c) => ({ ...c, evidence: c.evidence.length > 240 ? `${c.evidence.slice(0, 237)}...` : c.evidence })), shots, log: logShown, help: hints(checks, { target, log: logShown, shots }) };
   } finally {
