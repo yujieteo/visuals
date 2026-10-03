@@ -42,7 +42,7 @@ builder template's, as `typecheck.page` says), less the blocks its `visual.json`
 | `tests/` | Tests of the shared tooling only. |
 | `package.json`, `tsconfig.base.json`, `tsconfig.json` | The pinned type checker, the compiler options every visual's `tsconfig.json` extends, and the tooling's own project. |
 | `e2e/` | The shared browser-check harness (Playwright, its own `package.json`), and the checks of the two visuals the site keeps; see [e2e/README.md](e2e/README.md). |
-| `.github/workflows/ci.yml` | CI: one job per changed visual plus a repository-wide job ([docs/monorepo.md](docs/monorepo.md)). |
+| `.github/workflows/ci.yml` | CI: one job per changed visual, its browser checks' jobs, and a repository-wide job ([docs/monorepo.md](docs/monorepo.md)). |
 | `SKILLS.md` | Agent guide for this repository. |
 
 ## Checks
