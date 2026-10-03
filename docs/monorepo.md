@@ -82,9 +82,8 @@ workflow (`.github/workflows/template.yml`, run by hand with the site branch) ru
 `scripts/sync_template.py`, which replaces the old text and its hash in every file of each visual that
 carries an older copy, and pushes the result to a branch whose pull request CI checks visual by visual. It
 lands before the site's change, whose tests compare the site's template with these copies. The same script
-runs locally. Publishing stays a deploy of the site, which CI
-never does; the site's CI builds against this repository's `main` daily, so a change here that breaks the
-site shows within a day.
+runs locally. Publishing stays a deploy of the site, which CI never does; the site's CI builds against this
+repository's `main` daily, so a change here that breaks the site shows within a day.
 
 ## Importing the visual repositories
 
@@ -120,6 +119,7 @@ are in `e2e/site/`). The combined findings list is generated in CI from the mani
 
 Data-only, documentation-only and mechanical changes take CI only, through a plain pull request. Mechanical
 means moving or copying already-reviewed content without changing its logic, tests or tooling: a
-byte-identical import of a repository's main with its history, a regenerated file, a copied page, a template synced by `scripts/sync_template.py`. Anything
-touching a page's logic, a builder, tests, CI or shared tooling keeps the full no-mistakes pipeline, and so
-does an import that also edits logic, tests or tooling to fit the monorepo. The diff decides.
+byte-identical import of a repository's main with its history, a regenerated file, a copied page, a template
+synced by `scripts/sync_template.py`. Anything touching a page's logic, a builder, tests, CI or shared tooling
+keeps the full no-mistakes pipeline, and so does an import that also edits logic, tests or tooling to fit the
+monorepo. The diff decides.
