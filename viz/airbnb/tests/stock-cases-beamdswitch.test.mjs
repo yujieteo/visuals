@@ -6,13 +6,20 @@ const REPORT = read("scripts/templates/stock-cases-report.js");
 const METRICS = ["revenue", "cash_margin"];
 const { Beamdswitch, StockReport } = load(read("beamdswitch.js"), REPORT);
 const html = read("index.html");
-const C = JSON.parse(/,CASE=(\{.*?\}),svg=/.exec(html)[1]);
+const caseJson = /,CASE=(\{.*?\}),svg=/.exec(html)?.[1];
+assert.ok(caseJson, "the page embeds its CASE");
+/** @type {{ title: string, source: string, rows: { end: string }[] }} */
+const C = JSON.parse(caseJson);
+
+/** @typedef {{ fp: string, form: string, start?: string, end: string, filed: string, val: number }} Fact */
 
 // The newest annual 10-K or 20-F fact for each fiscal-year end, recounted from the SEC source.
+/** @param {{ facts: Record<string, Record<string, { units: { USD: Fact[] } }>> }} raw @param {string} tag */
 function annual(raw, tag) {
+  /** @type {Map<string, Fact>} */
   const out = new Map();
   for (const f of raw.facts["us-gaap"][tag].units.USD)
-    if (f.fp === "FY" && ["10-K", "20-F"].includes(f.form) && f.start && (!out.has(f.end) || f.filed > out.get(f.end).filed)) out.set(f.end, f);
+    if (f.fp === "FY" && ["10-K", "20-F"].includes(f.form) && f.start && (!out.has(f.end) || f.filed > /** @type {Fact} */ (out.get(f.end)).filed)) out.set(f.end, f);
   return out;
 }
 
@@ -28,6 +35,7 @@ test(`${SLUG}: each measure's deck parses in beamdswitch as the standard templat
     assert.equal(deck.meta.title, C.title);
     // The selected measure leads the results.
     const first = deck.frames.find((f) => f.section === "Results" && f.kind === "frame");
+    assert.ok(first, `${SLUG} ${metric}: has a Results frame`);
     assert.ok(first.title.startsWith(StockReport.METRICS[metric].label), `${SLUG} ${metric}: ${first.title}`);
   }
 });
@@ -39,7 +47,7 @@ test(`${SLUG}: the deck's figures are the SEC filings', in the page's digits`, (
   assert.deepEqual(C.rows.map((r) => r.end), ends);
   const md = Beamdswitch.deck(StockReport.report(C, { metric: "revenue" }));
   for (const end of ends) {
-    const rev = revenue.get(end).val, ocf = cash.get(end).val, fy = end.slice(0, 4);
+    const rev = /** @type {Fact} */ (revenue.get(end)).val, ocf = /** @type {Fact} */ (cash.get(end)).val, fy = end.slice(0, 4);
     const money = "\\$" + (rev / 1e9).toFixed(2) + "B", margin = (100 * ocf / rev).toFixed(1) + "%";
     assert.ok(md.includes(`| ${fy} | ${end} | ${money} |`), `${SLUG} ${fy} revenue`);
     assert.ok(md.includes(`| ${fy} | ${end} | ${margin} |`), `${SLUG} ${fy} margin`);

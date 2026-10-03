@@ -5,15 +5,26 @@ import { SLUG, read } from "./finance-beamdswitch-checks.mjs";
 
 const HEAD = "fy|revenue_usd|operating_cash_flow_usd|cash_margin_pct";
 
+/** @typedef {{ fy: string, revenue: number, operating_cash_flow: number, cash_margin: number }} Row */
+/**
+ * A registered WebMCP tool, as the page passes it to registerTool.
+ * @typedef {{ name: string, annotations: { readOnlyHint?: boolean }, execute(input?: object): Promise<{ content: { text: string }[] }> }} Tool
+ */
+
 // Run the page's WebMCP block against a stub modelContext and return the tools it registers.
+/** @param {string} html */
 function tools(html) {
-  const rows = /const rows=(\[.*?\]),CASE=/.exec(html)[1];
+  const rows = /const rows=(\[.*?\]),CASE=/.exec(html)?.[1];
+  assert.ok(rows, "the page embeds its rows");
   const block = html.split("\n").find((l) => l.startsWith("const result="));
+  /** @type {Record<string, Tool>} */
   const registered = {};
-  vm.runInNewContext(`const rows=${rows};${block}`, { document: { modelContext: { registerTool: (t) => (registered[t.name] = t) } }, navigator: {} });
-  return { rows: JSON.parse(rows), registered };
+  vm.runInNewContext(`const rows=${rows};${block}`, { document: { modelContext: { registerTool: (/** @type {Tool} */ t) => (registered[t.name] = t) } }, navigator: {} });
+  return { rows: /** @type {Row[]} */ (JSON.parse(rows)), registered };
 }
+/** @param {Tool} tool @param {object} [input] */
 const text = async (tool, input) => (await tool.execute(input)).content[0].text;
+/** @param {Row} r */
 const line = (r) => `${r.fy}|${r.revenue}|${r.operating_cash_flow}|${r.cash_margin.toFixed(1)}`;
 
 const { rows, registered } = tools(read("index.html"));

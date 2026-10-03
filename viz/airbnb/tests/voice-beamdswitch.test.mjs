@@ -6,7 +6,9 @@ import assert from "node:assert/strict";
 import { parseDeck } from "./fixtures/beamdswitch/deck.mjs";
 import { SLUG, assertVoice, inlined, load, read } from "./finance-beamdswitch-checks.mjs";
 
+/** @param {string} title */
 const frame = (title) => ({ title, body: "A body.", narration: `This is ${title}.` });
+/** @param {{ voice?: string }} meta */
 const report = (meta) => ({
   meta: { title: "A report", ...meta }, narration: "A report.",
   setup: [frame("Set-up")], method: [frame("Method")], results: [frame("Results")], checks: [{ ...frame("Checks"), key: "The key." }],
