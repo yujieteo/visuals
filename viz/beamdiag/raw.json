@@ -1,0 +1,360 @@
+{
+ "title": "Beam diagram creator",
+ "slug": "beamdiag",
+ "version": "1.0.0",
+ "summary": "Build a straight beam with pinned and fixed supports, point forces, couples and distributed loads; see reactions, shear force, bending moment and deflection solved in the browser by the stiffness method, including statically indeterminate beams, and download the same model as an MSC Nastran SOL 101 bulk data deck.",
+ "units": {
+  "internal": "SI: m, N, N/m, N·m, Pa, m², m⁴",
+  "conventions": "Inputs, results, diagrams and the NASTRAN deck use one consistent unit convention chosen on the page: SI N, mm, MPa (the default); SI kN, m, kPa; SI N, m, Pa; US customary lbf, in, psi; or US customary kip, in, ksi. Values are converted only where they are typed or shown, so the solved beam is the same in every convention and switching re-expresses the values already entered. Slopes are in radians.",
+  "tools": "The page tools take and return SI; export_nastran_bdf writes the deck in the page's convention unless given another."
+ },
+ "conventions": [
+  "x runs along the beam, positive to the right, measured from its left end or, when chosen, from mid-span (then from −L/2 to +L/2); +y is up.",
+  "Point forces and distributed loads are positive upward: enter downward loads as negative numbers.",
+  "Couples, rotations and support moments are positive counter-clockwise.",
+  "Shear V(x) is the sum of the upward forces to the left of the section.",
+  "Bending moment M(x) is positive when it sags the beam (tension on the bottom fibre); dM/dx = V and dV/dx = q.",
+  "At a point force V jumps by the force; at a couple C, M jumps by −C. Both one-sided values are reported."
+ ],
+ "assumptions": [
+  "Linear elastic, small displacement, static loading.",
+  "Euler–Bernoulli bending: plane sections stay plane and shear deformation is neglected.",
+  "Uniform prismatic section and one material along the whole beam.",
+  "Loads act in the plane of bending through the shear centre; no axial load, torsion, temperature or dynamics.",
+  "A pin restrains deflection; a fixed support restrains deflection and slope. Supports are rigid."
+ ],
+ "method": "Direct stiffness method with two-node Hermite beam elements between the supports and the beam ends. Point forces, couples and distributed loads inside each element enter as consistent nodal loads, which are the exact fixed-end actions for Euler–Bernoulli beams, so nodal deflections and reactions are exact and statically indeterminate supports need no special handling. Load points stay out of the stiffness matrix, so closely spaced loads do not degrade its conditioning, and there is no cap on the number of supports or loads. Shear and moment are then recovered exactly by statics from the loads and reactions, and deflection between nodes by integrating M/EI. Results are checked against an independent exact-arithmetic Python solver (Macaulay integration with compatibility conditions) on shared fixtures.",
+ "materials": [
+  {
+   "id": "steel",
+   "label": "Structural steel",
+   "E": 200000000000.0,
+   "nu": 0.3
+  },
+  {
+   "id": "aluminium",
+   "label": "Aluminium alloy",
+   "E": 69000000000.0,
+   "nu": 0.33
+  },
+  {
+   "id": "concrete",
+   "label": "Concrete (uncracked, C30/37)",
+   "E": 33000000000.0,
+   "nu": 0.2
+  },
+  {
+   "id": "timber",
+   "label": "Softwood timber (C24, along grain)",
+   "E": 11000000000.0,
+   "nu": 0.3
+  }
+ ],
+ "sections": [
+  {
+   "id": "rect",
+   "label": "Solid rectangle b × h"
+  },
+  {
+   "id": "circle",
+   "label": "Solid circle, diameter d"
+  },
+  {
+   "id": "tube",
+   "label": "Circular tube D × t"
+  },
+  {
+   "id": "custom",
+   "label": "Custom A and I"
+  }
+ ],
+ "presets": [
+  {
+   "id": "pin-pin-udl",
+   "label": "Pinned–pinned, uniform load",
+   "note": "Statically determinate: reactions from equilibrium alone.",
+   "length": 6,
+   "supports": [
+    {
+     "kind": "pin",
+     "x": 0
+    },
+    {
+     "kind": "pin",
+     "x": 6
+    }
+   ],
+   "loads": [
+    {
+     "kind": "dist",
+     "x1": 0,
+     "x2": 6,
+     "q1": -10000.0,
+     "q2": -10000.0
+    }
+   ],
+   "material": "steel",
+   "section": {
+    "shape": "rect",
+    "b": 0.1,
+    "h": 0.2
+   }
+  },
+  {
+   "id": "fixed-fixed-udl",
+   "label": "Fixed–fixed, uniform load",
+   "note": "Indeterminate to degree 2: end moments wL²/12 hog, mid-span wL²/24 sags.",
+   "length": 6,
+   "supports": [
+    {
+     "kind": "fixed",
+     "x": 0
+    },
+    {
+     "kind": "fixed",
+     "x": 6
+    }
+   ],
+   "loads": [
+    {
+     "kind": "dist",
+     "x1": 0,
+     "x2": 6,
+     "q1": -10000.0,
+     "q2": -10000.0
+    }
+   ],
+   "material": "steel",
+   "section": {
+    "shape": "rect",
+    "b": 0.1,
+    "h": 0.2
+   }
+  },
+  {
+   "id": "fixed-fixed-point",
+   "label": "Fixed–fixed, off-centre point load",
+   "note": "End moments Pab²/L² and Pa²b/L² are unequal, so the reactions are too.",
+   "length": 6,
+   "supports": [
+    {
+     "kind": "fixed",
+     "x": 0
+    },
+    {
+     "kind": "fixed",
+     "x": 6
+    }
+   ],
+   "loads": [
+    {
+     "kind": "point",
+     "x": 2,
+     "F": -40000.0
+    }
+   ],
+   "material": "steel",
+   "section": {
+    "shape": "rect",
+    "b": 0.1,
+    "h": 0.2
+   }
+  },
+  {
+   "id": "pin-pin-mixed",
+   "label": "Pinned–pinned, point load and couple",
+   "note": "The couple makes the moment diagram jump; the point load makes the shear jump.",
+   "length": 8,
+   "supports": [
+    {
+     "kind": "pin",
+     "x": 0
+    },
+    {
+     "kind": "pin",
+     "x": 8
+    }
+   ],
+   "loads": [
+    {
+     "kind": "point",
+     "x": 3,
+     "F": -20000.0
+    },
+    {
+     "kind": "moment",
+     "x": 5.5,
+     "C": 15000.0
+    }
+   ],
+   "material": "steel",
+   "section": {
+    "shape": "rect",
+    "b": 0.1,
+    "h": 0.2
+   }
+  },
+  {
+   "id": "propped-cantilever",
+   "label": "Propped cantilever (fixed–pinned)",
+   "note": "Indeterminate to degree 1: the prop carries 3wL/8.",
+   "length": 6,
+   "supports": [
+    {
+     "kind": "fixed",
+     "x": 0
+    },
+    {
+     "kind": "pin",
+     "x": 6
+    }
+   ],
+   "loads": [
+    {
+     "kind": "dist",
+     "x1": 0,
+     "x2": 6,
+     "q1": -10000.0,
+     "q2": -10000.0
+    }
+   ],
+   "material": "steel",
+   "section": {
+    "shape": "rect",
+    "b": 0.1,
+    "h": 0.2
+   }
+  },
+  {
+   "id": "cantilever",
+   "label": "Cantilever, tip load",
+   "note": "Statically determinate: the whole load returns through the fixed end.",
+   "length": 3,
+   "supports": [
+    {
+     "kind": "fixed",
+     "x": 0
+    }
+   ],
+   "loads": [
+    {
+     "kind": "point",
+     "x": 3,
+     "F": -5000.0
+    }
+   ],
+   "material": "steel",
+   "section": {
+    "shape": "rect",
+    "b": 0.1,
+    "h": 0.2
+   }
+  },
+  {
+   "id": "continuous",
+   "label": "Two-span continuous beam",
+   "note": "Indeterminate to degree 1: the middle support carries 5wL/4 and hogs by wL²/8.",
+   "length": 8,
+   "supports": [
+    {
+     "kind": "pin",
+     "x": 0
+    },
+    {
+     "kind": "pin",
+     "x": 4
+    },
+    {
+     "kind": "pin",
+     "x": 8
+    }
+   ],
+   "loads": [
+    {
+     "kind": "dist",
+     "x1": 0,
+     "x2": 8,
+     "q1": -10000.0,
+     "q2": -10000.0
+    }
+   ],
+   "material": "steel",
+   "section": {
+    "shape": "rect",
+    "b": 0.1,
+    "h": 0.2
+   }
+  }
+ ],
+ "nastran": {
+  "dialect": "MSC Nastran, SOL 101 linear statics, small-field fixed-format bulk data (large field only for a card group whose values need more than eight characters to stay exact)",
+  "cards": [
+   {
+    "card": "GRID",
+    "use": "One grid per node along basic X; GRDSET sets PS=345 on every grid, permanently removing out-of-plane translation and rotations."
+   },
+   {
+    "card": "CBAR",
+    "use": "One bar per element, orientation vector X1,X2,X3 = 0,1,0 (element y = basic +Y)."
+   },
+   {
+    "card": "PBAR",
+    "use": "A, I1 (in-plane I), I2, J; K1/K2 blank = zero shear flexibility, matching Euler–Bernoulli."
+   },
+   {
+    "card": "MAT1",
+    "use": "E and ν; G left blank so NASTRAN derives it."
+   },
+   {
+    "card": "SPC1",
+    "use": "Set 1: one card for the pins (components 12) and one for the fixed supports (126), each listing its support grids."
+   },
+   {
+    "card": "FORCE / MOMENT",
+    "use": "Load set 2: point forces along basic Y and couples about basic Z at grids."
+   },
+   {
+    "card": "PLOAD1",
+    "use": "Load set 2: TYPE=FY, SCALE=FR from 0 to 1 on each element under a distributed load, with the intensities at its ends."
+   },
+   {
+    "card": "PARAM,POST,0",
+    "use": "Asks MSC Nastran to write the Patran results database (.xdb) alongside the run."
+   }
+  ],
+  "run": [
+   "Save the deck, e.g. beam.bdf, on a machine with a licensed MSC Nastran installation.",
+   "Run: nastran beam.bdf",
+   "PARAM,POST,0 makes the run write beam.xdb next to beam.f06; open it in Patran (or another .xdb reader) to post-process.",
+   "Compare DISPLACEMENT T2 (deflection) and R3 (slope, rad), and SPCFORCES T2 (reaction) and R3 (support moment), with this page in the same unit convention; the deck's $ Units comment names it. These are in basic coordinates and use the same signs."
+  ],
+  "status": "The deck is generated from the same model the page solves and is checked by reading it back and re-solving it with the independent Python reference. This page does not run NASTRAN and does not produce an .xdb file itself."
+ },
+ "sources": [
+  {
+   "id": "cbar",
+   "title": "MSC Nastran Quick Reference Guide: CBAR",
+   "url": "https://nexus.hexagon.com/documentationcenter/en-US/bundle/MSC_Nastran_2024.1/page/Nastran_Combined_Book/qrg/bulkc1/TOC.CBAR.xhtml"
+  },
+  {
+   "id": "pbar",
+   "title": "MSC Nastran Quick Reference Guide: PBAR",
+   "url": "https://nexus.hexagon.com/documentationcenter/en-US/bundle/MSC_Nastran_2024.1/page/Nastran_Combined_Book/qrg/bulkp/TOC.PBAR.xhtml"
+  },
+  {
+   "id": "pload1",
+   "title": "MSC Nastran Quick Reference Guide: PLOAD1",
+   "url": "https://nexus.hexagon.com/documentationcenter/en-US/bundle/MSC_Nastran_2023.1/page/Nastran_Combined_Book/qrg/bulkp/TOC.PLOAD1.xhtml"
+  },
+  {
+   "id": "post",
+   "title": "MSC Nastran Quick Reference Guide: parameter POST",
+   "url": "https://nexus.hexagon.com/documentationcenter/en-US/bundle/MSC_Nastran_2024.2/page/Nastran_Combined_Book/qrg/parameters/TOC.POST.xhtml"
+  },
+  {
+   "id": "code",
+   "title": "Source, fixtures and the Python reference solver",
+   "url": "https://github.com/yujieteo/site/tree/main/visuals/beamdiag"
+  }
+ ]
+}

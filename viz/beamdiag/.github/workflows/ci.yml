@@ -1,0 +1,34 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Start headless Chrome for tests/browser.test.mjs
+        run: |
+          google-chrome --headless=new --remote-debugging-port=9227 '--remote-allow-origins=*' \
+            --no-sandbox --disable-gpu --user-data-dir="$RUNNER_TEMP/chrome" about:blank &
+          for _ in $(seq 1 60); do curl -sf http://127.0.0.1:9227/json/version && break; sleep 0.5; done
+      - name: Node tests
+        run: node --test tests/*.test.mjs
+        env:
+          BEAMDIAG_BROWSER_URL: http://127.0.0.1:9227
+      - name: Python verification
+        run: python -m unittest discover -s tests -p 'test_*.py' -v
+      - name: Type check
+        run: npm ci && npm run typecheck
