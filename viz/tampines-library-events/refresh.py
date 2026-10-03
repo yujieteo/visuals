@@ -459,11 +459,8 @@ def add_arguments(parser):
 def refresh(source, folder, args):
     now = source.now
     failures = []
-    try:
-        nlb = fetch_nlb(not getattr(args, "no_pages", False), failures)
-        pa = fetch_onepa(now.astimezone(SGT).date().isoformat(), not getattr(args, "no_pages", False), failures)
-    except (OSError, ValueError, KeyError, TypeError) as error:
-        raise refresh_kit.Failed(f"a source failed or changed its format: {type(error).__name__}: {error}") from error
+    nlb = fetch_nlb(not getattr(args, "no_pages", False), failures)
+    pa = fetch_onepa(now.astimezone(SGT).date().isoformat(), not getattr(args, "no_pages", False), failures)
     data = build(nlb, pa, now)
     return update(data, failures, folder, getattr(args, "allow_partial", False), getattr(args, "force", False))
 

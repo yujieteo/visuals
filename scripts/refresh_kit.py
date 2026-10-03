@@ -12,7 +12,7 @@ them with its own request(), which uses BOT_CHECK, and its tests mock that funct
 
 run() then
   1. fails with exit 2 and writes nothing when a fetch fails, a response is empty or a bot check, or the data
-     fails the visual's own schema check (each raises Failed);
+     fails the visual's own schema check (each raises Failed), and on any other error of the refresh;
   2. compares every file with the one on disk and prints a TOON summary of what would change;
   3. writes every changed file, then runs the visual's builder. When the builder fails, every file in the
      folder goes back to what it was and the exit code is 2, so a refresh never leaves a partial write.
@@ -246,6 +246,13 @@ def write(folder, files, build):
         raise
 
 
+def failed(report, error, out):
+    """Print the TOON report of a refresh that stopped on ``error`` and return FAILED."""
+    reason = str(error) if isinstance(error, Failed) else f"{type(error).__name__}: {error}"
+    print(toon({**report, "result": "failed", "error": reason, "written": "nothing"}), file=out)
+    return FAILED
+
+
 def run(slug, dry_run=False, args=None, source=None, root=ROOT, out=None, hook=None):
     """Refresh one visual: print the TOON summary and return the exit code (0 or FAILED)."""
     out = out or sys.stdout
@@ -260,9 +267,8 @@ def run(slug, dry_run=False, args=None, source=None, root=ROOT, out=None, hook=N
         news = any(row["status"] != "unchanged" for row in compare(folder, files))
         if news and update.fetched:
             files["visual.json"] = set_fetched(read(folder, "visual.json") or "", update.fetched)
-    except Failed as error:
-        print(toon({**report, "result": "failed", "error": str(error), "written": "nothing"}), file=out)
-        return FAILED
+    except Exception as error:
+        return failed(report, error, out)
     rows = compare(folder, files)
     report.update({"result": "changes" if news else "up-to-date", "source": update.source, "files": rows,
                    "changes": update.changes, "notes": update.notes,
@@ -270,9 +276,8 @@ def run(slug, dry_run=False, args=None, source=None, root=ROOT, out=None, hook=N
     if news and not dry_run:
         try:
             write(folder, {row["path"]: files[row["path"]] for row in rows if row["status"] != "unchanged"}, update.build)
-        except Failed as error:
-            print(toon({**report, "result": "failed", "error": str(error), "written": "nothing"}), file=out)
-            return FAILED
+        except Exception as error:
+            return failed(report, error, out)
         report["written"] = "every changed file, then the builder"
     elif news:
         report["next"] = f"python3 scripts/refresh.py {slug}"

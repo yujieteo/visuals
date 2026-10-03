@@ -139,6 +139,15 @@ class Run(unittest.TestCase):
                 self.assertEqual(self.files(), before)
         self.assertEqual(self.run_refresh('{"rows": []}', empty_ok=True)[0], 0, "the visual's own flag reaches its refresh")
 
+    def test_an_unexpected_error_in_a_refresh_exits_2_and_writes_nothing(self):
+        before = self.files()
+        code, out = self.run_refresh('["rows"]')
+        self.assertEqual(code, refresh_kit.FAILED)
+        self.assertIn("result: failed\n", out)
+        self.assertIn("AttributeError", out)
+        self.assertIn("written: nothing", out)
+        self.assertEqual(self.files(), before)
+
     def test_a_builder_that_fails_puts_every_file_back(self):
         before = self.files()
         code, out = self.run_refresh('{"rows": ["a", "bad"]}')
