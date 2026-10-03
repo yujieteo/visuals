@@ -5,7 +5,8 @@ no deploy and no site navigation. Each visual is staged as the site publishes it
 `data.json` and its assets in a folder of its own), served from localhost and opened from `file://`, then
 driven in Chromium, Firefox and WebKit at desktop and mobile sizes. Tests are Node's built-in `node --test`
 driving browsers through the Playwright library; the code is JavaScript type-checked by `tsc` (`checkJs`).
-They moved here, with their history, from yujieteo/technical-e2e.
+They moved here from yujieteo/technical-e2e in one squash commit; the archived yujieteo/technical-e2e keeps
+the commit-level history.
 
 This folder is the shared harness. A visual's own checks live in its folder: `viz/<slug>/e2e/manifest.json`
 (how to drive it, which checks do not apply, and known findings) and `viz/<slug>/e2e/full.test.mjs` (its

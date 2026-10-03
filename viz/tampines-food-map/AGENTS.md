@@ -4,4 +4,4 @@
 
 Not published on teoyujie.org (`"published": false` in `visual.json`): the site's current Tampines food page is `tampines-food`. The builder also rewrites `meta.json`.
 
-Its tests are in `tests/`, imported with their history from [yujieteo/tampines-food-map](https://github.com/yujieteo/tampines-food-map). Rules for every visual: [SKILLS.md](../../SKILLS.md).
+Its tests are in `tests/`, imported with their history from yujieteo/tampines-food-map (now deleted) into yujieteo/visuals. Rules for every visual: [SKILLS.md](../../SKILLS.md).

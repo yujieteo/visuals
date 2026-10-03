@@ -1,5 +1,5 @@
 /* Checks for the Motives and periods beamdswitch decks, and a small stand-in DOM to run the page and its
-   WebMCP tools in Node. Copied from the site's tests/beamdswitch-deck-checks.mjs (by way of yujieteo/mohr), with paths
+   WebMCP tools in Node. Copied from the site's tests/beamdswitch-deck-checks.mjs (by way of viz/mohr), with paths
    pointing at this repository. The decks are parsed with beamdswitch's own parsers, and the site's
    shared template and its report outline are compared against read-only copies, all in
    tests/fixtures/beamdswitch/. */

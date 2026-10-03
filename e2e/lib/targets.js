@@ -87,7 +87,7 @@ function adHocVisual(slug, folder) {
     slug, title: slug, summary: "", source: "site", htmlPath: "", dataPath: null, assets: [], pin: null,
     catalogued: false,
     offlineClaim: /\boffline\b|\bfile:\/\/|no network access/i.test(docs),
-    owner: process.env.E2E_OWNER ?? `https://github.com/yujieteo/${slug}`,
+    owner: process.env.E2E_OWNER ?? "https://github.com/yujieteo/visuals",
   };
 }
 

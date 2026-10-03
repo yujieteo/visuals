@@ -14,7 +14,7 @@ The builder expands each bracketed tree into hierarchical JSON with token spans,
 validates the whole corpus (including the three special structures that are not ordinary
 constituent trees: word-internal structure, punctuation marks attached to constituent
 boundaries, and antecedent links), and renders index.html from src/english-grammar.css,
-src/english-grammar-logic.js (pure logic, also run by yujieteo/english-grammar's
+src/english-grammar-logic.js (pure logic, also run by
 tests/english-grammar.test.mjs) and src/english-grammar.js (interface). Each concept page offers its
 lesson as a narrated beamdswitch deck: beamdswitch.js (the site's shared report template, unchanged)
 and report.js (one concept as a report) are inlined as they are.
