@@ -172,3 +172,62 @@ export function overflow(page) {
     return { scrollWidth, clientWidth, culprits: wide.slice(0, 4).map(([, d]) => d) };
   });
 }
+
+/** Words a broken number writes into the page: a division by zero, a parse of "" or a missing value. */
+const BROKEN = String.raw`(?<![\w.])(?:NaN|-?Infinity|undefined)(?![\w])`;
+
+/**
+ * Where the visible text shows NaN, Infinity or undefined, each with a little context.
+ * @param {import("playwright").Page} page
+ * @returns {Promise<string[]>}
+ */
+export function brokenNumbers(page) {
+  return page.evaluate((pattern) => {
+    const text = document.body ? document.body.innerText : "";
+    return [...text.matchAll(new RegExp(pattern, "g"))].map((m) => JSON.stringify(text.slice(Math.max(0, (m.index ?? 0) - 24), (m.index ?? 0) + m[0].length + 8).replace(/\s+/g, " ")));
+  }, BROKEN);
+}
+
+/**
+ * Drive each visible, enabled number field and slider (up to ``limit``) to its minimum, its maximum and 0,
+ * and each number field to empty as a reader clearing it would, and return what showed NaN, Infinity or
+ * undefined after each, as "<control> = <value>: <context>".
+ * @param {import("playwright").Page} page
+ * @param {number} [limit]
+ * @returns {Promise<{ driven: number, broken: string[] }>}
+ */
+export function driveNumbers(page, limit = 12) {
+  return page.evaluate(async ({ pattern, limit }) => {
+    /** @param {Element} el */
+    const describe = (el) => el.id ? `#${el.id}` : `${el.tagName.toLowerCase()}[name="${el.getAttribute("name") ?? ""}"]`;
+    const frame = () => new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve, 30)));
+    const setter = /** @type {(this: HTMLInputElement, v: string) => void} */ (Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set);
+    const inputs = [...document.querySelectorAll('input[type="number"], input[type="range"]')]
+      .map((el) => /** @type {HTMLInputElement} */ (el))
+      .filter((el) => !el.disabled && !el.readOnly && el.getClientRects().length > 0)
+      .slice(0, limit);
+    /** @type {string[]} */
+    const broken = [];
+    for (const input of inputs) {
+      const start = input.value;
+      const min = input.min === "" ? null : Number(input.min), max = input.max === "" ? null : Number(input.max);
+      const values = new Set([input.min, input.max].filter((v) => v !== ""));
+      if ((min === null || min <= 0) && (max === null || max >= 0)) values.add("0");
+      if (input.type === "number") values.add("");
+      for (const value of values) {
+        setter.call(input, value);
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+        input.dispatchEvent(new Event("change", { bubbles: true }));
+        await frame();
+        const text = document.body.innerText;
+        const m = new RegExp(pattern).exec(text);
+        if (m) broken.push(`${describe(input)} = ${JSON.stringify(value)}: ${JSON.stringify(text.slice(Math.max(0, m.index - 24), m.index + m[0].length + 8).replace(/\s+/g, " "))}`);
+      }
+      setter.call(input, start);
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+      await frame();
+    }
+    return { driven: inputs.length, broken };
+  }, { pattern: BROKEN, limit });
+}

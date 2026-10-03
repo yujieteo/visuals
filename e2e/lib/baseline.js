@@ -1,8 +1,10 @@
 // The baseline every visual gets, in every browser project: it opens, throws
 // nothing, logs no console error, requests nothing outside itself, works from
-// file:// when it says it works offline, does not overflow 320 px, and its
-// primary control changes what the reader sees.
-import { fingerprint, markCandidate, operate, overflow } from "./checks.js";
+// file:// when it says it works offline, does not overflow 320 px or 390 px, its
+// primary control changes what the reader sees, and no number it shows reads NaN,
+// Infinity or undefined, even with each number field and slider at its limits.
+import { brokenNumbers, driveNumbers, fingerprint, markCandidate, operate, overflow } from "./checks.js";
+import { BASELINE_CHECKS } from "./manifest.js";
 import { openSession, settle } from "./browser.js";
 
 /** @typedef {import("./targets.js").Artifact} Artifact */
@@ -48,7 +50,7 @@ export async function runBaseline(browser, project, artifact, targets, manifest)
   /** @type {Record<string, Outcome>} */
   const out = {};
   if (artifact.stageError && !artifact.remoteUrl) {
-    for (const check of ["opens", "runtime-errors", "console-errors", "network", "file-url", "overflow-320", "primary-control"]) {
+    for (const check of BASELINE_CHECKS) {
       out[check] = { outcome: "fail", evidence: `could not stage the artifact: ${artifact.stageError}`, ms: 0 };
     }
     return out;
@@ -119,6 +121,27 @@ export async function runBaseline(browser, project, artifact, targets, manifest)
       };
     }
 
+    // Numbers: none broken as the page opens or after its primary control, nor with each numeric input at
+    // its minimum, maximum, 0 and (a number field) empty.
+    t = Date.now();
+    if (out.opens.outcome !== "pass") {
+      out["numeric-text"] = { outcome: "fail", evidence: "the page did not open", ms: 0 };
+    } else {
+      const errors = main.observed.pageErrors.length, logged = main.observed.consoleErrors.length;
+      try {
+        const shown = await brokenNumbers(main.page);
+        const { driven, broken } = await driveNumbers(main.page);
+        // An error the driving raises belongs to this check, not to the page's load in runtime-errors.
+        const thrown = [...main.observed.pageErrors.splice(errors), ...main.observed.consoleErrors.splice(logged)];
+        const problems = [...shown.map((s) => `shown ${s}`), ...broken, ...thrown.map((e) => `error ${e}`)];
+        out["numeric-text"] = problems.length
+          ? { outcome: "fail", evidence: list(problems, 4), ms: Date.now() - t }
+          : { outcome: "pass", evidence: `no NaN, Infinity or undefined shown, ${driven} numeric input(s) driven to their limits`, ms: Date.now() - t };
+      } catch (e) {
+        out["numeric-text"] = { outcome: "fail", evidence: `could not drive the numeric inputs: ${String(/** @type {Error} */ (e).message).split("\n")[0]}`, ms: Date.now() - t };
+      }
+    }
+
     await pause(main.page);
     const { pageErrors, consoleErrors, unexpectedRequests, failedRequests } = main.observed;
     out["runtime-errors"] = pageErrors.length
@@ -167,19 +190,27 @@ export async function runBaseline(browser, project, artifact, targets, manifest)
     }
   }
 
-  // 320 px wide.
+  // 320 px wide, then 390 px.
   t = Date.now();
   const narrow = await openSession(browser, project, allowed, { viewport: { width: 320, height: 640 } });
   try {
     const response = await narrow.page.goto(targets.httpUrl(artifact), { waitUntil: "load", timeout: 30_000 }).catch((e) => e);
     if (response instanceof Error) {
-      out["overflow-320"] = { outcome: "fail", evidence: `navigation failed: ${response.message.split("\n")[0]}`, ms: Date.now() - t };
+      out["overflow-320"] = out["overflow-390"] = { outcome: "fail", evidence: `navigation failed: ${response.message.split("\n")[0]}`, ms: Date.now() - t };
     } else {
       await settle(narrow.page, manifest.ready).catch(() => {});
-      const o = await overflow(narrow.page);
-      out["overflow-320"] = o.scrollWidth > o.clientWidth + 1
-        ? { outcome: "fail", evidence: `scrollWidth ${o.scrollWidth} > clientWidth ${o.clientWidth}: ${list(o.culprits, 4)}`, ms: Date.now() - t }
-        : { outcome: "pass", evidence: `scrollWidth ${o.scrollWidth} <= clientWidth ${o.clientWidth}`, ms: Date.now() - t };
+      for (const width of [320, 390]) {
+        // 390 px is a common phone width, where a layout between its breakpoints can overflow though 320 px does not.
+        if (width !== 320) {
+          t = Date.now();
+          await narrow.page.setViewportSize({ width, height: 844 });
+          await pause(narrow.page);
+        }
+        const o = await overflow(narrow.page);
+        out[`overflow-${width}`] = o.scrollWidth > o.clientWidth + 1
+          ? { outcome: "fail", evidence: `scrollWidth ${o.scrollWidth} > clientWidth ${o.clientWidth}: ${list(o.culprits, 4)}`, ms: Date.now() - t }
+          : { outcome: "pass", evidence: `scrollWidth ${o.scrollWidth} <= clientWidth ${o.clientWidth}`, ms: Date.now() - t };
+      }
     }
   } finally {
     await narrow.close();
