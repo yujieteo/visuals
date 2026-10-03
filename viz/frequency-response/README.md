@@ -39,9 +39,10 @@ samples in discrete time.
 | `AGENTS.md` | Notes for coding agents: where changes go (the standalone repository, where this visualisation and its tests develop; yujieteo/site holds a port of the page files), how to build and test, and the conventions. |
 | `SKILLS.md` | For agents using the tool: its tasks, inputs, read-only WebMCP tools, exports and a worked example. |
 | `LICENSE` | MIT. |
+| `package.json`, `package-lock.json`, `tsconfig.json`, `.gitignore` | Type-check tooling only: `npm ci && npm run typecheck` copies the page's inline scripts out of `index.html` (`tests/extract-inline.mjs`) into the ignored `.typecheck/` and runs TypeScript's `tsc` over their JSDoc types and the tests'. No runtime dependencies. |
 
 The tests are `tests/frequency-response.test.mjs`, run with Node's built-in
-runner (`node --test`). They extract the engine script from `index.html`, run
+runner (`node --test`), typed against the engine's own JSDoc through `tests/page-globals.d.ts`. They extract the engine script from `index.html`, run
 the in-page self-tests and further analytic checks, and exercise the WebMCP
 tools. The page runs the same self-tests on every load and shows a pass/fail
 badge with each tolerance. After changing `META` or `defaultInputs()`,
