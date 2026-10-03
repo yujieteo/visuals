@@ -123,6 +123,9 @@
   const plural = (n, one, many = one + "s") => `${n} ${n === 1 ? one : many}`;
   const list = (xs) => (xs.length < 2 ? xs.join("") : `${xs.slice(0, -1).join(", ")} and ${xs.at(-1)}`);
   const span = (r) => (r.start === r.end ? r.start : `${r.start} to ${r.end}`);
+  /* ISO dates sort as text: the earliest start and the latest end of a group of rows. */
+  const firstStart = (its) => its.map((r) => r.start).sort()[0];
+  const lastEnd = (its) => its.map((r) => r.end).sort().at(-1);
 
   function report(rows, view = {}) {
     const lanes = [...new Set(rows.map((r) => r.lane))];
@@ -139,7 +142,7 @@
       body: [
         "| Lane | Items | Dates |",
         "| --- | ---: | --- |",
-        ...lanes.map((l) => { const its = inLane(l); return `| ${md(l)} | ${its.length} | ${its.map((r) => r.start).sort()[0]} to ${its.map((r) => r.end).sort().at(-1)} |`; }),
+        ...lanes.map((l) => { const its = inLane(l); return `| ${md(l)} | ${its.length} | ${firstStart(its)} to ${lastEnd(its)} |`; }),
         "",
         `- ${md(STATUS)}`,
         `- ${active === "All" ? "Shown: all lanes." : `Shown: the ${md(active)} lane only.`}`,
@@ -159,10 +162,10 @@
     }];
 
     const periods = (its) => ({
-      title: `${plural(its.length, "alleged period")}, from ${its.map((r) => r.start).sort()[0]} to ${its.map((r) => r.end).sort().at(-1)}`,
+      title: `${plural(its.length, "alleged period")}, from ${firstStart(its)} to ${lastEnd(its)}`,
       body: ["| Item | Period | Scope |", "| --- | --- | --- |", ...its.map((r) => `| ${md(r.label)} | ${span(r)} | ${md(r.detail)} |`)].join("\n"),
       notes: `Primary source: ${its[0].source_url}`,
-      narration: `The ${its[0].lane} lane holds ${plural(its.length, "period")}: ${list(its.map((r) => r.label))}. These are allegations, spanning ${sayDate(its.map((r) => r.start).sort()[0])} to ${sayDate(its.map((r) => r.end).sort().at(-1))}.`,
+      narration: `The ${its[0].lane} lane holds ${plural(its.length, "period")}: ${list(its.map((r) => r.label))}. These are allegations, spanning ${sayDate(firstStart(its))} to ${sayDate(lastEnd(its))}.`,
     });
     const filed = (its) => ({
       title: `Filed accounts: revenue ${list(its.map((r) => money(r.revenue_gbp_m)))}`,
