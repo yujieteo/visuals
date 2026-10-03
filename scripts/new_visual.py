@@ -24,6 +24,7 @@ Usage:
 """
 import argparse
 import datetime
+import html
 import json
 import re
 import sys
@@ -141,8 +142,10 @@ def generate(args, root=ROOT):
         raise SystemExit(f"viz/{args.slug} exists; --check or --update an existing visual instead")
     options = {"slug": args.slug, "title": args.title, "subject": args.subject, "mathjax": args.mathjax}
     values = {"slug": args.slug, "title": args.title, "lede": args.lede or args.summary, "purpose": args.purpose}
+    in_html = {**values, "lede": html.escape(values["lede"], quote=False)}
     flags = {"mathjax": args.mathjax}
-    files = {target: render(kit.read(STARTER / source), values, flags) for target, source in starter_files(args.slug).items()}
+    files = {target: render(kit.read(STARTER / source), in_html if source == "body.html" else values, flags)
+             for target, source in starter_files(args.slug).items()}
     files.update(mechanical_files(options))
     files["visual.json"] = json_text(visual_json(args, options))
     write(folder, files)

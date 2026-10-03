@@ -6,6 +6,7 @@ import json
 import shutil
 import subprocess
 import unittest
+from html.parser import HTMLParser
 
 from helpers import ROOT, Layout
 
@@ -38,6 +39,24 @@ class GeneratorLayout(Layout):
         super().__enter__()
         (self.root / "scripts").symlink_to(ROOT / "scripts", target_is_directory=True)
         return self
+
+
+class LedeText(HTMLParser):
+    """The text of the page's <p class="lede">."""
+
+    def __init__(self):
+        super().__init__()
+        self.inside, self.text = False, ""
+
+    def handle_starttag(self, tag, attrs):
+        self.inside = tag == "p" and ("class", "lede") in attrs
+
+    def handle_endtag(self, tag):
+        self.inside = False
+
+    def handle_data(self, data):
+        if self.inside:
+            self.text += data
 
 
 class RenderTest(unittest.TestCase):
@@ -91,6 +110,14 @@ class GenerateTest(unittest.TestCase):
         self.assertIn("scripts/vendor/mathjax", json.loads((folder / "visual.json").read_text(encoding="utf-8"))["uses"])
         tampered = html.replace("window.MathJax = {", "window.MathJax = { tampered: 1,", 1)
         self.assertEqual(len(rules.vendor_problems(tampered)), 1)
+
+    def test_the_lede_is_text_in_the_page_and_unchanged_in_skills_md(self):
+        lede = "RCS <b> 0.01 m² for the F-117 & B-2"
+        folder = new_visual.generate(new_visual.parse(["tide-clock", *ARGS[:2], "--summary", lede, *ARGS[4:]]), self.root)
+        parser = LedeText()
+        parser.feed((folder / "index.html").read_text(encoding="utf-8"))
+        self.assertEqual(parser.text, lede)
+        self.assertIn(f"{lede} To change the page", (folder / "SKILLS.md").read_text(encoding="utf-8"))
 
     def test_an_existing_folder_or_an_unsafe_title_is_refused(self):
         generated(self.root)
