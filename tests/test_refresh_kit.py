@@ -148,6 +148,18 @@ class Run(unittest.TestCase):
         self.assertIn("written: nothing", out)
         self.assertEqual(self.files(), before)
 
+    def test_a_refresh_py_that_fails_to_import_exits_2_from_the_command_line(self):
+        (self.folder / "refresh.py").write_text("import a_module_that_does_not_exist\n", encoding="utf-8")
+        before = self.files()
+        out = io.StringIO()
+        with mock.patch.object(refresh_kit, "ROOT", self.layout.root), mock.patch("sys.stdout", out):
+            code = refresh_kit.main(["demo"])
+        self.assertEqual(code, refresh_kit.FAILED)
+        self.assertIn("result: failed\n", out.getvalue())
+        self.assertIn("ModuleNotFoundError", out.getvalue())
+        self.assertIn("written: nothing", out.getvalue())
+        self.assertEqual(self.files(), before)
+
     def test_a_builder_that_fails_puts_every_file_back(self):
         before = self.files()
         code, out = self.run_refresh('{"rows": ["a", "bad"]}')

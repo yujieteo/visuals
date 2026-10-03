@@ -295,9 +295,12 @@ def main(argv=None, slug=None):
     argv = sys.argv[1:] if argv is None else argv
     known, _ = parser.parse_known_args(argv)
     slug = slug or known.slug
-    hook = module(ROOT / VIZ / slug) if (ROOT / VIZ / slug).is_dir() else None
-    if hook is not None and hasattr(hook, "add_arguments"):
-        hook.add_arguments(parser)
+    try:
+        hook = module(ROOT / VIZ / slug) if (ROOT / VIZ / slug).is_dir() else None
+        if hook is not None and hasattr(hook, "add_arguments"):
+            hook.add_arguments(parser)
+    except Exception as error:
+        return failed({"slug": slug, "mode": "dry-run" if known.dry_run else "write"}, error, sys.stdout)
     args = parser.parse_args(argv)
     now = datetime.fromisoformat(args.now) if args.now else None
     if now is not None and now.tzinfo is None:
