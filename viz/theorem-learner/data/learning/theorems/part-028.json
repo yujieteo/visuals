@@ -1,0 +1,490 @@
+[
+ {
+  "id": "nl:24462",
+  "statement": "A [rewriting system](c:rewriting-system) that is terminating ([strongly normalizing](c:strong-normalization)) and [locally confluent](c:locally-confluent-relation) is [confluent](c:confluence).",
+  "hypotheses": [
+   {
+    "id": "h:terminating",
+    "text": "The relation $\\to$ on the set $A$ is [terminating](c:strong-normalization): there is no infinite chain $a_0 \\to a_1 \\to a_2 \\to \\cdots$.",
+    "concept": "c:strong-normalization"
+   },
+   {
+    "id": "h:local",
+    "text": "The relation is [locally confluent](c:locally-confluent-relation): if $a \\to b$ and $a \\to c$, then $b \\to^* d$ and $c \\to^* d$ for some $d$.",
+    "concept": "c:locally-confluent-relation"
+   }
+  ],
+  "conclusion": "The relation is [confluent](c:confluence): if $a \\to^* b$ and $a \\to^* c$, then $b \\to^* d$ and $c \\to^* d$ for some $d$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "well-founded-induction",
+    "name": "Well-founded induction on the start point",
+    "slogan": "Prove confluence at each element by well-founded induction along the terminating relation, and close each peak with local confluence and two induction hypotheses.",
+    "scope": "The whole theorem; the converse, that confluence gives local confluence, holds for every relation. Peaks with $b = a$ or $c = a$ are settled separately in step 2.",
+    "mechanisms": [
+     "m:strong-induction",
+     "m:case-analysis"
+    ],
+    "roles": [
+     {
+      "h": "h:terminating",
+      "why": "Termination makes $\\to^+$ a well-founded relation, so the induction is valid.",
+      "steps": [
+       "s:order"
+      ]
+     },
+     {
+      "h": "h:local",
+      "why": "Local confluence closes the one-step peak $b_1 \\leftarrow a \\to c_1$ at the top.",
+      "steps": [
+       "s:split"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:order",
+      "slogan": "Order the elements by $\\to^+$ and set up [well-founded induction](c:well-founded-induction).",
+      "detail": "Because $\\to$ terminates, $\\to^+$ has no infinite chain, so induction along it is valid. Prove the claim $P(a)$: any two reducts $b, c$ of $a$ have a common reduct, assuming $P(a')$ for every $a'$ with $a \\to^+ a'$.",
+      "uses": []
+     },
+     {
+      "id": "s:trivial",
+      "slogan": "Settle the peaks where one side takes zero steps.",
+      "detail": "If $b = a$, then $c$ is a common reduct of $b$ and $c$, because $a \\to^* c$. The case $c = a$ is symmetric.",
+      "uses": []
+     },
+     {
+      "id": "s:split",
+      "slogan": "Split a nontrivial peak into first steps $a \\to b_1$ and $a \\to c_1$.",
+      "detail": "Otherwise $a \\to b_1 \\to^* b$ and $a \\to c_1 \\to^* c$. [Local confluence](c:locally-confluent-relation) gives $d$ with $b_1 \\to^* d$ and $c_1 \\to^* d$.",
+      "uses": []
+     },
+     {
+      "id": "s:ih-b",
+      "slogan": "Join $b$ and $d$ by the induction hypothesis at $b_1$.",
+      "detail": "Since $a \\to^+ b_1$, the hypothesis $P(b_1)$ applies to the reducts $b$ and $d$ of $b_1$ and gives $e$ with $b \\to^* e$ and $d \\to^* e$.",
+      "uses": []
+     },
+     {
+      "id": "s:ih-c",
+      "slogan": "Join $c$ and $e$ by the induction hypothesis at $c_1$.",
+      "detail": "Both $c$ and $e$ are reducts of $c_1$, because $c_1 \\to^* d \\to^* e$. Since $a \\to^+ c_1$, $P(c_1)$ gives $f$ with $c \\to^* f$ and $e \\to^* f$, so $b \\to^* e \\to^* f$.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Combine both cases into $P(a)$ and conclude [confluence](c:confluence) by induction.",
+      "detail": "Steps 2 and 5 give a common reduct of $b$ and $c$ in every case, so $P(a)$ holds. By well-founded induction $P(a)$ holds for every $a$, which is confluence.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:order",
+      "s:ih-b"
+     ],
+     [
+      "s:order",
+      "s:ih-c"
+     ],
+     [
+      "s:split",
+      "s:ih-b"
+     ],
+     [
+      "s:split",
+      "s:ih-c"
+     ],
+     [
+      "s:ih-b",
+      "s:ih-c"
+     ],
+     [
+      "s:ih-c",
+      "s:conclude"
+     ],
+     [
+      "s:trivial",
+      "s:conclude"
+     ],
+     [
+      "s:order",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:rewriting-system": "The lemma is about the reduction relation of a rewriting system.",
+     "c:strong-normalization": "Termination makes the reduction relation usable for induction.",
+     "c:locally-confluent-relation": "Local confluence closes the top peak of each diagram.",
+     "c:confluence": "Confluence is the property proved at every element.",
+     "c:well-founded-induction": "Induction along the reduction relation supplies the hypotheses at $b_1$ and $c_1$."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Huet's well-founded induction proof of Newman's 1942 lemma, as in F. Baader and T. Nipkow, Term Rewriting and All That, chapter 2."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1529941",
+  "statement": "For a [compact group](c:compact-group) $G$, the matrix coefficients $g \\mapsto \\langle \\pi(g)u, v \\rangle$ of finite-dimensional continuous [unitary representations](c:unitary-representation) $\\pi$ span a [dense](c:dense-set) subspace of $C(G)$ in the sup norm.",
+  "hypotheses": [
+   {
+    "id": "h:compact",
+    "text": "The group $G$ is a compact Hausdorff topological group.",
+    "concept": "c:compact-group"
+   }
+  ],
+  "conclusion": "Every [continuous function](c:continuous-function) on $G$ is a uniform limit of finite linear combinations of matrix coefficients ([representative functions](c:representative-function)).",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "compact-operators",
+    "name": "Compact convolution operators",
+    "slogan": "Smooth a continuous function by a convolution operator, expand it in the finite-dimensional eigenspaces of that compact operator, and read the eigenfunctions as matrix coefficients.",
+    "scope": "The whole theorem, including the trivial group. Density in $L^2(G)$ follows, because $C(G)$ is dense in $L^2(G)$.",
+    "mechanisms": [
+     "m:spectral-decomposition",
+     "m:approximation",
+     "m:cauchy-schwarz"
+    ],
+    "roles": [
+     {
+      "h": "h:compact",
+      "why": "Compactness gives a finite [Haar measure](c:haar-measure), a compact convolution operator and uniform continuity of $f$.",
+      "steps": [
+       "s:operator",
+       "s:approx"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:operator",
+      "slogan": "Convolve with a symmetric continuous kernel to get a [compact self-adjoint operator](c:compact-self-adjoint-operator).",
+      "detail": "Let $dy$ be the normalized [Haar measure](c:haar-measure). For continuous $\\varphi$ with $\\varphi(y^{-1}) = \\overline{\\varphi(y)}$, the [convolution](c:convolution) $Tf(x) = \\int \\varphi(xy^{-1}) f(y)\\,dy$ has a bounded kernel on a finite measure space, so $T$ is self-adjoint and Hilbert-Schmidt, hence compact, on $L^2(G)$. It commutes with right translations $R_g f(x) = f(xg)$.",
+      "uses": []
+     },
+     {
+      "id": "s:approx",
+      "slogan": "Choose the kernel as a bump at the identity so that $\\varphi * f$ is uniformly close to $f$.",
+      "detail": "Given $f \\in C(G)$ and $\\varepsilon > 0$, uniform continuity gives a symmetric neighborhood $U$ of $e$ with $|f(z^{-1}x) - f(x)| < \\varepsilon$ for $z \\in U$. Urysohn's lemma gives a symmetric continuous $\\varphi \\ge 0$ supported in $U$ with $\\int \\varphi = 1$, and then $\\|\\varphi * f - f\\|_\\infty < \\varepsilon$.",
+      "uses": [
+       "nl:10682"
+      ]
+     },
+     {
+      "id": "s:spectral",
+      "slogan": "Split $L^2(G)$ into the kernel of $T$ and finite-dimensional translation-invariant eigenspaces.",
+      "detail": "The spectral theorem for compact self-adjoint operators gives $L^2(G) = \\ker T \\oplus \\overline{\\bigoplus_{\\lambda \\ne 0} E_\\lambda}$ with each $E_\\lambda$ finite dimensional. Each $E_\\lambda$ is invariant under right translations because $T$ commutes with them, and its elements are continuous because $f = \\lambda^{-1}\\,\\varphi * f$.",
+      "uses": [
+       "wd:Q2022775"
+      ]
+     },
+     {
+      "id": "s:coefficients",
+      "slogan": "Write each function of an invariant finite-dimensional space as a combination of matrix coefficients.",
+      "detail": "Right translation on $W = E_\\lambda$ is a continuous [unitary representation](c:unitary-representation), because Haar measure is right invariant. For a basis $f_1, \\dots, f_m$ of $W$, $f_i(xg) = \\sum_j a_{ji}(g) f_j(x)$ with matrix coefficients $a_{ji}$, and $x = e$ gives $f_i = \\sum_j f_j(e)\\,a_{ji}$, a [representative function](c:representative-function).",
+      "uses": []
+     },
+     {
+      "id": "s:uniform",
+      "slogan": "Truncate the eigen-expansion and control the error uniformly by the Cauchy-Schwarz inequality.",
+      "detail": "Write $f = f_0 + \\sum_\\lambda f_\\lambda$ in $L^2$, so $Tf = \\sum_\\lambda \\lambda f_\\lambda$. Since $\\|Th\\|_\\infty \\le \\|\\varphi\\|_2 \\|h\\|_2$, a finite partial sum $h$ gives $\\|Tf - Th\\|_\\infty < \\varepsilon$; then $Th$ is a combination of matrix coefficients by step 4, and $\\|f - Th\\|_\\infty < 2\\varepsilon$ by step 2.",
+      "uses": [
+       "nl:16121"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:operator",
+      "s:spectral"
+     ],
+     [
+      "s:operator",
+      "s:approx"
+     ],
+     [
+      "s:spectral",
+      "s:coefficients"
+     ],
+     [
+      "s:coefficients",
+      "s:uniform"
+     ],
+     [
+      "s:spectral",
+      "s:uniform"
+     ],
+     [
+      "s:approx",
+      "s:uniform"
+     ]
+    ],
+    "conclusion": "s:uniform",
+    "concepts": {
+     "c:compact-group": "Compactness of the group drives every step of the proof.",
+     "c:unitary-representation": "Right translation on an eigenspace is a finite-dimensional unitary representation.",
+     "c:dense-set": "The theorem asserts density of the span of matrix coefficients.",
+     "c:continuous-function": "The functions approximated are the continuous functions on $G$.",
+     "c:representative-function": "Matrix coefficients are the approximating functions.",
+     "c:haar-measure": "The invariant probability measure defines convolution and the $L^2$ inner product.",
+     "c:compact-self-adjoint-operator": "Its spectral theorem gives finite-dimensional eigenspaces.",
+     "c:convolution": "Convolution with a bump smooths $f$ and defines the compact operator."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The compact-operator proof, as in D. Bump, Lie Groups, chapter 4, and G. B. Folland, A Course in Abstract Harmonic Analysis, section 5.2."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:plunnecke-petridis-inequality",
+  "statement": "Let $A, B, C$ be [finite sets](c:finite-set) in a group written additively, and suppose $|A+B|\\,|A'| \\le |A'+B|\\,|A|$ for every $A' \\subseteq A$. Then the [sumsets](c:sumset) satisfy $|C+A+B|\\,|A| \\le |A+B|\\,|C+A|$.",
+  "hypotheses": [
+   {
+    "id": "h:finite",
+    "text": "The sets $A$, $B$ and $C$ are [finite](c:finite-set) subsets of a group $G$, written additively.",
+    "concept": "c:finite-set"
+   },
+   {
+    "id": "h:minimal",
+    "text": "Every $A' \\subseteq A$ has $|A+B|\\,|A'| \\le |A'+B|\\,|A|$, so $A$ minimizes $|A'+B|/|A'|$ among its nonempty subsets.",
+    "concept": null
+   }
+  ],
+  "conclusion": "$|C+A+B|\\,|A| \\le |A+B|\\,|C+A|$; for nonempty $A$ this reads $|C+A+B| \\le K\\,|C+A|$ with $K = |A+B|/|A|$.",
+  "formal": {
+   "decl": "Finset.pluennecke_petridis_inequality_add",
+   "difference": null
+  },
+  "proofs": [
+   {
+    "id": "induction-on-c",
+    "name": "Induction on C",
+    "slogan": "Add the points of $C$ one at a time, and pay for each new translate $x + A$ only with the part that $C + A$ does not cover yet.",
+    "scope": "The whole theorem, by induction on $|C|$; the group need not be commutative, so the sums keep their order. For empty $A$ or empty $C$ both sides are $0$.",
+    "mechanisms": [
+     "m:induction",
+     "m:inclusion-exclusion",
+     "m:extremal-choice"
+    ],
+    "roles": [
+     {
+      "h": "h:finite",
+      "why": "Finiteness makes the cardinalities numbers and allows induction on $|C|$.",
+      "steps": [
+       "s:base",
+       "s:count"
+      ]
+     },
+     {
+      "h": "h:minimal",
+      "why": "Minimality bounds from below the part $A' + B$ that the new translate shares with old sums.",
+      "steps": [
+       "s:minimal"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:base",
+      "slogan": "Check the inequality for empty $C$, where both sides are zero.",
+      "detail": "If $C = \\emptyset$, then $C + A + B$ and $C + A$ are empty, so both sides are $0$. For the induction step, assume the inequality for $C$ and let $C' = C \\cup \\{x\\}$ with $x \\notin C$.",
+      "uses": []
+     },
+     {
+      "id": "s:overlap",
+      "slogan": "Define $A'$ as the points of $A$ whose translate by $x$ already lies in $C + A$.",
+      "detail": "Let $A' = \\{a \\in A : x + a \\in C + A\\}$, so $(x + A) \\cap (C + A) = x + A'$. Then $x + A' + B \\subseteq C + A + B$, and $C' + A + B = (C + A + B) \\cup \\big((x + A + B) \\setminus (x + A' + B)\\big)$.",
+      "uses": []
+     },
+     {
+      "id": "s:count",
+      "slogan": "Bound the new [sumset](c:sumset) by $|C + A + B| + |A + B| - |A' + B|$.",
+      "detail": "The union bound and $x + A' + B \\subseteq x + A + B$ give $|C'+A+B| \\le |C+A+B| + |x+A+B| - |x+A'+B|$. Left [translation](c:translation) by $x$ is a bijection, so $|x + A + B| = |A + B|$ and $|x + A' + B| = |A' + B|$.",
+      "uses": []
+     },
+     {
+      "id": "s:minimal",
+      "slogan": "Multiply by $|A|$ and apply the induction hypothesis and the minimality of $A$.",
+      "detail": "The induction hypothesis gives $|C+A+B|\\,|A| \\le |A+B|\\,|C+A|$, and the hypothesis on $A$ gives $|A'+B|\\,|A| \\ge |A+B|\\,|A'|$. So $|C'+A+B|\\,|A| \\le |A+B|\\,(|C+A| + |A| - |A'|)$.",
+      "uses": []
+     },
+     {
+      "id": "s:inclusion",
+      "slogan": "Count $C' + A$ by inclusion-exclusion to close the induction.",
+      "detail": "Since $C' + A = (C + A) \\cup (x + A)$ with intersection $x + A'$, we get $|C' + A| = |C + A| + |A| - |A'|$. With step 4 this gives $|C'+A+B|\\,|A| \\le |A+B|\\,|C'+A|$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:base",
+      "s:minimal"
+     ],
+     [
+      "s:overlap",
+      "s:count"
+     ],
+     [
+      "s:overlap",
+      "s:inclusion"
+     ],
+     [
+      "s:count",
+      "s:minimal"
+     ],
+     [
+      "s:minimal",
+      "s:inclusion"
+     ]
+    ],
+    "conclusion": "s:inclusion",
+    "concepts": {
+     "c:finite-set": "Finite sets have cardinalities, and induction runs over $|C|$.",
+     "c:sumset": "The inequality compares sizes of sumsets.",
+     "c:translation": "Translates $x + A$ have the same size as $A$."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Finset.pluennecke_petridis_inequality_add",
+     "follows": true,
+     "note": "mathlib inducts on C (Finset.induction_on) and counts with card_union_le, card_sdiff_of_subset, card_singleton_mul and card_union_add_card_inter; the additive form comes by to_additive."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:plunnecke-ruzsa-inequality",
+  "statement": "Let $A, B$ be [finite sets](c:finite-set) in an [abelian group](c:abelian-group) with $A$ nonempty and $|A+B| \\le K|A|$. Then for all integers $m, n \\ge 0$ the iterated [sumsets](c:sumset) satisfy $|mB - nB| \\le K^{m+n}|A|$.",
+  "hypotheses": [
+   {
+    "id": "h:finite",
+    "text": "The sets $A$ and $B$ are [finite](c:finite-set) subsets of an [abelian group](c:abelian-group) $G$.",
+    "concept": "c:abelian-group"
+   },
+   {
+    "id": "h:nonempty",
+    "text": "The set $A$ is nonempty.",
+    "concept": null
+   },
+   {
+    "id": "h:doubling",
+    "text": "The [sumset](c:sumset) satisfies $|A+B| \\le K|A|$.",
+    "concept": "c:sumset"
+   }
+  ],
+  "conclusion": "$|mB - nB| \\le K^{m+n}|A|$, where $mB$ is the set of sums of $m$ elements of $B$.",
+  "formal": {
+   "decl": "Finset.pluennecke_ruzsa_inequality_nsmul_sub_nsmul_add",
+   "difference": "The declaration takes $K = |A+B|/|A|$ exactly. A larger $K$ follows at once, because $K^{m+n}$ grows with $K$."
+  },
+  "proofs": [
+   {
+    "id": "petridis-ruzsa",
+    "name": "Petridis subset and Ruzsa triangle",
+    "slogan": "Pass to a subset of $A$ with the least growth ratio, grow it by Petridis' inequality, and split the difference set by Ruzsa's triangle inequality.",
+    "scope": "All $m, n \\ge 0$; for $m = n = 0$ the set $\\{0\\}$ has size $1 \\le |A|$. The proof needs $A \\ne \\emptyset$ for the ratios to exist.",
+    "mechanisms": [
+     "m:extremal-choice",
+     "m:induction"
+    ],
+    "roles": [
+     {
+      "h": "h:finite",
+      "why": "Finiteness gives a minimizing subset, and commutativity lets the proof reorder $X + (k-1)B + B$.",
+      "steps": [
+       "s:min",
+       "s:grow"
+      ]
+     },
+     {
+      "h": "h:nonempty",
+      "why": "A nonempty $A$ has nonempty subsets, so the minimum ratio exists.",
+      "steps": [
+       "s:min"
+      ]
+     },
+     {
+      "h": "h:doubling",
+      "why": "The bound $|A+B| \\le K|A|$ caps the minimal ratio by $K$.",
+      "steps": [
+       "s:min"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:min",
+      "slogan": "Choose a nonempty $X \\subseteq A$ that minimizes the ratio $|X+B|/|X|$.",
+      "detail": "The nonempty subsets of $A$ form a finite nonempty family because $A \\ne \\emptyset$, so some $X$ minimizes $|X+B|/|X|$. Set $K_X = |X+B|/|X|$; then $K_X \\le |A+B|/|A| \\le K$ and $|X| \\le |A|$.",
+      "uses": []
+     },
+     {
+      "id": "s:grow",
+      "slogan": "Grow $X$ by one copy of $B$ at a time with the Plünnecke-Petridis inequality.",
+      "detail": "By the choice of $X$, the Plünnecke-Petridis inequality applies to $X$, $B$ and $C = (k-1)B$ and gives $|X + kB| \\le K_X\\,|X + (k-1)B|$. Induction on $k$ gives $|X + kB| \\le K_X^{k}\\,|X|$ for every $k \\ge 0$.",
+      "uses": [
+       "nm:plunnecke-petridis-inequality"
+      ]
+     },
+     {
+      "id": "s:ruzsa",
+      "slogan": "Bound the difference set by Ruzsa's triangle inequality through $X$.",
+      "detail": "Ruzsa's triangle inequality gives $|mB - nB|\\,|X| \\le |X + mB|\\,|X + nB|$: fix $d = b - b'$ for each $d \\in mB - nB$, and the map $(d, x) \\mapsto (x + b, x + b')$ is injective.",
+      "uses": [
+       "nm:ruzsa-s-triangle-inequality"
+      ]
+     },
+     {
+      "id": "s:combine",
+      "slogan": "Combine the two bounds and divide by $|X|$.",
+      "detail": "Steps 2 and 3 give $|mB - nB|\\,|X| \\le K_X^{m+n}\\,|X|^2$, so $|mB - nB| \\le K_X^{m+n}\\,|X| \\le K^{m+n}\\,|A|$ by step 1.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:min",
+      "s:grow"
+     ],
+     [
+      "s:min",
+      "s:ruzsa"
+     ],
+     [
+      "s:min",
+      "s:combine"
+     ],
+     [
+      "s:grow",
+      "s:combine"
+     ],
+     [
+      "s:ruzsa",
+      "s:combine"
+     ]
+    ],
+    "conclusion": "s:combine",
+    "concepts": {
+     "c:finite-set": "Finite sets give finite ratios and a minimizing subset.",
+     "c:abelian-group": "Commutativity lets the proof reorder iterated sums.",
+     "c:sumset": "The inequality bounds the size of iterated sumsets."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Finset.pluennecke_ruzsa_inequality_nsmul_sub_nsmul_add",
+     "follows": true,
+     "note": "mathlib picks the minimizing subset with Finset.exists_min_image, iterates Petridis through card_mul_pow_le and applies ruzsa_triangle_inequality_div_mul_mul, all stated multiplicatively and transferred by to_additive."
+    }
+   }
+  ]
+ }
+]
