@@ -32,9 +32,8 @@ skipped unless --require-typecheck (CI) makes that a failure. A failing visual n
 and first file:line, then counts and next steps; every step's full output goes to a log in build/logs/ that
 the verdict names. Without a selection it checks every visual. With SLUGs or --changed the verdict covers
 the selected visuals only, and the verdict line and the scope row say how many of the total that is and
-how many were not checked. Exit 0 pass, 1 fail, 2 usage
-or environment error: an unknown visual, an unknown BASE, a --changed that selects no visual, or
---require-typecheck without typescript installed.
+how many were not checked. Exit 0 pass, 1 fail, 2 usage or environment error: an unknown visual, an
+unknown BASE, a --changed that selects no visual, or --require-typecheck without typescript installed.
 """
 import argparse
 import contextlib
