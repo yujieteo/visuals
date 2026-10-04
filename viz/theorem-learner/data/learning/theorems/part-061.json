@@ -1,0 +1,1931 @@
+[
+ {
+  "id": "wd:Q2524990",
+  "statement": "In an open Jackson network of $J$ single-server queues (Poisson arrivals at rates $\\lambda_i$, exponential service at rates $\\mu_i$, Markov routing $r_{ij}$), let $\\alpha$ solve the traffic equations and put $\\rho_i = \\alpha_i/\\mu_i$. If $0<\\rho_i<1$ for every $i$, the queue-length [Markov chain](c:markov-chain) has the unique stationary distribution $\\pi(n)=\\prod_i(1-\\rho_i)\\rho_i^{n_i}$.",
+  "hypotheses": [
+   {
+    "id": "h:markov",
+    "text": "External arrivals to queue $i$ form a [Poisson process](c:poisson-process) of rate $\\lambda_i$, services at queue $i$ are exponential with rate $\\mu_i$, and a served job goes to queue $j$ with probability $r_{ij}$ or leaves with probability $r_{i0}$.",
+    "concept": "c:poisson-process"
+   },
+   {
+    "id": "h:open",
+    "text": "The network is open: every job leaves eventually, so $I-R$ is invertible and $\\alpha_i=\\lambda_i+\\sum_j\\alpha_j r_{ji}$ has a unique solution.",
+    "concept": null
+   },
+   {
+    "id": "h:stable",
+    "text": "The traffic rates satisfy $0<\\rho_i<1$ for every queue $i$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The queue-length process has exactly one stationary distribution, and it is $\\pi(n)=\\prod_i(1-\\rho_i)\\rho_i^{n_i}$, so the queue lengths are independent geometric variables at equilibrium.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "reversed-guess",
+    "name": "Guess the reversed process",
+    "slogan": "Verify the product form against a guessed time-reversed chain, which shows that it satisfies global balance.",
+    "scope": "The whole theorem. Every queue is assumed to receive traffic ($\\alpha_i>0$), so that the chain is irreducible and the reversed rates are defined.",
+    "mechanisms": [
+     "m:construction-explicit",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:markov",
+      "why": "Gives the transition rates of the chain on $\\mathbb{N}^J$ that the proof reverses.",
+      "steps": [
+       "s:chain",
+       "s:reversed"
+      ]
+     },
+     {
+      "h": "h:open",
+      "why": "Gives the unique traffic rates $\\alpha$ and lets every job leave, so the chain reaches the empty state.",
+      "steps": [
+       "s:chain",
+       "s:traffic"
+      ]
+     },
+     {
+      "h": "h:stable",
+      "why": "The bound $\\rho_i<1$ makes $\\pi$ a probability distribution, and $\\rho_i>0$ keeps the reversed rates finite.",
+      "steps": [
+       "s:reversed",
+       "s:unique"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:chain",
+      "slogan": "Write the transition rates of the queue-length chain on $\\mathbb{N}^J$.",
+      "detail": "From $n$ the chain goes to $n+e_i$ at rate $\\lambda_i$, and, when $n_i>0$, to $n-e_i+e_j$ at rate $\\mu_i r_{ij}$ and to $n-e_i$ at rate $\\mu_i r_{i0}$. The total rate $q(n)=\\sum_i\\lambda_i+\\sum_{n_i>0}\\mu_i$ is bounded, so the chain does not explode. It is irreducible, because jobs leave and $\\alpha_i>0$ lets every queue fill from $0$.",
+      "uses": []
+     },
+     {
+      "id": "s:traffic",
+      "slogan": "Sum the traffic equations to link total arrivals and total departures.",
+      "detail": "Summing $\\alpha_i=\\lambda_i+\\sum_j\\alpha_j r_{ji}$ over $i$ gives $\\sum_i\\lambda_i=\\sum_j\\alpha_j r_{j0}$. Put $r^*_{ji}=\\alpha_i r_{ij}/\\alpha_j$ and $r^*_{j0}=\\lambda_j/\\alpha_j$. The traffic equations say that $r^*_{j0}+\\sum_i r^*_{ji}=1$ for every $j$.",
+      "uses": []
+     },
+     {
+      "id": "s:reversed",
+      "slogan": "Define the reversed rates $q^*(m,n)=\\pi(n)q(n,m)/\\pi(m)$ and compute them.",
+      "detail": "With $\\pi(n)=\\prod_i(1-\\rho_i)\\rho_i^{n_i}$ and $\\rho_i=\\alpha_i/\\mu_i$, the reversed rates are $q^*(m,m+e_i)=\\alpha_i r_{i0}$, $q^*(m,m-e_j)=\\mu_j r^*_{j0}$ and $q^*(m,m-e_j+e_i)=\\mu_j r^*_{ji}$, each of the last two when $m_j>0$. For example, $\\pi(m+e_i)\\mu_i r_{i0}/\\pi(m)=\\rho_i\\mu_i r_{i0}=\\alpha_i r_{i0}$.",
+      "uses": []
+     },
+     {
+      "id": "s:match",
+      "slogan": "Check that forward and reversed total exit rates agree at every state.",
+      "detail": "The reversed exit rate of $m$ is $\\sum_i\\alpha_i r_{i0}+\\sum_{m_j>0}\\mu_j(r^*_{j0}+\\sum_i r^*_{ji})$. By the traffic step this equals $\\sum_i\\lambda_i+\\sum_{m_j>0}\\mu_j=q(m)$.",
+      "uses": []
+     },
+     {
+      "id": "s:balance",
+      "slogan": "Sum the reversal identity over all states to get global balance.",
+      "detail": "Fix $m$. Since $\\pi(n)q(n,m)=\\pi(m)q^*(m,n)$, summing over $n$ gives $\\sum_n\\pi(n)q(n,m)=\\pi(m)\\sum_n q^*(m,n)=\\pi(m)q(m)$. These are the global balance equations, so $\\pi$ is a stationary measure.",
+      "uses": []
+     },
+     {
+      "id": "s:unique",
+      "slogan": "Normalize $\\pi$ and use irreducibility to prove that it is the only stationary distribution.",
+      "detail": "Because $\\rho_i<1$, $\\sum_n\\pi(n)=\\prod_i\\sum_{k\\ge0}(1-\\rho_i)\\rho_i^k=1$. An irreducible non-explosive chain with a stationary distribution is [positive recurrent](c:positive-recurrence), and its stationary distribution is unique.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:chain",
+      "s:balance"
+     ],
+     [
+      "s:traffic",
+      "s:reversed"
+     ],
+     [
+      "s:traffic",
+      "s:match"
+     ],
+     [
+      "s:reversed",
+      "s:match"
+     ],
+     [
+      "s:reversed",
+      "s:balance"
+     ],
+     [
+      "s:match",
+      "s:balance"
+     ],
+     [
+      "s:balance",
+      "s:unique"
+     ],
+     [
+      "s:chain",
+      "s:unique"
+     ]
+    ],
+    "conclusion": "s:unique",
+    "concepts": {
+     "c:markov-chain": "The queue-length vector is a Markov chain whose stationary law is sought.",
+     "c:poisson-process": "Poisson arrivals make the queue lengths a Markov chain.",
+     "c:positive-recurrence": "A stationary distribution of an irreducible chain makes it positive recurrent and fixes it."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The reversed-process proof of Kelly, Reversibility and Stochastic Networks (Wiley, 1979), chapter 2; the theorem is J. R. Jackson, Jobshop-like queueing systems, Management Science 10 (1963)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:jacobian-criterion",
+  "statement": "Let $S$ be a [local ring](c:local-ring) and an $R$-algebra with [residue field](c:residue-field) $k$, and let $0\\to I\\to P\\to S\\to 0$ be a presentation with $P$ [formally smooth](c:formal-smoothness) over $R$, $\\Omega_{P/R}$ finite free over $P$ and $I$ finitely generated. Then $S$ is formally smooth over $R$ if and only if $k\\otimes I/I^2\\to k\\otimes\\Omega_{P/R}$ is injective.",
+  "hypotheses": [
+   {
+    "id": "h:local",
+    "text": "The ring $S$ is a [local ring](c:local-ring) and an $R$-algebra, with [residue field](c:residue-field) $k$.",
+    "concept": "c:local-ring"
+   },
+   {
+    "id": "h:presentation",
+    "text": "A surjective $R$-algebra map $P\\to S$ has kernel $I$, and $P$ is [formally smooth](c:formal-smoothness) over $R$.",
+    "concept": "c:formal-smoothness"
+   },
+   {
+    "id": "h:differentials",
+    "text": "The module $\\Omega_{P/R}$ of [Kähler differentials](c:kahler-differential) is finite free over $P$.",
+    "concept": "c:kahler-differential"
+   },
+   {
+    "id": "h:fg",
+    "text": "The ideal $I$ is finitely generated.",
+    "concept": null
+   }
+  ],
+  "conclusion": "$S$ is formally smooth over $R$ if and only if the map $k\\otimes_S I/I^2\\to k\\otimes_P\\Omega_{P/R}$ is injective.",
+  "formal": {
+   "decl": "Algebra.FormallySmooth.iff_injective_lTensor_residueField",
+   "difference": "The declaration states the criterion for an extension $P$ of $S$ over $R$, with the map $k\\otimes P.\\mathrm{cotangentComplex}$. The classical rank-of-the-Jacobian-matrix form follows when $P$ is a polynomial ring of finite type."
+  },
+  "proofs": [
+   {
+    "id": "split-injection",
+    "name": "Split injection over a local ring",
+    "slogan": "Formal smoothness is a splitting of the conormal map, and over a local ring a splitting is tested after tensoring with the residue field.",
+    "scope": "The whole criterion, in the form of the mathlib declaration. The proof compares the two statements through split injectivity of the conormal map $I/I^2\\to S\\otimes_P\\Omega_{P/R}$.",
+    "mechanisms": [
+     "m:exact-sequence",
+     "m:local-global"
+    ],
+    "roles": [
+     {
+      "h": "h:local",
+      "why": "Over a local ring, Nakayama's lemma turns a splitting into an injectivity test on the residue field.",
+      "steps": [
+       "s:test",
+       "s:combine"
+      ]
+     },
+     {
+      "h": "h:presentation",
+      "why": "A formally smooth $P$ with a presentation of $S$ makes smoothness of $S$ equivalent to a splitting of the conormal map.",
+      "steps": [
+       "s:split"
+      ]
+     },
+     {
+      "h": "h:differentials",
+      "why": "A finite free target makes the test over the local ring applicable.",
+      "steps": [
+       "s:free"
+      ]
+     },
+     {
+      "h": "h:fg",
+      "why": "A finitely generated $I$ makes $I/I^2$ a finite module over $S$.",
+      "steps": [
+       "s:finite"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:split",
+      "slogan": "Express formal smoothness of $S$ as a left inverse of the conormal map.",
+      "detail": "Since $P$ is [formally smooth](c:formal-smoothness), $S$ is formally smooth over $R$ if and only if the $S$-linear map $I/I^2\\to S\\otimes_P\\Omega_{P/R}$ has a left inverse (Stacks 031I). This is the criterion that the conormal sequence $0\\to I/I^2\\to S\\otimes_P\\Omega_{P/R}\\to\\Omega_{S/R}\\to0$ is split exact if and only if $S$ is formally smooth.",
+      "uses": []
+     },
+     {
+      "id": "s:finite",
+      "slogan": "Show that $I/I^2$ is a finite module over $S$.",
+      "detail": "If $I$ is generated by $g_1,\\dots,g_r$, then $I/I^2$ is generated by their classes as a $P$-module. It is killed by $I$, so it is a finitely generated module over $S=P/I$.",
+      "uses": []
+     },
+     {
+      "id": "s:free",
+      "slogan": "Show that $S\\otimes_P\\Omega_{P/R}$ is a finite [free module](c:free-module) over $S$.",
+      "detail": "The module $\\Omega_{P/R}$ is finite free over $P$, and base change along $P\\to S$ keeps a finite free module finite free.",
+      "uses": []
+     },
+     {
+      "id": "s:test",
+      "slogan": "Test splitting of a map from a finite module to a finite free module over a local ring.",
+      "detail": "Let $l\\colon M\\to N$ with $M$ finite and $N$ finite free over a local ring. If $k\\otimes l$ is injective, Nakayama's lemma shows that $N/l(M)$ is free, so $l(M)$ is a direct summand of $N$ and $l$ splits. Conversely a left inverse of $l$ tensors to a left inverse of $k\\otimes l$.",
+      "uses": [
+       "nl:7346"
+      ]
+     },
+     {
+      "id": "s:combine",
+      "slogan": "Combine the steps to compare formal smoothness with injectivity after tensoring.",
+      "detail": "Take $l$ to be the conormal map. Then $S$ is formally smooth if and only if $l$ splits, if and only if $k\\otimes l$ is injective.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:split",
+      "s:combine"
+     ],
+     [
+      "s:finite",
+      "s:test"
+     ],
+     [
+      "s:free",
+      "s:test"
+     ],
+     [
+      "s:test",
+      "s:combine"
+     ]
+    ],
+    "conclusion": "s:combine",
+    "concepts": {
+     "c:local-ring": "Splitting is tested on the residue field only because $S$ is local.",
+     "c:residue-field": "The residue field $k$ carries the injectivity test.",
+     "c:formal-smoothness": "Smoothness of $P$ and of $S$ is what the criterion links.",
+     "c:kahler-differential": "The target of the conormal map is built from the Kähler differentials of $P$.",
+     "c:free-module": "A finite free target is needed to test a splitting on the residue field."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Algebra.FormallySmooth.iff_injective_lTensor_residueField",
+     "follows": true,
+     "note": "mathlib rewrites with Algebra.Extension.formallySmooth_iff_split_injection and IsLocalRing.split_injective_iff_lTensor_residueField_injective, after showing the cotangent module is finite."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q528955",
+  "statement": "Let $H$ be a [Hilbert space](c:hilbert-space) of finite dimension $d\\ge3$. No map $v$ from the [projection operators](c:projection-operator) of $H$ to $\\{0,1\\}$ has $v(I)=1$ and $v(P+Q)=v(P)+v(Q)$ for all projections with $PQ=0$.",
+  "hypotheses": [
+   {
+    "id": "h:dim",
+    "text": "The [Hilbert space](c:hilbert-space) $H$ has finite dimension $d\\ge3$.",
+    "concept": "c:hilbert-space"
+   }
+  ],
+  "conclusion": "No noncontextual value assignment exists: every map $v$ with $v(I)=1$ and additive on orthogonal projections takes a value outside $\\{0,1\\}$ on some projection.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "ks-configuration",
+    "name": "Finite configuration of rays",
+    "slogan": "Reduce an assignment to a 0-1 labelling of rays in three dimensions, then refute every labelling of a finite configuration.",
+    "scope": "Dimensions $d\\ge3$, real or complex scalars. The outline rests on the published finite configuration of rays and its case analysis; the reduction steps are written out.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:contradiction",
+     "m:case-analysis"
+    ],
+    "roles": [
+     {
+      "h": "h:dim",
+      "why": "Dimension at least 3 gives a three-dimensional subspace that holds the configuration of rays.",
+      "steps": [
+       "s:reduce",
+       "s:config"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:rays",
+      "slogan": "Show that exactly one vector of every [orthonormal basis](c:orthonormal-basis) has value 1.",
+      "detail": "Suppose that $v$ exists. For an orthonormal basis $e_1,\\dots,e_d$, the projections $P_{e_k}$ are orthogonal with sum $I$, so $\\sum_k v(P_{e_k})=v(I)=1$. Each value is $0$ or $1$, so exactly one is $1$.",
+      "uses": []
+     },
+     {
+      "id": "s:reduce",
+      "slogan": "Restrict $v$ to a three-dimensional subspace where it still labels rays.",
+      "detail": "By step 1 some unit vector $u$ has $v(P_u)=1$. For a subspace $V\\ni u$ of dimension 3, $P_V=P_u+P_{V\\ominus u}$ gives $v(P_V)=1$. So every orthonormal triple $a,b,c$ of $V$ has $v(P_a)+v(P_b)+v(P_c)=1$.",
+      "uses": []
+     },
+     {
+      "id": "s:config",
+      "slogan": "Fix a finite set of rays in $\\mathbb{R}^3$ that contains many orthonormal triples.",
+      "detail": "Kochen and Specker use 117 rays; Peres later gave a version with 33 rays and 16 triples. The rays are chosen so that each triple is a set of mutually orthogonal rays and rays are shared between triples.",
+      "uses": []
+     },
+     {
+      "id": "s:colour",
+      "slogan": "Show that no 0-1 labelling of the rays has exactly one 1 in every triple.",
+      "detail": "Kochen and Specker first prove, with a small orthogonality graph, that value 1 on a ray forces value 1 on another ray at a fixed angle. They chain this implication through the configuration until two orthogonal rays both have value 1, which breaks the rule of step 2.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Conclude that no assignment $v$ exists in dimension 3 or more.",
+      "detail": "Steps 2 to 4 give a contradiction from the existence of $v$, so no such $v$ exists. The restriction to $V$ in step 2 is the only place where $d>3$ differs from $d=3$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:rays",
+      "s:reduce"
+     ],
+     [
+      "s:reduce",
+      "s:colour"
+     ],
+     [
+      "s:config",
+      "s:colour"
+     ],
+     [
+      "s:colour",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:hilbert-space": "The assignment is defined on the projections of the Hilbert space.",
+     "c:projection-operator": "Values are assigned to projection operators and must add on orthogonal ones.",
+     "c:orthonormal-basis": "An orthonormal basis splits $I$ into orthogonal projections that add to 1."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "S. Kochen and E. P. Specker, The problem of hidden variables in quantum mechanics, Journal of Mathematics and Mechanics 17 (1967), 59-87",
+     "url": "https://www.jstor.org/stable/24902153",
+     "note": "Reduction as in the original paper. A. Peres, Two simple proofs of the Kochen-Specker theorem, Journal of Physics A 24 (1991), L175, gives the 33-ray version."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q848810",
+  "statement": "Let $x\\ne0$ be an [algebraic integer](c:algebraic-integer) of a [number field](c:number-field) $K$ such that every conjugate $\\varphi(x)$, for $\\varphi\\colon K\\to\\mathbb{C}$, has absolute value at most 1. Then $x$ is a [root of unity](c:root-of-unity).",
+  "hypotheses": [
+   {
+    "id": "h:integer",
+    "text": "The element $x$ of the [number field](c:number-field) $K$ is an [algebraic integer](c:algebraic-integer).",
+    "concept": "c:algebraic-integer"
+   },
+   {
+    "id": "h:nonzero",
+    "text": "The element $x$ is not zero.",
+    "concept": null
+   },
+   {
+    "id": "h:conjugates",
+    "text": "Every embedding $\\varphi\\colon K\\to\\mathbb{C}$ has $|\\varphi(x)|\\le1$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "$x^n=1$ for some integer $n\\ge1$.",
+  "formal": {
+   "decl": "NumberField.Embeddings.pow_eq_one_of_norm_le_one",
+   "difference": "The declaration tests all embeddings of $K$ into an algebraically closed normed field $A$, for example $\\mathbb{C}$. The Wikipedia source of this record describes Kronecker's approximation theorem, a different result, and this proof follows the declaration."
+  },
+  "proofs": [
+   {
+    "id": "finite-powers",
+    "name": "Finitely many bounded integers",
+    "slogan": "Only finitely many algebraic integers of $K$ have all conjugates in the unit disk, so two powers of $x$ coincide.",
+    "scope": "The whole theorem. The case $x=0$ is excluded because $0$ is not a root of unity.",
+    "mechanisms": [
+     "m:pigeonhole",
+     "m:determinant"
+    ],
+    "roles": [
+     {
+      "h": "h:integer",
+      "why": "Integrality makes every power integral and gives a monic integer minimal polynomial.",
+      "steps": [
+       "s:powers",
+       "s:coeff"
+      ]
+     },
+     {
+      "h": "h:conjugates",
+      "why": "The bound on conjugates bounds the roots of the minimal polynomial, hence its coefficients.",
+      "steps": [
+       "s:powers",
+       "s:coeff"
+      ]
+     },
+     {
+      "h": "h:nonzero",
+      "why": "A nonzero element can be cancelled in the field $K$.",
+      "steps": [
+       "s:cancel"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:powers",
+      "slogan": "Show that every power of $x$ is an integer with conjugates in the unit disk.",
+      "detail": "Algebraic integers form a ring, so $x^m$ is an algebraic integer. For every embedding $\\varphi$, $|\\varphi(x^m)|=|\\varphi(x)|^m\\le1$.",
+      "uses": []
+     },
+     {
+      "id": "s:coeff",
+      "slogan": "Bound the coefficients of the minimal polynomial of such an integer.",
+      "detail": "Let $y$ be an algebraic integer of $K$ with all $|\\varphi(y)|\\le1$ and let $d=[K:\\mathbb{Q}]$. Its minimal polynomial is monic with integer coefficients, degree at most $d$, and roots $\\varphi(y)$. By Vieta's formulas, each coefficient is at most $\\binom{d}{\\lfloor d/2\\rfloor}$ in absolute value.",
+      "uses": [
+       "wd:Q570779"
+      ]
+     },
+     {
+      "id": "s:finite",
+      "slogan": "Show that only finitely many such integers exist in $K$.",
+      "detail": "Only finitely many monic integer polynomials of degree at most $d$ have coefficients in $[-C,C]$, and each has at most $d$ roots. So the set $F$ of algebraic integers of $K$ with all conjugates in the unit disk is finite.",
+      "uses": []
+     },
+     {
+      "id": "s:pigeon",
+      "slogan": "Find two equal powers of $x$ by the pigeonhole principle.",
+      "detail": "By step 1 all the infinitely many powers $x^0,x^1,x^2,\\dots$ lie in the finite set $F$. So $x^a=x^b$ for some $a>b\\ge0$.",
+      "uses": [
+       "nm:pigeonhole-principle"
+      ]
+     },
+     {
+      "id": "s:cancel",
+      "slogan": "Cancel the common factor to get a power of $x$ equal to 1.",
+      "detail": "From $x^b(x^{a-b}-1)=0$ in the field $K$ and $x\\ne0$, we get $x^{a-b}=1$ with $a-b\\ge1$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:coeff",
+      "s:finite"
+     ],
+     [
+      "s:powers",
+      "s:pigeon"
+     ],
+     [
+      "s:finite",
+      "s:pigeon"
+     ],
+     [
+      "s:pigeon",
+      "s:cancel"
+     ]
+    ],
+    "conclusion": "s:cancel",
+    "concepts": {
+     "c:algebraic-integer": "Algebraic integers are closed under powers and have integer minimal polynomials.",
+     "c:number-field": "A number field has finitely many embeddings and a fixed degree $d$.",
+     "c:root-of-unity": "A power of $x$ equal to 1 is what the proof produces."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "NumberField.Embeddings.pow_eq_one_of_norm_le_one",
+     "follows": true,
+     "note": "mathlib uses NumberField.Embeddings.finite_of_norm_le (bounded minimal-polynomial coefficients) and Set.Infinite.exists_ne_map_eq_of_mapsTo on the powers of x."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:krull-s-intersection-theorem",
+  "statement": "Let $R$ be a [Noetherian](c:noetherian-ring) [local ring](c:local-ring) and $I$ a proper [ideal](c:ideal). Then $\\bigcap_{n\\ge0}I^n=0$.",
+  "hypotheses": [
+   {
+    "id": "h:noetherian",
+    "text": "The ring $R$ is a commutative [Noetherian ring](c:noetherian-ring).",
+    "concept": "c:noetherian-ring"
+   },
+   {
+    "id": "h:local",
+    "text": "The ring $R$ is a [local ring](c:local-ring) with maximal ideal $\\mathfrak m$.",
+    "concept": "c:local-ring"
+   },
+   {
+    "id": "h:proper",
+    "text": "The [ideal](c:ideal) $I$ is proper: $I\\ne R$.",
+    "concept": "c:ideal"
+   }
+  ],
+  "conclusion": "The intersection $\\bigcap_{n\\ge0}I^n$ of all powers of $I$ is the zero ideal.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "artin-rees",
+    "name": "Artin-Rees and Nakayama",
+    "slogan": "Show that the intersection $N$ satisfies $N=IN$, find $r\\in I$ with $(1-r)N=0$, and cancel the unit $1-r$.",
+    "scope": "The ring itself as the module (mathlib proves the module version). The case $I=0$ is trivial.",
+    "mechanisms": [
+     "m:determinant"
+    ],
+    "roles": [
+     {
+      "h": "h:noetherian",
+      "why": "Noetherianity makes $N$ finitely generated and gives the Artin-Rees lemma.",
+      "steps": [
+       "s:setup",
+       "s:rees"
+      ]
+     },
+     {
+      "h": "h:local",
+      "why": "In a local ring every element outside $\\mathfrak m$ is a unit.",
+      "steps": [
+       "s:unit"
+      ]
+     },
+     {
+      "h": "h:proper",
+      "why": "A proper ideal lies in $\\mathfrak m$, so $1-r$ is a unit for $r\\in I$.",
+      "steps": [
+       "s:unit"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:setup",
+      "slogan": "Name the intersection $N$ and show that it is a finitely generated ideal.",
+      "detail": "Put $N=\\bigcap_n I^n$. Then $N$ is an ideal of the [Noetherian ring](c:noetherian-ring) $R$, so it is finitely generated.",
+      "uses": []
+     },
+     {
+      "id": "s:rees",
+      "slogan": "Show $N=IN$ with the Artin-Rees lemma.",
+      "detail": "Artin-Rees gives $k$ with $I^{n}\\cap N=I^{n-k}(I^k\\cap N)$ for $n\\ge k$. Here $N\\subseteq I^n$ for every $n$, so $I^{k+1}\\cap N=N$ and $N=I(I^k\\cap N)\\subseteq IN\\subseteq N$.",
+      "uses": [
+       "nm:artin-rees-lemma"
+      ]
+     },
+     {
+      "id": "s:trick",
+      "slogan": "Find $r\\in I$ with $rx=x$ for all $x\\in N$ by the determinant trick.",
+      "detail": "The ideal $N$ is finitely generated and $N=IN$. The determinant (Cayley-Hamilton) argument behind Nakayama's lemma gives $r\\in I$ with $(1-r)N=0$.",
+      "uses": [
+       "nl:7346",
+       "wd:Q656772"
+      ]
+     },
+     {
+      "id": "s:unit",
+      "slogan": "Show that $1-r$ is a unit of the [local ring](c:local-ring) $R$.",
+      "detail": "A proper ideal lies in the unique [maximal ideal](c:maximal-ideal) $\\mathfrak m$, so $r\\in\\mathfrak m$. Then $1-r\\notin\\mathfrak m$, so $1-r$ is a unit.",
+      "uses": []
+     },
+     {
+      "id": "s:zero",
+      "slogan": "Cancel the unit $1-r$ to get $N=0$.",
+      "detail": "Take $x\\in N$. Then $(1-r)x=0$, and $1-r$ is a unit of $R$, so multiplying by its inverse gives $x=0$. Hence $N=0$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:setup",
+      "s:rees"
+     ],
+     [
+      "s:setup",
+      "s:trick"
+     ],
+     [
+      "s:rees",
+      "s:trick"
+     ],
+     [
+      "s:trick",
+      "s:unit"
+     ],
+     [
+      "s:trick",
+      "s:zero"
+     ],
+     [
+      "s:unit",
+      "s:zero"
+     ]
+    ],
+    "conclusion": "s:zero",
+    "concepts": {
+     "c:noetherian-ring": "Noetherianity gives a finitely generated intersection and Artin-Rees.",
+     "c:local-ring": "A local ring makes every element outside the maximal ideal a unit.",
+     "c:ideal": "The intersection of powers of the ideal $I$ is the object studied.",
+     "c:maximal-ideal": "The proper ideal $I$ lies in the unique maximal ideal."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Ideal.iInf_pow_eq_bot_of_isLocalRing",
+     "follows": true,
+     "note": "mathlib takes M = R in Ideal.iInf_pow_smul_eq_bot_of_isLocalRing, which uses Submodule.exists_mem_and_smul_eq_self_of_fg_of_le_smul with the Artin-Rees stable filtration, and units of the Jacobson radical."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:kummer-s-theorem",
+  "statement": "Let $p$ be a [prime number](c:prime-number) and $n,k$ natural numbers. The [p-adic valuation](c:p-adic-valuation) of the [binomial coefficient](c:binomial-coefficient) $\\binom{n+k}{k}$ equals the number of [carries](c:carrying) when $n$ and $k$ are added in base $p$.",
+  "hypotheses": [
+   {
+    "id": "h:prime",
+    "text": "The number $p$ is a [prime number](c:prime-number).",
+    "concept": "c:prime-number"
+   },
+   {
+    "id": "h:naturals",
+    "text": "The numbers $n$ and $k$ are natural numbers (zero is allowed).",
+    "concept": null
+   }
+  ],
+  "conclusion": "$v_p\\binom{n+k}{k}$ is the number of carries in the base-$p$ addition $n+k$.",
+  "formal": {
+   "decl": "sub_one_mul_padicValNat_choose_eq_sub_sum_digits'",
+   "difference": "The declaration gives the digit-sum form $(p-1)\\,v_p\\binom{n+k}{k}=s_p(k)+s_p(n)-s_p(n+k)$ and does not count carries. Step 3 below turns the digit-sum form into the carry count."
+  },
+  "proofs": [
+   {
+    "id": "legendre-digits",
+    "name": "Legendre's formula and carries",
+    "slogan": "Turn the factorial quotient into digit sums with Legendre's formula, then count the carries as the loss of digit sum.",
+    "scope": "All $n,k\\ge0$; if $n=0$ or $k=0$ there are no carries and the binomial coefficient is 1.",
+    "mechanisms": [
+     "m:algebraic-identity",
+     "m:modular-arithmetic"
+    ],
+    "roles": [
+     {
+      "h": "h:prime",
+      "why": "Legendre's formula holds for a prime, and $p-1\\ge1$ allows the final division.",
+      "steps": [
+       "s:legendre",
+       "s:divide"
+      ]
+     },
+     {
+      "h": "h:naturals",
+      "why": "The quotient of factorials and the digit expansions need natural numbers.",
+      "steps": [
+       "s:quotient",
+       "s:carries"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:legendre",
+      "slogan": "Express the valuation of a factorial through the base-p [digit sum](c:digit-sum).",
+      "detail": "Legendre's formula gives $(p-1)\\,v_p(m!)=m-s_p(m)$ for every $m\\ge0$, where $s_p(m)$ is the sum of the [base-p digits](c:base-p-digits) of $m$.",
+      "uses": [
+       "nm:legendre-s-theorem"
+      ]
+     },
+     {
+      "id": "s:quotient",
+      "slogan": "Write the binomial coefficient as a quotient of factorials and take valuations.",
+      "detail": "Since $\\binom{n+k}{k}=\\frac{(n+k)!}{k!\\,n!}$ and $v_p$ turns products into sums, $v_p\\binom{n+k}{k}=v_p((n+k)!)-v_p(k!)-v_p(n!)$. Multiply by $p-1$ and insert step 1: $(p-1)v_p\\binom{n+k}{k}=s_p(n)+s_p(k)-s_p(n+k)$, because the terms $n+k$, $k$ and $n$ cancel.",
+      "uses": []
+     },
+     {
+      "id": "s:carries",
+      "slogan": "Show that each carry lowers the digit sum by $p-1$.",
+      "detail": "Let $c_0=0$ and let $c_{i+1}\\in\\{0,1\\}$ be the carry out of position $i$, so that $n_i+k_i+c_i=m_i+p\\,c_{i+1}$, with $m_i$ the digits of $n+k$. Summing over all $i$ and using $\\sum_i c_i=\\sum_i c_{i+1}=C$ gives $s_p(n)+s_p(k)-s_p(n+k)=(p-1)C$, with $C$ the number of carries.",
+      "uses": []
+     },
+     {
+      "id": "s:divide",
+      "slogan": "Divide by $p-1$ to equate the valuation with the carry count.",
+      "detail": "Steps 2 and 3 both express $s_p(n)+s_p(k)-s_p(n+k)$, so $(p-1)v_p\\binom{n+k}{k}=(p-1)C$. Since $p-1\\ge1$, we divide and get $v_p\\binom{n+k}{k}=C$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:legendre",
+      "s:quotient"
+     ],
+     [
+      "s:quotient",
+      "s:divide"
+     ],
+     [
+      "s:carries",
+      "s:divide"
+     ]
+    ],
+    "conclusion": "s:divide",
+    "concepts": {
+     "c:prime-number": "Legendre's formula and the valuation $v_p$ need a prime $p$.",
+     "c:p-adic-valuation": "The valuation $v_p$ is the quantity counted by the carries.",
+     "c:binomial-coefficient": "The coefficient $\\binom{n+k}{k}$ is the quotient whose valuation is studied.",
+     "c:carrying": "Each carry in the addition lowers the digit sum by $p-1$.",
+     "c:digit-sum": "Digit sums turn factorial valuations into the carry count.",
+     "c:base-p-digits": "Base-$p$ digits define $s_p$ and the carries."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "sub_one_mul_padicValNat_choose_eq_sub_sum_digits'",
+     "follows": true,
+     "note": "mathlib rewrites the binomial coefficient as a factorial quotient (Nat.choose_eq_factorial_div_factorial) and applies sub_one_mul_padicValNat_factorial (Legendre) to each factorial."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q3527110",
+  "statement": "If a conservative scheme (consistent Lipschitz numerical flux, fixed ratio $\\Delta t/\\Delta x$) for the [conservation law](c:conservation-law) $u_t+f(u)_x=0$ has bounded numerical solutions that converge in $L^1_{\\mathrm{loc}}$ to $u$, with initial data converging to $u_0$, then $u$ is a [weak solution](c:weak-solution).",
+  "hypotheses": [
+   {
+    "id": "h:scheme",
+    "text": "The scheme is conservative, in [finite volume](c:finite-volume-method) form: $U_j^{n+1}=U_j^n-\\lambda(F^n_{j+1/2}-F^n_{j-1/2})$ with $F^n_{j+1/2}=F(U^n_{j-p+1},\\dots,U^n_{j+q})$ and $\\lambda=\\Delta t/\\Delta x$ fixed.",
+    "concept": "c:finite-volume-method"
+   },
+   {
+    "id": "h:consistent",
+    "text": "The numerical flux $F$ is [Lipschitz](c:lipschitz-continuous-function) on bounded sets and consistent: $F(v,\\dots,v)=f(v)$.",
+    "concept": "c:lipschitz-continuous-function"
+   },
+   {
+    "id": "h:converge",
+    "text": "Along a sequence $\\Delta x\\to0$ the piecewise constant solutions $u_{\\Delta x}$ satisfy $|u_{\\Delta x}|\\le M$, converge in $L^1_{\\mathrm{loc}}$ to $u$, and $u_{\\Delta x}(\\cdot,0)\\to u_0$ in $L^1_{\\mathrm{loc}}$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "For every [test function](c:test-function) $\\varphi\\in C^1_c(\\mathbb{R}\\times[0,\\infty))$, $\\iint(u\\varphi_t+f(u)\\varphi_x)\\,dx\\,dt+\\int u_0\\varphi(x,0)\\,dx=0$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "summation-by-parts",
+    "name": "Summation by parts",
+    "slogan": "Multiply the scheme by a test function, sum by parts to move differences onto it, and pass to the limit.",
+    "scope": "Systems $u\\in\\mathbb{R}^m$ with $f$ locally Lipschitz; no entropy condition is claimed, only the weak form. The limit exists by hypothesis, and the proof does not use total variation bounds.",
+    "mechanisms": [
+     "m:telescoping",
+     "m:uniform-convergence"
+    ],
+    "roles": [
+     {
+      "h": "h:scheme",
+      "why": "The conservative form makes the flux terms telescope under summation by parts.",
+      "steps": [
+       "s:discrete",
+       "s:parts"
+      ]
+     },
+     {
+      "h": "h:consistent",
+      "why": "Consistency and the Lipschitz bound send the numerical flux to $f(u)$ in the limit.",
+      "steps": [
+       "s:flux"
+      ]
+     },
+     {
+      "h": "h:converge",
+      "why": "Bounded $L^1_{\\mathrm{loc}}$ convergence passes the limit through the integrals, and the initial data give the initial term.",
+      "steps": [
+       "s:flux",
+       "s:pass"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:discrete",
+      "slogan": "Multiply the scheme by a test function and sum over the grid.",
+      "detail": "Let $\\varphi\\in C_c^1$, $x_j=j\\Delta x$, $t_n=n\\Delta t$ and $\\varphi_j^n=\\varphi(x_j,t_n)$. Multiplying the scheme by $\\varphi_j^n$ and summing over $j$ and $n\\ge0$ gives $\\sum\\varphi_j^n(U_j^{n+1}-U_j^n)=-\\lambda\\sum\\varphi_j^n(F^n_{j+1/2}-F^n_{j-1/2})$. The sums are finite because $\\varphi$ has compact support.",
+      "uses": []
+     },
+     {
+      "id": "s:parts",
+      "slogan": "Sum by parts in time and in space to move the differences onto $\\varphi$.",
+      "detail": "After multiplying by $\\Delta x$, the identity reads $\\Delta x\\Delta t\\sum_{n\\ge1,j}U_j^n\\frac{\\varphi_j^n-\\varphi_j^{n-1}}{\\Delta t}+\\Delta x\\Delta t\\sum_{n\\ge0,j}F^n_{j+1/2}\\frac{\\varphi^n_{j+1}-\\varphi^n_j}{\\Delta x}+\\Delta x\\sum_jU_j^0\\varphi_j^0=0$. No boundary terms remain, because $\\varphi$ vanishes for large $|x|$ and large $t$.",
+      "uses": []
+     },
+     {
+      "id": "s:integral",
+      "slogan": "Write the three sums as integrals of the piecewise constant solution.",
+      "detail": "The sums equal $\\iint u_{\\Delta x}D_t\\varphi$, $\\iint F(\\text{shifts of }u_{\\Delta x})D_x\\varphi$ and $\\int u_{\\Delta x}(x,0)\\varphi(x,0)\\,dx$, up to errors that tend to $0$. Here $D_t\\varphi$ and $D_x\\varphi$ are difference quotients, which converge uniformly to $\\varphi_t$ and $\\varphi_x$ with supports in one compact set.",
+      "uses": []
+     },
+     {
+      "id": "s:flux",
+      "slogan": "Show that the numerical flux values converge to $f(u)$ in $L^1_{\\mathrm{loc}}$.",
+      "detail": "Translation is continuous in $L^1$, so the values of $u_{\\Delta x}$ shifted by $i\\Delta x$ also converge to $u$ in $L^1_{\\mathrm{loc}}$. On $|v|\\le M$, consistency and the Lipschitz constant $L$ of $F$ give $|F(v_{-p+1},\\dots,v_q)-f(v_0)|\\le L\\max_i|v_i-v_0|$, and $f(v)=F(v,\\dots,v)$ is Lipschitz too. So both the flux values and $f(u_{\\Delta x})$ converge to $f(u)$.",
+      "uses": []
+     },
+     {
+      "id": "s:pass",
+      "slogan": "Pass to the limit in the integral identity to get the weak form.",
+      "detail": "A bounded sequence that converges in $L^1_{\\mathrm{loc}}$, integrated against uniformly convergent compactly supported functions, converges to the limit integral. So $\\iint(u\\varphi_t+f(u)\\varphi_x)\\,dx\\,dt+\\int u_0\\varphi(x,0)\\,dx=0$ for every $\\varphi$, and $u$ is a [weak solution](c:weak-solution).",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:discrete",
+      "s:parts"
+     ],
+     [
+      "s:parts",
+      "s:integral"
+     ],
+     [
+      "s:integral",
+      "s:pass"
+     ],
+     [
+      "s:flux",
+      "s:pass"
+     ]
+    ],
+    "conclusion": "s:pass",
+    "concepts": {
+     "c:conservation-law": "The limit is claimed to solve the conservation law in the weak sense.",
+     "c:weak-solution": "The integral identity against test functions defines the weak solution.",
+     "c:finite-volume-method": "Conservative form means flux differences between cells, which telescope.",
+     "c:lipschitz-continuous-function": "A Lipschitz flux turns closeness of the values into closeness of the fluxes.",
+     "c:test-function": "Test functions let the differences move onto smooth functions."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The proof of P. D. Lax and B. Wendroff, Systems of conservation laws, Comm. Pure Appl. Math. 13 (1960), 217-237, as presented in LeVeque, Numerical Methods for Conservation Laws (Birkhauser, 1992), chapter 12."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:10732",
+  "statement": "The [Lazard ring](c:lazard-ring) $L$ of the universal one-dimensional [formal group law](c:formal-group-law) is a [polynomial ring](c:polynomial-ring) $\\mathbb{Z}[x_1,x_2,\\dots]$ with one generator $x_i$ in each degree $2i$.",
+  "hypotheses": [
+   {
+    "id": "h:universal",
+    "text": "The ring $L$ carries the [universal](c:universal-property) commutative one-dimensional formal group law $F_L$: every such law over a ring $A$ is the image of $F_L$ under a unique ring map $L\\to A$.",
+    "concept": "c:universal-property"
+   }
+  ],
+  "conclusion": "$L\\cong\\mathbb{Z}[x_1,x_2,\\dots]$ as graded rings, with $|x_i|=2i$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "cocycle-method",
+    "name": "Cocycle lemma and rank count",
+    "slogan": "Build the universal law, show by the symmetric cocycle lemma that one generator per degree suffices, and compare ranks over the rationals.",
+    "scope": "An outline of Lazard's proof: the cocycle lemma and the rational logarithm are cited, not reproved. Both rings are graded with $|x_i|=2i$.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:universal-property",
+     "m:dimension-count"
+    ],
+    "roles": [
+     {
+      "h": "h:universal",
+      "why": "The universal property defines $L$ and the law $F_L$ whose coefficients generate it.",
+      "steps": [
+       "s:universal",
+       "s:generators"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:universal",
+      "slogan": "Build the universal formal group law over a graded ring $L$.",
+      "detail": "Let $L=\\mathbb{Z}[a_{ij}]/J$, where $J$ imposes $F(x,0)=x$, commutativity and associativity on $F(x,y)=x+y+\\sum a_{ij}x^iy^j$. Giving $a_{ij}$ degree $2(i+j-1)$ grades $L$ and makes $F_L$ homogeneous. By construction $L$ has the universal property.",
+      "uses": []
+     },
+     {
+      "id": "s:rational",
+      "slogan": "Compute $L\\otimes\\mathbb{Q}$ through the logarithm.",
+      "detail": "Over a $\\mathbb{Q}$-algebra every formal group law is $\\exp(\\log x+\\log y)$ for a unique logarithm $\\log x=x+\\sum_{i\\ge1}m_ix^{i+1}$. So $L\\otimes\\mathbb{Q}\\cong\\mathbb{Q}[m_1,m_2,\\dots]$ with $m_i$ in degree $2i$.",
+      "uses": []
+     },
+     {
+      "id": "s:cocycle",
+      "slogan": "Classify the homogeneous symmetric 2-cocycles of each degree.",
+      "detail": "Lazard's lemma: every homogeneous symmetric 2-[cocycle](c:cocycle) of degree $n$ over $\\mathbb{Z}$ is an integer multiple of $C_n(x,y)=\\frac1{d_n}\\big((x+y)^n-x^n-y^n\\big)$ plus a coboundary. Here $d_n=p$ if $n=p^k$ for a prime $p$, and $d_n=1$ otherwise.",
+      "uses": []
+     },
+     {
+      "id": "s:generators",
+      "slogan": "Show that $L$ is generated by one element in each degree.",
+      "detail": "By associativity, the degree-$n$ part of $F_L$ modulo decomposables is a symmetric 2-cocycle. By step 3 it is $x_nC_n$ plus a coboundary, which a change of coordinate removes. So the indecomposables of $L$ in degree $2n$ are generated by one element $x_n$, and $\\mathbb{Z}[x_1,x_2,\\dots]\\to L$ is onto.",
+      "uses": []
+     },
+     {
+      "id": "s:injective",
+      "slogan": "Compare ranks over the rationals to show that the surjection is injective.",
+      "detail": "The graded surjection has finitely generated pieces. After $\\otimes\\mathbb{Q}$ it maps $\\mathbb{Q}[x_i]$ onto $L\\otimes\\mathbb{Q}\\cong\\mathbb{Q}[m_i]$, which has the same dimension in each degree, so it is bijective. The kernel $K$ has $K\\otimes\\mathbb{Q}=0$ and lies in the torsion-free ring $\\mathbb{Z}[x_i]$, so $K=0$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:universal",
+      "s:rational"
+     ],
+     [
+      "s:universal",
+      "s:generators"
+     ],
+     [
+      "s:cocycle",
+      "s:generators"
+     ],
+     [
+      "s:generators",
+      "s:injective"
+     ],
+     [
+      "s:rational",
+      "s:injective"
+     ]
+    ],
+    "conclusion": "s:injective",
+    "concepts": {
+     "c:lazard-ring": "The Lazard ring is the ring whose structure the theorem gives.",
+     "c:formal-group-law": "The universal formal group law is the object that $L$ classifies.",
+     "c:polynomial-ring": "The conclusion is that $L$ is a polynomial ring on one generator per degree.",
+     "c:universal-property": "The universal property defines $L$ and its generating coefficients.",
+     "c:cocycle": "Associativity makes the leading terms of a formal group law symmetric 2-cocycles."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "M. Lazard, Sur les groupes de Lie formels a un parametre, Bulletin de la Societe Mathematique de France 83 (1955), 251-274",
+     "url": "https://www.numdam.org/articles/10.24033/bsmf.1462/",
+     "note": "Modern expositions with the cocycle method: J. F. Adams, Stable Homotopy and Generalised Homology (University of Chicago Press, 1974), Part II; D. C. Ravenel, Complex Cobordism and Stable Homotopy Groups of Spheres, appendix 2."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:18113",
+  "statement": "Let $\\mathcal U$ be an [open cover](c:open-cover) of a [compact metric space](c:compact-metric-space) $(X,d)$. Then some $\\delta>0$ has the property that every subset of $X$ of [diameter](c:diameter) less than $\\delta$ lies in one member of $\\mathcal U$.",
+  "hypotheses": [
+   {
+    "id": "h:compact",
+    "text": "The space $(X,d)$ is a [compact metric space](c:compact-metric-space).",
+    "concept": "c:compact-metric-space"
+   },
+   {
+    "id": "h:cover",
+    "text": "The family $\\mathcal U$ is an [open cover](c:open-cover) of $X$.",
+    "concept": "c:open-cover"
+   }
+  ],
+  "conclusion": "There is $\\delta>0$ such that every $A\\subseteq X$ with $\\operatorname{diam}A<\\delta$ lies in some $U\\in\\mathcal U$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "sequences",
+    "name": "Convergent subsequence",
+    "slogan": "Assume that no $\\delta$ works, pick bad points, extract a convergent subsequence and trap its tails in one open set.",
+    "scope": "The whole lemma. The empty space is trivial, and the empty set lies in every member of the cover.",
+    "mechanisms": [
+     "m:contradiction",
+     "m:subsequence"
+    ],
+    "roles": [
+     {
+      "h": "h:compact",
+      "why": "A compact metric space is sequentially compact, so the bad points have a convergent subsequence.",
+      "steps": [
+       "s:subsequence"
+      ]
+     },
+     {
+      "h": "h:cover",
+      "why": "The limit point lies in an open member, which holds a ball around it.",
+      "steps": [
+       "s:ball",
+       "s:contain"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:suppose",
+      "slogan": "Assume that no $\\delta$ works and choose a bad set for each $\\delta=1/n$.",
+      "detail": "For every $n$ there is $A_n\\subseteq X$ with $\\operatorname{diam}A_n<1/n$ that lies in no member of $\\mathcal U$. Each $A_n$ is nonempty, so choose $x_n\\in A_n$.",
+      "uses": []
+     },
+     {
+      "id": "s:subsequence",
+      "slogan": "Extract a convergent subsequence of the points $x_n$.",
+      "detail": "A [compact metric space](c:compact-metric-space) is sequentially compact, so some subsequence $x_{n_k}$ converges to a point $x\\in X$.",
+      "uses": [
+       "nm:sequential-compactness-is-equivalent-to-compactness-bolzano-weierstrass"
+      ]
+     },
+     {
+      "id": "s:ball",
+      "slogan": "Put a ball around the limit $x$ inside one member of the cover.",
+      "detail": "The cover has a member $U\\ni x$. Since $U$ is open, there is $\\varepsilon>0$ with $B(x,\\varepsilon)\\subseteq U$.",
+      "uses": []
+     },
+     {
+      "id": "s:contain",
+      "slogan": "Show that the sets $A_{n_k}$ lie in $U$ for large $k$.",
+      "detail": "Take $k$ with $d(x_{n_k},x)<\\varepsilon/2$ and $1/n_k<\\varepsilon/2$. For $y\\in A_{n_k}$, $d(y,x)\\le d(y,x_{n_k})+d(x_{n_k},x)<\\varepsilon$, so $A_{n_k}\\subseteq U$. This contradicts the choice of $A_{n_k}$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:suppose",
+      "s:subsequence"
+     ],
+     [
+      "s:subsequence",
+      "s:ball"
+     ],
+     [
+      "s:ball",
+      "s:contain"
+     ],
+     [
+      "s:suppose",
+      "s:contain"
+     ]
+    ],
+    "conclusion": "s:contain",
+    "concepts": {
+     "c:open-cover": "The members of the cover are open, so one contains a ball around the limit.",
+     "c:compact-metric-space": "Compactness gives the convergent subsequence of bad points.",
+     "c:diameter": "Small diameter keeps the whole set $A_{n_k}$ near its chosen point."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard sequential-compactness argument for compact metric spaces."
+    }
+   },
+   {
+    "id": "distance-function",
+    "name": "Distance function",
+    "slogan": "Average the distances to the complements of a finite subcover and take the positive minimum on the compact space.",
+    "scope": "If some member of the cover equals $X$, every $\\delta$ works; otherwise each complement is nonempty. The empty set lies in every member.",
+    "mechanisms": [
+     "m:finite-subcover",
+     "m:compactness-extremum"
+    ],
+    "roles": [
+     {
+      "h": "h:compact",
+      "why": "Compactness gives a finite subcover and makes the continuous function attain its minimum.",
+      "steps": [
+       "s:finite",
+       "s:minimum"
+      ]
+     },
+     {
+      "h": "h:cover",
+      "why": "The members are open, so every point has positive distance from some complement.",
+      "steps": [
+       "s:finite",
+       "s:function"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:finite",
+      "slogan": "Select a finite subcover $U_1,\\dots,U_m$ of the cover.",
+      "detail": "Since $X$ is compact, finitely many members $U_1,\\dots,U_m$ of the [open cover](c:open-cover) cover $X$. Assume that no $U_i$ equals $X$.",
+      "uses": []
+     },
+     {
+      "id": "s:function",
+      "slogan": "Define $f(x)$ as the mean distance from $x$ to the complements $X\\setminus U_i$.",
+      "detail": "Put $f(x)=\\frac1m\\sum_i d(x,X\\setminus U_i)$. Each term is 1-Lipschitz, so $f$ is [continuous](c:continuous-function). Each $x$ lies in some open $U_i$, so $d(x,X\\setminus U_i)>0$ and $f(x)>0$.",
+      "uses": []
+     },
+     {
+      "id": "s:minimum",
+      "slogan": "Take the minimum $\\delta>0$ of $f$ on the compact space.",
+      "detail": "A continuous function on a nonempty compact space attains its minimum $\\delta$, and $\\delta=f(x_0)>0$.",
+      "uses": [
+       "wd:Q752375"
+      ]
+     },
+     {
+      "id": "s:trap",
+      "slogan": "Show that a set of diameter below $\\delta$ lies in one $U_i$.",
+      "detail": "Let $\\operatorname{diam}A<\\delta$ and $a\\in A$. The mean $f(a)$ is at least $\\delta$, so its largest term is at least $\\delta$: some $i$ has $d(a,X\\setminus U_i)\\ge\\delta$. Every $y\\in A$ has $d(a,y)<\\delta$, so $y\\in U_i$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:finite",
+      "s:function"
+     ],
+     [
+      "s:function",
+      "s:minimum"
+     ],
+     [
+      "s:minimum",
+      "s:trap"
+     ]
+    ],
+    "conclusion": "s:trap",
+    "concepts": {
+     "c:open-cover": "A finite subcover of the open cover gives finitely many distance terms.",
+     "c:compact-metric-space": "Compactness gives the finite subcover and the minimum of $f$.",
+     "c:diameter": "Diameter below $\\delta$ keeps every point of $A$ within $\\delta$ of $a$.",
+     "c:continuous-function": "Continuity of $f$ lets it attain a minimum on the compact space."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Munkres, Topology, 2nd ed., lemma 27.5 (the Lebesgue number lemma)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q929547",
+  "statement": "Let $(M,g)$ be a connected, complete [Riemannian manifold](c:riemannian-manifold) of dimension $n\\ge2$ with [Ricci curvature](c:ricci-curvature) $\\mathrm{Ric}\\ge(n-1)k\\,g$ for a constant $k>0$. Then the [diameter](c:diameter) of $M$ is at most $\\pi/\\sqrt k$, $M$ is compact and the [fundamental group](c:fundamental-group) of $M$ is finite.",
+  "hypotheses": [
+   {
+    "id": "h:complete",
+    "text": "The manifold $M$ is connected and complete as a metric space.",
+    "concept": null
+   },
+   {
+    "id": "h:dim",
+    "text": "The dimension $n$ of $M$ is at least 2.",
+    "concept": null
+   },
+   {
+    "id": "h:ricci",
+    "text": "The [Ricci curvature](c:ricci-curvature) satisfies $\\mathrm{Ric}(v,v)\\ge(n-1)k|v|^2$ for every tangent vector $v$, with a constant $k>0$.",
+    "concept": "c:ricci-curvature"
+   }
+  ],
+  "conclusion": "$\\operatorname{diam}M\\le\\pi/\\sqrt k$, the manifold $M$ is compact and $\\pi_1(M)$ is finite.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "second-variation",
+    "name": "Second variation of length",
+    "slogan": "Join two far points by a minimizing geodesic and show by the second variation that the Ricci bound shortens it.",
+    "scope": "The diameter bound is proved by contradiction. Compactness and finiteness of $\\pi_1$ follow from the bound applied to $M$ and to its universal cover.",
+    "mechanisms": [
+     "m:curvature-comparison",
+     "m:energy-functional",
+     "m:contradiction",
+     "m:covering-lift"
+    ],
+    "roles": [
+     {
+      "h": "h:complete",
+      "why": "Completeness gives minimizing geodesics (Hopf-Rinow) and makes bounded closed sets compact.",
+      "steps": [
+       "s:geodesic",
+       "s:compact"
+      ]
+     },
+     {
+      "h": "h:dim",
+      "why": "Dimension at least 2 gives at least one parallel field normal to the geodesic.",
+      "steps": [
+       "s:variation"
+      ]
+     },
+     {
+      "h": "h:ricci",
+      "why": "The lower Ricci bound makes the summed second variation negative.",
+      "steps": [
+       "s:estimate"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:geodesic",
+      "slogan": "Join two points that are far apart by a minimizing unit speed [geodesic](c:geodesic).",
+      "detail": "Suppose $d(p,q)=\\ell>\\pi/\\sqrt k$ for some $p,q\\in M$. By the Hopf-Rinow theorem there is a minimizing unit speed geodesic $\\gamma\\colon[0,\\ell]\\to M$ from $p$ to $q$.",
+      "uses": [
+       "wd:Q2094241"
+      ]
+     },
+     {
+      "id": "s:variation",
+      "slogan": "Build variation fields along $\\gamma$ from a parallel orthonormal frame.",
+      "detail": "Take parallel orthonormal fields $e_1,\\dots,e_{n-1}$ along $\\gamma$, all orthogonal to $\\gamma'$. Put $V_i(t)=\\sin(\\pi t/\\ell)\\,e_i(t)$, which vanishes at both ends.",
+      "uses": []
+     },
+     {
+      "id": "s:second",
+      "slogan": "Sum the second variations of length over the $n-1$ fields.",
+      "detail": "For a unit speed geodesic, the second variation along $V_i$ is $\\int_0^\\ell(|V_i'|^2-\\langle R(V_i,\\gamma')\\gamma',V_i\\rangle)\\,dt$. Since $\\sum_i\\langle R(e_i,\\gamma')\\gamma',e_i\\rangle=\\mathrm{Ric}(\\gamma',\\gamma')$, the sum is $\\int_0^\\ell\\big((n-1)\\frac{\\pi^2}{\\ell^2}\\cos^2\\frac{\\pi t}{\\ell}-\\sin^2\\frac{\\pi t}{\\ell}\\,\\mathrm{Ric}(\\gamma',\\gamma')\\big)dt$.",
+      "uses": []
+     },
+     {
+      "id": "s:estimate",
+      "slogan": "Bound the sum with the Ricci lower bound to get a negative number.",
+      "detail": "With $\\mathrm{Ric}(\\gamma',\\gamma')\\ge(n-1)k$, the sum is at most $(n-1)\\frac{\\ell}{2}\\big(\\frac{\\pi^2}{\\ell^2}-k\\big)$. This is negative because $\\ell>\\pi/\\sqrt k$.",
+      "uses": []
+     },
+     {
+      "id": "s:contradict",
+      "slogan": "Contradict minimality: some variation of $\\gamma$ is shorter.",
+      "detail": "Some $V_i$ has negative second variation, so nearby curves from $p$ to $q$ are shorter than $\\gamma$. This contradicts minimality of $\\gamma$, so $\\operatorname{diam}M\\le\\pi/\\sqrt k$.",
+      "uses": []
+     },
+     {
+      "id": "s:compact",
+      "slogan": "Deduce compactness of $M$ and finiteness of $\\pi_1(M)$ from the diameter bound.",
+      "detail": "A complete space of finite diameter is a closed ball, which is compact by Hopf-Rinow. The universal [covering space](c:covering-space) with the lifted metric is complete with the same Ricci bound, so it is compact too. Its fibres over $M$ are closed and discrete, hence finite, and they are in bijection with $\\pi_1(M)$.",
+      "uses": [
+       "wd:Q2094241"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:geodesic",
+      "s:variation"
+     ],
+     [
+      "s:geodesic",
+      "s:second"
+     ],
+     [
+      "s:variation",
+      "s:second"
+     ],
+     [
+      "s:second",
+      "s:estimate"
+     ],
+     [
+      "s:estimate",
+      "s:contradict"
+     ],
+     [
+      "s:contradict",
+      "s:compact"
+     ]
+    ],
+    "conclusion": "s:compact",
+    "concepts": {
+     "c:riemannian-manifold": "The theorem is a statement about complete Riemannian manifolds.",
+     "c:ricci-curvature": "The Ricci lower bound controls the summed second variation.",
+     "c:diameter": "The diameter bound is the first conclusion, proved by contradiction.",
+     "c:fundamental-group": "Finiteness of the fundamental group follows from compactness of the universal cover.",
+     "c:geodesic": "A minimizing geodesic between far points is the curve that is shortened.",
+     "c:covering-space": "The universal cover has the same curvature bound and is compact."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The second variation proof of do Carmo, Riemannian Geometry (Birkhauser, 1992), chapter 9, the Bonnet-Myers theorem."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:northcott-s-theorem",
+  "statement": "For every natural number $n$ and real $B\\ge0$, only finitely many integer [polynomials](c:polynomial) $p$ of degree at most $n$ have [Mahler measure](c:mahler-measure) $M(p)\\le B$.",
+  "hypotheses": [
+   {
+    "id": "h:degree",
+    "text": "The degree bound $n$ is a natural number, and $p$ ranges over [polynomials](c:polynomial) in $\\mathbb{Z}[X]$ of degree at most $n$.",
+    "concept": "c:polynomial"
+   },
+   {
+    "id": "h:bound",
+    "text": "The bound $B\\ge0$ is a real number and the [Mahler measure](c:mahler-measure) satisfies $M(p)\\le B$.",
+    "concept": "c:mahler-measure"
+   }
+  ],
+  "conclusion": "The set $\\{p\\in\\mathbb{Z}[X]:\\deg p\\le n,\\ M(p)\\le B\\}$ is finite.",
+  "formal": {
+   "decl": "Polynomial.finite_mahlerMeasure_le",
+   "difference": "The declaration is the polynomial form, stated for the Mahler measure of the image in $\\mathbb{C}[X]$. The classical form for algebraic numbers of bounded degree and height follows from it."
+  },
+  "proofs": [
+   {
+    "id": "coefficient-box",
+    "name": "Coefficient box",
+    "slogan": "Bound every coefficient by a binomial multiple of the Mahler measure, so the polynomials lie in a finite box of integer vectors.",
+    "scope": "All $n\\ge0$ and $B\\ge0$; the zero polynomial has $M(0)=0$ and is a single polynomial. The Mahler measure of $p=a_d\\prod_j(X-\\alpha_j)$ is $M(p)=|a_d|\\prod_j\\max(1,|\\alpha_j|)$.",
+    "mechanisms": [
+     "m:height-descent",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:degree",
+      "why": "The degree bound limits the number of roots and of coefficients, and the coefficient vector has length $n+1$.",
+      "steps": [
+       "s:coeff",
+       "s:inject"
+      ]
+     },
+     {
+      "h": "h:bound",
+      "why": "The bound on $M(p)$ bounds every coefficient.",
+      "steps": [
+       "s:coeff",
+       "s:box"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:roots",
+      "slogan": "Write the Mahler measure of a nonzero polynomial through its roots.",
+      "detail": "For $p=a_d\\prod_{j=1}^d(X-\\alpha_j)$ with $a_d\\ne0$, Jensen's formula gives $M(p)=|a_d|\\prod_j\\max(1,|\\alpha_j|)$ for the [Mahler measure](c:mahler-measure).",
+      "uses": [
+       "nm:jensen-s-formula"
+      ]
+     },
+     {
+      "id": "s:coeff",
+      "slogan": "Bound each coefficient of $p$ by a binomial multiple of $M(p)$.",
+      "detail": "By Vieta's formulas, $a_{d-i}=\\pm a_d\\,e_i(\\alpha_1,\\dots,\\alpha_d)$ is a sum of $\\binom di$ terms $\\pm a_d\\prod_{j\\in S}\\alpha_j$. Each term has absolute value at most $|a_d|\\prod_j\\max(1,|\\alpha_j|)=M(p)$. So $|a_m|\\le\\binom dmM(p)\\le\\binom nmB$ for every $m$.",
+      "uses": [
+       "wd:Q570779"
+      ]
+     },
+     {
+      "id": "s:box",
+      "slogan": "Count the integer vectors in the box $|a_m|\\le\\binom nmB$.",
+      "detail": "The coefficient $a_m\\in\\mathbb{Z}$ has at most $2\\lfloor\\binom nmB\\rfloor+1$ values. So the box holds at most $\\prod_{m=0}^n\\big(2\\lfloor\\binom nmB\\rfloor+1\\big)$ integer vectors.",
+      "uses": []
+     },
+     {
+      "id": "s:inject",
+      "slogan": "Embed the set of polynomials into the box by taking coefficient vectors.",
+      "detail": "A polynomial of degree at most $n$ is determined by $(a_0,\\dots,a_n)$. By step 2 this vector lies in the box, so the set injects into a finite set and is finite.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:roots",
+      "s:coeff"
+     ],
+     [
+      "s:coeff",
+      "s:box"
+     ],
+     [
+      "s:box",
+      "s:inject"
+     ]
+    ],
+    "conclusion": "s:inject",
+    "concepts": {
+     "c:polynomial": "The integer polynomials of bounded degree are the objects counted.",
+     "c:mahler-measure": "The Mahler measure bounds every coefficient and so gives finiteness."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Polynomial.finite_mahlerMeasure_le",
+     "follows": true,
+     "note": "mathlib bounds the coefficients (norm_coeff_le_choose_mul_mahlerMeasure) and counts the integer box (ncard_boxPoly) in Polynomial.card_mahlerMeasure."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:number-of-subsets-of-a-set",
+  "statement": "The [power set](c:power-set) of a [finite set](c:finite-set) $S$ has exactly $2^{|S|}$ elements.",
+  "hypotheses": [
+   {
+    "id": "h:finite",
+    "text": "The set $S$ is a [finite set](c:finite-set) with $n=|S|$ elements; $n=0$ is allowed.",
+    "concept": "c:finite-set"
+   }
+  ],
+  "conclusion": "$|\\mathcal P(S)|=2^n$, where $\\mathcal P(S)$ is the set of all subsets of $S$.",
+  "formal": {
+   "decl": "Finset.card_powerset",
+   "difference": null
+  },
+  "proofs": [
+   {
+    "id": "induction",
+    "name": "Induction on the size",
+    "slogan": "Split the subsets of a set with one more element by whether they contain it, and double the count.",
+    "scope": "All $n\\ge0$. The empty set has one subset, itself.",
+    "mechanisms": [
+     "m:induction",
+     "m:bijection"
+    ],
+    "roles": [
+     {
+      "h": "h:finite",
+      "why": "Finiteness lets induction on the number of elements run.",
+      "steps": [
+       "s:base",
+       "s:split",
+       "s:count",
+       "s:induct"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:base",
+      "slogan": "Count the subsets of the empty set.",
+      "detail": "The empty set has exactly one subset, which is the empty set itself. This agrees with the formula, because $2^0=1$.",
+      "uses": []
+     },
+     {
+      "id": "s:split",
+      "slogan": "Split the subsets of $S\\cup\\{a\\}$ by whether they contain $a$.",
+      "detail": "Let $a\\notin S$. A subset of $S\\cup\\{a\\}$ either avoids $a$, and is a subset of $S$, or contains $a$, and is $A\\cup\\{a\\}$ for a unique subset $A$ of $S$. The map $A\\mapsto A\\cup\\{a\\}$ is a [bijection](c:bijection) from $\\mathcal P(S)$ onto the subsets that contain $a$.",
+      "uses": []
+     },
+     {
+      "id": "s:count",
+      "slogan": "Add the two counts to get $2^{n+1}$ subsets.",
+      "detail": "If $S$ has $n$ elements and $2^n$ subsets, then $S\\cup\\{a\\}$ has $2^n+2^n=2^{n+1}$ subsets, because the two classes are disjoint and have equal size.",
+      "uses": []
+     },
+     {
+      "id": "s:induct",
+      "slogan": "Conclude by induction on the number of elements.",
+      "detail": "The base case and the step give $|\\mathcal P(S)|=2^{|S|}$ for every finite set $S$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:base",
+      "s:induct"
+     ],
+     [
+      "s:split",
+      "s:count"
+     ],
+     [
+      "s:count",
+      "s:induct"
+     ]
+    ],
+    "conclusion": "s:induct",
+    "concepts": {
+     "c:power-set": "The power set is the collection of subsets being counted.",
+     "c:finite-set": "Finiteness lets induction on the number of elements run.",
+     "c:bijection": "A bijection shows that the subsets with $a$ and without $a$ are equally many."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Finset.card_powerset",
+     "follows": true,
+     "note": "mathlib reduces to Multiset.card_powerset, which inducts with powerset (a ::ₘ s) = powerset s + map (cons a) (powerset s)."
+    }
+   },
+   {
+    "id": "indicator",
+    "name": "Indicator functions",
+    "slogan": "Match subsets with functions from $S$ to $\\{0,1\\}$ and count the functions.",
+    "scope": "All $n\\ge0$. For $n=0$ the only function is the empty function.",
+    "mechanisms": [
+     "m:bijection"
+    ],
+    "roles": [
+     {
+      "h": "h:finite",
+      "why": "Finiteness makes the count of functions a product of $n$ factors.",
+      "steps": [
+       "s:count"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:indicator",
+      "slogan": "Send each subset $A\\subseteq S$ to its indicator function $1_A\\colon S\\to\\{0,1\\}$.",
+      "detail": "Put $1_A(x)=1$ if $x\\in A$ and $1_A(x)=0$ otherwise. This defines a map from $\\mathcal P(S)$ to the functions $S\\to\\{0,1\\}$.",
+      "uses": []
+     },
+     {
+      "id": "s:inverse",
+      "slogan": "Show that this map is a [bijection](c:bijection) by writing its inverse.",
+      "detail": "The map $f\\mapsto\\{x\\in S:f(x)=1\\}$ is inverse to $A\\mapsto1_A$ in both orders. So subsets of $S$ and functions $S\\to\\{0,1\\}$ correspond one to one.",
+      "uses": []
+     },
+     {
+      "id": "s:count",
+      "slogan": "Count the functions $S\\to\\{0,1\\}$ by independent choices.",
+      "detail": "Each of the $n$ elements of $S$ takes one of 2 values independently, so there are $2^n$ functions. Hence $|\\mathcal P(S)|=2^n$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:indicator",
+      "s:inverse"
+     ],
+     [
+      "s:inverse",
+      "s:count"
+     ]
+    ],
+    "conclusion": "s:count",
+    "concepts": {
+     "c:power-set": "The power set is the collection of subsets being counted.",
+     "c:finite-set": "Finiteness makes the count of functions a finite product.",
+     "c:bijection": "The indicator map is a bijection between subsets and 0-1 functions."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard bijection between subsets and characteristic functions."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q845088",
+  "statement": "Revolve a plane region $R$ of [area](c:area) $A$, or a plane curve $C$ of length $L$, about a line $\\ell$ of its plane that it does not cross. The [solid of revolution](c:solid-of-revolution) of $R$ has volume $2\\pi\\rho_RA$ and the surface of $C$ has area $2\\pi\\rho_CL$, where $\\rho_R,\\rho_C$ are the distances from $\\ell$ to the [centroids](c:centroid).",
+  "hypotheses": [
+   {
+    "id": "h:position",
+    "text": "The region or curve lies in one closed half-plane of the axis $\\ell$.",
+    "concept": null
+   },
+   {
+    "id": "h:regular",
+    "text": "The region $R$ is compact with piecewise smooth boundary and positive area, and $C$ is a simple piecewise $C^1$ arc of positive length.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The volume is $V=2\\pi\\rho_RA$ and the surface area is $S=2\\pi\\rho_CL$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "cylindrical",
+    "name": "Cylindrical coordinates",
+    "slogan": "Write the volume and the surface area as integrals of the distance from the axis, and recognize the centroid in them.",
+    "scope": "Both parts, with the axis as the $y$-axis. A region or curve that touches the axis is allowed; the touched set has measure zero in the swept body.",
+    "mechanisms": [
+     "m:coordinates",
+     "m:change-of-variables",
+     "m:fubini-swap"
+    ],
+    "roles": [
+     {
+      "h": "h:position",
+      "why": "Staying on one side makes the distance to the axis equal to $x\\ge0$ and the revolution injective.",
+      "steps": [
+       "s:axis",
+       "s:volume",
+       "s:surface"
+      ]
+     },
+     {
+      "h": "h:regular",
+      "why": "Piecewise smooth boundaries and arcs make the integrals and the area element defined.",
+      "steps": [
+       "s:volume",
+       "s:surface"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:axis",
+      "slogan": "Place the axis as the $y$-axis with the figure in $x\\ge0$.",
+      "detail": "Choose coordinates in the plane of the figure so that $\\ell$ is the $y$-axis. The distance of a point to $\\ell$ is its coordinate $x\\ge0$.",
+      "uses": []
+     },
+     {
+      "id": "s:centroid",
+      "slogan": "Write each centroid distance as a mean value of $x$.",
+      "detail": "The [centroid](c:centroid) is the mean position of the points, so $\\rho_R=\\frac1A\\iint_Rx\\,dA$ and, with arc length $s$, $\\rho_C=\\frac1L\\int_Cx\\,ds$.",
+      "uses": []
+     },
+     {
+      "id": "s:volume",
+      "slogan": "Compute the volume of the [solid of revolution](c:solid-of-revolution) in cylindrical coordinates.",
+      "detail": "The solid is the image of $\\{(x,y,\\theta):(x,y)\\in R,\\ 0\\le\\theta<2\\pi\\}$ under $(x,y,\\theta)\\mapsto(x\\cos\\theta,y,x\\sin\\theta)$, which is injective off a null set because $x\\ge0$. The Jacobian is $x$, so $V=\\iint_R\\int_0^{2\\pi}x\\,d\\theta\\,dA=2\\pi\\iint_Rx\\,dA$.",
+      "uses": [
+       "nm:change-of-variables-formula"
+      ]
+     },
+     {
+      "id": "s:surface",
+      "slogan": "Compute the area of the swept surface from its area element.",
+      "detail": "Parametrize $C$ by arc length, $s\\mapsto(x(s),y(s))$, and the surface by $(s,\\theta)\\mapsto(x\\cos\\theta,y,x\\sin\\theta)$. The two partial derivatives are orthogonal with lengths $1$ and $x$, so the area element is $x\\,ds\\,d\\theta$ and $S=2\\pi\\int_Cx\\,ds$.",
+      "uses": []
+     },
+     {
+      "id": "s:combine",
+      "slogan": "Substitute the centroid formulas to get both results.",
+      "detail": "By the centroid step, $\\iint_Rx\\,dA=\\rho_RA$ and $\\int_Cx\\,ds=\\rho_CL$. Substituting into the volume and surface formulas gives $V=2\\pi\\rho_RA$ and $S=2\\pi\\rho_CL$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:axis",
+      "s:centroid"
+     ],
+     [
+      "s:axis",
+      "s:volume"
+     ],
+     [
+      "s:axis",
+      "s:surface"
+     ],
+     [
+      "s:centroid",
+      "s:combine"
+     ],
+     [
+      "s:volume",
+      "s:combine"
+     ],
+     [
+      "s:surface",
+      "s:combine"
+     ]
+    ],
+    "conclusion": "s:combine",
+    "concepts": {
+     "c:area": "The area $A$ of the region is the factor in the volume formula.",
+     "c:solid-of-revolution": "The swept solid is the body whose volume the theorem gives.",
+     "c:centroid": "The centroid is the mean of $x$, which the integrals contain."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard calculus proof by cylindrical coordinates; the theorem is due to Pappus of Alexandria and was restated by Guldin."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1668861",
+  "statement": "A nonconstant [entire function](c:entire-function) omits at most one complex value (little Picard). Near an [essential singularity](c:essential-singularity), a holomorphic function takes every complex value infinitely often, with at most one exception (great Picard).",
+  "hypotheses": [
+   {
+    "id": "h:holomorphic",
+    "text": "The function $f$ is [holomorphic](c:holomorphic-function) on $\\mathbb{C}$ (little Picard) or on a punctured disc $0<|z|<r$ (great Picard).",
+    "concept": "c:holomorphic-function"
+   },
+   {
+    "id": "h:singular",
+    "text": "In the first case $f$ is nonconstant; in the second case $f$ has an [essential singularity](c:essential-singularity) at $0$.",
+    "concept": "c:essential-singularity"
+   }
+  ],
+  "conclusion": "In the first case $f(\\mathbb{C})$ misses at most one value; in the second case, in every neighborhood of $0$, $f$ takes each value infinitely often, with at most one exception.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "montel",
+    "name": "Normal families",
+    "slogan": "Use the fundamental normality test for functions that omit two values, and rescale to a normal family in both cases.",
+    "scope": "An outline: Montel's fundamental normality test is cited, and the two rescaling arguments are written out. Both Picard theorems follow from it.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:maximum-principle",
+     "m:contradiction"
+    ],
+    "roles": [
+     {
+      "h": "h:holomorphic",
+      "why": "Holomorphy lets the rescaled functions form a normal family and lets the maximum principle apply.",
+      "steps": [
+       "s:montel",
+       "s:little",
+       "s:annulus",
+       "s:maximum"
+      ]
+     },
+     {
+      "h": "h:singular",
+      "why": "Nonconstancy or the essential singularity is the property that the contradiction defeats.",
+      "steps": [
+       "s:little",
+       "s:maximum",
+       "s:infinite"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:montel",
+      "slogan": "Cite the fundamental normality test for families that omit two values.",
+      "detail": "A family of holomorphic functions on a domain that all omit $0$ and $1$ is a [normal family](c:normal-family): each sequence has a subsequence that converges locally uniformly, in the spherical metric, to a holomorphic function or to $\\infty$. Published proofs use Schottky's theorem or the modular function.",
+      "uses": [
+       "wd:Q535366"
+      ]
+     },
+     {
+      "id": "s:little",
+      "slogan": "Rescale an entire function that omits two values and force its derivative to vanish.",
+      "detail": "Suppose a nonconstant entire $f$ omits two values; after an affine change they are $0$ and $1$. For fixed $w$, the functions $f_k(z)=f(w+kz)$ on $|z|<1$ omit $0,1$, so a subsequence converges to a finite limit, because $f_k(0)=f(w)$ is fixed. Then $f_k'(0)=kf'(w)$ stays bounded, so $f'(w)=0$ for all $w$ and $f$ is constant, a contradiction.",
+      "uses": []
+     },
+     {
+      "id": "s:annulus",
+      "slogan": "Rescale near the singularity and bound $f$ or $1/f$ on small circles.",
+      "detail": "Suppose $f$ omits $0$ and $1$ on $0<|z|<r$. The functions $g_k(z)=f(z/k)$ omit $0,1$ on $\\frac12<|z|<2$, so a subsequence $g_{k_j}$ converges uniformly on $|z|=1$ to a bounded holomorphic function or to $\\infty$. So either $|f|\\le M$ on the circles $|z|=1/k_j$, or $|f|\\ge1$ on them for large $j$.",
+      "uses": []
+     },
+     {
+      "id": "s:maximum",
+      "slogan": "Spread the bound over a punctured neighborhood by the maximum modulus principle.",
+      "detail": "Apply the maximum modulus principle to $f$, or to $1/f$ in the second case, on the annuli between consecutive circles $|z|=1/k_j$. Then $f$ or $1/f$ is bounded near $0$, so the singularity is removable or a pole by Riemann's theorem. This contradicts an essential singularity.",
+      "uses": [
+       "nm:maximum-modulus-principle",
+       "wd:Q1974087"
+      ]
+     },
+     {
+      "id": "s:infinite",
+      "slogan": "Turn finitely many takings of two values into two omitted values.",
+      "detail": "Let $f$ have an essential singularity at $0$, and suppose two values $b\\ne c$ are each taken only finitely often near $0$. In a smaller punctured disc $f$ omits both, and an affine change makes them $0$ and $1$, which the previous step excludes. So at most one value is exceptional.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Combine the entire case and the essential singularity case.",
+      "detail": "Step 2 shows that a nonconstant entire function omits at most one value. Step 5 shows that near an essential singularity every value but at most one is taken infinitely often.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:montel",
+      "s:little"
+     ],
+     [
+      "s:montel",
+      "s:annulus"
+     ],
+     [
+      "s:annulus",
+      "s:maximum"
+     ],
+     [
+      "s:maximum",
+      "s:infinite"
+     ],
+     [
+      "s:infinite",
+      "s:conclude"
+     ],
+     [
+      "s:little",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:entire-function": "Little Picard is a statement about nonconstant entire functions.",
+     "c:essential-singularity": "Great Picard describes the values near an essential singularity.",
+     "c:holomorphic-function": "Holomorphy gives normal families and the maximum principle.",
+     "c:normal-family": "Normality of the rescaled functions is the engine of both parts."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "J. B. Conway, Functions of One Complex Variable I, 2nd edition, Graduate Texts in Mathematics 11, Springer, 1978, chapter XII (The Range of an Analytic Function)",
+     "url": "https://link.springer.com/book/10.1007/978-1-4612-6313-5",
+     "note": "Chapter XII proves the little and the great Picard theorems from Montel's normality test; the rescaling steps follow that chapter."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q646523",
+  "statement": "For a [simple polygon](c:simple-polygon) with vertices at [lattice points](c:lattice-point), the [area](c:area) is $A=I+\\frac B2-1$, where $I$ and $B$ count the lattice points in the interior and on the boundary.",
+  "hypotheses": [
+   {
+    "id": "h:simple",
+    "text": "The polygon $P$ is [simple](c:simple-polygon): its boundary is a closed curve without self-intersections.",
+    "concept": "c:simple-polygon"
+   },
+   {
+    "id": "h:lattice",
+    "text": "Every vertex of $P$ is a [lattice point](c:lattice-point), a point of $\\mathbb{Z}^2$.",
+    "concept": "c:lattice-point"
+   }
+  ],
+  "conclusion": "$A=I+\\frac B2-1$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "parallelogram-count",
+    "name": "Triangulation and parallelograms",
+    "slogan": "Show that the defect is additive, triangulate, double each triangle to a parallelogram and count lattice points of its fundamental domain.",
+    "scope": "All simple lattice polygons, convex or not. A triangle is a polygon with 3 vertices, and the induction on the number of vertices starts there.",
+    "mechanisms": [
+     "m:induction",
+     "m:symmetry",
+     "m:lagrange-counting"
+    ],
+    "roles": [
+     {
+      "h": "h:simple",
+      "why": "A simple polygon with more than 3 vertices has an interior diagonal, so it can be triangulated.",
+      "steps": [
+       "s:additive",
+       "s:triangulate"
+      ]
+     },
+     {
+      "h": "h:lattice",
+      "why": "Lattice vertices make the cuts lattice segments and the point reflection preserve the lattice.",
+      "steps": [
+       "s:triangulate",
+       "s:parallelogram",
+       "s:fundamental"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:additive",
+      "slogan": "Show that the defect $D=A-(I+\\frac B2-1)$ is additive under cutting along a diagonal.",
+      "detail": "Cut $P$ along a diagonal with $c$ lattice points, endpoints included, into $P_1$ and $P_2$. Then $A=A_1+A_2$, $I=I_1+I_2+(c-2)$ and $B=B_1+B_2-2c+2$. Substitution gives $I+\\frac B2-1=(I_1+\\frac{B_1}2-1)+(I_2+\\frac{B_2}2-1)$, so $D(P)=D(P_1)+D(P_2)$.",
+      "uses": []
+     },
+     {
+      "id": "s:triangulate",
+      "slogan": "Cut the polygon into lattice triangles along diagonals.",
+      "detail": "A simple polygon with more than 3 vertices has a diagonal inside it. Cutting along it gives two simple lattice polygons with fewer vertices. By induction on the number of vertices, $P$ is a union of lattice triangles glued along lattice diagonals, a [triangulation](c:polygon-triangulation).",
+      "uses": []
+     },
+     {
+      "id": "s:parallelogram",
+      "slogan": "Double a lattice triangle into a lattice parallelogram by a point reflection.",
+      "detail": "Let $M$ be the midpoint of a side of a lattice triangle $T$, so $2M\\in\\mathbb{Z}^2$. The reflection $x\\mapsto2M-x$ maps $\\mathbb{Z}^2$ to itself, so the image $T'$ has the same $A,I,B$ and $D(T')=D(T)$. The parallelogram $\\Pi=T\\cup T'$ is cut along that side, so $D(\\Pi)=2D(T)$ by step 1.",
+      "uses": []
+     },
+     {
+      "id": "s:fundamental",
+      "slogan": "Show $D=0$ for a lattice parallelogram by counting the points of a fundamental domain.",
+      "detail": "Let $\\Pi$ be spanned by lattice vectors $u,v$ and put $N=|\\det(u,v)|=A$. The sublattice $\\mathbb{Z}u+\\mathbb{Z}v$ has index $N$ in $\\mathbb{Z}^2$, so the half-open parallelogram $\\{su+tv:0\\le s,t<1\\}$ contains exactly $N$ lattice points, one per coset. They are the $I$ interior points and the $B/2-1$ boundary points on the two edges from the origin, far ends excluded, so $A=N=I+\\frac B2-1$.",
+      "uses": []
+     },
+     {
+      "id": "s:sum",
+      "slogan": "Sum the defects of the triangles to get Pick's formula for $P$.",
+      "detail": "Steps 3 and 4 give $D(T)=0$ for every lattice triangle $T$. By step 2 and the additivity of step 1, $D(P)$ is the sum of the defects of the triangles, so $D(P)=0$, that is $A=I+\\frac B2-1$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:additive",
+      "s:parallelogram"
+     ],
+     [
+      "s:additive",
+      "s:sum"
+     ],
+     [
+      "s:triangulate",
+      "s:sum"
+     ],
+     [
+      "s:parallelogram",
+      "s:sum"
+     ],
+     [
+      "s:fundamental",
+      "s:sum"
+     ]
+    ],
+    "conclusion": "s:sum",
+    "concepts": {
+     "c:simple-polygon": "Simplicity gives interior diagonals and a well-defined interior and boundary.",
+     "c:lattice-point": "Lattice points are counted, and lattice vertices keep every cut a lattice segment.",
+     "c:area": "The area is compared with the point count through the defect.",
+     "c:polygon-triangulation": "Triangulation reduces the formula to triangles."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The additivity, parallelogram and fundamental-domain proof, a standard proof of Pick's theorem."
+    }
+   }
+  ]
+ }
+]
