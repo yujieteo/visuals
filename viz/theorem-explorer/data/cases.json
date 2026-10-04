@@ -1,0 +1,113 @@
+{
+ "rule": "te-cases/1",
+ "about": "Concrete comparison cases (spec section 6). Each case fixes a goal, its inputs and admissible hypotheses, a target, a metric with its direction, and the applicable results. The viewer calculates every guarantee from the named formula and the inputs (src/model.js, CASE_FORMULAS); tests/test_cases.py recalculates them independently. The formulas are the standard statements of the cited results. These are calculated guarantees, not published empirical measurements. A result that does not apply is excluded from the rank, with its reason. The judge (claude-opus-5-5) authored the cases; the dates are judge-supplied citations of the original publications, not retrieved from a declared source.",
+ "evaluated": "2026-10-04",
+ "cutoff": "2026-10-04",
+ "cases": [
+  {
+   "id": "tail-binomial",
+   "title": "Upper tail of a sum of independent fair coin flips",
+   "goal": "numerical bound",
+   "question": "How small an upper bound on P(S ≥ 60) does each result give, where S is the number of heads in 100 independent fair coin flips?",
+   "inputs": {"n": 100, "p": 0.5, "t": 10},
+   "input_text": [
+    "n = 100 independent Bernoulli(p) variables X_1, ..., X_n, each in [0, 1]",
+    "p = 0.5, so E[S] = np = 50 and Var(S) = np(1 - p) = 25",
+    "deviation t = 10: the event is S ≥ np + t = 60"
+   ],
+   "hypotheses": ["independence", "each X_i takes values in [0, 1]", "the distribution of each X_i is known (Bernoulli(p))"],
+   "target": "an upper bound on P(S ≥ np + t) for this fixed n (not a limit)",
+   "metric": {"name": "upper bound on the probability", "unit": "probability", "direction": "lower"},
+   "reference": {"label": "exact binomial tail (a check value, not a result)", "formula": "binomial_tail"},
+   "entries": [
+    {"result": "nm:markov-s-inequality", "formula": "markov", "tex": "P(S \\ge a) \\le \\frac{\\mathbb{E}[S]}{a},\\quad a = np + t",
+     "requires": "S ≥ 0 and E[S] finite: holds here", "decl": "MeasureTheory.mul_meas_ge_le_lintegral",
+     "date": {"year": null, "basis": "no documented original publication in the declared sources"}},
+    {"result": "nm:chebyshev-s-inequality", "formula": "chebyshev", "tex": "P(|S - np| \\ge t) \\le \\frac{np(1-p)}{t^2}",
+     "requires": "finite variance: holds here; the two-sided bound also bounds the upper tail", "decl": "ProbabilityTheory.meas_ge_le_variance_div_sq",
+     "date": {"year": 1867, "basis": "P. Chebyshev, Des valeurs moyennes, J. Math. Pures Appl. (2) 12 (1867) 177-184 (judge-supplied citation)"}},
+    {"result": "nm:chernoff-bound", "formula": "chernoff_kl", "tex": "P(S \\ge np + t) \\le \\inf_{s>0} e^{-s(np+t)}\\,\\mathbb{E}[e^{sS}] = e^{-n\\,D(p + t/n \\,\\|\\, p)}",
+     "requires": "the moment generating function of S: known here, because each X_i is Bernoulli(p)", "decl": "ProbabilityTheory.measure_ge_le_exp_mul_mgf",
+     "date": {"year": 1952, "basis": "H. Chernoff, Ann. Math. Statist. 23(4) (1952) 493-507, doi:10.1214/aoms/1177729330 (judge-supplied citation)"}},
+    {"result": "nm:hoeffding-inequality", "formula": "hoeffding", "tex": "P(S - np \\ge t) \\le e^{-2t^2/n}",
+     "requires": "independence and X_i in [0, 1]: holds here; the distribution is not needed", "decl": "ProbabilityTheory.HasSubgaussianMGF.measure_sum_range_ge_le_of_iIndepFun",
+     "date": {"year": 1963, "basis": "W. Hoeffding, J. Amer. Statist. Assoc. 58(301) (1963) 13-30, doi:10.1080/01621459.1963.10500830 (judge-supplied citation)"}},
+    {"result": "nm:azuma-hoeffding-inequality", "formula": "azuma", "tex": "P(S - np \\ge t) \\le e^{-t^2/(2nc^2)},\\quad c = \\max(p, 1-p)",
+     "requires": "martingale differences X_i - p with |X_i - p| ≤ c: holds here; independence is not needed", "decl": "ProbabilityTheory.measure_sum_ge_le_of_hasCondSubgaussianMGF",
+     "date": {"year": 1967, "basis": "K. Azuma, Tohoku Math. J. 19(3) (1967) 357-367, doi:10.2748/tmj/1178243286 (judge-supplied citation)"}},
+    {"result": "wd:Q190391", "formula": null, "excluded": "The central limit theorem gives a limit as n tends to infinity. It gives no bound for the fixed n = 100, so it has no value for this metric."}
+   ]
+  },
+  {
+   "id": "existence-ksat",
+   "title": "Existence of a satisfying assignment: union bound against the local lemma",
+   "goal": "existence proof",
+   "question": "Does each result prove that a 10-CNF formula with 10000 clauses, where each clause shares variables with at most 300 other clauses, has a satisfying assignment?",
+   "inputs": {"k": 10, "m": 10000, "d": 300},
+   "input_text": [
+    "k = 10 distinct variables in each clause; a uniform random assignment makes a clause false with probability 2^-k",
+    "m = 10000 clauses (bad events A_j: clause j is false)",
+    "d = 300: each clause shares a variable with at most d other clauses, so each A_j is independent of all but at most d others"
+   ],
+   "hypotheses": ["a uniform random assignment", "a dependency graph of maximum degree d"],
+   "target": "P(no bad event occurs) > 0, which proves that a satisfying assignment exists",
+   "metric": {"name": "the sufficient condition of the result, evaluated on the inputs", "unit": "condition value (the result proves existence when it is below its threshold)", "direction": "lower"},
+   "entries": [
+    {"result": "nm:union-bound", "formula": "union_condition", "tex": "P\\Big(\\bigcup_j A_j\\Big) \\le \\sum_j P(A_j) = m\\,2^{-k} < 1",
+     "requires": "only the probabilities of the bad events; no dependency information", "decl": "MeasureTheory.measure_iUnion_le",
+     "date": {"year": 1854, "basis": "G. Boole, An Investigation of the Laws of Thought (1854) (judge-supplied citation)"}},
+    {"result": "nm:lovasz-local-lemma", "formula": "lll_symmetric", "tex": "e\\,p\\,(d+1) \\le 1,\\quad p = 2^{-k}",
+     "requires": "a dependency graph of maximum degree d: holds here", "decl": null,
+     "date": {"year": 1975, "basis": "P. Erdős and L. Lovász, Problems and results on 3-chromatic hypergraphs and some related questions, in Infinite and Finite Sets (1975) (judge-supplied citation)"}}
+   ]
+  },
+  {
+   "id": "union-three",
+   "title": "Probability of a union of three events",
+   "goal": "numerical bound",
+   "question": "What upper bound on P(A ∪ B ∪ C) does each result give from the stated probabilities?",
+   "inputs": {"a": 0.2, "b": 0.25, "c": 0.15, "ab": 0.05, "ac": 0.03, "bc": 0.04, "abc": 0.01},
+   "input_text": [
+    "P(A) = 0.2, P(B) = 0.25, P(C) = 0.15",
+    "P(A ∩ B) = 0.05, P(A ∩ C) = 0.03, P(B ∩ C) = 0.04, P(A ∩ B ∩ C) = 0.01"
+   ],
+   "hypotheses": ["a probability measure", "the intersection probabilities are known (inclusion-exclusion only)"],
+   "target": "an upper bound on P(A ∪ B ∪ C)",
+   "metric": {"name": "upper bound on the probability", "unit": "probability", "direction": "lower"},
+   "entries": [
+    {"result": "nm:union-bound", "formula": "union_sum3", "tex": "P(A \\cup B \\cup C) \\le P(A) + P(B) + P(C)",
+     "requires": "3 inputs: the marginal probabilities only", "decl": "MeasureTheory.measure_union_le",
+     "date": {"year": 1854, "basis": "G. Boole, An Investigation of the Laws of Thought (1854) (judge-supplied citation)"}},
+    {"result": "nm:principle-of-inclusion-exclusion", "formula": "inclusion_exclusion3", "tex": "P(A \\cup B \\cup C) = \\sum P(A) - \\sum P(A \\cap B) + P(A \\cap B \\cap C)",
+     "requires": "7 inputs: all intersection probabilities", "decl": "Finset.inclusion_exclusion_sum_biUnion",
+     "date": {"year": null, "basis": "no documented original publication in the declared sources"}}
+   ]
+  },
+  {
+   "id": "euler-genus-two",
+   "title": "Euler characteristic of a closed surface from its curvature",
+   "goal": "structural connection",
+   "question": "Which results give the Euler characteristic of a closed oriented surface of genus 2 from a metric of constant curvature -1?",
+   "inputs": {"K": -1, "area_over_pi": 4},
+   "input_text": [
+    "a closed oriented surface of genus 2 with a Riemannian metric of constant Gaussian curvature K = -1",
+    "its area is 4π (from the hyperbolic metric)"
+   ],
+   "hypotheses": ["a compact Riemannian manifold without boundary"],
+   "target": "the value of the Euler characteristic χ",
+   "metric": {"name": "the calculated value of χ", "unit": "integer", "direction": "none"},
+   "entries": [
+    {"result": "wd:Q742833", "formula": "gauss_bonnet", "tex": "\\int_M K\\,dA = 2\\pi\\,\\chi(M)",
+     "requires": "a compact 2-dimensional Riemannian manifold without boundary", "decl": null,
+     "date": {"year": null, "basis": "no documented original publication in the declared sources"}},
+    {"result": "wd:Q11704319", "formula": "gauss_bonnet", "tex": "\\int_M \\mathrm{Pf}(\\Omega) = (2\\pi)^{n}\\chi(M),\\quad \\dim M = 2n",
+     "requires": "a compact even-dimensional Riemannian manifold without boundary; here n = 1", "decl": null,
+     "date": {"year": null, "basis": "no documented original publication in the declared sources"}},
+    {"result": "wd:Q755991", "formula": "gauss_bonnet", "tex": "\\operatorname{ind}(d + d^*) = \\chi(M) = \\int_M e(TM)",
+     "requires": "an elliptic operator on a closed manifold; here d + d* from even to odd forms, whose index is χ", "decl": null,
+     "date": {"year": null, "basis": "no documented original publication in the declared sources"}}
+   ],
+   "note": "All three results give the same value. No result dominates on this metric; the trade-off is the machinery that each one needs (see the proof simplicity and effort columns, which are judgments)."
+  }
+ ]
+}
