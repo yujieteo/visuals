@@ -337,8 +337,8 @@
     if (!expanded) return [head, shortText, h("p", { class: "note", text: "Click, tap or press Enter to pin the full reminder." })];
     const why = r.why ? segsPlain(r.why) : r.proofName ? `The ${r.proofName} proof marks it without a note.` : "No proof is selected.";
     return [head,
-      h("p", null, h("span", { class: "label", text: "Definition " }), def ? segsPlain(def) : "no definition text in this snapshot", r.definitionBasis && r.definitionBasis !== "authored" ? h("span", { class: "note", text: ` (${r.definitionBasis})` }) : null),
       r.reminder ? h("p", null, h("span", { class: "label", text: "In short " }), segsPlain(r.reminder)) : null,
+      h("p", null, h("span", { class: "label", text: "Definition " }), def ? segsPlain(def) : "no definition text in this snapshot", r.definitionBasis && r.definitionBasis !== "authored" ? h("span", { class: "note", text: ` (${r.definitionBasis})` }) : null),
       h("p", null, h("span", { class: "label", text: "Why here " }), why, h("span", { class: "note", text: ` (at ${where})` })),
       h("p", null, h("span", { class: "label", text: "Used at " }), r.usedAt.length ? r.usedAt.map((/** @type {any} */ u, /** @type {number} */ j) => [j ? "; " : "", h("a", { href: `#step-${u.number}`, onclick: (/** @type {Event} */ ev) => { ev.preventDefault(); $(`step-${u.number}`)?.scrollIntoView({ block: "center" }); } }, `step ${u.number}`)]) : "no step of this proof", r.hyps.length ? `; hypotheses ${r.hyps.join(", ")}` : ""),
       r.examples.length ? h("details", null, h("summary", { text: "Examples" }), h("ul", null, r.examples.map((/** @type {any[]} */ e) => h("li", null, segsPlain(e))))) : null,
