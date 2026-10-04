@@ -4,6 +4,8 @@ No build step: edit `index.html`. `<script id="calibrator-engine">` is the pure 
 
 TOON must match yujieteo/site's `scripts/toon.py` byte for byte; `tests/fixtures/toon.py` is a read-only copy of it. When the schema changes, update README.md, `raw.json` and the site's raw.toon reader together.
 
+The life interview (`optchat-interview`) is a separate format with its own version, state and storage keys; a change to it must never change how a probability session imports, saves or exports (`tests/fixtures/saved-session-v1.json` checks this). Its schema is also read by OptChat's `ingest`, so change README.md, `raw.json` and that reader together.
+
 Imported questions are immutable: the first answer is never overwritten, skipped and unseen are never merged, and an untouched question has no probability.
 
 Keep the suite to its deterministic checks; it has deliberately no browser end-to-end tests.

@@ -319,3 +319,18 @@ test("polarity check: the swapped cards of session 1 are flagged, sound cards ar
   assert.equal(run("sample-session.toon"), 0);
   assert.equal(run("sessions/2026-10-02.toon"), 1);
 });
+
+test("a probability session saved before the life interview existed restores and exports unchanged", () => {
+  // saved-session-v1.json is what the page kept in localStorage (calibrator:session) before interview mode,
+  // after the steps of the export round-trip test. It must restore, stay a probability session and export the
+  // same bytes; the interview reader refuses it, so the two modes never read each other's saved state.
+  const saved = read("tests/fixtures/saved-session-v1.json");
+  const s = C.deserialize(saved);
+  assert.equal(s.current, 2);
+  assert.equal(C.stateOf(s, ids(s)[1]), "skipped");
+  assert.equal(C.exportToon(s, T0 + 15000), read("tests/fixtures/export.toon"));
+  assert.throws(() => C.Interview.deserialize(saved), /Not a saved interview/);
+  // Answering still works after the restore: a move on the answered card on screen is a revision.
+  const next = C.answer(C.display(s, T0 + 20000), 55, T0 + 21000).state.responses[ids(s)[2]];
+  assert.deepEqual([next.first_probability, next.final_probability, next.revision_history.length], [20, 55, 2]);
+});

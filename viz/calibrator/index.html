@@ -94,6 +94,19 @@ dialog::backdrop{background:rgba(0,0,0,.35)}
 .tally dd{margin:0;font-size:1.5rem;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.03em}
 .sheet .row{display:flex;flex-wrap:wrap;gap:.5rem}
 .sheet .row .btn.primary{flex:1 1 10rem}
+/* Interview card */
+.topic{margin:0;font-size:.8125rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.ask-text{min-height:7rem;font:1rem/1.45 var(--sans)}
+.fields{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,9rem);gap:.6rem}
+.fields label{display:grid;gap:.2rem;font-size:.8125rem;color:var(--muted);min-width:0}
+.fields input{min-height:2.75rem;width:100%;min-width:0;padding:0 .65rem;border:1px solid var(--control);border-radius:var(--r);background:var(--bg)}
+.earlier{font-size:.875rem}
+.earlier ol{margin:.4rem 0 0;padding-left:1.2rem;display:grid;gap:.4rem}
+.earlier li{overflow-wrap:anywhere;white-space:pre-wrap}
+.nav4{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media (max-width:30rem){.nav4{grid-template-columns:1fr 1fr}.fields{grid-template-columns:minmax(0,1fr) minmax(0,7rem)}}
+.tally4{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media (max-width:30rem){.tally4{grid-template-columns:1fr 1fr}}
 pre{margin:0;max-height:40dvh;overflow:auto;padding:.6rem .75rem;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);font:.75rem/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre}
 /* Short viewports (an iPhone SE, or any phone with Safari's toolbars showing): tighten the type and spacing so
    the question, slider and controls fit without scrolling. Targets stay at least 2.75rem. */
@@ -127,14 +140,14 @@ pre{margin:0;max-height:40dvh;overflow:auto;padding:.6rem .75rem;border:1px soli
 <div class="shell" id="start" hidden>
   <div class="start">
     <h1>Calibrator</h1>
-    <p class="muted">Paste a session, answer each question with your probability, then copy the result.</p>
+    <p class="muted">Paste a session, answer each question with your probability, then copy the result. A life-interview batch opens the written interview.</p>
     <div class="stack">
       <button type="button" class="btn primary" id="paste">Paste Session</button>
       <span class="or">or</span>
       <label class="btn file" for="file">Import .toon<input type="file" id="file" accept=".toon,text/plain"></label>
     </div>
     <div id="manual" hidden>
-      <label for="manual-text" class="small muted">Paste the session TOON here: it loads as soon as it is pasted.</label>
+      <label for="manual-text" class="small muted">Paste the session or interview TOON here: it loads as soon as it is pasted.</label>
       <textarea id="manual-text" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
       <div style="margin-top:.5rem"><button type="button" class="btn primary" id="manual-load">Load session</button></div>
     </div>
@@ -186,6 +199,61 @@ pre{margin:0;max-height:40dvh;overflow:auto;padding:.6rem .75rem;border:1px soli
     <button type="button" class="btn" id="skip">Skip</button>
   </div>
 </div>
+
+<div class="shell" id="talk" hidden>
+  <div class="top">
+    <span class="count" id="t-count" aria-hidden="true"></span>
+    <button type="button" class="btn quiet" id="t-export-open">Export</button>
+  </div>
+  <section class="card" id="t-card" aria-labelledby="t-prompt">
+    <p class="topic" id="t-topic"></p>
+    <h1 class="prop" id="t-prompt"><span class="sr" id="t-qnum"></span><span id="t-prompt-text"></span></h1>
+    <p class="ctx" id="t-ctx"></p>
+    <label for="t-text" class="sr">Your answer</label>
+    <textarea id="t-text" class="ask-text" placeholder="Your answer, in your own words" spellcheck="true"></textarea>
+    <div class="fields">
+      <label for="t-date">When, roughly (optional)<input id="t-date" autocomplete="off" inputmode="numeric" placeholder="2015, 2015-06 or 2014/2016"></label>
+      <label for="t-conf">Confidence % (optional)<input id="t-conf" type="number" min="0" max="100" step="1" inputmode="numeric"></label>
+    </div>
+    <details class="earlier" id="t-earlier" hidden>
+      <summary>Earlier answers</summary>
+      <ol id="t-earlier-list"></ol>
+    </details>
+  </section>
+  <p class="state" id="t-state" role="status" aria-live="polite"></p>
+  <div class="nav nav4">
+    <button type="button" class="btn" id="t-back">Back</button>
+    <button type="button" class="btn" id="t-skip">Skip</button>
+    <button type="button" class="btn" id="t-forgot">I don't remember</button>
+    <button type="button" class="btn primary" id="t-submit">Submit</button>
+  </div>
+</div>
+
+<dialog id="t-sheet" aria-labelledby="t-sheet-title">
+  <div class="sheet">
+    <h2 id="t-sheet-title">Interview</h2>
+    <dl class="tally tally4">
+      <div><dt>Answered</dt><dd id="t-n-answered">0</dd></div>
+      <div><dt>Don't remember</dt><dd id="t-n-forgot">0</dd></div>
+      <div><dt>Skipped</dt><dd id="t-n-skipped">0</dd></div>
+      <div><dt>Unseen</dt><dd id="t-n-unseen">0</dd></div>
+    </dl>
+    <p class="msg" id="t-drafts" hidden></p>
+    <div class="row">
+      <button type="button" class="btn primary" id="t-copy">Copy TOON</button>
+      <button type="button" class="btn" id="t-download">Save .toon</button>
+    </div>
+    <p class="msg" id="t-sheet-msg" role="status" aria-live="polite"></p>
+    <details id="t-preview-box">
+      <summary class="small">Preview</summary>
+      <pre id="t-preview" tabindex="0"></pre>
+    </details>
+    <div class="row">
+      <button type="button" class="btn" id="t-close">Close</button>
+      <button type="button" class="btn quiet" id="t-new">New session</button>
+    </div>
+  </div>
+</dialog>
 
 <dialog id="sheet" aria-labelledby="sheet-title">
   <div class="sheet">
@@ -637,10 +705,263 @@ function keyProbability(key, choice) {
   return choice == null ? 50 : clampProbability(choice + STEPS[key]);
 }
 
+/* ---------- Life interview (optchat-interview, versioned apart from calibrator-session) ---------- */
+// A batch of written questions from an external generator that read the person's OptChat history. Each answer is
+// a submission: the first is kept forever and later ones append as revisions. An exported batch imports again, so
+// revisions can follow on another day; OptChat's ingest appends only the submissions it does not have yet.
+const INTERVIEW_FORMAT = "optchat-interview", INTERVIEW_VERSION = 1;
+const INTERVIEW_FIELDS = {
+  batch: ["batch_id", "generated_at", "generator", "inputs"],
+  questions: ["question_id", "batch_id", "prompt", "context", "topic", "period", "gap", "generated_at"],
+  evidence: ["question_id", "ref", "reason"],
+};
+const INTERVIEW_EXPORT_FIELDS = {
+  batch: [...INTERVIEW_FIELDS.batch, "question_count", "imported_at", "exported_at", "answered", "dont_remember", "skipped", "unseen"],
+  responses: ["question_id", "state", "revision_count", "first_shown_at", "first_submitted_at", "final_submitted_at"],
+  answers: ["question_id", "revision", "kind", "text", "confidence", "event_date", "submitted_at"],
+};
+const INTERVIEW_STATES = ["answered", "dont_remember", "skipped", "unseen"];
+const ANSWER_KINDS = ["answer", "dont_remember"];
+// An approximate date: a year, a month or a day, or an interval of two of them ("2014/2016"), as ISO 8601 writes it.
+const PART_DATE = /^([0-9]{4})(?:-(0[1-9]|1[0-2])(?:-(0[1-9]|[12][0-9]|3[01]))?)?$/;
+// A reference to what the generator read: "optchat:<id>" or "optchat:<id>+<n>" for a message or a tree line,
+// or another scheme (such as "site:notes.html#note:<hash>"). The page never shows or opens it.
+const REF = /^[a-z][a-z0-9-]*:[^\s,]+$/;
+function approxDate(v) {
+  if (typeof v !== "string") return false;
+  const parts = v.split("/");
+  if (parts.length > 2 || !parts.every((p) => PART_DATE.test(p))) return false;
+  return parts.length === 1 || parts[0] <= parts[1];
+}
+const checkConfidence = (c) => c === null || (Number.isInteger(c) && c >= 0 && c <= 100);
+const ifield = (row, fields, optional, where) => {
+  if (!isObject(row)) throw new SchemaError(`${where}: not a row`);
+  for (const k of Object.keys(row)) if (!fields.includes(k)) throw new SchemaError(`${where}: unknown field ${k}`);
+  for (const k of fields) if (!optional.includes(k) && (row[k] === undefined || row[k] === null)) throw new SchemaError(`${where}: missing ${k}`);
+};
+const pick = (row, fields) => Object.fromEntries(fields.map((f) => [f, row[f] === undefined ? null : row[f]]));
+// Validate a decoded interview: a fresh batch, or an exported one with its responses and answers. Returns a
+// normalized copy: { batch, questions, evidence, history }, history mapping question_id to its submissions.
+function validateInterview(doc) {
+  if (!isObject(doc)) throw new SchemaError("Not an interview document");
+  if (doc.format !== INTERVIEW_FORMAT) throw new SchemaError(`format must be ${INTERVIEW_FORMAT}`);
+  if (doc.version !== INTERVIEW_VERSION) throw new SchemaError(`version must be ${INTERVIEW_VERSION}`);
+  const exported = "responses" in doc || "answers" in doc;
+  for (const k of Object.keys(doc)) {
+    if (!["format", "version", "batch", "questions", "evidence", ...(exported ? ["responses", "answers"] : [])].includes(k)) throw new SchemaError(`unknown top-level key ${k}`);
+  }
+  if (exported && !(Array.isArray(doc.responses) && Array.isArray(doc.answers))) throw new SchemaError("an exported interview needs both responses and answers");
+  if (!isObject(doc.batch)) throw new SchemaError("batch must be an object");
+  ifield(doc.batch, exported ? INTERVIEW_EXPORT_FIELDS.batch : INTERVIEW_FIELDS.batch, ["generator", "inputs", "exported_at"], "batch");
+  text(doc.batch, "batch_id", "batch");
+  if (!ID.test(doc.batch.batch_id)) throw new SchemaError("batch.batch_id may use only letters, digits, '.', '_' and '-'");
+  text(doc.batch, "generated_at", "batch");
+  text(doc.batch, "generator", "batch", { nullable: true });
+  text(doc.batch, "inputs", "batch", { nullable: true, empty: true });
+  const questions = table(doc, "questions"), evidence = table(doc, "evidence");
+  if (!questions.length) throw new SchemaError("The batch has no questions");
+  const ids = new Set();
+  questions.forEach((q, i) => {
+    const where = `question ${i + 1}`;
+    ifield(q, INTERVIEW_FIELDS.questions, ["period"], where);
+    text(q, "question_id", where);
+    if (!ID.test(q.question_id)) throw new SchemaError(`${where}: question_id may use only letters, digits, '.', '_' and '-'`);
+    if (ids.has(q.question_id)) throw new SchemaError(`${where}: duplicate question_id ${q.question_id}`);
+    ids.add(q.question_id);
+    if (q.batch_id !== doc.batch.batch_id) throw new SchemaError(`${where}: batch_id does not match the batch`);
+    for (const k of ["prompt", "topic", "gap", "generated_at"]) text(q, k, where);
+    text(q, "context", where, { empty: true });
+    if (q.period != null && !approxDate(q.period)) throw new SchemaError(`${where}: period must be a year, month or day (YYYY, YYYY-MM, YYYY-MM-DD) or an interval A/B`);
+  });
+  const cited = new Set();
+  evidence.forEach((e, i) => {
+    const where = `evidence ${i + 1}`;
+    ifield(e, INTERVIEW_FIELDS.evidence, [], where);
+    for (const k of ["question_id", "ref", "reason"]) text(e, k, where);
+    if (!ids.has(e.question_id)) throw new SchemaError(`${where}: unknown question_id ${e.question_id}`);
+    if (!REF.test(e.ref)) throw new SchemaError(`${where}: ref must look like optchat:<id> or optchat:<id>+<n>`);
+    cited.add(e.question_id);
+  });
+  for (const id of ids) if (!cited.has(id)) throw new SchemaError(`question ${id} has no evidence: the generator must cite what it read`);
+  const history = {}, skipped = {}, shown = {};
+  if (exported) {
+    doc.answers.forEach((a, i) => {
+      const where = `answer ${i + 1}`;
+      ifield(a, INTERVIEW_EXPORT_FIELDS.answers, ["text", "confidence", "event_date"], where);
+      if (!ids.has(a.question_id)) throw new SchemaError(`${where}: unknown question_id ${a.question_id}`);
+      const list = history[a.question_id] || (history[a.question_id] = []);
+      if (a.revision !== list.length + 1) throw new SchemaError(`${where}: revisions of ${a.question_id} must run 1, 2, 3 in order`);
+      if (!ANSWER_KINDS.includes(a.kind)) throw new SchemaError(`${where}: kind must be answer or dont_remember`);
+      if (a.kind === "answer") text(a, "text", where); else text(a, "text", where, { nullable: true, empty: true });
+      if (!checkConfidence(a.confidence)) throw new SchemaError(`${where}: confidence must be an integer from 0 to 100, or null`);
+      if (a.event_date != null && !approxDate(a.event_date)) throw new SchemaError(`${where}: event_date must be YYYY, YYYY-MM, YYYY-MM-DD or an interval A/B`);
+      text(a, "submitted_at", where);
+      const at = Date.parse(a.submitted_at);
+      if (!Number.isFinite(at)) throw new SchemaError(`${where}: submitted_at is not a timestamp`);
+      list.push({ kind: a.kind, text: a.text ?? null, confidence: a.confidence ?? null, event_date: a.event_date ?? null, at });
+    });
+    if (doc.responses.length !== questions.length) throw new SchemaError("an exported interview needs one response row per question");
+    doc.responses.forEach((r, i) => {
+      const where = `response ${i + 1}`;
+      ifield(r, INTERVIEW_EXPORT_FIELDS.responses, ["revision_count", "first_shown_at", "first_submitted_at", "final_submitted_at"], where);
+      if (r.question_id !== questions[i].question_id) throw new SchemaError(`${where}: responses must follow the question order`);
+      const list = history[r.question_id] || [];
+      const expected = list.length ? (list[list.length - 1].kind === "answer" ? "answered" : "dont_remember") : null;
+      if (!INTERVIEW_STATES.includes(r.state)) throw new SchemaError(`${where}: state must be one of ${INTERVIEW_STATES.join(", ")}`);
+      if (expected ? r.state !== expected : !["skipped", "unseen"].includes(r.state)) throw new SchemaError(`${where}: state ${r.state} does not match the answers of ${r.question_id}`);
+      if (r.state === "skipped") skipped[r.question_id] = true;
+      if (r.first_shown_at != null) {
+        const at = Date.parse(r.first_shown_at);
+        if (!Number.isFinite(at)) throw new SchemaError(`${where}: first_shown_at is not a timestamp`);
+        shown[r.question_id] = at;
+      }
+    });
+  }
+  return {
+    doc: {
+      format: INTERVIEW_FORMAT, version: INTERVIEW_VERSION,
+      batch: pick(doc.batch, INTERVIEW_FIELDS.batch),
+      questions: questions.map((q) => pick(q, INTERVIEW_FIELDS.questions)),
+      evidence: evidence.map((e) => pick(e, INTERVIEW_FIELDS.evidence)),
+    },
+    history, skipped, shown,
+  };
+}
+const parseInterview = (toon) => validateInterview(decode(typeof toon === "string" ? tidy(toon) : toon));
+// The format of a pasted document, so that the page opens the right mode; null when it is not TOON with a format.
+function formatOf(toon) {
+  try { const d = decode(tidy(String(toon))); return isObject(d) && typeof d.format === "string" ? d.format : null; } catch { return null; }
+}
+
+// Interview state. submissions[id]: every submission of the question in order (the first is never changed);
+// drafts[id]: the unsent form, { text, confidence, event_date } as typed (strings), kept on the device only.
+function newInterview(parsed, now) {
+  return { v: 1, mode: "interview", doc: deepFreeze(parsed.doc), imported_at: now, current: 0,
+    submissions: deepFreeze(JSON.parse(JSON.stringify(parsed.history))), skipped: { ...parsed.skipped },
+    shown: { ...parsed.shown }, drafts: {}, changed_at: now, exported_at: null };
+}
+const iclone = (s) => ({ ...s, submissions: { ...s.submissions }, skipped: { ...s.skipped }, shown: { ...s.shown }, drafts: { ...s.drafts } });
+const iqid = (s, i = s.current) => s.doc.questions[i].question_id;
+const ilast = (s) => s.current >= s.doc.questions.length - 1;
+const latest = (s, id) => { const l = s.submissions[id]; return l && l.length ? l[l.length - 1] : null; };
+function interviewStateOf(s, id) {
+  const l = latest(s, id);
+  if (l) return l.kind === "answer" ? "answered" : "dont_remember";
+  return s.skipped[id] ? "skipped" : "unseen";
+}
+function interviewDisplay(s0, now) { const s = iclone(s0), id = iqid(s); if (s.shown[id] == null) s.shown[id] = now; return s; }
+// The form to show for the current question: its draft, else its latest answer, else empty.
+function form(s, id = iqid(s)) {
+  const d = s.drafts[id];
+  if (d) return d;
+  const l = latest(s, id);
+  return l && l.kind === "answer"
+    ? { text: l.text, confidence: l.confidence == null ? "" : String(l.confidence), event_date: l.event_date ?? "" }
+    : { text: "", confidence: "", event_date: "" };
+}
+// Keep what is typed. A draft equal to the saved form is dropped, so that a question is a draft only when it differs.
+function setDraft(s0, draft) {
+  const s = iclone(s0), id = iqid(s);
+  const d = { text: String(draft.text ?? ""), confidence: String(draft.confidence ?? ""), event_date: String(draft.event_date ?? "") };
+  delete s.drafts[id];
+  const base = form(s, id);
+  if (d.text !== base.text || d.confidence !== base.confidence || d.event_date !== base.event_date) s.drafts[id] = d;
+  return s;
+}
+// Turn a form into a submission's fields, or throw a SchemaError naming the first problem.
+function readForm(d) {
+  const answerText = String(d.text ?? "").trim();
+  if (!answerText) throw new SchemaError("Write an answer first, or tap I don't remember");
+  const c = String(d.confidence ?? "").trim(), date = String(d.event_date ?? "").trim();
+  const confidence = c === "" ? null : Number(c);
+  if (!checkConfidence(confidence)) throw new SchemaError("Confidence must be a whole number from 0 to 100, or empty");
+  if (date && !approxDate(date)) throw new SchemaError("When must be a year, month or day (2015, 2015-06, 2015-06-12) or an interval such as 2014/2016");
+  return { text: answerText, confidence, event_date: date || null };
+}
+function append(s, id, sub) {
+  s.submissions[id] = deepFreeze([...(s.submissions[id] || []), deepFreeze(sub)]);
+  delete s.drafts[id];
+}
+const same = (a, b) => a && a.kind === b.kind && a.text === b.text && a.confidence === b.confidence && a.event_date === b.event_date;
+function step(s) { const end = ilast(s); if (!end) s.current += 1; return { advanced: !end, end }; }
+// Submit the current form. The first submission is kept forever; a changed later one appends a revision;
+// an unchanged one appends nothing. Either way the page moves on.
+function submit(s0, now) {
+  const s = s0.shown[iqid(s0)] == null ? interviewDisplay(s0, now) : iclone(s0), id = iqid(s);
+  const sub = { kind: "answer", ...readForm(form(s, id)), at: now };
+  const first = !latest(s, id), added = !same(latest(s, id), sub);
+  if (added) { append(s, id, sub); s.changed_at = now; } else delete s.drafts[id];
+  return { state: s, first, added, ...step(s) };
+}
+// "I don't remember" is an answer too: recorded as a submission of its own kind, and never as a skip.
+function dontRemember(s0, now) {
+  const s = s0.shown[iqid(s0)] == null ? interviewDisplay(s0, now) : iclone(s0), id = iqid(s);
+  const sub = { kind: "dont_remember", text: null, confidence: null, event_date: null, at: now };
+  const added = !same(latest(s, id), sub);
+  if (added) { append(s, id, sub); s.changed_at = now; }
+  return { state: s, added, ...step(s) };
+}
+// Skip records only that the question was passed over, and never erases an answer or a draft.
+function interviewSkip(s0, now) {
+  const s = iclone(s0), id = iqid(s);
+  if (interviewStateOf(s, id) === "unseen") { s.skipped[id] = true; s.changed_at = now; }
+  return { state: s, ...step(s) };
+}
+function interviewBack(s0) { const s = iclone(s0); if (s.current > 0) s.current -= 1; return s; }
+function interviewCounts(s) {
+  const c = { answered: 0, dont_remember: 0, skipped: 0, unseen: 0, drafts: 0, total: s.doc.questions.length };
+  for (const q of s.doc.questions) {
+    c[interviewStateOf(s, q.question_id)] += 1;
+    if (s.drafts[q.question_id]) c.drafts += 1;
+  }
+  return c;
+}
+function exportInterview(s, now) {
+  const c = interviewCounts(s), responses = [], answers = [];
+  for (const q of s.doc.questions) {
+    const id = q.question_id, list = s.submissions[id] || [];
+    list.forEach((a, i) => answers.push({ question_id: id, revision: i + 1, kind: a.kind, text: a.text, confidence: a.confidence, event_date: a.event_date, submitted_at: iso(a.at) }));
+    responses.push({ question_id: id, state: interviewStateOf(s, id), revision_count: list.length ? list.length - 1 : null,
+      first_shown_at: iso(s.shown[id]), first_submitted_at: list.length ? iso(list[0].at) : null, final_submitted_at: list.length ? iso(list[list.length - 1].at) : null });
+  }
+  return {
+    format: INTERVIEW_FORMAT, version: INTERVIEW_VERSION,
+    batch: { ...s.doc.batch, question_count: c.total, imported_at: iso(s.imported_at), exported_at: iso(now), answered: c.answered, dont_remember: c.dont_remember, skipped: c.skipped, unseen: c.unseen },
+    questions: s.doc.questions, evidence: s.doc.evidence, responses, answers,
+  };
+}
+const exportInterviewToon = (s, now) => encode(exportInterview(s, now));
+const markInterviewExported = (s, now) => ({ ...iclone(s), exported_at: now });
+const interviewUnfinished = (s) => s.exported_at == null || s.changed_at > s.exported_at || interviewCounts(s).unseen > 0;
+function deserializeInterview(json) {
+  const s = JSON.parse(json);
+  if (!s || s.v !== 1 || s.mode !== "interview" || ![s.submissions, s.skipped, s.shown, s.drafts].every(isObject)) throw new SchemaError("Not a saved interview");
+  const parsed = validateInterview(s.doc);
+  if (!Number.isInteger(s.current) || s.current < 0 || s.current >= parsed.doc.questions.length) throw new SchemaError("Saved position is out of range");
+  const ids = new Set(parsed.doc.questions.map((q) => q.question_id));
+  for (const [id, list] of Object.entries(s.submissions)) {
+    if (!ids.has(id) || !Array.isArray(list)) throw new SchemaError(`Saved answers for unknown question ${id}`);
+    for (const a of list) {
+      if (!ANSWER_KINDS.includes(a.kind) || !checkConfidence(a.confidence) || !Number.isFinite(a.at)) throw new SchemaError(`Saved answer of ${id} is malformed`);
+      if (a.kind === "answer" && !(typeof a.text === "string" && a.text.trim())) throw new SchemaError(`Saved answer of ${id} has no text`);
+    }
+  }
+  for (const id of Object.keys(s.drafts)) if (!ids.has(id)) throw new SchemaError(`Saved draft for unknown question ${id}`);
+  return { ...s, doc: deepFreeze(parsed.doc), submissions: deepFreeze(s.submissions) };
+}
+
 root.Calibrator = {
   encode, decode, ToonError, SchemaError, FORMAT, VERSION, FIELDS, EXPORT_FIELDS, ORIGINS, SCORES, STATES,
   validateSession, parseSession, newState, display, answer, skip, back, SLOW_IMPACT, SLOW_MS, slowCard, hasty, counts, stateOf, isLast,
-  exportDocument, exportToon, markExported, unfinished, serialize, deserialize, pointerProbability, keyProbability,
+  exportDocument, exportToon, markExported, unfinished, serialize, deserialize, pointerProbability, keyProbability, formatOf,
+  Interview: {
+    FORMAT: INTERVIEW_FORMAT, VERSION: INTERVIEW_VERSION, FIELDS: INTERVIEW_FIELDS, EXPORT_FIELDS: INTERVIEW_EXPORT_FIELDS,
+    STATES: INTERVIEW_STATES, KINDS: ANSWER_KINDS, approxDate, validate: validateInterview, parse: parseInterview,
+    newState: newInterview, display: interviewDisplay, form, setDraft, submit, dontRemember, skip: interviewSkip,
+    back: interviewBack, stateOf: interviewStateOf, counts: interviewCounts, isLast: ilast, exportDocument: exportInterview,
+    exportToon: exportInterviewToon, markExported: markInterviewExported, unfinished: interviewUnfinished,
+    serialize, deserialize: deserializeInterview,
+  },
 };
 })(typeof self !== "undefined" ? self : globalThis);
 </script>
@@ -650,6 +971,9 @@ root.Calibrator = {
 "use strict";
 const C = self.Calibrator, $ = (id) => document.getElementById(id);
 const KEY = "calibrator:session", PREVIOUS = "calibrator:previous";
+// The life interview keeps its own keys, so a probability session and an interview never replace each other.
+const IKEY = "calibrator:interview", IPREVIOUS = "calibrator:interview-previous", MODE = "calibrator:mode";
+const I = C.Interview;
 const store = {
   get(k) { try { return localStorage.getItem(k); } catch { return null; } },
   set(k, v) { try { localStorage.setItem(k, v); return true; } catch { return false; } },
@@ -657,6 +981,8 @@ const store = {
 const now = () => Date.now();
 const reduced = matchMedia("(prefers-reduced-motion: reduce)");
 let S = null, pendingDoc = null, advanceTimer = 0;
+// V: the interview in memory; pendingMode: which mode pendingDoc opens.
+let V = null, pendingMode = "probability";
 
 function save() { if (S && !store.set(KEY, C.serialize(S))) setState("Could not save on this device: export before closing."); }
 function load() {
@@ -667,28 +993,29 @@ function load() {
 // The session in memory, else the one saved on this device (null when there is none).
 const loaded = () => S || load();
 // Show a session again: stamp its current question as displayed, save, and open the question card.
-function resume(state) { S = C.display(state, now()); save(); showAsk(); }
+function resume(state) { S = C.display(state, now()); save(); store.set(MODE, "probability"); showAsk(); }
 const setState = (t) => { $("state").textContent = t; };
 const startMsg = (t, error = false) => { const m = $("start-msg"); m.textContent = t; m.classList.toggle("error", error); };
 
 /* ---------- Start screen ---------- */
 function showStart() {
-  $("ask").hidden = true; $("start").hidden = false;
+  $("ask").hidden = true; $("talk").hidden = true; $("start").hidden = false;
   $("guard").hidden = true; $("manual").hidden = true;
 }
 function begin(doc) {
   S = C.display(C.newState(doc, now()), now());
-  save(); pendingDoc = null;
+  save(); pendingDoc = null; store.set(MODE, "probability");
   showAsk();
 }
 function offer(toon) {
+  if (C.formatOf(toon) === I.FORMAT) { offerInterview(toon); return; }
   let doc;
   try { doc = C.parseSession(toon); } catch (e) { startMsg(`Not a valid session: ${e.message}`, true); return; }
   const prev = loaded();
   if (prev && prev.doc.session.session_id === doc.session.session_id) { resume(prev); return; }
   if (prev && C.unfinished(prev)) {
     const c = C.counts(prev);
-    pendingDoc = doc;
+    pendingDoc = doc; pendingMode = "probability";
     $("guard-text").textContent = `An unfinished session (${prev.doc.session.session_id}: ${c.answered} answered, ${c.skipped} skipped, ${c.unseen} unseen) has not been exported. Replace it with ${doc.session.session_id}?`;
     $("guard").hidden = false; startMsg("");
     $("guard-resume").focus();
@@ -723,12 +1050,126 @@ $("file").addEventListener("change", async (e) => {
   const f = e.target.files[0]; e.target.value = "";
   if (f) offer(await f.text());
 });
-$("guard-resume").addEventListener("click", () => { const prev = loaded(); pendingDoc = null; if (prev) resume(prev); });
+$("guard-resume").addEventListener("click", () => {
+  const interview = pendingMode === "interview", prev = interview ? iloaded() : loaded();
+  pendingDoc = null;
+  if (prev) (interview ? iresume : resume)(prev);
+});
 $("guard-replace").addEventListener("click", () => {
+  if (pendingMode === "interview") {
+    const prev = iloaded();
+    if (prev) store.set(IPREVIOUS, I.serialize(prev));
+    if (pendingDoc) ibegin(pendingDoc);
+    return;
+  }
   const prev = loaded();
   if (prev) store.set(PREVIOUS, C.serialize(prev));
   if (pendingDoc) begin(pendingDoc);
 });
+
+/* ---------- Life interview ---------- */
+function isave() { if (V && !store.set(IKEY, I.serialize(V))) $("t-state").textContent = "Could not save on this device: export before closing."; }
+function iload() {
+  const json = store.get(IKEY);
+  if (!json) return null;
+  try { return I.deserialize(json); } catch { return null; }
+}
+const iloaded = () => V || iload();
+function showTalk() { $("start").hidden = true; $("ask").hidden = true; $("talk").hidden = false; irender(true); }
+function iresume(state) { V = I.display(state, now()); isave(); store.set(MODE, "interview"); showTalk(); }
+function ibegin(parsed) { pendingDoc = null; iresume(I.newState(parsed, now())); }
+// An exported batch imports too: its answers become the first answers, and new submissions append revisions.
+function offerInterview(toon) {
+  let parsed;
+  try { parsed = I.parse(toon); } catch (e) { startMsg(`Not a valid interview: ${e.message}`, true); return; }
+  const prev = iloaded();
+  if (prev && prev.doc.batch.batch_id === parsed.doc.batch.batch_id) { iresume(prev); return; }
+  if (prev && I.unfinished(prev)) {
+    const c = I.counts(prev);
+    pendingDoc = parsed; pendingMode = "interview";
+    $("guard-text").textContent = `An unfinished interview (${prev.doc.batch.batch_id}: ${c.answered} answered, ${c.dont_remember} not remembered, ${c.skipped} skipped, ${c.unseen} unseen) has not been exported. Replace it with ${parsed.doc.batch.batch_id}?`;
+    $("guard").hidden = false; startMsg("");
+    $("guard-resume").focus();
+    return;
+  }
+  if (prev) store.set(IPREVIOUS, I.serialize(prev));
+  ibegin(parsed);
+}
+const tText = $("t-text"), tDate = $("t-date"), tConf = $("t-conf");
+const tState = (t) => { $("t-state").textContent = t; };
+const STATE_LABEL = { answered: "Answered", dont_remember: "Marked I don't remember", skipped: "Skipped", unseen: "" };
+function irender(fade) {
+  const q = V.doc.questions[V.current], n = V.current + 1, total = V.doc.questions.length, id = q.question_id;
+  const f = I.form(V, id), st = I.stateOf(V, id), list = V.submissions[id] || [];
+  $("t-count").textContent = `${n} / ${total}`;
+  $("t-qnum").textContent = `Question ${n} of ${total}: `;
+  $("t-topic").textContent = q.topic;
+  $("t-prompt-text").textContent = q.prompt;
+  $("t-ctx").textContent = q.context; $("t-ctx").hidden = !q.context;
+  tText.value = f.text; tDate.value = f.event_date; tConf.value = f.confidence;
+  const earlier = $("t-earlier-list");
+  earlier.replaceChildren(...list.map((a, i) => {
+    const li = document.createElement("li");
+    const when = new Date(a.at).toISOString().slice(0, 10), extra = [a.event_date && `when ${a.event_date}`, a.confidence != null && `${a.confidence}% sure`].filter(Boolean).join(", ");
+    li.textContent = `${i === 0 ? "First answer" : `Revision ${i}`} (${when}): ${a.kind === "answer" ? a.text : "I don't remember"}${extra ? ` (${extra})` : ""}`;
+    return li;
+  }));
+  $("t-earlier").hidden = !list.length;
+  $("t-back").disabled = V.current === 0;
+  $("t-skip").textContent = st === "unseen" ? "Skip" : "Next";
+  $("t-skip").disabled = st !== "unseen" && I.isLast(V);
+  tState(V.drafts[id] ? "Draft saved on this device" : STATE_LABEL[st] + (list.length > 1 ? ` (${list.length - 1} revision${list.length > 2 ? "s" : ""})` : ""));
+  if (fade && !reduced.matches) { const c = $("t-card"); c.classList.remove("fade"); void c.offsetWidth; c.classList.add("fade"); }
+}
+// Every keystroke keeps the draft on the device; nothing is an answer until Submit.
+function idraft() {
+  V = I.setDraft(V, { text: tText.value, confidence: tConf.value, event_date: tDate.value });
+  isave();
+  const id = V.doc.questions[V.current].question_id;
+  tState(V.drafts[id] ? "Draft saved on this device" : STATE_LABEL[I.stateOf(V, id)]);
+}
+for (const el of [tText, tDate, tConf]) el.addEventListener("input", idraft);
+function igo(next) { V = I.display(next, now()); isave(); irender(true); }
+function iafter(res) {
+  V = res.state; isave();
+  if (res.end) { irender(false); openTalkSheet(); } else igo(V);
+}
+$("t-submit").addEventListener("click", () => {
+  let res;
+  try { res = I.submit(V, now()); } catch (e) { tState(e.message); return; }
+  iafter(res);
+});
+$("t-forgot").addEventListener("click", () => iafter(I.dontRemember(V, now())));
+$("t-skip").addEventListener("click", () => iafter(I.skip(V, now())));
+$("t-back").addEventListener("click", () => igo(I.back(V)));
+const tSheet = $("t-sheet");
+let tExport = "";
+function openTalkSheet() {
+  const c = I.counts(V);
+  $("t-n-answered").textContent = c.answered; $("t-n-forgot").textContent = c.dont_remember;
+  $("t-n-skipped").textContent = c.skipped; $("t-n-unseen").textContent = c.unseen;
+  $("t-drafts").hidden = !c.drafts;
+  $("t-drafts").textContent = c.drafts ? `${c.drafts} draft${c.drafts > 1 ? "s are" : " is"} not submitted and will not be exported.` : "";
+  tExport = I.exportToon(V, now());
+  $("t-preview").textContent = tExport; $("t-sheet-msg").textContent = "";
+  if (!tSheet.open) tSheet.showModal();
+}
+function iexported() { V = I.markExported(V, now()); isave(); }
+$("t-export-open").addEventListener("click", openTalkSheet);
+$("t-close").addEventListener("click", () => tSheet.close());
+tSheet.addEventListener("click", (e) => { if (e.target === tSheet) tSheet.close(); });
+$("t-copy").addEventListener("click", async () => {
+  try { await navigator.clipboard.writeText(tExport); iexported(); $("t-sheet-msg").textContent = "Copied the interview TOON."; }
+  catch { $("t-preview-box").open = true; $("t-sheet-msg").textContent = "Copying is blocked here: select the preview text, or save a .toon file."; }
+});
+$("t-download").addEventListener("click", () => {
+  const url = URL.createObjectURL(new Blob([tExport], { type: "text/plain" })), a = document.createElement("a");
+  a.href = url; a.download = `${V.doc.batch.batch_id}-answered.toon`;
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  iexported(); $("t-sheet-msg").textContent = `Saved ${a.download}.`;
+});
+$("t-new").addEventListener("click", () => { tSheet.close(); showStart(); startMsg(""); });
 
 /* ---------- Question card ---------- */
 const range = $("range"), track = range.parentElement;
@@ -884,7 +1325,8 @@ const result = (v) => ({ content: [{ type: "text", text: JSON.stringify(v) }] })
 const ro = { readOnlyHint: true }, none = { type: "object", properties: {}, additionalProperties: false };
 const tools = [
   { name: "get_metadata", description: "Return what Calibrator does and its session TOON schema: the fields of each table, the allowed origins and question states, and where the schema is documented.", inputSchema: none, annotations: ro,
-    async execute() { return result({ title: "Calibrator", url: "https://teoyujie.org/visuals/calibrator/", format: C.FORMAT, version: C.VERSION, import_fields: C.FIELDS, export_fields: C.EXPORT_FIELDS, origins: C.ORIGINS, scores: C.SCORES, states: C.STATES, schema_docs: "https://github.com/yujieteo/visuals/blob/main/viz/calibrator/README.md#session-toon-schema" }); } },
+    async execute() { return result({ title: "Calibrator", url: "https://teoyujie.org/visuals/calibrator/", format: C.FORMAT, version: C.VERSION, import_fields: C.FIELDS, export_fields: C.EXPORT_FIELDS, origins: C.ORIGINS, scores: C.SCORES, states: C.STATES, schema_docs: "https://github.com/yujieteo/visuals/blob/main/viz/calibrator/README.md#session-toon-schema",
+      interview: { format: I.FORMAT, version: I.VERSION, import_fields: I.FIELDS, export_fields: I.EXPORT_FIELDS, states: I.STATES, kinds: I.KINDS, schema_docs: "https://github.com/yujieteo/visuals/blob/main/viz/calibrator/README.md#life-interview-toon-schema" } }); } },
   { name: "get_session_summary", description: "Return the loaded session's id, position and answered, skipped and unseen counts, or null when no session is loaded. Never changes the page.", inputSchema: none, annotations: ro,
     async execute() { const s = loaded(); return result(s ? { session_id: s.doc.session.session_id, current: s.current + 1, ...C.counts(s), unfinished: C.unfinished(s) } : null); } },
   { name: "get_current_question", description: "Return the question on screen: its number, id, proposition, context, high and low actions and its state (answered, skipped or unseen). Generator scores and sources are not included.", inputSchema: none, annotations: ro,
@@ -898,13 +1340,21 @@ const tools = [
   { name: "validate_session_toon", description: "Check whether a session TOON would import: decode it, validate the schema, and return the session id and question count or the first error. Never loads it.", annotations: ro,
     inputSchema: { type: "object", properties: { toon: { type: "string" } }, required: ["toon"], additionalProperties: false },
     async execute({ toon }) { try { const d = C.parseSession(toon); return result({ valid: true, session_id: d.session.session_id, questions: d.questions.length }); } catch (e) { return result({ valid: false, error: e.message }); } } },
+  { name: "get_interview_summary", description: "Return the loaded life interview's batch id, position and answered, don't-remember, skipped, unseen and draft counts, or null when no interview is loaded. Never changes the page.", inputSchema: none, annotations: ro,
+    async execute() { const v = iloaded(); return result(v ? { batch_id: v.doc.batch.batch_id, current: v.current + 1, ...I.counts(v), unfinished: I.unfinished(v) } : null); } },
+  { name: "export_interview_toon", description: "Return the loaded life interview as exported optchat-interview TOON (every submitted answer and revision, without drafts), as Copy TOON would, without marking it exported.", inputSchema: none, annotations: ro,
+    async execute() { const v = iloaded(); return result(v ? { toon: I.exportToon(v, now()) } : null); } },
+  { name: "validate_interview_toon", description: "Check whether an optchat-interview TOON would import: decode it, validate the schema, and return the batch id, question count and number of answers already in it, or the first error. Never loads it.", annotations: ro,
+    inputSchema: { type: "object", properties: { toon: { type: "string" } }, required: ["toon"], additionalProperties: false },
+    async execute({ toon }) { try { const d = I.parse(toon); return result({ valid: true, batch_id: d.doc.batch.batch_id, questions: d.doc.questions.length, answers: Object.values(d.history).reduce((n, l) => n + l.length, 0) }); } catch (e) { return result({ valid: false, error: e.message }); } } },
 ];
 self.CalibratorTools = tools;
 const mc = (typeof document !== "undefined" && document.modelContext) || (typeof navigator !== "undefined" && navigator.modelContext);
 if (mc && typeof mc.registerTool === "function") for (const t of tools) mc.registerTool(t);
 
-const saved = load();
-if (saved) resume(saved); else showStart();
+const isaved = iload(), saved = load();
+if (isaved && (store.get(MODE) === "interview" || !saved)) iresume(isaved);
+else if (saved) resume(saved); else showStart();
 })();
 </script>
 </body>
