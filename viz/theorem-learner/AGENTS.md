@@ -35,13 +35,15 @@ The format and every rule are in the docstring of `pipeline/learning.py`. Text m
 | --- | --- |
 | `python3 pipeline/packets.py --per 30` | `build/tl-work/packets/` (one packet per theorem: sources, the Lean declaration and its proof text, key concepts, prerequisites, relations), `concept-index.tsv`, `result-index.tsv` |
 | `python3 pipeline/packets.py --concepts ids.txt` | `build/tl-work/concept-packets/` for the concept author |
+| `python3 pipeline/packets.py --marked` | concept packets for every catalog concept the authored proofs mark and no concept file answers yet, most used first |
 | `python3 pipeline/learning.py check FILE...` | every problem of the authored files; 0 problems before a commit |
 | `python3 pipeline/assemble.py` | `raw.json`, with the coverage counts |
 
 Proofs follow `pipeline/proof-author-prompt.md` (tl-proof-prompt/1): Lean first (the packet holds the mathlib proof
 text at the pinned commit), then a web source, then an authored proof, and for a result too deep to write out an
 outline of its real steps with a cited published proof. Every theorem gets a proof; an alternative proof is a different
-route, never an equivalent theorem or a generalization. Concepts follow `pipeline/concept-author-prompt.md`
+route, never an equivalent theorem or a generalization. A record that names a family of results states and proves one named member and lists
+the others in its scope; a record with no precise statement stays unknown, with the reason. Concepts follow `pipeline/concept-author-prompt.md`
 (tl-concept-prompt/1). The packets need the pinned mathlib checkout at `build/te-work/mathlib4` (the Theorem
 Explorer's work directory; `TE_WORK` moves it).
 
