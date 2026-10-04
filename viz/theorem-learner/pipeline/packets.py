@@ -24,7 +24,11 @@ Concept packets (--concepts FILE: one concept id per line) go to concept-packets
 id, name, kind, level, aliases, the catalog's definition text and its basis, the catalog prerequisites, the concepts
 that need it and the results that name it, for the concept author (concept-author-prompt.md).
 
-Run: python3 pipeline/packets.py [--per 30] [--out build/tl-work] [--concepts ids.txt]
+--marked writes concept packets for every catalog concept that the authored theorem files mark ([word](c:id)),
+most used first, leaving out concepts already answered in data/learning/concepts/ and the theorem files' own
+new_concepts.
+
+Run: python3 pipeline/packets.py [--per 30] [--out build/tl-work] [--concepts ids.txt | --marked]
 """
 import argparse
 import base64
@@ -169,13 +173,34 @@ def concept_packets(ids, out, per=120):
     return {"concept_packets": len(packets), "batches": (len(packets) + per - 1) // per}
 
 
+def marked_concepts():
+    """Catalog concept ids marked in the authored theorem files, most used first, without answered ones."""
+    learning = VISUAL / "data" / "learning"
+    count, new = {}, set()
+    for f in sorted((learning / "theorems").glob("*.json")):
+        text = f.read_text(encoding="utf-8")
+        for cid in re.findall(r"\]\((c:[^)\s]+)\)", text):
+            count[cid] = count.get(cid, 0) + 1
+        data = json.loads(text)
+        for t in data["theorems"] if isinstance(data, dict) else data:
+            new.update(c.get("id") for c in t.get("new_concepts") or [])
+    done = set()
+    for f in sorted((learning / "concepts").glob("*.json")) if (learning / "concepts").exists() else []:
+        data = json.loads(f.read_text(encoding="utf-8"))
+        done.update(c.get("id") for c in (data["concepts"] if isinstance(data, dict) else data))
+    return sorted((c for c in count if c not in new and c not in done), key=lambda c: (-count[c], c))
+
+
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--per", type=int, default=30)
     ap.add_argument("--out", type=Path, default=ROOT / "build" / "tl-work")
     ap.add_argument("--concepts", type=Path, help="write concept packets for the ids in this file instead")
+    ap.add_argument("--marked", action="store_true", help="write concept packets for the concepts the proofs mark")
     a = ap.parse_args()
-    if a.concepts:
+    if a.marked:
+        print(concept_packets(marked_concepts(), a.out))
+    elif a.concepts:
         print(concept_packets([x.strip() for x in a.concepts.read_text().split() if x.strip()], a.out))
     else:
         print(build(a.per, a.out))
