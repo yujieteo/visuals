@@ -1,0 +1,1927 @@
+[
+ {
+  "id": "nm:am-gm-inequality-equality-condition",
+  "statement": "Let $w_i > 0$ with $\\sum_{i \\in s} w_i = 1$ and $z_i \\ge 0$ for $i$ in a finite set $s$. The geometric mean $\\prod z_i^{w_i}$ equals the [weighted mean](c:weighted-mean) $m = \\sum w_i z_i$ if and only if $z_j = m$ for every $j \\in s$.",
+  "hypotheses": [
+   {
+    "id": "h:weights",
+    "text": "Each weight satisfies $w_i > 0$ for $i \\in s$.",
+    "concept": null
+   },
+   {
+    "id": "h:unit-sum",
+    "text": "The weights sum to one: $\\sum_{i \\in s} w_i = 1$.",
+    "concept": null
+   },
+   {
+    "id": "h:values",
+    "text": "Each value satisfies $z_i \\ge 0$ for $i \\in s$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "$\\prod_{i \\in s} z_i^{w_i} = \\sum_{i \\in s} w_i z_i$ holds exactly when $z_j = \\sum_{i \\in s} w_i z_i$ for every $j \\in s$.",
+  "formal": {
+   "decl": "Real.geom_mean_eq_arith_mean_weighted_iff_of_pos'",
+   "difference": null
+  },
+  "proofs": [
+   {
+    "id": "strict-convexity",
+    "name": "Strict convexity of exp",
+    "slogan": "Take logarithms of positive values, so that the equality case of Jensen for the strictly convex exponential forces all values to be equal.",
+    "scope": "The whole equivalence, in two cases: some $z_i$ is zero, or all $z_i$ are positive. The weights sum to $1$, so $s$ is nonempty.",
+    "mechanisms": [
+     "m:convexity",
+     "m:case-analysis"
+    ],
+    "roles": [
+     {
+      "h": "h:weights",
+      "why": "Positive weights make a zero value force the product to $0$, and make Jensen's equality case apply at every point.",
+      "steps": [
+       "s:zero",
+       "s:jensen"
+      ]
+     },
+     {
+      "h": "h:unit-sum",
+      "why": "Weights summing to one make both sums convex combinations and give $m = c$ for constant values.",
+      "steps": [
+       "s:jensen",
+       "s:back"
+      ]
+     },
+     {
+      "h": "h:values",
+      "why": "Nonnegative values give the zero case and allow the logarithm in the positive case.",
+      "steps": [
+       "s:zero",
+       "s:log"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:zero",
+      "slogan": "Settle the case where some value $z_i$ equals zero.",
+      "detail": "Since $w_i > 0$, the factor $z_i^{w_i}$ is $0$, so the product is $0$. A sum of nonnegative terms $w_j z_j$ is $0$ only if every $z_j = 0$. So equality forces $m = 0$ and every $z_j = m$. Conversely, if every $z_j = m$, then $m = z_i = 0$ and both sides are $0$.",
+      "uses": []
+     },
+     {
+      "id": "s:log",
+      "slogan": "Write both means of positive values through the [exponential](c:exponential-function) and the [logarithm](c:logarithm).",
+      "detail": "Assume all $z_i > 0$ and put $y_i = \\log z_i$. Then $\\prod z_i^{w_i} = \\exp(\\sum w_i y_i)$ and $\\sum w_i z_i = \\sum w_i \\exp(y_i)$. So equality of the means says that Jensen's inequality for $\\exp$ is an equality at the points $y_i$.",
+      "uses": []
+     },
+     {
+      "id": "s:jensen",
+      "slogan": "Read the equality case of Jensen's inequality for the [strictly convex](c:strictly-convex-function) function $\\exp$.",
+      "detail": "The function $\\exp$ is strictly convex. For positive weights that sum to one, $\\exp(\\sum w_i y_i) = \\sum w_i \\exp(y_i)$ holds if and only if all $y_i$ are equal.",
+      "uses": [
+       "nm:strict-jensen-inequality"
+      ]
+     },
+     {
+      "id": "s:back",
+      "slogan": "Turn equal logarithms into values that are equal to the mean.",
+      "detail": "All $y_i$ equal means all $z_i$ equal one value $c$, because $\\log$ is injective. Then $m = \\sum w_i c = c$, so $z_j = m$ for every $j$. Conversely, if every $z_j = m$ then all $y_j$ are equal and the previous step gives equality of the means.",
+      "uses": []
+     },
+     {
+      "id": "s:combine",
+      "slogan": "Combine the two cases into the stated equivalence.",
+      "detail": "The zero case and the positive case cover every nonnegative family $z$, and each case proves the equivalence. So the means are equal exactly when every $z_j = m$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:zero",
+      "s:combine"
+     ],
+     [
+      "s:log",
+      "s:jensen"
+     ],
+     [
+      "s:jensen",
+      "s:back"
+     ],
+     [
+      "s:back",
+      "s:combine"
+     ]
+    ],
+    "conclusion": "s:combine",
+    "concepts": {
+     "c:weighted-mean": "The common value of all $z_j$ in the equality case is this mean.",
+     "c:exponential-function": "The exponential turns the geometric mean into a weighted exponential average.",
+     "c:logarithm": "The logarithm moves positive values to points where Jensen applies.",
+     "c:strictly-convex-function": "Strict convexity of exp gives the equality case of Jensen."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Real.geom_mean_eq_arith_mean_weighted_iff_of_pos'",
+     "follows": true,
+     "note": "mathlib splits on a zero value, then applies StrictConvexOn.map_sum_eq_iff to strictConvexOn_exp at the points log z_i."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:am-gm-inequality-strict-inequality-condition",
+  "statement": "Let $w_i > 0$ with $\\sum_{i \\in s} w_i = 1$ and $z_i \\ge 0$ for $i$ in a finite set $s$. The geometric mean $\\prod z_i^{w_i}$ is strictly smaller than the [weighted mean](c:weighted-mean) $\\sum w_i z_i$ if and only if $z_j \\ne z_k$ for some $j, k \\in s$.",
+  "hypotheses": [
+   {
+    "id": "h:weights",
+    "text": "Each weight satisfies $w_i > 0$ for $i \\in s$.",
+    "concept": null
+   },
+   {
+    "id": "h:unit-sum",
+    "text": "The weights sum to one: $\\sum_{i \\in s} w_i = 1$.",
+    "concept": null
+   },
+   {
+    "id": "h:values",
+    "text": "Each value satisfies $z_i \\ge 0$ for $i \\in s$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "$\\prod z_i^{w_i} < \\sum w_i z_i$ holds exactly when the values $z_i$ are not all equal.",
+  "formal": {
+   "decl": "Real.geom_mean_lt_arith_mean_weighted_iff_of_pos",
+   "difference": null
+  },
+  "proofs": [
+   {
+    "id": "from-equality-case",
+    "name": "From the equality case",
+    "slogan": "The weighted AM-GM inequality orders the two means, and its equality condition says exactly when they coincide.",
+    "scope": "The whole equivalence for positive weights; nothing is assumed about the values except $z_i \\ge 0$.",
+    "mechanisms": [
+     "m:contrapositive",
+     "m:case-analysis"
+    ],
+    "roles": [
+     {
+      "h": "h:weights",
+      "why": "Both the AM-GM inequality and its equality condition need positive weights.",
+      "steps": [
+       "s:amgm",
+       "s:equality"
+      ]
+     },
+     {
+      "h": "h:unit-sum",
+      "why": "Weights summing to one make the mean of a constant family equal to that constant.",
+      "steps": [
+       "s:amgm",
+       "s:constant"
+      ]
+     },
+     {
+      "h": "h:values",
+      "why": "Nonnegative values are the domain of the AM-GM inequality and its equality condition.",
+      "steps": [
+       "s:amgm",
+       "s:equality"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:amgm",
+      "slogan": "Bound the geometric mean above by the [weighted mean](c:weighted-mean).",
+      "detail": "The weighted AM-GM inequality gives $\\prod z_i^{w_i} \\le m$ where $m = \\sum w_i z_i$.",
+      "uses": [
+       "nm:arithmetic-mean-geometric-mean"
+      ]
+     },
+     {
+      "id": "s:equality",
+      "slogan": "Read off when the two means are equal.",
+      "detail": "By the equality condition, $\\prod z_i^{w_i} = m$ holds if and only if $z_j = m$ for every $j \\in s$.",
+      "uses": [
+       "nm:am-gm-inequality-equality-condition"
+      ]
+     },
+     {
+      "id": "s:constant",
+      "slogan": "Show that all values equal to the mean is the same as all values equal.",
+      "detail": "If every $z_j = m$, then the values are equal to each other. If every $z_j$ equals one value $c$, then $m = \\sum w_i c = c$ because the weights sum to $1$, so every $z_j = m$.",
+      "uses": []
+     },
+     {
+      "id": "s:negate",
+      "slogan": "Negate the equality case to get strict inequality exactly when two values differ.",
+      "detail": "By the first step the geometric mean is at most $m$, so it is less than $m$ exactly when it is not equal to $m$. By the second and third steps it is equal to $m$ exactly when all values are equal. So it is less than $m$ if and only if $z_j \\ne z_k$ for some $j, k$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:amgm",
+      "s:negate"
+     ],
+     [
+      "s:equality",
+      "s:negate"
+     ],
+     [
+      "s:constant",
+      "s:negate"
+     ]
+    ],
+    "conclusion": "s:negate",
+    "concepts": {
+     "c:weighted-mean": "Both the inequality and its equality case compare the geometric mean with this mean."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Real.geom_mean_lt_arith_mean_weighted_iff_of_pos",
+     "follows": true,
+     "note": "mathlib combines geom_mean_le_arith_mean_weighted with geom_mean_eq_arith_mean_weighted_iff_of_pos' in both directions."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:25847",
+  "statement": "Let $R$ be a commutative Noetherian [local ring](c:local-ring) and $M \\ne 0$ a finitely generated $R$-module of finite [projective dimension](c:projective-dimension). Then $\\operatorname{pd}_R M + \\operatorname{depth} M = \\operatorname{depth} R$.",
+  "hypotheses": [
+   {
+    "id": "h:local",
+    "text": "The ring $R$ is a commutative Noetherian [local ring](c:local-ring) with maximal ideal $\\mathfrak m$.",
+    "concept": "c:local-ring"
+   },
+   {
+    "id": "h:module",
+    "text": "The module $M$ is nonzero and finitely generated.",
+    "concept": null
+   },
+   {
+    "id": "h:finite-pd",
+    "text": "The [projective dimension](c:projective-dimension) of $M$ is finite.",
+    "concept": "c:projective-dimension"
+   }
+  ],
+  "conclusion": "$\\operatorname{pd}_R M + \\operatorname{depth} M = \\operatorname{depth} R$, where [depth](c:depth) is measured with respect to $\\mathfrak m$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "induction-on-depth",
+    "name": "Induction on the depth of the ring",
+    "slogan": "Induct on the depth of $R$, cutting down by a regular element when depths are positive and passing to a syzygy when $M$ has depth zero.",
+    "scope": "The whole formula, in three cases: $\\operatorname{depth} R = 0$; $\\operatorname{depth} R > 0$ and $\\operatorname{depth} M > 0$; $\\operatorname{depth} M = 0 < \\operatorname{depth} R$.",
+    "mechanisms": [
+     "m:induction",
+     "m:exact-sequence",
+     "m:case-analysis"
+    ],
+    "roles": [
+     {
+      "h": "h:local",
+      "why": "Locality gives a minimal resolution, a socle element when the depth is zero, and a regular element by prime avoidance.",
+      "steps": [
+       "s:minimal",
+       "s:depth-zero",
+       "s:reduce"
+      ]
+     },
+     {
+      "h": "h:module",
+      "why": "Finite generation gives finite free resolutions, and $M \\ne 0$ keeps $M/xM$ and the syzygy nonzero.",
+      "steps": [
+       "s:minimal",
+       "s:reduce",
+       "s:syzygy"
+      ]
+     },
+     {
+      "h": "h:finite-pd",
+      "why": "A finite resolution has a last map, which carries the argument, and lets the syzygy have smaller length.",
+      "steps": [
+       "s:minimal",
+       "s:depth-zero",
+       "s:syzygy"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:minimal",
+      "slogan": "Choose a minimal [free resolution](c:free-resolution) of $M$ of length $n = \\operatorname{pd}_R M$.",
+      "detail": "Over a Noetherian local ring, $M$ has a resolution $0 \\to F_n \\to \\dots \\to F_0 \\to M \\to 0$ by finite free modules. By Nakayama's lemma it can be chosen minimal, so every matrix has entries in $\\mathfrak m$. Its length is $\\operatorname{pd}_R M$.",
+      "uses": [
+       "nl:7346"
+      ]
+     },
+     {
+      "id": "s:depth-zero",
+      "slogan": "Settle the case $\\operatorname{depth} R = 0$ by showing that $M$ is free.",
+      "detail": "Depth zero gives a nonzero $s \\in R$ with $\\mathfrak m s = 0$. If $n > 0$, the injective map $F_n \\to F_{n-1}$ has entries in $\\mathfrak m$, so it kills the nonzero submodule $sF_n$, which is absurd. So $n = 0$, $M$ is free, and $0 + \\operatorname{depth} M = \\operatorname{depth} R$.",
+      "uses": []
+     },
+     {
+      "id": "s:reduce",
+      "slogan": "Cut down by a regular element when $\\operatorname{depth} R > 0$ and $\\operatorname{depth} M > 0$.",
+      "detail": "Prime avoidance gives $x \\in \\mathfrak m$ that is a nonzerodivisor on $R$ and on $M$. Reducing a minimal resolution modulo $x$ keeps it exact and minimal, so $\\operatorname{pd}_{R/x}(M/xM) = \\operatorname{pd}_R M$, while both depths drop by one. Induction on $\\operatorname{depth} R$ gives the formula.",
+      "uses": [
+       "nl:7346"
+      ]
+     },
+     {
+      "id": "s:syzygy",
+      "slogan": "Pass to the first [syzygy](c:syzygy) when $\\operatorname{depth} M = 0 < \\operatorname{depth} R$.",
+      "detail": "Then $M$ is not free, so $n \\ge 1$. Let $0 \\to K \\to F_0 \\to M \\to 0$ be the first step of the resolution, so $\\operatorname{pd} K = n - 1$. The depth lemma gives $\\operatorname{depth} K = 1$, and the previous step applied to $K$ gives $(n - 1) + 1 = \\operatorname{depth} R$.",
+      "uses": []
+     },
+     {
+      "id": "s:combine",
+      "slogan": "Combine the three cases into the formula for every admissible module.",
+      "detail": "The case $\\operatorname{depth} R = 0$ is the second step. If $\\operatorname{depth} R > 0$, then either $\\operatorname{depth} M > 0$, which is the third step, or $\\operatorname{depth} M = 0$, which is the fourth step. These cases cover all pairs.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:minimal",
+      "s:depth-zero"
+     ],
+     [
+      "s:minimal",
+      "s:reduce"
+     ],
+     [
+      "s:minimal",
+      "s:syzygy"
+     ],
+     [
+      "s:reduce",
+      "s:syzygy"
+     ],
+     [
+      "s:depth-zero",
+      "s:combine"
+     ],
+     [
+      "s:reduce",
+      "s:combine"
+     ],
+     [
+      "s:syzygy",
+      "s:combine"
+     ]
+    ],
+    "conclusion": "s:combine",
+    "concepts": {
+     "c:local-ring": "Locality supplies the maximal ideal that makes resolutions minimal and depth meaningful.",
+     "c:projective-dimension": "The formula measures the length of a minimal resolution.",
+     "c:depth": "Depth drops by one under a regular element and rises by one along a syzygy.",
+     "c:free-resolution": "The minimal free resolution carries the matrices with entries in $\\mathfrak m$.",
+     "c:syzygy": "The first syzygy has depth one when $M$ has depth zero."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Bruns and Herzog, Cohen-Macaulay Rings, Theorem 1.3.3: induction on depth R with the depth lemma."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:3265",
+  "statement": "Let $f\\colon X \\to Y$ be a [proper](c:proper-map) morphism of complex algebraic varieties with $X$ irreducible. Then $Rf_* \\mathrm{IC}_X \\cong \\bigoplus_i {}^p\\mathcal H^i(Rf_* \\mathrm{IC}_X)[-i]$, and each ${}^p\\mathcal H^i$ is a semisimple [perverse sheaf](c:perverse-sheaf).",
+  "hypotheses": [
+   {
+    "id": "h:proper",
+    "text": "The morphism $f\\colon X \\to Y$ is [proper](c:proper-map).",
+    "concept": "c:proper-map"
+   },
+   {
+    "id": "h:varieties",
+    "text": "The spaces $X$ and $Y$ are complex algebraic varieties and $X$ is irreducible, with $\\mathrm{IC}_X$ its [intersection complex](c:intersection-cohomology).",
+    "concept": null
+   }
+  ],
+  "conclusion": "The pushforward $Rf_* \\mathrm{IC}_X$ is a direct sum of shifted semisimple [perverse sheaves](c:perverse-sheaf), namely its shifted perverse cohomology sheaves.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "weights",
+    "name": "Weights over finite fields",
+    "slogan": "Reduce to finite fields, where Deligne's weights make the pushforward pure, and purity forces both the splitting and the semisimplicity.",
+    "scope": "An outline for rational or $\\ell$-adic coefficients; the family also contains versions for semisimple local systems of geometric origin. Each step rests on the cited work.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:reduction"
+    ],
+    "roles": [
+     {
+      "h": "h:proper",
+      "why": "Properness lets the pushforward preserve purity and allows relative hard Lefschetz.",
+      "steps": [
+       "s:proper-pure",
+       "s:split"
+      ]
+     },
+     {
+      "h": "h:varieties",
+      "why": "Algebraic data spread out over finite fields, and irreducibility makes $\\mathrm{IC}_X$ a single pure object.",
+      "steps": [
+       "s:finite-field",
+       "s:ic-pure",
+       "s:descend"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:finite-field",
+      "slogan": "Spread the data out and reduce to varieties over a finite field.",
+      "detail": "The varieties, the map and the sheaves are defined over a finitely generated ring. Specializing to finite fields $\\mathbb F_q$ and using $\\ell$-adic sheaves reduces the statement to Frobenius-equivariant objects (BBD, Chapter 6).",
+      "uses": []
+     },
+     {
+      "id": "s:ic-pure",
+      "slogan": "Show that the [intersection complex](c:intersection-cohomology) of an irreducible variety is pure.",
+      "detail": "Deligne's weight theory gives that $\\mathrm{IC}_X$ over $\\mathbb F_q$ is pure of weight $\\dim X$ (BBD, Chapter 5), so Frobenius acts on its stalk cohomology with controlled weights.",
+      "uses": []
+     },
+     {
+      "id": "s:proper-pure",
+      "slogan": "Push the pure complex forward along the [proper](c:proper-map) map and keep purity.",
+      "detail": "Deligne's theorem in Weil II says that the proper pushforward of a pure complex of weight $w$ is pure of weight $w$. So $Rf_* \\mathrm{IC}_X$ is pure.",
+      "uses": []
+     },
+     {
+      "id": "s:split",
+      "slogan": "Split the pure complex into its shifted [perverse](c:perverse-sheaf) cohomology sheaves.",
+      "detail": "Over $\\overline{\\mathbb F}_q$ a pure complex is the direct sum of the shifts of its perverse cohomology sheaves; the proof uses the relative hard Lefschetz theorem for the proper map and the vanishing of the relevant Ext groups for pure objects (BBD, Section 5.4).",
+      "uses": [
+       "nl:13051"
+      ]
+     },
+     {
+      "id": "s:semisimple",
+      "slogan": "Show that each pure perverse cohomology sheaf is semisimple.",
+      "detail": "Each ${}^p\\mathcal H^i$ of a pure complex is a pure perverse sheaf. A pure perverse sheaf is geometrically semisimple, because Frobenius weights prevent nonsplit extensions between simple pure perverse sheaves (BBD, Theorem 5.3.8).",
+      "uses": []
+     },
+     {
+      "id": "s:descend",
+      "slogan": "Transfer the splitting and the semisimplicity from finite fields to complex varieties.",
+      "detail": "Comparison theorems for $\\ell$-adic sheaves of geometric origin carry both statements from characteristic $p$ back to $\\mathbb C$ through the spreading out of the first step. This gives the theorem for $\\mathbb Q_\\ell$ coefficients and then for the complex or rational ones (BBD, Theorem 6.2.5 and the comparison of Section 6.2).",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:finite-field",
+      "s:ic-pure"
+     ],
+     [
+      "s:ic-pure",
+      "s:proper-pure"
+     ],
+     [
+      "s:proper-pure",
+      "s:split"
+     ],
+     [
+      "s:split",
+      "s:semisimple"
+     ],
+     [
+      "s:semisimple",
+      "s:descend"
+     ]
+    ],
+    "conclusion": "s:descend",
+    "concepts": {
+     "c:proper-map": "Properness keeps purity under pushforward and gives relative hard Lefschetz.",
+     "c:perverse-sheaf": "The summands of the decomposition are shifted perverse sheaves.",
+     "c:intersection-cohomology": "The intersection complex is the pure object that is pushed forward."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "A. A. Beilinson, J. Bernstein, P. Deligne and O. Gabber, Faisceaux pervers, Asterisque 100, Societe Mathematique de France (1982), 5-171",
+     "url": "https://smf.emath.fr/system/files/2017-08/smf_ast_100.pdf",
+     "note": "The decomposition theorem is Theorem 6.2.5 there; the outline follows its proof through Deligne's weights."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q794269",
+  "statement": "Let a body of [linear elasticity](c:linear-elasticity) occupy a region $\\Omega$ with a symmetric elasticity tensor, fixed on a boundary part $\\Gamma_u$. Let two force systems $P = (f^P, t^P)$ and $Q = (f^Q, t^Q)$ be in equilibrium with displacements $u^P$ and $u^Q$. Then the work of $P$ through $u^Q$ equals the work of $Q$ through $u^P$.",
+  "hypotheses": [
+   {
+    "id": "h:elastic",
+    "text": "The material obeys $\\sigma = C\\varepsilon(u)$ with $\\varepsilon(u) = \\tfrac12(\\nabla u + \\nabla u^{T})$ and $C_{ijkl} = C_{klij}$.",
+    "concept": "c:linear-elasticity"
+   },
+   {
+    "id": "h:equilibrium",
+    "text": "Each system is in equilibrium: $\\operatorname{div}\\sigma + f = 0$ in $\\Omega$ and $\\sigma n = t$ on the loaded boundary $\\Gamma_t$.",
+    "concept": null
+   },
+   {
+    "id": "h:supports",
+    "text": "The displacement fields $u^P$ and $u^Q$ vanish on the fixed part $\\Gamma_u$, so the supports do no work.",
+    "concept": null
+   }
+  ],
+  "conclusion": "$\\int_\\Omega f^P \\cdot u^Q\\,dV + \\int_{\\Gamma_t} t^P \\cdot u^Q\\,dS = \\int_\\Omega f^Q \\cdot u^P\\,dV + \\int_{\\Gamma_t} t^Q \\cdot u^P\\,dS$.",
+  "formal": null,
+  "new_concepts": [
+   {
+    "id": "c:linear-elasticity",
+    "name": "linear elasticity",
+    "reminder": "Small deformations of a body whose stress is a linear function of strain.",
+    "definition": "A body is linearly elastic when its stress tensor is $\\sigma = C\\varepsilon$ for a fixed elasticity tensor $C$ and the small strain $\\varepsilon = \\tfrac12(\\nabla u + \\nabla u^{T})$ of the displacement field $u$.",
+    "requires": [
+     "c:vector-field"
+    ]
+   }
+  ],
+  "proofs": [
+   {
+    "id": "virtual-work",
+    "name": "Virtual work and symmetry of the elasticity tensor",
+    "slogan": "Write each work as the integral of stress against the other strain and swap the strains with the symmetric elasticity tensor.",
+    "scope": "The continuum statement for the small-strain theory. Point loads are limits of distributed loads, and a discrete structure gives $P^{T}K^{-1}Q = Q^{T}K^{-1}P$ for a symmetric stiffness matrix $K$.",
+    "mechanisms": [
+     "m:stokes",
+     "m:symmetry"
+    ],
+    "roles": [
+     {
+      "h": "h:equilibrium",
+      "why": "Equilibrium turns the work of the loads into an integral of stress against strain.",
+      "steps": [
+       "s:virtual",
+       "s:back"
+      ]
+     },
+     {
+      "h": "h:supports",
+      "why": "The vanishing displacement on $\\Gamma_u$ removes the boundary term there.",
+      "steps": [
+       "s:virtual",
+       "s:back"
+      ]
+     },
+     {
+      "h": "h:elastic",
+      "why": "The linear law and the symmetry of $C$ let the two strains swap.",
+      "steps": [
+       "s:law",
+       "s:symmetry"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:virtual",
+      "slogan": "Write the work of $P$ through $u^Q$ as an integral of stress against strain.",
+      "detail": "Multiply $\\operatorname{div}\\sigma^P + f^P = 0$ by $u^Q$ and integrate over $\\Omega$. The divergence theorem, $\\sigma^P n = t^P$ on $\\Gamma_t$ and $u^Q = 0$ on $\\Gamma_u$ give $W_{PQ} = \\int_\\Omega \\sigma^P : \\varepsilon(u^Q)\\,dV$, since $\\sigma^P$ is symmetric.",
+      "uses": [
+       "wd:Q338886"
+      ]
+     },
+     {
+      "id": "s:law",
+      "slogan": "Insert the linear law to express the integrand through the two strains.",
+      "detail": "Since $\\sigma^P = C\\varepsilon(u^P)$, we get $W_{PQ} = \\int_\\Omega C\\varepsilon(u^P) : \\varepsilon(u^Q)\\,dV$. Only the two strains and the tensor $C$ remain in the integrand.",
+      "uses": []
+     },
+     {
+      "id": "s:symmetry",
+      "slogan": "Swap the two strains using the symmetry of the elasticity tensor.",
+      "detail": "At every point $\\varepsilon^P_{ij} C_{ijkl} \\varepsilon^Q_{kl} = \\varepsilon^Q_{kl} C_{klij} \\varepsilon^P_{ij}$ because $C_{ijkl} = C_{klij}$. So $C\\varepsilon^P : \\varepsilon^Q = C\\varepsilon^Q : \\varepsilon^P$.",
+      "uses": []
+     },
+     {
+      "id": "s:back",
+      "slogan": "Read the swapped integral as the work of $Q$ through $u^P$.",
+      "detail": "The first step with $P$ and $Q$ exchanged gives $W_{QP} = \\int_\\Omega \\sigma^Q : \\varepsilon(u^P)\\,dV = \\int_\\Omega C\\varepsilon^Q : \\varepsilon^P\\,dV$. By the symmetry step this equals $W_{PQ}$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:virtual",
+      "s:law"
+     ],
+     [
+      "s:law",
+      "s:symmetry"
+     ],
+     [
+      "s:symmetry",
+      "s:back"
+     ],
+     [
+      "s:virtual",
+      "s:back"
+     ]
+    ],
+    "conclusion": "s:back",
+    "concepts": {
+     "c:linear-elasticity": "The linear stress-strain law with a symmetric tensor drives the swap."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The classical derivation from the principle of virtual work, as in Gurtin, The Linear Theory of Elasticity."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:bhatia-davis-inequality-on-variance",
+  "statement": "Let $X$ be a real [random variable](c:random-variable) with $a \\le X \\le b$ almost surely. Then its [variance](c:variance) satisfies $\\operatorname{Var}(X) \\le (b - \\mathbb{E}X)(\\mathbb{E}X - a)$.",
+  "hypotheses": [
+   {
+    "id": "h:rv",
+    "text": "$X$ is a real [random variable](c:random-variable) on a probability space.",
+    "concept": "c:random-variable"
+   },
+   {
+    "id": "h:bounded",
+    "text": "For real numbers $a \\le b$, the bounds $a \\le X \\le b$ hold [almost surely](c:almost-everywhere).",
+    "concept": "c:almost-everywhere"
+   }
+  ],
+  "conclusion": "$\\operatorname{Var}(X) \\le (b - m)(m - a)$ where $m = \\mathbb{E}X$ is the [expected value](c:expected-value) of $X$.",
+  "formal": {
+   "decl": "ProbabilityTheory.variance_le_sub_mul_sub",
+   "difference": null
+  },
+  "proofs": [
+   {
+    "id": "nonnegative-product",
+    "name": "Expectation of a nonnegative product",
+    "slogan": "The product $(b - X)(X - a)$ is nonnegative, and its expectation rearranges into the gap between the bound and the variance.",
+    "scope": "The whole inequality. Boundedness makes $X$ and $X^2$ integrable, so every expectation below exists.",
+    "mechanisms": [
+     "m:algebraic-identity",
+     "m:averaging"
+    ],
+    "roles": [
+     {
+      "h": "h:bounded",
+      "why": "The bounds make both factors nonnegative almost surely and make $X$ and $X^2$ integrable.",
+      "steps": [
+       "s:product",
+       "s:expand"
+      ]
+     },
+     {
+      "h": "h:rv",
+      "why": "A real random variable has an expectation and a variance to compare.",
+      "steps": [
+       "s:expand",
+       "s:variance"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:product",
+      "slogan": "Show that $(b - X)(X - a)$ is nonnegative almost surely.",
+      "detail": "Almost surely $b - X \\ge 0$ and $X - a \\ge 0$, so the product of the two factors is $\\ge 0$ almost surely.",
+      "uses": []
+     },
+     {
+      "id": "s:expand",
+      "slogan": "Expand the product and take the expectation.",
+      "detail": "Write $(b - X)(X - a) = -X^2 + (a + b)X - ab$. Since $X$ is bounded, linearity of expectation gives $0 \\le -\\mathbb{E}[X^2] + (a + b)m - ab$.",
+      "uses": []
+     },
+     {
+      "id": "s:variance",
+      "slogan": "Bound the [variance](c:variance) through $\\operatorname{Var}(X) = \\mathbb{E}[X^2] - m^2$.",
+      "detail": "For bounded $X$ the variance equals $\\mathbb{E}[X^2] - m^2$. The previous step gives $\\mathbb{E}[X^2] \\le (a + b)m - ab$, so $\\operatorname{Var}(X) \\le (a + b)m - ab - m^2$.",
+      "uses": []
+     },
+     {
+      "id": "s:factor",
+      "slogan": "Factor the right side as $(b - m)(m - a)$.",
+      "detail": "Expanding gives $(b - m)(m - a) = -m^2 + (a + b)m - ab$, which is the bound of the previous step.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:product",
+      "s:expand"
+     ],
+     [
+      "s:expand",
+      "s:variance"
+     ],
+     [
+      "s:variance",
+      "s:factor"
+     ]
+    ],
+    "conclusion": "s:factor",
+    "concepts": {
+     "c:random-variable": "The statement is about a real-valued random variable $X$.",
+     "c:almost-everywhere": "The bounds hold except on a null set, which expectation ignores.",
+     "c:variance": "The variance is the quantity that the proof bounds from above.",
+     "c:expected-value": "The expected value $m$ appears in the bound and in the variance formula."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "ProbabilityTheory.variance_le_sub_mul_sub",
+     "follows": true,
+     "note": "mathlib integrates the nonnegative product (b - X)(X - a), then uses variance_eq_sub and linarith."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:4157",
+  "statement": "In a [Wightman](c:wightman-axioms) quantum field theory with vacuum $\\Omega$, let $\\mathcal M(W)$ be the [von Neumann algebra](c:von-neumann-algebra) of the fields smeared inside the right wedge $W$. Then $\\Omega$ is cyclic and separating for $\\mathcal M(W)$, and the modular group of $(\\mathcal M(W), \\Omega)$ is the boost group: $\\Delta^{it} = U(\\Lambda_W(-2\\pi t))$.",
+  "hypotheses": [
+   {
+    "id": "h:wightman",
+    "text": "The fields satisfy the [Wightman axioms](c:wightman-axioms): Poincare covariance, the spectrum condition, locality and a cyclic vacuum $\\Omega$.",
+    "concept": "c:wightman-axioms"
+   },
+   {
+    "id": "h:wedge",
+    "text": "The region is the right wedge $W = \\{x : x_1 > |x_0|\\}$, and $\\mathcal M(W)$ is generated by the fields smeared with test functions supported in $W$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "$\\Omega$ is cyclic and separating for $\\mathcal M(W)$, and $\\Delta^{it} = U(\\Lambda_W(-2\\pi t))$ for all real $t$, where $\\Delta$ is the modular operator and $\\Lambda_W(s)$ is the [Lorentz boost](c:boost) of rapidity $s$ that preserves $W$ and moves it toward the future for $s > 0$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "analytic-continuation",
+    "name": "Analytic continuation of the boosts",
+    "slogan": "The boost orbit of a wedge vector continues analytically to a strip, and its boundary value is the Tomita conjugate, which identifies the boosts with the modular group.",
+    "scope": "An outline for Wightman fields; the modular conjugation comes out of the same argument as $J = \\Theta U(R(\\pi))$, with CPT operator $\\Theta$. Each step rests on the cited work.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:analytic-continuation",
+     "m:symmetry"
+    ],
+    "roles": [
+     {
+      "h": "h:wightman",
+      "why": "The spectrum condition gives the analytic continuation, and locality with the cyclic vacuum gives the cyclic and separating property.",
+      "steps": [
+       "s:separating",
+       "s:analytic",
+       "s:boundary"
+      ]
+     },
+     {
+      "h": "h:wedge",
+      "why": "The wedge is invariant under its boosts, and the rotation combined with CPT maps it to the opposite wedge.",
+      "steps": [
+       "s:analytic",
+       "s:boundary",
+       "s:identify"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:separating",
+      "slogan": "Show that the vacuum is cyclic and separating for the wedge [algebra](c:von-neumann-algebra).",
+      "detail": "The Reeh-Schlieder theorem makes $\\Omega$ cyclic for the algebra of every open region, so for $\\mathcal M(W)$. Locality puts the algebra of the opposite wedge in the commutant $\\mathcal M(W)'$, and $\\Omega$ is cyclic for it too, so $\\Omega$ is separating for $\\mathcal M(W)$.",
+      "uses": [
+       "wd:Q1555342"
+      ]
+     },
+     {
+      "id": "s:tomita",
+      "slogan": "Form the Tomita operator $S$ and its polar decomposition $S = J\\Delta^{1/2}$.",
+      "detail": "Define $S A\\Omega = A^*\\Omega$ for $A \\in \\mathcal M(W)$. It is closable because $\\Omega$ is cyclic and separating. The polar decomposition $S = J\\Delta^{1/2}$ gives the modular operator $\\Delta$ and the modular conjugation $J$.",
+      "uses": [
+       "wd:Q7818977"
+      ]
+     },
+     {
+      "id": "s:analytic",
+      "slogan": "Continue the boost orbit of $A\\Omega$ analytically into a strip of width $\\pi$.",
+      "detail": "For $A \\in \\mathcal M(W)$, the vector $U(\\Lambda_W(s))A\\Omega$ extends analytically to $0 < \\operatorname{Im} s < \\pi$. The spectrum condition gives the extension, through the analytic continuation of Wightman functions under the complexified Lorentz group.",
+      "uses": []
+     },
+     {
+      "id": "s:boundary",
+      "slogan": "Identify the boundary value at $\\operatorname{Im} s = \\pi$ with a conjugate of $A^*\\Omega$.",
+      "detail": "At $s = i\\pi$ the complex boost acts on the wedge as the reflection to the opposite wedge. Locality and the CPT theorem give $U(\\Lambda_W(i\\pi))A\\Omega = J_W A^*\\Omega$, with $J_W = \\Theta U(R(\\pi))$ the CPT operator times the rotation by $\\pi$ in the $x_2 x_3$ plane.",
+      "uses": []
+     },
+     {
+      "id": "s:identify",
+      "slogan": "Show that $S$ coincides with $J_W U(\\Lambda_W(i\\pi))$ on the wedge algebra.",
+      "detail": "The previous step gives $S \\subset J_W U(\\Lambda_W(i\\pi))$. The cited paper shows equality of the closed operators by a domain argument that uses the same analysis for the opposite wedge.",
+      "uses": []
+     },
+     {
+      "id": "s:polar",
+      "slogan": "Read $\\Delta$ and $J$ off by uniqueness of the polar decomposition.",
+      "detail": "Write $U(\\Lambda_W(s)) = e^{isK}$. Then $S = J_W e^{-\\pi K}$ has polar decomposition with $J = J_W$ and $\\Delta = e^{-2\\pi K}$. So $\\Delta^{it} = U(\\Lambda_W(-2\\pi t))$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:separating",
+      "s:tomita"
+     ],
+     [
+      "s:tomita",
+      "s:identify"
+     ],
+     [
+      "s:analytic",
+      "s:boundary"
+     ],
+     [
+      "s:boundary",
+      "s:identify"
+     ],
+     [
+      "s:identify",
+      "s:polar"
+     ]
+    ],
+    "conclusion": "s:polar",
+    "concepts": {
+     "c:wightman-axioms": "The axioms supply covariance, the spectrum condition, locality and the vacuum.",
+     "c:von-neumann-algebra": "The wedge algebra is the algebra whose modular theory is computed.",
+     "c:boost": "The boosts of the wedge turn out to be the modular group."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "J. J. Bisognano and E. H. Wichmann, On the duality condition for quantum fields, Journal of Mathematical Physics 17 (1976), 303-321",
+     "note": "The scalar-field case is J. J. Bisognano and E. H. Wichmann, On the duality condition for a Hermitian scalar field, Journal of Mathematical Physics 16 (1975), 985-1007."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q784049",
+  "statement": "Let $(K_n)$ be a sequence of nonempty [convex sets](c:convex-set) in $\\mathbb{R}^d$ that all lie in one bounded set. Then a subsequence converges in the [Hausdorff distance](c:hausdorff-distance) to a nonempty compact convex set $K$.",
+  "hypotheses": [
+   {
+    "id": "h:convex",
+    "text": "Each $K_n$ is a nonempty [convex](c:convex-set) subset of $\\mathbb{R}^d$.",
+    "concept": "c:convex-set"
+   },
+   {
+    "id": "h:bounded",
+    "text": "All $K_n$ lie in one bounded set $B \\subset \\mathbb{R}^d$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "Some subsequence has $d_H(K_{n_m}, K) \\to 0$ for a nonempty compact convex set $K$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "hyperspace-compact",
+    "name": "Compact hyperspace",
+    "slogan": "The nonempty closed subsets of a compact set form a compact space under the Hausdorff distance, and convexity survives Hausdorff limits.",
+    "scope": "The whole theorem; the sets need not be closed, because $d_H(K, \\overline K) = 0$.",
+    "mechanisms": [
+     "m:subsequence",
+     "m:cauchy-completeness",
+     "m:approximation"
+    ],
+    "roles": [
+     {
+      "h": "h:bounded",
+      "why": "Boundedness places all closures in one compact ball $C$.",
+      "steps": [
+       "s:closure",
+       "s:net"
+      ]
+     },
+     {
+      "h": "h:convex",
+      "why": "Convexity of each $K_n$ passes to the limit set through convex combinations.",
+      "steps": [
+       "s:closure",
+       "s:convex-limit"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:closure",
+      "slogan": "Replace each set by its closure inside a closed ball.",
+      "detail": "The closure of a convex set is convex and has Hausdorff distance $0$ from the set. The closures lie in the closed ball $C \\supseteq B$, which is [compact](c:compact-space) by Heine-Borel. So assume each $K_n$ is a nonempty compact convex subset of $C$.",
+      "uses": [
+       "wd:Q253214"
+      ]
+     },
+     {
+      "id": "s:net",
+      "slogan": "Show that the nonempty closed subsets of $C$ form a totally bounded family.",
+      "detail": "Fix $\\varepsilon > 0$ and a finite $\\varepsilon$-net $F \\subset C$. For a closed $K \\subseteq C$ let $F_K = \\{p \\in F : d(p, K) < \\varepsilon\\}$, which is nonempty. Then $d_H(K, F_K) \\le \\varepsilon$, so the finitely many nonempty subsets of $F$ form an $\\varepsilon$-net.",
+      "uses": []
+     },
+     {
+      "id": "s:complete",
+      "slogan": "Show that every Cauchy sequence of nonempty closed subsets of $C$ converges.",
+      "detail": "For a Cauchy sequence $(L_n)$ let $L = \\bigcap_N \\overline{\\bigcup_{n \\ge N} L_n}$, a nonempty compact set. Given $\\varepsilon$, pick $N$ with $d_H(L_n, L_m) < \\varepsilon$ for $n, m \\ge N$. Points of $L$ lie within $2\\varepsilon$ of $L_n$, and compactness gives for each $y \\in L_n$ a point of $L$ within $\\varepsilon$. So $d_H(L_n, L) \\to 0$.",
+      "uses": [
+       "wd:Q468391"
+      ]
+     },
+     {
+      "id": "s:extract",
+      "slogan": "Extract a convergent subsequence from the totally bounded complete family.",
+      "detail": "A sequence in a totally bounded space has a Cauchy subsequence, by a diagonal argument over the finite nets. By the previous step it converges to a nonempty compact set $K$.",
+      "uses": []
+     },
+     {
+      "id": "s:convex-limit",
+      "slogan": "Show that the Hausdorff limit $K$ of convex sets is convex.",
+      "detail": "Take $x, y \\in K$ and $t \\in [0, 1]$. Pick $x_m, y_m \\in K_{n_m}$ with $x_m \\to x$ and $y_m \\to y$. Then $z_m = t x_m + (1 - t) y_m \\in K_{n_m}$ and $z_m \\to z = tx + (1 - t)y$. So $d(z, K) \\le |z - z_m| + d_H(K_{n_m}, K) \\to 0$, and $z \\in K$ since $K$ is closed.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:closure",
+      "s:net"
+     ],
+     [
+      "s:net",
+      "s:extract"
+     ],
+     [
+      "s:complete",
+      "s:extract"
+     ],
+     [
+      "s:extract",
+      "s:convex-limit"
+     ]
+    ],
+    "conclusion": "s:convex-limit",
+    "concepts": {
+     "c:convex-set": "Convexity of the $K_n$ is the property that the limit must keep.",
+     "c:hausdorff-distance": "The Hausdorff distance is the metric in which the subsequence converges.",
+     "c:compact-space": "A compact ball holds all closures and makes the limit set compact."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The compactness of the Hausdorff metric space of compact subsets, as in Burago, Burago and Ivanov, A Course in Metric Geometry, Section 7.3."
+    }
+   },
+   {
+    "id": "support-functions",
+    "name": "Support functions and Arzela-Ascoli",
+    "slogan": "Encode compact convex sets by their support functions, extract a uniformly convergent subsequence, and decode its limit.",
+    "scope": "The whole theorem for sets in a ball of radius $R$; Hausdorff distance between compact convex sets equals the sup-distance of their support functions.",
+    "mechanisms": [
+     "m:subsequence",
+     "m:separation"
+    ],
+    "roles": [
+     {
+      "h": "h:bounded",
+      "why": "The bound $R$ makes the support functions uniformly bounded and uniformly Lipschitz.",
+      "steps": [
+       "s:support",
+       "s:equi"
+      ]
+     },
+     {
+      "h": "h:convex",
+      "why": "Convexity makes each set determined by its support function and gives sublinearity of the limit.",
+      "steps": [
+       "s:support",
+       "s:sublinear",
+       "s:decode"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:support",
+      "slogan": "Pass to closures and encode each [convex](c:convex-set) set by its support function.",
+      "detail": "The closure $\\overline{K_n}$ is compact and convex, in a ball of radius $R$. Put $h_K(u) = \\max_{x \\in K} \\langle x, u \\rangle$ for $u \\in S^{d-1}$. By Hahn-Banach separation, $d_H(K, L) = \\max_u |h_K(u) - h_L(u)|$ for compact convex sets.",
+      "uses": [
+       "wd:Q866116"
+      ]
+     },
+     {
+      "id": "s:equi",
+      "slogan": "Show that the support functions are uniformly bounded and uniformly Lipschitz.",
+      "detail": "For $K$ in the ball of radius $R$ we get $|h_K| \\le R$. Also $h_K(u) - h_K(v) \\le \\max_{x \\in K} \\langle x, u - v \\rangle \\le R|u - v|$, and by symmetry $|h_K(u) - h_K(v)| \\le R|u - v|$.",
+      "uses": []
+     },
+     {
+      "id": "s:ascoli",
+      "slogan": "Extract a uniformly convergent subsequence of the support functions.",
+      "detail": "The functions $h_{K_n}$ on the compact sphere are bounded and equicontinuous. The Arzela-Ascoli theorem gives a subsequence that converges uniformly to a continuous function $h$.",
+      "uses": [
+       "wd:Q1477053"
+      ]
+     },
+     {
+      "id": "s:sublinear",
+      "slogan": "Show that the limit function is sublinear and thus a support function.",
+      "detail": "Extend each $h_{K_n}$ to $\\mathbb{R}^d$ by positive homogeneity. The limit is positively homogeneous and subadditive, since each $h_{K_n}$ is. A finite sublinear function is the support function $h_K$ of the nonempty compact convex set $K = \\{x : \\langle x, u \\rangle \\le h(u) \\text{ for all } u\\}$.",
+      "uses": [
+       "wd:Q866116"
+      ]
+     },
+     {
+      "id": "s:decode",
+      "slogan": "Convert uniform convergence of support functions into Hausdorff convergence.",
+      "detail": "By the distance formula of the first step, $d_H(K_{n_m}, K) = \\max_u |h_{K_{n_m}}(u) - h_K(u)|$. This tends to $0$ because the support functions converge uniformly.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:support",
+      "s:equi"
+     ],
+     [
+      "s:equi",
+      "s:ascoli"
+     ],
+     [
+      "s:ascoli",
+      "s:sublinear"
+     ],
+     [
+      "s:sublinear",
+      "s:decode"
+     ],
+     [
+      "s:support",
+      "s:decode"
+     ]
+    ],
+    "conclusion": "s:decode",
+    "concepts": {
+     "c:convex-set": "Convexity makes a set recoverable from its support function.",
+     "c:hausdorff-distance": "It equals the sup-distance of the support functions."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The support-function proof, as in Schneider, Convex Bodies: The Brunn-Minkowski Theory, Section 1.8."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q4944906",
+  "statement": "Let $X$ be a set and $A \\subseteq X^\\omega$ a [Borel set](c:borel-set) for the product of the discrete topology on $X$. In the [Gale-Stewart game](c:gale-stewart-game) with payoff $A$, players I and II alternately choose points of $X$ and I wins if the sequence lies in $A$. Then one player has a winning strategy.",
+  "hypotheses": [
+   {
+    "id": "h:borel",
+    "text": "The payoff set $A \\subseteq X^\\omega$ is a [Borel set](c:borel-set) in the product topology.",
+    "concept": "c:borel-set"
+   },
+   {
+    "id": "h:game",
+    "text": "The game is the [Gale-Stewart game](c:gale-stewart-game) on $X$ of length $\\omega$ with perfect information.",
+    "concept": "c:gale-stewart-game"
+   }
+  ],
+  "conclusion": "The game is [determined](c:determinacy): player I or player II has a winning strategy.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "martin-unraveling",
+    "name": "Martin's unraveling of Borel games",
+    "slogan": "Cover the Borel game by a game with clopen payoff, which is determined, and project the winning strategy down.",
+    "scope": "An outline of Martin's proof, which uses the axiom of choice and many iterations of the power set operation. Friedman showed that this much set theory is necessary. Each step rests on the cited work.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:structural-induction"
+    ],
+    "roles": [
+     {
+      "h": "h:borel",
+      "why": "Borel rank drives the induction that unravels the payoff set.",
+      "steps": [
+       "s:closed",
+       "s:unravel",
+       "s:project"
+      ]
+     },
+     {
+      "h": "h:game",
+      "why": "The covering construction is defined for games of length $\\omega$ with perfect information.",
+      "steps": [
+       "s:open",
+       "s:cover",
+       "s:project"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:open",
+      "slogan": "Prove that games with open or closed payoff are determined.",
+      "detail": "This is the Gale-Stewart theorem. For an open payoff set, if I has no winning strategy, II can always move to a position from which I still has none. Then the play never reaches the open set at a finite stage, so II wins. Closed payoff sets follow by exchanging the players.",
+      "uses": []
+     },
+     {
+      "id": "s:cover",
+      "slogan": "Define covering games and show that determinacy of the cover gives determinacy of the game.",
+      "detail": "A covering maps a new game tree $T^*$ onto $T$ and respects positions and the player to move. Each strategy $\\sigma^*$ in $T^*$ gives a strategy $\\sigma$ in $T$ whose plays are images of plays of $\\sigma^*$. If $\\sigma^*$ wins for the payoff $\\varphi^{-1}(A)$, then $\\sigma$ wins for $A$ (Martin).",
+      "uses": []
+     },
+     {
+      "id": "s:closed",
+      "slogan": "Unravel closed payoff sets and their complements by covers.",
+      "detail": "Martin shows that for closed $A$ there is a covering whose preimage of $A$ is clopen; the cover records quasi-strategies, which are subsets of the game tree. If a covering makes the preimage of $A$ clopen, the same covering does so for the complement of $A$.",
+      "uses": []
+     },
+     {
+      "id": "s:unravel",
+      "slogan": "Unravel countable unions by induction on the Borel rank.",
+      "detail": "If each $A_n$ is unraveled, the inverse limit of the countably many covers makes every preimage of $A_n$ clopen, so the preimage of the union is open. An open set is the complement of a closed one, so one more cover makes it clopen. The induction runs through $\\omega_1$ ranks and takes a power set at each one.",
+      "uses": []
+     },
+     {
+      "id": "s:project",
+      "slogan": "Determine the covering game and project its winning strategy to $G(A)$.",
+      "detail": "The cover of $G(A)$ has clopen payoff, so it is determined by the first step. By the covering step, the winning strategy of the cover gives a winning strategy for the same player in $G(A)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:open",
+      "s:project"
+     ],
+     [
+      "s:cover",
+      "s:project"
+     ],
+     [
+      "s:closed",
+      "s:unravel"
+     ],
+     [
+      "s:unravel",
+      "s:project"
+     ]
+    ],
+    "conclusion": "s:project",
+    "concepts": {
+     "c:borel-set": "The Borel rank of the payoff set drives the induction.",
+     "c:gale-stewart-game": "The theorem and the cover construction concern games of this form.",
+     "c:determinacy": "The conclusion says that one player has a winning strategy."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "D. A. Martin, Borel determinacy, Annals of Mathematics (2) 102 (1975), 363-371",
+     "url": "https://www.jstor.org/stable/1971035",
+     "note": "Textbook account: A. S. Kechris, Classical Descriptive Set Theory, Springer (1995), Section 20."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q5047048",
+  "statement": "Let $M$ be a complete connected [Riemannian manifold](c:riemannian-manifold) of dimension $n$ with [sectional curvature](c:sectional-curvature) $K \\le 0$. Then for each $p \\in M$ the [exponential map](c:exponential-map) $\\exp_p\\colon T_pM \\to M$ is a covering map. So the [universal cover](c:universal-cover) of $M$ is diffeomorphic to $\\mathbb{R}^n$.",
+  "hypotheses": [
+   {
+    "id": "h:complete",
+    "text": "The Riemannian manifold $M$ is complete: its geodesics are defined for all time.",
+    "concept": null
+   },
+   {
+    "id": "h:connected",
+    "text": "The manifold $M$ is connected, of dimension $n$.",
+    "concept": "c:riemannian-manifold"
+   },
+   {
+    "id": "h:curvature",
+    "text": "The [sectional curvature](c:sectional-curvature) of $M$ is at most $0$ everywhere.",
+    "concept": "c:sectional-curvature"
+   }
+  ],
+  "conclusion": "Each map $\\exp_p$ is a covering map, so the universal cover of $M$ is diffeomorphic to $\\mathbb{R}^n$ through $\\exp_p$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "no-conjugate-points",
+    "name": "No conjugate points and a complete pullback",
+    "slogan": "Nonpositive curvature gives no conjugate points, so the exponential map is a local diffeomorphism, and the pulled-back metric is complete, making it a covering.",
+    "scope": "The whole theorem for a fixed base point $p$; the dimension $n = 0$ is a point and is trivial.",
+    "mechanisms": [
+     "m:curvature-comparison",
+     "m:covering-lift"
+    ],
+    "roles": [
+     {
+      "h": "h:curvature",
+      "why": "Nonpositive curvature makes $|J|^2$ convex along a Jacobi field.",
+      "steps": [
+       "s:jacobi"
+      ]
+     },
+     {
+      "h": "h:complete",
+      "why": "Completeness gives geodesics for all time, so the pullback metric is geodesically complete at the origin.",
+      "steps": [
+       "s:metric",
+       "s:cover"
+      ]
+     },
+     {
+      "h": "h:connected",
+      "why": "Connectedness makes the exponential map onto $M$ and the covering well defined.",
+      "steps": [
+       "s:cover",
+       "s:universal"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:jacobi",
+      "slogan": "Show that a Jacobi field vanishing at $0$ never vanishes again.",
+      "detail": "Let $J \\not\\equiv 0$ be a Jacobi field along a geodesic $\\gamma$ with $J(0) = 0$. Then $(|J|^2)'' = 2|J'|^2 - 2\\langle R(J, \\gamma')\\gamma', J\\rangle \\ge 2|J'|^2$ since $K \\le 0$. So $|J|^2$ is convex, $0$ at $0$ with positive second derivative there, hence positive for all $t > 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:local",
+      "slogan": "Conclude that $\\exp_p$ is a [local diffeomorphism](c:local-diffeomorphism).",
+      "detail": "The differential of $\\exp_p$ at $tv$ has a kernel exactly when a nonzero Jacobi field along $s \\mapsto \\exp_p(sv)$ vanishes at $0$ and $t$. The previous step excludes this, so the differential is an isomorphism and the inverse function theorem applies.",
+      "uses": []
+     },
+     {
+      "id": "s:metric",
+      "slogan": "Pull the metric back to $T_pM$ and show that it is complete.",
+      "detail": "The pullback $g^* = \\exp_p^* g$ is a Riemannian metric, and $\\exp_p$ is a local isometry. The lines through $0$ are $g^*$-geodesics defined for all time, since the geodesics of $M$ are. By the Hopf-Rinow theorem, $(T_pM, g^*)$ is complete.",
+      "uses": [
+       "wd:Q2094241"
+      ]
+     },
+     {
+      "id": "s:cover",
+      "slogan": "Show that a local isometry from a complete manifold onto a connected manifold is a [covering](c:covering-space).",
+      "detail": "Let $\\phi\\colon N \\to M$ be a local isometry with $N$ complete and $M$ connected. Geodesics of $M$ lift through $\\phi$ for all time, so $\\phi$ is onto, and small balls in $M$ have disjoint lifts. So $\\phi$ is a covering map (do Carmo, Chapter 7, Section 3).",
+      "uses": []
+     },
+     {
+      "id": "s:universal",
+      "slogan": "Identify the universal cover of $M$ with $T_pM \\cong \\mathbb{R}^n$.",
+      "detail": "The space $T_pM$ is simply connected, so the covering $\\exp_p$ is the [universal cover](c:universal-cover) of $M$, and $T_pM$ is diffeomorphic to $\\mathbb{R}^n$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:jacobi",
+      "s:local"
+     ],
+     [
+      "s:local",
+      "s:metric"
+     ],
+     [
+      "s:metric",
+      "s:cover"
+     ],
+     [
+      "s:cover",
+      "s:universal"
+     ]
+    ],
+    "conclusion": "s:universal",
+    "concepts": {
+     "c:riemannian-manifold": "The statement concerns a connected complete manifold with a Riemannian metric.",
+     "c:sectional-curvature": "The sign of the curvature controls the growth of Jacobi fields.",
+     "c:exponential-map": "The exponential map at $p$ is the covering map of the theorem.",
+     "c:universal-cover": "The covering $\\exp_p$ from a simply connected space is the universal cover.",
+     "c:local-diffeomorphism": "No conjugate points make $\\exp_p$ a local diffeomorphism.",
+     "c:covering-space": "Lifting geodesics shows that the local isometry is a covering."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "M. P. do Carmo, Riemannian Geometry, Chapter 7 (Hadamard's theorem)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q213603",
+  "statement": "Let $ABC$ be a [triangle](c:triangle) and $O$ a point on none of its side lines. Let the lines $AO$, $BO$, $CO$ meet the lines $BC$, $CA$, $AB$ at $D$, $E$, $F$. Then the product of [signed ratios](c:signed-ratio) satisfies $\\frac{AF}{FB} \\cdot \\frac{BD}{DC} \\cdot \\frac{CE}{EA} = 1$.",
+  "hypotheses": [
+   {
+    "id": "h:triangle",
+    "text": "The points $A, B, C$ form a nondegenerate [triangle](c:triangle) in a plane.",
+    "concept": "c:triangle"
+   },
+   {
+    "id": "h:concurrent",
+    "text": "The three [cevians](c:cevian) $AD$, $BE$, $CF$ pass through one point $O$ that lies on no side line of $ABC$.",
+    "concept": "c:cevian"
+   }
+  ],
+  "conclusion": "The product of the [signed ratios](c:signed-ratio) $\\frac{AF}{FB} \\cdot \\frac{BD}{DC} \\cdot \\frac{CE}{EA}$ equals $1$.",
+  "formal": {
+   "decl": "Affine.Triangle.prod_dist_div_dist_eq_one_of_mem_line_of_mem_line",
+   "difference": "The declaration gives the product of unsigned distance ratios in a normed affine space and asks only that each foot differs from the far vertex. The signed form is the neighboring declaration Affine.Triangle.prod_div_one_sub_eq_one_of_mem_line_point_lineMap, and the converse is not stated."
+  },
+  "proofs": [
+   {
+    "id": "barycentric",
+    "name": "Barycentric coordinates of the common point",
+    "slogan": "Write the common point in barycentric coordinates, compare them along each cevian, and multiply the three resulting identities.",
+    "scope": "The forward direction of Ceva's theorem for a point off the side lines. The converse (product $1$ implies concurrency or parallelism) is not proved here.",
+    "mechanisms": [
+     "m:coordinates",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:triangle",
+      "why": "The vertices are affinely independent, so barycentric coordinates exist and are unique.",
+      "steps": [
+       "s:ratio",
+       "s:barycentric"
+      ]
+     },
+     {
+      "h": "h:concurrent",
+      "why": "The common point on each cevian links its coordinates to the parameter of the foot.",
+      "steps": [
+       "s:barycentric",
+       "s:cevian",
+       "s:multiply"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:ratio",
+      "slogan": "Write each foot as an affine combination of two vertices with a parameter $r_i$.",
+      "detail": "Index the vertices $A_0, A_1, A_2$ by $\\mathbb Z/3$. Write the foot $D_i$ on line $A_{i+1}A_{i+2}$ as $D_i = (1 - r_i)A_{i+1} + r_i A_{i+2}$. The signed ratio $A_{i+1}D_i / D_iA_{i+2}$ is then $r_i/(1 - r_i)$, and $r_i \\ne 1$, since $D_i = A_{i+2}$ would put $O$ on the side line $A_iA_{i+2}$.",
+      "uses": []
+     },
+     {
+      "id": "s:barycentric",
+      "slogan": "Write $O$ in barycentric coordinates $w_0, w_1, w_2$ with sum one.",
+      "detail": "The vertices are [affinely independent](c:affine-independence), so $O = \\sum w_j A_j$ with unique $w_j$ and $\\sum w_j = 1$. A coordinate $w_j$ is $0$ exactly when $O$ lies on the opposite side line, so every $w_j \\ne 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:cevian",
+      "slogan": "Compare the coordinates of $O$ along each cevian to get $w_{i+1} r_i = w_{i+2}(1 - r_i)$.",
+      "detail": "Since $O$ lies on line $A_iD_i$, $O = (1 - s)A_i + s(1 - r_i)A_{i+1} + s r_i A_{i+2}$ for some $s$. Uniqueness of the coordinates gives $w_{i+1} = s(1 - r_i)$ and $w_{i+2} = s r_i$. Eliminating $s$ gives $w_{i+1} r_i = w_{i+2}(1 - r_i)$.",
+      "uses": []
+     },
+     {
+      "id": "s:multiply",
+      "slogan": "Multiply the three identities and cancel $w_0w_1w_2$ to get $\\prod r_i = \\prod (1 - r_i)$.",
+      "detail": "The product over $i$ gives $(\\prod w_{i+1}) \\prod r_i = (\\prod w_{i+2}) \\prod (1 - r_i)$. Both products of $w$ equal $w_0w_1w_2 \\ne 0$, so they cancel.",
+      "uses": []
+     },
+     {
+      "id": "s:divide",
+      "slogan": "Divide by $\\prod (1 - r_i)$ to get the product of signed ratios equal to one.",
+      "detail": "Each $1 - r_i \\ne 0$, so $\\prod r_i / (1 - r_i) = 1$. Since $r_i/(1 - r_i)$ is the signed ratio at the $i$-th foot, the product $\\frac{BD}{DC} \\cdot \\frac{CE}{EA} \\cdot \\frac{AF}{FB}$ equals $1$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:ratio",
+      "s:cevian"
+     ],
+     [
+      "s:barycentric",
+      "s:cevian"
+     ],
+     [
+      "s:cevian",
+      "s:multiply"
+     ],
+     [
+      "s:barycentric",
+      "s:multiply"
+     ],
+     [
+      "s:multiply",
+      "s:divide"
+     ],
+     [
+      "s:ratio",
+      "s:divide"
+     ]
+    ],
+    "conclusion": "s:divide",
+    "concepts": {
+     "c:triangle": "The three vertices give the barycentric frame of the plane.",
+     "c:cevian": "Each cevian carries the common point and one foot.",
+     "c:signed-ratio": "The signed ratio of a foot is $r_i/(1 - r_i)$.",
+     "c:affine-independence": "It makes the barycentric coordinates of $O$ unique."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Affine.Triangle.prod_dist_div_dist_eq_one_of_mem_line_of_mem_line",
+     "follows": true,
+     "note": "mathlib proves prod_eq_prod_one_sub_of_mem_line_point_lineMap from the weights of exists_affineCombination_eq_smul_eq_of_fintype, then divides and turns ratios into distances."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q5171652",
+  "statement": "For every $\\varepsilon > 0$ there is $N_0(\\varepsilon)$ such that for $N \\ge N_0$, every $A \\subseteq \\{1, \\dots, N\\}^2$ with $|A| \\ge \\varepsilon N^2$ contains a [corner](c:is-corner): points $(x, y)$, $(x + h, y)$, $(x, y + h)$ with $h \\ne 0$.",
+  "hypotheses": [
+   {
+    "id": "h:eps",
+    "text": "The density $\\varepsilon$ is a positive real number.",
+    "concept": null
+   },
+   {
+    "id": "h:grid",
+    "text": "The set $A$ lies in the grid $\\{1, \\dots, N\\}^2$.",
+    "concept": null
+   },
+   {
+    "id": "h:dense",
+    "text": "The size satisfies $|A| \\ge \\varepsilon N^2$ and $N \\ge N_0(\\varepsilon)$, a bound that depends only on $\\varepsilon$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The set $A$ contains points $(x, y)$, $(x + h, y)$ and $(x, y + h)$ with $h \\ne 0$.",
+  "formal": {
+   "decl": "corners_theorem_nat",
+   "difference": "The declaration uses the grid $\\{0, \\dots, n-1\\}^2$ and the explicit bound cornersTheoremBound $(\\varepsilon/9) \\le n$, and states that $A$ is not corner-free. The version for finite abelian groups is the separate declaration corners_theorem."
+  },
+  "proofs": [
+   {
+    "id": "triangle-removal",
+    "name": "Triangle removal",
+    "slogan": "Turn a corner-free dense set into a graph whose triangles are few yet far from removable, which contradicts the triangle removal lemma.",
+    "scope": "The whole theorem by contradiction, through the cyclic group $G = \\mathbb Z/(2N+1)$, with $N_0$ coming from the removal lemma. The proof gives a corner with $h \\ne 0$ of either sign.",
+    "mechanisms": [
+     "m:reduction",
+     "m:contradiction",
+     "m:construction-explicit"
+    ],
+    "roles": [
+     {
+      "h": "h:eps",
+      "why": "The positive density gives a positive removal parameter $\\varepsilon/81$.",
+      "steps": [
+       "s:far",
+       "s:removal"
+      ]
+     },
+     {
+      "h": "h:grid",
+      "why": "The grid sits inside $G^2$ so that no wraparound occurs.",
+      "steps": [
+       "s:embed"
+      ]
+     },
+     {
+      "h": "h:dense",
+      "why": "Density makes the graph far from triangle-free, and a large $N$ makes the triangle count too small.",
+      "steps": [
+       "s:embed",
+       "s:far",
+       "s:removal"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:embed",
+      "slogan": "Embed the grid in $G^2$ for the [cyclic group](c:cyclic-group) $G = \\mathbb Z/(2N+1)$.",
+      "detail": "Shift to $\\{0, \\dots, N-1\\}^2$ and reduce modulo $2N + 1$. Since $|G| \\le 3N$, the image has density at least $\\varepsilon' = \\varepsilon/9$ in $G^2$. A corner in $G^2$ lifts to a grid corner, because both sides of $x_1 + y_2 = x_2 + y_1$ stay below $2N + 1$.",
+      "uses": []
+     },
+     {
+      "id": "s:graph",
+      "slogan": "Build a tripartite [graph](c:graph) with a triangle $x_a, y_b, z_{a+b}$ for each point $(a, b) \\in A$.",
+      "detail": "Take three copies $X$, $Y$, $Z$ of $G$. For each $(a, b) \\in A$ join $x_a y_b$, $x_a z_{a+b}$ and $y_b z_{a+b}$. These $|A|$ triangles are pairwise edge-disjoint, since an edge fixes two of $a$, $b$, $a + b$ and hence all three.",
+      "uses": []
+     },
+     {
+      "id": "s:only",
+      "slogan": "Show that a set with only trivial corners creates no other triangles.",
+      "detail": "A triangle $x_a, y_b, z_c$ needs $(a, b)$, $(a, c - a)$ and $(c - b, b)$ in $A$. They form a corner with $x_1 + y_2 = c = x_2 + y_1$, so corner-freeness gives $x_1 = x_2$, that is $c = a + b$. Hence the graph has exactly $|A| \\le |G|^2$ triangles.",
+      "uses": []
+     },
+     {
+      "id": "s:far",
+      "slogan": "Show that the graph is far from triangle-free.",
+      "detail": "The $|A|$ triangles are edge-disjoint, so killing all triangles removes at least $|A| \\ge \\varepsilon'|G|^2$ edges. The graph has $3|G|$ vertices, so this is $(\\varepsilon'/9)(3|G|)^2$ edges: the graph is $\\varepsilon'/9$-far from triangle-free.",
+      "uses": []
+     },
+     {
+      "id": "s:removal",
+      "slogan": "Compare the triangle count with the bound of the triangle removal lemma.",
+      "detail": "The removal lemma gives $\\delta = \\delta(\\varepsilon'/9) > 0$ with at least $\\delta(3|G|)^3$ triangles in an $\\varepsilon'/9$-far graph. The graph has at most $|G|^2$ triangles, which is fewer once $|G| > 1/(27\\delta)$. So a dense corner-free set cannot exist for large $N$.",
+      "uses": [
+       "nm:triangle-removal-lemma"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:embed",
+      "s:graph"
+     ],
+     [
+      "s:graph",
+      "s:only"
+     ],
+     [
+      "s:graph",
+      "s:far"
+     ],
+     [
+      "s:only",
+      "s:removal"
+     ],
+     [
+      "s:far",
+      "s:removal"
+     ]
+    ],
+    "conclusion": "s:removal",
+    "concepts": {
+     "c:is-corner": "The theorem asks for a corner, and the construction turns triangles into corners.",
+     "c:cyclic-group": "Working in a cyclic group makes sums wrap, and the graph needs a group.",
+     "c:graph": "The graph encodes corners as triangles."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "corners_theorem_nat",
+     "follows": true,
+     "note": "mathlib embeds the grid in Fin (2n+1), builds the tripartite graph (triangleIndices), shows it is far from triangle-free with no accidental triangles, and applies the triangle removal lemma."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1054106",
+  "statement": "Let $\\mathrm{pl}(A \\mid C)$ be real plausibilities of propositions in a Boolean algebra, with $\\mathrm{pl}(AB \\mid C) = F(\\mathrm{pl}(A \\mid BC), \\mathrm{pl}(B \\mid C))$ and $\\mathrm{pl}(\\neg A \\mid C) = S(\\mathrm{pl}(A \\mid C))$ for regular $F$ and $S$. Then some strictly increasing $w$ makes $P = w \\circ \\mathrm{pl}$ obey the [probability axioms](c:probability-axioms).",
+  "hypotheses": [
+   {
+    "id": "h:product",
+    "text": "The plausibility of a conjunction depends only on the two conditional plausibilities: $\\mathrm{pl}(AB \\mid C) = F(\\mathrm{pl}(A \\mid BC), \\mathrm{pl}(B \\mid C))$.",
+    "concept": null
+   },
+   {
+    "id": "h:negation",
+    "text": "The plausibility of a negation depends only on the plausibility of the proposition: $\\mathrm{pl}(\\neg A \\mid C) = S(\\mathrm{pl}(A \\mid C))$.",
+    "concept": null
+   },
+   {
+    "id": "h:regular",
+    "text": "The function $F$ is strictly increasing in each argument, $S$ is strictly decreasing, and the plausibility values are dense in an interval.",
+    "concept": null
+   }
+  ],
+  "conclusion": "Some strictly increasing $w$ gives $P = w \\circ \\mathrm{pl}$ with $P(AB \\mid C) = P(A \\mid BC)P(B \\mid C)$ and $P(A \\mid C) + P(\\neg A \\mid C) = 1$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "functional-equations",
+    "name": "Functional equations of Cox and Jaynes",
+    "slogan": "The laws of Boolean algebra force two functional equations, and their solutions are the product rule and the sum rule after a rescaling.",
+    "scope": "An outline in the form of Van Horn's guide, with a density postulate in place of Cox's differentiability. The exact regularity postulates differ between versions, and each step rests on the cited work.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:product",
+      "why": "The product postulate and the associativity of conjunction give the associativity equation.",
+      "steps": [
+       "s:assoc",
+       "s:rescale"
+      ]
+     },
+     {
+      "h": "h:negation",
+      "why": "The negation postulate with $\\neg\\neg A = A$ and the symmetry of conjunction gives the equation for $S$.",
+      "steps": [
+       "s:negation",
+       "s:solve"
+      ]
+     },
+     {
+      "h": "h:regular",
+      "why": "Monotonicity and density let the functional equations be solved on a whole interval.",
+      "steps": [
+       "s:assoc",
+       "s:rescale",
+       "s:solve"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:assoc",
+      "slogan": "Derive the associativity equation of $F$ from the associativity of conjunction.",
+      "detail": "Compute $\\mathrm{pl}(ABC \\mid D)$ by grouping $(AB)C$ and $A(BC)$. Equating the two results gives the [functional equation](c:functional-equation) $F(F(x, y), z) = F(x, F(y, z))$ on a set made large enough by the density postulate.",
+      "uses": []
+     },
+     {
+      "id": "s:rescale",
+      "slogan": "Solve the associativity equation to rescale plausibilities to the product rule.",
+      "detail": "Aczel's theorem on associative strictly monotone functions gives a strictly increasing continuous $w$ with $F(x, y) = w^{-1}(w(x)w(y))$. Then $v = w \\circ \\mathrm{pl}$ obeys $v(AB \\mid C) = v(A \\mid BC)v(B \\mid C)$, with certainty at $1$ and impossibility at $0$.",
+      "uses": []
+     },
+     {
+      "id": "s:negation",
+      "slogan": "Derive the functional equations of the negation function.",
+      "detail": "Since $\\neg\\neg A = A$, the function satisfies $S(S(x)) = x$. The product rule applied to $AB$ and $BA$ gives $x\\,S(S(y)/x) = y\\,S(S(x)/y)$ for the rescaled negation function (Cox, Jaynes).",
+      "uses": []
+     },
+     {
+      "id": "s:solve",
+      "slogan": "Solve the negation equation to get $S(x) = (1 - x^m)^{1/m}$.",
+      "detail": "The two equations of the previous step have the solutions $S(x) = (1 - x^m)^{1/m}$ for a constant $m > 0$. The cited guide proves this under the density postulate and shows that no other solution is regular.",
+      "uses": []
+     },
+     {
+      "id": "s:probability",
+      "slogan": "Set $P = v^m$ and read off the product rule and the sum rule.",
+      "detail": "Raising $v$ to the power $m$ keeps the product rule and turns negation into $P(\\neg A \\mid C) = 1 - P(A \\mid C)$. The remaining [probability axioms](c:probability-axioms), such as finite additivity, then follow by Boolean algebra.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:assoc",
+      "s:rescale"
+     ],
+     [
+      "s:rescale",
+      "s:negation"
+     ],
+     [
+      "s:negation",
+      "s:solve"
+     ],
+     [
+      "s:solve",
+      "s:probability"
+     ],
+     [
+      "s:rescale",
+      "s:probability"
+     ]
+    ],
+    "conclusion": "s:probability",
+    "concepts": {
+     "c:probability-axioms": "The theorem says that rescaled plausibilities obey these axioms.",
+     "c:functional-equation": "Associativity of conjunction becomes a functional equation for $F$."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "K. S. Van Horn, Constructing a logic of plausible inference: a guide to Cox's theorem, International Journal of Approximate Reasoning 34 (2003), 3-24",
+     "url": "https://doi.org/10.1016/S0888-613X(03)00051-3",
+     "note": "The classical derivation is in E. T. Jaynes, Probability Theory: The Logic of Science, Chapter 2, and in Aczel, Lectures on Functional Equations."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:24805",
+  "statement": "Let $C$ be a [quantum circuit](c:quantum-circuit) that measures a [qubit](c:qbit) $q$ in the computational basis and uses the outcome only to control later gates. Let $C'$ postpone that measurement to the end and replace each classically controlled gate by a [controlled gate](c:controlled-gate) with control $q$. Then $C$ and $C'$ give the same joint distribution of all measurement outcomes.",
+  "hypotheses": [
+   {
+    "id": "h:measure",
+    "text": "The qubit $q$ is measured in the computational basis, and its outcome is used afterwards only as a control.",
+    "concept": null
+   },
+   {
+    "id": "h:later",
+    "text": "The later gates are unitary gates controlled by the outcome, and the later measurements act on qubits other than $q$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The joint distribution of the outcomes of $q$ and of all later measurements is the same in $C$ and in $C'$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "commute-measurement",
+    "name": "Control commutes with measurement",
+    "slogan": "A gate controlled by a measured bit gives the same joint outcome law as the quantum control, because later operations commute with measuring the control.",
+    "scope": "One postponed measurement and a pure input state; mixed states follow by linearity, and several intermediate measurements follow by repeating the argument.",
+    "mechanisms": [
+     "m:induction",
+     "m:case-analysis"
+    ],
+    "roles": [
+     {
+      "h": "h:measure",
+      "why": "The outcome $j$ splits the state into branches and the control acts only through $j$.",
+      "steps": [
+       "s:state",
+       "s:classical",
+       "s:quantum"
+      ]
+     },
+     {
+      "h": "h:later",
+      "why": "The later operations on the other qubits commute with measuring $q$.",
+      "steps": [
+       "s:quantum",
+       "s:compare"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:state",
+      "slogan": "Write the state before the measurement as a sum over the values of $q$.",
+      "detail": "Write $|\\psi\\rangle = \\sum_{j \\in \\{0,1\\}} |j\\rangle_q \\otimes |\\phi_j\\rangle$ with unnormalized $|\\phi_j\\rangle$ on the other qubits.",
+      "uses": []
+     },
+     {
+      "id": "s:classical",
+      "slogan": "Compute the joint law of the outcomes in the circuit $C$.",
+      "detail": "The measurement gives $j$ with probability $\\|\\phi_j\\|^2$ and leaves the normalized $\\phi_j$. Then the gate $W_j$ and a later projective measurement $\\Pi_m$ act, so $\\Pr[j, m] = \\|\\Pi_m W_j \\phi_j\\|^2$.",
+      "uses": []
+     },
+     {
+      "id": "s:quantum",
+      "slogan": "Compute the joint law of the outcomes in the circuit $C'$.",
+      "detail": "The [controlled gate](c:controlled-gate) $\\sum_j |j\\rangle\\langle j| \\otimes W_j$ gives $\\sum_j |j\\rangle \\otimes W_j\\phi_j$. The measurement $\\Pi_m$ acts on other qubits, so it commutes with the final measurement of $q$, and $\\Pr[j, m] = \\|(|j\\rangle\\langle j| \\otimes \\Pi_m)\\sum_k |k\\rangle \\otimes W_k\\phi_k\\|^2 = \\|\\Pi_m W_j \\phi_j\\|^2$.",
+      "uses": []
+     },
+     {
+      "id": "s:compare",
+      "slogan": "Compare the two joint laws outcome by outcome.",
+      "detail": "Both circuits give $\\Pr[j, m] = \\|\\Pi_m W_j \\phi_j\\|^2$ for every outcome $j$ of $q$ and every later outcome $m$. So the joint distributions are equal.",
+      "uses": []
+     },
+     {
+      "id": "s:repeat",
+      "slogan": "Repeat the argument for every further intermediate measurement.",
+      "detail": "Postponing one measurement leaves a circuit of the same form with one measurement fewer in the middle. Induction on the number of intermediate measurements moves all of them to the end.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:state",
+      "s:classical"
+     ],
+     [
+      "s:state",
+      "s:quantum"
+     ],
+     [
+      "s:classical",
+      "s:compare"
+     ],
+     [
+      "s:quantum",
+      "s:compare"
+     ],
+     [
+      "s:compare",
+      "s:repeat"
+     ]
+    ],
+    "conclusion": "s:repeat",
+    "concepts": {
+     "c:quantum-circuit": "The statement compares two circuits that differ in where they measure.",
+     "c:qbit": "The measured control is a qubit whose value splits the state.",
+     "c:controlled-gate": "The quantum control replaces the classical control of the gate."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Nielsen and Chuang, Quantum Computation and Quantum Information, Section 4.4 (principle of deferred measurement)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:20486",
+  "statement": "In [intuitionistic](c:intuitionistic-logic) set theory with extensionality and separation, the [axiom of choice](c:axiom-of-choice) implies the [law of excluded middle](c:law-of-excluded-middle): $P \\vee \\neg P$ holds for every proposition $P$.",
+  "hypotheses": [
+   {
+    "id": "h:logic",
+    "text": "The set theory has intuitionistic logic, extensionality, separation, and the set $\\{0, 1\\}$ with $0 \\ne 1$.",
+    "concept": "c:intuitionistic-logic"
+   },
+   {
+    "id": "h:choice",
+    "text": "The [axiom of choice](c:axiom-of-choice) holds: every set of inhabited sets has a [choice function](c:choice-function).",
+    "concept": "c:axiom-of-choice"
+   }
+  ],
+  "conclusion": "For every proposition $P$ the disjunction $P \\vee \\neg P$ holds.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "two-subsets",
+    "name": "Two subsets of the two-element set",
+    "slogan": "Choose elements from two subsets of $\\{0, 1\\}$ defined by $P$, and read $P$ or its negation from the choices.",
+    "scope": "The set-theoretic form. In a topos the same argument uses the epimorphism onto the two subsets, which is Diaconescu's theorem. The proof uses no excluded middle, since each case split comes from an established disjunction.",
+    "mechanisms": [
+     "m:case-analysis",
+     "m:construction-explicit"
+    ],
+    "roles": [
+     {
+      "h": "h:logic",
+      "why": "Separation builds the two subsets, and extensionality equates them when $P$ holds.",
+      "steps": [
+       "s:sets",
+       "s:extensional"
+      ]
+     },
+     {
+      "h": "h:choice",
+      "why": "Choice picks one element from each of the two inhabited subsets.",
+      "steps": [
+       "s:choose"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:sets",
+      "slogan": "Form two subsets of $\\{0, 1\\}$ from the proposition $P$.",
+      "detail": "By separation, $U = \\{x \\in \\{0, 1\\} : x = 0 \\vee P\\}$ and $V = \\{x \\in \\{0, 1\\} : x = 1 \\vee P\\}$ are sets. Also $0 \\in U$ and $1 \\in V$, so both are inhabited.",
+      "uses": []
+     },
+     {
+      "id": "s:choose",
+      "slogan": "Pick an element of each subset with a [choice function](c:choice-function).",
+      "detail": "Choice for the set $\\{U, V\\}$ gives $f$ with $f(U) \\in U$ and $f(V) \\in V$. By the definitions, $f(U) = 0 \\vee P$ and $f(V) = 1 \\vee P$.",
+      "uses": []
+     },
+     {
+      "id": "s:split",
+      "slogan": "Split the two disjunctions into cases.",
+      "detail": "The two disjunctions give four cases. In each case where $P$ is one of the disjuncts, $P \\vee \\neg P$ holds at once. The remaining case has $f(U) = 0$ and $f(V) = 1$.",
+      "uses": []
+     },
+     {
+      "id": "s:extensional",
+      "slogan": "In the remaining case, refute $P$ using extensionality.",
+      "detail": "Assume $P$. Then $0$ and $1$ both satisfy both defining conditions, so $U = \\{0, 1\\} = V$ by extensionality. Then $f(U) = f(V)$, so $0 = 1$, which is false. Hence $\\neg P$.",
+      "uses": []
+     },
+     {
+      "id": "s:combine",
+      "slogan": "Combine the cases into the disjunction $P \\vee \\neg P$.",
+      "detail": "Every case gives $P$ or $\\neg P$, so $P \\vee \\neg P$ holds for the arbitrary proposition $P$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:sets",
+      "s:choose"
+     ],
+     [
+      "s:choose",
+      "s:split"
+     ],
+     [
+      "s:split",
+      "s:extensional"
+     ],
+     [
+      "s:split",
+      "s:combine"
+     ],
+     [
+      "s:extensional",
+      "s:combine"
+     ]
+    ],
+    "conclusion": "s:combine",
+    "concepts": {
+     "c:intuitionistic-logic": "The proof must avoid excluded middle, since that is its conclusion.",
+     "c:axiom-of-choice": "Choice for two inhabited subsets is the only choice used.",
+     "c:law-of-excluded-middle": "The theorem derives this law for every proposition.",
+     "c:choice-function": "The function $f$ picks elements of $U$ and $V$."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "R. Diaconescu, Axiom of choice and complementation, Proc. Amer. Math. Soc. 51 (1975), 176-178; N. D. Goodman and J. Myhill, Choice implies excluded middle, Z. Math. Logik Grundlagen Math. 24 (1978), 461."
+    }
+   }
+  ]
+ }
+]
