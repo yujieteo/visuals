@@ -16,6 +16,8 @@ for name, target in (
     ("sample-session", HERE.parents[1] / "sample-session.toon"),
     ("edge", HERE / "edge.toon"),
     ("export", HERE / "export.toon"),
+    ("sample-interview", HERE.parents[1] / "sample-interview.toon"),
+    ("interview-export", HERE / "interview-export.toon"),
 ):
     document = json.loads((HERE / f"{name}.json").read_text(encoding="utf-8"))
     target.write_text(encode(document), encoding="utf-8")
