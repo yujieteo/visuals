@@ -38,13 +38,24 @@
   const DEPTHS = ["understand", "apply", "prove"];
   const BANDS = ["under 1 hour", "hours", "days", "weeks", "months"];
   const RESULT_TYPES = ["theorem", "lemma", "inequality", "identity", "principle", "formula", "criterion", "conjecture-proved", "construction", "classification", "other-result"];
-  const VIEWS = ["learn", "catalog", "compare", "connections", "fields", "about"];
+  const VIEWS = ["learn", "catalog", "concepts", "compare", "connections", "tree", "fields", "popularity", "about"];
   const CASES = ["tail-binomial", "existence-ksat", "union-three", "euler-genus-two"];
   const SOURCES = ["any", "mathlib", "wikidata", "wikipedia", "nlab", "theoremsearch", "theoremgraph", "freek100", "overview", "undergrad", "curated"];
   const SORTS = ["score", "learn", "lo", "hi", "name", ...COMPONENTS, "level", "statement", "proof", "dependents", "uses", "year"];
   const COLUMNS = ["type", "score", "interval", ...COMPONENTS, "conf", "formal", "level", "effort", "statement", "proof", "dependents", "uses", "year", "fields"];
   const DEFAULT_COLUMNS = "type,score,interval,eff,res,pra,rea,hyp,pro,app,conf,formal,level";
   const NO_YEAR = 2100;
+
+  /* The concept catalog (tc-rubric/1): the same seven-slot rubric, with concept components. */
+  const CONCEPT_COMPONENTS = ["uni", "res", "pra", "rea", "lpb", "exa", "cmp"];
+  const CONCEPT_COMPONENT_NAMES = ["Unifying power", "Research influence", "Practical impact", "Reach", "Low prerequisite burden", "Example accessibility", "Computability"];
+  const CONCEPT_PRESETS = { balanced: [25, 25, 20, 15, 5, 5, 5], practitioner: [20, 10, 35, 15, 5, 5, 10], researcher: [25, 35, 10, 15, 5, 7, 3] };
+  const CONCEPT_SORTS = ["score", "lo", "hi", "name", "papers", "results", "backlinks", "files", "level", ...CONCEPT_COMPONENTS];
+  const CONCEPT_KINDS = ["structure", "space", "object", "map", "property", "construction", "invariant", "number-system", "logic", "relation", "other"];
+  /** The popularity rate unit: papers per this many papers with the tag. */
+  const PER = 10000;
+  /** A lift needs at least this many naming papers in the tag, so one paper cannot make a tag look distinctive. */
+  const LIFT_MIN = 20;
 
   /** The learning weights of spec section 9.3. */
   const LEARN_WEIGHTS = { value: 0.35, relevance: 0.25, accessibility: 0.15, future_access: 0.15, effort_fit: 0.1 };
@@ -134,6 +145,32 @@
     fby: en("fby", "Categories", ["theorem", "application"], "theorem"),
     flevel: en("flevel", "Taxonomy level", ["group", "archive", "category"], "group"),
     mode: en("mode", "Evidence mode", ["historical", "retrospective"], "historical"),
+    cq: str("Concept search"),
+    cjudge: en("cjudge", "Concept assessment", ["all", "full", "light"], "all"),
+    ckind: en("ckind", "Concept kind", ["any", ...CONCEPT_KINDS], "any"),
+    ctag: str("Concept arXiv tag"),
+    clevel: en("clevel", "Concept reader level at most", ["any", ...LEVELS], "any"),
+    csrc: en("csrc", "Concept source", ["any", "nlab", "mathlib", "results"], "any"),
+    csort: en("csort", "Sort concepts by", CONCEPT_SORTS, "score"),
+    cdir: en("cdir", "Concept sort direction", ["desc", "asc"], "desc"),
+    csel: str("Selected concept"),
+    cw_uni: int("Custom concept weight: unifying power", 25, 0, 100),
+    cw_res: int("Custom concept weight: research influence", 25, 0, 100),
+    cw_pra: int("Custom concept weight: practical impact", 20, 0, 100),
+    cw_rea: int("Custom concept weight: reach", 15, 0, 100),
+    cw_lpb: int("Custom concept weight: low prerequisite burden", 5, 0, 100),
+    cw_exa: int("Custom concept weight: example accessibility", 5, 0, 100),
+    cw_cmp: int("Custom concept weight: computability", 5, 0, 100),
+    troot: str("Tree root (a result or concept id)"),
+    tdepth: int("Tree depth", 3, 1, 8),
+    tshow: en("tshow", "Tree members", ["both", "results", "concepts"], "both"),
+    ptags: str("arXiv tags", "math.AG,math.PR,math.CO,hep-th,cs.LG,stat.ME"),
+    pkind: en("pkind", "Popularity of", ["concepts", "results"], "concepts"),
+    pmetric: en("pmetric", "Popularity measure", ["rate", "count", "lift"], "rate"),
+    pn: int("Rows in the tag matrix", 15, 5, 40),
+    py0: int("Papers from year (0: no limit)", 0, 0, NO_YEAR),
+    py1: int("Papers to year (2100: no limit)", NO_YEAR, 0, NO_YEAR),
+    psel: str("Item for the trend"),
   };
 
   /** Named states with stable ids. @type {KitExample[]} */
@@ -146,6 +183,9 @@
     { id: "atiyah-singer", label: "The Atiyah-Singer index theorem and its relations", state: { view: "connections", sel: "wd:Q755991", reader: "graduate" } },
     { id: "applied-fields", label: "Applications by application category", state: { view: "fields", fby: "application", flevel: "archive" } },
     { id: "no-simplicity", label: "Custom weights without the simplicity components", state: { view: "catalog", preset: "custom", w_eff: 30, w_res: 25, w_pra: 25, w_rea: 20, w_hyp: 0, w_pro: 0, w_app: 0 } },
+    { id: "concepts", label: "The concept catalog, most unifying first", state: { view: "concepts", csort: "uni" } },
+    { id: "spectral-tree", label: "Prerequisite tree of the spectral theorem", state: { view: "tree", troot: "wd:Q1425077", tdepth: 3 } },
+    { id: "tag-popularity", label: "Concept popularity across arXiv tags", state: { view: "popularity", ptags: "math.AG,math.PR,hep-th,cs.LG,q-fin,q-bio", pmetric: "lift" } },
     { id: "sources", label: "Sources, coverage and rubric", state: { view: "about" } },
   ];
 
@@ -761,6 +801,329 @@
     return { view: f, label: "Assessment history", unit: "recorded assessments", basis: `One snapshot (${data.snapshot.id}); previous snapshot: none. The second assessment of the same snapshot is the only recorded change.`, tags, level, changes, note: "Cause of each change: the second assessment re-read the same evidence (a judge change within one rubric version)." };
   }
 
+  /* ---------- concepts (tc-rubric/1, tc-universe/1) ---------- */
+
+  /** The concept pack: rows, texts and the key concepts of each result. Null before the browser decodes it. @param {any} data */
+  const conceptPack = (data) => pack(data, "concepts");
+  /** The popularity pack (tc-popularity/1). @param {any} data */
+  const popularityPack = (data) => pack(data, "popularity");
+
+  /** Indexes over the concept pack, built once per dataset. @param {any} data */
+  function cindex(data) {
+    const s = slot(data);
+    if (s.cindex) return s.cindex;
+    const cp = conceptPack(data);
+    if (!cp) return null;
+    const ix = index(data);
+    const rows = cp.rows;
+    const byId = new Map(rows.map((/** @type {any} */ r, /** @type {number} */ i) => [r.id, i]));
+    const scores = rows.map((/** @type {any} */ r) => parseScores(r.s));
+    const text = rows.map((/** @type {any} */ r) => [r.q, r.id.toLowerCase(), ...r.cat.map((/** @type {number} */ k) => data.taxonomy.categories[k][0].toLowerCase())].join(" "));
+    /** @type {number[][]} */
+    const needs = rows.map(() => []);
+    rows.forEach((/** @type {any} */ r, /** @type {number} */ i) => { for (const j of r.pre) if (j !== i) needs[j].push(i); });
+    s.cindex = { rows, byId, scores, text, texts: cp.text, rc: cp.rc, needs, ix };
+    return s.cindex;
+  }
+
+  /** The active concept weights: the shared preset, or the custom concept weights. @param {Record<string, any>} state @returns {number[]} */
+  function conceptWeightsOf(state) {
+    if (state.preset === "custom") return CONCEPT_COMPONENTS.map((k) => state[`cw_${k}`]);
+    return CONCEPT_PRESETS[/** @type {"balanced"} */ (state.preset)] ?? CONCEPT_PRESETS.balanced;
+  }
+
+  /** A taxonomy id as {kind, idx}: a category, else a group, else an archive (as the interests). @param {any} data @param {string} raw */
+  function tagOf(data, raw) {
+    const ix = index(data);
+    const id = data.taxonomy.aliases?.[raw] ?? raw;
+    if (ix.catIdx.has(id)) return { kind: "cat", idx: ix.catIdx.get(id), id };
+    if (ix.grpIdx.has(id)) return { kind: "grp", idx: ix.grpIdx.get(id), id };
+    if (ix.archIdx.has(id)) return { kind: "arch", idx: ix.archIdx.get(id), id };
+    return null;
+  }
+
+  /** Does a category list fall under a tag? @param {any} ix @param {number[]} cats @param {any} tag */
+  const underTag = (ix, cats, tag) => cats.some((c) => (tag.kind === "cat" ? c === tag.idx : tag.kind === "arch" ? ix.catArch[c] === tag.idx : ix.catGrp[c] === tag.idx));
+
+  /** The concept catalog that the state selects: filters, sort, counts and the selected concept. @param {Record<string, any>} state @param {any} data @param {string[]} notes */
+  function conceptsOf(state, data, notes) {
+    const cx = cindex(data);
+    if (!cx) return null;
+    const ix = cx.ix;
+    const w = conceptWeightsOf(state);
+    const sum = w.reduce((a, b) => a + b, 0);
+    const ok = sum === 100;
+    if (!ok && state.view === "concepts") notes.push(`The custom concept weights add up to ${sum}, not 100. Every concept aggregate is unknown until they add up to 100.`);
+    const agg = cx.scores.map((/** @type {number[]} */ sc) => (ok ? aggregate(sc, w) : { v: null, lo: 0, hi: 100, missing: ["weights"] }));
+    const tag = state.ctag ? tagOf(data, state.ctag) : null;
+    if (state.ctag && !tag) notes.push(`The concept tag "${String(state.ctag).slice(0, 40)}" is not in the pinned taxonomy, so the filter matches nothing.`);
+    const words = String(state.cq).toLowerCase().split(/\s+/).filter(Boolean);
+    const known = knownOf(data);
+    const order = [];
+    for (let i = 0; i < cx.rows.length; i++) {
+      const r = cx.rows[i];
+      if (state.cjudge === "full" && r.j !== 2) continue;
+      if (state.cjudge === "light" && r.j !== 1) continue;
+      if (state.ckind !== "any" && r.k !== state.ckind) continue;
+      if (state.ctag && (!tag || !underTag(ix, r.cat, tag))) continue;
+      if (state.clevel !== "any" && !(r.lv !== null && r.lv <= LEVELS.indexOf(state.clevel))) continue;
+      if (state.csrc === "nlab" && r.nl === null) continue;
+      if (state.csrc === "mathlib" && r.decl === null) continue;
+      if (state.csrc === "results" && !r.rx.length) continue;
+      if (words.length && !words.every((x) => cx.text[i].includes(x))) continue;
+      order.push(i);
+    }
+    const key = (/** @type {number} */ i) => {
+      const r = cx.rows[i], a = agg[i];
+      switch (state.csort) {
+        case "score": return a.v;
+        case "lo": return a.lo;
+        case "hi": return a.hi;
+        case "papers": return r.ap;
+        case "results": return r.rx.length;
+        case "backlinks": return r.nb;
+        case "files": return r.mf;
+        case "level": return r.lv;
+        case "name": return null;
+        default: {
+          const k = CONCEPT_COMPONENTS.indexOf(state.csort);
+          return cx.scores[i][k] >= 0 ? cx.scores[i][k] : null;
+        }
+      }
+    };
+    const sign = state.cdir === "asc" ? 1 : -1;
+    const keys = new Map(order.map((i) => [i, key(i)]));
+    if (state.csort === "name") order.sort((a, b) => sign * cx.rows[a].n.localeCompare(cx.rows[b].n) || a - b);
+    else order.sort((a, b) => {
+      const ka = keys.get(a), kb = keys.get(b);
+      if (ka === null && kb !== null) return 1;
+      if (kb === null && ka !== null) return -1;
+      if (ka !== null && kb !== null && ka !== kb) return sign * (ka - kb);
+      // Ties: the full assessment first, then more arXiv papers, then the name, so the order is total.
+      return cx.rows[b].j - cx.rows[a].j || (cx.rows[b].ap ?? -1) - (cx.rows[a].ap ?? -1) || cx.rows[a].n.localeCompare(cx.rows[b].n) || a - b;
+    });
+    let sel = state.csel ? cx.byId.get(state.csel) ?? -1 : -1;
+    if (state.csel && sel < 0) notes.push(`The concept "${String(state.csel).slice(0, 60)}" is not in this snapshot.`);
+    if (sel < 0) sel = order[0] ?? 0;
+    const filters = ["cq", "cjudge", "ckind", "ctag", "clevel", "csrc"].filter((k) => state[k] !== FIELDS[k].default).map((k) => ({ key: k, label: FIELDS[k].label, value: String(state[k]) }));
+    return {
+      weights: w, weightSum: sum, weightsOk: ok, order, filters,
+      counts: { concepts: cx.rows.length, full: cx.rows.filter((/** @type {any} */ r) => r.j === 2).length, shown: order.length, shownUnknown: order.filter((i) => agg[i].v === null).length, known: Object.keys(known).filter((id) => cx.byId.has(id)).length },
+      selected: conceptOf(data, cx, agg, sel),
+      top: order.slice(0, 10).map((i) => ({ id: cx.rows[i].id, name: cx.rows[i].n, score: agg[i].v, lo: agg[i].lo, hi: agg[i].hi })),
+    };
+  }
+
+  /** One concept, for the concept page, the tools and the deck. @param {any} data @param {any} cx @param {any[]} agg @param {number} i */
+  function conceptOf(data, cx, agg, i) {
+    const r = cx.rows[i], t = cx.texts[i];
+    const tax = data.taxonomy;
+    const known = knownOf(data);
+    const a = agg[i];
+    return {
+      i, id: r.id, name: r.n, kind: r.k, assessment: r.j === 2 ? "full" : "light", scores: cx.scores[i].map(scoreText), score: a.v, lo: a.lo, hi: a.hi, missing: a.missing,
+      rank: a.v === null ? null : 1 + agg.filter((/** @type {any} */ b) => b.v !== null && b.v > /** @type {number} */ (a.v)).length,
+      conf: r.c, level: r.lv === null ? null : LEVELS[r.lv], effort: r.ef, cats: r.cat.map((/** @type {number} */ k) => tax.categories[k][0]),
+      definition: t.def, definitionBasis: t.defb, aliases: t.al, why: t.why, phrases: t.pat, ambiguous: Boolean(r.amb),
+      prerequisites: r.pre.map((/** @type {number} */ j) => ({ id: cx.rows[j].id, name: cx.rows[j].n, known: cx.rows[j].id in known })), prerequisiteBasis: r.pk,
+      neededBy: cx.needs[i].slice(0, 40).map((/** @type {number} */ j) => ({ id: cx.rows[j].id, name: cx.rows[j].n })), neededByCount: cx.needs[i].length,
+      results: r.rx.slice(0, 40).map((/** @type {number} */ j) => ({ id: cx.ix.rows[j].id, name: cx.ix.rows[j].n })), resultCount: r.rx.length,
+      mathlib: r.decl ? { decl: r.decl, verified: Boolean(r.dv), files: r.mf, doc: t.doc, module: r.mod, line: r.ln } : null,
+      nlab: r.nl ? { page: r.nl, id: r.np, backlinks: r.nb, idea: t.idea } : null,
+      papers: r.ap, known: r.id in known ? DEPTHS[known[r.id]] : null,
+    };
+  }
+
+  /* ---------- the prerequisite tree (tc-tree/1) ---------- */
+
+  /** An item id as {kind, i}: a result row or a concept row. @param {any} data @param {string} id */
+  function itemOf(data, id) {
+    const ix = index(data), cx = cindex(data);
+    const r = ix.byId.get(migrate(data, id));
+    if (r !== undefined) return { kind: "r", i: r };
+    const c = cx?.byId.get(id);
+    return c !== undefined ? { kind: "c", i: c } : null;
+  }
+
+  const TREE_NODES = 400;
+
+  /**
+   * The prerequisite tree of one result or concept (tc-tree/1). A result's children are its judged prerequisite
+   * results and its key concepts; a concept's children are its prerequisite concepts (judged for the fully judged
+   * concepts, the nLab Idea and Definition links otherwise). Each item is expanded once: a later meeting is a
+   * reference to the first. Known items are not expanded. The expansion stops at the depth and at 400 nodes.
+   * @param {Record<string, any>} state @param {any} data @param {string} rootId
+   */
+  function treeOf(state, data, rootId) {
+    const ix = index(data), cx = cindex(data);
+    const root = itemOf(data, rootId);
+    if (!root || !cx) return null;
+    const known = knownOf(data);
+    const depthIdx = DEPTHS.indexOf(state.depth);
+    const show = state.tshow;
+    const expanded = new Set();
+    const onStack = new Set();
+    let nodes = 0, truncated = false, maxDepth = 0;
+    /** @type {any[]} */
+    const study = [];
+    const keyOf = (/** @type {any} */ it) => `${it.kind}${it.i}`;
+    const info = (/** @type {any} */ it) => {
+      const r = it.kind === "r" ? ix.rows[it.i] : cx.rows[it.i];
+      const lv = r.lv ?? null;
+      return { kind: it.kind === "r" ? "result" : "concept", id: r.id, name: r.n, level: lv === null ? null : LEVELS[lv], band: r.ef ? r.ef[depthIdx] ?? "x" : "x", known: r.id in known };
+    };
+    const kids = (/** @type {any} */ it) => {
+      const out = [];
+      if (it.kind === "r") {
+        if (show !== "concepts") for (const j of ix.pre[it.i]) out.push({ kind: "r", i: j, edge: ix.formalPairs.has(`${it.i}>${j}`) ? "judged, formal reference" : "judged" });
+        if (show !== "results") for (const j of cx.rc[it.i] ?? []) out.push({ kind: "c", i: j, edge: "key concept" });
+      } else if (show !== "results") {
+        for (const j of cx.rows[it.i].pre) out.push({ kind: "c", i: j, edge: cx.rows[it.i].pk });
+      }
+      return out;
+    };
+    /** @param {any} it @param {number} depth @param {string | null} edge */
+    function visit(it, depth, edge) {
+      nodes++;
+      maxDepth = Math.max(maxDepth, depth);
+      const node = /** @type {any} */ ({ ...info(it), edge, children: [], ref: false, cycle: false, more: 0 });
+      const k = keyOf(it);
+      if (onStack.has(k)) { node.cycle = true; return node; }
+      if (expanded.has(k)) { node.ref = true; return node; }
+      expanded.add(k);
+      const ch = kids(it);
+      if (node.known && depth > 0) { node.more = ch.length; return node; }
+      if (depth >= state.tdepth) { node.more = ch.length; if (!node.known) study.push(node); return node; }
+      onStack.add(k);
+      for (const c of ch) {
+        if (nodes >= TREE_NODES) { truncated = true; node.more = ch.length - node.children.length; break; }
+        node.children.push(visit(c, depth + 1, c.edge));
+      }
+      onStack.delete(k);
+      if (!node.known) study.push(node);
+      return node;
+    }
+    const tree = visit(root, 0, null);
+    const flat = study.map((n) => ({ kind: n.kind, id: n.id, name: n.name, level: n.level, band: n.band }));
+    return {
+      root: tree, nodes, unique: expanded.size, maxDepth, truncated, depth: state.tdepth, show,
+      study: flat, studyCount: flat.length,
+      results: flat.filter((n) => n.kind === "result").length, concepts: flat.filter((n) => n.kind === "concept").length,
+      knownStops: [...expanded].length - flat.length,
+    };
+  }
+
+  /* ---------- popularity by arXiv tag (tc-popularity/1) ---------- */
+
+  /** Resolve tag ids against the popularity pack's tag list. @param {any} data @param {string} list */
+  function popTags(data, list) {
+    const pp = popularityPack(data);
+    const ok = [], unresolved = [];
+    for (const raw of splitList(list)) {
+      const t = tagOf(data, raw);
+      if (!t) { unresolved.push(raw); continue; }
+      const base = t.kind === "cat" ? 0 : t.kind === "arch" ? pp.ncat : pp.ncat + pp.narch;
+      ok.push({ id: t.id, kind: t.kind, idx: base + t.idx, name: t.kind === "cat" ? data.taxonomy.categories[t.idx][1] : t.kind === "arch" ? data.taxonomy.archives[t.idx][1] : data.taxonomy.groups[t.idx][1] });
+    }
+    return { ok: ok.slice(0, 12), unresolved };
+  }
+
+  /**
+   * Popularity of the concepts or the results in the selected arXiv tags: papers that name the item per 10,000
+   * papers with the tag (rate), the paper count, or the lift (the rate in the tag over the rate in all papers).
+   * @param {Record<string, any>} state @param {any} data @param {string[]} notes
+   */
+  function popularityOf(state, data, notes) {
+    const pp = popularityPack(data);
+    const cx = cindex(data);
+    if (!pp || !cx) return null;
+    const ix = index(data);
+    const { ok: tags, unresolved } = popTags(data, state.ptags);
+    if (unresolved.length) notes.push(`These arXiv tags are not in the pinned taxonomy and are ignored: ${unresolved.join(", ")}.`);
+    const [y0, y1] = pp.years;
+    const from = Math.max(y0, state.py0 || y0), to = Math.min(y1, state.py1);
+    const b0 = Math.floor((from - y0) / pp.bin), b1 = Math.floor((to - y0) / pp.bin);
+    const all = pp.tags.length - 1;
+    const want = [...tags.map((t) => t.idx), all];
+    const den = new Map(want.map((t) => [t, (pp.den[t] ?? []).slice(b0, b1 + 1).reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0)]));
+    const items = state.pkind === "concepts" ? pp.c : pp.r;
+    const names = (/** @type {number} */ i) => (state.pkind === "concepts" ? cx.rows[i] : ix.rows[i]);
+    /** @type {{ i: number, counts: number[], all: number }[]} */
+    const rowsOut = [];
+    for (const [key, flat] of Object.entries(items)) {
+      if (!flat.length) continue;
+      const counts = tags.map(() => 0);
+      let tot = 0;
+      for (let k = 0; k < flat.length; k += 3) {
+        const t = flat[k], b = flat[k + 1];
+        if (b < b0 || b > b1) continue;
+        if (t === all) tot += flat[k + 2];
+        else { const j = tags.findIndex((g) => g.idx === t); if (j >= 0) counts[j] += flat[k + 2]; }
+      }
+      if (tot) rowsOut.push({ i: Number(key), counts, all: tot });
+    }
+    const allDen = /** @type {number} */ (den.get(all));
+    const metric = (/** @type {number} */ n, /** @type {number} */ t, /** @type {number} */ itemAll) => {
+      const d = /** @type {number} */ (den.get(t));
+      if (state.pmetric === "count") return n;
+      if (!d) return null;
+      const rate = (PER * n) / d;
+      if (state.pmetric === "rate") return round(rate, 3);
+      if (n < LIFT_MIN || !itemAll || !allDen) return null;
+      return round(rate / ((PER * itemAll) / allDen), 3);
+    };
+    const cells = rowsOut.map((r) => ({ ...r, m: r.counts.map((n, j) => metric(n, tags[j].idx, r.all)) }));
+    const best = (/** @type {any} */ r) => Math.max(-1, ...r.m.filter((/** @type {number | null} */ v) => v !== null));
+    const ranked = cells.filter((r) => best(r) > 0).sort((a, b) => best(b) - best(a) || b.all - a.all || a.i - b.i);
+    const describe = (/** @type {any} */ r) => ({ i: r.i, id: names(r.i).id, name: names(r.i).n, counts: r.counts, values: r.m, all: r.all, allRate: allDen ? round((PER * r.all) / allDen, 3) : null });
+    const matrix = ranked.slice(0, state.pn).map(describe);
+    const perTag = tags.map((t, j) => ({
+      tag: t.id, name: t.name, papers: den.get(t.idx) ?? 0,
+      top: cells.filter((r) => r.m[j] !== null && r.m[j] > 0).sort((a, b) => /** @type {number} */ (b.m[j]) - /** @type {number} */ (a.m[j]) || b.counts[j] - a.counts[j] || a.i - b.i).slice(0, 10)
+        .map((r) => ({ id: names(r.i).id, name: names(r.i).n, value: r.m[j], count: r.counts[j] })),
+    }));
+    // The selected item: the state's, else the top of the matrix.
+    const lookup = state.pkind === "concepts" ? cx.byId : ix.byId;
+    let sel = state.psel ? lookup.get(state.psel) ?? -1 : -1;
+    if (state.psel && sel < 0) notes.push(`"${String(state.psel).slice(0, 60)}" has no popularity record of this kind; the matrix's first row is shown instead.`);
+    if (sel < 0 || !items[sel]) sel = matrix[0]?.i ?? -1;
+    let trend = null, distinct = null;
+    if (sel >= 0) {
+      const flat = items[sel] ?? [];
+      /** @type {number[]} */
+      const bins = [];
+      for (let b = b0; b <= b1; b++) bins.push(b);
+      const series = [...tags, { id: "all", idx: all, name: "all papers" }].map((t) => ({
+        tag: t.id,
+        rates: bins.map((b) => {
+          const d = pp.den[t.idx]?.[b] ?? 0;
+          let n = 0;
+          for (let k = 0; k < flat.length; k += 3) if (flat[k] === t.idx && flat[k + 1] === b) n += flat[k + 2];
+          return d >= 100 ? round((PER * n) / d, 3) : null;
+        }),
+      }));
+      trend = { id: names(sel).id, name: names(sel).n, bins: bins.map((b) => [y0 + b * pp.bin, Math.min(y1, y0 + (b + 1) * pp.bin - 1)]), series };
+      // The categories where the item is most over-represented (lift), with at least LIFT_MIN papers.
+      const byTag = new Map();
+      let tot = 0;
+      for (let k = 0; k < flat.length; k += 3) {
+        if (flat[k + 1] < b0 || flat[k + 1] > b1) continue;
+        if (flat[k] === all) tot += flat[k + 2];
+        else if (flat[k] < pp.ncat) byTag.set(flat[k], (byTag.get(flat[k]) ?? 0) + flat[k + 2]);
+      }
+      distinct = [...byTag].filter(([, n]) => n >= LIFT_MIN).map(([t, n]) => {
+        const d = (pp.den[t] ?? []).slice(b0, b1 + 1).reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0);
+        const rate = d ? (PER * n) / d : 0;
+        return { tag: pp.tags[t], name: data.taxonomy.categories[t][1], count: n, rate: round(rate, 3), lift: tot && allDen ? round(rate / ((PER * tot) / allDen), 3) : null };
+      }).sort((a, b) => (b.lift ?? 0) - (a.lift ?? 0) || b.count - a.count).slice(0, 12);
+    }
+    return {
+      kind: state.pkind, metric: state.pmetric, unit: state.pmetric === "rate" ? `papers that name it per ${PER.toLocaleString("en")} papers with the tag` : state.pmetric === "count" ? "papers that name it" : `rate in the tag / rate in all papers (at least ${LIFT_MIN} papers)`,
+      tags: tags.map((t) => ({ id: t.id, kind: t.kind, name: t.name, papers: den.get(t.idx) ?? 0 })),
+      years: [from, to], data: pp.years, bin: pp.bin, allPapers: allDen, named: rowsOut.length, matrix, perTag, trend, distinct,
+    };
+  }
+
   /* ---------- derive ---------- */
 
   /**
@@ -813,6 +1176,7 @@
       shown: order.length,
       shownUnknown: order.filter((i) => agg[i].v === null).length,
       known: Object.keys(knownMap).filter((id) => ix.byId.has(id)).length,
+      knownConcepts: Object.keys(knownMap).filter((id) => cindex(data)?.byId.has(id)).length,
       formalUnnamed: data.coverage.formal.unnamed_unscored,
     };
 
@@ -835,6 +1199,7 @@
     if (state.sel && selIdx < 0) notes.push(`The result "${state.sel.slice(0, 60)}" is not in this snapshot.`);
     if (selIdx < 0) selIdx = recs[0]?.i ?? order[0] ?? 0;
     const selected = selectedOf(state, data, ix, agg, learn, selIdx);
+    if (state.view === "tree" && state.troot && !itemOf(data, state.troot)) notes.push(`The tree root "${String(state.troot).slice(0, 60)}" is neither a result nor a concept of this snapshot; the selected result is the root instead.`);
 
     const pins = splitList(state.pins).map((id) => ({ id, i: ix.byId.get(migrate(data, id)) ?? -1 }));
     const unresolvedPins = pins.filter((p) => p.i < 0).map((p) => p.id);
@@ -857,6 +1222,9 @@
       compare: comparison(data, ix, state.cmp, w),
       fields: history(state, data, ix, agg),
       sensitivity: sensitivity(ix, agg, w, weightsOk),
+      concepts: state.view === "concepts" ? conceptsOf(state, data, notes) : null,
+      tree: state.view === "tree" ? treeOf(state, data, state.troot && itemOf(data, state.troot) ? state.troot : selected.id) : null,
+      popularity: state.view === "popularity" ? popularityOf(state, data, notes) : null,
       notes,
     };
   }
@@ -952,6 +1320,21 @@
     return `${lines.join("\r\n")}\r\n`;
   }
 
+  /** The CSV of the concepts the concept table shows, in its order. @param {Record<string, any>} state @param {any} c the derived concepts @param {any} data */
+  function conceptCsv(state, c, data) {
+    const cx = cindex(data);
+    const tax = data.taxonomy;
+    const head = ["id", "name", "kind", "assessment", "overall", "interval_low", "interval_high", ...CONCEPT_COMPONENTS, "confidence", "reader_level", "arxiv_categories", "arxiv_papers", "results_naming_it", "nlab_page", "nlab_backlinks", "mathlib", "mathlib_files"];
+    const lines = [head.join(",")];
+    for (const i of c.order) {
+      const r = cx.rows[i];
+      const a = c.weightsOk ? aggregate(cx.scores[i], c.weights) : { v: null, lo: null, hi: null };
+      lines.push([r.id, r.n, r.k, r.j === 2 ? "full" : "light", a.v === null ? "unknown" : a.v, a.lo, a.hi, ...cx.scores[i].map(scoreText), r.c, r.lv === null ? "" : LEVELS[r.lv],
+        r.cat.map((/** @type {number} */ k) => tax.categories[k][0]).join("; "), r.ap ?? "", r.rx.length, r.nl ?? "", r.nb ?? "", r.decl ?? "", r.mf ?? ""].map(csvCell).join(","));
+    }
+    return `${lines.join("\r\n")}\r\n`;
+  }
+
   /** A profile from the state and the known results. @param {Record<string, any>} state @param {any} data */
   function profileOf(state, data) {
     return { schema: PROFILE_SCHEMA, snapshot: data.snapshot.id, known: { ...knownOf(data) }, interests: state.interests, stance: state.preset, depth: state.depth, reader: state.reader, budget: state.budget, weights: weightsOf(state) };
@@ -977,7 +1360,7 @@
     for (const [id, depth] of Object.entries(doc.known)) {
       if (!Number.isInteger(depth) || /** @type {number} */ (depth) < 0 || /** @type {number} */ (depth) > 2) throw new Error(`The depth of ${id.slice(0, 40)} is not 0, 1 or 2.`);
       const now = migrate(data, id);
-      if (ix.byId.has(now)) known[now] = Math.max(known[now] ?? 0, /** @type {number} */ (depth));
+      if (ix.byId.has(now) || cindex(data)?.byId.has(now)) known[now] = Math.max(known[now] ?? 0, /** @type {number} */ (depth));
       else unresolved.push(id);
     }
     /** @type {Record<string, any>} */
@@ -1032,6 +1415,8 @@
   return {
     SLUG, SCHEMA_VERSION, FIELDS, EXAMPLES, COMPONENTS, COMPONENT_NAMES, PRESETS, LEVELS, LEVEL_NAMES, DEPTHS, BANDS, RESULT_TYPES, COLUMNS, DEFAULT_COLUMNS,
     LEARN_WEIGHTS, LEARN_RULES, SEARCH_HELP, REL_PHRASES, REL_ORDER, CASE_FORMULAS, PROFILE_SCHEMA, EXPORT_SCHEMA, NO_YEAR,
+    CONCEPT_COMPONENTS, CONCEPT_COMPONENT_NAMES, CONCEPT_PRESETS, CONCEPT_KINDS, PER, LIFT_MIN, TREE_NODES,
+    conceptPack, popularityPack, cindex, conceptWeightsOf, conceptsOf, conceptOf, treeOf, popularityOf, popTags, itemOf, tagOf, conceptCsv,
     derive, prime, pack, core, detail, index, aggregate, weightsOf, consistency, relevance, interestsOf, comparison, history,
     prerequisitePath, relationsOf, csv, csvCell, profileOf, readProfile, exportJson, splitList, scoreLabel, bandLabel, scoreText, migrate,
   };

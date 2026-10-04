@@ -180,6 +180,56 @@
 
   /** The frame for the active view. @param {Record<string, any>} state @param {any} d @param {any} data */
   function viewFrame(state, d, data) {
+    if (state.view === "concepts" && d.concepts) {
+      const c = d.concepts, s = c.selected;
+      return {
+        title: `Concepts: ${s.name}`,
+        body: [
+          `- ${c.counts.shown} of ${c.counts.concepts} concepts shown; ${c.counts.full} have the full assessment`,
+          `- ${s.name}: ${s.kind}, ${s.assessment} assessment, aggregate ${s.score === null ? `unknown, ${score(s.lo)} to ${score(s.hi)}` : score(s.score)}`,
+          `- Scores ${Model.CONCEPT_COMPONENTS.join(" ")}: ${s.scores.join(" ")}`,
+          s.definition ? `- Definition (${s.definitionBasis === "judge" ? "judge" : s.definitionBasis}): ${line(s.definition, 240).replace(/`/g, "'")}` : "- No definition text in the snapshot",
+          `- Prerequisites: ${s.prerequisites.map((/** @type {any} */ p) => p.name).join("; ") || "none recorded"}`,
+          `- arXiv papers that name it: ${s.papers === null ? "not counted" : s.papers}; catalog results that name it: ${s.resultCount}`,
+          "",
+          "Top concepts in the table:",
+          ...c.top.slice(0, 5).map((/** @type {any} */ t, /** @type {number} */ k) => `${k + 1}. ${t.name}: ${t.score === null ? `${score(t.lo)} to ${score(t.hi)}` : score(t.score)}`),
+        ].join("\n"),
+        narration: say(`The concept catalog has ${c.counts.concepts} concepts. The selected concept is ${s.name}. ${s.score === null ? "Its aggregate score is unknown, so the page shows an interval." : `Its aggregate score is ${score(s.score)}.`} ${s.resultCount ? `${s.resultCount} catalog results name it.` : "No catalog result names it."}`),
+      };
+    }
+    if (state.view === "tree" && d.tree) {
+      const t = d.tree;
+      const steps = t.study.slice(-8);
+      return {
+        title: `Prerequisite tree of ${t.root.name}`,
+        body: [
+          `- Root: ${t.root.name} (${t.root.kind}); depth ${t.depth}; ${t.unique} distinct items${t.truncated ? `, cut at ${Model.TREE_NODES} nodes` : ""}`,
+          `- Unknown: ${t.studyCount} (${t.results} results, ${t.concepts} concepts)`,
+          "",
+          "Study order, the last steps:",
+          ...steps.map((/** @type {any} */ n, /** @type {number} */ k) => `${t.studyCount - steps.length + k + 1}. ${n.name} (${n.kind})`),
+          "",
+          "Results need their judged prerequisite results and key concepts; concepts need their prerequisite concepts. Not a guaranteed curriculum.",
+        ].join("\n"),
+        narration: say(`The prerequisite tree of ${t.root.name} has ${t.unique} distinct items to depth ${t.depth}. ${t.studyCount} of them are not known: ${t.results} results and ${t.concepts} concepts. The study order puts each item after the items it needs.`),
+      };
+    }
+    if (state.view === "popularity" && d.popularity) {
+      const p = d.popularity;
+      const top = p.perTag.map((/** @type {any} */ t) => `- ${t.tag}: ${t.top.slice(0, 3).map((/** @type {any} */ x) => x.name).join("; ") || "none"}`);
+      return {
+        title: `Popularity by arXiv tag: ${p.kind}`,
+        body: [
+          `Measure: ${p.unit}. Papers ${p.years[0]} to ${p.years[1]}, titles and abstracts.`,
+          "",
+          "The top three in each tag:",
+          ...top,
+          p.trend ? `\nTrend item: ${p.trend.name}` : "",
+        ].join("\n"),
+        narration: say(`This frame compares the popularity of ${p.kind} across ${p.tags.length} arXiv tags. ${p.perTag[0]?.top[0] ? `In ${p.perTag[0].tag}, the top item is ${p.perTag[0].top[0].name}.` : ""} A count shows use in abstracts, not importance.`),
+      };
+    }
     if (state.view === "compare") {
       const c = d.compare;
       const ranked = c.entries.filter((/** @type {any} */ e) => e.value !== null);

@@ -24,4 +24,19 @@ Obey these rules:
 5. Read `<work>/out/change-report.json` for the source, measurement, judge, rubric and identity changes.
 6. Find the old snapshots in `<work>/snapshots/<id>/raw.json`.
 
+## Concepts, prerequisite trees and arXiv popularity
+
+The concept catalog extends the result catalog with the same idea: one rubric (`data/concept-rubric.json`, tc-rubric/1), judged scores with their evidence, and the page's aggregate, interval and confidence rules. `pipeline/concepts.py` adds two packs to `raw.json` (`concepts` and `popularity`) after `assemble.py`; `run.py` runs it as the `concepts` step.
+
+| Stage | Input | Output |
+| --- | --- | --- |
+| `arxiv.py` | the pinned arXiv metadata file (`pins.json` `arxiv`, read with `gsutil cat`, no account) | `<work>/stage/arxiv-papers.jsonl.gz`: one normalized title and abstract per paper (tc-arxiv/1, tc-norm/1) |
+| `concept_sources.py` | mathlib (textual declaration index, tc-decl-text/1), nLab, the results' key concepts | `concept-candidates.json`, `mathlib-decls.json.gz`, `nlab-pages.json.gz` |
+| `concept_universe.py` | the above and `data/concepts.json` | `concept-universe.json.gz`: every nLab concept page, documented mathlib class and structure, and result key concept, merged by name (tc-universe/1) |
+| `concepts.py` | the universe, both judges' answers, the arXiv papers | `packs.concepts`, `packs.popularity`, `coverage.concepts`, `sources.arxiv`, `sources.concepts` |
+
+The judges' answers are committed: `data/concepts.json` (the full judge, tc-judge-prompt/1 in `pipeline/concept-judge-prompt.md`: definition, phrases, prerequisites and scores) and `data/concepts-light.json` (the light judge, tc-judge-light/1 in `pipeline/concept-light-judge-prompt.md`: keep or drop, kind, scores, level, categories, effort and whether the name is a safe search phrase). A light concept's prerequisites are its nLab Idea and Definition links, labelled as documented, not judged. After a refresh, `<work>/judge/concepts-todo.json` lists the universe members that neither judge has assessed; they stay out of the catalog until one does.
+
+Popularity (tc-popularity/1) counts the papers whose title or abstract names an item, once per paper, in each tag the paper carries: every listed category, its archive and its group. The arXiv metadata file at the pinned generation ends in August 2020. The pack keeps year bins of 1, 2 or 5 years, the smallest that stays under 2.5 MB compressed (tc-bins/1).
+
 The source pins are in `data/sources/pins.json`. The Lean extractor is in `pipeline/lean/`. It needs a Lean toolchain in `<work>/elan`.
