@@ -561,5 +561,609 @@
     }
    }
   ]
+ },
+ {
+  "id": "wd:Q1196729",
+  "statement": "Let $p$ run over the [primes](c:prime-number) and let $n \\ge 2$ be an integer. Then $\\sum_{p \\le n} \\frac{\\log p}{p} = \\log n + O(1)$ and $\\sum_{p \\le n} \\frac{1}{p} = \\log\\log n + M + O\\!\\left(\\frac{1}{\\log n}\\right)$ for a constant $M$. These are the first two Mertens theorems, with their [asymptotic](c:asymptotic) forms.",
+  "hypotheses": [
+   {
+    "id": "h:range",
+    "text": "The number $n \\ge 2$ is an integer and $p$ runs over the [primes](c:prime-number) up to $n$.",
+    "concept": "c:prime-number"
+   }
+  ],
+  "conclusion": "The two sums over primes $p \\le n$ have the stated asymptotic forms, with an absolute constant in the $O$ terms and one constant $M$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "legendre-abel",
+    "name": "Legendre's formula and partial summation",
+    "slogan": "Count the prime factors of $n!$ in two ways to get the first theorem, then sum by parts to get the second.",
+    "scope": "The first and second Mertens theorems for integers $n \\ge 2$; a real $x$ changes each sum by $O(1)$ and $\\log\\log x$ by $O(1/\\log x)$. The third theorem, $\\prod_{p \\le n}(1 - 1/p) \\sim e^{-\\gamma}/\\log n$, is the other member of the family; it follows from the second with $M = \\gamma + \\sum_p (\\log(1 - 1/p) + 1/p)$.",
+    "mechanisms": [
+     "m:double-counting",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:range",
+      "why": "The primes up to $n$ are exactly the prime factors of $n!$, and $n \\ge 2$ makes $\\log\\log n$ defined.",
+      "steps": [
+       "s:chebyshev",
+       "s:legendre",
+       "s:second"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:chebyshev",
+      "slogan": "Bound the [Chebyshev function](c:chebyshev-function) $\\theta(n) = \\sum_{p \\le n}\\log p$ by $n\\log 4$.",
+      "detail": "Primes in $(m, 2m]$ divide $\\binom{2m}{m} \\le 4^m$, and primes in $(m+1, 2m+1]$ divide $\\binom{2m+1}{m} \\le 4^m$. So $\\theta(2m+1) - \\theta(m+1) \\le m\\log 4$, and strong induction on $n$ gives $\\theta(n) \\le n\\log 4$.",
+      "uses": []
+     },
+     {
+      "id": "s:legendre",
+      "slogan": "Write $\\log n!$ as a sum over primes with Legendre's formula.",
+      "detail": "The exponent of $p$ in $n!$ is $\\sum_{k \\ge 1}\\lfloor n/p^k\\rfloor$, so $\\log n! = \\sum_{p \\le n}\\log p \\sum_k \\lfloor n/p^k\\rfloor$. The terms with $k \\ge 2$ add at most $n\\sum_p \\frac{\\log p}{p(p-1)} = O(n)$. Hence $\\log n! = \\sum_{p \\le n}\\lfloor n/p\\rfloor\\log p + O(n)$.",
+      "uses": []
+     },
+     {
+      "id": "s:stirling",
+      "slogan": "Estimate $\\log n!$ by $n\\log n$ up to a linear error.",
+      "detail": "Comparing $\\sum_{j \\le n}\\log j$ with $\\int_1^n \\log t\\,dt$ gives $n\\log n - n < \\log n! \\le n\\log n$. This is a weak form of Stirling's approximation, so $\\log n! = n\\log n + O(n)$.",
+      "uses": [
+       "wd:Q470877"
+      ]
+     },
+     {
+      "id": "s:first",
+      "slogan": "Compare the two expressions for $\\log n!$ to get the first theorem.",
+      "detail": "Write $\\lfloor n/p\\rfloor = n/p - \\vartheta_p$ with $0 \\le \\vartheta_p < 1$. Then $\\sum_{p \\le n}\\lfloor n/p\\rfloor\\log p = n\\sum_{p \\le n}\\frac{\\log p}{p} - O(\\theta(n))$, and $\\theta(n) = O(n)$ by step 1. With steps 2 and 3 this gives $n\\sum_{p \\le n}\\frac{\\log p}{p} = n\\log n + O(n)$; divide by $n$.",
+      "uses": []
+     },
+     {
+      "id": "s:second",
+      "slogan": "Sum by parts against $1/\\log t$ to get the second theorem.",
+      "detail": "Let $A(t) = \\sum_{p \\le t}\\frac{\\log p}{p} = \\log t + R(t)$ with $|R| \\le C$. [Abel summation](c:abel-summation) gives $\\sum_{p \\le n}\\frac1p = \\frac{A(n)}{\\log n} + \\int_2^n \\frac{A(t)}{t\\log^2 t}\\,dt = 1 + \\log\\log n - \\log\\log 2 + \\int_2^n \\frac{R(t)}{t\\log^2 t}\\,dt + O\\!\\left(\\frac{1}{\\log n}\\right)$. The integral converges as $n \\to \\infty$ with tail at most $C/\\log n$, so the sum is $\\log\\log n + M + O(1/\\log n)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:chebyshev",
+      "s:first"
+     ],
+     [
+      "s:legendre",
+      "s:first"
+     ],
+     [
+      "s:stirling",
+      "s:first"
+     ],
+     [
+      "s:first",
+      "s:second"
+     ]
+    ],
+    "conclusion": "s:second",
+    "concepts": {
+     "c:prime-number": "The sums run over primes, which are the prime factors of $n!$.",
+     "c:asymptotic": "The theorems give the asymptotic size of the two sums.",
+     "c:chebyshev-function": "The bound $\\theta(n) = O(n)$ controls the error in the first theorem.",
+     "c:abel-summation": "Partial summation turns the first theorem into the second."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Mertens' elementary proof by Legendre's formula for $n!$ and partial summation; compare Apostol, Introduction to Analytic Number Theory, section 4.10."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q6860180",
+  "statement": "Every [uniformly convex](c:uniform-convex-space) [Banach space](c:banach-space) $X$ is [reflexive](c:reflexive-space): the canonical embedding $J\\colon X \\to X^{**}$ is onto.",
+  "hypotheses": [
+   {
+    "id": "h:banach",
+    "text": "$X$ is a [Banach space](c:banach-space).",
+    "concept": "c:banach-space"
+   },
+   {
+    "id": "h:uniform",
+    "text": "$X$ is [uniformly convex](c:uniform-convex-space): for each $\\varepsilon > 0$ there is $\\delta > 0$ with $\\|\\tfrac{x+y}{2}\\| \\le 1 - \\delta$ whenever $\\|x\\|, \\|y\\| \\le 1$ and $\\|x - y\\| \\ge \\varepsilon$.",
+    "concept": "c:uniform-convex-space"
+   }
+  ],
+  "conclusion": "The canonical map $J\\colon X \\to X^{**}$ is surjective, so $X$ is reflexive.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "goldstine",
+    "name": "Goldstine argument",
+    "slogan": "Approximate a norm one point of the bidual by the unit ball using Goldstine and uniform convexity, then use that the image is closed.",
+    "scope": "Real scalars; for complex scalars apply the proof to the underlying real space, whose functionals are the real parts of the complex ones. The case $X = 0$ is trivial.",
+    "mechanisms": [
+     "m:approximation",
+     "m:contradiction"
+    ],
+    "roles": [
+     {
+      "h": "h:banach",
+      "why": "Completeness makes the isometric image $J(X)$ closed in the bidual.",
+      "steps": [
+       "s:reduce",
+       "s:conclude"
+      ]
+     },
+     {
+      "h": "h:uniform",
+      "why": "Uniform convexity forces two almost norming points of the unit ball to lie close together.",
+      "steps": [
+       "s:choose",
+       "s:contradict"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:reduce",
+      "slogan": "Reduce surjectivity of $J$ to approximating each norm one point of the [bidual](c:bidual).",
+      "detail": "The map $J$ is an isometry and $X$ is complete, so $J(X)$ and $J(B_X)$ are closed in $X^{**}$. So it suffices to show that every $\\xi \\in X^{**}$ with $\\|\\xi\\| = 1$ lies in the norm closure of $J(B_X)$; scaling handles the other $\\xi$.",
+      "uses": []
+     },
+     {
+      "id": "s:choose",
+      "slogan": "Choose a norming functional and a [weak-star](c:weak-star-topology) neighborhood of $\\xi$.",
+      "detail": "Fix $\\varepsilon > 0$ and take $\\delta$ from [uniform convexity](c:uniform-convex-space). Choose $f \\in X^*$ with $\\|f\\| = 1$ and $\\langle\\xi, f\\rangle > 1 - \\delta/2$. Let $V = \\{\\eta \\in X^{**} : |\\langle\\eta - \\xi, f\\rangle| < \\delta/2\\}$, a weak-star neighborhood of $\\xi$.",
+      "uses": []
+     },
+     {
+      "id": "s:goldstine",
+      "slogan": "Pick a point $x$ of the unit ball whose image lies in $V$.",
+      "detail": "By Goldstine's theorem $J(B_X)$ is weak-star dense in $B_{X^{**}}$, which contains $\\xi$. So some $x \\in B_X$ has $Jx \\in V$, that is $|f(x) - \\langle\\xi, f\\rangle| < \\delta/2$, and hence $f(x) > 1 - \\delta$.",
+      "uses": [
+       "wd:Q3088644"
+      ]
+     },
+     {
+      "id": "s:contradict",
+      "slogan": "Assume that $\\xi$ is farther than $\\varepsilon$ from $Jx$ and find a second point that breaks uniform convexity.",
+      "detail": "The ball $Jx + \\varepsilon B_{X^{**}}$ is weak-star closed by Banach-Alaoglu. If $\\|\\xi - Jx\\| > \\varepsilon$, the set $W = \\{\\eta : \\|\\eta - Jx\\| > \\varepsilon\\}$ is a weak-star neighborhood of $\\xi$, and Goldstine gives $x' \\in B_X$ with $Jx' \\in V \\cap W$. Then $\\|x - x'\\| > \\varepsilon$, but $f(x) + f(x') > 2 - 2\\delta$ gives $\\|\\tfrac{x+x'}{2}\\| > 1 - \\delta$, against uniform convexity.",
+      "uses": [
+       "wd:Q537618",
+       "wd:Q3088644"
+      ]
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Conclude that $\\xi$ lies in the closed image, so $J$ is onto.",
+      "detail": "So $\\|\\xi - Jx\\| \\le \\varepsilon$ for some $x \\in B_X$, for every $\\varepsilon > 0$. Hence $\\xi$ lies in the closure of $J(B_X)$, which equals $J(B_X)$ by step 1. Thus $J$ is onto and $X$ is [reflexive](c:reflexive-space).",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:reduce",
+      "s:conclude"
+     ],
+     [
+      "s:choose",
+      "s:goldstine"
+     ],
+     [
+      "s:goldstine",
+      "s:contradict"
+     ],
+     [
+      "s:choose",
+      "s:contradict"
+     ],
+     [
+      "s:contradict",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:uniform-convex-space": "Uniform convexity is the geometric property that produces the contradiction.",
+     "c:banach-space": "Completeness makes the image of $X$ closed in its bidual.",
+     "c:reflexive-space": "Reflexivity means that the canonical map into the bidual is onto.",
+     "c:bidual": "The proof approximates points of the bidual by points of $X$.",
+     "c:weak-star-topology": "Weak-star neighborhoods let Goldstine's density produce points of $X$."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard Goldstine argument for the Milman-Pettis theorem, as in Brezis, Functional Analysis, Sobolev Spaces and Partial Differential Equations, section 3.7."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q6911202",
+  "statement": "Let $f$ be a proper [lower semicontinuous](c:lower-semicontinuous-function) [convex function](c:convex-function) on a real [Hilbert space](c:hilbert-space) $H$, and $\\lambda > 0$. The minimum $f_\\lambda(x) = \\min_y\\{f(y) + \\|x-y\\|^2/2\\lambda\\}$ is attained at a unique point $p(x)$, the [proximal operator](c:proximal-operator). The [Moreau envelope](c:moreau-envelope) $f_\\lambda$ is convex and differentiable with $\\nabla f_\\lambda = (I - p)/\\lambda$, which is $1/\\lambda$-Lipschitz.",
+  "hypotheses": [
+   {
+    "id": "h:hilbert",
+    "text": "$H$ is a real [Hilbert space](c:hilbert-space) and $\\lambda > 0$.",
+    "concept": "c:hilbert-space"
+   },
+   {
+    "id": "h:convex",
+    "text": "$f\\colon H \\to (-\\infty, \\infty]$ is a proper [convex function](c:convex-function) that is [lower semicontinuous](c:lower-semicontinuous-function).",
+    "concept": "c:convex-function"
+   }
+  ],
+  "conclusion": "The envelope $f_\\lambda$ is convex and Fréchet differentiable, and its gradient $(I - p)/\\lambda$ is $1/\\lambda$-Lipschitz.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "sandwich",
+    "name": "Subgradient inequality and sandwich",
+    "slogan": "Characterize the minimizer by a subgradient inequality, then sandwich the envelope between two quadratics to read off its gradient.",
+    "scope": "Existence of the minimizer, convexity, differentiability and the Lipschitz gradient of $f_\\lambda$. The limit $f_\\lambda \\to f$ as $\\lambda \\to 0$ is the other part of the family and is not proved here.",
+    "mechanisms": [
+     "m:compactness-extremum",
+     "m:convexity"
+    ],
+    "roles": [
+     {
+      "h": "h:hilbert",
+      "why": "The inner product gives the squared distance, weak compactness of balls and the identities used in the estimates.",
+      "steps": [
+       "s:minimizer",
+       "s:sandwich",
+       "s:lipschitz"
+      ]
+     },
+     {
+      "h": "h:convex",
+      "why": "Lower semicontinuity gives a minimizer, convexity gives the subgradient inequality, and properness makes $f_\\lambda$ finite.",
+      "steps": [
+       "s:minimizer",
+       "s:subgradient",
+       "s:convex"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:minimizer",
+      "slogan": "Show that $y \\mapsto f(y) + \\|x-y\\|^2/2\\lambda$ has a unique minimizer $p(x)$.",
+      "detail": "A proper [lower semicontinuous](c:lower-semicontinuous-function) convex function has an affine minorant, so the objective is coercive and a minimizing sequence is bounded. A subsequence converges weakly, and the objective is weakly lower semicontinuous because it is convex and norm lower semicontinuous. So a minimizer exists, and it is unique because $\\|x-y\\|^2$ is strictly convex.",
+      "uses": []
+     },
+     {
+      "id": "s:subgradient",
+      "slogan": "Show that $p = p(x)$ satisfies $f(y) \\ge f(p) + \\langle (x-p)/\\lambda, y-p\\rangle$ for all $y$.",
+      "detail": "For $t \\in (0,1)$ compare the objective at $p$ and at $p + t(y-p)$, and use $f(p + t(y-p)) \\le (1-t)f(p) + tf(y)$. This gives $0 \\le t(f(y) - f(p)) + [-2t\\langle x-p, y-p\\rangle + t^2\\|y-p\\|^2]/2\\lambda$. Divide by $t$ and let $t \\to 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:sandwich",
+      "slogan": "Sandwich $f_\\lambda(x+h) - f_\\lambda(x)$ between $\\langle g, h\\rangle$ and $\\langle g, h\\rangle + \\|h\\|^2/2\\lambda$.",
+      "detail": "Put $g = (x - p)/\\lambda$ with $p = p(x)$, and $p' = p(x+h)$. Using $p$ as a competitor at $x+h$ gives the upper bound. The subgradient inequality at $p$ applied to $f(p')$ gives $f_\\lambda(x+h) - f_\\lambda(x) \\ge \\langle g, h\\rangle + \\|a'-a\\|^2/2\\lambda$ with $a = x-p$ and $a' = x+h-p'$. So $f_\\lambda$ is [Fréchet differentiable](c:frechet-derivative) with $\\nabla f_\\lambda(x) = g$.",
+      "uses": []
+     },
+     {
+      "id": "s:lipschitz",
+      "slogan": "Show that $I - p$ is firmly nonexpansive, so the gradient is $1/\\lambda$-Lipschitz.",
+      "detail": "Add the subgradient inequalities at $p = p(x)$ and $p' = p(x')$ with the roles exchanged to get $\\langle a - a', p - p'\\rangle \\ge 0$, where $a = x-p$ and $a' = x'-p'$. Since $x - x' = (a-a') + (p-p')$, this gives $\\|a-a'\\|^2 + \\|p-p'\\|^2 \\le \\|x-x'\\|^2$. So $\\|\\nabla f_\\lambda(x) - \\nabla f_\\lambda(x')\\| = \\|a-a'\\|/\\lambda \\le \\|x-x'\\|/\\lambda$.",
+      "uses": []
+     },
+     {
+      "id": "s:convex",
+      "slogan": "Show that $f_\\lambda$ is convex as a partial minimum of a jointly convex function.",
+      "detail": "The function $(x,y) \\mapsto f(y) + \\|x-y\\|^2/2\\lambda$ is jointly [convex](c:convex-function). For $x_1, x_2$ and $t \\in [0,1]$ take the minimizers $y_1, y_2$, and use $ty_1 + (1-t)y_2$ as a competitor at $tx_1 + (1-t)x_2$ to get $f_\\lambda(tx_1 + (1-t)x_2) \\le tf_\\lambda(x_1) + (1-t)f_\\lambda(x_2)$.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Collect the minimizer, the convexity, the gradient formula and its Lipschitz constant.",
+      "detail": "Step 1 gives the unique proximal point and step 5 gives convexity. Step 3 gives the gradient $(I - p)/\\lambda$ and step 4 gives its Lipschitz constant $1/\\lambda$. Together they are the theorem.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:minimizer",
+      "s:subgradient"
+     ],
+     [
+      "s:minimizer",
+      "s:convex"
+     ],
+     [
+      "s:subgradient",
+      "s:sandwich"
+     ],
+     [
+      "s:subgradient",
+      "s:lipschitz"
+     ],
+     [
+      "s:sandwich",
+      "s:conclude"
+     ],
+     [
+      "s:lipschitz",
+      "s:conclude"
+     ],
+     [
+      "s:convex",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:hilbert-space": "The inner product gives the quadratic term and weak compactness of bounded sets.",
+     "c:convex-function": "Convexity gives the subgradient inequality and the convexity of the envelope.",
+     "c:lower-semicontinuous-function": "Lower semicontinuity lets a weak limit of a minimizing sequence be a minimizer.",
+     "c:proximal-operator": "The proximal operator maps $x$ to the minimizer and defines the gradient.",
+     "c:moreau-envelope": "The envelope is the smooth function whose gradient the proof computes.",
+     "c:frechet-derivative": "The two-sided quadratic bound shows differentiability in the Fréchet sense."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Moreau, Proximité et dualité dans un espace hilbertien, Bulletin de la Société Mathématique de France 93 (1965), 273-299; see also Bauschke and Combettes, Convex Analysis and Monotone Operator Theory in Hilbert Spaces, chapter 12."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q6967039",
+  "statement": "Let $F$ and $G$ be [tame Fréchet spaces](c:tame-frechet-space), $U \\subseteq F$ open, and $P\\colon U \\to G$ a smooth tame map. Suppose that for every $f \\in U$ and $k \\in G$ the equation $DP(f)h = k$ has a unique solution $h = VP(f)k$, and that $VP\\colon U \\times G \\to F$ is smooth tame. Then $P$ is locally invertible and each local inverse is a smooth tame map.",
+  "hypotheses": [
+   {
+    "id": "h:tame",
+    "text": "$F$ and $G$ are [tame Fréchet spaces](c:tame-frechet-space), $U \\subseteq F$ is open and $P\\colon U \\to G$ is a smooth tame map.",
+    "concept": "c:tame-frechet-space"
+   },
+   {
+    "id": "h:linear",
+    "text": "For every $f \\in U$ and $k \\in G$ the equation $DP(f)h = k$ has a unique solution $h = VP(f)k$.",
+    "concept": null
+   },
+   {
+    "id": "h:inverse-tame",
+    "text": "The family of solution operators $VP\\colon U \\times G \\to F$ is smooth tame.",
+    "concept": null
+   }
+  ],
+  "conclusion": "$P$ is locally invertible near each point of $U$, and each local inverse $P^{-1}$ is a smooth tame map.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "newton-smoothing",
+    "name": "Newton iteration with smoothing",
+    "slogan": "Run a Newton iteration with smoothing operators that pays for the lost derivatives by superexponentially fast convergence.",
+    "scope": "An outline of Hamilton's proof; the tame estimates in steps 3 to 5 rest on the cited paper. The Banach space case needs no smoothing and is the inverse function theorem.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:contraction-iteration",
+     "m:a-priori-estimate"
+    ],
+    "roles": [
+     {
+      "h": "h:tame",
+      "why": "Tameness supplies the smoothing operators and the tame estimates that make the iteration converge.",
+      "steps": [
+       "s:smooth",
+       "s:quadratic"
+      ]
+     },
+     {
+      "h": "h:linear",
+      "why": "Unique solvability of the linearized equation gives the Newton step $VP(f)k$ at every point of $U$.",
+      "steps": [
+       "s:newton",
+       "s:inverse"
+      ]
+     },
+     {
+      "h": "h:inverse-tame",
+      "why": "Tame estimates for $VP$ bound the new error and make the inverse family tame.",
+      "steps": [
+       "s:quadratic",
+       "s:inverse"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:smooth",
+      "slogan": "Introduce [smoothing operators](c:smoothing-operator) $S_t$ on the [tame Fréchet space](c:tame-frechet-space) $F$.",
+      "detail": "Tameness gives operators $S_t$ for $t \\ge 1$ with $\\|S_tf\\|_n \\le Ct^{n-m}\\|f\\|_m$ for $n \\ge m$ and $\\|f - S_tf\\|_n \\le Ct^{n-m}\\|f\\|_m$ for $n \\le m$. They trade smoothness for size, which pays for the derivatives that the linear solution operator loses. Hamilton, Part II, constructs them.",
+      "uses": []
+     },
+     {
+      "id": "s:newton",
+      "slogan": "Define the modified Newton iteration $f_{j+1} = f_j + S_{t_j}\\,VP(f_j)(g - P(f_j))$.",
+      "detail": "Fix $g$ near $P(f_0)$. Plain Newton iteration would add $VP(f_j)(g - P(f_j))$, which loses derivatives at each step and so cannot be iterated in a fixed Fréchet norm. The factor $S_{t_j}$ restores smoothness, with parameters $t_j \\to \\infty$ superexponentially.",
+      "uses": []
+     },
+     {
+      "id": "s:quadratic",
+      "slogan": "Bound the error $g - P(f_{j+1})$ by a quadratic estimate that loses derivatives.",
+      "detail": "Tame estimates for $P$ and $VP$ bound the new error by a term quadratic in the step $f_{j+1} - f_j$, which costs derivatives, plus a smoothing error from $I - S_{t_j}$. The smoothing error is small because $t_j$ is large.",
+      "uses": []
+     },
+     {
+      "id": "s:converge",
+      "slogan": "Show that the iterates converge in every seminorm to a solution of $P(f) = g$.",
+      "detail": "Induction on $j$ gives bounds on $\\|f_{j+1} - f_j\\|_n$ that are summable for each $n$, because the errors fall faster than the powers of $t_j$ that the lost derivatives cost. So $f_j$ converges in the [Fréchet space](c:frechet-space) $F$ to a point $f$ with $P(f) = g$. This is a local right inverse.",
+      "uses": []
+     },
+     {
+      "id": "s:inverse",
+      "slogan": "Show that the local inverse is unique, smooth and tame.",
+      "detail": "The cited paper proves that $P$ is locally injective and that $P^{-1}(g)$ depends on $g$ in a tame way. The derivative then satisfies $D(P^{-1})(g)k = VP(P^{-1}(g))k$, which is smooth tame because $VP$ is.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:smooth",
+      "s:newton"
+     ],
+     [
+      "s:newton",
+      "s:quadratic"
+     ],
+     [
+      "s:quadratic",
+      "s:converge"
+     ],
+     [
+      "s:converge",
+      "s:inverse"
+     ]
+    ],
+    "conclusion": "s:inverse",
+    "concepts": {
+     "c:tame-frechet-space": "Tame spaces carry the smoothing operators and the tame estimates of the proof.",
+     "c:smoothing-operator": "Smoothing operators repair the loss of derivatives in each Newton step.",
+     "c:frechet-space": "The iterates converge in the seminorms of the Fréchet space $F$."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "R. S. Hamilton, The inverse function theorem of Nash and Moser, Bulletin of the American Mathematical Society (N.S.) 7 (1982), no. 1, 65-222",
+     "url": "https://doi.org/10.1090/S0273-0979-1982-15004-2",
+     "note": "Part III, theorem 1.1.1 and its proof, with the tame spaces and smoothing operators of Part II; the iteration follows Moser's smoothing scheme."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:nested-intervals-lemma",
+  "statement": "Let $(a_n)$ and $(b_n)$ be real sequences with $(a_n)$ nondecreasing, $(b_n)$ nonincreasing and $a_n \\le b_n$ for every $n$. Then the [least upper bound](c:least-upper-bound) $s = \\sup_n a_n$ exists and $a_n \\le s \\le b_n$ for every $n$, so $s$ lies in all the closed intervals $[a_n, b_n]$.",
+  "hypotheses": [
+   {
+    "id": "h:increasing",
+    "text": "The sequence $(a_n)$ is a nondecreasing [monotone sequence](c:monotone-sequence) of real numbers.",
+    "concept": "c:monotone-sequence"
+   },
+   {
+    "id": "h:decreasing",
+    "text": "The sequence $(b_n)$ of real numbers is nonincreasing.",
+    "concept": null
+   },
+   {
+    "id": "h:order",
+    "text": "$a_n \\le b_n$ for every $n$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The supremum $s = \\sup_n a_n$ exists and $a_n \\le s \\le b_n$ for every $n$.",
+  "formal": {
+   "decl": "Monotone.ciSup_mem_iInter_Icc_of_antitone",
+   "difference": "The declaration allows any directed index set and any conditionally complete partial order with suprema of bounded directed sets, so real sequences are a special case. There the supremum exists by the instance, and here it exists by completeness of $\\mathbb{R}$."
+  },
+  "proofs": [
+   {
+    "id": "supremum-of-left-ends",
+    "name": "Supremum of the left ends",
+    "slogan": "Every right end bounds all the left ends, so the supremum of the left ends exists and sits between each pair of ends.",
+    "scope": "Real sequences indexed by $\\mathbb{N}$; the argument is the one mathlib uses for directed families. The same $s$ lies in every interval, so the intersection $\\bigcap_n [a_n, b_n]$ is nonempty.",
+    "mechanisms": [
+     "m:supremum",
+     "m:monotone-limit"
+    ],
+    "roles": [
+     {
+      "h": "h:increasing",
+      "why": "Monotonicity of $a$ gives $a_m \\le a_n$ for $m \\le n$.",
+      "steps": [
+       "s:cross"
+      ]
+     },
+     {
+      "h": "h:decreasing",
+      "why": "Monotonicity of $b$ gives $b_m \\le b_n$ for $m \\ge n$.",
+      "steps": [
+       "s:cross"
+      ]
+     },
+     {
+      "h": "h:order",
+      "why": "The inequality $a_m \\le b_m$ links the two sequences when $m \\ge n$.",
+      "steps": [
+       "s:cross"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:cross",
+      "slogan": "Show that every $a_m$ is at most every $b_n$.",
+      "detail": "Take indices $m$ and $n$. If $m \\le n$, then $a_m \\le a_n \\le b_n$ because $a$ is nondecreasing. If $m \\ge n$, then $a_m \\le b_m \\le b_n$ because $b$ is nonincreasing.",
+      "uses": []
+     },
+     {
+      "id": "s:sup",
+      "slogan": "Take the [supremum](c:least-upper-bound) $s$ of the set $\\{a_m\\}$.",
+      "detail": "By step 1 the nonempty set $\\{a_m : m \\ge 0\\}$ is bounded above by $b_0$. By completeness of the [real numbers](c:real-number) it has a least upper bound $s$.",
+      "uses": []
+     },
+     {
+      "id": "s:left",
+      "slogan": "Show that $s \\ge a_n$ for each $n$.",
+      "detail": "Each $a_n$ belongs to the set $\\{a_m\\}$, and $s$ is an upper bound of that set. So $a_n \\le s$.",
+      "uses": []
+     },
+     {
+      "id": "s:right",
+      "slogan": "Show that $s \\le b_n$ for each $n$.",
+      "detail": "By step 1 the number $b_n$ is an upper bound of $\\{a_m\\}$, and $s$ is the least upper bound. So $s \\le b_n$.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Join the two inequalities to put $s$ in every interval.",
+      "detail": "Steps 3 and 4 give $a_n \\le s \\le b_n$ for every $n$. So $s \\in [a_n, b_n]$ for every $n$, that is $s \\in \\bigcap_n [a_n, b_n]$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:cross",
+      "s:sup"
+     ],
+     [
+      "s:sup",
+      "s:left"
+     ],
+     [
+      "s:sup",
+      "s:right"
+     ],
+     [
+      "s:cross",
+      "s:right"
+     ],
+     [
+      "s:left",
+      "s:conclude"
+     ],
+     [
+      "s:right",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:least-upper-bound": "The supremum of the left ends is the common point of the intervals.",
+     "c:monotone-sequence": "Monotonicity orders the left ends and the right ends.",
+     "c:real-number": "Completeness of the reals gives the supremum of a bounded set."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Monotone.ciSup_mem_iInter_Icc_of_antitone",
+     "follows": true,
+     "note": "mathlib shows that each right end bounds the range of the left ends (Monotone.forall_le_of_antitone), then uses Directed.le_ciSup and Directed.ciSup_le."
+    }
+   }
+  ]
  }
 ]
