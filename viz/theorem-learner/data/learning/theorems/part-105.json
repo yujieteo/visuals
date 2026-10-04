@@ -1,0 +1,134 @@
+[
+ {
+  "id": "nm:canonical-decomposition",
+  "statement": "Let $R>0$ and let $f$ be [meromorphic](c:meromorphic-function) on the closed disk $|z|\\le R$, with values in a complex normed space, with finite order at every point. With $C_w(z)=\\frac{R^2-\\bar w z}{R(z-w)}$ there is a function $g$, meromorphic in normal form and zero-free on $|z|<R$, such that $f=\\big(\\prod_{|w|<R}C_w^{-\\operatorname{ord}_w f}\\big)\\,g$ off a discrete set.",
+  "hypotheses": [
+   {
+    "id": "h:radius",
+    "text": "The radius $R$ is positive.",
+    "concept": null
+   },
+   {
+    "id": "h:meromorphic",
+    "text": "The function $f$ is [meromorphic](c:meromorphic-function) on the closed disk $|z|\\le R$.",
+    "concept": "c:meromorphic-function"
+   },
+   {
+    "id": "h:order",
+    "text": "The function $f$ is [locally nonzero](c:locally-nonzero-function) at every point of the closed disk, so its order is never $\\infty$.",
+    "concept": "c:locally-nonzero-function"
+   }
+  ],
+  "conclusion": "There is a function $g$, meromorphic in normal form on the closed disk and zero-free on the open disk, with $f=\\big(\\prod_{|w|<R}C_w^{-\\operatorname{ord}_w f}\\big)\\,g$ outside a discrete subset of the closed disk.",
+  "formal": {
+   "decl": "MeromorphicOn.exists_canonicalDecomp",
+   "difference": "mathlib allows any real $R$ and treats $R\\le 0$ as a trivial case with an empty open disk. Otherwise the statements agree."
+  },
+  "proofs": [
+   {
+    "id": "normalize-product",
+    "name": "Cancel by canonical factors",
+    "slogan": "Multiply f by canonical factors that cancel its zeros and poles, then pass to the normal form.",
+    "scope": "The case $R>0$. For $R\\le 0$ the open disk is empty: take $g$ constant equal to $f(0)$ and the product empty.",
+    "mechanisms": [
+     "m:construction-explicit",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:radius",
+      "why": "A positive radius makes the open disk nonempty and defines every canonical factor.",
+      "steps": [
+       "s:factors"
+      ]
+     },
+     {
+      "h": "h:meromorphic",
+      "why": "Meromorphy of $f$ gives a meromorphic product and only finitely many zeros and poles.",
+      "steps": [
+       "s:finite",
+       "s:product"
+      ]
+     },
+     {
+      "h": "h:order",
+      "why": "Finite order everywhere lets orders add, so the product has order $0$ at each point of the open disk.",
+      "steps": [
+       "s:finite",
+       "s:product"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:factors",
+      "slogan": "Show that each canonical factor has one simple pole and no zero.",
+      "detail": "Take $|w|<R$ and $|z|\\le R$. Then $|R^2-\\bar w z|\\ge R^2-|w|R>0$, so $C_w$ has no zero on the closed disk. Its only [pole](c:pole-of-a-function) is $z=w$, and it is simple because the numerator is nonzero there. Hence $\\operatorname{ord}_w C_w=-1$ and $\\operatorname{ord}_z C_w=0$ for $z\\ne w$.",
+      "uses": []
+     },
+     {
+      "id": "s:finite",
+      "slogan": "Show that $f$ has only finitely many zeros and poles in the open disk.",
+      "detail": "Near a point $p$ the function is $(z-p)^k h(z)$ with $h$ nonzero at $p$, because its order is finite. So the points with nonzero order have no accumulation point in the closed disk. A compact disk holds only finitely many of them, so $n(w)=\\operatorname{ord}_w f$ is nonzero for finitely many $w$.",
+      "uses": [
+       "nm:principle-of-isolated-zeros"
+      ]
+     },
+     {
+      "id": "s:product",
+      "slogan": "Multiply $f$ by the finite product of the canonical factors raised to $n(w)$.",
+      "detail": "Put $\\varphi=\\big(\\prod_w C_w^{n(w)}\\big)f$, a finite product. At a point $w$ with $n(w)\\ne 0$, the factor $C_w^{n(w)}$ has order $-n(w)$ and $f$ has order $n(w)$, so $\\varphi$ has order $0$. At every other point of the open disk all factors have order $0$, so the order of $\\varphi$ is that of $f$, which is $0$.",
+      "uses": []
+     },
+     {
+      "id": "s:normal-form",
+      "slogan": "Replace $\\varphi$ by its meromorphic normal form $g$.",
+      "detail": "Changing $\\varphi$ on a discrete set gives a function $g$ in normal form with the same orders at every point. At a point of the open disk the order is $0$, so $g$ is [analytic](c:analytic-function) there and $g(z)\\ne 0$. The set where $g\\ne\\varphi$ is discrete.",
+      "uses": []
+     },
+     {
+      "id": "s:recover",
+      "slogan": "Multiply back by the inverse product to recover $f$ off a discrete set.",
+      "detail": "Away from the finitely many $w$ with $n(w)\\ne 0$, $C_w^{-n(w)}C_w^{n(w)}=1$ pointwise. Hence $f=\\big(\\prod_w C_w^{-n(w)}\\big)\\varphi$ there, and $\\varphi=g$ off a discrete set. The excluded points form a discrete set, which gives the stated identity.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:factors",
+      "s:product"
+     ],
+     [
+      "s:finite",
+      "s:product"
+     ],
+     [
+      "s:product",
+      "s:normal-form"
+     ],
+     [
+      "s:normal-form",
+      "s:recover"
+     ],
+     [
+      "s:finite",
+      "s:recover"
+     ]
+    ],
+    "conclusion": "s:recover",
+    "concepts": {
+     "c:meromorphic-function": "The product of meromorphic functions is meromorphic and has a well-defined order.",
+     "c:locally-nonzero-function": "A locally nonzero function has finite order, so orders add under multiplication.",
+     "c:pole-of-a-function": "Each canonical factor contributes exactly one simple pole, which cancels one zero of $f$.",
+     "c:analytic-function": "Order $0$ in normal form means $g$ is analytic and nonzero at the point."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "MeromorphicOn.exists_canonicalDecomp",
+     "follows": true,
+     "note": "mathlib takes g as toMeromorphicNFOn of (finprod of canonicalFactor R c ^ divisor f c) • f, and computes its divisor with divisor_smul and canonicalDecomposition_aux₂."
+    }
+   }
+  ]
+ }
+]

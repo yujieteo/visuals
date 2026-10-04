@@ -1,0 +1,1779 @@
+[
+ {
+  "id": "wd:Q7572588",
+  "statement": "Let $f$ be a [space-constructible function](c:space-constructible-function) with $f(n) \\ge \\log n$ and let $g(n) = o(f(n))$. Some language is decided by a deterministic [Turing machine](c:turing-machine) in space $O(f(n))$ and by no such machine in space $g(n)$.",
+  "hypotheses": [
+   {
+    "id": "h:constructible",
+    "text": "The function $f$ is [space-constructible](c:space-constructible-function) and $f(n) \\ge \\log n$.",
+    "concept": "c:space-constructible-function"
+   },
+   {
+    "id": "h:smaller",
+    "text": "The function $g$ satisfies $g(n) = o(f(n))$.",
+    "concept": "c:asymptotic-notation"
+   }
+  ],
+  "conclusion": "Some language is in $\\mathrm{SPACE}(f(n))$ but not in $\\mathrm{SPACE}(g(n))$, so $\\mathrm{SPACE}(g) \\subsetneq \\mathrm{SPACE}(f)$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "diagonalization",
+    "name": "Diagonalization",
+    "slogan": "A machine $D$ simulates each machine $M$ on its own code within $f(n)$ cells and gives the opposite answer.",
+    "scope": "The deterministic hierarchy theorem. The nondeterministic hierarchy theorem is another member of the family.",
+    "mechanisms": [
+     "m:diagonal-argument",
+     "m:contradiction",
+     "m:encoding"
+    ],
+    "roles": [
+     {
+      "h": "h:constructible",
+      "why": "Space-constructibility lets $D$ mark off $f(n)$ cells, and $f(n) \\ge \\log n$ leaves room for head positions and counters.",
+      "steps": [
+       "s:machine",
+       "s:simulate"
+      ]
+     },
+     {
+      "h": "h:smaller",
+      "why": "The relation $g = o(f)$ makes the simulation of a $g$-space machine fit into $f(n)$ cells for long inputs.",
+      "steps": [
+       "s:fit"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:machine",
+      "slogan": "Build a machine $D$ that marks off $f(n)$ cells and accepts only inputs of the form $\\langle M\\rangle 10^k$.",
+      "detail": "On input $w$ of length $n$, $D$ computes $f(n)$ and marks that many cells, which is possible because $f$ is [space-constructible](c:space-constructible-function). $D$ rejects unless $w = \\langle M\\rangle 10^k$ for some [Turing machine](c:turing-machine) $M$, and $D$ rejects if it ever needs a cell outside the marked cells.",
+      "uses": []
+     },
+     {
+      "id": "s:simulate",
+      "slogan": "Simulate $M$ on $w$ inside the marked cells and count its steps.",
+      "detail": "$D$ simulates $M$ on $w$ and keeps a binary step counter of $O(f(n))$ bits. A machine of space $f(n)$ has at most $n f(n)\\,|\\Gamma|^{f(n)} \\le 2^{d f(n)}$ [configurations](c:cfg), so $D$ rejects after $2^{d f(n)}$ steps. Hence $D$ always halts in space $O(f(n))$.",
+      "uses": []
+     },
+     {
+      "id": "s:flip",
+      "slogan": "Flip the answer of $M$ so that $D$ disagrees with $M$ on $w$.",
+      "detail": "$D$ rejects if $M$ accepts $w$ and accepts if $M$ rejects $w$; if the simulation is cut off, $D$ rejects. So $D$ decides a language $L(D)$ in space $O(f(n))$.",
+      "uses": []
+     },
+     {
+      "id": "s:fit",
+      "slogan": "Pad the code of $M$ so that the simulation of $M$ fits into $f(n)$ cells.",
+      "detail": "Suppose a machine $M$ decides $L(D)$ in space $g(n)$. Simulating $M$ on the fixed alphabet of $D$ takes $c\\,g(n)$ cells, with $c$ depending only on $M$. Since $g = o(f)$, we have $c\\,g(n) < f(n)$ and $M$ halts within $2^{d f(n)}$ steps for all large $n$, so $w = \\langle M\\rangle 10^k$ with $k$ large lets the simulation finish.",
+      "uses": []
+     },
+     {
+      "id": "s:contradict",
+      "slogan": "Run $D$ on $w = \\langle M\\rangle 10^k$ to get a contradiction.",
+      "detail": "On $w$ the simulation finishes, so $D$ gives the opposite answer to $M$: $w \\in L(D)$ if and only if $M$ rejects $w$. Then $M$ does not decide $L(D)$. This is the diagonal argument, so no machine of space $g(n)$ decides $L(D)$, while $D$ does so in space $O(f(n))$.",
+      "uses": [
+       "nl:11269"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:machine",
+      "s:simulate"
+     ],
+     [
+      "s:simulate",
+      "s:flip"
+     ],
+     [
+      "s:simulate",
+      "s:fit"
+     ],
+     [
+      "s:flip",
+      "s:contradict"
+     ],
+     [
+      "s:fit",
+      "s:contradict"
+     ]
+    ],
+    "conclusion": "s:contradict",
+    "concepts": {
+     "c:space-constructible-function": "It lets the diagonal machine mark off exactly $f(n)$ cells.",
+     "c:turing-machine": "The diagonal machine simulates other machines from their codes.",
+     "c:cfg": "Counting configurations bounds the running time of the simulation.",
+     "c:asymptotic-notation": "The relation $g = o(f)$ makes the simulation fit for large inputs."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The diagonalization of Stearns, Hartmanis and Lewis (1965); textbook form in Sipser, Introduction to the Theory of Computation, Section 9.1."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q7599389",
+  "statement": "Let $C \\subset \\mathbb{R}^d$ be a pointed [rational cone](c:rational-cone) of dimension $d$. Its [generating functions](c:generating-function) $F_C(x)=\\sum_{m \\in C \\cap \\mathbb{Z}^d} x^m$ and $F_{C^\\circ}(x)=\\sum_{m \\in C^\\circ \\cap \\mathbb{Z}^d} x^m$ are [rational functions](c:rational-function) and satisfy $F_C(1/x) = (-1)^d F_{C^\\circ}(x)$.",
+  "hypotheses": [
+   {
+    "id": "h:cone",
+    "text": "The set $C \\subset \\mathbb{R}^d$ is a pointed [rational cone](c:rational-cone): the nonnegative span of finitely many integer vectors, with no line inside.",
+    "concept": "c:rational-cone"
+   },
+   {
+    "id": "h:full",
+    "text": "The cone $C$ has dimension $d$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The series $F_C$ and $F_{C^\\circ}$ are rational functions, and $F_C(1/x) = (-1)^d F_{C^\\circ}(x)$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "triangulation",
+    "name": "Triangulation and links",
+    "slogan": "Prove the law for simplicial cones with a fundamental parallelepiped, then triangulate and sum over faces with Euler characteristics of links.",
+    "scope": "The theorem for full-dimensional cones; a cone of dimension $k<d$ is treated in the lattice $\\mathbb{Z}^d \\cap \\operatorname{span} C$ with $k$ in place of $d$. The identity is one of rational functions.",
+    "mechanisms": [
+     "m:generating-function",
+     "m:euler-characteristic",
+     "m:inclusion-exclusion"
+    ],
+    "roles": [
+     {
+      "h": "h:cone",
+      "why": "Integer generators give rational series for simplicial cones, and pointedness gives a triangulation with a bounded cross-section.",
+      "steps": [
+       "s:simplicial",
+       "s:triangulate"
+      ]
+     },
+     {
+      "h": "h:full",
+      "why": "Full dimension makes the link of an interior face a sphere of the right dimension, which gives the sign $(-1)^d$.",
+      "steps": [
+       "s:star",
+       "s:collect"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:simplicial",
+      "slogan": "Write the lattice points of a simplicial cone through a fundamental parallelepiped.",
+      "detail": "Let $\\sigma$ have independent primitive integer generators $v_1,\\dots,v_k$ and let $\\Lambda = \\mathbb{Z}^d \\cap \\operatorname{span}\\sigma$. With $\\Pi = \\{\\sum \\lambda_i v_i : 0 \\le \\lambda_i < 1\\}$, each lattice point of $\\sigma$ is uniquely $w + \\sum a_i v_i$ with $w \\in \\Pi \\cap \\Lambda$ and $a_i \\in \\mathbb{N}$. The [geometric series](c:geometric-series) give $F_\\sigma = \\sum_{w\\in\\Pi} x^w \\prod_i (1-x^{v_i})^{-1}$; for the [relative interior](c:relative-interior) use $\\Pi' = \\{0 < \\lambda_i \\le 1\\}$.",
+      "uses": [
+       "nm:geometric-series"
+      ]
+     },
+     {
+      "id": "s:reflect",
+      "slogan": "Reflect the series of a simplicial cone and match the two parallelepipeds.",
+      "detail": "The map $w \\mapsto \\sum v_i - w$ is a bijection from $\\Pi \\cap \\Lambda$ onto $\\Pi' \\cap \\Lambda$. Since $(1-x^{-v})^{-1} = -x^{v}(1-x^{v})^{-1}$, we get $F_\\sigma(1/x) = (-1)^k F_{\\sigma^\\circ}(x)$ for $k=\\dim\\sigma$. Replacing $x$ by $1/x$ gives $F_{\\sigma^\\circ}(1/x) = (-1)^k F_\\sigma(x)$.",
+      "uses": []
+     },
+     {
+      "id": "s:triangulate",
+      "slogan": "Triangulate $C$ into simplicial cones on its own rays and split $C$ into open pieces.",
+      "detail": "A pointed cone has a [triangulation](c:triangulation) $\\Delta$ into simplicial cones with no new rays (triangulate a cross-section polytope on its vertices). The relative interiors of the cones of $\\Delta$ partition $C$, so $F_C = \\sum_{\\sigma\\in\\Delta} F_{\\sigma^\\circ}$ and $F_{C^\\circ} = \\sum_{\\sigma^\\circ \\subset C^\\circ} F_{\\sigma^\\circ}$. Also $F_\\sigma = \\sum_{\\tau \\le \\sigma} F_{\\tau^\\circ}$ over faces $\\tau$.",
+      "uses": []
+     },
+     {
+      "id": "s:invert",
+      "slogan": "Reflect every open piece and expand each closed cone into its open faces.",
+      "detail": "By step 2, $F_{\\tau^\\circ}(1/x) = (-1)^{\\dim\\tau} F_\\tau(x) = (-1)^{\\dim\\tau}\\sum_{\\rho \\le \\tau} F_{\\rho^\\circ}(x)$. Summing over $\\tau \\in \\Delta$ gives $F_C(1/x) = \\sum_{\\rho\\in\\Delta} F_{\\rho^\\circ}(x)\\, c_\\rho$ with $c_\\rho = \\sum_{\\tau \\ge \\rho} (-1)^{\\dim \\tau}$, the sum over cones of $\\Delta$ that contain $\\rho$ as a face.",
+      "uses": []
+     },
+     {
+      "id": "s:star",
+      "slogan": "Compute the alternating sum $c_\\rho$ as an Euler characteristic of the link of $\\rho$.",
+      "detail": "Cut $C$ by a hyperplane to get a triangulated $(d-1)$-ball $P$. For $\\rho \\ne 0$, $c_\\rho = (-1)^{\\dim\\rho+1}\\tilde\\chi(\\operatorname{lk}\\rho)$, with $\\tilde\\chi$ the reduced [Euler characteristic](c:euler-characteristic): the link is a sphere of dimension $d-\\dim\\rho-1$ if $\\rho^\\circ \\subset C^\\circ$, giving $(-1)^d$, and a ball if $\\rho \\subset \\partial C$, giving $0$. For $\\rho = 0$ the link is $P$, so $c_0 = 1-\\chi(P) = 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:collect",
+      "slogan": "Collect the surviving terms to get $F_C(1/x) = (-1)^d F_{C^\\circ}(x)$.",
+      "detail": "By step 5 only the faces $\\rho$ with $\\rho^\\circ \\subset C^\\circ$ remain, each with factor $(-1)^d$. So $F_C(1/x) = (-1)^d \\sum_{\\rho^\\circ \\subset C^\\circ} F_{\\rho^\\circ}(x) = (-1)^d F_{C^\\circ}(x)$ by step 3. Both series are finite sums of rational functions, hence rational.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:simplicial",
+      "s:reflect"
+     ],
+     [
+      "s:simplicial",
+      "s:triangulate"
+     ],
+     [
+      "s:reflect",
+      "s:invert"
+     ],
+     [
+      "s:triangulate",
+      "s:invert"
+     ],
+     [
+      "s:invert",
+      "s:star"
+     ],
+     [
+      "s:star",
+      "s:collect"
+     ],
+     [
+      "s:triangulate",
+      "s:collect"
+     ]
+    ],
+    "conclusion": "s:collect",
+    "concepts": {
+     "c:rational-cone": "Its integer generators make every simplicial piece a rational series.",
+     "c:generating-function": "The theorem compares the series of lattice points of $C$ and $C^\\circ$.",
+     "c:rational-function": "Each series sums to a rational function, which allows $x \\mapsto 1/x$.",
+     "c:geometric-series": "Geometric series sum the lattice points along each generator.",
+     "c:relative-interior": "Relative interiors of faces partition the cone into open pieces.",
+     "c:triangulation": "It splits $C$ into simplicial cones whose open faces partition $C$.",
+     "c:euler-characteristic": "It evaluates the alternating sum over cones that contain a face."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Triangulation proof of Stanley's reciprocity theorem for rational cones; the simplicial case is a fundamental parallelepiped computation."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q7664013",
+  "statement": "Every [contraction](c:contraction-mapping) $T$ on a complex [Hilbert space](c:hilbert-space) $H$ has a [unitary](c:unitary-operator) dilation: a Hilbert space $K \\supseteq H$ and a unitary $U$ on $K$ with $T^n = P_H U^n|_H$ for all $n \\ge 0$.",
+  "hypotheses": [
+   {
+    "id": "h:hilbert",
+    "text": "The space $H$ is a complex [Hilbert space](c:hilbert-space).",
+    "concept": "c:hilbert-space"
+   },
+   {
+    "id": "h:contraction",
+    "text": "The operator $T$ on $H$ is a [contraction](c:contraction-mapping): $\\|T\\| \\le 1$.",
+    "concept": "c:contraction-mapping"
+   }
+  ],
+  "conclusion": "There are a Hilbert space $K \\supseteq H$ and a unitary $U$ on $K$ with $T^n = P_H U^n|_H$ for every $n \\ge 0$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "schaffer",
+    "name": "Schäffer matrix",
+    "slogan": "Fill the defect operators into a unitary block, then shift the rest of $\\ell^2(\\mathbb{Z}, H)$ so that powers of $U$ compress to powers of $T$.",
+    "scope": "The existence of the dilation; the uniqueness of the minimal dilation is a separate part of the record and is not proved here. The scalar field is $\\mathbb{C}$.",
+    "mechanisms": [
+     "m:construction-explicit",
+     "m:orthogonal-projection"
+    ],
+    "roles": [
+     {
+      "h": "h:hilbert",
+      "why": "The Hilbert space gives adjoints, positive square roots and orthogonal direct sums.",
+      "steps": [
+       "s:defect",
+       "s:assemble"
+      ]
+     },
+     {
+      "h": "h:contraction",
+      "why": "The bound $\\|T\\| \\le 1$ makes $I - T^*T$ and $I - TT^*$ positive, so the defect operators exist.",
+      "steps": [
+       "s:defect",
+       "s:halmos"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:defect",
+      "slogan": "Define the defect operators and show that $T D_T = D_{T^*} T$.",
+      "detail": "Since $\\|T\\| \\le 1$, the [positive operators](c:positive-operator) $I - T^*T$ and $I - TT^*$ have square roots $D_T$ and $D_{T^*}$. From $T(I - T^*T) = (I - TT^*)T$ we get $T\\,p(T^*T) = p(TT^*)\\,T$ for polynomials $p$, hence for continuous $p$ on $[0,1]$ by approximation. The choice $p(t) = \\sqrt{1-t}$ gives $T D_T = D_{T^*} T$, and the adjoint gives $D_T T^* = T^* D_{T^*}$.",
+      "uses": [
+       "nm:weierstrass-approximation-theorem"
+      ]
+     },
+     {
+      "id": "s:halmos",
+      "slogan": "Show that the block matrix $W = \\begin{pmatrix} T & D_{T^*} \\\\ D_T & -T^* \\end{pmatrix}$ is unitary on $H \\oplus H$.",
+      "detail": "The products $W^*W$ and $WW^*$ have diagonal entries $T^*T + D_T^2 = I$ and $D_{T^*}^2 + TT^* = I$ (and the two similar ones). Their off-diagonal entries vanish by the two identities of step 1. So $W^*W = WW^* = I$.",
+      "uses": []
+     },
+     {
+      "id": "s:assemble",
+      "slogan": "Build $U$ on $K = \\ell^2(\\mathbb{Z}, H)$ from the block $W$ and identity shifts.",
+      "detail": "Write the [direct sum](c:direct-sum) $K = \\bigoplus_{j\\in\\mathbb{Z}} H_j$ with $H_j = H$ and $H = H_0$. Let $U$ map $H_0 \\oplus H_{-1}$ onto $H_0 \\oplus H_1$ by $W$, and map $H_j$ onto $H_{j+1}$ by the identity for $j \\ge 1$ and for $j \\le -2$. The sources cover every index and so do the targets, so $U$ is unitary.",
+      "uses": []
+     },
+     {
+      "id": "s:powers",
+      "slogan": "Follow $U^n x$ for $x \\in H$ and read off its $H_0$ component.",
+      "detail": "For $x \\in H_0$ we have $Ux = Tx + D_T x$ with $Tx \\in H_0$ and $D_T x \\in H_1$. Vectors in $H_j$ with $j \\ge 1$ only move to higher indices. By induction, $U^n x = T^n x + y_n$ with $y_n \\in \\bigoplus_{j \\ge 1} H_j$, so $P_H U^n x = T^n x$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:defect",
+      "s:halmos"
+     ],
+     [
+      "s:halmos",
+      "s:assemble"
+     ],
+     [
+      "s:assemble",
+      "s:powers"
+     ]
+    ],
+    "conclusion": "s:powers",
+    "concepts": {
+     "c:contraction-mapping": "The norm bound $\\|T\\| \\le 1$ makes the defect operators exist.",
+     "c:hilbert-space": "It supplies adjoints, square roots and the orthogonal sum $K$.",
+     "c:unitary-operator": "The constructed operator $U$ must be unitary on $K$.",
+     "c:positive-operator": "Positive operators have square roots, which define $D_T$ and $D_{T^*}$.",
+     "c:direct-sum": "The big space $K$ is an orthogonal direct sum of copies of $H$."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Schäffer's matrix construction of the unitary dilation; see Sz.-Nagy and Foias, Harmonic Analysis of Operators on Hilbert Space, Chapter I."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q719966",
+  "statement": "Every language in the [polynomial hierarchy](c:polynomial-hierarchy) is decided by a deterministic polynomial-time [oracle machine](c:oracle-machine) that queries a $\\#\\mathrm{P}$ function: $\\mathrm{PH} \\subseteq \\mathrm{P}^{\\#\\mathrm{P}} = \\mathrm{P}^{\\mathrm{PP}}$.",
+  "hypotheses": [],
+  "conclusion": "The inclusion $\\mathrm{PH} \\subseteq \\mathrm{P}^{\\#\\mathrm{P}}$ holds.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "toda",
+    "name": "Toda's two inclusions",
+    "slogan": "Put the hierarchy into BP$\\cdot\\oplus$P with Valiant-Vazirani and parity arithmetic, then derandomize with one amplified counting query.",
+    "scope": "An outline of Toda's published proof; the cited paper proves each step in full. Steps 1 and 2 show $\\mathrm{PH} \\subseteq \\mathrm{BP}\\cdot\\oplus\\mathrm{P}$ and steps 3 and 4 show $\\mathrm{BP}\\cdot\\oplus\\mathrm{P} \\subseteq \\mathrm{P}^{\\#\\mathrm{P}}$.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:reduction",
+     "m:modular-arithmetic"
+    ],
+    "roles": [],
+    "steps": [
+     {
+      "id": "s:vv",
+      "slogan": "Reduce satisfiability randomly to formulas with an odd number of solutions.",
+      "detail": "The Valiant-Vazirani theorem gives a randomized polynomial-time map $\\varphi \\mapsto \\varphi'$: if $\\varphi$ is unsatisfiable, $\\varphi'$ has no solution, and if $\\varphi$ is satisfiable, then with probability at least $1/\\mathrm{poly}(n)$ it has exactly one. Toda combines this with the closure of $\\oplus\\mathrm{P}$ under complement and polynomial disjunction to get $\\mathrm{NP} \\subseteq \\mathrm{BP}\\cdot\\oplus\\mathrm{P}$.",
+      "uses": [
+       "wd:Q7911648"
+      ]
+     },
+     {
+      "id": "s:bpxorp",
+      "slogan": "Show by induction on the level that every class $\\Sigma_k^p$ lies in BP$\\cdot\\oplus$P.",
+      "detail": "Toda relativizes step 1 and swaps the operators $\\exists$, $\\oplus$ and BP past each other at the cost of one more BP$\\cdot\\oplus$ layer, using that [BPP](c:bpp) is closed under complement and composition. Each level of the hierarchy then collapses into one layer, so $\\mathrm{PH} \\subseteq \\mathrm{BP}\\cdot\\oplus\\mathrm{P}$.",
+      "uses": []
+     },
+     {
+      "id": "s:amplify",
+      "slogan": "Amplify the parity so that residues modulo a large power of $2$ separate yes from no.",
+      "detail": "A fixed polynomial with nonnegative coefficients, such as $q(y)=3y^4+4y^3$, maps $y \\equiv 0$ and $y \\equiv -1 \\pmod m$ to $0$ and $-1 \\pmod{m^2}$. Iterating it $O(\\log n)$ times turns a parity count into a count that is $0$ or $-1$ modulo $2^{p(n)}$. The new count is again a $\\#\\mathrm{P}$ function, because $\\#\\mathrm{P}$ is closed under sums and products.",
+      "uses": []
+     },
+     {
+      "id": "s:count",
+      "slogan": "Sum the amplified counts over all random strings with one $\\#\\mathrm{P}$ query.",
+      "detail": "Let $N(x,r)$ be the amplified count for input $x$ and random string $r$ of length $q(n)$, with $p(n) > q(n)$. The total $\\sum_r N(x,r)$ is a $\\#\\mathrm{P}$ value, and modulo $2^{p(n)}$ it equals minus the number of strings $r$ on which the parity is odd. A polynomial-time machine reads that number from one oracle answer and compares it with the BP threshold.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Combine the two inclusions and relate $\\mathrm{P}^{\\#\\mathrm{P}}$ to $\\mathrm{P}^{\\mathrm{PP}}$.",
+      "detail": "Steps 1 and 2 put a language of $\\mathrm{PH}$ into $\\mathrm{BP}\\cdot\\oplus\\mathrm{P}$, and steps 3 and 4 decide it in $\\mathrm{P}^{\\#\\mathrm{P}}$. The classes $\\mathrm{P}^{\\#\\mathrm{P}}$ and $\\mathrm{P}^{\\mathrm{PP}}$ agree, since a $\\mathrm{PP}$ oracle finds a $\\#\\mathrm{P}$ value by binary search and a $\\#\\mathrm{P}$ oracle answers $\\mathrm{PP}$ queries.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:vv",
+      "s:bpxorp"
+     ],
+     [
+      "s:bpxorp",
+      "s:amplify"
+     ],
+     [
+      "s:amplify",
+      "s:count"
+     ],
+     [
+      "s:count",
+      "s:conclude"
+     ],
+     [
+      "s:bpxorp",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:polynomial-hierarchy": "The theorem bounds the hierarchy; its levels are collapsed one by one.",
+     "c:oracle-machine": "The final machine asks one oracle question to a $\\#\\mathrm{P}$ function.",
+     "c:bpp": "Randomized error reduction keeps BP$\\cdot\\oplus$P closed under the level swaps."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "S. Toda, PP is as hard as the polynomial-time hierarchy, SIAM Journal on Computing 20 (1991), 865-877",
+     "url": "https://doi.org/10.1137/0220053",
+     "note": "Toda proves PH in BP.parity-P by Valiant-Vazirani and operator swapping, then BP.parity-P in P^#P by modular amplification."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1347094",
+  "statement": "If a transversal crosses two [parallel lines](c:parallel-lines) in the Euclidean plane, then the alternate interior [angles](c:angle) are equal.",
+  "hypotheses": [
+   {
+    "id": "h:plane",
+    "text": "The lines lie in the Euclidean plane, where Euclid's parallel postulate holds.",
+    "concept": null
+   },
+   {
+    "id": "h:parallel",
+    "text": "The lines $\\ell$ and $m$ are [parallel](c:parallel-lines): they lie in one plane and do not meet.",
+    "concept": "c:parallel-lines"
+   },
+   {
+    "id": "h:transversal",
+    "text": "The line $t$ meets $\\ell$ at a point $A$ and $m$ at a point $B$, with $A \\ne B$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The alternate interior [angles](c:angle) that $t$ makes with $\\ell$ at $A$ and with $m$ at $B$ are equal.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "euclid-i29",
+    "name": "Euclid I.29",
+    "slogan": "If the alternate angles differed, the interior angles on one side would sum to less than two right angles, so the parallel postulate would make the lines meet.",
+    "scope": "The direct statement. The converse (equal alternate angles make the lines parallel) is Euclid I.27 and needs no parallel postulate.",
+    "mechanisms": [
+     "m:contradiction",
+     "m:case-analysis"
+    ],
+    "roles": [
+     {
+      "h": "h:transversal",
+      "why": "Two distinct crossing points $A$ and $B$ define the angles on both sides of $t$.",
+      "steps": [
+       "s:setup"
+      ]
+     },
+     {
+      "h": "h:parallel",
+      "why": "Parallel lines have no common point, which contradicts the meeting point from the postulate.",
+      "steps": [
+       "s:contradict"
+      ]
+     },
+     {
+      "h": "h:plane",
+      "why": "The parallel postulate says that the lines meet on the side where the interior angles sum to less than two right angles.",
+      "steps": [
+       "s:meet"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:setup",
+      "slogan": "Name the alternate angles $\\alpha$ and $\\beta$ and the interior angles on one side of $t$.",
+      "detail": "Choose $C \\in \\ell$ and $D \\in m$ on opposite sides of $t$, and let $\\alpha = \\angle CAB$ and $\\beta = \\angle ABD$ be the alternate [angles](c:angle). Let $C'$ lie on $\\ell$ on the other side of $A$ from $C$. Then $\\angle C'AB = 180^\\circ - \\alpha$ because two angles on a straight line sum to $180^\\circ$.",
+      "uses": []
+     },
+     {
+      "id": "s:assume",
+      "slogan": "Assume $\\alpha \\ne \\beta$ and compare the interior angles on each side with two right angles.",
+      "detail": "On the side of $D$ the interior angles $\\angle C'AB$ and $\\angle ABD$ sum to $180^\\circ - \\alpha + \\beta$. On the side of $C$ they sum to $180^\\circ + \\alpha - \\beta$. If $\\alpha \\ne \\beta$, exactly one of the two sums is less than $180^\\circ$.",
+      "uses": []
+     },
+     {
+      "id": "s:meet",
+      "slogan": "Apply the parallel postulate on the side with the smaller sum.",
+      "detail": "Euclid's parallel postulate says that, if the interior angles on one side of a transversal sum to less than two right angles, then the two lines meet on that side. So $\\ell$ and $m$ meet.",
+      "uses": [
+       "wd:Q207014"
+      ]
+     },
+     {
+      "id": "s:contradict",
+      "slogan": "Contradict the parallelism of $\\ell$ and $m$ to get $\\alpha = \\beta$.",
+      "detail": "The lines $\\ell$ and $m$ are [parallel](c:parallel-lines), so they do not meet. This contradicts step 3, so the assumption $\\alpha \\ne \\beta$ is false and $\\alpha = \\beta$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:setup",
+      "s:assume"
+     ],
+     [
+      "s:assume",
+      "s:meet"
+     ],
+     [
+      "s:meet",
+      "s:contradict"
+     ]
+    ],
+    "conclusion": "s:contradict",
+    "concepts": {
+     "c:angle": "The theorem compares two angles that $t$ makes with the lines.",
+     "c:parallel-lines": "Parallelism gives the contradiction when the postulate yields a meeting point."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Euclid, Elements, Book I, Proposition 29."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q7847268",
+  "statement": "Let $\\Omega \\subset \\mathbb{R}^n$ be bounded and open, $n \\ge 2$. There are constants $\\alpha, C > 0$ depending only on $n$ such that every $u$ in the [Sobolev space](c:sobolev-space) $W_0^{1,n}(\\Omega)$ with $\\|\\nabla u\\|_{n} \\le 1$ satisfies $\\int_\\Omega \\exp(\\alpha |u|^{n/(n-1)})\\,dx \\le C|\\Omega|$. So $u$ lies in an exponential [Orlicz space](c:orlicz-space).",
+  "hypotheses": [
+   {
+    "id": "h:domain",
+    "text": "The set $\\Omega \\subset \\mathbb{R}^n$ is bounded and open, and $n \\ge 2$.",
+    "concept": null
+   },
+   {
+    "id": "h:function",
+    "text": "The function $u$ lies in the [Sobolev space](c:sobolev-space) $W_0^{1,n}(\\Omega)$ and $\\|\\nabla u\\|_{L^n} \\le 1$.",
+    "concept": "c:sobolev-space"
+   }
+  ],
+  "conclusion": "The integral $\\int_\\Omega \\exp(\\alpha |u|^{n/(n-1)})\\,dx$ is at most $C|\\Omega|$ with $\\alpha, C$ depending only on $n$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "potential-series",
+    "name": "Potential estimate and series",
+    "slogan": "Bound $u$ by a Riesz potential of $|\\nabla u|$, estimate its $L^q$ norms with $q^{1-1/n}$ growth, and sum the exponential series.",
+    "scope": "The inequality with some constant $\\alpha$; Moser's sharp constant $\\alpha_n$ is not proved. Below, $n' = n/(n-1)$ and $\\omega_n$ is the volume of the unit ball.",
+    "mechanisms": [
+     "m:density-extension",
+     "m:a-priori-estimate"
+    ],
+    "roles": [
+     {
+      "h": "h:domain",
+      "why": "Boundedness gives $|\\Omega| < \\infty$, which enters every $L^q$ estimate through the factor $|\\Omega|^{1/q}$.",
+      "steps": [
+       "s:norms",
+       "s:series"
+      ]
+     },
+     {
+      "h": "h:function",
+      "why": "The $W_0^{1,n}$ condition allows approximation by smooth compactly supported functions, and the bound $\\|\\nabla u\\|_n \\le 1$ normalizes the estimates.",
+      "steps": [
+       "s:density",
+       "s:potential"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:density",
+      "slogan": "Reduce to smooth compactly supported functions by density and Fatou's lemma.",
+      "detail": "The space $C_c^\\infty(\\Omega)$ is dense in $W_0^{1,n}(\\Omega)$, so choose $u_j \\in C_c^\\infty(\\Omega)$ with $u_j \\to u$ almost everywhere and in $W^{1,n}$, rescaled so that $\\|\\nabla u_j\\|_n \\le 1$. Fatou's lemma passes the integral estimate from the $u_j$ to $u$.",
+      "uses": [
+       "wd:Q5437947"
+      ]
+     },
+     {
+      "id": "s:potential",
+      "slogan": "Bound $|u(x)|$ by a Riesz potential of $|\\nabla u|$.",
+      "detail": "For $u \\in C_c^1(\\Omega)$ write $u(x) = -\\int_0^\\infty \\partial_r u(x + r\\theta)\\,dr$ for each unit vector $\\theta$, and average over the sphere. This gives $|u(x)| \\le \\frac{1}{n\\omega_n}\\int_\\Omega \\frac{|\\nabla u(y)|}{|x-y|^{n-1}}\\,dy$.",
+      "uses": []
+     },
+     {
+      "id": "s:norms",
+      "slogan": "Bound the $L^q$ norms of the potential by $c_n q^{1-1/n}|\\Omega|^{1/q}$ with Young's inequality for kernels.",
+      "detail": "Fix $q \\ge n$ and set $1/r = 1 - 1/n + 1/q$. Young's inequality for the integral operator with kernel $|x-y|^{1-n}$ on $\\Omega$ bounds $\\|u\\|_q$ by $\\|\\nabla u\\|_n$ times the $L^r$ norm of the kernel on a ball of volume $|\\Omega|$. The radial integral shows that this norm is at most $c_n q^{1-1/n}|\\Omega|^{1/q}$, with $c_n$ independent of $q$.",
+      "uses": []
+     },
+     {
+      "id": "s:series",
+      "slogan": "Expand the exponential and bound the $k$-th term by $(\\alpha c)^k|\\Omega|$ for large $k$.",
+      "detail": "We have $\\int_\\Omega e^{\\alpha|u|^{n'}} = \\sum_k \\frac{\\alpha^k}{k!}\\int_\\Omega |u|^{kn'}$. For $kn' \\ge n$, step 3 with $q = kn'$ gives $\\int |u|^{kn'} \\le (c_n^{n'} n')^k k^k|\\Omega|$, and $k^k \\le e^k k!$. The finitely many terms with $kn' < n$ are at most $c\\,|\\Omega|$ by Hölder's inequality and step 3 with $q = n$.",
+      "uses": [
+       "nl:18096"
+      ]
+     },
+     {
+      "id": "s:sum",
+      "slogan": "Choose $\\alpha$ small so that the series is dominated by a [geometric series](c:geometric-series).",
+      "detail": "Take $\\alpha$ with $\\alpha\\, c_n^{n'} n' e \\le 1/2$. Then the terms with $kn' \\ge n$ add up to at most $2|\\Omega|$, and the finitely many other terms add up to at most $c\\,|\\Omega|$. With step 1, this gives $\\int_\\Omega e^{\\alpha|u|^{n'}} \\le C|\\Omega|$ for every admissible $u$.",
+      "uses": [
+       "nm:geometric-series"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:density",
+      "s:sum"
+     ],
+     [
+      "s:potential",
+      "s:norms"
+     ],
+     [
+      "s:norms",
+      "s:series"
+     ],
+     [
+      "s:series",
+      "s:sum"
+     ]
+    ],
+    "conclusion": "s:sum",
+    "concepts": {
+     "c:sobolev-space": "The functions $u$ come from $W_0^{1,n}$, which the smooth functions approximate.",
+     "c:orlicz-space": "The estimate says that $W_0^{1,n}$ embeds into an exponential Orlicz space.",
+     "c:geometric-series": "A geometric majorant sums the exponential series with a uniform constant."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Trudinger's argument as in Gilbarg and Trudinger, Elliptic Partial Differential Equations of Second Order, Section 7.8 (Theorem 7.15)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:26111",
+  "statement": "Every [inverse semigroup](c:inverse-semigroup) $S$ embeds in the symmetric inverse monoid $I(S)$ of [partial bijections](c:partial-bijection) of the set $S$: there is an injective [homomorphism](c:homomorphism) $\\rho\\colon S \\to I(S)$ with $\\rho(s^{-1}) = \\rho(s)^{-1}$.",
+  "hypotheses": [
+   {
+    "id": "h:inverse",
+    "text": "The semigroup $S$ is an [inverse semigroup](c:inverse-semigroup): each $s$ has a unique $s^{-1}$ with $ss^{-1}s = s$ and $s^{-1}ss^{-1} = s^{-1}$.",
+    "concept": "c:inverse-semigroup"
+   }
+  ],
+  "conclusion": "There is an injective homomorphism $\\rho\\colon S \\to I(S)$ of semigroups with $\\rho(s^{-1}) = \\rho(s)^{-1}$ for all $s$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "translations",
+    "name": "Partial left translations",
+    "slogan": "Let each element act by left multiplication, restricted to the set where it is injective, and check that this is an injective homomorphism.",
+    "scope": "All inverse semigroups, including the empty and the one-element case. For a group every $\\rho_s$ is total, and the proof gives Cayley's theorem.",
+    "mechanisms": [
+     "m:construction-explicit",
+     "m:homomorphism-kernel"
+    ],
+    "roles": [
+     {
+      "h": "h:inverse",
+      "why": "Unique inverses give the commuting [idempotents](c:idempotent) and the rules for inverses that every step uses.",
+      "steps": [
+       "s:facts",
+       "s:define",
+       "s:hom",
+       "s:inject"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:facts",
+      "slogan": "Collect the structure facts about idempotents and inverses in an inverse semigroup.",
+      "detail": "In an [inverse semigroup](c:inverse-semigroup), $ss^{-1}$ and $s^{-1}s$ are [idempotents](c:idempotent), any two idempotents commute, $(s^{-1})^{-1} = s$ and $(st)^{-1} = t^{-1}s^{-1}$. These standard facts (Vagner) are the only input from the hypothesis.",
+      "uses": []
+     },
+     {
+      "id": "s:define",
+      "slogan": "Define $\\rho_s$ as left multiplication by $s$ on the set $D_s = s^{-1}S$.",
+      "detail": "We have $D_s = \\{x : s^{-1}sx = x\\}$ and $\\rho_s(x) = sx \\in sS$. For $x \\in D_s$, $s^{-1}(sx) = x$, and for $y = sz \\in sS$, $s(s^{-1}y) = ss^{-1}sz = y$. So $\\rho_s\\colon D_s \\to sS$ is a [partial bijection](c:partial-bijection) with inverse $\\rho_{s^{-1}}$, which gives $\\rho(s^{-1}) = \\rho(s)^{-1}$.",
+      "uses": []
+     },
+     {
+      "id": "s:hom",
+      "slogan": "Show that $\\rho_s\\rho_t = \\rho_{st}$ by comparing domains and values.",
+      "detail": "The domain of $\\rho_s\\rho_t$ is $\\{x \\in D_t : tx \\in D_s\\}$. If $x = t^{-1}s^{-1}z \\in D_{st}$, then $tx = tt^{-1}s^{-1}z \\in D_s$ because idempotents commute; conversely, if $x \\in D_t$ and $tx \\in D_s$, then $x = t^{-1}s^{-1}s(tx) \\in D_{st}$. On this domain $s(tx) = (st)x$.",
+      "uses": []
+     },
+     {
+      "id": "s:inject",
+      "slogan": "Show that $\\rho_s = \\rho_t$ forces $s = t$ by evaluating at an idempotent.",
+      "detail": "If $\\rho_s = \\rho_t$, then $D_s = D_t$. The idempotent $e = s^{-1}s$ lies in $D_s = D_t$, so $t^{-1}te = e$, and $t^{-1}t \\in D_s$ gives $s^{-1}s\\,t^{-1}t = t^{-1}t$; idempotents commute, so $e = t^{-1}t$. Then $s = se = \\rho_s(e) = \\rho_t(e) = te = t$.",
+      "uses": []
+     },
+     {
+      "id": "s:embed",
+      "slogan": "Combine the steps: $\\rho$ is an injective homomorphism that respects inverses.",
+      "detail": "Step 3 shows that $\\rho$ is a homomorphism into $I(S)$, step 4 that it is injective, and step 2 that $\\rho(s^{-1}) = \\rho(s)^{-1}$. So $\\rho$ embeds $S$ into $I(S)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:facts",
+      "s:define"
+     ],
+     [
+      "s:facts",
+      "s:hom"
+     ],
+     [
+      "s:define",
+      "s:hom"
+     ],
+     [
+      "s:facts",
+      "s:inject"
+     ],
+     [
+      "s:define",
+      "s:inject"
+     ],
+     [
+      "s:hom",
+      "s:embed"
+     ],
+     [
+      "s:inject",
+      "s:embed"
+     ],
+     [
+      "s:define",
+      "s:embed"
+     ]
+    ],
+    "conclusion": "s:embed",
+    "concepts": {
+     "c:inverse-semigroup": "Unique inverses are what make left translations partial bijections.",
+     "c:partial-bijection": "Each element acts as a partial bijection of the set $S$.",
+     "c:idempotent": "Commuting idempotents control the domains of the partial maps.",
+     "c:homomorphism": "The map $\\rho$ must respect the product, which step 3 checks."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The Vagner-Preston representation by partial left translations; see Howie, Fundamentals of Semigroup Theory, Chapter 5."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:6374",
+  "statement": "Let $C$ be a smooth projective [algebraic curve](c:algebraic-curve) over an [algebraically closed field](c:algebraically-closed-field) $K$, and let $f, g$ be nonzero [rational functions](c:rational-function) on $C$ with [divisors](c:divisor) of disjoint support. Then $\\prod_P f(P)^{\\operatorname{ord}_P g} = \\prod_P g(P)^{\\operatorname{ord}_P f}$.",
+  "hypotheses": [
+   {
+    "id": "h:curve",
+    "text": "The curve $C$ is a smooth projective [algebraic curve](c:algebraic-curve) over an algebraically closed field $K$.",
+    "concept": "c:algebraic-curve"
+   },
+   {
+    "id": "h:functions",
+    "text": "The functions $f, g \\in K(C)^\\times$ have [divisors](c:divisor) with disjoint supports.",
+    "concept": "c:divisor"
+   }
+  ],
+  "conclusion": "The two finite products $\\prod_P f(P)^{\\operatorname{ord}_P g}$ and $\\prod_P g(P)^{\\operatorname{ord}_P f}$ are equal.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "norm",
+    "name": "Norm to the projective line",
+    "slogan": "Read both sides along the finite map $g\\colon C \\to \\mathbb{P}^1$, replace $f$ by its norm in $K(t)$, and compute on the projective line.",
+    "scope": "A nonconstant $g$; for constant $g = c$ both sides equal $1$ because $\\operatorname{ord}_P g = 0$ and $\\deg \\operatorname{div} f = 0$. Both products are finite since only finitely many orders are nonzero.",
+    "mechanisms": [
+     "m:reduction",
+     "m:determinant"
+    ],
+    "roles": [
+     {
+      "h": "h:curve",
+      "why": "Smoothness and properness make $g$ a finite map to the projective line and give orders of vanishing at every point.",
+      "steps": [
+       "s:fibres",
+       "s:norm"
+      ]
+     },
+     {
+      "h": "h:functions",
+      "why": "Disjoint divisors make $f$ a unit over $0$ and $\\infty$, so both products are defined and the norm formulas apply.",
+      "steps": [
+       "s:fibres",
+       "s:line"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:fibres",
+      "slogan": "Read the left side as a ratio of values of $f$ on the fibres of $g$ over $0$ and $\\infty$.",
+      "detail": "The nonconstant $g$ is a finite map $C \\to \\mathbb{P}^1$. The order $\\operatorname{ord}_P g$ is $e_P$ over $0$, is $-e_P$ over $\\infty$, and is $0$ elsewhere, with $e_P$ the ramification index. So the left side is $\\prod_{P \\mapsto 0} f(P)^{e_P} \\big/ \\prod_{P \\mapsto \\infty} f(P)^{e_P}$, and $f$ is a unit at all these points.",
+      "uses": []
+     },
+     {
+      "id": "s:norm",
+      "slogan": "Replace $f$ by its norm $N(f) \\in K(t)$ along the [field extension](c:field-extension) $K(C)/K(t)$ with $t = g$.",
+      "detail": "The [function field](c:function-field) $K(C)$ is a finite extension of $K(t)$. At a point $a$ over which $f$ is a unit, $N(f)(a) = \\prod_{P \\mapsto a} f(P)^{e_P}$, the determinant of multiplication by $f$ on the fibre algebra $\\prod_P K[\\epsilon]/(\\epsilon^{e_P})$, and $\\operatorname{ord}_a N(f) = \\sum_{P \\mapsto a}\\operatorname{ord}_P f$ since all residue fields equal $K$. So the left side is $N(f)(0)/N(f)(\\infty)$.",
+      "uses": []
+     },
+     {
+      "id": "s:line",
+      "slogan": "Compute $N(f)(0)/N(f)(\\infty)$ on the [projective line](c:projective-line) from the factorization of $N(f)$.",
+      "detail": "Write $N(f) = c\\prod_i (t-a_i)^{n_i}$. Because $f$ has no zero or pole over $0$ or $\\infty$, every $a_i \\ne 0$ and $\\sum n_i = 0$. Then $N(f)(0) = c\\prod(-a_i)^{n_i} = c\\prod a_i^{n_i}$ and $N(f)(\\infty) = c$, so the left side equals $\\prod_i a_i^{n_i}$.",
+      "uses": []
+     },
+     {
+      "id": "s:right",
+      "slogan": "Evaluate the right side with the same norm formula for orders.",
+      "detail": "Since $g(P) = t(P)$, the right side is $\\prod_a a^{\\sum_{P \\mapsto a}\\operatorname{ord}_P f}$ over $a \\in K^\\times$, because $\\operatorname{ord}_P f = 0$ over $0$ and $\\infty$. By the order formula of step 2 this is $\\prod_a a^{\\operatorname{ord}_a N(f)} = \\prod_i a_i^{n_i}$.",
+      "uses": []
+     },
+     {
+      "id": "s:equal",
+      "slogan": "Compare the two evaluations to obtain the reciprocity law.",
+      "detail": "Steps 3 and 4 give the same value $\\prod_i a_i^{n_i}$ for the two products. So $\\prod_P f(P)^{\\operatorname{ord}_P g} = \\prod_P g(P)^{\\operatorname{ord}_P f}$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:fibres",
+      "s:norm"
+     ],
+     [
+      "s:norm",
+      "s:line"
+     ],
+     [
+      "s:norm",
+      "s:right"
+     ],
+     [
+      "s:line",
+      "s:equal"
+     ],
+     [
+      "s:right",
+      "s:equal"
+     ]
+    ],
+    "conclusion": "s:equal",
+    "concepts": {
+     "c:algebraic-curve": "The theorem is about functions on a smooth projective curve.",
+     "c:algebraically-closed-field": "Algebraic closure makes all residue fields equal $K$.",
+     "c:rational-function": "The functions $f$ and $g$ are rational functions on the curve.",
+     "c:divisor": "Disjoint divisors keep $f$ a unit where $g$ vanishes or has a pole.",
+     "c:field-extension": "The norm is taken along the finite extension $K(C)/K(t)$.",
+     "c:function-field": "The function field $K(C)$ carries the norm to $K(t)$.",
+     "c:projective-line": "On the projective line every rational function factors into linear terms."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The norm argument that reduces Weil reciprocity to the projective line; see Serre, Groupes algébriques et corps de classes, Chapter III."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q4677985",
+  "statement": "Let $F, G$ be [functors](c:functor) from a category with models $\\mathcal{M}$ to nonnegative [chain complexes](c:chain-complex), with $F$ free on models and $G$ acyclic on models. Then each natural map $H_0F \\to H_0G$ is induced by a natural chain map $F \\to G$, unique up to natural chain homotopy.",
+  "hypotheses": [
+   {
+    "id": "h:free",
+    "text": "Each $F_n$ is free on models: there are models $M_i$ and elements $b_i \\in F_n(M_i)$ such that the elements $F_n(f)(b_i)$, over all morphisms $f\\colon M_i \\to X$, form a [basis](c:basis) of $F_n(X)$ for every object $X$.",
+    "concept": "c:basis"
+   },
+   {
+    "id": "h:acyclic",
+    "text": "For each model $M$ and each $k \\ge 1$, the [homology](c:homology) group $H_k(G(M))$ is zero.",
+    "concept": "c:homology"
+   },
+   {
+    "id": "h:natural",
+    "text": "The map $\\varphi\\colon H_0F \\to H_0G$ is a [natural transformation](c:natural-transformation).",
+    "concept": "c:natural-transformation"
+   }
+  ],
+  "conclusion": "There is a natural [chain map](c:chain-map) $\\Phi\\colon F \\to G$ that induces $\\varphi$ on $H_0$, and any two such maps are naturally [chain homotopic](c:chain-homotopy).",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "induction-on-degree",
+    "name": "Induction on the degree",
+    "slogan": "Choose images of the basis elements degree by degree, solving each boundary equation in the acyclic complex of a model.",
+    "scope": "Existence and uniqueness up to homotopy. The corollary that two homology theories agree on a category of spaces is not proved here.",
+    "mechanisms": [
+     "m:induction",
+     "m:universal-property"
+    ],
+    "roles": [
+     {
+      "h": "h:free",
+      "why": "Freeness lets one define natural maps by choosing images of the basis elements only.",
+      "steps": [
+       "s:extension",
+       "s:zero",
+       "s:lift",
+       "s:homotopy"
+      ]
+     },
+     {
+      "h": "h:acyclic",
+      "why": "Acyclicity of $G(M)$ turns cycles of positive degree into boundaries, which solves each lifting problem.",
+      "steps": [
+       "s:lift",
+       "s:homotopy"
+      ]
+     },
+     {
+      "h": "h:natural",
+      "why": "Naturality of $\\varphi$ makes the degree-zero lift induce $\\varphi$ and kills the obstruction in degree one.",
+      "steps": [
+       "s:zero",
+       "s:lift"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:extension",
+      "slogan": "Define a natural map on a free functor by choosing images of the [basis](c:basis) elements.",
+      "detail": "The elements $F_n(f)(b_i)$ form a basis of $F_n(X)$. So choosing any $\\Phi(b_i) \\in G_n(M_i)$ and setting $\\Phi(F_n(f)b_i) = G_n(f)\\Phi(b_i)$ defines a natural transformation $F_n \\to G_n$. Naturality holds on basis elements because $F_n(h)F_n(f)b_i = F_n(hf)b_i$, and so on all of $F_n(X)$.",
+      "uses": []
+     },
+     {
+      "id": "s:zero",
+      "slogan": "Lift $\\varphi$ to degree zero by choosing representatives of $\\varphi[b_i]$.",
+      "detail": "For a basis element $b_i \\in F_0(M_i)$, the class $\\varphi[b_i] \\in H_0G(M_i) = G_0(M_i)/\\partial G_1(M_i)$ has a representative $g_i$. Set $\\Phi_0(b_i) = g_i$ and extend by step 1. Naturality of $\\varphi$ shows $[\\Phi_0 x] = \\varphi[x]$ on every basis element, hence on all of $F_0(X)$.",
+      "uses": []
+     },
+     {
+      "id": "s:lift",
+      "slogan": "Build $\\Phi_n$ inductively by solving $\\partial g = \\Phi_{n-1}\\partial b$ in $G_n(M)$.",
+      "detail": "For a basis element $b \\in F_n(M)$ let $z = \\Phi_{n-1}\\partial b$. For $n = 1$, $[z] = \\varphi[\\partial b] = 0$ in $H_0$, so $z$ is a boundary. For $n \\ge 2$, $\\partial z = \\Phi_{n-2}\\partial\\partial b = 0$, so $z$ is a cycle of positive degree and a boundary by acyclicity. Pick $g$ with $\\partial g = z$, set $\\Phi_n(b) = g$ and extend by step 1.",
+      "uses": []
+     },
+     {
+      "id": "s:homotopy",
+      "slogan": "Build a natural chain homotopy between two lifts by the same inductive method.",
+      "detail": "Let $\\Phi, \\Psi$ both induce $\\varphi$. We build natural $s_n\\colon F_n \\to G_{n+1}$ with $\\partial s_n + s_{n-1}\\partial = \\Phi_n - \\Psi_n$. For a basis element $b$, the element $z = \\Phi_n b - \\Psi_n b - s_{n-1}\\partial b$ is a cycle for $n \\ge 1$ and has class $0$ in $H_0$ for $n = 0$, so $z = \\partial g$ for some $g$ (by acyclicity if $n \\ge 1$); set $s_n(b) = g$ and extend by step 1.",
+      "uses": []
+     },
+     {
+      "id": "s:collect",
+      "slogan": "Collect existence and uniqueness into the statement of the theorem.",
+      "detail": "Steps 2 and 3 give a natural chain map $\\Phi$ that induces $\\varphi$ on $H_0$. Step 4 shows that any two such maps differ by a natural chain homotopy.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:extension",
+      "s:zero"
+     ],
+     [
+      "s:extension",
+      "s:lift"
+     ],
+     [
+      "s:zero",
+      "s:lift"
+     ],
+     [
+      "s:extension",
+      "s:homotopy"
+     ],
+     [
+      "s:lift",
+      "s:collect"
+     ],
+     [
+      "s:homotopy",
+      "s:collect"
+     ]
+    ],
+    "conclusion": "s:collect",
+    "concepts": {
+     "c:functor": "The theorem concerns natural constructions on all objects at once.",
+     "c:chain-complex": "The functors take values in nonnegative chain complexes.",
+     "c:homology": "Acyclicity on models is vanishing of positive-degree homology.",
+     "c:natural-transformation": "The given map $\\varphi$ and the constructed $\\Phi$ are natural.",
+     "c:chain-map": "The constructed $\\Phi$ commutes with the boundary maps.",
+     "c:chain-homotopy": "Two lifts are shown to be naturally chain homotopic.",
+     "c:basis": "The basis lets one define $\\Phi$ by free choices of images."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The inductive construction of Eilenberg and Mac Lane, Acyclic models, Amer. J. Math. 75 (1953)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q3526969",
+  "statement": "Let $F, G, H \\in \\mathbb{C}[x,y,z]$ be forms that define plane [algebraic curves](c:algebraic-curve), with $F$ and $G$ having no common component. If, at every point $P$ of $V(F) \\cap V(G)$, $H$ lies in the ideal $(F,G)$ of the [local ring](c:local-ring) $\\mathcal{O}_P$, then $H = AF + BG$ for forms $A, B$.",
+  "hypotheses": [
+   {
+    "id": "h:curves",
+    "text": "The forms $F, G$ define [algebraic curves](c:algebraic-curve) in $\\mathbb{P}^2$ without a common component.",
+    "concept": "c:algebraic-curve"
+   },
+   {
+    "id": "h:local",
+    "text": "At every point $P \\in V(F) \\cap V(G)$ the form $H$ lies in $(F,G)$ in the [local ring](c:local-ring) $\\mathcal{O}_P$ of the plane at $P$.",
+    "concept": "c:local-ring"
+   }
+  ],
+  "conclusion": "There are homogeneous polynomials $A, B$, of degrees $\\deg H - \\deg F$ and $\\deg H - \\deg G$, with $H = AF + BG$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "unmixedness",
+    "name": "Unmixedness of a complete intersection",
+    "slogan": "Show that $(F,G)$ is a complete intersection without embedded components, so membership in $(F,G)$ can be tested at each intersection point.",
+    "scope": "Complex projective plane; the same proof works over any algebraically closed field. The local hypothesis is not vacuous, because two plane curves always meet.",
+    "mechanisms": [
+     "m:local-global"
+    ],
+    "roles": [
+     {
+      "h": "h:curves",
+      "why": "Coprime forms give a regular sequence, so $(F,G)$ is unmixed with finitely many isolated points.",
+      "steps": [
+       "s:regular",
+       "s:points"
+      ]
+     },
+     {
+      "h": "h:local",
+      "why": "Membership of $H$ in each primary component is exactly the local condition at the corresponding point.",
+      "steps": [
+       "s:local"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:regular",
+      "slogan": "Show that $F, G$ form a [regular sequence](c:regular-sequence) in $S = \\mathbb{C}[x,y,z]$.",
+      "detail": "The ring $S$ is a [unique factorization domain](c:unique-factorization-domain), and $F \\ne 0$ is a nonzerodivisor. If $Gh \\in (F)$, then $F \\mid Gh$, and since $F, G$ are coprime, $F \\mid h$. So $G$ is a nonzerodivisor modulo $F$.",
+      "uses": []
+     },
+     {
+      "id": "s:cm",
+      "slogan": "Deduce that $(F,G)$ has no embedded primes and no irrelevant component.",
+      "detail": "The quotient $S/(F,G)$ is a complete intersection of dimension $1$, hence a [Cohen-Macaulay ring](c:cohen-macaulay-ring). Macaulay's unmixedness theorem says that it has no embedded [associated primes](c:associated-prime). So every associated prime of $(F,G)$ is minimal of height $2$, and the irrelevant ideal $(x,y,z)$ of height $3$ is not associated.",
+      "uses": [
+       "wd:Q2893695"
+      ]
+     },
+     {
+      "id": "s:points",
+      "slogan": "Identify the associated primes with the points of $V(F) \\cap V(G)$.",
+      "detail": "Since $F, G$ are coprime, $V(F) \\cap V(G)$ is a finite set of points of $\\mathbb{P}^2$. The homogeneous primes of height $2$ that contain $(F,G)$ are exactly the ideals $\\mathfrak{p}_P$ of these points $P$.",
+      "uses": []
+     },
+     {
+      "id": "s:decompose",
+      "slogan": "Write $(F,G)$ as the intersection of its local primary components.",
+      "detail": "By [primary decomposition](c:primary-ideal), $(F,G) = \\bigcap_P Q_P$ with $Q_P$ a $\\mathfrak{p}_P$-primary ideal, and no component is embedded by step 2. Each $Q_P$ is isolated, so $Q_P = (F,G)S_{\\mathfrak{p}_P} \\cap S$. Hence $H \\in (F,G)$ if and only if $H \\in (F,G)S_{\\mathfrak{p}_P}$ for every $P$.",
+      "uses": [
+       "wd:Q172298"
+      ]
+     },
+     {
+      "id": "s:local",
+      "slogan": "Match membership in $S_{\\mathfrak{p}_P}$ with membership in $\\mathcal{O}_P$ and conclude.",
+      "detail": "Choose a linear form $L$ with $L(P) \\ne 0$. Then $S[1/L] = \\mathbb{C}[u,v][L,L^{-1}]$ with $u = x/L$, $v = y/L$, so $H \\in (F,G)S_{\\mathfrak{p}_P}$ is the hypothesis in $\\mathcal{O}_P$ for the dehomogenizations. By step 4, $H = AF + BG$ with $A, B \\in S$; taking the components of degrees $\\deg H - \\deg F$ and $\\deg H - \\deg G$ makes them homogeneous.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:regular",
+      "s:cm"
+     ],
+     [
+      "s:cm",
+      "s:points"
+     ],
+     [
+      "s:points",
+      "s:decompose"
+     ],
+     [
+      "s:decompose",
+      "s:local"
+     ]
+    ],
+    "conclusion": "s:local",
+    "concepts": {
+     "c:algebraic-curve": "The forms $F$ and $G$ define the two curves that meet in finitely many points.",
+     "c:local-ring": "The hypothesis is membership in $(F,G)$ in the local ring at each point.",
+     "c:regular-sequence": "A regular sequence makes $S/(F,G)$ a complete intersection.",
+     "c:unique-factorization-domain": "Unique factorization turns coprimality of $F, G$ into regularity.",
+     "c:cohen-macaulay-ring": "Cohen-Macaulayness rules out embedded components of $(F,G)$.",
+     "c:associated-prime": "Associated primes of $(F,G)$ are shown to be the points of the intersection.",
+     "c:primary-ideal": "The ideal $(F,G)$ is the intersection of primary components, one per point."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Max Noether's fundamental theorem via unmixedness of complete intersections; see Fulton, Algebraic Curves, Chapter 5, for the classical treatment."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:ahlswede-zhang-identity",
+  "statement": "Let $\\mathcal{A}$ be a nonempty [family of sets](c:family-of-sets) of subsets of an $n$-element set $X$, $n \\ge 1$, with $\\emptyset \\notin \\mathcal{A}$. For $A \\subseteq X$ let $I(A)$ be the intersection of all $B \\in \\mathcal{A}$ with $B \\subseteq A$, and $\\emptyset$ if there is none. Then $\\sum_{\\emptyset \\ne A \\subseteq X} \\frac{|I(A)|}{|A|\\binom{n}{|A|}} = 1$.",
+  "hypotheses": [
+   {
+    "id": "h:ground",
+    "text": "The ground set $X$ is a [finite set](c:finite-set) with $n \\ge 1$ elements.",
+    "concept": "c:finite-set"
+   },
+   {
+    "id": "h:nonempty",
+    "text": "The family $\\mathcal{A}$ is nonempty.",
+    "concept": null
+   },
+   {
+    "id": "h:no-empty",
+    "text": "The empty set is not a member of $\\mathcal{A}$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The weighted sum of the sizes $|I(A)|$ over the nonempty subsets $A \\subseteq X$ equals $1$.",
+  "formal": {
+   "decl": "AhlswedeZhang.infSum_eq_one",
+   "difference": "The declaration sums over all subsets of a finite nonempty type and reads division by zero as $0$. The term for $A = \\emptyset$ is then $0$, as in this statement."
+  },
+  "proofs": [
+   {
+    "id": "complement-duality",
+    "name": "Complement duality and telescoping",
+    "slogan": "Pair the sum with a dual sum of truncated suprema, compute the dual sum by induction with a telescoping base case, and complement twice.",
+    "scope": "All nonempty families avoiding $\\emptyset$; the sums over $A$ read terms with zero denominator as $0$. Write $H_n = \\sum_{k=1}^n 1/k$.",
+    "mechanisms": [
+     "m:telescoping",
+     "m:strong-induction",
+     "m:symmetry"
+    ],
+    "roles": [
+     {
+      "h": "h:ground",
+      "why": "Finiteness and $n \\ge 1$ make all sums finite and give the harmonic total $nH_n$.",
+      "steps": [
+       "s:setup",
+       "s:duality",
+       "s:telescope"
+      ]
+     },
+     {
+      "h": "h:nonempty",
+      "why": "Nonemptiness starts the induction and makes the complement family nonempty.",
+      "steps": [
+       "s:induction",
+       "s:conclude"
+      ]
+     },
+     {
+      "h": "h:no-empty",
+      "why": "Since $\\emptyset \\notin \\mathcal{A}$, the complement family does not contain $X$, which the dual formula needs.",
+      "steps": [
+       "s:conclude"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:setup",
+      "slogan": "Define the truncated infimum and supremum of $\\mathcal{A}$ and the two weighted sums.",
+      "detail": "Let $I_{\\mathcal{A}}(A)$ be as in the statement and $U_{\\mathcal{A}}(A) = \\bigcup\\{B \\in \\mathcal{A} : A \\subseteq B\\}$, or $X$ if there is no such $B$. Put $\\mathrm{inf}(\\mathcal{A}) = \\sum_A \\frac{|I_{\\mathcal{A}}(A)|}{|A|\\binom{n}{|A|}}$ and $\\mathrm{sup}(\\mathcal{A}) = \\sum_A \\frac{|U_{\\mathcal{A}}(A)|}{(n-|A|)\\binom{n}{|A|}}$; the claim is $\\mathrm{inf}(\\mathcal{A}) = 1$, and terms with zero denominator are $0$.",
+      "uses": []
+     },
+     {
+      "id": "s:duality",
+      "slogan": "Reflect by complements to relate $\\mathrm{inf}(\\mathcal{A}^c)$ and $\\mathrm{sup}(\\mathcal{A})$.",
+      "detail": "Let $\\mathcal{A}^c = \\{X \\setminus B\\}$. Then $X \\setminus U_{\\mathcal{A}}(A) = I_{\\mathcal{A}^c}(X \\setminus A)$, so $|I_{\\mathcal{A}^c}(X\\setminus A)| + |U_{\\mathcal{A}}(A)| = n$. Reindex by $A \\mapsto X \\setminus A$, with $\\binom{n}{n-j} = \\binom{n}{j}$, and group by $|A| = j$: $\\mathrm{inf}(\\mathcal{A}^c) + \\mathrm{sup}(\\mathcal{A}) = \\sum_{j=0}^{n-1} \\frac{n}{n-j} = nH_n$.",
+      "uses": []
+     },
+     {
+      "id": "s:telescope",
+      "slogan": "Show that $\\mathrm{sup}(\\{B\\}) = nH_n - 1$ for one proper subset $B$ by telescoping.",
+      "detail": "For $B \\ne X$, $U_{\\{B\\}}(A) = B$ if $A \\subseteq B$ and $X$ otherwise, so $\\mathrm{sup}(\\{B\\}) = nH_n - \\sum_{i=0}^{b}\\binom{b}{i}\\frac{n-b}{(n-i)\\binom{n}{i}}$ with $b = |B|$. With $f(i) = \\binom{b}{i}/\\binom{n}{i}$, the $i$-th term equals $f(i) - f(i+1)$, so the sum telescopes to $f(0) - f(b+1) = 1$.",
+      "uses": []
+     },
+     {
+      "id": "s:induction",
+      "slogan": "Prove $\\mathrm{sup}(\\mathcal{B}) = nH_n - 1$ for every nonempty $\\mathcal{B}$ with $X \\notin \\mathcal{B}$ by strong induction.",
+      "detail": "For $\\mathcal{B} = \\{B\\} \\cup \\mathcal{B}'$ use the termwise identity $\\mathrm{sup}(\\mathcal{C} \\cup \\mathcal{D}) + \\mathrm{sup}(\\mathcal{C} \\sqcap \\mathcal{D}) = \\mathrm{sup}(\\mathcal{C}) + \\mathrm{sup}(\\mathcal{D})$, where $\\mathcal{C} \\sqcap \\mathcal{D} = \\{C \\cap D\\}$. The families $\\mathcal{B}'$ and $\\{B\\} \\sqcap \\mathcal{B}'$ are nonempty, smaller, and avoid $X$. By step 3 and induction all three other terms equal $nH_n - 1$, so $\\mathrm{sup}(\\mathcal{B}) = nH_n - 1$.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Complement $\\mathcal{A}$ and read $\\mathrm{inf}(\\mathcal{A}) = nH_n - (nH_n - 1) = 1$.",
+      "detail": "Since $\\emptyset \\notin \\mathcal{A}$, the family $\\mathcal{A}^c$ is nonempty and does not contain $X$. Step 4 gives $\\mathrm{sup}(\\mathcal{A}^c) = nH_n - 1$. Step 2 for the family $\\mathcal{A}^c$, whose complement family is $\\mathcal{A}$, gives $\\mathrm{inf}(\\mathcal{A}) = nH_n - \\mathrm{sup}(\\mathcal{A}^c) = 1$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:setup",
+      "s:duality"
+     ],
+     [
+      "s:setup",
+      "s:telescope"
+     ],
+     [
+      "s:telescope",
+      "s:induction"
+     ],
+     [
+      "s:duality",
+      "s:conclude"
+     ],
+     [
+      "s:induction",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:family-of-sets": "The identity concerns a family of subsets and its truncated intersections.",
+     "c:finite-set": "Finiteness of the ground set makes all sums finite."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "AhlswedeZhang.infSum_eq_one",
+     "follows": true,
+     "note": "mathlib uses infSum_compls_add_supSum (complement duality), supSum_singleton with binomial_sum_eq (telescoping), supSum_union_add_supSum_infs with strong induction in supSum_of_univ_notMem, then complements twice."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:15651",
+  "statement": "Let $G$ be a connected [reductive group](c:reductive-group) over $\\mathbb{Q}$ and $f \\in C_c^\\infty(G(\\mathbb{A})^1)$. Then $\\sum_{\\mathfrak{o}} J_{\\mathfrak{o}}(f) = \\sum_{\\chi} J_\\chi(f)$. The geometric terms $J_{\\mathfrak{o}}$ are weighted orbital integrals over classes $\\mathfrak{o}$, and the spectral terms $J_\\chi$ come from [automorphic forms](c:automorphic-form) and Eisenstein series.",
+  "hypotheses": [
+   {
+    "id": "h:group",
+    "text": "The group $G$ is a connected [reductive group](c:reductive-group) over $\\mathbb{Q}$.",
+    "concept": "c:reductive-group"
+   },
+   {
+    "id": "h:test",
+    "text": "The function $f$ is smooth with compact support on $G(\\mathbb{A})^1$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The geometric and the spectral expansion of Arthur's truncated kernel integral give the same value: $\\sum_{\\mathfrak{o}} J_{\\mathfrak{o}}(f) = \\sum_\\chi J_\\chi(f)$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "truncated-kernel",
+    "name": "Truncated kernel",
+    "slogan": "Truncate the kernel of $R(f)$ near the cusps, expand its integral over conjugacy classes and over cuspidal data, and equate the two expansions.",
+    "scope": "An outline of Arthur's coarse (non-invariant) trace formula; the cited papers give each step in full. The invariant and stable trace formulas are other members of the family.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:spectral-decomposition"
+    ],
+    "roles": [
+     {
+      "h": "h:group",
+      "why": "Reductivity gives the parabolic subgroups, Levi components and Eisenstein series that truncation and the spectral side use.",
+      "steps": [
+       "s:kernel",
+       "s:truncate",
+       "s:geometric",
+       "s:spectral"
+      ]
+     },
+     {
+      "h": "h:test",
+      "why": "Smoothness and compact support make the kernel of $R(f)$ well behaved and give absolute convergence of both expansions.",
+      "steps": [
+       "s:kernel",
+       "s:geometric"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:kernel",
+      "slogan": "Write $R(f)$ as an integral operator with the kernel $K(x,y) = \\sum_{\\gamma \\in G(\\mathbb{Q})} f(x^{-1}\\gamma y)$.",
+      "detail": "The operator $R(f)$ acts on $L^2(G(\\mathbb{Q}) \\backslash G(\\mathbb{A})^1)$ by right translation. This is the start of Selberg's trace formula. For a noncompact quotient the integral $\\int K(x,x)\\,dx$ diverges, so $R(f)$ is not of trace class.",
+      "uses": [
+       "nl:10596"
+      ]
+     },
+     {
+      "id": "s:truncate",
+      "slogan": "Truncate the kernel with Arthur's operator $\\Lambda^T$ so that its diagonal integral converges.",
+      "detail": "Arthur's truncation operator removes the growth of the kernel near the cusps, using the parabolic subgroups of $G$. The integral $J^T(f)$ of the truncated kernel over the diagonal converges absolutely and is a polynomial function of the truncation parameter $T$.",
+      "uses": []
+     },
+     {
+      "id": "s:geometric",
+      "slogan": "Expand $J^T(f)$ over classes of $G(\\mathbb{Q})$ into weighted orbital integrals.",
+      "detail": "Group the terms of the kernel by [conjugacy classes](c:conjugacy-class) $\\mathfrak{o}$ of $G(\\mathbb{Q})$, taken by semisimple part. Arthur proves that each $J_{\\mathfrak{o}}^T(f)$ converges and that $\\sum_{\\mathfrak{o}} J_{\\mathfrak{o}}^T(f)$ converges absolutely. The terms are weighted orbital integrals.",
+      "uses": []
+     },
+     {
+      "id": "s:spectral",
+      "slogan": "Expand $J^T(f)$ spectrally with Langlands' theory of [Eisenstein series](c:eisenstein-series).",
+      "detail": "Langlands' spectral decomposition of $L^2(G(\\mathbb{Q}) \\backslash G(\\mathbb{A})^1)$ expresses the kernel through cuspidal data $\\chi$ and residues of Eisenstein series. Applying the same truncation to this expression gives $J^T(f) = \\sum_\\chi J_\\chi^T(f)$, again absolutely convergent.",
+      "uses": []
+     },
+     {
+      "id": "s:equate",
+      "slogan": "Equate the two expansions of $J^T(f)$ and evaluate at a base point.",
+      "detail": "Both expansions equal the same function $J^T(f)$ of $T$, so they agree as polynomials in $T$. Their common value at a fixed base point $T_0$ gives $\\sum_{\\mathfrak{o}} J_{\\mathfrak{o}}(f) = \\sum_\\chi J_\\chi(f)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:kernel",
+      "s:truncate"
+     ],
+     [
+      "s:truncate",
+      "s:geometric"
+     ],
+     [
+      "s:truncate",
+      "s:spectral"
+     ],
+     [
+      "s:geometric",
+      "s:equate"
+     ],
+     [
+      "s:spectral",
+      "s:equate"
+     ]
+    ],
+    "conclusion": "s:equate",
+    "concepts": {
+     "c:reductive-group": "Its parabolic subgroups define the truncation and the Eisenstein series.",
+     "c:automorphic-form": "The spectral terms are built from automorphic forms on $G$.",
+     "c:conjugacy-class": "Geometric terms are indexed by classes of rational elements.",
+     "c:eisenstein-series": "Eisenstein series describe the continuous part of the spectral expansion."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "J. Arthur, A trace formula for reductive groups I: terms associated to classes in G(Q), Duke Mathematical Journal 45 (1978), 911-952; II: applications of a truncation operator, Compositio Mathematica 40 (1980), 87-121",
+     "note": "The first paper treats the geometric expansion of the truncated kernel and the second applies the truncation operator to the spectral side; see also Arthur's introduction to the trace formula, Clay Mathematics Proceedings 4 (2005)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q4830725",
+  "statement": "Let $K$ be an [algebraically closed field](c:algebraically-closed-field), $V \\subseteq K^n$ the [zero locus](c:zero-locus) of an ideal of $K[x_1,\\dots,x_n]$, and $P\\colon K^n \\to K^n$ a polynomial map with $P(V) \\subseteq V$ that is injective on $V$. Then $P(V) = V$.",
+  "hypotheses": [
+   {
+    "id": "h:field",
+    "text": "The field $K$ is [algebraically closed](c:algebraically-closed-field).",
+    "concept": "c:algebraically-closed-field"
+   },
+   {
+    "id": "h:variety",
+    "text": "The set $V \\subseteq K^n$ is the [zero locus](c:zero-locus) of an ideal $I \\subseteq K[x_1,\\dots,x_n]$.",
+    "concept": "c:zero-locus"
+   },
+   {
+    "id": "h:map",
+    "text": "The map $P = (p_1,\\dots,p_n)$ has polynomial components, satisfies $P(V) \\subseteq V$ and is injective on $V$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The map $P$ sends $V$ onto $V$, so it is surjective on $V$.",
+  "formal": {
+   "decl": "ax_grothendieck_zeroLocus",
+   "difference": "The declaration states the same implication, with $V$ given by an ideal and the coordinates indexed by a finite type. The bijectivity of injective polynomial self-maps of $K^n$ is the case $I = 0$ (ax_grothendieck_univ)."
+  },
+  "proofs": [
+   {
+    "id": "model-theory",
+    "name": "Finite fields and the Lefschetz principle",
+    "slogan": "Prove the claim for algebraic extensions of finite fields by a finiteness argument, then transfer it to all algebraically closed fields by completeness and compactness.",
+    "scope": "Every characteristic and every $n$; for $K = \\mathbb{C}$ and $V = \\mathbb{C}^n$, every injective polynomial self-map of $\\mathbb{C}^n$ is bijective. The base case uses only that an injective self-map of a finite set is onto.",
+    "mechanisms": [
+     "m:compactness-logic",
+     "m:pigeonhole"
+    ],
+    "roles": [
+     {
+      "h": "h:field",
+      "why": "Completeness of the theory of algebraically closed fields of a given characteristic transfers the finite-field case to $K$.",
+      "steps": [
+       "s:prime",
+       "s:zero",
+       "s:conclude"
+      ]
+     },
+     {
+      "h": "h:variety",
+      "why": "A finitely generated ideal makes $V$ definable by one first-order formula, so the claim is a first-order sentence.",
+      "steps": [
+       "s:reduce"
+      ]
+     },
+     {
+      "h": "h:map",
+      "why": "The two properties $P(V) \\subseteq V$ and injectivity on $V$ are the premises of the sentence, and the finite case restricts $P$ to a finite subring.",
+      "steps": [
+       "s:finite",
+       "s:conclude"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:reduce",
+      "slogan": "Express the claim as one sentence of [first-order logic](c:first-order-logic) about polynomial maps of bounded degree.",
+      "detail": "By Hilbert's basis theorem $I = (q_1,\\dots,q_r)$, so $V$ is defined by a formula $\\varphi$ with the coefficients of the $q_j$ as parameters. For fixed $n$, $r$ and degree bound $d$, the statement ``for all parameters and all $P$ of degree at most $d$, if $P$ maps $V$ into $V$ and is injective on $V$, then it is onto $V$'' is one sentence $\\sigma$.",
+      "uses": [
+       "wd:Q656645"
+      ]
+     },
+     {
+      "id": "s:finite",
+      "slogan": "Prove the claim for algebraic extensions of a [finite field](c:finite-field) by restricting $P$ to a finite subring.",
+      "detail": "Let $R$ be an [algebraic extension](c:algebraic-extension) of a finite field $k$, and let $S \\subseteq R^n$ satisfy $P(S) \\subseteq S$ with $P$ injective on $S$. For a target $v \\in S$, let $R_0$ be the finite $k$-algebra generated by the coefficients of $P$ and the coordinates of $v$. Then $S \\cap R_0^n$ is finite and $P$ maps it injectively into itself, hence onto itself, so $v$ has a preimage.",
+      "uses": []
+     },
+     {
+      "id": "s:prime",
+      "slogan": "Transfer the sentence to every algebraically closed field of prime characteristic $p$.",
+      "detail": "The algebraic closure of $\\mathbb{F}_p$ is algebraic over $\\mathbb{F}_p$, so it satisfies $\\sigma$ by step 2. The theory of algebraically closed fields of characteristic $p$ is a [complete theory](c:complete-theory), so every such field satisfies $\\sigma$.",
+      "uses": []
+     },
+     {
+      "id": "s:zero",
+      "slogan": "Transfer the sentence to characteristic $0$ by the Lefschetz principle.",
+      "detail": "A sentence holds in the algebraically closed fields of characteristic $0$ if and only if it holds in those of infinitely many prime characteristics, by the compactness theorem. By step 3, $\\sigma$ holds in all prime characteristics, so it holds in characteristic $0$.",
+      "uses": [
+       "nm:lefschetz-principle",
+       "wd:Q1149458"
+      ]
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Instantiate the sentence of the right characteristic at the data of $V$ and $P$.",
+      "detail": "The characteristic of $K$ is $0$ or prime, so $K$ satisfies $\\sigma$ by step 4 or step 3. Apply $\\sigma$ to the parameters of $V$ and the coefficients of $P$. The premises $P(V) \\subseteq V$ and injectivity on $V$ hold, so $P$ maps $V$ onto $V$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:reduce",
+      "s:prime"
+     ],
+     [
+      "s:finite",
+      "s:prime"
+     ],
+     [
+      "s:prime",
+      "s:zero"
+     ],
+     [
+      "s:reduce",
+      "s:conclude"
+     ],
+     [
+      "s:prime",
+      "s:conclude"
+     ],
+     [
+      "s:zero",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:algebraically-closed-field": "Completeness of its theory lets one test the claim in one convenient field.",
+     "c:zero-locus": "The set $V$ is the zero locus, defined by finitely many polynomial equations.",
+     "c:first-order-logic": "The claim is turned into one sentence that transfers between fields.",
+     "c:finite-field": "Injective self-maps of finite sets are onto, which settles the base case.",
+     "c:algebraic-extension": "Algebraic extensions of finite fields are locally finite.",
+     "c:complete-theory": "Completeness gives the sentence in all fields of one characteristic."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "ax_grothendieck_zeroLocus",
+     "follows": true,
+     "note": "mathlib uses ax_grothendieck_of_locally_finite (finite subring), ACF_isComplete in prime characteristic, ACF_zero_realize_iff_infinite_ACF_prime_realize, and the Noetherian property of the ideal in ax_grothendieck_of_definable."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q4853767",
+  "statement": "Let $K$ and $L$ be [compact Hausdorff spaces](c:compact-hausdorff-space). The spaces $C(K)$ and $C(L)$ of real [continuous functions](c:c-k-space) with the sup norm are isometrically isomorphic if and only if $K$ and $L$ are [homeomorphic](c:homeomorphism).",
+  "hypotheses": [
+   {
+    "id": "h:spaces",
+    "text": "The spaces $K$ and $L$ are [compact Hausdorff spaces](c:compact-hausdorff-space).",
+    "concept": "c:compact-hausdorff-space"
+   }
+  ],
+  "conclusion": "The spaces $C(K)$ and $C(L)$ are isometrically isomorphic if and only if $K$ and $L$ are homeomorphic.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "extreme-points",
+    "name": "Extreme points of the dual ball",
+    "slogan": "A surjective isometry has an adjoint that maps the extreme points of the dual ball, the point masses, to point masses, and this gives a homeomorphism.",
+    "scope": "Real scalars and surjective linear isometries. In the complex case the extreme points are $\\lambda\\delta_k$ with $|\\lambda| = 1$, and the same proof works with a unimodular function $h$.",
+    "mechanisms": [
+     "m:duality",
+     "m:functoriality"
+    ],
+    "roles": [
+     {
+      "h": "h:spaces",
+      "why": "Compactness gives the Riesz representation by measures, and the Hausdorff property with Urysohn's lemma makes the points of $K$ and $L$ recoverable from functions.",
+      "steps": [
+       "s:extreme",
+       "s:continuous",
+       "s:bijective"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:easy",
+      "slogan": "Turn a homeomorphism into a surjective isometry by composition.",
+      "detail": "If $\\varphi\\colon L \\to K$ is a [homeomorphism](c:homeomorphism), then $Tf = f \\circ \\varphi$ is linear and bijective with inverse $g \\mapsto g \\circ \\varphi^{-1}$. It preserves the sup norm because $\\varphi$ is onto. This proves the direction ``if''.",
+      "uses": []
+     },
+     {
+      "id": "s:extreme",
+      "slogan": "Identify the extreme points of the unit ball of the dual of $C(K)$ as the measures $\\pm\\delta_k$.",
+      "detail": "By the Riesz-Markov-Kakutani theorem, the dual of $C(K)$ is the space of signed Radon measures with the total variation norm. If $|\\mu|$ has two points in its support, an open $U$ that separates them gives $\\mu = \\mu|_U + \\mu|_{U^c}$, a nontrivial convex combination of norm one measures, so $\\mu$ is not extreme. Thus an [extreme point](c:extreme-point) is a [Dirac measure](c:dirac-measure) $\\pm\\delta_k$, and each $\\pm\\delta_k$ is extreme.",
+      "uses": [
+       "nm:riesz-markov-kakutani-representation-theorem"
+      ]
+     },
+     {
+      "id": "s:adjoint",
+      "slogan": "Map point masses by the adjoint of $T$ to get $\\varphi\\colon L \\to K$ and signs $h(l)$.",
+      "detail": "Let $T\\colon C(K) \\to C(L)$ be a surjective [linear isometry](c:linear-isometry). Its adjoint is an affine bijection of the dual balls, so it maps extreme points to extreme points: $T^*\\delta_l = h(l)\\,\\delta_{\\varphi(l)}$ with $h(l) = \\pm1$. Hence $(Tf)(l) = h(l) f(\\varphi(l))$, and $f = 1$ gives $h = T1$.",
+      "uses": []
+     },
+     {
+      "id": "s:continuous",
+      "slogan": "Show that $\\varphi$ is continuous because $f \\circ \\varphi = h \\cdot Tf$ for every $f$.",
+      "detail": "The function $h = T1$ is continuous and $h^2 = 1$, so $f \\circ \\varphi = h \\cdot Tf$ is continuous on $L$ for every $f \\in C(K)$. The topology of the compact Hausdorff space $K$ is the weakest one that makes every $f \\in C(K)$ continuous, by Urysohn's lemma. So $\\varphi$ is continuous.",
+      "uses": [
+       "nl:10682"
+      ]
+     },
+     {
+      "id": "s:bijective",
+      "slogan": "Show that $\\varphi$ is bijective, hence a homeomorphism, because $T$ is onto.",
+      "detail": "If $\\varphi(l_1) = \\varphi(l_2)$, then $h(l_1)(Tf)(l_1) = h(l_2)(Tf)(l_2)$ for all $f$; since $T$ is onto, this holds for every $g \\in C(L)$, so $l_1 = l_2$ by Urysohn's lemma. If $k \\notin \\varphi(L)$, some $f \\in C(K)$ with $f(k) = 1$ vanishes on the compact set $\\varphi(L)$, so $Tf = 0$ and $f = 0$, which is false. A continuous bijection from a compact space onto a Hausdorff space is a homeomorphism.",
+      "uses": [
+       "nl:10682"
+      ]
+     },
+     {
+      "id": "s:both",
+      "slogan": "Combine the two directions to get the equivalence.",
+      "detail": "Step 1 gives an isometric isomorphism from a homeomorphism. Steps 2 to 5 give a homeomorphism from an isometric isomorphism. Together they prove the equivalence.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:easy",
+      "s:both"
+     ],
+     [
+      "s:extreme",
+      "s:adjoint"
+     ],
+     [
+      "s:adjoint",
+      "s:continuous"
+     ],
+     [
+      "s:continuous",
+      "s:bijective"
+     ],
+     [
+      "s:adjoint",
+      "s:bijective"
+     ],
+     [
+      "s:bijective",
+      "s:both"
+     ]
+    ],
+    "conclusion": "s:both",
+    "concepts": {
+     "c:compact-hausdorff-space": "Compact Hausdorff spaces are the ones recovered from their function spaces.",
+     "c:c-k-space": "The theorem compares the spaces of continuous functions on $K$ and $L$.",
+     "c:homeomorphism": "A homeomorphism is what the isometry produces and what composition uses.",
+     "c:extreme-point": "Extreme points of the dual ball are the point masses that encode $K$.",
+     "c:dirac-measure": "Point masses $\\pm\\delta_k$ are the extreme points of the dual ball.",
+     "c:linear-isometry": "The adjoint of a surjective linear isometry preserves extreme points."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The extreme point argument of Arens and Kelley, Characterizations of the space of continuous functions over a compact Hausdorff space, Trans. Amer. Math. Soc. 62 (1947)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:10436",
+  "statement": "Let a [CW complex](c:cw-complex) $X$ be the union of subcomplexes $A$ and $B$ with $C = A \\cap B$ nonempty and connected. If $(A,C)$ is $m$-connected and $(B,C)$ is $n$-connected, $m, n \\ge 0$, then $\\pi_i(A,C) \\to \\pi_i(X,B)$ is an isomorphism for $i < m+n$ and a surjection for $i = m+n$.",
+  "hypotheses": [
+   {
+    "id": "h:triad",
+    "text": "The [CW complex](c:cw-complex) $X$ is the union of subcomplexes $A$ and $B$, and $C = A \\cap B$ is nonempty and connected.",
+    "concept": "c:cw-complex"
+   },
+   {
+    "id": "h:a-conn",
+    "text": "The pair $(A, C)$ is $m$-connected, with $m \\ge 0$.",
+    "concept": "c:connectivity"
+   },
+   {
+    "id": "h:b-conn",
+    "text": "The pair $(B, C)$ is $n$-connected, with $n \\ge 0$.",
+    "concept": "c:connectivity"
+   }
+  ],
+  "conclusion": "The map $\\pi_i(A,C) \\to \\pi_i(X,B)$ of [relative homotopy groups](c:relative-homotopy-group) is an isomorphism for $i < m+n$ and a surjection for $i = m+n$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "general-position",
+    "name": "Cells and general position",
+    "slogan": "Reduce to one cell on each side of the pair, then deform maps of disks by general position, where the dimension count gives the range.",
+    "scope": "The CW triad form (homotopy excision); the version for homotopy pushouts is another member of the family. The steps outline the geometric proof of the cited text and rest on it for the deformation argument.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:dimension-count",
+     "m:reduction"
+    ],
+    "roles": [
+     {
+      "h": "h:triad",
+      "why": "The subcomplex structure lets one attach cells to $C$ and compare $(A,C)$ with $(X,B)$.",
+      "steps": [
+       "s:cells",
+       "s:attach"
+      ]
+     },
+     {
+      "h": "h:a-conn",
+      "why": "The connectivity $m$ means that $A$ needs only cells of dimension greater than $m$ over $C$.",
+      "steps": [
+       "s:cells",
+       "s:general"
+      ]
+     },
+     {
+      "h": "h:b-conn",
+      "why": "The connectivity $n$ means that $B$ needs only cells of dimension greater than $n$ over $C$, which fixes the range.",
+      "steps": [
+       "s:cells",
+       "s:range"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:cells",
+      "slogan": "Replace $A$ and $B$ by complexes built from $C$ with only high-dimensional cells.",
+      "detail": "Since $(A,C)$ is $m$-connected, relative CW approximation lets us assume that $A$ is obtained from $C$ by [attaching cells](c:attach-cells) of dimension greater than $m$. In the same way $B$ comes from $C$ with cells of dimension greater than $n$. This changes no homotopy group of the pairs in question.",
+      "uses": [
+       "nl:3255"
+      ]
+     },
+     {
+      "id": "s:one-cell",
+      "slogan": "Reduce to one attached cell on each side by compactness and induction over the cells.",
+      "detail": "A map of a disk or a sphere meets only finitely many cells, so only finitely many cells matter. Induction on the number of cells then reduces the theorem to $A = C \\cup e^k$ and $B = C \\cup e^l$ with $k > m$ and $l > n$.",
+      "uses": []
+     },
+     {
+      "id": "s:attach",
+      "slogan": "View $(X, B)$ as $(A, C)$ with the attaching map pushed forward from $C$ into $B$.",
+      "detail": "In the one-cell case $X = B \\cup_C A = B \\cup e^k$ is obtained from $B$ by the same cell that $A$ has over $C$. So the map $\\pi_i(A,C) \\to \\pi_i(X,B)$ compares the two pairs of relative homotopy groups of this cell.",
+      "uses": []
+     },
+     {
+      "id": "s:general",
+      "slogan": "Deform maps of disks into general position with respect to the two cells.",
+      "detail": "The cited proof represents a class of $\\pi_i(X,B)$ by a map of a disk. It uses simplicial approximation and general position, as in Blakers and Massey, to deform that map into $A$ with boundary in $C$. The connectivity of the two pairs supplies the room for these deformations; Hatcher gives them in Section 4.2.",
+      "uses": []
+     },
+     {
+      "id": "s:range",
+      "slogan": "Count dimensions to get an isomorphism for $i < m+n$ and a surjection for $i = m+n$.",
+      "detail": "With $k \\ge m+1$ and $l \\ge n+1$ the deformation of an $i$-disk exists for $i \\le m+n$, which gives surjectivity. A homotopy between two such maps is an $(i+1)$-disk, which exists for $i+1 \\le m+n$. This gives injectivity for $i < m+n$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:cells",
+      "s:one-cell"
+     ],
+     [
+      "s:one-cell",
+      "s:attach"
+     ],
+     [
+      "s:attach",
+      "s:general"
+     ],
+     [
+      "s:general",
+      "s:range"
+     ]
+    ],
+    "conclusion": "s:range",
+    "concepts": {
+     "c:cw-complex": "The decomposition into subcomplexes lets cells be attached and counted.",
+     "c:connectivity": "Connectivity of the two pairs sets the dimensions of the needed cells.",
+     "c:relative-homotopy-group": "The theorem compares relative homotopy groups of $(A,C)$ and $(X,B)$.",
+     "c:attach-cells": "The reduction builds $A$ and $B$ from $C$ by attaching high cells."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "A. Hatcher, Algebraic Topology, Cambridge University Press, 2002, Section 4.2 (Theorem 4.23)",
+     "url": "https://pi.math.cornell.edu/~hatcher/AT/AT.pdf",
+     "note": "Hatcher proves the CW triad form by the cell reductions and the general position argument of Blakers and Massey (Ann. of Math. 1951)."
+    }
+   }
+  ]
+ }
+]
