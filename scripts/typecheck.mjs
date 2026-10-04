@@ -10,14 +10,15 @@
 // scripts/visual_build.py embeds; scripts/rules.py checks it is unchanged) are always left out.
 // Usage: node scripts/typecheck.mjs [SLUG...]   (after npm ci; scripts/check.py runs it per visual; with no
 // slug it checks the shared tooling, tsconfig.json, which is `npm run typecheck`)
-//        node scripts/typecheck.mjs --summary [SLUG...] [--file PATH] [--since REF] [--scoped] [--first N]
+//        node scripts/typecheck.mjs --summary [SLUG...] [--file PATH] [--since REF] [--first N]
 // --summary runs tsc --pretty false on the shared tooling and every visual with a tsconfig.json (or only the
 // named ones), writes tsc's full output to build/logs/, and prints one TOON verdict: totals, errors by code
 // and by file, the first N errors in a stable order, and next steps. An error in an extracted inline script
 // is reported at its page line. --file and --since filter the errors shown, but never an error that names no
-// file (a failed tsc run, put at its project); the verdict and the exit code still count every error in
-// every project unless --scoped, and then the output says how much lies outside.
-// Exit 0: no error counted; 1: an error counted, or projects left out without --scoped; 2: usage or
+// file (a failed tsc run, put at its project); the verdict and the exit code still count every error and
+// every non-zero tsc exit in every checked project. Named slugs check only those projects, and the verdict
+// line then says how many of the total it covers.
+// Exit 0: no error and every tsc run exited 0; 1: an error or a failed tsc run; 2: usage or
 // environment error (no tsc, a missing path, an unknown ref, a filter or slug that matches nothing).
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
@@ -154,17 +155,16 @@ export function table(name, fields, rows) {
 /**
  * The summary of every error: counts by code and by file (most first, then by name), the first `first` in
  * place order, and the scope: `shown` keeps the errors a filter selects, and every error that names no file
- * (line 0, put at its project) is kept, so a filter never hides a failed tsc run. The verdict counts every error
- * unless `scoped`, and an unchecked project fails it unless `scoped`.
+ * (line 0, put at its project) is kept. A filter only narrows what is listed: the verdict fails when any
+ * checked project has an error or a tsc run exited non-zero (`failedRuns`), whatever the filter shows.
  * @param {TscError[]} errors
- * @param {{ shown?: (e: TscError) => boolean, first?: number, scoped?: boolean, filter?: string, projects: number, total: number, log: string }} opts
+ * @param {{ shown?: (e: TscError) => boolean, first?: number, filter?: string, failedRuns?: number, projects: number, total: number, log: string }} opts
  */
-export function summarize(errors, { shown = () => true, first = 20, scoped = false, filter = "", projects, total, log }) {
+export function summarize(errors, { shown = () => true, first = 20, filter = "", failedRuns = 0, projects, total, log }) {
   const all = [...errors].sort(byPlace);
   const kept = all.filter((e) => e.line === 0 || shown(e));
-  const counted = scoped ? kept : all;
   const unchecked = total - projects;
-  const fail = counted.length > 0 || (!scoped && unchecked > 0);
+  const fail = all.length > 0 || failedRuns > 0;
   /** @param {TscError[]} list @param {(e: TscError) => string} key */
   const tally = (list, key) => {
     /** @type {Map<string, TscError[]>} */
@@ -174,11 +174,11 @@ export function summarize(errors, { shown = () => true, first = 20, scoped = fal
   };
   const byFile = tally(kept, (e) => e.file);
   const lines = [
-    `verdict: ${fail ? "fail" : "pass"}${scoped ? " (scoped: counts only the errors the filter selects)" : ""}`,
-    `scope{filter,errors_shown,errors_total,projects_checked,projects_total,outside_scope}:`,
-    `  ${[filter || "none", kept.length, all.length, projects, total, all.length - kept.length].map(cell).join(",")}`,
+    `verdict: ${fail ? "fail" : "pass"}${unchecked > 0 ? ` (on ${projects} of ${total} projects; ${unchecked} not checked)` : ""}`,
+    `scope{filter,errors_shown,errors_total,projects_checked,projects_total,tsc_failed_runs}:`,
+    `  ${[filter || "none", kept.length, all.length, projects, total, failedRuns].map(cell).join(",")}`,
     `totals{errors,files}:`,
-    `  ${counted.length},${new Set(counted.map((e) => e.file)).size}`,
+    `  ${all.length},${new Set(all.map((e) => e.file)).size}`,
     table("by_code", ["code", "count", "example"], tally(kept, (e) => e.code).map(([code, list]) => [code, list.length, list[0].message])),
     table("by_file", ["file", "count"], byFile.map(([file, list]) => [file, list.length])),
     table("first", ["file_line", "code", "message"], kept.slice(0, first).map((e) => [`${e.file}:${e.line}`, e.code, e.message])),
@@ -188,9 +188,10 @@ export function summarize(errors, { shown = () => true, first = 20, scoped = fal
   const help = [];
   if (byFile.length > 1) help.push(`Run \`npm run typecheck -- --summary --file ${byFile[0][0]}\` to see only the file with the most errors`);
   if (kept.length > first) help.push(`Run with --first ${kept.length} to list every shown error, or read ${log}`);
-  if (!scoped && unchecked > 0) help.push(`${unchecked} project(s) were not checked; run without slugs for the full verdict, or pass --scoped to accept a verdict on the named ones only`);
-  if (!scoped && kept.length < all.length) help.push(`${all.length - kept.length} error(s) lie outside the filter and still fail the verdict; pass --scoped to count only the filtered ones`);
-  if (!fail) help.push("No type errors counted; run `python3 scripts/check.py --toon --changed --scoped` for the other checks");
+  if (kept.length < all.length) help.push(`${all.length - kept.length} error(s) lie outside the filter and still fail the verdict; run without the filter to list them`);
+  if (failedRuns > 0 && all.length === 0) help.push(`tsc exited non-zero ${failedRuns} time(s) with no error it could parse; read ${log}`);
+  if (unchecked > 0) help.push(`${unchecked} project(s) were not checked; run without slugs for every project`);
+  if (!fail) help.push("No type errors; run `python3 scripts/check.py --toon --changed` for the other checks");
   lines.push(table("help", ["next"], help.map((h) => [h])));
   return { text: lines.join("\n"), code: fail ? 1 : 0 };
 }
@@ -223,11 +224,10 @@ function git(args) {
 function summary(argv) {
   /** @type {string[]} */
   const slugs = [];
-  let file = "", since = "", scoped = false, first = 20;
+  let file = "", since = "", first = 20;
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
-    if (arg === "--scoped") scoped = true;
-    else if (arg === "--file" || arg === "--since" || arg === "--first") {
+    if (arg === "--file" || arg === "--since" || arg === "--first") {
       const value = argv[++i];
       if (value === undefined || value.startsWith("--")) throw new UsageError(`${arg} needs a value`);
       if (arg === "--file") file = value.replace(/^\.\//, "");
@@ -262,9 +262,11 @@ function summary(argv) {
   let output = "";
   /** @type {TscError[]} */
   const found = [];
+  let failedRuns = 0;
   for (const project of projects) {
     const run = spawnSync(TSC, ["-p", project, "--pretty", "false"], { cwd: fileURLToPath(ROOT), encoding: "utf8", maxBuffer: 1 << 28 });
     if (run.error) throw new UsageError(`tsc did not run: ${run.error.message}`);
+    if (run.status !== 0) failedRuns++;
     output += `### tsc -p ${project} (exit ${run.status})\n${run.stdout}${run.stderr}`;
     found.push(...parse(`${run.stdout}\n${run.stderr}`, project, run.status));
   }
@@ -288,7 +290,7 @@ function summary(argv) {
   const filter = [file && `file=${file}`, since && `since=${since}`, slugs.length && `slugs=${slugs.join(" ")}`].filter(Boolean).join(" ");
   /** @param {TscError} e */
   const shown = (e) => (!file || e.file === file) && (!changed || changed.has(e.file));
-  const result = summarize(errors, { shown, first, scoped, filter, projects: projects.length, total, log });
+  const result = summarize(errors, { shown, first, filter, failedRuns, projects: projects.length, total, log });
   console.log(result.text);
   return result.code;
 }

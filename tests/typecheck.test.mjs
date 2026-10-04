@@ -1,7 +1,7 @@
 // scripts/typecheck.mjs: which inline scripts the shared extractor copies out for tsc, and where their lines map.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdtempSync, realpathSync, rmSync, symlinkSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -93,34 +93,42 @@ test("the summary counts by code and file, most first, and lists the first error
   assert.match(text, /\nlog: build\/logs\/t\.log\n/);
 });
 
-test("a filter shows its errors but the verdict counts every error unless scoped, and says what lies outside", () => {
+test("a filter shows only its errors, but the verdict counts every error and says how many lie outside", () => {
   const shown = (/** @type {{ file: string }} */ e) => e.file === "viz/b/tests/x.mjs";
   const errors = parse(OUTPUT);
-  const unscoped = summarize(errors, { ...base, shown, filter: "file=viz/b/tests/x.mjs" });
-  assert.equal(unscoped.code, 1);
-  assert.match(unscoped.text, /\n {2}file=viz\/b\/tests\/x\.mjs,1,4,3,3,3\n/);
-  assert.match(unscoped.text, /3 error\(s\) lie outside the filter and still fail the verdict/);
-  const clean = summarize(errors.slice(1), { ...base, shown, scoped: true, filter: "file=viz/b/tests/x.mjs" });
-  assert.equal(clean.code, 0);
-  assert.match(clean.text, /^verdict: pass \(scoped: counts only the errors the filter selects\)\n/);
+  const filtered = summarize(errors, { ...base, shown, filter: "file=viz/b/tests/x.mjs" });
+  assert.equal(filtered.code, 1);
+  assert.match(filtered.text, /^verdict: fail\n/);
+  assert.match(filtered.text, /\n {2}file=viz\/b\/tests\/x\.mjs,1,4,3,3,0\n/);
+  assert.match(filtered.text, /3 error\(s\) lie outside the filter and still fail the verdict/);
   assert.equal(summarize(errors.slice(1), { ...base, shown, filter: "file=viz/b/tests/x.mjs" }).code, 1);
 });
 
-test("a filter never hides an error that names no file, so a failed tsc run fails even a scoped verdict", () => {
+test("a filter never hides an error that names no file", () => {
   const errors = [...parse("", "viz/x/tsconfig.json", 1), ...parse("error TS18003: No inputs were found in config file 'viz/y/tsconfig.json'.\n", "viz/y/tsconfig.json", 2)];
   const shown = (/** @type {{ file: string }} */ e) => e.file === "viz/x/index.html";
-  const { text, code } = summarize(errors, { ...base, shown, scoped: true, filter: "file=viz/x/index.html" });
+  const { text, code } = summarize(errors, { ...base, shown, failedRuns: 2, filter: "file=viz/x/index.html" });
   assert.equal(code, 1);
-  assert.match(text, /^verdict: fail /);
+  assert.match(text, /^verdict: fail\n/);
   assert.match(text, /\ntotals\{errors,files\}:\n {2}2,2\n/);
   assert.match(text, /\n {2}"viz\/x\/tsconfig\.json:0",exit,/);
 });
 
-test("projects left unchecked fail the verdict unless scoped", () => {
-  assert.equal(summarize([], { ...base, projects: 1 }).code, 1);
-  assert.match(summarize([], { ...base, projects: 1 }).text, /2 project\(s\) were not checked/);
-  assert.equal(summarize([], { ...base, projects: 1, scoped: true }).code, 0);
+test("a tsc run that exited non-zero fails the verdict even with no error parsed and a filter that shows nothing", () => {
+  const { text, code } = summarize([], { ...base, shown: () => false, failedRuns: 1, filter: "file=scripts/a.mjs" });
+  assert.equal(code, 1);
+  assert.match(text, /^verdict: fail\n/);
+  assert.match(text, /\n {2}file=scripts\/a\.mjs,0,0,3,3,1\n/);
+  assert.match(text, /tsc exited non-zero 1 time\(s\) with no error it could parse/);
+});
+
+test("named projects give a verdict on them, and the verdict line says how many were not checked", () => {
+  const partial = summarize([], { ...base, projects: 1 });
+  assert.equal(partial.code, 0);
+  assert.match(partial.text, /^verdict: pass \(on 1 of 3 projects; 2 not checked\)\n/);
+  assert.match(partial.text, /2 project\(s\) were not checked/);
   assert.equal(summarize([], base).code, 0);
+  assert.match(summarize([], base).text, /^verdict: pass\n/);
 });
 
 test("a TOON value with a separator, a colon or space at its ends is quoted", () => {
@@ -139,7 +147,8 @@ test("a missing path, an unknown ref, an unknown visual or option is a usage err
     [["--bogus"], "unknown option --bogus"],
     [["--first", "x"], "--first needs a whole number"],
     [["airbnb", "--file", "README.md"], "--file README.md is in none of the checked tsc projects, so the filter matches nothing"],
-    [["work-lanyards", "--scoped", "--file", "viz/work-lanyards/data.json"], "--file viz/work-lanyards/data.json is in none of the checked tsc projects"],
+    [["--scoped"], "unknown option --scoped"],
+    [["work-lanyards", "--file", "viz/work-lanyards/data.json"], "--file viz/work-lanyards/data.json is in none of the checked tsc projects"],
   ];
   const clean = spawnSync("git", ["status", "--porcelain"], { encoding: "utf8" }).stdout === "";
   if (clean) cases.push([["--since", "HEAD"], "--since HEAD: no file changed since"]);
@@ -155,7 +164,7 @@ test("--file finds a page's inline scripts when the repository is reached throug
   const link = join(dir, "repo");
   symlinkSync(fileURLToPath(new URL("../", import.meta.url)), link);
   try {
-    const args = ["scripts/typecheck.mjs", "--summary", "work-lanyards", "--scoped", "--file", "viz/work-lanyards/index.html"];
+    const args = ["scripts/typecheck.mjs", "--summary", "work-lanyards", "--file", "viz/work-lanyards/index.html"];
     const run = spawnSync(process.execPath, args, { cwd: link, env: { ...process.env, PWD: link }, encoding: "utf8" });
     assert.notEqual(run.status, 2, run.stdout);
     assert.match(run.stdout, /^verdict: (pass|fail)\b/);
@@ -167,4 +176,34 @@ test("--file finds a page's inline scripts when the repository is reached throug
 test("--listFilesOnly output gives the real paths of its files and drops the errors tsc writes beside them", () => {
   const stdout = ["a.js(1,9): error TS1109: Expression expected.", "error TS18003: No inputs were found in config file 'tsconfig.json'.", `  ${script}`, ""].join("\n");
   assert.deepEqual(listedFiles(stdout), [realpathSync(script)]);
+});
+
+test("a filtered summary fails, exit 1, when tsc fails: on an error outside the filter, and on a tsc run with no file", { skip: !installed && "npm ci not run" }, () => {
+  const dir = realpathSync(mkdtempSync(join(tmpdir(), "typecheck-fail-")));
+  const at = (/** @type {string} */ path) => join(dir, path);
+  try {
+    mkdirSync(at("scripts"));
+    mkdirSync(at("viz/broken"), { recursive: true });
+    symlinkSync(fileURLToPath(new URL("../node_modules", import.meta.url)), at("node_modules"));
+    copyFileSync(script, at("scripts/typecheck.mjs"));
+    writeFileSync(at("tsconfig.json"), JSON.stringify({ compilerOptions: { allowJs: true, checkJs: true, noEmit: true, strict: true }, include: ["scripts/ok.mjs", "scripts/bad.mjs"] }));
+    writeFileSync(at("scripts/ok.mjs"), "export const ok = 1;\n");
+    writeFileSync(at("scripts/bad.mjs"), "export const bad = 1;\nbad.nothing();\n");
+    // A visual whose tsconfig.json includes nothing: tsc exits non-zero with TS18003 and names no file.
+    writeFileSync(at("viz/broken/visual.json"), "{}");
+    writeFileSync(at("viz/broken/index.html"), "<!doctype html>");
+    writeFileSync(at("viz/broken/tsconfig.json"), JSON.stringify({ compilerOptions: { allowJs: true, noEmit: true }, include: ["none/*.mjs"] }));
+    const git = (/** @type {string[]} */ ...args) => spawnSync("git", ["-c", "user.name=t", "-c", "user.email=t@example.org", "-c", "commit.gpgsign=false", ...args], { cwd: dir });
+    git("init", "-q");
+    git("add", "-A");
+    git("commit", "-q", "-m", "base");
+    writeFileSync(at("scripts/ok.mjs"), "export const ok = 2;\n");
+    for (const args of [["--file", "scripts/ok.mjs"], ["--since", "HEAD"], ["broken", "--file", "viz/broken/tsconfig.json"]]) {
+      const run = spawnSync(process.execPath, [at("scripts/typecheck.mjs"), "--summary", ...args], { cwd: dir, encoding: "utf8" });
+      assert.equal(run.status, 1, `${args.join(" ")}\n${run.stdout}`);
+      assert.match(run.stdout, /^verdict: fail\b/, args.join(" "));
+    }
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });

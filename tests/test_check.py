@@ -137,24 +137,19 @@ class ToonTest(unittest.TestCase):
         log = out.split("log: ", 1)[1].split("\n", 1)[0]
         self.assertIn("checking 2 visual(s)", (layout.root / log).read_text(encoding="utf-8"))
 
-    def test_a_named_visual_alone_does_not_pass_without_scoped(self):
-        layout = self.layout()
-        out, code = toon(layout, "alpha")
-        self.assertEqual(code, 1)
-        self.assertIn("verdict: fail\n", out)
-        self.assertIn("  1,1,2,1,named", out)
-        self.assertIn("1 visual(s) were not checked, so this is not a pass", out)
-
-    def test_scoped_passes_on_the_selection_and_says_what_lies_outside(self):
-        out, code = toon(self.layout(), "alpha", "--scoped")
+    def test_a_named_visual_gives_a_verdict_on_it_and_says_how_many_were_not_checked(self):
+        out, code = toon(self.layout(), "alpha")
         self.assertEqual(code, 0)
-        self.assertIn("verdict: pass (scoped: 1 of 2 visuals; 1 outside the scope are not counted)", out)
+        self.assertIn("verdict: pass (on 1 of 2 visuals; 1 not checked)\n", out)
+        self.assertIn("  1,1,2,1,named", out)
+        self.assertIn("1 visual(s) were not checked; run `python3 scripts/check.py --toon` for every visual", out)
 
-    def test_a_failing_step_comes_first_with_its_place_and_fails_even_when_scoped(self):
+    def test_a_failing_step_comes_first_with_its_place_and_fails_the_verdict(self):
         layout = self.layout()
         (layout.root / "viz" / "alpha" / "build.py").write_text("import os\nraise SystemExit('stale: index.html:3 differs')\n", encoding="utf-8")
-        out, code = toon(layout, "alpha", "--scoped")
+        out, code = toon(layout, "alpha")
         self.assertEqual(code, 1)
+        self.assertIn("verdict: fail (on 1 of 2 visuals; 1 not checked)\n", out)
         self.assertIn('failures[2]{visual,step,file_line,evidence}:\n  alpha,build,"viz/alpha/index.html:3","stale: index.html:3 differs"\n', out)
         self.assertIn('alpha,pydead,"viz/alpha/build.py:1","build.py:1: import os is unused"', out)
 
@@ -172,7 +167,7 @@ class ToonTest(unittest.TestCase):
         self.assertEqual((code, out.splitlines()[1]), (2, "error: --changed HEAD: the change selects no visual, so the filter matches nothing"))
 
     def test_require_typecheck_without_typescript_is_an_environment_error(self):
-        out, code = toon(self.layout(), "alpha", "--scoped", "--require-typecheck")
+        out, code = toon(self.layout(), "alpha", "--require-typecheck")
         self.assertEqual((code, out.splitlines()), (2, [
             "verdict: error",
             "error: --require-typecheck: typescript is not installed",
@@ -180,9 +175,9 @@ class ToonTest(unittest.TestCase):
             '  "Run `npm ci` at the repository root, then run this command again"',
         ]))
 
-    def test_scoped_needs_toon(self):
+    def test_scoped_is_not_an_option(self):
         with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as raised:
-            main(["alpha", "--scoped"])
+            main(["--toon", "alpha", "--scoped"])
         self.assertEqual(raised.exception.code, 2)
 
 

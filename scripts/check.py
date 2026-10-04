@@ -22,7 +22,7 @@ steps after them always run. scripts/rules.py says what each rule checks, and vi
 findings a visual keeps on purpose.
 
 Usage: scripts/check.py SLUG... | --all | --changed [BASE] [--require-typecheck]
-       scripts/check.py --toon [SLUG... | --changed [BASE]] [--scoped] [--require-typecheck]
+       scripts/check.py --toon [SLUG... | --changed [BASE]] [--require-typecheck]
 
 --changed selects the visuals scripts/changed.py finds changed against BASE (default origin/main, else
 main). The type check and the dead-code check need `npm ci` at the repository root; without it they are
@@ -30,9 +30,9 @@ skipped unless --require-typecheck (CI) makes that a failure. A failing visual n
 
 --toon prints one TOON verdict and nothing else: the failing steps first, each with its visual, evidence
 and first file:line, then counts and next steps; every step's full output goes to a log in build/logs/ that
-the verdict names. Without a selection it checks every visual. With SLUGs or --changed the verdict still
-follows every visual, so the visuals left unchecked fail it, unless --scoped accepts a verdict on the
-selection only, which the output then says, with how many visuals lie outside. Exit 0 pass, 1 fail, 2 usage
+the verdict names. Without a selection it checks every visual. With SLUGs or --changed the verdict covers
+the selected visuals only, and the verdict line and the scope row say how many of the total that is and
+how many were not checked. Exit 0 pass, 1 fail, 2 usage
 or environment error: an unknown visual, an unknown BASE, a --changed that selects no visual, or
 --require-typecheck without typescript installed.
 """
@@ -239,7 +239,7 @@ def evidence(slug, detail, text):
     return first, ""
 
 
-def toon(results, slugs, total, scoped, reason, log_path):
+def toon(results, slugs, total, reason, log_path):
     """The --toon verdict and exit code."""
     text = log_path.read_bytes()
     failures, counts = [], {"ok": 0, "FAIL": 0, "skipped": 0}
@@ -251,12 +251,12 @@ def toon(results, slugs, total, scoped, reason, log_path):
                 failures.append([slug, name, place, first])
     failed = sorted({row[0] for row in failures})
     outside = total - len(slugs)
-    fail = bool(failures) or (outside > 0 and not scoped)
+    fail = bool(failures)
     relative = log_path.relative_to(ROOT).as_posix()
     lines = [
-        f"verdict: {'fail' if fail else 'pass'}" + (f" (scoped: {len(slugs)} of {total} visuals; {outside} outside the scope are not counted)" if scoped and outside else ""),
+        f"verdict: {'fail' if fail else 'pass'}" + (f" (on {len(slugs)} of {total} visuals; {outside} not checked)" if outside else ""),
         table("failures", ["visual", "step", "file_line", "evidence"], failures),
-        "scope{selected,checked,total,outside_scope,reason}:",
+        "scope{selected,checked,total,not_checked,reason}:",
         "  " + ",".join(cell(v) for v in (len(slugs), len(results), total, outside, reason)),
         "visuals{pass,fail}:",
         f"  {len(results) - len(failed)},{len(failed)}",
@@ -266,12 +266,12 @@ def toon(results, slugs, total, scoped, reason, log_path):
     ]
     help = []
     if failed:
-        help.append(f"Fix the first failure, then run `python3 scripts/check.py --toon {failed[0]} --scoped` to check that visual again")
+        help.append(f"Fix the first failure, then run `python3 scripts/check.py --toon {failed[0]}` to check that visual again")
         help.append(f"Read {relative} for each step's full output; search it with `rg -n '^\\[{failed[0]}\\]' {relative}`")
     if any(row[1] == "types" for row in failures):
-        help.append(f"Run `npm run typecheck -- --summary {next(row[0] for row in failures if row[1] == 'types')} --scoped` for the type errors by code and file")
-    if outside and not scoped:
-        help.append(f"{outside} visual(s) were not checked, so this is not a pass; pass --scoped to accept a verdict on the {len(slugs)} selected, or run --toon with no selection for every visual")
+        help.append(f"Run `npm run typecheck -- --summary {next(row[0] for row in failures if row[1] == 'types')}` for the type errors by code and file")
+    if outside:
+        help.append(f"{outside} visual(s) were not checked; run `python3 scripts/check.py --toon` for every visual")
     if counts["skipped"] and not failures:
         help.append("Some steps were skipped; run `npm ci` once so the type and dead-code checks run")
     if not fail:
@@ -319,7 +319,7 @@ def toon_main(args):
             os.dup2(saved[1], 2)
             for fd in saved:
                 os.close(fd)
-    return toon(results, slugs, len(every), args.scoped, reason, log_path)
+    return toon(results, slugs, len(every), reason, log_path)
 
 
 def usage(message, next="Run `python3 scripts/check.py --toon` for every visual, or name a folder in viz/"):
@@ -336,10 +336,7 @@ def main(argv=None):
     group.add_argument("--changed", nargs="?", const="", metavar="BASE", help="the visuals changed against BASE")
     parser.add_argument("--require-typecheck", action="store_true", help="fail, not skip, when typescript is missing")
     parser.add_argument("--toon", action="store_true", help="print one TOON verdict; full output goes to build/logs/")
-    parser.add_argument("--scoped", action="store_true", help="with --toon: a verdict on the selection only")
     args = parser.parse_args(argv)
-    if args.scoped and not args.toon:
-        parser.error("--scoped needs --toon")
     if args.toon:
         sys.exit(toon_main(args))
     if args.all:

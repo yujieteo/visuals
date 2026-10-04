@@ -14,7 +14,7 @@ What a visual must be (artifact contract, state and export, interaction and acce
 1. Work inside `viz/<slug>/` only. Edit the data, `src/` or `build.py` and run `python3 build.py` when the folder has a builder (it regenerates `index.html`; never hand-edit a generated page); otherwise edit `index.html` directly.
 2. Keep `visual.json` true: its `webmcp_tools` and the WebMCP tools table in `SKILLS.md` name exactly the tools the page registers, and `fetched` is the date of the data. `schema/visual.schema.json` says what each field means.
 3. Put its tests in its own `tests/` (`*.test.mjs` for `node --test`, `test_*.py` for unittest). A test reads only its own folder and the shared tooling, never another visual's folder: CI runs it on a checkout without them. A test runs the page's code and asserts on what it does; the `sourcetests` step fails a test that only searches the page's source text. Time any test you add and keep it fast.
-4. Check it: `python3 scripts/check.py --toon <slug> --scoped`, and `node e2e/bin/page-axi.js check <slug>` for the page in a browser, then `python3 scripts/check.py --toon --changed --scoped` for everything the branch touches. Run `npm ci` once first, so the type and dead-code checks run too. Fix a failure; do not add it to `allow` in `visual.json` unless the finding is deliberate, and then say why in the pull request.
+4. Check it: `python3 scripts/check.py --toon <slug>`, and `node e2e/bin/page-axi.js check <slug>` for the page in a browser, then `python3 scripts/check.py --toon --changed` for everything the branch touches. Run `npm ci` once first, so the type and dead-code checks run too. Fix a failure; do not add it to `allow` in `visual.json` unless the finding is deliberate, and then say why in the pull request.
 
 ## One-call verdicts
 
@@ -23,12 +23,12 @@ Agents call these and read their output; do not pipe a check's output through `t
 | Command | Verdict on |
 | --- | --- |
 | `python3 scripts/check.py --toon` | every visual's checks |
-| `python3 scripts/check.py --toon <slug>... --scoped` | the named visuals only |
-| `python3 scripts/check.py --toon --changed [BASE] --scoped` | the visuals the branch changes |
+| `python3 scripts/check.py --toon <slug>...` | the named visuals only |
+| `python3 scripts/check.py --toon --changed [BASE]` | the visuals the branch changes |
 | `npm run typecheck -- --summary` | every tsc project: the shared tooling and each visual with a `tsconfig.json`; errors by code and by file, the first 20 in place order, inline-script errors at their page line |
-| `npm run typecheck -- --summary [<slug>...] [--file PATH] [--since REF] [--scoped] [--first N]` | the same, with the errors filtered |
+| `npm run typecheck -- --summary [<slug>...] [--file PATH] [--since REF] [--first N]` | the same, with the errors filtered |
 
-A selection or filter never passes silently: the output gives the selected count and the total, and the verdict counts every visual or error unless `--scoped` is given, when the output says so and counts what lies outside. An unknown visual, a missing path, an unknown ref, or a filter that matches nothing exits 2.
+A selection or filter never passes silently. Named visuals or projects get a verdict on them, and the verdict line says how many of the total were not checked. A `--file` or `--since` filter only narrows the errors listed: the verdict fails on every error in a checked project and on every tsc run that exits non-zero. An unknown visual, a missing path, an unknown ref, or a filter that matches nothing exits 2.
 
 ## Refresh data
 
