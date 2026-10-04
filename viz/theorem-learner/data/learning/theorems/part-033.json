@@ -1,0 +1,614 @@
+[
+ {
+  "id": "wd:Q632546",
+  "statement": "For every integer $n \\ge 1$ there is a [prime number](c:prime-number) $p$ with $n < p \\le 2n$.",
+  "hypotheses": [
+   {
+    "id": "h:positive",
+    "text": "The integer $n$ satisfies $n \\ge 1$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "Some prime $p$ satisfies $n < p \\le 2n$.",
+  "formal": {
+   "decl": "Nat.bertrand",
+   "difference": null
+  },
+  "proofs": [
+   {
+    "id": "erdos",
+    "name": "Erdős's central binomial proof",
+    "slogan": "Compare a lower bound for $\\binom{2n}{n}$ with the upper bound that holds when $(n, 2n]$ has no prime, and check small $n$ by a chain of primes.",
+    "scope": "All $n \\ge 1$: the bound comparison covers $n \\ge 512$ and a chain of primes covers $1 \\le n \\le 511$. For $n = 0$ the interval $(0, 0]$ is empty, so the hypothesis is necessary.",
+    "mechanisms": [
+     "m:contradiction",
+     "m:unique-factorization",
+     "m:case-analysis"
+    ],
+    "roles": [
+     {
+      "h": "h:positive",
+      "why": "For $n \\ge 1$ the chain of primes starts with $2 \\le 2n$, and the two cases cover every such $n$.",
+      "steps": [
+       "s:small",
+       "s:conclude"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:lower",
+      "slogan": "Bound the [central binomial coefficient](c:binomial-coefficient) below by $4^n < n\\binom{2n}{n}$ for $n \\ge 4$.",
+      "detail": "The binomial theorem gives $\\sum_k \\binom{2n}{k} = 4^n$, and $\\binom{2n}{n}$ is the largest of these $2n + 1$ terms. An induction on $n$ sharpens this count to $4^n < n\\binom{2n}{n}$ for $n \\ge 4$.",
+      "uses": [
+       "wd:Q26708"
+      ]
+     },
+     {
+      "id": "s:middle",
+      "slogan": "Show that no prime in $(2n/3, n]$ divides $\\binom{2n}{n}$.",
+      "detail": "Let $p$ be such a prime and $n \\ge 5$, so $p \\le n < 3p/2$ and $p^2 > 2n$. Legendre's formula for the [factorials](c:factorial) $(2n)!$ and $n!^2$ gives the exponent $\\lfloor 2n/p \\rfloor - 2\\lfloor n/p \\rfloor = 2 - 2 = 0$.",
+      "uses": [
+       "nm:legendre-s-theorem"
+      ]
+     },
+     {
+      "id": "s:powers",
+      "slogan": "Bound each prime power in $\\binom{2n}{n}$ by $2n$, and by $p$ when $p > \\sqrt{2n}$.",
+      "detail": "Legendre's formula gives the exponent $e = \\sum_{k \\ge 1} (\\lfloor 2n/p^k \\rfloor - 2\\lfloor n/p^k \\rfloor)$, with each term $0$ or $1$ and no term once $p^k > 2n$, so $p^e \\le 2n$. If $p > \\sqrt{2n}$, only $k = 1$ can contribute, so $e \\le 1$.",
+      "uses": [
+       "nm:legendre-s-theorem"
+      ]
+     },
+     {
+      "id": "s:upper",
+      "slogan": "Assume that no prime lies in $(n, 2n]$ and bound $\\binom{2n}{n}$ above.",
+      "detail": "Then every prime factor of $\\binom{2n}{n}$ is at most $2n/3$ by step 2, since primes above $2n$ do not divide it. In the [prime factorization](c:prime-factorization), the primes up to $\\sqrt{2n}$ give at most $(2n)^{\\sqrt{2n}}$, and the larger ones give at most $\\prod_{p \\le 2n/3} p \\le 4^{2n/3}$.",
+      "uses": []
+     },
+     {
+      "id": "s:compare",
+      "slogan": "Combine the two bounds and get a contradiction for every $n \\ge 512$.",
+      "detail": "Steps 1 and 4 give $4^n < n(2n)^{\\sqrt{2n}}4^{2n/3}$, that is $4^{n/3} < n(2n)^{\\sqrt{2n}}$. A logarithmic estimate shows that this fails for every $n \\ge 512$, so some prime lies in $(n, 2n]$.",
+      "uses": []
+     },
+     {
+      "id": "s:small",
+      "slogan": "Cover each $n \\le 511$ by a chain of primes, each less than twice the previous.",
+      "detail": "In the chain $2, 3, 5, 7, 13, 23, 43, 83, 163, 317, 521$ each prime is less than twice the one before. For $1 \\le n \\le 511$, the first prime $q$ of the chain with $q > n$ has its predecessor at most $n$ (or $q = 2$), so $q \\le 2n$.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Join the large case and the small case to cover every $n \\ge 1$.",
+      "detail": "Step 5 gives a prime in $(n, 2n]$ for $n \\ge 512$, and step 6 gives one for $1 \\le n \\le 511$. So every $n \\ge 1$ has a [prime](c:prime-number) $p$ with $n < p \\le 2n$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:lower",
+      "s:compare"
+     ],
+     [
+      "s:middle",
+      "s:upper"
+     ],
+     [
+      "s:powers",
+      "s:upper"
+     ],
+     [
+      "s:upper",
+      "s:compare"
+     ],
+     [
+      "s:compare",
+      "s:conclude"
+     ],
+     [
+      "s:small",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:prime-number": "The theorem asserts a prime in each interval $(n, 2n]$.",
+     "c:binomial-coefficient": "The central coefficient $\\binom{2n}{n}$ is squeezed between two bounds.",
+     "c:factorial": "Prime exponents in factorials give the exponents in $\\binom{2n}{n}$.",
+     "c:prime-factorization": "The upper bound multiplies the prime powers of $\\binom{2n}{n}$."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Nat.bertrand",
+     "follows": true,
+     "note": "Nat.bertrand aliases Nat.exists_prime_lt_and_le_two_mul: Nat.four_pow_lt_mul_centralBinom, centralBinom_le_of_no_bertrand_prime (with Nat.factorization_centralBinom_of_two_mul_self_lt_three_mul and primorial_le_four_pow), bertrand_main_inequality for n >= 512, and a chain of primes for small n."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q17005116",
+  "statement": "Let $L$ be a nonempty finite [distributive lattice](c:distributive-lattice) and $J$ the [partially ordered set](c:partial-order) of its [join-irreducible elements](c:join-irreducible-element). Then $\\phi(a) = \\{j \\in J : j \\le a\\}$ is a [lattice isomorphism](c:lattice-hom) from $L$ onto the lattice of [down-sets](c:down-set-2) of $J$, ordered by inclusion.",
+  "hypotheses": [
+   {
+    "id": "h:finite",
+    "text": "The lattice $L$ is finite and nonempty.",
+    "concept": "c:finite-set"
+   },
+   {
+    "id": "h:distributive",
+    "text": "The lattice $L$ is [distributive](c:distributive-lattice): $a \\wedge (b \\vee c) = (a \\wedge b) \\vee (a \\wedge c)$.",
+    "concept": "c:distributive-lattice"
+   }
+  ],
+  "conclusion": "The map $\\phi$ is a bijection from $L$ onto the down-sets of $J$ that turns joins into unions and meets into intersections.",
+  "formal": {
+   "decl": "LatticeHom.birkhoffSet",
+   "difference": "The declaration gives a lattice homomorphism from L into the power set of its join-irreducibles; that it is a bijection onto the down-sets is OrderIso.lowerSetSupIrred. It also allows the empty lattice."
+  },
+  "proofs": [
+   {
+    "id": "decomposition",
+    "name": "Join-irreducible decomposition",
+    "slogan": "Write each element as the join of the join-irreducibles below it, and use distributivity to show that a join-irreducible below a join lies below one of its terms.",
+    "scope": "The whole theorem. The bottom element maps to the empty down-set, because the bottom is not join-irreducible.",
+    "mechanisms": [
+     "m:bijection",
+     "m:strong-induction"
+    ],
+    "roles": [
+     {
+      "h": "h:finite",
+      "why": "Finiteness supports the induction and gives every set of join-irreducibles a join.",
+      "steps": [
+       "s:decompose",
+       "s:inverse"
+      ]
+     },
+     {
+      "h": "h:distributive",
+      "why": "Distributivity makes every join-irreducible element join-prime.",
+      "steps": [
+       "s:prime"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:downset",
+      "slogan": "Show that $\\phi(a)$ is a [down-set](c:down-set-2) and that $\\phi$ preserves order.",
+      "detail": "If $j \\le a$ and $i \\le j$ with $i \\in J$, then $i \\le a$ by transitivity, so $\\phi(a)$ is a down-set of $J$. Also $a \\le b$ gives $\\phi(a) \\subseteq \\phi(b)$.",
+      "uses": []
+     },
+     {
+      "id": "s:decompose",
+      "slogan": "Write every element as the join of the join-irreducibles below it.",
+      "detail": "Use strong induction on the finite lattice: the bottom is the empty join, and a join-irreducible element is its own join. Any other $a$ equals $b \\vee c$ with $b, c < a$, and the decompositions of $b$ and $c$ combine, so $a = \\bigvee \\phi(a)$.",
+      "uses": []
+     },
+     {
+      "id": "s:prime",
+      "slogan": "Show that a join-irreducible element below a join lies below one of its terms.",
+      "detail": "Let $j \\in J$ with $j \\le a \\vee b$. [Distributivity](c:distributive-lattice) gives $j = j \\wedge (a \\vee b) = (j \\wedge a) \\vee (j \\wedge b)$, so $j = j \\wedge a$ or $j = j \\wedge b$, that is $j \\le a$ or $j \\le b$.",
+      "uses": []
+     },
+     {
+      "id": "s:inverse",
+      "slogan": "Send each down-set $D$ to its join and check that both composites are identities.",
+      "detail": "Step 2 gives $\\bigvee \\phi(a) = a$. If $D$ is a down-set and $j \\in J$ satisfies $j \\le \\bigvee D$, then step 3, applied repeatedly to this finite join, gives $j \\le d$ for some $d \\in D$, so $j \\in D$ and $\\phi(\\bigvee D) = D$.",
+      "uses": []
+     },
+     {
+      "id": "s:operations",
+      "slogan": "Check that $\\phi$ turns joins into unions and meets into intersections.",
+      "detail": "Step 3 gives $\\phi(a \\vee b) \\subseteq \\phi(a) \\cup \\phi(b)$ and step 1 gives the reverse inclusion; $j \\le a \\wedge b$ holds exactly when $j \\le a$ and $j \\le b$. So $\\phi$ is a bijective [lattice homomorphism](c:lattice-hom) by step 4, hence a lattice isomorphism.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:downset",
+      "s:inverse"
+     ],
+     [
+      "s:decompose",
+      "s:inverse"
+     ],
+     [
+      "s:prime",
+      "s:inverse"
+     ],
+     [
+      "s:prime",
+      "s:operations"
+     ],
+     [
+      "s:downset",
+      "s:operations"
+     ],
+     [
+      "s:inverse",
+      "s:operations"
+     ]
+    ],
+    "conclusion": "s:operations",
+    "concepts": {
+     "c:distributive-lattice": "Distributivity makes join-irreducibles behave like primes under joins.",
+     "c:partial-order": "The join-irreducibles carry the induced partial order of the lattice.",
+     "c:join-irreducible-element": "Join-irreducibles are the building blocks of every element.",
+     "c:lattice-hom": "The map must preserve joins and meets to be a lattice isomorphism.",
+     "c:down-set-2": "Down-sets of join-irreducibles are the images of the lattice elements.",
+     "c:finite-set": "Finiteness gives induction and finite joins of join-irreducibles."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "LatticeHom.birkhoffSet",
+     "follows": true,
+     "note": "mathlib builds OrderIso.lowerSetSupIrred from exists_supIrred_decomposition and SupIrred.supPrime (join-irreducible means join-prime in a distributive lattice), then derives OrderEmbedding.birkhoffSet_sup and birkhoffSet_inf."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q25303622",
+  "statement": "Let $X$ be a real [separable](c:separable-space) [reflexive Banach space](c:reflexive-banach-space) and $T\\colon X \\to X^*$ a bounded, continuous, [coercive](c:coercive-operator) and [monotone operator](c:monotone-operator). Then $T$ is surjective: for every $g \\in X^*$ some $u \\in X$ satisfies $T(u) = g$.",
+  "hypotheses": [
+   {
+    "id": "h:space",
+    "text": "The space $X$ is a real [separable](c:separable-space) [reflexive Banach space](c:reflexive-banach-space) with [dual space](c:dual-space) $X^*$.",
+    "concept": "c:reflexive-banach-space"
+   },
+   {
+    "id": "h:bounded",
+    "text": "The operator $T$ maps bounded sets to bounded sets.",
+    "concept": null
+   },
+   {
+    "id": "h:continuous",
+    "text": "The operator $T$ is continuous from $X$ to $X^*$.",
+    "concept": null
+   },
+   {
+    "id": "h:coercive",
+    "text": "The operator is [coercive](c:coercive-operator): $\\langle T(u), u\\rangle / \\|u\\| \\to \\infty$ as $\\|u\\| \\to \\infty$.",
+    "concept": "c:coercive-operator"
+   },
+   {
+    "id": "h:monotone",
+    "text": "The operator is [monotone](c:monotone-operator): $\\langle T(u) - T(v), u - v\\rangle \\ge 0$ for all $u, v \\in X$.",
+    "concept": "c:monotone-operator"
+   }
+  ],
+  "conclusion": "For every $g \\in X^*$ there is $u \\in X$ with $T(u) = g$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "galerkin-minty",
+    "name": "Galerkin approximation and Minty's trick",
+    "slogan": "Solve the equation on finite-dimensional subspaces by Brouwer's theorem, extract weak limits by reflexivity, and identify the limit by monotonicity.",
+    "scope": "The whole theorem, for a fixed $g \\in X^*$. Continuity is used only along lines, so the proof also covers hemicontinuous $T$.",
+    "mechanisms": [
+     "m:fixed-point",
+     "m:approximation",
+     "m:subsequence",
+     "m:a-priori-estimate"
+    ],
+    "roles": [
+     {
+      "h": "h:space",
+      "why": "Separability gives the Galerkin subspaces, and reflexivity gives weakly convergent subsequences.",
+      "steps": [
+       "s:subspaces",
+       "s:limits"
+      ]
+     },
+     {
+      "h": "h:bounded",
+      "why": "Boundedness keeps the images $T(u_n)$ in a bounded set, so they have a weak limit.",
+      "steps": [
+       "s:bounds"
+      ]
+     },
+     {
+      "h": "h:continuous",
+      "why": "Continuity makes the finite-dimensional maps continuous and gives $T(u - tw) \\to T(u)$.",
+      "steps": [
+       "s:galerkin",
+       "s:identify"
+      ]
+     },
+     {
+      "h": "h:coercive",
+      "why": "Coercivity gives one radius $R$, for all $n$, on which the projected map points outward.",
+      "steps": [
+       "s:galerkin"
+      ]
+     },
+     {
+      "h": "h:monotone",
+      "why": "Monotonicity gives the limit inequality of Minty's trick.",
+      "steps": [
+       "s:minty"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:subspaces",
+      "slogan": "Choose finite-dimensional subspaces $X_1 \\subseteq X_2 \\subseteq \\dots$ with dense union.",
+      "detail": "[Separability](c:separable-space) gives a dense sequence $w_1, w_2, \\dots$, and $X_n = \\operatorname{span}\\{w_1, \\dots, w_n\\}$ works. Every $v \\in X$ is then a limit of elements $v_n \\in X_n$.",
+      "uses": []
+     },
+     {
+      "id": "s:galerkin",
+      "slogan": "Solve the projected equation $\\langle T(u_n) - g, v\\rangle = 0$ for all $v \\in X_n$ by Brouwer's theorem.",
+      "detail": "Coercivity gives $R$ with $\\langle T(u) - g, u\\rangle > 0$ whenever $\\|u\\| = R$. The continuous map $u \\mapsto (T(u) - g)|_{X_n}$ from $X_n$ to its dual points outward on the sphere of radius $R$, so the acute-angle corollary of Brouwer's theorem gives a zero $u_n$ with $\\|u_n\\| \\le R$.",
+      "uses": [
+       "wd:Q1144897"
+      ]
+     },
+     {
+      "id": "s:bounds",
+      "slogan": "Bound the approximate solutions and their images uniformly in $n$.",
+      "detail": "Step 2 gives $\\|u_n\\| \\le R$ for every $n$. Because $T$ maps bounded sets to bounded sets, $\\|T(u_n)\\| \\le K$ for one constant $K$.",
+      "uses": []
+     },
+     {
+      "id": "s:limits",
+      "slogan": "Extract a subsequence with $u_n \\to u$ and $T(u_n) \\to g$ in the [weak topology](c:weak-topology).",
+      "detail": "[Reflexivity](c:reflexive-banach-space) makes bounded sets of $X$ and of $X^*$ weakly sequentially compact, so a subsequence has $u_n \\rightharpoonup u$ and $T(u_n) \\rightharpoonup \\chi$. For $v \\in X_m$ and $n \\ge m$, $\\langle T(u_n), v\\rangle = \\langle g, v\\rangle$, so $\\chi = g$ by density, and $\\langle T(u_n), u_n\\rangle = \\langle g, u_n\\rangle \\to \\langle g, u\\rangle$.",
+      "uses": [
+       "wd:Q2226650",
+       "nm:sequential-banach-alaoglu-theorem"
+      ]
+     },
+     {
+      "id": "s:minty",
+      "slogan": "Pass monotonicity to the limit to get $\\langle T(v) - g, v - u\\rangle \\ge 0$ for every $v$.",
+      "detail": "[Monotonicity](c:monotone-operator) gives $\\langle T(v) - T(u_n), v - u_n\\rangle \\ge 0$ for every $v \\in X$. Expand it and let $n \\to \\infty$: the term $\\langle T(u_n), u_n\\rangle$ tends to $\\langle g, u\\rangle$ by step 4, and the other terms converge weakly.",
+      "uses": []
+     },
+     {
+      "id": "s:identify",
+      "slogan": "Insert $v = u - tw$, divide by $t > 0$, and let $t$ tend to zero.",
+      "detail": "Step 5 gives $\\langle T(u - tw) - g, w\\rangle \\ge 0$ for all $w \\in X$ and $t > 0$. Continuity of $T$ gives $\\langle T(u) - g, w\\rangle \\ge 0$, and replacing $w$ by $-w$ yields $T(u) = g$ in the [dual space](c:dual-space).",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:subspaces",
+      "s:galerkin"
+     ],
+     [
+      "s:galerkin",
+      "s:bounds"
+     ],
+     [
+      "s:bounds",
+      "s:limits"
+     ],
+     [
+      "s:subspaces",
+      "s:limits"
+     ],
+     [
+      "s:limits",
+      "s:minty"
+     ],
+     [
+      "s:minty",
+      "s:identify"
+     ]
+    ],
+    "conclusion": "s:identify",
+    "concepts": {
+     "c:separable-space": "Separability gives the increasing finite-dimensional Galerkin subspaces.",
+     "c:reflexive-banach-space": "Reflexivity turns bounded sequences into weakly convergent subsequences.",
+     "c:dual-space": "The operator takes values in the dual, where the equation lives.",
+     "c:coercive-operator": "Coercivity gives the a priori bound $\\|u_n\\| \\le R$.",
+     "c:monotone-operator": "Monotonicity lets weak limits pass through the nonlinear operator.",
+     "c:weak-topology": "Only weak limits exist, so the proof works in the weak topology."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The Galerkin and Minty-trick proof of Browder and Minty, as in E. Zeidler, Nonlinear Functional Analysis and its Applications II/B (Springer, 1990), chapter 26."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:buffon-needle-problem",
+  "statement": "A needle of length $l$ falls on a plane ruled by parallel lines at distance $d \\ge l$. Its centre's distance to the nearest line is [uniform](c:uniform-distribution) on $[0, d/2]$, its acute angle with the lines is uniform on $[0, \\pi/2]$, and the two are [independent](c:independent-random-variables). Then it crosses a line with [probability](c:probability-measure) $2l/(\\pi d)$.",
+  "hypotheses": [
+   {
+    "id": "h:short",
+    "text": "The needle is not longer than the spacing: $0 < l \\le d$.",
+    "concept": null
+   },
+   {
+    "id": "h:uniform",
+    "text": "The distance $x$ is [uniform](c:uniform-distribution) on $[0, d/2]$ and the angle $\\theta$ is uniform on $[0, \\pi/2]$.",
+    "concept": "c:uniform-distribution"
+   },
+   {
+    "id": "h:independent",
+    "text": "The variables $x$ and $\\theta$ are [independent](c:independent-random-variables).",
+    "concept": "c:independent-random-variables"
+   }
+  ],
+  "conclusion": "The probability that the needle meets a line is $2l/(\\pi d)$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "integral",
+    "name": "Integral over the angle",
+    "slogan": "Write the crossing event as $x \\le (l/2)\\sin\\theta$ and integrate the joint density over that region.",
+    "scope": "The case $l \\le d$. For $l > d$ the curve $x = (l/2)\\sin\\theta$ leaves the rectangle and the formula changes.",
+    "mechanisms": [
+     "m:coordinates",
+     "m:fubini-swap"
+    ],
+    "roles": [
+     {
+      "h": "h:short",
+      "why": "It keeps the region under the curve inside the rectangle and allows only one crossed line.",
+      "steps": [
+       "s:event",
+       "s:integrate"
+      ]
+     },
+     {
+      "h": "h:uniform",
+      "why": "Uniform laws have constant densities $2/d$ and $2/\\pi$.",
+      "steps": [
+       "s:density"
+      ]
+     },
+     {
+      "h": "h:independent",
+      "why": "Independence makes the joint density the product of the two densities.",
+      "steps": [
+       "s:density"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:event",
+      "slogan": "Express the crossing event as the inequality $x \\le (l/2)\\sin\\theta$.",
+      "detail": "Each half of the needle reaches a distance $(l/2)\\sin\\theta$ from its centre, measured across the lines. So the needle meets the nearest line exactly when $x \\le (l/2)\\sin\\theta$; because $l \\le d$, it meets no other line except on a null event.",
+      "uses": []
+     },
+     {
+      "id": "s:density",
+      "slogan": "Write the joint density as $4/(\\pi d)$ on the rectangle $[0, d/2] \\times [0, \\pi/2]$.",
+      "detail": "Each [uniform](c:uniform-distribution) variable has a constant density, $2/d$ for $x$ and $2/\\pi$ for $\\theta$. [Independence](c:independent-random-variables) makes the joint density their product $4/(\\pi d)$.",
+      "uses": []
+     },
+     {
+      "id": "s:integrate",
+      "slogan": "Integrate the joint density over the region below the curve $x = (l/2)\\sin\\theta$.",
+      "detail": "The region lies in the rectangle because $(l/2)\\sin\\theta \\le d/2$. Fubini's theorem and the [integral](c:integral) $\\int_0^{\\pi/2} \\sin\\theta\\,d\\theta = 1$ give the probability $\\frac{4}{\\pi d}\\int_0^{\\pi/2} \\frac{l}{2}\\sin\\theta\\,d\\theta = \\frac{2l}{\\pi d}$.",
+      "uses": [
+       "wd:Q1149022",
+       "wd:Q1217677"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:event",
+      "s:integrate"
+     ],
+     [
+      "s:density",
+      "s:integrate"
+     ]
+    ],
+    "conclusion": "s:integrate",
+    "concepts": {
+     "c:uniform-distribution": "Uniform laws give the constant densities that are integrated.",
+     "c:independent-random-variables": "Independence makes the joint density a product.",
+     "c:probability-measure": "The answer is the probability measure of the crossing event.",
+     "c:integral": "The probability is the integral of the density over a region."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The classical integral computation going back to Buffon (1777), as in most probability texts."
+    }
+   },
+   {
+    "id": "noodle",
+    "name": "Barbier's noodle argument",
+    "slogan": "Show that the expected number of crossings is proportional to length, fix the constant with a circle, and note that a short needle crosses at most once.",
+    "scope": "The case $l \\le d$, where the crossing count is $0$ or $1$ almost surely. Rigid curves are placed with the same uniform position and angle as the needle.",
+    "mechanisms": [
+     "m:linearity-of-expectation",
+     "m:approximation",
+     "m:symmetry"
+    ],
+    "roles": [
+     {
+      "h": "h:short",
+      "why": "A needle of length at most $d$ meets at most one line, so the probability equals the expected count.",
+      "steps": [
+       "s:count"
+      ]
+     },
+     {
+      "h": "h:uniform",
+      "why": "Uniform position and angle make the law of each piece depend only on its length.",
+      "steps": [
+       "s:additive",
+       "s:circle"
+      ]
+     },
+     {
+      "h": "h:independent",
+      "why": "Independence lets every piece of a rigid curve carry the same uniform placement.",
+      "steps": [
+       "s:additive"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:count",
+      "slogan": "Reduce the crossing probability to the expected number $E[N]$ of crossings.",
+      "detail": "Because $l \\le d$, the needle meets at most one line except on a null event, so $N$ takes only the values $0$ and $1$. Hence the crossing probability equals the [expected value](c:expected-value) $E[N]$.",
+      "uses": []
+     },
+     {
+      "id": "s:additive",
+      "slogan": "Show that $E[N] = c\\,l$ for needles and rigid polygonal curves by additivity.",
+      "detail": "Cut a segment into pieces: each piece is placed by the same uniform law, and linearity of expectation gives $E[N(l_1 + l_2)] = E[N(l_1)] + E[N(l_2)]$. A monotone additive function of length is linear, so $E[N] = c\\,l$, and summing over sides gives $E[N] = c\\,L$ for a rigid polygon of length $L$.",
+      "uses": []
+     },
+     {
+      "id": "s:circle",
+      "slogan": "Compute the constant with a circle of diameter $d$, which always meets the lines twice.",
+      "detail": "A circle of diameter $d$ meets the lines in exactly two points almost surely. Inscribed and circumscribed polygons satisfy $N_{\\mathrm{in}} \\le 2 \\le N_{\\mathrm{out}}$, so $c L_{\\mathrm{in}} \\le 2 \\le c L_{\\mathrm{out}}$, and both lengths tend to $\\pi d$; hence $c = 2/(\\pi d)$.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Combine the constant with the reduction to get the probability $2l/(\\pi d)$.",
+      "detail": "Steps 1 and 2 give the probability $E[N] = c\\,l$ for the needle. With $c = 2/(\\pi d)$ from step 3, the needle crosses a line with [probability](c:probability-measure) $2l/(\\pi d)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:count",
+      "s:conclude"
+     ],
+     [
+      "s:additive",
+      "s:circle"
+     ],
+     [
+      "s:additive",
+      "s:conclude"
+     ],
+     [
+      "s:circle",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:uniform-distribution": "Uniform placement makes the expected count depend only on length.",
+     "c:independent-random-variables": "Independent position and angle give every piece the same placement law.",
+     "c:probability-measure": "The crossing probability equals the expected number of crossings here.",
+     "c:expected-value": "Expected crossing counts add over the pieces of a curve."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Barbier's 1860 argument (Buffon's noodle), as in M. Aigner and G. M. Ziegler, Proofs from THE BOOK, chapter on Buffon's needle problem."
+    }
+   }
+  ]
+ }
+]

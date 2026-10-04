@@ -1,0 +1,2078 @@
+[
+ {
+  "id": "nm:characterization-of-convexity",
+  "statement": "Let $D \\subseteq \\mathbb{R}$ be a [convex set](c:convex-set) and let $f$ be continuous on $D$ and twice differentiable on the [interior](c:interior) of $D$. If the [second derivative](c:second-derivative) satisfies $f'' \\ge 0$ on the interior, then $f$ is a [convex function](c:convex-function) on $D$.",
+  "hypotheses": [
+   {
+    "id": "h:convex-domain",
+    "text": "The set $D \\subseteq \\mathbb{R}$ is [convex](c:convex-set), that is an interval.",
+    "concept": "c:convex-set"
+   },
+   {
+    "id": "h:continuous",
+    "text": "The function $f$ is continuous on $D$.",
+    "concept": null
+   },
+   {
+    "id": "h:twice",
+    "text": "The function $f$ and its derivative $f'$ are differentiable on the [interior](c:interior) of $D$.",
+    "concept": "c:interior"
+   },
+   {
+    "id": "h:nonneg",
+    "text": "The [second derivative](c:second-derivative) satisfies $f''(x) \\ge 0$ for every $x$ in the interior of $D$.",
+    "concept": "c:second-derivative"
+   }
+  ],
+  "conclusion": "For all $x, z \\in D$ and $\\lambda \\in [0, 1]$, $f(\\lambda x + (1 - \\lambda) z) \\le \\lambda f(x) + (1 - \\lambda) f(z)$.",
+  "formal": {
+   "decl": "convexOn_of_deriv2_nonneg",
+   "difference": null
+  },
+  "proofs": [
+   {
+    "id": "monotone-derivative",
+    "name": "Monotone derivative and slopes",
+    "slogan": "The nonnegative second derivative makes $f'$ monotone, and the mean value theorem turns a monotone derivative into increasing slopes.",
+    "scope": "The whole theorem. If $D$ is empty or one point, $f$ is convex with nothing to prove, and the cases $\\lambda \\in \\{0, 1\\}$ are trivial.",
+    "mechanisms": [
+     "m:mean-value",
+     "m:convexity"
+    ],
+    "roles": [
+     {
+      "h": "h:convex-domain",
+      "why": "A [convex set](c:convex-set) contains each segment $[x, z]$, and the open segments lie in its interior.",
+      "steps": [
+       "s:monotone",
+       "s:slopes"
+      ]
+     },
+     {
+      "h": "h:continuous",
+      "why": "Continuity at the end points of $D$ lets the mean value theorem run on $[x, y]$ and $[y, z]$.",
+      "steps": [
+       "s:slopes"
+      ]
+     },
+     {
+      "h": "h:twice",
+      "why": "Differentiability of $f$ gives the mean value slopes, and differentiability of $f'$ gives its monotonicity.",
+      "steps": [
+       "s:monotone",
+       "s:slopes"
+      ]
+     },
+     {
+      "h": "h:nonneg",
+      "why": "The sign $f'' \\ge 0$ makes the increments of $f'$ nonnegative.",
+      "steps": [
+       "s:monotone"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:monotone",
+      "slogan": "Show that $f'$ is [monotone](c:monotone-function) on the interior by the mean value theorem.",
+      "detail": "The interior of $D$ is an open interval. For $u < v$ in it, the mean value theorem for $f'$ gives $f'(v) - f'(u) = f''(\\xi)(v - u) \\ge 0$ for some $\\xi \\in (u, v)$.",
+      "uses": [
+       "wd:Q189136"
+      ]
+     },
+     {
+      "id": "s:slopes",
+      "slogan": "Take $x < y < z$ in $D$ and write both secant slopes as derivative values.",
+      "detail": "Convexity gives $[x, z] \\subseteq D$ and $(x, z) \\subseteq$ interior. The mean value theorem on $[x, y]$ and $[y, z]$ gives $a \\in (x, y)$ and $b \\in (y, z)$ with $f'(a) = \\frac{f(y) - f(x)}{y - x}$ and $f'(b) = \\frac{f(z) - f(y)}{z - y}$.",
+      "uses": [
+       "wd:Q189136"
+      ]
+     },
+     {
+      "id": "s:compare",
+      "slogan": "Compare the two slopes through the monotone [derivative](c:derivative).",
+      "detail": "Because $a < y < b$ and both points lie in the interior, step 1 gives $f'(a) \\le f'(b)$. So the slope of $f$ on $[x, y]$ is at most its slope on $[y, z]$.",
+      "uses": []
+     },
+     {
+      "id": "s:convex",
+      "slogan": "Rearrange the adjacent slope inequality into the convexity inequality.",
+      "detail": "Write $y = \\lambda x + (1 - \\lambda) z$ with $\\lambda \\in (0, 1)$, so $y - x = (1 - \\lambda)(z - x)$ and $z - y = \\lambda (z - x)$. Multiplying the slope inequality by $\\lambda (1 - \\lambda)(z - x) > 0$ gives $f(y) \\le \\lambda f(x) + (1 - \\lambda) f(z)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:monotone",
+      "s:compare"
+     ],
+     [
+      "s:slopes",
+      "s:compare"
+     ],
+     [
+      "s:compare",
+      "s:convex"
+     ]
+    ],
+    "conclusion": "s:convex",
+    "concepts": {
+     "c:convex-set": "The segment between two points of the domain stays in the domain.",
+     "c:interior": "The derivatives exist only on the interior, where the mean value points lie.",
+     "c:second-derivative": "Its sign controls the growth of the first derivative.",
+     "c:convex-function": "Convexity is the inequality that the increasing slopes produce.",
+     "c:monotone-function": "A monotone derivative orders the two mean value slopes.",
+     "c:derivative": "Each secant slope equals a value of the derivative."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "convexOn_of_deriv2_nonneg",
+     "follows": true,
+     "note": "mathlib proves deriv f monotone on the interior (monotoneOn_of_deriv_nonneg) and applies MonotoneOn.convexOn_of_deriv, which compares two slopes from exists_deriv_eq_slope via convexOn_of_slope_mono_adjacent."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1425529",
+  "statement": "Let $L/K$ be a finite [Galois extension](c:galois-extension) of [number fields](c:number-field) with group $G$, and let $C$ be a [conjugacy class](c:conjugacy-class) of $G$. Then the primes $\\mathfrak{p}$ of $K$ unramified in $L$ whose [Frobenius](c:frobenius-element) class is $C$ have Dirichlet density $|C|/|G|$.",
+  "hypotheses": [
+   {
+    "id": "h:galois",
+    "text": "The extension $L/K$ is a finite [Galois extension](c:galois-extension) of number fields with group $G$.",
+    "concept": "c:galois-extension"
+   },
+   {
+    "id": "h:class",
+    "text": "The set $C$ is a [conjugacy class](c:conjugacy-class) of $G$.",
+    "concept": "c:conjugacy-class"
+   }
+  ],
+  "conclusion": "$\\sum_{\\mathrm{Frob}_\\mathfrak{p} = C} N\\mathfrak{p}^{-s} \\big/ \\log\\frac{1}{s - 1} \\to |C|/|G|$ as $s \\to 1^+$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "deuring-reduction",
+    "name": "Abelian case and Deuring reduction",
+    "slogan": "Prove the abelian case with Hecke [L-functions](c:l-function) and class field theory, then reduce the general case to a cyclic subextension.",
+    "scope": "An outline of the published proof for Dirichlet density; the abelian case rests on Artin reciprocity and the nonvanishing of Hecke L-functions at $s = 1$, which the cited book proves. Natural density needs further analytic estimates and is not covered.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:representation-characters",
+     "m:reduction"
+    ],
+    "roles": [
+     {
+      "h": "h:galois",
+      "why": "The Galois group acts on the primes above $\\mathfrak{p}$, so Frobenius elements and fixed fields exist.",
+      "steps": [
+       "s:artin",
+       "s:reduce",
+       "s:count"
+      ]
+     },
+     {
+      "h": "h:class",
+      "why": "The class $C$ fixes the element $\\sigma$ and the centralizer size $|G|/|C|$ in the final count.",
+      "steps": [
+       "s:reduce",
+       "s:count"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:artin",
+      "slogan": "Identify Frobenius elements of an abelian extension with ray classes by Artin reciprocity.",
+      "detail": "For an abelian extension $L/M$ with group $H$, Artin reciprocity gives a surjection from a [ray class group](c:ray-class-group) mod $\\mathfrak{m}$ onto $H$ that sends the class of an unramified prime $\\mathfrak{q}$ to its Frobenius. So characters of $H$ become Hecke characters.",
+      "uses": [
+       "nl:6375"
+      ]
+     },
+     {
+      "id": "s:nonvanish",
+      "slogan": "Show that each Hecke L-function of a nontrivial character is finite and nonzero at $s = 1$.",
+      "detail": "The cited proof shows $L(1, \\chi) \\ne 0$ for $\\chi \\ne 1$, while $\\zeta_M$ has a simple pole at $s = 1$. Taking logarithms, $\\sum_\\mathfrak{q} \\chi(\\mathfrak{q}) N\\mathfrak{q}^{-s}$ stays bounded for $\\chi \\ne 1$ and grows like $\\log\\frac{1}{s - 1}$ for $\\chi = 1$.",
+      "uses": []
+     },
+     {
+      "id": "s:abelian",
+      "slogan": "Combine the L-functions by character orthogonality to get density $1/|H|$ in the abelian case.",
+      "detail": "Orthogonality gives $\\sum_{\\mathrm{Frob}_\\mathfrak{q} = \\tau} N\\mathfrak{q}^{-s} = \\frac{1}{|H|} \\sum_\\chi \\overline{\\chi(\\tau)} \\sum_\\mathfrak{q} \\chi(\\mathfrak{q}) N\\mathfrak{q}^{-s}$. By step 2 only $\\chi = 1$ contributes the main term, so each $\\tau \\in H$ has density $1/|H|$.",
+      "uses": [
+       "nm:orthogonality-of-characters"
+      ]
+     },
+     {
+      "id": "s:reduce",
+      "slogan": "Pass to the cyclic extension $L/M$, with $M$ the fixed field of $\\langle\\sigma\\rangle$ for $\\sigma \\in C$.",
+      "detail": "Let $\\sigma \\in C$ have order $f$. A prime $\\mathfrak{P}$ of $L$ has Frobenius $\\sigma$ over $K$ exactly when $\\mathfrak{q} = \\mathfrak{P} \\cap M$ has degree 1 over $K$ and Frobenius $\\sigma$ in the cyclic extension $L/M$. Primes of $M$ of higher degree contribute only a bounded sum.",
+      "uses": []
+     },
+     {
+      "id": "s:count",
+      "slogan": "Count the primes of $M$ over each prime of $K$ to get density $|C|/|G|$.",
+      "detail": "By step 3 for $L/M$, the primes $\\mathfrak{q}$ of step 4 have density $1/f$. Over each $\\mathfrak{p}$ with class $C$ lie $|G|/f$ primes $\\mathfrak{P}$, of which $|G|/(f|C|)$ have Frobenius $\\sigma$. So $\\mathfrak{p}$ has density $\\frac{1}{f} \\cdot \\frac{f|C|}{|G|} = \\frac{|C|}{|G|}$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:artin",
+      "s:abelian"
+     ],
+     [
+      "s:nonvanish",
+      "s:abelian"
+     ],
+     [
+      "s:abelian",
+      "s:count"
+     ],
+     [
+      "s:reduce",
+      "s:count"
+     ]
+    ],
+    "conclusion": "s:count",
+    "concepts": {
+     "c:galois-extension": "The Galois group acts on primes, which defines Frobenius classes.",
+     "c:number-field": "Primes, norms and zeta functions are those of number fields.",
+     "c:conjugacy-class": "Frobenius elements over one prime form one conjugacy class.",
+     "c:frobenius-element": "The theorem counts primes by their Frobenius class.",
+     "c:l-function": "Hecke L-functions detect primes in a given ray class.",
+     "c:ray-class-group": "Class field theory realizes the abelian Galois group as a ray class quotient."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "J. Neukirch, Algebraic Number Theory, Grundlehren der mathematischen Wissenschaften 322, Springer, 1999, chapter VII, section 13 (original: N. Tschebotareff, Die Bestimmung der Dichtigkeit einer Menge von Primzahlen, welche zu einer gegebenen Substitutionsklasse gehören, Mathematische Annalen 95 (1926), 191-228)",
+     "url": "https://link.springer.com/book/9783540653998",
+     "note": "Neukirch proves the abelian case with Hecke L-series and reduces the general case to cyclic extensions; Chebotarev's original proof avoided class field theory."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q4724004A",
+  "statement": "Every closed [analytic subset](c:analytic-set) $X$ of [complex projective space](c:complex-projective-space) $\\mathbb{P}^n$ is the common zero set of finitely many [homogeneous polynomials](c:homogeneous-polynomial), so $X$ is [algebraic](c:algebraic-variety).",
+  "hypotheses": [
+   {
+    "id": "h:analytic",
+    "text": "Near each of its points, $X$ is the common zero set of finitely many [holomorphic functions](c:holomorphic-function).",
+    "concept": "c:analytic-set"
+   },
+   {
+    "id": "h:closed",
+    "text": "The set $X$ is closed in $\\mathbb{P}^n$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "There are homogeneous polynomials $p_1, \\dots, p_r \\in \\mathbb{C}[z_0, \\dots, z_n]$ with $X = \\{[z] : p_1(z) = \\dots = p_r(z) = 0\\}$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "cone",
+    "name": "Cone over the set",
+    "slogan": "Lift the set to its cone in $\\mathbb{C}^{n+1}$, extend the cone across the origin, and expand its local equations into homogeneous parts.",
+    "scope": "Nonempty $X$; the empty set is the zero set of the constant polynomial $1$. The extension across the origin rests on the Remmert-Stein theorem.",
+    "mechanisms": [
+     "m:symmetry",
+     "m:local-to-global",
+     "m:taylor-expansion"
+    ],
+    "roles": [
+     {
+      "h": "h:analytic",
+      "why": "Local holomorphic equations of $X$ pull back to local equations of the cone.",
+      "steps": [
+       "s:cone"
+      ]
+     },
+     {
+      "h": "h:closed",
+      "why": "Closedness makes the cone a closed analytic subset of $\\mathbb{C}^{n+1} \\setminus \\{0\\}$, as Remmert-Stein requires.",
+      "steps": [
+       "s:cone",
+       "s:extend"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:cone",
+      "slogan": "Form the cone $C(X) = \\pi^{-1}(X) \\cup \\{0\\}$ in $\\mathbb{C}^{n+1}$.",
+      "detail": "The projection $\\pi\\colon \\mathbb{C}^{n+1} \\setminus \\{0\\} \\to \\mathbb{P}^n$ is a holomorphic submersion, so $\\pi^{-1}(X)$ is a closed [analytic set](c:analytic-set) in $\\mathbb{C}^{n+1} \\setminus \\{0\\}$. It is invariant under scaling by $\\mathbb{C}^*$, so each of its components has dimension at least 1.",
+      "uses": []
+     },
+     {
+      "id": "s:extend",
+      "slogan": "Extend the cone across the origin by the Remmert-Stein theorem.",
+      "detail": "Every component of $\\pi^{-1}(X)$ has dimension greater than $\\dim\\{0\\} = 0$. The Remmert-Stein theorem then says that its closure $C(X)$ is an analytic subset of $\\mathbb{C}^{n+1}$.",
+      "uses": [
+       "wd:Q7312009"
+      ]
+     },
+     {
+      "id": "s:local",
+      "slogan": "Write the cone near $0$ as the zero set of holomorphic $f_1, \\dots, f_k$ on a ball.",
+      "detail": "Analyticity at $0$ gives a ball $B$ around $0$ and holomorphic $f_j$ on $B$ with $C(X) \\cap B = \\{f_1 = \\dots = f_k = 0\\}$. Expand $f_j = \\sum_d f_{j,d}$ into homogeneous polynomials, with the series convergent on $B$.",
+      "uses": []
+     },
+     {
+      "id": "s:homog",
+      "slogan": "Show that every homogeneous part $f_{j,d}$ vanishes on the cone near $0$.",
+      "detail": "For $z \\in C(X) \\cap B$ and $|t| \\le 1$, also $tz \\in C(X) \\cap B$, so $0 = f_j(tz) = \\sum_d t^d f_{j,d}(z)$ and every coefficient vanishes. Conversely, a common zero of all $f_{j,d}$ in $B$ is a zero of each $f_j$.",
+      "uses": []
+     },
+     {
+      "id": "s:finite",
+      "slogan": "Keep finitely many homogeneous polynomials by Hilbert's basis theorem and descend to $\\mathbb{P}^n$.",
+      "detail": "The ideal generated by all $f_{j,d}$ is generated by finitely many [homogeneous polynomials](c:homogeneous-polynomial) $p_1, \\dots, p_r$. Their zero set $Z$ is a cone with $Z \\cap B = C(X) \\cap B$; two cones that agree near $0$ are equal, so $X = \\pi(Z \\setminus \\{0\\})$.",
+      "uses": [
+       "wd:Q656645"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:cone",
+      "s:extend"
+     ],
+     [
+      "s:extend",
+      "s:local"
+     ],
+     [
+      "s:local",
+      "s:homog"
+     ],
+     [
+      "s:homog",
+      "s:finite"
+     ],
+     [
+      "s:cone",
+      "s:homog"
+     ]
+    ],
+    "conclusion": "s:finite",
+    "concepts": {
+     "c:analytic-set": "The hypothesis and the extended cone are analytic sets.",
+     "c:complex-projective-space": "The theorem concerns subsets of projective space and their cones.",
+     "c:homogeneous-polynomial": "Homogeneous parts of local equations become the global equations.",
+     "c:algebraic-variety": "Being cut out by polynomials is what algebraic means here.",
+     "c:holomorphic-function": "Local equations of $X$ and of the cone are holomorphic functions."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard proof through the Remmert-Stein theorem, as in P. Griffiths and J. Harris, Principles of Algebraic Geometry, Wiley, 1978, chapter 1, section 3."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q18206032",
+  "statement": "Let $G$ be a [Lie group](c:lie-group) and $H$ a subgroup of $G$ that is closed as a subset. Then $H$ is an embedded [submanifold](c:submanifold) of $G$, so $H$ is a Lie group with the subspace topology.",
+  "hypotheses": [
+   {
+    "id": "h:lie",
+    "text": "The group $G$ is a [Lie group](c:lie-group) with [Lie algebra](c:lie-algebra) $\\mathfrak{g}$.",
+    "concept": "c:lie-group"
+   },
+   {
+    "id": "h:subgroup",
+    "text": "The set $H$ is a subgroup of $G$.",
+    "concept": null
+   },
+   {
+    "id": "h:closed",
+    "text": "The subgroup $H$ is a closed subset of $G$.",
+    "concept": "c:closed-subgroup"
+   }
+  ],
+  "conclusion": "$H$ is an embedded submanifold of $G$, and with this structure $H$ is a Lie group.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "exponential-chart",
+    "name": "Exponential slice chart",
+    "slogan": "Collect the directions whose one-parameter groups stay in $H$, and show that the [exponential map](c:exponential-map) on them gives a slice chart of $H$.",
+    "scope": "The whole theorem, including discrete $H$, where $\\mathfrak{h} = 0$ and the charts are points.",
+    "mechanisms": [
+     "m:subsequence",
+     "m:contradiction",
+     "m:local-to-global"
+    ],
+    "roles": [
+     {
+      "h": "h:lie",
+      "why": "The Lie structure supplies the exponential map, the inverse function theorem and smooth left translations.",
+      "steps": [
+       "s:algebra",
+       "s:complement",
+       "s:translate"
+      ]
+     },
+     {
+      "h": "h:subgroup",
+      "why": "Powers and products of elements of $H$ stay in $H$, and left translation by $h \\in H$ preserves $H$.",
+      "steps": [
+       "s:limit",
+       "s:chart",
+       "s:translate"
+      ]
+     },
+     {
+      "h": "h:closed",
+      "why": "Closedness keeps the limits $\\exp(tX)$ of elements of $H$ inside $H$.",
+      "steps": [
+       "s:limit"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:algebra",
+      "slogan": "Define $\\mathfrak{h} = \\{X \\in \\mathfrak{g} : \\exp(tX) \\in H \\text{ for all } t\\}$.",
+      "detail": "The set $\\mathfrak{h}$ is the candidate tangent space of $H$ at $e$ inside the [Lie algebra](c:lie-algebra) $\\mathfrak{g}$. Fix a norm on $\\mathfrak{g}$ and a neighborhood of $0$ on which $\\exp$ is a diffeomorphism.",
+      "uses": []
+     },
+     {
+      "id": "s:limit",
+      "slogan": "Show that limits of normalized small logarithms of elements of $H$ lie in $\\mathfrak{h}$.",
+      "detail": "Let $X_n \\to 0$, $X_n \\ne 0$, $\\exp X_n \\in H$ and $X_n/|X_n| \\to X$. For $t \\in \\mathbb{R}$ choose integers $m_n$ with $m_n |X_n| \\to t$; then $\\exp(m_n X_n) = (\\exp X_n)^{m_n} \\in H$ tends to $\\exp(tX)$, which lies in $H$ because $H$ is closed.",
+      "uses": []
+     },
+     {
+      "id": "s:subspace",
+      "slogan": "Show that $\\mathfrak{h}$ is a linear subspace of $\\mathfrak{g}$.",
+      "detail": "Scalar multiples are clear. For $X, Y \\in \\mathfrak{h}$ the elements $Z_n = \\log(\\exp(X/n)\\exp(Y/n))$ have $\\exp Z_n \\in H$ and $n Z_n \\to X + Y$, so step 2 gives $X + Y \\in \\mathfrak{h}$ when $X + Y \\ne 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:complement",
+      "slogan": "Choose a complement $\\mathfrak{m}$ and show that $\\exp Y \\notin H$ for small nonzero $Y \\in \\mathfrak{m}$.",
+      "detail": "The map $\\Phi(X, Y) = \\exp X \\exp Y$ on $\\mathfrak{h} \\oplus \\mathfrak{m}$ has invertible differential at $0$, so it is a local diffeomorphism. If $Y_n \\to 0$ in $\\mathfrak{m}$ with $\\exp Y_n \\in H$, a subsequence of $Y_n/|Y_n|$ converges to a unit vector of $\\mathfrak{m}$ that lies in $\\mathfrak{h}$ by step 2, which is impossible.",
+      "uses": [
+       "wd:Q931001"
+      ]
+     },
+     {
+      "id": "s:chart",
+      "slogan": "Show that $\\Phi$ carries a neighborhood of $0$ in $\\mathfrak{h}$ onto a neighborhood of $e$ in $H$.",
+      "detail": "For $g \\in H$ near $e$ write $g = \\exp X \\exp Y$ with $X, Y$ small. Then $\\exp Y = \\exp(-X) g \\in H$, so $Y = 0$ by step 4, and $H \\cap \\Phi(U) = \\Phi(U \\cap \\mathfrak{h})$ is a slice chart at $e$.",
+      "uses": []
+     },
+     {
+      "id": "s:translate",
+      "slogan": "Move the slice chart to every point of $H$ by left translation.",
+      "detail": "For $h \\in H$ the left translation $L_h$ is a diffeomorphism of $G$ that maps $H$ onto $H$, so $L_h \\circ \\Phi$ is a slice chart at $h$. Hence $H$ is an embedded [submanifold](c:submanifold), and multiplication and inversion on $H$ are smooth as restrictions.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:algebra",
+      "s:limit"
+     ],
+     [
+      "s:limit",
+      "s:subspace"
+     ],
+     [
+      "s:limit",
+      "s:complement"
+     ],
+     [
+      "s:subspace",
+      "s:complement"
+     ],
+     [
+      "s:complement",
+      "s:chart"
+     ],
+     [
+      "s:chart",
+      "s:translate"
+     ]
+    ],
+    "conclusion": "s:translate",
+    "concepts": {
+     "c:lie-group": "The ambient group supplies smooth multiplication and the exponential map.",
+     "c:lie-algebra": "The tangent space of $H$ is found as a subspace of it.",
+     "c:closed-subgroup": "Closedness turns limits of elements of $H$ into elements of $H$.",
+     "c:submanifold": "The conclusion is that $H$ is an embedded submanifold.",
+     "c:exponential-map": "Exponentials of the subspace give the chart of $H$ near $e$."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Cartan's proof as in J. M. Lee, Introduction to Smooth Manifolds, 2nd ed., Springer, 2013, chapter 20, and F. Warner, Foundations of Differentiable Manifolds and Lie Groups, theorem 3.42."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:17802",
+  "statement": "Let $T$ be a set of sentences and $\\varphi$ a sentence of one language of [first-order logic](c:first-order-logic). If every [model](c:model) of $T$ satisfies $\\varphi$, then $\\varphi$ has a [formal proof](c:formal-proof) from $T$ in the standard first-order [proof system](c:proof-system).",
+  "hypotheses": [
+   {
+    "id": "h:theory",
+    "text": "The set $T$ and the sentence $\\varphi$ belong to one [first-order](c:first-order-logic) language.",
+    "concept": "c:first-order-logic"
+   },
+   {
+    "id": "h:valid",
+    "text": "Every [model](c:model) of $T$ satisfies $\\varphi$.",
+    "concept": "c:model"
+   }
+  ],
+  "conclusion": "$T \\vdash \\varphi$: semantic consequence implies provability.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "henkin-lindenbaum",
+    "name": "Henkin witnesses and Lindenbaum enumeration",
+    "slogan": "Assume that $\\varphi$ is unprovable, extend $T \\cup \\{\\neg\\varphi\\}$ to a complete theory with witnesses by enumeration, and read a model off its closed terms.",
+    "scope": "Countable languages in full. For an uncountable language a transfinite enumeration or Zorn's lemma replaces the enumeration of step 3.",
+    "mechanisms": [
+     "m:contradiction",
+     "m:structural-induction",
+     "m:induction"
+    ],
+    "roles": [
+     {
+      "h": "h:theory",
+      "why": "First-order syntax gives finite proofs, the deduction theorem and closed terms for the model.",
+      "steps": [
+       "s:consistent",
+       "s:lindenbaum",
+       "s:term"
+      ]
+     },
+     {
+      "h": "h:valid",
+      "why": "The term model is a model of $T$, so the hypothesis forces it to satisfy $\\varphi$.",
+      "steps": [
+       "s:contradict"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:consistent",
+      "slogan": "Assume $T \\nvdash \\varphi$ and show that $T \\cup \\{\\neg\\varphi\\}$ is a [consistent theory](c:consistent-theory).",
+      "detail": "If $T \\cup \\{\\neg\\varphi\\}$ proved a contradiction, the deduction theorem would give $T \\vdash \\neg\\varphi \\to \\bot$ and so $T \\vdash \\varphi$. This contradicts the assumption.",
+      "uses": [
+       "wd:Q1182249"
+      ]
+     },
+     {
+      "id": "s:henkin",
+      "slogan": "Add witness constants $c_\\psi$ with axioms $\\exists x\\,\\psi \\to \\psi(c_\\psi)$ without losing consistency.",
+      "detail": "If adding $\\exists x\\,\\psi \\to \\psi(c_\\psi)$ to a consistent $\\Gamma$ gave a contradiction, then $\\Gamma \\vdash \\exists x\\,\\psi$ and $\\Gamma \\vdash \\neg\\psi(c_\\psi)$, and since $c_\\psi$ is new, $\\Gamma \\vdash \\forall x\\,\\neg\\psi$. So $\\Gamma$ would be inconsistent; adding witnesses one at a time, and again for the new formulas countably often, keeps consistency.",
+      "uses": []
+     },
+     {
+      "id": "s:lindenbaum",
+      "slogan": "Enumerate all sentences and decide each one to get a complete consistent extension $T^*$.",
+      "detail": "List the sentences as $\\psi_0, \\psi_1, \\dots$ and add $\\psi_i$ if this keeps consistency, else add $\\neg\\psi_i$; one of the two choices is consistent. The union is consistent because proofs are finite, and it contains $\\psi$ or $\\neg\\psi$ for every $\\psi$.",
+      "uses": []
+     },
+     {
+      "id": "s:term",
+      "slogan": "Build the [term model](c:term-model) on closed terms modulo the equations in $T^*$.",
+      "detail": "Let the domain be the closed terms with $s \\sim t$ when $s = t \\in T^*$, and interpret each symbol as $T^*$ prescribes. The equality axioms make these interpretations well defined.",
+      "uses": []
+     },
+     {
+      "id": "s:truth",
+      "slogan": "Prove by induction on sentences that the term model satisfies exactly the members of $T^*$.",
+      "detail": "Atomic sentences hold by construction, and negation and conjunction follow from completeness and consistency of $T^*$. An existential sentence in $T^*$ has its witness $\\psi(c_\\psi)$ in $T^*$, so it is true.",
+      "uses": []
+     },
+     {
+      "id": "s:contradict",
+      "slogan": "Contradict the hypothesis with a model of $T$ in which $\\varphi$ fails.",
+      "detail": "The term model satisfies $T \\cup \\{\\neg\\varphi\\} \\subseteq T^*$, so it is a model of $T$ without $\\varphi$, against the hypothesis. Hence $T \\vdash \\varphi$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:consistent",
+      "s:henkin"
+     ],
+     [
+      "s:henkin",
+      "s:lindenbaum"
+     ],
+     [
+      "s:lindenbaum",
+      "s:term"
+     ],
+     [
+      "s:term",
+      "s:truth"
+     ],
+     [
+      "s:henkin",
+      "s:truth"
+     ],
+     [
+      "s:lindenbaum",
+      "s:truth"
+     ],
+     [
+      "s:truth",
+      "s:contradict"
+     ]
+    ],
+    "conclusion": "s:contradict",
+    "concepts": {
+     "c:first-order-logic": "The theorem holds for first-order syntax and its semantics.",
+     "c:model": "Truth in all models is the hypothesis that the term model contradicts.",
+     "c:formal-proof": "The conclusion is the existence of a formal proof.",
+     "c:proof-system": "Completeness is a property of the first-order proof system.",
+     "c:consistent-theory": "Unprovability of $\\varphi$ makes $T$ with $\\neg\\varphi$ consistent.",
+     "c:term-model": "The model is built from closed terms of the language."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Henkin's proof with Lindenbaum's enumeration, as in H. B. Enderton, A Mathematical Introduction to Logic, 2nd ed., section 2.5."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q2525646",
+  "statement": "Let $G$ be a group with a [composition series](c:composition-series). Any two composition series of $G$ have the same length, and their factors, which are [simple groups](c:simple-group), agree up to order and isomorphism.",
+  "hypotheses": [
+   {
+    "id": "h:first",
+    "text": "The chain $G = G_0 \\rhd G_1 \\rhd \\dots \\rhd G_n = 1$ is a [composition series](c:composition-series): each $G_{i+1}$ is a proper [normal subgroup](c:normal-subgroup) of $G_i$ with simple quotient.",
+    "concept": "c:composition-series"
+   },
+   {
+    "id": "h:second",
+    "text": "The chain $G = H_0 \\rhd H_1 \\rhd \\dots \\rhd H_m = 1$ is also a composition series of $G$.",
+    "concept": "c:composition-series"
+   }
+  ],
+  "conclusion": "$m = n$, and some permutation $\\pi$ of $\\{0, \\dots, n - 1\\}$ has $G_i/G_{i+1} \\cong H_{\\pi(i)}/H_{\\pi(i)+1}$ for every $i$.",
+  "formal": {
+   "decl": "CompositionSeries.jordan_holder",
+   "difference": "The declaration is stated for composition series in an abstract Jordan-Hölder lattice, such as the submodules of a module, and compares two series with the same first and last terms. mathlib does not yet provide the instance for subgroups, so the group case is the same argument in that lattice language."
+  },
+  "proofs": [
+   {
+    "id": "induction-on-length",
+    "name": "Induction on the length",
+    "slogan": "Induct on the length, and when the two top steps differ, pass through the intersection of the two maximal [normal subgroups](c:normal-subgroup).",
+    "scope": "The whole theorem. For $n = 0$ the group is trivial and both series are trivial.",
+    "mechanisms": [
+     "m:strong-induction",
+     "m:homomorphism-kernel",
+     "m:case-analysis"
+    ],
+    "roles": [
+     {
+      "h": "h:first",
+      "why": "The first series fixes the length $n$ of the induction and is rebuilt through $H_1$.",
+      "steps": [
+       "s:induct",
+       "s:key"
+      ]
+     },
+     {
+      "h": "h:second",
+      "why": "Its top term $M = H_1$ is a maximal normal subgroup, and its tail is the series compared by induction.",
+      "steps": [
+       "s:key",
+       "s:ih",
+       "s:assemble"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:induct",
+      "slogan": "Induct on the length $n$ of the first series, for all groups at once.",
+      "detail": "If $n = 0$, then $G = 1$, and every composition series of $G$ has length $0$ because its steps are proper. For $n \\ge 1$, assume the theorem for every group that has a composition series of length less than $n$.",
+      "uses": []
+     },
+     {
+      "id": "s:diamond",
+      "slogan": "Show that two different maximal normal subgroups $N, M$ give $NM = G$ and swapped quotients.",
+      "detail": "The product $NM$ is normal and properly contains $N$, so $NM = G$. The second isomorphism theorem gives $G/N \\cong M/(N \\cap M)$ and $G/M \\cong N/(N \\cap M)$, which are simple.",
+      "uses": [
+       "wd:Q1065966"
+      ]
+     },
+     {
+      "id": "s:key",
+      "slogan": "Rebuild the first series through $M = H_1$ without changing its factors.",
+      "detail": "Claim: $M$ has a composition series of length $n - 1$ whose factors are those of the first series minus one copy of $G/M$. If $G_1 = M$, take $G_1 \\rhd \\dots \\rhd G_n$; otherwise apply the claim inductively to $G_1$ and $K = G_1 \\cap M$ and use $M \\rhd K \\rhd \\dots$, whose top factors are swapped by step 2.",
+      "uses": []
+     },
+     {
+      "id": "s:ih",
+      "slogan": "Compare the rebuilt series with $H_1 \\rhd H_2 \\rhd \\dots \\rhd H_m$ by the induction hypothesis.",
+      "detail": "Both are composition series of $M$, and the rebuilt one has length $n - 1 < n$. So $m - 1 = n - 1$, and their factors agree up to order and isomorphism.",
+      "uses": []
+     },
+     {
+      "id": "s:assemble",
+      "slogan": "Add the common top factor $G/M$ to both lists of factors.",
+      "detail": "The first series has the factors of the rebuilt series together with $G/M$, by step 3. The second has the factors of $H_1 \\rhd \\dots$ together with $G/H_1 = G/M$, so the two lists agree and $m = n$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:induct",
+      "s:ih"
+     ],
+     [
+      "s:diamond",
+      "s:key"
+     ],
+     [
+      "s:key",
+      "s:ih"
+     ],
+     [
+      "s:ih",
+      "s:assemble"
+     ],
+     [
+      "s:key",
+      "s:assemble"
+     ]
+    ],
+    "conclusion": "s:assemble",
+    "concepts": {
+     "c:composition-series": "The theorem compares two composition series of one group.",
+     "c:simple-group": "Simple quotients make the top subgroups maximal normal.",
+     "c:normal-subgroup": "Each term is a normal subgroup of the previous term."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "CompositionSeries.jordan_holder",
+     "follows": true,
+     "note": "mathlib inducts on the length; the key lemma exists_last_eq_snoc_equivalent rebuilds a series through another maximal element, using the lattice axioms sup_eq_of_isMaximal and isMaximal_inf_left_of_isMaximal_sup (the second isomorphism theorem)."
+    }
+   },
+   {
+    "id": "schreier-refinement",
+    "name": "Schreier refinement",
+    "slogan": "Refine both series by Zassenhaus's lemma until their factors match in pairs, then delete the trivial factors.",
+    "scope": "The whole theorem; the refinement step works for any two subnormal series, and simplicity of the factors enters only at the end.",
+    "mechanisms": [
+     "m:homomorphism-kernel",
+     "m:bijection"
+    ],
+    "roles": [
+     {
+      "h": "h:first",
+      "why": "Its terms $G_i$ are refined, and the simplicity of $G_i/G_{i+1}$ leaves one nontrivial factor per step.",
+      "steps": [
+       "s:refine",
+       "s:trivial"
+      ]
+     },
+     {
+      "h": "h:second",
+      "why": "Its terms $H_j$ supply the intersections of the refinement and are refined in the same way.",
+      "steps": [
+       "s:refine",
+       "s:trivial"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:zassenhaus",
+      "slogan": "Prove Zassenhaus's lemma for $A' \\lhd A$ and $B' \\lhd B$ in $G$.",
+      "detail": "The groups $A'(A \\cap B)/A'(A \\cap B')$ and $B'(A \\cap B)/B'(A' \\cap B)$ are both isomorphic to $(A \\cap B)/(A' \\cap B)(A \\cap B')$. The second isomorphism theorem gives each isomorphism.",
+      "uses": [
+       "wd:Q1065966"
+      ]
+     },
+     {
+      "id": "s:refine",
+      "slogan": "Insert the terms $G_{i,j} = G_{i+1}(G_i \\cap H_j)$ and $H_{j,i} = H_{j+1}(H_j \\cap G_i)$.",
+      "detail": "Then $G_{i,0} = G_i$, $G_{i,m} = G_{i+1}$, and each $G_{i,j+1}$ is normal in $G_{i,j}$; the same holds for $H_{j,i}$. Both refined series have $nm$ steps.",
+      "uses": []
+     },
+     {
+      "id": "s:match",
+      "slogan": "Match the refined factors in pairs by Zassenhaus's lemma.",
+      "detail": "With $A = G_i$, $A' = G_{i+1}$, $B = H_j$ and $B' = H_{j+1}$, step 1 gives $G_{i,j}/G_{i,j+1} \\cong H_{j,i}/H_{j,i+1}$. So the two refinements have the same factors up to order, which is the Schreier refinement theorem.",
+      "uses": [
+       "wd:Q7432872"
+      ]
+     },
+     {
+      "id": "s:trivial",
+      "slogan": "Show that refining a [composition series](c:composition-series) adds only trivial factors.",
+      "detail": "In $G_i = G_{i,0} \\supseteq G_{i,1} \\supseteq \\dots \\supseteq G_{i+1}$, the first term that differs from $G_i$ is normal in $G_i$. Since $G_i/G_{i+1}$ is [simple](c:simple-group), that term is $G_{i+1}$, so exactly one factor is nontrivial and it is $G_i/G_{i+1}$.",
+      "uses": []
+     },
+     {
+      "id": "s:delete",
+      "slogan": "Delete the trivial factors from both refinements and compare the rest.",
+      "detail": "The matching of step 3 pairs trivial factors with trivial ones. The remaining factors are $G_i/G_{i+1}$ on one side and $H_j/H_{j+1}$ on the other, so $n = m$ and they agree up to order.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:zassenhaus",
+      "s:refine"
+     ],
+     [
+      "s:zassenhaus",
+      "s:match"
+     ],
+     [
+      "s:refine",
+      "s:match"
+     ],
+     [
+      "s:refine",
+      "s:trivial"
+     ],
+     [
+      "s:match",
+      "s:delete"
+     ],
+     [
+      "s:trivial",
+      "s:delete"
+     ]
+    ],
+    "conclusion": "s:delete",
+    "concepts": {
+     "c:composition-series": "A composition series has no proper refinement, only repeated terms.",
+     "c:simple-group": "Simplicity of each factor removes all but one refined factor.",
+     "c:normal-subgroup": "Each inserted term is normal in the term before it."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Schreier's proof through Zassenhaus's butterfly lemma, as in S. Lang, Algebra, revised 3rd ed., chapter I, section 3."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:descartes-rule-of-signs",
+  "statement": "Let $P$ be a nonzero [polynomial](c:polynomial) with real coefficients, let $V$ be the number of sign changes in its sequence of nonzero coefficients, and let $N$ be the number of positive [real roots](c:real-root), counted with multiplicity. Then $N \\le V$ and $V - N$ is even.",
+  "hypotheses": [
+   {
+    "id": "h:nonzero",
+    "text": "The [polynomial](c:polynomial) $P \\in \\mathbb{R}[X]$ is nonzero.",
+    "concept": "c:polynomial"
+   }
+  ],
+  "conclusion": "$N = V - 2k$ for some integer $k \\ge 0$.",
+  "formal": {
+   "decl": "Polynomial.roots_countP_pos_le_signVariations",
+   "difference": "The declaration proves only the bound $N \\le V$, for polynomials over any ordered commutative ring. It does not state the parity of $V - N$."
+  },
+  "proofs": [
+   {
+    "id": "peel-roots",
+    "name": "Peel off positive roots",
+    "slogan": "Each factor $X - \\eta$ with $\\eta > 0$ adds at least one sign change, and the end signs of $P$ fix the parity.",
+    "scope": "The whole theorem. A constant nonzero $P$ has $N = V = 0$.",
+    "mechanisms": [
+     "m:induction",
+     "m:division-algorithm",
+     "m:case-analysis"
+    ],
+    "roles": [
+     {
+      "h": "h:nonzero",
+      "why": "A nonzero polynomial has finitely many roots, a leading coefficient and a lowest nonzero coefficient.",
+      "steps": [
+       "s:factor",
+       "s:parity"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:factor",
+      "slogan": "Split off a positive root $\\eta$ as $P = (X - \\eta) Q$.",
+      "detail": "If $P(\\eta) = 0$ with $\\eta > 0$, the factor theorem gives $P = (X - \\eta) Q$ with $Q \\ne 0$. The polynomial $Q$ has $N - 1$ positive roots counted with multiplicity.",
+      "uses": [
+       "nm:factor-and-remainder-theorems"
+      ]
+     },
+     {
+      "id": "s:lemma",
+      "slogan": "Show that multiplying $Q$ by $X - \\eta$ adds at least one sign change.",
+      "detail": "Write $Q = \\sum b_i X^i$, so $(X - \\eta) Q$ has coefficients $c_i = b_{i-1} - \\eta b_i$. At the top index $k$ of each sign block of $Q$, $c_{k+1}$ has the sign of $b_k$, and the lowest nonzero $b_j$ gives $c_j = -\\eta b_j$ of the opposite sign. So $r$ sign blocks of $Q$ give at least $r$ sign changes of $(X - \\eta) Q$.",
+      "uses": []
+     },
+     {
+      "id": "s:bound",
+      "slogan": "Induct on the number $N$ of positive roots to get $N \\le V$.",
+      "detail": "For $N = 0$ there is nothing to prove. For $N \\ge 1$, steps 1 and 2 give $V(P) \\ge V(Q) + 1 \\ge (N - 1) + 1 = N$ by the induction hypothesis for $Q$.",
+      "uses": []
+     },
+     {
+      "id": "s:parity",
+      "slogan": "Compare the signs of $P$ near $0$ and near $+\\infty$ to get $N \\equiv V \\pmod 2$.",
+      "detail": "Write $P = R \\prod_i (X - \\eta_i)$ over the positive roots, so $R$ has no positive root and keeps one sign on $(0, \\infty)$. Then the lowest nonzero coefficient of $P$ has $(-1)^N$ times the sign of $R$ on $(0, \\infty)$, and the leading coefficient has the sign of $R$. These end signs agree exactly when $V$ is even, so $(-1)^N = (-1)^V$.",
+      "uses": [
+       "wd:Q245098"
+      ]
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Combine the bound and the parity into $N = V - 2k$ with $k \\ge 0$.",
+      "detail": "Step 3 gives $V - N \\ge 0$ and step 4 gives $V - N$ even. So $V - N = 2k$ for an integer $k \\ge 0$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:factor",
+      "s:bound"
+     ],
+     [
+      "s:lemma",
+      "s:bound"
+     ],
+     [
+      "s:factor",
+      "s:parity"
+     ],
+     [
+      "s:bound",
+      "s:conclude"
+     ],
+     [
+      "s:parity",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:polynomial": "The rule reads root counts from the coefficients of a polynomial.",
+     "c:real-root": "The rule bounds the positive real roots, with multiplicity."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Polynomial.roots_countP_pos_le_signVariations",
+     "follows": true,
+     "note": "mathlib inducts on the number of positive roots, writes P = (X - C eta) * Q (dvd_iff_isRoot) and uses succ_signVariations_le_X_sub_C_mul; the parity step is added here and is not in mathlib."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q16251580",
+  "statement": "Every [recursively enumerable set](c:recursively-enumerable-set) $S \\subseteq \\mathbb{N}^j$ is Diophantine: some polynomial $P$ with integer coefficients has $x \\in S$ exactly when the [Diophantine equation](c:diophantine-equation) $P(x, y) = 0$ has a solution $y \\in \\mathbb{N}^k$.",
+  "hypotheses": [
+   {
+    "id": "h:re",
+    "text": "The set $S \\subseteq \\mathbb{N}^j$ is [recursively enumerable](c:recursively-enumerable-set).",
+    "concept": "c:recursively-enumerable-set"
+   }
+  ],
+  "conclusion": "$S = \\{x \\in \\mathbb{N}^j : \\exists y \\in \\mathbb{N}^k,\\ P(x, y) = 0\\}$ for some $P \\in \\mathbb{Z}[x, y]$.",
+  "formal": {
+   "decl": "Pell.matiyasevic",
+   "difference": "The declaration proves only the key step: the relation $x = x_k(a), y = y_k(a)$ between solutions of a Pell equation is defined by a Diophantine system. mathlib derives from it that exponentiation is Diophantine (Dioph.pow_dioph) but does not prove that all recursively enumerable sets are Diophantine."
+  },
+  "proofs": [
+   {
+    "id": "dpr-pell",
+    "name": "Exponential representation and Pell equations",
+    "slogan": "Represent the set by an exponential Diophantine formula, then define exponentiation by a Diophantine system built from Pell equations.",
+    "scope": "An outline of the published proof; step 1 is the Davis-Putnam-Robinson theorem, which the cited paper proves in full. The theorem also gives the unsolvability of Hilbert's tenth problem, which is not part of this statement.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:encoding",
+     "m:modular-arithmetic"
+    ],
+    "roles": [
+     {
+      "h": "h:re",
+      "why": "A recursively enumerable set has an exponential Diophantine definition by the Davis-Putnam-Robinson theorem.",
+      "steps": [
+       "s:dpr"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:dpr",
+      "slogan": "Represent $S$ by an [exponential Diophantine equation](c:exponential-diophantine-equation) after Davis, Putnam and Robinson.",
+      "detail": "Davis's normal form writes $S$ with one bounded universal quantifier in front of a Diophantine condition. The Davis-Putnam-Robinson theorem removes that quantifier with binomial coefficients and factorials, which are exponential Diophantine.",
+      "uses": []
+     },
+     {
+      "id": "s:pell",
+      "slogan": "Solve the [Pell equation](c:pell-equation) $x^2 - (a^2 - 1) y^2 = 1$ by the sequence $(x_n(a), y_n(a))$.",
+      "detail": "For $a > 1$ every solution in $\\mathbb{N}$ is $x_n + y_n\\sqrt{a^2 - 1} = (a + \\sqrt{a^2 - 1})^n$. The sequences satisfy linear recurrences, so they have congruence laws such as $y_n(a) \\equiv n \\pmod{a - 1}$ and $y_n(b) \\equiv y_n(a) \\pmod{u}$ when $b \\equiv a \\pmod u$.",
+      "uses": [
+       "wd:Q853067"
+      ]
+     },
+     {
+      "id": "s:pell-dioph",
+      "slogan": "Define the relation $y = y_k(a)$ by a Diophantine system of Pell equations and congruences.",
+      "detail": "Add solutions $(u, v)$ and $(s, t)$ of Pell equations for $a$ and for an auxiliary $b$, with $b \\equiv 1 \\pmod{4y}$, $b \\equiv a \\pmod u$, $y^2 \\mid v$, $s \\equiv x \\pmod u$ and $t \\equiv k \\pmod{4y}$. The congruences force the index of $(x, y)$ to be $k$, and the Chinese remainder theorem supplies $b$ in the converse.",
+      "uses": [
+       "wd:Q193878"
+      ]
+     },
+     {
+      "id": "s:pow",
+      "slogan": "Express $m^k$ through $x_k(a)$ and $y_k(a)$ for a large parameter $a$.",
+      "detail": "The recurrences give $x_k(a) - (a - m) y_k(a) \\equiv m^k \\pmod{2am - m^2 - 1}$. When $a$ is large enough, $m^k$ is smaller than the modulus, so $n = m^k$ becomes a Diophantine condition by step 3.",
+      "uses": []
+     },
+     {
+      "id": "s:combine",
+      "slogan": "Replace each exponential in the representation of step 1 by its Diophantine definition.",
+      "detail": "Diophantine relations are closed under conjunction, since $P = 0 \\wedge Q = 0$ iff $P^2 + Q^2 = 0$, and under existential quantification. So the exponential Diophantine definition of $S$ becomes one polynomial equation $P(x, y) = 0$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:dpr",
+      "s:combine"
+     ],
+     [
+      "s:pell",
+      "s:pell-dioph"
+     ],
+     [
+      "s:pell-dioph",
+      "s:pow"
+     ],
+     [
+      "s:pow",
+      "s:combine"
+     ]
+    ],
+    "conclusion": "s:combine",
+    "concepts": {
+     "c:recursively-enumerable-set": "The hypothesis: the set is listed by some algorithm.",
+     "c:diophantine-equation": "The conclusion defines the set by one Diophantine equation.",
+     "c:exponential-diophantine-equation": "This intermediate class allows exponents and is reduced to polynomials.",
+     "c:pell-equation": "Pell solutions grow exponentially, which encodes exponentiation."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "M. Davis, Hilbert's tenth problem is unsolvable, American Mathematical Monthly 80 (1973), 233-269",
+     "url": "https://www.jstor.org/stable/2318447",
+     "note": "Davis gives the full proof with Pell equations; steps 3 and 4 follow mathlib's Pell.matiyasevic and eq_pow_of_pell, which formalize Davis's version."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:dirichlet-class-number-formula",
+  "statement": "Let $K$ be a [number field](c:number-field) with $r_1$ real and $r_2$ complex places, [class number](c:ideal-class-group) $h$, [regulator](c:regulator) $R$, $w$ roots of unity and [discriminant](c:discriminant) $d$. Then the [Dedekind zeta function](c:dedekind-zeta-function) satisfies $(s - 1)\\zeta_K(s) \\to \\frac{2^{r_1} (2\\pi)^{r_2} h R}{w \\sqrt{|d|}}$ as real $s \\to 1^+$.",
+  "hypotheses": [
+   {
+    "id": "h:number-field",
+    "text": "The field $K$ is a [number field](c:number-field), a finite extension of $\\mathbb{Q}$.",
+    "concept": "c:number-field"
+   }
+  ],
+  "conclusion": "$\\lim_{s \\to 1^+} (s - 1)\\zeta_K(s) = 2^{r_1} (2\\pi)^{r_2} h R / (w \\sqrt{|d|})$.",
+  "formal": {
+   "decl": "NumberField.tendsto_sub_one_mul_dedekindZeta_nhdsGT",
+   "difference": null
+  },
+  "proofs": [
+   {
+    "id": "ideal-count",
+    "name": "Counting ideals by lattice points",
+    "slogan": "Count the integral ideals of norm at most $t$ by lattice points in a cone, then turn the count into the limit at $s = 1$.",
+    "scope": "The whole theorem along real $s \\to 1^+$; it does not use the meromorphic continuation of $\\zeta_K$.",
+    "mechanisms": [
+     "m:approximation",
+     "m:generating-function",
+     "m:lagrange-counting"
+    ],
+    "roles": [
+     {
+      "h": "h:number-field",
+      "why": "A number field has a ring of integers with finite class group, a unit lattice and a Minkowski embedding.",
+      "steps": [
+       "s:series",
+       "s:class",
+       "s:domain"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:series",
+      "slogan": "Write $\\zeta_K(s) = \\sum_n a_n n^{-s}$ with $a_n$ the number of ideals of norm $n$.",
+      "detail": "The [Dedekind zeta function](c:dedekind-zeta-function) is $\\sum_\\mathfrak{a} N\\mathfrak{a}^{-s}$ over nonzero integral ideals. Grouping by norm gives a Dirichlet series with coefficients $a_n \\ge 0$, convergent for $s > 1$.",
+      "uses": []
+     },
+     {
+      "id": "s:class",
+      "slogan": "Count the ideals of one ideal class by nonzero elements of a fixed ideal modulo units.",
+      "detail": "Fix $\\mathfrak{b}$ in the inverse class. An integral ideal $\\mathfrak{a}$ of the class with $N\\mathfrak{a} \\le t$ gives $\\mathfrak{a}\\mathfrak{b} = (\\alpha)$ with $\\alpha \\in \\mathfrak{b}$ and $|N(\\alpha)| \\le t N\\mathfrak{b}$, unique up to units. In $\\mathbb{R}^{r_1} \\times \\mathbb{C}^{r_2}$, $\\mathfrak{b}$ is a [lattice](c:lattice-discrete-subgroup) of covolume $2^{-r_2}\\sqrt{|d|} N\\mathfrak{b}$.",
+      "uses": []
+     },
+     {
+      "id": "s:domain",
+      "slogan": "Cut out a fundamental cone for the units by the logarithmic embedding.",
+      "detail": "Dirichlet's unit theorem makes the units modulo roots of unity a lattice in the trace-zero hyperplane with covolume given by $R$. The cone $F$ of points whose logarithm vector lies in a fundamental cell meets each unit orbit $w$ times, and $F \\cap \\{|N| \\le 1\\}$ has volume $2^{r_1}\\pi^{r_2} R$.",
+      "uses": [
+       "wd:Q1227702"
+      ]
+     },
+     {
+      "id": "s:volume",
+      "slogan": "Count lattice points in the truncated cone by its volume.",
+      "detail": "The truncated cone has a Lipschitz boundary, so the number of points of $\\mathfrak{b}$ in $F \\cap \\{|N| \\le t N\\mathfrak{b}\\}$ is its volume divided by the covolume, up to $O(t^{1 - 1/n})$. Dividing by $w$, each class has $\\frac{2^{r_1}(2\\pi)^{r_2} R}{w\\sqrt{|d|}}\\, t + o(t)$ ideals of norm at most $t$.",
+      "uses": []
+     },
+     {
+      "id": "s:sum",
+      "slogan": "Sum over the $h$ ideal classes to get $\\sum_{n \\le t} a_n \\sim \\kappa t$.",
+      "detail": "Each of the $h$ classes contributes the same main term. So $\\sum_{n \\le t} a_n = \\kappa t + o(t)$ with $\\kappa = 2^{r_1}(2\\pi)^{r_2} h R/(w\\sqrt{|d|})$.",
+      "uses": []
+     },
+     {
+      "id": "s:tauber",
+      "slogan": "Turn the counting asymptotic into the limit of $(s - 1)\\zeta_K(s)$ by summation by parts.",
+      "detail": "With $A(t) = \\sum_{n \\le t} a_n$, summation by parts gives $\\zeta_K(s) = s \\int_1^\\infty A(t) t^{-s-1}\\,dt$ for $s > 1$. Inserting $A(t) = \\kappa t + o(t)$ gives $\\zeta_K(s) = \\frac{\\kappa s}{s - 1} + o\\big(\\frac{1}{s - 1}\\big)$, so $(s - 1)\\zeta_K(s) \\to \\kappa$.",
+      "uses": [
+       "nm:abel-s-lemma"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:series",
+      "s:tauber"
+     ],
+     [
+      "s:class",
+      "s:volume"
+     ],
+     [
+      "s:domain",
+      "s:volume"
+     ],
+     [
+      "s:volume",
+      "s:sum"
+     ],
+     [
+      "s:sum",
+      "s:tauber"
+     ]
+    ],
+    "conclusion": "s:tauber",
+    "concepts": {
+     "c:number-field": "All invariants in the formula belong to the number field.",
+     "c:ideal-class-group": "The count runs over the $h$ classes, each with the same main term.",
+     "c:regulator": "The regulator measures the unit lattice and enters the cone volume.",
+     "c:discriminant": "The discriminant fixes the covolume of the ideal lattices.",
+     "c:dedekind-zeta-function": "Its coefficients count ideals, and the theorem gives its residue.",
+     "c:lattice-discrete-subgroup": "Ideals embed as lattices whose points are counted by volume."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "NumberField.tendsto_sub_one_mul_dedekindZeta_nhdsGT",
+     "follows": true,
+     "note": "mathlib combines the ideal count Ideal.tendsto_norm_le_div_atTop₀ (lattice points in the fundamental cone) with the Abelian lemma LSeries_tendsto_sub_mul_nhds_one_of_tendsto_sum_div_and_nonneg."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q3527064",
+  "statement": "Let $X_1, X_2, \\dots$ be [independent](c:independence) identically distributed [random variables](c:random-variable) with mean $0$ and variance $1$, let $S_k = X_1 + \\dots + X_k$, and let $W_n \\in C[0, 1]$ interpolate the points $(k/n, S_k/\\sqrt{n})$ linearly. Then $W_n$ [converges in distribution](c:convergence-in-distribution) in $C[0, 1]$ to standard [Brownian motion](c:brownian-motion).",
+  "hypotheses": [
+   {
+    "id": "h:iid",
+    "text": "The random variables $X_1, X_2, \\dots$ are [independent](c:independence) and identically distributed.",
+    "concept": "c:independence"
+   },
+   {
+    "id": "h:moments",
+    "text": "Each $X_i$ has mean $0$ and variance $1$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "$E\\,\\Phi(W_n) \\to E\\,\\Phi(B)$ for every bounded continuous $\\Phi\\colon C[0, 1] \\to \\mathbb{R}$, where $B$ is standard Brownian motion.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "fdd-tightness",
+    "name": "Finite-dimensional limits and tightness",
+    "slogan": "Get the finite-dimensional limits from the central limit theorem, prove tightness from a maximal inequality, and identify the limit by Prokhorov's theorem.",
+    "scope": "The whole theorem for the interpolated walk in $C[0, 1]$. The argument also proves that Wiener measure exists, since a limit law exists.",
+    "mechanisms": [
+     "m:subsequence",
+     "m:union-bound",
+     "m:characteristic-function"
+    ],
+    "roles": [
+     {
+      "h": "h:iid",
+      "why": "Independence makes increments over disjoint blocks independent and gives the maximal inequality.",
+      "steps": [
+       "s:fdd",
+       "s:maximal"
+      ]
+     },
+     {
+      "h": "h:moments",
+      "why": "Mean $0$ and variance $1$ fix the Gaussian limits and the scale $\\sqrt{n}$.",
+      "steps": [
+       "s:fdd",
+       "s:maximal"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:fdd",
+      "slogan": "Show that the finite-dimensional distributions of $W_n$ converge to those of Brownian motion.",
+      "detail": "For $0 \\le t_1 < \\dots < t_k \\le 1$, the increments $W_n(t_i) - W_n(t_{i-1})$ are, up to an error at most $\\max_{j \\le n}|X_j|/\\sqrt{n} \\to 0$ in probability, normalized sums over disjoint blocks. The central limit theorem gives independent $N(0, t_i - t_{i-1})$ limits.",
+      "uses": [
+       "wd:Q190391"
+      ]
+     },
+     {
+      "id": "s:maximal",
+      "slogan": "Bound the maximum of the partial sums by a maximal inequality and the central limit theorem.",
+      "detail": "Etemadi's inequality $P(\\max_{k \\le m}|S_k| \\ge 3\\lambda) \\le 3\\max_{k \\le m} P(|S_k| \\ge \\lambda)$ and the normal fourth moment give, for each fixed $\\delta > 0$, $\\limsup_n P(\\max_{k \\le n\\delta}|S_k| \\ge \\varepsilon\\sqrt{n}) \\le C\\delta^2/\\varepsilon^4$.",
+      "uses": []
+     },
+     {
+      "id": "s:tight",
+      "slogan": "Show that the laws of $W_n$ form a [tight](c:tightness) family in $C[0, 1]$.",
+      "detail": "Cover $[0, 1]$ by about $1/\\delta$ windows of length $\\delta$; the union bound and step 2 give $\\limsup_n P(\\omega(W_n, \\delta) \\ge 3\\varepsilon) \\le C\\delta/\\varepsilon^4$ for the modulus of continuity. Since $W_n(0) = 0$, the Arzelà-Ascoli theorem turns this into tightness.",
+      "uses": [
+       "wd:Q1477053"
+      ]
+     },
+     {
+      "id": "s:prokhorov",
+      "slogan": "Extract convergent subsequences of the laws by Prokhorov's theorem.",
+      "detail": "A tight family of laws on the Polish space $C[0, 1]$ is relatively compact. So every subsequence of $W_n$ has a further subsequence that converges in distribution to some law $Q$.",
+      "uses": [
+       "wd:Q7249519"
+      ]
+     },
+     {
+      "id": "s:identify",
+      "slogan": "Identify every limit law as [Wiener measure](c:wiener-measure) by its finite-dimensional distributions.",
+      "detail": "The maps $w \\mapsto (w(t_1), \\dots, w(t_k))$ are continuous, so by step 1 every limit $Q$ has the Brownian finite-dimensional laws, and these determine a law on $C[0, 1]$. All subsequential limits agree, so the whole sequence converges.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:fdd",
+      "s:identify"
+     ],
+     [
+      "s:maximal",
+      "s:tight"
+     ],
+     [
+      "s:tight",
+      "s:prokhorov"
+     ],
+     [
+      "s:prokhorov",
+      "s:identify"
+     ]
+    ],
+    "conclusion": "s:identify",
+    "concepts": {
+     "c:independence": "Independent steps give independent block sums and the maximal inequality.",
+     "c:random-variable": "The walk is built from the random variables $X_i$.",
+     "c:convergence-in-distribution": "The conclusion is weak convergence of laws on $C[0, 1]$.",
+     "c:brownian-motion": "Brownian motion is the limit process of the rescaled walk.",
+     "c:tightness": "Tightness gives the compactness that Prokhorov's theorem needs.",
+     "c:wiener-measure": "Wiener measure is the law of Brownian motion on $C[0, 1]$."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard proof by finite-dimensional convergence and tightness, as in P. Billingsley, Convergence of Probability Measures, 2nd ed., Wiley, 1999, section 8."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q718875",
+  "statement": "Let $1 \\le r$ and $2r \\le n$. If $\\mathcal{A}$ is a family of $r$-element subsets of $\\{1, \\dots, n\\}$ in which every two members intersect, then $|\\mathcal{A}| \\le \\binom{n-1}{r-1}$, a [binomial coefficient](c:binomial-coefficient).",
+  "hypotheses": [
+   {
+    "id": "h:uniform",
+    "text": "Every member of $\\mathcal{A}$ is an $r$-element subset of $\\{1, \\dots, n\\}$.",
+    "concept": null
+   },
+   {
+    "id": "h:intersecting",
+    "text": "The family $\\mathcal{A}$ is an [intersecting family](c:intersecting-family): every two members share an element.",
+    "concept": "c:intersecting-family"
+   },
+   {
+    "id": "h:size",
+    "text": "The sizes satisfy $1 \\le r$ and $2r \\le n$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "$|\\mathcal{A}| \\le \\binom{n-1}{r-1}$.",
+  "formal": {
+   "decl": "Finset.erdos_ko_rado",
+   "difference": "The declaration also allows $r = 0$, where natural subtraction makes the bound $\\binom{n-1}{0} = 1$ and the family is empty. It writes $2r \\le n$ as $r \\le n/2$ with natural division."
+  },
+  "proofs": [
+   {
+    "id": "kruskal-katona",
+    "name": "Shadow of the complements",
+    "slogan": "If the family were larger, the iterated [shadow](c:shadow) of its complements would give more than $\\binom{n}{r}$ sets of size $r$.",
+    "scope": "The whole theorem, by contradiction. The case $r = 0$ is excluded by hypothesis; there the family is empty.",
+    "mechanisms": [
+     "m:contradiction",
+     "m:reduction"
+    ],
+    "roles": [
+     {
+      "h": "h:uniform",
+      "why": "The complements all have size $n - r$, so one shadow bound applies, and all sets counted have size $r$.",
+      "steps": [
+       "s:assume",
+       "s:shadow",
+       "s:count"
+      ]
+     },
+     {
+      "h": "h:intersecting",
+      "why": "A set disjoint from a member cannot be a member, so the shadow avoids $\\mathcal{A}$.",
+      "steps": [
+       "s:disjoint"
+      ]
+     },
+     {
+      "h": "h:size",
+      "why": "The inequality $2r \\le n$ makes the shadow order $n - 2r$ nonnegative, and $r \\ge 1$ fits the Lovász bound.",
+      "steps": [
+       "s:shadow"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:assume",
+      "slogan": "Assume $|\\mathcal{A}| > \\binom{n-1}{r-1}$ and pass to the family of complements.",
+      "detail": "The complements $\\mathcal{A}^c = \\{[n] \\setminus A : A \\in \\mathcal{A}\\}$ are $(n - r)$-sets. Their number is $|\\mathcal{A}| > \\binom{n-1}{r-1} = \\binom{n-1}{n-r}$.",
+      "uses": []
+     },
+     {
+      "id": "s:shadow",
+      "slogan": "Bound the $(n - 2r)$-fold shadow of the complements from below by Lovász's form of Kruskal-Katona.",
+      "detail": "Lovász's form says that a family of $k$-sets of size at least $\\binom{x}{k}$ has $i$-fold shadow of size at least $\\binom{x}{k-i}$. With $k = n - r$, $x = n - 1$ and $i = n - 2r$, the $r$-sets below $\\mathcal{A}^c$ number at least $\\binom{n-1}{r}$.",
+      "uses": [
+       "nm:lovasz-formulation-of-the-kruskal-katona-theorem",
+       "wd:Q3527102"
+      ]
+     },
+     {
+      "id": "s:disjoint",
+      "slogan": "Show that the shadow and $\\mathcal{A}$ are disjoint families of $r$-sets.",
+      "detail": "A set $S$ in the shadow lies inside $[n] \\setminus A'$ for some $A' \\in \\mathcal{A}$, so $S \\cap A' = \\emptyset$. Because $\\mathcal{A}$ is [intersecting](c:intersecting-family), $S \\notin \\mathcal{A}$.",
+      "uses": []
+     },
+     {
+      "id": "s:count",
+      "slogan": "Count both families among the $\\binom{n}{r}$ sets of size $r$ to reach a contradiction.",
+      "detail": "The two disjoint families have more than $\\binom{n-1}{r-1} + \\binom{n-1}{r} = \\binom{n}{r}$ members by Pascal's rule. But there are only $\\binom{n}{r}$ subsets of size $r$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:assume",
+      "s:shadow"
+     ],
+     [
+      "s:assume",
+      "s:disjoint"
+     ],
+     [
+      "s:shadow",
+      "s:count"
+     ],
+     [
+      "s:disjoint",
+      "s:count"
+     ]
+    ],
+    "conclusion": "s:count",
+    "concepts": {
+     "c:binomial-coefficient": "The bound and the count of $r$-sets are binomial coefficients.",
+     "c:intersecting-family": "The hypothesis that keeps the shadow away from the family.",
+     "c:shadow": "The iterated shadow of the complements gives many sets outside the family."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Finset.erdos_ko_rado",
+     "follows": true,
+     "note": "mathlib applies kruskal_katona_lovasz_form to the complements, shows the iterated shadow is disjoint from the family, and counts with Nat.choose_succ_succ and Set.Sized.card_le."
+    }
+   },
+   {
+    "id": "katona-circle",
+    "name": "Katona's circle",
+    "slogan": "Double count pairs of a cyclic order and a member that forms an arc, and bound the arcs in one cyclic order by $r$.",
+    "scope": "The whole theorem under $1 \\le r$ and $2r \\le n$.",
+    "mechanisms": [
+     "m:double-counting",
+     "m:averaging"
+    ],
+    "roles": [
+     {
+      "h": "h:uniform",
+      "why": "All members have size $r$, so each is an arc of length $r$ in the same number of cyclic orders.",
+      "steps": [
+       "s:cycles",
+       "s:arcs"
+      ]
+     },
+     {
+      "h": "h:intersecting",
+      "why": "Pairwise intersection limits the arcs present in one cyclic order.",
+      "steps": [
+       "s:arcs"
+      ]
+     },
+     {
+      "h": "h:size",
+      "why": "The inequality $2r \\le n$ makes the two arcs on either side of a gap disjoint.",
+      "steps": [
+       "s:arcs"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:cycles",
+      "slogan": "Count the pairs of a cyclic order and a member that is an arc in it.",
+      "detail": "There are $(n - 1)!$ cyclic orders of $[n]$, and a fixed $r$-set is a block of consecutive elements in $r!\\,(n - r)!$ of them. So there are $|\\mathcal{A}|\\, r!\\,(n - r)!$ such pairs.",
+      "uses": []
+     },
+     {
+      "id": "s:arcs",
+      "slogan": "Show that one cyclic order contains at most $r$ arcs from the family.",
+      "detail": "Fix an arc $a_1 \\dots a_r$ of the family. Every other member arc meets it, so it starts at some $a_{i+1}$ or ends at some $a_i$ with $1 \\le i \\le r - 1$, and for each $i$ these two arcs are disjoint because $2r \\le n$. So at most $1 + (r - 1) = r$ arcs are members.",
+      "uses": []
+     },
+     {
+      "id": "s:bound",
+      "slogan": "Compare the two counts to get $|\\mathcal{A}|\\, r!\\,(n - r)! \\le r\\,(n - 1)!$.",
+      "detail": "Summing step 2 over the $(n - 1)!$ cyclic orders bounds the pairs of step 1 by $r\\,(n - 1)!$. Dividing gives $|\\mathcal{A}| \\le \\frac{r\\,(n - 1)!}{r!\\,(n - r)!} = \\binom{n-1}{r-1}$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:cycles",
+      "s:bound"
+     ],
+     [
+      "s:arcs",
+      "s:bound"
+     ]
+    ],
+    "conclusion": "s:bound",
+    "concepts": {
+     "c:binomial-coefficient": "The quotient of the two counts is the binomial coefficient $\\binom{n-1}{r-1}$.",
+     "c:intersecting-family": "Intersecting arcs in one cyclic order number at most $r$."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "G. O. H. Katona, A simple proof of the Erdős-Chao Ko-Rado theorem, Journal of Combinatorial Theory Series B 13 (1972), 183-184."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q752375",
+  "statement": "Every [continuous](c:continuous-function) real-valued function on a nonempty [compact space](c:compact-space) attains a maximum and a minimum.",
+  "hypotheses": [
+   {
+    "id": "h:nonempty",
+    "text": "The space $X$ is nonempty.",
+    "concept": null
+   },
+   {
+    "id": "h:compact",
+    "text": "The space $X$ is [compact](c:compact-space).",
+    "concept": "c:compact-space"
+   },
+   {
+    "id": "h:continuous",
+    "text": "The function $f\\colon X \\to \\mathbb{R}$ is [continuous](c:continuous-function).",
+    "concept": "c:continuous-function"
+   }
+  ],
+  "conclusion": "There are points $a, b \\in X$ with $f(a) \\le f(x) \\le f(b)$ for every $x \\in X$.",
+  "formal": {
+   "decl": "IsCompact.exists_isMinOn",
+   "difference": "The declaration gives the minimum only, for a function continuous on a compact set with values in a linear order with closed lower rays. The maximum is the separate declaration IsCompact.exists_isMaxOn."
+  },
+  "proofs": [
+   {
+    "id": "compact-image",
+    "name": "Compact image",
+    "slogan": "The image of the compact space is a compact set of reals, and such a set contains its supremum and infimum.",
+    "scope": "The whole theorem. An empty space has no maximum, so the hypothesis $X \\neq \\emptyset$ is necessary; the proof uses it only to make the image nonempty.",
+    "mechanisms": [
+     "m:continuous-image",
+     "m:finite-subcover",
+     "m:supremum"
+    ],
+    "roles": [
+     {
+      "h": "h:compact",
+      "why": "[Compactness](c:compact-space) of $X$ makes the image $f(X)$ compact.",
+      "steps": [
+       "s:image"
+      ]
+     },
+     {
+      "h": "h:continuous",
+      "why": "Continuity pulls an [open cover](c:open-cover) of the image back to an open cover of $X$.",
+      "steps": [
+       "s:image"
+      ]
+     },
+     {
+      "h": "h:nonempty",
+      "why": "A nonempty space has a nonempty image, so the supremum and infimum exist.",
+      "steps": [
+       "s:sup"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:image",
+      "slogan": "Push the [compact space](c:compact-space) forward to its [image](c:image) under $f$.",
+      "detail": "Let $\\{V_i\\}$ be an [open cover](c:open-cover) of $f(X)$. The preimages $f^{-1}(V_i)$ are open because $f$ is [continuous](c:continuous-function), and they cover $X$. Finitely many of them cover $X$, so the matching $V_i$ cover $f(X)$, and $f(X)$ is compact.",
+      "uses": []
+     },
+     {
+      "id": "s:closed-bounded",
+      "slogan": "Show that the compact image is a [closed](c:closed-set) and [bounded set](c:bounded-set) of reals.",
+      "detail": "The open intervals $(-n, n)$ cover $f(X)$ and finitely many suffice, so $f(X)$ is bounded. A compact subset of the Hausdorff space $\\mathbb{R}$ is closed, so $f(X)$ is closed.",
+      "uses": []
+     },
+     {
+      "id": "s:sup",
+      "slogan": "Take the [supremum](c:least-upper-bound) and the infimum of the nonempty bounded image.",
+      "detail": "The image is nonempty because $X$ is nonempty, and it is bounded. The completeness of the [real numbers](c:real-number) gives $M = \\sup f(X)$ and $m = \\inf f(X)$.",
+      "uses": []
+     },
+     {
+      "id": "s:attain",
+      "slogan": "Find the supremum and the infimum inside the closed image.",
+      "detail": "Every neighborhood of $M$ meets $f(X)$, so $M$ lies in the closure of $f(X)$, which is $f(X)$ because the image is [closed](c:closed-set). Hence $M = f(b)$ for some $b \\in X$. In the same way $m = f(a)$ for some $a \\in X$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:image",
+      "s:closed-bounded"
+     ],
+     [
+      "s:closed-bounded",
+      "s:sup"
+     ],
+     [
+      "s:sup",
+      "s:attain"
+     ],
+     [
+      "s:closed-bounded",
+      "s:attain"
+     ]
+    ],
+    "conclusion": "s:attain",
+    "concepts": {
+     "c:continuous-function": "The function must be continuous so that preimages of open sets are open.",
+     "c:compact-space": "Compactness is the property that passes from the space to its image.",
+     "c:open-cover": "The image is shown compact through an open cover and its preimage cover.",
+     "c:image": "The proof studies the set of values $f(X)$ instead of the function.",
+     "c:closed-set": "A closed set of reals contains its limit points, hence its supremum.",
+     "c:bounded-set": "A bounded set of reals has a finite supremum and infimum.",
+     "c:least-upper-bound": "The supremum is the candidate for the maximum value.",
+     "c:real-number": "Completeness of the reals supplies the supremum."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "IsCompact.exists_isMinOn",
+     "follows": true,
+     "note": "mathlib takes the compact image (IsCompact.image_of_continuousOn) and its least element (IsCompact.exists_isLeast)."
+    }
+   },
+   {
+    "id": "local-bounds",
+    "name": "Local bounds and a reciprocal",
+    "slogan": "Bound the function near each point, keep finitely many bounds, then show that the supremum is a value.",
+    "scope": "The maximum, for nonempty $X$; the minimum follows when the proof is applied to $-f$. Steps 1 to 3 prove only boundedness, and steps 4 and 5 supply attainment.",
+    "mechanisms": [
+     "m:local-to-global",
+     "m:finite-subcover",
+     "m:supremum",
+     "m:contradiction"
+    ],
+    "roles": [
+     {
+      "h": "h:continuous",
+      "why": "Continuity gives a bound near each point, and it makes the reciprocal $1/(M - f)$ continuous.",
+      "steps": [
+       "s:local",
+       "s:reciprocal"
+      ]
+     },
+     {
+      "h": "h:compact",
+      "why": "[Compactness](c:compact-space) reduces the cover by bounded neighborhoods to a finite cover.",
+      "steps": [
+       "s:finite"
+      ]
+     },
+     {
+      "h": "h:nonempty",
+      "why": "A nonempty set of values has a supremum.",
+      "steps": [
+       "s:bound"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:local",
+      "slogan": "Cover the space by bounded neighborhoods.",
+      "detail": "For each $x \\in X$, [continuity](c:continuous-function) at $x$ gives an open neighborhood $U_x$ on which $|f(y) - f(x)| < 1$, so $|f| < |f(x)| + 1$ on $U_x$. The sets $U_x$ form an [open cover](c:open-cover) of $X$.",
+      "uses": []
+     },
+     {
+      "id": "s:finite",
+      "slogan": "Select a finite subcover of the neighborhood cover.",
+      "detail": "Because $X$ is [compact](c:compact-space), finitely many points $x_1, \\dots, x_n$ have neighborhoods $U_{x_1}, \\dots, U_{x_n}$ that still cover $X$. This finiteness is derived here; it is not a hypothesis.",
+      "uses": []
+     },
+     {
+      "id": "s:bound",
+      "slogan": "Take the largest of the finitely many local bounds.",
+      "detail": "On $X$, $|f| \\le \\max_i (|f(x_i)| + 1)$; a [finite set](c:finite-set) of reals has a largest element because $n \\ge 1$, which holds since $X$ is nonempty. So $f$ is a [bounded function](c:bounded-function) and $M = \\sup f(X)$ is a [real number](c:real-number).",
+      "uses": []
+     },
+     {
+      "id": "s:reciprocal",
+      "slogan": "Assume that $M$ is not a value and form the reciprocal $g = 1/(M - f)$.",
+      "detail": "If $f(x) < M$ for every $x$, then $g(x) = 1/(M - f(x))$ is defined, positive and [continuous](c:continuous-function) on $X$, because $M - f$ is continuous and never zero.",
+      "uses": []
+     },
+     {
+      "id": "s:contradict",
+      "slogan": "Bound the reciprocal by steps 1 to 3 and contradict the choice of $M$.",
+      "detail": "Steps 1 to 3 applied to $g$ give $g \\le K$ for some $K > 0$. Then $M - f(x) \\ge 1/K$, so $f \\le M - 1/K$ on $X$, which contradicts $M = \\sup f(X)$. So $M = f(b)$ for some $b$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:local",
+      "s:finite"
+     ],
+     [
+      "s:finite",
+      "s:bound"
+     ],
+     [
+      "s:bound",
+      "s:reciprocal"
+     ],
+     [
+      "s:reciprocal",
+      "s:contradict"
+     ],
+     [
+      "s:bound",
+      "s:contradict"
+     ]
+    ],
+    "conclusion": "s:contradict",
+    "concepts": {
+     "c:continuous-function": "Continuity gives a bound near each point and keeps the reciprocal continuous.",
+     "c:compact-space": "Compactness turns the local bounds into finitely many bounds.",
+     "c:open-cover": "The bounded neighborhoods form the open cover that compactness reduces.",
+     "c:finite-set": "Only a finite family of bounds has a largest member.",
+     "c:bounded-function": "Boundedness makes the supremum a real number, not infinity.",
+     "c:real-number": "The supremum exists because the reals are complete."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The classical proof by local boundedness and the reciprocal function, as in Rudin, Principles of Mathematical Analysis, theorem 4.16 and its exercise route; not the mathlib route."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1434158",
+  "statement": "Let a classical system with [Hamiltonian](c:hamiltonian) $H_0$ be in canonical equilibrium $\\rho_0 = e^{-\\beta H_0}/Z$ and be perturbed to $H_0 - f(t) B$. To first order in $f$, $\\langle A\\rangle_t - \\langle A\\rangle_0 = \\int_{-\\infty}^t \\chi(t - s) f(s)\\,ds$ with response $\\chi(\\tau) = -\\beta\\, C_{AB}'(\\tau)$, where $C_{AB}(\\tau) = \\langle A(\\tau) B(0)\\rangle_0$ is the equilibrium [correlation function](c:correlation-function).",
+  "hypotheses": [
+   {
+    "id": "h:equilibrium",
+    "text": "Before the perturbation the system is in canonical equilibrium $\\rho_0 = e^{-\\beta H_0}/Z$ with $Z < \\infty$.",
+    "concept": null
+   },
+   {
+    "id": "h:perturbation",
+    "text": "The perturbed [Hamiltonian](c:hamiltonian) is $H_0 - f(t) B$ with $f = 0$ before some time, and $A, B$ are smooth observables.",
+    "concept": "c:hamiltonian"
+   }
+  ],
+  "conclusion": "The linear response function of $A$ to the force $f$ is $\\chi(\\tau) = -\\beta\\, \\frac{d}{d\\tau}\\langle A(\\tau) B(0)\\rangle_0$ for $\\tau \\ge 0$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "kubo-classical",
+    "name": "Classical linear response",
+    "slogan": "Linearize the Liouville equation, solve it along the unperturbed flow, and turn the source term into a time derivative of the equilibrium correlation.",
+    "scope": "The classical theorem as a first-order calculation, assuming that the integrals converge and may be differentiated. The quantum form follows the same route with the Kubo correlation in place of $C_{AB}$.",
+    "mechanisms": [
+     "m:taylor-expansion",
+     "m:change-of-variables",
+     "m:symmetry"
+    ],
+    "roles": [
+     {
+      "h": "h:equilibrium",
+      "why": "The canonical form of $\\rho_0$ gives the source $-\\beta\\rho_0\\dot B$, and its invariance under the flow gives stationarity.",
+      "steps": [
+       "s:source",
+       "s:duhamel",
+       "s:stationary"
+      ]
+     },
+     {
+      "h": "h:perturbation",
+      "why": "The form $-f(t) B$ fixes the first-order source, and $f = 0$ in the past fixes the initial condition.",
+      "steps": [
+       "s:linearize",
+       "s:duhamel"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:linearize",
+      "slogan": "Expand the density as $\\rho_0 + \\rho_1$ and keep the first-order Liouville equation.",
+      "detail": "The density obeys $\\partial_t \\rho = \\{H, \\rho\\}$ with the [Poisson bracket](c:poisson-bracket). Since $\\{H_0, \\rho_0\\} = 0$, the first-order part satisfies $\\partial_t \\rho_1 = \\{H_0, \\rho_1\\} - f(t)\\{B, \\rho_0\\}$, with $\\rho_1 = 0$ before $f$ is switched on.",
+      "uses": [
+       "nl:19685"
+      ]
+     },
+     {
+      "id": "s:source",
+      "slogan": "Compute the source term $\\{B, \\rho_0\\} = -\\beta \\rho_0 \\dot B$ from the canonical form of $\\rho_0$.",
+      "detail": "The chain rule gives $\\nabla\\rho_0 = -\\beta\\rho_0 \\nabla H_0$, so $\\{B, \\rho_0\\} = -\\beta\\rho_0 \\{B, H_0\\}$. Here $\\dot B = \\{B, H_0\\}$ is the time derivative of $B$ along the unperturbed flow $\\Phi_t$.",
+      "uses": []
+     },
+     {
+      "id": "s:duhamel",
+      "slogan": "Solve the linear equation for $\\rho_1$ by Duhamel's formula along the unperturbed flow.",
+      "detail": "The free equation $\\partial_t\\rho = \\{H_0, \\rho\\}$ moves a density to $\\rho \\circ \\Phi_{-\\tau}$. Duhamel's formula and the invariance of $\\rho_0$ give $\\rho_1(t) = \\beta \\int_{-\\infty}^t f(s)\\, \\rho_0\\, (\\dot B \\circ \\Phi_{s-t})\\,ds$.",
+      "uses": []
+     },
+     {
+      "id": "s:response",
+      "slogan": "Integrate $A$ against $\\rho_1$ and move the flow onto $A$ by Liouville's theorem.",
+      "detail": "The change of $\\langle A\\rangle_t$ is $\\int A \\rho_1(t)\\,dx$. The substitution $x = \\Phi_{t-s} y$ preserves the Liouville measure and $\\rho_0$, so it equals $\\beta \\int_{-\\infty}^t f(s) \\langle A(t - s) \\dot B(0)\\rangle_0\\,ds$.",
+      "uses": [
+       "wd:Q766722"
+      ]
+     },
+     {
+      "id": "s:stationary",
+      "slogan": "Use stationarity to replace $\\langle A(\\tau)\\dot B(0)\\rangle_0$ by $-C_{AB}'(\\tau)$.",
+      "detail": "Invariance of $\\rho_0$ gives $C_{AB}(\\tau) = \\langle A(\\tau + \\sigma) B(\\sigma)\\rangle_0$ for every $\\sigma$. Differentiating in $\\sigma$ at $0$ gives $0 = C_{AB}'(\\tau) + \\langle A(\\tau)\\dot B(0)\\rangle_0$, so $\\chi(\\tau) = -\\beta C_{AB}'(\\tau)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:linearize",
+      "s:duhamel"
+     ],
+     [
+      "s:source",
+      "s:duhamel"
+     ],
+     [
+      "s:duhamel",
+      "s:response"
+     ],
+     [
+      "s:response",
+      "s:stationary"
+     ]
+    ],
+    "conclusion": "s:stationary",
+    "concepts": {
+     "c:hamiltonian": "The unperturbed and perturbed dynamics come from Hamiltonians.",
+     "c:correlation-function": "The response equals minus $\\beta$ times its time derivative.",
+     "c:poisson-bracket": "The Liouville equation and the source term are Poisson brackets."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Kubo's linear response derivation in the classical case, as in R. Kubo, The fluctuation-dissipation theorem, Reports on Progress in Physics 29 (1966), 255-284."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1059151",
+  "statement": "Let $y \\in \\mathbb{R}^n$, let $X = [X_1\\ X_2]$ have full column [rank](c:rank-of-a-matrix), and let $M_2 = I - X_2(X_2^\\top X_2)^{-1} X_2^\\top$. The [least squares](c:least-squares) coefficient $\\hat\\beta_1$ of $X_1$ in the [linear regression](c:linear-regression) of $y$ on $X$ equals the coefficient from regressing $M_2 y$ on $M_2 X_1$, and the two regressions have the same [residuals](c:residual).",
+  "hypotheses": [
+   {
+    "id": "h:rank",
+    "text": "The $n \\times k$ matrix $X = [X_1\\ X_2]$ has full column [rank](c:rank-of-a-matrix).",
+    "concept": "c:rank-of-a-matrix"
+   },
+   {
+    "id": "h:fit",
+    "text": "The vector $(\\hat\\beta_1, \\hat\\beta_2)$ minimizes $\\|y - X_1 b_1 - X_2 b_2\\|^2$.",
+    "concept": "c:least-squares"
+   }
+  ],
+  "conclusion": "$\\hat\\beta_1 = ((M_2 X_1)^\\top M_2 X_1)^{-1} (M_2 X_1)^\\top M_2 y$, and $M_2 y - M_2 X_1 \\hat\\beta_1 = y - X_1\\hat\\beta_1 - X_2\\hat\\beta_2$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "annihilator",
+    "name": "Annihilator projection",
+    "slogan": "Apply the [projection matrix](c:projection-matrix) $M_2$ to the full fit, which removes $X_2$ and keeps the residual, and read off the normal equations of the partial regression.",
+    "scope": "The whole theorem. If $X_2$ is empty, then $M_2 = I$ and both regressions coincide.",
+    "mechanisms": [
+     "m:orthogonal-projection",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:rank",
+      "why": "Full rank makes $X_2^\\top X_2$ invertible, so $M_2$ exists, and makes $M_2 X_1$ of full column rank.",
+      "steps": [
+       "s:annihilate",
+       "s:rank"
+      ]
+     },
+     {
+      "h": "h:fit",
+      "why": "The minimizing coefficients leave a [residual](c:residual) orthogonal to all columns of $X$.",
+      "steps": [
+       "s:normal"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:normal",
+      "slogan": "Write the full fit as $y = X_1\\hat\\beta_1 + X_2\\hat\\beta_2 + \\hat e$ with $\\hat e$ orthogonal to the columns of $X$.",
+      "detail": "The minimizer makes $X\\hat\\beta$ the [orthogonal projection](c:orthogonal-projection) of $y$ onto the column space of $X$. So the residual $\\hat e$ satisfies the normal equations $X_1^\\top \\hat e = 0$ and $X_2^\\top \\hat e = 0$.",
+      "uses": [
+       "wd:Q3527215"
+      ]
+     },
+     {
+      "id": "s:annihilate",
+      "slogan": "Multiply the fit by $M_2$, which kills $X_2$ and fixes $\\hat e$.",
+      "detail": "The matrix $M_2$ is symmetric and idempotent with $M_2 X_2 = 0$, and $M_2 \\hat e = \\hat e$ because $X_2^\\top\\hat e = 0$. So $M_2 y = M_2 X_1 \\hat\\beta_1 + \\hat e$.",
+      "uses": []
+     },
+     {
+      "id": "s:orth",
+      "slogan": "Show that $\\hat e$ is orthogonal to the columns of $M_2 X_1$.",
+      "detail": "Symmetry of $M_2$ and step 2 give $(M_2 X_1)^\\top \\hat e = X_1^\\top M_2 \\hat e = X_1^\\top \\hat e$. This is $0$ by the normal equations of step 1.",
+      "uses": []
+     },
+     {
+      "id": "s:rank",
+      "slogan": "Show that $M_2 X_1$ has full column rank.",
+      "detail": "If $M_2 X_1 b = 0$, then $X_1 b$ lies in the column space of $X_2$, so $X_1 b - X_2 c = 0$ for some $c$. Full column rank of $X$ forces $b = 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:match",
+      "slogan": "Identify $\\hat\\beta_1$ as the unique least squares solution of the partial regression.",
+      "detail": "By steps 2 and 3, $b = \\hat\\beta_1$ solves the normal equations $(M_2 X_1)^\\top (M_2 y - M_2 X_1 b) = 0$. Step 4 makes this solution unique, and the residual of the partial regression is $\\hat e$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:normal",
+      "s:annihilate"
+     ],
+     [
+      "s:normal",
+      "s:orth"
+     ],
+     [
+      "s:annihilate",
+      "s:orth"
+     ],
+     [
+      "s:annihilate",
+      "s:match"
+     ],
+     [
+      "s:orth",
+      "s:match"
+     ],
+     [
+      "s:rank",
+      "s:match"
+     ]
+    ],
+    "conclusion": "s:match",
+    "concepts": {
+     "c:rank-of-a-matrix": "Full rank gives invertible Gram matrices and unique coefficients.",
+     "c:least-squares": "Both regressions are least squares fits, described by normal equations.",
+     "c:linear-regression": "The theorem compares the full regression with a partial one.",
+     "c:residual": "The full fit's residual is also the partial fit's residual.",
+     "c:projection-matrix": "The matrix $M_2$ removes the part explained by $X_2$.",
+     "c:orthogonal-projection": "The least squares fit is the orthogonal projection of $y$."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The projection proof, as in R. Davidson and J. G. MacKinnon, Econometric Theory and Methods, Oxford University Press, 2004, section 2.4."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q2226682",
+  "statement": "Every [C*-algebra](c:c-star-algebra) $A$ is isometrically *-isomorphic to a norm-closed *-subalgebra of the algebra $B(H)$ of [bounded operators](c:bounded-operator) on some [Hilbert space](c:hilbert-space) $H$.",
+  "hypotheses": [
+   {
+    "id": "h:cstar",
+    "text": "The algebra $A$ is a [C*-algebra](c:c-star-algebra): a Banach *-algebra with $\\|a^*a\\| = \\|a\\|^2$ for every $a \\in A$.",
+    "concept": "c:c-star-algebra"
+   }
+  ],
+  "conclusion": "Some *-homomorphism $\\pi\\colon A \\to B(H)$ has $\\|\\pi(a)\\| = \\|a\\|$ for every $a$, so $\\pi(A)$ is a closed *-subalgebra isomorphic to $A$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "gns-sum",
+    "name": "Sum of GNS representations",
+    "slogan": "Turn every [state](c:state-on-a-star-algebra) into a representation by the [GNS construction](c:gns-construction), and sum them into one isometric representation.",
+    "scope": "Unital $A$; a nonunital algebra sits isometrically in its [unitization](c:unitization-of-a-c-star-algebra), and restriction gives the result. For $A = 0$ take $H = 0$.",
+    "mechanisms": [
+     "m:quotient-construction",
+     "m:linear-extension",
+     "m:construction-explicit"
+    ],
+    "roles": [
+     {
+      "h": "h:cstar",
+      "why": "The C*-identity gives states that see the norm and bounds the GNS operators by $\\|a\\|$.",
+      "steps": [
+       "s:state",
+       "s:bounded",
+       "s:isometry"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:state",
+      "slogan": "Find for each $a \\in A$ a state $\\varphi$ with $\\varphi(a^*a) = \\|a\\|^2$.",
+      "detail": "Gelfand duality identifies the C*-algebra generated by $1$ and $a^*a$ with $C(\\sigma(a^*a))$, and $\\|a^*a\\| = \\|a\\|^2$ lies in $\\sigma(a^*a)$. Evaluation there has norm $1$; a Hahn-Banach extension $\\varphi$ with $\\|\\varphi\\| = \\varphi(1) = 1$ is a [positive functional](c:positive-linear-functional), hence a state.",
+      "uses": [
+       "nl:6363",
+       "wd:Q866116"
+      ]
+     },
+     {
+      "id": "s:gns",
+      "slogan": "Build the Hilbert space $H_\\varphi$ from the form $\\langle b, c\\rangle = \\varphi(c^*b)$.",
+      "detail": "Positivity of $\\varphi$ makes the form positive semidefinite. Dividing by its null space $N_\\varphi$ and completing gives a [Hilbert space](c:hilbert-space) $H_\\varphi$ with the cyclic vector $\\xi_\\varphi = [1]$.",
+      "uses": [
+       "nl:3764"
+      ]
+     },
+     {
+      "id": "s:bounded",
+      "slogan": "Bound the left multiplication operators by $\\|\\pi_\\varphi(a)\\| \\le \\|a\\|$.",
+      "detail": "In a C*-algebra $a^*a \\le \\|a\\|^2 1$, so $b^*a^*ab \\le \\|a\\|^2 b^*b$ and $\\varphi$ gives $\\|[ab]\\|^2 \\le \\|a\\|^2 \\|[b]\\|^2$. So $\\pi_\\varphi(a)[b] = [ab]$ extends to a bounded operator, and $\\pi_\\varphi$ is a *-homomorphism.",
+      "uses": []
+     },
+     {
+      "id": "s:sum",
+      "slogan": "Sum the representations over all states into $\\pi = \\bigoplus_\\varphi \\pi_\\varphi$.",
+      "detail": "On $H = \\bigoplus_\\varphi H_\\varphi$ the operators act coordinatewise, and step 3 gives $\\|\\pi(a)\\| \\le \\|a\\|$. So $\\pi\\colon A \\to B(H)$ is a *-homomorphism.",
+      "uses": []
+     },
+     {
+      "id": "s:isometry",
+      "slogan": "Show that $\\pi$ is isometric, so its image is a closed *-subalgebra isomorphic to $A$.",
+      "detail": "For the state $\\varphi$ of step 1, $\\|\\pi(a)\\xi_\\varphi\\|^2 = \\varphi(a^*a) = \\|a\\|^2$ with $\\|\\xi_\\varphi\\| = 1$, so $\\|\\pi(a)\\| \\ge \\|a\\|$. An isometry is injective, and its image is complete, hence closed.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:state",
+      "s:isometry"
+     ],
+     [
+      "s:gns",
+      "s:bounded"
+     ],
+     [
+      "s:bounded",
+      "s:sum"
+     ],
+     [
+      "s:sum",
+      "s:isometry"
+     ]
+    ],
+    "conclusion": "s:isometry",
+    "concepts": {
+     "c:c-star-algebra": "The C*-identity is what makes the sum representation isometric.",
+     "c:bounded-operator": "The algebra is realized by bounded operators on the sum space.",
+     "c:hilbert-space": "Each state gives a Hilbert space, and $H$ is their sum.",
+     "c:state-on-a-star-algebra": "States with $\\varphi(a^*a) = \\|a\\|^2$ detect the norm.",
+     "c:gns-construction": "The GNS construction turns each state into a representation.",
+     "c:unitization-of-a-c-star-algebra": "The unitization reduces the nonunital case to the unital case.",
+     "c:positive-linear-functional": "Positivity makes the GNS form an inner product after the quotient."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The Gelfand-Naimark-Segal proof, as in G. J. Murphy, C*-Algebras and Operator Theory, Academic Press, 1990, section 3.4."
+    }
+   }
+  ]
+ }
+]
