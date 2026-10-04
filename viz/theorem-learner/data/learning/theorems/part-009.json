@@ -1409,5 +1409,724 @@
     }
    }
   ]
+ },
+ {
+  "id": "wd:Q7888360",
+  "statement": "Let $M$ be a [finitely generated module](c:finitely-generated-module) over a [principal ideal domain](c:principal-ideal-domain) $R$. Then $M \\cong R^n \\oplus R/(p_1^{e_1}) \\oplus \\dots \\oplus R/(p_s^{e_s})$ with $n \\ge 0$, [irreducible](c:irreducible) elements $p_i$ and $e_i \\ge 1$. The rank $n$ and the list of ideals $(p_i^{e_i})$, up to order, are determined by $M$.",
+  "hypotheses": [
+   {
+    "id": "h:pid",
+    "text": "The ring $R$ is a [principal ideal domain](c:principal-ideal-domain).",
+    "concept": "c:principal-ideal-domain"
+   },
+   {
+    "id": "h:fg",
+    "text": "The [module](c:module) $M$ is finitely generated over $R$.",
+    "concept": "c:finitely-generated-module"
+   }
+  ],
+  "conclusion": "$M$ is a free module of unique rank plus a direct sum of cyclic modules $R/(p^e)$ that is unique up to order.",
+  "formal": {
+   "decl": "Module.equiv_free_prod_directSum",
+   "difference": "The declaration proves existence only; it does not state that the rank and the prime powers are unique."
+  },
+  "proofs": [
+   {
+    "id": "torsion-split",
+    "name": "Torsion part, free quotient and invariants",
+    "slogan": "Decompose the torsion submodule into cyclic primary parts, split off the free quotient, and read the rank and the exponents from invariants of $M$.",
+    "scope": "Existence (steps 1 to 4, the mathlib route) and uniqueness (step 5). The zero module is the case $n = s = 0$.",
+    "mechanisms": [
+     "m:local-global",
+     "m:strong-induction",
+     "m:dimension-count"
+    ],
+    "roles": [
+     {
+      "h": "h:pid",
+      "why": "Principal ideals give unique factorization of annihilators, freeness of torsion-free modules, and the field $R/(p)$.",
+      "steps": [
+       "s:primary",
+       "s:cyclic",
+       "s:free",
+       "s:invariants"
+      ]
+     },
+     {
+      "h": "h:fg",
+      "why": "Finite generation makes the torsion part finitely generated with nonzero annihilator, and the free quotient of finite rank.",
+      "steps": [
+       "s:primary",
+       "s:cyclic",
+       "s:free"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:primary",
+      "slogan": "Split the [torsion module](c:torsion-module) $T \\subseteq M$ into its $p$-primary parts.",
+      "detail": "The torsion elements form a submodule $T$, finitely generated because $R$ is Noetherian, so some $a \\ne 0$ kills $T$. Factor $a = u\\prod_i p_i^{k_i}$; the Chinese remainder theorem gives $T = \\bigoplus_i T[p_i^{k_i}]$.",
+      "uses": [
+       "wd:Q193878",
+       "wd:Q670235"
+      ]
+     },
+     {
+      "id": "s:cyclic",
+      "slogan": "Write each finitely generated $p$-primary module as a sum of cyclic modules $R/(p^e)$.",
+      "detail": "Choose $x$ of maximal order $p^e$. By induction on the number of generators, $T[p^\\infty]/Rx$ is a sum of cyclic modules, and each generator lifts to an element of the same order because $p^e$ kills everything. So $Rx \\cong R/(p^e)$ splits off.",
+      "uses": []
+     },
+     {
+      "id": "s:free",
+      "slogan": "Show that the quotient $M/T$ is a [free module](c:free-module) of finite rank $n$.",
+      "detail": "The quotient $M/T$ is finitely generated and torsion-free. Over a principal ideal domain such a module embeds in a finitely generated free module, and submodules of free modules are free, so $M/T \\cong R^n$.",
+      "uses": []
+     },
+     {
+      "id": "s:split",
+      "slogan": "Split the quotient map $M \\to M/T$ because free modules are projective.",
+      "detail": "A free module is a [projective module](c:projective-module), so the identity of $M/T \\cong R^n$ lifts to a section $R^n \\to M$. The splitting lemma gives $M \\cong T \\oplus R^n$, and steps 1 and 2 decompose $T$.",
+      "uses": [
+       "nm:splitting-lemma"
+      ]
+     },
+     {
+      "id": "s:invariants",
+      "slogan": "Compute the rank and the number of summands $R/(p^e)$ with $e \\ge j$ as invariants.",
+      "detail": "For any such decomposition, $n = \\dim_K(K \\otimes_R M)$ with $K$ the [field of fractions](c:field-of-fractions), and the torsion part is $T$. For each irreducible $p$, $\\dim_{R/(p)}\\big(p^{j-1}T/p^jT\\big)$ counts the summands $R/(p^e)$ with $e \\ge j$, since other primes act invertibly.",
+      "uses": []
+     },
+     {
+      "id": "s:unique",
+      "slogan": "Combine existence with the invariants to get uniqueness of the decomposition.",
+      "detail": "Step 4 gives the decomposition. The numbers of step 5 depend only on $M$, and their differences in $j$ give the multiplicity of each $R/(p^e)$, so $n$ and the list $(p_i^{e_i})$ are unique up to order and units.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:primary",
+      "s:cyclic"
+     ],
+     [
+      "s:cyclic",
+      "s:split"
+     ],
+     [
+      "s:free",
+      "s:split"
+     ],
+     [
+      "s:split",
+      "s:unique"
+     ],
+     [
+      "s:invariants",
+      "s:unique"
+     ]
+    ],
+    "conclusion": "s:unique",
+    "concepts": {
+     "c:finitely-generated-module": "Finite generation keeps every piece finite and the rank finite.",
+     "c:principal-ideal-domain": "The PID property drives factorization, freeness and the residue fields.",
+     "c:irreducible": "Irreducible elements are the primes of the cyclic summands.",
+     "c:module": "The theorem classifies modules over the ring.",
+     "c:torsion-module": "The torsion submodule carries the cyclic part.",
+     "c:free-module": "The torsion-free quotient is free and gives $R^n$.",
+     "c:projective-module": "Projectivity of free modules splits the extension.",
+     "c:field-of-fractions": "The rank is a dimension over the field of fractions."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Module.equiv_free_prod_directSum",
+     "follows": true,
+     "note": "mathlib uses equiv_directSum_of_isTorsion (via Submodule.exists_isInternal_prime_power_torsion_of_pid and torsion_by_prime_power_decomposition), Module.basisOfFiniteTypeTorsionFree' and Module.projective_lifting_property; the uniqueness step goes beyond the declaration."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:9630",
+  "statement": "Let $R$ be a [real closed field](c:is-real-closed), such as $\\mathbb{R}$. If $S \\subseteq R^{n+1}$ is a [semialgebraic set](c:semialgebraic-set), then its image under the projection $(x_1, \\dots, x_{n+1}) \\mapsto (x_1, \\dots, x_n)$ is a semialgebraic subset of $R^n$.",
+  "hypotheses": [
+   {
+    "id": "h:real-closed",
+    "text": "The field $R$ is a [real closed field](c:is-real-closed).",
+    "concept": "c:is-real-closed"
+   },
+   {
+    "id": "h:semialgebraic",
+    "text": "The set $S$ is a finite boolean combination of sets $\\{P > 0\\}$ and $\\{P = 0\\}$ with [polynomials](c:polynomial) $P$ over $R$.",
+    "concept": "c:semialgebraic-set"
+   }
+  ],
+  "conclusion": "The projection of $S$ to $R^n$ is semialgebraic.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "sign-tables",
+    "name": "Sign tables with parameters",
+    "slogan": "Show that the sign table of a family of polynomials in the last variable depends only on the signs of finitely many polynomials in the parameters.",
+    "scope": "An outline of the proof in Bochnak, Coste and Roy, which follows Hörmander; the induction on degrees in step 3 rests on the cited work.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:strong-induction",
+     "m:case-analysis"
+    ],
+    "roles": [
+     {
+      "h": "h:real-closed",
+      "why": "Real closedness gives polynomials the intermediate value property, so signs change only at roots.",
+      "steps": [
+       "s:sign-table"
+      ]
+     },
+     {
+      "h": "h:semialgebraic",
+      "why": "The finite boolean description of $S$ supplies the finite family of polynomials.",
+      "steps": [
+       "s:reduce"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:reduce",
+      "slogan": "Reduce to one basic set given by sign conditions on polynomials $P_1, \\dots, P_s$.",
+      "detail": "A [semialgebraic set](c:semialgebraic-set) is a finite union of sets $\\{(x, y) : \\operatorname{sign}P_j(x, y) = \\epsilon_j \\text{ for all } j\\}$, and projection commutes with finite unions. So it suffices to describe the set of $x \\in R^n$ for which some $y \\in R$ meets the sign conditions.",
+      "uses": []
+     },
+     {
+      "id": "s:close",
+      "slogan": "Enlarge the family by derivatives in $y$ and by remainders of Euclidean division.",
+      "detail": "Split the parameter space into finitely many semialgebraic pieces by the vanishing of leading coefficients, so that degrees in $y$ are fixed on each piece. On each piece add the derivatives $\\partial_y P_j$ and the remainders of divisions; degrees drop, so the family stays finite with coefficients [polynomial](c:polynomial) in $x$.",
+      "uses": []
+     },
+     {
+      "id": "s:sign-table",
+      "slogan": "Prove by induction on degree that signs of polynomials in $x$ fix the sign table.",
+      "detail": "The sign table lists the signs of all members at their ordered real roots and on the intervals between. In a [real closed field](c:is-real-closed) the signs of $P$ there follow from the table of $P'$ and the lower-degree remainders, so by induction finitely many polynomials in $x$ fix the table.",
+      "uses": []
+     },
+     {
+      "id": "s:finite",
+      "slogan": "Describe the parameters with a given sign table as a semialgebraic set.",
+      "detail": "Each realizable sign table corresponds to a boolean combination of sign conditions on the polynomials in $x$ from step 3. There are finitely many tables, so these sets form a finite partition of $R^n$ into semialgebraic sets.",
+      "uses": []
+     },
+     {
+      "id": "s:project",
+      "slogan": "Take the union of the pieces whose sign table contains the required sign condition.",
+      "detail": "A point $x$ lies in the projection exactly when its sign table has a root or an interval where each $P_j$ has sign $\\epsilon_j$. So the projection is a finite union of pieces from step 4; applied once per quantifier this gives [quantifier elimination](c:elimination-of-quantifiers).",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:reduce",
+      "s:close"
+     ],
+     [
+      "s:close",
+      "s:sign-table"
+     ],
+     [
+      "s:sign-table",
+      "s:finite"
+     ],
+     [
+      "s:finite",
+      "s:project"
+     ],
+     [
+      "s:reduce",
+      "s:project"
+     ]
+    ],
+    "conclusion": "s:project",
+    "concepts": {
+     "c:is-real-closed": "Real closedness makes sign tables depend only on algebraic data.",
+     "c:semialgebraic-set": "Semialgebraic sets are the class shown closed under projection.",
+     "c:polynomial": "All conditions are signs of polynomials in the parameters.",
+     "c:elimination-of-quantifiers": "Projection of semialgebraic sets is the geometric form of quantifier elimination."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "J. Bochnak, M. Coste and M.-F. Roy, Real Algebraic Geometry, Ergebnisse der Mathematik und ihrer Grenzgebiete 36, Springer, 1998, chapters 1 and 2",
+     "url": "https://doi.org/10.1007/978-3-662-03718-8",
+     "note": "The book proves the Tarski-Seidenberg principle by Hörmander's parametrized sign tables and deduces the projection theorem for semialgebraic sets."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q620602",
+  "statement": "Let $N$ particles with masses $m_k$ move by Newton's law $m_k\\ddot{\\mathbf r}_k = \\mathbf F_k$, with bounded positions and velocities. If the [time averages](c:time-average) of the kinetic energy $T$ and of $\\sum_k \\mathbf F_k\\cdot\\mathbf r_k$ exist, then $2\\langle T\\rangle = -\\langle\\sum_k \\mathbf F_k\\cdot\\mathbf r_k\\rangle$. If $\\mathbf F_k = -\\nabla_k V$ with $V$ [homogeneous](c:homogeneous-function) of degree $n$, then $2\\langle T\\rangle = n\\langle V\\rangle$.",
+  "hypotheses": [
+   {
+    "id": "h:newton",
+    "text": "Each particle obeys $m_k\\ddot{\\mathbf r}_k = \\mathbf F_k$, and $T = \\frac12\\sum_k m_k|\\dot{\\mathbf r}_k|^2$.",
+    "concept": null
+   },
+   {
+    "id": "h:bounded",
+    "text": "The positions and velocities are [bounded functions](c:bounded-function) of $t \\ge 0$.",
+    "concept": "c:bounded-function"
+   },
+   {
+    "id": "h:averages",
+    "text": "The [time averages](c:time-average) $\\langle g\\rangle = \\lim_{\\tau \\to \\infty}\\frac1\\tau\\int_0^\\tau g\\,dt$ of $T$ and of $\\sum_k \\mathbf F_k\\cdot\\mathbf r_k$ exist.",
+    "concept": "c:time-average"
+   },
+   {
+    "id": "h:homogeneous",
+    "text": "For the second claim, $\\mathbf F_k = -\\nabla_k V$ with $V$ a differentiable [homogeneous function](c:homogeneous-function) of degree $n$.",
+    "concept": "c:homogeneous-function"
+   }
+  ],
+  "conclusion": "$2\\langle T\\rangle = -\\langle\\sum_k \\mathbf F_k\\cdot\\mathbf r_k\\rangle$, and $2\\langle T\\rangle = n\\langle V\\rangle$ for a homogeneous potential of degree $n$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "virial-derivative",
+    "name": "Derivative of the virial",
+    "slogan": "Differentiate the virial $G = \\sum_k m_k\\dot{\\mathbf r}_k\\cdot\\mathbf r_k$, average over time, and use boundedness to make the average of $\\dot G$ vanish.",
+    "scope": "Both claims; the second uses the homogeneity hypothesis. For gravity or Coulomb forces $n = -1$, so $2\\langle T\\rangle = -\\langle V\\rangle$.",
+    "mechanisms": [
+     "m:fundamental-theorem-calculus",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:newton",
+      "why": "Newton's law replaces $m_k\\ddot{\\mathbf r}_k$ by the force in $\\dot G$.",
+      "steps": [
+       "s:derivative"
+      ]
+     },
+     {
+      "h": "h:bounded",
+      "why": "Bounded positions and velocities make the virial $G$ bounded.",
+      "steps": [
+       "s:bounded"
+      ]
+     },
+     {
+      "h": "h:averages",
+      "why": "Existence of the averages lets the limit split into two averages.",
+      "steps": [
+       "s:limit"
+      ]
+     },
+     {
+      "h": "h:homogeneous",
+      "why": "Homogeneity turns the virial of the forces into $-nV$.",
+      "steps": [
+       "s:euler"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:derivative",
+      "slogan": "Differentiate the virial $G = \\sum_k m_k\\dot{\\mathbf r}_k\\cdot\\mathbf r_k$ along the motion.",
+      "detail": "The product rule gives $\\dot G = \\sum_k m_k|\\dot{\\mathbf r}_k|^2 + \\sum_k m_k\\ddot{\\mathbf r}_k\\cdot\\mathbf r_k$. Newton's law turns this into $\\dot G = 2T + \\sum_k \\mathbf F_k\\cdot\\mathbf r_k$.",
+      "uses": []
+     },
+     {
+      "id": "s:average",
+      "slogan": "Average the identity for $\\dot G$ over the interval $[0, \\tau]$.",
+      "detail": "The fundamental theorem of calculus gives $\\frac{G(\\tau) - G(0)}{\\tau} = \\frac1\\tau\\int_0^\\tau 2T\\,dt + \\frac1\\tau\\int_0^\\tau \\sum_k \\mathbf F_k\\cdot\\mathbf r_k\\,dt$ for every $\\tau > 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:bounded",
+      "slogan": "Bound the virial by the bounds on positions and velocities.",
+      "detail": "If $|\\mathbf r_k| \\le L$ and $|\\dot{\\mathbf r}_k| \\le W$ for all $t \\ge 0$, then $|G| \\le \\sum_k m_k LW$. So $|G(\\tau) - G(0)|/\\tau \\le 2\\sum_k m_k LW/\\tau$, which tends to $0$.",
+      "uses": []
+     },
+     {
+      "id": "s:limit",
+      "slogan": "Let $\\tau \\to \\infty$ in the averaged identity to get the first claim.",
+      "detail": "The left side of step 2 tends to $0$ by step 3. The right side tends to $2\\langle T\\rangle + \\langle\\sum_k \\mathbf F_k\\cdot\\mathbf r_k\\rangle$ because both [time averages](c:time-average) exist, so $2\\langle T\\rangle = -\\langle\\sum_k \\mathbf F_k\\cdot\\mathbf r_k\\rangle$.",
+      "uses": []
+     },
+     {
+      "id": "s:euler",
+      "slogan": "Rewrite the virial of the forces with Euler's theorem on homogeneous functions.",
+      "detail": "For a [homogeneous function](c:homogeneous-function) $V$ of degree $n$, Euler's theorem gives $\\sum_k \\mathbf r_k\\cdot\\nabla_k V = nV$, so $\\sum_k \\mathbf F_k\\cdot\\mathbf r_k = -nV$. Step 4 then gives $2\\langle T\\rangle = n\\langle V\\rangle$.",
+      "uses": [
+       "wd:Q25378679"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:derivative",
+      "s:average"
+     ],
+     [
+      "s:average",
+      "s:limit"
+     ],
+     [
+      "s:bounded",
+      "s:limit"
+     ],
+     [
+      "s:limit",
+      "s:euler"
+     ]
+    ],
+    "conclusion": "s:euler",
+    "concepts": {
+     "c:time-average": "The theorem is an identity between long-time averages.",
+     "c:homogeneous-function": "Homogeneity of the potential gives the ratio $n$ between averages.",
+     "c:bounded-function": "Boundedness of the motion kills the average of $\\dot G$."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The classical argument of Clausius, as in H. Goldstein, Classical Mechanics, section 3.4 (the virial theorem)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q850495",
+  "statement": "Let $A_1, \\dots, A_n$ be linear combinations of bosonic [creation and annihilation operators](c:creation-and-annihilation-operators) with the [canonical commutation relations](c:canonical-commutation-relation). Then $A_1\\cdots A_n$ is the sum over all sets of disjoint pairs $i < j$ of the product of the contractions $\\langle A_iA_j\\rangle = A_iA_j - {:}A_iA_j{:}$ and the [normal-ordered](c:normal-ordering) product of the unpaired $A_l$. So $\\langle 0|A_1\\cdots A_n|0\\rangle$ is a sum over [perfect matchings](c:perfect-matching).",
+  "hypotheses": [
+   {
+    "id": "h:ccr",
+    "text": "The operators $a_1, \\dots, a_m$ satisfy $[a_i, a_j^\\dagger] = \\delta_{ij}$ and $[a_i, a_j] = [a_i^\\dagger, a_j^\\dagger] = 0$.",
+    "concept": "c:canonical-commutation-relation"
+   },
+   {
+    "id": "h:linear",
+    "text": "Each $A_l$ is a linear combination of the [creation and annihilation operators](c:creation-and-annihilation-operators) $a_i^\\dagger$ and $a_i$.",
+    "concept": "c:creation-and-annihilation-operators"
+   },
+   {
+    "id": "h:vacuum",
+    "text": "For the last claim, $|0\\rangle$ is a unit vector with $a_i|0\\rangle = 0$ for every $i$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "Wick's expansion of $A_1\\cdots A_n$ holds, and $\\langle 0|A_1\\cdots A_n|0\\rangle$ is the sum over perfect matchings of products of contractions, so it is $0$ for odd $n$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "induction-on-length",
+    "name": "Induction on the number of operators",
+    "slogan": "Split each operator into creation and annihilation parts, move one new operator into normal order, and induct on the number of factors.",
+    "scope": "Bosonic operators and ordinary products; the fermionic and time-ordered forms follow the same induction with signs or time order. The case $n = 0$ is the empty product $1$.",
+    "mechanisms": [
+     "m:induction",
+     "m:bijection",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:ccr",
+      "why": "The relations make each commutator $[A_i^-, A_j^+]$ a scalar, so contractions are numbers.",
+      "steps": [
+       "s:split",
+       "s:lemma"
+      ]
+     },
+     {
+      "h": "h:linear",
+      "why": "Linearity lets each operator split into one creation part and one annihilation part.",
+      "steps": [
+       "s:split"
+      ]
+     },
+     {
+      "h": "h:vacuum",
+      "why": "Annihilation parts kill the vacuum, so normal-ordered terms have zero expectation.",
+      "steps": [
+       "s:vacuum"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:split",
+      "slogan": "Split each $A_l$ into a creation part $A_l^+$ and an annihilation part $A_l^-$.",
+      "detail": "[Normal ordering](c:normal-ordering) puts every creation part to the left of every annihilation part, extended multilinearly. Expanding $A_iA_j$ gives $A_iA_j - {:}A_iA_j{:} = [A_i^-, A_j^+]$, a scalar by the [canonical commutation relations](c:canonical-commutation-relation); this is the contraction $\\langle A_iA_j\\rangle$.",
+      "uses": []
+     },
+     {
+      "id": "s:lemma",
+      "slogan": "Move one more operator $B$ into a normal-ordered product ${:}A_1\\cdots A_k{:}$.",
+      "detail": "The part $B^-$ already stands in normal position on the right. The part $B^+$ moves left past each $A_l^-$ by $A_l^-B^+ = B^+A_l^- + \\langle A_lB\\rangle$, so ${:}A_1\\cdots A_k{:}\\,B = {:}A_1\\cdots A_kB{:} + \\sum_l \\langle A_lB\\rangle\\,{:}A_1\\cdots\\widehat{A_l}\\cdots A_k{:}$.",
+      "uses": []
+     },
+     {
+      "id": "s:induct",
+      "slogan": "Multiply the expansion for $n$ factors on the right by $A_{n+1}$.",
+      "detail": "Assume the expansion for $A_1\\cdots A_n$ and multiply each term by $A_{n+1}$. Step 2 splits each term into one term with $n+1$ unpaired and one term for each unpaired $l$ now paired with $n+1$.",
+      "uses": []
+     },
+     {
+      "id": "s:match",
+      "slogan": "Match the new terms with the pairings of $\\{1, \\dots, n+1\\}$.",
+      "detail": "A set of disjoint pairs in $\\{1, \\dots, n+1\\}$ leaves $n+1$ unpaired or pairs it with one $l$; removing that pair gives a unique pairing of $\\{1, \\dots, n\\}$ with $l$ unpaired. So every pairing appears exactly once, which proves the expansion for $n+1$ factors.",
+      "uses": []
+     },
+     {
+      "id": "s:vacuum",
+      "slogan": "Take the vacuum expectation, which removes every normal-ordered product of positive length.",
+      "detail": "In $\\langle 0|{:}B_1\\cdots B_k{:}|0\\rangle$ with $k \\ge 1$, an annihilation part on the right kills $|0\\rangle$ or a creation part on the left kills $\\langle 0|$. Only pairings with no unpaired index survive, the [perfect matchings](c:perfect-matching), and for odd $n$ there are none.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:split",
+      "s:lemma"
+     ],
+     [
+      "s:lemma",
+      "s:induct"
+     ],
+     [
+      "s:induct",
+      "s:match"
+     ],
+     [
+      "s:match",
+      "s:vacuum"
+     ]
+    ],
+    "conclusion": "s:vacuum",
+    "concepts": {
+     "c:creation-and-annihilation-operators": "Each factor splits into a creation and an annihilation part.",
+     "c:canonical-commutation-relation": "These relations make every contraction a scalar.",
+     "c:normal-ordering": "Normal-ordered products are the building blocks of the expansion.",
+     "c:perfect-matching": "Vacuum expectations keep only the complete pairings."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard induction on the number of operators, as in G. C. Wick, The evaluation of the collision matrix, Physical Review 80 (1950), 268-272."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1551745",
+  "statement": "Let $A$ ($n \\times n$) and $C$ ($k \\times k$) be invertible matrices over a field, $U$ an $n \\times k$ and $V$ a $k \\times n$ matrix, with $C^{-1} + VA^{-1}U$ invertible. Then the [low-rank update](c:low-rank-update) $A + UCV$ is invertible, and its [inverse](c:matrix-inverse) is $(A + UCV)^{-1} = A^{-1} - A^{-1}U(C^{-1} + VA^{-1}U)^{-1}VA^{-1}$.",
+  "hypotheses": [
+   {
+    "id": "h:a",
+    "text": "The $n \\times n$ matrix $A$ is invertible.",
+    "concept": "c:matrix-inverse"
+   },
+   {
+    "id": "h:c",
+    "text": "The $k \\times k$ matrix $C$ is invertible.",
+    "concept": "c:matrix-inverse"
+   },
+   {
+    "id": "h:capacitance",
+    "text": "The $k \\times k$ matrix $S = C^{-1} + VA^{-1}U$ is invertible.",
+    "concept": null
+   }
+  ],
+  "conclusion": "$A + UCV$ is invertible with inverse $A^{-1} - A^{-1}US^{-1}VA^{-1}$.",
+  "formal": {
+   "decl": "Matrix.invOf_add_mul_mul",
+   "difference": "The declaration works over any ring and also assumes that $A + UCV$ is invertible; the construction Matrix.invertibleAddMulMul shows that this follows from the other hypotheses."
+  },
+  "proofs": [
+   {
+    "id": "direct-check",
+    "name": "Direct multiplication",
+    "slogan": "Multiply $A + UCV$ by the proposed inverse on both sides and simplify with $C^{-1} + VA^{-1}U = S$.",
+    "scope": "The whole identity, over any ring, since only associativity and the given inverses are used.",
+    "mechanisms": [
+     "m:algebraic-identity",
+     "m:construction-explicit"
+    ],
+    "roles": [
+     {
+      "h": "h:a",
+      "why": "The inverse $A^{-1}$ appears in the candidate and cancels $A$.",
+      "steps": [
+       "s:candidate",
+       "s:right",
+       "s:left"
+      ]
+     },
+     {
+      "h": "h:c",
+      "why": "The inverse $C^{-1}$ lets $UC(C^{-1} + VA^{-1}U)$ expand to $U + UCVA^{-1}U$.",
+      "steps": [
+       "s:right",
+       "s:left"
+      ]
+     },
+     {
+      "h": "h:capacitance",
+      "why": "The inverse $S^{-1}$ appears in the candidate and cancels $S$.",
+      "steps": [
+       "s:candidate",
+       "s:right",
+       "s:left"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:candidate",
+      "slogan": "Set $X = A^{-1} - A^{-1}US^{-1}VA^{-1}$ with $S = C^{-1} + VA^{-1}U$.",
+      "detail": "Both $A^{-1}$ and $S^{-1}$ exist by hypothesis, so $X$ is a well-defined $n \\times n$ matrix. It is the candidate for the [inverse](c:matrix-inverse) of $A + UCV$.",
+      "uses": []
+     },
+     {
+      "id": "s:right",
+      "slogan": "Show that $(A + UCV)X$ is the identity matrix.",
+      "detail": "Expanding gives $I + UCVA^{-1} - US^{-1}VA^{-1} - UCVA^{-1}US^{-1}VA^{-1}$. The last two terms are $-UC(C^{-1} + VA^{-1}U)S^{-1}VA^{-1} = -UCVA^{-1}$, so the product is the [identity matrix](c:identity-matrix).",
+      "uses": []
+     },
+     {
+      "id": "s:left",
+      "slogan": "Show that $X(A + UCV)$ is the identity matrix.",
+      "detail": "Expanding gives $I + A^{-1}UCV - A^{-1}US^{-1}V - A^{-1}US^{-1}VA^{-1}UCV$. The last two terms are $-A^{-1}US^{-1}(C^{-1} + VA^{-1}U)CV = -A^{-1}UCV$, so the product is $I$.",
+      "uses": []
+     },
+     {
+      "id": "s:unique",
+      "slogan": "Conclude that $X$ is the unique inverse of $A + UCV$.",
+      "detail": "A matrix with a left and a right inverse is invertible, and its inverse is unique. So $A + UCV$ is invertible and $(A + UCV)^{-1} = X$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:candidate",
+      "s:right"
+     ],
+     [
+      "s:candidate",
+      "s:left"
+     ],
+     [
+      "s:right",
+      "s:unique"
+     ],
+     [
+      "s:left",
+      "s:unique"
+     ]
+    ],
+    "conclusion": "s:unique",
+    "concepts": {
+     "c:low-rank-update": "The rank-$k$ update needs only the new $k \\times k$ inverse $S^{-1}$.",
+     "c:matrix-inverse": "The identity expresses one inverse through two others.",
+     "c:identity-matrix": "Both products of the candidate with $A + UCV$ reduce to the identity."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Matrix.invOf_add_mul_mul",
+     "follows": true,
+     "note": "mathlib builds Matrix.invertibleAddMulMul from add_mul_mul_invOf_mul_eq_one and add_mul_mul_invOf_mul_eq_one', then uses uniqueness of the inverse."
+    }
+   },
+   {
+    "id": "block-elimination",
+    "name": "Two block eliminations",
+    "slogan": "Invert one block matrix by eliminating either diagonal block first, and compare the two top left blocks.",
+    "scope": "The whole identity, including the invertibility of $A + UCV$, which comes out of the block factorization.",
+    "mechanisms": [
+     "m:matrix-factorization",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:a",
+      "why": "Eliminating with $A$ needs $A^{-1}$.",
+      "steps": [
+       "s:eliminate-a"
+      ]
+     },
+     {
+      "h": "h:c",
+      "why": "The lower right block $-C^{-1}$ must exist and be invertible for the second elimination.",
+      "steps": [
+       "s:block",
+       "s:eliminate-c"
+      ]
+     },
+     {
+      "h": "h:capacitance",
+      "why": "The [Schur complement](c:schur-complement) of $A$ is $-S$, which must be invertible.",
+      "steps": [
+       "s:eliminate-a"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:block",
+      "slogan": "Form the [block matrix](c:partitioned-matrix) $M$ with blocks $A$, $U$, $V$ and $-C^{-1}$.",
+      "detail": "Let $M = \\begin{pmatrix} A & U \\\\ V & -C^{-1}\\end{pmatrix}$, a square matrix of size $n + k$. Its two diagonal blocks are invertible.",
+      "uses": []
+     },
+     {
+      "id": "s:eliminate-a",
+      "slogan": "Eliminate with $A$ and get the top left block of $M^{-1}$.",
+      "detail": "Block elimination gives $M = \\begin{pmatrix} I & 0 \\\\ VA^{-1} & I\\end{pmatrix}\\begin{pmatrix} A & 0 \\\\ 0 & -S\\end{pmatrix}\\begin{pmatrix} I & A^{-1}U \\\\ 0 & I\\end{pmatrix}$, with [Schur complement](c:schur-complement) $-S$. All factors are invertible, so $M$ is, and the top left block of $M^{-1}$ is $A^{-1} - A^{-1}US^{-1}VA^{-1}$.",
+      "uses": []
+     },
+     {
+      "id": "s:eliminate-c",
+      "slogan": "Eliminate with $-C^{-1}$ and identify the top left block of $M^{-1}$ again.",
+      "detail": "Elimination with $D = -C^{-1}$ gives $M = \\begin{pmatrix} I & UD^{-1} \\\\ 0 & I\\end{pmatrix}\\begin{pmatrix} A + UCV & 0 \\\\ 0 & D\\end{pmatrix}\\begin{pmatrix} I & 0 \\\\ D^{-1}V & I\\end{pmatrix}$. As $M$ is invertible, so is $A + UCV$, and the top left block of $M^{-1}$ is $(A + UCV)^{-1}$.",
+      "uses": []
+     },
+     {
+      "id": "s:compare",
+      "slogan": "Equate the two expressions for the top left block of $M^{-1}$.",
+      "detail": "Steps 2 and 3 compute the same block of the same [inverse](c:matrix-inverse) $M^{-1}$. So $(A + UCV)^{-1} = A^{-1} - A^{-1}US^{-1}VA^{-1}$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:block",
+      "s:eliminate-a"
+     ],
+     [
+      "s:block",
+      "s:eliminate-c"
+     ],
+     [
+      "s:eliminate-a",
+      "s:eliminate-c"
+     ],
+     [
+      "s:eliminate-a",
+      "s:compare"
+     ],
+     [
+      "s:eliminate-c",
+      "s:compare"
+     ]
+    ],
+    "conclusion": "s:compare",
+    "concepts": {
+     "c:low-rank-update": "The block view explains why the update costs only a $k \\times k$ inverse.",
+     "c:matrix-inverse": "Both sides are blocks of one inverse matrix.",
+     "c:schur-complement": "Each elimination produces a Schur complement, one of them $A + UCV$.",
+     "c:partitioned-matrix": "The bordered block matrix holds all four pieces of the identity."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Block Gaussian elimination with Schur complements, one of the derivations surveyed in H. V. Henderson and S. R. Searle, On deriving the inverse of a sum of matrices, SIAM Review 23 (1981), 53-60."
+    }
+   }
+  ]
  }
 ]
