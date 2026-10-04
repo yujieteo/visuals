@@ -41,6 +41,7 @@
     /** @type {any} */ session: null,
     state: "off",            // off | loading | starting | ready | failed
     /** @type {Record<string, Blob> | null} */ files: null,
+    /** @type {Promise<Record<string, Blob>> | null} */ loading: null,
     /** @type {Promise<void> | null} */ starting: null,
     /** @type {{cellId: string, runId: string, resolve: (status: string) => void} | null} */ running: null,
     busy: false,
@@ -60,24 +61,26 @@
     updateControls();
   }
 
-  async function loadRuntime() {
-    if (py.files) return py.files;
-    if (FORM === "portable") {
-      setPython("loading", "reading the embedded runtime");
-      py.files = await runtime.loadEmbedded(manifest, document);
-    } else {
-      setPython("loading", `loading the runtime, 0 of ${mb(RUNTIME_BYTES)}`);
-      py.files = await runtime.loadFetched(manifest, (done, total) => setPython("loading", `loading the runtime, ${mb(done)} of ${mb(total)}`));
+  /** Load the runtime files once; a second caller during the load gets the same promise. @param {(done: number, total: number) => void} progress */
+  function loadRuntime(progress) {
+    if (py.files) return Promise.resolve(py.files);
+    if (!py.loading) {
+      py.loading = (FORM === "portable" ? runtime.loadEmbedded(manifest, document) : runtime.loadFetched(manifest, progress))
+        .then((files) => (py.files = files))
+        .finally(() => { py.loading = null; });
     }
-    return py.files;
+    return py.loading;
   }
 
   /** Start Python for the active notebook, once; the promise resolves when the kernel is ready and has the saved files. */
   function startPython() {
     if (py.starting) return py.starting;
     const notebookId = app.record && app.record.id;
+    const generation = py.generation;
     py.starting = (async () => {
-      const files = await loadRuntime();
+      if (!py.files) setPython("loading", FORM === "portable" ? "reading the embedded runtime" : `loading the runtime, 0 of ${mb(RUNTIME_BYTES)}`);
+      const files = await loadRuntime((done, total) => setPython("loading", `loading the runtime, ${mb(done)} of ${mb(total)}`));
+      if (generation !== py.generation) return;
       setPython("starting", "starting");
       const started = performance.now();
       await new Promise((resolve, reject) => {
@@ -85,12 +88,13 @@
         py.session = session;
       });
       py.readySeconds = (performance.now() - started) / 1000;
-      if (!app.record || app.record.id !== notebookId) return;
+      if (generation !== py.generation || !app.record || app.record.id !== notebookId) return;
       await writeSavedFiles(app.files);
       setPython("ready", `ready (Python ${py.info.python}, Pyodide ${py.info.pyodide}; started in ${py.readySeconds.toFixed(1)} s)`);
       $("#start-panel").hidden = true;
     })();
     py.starting.catch((error) => {
+      if (generation !== py.generation) return;
       py.starting = null;
       if (py.session) py.session.terminate();
       py.session = null;
@@ -603,7 +607,7 @@
     await renderNotebookList();
     if (app.store.kind === "memory") setSave("in this tab only. Use Save HTML copy or Export .ipynb to keep changes.", "memory");
     else { await save(); }
-    if (FORM === "portable" || py.files) startPython().catch(() => {});
+    if (FORM === "portable" || py.files || py.loading) startPython().catch(() => {});
     else startPrompt();
   }
 
@@ -768,10 +772,7 @@
 
   /** The runtime files as base64, from memory, the embedded blocks or the site. @param {(text: string) => void} progress */
   async function runtimeBase64(progress) {
-    if (!py.files) {
-      if (FORM === "portable") py.files = await runtime.loadEmbedded(manifest, document);
-      else py.files = await runtime.loadFetched(manifest, (done, total) => progress(`Loading the runtime: ${mb(done)} of ${mb(total)}`));
-    }
+    await loadRuntime((done, total) => progress(`Loading the runtime: ${mb(done)} of ${mb(total)}`));
     const out = [];
     for (const file of manifest.downloads) {
       const blob = py.files[runtime.fileName(file.path)];
