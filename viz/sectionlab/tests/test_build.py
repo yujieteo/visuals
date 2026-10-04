@@ -31,11 +31,6 @@ class BuildTest(unittest.TestCase):
                 run = subprocess.run([sys.executable, *args], cwd=copy, capture_output=True, text=True)
                 self.assertEqual(run.returncode, 0, f"{' '.join(args)}: {run.stderr}")
 
-    def test_page_is_not_labelled_as_a_code_check(self):
-        html = (ROOT / "index.html").read_text(encoding="utf-8")
-        self.assertIn("Verify independently", html)
-        self.assertNotRegex(html.lower(), r"design[- ]code compliant|code[- ]compliant results")
-
 
 if __name__ == "__main__":
     unittest.main()

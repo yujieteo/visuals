@@ -77,11 +77,9 @@ test("the WebMCP tools are read-only and answer from the engine", async () => {
   assert.equal(st.passed, st.total);
 });
 
-test("one self-contained file: no network, no external scripts or fonts, no TeX library, canonical URL", () => {
+test("no TeX library, a canonical URL, and the dark, reduced-motion and viewport settings", () => {
   assert.match(html, /<link rel="canonical" href="https:\/\/teoyujie\.org\/visuals\/generating-functions">/);
-  const urls = [...html.matchAll(/(?:src|href)="(https?:[^"]+)"/g)].map((m) => m[1]);
-  assert.deepEqual(urls, ["https://teoyujie.org/visuals/generating-functions"], "the only absolute URL attribute is the canonical link");
-  for (const bad of [/\bfetch\(/, /XMLHttpRequest/, /new WebSocket/, /sendBeacon/, /EventSource/, /import\(/, /@import/, /MathJax/, /katex/i, /<link[^>]+stylesheet/, /<script[^>]+src=/]) assert.doesNotMatch(html, bad, String(bad));
+  for (const bad of [/MathJax/, /katex/i]) assert.doesNotMatch(html, bad, String(bad));
   assert.match(html, /prefers-color-scheme:dark/);
   assert.match(html, /prefers-reduced-motion:reduce/);
   assert.match(html, /<meta name="viewport"/);

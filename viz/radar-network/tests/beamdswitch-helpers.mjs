@@ -10,11 +10,6 @@ export const read = (path) => readFileSync(new URL(path, root), "utf8");
 const skeleton = read("tests/fixtures/beamdswitch/report-template.md");
 export const SECTIONS = [...skeleton.matchAll(/^# (.+)$/gm)].map((m) => m[1]);
 
-export function assertTemplateCopy(slug) {
-  assert.equal(read("beamdswitch.js"), read("tests/fixtures/beamdswitch/beamdswitch.js"),
-    `tests/fixtures/beamdswitch/beamdswitch.js and beamdswitch.js must stay identical (${slug})`);
-}
-
 export function assertInlined(html, id, source, what) {
   const m = new RegExp(`<script id="${id}">\\n([\\s\\S]*?)</script>`).exec(html);
   assert.ok(m, `${what}: the page has a <script id="${id}"> block`);

@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
-import { checkDeck, plotsOf, standIn, Element, TEMPLATE } from "./beamdswitch-deck-checks.mjs";
+import { checkDeck, plotsOf, standIn, Element } from "./beamdswitch-deck-checks.mjs";
 
 const require = createRequire(import.meta.url);
 const E = require("../engine.js");
@@ -141,10 +141,4 @@ test("nothing is saved or copied while the joint cannot be solved", async () => 
   await p.$("copy-beamdswitch").fire("click");
   assert.equal(p.$("status").textContent, "Fix the joint first: there is no solution to copy.");
   assert.equal(p.saved.length + p.copied.length, 0);
-});
-
-test("the page inlines the site's shared beamdswitch template unchanged", () => {
-  const copy = readFileSync(new URL("../beamdswitch.js", import.meta.url), "utf8");
-  assert.equal(copy, TEMPLATE, "tests/fixtures/beamdswitch/beamdswitch.js and visuals/edge-pitch/beamdswitch.js must stay identical");
-  assert.ok(html.includes(`<script>\n${copy}\n</script>`), "index.html inlines beamdswitch.js; run build.py");
 });

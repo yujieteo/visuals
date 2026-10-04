@@ -91,6 +91,27 @@ class RequestsTest(unittest.TestCase):
         self.assertTrue(any("/visuals/x.png: a path outside" in p for p in problems))
         self.assertTrue(any("raw.json: not a published file" in p for p in problems))
 
+    def test_css_imports_and_urls_are_requests_too(self):
+        html = ('<style>@import url("https://fonts.example.org/f.css");.a{background:url(bg.png)}'
+                '.b{background:url("data:image/png;base64,AA")}</style><div style="background:url(\'//cdn.example.org/x.png\')"></div>')
+        self.assertEqual(rules.request_problems(html, {}), [
+            "index.html requests //cdn.example.org/x.png: a page makes no request outside its folder",
+            "index.html requests bg.png: not a published file (index.html, data.json or visual.json assets)",
+            "index.html requests https://fonts.example.org/f.css: a page makes no request outside its folder",
+        ])
+        self.assertEqual(rules.request_problems("<script>el.style.url(e)</script>", {}), [])
+
+    def test_network_apis_and_computed_fetch_urls_are_named(self):
+        html = ('<script>new XMLHttpRequest(); new WebSocket(u); navigator.sendBeacon(u); new EventSource(u);'
+                'fetch(base + "x.json");\n// fetch(url) in a comment is not a call\n</script>')
+        self.assertEqual(rules.request_problems(html, {}), [
+            "index.html uses EventSource: a page makes no request outside its folder, and reads its own files with fetch",
+            "index.html uses WebSocket: a page makes no request outside its folder, and reads its own files with fetch",
+            "index.html uses XMLHttpRequest: a page makes no request outside its folder, and reads its own files with fetch",
+            "index.html uses sendBeacon: a page makes no request outside its folder, and reads its own files with fetch",
+            'index.html calls fetch(base + "x.json"): a computed URL the rule cannot check, so fetch a literal path',
+        ])
+
 
 class ContrastTest(unittest.TestCase):
     def test_the_style_guide_tokens_pass_in_both_themes(self):
@@ -120,6 +141,34 @@ class ContrastTest(unittest.TestCase):
         self.assertEqual(rules.rgb("var(--a)", tokens), (255, 255, 255))
         self.assertIsNone(rules.rgb("var(--c)", tokens))
         self.assertAlmostEqual(rules.ratio((0, 0, 0), (255, 255, 255)), 21.0)
+
+
+class ThemeTest(unittest.TestCase):
+    LIGHT = ':root[data-theme="light"]{color-scheme:light}'
+
+    def themed(self, head=None, css=""):
+        head = rules.THEME_SCRIPT if head is None else head
+        return f"<!doctype html><head>{head}<style>{THEMES}{self.LIGHT}{css}</style></head>".replace(
+            ':root[data-theme="dark"]{', ':root[data-theme="dark"]{color-scheme:dark;')
+
+    def test_the_site_theme_script_before_the_first_style_passes(self):
+        self.assertEqual(rules.theme_problems(self.themed()), [])
+
+    def test_a_missing_changed_or_late_theme_script_is_named(self):
+        self.assertEqual(rules.theme_problems(self.themed("")),
+                         ["index.html has no site-theme script (style_guide.THEME_SCRIPT), so it ignores the reader's theme choice"])
+        changed = rules.THEME_SCRIPT.replace('t === "dark"', 't === "night"')
+        self.assertEqual(rules.theme_problems(self.themed(changed)), ["index.html site-theme script is not style_guide.THEME_SCRIPT unchanged"])
+        late = self.themed("").replace("</style>", "</style>" + rules.THEME_SCRIPT)
+        self.assertEqual(rules.theme_problems(late),
+                         ["index.html site-theme script comes after the first <style>, so the page first paints in the wrong theme"])
+
+    def test_a_theme_block_must_set_its_own_color_scheme(self):
+        html = self.themed().replace("color-scheme:dark;", "").replace("color-scheme:light", "color-scheme:dark")
+        self.assertEqual(rules.theme_problems(html), [
+            'index.html [data-theme="dark"] sets color-scheme nowhere, not dark',
+            "index.html [data-theme=\"light\"] sets color-scheme ['dark'], not light",
+        ])
 
 
 class PythonTest(unittest.TestCase):

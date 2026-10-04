@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
-import { assertSharedTemplate, checkDeck, checkDeckPlots, parseDeck, standIn, textOf, Element } from "./beamdswitch-deck-checks.mjs";
+import { checkDeck, checkDeckPlots, parseDeck, standIn, textOf, Element } from "./beamdswitch-deck-checks.mjs";
 
 const require = createRequire(import.meta.url);
 const L = require("../src/engine.js");
@@ -23,10 +23,6 @@ const CASES = [
 ].map(([what, model]) => {
   const result = L.compute(model, { accuracy: ACCURACY });
   return { what, result, md: T.deck(L.buildBeamdswitch(result)) };
-});
-
-test("the Sectionlab page inlines the site's shared beamdswitch template unchanged", () => {
-  assertSharedTemplate();
 });
 
 test("every section's deck opens in beamdswitch as the standard template, narrated on every slide", () => {

@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
-import { assertSharedTemplate, checkDeck, checkDeckPlots, parseDeck, standIn, Element } from "./beamdswitch-deck-checks.mjs";
+import { checkDeck, checkDeckPlots, parseDeck, standIn, Element } from "./beamdswitch-deck-checks.mjs";
 
 const require = createRequire(import.meta.url);
 const S = require("../engine.js");
@@ -27,10 +27,6 @@ const CASES = [
 ].flatMap(([tab, inputs, label]) => ["SI", "US"].map((units) => ({ tab, inputs: S.normalise(tab, inputs), units, what: `${tab} ${label} ${units}` })));
 const deckFor = ({ tab, inputs, units }) => T.deck(S.report(tab, inputs, { displayUnits: units }));
 const showVal = (v, q, units) => (v === null || v === undefined ? "—" : typeof v === "string" ? v : `${S.fmt(S.toDisplay(v, q, units))}${S.unitLabel(q, units) ? " " + S.unitLabel(q, units) : ""}`);
-
-test("the stability page inlines the site's shared beamdswitch template unchanged", () => {
-  assertSharedTemplate();
-});
 
 test("every tab's deck opens in beamdswitch as the standard template, narrated on every slide", () => {
   for (const c of CASES) {

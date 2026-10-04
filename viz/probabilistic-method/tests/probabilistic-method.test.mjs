@@ -26,15 +26,6 @@ test("index.html and raw.json are the build of the sources, with every script in
   assertInlined(html, "probabilistic-method-ui", uiSource(), "page code");
 });
 
-test("the page is self-contained: no external scripts, styles, fonts or requests", () => {
-  const html = read("index.html");
-  assert.doesNotMatch(html, /<script[^>]+src=/i);
-  assert.doesNotMatch(html, /<link[^>]+rel="stylesheet"/i);
-  assert.doesNotMatch(html, /@import|url\(\s*["']?https?:/i);
-  assert.doesNotMatch(html, /\bfetch\(|XMLHttpRequest|new WebSocket|EventSource/);
-  for (const m of html.matchAll(/https?:\/\/[^\s"'<>)]+/g)) assert.match(m[0], /^https:\/\/teoyujie\.org\/|^http:\/\/www\.w3\.org\/2000\/svg$/, `unexpected URL ${m[0]}`);
-});
-
 test("the no-JavaScript fallback has the worked example and the whole inventory", () => {
   const html = read("index.html"), stat = /** @type {RegExpExecArray} */ (/<div id="static" class="static">([\s\S]*?)<\/div>\n<div id="app" hidden>/.exec(html))[1];
   assert.match(stat, /E\[X\] = 0\.4922 &lt; 1/);

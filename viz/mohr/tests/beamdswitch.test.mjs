@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
-import { assertSharedTemplate, checkDeck, checkDeckPlots, parseDeck, standIn } from "./beamdswitch-deck-checks.mjs";
+import { checkDeck, checkDeckPlots, parseDeck, standIn } from "./beamdswitch-deck-checks.mjs";
 
 const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
 const script = (id) => new RegExp(`<script id="${id}">([\\s\\S]*?)</script>`).exec(html)[1];
@@ -33,11 +33,6 @@ const CASES = [
   ["zero tensor", edit(1, (s) => { s.stress = { sx: 0, sy: 0, sz: 0, txy: 0, tyz: 0, tzx: 0 }; })],
 ].map(([what, st]) => ({ what, st }));
 const deckFor = (st) => T.deck(M.beamdswitchReport(st));
-
-test("the Mohr page inlines the site's shared beamdswitch template unchanged", () => {
-  assertSharedTemplate();
-  assert.equal(script("mohr-beamdswitch"), `\n${readFileSync(new URL("./fixtures/beamdswitch/template.js", import.meta.url), "utf8")}`);
-});
 
 test("every state's deck opens in beamdswitch as the standard template, narrated on every slide", () => {
   for (const { what, st } of CASES) {

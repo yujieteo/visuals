@@ -9,7 +9,9 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 sys.dont_write_bytecode = True
 
-PAGE = '<!doctype html><title>t</title><script>mc?.registerTool({name:"get_data"});mc?.registerTool({name:"get_metadata"});mc?.registerTool({name:"query"})</script>'
+from style_guide import THEME_SCRIPT  # noqa: E402
+
+PAGE = '<!doctype html><title>t</title>' + THEME_SCRIPT + '<script>mc?.registerTool({name:"get_data"});mc?.registerTool({name:"get_metadata"});mc?.registerTool({name:"query"})</script>'
 
 
 def metadata(**fields):

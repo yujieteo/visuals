@@ -25,10 +25,8 @@ function page(hash = "") {
   return { tools, call, ctx };
 }
 
-test("the page is one self-contained file with the notice and no external resources", () => {
+test("the page is fully built and carries the notice", () => {
   assert.match(HTML, /Verify independently/);
-  assert.doesNotMatch(HTML, /<script[^>]+src=/);
-  assert.doesNotMatch(HTML, /<link[^>]+rel="stylesheet"/);
   assert.doesNotMatch(HTML, /\/\*@(DATA|ACCURACY|ENGINE|BEAMDSWITCH|UI)@\*\//);
   assert.doesNotMatch(HTML, /design[- ]code compliant/i);
 });

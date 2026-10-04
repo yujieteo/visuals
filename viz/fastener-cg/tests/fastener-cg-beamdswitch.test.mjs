@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import test from "node:test";
 
-import { assertSharedTemplate, checkDeck, Element, parseDeck, standIn } from "./beamdswitch-deck-checks.mjs";
+import { checkDeck, Element, parseDeck, standIn } from "./beamdswitch-deck-checks.mjs";
 import { solve } from "../src/core/solve.mjs";
 import { examplePattern, clone } from "../src/core/model.mjs";
 import { convertPattern } from "../src/core/units.mjs";
@@ -41,11 +41,6 @@ const CASES = {
   "with errors": variant((p) => { p.fasteners = []; }),
 };
 const deckOf = (p, opts = {}) => T.deck(deckReport(p, solve(p), { verification: VERIFY, ...opts }));
-
-test("the page inlines the site's shared beamdswitch template unchanged", () => {
-  assertSharedTemplate("fastener-cg");
-  assert.ok(html.includes(`<script id="fcg-beamdswitch">\n${readFileSync(new URL("./fixtures/beamdswitch/template.js", import.meta.url), "utf8")}`));
-});
 
 test("every pattern's deck opens in beamdswitch as the standard template, narrated on every slide, voice bf_emma", () => {
   for (const [what, p] of Object.entries(CASES)) {

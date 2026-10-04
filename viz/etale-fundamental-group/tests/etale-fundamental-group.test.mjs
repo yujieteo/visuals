@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import vm from "node:vm";
 import { build, raw } from "../build.mjs";
-import { assertSharedTemplate, checkDeck, standIn } from "./beamdswitch-deck-checks.mjs";
+import { checkDeck, standIn } from "./beamdswitch-deck-checks.mjs";
 
 const read = (p) => readFileSync(new URL(`../${p}`, import.meta.url), "utf8");
 const html = read("index.html");
@@ -22,11 +22,6 @@ const isId = (p) => E.equal(p, E.identity(p.length));
 test("index.html and raw.json are exactly what build.mjs makes from src/", () => {
   assert.equal(html, build(), "run node build.mjs");
   assert.equal(read("raw.json"), raw());
-});
-
-test("the page inlines the site's shared beamdswitch template unchanged", () => {
-  assertSharedTemplate();
-  assert.equal(script("etale-beamdswitch"), `\n${read("tests/fixtures/beamdswitch/template.js")}`);
 });
 
 /* ---------- monodromy computed by lifting loops ---------- */

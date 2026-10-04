@@ -8,10 +8,15 @@ and scripts/check_repo.py the repository-wide ones. No check reads the network.
                 scripts/sync_template.py records in scripts/templates/beamdswitch.sha256, and a page without
                 a builder inlines beamdswitch.js and report.js unchanged
   requests      the page requests nothing outside the files the site publishes beside it (index.html,
-                data.json and visual.json "assets"): no absolute or parent paths, no notes.md
+                data.json and visual.json "assets"): no absolute or parent paths, no notes.md, also from CSS
+                @import and url(), no fetch of a computed URL, and no XMLHttpRequest, WebSocket, EventSource
+                or sendBeacon at all
   contrast      the page's colour tokens meet WCAG contrast in both themes (text 4.5:1 on --bg, controls
                 and series 3:1), no control is outlined in a token below 3:1 (such as --border), and its two
                 dark-theme blocks agree
+  theme         the page carries the site's theme script (style_guide.THEME_SCRIPT) unchanged, before its first
+                <style>, so the reader's Light or Dark choice applies, and each [data-theme] block sets the
+                matching color-scheme so form controls and scroll bars follow it
   python        unused imports, unused local variables and definitions made twice in the visual's Python
   source-tests  tests whose every assertion checks the page's source text, or a value read out of it, instead
                 of running the code
@@ -29,6 +34,8 @@ import hashlib
 import re
 from collections import Counter
 from pathlib import Path
+
+from style_guide import THEME_SCRIPT
 
 TEMPLATE_HASH = Path(__file__).resolve().parent / "templates" / "beamdswitch.sha256"
 TEMPLATE_COPIES = ("beamdswitch.js", "tests/fixtures/beamdswitch/beamdswitch.js", "tests/fixtures/beamdswitch/template.js")
@@ -111,13 +118,20 @@ REQUEST_TAG = re.compile(r"<(script|img|iframe|source|video|audio|link|embed|obj
 REQUEST_ATTR = re.compile(r"\b(src|href|data)\s*=\s*([\"'])([^\"']*)\2", re.I)
 LINK_REQUEST = re.compile(r"\brel\s*=\s*[\"']?[^\"'>]*\b(?:stylesheet|preload|modulepreload|icon|manifest|prefetch)\b", re.I)
 REQUEST_CALL = re.compile(r"\b(fetch|new\s+Worker|new\s+SharedWorker|import|importScripts)\s*\(\s*([`\"'])([^`\"']*)\2")
+STYLE_TEXT = re.compile(r"<style\b[^>]*>(.*?)</style>|\bstyle\s*=\s*\"([^\"]*)\"", re.I | re.S)
+CSS_REQUEST = re.compile(r"@import\s+(?:url\(\s*)?([\"']?)([^\"')\s;]+)\1|\burl\(\s*([\"']?)([^\"')]+?)\3\s*\)", re.I)
+NETWORK_API = re.compile(r"\b(XMLHttpRequest|WebSocket|EventSource|sendBeacon)\b")
+COMPUTED_FETCH = re.compile(r"\bfetch\s*\(\s*([^`\"'\s)][^,)]*)")
 FREE_SCHEMES = ("data:", "blob:", "#", "about:")
 
 
 def page_requests(html):
-    """The URLs the page asks the browser to load: tag sources, linked stylesheets and icons, fetch, workers
-    and dynamic imports. JSDoc ``import("./x.js")`` types and template-literal URLs are not requests."""
+    """The URLs the page asks the browser to load: tag sources, linked stylesheets and icons, CSS @import and
+    url(), fetch, workers and dynamic imports. JSDoc ``import("./x.js")`` types and template-literal URLs are
+    not requests."""
     found = []
+    for m in STYLE_TEXT.finditer(html):
+        found += [c.group(2) or c.group(4) for c in CSS_REQUEST.finditer(m.group(1) or m.group(2) or "")]
     for m in REQUEST_TAG.finditer(html):
         tag, attrs = m.group(1).lower(), m.group(2)
         if tag == "link" and not LINK_REQUEST.search(attrs):
@@ -125,16 +139,25 @@ def page_requests(html):
         found += [a.group(3) for a in REQUEST_ATTR.finditer(attrs) if not (tag != "object" and a.group(1).lower() == "data")]
     for m in REQUEST_CALL.finditer(html):
         line = html[html.rfind("\n", 0, m.start()) + 1:m.start()]
-        if "@" in line or "typeof" in line[-8:] or line.lstrip().startswith(("*", "//", "/*")):
+        if "@" in line or "typeof" in line[-8:] or _in_comment(html, m.start()):
             continue
         found.append(m.group(3))
     return [url for url in found if url and "${" not in url and not url.startswith(FREE_SCHEMES)]
+
+
+def _in_comment(html, at):
+    """True when the line that holds ``at`` is a comment line up to that point."""
+    return html[html.rfind("\n", 0, at) + 1:at].lstrip().startswith(("*", "//", "/*"))
 
 
 def request_problems(html, data):
     """Requests the published page would make outside its own published files."""
     published = {"index.html", "data.json", "./", ""} | set(data.get("assets", []))
     problems = []
+    for api in sorted({m.group(1) for m in NETWORK_API.finditer(html) if not _in_comment(html, m.start())}):
+        problems.append(f"index.html uses {api}: a page makes no request outside its folder, and reads its own files with fetch")
+    for arg in sorted({m.group(1).strip() for m in COMPUTED_FETCH.finditer(html) if not _in_comment(html, m.start())}):
+        problems.append(f"index.html calls fetch({arg}): a computed URL the rule cannot check, so fetch a literal path")
     for url in sorted(set(page_requests(html))):
         path = url.split("#")[0].split("?")[0].removeprefix("./")
         if re.match(r"^(?:[a-z][a-z0-9+.-]*:)?//", url, re.I):
@@ -271,6 +294,33 @@ def contrast_problems(html):
             if media_dark.get(name) != forced_dark.get(name):
                 problems.append(f"dark: --{name} is {media_dark.get(name)} under prefers-color-scheme but "
                                 f"{forced_dark.get(name)} under [data-theme=\"dark\"]")
+    return problems
+
+
+# theme ------------------------------------------------------------------------------------------------------
+
+SITE_THEME = re.compile(r"<script\b[^>]*\bid\s*=\s*[\"']?site-theme\b[^>]*>.*?</script>", re.I | re.S)
+THEME_BLOCK = re.compile(r"(?:(?<=[{};\s])|^)(?::root|html)?\[data-theme=[\"']?(dark|light)[\"']?\](?::not\([^)]*\))*\s*\{([^{}]*)\}", re.M)
+COLOR_SCHEME = re.compile(r"(?<![\w-])color-scheme\s*:\s*([\w ]+?)\s*(?:;|!|$)")
+
+
+def theme_problems(html):
+    """Where the page does not follow the site's Light or Dark choice."""
+    problems = []
+    scripts = SITE_THEME.findall(html)
+    style = html.find("<style")
+    if not scripts:
+        problems.append("index.html has no site-theme script (style_guide.THEME_SCRIPT), so it ignores the reader's theme choice")
+    elif scripts != [THEME_SCRIPT]:
+        problems.append("index.html site-theme script is not style_guide.THEME_SCRIPT unchanged")
+    elif style != -1 and html.find(THEME_SCRIPT) > style:
+        problems.append("index.html site-theme script comes after the first <style>, so the page first paints in the wrong theme")
+    schemes = {}
+    for theme, body in THEME_BLOCK.findall(html):
+        schemes.setdefault(theme, set()).update(COLOR_SCHEME.findall(body))
+    for theme, found in sorted(schemes.items()):
+        if found != {theme}:
+            problems.append(f'index.html [data-theme="{theme}"] sets color-scheme {sorted(found) or "nowhere"}, not {theme}')
     return problems
 
 

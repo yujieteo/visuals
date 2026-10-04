@@ -5,7 +5,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
-import { assertSharedTemplate, checkDeck, divs } from "./beamdswitch-deck-checks.mjs";
+import { checkDeck, divs } from "./beamdswitch-deck-checks.mjs";
 
 const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
 /** @param {string} id */
@@ -28,10 +28,6 @@ const CASES = L.LESSONS.flatMap((l) => [
 ]);
 /** The beam-md-switch state comments of a deck, as key/value maps. @param {string} md */
 const comments = (md) => [...md.matchAll(/<!-- beam-md-switch\n([\s\S]*?)\n-->/g)].map((m) => Object.fromEntries(m[1].split("\n").map((line) => line.split(/: (.*)/s).slice(0, 2))));
-
-test("the page inlines the site's shared beamdswitch template unchanged", () => {
-  assertSharedTemplate();
-});
 
 test("every lesson deck opens in beamdswitch as the standard template, narrated on every slide, voice bf_emma", () => {
   for (const { l, p, what } of CASES) {

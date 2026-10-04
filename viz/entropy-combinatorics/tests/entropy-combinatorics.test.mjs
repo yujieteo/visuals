@@ -25,14 +25,6 @@ test("index.html and raw.json are the current build of src/ and template.html", 
   assert.equal(read("raw.json"), buildData(), "run node build.mjs");
 });
 
-test("the page is self-contained: no external scripts, styles, fonts or requests", () => {
-  assert.doesNotMatch(html, /<script[^>]+src=/i);
-  assert.doesNotMatch(html, /<link[^>]+rel="stylesheet"/i);
-  assert.doesNotMatch(html, /@import|@font-face|url\(\s*["']?https?:/i);
-  assert.doesNotMatch(html, /\bfetch\(|XMLHttpRequest|new WebSocket|import\(/);
-  for (const m of html.matchAll(/(?:src|href)="(https?:[^"]+)"/g)) assert.ok(/^https:\/\/teoyujie\.org\//.test(m[1]), `only links to the site: ${m[1]}`);
-});
-
 test("entropy, conditional entropy and mutual information from tables", () => {
   close(E.entropyCounts([1, 1, 1, 1]), 2, 1e-12, "uniform on 4");
   close(E.entropyCounts([6, 3, 2, 1]), -(0.5 * Math.log2(0.5) + 0.25 * Math.log2(0.25) + (1 / 6) * Math.log2(1 / 6) + (1 / 12) * Math.log2(1 / 12)), 1e-12, "(6,3,2,1)/12");
