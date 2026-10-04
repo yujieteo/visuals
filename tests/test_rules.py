@@ -125,9 +125,9 @@ class RequestsTest(unittest.TestCase):
                 self.assertEqual(rules.request_problems(f"<script>{call};</script>", {}), [
                     f"index.html calls {shown}: a computed URL the rule cannot check, so use a literal path"])
 
-    def test_literal_urls_comments_prose_and_vendored_blocks_are_not_computed_calls(self):
+    def test_literal_urls_comments_and_prose_are_not_computed_calls(self):
         html = ('<p>Paste to import (JSON or a report)</p><script>fetch(`data.json`); import("./x.js");'
-                '\n// import(url) in a comment\n</script><script data-vendor="mathjax">new Worker(a);</script>')
+                '\n// import(url) in a comment\n</script>')
         self.assertEqual(rules.request_problems(html, {"assets": ["x.js"]}), [])
 
     def test_absolute_urls_set_from_script_are_named(self):

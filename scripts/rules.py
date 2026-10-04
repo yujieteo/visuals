@@ -10,10 +10,10 @@ and scripts/check_repo.py the repository-wide ones. No check reads the network.
   requests      the page requests nothing outside the files the site publishes beside it (index.html,
                 data.json and visual.json "assets"): no absolute or parent paths, no notes.md, also from CSS
                 @import and url(); no XMLHttpRequest, WebSocket, EventSource or sendBeacon at all; and in a
-                script that is not a vendored block, no fetch, import(), importScripts, Worker or SharedWorker
-                of a computed URL (a template literal with ${}, a literal joined with +, or a name), and no
-                absolute http(s) URL set as a src, srcset or poster or passed to new Audio (teoyujie.org and
-                the w3.org namespaces aside)
+                script, no fetch, import(), importScripts, Worker or SharedWorker of a computed URL (a
+                template literal with ${}, a literal joined with +, or a name), and no absolute http(s) URL
+                set as a src, srcset or poster or passed to new Audio (teoyujie.org and the w3.org
+                namespaces aside)
   contrast      the page's colour tokens meet WCAG contrast in both themes (text 4.5:1 on --bg, controls
                 and series 3:1), no control is outlined in a token below 3:1 (such as --border), and its two
                 dark-theme blocks agree
@@ -128,7 +128,7 @@ COMPUTED_CALL = re.compile(r"(?<![\w$])(fetch|new\s+Worker|new\s+SharedWorker|im
                            r"(`[^`]*`|\"[^\"\n]*\"|'[^'\n]*'|[^`\"'\s)][^,)]*)(\s*\+[^,)]*)?")
 SCRIPT_URL = re.compile(r"(?:\.(?:src|srcset|poster)\s*=\s*|setAttribute\(\s*([\"'])(?:src|srcset|poster)\1\s*,\s*|"
                         r"\bnew\s+Audio\s*\(\s*)([`\"'])(https?://[^`\"'\s]*)\2", re.I)
-SCRIPT_TEXT = re.compile(r"<script\b(?![^>]*\bdata-vendor=)[^>]*>(.*?)</script>", re.I | re.S)
+SCRIPT_TEXT = re.compile(r"<script\b[^>]*>(.*?)</script>", re.I | re.S)
 SCRIPT_URL_HOSTS = re.compile(r"^https?://(?:[\w-]+\.)*(?:teoyujie\.org|w3\.org)(?:[/:?#]|$)", re.I)
 FREE_SCHEMES = ("data:", "blob:", "#", "about:")
 
