@@ -31,7 +31,7 @@
   };
 
   /** Words that mark a key result as an activity, from the re:Work guide. */
-  const ACTIVITY = /\b(consult|help|analy[sz]|participat)\w*/i;
+  const ACTIVITY = /\b(consult(s|ed|ing)?|help(s|ed|ing)?|analy[sz](e|es|ed|ing)|participat(e|es|ed|ing))\b/i;
   /** Words that mark an objective as upkeep, from the re:Work guide ("keep hiring", "maintain market position"). */
   const UPKEEP = /\b(keep|maintain|continue)\b/i;
 
@@ -101,7 +101,7 @@
       { title: "Make new users productive in their first week", type: "aspirational", krs: [
         { name: "Users who finish setup within 24 hours", unit: "%", start: 40, target: 70, current: 52, owner: "Product", due: "2026-12-31" },
         { name: "Median days from sign-up to first report", unit: "days", start: 9, target: 3, current: 6, owner: "Support", due: "2026-12-31" },
-        { name: "Onboarding survey score", kind: "score", current: 0.6, owner: "Research", due: "2026-12-31" },
+        { name: "Onboarding survey score", kind: "score", start: 0, target: 1, current: 0.6, owner: "Research", due: "2026-12-31" },
       ] },
       { title: "Cut the support load of setup", type: "committed", krs: [
         { name: "Setup tickets per 100 new users", unit: "tickets", start: 12, target: 6, current: 10, owner: "Support", due: "2026-12-31" },
@@ -113,7 +113,7 @@
       { title: "Run a 10 km race by the end of the year", type: "aspirational", krs: [
         { name: "Longest run", unit: "km", start: 3, target: 10, current: 6, owner: "Me", due: "2026-11-30" },
         { name: "Runs per week", unit: "runs", start: 1, target: 3, current: 2, owner: "Me", due: "2026-11-30" },
-        { name: "Training plan followed, as a score", kind: "score", current: 0.75, owner: "Me", due: "2026-11-30" },
+        { name: "Training plan followed, as a score", kind: "score", start: 0, target: 1, current: 0.75, owner: "Me", due: "2026-11-30" },
       ] },
     ]) },
     { id: "needs-work", label: "Common faults (illustrative)", state: setOf([
@@ -159,8 +159,8 @@
   }
 
   /**
-   * One key result's values and checks. Progress is (current - start) / (target - start) for a value, clamped to
-   * 0..1 for the bar, and the score itself for a score. A target equal to the start has no progress.
+   * One key result's values and checks. Progress is (current - start) / (target - start) for both kinds, clamped
+   * to 0..1 for the bar; a score sets all three on the 0..1 scale. A target equal to the start has no progress.
    * @param {Record<string, any>} state @param {number} o @param {number} k
    */
   function keyResult(state, o, k) {
@@ -168,20 +168,21 @@
     const get = (part) => state[krKey(o, k, part)];
     const name = String(get("name")).trim();
     const score = get("kind") === "score";
-    const unit = String(get("unit")).trim(), owner = String(get("owner")).trim(), due = String(get("due")).trim();
-    const start = score ? 0 : Number(get("start")), target = score ? 1 : Number(get("target")), current = Number(get("current"));
+    const unit = score ? "" : String(get("unit")).trim(), owner = String(get("owner")).trim(), due = String(get("due")).trim();
+    const start = Number(get("start")), target = Number(get("target")), current = Number(get("current"));
     const span = target - start;
-    const raw = score ? current : span === 0 ? null : (current - start) / span;
+    const raw = span === 0 ? null : (current - start) / span;
     const progress = raw === null ? null : clamp(raw, 0, 1);
-    const measurable = score ? current >= 0 && current <= 1 : span !== 0 && unit !== "";
-    const measurableWhy = score ? "A score must be between 0 and 1." : span === 0 ? "The target equals the start, so there is nothing to measure." : "A number needs a unit.";
+    const scaled = !score || [start, target, current].every((x) => x >= 0 && x <= 1);
+    const measurable = span !== 0 && scaled;
+    const measurableWhy = span === 0 ? "The target equals the start, so there is nothing to measure." : "A score's start, target and current must be between 0 and 1.";
     const activity = ACTIVITY.exec(name)?.[0] ?? null;
     const timed = validDate(due);
     const timedWhy = due === "" ? "No due date is set." : "The due date is not a real date.";
     const id = `o${o}-k${k}`;
     /** @type {Check[]} */
     const checks = [
-      { id: `${id}-measurable`, pass: measurable, label: "Measurable", source: "doerr", detail: measurable ? (score ? "The score is between 0 and 1." : "It has a unit and a target that differs from the start.") : measurableWhy },
+      { id: `${id}-measurable`, pass: measurable, label: "Measurable", source: "doerr", detail: measurable ? "The target differs from the start." : measurableWhy },
       { id: `${id}-outcome`, pass: activity === null, label: "An outcome, not an activity", source: "rework", detail: activity === null ? "The name has no activity word." : `"${activity.toLowerCase()}" describes an activity: name the result instead.` },
       { id: `${id}-timebound`, pass: timed, label: "Time-bound", source: "doerr", detail: timed ? `Due ${due}.` : timedWhy },
     ];
@@ -190,9 +191,9 @@
       start, target, current, raw, progress, measurable, checks,
       text: {
         progress: progress === null ? "no progress can be shown" : percent(progress),
-        current: score ? num(current) : `${num(current)}${unit ? ` ${unit}` : ""}`,
-        target: score ? "1" : `${num(target)}${unit ? ` ${unit}` : ""}`,
-        start: score ? "0" : `${num(start)}${unit ? ` ${unit}` : ""}`,
+        current: `${num(current)}${unit ? ` ${unit}` : ""}`,
+        target: `${num(target)}${unit ? ` ${unit}` : ""}`,
+        start: `${num(start)}${unit ? ` ${unit}` : ""}`,
       },
     };
   }
@@ -311,8 +312,7 @@
   const orNull = (s) => (s === "" ? null : s);
 
   /**
-   * The set as TOON: objectives, key results and the plain checks, one table each. A score key result writes
-   * start 0 and target 1.
+   * The set as TOON: objectives, key results and the plain checks, one table each.
    * @param {ReturnType<typeof derive>} d
    */
   function toToon(d) {

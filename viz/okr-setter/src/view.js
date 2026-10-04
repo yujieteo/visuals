@@ -58,14 +58,14 @@
     const krs = [];
     for (let k = 1; k <= Model.KEY_RESULTS; k++) {
       const key = (/** @type {string} */ part) => Model.krKey(o, k, part);
-      const hide = [control(key("start"), "Start", "number"), control(key("target"), "Target", "number"), control(key("unit"), "Unit", "text"), control(key("current"), "Current", "number")];
-      // A score is set with a slider, which the kit binds through data-field; the number inputs are for a value.
+      const hide = [control(key("unit"), "Unit", "text"), control(key("current"), "Current", "number")];
+      // A score's current value is set with a slider, which the kit binds through data-field; these inputs are for a value.
       const slider = el("label", { class: "field-label", for: `o${o}_k${k}_slider` }, ["Current score",
         el("input", { id: `o${o}_k${k}_slider`, type: "range", min: "0", max: "1", step: "0.05", "data-field": key("current") })]);
       const krBar = bar(`Objective ${o}, key result ${k} progress`), krSum = el("p", { class: "sum" }), krChecks = el("ul", { class: "checks" });
       const row = el("div", { class: "kr" }, [
         control(key("name"), `Key result ${k}`, "text"),
-        el("div", { class: "grid" }, [control(key("kind"), "Kind", "select"), slider, ...hide]),
+        el("div", { class: "grid" }, [control(key("kind"), "Kind", "select"), control(key("start"), "Start", "number"), control(key("target"), "Target", "number"), slider, ...hide]),
         el("div", { class: "grid" }, [control(key("owner"), "Owner (optional)", "text"), control(key("due"), "Due date (optional)", "date")]),
         krBar, krSum, krChecks,
       ]);

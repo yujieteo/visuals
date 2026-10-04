@@ -393,7 +393,7 @@ button, select, input { min-height: 2.75rem; }
 <h2 id="rules-title">The checks</h2>
 <p class="note">The rules follow John Doerr's <em>Measure What Matters</em> and Google's re:Work guide. Each links its source. The page tests only the wording it can test, and flags words as hints, not proof.</p>
 <ul id="rules"></ul>
-<p class="note">Progress of a number key result is (current − start) ÷ (target − start), held between 0 and 100%. A score key result is the score, 0.0 to 1.0. An objective is the mean of its key results.</p>
+<p class="note">Progress of a key result is (current − start) ÷ (target − start), held between 0 and 100%. A score key result sets start, target and current on the 0.0 to 1.0 scale. An objective is the mean of its key results.</p>
 </section>
 </main>
 <dialog id="palette" aria-label="Commands">
@@ -402,7 +402,7 @@ button, select, input { min-height: 2.75rem; }
 <ul id="palette-list" role="listbox" aria-label="Matching commands"></ul>
 </dialog>
 <script id="dataset" type="application/json">
-{"description":"The dataset of OKR Setter: the limits of the form and each rule its checks apply, with its source. The sources' addresses are in src/model.js. The examples are written for this page.","version":1,"limits":{"objectives":3,"keyResultsPerObjective":5,"minKeyResults":3},"rules":[{"source":"doerr","text":"An objective is significant, concrete, action-oriented and, ideally, inspirational. The page checks that it has a title."},{"source":"rework","text":"An objective is not upkeep such as \"keep hiring\" or \"maintain market position\". The page flags the words keep, maintain and continue."},{"source":"doerr","text":"An objective has 3 to 5 key results."},{"source":"doerr","text":"A key result is specific, time-bound, and measurable and verifiable. The page checks that a number has a unit and a target that differs from its start, and that a score lies between 0.0 and 1.0."},{"source":"rework","text":"A key result describes an outcome, not an activity. The page flags the words consult, help, analyze and participate."},{"source":"doerr","text":"A key result is time-bound. The page checks for a real due date."},{"source":"rework","text":"Score a key result from 0.0 to 1.0. The sweet spot for OKRs is 60 to 70 percent."},{"source":"playbook","text":"A committed OKR is expected to score 1.0. An aspirational OKR is expected to average 0.7. Mark which one each objective is."},{"source":"mistakes","text":"Common mistakes include failing to tell committed from aspirational OKRs, and key results that do not add up to the objective. A page cannot test these: read them."}]}
+{"description":"The dataset of OKR Setter: the limits of the form and each rule its checks apply, with its source. The sources' addresses are in src/model.js. The examples are written for this page.","version":1,"limits":{"objectives":3,"keyResultsPerObjective":5,"minKeyResults":3},"rules":[{"source":"doerr","text":"An objective is significant, concrete, action-oriented and, ideally, inspirational. The page checks that it has a title."},{"source":"rework","text":"An objective is not upkeep such as \"keep hiring\" or \"maintain market position\". The page flags the words keep, maintain and continue."},{"source":"doerr","text":"An objective has 3 to 5 key results."},{"source":"doerr","text":"A key result is specific, time-bound, and measurable and verifiable. The page checks that the target differs from the start, for every kind, and that a score's start, target and current lie between 0.0 and 1.0."},{"source":"rework","text":"A key result describes an outcome, not an activity. The page flags the verbs consult, help, analyze and participate in any tense."},{"source":"doerr","text":"A key result is time-bound. The page checks for a real due date."},{"source":"rework","text":"Score a key result from 0.0 to 1.0. The sweet spot for OKRs is 60 to 70 percent."},{"source":"playbook","text":"A committed OKR is expected to score 1.0. An aspirational OKR is expected to average 0.7. Mark which one each objective is."},{"source":"mistakes","text":"Common mistakes include failing to tell committed from aspirational OKRs, and key results that do not add up to the objective. A page cannot test these: read them."}]}
 </script>
 <script id="kit">
 /* The shared runtime of every visual that scripts/new_visual.py generates: the mechanical parts of the
@@ -941,7 +941,7 @@ button, select, input { min-height: 2.75rem; }
   };
 
   /** Words that mark a key result as an activity, from the re:Work guide. */
-  const ACTIVITY = /\b(consult|help|analy[sz]|participat)\w*/i;
+  const ACTIVITY = /\b(consult(s|ed|ing)?|help(s|ed|ing)?|analy[sz](e|es|ed|ing)|participat(e|es|ed|ing))\b/i;
   /** Words that mark an objective as upkeep, from the re:Work guide ("keep hiring", "maintain market position"). */
   const UPKEEP = /\b(keep|maintain|continue)\b/i;
 
@@ -1011,7 +1011,7 @@ button, select, input { min-height: 2.75rem; }
       { title: "Make new users productive in their first week", type: "aspirational", krs: [
         { name: "Users who finish setup within 24 hours", unit: "%", start: 40, target: 70, current: 52, owner: "Product", due: "2026-12-31" },
         { name: "Median days from sign-up to first report", unit: "days", start: 9, target: 3, current: 6, owner: "Support", due: "2026-12-31" },
-        { name: "Onboarding survey score", kind: "score", current: 0.6, owner: "Research", due: "2026-12-31" },
+        { name: "Onboarding survey score", kind: "score", start: 0, target: 1, current: 0.6, owner: "Research", due: "2026-12-31" },
       ] },
       { title: "Cut the support load of setup", type: "committed", krs: [
         { name: "Setup tickets per 100 new users", unit: "tickets", start: 12, target: 6, current: 10, owner: "Support", due: "2026-12-31" },
@@ -1023,7 +1023,7 @@ button, select, input { min-height: 2.75rem; }
       { title: "Run a 10 km race by the end of the year", type: "aspirational", krs: [
         { name: "Longest run", unit: "km", start: 3, target: 10, current: 6, owner: "Me", due: "2026-11-30" },
         { name: "Runs per week", unit: "runs", start: 1, target: 3, current: 2, owner: "Me", due: "2026-11-30" },
-        { name: "Training plan followed, as a score", kind: "score", current: 0.75, owner: "Me", due: "2026-11-30" },
+        { name: "Training plan followed, as a score", kind: "score", start: 0, target: 1, current: 0.75, owner: "Me", due: "2026-11-30" },
       ] },
     ]) },
     { id: "needs-work", label: "Common faults (illustrative)", state: setOf([
@@ -1069,8 +1069,8 @@ button, select, input { min-height: 2.75rem; }
   }
 
   /**
-   * One key result's values and checks. Progress is (current - start) / (target - start) for a value, clamped to
-   * 0..1 for the bar, and the score itself for a score. A target equal to the start has no progress.
+   * One key result's values and checks. Progress is (current - start) / (target - start) for both kinds, clamped
+   * to 0..1 for the bar; a score sets all three on the 0..1 scale. A target equal to the start has no progress.
    * @param {Record<string, any>} state @param {number} o @param {number} k
    */
   function keyResult(state, o, k) {
@@ -1078,20 +1078,21 @@ button, select, input { min-height: 2.75rem; }
     const get = (part) => state[krKey(o, k, part)];
     const name = String(get("name")).trim();
     const score = get("kind") === "score";
-    const unit = String(get("unit")).trim(), owner = String(get("owner")).trim(), due = String(get("due")).trim();
-    const start = score ? 0 : Number(get("start")), target = score ? 1 : Number(get("target")), current = Number(get("current"));
+    const unit = score ? "" : String(get("unit")).trim(), owner = String(get("owner")).trim(), due = String(get("due")).trim();
+    const start = Number(get("start")), target = Number(get("target")), current = Number(get("current"));
     const span = target - start;
-    const raw = score ? current : span === 0 ? null : (current - start) / span;
+    const raw = span === 0 ? null : (current - start) / span;
     const progress = raw === null ? null : clamp(raw, 0, 1);
-    const measurable = score ? current >= 0 && current <= 1 : span !== 0 && unit !== "";
-    const measurableWhy = score ? "A score must be between 0 and 1." : span === 0 ? "The target equals the start, so there is nothing to measure." : "A number needs a unit.";
+    const scaled = !score || [start, target, current].every((x) => x >= 0 && x <= 1);
+    const measurable = span !== 0 && scaled;
+    const measurableWhy = span === 0 ? "The target equals the start, so there is nothing to measure." : "A score's start, target and current must be between 0 and 1.";
     const activity = ACTIVITY.exec(name)?.[0] ?? null;
     const timed = validDate(due);
     const timedWhy = due === "" ? "No due date is set." : "The due date is not a real date.";
     const id = `o${o}-k${k}`;
     /** @type {Check[]} */
     const checks = [
-      { id: `${id}-measurable`, pass: measurable, label: "Measurable", source: "doerr", detail: measurable ? (score ? "The score is between 0 and 1." : "It has a unit and a target that differs from the start.") : measurableWhy },
+      { id: `${id}-measurable`, pass: measurable, label: "Measurable", source: "doerr", detail: measurable ? "The target differs from the start." : measurableWhy },
       { id: `${id}-outcome`, pass: activity === null, label: "An outcome, not an activity", source: "rework", detail: activity === null ? "The name has no activity word." : `"${activity.toLowerCase()}" describes an activity: name the result instead.` },
       { id: `${id}-timebound`, pass: timed, label: "Time-bound", source: "doerr", detail: timed ? `Due ${due}.` : timedWhy },
     ];
@@ -1100,9 +1101,9 @@ button, select, input { min-height: 2.75rem; }
       start, target, current, raw, progress, measurable, checks,
       text: {
         progress: progress === null ? "no progress can be shown" : percent(progress),
-        current: score ? num(current) : `${num(current)}${unit ? ` ${unit}` : ""}`,
-        target: score ? "1" : `${num(target)}${unit ? ` ${unit}` : ""}`,
-        start: score ? "0" : `${num(start)}${unit ? ` ${unit}` : ""}`,
+        current: `${num(current)}${unit ? ` ${unit}` : ""}`,
+        target: `${num(target)}${unit ? ` ${unit}` : ""}`,
+        start: `${num(start)}${unit ? ` ${unit}` : ""}`,
       },
     };
   }
@@ -1221,8 +1222,7 @@ button, select, input { min-height: 2.75rem; }
   const orNull = (s) => (s === "" ? null : s);
 
   /**
-   * The set as TOON: objectives, key results and the plain checks, one table each. A score key result writes
-   * start 0 and target 1.
+   * The set as TOON: objectives, key results and the plain checks, one table each.
    * @param {ReturnType<typeof derive>} d
    */
   function toToon(d) {
@@ -1289,8 +1289,8 @@ button, select, input { min-height: 2.75rem; }
       }],
       method: [{
         title: "Progress is the share of the way from start to target",
-        body: "- A number key result: current minus start, divided by target minus start, held between 0 and 100%\n- A score key result: the score itself, between 0 and 1\n- An objective: the mean of its key results that have progress",
-        narration: "A number key result measures the share of the way from its start value to its target. A score key result is the score itself, between zero and one. An objective is the mean of its key results.",
+        body: "- A key result: current minus start, divided by target minus start, held between 0 and 100%\n- A score key result does the same on the 0 to 1 scale\n- An objective: the mean of its key results that have progress",
+        narration: "A key result measures the share of the way from its start value to its target. A score key result does the same on the scale from zero to one. An objective is the mean of its key results.",
       }],
       results: shown.length ? shown.map((/** @type {any} */ ob) => ({
         title: `${ob.title || "Untitled objective"}: ${ob.text.progress}`,
@@ -1370,14 +1370,14 @@ button, select, input { min-height: 2.75rem; }
     const krs = [];
     for (let k = 1; k <= Model.KEY_RESULTS; k++) {
       const key = (/** @type {string} */ part) => Model.krKey(o, k, part);
-      const hide = [control(key("start"), "Start", "number"), control(key("target"), "Target", "number"), control(key("unit"), "Unit", "text"), control(key("current"), "Current", "number")];
-      // A score is set with a slider, which the kit binds through data-field; the number inputs are for a value.
+      const hide = [control(key("unit"), "Unit", "text"), control(key("current"), "Current", "number")];
+      // A score's current value is set with a slider, which the kit binds through data-field; these inputs are for a value.
       const slider = el("label", { class: "field-label", for: `o${o}_k${k}_slider` }, ["Current score",
         el("input", { id: `o${o}_k${k}_slider`, type: "range", min: "0", max: "1", step: "0.05", "data-field": key("current") })]);
       const krBar = bar(`Objective ${o}, key result ${k} progress`), krSum = el("p", { class: "sum" }), krChecks = el("ul", { class: "checks" });
       const row = el("div", { class: "kr" }, [
         control(key("name"), `Key result ${k}`, "text"),
-        el("div", { class: "grid" }, [control(key("kind"), "Kind", "select"), slider, ...hide]),
+        el("div", { class: "grid" }, [control(key("kind"), "Kind", "select"), control(key("start"), "Start", "number"), control(key("target"), "Target", "number"), slider, ...hide]),
         el("div", { class: "grid" }, [control(key("owner"), "Owner (optional)", "text"), control(key("due"), "Due date (optional)", "date")]),
         krBar, krSum, krChecks,
       ]);

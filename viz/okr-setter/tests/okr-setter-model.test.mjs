@@ -15,7 +15,7 @@ test("known cases: a rising value, a falling value and a score give 40%, 50% and
   const d = at({
     o1_title: "Grow", o1_k1_name: "Rise", o1_k1_unit: "u", o1_k1_start: 40, o1_k1_target: 70, o1_k1_current: 52,
     o1_k2_name: "Fall", o1_k2_unit: "days", o1_k2_start: 9, o1_k2_target: 3, o1_k2_current: 6,
-    o1_k3_name: "Score", o1_k3_kind: "score", o1_k3_current: 0.6,
+    o1_k3_name: "Score", o1_k3_kind: "score", o1_k3_start: 0.2, o1_k3_target: 0.7, o1_k3_current: 0.5,
   });
   const [rise, fall, score] = d.objectives[0].krs;
   near(rise.progress, 0.4);
@@ -97,7 +97,7 @@ test("known cases: the TOON of a one-key-result set is the literal text, quoting
     "  o1-title,Has a title,true,doerr,The objective is named.",
     '  o1-action,"Action-oriented, not upkeep",true,rework,The title has no upkeep word.',
     "  o1-count,Has 3 to 5 key results,false,doerr,It has 1 key result.",
-    "  o1-k1-measurable,Measurable,true,doerr,It has a unit and a target that differs from the start.",
+    "  o1-k1-measurable,Measurable,true,doerr,The target differs from the start.",
     '  o1-k1-outcome,"An outcome, not an activity",true,rework,The name has no activity word.',
     "  o1-k1-timebound,Time-bound,true,doerr,Due 2026-12-31.",
     ...SOURCES_TOON,
@@ -141,11 +141,32 @@ test("invariants: every example is a full state, derives progress in 0..1 and co
   }
 });
 
-test("invariants: a score key result ignores its start, target and unit", () => {
-  const plain = at({ o1_k1_name: "S", o1_k1_kind: "score", o1_k1_current: 0.3 });
-  const noisy = at({ o1_k1_name: "S", o1_k1_kind: "score", o1_k1_current: 0.3, o1_k1_start: 7, o1_k1_target: 9, o1_k1_unit: "kg" });
-  assert.equal(noisy.objectives[0].krs[0].progress, plain.objectives[0].krs[0].progress);
-  assert.equal(noisy.objectives[0].krs[0].measurable, true);
+test("known cases: a score with no target is not measurable, and a score off the 0 to 1 scale is not either", () => {
+  const faults = Model.EXAMPLES.find((/** @type {{ id: string }} */ e) => e.id === "needs-work")?.state ?? {};
+  const asScore = at({ ...faults, o1_k1_kind: "score", o1_k1_current: 0.5, o1_k1_due: "2026-12-31" }).objectives[0].krs[0];
+  assert.equal(asScore.name, "Improve onboarding");
+  assert.equal(asScore.measurable, false);
+  assert.equal(asScore.progress, null);
+  assert.equal(asScore.checks[0].detail, "The target equals the start, so there is nothing to measure.");
+  const off = at({ o1_k1_name: "S", o1_k1_kind: "score", o1_k1_start: 0, o1_k1_target: 9, o1_k1_current: 0.3 }).objectives[0].krs[0];
+  assert.equal(off.measurable, false);
+  assert.equal(off.checks[0].detail, "A score's start, target and current must be between 0 and 1.");
+});
+
+test("known cases: a number with no unit is measurable when its target differs from its start", () => {
+  const nps = at({ o1_k1_name: "Net Promoter Score", o1_k1_start: 30, o1_k1_target: 50, o1_k1_current: 40 }).objectives[0].krs[0];
+  assert.equal(nps.measurable, true);
+  assert.equal(nps.checks[0].detail, "The target differs from the start.");
+  near(nps.progress, 0.5);
+});
+
+test("known cases: the activity check flags the re:Work verbs, not outcome nouns that share a stem", () => {
+  const outcome = (/** @type {string} */ name) => at({ o1_k1_name: name }).objectives[0].krs[0].checks[1].pass;
+  assert.equal(outcome("Analytics dashboards adopted by 50 teams"), true);
+  assert.equal(outcome("Helpdesk tickets closed same day"), true);
+  assert.equal(outcome("Consulted with 10 customers"), false);
+  assert.equal(outcome("Participating in standups"), false);
+  assert.equal(outcome("Analyzes churn"), false);
 });
 
 test("invariants: the default state is the first example, and the blank example has no objectives", () => {

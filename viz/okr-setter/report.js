@@ -38,8 +38,8 @@
       }],
       method: [{
         title: "Progress is the share of the way from start to target",
-        body: "- A number key result: current minus start, divided by target minus start, held between 0 and 100%\n- A score key result: the score itself, between 0 and 1\n- An objective: the mean of its key results that have progress",
-        narration: "A number key result measures the share of the way from its start value to its target. A score key result is the score itself, between zero and one. An objective is the mean of its key results.",
+        body: "- A key result: current minus start, divided by target minus start, held between 0 and 100%\n- A score key result does the same on the 0 to 1 scale\n- An objective: the mean of its key results that have progress",
+        narration: "A key result measures the share of the way from its start value to its target. A score key result does the same on the scale from zero to one. An objective is the mean of its key results.",
       }],
       results: shown.length ? shown.map((/** @type {any} */ ob) => ({
         title: `${ob.title || "Untitled objective"}: ${ob.text.progress}`,
