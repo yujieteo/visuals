@@ -99,7 +99,7 @@ catalog id, add it to `new_concepts` with a short reminder and definition (rare)
 
 ## Language
 
-ASD-STE100: short sentences, simple words, active voice, present tense, one instruction per sentence. Mathematical
+ASD-STE100: short sentences, simple words, active voice, present tense, one instruction per sentence. Use no gendered pronouns for players, agents or people: write "the player", "player $i$" or "they". Mathematical
 terms are allowed. No filler, no "clearly", no "it is easy to see".
 
 ## Output and checks
