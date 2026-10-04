@@ -1,0 +1,643 @@
+[
+ {
+  "id": "nm:lucas-lehmer-primality-test",
+  "statement": "Let $p \\ge 3$, let $M_p = 2^p - 1$ be the [Mersenne number](c:mersenne-number), and let $s_0 = 4$, $s_{i+1} = s_i^2 - 2$. Then $M_p$ is [prime](c:prime-number) if and only if $s_{p-2} \\equiv 0$ [modulo](c:modular-arithmetic) $M_p$.",
+  "hypotheses": [
+   {
+    "id": "h:p",
+    "text": "The exponent $p$ is an integer with $p \\ge 3$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "$M_p$ is prime exactly when $M_p$ divides $s_{p-2}$.",
+  "formal": {
+   "decl": "lucas_lehmer_sufficiency",
+   "difference": "The declaration proves only the sufficiency direction, for every $p > 1$. The converse is the separate declaration lucas_lehmer_necessity, for $p \\ge 3$."
+  },
+  "proofs": [
+   {
+    "id": "order-of-omega",
+    "name": "Order of 2 plus root 3",
+    "slogan": "Write $s_i$ through powers of $\\omega = 2 + \\sqrt3$; an order count modulo a prime factor gives sufficiency, and the Frobenius map modulo a prime $M_p$ gives necessity.",
+    "scope": "Both directions for $p \\ge 3$. For $p = 2$ the test fails although $M_2 = 3$ is prime, which is why $p \\ge 3$ is assumed.",
+    "mechanisms": [
+     "m:modular-arithmetic",
+     "m:contradiction",
+     "m:extremal-choice"
+    ],
+    "roles": [
+     {
+      "h": "h:p",
+      "why": "The bound $p \\ge 3$ makes $M_p$ odd, gives $M_p \\equiv 7 \\pmod 8$, and makes $p$ odd when $M_p$ is prime.",
+      "steps": [
+       "s:order",
+       "s:symbols",
+       "s:sufficiency"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:closed-form",
+      "slogan": "Write $s_i$ as $\\omega^{2^i} + \\bar\\omega^{2^i}$ in the ring $X_q = (\\mathbb{Z}/q)[\\sqrt3]$.",
+      "detail": "For a prime $q$, let $X_q$ hold the elements $a + b\\sqrt3$ with $a, b \\in \\mathbb{Z}/q$, and put $\\omega = 2 + \\sqrt3$, $\\bar\\omega = 2 - \\sqrt3$, so $\\omega\\bar\\omega = 1$. Induction on $i$ gives $s_i = \\omega^{2^i} + \\bar\\omega^{2^i}$, because $(\\omega^{2^i} + \\bar\\omega^{2^i})^2 - 2 = \\omega^{2^{i+1}} + \\bar\\omega^{2^{i+1}}$.",
+      "uses": []
+     },
+     {
+      "id": "s:order",
+      "slogan": "Show that $\\omega$ has order exactly $2^p$ for a prime factor $q$ of $M_p$.",
+      "detail": "Assume $q \\mid M_p$ and $q \\mid s_{p-2}$. Then $\\omega^{2^{p-2}} = -\\bar\\omega^{2^{p-2}}$, and multiplication by $\\omega^{2^{p-2}}$ gives $\\omega^{2^{p-1}} = -1$, so $\\omega^{2^p} = 1$. As $q$ is odd, $-1 \\ne 1$, so the [order](c:order-of-an-element) of $\\omega$ is $2^p$.",
+      "uses": []
+     },
+     {
+      "id": "s:bound",
+      "slogan": "Bound the order of $\\omega$ by the number of units of $X_q$.",
+      "detail": "The ring $X_q$ has $q^2$ elements and $0$ is not a unit, so its [group of units](c:group-of-units) has at most $q^2 - 1$ elements. The $2^p$ distinct powers of $\\omega$ are units, so $2^p < q^2$.",
+      "uses": []
+     },
+     {
+      "id": "s:sufficiency",
+      "slogan": "Take the least prime factor of a composite $M_p$ and reach a contradiction.",
+      "detail": "Suppose $M_p \\mid s_{p-2}$ but $M_p$ is not prime. Its least prime factor $q$ satisfies $q^2 \\le M_p < 2^p$, which contradicts $2^p < q^2$ from step 3. So $M_p$ is prime.",
+      "uses": []
+     },
+     {
+      "id": "s:symbols",
+      "slogan": "Compute the [Legendre symbols](c:legendre-symbol) of 2 and 3 modulo a prime $q = M_p$.",
+      "detail": "If $q = M_p$ is prime, then $p$ is prime, hence odd. Since $q \\equiv 7 \\pmod 8$, $(2/q) = 1$. Since $q \\equiv 3 \\pmod 4$ and $q \\equiv 1 \\pmod 3$, quadratic reciprocity gives $(3/q) = -(q/3) = -1$.",
+      "uses": [
+       "wd:Q472883"
+      ]
+     },
+     {
+      "id": "s:necessity",
+      "slogan": "Evaluate $\\omega^{(q+1)/2}$ in the field $X_q$ with the [Frobenius](c:frobenius) map.",
+      "detail": "As 3 is not a square, $X_q$ is the [finite field](c:finite-field) of order $q^2$, and Frobenius with Euler's criterion gives $(1+\\sqrt3)^q = 1 - \\sqrt3$, so $(1+\\sqrt3)^{q+1} = -2$. With $(1+\\sqrt3)^2 = 2\\omega$ and $2^{(q-1)/2} = 1$ this gives $\\omega^{2^{p-1}} = -1$. Multiplication by $\\bar\\omega^{2^{p-2}}$ and step 1 give $s_{p-2} = 0$ in $\\mathbb{Z}/q$.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Combine the two directions into the equivalence for every $p \\ge 3$.",
+      "detail": "Step 4 shows that $M_p \\mid s_{p-2}$ makes $M_p$ prime. Step 6 shows that a prime $M_p$ divides $s_{p-2}$. Together they give the equivalence.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:closed-form",
+      "s:order"
+     ],
+     [
+      "s:order",
+      "s:bound"
+     ],
+     [
+      "s:bound",
+      "s:sufficiency"
+     ],
+     [
+      "s:sufficiency",
+      "s:conclude"
+     ],
+     [
+      "s:symbols",
+      "s:necessity"
+     ],
+     [
+      "s:closed-form",
+      "s:necessity"
+     ],
+     [
+      "s:necessity",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:mersenne-number": "The test decides primality of the Mersenne number $M_p$.",
+     "c:prime-number": "Primality of $M_p$ is the conclusion, and prime factors drive the contradiction.",
+     "c:modular-arithmetic": "The sequence is reduced modulo $M_p$ and modulo its prime factors.",
+     "c:order-of-an-element": "The order $2^p$ of $\\omega$ forces a large prime factor.",
+     "c:group-of-units": "The unit group of $X_q$ is too small for an element of order $2^p$.",
+     "c:legendre-symbol": "The symbols of 2 and 3 fix the powers in the Frobenius computation.",
+     "c:frobenius": "Frobenius turns $(1+\\sqrt3)^q$ into its conjugate $1 - \\sqrt3$.",
+     "c:finite-field": "For prime $M_p$ the ring $X_q$ is a field, so Frobenius applies."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "lucas_lehmer_sufficiency",
+     "follows": true,
+     "note": "mathlib gets sufficiency from LucasLehmer.order_ineq (order_ω and card_units_lt) and Nat.minFac_sq_le_self; the necessity steps follow lucas_lehmer_necessity with pow_ω, legendreSym_mersenne_two and legendreSym_mersenne_three."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1966978",
+  "statement": "Let $\\mu_n$ and $\\mu$ be Borel [probability measures](c:probability-measure) on $\\mathbb{R}^d$ with [characteristic functions](c:characteristic-function) $\\varphi_n(t) = \\int e^{i\\langle t, x\\rangle}\\,d\\mu_n(x)$ and $\\varphi$. Then $\\mu_n \\to \\mu$ [in distribution](c:convergence-in-distribution) if and only if $\\varphi_n(t) \\to \\varphi(t)$ for every $t \\in \\mathbb{R}^d$.",
+  "hypotheses": [
+   {
+    "id": "h:probability",
+    "text": "Each $\\mu_n$ and $\\mu$ is a Borel [probability measure](c:probability-measure) on $\\mathbb{R}^d$.",
+    "concept": "c:probability-measure"
+   }
+  ],
+  "conclusion": "The measures $\\mu_n$ converge weakly to $\\mu$ exactly when $\\varphi_n \\to \\varphi$ pointwise on $\\mathbb{R}^d$.",
+  "formal": {
+   "decl": "MeasureTheory.ProbabilityMeasure.tendsto_iff_tendsto_charFun",
+   "difference": "The declaration states the theorem for probability measures on any finite-dimensional real inner product space, which includes $\\mathbb{R}^d$."
+  },
+  "proofs": [
+   {
+    "id": "tightness-uniqueness",
+    "name": "Tightness, Prokhorov and uniqueness",
+    "slogan": "Test weak convergence on $e^{i\\langle t,x\\rangle}$, and for the converse get tightness from the characteristic functions and identify every subsequential limit.",
+    "scope": "Both directions, with the limit $\\mu$ given in advance. The stronger form, where the pointwise limit is only assumed continuous at $0$, is not covered.",
+    "mechanisms": [
+     "m:characteristic-function",
+     "m:subsequence",
+     "m:dominated-convergence"
+    ],
+    "roles": [
+     {
+      "h": "h:probability",
+      "why": "Total mass $1$ makes $e^{i\\langle t,x\\rangle}$ integrable, bounds $|1 - \\varphi_n|$ by $2$, and keeps weak limits probability measures.",
+      "steps": [
+       "s:forward",
+       "s:tight",
+       "s:compact"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:forward",
+      "slogan": "Integrate the bounded continuous function $x \\mapsto e^{i\\langle t, x\\rangle}$ against $\\mu_n$.",
+      "detail": "Weak convergence gives $\\int g\\,d\\mu_n \\to \\int g\\,d\\mu$ for every [bounded continuous function](c:bounded-continuous-function) $g$. The real and imaginary parts of $e^{i\\langle t,x\\rangle}$ are such functions, so $\\varphi_n(t) \\to \\varphi(t)$.",
+      "uses": []
+     },
+     {
+      "id": "s:tight",
+      "slogan": "Bound the tails of $\\mu_n$ by averages of $1 - \\varphi_n$ near $0$.",
+      "detail": "For a unit vector $z$ and $r > 0$, Fubini gives $\\mu_n\\{|\\langle z,x\\rangle| \\ge r\\} \\le \\frac r2 \\int_{-2/r}^{2/r} (1 - \\varphi_n(sz))\\,ds$. Dominated convergence turns the right side into the same average of $1 - \\varphi$, which is small for large $r$ since $\\varphi$ is continuous with $\\varphi(0) = 1$. A basis of directions then gives the [tightness](c:tightness) of $\\{\\mu_n\\}$.",
+      "uses": [
+       "wd:Q1149022",
+       "wd:Q1067156"
+      ]
+     },
+     {
+      "id": "s:compact",
+      "slogan": "Extract weakly convergent subsequences with Prokhorov's theorem.",
+      "detail": "A tight family of probability measures on $\\mathbb{R}^d$ is relatively compact for weak convergence. So every [subsequence](c:subsequence) of $(\\mu_n)$ has a further subsequence that converges weakly to some probability measure $\\nu$.",
+      "uses": [
+       "wd:Q7249519"
+      ]
+     },
+     {
+      "id": "s:identify",
+      "slogan": "Identify each subsequential limit $\\nu$ with $\\mu$ through its characteristic function.",
+      "detail": "Step 1 applied to the convergent subsequence gives $\\varphi_\\nu(t) = \\lim_k \\varphi_{n_k}(t) = \\varphi(t)$ for all $t$. Trigonometric polynomials separate points, so the characteristic function determines a probability measure, and $\\nu = \\mu$.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Conclude weak convergence of the whole sequence by the subsequence principle.",
+      "detail": "If $\\int g\\,d\\mu_n \\not\\to \\int g\\,d\\mu$ for some bounded continuous $g$, a subsequence stays $\\varepsilon$ away, yet steps 3 and 4 give a further subsequence whose integrals tend to $\\int g\\,d\\mu$. So $\\mu_n \\to \\mu$, and step 1 gives the other direction.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:forward",
+      "s:identify"
+     ],
+     [
+      "s:tight",
+      "s:compact"
+     ],
+     [
+      "s:compact",
+      "s:identify"
+     ],
+     [
+      "s:identify",
+      "s:conclude"
+     ],
+     [
+      "s:forward",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:probability-measure": "Weak limits of tight probability measures stay probability measures.",
+     "c:characteristic-function": "Characteristic functions both detect convergence and identify the limit.",
+     "c:convergence-in-distribution": "This is the convergence that the theorem characterizes.",
+     "c:bounded-continuous-function": "Weak convergence is tested on bounded continuous functions such as $e^{i\\langle t,x\\rangle}$.",
+     "c:tightness": "Tightness is what Prokhorov's theorem needs for compactness.",
+     "c:subsequence": "The proof identifies the limit along every convergent subsequence."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "MeasureTheory.ProbabilityMeasure.tendsto_iff_tendsto_charFun",
+     "follows": true,
+     "note": "mathlib proves the forward direction with ProbabilityMeasure.tendsto_iff_forall_integral_rclike_tendsto and the converse with isTightMeasureSet_of_tendsto_charFun, isCompact_closure_of_isTightMeasureSet and ProbabilityMeasure.tendsto_of_tight_of_separatesPoints."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q6757284",
+  "statement": "Let $1 \\le p_0 < p_1 \\le \\infty$ and let $T$ be a [sublinear operator](c:sublinear-operator) from $L^{p_0} + L^{p_1}$ of a $\\sigma$-finite [measure space](c:measure-space) to measurable functions on another. If $T$ is of [weak type](c:weak-type-estimate) $(p_0, p_0)$ and $(p_1, p_1)$, then for each $p_0 < p < p_1$ there is $C_p$ with $\\|Tf\\|_p \\le C_p\\|f\\|_p$ on the [Lebesgue space](c:lp-space) $L^p$.",
+  "hypotheses": [
+   {
+    "id": "h:exponents",
+    "text": "The exponents satisfy $1 \\le p_0 < p < p_1 \\le \\infty$.",
+    "concept": null
+   },
+   {
+    "id": "h:sublinear",
+    "text": "The operator is [sublinear](c:sublinear-operator): $|T(f+g)| \\le |Tf| + |Tg|$ and $|T(cf)| = |c|\\,|Tf|$.",
+    "concept": "c:sublinear-operator"
+   },
+   {
+    "id": "h:weak0",
+    "text": "The operator is of [weak type](c:weak-type-estimate) $(p_0, p_0)$: $\\mu\\{|Tf| > \\lambda\\} \\le (A_0\\|f\\|_{p_0}/\\lambda)^{p_0}$ for all $\\lambda > 0$.",
+    "concept": "c:weak-type-estimate"
+   },
+   {
+    "id": "h:weak1",
+    "text": "The operator is of weak type $(p_1, p_1)$ with constant $A_1$, read as $\\|Tf\\|_\\infty \\le A_1\\|f\\|_\\infty$ when $p_1 = \\infty$.",
+    "concept": "c:weak-type-estimate"
+   }
+  ],
+  "conclusion": "For $p_0 < p < p_1$, $T$ is bounded on $L^p$, with $\\|Tf\\|_p \\le C_p\\|f\\|_p$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "split-at-height",
+    "name": "Splitting at height lambda",
+    "slogan": "Cut $f$ at height $\\lambda$ into an $L^{p_0}$ part and an $L^{p_1}$ part, apply the weak-type bounds to each part, and integrate over $\\lambda$.",
+    "scope": "The case $p_1 < \\infty$, with $C_p^p = p\\,2^p\\big(A_0^{p_0}/(p - p_0) + A_1^{p_1}/(p_1 - p)\\big)$. For $p_1 = \\infty$ cut at height $\\lambda/A_1$, so $|Tf_1| \\le \\lambda$ and only the $p_0$ term remains.",
+    "mechanisms": [
+     "m:interpolation",
+     "m:fubini-swap"
+    ],
+    "roles": [
+     {
+      "h": "h:exponents",
+      "why": "The inequalities $p_0 < p < p_1$ put the two pieces in $L^{p_0}$ and $L^{p_1}$ and make both $\\lambda$ integrals finite.",
+      "steps": [
+       "s:split",
+       "s:tonelli"
+      ]
+     },
+     {
+      "h": "h:sublinear",
+      "why": "Sublinearity bounds $|Tf|$ by $|Tf_0| + |Tf_1|$.",
+      "steps": [
+       "s:sublinear"
+      ]
+     },
+     {
+      "h": "h:weak0",
+      "why": "The weak $(p_0, p_0)$ bound controls the large part $f_0$.",
+      "steps": [
+       "s:weak"
+      ]
+     },
+     {
+      "h": "h:weak1",
+      "why": "The weak $(p_1, p_1)$ bound controls the small part $f_1$.",
+      "steps": [
+       "s:weak"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:split",
+      "slogan": "Split $f$ at height $\\lambda$ into a large part $f_0$ and a small part $f_1$.",
+      "detail": "For $\\lambda > 0$ put $f_0 = f\\,1_{\\{|f| > \\lambda\\}}$ and $f_1 = f\\,1_{\\{|f| \\le \\lambda\\}}$. Since $p_0 < p < p_1$, $|f_0|^{p_0} \\le \\lambda^{p_0 - p}|f|^p$ and $|f_1|^{p_1} \\le \\lambda^{p_1 - p}|f|^p$, so $f_0 \\in L^{p_0}$ and $f_1 \\in L^{p_1}$.",
+      "uses": []
+     },
+     {
+      "id": "s:sublinear",
+      "slogan": "Bound the distribution function of $Tf$ by those of $Tf_0$ and $Tf_1$.",
+      "detail": "Sublinearity gives $|Tf| \\le |Tf_0| + |Tf_1|$, so $|Tf| > 2\\lambda$ forces $|Tf_0| > \\lambda$ or $|Tf_1| > \\lambda$. With $d_g(s) = \\mu\\{|g| > s\\}$ this gives $d_{Tf}(2\\lambda) \\le d_{Tf_0}(\\lambda) + d_{Tf_1}(\\lambda)$.",
+      "uses": []
+     },
+     {
+      "id": "s:weak",
+      "slogan": "Insert the two weak-type bounds into the distribution estimate.",
+      "detail": "The [weak-type estimates](c:weak-type-estimate) give $d_{Tf}(2\\lambda) \\le (A_0/\\lambda)^{p_0}\\int_{\\{|f| > \\lambda\\}}|f|^{p_0}\\,d\\mu + (A_1/\\lambda)^{p_1}\\int_{\\{|f| \\le \\lambda\\}}|f|^{p_1}\\,d\\mu$.",
+      "uses": []
+     },
+     {
+      "id": "s:layer",
+      "slogan": "Write the $L^p$ norm of $Tf$ through its distribution function.",
+      "detail": "Tonelli's theorem gives the layer-cake formula $\\|g\\|_p^p = p\\int_0^\\infty s^{p-1} d_g(s)\\,ds$. With $s = 2\\lambda$ this reads $\\|Tf\\|_p^p = p\\,2^p\\int_0^\\infty \\lambda^{p-1} d_{Tf}(2\\lambda)\\,d\\lambda$.",
+      "uses": [
+       "wd:Q7820874"
+      ]
+     },
+     {
+      "id": "s:tonelli",
+      "slogan": "Swap the $\\lambda$ and $x$ integrals and compute the inner integrals.",
+      "detail": "Tonelli gives $\\int_0^\\infty \\lambda^{p-1-p_0}\\int_{\\{|f| > \\lambda\\}}|f|^{p_0}\\,d\\mu\\,d\\lambda = \\int |f|^{p_0}\\int_0^{|f|}\\lambda^{p-1-p_0}\\,d\\lambda\\,d\\mu = \\|f\\|_p^p/(p - p_0)$. The second term gives $\\|f\\|_p^p/(p_1 - p)$ in the same way, so $\\|Tf\\|_p^p \\le C_p^p\\|f\\|_p^p$.",
+      "uses": [
+       "wd:Q7820874"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:split",
+      "s:sublinear"
+     ],
+     [
+      "s:sublinear",
+      "s:weak"
+     ],
+     [
+      "s:split",
+      "s:weak"
+     ],
+     [
+      "s:weak",
+      "s:tonelli"
+     ],
+     [
+      "s:layer",
+      "s:tonelli"
+     ]
+    ],
+    "conclusion": "s:tonelli",
+    "concepts": {
+     "c:sublinear-operator": "Sublinearity is all the proof needs in place of linearity.",
+     "c:measure-space": "Distribution functions and Tonelli live on a sigma-finite measure space.",
+     "c:weak-type-estimate": "Weak-type bounds at the end points control the two pieces.",
+     "c:lp-space": "The conclusion is boundedness on the intermediate space $L^p$."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard real-interpolation proof by splitting at height lambda, as in L. Grafakos, Classical Fourier Analysis, theorem 1.3.2."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:partial-derivatives-commute",
+  "statement": "Let $U \\subseteq \\mathbb{R}^n$ be [open](c:open-set) and let $f\\colon U \\to \\mathbb{R}$ be [differentiable](c:differentiable-function) on $U$, with derivative $f'$ differentiable at $x \\in U$. Then the [second derivative](c:second-derivative) $f''(x)$ is symmetric, and the mixed [partial derivatives](c:partial-derivative) agree: $\\partial_i\\partial_j f(x) = \\partial_j\\partial_i f(x)$ for all $i, j$.",
+  "hypotheses": [
+   {
+    "id": "h:open",
+    "text": "The set $U \\subseteq \\mathbb{R}^n$ is [open](c:open-set) and contains $x$.",
+    "concept": "c:open-set"
+   },
+   {
+    "id": "h:differentiable",
+    "text": "The function $f$ is [differentiable](c:differentiable-function) at every point $y$ of $U$, with derivative $f'(y)$.",
+    "concept": "c:differentiable-function"
+   },
+   {
+    "id": "h:twice",
+    "text": "The map $y \\mapsto f'(y)$ is differentiable at $x$, with derivative $f''(x)$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "For all vectors $v, w$, $f''(x)(v)(w) = f''(x)(w)(v)$; in particular $\\partial_i\\partial_j f(x) = \\partial_j\\partial_i f(x)$.",
+  "formal": {
+   "decl": "second_derivative_symmetric",
+   "difference": "The declaration works in normed spaces over $\\mathbb{R}$ or $\\mathbb{C}$ and asks $f$ to be differentiable everywhere; second_derivative_symmetric_of_eventually is the local form. It states $f''(v)(w) = f''(w)(v)$, and the partial derivatives are the case $v = e_i$, $w = e_j$."
+  },
+  "proofs": [
+   {
+    "id": "alternate-sum",
+    "name": "Alternate sum over a small parallelogram",
+    "slogan": "Expand an alternate sum of $f$ over a small parallelogram to second order, and note that this sum is symmetric in the two directions.",
+    "scope": "Real scalars and any vectors $v, w$; the partial derivatives are the case $v = e_i$, $w = e_j$. The proof needs no continuity of the second partial derivatives.",
+    "mechanisms": [
+     "m:taylor-expansion",
+     "m:mean-value",
+     "m:symmetry"
+    ],
+    "roles": [
+     {
+      "h": "h:open",
+      "why": "Openness keeps the corners $x + h(\\cdot)$ inside $U$ for small $h > 0$.",
+      "steps": [
+       "s:taylor",
+       "s:alternate"
+      ]
+     },
+     {
+      "h": "h:differentiable",
+      "why": "Differentiability on $U$ lets the mean value inequality run along each segment.",
+      "steps": [
+       "s:taylor"
+      ]
+     },
+     {
+      "h": "h:twice",
+      "why": "Differentiability of $f'$ at $x$ makes the error of the linear model of $f'$ equal to $o(h)$.",
+      "steps": [
+       "s:taylor"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:taylor",
+      "slogan": "Expand $f(x + hu + hw) - f(x + hu)$ to second order in $h$.",
+      "detail": "Apply the mean value inequality on $[0,1]$ to $g(t) = f(x + hu + thw) - th f'(x)w - th^2 f''(x)(u)(w) - \\tfrac{t^2h^2}{2}f''(x)(w)(w)$. Differentiability of $f'$ at $x$ makes $g'(t) = o(h^2)$ uniformly in $t$. So $f(x + hu + hw) - f(x + hu) = hf'(x)w + h^2f''(x)(u)(w) + \\tfrac{h^2}{2}f''(x)(w)(w) + o(h^2)$.",
+      "uses": [
+       "wd:Q189136"
+      ]
+     },
+     {
+      "id": "s:alternate",
+      "slogan": "Form the alternate sum $\\Delta(h)$ of $f$ at four corners and expand it.",
+      "detail": "Let $\\Delta(h) = f(x + 2hv + 2hw) - f(x + 2hv + hw) - f(x + hv + 2hw) + f(x + hv + hw)$. Step 1 with $u = 2v + w$ and with $u = v + w$, subtracted, gives $\\Delta(h) = h^2 f''(x)(v)(w) + o(h^2)$.",
+      "uses": []
+     },
+     {
+      "id": "s:symmetric",
+      "slogan": "Swap the roles of $v$ and $w$, which leaves $\\Delta(h)$ unchanged.",
+      "detail": "The four corners of $\\Delta(h)$ are symmetric in $v$ and $w$, so $\\Delta_{v,w}(h) = \\Delta_{w,v}(h)$. Subtracting the two expansions from step 2 gives $h^2\\big(f''(x)(v)(w) - f''(x)(w)(v)\\big) = o(h^2)$.",
+      "uses": []
+     },
+     {
+      "id": "s:limit",
+      "slogan": "Divide by $h^2$ and let $h$ tend to $0$ from above.",
+      "detail": "The constant $f''(x)(v)(w) - f''(x)(w)(v)$ is $o(1)$, so it is $0$ and the [second derivative](c:second-derivative) is symmetric. With $v = e_i$, $w = e_j$ the value $f''(x)(e_i)(e_j)$ is a mixed [partial derivative](c:partial-derivative), so $\\partial_i\\partial_j f(x) = \\partial_j\\partial_i f(x)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:taylor",
+      "s:alternate"
+     ],
+     [
+      "s:alternate",
+      "s:symmetric"
+     ],
+     [
+      "s:symmetric",
+      "s:limit"
+     ]
+    ],
+    "conclusion": "s:limit",
+    "concepts": {
+     "c:open-set": "The small parallelogram must stay inside the domain.",
+     "c:differentiable-function": "Differentiability along segments feeds the mean value inequality.",
+     "c:second-derivative": "Symmetry of the bilinear map $f''(x)$ is the real content.",
+     "c:partial-derivative": "Mixed partial derivatives are values of $f''(x)$ on basis vectors."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "second_derivative_symmetric",
+     "follows": true,
+     "note": "mathlib reduces to second_derivative_symmetric_of_eventually and Convex.second_derivative_within_at_symmetric, using Convex.taylor_approx_two_segment and Convex.isLittleO_alternate_sum_square."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q2063099",
+  "statement": "Let $M$ be a [closed oriented manifold](c:closed-oriented-manifold) of dimension $n$, oriented over a commutative ring $R$, with [fundamental class](c:fundamental-class) $[M] \\in H_n(M;R)$. Then for every $k$ the [cap product](c:cap-product) $\\varphi \\mapsto [M] \\frown \\varphi$ is an isomorphism from the [cohomology](c:cohomology) $H^k(M;R)$ to the [homology](c:homology) $H_{n-k}(M;R)$.",
+  "hypotheses": [
+   {
+    "id": "h:closed",
+    "text": "The [manifold](c:manifold) $M$ is compact, without boundary, of dimension $n$.",
+    "concept": "c:manifold"
+   },
+   {
+    "id": "h:oriented",
+    "text": "The manifold $M$ is $R$-oriented, so it has a [fundamental class](c:fundamental-class) $[M]$.",
+    "concept": "c:fundamental-class"
+   }
+  ],
+  "conclusion": "For every $k$, $[M] \\frown -\\colon H^k(M;R) \\to H_{n-k}(M;R)$ is an isomorphism.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "mayer-vietoris-induction",
+    "name": "Compact supports and Mayer-Vietoris induction",
+    "slogan": "Prove a compactly supported duality for every oriented manifold by building it from convex pieces of $\\mathbb{R}^n$ with Mayer-Vietoris sequences and direct limits.",
+    "scope": "An outline of Hatcher's proof; the sign-commutativity of the cap-product ladder with the Mayer-Vietoris sequences rests on the cited work. Noncompact manifolds enter only as an intermediate step.",
+    "mechanisms": [
+     "m:mayer-vietoris",
+     "m:local-to-global",
+     "m:exact-sequence",
+     "m:cited-deep-result"
+    ],
+    "roles": [
+     {
+      "h": "h:closed",
+      "why": "Compactness makes $M$ itself the largest compact subset, so compactly supported cohomology is ordinary cohomology.",
+      "steps": [
+       "s:closed"
+      ]
+     },
+     {
+      "h": "h:oriented",
+      "why": "The $R$-orientation supplies the classes $\\mu_K$ and the fundamental class $[M]$.",
+      "steps": [
+       "s:define",
+       "s:closed"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:define",
+      "slogan": "Define the duality map $D_M$ on [compactly supported](c:compact-support) cohomology of an oriented manifold.",
+      "detail": "For compact $K \\subseteq M$ the orientation gives $\\mu_K \\in H_n(M, M - K)$, and cap product with $\\mu_K$ maps $H^k(M, M - K)$ to $H_{n-k}(M)$. These maps agree under inclusions $K \\subseteq L$, so they define $D_M\\colon H^k_c(M) = \\varinjlim_K H^k(M, M - K) \\to H_{n-k}(M)$.",
+      "uses": []
+     },
+     {
+      "id": "s:euclidean",
+      "slogan": "Check that $D_M$ is an isomorphism for $M = \\mathbb{R}^n$.",
+      "detail": "With $K$ running over balls $B$, $H^k(\\mathbb{R}^n, \\mathbb{R}^n - B)$ is $R$ for $k = n$ and $0$ otherwise. Cap product with $\\mu_B$ sends a generator of $H^n$ to a generator of $H_0(\\mathbb{R}^n) = R$, so $D$ is an isomorphism in every degree.",
+      "uses": []
+     },
+     {
+      "id": "s:union",
+      "slogan": "Pass from open sets $U$, $V$ and $U \\cap V$ to $U \\cup V$ with the five lemma.",
+      "detail": "The [Mayer-Vietoris sequences](c:mayer-vietoris-sequence) for $H^*_c$ and for $H_*$ form a ladder with rungs $D$, and Hatcher's lemma 3.36 shows that its squares commute up to sign. If $D_U$, $D_V$ and $D_{U \\cap V}$ are isomorphisms, the five lemma makes $D_{U \\cup V}$ one.",
+      "uses": [
+       "nl:3517"
+      ]
+     },
+     {
+      "id": "s:limit",
+      "slogan": "Pass to an increasing union of open sets by direct limits.",
+      "detail": "If $M = \\bigcup_i U_i$ with open $U_1 \\subseteq U_2 \\subseteq \\cdots$, then $H^k_c(M) = \\varinjlim H^k_c(U_i)$ and $H_{n-k}(M) = \\varinjlim H_{n-k}(U_i)$, compatibly with $D$. A direct limit of isomorphisms is an isomorphism.",
+      "uses": []
+     },
+     {
+      "id": "s:build",
+      "slogan": "Build every open subset of $\\mathbb{R}^n$, and then the manifold, from convex charts.",
+      "detail": "Convex open sets are homeomorphic to $\\mathbb{R}^n$, and finite unions of them follow by induction with step 3, since intersections of convex sets are convex. Every open set of $\\mathbb{R}^n$ is an increasing union of such finite unions, so step 4 applies; the same two steps applied to chart domains give every $R$-oriented manifold.",
+      "uses": []
+     },
+     {
+      "id": "s:closed",
+      "slogan": "Specialize to the closed manifold, where $D_M$ is the cap product with $[M]$.",
+      "detail": "If $M$ is compact, then $K = M$ is the largest compact set, so $H^k_c(M) = H^k(M)$ and $\\mu_M$ is the [fundamental class](c:fundamental-class) $[M]$. Hence $D_M(\\varphi) = [M] \\frown \\varphi$ is an isomorphism $H^k(M;R) \\to H_{n-k}(M;R)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:define",
+      "s:euclidean"
+     ],
+     [
+      "s:define",
+      "s:union"
+     ],
+     [
+      "s:define",
+      "s:limit"
+     ],
+     [
+      "s:euclidean",
+      "s:build"
+     ],
+     [
+      "s:union",
+      "s:build"
+     ],
+     [
+      "s:limit",
+      "s:build"
+     ],
+     [
+      "s:build",
+      "s:closed"
+     ]
+    ],
+    "conclusion": "s:closed",
+    "concepts": {
+     "c:closed-oriented-manifold": "Closed and oriented are exactly what make the cap-product map defined and bijective.",
+     "c:manifold": "Local Euclidean charts let the proof start from convex sets.",
+     "c:fundamental-class": "The fundamental class is the class one caps with.",
+     "c:cap-product": "The duality isomorphism is cap product with orientation classes.",
+     "c:cohomology": "Cohomology, with compact supports, is the source of the duality map.",
+     "c:homology": "Homology in complementary degree is the target of the duality map.",
+     "c:compact-support": "Compact supports make the statement local enough to glue.",
+     "c:mayer-vietoris-sequence": "Mayer-Vietoris sequences glue the isomorphism over unions."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "A. Hatcher, Algebraic Topology, Cambridge University Press, 2002, section 3.3, theorems 3.30 and 3.35",
+     "url": "https://pi.math.cornell.edu/~hatcher/AT/ATpage.html",
+     "note": "Hatcher proves the compactly supported duality (theorem 3.35) by this induction, with lemma 3.36 for the Mayer-Vietoris ladder, and deduces theorem 3.30."
+    }
+   }
+  ]
+ }
+]
