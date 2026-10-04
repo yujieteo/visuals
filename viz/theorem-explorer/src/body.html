@@ -1,4 +1,4 @@
-<p class="lede">A catalog of named mathematical results from mathlib4, Wikidata, Wikipedia, nLab and the TheoremSearch dataset. Each result has rubric scores with their evidence, Lean measurements, prerequisite paths, concrete comparisons and field shares over time. Use it to find the result to learn next. The file works offline and never refreshes its sources.</p>
+<p class="lede">A catalog of named mathematical results from mathlib4, Wikidata, Wikipedia, nLab and the TheoremSearch dataset, and a catalog of the mathematical concepts they are stated about, from nLab, mathlib and the results themselves. Each result and each concept has rubric scores with their evidence. Prerequisite trees join results to concepts, and arXiv popularity is shown per tag: category, archive or group. Use it to find what to learn next. The file works offline and never refreshes its sources.</p>
 <p id="snapshot-line" class="note"></p>
 <p id="loading" class="callout" role="status" aria-live="polite">Decoding the catalog. This takes a few seconds on a slow device.</p>
 
@@ -12,6 +12,9 @@
 <button type="button" data-example="atiyah-singer">Atiyah-Singer relations</button>
 <button type="button" data-example="applied-fields">Application fields</button>
 <button type="button" data-example="no-simplicity">Without simplicity</button>
+<button type="button" data-example="concepts">Concept catalog</button>
+<button type="button" data-example="spectral-tree">Prerequisite tree</button>
+<button type="button" data-example="tag-popularity">Popularity by arXiv tag</button>
 <button type="button" data-example="sources">Sources and rubric</button>
 <button type="button" id="restore-view" hidden>Restore the saved view</button>
 </div>
@@ -19,9 +22,12 @@
 <nav class="tabs no-print" aria-label="Views">
 <button type="button" data-field="view" value="learn">Learn next</button>
 <button type="button" data-field="view" value="catalog">Catalog and scores</button>
+<button type="button" data-field="view" value="concepts">Concepts</button>
 <button type="button" data-field="view" value="compare">Comparisons</button>
 <button type="button" data-field="view" value="connections">Connections and paths</button>
+<button type="button" data-field="view" value="tree">Prerequisite tree</button>
 <button type="button" data-field="view" value="fields">Fields over time</button>
+<button type="button" data-field="view" value="popularity">Popularity by arXiv tag</button>
 <button type="button" data-field="view" value="about">Sources and rubric</button>
 </nav>
 
@@ -45,6 +51,15 @@
 </div>
 </div>
 <p id="weights-line" class="note"></p>
+<div id="concept-weights" class="weight-inputs" role="group" aria-label="Custom concept weights (0 excludes a component)" hidden>
+<label>Unifying power <input type="number" data-field="cw_uni" min="0" max="100" step="1"></label>
+<label>Research influence <input type="number" data-field="cw_res" min="0" max="100" step="1"></label>
+<label>Practical impact <input type="number" data-field="cw_pra" min="0" max="100" step="1"></label>
+<label>Reach <input type="number" data-field="cw_rea" min="0" max="100" step="1"></label>
+<label>Low prerequisite burden <input type="number" data-field="cw_lpb" min="0" max="100" step="1"></label>
+<label>Example accessibility <input type="number" data-field="cw_exa" min="0" max="100" step="1"></label>
+<label>Computability <input type="number" data-field="cw_cmp" min="0" max="100" step="1"></label>
+</div>
 </section>
 
 <!-- Learn next -->
@@ -199,6 +214,53 @@
 </section>
 </section>
 
+<!-- Concepts -->
+<section id="view-concepts" class="view" aria-labelledby="h-concepts">
+<h2 id="h-concepts">Concepts</h2>
+<p id="concepts-intro" class="note"></p>
+<details class="card filters" open>
+<summary>Filters</summary>
+<div class="filter-grid">
+<label class="field wide">Search
+<input id="cq" type="search" autocomplete="off" placeholder="name, alias, kind, Lean name, nLab page, category"></label>
+<label class="field">Assessment
+<select data-field="cjudge"><option value="all">All concepts</option><option value="full">Full judge (definition, phrases, judged prerequisites)</option><option value="light">Light judge</option></select></label>
+<label class="field">Kind
+<select data-field="ckind"><option value="any">Any</option><option value="structure">Structure</option><option value="space">Space</option><option value="object">Object</option><option value="map">Map</option><option value="property">Property</option><option value="construction">Construction</option><option value="invariant">Invariant</option><option value="number-system">Number system</option><option value="logic">Logic</option><option value="relation">Relation</option><option value="other">Other</option></select></label>
+<label class="field">arXiv tag (category, archive or group)
+<input id="ctag" type="text" list="taxonomy-ids" placeholder="math.AT, math, hep" autocomplete="off"></label>
+<label class="field">Needed reader level at most
+<select data-field="clevel"><option value="any">Any</option><option value="school">School</option><option value="undergrad">Undergraduate</option><option value="graduate">Graduate</option><option value="research">Research</option></select></label>
+<label class="field">Source
+<select data-field="csrc"><option value="any">Any</option><option value="nlab">Has an nLab page</option><option value="mathlib">Has a mathlib declaration</option><option value="results">Named by a catalog result</option></select></label>
+<label class="field">Sort by
+<select data-field="csort"><option value="score">Aggregate score</option><option value="lo">Interval low end</option><option value="hi">Interval high end</option><option value="name">Name</option><option value="papers">arXiv papers that name it</option><option value="results">Catalog results that name it</option><option value="backlinks">nLab backlinks</option><option value="files">mathlib files that mention it</option><option value="level">Reader level</option><option value="uni">Unifying power</option><option value="res">Research influence</option><option value="pra">Practical impact</option><option value="rea">Reach</option><option value="lpb">Low prerequisite burden</option><option value="exa">Example accessibility</option><option value="cmp">Computability</option></select></label>
+<div class="field"><span class="label">Direction</span>
+<div class="seg" role="group" aria-label="Concept sort direction">
+<button type="button" data-field="cdir" value="desc">Descending</button>
+<button type="button" data-field="cdir" value="asc">Ascending</button>
+</div></div>
+</div>
+</details>
+<div class="chips-row">
+<p id="concept-count" class="note" aria-live="polite"></p>
+<ul id="concept-chips" class="chips" aria-label="Active concept filters"></ul>
+<button type="button" id="clear-concept-filters">Reset filters</button>
+</div>
+<div class="row table-tools no-print">
+<button type="button" id="save-concept-csv">Save concept CSV</button>
+<button type="button" id="copy-concept-csv">Copy concept CSV</button>
+</div>
+<div id="concept-wrap" class="table-wrap" tabindex="0" role="region" aria-label="Concept table: scroll for more rows">
+<table id="concept-table" class="catalog">
+<thead><tr><th scope="col">Concept</th><th scope="col">Kind</th><th scope="col">Score</th><th scope="col" title="Unifying power">uni</th><th scope="col" title="Research influence">res</th><th scope="col" title="Practical impact">pra</th><th scope="col" title="Reach">rea</th><th scope="col" title="Low prerequisite burden">lpb</th><th scope="col" title="Example accessibility">exa</th><th scope="col" title="Computability">cmp</th><th scope="col">Level</th><th scope="col">arXiv papers</th><th scope="col">Results</th><th scope="col">nLab backlinks</th><th scope="col">Categories</th></tr></thead>
+<tbody id="concept-body"></tbody>
+</table>
+</div>
+<p class="note">Scores are 0 to 4 per component (tc-rubric/1). u: unknown, na: not applicable. The full judge wrote a definition, search phrases and prerequisites for its concepts; the light judge scored the others, whose definition is the quoted nLab or mathlib text and whose prerequisites are the nLab Idea and Definition links. The table draws only the rows near the scroll position.</p>
+<article id="concept" class="card result" aria-labelledby="concept-name"></article>
+</section>
+
 <!-- Comparisons -->
 <section id="view-compare" class="view" aria-labelledby="h-compare">
 <h2 id="h-compare">Comparisons</h2>
@@ -233,6 +295,41 @@
 <div id="relations"></div>
 </section>
 
+<!-- Prerequisite tree -->
+<section id="view-tree" class="view" aria-labelledby="h-tree">
+<h2 id="h-tree">Prerequisite tree</h2>
+<div class="row">
+<label class="field" for="troot">Root (a result or a concept)
+<input id="troot" type="text" list="item-names" autocomplete="off" placeholder="Type a result or concept name"></label>
+<datalist id="item-names"></datalist>
+<label class="field"><span>Depth: <output data-field="tdepth"></output></span>
+<input id="tdepth" type="range" data-field="tdepth" min="1" max="8" step="1"></label>
+<div class="field"><span class="label">Members</span>
+<div class="seg wrap" role="group" aria-label="Tree members">
+<button type="button" data-field="tshow" value="both">Results and concepts</button>
+<button type="button" data-field="tshow" value="results">Results only</button>
+<button type="button" data-field="tshow" value="concepts">Concepts only</button>
+</div></div>
+</div>
+<p id="tree-summary" class="note"></p>
+<figure class="card">
+<figcaption class="label">The tree, root on the left, prerequisites to the right</figcaption>
+<div class="tree-scroll" tabindex="0" role="region" aria-label="Prerequisite tree drawing: scroll sideways for deeper levels"><svg id="tree-chart" class="chart tree" role="img" aria-label="The prerequisite tree; the outline below gives the same tree as text"></svg></div>
+<p class="note">Squares are results, circles concepts. A filled mark is known. A dashed edge is documented or judged only; a solid edge has a formal reference in mathlib. An item met again is drawn once and referred to.</p>
+</figure>
+<div class="lab">
+<div>
+<h3>Outline</h3>
+<div id="tree-outline"></div>
+</div>
+<div>
+<h3>Study order</h3>
+<p class="note">Every unknown item of the tree, each after the items it needs. Not a guaranteed curriculum.</p>
+<ol id="tree-study" class="path"></ol>
+</div>
+</div>
+</section>
+
 <!-- Fields over time -->
 <section id="view-fields" class="view" aria-labelledby="h-fields">
 <h2 id="h-fields">Fields over time</h2>
@@ -258,6 +355,50 @@
 </div></div>
 </div>
 <div id="history"></div>
+</section>
+
+<!-- Popularity by arXiv tag -->
+<section id="view-popularity" class="view" aria-labelledby="h-popularity">
+<h2 id="h-popularity">Popularity by arXiv tag</h2>
+<div class="row">
+<label class="field wide" for="ptags">arXiv tags (categories, archives or groups, comma-separated, at most 12)
+<input id="ptags" type="text" list="taxonomy-ids" autocomplete="off" placeholder="math.AG, math.PR, hep-th, cs.LG, q-fin, q-bio"></label>
+<div class="field"><span class="label">Popularity of</span>
+<div class="seg wrap" role="group" aria-label="Popularity of">
+<button type="button" data-field="pkind" value="concepts">Concepts</button>
+<button type="button" data-field="pkind" value="results">Results</button>
+</div></div>
+<div class="field"><span class="label">Measure</span>
+<div class="seg wrap" role="group" aria-label="Popularity measure">
+<button type="button" data-field="pmetric" value="rate">Rate per 10,000 papers</button>
+<button type="button" data-field="pmetric" value="count">Paper count</button>
+<button type="button" data-field="pmetric" value="lift">Lift over all papers</button>
+</div></div>
+<label class="field"><span>Rows: <output data-field="pn"></output></span>
+<input id="pn" type="range" data-field="pn" min="5" max="40" step="1"></label>
+<label class="field">Papers from year (0: any)
+<input type="number" data-field="py0" min="0" max="2100" step="1"></label>
+<label class="field">Papers to year (2100: any)
+<input type="number" data-field="py1" min="0" max="2100" step="1"></label>
+</div>
+<div class="chips-row no-print" id="tag-presets" role="group" aria-label="Tag sets"></div>
+<p id="pop-summary" class="note"></p>
+<figure class="card">
+<figcaption id="pop-caption" class="label"></figcaption>
+<div class="table-scroll"><svg id="pop-chart" class="chart heat" role="img" aria-label="Popularity of the top items in each selected arXiv tag; the table below gives the same values"></svg></div>
+<details><summary>Table: the matrix values and counts</summary><div id="pop-table"></div></details>
+</figure>
+<h3>Top 10 in each tag</h3>
+<div id="pop-tags" class="tag-grid"></div>
+<h3 id="pop-trend-title">Trend</h3>
+<label class="field" for="psel">Item
+<input id="psel" type="text" list="pop-names" autocomplete="off" placeholder="Type a concept or result name"></label>
+<datalist id="pop-names"></datalist>
+<figure class="card"><svg id="pop-trend" class="chart" viewBox="0 0 640 260" role="img" aria-label="The item's rate per year bin in each selected tag; the table below gives the same values"></svg>
+<details><summary>Table: rate per year bin</summary><div id="pop-trend-table"></div></details></figure>
+<h3>Where it is most over-represented</h3>
+<div id="pop-distinct"></div>
+<p id="pop-method" class="note"></p>
 </section>
 
 <!-- About -->

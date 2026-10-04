@@ -1,5 +1,5 @@
 /* Theorem Explorer: which result to learn next: the views. This file is the visual's own: it decodes the packs,
- * draws the six views and the result page from the state, keeps the reader's profile in local storage, and adds
+ * draws the nine views, the result page and the concept page from the state, keeps the reader's profile in local storage, and adds
  * the CSV, result JSON and profile exports, the domain WebMCP tools and the palette commands. The kit
  * (VisualKit.start) owns the state, the URL, Back and Forward, Reset, the view JSON, Markdown and beamdswitch
  * exports, the command palette and the shared WebMCP tools. Nothing here reads the network.
@@ -79,9 +79,11 @@
   if (early.notices.length) $("notice").textContent = early.notices.join(" ");
   const loading = $("loading");
   try {
-    const [core, detail] = await Promise.all([decode(D.packs.core), decode(D.packs.detail)]);
+    const [core, detail, concepts, popularity] = await Promise.all([decode(D.packs.core), decode(D.packs.detail), decode(D.packs.concepts), decode(D.packs.popularity)]);
     Model.prime(D, "core", core);
     Model.prime(D, "detail", detail);
+    Model.prime(D, "concepts", concepts);
+    Model.prime(D, "popularity", popularity);
   } catch (e) {
     loading.textContent = `This browser cannot decode the catalog (it needs DecompressionStream): ${String(e)}. Use a current Chrome, Edge, Firefox or Safari.`;
     return;
@@ -89,6 +91,7 @@
   loading.hidden = true;
   const IX = Model.index(D);
   const DET = Model.detail(D);
+  const CX = Model.cindex(D);
   const TAX = D.taxonomy;
   const catName = (/** @type {number} */ k) => `${TAX.categories[k][0]} (${TAX.categories[k][1]})`;
   const rowOf = (/** @type {string} */ id) => IX.byId.get(id) ?? -1;
@@ -180,12 +183,19 @@
     const s = D.snapshot;
     $("snapshot-line").textContent = `Snapshot ${s.id}. Source freshness: evidence to ${s.evidence_cutoff} (mathlib ${String(D.sources.mathlib.commit).slice(0, 12)}, TheoremSearch dataset of ${D.sources.theoremsearch.last_modified}, Wikidata and Wikipedia retrieved ${D.sources.wikidata.retrieved}). File generated ${String(s.generated_at).slice(0, 10)}. The page never refreshes its sources.`;
     for (const v of Model.FIELDS.view.values ?? []) $(`view-${v}`).hidden = state.view !== v;
-    $("weights").hidden = state.view === "about" || (state.view === "fields" && state.fview !== "utility");
-    $("custom-weights").hidden = state.preset !== "custom";
+    $("weights").hidden = ["about", "tree", "popularity"].includes(state.view) || (state.view === "fields" && state.fview !== "utility");
+    const conceptView = state.view === "concepts";
+    $("custom-weights").hidden = state.preset !== "custom" || conceptView;
+    $("concept-weights").hidden = state.preset !== "custom" || !conceptView;
+    if (conceptView && d.concepts) {
+      const c = d.concepts;
+      $("weights-line").textContent = `Concept rubric (tc-rubric/1): ${Model.CONCEPT_COMPONENT_NAMES.map((n, k) => `${n} ${c.weights[k]}`).join(", ")}. Sum ${c.weightSum}.${c.weightsOk ? "" : " The weights must add up to 100: every concept aggregate is unknown until they do."}`;
+    } else {
     const names = Model.COMPONENT_NAMES.map((n, k) => `${n} ${d.weights[k]}`).join(", ");
     $("weights-line").textContent = `${names}. Sum ${d.weightSum}.` +
       (d.excluded.length ? ` Excluded components: ${d.excluded.map((/** @type {string} */ k) => Model.COMPONENT_NAMES[Model.COMPONENTS.indexOf(k)]).join(", ")}. The scores are a custom view over the remaining components only, not the full rubric.` : "") +
       (d.weightsOk ? "" : " The weights must add up to 100: every aggregate is unknown until they do.");
+    }
     $("result").hidden = !["learn", "catalog", "connections"].includes(state.view);
     for (const b of document.querySelectorAll("[data-example]")) {
       const ex = Model.EXAMPLES.find((/** @type {KitExample} */ e) => e.id === b.getAttribute("data-example"));
@@ -734,6 +744,265 @@
     return out;
   }
 
+  /* ---------- concepts ---------- */
+
+  /** @param {string} id @param {string} [label] */
+  const conceptBtn = (id, label) => h("button", { type: "button", class: "link", onclick: () => app.set({ view: "concepts", csel: id }) }, label ?? CX.rows[CX.byId.get(id)]?.n ?? id);
+  /** A result or concept as a link that roots the tree at it. @param {string} id @param {string} name */
+  const treeBtn = (id, name) => h("button", { type: "button", class: "link", onclick: () => app.set({ view: "tree", troot: id }) }, name);
+
+  /** @type {{ order: number[], weights: number[], ok: boolean, sel: string }} */
+  let conceptModel = { order: [], weights: [], ok: true, sel: "" };
+  let conceptFrame = 0;
+
+  function drawConceptRows() {
+    const wrap = $("concept-wrap");
+    const { order, weights, ok, sel } = conceptModel;
+    const first = Math.max(0, Math.floor(wrap.scrollTop / ROW) - 10);
+    const last = Math.min(order.length, first + Math.ceil((wrap.clientHeight || 600) / ROW) + 20);
+    const rows = [h("tr", { class: "spacer", "aria-hidden": "true" }, h("td", { colspan: 15, style: `height:${first * ROW}px` }))];
+    for (let k = first; k < last; k++) {
+      const i = order[k];
+      const r = CX.rows[i], t = CX.texts[i];
+      const a = ok ? Model.aggregate(CX.scores[i], weights) : { v: null, lo: 0, hi: 100, missing: ["weights"] };
+      const score = a.v !== null ? fmt(a.v) : a.missing[0] === "weights" ? "unknown" : `${num(a.lo, 0)}-${num(a.hi, 0)}`;
+      rows.push(h("tr", { class: r.id === sel ? "sel" : null, "aria-rowindex": k + 2, "aria-selected": r.id === sel ? "true" : null },
+        h("th", { scope: "row", class: "name" },
+          h("button", { type: "button", class: "link", onclick: () => { app.set({ csel: r.id }); $("concept").scrollIntoView({ block: "start" }); } }, r.n),
+          h("span", { class: "preview", text: String(t.def ?? "").replace(/\$|\\(?=[a-zA-Z])/g, "").replace(/\s+/g, " ").slice(0, 160) })),
+        h("td", { text: `${r.k}${r.j === 2 ? "" : " (light)"}` }), h("td", { class: "num", text: score }),
+        CX.scores[i].map((/** @type {number} */ v) => h("td", { class: "num", text: Model.scoreText(v) })),
+        h("td", { text: r.lv === null ? "" : Model.LEVEL_NAMES[r.lv] }),
+        h("td", { class: "num", text: r.ap === null ? "not counted" : String(r.ap) }), h("td", { class: "num", text: String(r.rx.length) }),
+        h("td", { class: "num", text: r.nb === null ? "" : String(r.nb) }),
+        h("td", { text: r.cat.map((/** @type {number} */ c) => TAX.categories[c][0]).join(" ") })));
+    }
+    rows.push(h("tr", { class: "spacer", "aria-hidden": "true" }, h("td", { colspan: 15, style: `height:${(order.length - last) * ROW}px` })));
+    put($("concept-body"), ...rows);
+  }
+
+  function renderConcepts(/** @type {any} */ state, /** @type {any} */ d) {
+    const c = d.concepts;
+    const cov = D.coverage.concepts;
+    $("concepts-intro").textContent = `${cov.catalog.toLocaleString("en")} concepts from a universe of ${cov.universe.toLocaleString("en")} candidate names (nLab pages, mathlib classes and structures, and the key concepts of the catalog results), merged by name. The full judge assessed ${cov.full}; the light judge assessed the rest and left out ${Object.values(cov.dropped).reduce((/** @type {number} */ a, /** @type {any} */ b) => a + b, 0).toLocaleString("en")} that are not concepts (${Object.entries(cov.dropped).map(([k, v]) => `${k} ${v}`).join(", ")}).`;
+    for (const [id, key] of [["cq", "cq"], ["ctag", "ctag"]]) { const el = $(id); if (document.activeElement !== el) el.value = state[key]; }
+    $("concept-count").textContent = `${c.counts.shown.toLocaleString("en")} of ${c.counts.concepts.toLocaleString("en")} concepts shown (${c.counts.shownUnknown.toLocaleString("en")} with an unknown aggregate, shown as an interval).`;
+    put($("concept-chips"), ...c.filters.map((/** @type {any} */ f) => h("li", null,
+      h("button", { type: "button", class: "chip", "aria-label": `Remove the filter ${f.label}: ${f.value}`, onclick: () => app.set({ [f.key]: Model.FIELDS[f.key].default }) }, `${f.label}: ${f.value} ×`))));
+    $("clear-concept-filters").disabled = c.filters.length === 0;
+    $("concept-table").setAttribute("aria-rowcount", String(c.order.length + 1));
+    conceptModel = { order: c.order, weights: c.weights, ok: c.weightsOk, sel: c.selected.id };
+    drawConceptRows();
+    renderConcept(state, c);
+  }
+
+  function renderConcept(/** @type {any} */ state, /** @type {any} */ c) {
+    const s = c.selected;
+    const i = s.i;
+    const R = D.concept_rubric;
+    const depth = Model.DEPTHS.indexOf(state.depth);
+    const comp = Model.CONCEPT_COMPONENTS.map((_k, j) => {
+      const cc = R.components[j];
+      const a = CX.scores[i][j];
+      const anchor = a >= 0 ? (cc.anchors[String(a)] ?? `between the anchors ${a - 1} and ${a + 1}`) : a === -1 ? R.scale.u : R.scale.na;
+      return [cc.name, Model.scoreText(a), String(c.weights[j]), anchor];
+    });
+    const list = (/** @type {any[]} */ items, /** @type {(x: any) => any} */ f) => items.map((x, k) => [k ? ", " : "", f(x)]);
+    put($("concept"),
+      h("p", { class: "eyebrow" }, h("span", { text: s.kind }), h("span", { text: s.id }), h("span", { text: s.level ? `${Model.LEVEL_NAMES[Model.LEVELS.indexOf(s.level)]} level` : "level unknown" }), h("span", { text: `${s.assessment} assessment` })),
+      h("h2", { id: "concept-name", text: s.name }),
+      s.aliases.length ? h("p", { class: "note", text: `Also called: ${s.aliases.join("; ")}.` }) : null,
+      s.definition ? h("figure", { class: "inset" }, prose(s.definition), h("figcaption", { class: "note", text: s.definitionBasis === "judge" ? "Definition written by the judge (tc-judge-prompt/1)." : `${s.definitionBasis}.` })) : h("p", { class: "note", text: "No definition text is in the snapshot for this concept." }),
+      h("p", { class: "note", text: `arXiv categories (judged): ${s.cats.join(", ") || "unclassified"}.` }),
+      h("div", { class: "actions" },
+        h("button", { type: "button", onclick: () => app.set({ view: "tree", troot: s.id }), text: "Show its prerequisite tree" }),
+        h("button", { type: "button", onclick: () => app.set({ view: "popularity", pkind: "concepts", psel: s.id }), text: "Show its popularity by tag" }),
+        h("button", { type: "button", onclick: () => setKnown(s.id, s.known ? null : depth), text: s.known ? "Mark it not known" : `I know it (${state.depth})` })),
+      h("h3", { text: "Scores" }),
+      h("p", null, "Aggregate under the active concept weights: ", h("strong", { class: "num", text: fmt(s.score) }),
+        s.score === null ? ` (interval ${num(s.lo, 2)} to ${num(s.hi, 2)}; missing: ${s.missing.join(", ")})` : ` (rank ${s.rank} of the scored concepts)`, `. Confidence ${s.conf}.`),
+      table(["Component", "Score", "Weight", "Anchor for this score"], comp),
+      s.why ? h("p", null, h("strong", { text: "Why: " }), s.why) : null,
+      h("p", { class: "note", text: `${R.confidence.note} Judge: ${D.snapshot.judge.model}, ${s.assessment === "full" ? "tc-judge-prompt/1" : "tc-judge-light/1"}, rubric ${R.version}.` }),
+      h("h3", { text: "Evidence and measurements" }),
+      dl([["Prerequisite concepts", s.prerequisites.length ? [list(s.prerequisites, (p) => [conceptBtn(p.id, p.name), p.known ? " (known)" : ""]), h("span", { class: "note", text: ` (${s.prerequisiteBasis})` })] : "none recorded"],
+        ["Concepts that need it", s.neededByCount ? [list(s.neededBy, (p) => conceptBtn(p.id, p.name)), s.neededByCount > s.neededBy.length ? ` and ${s.neededByCount - s.neededBy.length} more` : ""] : "none recorded"],
+        ["Catalog results that name it", s.resultCount ? [list(s.results, (r) => openBtn(r.id, r.name, { view: "catalog" })), s.resultCount > s.results.length ? ` and ${s.resultCount - s.results.length} more` : ""] : "none"],
+        ["arXiv papers that name it (titles and abstracts, to 2020)", s.papers === null ? "not counted: its name is not a safe search phrase" : `${s.papers.toLocaleString("en")}${s.phrases.length ? ` (phrases: ${s.phrases.join("; ")})` : ""}${s.ambiguous ? "; some phrases have other senses, so this is an upper bound" : ""}`],
+        ["nLab page", s.nlab ? [h("a", { href: `https://ncatlab.org/nlab/show/${encodeURIComponent(s.nlab.page).replace(/%20/g, "+")}`, rel: "noopener", text: `${s.nlab.page} (online)` }), `; ${s.nlab.backlinks} other pages link to it`] : "none"],
+        ["nLab Idea passage (quoted)", s.nlab?.idea ? prose(s.nlab.idea) : null],
+        ["mathlib declaration", s.mathlib ? [h("code", { text: s.mathlib.decl }), s.mathlib.verified ? `; ${s.mathlib.module}, line ${s.mathlib.line}; ${s.mathlib.files} files mention it (textual, tc-decl-text/1)` : "; named by the judge, not found in the textual declaration index (it may be in Lean core)"] : "none"],
+        ["mathlib doc comment (quoted)", s.mathlib?.doc ?? null],
+        ["Effort bands (understand / apply / prove)", s.effort.map((/** @type {string} */ b) => Model.bandLabel(b)).join("; ")]]));
+  }
+
+  /* ---------- the prerequisite tree ---------- */
+
+  function renderTree(/** @type {any} */ state, /** @type {any} */ d) {
+    const t = d.tree;
+    const rootEl = $("troot");
+    if (!t) { put($("tree-outline"), h("p", { class: "note", text: "No tree: the root is not in this snapshot." })); return; }
+    if (document.activeElement !== rootEl) rootEl.value = t.root.name;
+    $("tree-summary").textContent = `${t.root.name} (${t.root.kind}): ${t.unique} distinct items to depth ${t.depth}${t.truncated ? `, cut at ${Model.TREE_NODES} nodes` : ""}; ${t.studyCount} unknown (${t.results} results, ${t.concepts} concepts). Results need their judged prerequisite results and their key concepts; concepts need their prerequisite concepts. A count after an item is the number of its prerequisites below the depth.`;
+    drawTree(t);
+    /** @param {any} n */
+    const item = (n) => h("li", { class: n.known ? "known" : null },
+      treeBtn(n.id, n.name), h("span", { class: "note", text: ` ${n.kind}${n.level ? `, ${Model.LEVEL_NAMES[Model.LEVELS.indexOf(n.level)]}` : ""}${n.edge ? `; ${n.edge}` : ""}${n.known ? "; known" : ""}${n.ref ? "; shown above" : ""}${n.cycle ? "; closes a cycle" : ""}${n.more ? `; ${n.more} more below` : ""}` }),
+      n.children.length ? h("ul", null, n.children.map(item)) : null);
+    put($("tree-outline"), h("ul", { class: "outline" }, item(t.root)));
+    put($("tree-study"), ...t.study.map((/** @type {any} */ n) => h("li", null, treeBtn(n.id, n.name), h("span", { class: "note", text: ` ${n.kind}${n.level ? `, ${Model.LEVEL_NAMES[Model.LEVELS.indexOf(n.level)]}` : ""}, ${Model.bandLabel(n.band)} ` }),
+      h("button", { type: "button", onclick: () => setKnown(n.id, Model.DEPTHS.indexOf(state.depth)), text: "I know it" }))));
+  }
+
+  /** A left-to-right tidy tree: one column per depth, leaves stacked, each parent centred on its children. @param {any} t */
+  function drawTree(t) {
+    const chart = $("tree-chart");
+    const colW = 240, rowH = 22, P = { l: 8, t: 14 }, labelW = 186;
+    /** @type {any[]} */
+    const nodes = [];
+    let leaf = 0;
+    /** @param {any} n @param {number} depth @returns {number} */
+    function place(n, depth) {
+      const kids = n.children.map((/** @type {any} */ c) => place(c, depth + 1));
+      const y = kids.length ? (kids[0] + kids[kids.length - 1]) / 2 : leaf++;
+      nodes.push({ n, depth, y, kids: n.children.map((/** @type {any} */ c) => c.__y) });
+      n.__y = y;
+      return y;
+    }
+    place(t.root, 0);
+    const depth = Math.max(...nodes.map((x) => x.depth));
+    const W = P.l + colW * (depth + 1) + 40, H = P.t * 2 + rowH * Math.max(1, leaf);
+    chart.setAttribute("viewBox", `0 0 ${W} ${H}`);
+    chart.setAttribute("width", String(W));
+    chart.setAttribute("height", String(H));
+    const X = (/** @type {number} */ dpt) => P.l + dpt * colW + 6, Y = (/** @type {number} */ y) => P.t + y * rowH + rowH / 2;
+    const edges = svg("g", { class: "tree-edges" }), marks = svg("g", { class: "tree-nodes" });
+    for (const x of nodes) {
+      for (const c of x.n.children) {
+        // Each edge starts after the parent's label (at most 26 characters), so it never crosses the text.
+        const x1 = X(x.depth) + labelW, y1 = Y(x.y), x2 = X(x.depth + 1) - 6, y2 = Y(c.__y);
+        const mid = (x1 + x2) / 2;
+        edges.append(svg("path", { class: c.edge && /formal/.test(c.edge) ? "edge formal" : "edge pre", d: `M${x1} ${y1}C${mid} ${y1} ${mid} ${y2} ${x2} ${y2}` }));
+      }
+      const g = svg("g", { class: `tnode${x.n.known ? " known" : ""}${x.n.ref ? " ref" : ""}`, tabindex: 0, role: "button", "aria-label": `${x.n.name}, ${x.n.kind}${x.n.known ? ", known" : ""}: root the tree here` });
+      const cx = X(x.depth), cy = Y(x.y);
+      g.append(x.n.kind === "result" ? svg("rect", { x: cx - 5, y: cy - 5, width: 10, height: 10 }) : svg("circle", { cx, cy, r: 5 }));
+      const label = x.n.name.length > 26 ? `${x.n.name.slice(0, 25)}…` : x.n.name;
+      g.append(svg("text", { x: cx + 9, y: cy + 4 }, `${label}${x.n.ref ? " ↑" : ""}${x.n.more ? ` +${x.n.more}` : ""}`));
+      g.append(svg("title", {}, `${x.n.name} (${x.n.kind})${x.n.edge ? `: ${x.n.edge}` : ""}`));
+      const go = () => app.set({ troot: x.n.id });
+      g.addEventListener("click", go);
+      g.addEventListener("keydown", (/** @type {KeyboardEvent} */ ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); go(); } });
+      marks.append(g);
+    }
+    put(chart, edges, marks);
+  }
+
+  /* ---------- popularity by arXiv tag ---------- */
+
+  const TAG_SETS = [
+    ["Across the groups", "math,physics,cs,stat,q-bio,q-fin,eess,econ"],
+    ["Pure mathematics", "math.AG,math.NT,math.AT,math.CT,math.GT,math.RT"],
+    ["Analysis and probability", "math.AP,math.FA,math.PR,math.DS,math.CA,math.OC"],
+    ["Physics", "hep-th,math-ph,quant-ph,gr-qc,cond-mat,astro-ph"],
+    ["Computing and data", "cs.LG,cs.IT,cs.DS,cs.LO,stat.ML,stat.ME"],
+    ["Applied", "q-fin,q-bio,eess,econ,physics.soc-ph,cs.SI"],
+  ];
+
+  function renderPopularity(/** @type {any} */ state, /** @type {any} */ d) {
+    const p = d.popularity;
+    const tags = $("ptags");
+    if (document.activeElement !== tags) tags.value = state.ptags;
+    if (!p || !p.tags.length) {
+      $("pop-summary").textContent = "Choose at least one arXiv tag of the pinned taxonomy.";
+      put($("pop-chart")); put($("pop-tags")); put($("pop-trend")); put($("pop-distinct")); put($("pop-table")); put($("pop-trend-table"));
+      return;
+    }
+    const kindName = p.kind === "concepts" ? "concept" : "result";
+    $("pop-summary").textContent = `${p.named.toLocaleString("en")} ${kindName}s are named by at least one of ${p.allPapers.toLocaleString("en")} arXiv papers from ${p.years[0]} to ${p.years[1]}. Tags: ${p.tags.map((/** @type {any} */ t) => `${t.id} (${t.kind === "cat" ? "category" : t.kind === "arch" ? "archive" : "group"}, ${t.papers.toLocaleString("en")} papers)`).join("; ")}.`;
+    $("pop-caption").textContent = `The ${p.matrix.length} ${kindName}s with the highest ${p.metric === "lift" ? "lift" : p.metric} in any selected tag: ${p.unit}`;
+    drawPopMatrix(p);
+    put($("pop-table"), table([kindName[0].toUpperCase() + kindName.slice(1), ...p.tags.map((/** @type {any} */ t) => t.id), "All papers"],
+      p.matrix.map((/** @type {any} */ r) => [popBtn(r.id, r.name), ...r.values.map((/** @type {any} */ v, /** @type {number} */ j) => `${v === null ? "no data" : num(v, 2)} (${r.counts[j]})`), `${num(r.allRate, 2)} per 10,000 (${r.all})`])));
+    put($("pop-tags"), ...p.perTag.map((/** @type {any} */ t) => h("section", { class: "card" },
+      h("h4", { text: `${t.tag}: ${t.name}` }), h("p", { class: "note", text: `${t.papers.toLocaleString("en")} papers` }),
+      t.top.length ? h("ol", null, t.top.map((/** @type {any} */ x) => h("li", null, popBtn(x.id, x.name), h("span", { class: "num note", text: ` ${num(x.value, 2)} (${x.count})` })))) : h("p", { class: "note", text: "No item reaches the threshold here." }))));
+    const tr = p.trend;
+    $("pop-trend-title").textContent = tr ? `Trend: ${tr.name}` : "Trend";
+    const psel = $("psel");
+    if (tr && document.activeElement !== psel) psel.value = tr.name;
+    if (tr) {
+      drawTrend(tr);
+      put($("pop-trend-table"), table(["Years", ...tr.series.map((/** @type {any} */ s) => s.tag)], tr.bins.map((/** @type {number[]} */ b, /** @type {number} */ k) => [b[0] === b[1] ? String(b[0]) : `${b[0]}-${b[1]}`, ...tr.series.map((/** @type {any} */ s) => (s.rates[k] === null ? "no data" : num(s.rates[k], 2)))])));
+      put($("pop-distinct"), p.distinct?.length ? table(["Category", "Papers", "Rate per 10,000", "Lift"], p.distinct.map((/** @type {any} */ x) => [`${x.tag}: ${x.name}`, String(x.count), num(x.rate, 2), x.lift === null ? "unknown" : num(x.lift, 2)]))
+        : h("p", { class: "note", text: `No category has ${Model.LIFT_MIN} or more papers that name it.` }));
+    } else { put($("pop-trend")); put($("pop-trend-table")); put($("pop-distinct")); }
+    $("pop-method").textContent = `Method (tc-popularity/1): a paper names an item when one of its phrases occurs as whole words in the paper's title or abstract (the full judge's phrases, or the concept's name and plural when the light judge marked them safe; for results, the te-use-rule/1 name index). A paper counts once per item and once in each of its tags: each listed category (cross-lists included), its archive and its group. Source: ${D.sources.arxiv.scope}; ${D.sources.arxiv.papers.toLocaleString("en")} papers, year bins of ${p.bin} year${p.bin > 1 ? "s" : ""}. Rates with fewer than 100 papers in a bin show no data. A count is evidence of use in abstracts, not of importance.`;
+  }
+
+  /** @param {string} id @param {string} name */
+  const popBtn = (id, name) => h("button", { type: "button", class: "link", onclick: () => app.set({ psel: id }) }, name);
+
+  /** The matrix: items down, tags across, one hue per value (darker is larger, by column maximum). @param {any} p */
+  function drawPopMatrix(p) {
+    const chart = $("pop-chart");
+    const L = 210, top = 44, cellH = 22;
+    const cw = Math.max(62, Math.min(110, ((chart.parentElement?.getBoundingClientRect().width || 640) - L - 8) / p.tags.length));
+    const W = L + cw * p.tags.length + 8, H = top + cellH * p.matrix.length + 8;
+    chart.setAttribute("viewBox", `0 0 ${W} ${H}`);
+    chart.setAttribute("width", String(W));
+    chart.setAttribute("height", String(H));
+    /** @type {any[]} */
+    const marks = [];
+    const max = p.tags.map((/** @type {any} */ _t, /** @type {number} */ j) => Math.max(1e-9, ...p.matrix.map((/** @type {any} */ r) => r.values[j] ?? 0)));
+    p.tags.forEach((/** @type {any} */ t, /** @type {number} */ j) => marks.push(svg("text", { class: "tick", x: L + j * cw + cw / 2, y: top - 10, "text-anchor": "middle" }, t.id)));
+    p.matrix.forEach((/** @type {any} */ r, /** @type {number} */ k) => {
+      const y = top + k * cellH;
+      const name = svg("text", { class: "tick", x: L - 6, y: y + 15, "text-anchor": "end" }, r.name.length > 30 ? `${r.name.slice(0, 29)}…` : r.name);
+      marks.push(name);
+      r.values.forEach((/** @type {number | null} */ v, /** @type {number} */ j) => {
+        const cell = svg("rect", { class: v === null ? "cell nodata" : "cell", x: L + j * cw + 1, y: y + 1, width: cw - 2, height: cellH - 2 });
+        if (v !== null) cell.setAttribute("fill-opacity", String(Math.min(1, 0.06 + 0.94 * (v / max[j]))));
+        cell.append(svg("title", {}, `${r.name} in ${p.tags[j].id}: ${v === null ? "no data" : num(v, 2)} (${r.counts[j]} papers)`));
+        marks.push(cell);
+        if (v !== null) marks.push(svg("text", { class: `cell-label${v / max[j] > 0.55 ? " on-dark" : ""}`, x: L + j * cw + cw / 2, y: y + 15, "text-anchor": "middle" }, num(v, p.metric === "count" ? 0 : 1)));
+      });
+    });
+    put(chart, ...marks);
+  }
+
+  /** Rate per year bin, one line per tag, with the all-papers line dashed. @param {any} tr */
+  function drawTrend(tr) {
+    const chart = $("pop-trend");
+    const W = 640, H = 260, P = { l: 48, r: 110, t: 14, b: 28 };
+    const vals = tr.series.flatMap((/** @type {any} */ s) => s.rates.filter((/** @type {number | null} */ v) => v !== null));
+    const max = Math.max(1e-9, ...vals);
+    const n = tr.bins.length;
+    const X = (/** @type {number} */ k) => P.l + (n === 1 ? 0.5 : k / (n - 1)) * (W - P.l - P.r);
+    const Y = (/** @type {number} */ v) => P.t + (1 - v / max) * (H - P.t - P.b);
+    const out = [svg("g", { class: "grid" }), svg("g", { class: "tick" })];
+    for (const f of [0, 0.5, 1]) { out[0].append(svg("line", { x1: P.l, x2: W - P.r, y1: Y(f * max), y2: Y(f * max) })); out[1].append(svg("text", { x: P.l - 6, y: Y(f * max) + 4, "text-anchor": "end" }, num(f * max, 1))); }
+    tr.bins.forEach((/** @type {number[]} */ b, /** @type {number} */ k) => { if (k % Math.ceil(n / 8) === 0 || k === n - 1) out[1].append(svg("text", { x: X(k), y: H - 8, "text-anchor": "middle" }, String(b[0]))); });
+    /** @type {{ y: number, tag: string, cls: string }[]} */
+    const labels = [];
+    tr.series.forEach((/** @type {any} */ s, /** @type {number} */ j) => {
+      let dpath = "", pen = false;
+      s.rates.forEach((/** @type {number | null} */ v, /** @type {number} */ k) => { if (v === null) { pen = false; return; } dpath += `${pen ? "L" : "M"}${X(k).toFixed(1)} ${Y(v).toFixed(1)}`; pen = true; });
+      if (!dpath) return;
+      const cls = s.tag === "all" ? "all" : `s${j % 6}`;
+      out.push(svg("path", { class: `series ${cls}`, d: dpath }));
+      const lastK = s.rates.map((/** @type {any} */ v, /** @type {number} */ k) => (v === null ? -1 : k)).filter((/** @type {number} */ k) => k >= 0).pop();
+      if (lastK !== undefined) labels.push({ y: Y(s.rates[lastK]) + 4, tag: s.tag, cls });
+    });
+    // End labels at the right edge, pushed apart so that no two overlap.
+    labels.sort((a, b) => a.y - b.y);
+    for (let k = 1; k < labels.length; k++) labels[k].y = Math.max(labels[k].y, labels[k - 1].y + 12);
+    for (let k = labels.length - 1; k >= 0; k--) labels[k].y = Math.min(labels[k].y, (k === labels.length - 1 ? H - P.b + 4 : labels[k + 1].y - 12));
+    for (const l of labels) out.push(svg("text", { class: `direct-label ${l.cls}`, x: W - P.r + 6, y: l.y.toFixed(1) }, l.tag));
+    out.push(svg("text", { class: "axis-title", x: P.l, y: 10 }, "Papers that name it per 10,000 papers with the tag"));
+    put(chart, ...out);
+  }
+
   /* ---------- about ---------- */
 
   let aboutDrawn = "";
@@ -796,6 +1065,9 @@
     if (state.view === "compare") renderCompare(state, d);
     if (state.view === "connections") renderConnections(state, d);
     if (state.view === "fields") renderFields(state, d);
+    if (state.view === "concepts") renderConcepts(state, d);
+    if (state.view === "tree") renderTree(state, d);
+    if (state.view === "popularity") renderPopularity(state, d);
     if (state.view === "about") renderAbout(state, d);
     if (["learn", "catalog", "connections"].includes(state.view)) renderResult(state, d);
     if (app) storeProfile();
@@ -860,6 +1132,36 @@
         const st = VisualKit.normalize(Model.FIELDS, { ...app.state, fview: input.view ?? app.state.fview, fby: input.by ?? app.state.fby, flevel: input.level ?? app.state.flevel, mode: input.mode ?? app.state.mode }).state;
         return out(Model.history(st, D, IX, IX.scores.map((/** @type {number[]} */ sc) => Model.aggregate(sc, Model.weightsOf(st)))));
       } },
+    { name: "get_concept", description: "Return one concept: kind, scores under the concept rubric (0-4, u unknown, na not applicable), the aggregate under the current concept weights, its definition and its basis, prerequisites, the concepts that need it, the results that name it, nLab, mathlib and arXiv evidence.",
+      inputSchema: { type: "object", properties: { id: { type: "string", description: "A concept id such as c:hilbert-space" } }, required: ["id"], additionalProperties: false },
+      annotations: { readOnlyHint: true },
+      execute: async (/** @type {{ id?: string }} */ input = {}) => {
+        const id = String(input.id ?? "");
+        if (!CX.byId.has(id)) return out({ error: `unknown concept id ${id}` });
+        return out(/** @type {any} */ (Model.derive({ ...app.state, view: "concepts", csel: id, cq: "", cjudge: "all", ckind: "any", ctag: "", clevel: "any", csrc: "any" }, D).concepts).selected);
+      } },
+    { name: "search_concepts", description: "Search the concept catalog offline (every word must match the name, aliases, kind, Lean name, nLab page or categories). Returns ids, names, kinds and aggregates in the current concept sort order.",
+      inputSchema: { type: "object", properties: { query: { type: "string" }, limit: { type: "integer", minimum: 1, maximum: 100 } }, required: ["query"], additionalProperties: false },
+      annotations: { readOnlyHint: true },
+      execute: async (/** @type {{ query?: string, limit?: number }} */ input = {}) => {
+        const c = /** @type {any} */ (Model.derive({ ...app.state, view: "concepts", cq: String(input.query ?? "").slice(0, 200), cjudge: "all", ckind: "any", ctag: "", clevel: "any", csrc: "any" }, D).concepts);
+        return out({ count: c.order.length, concepts: c.order.slice(0, input.limit ?? 20).map((/** @type {number} */ i) => ({ id: CX.rows[i].id, name: CX.rows[i].n, kind: CX.rows[i].k, assessment: CX.rows[i].j === 2 ? "full" : "light", score: c.weightsOk ? Model.aggregate(CX.scores[i], c.weights).v : null })) });
+      } },
+    { name: "get_prerequisite_tree", description: "Return the prerequisite tree of a result or a concept (results need their prerequisite results and key concepts; concepts need their prerequisite concepts), with the study order of the unknown items.",
+      inputSchema: { type: "object", properties: { id: { type: "string" }, depth: { type: "integer", minimum: 1, maximum: 8 }, show: { type: "string", enum: Model.FIELDS.tshow.values } }, required: ["id"], additionalProperties: false },
+      annotations: { readOnlyHint: true },
+      execute: async (/** @type {{ id?: string, depth?: number, show?: string }} */ input = {}) => {
+        const st = VisualKit.normalize(Model.FIELDS, { ...app.state, view: "tree", troot: String(input.id ?? ""), tdepth: input.depth ?? app.state.tdepth, tshow: input.show ?? app.state.tshow }).state;
+        const t = Model.treeOf(st, D, st.troot);
+        return out(t ?? { error: "unknown result or concept id" });
+      } },
+    { name: "get_tag_popularity", description: "Return the popularity of concepts or results in arXiv tags (categories, archives or groups): the top items by rate per 10,000 papers, paper count or lift, the top 10 per tag, and one item's trend and most over-represented categories.",
+      inputSchema: { type: "object", properties: { tags: { type: "string", description: "Comma-separated arXiv ids, e.g. math.AG,hep-th,cs.LG,q-fin" }, kind: { type: "string", enum: Model.FIELDS.pkind.values }, metric: { type: "string", enum: Model.FIELDS.pmetric.values }, item: { type: "string" } }, additionalProperties: false },
+      annotations: { readOnlyHint: true },
+      execute: async (/** @type {Record<string, string>} */ input = {}) => {
+        const st = VisualKit.normalize(Model.FIELDS, { ...app.state, view: "popularity", ptags: input.tags ?? app.state.ptags, pkind: input.kind ?? app.state.pkind, pmetric: input.metric ?? app.state.pmetric, psel: input.item ?? app.state.psel }).state;
+        return out(Model.derive(st, D).popularity);
+      } },
   ];
 
   /* ---------- start ---------- */
@@ -879,6 +1181,7 @@
       ...(Model.FIELDS.view.values ?? []).map((/** @type {string} */ v) => ({ label: `View: ${v}`, run: () => app.set({ view: v }) })),
       { label: "Save table CSV", run: () => save(`${Model.SLUG}-table.csv`, Model.csv(app.state, app.derived, D), "text/csv") },
       { label: "Save selected results JSON", run: saveResultJson },
+      { label: "Save concept CSV", run: () => { const c = Model.derive({ ...app.state, view: "concepts" }, D).concepts; save(`${Model.SLUG}-concepts.csv`, Model.conceptCsv(app.state, c, D), "text/csv"); } },
       { label: "Save profile JSON", run: () => save(`${Model.SLUG}-profile.json`, `${JSON.stringify(Model.profileOf(app.state, D), null, 2)}\n`, "application/json") },
     ],
     bind(a) {
@@ -934,6 +1237,45 @@
           tell(`${chosen.name} was not loaded: ${e instanceof Error ? e.message : String(e)}`);
         }
         file.value = "";
+      });
+      // Concepts, the tree and popularity: text fields whose empty value means "no filter" or "the default".
+      /** @type {ReturnType<typeof setTimeout> | undefined} */ let ctimer;
+      $("cq").addEventListener("input", () => { clearTimeout(ctimer); ctimer = setTimeout(() => a.set({ cq: $("cq").value.slice(0, 200) }, "replace"), 200); });
+      $("cq").addEventListener("change", () => a.set({ cq: $("cq").value.slice(0, 200) }));
+      $("ctag").addEventListener("change", () => a.set({ ctag: $("ctag").value.trim().slice(0, 40) }));
+      $("ptags").addEventListener("change", () => a.set({ ptags: $("ptags").value.slice(0, 200) }));
+      $("clear-concept-filters").addEventListener("click", () => a.set(Object.fromEntries(["cq", "cjudge", "ckind", "ctag", "clevel", "csrc"].map((k) => [k, Model.FIELDS[k].default]))));
+      $("concept-wrap").addEventListener("scroll", () => { cancelAnimationFrame(conceptFrame); conceptFrame = requestAnimationFrame(drawConceptRows); });
+      $("save-concept-csv").addEventListener("click", () => { const c = Model.derive({ ...a.state, view: "concepts" }, D).concepts; save(`${Model.SLUG}-concepts.csv`, Model.conceptCsv(a.state, c, D), "text/csv"); });
+      $("copy-concept-csv").addEventListener("click", () => { const c = Model.derive({ ...a.state, view: "concepts" }, D).concepts; copy(Model.conceptCsv(a.state, c, D), "Copied the concept CSV."); });
+      put($("tag-presets"), h("span", { class: "label", text: "Tag sets: " }), ...TAG_SETS.map(([label, tags]) => h("button", { type: "button", onclick: () => a.set({ ptags: tags }), text: label })));
+      // The name lists fill on first focus: about 13,000 concept names and 2,000 result names.
+      /** Find a result or concept by its name or id. @param {string} raw @param {"both" | "concepts" | "results"} kind */
+      const findItem = (raw, kind) => {
+        const q = raw.trim().toLowerCase();
+        if (kind !== "concepts") { const i = IX.rows.findIndex((/** @type {any} */ r) => r.n.toLowerCase() === q || r.id.toLowerCase() === q); if (i >= 0) return IX.rows[i].id; }
+        if (kind !== "results") { const i = CX.rows.findIndex((/** @type {any} */ r) => r.n.toLowerCase() === q || r.id.toLowerCase() === q); if (i >= 0) return CX.rows[i].id; }
+        return null;
+      };
+      let namesFilled = false;
+      const fillNames = () => {
+        if (namesFilled) return;
+        namesFilled = true;
+        const opts = [...new Set([...IX.rows.filter((/** @type {any} */ _r, /** @type {number} */ i) => IX.isResult[i]).map((/** @type {any} */ r) => r.n), ...CX.rows.map((/** @type {any} */ r) => r.n)])];
+        for (const id of ["item-names", "pop-names"]) {
+          const frag = document.createDocumentFragment();
+          for (const n of opts) frag.append(h("option", { value: n }));
+          $(id).append(frag);
+        }
+      };
+      for (const id of ["troot", "psel"]) $(id).addEventListener("focus", fillNames, { once: true });
+      $("troot").addEventListener("change", () => {
+        const id = findItem($("troot").value, "both");
+        if (id) a.set({ troot: id }); else tell(`No result or concept is named "${$("troot").value.slice(0, 60)}". Choose a name from the list.`);
+      });
+      $("psel").addEventListener("change", () => {
+        const id = findItem($("psel").value, a.state.pkind);
+        if (id) a.set({ psel: id }); else tell(`No ${a.state.pkind === "concepts" ? "concept" : "result"} is named "${$("psel").value.slice(0, 60)}". Choose a name from the list.`);
       });
       setupFormal();
       $("deck-fallback").addEventListener("toggle", () => {

@@ -11,13 +11,18 @@ Steps, in order (each writes <work>/refresh/<step>.log):
             Wikidata and Wikipedia records (wiki.py, cached). Requests are one per second, with no account.
   extract   the Lean extractor (pipeline/lean) over the pinned mathlib build, in SHARDS shards. Skipped when every
             shard header already names the pinned commit (the cache).
-  stages    taxonomy, mathlib, nlab, theoremsearch, consolidate, theoremgraph, uses, sources, packets.
+  stages    taxonomy, mathlib, nlab, theoremsearch, consolidate, theoremgraph, uses, sources, packets, then the
+            concept stages: arxiv (the pinned arXiv metadata file, skipped when the stage file names its generation),
+            concept_sources and concept_universe.
   judge     carries each earlier answer to the new packets when its cache key (packet row, prompt, rubric version,
             judge configuration) is unchanged, then lists the results that need an assessment in
             <work>/judge/todo.json. With a non-empty list the run stops here (exit 3): the judge answers, then
             `--from judge` continues. No step calls a remote model.
   assemble  assemble.py, then the snapshot links: the identity map, the previous snapshot ID and the change
             report, split into source, measurement, judge, rubric and identity changes.
+  concepts  concepts.py: the concept catalog and the arXiv popularity packs (tc-assemble/1). A universe member that
+            neither data/concepts.json nor data/concepts-light.json judges is counted as unjudged and left out;
+            <work>/judge/concepts-todo.json lists those members for the light judge (tc-judge-light/1).
   publish   copies the new raw.json into the visual, rebuilds index.html (build.py) and verifies it.
 
 A failed step stops the run before publish, so the committed raw.json and index.html stay the preceding usable
@@ -37,7 +42,7 @@ import time
 import urllib.request
 from pathlib import Path
 
-from common import DATA, VISUAL, WORK, from_toon, pins, read_json, sha256_bytes, shown, to_toon, write_json
+from common import DATA, STAGE, VISUAL, WORK, from_toon, pins, read_json, sha256_bytes, shown, to_toon, write_json
 
 HERE = Path(__file__).resolve().parent
 PINS = DATA / "sources" / "pins.json"
@@ -45,8 +50,9 @@ OUT = WORK / "out"
 LOGS = WORK / "refresh"
 SNAPSHOTS = WORK / "snapshots"
 SHARDS = 3
-STEPS = ["resolve", "fetch", "extract", "stages", "judge", "assemble", "publish"]
-STAGES = ["taxonomy", "mathlib", "nlab", "theoremsearch", "consolidate", "theoremgraph", "uses", "sources", "packets"]
+STEPS = ["resolve", "fetch", "extract", "stages", "judge", "assemble", "concepts", "publish"]
+STAGES = ["taxonomy", "mathlib", "nlab", "theoremsearch", "consolidate", "theoremgraph", "uses", "sources", "packets",
+          "arxiv", "concept_sources", "concept_universe"]
 USER_AGENT = "theorem-explorer-pipeline/1 (https://github.com/yujieteo/visuals; offline research snapshot)"
 HF_API = "https://huggingface.co/api/datasets/"
 HF_FILE = "https://huggingface.co/datasets/{repo}/resolve/{revision}/{file}"
@@ -202,9 +208,25 @@ def extract(log):
 
 def stages(log):
     for name in STAGES:
+        marker = STAGE / "arxiv-generation.txt"
+        if name == "arxiv" and marker.is_file() and marker.read_text().strip() == pins()["arxiv"]["generation"]:
+            continue
         args = [pins()["taxonomy_retrieved"]] if name == "taxonomy" else []
         run([sys.executable, HERE / f"{name}.py", *args], log, cwd=HERE)
+        if name == "arxiv":
+            marker.write_text(pins()["arxiv"]["generation"] + "\n")
     return {"stages": STAGES}
+
+
+def concepts(log):
+    """The concept packs, and the list of universe members that no judge has assessed yet."""
+    import gzip
+    run([sys.executable, HERE / "concepts.py", OUT / "raw.json"], log, cwd=HERE)
+    judged = {c["id"] for c in read_json(DATA / "concepts.json")} | {a[0] for a in read_json(DATA / "concepts-light.json")}
+    universe = json.loads(gzip.open(STAGE / "concept-universe.json.gz", "rt", encoding="utf-8").read())
+    todo = [m for m in universe if m["id"] not in judged]
+    write_json(WORK / "judge" / "concepts-todo.json", todo)
+    return {"unjudged_concepts": len(todo)}
 
 
 def answer_rows(folder):
@@ -392,7 +414,7 @@ def publish(log):
 
 
 ACTIONS = {"resolve": resolve, "fetch": fetch, "extract": extract, "stages": stages, "judge": judge_step,
-           "assemble": assemble, "publish": publish}
+           "assemble": assemble, "concepts": concepts, "publish": publish}
 
 
 def main(argv=None):

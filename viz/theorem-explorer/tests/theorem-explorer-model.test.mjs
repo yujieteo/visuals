@@ -213,3 +213,96 @@ test("search: offline substring search finds a result by an alias word and by it
   const none = at({ view: "catalog", q: "zzzz-no-such-word" });
   assert.equal(none.order.length, 0);
 });
+
+/* ---------- concepts, the prerequisite tree and popularity by arXiv tag ---------- */
+
+const cx = Model.cindex(D);
+
+test("concepts: the catalog holds at least 10,000 concepts, the 546 fully judged ones among them", () => {
+  assert.ok(cx.rows.length >= 10000, `${cx.rows.length} concepts`);
+  assert.equal(cx.rows.filter((/** @type {any} */ r) => r.j === 2).length, 546);
+  assert.equal(D.coverage.concepts.catalog, cx.rows.length);
+  for (const r of cx.rows) assert.match(r.s, /^[0-4un]{7}$/, r.id);
+  assert.equal(new Set(cx.rows.map((/** @type {any} */ r) => r.id)).size, cx.rows.length);
+});
+
+test("concepts: the concept presets add up to 100 and the aggregate follows tc-rubric/1", () => {
+  for (const w of Object.values(Model.CONCEPT_PRESETS)) assert.equal(/** @type {number[]} */ (w).reduce((s, x) => s + x, 0), 100);
+  // Hilbert space, judged 4444232: 25 + 25 + 20 + 15 + 5*2/4 + 5*3/4 + 5*2/4 = 85 + 2.5 + 3.75 + 2.5 = 93.75
+  const d = at({ view: "concepts", csel: "c:hilbert-space" });
+  assert.equal(d.concepts.selected.scores.join(""), "4444232");
+  assert.equal(d.concepts.selected.score, 93.75);
+  assert.ok(d.concepts.selected.prerequisites.some((/** @type {any} */ p) => p.id === "c:inner-product-space"));
+  assert.ok(d.concepts.selected.resultCount >= 20, "many catalog results name Hilbert space");
+});
+
+test("concepts: filters by tag and source, and custom weights that miss 100 make every aggregate unknown", () => {
+  const all = at({ view: "concepts" }).concepts.counts.shown;
+  const ag = at({ view: "concepts", ctag: "math.AG" }).concepts;
+  assert.ok(ag.counts.shown > 0 && ag.counts.shown < all);
+  for (const i of ag.order.slice(0, 50)) assert.ok(cx.rows[i].cat.includes(ix.catIdx.get("math.AG")));
+  const ml = at({ view: "concepts", csrc: "mathlib" }).concepts;
+  for (const i of ml.order) assert.notEqual(cx.rows[i].decl, null);
+  const bad = at({ view: "concepts", preset: "custom", cw_uni: 50 }).concepts;
+  assert.equal(bad.weightsOk, false);
+  assert.equal(bad.selected.score, null);
+});
+
+test("tree: a result's children are its prerequisite results and key concepts; each item is expanded once", () => {
+  const d = at({ view: "tree", troot: "wd:Q1425077", tdepth: 3 });
+  const t = d.tree;
+  assert.equal(t.root.id, "wd:Q1425077");
+  const kids = t.root.children.map((/** @type {any} */ c) => c.id);
+  const expect = [...ix.pre[row("wd:Q1425077")].map((/** @type {number} */ j) => ix.rows[j].id), ...cx.rc[row("wd:Q1425077")].map((/** @type {number} */ j) => cx.rows[j].id)];
+  assert.deepEqual(kids, expect);
+  // No item is expanded twice: an item with children appears once.
+  const seen = new Set();
+  (function walk(/** @type {any} */ n) { if (n.children.length) { assert.ok(!seen.has(n.id), n.id); seen.add(n.id); } n.children.forEach(walk); })(t.root);
+  // The study order puts every prerequisite before the items that need it.
+  const pos = new Map(t.study.map((/** @type {any} */ n, /** @type {number} */ k) => [n.id, k]));
+  (function walk(/** @type {any} */ n) { for (const c of n.children) { if (pos.has(c.id) && pos.has(n.id) && !c.ref && !c.cycle) assert.ok(pos.get(c.id) < pos.get(n.id), `${c.id} before ${n.id}`); walk(c); } })(t.root);
+  assert.ok(at({ view: "tree", troot: "wd:Q1425077", tshow: "results", tdepth: 3 }).tree.root.children.every((/** @type {any} */ c) => c.kind === "result"));
+});
+
+test("tree: a known item is not expanded and leaves the study order", () => {
+  const data = { ...D, profile: { known: { "c:inner-product-space": 0 } } };
+  const t = Model.treeOf(VisualKit.normalize(Model.FIELDS, { tdepth: 4 }).state, data, "c:hilbert-space");
+  const ips = t.root.children.find((/** @type {any} */ c) => c.id === "c:inner-product-space");
+  assert.equal(ips.known, true);
+  assert.equal(ips.children.length, 0);
+  assert.ok(!t.study.some((/** @type {any} */ n) => n.id === "c:inner-product-space"));
+});
+
+test("popularity: rate = 10,000 x papers naming the item / papers with the tag, recomputed from the pack", () => {
+  const pp = Model.popularityPack(D);
+  const d = at({ view: "popularity", ptags: "math.PR,hep-th", pmetric: "rate" });
+  const p = d.popularity;
+  assert.deepEqual(p.tags.map((/** @type {any} */ t) => t.id), ["math.PR", "hep-th"]);
+  const r = p.matrix[0];
+  const flat = pp.c[String(r.i)];
+  const tagIdx = ix.catIdx.get("math.PR");
+  let n = 0;
+  for (let k = 0; k < flat.length; k += 3) if (flat[k] === tagIdx) n += flat[k + 2];
+  const den = pp.den[tagIdx].reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0);
+  assert.equal(r.counts[0], n);
+  assert.equal(r.values[0], Math.round((1e4 * n / den) * 1000) / 1000);
+  // An id that is a category and an archive at once ("hep-th") resolves to the category, with papers.
+  assert.ok(p.tags[1].papers > 0);
+});
+
+test("popularity: archives and groups count a cross-listed paper once; lift needs 20 papers", () => {
+  const pp = Model.popularityPack(D);
+  const cats = D.taxonomy.categories.map((/** @type {any[]} */ c, /** @type {number} */ i) => [c, i]).filter((/** @type {any[]} */ x) => x[0][2] === "math");
+  const archIdx = pp.ncat + ix.archIdx.get("math");
+  const sumCats = cats.reduce((/** @type {number} */ s, /** @type {any[]} */ x) => s + pp.den[x[1]].reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0), 0);
+  const arch = pp.den[archIdx].reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0);
+  assert.ok(arch < sumCats, "the math archive counts each cross-listed paper once");
+  const lift = at({ view: "popularity", ptags: "q-fin", pmetric: "lift" }).popularity;
+  for (const t of lift.perTag) for (const x of t.top) assert.ok(x.count >= Model.LIFT_MIN);
+});
+
+test("popularity: unknown tags are reported and ignored", () => {
+  const d = at({ view: "popularity", ptags: "math.PR,not.ATAG" });
+  assert.deepEqual(d.popularity.tags.map((/** @type {any} */ t) => t.id), ["math.PR"]);
+  assert.ok(d.notes.some((/** @type {string} */ n) => /not\.ATAG/.test(n)));
+});
