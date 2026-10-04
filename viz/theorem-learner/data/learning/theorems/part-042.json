@@ -1,0 +1,2091 @@
+[
+ {
+  "id": "wd:Q5251122",
+  "statement": "Let $f, g$ be [time-constructible](c:time-constructible-function) functions with $f(n)\\log f(n) = o(g(n))$. Then $\\mathrm{DTIME}(f(n)) \\subsetneq \\mathrm{DTIME}(g(n))$: some language is decided by a [Turing machine](c:turing-machine) in time $O(g(n))$ and by none in time $O(f(n))$.",
+  "hypotheses": [
+   {
+    "id": "h:f-constructible",
+    "text": "The function $f$ is [time-constructible](c:time-constructible-function), so $f(n) \\ge n$.",
+    "concept": "c:time-constructible-function"
+   },
+   {
+    "id": "h:g-constructible",
+    "text": "The function $g$ is [time-constructible](c:time-constructible-function): a machine writes $g(n)$ in time $O(g(n))$.",
+    "concept": "c:time-constructible-function"
+   },
+   {
+    "id": "h:gap",
+    "text": "The growth gap holds: $f(n)\\log f(n) = o(g(n))$ in [asymptotic notation](c:asymptotic-notation).",
+    "concept": "c:asymptotic-notation"
+   }
+  ],
+  "conclusion": "The class $\\mathrm{DTIME}(f(n))$ is a proper subset of $\\mathrm{DTIME}(g(n))$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "diagonalization",
+    "name": "Clocked diagonalization",
+    "slogan": "Build a machine that runs in time $O(g)$ and does the opposite of every machine that runs in time $O(f)$ on that machine's own code.",
+    "scope": "The proper inclusion; the inclusion $\\mathrm{DTIME}(f) \\subseteq \\mathrm{DTIME}(g)$ is immediate because $f \\le f \\log f = o(g)$ eventually. Machines are deterministic, with codes that may be padded.",
+    "mechanisms": [
+     "m:diagonal-argument",
+     "m:encoding",
+     "m:contradiction"
+    ],
+    "roles": [
+     {
+      "h": "h:g-constructible",
+      "why": "It lets the machine $D$ count $g(|x|)$ steps and stop in time $O(g)$.",
+      "steps": [
+       "s:define",
+       "s:in-g"
+      ]
+     },
+     {
+      "h": "h:f-constructible",
+      "why": "It gives $f(n) \\ge n$, so simulating an $f$-time machine costs $O(f \\log f)$.",
+      "steps": [
+       "s:simulate"
+      ]
+     },
+     {
+      "h": "h:gap",
+      "why": "The gap $f \\log f = o(g)$ makes the simulation fit in the clock for long inputs.",
+      "steps": [
+       "s:simulate"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:define",
+      "slogan": "Define a machine $D$ that runs the machine coded by its input for $g(|x|)$ steps.",
+      "detail": "On input $x$, $D$ reads $x$ as the code of a [Turing machine](c:turing-machine) $M_x$ and starts a clock of $g(|x|)$ steps. Inside the clock a universal machine simulates $M_x$ on $x$. If the simulation ends with output $b$, then $D$ outputs $1 - b$; if the clock runs out, $D$ outputs $0$.",
+      "uses": [
+       "nl:11269"
+      ]
+     },
+     {
+      "id": "s:in-g",
+      "slogan": "Place the language of $D$ in $\\mathrm{DTIME}(g(n))$.",
+      "detail": "The clock needs $O(g(|x|))$ steps, because $g$ is [time-constructible](c:time-constructible-function). Running the clock beside the simulation costs only a constant factor, so $D$ halts in time $O(g(n))$ on every input.",
+      "uses": []
+     },
+     {
+      "id": "s:assume",
+      "slogan": "Suppose that a machine $M$ decides the language of $D$ in time $c f(n)$.",
+      "detail": "Every machine has infinitely many codes, since a code can be padded with unused states. Let $x$ be a code of $M$ that is as long as we need.",
+      "uses": []
+     },
+     {
+      "id": "s:simulate",
+      "slogan": "Show that the clock of $D$ outlasts the simulation of $M$ on a long code $x$.",
+      "detail": "A universal machine simulates $c f(|x|)$ steps of $M$ in time $c' c f(|x|)\\log f(|x|)$, with $c'$ depending only on $M$. Because $f \\log f = o(g)$, this is less than $g(|x|)$ once $|x|$ is large, so $D$ finishes the simulation.",
+      "uses": []
+     },
+     {
+      "id": "s:contradict",
+      "slogan": "Compare $D(x)$ with $M(x)$ to reach a contradiction.",
+      "detail": "By the last step $D(x) = 1 - M(x) \\neq M(x)$, so $M$ does not decide the language of $D$. This contradicts the choice of $M$, so no machine in time $O(f)$ decides it, and the language lies in $\\mathrm{DTIME}(g) \\setminus \\mathrm{DTIME}(f)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:define",
+      "s:in-g"
+     ],
+     [
+      "s:define",
+      "s:assume"
+     ],
+     [
+      "s:assume",
+      "s:simulate"
+     ],
+     [
+      "s:simulate",
+      "s:contradict"
+     ],
+     [
+      "s:in-g",
+      "s:contradict"
+     ]
+    ],
+    "conclusion": "s:contradict",
+    "concepts": {
+     "c:time-constructible-function": "Constructibility lets $D$ and the simulation use exact step counts.",
+     "c:turing-machine": "Codes of machines are the inputs on which $D$ diagonalizes.",
+     "c:asymptotic-notation": "Little-o says that the simulation cost is eventually below $g$."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The classical diagonal proof of Hartmanis and Stearns (1965), as in Arora and Barak, Computational Complexity, Theorem 3.1."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1426292",
+  "statement": "Let $E$ be a [Banach space](c:banach-space), $F$ a normed space and $(T_i)_{i \\in I}$ a family of [bounded linear operators](c:bounded-linear-operator) $E \\to F$ with $\\sup_i \\|T_i x\\| < \\infty$ for each $x \\in E$. Then $\\sup_i \\|T_i\\| < \\infty$.",
+  "hypotheses": [
+   {
+    "id": "h:banach",
+    "text": "The space $E$ is a [Banach space](c:banach-space).",
+    "concept": "c:banach-space"
+   },
+   {
+    "id": "h:operators",
+    "text": "Each $T_i\\colon E \\to F$ is a [bounded linear operator](c:bounded-linear-operator) into a normed space $F$.",
+    "concept": "c:bounded-linear-operator"
+   },
+   {
+    "id": "h:pointwise",
+    "text": "For each $x \\in E$ the set $\\{\\|T_i x\\| : i \\in I\\}$ is bounded.",
+    "concept": null
+   }
+  ],
+  "conclusion": "A constant $C$ exists with $\\|T_i\\| \\le C$ for every $i \\in I$.",
+  "formal": {
+   "decl": "banach_steinhaus",
+   "difference": "The declaration allows seminormed spaces and semilinear maps between nontrivially normed fields, with $E$ complete. Its conclusion is the same uniform bound on the norms of the maps."
+  },
+  "proofs": [
+   {
+    "id": "baire",
+    "name": "Baire category",
+    "slogan": "Cover the space by the closed sets where all values stay below $n$, find a ball in one of them, and move it to the origin.",
+    "scope": "The whole theorem, for $E \\neq \\{0\\}$ ($E = \\{0\\}$ gives all norms zero). The constant obtained is $C = 4n/r$ for the ball found in step 2.",
+    "mechanisms": [
+     "m:baire-category",
+     "m:triangle-inequality"
+    ],
+    "roles": [
+     {
+      "h": "h:pointwise",
+      "why": "It makes the closed sets $A_n$ cover $E$.",
+      "steps": [
+       "s:cover"
+      ]
+     },
+     {
+      "h": "h:operators",
+      "why": "Continuity makes each $A_n$ closed, and linearity transfers a bound from a ball to every vector.",
+      "steps": [
+       "s:cover",
+       "s:translate",
+       "s:scale"
+      ]
+     },
+     {
+      "h": "h:banach",
+      "why": "Completeness makes $E$ a [Baire space](c:baire-space), so one set $A_n$ has interior.",
+      "steps": [
+       "s:baire"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:cover",
+      "slogan": "Cover $E$ by the sets $A_n$ where every $\\|T_i x\\|$ is at most $n$.",
+      "detail": "Put $A_n = \\bigcap_i \\{x : \\|T_i x\\| \\le n\\}$. Each $A_n$ is an intersection of preimages of a [closed set](c:closed-set) under continuous maps, so it is closed. By pointwise boundedness every $x$ lies in some $A_n$, so $E = \\bigcup_n A_n$.",
+      "uses": []
+     },
+     {
+      "id": "s:baire",
+      "slogan": "Find a ball inside one set $A_n$ by the Baire category theorem.",
+      "detail": "A [complete metric space](c:complete-metric-space) is a [Baire space](c:baire-space), so a countable union of closed sets covering $E$ has a member with nonempty interior. Hence some $A_n$ contains a ball $B(x_0, r)$.",
+      "uses": [
+       "wd:Q1052678"
+      ]
+     },
+     {
+      "id": "s:translate",
+      "slogan": "Translate the ball to the origin to bound every $T_i$ on a ball around $0$.",
+      "detail": "Since $x_0 \\in A_n$ and $x_0 + y \\in A_n$ for $\\|y\\| < r$, we get $\\|T_i y\\| = \\|T_i(x_0 + y) - T_i x_0\\| \\le 2n$ for all $i$ and all $\\|y\\| < r$.",
+      "uses": []
+     },
+     {
+      "id": "s:scale",
+      "slogan": "Scale an arbitrary vector into the ball to bound the [operator norm](c:operator-norm).",
+      "detail": "For $x \\neq 0$ put $y = \\frac{r}{2}\\,x/\\|x\\|$. Linearity gives $\\|T_i x\\| = \\frac{2\\|x\\|}{r}\\|T_i y\\| \\le \\frac{4n}{r}\\|x\\|$. So $\\|T_i\\| \\le 4n/r$ for every $i$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:cover",
+      "s:baire"
+     ],
+     [
+      "s:baire",
+      "s:translate"
+     ],
+     [
+      "s:translate",
+      "s:scale"
+     ]
+    ],
+    "conclusion": "s:scale",
+    "concepts": {
+     "c:banach-space": "Completeness is the hypothesis that the Baire category theorem needs.",
+     "c:bounded-linear-operator": "The operators are continuous and linear, which the covering and scaling steps use.",
+     "c:baire-space": "A Baire space cannot be a countable union of nowhere dense closed sets.",
+     "c:complete-metric-space": "Completeness of the metric is what makes the space a Baire space.",
+     "c:closed-set": "Closedness of the sets $A_n$ lets Baire's theorem apply.",
+     "c:operator-norm": "The operator norm is the quantity that the proof bounds uniformly."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "banach_steinhaus",
+     "follows": true,
+     "note": "mathlib proves that a Baire space is barrelled (BaireSpace.instBarrelledSpace) by this closed-cover, translate and double argument, and applies it to the supremum seminorm (WithSeminorms.banach_steinhaus)."
+    }
+   },
+   {
+    "id": "sokal",
+    "name": "Inductive choice of signs",
+    "slogan": "Build a point by choosing signs along a sparse sequence of operators, and show that the values of those operators blow up.",
+    "scope": "The whole theorem, without the Baire category theorem. It argues by contradiction from $\\sup_i \\|T_i\\| = \\infty$.",
+    "mechanisms": [
+     "m:contradiction",
+     "m:cauchy-completeness"
+    ],
+    "roles": [
+     {
+      "h": "h:operators",
+      "why": "Linearity gives the key inequality, and finite norms give vectors that nearly attain them.",
+      "steps": [
+       "s:key",
+       "s:build"
+      ]
+     },
+     {
+      "h": "h:banach",
+      "why": "Completeness makes the series of small steps converge to a point $x$.",
+      "steps": [
+       "s:limit"
+      ]
+     },
+     {
+      "h": "h:pointwise",
+      "why": "It contradicts the blow-up of $\\|T_n x\\|$ at the limit point.",
+      "steps": [
+       "s:blowup"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:key",
+      "slogan": "Show that one of $x \\pm \\xi$ gives $T$ a value at least as large as $T\\xi$.",
+      "detail": "For a linear $T$ and vectors $x, \\xi$, we have $2T\\xi = T(x + \\xi) - T(x - \\xi)$. So $\\max(\\|T(x+\\xi)\\|, \\|T(x-\\xi)\\|) \\ge \\|T\\xi\\|$.",
+      "uses": []
+     },
+     {
+      "id": "s:select",
+      "slogan": "Assume that the norms are unbounded and pick operators $T_n$ with $\\|T_n\\| \\ge 4^n$.",
+      "detail": "If $\\sup_i \\|T_i\\| = \\infty$, then for each $n \\ge 1$ some $T_n$ in the family has $\\|T_n\\| \\ge 4^n$. We show that this contradicts pointwise boundedness.",
+      "uses": []
+     },
+     {
+      "id": "s:build",
+      "slogan": "Choose points $x_n = x_{n-1} \\pm \\xi_n$ so that $\\|T_n x_n\\|$ is large.",
+      "detail": "Let $x_0 = 0$. Pick $\\xi_n$ with $\\|\\xi_n\\| \\le 3^{-n}$ and $\\|T_n \\xi_n\\| \\ge \\frac23 3^{-n}\\|T_n\\|$. By the key inequality choose the sign so that $\\|T_n x_n\\| \\ge \\|T_n \\xi_n\\|$.",
+      "uses": []
+     },
+     {
+      "id": "s:limit",
+      "slogan": "Take the limit $x$ of the points $x_n$ in the complete space.",
+      "detail": "Since $\\sum \\|\\xi_n\\| \\le \\sum 3^{-n} < \\infty$ and $E$ is complete, the sequence $x_n$ converges to some $x$. The tail satisfies $\\|x - x_n\\| \\le \\sum_{k > n} 3^{-k} = 3^{-n}/2$.",
+      "uses": []
+     },
+     {
+      "id": "s:blowup",
+      "slogan": "Show that $\\|T_n x\\|$ tends to infinity, which contradicts pointwise boundedness.",
+      "detail": "We have $\\|T_n x\\| \\ge \\|T_n x_n\\| - \\|T_n\\|\\,\\|x - x_n\\| \\ge (\\frac23 - \\frac12)3^{-n}\\|T_n\\| \\ge \\frac16 (4/3)^n \\to \\infty$. This contradicts the bound on $\\{\\|T_i x\\|\\}$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:key",
+      "s:build"
+     ],
+     [
+      "s:select",
+      "s:build"
+     ],
+     [
+      "s:build",
+      "s:limit"
+     ],
+     [
+      "s:limit",
+      "s:blowup"
+     ],
+     [
+      "s:build",
+      "s:blowup"
+     ],
+     [
+      "s:select",
+      "s:blowup"
+     ]
+    ],
+    "conclusion": "s:blowup",
+    "concepts": {
+     "c:banach-space": "Completeness gives the limit of the constructed sequence.",
+     "c:bounded-linear-operator": "Each operator has a finite norm and is linear."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "A. D. Sokal, A really simple elementary proof of the uniform boundedness theorem, American Mathematical Monthly 118 (2011)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:uniqueness-of-integral-curves",
+  "statement": "Let $v$ be a $C^1$ [vector field](c:vector-field) on a Hausdorff [smooth manifold](c:smooth-manifold) $M$. If $\\gamma, \\gamma'\\colon (a, b) \\to M$ are integral curves of $v$ with $\\gamma(t_0) = \\gamma'(t_0)$ for some $t_0 \\in (a, b)$, then $\\gamma = \\gamma'$ on $(a, b)$.",
+  "hypotheses": [
+   {
+    "id": "h:field",
+    "text": "The [vector field](c:vector-field) $v$ is $C^1$.",
+    "concept": "c:vector-field"
+   },
+   {
+    "id": "h:hausdorff",
+    "text": "The manifold $M$ is a [Hausdorff space](c:hausdorff-space).",
+    "concept": "c:hausdorff-space"
+   },
+   {
+    "id": "h:curves",
+    "text": "The maps $\\gamma, \\gamma'$ are differentiable and satisfy $\\dot\\gamma = v \\circ \\gamma$ and $\\dot\\gamma' = v \\circ \\gamma'$ on $(a, b)$.",
+    "concept": null
+   },
+   {
+    "id": "h:agree",
+    "text": "The curves agree at one time: $\\gamma(t_0) = \\gamma'(t_0)$ with $t_0 \\in (a, b)$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The two curves are equal at every time of $(a, b)$.",
+  "formal": {
+   "decl": "isMIntegralCurveOn_Ioo_eqOn_of_contMDiff_boundaryless",
+   "difference": "The declaration allows manifolds modelled on any real normed space, possibly infinite dimensional, with a $C^1$ structure and no boundary. The Hausdorff hypothesis is the declaration's T2 assumption."
+  },
+  "proofs": [
+   {
+    "id": "clopen",
+    "name": "Clopen agreement set",
+    "slogan": "Show that the set of times where the curves agree is nonempty, closed and open, then use the connectedness of the interval.",
+    "scope": "The whole theorem on an open interval; the interval may be unbounded. Openness is the local uniqueness theorem for ODEs in one chart.",
+    "mechanisms": [
+     "m:local-to-global",
+     "m:a-priori-estimate"
+    ],
+    "roles": [
+     {
+      "h": "h:agree",
+      "why": "It puts $t_0$ in the agreement set, so the set is nonempty.",
+      "steps": [
+       "s:set"
+      ]
+     },
+     {
+      "h": "h:curves",
+      "why": "Continuity of the curves makes the set closed, and the equations $\\dot\\gamma = v \\circ \\gamma$ give the chart equation.",
+      "steps": [
+       "s:closed",
+       "s:open"
+      ]
+     },
+     {
+      "h": "h:hausdorff",
+      "why": "In a Hausdorff space the diagonal is closed, which closes the agreement set.",
+      "steps": [
+       "s:closed"
+      ]
+     },
+     {
+      "h": "h:field",
+      "why": "A $C^1$ field has a locally Lipschitz chart expression, which feeds Grönwall's inequality.",
+      "steps": [
+       "s:open"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:set",
+      "slogan": "Collect the times where the two curves agree into a set $S$.",
+      "detail": "Let $S = \\{t \\in (a, b) : \\gamma(t) = \\gamma'(t)\\}$. The point $t_0$ lies in $S$, so $S$ is nonempty.",
+      "uses": []
+     },
+     {
+      "id": "s:closed",
+      "slogan": "Show that $S$ is closed in $(a, b)$.",
+      "detail": "The map $t \\mapsto (\\gamma(t), \\gamma'(t))$ is continuous, and the diagonal of $M \\times M$ is closed because $M$ is a [Hausdorff space](c:hausdorff-space). So $S$, the preimage of the diagonal, is closed.",
+      "uses": []
+     },
+     {
+      "id": "s:open",
+      "slogan": "Show that $S$ is open by comparing both curves in one chart.",
+      "detail": "Let $t_1 \\in S$ and take a chart $\\varphi$ at $\\gamma(t_1)$. Near $t_1$ both $\\varphi\\circ\\gamma$ and $\\varphi\\circ\\gamma'$ solve $x' = V(x)$, where $V$ is the $C^1$ chart expression of $v$, hence [Lipschitz](c:lipschitz-continuous-function) with some constant $K$. Then $u = |\\varphi\\gamma - \\varphi\\gamma'|$ obeys $u(t) \\le K\\bigl|\\int_{t_1}^t u\\bigr|$ with $u(t_1) = 0$, so $u = 0$ near $t_1$ by Grönwall's lemma.",
+      "uses": [
+       "nm:gronwall-lemma"
+      ]
+     },
+     {
+      "id": "s:connected",
+      "slogan": "Conclude from the connectedness of the interval that $S = (a, b)$.",
+      "detail": "The set $S$ is nonempty, closed and open in $(a, b)$, so it is [clopen](c:clopen-subset). The interval is a [connected space](c:connected-space), so $S = (a, b)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:set",
+      "s:closed"
+     ],
+     [
+      "s:set",
+      "s:open"
+     ],
+     [
+      "s:closed",
+      "s:connected"
+     ],
+     [
+      "s:open",
+      "s:connected"
+     ]
+    ],
+    "conclusion": "s:connected",
+    "concepts": {
+     "c:vector-field": "The field defines the equation that both curves solve.",
+     "c:smooth-manifold": "Charts turn the equation on the manifold into an ODE on a vector space.",
+     "c:hausdorff-space": "Hausdorff separation makes the set of agreement times closed.",
+     "c:lipschitz-continuous-function": "A Lipschitz chart field gives the estimate that Grönwall's lemma needs.",
+     "c:clopen-subset": "The agreement set is both open and closed in the interval.",
+     "c:connected-space": "A connected interval has no proper nonempty clopen subset."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "isMIntegralCurveOn_Ioo_eqOn_of_contMDiff_boundaryless",
+     "follows": true,
+     "note": "mathlib proves local uniqueness in a chart with ODE_solution_unique_of_eventually (Grönwall), then shows the agreement set is clopen in the preconnected interval (isPreconnected_Ioo)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q3527219",
+  "statement": "Let $A$ be a [complete local ring](c:complete-local-ring) with maximal ideal $\\mathfrak m$, and let $g = \\sum a_i X^i \\in A[[X]]$ have some coefficient outside $\\mathfrak m$; let $n$ be the least such index. Then $g = f h$ with $f$ a [distinguished polynomial](c:is-distinguished-at) of degree $n$ and $h$ a unit of $A[[X]]$.",
+  "hypotheses": [
+   {
+    "id": "h:complete",
+    "text": "The ring $A$ is a [complete local ring](c:complete-local-ring) with maximal ideal $\\mathfrak m$.",
+    "concept": "c:complete-local-ring"
+   },
+   {
+    "id": "h:nonzero",
+    "text": "Some coefficient of the [power series](c:power-series) $g$ lies outside $\\mathfrak m$.",
+    "concept": "c:power-series"
+   }
+  ],
+  "conclusion": "The series factors as $g = f h$, where $f = X^n + c_{n-1}X^{n-1} + \\dots + c_0$ with all $c_j \\in \\mathfrak m$ and $h$ is a unit.",
+  "formal": {
+   "decl": "PowerSeries.exists_isWeierstrassFactorization",
+   "difference": "The declaration states the same factorization for a ring that is adically complete for its maximal ideal. The analytic theorem for convergent series over $\\mathbb C$ is a separate result."
+  },
+  "proofs": [
+   {
+    "id": "division",
+    "name": "Weierstrass division of $X^n$",
+    "slogan": "Divide $X^n$ by $g$ with a quotient and a remainder of degree below $n$, then read the factorization from that division.",
+    "scope": "The whole formal theorem. The case $n = 0$ is included: then $g$ is a unit and $f = 1$.",
+    "mechanisms": [
+     "m:division-algorithm",
+     "m:cauchy-completeness",
+     "m:contraction-iteration"
+    ],
+    "roles": [
+     {
+      "h": "h:nonzero",
+      "why": "It defines $n$ and makes the tail of $g$ a unit, which is the divisor condition.",
+      "steps": [
+       "s:split",
+       "s:mod"
+      ]
+     },
+     {
+      "h": "h:complete",
+      "why": "A non-member of $\\mathfrak m$ is a unit, and completeness makes the geometric series converge.",
+      "steps": [
+       "s:split",
+       "s:series"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:split",
+      "slogan": "Split $g$ into a low part with coefficients in $\\mathfrak m$ and a unit tail.",
+      "detail": "Write $g = \\alpha + X^n u$ with $\\alpha = \\sum_{i<n} a_i X^i$ and $u = \\sum_{i \\ge n} a_i X^{i-n}$. The coefficients of $\\alpha$ lie in $\\mathfrak m$. The constant term $a_n \\notin \\mathfrak m$ is a unit of the [local ring](c:local-ring), so $u$ is a unit of $A[[X]]$.",
+      "uses": []
+     },
+     {
+      "id": "s:equation",
+      "slogan": "Turn the division of $X^n$ by $g$ into the equation $(1 + L)Q = 1$.",
+      "detail": "Let $\\tau$ drop the first $n$ terms of a series and divide by $X^n$. If $X^n = qg + r$ with $r$ a polynomial of degree below $n$, then $\\tau$ gives $1 = \\tau(q\\alpha) + qu$. With $Q = qu$ this reads $Q + L(Q) = 1$, where $L(Q) = \\tau(Q u^{-1}\\alpha)$ maps $\\mathfrak m^k A[[X]]$ into $\\mathfrak m^{k+1}A[[X]]$.",
+      "uses": []
+     },
+     {
+      "id": "s:series",
+      "slogan": "Solve for $Q$ with the geometric series $\\sum_k (-L)^k(1)$.",
+      "detail": "The $k$-th term lies in $\\mathfrak m^k A[[X]]$, so each coefficient series converges because $A$ is complete. The sum $Q$ satisfies $(1+L)Q = 1$. Put $q = Qu^{-1}$ and $r = X^n - qg$; then $\\tau(r) = 0$, so $r$ is a polynomial of degree below $n$.",
+      "uses": [
+       "nm:geometric-series"
+      ]
+     },
+     {
+      "id": "s:mod",
+      "slogan": "Reduce modulo $\\mathfrak m$ to show that $q$ is a unit and $r$ has coefficients in $\\mathfrak m$.",
+      "detail": "Modulo $\\mathfrak m$ we have $\\bar g = X^n\\bar u$ and $X^n = \\bar q X^n \\bar u + \\bar r$. So $X^n$ divides $\\bar r$, which has degree below $n$; hence $\\bar r = 0$ and $\\bar q\\bar u = 1$. Thus $q(0) \\notin \\mathfrak m$, so $q$ is a unit, and every coefficient of $r$ lies in $\\mathfrak m$.",
+      "uses": []
+     },
+     {
+      "id": "s:factor",
+      "slogan": "Rewrite the division as the factorization $g = f h$.",
+      "detail": "From $X^n = qg + r$ we get $g = q^{-1}(X^n - r)$. The polynomial $f = X^n - r$ is monic of degree $n$ with its lower coefficients in $\\mathfrak m$, so it is [distinguished](c:is-distinguished-at), and $h = q^{-1}$ is a unit.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:split",
+      "s:equation"
+     ],
+     [
+      "s:equation",
+      "s:series"
+     ],
+     [
+      "s:series",
+      "s:mod"
+     ],
+     [
+      "s:split",
+      "s:mod"
+     ],
+     [
+      "s:mod",
+      "s:factor"
+     ],
+     [
+      "s:series",
+      "s:factor"
+     ]
+    ],
+    "conclusion": "s:factor",
+    "concepts": {
+     "c:complete-local-ring": "Completeness gives the limit; the local property makes non-members of $\\mathfrak m$ units.",
+     "c:power-series": "The factorization lives in the ring of power series over $A$.",
+     "c:local-ring": "Elements outside the maximal ideal are units, so the tail $u$ is a unit.",
+     "c:is-distinguished-at": "The factor $f$ is monic with all lower coefficients in $\\mathfrak m$."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "PowerSeries.exists_isWeierstrassFactorization",
+     "follows": true,
+     "note": "mathlib divides $X^n$ by $g$ (exists_isWeierstrassDivision, built from a limit of approximate quotients) and turns quotient and remainder into the factorization (IsWeierstrassDivision.isWeierstrassFactorization), after Washington, Introduction to Cyclotomic Fields, Theorem 7.3."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:weighted-holder-inequality",
+  "statement": "For a [weighted sum](c:weighted-sum) over a finite index set $I$, a real $p \\ge 1$ and nonnegative reals $w_i, f_i$: $\\sum_i w_i f_i \\le \\bigl(\\sum_i w_i\\bigr)^{1 - 1/p}\\bigl(\\sum_i w_i f_i^p\\bigr)^{1/p}$.",
+  "hypotheses": [
+   {
+    "id": "h:exponent",
+    "text": "The exponent satisfies $p \\ge 1$.",
+    "concept": null
+   },
+   {
+    "id": "h:nonneg",
+    "text": "The weights $w_i$ and the values $f_i$ are nonnegative reals.",
+    "concept": null
+   },
+   {
+    "id": "h:finite",
+    "text": "The index set $I$ is finite, so every sum is a [finite sum](c:finite-sum).",
+    "concept": "c:finite-sum"
+   }
+  ],
+  "conclusion": "The weighted sum $\\sum_i w_i f_i$ is at most $\\bigl(\\sum_i w_i\\bigr)^{1-1/p}\\bigl(\\sum_i w_i f_i^p\\bigr)^{1/p}$.",
+  "formal": {
+   "decl": "NNReal.inner_le_weight_mul_Lp",
+   "difference": "The declaration states the inequality for functions into the nonnegative reals on a finset of any index type. The versions for real and for extended-real values are separate declarations."
+  },
+  "proofs": [
+   {
+    "id": "holder",
+    "name": "Hölder with a split weight",
+    "slogan": "Write each term as a product of two powers of the weight and apply Hölder's inequality to the two factors.",
+    "scope": "The case $p > 1$. For $p = 1$ both sides equal $\\sum_i w_i f_i$, because the first exponent is $0$.",
+    "mechanisms": [
+     "m:cauchy-schwarz",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:nonneg",
+      "why": "Nonnegativity makes the real powers of $w_i$ and of $f_i$ defined and the factors nonnegative.",
+      "steps": [
+       "s:factor"
+      ]
+     },
+     {
+      "h": "h:exponent",
+      "why": "The value $p > 1$ gives the conjugate exponent $q = p/(p-1)$.",
+      "steps": [
+       "s:holder"
+      ]
+     },
+     {
+      "h": "h:finite",
+      "why": "Hölder's inequality for finite sums applies to the finite index set.",
+      "steps": [
+       "s:holder"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:factor",
+      "slogan": "Factor each term as $w_i f_i = w_i^{1-1/p}\\,(w_i^{1/p} f_i)$.",
+      "detail": "Because $w_i \\ge 0$, the exponents add: $w_i^{1-1/p}\\,w_i^{1/p} = w_i$. So $\\sum_i w_i f_i = \\sum_i u_i v_i$ with the nonnegative numbers $u_i = w_i^{1-1/p}$ and $v_i = w_i^{1/p} f_i$.",
+      "uses": []
+     },
+     {
+      "id": "s:holder",
+      "slogan": "Bound $\\sum u_i v_i$ by Hölder's inequality with the [conjugate exponents](c:holder-conjugate-exponents) $q = p/(p-1)$ and $p$.",
+      "detail": "For $p > 1$ we have $1/q + 1/p = 1$. Hölder's inequality gives $\\sum_i u_i v_i \\le \\bigl(\\sum_i u_i^q\\bigr)^{1/q}\\bigl(\\sum_i v_i^p\\bigr)^{1/p}$.",
+      "uses": [
+       "nl:18096"
+      ]
+     },
+     {
+      "id": "s:simplify",
+      "slogan": "Simplify the powers to get the weighted form of the bound.",
+      "detail": "Since $(1 - 1/p)\\,q = 1$, we have $u_i^q = w_i$, and $1/q = 1 - 1/p$. Also $v_i^p = w_i f_i^p$. Substituting gives $\\sum_i w_i f_i \\le \\bigl(\\sum_i w_i\\bigr)^{1-1/p}\\bigl(\\sum_i w_i f_i^p\\bigr)^{1/p}$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:factor",
+      "s:holder"
+     ],
+     [
+      "s:holder",
+      "s:simplify"
+     ]
+    ],
+    "conclusion": "s:simplify",
+    "concepts": {
+     "c:weighted-sum": "The left side is a sum of the values $f_i$ with weights $w_i$.",
+     "c:finite-sum": "Hölder's inequality is applied to sums over a finite index set.",
+     "c:holder-conjugate-exponents": "The exponents $q$ and $p$ satisfy $1/q + 1/p = 1$, as Hölder requires."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "NNReal.inner_le_weight_mul_Lp",
+     "follows": true,
+     "note": "mathlib factors $w f$ as $w^{1-1/p}(w^{1/p} f)$, applies inner_le_Lp_mul_Lq with Hölder conjugate exponents, and simplifies the powers."
+    }
+   },
+   {
+    "id": "jensen",
+    "name": "Jensen for the power function",
+    "slogan": "Normalize the weights to a probability vector and apply Jensen's inequality to the convex function $t^p$.",
+    "scope": "The case $p > 1$ and $\\sum_i w_i > 0$. If all $w_i = 0$ both sides are $0$; for $p = 1$ both sides are equal.",
+    "mechanisms": [
+     "m:convexity",
+     "m:averaging"
+    ],
+    "roles": [
+     {
+      "h": "h:nonneg",
+      "why": "Nonnegative weights give a probability vector and keep the $p$-th root well defined.",
+      "steps": [
+       "s:normalize",
+       "s:clear"
+      ]
+     },
+     {
+      "h": "h:exponent",
+      "why": "The condition $p \\ge 1$ makes $t \\mapsto t^p$ convex on $[0, \\infty)$.",
+      "steps": [
+       "s:jensen"
+      ]
+     },
+     {
+      "h": "h:finite",
+      "why": "Finiteness makes the total weight $W$ a finite positive number.",
+      "steps": [
+       "s:normalize"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:normalize",
+      "slogan": "Normalize the weights to probabilities $\\pi_i = w_i/W$.",
+      "detail": "Let $W = \\sum_i w_i > 0$. The numbers $\\pi_i = w_i/W$ are nonnegative and sum to $1$, so $\\sum_i \\pi_i f_i$ is a [weighted mean](c:weighted-mean) of the $f_i$.",
+      "uses": []
+     },
+     {
+      "id": "s:jensen",
+      "slogan": "Apply Jensen's inequality to the [convex function](c:convex-function) $t \\mapsto t^p$.",
+      "detail": "For $p \\ge 1$ the function $t^p$ is convex on $[0, \\infty)$. Jensen's inequality gives $\\bigl(\\sum_i \\pi_i f_i\\bigr)^p \\le \\sum_i \\pi_i f_i^p$.",
+      "uses": [
+       "nm:jensen-s-inequality"
+      ]
+     },
+     {
+      "id": "s:clear",
+      "slogan": "Clear the denominators and take the $p$-th root of both sides.",
+      "detail": "Multiplying by $W^p$ gives $\\bigl(\\sum_i w_i f_i\\bigr)^p \\le W^{p-1}\\sum_i w_i f_i^p$. Both sides are nonnegative, so taking $p$-th roots gives $\\sum_i w_i f_i \\le W^{1-1/p}\\bigl(\\sum_i w_i f_i^p\\bigr)^{1/p}$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:normalize",
+      "s:jensen"
+     ],
+     [
+      "s:jensen",
+      "s:clear"
+     ]
+    ],
+    "conclusion": "s:clear",
+    "concepts": {
+     "c:weighted-sum": "The inequality bounds this weighted sum by a power mean.",
+     "c:finite-sum": "All sums are finite, so the normalizing total $W$ is a real number.",
+     "c:weighted-mean": "The normalized sum is the mean that Jensen's inequality compares.",
+     "c:convex-function": "Convexity of $t^p$ is the one analytic fact that the proof needs."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard derivation of Hölder-type inequalities from Jensen's inequality, as in Hardy, Littlewood and Pólya, Inequalities, chapter 2."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q195133",
+  "statement": "Let $T^k_q$ be a [tensor operator](c:tensor-operator) of rank $k$ for [SU(2)](c:su-2), and $|j\\,m\\rangle$, $|j'\\,m'\\rangle$ standard basis vectors of irreducible representations. Then $\\langle j\\,m|T^k_q|j'\\,m'\\rangle = \\langle j'\\,m';k\\,q|j\\,m\\rangle\\,\\langle j\\|T^k\\|j'\\rangle$: a [Clebsch-Gordan coefficient](c:clebsch-gordan-coefficient) times a reduced element independent of $m, m', q$.",
+  "hypotheses": [
+   {
+    "id": "h:tensor",
+    "text": "The operators $T^k_q$ form a [tensor operator](c:tensor-operator) of rank $k$: they transform under $\\mathrm{SU}(2)$ like the basis $|k\\,q\\rangle$ of the spin-$k$ representation.",
+    "concept": "c:tensor-operator"
+   },
+   {
+    "id": "h:states",
+    "text": "The vectors $|j\\,m\\rangle$ and $|j'\\,m'\\rangle$ are standard basis vectors of [irreducible representations](c:irreducible-representation) of spins $j$ and $j'$ inside one unitary representation.",
+    "concept": "c:irreducible-representation"
+   }
+  ],
+  "conclusion": "The matrix element is a [Clebsch-Gordan coefficient](c:clebsch-gordan-coefficient) times a number independent of $m, m', q$; it vanishes unless $m = m' + q$ and $|k - j'| \\le j \\le k + j'$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "equivariant-map",
+    "name": "Equivariant map and Schur's lemma",
+    "slogan": "Read the tensor operator as an equivariant map out of $V_k \\otimes V_{j'}$, so that Schur's lemma leaves one free number.",
+    "scope": "Spin representations $V_j$ with the standard phase convention; another sign convention for the Clebsch-Gordan coefficient changes only a factor $(-1)^{k+j'-j}$ inside the reduced element. The same proof works for $\\mathrm{SO}(3)$ with integer spins.",
+    "mechanisms": [
+     "m:representation-characters",
+     "m:orthogonal-projection",
+     "m:symmetry"
+    ],
+    "roles": [
+     {
+      "h": "h:tensor",
+      "why": "The transformation law of $T^k_q$ is exactly the equivariance of the map $\\Phi$.",
+      "steps": [
+       "s:equivariant"
+      ]
+     },
+     {
+      "h": "h:states",
+      "why": "The states span invariant subspaces $V_j$ and $V_{j'}$, which allows the projection and Schur's lemma.",
+      "steps": [
+       "s:project",
+       "s:decompose"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:equivariant",
+      "slogan": "Package the tensor operator as an equivariant map $\\Phi\\colon V_k \\otimes V_{j'} \\to H$.",
+      "detail": "Define $\\Phi(|k\\,q\\rangle \\otimes |j'\\,m'\\rangle) = T^k_q|j'\\,m'\\rangle$. The tensor law $U T^k_q U^{-1} = \\sum_{q'} D^k_{q'q}\\,T^k_{q'}$, together with $U|j'\\,m'\\rangle = \\sum_{m''} D^{j'}_{m''m'}|j'\\,m''\\rangle$, gives $U\\,\\Phi(v \\otimes w) = \\Phi(gv \\otimes gw)$. So $\\Phi$ is equivariant.",
+      "uses": []
+     },
+     {
+      "id": "s:project",
+      "slogan": "Project onto the invariant subspace $V_j$ to get an equivariant map into $V_j$.",
+      "detail": "The orthogonal projection $P_j$ onto $V_j$ commutes with the unitary action. So $\\Psi = P_j \\circ \\Phi\\colon V_k \\otimes V_{j'} \\to V_j$ is equivariant, and $\\langle j\\,m|\\Psi(|k\\,q\\rangle \\otimes |j'\\,m'\\rangle) = \\langle j\\,m|T^k_q|j'\\,m'\\rangle$.",
+      "uses": []
+     },
+     {
+      "id": "s:decompose",
+      "slogan": "Decompose $V_k \\otimes V_{j'}$ into spins and count the equivariant maps into $V_j$.",
+      "detail": "Clebsch-Gordan theory gives $V_k \\otimes V_{j'} \\cong \\bigoplus_{J=|k-j'|}^{k+j'} V_J$, each spin occurring once. By Schur's lemma the equivariant maps into the [irreducible](c:irreducible-representation) $V_j$ form a space of dimension $1$ if $j$ occurs and $0$ otherwise.",
+      "uses": [
+       "wd:Q1816952"
+      ]
+     },
+     {
+      "id": "s:identify",
+      "slogan": "Identify $\\Psi$ as a multiple of the Clebsch-Gordan projection and read off the matrix elements.",
+      "detail": "If $j$ does not occur, then $\\Psi = 0$ and every matrix element vanishes. Otherwise $\\Psi = c\\,\\pi_j$, where $\\pi_j$ projects onto the copy of $V_j$ and has the Clebsch-Gordan coefficients as matrix elements, which vanish unless $m = m' + q$. So the matrix element is $c$ times a coefficient, and $c$ does not depend on $m, m', q$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:equivariant",
+      "s:project"
+     ],
+     [
+      "s:project",
+      "s:identify"
+     ],
+     [
+      "s:decompose",
+      "s:identify"
+     ]
+    ],
+    "conclusion": "s:identify",
+    "concepts": {
+     "c:tensor-operator": "Its transformation law is the equivariance that Schur's lemma exploits.",
+     "c:su-2": "The group $\\mathrm{SU}(2)$ acts on all spaces and its irreducibles are the spins $V_j$.",
+     "c:clebsch-gordan-coefficient": "These coefficients are the matrix elements of the unique equivariant projection.",
+     "c:irreducible-representation": "Irreducibility of $V_j$ lets Schur's lemma limit the equivariant maps."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The representation-theoretic form of the argument in Sakurai and Napolitano, Modern Quantum Mechanics, chapter 3 (tensor operators and the Wigner-Eckart theorem)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q276082",
+  "statement": "For an integer $n > 1$, the [factorial](c:factorial) satisfies $(n-1)! \\equiv -1$ in [modular arithmetic](c:modular-arithmetic) modulo $n$ if and only if $n$ is a [prime number](c:prime-number).",
+  "hypotheses": [
+   {
+    "id": "h:integer",
+    "text": "The integer $n$ satisfies $n > 1$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The number $n$ divides $(n-1)! + 1$ exactly when $n$ is prime.",
+  "formal": {
+   "decl": "ZMod.wilsons_lemma",
+   "difference": "The declaration proves only the forward direction: $(p-1)! = -1$ in $\\mathbb Z/p$ for a prime $p$. The converse is Nat.prime_of_fac_equiv_neg_one, and Nat.prime_iff_fac_equiv_neg_one joins both."
+  },
+  "proofs": [
+   {
+    "id": "inverse-pairs",
+    "name": "Pairing units with inverses",
+    "slogan": "Multiply all nonzero residues modulo a prime in inverse pairs, and rule out composite numbers with a proper divisor.",
+    "scope": "Both directions for every $n > 1$; the prime $p = 2$ is handled in step 3. A composite $n$ has a divisor $a$ with $1 < a < n$.",
+    "mechanisms": [
+     "m:modular-arithmetic",
+     "m:bijection",
+     "m:contradiction"
+    ],
+    "roles": [
+     {
+      "h": "h:integer",
+      "why": "For $n > 1$ the number $n$ is either prime or has a divisor $a$ with $1 < a < n$.",
+      "steps": [
+       "s:composite",
+       "s:combine"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:units",
+      "slogan": "Identify $(p-1)!$ with the product of all units of $\\mathbb Z/p$ for a prime $p$.",
+      "detail": "For a prime $p$, the ring $\\mathbb Z/p$ is a [field](c:field), so its nonzero elements $1, \\dots, p-1$ are exactly its [units](c:group-of-units). Hence $(p-1)! = \\prod_{x \\in (\\mathbb Z/p)^\\times} x$.",
+      "uses": []
+     },
+     {
+      "id": "s:pair",
+      "slogan": "Pair each unit $x$ with its inverse $x^{-1}$.",
+      "detail": "A unit equals its inverse exactly when $x^2 = 1$, that is $(x-1)(x+1) = 0$. A field has no zero divisors, so $x = \\pm 1$. The other units split into pairs $\\{x, x^{-1}\\}$ whose product is $1$.",
+      "uses": []
+     },
+     {
+      "id": "s:product",
+      "slogan": "Multiply the pairs to find that the product of all units is $-1$.",
+      "detail": "The pairs contribute $1$. For odd $p$ the units $1$ and $-1$ are distinct, so the product is $1 \\cdot (-1) = -1$. For $p = 2$ the only unit is $1 = -1$. So $(p-1)! \\equiv -1 \\pmod p$.",
+      "uses": []
+     },
+     {
+      "id": "s:composite",
+      "slogan": "Show that a composite $n$ does not satisfy the congruence.",
+      "detail": "Let $a$ be a divisor of $n$ with $1 < a < n$. Then $a$ is a factor of $(n-1)!$. If $n \\mid (n-1)! + 1$, then $a \\mid (n-1)! + 1$, so $a \\mid 1$, which is false.",
+      "uses": []
+     },
+     {
+      "id": "s:combine",
+      "slogan": "Combine the two cases into the equivalence for every $n > 1$.",
+      "detail": "A prime satisfies the congruence by steps 1 to 3, and a composite number does not by step 4. Every $n > 1$ is one of the two, so the congruence holds if and only if $n$ is prime.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:units",
+      "s:pair"
+     ],
+     [
+      "s:pair",
+      "s:product"
+     ],
+     [
+      "s:product",
+      "s:combine"
+     ],
+     [
+      "s:composite",
+      "s:combine"
+     ]
+    ],
+    "conclusion": "s:combine",
+    "concepts": {
+     "c:factorial": "The product $(n-1)!$ is the quantity that the congruence evaluates.",
+     "c:modular-arithmetic": "The theorem is a statement about residues modulo $n$.",
+     "c:prime-number": "Primality makes $\\mathbb Z/n$ a field and rules out proper divisors.",
+     "c:field": "A field has no zero divisors, so only $\\pm 1$ are self-inverse.",
+     "c:group-of-units": "The nonzero residues form the unit group, which inversion pairs up."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "ZMod.wilsons_lemma",
+     "follows": true,
+     "note": "mathlib matches $1, \\dots, p-1$ with the units of ZMod p and uses prod_univ_units_id_eq_neg_one (pair each unit with its inverse); the converse is Nat.prime_of_fac_equiv_neg_one."
+    }
+   },
+   {
+    "id": "polynomial",
+    "name": "Factoring $X^{p-1} - 1$",
+    "slogan": "Factor $X^{p-1} - 1$ over the field $\\mathbb Z/p$ into linear factors and compare constant terms.",
+    "scope": "Both directions for every $n > 1$. The prime case uses a polynomial identity; the composite case is the divisor argument.",
+    "mechanisms": [
+     "m:algebraic-identity",
+     "m:modular-arithmetic"
+    ],
+    "roles": [
+     {
+      "h": "h:integer",
+      "why": "For $n > 1$ the number $n$ is either prime or has a divisor $a$ with $1 < a < n$.",
+      "steps": [
+       "s:composite2",
+       "s:combine2"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:roots",
+      "slogan": "Show that each of $1, \\dots, p-1$ is a root of $X^{p-1} - 1$ in $\\mathbb Z/p$.",
+      "detail": "For a prime $p$ and $a \\not\\equiv 0$, Fermat's little theorem gives $a^{p-1} \\equiv 1 \\pmod p$. So the $p-1$ distinct residues $1, \\dots, p-1$ are roots of $X^{p-1} - 1$.",
+      "uses": [
+       "wd:Q188295"
+      ]
+     },
+     {
+      "id": "s:factor",
+      "slogan": "Factor the polynomial completely over the [field](c:field) $\\mathbb Z/p$.",
+      "detail": "A polynomial of degree $p-1$ over a field has at most $p-1$ roots, and each root gives a linear factor. The monic polynomial $X^{p-1} - 1$ therefore equals $\\prod_{a=1}^{p-1}(X - a)$.",
+      "uses": []
+     },
+     {
+      "id": "s:constant",
+      "slogan": "Compare the constant terms of the two sides.",
+      "detail": "Set $X = 0$ to get $-1 = (-1)^{p-1}(p-1)!$. For odd $p$ the sign $(-1)^{p-1}$ is $1$, so $(p-1)! \\equiv -1$. For $p = 2$, $1! = 1 \\equiv -1 \\pmod 2$.",
+      "uses": []
+     },
+     {
+      "id": "s:composite2",
+      "slogan": "Show that a composite $n$ does not satisfy the congruence.",
+      "detail": "Let $a$ be a divisor of $n$ with $1 < a < n$. Then $a \\mid (n-1)!$. If $n \\mid (n-1)! + 1$, then $a \\mid 1$, which is false.",
+      "uses": []
+     },
+     {
+      "id": "s:combine2",
+      "slogan": "Combine the prime and composite cases into the equivalence.",
+      "detail": "Primes satisfy the congruence by the first three steps and composite numbers do not by the fourth. Every $n > 1$ is prime or composite, so the equivalence holds.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:roots",
+      "s:factor"
+     ],
+     [
+      "s:factor",
+      "s:constant"
+     ],
+     [
+      "s:constant",
+      "s:combine2"
+     ],
+     [
+      "s:composite2",
+      "s:combine2"
+     ]
+    ],
+    "conclusion": "s:combine2",
+    "concepts": {
+     "c:factorial": "The product $(n-1)!$ is the quantity that the congruence evaluates.",
+     "c:modular-arithmetic": "The theorem is a statement about residues modulo $n$.",
+     "c:prime-number": "Primality makes $\\mathbb Z/n$ a field and rules out proper divisors.",
+     "c:field": "Over a field, a polynomial has at most as many roots as its degree."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The classical proof that compares $X^{p-1} - 1$ with $\\prod (X - a)$, as in Hardy and Wright, An Introduction to the Theory of Numbers, chapter 6."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:24882",
+  "statement": "Let $F$ be an [endofunctor](c:endofunctor) of a category with an [initial object](c:initial-object) $0$. If the chain $0 \\to F0 \\to F^2 0 \\to \\cdots$ has a [colimit](c:colimit) $I$ that $F$ preserves, then $F$ has an [initial algebra](c:initial-algebra) with carrier $I$.",
+  "hypotheses": [
+   {
+    "id": "h:initial",
+    "text": "The category has an [initial object](c:initial-object) $0$.",
+    "concept": "c:initial-object"
+   },
+   {
+    "id": "h:colimit",
+    "text": "The chain $0 \\xrightarrow{!} F0 \\xrightarrow{F!} F^2 0 \\to \\cdots$ has a [colimit](c:colimit) $I$ with injections $\\iota_n\\colon F^n 0 \\to I$.",
+    "concept": "c:colimit"
+   },
+   {
+    "id": "h:preserved",
+    "text": "The functor $F$ preserves this colimit: the cocone $(F\\iota_n)_n$ is a colimit of $F$ applied to the chain.",
+    "concept": null
+   }
+  ],
+  "conclusion": "There is an isomorphism $a\\colon FI \\to I$, and $(I, a)$ is an initial $F$-algebra.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "initial-chain",
+    "name": "Iterating the functor on the initial object",
+    "slogan": "Take the colimit of the initial chain, use preservation to get the structure map, and build the unique algebra morphism from the chain.",
+    "scope": "The whole theorem for an arbitrary category with the three hypotheses. Algebras are pairs $(A, \\alpha\\colon FA \\to A)$ and morphisms commute with the structure maps.",
+    "mechanisms": [
+     "m:universal-property",
+     "m:induction",
+     "m:functoriality"
+    ],
+    "roles": [
+     {
+      "h": "h:initial",
+      "why": "The unique map out of $0$ starts the chain and starts the recursion for the maps $h_n$.",
+      "steps": [
+       "s:cocone",
+       "s:unique"
+      ]
+     },
+     {
+      "h": "h:colimit",
+      "why": "The colimit $I$ with its injections is the candidate carrier of the initial algebra.",
+      "steps": [
+       "s:chain"
+      ]
+     },
+     {
+      "h": "h:preserved",
+      "why": "Preservation identifies $FI$ with $I$ and makes the maps $F\\iota_n$ jointly epimorphic.",
+      "steps": [
+       "s:structure",
+       "s:exist"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:chain",
+      "slogan": "Build the initial chain and name its colimit $I$ with injections $\\iota_n$.",
+      "detail": "Let $c_0 = {!}\\colon 0 \\to F0$ and $c_{n+1} = F c_n$, so the chain is $F^n 0 \\xrightarrow{c_n} F^{n+1} 0$. Its [colimit](c:colimit) $I$ has injections $\\iota_n$ with $\\iota_{n+1} c_n = \\iota_n$.",
+      "uses": []
+     },
+     {
+      "id": "s:structure",
+      "slogan": "Get the structure map $a\\colon FI \\to I$ from the preservation of the colimit.",
+      "detail": "By preservation, $(F\\iota_n)$ is a colimit of the chain $F^{n+1}0$. The cocone $(\\iota_{n+1})$ is also a colimit of that chain, because dropping the first term of a chain does not change its colimit. So a unique isomorphism $a$ has $a\\,F\\iota_n = \\iota_{n+1}$.",
+      "uses": []
+     },
+     {
+      "id": "s:cocone",
+      "slogan": "For a given algebra $(A, \\alpha)$, define maps $h_n\\colon F^n 0 \\to A$ by recursion.",
+      "detail": "Let $h_0$ be the unique map $0 \\to A$ and $h_{n+1} = \\alpha\\,F h_n$. Then $h_{n+1}c_n = h_n$ by induction: the base case holds since $0$ is initial, and $h_{n+2}c_{n+1} = \\alpha F(h_{n+1}c_n) = \\alpha F h_n = h_{n+1}$. So $(h_n)$ is a [cocone](c:cocone) on the chain.",
+      "uses": []
+     },
+     {
+      "id": "s:exist",
+      "slogan": "Induce $h\\colon I \\to A$ and check that it is an algebra morphism.",
+      "detail": "The cocone gives $h$ with $h\\iota_n = h_n$. Then $h\\,a\\,F\\iota_n = h\\iota_{n+1} = h_{n+1} = \\alpha\\,F h_n = \\alpha\\,F h\\,F\\iota_n$. The maps $F\\iota_n$ are jointly epimorphic, so $h\\,a = \\alpha\\,F h$.",
+      "uses": []
+     },
+     {
+      "id": "s:unique",
+      "slogan": "Show that every algebra morphism $g\\colon I \\to A$ equals $h$, so $(I, a)$ is initial.",
+      "detail": "Suppose $g\\,a = \\alpha\\,F g$. Then $g\\iota_0 = h_0$ since $0$ is initial, and $g\\iota_{n+1} = g\\,a\\,F\\iota_n = \\alpha\\,F(g\\iota_n) = \\alpha\\,F h_n = h_{n+1}$. So $g\\iota_n = h\\iota_n$ for all $n$, and the colimit property gives $g = h$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:chain",
+      "s:structure"
+     ],
+     [
+      "s:chain",
+      "s:cocone"
+     ],
+     [
+      "s:structure",
+      "s:exist"
+     ],
+     [
+      "s:cocone",
+      "s:exist"
+     ],
+     [
+      "s:exist",
+      "s:unique"
+     ],
+     [
+      "s:structure",
+      "s:unique"
+     ],
+     [
+      "s:cocone",
+      "s:unique"
+     ]
+    ],
+    "conclusion": "s:unique",
+    "concepts": {
+     "c:endofunctor": "The functor $F$ is iterated on $0$ and acts on the algebra structure.",
+     "c:initial-object": "Initiality of $0$ gives the first map of the chain and the base cases.",
+     "c:colimit": "The colimit of the chain is the carrier, and its universal property gives $h$ and $g = h$.",
+     "c:initial-algebra": "The goal is an algebra with exactly one morphism to every algebra.",
+     "c:cocone": "The maps $h_n$ form a cocone, which induces the algebra morphism."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "J. Adámek, Free algebras and automata realizations in the language of categories, Commentationes Mathematicae Universitatis Carolinae 15 (1974); see also the nLab entry on Adámek's fixed point theorem."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:6181",
+  "statement": "Let $X$ be a nonempty proper subset of the [sphere](c:sphere) $S^n$ that is a [finite CW complex](c:finite-cw-complex). Then $\\tilde H_i(S^n \\setminus X) \\cong \\check H^{\\,n-i-1}(X)$ for every integer $i$, with the [reduced homology](c:reduced-homology) of the complement and reduced [Čech cohomology](c:cech-cohomology) of $X$.",
+  "hypotheses": [
+   {
+    "id": "h:cw",
+    "text": "The subset $X$ is a [finite CW complex](c:finite-cw-complex).",
+    "concept": "c:finite-cw-complex"
+   },
+   {
+    "id": "h:proper",
+    "text": "The subset $X$ is nonempty and different from $S^n$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The reduced homology of the complement equals the reduced Čech cohomology of $X$ with the degree shift $i \\mapsto n-i-1$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "hatcher",
+    "name": "Duality for compact subsets of a sphere",
+    "slogan": "Pass to the homology of the pair $(S^n, S^n \\setminus X)$, identify it with the cohomology of $X$ by duality on neighbourhoods, and fix the extreme degrees.",
+    "scope": "An outline: the duality of step 2 for compact locally contractible subsets of a closed orientable manifold rests on the cited work. The case $n = 1$ is included.",
+    "mechanisms": [
+     "m:long-exact-sequence",
+     "m:duality",
+     "m:cited-deep-result"
+    ],
+    "roles": [
+     {
+      "h": "h:cw",
+      "why": "A finite complex is compact and locally contractible, and its Čech and singular cohomology agree.",
+      "steps": [
+       "s:duality",
+       "s:cech"
+      ]
+     },
+     {
+      "h": "h:proper",
+      "why": "Nonemptiness gives reduced cohomology, and properness keeps the complement from being empty.",
+      "steps": [
+       "s:pair",
+       "s:degrees"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:pair",
+      "slogan": "Replace the complement by the pair $(S^n, S^n \\setminus X)$ in the long exact sequence.",
+      "detail": "The [long exact sequence](c:long-exact-sequence-in-chain-homology) of the pair in reduced homology contains $\\tilde H_{i+1}(S^n) \\to H_{i+1}(S^n, S^n \\setminus X) \\to \\tilde H_i(S^n \\setminus X) \\to \\tilde H_i(S^n)$. The groups $\\tilde H_*(S^n)$ vanish outside degree $n$, so $\\tilde H_i(S^n \\setminus X) \\cong H_{i+1}(S^n, S^n \\setminus X)$ for $i \\ne n-1, n$.",
+      "uses": []
+     },
+     {
+      "id": "s:duality",
+      "slogan": "Identify the relative homology of the pair with the cohomology of $X$ by duality.",
+      "detail": "For a compact, [locally contractible](c:locally-contractible-space) subset $X$ of a closed [orientable manifold](c:orientable-manifold) such as $S^n$, one has $H_j(S^n, S^n \\setminus X) \\cong H^{n-j}(X)$. The proof applies Poincaré duality to neighbourhoods of $X$ and passes to the limit.",
+      "uses": [
+       "wd:Q2063099"
+      ]
+     },
+     {
+      "id": "s:degrees",
+      "slogan": "Assemble all degrees and treat the two extreme degrees separately.",
+      "detail": "For $i \\ne n-1, n$, steps 1 and 2 give $\\tilde H_i(S^n \\setminus X) \\cong H^{n-i-1}(X)$. For $i = n-1$ the exact sequence ends in $H_n(S^n) \\to H^0(X) \\to \\tilde H_{n-1}(S^n \\setminus X) \\to 0$, whose cokernel is $\\tilde H^0(X)$ after comparing with a point of $X$. For $i \\ge n$ both sides vanish.",
+      "uses": []
+     },
+     {
+      "id": "s:cech",
+      "slogan": "Replace singular by [Čech cohomology](c:cech-cohomology) for the finite complex $X$.",
+      "detail": "A finite CW complex is compact and locally contractible, so its Čech and singular cohomology agree. Hence $\\tilde H_i(S^n \\setminus X) \\cong \\check H^{\\,n-i-1}(X)$ in every degree $i$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:pair",
+      "s:degrees"
+     ],
+     [
+      "s:duality",
+      "s:degrees"
+     ],
+     [
+      "s:degrees",
+      "s:cech"
+     ]
+    ],
+    "conclusion": "s:cech",
+    "concepts": {
+     "c:sphere": "The ambient sphere is a closed orientable manifold with simple homology.",
+     "c:finite-cw-complex": "Finiteness gives compactness and local contractibility, which the duality needs.",
+     "c:reduced-homology": "Reduced groups make the sphere's homology vanish outside degree $n$.",
+     "c:cech-cohomology": "Čech cohomology of $X$ is the right-hand side of the duality.",
+     "c:long-exact-sequence-in-chain-homology": "The sequence of the pair links the complement to the relative groups.",
+     "c:locally-contractible-space": "Local contractibility lets cohomology of $X$ be computed from neighbourhoods.",
+     "c:orientable-manifold": "Poincaré duality needs an orientable closed manifold, here $S^n$."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "A. Hatcher, Algebraic Topology, Cambridge University Press, 2002, Theorem 3.44 (Alexander duality), section 3.3",
+     "url": "https://pi.math.cornell.edu/~hatcher/AT/ATpage.html",
+     "note": "Hatcher proves the isomorphism for compact, locally contractible, nonempty proper subsets of $S^n$; the outline follows his reduction to the duality for compact subsets of a closed orientable manifold."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:alternating-groups-on-5-letters-or-more-are-simple",
+  "statement": "For $n \\ge 5$ the [alternating group](c:alternating-group) $A_n$ is a [simple group](c:simple-group): its only [normal subgroups](c:normal-subgroup) are the trivial group and $A_n$.",
+  "hypotheses": [
+   {
+    "id": "h:degree",
+    "text": "The degree satisfies $n \\ge 5$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The group $A_n$ is nontrivial, and every normal subgroup of $A_n$ is trivial or equal to $A_n$.",
+  "formal": {
+   "decl": "alternatingGroup.isSimpleGroup",
+   "difference": null
+  },
+  "proofs": [
+   {
+    "id": "iwasawa",
+    "name": "Iwasawa criterion on 3-subsets",
+    "slogan": "Let the group act primitively on 3-subsets, so that a normal subgroup is transitive and the quotient is abelian, then use perfectness.",
+    "scope": "Degrees $n \\ge 5$ with $n \\ne 6$. For $n = 6$ mathlib runs the same steps on 4-subsets with Klein four-groups; the second proof covers every $n \\ge 5$.",
+    "mechanisms": [
+     "m:group-action-orbits",
+     "m:quotient-construction",
+     "m:case-analysis"
+    ],
+    "roles": [
+     {
+      "h": "h:degree",
+      "why": "Degree at least $5$ gives outside points for commutators, faithfulness and the block argument; $n \\ne 6$ is used for primitivity.",
+      "steps": [
+       "s:perfect",
+       "s:action",
+       "s:primitive"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:perfect",
+      "slogan": "Show that $A_n$ equals its commutator subgroup.",
+      "detail": "For a 3-cycle $(a\\,b\\,c)$ pick $d, e \\notin \\{a, b, c\\}$, which is possible as $n \\ge 5$. Then $(a\\,b\\,c) = [(b\\,c\\,d), (a\\,e\\,b)]$ is a [commutator](c:commutator) of even permutations, with $[x,y] = xyx^{-1}y^{-1}$. Since 3-cycles generate $A_n$, the group is [perfect](c:is-perfect).",
+      "uses": []
+     },
+     {
+      "id": "s:action",
+      "slogan": "Let $G = A_n$ act on the 3-subsets of $\\{1, \\dots, n\\}$ and name the subgroups $T_s$.",
+      "detail": "The action is transitive, since an odd permutation can be fixed by a transposition inside the target set, and it is faithful as $n \\ge 5$. For a 3-subset $s$ let $T_s$ be the even permutations supported in $s$: cyclic of order $3$ and normal in the [stabilizer](c:stabilizer) $G_s$. The conjugates of the $T_s$ contain all 3-cycles, so they generate $G$.",
+      "uses": []
+     },
+     {
+      "id": "s:primitive",
+      "slogan": "Show that the action on 3-subsets is [primitive](c:is-preprimitive) when $n \\ne 6$.",
+      "detail": "Let $B$ be a block with $s \\in B$ and another $t \\in B$. Elements fixing $s$ preserve $B$, and they are transitive on the 3-subsets sharing two points with $s$; so if $|s \\cap t| = 2$, chaining through such neighbours gives $B = X$. If $|s \\cap t| = 1$, a 3-cycle of $T_s$ moves $t$ to a neighbour of $t$ in $B$. If $s \\cap t = \\emptyset$, then $n \\ge 7$ and a 3-cycle on two points of $t$ and one outside point does the same.",
+      "uses": []
+     },
+     {
+      "id": "s:transitive",
+      "slogan": "Show that a nontrivial normal subgroup $N$ is transitive on the 3-subsets.",
+      "detail": "Since $N$ is normal, $g$ maps an $N$-orbit to an $N$-orbit, so the orbits are blocks. The action is faithful, so $N \\ne 1$ moves some $s$ and its [orbit](c:orbit) has at least two elements. By primitivity this orbit is the whole set.",
+      "uses": []
+     },
+     {
+      "id": "s:quotient",
+      "slogan": "Show that $G/N$ is generated by the image of the abelian group $T_s$.",
+      "detail": "Transitivity gives $G = N G_s$. For $g = nh$ with $n \\in N$ and $h \\in G_s$, the group $hT_sh^{-1} = T_s$, so $gT_sg^{-1}$ and $T_s$ have the same image in $G/N$. The conjugates of $T_s$ generate $G$, so the image of $T_s$ generates $G/N$, which is therefore abelian.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Conclude that $N = G$, because $G$ equals its commutator subgroup.",
+      "detail": "An abelian quotient $G/N$ means that $N$ contains the commutator subgroup $[G, G]$. By step 1, $[G, G] = G$, so $N = G$. As $A_n \\ne 1$, the group is simple, following the [Iwasawa criterion](c:iwasawa-structure).",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:perfect",
+      "s:conclude"
+     ],
+     [
+      "s:action",
+      "s:primitive"
+     ],
+     [
+      "s:action",
+      "s:quotient"
+     ],
+     [
+      "s:primitive",
+      "s:transitive"
+     ],
+     [
+      "s:transitive",
+      "s:quotient"
+     ],
+     [
+      "s:quotient",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:alternating-group": "The group $G = A_n$ is the group that the proof shows to be simple.",
+     "c:simple-group": "Simplicity is the goal: no normal subgroup other than $1$ and $G$.",
+     "c:normal-subgroup": "Normality makes orbits into blocks and lets conjugation act on the quotient.",
+     "c:commutator": "Commutators show that the group is perfect and that abelian quotients are trivial.",
+     "c:is-perfect": "A perfect group has no nontrivial abelian quotient.",
+     "c:stabilizer": "The stabilizer $G_s$ normalizes $T_s$ and gives $G = N G_s$.",
+     "c:is-preprimitive": "Primitivity forces an orbit of $N$ with two points to be everything.",
+     "c:orbit": "The orbits of $N$ are blocks of the action.",
+     "c:iwasawa-structure": "The family $T_s$ with these properties is an Iwasawa structure."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "alternatingGroup.isSimpleGroup",
+     "follows": true,
+     "note": "mathlib applies the Iwasawa criterion (IwasawaStructure.commutator_le) to the preprimitive action on 3-subsets (iwasawaStructure_three), and on 4-subsets when the degree is 6."
+    }
+   },
+   {
+    "id": "three-cycles",
+    "name": "Three-cycles in a normal subgroup",
+    "slogan": "Show that a nontrivial normal subgroup contains a 3-cycle by a case split on cycle types, then that 3-cycles are conjugate and generate.",
+    "scope": "Every degree $n \\ge 5$. The case split on the cycle type of one nonidentity element covers all possibilities.",
+    "mechanisms": [
+     "m:case-analysis",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:degree",
+      "why": "Degree at least $5$ supplies the extra points used in the conjugation step and in the transposition case.",
+      "steps": [
+       "s:conjugate",
+       "s:small"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:generate",
+      "slogan": "Show that 3-cycles generate $A_n$.",
+      "detail": "Every even permutation is a product of an even number of transpositions. Two transpositions with a common point give a [3-cycle](c:3-cycle), as $(a\\,b)(a\\,c) = (a\\,c\\,b)$. Two disjoint ones give $(a\\,b)(c\\,d) = (a\\,c\\,b)(a\\,c\\,d)$, a product of two 3-cycles.",
+      "uses": []
+     },
+     {
+      "id": "s:conjugate",
+      "slogan": "Show that all 3-cycles are conjugate in $A_n$ when $n \\ge 5$.",
+      "detail": "In $S_n$, any two 3-cycles are [conjugate](c:conjugacy-class): $g(a\\,b\\,c)g^{-1} = (a'\\,b'\\,c')$. If $g$ is odd, replace it by $g(d\\,e)$ with $d, e \\notin \\{a, b, c\\}$. The transposition $(d\\,e)$ commutes with $(a\\,b\\,c)$, so the new element conjugates the same way and is even.",
+      "uses": []
+     },
+     {
+      "id": "s:long",
+      "slogan": "Find a 3-cycle in $N$ from an element with a long cycle or two 3-cycles.",
+      "detail": "Let $1 \\ne \\sigma \\in N$. If $\\sigma = (a_1\\,a_2\\,\\dots\\,a_r)\\tau$ with $r \\ge 4$, then with $\\delta = (a_1\\,a_2\\,a_3)$ the [commutator](c:commutator) $\\delta\\sigma\\delta^{-1}\\sigma^{-1} \\in N$ equals $(a_1\\,a_2\\,a_4)$. If $\\sigma = (1\\,2\\,3)(4\\,5\\,6)\\tau$ and $\\delta = (1\\,2\\,4)$, the commutator is a 5-cycle, which falls under the first case.",
+      "uses": []
+     },
+     {
+      "id": "s:small",
+      "slogan": "Find a 3-cycle in $N$ from an element with one 3-cycle or only transpositions.",
+      "detail": "If $\\sigma = (1\\,2\\,3)\\tau$ with $\\tau$ a product of disjoint transpositions, then $\\sigma^2 = (1\\,3\\,2) \\in N$. If $\\sigma = (1\\,2)(3\\,4)\\tau$ with $\\tau$ such a product, then $\\pi = [(1\\,2\\,3), \\sigma] = (1\\,3)(2\\,4) \\in N$, and $\\pi \\cdot (1\\,3\\,5)\\pi(1\\,3\\,5)^{-1} = (1\\,3\\,5) \\in N$.",
+      "uses": []
+     },
+     {
+      "id": "s:finish",
+      "slogan": "Collect the cases to put a 3-cycle in $N$, then conclude that $N = A_n$.",
+      "detail": "A nonidentity $\\sigma$ has a cycle of length at least four, or at least two 3-cycles, or exactly one 3-cycle, or none. In each case $N$ contains a 3-cycle, hence all 3-cycles by step 2, hence $N = A_n$ by step 1. Since $A_n \\ne 1$, it is simple.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:generate",
+      "s:finish"
+     ],
+     [
+      "s:conjugate",
+      "s:finish"
+     ],
+     [
+      "s:long",
+      "s:finish"
+     ],
+     [
+      "s:small",
+      "s:finish"
+     ]
+    ],
+    "conclusion": "s:finish",
+    "concepts": {
+     "c:alternating-group": "The proof describes the even permutations through 3-cycles.",
+     "c:simple-group": "Simplicity means that a nontrivial normal subgroup must be the whole group.",
+     "c:normal-subgroup": "Normality puts commutators with a 3-cycle back inside $N$.",
+     "c:3-cycle": "The 3-cycles generate $A_n$ and form a single conjugacy class.",
+     "c:conjugacy-class": "One conjugacy class of 3-cycles spreads a single 3-cycle in $N$ to all.",
+     "c:commutator": "Commutators of an element of $N$ with a 3-cycle stay in $N$ and are short cycles."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The classical argument on cycle types, as in Dummit and Foote, Abstract Algebra, section 4.6."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q810431",
+  "statement": "The [series](c:series) $\\sum_{n \\ge 1} 1/n^2$ converges and equals $\\pi^2/6$; equivalently $\\zeta(2) = \\pi^2/6$ for the [Riemann zeta function](c:riemann-zeta-function).",
+  "hypotheses": [],
+  "conclusion": "$\\sum_{n=1}^{\\infty} \\frac{1}{n^2} = \\frac{\\pi^2}{6}$.",
+  "formal": {
+   "decl": "hasSum_zeta_two",
+   "difference": "The declaration sums over all natural numbers, with the term at $n = 0$ equal to $0$ because division by zero is $0$ in Lean. It is the case $k = 1$ of the general formula hasSum_zeta_nat."
+  },
+  "proofs": [
+   {
+    "id": "bernoulli-fourier",
+    "name": "Fourier series of a Bernoulli polynomial",
+    "slogan": "Expand the periodic quadratic $x^2 - x + 1/6$ in a Fourier series and evaluate the series at $x = 0$.",
+    "scope": "The whole identity, with no hypotheses. The expansion is a pointwise equality at every $x$, including $x = 0$.",
+    "mechanisms": [
+     "m:characteristic-function",
+     "m:uniform-convergence",
+     "m:telescoping"
+    ],
+    "roles": [],
+    "steps": [
+     {
+      "id": "s:coefficients",
+      "slogan": "Compute the Fourier coefficients of the periodic function $B(x) = x^2 - x + 1/6$.",
+      "detail": "Extend the [Bernoulli polynomial](c:bernoulli-polynomial) $B$ from $[0, 1)$ to a $1$-[periodic function](c:periodic-function); it is continuous because $B(0) = B(1)$. Two integrations by parts give $\\hat B(0) = 0$ and $\\hat B(n) = \\int_0^1 B(x)e^{-2\\pi i n x}\\,dx = \\frac{1}{2\\pi^2 n^2}$ for $n \\neq 0$.",
+      "uses": [
+       "nm:integration-by-parts"
+      ]
+     },
+     {
+      "id": "s:summable",
+      "slogan": "Show that the Fourier coefficients are absolutely summable.",
+      "detail": "For $n \\ge 2$ we have $1/n^2 \\le \\frac1{n-1} - \\frac1n$, and the right sides telescope. So $\\sum_{n \\ge 1} 1/n^2 \\le 2$, and $\\sum_{n \\in \\mathbb Z}|\\hat B(n)|$ converges.",
+      "uses": []
+     },
+     {
+      "id": "s:converge",
+      "slogan": "Show that the [Fourier series](c:fourier-series) of $B$ converges to $B$ at every point.",
+      "detail": "A series with absolutely summable coefficients converges uniformly to a continuous function $g$ with the same coefficients. The continuous function $B - g$ has all Fourier coefficients zero, so it vanishes by the uniqueness theorem. Hence $B(x) = \\sum_n \\hat B(n)e^{2\\pi i n x}$ for every $x$.",
+      "uses": [
+       "wd:Q179467"
+      ]
+     },
+     {
+      "id": "s:evaluate",
+      "slogan": "Evaluate the expansion at $x = 0$ to read off the sum.",
+      "detail": "At $x = 0$ we get $\\frac16 = B(0) = \\sum_{n \\ne 0}\\frac{1}{2\\pi^2 n^2} = \\frac{1}{\\pi^2}\\sum_{n \\ge 1}\\frac{1}{n^2}$. Multiplying by $\\pi^2$ gives $\\sum_{n \\ge 1} 1/n^2 = \\pi^2/6$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:coefficients",
+      "s:summable"
+     ],
+     [
+      "s:coefficients",
+      "s:converge"
+     ],
+     [
+      "s:summable",
+      "s:converge"
+     ],
+     [
+      "s:converge",
+      "s:evaluate"
+     ]
+    ],
+    "conclusion": "s:evaluate",
+    "concepts": {
+     "c:series": "The theorem is the value of this series.",
+     "c:riemann-zeta-function": "The sum is the value of the zeta function at $2$.",
+     "c:bernoulli-polynomial": "The quadratic $B$ is the second Bernoulli polynomial, with a simple Fourier series.",
+     "c:periodic-function": "Periodic extension makes $B$ a continuous function on the circle.",
+     "c:fourier-series": "The Fourier series of $B$ at $0$ is the series $\\sum 1/n^2$ up to a factor."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "hasSum_zeta_two",
+     "follows": true,
+     "note": "mathlib specializes hasSum_zeta_nat, which evaluates the Fourier series of the periodized Bernoulli polynomial at $x = 0$ (hasSum_one_div_nat_pow_mul_cos), with $B_2 = 1/6$."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q2226602",
+  "statement": "Let $A = VDV^{-1}$ be a [diagonalizable matrix](c:diagonalizable-matrix) with $D = \\mathrm{diag}(\\lambda_1, \\dots, \\lambda_m)$, let $\\|\\cdot\\|$ be an induced $p$-[matrix norm](c:matrix-norm), and let $E$ be any matrix. If $\\mu$ is an [eigenvalue](c:eigenvalue) of $A + E$, then $\\min_i |\\mu - \\lambda_i| \\le \\kappa(V)\\,\\|E\\|$, where $\\kappa(V) = \\|V\\|\\,\\|V^{-1}\\|$ is the [condition number](c:condition-number).",
+  "hypotheses": [
+   {
+    "id": "h:diag",
+    "text": "The matrix factors as $A = VDV^{-1}$ with $D$ diagonal, so $A$ is [diagonalizable](c:diagonalizable-matrix).",
+    "concept": "c:diagonalizable-matrix"
+   },
+   {
+    "id": "h:norm",
+    "text": "The norm is an induced $p$-[matrix norm](c:matrix-norm) with $1 \\le p \\le \\infty$, so it is submultiplicative and $\\|D\\| = \\max_i |d_i|$ for diagonal $D$.",
+    "concept": "c:matrix-norm"
+   },
+   {
+    "id": "h:eigen",
+    "text": "The number $\\mu$ is an [eigenvalue](c:eigenvalue) of $A + E$ for a square matrix $E$ of the same size.",
+    "concept": "c:eigenvalue"
+   }
+  ],
+  "conclusion": "Some eigenvalue $\\lambda_i$ of $A$ satisfies $|\\mu - \\lambda_i| \\le \\kappa(V)\\,\\|E\\|$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "resolvent",
+    "name": "Resolvent bound",
+    "slogan": "Rewrite the eigenvector equation of $A + E$ in the eigenbasis of $A$, invert $\\mu I - D$ and take norms.",
+    "scope": "The whole theorem. The case that $\\mu$ is already an eigenvalue of $A$ is immediate and is treated first.",
+    "mechanisms": [
+     "m:eigenvector-basis",
+     "m:spectral-decomposition"
+    ],
+    "roles": [
+     {
+      "h": "h:eigen",
+      "why": "It gives a nonzero vector $x$ with $(A + E)x = \\mu x$.",
+      "steps": [
+       "s:equation"
+      ]
+     },
+     {
+      "h": "h:diag",
+      "why": "The factorization turns $\\mu I - A$ into $V(\\mu I - D)V^{-1}$ with a diagonal middle factor.",
+      "steps": [
+       "s:equation",
+       "s:diagonal-norm"
+      ]
+     },
+     {
+      "h": "h:norm",
+      "why": "Submultiplicativity bounds the product of norms, and the diagonal norm is the largest entry.",
+      "steps": [
+       "s:invert",
+       "s:diagonal-norm"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:trivial",
+      "slogan": "Dispose of the case that $\\mu$ equals an eigenvalue of $A$.",
+      "detail": "If $\\mu = \\lambda_i$ for some $i$, then $|\\mu - \\lambda_i| = 0 \\le \\kappa(V)\\|E\\|$ and the claim holds. Otherwise $\\mu \\ne \\lambda_i$ for all $i$, so the diagonal matrix $\\mu I - D$ is invertible.",
+      "uses": []
+     },
+     {
+      "id": "s:equation",
+      "slogan": "Turn the eigenvector equation of $A + E$ into an equation for $w = V^{-1}x$.",
+      "detail": "Let $(A + E)x = \\mu x$ with $x \\ne 0$. Then $(\\mu I - A)x = Ex$. With $A = VDV^{-1}$ and multiplication by $V^{-1}$ this becomes $(\\mu I - D)w = (V^{-1}EV)\\,w$, where $w = V^{-1}x \\ne 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:invert",
+      "slogan": "Invert $\\mu I - D$ and take norms to bound $1$ from above.",
+      "detail": "We have $w = (\\mu I - D)^{-1}(V^{-1}EV)\\,w$. Taking norms and using submultiplicativity gives $\\|w\\| \\le \\|(\\mu I - D)^{-1}\\|\\,\\|V^{-1}\\|\\,\\|E\\|\\,\\|V\\|\\,\\|w\\|$. Since $w \\ne 0$, we get $1 \\le \\|(\\mu I - D)^{-1}\\|\\,\\kappa(V)\\,\\|E\\|$.",
+      "uses": []
+     },
+     {
+      "id": "s:diagonal-norm",
+      "slogan": "Compute the norm of the diagonal matrix $(\\mu I - D)^{-1}$.",
+      "detail": "The induced $p$-norm of a diagonal matrix is its largest absolute entry. So $\\|(\\mu I - D)^{-1}\\| = \\max_i \\frac{1}{|\\mu - \\lambda_i|} = \\frac{1}{\\min_i |\\mu - \\lambda_i|}$.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Combine the two estimates to bound the distance to the nearest eigenvalue.",
+      "detail": "Steps 3 and 4 give $1 \\le \\kappa(V)\\,\\|E\\| / \\min_i |\\mu - \\lambda_i|$. Hence $\\min_i |\\mu - \\lambda_i| \\le \\kappa(V)\\,\\|E\\|$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:trivial",
+      "s:equation"
+     ],
+     [
+      "s:trivial",
+      "s:diagonal-norm"
+     ],
+     [
+      "s:equation",
+      "s:invert"
+     ],
+     [
+      "s:invert",
+      "s:conclude"
+     ],
+     [
+      "s:diagonal-norm",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:diagonalizable-matrix": "A diagonalizing factorization turns the problem into one about a diagonal matrix.",
+     "c:matrix-norm": "Submultiplicativity and the diagonal norm formula give the estimate.",
+     "c:eigenvalue": "The perturbed eigenvalue $\\mu$ supplies the eigenvector equation.",
+     "c:condition-number": "The product $\\|V\\|\\|V^{-1}\\|$ appears as the factor in the bound."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard resolvent argument of F. L. Bauer and C. T. Fike, Norms and exclusion theorems, Numerische Mathematik 2 (1960)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:blichfeldt-s-theorem",
+  "statement": "Let $\\Lambda$ be a [lattice](c:lattice-discrete-subgroup) in $\\mathbb R^n$ with a measurable [fundamental domain](c:fundamental-domain) $F$, and let $S \\subseteq \\mathbb R^n$ be measurable with $\\mathrm{vol}(S) > \\mathrm{vol}(F)$. Then $S$ contains two distinct points $s, t$ with $s - t \\in \\Lambda$.",
+  "hypotheses": [
+   {
+    "id": "h:lattice",
+    "text": "The group $\\Lambda$ is a [lattice](c:lattice-discrete-subgroup) in $\\mathbb R^n$ with a measurable [fundamental domain](c:fundamental-domain) $F$ of finite volume.",
+    "concept": "c:fundamental-domain"
+   },
+   {
+    "id": "h:measurable",
+    "text": "The set $S$ is [measurable](c:measurable-set).",
+    "concept": "c:measurable-set"
+   },
+   {
+    "id": "h:volume",
+    "text": "The volume of $S$ exceeds the covolume: $\\mathrm{vol}(S) > \\mathrm{vol}(F)$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "Some distinct $s, t \\in S$ have $s - t \\in \\Lambda$.",
+  "formal": {
+   "decl": "MeasureTheory.exists_pair_mem_lattice_not_disjoint_vadd",
+   "difference": "The declaration holds for a countable group acting on a measure space with an invariant measure and a fundamental domain. It concludes that two translates $x + S$ and $y + S$, for distinct $x, y$, intersect; in $\\mathbb R^n$ an intersection point gives two points of $S$ with difference $y - x \\in \\Lambda$."
+  },
+  "proofs": [
+   {
+    "id": "translate-back",
+    "name": "Translate the pieces back",
+    "slogan": "Cut $S$ along the translates of $F$, move every piece back into $F$, and note that pieces of total volume above $\\mathrm{vol}(F)$ must overlap.",
+    "scope": "The whole theorem, for any lattice and any measurable $S$ with $\\mathrm{vol}(S) > \\mathrm{vol}(F)$, including $\\mathrm{vol}(S) = \\infty$. The two points are $z + \\lambda$ and $z + \\lambda'$ for a point $z$ of the overlap.",
+    "mechanisms": [
+     "m:pigeonhole",
+     "m:symmetry"
+    ],
+    "roles": [
+     {
+      "h": "h:lattice",
+      "why": "The translates $\\lambda + F$ tile the space, and the lattice is countable.",
+      "steps": [
+       "s:tile",
+       "s:translate"
+      ]
+     },
+     {
+      "h": "h:measurable",
+      "why": "Measurability makes the volumes of the pieces defined and additive.",
+      "steps": [
+       "s:tile",
+       "s:overlap"
+      ]
+     },
+     {
+      "h": "h:volume",
+      "why": "The excess volume forces the pieces inside $F$ to overlap.",
+      "steps": [
+       "s:overlap"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:tile",
+      "slogan": "Cut $S$ along the translates of the [fundamental domain](c:fundamental-domain) $F$.",
+      "detail": "The translates $\\lambda + F$ with $\\lambda \\in \\Lambda$ cover $\\mathbb R^n$ and overlap only in null sets, and $\\Lambda$ is countable. So $\\mathrm{vol}(S) = \\sum_{\\lambda \\in \\Lambda} \\mathrm{vol}\\bigl(S \\cap (\\lambda + F)\\bigr)$.",
+      "uses": []
+     },
+     {
+      "id": "s:translate",
+      "slogan": "Translate each piece back into $F$ without changing its volume.",
+      "detail": "Put $S_\\lambda = (S - \\lambda) \\cap F$. Translation preserves [Lebesgue measure](c:lebesgue-measure), so $\\mathrm{vol}(S_\\lambda) = \\mathrm{vol}(S \\cap (\\lambda + F))$. Hence $\\sum_\\lambda \\mathrm{vol}(S_\\lambda) = \\mathrm{vol}(S) > \\mathrm{vol}(F)$.",
+      "uses": []
+     },
+     {
+      "id": "s:overlap",
+      "slogan": "Show that two of the pieces $S_\\lambda$ share a point.",
+      "detail": "All $S_\\lambda$ lie in $F$. If they were pairwise disjoint, countable additivity would give $\\sum_\\lambda \\mathrm{vol}(S_\\lambda) = \\mathrm{vol}(\\bigcup_\\lambda S_\\lambda) \\le \\mathrm{vol}(F)$, against step 2. So some $z$ lies in $S_\\lambda \\cap S_{\\lambda'}$ with $\\lambda \\ne \\lambda'$.",
+      "uses": []
+     },
+     {
+      "id": "s:difference",
+      "slogan": "Read off two points of $S$ whose difference is a lattice vector.",
+      "detail": "From $z \\in S_\\lambda \\cap S_{\\lambda'}$ we get $z + \\lambda \\in S$ and $z + \\lambda' \\in S$. These points are distinct, and their difference $\\lambda - \\lambda'$ lies in $\\Lambda$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:tile",
+      "s:translate"
+     ],
+     [
+      "s:translate",
+      "s:overlap"
+     ],
+     [
+      "s:overlap",
+      "s:difference"
+     ]
+    ],
+    "conclusion": "s:difference",
+    "concepts": {
+     "c:lattice-discrete-subgroup": "The lattice supplies the countable group of translations.",
+     "c:fundamental-domain": "Its translates tile the space and give the pieces of $S$.",
+     "c:measurable-set": "Measurability lets volumes of the pieces add up.",
+     "c:lebesgue-measure": "Translation invariance of volume keeps the volume of each moved piece."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "MeasureTheory.exists_pair_mem_lattice_not_disjoint_vadd",
+     "follows": true,
+     "note": "mathlib argues by contraposition: if the translates of $S$ were pairwise disjoint, then $\\mu(S) = \\sum \\mu((x + S) \\cap F)$ (IsAddFundamentalDomain.measure_eq_tsum) is the measure of a disjoint union inside $F$ (measure_iUnion₀, measure_mono), hence at most $\\mu(F)$."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q872088",
+  "statement": "Let $B$ be a [Boolean algebra](c:boolean-algebra), $I$ an [ideal](c:ideal) of $B$ and $F$ a [filter](c:filter) of $B$ with $I \\cap F = \\emptyset$. Then some [prime ideal](c:prime-ideal) $J \\supseteq I$ has $J \\cap F = \\emptyset$.",
+  "hypotheses": [
+   {
+    "id": "h:boolean",
+    "text": "The structure $B$ is a [Boolean algebra](c:boolean-algebra).",
+    "concept": "c:boolean-algebra"
+   },
+   {
+    "id": "h:ideal-filter",
+    "text": "The set $I$ is an [ideal](c:ideal) and $F$ is a nonempty [filter](c:filter) of $B$.",
+    "concept": "c:filter"
+   },
+   {
+    "id": "h:disjoint",
+    "text": "The ideal and the filter are disjoint: $I \\cap F = \\emptyset$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "There is a [prime ideal](c:prime-ideal) $J$ of $B$ with $I \\subseteq J$ and $J \\cap F = \\emptyset$.",
+  "formal": {
+   "decl": "DistribLattice.prime_ideal_of_disjoint_filter_ideal",
+   "difference": "The declaration holds in any distributive lattice, not only in a Boolean algebra, and calls an ideal prime when its complement is a filter."
+  },
+  "proofs": [
+   {
+    "id": "zorn",
+    "name": "Maximal ideal by Zorn's lemma",
+    "slogan": "Take an ideal that contains $I$, misses $F$ and is maximal for these properties, and show with distributivity that it is prime.",
+    "scope": "The whole theorem. The proof uses the axiom of choice through Zorn's lemma, and it uses only the distributive law of $B$.",
+    "mechanisms": [
+     "m:zorn",
+     "m:extremal-choice"
+    ],
+    "roles": [
+     {
+      "h": "h:disjoint",
+      "why": "It puts $I$ itself into the family of admissible ideals.",
+      "steps": [
+       "s:poset"
+      ]
+     },
+     {
+      "h": "h:ideal-filter",
+      "why": "Unions of chains of ideals are ideals, and the filter is upward closed and closed under meets.",
+      "steps": [
+       "s:chain",
+       "s:enlarge"
+      ]
+     },
+     {
+      "h": "h:boolean",
+      "why": "The distributive law lets the two meets of filter elements be compared with $a_1 \\wedge a_2$.",
+      "steps": [
+       "s:meet"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:poset",
+      "slogan": "Collect the ideals that contain $I$ and miss $F$ into a poset $\\mathcal S$.",
+      "detail": "Let $\\mathcal S$ be the set of ideals $K$ with $I \\subseteq K$ and $K \\cap F = \\emptyset$, ordered by inclusion. By hypothesis $I \\in \\mathcal S$, so $\\mathcal S$ is nonempty.",
+      "uses": []
+     },
+     {
+      "id": "s:chain",
+      "slogan": "Show that every nonempty chain in $\\mathcal S$ has an upper bound in $\\mathcal S$.",
+      "detail": "The union of a nonempty chain of ideals is a lower set, and it is directed because any two members lie in one ideal of the chain. It contains $I$ and misses $F$, since each member does. So the union lies in $\\mathcal S$.",
+      "uses": []
+     },
+     {
+      "id": "s:zorn",
+      "slogan": "Take a maximal element $J$ of $\\mathcal S$ by Zorn's lemma.",
+      "detail": "Every chain of $\\mathcal S$ has an upper bound, so $\\mathcal S$ has a maximal element $J$. It is proper, because $F$ is nonempty and upward closed, so it contains the top element $1$, which $J$ misses.",
+      "uses": [
+       "nl:1475"
+      ]
+     },
+     {
+      "id": "s:enlarge",
+      "slogan": "Enlarge $J$ by an element outside it and use maximality to meet $F$.",
+      "detail": "Let $a_1, a_2 \\notin J$ and let $J_i$ be the ideal generated by $J \\cup \\{a_i\\}$, so $J_i \\supsetneq J$. By maximality $J_i \\notin \\mathcal S$, so it meets $F$ (it contains $I$). Pick $c_i \\in F$ with $c_i \\le j_i \\vee a_i$ for some $j_i \\in J$.",
+      "uses": []
+     },
+     {
+      "id": "s:meet",
+      "slogan": "Combine the two filter elements to show that $a_1 \\wedge a_2 \\notin J$.",
+      "detail": "Put $j = j_1 \\vee j_2 \\in J$. Then $c_1 \\wedge c_2 \\in F$ and, by the [distributive law](c:distributive-lattice), $c_1 \\wedge c_2 \\le (j \\vee a_1) \\wedge (j \\vee a_2) = j \\vee (a_1 \\wedge a_2)$, so this element lies in $F$. If $a_1 \\wedge a_2 \\in J$, it would lie in $J \\cap F$, which is empty. So the complement of $J$ is closed under meets, and $J$ is prime.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:poset",
+      "s:chain"
+     ],
+     [
+      "s:chain",
+      "s:zorn"
+     ],
+     [
+      "s:zorn",
+      "s:enlarge"
+     ],
+     [
+      "s:enlarge",
+      "s:meet"
+     ]
+    ],
+    "conclusion": "s:meet",
+    "concepts": {
+     "c:boolean-algebra": "The algebra is distributive, which the primality argument needs.",
+     "c:ideal": "The admissible objects are ideals containing $I$; chains of them have unions.",
+     "c:filter": "The filter is upward closed and closed under meets, which gives the contradiction.",
+     "c:prime-ideal": "The maximal ideal is shown to be prime, which is the goal.",
+     "c:distributive-lattice": "Distributivity turns $(j \\vee a_1) \\wedge (j \\vee a_2)$ into $j \\vee (a_1 \\wedge a_2)$."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "DistribLattice.prime_ideal_of_disjoint_filter_ideal",
+     "follows": true,
+     "note": "mathlib applies Zorn's lemma (zorn_subset_nonempty) to the ideals containing $I$ and disjoint from $F$, then proves a maximal one prime with the distributive law."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:6271",
+  "statement": "For every family $(a_\\alpha)$ of real numbers indexed by multi-indices $\\alpha \\in \\mathbb N^m$ there is a [smooth function](c:smooth-function) $f\\colon \\mathbb R^m \\to \\mathbb R$ with $\\partial^\\alpha f(0) = a_\\alpha$ for all $\\alpha$. So every formal [power series](c:power-series) is the [Taylor series](c:taylor-series) of a smooth function at $0$.",
+  "hypotheses": [
+   {
+    "id": "h:data",
+    "text": "The numbers $a_\\alpha \\in \\mathbb R$ are arbitrary, one for each multi-index $\\alpha \\in \\mathbb N^m$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "A smooth function $f$ on $\\mathbb R^m$ has $\\partial^\\alpha f(0) = a_\\alpha$ for every multi-index $\\alpha$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "cutoff-sum",
+    "name": "Sum of cut-off monomials",
+    "slogan": "Cut off each monomial at a scale so small that all its low-order derivatives are tiny, and add the cut-off monomials.",
+    "scope": "The whole theorem for any $m \\ge 1$. The sum is over all multi-indices, enumerated by a fixed bijection $\\alpha \\mapsto m(\\alpha)$ from $\\mathbb N^m$ to $\\mathbb N$.",
+    "mechanisms": [
+     "m:construction-explicit",
+     "m:uniform-convergence"
+    ],
+    "roles": [
+     {
+      "h": "h:data",
+      "why": "The numbers $a_\\alpha$ are the coefficients of the monomials and set the size of each cut-off.",
+      "steps": [
+       "s:terms",
+       "s:choose"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:bump",
+      "slogan": "Fix a [bump function](c:bump-function) $\\chi$ equal to $1$ near the origin.",
+      "detail": "Choose a smooth $\\chi\\colon \\mathbb R^m \\to [0, 1]$ with $\\chi = 1$ on $|x| \\le 1/2$ and $\\chi = 0$ for $|x| \\ge 1$. All derivatives of $\\chi$ are bounded.",
+      "uses": []
+     },
+     {
+      "id": "s:terms",
+      "slogan": "Form the terms $g_\\alpha(x) = \\frac{a_\\alpha}{\\alpha!}\\,x^\\alpha\\,\\chi(x/\\varepsilon_\\alpha)$ with scales $\\varepsilon_\\alpha \\in (0, 1]$.",
+      "detail": "Near $0$ the cut-off equals $1$, so $g_\\alpha(x) = \\frac{a_\\alpha}{\\alpha!}x^\\alpha$ there. Hence $\\partial^\\beta g_\\alpha(0) = a_\\alpha$ if $\\beta = \\alpha$ and $\\partial^\\beta g_\\alpha(0) = 0$ if $\\beta \\ne \\alpha$, whatever the scale $\\varepsilon_\\alpha$.",
+      "uses": []
+     },
+     {
+      "id": "s:scale",
+      "slogan": "Bound the derivatives of a term of lower order than its monomial by scaling.",
+      "detail": "Substituting $x = \\varepsilon y$ gives $\\sup|\\partial^\\beta(x^\\alpha\\chi(x/\\varepsilon))| = \\varepsilon^{|\\alpha| - |\\beta|}\\sup|\\partial^\\beta(y^\\alpha\\chi)|$. Let $M_\\alpha$ bound the right supremum for all $|\\beta| < |\\alpha|$. For $\\varepsilon \\le 1$ this gives $\\sup|\\partial^\\beta g_\\alpha| \\le \\varepsilon\\,|a_\\alpha|M_\\alpha/\\alpha!$.",
+      "uses": []
+     },
+     {
+      "id": "s:choose",
+      "slogan": "Choose each scale $\\varepsilon_\\alpha$ so that $\\sup|\\partial^\\beta g_\\alpha| \\le 2^{-m(\\alpha)}$ for all $|\\beta| < |\\alpha|$.",
+      "detail": "Take $\\varepsilon_\\alpha = \\min\\bigl(1, \\; 2^{-m(\\alpha)}\\alpha!/((|a_\\alpha| + 1)(M_\\alpha + 1))\\bigr)$. By the previous step, every derivative of order below $|\\alpha|$ of $g_\\alpha$ is then at most $2^{-m(\\alpha)}$ in absolute value.",
+      "uses": []
+     },
+     {
+      "id": "s:sum",
+      "slogan": "Sum the terms and differentiate term by term to get a smooth function $f$.",
+      "detail": "Fix $\\beta$. The terms with $|\\alpha| > |\\beta|$ have $\\sup|\\partial^\\beta g_\\alpha| \\le 2^{-m(\\alpha)}$, a summable bound, and the finitely many other terms are smooth. So $\\sum_\\alpha \\partial^\\beta g_\\alpha$ converges [uniformly](c:uniform-convergence) for every $\\beta$. Hence $f = \\sum_\\alpha g_\\alpha$ is smooth and $\\partial^\\beta f = \\sum_\\alpha \\partial^\\beta g_\\alpha$.",
+      "uses": []
+     },
+     {
+      "id": "s:evaluate",
+      "slogan": "Evaluate the derivatives of $f$ at the origin to find the prescribed numbers.",
+      "detail": "By the second step, $\\partial^\\beta g_\\alpha(0)$ is $a_\\beta$ for $\\alpha = \\beta$ and $0$ otherwise. So $\\partial^\\beta f(0) = \\sum_\\alpha \\partial^\\beta g_\\alpha(0) = a_\\beta$ for every multi-index $\\beta$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:bump",
+      "s:terms"
+     ],
+     [
+      "s:terms",
+      "s:scale"
+     ],
+     [
+      "s:scale",
+      "s:choose"
+     ],
+     [
+      "s:choose",
+      "s:sum"
+     ],
+     [
+      "s:sum",
+      "s:evaluate"
+     ],
+     [
+      "s:terms",
+      "s:evaluate"
+     ]
+    ],
+    "conclusion": "s:evaluate",
+    "concepts": {
+     "c:smooth-function": "The constructed sum is smooth because every derivative series converges uniformly.",
+     "c:power-series": "The prescribed numbers are the coefficients of an arbitrary formal power series.",
+     "c:taylor-series": "The derivatives of $f$ at $0$ give the Taylor series of $f$.",
+     "c:bump-function": "The cut-off function lets each monomial be switched off away from $0$.",
+     "c:uniform-convergence": "Uniform convergence of each derivative series allows term-by-term differentiation."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The classical construction of É. Borel (1895): monomials cut off at shrinking scales so that every derivative series converges uniformly."
+    }
+   }
+  ]
+ }
+]
