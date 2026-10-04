@@ -606,40 +606,59 @@
  },
  {
   "id": "nm:matiyasevic-s-theorem",
-  "statement": "[Exponentiation](c:power) is Diophantine: there is a [polynomial](c:polynomial) $P$ with integer coefficients such that, for natural numbers $x, y, z$, $z = x^y$ holds exactly when the [Diophantine equation](c:diophantine-equation) $P(x, y, z, w_1, \\dots, w_k) = 0$ has a solution in natural numbers $w_1, \\dots, w_k$.",
+  "statement": "Every [recursively enumerable set](c:recursively-enumerable-set) $S \\subseteq \\mathbb{N}^n$ is Diophantine: there is a [polynomial](c:polynomial) $P$ with integer coefficients such that $a \\in S$ exactly when the [Diophantine equation](c:diophantine-equation) $P(a_1, \\dots, a_n, w_1, \\dots, w_k) = 0$ has a solution in natural numbers $w_1, \\dots, w_k$.",
   "hypotheses": [
    {
+    "id": "h:re",
+    "text": "The set $S \\subseteq \\mathbb{N}^n$ is [recursively enumerable](c:recursively-enumerable-set): some program halts exactly on the elements of $S$.",
+    "concept": "c:recursively-enumerable-set"
+   },
+   {
     "id": "h:naturals",
-    "text": "The variables $x, y, z$ and the witnesses $w_i$ range over the natural numbers.",
+    "text": "The elements of $S$ and the witnesses $w_i$ are natural numbers.",
     "concept": null
    }
   ],
-  "conclusion": "The relation $z = x^y$ is the projection of the natural-number zero set of one integer polynomial.",
+  "conclusion": "Some integer polynomial $P$ has $S = \\{a \\in \\mathbb{N}^n : P(a, w) = 0 \\text{ for some } w \\in \\mathbb{N}^k\\}$, so $S$ is Diophantine.",
   "formal": {
    "decl": "Dioph.pow_dioph",
-   "difference": "The declaration shows that $v \\mapsto f(v)^{g(v)}$ is a Diophantine function whenever $f$ and $g$ are, which gives the statement when $f$ and $g$ are coordinate projections. It builds the polynomial through closure of Diophantine sets under conjunction, disjunction and existential quantifiers."
+   "difference": "The declaration states only the key step, that exponentiation is Diophantine (as $v \\mapsto f(v)^{g(v)}$ for Diophantine functions $f$ and $g$). It does not state the theorem that every recursively enumerable set is Diophantine."
   },
   "proofs": [
    {
-    "id": "pell",
-    "name": "Pell equation solutions",
-    "slogan": "Express $x^y$ through the solutions $X_n(a), Y_n(a)$ of the Pell equation $X^2 - (a^2-1)Y^2 = 1$, which form a Diophantine relation in $a$ and $n$.",
-    "scope": "The whole relation; the cases $y = 0$ ($z = 1$) and $x = 0$, $y > 0$ ($z = 0$) are direct, and the Pell argument covers $x, y > 0$. With the Davis–Putnam–Robinson theorem, the result makes every [recursively enumerable set](c:recursively-enumerable-set) Diophantine.",
+    "id": "dpr-pell",
+    "name": "Davis–Putnam–Robinson and Pell exponentiation",
+    "slogan": "Represent the set by an exponential Diophantine equation, show that exponentiation is Diophantine through Pell equations, and substitute.",
+    "scope": "An outline: step 1 rests on the cited Davis–Putnam–Robinson theorem, and steps 3 and 4 follow Matiyasevich's Pell route as formalized in Dioph.pow_dioph. The converse, that a Diophantine set is recursively enumerable, holds by a search over witnesses.",
     "mechanisms": [
-     "m:modular-arithmetic",
-     "m:case-analysis"
+     "m:cited-deep-result",
+     "m:encoding",
+     "m:modular-arithmetic"
     ],
     "roles": [
      {
+      "h": "h:re",
+      "why": "A recursively enumerable set has the exponential Diophantine form of Davis, Putnam and Robinson.",
+      "steps": [
+       "s:dpr"
+      ]
+     },
+     {
       "h": "h:naturals",
-      "why": "Natural-number witnesses express residues, divisibility and inequalities such as $z < t$ by equations.",
+      "why": "Natural-number witnesses express residues, divisibility and inequalities by polynomial equations.",
       "steps": [
        "s:closure",
-       "s:recover"
+       "s:power"
       ]
      }
     ],
     "steps": [
+     {
+      "id": "s:dpr",
+      "slogan": "Represent $S$ by an [exponential Diophantine equation](c:exponential-diophantine-equation) with the Davis–Putnam–Robinson theorem.",
+      "detail": "Davis, Putnam and Robinson (Annals of Mathematics 74, 1961) show that $a \\in S$ exactly when $E_1(a, w) = E_2(a, w)$ for some $w \\in \\mathbb{N}^k$, where $E_1, E_2$ use addition, multiplication and [exponentiation](c:power). They remove the bounded universal quantifier of Davis normal form by coding with binomial coefficients and factorials.",
+      "uses": []
+     },
      {
       "id": "s:closure",
       "slogan": "Show that Diophantine relations are closed under conjunction, disjunction and existential quantifiers.",
@@ -648,72 +667,60 @@
      },
      {
       "id": "s:pell",
-      "slogan": "Show that the relation $X = X_n(a)$, $Y = Y_n(a)$ for $a > 1$ is Diophantine.",
-      "detail": "For $a > 1$ the natural solutions of the [Pell equation](c:pell-equation) $X^2 - (a^2-1)Y^2 = 1$ are exactly $X_n + Y_n\\sqrt{a^2-1} = (a + \\sqrt{a^2-1})^n$. Matiyasevich's lemma characterizes $(X_n, Y_n)$ among them by more Pell equations and congruences, through $Y_n^2 \\mid Y_t \\Rightarrow Y_n \\mid t$ and $Y_n(b) \\equiv n \\pmod{b-1}$.",
+      "slogan": "Show that the Pell solution relation $X = X_n(a)$, $Y = Y_n(a)$ for $a > 1$ is Diophantine.",
+      "detail": "For $a > 1$ the natural solutions of the [Pell equation](c:pell-equation) $X^2 - (a^2-1)Y^2 = 1$ are $X_n + Y_n\\sqrt{a^2-1} = (a + \\sqrt{a^2-1})^n$. Matiyasevich's lemma singles out $(X_n, Y_n)$ by more Pell equations and congruences, through $Y_n^2 \\mid Y_t \\Rightarrow Y_n \\mid t$ and $Y_n(b) \\equiv n \\pmod{b-1}$.",
       "uses": [
        "wd:Q853067"
       ]
      },
      {
-      "id": "s:congruence",
-      "slogan": "Prove $X_n(a) - (a - x)Y_n(a) \\equiv x^n$ modulo $t = 2ax - x^2 - 1$.",
-      "detail": "The solutions satisfy $X_{n+1} = aX_n + (a^2-1)Y_n$ and $Y_{n+1} = X_n + aY_n$. A direct computation gives $X_{n+1} - (a-x)Y_{n+1} - x\\big(X_n - (a-x)Y_n\\big) = (2ax - x^2 - 1)Y_n$, so induction on $n$ gives the congruence.",
+      "id": "s:power",
+      "slogan": "Show that $z = x^y$ is Diophantine by a Pell congruence and a size bound.",
+      "detail": "Induction gives $X_y(a) - (a - x)Y_y(a) \\equiv x^y \\pmod t$ with $t = 2ax - x^2 - 1$. A Pell condition $a^2 - ((w+1)^2-1)(ws)^2 = 1$ with $w \\ge x, y$ forces $a > x^y$, so $x^y < t$ and $z = x^y$ exactly when $z < t$ is that residue; the cases $x = 0$ or $y = 0$ are direct.",
       "uses": []
      },
      {
-      "id": "s:large",
-      "slogan": "Force $a > x^y$ by a Pell condition with witnesses $w \\ge x, y$ and $s$.",
-      "detail": "Require $a^2 - ((w+1)^2 - 1)(ws)^2 = 1$ with $a > 1$. Then $a = X_m(w+1)$ with $w \\mid Y_m(w+1) \\equiv m \\pmod w$, so $m \\ge w$ and $a \\ge (w+1)^w > x^y$; conversely $m = w$ gives such an $a$.",
-      "uses": []
-     },
-     {
-      "id": "s:recover",
-      "slogan": "Recover $z = x^y$ as the residue of $X_y(a) - (a - x)Y_y(a)$ modulo $t$.",
-      "detail": "Since $x^y < a$, also $x^y < 2ax - x^2 - 1 = t$. So the conditions $X_y(a) \\equiv Y_y(a)(a - x) + z \\pmod t$ and $z < t$ hold exactly when $z = x^y$, as both are residues below $t$.",
-      "uses": []
-     },
-     {
-      "id": "s:assemble",
-      "slogan": "Assemble the case formula for $z = x^y$ into one polynomial equation.",
-      "detail": "Steps 2 to 5 give: $z = x^y$ if and only if $y = 0, z = 1$, or $y > 0, x = 0, z = 0$, or $x, y > 0$ and witnesses $w, a, t, s$ satisfy the Pell, congruence and size conditions. Step 1 turns this formula into one polynomial $P$.",
+      "id": "s:substitute",
+      "slogan": "Replace each exponential term by a new variable with a Diophantine definition.",
+      "detail": "Give each subterm $s^r$ of $E_1$ and $E_2$ a fresh variable $u$ and add the condition $u = s^r$, which is Diophantine by step 4. Step 2 merges these conditions with the polynomial equation $E_1 = E_2$ into one polynomial $P$, so $S$ is Diophantine.",
       "uses": []
      }
     ],
     "edges": [
      [
-      "s:pell",
-      "s:recover"
-     ],
-     [
-      "s:congruence",
-      "s:recover"
-     ],
-     [
-      "s:large",
-      "s:recover"
+      "s:dpr",
+      "s:substitute"
      ],
      [
       "s:closure",
-      "s:assemble"
+      "s:power"
      ],
      [
-      "s:recover",
-      "s:assemble"
+      "s:pell",
+      "s:power"
+     ],
+     [
+      "s:power",
+      "s:substitute"
+     ],
+     [
+      "s:closure",
+      "s:substitute"
      ]
     ],
-    "conclusion": "s:assemble",
+    "conclusion": "s:substitute",
     "concepts": {
-     "c:power": "The proof captures $x^y$ with polynomial conditions only.",
+     "c:recursively-enumerable-set": "The theorem turns every recursively enumerable set into a Diophantine one.",
      "c:polynomial": "All conditions merge into a single integer polynomial equation.",
-     "c:diophantine-equation": "The relation is the solvability of a Diophantine equation in witnesses.",
-     "c:pell-equation": "Pell solutions grow exponentially and encode $x^y$ by a congruence.",
-     "c:recursively-enumerable-set": "Diophantine exponentiation is the missing step for all recursively enumerable sets."
+     "c:diophantine-equation": "Membership in $S$ becomes solvability of a Diophantine equation.",
+     "c:exponential-diophantine-equation": "Davis, Putnam and Robinson reach this form, which allows exponentiation.",
+     "c:power": "Exponentiation is the only operation left to remove after step 1.",
+     "c:pell-equation": "Pell solutions grow exponentially and encode $x^y$ by a congruence."
     },
     "source": {
-     "kind": "lean",
-     "decl": "Dioph.pow_dioph",
-     "follows": true,
-     "note": "mathlib combines pell_dioph (from Pell.matiyasevic) with Pell.eq_pow_of_pell, which rests on the congruence Pell.x_sub_y_dvd_pow and the bound eq_pow_of_pell_lem, and assembles the set with Dioph closure lemmas."
+     "kind": "cited",
+     "ref": "Yu. V. Matiyasevich, Hilbert's Tenth Problem, MIT Press, Cambridge MA, 1993",
+     "note": "Step 1 is M. Davis, H. Putnam and J. Robinson, The decision problem for exponential Diophantine equations, Annals of Mathematics 74 (1961), 425-436, doi 10.2307/1970289. Steps 3 and 4 follow mathlib's Dioph.pow_dioph (pell_dioph from Pell.matiyasevic, and Pell.eq_pow_of_pell)."
     }
    }
   ]
