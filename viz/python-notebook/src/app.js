@@ -42,6 +42,8 @@
     state: "off",            // off | loading | starting | ready | failed
     /** @type {Record<string, Blob> | null} */ files: null,
     /** @type {Promise<Record<string, Blob>> | null} */ loading: null,
+    /** @type {Set<(done: number, total: number) => void>} */ loadListeners: new Set(),
+    /** @type {[number, number] | null} */ loadProgress: null,
     /** @type {Promise<void> | null} */ starting: null,
     /** @type {{cellId: string, runId: string, resolve: (status: string) => void} | null} */ running: null,
     busy: false,
@@ -61,13 +63,19 @@
     updateControls();
   }
 
-  /** Load the runtime files once; a second caller during the load gets the same promise. @param {(done: number, total: number) => void} progress */
+  /** Load the runtime files once; a second caller during the load gets the same promise and the same progress. @param {(done: number, total: number) => void} progress */
   function loadRuntime(progress) {
     if (py.files) return Promise.resolve(py.files);
+    py.loadListeners.add(progress);
+    if (py.loadProgress) progress(...py.loadProgress);
     if (!py.loading) {
-      py.loading = (FORM === "portable" ? runtime.loadEmbedded(manifest, document) : runtime.loadFetched(manifest, progress))
+      const report = (done, total) => {
+        py.loadProgress = [done, total];
+        for (const listener of py.loadListeners) listener(done, total);
+      };
+      py.loading = (FORM === "portable" ? runtime.loadEmbedded(manifest, document) : runtime.loadFetched(manifest, report))
         .then((files) => (py.files = files))
-        .finally(() => { py.loading = null; });
+        .finally(() => { py.loading = null; py.loadListeners.clear(); py.loadProgress = null; });
     }
     return py.loading;
   }
