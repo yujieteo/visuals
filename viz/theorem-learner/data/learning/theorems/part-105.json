@@ -557,5 +557,106 @@
     }
    }
   ]
+ },
+ {
+  "id": "nm:complete-metric-spaces",
+  "statement": "A [metric space](c:metric-space) $X$ is [complete](c:complete-metric-space), meaning every [Cauchy filter](c:cauchy-filter) converges, if and only if every [Cauchy sequence](c:cauchy-sequence) in $X$ converges.",
+  "hypotheses": [
+   {
+    "id": "h:metric",
+    "text": "$X$ is a [metric space](c:metric-space) with metric $d$.",
+    "concept": "c:metric-space"
+   }
+  ],
+  "conclusion": "Every Cauchy filter on $X$ converges if and only if every Cauchy sequence in $X$ converges.",
+  "formal": {
+   "decl": "Metric.complete_of_cauchySeq_tendsto",
+   "difference": "The declaration proves only the implication from convergent Cauchy sequences to completeness, for pseudometric spaces. The converse is the first step below."
+  },
+  "proofs": [
+   {
+    "id": "controlled-sequence",
+    "name": "Sequence from a Cauchy filter",
+    "slogan": "Pick a point from each of nested small sets of the Cauchy filter, then show that its limit is the limit of the filter.",
+    "scope": "Both directions. A [metric space](c:metric-space) has a countable base of balls, which makes the sequence argument possible; the empty space is trivially complete.",
+    "mechanisms": [
+     "m:cauchy-completeness",
+     "m:triangle-inequality"
+    ],
+    "roles": [
+     {
+      "h": "h:metric",
+      "why": "The metric gives diameters of sets and balls, which define Cauchy filters and control the chosen sequence.",
+      "steps": [
+       "s:small-sets",
+       "s:limit"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:tail",
+      "slogan": "Show that a Cauchy sequence generates a Cauchy filter.",
+      "detail": "Let $(x_k)$ be a [Cauchy sequence](c:cauchy-sequence). The sets $\\{x_k:k\\ge n\\}$ generate a filter, and they have diameters tending to $0$, so it is a [Cauchy filter](c:cauchy-filter). If every Cauchy filter converges to $a$, then $x_k\\to a$.",
+      "uses": []
+     },
+     {
+      "id": "s:small-sets",
+      "slogan": "Choose sets of small diameter inside a given Cauchy filter.",
+      "detail": "Let $\\mathcal F$ be a [Cauchy filter](c:cauchy-filter). For each $n\\ge 1$ it contains a set $A_n$ with diameter below $1/n$. Replace $A_n$ by $A_1\\cap\\dots\\cap A_n$ so the sets decrease; each is still in $\\mathcal F$ and nonempty.",
+      "uses": []
+     },
+     {
+      "id": "s:sequence",
+      "slogan": "Pick one point from each set and show that the picks form a Cauchy sequence.",
+      "detail": "Choose $x_n\\in A_n$. For $m\\ge n$ both $x_m$ and $x_n$ lie in $A_n$, so $d(x_m,x_n)<1/n$. Hence $(x_n)$ is a Cauchy sequence.",
+      "uses": []
+     },
+     {
+      "id": "s:limit",
+      "slogan": "Show that the filter converges to the limit of the picked sequence.",
+      "detail": "By assumption $x_n\\to a$. For $\\varepsilon>0$ choose $n$ with $1/n<\\varepsilon/2$ and $d(x_n,a)<\\varepsilon/2$. Every $y\\in A_n$ has $d(y,a)\\le d(y,x_n)+d(x_n,a)<\\varepsilon$, so the ball $B(a,\\varepsilon)$ contains $A_n\\in\\mathcal F$. Hence $\\mathcal F\\to a$.",
+      "uses": []
+     },
+     {
+      "id": "s:equivalence",
+      "slogan": "Join the two implications into the stated equivalence.",
+      "detail": "The tail step shows that completeness gives convergent Cauchy sequences. The limit step shows that convergent Cauchy sequences give convergent Cauchy filters. Together they prove the equivalence.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:small-sets",
+      "s:sequence"
+     ],
+     [
+      "s:sequence",
+      "s:limit"
+     ],
+     [
+      "s:limit",
+      "s:equivalence"
+     ],
+     [
+      "s:tail",
+      "s:equivalence"
+     ]
+    ],
+    "conclusion": "s:equivalence",
+    "concepts": {
+     "c:metric-space": "Diameters and balls of the metric make small sets and convergence precise.",
+     "c:complete-metric-space": "Completeness is the property that the criterion reduces to sequences.",
+     "c:cauchy-filter": "A Cauchy filter has sets of arbitrarily small diameter, which gives the sequence.",
+     "c:cauchy-sequence": "Cauchy sequences are the objects whose convergence the criterion requires."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Metric.complete_of_cauchySeq_tendsto",
+     "follows": true,
+     "note": "mathlib chooses nested small sets (SequentiallyComplete.setSeq), picks a point in each, and uses cauchySeq_of_controlled and le_nhds_of_seq_tendsto_nhds."
+    }
+   }
+  ]
  }
 ]
