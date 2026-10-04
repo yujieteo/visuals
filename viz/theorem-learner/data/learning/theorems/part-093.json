@@ -1,0 +1,1910 @@
+[
+ {
+  "id": "nm:lifting-the-exponent-lemma",
+  "statement": "Let $p$ be an odd [prime number](c:prime-number) and $x, y$ [integers](c:integer) with $p \\mid x - y$ and $p \\nmid x$. Then for every integer $n \\ge 0$, $v_p(x^n - y^n) = v_p(x - y) + v_p(n)$, where $v_p$ is the [p-adic valuation](c:p-adic-valuation) and $v_p(0) = \\infty$.",
+  "hypotheses": [
+   {
+    "id": "h:odd-prime",
+    "text": "The number $p$ is an odd [prime number](c:prime-number).",
+    "concept": "c:prime-number"
+   },
+   {
+    "id": "h:congruent",
+    "text": "The prime $p$ divides $x - y$.",
+    "concept": "c:divisibility"
+   },
+   {
+    "id": "h:coprime",
+    "text": "The prime $p$ does not divide $x$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "$v_p(x^n - y^n) = v_p(x - y) + v_p(n)$ for every $n \\ge 0$, with $v_p(0) = \\infty$.",
+  "formal": {
+   "decl": "Int.emultiplicity_pow_sub_pow",
+   "difference": null
+  },
+  "proofs": [
+   {
+    "id": "geometric-sum",
+    "name": "Geometric sum and iteration",
+    "slogan": "Split $n$ into a power of $p$ and a part prime to $p$, and track the valuation through the geometric sum of each factor.",
+    "scope": "All $n \\ge 0$ and all $x, y$. If $n = 0$ or $x = y$, both sides are $\\infty$, so assume $n \\ge 1$ and $x \\ne y$.",
+    "mechanisms": [
+     "m:algebraic-identity",
+     "m:induction",
+     "m:modular-arithmetic"
+    ],
+    "roles": [
+     {
+      "h": "h:odd-prime",
+      "why": "Oddness of $p$ makes the geometric sum of exponent $p$ exactly divisible by $p$; primality lets $p$ divide a product only through a factor.",
+      "steps": [
+       "s:gsum",
+       "s:ptop"
+      ]
+     },
+     {
+      "h": "h:congruent",
+      "why": "The congruence $x \\equiv y \\pmod p$ makes every term of each geometric sum congruent to the same power.",
+      "steps": [
+       "s:factor",
+       "s:ptop",
+       "s:gsum"
+      ]
+     },
+     {
+      "h": "h:coprime",
+      "why": "The condition $p \\nmid x$ keeps all powers of $x$ and $y$ prime to $p$.",
+      "steps": [
+       "s:ptop",
+       "s:gsum",
+       "s:iterate"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:factor",
+      "slogan": "Write $n$ as $p^a m$ with $p$ not dividing $m$.",
+      "detail": "For $n \\ge 1$ write $n = p^a m$ with $p \\nmid m$, so $v_p(n) = a$. Then $x^n - y^n = X^m - Y^m$ with $X = x^{p^a}$ and $Y = y^{p^a}$. Since $x \\equiv y \\pmod p$, also $X \\equiv Y \\pmod p$ and $p \\nmid X$.",
+      "uses": []
+     },
+     {
+      "id": "s:ptop",
+      "slogan": "Show that the exponent $m$ prime to $p$ keeps the valuation of $X - Y$.",
+      "detail": "Write $X^m - Y^m = (X - Y)S$ with $S = \\sum_{i<m} X^i Y^{m-1-i}$. Each term of $S$ is congruent to $X^{m-1}$ modulo $p$, so $S \\equiv mX^{m-1} \\pmod p$, which is not divisible by the prime $p$. Hence $v_p(X^m - Y^m) = v_p(X - Y)$.",
+      "uses": [
+       "nm:sum-of-a-geometric-series"
+      ]
+     },
+     {
+      "id": "s:gsum",
+      "slogan": "Show that the geometric sum with exponent $p$ has valuation exactly $1$.",
+      "detail": "Let $u \\equiv w \\pmod p$ with $p \\nmid w$, write $u = w + t$ with $p \\mid t$, and let $S = \\sum_{i<p} u^i w^{p-1-i}$. Modulo $p^2$, $u^i \\equiv w^i + i w^{i-1}t$, so $S \\equiv p\\,w^{p-1} + t\\,w^{p-2}\\,p\\,\\tfrac{p-1}{2}$. As $p$ is odd, the last term is divisible by $p^2$, so $S \\equiv p\\,w^{p-1}$ and $v_p(S) = 1$.",
+      "uses": [
+       "wd:Q26708"
+      ]
+     },
+     {
+      "id": "s:pstep",
+      "slogan": "Multiply by $u - w$ to see that the $p$-th power adds one to the valuation.",
+      "detail": "Since $u^p - w^p = (u - w)S$ and $v_p(S) = 1$, we get $v_p(u^p - w^p) = v_p(u - w) + 1$ whenever $p \\mid u - w$ and $p \\nmid u$.",
+      "uses": [
+       "nm:sum-of-a-geometric-series"
+      ]
+     },
+     {
+      "id": "s:iterate",
+      "slogan": "Iterate the prime step $a$ times to get $v_p(X - Y) = v_p(x - y) + a$.",
+      "detail": "Apply step 4 to $u = x^{p^j}$ and $w = y^{p^j}$ for $j = 0, \\dots, a - 1$. The conditions $p \\mid u - w$ and $p \\nmid u$ persist, because $u \\equiv w \\pmod p$ gives $u^p \\equiv w^p$ and $p \\nmid u^p$. Each application adds one.",
+      "uses": []
+     },
+     {
+      "id": "s:combine",
+      "slogan": "Combine the two valuation equalities for $x^n - y^n$.",
+      "detail": "Steps 2 and 5 give $v_p(x^n - y^n) = v_p(X - Y) = v_p(x - y) + a$, and $a = v_p(n)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:factor",
+      "s:ptop"
+     ],
+     [
+      "s:factor",
+      "s:iterate"
+     ],
+     [
+      "s:gsum",
+      "s:pstep"
+     ],
+     [
+      "s:pstep",
+      "s:iterate"
+     ],
+     [
+      "s:ptop",
+      "s:combine"
+     ],
+     [
+      "s:iterate",
+      "s:combine"
+     ]
+    ],
+    "conclusion": "s:combine",
+    "concepts": {
+     "c:prime-number": "The proof needs $p$ prime so that $p$ divides a product only through a factor.",
+     "c:integer": "The integers $x$ and $y$ are the base numbers whose powers are compared.",
+     "c:p-adic-valuation": "The valuation $v_p$ counts the exact power of $p$ in each difference.",
+     "c:divisibility": "The hypothesis $p \\mid x - y$ starts the chain of valuations."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Int.emultiplicity_pow_sub_pow",
+     "follows": true,
+     "note": "mathlib writes n = p^a * k with p not dividing k, uses emultiplicity_pow_sub_pow_of_prime for the factor k and emultiplicity_pow_prime_pow_sub_pow_prime_pow (induction on emultiplicity_pow_prime_sub_pow_prime) for the factor p^a."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q6722024",
+  "statement": "For an $n \\times n$ [matrix](c:matrix) $A = (a_{ij})$ over a commutative ring and $k \\in \\mathbb{N}^n$, the coefficient of $x^k$ in $\\prod_{i}(a_{i1}x_1 + \\dots + a_{in}x_n)^{k_i}$ equals the coefficient of $x^k$ in the [generating function](c:generating-function) $1/\\det(I - XA)$, where $X = \\mathrm{diag}(x_1, \\dots, x_n)$.",
+  "hypotheses": [
+   {
+    "id": "h:matrix",
+    "text": "$A = (a_{ij})$ is an $n \\times n$ [matrix](c:matrix) over a commutative ring.",
+    "concept": "c:matrix"
+   },
+   {
+    "id": "h:exponents",
+    "text": "The tuple $k = (k_1, \\dots, k_n)$ has nonnegative integer entries.",
+    "concept": null
+   }
+  ],
+  "conclusion": "$[x^k]\\prod_i(a_{i1}x_1 + \\dots + a_{in}x_n)^{k_i} = [x^k]\\,1/\\det(I - XA)$, the coefficient in the inverse of a [determinant](c:determinant).",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "trace",
+    "name": "Trace of a symmetric power",
+    "slogan": "Read the left side as a diagonal entry of a substitution map, then sum the diagonal entries as a trace over symmetric powers.",
+    "scope": "All $n \\ge 1$ and all $k$. Take the $a_{ij}$ as indeterminates over $\\mathbb{Z}$ and work over an algebraic closure of the field of fractions; the identity then holds in every commutative ring by specialization.",
+    "mechanisms": [
+     "m:generating-function",
+     "m:determinant",
+     "m:eigenvector-basis"
+    ],
+    "roles": [
+     {
+      "h": "h:matrix",
+      "why": "The matrix $A$ defines the substitution map whose diagonal entries are the left side; triangularizing $TA$ gives its eigenvalues.",
+      "steps": [
+       "s:substitute",
+       "s:weight",
+       "s:triangular"
+      ]
+     },
+     {
+      "h": "h:exponents",
+      "why": "The exponent tuple $k$ picks the diagonal entry of the substitution map at the monomial $x^k$.",
+      "steps": [
+       "s:substitute",
+       "s:trace"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:substitute",
+      "slogan": "Define the substitution map $\\varphi_B$ and read the left side as a diagonal matrix entry.",
+      "detail": "For a matrix $B = (b_{ij})$ let $\\varphi_B$ be the ring map of the [polynomial ring](c:polynomial-ring) with $x_i \\mapsto \\sum_j b_{ij}x_j$. It preserves degrees, and its matrix entry from $x^k$ to $x^{k'}$ is $[x^{k'}]\\prod_i(\\sum_j b_{ij}x_j)^{k_i}$. For $B = A$ and $k' = k$ this is the left side.",
+      "uses": []
+     },
+     {
+      "id": "s:weight",
+      "slogan": "Insert the weights $t^k$ with the diagonal substitution $\\varphi_T$.",
+      "detail": "Let $T = \\mathrm{diag}(t_1, \\dots, t_n)$, so $\\varphi_T x^k = t^k x^k$. Since $x_i \\mapsto t_ix_i \\mapsto t_i\\sum_j a_{ij}x_j$, we get $\\varphi_A\\varphi_T = \\varphi_{TA}$. So the diagonal entry of $\\varphi_{TA}$ at $x^k$ is $t^k$ times the left side.",
+      "uses": []
+     },
+     {
+      "id": "s:trace",
+      "slogan": "Sum the diagonal entries to get the trace of $\\varphi_{TA}$ on each degree.",
+      "detail": "Summing over all $k$ with $|k| = m$ gives the trace of $\\varphi_{TA}$ on the forms of degree $m$. So $\\sum_k t^k\\,[x^k]\\prod_i(\\cdots)^{k_i} = \\sum_{m \\ge 0}\\mathrm{tr}(\\varphi_{TA}|_{\\deg m})$, a [formal power series](c:formal-power-series) in $t$, because the degree $m$ trace is homogeneous of degree $m$ in $t$.",
+      "uses": []
+     },
+     {
+      "id": "s:triangular",
+      "slogan": "Triangularize $TA$ over an algebraic closure to compute each trace.",
+      "detail": "Over an [algebraically closed field](c:algebraically-closed-field), choose linear forms $y_1, \\dots, y_n$ in which $x_i \\mapsto \\sum_j (TA)_{ij}x_j$ is triangular, with [eigenvalues](c:eigenvalue) $\\lambda_1, \\dots, \\lambda_n$. In a suitable monomial order, $\\varphi_{TA}$ is triangular on the monomials $y^k$ with diagonal entries $\\lambda^k$. So $\\mathrm{tr}(\\varphi_{TA}|_{\\deg m}) = \\sum_{|k| = m}\\lambda^k$.",
+      "uses": []
+     },
+     {
+      "id": "s:sum",
+      "slogan": "Sum the geometric series in the eigenvalues to get $1/\\det(I - TA)$.",
+      "detail": "$\\sum_{m}\\sum_{|k| = m}\\lambda^k = \\prod_i(1 - \\lambda_i)^{-1} = 1/\\det(I - TA)$, as the $\\lambda_i$ are the eigenvalues of $TA$ (transposing does not change them). Comparing coefficients of $t^k$ and renaming $t$ as $x$ gives the theorem.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:substitute",
+      "s:weight"
+     ],
+     [
+      "s:weight",
+      "s:trace"
+     ],
+     [
+      "s:trace",
+      "s:triangular"
+     ],
+     [
+      "s:triangular",
+      "s:sum"
+     ],
+     [
+      "s:trace",
+      "s:sum"
+     ]
+    ],
+    "conclusion": "s:sum",
+    "concepts": {
+     "c:matrix": "The theorem is an identity about the entries of one square matrix.",
+     "c:generating-function": "The right side packages all the coefficients into one series.",
+     "c:determinant": "The determinant of $I - TA$ is the product of $1 - \\lambda_i$.",
+     "c:polynomial-ring": "The substitution map acts on the polynomial ring and preserves degrees.",
+     "c:formal-power-series": "The sum of the traces converges as a formal series in $t$.",
+     "c:algebraically-closed-field": "Triangularizing a matrix needs all its eigenvalues in the field.",
+     "c:eigenvalue": "The eigenvalues give the diagonal entries of the symmetric powers."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The trace of the symmetric power proof, a standard representation-theoretic derivation of the master theorem; MacMahon, Combinatory Analysis (1915-16), states the theorem."
+    }
+   },
+   {
+    "id": "lagrange-good",
+    "name": "Multivariable Lagrange inversion",
+    "slogan": "Shift the product by $1$ without changing the coefficient, then apply Good's multivariable Lagrange inversion to the system $x_i = t_i(1 + \\sum_j a_{ij}x_j)$.",
+    "scope": "All $n \\ge 1$ and all $k$, over a commutative ring. The inversion formula is quoted from Good (1960).",
+    "mechanisms": [
+     "m:generating-function",
+     "m:algebraic-identity",
+     "m:determinant"
+    ],
+    "roles": [
+     {
+      "h": "h:matrix",
+      "why": "The entries $a_{ij}$ define the system $x_i = t_i g_i(x)$ and make its Jacobian matrix constant.",
+      "steps": [
+       "s:system",
+       "s:jacobian"
+      ]
+     },
+     {
+      "h": "h:exponents",
+      "why": "The tuple $k$ gives the exponents in $g(x)^k$ and the coefficient extracted from the series.",
+      "steps": [
+       "s:shift",
+       "s:good"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:shift",
+      "slogan": "Replace the homogeneous product by $\\prod_i(1 + G_i)^{k_i}$ without changing the coefficient.",
+      "detail": "Let $G_i = \\sum_j a_{ij}x_j$. In $\\prod_i(1 + G_i)^{k_i}$ the terms of degree $|k|$ use $\\binom{k_i}{m_i}G_i^{m_i}$ with $\\sum m_i = |k|$ and $m_i \\le k_i$, so $m_i = k_i$. Hence $[x^k]\\prod_i(1 + G_i)^{k_i} = [x^k]\\prod_i G_i^{k_i}$.",
+      "uses": []
+     },
+     {
+      "id": "s:system",
+      "slogan": "Introduce the system $x_i = t_ig_i(x)$ with $g_i = 1 + G_i$.",
+      "detail": "The $g_i$ are polynomials with $g_i(0) = 1$, so the system has a unique solution $x(t)$ in [formal power series](c:formal-power-series) in $t_1, \\dots, t_n$, with $x_i \\in t_iR[[t]]$.",
+      "uses": []
+     },
+     {
+      "id": "s:good",
+      "slogan": "Apply Good's inversion formula to the constant function $1$.",
+      "detail": "Good's formula says $[x^k]\\,f(x)g(x)^k = [t^k]\\,f(x(t))\\big/\\det\\bigl(\\delta_{ij} - t_i\\,\\partial g_i/\\partial x_j\\,(x(t))\\bigr)$. For $f = 1$ the left side is the left side of the theorem, by step 1.",
+      "uses": [
+       "wd:Q544292"
+      ]
+     },
+     {
+      "id": "s:jacobian",
+      "slogan": "Compute the Jacobian matrix, which is constant.",
+      "detail": "Since $g_i = 1 + \\sum_j a_{ij}x_j$, we have $\\partial g_i/\\partial x_j = a_{ij}$ and $t_i\\,\\partial g_i/\\partial x_j = (TA)_{ij}$. So the denominator in step 3 is $\\det(I - TA)$.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Read off the coefficient of $t^k$ in $1/\\det(I - TA)$.",
+      "detail": "Steps 1, 3 and 4 give $[x^k]\\prod_iG_i^{k_i} = [t^k]\\,1/\\det(I - TA)$. Renaming $t$ as $x$ is the theorem.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:shift",
+      "s:good"
+     ],
+     [
+      "s:system",
+      "s:good"
+     ],
+     [
+      "s:good",
+      "s:jacobian"
+     ],
+     [
+      "s:jacobian",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:formal-power-series": "The solution $x(t)$ of the system is a formal power series.",
+     "c:generating-function": "The inversion formula turns the left coefficient into one in a series.",
+     "c:matrix": "The Jacobian of the system is the constant matrix $TA$.",
+     "c:determinant": "The inversion formula divides by a Jacobian determinant."
+    },
+    "source": {
+     "kind": "web",
+     "url": "https://www.cambridge.org/core/journals/mathematical-proceedings-of-the-cambridge-philosophical-society/article/short-proof-of-macmahons-master-theorem/CE7AB572024D197862261688E7DDD818",
+     "note": "I. J. Good, A short proof of MacMahon's Master Theorem, Proc. Cambridge Philos. Soc. 58 (1962), derives the theorem from his multivariable Lagrange inversion."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q107547910",
+  "statement": "Let $I_1, \\dots, I_n \\subset \\mathbb{R}$ be open intervals containing $0$ and $X = \\bigcup_j \\{z \\in \\mathbb{C}^n : z_k \\in \\mathbb{R}\\ (k \\ne j),\\ \\mathrm{Im}\\, z_j \\in I_j\\}$. Let $f$ on $X$ be locally bounded and [holomorphic](c:holomorphic-function) in each $z_j$ separately. Then $f$ extends uniquely to a holomorphic function on the [tube domain](c:tube-domain) over the interior of the [convex hull](c:convex-hull) of $\\bigcup_j I_je_j$.",
+  "hypotheses": [
+   {
+    "id": "h:intervals",
+    "text": "Each $I_j$ is an open interval of $\\mathbb{R}$ that contains $0$.",
+    "concept": null
+   },
+   {
+    "id": "h:bounded",
+    "text": "The function $f$ is locally bounded on $X$.",
+    "concept": null
+   },
+   {
+    "id": "h:separate",
+    "text": "For each $j$ and each real choice of the other coordinates, $z_j \\mapsto f$ is [holomorphic](c:holomorphic-function) on the strip $\\mathrm{Im}\\, z_j \\in I_j$.",
+    "concept": "c:holomorphic-function"
+   }
+  ],
+  "conclusion": "A unique [holomorphic function](c:holomorphic-function) $F$ on $\\mathbb{R}^n + i\\,\\mathrm{int}\\,\\mathrm{conv}(\\bigcup_j I_je_j)$ agrees with $f$ on $X$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "cross-induction",
+    "name": "Induction with the cross theorem",
+    "slogan": "Induct on the number of variables and extend over each new variable by the cross theorem, whose hull is the tube over the convex hull.",
+    "scope": "An outline in the tube form of the theorem; the cross theorem for a cross whose first factor is a tube domain rests on the cited work. Malgrange (1961, unpublished) and Zerner proved the theorem by other arguments.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:induction",
+     "m:analytic-continuation"
+    ],
+    "roles": [
+     {
+      "h": "h:intervals",
+      "why": "The intervals give the strips and, through their gauges, the shape of the extension hull.",
+      "steps": [
+       "s:cross",
+       "s:extremal",
+       "s:hull"
+      ]
+     },
+     {
+      "h": "h:bounded",
+      "why": "Local boundedness is the hypothesis of the classical cross theorem used in the hull step; later versions of that theorem drop it.",
+      "steps": [
+       "s:hull"
+      ]
+     },
+     {
+      "h": "h:separate",
+      "why": "Separate holomorphy gives both families of slices of the cross, in $z'$ and in $z_n$.",
+      "steps": [
+       "s:induct",
+       "s:cross"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:induct",
+      "slogan": "Induct on $n$ and extend $f$ in $z' = (z_1, \\dots, z_{n-1})$ for each real $x_n$.",
+      "detail": "For $n = 1$ the claim is the hypothesis. For $n > 1$ and real $x_n$, the function $z' \\mapsto f(z', x_n)$ satisfies the hypotheses in $n - 1$ variables. By induction it extends holomorphically to the [tube domain](c:tube-domain) $T'$ over $K' = \\mathrm{int}\\,\\mathrm{conv}\\bigcup_{j<n}I_je_j$.",
+      "uses": []
+     },
+     {
+      "id": "s:cross",
+      "slogan": "Recognize the extended function as separately holomorphic on a cross.",
+      "detail": "Put $A = \\mathbb{R}^{n-1} \\subset D = T'$ and $B = \\mathbb{R} \\subset G = \\{\\mathrm{Im}\\, z_n \\in I_n\\}$. The function is holomorphic on $D \\times \\{b\\}$ for $b \\in B$ and on $\\{a\\} \\times G$ for $a \\in A$. So it is separately holomorphic on the cross $(A \\times G) \\cup (D \\times B)$, which contains $X$.",
+      "uses": []
+     },
+     {
+      "id": "s:extremal",
+      "slogan": "Compute the relative extremal functions of $A$ in $D$ and of $B$ in $G$.",
+      "detail": "For an open convex set $K \\ni 0$ with gauge $\\mu_K$, the relative extremal function of $\\mathbb{R}^m$ in the tube over $K$ is $\\mu_K(\\mathrm{Im}\\, z)$. This plurisubharmonic function is a candidate, and the strip estimate on complex lines $\\zeta \\mapsto x + \\zeta w$ gives the reverse bound. So $h_{A,D} = \\mu_{K'}(\\mathrm{Im}\\, z')$ and $h_{B,G} = \\mu_{I_n}(\\mathrm{Im}\\, z_n)$.",
+      "uses": []
+     },
+     {
+      "id": "s:hull",
+      "slogan": "Extend over the cross hull $\\{h_{A,D} + h_{B,G} < 1\\}$ by the cross theorem.",
+      "detail": "The cross theorem (Gonchar, Siciak, Zahariuta) extends a separately holomorphic function from the cross to $\\{h_{A,D}(z') + h_{B,G}(z_n) < 1\\}$ when $A$ and $B$ are non-pluripolar and regular. Here this set is $\\{\\mu_{K'}(y') + \\mu_{I_n}(y_n) < 1\\}$, the tube over $\\mathrm{int}\\,\\mathrm{conv}\\bigcup_{j \\le n}I_je_j$, because the hull of the union is $\\bigcup_{0 \\le s \\le 1}sK' \\times (1 - s)I_n$.",
+      "uses": []
+     },
+     {
+      "id": "s:unique",
+      "slogan": "Show that the extension is unique and agrees with $f$ on $X$.",
+      "detail": "The tube is connected and contains $\\mathbb{R}^n \\subset X$, and a [holomorphic function](c:holomorphic-function) that vanishes on $\\mathbb{R}^n$ vanishes identically. So two extensions coincide. The extension agrees with $f$ on the cross, hence on $X$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:induct",
+      "s:cross"
+     ],
+     [
+      "s:induct",
+      "s:extremal"
+     ],
+     [
+      "s:cross",
+      "s:hull"
+     ],
+     [
+      "s:extremal",
+      "s:hull"
+     ],
+     [
+      "s:hull",
+      "s:unique"
+     ]
+    ],
+    "conclusion": "s:unique",
+    "concepts": {
+     "c:holomorphic-function": "Both the data and the extension are holomorphic, and the identity theorem gives uniqueness.",
+     "c:tube-domain": "The extension lives on a tube domain whose base is the convex hull.",
+     "c:convex-hull": "The convex hull of the cross of intervals is the base of the extension."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "M. Jarnicki and P. Pflug, Separately Analytic Functions, EMS Tracts in Mathematics 16, European Mathematical Society, 2011",
+     "url": "https://ems.press/books/etm/94",
+     "note": "The book proves the cross theorem for crosses with general bases; the induction and the tube computation are the outline given here. See also L. M. Druzkowski, A generalization of the Malgrange-Zerner theorem, Ann. Polon. Math. 38 (1980), 181-186."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:mean-square-bound",
+  "statement": "Let $f$ be a [cusp form](c:cusp-form) of weight $k \\in \\mathbb{N}$ for an arithmetic subgroup $\\Gamma$, with [q-expansion](c:q-expansion) $f = \\sum_{n \\ge 0} a_n q_h^n$, $q_h = e^{2\\pi i\\tau/h}$, at a strict period $h$ of $\\Gamma$. Then there is a constant $C$ with $\\sum_{n < M}|a_n|^2 \\le C M^k$ for every $M \\ge 0$.",
+  "hypotheses": [
+   {
+    "id": "h:cusp",
+    "text": "$f$ is a [cusp form](c:cusp-form) of weight $k \\in \\mathbb{N}$ for an arithmetic subgroup $\\Gamma$ of $GL_2(\\mathbb{R})$.",
+    "concept": "c:cusp-form"
+   },
+   {
+    "id": "h:expansion",
+    "text": "The numbers $a_n$ are the coefficients of the [q-expansion](c:q-expansion) of $f$ at $\\infty$ in $q_h$, where $h > 0$ is a strict period of $\\Gamma$.",
+    "concept": "c:q-expansion"
+   }
+  ],
+  "conclusion": "Some constant $C$ gives $\\sum_{n=0}^{M-1}|a_n|^2 \\le C M^k$ for all $M \\ge 0$.",
+  "formal": {
+   "decl": "CuspFormClass.exists_sum_range_norm_sq_qExpansion_coeff_le",
+   "difference": "The declaration fixes $h$ as the strict width of $\\infty$. The companion declaration CuspFormClass.exists_sum_range_norm_sq_qExpansion_coeff_le_of_mem_strictPeriods allows any strict period, as here."
+  },
+  "proofs": [
+   {
+    "id": "parseval-line",
+    "name": "Parseval on a horizontal line",
+    "slogan": "Bound the cusp form on the horizontal line at height $1/M$, then compare its mean square with the coefficients by Parseval.",
+    "scope": "All $M \\ge 0$; the case $M = 0$ is the empty sum. The constant $C = e^{4\\pi/h}B^2$ does not depend on $M$.",
+    "mechanisms": [
+     "m:a-priori-estimate",
+     "m:orthogonal-projection"
+    ],
+    "roles": [
+     {
+      "h": "h:cusp",
+      "why": "Vanishing at every cusp makes $|f(\\tau)|(\\mathrm{Im}\\,\\tau)^{k/2}$ bounded on the whole upper half-plane.",
+      "steps": [
+       "s:hecke"
+      ]
+     },
+     {
+      "h": "h:expansion",
+      "why": "The $q$-expansion makes $x \\mapsto f(x + iy)$ a Fourier series with the coefficients $a_n e^{-2\\pi n y/h}$.",
+      "steps": [
+       "s:parseval",
+       "s:truncate"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:hecke",
+      "slogan": "Bound $|f(\\tau)|^2(\\mathrm{Im}\\,\\tau)^k$ uniformly on the [upper half-plane](c:upper-half-plane).",
+      "detail": "For a [cusp form](c:cusp-form) of weight $k$, the function $|f(\\tau)|(\\mathrm{Im}\\,\\tau)^{k/2}$ is $\\Gamma$-invariant and continuous, and tends to $0$ at every cusp. So it is bounded: some $B$ gives $|f(\\tau)|^2(\\mathrm{Im}\\,\\tau)^k \\le B^2$.",
+      "uses": []
+     },
+     {
+      "id": "s:line",
+      "slogan": "Restrict the bound to the horizontal line at height $y = 1/M$.",
+      "detail": "For $M \\ge 1$ and $\\mathrm{Im}\\,\\tau = y = 1/M$, step 1 gives $|f(\\tau)|^2 \\le B^2y^{-k} = B^2M^k$. Integrating over one period, $\\tfrac1h\\int_0^h|f(x + iy)|^2\\,dx \\le B^2M^k$.",
+      "uses": []
+     },
+     {
+      "id": "s:parseval",
+      "slogan": "Expand $f$ along the line in a Fourier series and apply Parseval.",
+      "detail": "On the line $\\mathrm{Im}\\,\\tau = y$, $f(x + iy) = \\sum_{n \\ge 0}a_ne^{-2\\pi ny/h}e^{2\\pi inx/h}$ is a [Fourier series](c:fourier-series) in $x$ of period $h$. Parseval's identity gives $\\tfrac1h\\int_0^h|f(x + iy)|^2\\,dx = \\sum_{n \\ge 0}|a_n|^2e^{-4\\pi ny/h}$.",
+      "uses": [
+       "nm:parseval-s-identity"
+      ]
+     },
+     {
+      "id": "s:truncate",
+      "slogan": "Keep only the terms with $n < M$ and bound their weights from below.",
+      "detail": "All terms are nonnegative. For $n < M$ and $y = 1/M$, $e^{-4\\pi ny/h} \\ge e^{-4\\pi/h}$. So $e^{-4\\pi/h}\\sum_{n < M}|a_n|^2 \\le \\sum_{n \\ge 0}|a_n|^2e^{-4\\pi ny/h}$.",
+      "uses": []
+     },
+     {
+      "id": "s:combine",
+      "slogan": "Combine the three estimates and name the constant $C = e^{4\\pi/h}B^2$.",
+      "detail": "Steps 2, 3 and 4 give $e^{-4\\pi/h}\\sum_{n < M}|a_n|^2 \\le B^2M^k$. So $\\sum_{n < M}|a_n|^2 \\le CM^k$ with $C = e^{4\\pi/h}B^2$, for every $M \\ge 1$; the case $M = 0$ is trivial.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:hecke",
+      "s:line"
+     ],
+     [
+      "s:line",
+      "s:combine"
+     ],
+     [
+      "s:parseval",
+      "s:truncate"
+     ],
+     [
+      "s:truncate",
+      "s:combine"
+     ]
+    ],
+    "conclusion": "s:combine",
+    "concepts": {
+     "c:cusp-form": "Decay at the cusps gives the uniform bound on $|f|^2(\\mathrm{Im}\\,\\tau)^k$.",
+     "c:q-expansion": "The coefficients $a_n$ are the Fourier coefficients of $f$ along horizontal lines.",
+     "c:upper-half-plane": "The bound holds at every point of the upper half-plane.",
+     "c:fourier-series": "Parseval's identity for the Fourier series links the mean square to the coefficients."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "CuspFormClass.exists_sum_range_norm_sq_qExpansion_coeff_le",
+     "follows": true,
+     "note": "mathlib bounds f on the line Im tau = 1/M with CuspFormClass.exists_bound and applies Bessel's inequality for x -> f(x + iy) (UpperHalfPlane.sum_range_norm_sq_qExpansion_coeff_le), through CuspFormClass.exists_sum_range_norm_sq_qExpansion_coeff_le_of_mem_strictPeriods."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:17465",
+  "statement": "Let $H$ be a connected cocommutative [Hopf algebra](c:hopf-algebra) over a field of characteristic $0$, and $P(H)$ its [Lie algebra](c:lie-algebra) of [primitive elements](c:primitive-element). Then the Hopf algebra map $U(P(H)) \\to H$ induced by the inclusion is an isomorphism, where $U$ is the [universal enveloping algebra](c:universal-enveloping-algebra).",
+  "hypotheses": [
+   {
+    "id": "h:connected",
+    "text": "The Hopf algebra $H$ is connected: its coradical is $k \\cdot 1$, for example $H$ is graded with $H_0 = k$.",
+    "concept": null
+   },
+   {
+    "id": "h:cocommutative",
+    "text": "The coproduct of $H$ is cocommutative.",
+    "concept": null
+   },
+   {
+    "id": "h:char0",
+    "text": "The field $k$ has characteristic $0$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The natural map $U(P(H)) \\to H$ is an isomorphism of Hopf algebras, so $H$ is the enveloping algebra of its primitives.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "eulerian-idempotent",
+    "name": "Eulerian idempotent",
+    "slogan": "Compare $H$ with the symmetric coalgebra on its primitives, using the logarithm of the identity as a projection onto the primitives.",
+    "scope": "An outline of the standard proof; the properties of the logarithm of the identity in step 3 rest on the cited work. Connectedness makes the logarithm series finite on each element.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:universal-property",
+     "m:homomorphism-kernel"
+    ],
+    "roles": [
+     {
+      "h": "h:connected",
+      "why": "Connectedness makes the logarithm series finite and makes the symmetric coalgebra cofree among the coalgebras considered.",
+      "steps": [
+       "s:projection",
+       "s:lift",
+       "s:bijective"
+      ]
+     },
+     {
+      "h": "h:cocommutative",
+      "why": "Cocommutativity makes the logarithm a projection onto the primitives and lets the lift land in a cocommutative coalgebra.",
+      "steps": [
+       "s:projection",
+       "s:lift"
+      ]
+     },
+     {
+      "h": "h:char0",
+      "why": "Characteristic $0$ gives the coalgebra isomorphism of Poincare-Birkhoff-Witt, the primitives of the symmetric coalgebra, and division by $n$ in the logarithm.",
+      "steps": [
+       "s:pbw",
+       "s:projection"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:map",
+      "slogan": "Define the Hopf algebra map $j\\colon U(P(H)) \\to H$ from the inclusion of the primitives.",
+      "detail": "The primitives $P(H)$ form a [Lie algebra](c:lie-algebra) under the commutator of $H$. The universal property of the [universal enveloping algebra](c:universal-enveloping-algebra) gives an algebra map $j$ extending the inclusion. It is a Hopf algebra map because the elements of $P(H)$ are [primitive](c:primitive-element).",
+      "uses": []
+     },
+     {
+      "id": "s:pbw",
+      "slogan": "Identify $U(\\mathfrak{g})$ with the symmetric coalgebra $S(\\mathfrak{g})$ for $\\mathfrak{g} = P(H)$.",
+      "detail": "In characteristic $0$ the symmetrization $\\mathrm{sym}\\colon S(\\mathfrak{g}) \\to U(\\mathfrak{g})$ is an isomorphism of coalgebras, by the Poincare-Birkhoff-Witt theorem. The primitive elements of $S(\\mathfrak{g})$ are exactly the elements of $\\mathfrak{g}$.",
+      "uses": [
+       "wd:Q2270905"
+      ]
+     },
+     {
+      "id": "s:projection",
+      "slogan": "Project $H$ onto its primitives with the logarithm of the identity.",
+      "detail": "The series $e = \\sum_{n \\ge 1}\\tfrac{(-1)^{n-1}}{n}(\\mathrm{id} - \\eta\\varepsilon)^{*n}$ is finite on each element of the connected $H$. For $H$ cocommutative in characteristic $0$, the cited work shows that $e$ maps $H$ onto $P(H)$, fixes $P(H)$ and kills the symmetrized products of two or more primitives.",
+      "uses": []
+     },
+     {
+      "id": "s:lift",
+      "slogan": "Lift $e$ to a coalgebra map $\\Theta\\colon H \\to S(P(H))$ by cofreeness.",
+      "detail": "In characteristic $0$, $S(V)$ is the cofree connected cocommutative coalgebra on $V$, so $e$ gives a coalgebra map $\\Theta$ with $\\pi\\Theta = e$, where $\\pi\\colon S(V) \\to V$ is the projection. Then $\\Theta\\,j\\,\\mathrm{sym}$ and $\\mathrm{id}$ are coalgebra maps of $S(P(H))$ with the same projection $e\\,j\\,\\mathrm{sym} = \\pi$, so they are equal.",
+      "uses": []
+     },
+     {
+      "id": "s:bijective",
+      "slogan": "Show that $\\Theta$ is injective, hence bijective, and conclude that $j$ is an isomorphism.",
+      "detail": "$\\Theta$ is the identity on primitives, because $\\pi\\Theta = e$ fixes them. A coalgebra map of connected coalgebras that is injective on primitives is injective: a kernel element of least filtration degree has zero reduced coproduct, so it is primitive. Hence $\\Theta$ is bijective, $j\\,\\mathrm{sym} = \\Theta^{-1}$ is bijective, and so is $j$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:map",
+      "s:lift"
+     ],
+     [
+      "s:pbw",
+      "s:lift"
+     ],
+     [
+      "s:projection",
+      "s:lift"
+     ],
+     [
+      "s:lift",
+      "s:bijective"
+     ]
+    ],
+    "conclusion": "s:bijective",
+    "concepts": {
+     "c:hopf-algebra": "The theorem classifies connected cocommutative Hopf algebras.",
+     "c:lie-algebra": "The primitives form the Lie algebra whose enveloping algebra recovers $H$.",
+     "c:primitive-element": "Primitive elements generate $H$ and are the target of the logarithm.",
+     "c:universal-enveloping-algebra": "The enveloping algebra is the free Hopf algebra on the Lie algebra of primitives."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "J. W. Milnor and J. C. Moore, On the structure of Hopf algebras, Annals of Mathematics (2) 81 (1965), 211-264",
+     "url": "https://doi.org/10.2307/1970615",
+     "note": "Milnor and Moore prove the theorem for connected graded Hopf algebras by their structure theory of primitives. The steps follow the standard modern form with the Eulerian idempotent."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q3527129",
+  "statement": "Let $0 < \\lambda_1 < \\lambda_2 < \\cdots$ be real numbers. The span of the generalized [polynomials](c:polynomial) $1, x^{\\lambda_1}, x^{\\lambda_2}, \\dots$ is [dense](c:dense-set) in $C[0,1]$ for the uniform norm if and only if $\\sum_n 1/\\lambda_n = \\infty$.",
+  "hypotheses": [
+   {
+    "id": "h:increasing",
+    "text": "The exponents satisfy $0 < \\lambda_1 < \\lambda_2 < \\cdots$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The span of $1, x^{\\lambda_1}, x^{\\lambda_2}, \\dots$ is dense in $C[0,1]$ exactly when $\\sum_n 1/\\lambda_n$ diverges.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "blaschke-gram",
+    "name": "Blaschke condition and Gram determinant",
+    "slogan": "Prove density from a Blaschke argument for an annihilating measure, and prove non-density from an $L^2$ distance formula by a Cauchy determinant.",
+    "scope": "Both directions, for strictly increasing exponents; a bounded sequence of exponents has divergent sum and is covered by step 3. The span contains the constants because $x^0 = 1$ is included.",
+    "mechanisms": [
+     "m:separation",
+     "m:approximation",
+     "m:contradiction"
+    ],
+    "roles": [
+     {
+      "h": "h:increasing",
+      "why": "Strict increase keeps every $\\lambda_n \\ge \\lambda_1 > 0$, so zeros cannot accumulate at $0$, and distinct exponents give a nonsingular Gram matrix.",
+      "steps": [
+       "s:analytic",
+       "s:blaschke",
+       "s:distance"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:annihilator",
+      "slogan": "Suppose that the span is not dense and take a nonzero measure that annihilates it.",
+      "detail": "If the span is not dense, the Hahn-Banach theorem gives a nonzero continuous functional that vanishes on it. The Riesz representation theorem writes it as a signed [measure](c:measure) $\\mu \\ne 0$ on $[0,1]$ with $\\int d\\mu = 0$ and $\\int t^{\\lambda_n}\\,d\\mu = 0$ for all $n$.",
+      "uses": [
+       "nl:10213",
+       "nm:riesz-markov-kakutani-representation-theorem"
+      ]
+     },
+     {
+      "id": "s:analytic",
+      "slogan": "Form $F(z) = \\int t^z\\,d\\mu(t)$, a bounded function holomorphic on the right half-plane.",
+      "detail": "For $\\mathrm{Re}\\,z > 0$ we have $|t^z| \\le 1$, so $|F| \\le \\|\\mu\\|$, and $F$ is [holomorphic](c:holomorphic-function) by dominated convergence and Morera's theorem. By construction $F(\\lambda_n) = 0$ for all $n$.",
+      "uses": []
+     },
+     {
+      "id": "s:blaschke",
+      "slogan": "Use the Blaschke condition to show that $F$ vanishes when $\\sum 1/\\lambda_n$ diverges.",
+      "detail": "A bounded holomorphic $F \\not\\equiv 0$ on the right half-plane has zeros with $\\sum \\lambda_n/(1 + \\lambda_n^2) < \\infty$, by Jensen's formula. A bounded sequence $(\\lambda_n)$ accumulates inside the half-plane, so $F \\equiv 0$. Otherwise $\\lambda_n \\to \\infty$ and $\\lambda_n/(1 + \\lambda_n^2) \\ge 1/(2\\lambda_n)$, so divergence of $\\sum 1/\\lambda_n$ forces $F \\equiv 0$.",
+      "uses": [
+       "nm:jensen-s-formula"
+      ]
+     },
+     {
+      "id": "s:moments",
+      "slogan": "Conclude that $\\mu$ annihilates all monomials, hence vanishes.",
+      "detail": "$F \\equiv 0$ gives $\\int t^m\\,d\\mu = F(m) = 0$ for $m = 1, 2, \\dots$, and $\\int d\\mu = 0$. So $\\mu$ annihilates every polynomial, which are dense in $C[0,1]$ by the Weierstrass theorem. Hence $\\mu = 0$, a contradiction: the span is dense when the series diverges.",
+      "uses": [
+       "nm:weierstrass-approximation-theorem"
+      ]
+     },
+     {
+      "id": "s:distance",
+      "slogan": "Compute the $L^2$ distance from $x^m$ to a finite span by a Cauchy determinant.",
+      "detail": "In $L^2[0,1]$ the Gram matrix of $x^{\\mu_0}, \\dots, x^{\\mu_N}$ is the Cauchy matrix $(1/(\\mu_i + \\mu_j + 1))$, with a product formula for its [determinant](c:determinant). With $\\mu_0 = 0$ and $\\mu_j = \\lambda_j$, it gives $\\mathrm{dist}(x^m, \\mathrm{span}) = (2m + 1)^{-1/2}\\prod_j|m - \\mu_j|/(m + \\mu_j + 1)$.",
+      "uses": []
+     },
+     {
+      "id": "s:product",
+      "slogan": "If the series converges, show that the infinite product is positive and contradict density.",
+      "detail": "If $\\sum 1/\\lambda_n < \\infty$, some integer $m \\ge 1$ is no $\\lambda_n$, because $\\sum 1/m$ diverges. Then $\\prod_n|m - \\lambda_n|/(m + \\lambda_n + 1) > 0$, since $\\sum 1/(m + \\lambda_n + 1) < \\infty$ and no factor is $0$. So the $L^2$ distance from $x^m$ to the span is positive; uniform density would make it $0$, because uniform approximation implies $L^2$ approximation.",
+      "uses": []
+     },
+     {
+      "id": "s:both",
+      "slogan": "Combine the two directions into the equivalence.",
+      "detail": "The divergent case gives density by steps 1 to 4, and the convergent case excludes density by steps 5 and 6. Hence the span is dense if and only if $\\sum 1/\\lambda_n = \\infty$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:annihilator",
+      "s:analytic"
+     ],
+     [
+      "s:analytic",
+      "s:blaschke"
+     ],
+     [
+      "s:blaschke",
+      "s:moments"
+     ],
+     [
+      "s:moments",
+      "s:both"
+     ],
+     [
+      "s:distance",
+      "s:product"
+     ],
+     [
+      "s:product",
+      "s:both"
+     ]
+    ],
+    "conclusion": "s:both",
+    "concepts": {
+     "c:polynomial": "The theorem asks which sparse families of powers still approximate like polynomials.",
+     "c:dense-set": "Density in the uniform norm is the property being characterized.",
+     "c:measure": "A functional that kills the span is a signed measure.",
+     "c:holomorphic-function": "The Mellin-type integral $F$ is holomorphic and bounded on the half-plane.",
+     "c:determinant": "The Cauchy determinant gives the Gram determinant in closed form."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The density direction is the Hahn-Banach and Blaschke argument of Rudin, Real and Complex Analysis, 3rd ed., chapter 15 (Muntz-Szasz theorem); the converse uses the $L^2$ distance formula."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q4455025",
+  "statement": "Let $f$ be a [rational function](c:rational-function) of degree at least $2$ on the [Riemann sphere](c:riemann-sphere). Then no component $U$ of its [Fatou set](c:fatou-set) is wandering: the Fatou components containing $f^n(U)$, $n \\ge 0$, are not pairwise distinct.",
+  "hypotheses": [
+   {
+    "id": "h:rational",
+    "text": "The map $f$ is a [rational function](c:rational-function) of degree $d \\ge 2$ on the Riemann sphere.",
+    "concept": "c:rational-function"
+   }
+  ],
+  "conclusion": "For every Fatou component $U$ there are $m < n$ such that $f^m(U)$ and $f^n(U)$ lie in the same Fatou component.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "quasiconformal-deformation",
+    "name": "Quasiconformal deformation",
+    "slogan": "Deform $f$ by invariant Beltrami coefficients supported on the orbit of a wandering domain, and contradict the finite dimension of the space of rational maps.",
+    "scope": "An outline of Sullivan's proof; the reduction of step 1 and the independence of deformations in step 4 rest on the cited work. The theorem fails for transcendental entire functions, which can have wandering domains.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:dimension-count",
+     "m:contradiction"
+    ],
+    "roles": [
+     {
+      "h": "h:rational",
+      "why": "Finite degree gives finitely many critical points for the reduction and a finite-dimensional space of maps of the same degree for the count.",
+      "steps": [
+       "s:reduce",
+       "s:count"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:reduce",
+      "slogan": "Assume that $U$ is wandering and pass to an iterate with simple dynamics.",
+      "detail": "Suppose the Fatou components $U_n \\supset f^n(U)$ are pairwise distinct. Only finitely many $U_n$ contain a critical point, so replace $U$ by a later $U_N$. By the lemmas of Baker and Sullivan we may assume that no $U_n$ has a critical point and that $f^n$ is univalent on $U$.",
+      "uses": []
+     },
+     {
+      "id": "s:beltrami",
+      "slogan": "Spread a Beltrami coefficient on $U$ over the grand orbit of $U$.",
+      "detail": "For a Beltrami coefficient $\\mu_0$ on $U$ with $\\|\\mu_0\\|_\\infty < 1$, push it forward to each $U_n$ by $f^n$, pull it back along the preimages of the $U_n$, and set it to $0$ elsewhere. The result is an $f$-invariant [Beltrami coefficient](c:beltrami-equation) $\\mu$ supported on the grand orbit of $U$.",
+      "uses": []
+     },
+     {
+      "id": "s:family",
+      "slogan": "Solve the Beltrami equation to deform $f$ into a family of rational maps.",
+      "detail": "For $t$ in a small complex disk, the measurable Riemann mapping theorem gives a [quasiconformal map](c:quasiconformal-map) $w_t$ of the sphere with Beltrami coefficient $t\\mu$. Invariance of $\\mu$ makes $f_t = w_t \\circ f \\circ w_t^{-1}$ a rational map of degree $d$ that depends holomorphically on $t$.",
+      "uses": []
+     },
+     {
+      "id": "s:independent",
+      "slogan": "Produce many independent deformations from independent coefficients on $U$.",
+      "detail": "The space of Beltrami coefficients supported in a compact part of the hyperbolic domain $U$ is infinite-dimensional. The cited work shows that independent coefficients give deformations of $f$ that are independent modulo [Moebius](c:moebius-transformation) conjugacy. It treats the simply connected, finitely connected and infinitely connected cases separately.",
+      "uses": []
+     },
+     {
+      "id": "s:count",
+      "slogan": "Compare with the finite dimension of the space of rational maps to reach a contradiction.",
+      "detail": "Rational maps of degree $d$ form a complex manifold of dimension $2d + 1$, and Moebius conjugacy has dimension $3$. So at most $2d - 2$ deformations are independent modulo conjugacy, but step 4 gives more. This contradiction shows that no wandering domain exists.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:reduce",
+      "s:beltrami"
+     ],
+     [
+      "s:beltrami",
+      "s:family"
+     ],
+     [
+      "s:family",
+      "s:independent"
+     ],
+     [
+      "s:beltrami",
+      "s:independent"
+     ],
+     [
+      "s:independent",
+      "s:count"
+     ]
+    ],
+    "conclusion": "s:count",
+    "concepts": {
+     "c:rational-function": "A rational map of degree at least $2$ is the dynamical system studied.",
+     "c:riemann-sphere": "The sphere is the space on which the iterates act.",
+     "c:fatou-set": "Wandering domains are components of the Fatou set.",
+     "c:beltrami-equation": "Invariant Beltrami coefficients carry the infinitesimal deformations.",
+     "c:quasiconformal-map": "Quasiconformal maps conjugate $f$ to nearby rational maps.",
+     "c:moebius-transformation": "Moebius conjugacy is the trivial equivalence among rational maps."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "D. P. Sullivan, Quasiconformal homeomorphisms and dynamics I: Solution of the Fatou-Julia problem on wandering domains, Annals of Mathematics 122 (1985), 401-418",
+     "url": "https://doi.org/10.2307/1971308",
+     "note": "Sullivan's paper; Carleson and Gamelin, Complex Dynamics (Springer, 1993), also gives the proof."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q7160489",
+  "statement": "Let $D$ be a linear map from smooth sections of a [vector bundle](c:vector-bundle) $E$ to smooth sections of a vector bundle $F$ over a [smooth manifold](c:smooth-manifold) $M$, with $\\mathrm{supp}\\,Ds \\subseteq \\mathrm{supp}\\,s$ for every $s$. Then each point of $M$ has a neighborhood on which $D$ is a [differential operator](c:differential-operator) of finite order.",
+  "hypotheses": [
+   {
+    "id": "h:linear",
+    "text": "The map $D$ is linear from smooth sections of $E$ to smooth sections of $F$.",
+    "concept": null
+   },
+   {
+    "id": "h:support",
+    "text": "The map $D$ does not enlarge [supports](c:support): $\\mathrm{supp}\\,Ds \\subseteq \\mathrm{supp}\\,s$ for every section $s$.",
+    "concept": "c:support"
+   }
+  ],
+  "conclusion": "Each point has a neighborhood $U$ and an order $m$ such that, in coordinates and trivializations, $Ds|_U = \\sum_{|\\alpha| \\le m}a_\\alpha\\,\\partial^\\alpha s$ with smooth matrix-valued $a_\\alpha$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "diverging-sequence",
+    "name": "Diverging sequence of test sections",
+    "slogan": "Show finite order near a point by building a section along a bad sequence of points, then read off the coefficients from a Taylor expansion.",
+    "scope": "A local statement: work in a chart around $x_0$ with trivialized bundles, so that sections are vector-valued functions. The order may vary from point to point.",
+    "mechanisms": [
+     "m:contradiction",
+     "m:taylor-expansion",
+     "m:local-to-global"
+    ],
+    "roles": [
+     {
+      "h": "h:linear",
+      "why": "Linearity lets us scale sections, add them, and split a section into its Taylor polynomial and a remainder.",
+      "steps": [
+       "s:sum",
+       "s:taylor"
+      ]
+     },
+     {
+      "h": "h:support",
+      "why": "The support condition makes $D$ local: $Ds(x)$ depends on the germ of $s$ at $x$, which allows cut-offs and evaluation of the sum at each $x_k$.",
+      "steps": [
+       "s:germ",
+       "s:contradict"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:germ",
+      "slogan": "Show that $Ds(x)$ depends only on the germ of $s$ at $x$.",
+      "detail": "If $s = s'$ near $x$, then $x \\notin \\mathrm{supp}(s - s')$, so $x \\notin \\mathrm{supp}\\,D(s - s')$ and $Ds(x) = Ds'(x)$. Hence multiplying $s$ by a [bump function](c:bump-function) that equals $1$ near $x$ does not change $Ds(x)$.",
+      "uses": []
+     },
+     {
+      "id": "s:suppose",
+      "slogan": "Suppose that the order is unbounded near $x_0$ and pick flat sections at points $x_k \\to x_0$.",
+      "detail": "Say $D$ has order $> m$ at $x$ if some $s$ with all derivatives of order $\\le m$ zero at $x$ has $Ds(x) \\ne 0$. If no ball around $x_0$ and no $m$ give order $\\le m$ at all $x \\ne x_0$ in the ball, pick distinct $x_k \\to x_0$ and $s_k$ whose derivatives up to order $k$ vanish at $x_k$ with $Ds_k(x_k) \\ne 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:sum",
+      "slogan": "Cut off, scale and add the sections $s_k$ into one smooth section $s$.",
+      "detail": "Multiply $s_k$ by a bump function $\\chi_k$ that equals $1$ near $x_k$ and has support in a small ball $B_k$; by step 1, $Ds_k(x_k)$ does not change. Flatness gives $\\|\\chi_ks_k\\|_{C^{k-1}} \\le C_kr_k$, so for $r_k$ small and $\\lambda_k = k/|Ds_k(x_k)|$ we get $\\|\\lambda_k\\chi_ks_k\\|_{C^{k-1}} \\le 2^{-k}$. With the balls disjoint, $s = \\sum_k\\lambda_k\\chi_ks_k$ is smooth.",
+      "uses": []
+     },
+     {
+      "id": "s:contradict",
+      "slogan": "Evaluate $Ds$ at $x_k$ to contradict continuity at $x_0$.",
+      "detail": "Near $x_k$ the section $s$ equals $\\lambda_ks_k$, so by step 1, $|Ds(x_k)| = \\lambda_k|Ds_k(x_k)| = k$. But $x_k \\to x_0$ and $Ds$ is continuous, hence bounded near $x_0$. So some ball around $x_0$ and some $m$ give order $\\le m$ at every $x \\ne x_0$ in the ball.",
+      "uses": []
+     },
+     {
+      "id": "s:taylor",
+      "slogan": "Expand $s$ in a Taylor polynomial at $x \\ne x_0$ to write $Ds(x)$ by a jet formula.",
+      "detail": "Let $\\chi$ equal $1$ on the ball, and write $\\chi s = \\chi T_xs + R$ with $T_xs$ the degree $m$ [Taylor polynomial](c:taylor-series) of $s$ at $x$. The remainder $R$ has zero $m$-jet at $x$, so $DR(x) = 0$. Hence $Ds(x) = \\sum_{|\\alpha| \\le m}a_\\alpha(x)\\,\\partial^\\alpha s(x)$ with $a_\\alpha(x) = D(\\chi\\,(\\cdot - x)^\\alpha/\\alpha!)(x)$, which is smooth in $x$.",
+      "uses": []
+     },
+     {
+      "id": "s:extend",
+      "slogan": "Extend the jet formula to $x_0$ by continuity.",
+      "detail": "Both sides of $Ds(x) = \\sum a_\\alpha(x)\\,\\partial^\\alpha s(x)$ are continuous on the ball and agree for $x \\ne x_0$, so they agree at $x_0$. Thus on the ball $D$ is a [differential operator](c:differential-operator) of order at most $m$ with smooth coefficients.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:germ",
+      "s:sum"
+     ],
+     [
+      "s:suppose",
+      "s:sum"
+     ],
+     [
+      "s:sum",
+      "s:contradict"
+     ],
+     [
+      "s:germ",
+      "s:contradict"
+     ],
+     [
+      "s:contradict",
+      "s:taylor"
+     ],
+     [
+      "s:germ",
+      "s:taylor"
+     ],
+     [
+      "s:taylor",
+      "s:extend"
+     ]
+    ],
+    "conclusion": "s:extend",
+    "concepts": {
+     "c:vector-bundle": "The operator acts between the smooth sections of two vector bundles.",
+     "c:smooth-manifold": "The statement is local on the manifold, through charts and trivializations.",
+     "c:differential-operator": "The conclusion identifies $D$ as a differential operator of finite order.",
+     "c:support": "The support condition is the only hypothesis on $D$ besides linearity.",
+     "c:bump-function": "Bump functions cut sections down to small balls without changing $Ds$ nearby.",
+     "c:taylor-series": "The Taylor polynomial at $x$ reduces $Ds(x)$ to a finite jet."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Peetre's argument: J. Peetre, Une caracterisation abstraite des operateurs differentiels, Math. Scand. 7 (1959), 211-218, with the rectification Math. Scand. 8 (1960), 116-120."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1785610",
+  "statement": "Let $C$ and $D$ be smooth [conic sections](c:conic-section) in the complex projective plane that meet in four distinct points. If some closed polygon with $n$ sides is inscribed in $C$ and circumscribed about $D$, then every point of $C$ is a vertex of such an $n$-gon.",
+  "hypotheses": [
+   {
+    "id": "h:conics",
+    "text": "The curves $C$ and $D$ are smooth conics in the complex projective plane.",
+    "concept": "c:conic-section"
+   },
+   {
+    "id": "h:general",
+    "text": "The conics $C$ and $D$ meet transversally, in four distinct points.",
+    "concept": null
+   },
+   {
+    "id": "h:closed",
+    "text": "A closed $n$-gon $p_1 \\dots p_n$ on $C$ exists, with each side $p_ip_{i+1}$ tangent to $D$ (indices mod $n$) and consecutive sides distinct.",
+    "concept": null
+   }
+  ],
+  "conclusion": "Every point of $C$ is a vertex of a closed $n$-gon inscribed in $C$ and circumscribed about $D$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "elliptic-translation",
+    "name": "Translation on an elliptic curve",
+    "slogan": "Encode the polygon as an orbit of a translation on an elliptic curve, and note that a translation with one periodic point is periodic everywhere.",
+    "scope": "Over $\\mathbb{C}$, for conics in general position; polygons are closed Poncelet paths and may repeat vertices. Real conics are included, because real points are complex points.",
+    "mechanisms": [
+     "m:geometric-construction",
+     "m:group-action-orbits"
+    ],
+    "roles": [
+     {
+      "h": "h:conics",
+      "why": "Smooth conics are projective lines, which gives the curve $E$ and the two tangent correspondences.",
+      "steps": [
+       "s:curve",
+       "s:involutions"
+      ]
+     },
+     {
+      "h": "h:general",
+      "why": "Transversality makes $E$ smooth of genus $1$ and gives each involution four fixed points.",
+      "steps": [
+       "s:curve",
+       "s:involutions"
+      ]
+     },
+     {
+      "h": "h:closed",
+      "why": "The closed polygon gives one point $x$ of $E$ with $T^nx = x$.",
+      "steps": [
+       "s:periodic"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:curve",
+      "slogan": "Form the curve $E$ of pairs of a point of $C$ and a tangent line of $D$ through it.",
+      "detail": "Let $E = \\{(p, l) : p \\in C,\\ l \\text{ tangent to } D,\\ p \\in l\\} \\subset C \\times D^\\vee \\cong \\mathbb{P}^1 \\times \\mathbb{P}^1$. The condition $p \\in l$ has degree $2$ in each parameter, so $E$ has bidegree $(2,2)$. It is smooth because $C$ and $D$ meet transversally, so $E$ is a connected [elliptic curve](c:elliptic-curve) of genus $1$.",
+      "uses": []
+     },
+     {
+      "id": "s:involutions",
+      "slogan": "Define the involutions $\\alpha$ and $\\beta$ that swap the second point and the second tangent.",
+      "detail": "Let $\\alpha(p, l) = (p', l)$, where $p'$ is the second point of $l \\cap C$, and $\\beta(p, l) = (p, l')$, where $l'$ is the second tangent to $D$ through $p$. Both are [involutions](c:involution) of $E$ with four fixed points: the four common tangents of $C$ and $D$ for $\\alpha$, and the four points of $C \\cap D$ for $\\beta$.",
+      "uses": []
+     },
+     {
+      "id": "s:negation",
+      "slogan": "Show that each involution has the form $x \\mapsto c - x$ in the group law of $E$.",
+      "detail": "Take a fixed point of $\\alpha$ as origin. An involution that fixes the origin is a group automorphism of order $2$, hence $x \\mapsto -x$, because $-1$ is the only element of order $2$ in the automorphism group of an elliptic curve. Conjugating by a translation to a fixed point $q$ gives $x \\mapsto 2q - x$, so $\\alpha(x) = a - x$ and $\\beta(x) = b - x$.",
+      "uses": []
+     },
+     {
+      "id": "s:translation",
+      "slogan": "Compose the involutions into the Poncelet map $T = \\beta\\alpha$, which is a translation.",
+      "detail": "$T(x) = b - (a - x) = x + (b - a)$ is the translation by $t = b - a$. By construction $T(p_i, l_i) = (p_{i+1}, l_{i+1})$ for the sides $l_i = p_ip_{i+1}$, so $T$ moves a vertex and side along the polygon.",
+      "uses": []
+     },
+     {
+      "id": "s:periodic",
+      "slogan": "Show that a translation with one periodic point is periodic at every point.",
+      "detail": "The closed $n$-gon gives a point $x_1 = (p_1, l_1)$ with $T^nx_1 = x_1$, so $x_1 + nt = x_1$ and $nt = 0$. Then $T^n$ is the identity on $E$.",
+      "uses": []
+     },
+     {
+      "id": "s:every",
+      "slogan": "Read the polygon off from any point of $C$.",
+      "detail": "Take $p \\in C$ and any $(p, l) \\in E$. Then $T^n(p, l) = (p, l)$, so the Poncelet path from $p$ along $l$ closes after $n$ steps. It is a closed $n$-gon inscribed in $C$ and circumscribed about $D$, with vertex $p$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:curve",
+      "s:involutions"
+     ],
+     [
+      "s:involutions",
+      "s:negation"
+     ],
+     [
+      "s:negation",
+      "s:translation"
+     ],
+     [
+      "s:translation",
+      "s:periodic"
+     ],
+     [
+      "s:periodic",
+      "s:every"
+     ]
+    ],
+    "conclusion": "s:every",
+    "concepts": {
+     "c:conic-section": "The two conics carry the vertices and the tangent lines of the polygon.",
+     "c:elliptic-curve": "The curve $E$ has genus $1$, so its translations are the Poncelet map.",
+     "c:involution": "The two swaps of the second point and the second tangent are involutions."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The proof of P. Griffiths and J. Harris, On Cayley's explicit solution to Poncelet's porism, L'Enseignement Mathematique 24 (1978), 31-40."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:27913",
+  "statement": "In an [ontological model](c:ontological-model) that reproduces the Born rule on all systems and satisfies preparation independence, any two distinct pure [quantum states](c:quantum-state) are represented by mutually singular [probability measures](c:probability-measure) on the space of ontic states. So the model is $\\psi$-ontic.",
+  "hypotheses": [
+   {
+    "id": "h:born",
+    "text": "The model reproduces the Born-rule probabilities of every measurement on every system, composite systems included.",
+    "concept": null
+   },
+   {
+    "id": "h:independence",
+    "text": "Preparation independence: independently prepared systems have the product ontic space and the product measure $\\mu_\\psi \\times \\mu_\\varphi$.",
+    "concept": null
+   },
+   {
+    "id": "h:states",
+    "text": "The pure states $\\psi$ and $\\varphi$ are distinct.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The measures $\\mu_\\psi$ and $\\mu_\\varphi$ are mutually singular: their supports are disjoint up to null sets.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "overlap-measurement",
+    "name": "Overlap and entangled measurement",
+    "slogan": "Assume that two state measures overlap, prepare many copies independently, and measure in an entangled basis whose outcomes the overlap would make impossible.",
+    "scope": "An outline of the argument of Pusey, Barrett and Rudolph. Orthogonal states are separated by a measurement, so only non-orthogonal states need the argument; step 2 is the cited lemma, written out for $|0\\rangle$ and $|+\\rangle$ with $n = 2$.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:contradiction"
+    ],
+    "roles": [
+     {
+      "h": "h:born",
+      "why": "The Born rule gives probability $0$ to an outcome orthogonal to a prepared product state.",
+      "steps": [
+       "s:vanish"
+      ]
+     },
+     {
+      "h": "h:independence",
+      "why": "The product structure makes the overlap event possible at once under all $2^n$ product preparations.",
+      "steps": [
+       "s:product"
+      ]
+     },
+     {
+      "h": "h:states",
+      "why": "Two distinct non-orthogonal states supply the measurement lemma and the two measures to compare.",
+      "steps": [
+       "s:overlap",
+       "s:measurement"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:overlap",
+      "slogan": "Assume that $\\mu_\\psi$ and $\\mu_\\varphi$ are not mutually singular and find an overlap set.",
+      "detail": "Let $\\nu = \\mu_\\psi + \\mu_\\varphi$ with densities $f_\\psi$ and $f_\\varphi$. If the [probability measures](c:probability-measure) are not singular, then for small $\\varepsilon > 0$ the set $\\Delta = \\{f_\\psi > \\varepsilon,\\ f_\\varphi > \\varepsilon\\}$ has $\\nu(\\Delta) > 0$. On $\\Delta$ each of $\\mu_\\psi$ and $\\mu_\\varphi$ is equivalent to $\\nu$.",
+      "uses": []
+     },
+     {
+      "id": "s:measurement",
+      "slogan": "Choose an entangled measurement on $n$ copies in which each outcome is impossible for some product preparation.",
+      "detail": "For non-orthogonal pure [quantum states](c:quantum-state) $\\psi, \\varphi$, the cited lemma gives $n$ and an [orthonormal basis](c:orthonormal-basis) $\\xi_1, \\dots, \\xi_{2^n}$ of the $n$-fold tensor product with each $\\xi_k$ orthogonal to some product of copies of $\\psi$ and $\\varphi$. For $|0\\rangle, |+\\rangle$ and $n = 2$, take $\\xi_1 = (|01\\rangle + |10\\rangle)/\\sqrt2$, $\\xi_2 = (|0-\\rangle + |1+\\rangle)/\\sqrt2$, $\\xi_3 = (|+1\\rangle + |-0\\rangle)/\\sqrt2$, $\\xi_4 = (|+-\\rangle + |-+\\rangle)/\\sqrt2$.",
+      "uses": []
+     },
+     {
+      "id": "s:product",
+      "slogan": "Use preparation independence to give the overlap a positive product measure.",
+      "detail": "Under each of the $2^n$ product preparations, the ontic state of the $n$ copies is distributed by a product of copies of $\\mu_\\psi$ and $\\mu_\\varphi$. On $\\Delta^n$ each of these is equivalent to $\\nu^n$, so $\\Delta^n$ has positive measure under all of them.",
+      "uses": []
+     },
+     {
+      "id": "s:vanish",
+      "slogan": "Show that each outcome has probability zero at almost every point of $\\Delta^n$.",
+      "detail": "If $\\xi_k$ is orthogonal to the product state of preparation $P_k$, the Born rule gives probability $0$ for outcome $k$ under $P_k$. So the response function of outcome $k$ is $0$ for $\\mu_{P_k}$-almost every $\\lambda$, hence for $\\nu^n$-almost every $\\lambda \\in \\Delta^n$.",
+      "uses": []
+     },
+     {
+      "id": "s:contradict",
+      "slogan": "Pick a point where all outcome probabilities vanish and contradict normalization.",
+      "detail": "The union of the $2^n$ exceptional sets is $\\nu^n$-null, so some $\\lambda \\in \\Delta^n$ lies outside all of them. At $\\lambda$ every outcome has response $0$, but the responses of one measurement sum to $1$. So $\\mu_\\psi$ and $\\mu_\\varphi$ are mutually singular.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:overlap",
+      "s:product"
+     ],
+     [
+      "s:measurement",
+      "s:vanish"
+     ],
+     [
+      "s:product",
+      "s:vanish"
+     ],
+     [
+      "s:vanish",
+      "s:contradict"
+     ]
+    ],
+    "conclusion": "s:contradict",
+    "concepts": {
+     "c:ontological-model": "The theorem is a constraint on every model of this kind.",
+     "c:quantum-state": "The states $\\psi$ and $\\varphi$ are the preparations whose measures are compared.",
+     "c:probability-measure": "Each pure state is represented by a probability measure on ontic states.",
+     "c:orthonormal-basis": "The entangled measurement is a projective measurement in an orthonormal basis."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "M. F. Pusey, J. Barrett and T. Rudolph, On the reality of the quantum state, Nature Physics 8 (2012), 475-478",
+     "url": "https://arxiv.org/abs/1111.3328",
+     "note": "The paper proves the case of |0> and |+> with two systems and extends it to all non-orthogonal pairs by an n-system measurement; the measure-theoretic bookkeeping here is a precise form of its argument."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:10097",
+  "statement": "Let $R$ be an [$E_\\infty$-ring](c:e-infinity-ring) spectrum and $n \\ge 0$. If the $T(n)$-[localization](c:telescopic-localization) $L_{T(n)}R$ is nonzero, then the $T(n+1)$-localization $L_{T(n+1)}K(R)$ of its [algebraic K-theory](c:algebraic-k-theory) is nonzero.",
+  "hypotheses": [
+   {
+    "id": "h:einf",
+    "text": "The spectrum $R$ is an [$E_\\infty$-ring](c:e-infinity-ring).",
+    "concept": "c:e-infinity-ring"
+   },
+   {
+    "id": "h:height",
+    "text": "The $T(n)$-localization $L_{T(n)}R$ is nonzero.",
+    "concept": "c:telescopic-localization"
+   }
+  ],
+  "conclusion": "$L_{T(n+1)}K(R) \\ne 0$: algebraic K-theory raises the chromatic height by at least one.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "nullstellensatz",
+    "name": "Chromatic Nullstellensatz",
+    "slogan": "Map $R$ to a Lubin-Tate theory by the chromatic Nullstellensatz, and transport the known nonvanishing of K-theory back along the module structure.",
+    "scope": "The lower bound of the redshift conjecture, for all $E_\\infty$-rings. An outline of the cited proof; the matching upper bound on the height of K-theory is a separate theorem.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:contradiction",
+     "m:functoriality"
+    ],
+    "roles": [
+     {
+      "h": "h:einf",
+      "why": "The $E_\\infty$ structure makes the Nullstellensatz map an $E_\\infty$ map and makes $K(R)$ a ring acting on $K(E)$.",
+      "steps": [
+       "s:nullstellensatz",
+       "s:module"
+      ]
+     },
+     {
+      "h": "h:height",
+      "why": "A nonzero $T(n)$-localization is a nonzero $T(n)$-local $E_\\infty$-ring, the input of the Nullstellensatz.",
+      "steps": [
+       "s:nullstellensatz"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:base",
+      "slogan": "Start from the Lubin-Tate case: $L_{T(n+1)}K(E) \\ne 0$ for $E$ over an algebraically closed field.",
+      "detail": "For the [Lubin-Tate theory](c:lubin-tate-theory) $E$ of height $n$ over an algebraically closed field, the nonvanishing of $L_{T(n+1)}K(E)$ is the redshift theorem for Lubin-Tate spectra. It is known by the work of Yuan, who builds on the Hahn-Wilson redshift theorem for truncated Brown-Peterson spectra.",
+      "uses": []
+     },
+     {
+      "id": "s:nullstellensatz",
+      "slogan": "Map $R$ to a Lubin-Tate theory by an $E_\\infty$ ring map.",
+      "detail": "The ring $L_{T(n)}R$ is a nonzero $T(n)$-local $E_\\infty$-ring. The chromatic Nullstellensatz of Burklund, Schlank and Yuan gives an $E_\\infty$ map $L_{T(n)}R \\to E$ to a Lubin-Tate theory $E$ of an algebraically closed field. Composing with $R \\to L_{T(n)}R$ gives an $E_\\infty$ map $R \\to E$.",
+      "uses": []
+     },
+     {
+      "id": "s:module",
+      "slogan": "Show that vanishing of $L_{T(n+1)}K(R)$ would pass to $K(E)$ by the module structure.",
+      "detail": "$K$ is lax symmetric monoidal on stable categories, so the ring map $R \\to E$ makes $K(E)$ a module over the $E_\\infty$-ring $K(R)$. Localization is compatible with smash products, so $L_{T(n+1)}K(E)$ is a module over $L_{T(n+1)}K(R)$. If this ring is $0$, so is the module.",
+      "uses": []
+     },
+     {
+      "id": "s:contradict",
+      "slogan": "Contradict the base case to conclude that $L_{T(n+1)}K(R) \\ne 0$.",
+      "detail": "If $L_{T(n+1)}K(R)$ were $0$, step 3 would give $L_{T(n+1)}K(E) = 0$, against step 1. Hence $L_{T(n+1)}K(R) \\ne 0$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:nullstellensatz",
+      "s:module"
+     ],
+     [
+      "s:module",
+      "s:contradict"
+     ],
+     [
+      "s:base",
+      "s:contradict"
+     ]
+    ],
+    "conclusion": "s:contradict",
+    "concepts": {
+     "c:e-infinity-ring": "The Nullstellensatz and the module structure of K-theory need commutative ring spectra.",
+     "c:telescopic-localization": "The height of a ring is detected by its $T(n)$-localization.",
+     "c:algebraic-k-theory": "The K-theory spectrum is the object whose height rises by one.",
+     "c:lubin-tate-theory": "Lubin-Tate theory is the model ring where nonvanishing is known."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "R. Burklund, T. M. Schlank and A. Yuan, The chromatic Nullstellensatz, arXiv:2207.09929 (2022), Annals of Mathematics",
+     "url": "https://arxiv.org/abs/2207.09929",
+     "note": "Combines the Nullstellensatz with the Lubin-Tate case of redshift (Yuan, building on Hahn and Wilson)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q7333126",
+  "statement": "Let $X$ be a smooth projective [algebraic surface](c:algebraic-surface) over an algebraically closed field, $K$ a [canonical divisor](c:canonical-divisor) and $D$ a [divisor](c:divisor). Then $\\chi(\\mathcal{O}_X(D)) = \\chi(\\mathcal{O}_X) + \\tfrac12\\,D\\cdot(D - K)$, where the dot is the [intersection form](c:intersection-form).",
+  "hypotheses": [
+   {
+    "id": "h:surface",
+    "text": "The scheme $X$ is a smooth projective [algebraic surface](c:algebraic-surface) over an algebraically closed field.",
+    "concept": "c:algebraic-surface"
+   },
+   {
+    "id": "h:divisor",
+    "text": "The divisor $D$ on $X$ has the line bundle $\\mathcal{O}_X(D)$.",
+    "concept": "c:divisor"
+   }
+  ],
+  "conclusion": "$\\chi(\\mathcal{O}_X(D)) - \\chi(\\mathcal{O}_X) = \\tfrac12\\,D\\cdot(D - K)$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "curve-restriction",
+    "name": "Restriction to smooth curves",
+    "slogan": "Show that both sides of the formula change by the same amount when $D$ drops by a smooth curve, then write $D$ as a difference of smooth curves.",
+    "scope": "Every divisor $D$; here $\\chi$ is the Euler characteristic $\\sum(-1)^i\\dim H^i$. The proof works for any smooth projective surface over an algebraically closed field.",
+    "mechanisms": [
+     "m:exact-sequence",
+     "m:algebraic-identity",
+     "m:euler-characteristic"
+    ],
+    "roles": [
+     {
+      "h": "h:surface",
+      "why": "Smoothness and projectivity give intersection numbers, the adjunction formula, Riemann-Roch on curves and Bertini curves.",
+      "steps": [
+       "s:curve",
+       "s:adjunction",
+       "s:generate"
+      ]
+     },
+     {
+      "h": "h:divisor",
+      "why": "The divisor $D$ is a difference of smooth curves, which reduces the formula to the trivial case $D = 0$.",
+      "steps": [
+       "s:generate"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:defect",
+      "slogan": "Define $F(L)$ as the failure of the formula; it vanishes for $L = \\mathcal{O}_X$.",
+      "detail": "For a line bundle $L$ put $F(L) = \\chi(L) - \\chi(\\mathcal{O}_X) - \\tfrac12\\,L\\cdot(L - K)$. Then $F(\\mathcal{O}_X) = 0$, and the theorem says that $F(L) = 0$ for every $L$.",
+      "uses": []
+     },
+     {
+      "id": "s:exact",
+      "slogan": "Compare $L$ and $L(-C)$ by the restriction sequence to a smooth curve $C$.",
+      "detail": "For a smooth irreducible curve $C$ the sequence $0 \\to L(-C) \\to L \\to L|_C \\to 0$ is exact. So $\\chi(L) - \\chi(L(-C)) = \\chi(L|_C)$.",
+      "uses": []
+     },
+     {
+      "id": "s:curve",
+      "slogan": "Evaluate $\\chi(L|_C)$ on the curve by the Riemann-Roch theorem.",
+      "detail": "For the curve $C$ of genus $g$, Riemann-Roch gives $\\chi(L|_C) = \\deg(L|_C) + 1 - g = L\\cdot C + 1 - g$.",
+      "uses": [
+       "wd:Q379048"
+      ]
+     },
+     {
+      "id": "s:adjunction",
+      "slogan": "Rewrite $1 - g$ by the adjunction formula to show that $F(L) = F(L(-C))$.",
+      "detail": "Adjunction gives $2g - 2 = C\\cdot(C + K)$. A direct expansion gives $\\tfrac12L\\cdot(L - K) - \\tfrac12(L - C)\\cdot(L - C - K) = L\\cdot C - \\tfrac12C\\cdot(C + K) = L\\cdot C + 1 - g$. So the left side of the formula changes by the same amount as the right side, and $F(L) = F(L(-C))$.",
+      "uses": []
+     },
+     {
+      "id": "s:generate",
+      "slogan": "Write the line bundle as $\\mathcal{O}_X(C_1 - C_2)$ with smooth curves and conclude.",
+      "detail": "Every divisor is a difference $H_1 - H_2$ of very ample divisors, and by Bertini's theorem each is linearly equivalent to a smooth irreducible curve $C_i$. Then $F(\\mathcal{O}(C_1 - C_2)) = F(\\mathcal{O}(-C_2)) = F(\\mathcal{O}) = 0$, using $F(L) = F(L(-C))$ with $C = C_1$ and then with $C = C_2$.",
+      "uses": [
+       "wd:Q7782345"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:exact",
+      "s:adjunction"
+     ],
+     [
+      "s:curve",
+      "s:adjunction"
+     ],
+     [
+      "s:adjunction",
+      "s:generate"
+     ],
+     [
+      "s:defect",
+      "s:generate"
+     ]
+    ],
+    "conclusion": "s:generate",
+    "concepts": {
+     "c:algebraic-surface": "The theorem is stated for a smooth projective surface.",
+     "c:canonical-divisor": "The canonical divisor enters the correction term and the adjunction formula.",
+     "c:divisor": "The divisor $D$ gives the line bundle whose Euler characteristic is computed.",
+     "c:intersection-form": "The intersection numbers on $X$ give the quadratic term."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Hartshorne, Algebraic Geometry, theorem V.1.6 (Riemann-Roch for surfaces) and its proof."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:24528",
+  "statement": "Let $0 \\to K \\to P \\to M \\to 0$ and $0 \\to K' \\to P' \\to M \\to 0$ be [exact sequences](c:exact-sequence) of modules over a ring, with $P$ and $P'$ [projective](c:projective-module). Then $K \\oplus P' \\cong K' \\oplus P$.",
+  "hypotheses": [
+   {
+    "id": "h:seq1",
+    "text": "The sequence $0 \\to K \\to P \\xrightarrow{\\pi} M \\to 0$ is [exact](c:exact-sequence).",
+    "concept": "c:exact-sequence"
+   },
+   {
+    "id": "h:seq2",
+    "text": "The sequence $0 \\to K' \\to P' \\xrightarrow{\\pi'} M \\to 0$ is exact.",
+    "concept": null
+   },
+   {
+    "id": "h:projective",
+    "text": "The modules $P$ and $P'$ are [projective](c:projective-module).",
+    "concept": "c:projective-module"
+   }
+  ],
+  "conclusion": "$K \\oplus P' \\cong K' \\oplus P$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "pullback",
+    "name": "Pullback of the two surjections",
+    "slogan": "Form the pullback of the two surjections onto $M$ and split it in two ways, once over each projective module.",
+    "scope": "Modules over any ring, including the case $M = 0$. No finiteness or freeness is assumed.",
+    "mechanisms": [
+     "m:exact-sequence",
+     "m:universal-property"
+    ],
+    "roles": [
+     {
+      "h": "h:seq1",
+      "why": "The first sequence makes $\\pi$ onto with kernel $K$, so the pullback maps onto $P'$ with kernel $K$.",
+      "steps": [
+       "s:pp-onto"
+      ]
+     },
+     {
+      "h": "h:seq2",
+      "why": "The second sequence makes $\\pi'$ onto with kernel $K'$, so the pullback maps onto $P$ with kernel $K'$.",
+      "steps": [
+       "s:p-onto"
+      ]
+     },
+     {
+      "h": "h:projective",
+      "why": "Projectivity of $P$ and $P'$ splits the two surjections from the pullback.",
+      "steps": [
+       "s:split"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:pullback",
+      "slogan": "Form the [pullback](c:pullback) $X = \\{(a, b) \\in P \\oplus P' : \\pi(a) = \\pi'(b)\\}$.",
+      "detail": "$X$ is a submodule of $P \\oplus P'$, and the two projections $p\\colon X \\to P$ and $p'\\colon X \\to P'$ are module maps.",
+      "uses": []
+     },
+     {
+      "id": "s:p-onto",
+      "slogan": "Show that $p\\colon X \\to P$ is onto with kernel $K'$.",
+      "detail": "Given $a \\in P$, choose $b \\in P'$ with $\\pi'(b) = \\pi(a)$, which exists because $\\pi'$ is onto. Then $(a, b) \\in X$ maps to $a$. The kernel of $p$ is $\\{(0, b) : \\pi'(b) = 0\\} \\cong K'$.",
+      "uses": []
+     },
+     {
+      "id": "s:pp-onto",
+      "slogan": "Show that $p'\\colon X \\to P'$ is onto with kernel $K$.",
+      "detail": "The same argument with the roles exchanged works: $\\pi$ is onto, and $\\ker p' = \\{(a, 0) : \\pi(a) = 0\\} \\cong K$.",
+      "uses": []
+     },
+     {
+      "id": "s:split",
+      "slogan": "Split both surjections, since $P$ and $P'$ are projective.",
+      "detail": "A surjection onto a projective module has a section. So $0 \\to K' \\to X \\to P \\to 0$ and $0 \\to K \\to X \\to P' \\to 0$ split, giving $X \\cong K' \\oplus P$ and $X \\cong K \\oplus P'$.",
+      "uses": []
+     },
+     {
+      "id": "s:compare",
+      "slogan": "Compare the two decompositions of $X$.",
+      "detail": "Both $K' \\oplus P$ and $K \\oplus P'$ are isomorphic to $X$. So $K \\oplus P' \\cong K' \\oplus P$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:pullback",
+      "s:p-onto"
+     ],
+     [
+      "s:pullback",
+      "s:pp-onto"
+     ],
+     [
+      "s:p-onto",
+      "s:split"
+     ],
+     [
+      "s:pp-onto",
+      "s:split"
+     ],
+     [
+      "s:split",
+      "s:compare"
+     ]
+    ],
+    "conclusion": "s:compare",
+    "concepts": {
+     "c:exact-sequence": "The two short exact sequences are the data of the lemma.",
+     "c:projective-module": "Projectivity gives the sections that split the surjections.",
+     "c:pullback": "The pullback of the two surjections is the module split in two ways."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard pullback proof, as in Lam, Lectures on Modules and Rings."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q942046",
+  "statement": "Let $\\rho(w)\\,|dw|$ be a conformal metric of class $C^2$ on a [Riemann surface](c:riemann-surface) $S$ with [Gaussian curvature](c:gaussian-curvature) at most $-1$, and let $f\\colon \\mathbb{D} \\to S$ be [holomorphic](c:holomorphic-function) on the unit disk. Then $\\rho(f(z))\\,|f'(z)| \\le \\dfrac{2}{1 - |z|^2}$, the [hyperbolic metric](c:hyperbolic-metric) of $\\mathbb{D}$.",
+  "hypotheses": [
+   {
+    "id": "h:metric",
+    "text": "The surface $S$ carries a $C^2$ conformal metric $\\rho\\,|dw|$ of [Gaussian curvature](c:gaussian-curvature) at most $-1$.",
+    "concept": "c:gaussian-curvature"
+   },
+   {
+    "id": "h:map",
+    "text": "The map $f\\colon \\mathbb{D} \\to S$ is [holomorphic](c:holomorphic-function).",
+    "concept": "c:holomorphic-function"
+   }
+  ],
+  "conclusion": "The map $f$ does not increase length: $\\rho(f(z))\\,|f'(z)| \\le 2/(1 - |z|^2)$ for all $z \\in \\mathbb{D}$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "ahlfors-lemma",
+    "name": "Ahlfors's lemma",
+    "slogan": "Compare the pulled-back density with the hyperbolic density of a smaller disk at the maximum point of their ratio.",
+    "scope": "All holomorphic $f$, including constant maps and critical points, where the density is $0$. The case $S = \\mathbb{D}$ with its hyperbolic metric is the Schwarz-Pick lemma.",
+    "mechanisms": [
+     "m:maximum-principle",
+     "m:curvature-comparison"
+    ],
+    "roles": [
+     {
+      "h": "h:metric",
+      "why": "The curvature bound gives $\\Delta\\log\\rho \\ge \\rho^2$, which is compared with the hyperbolic model at the maximum point.",
+      "steps": [
+       "s:pullback",
+       "s:compare"
+      ]
+     },
+     {
+      "h": "h:map",
+      "why": "Holomorphy makes $\\log|f'|$ [harmonic](c:harmonic-function) where $f' \\ne 0$, so pulling back keeps the curvature inequality.",
+      "steps": [
+       "s:pullback"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:pullback",
+      "slogan": "Pull back $\\rho$ and compute the inequality $\\Delta\\log u \\ge u^2$.",
+      "detail": "Let $u(z) = \\rho(f(z))\\,|f'(z)|$, which is continuous and $\\ge 0$. Where $u > 0$, $\\log u = \\log\\rho \\circ f + \\log|f'|$ and $\\log|f'|$ is [harmonic](c:harmonic-function), so $\\Delta\\log u = (\\Delta\\log\\rho)(f)\\,|f'|^2 \\ge \\rho(f)^2|f'|^2 = u^2$, because the [Gaussian curvature](c:gaussian-curvature) $-\\Delta\\log\\rho/\\rho^2$ is at most $-1$.",
+      "uses": []
+     },
+     {
+      "id": "s:model",
+      "slogan": "Take the hyperbolic density $\\lambda_r = 2r/(r^2 - |z|^2)$ of the disk of radius $r < 1$.",
+      "detail": "The density $\\lambda_r$ has curvature exactly $-1$, so $\\Delta\\log\\lambda_r = \\lambda_r^2$, and $\\lambda_r \\to \\infty$ at $|z| = r$. Since $u$ is bounded on $|z| \\le r$, the ratio $u/\\lambda_r$ tends to $0$ at the boundary of the disk $|z| < r$.",
+      "uses": []
+     },
+     {
+      "id": "s:max",
+      "slogan": "Pick a point $z_0$ where $u/\\lambda_r$ is maximal in the disk $|z| < r$.",
+      "detail": "If $u \\equiv 0$ on the disk there is nothing to prove. Otherwise the continuous ratio tends to $0$ at the boundary, so it has a positive maximum at an interior point $z_0$, where $u(z_0) > 0$ and $\\log u - \\log\\lambda_r$ is $C^2$ near $z_0$.",
+      "uses": []
+     },
+     {
+      "id": "s:compare",
+      "slogan": "Use the Laplacian at $z_0$ to show that $u \\le \\lambda_r$ on the disk.",
+      "detail": "At a maximum of $\\log u - \\log\\lambda_r$ the Laplacian is $\\le 0$, so $\\Delta\\log u(z_0) \\le \\Delta\\log\\lambda_r(z_0) = \\lambda_r(z_0)^2$. With step 1, $u(z_0)^2 \\le \\lambda_r(z_0)^2$, so the maximum of $u/\\lambda_r$ is at most $1$. Hence $u \\le \\lambda_r$ on $|z| < r$.",
+      "uses": []
+     },
+     {
+      "id": "s:limit",
+      "slogan": "Let $r \\to 1$ to get the bound on all of $\\mathbb{D}$.",
+      "detail": "For fixed $z \\in \\mathbb{D}$, $\\lambda_r(z) = 2r/(r^2 - |z|^2) \\to 2/(1 - |z|^2)$ as $r \\to 1$. So $u(z) \\le 2/(1 - |z|^2)$, the [hyperbolic metric](c:hyperbolic-metric) of the disk.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:pullback",
+      "s:max"
+     ],
+     [
+      "s:pullback",
+      "s:compare"
+     ],
+     [
+      "s:model",
+      "s:max"
+     ],
+     [
+      "s:max",
+      "s:compare"
+     ],
+     [
+      "s:compare",
+      "s:limit"
+     ]
+    ],
+    "conclusion": "s:limit",
+    "concepts": {
+     "c:riemann-surface": "The target is any Riemann surface with a metric of the given kind.",
+     "c:gaussian-curvature": "The curvature bound $-1$ is what the comparison needs.",
+     "c:holomorphic-function": "The map $f$ is holomorphic, so $\\log|f'|$ is harmonic.",
+     "c:hyperbolic-metric": "The hyperbolic metric of the disk is the model with curvature $-1$.",
+     "c:harmonic-function": "The harmonic term $\\log|f'|$ drops out of the Laplacian."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Ahlfors's lemma, L. V. Ahlfors, An extension of Schwarz's lemma, Trans. Amer. Math. Soc. 43 (1938), 359-364."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:solution-of-the-general-quartic-equation",
+  "statement": "Let $y^4 + py^2 + qy + r = 0$ have complex coefficients with $q \\ne 0$, and let $m$ be a root of the [resolvent cubic](c:resolvent-cubic) $8m^3 + 8pm^2 + (2p^2 - 8r)m - q^2 = 0$. Then $m \\ne 0$ and, for $s^2 = 2m$, the roots of the quartic are the roots of the quadratics $y^2 \\mp sy + \\tfrac p2 + m \\pm \\tfrac{sq}{4m} = 0$.",
+  "hypotheses": [
+   {
+    "id": "h:quartic",
+    "text": "The [polynomial](c:polynomial) is $y^4 + py^2 + qy + r$ with complex coefficients and $q \\ne 0$.",
+    "concept": "c:polynomial"
+   },
+   {
+    "id": "h:resolvent",
+    "text": "The number $m$ is a root of the [resolvent cubic](c:resolvent-cubic).",
+    "concept": "c:resolvent-cubic"
+   }
+  ],
+  "conclusion": "$m \\ne 0$, and with $s^2 = 2m$ the quartic equals $\\bigl(y^2 - sy + \\tfrac p2 + m + \\tfrac{sq}{4m}\\bigr)\\bigl(y^2 + sy + \\tfrac p2 + m - \\tfrac{sq}{4m}\\bigr)$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "ferrari",
+    "name": "Ferrari's completion of the square",
+    "slogan": "Complete the square in $y^2$ with a free parameter $m$, then choose $m$ so that the right side is a perfect square.",
+    "scope": "The depressed quartic with $q \\ne 0$. A general quartic $x^4 + ax^3 + bx^2 + cx + d$ reduces to this form by $x = y - a/4$, and for $q = 0$ the equation is quadratic in $y^2$.",
+    "mechanisms": [
+     "m:algebraic-identity",
+     "m:construction-explicit"
+    ],
+    "roles": [
+     {
+      "h": "h:quartic",
+      "why": "The quartic gives the rewriting for every $m$, and $q \\ne 0$ forces $m \\ne 0$.",
+      "steps": [
+       "s:rewrite",
+       "s:root"
+      ]
+     },
+     {
+      "h": "h:resolvent",
+      "why": "The resolvent cubic is exactly the condition that the right side is a perfect square.",
+      "steps": [
+       "s:square",
+       "s:perfect"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:rewrite",
+      "slogan": "Rewrite the quartic as a square equal to a quadratic in $y$, for any $m$.",
+      "detail": "Add $2my^2 + (\\tfrac p2 + m)^2$ to both sides of $y^4 + py^2 = -qy - r$. This gives $(y^2 + \\tfrac p2 + m)^2 = 2my^2 - qy + c_0$ with $c_0 = m^2 + pm + \\tfrac{p^2}{4} - r$.",
+      "uses": []
+     },
+     {
+      "id": "s:square",
+      "slogan": "Require the right side to be a perfect square in $y$.",
+      "detail": "A quadratic $2my^2 - qy + c_0$ with $m \\ne 0$ is a perfect square exactly when its discriminant $q^2 - 8mc_0$ is zero. With the value of $c_0$ this reads $8m^3 + 8pm^2 + (2p^2 - 8r)m - q^2 = 0$, the [resolvent cubic](c:resolvent-cubic).",
+      "uses": []
+     },
+     {
+      "id": "s:root",
+      "slogan": "Take a root $m$ of the resolvent cubic and show that $m \\ne 0$.",
+      "detail": "The resolvent cubic has a root, which Cardano's formula gives. If $m = 0$ the cubic would give $-q^2 = 0$, against $q \\ne 0$. So $m \\ne 0$ and $c_0 = q^2/(8m)$.",
+      "uses": [
+       "nm:solution-of-a-cubic"
+      ]
+     },
+     {
+      "id": "s:perfect",
+      "slogan": "Write the right side as $2m\\,(y - q/(4m))^2$.",
+      "detail": "Since $c_0 = q^2/(8m)$, we get $2my^2 - qy + c_0 = 2m\\bigl(y^2 - \\tfrac{q}{2m}y + \\tfrac{q^2}{16m^2}\\bigr) = 2m\\bigl(y - \\tfrac{q}{4m}\\bigr)^2$.",
+      "uses": []
+     },
+     {
+      "id": "s:factor",
+      "slogan": "Factor the difference of squares and solve the two quadratics.",
+      "detail": "Let $s^2 = 2m$. Then $(y^2 + \\tfrac p2 + m)^2 - s^2(y - \\tfrac{q}{4m})^2 = 0$ factors as $\\bigl(y^2 + \\tfrac p2 + m - s(y - \\tfrac{q}{4m})\\bigr)\\bigl(y^2 + \\tfrac p2 + m + s(y - \\tfrac{q}{4m})\\bigr) = 0$. The roots of the quartic are the roots of these two quadratics, which the quadratic formula gives.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:rewrite",
+      "s:square"
+     ],
+     [
+      "s:square",
+      "s:root"
+     ],
+     [
+      "s:root",
+      "s:perfect"
+     ],
+     [
+      "s:rewrite",
+      "s:perfect"
+     ],
+     [
+      "s:perfect",
+      "s:factor"
+     ]
+    ],
+    "conclusion": "s:factor",
+    "concepts": {
+     "c:resolvent-cubic": "A root of the resolvent cubic makes the completed square work.",
+     "c:polynomial": "The quartic polynomial is the object whose roots are found."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Ferrari's method, first published in Cardano's Ars Magna (1545)."
+    }
+   }
+  ]
+ }
+]
