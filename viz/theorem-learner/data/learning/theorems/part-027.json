@@ -1,0 +1,1973 @@
+[
+ {
+  "id": "nm:doob-s-upcrossing-estimate",
+  "statement": "Let $(f_n)_{n \\ge 0}$ be a real [submartingale](c:submartingale) for a [filtration](c:filtration) on a [finite measure](c:finite-measure) space, let $a, b \\in \\mathbb{R}$ and $N \\in \\mathbb{N}$, and let $U_N$ count the passages of $(f_n)$ from at most $a$ to at least $b$ completed before time $N$. Then $(b - a)\\,\\mathbb{E}[U_N] \\le \\mathbb{E}[(f_N - a)^+]$.",
+  "hypotheses": [
+   {
+    "id": "h:submartingale",
+    "text": "The process $(f_n)$ is a [submartingale](c:submartingale) for the [filtration](c:filtration) $(\\mathcal{F}_n)$.",
+    "concept": "c:submartingale"
+   },
+   {
+    "id": "h:finite",
+    "text": "The measure $\\mu$ is a [finite measure](c:finite-measure).",
+    "concept": "c:finite-measure"
+   }
+  ],
+  "conclusion": "The expected number of upcrossings satisfies $(b - a)\\,\\mathbb{E}[U_N] \\le \\mathbb{E}[(f_N - a)^+]$.",
+  "formal": {
+   "decl": "MeasureTheory.Submartingale.mul_integral_upcrossingsBefore_le_integral_pos_part",
+   "difference": null
+  },
+  "new_concepts": [
+   {
+    "id": "c:submartingale",
+    "name": "submartingale",
+    "reminder": "A submartingale is an adapted integrable process whose conditional mean of the next value is at least the present value.",
+    "definition": "An adapted process $(f_n)$ of [integrable](c:integrable-function) random variables for a [filtration](c:filtration) $(\\mathcal{F}_n)$ such that $\\mathbb{E}[f_{n+1} \\mid \\mathcal{F}_n] \\ge f_n$ almost surely for every $n$.",
+    "requires": [
+     "c:filtration",
+     "c:integrable-function",
+     "c:conditional-expectation",
+     "c:martingale"
+    ]
+   }
+  ],
+  "proofs": [
+   {
+    "id": "buy-low-sell-high",
+    "name": "Buy low, sell high",
+    "slogan": "Shift and truncate the process at $a$, hold it only during upcrossings, and bound that gain by the gain of the whole submartingale.",
+    "scope": "All real $a, b$ and all $N$. The case $a \\ge b$ is trivial, and steps 2 to 5 assume $a < b$.",
+    "mechanisms": [
+     "m:martingale",
+     "m:telescoping",
+     "m:case-analysis"
+    ],
+    "roles": [
+     {
+      "h": "h:submartingale",
+      "why": "The submartingale property passes to $(f_n - a)^+$ and to its transforms by bounded nonnegative [predictable](c:predictable-process) processes.",
+      "steps": [
+       "s:shift",
+       "s:complement"
+      ]
+     },
+     {
+      "h": "h:finite",
+      "why": "On a finite measure space constants are integrable, so $f_n - a$ is again a submartingale.",
+      "steps": [
+       "s:shift"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:trivial",
+      "slogan": "Dismiss the case $a \\ge b$, where the left side is at most zero.",
+      "detail": "If $b \\le a$, then $(b - a)\\,\\mathbb{E}[U_N] \\le 0$ because $U_N \\ge 0$. The right side is the integral of a nonnegative function, so it is at least $0$.",
+      "uses": []
+     },
+     {
+      "id": "s:shift",
+      "slogan": "Replace $f_n$ by the nonnegative [submartingale](c:submartingale) $g_n = (f_n - a)^+$.",
+      "detail": "The process $f_n - a$ is a submartingale, and $x \\mapsto x^+$ is convex and nondecreasing, so $g_n$ is a submartingale. For $a < b$, $g$ crosses from $0$ to at least $b - a$ exactly when $f$ crosses from at most $a$ to at least $b$, so both processes have the same $U_N$.",
+      "uses": []
+     },
+     {
+      "id": "s:times",
+      "slogan": "Define the alternating crossing [stopping times](c:stopping-time) $\\sigma_k$ and $\\tau_k$ of $g$.",
+      "detail": "Let $\\tau_0 = 0$, let $\\sigma_k$ be the first time after $\\tau_k$ with $g = 0$, and let $\\tau_{k+1}$ be the first time after $\\sigma_k$ with $g \\ge b - a$, all capped at $N$. They are stopping times because $g$ is adapted, and $U_N$ is the number of $k \\ge 1$ with $\\tau_k < N$.",
+      "uses": []
+     },
+     {
+      "id": "s:strategy",
+      "slogan": "Hold one unit during each upcrossing and bound the gain below by $(b - a)U_N$.",
+      "detail": "Let $C_n = 1$ when $\\sigma_k \\le n < \\tau_{k+1}$ for some $k$, and $C_n = 0$ otherwise; $C$ is [predictable](c:predictable-process). The gain $\\sum_{n < N} C_n (g_{n+1} - g_n)$ telescopes to $\\sum_k (g_{\\tau_{k+1}} - g_{\\sigma_k})$, where each completed upcrossing gives at least $b - a$ and a last incomplete one gives $g_N - 0 \\ge 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:complement",
+      "slogan": "Show that the expected gain is at most $\\mathbb{E}[g_N] - \\mathbb{E}[g_0]$.",
+      "detail": "The process $1 - C$ is predictable with values in $[0, 1]$, so its transform $\\sum_{n < N}(1 - C_n)(g_{n+1} - g_n)$ is a submartingale started at $0$ and has nonnegative mean. The two transforms add up to $g_N - g_0$.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Combine the pathwise bound with the [expected value](c:expected-value) bound.",
+      "detail": "Steps 4 and 5 give $(b - a)\\,\\mathbb{E}[U_N] \\le \\mathbb{E}[g_N] - \\mathbb{E}[g_0] \\le \\mathbb{E}[g_N] = \\mathbb{E}[(f_N - a)^+]$, because $g_0 \\ge 0$. With step 1 this covers all $a$ and $b$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:shift",
+      "s:times"
+     ],
+     [
+      "s:times",
+      "s:strategy"
+     ],
+     [
+      "s:shift",
+      "s:complement"
+     ],
+     [
+      "s:strategy",
+      "s:complement"
+     ],
+     [
+      "s:strategy",
+      "s:conclude"
+     ],
+     [
+      "s:complement",
+      "s:conclude"
+     ],
+     [
+      "s:trivial",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:submartingale": "The submartingale property bounds the mean gain of every bounded nonnegative strategy.",
+     "c:filtration": "The filtration decides which strategies count as predictable.",
+     "c:finite-measure": "Finiteness makes constants integrable, so shifting by $a$ is allowed.",
+     "c:stopping-time": "The crossing times are stopping times that mark each upcrossing.",
+     "c:predictable-process": "The buying strategy is predictable, so its transform stays a submartingale.",
+     "c:expected-value": "The estimate compares expected values of the crossing count and the final value."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "MeasureTheory.Submartingale.mul_integral_upcrossingsBefore_le_integral_pos_part",
+     "follows": true,
+     "note": "mathlib treats $a \\ge b$ by positivity, then applies integral_mul_upcrossingsBefore_le_integral to $(f_n - a)^+$ (Submartingale.pos, crossing_pos_eq); that lemma uses upcrossingStrat and Submartingale.sum_mul_upcrossingStrat_le, following Kallenberg."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:eisenstein-s-criterion",
+  "statement": "Let $R$ be an [integral domain](c:integral-domain), $P$ a [prime ideal](c:prime-ideal) of $R$ and $f = a_n X^n + \\dots + a_0 \\in R[X]$ a [primitive polynomial](c:primitive-polynomial) with $n \\ge 1$. If $a_n \\notin P$, $a_i \\in P$ for all $i < n$, and $a_0 \\notin P^2$, then $f$ is an [irreducible polynomial](c:irreducible-polynomial) in $R[X]$.",
+  "hypotheses": [
+   {
+    "id": "h:domain",
+    "text": "The ring $R$ is an [integral domain](c:integral-domain).",
+    "concept": "c:integral-domain"
+   },
+   {
+    "id": "h:prime",
+    "text": "The ideal $P$ is a [prime ideal](c:prime-ideal) of $R$.",
+    "concept": "c:prime-ideal"
+   },
+   {
+    "id": "h:primitive",
+    "text": "The polynomial $f$ is [primitive](c:primitive-polynomial): only units of $R$ divide all its coefficients.",
+    "concept": "c:primitive-polynomial"
+   },
+   {
+    "id": "h:degree",
+    "text": "The degree $n$ of $f$ is at least $1$.",
+    "concept": null
+   },
+   {
+    "id": "h:leading",
+    "text": "The leading coefficient $a_n$ is not in $P$.",
+    "concept": null
+   },
+   {
+    "id": "h:lower",
+    "text": "Every coefficient $a_i$ with $i < n$ is in $P$.",
+    "concept": null
+   },
+   {
+    "id": "h:constant",
+    "text": "The constant coefficient $a_0$ is not in $P^2$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The polynomial $f$ is [irreducible](c:irreducible-polynomial) in $R[X]$.",
+  "formal": {
+   "decl": "Polynomial.irreducible_of_eisenstein_criterion",
+   "difference": null
+  },
+  "proofs": [
+   {
+    "id": "reduction-mod-p",
+    "name": "Reduction modulo the prime",
+    "slogan": "Reduce a factorization modulo $P$, where $f$ becomes a monomial, and show that both factors would have constant terms in $P$.",
+    "scope": "The whole criterion. A constant factor is a unit because $f$ is primitive, so the proof assumes two nonconstant factors and reaches a contradiction.",
+    "mechanisms": [
+     "m:modular-arithmetic",
+     "m:unique-factorization",
+     "m:contradiction"
+    ],
+    "roles": [
+     {
+      "h": "h:domain",
+      "why": "In an [integral domain](c:integral-domain) the leading coefficient of $gh$ is the product of the leading coefficients.",
+      "steps": [
+       "s:monomials"
+      ]
+     },
+     {
+      "h": "h:prime",
+      "why": "Primality makes $R/P$ a domain, so it has a [field of fractions](c:field-of-fractions).",
+      "steps": [
+       "s:reduce"
+      ]
+     },
+     {
+      "h": "h:primitive",
+      "why": "Primitivity makes every constant factor of $f$ a unit.",
+      "steps": [
+       "s:factor"
+      ]
+     },
+     {
+      "h": "h:degree",
+      "why": "Positive degree makes $f$ a nonunit, as irreducibility requires.",
+      "steps": [
+       "s:factor"
+      ]
+     },
+     {
+      "h": "h:leading",
+      "why": "The leading coefficient survives the reduction and keeps the degrees of the factors.",
+      "steps": [
+       "s:reduce",
+       "s:monomials"
+      ]
+     },
+     {
+      "h": "h:lower",
+      "why": "The lower coefficients vanish modulo $P$, so $\\bar f$ is a monomial.",
+      "steps": [
+       "s:reduce"
+      ]
+     },
+     {
+      "h": "h:constant",
+      "why": "The condition $a_0 \\notin P^2$ is what the final product contradicts.",
+      "steps": [
+       "s:contradict"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:factor",
+      "slogan": "Assume $f = gh$ and reduce to the case of two nonconstant factors.",
+      "detail": "The polynomial $f$ is not a unit because $n \\ge 1$. If $g$ is a constant $c$, then $c$ divides every coefficient of $f$, so $c$ is a [unit](c:invertible) because $f$ is [primitive](c:primitive-polynomial); the same holds for $h$. So assume $\\deg g \\ge 1$ and $\\deg h \\ge 1$.",
+      "uses": []
+     },
+     {
+      "id": "s:reduce",
+      "slogan": "Reduce modulo $P$ to get $\\bar g \\bar h = \\bar a_n X^n$ over a field $K$.",
+      "detail": "The ring $R/P$ is a domain because $P$ is prime; let $K$ be its [field of fractions](c:field-of-fractions). Reduction kills $a_0, \\dots, a_{n-1}$, so $\\bar f = \\bar a_n X^n$ in $K[X]$ with $\\bar a_n \\neq 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:monomials",
+      "slogan": "Show that $\\bar g$ and $\\bar h$ are monomials of positive degree.",
+      "detail": "In the [unique factorization domain](c:unique-factorization-domain) $K[X]$ the element $X$ is prime, so the factors of $\\bar a_n X^n$ have the form $cX^i$. The leading coefficients of $g$ and $h$ multiply to $a_n \\notin P$, so neither lies in $P$, and $\\deg \\bar g = \\deg g \\ge 1$, $\\deg \\bar h = \\deg h \\ge 1$.",
+      "uses": []
+     },
+     {
+      "id": "s:constants",
+      "slogan": "Read off that the constant terms $g(0)$ and $h(0)$ lie in $P$.",
+      "detail": "By step 3, $\\bar g = cX^i$ and $\\bar h = c'X^j$ with $i, j \\ge 1$, so their constant terms vanish in $K$. The map $R/P \\to K$ is injective, so $g(0) \\in P$ and $h(0) \\in P$.",
+      "uses": []
+     },
+     {
+      "id": "s:contradict",
+      "slogan": "Multiply the constant terms to get $a_0 \\in P^2$, a contradiction.",
+      "detail": "The constant term of $gh$ is $a_0 = g(0)h(0) \\in P \\cdot P = P^2$, against the hypothesis $a_0 \\notin P^2$. So one of $g, h$ is constant, hence a unit by step 1, and $f$ is irreducible.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:factor",
+      "s:monomials"
+     ],
+     [
+      "s:reduce",
+      "s:monomials"
+     ],
+     [
+      "s:monomials",
+      "s:constants"
+     ],
+     [
+      "s:constants",
+      "s:contradict"
+     ],
+     [
+      "s:factor",
+      "s:contradict"
+     ]
+    ],
+    "conclusion": "s:contradict",
+    "concepts": {
+     "c:integral-domain": "No zero divisors make leading coefficients and degrees multiply correctly.",
+     "c:prime-ideal": "A prime ideal gives a domain $R/P$ to reduce into.",
+     "c:primitive-polynomial": "Primitivity excludes nontrivial constant factors of $f$.",
+     "c:irreducible-polynomial": "Irreducibility is the conclusion: every factorization is trivial.",
+     "c:invertible": "A constant factor must be a unit for the factorization to be trivial.",
+     "c:field-of-fractions": "The fraction field of $R/P$ gives a polynomial ring with unique factorization.",
+     "c:unique-factorization-domain": "Unique factorization in $K[X]$ forces the factors of $X^n$ to be monomials."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Polynomial.irreducible_of_eisenstein_criterion",
+     "follows": true,
+     "note": "mathlib applies generalizedEisenstein with $K$ the fraction field of $R/P$ and $q = X$; that lemma shows that both factors reduce to powers of $q$ and compares constant terms modulo $P^2$."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:8879",
+  "statement": "If $g$ is $n \\ge 1$ times [differentiable](c:differentiable-function) on an open interval $I$ and $f$ is $n$ times differentiable on an open interval containing $g(I)$, then for $x \\in I$, $(f \\circ g)^{(n)}(x) = \\sum_{\\pi} f^{(|\\pi|)}(g(x)) \\prod_{B \\in \\pi} g^{(|B|)}(x)$, where $\\pi$ runs over the [set partitions](c:set-partition) of $\\{1, \\dots, n\\}$ and $|\\pi|$ counts its blocks.",
+  "hypotheses": [
+   {
+    "id": "h:inner",
+    "text": "The function $g$ is $n \\ge 1$ times [differentiable](c:differentiable-function) on an open interval $I$.",
+    "concept": "c:differentiable-function"
+   },
+   {
+    "id": "h:outer",
+    "text": "The function $f$ is $n$ times differentiable on an open interval containing $g(I)$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "For every $x \\in I$ the $n$th [derivative](c:derivative) of the [composition](c:composition) is $(f \\circ g)^{(n)}(x) = \\sum_{\\pi} f^{(|\\pi|)}(g(x)) \\prod_{B \\in \\pi} g^{(|B|)}(x)$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "partition-induction",
+    "name": "Induction over set partitions",
+    "slogan": "Differentiate the formula for $n$ term by term and match the new terms with the partitions of $\\{1, \\dots, n+1\\}$.",
+    "scope": "All $n \\ge 1$ by induction on $n$. The step from $n$ to $n + 1$ assumes that $f$ and $g$ are $n + 1$ times differentiable.",
+    "mechanisms": [
+     "m:induction",
+     "m:bijection"
+    ],
+    "roles": [
+     {
+      "h": "h:inner",
+      "why": "The derivatives of $g$ supply the factors $g^{(|B|)}(x)$ and can be differentiated once more.",
+      "steps": [
+       "s:base",
+       "s:differentiate"
+      ]
+     },
+     {
+      "h": "h:outer",
+      "why": "The derivatives of $f$ at $g(x)$ supply the factors $f^{(|\\pi|)}(g(x))$.",
+      "steps": [
+       "s:base",
+       "s:differentiate"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:base",
+      "slogan": "Check the case $n = 1$ with the chain rule.",
+      "detail": "The set $\\{1\\}$ has one partition, with one block of size $1$. The formula reads $(f \\circ g)'(x) = f'(g(x))\\,g'(x)$, which is the chain rule.",
+      "uses": [
+       "nl:4955"
+      ]
+     },
+     {
+      "id": "s:differentiate",
+      "slogan": "Differentiate each term of the formula for $n$ by the product and chain rules.",
+      "detail": "The [derivative](c:derivative) of the term $f^{(|\\pi|)}(g(x)) \\prod_{B} g^{(|B|)}(x)$ is $f^{(|\\pi|+1)}(g(x))\\,g'(x) \\prod_B g^{(|B|)}(x)$ plus, for each block $B$, the same product with $g^{(|B|)}$ replaced by $g^{(|B|+1)}$. These derivatives exist because $f$ and $g$ are $n + 1$ times differentiable.",
+      "uses": [
+       "nl:4955"
+      ]
+     },
+     {
+      "id": "s:moves",
+      "slogan": "Read each new term as a partition of $\\{1, \\dots, n+1\\}$.",
+      "detail": "The first new term belongs to $\\pi$ with the new singleton block $\\{n+1\\}$: one more block and one more factor $g'$. The term for $B$ belongs to $\\pi$ with $n + 1$ put into $B$: the same number of blocks, and $B$ one element larger.",
+      "uses": []
+     },
+     {
+      "id": "s:bijection",
+      "slogan": "Show that every partition of $\\{1, \\dots, n+1\\}$ arises exactly once.",
+      "detail": "Removing $n + 1$ from a [set partition](c:set-partition) of $\\{1, \\dots, n+1\\}$ gives a partition $\\pi$ of $\\{1, \\dots, n\\}$, and $n + 1$ was either a singleton or in one block of $\\pi$. This inverse map makes step 3 a bijection, so the new terms sum to the formula for $n + 1$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:base",
+      "s:differentiate"
+     ],
+     [
+      "s:differentiate",
+      "s:moves"
+     ],
+     [
+      "s:moves",
+      "s:bijection"
+     ]
+    ],
+    "conclusion": "s:bijection",
+    "concepts": {
+     "c:differentiable-function": "Enough differentiability lets each term be differentiated once more.",
+     "c:derivative": "The proof differentiates the formula for $n$ to get the formula for $n + 1$.",
+     "c:composition": "The formula computes higher derivatives of the composite $f \\circ g$.",
+     "c:set-partition": "Set partitions index the terms, and adding one element builds the next level."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard induction over set partitions; see W. P. Johnson, The curious history of Faa di Bruno's formula, American Mathematical Monthly 109 (2002), 217-234."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:24675",
+  "statement": "Give $\\mathbb{R}^{2n}$ the standard [symplectic form](c:symplectic-form) $\\omega_0 = \\sum_i dx_i \\wedge dy_i$. Let $B^{2n}(r)$ be the open ball of radius $r$ and $Z^{2n}(R) = B^2(R) \\times \\mathbb{R}^{2n-2}$ the cylinder over a disk in the $(x_1, y_1)$-plane. If a [symplectic](c:symplectic-map) embedding $B^{2n}(r) \\to Z^{2n}(R)$ exists, then $r \\le R$.",
+  "hypotheses": [
+   {
+    "id": "h:embedding",
+    "text": "The map $\\varphi\\colon B^{2n}(r) \\to Z^{2n}(R)$ is a smooth embedding with $\\varphi^*\\omega_0 = \\omega_0$, a [symplectic map](c:symplectic-map).",
+    "concept": "c:symplectic-map"
+   }
+  ],
+  "conclusion": "The radii satisfy $r \\le R$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "holomorphic-spheres",
+    "name": "Pseudoholomorphic spheres",
+    "slogan": "Compactify the cylinder to a product with a sphere factor, find a pseudoholomorphic sphere through the image of the center, and compare its area with that of the ball.",
+    "scope": "An outline of Gromov's proof for every $n \\ge 1$. The existence of the holomorphic spheres in step 3 rests on the cited compactness theory.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:homotopy-invariance",
+     "m:a-priori-estimate"
+    ],
+    "roles": [
+     {
+      "h": "h:embedding",
+      "why": "The embedding preserves $\\omega_0$, so it carries the standard structure of the ball into the compactified cylinder and keeps areas.",
+      "steps": [
+       "s:compactify",
+       "s:structure",
+       "s:monotone"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:compactify",
+      "slogan": "Embed the image of a slightly smaller ball into $S^2 \\times T^{2n-2}$ with sphere area $\\pi R^2 + \\varepsilon$.",
+      "detail": "For $r' < r$ the image of the closed ball of radius $r'$ is compact, so it lies in $B^2(R) \\times [-K, K]^{2n-2}$. Embedding the disk into a [sphere](c:sphere) of area $\\pi R^2 + \\varepsilon$ and the cube into a large torus gives a closed [symplectic manifold](c:symplectic-manifold) $M$, where the class $A = [S^2 \\times \\mathrm{pt}]$ has area $\\pi R^2 + \\varepsilon$.",
+      "uses": []
+     },
+     {
+      "id": "s:structure",
+      "slogan": "Choose a tame [almost complex structure](c:almost-complex-structure) $J$ that is standard on the embedded ball.",
+      "detail": "Take $J$ tamed by the symplectic form of $M$ and equal to $\\varphi_* J_0$ on $\\varphi(B(r'))$, where $J_0$ is the complex structure of $\\mathbb{C}^n$. Such $J$ exists because tame structures form a contractible space and can be prescribed on a closed subset.",
+      "uses": []
+     },
+     {
+      "id": "s:sphere",
+      "slogan": "Find a $J$-holomorphic sphere in the class $A$ through the point $\\varphi(0)$.",
+      "detail": "For the product structure the spheres $S^2 \\times \\{t\\}$ are the only [pseudoholomorphic curves](c:pseudoholomorphic-curve) in $A$, one through each point. The cited compactness theorem shows that no bubbling occurs in the minimal class $A$, so such a sphere persists along a path of tame structures to $J$.",
+      "uses": [
+       "wd:Q5610190"
+      ]
+     },
+     {
+      "id": "s:monotone",
+      "slogan": "Pull the sphere back to the ball and bound its area below by $\\pi r'^2$.",
+      "detail": "The part of the sphere inside $\\varphi(B(r'))$ pulls back to a proper $J_0$-holomorphic curve through $0$ in $B(r')$. Such a curve is a [minimal surface](c:minimal-surface), and the monotonicity formula gives it area at least $\\pi r'^2$.",
+      "uses": []
+     },
+     {
+      "id": "s:compare",
+      "slogan": "Compare the two areas and let $\\varepsilon \\to 0$ and $r' \\to r$.",
+      "detail": "The area of a holomorphic curve equals its symplectic area, so $\\pi r'^2 \\le \\omega(A) = \\pi R^2 + \\varepsilon$. Since $\\varepsilon > 0$ and $r' < r$ are arbitrary, $r \\le R$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:compactify",
+      "s:structure"
+     ],
+     [
+      "s:compactify",
+      "s:sphere"
+     ],
+     [
+      "s:structure",
+      "s:sphere"
+     ],
+     [
+      "s:sphere",
+      "s:monotone"
+     ],
+     [
+      "s:structure",
+      "s:monotone"
+     ],
+     [
+      "s:monotone",
+      "s:compare"
+     ],
+     [
+      "s:compactify",
+      "s:compare"
+     ]
+    ],
+    "conclusion": "s:compare",
+    "concepts": {
+     "c:symplectic-form": "The standard form measures the symplectic area of the curves.",
+     "c:symplectic-map": "The embedding preserves the form, so areas pull back unchanged.",
+     "c:sphere": "The disk factor closes up to a sphere whose area bounds the curve.",
+     "c:symplectic-manifold": "Compactification gives a closed symplectic manifold where curve theory works.",
+     "c:almost-complex-structure": "A tame structure, standard on the ball, defines the holomorphic curves.",
+     "c:pseudoholomorphic-curve": "A holomorphic sphere through the center carries the area comparison.",
+     "c:minimal-surface": "Holomorphic curves are minimal, so monotonicity bounds their area below."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "M. Gromov, Pseudo holomorphic curves in symplectic manifolds, Inventiones Mathematicae 82 (1985), 307-348",
+     "url": "https://eudml.org/doc/143289",
+     "note": "Gromov's original proof; D. McDuff and D. Salamon, J-holomorphic curves and symplectic topology (AMS, 2004), give a detailed account."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1946642",
+  "statement": "Let $W$ be a compact [smooth manifold](c:smooth-manifold) with boundary $\\partial W = M \\sqcup N$, where $M$ and $N$ are closed and both inclusions $M, N \\hookrightarrow W$ are [homotopy equivalences](c:homotopy-equivalence), so $W$ is an [h-cobordism](c:h-cobordism). If $W$ is [simply connected](c:simply-connected-manifold) and $\\dim W \\ge 6$, then $W$ is [diffeomorphic](c:diffeomorph) to $M \\times [0, 1]$.",
+  "hypotheses": [
+   {
+    "id": "h:cobordism",
+    "text": "The manifold $W$ is a compact smooth [cobordism](c:cobordism) with $\\partial W = M \\sqcup N$ for closed manifolds $M$ and $N$.",
+    "concept": "c:cobordism"
+   },
+   {
+    "id": "h:homotopy",
+    "text": "The inclusions $M \\hookrightarrow W$ and $N \\hookrightarrow W$ are [homotopy equivalences](c:homotopy-equivalence).",
+    "concept": "c:homotopy-equivalence"
+   },
+   {
+    "id": "h:simply-connected",
+    "text": "The manifold $W$ is [simply connected](c:simply-connected-manifold).",
+    "concept": "c:simply-connected-manifold"
+   },
+   {
+    "id": "h:dimension",
+    "text": "The dimension of $W$ is at least $6$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "There is a [diffeomorphism](c:diffeomorph) $W \\cong M \\times [0, 1]$ that is the identity on $M = M \\times \\{0\\}$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "handle-cancellation",
+    "name": "Handle cancellation",
+    "slogan": "Decompose $W$ into handles, cancel them in pairs with algebra and the Whitney trick, and read off a product.",
+    "scope": "An outline of Smale's proof in Milnor's exposition; the handle moves of steps 2 to 5 rest on the cited work. The bound $\\dim W \\ge 6$ is what the Whitney trick needs.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:geometric-construction",
+     "m:matrix-factorization"
+    ],
+    "roles": [
+     {
+      "h": "h:cobordism",
+      "why": "Compactness and the two boundary parts give a [Morse function](c:morse-function) from $M$ to $N$ with finitely many critical points.",
+      "steps": [
+       "s:morse"
+      ]
+     },
+     {
+      "h": "h:homotopy",
+      "why": "The homotopy equivalence makes the chain complex of the handles acyclic.",
+      "steps": [
+       "s:algebra"
+      ]
+     },
+     {
+      "h": "h:simply-connected",
+      "why": "Simple connectivity allows the trading of $1$-handles and the Whitney trick.",
+      "steps": [
+       "s:low",
+       "s:whitney"
+      ]
+     },
+     {
+      "h": "h:dimension",
+      "why": "Six or more dimensions give room for embedded Whitney disks and for handle trading.",
+      "steps": [
+       "s:low",
+       "s:whitney"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:morse",
+      "slogan": "Choose a [Morse function](c:morse-function) on $W$ and turn it into an ordered [handle decomposition](c:handle-decomposition).",
+      "detail": "A Morse function $f\\colon W \\to [0, 1]$ with $f^{-1}(0) = M$ and $f^{-1}(1) = N$ builds $W$ from $M \\times [0, 1]$ by attaching one handle per critical point. The cited work rearranges the handles so that their indices increase.",
+      "uses": []
+     },
+     {
+      "id": "s:low",
+      "slogan": "Remove the handles of index $0$, $1$, $m - 1$ and $m$ by cancellation and trading.",
+      "detail": "Here $m = \\dim W$. Connectedness cancels $0$-handles against $1$-handles, and simple connectivity lets each $1$-handle be traded for a $3$-handle. The same moves in the dual decomposition from $N$ remove the handles of index $m$ and $m - 1$.",
+      "uses": []
+     },
+     {
+      "id": "s:algebra",
+      "slogan": "Use $H_*(W, M) = 0$ to make the handle chain complex diagonal by handle slides.",
+      "detail": "Since $M \\hookrightarrow W$ is a homotopy equivalence, the chain complex of the handles is acyclic. Handle slides change bases, so the cited work arranges that each attaching sphere has algebraic [intersection number](c:intersection-number) $\\pm 1$ with the belt sphere of one handle of the index below and $0$ with the others.",
+      "uses": []
+     },
+     {
+      "id": "s:whitney",
+      "slogan": "Apply the [Whitney trick](c:whitney-trick) until each such pair of spheres meets in one point.",
+      "detail": "In dimension $m \\ge 6$, with trivial fundamental groups, two intersection points of opposite sign bound an embedded Whitney disk. An isotopy across the disk removes both points, so the attaching and belt spheres meet transversally in exactly one point.",
+      "uses": []
+     },
+     {
+      "id": "s:cancel",
+      "slogan": "Cancel the handles in pairs and read off $W \\cong M \\times [0, 1]$.",
+      "detail": "Two handles whose spheres meet transversally in one point cancel, so the Morse function changes to one with fewer critical points. When no critical points remain, the gradient flow gives a [diffeomorphism](c:diffeomorph) $W \\cong M \\times [0, 1]$ that fixes $M$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:morse",
+      "s:low"
+     ],
+     [
+      "s:low",
+      "s:algebra"
+     ],
+     [
+      "s:algebra",
+      "s:whitney"
+     ],
+     [
+      "s:whitney",
+      "s:cancel"
+     ]
+    ],
+    "conclusion": "s:cancel",
+    "concepts": {
+     "c:smooth-manifold": "Smoothness gives Morse functions and handle decompositions.",
+     "c:homotopy-equivalence": "The homotopy equivalence makes the relative homology vanish.",
+     "c:h-cobordism": "The theorem says that a simply connected h-cobordism is a product.",
+     "c:simply-connected-manifold": "Trivial fundamental group makes algebraic intersections realizable geometrically.",
+     "c:diffeomorph": "The conclusion is a diffeomorphism with the cylinder.",
+     "c:cobordism": "The manifold $W$ joins $M$ to $N$, so a Morse function runs between them.",
+     "c:morse-function": "Critical points of the Morse function are the handles to cancel.",
+     "c:handle-decomposition": "The proof edits the handle decomposition until no handles remain.",
+     "c:intersection-number": "Intersection numbers are the entries of the handle boundary maps.",
+     "c:whitney-trick": "The Whitney trick removes pairs of opposite intersection points."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "J. Milnor, Lectures on the h-cobordism theorem, notes by L. Siebenmann and J. Sondow, Princeton University Press, 1965; original proof in S. Smale, On the structure of manifolds, American Journal of Mathematics 84 (1962), 387-399",
+     "note": "Milnor's lectures give the handle-cancellation proof outlined here."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:16581",
+  "statement": "Let $H(\\lambda)$ be bounded [self-adjoint operators](c:self-adjoint-operator) on a complex [Hilbert space](c:hilbert-space) and $\\psi(\\lambda)$ unit [eigenvectors](c:eigenvector) with $H(\\lambda)\\psi(\\lambda) = E(\\lambda)\\psi(\\lambda)$. If $H$ and $\\psi$ are differentiable in the real parameter $\\lambda$, then $E'(\\lambda) = \\langle \\psi(\\lambda), H'(\\lambda)\\psi(\\lambda) \\rangle$, the [expectation value](c:expectation-value) of $H'(\\lambda)$.",
+  "hypotheses": [
+   {
+    "id": "h:selfadjoint",
+    "text": "Each [Hamiltonian](c:hamiltonian) $H(\\lambda)$ is a bounded [self-adjoint operator](c:self-adjoint-operator) on a complex Hilbert space.",
+    "concept": "c:self-adjoint-operator"
+   },
+   {
+    "id": "h:eigen",
+    "text": "Each $\\psi(\\lambda)$ is a unit vector with $H(\\lambda)\\psi(\\lambda) = E(\\lambda)\\psi(\\lambda)$, so $E(\\lambda)$ is an [eigenvalue](c:eigenvalue).",
+    "concept": "c:eigenvalue"
+   },
+   {
+    "id": "h:differentiable",
+    "text": "The maps $\\lambda \\mapsto H(\\lambda)$ and $\\lambda \\mapsto \\psi(\\lambda)$ are differentiable in norm.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The function $E$ is differentiable and $E'(\\lambda) = \\langle \\psi(\\lambda), H'(\\lambda)\\psi(\\lambda) \\rangle$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "differentiate-expectation",
+    "name": "Differentiate the expectation value",
+    "slogan": "Write the eigenvalue as an expectation value, differentiate by the product rule, and cancel the two outer terms with self-adjointness and normalization.",
+    "scope": "The whole theorem, at every parameter $\\lambda$. The inner product is linear in its second argument.",
+    "mechanisms": [
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:selfadjoint",
+      "why": "Self-adjointness makes $E$ real and moves $H$ across the inner product.",
+      "steps": [
+       "s:outer"
+      ]
+     },
+     {
+      "h": "h:eigen",
+      "why": "The eigen-equation turns $\\langle \\psi, H\\psi \\rangle$ into $E$ and $H\\psi$ into $E\\psi$; the unit norm cancels the outer terms.",
+      "steps": [
+       "s:energy",
+       "s:outer",
+       "s:normalize"
+      ]
+     },
+     {
+      "h": "h:differentiable",
+      "why": "Differentiability of $H$ and $\\psi$ makes the product rule apply.",
+      "steps": [
+       "s:energy",
+       "s:product"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:energy",
+      "slogan": "Write the eigenvalue as the [expectation value](c:expectation-value) $E = \\langle \\psi, H\\psi \\rangle$.",
+      "detail": "From $H\\psi = E\\psi$ and $\\langle \\psi, \\psi \\rangle = 1$ we get $\\langle \\psi, H\\psi \\rangle = E\\langle \\psi, \\psi \\rangle = E$. So $E$ is differentiable, as a composite of differentiable maps.",
+      "uses": []
+     },
+     {
+      "id": "s:product",
+      "slogan": "Differentiate the inner product $\\langle \\psi, H\\psi \\rangle$ by the product rule.",
+      "detail": "The inner product is continuous and sesquilinear, and operator application is continuous and bilinear. So $E' = \\langle \\psi', H\\psi \\rangle + \\langle \\psi, H'\\psi \\rangle + \\langle \\psi, H\\psi' \\rangle$.",
+      "uses": []
+     },
+     {
+      "id": "s:outer",
+      "slogan": "Move $H$ across the inner product in the two outer terms.",
+      "detail": "Since $H$ is [self-adjoint](c:self-adjoint-operator), $E$ is real and $\\langle \\psi, H\\psi' \\rangle = \\langle H\\psi, \\psi' \\rangle = E\\langle \\psi, \\psi' \\rangle$; also $\\langle \\psi', H\\psi \\rangle = E\\langle \\psi', \\psi \\rangle$. So the outer terms sum to $E(\\langle \\psi', \\psi \\rangle + \\langle \\psi, \\psi' \\rangle)$.",
+      "uses": []
+     },
+     {
+      "id": "s:normalize",
+      "slogan": "Differentiate the normalization $\\langle \\psi, \\psi \\rangle = 1$ to cancel the outer terms.",
+      "detail": "The derivative of the constant $\\langle \\psi, \\psi \\rangle$ is $\\langle \\psi', \\psi \\rangle + \\langle \\psi, \\psi' \\rangle = 0$. Hence the outer terms vanish and $E' = \\langle \\psi, H'\\psi \\rangle$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:energy",
+      "s:product"
+     ],
+     [
+      "s:product",
+      "s:outer"
+     ],
+     [
+      "s:outer",
+      "s:normalize"
+     ]
+    ],
+    "conclusion": "s:normalize",
+    "concepts": {
+     "c:self-adjoint-operator": "Self-adjointness lets $H$ act on either side of the inner product.",
+     "c:hilbert-space": "The inner product of the Hilbert space defines the expectation value.",
+     "c:eigenvector": "The unit eigenvector is the state whose energy is differentiated.",
+     "c:expectation-value": "The energy and its derivative are both expectation values.",
+     "c:hamiltonian": "The Hamiltonian family depends on the parameter being varied.",
+     "c:eigenvalue": "The energy is the eigenvalue that the eigen-equation identifies."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard derivation, as in R. P. Feynman, Forces in molecules, Physical Review 56 (1939) 340."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q5761142",
+  "statement": "Let $r, s \\ge 1$ and let $f_1, \\dots, f_m \\in \\mathbb{Q}[t_1, \\dots, t_r, X_1, \\dots, X_s]$ be [irreducible polynomials](c:irreducible-polynomial), each of positive degree in the variables $X$. Then infinitely many $a \\in \\mathbb{Q}^r$ make every [specialization](c:specialization) $f_i(a, X)$ irreducible in $\\mathbb{Q}[X_1, \\dots, X_s]$.",
+  "hypotheses": [
+   {
+    "id": "h:irreducible",
+    "text": "Each $f_i$ is [irreducible](c:irreducible-polynomial) in $\\mathbb{Q}[t, X]$ and has positive degree in $X = (X_1, \\dots, X_s)$.",
+    "concept": "c:irreducible-polynomial"
+   },
+   {
+    "id": "h:parameters",
+    "text": "There is at least one parameter: $r \\ge 1$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The set of $a \\in \\mathbb{Q}^r$ for which every [specialization](c:specialization) $f_i(a, X)$ is irreducible is infinite.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "thin-sets",
+    "name": "Thin sets and counting",
+    "slogan": "Show that the bad parameters form a thin set, and count that a thin set misses most integral points.",
+    "scope": "An outline of the proof in Serre's book; the thin-set reduction of step 1 and the count of step 2 rest on the cited work.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:reduction",
+     "m:sieve"
+    ],
+    "roles": [
+     {
+      "h": "h:irreducible",
+      "why": "Irreducibility over $\\mathbb{Q}(t)$ makes every cover attached to a possible factor have degree at least $2$.",
+      "steps": [
+       "s:thin"
+      ]
+     },
+     {
+      "h": "h:parameters",
+      "why": "With $r \\ge 1$ the box $[-N, N]^r$ holds $(2N + 1)^r$ points, a number that grows without bound.",
+      "steps": [
+       "s:compare"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:thin",
+      "slogan": "Show that the parameters with a reducible specialization form a thin set.",
+      "detail": "With Kronecker's substitution the cited work reduces to one variable $X$. Outside a proper Zariski closed set, $f_i(a, X)$ factors only if $a$ lifts to a rational point of one of finitely many covers of degree at least $2$ built from the possible factors. A finite union of such images is a thin set.",
+      "uses": []
+     },
+     {
+      "id": "s:count",
+      "slogan": "Bound the number of integral points of height at most $N$ in a thin set.",
+      "detail": "The cited work shows that a thin subset of $\\mathbb{Q}^r$ contains $O(N^{r - 1/2}\\log N)$ points of $\\mathbb{Z}^r$ with all $|a_j| \\le N$, which is S. D. Cohen's theorem. For $r = 1$ an elementary argument gives $O(N^{1/2})$.",
+      "uses": []
+     },
+     {
+      "id": "s:compare",
+      "slogan": "Compare the count with the $(2N + 1)^r$ integral points of the box.",
+      "detail": "Since $(2N + 1)^r$ grows faster than $N^{r - 1/2}\\log N$, the box $[-N, N]^r$ holds more and more integral points outside the thin set as $N$ grows.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Conclude that infinitely many specializations keep every $f_i$ irreducible.",
+      "detail": "Each integral point outside the thin set gives $a \\in \\mathbb{Q}^r$ with all $f_i(a, X)$ irreducible, and step 3 gives infinitely many such points. So $\\mathbb{Q}$ is a [Hilbertian field](c:hilbertian-field).",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:thin",
+      "s:conclude"
+     ],
+     [
+      "s:count",
+      "s:compare"
+     ],
+     [
+      "s:compare",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:irreducible-polynomial": "Irreducibility is the property that the specializations must keep.",
+     "c:specialization": "Specializing the parameters to rational values gives the polynomials to test.",
+     "c:hilbertian-field": "The theorem says exactly that $\\mathbb{Q}$ is a Hilbertian field."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "J.-P. Serre, Topics in Galois Theory, Research Notes in Mathematics 1, Jones and Bartlett, Boston, 1992, chapter 3",
+     "note": "Serre proves the theorem through thin sets; the count of integral points in thin sets is S. D. Cohen's theorem, also proved with the large sieve in Serre, Lectures on the Mordell-Weil theorem (Vieweg, 1989)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1038716",
+  "statement": "Let $U$ be a [connected](c:connected-set) open subset of $\\mathbb{C}$ or of $\\mathbb{R}$, and let $f, g$ be [analytic](c:analytic-function) on $U$. If the set $\\{z \\in U : f(z) = g(z)\\}$ has an [accumulation point](c:accumulation-point) in $U$, then $f = g$ on $U$.",
+  "hypotheses": [
+   {
+    "id": "h:domain",
+    "text": "The set $U$ is open and [connected](c:connected-set).",
+    "concept": "c:connected-set"
+   },
+   {
+    "id": "h:analytic",
+    "text": "The functions $f$ and $g$ are [analytic](c:analytic-function) on $U$.",
+    "concept": "c:analytic-function"
+   },
+   {
+    "id": "h:accumulate",
+    "text": "Some $z_0 \\in U$ is an [accumulation point](c:accumulation-point) of $\\{z \\in U : f(z) = g(z)\\}$.",
+    "concept": "c:accumulation-point"
+   }
+  ],
+  "conclusion": "The functions agree: $f(z) = g(z)$ for every $z \\in U$.",
+  "formal": {
+   "decl": "AnalyticOnNhd.eqOn_of_preconnected_of_frequently_eq",
+   "difference": "The declaration works over any nontrivially normed field, with values in a normed space. It asks for analyticity on a neighborhood of each point of a preconnected set $U$ that need not be open."
+  },
+  "proofs": [
+   {
+    "id": "clopen-zero-set",
+    "name": "Open and closed vanishing set",
+    "slogan": "Pass to $f - g$, show that it vanishes near every limit point of its zeros, and spread the vanishing set over the connected domain.",
+    "scope": "The whole theorem. The set $U$ is nonempty because it contains $z_0$.",
+    "mechanisms": [
+     "m:analytic-continuation",
+     "m:local-to-global"
+    ],
+    "roles": [
+     {
+      "h": "h:domain",
+      "why": "Openness makes analyticity a local power series property, and connectedness forces a nonempty clopen subset to be all of $U$.",
+      "steps": [
+       "s:clopen",
+       "s:connected"
+      ]
+     },
+     {
+      "h": "h:analytic",
+      "why": "Analyticity gives the difference $h$ a power series at every point.",
+      "steps": [
+       "s:difference",
+       "s:isolated"
+      ]
+     },
+     {
+      "h": "h:accumulate",
+      "why": "The accumulation point puts $z_0$ in the vanishing set, so that set is nonempty.",
+      "steps": [
+       "s:connected"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:difference",
+      "slogan": "Pass to the difference $h = f - g$, which is analytic on $U$.",
+      "detail": "A difference of [analytic functions](c:analytic-function) is analytic, and $f = g$ exactly where $h = 0$. So $z_0$ is an accumulation point of the zeros of $h$.",
+      "uses": []
+     },
+     {
+      "id": "s:isolated",
+      "slogan": "Show that $h$ vanishes near every point of $U$ that is a limit of other zeros.",
+      "detail": "Expand $h$ in a [power series](c:power-series) at such a point $w$. If some coefficient is nonzero, then $h(z) = (z - w)^k u(z)$ with $u(w) \\neq 0$, so $h$ has no zeros near $w$ other than $w$, a contradiction. So $h = 0$ near $w$.",
+      "uses": [
+       "nm:principle-of-isolated-zeros"
+      ]
+     },
+     {
+      "id": "s:clopen",
+      "slogan": "Show that the set $V$ where $h$ vanishes nearby is open and closed in $U$.",
+      "detail": "Let $V = \\{w \\in U : h = 0 \\text{ near } w\\}$; it is open by definition. A point of $U$ in the closure of $V$ but not in $V$ is a limit of other zeros of $h$, so step 2 puts it in $V$. Thus $V$ is a [clopen](c:clopen-subset) subset of $U$.",
+      "uses": []
+     },
+     {
+      "id": "s:connected",
+      "slogan": "Use the connectedness of $U$ to get $V = U$ and hence $f = g$.",
+      "detail": "Step 2 at $z_0$ gives $z_0 \\in V$, so $V$ is nonempty. A nonempty clopen subset of the [connected](c:connected-set) set $U$ is all of $U$, so $h = 0$ on $U$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:difference",
+      "s:isolated"
+     ],
+     [
+      "s:isolated",
+      "s:clopen"
+     ],
+     [
+      "s:isolated",
+      "s:connected"
+     ],
+     [
+      "s:clopen",
+      "s:connected"
+     ]
+    ],
+    "conclusion": "s:connected",
+    "concepts": {
+     "c:connected-set": "Connectedness spreads local vanishing over the whole domain.",
+     "c:analytic-function": "Analytic functions have local power series, so zeros are isolated or everywhere.",
+     "c:accumulation-point": "An accumulation point of agreement starts the local vanishing.",
+     "c:power-series": "The power series at a point decides between isolated zeros and local vanishing.",
+     "c:clopen-subset": "The vanishing set is clopen, which connectedness turns into everything."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "AnalyticOnNhd.eqOn_of_preconnected_of_frequently_eq",
+     "follows": true,
+     "note": "mathlib passes to $f - g$ and applies AnalyticOnNhd.eqOn_zero_of_preconnected_of_frequently_eq_zero, built on AnalyticAt.frequently_zero_iff_eventually_zero and a clopen argument on the preconnected set."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:impossibility-of-trisecting-the-angle-and-doubling-the-cube",
+  "statement": "Starting from two points at distance $1$, no [ruler-and-compass construction](c:ruler-and-compass-construction) produces a segment of length $\\sqrt[3]{2}$, the edge of a [cube](c:cube) of volume $2$, and none trisects the [angle](c:angle) of $60^\\circ$.",
+  "hypotheses": [
+   {
+    "id": "h:rules",
+    "text": "Only [ruler-and-compass constructions](c:ruler-and-compass-construction) are allowed, starting from the points $0$ and $1$ of the plane.",
+    "concept": "c:ruler-and-compass-construction"
+   }
+  ],
+  "conclusion": "The numbers $\\sqrt[3]{2}$ and $\\cos 20^\\circ$ are not [constructible numbers](c:constructible-number), so the cube cannot be doubled and the angle of $60^\\circ$ cannot be trisected.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "field-degrees",
+    "name": "Degrees of field extensions",
+    "slogan": "Constructible numbers have degree a power of $2$ over $\\mathbb{Q}$, while $\\sqrt[3]{2}$ and $\\cos 20^\\circ$ have degree $3$.",
+    "scope": "Both impossibility statements. An angle of $20^\\circ$ is constructible exactly when the length $\\cos 20^\\circ$ is, since a perpendicular dropped from the unit circle gives one from the other.",
+    "mechanisms": [
+     "m:field-extension-degree",
+     "m:coordinates",
+     "m:contradiction"
+    ],
+    "roles": [
+     {
+      "h": "h:rules",
+      "why": "The allowed steps only intersect lines and circles, so they only solve equations of degree at most $2$.",
+      "steps": [
+       "s:coordinates"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:coordinates",
+      "slogan": "Express each new point as a solution of a linear or quadratic equation.",
+      "detail": "Put coordinates on the plane with the given points at $(0, 0)$ and $(1, 0)$. A new point is an intersection of lines and circles through earlier points, so its coordinates solve a linear system or a quadratic equation over the field $K$ generated by the earlier coordinates.",
+      "uses": []
+     },
+     {
+      "id": "s:tower",
+      "slogan": "Place every constructible number in a tower of quadratic extensions of $\\mathbb{Q}$.",
+      "detail": "Each new coordinate lies in $K$ or in $K(\\sqrt{d})$ for some $d \\in K$, a [field extension](c:field-extension) of degree at most $2$. So a [constructible number](c:constructible-number) lies in a field $K_m$ with $\\mathbb{Q} = K_0 \\subset \\dots \\subset K_m$ and $[K_{i+1} : K_i] \\le 2$.",
+      "uses": []
+     },
+     {
+      "id": "s:degree",
+      "slogan": "Show that a constructible number $x$ has degree a power of $2$ over $\\mathbb{Q}$.",
+      "detail": "The tower law gives $[K_m : \\mathbb{Q}] = 2^k$. Since $\\mathbb{Q} \\subseteq \\mathbb{Q}(x) \\subseteq K_m$, the tower law again shows that the [degree](c:degree-of-an-extension) $[\\mathbb{Q}(x) : \\mathbb{Q}]$ divides $2^k$.",
+      "uses": []
+     },
+     {
+      "id": "s:cube",
+      "slogan": "Show that $\\sqrt[3]{2}$ has degree $3$ over $\\mathbb{Q}$.",
+      "detail": "A rational root $p/q$ of $X^3 - 2$ in lowest terms needs $p \\mid 2$ and $q \\mid 1$, and $\\pm 1, \\pm 2$ fail. A cubic without rational roots is irreducible, so $X^3 - 2$ is the [minimal polynomial](c:minimal-polynomial) of $\\sqrt[3]{2}$.",
+      "uses": [
+       "wd:Q180345"
+      ]
+     },
+     {
+      "id": "s:angle",
+      "slogan": "Show that $\\cos 20^\\circ$ has degree $3$ over $\\mathbb{Q}$.",
+      "detail": "With $c = \\cos 20^\\circ$, the identity $\\cos 3\\theta = 4\\cos^3\\theta - 3\\cos\\theta$ gives $8c^3 - 6c - 1 = 0$, so $x = 2c$ solves $x^3 - 3x - 1 = 0$. This cubic has no rational root, since $\\pm 1$ fail, so it is irreducible and $[\\mathbb{Q}(c) : \\mathbb{Q}] = 3$.",
+      "uses": [
+       "wd:Q180345"
+      ]
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Compare the degree $3$ with the powers of $2$ to exclude both constructions.",
+      "detail": "Since $3$ is not a power of $2$, step 3 shows that neither $\\sqrt[3]{2}$ nor $\\cos 20^\\circ$ is constructible. The angle of $60^\\circ$ is constructible, but a trisection would give the angle $20^\\circ$ and hence the length $\\cos 20^\\circ$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:coordinates",
+      "s:tower"
+     ],
+     [
+      "s:tower",
+      "s:degree"
+     ],
+     [
+      "s:degree",
+      "s:conclude"
+     ],
+     [
+      "s:cube",
+      "s:conclude"
+     ],
+     [
+      "s:angle",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:ruler-and-compass-construction": "The construction rules limit new points to linear and quadratic equations.",
+     "c:cube": "Doubling the cube means constructing the edge $\\sqrt[3]{2}$.",
+     "c:angle": "Trisecting $60^\\circ$ means constructing the angle $20^\\circ$.",
+     "c:constructible-number": "Constructible numbers are the coordinates reachable by the allowed steps.",
+     "c:field-extension": "Each construction step adjoins at most a square root.",
+     "c:degree-of-an-extension": "The degree over $\\mathbb{Q}$ is the invariant that separates possible from impossible.",
+     "c:minimal-polynomial": "The irreducible cubic is the minimal polynomial, so the degree is $3$."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Wantzel's argument (1837) in the language of field degrees, as in I. Stewart, Galois Theory, chapter on ruler-and-compass constructions."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:liouville-s-theorem-on-existence-of-transcendental-numbers",
+  "statement": "Call a real number $x$ a Liouville number if for every $n$ there are integers $p, q$ with $q > 1$ and $0 < |x - p/q| < q^{-n}$. Every Liouville number is [transcendental](c:transcendental-number). In particular, for every integer $m \\ge 2$, the number $\\sum_{k \\ge 0} m^{-k!}$ is transcendental.",
+  "hypotheses": [
+   {
+    "id": "h:liouville",
+    "text": "The real number $x$ is a Liouville number.",
+    "concept": null
+   },
+   {
+    "id": "h:base",
+    "text": "The base $m$ of the example is an integer with $m \\ge 2$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The number $x$, and each number $\\sum_{k \\ge 0} m^{-k!}$ with $m \\ge 2$, is not an [algebraic number](c:algebraic-number).",
+  "formal": {
+   "decl": "transcendental_liouvilleNumber",
+   "difference": "The declaration proves only the example: $\\sum_{k \\ge 0} m^{-k!}$ is transcendental over $\\mathbb{Z}$ for $m \\ge 2$. The general statement is Liouville.transcendental, which its proof applies."
+  },
+  "proofs": [
+   {
+    "id": "approximation-bound",
+    "name": "Liouville's approximation bound",
+    "slogan": "An algebraic number of degree $d$ stays about $q^{-d}$ away from every nearby fraction $p/q$, and Liouville numbers violate this.",
+    "scope": "Both parts: steps 2 to 5 treat any Liouville number, and step 1 shows that the series is one.",
+    "mechanisms": [
+     "m:mean-value",
+     "m:contradiction",
+     "m:construction-explicit"
+    ],
+    "roles": [
+     {
+      "h": "h:liouville",
+      "why": "The Liouville fractions come closer to $x$ than $q^{-n}$ for every $n$.",
+      "steps": [
+       "s:contradict"
+      ]
+     },
+     {
+      "h": "h:base",
+      "why": "With $m \\ge 2$ the denominators $q = m^{n!}$ are at least $2$ and the tail is below $q^{-n}$.",
+      "steps": [
+       "s:example"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:example",
+      "slogan": "Show that $\\sum_{k \\ge 0} m^{-k!}$ is a Liouville number for $m \\ge 2$.",
+      "detail": "Let $p/q$ be the partial sum up to $k = n$, with $q = m^{n!}$. The tail is positive and less than $m^{-(n+1)!}\\,\\tfrac{m}{m - 1} \\le 2q^{-(n+1)} \\le q^{-n}$, because $q \\ge 2$.",
+      "uses": []
+     },
+     {
+      "id": "s:algebraic",
+      "slogan": "Assume that $x$ is algebraic, a root of a nonzero integer [polynomial](c:polynomial) $f$ of degree $d$.",
+      "detail": "Suppose $f \\in \\mathbb{Z}[X]$ is nonzero with $f(x) = 0$ and $\\deg f = d \\ge 1$. Since $f$ has finitely many roots, some $\\delta \\in (0, 1]$ makes $f(y) \\neq 0$ whenever $0 < |y - x| < \\delta$.",
+      "uses": []
+     },
+     {
+      "id": "s:lower",
+      "slogan": "Bound $|f(p/q)|$ below by $q^{-d}$ when $f(p/q) \\neq 0$.",
+      "detail": "The number $q^d f(p/q)$ is an integer because $f$ has integer coefficients. If it is nonzero, its absolute value is at least $1$, so $|f(p/q)| \\ge q^{-d}$.",
+      "uses": []
+     },
+     {
+      "id": "s:upper",
+      "slogan": "Bound $|f(p/q)|$ above by $M|x - p/q|$ with the mean value theorem.",
+      "detail": "For $|p/q - x| < \\delta$ the mean value theorem gives $f(p/q) = f(p/q) - f(x) = f'(\\xi)(p/q - x)$ with $\\xi$ between them. So $|f(p/q)| \\le M|x - p/q|$, where $M \\ge 1$ bounds $|f'|$ on $[x - 1, x + 1]$.",
+      "uses": [
+       "wd:Q189136"
+      ]
+     },
+     {
+      "id": "s:contradict",
+      "slogan": "Contradict the Liouville approximations for a large exponent $n$.",
+      "detail": "Take $n > d$ with $2^{n-d} > M$ and $2^{-n} < \\delta$, and a Liouville fraction $p/q \\neq x$ with $|x - p/q| < q^{-n} \\le 2^{-n}$. Steps 3 and 4 give $q^{-d} < M q^{-n}$, so $q^{n-d} < M < 2^{n-d}$, against $q \\ge 2$. So $x$ is not algebraic.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:algebraic",
+      "s:lower"
+     ],
+     [
+      "s:algebraic",
+      "s:upper"
+     ],
+     [
+      "s:lower",
+      "s:contradict"
+     ],
+     [
+      "s:upper",
+      "s:contradict"
+     ],
+     [
+      "s:example",
+      "s:contradict"
+     ]
+    ],
+    "conclusion": "s:contradict",
+    "concepts": {
+     "c:transcendental-number": "Transcendence is the conclusion: no integer polynomial vanishes at $x$.",
+     "c:algebraic-number": "The proof assumes an algebraic $x$ and reaches a contradiction.",
+     "c:polynomial": "An integer polynomial with root $x$ gives the integer $q^d f(p/q)$."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "transcendental_liouvilleNumber",
+     "follows": true,
+     "note": "mathlib proves liouville_liouvilleNumber and applies Liouville.transcendental, whose bound exists_pos_real_of_irrational_root comes from the mean value theorem."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:levy-s-generalization-of-the-borel-cantelli-lemma",
+  "statement": "Let $(\\mathcal{F}_n)$ be a [filtration](c:filtration) on a space with a [finite measure](c:finite-measure) $\\mu$, and let $A_n \\in \\mathcal{F}_n$ for every $n$. Then for $\\mu$-[almost every](c:almost-everywhere) $\\omega$, the point $\\omega$ lies in infinitely many $A_n$ if and only if $\\sum_{n \\ge 0} \\mathbb{E}[\\mathbf{1}_{A_{n+1}} \\mid \\mathcal{F}_n](\\omega) = \\infty$.",
+  "hypotheses": [
+   {
+    "id": "h:finite",
+    "text": "The measure $\\mu$ is a [finite measure](c:finite-measure).",
+    "concept": "c:finite-measure"
+   },
+   {
+    "id": "h:adapted",
+    "text": "Each event $A_n$ belongs to the $\\sigma$-algebra $\\mathcal{F}_n$ of the [filtration](c:filtration).",
+    "concept": "c:filtration"
+   }
+  ],
+  "conclusion": "Almost everywhere, $\\omega$ lies in the [limit superior](c:limsup-of-sets) $\\limsup_n A_n$ exactly when the sum of the [conditional expectations](c:conditional-expectation) $\\mathbb{E}[\\mathbf{1}_{A_{n+1}} \\mid \\mathcal{F}_n](\\omega)$ diverges.",
+  "formal": {
+   "decl": "MeasureTheory.ae_mem_limsup_atTop_iff",
+   "difference": null
+  },
+  "proofs": [
+   {
+    "id": "martingale-part",
+    "name": "Martingale part of the counting process",
+    "slogan": "Split the count of occurred events into a martingale with bounded steps and the sum of conditional probabilities, and show that the martingale cannot diverge.",
+    "scope": "The whole theorem. The exceptional set is a countable union of the null sets from steps 2 and 3.",
+    "mechanisms": [
+     "m:martingale",
+     "m:monotone-limit",
+     "m:borel-cantelli"
+    ],
+    "roles": [
+     {
+      "h": "h:finite",
+      "why": "Finiteness makes indicators and constants integrable, so the decomposition and the convergence theorem apply.",
+      "steps": [
+       "s:doob",
+       "s:one-sided"
+      ]
+     },
+     {
+      "h": "h:adapted",
+      "why": "Adaptedness makes the counting process adapted, so its compensated part is a [martingale](c:martingale).",
+      "steps": [
+       "s:doob"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:counting",
+      "slogan": "Count the events by $X_n = \\sum_{k < n} \\mathbf{1}_{A_{k+1}}$ and characterize $\\limsup A_n$ by $X_n \\to \\infty$.",
+      "detail": "The point $\\omega$ lies in infinitely many $A_n$ exactly when infinitely many indicators equal $1$. The counts $X_n(\\omega)$ are nondecreasing, so this happens exactly when $X_n(\\omega) \\to \\infty$.",
+      "uses": []
+     },
+     {
+      "id": "s:doob",
+      "slogan": "Split $X_n$ into a [martingale](c:martingale) $M_n$ and the predictable sum $Y_n$ of conditional probabilities.",
+      "detail": "Let $Y_n = \\sum_{k < n} \\mathbb{E}[\\mathbf{1}_{A_{k+1}} \\mid \\mathcal{F}_k]$ and $M_n = X_n - Y_n$, the Doob decomposition of $X$. Since $A_{k+1} \\in \\mathcal{F}_{k+1}$, $M$ is a martingale, and its steps are bounded by $1$ because the [conditional expectations](c:conditional-expectation) lie in $[0, 1]$ almost everywhere.",
+      "uses": [
+       "wd:Q1242398"
+      ]
+     },
+     {
+      "id": "s:one-sided",
+      "slogan": "Show that a martingale with bounded steps almost never tends to $+\\infty$ or to $-\\infty$.",
+      "detail": "Stop $M$ at the [stopping time](c:stopping-time) when it first exceeds $r \\ge 0$; the stopped martingale is bounded above by $r + 1$, so it is bounded in $L^1$ and converges almost everywhere. Thus $M$ converges almost everywhere on $\\{\\sup_n M_n \\le r\\}$, and taking all $r$ and also $-M$ excludes both divergences.",
+      "uses": [
+       "nm:almost-everywhere-martingale-convergence-theorem"
+      ]
+     },
+     {
+      "id": "s:compare",
+      "slogan": "Compare the nondecreasing sequences $X_n$ and $Y_n$ through $M_n = X_n - Y_n$.",
+      "detail": "If $X_n \\to \\infty$ while $Y_n \\le b$, then $M_n \\ge X_n - b \\to \\infty$; if $Y_n \\to \\infty$ while $X_n \\le b$, then $M_n \\to -\\infty$. Step 3 excludes both [almost everywhere](c:almost-everywhere), so $X_n \\to \\infty$ exactly when $Y_n \\to \\infty$, which with step 1 is the claim.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:counting",
+      "s:compare"
+     ],
+     [
+      "s:doob",
+      "s:one-sided"
+     ],
+     [
+      "s:doob",
+      "s:compare"
+     ],
+     [
+      "s:one-sided",
+      "s:compare"
+     ]
+    ],
+    "conclusion": "s:compare",
+    "concepts": {
+     "c:filtration": "The filtration fixes the information used by the conditional probabilities.",
+     "c:finite-measure": "A finite measure makes bounded functions integrable.",
+     "c:almost-everywhere": "The equivalence holds outside a null set of exceptional points.",
+     "c:limsup-of-sets": "The limit superior is the set of points in infinitely many events.",
+     "c:conditional-expectation": "Conditional expectations of the indicators form the compensator of the count.",
+     "c:martingale": "The compensated count is a martingale, which cannot drift to infinity.",
+     "c:stopping-time": "Stopping at the first large value bounds the martingale above."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "MeasureTheory.ae_mem_limsup_atTop_iff",
+     "follows": true,
+     "note": "mathlib rewrites the limsup as divergence of the indicator sum (Set.limsup_eq_tendsto_sum_indicator_atTop) and applies tendsto_sum_indicator_atTop_iff', built on Martingale.ae_not_tendsto_atTop_atTop and the one-sided bound Submartingale.bddAbove_iff_exists_tendsto."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:matrix-determinant-lemma",
+  "statement": "Let $A$ be an [invertible](c:invertible) $n \\times n$ [matrix](c:matrix) over a [commutative ring](c:commutative-ring) and $u, v$ column vectors of length $n$. Then the update of $A$ by the [outer product](c:outer-product) $uv^{T}$ has [determinant](c:determinant) $\\det(A + uv^{T}) = (1 + v^{T}A^{-1}u)\\det A$. In particular, $\\det(I + uv^{T}) = 1 + v^{T}u$.",
+  "hypotheses": [
+   {
+    "id": "h:ring",
+    "text": "The entries lie in a [commutative ring](c:commutative-ring).",
+    "concept": "c:commutative-ring"
+   },
+   {
+    "id": "h:invertible",
+    "text": "The matrix $A$ is [invertible](c:invertible).",
+    "concept": "c:invertible"
+   }
+  ],
+  "conclusion": "The determinant of the rank-one update is $\\det(A + uv^{T}) = (1 + v^{T}A^{-1}u)\\det A$.",
+  "formal": {
+   "decl": "Matrix.det_one_add_replicateCol_mul_replicateRow",
+   "difference": "The declaration proves only the case $A = I$: $\\det(1 + uv^{T}) = 1 + v \\cdot u$, with $u$ and $v$ written as a one-column and a one-row matrix."
+  },
+  "proofs": [
+   {
+    "id": "swap-factors",
+    "name": "Swap the factors",
+    "slogan": "Swap the factors of the rank-one product to reduce to a $1 \\times 1$ determinant, then factor out $A$.",
+    "scope": "Steps 1 and 2 prove the case $A = I$, and steps 3 and 4 extend it to every invertible $A$.",
+    "mechanisms": [
+     "m:determinant",
+     "m:matrix-factorization",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:ring",
+      "why": "Commutativity gives determinants, their multiplicativity and the Schur complement formulas.",
+      "steps": [
+       "s:sylvester",
+       "s:factor"
+      ]
+     },
+     {
+      "h": "h:invertible",
+      "why": "Invertibility lets $A$ be factored out of the update.",
+      "steps": [
+       "s:factor"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:sylvester",
+      "slogan": "Swap the factors with the identity $\\det(I_n + XY) = \\det(I_1 + YX)$.",
+      "detail": "Take $X = u$, an $n \\times 1$ matrix, and $Y = v^{T}$, a $1 \\times n$ matrix. The Weinstein-Aronszajn identity gives $\\det(I_n + uv^{T}) = \\det(I_1 + v^{T}u)$; it follows from the two Schur complements of the [block matrix](c:partitioned-matrix) with blocks $I_n$, $-X$, $Y$ and $I_1$.",
+      "uses": [
+       "wd:Q7660749"
+      ]
+     },
+     {
+      "id": "s:scalar",
+      "slogan": "Evaluate the $1 \\times 1$ determinant as $1 + v^{T}u$.",
+      "detail": "The matrix $I_1 + v^{T}u$ has the single entry $1 + \\sum_i v_i u_i$, and a $1 \\times 1$ [determinant](c:determinant) is its entry. This proves $\\det(I + uv^{T}) = 1 + v^{T}u$.",
+      "uses": []
+     },
+     {
+      "id": "s:factor",
+      "slogan": "Factor $A + uv^{T}$ as $A\\,(I + A^{-1}u\\,v^{T})$ for the invertible $A$.",
+      "detail": "Since $AA^{-1} = I$, the product $A(I + A^{-1}uv^{T})$ equals $A + uv^{T}$. The determinant is multiplicative over a commutative ring, so $\\det(A + uv^{T}) = \\det A \\cdot \\det(I + (A^{-1}u)v^{T})$.",
+      "uses": []
+     },
+     {
+      "id": "s:combine",
+      "slogan": "Apply the identity case to the vectors $A^{-1}u$ and $v$.",
+      "detail": "Step 2 with $A^{-1}u$ in place of $u$ gives $\\det(I + (A^{-1}u)v^{T}) = 1 + v^{T}A^{-1}u$. With step 3, $\\det(A + uv^{T}) = (1 + v^{T}A^{-1}u)\\det A$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:sylvester",
+      "s:scalar"
+     ],
+     [
+      "s:scalar",
+      "s:combine"
+     ],
+     [
+      "s:factor",
+      "s:combine"
+     ]
+    ],
+    "conclusion": "s:combine",
+    "concepts": {
+     "c:invertible": "An invertible $A$ can be factored out of the update.",
+     "c:matrix": "The identity is about square matrices and their rank-one updates.",
+     "c:commutative-ring": "Determinants and their multiplicativity need commuting entries.",
+     "c:outer-product": "The outer product $uv^{T}$ is the rank-one update.",
+     "c:determinant": "The lemma computes the determinant of the updated matrix.",
+     "c:partitioned-matrix": "A block matrix with two Schur complements proves the factor swap."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Matrix.det_one_add_replicateCol_mul_replicateRow",
+     "follows": true,
+     "note": "mathlib rewrites with Matrix.det_one_add_mul_comm (the Weinstein-Aronszajn identity), det_unique and replicateRow_mul_replicateCol_apply; steps 3 and 4 add the factoring for a general invertible $A$."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q6925496",
+  "statement": "Let $X$ be a real [Banach space](c:banach-space) and $I\\colon X \\to \\mathbb{R}$ a $C^1$ functional with the [Palais-Smale condition](c:palais-smale-condition). Suppose $I(0) = 0$, $I \\ge a > 0$ on a sphere $\\|u\\| = r$, and $I(e) \\le 0$ for some $\\|e\\| > r$. Then $c = \\inf_{\\gamma} \\max_{t} I(\\gamma(t))$ over paths $\\gamma$ from $0$ to $e$ is a [critical](c:critical-point) value, and $c \\ge a$.",
+  "hypotheses": [
+   {
+    "id": "h:smooth",
+    "text": "The space $X$ is a real [Banach space](c:banach-space) and $I$ is [continuously differentiable](c:continuously-differentiable-map).",
+    "concept": "c:continuously-differentiable-map"
+   },
+   {
+    "id": "h:palais-smale",
+    "text": "The functional $I$ satisfies the [Palais-Smale condition](c:palais-smale-condition): every sequence with $I(u_k)$ bounded and $I'(u_k) \\to 0$ has a convergent subsequence.",
+    "concept": "c:palais-smale-condition"
+   },
+   {
+    "id": "h:ring",
+    "text": "The values satisfy $I(0) = 0$ and $I(u) \\ge a$ for all $\\|u\\| = r$, for some $r > 0$ and $a > 0$.",
+    "concept": null
+   },
+   {
+    "id": "h:valley",
+    "text": "Some $e \\in X$ with $\\|e\\| > r$ has $I(e) \\le 0$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "Some $u \\in X$ is a [critical point](c:critical-point) with $I'(u) = 0$ and $I(u) = c \\ge a$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "deformation",
+    "name": "Deformation lemma",
+    "slogan": "If the minimax level were not critical, a pseudo-gradient flow would push a nearly optimal path below that level.",
+    "scope": "The whole theorem, by contradiction at the level $c$.",
+    "mechanisms": [
+     "m:energy-functional",
+     "m:contradiction",
+     "m:subsequence"
+    ],
+    "roles": [
+     {
+      "h": "h:smooth",
+      "why": "Completeness and the $C^1$ property give a locally Lipschitz pseudo-gradient field with a global flow.",
+      "steps": [
+       "s:deform"
+      ]
+     },
+     {
+      "h": "h:palais-smale",
+      "why": "Compactness of almost critical sequences gives a lower bound for $\\|I'\\|$ near level $c$.",
+      "steps": [
+       "s:gap"
+      ]
+     },
+     {
+      "h": "h:ring",
+      "why": "The ring of height $a$ around $0$ forces every path to climb to level $a$.",
+      "steps": [
+       "s:level",
+       "s:deform"
+      ]
+     },
+     {
+      "h": "h:valley",
+      "why": "The low point $e$ outside the ring makes every path cross the sphere and stay fixed at its end.",
+      "steps": [
+       "s:level",
+       "s:deform"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:level",
+      "slogan": "Show that the minimax level $c$ is finite and at least $a$.",
+      "detail": "The segment $t \\mapsto te$ is a path from $0$ to $e$, so $c < \\infty$. Every path $\\gamma$ has $\\|\\gamma(0)\\| < r < \\|\\gamma(1)\\|$, so the intermediate value theorem gives $\\|\\gamma(t)\\| = r$ for some $t$, and then $\\max I \\circ \\gamma \\ge a$.",
+      "uses": [
+       "wd:Q245098"
+      ]
+     },
+     {
+      "id": "s:gap",
+      "slogan": "Assume that $c$ is not critical and get a gap $\\|I'(u)\\| \\ge \\delta$ near level $c$.",
+      "detail": "Otherwise some $u_k$ have $I(u_k) \\to c$ and $I'(u_k) \\to 0$; the [Palais-Smale condition](c:palais-smale-condition) gives a convergent subsequence, and its limit is a critical point at level $c$. So some $\\varepsilon_0 \\in (0, a)$ and $\\delta > 0$ give $\\|I'(u)\\| \\ge \\delta$ whenever $|I(u) - c| \\le \\varepsilon_0$.",
+      "uses": []
+     },
+     {
+      "id": "s:deform",
+      "slogan": "Build a flow that moves $\\{I \\le c + \\varepsilon\\}$ into $\\{I \\le c - \\varepsilon\\}$ and fixes $0$ and $e$.",
+      "detail": "Take a bounded locally Lipschitz pseudo-gradient field $W$ with $I'(u)W(u) \\ge \\delta/2$ on that strip, and a cutoff $\\chi$ equal to $1$ on $\\{|I - c| \\le \\varepsilon_0/2\\}$ and $0$ off the strip. For $\\varepsilon < \\varepsilon_0/2$ the time $4\\varepsilon/\\delta$ map $\\eta$ of the flow of $-\\chi W$ works; it fixes $0$ and $e$ since $I(0), I(e) \\le 0 < c - \\varepsilon_0$.",
+      "uses": []
+     },
+     {
+      "id": "s:contradict",
+      "slogan": "Deform a nearly optimal path below level $c$ to contradict the definition of $c$.",
+      "detail": "Choose a path $\\gamma$ from $0$ to $e$ with $\\max I \\circ \\gamma \\le c + \\varepsilon$. Then $\\eta \\circ \\gamma$ still joins $0$ to $e$ and has $\\max I \\circ \\eta \\circ \\gamma \\le c - \\varepsilon < c$, against the infimum. So $c$ is the value of a [critical point](c:critical-point).",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:level",
+      "s:gap"
+     ],
+     [
+      "s:level",
+      "s:deform"
+     ],
+     [
+      "s:gap",
+      "s:deform"
+     ],
+     [
+      "s:deform",
+      "s:contradict"
+     ]
+    ],
+    "conclusion": "s:contradict",
+    "concepts": {
+     "c:banach-space": "Completeness of the space gives the flow of the pseudo-gradient field.",
+     "c:continuously-differentiable-map": "A $C^1$ functional has a pseudo-gradient field and a derivative to test.",
+     "c:palais-smale-condition": "Palais-Smale compactness turns almost critical sequences into critical points.",
+     "c:critical-point": "The minimax level is the value of a critical point."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The deformation proof of A. Ambrosetti and P. H. Rabinowitz, Dual variational methods in critical point theory and applications, Journal of Functional Analysis 14 (1973), 349-381; see also M. Willem, Minimax Theorems, Birkhauser, 1996."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q619985",
+  "statement": "Let $x_1, \\dots, x_m$ be pairwise commuting elements of a [semiring](c:semiring) and $n \\ge 0$. Then $(x_1 + \\dots + x_m)^n = \\sum \\binom{n}{k_1, \\dots, k_m} x_1^{k_1} \\cdots x_m^{k_m}$, summed over the tuples of nonnegative integers with $k_1 + \\dots + k_m = n$, where $\\binom{n}{k_1, \\dots, k_m} = \\frac{n!}{k_1! \\cdots k_m!}$ is the [multinomial coefficient](c:multinomial-coefficient).",
+  "hypotheses": [
+   {
+    "id": "h:commute",
+    "text": "The elements $x_1, \\dots, x_m$ of the [semiring](c:semiring) commute pairwise.",
+    "concept": "c:semiring"
+   }
+  ],
+  "conclusion": "The power $(x_1 + \\dots + x_m)^n$ equals the sum of $\\binom{n}{k_1, \\dots, k_m} x_1^{k_1} \\cdots x_m^{k_m}$ over all $k_1 + \\dots + k_m = n$.",
+  "formal": {
+   "decl": "Finset.sum_pow_eq_sum_piAntidiag_of_commute",
+   "difference": null
+  },
+  "proofs": [
+   {
+    "id": "binomial-induction",
+    "name": "Induction with the binomial theorem",
+    "slogan": "Induct on the number of terms, split off the last term with the binomial theorem, and merge the coefficients.",
+    "scope": "All $m \\ge 0$ and $n \\ge 0$. For $m = 0$ both sides equal $0^n$, which is $1$ when $n = 0$.",
+    "mechanisms": [
+     "m:induction",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:commute",
+      "why": "The last term commutes with the sum of the others, so the binomial theorem applies.",
+      "steps": [
+       "s:split"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:base",
+      "slogan": "Check the empty sum, where both sides equal $0^n$.",
+      "detail": "For $m = 0$ the left side is $0^n$. The right side has the single empty tuple when $n = 0$, which contributes $1$, and no tuple when $n > 0$, so it is also $0^n$.",
+      "uses": []
+     },
+     {
+      "id": "s:split",
+      "slogan": "Split off $x_m$ and expand $(s + x_m)^n$ by the binomial theorem.",
+      "detail": "Let $s = x_1 + \\dots + x_{m-1}$. Since $x_m$ commutes with each $x_i$, it commutes with $s$, so $(s + x_m)^n = \\sum_{j} \\binom{n}{j} s^{n-j} x_m^{j}$ with [binomial coefficients](c:binomial-coefficient).",
+      "uses": [
+       "wd:Q26708"
+      ]
+     },
+     {
+      "id": "s:induct",
+      "slogan": "Expand each power $s^{n-j}$ by the induction hypothesis for $m - 1$ terms.",
+      "detail": "The induction hypothesis gives $s^{n-j} = \\sum \\binom{n-j}{k_1, \\dots, k_{m-1}} x_1^{k_1} \\cdots x_{m-1}^{k_{m-1}}$ over the tuples with sum $n - j$. Substitute this sum into step 2.",
+      "uses": []
+     },
+     {
+      "id": "s:merge",
+      "slogan": "Merge the coefficients into $\\binom{n}{k_1, \\dots, k_m}$ with $k_m = j$.",
+      "detail": "Each tuple $(k_1, \\dots, k_m)$ with sum $n$ appears once, with $k_m = j$, and $\\binom{n}{j}\\binom{n-j}{k_1, \\dots, k_{m-1}} = \\frac{n!}{j!\\,(n-j)!} \\cdot \\frac{(n-j)!}{k_1! \\cdots k_{m-1}!} = \\binom{n}{k_1, \\dots, k_m}$. The factor $x_m^{j}$ already stands last in each monomial.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:base",
+      "s:induct"
+     ],
+     [
+      "s:split",
+      "s:induct"
+     ],
+     [
+      "s:induct",
+      "s:merge"
+     ]
+    ],
+    "conclusion": "s:merge",
+    "concepts": {
+     "c:semiring": "The identity holds in any semiring once the elements commute.",
+     "c:multinomial-coefficient": "The merged coefficients are the multinomial coefficients.",
+     "c:binomial-coefficient": "The binomial theorem supplies the coefficients of each splitting step."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Finset.sum_pow_eq_sum_piAntidiag_of_commute",
+     "follows": true,
+     "note": "mathlib inducts over the finite index set (Finset.cons_induction), splits the sum with piAntidiag_cons, applies Commute.add_pow and merges the coefficients with Nat.multinomial_cons."
+    }
+   },
+   {
+    "id": "counting-words",
+    "name": "Counting words",
+    "slogan": "Expand the power into words in the letters $x_i$, sort each word, and count the words with given letter counts.",
+    "scope": "All $m \\ge 0$ and $n \\ge 0$. For $n = 0$ the single empty word gives the term $1$.",
+    "mechanisms": [
+     "m:double-counting"
+    ],
+    "roles": [
+     {
+      "h": "h:commute",
+      "why": "Pairwise commutation lets each word be sorted into a standard monomial.",
+      "steps": [
+       "s:sort"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:expand",
+      "slogan": "Expand the product of $n$ copies of the sum into $m^n$ words.",
+      "detail": "By distributivity in the [semiring](c:semiring), $(x_1 + \\dots + x_m)^n = \\sum x_{i_1} x_{i_2} \\cdots x_{i_n}$ over all words $(i_1, \\dots, i_n) \\in \\{1, \\dots, m\\}^n$.",
+      "uses": []
+     },
+     {
+      "id": "s:sort",
+      "slogan": "Sort each word into the monomial $x_1^{k_1} \\cdots x_m^{k_m}$ by commutation.",
+      "detail": "Let $k_i$ count the letter $i$ in the word, so $k_1 + \\dots + k_m = n$. Since the $x_i$ commute pairwise, adjacent factors can be swapped until the word reads $x_1^{k_1} \\cdots x_m^{k_m}$.",
+      "uses": []
+     },
+     {
+      "id": "s:count",
+      "slogan": "Count the words with letter counts $(k_1, \\dots, k_m)$.",
+      "detail": "Choose the $k_1$ positions of letter $1$ in $\\binom{n}{k_1}$ ways, then the positions of letter $2$ among the rest in $\\binom{n - k_1}{k_2}$ ways, and so on. The product simplifies to $\\frac{n!}{k_1! \\cdots k_m!}$, the [multinomial coefficient](c:multinomial-coefficient).",
+      "uses": []
+     },
+     {
+      "id": "s:collect",
+      "slogan": "Collect the equal monomials to obtain the multinomial expansion.",
+      "detail": "By steps 2 and 3, each monomial $x_1^{k_1} \\cdots x_m^{k_m}$ with $k_1 + \\dots + k_m = n$ arises from exactly $\\binom{n}{k_1, \\dots, k_m}$ words. Adding the equal terms gives the formula.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:expand",
+      "s:sort"
+     ],
+     [
+      "s:sort",
+      "s:collect"
+     ],
+     [
+      "s:count",
+      "s:collect"
+     ]
+    ],
+    "conclusion": "s:collect",
+    "concepts": {
+     "c:semiring": "Distributivity in the semiring expands the power into words.",
+     "c:multinomial-coefficient": "The multinomial coefficient counts the words with given letter counts."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard combinatorial proof by counting words, the arrangements of a multiset."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:7346",
+  "statement": "Let $R$ be a [commutative ring](c:commutative-ring), $I$ an [ideal](c:ideal) contained in the [Jacobson radical](c:jacobson-radical) of $R$, $M$ an $R$-[module](c:module), and $N \\subseteq M$ a [finitely generated](c:finitely-generated-module) submodule with $N \\subseteq IN$. Then $N = 0$.",
+  "hypotheses": [
+   {
+    "id": "h:jacobson",
+    "text": "The ideal $I$ lies in the [Jacobson radical](c:jacobson-radical) $J(R)$.",
+    "concept": "c:jacobson-radical"
+   },
+   {
+    "id": "h:finite",
+    "text": "The submodule $N$ is [finitely generated](c:finitely-generated-module).",
+    "concept": "c:finitely-generated-module"
+   },
+   {
+    "id": "h:fixed",
+    "text": "The inclusion $N \\subseteq IN$ holds.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The submodule $N$ is zero.",
+  "formal": {
+   "decl": "Submodule.eq_bot_of_le_smul_of_le_jacobson_bot",
+   "difference": null
+  },
+  "proofs": [
+   {
+    "id": "kill-generators",
+    "name": "Removing the generators one by one",
+    "slogan": "Find an element $r \\equiv 1 \\pmod I$ that kills $N$ by removing the generators one at a time, then invert $r$.",
+    "scope": "The whole lemma, by induction on a finite generating set; with no generators $N = 0$ at once.",
+    "mechanisms": [
+     "m:induction",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:jacobson",
+      "why": "An element $1 - x$ with $x$ in the Jacobson radical is a unit.",
+      "steps": [
+       "s:unit"
+      ]
+     },
+     {
+      "h": "h:finite",
+      "why": "Finitely many generators make the removal stop.",
+      "steps": [
+       "s:element"
+      ]
+     },
+     {
+      "h": "h:fixed",
+      "why": "The inclusion $N \\subseteq IN$ starts the induction with $r = 1$.",
+      "steps": [
+       "s:element"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:element",
+      "slogan": "Find $r$ with $r - 1 \\in I$ and $rN = 0$ by removing generators one at a time.",
+      "detail": "Keep $r \\equiv 1 \\pmod I$ with $rN \\subseteq I\\,\\mathrm{span}(S)$, starting with $r = 1$ and $S$ a finite [generating set](c:generating-set). To drop $g$ from $S$, write $rg = ag + z$ with $a \\in I$ and $z \\in I\\,\\mathrm{span}(S \\setminus \\{g\\})$, and replace $r$ by $(r - a)r$. When $S$ is empty, $rN = 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:unit",
+      "slogan": "Show that $r$ is a [unit](c:invertible) because $1 - r$ lies in the Jacobson radical.",
+      "detail": "Here $x = 1 - r \\in I \\subseteq J(R)$. If $r = 1 - x$ lay in a [maximal ideal](c:maximal-ideal) $\\mathfrak{m}$, then $1 = r + x \\in \\mathfrak{m}$, because $x \\in \\mathfrak{m}$. So $r$ lies in no maximal ideal and is a unit.",
+      "uses": []
+     },
+     {
+      "id": "s:kill",
+      "slogan": "Multiply $rN = 0$ by $r^{-1}$ to get $N = 0$.",
+      "detail": "For every $n \\in N$ we get $n = r^{-1}(rn) = r^{-1} \\cdot 0 = 0$. So the submodule $N$ is zero.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:element",
+      "s:unit"
+     ],
+     [
+      "s:element",
+      "s:kill"
+     ],
+     [
+      "s:unit",
+      "s:kill"
+     ]
+    ],
+    "conclusion": "s:kill",
+    "concepts": {
+     "c:commutative-ring": "Commutativity lets ring elements act as module endomorphisms that commute.",
+     "c:ideal": "The ideal $I$ supplies the coefficients of the self-expressions.",
+     "c:jacobson-radical": "Elements of the Jacobson radical make $1 - x$ invertible.",
+     "c:module": "The lemma is about a submodule of an arbitrary module.",
+     "c:finitely-generated-module": "Finite generation makes the generator removal terminate.",
+     "c:generating-set": "The induction removes one generator at a time.",
+     "c:invertible": "The killing element $r$ is a unit, so $N$ must vanish.",
+     "c:maximal-ideal": "The Jacobson radical is the intersection of the maximal ideals."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Submodule.eq_bot_of_le_smul_of_le_jacobson_bot",
+     "follows": true,
+     "note": "mathlib applies eq_smul_of_le_smul_of_le_jacobson, which takes $r$ from Submodule.exists_sub_one_mem_and_smul_eq_zero_of_fg_of_le_smul (induction on the generating set) and inverts it with exists_mul_sub_mem_of_sub_one_mem_jacobson."
+    }
+   },
+   {
+    "id": "determinant-trick",
+    "name": "Determinant trick",
+    "slogan": "Write the generators as an $I$-linear system, multiply by the adjugate matrix, and invert the determinant, which is $1$ modulo $I$.",
+    "scope": "The whole lemma. With no generators the matrix is empty, its determinant is $1$, and the argument still applies.",
+    "mechanisms": [
+     "m:determinant"
+    ],
+    "roles": [
+     {
+      "h": "h:jacobson",
+      "why": "An element congruent to $1$ modulo a part of the Jacobson radical is a unit.",
+      "steps": [
+       "s:invert"
+      ]
+     },
+     {
+      "h": "h:finite",
+      "why": "Finitely many generators give a square matrix $A$.",
+      "steps": [
+       "s:system"
+      ]
+     },
+     {
+      "h": "h:fixed",
+      "why": "The inclusion $N \\subseteq IN$ writes each generator with coefficients in $I$.",
+      "steps": [
+       "s:system"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:system",
+      "slogan": "Write each generator as an $I$-combination of the generators.",
+      "detail": "Let $n_1, \\dots, n_k$ generate $N$. Since $N \\subseteq IN$ and $IN$ consists of sums $\\sum a\\,m$ with $a \\in I$ and $m \\in N$, each $n_i = \\sum_j a_{ij} n_j$ with $a_{ij} \\in I$.",
+      "uses": []
+     },
+     {
+      "id": "s:adjugate",
+      "slogan": "Multiply the system $(\\mathbf{1} - A)\\mathbf{n} = 0$ by the [adjugate matrix](c:adjugate-matrix).",
+      "detail": "With $A = (a_{ij})$, step 1 says $(\\mathbf{1} - A)\\mathbf{n} = 0$. Over a commutative ring $\\mathrm{adj}(B)\\,B = \\det(B)\\,\\mathbf{1}$, so $d = \\det(\\mathbf{1} - A)$ satisfies $d\\,n_i = 0$ for every $i$, and $dN = 0$.",
+      "uses": [
+       "nl:26835"
+      ]
+     },
+     {
+      "id": "s:expand",
+      "slogan": "Reduce the [determinant](c:determinant) modulo $I$ to get $d \\equiv 1 \\pmod I$.",
+      "detail": "The determinant commutes with the ring map $R \\to R/I$, and $\\mathbf{1} - A$ reduces to the identity matrix because every $a_{ij} \\in I$. So $d \\equiv \\det \\mathbf{1} = 1 \\pmod I$.",
+      "uses": []
+     },
+     {
+      "id": "s:invert",
+      "slogan": "Invert $d$, a unit since $1 - d \\in J(R)$, to get $N = 0$.",
+      "detail": "Here $1 - d \\in I \\subseteq J(R)$, and an element $1 - x$ with $x \\in J(R)$ lies in no maximal ideal, so $d$ is a [unit](c:invertible). Then $n = d^{-1}(dn) = 0$ for every $n \\in N$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:system",
+      "s:adjugate"
+     ],
+     [
+      "s:system",
+      "s:expand"
+     ],
+     [
+      "s:adjugate",
+      "s:invert"
+     ],
+     [
+      "s:expand",
+      "s:invert"
+     ]
+    ],
+    "conclusion": "s:invert",
+    "concepts": {
+     "c:commutative-ring": "Commutativity makes the adjugate identity hold for matrices over $R$.",
+     "c:ideal": "The ideal $I$ holds the entries of the matrix $A$.",
+     "c:jacobson-radical": "The Jacobson radical makes $d \\equiv 1$ invertible.",
+     "c:module": "The generators of the module satisfy the linear system.",
+     "c:finitely-generated-module": "Finite generation gives a finite square system.",
+     "c:adjugate-matrix": "The adjugate turns the linear system into $dN = 0$.",
+     "c:determinant": "The determinant $d$ kills $N$ and is congruent to $1$.",
+     "c:invertible": "The determinant is a unit, so it can be cancelled."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The determinant trick of M. F. Atiyah and I. G. Macdonald, Introduction to Commutative Algebra (1969), proposition 2.4 and corollary 2.5."
+    }
+   }
+  ]
+ }
+]
