@@ -1294,5 +1294,607 @@
     }
    }
   ]
+ },
+ {
+  "id": "wd:Q7200963",
+  "statement": "Every [planar graph](c:planar-graph) with $n$ vertices has a set $S$ of at most $2\\sqrt{2}\\sqrt{n}$ vertices whose removal splits the other vertices into two sets $A$ and $B$ with no edge between $A$ and $B$ and $|A|, |B| \\le 2n/3$.",
+  "hypotheses": [
+   {
+    "id": "h:planar",
+    "text": "The graph $G$ is a finite [planar graph](c:planar-graph) with $n$ vertices.",
+    "concept": "c:planar-graph"
+   }
+  ],
+  "conclusion": "A partition $V = A \\cup B \\cup S$ exists with no edge from $A$ to $B$, $|A|, |B| \\le 2n/3$ and $|S| \\le 2\\sqrt{2n}$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "bfs-levels-cycle",
+    "name": "Breadth-first levels and a fundamental cycle",
+    "slogan": "Cut a breadth-first search tree at two thin levels near the median, contract the inner part, and split the middle by a short fundamental cycle.",
+    "scope": "An outline of the Lipton-Tarjan proof; the level counting of step 3 and the cycle lemma of step 5 rest on the cited paper. For $n = 0$ all three sets are empty.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:graph-traversal",
+     "m:averaging",
+     "m:case-analysis"
+    ],
+    "roles": [
+     {
+      "h": "h:planar",
+      "why": "Planarity survives deletion and contraction, and the [Jordan curve](c:jordan-curve) theorem makes a cycle separate its inside from its outside.",
+      "steps": [
+       "s:middle",
+       "s:cycle"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:components",
+      "slogan": "Reduce the problem to one connected component with more than $2n/3$ vertices.",
+      "detail": "If every component has at most $2n/3$ vertices, a greedy grouping of whole components gives $A$ and $B$ with $S = \\emptyset$. Otherwise the cited work runs the construction below on the large component and adds the other components to the smaller side.",
+      "uses": []
+     },
+     {
+      "id": "s:bfs",
+      "slogan": "Build a [breadth-first search](c:breadth-first-search) tree and split the vertices into distance levels.",
+      "detail": "Every edge joins vertices in the same or adjacent levels $L_0, \\dots, L_r$, so removing one level separates the levels below it from those above it. Let $l_1$ be the level of the median vertex: fewer than $n/2$ vertices lie below it and at most $n/2$ above it.",
+      "uses": []
+     },
+     {
+      "id": "s:levels",
+      "slogan": "Choose thin levels $l_0 \\le l_1 < l_2$ close to the median level.",
+      "detail": "Let $k$ count the vertices in levels $0$ to $l_1$. Counting vertices over the last $\\sqrt{k}$ levels up to $l_1$ gives $l_0$ with $|L_{l_0}| + 2(l_1 - l_0) \\le 2\\sqrt{k}$, and in the same way $l_2$ with $|L_{l_2}| + 2(l_2 - l_1 - 1) \\le 2\\sqrt{n - k}$; an empty level counts.",
+      "uses": []
+     },
+     {
+      "id": "s:middle",
+      "slogan": "Cut at the two thin levels, and contract the inner levels when the middle part is too large.",
+      "detail": "If at most $2n/3$ vertices lie strictly between $L_{l_0}$ and $L_{l_2}$, then $S = L_{l_0} \\cup L_{l_2}$ works. Otherwise delete the levels from $l_2$ on and contract the levels up to $l_0$ to one vertex; the result is planar with a [spanning tree](c:spanning-tree) of radius at most $l_2 - l_0 - 1$.",
+      "uses": []
+     },
+     {
+      "id": "s:cycle",
+      "slogan": "Split the contracted graph by a fundamental cycle of at most $2(l_2 - l_0) - 1$ vertices.",
+      "detail": "Triangulate the contracted graph and keep the tree. The cited lemma finds a non-tree edge whose fundamental cycle has at most $2/3$ of the middle vertices strictly inside and at most $2/3$ strictly outside, and the [Jordan curve](c:jordan-curve) theorem ensures that no edge joins inside and outside.",
+      "uses": [
+       "wd:Q260928"
+      ]
+     },
+     {
+      "id": "s:combine",
+      "slogan": "Join the two thin levels and the cycle into $S$ and check both bounds.",
+      "detail": "Let $S$ be $L_{l_0} \\cup L_{l_2}$ together with the cycle vertices other than the contracted vertex. Then $|S| \\le 2\\sqrt{k} + 2\\sqrt{n - k} \\le 2\\sqrt{2n}$, and grouping the inside, the outside and the outer levels gives two sides of at most $2n/3$ vertices each.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:components",
+      "s:bfs"
+     ],
+     [
+      "s:bfs",
+      "s:levels"
+     ],
+     [
+      "s:levels",
+      "s:middle"
+     ],
+     [
+      "s:middle",
+      "s:cycle"
+     ],
+     [
+      "s:cycle",
+      "s:combine"
+     ],
+     [
+      "s:levels",
+      "s:combine"
+     ],
+     [
+      "s:middle",
+      "s:combine"
+     ]
+    ],
+    "conclusion": "s:combine",
+    "concepts": {
+     "c:planar-graph": "The separator bound holds because the graph is planar.",
+     "c:breadth-first-search": "Breadth-first levels are natural separators of a connected graph.",
+     "c:spanning-tree": "A shallow spanning tree gives short fundamental cycles.",
+     "c:jordan-curve": "A cycle in the plane separates inside from outside."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "R. J. Lipton and R. E. Tarjan, A separator theorem for planar graphs, SIAM Journal on Applied Mathematics 36 (1979), no. 2, 177-189",
+     "url": "https://doi.org/10.1137/0136016",
+     "note": "The original proof, which also gives a linear-time algorithm; the constant $2\\sqrt{2}$ is theirs."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q172298",
+  "statement": "In a commutative [Noetherian ring](c:noetherian-ring) $R$, every ideal $I \\ne R$ is a finite intersection $I = Q_1 \\cap \\dots \\cap Q_k$ of [primary ideals](c:primary-ideal), and the $Q_i$ can be chosen with pairwise distinct [radicals](c:radical) $\\sqrt{Q_i}$.",
+  "hypotheses": [
+   {
+    "id": "h:commutative",
+    "text": "The ring $R$ is commutative with identity.",
+    "concept": null
+   },
+   {
+    "id": "h:noetherian",
+    "text": "The ring $R$ is [Noetherian](c:noetherian-ring): every ascending chain of ideals becomes stationary.",
+    "concept": "c:noetherian-ring"
+   },
+   {
+    "id": "h:proper",
+    "text": "The ideal $I$ is proper: $I \\ne R$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "Primary ideals $Q_1, \\dots, Q_k$ with $I = Q_1 \\cap \\dots \\cap Q_k$ and pairwise distinct radicals exist.",
+  "formal": {
+   "decl": "Submodule.isPrimary_decomposition_pairwise_ne_radical",
+   "difference": "The declaration proves only the merging step, for submodules over a commutative semiring: a given primary decomposition becomes one with pairwise distinct radicals. Existence in a Noetherian module is the separate lemma Submodule.isLasker."
+  },
+  "proofs": [
+   {
+    "id": "irreducible-decomposition",
+    "name": "Irreducible decomposition",
+    "slogan": "Write the ideal as a finite intersection of irreducible ideals, show that irreducible ideals are primary, and merge components with equal radicals.",
+    "scope": "Proper ideals; $I = R$ is the empty intersection. The distinct radicals are the [associated primes](c:associated-prime) of $I$, but this uniqueness theorem is not proved here.",
+    "mechanisms": [
+     "m:extremal-choice",
+     "m:strong-induction",
+     "m:case-analysis"
+    ],
+    "roles": [
+     {
+      "h": "h:commutative",
+      "why": "Commutativity makes the colon sets $(Q : a^n)$ ideals and the radical of a primary ideal prime.",
+      "steps": [
+       "s:primary",
+       "s:merge"
+      ]
+     },
+     {
+      "h": "h:noetherian",
+      "why": "The [ascending chain condition](c:ascending-chain-condition) gives a maximal counterexample and stabilizes the colon ideals.",
+      "steps": [
+       "s:irreducible",
+       "s:chain"
+      ]
+     },
+     {
+      "h": "h:proper",
+      "why": "A proper ideal is an intersection of at least one irreducible ideal, so the decomposition is not empty.",
+      "steps": [
+       "s:irreducible"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:irreducible",
+      "slogan": "Write $I$ as a finite intersection of [irreducible ideals](c:irreducible-ideal) by Noetherian induction.",
+      "detail": "If some proper ideal has no such decomposition, the Noetherian property gives a maximal one, $J$. It is not irreducible, so $J = J_1 \\cap J_2$ with $J \\subsetneq J_1, J_2$; both are proper and decompose by maximality, so $J$ decomposes, a contradiction.",
+      "uses": []
+     },
+     {
+      "id": "s:chain",
+      "slogan": "Stabilize the colon ideals $(Q : a^n)$ for an irreducible $Q$ and $ab \\in Q$.",
+      "detail": "The ideals $(Q : a) \\subseteq (Q : a^2) \\subseteq \\cdots$ form an ascending chain. The Noetherian property gives $n$ with $(Q : a^n) = (Q : a^{2n})$, and $(Q : a) \\subseteq (Q : a^n)$.",
+      "uses": []
+     },
+     {
+      "id": "s:primary",
+      "slogan": "Show that an irreducible ideal $Q$ is a [primary ideal](c:primary-ideal).",
+      "detail": "If $x = q + a^n y$ with $q \\in Q$ lies in $(Q : a^n)$, then $a^{2n} y \\in Q$, so $y \\in (Q : a^n)$ and $x \\in Q$. Thus $(Q + (a^n)) \\cap (Q : a^n) = Q$, and irreducibility gives $a^n \\in Q$ or $b \\in (Q : a) \\subseteq (Q : a^n) = Q$.",
+      "uses": []
+     },
+     {
+      "id": "s:merge",
+      "slogan": "Merge the primary components that share a radical.",
+      "detail": "Primary ideals $Q_1, \\dots, Q_j$ with the same [radical](c:radical) $P$ have a primary intersection with radical $P$: if $xy \\in \\bigcap Q_i$ and $x \\notin Q_i$ for some $i$, then $y \\in P$. Grouping the components of step 1 by radical gives distinct radicals.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:irreducible",
+      "s:merge"
+     ],
+     [
+      "s:chain",
+      "s:primary"
+     ],
+     [
+      "s:primary",
+      "s:merge"
+     ]
+    ],
+    "conclusion": "s:merge",
+    "concepts": {
+     "c:noetherian-ring": "The Noetherian property drives both the induction and the stabilization.",
+     "c:primary-ideal": "Primary ideals are the building blocks of the decomposition.",
+     "c:radical": "Components are merged exactly when their radicals agree.",
+     "c:associated-prime": "The distinct radicals obtained are the associated primes of $I$.",
+     "c:ascending-chain-condition": "Stationary chains give maximal counterexamples and stable colon ideals.",
+     "c:irreducible-ideal": "Irreducible ideals are the intermediate decomposition and turn out primary."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Submodule.isPrimary_decomposition_pairwise_ne_radical",
+     "follows": true,
+     "note": "Existence in mathlib is Submodule.isLasker, from exists_infIrred_decomposition and InfIrred.isPrimary (stabilizing colon submodules); the catalog declaration merges components with equal radicals using isPrimary_finsetInf and radical_finset_inf."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q132427",
+  "statement": "Let $U \\subseteq \\mathbb{R}^n$ be open and $f\\colon U \\to \\mathbb{R}^m$ be a [Lipschitz function](c:lipschitz-function). Then $f$ is [differentiable](c:differentiable-function) at [almost every](c:almost-everywhere) point of $U$ with respect to [Lebesgue measure](c:lebesgue-measure).",
+  "hypotheses": [
+   {
+    "id": "h:open",
+    "text": "The set $U$ is open in $\\mathbb{R}^n$.",
+    "concept": null
+   },
+   {
+    "id": "h:lipschitz",
+    "text": "Some constant $C$ gives $|f(x) - f(y)| \\le C|x - y|$ for all $x, y \\in U$.",
+    "concept": "c:lipschitz-function"
+   }
+  ],
+  "conclusion": "The points of $U$ where $f$ is not differentiable form a Lebesgue null set.",
+  "formal": {
+   "decl": "LipschitzOnWith.ae_differentiableWithinAt",
+   "difference": "The declaration allows any measurable set $s$ in a finite-dimensional real normed space with an additive Haar measure, and gives differentiability within $s$ at almost every point of $s$. For open $s$ this is the stated theorem."
+  },
+  "proofs": [
+   {
+    "id": "morrey",
+    "name": "Directional derivatives and dense directions",
+    "slogan": "Get directional derivatives almost everywhere from one-variable theory, show that they are linear in the direction by duality, and upgrade them with a dense set of directions.",
+    "scope": "The whole theorem; the components of $f$ are treated one at a time, and $n = 0$ is trivial.",
+    "mechanisms": [
+     "m:fubini-swap",
+     "m:dominated-convergence",
+     "m:density-extension",
+     "m:finite-subcover"
+    ],
+    "roles": [
+     {
+      "h": "h:open",
+      "why": "On an open set, differentiability of the extension at a point of $U$ is differentiability of $f$.",
+      "steps": [
+       "s:reduce"
+      ]
+     },
+     {
+      "h": "h:lipschitz",
+      "why": "The Lipschitz bound gives the extension, differentiability on lines, dominated difference quotients and control of the error between directions.",
+      "steps": [
+       "s:reduce",
+       "s:line",
+       "s:linear",
+       "s:frechet"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:reduce",
+      "slogan": "Extend $f$ to a Lipschitz map on $\\mathbb{R}^n$ and treat each real component separately.",
+      "detail": "Each component $f_j$ extends with the same constant by $g_j(x) = \\inf_{y \\in U}(f_j(y) + C|x - y|)$, and differentiability holds componentwise. Since $U$ is open, the extension is differentiable at $x \\in U$ exactly when $f$ is.",
+      "uses": []
+     },
+     {
+      "id": "s:line",
+      "slogan": "Show that each [directional derivative](c:directional-derivative) $D_v f$ exists almost everywhere.",
+      "detail": "On each line $t \\mapsto x + tv$ the function is Lipschitz, hence by the Radon-Nikodym theorem the integral of a bounded function, and the Lebesgue differentiation theorem makes it differentiable at almost every $t$. The bad set is measurable, so Fubini's theorem makes it null in $\\mathbb{R}^n$.",
+      "uses": [
+       "wd:Q1191319",
+       "wd:Q2275191",
+       "wd:Q1149022"
+      ]
+     },
+     {
+      "id": "s:linear",
+      "slogan": "Show that $D_v f = \\sum_i v_i\\,\\partial_i f$ almost everywhere by integration against [test functions](c:test-function).",
+      "detail": "Difference quotients of $f$ are bounded by $C|v|$, so dominated convergence and a shift of variables give $\\int D_v f\\,\\varphi = -\\int f\\,D_v\\varphi = \\sum_i v_i\\int \\partial_i f\\,\\varphi$ for every test function $\\varphi$. Hence the two functions agree almost everywhere.",
+      "uses": [
+       "wd:Q1067156",
+       "nm:integration-by-parts"
+      ]
+     },
+     {
+      "id": "s:countable",
+      "slogan": "Collect a countable [dense set](c:dense-set) of directions into one set $A$ of full measure.",
+      "detail": "Choose directions $v_1, v_2, \\dots$ dense in the unit sphere. A countable union of null sets is null, so on a set $A$ of full measure every $D_{v_k} f(x)$ exists and equals $\\nabla f(x) \\cdot v_k$.",
+      "uses": []
+     },
+     {
+      "id": "s:frechet",
+      "slogan": "Approximate every unit direction by the countable ones to get differentiability on $A$.",
+      "detail": "For $x \\in A$, the error $Q_t(v) = (f(x + tv) - f(x))/t - \\nabla f(x) \\cdot v$ changes by at most $(C + |\\nabla f(x)|)|v - w|$ between directions $v$ and $w$. A finite $\\varepsilon$-net of the compact sphere among the $v_k$ gives $\\sup_{|v| = 1}|Q_t(v)| \\to 0$, so $f$ is differentiable at $x$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:reduce",
+      "s:line"
+     ],
+     [
+      "s:line",
+      "s:linear"
+     ],
+     [
+      "s:linear",
+      "s:countable"
+     ],
+     [
+      "s:countable",
+      "s:frechet"
+     ],
+     [
+      "s:reduce",
+      "s:frechet"
+     ]
+    ],
+    "conclusion": "s:frechet",
+    "concepts": {
+     "c:lipschitz-function": "The Lipschitz bound controls every limit in the proof.",
+     "c:differentiable-function": "The theorem gives full differentiability, not only directional derivatives.",
+     "c:almost-everywhere": "Differentiability may fail on a null set, which the proof tolerates.",
+     "c:lebesgue-measure": "Null sets and Fubini's theorem refer to Lebesgue measure.",
+     "c:directional-derivative": "Derivatives along lines come first, from one-variable theory.",
+     "c:test-function": "Integration against test functions proves linearity in the direction.",
+     "c:dense-set": "Countably many dense directions control all directions."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "LipschitzOnWith.ae_differentiableWithinAt",
+     "follows": true,
+     "note": "mathlib follows Morrey's proof: LipschitzOnWith.extend_real, LipschitzWith.ae_lineDifferentiableAt (bounded variation and Fubini), ae_lineDeriv_sum_eq (integration against smooth compactly supported functions), and hasFDerivAt_of_hasLineDerivAt_of_closure."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q180345",
+  "statement": "Let $a_n x^n + \\dots + a_1 x + a_0$ be a [polynomial](c:polynomial) with [integer](c:integer) coefficients and $a_n \\ne 0$. If a rational number $p/q$ in lowest terms, with $q > 0$ and $\\gcd(p, q) = 1$, is a root, then $p$ [divides](c:divisibility) $a_0$ and $q$ divides $a_n$.",
+  "hypotheses": [
+   {
+    "id": "h:integer",
+    "text": "The coefficients $a_0, \\dots, a_n$ are [integers](c:integer) and $a_n \\ne 0$.",
+    "concept": "c:integer"
+   },
+   {
+    "id": "h:root",
+    "text": "The fraction $p/q$ is a root, with $q > 0$ and [coprime](c:coprime-integers) integers $p$ and $q$.",
+    "concept": "c:coprime-integers"
+   }
+  ],
+  "conclusion": "The numerator satisfies $p \\mid a_0$ and the denominator satisfies $q \\mid a_n$.",
+  "formal": {
+   "decl": "num_dvd_of_is_root",
+   "difference": "The declaration proves only $p \\mid a_0$, for a root in the fraction field of any unique factorization domain. The part $q \\mid a_n$ is the separate declaration den_dvd_of_is_root."
+  },
+  "proofs": [
+   {
+    "id": "clear-denominators",
+    "name": "Clearing denominators",
+    "slogan": "Multiply the root equation by $q^n$, read off which terms $p$ and $q$ divide, and cancel the coprime powers.",
+    "scope": "The whole theorem; for $p = 0$ the root is $0$, so $a_0 = 0$ and $p \\mid a_0$ holds.",
+    "mechanisms": [
+     "m:algebraic-identity",
+     "m:unique-factorization"
+    ],
+    "roles": [
+     {
+      "h": "h:integer",
+      "why": "Integer coefficients make every term of the cleared equation an integer multiple of $p$ or of $q$.",
+      "steps": [
+       "s:clear",
+       "s:isolate"
+      ]
+     },
+     {
+      "h": "h:root",
+      "why": "The root equation gives the cleared identity, and coprimality lets the powers $q^n$ and $p^n$ cancel.",
+      "steps": [
+       "s:clear",
+       "s:coprime"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:clear",
+      "slogan": "Multiply the equation $\\sum_i a_i (p/q)^i = 0$ by $q^n$.",
+      "detail": "The result is the identity $a_n p^n + a_{n-1}p^{n-1}q + \\dots + a_1 p q^{n-1} + a_0 q^n = 0$, in which every term is an [integer](c:integer).",
+      "uses": []
+     },
+     {
+      "id": "s:isolate",
+      "slogan": "Isolate the terms $a_0 q^n$ and $a_n p^n$ to get two divisibilities.",
+      "detail": "Every term except $a_0 q^n$ contains the factor $p$, so $p$ [divides](c:divisibility) $a_0 q^n$. Every term except $a_n p^n$ contains the factor $q$, so $q$ divides $a_n p^n$.",
+      "uses": []
+     },
+     {
+      "id": "s:coprime",
+      "slogan": "Show that $p$ is prime to $q^n$ and that $q$ is prime to $p^n$.",
+      "detail": "A prime factor common to $p$ and $q^n$ would divide $q$ by [unique factorization](c:unique-factorization), against $\\gcd(p, q) = 1$. The same argument applies to $q$ and $p^n$.",
+      "uses": [
+       "wd:Q670235"
+      ]
+     },
+     {
+      "id": "s:cancel",
+      "slogan": "Cancel the coprime powers to get $p \\mid a_0$ and $q \\mid a_n$.",
+      "detail": "If $p \\mid a_0 q^n$ and $\\gcd(p, q^n) = 1$, Bezout's identity $1 = sp + tq^n$ gives $a_0 = s p a_0 + t a_0 q^n$, which $p$ divides. In the same way $q \\mid a_n p^n$ gives $q \\mid a_n$.",
+      "uses": [
+       "wd:Q513028"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:clear",
+      "s:isolate"
+     ],
+     [
+      "s:isolate",
+      "s:cancel"
+     ],
+     [
+      "s:coprime",
+      "s:cancel"
+     ]
+    ],
+    "conclusion": "s:cancel",
+    "concepts": {
+     "c:polynomial": "The theorem constrains the rational roots of this polynomial.",
+     "c:integer": "Integrality of the coefficients makes divisibility meaningful.",
+     "c:divisibility": "The conclusion and every step are divisibility statements.",
+     "c:coprime-integers": "Lowest terms let the powers of $q$ and $p$ cancel.",
+     "c:unique-factorization": "Unique factorization shows that coprimality passes to powers."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "num_dvd_of_is_root",
+     "follows": true,
+     "note": "mathlib clears denominators with scaleRoots (num_isRoot_scaleRoots_of_aeval_eq_zero), gets the constant-term divisibility from dvd_term_of_isRoot_of_dvd_terms, and cancels the denominator power with dvd_of_dvd_mul_left_of_no_prime_factors and num_den_reduced."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:regularization-by-convolution",
+  "statement": "Let $f\\colon \\mathbb{R}^d \\to \\mathbb{C}$ be of class $C^k$ with [compact support](c:compact-support), where $0 \\le k \\le \\infty$, and let $g$ be locally [integrable](c:integrable-function). Then the [convolution](c:convolution) $(f * g)(x) = \\int f(t)\\,g(x - t)\\,dt$ is of class $C^k$, with $\\partial^\\alpha(f * g) = (\\partial^\\alpha f) * g$ for $|\\alpha| \\le k$; for [smooth](c:smooth-function) $f$ it is smooth.",
+  "hypotheses": [
+   {
+    "id": "h:support",
+    "text": "The function $f$ has [compact support](c:compact-support).",
+    "concept": "c:compact-support"
+   },
+   {
+    "id": "h:smooth",
+    "text": "The function $f$ is of class $C^k$ for some $k \\in \\{0, 1, 2, \\dots, \\infty\\}$.",
+    "concept": null
+   },
+   {
+    "id": "h:integrable",
+    "text": "The function $g$ is locally [integrable](c:integrable-function): it is integrable on every compact set.",
+    "concept": "c:integrable-function"
+   }
+  ],
+  "conclusion": "The convolution $f * g$ is of class $C^k$, and $\\partial^\\alpha(f * g) = (\\partial^\\alpha f) * g$ for $|\\alpha| \\le k$.",
+  "formal": {
+   "decl": "HasCompactSupport.contDiff_convolution_left",
+   "difference": "The declaration works for a continuous bilinear map in place of the product, on a normed group with a translation- and reflection-invariant measure, over $\\mathbb{R}$ or $\\mathbb{C}$. The derivative formula is the separate declaration HasCompactSupport.hasFDerivAt_convolution_left."
+  },
+  "proofs": [
+   {
+    "id": "differentiate-under-integral",
+    "name": "Differentiation under the integral",
+    "slogan": "Move the variable into the compactly supported factor, dominate its derivatives by a locally integrable bound, differentiate under the integral sign, and induct on $k$.",
+    "scope": "All $k$; the case $k = 0$ is continuity, and $k = \\infty$ follows from all finite $k$.",
+    "mechanisms": [
+     "m:change-of-variables",
+     "m:dominated-convergence",
+     "m:induction"
+    ],
+    "roles": [
+     {
+      "h": "h:support",
+      "why": "Compact support confines the integrand to a compact set of $y$ when $x$ stays in a ball.",
+      "steps": [
+       "s:dominate"
+      ]
+     },
+     {
+      "h": "h:smooth",
+      "why": "The derivatives of $f$ up to order $k$ exist, are continuous and are bounded.",
+      "steps": [
+       "s:dominate",
+       "s:differentiate",
+       "s:induct"
+      ]
+     },
+     {
+      "h": "h:integrable",
+      "why": "Local integrability of $g$ makes the dominating function integrable.",
+      "steps": [
+       "s:dominate"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:flip",
+      "slogan": "Rewrite the convolution so that $x$ appears only inside the factor $f$.",
+      "detail": "The substitution $y = x - t$ and the translation and reflection invariance of [Lebesgue measure](c:lebesgue-measure) give $\\int f(t)\\,g(x - t)\\,dt = \\int f(x - y)\\,g(y)\\,dy$. Now $g$ does not depend on $x$.",
+      "uses": [
+       "nm:change-of-variables-formula"
+      ]
+     },
+     {
+      "id": "s:dominate",
+      "slogan": "Dominate the integrand and its $x$-derivatives for $x$ in a ball $B$.",
+      "detail": "For $x \\in B$, $f(x - y)$ and $\\partial^\\alpha f(x - y)$ vanish unless $y$ lies in the compact set $K = B - \\operatorname{supp} f$. So $|\\partial^\\alpha f(x - y)\\,g(y)| \\le \\|\\partial^\\alpha f\\|_\\infty\\,|g(y)|\\,1_K(y)$, an [integrable function](c:integrable-function) of $y$ independent of $x$.",
+      "uses": []
+     },
+     {
+      "id": "s:differentiate",
+      "slogan": "Differentiate under the integral sign to get $\\partial_j(f * g) = (\\partial_j f) * g$.",
+      "detail": "The mean value theorem bounds the difference quotients of $f(x - y)$ in $x$ by the bound of step 2, so dominated convergence gives $\\partial_j(f * g) = (\\partial_j f) * g$ when $k \\ge 1$. The same domination makes $f * g$ continuous, which settles $k = 0$.",
+      "uses": [
+       "wd:Q1067156",
+       "nm:differentiability-of-integrals-with-respect-to-parameters"
+      ]
+     },
+     {
+      "id": "s:induct",
+      "slogan": "Induct on $k$ by applying the result to the derivatives $\\partial_j f$.",
+      "detail": "Each $\\partial_j f$ is of class $C^{k-1}$ with compact support, so by induction $(\\partial_j f) * g$ is $C^{k-1}$ and $f * g$ is $C^k$, with the derivative formula. For $k = \\infty$ this holds for every finite order, so $f * g$ is [smooth](c:smooth-function).",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:flip",
+      "s:dominate"
+     ],
+     [
+      "s:dominate",
+      "s:differentiate"
+     ],
+     [
+      "s:differentiate",
+      "s:induct"
+     ]
+    ],
+    "conclusion": "s:induct",
+    "concepts": {
+     "c:compact-support": "Compact support makes the domination uniform on balls.",
+     "c:integrable-function": "Local integrability of $g$ is the only condition on $g$.",
+     "c:convolution": "The convolution inherits the smoothness of its compactly supported factor.",
+     "c:smooth-function": "With $k = \\infty$ the convolution is smooth, which is the regularization.",
+     "c:lebesgue-measure": "Its translation and reflection invariance justifies the change of variables."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "HasCompactSupport.contDiff_convolution_left",
+     "follows": true,
+     "note": "mathlib rewrites with convolution_flip and applies HasCompactSupport.contDiff_convolution_right, proved by contDiffOn_convolution_right_with_param through hasFDerivAt_convolution_right_with_param and induction on the order."
+    }
+   }
+  ]
  }
 ]
