@@ -97,6 +97,15 @@ Find ids with `grep -i -P "\tcompact space\t" build/tl-work/concept-index.tsv` (
 sense). The packet's `concept_ids` are a good start. Never mark inside `$...$`. If a concept that matters has no
 catalog id, add it to `new_concepts` with a short reminder and definition (rare).
 
+## Family records and scratch files
+
+- If a record names a family of results ("reciprocity law", "index theorem", "zero-one law"), state and prove the
+  member that the packet's explanation, concepts and relations point to, and say in `scope` which other members the
+  family includes. Prefer a member that has no record of its own in result-index.tsv. Mark a theorem unknown only when
+  no member can be identified.
+- Keep scratch scripts in a directory named after your part (for example `<scratchpad>/part-NNN/`), never in the
+  scratchpad root: other authors work in the same scratchpad at the same time.
+
 ## Language
 
 ASD-STE100: short sentences, simple words, active voice, present tense, one instruction per sentence. Use no gendered pronouns for players, agents or people: write "the player", "player $i$" or "they". Mathematical
