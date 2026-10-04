@@ -1,0 +1,474 @@
+[
+ {
+  "id": "nl:26879",
+  "statement": "Every square matrix $A$ over a [field](c:field) factors as $PA = LU$, where $P$ is a [permutation matrix](c:permutation-matrix), $L$ is [lower triangular](c:lower-triangular-matrix) with ones on the diagonal and $U$ is [upper triangular](c:upper-triangular-matrix). If the leading principal minors of orders $1, \\dots, n-1$ are nonzero, $P = I$ works.",
+  "hypotheses": [
+   {
+    "id": "h:square",
+    "text": "The matrix $A$ is an $n \\times n$ matrix over a [field](c:field) $K$.",
+    "concept": "c:field"
+   },
+   {
+    "id": "h:minors",
+    "text": "For the case $P = I$: the leading principal minors $\\Delta_1, \\dots, \\Delta_{n-1}$ of $A$ are nonzero.",
+    "concept": "c:determinant"
+   }
+  ],
+  "conclusion": "There are $P$, $L$ and $U$ as stated with $PA = LU$, and $P = I$ when the leading minors $\\Delta_1, \\dots, \\Delta_{n-1}$ are nonzero.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "elimination",
+    "name": "Gaussian elimination with row swaps",
+    "slogan": "Elimination with row swaps turns $A$ into $U$ by unit lower [triangular](c:triangular-matrix) steps, and collecting the steps gives $L$ and $P$.",
+    "scope": "The whole theorem for $n \\ge 1$; a column with no nonzero entry on or below the diagonal needs no elimination, and its swap is the identity. Step 5 treats the case of nonzero leading minors.",
+    "mechanisms": [
+     "m:matrix-factorization",
+     "m:induction",
+     "m:determinant"
+    ],
+    "roles": [
+     {
+      "h": "h:square",
+      "why": "Division by a nonzero pivot needs a [field](c:field), and the square shape makes $U$ square.",
+      "steps": [
+       "s:pivot",
+       "s:upper"
+      ]
+     },
+     {
+      "h": "h:minors",
+      "why": "Nonzero leading minors make every pivot nonzero, so no swap is needed.",
+      "steps": [
+       "s:minors"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:pivot",
+      "slogan": "Swap a nonzero pivot into row $k$ and clear the entries below it.",
+      "detail": "At stage $k$, a transposition matrix $P_k$ moves a row $i \\ge k$ with nonzero entry in column $k$ to row $k$ ($P_k = I$ if there is none). Subtracting $\\ell_{ik} = a_{ik}/a_{kk}$ times row $k$ from each row $i > k$ is multiplication by $M_k = I - \\ell_k e_k^{T}$, a unit [lower triangular matrix](c:lower-triangular-matrix).",
+      "uses": [
+       "nm:gaussian-elimination"
+      ]
+     },
+     {
+      "id": "s:upper",
+      "slogan": "Repeat the stage for each column to reach an upper triangular matrix.",
+      "detail": "After stages $k = 1, \\dots, n-1$, the matrix $U = M_{n-1}P_{n-1} \\cdots M_1 P_1 A$ has zeros below the diagonal, so it is [upper triangular](c:upper-triangular-matrix). Each stage combines only rows $k, \\dots, n$, so it keeps the zeros of earlier columns.",
+      "uses": []
+     },
+     {
+      "id": "s:commute",
+      "slogan": "Move every row swap to the right of the elimination matrices.",
+      "detail": "For $j > k$ the swap $P_j$ exchanges two rows with index greater than $k$, so $P_j M_k = \\tilde M_k P_j$ with $\\tilde M_k$ equal to $M_k$ with permuted multipliers, still unit lower triangular. Hence $\\tilde M_{n-1} \\cdots \\tilde M_1 P A = U$ with the [permutation matrix](c:permutation-matrix) $P = P_{n-1} \\cdots P_1$.",
+      "uses": []
+     },
+     {
+      "id": "s:minors",
+      "slogan": "Show that nonzero leading minors give nonzero pivots without any swap.",
+      "detail": "Without swaps, stage $k$ adds multiples of row $k$ to later rows, so it keeps every leading principal minor. After $k-1$ stages the leading $k \\times k$ block is upper triangular, so $\\Delta_k = u_{11} \\cdots u_{kk}$ by the [determinant](c:determinant) of a triangular block, and $u_{kk} = \\Delta_k / \\Delta_{k-1} \\ne 0$ for $k < n$. So every $P_k = I$.",
+      "uses": []
+     },
+     {
+      "id": "s:invert",
+      "slogan": "Invert the product of unit lower triangular matrices to obtain $L$.",
+      "detail": "Products and inverses of unit lower triangular matrices are unit lower triangular, with $\\tilde M_k^{-1} = I + \\tilde\\ell_k e_k^{T}$. So $L = (\\tilde M_{n-1} \\cdots \\tilde M_1)^{-1}$ is unit lower triangular and $PA = LU$, with $P = I$ in the case of step 4.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:pivot",
+      "s:upper"
+     ],
+     [
+      "s:upper",
+      "s:commute"
+     ],
+     [
+      "s:commute",
+      "s:invert"
+     ],
+     [
+      "s:pivot",
+      "s:minors"
+     ],
+     [
+      "s:minors",
+      "s:invert"
+     ]
+    ],
+    "conclusion": "s:invert",
+    "concepts": {
+     "c:field": "Pivots must be invertible scalars, so the entries lie in a field.",
+     "c:permutation-matrix": "The row swaps collect into one permutation matrix $P$.",
+     "c:lower-triangular-matrix": "Each elimination step and the factor $L$ are unit lower triangular.",
+     "c:upper-triangular-matrix": "Elimination ends at the upper triangular factor $U$.",
+     "c:triangular-matrix": "Triangular matrices are closed under products and inverses here.",
+     "c:determinant": "Leading minors are determinants that equal products of pivots."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Gaussian elimination with partial pivoting, as in G. H. Golub and C. F. Van Loan, Matrix Computations, chapter 3."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:levy-s-upward-theorem",
+  "statement": "Let $(\\mathcal F_n)$ be a [filtration](c:filtration) on a finite measure space $(\\Omega, \\mathcal F, \\mu)$, let $g$ be an [integrable function](c:integrable-function) and let $\\mathcal F_\\infty = \\bigvee_n \\mathcal F_n$. Then the [conditional expectations](c:conditional-expectation) $E[g \\mid \\mathcal F_n]$ converge to $E[g \\mid \\mathcal F_\\infty]$ in $L^1$ and [almost everywhere](c:almost-everywhere).",
+  "hypotheses": [
+   {
+    "id": "h:finite",
+    "text": "The measure $\\mu$ is finite.",
+    "concept": null
+   },
+   {
+    "id": "h:filtration",
+    "text": "The $\\sigma$-algebras $\\mathcal F_n \\subseteq \\mathcal F$ increase with $n$ and form a [filtration](c:filtration).",
+    "concept": "c:filtration"
+   },
+   {
+    "id": "h:integrable",
+    "text": "The function $g$ is [integrable](c:integrable-function).",
+    "concept": "c:integrable-function"
+   }
+  ],
+  "conclusion": "$\\|E[g \\mid \\mathcal F_n] - E[g \\mid \\mathcal F_\\infty]\\|_1 \\to 0$ and $E[g \\mid \\mathcal F_n] \\to E[g \\mid \\mathcal F_\\infty]$ almost everywhere.",
+  "formal": {
+   "decl": "MeasureTheory.tendsto_eLpNorm_condExp",
+   "difference": "The declaration gives the $L^1$ convergence only; the almost everywhere convergence is MeasureTheory.tendsto_ae_condExp. It has no integrability hypothesis, because mathlib sets the conditional expectation of a non-integrable function to $0$."
+  },
+  "proofs": [
+   {
+    "id": "tower-and-vitali",
+    "name": "Tower property, martingale limit and Vitali",
+    "slogan": "Replace $g$ by $h = E[g \\mid \\mathcal F_\\infty]$, let the martingale $E[h \\mid \\mathcal F_n]$ converge, upgrade by uniform integrability and identify the limit with $h$.",
+    "scope": "The whole theorem for real-valued $g$. If $\\mu = 0$, every statement is trivial.",
+    "mechanisms": [
+     "m:martingale",
+     "m:reduction"
+    ],
+    "roles": [
+     {
+      "h": "h:finite",
+      "why": "A finite measure lets the martingale convergence theorem apply and makes almost everywhere convergence imply convergence in measure.",
+      "steps": [
+       "s:ae",
+       "s:l1"
+      ]
+     },
+     {
+      "h": "h:filtration",
+      "why": "Increasing $\\sigma$-algebras give the tower property, make $(M_n)$ a martingale and make $\\bigcup_n \\mathcal F_n$ a π-system.",
+      "steps": [
+       "s:tower",
+       "s:ui",
+       "s:identify"
+      ]
+     },
+     {
+      "h": "h:integrable",
+      "why": "Integrability of $g$ makes $h$ integrable and bounds the martingale in $L^1$.",
+      "steps": [
+       "s:tower",
+       "s:ui"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:tower",
+      "slogan": "Replace $g$ by $h = E[g \\mid \\mathcal F_\\infty]$ through the tower property.",
+      "detail": "Since $\\mathcal F_n \\subseteq \\mathcal F_\\infty$, the tower property gives $E[h \\mid \\mathcal F_n] = E[g \\mid \\mathcal F_n]$ almost everywhere for every $n$. So it suffices to prove $M_n = E[h \\mid \\mathcal F_n] \\to h$ for the $\\mathcal F_\\infty$-measurable [integrable function](c:integrable-function) $h$.",
+      "uses": [
+       "nm:tower-property-of-the-conditional-expectation"
+      ]
+     },
+     {
+      "id": "s:ui",
+      "slogan": "Show that the [martingale](c:martingale) $M_n$ is bounded in $L^1$ and uniformly integrable.",
+      "detail": "Conditional Jensen gives $|M_n| \\le E[|h| \\mid \\mathcal F_n]$, so $\\|M_n\\|_1 \\le \\|h\\|_1$, $\\mu(|M_n| > K) \\le \\|h\\|_1 / K$ and $\\int_{\\{|M_n| > K\\}} |M_n| \\le \\int_{\\{|M_n| > K\\}} |h|$. Absolute continuity of the integral of $|h|$ makes this small uniformly in $n$, which is [uniform integrability](c:uniform-integrability).",
+      "uses": [
+       "nm:conditional-jensen-s-inequality"
+      ]
+     },
+     {
+      "id": "s:ae",
+      "slogan": "Let the $L^1$-bounded martingale converge almost everywhere to a limit $M_\\infty$.",
+      "detail": "The almost everywhere martingale convergence theorem gives an $\\mathcal F_\\infty$-measurable $M_\\infty$ with $M_n \\to M_\\infty$ [almost everywhere](c:almost-everywhere). Fatou's lemma and the bound $\\|M_n\\|_1 \\le \\|h\\|_1$ make $M_\\infty$ integrable.",
+      "uses": [
+       "nm:almost-everywhere-martingale-convergence-theorem"
+      ]
+     },
+     {
+      "id": "s:l1",
+      "slogan": "Upgrade the almost everywhere convergence to $L^1$ convergence by Vitali's theorem.",
+      "detail": "On a finite measure space, almost everywhere convergence implies [convergence in measure](c:convergence-in-measure). With uniform integrability, the Vitali convergence theorem gives $\\|M_n - M_\\infty\\|_1 \\to 0$.",
+      "uses": [
+       "wd:Q11352023"
+      ]
+     },
+     {
+      "id": "s:identify",
+      "slogan": "Identify $M_\\infty$ with $h$ by integrals over the sets of $\\bigcup_n \\mathcal F_n$.",
+      "detail": "For $A \\in \\mathcal F_m$ and $n \\ge m$, $\\int_A M_n = \\int_A h$, and the $L^1$ limit gives $\\int_A M_\\infty = \\int_A h$. These sets form a [π-system](c:pi-system) that generates $\\mathcal F_\\infty$, so Dynkin's theorem extends the equality to $\\mathcal F_\\infty$ and $M_\\infty = h$ almost everywhere. Hence $E[g \\mid \\mathcal F_n] = M_n \\to h$ almost everywhere and in $L^1$.",
+      "uses": [
+       "nm:dynkin-s-theorem"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:tower",
+      "s:ui"
+     ],
+     [
+      "s:ui",
+      "s:ae"
+     ],
+     [
+      "s:ae",
+      "s:l1"
+     ],
+     [
+      "s:ui",
+      "s:l1"
+     ],
+     [
+      "s:l1",
+      "s:identify"
+     ],
+     [
+      "s:ae",
+      "s:identify"
+     ],
+     [
+      "s:tower",
+      "s:identify"
+     ]
+    ],
+    "conclusion": "s:identify",
+    "concepts": {
+     "c:filtration": "The increasing sigma-algebras define the martingale and its limit sigma-algebra.",
+     "c:integrable-function": "Integrability of $g$ gives an integrable $h$ and an $L^1$ bound.",
+     "c:conditional-expectation": "The theorem is about limits of conditional expectations of one function.",
+     "c:almost-everywhere": "The martingale limit exists outside a null set.",
+     "c:martingale": "The sequence $E[h \\mid \\mathcal F_n]$ is a martingale, so it converges.",
+     "c:uniform-integrability": "Uniform integrability turns almost everywhere convergence into $L^1$ convergence.",
+     "c:convergence-in-measure": "Vitali's theorem needs convergence in measure, which a.e. convergence gives.",
+     "c:pi-system": "Equality of integrals on a generating π-system extends to the sigma-algebra."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "MeasureTheory.tendsto_eLpNorm_condExp",
+     "follows": true,
+     "note": "mathlib reduces to $E[g \\mid \\mathcal F_\\infty]$ by condExp_condExp_of_le; Integrable.tendsto_eLpNorm_condExp then uses uniformIntegrable_condExp_filtration, Submartingale.ae_tendsto_limitProcess, the π-system identification of Integrable.tendsto_ae_condExp and Vitali (tendsto_Lp_finite_of_tendstoInMeasure)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:maximum-modulus-principle",
+  "statement": "Let $U \\subseteq \\mathbb{C}$ be an [open set](c:open-set) and $f\\colon U \\to \\mathbb{C}$ a [holomorphic function](c:holomorphic-function). If $|f|$ has a local maximum at $c \\in U$, then $f$ is constant on a neighborhood of $c$.",
+  "hypotheses": [
+   {
+    "id": "h:holomorphic",
+    "text": "The function $f$ is [holomorphic](c:holomorphic-function) on the [open set](c:open-set) $U$.",
+    "concept": "c:holomorphic-function"
+   },
+   {
+    "id": "h:local-max",
+    "text": "The [modulus](c:norm) $|f|$ has a local maximum at $c \\in U$: $|f(z)| \\le |f(c)|$ for all $z$ near $c$.",
+    "concept": "c:norm"
+   }
+  ],
+  "conclusion": "There is $r > 0$ with $f(z) = f(c)$ for all $z$ with $|z - c| \\le r$.",
+  "formal": {
+   "decl": "Complex.eventually_eq_of_isLocalMax_norm",
+   "difference": "The declaration is more general: $f\\colon E \\to F$ maps between complex normed spaces with $F$ strictly convex, and $f$ need only be differentiable near $c$. Constancy on a connected domain is the separate declaration Complex.eqOn_of_isPreconnected_of_isMaxOn_norm."
+  },
+  "proofs": [
+   {
+    "id": "circle-average",
+    "name": "Cauchy formula on circles and strict convexity",
+    "slogan": "The Cauchy integral formula makes $f(c)$ an average over circles, so $|f|$ is constant near $c$, and the function $f + f(c)$ then forces $f$ to be constant.",
+    "scope": "The local statement; for a connected $U$ the identity theorem then gives constancy on all of $U$. The point $w = c$ needs no argument.",
+    "mechanisms": [
+     "m:complex-integration",
+     "m:maximum-principle",
+     "m:triangle-inequality"
+    ],
+    "roles": [
+     {
+      "h": "h:holomorphic",
+      "why": "Holomorphy on a disc in the open set gives the Cauchy integral formula and continuity of $f$.",
+      "steps": [
+       "s:ball",
+       "s:cauchy",
+       "s:shift"
+      ]
+     },
+     {
+      "h": "h:local-max",
+      "why": "The local maximum gives $|f| \\le |f(c)|$ on a disc, the bound that the circle average must meet with equality.",
+      "steps": [
+       "s:ball",
+       "s:norm",
+       "s:shift"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:ball",
+      "slogan": "Choose a closed disc around $c$ on which $f$ is holomorphic and $|f| \\le |f(c)|$.",
+      "detail": "Since $U$ is open and $|f|$ has a local maximum at $c$, there is $r > 0$ with $\\overline{D}(c, r) \\subseteq U$ and $|f(z)| \\le |f(c)|$ on $\\overline{D}(c, r)$. Both properties hold on every smaller concentric disc.",
+      "uses": []
+     },
+     {
+      "id": "s:cauchy",
+      "slogan": "Write $f(c)$ as the average of $f$ over the circle through a point $w$.",
+      "detail": "For $w \\ne c$ in the disc and $\\rho = |w - c|$, the Cauchy integral formula gives $f(c) = \\frac{1}{2\\pi} \\int_0^{2\\pi} f(c + \\rho e^{i\\theta}) \\, d\\theta$.",
+      "uses": [
+       "nl:11500"
+      ]
+     },
+     {
+      "id": "s:norm",
+      "slogan": "Show that $|f(w)| = |f(c)|$ by a strict estimate of the circle average.",
+      "detail": "If $|f(w)| < |f(c)|$, continuity gives $|f| < |f(c)|$ on an arc of the circle, and $|f| \\le |f(c)|$ on the rest. Then $|f(c)| \\le \\frac{1}{2\\pi}\\int_0^{2\\pi} |f(c + \\rho e^{i\\theta})| \\, d\\theta < |f(c)|$, a contradiction. So $|f| = |f(c)|$ on the disc.",
+      "uses": []
+     },
+     {
+      "id": "s:shift",
+      "slogan": "Apply steps 2 and 3 to $f + f(c)$ to get $|f(w) + f(c)| = 2|f(c)|$.",
+      "detail": "The function $f + f(c)$ is holomorphic, and $|f(z) + f(c)| \\le |f(z)| + |f(c)| \\le 2|f(c)|$ on the disc, with equality at $z = c$. So its modulus also has a maximum at $c$, and steps 2 and 3 give $|f(w) + f(c)| = 2|f(c)|$.",
+      "uses": []
+     },
+     {
+      "id": "s:equal",
+      "slogan": "Use equality in the triangle inequality to conclude $f(w) = f(c)$.",
+      "detail": "Now $|f(w)| = |f(c)|$ and $|f(w) + f(c)| = |f(w)| + |f(c)|$. Because $\\mathbb{C}$ is a [strictly convex space](c:strict-convex-space), equality in the triangle inequality puts $f(w)$ and $f(c)$ on one ray from $0$, and equal moduli give $f(w) = f(c)$.",
+      "uses": [
+       "nl:15368"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:ball",
+      "s:cauchy"
+     ],
+     [
+      "s:cauchy",
+      "s:norm"
+     ],
+     [
+      "s:ball",
+      "s:norm"
+     ],
+     [
+      "s:norm",
+      "s:shift"
+     ],
+     [
+      "s:norm",
+      "s:equal"
+     ],
+     [
+      "s:shift",
+      "s:equal"
+     ]
+    ],
+    "conclusion": "s:equal",
+    "concepts": {
+     "c:open-set": "Openness of $U$ gives a closed disc around $c$ inside $U$.",
+     "c:holomorphic-function": "Holomorphy gives the Cauchy integral formula on every circle in the disc.",
+     "c:norm": "The hypothesis bounds the modulus, and the proof compares moduli of averages.",
+     "c:strict-convex-space": "Strict convexity of $\\mathbb{C}$ turns equal norms into equal values."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Complex.eventually_eq_of_isLocalMax_norm",
+     "follows": true,
+     "note": "mathlib takes a closed ball (nhds_basis_closedBall), proves the norm constant from the Cauchy formula along complex lines (norm_max_aux₁ with circleIntegral_sub_inv_smul, norm_eqOn_closedBall_of_isMaxOn), and gets $f$ constant from $f + f(c)$ and strict convexity (eq_of_isMaxOn_of_ball_subset)."
+    }
+   },
+   {
+    "id": "parseval",
+    "name": "Power series and Parseval",
+    "slogan": "Expand $f$ in a power series at $c$ and compare the mean of $|f|^2$ on a circle with $|f(c)|^2$.",
+    "scope": "The local statement on a disc of convergence inside $U$ on which $|f| \\le |f(c)|$.",
+    "mechanisms": [
+     "m:taylor-expansion",
+     "m:characteristic-function"
+    ],
+    "roles": [
+     {
+      "h": "h:holomorphic",
+      "why": "Holomorphy on the open set gives a convergent power series on a disc around $c$.",
+      "steps": [
+       "s:series"
+      ]
+     },
+     {
+      "h": "h:local-max",
+      "why": "The local maximum bounds the circle mean of $|f|^2$ by $|f(c)|^2$.",
+      "steps": [
+       "s:compare"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:series",
+      "slogan": "Expand $f$ as a power series on a disc around $c$.",
+      "detail": "A [holomorphic function](c:holomorphic-function) on the [open set](c:open-set) $U$ is analytic, so $f(z) = \\sum_{n \\ge 0} a_n (z - c)^n$ on a disc $|z - c| < R$ inside $U$, with $a_0 = f(c)$. Shrink $R$ so that $|f| \\le |f(c)|$ on this disc.",
+      "uses": [
+       "nm:cauchy-integral-formula-for-derivatives"
+      ]
+     },
+     {
+      "id": "s:parseval",
+      "slogan": "Compute the mean of $|f|^2$ on a circle by orthogonality of the exponentials $e^{in\\theta}$.",
+      "detail": "For $0 < \\rho < R$ the series converges uniformly on $|z - c| = \\rho$, and $\\int_0^{2\\pi} e^{i(n-m)\\theta}\\,d\\theta = 0$ for $n \\ne m$. Hence $\\frac{1}{2\\pi}\\int_0^{2\\pi} |f(c + \\rho e^{i\\theta})|^2 \\, d\\theta = \\sum_{n \\ge 0} |a_n|^2 \\rho^{2n}$.",
+      "uses": []
+     },
+     {
+      "id": "s:compare",
+      "slogan": "Bound the mean by $|f(c)|^2$ and deduce that all higher coefficients vanish.",
+      "detail": "The bound $|f| \\le |f(c)|$ makes the mean at most $|f(c)|^2 = |a_0|^2$, so $\\sum_{n \\ge 1} |a_n|^2 \\rho^{2n} \\le 0$. Hence $a_n = 0$ for $n \\ge 1$, and $f = a_0 = f(c)$ on the disc.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:series",
+      "s:parseval"
+     ],
+     [
+      "s:parseval",
+      "s:compare"
+     ],
+     [
+      "s:series",
+      "s:compare"
+     ]
+    ],
+    "conclusion": "s:compare",
+    "concepts": {
+     "c:open-set": "Openness of $U$ leaves room for a disc of convergence around $c$.",
+     "c:holomorphic-function": "Holomorphic functions have convergent power series, the object of this proof.",
+     "c:norm": "The modulus bound controls the mean square of $f$ on circles."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The classical Gutzmer-Parseval argument for power series; not the mathlib route."
+    }
+   }
+  ]
+ }
+]
