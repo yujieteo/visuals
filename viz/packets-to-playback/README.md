@@ -60,5 +60,4 @@ the bounded memo behind the engine's caches, `raw.json` and the stub. It
 also boots the page in `node:vm` against a stand-in DOM to check the WebMCP
 tools, Reset, and that the beamdswitch and Copy deck buttons export the deck
 of the page as set, parsed with beamdswitch's own parser.
-`tests/site-theme.test.mjs` checks the site-theme script and that an
-explicit Dark or Light choice gets the matching palette.
+The repository's `theme` rule checks the site-theme script.

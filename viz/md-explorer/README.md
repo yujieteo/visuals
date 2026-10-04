@@ -49,7 +49,6 @@ Live at <https://teoyujie.org/visuals/md-explorer/>.
 | `index.html` | The whole tool. `<script id="marked-lib">` is marked; `<script id="mdx-core">` is the pure core (parsing, slugs, section tree, link resolution, the backlink index, tags, search scoring, routes and the sanitising renderer; no DOM or storage; `self.MdxCore`); `<script id="mdx-ui">` is the page and the WebMCP tools. Edit this file directly. |
 | `raw.json` | Published metadata; must equal the core's `META`. |
 | `tests/md-explorer.test.mjs` | Node's built-in runner: `node --test 'tests/*.test.{mjs,cjs}'` from this folder, which yujieteo/visuals CI also runs when the folder changes. It loads marked and the core from `index.html` and checks slugs, the tree, links, the incremental backlink index, tags, search, routes, the security cases and a 5 MB input; it also boots the whole page in a `vm` with stub DOM and storage to check the CSP, that nothing fetches, the WebMCP tools and tab-switch edits. |
-| `tests/site-theme.test.mjs` | The shared style-guide check: the `site-theme` head script applies the site-wide Light or Dark choice before paint, and an explicit Dark choice gets the system dark palette. |
 | `LICENSE` | MIT. |
 
 To update marked, replace the body of `<script id="marked-lib">` with the new
