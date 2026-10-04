@@ -84,6 +84,19 @@ test("learning: priority = 100 (0.35 value + 0.25 relevance + 0.15 accessibility
   for (let k = 1; k < d.learn.recs.length; k++) assert.ok(d.learn.recs[k - 1].lo >= d.learn.recs[k].lo);
 });
 
+test("learning: with weights that add up to 125 the value term is unknown (0 to 1) and every priority is incomplete", () => {
+  const d = at({ view: "learn", interests: "math.PR", depth: "apply", budget: 2, preset: "custom", w_eff: 50 });
+  assert.equal(d.weightsOk, false);
+  assert.ok(d.learn.recs.length > 0);
+  assert.equal(d.learn.incomplete, d.learn.candidates);
+  for (const r of d.learn.recs) {
+    assert.deepEqual(r.comps.value, [0, 1]);
+    assert.equal(r.complete, false);
+    assert.equal(r.p, null);
+    assert.ok(r.hi - r.lo >= 35 - 0.01, `${r.id}: ${r.lo} to ${r.hi}`);
+  }
+});
+
 test("learning: a result known at the selected depth is excluded; known only at a lower depth it stays", () => {
   const id = "nm:union-bound";
   const known = (/** @type {number} */ depth) => ({ ...D, profile: { known: { [id]: depth } } });

@@ -775,7 +775,7 @@
     /** @type {string[]} */
     const notes = [];
     if (!weightsOk) notes.push(`The custom weights add up to ${sum}, not 100. Every aggregate score is unknown until they add up to 100.`);
-    const agg = ix.scores.map((/** @type {number[]} */ sc) => (weightsOk ? aggregate(sc, w) : { v: null, lo: 0, hi: 0, missing: ["weights"] }));
+    const agg = ix.scores.map((/** @type {number[]} */ sc) => (weightsOk ? aggregate(sc, w) : { v: null, lo: 0, hi: 100, missing: ["weights"] }));
     const learn = learning(state, data, ix, agg);
     if (learn.unresolved.length) notes.push(`These interests are not arXiv ids of the pinned taxonomy and are ignored: ${learn.unresolved.join(", ")}.`);
 

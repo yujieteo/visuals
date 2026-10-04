@@ -265,7 +265,7 @@
     for (let k = first; k < last; k++) {
       const i = order[k];
       const r = IX.rows[i];
-      const a = ok ? Model.aggregate(IX.scores[i], weights) : { v: null, lo: 0, hi: 0, missing: ["weights"] };
+      const a = ok ? Model.aggregate(IX.scores[i], weights) : { v: null, lo: 0, hi: 100, missing: ["weights"] };
       const preview = DET[i].concl ?? (DET[i].evs.find((/** @type {any} */ e) => e.kind === "source statement")?.claim ?? DET[i].wd ?? "");
       rows.push(h("tr", { class: r.id === sel ? "sel" : null, "aria-rowindex": k + 2, "aria-selected": r.id === sel ? "true" : null },
         h("th", { scope: "row", class: "name" },

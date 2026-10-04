@@ -99,6 +99,26 @@ class PipelineTests(unittest.TestCase):
         kept = common.from_toon((WORK / "judge" / "answers" / "b000.toon").read_text(encoding="utf-8"))["answers"]
         self.assertEqual([r["id"] for r in kept], ["wd:Q1"])
 
+    def test_a_new_answer_for_a_changed_packet_survives_the_run_from_judge(self):
+        setup_judge({"wd:Q1": "Alpha", "wd:Q2": "Beta"})
+        (WORK / "judge" / "keys.json").unlink(missing_ok=True)
+        (WORK / "stage").mkdir(parents=True, exist_ok=True)
+        (WORK / "stage" / "evidence.json").write_text(json.dumps([{"id": "wd:Q1"}, {"id": "wd:Q2"}]), encoding="utf-8")
+        log = WORK / "judge.log"
+        second = {**ANSWER, "id": "wd:Q2", "pre": "measure", "rel": ""}
+        answers = WORK / "judge" / "answers" / "b000.toon"
+        answers.write_text(common.to_toon({"answers": [ANSWER, second]}) + "\n", encoding="utf-8")
+        run.judge_step(log)
+        packets = WORK / "judge" / "packets" / "b000.toon"
+        packets.write_text(packets.read_text(encoding="utf-8").replace("Beta", "Beta, new evidence"), encoding="utf-8")
+        with self.assertRaises(run.StepFailed):
+            run.judge_step(log)
+        self.assertEqual(common.from_toon(answers.read_text(encoding="utf-8"))["answers"], [ANSWER])
+        answers.write_text(common.to_toon({"answers": [ANSWER, {**second, "why": "A new explanation for the new evidence here."}]}) + "\n", encoding="utf-8")
+        self.assertEqual(run.judge_step(log), {"reused": 2})
+        kept = common.from_toon(answers.read_text(encoding="utf-8"))["answers"]
+        self.assertEqual([r["id"] for r in kept], ["wd:Q1", "wd:Q2"])
+
     def test_identity_map_follows_the_declaration_and_chains(self):
         prev = {"wd:Q1": {"decl": "Foo.bar"}, "wd:Q5": {"decl": "Baz"}, "wd:Q6": {"decl": "Same"}}
         new = {"nm:foo": {"decl": "Foo.bar"}, "wd:Q5": {"decl": "Baz"}, "nm:a": {"decl": "Same"}, "nm:b": {"decl": "Same"}}

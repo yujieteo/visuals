@@ -262,6 +262,7 @@ def judge_step(log):
         judged, bad = judge.collect(folder)
         problems += [f"{folder}: {p}" for p in bad]
         keys[folder] = {rid: j["cache_key"] for rid, j in judged.items()}
+    write_json(keys_path, keys)
     write_json(WORK / "judge" / "todo.json", {"assess": todo["answers"], "second_assessment": todo["answers-2"]})
     with open(log, "a", encoding="utf-8") as f:
         f.write(to_toon({"todo": len(todo["answers"]), "second": len(todo["answers-2"]), "problems": problems or ["none"]}) + "\n")
@@ -270,7 +271,6 @@ def judge_step(log):
     if todo["answers"] or todo["answers-2"]:
         raise StepFailed(f"the judge must assess {len(todo['answers'])} results (and {len(todo['answers-2'])} second "
                          "assessments) listed in <work>/judge/todo.json; then run with --from judge")
-    write_json(keys_path, keys)
     return {"reused": sum(len(v) for v in keys.values())}
 
 
