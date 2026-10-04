@@ -57,7 +57,7 @@
      {
       "id": "s:faces",
       "slogan": "Count the inside faces by adding the inside chords one at a time.",
-      "detail": "Let $d'$ be the number of inside chords. The inside of $C$ is one face. A new chord crosses no earlier chord, so it joins two boundary vertices of one face and cuts that face in two. Hence there are $d'+1$ inside faces.",
+      "detail": "Let $d'$ be the number of inside chords. The inside of $C$ is one face, and each new chord crosses no earlier chord, so it joins two boundary vertices of one face and cuts it in two. Hence there are $d'+1$ inside faces.",
       "uses": []
      },
      {
@@ -511,6 +511,7 @@
       "steps": [
        "s:lower",
        "s:points",
+       "s:fit",
        "s:parity"
       ]
      },
@@ -534,20 +535,26 @@
      },
      {
       "id": "s:points",
-      "slogan": "Choose points on the ovals and fit a real curve $D$ of degree $m-2$ through them.",
-      "detail": "Let $g = \\frac{(m-1)(m-2)}{2}$ and suppose $c \\ge g+2$. Components are ovals, except at most one one-sided component when $m$ is odd. Pick $g + m - 2 = \\frac{(m-2)(m+1)}{2}$ points: for odd $m$, one on each of $g$ ovals and $m-2$ on another oval; for even $m$, one on each of $g+1$ ovals and $m-3$ on another. A real curve $D$ of degree $m-2$ passes through them, because such curves form a family of dimension $\\frac{(m-2)(m+1)}{2}$.",
+      "slogan": "Choose points on the ovals, assuming that there are too many components.",
+      "detail": "Let $g = \\frac{(m-1)(m-2)}{2}$ and suppose $c \\ge g+2$. Components are ovals, except at most one one-sided component when $m$ is odd. For odd $m$ choose one point on each of $g$ ovals and $m-2$ points on another oval; for even $m$ choose one point on each of $g+1$ ovals and $m-3$ on another.",
+      "uses": []
+     },
+     {
+      "id": "s:fit",
+      "slogan": "Fit a real curve $D$ of degree $m-2$ through the chosen points.",
+      "detail": "Both choices give $g + m - 2 = \\frac{(m-2)(m+1)}{2}$ points. Real curves of degree $m-2$ form a projective space of dimension $\\frac{(m-2)(m+1)}{2}$, so a real curve $D$ passes through all chosen points.",
       "uses": []
      },
      {
       "id": "s:parity",
       "slogan": "Show that $D$ meets each oval in an even number of points.",
-      "detail": "Lift an oval to a closed curve $\\gamma$ on the sphere $S^2$. Because $C$ is nonsingular, the intersection multiplicity of $D$ with $C$ at $\\gamma(t)$ is the order of vanishing of $F_D \\circ \\gamma$ there, and it is odd exactly where $F_D$ changes sign. A function on a circle changes sign an even number of times, so each oval meets $D$ in an even number of points counted with multiplicity.",
+      "detail": "Lift an oval to a closed curve $\\gamma$ on $S^2$. Because $C$ is nonsingular, the multiplicity of $D \\cap C$ at $\\gamma(t)$ is the order of vanishing of $F_D \\circ \\gamma$, and it is odd exactly where $F_D$ changes sign. A function on a circle changes sign an even number of times, so the total multiplicity on an oval is even.",
       "uses": []
      },
      {
       "id": "s:bezout",
       "slogan": "Count the intersections and contradict Bezout's bound $m(m-2)$.",
-      "detail": "The curves $C$ and $D$ share no component, since $C$ is irreducible and $\\deg D < m$. By step 3 each oval holding a chosen point meets $D$ at least twice, and an oval with $m-2$ or $m-3$ chosen points meets it at least $m-2$ times (odd $m$: $m-1$). The total is at least $m^2 - 2m + 1 > m(m-2)$, against Bezout's theorem.",
+      "detail": "The curves $C$ and $D$ share no component, since $C$ is irreducible and $\\deg D < m$. By the parity step each oval holding a chosen point meets $D$ at least twice, and an oval with $m-2$ or $m-3$ chosen points meets it at least $m-2$ times (odd $m$: $m-1$). The total is at least $m^2 - 2m + 1 > m(m-2)$, against Bezout's theorem.",
       "uses": [
        "wd:Q1542114"
       ]
@@ -562,6 +569,10 @@
     "edges": [
      [
       "s:points",
+      "s:fit"
+     ],
+     [
+      "s:fit",
       "s:parity"
      ],
      [
@@ -1286,7 +1297,7 @@
      {
       "id": "s:edge",
       "slogan": "Show that the one-edge polynomial has no zero in the open unit bidisc.",
-      "detail": "Put $f(z_1,z_2) = e^{J}(1 + z_1z_2) + e^{-J}(z_1 + z_2)$ with $J \\ge 0$. Write $N = e^J + e^{-J}z_1$ and $D = e^{-J} + e^Jz_1$. A zero has $z_2 = -N/D$, and $|D|^2 - |N|^2 = (e^{2J} - e^{-2J})(|z_1|^2 - 1) \\le 0$ for $|z_1| < 1$, so $|z_2| \\ge 1$.",
+      "detail": "Let $f = e^{J}(1 + z_1z_2) + e^{-J}(z_1 + z_2) = N + Dz_2$, with $N = e^J + e^{-J}z_1$ and $D = e^{-J} + e^Jz_1$. For $J > 0$ and $|z_1| < 1$ we have $|D|^2 - |N|^2 = (e^{2J} - e^{-2J})(|z_1|^2 - 1) < 0$, so $f = 0$ forces $|z_2| = |N|/|D| > 1$. For $J = 0$, $f = (1+z_1)(1+z_2) \\ne 0$.",
       "uses": []
      },
      {
@@ -1296,9 +1307,15 @@
       "uses": []
      },
      {
+      "id": "s:bounds",
+      "slogan": "Bound the coefficients of a zero-free affine polynomial in two variables.",
+      "detail": "Let $P = A + Bz_1 + Cz_2 + Dz_1z_2$ have no zero in $|z_1|, |z_2| < 1$. For fixed $z_1$ the root in $z_2$ lies outside the disc, so $|A + Bz_1| \\ge |C + Dz_1|$ for $|z_1| \\le 1$. Averaging the squares over the circle gives $|A|^2 + |B|^2 \\ge |C|^2 + |D|^2$.",
+      "uses": []
+     },
+     {
       "id": "s:asano",
-      "slogan": "Prove that contracting two affine variables keeps the zero-free property.",
-      "detail": "Let $P = A + Bz_1 + Cz_2 + Dz_1z_2$ have no zero in $|z_1|, |z_2| < 1$. Then $|A + Bz_1| \\ge |C + Dz_1|$ for $|z_1| \\le 1$. Averaging the squares over the circle gives $|A|^2 + |B|^2 \\ge |C|^2 + |D|^2$, and the same with $z_2$ gives $|A|^2 + |C|^2 \\ge |B|^2 + |D|^2$. Adding them gives $|A| \\ge |D|$, and $A = P(0,0) \\ne 0$, so $A + Dz \\ne 0$ for $|z| < 1$. The other variables may be any point of the polydisc.",
+      "slogan": "Deduce that the contraction $A + Dz$ has no zero in the open unit disc.",
+      "detail": "The same argument in $z_2$ gives $|A|^2 + |C|^2 \\ge |B|^2 + |D|^2$. Adding the two inequalities gives $|A| \\ge |D|$, and $A = P(0,0) \\ne 0$. So $A + Dz \\ne 0$ for $|z| < 1$, for any values of the other variables in the open disc.",
       "uses": []
      },
      {
@@ -1322,6 +1339,10 @@
      [
       "s:product",
       "s:contract"
+     ],
+     [
+      "s:bounds",
+      "s:asano"
      ],
      [
       "s:asano",
