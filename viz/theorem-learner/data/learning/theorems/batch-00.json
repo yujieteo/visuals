@@ -3425,5 +3425,859 @@
     }
    }
   ]
+ },
+ {
+  "id": "nm:diagonalization-of-self-adjoint-endomorphisms",
+  "statement": "Let $T$ be a [self-adjoint operator](c:self-adjoint-operator) on an $n$-dimensional real or complex [inner product space](c:inner-product-space) $E$. Then there are an orthonormal basis $e_1, \\dots, e_n$ of [eigenvectors](c:eigenvector) of $T$ and real eigenvalues $\\lambda_1, \\dots, \\lambda_n$ such that $T$ acts diagonally in its coordinates: the $i$-th coordinate of $Tv$ is $\\lambda_i$ times the $i$-th coordinate of $v$, for every $v \\in E$.",
+  "hypotheses": [
+   {
+    "id": "h:finite",
+    "text": "$E$ is an [inner product space](c:inner-product-space) over $\\mathbb{R}$ or $\\mathbb{C}$ of finite dimension $n$.",
+    "concept": "c:inner-product-space"
+   },
+   {
+    "id": "h:self-adjoint",
+    "text": "$T$ is [self-adjoint](c:self-adjoint-operator): $\\langle Tu, v \\rangle = \\langle u, Tv \\rangle$ for all $u, v \\in E$.",
+    "concept": "c:self-adjoint-operator"
+   }
+  ],
+  "conclusion": "$\\langle e_i, Tv \\rangle = \\lambda_i \\langle e_i, v \\rangle$ for every $v \\in E$ and every $i$, with $\\lambda_i$ real.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "eigenbasis-coordinates",
+    "name": "Eigenbasis and coordinates",
+    "slogan": "Build an orthonormal basis from the orthogonal eigenspaces, expand each vector in it, and apply $T$ term by term.",
+    "scope": "Every finite dimension; for $n = 0$ the empty basis works and there is nothing to check. Step 2 cites the Rayleigh-quotient argument that a self-adjoint operator on a nonzero space has an eigenvector. The inner product is linear in its second argument.",
+    "mechanisms": [
+     "m:eigenvector-basis",
+     "m:spectral-decomposition"
+    ],
+    "roles": [
+     {
+      "h": "h:finite",
+      "why": "Finite dimension makes the unit sphere compact for the Rayleigh quotient and gives a basis of exactly $n$ vectors.",
+      "steps": [
+       "s:span",
+       "s:basis"
+      ]
+     },
+     {
+      "h": "h:self-adjoint",
+      "why": "Self-adjointness makes the eigenvalues real, the eigenspaces orthogonal and their complement invariant.",
+      "steps": [
+       "s:real",
+       "s:span"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:real",
+      "slogan": "Show that the eigenvalues of $T$ are real numbers.",
+      "detail": "If $Tv = \\lambda v$ with $v \\neq 0$, then $\\lambda\\langle v, v \\rangle = \\langle v, Tv \\rangle = \\langle Tv, v \\rangle = \\bar\\lambda\\langle v, v \\rangle$. Since $\\langle v, v \\rangle > 0$, $\\lambda$ is real.",
+      "uses": []
+     },
+     {
+      "id": "s:span",
+      "slogan": "Show that the mutually orthogonal [eigenspaces](c:eigenspace) of $T$ span $E$.",
+      "detail": "For real $\\lambda \\neq \\mu$, eigenvectors $u$ and $v$ satisfy $\\mu\\langle u, v \\rangle = \\langle Tu, v \\rangle = \\lambda\\langle u, v \\rangle$, so the eigenspaces are orthogonal. The orthogonal complement $W$ of their sum is invariant under $T$. If $W \\neq 0$, the maximum of the Rayleigh quotient on the unit sphere of $W$ gives an eigenvector inside $W$, which is impossible; so $W = 0$ and the eigenspaces span $E$.",
+      "uses": [
+       "nm:eigenvalues-from-rayleigh-quotient"
+      ]
+     },
+     {
+      "id": "s:basis",
+      "slogan": "Join orthonormal bases of the eigenspaces and number the vectors from $1$ to $n$.",
+      "detail": "Gram-Schmidt gives an orthonormal basis of each eigenspace. By step 2 their union is orthonormal and spans $E$, so it is an [orthonormal basis](c:orthonormal-basis) with $n = \\dim E$ vectors. Number them $e_1, \\dots, e_n$, with $Te_i = \\lambda_i e_i$ and $\\lambda_i$ real by step 1.",
+      "uses": [
+       "nm:gram-schmidt-orthogonalisation"
+      ]
+     },
+     {
+      "id": "s:coordinates",
+      "slogan": "Expand $v$ in the eigenbasis and apply $T$ term by term.",
+      "detail": "Write $v = \\sum_i c_i e_i$ with $c_i = \\langle e_i, v \\rangle$. Linearity gives $Tv = \\sum_i c_i Te_i = \\sum_i \\lambda_i c_i e_i$. So the $i$-th coordinate of $Tv$ is $\\lambda_i c_i$, which is $\\lambda_i$ times the $i$-th coordinate of $v$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:real",
+      "s:span"
+     ],
+     [
+      "s:span",
+      "s:basis"
+     ],
+     [
+      "s:real",
+      "s:basis"
+     ],
+     [
+      "s:basis",
+      "s:coordinates"
+     ]
+    ],
+    "conclusion": "s:coordinates",
+    "concepts": {
+     "c:self-adjoint-operator": "Self-adjointness is what makes an orthonormal eigenbasis exist.",
+     "c:inner-product-space": "The inner product gives orthonormality and the coordinates $\\langle e_i, v \\rangle$.",
+     "c:eigenvector": "In a basis of eigenvectors the operator multiplies each coordinate by its eigenvalue.",
+     "c:eigenspace": "The basis is assembled from bases of the orthogonal eigenspaces.",
+     "c:orthonormal-basis": "Orthonormality makes the coordinates of $v$ the inner products $\\langle e_i, v \\rangle$."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "LinearMap.IsSymmetric.eigenvectorBasis_apply_self_apply",
+     "follows": true,
+     "note": "mathlib builds eigenvectorBasis from the orthogonal family of eigenspaces (orthogonalFamily_eigenspaces' and orthogonalComplement_iSup_eigenspaces_eq_bot') and proves the coordinate identity by expansion in the basis (OrthonormalBasis.sum_repr_symm, map_sum, apply_eigenvectorBasis)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:diagonalization-theorem",
+  "statement": "Every real symmetric or complex Hermitian $n \\times n$ [matrix](c:matrix) $A$ is unitarily [diagonalizable](c:diagonalizable-matrix) with real [eigenvalues](c:eigenvalue): $A = UDU^*$ for a [unitary matrix](c:unitary-operator) $U$, whose columns are eigenvectors of $A$, and a real [diagonal matrix](c:diagonal-matrix) $D$.",
+  "hypotheses": [
+   {
+    "id": "h:hermitian",
+    "text": "$A$ is an $n \\times n$ matrix over $\\mathbb{R}$ or $\\mathbb{C}$ with $A^* = A$, so it is [self-adjoint](c:self-adjoint-operator) for the standard inner product.",
+    "concept": "c:self-adjoint-operator"
+   }
+  ],
+  "conclusion": "$A = UDU^*$ with $U$ unitary (real orthogonal when $A$ is real) and $D$ real diagonal.",
+  "formal": {
+   "decl": "Matrix.IsHermitian.spectral_theorem",
+   "difference": null
+  },
+  "proofs": [
+   {
+    "id": "eigenvector-columns",
+    "name": "Orthonormal eigenvectors as columns",
+    "slogan": "Treat $A$ as a self-adjoint operator on $\\mathbb{K}^n$, take an orthonormal basis of eigenvectors, and use it as the columns of $U$.",
+    "scope": "Real symmetric and complex Hermitian matrices of every size; for $n = 0$ the matrices are empty. In the real case $U$ is real orthogonal. Step 2 cites the spectral theorem for self-adjoint operators.",
+    "mechanisms": [
+     "m:eigenvector-basis",
+     "m:spectral-decomposition"
+    ],
+    "roles": [
+     {
+      "h": "h:hermitian",
+      "why": "The identity $A^* = A$ makes multiplication by $A$ a self-adjoint operator on $\\mathbb{K}^n$.",
+      "steps": [
+       "s:operator"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:operator",
+      "slogan": "View $A$ as a self-adjoint operator on $\\mathbb{K}^n$ with the standard inner product.",
+      "detail": "Let $\\mathbb{K}$ be $\\mathbb{R}$ or $\\mathbb{C}$ and $\\langle u, v \\rangle = u^*v$. Then $\\langle Au, v \\rangle = u^*A^*v = u^*Av = \\langle u, Av \\rangle$, because $A^* = A$. So $v \\mapsto Av$ is a [self-adjoint](c:self-adjoint-operator) operator on $\\mathbb{K}^n$.",
+      "uses": []
+     },
+     {
+      "id": "s:eigenbasis",
+      "slogan": "Take an orthonormal basis of eigenvectors of this operator with real eigenvalues.",
+      "detail": "The spectral theorem for self-adjoint operators on a finite-dimensional inner product space gives an orthonormal basis $u_1, \\dots, u_n$ of $\\mathbb{K}^n$ with $Au_i = \\lambda_i u_i$ and real [eigenvalues](c:eigenvalue) $\\lambda_i$. mathlib takes it from LinearMap.IsSymmetric.eigenvectorBasis.",
+      "uses": [
+       "wd:Q1425077"
+      ]
+     },
+     {
+      "id": "s:unitary",
+      "slogan": "Place the eigenvectors as the columns of $U$ and check that $U$ is unitary.",
+      "detail": "Let $U$ have the columns $u_1, \\dots, u_n$. The $(i, j)$ entry of $U^*U$ is $u_i^*u_j = \\langle u_i, u_j \\rangle$, which is $1$ for $i = j$ and $0$ otherwise. So $U^*U = I$, and $U$ is a [unitary matrix](c:unitary-operator) with $U^{-1} = U^*$.",
+      "uses": []
+     },
+     {
+      "id": "s:conjugate",
+      "slogan": "Compute $AU = UD$ and multiply by $U^*$ to get $A = UDU^*$.",
+      "detail": "The $j$-th column of $AU$ is $Au_j = \\lambda_j u_j$, which is the $j$-th column of $UD$ for $D = \\mathrm{diag}(\\lambda_1, \\dots, \\lambda_n)$. So $AU = UD$, and right multiplication by $U^*$ gives $A = UDU^*$ with a real [diagonal matrix](c:diagonal-matrix) $D$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:operator",
+      "s:eigenbasis"
+     ],
+     [
+      "s:eigenbasis",
+      "s:unitary"
+     ],
+     [
+      "s:eigenbasis",
+      "s:conjugate"
+     ],
+     [
+      "s:unitary",
+      "s:conjugate"
+     ]
+    ],
+    "conclusion": "s:conjugate",
+    "concepts": {
+     "c:matrix": "The theorem factors one square matrix.",
+     "c:diagonalizable-matrix": "The conclusion is that $A$ is diagonalizable, and by a unitary change of basis.",
+     "c:eigenvalue": "The diagonal entries of $D$ are the eigenvalues, and they are real.",
+     "c:unitary-operator": "A matrix with orthonormal columns is unitary, so its inverse is its adjoint.",
+     "c:diagonal-matrix": "In the eigenvector basis the matrix becomes diagonal.",
+     "c:self-adjoint-operator": "A Hermitian matrix is a self-adjoint operator, to which the spectral theorem applies."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Matrix.IsHermitian.spectral_theorem",
+     "follows": true,
+     "note": "mathlib rewrites A with conjStarAlgAut_star_eigenvectorUnitary (U* A U = D) and conjStarAlgAut_mul_apply; eigenvectorUnitary has as columns the vectors of LinearMap.IsSymmetric.eigenvectorBasis for the operator toEuclideanLin A."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:16110",
+  "statement": "For every [complex number](c:complex-number) $z$, $e^{iz} = \\cos z + i\\sin z$, where the [exponential function](c:exponential-function), the cosine and the sine are defined by their [power series](c:power-series). In particular $e^{ix} = \\cos x + i\\sin x$ for real $x$, which links the exponential with the [trigonometric functions](c:trigonometric-function).",
+  "hypotheses": [],
+  "conclusion": "$e^{iz} = \\cos z + i\\sin z$ for all $z \\in \\mathbb{C}$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "even-odd",
+    "name": "Even and odd terms",
+    "slogan": "Split the exponential series at $iz$ into its even and odd terms and recognize the cosine and sine series.",
+    "scope": "All complex $z$. If cosine and sine are defined geometrically for real $x$, their Taylor series equal these power series, so the formula holds in that setting as well.",
+    "mechanisms": [
+     "m:algebraic-identity"
+    ],
+    "roles": [],
+    "steps": [
+     {
+      "id": "s:series",
+      "slogan": "Write the three [power series](c:power-series) and check their absolute convergence.",
+      "detail": "By definition $e^w = \\sum_{n \\ge 0} w^n/n!$, $\\cos z = \\sum_{k \\ge 0}(-1)^k z^{2k}/(2k)!$ and $\\sin z = \\sum_{k \\ge 0}(-1)^k z^{2k+1}/(2k+1)!$. The ratio test shows that all three converge absolutely for every complex argument.",
+      "uses": []
+     },
+     {
+      "id": "s:powers",
+      "slogan": "Compute the powers of $i$ in the terms $(iz)^n$.",
+      "detail": "Since $i^2 = -1$, $i^{2k} = (-1)^k$ and $i^{2k+1} = (-1)^k i$. So $(iz)^{2k}/(2k)! = (-1)^k z^{2k}/(2k)!$ and $(iz)^{2k+1}/(2k+1)! = i(-1)^k z^{2k+1}/(2k+1)!$.",
+      "uses": []
+     },
+     {
+      "id": "s:split",
+      "slogan": "Regroup the absolutely convergent exponential series into even and odd terms.",
+      "detail": "An absolutely convergent series can be split into its even-indexed and its odd-indexed terms without a change of sum. With step 2, $e^{iz} = \\sum_k (-1)^k z^{2k}/(2k)! + i\\sum_k (-1)^k z^{2k+1}/(2k+1)!$, which is $\\cos z + i\\sin z$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:series",
+      "s:split"
+     ],
+     [
+      "s:powers",
+      "s:split"
+     ]
+    ],
+    "conclusion": "s:split",
+    "concepts": {
+     "c:complex-number": "The formula evaluates the exponential at the imaginary number $iz$.",
+     "c:exponential-function": "The left side is the exponential function, defined by its power series.",
+     "c:power-series": "All three functions are power series that converge on the whole plane.",
+     "c:trigonometric-function": "Cosine and sine form the real and imaginary parts of $e^{ix}$ for real $x$."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard comparison of the power series of the exponential, the cosine and the sine."
+    }
+   },
+   {
+    "id": "zero-derivative",
+    "name": "Zero derivative",
+    "slogan": "Show that $e^{-iz}(\\cos z + i\\sin z)$ has derivative zero on the complex plane, so it equals its value $1$ at $0$.",
+    "scope": "All complex $z$. The proof uses the derivatives of the three functions, from term-by-term differentiation of their power series, and the identity $e^w e^{-w} = 1$.",
+    "mechanisms": [
+     "m:mean-value",
+     "m:algebraic-identity"
+    ],
+    "roles": [],
+    "steps": [
+     {
+      "id": "s:derivatives",
+      "slogan": "Differentiate the three [power series](c:power-series) term by term.",
+      "detail": "A power series can be differentiated term by term inside its disk of convergence, which here is all of $\\mathbb{C}$. This gives $\\frac{d}{dz}e^{az} = ae^{az}$, $\\cos' = -\\sin$ and $\\sin' = \\cos$.",
+      "uses": []
+     },
+     {
+      "id": "s:quotient",
+      "slogan": "Show that $g(z) = e^{-iz}(\\cos z + i\\sin z)$ has derivative zero.",
+      "detail": "The product rule gives $g'(z) = -ie^{-iz}(\\cos z + i\\sin z) + e^{-iz}(-\\sin z + i\\cos z)$. The bracket terms add to $-i\\cos z + \\sin z - \\sin z + i\\cos z = 0$, so $g' = 0$ on $\\mathbb{C}$.",
+      "uses": []
+     },
+     {
+      "id": "s:constant",
+      "slogan": "Conclude that $g$ is constant and equal to $g(0) = 1$.",
+      "detail": "A function with zero complex derivative on the connected set $\\mathbb{C}$ is constant, by the mean value theorem for its real and imaginary parts along segments. So $g(z) = g(0) = e^0(\\cos 0 + i\\sin 0) = 1$.",
+      "uses": [
+       "wd:Q189136"
+      ]
+     },
+     {
+      "id": "s:multiply",
+      "slogan": "Multiply $g(z) = 1$ by $e^{iz}$ to get Euler's formula.",
+      "detail": "The functional equation of the [exponential function](c:exponential-function) gives $e^{iz}e^{-iz} = e^0 = 1$. Multiplication of $g(z) = 1$ by $e^{iz}$ gives $\\cos z + i\\sin z = e^{iz}$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:derivatives",
+      "s:quotient"
+     ],
+     [
+      "s:quotient",
+      "s:constant"
+     ],
+     [
+      "s:constant",
+      "s:multiply"
+     ]
+    ],
+    "conclusion": "s:multiply",
+    "concepts": {
+     "c:complex-number": "The formula evaluates the exponential at the imaginary number $iz$.",
+     "c:exponential-function": "The left side is the exponential function, defined by its power series.",
+     "c:power-series": "All three functions are power series that converge on the whole plane.",
+     "c:trigonometric-function": "Cosine and sine form the real and imaginary parts of $e^{ix}$ for real $x$."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The zero-derivative proof, a standard alternative to the comparison of series."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q193910",
+  "statement": "If $n$ is a positive integer and $a$ is an integer [coprime](c:coprime-integers) to $n$, then $a^{\\varphi(n)} \\equiv 1 \\pmod{n}$, where $\\varphi$ is [Euler's totient function](c:euler-s-totient-function).",
+  "hypotheses": [
+   {
+    "id": "h:positive",
+    "text": "The modulus $n$ is a positive integer.",
+    "concept": null
+   },
+   {
+    "id": "h:coprime",
+    "text": "The integers $a$ and $n$ are [coprime](c:coprime-integers): $\\gcd(a, n) = 1$.",
+    "concept": "c:coprime-integers"
+   }
+  ],
+  "conclusion": "$a^{\\varphi(n)} \\equiv 1$ [modulo](c:modular-arithmetic) $n$.",
+  "formal": {
+   "decl": "Nat.ModEq.pow_totient",
+   "difference": "The declaration takes natural numbers $x$ and $n$, and it also covers $n = 0$, where $\\varphi(0) = 0$ makes the claim trivial. An integer $a$ reduces to the natural number $a \\bmod n$, which has the same residue."
+  },
+  "proofs": [
+   {
+    "id": "unit-group",
+    "name": "Lagrange's theorem in the unit group",
+    "slogan": "The residue of $a$ is a unit of $\\mathbb{Z}/n\\mathbb{Z}$, the unit group has $\\varphi(n)$ elements, and the order of an element divides the order of the group.",
+    "scope": "All $n \\ge 1$. For $n = 1$ every congruence modulo $1$ holds and $\\varphi(1) = 1$.",
+    "mechanisms": [
+     "m:lagrange-counting",
+     "m:modular-arithmetic"
+    ],
+    "roles": [
+     {
+      "h": "h:positive",
+      "why": "A positive modulus gives the finite ring $\\mathbb{Z}/n\\mathbb{Z}$ whose units the totient counts.",
+      "steps": [
+       "s:count"
+      ]
+     },
+     {
+      "h": "h:coprime",
+      "why": "Coprimality makes $a$ invertible modulo $n$.",
+      "steps": [
+       "s:unit"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:unit",
+      "slogan": "Show that the residue of $a$ is a unit modulo $n$.",
+      "detail": "Because $\\gcd(a, n) = 1$, Bezout's identity gives $au + nv = 1$, so $au \\equiv 1 \\pmod{n}$. Hence the class of $a$ lies in the [group of units](c:group-of-units) $(\\mathbb{Z}/n\\mathbb{Z})^\\times$.",
+      "uses": [
+       "wd:Q513028"
+      ]
+     },
+     {
+      "id": "s:count",
+      "slogan": "Count the units of $\\mathbb{Z}/n\\mathbb{Z}$ with the totient function.",
+      "detail": "A residue $b$ is a unit exactly when $\\gcd(b, n) = 1$: one direction is step 1, and if $bu \\equiv 1$, a common divisor of $b$ and $n$ divides $1$. So $(\\mathbb{Z}/n\\mathbb{Z})^\\times$ has $\\varphi(n)$ elements, by the definition of [Euler's totient function](c:euler-s-totient-function).",
+      "uses": []
+     },
+     {
+      "id": "s:lagrange",
+      "slogan": "Raise $a$ to the order of the finite unit group by Lagrange's theorem.",
+      "detail": "By Lagrange's theorem, the [order](c:order-of-an-element) of the class of $a$ divides the order $\\varphi(n)$ of the unit group. So $a^{\\varphi(n)} = 1$ in $(\\mathbb{Z}/n\\mathbb{Z})^\\times$.",
+      "uses": [
+       "wd:Q505798"
+      ]
+     },
+     {
+      "id": "s:back",
+      "slogan": "Translate the identity in the residue ring back into a congruence.",
+      "detail": "Equality of classes in $\\mathbb{Z}/n\\mathbb{Z}$ means congruence [modulo](c:modular-arithmetic) $n$. So $a^{\\varphi(n)} \\equiv 1 \\pmod{n}$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:unit",
+      "s:lagrange"
+     ],
+     [
+      "s:count",
+      "s:lagrange"
+     ],
+     [
+      "s:lagrange",
+      "s:back"
+     ]
+    ],
+    "conclusion": "s:back",
+    "concepts": {
+     "c:coprime-integers": "Coprimality of $a$ and $n$ makes $a$ invertible modulo $n$.",
+     "c:euler-s-totient-function": "The totient counts the residues coprime to $n$, which is the exponent in the theorem.",
+     "c:modular-arithmetic": "The theorem is a congruence, that is an equation in the integers modulo $n$.",
+     "c:group-of-units": "The invertible residues form the finite group in which Lagrange's theorem acts.",
+     "c:order-of-an-element": "The order of the class of $a$ divides the group order, which gives the exponent."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Nat.ModEq.pow_totient",
+     "follows": true,
+     "note": "mathlib casts to ZMod n, forms the unit ZMod.unitOfCoprime, and applies ZMod.pow_totient, which is pow_card_eq_one (Lagrange's theorem) for the unit group of order φ(n) (ZMod.card_units_eq_totient)."
+    }
+   },
+   {
+    "id": "permutation",
+    "name": "Permutation of reduced residues",
+    "slogan": "Multiplication by $a$ permutes the residues coprime to $n$, so their product is unchanged and the factor $a^{\\varphi(n)}$ cancels.",
+    "scope": "All $n \\ge 1$; for $n = 1$ the only reduced residue is $0$, and the claim is trivial.",
+    "mechanisms": [
+     "m:bijection",
+     "m:modular-arithmetic"
+    ],
+    "roles": [
+     {
+      "h": "h:positive",
+      "why": "A positive modulus gives a finite list of residues.",
+      "steps": [
+       "s:list"
+      ]
+     },
+     {
+      "h": "h:coprime",
+      "why": "Coprimality of $a$ and $n$ lets the proof cancel $a$, so multiplication by $a$ is injective.",
+      "steps": [
+       "s:permute"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:list",
+      "slogan": "List the $\\varphi(n)$ residues $r_1, \\dots, r_{\\varphi(n)}$ that are coprime to $n$.",
+      "detail": "By the definition of [Euler's totient function](c:euler-s-totient-function), exactly $\\varphi(n)$ residues in $\\{0, \\dots, n - 1\\}$ are coprime to $n$. Call them $r_1, \\dots, r_{\\varphi(n)}$.",
+      "uses": []
+     },
+     {
+      "id": "s:permute",
+      "slogan": "Show that multiplication by $a$ permutes the reduced residues.",
+      "detail": "Each $ar_j$ is coprime to $n$, so it is congruent to some $r_k$. If $ar_j \\equiv ar_l$, then $n \\mid a(r_j - r_l)$, and $\\gcd(a, n) = 1$ gives $r_j \\equiv r_l$. So $r_j \\mapsto ar_j \\bmod n$ is injective on a finite set, hence a permutation.",
+      "uses": []
+     },
+     {
+      "id": "s:product",
+      "slogan": "Compare the products of the residues before and after multiplication by $a$.",
+      "detail": "The residues are only permuted, so $\\prod_j (ar_j) \\equiv \\prod_j r_j \\pmod{n}$. That is $a^{\\varphi(n)}P \\equiv P$ with $P = \\prod_j r_j$.",
+      "uses": []
+     },
+     {
+      "id": "s:cancel",
+      "slogan": "Cancel the product $P$, which is coprime to $n$.",
+      "detail": "The number $P$ is a product of numbers coprime to $n$, so $\\gcd(P, n) = 1$, and Bezout's identity gives an inverse of $P$ [modulo](c:modular-arithmetic) $n$. Multiplication by this inverse gives $a^{\\varphi(n)} \\equiv 1 \\pmod{n}$.",
+      "uses": [
+       "wd:Q513028"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:list",
+      "s:permute"
+     ],
+     [
+      "s:permute",
+      "s:product"
+     ],
+     [
+      "s:product",
+      "s:cancel"
+     ],
+     [
+      "s:list",
+      "s:cancel"
+     ]
+    ],
+    "conclusion": "s:cancel",
+    "concepts": {
+     "c:coprime-integers": "Coprimality of $a$ and $n$ makes $a$ invertible modulo $n$.",
+     "c:euler-s-totient-function": "The totient counts the residues coprime to $n$, which is the exponent in the theorem.",
+     "c:modular-arithmetic": "The theorem is a congruence, that is an equation in the integers modulo $n$."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Euler's argument by permuting the reduced residues, as in Hardy and Wright, An Introduction to the Theory of Numbers, chapter 6."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q188295",
+  "statement": "If $p$ is a [prime number](c:prime-number) and $a$ is an integer not divisible by $p$, then $a^{p-1} \\equiv 1 \\pmod{p}$. Hence $a^p \\equiv a$ [modulo](c:modular-arithmetic) $p$ for every integer $a$.",
+  "hypotheses": [
+   {
+    "id": "h:prime",
+    "text": "The modulus $p$ is a [prime number](c:prime-number).",
+    "concept": "c:prime-number"
+   },
+   {
+    "id": "h:not-divisible",
+    "text": "For the first form, $p$ does not divide $a$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "$a^{p-1} \\equiv 1 \\pmod{p}$ when $p \\nmid a$, and $a^p \\equiv a \\pmod{p}$ for every integer $a$.",
+  "formal": {
+   "decl": "ZMod.pow_card_sub_one_eq_one",
+   "difference": "The declaration states $a^{p-1} = 1$ for nonzero $a$ in $\\mathbb{Z}/p\\mathbb{Z}$, which is the first form; the integer congruence is Int.ModEq.pow_card_sub_one_eq_one. The form $a^p \\equiv a$ for every $a$ is not part of the declaration."
+  },
+  "proofs": [
+   {
+    "id": "unit-group",
+    "name": "Unit group of the field of residues",
+    "slogan": "The nonzero residues modulo $p$ form a group of order $p - 1$, and Lagrange's theorem gives $a^{p-1} = 1$.",
+    "scope": "Both forms; step 4 derives the second form by a split on whether $p$ divides $a$.",
+    "mechanisms": [
+     "m:lagrange-counting",
+     "m:modular-arithmetic",
+     "m:case-analysis"
+    ],
+    "roles": [
+     {
+      "h": "h:prime",
+      "why": "Primality makes every nonzero residue invertible, so the residues form a field.",
+      "steps": [
+       "s:field"
+      ]
+     },
+     {
+      "h": "h:not-divisible",
+      "why": "The condition $p \\nmid a$ puts the class of $a$ in the group of nonzero residues.",
+      "steps": [
+       "s:group"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:field",
+      "slogan": "Show that the residues modulo the prime $p$ form a [field](c:field).",
+      "detail": "If $p \\nmid b$, then $\\gcd(b, p) = 1$, because the only positive divisors of the [prime number](c:prime-number) $p$ are $1$ and $p$. Bezout's identity then gives $bu \\equiv 1 \\pmod{p}$. So every nonzero residue is invertible, and $\\mathbb{Z}/p\\mathbb{Z}$ is a field.",
+      "uses": [
+       "wd:Q513028"
+      ]
+     },
+     {
+      "id": "s:group",
+      "slogan": "Count the nonzero residues, which form the unit group of order $p - 1$.",
+      "detail": "The nonzero residues $1, \\dots, p - 1$ are exactly the units of the field, so the unit group has $p - 1$ elements. The class of $a$ is one of them, because $p \\nmid a$.",
+      "uses": []
+     },
+     {
+      "id": "s:lagrange",
+      "slogan": "Raise $a$ to the group order by Lagrange's theorem.",
+      "detail": "By Lagrange's theorem, the order of the class of $a$ divides $p - 1$. So $a^{p-1} = 1$ in $\\mathbb{Z}/p\\mathbb{Z}$, that is $a^{p-1} \\equiv 1 \\pmod{p}$.",
+      "uses": [
+       "wd:Q505798"
+      ]
+     },
+     {
+      "id": "s:all",
+      "slogan": "Multiply by $a$ and treat the multiples of $p$ apart to get $a^p \\equiv a$.",
+      "detail": "If $p \\nmid a$, multiply $a^{p-1} \\equiv 1$ by $a$. If $p \\mid a$, both $a^p$ and $a$ are $0$ [modulo](c:modular-arithmetic) $p$. So $a^p \\equiv a \\pmod{p}$ for every integer $a$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:field",
+      "s:group"
+     ],
+     [
+      "s:group",
+      "s:lagrange"
+     ],
+     [
+      "s:lagrange",
+      "s:all"
+     ]
+    ],
+    "conclusion": "s:all",
+    "concepts": {
+     "c:prime-number": "Primality of $p$ is what makes every nonzero residue invertible.",
+     "c:modular-arithmetic": "The theorem is a congruence modulo $p$.",
+     "c:field": "In the field $\\mathbb{Z}/p\\mathbb{Z}$ the nonzero elements form a group of order $p - 1$."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "ZMod.pow_card_sub_one_eq_one",
+     "follows": true,
+     "note": "mathlib applies FiniteField.pow_card_sub_one_eq_one (the unit group of a finite field with q elements has order q - 1, and pow_card_eq_one is Lagrange's theorem) and rewrites q with ZMod.card p."
+    }
+   },
+   {
+    "id": "binomial-induction",
+    "name": "Binomial induction",
+    "slogan": "Show $(b + 1)^p \\equiv b^p + 1$ by the binomial theorem, induct to get $a^p \\equiv a$, and cancel $a$.",
+    "scope": "Steps 1 to 3 prove $a^p \\equiv a$ for all integers $a$; step 4 cancels $a$ when $p \\nmid a$.",
+    "mechanisms": [
+     "m:induction",
+     "m:modular-arithmetic"
+    ],
+    "roles": [
+     {
+      "h": "h:prime",
+      "why": "Primality gives Euclid's lemma, which shows $p \\mid \\binom{p}{k}$ and allows the cancellation of $a$.",
+      "steps": [
+       "s:divides",
+       "s:cancel"
+      ]
+     },
+     {
+      "h": "h:not-divisible",
+      "why": "The condition $p \\nmid a$ allows the cancellation of $a$ in the last step.",
+      "steps": [
+       "s:cancel"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:divides",
+      "slogan": "Show that $p$ divides the binomial coefficients $\\binom{p}{k}$ for $0 < k < p$.",
+      "detail": "The identity $k\\binom{p}{k} = p\\binom{p-1}{k-1}$ shows that the [prime number](c:prime-number) $p$ divides $k\\binom{p}{k}$. Since $0 < k < p$, $p \\nmid k$, so Euclid's lemma gives $p \\mid \\binom{p}{k}$.",
+      "uses": []
+     },
+     {
+      "id": "s:freshman",
+      "slogan": "Expand $(b + 1)^p$ by the binomial theorem modulo $p$.",
+      "detail": "The binomial theorem gives $(b + 1)^p = \\sum_{k=0}^p \\binom{p}{k}b^k$. By step 1 every middle term vanishes [modulo](c:modular-arithmetic) $p$, so $(b + 1)^p \\equiv b^p + 1 \\pmod{p}$.",
+      "uses": [
+       "wd:Q26708"
+      ]
+     },
+     {
+      "id": "s:induct",
+      "slogan": "Induct on $a \\ge 0$ to get $a^p \\equiv a$, then pass to negative $a$.",
+      "detail": "For $a = 0$ both sides are $0$. If $b^p \\equiv b$, step 2 gives $(b + 1)^p \\equiv b^p + 1 \\equiv b + 1$. So $a^p \\equiv a \\pmod{p}$ for every $a \\ge 0$, and also for negative $a$, because $a^p \\bmod p$ depends only on $a \\bmod p$.",
+      "uses": []
+     },
+     {
+      "id": "s:cancel",
+      "slogan": "Cancel $a$ from $a^p \\equiv a$ when $p$ does not divide $a$.",
+      "detail": "If $p \\nmid a$, then $p \\mid a(a^{p-1} - 1)$, and Euclid's lemma for the prime $p$ gives $p \\mid a^{p-1} - 1$. So $a^{p-1} \\equiv 1 \\pmod{p}$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:divides",
+      "s:freshman"
+     ],
+     [
+      "s:freshman",
+      "s:induct"
+     ],
+     [
+      "s:induct",
+      "s:cancel"
+     ]
+    ],
+    "conclusion": "s:cancel",
+    "concepts": {
+     "c:prime-number": "Primality of $p$ is what makes every nonzero residue invertible.",
+     "c:modular-arithmetic": "The theorem is a congruence modulo $p$."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard inductive proof by the binomial theorem."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q179467",
+  "statement": "Let $f\\colon \\mathbb{R} \\to \\mathbb{C}$ be a $1$-[periodic function](c:periodic-function) that is [integrable](c:integrable-function) on $[0, 1]$, with [Fourier coefficients](c:fourier-coefficients) $\\hat f(k) = \\int_0^1 f(t)e^{-2\\pi ikt}\\,dt$. If $\\sum_{k \\in \\mathbb{Z}} |\\hat f(k)| < \\infty$ and $f$ is continuous at $x$, then the [Fourier series](c:fourier-series) of $f$ converges at $x$ to $f(x)$: $\\sum_{k \\in \\mathbb{Z}} \\hat f(k)e^{2\\pi ikx} = f(x)$.",
+  "hypotheses": [
+   {
+    "id": "h:periodic",
+    "text": "$f$ is a [periodic function](c:periodic-function) of period $1$.",
+    "concept": "c:periodic-function"
+   },
+   {
+    "id": "h:integrable",
+    "text": "$f$ is [integrable](c:integrable-function) on $[0, 1]$.",
+    "concept": "c:integrable-function"
+   },
+   {
+    "id": "h:summable",
+    "text": "The Fourier coefficients are absolutely summable: $\\sum_k |\\hat f(k)| < \\infty$.",
+    "concept": null
+   },
+   {
+    "id": "h:continuous",
+    "text": "$f$ is continuous at the point $x$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "$\\sum_{k \\in \\mathbb{Z}} \\hat f(k)e^{2\\pi ikx} = f(x)$.",
+  "formal": {
+   "decl": "MeasureTheory.Integrable.fourierInv_fourier_eq",
+   "difference": "The declaration is the inversion formula for the Fourier transform, not for series: for $f$ integrable on a finite-dimensional real inner product space $V$ with integrable transform $\\hat f$, $\\int_V \\hat f(w)e^{2\\pi i\\langle w, v \\rangle}\\,dw = f(v)$ at every point $v$ where $f$ is continuous. The series statement here is its analogue on the circle; the series result in mathlib is the $L^2$ convergence hasSum_fourier_series_L2."
+  },
+  "proofs": [
+   {
+    "id": "summability-kernel",
+    "name": "Damping factor and two limits",
+    "slogan": "Insert the damping factor $r^{|k|}$, compute the damped series once by dominated convergence and once as a Poisson average, and compare the two limits.",
+    "scope": "Pointwise inversion at a point of continuity. mathlib proves the transform version by the same route with a Gaussian damping factor; here the factor $r^{|k|}$ and the Poisson kernel take its place. Other pointwise results, such as Dirichlet's theorem for piecewise smooth $f$, need other kernels.",
+    "mechanisms": [
+     "m:approximation",
+     "m:dominated-convergence",
+     "m:fubini-swap"
+    ],
+    "roles": [
+     {
+      "h": "h:periodic",
+      "why": "Periodicity makes the integral over one period a convolution on the circle.",
+      "steps": [
+       "s:kernel"
+      ]
+     },
+     {
+      "h": "h:integrable",
+      "why": "Integrability allows the exchange of sum and integral and bounds the far part of the Poisson average.",
+      "steps": [
+       "s:kernel",
+       "s:identity"
+      ]
+     },
+     {
+      "h": "h:summable",
+      "why": "Absolute summability gives the dominating sequence for the limit on the frequency side.",
+      "steps": [
+       "s:damp",
+       "s:frequency"
+      ]
+     },
+     {
+      "h": "h:continuous",
+      "why": "Continuity at $x$ makes the near part of the Poisson average small.",
+      "steps": [
+       "s:identity"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:damp",
+      "slogan": "Multiply the [Fourier coefficients](c:fourier-coefficients) by $r^{|k|}$ for $0 < r < 1$.",
+      "detail": "Put $A_r(x) = \\sum_k r^{|k|}\\hat f(k)e^{2\\pi ikx}$. The terms are bounded by $|\\hat f(k)|$, so the series converges absolutely for every $r$.",
+      "uses": []
+     },
+     {
+      "id": "s:frequency",
+      "slogan": "Let $r$ tend to $1$ on the frequency side by dominated convergence.",
+      "detail": "Each term $r^{|k|}\\hat f(k)e^{2\\pi ikx}$ tends to $\\hat f(k)e^{2\\pi ikx}$ as $r \\to 1$ and is bounded by $|\\hat f(k)|$. Because $\\sum_k |\\hat f(k)| < \\infty$, dominated convergence for sums gives $A_r(x) \\to \\sum_k \\hat f(k)e^{2\\pi ikx}$.",
+      "uses": [
+       "wd:Q1067156"
+      ]
+     },
+     {
+      "id": "s:kernel",
+      "slogan": "Rewrite the damped series as a [convolution](c:convolution) of $f$ with the [Poisson kernel](c:poisson-kernel).",
+      "detail": "Insert the integral for $\\hat f(k)$ and exchange the sum and the integral; this is allowed because $\\sum_k r^{|k|} < \\infty$ and $f$ is integrable. Periodicity then gives $A_r(x) = \\int_0^1 f(x - t)P_r(t)\\,dt$ with $P_r(t) = \\sum_k r^{|k|}e^{2\\pi ikt} = (1 - r^2)/(1 - 2r\\cos 2\\pi t + r^2)$.",
+      "uses": [
+       "wd:Q1149022"
+      ]
+     },
+     {
+      "id": "s:identity",
+      "slogan": "Show that the Poisson averages tend to $f(x)$ at the point of continuity.",
+      "detail": "The kernel satisfies $P_r > 0$ and $\\int_0^1 P_r = 1$, and for each $\\delta > 0$, $\\sup_{\\delta \\le |t| \\le 1/2} P_r(t) \\to 0$ as $r \\to 1$. So $|A_r(x) - f(x)| \\le \\int_{-1/2}^{1/2} |f(x - t) - f(x)|\\,P_r(t)\\,dt$. The part with $|t| < \\delta$ is small by continuity of $f$ at $x$, and the part with $|t| \\ge \\delta$ is at most $\\sup_{|t| \\ge \\delta} P_r \\cdot (\\|f\\|_1 + |f(x)|)$, which tends to $0$.",
+      "uses": []
+     },
+     {
+      "id": "s:unique",
+      "slogan": "Equate the two limits of the damped series $A_r(x)$.",
+      "detail": "Steps 2 and 4 give two limits of the same function $A_r(x)$ as $r \\to 1$. Limits are unique, so the [Fourier series](c:fourier-series) satisfies $\\sum_k \\hat f(k)e^{2\\pi ikx} = f(x)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:damp",
+      "s:frequency"
+     ],
+     [
+      "s:damp",
+      "s:kernel"
+     ],
+     [
+      "s:kernel",
+      "s:identity"
+     ],
+     [
+      "s:frequency",
+      "s:unique"
+     ],
+     [
+      "s:identity",
+      "s:unique"
+     ]
+    ],
+    "conclusion": "s:unique",
+    "concepts": {
+     "c:periodic-function": "Periodicity turns the coefficient integrals into a convolution on the circle.",
+     "c:integrable-function": "Integrability defines the coefficients and controls the far part of the Poisson average.",
+     "c:fourier-coefficients": "The proof damps the coefficients and sums them in two ways.",
+     "c:fourier-series": "The theorem identifies the sum of the Fourier series at $x$ with $f(x)$.",
+     "c:poisson-kernel": "The Poisson kernel is the approximate identity that the damped series produces.",
+     "c:convolution": "The damped series is the convolution of $f$ with the Poisson kernel."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "MeasureTheory.Integrable.fourierInv_fourier_eq",
+     "follows": true,
+     "note": "mathlib proves the transform version by this route: it inserts a Gaussian factor, takes the frequency-side limit by dominated convergence (Real.tendsto_integral_gaussian_smul), takes the space-side limit as a Gaussian approximate identity at the continuity point (Real.tendsto_integral_gaussian_smul'), and concludes with tendsto_nhds_unique. This proof runs the same route for series with the Poisson factor."
+    }
+   }
+  ]
  }
 ]
