@@ -267,8 +267,8 @@ def build():
     for rank, (place, row) in enumerate(candidates, 1):
         place["rank"] = rank
         has_dish = bool(row["dish"])
-        if has_dish != (rank <= TOP) or bool(row["cuisine"]) != has_dish:
-            fail(f"{row['id']}: rank {rank}, so it {'needs' if rank <= TOP else 'must not have'} a signature dish")
+        if has_dish != (rank <= TOP) or bool(row["cuisine"]) != has_dish or bool(row["dish_named_by"]) != has_dish:
+            fail(f"{row['id']}: rank {rank}, so it {'needs' if rank <= TOP else 'must not have'} a signature dish, a cuisine and dish_named_by")
     for place, row in candidates[:TOP]:
         place["dish"] = row["dish"]
         place["dish_named_by"] = row["dish_named_by"]

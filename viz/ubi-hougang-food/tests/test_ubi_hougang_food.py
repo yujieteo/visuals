@@ -52,6 +52,14 @@ class DatasetTest(unittest.TestCase):
             with self.assertRaisesRegex(SystemExit, f"{first_out}: rank 101"):
                 dataset.build()
 
+    def test_build_refuses_a_top_100_dish_that_no_guide_names(self):
+        last_in = RAW["outlets"][-1]["id"]
+        real = dataset.read_csv
+        rows = [dict(r, dish_named_by="") if r["id"] == last_in else r for r in real("outlets.csv")]
+        with mock.patch.object(dataset, "read_csv", lambda name: rows if name == "outlets.csv" else real(name)):
+            with self.assertRaisesRegex(SystemExit, f"{last_in}: rank 100"):
+                dataset.build()
+
     def test_the_top_100_are_open_and_ranked_by_publishers_then_guides_then_newest_guide(self):
         outlets = RAW["outlets"]
         self.assertEqual([o["rank"] for o in outlets], list(range(1, 101)))
