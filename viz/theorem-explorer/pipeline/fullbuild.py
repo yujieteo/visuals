@@ -12,7 +12,7 @@ import shutil
 import sys
 
 from assemble import pack
-from common import ROOT, VISUAL, WORK, read_json
+from common import ROOT, VISUAL, WORK, read_json, shown
 
 sys.path.insert(0, str(ROOT / "scripts"))
 import visual_build  # noqa: E402
@@ -43,4 +43,4 @@ def build():
 
 if __name__ == "__main__":
     path, size, p = build()
-    print(f"wrote {path.relative_to(ROOT)} ({size} bytes; formal pack {p['bytes']} bytes, {p['gz_bytes']} compressed)")
+    print(f"wrote {shown(path)} ({size} bytes; formal pack {p['bytes']} bytes, {p['gz_bytes']} compressed)")

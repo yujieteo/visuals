@@ -18,6 +18,11 @@ ROOT = VISUAL.parents[1]
 WORK = Path(os.environ.get("TE_WORK", ROOT / "build" / "te-work"))
 STAGE = WORK / "stage"
 
+
+def shown(path):
+    """A path for a message: relative to the repository root when it is in it, else absolute (TE_WORK can be elsewhere)."""
+    return str(path.relative_to(ROOT)) if path.is_relative_to(ROOT) else str(path)
+
 SCHEMA_VERSION = "te-schema/1"
 RUBRIC_VERSION = "te-rubric/1"
 PROMPT_VERSION = "te-judge-prompt/1"

@@ -5,7 +5,9 @@ needs a new assessment, an unchanged one keeps its answer), the identity map acr
 that keeps source, measurement, judge, rubric and identity changes apart.
 """
 import base64
+import contextlib
 import gzip
+import io
 import json
 import os
 import sys
@@ -118,6 +120,18 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(run.judge_step(log), {"reused": 2})
         kept = common.from_toon(answers.read_text(encoding="utf-8"))["answers"]
         self.assertEqual([r["id"] for r in kept], ["wd:Q1", "wd:Q2"])
+
+    def test_the_refresh_runs_to_its_exit_code_with_the_work_directory_outside_the_repository(self):
+        self.assertFalse(WORK.resolve().is_relative_to(common.ROOT))
+        setup_judge({"wd:Q1": "Alpha", "wd:Q2": "Beta"})
+        (WORK / "judge" / "keys.json").unlink(missing_ok=True)
+        (WORK / "judge" / "answers" / "b000.toon").write_text(common.to_toon({"answers": [ANSWER]}) + "\n", encoding="utf-8")
+        with contextlib.redirect_stdout(io.StringIO()) as out:
+            code = run.main(["--offline", "--from", "judge", "--to", "judge"])
+        self.assertEqual(code, 3)
+        self.assertIn(str(WORK / "refresh" / "report.json"), out.getvalue())
+        report = json.loads((WORK / "refresh" / "report.json").read_text(encoding="utf-8"))
+        self.assertEqual(report["failure"]["step"], "judge")
 
     def test_identity_map_follows_the_declaration_and_chains(self):
         prev = {"wd:Q1": {"decl": "Foo.bar"}, "wd:Q5": {"decl": "Baz"}, "wd:Q6": {"decl": "Same"}}

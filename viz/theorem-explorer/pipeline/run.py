@@ -37,7 +37,7 @@ import time
 import urllib.request
 from pathlib import Path
 
-from common import DATA, ROOT, VISUAL, WORK, from_toon, pins, read_json, sha256_bytes, to_toon, write_json
+from common import DATA, VISUAL, WORK, from_toon, pins, read_json, sha256_bytes, shown, to_toon, write_json
 
 HERE = Path(__file__).resolve().parent
 PINS = DATA / "sources" / "pins.json"
@@ -74,7 +74,7 @@ def run(cmd, log, cwd=None, env=None):
         f.flush()
         code = subprocess.call([str(c) for c in cmd], cwd=cwd, env=env, stdout=f, stderr=subprocess.STDOUT)
     if code:
-        raise StepFailed(f"{Path(str(cmd[0])).name} exited {code}; see {log.relative_to(ROOT)}")
+        raise StepFailed(f"{Path(str(cmd[0])).name} exited {code}; see {shown(log)}")
 
 
 def get_json(url):
@@ -267,7 +267,7 @@ def judge_step(log):
     with open(log, "a", encoding="utf-8") as f:
         f.write(to_toon({"todo": len(todo["answers"]), "second": len(todo["answers-2"]), "problems": problems or ["none"]}) + "\n")
     if problems:
-        raise StepFailed(f"{len(problems)} answer rows fail validation; see {log.relative_to(ROOT)}")
+        raise StepFailed(f"{len(problems)} answer rows fail validation; see {shown(log)}")
     if todo["answers"] or todo["answers-2"]:
         raise StepFailed(f"the judge must assess {len(todo['answers'])} results (and {len(todo['answers-2'])} second "
                          "assessments) listed in <work>/judge/todo.json; then run with --from judge")
@@ -430,7 +430,7 @@ def main(argv=None):
     write_json(LOGS / "report.json", report)
     print(to_toon({"refresh": {"steps": ",".join(s["step"] + ("" if s["ok"] else " (failed)") for s in report["steps"]),
                                "failure": (report["failure"] or {}).get("error", "none"),
-                               "report": str((LOGS / "report.json").relative_to(ROOT))}}))
+                               "report": shown(LOGS / "report.json")}}))
     return code
 
 
