@@ -1,0 +1,1910 @@
+[
+ {
+  "id": "nm:principle-of-isolated-zeros",
+  "statement": "Let $f$ map $\\mathbb{K} = \\mathbb{R}$ or $\\mathbb{C}$ to a normed space over $\\mathbb{K}$, and let $f$ be [analytic](c:analytic-function) at $z_0$. Then either $f = 0$ on a [neighborhood](c:neighborhood) of $z_0$, or $f(z) \\neq 0$ for every $z$ in some [punctured neighborhood](c:punctured-neighborhood) of $z_0$.",
+  "hypotheses": [
+   {
+    "id": "h:analytic",
+    "text": "The function $f$ is [analytic](c:analytic-function) at $z_0$: a convergent [power series](c:power-series) $\\sum_n a_n (z - z_0)^n$ equals $f$ on a ball around $z_0$.",
+    "concept": "c:analytic-function"
+   }
+  ],
+  "conclusion": "Either $f$ vanishes near $z_0$, or $f$ has no zero in a punctured neighborhood of $z_0$.",
+  "formal": {
+   "decl": "AnalyticAt.eventually_eq_zero_or_eventually_ne_zero",
+   "difference": "The declaration allows any nontrivially normed field in place of $\\mathbb{R}$ or $\\mathbb{C}$."
+  },
+  "proofs": [
+   {
+    "id": "first-nonzero-coefficient",
+    "name": "First nonzero coefficient",
+    "slogan": "Either every coefficient of the power series is zero, or the first nonzero coefficient factors out a power of $z - z_0$ times a function that is nonzero near $z_0$.",
+    "scope": "The whole theorem, by a split into the zero series and a nonzero series. The second case gives a punctured neighborhood because $(z - z_0)^k = 0$ only at $z_0$.",
+    "mechanisms": [
+     "m:case-analysis",
+     "m:taylor-expansion"
+    ],
+    "roles": [
+     {
+      "h": "h:analytic",
+      "why": "Analyticity supplies the [power series](c:power-series) whose coefficients drive the case split.",
+      "steps": [
+       "s:expand"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:expand",
+      "slogan": "Expand $f$ as a [power series](c:power-series) on a ball around $z_0$.",
+      "detail": "By hypothesis, $f(z) = \\sum_{n \\ge 0} a_n (z - z_0)^n$ for $|z - z_0| < r$, with some $r > 0$ and coefficients $a_n$ in the normed space.",
+      "uses": []
+     },
+     {
+      "id": "s:zero",
+      "slogan": "Show that $f$ vanishes on the ball when every coefficient is zero.",
+      "detail": "If $a_n = 0$ for every $n$, the series is zero at each point of the ball. So $f = 0$ on the [neighborhood](c:neighborhood) $|z - z_0| < r$ of $z_0$.",
+      "uses": []
+     },
+     {
+      "id": "s:factor",
+      "slogan": "Factor out $(z - z_0)^k$ at the first nonzero coefficient $a_k$.",
+      "detail": "Otherwise let $k$ be the least index with $a_k \\neq 0$. Then $f(z) = (z - z_0)^k g(z)$ with $g(z) = \\sum_{n \\ge k} a_n (z - z_0)^{n-k}$, a power series with the same radius of convergence and $g(z_0) = a_k$.",
+      "uses": [
+       "wd:Q859122"
+      ]
+     },
+     {
+      "id": "s:nonzero",
+      "slogan": "Keep $g$ away from zero on a small ball by continuity.",
+      "detail": "A convergent power series is [continuous](c:continuous-function) inside its ball, so $g$ is continuous at $z_0$. Since $g(z_0) = a_k \\neq 0$, some $\\delta > 0$ gives $g(z) \\neq 0$ for $|z - z_0| < \\delta$.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Combine the two cases to get the dichotomy.",
+      "detail": "In the second case, for $0 < |z - z_0| < \\delta$ both $(z - z_0)^k$ and $g(z)$ are nonzero, so $f(z) \\neq 0$ on this [punctured neighborhood](c:punctured-neighborhood). With step 2, one of the two alternatives always holds.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:expand",
+      "s:zero"
+     ],
+     [
+      "s:expand",
+      "s:factor"
+     ],
+     [
+      "s:factor",
+      "s:nonzero"
+     ],
+     [
+      "s:nonzero",
+      "s:conclude"
+     ],
+     [
+      "s:factor",
+      "s:conclude"
+     ],
+     [
+      "s:zero",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:analytic-function": "Analyticity gives a local power series for $f$.",
+     "c:power-series": "The coefficients of the series decide which alternative holds.",
+     "c:neighborhood": "The zero series makes $f$ vanish on a whole neighborhood.",
+     "c:punctured-neighborhood": "A nonzero series leaves only $z_0$ as a possible zero nearby.",
+     "c:continuous-function": "Continuity of $g$ at $z_0$ keeps it nonzero nearby."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "AnalyticAt.eventually_eq_zero_or_eventually_ne_zero",
+     "follows": true,
+     "note": "mathlib splits on p = 0: HasFPowerSeriesAt.eventually_eq_zero for the zero series, and HasFPowerSeriesAt.locally_ne_zero, which writes f as (z - z0)^order times an iterated dslope (eq_pow_order_mul_iterate_dslope) that is nonzero at z0."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:principle-of-mathematical-induction",
+  "statement": "Let $P$ be a property of [natural numbers](c:natural-number). If $P(0)$ holds, and $P(n)$ implies $P(n+1)$ for every $n$, then $P(n)$ holds for every natural number $n$.",
+  "hypotheses": [
+   {
+    "id": "h:base",
+    "text": "The base case $P(0)$ holds.",
+    "concept": null
+   },
+   {
+    "id": "h:step",
+    "text": "For every natural number $n$, $P(n)$ implies $P(n+1)$, where $n+1$ is the [successor](c:successor) of $n$.",
+    "concept": "c:successor"
+   }
+  ],
+  "conclusion": "$P(n)$ holds for every natural number $n$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "smallest-inductive-set",
+    "name": "Smallest inductive set",
+    "slogan": "The set of numbers with property $P$ is inductive, and the natural numbers form the smallest inductive set.",
+    "scope": "The proof works in set theory, where $\\mathbb{N} = \\omega$ is the intersection of all inductive sets. In Peano arithmetic the statement is an axiom scheme, so it needs no proof there.",
+    "mechanisms": [
+     "m:extremal-choice",
+     "m:construction-explicit"
+    ],
+    "roles": [
+     {
+      "h": "h:base",
+      "why": "The base case puts $0$ in the set $S$.",
+      "steps": [
+       "s:inductive"
+      ]
+     },
+     {
+      "h": "h:step",
+      "why": "The step makes $S$ closed under the [successor](c:successor) map.",
+      "steps": [
+       "s:inductive"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:collect",
+      "slogan": "Collect the natural numbers with property $P$ into a set $S$.",
+      "detail": "Let $S = \\{n \\in \\mathbb{N} : P(n)\\}$. The axiom of separation of [ZFC](c:zfc) makes $S$ a set, and $S \\subseteq \\mathbb{N}$.",
+      "uses": []
+     },
+     {
+      "id": "s:inductive",
+      "slogan": "Show that $S$ contains $0$ and is closed under the successor map.",
+      "detail": "The base case gives $0 \\in S$. If $n \\in S$, then $P(n)$ holds, the step gives $P(n+1)$, and so $n + 1 \\in S$. Thus $S$ is an inductive set.",
+      "uses": []
+     },
+     {
+      "id": "s:minimal",
+      "slogan": "Place the natural numbers inside every inductive set.",
+      "detail": "The [axiom of infinity](c:axiom-of-infinity) gives an inductive set, and $\\mathbb{N}$ is defined as the intersection of all inductive sets. So $\\mathbb{N}$ is a subset of each inductive set, in particular of $S$.",
+      "uses": []
+     },
+     {
+      "id": "s:equal",
+      "slogan": "Combine the two inclusions to get $S = \\mathbb{N}$.",
+      "detail": "Step 1 gives $S \\subseteq \\mathbb{N}$ and step 3 gives $\\mathbb{N} \\subseteq S$. So $S = \\mathbb{N}$, and $P(n)$ holds for every [natural number](c:natural-number) $n$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:collect",
+      "s:inductive"
+     ],
+     [
+      "s:inductive",
+      "s:minimal"
+     ],
+     [
+      "s:minimal",
+      "s:equal"
+     ],
+     [
+      "s:collect",
+      "s:equal"
+     ]
+    ],
+    "conclusion": "s:equal",
+    "concepts": {
+     "c:natural-number": "The natural numbers are the smallest inductive set.",
+     "c:successor": "Closure under the successor makes $S$ inductive.",
+     "c:zfc": "Separation in ZFC turns the property into a set.",
+     "c:axiom-of-infinity": "This axiom guarantees that an inductive set exists."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The set-theoretic proof from the definition of omega as the smallest inductive set, as in Enderton, Elements of Set Theory, chapter 4 (induction principle for omega)."
+    }
+   },
+   {
+    "id": "least-counterexample",
+    "name": "Least counterexample",
+    "slogan": "A least counterexample cannot be $0$, and its predecessor would force it to have property $P$.",
+    "scope": "The proof assumes that $\\mathbb{N}$ is [well ordered](c:well-order) and that every nonzero number is a successor. It derives induction from these order properties.",
+    "mechanisms": [
+     "m:well-ordering",
+     "m:contradiction"
+    ],
+    "roles": [
+     {
+      "h": "h:base",
+      "why": "The base case shows that the least counterexample is not $0$.",
+      "steps": [
+       "s:nonzero"
+      ]
+     },
+     {
+      "h": "h:step",
+      "why": "The step passes $P$ from the predecessor to the least counterexample.",
+      "steps": [
+       "s:contradict"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:counter",
+      "slogan": "Assume a counterexample and collect all counterexamples into a set $C$.",
+      "detail": "Suppose $P(n)$ fails for some $n$. Then $C = \\{n \\in \\mathbb{N} : P(n) \\text{ fails}\\}$ is a nonempty set of [natural numbers](c:natural-number).",
+      "uses": []
+     },
+     {
+      "id": "s:least",
+      "slogan": "Take the least element $m$ of the nonempty set $C$.",
+      "detail": "The natural numbers are [well ordered](c:well-order), so the nonempty set $C$ has a least element $m$. Every $k < m$ satisfies $P(k)$.",
+      "uses": []
+     },
+     {
+      "id": "s:nonzero",
+      "slogan": "Exclude $m = 0$ by the base case and write $m = k + 1$.",
+      "detail": "Since $P(0)$ holds, $0 \\notin C$, so $m \\neq 0$. A nonzero natural number is a [successor](c:successor), so $m = k + 1$ with $k < m$.",
+      "uses": []
+     },
+     {
+      "id": "s:contradict",
+      "slogan": "Derive $P(m)$ from $P(k)$ and contradict the choice of $m$.",
+      "detail": "Because $k < m$, minimality gives $P(k)$. The step gives $P(k+1) = P(m)$, against $m \\in C$. So $C$ is empty and $P(n)$ holds for all $n$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:counter",
+      "s:least"
+     ],
+     [
+      "s:least",
+      "s:nonzero"
+     ],
+     [
+      "s:nonzero",
+      "s:contradict"
+     ],
+     [
+      "s:least",
+      "s:contradict"
+     ]
+    ],
+    "conclusion": "s:contradict",
+    "concepts": {
+     "c:natural-number": "The counterexamples form a set of natural numbers.",
+     "c:successor": "The least counterexample has a predecessor because it is a successor.",
+     "c:well-order": "Well ordering supplies the least counterexample."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The classical least-counterexample proof from the well-ordering of the natural numbers."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1037559",
+  "statement": "Let a finite [group](c:group) $G$ [act](c:group-action) on a finite set $X$, and let each colour $c$ of a finite set $C$ have a weight $w(c)$ in a commutative $\\mathbb{Q}$-algebra. Let $G$ act on colourings $f\\colon X \\to C$ by $(gf)(x) = f(g^{-1}x)$. Then the sum over [orbits](c:orbit) of $\\prod_x w(f(x))$ is the [cycle index](c:cycle-index) $Z_G(p_1, p_2, \\dots)$ at $p_k = \\sum_c w(c)^k$.",
+  "hypotheses": [
+   {
+    "id": "h:action",
+    "text": "A finite [group](c:group) $G$ [acts](c:group-action) on a finite set $X$.",
+    "concept": "c:group-action"
+   },
+   {
+    "id": "h:colours",
+    "text": "The colour set $C$ is finite, and its weights $w(c)$ lie in a commutative $\\mathbb{Q}$-algebra.",
+    "concept": null
+   }
+  ],
+  "conclusion": "$\\sum_{\\text{orbits } O} W(O) = Z_G(p_1, p_2, \\dots) = \\frac{1}{|G|}\\sum_{g \\in G} \\prod_k p_k^{j_k(g)}$, where $W(f) = \\prod_x w(f(x))$ and $j_k(g)$ is the number of $k$-cycles of $g$ on $X$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "weighted-burnside",
+    "name": "Weighted Burnside count",
+    "slogan": "Count orbits with weights by the weighted Burnside lemma, and sum the weights of the colourings fixed by $g$ cycle by cycle.",
+    "scope": "The whole theorem. With every weight equal to $1$ it gives the number of orbits $Z_G(|C|, |C|, \\dots)$; an empty $X$ gives one orbit of weight $1$ on both sides.",
+    "mechanisms": [
+     "m:group-action-orbits",
+     "m:double-counting",
+     "m:generating-function"
+    ],
+    "roles": [
+     {
+      "h": "h:action",
+      "why": "A finite group lets the proof average over $G$, and each $g$ splits the finite set $X$ into [cycles](c:cycle-of-a-permutation).",
+      "steps": [
+       "s:burnside",
+       "s:fixed"
+      ]
+     },
+     {
+      "h": "h:colours",
+      "why": "Finite colour sums define $p_k$, and division by $|G|$ needs rational scalars.",
+      "steps": [
+       "s:burnside",
+       "s:product"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:constant",
+      "slogan": "Show that the weight of a colouring is constant on each orbit.",
+      "detail": "For $g \\in G$, $W(gf) = \\prod_x w(f(g^{-1}x)) = W(f)$ because $x \\mapsto g^{-1}x$ permutes $X$. So each [orbit](c:orbit) $O$ has a well defined weight $W(O)$.",
+      "uses": []
+     },
+     {
+      "id": "s:burnside",
+      "slogan": "Count the weighted orbits by the weighted form of Burnside's lemma.",
+      "detail": "Each orbit $O$ has $\\sum_{f \\in O} |G_f| = |G|$ by the orbit-stabilizer count. Double counting the pairs $(g, f)$ with $gf = f$ gives $\\sum_O W(O) = \\frac{1}{|G|}\\sum_g \\sum_{gf = f} W(f)$.",
+      "uses": [
+       "nm:burnside-s-lemma"
+      ]
+     },
+     {
+      "id": "s:fixed",
+      "slogan": "Describe the colourings fixed by $g$ as those constant on its cycles.",
+      "detail": "The equation $f(g^{-1}x) = f(x)$ for all $x$ holds exactly when $f$ takes one colour on each [cycle](c:cycle-of-a-permutation) of the permutation of $X$ that $g$ induces.",
+      "uses": []
+     },
+     {
+      "id": "s:product",
+      "slogan": "Sum the weights of the fixed colourings as a product over cycles.",
+      "detail": "A fixed colouring chooses one colour per cycle, and a $k$-cycle with colour $c$ contributes $w(c)^k$. So $\\sum_{gf = f} W(f) = \\prod_{\\text{cycles}} p_{\\text{length}} = \\prod_k p_k^{j_k(g)}$.",
+      "uses": []
+     },
+     {
+      "id": "s:average",
+      "slogan": "Average the cycle products over $G$ to obtain the cycle index.",
+      "detail": "Steps 2 and 4 give $\\sum_O W(O) = \\frac{1}{|G|}\\sum_g \\prod_k p_k^{j_k(g)}$, which is the definition of the [cycle index](c:cycle-index) $Z_G$ at $p_k = \\sum_c w(c)^k$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:constant",
+      "s:burnside"
+     ],
+     [
+      "s:burnside",
+      "s:average"
+     ],
+     [
+      "s:fixed",
+      "s:product"
+     ],
+     [
+      "s:product",
+      "s:average"
+     ]
+    ],
+    "conclusion": "s:average",
+    "concepts": {
+     "c:group": "The finite group is the symmetry that identifies colourings.",
+     "c:group-action": "The action on $X$ induces the action on colourings.",
+     "c:orbit": "Colourings up to symmetry are the orbits of the action.",
+     "c:cycle-index": "The cycle index records the cycle types that the count needs.",
+     "c:cycle-of-a-permutation": "Fixed colourings are constant on the cycles of $g$."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard derivation from the weighted Burnside lemma, as in G. Polya, Acta Mathematica 68 (1937), and in most combinatorics texts."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q472883",
+  "statement": "For distinct odd [primes](c:prime-number) $p$ and $q$, the [Legendre symbols](c:legendre-symbol) satisfy $\\left(\\frac{p}{q}\\right)\\left(\\frac{q}{p}\\right) = (-1)^{\\frac{p-1}{2}\\cdot\\frac{q-1}{2}}$.",
+  "hypotheses": [
+   {
+    "id": "h:odd-primes",
+    "text": "The numbers $p$ and $q$ are odd [primes](c:prime-number).",
+    "concept": "c:prime-number"
+   },
+   {
+    "id": "h:distinct",
+    "text": "The primes are distinct: $p \\neq q$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "$\\left(\\frac{p}{q}\\right)\\left(\\frac{q}{p}\\right) = (-1)^{\\frac{p-1}{2}\\cdot\\frac{q-1}{2}}$.",
+  "formal": {
+   "decl": "legendreSym.quadratic_reciprocity",
+   "difference": null
+  },
+  "proofs": [
+   {
+    "id": "gauss-sum",
+    "name": "Gauss sum and Frobenius",
+    "slogan": "Compute the $q$-th power of a quadratic Gauss sum in two ways: by the Frobenius map and by Euler's criterion.",
+    "scope": "The whole theorem. The Gauss sum lives in a finite field of characteristic $q$, so the proof needs $q \\neq p$ and both primes odd.",
+    "mechanisms": [
+     "m:modular-arithmetic",
+     "m:algebraic-identity",
+     "m:field-extension-degree"
+    ],
+    "roles": [
+     {
+      "h": "h:odd-primes",
+      "why": "Oddness makes the [Legendre symbols](c:legendre-symbol) of both primes defined, makes $(a/p)^q = (a/p)$, and keeps $1 \\neq -1$ in characteristic $q$.",
+      "steps": [
+       "s:frobenius",
+       "s:compare",
+       "s:sign"
+      ]
+     },
+     {
+      "h": "h:distinct",
+      "why": "Since $q \\neq p$, a field of characteristic $q$ has a primitive $p$-th root of unity and $p \\neq 0$ in it.",
+      "steps": [
+       "s:field",
+       "s:square"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:field",
+      "slogan": "Form the [Gauss sum](c:gauss-sum) in a field of characteristic $q$ with a $p$-th root of unity.",
+      "detail": "Since $q^{p-1} \\equiv 1 \\pmod p$, the cyclic group $\\mathbb{F}_{q^{p-1}}^\\times$ has an element $\\zeta$ of order $p$. Set $\\tau = \\sum_{a=1}^{p-1} \\left(\\frac{a}{p}\\right)\\zeta^a$ in this [finite field](c:finite-field).",
+      "uses": [
+       "wd:Q188295"
+      ]
+     },
+     {
+      "id": "s:square",
+      "slogan": "Compute the square $\\tau^2 = (-1)^{(p-1)/2} p$.",
+      "detail": "Expand $\\tau^2 = \\sum_{a,b}\\left(\\frac{ab}{p}\\right)\\zeta^{a+b}$, put $b = ac$, and use $\\sum_a \\zeta^{a(1+c)} = -1$ unless $c = -1$. This gives $\\tau^2 = \\left(\\frac{-1}{p}\\right)p = p^*$, which is nonzero because $p \\neq q$, so $\\tau \\neq 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:frobenius",
+      "slogan": "Raise $\\tau$ to the power $q$ with the [Frobenius](c:frobenius) map.",
+      "detail": "In characteristic $q$, $(x + y)^q = x^q + y^q$, and $(a/p)^q = (a/p)$ because $q$ is odd. So $\\tau^q = \\sum_a \\left(\\frac{a}{p}\\right)\\zeta^{aq} = \\left(\\frac{q}{p}\\right)\\tau$ after the substitution $b = aq$, since $(a/p) = (q/p)(b/p)$.",
+      "uses": []
+     },
+     {
+      "id": "s:euler",
+      "slogan": "Evaluate $\\tau^{q-1}$ by Euler's criterion in $\\mathbb{F}_q$.",
+      "detail": "Write $\\tau^{q} = \\tau\\,(p^*)^{(q-1)/2}$. Euler's criterion, a consequence of Fermat's little theorem, gives $(p^*)^{(q-1)/2} \\equiv \\left(\\frac{p^*}{q}\\right) \\pmod q$.",
+      "uses": [
+       "wd:Q188295"
+      ]
+     },
+     {
+      "id": "s:compare",
+      "slogan": "Cancel $\\tau$ to get $\\left(\\frac{q}{p}\\right) = \\left(\\frac{p^*}{q}\\right)$.",
+      "detail": "Steps 3 and 4 give $\\left(\\frac{q}{p}\\right)\\tau = \\left(\\frac{p^*}{q}\\right)\\tau$ with $\\tau \\neq 0$. Both symbols are $\\pm 1$ and $1 \\neq -1$ in odd characteristic, so they are equal as integers.",
+      "uses": []
+     },
+     {
+      "id": "s:sign",
+      "slogan": "Remove the sign in $p^*$ with the first supplementary law.",
+      "detail": "Euler's criterion gives $\\left(\\frac{-1}{q}\\right) = (-1)^{(q-1)/2}$. So $\\left(\\frac{p^*}{q}\\right) = (-1)^{\\frac{p-1}{2}\\frac{q-1}{2}}\\left(\\frac{p}{q}\\right)$; multiply step 5 by $\\left(\\frac{p}{q}\\right)$ to finish.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:field",
+      "s:square"
+     ],
+     [
+      "s:field",
+      "s:frobenius"
+     ],
+     [
+      "s:square",
+      "s:euler"
+     ],
+     [
+      "s:frobenius",
+      "s:compare"
+     ],
+     [
+      "s:euler",
+      "s:compare"
+     ],
+     [
+      "s:square",
+      "s:compare"
+     ],
+     [
+      "s:compare",
+      "s:sign"
+     ]
+    ],
+    "conclusion": "s:sign",
+    "concepts": {
+     "c:prime-number": "Both moduli must be odd primes for the symbols and fields.",
+     "c:legendre-symbol": "The theorem relates the two Legendre symbols.",
+     "c:gauss-sum": "The Gauss sum is a square root of $\\pm p$ in characteristic $q$.",
+     "c:finite-field": "The Gauss sum lives in a finite field of characteristic $q$.",
+     "c:frobenius": "The Frobenius map turns $\\tau^q$ into a twisted Gauss sum."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "legendreSym.quadratic_reciprocity",
+     "follows": true,
+     "note": "mathlib uses quadraticChar_odd_prime, proved from Gauss sums (Char.card_pow_card) and Euler's criterion (quadraticChar_eq_pow_of_char_ne_two'), then quadraticChar_neg_one and χ₄ for the sign."
+    }
+   },
+   {
+    "id": "lattice-points",
+    "name": "Lattice points in a rectangle",
+    "slogan": "Write each symbol as a sign of a lattice point count by Eisenstein's lemma, then count the points of a rectangle on both sides of its diagonal.",
+    "scope": "The whole theorem. Eisenstein's lemma needs $p$ and $q$ odd and coprime, which distinct odd primes are.",
+    "mechanisms": [
+     "m:double-counting",
+     "m:modular-arithmetic"
+    ],
+    "roles": [
+     {
+      "h": "h:odd-primes",
+      "why": "Eisenstein's lemma needs odd primes, and odd sides give the half-integers $p/2$ and $q/2$.",
+      "steps": [
+       "s:eisenstein",
+       "s:rectangle"
+      ]
+     },
+     {
+      "h": "h:distinct",
+      "why": "Distinct primes are coprime, so no lattice point lies on the diagonal.",
+      "steps": [
+       "s:eisenstein",
+       "s:diagonal"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:eisenstein",
+      "slogan": "Express each [Legendre symbol](c:legendre-symbol) as a sign by Eisenstein's lemma.",
+      "detail": "Eisenstein's lemma gives $\\left(\\frac{q}{p}\\right) = (-1)^{S(q,p)}$ with $S(q,p) = \\sum_{k=1}^{(p-1)/2}\\lfloor kq/p\\rfloor$, and in the same way $\\left(\\frac{p}{q}\\right) = (-1)^{S(p,q)}$.",
+      "uses": [
+       "nm:eisenstein-s-lemma"
+      ]
+     },
+     {
+      "id": "s:rectangle",
+      "slogan": "Count the lattice points of the open rectangle $0 < x < p/2$, $0 < y < q/2$.",
+      "detail": "The coordinates run over $1, \\dots, (p-1)/2$ and $1, \\dots, (q-1)/2$. So the rectangle holds $\\frac{p-1}{2}\\cdot\\frac{q-1}{2}$ lattice points.",
+      "uses": []
+     },
+     {
+      "id": "s:diagonal",
+      "slogan": "Show that no lattice point of the rectangle lies on the line $py = qx$.",
+      "detail": "If $py = qx$ with integers, then $p \\mid qx$, so $p \\mid x$ because $p \\neq q$ are primes. This is impossible for $0 < x < p/2$.",
+      "uses": []
+     },
+     {
+      "id": "s:split",
+      "slogan": "Count the points below and above the diagonal as $S(q,p)$ and $S(p,q)$.",
+      "detail": "For $x = k$, the points below the line are $y = 1, \\dots, \\lfloor kq/p\\rfloor$, all with $y < q/2$; their total is $S(q,p)$. By symmetry the points above the line number $S(p,q)$.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Add the two counts and multiply the two signs.",
+      "detail": "Steps 2 to 4 give $S(q,p) + S(p,q) = \\frac{p-1}{2}\\cdot\\frac{q-1}{2}$. With step 1, $\\left(\\frac{p}{q}\\right)\\left(\\frac{q}{p}\\right) = (-1)^{S(p,q) + S(q,p)}$, which is the claim.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:eisenstein",
+      "s:conclude"
+     ],
+     [
+      "s:rectangle",
+      "s:conclude"
+     ],
+     [
+      "s:diagonal",
+      "s:split"
+     ],
+     [
+      "s:split",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:prime-number": "Distinct odd primes keep the diagonal free of lattice points.",
+     "c:legendre-symbol": "Each symbol becomes a sign of a lattice point count."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Eisenstein's geometric proof (1844) by lattice points, as given in most elementary number theory texts."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:23748",
+  "statement": "Let $H(s)$, $0 \\le s \\le 1$, be a $C^2$ family of bounded [self-adjoint operators](c:self-adjoint-operator) on a [Hilbert space](c:hilbert-space) whose spectral part $\\sigma_0(s)$ has a uniform [spectral gap](c:spectral-gap) to the rest, with [projection](c:is-star-projection) $P(s)$. If $i\\,\\partial_s U_T = T H(s) U_T$ and $U_T(0) = I$, then $\\sup_s \\|(1 - P(s))\\,U_T(s)P(0)\\| = O(1/T)$.",
+  "hypotheses": [
+   {
+    "id": "h:family",
+    "text": "The map $s \\mapsto H(s)$ is a twice continuously differentiable family of bounded [self-adjoint operators](c:self-adjoint-operator).",
+    "concept": "c:self-adjoint-operator"
+   },
+   {
+    "id": "h:gap",
+    "text": "The spectrum of $H(s)$ splits into $\\sigma_0(s)$ and a remainder at distance at least $g > 0$ from it, for every $s$.",
+    "concept": "c:spectral-gap"
+   }
+  ],
+  "conclusion": "A state that starts in the range of $P(0)$ and evolves by the slowly changing [Schrödinger equation](c:schrodinger-equation) stays within $O(1/T)$ of the range of $P(s)$ for all $s$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "kato-adiabatic-evolution",
+    "name": "Kato's adiabatic evolution",
+    "slogan": "Compare the true evolution with Kato's evolution that maps the spectral subspace exactly, and gain a factor $1/T$ by an integration by parts.",
+    "scope": "An outline of Kato's published proof; the commutator solution and the integration by parts follow the cited work. Unbounded $H(s)$ with a common domain need extra care that the paper supplies.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:complex-integration",
+     "m:a-priori-estimate"
+    ],
+    "roles": [
+     {
+      "h": "h:family",
+      "why": "Smoothness makes $P$, $P'$ and the commutator solution $X$ differentiable, and self-adjointness makes the evolutions unitary.",
+      "steps": [
+       "s:projection",
+       "s:kato",
+       "s:estimate"
+      ]
+     },
+     {
+      "h": "h:gap",
+      "why": "The gap leaves room for the contour and bounds the [resolvent](c:resolvent) on it.",
+      "steps": [
+       "s:projection",
+       "s:commutator"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:projection",
+      "slogan": "Write $P(s)$ as a contour integral of the [resolvent](c:resolvent) inside the gap.",
+      "detail": "With $R(z) = (H(s) - z)^{-1}$ and a contour $\\Gamma$ around $\\sigma_0(s)$ in the gap, $P(s) = -\\frac{1}{2\\pi i}\\oint_\\Gamma R(z)\\,dz$. So $P$ is $C^2$, and $P^2 = P$ gives $PP'P = 0$ and $P' = [[P', P], P]$.",
+      "uses": []
+     },
+     {
+      "id": "s:kato",
+      "slogan": "Define Kato's evolution $U_A$ with generator $T H + i[P', P]$.",
+      "detail": "Let $i\\,\\partial_s U_A = (T H + i[P', P])U_A$ with $U_A(0) = I$; $i[P', P]$ is self-adjoint, so $U_A$ is unitary. Since $[H, P] = 0$ and $[[P', P], P] = P'$, $U_A^{-1} P(s) U_A$ is constant, so $U_A(s)P(0) = P(s)U_A(s)$.",
+      "uses": []
+     },
+     {
+      "id": "s:duhamel",
+      "slogan": "Compare the two evolutions by the Duhamel formula.",
+      "detail": "Differentiation gives $\\partial_s(U_A^{-1}U_T) = -U_A^{-1}KU_T$ with $K = [P', P]$. So $U_A(s)^{-1}U_T(s) - I = -\\int_0^s U_A^{-1} K U_T\\,dr$.",
+      "uses": []
+     },
+     {
+      "id": "s:commutator",
+      "slogan": "Solve the commutator equation $[H, X] = [P', P]$ with a bounded $X$.",
+      "detail": "The operator $X = -\\frac{1}{2\\pi i}\\oint_\\Gamma R(z) P' R(z)\\,dz$ satisfies $[H, X] = [P', P]$, and the gap bounds $\\|X\\|$ and $\\|X'\\|$ uniformly in $s$. This is where the [spectral gap](c:spectral-gap) enters.",
+      "uses": []
+     },
+     {
+      "id": "s:estimate",
+      "slogan": "Integrate by parts to bound $U_T - U_A$ by $C/T$.",
+      "detail": "One checks $U_A^{-1}[H, X]U_T = \\frac{1}{iT}\\big(\\partial_r(U_A^{-1}XU_T) + U_A^{-1}(KX - X')U_T\\big)$, so the Duhamel integral is $O(1/T)$. Then $(1 - P(s))U_T(s)P(0) = (1 - P(s))(U_T - U_A)(s)P(0)$ has norm at most $C/T$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:projection",
+      "s:kato"
+     ],
+     [
+      "s:projection",
+      "s:commutator"
+     ],
+     [
+      "s:kato",
+      "s:duhamel"
+     ],
+     [
+      "s:duhamel",
+      "s:estimate"
+     ],
+     [
+      "s:commutator",
+      "s:estimate"
+     ],
+     [
+      "s:kato",
+      "s:estimate"
+     ]
+    ],
+    "conclusion": "s:estimate",
+    "concepts": {
+     "c:self-adjoint-operator": "Self-adjoint generators give unitary evolutions and real spectra.",
+     "c:hilbert-space": "The states and operators live on a Hilbert space.",
+     "c:spectral-gap": "The gap makes the contour and the bound on $X$ possible.",
+     "c:is-star-projection": "The spectral projection $P(s)$ marks the tracked eigenspace.",
+     "c:schrodinger-equation": "The evolution $U_T$ solves the slowed Schrödinger equation.",
+     "c:resolvent": "Resolvent integrals give $P(s)$ and the commutator solution $X$."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "T. Kato, On the adiabatic theorem of quantum mechanics, Journal of the Physical Society of Japan 5 (1950), 435-439",
+     "url": "https://doi.org/10.1143/JPSJ.5.435",
+     "note": "Kato introduces the adiabatic evolution generated by [P', P], proves the intertwining property and gets the O(1/T) bound by integration by parts with the reduced resolvent; Born and Fock (1928) had the nondegenerate discrete case."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q579515",
+  "statement": "Let $\\delta(X)$ be an estimator of $g(\\theta)$ with $E_\\theta[\\delta(X)^2] < \\infty$ for every $\\theta$, and let $T$ be a [sufficient statistic](c:sufficient-statistic). Then $\\delta^* = E[\\delta(X) \\mid T]$ is an estimator, and its [mean squared error](c:mean-squared-error) satisfies $E_\\theta[(\\delta^* - g(\\theta))^2] \\le E_\\theta[(\\delta(X) - g(\\theta))^2]$ for every $\\theta$, with equality only when $\\delta(X) = \\delta^*$ almost surely.",
+  "hypotheses": [
+   {
+    "id": "h:sufficient",
+    "text": "The [statistic](c:statistic) $T(X)$ is [sufficient](c:sufficient-statistic) for the family $\\{P_\\theta\\}$.",
+    "concept": "c:sufficient-statistic"
+   },
+   {
+    "id": "h:square-integrable",
+    "text": "The estimator has a finite second moment: $E_\\theta[\\delta(X)^2] < \\infty$ for every $\\theta$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The conditioned estimator $E[\\delta(X) \\mid T]$ does not depend on $\\theta$ and has mean squared error at most that of $\\delta(X)$ for every $\\theta$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "variance-decomposition",
+    "name": "Orthogonal error decomposition",
+    "slogan": "Split the error of $\\delta$ into the error of $\\delta^*$ and the orthogonal part $\\delta - \\delta^*$, whose square only adds to the error.",
+    "scope": "The whole theorem, for each fixed $\\theta$. Conditioning also keeps the mean, so an unbiased $\\delta$ gives an unbiased $\\delta^*$.",
+    "mechanisms": [
+     "m:orthogonal-projection",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:sufficient",
+      "why": "Sufficiency makes the conditional expectation free of $\\theta$, so $\\delta^*$ is a genuine estimator.",
+      "steps": [
+       "s:statistic"
+      ]
+     },
+     {
+      "h": "h:square-integrable",
+      "why": "Finite second moments make every term of the expansion finite.",
+      "steps": [
+       "s:split",
+       "s:cross"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:statistic",
+      "slogan": "Show that $\\delta^*$ is the same function of $T$ for every $\\theta$.",
+      "detail": "Because $T$ is [sufficient](c:sufficient-statistic), the conditional law of $X$ given $T$ does not depend on $\\theta$. So the [conditional expectation](c:conditional-expectation) $\\delta^* = E[\\delta(X) \\mid T]$ is one function of $T$, computable from the data.",
+      "uses": []
+     },
+     {
+      "id": "s:split",
+      "slogan": "Expand the squared error around $\\delta^*$.",
+      "detail": "Write $\\delta - g = (\\delta - \\delta^*) + (\\delta^* - g)$ and square. All terms are integrable, since $E_\\theta[(\\delta^*)^2] \\le E_\\theta[\\delta^2] < \\infty$ by the conditional Jensen inequality.",
+      "uses": [
+       "nm:conditional-jensen-s-inequality"
+      ]
+     },
+     {
+      "id": "s:cross",
+      "slogan": "Show that the cross term $E_\\theta[(\\delta - \\delta^*)(\\delta^* - g)]$ is zero.",
+      "detail": "The factor $\\delta^* - g(\\theta)$ is a function of $T$. The tower property gives $E_\\theta[(\\delta - \\delta^*)(\\delta^* - g)] = E_\\theta[(\\delta^* - g)\\,E[\\delta - \\delta^* \\mid T]] = 0$.",
+      "uses": [
+       "nm:tower-property-of-the-conditional-expectation"
+      ]
+     },
+     {
+      "id": "s:compare",
+      "slogan": "Compare the two [mean squared errors](c:mean-squared-error) through the remaining square.",
+      "detail": "Steps 2 and 3 give $E_\\theta[(\\delta - g)^2] = E_\\theta[(\\delta - \\delta^*)^2] + E_\\theta[(\\delta^* - g)^2]$. The first term is nonnegative and is zero only when $\\delta = \\delta^*$ almost surely.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:statistic",
+      "s:cross"
+     ],
+     [
+      "s:split",
+      "s:cross"
+     ],
+     [
+      "s:cross",
+      "s:compare"
+     ],
+     [
+      "s:split",
+      "s:compare"
+     ]
+    ],
+    "conclusion": "s:compare",
+    "concepts": {
+     "c:sufficient-statistic": "Sufficiency removes $\\theta$ from the conditioned estimator.",
+     "c:statistic": "The improved estimator must be a statistic, a function of data only.",
+     "c:mean-squared-error": "The theorem compares estimators by their mean squared error.",
+     "c:conditional-expectation": "Conditioning on $T$ is the projection that builds $\\delta^*$."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard proof by the orthogonal decomposition of the error, as in Lehmann and Casella, Theory of Point Estimation, chapter 1."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q10942247",
+  "statement": "Let $X$ be an [algebraic variety](c:algebraic-variety) over a field of [characteristic zero](c:char-zero). Then there are a smooth variety $\\tilde X$ and a [proper birational map](c:proper-birational-map) $\\pi\\colon \\tilde X \\to X$ that is an isomorphism over the smooth locus of $X$, and $\\pi$ can be chosen as a composition of [blow-ups](c:blow-up) along smooth centres.",
+  "hypotheses": [
+   {
+    "id": "h:variety",
+    "text": "The space $X$ is an [algebraic variety](c:algebraic-variety): a reduced separated scheme of finite type over a field $k$.",
+    "concept": "c:algebraic-variety"
+   },
+   {
+    "id": "h:char-zero",
+    "text": "The field $k$ has [characteristic zero](c:char-zero).",
+    "concept": "c:char-zero"
+   }
+  ],
+  "conclusion": "Every variety over a field of characteristic zero has a resolution of singularities by a sequence of blow-ups with smooth centres.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "maximal-contact-induction",
+    "name": "Maximal contact and induction on dimension",
+    "slogan": "Lower the maximal order of an ideal by blow-ups chosen on a hypersurface of maximal contact, by induction on dimension, and deduce resolution from this principalization.",
+    "scope": "An outline of the functorial proof in the cited book, not of Hironaka's original 1964 argument; steps 1 to 4 rest on the cited work. In characteristic $p$ the maximal contact step fails, and the dimension 4 and higher case is open.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:strong-induction",
+     "m:local-to-global"
+    ],
+    "roles": [
+     {
+      "h": "h:variety",
+      "why": "A variety of finite type embeds locally in smooth affine space, so its ideal can be principalized.",
+      "steps": [
+       "s:resolve"
+      ]
+     },
+     {
+      "h": "h:char-zero",
+      "why": "Characteristic zero gives hypersurfaces of maximal contact through derivatives.",
+      "steps": [
+       "s:max-contact"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:order",
+      "slogan": "Measure an [ideal](c:ideal) on a smooth variety by its maximal order of vanishing.",
+      "detail": "For an ideal sheaf $I$ on a smooth variety $M$, the locus where the order of $I$ equals its maximum $m$ is closed. The cited proof blows up smooth centres inside this locus, which never raises the maximal order.",
+      "uses": []
+     },
+     {
+      "id": "s:max-contact",
+      "slogan": "Find a smooth hypersurface of maximal contact from derivatives of order $m - 1$.",
+      "detail": "In characteristic zero, a derivative of order $m - 1$ of a local generator of order $m$ defines a smooth hypersurface $H$ that contains the maximal order locus. The book shows that its transforms keep this property after each admissible [blow-up](c:blow-up).",
+      "uses": []
+     },
+     {
+      "id": "s:induct",
+      "slogan": "Restrict a coefficient ideal to $H$ and resolve it by induction on dimension.",
+      "detail": "The coefficient ideal on $H$ records the maximal order locus of $I$. By induction on dimension it has a principalization, whose centres, read in $M$, lower the maximal order of $I$ after finitely many blow-ups.",
+      "uses": []
+     },
+     {
+      "id": "s:glue",
+      "slogan": "Make the local choices independent of $H$ and glue them globally.",
+      "detail": "The book replaces the coefficient ideal by a homogenized one, so that the resulting centres do not depend on the choice of $H$ or of the local embedding. The procedure is then functorial for smooth morphisms, and the local sequences of blow-ups glue.",
+      "uses": []
+     },
+     {
+      "id": "s:resolve",
+      "slogan": "Deduce resolution from the principalization of the ideal of $X$ in a smooth ambient variety.",
+      "detail": "Run the procedure on the ideal of $X$ inside a smooth $M$. At the stage where the strict transform of $X$ becomes a centre, it is smooth; the composite $\\pi$ is a [proper birational map](c:proper-birational-map), an isomorphism over the smooth locus because all centres lie over the singular locus.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:order",
+      "s:max-contact"
+     ],
+     [
+      "s:max-contact",
+      "s:induct"
+     ],
+     [
+      "s:order",
+      "s:induct"
+     ],
+     [
+      "s:induct",
+      "s:glue"
+     ],
+     [
+      "s:glue",
+      "s:resolve"
+     ]
+    ],
+    "conclusion": "s:resolve",
+    "concepts": {
+     "c:algebraic-variety": "The theorem resolves an arbitrary variety, possibly singular.",
+     "c:char-zero": "Characteristic zero is what makes maximal contact hypersurfaces exist.",
+     "c:proper-birational-map": "The resolution map is proper and birational.",
+     "c:blow-up": "Blow-ups along smooth centres are the only operations used.",
+     "c:ideal": "The proof principalizes ideal sheaves on smooth varieties."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "J. Kollár, Lectures on Resolution of Singularities, Annals of Mathematics Studies 166, Princeton University Press, 2007; first proved in H. Hironaka, Resolution of singularities of an algebraic variety over a field of characteristic zero I, II, Annals of Mathematics 79 (1964), 109-203 and 205-326",
+     "url": "https://doi.org/10.1515/9781400827800",
+     "note": "Kollár gives a self-contained functorial proof of strong resolution via principalization, maximal contact and induction on dimension."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1357684",
+  "statement": "Let $H$ be a [Hilbert space](c:hilbert-space) over $\\mathbb{R}$ or $\\mathbb{C}$. For every continuous [linear functional](c:linear-functional) $\\ell$ on $H$ there is a unique $y \\in H$ with $\\ell(x) = \\langle y, x\\rangle$ for all $x \\in H$, and $\\|\\ell\\| = \\|y\\|$. So $y \\mapsto \\langle y, \\cdot\\rangle$ is a conjugate-linear isometric bijection from $H$ onto its [dual space](c:dual-space) $H^*$.",
+  "hypotheses": [
+   {
+    "id": "h:complete",
+    "text": "The space $H$ is a complete [inner product space](c:inner-product-space).",
+    "concept": "c:inner-product-space"
+   },
+   {
+    "id": "h:continuous",
+    "text": "The functional $\\ell\\colon H \\to \\mathbb{K}$ is linear and continuous.",
+    "concept": "c:linear-functional"
+   }
+  ],
+  "conclusion": "Each continuous linear functional is $\\langle y, \\cdot\\rangle$ for exactly one $y$, with $\\|\\ell\\| = \\|y\\|$.",
+  "formal": {
+   "decl": "InnerProductSpace.toDual",
+   "difference": "The declaration is a definition: the conjugate-linear isometric equivalence from $H$ onto its dual, whose construction proves surjectivity. It carries the same content as the statement."
+  },
+  "proofs": [
+   {
+    "id": "kernel-normal",
+    "name": "Normal vector to the kernel",
+    "slogan": "Take a nonzero vector orthogonal to the kernel of $\\ell$ and rescale it into the representing vector.",
+    "scope": "The whole theorem, with the case $\\ell = 0$ (take $y = 0$) split off first. Completeness enters only through the projection theorem.",
+    "mechanisms": [
+     "m:orthogonal-projection",
+     "m:cauchy-schwarz",
+     "m:case-analysis"
+    ],
+    "roles": [
+     {
+      "h": "h:complete",
+      "why": "Completeness gives the projection theorem, which yields a nonzero vector orthogonal to the kernel.",
+      "steps": [
+       "s:normal"
+      ]
+     },
+     {
+      "h": "h:continuous",
+      "why": "Continuity makes the kernel closed and the norm $\\|\\ell\\|$ finite.",
+      "steps": [
+       "s:kernel",
+       "s:isometry"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:kernel",
+      "slogan": "Split off the zero functional and note that the kernel is closed.",
+      "detail": "Let $Y = \\ker \\ell$, a [closed subspace](c:closed-subspace) because $\\ell$ is continuous. If $Y = H$, then $\\ell = 0 = \\langle 0, \\cdot\\rangle$, so take $y = 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:normal",
+      "slogan": "Choose a nonzero vector $z$ orthogonal to the kernel.",
+      "detail": "If $Y \\neq H$, pick $x \\notin Y$. The projection theorem gives its nearest point $P_Y x \\in Y$, and $z = x - P_Y x$ is nonzero and [orthogonal](c:orthogonality) to $Y$.",
+      "uses": [
+       "wd:Q3527215"
+      ]
+     },
+     {
+      "id": "s:identity",
+      "slogan": "Pair $z$ with $\\ell(z)x - \\ell(x)z$ to get $\\ell(z)\\langle z, x\\rangle = \\ell(x)\\langle z, z\\rangle$.",
+      "detail": "For every $x$, $\\ell(\\ell(z)x - \\ell(x)z) = 0$, so this vector lies in $Y$ and is orthogonal to $z$. Expanding $\\langle z, \\ell(z)x - \\ell(x)z\\rangle = 0$ gives the identity.",
+      "uses": []
+     },
+     {
+      "id": "s:represent",
+      "slogan": "Set $y = \\overline{\\ell(z)}\\,z/\\langle z, z\\rangle$ and check that $\\langle y, x\\rangle = \\ell(x)$.",
+      "detail": "The inner product is conjugate-linear in its first slot, so $\\langle y, x\\rangle = \\ell(z)\\langle z, x\\rangle/\\langle z, z\\rangle$. Step 3 turns this into $\\ell(x)$ for every $x$.",
+      "uses": []
+     },
+     {
+      "id": "s:isometry",
+      "slogan": "Prove $\\|\\ell\\| = \\|y\\|$ and the uniqueness of $y$.",
+      "detail": "The Cauchy-Schwarz inequality gives $|\\ell(x)| \\le \\|y\\|\\|x\\|$, and $\\ell(y) = \\|y\\|^2$, so $\\|\\ell\\| = \\|y\\|$. If $\\langle y - y', x\\rangle = 0$ for all $x$, take $x = y - y'$ to get $y = y'$; so the map onto the [dual space](c:dual-space) is a conjugate-linear isometric bijection.",
+      "uses": [
+       "nl:16121"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:kernel",
+      "s:normal"
+     ],
+     [
+      "s:normal",
+      "s:identity"
+     ],
+     [
+      "s:identity",
+      "s:represent"
+     ],
+     [
+      "s:represent",
+      "s:isometry"
+     ],
+     [
+      "s:kernel",
+      "s:isometry"
+     ]
+    ],
+    "conclusion": "s:isometry",
+    "concepts": {
+     "c:hilbert-space": "A Hilbert space has the projection theorem the proof needs.",
+     "c:inner-product-space": "The inner product supplies the functionals $\\langle y, \\cdot\\rangle$.",
+     "c:linear-functional": "The theorem represents each continuous linear functional.",
+     "c:dual-space": "The result identifies $H$ with its continuous dual.",
+     "c:closed-subspace": "A closed proper kernel has a nonzero orthogonal vector.",
+     "c:orthogonality": "The normal vector $z$ is orthogonal to the kernel."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "InnerProductSpace.toDual",
+     "follows": true,
+     "note": "mathlib takes z ≠ 0 in the orthogonal complement of ker ℓ (Submodule.orthogonal_eq_bot_iff), sets y = (conj(ℓ z)/⟪z, z⟫) • z, and packages toDualMap by LinearIsometryEquiv.ofSurjective."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:8044",
+  "statement": "No [set](c:set) $R$ satisfies $x \\in R \\iff x \\notin x$ for every set $x$: no set has as its members exactly the sets that are not [members](c:membership) of themselves. Hence the unrestricted comprehension scheme, which would supply such an $R$, is inconsistent.",
+  "hypotheses": [],
+  "conclusion": "There is no set of all sets that are not members of themselves, and unrestricted comprehension is inconsistent.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "self-application",
+    "name": "Self-application",
+    "slogan": "Ask whether the set $R$ is a member of itself; both answers contradict its definition.",
+    "scope": "The argument is pure logic and holds for any binary relation in place of $\\in$. It needs no axiom of set theory.",
+    "mechanisms": [
+     "m:diagonal-argument",
+     "m:contradiction",
+     "m:case-analysis"
+    ],
+    "roles": [],
+    "steps": [
+     {
+      "id": "s:assume",
+      "slogan": "Assume a set $R$ with $x \\in R \\iff x \\notin x$ for every $x$.",
+      "detail": "Suppose, for a contradiction, that some [set](c:set) $R$ has this property, so that its members are exactly the sets that are not members of themselves.",
+      "uses": []
+     },
+     {
+      "id": "s:instantiate",
+      "slogan": "Put $x = R$ in the defining property of $R$.",
+      "detail": "The property holds for every set $x$, in particular for $R$ itself. This diagonal choice gives $R \\in R \\iff R \\notin R$.",
+      "uses": []
+     },
+     {
+      "id": "s:cases",
+      "slogan": "Refute both cases $R \\in R$ and $R \\notin R$.",
+      "detail": "If $R \\in R$, the equivalence gives $R \\notin R$. If $R \\notin R$, it gives $R \\in R$. Each case contradicts itself, so no such $R$ exists.",
+      "uses": []
+     },
+     {
+      "id": "s:comprehension",
+      "slogan": "Apply unrestricted comprehension to the property $x \\notin x$ to reach a contradiction.",
+      "detail": "Unrestricted comprehension asserts a set $\\{x : \\varphi(x)\\}$ for every property $\\varphi$. With $\\varphi(x) = x \\notin x$ it gives the set $R$ that step 3 rules out, so the scheme proves a contradiction.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:assume",
+      "s:instantiate"
+     ],
+     [
+      "s:instantiate",
+      "s:cases"
+     ],
+     [
+      "s:cases",
+      "s:comprehension"
+     ]
+    ],
+    "conclusion": "s:comprehension",
+    "concepts": {
+     "c:set": "The paradox shows that not every collection is a set.",
+     "c:membership": "The defining property of $R$ refers to self-membership."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Russell's argument from his 1902 letter to Frege, the standard diagonal proof."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:ruzsa-s-triangle-inequality",
+  "statement": "For [finite](c:finite-set) subsets $A$, $B$, $C$ of a [group](c:group) $G$ written additively, the difference [sets](c:sumset) satisfy $|A - C|\\,|B| \\le |A - B|\\,|C - B|$.",
+  "hypotheses": [
+   {
+    "id": "h:finite",
+    "text": "The sets $A$, $B$, $C$ are [finite](c:finite-set) subsets of a [group](c:group) $G$.",
+    "concept": "c:finite-set"
+   }
+  ],
+  "conclusion": "$|A - C|\\,|B| \\le |A - B|\\,|C - B|$.",
+  "formal": {
+   "decl": "Finset.ruzsa_triangle_inequality_sub_sub_sub",
+   "difference": null
+  },
+  "proofs": [
+   {
+    "id": "injection",
+    "name": "Injection into pairs of differences",
+    "slogan": "Fix one representation $a - c$ of each difference and send $(a - c, b)$ to the pair $(a - b, c - b)$, which is injective.",
+    "scope": "The whole statement; the group need not be commutative. If one of the sets is empty, the left side is $0$.",
+    "mechanisms": [
+     "m:double-counting",
+     "m:bijection"
+    ],
+    "roles": [
+     {
+      "h": "h:finite",
+      "why": "Finite sets have cardinalities, and an injection compares them.",
+      "steps": [
+       "s:count"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:fix",
+      "slogan": "Fix one representation $x = a_x - c_x$ for each difference $x \\in A - C$.",
+      "detail": "Each $x$ in the [difference set](c:sumset) $A - C$ is $a - c$ for some $a \\in A$ and $c \\in C$. Choose one such pair $(a_x, c_x)$ for every $x$.",
+      "uses": []
+     },
+     {
+      "id": "s:inject",
+      "slogan": "Map each $b \\in B$ injectively to a pair with difference $x$.",
+      "detail": "Send $b$ to $(a_x - b, c_x - b) \\in (A - B) \\times (C - B)$. The first coordinate determines $b$, and $(a_x - b) - (c_x - b) = a_x - b + b - c_x = x$ in any [group](c:group).",
+      "uses": []
+     },
+     {
+      "id": "s:disjoint",
+      "slogan": "Separate the images for different $x$ by the difference of the pair.",
+      "detail": "A pair $(u, v)$ has exactly one difference $u - v$. So pairs that come from different $x$ are different, and the images of step 2 are disjoint.",
+      "uses": []
+     },
+     {
+      "id": "s:count",
+      "slogan": "Count the disjoint images inside $(A - B) \\times (C - B)$.",
+      "detail": "Steps 2 and 3 give $|A - C|$ disjoint sets of $|B|$ pairs each inside the [finite set](c:finite-set) $(A - B) \\times (C - B)$. Hence $|A - C|\\,|B| \\le |A - B|\\,|C - B|$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:fix",
+      "s:inject"
+     ],
+     [
+      "s:inject",
+      "s:count"
+     ],
+     [
+      "s:disjoint",
+      "s:count"
+     ]
+    ],
+    "conclusion": "s:count",
+    "concepts": {
+     "c:finite-set": "The inequality compares sizes of finite sets.",
+     "c:group": "Group cancellation makes the map injective with the right difference.",
+     "c:sumset": "The inequality bounds one difference set by two others."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Finset.ruzsa_triangle_inequality_sub_sub_sub",
+     "follows": true,
+     "note": "mathlib double counts with card_mul_le_card_mul on the relation a - c = x, and gets the |B| lower bound per x from card_le_card_of_injOn with b ↦ (a - b, c - b)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:sequential-compactness-is-equivalent-to-compactness-bolzano-weierstrass",
+  "statement": "In a [metric space](c:metric-space) $X$, a subset $K$ is [compact](c:compact-space) if and only if it is [sequentially compact](c:seq-compact-space): every sequence in $K$ has a [subsequence](c:subsequence) that converges to a point of $K$.",
+  "hypotheses": [
+   {
+    "id": "h:metric",
+    "text": "The space $X$ is a [metric space](c:metric-space), or more generally its topology comes from a pseudometric.",
+    "concept": "c:metric-space"
+   }
+  ],
+  "conclusion": "A subset $K \\subseteq X$ is compact exactly when every sequence in $K$ has a subsequence converging in $K$.",
+  "formal": {
+   "decl": "isCompact_iff_isSeqCompact",
+   "difference": "The declaration holds in every pseudometrizable topological space, which includes all metric spaces."
+  },
+  "proofs": [
+   {
+    "id": "cluster-and-total-boundedness",
+    "name": "Cluster point, then complete and totally bounded",
+    "slogan": "Compactness gives a cluster point and countable balls give a subsequence; conversely sequential compactness gives completeness and total boundedness, which give compactness.",
+    "scope": "Both directions; steps 1 and 2 prove compact implies sequentially compact, steps 3 to 5 the converse. The empty set satisfies both properties.",
+    "mechanisms": [
+     "m:finite-subcover",
+     "m:subsequence",
+     "m:cauchy-completeness",
+     "m:nested-intervals"
+    ],
+    "roles": [
+     {
+      "h": "h:metric",
+      "why": "The metric supplies countable bases of balls, Cauchy sequences and finite $\\varepsilon$-nets.",
+      "steps": [
+       "s:extract",
+       "s:bounded",
+       "s:complete",
+       "s:compact"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:cluster",
+      "slogan": "Find a point of $K$ that every tail of the sequence approaches.",
+      "detail": "Let $K$ be compact and $(x_n)$ a sequence in $K$. The relatively closed sets $F_N = K \\cap \\overline{\\{x_n : n \\ge N\\}}$ are nonempty and decreasing, so the finite intersection property gives $a \\in \\bigcap_N F_N$. Every ball around $a$ then holds $x_n$ for infinitely many $n$.",
+      "uses": []
+     },
+     {
+      "id": "s:extract",
+      "slogan": "Choose indices $n_1 < n_2 < \\dots$ with $d(x_{n_k}, a) < 1/k$.",
+      "detail": "Step 1 lets each choice $n_k$ exceed $n_{k-1}$. The [subsequence](c:subsequence) $(x_{n_k})$ converges to $a \\in K$, so $K$ is sequentially compact.",
+      "uses": []
+     },
+     {
+      "id": "s:bounded",
+      "slogan": "Show that a sequentially compact $K$ is [totally bounded](c:totally-bounded-space).",
+      "detail": "If some $\\varepsilon > 0$ has no finite $\\varepsilon$-net in $K$, choose $x_{n+1} \\in K$ at distance at least $\\varepsilon$ from $x_1, \\dots, x_n$. No subsequence of $(x_n)$ is Cauchy, so none converges, a contradiction.",
+      "uses": []
+     },
+     {
+      "id": "s:complete",
+      "slogan": "Show that every [Cauchy sequence](c:cauchy-sequence) in $K$ converges to a point of $K$.",
+      "detail": "A Cauchy sequence in $K$ has a subsequence that converges to some $a \\in K$. A Cauchy sequence with a convergent subsequence converges to the same limit $a$.",
+      "uses": []
+     },
+     {
+      "id": "s:compact",
+      "slogan": "Prove that the complete and totally bounded set $K$ is compact by nested balls.",
+      "detail": "Suppose an [open cover](c:open-cover) of $K$ has no finite subcover. Total boundedness gives nested pieces $K \\cap B(c_j, 2^{-j})$ with no finite subcover; their centres $c_j$ form a Cauchy sequence with a limit $x \\in K$, and a cover member around $x$ contains a late piece, a contradiction.",
+      "uses": []
+     },
+     {
+      "id": "s:both",
+      "slogan": "Combine both directions into the equivalence.",
+      "detail": "Steps 1 and 2 show that compact implies sequentially compact. Steps 3 to 5 show that sequentially compact implies [compact](c:compact-space), so the two properties agree for subsets of a metric space.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:cluster",
+      "s:extract"
+     ],
+     [
+      "s:extract",
+      "s:both"
+     ],
+     [
+      "s:bounded",
+      "s:compact"
+     ],
+     [
+      "s:complete",
+      "s:compact"
+     ],
+     [
+      "s:compact",
+      "s:both"
+     ]
+    ],
+    "conclusion": "s:both",
+    "concepts": {
+     "c:metric-space": "The metric gives balls of radius $1/k$ and Cauchy sequences.",
+     "c:compact-space": "Compactness is one side of the equivalence.",
+     "c:seq-compact-space": "Sequential compactness is the other side of the equivalence.",
+     "c:subsequence": "Convergent subsequences define sequential compactness.",
+     "c:totally-bounded-space": "Total boundedness gives the finite nets of shrinking balls.",
+     "c:cauchy-sequence": "Nested ball centres form a Cauchy sequence that converges in $K$.",
+     "c:open-cover": "Compactness is tested on an open cover without a finite subcover."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "isCompact_iff_isSeqCompact",
+     "follows": true,
+     "note": "mathlib proves IsCompact.isSeqCompact from a cluster point and a countable neighbourhood basis (MapClusterPt.tendsto_subseq), and IsSeqCompact.isCompact from IsSeqCompact.totallyBounded, IsSeqCompact.isComplete and isCompact_iff_totallyBounded_isComplete."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q2226786",
+  "statement": "Let $\\mathcal{A}$ be an [antichain](c:antichain) of subsets of an $n$-element set: no member of $\\mathcal{A}$ contains another. Then $|\\mathcal{A}| \\le \\binom{n}{\\lfloor n/2\\rfloor}$, a [binomial coefficient](c:binomial-coefficient), and the family of all $\\lfloor n/2\\rfloor$-element subsets attains this bound.",
+  "hypotheses": [
+   {
+    "id": "h:finite",
+    "text": "The ground set $S$ has $n$ elements.",
+    "concept": null
+   },
+   {
+    "id": "h:antichain",
+    "text": "The family $\\mathcal{A}$ of subsets of $S$ is an [antichain](c:antichain) for inclusion.",
+    "concept": "c:antichain"
+   }
+  ],
+  "conclusion": "$|\\mathcal{A}| \\le \\binom{n}{\\lfloor n/2\\rfloor}$, with equality for the middle layer.",
+  "formal": {
+   "decl": "IsAntichain.sperner",
+   "difference": "The declaration proves the upper bound only. That the middle layer attains it is not part of the declaration."
+  },
+  "proofs": [
+   {
+    "id": "lym",
+    "name": "LYM inequality",
+    "slogan": "Bound the weighted sum $\\sum_{A} 1/\\binom{n}{|A|}$ by $1$ and replace each binomial coefficient by the middle one.",
+    "scope": "The whole theorem, including $n = 0$, where the only antichains are $\\emptyset$ and $\\{\\emptyset\\}$.",
+    "mechanisms": [
+     "m:double-counting",
+     "m:extremal-choice"
+    ],
+    "roles": [
+     {
+      "h": "h:finite",
+      "why": "A finite ground set has $n!$ maximal [chains](c:chain) and finite layers.",
+      "steps": [
+       "s:lym",
+       "s:middle"
+      ]
+     },
+     {
+      "h": "h:antichain",
+      "why": "An antichain meets each maximal chain at most once.",
+      "steps": [
+       "s:lym"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:lym",
+      "slogan": "Bound $\\sum_{A \\in \\mathcal{A}} 1/\\binom{n}{|A|}$ by $1$ with the LYM inequality.",
+      "detail": "Each of the $n!$ maximal [chains](c:chain) $\\emptyset \\subset \\{s_1\\} \\subset \\dots \\subset S$ meets the [antichain](c:antichain) at most once, and a set of size $k$ lies on $k!(n-k)!$ of them. So $\\sum_A |A|!(n - |A|)! \\le n!$.",
+      "uses": [
+       "nm:lubell-yamamoto-meshalkin-inequality"
+      ]
+     },
+     {
+      "id": "s:middle",
+      "slogan": "Show that the middle [binomial coefficient](c:binomial-coefficient) is the largest one.",
+      "detail": "The ratio $\\binom{n}{k+1}/\\binom{n}{k} = (n-k)/(k+1)$ is at least $1$ exactly when $k < n/2$. So $\\binom{n}{k} \\le \\binom{n}{\\lfloor n/2\\rfloor}$ for every $k$.",
+      "uses": []
+     },
+     {
+      "id": "s:bound",
+      "slogan": "Combine the two estimates into $|\\mathcal{A}| \\le \\binom{n}{\\lfloor n/2\\rfloor}$.",
+      "detail": "By step 2, $|\\mathcal{A}|/\\binom{n}{\\lfloor n/2\\rfloor} \\le \\sum_A 1/\\binom{n}{|A|}$, and step 1 bounds the right side by $1$.",
+      "uses": []
+     },
+     {
+      "id": "s:sharp",
+      "slogan": "Show that the middle layer is an antichain that attains the bound.",
+      "detail": "Two different sets of the same size never contain each other, so all $\\lfloor n/2\\rfloor$-element subsets form an antichain of size $\\binom{n}{\\lfloor n/2\\rfloor}$. With step 3, this size is the largest possible.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:lym",
+      "s:bound"
+     ],
+     [
+      "s:middle",
+      "s:bound"
+     ],
+     [
+      "s:bound",
+      "s:sharp"
+     ]
+    ],
+    "conclusion": "s:sharp",
+    "concepts": {
+     "c:antichain": "The antichain condition allows one set per maximal chain.",
+     "c:binomial-coefficient": "Binomial coefficients count the sets in each layer.",
+     "c:chain": "Maximal chains are the objects that the LYM count uses."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "IsAntichain.sperner",
+     "follows": true,
+     "note": "mathlib bounds the sum by lubell_yamamoto_meshalkin_inequality_sum_inv_choose and compares terms with Nat.choose_le_middle."
+    }
+   },
+   {
+    "id": "symmetric-chains",
+    "name": "Symmetric chain decomposition",
+    "slogan": "Partition the power set into $\\binom{n}{\\lfloor n/2\\rfloor}$ chains; an antichain takes at most one set from each chain.",
+    "scope": "The whole theorem. The chain decomposition is built by induction on $n$, starting from the single chain $\\{\\emptyset\\}$ for $n = 0$.",
+    "mechanisms": [
+     "m:pigeonhole",
+     "m:induction",
+     "m:construction-explicit"
+    ],
+    "roles": [
+     {
+      "h": "h:finite",
+      "why": "Induction on the size $n$ builds the decomposition of the finite [power set](c:power-set).",
+      "steps": [
+       "s:decompose",
+       "s:count"
+      ]
+     },
+     {
+      "h": "h:antichain",
+      "why": "Two sets of one chain are comparable, so the antichain meets each chain at most once.",
+      "steps": [
+       "s:meet"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:decompose",
+      "slogan": "Build a symmetric chain decomposition of the [power set](c:power-set) by induction on $n$.",
+      "detail": "A symmetric [chain](c:chain) has sets of sizes $k, k+1, \\dots, n-k$. Each chain $C_1 \\subset \\dots \\subset C_m$ for $n$ gives two chains for $n + 1$: $C_1, \\dots, C_m, C_m \\cup \\{n+1\\}$ and $C_1 \\cup \\{n+1\\}, \\dots, C_{m-1} \\cup \\{n+1\\}$, the second dropped when empty.",
+      "uses": []
+     },
+     {
+      "id": "s:count",
+      "slogan": "Count the chains by their sets of size $\\lfloor n/2\\rfloor$.",
+      "detail": "Each symmetric chain contains exactly one set of size $\\lfloor n/2\\rfloor$, and the chains partition the power set. So there are $\\binom{n}{\\lfloor n/2\\rfloor}$ chains.",
+      "uses": []
+     },
+     {
+      "id": "s:meet",
+      "slogan": "Show that the antichain meets each chain in at most one set.",
+      "detail": "Any two sets of a chain are comparable for inclusion, and no two members of the [antichain](c:antichain) are comparable.",
+      "uses": []
+     },
+     {
+      "id": "s:bound",
+      "slogan": "Bound $|\\mathcal{A}|$ by the number of chains and exhibit the middle layer.",
+      "detail": "Steps 2 and 3 give $|\\mathcal{A}| \\le \\binom{n}{\\lfloor n/2\\rfloor}$. The middle layer is an antichain of exactly this size, because sets of equal size are incomparable.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:decompose",
+      "s:count"
+     ],
+     [
+      "s:count",
+      "s:bound"
+     ],
+     [
+      "s:meet",
+      "s:bound"
+     ]
+    ],
+    "conclusion": "s:bound",
+    "concepts": {
+     "c:antichain": "The antichain takes at most one set from each chain.",
+     "c:binomial-coefficient": "The middle binomial coefficient counts the chains.",
+     "c:chain": "The power set splits into disjoint symmetric chains.",
+     "c:power-set": "The decomposition partitions the whole power set."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The symmetric chain decomposition of de Bruijn, van Ebbenhorst Tengbergen and Kruyswijk (1951), as in most texts on extremal set theory."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q2338929",
+  "statement": "Let $V$ be a [vector space](c:vector-space), let $u_1, \\dots, u_m$ be [linearly independent](c:linear-independence), and let $w_1, \\dots, w_n$ be a [spanning set](c:spanning-set) of $V$. Then $m \\le n$, and after renumbering the $w_j$ the vectors $u_1, \\dots, u_m, w_{m+1}, \\dots, w_n$ span $V$.",
+  "hypotheses": [
+   {
+    "id": "h:independent",
+    "text": "The vectors $u_1, \\dots, u_m$ are [linearly independent](c:linear-independence).",
+    "concept": "c:linear-independence"
+   },
+   {
+    "id": "h:spanning",
+    "text": "The vectors $w_1, \\dots, w_n$ span $V$.",
+    "concept": "c:spanning-set"
+   }
+  ],
+  "conclusion": "$m \\le n$, and some $n - m$ of the $w_j$ together with the $u_i$ span $V$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "exchange-induction",
+    "name": "One exchange at a time",
+    "slogan": "Insert the $u_i$ one at a time, and each time remove a vector $w_j$ that the new $u_i$ needs in its expression.",
+    "scope": "The proof inducts on $k = 0, \\dots, m$; the case $m = 0$ is the base. The scalars may lie in any field or division ring.",
+    "mechanisms": [
+     "m:induction",
+     "m:contradiction"
+    ],
+    "roles": [
+     {
+      "h": "h:independent",
+      "why": "Independence forces a nonzero coefficient on some remaining $w_j$.",
+      "steps": [
+       "s:nonzero"
+      ]
+     },
+     {
+      "h": "h:spanning",
+      "why": "The spanning list starts the induction.",
+      "steps": [
+       "s:base"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:base",
+      "slogan": "Start the induction with $k = 0$ and the spanning list $w_1, \\dots, w_n$.",
+      "detail": "The claim for $k$ says that $k \\le n$ and, after renumbering, $u_1, \\dots, u_k, w_{k+1}, \\dots, w_n$ span $V$. For $k = 0$ this is the hypothesis that the $w_j$ form a [spanning set](c:spanning-set).",
+      "uses": []
+     },
+     {
+      "id": "s:express",
+      "slogan": "Write $u_k$ as a [linear combination](c:linear-combination) of the current spanning list.",
+      "detail": "Assume the claim for $k - 1$, with $k \\le m$. Then $u_k = \\sum_{i < k} a_i u_i + \\sum_{j \\ge k} b_j w_j$ for some scalars $a_i$ and $b_j$.",
+      "uses": []
+     },
+     {
+      "id": "s:nonzero",
+      "slogan": "Find a nonzero coefficient $b_j$ and conclude $k \\le n$.",
+      "detail": "If every $b_j$ were zero, $u_k$ would be a combination of $u_1, \\dots, u_{k-1}$, against [linear independence](c:linear-independence). So some $b_j \\neq 0$ with $j \\ge k$, hence $k \\le n$; renumber so that $b_k \\neq 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:swap",
+      "slogan": "Solve for $w_k$ and exchange it for $u_k$ in the spanning list.",
+      "detail": "Dividing by $b_k$ writes $w_k$ as a combination of $u_1, \\dots, u_k, w_{k+1}, \\dots, w_n$. The new list spans every vector of the old list, so it spans $V$, which is the claim for $k$.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Run the exchange up to $k = m$ to finish.",
+      "detail": "Induction on $k$ gives the claim for $k = m$: $m \\le n$, and $u_1, \\dots, u_m, w_{m+1}, \\dots, w_n$ span the [vector space](c:vector-space) $V$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:base",
+      "s:express"
+     ],
+     [
+      "s:express",
+      "s:nonzero"
+     ],
+     [
+      "s:nonzero",
+      "s:swap"
+     ],
+     [
+      "s:swap",
+      "s:conclude"
+     ],
+     [
+      "s:base",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:vector-space": "The lemma compares independent and spanning lists in one space.",
+     "c:linear-independence": "Independence forces each new vector to need some $w_j$.",
+     "c:spanning-set": "The spanning list is what each exchange keeps spanning.",
+     "c:linear-combination": "Each $u_k$ is expressed through the current spanning list."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The classical exchange argument of Steinitz by induction on the number of exchanged vectors, as in standard linear algebra texts."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1752621",
+  "statement": "Let $Q$ be a [quadratic form](c:quadratic-form) on a real vector space of finite dimension $n$. Some [basis](c:basis) gives $Q(x) = x_1^2 + \\dots + x_p^2 - x_{p+1}^2 - \\dots - x_{p+q}^2$, and $p$ and $q$ are the same for every such basis. Equivalently, congruent real [symmetric matrices](c:symmetric-matrix) $S$ and $PSP^{\\mathsf T}$ have equally many positive, negative and zero [eigenvalues](c:eigenvalue).",
+  "hypotheses": [
+   {
+    "id": "h:real",
+    "text": "The scalars are the real numbers.",
+    "concept": null
+   },
+   {
+    "id": "h:finite",
+    "text": "The vector space $V$ has finite dimension $n$.",
+    "concept": "c:finite-dimensional-vector-space"
+   }
+  ],
+  "conclusion": "$Q$ is equivalent to a sum of $p$ positive and $q$ negative squares, and the pair $(p, q)$, its [signature](c:signature), does not depend on the basis.",
+  "formal": {
+   "decl": "QuadraticForm.equivalent_one_zero_neg_one_weighted_sum_squared",
+   "difference": "The declaration proves only the existence of a diagonal form with weights $-1$, $0$ and $1$. The invariance of $p$ and $q$ is in the related declarations QuadraticForm.sigPos_of_equiv_weightedSumSquares and QuadraticForm.sigNeg_of_equiv_weightedSumSquares."
+  },
+  "proofs": [
+   {
+    "id": "diagonalize-and-compare",
+    "name": "Orthogonal basis and maximal positive subspaces",
+    "slogan": "Diagonalize the form by an orthogonal basis and rescaling, then identify $p$ as the largest dimension of a subspace where $Q$ is positive definite.",
+    "scope": "Existence comes from steps 1 and 2, invariance from steps 3 and 4, and the matrix form from step 5. The zero form ($p = q = 0$) and $n = 0$ are included.",
+    "mechanisms": [
+     "m:induction",
+     "m:dimension-count",
+     "m:eigenvector-basis"
+    ],
+    "roles": [
+     {
+      "h": "h:real",
+      "why": "Real scalars give characteristic $0$ for polarization, square roots of positive numbers, and an order to compare signs.",
+      "steps": [
+       "s:orthogonal",
+       "s:rescale",
+       "s:positive"
+      ]
+     },
+     {
+      "h": "h:finite",
+      "why": "Finite dimension allows induction on $n$ and the dimension count of two subspaces.",
+      "steps": [
+       "s:orthogonal",
+       "s:positive"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:orthogonal",
+      "slogan": "Find a basis that is orthogonal for the polar [bilinear form](c:bilinear-form) of $Q$.",
+      "detail": "Let $B(x, y) = \\frac{1}{2}(Q(x + y) - Q(x) - Q(y))$. If $Q = 0$ any basis works; otherwise pick $v$ with $Q(v) \\neq 0$, split $V = \\mathbb{R}v \\oplus v^{\\perp}$ and recurse on $v^{\\perp}$ by induction on $n$.",
+      "uses": []
+     },
+     {
+      "id": "s:rescale",
+      "slogan": "Rescale the basis vectors to make every coefficient $1$, $-1$ or $0$.",
+      "detail": "In the orthogonal basis $Q(x) = \\sum_i Q(v_i)x_i^2$. Replace $v_i$ by $v_i/\\sqrt{|Q(v_i)|}$ when $Q(v_i) \\neq 0$ and reorder, which gives $p$ positive and $q$ negative squares.",
+      "uses": []
+     },
+     {
+      "id": "s:positive",
+      "slogan": "Identify $p$ as the largest dimension of a subspace where $Q$ is positive definite.",
+      "detail": "The span of the $p$ positive basis vectors is such a subspace. A subspace $W$ with $\\dim W > p$ meets the $(n - p)$-dimensional span of the other basis vectors, where $Q \\le 0$, in a nonzero vector, so $Q$ is not positive definite on $W$.",
+      "uses": [
+       "wd:Q303402"
+      ]
+     },
+     {
+      "id": "s:invariant",
+      "slogan": "Conclude that $p$ and $q$ do not depend on the diagonalizing basis.",
+      "detail": "Step 3 describes $p$ without a basis, so every diagonalizing basis gives the same $p$. Applied to $-Q$, it gives the same $q$, and $n - p - q$ is then fixed as well.",
+      "uses": []
+     },
+     {
+      "id": "s:matrix",
+      "slogan": "Translate the invariance into the eigenvalue counts of congruent [symmetric matrices](c:symmetric-matrix).",
+      "detail": "A symmetric $S$ defines $Q(x) = x^{\\mathsf T}Sx$, and $PSP^{\\mathsf T}$ is the matrix of the same form in another basis. The spectral theorem gives an orthonormal eigenbasis, in which the signs of the [eigenvalues](c:eigenvalue) are the signs of the squares, so both matrices have $p$ positive and $q$ negative eigenvalues.",
+      "uses": [
+       "wd:Q1425077"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:orthogonal",
+      "s:rescale"
+     ],
+     [
+      "s:rescale",
+      "s:positive"
+     ],
+     [
+      "s:positive",
+      "s:invariant"
+     ],
+     [
+      "s:invariant",
+      "s:matrix"
+     ]
+    ],
+    "conclusion": "s:matrix",
+    "concepts": {
+     "c:quadratic-form": "The theorem classifies real quadratic forms up to a change of basis.",
+     "c:basis": "Different diagonalizing bases must give the same counts.",
+     "c:symmetric-matrix": "Symmetric matrices represent the form in coordinates.",
+     "c:eigenvalue": "Eigenvalue signs give one diagonal form of the matrix.",
+     "c:finite-dimensional-vector-space": "Finite dimension drives the induction and the dimension count.",
+     "c:signature": "The invariant pair $(p, q)$ is the signature of the form.",
+     "c:bilinear-form": "The polar bilinear form defines orthogonality for the basis."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "QuadraticForm.equivalent_one_zero_neg_one_weighted_sum_squared",
+     "follows": true,
+     "note": "mathlib gets a weighted sum of squares from an orthogonal basis (QuadraticForm.equivalent_weightedSumSquares) and rescales to signs (equivalent_signType_weighted_sum_squared); the invariance steps follow the classical maximal positive subspace argument."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1046232",
+  "statement": "Let $A$ be a set of [natural numbers](c:natural-number) with positive upper [density](c:density-of-a-subset), $\\limsup_{N\\to\\infty} |A \\cap \\{1, \\dots, N\\}|/N > 0$. Then for every $k \\ge 1$, $A$ contains an [arithmetic progression](c:arithmetic-progression) $a, a + d, \\dots, a + (k-1)d$ with $d \\ge 1$.",
+  "hypotheses": [
+   {
+    "id": "h:density",
+    "text": "The set $A \\subseteq \\mathbb{N}$ has positive upper [density](c:density-of-a-subset).",
+    "concept": "c:density-of-a-subset"
+   }
+  ],
+  "conclusion": "$A$ contains arithmetic progressions of every finite length.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "furstenberg-recurrence",
+    "name": "Furstenberg multiple recurrence",
+    "slogan": "Turn the dense set into a measure-preserving system and prove multiple recurrence by climbing its structure of compact and weakly mixing extensions.",
+    "scope": "An outline of Furstenberg's ergodic proof; steps 2 to 5 rest on the cited work. Szemerédi's original combinatorial proof (1975) is a different route.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:zorn"
+    ],
+    "roles": [
+     {
+      "h": "h:density",
+      "why": "Positive upper density gives a set $E$ of positive measure in the correspondence.",
+      "steps": [
+       "s:correspondence"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:correspondence",
+      "slogan": "Build a [measure-preserving system](c:measure-preserving-system) that encodes $A$ by the correspondence principle.",
+      "detail": "On $X = \\{0, 1\\}^{\\mathbb{Z}}$ with the shift $T$, take a weak-* limit $\\mu$ of averages of point masses along the orbit of the indicator of $A$, along $N_i$ that realize the upper density, and let $E = \\{x : x_0 = 1\\}$. Then $\\mu(E) > 0$, and $\\mu(E \\cap T^{-n}E \\cap \\dots \\cap T^{-(k-1)n}E) > 0$ forces $a, a + n, \\dots, a + (k-1)n \\in A$ for some $a$.",
+      "uses": []
+     },
+     {
+      "id": "s:compact",
+      "slogan": "Lift multiple recurrence through compact extensions by a van der Waerden argument.",
+      "detail": "Call a system SZ if $\\liminf_N \\frac{1}{N}\\sum_{n \\le N} \\mu(E \\cap T^{-n}E \\cap \\dots \\cap T^{-(k-1)n}E) > 0$ whenever $\\mu(E) > 0$. The cited work shows that a compact extension of an SZ system is SZ, with a colouring argument of van der Waerden type on almost periodic functions.",
+      "uses": [
+       "wd:Q764287"
+      ]
+     },
+     {
+      "id": "s:weak-mixing",
+      "slogan": "Lift multiple recurrence through weakly mixing extensions by comparing averages.",
+      "detail": "For a weakly mixing extension, the cited work shows that the multiple averages are asymptotically the averages of the conditional expectations on the factor. So the SZ property passes from the factor to the extension.",
+      "uses": []
+     },
+     {
+      "id": "s:maximal",
+      "slogan": "Take a maximal SZ factor with Zorn's lemma.",
+      "detail": "The SZ property passes to inverse limits of chains of factors, and the trivial factor is SZ. Zorn's lemma gives a maximal factor of $X$ with the SZ property.",
+      "uses": [
+       "nl:1475"
+      ]
+     },
+     {
+      "id": "s:structure",
+      "slogan": "Show that the maximal SZ factor is the whole system.",
+      "detail": "If the extension of the maximal factor were proper, it would be weakly mixing or contain a proper compact intermediate extension, by the Furstenberg-Zimmer dichotomy. Steps 2 and 3 then give a larger SZ factor, against maximality, so the whole system is SZ.",
+      "uses": [
+       "nl:22920"
+      ]
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Return from multiple recurrence to an [arithmetic progression](c:arithmetic-progression) in $A$.",
+      "detail": "Since $X$ is SZ and $\\mu(E) > 0$, some $n \\ge 1$ has $\\mu(E \\cap T^{-n}E \\cap \\dots \\cap T^{-(k-1)n}E) > 0$. Step 1 turns this into $a, a + n, \\dots, a + (k-1)n \\in A$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:correspondence",
+      "s:conclude"
+     ],
+     [
+      "s:compact",
+      "s:structure"
+     ],
+     [
+      "s:weak-mixing",
+      "s:structure"
+     ],
+     [
+      "s:maximal",
+      "s:structure"
+     ],
+     [
+      "s:structure",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:natural-number": "The theorem concerns subsets of the natural numbers.",
+     "c:density-of-a-subset": "Positive upper density is the only size condition on $A$.",
+     "c:arithmetic-progression": "Long arithmetic progressions are the patterns the theorem finds.",
+     "c:measure-preserving-system": "The correspondence moves the problem into ergodic theory."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "H. Furstenberg, Ergodic behavior of diagonal measures and a theorem of Szemerédi on arithmetic progressions, Journal d'Analyse Mathématique 31 (1977), 204-256",
+     "url": "https://doi.org/10.1007/BF02813304",
+     "note": "Furstenberg proves the multiple recurrence theorem through the correspondence principle and the structure of compact and weakly mixing extensions; the theorem was first proved combinatorially by E. Szemerédi, Acta Arithmetica 27 (1975), 199-245."
+    }
+   }
+  ]
+ }
+]
