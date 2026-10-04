@@ -1,0 +1,1992 @@
+[
+ {
+  "id": "nm:leibniz-formula",
+  "statement": "If real functions $f$ and $g$ are [differentiable](c:differentiable-function) at a point $x$, then their [product](c:product-of-functions) $fg$ is differentiable at $x$, and its [derivative](c:derivative) is $(fg)'(x) = f'(x)\\,g(x) + f(x)\\,g'(x)$.",
+  "hypotheses": [
+   {
+    "id": "h:f-differentiable",
+    "text": "The function $f$ is [differentiable](c:differentiable-function) at $x$.",
+    "concept": "c:differentiable-function"
+   },
+   {
+    "id": "h:g-differentiable",
+    "text": "The function $g$ is [differentiable](c:differentiable-function) at $x$.",
+    "concept": "c:differentiable-function"
+   }
+  ],
+  "conclusion": "The product $fg$ is differentiable at $x$, and $(fg)'(x) = f'(x)\\,g(x) + f(x)\\,g'(x)$.",
+  "formal": {
+   "decl": "fderiv_mul",
+   "difference": "The declaration treats Fréchet derivatives of functions from a normed space to a commutative normed algebra. It states only the formula; the differentiability of the product is a separate declaration."
+  },
+  "proofs": [
+   {
+    "id": "bilinear-chain",
+    "name": "Bilinear map and chain rule",
+    "slogan": "Write the product as the bilinear multiplication map applied to the pair $(f, g)$, and differentiate the composite by the chain rule.",
+    "scope": "The whole theorem for real functions. The same steps work for functions with values in any commutative normed algebra.",
+    "mechanisms": [
+     "m:algebraic-identity",
+     "m:epsilon-delta"
+    ],
+    "roles": [
+     {
+      "h": "h:f-differentiable",
+      "why": "Differentiability of $f$ gives the first coordinate of the derivative of the pair map.",
+      "steps": [
+       "s:pair"
+      ]
+     },
+     {
+      "h": "h:g-differentiable",
+      "why": "Differentiability of $g$ gives the second coordinate of the derivative of the pair map.",
+      "steps": [
+       "s:pair"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:pair",
+      "slogan": "Combine $f$ and $g$ into the pair map $F(t) = (f(t), g(t))$.",
+      "detail": "The map $F$ into $\\mathbb{R}^2$ is differentiable at $x$ with derivative $h \\mapsto (f'(x)h, g'(x)h)$, because each coordinate is differentiable at $x$.",
+      "uses": []
+     },
+     {
+      "id": "s:bilinear",
+      "slogan": "Differentiate the [bilinear map](c:bilinear-map) $B(u, v) = uv$ at the point $(p, q)$.",
+      "detail": "$B(p + h, q + k) - B(p, q) = pk + hq + hk$. The rest term satisfies $|hk| \\le \\|(h, k)\\|^2$, so it is $o(\\|(h, k)\\|)$, and $B'(p, q)(h, k) = pk + hq$.",
+      "uses": []
+     },
+     {
+      "id": "s:chain",
+      "slogan": "Compose the derivative of $B$ with the derivative of $F$ by the chain rule.",
+      "detail": "Since $fg = B \\circ F$, the chain rule makes $fg$ differentiable at $x$ with derivative $h \\mapsto B'(F(x))(F'(x)h) = f(x)\\,g'(x)\\,h + f'(x)\\,h\\,g(x)$.",
+      "uses": [
+       "nm:derivative-of-a-composition-of-functions"
+      ]
+     },
+     {
+      "id": "s:read",
+      "slogan": "Read the coefficient of $h$ as the [derivative](c:derivative) of $fg$ at $x$.",
+      "detail": "The derivative of $fg$ at $x$ is the number that multiplies $h$, which is $f'(x)\\,g(x) + f(x)\\,g'(x)$. Commutativity of multiplication puts the terms in this order.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:pair",
+      "s:chain"
+     ],
+     [
+      "s:bilinear",
+      "s:chain"
+     ],
+     [
+      "s:chain",
+      "s:read"
+     ]
+    ],
+    "conclusion": "s:read",
+    "concepts": {
+     "c:differentiable-function": "Both factors must have linear approximations at the point.",
+     "c:product-of-functions": "The product is the composite of the pair map and multiplication.",
+     "c:derivative": "The derivative of the composite is read as the coefficient of $h$.",
+     "c:bilinear-map": "Multiplication is bilinear, so its derivative is explicit and its error is quadratic."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "fderiv_mul",
+     "follows": true,
+     "note": "mathlib proves HasFDerivAt.mul' by IsBoundedBilinearMap.hasFDerivAt for ContinuousLinearMap.mul, composed (HasFDerivAt.comp) with the pair map from HasFDerivAt.prodMk."
+    }
+   },
+   {
+    "id": "difference-quotient",
+    "name": "Difference quotient",
+    "slogan": "Split the difference quotient of $fg$ into two quotients by adding and subtracting $f(x+h)\\,g(x)$, then pass to the limit.",
+    "scope": "The whole theorem for functions of one real variable. The limit is taken as $h \\to 0$ with $h \\neq 0$.",
+    "mechanisms": [
+     "m:algebraic-identity",
+     "m:epsilon-delta"
+    ],
+    "roles": [
+     {
+      "h": "h:f-differentiable",
+      "why": "It gives the limit $f'(x)$ and, through it, the continuity of $f$ at $x$.",
+      "steps": [
+       "s:continuity",
+       "s:limit"
+      ]
+     },
+     {
+      "h": "h:g-differentiable",
+      "why": "It gives the limit $g'(x)$ of the second quotient.",
+      "steps": [
+       "s:limit"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:split",
+      "slogan": "Add and subtract $f(x+h)\\,g(x)$ in the numerator of the difference quotient.",
+      "detail": "For $h \\neq 0$, the added and subtracted terms cancel, so $\\frac{f(x+h)g(x+h) - f(x)g(x)}{h} = f(x+h)\\,\\frac{g(x+h) - g(x)}{h} + g(x)\\,\\frac{f(x+h) - f(x)}{h}$. Each quotient on the right has a known limit.",
+      "uses": []
+     },
+     {
+      "id": "s:continuity",
+      "slogan": "Derive the continuity of $f$ at $x$ from its differentiability.",
+      "detail": "$f(x+h) - f(x) = h \\cdot \\frac{f(x+h) - f(x)}{h}$ tends to $0 \\cdot f'(x) = 0$ as $h \\to 0$, so $f(x+h) \\to f(x)$.",
+      "uses": []
+     },
+     {
+      "id": "s:limit",
+      "slogan": "Take the [limit](c:limit-of-a-function) of each term of the split as $h \\to 0$.",
+      "detail": "The limit of a product is the product of the limits: $f(x+h) \\to f(x)$, the quotient of $g$ tends to $g'(x)$ and the quotient of $f$ tends to $f'(x)$. So the quotient of $fg$ tends to $f(x)\\,g'(x) + g(x)\\,f'(x)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:split",
+      "s:limit"
+     ],
+     [
+      "s:continuity",
+      "s:limit"
+     ]
+    ],
+    "conclusion": "s:limit",
+    "concepts": {
+     "c:differentiable-function": "Differentiability gives the two limits and the continuity of $f$.",
+     "c:product-of-functions": "The product's difference quotient is split into two simpler quotients.",
+     "c:derivative": "The derivative is the limit of the difference quotient.",
+     "c:limit-of-a-function": "Limits of products and sums give the limit of the split quotient."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The classical proof by adding and subtracting a term, as in Spivak, Calculus, chapter 10."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:markov-s-inequality",
+  "statement": "If $f$ is a [measurable](c:measurable-function) [nonnegative function](c:nonnegative-function) on a [measure space](c:measure-space) $(X, \\mu)$ and $0 < t < \\infty$, then $t\\,\\mu(\\{x : f(x) \\ge t\\}) \\le \\int_X f\\,d\\mu$, so $\\mu(\\{f \\ge t\\}) \\le \\frac{1}{t}\\int_X f\\,d\\mu$.",
+  "hypotheses": [
+   {
+    "id": "h:measurable",
+    "text": "The function $f$ is [measurable](c:measurable-function) on the measure space $(X, \\mu)$.",
+    "concept": "c:measurable-function"
+   },
+   {
+    "id": "h:nonnegative",
+    "text": "The function $f$ is [nonnegative](c:nonnegative-function), with values in $[0, \\infty]$.",
+    "concept": "c:nonnegative-function"
+   },
+   {
+    "id": "h:level",
+    "text": "The level $t$ satisfies $0 < t < \\infty$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "$t\\,\\mu(\\{f \\ge t\\}) \\le \\int_X f\\,d\\mu$, and hence $\\mu(\\{f \\ge t\\}) \\le \\frac{1}{t}\\int_X f\\,d\\mu$.",
+  "formal": {
+   "decl": "MeasureTheory.mul_meas_ge_le_lintegral",
+   "difference": "The declaration states only the multiplied form $\\varepsilon\\,\\mu\\{\\varepsilon \\le f\\} \\le \\int f\\,d\\mu$, for every $\\varepsilon \\in [0, \\infty]$. The divided form needs $0 < t < \\infty$."
+  },
+  "proofs": [
+   {
+    "id": "indicator-minorant",
+    "name": "Step function below the function",
+    "slogan": "Bound $f$ from below by $t$ times the indicator of the set where $f \\ge t$, and integrate both sides.",
+    "scope": "The whole theorem. If $\\int_X f\\,d\\mu = \\infty$, both forms hold trivially, and the proof needs no separate case.",
+    "mechanisms": [
+     "m:construction-explicit"
+    ],
+    "roles": [
+     {
+      "h": "h:measurable",
+      "why": "Measurability makes the level set measurable, so $\\mu(A)$ and the integral of its indicator exist.",
+      "steps": [
+       "s:set",
+       "s:integrate"
+      ]
+     },
+     {
+      "h": "h:nonnegative",
+      "why": "Nonnegativity gives $t\\,\\mathbf{1}_A \\le f$ outside the level set.",
+      "steps": [
+       "s:minorant"
+      ]
+     },
+     {
+      "h": "h:level",
+      "why": "A finite positive level can be divided out of the inequality.",
+      "steps": [
+       "s:divide"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:set",
+      "slogan": "Define the level set $A = \\{x : f(x) \\ge t\\}$ and check that it is measurable.",
+      "detail": "$A$ is the preimage of the closed ray $[t, \\infty]$ under the [measurable](c:measurable-function) map $f$. So $A$ is a measurable set and $\\mu(A)$ is defined.",
+      "uses": []
+     },
+     {
+      "id": "s:minorant",
+      "slogan": "Compare $f$ pointwise with the step function $t\\,\\mathbf{1}_A$.",
+      "detail": "On $A$, $t\\,\\mathbf{1}_A(x) = t \\le f(x)$. Outside $A$, $t\\,\\mathbf{1}_A(x) = 0 \\le f(x)$ because $f$ is [nonnegative](c:nonnegative-function). So $t\\,\\mathbf{1}_A \\le f$ everywhere.",
+      "uses": []
+     },
+     {
+      "id": "s:integrate",
+      "slogan": "Integrate both sides and use the monotonicity of the [integral](c:lebesgue-integral).",
+      "detail": "The integral of the simple function $t\\,\\mathbf{1}_A$ is $t\\,\\mu(A)$. The integral of nonnegative functions is monotone, so $t\\,\\mu(A) \\le \\int_X f\\,d\\mu$.",
+      "uses": []
+     },
+     {
+      "id": "s:divide",
+      "slogan": "Divide the inequality by the positive number $t$.",
+      "detail": "Because $0 < t < \\infty$, division by $t$ keeps the inequality, also when the integral is infinite. This gives $\\mu(A) \\le \\frac{1}{t}\\int_X f\\,d\\mu$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:set",
+      "s:minorant"
+     ],
+     [
+      "s:set",
+      "s:integrate"
+     ],
+     [
+      "s:minorant",
+      "s:integrate"
+     ],
+     [
+      "s:integrate",
+      "s:divide"
+     ]
+    ],
+    "conclusion": "s:divide",
+    "concepts": {
+     "c:measurable-function": "Measurability makes the level set measurable and the integrals defined.",
+     "c:nonnegative-function": "Nonnegativity keeps the step function below $f$ off the level set.",
+     "c:measure-space": "The measure gives the size of the level set that the bound controls.",
+     "c:lebesgue-integral": "Monotonicity of the integral turns the pointwise bound into the inequality."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "MeasureTheory.mul_meas_ge_le_lintegral",
+     "follows": true,
+     "note": "mathlib applies lintegral_add_mul_meas_add_le_le_lintegral with the zero function: the indicator of the level set times ε lies below f (lintegral_mono), and setLIntegral_const computes its integral."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q656198",
+  "statement": "Let $G$ be a [finite group](c:finite-group) and $k$ a field whose [characteristic](c:characteristic) does not divide $|G|$. Every [subrepresentation](c:subrepresentation) $W$ of a [representation](c:group-representation) $V$ of $G$ over $k$ has a $G$-invariant complement, so every finite-dimensional representation is a [direct sum](c:direct-sum) of [irreducible representations](c:irreducible-representation).",
+  "hypotheses": [
+   {
+    "id": "h:finite-group",
+    "text": "The group $G$ is [finite](c:finite-group).",
+    "concept": "c:finite-group"
+   },
+   {
+    "id": "h:characteristic",
+    "text": "The [characteristic](c:characteristic) of $k$ does not divide $|G|$, so $|G|$ is invertible in $k$.",
+    "concept": "c:characteristic"
+   },
+   {
+    "id": "h:finite-dimensional",
+    "text": "For the decomposition, the representation $V$ is finite dimensional over $k$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "Every subrepresentation $W \\subseteq V$ has a subrepresentation $W'$ with $V = W \\oplus W'$, and a finite-dimensional $V$ is a direct sum of irreducible subrepresentations.",
+  "formal": {
+   "decl": "MonoidAlgebra.Submodule.exists_isCompl",
+   "difference": "The declaration gives the invariant complement for every $k[G]$-module, finite dimensional or not, but not the decomposition into irreducible representations. It states the characteristic condition as $|G| \\neq 0$ in $k$."
+  },
+  "proofs": [
+   {
+    "id": "averaged-projection",
+    "name": "Averaged projection",
+    "slogan": "Average a linear projection onto $W$ over the group to get a $G$-linear projection, and take its kernel as the invariant complement.",
+    "scope": "The complement for every representation, then the decomposition by induction on the dimension. The zero representation is the empty direct sum.",
+    "mechanisms": [
+     "m:construction-explicit",
+     "m:homomorphism-kernel",
+     "m:induction"
+    ],
+    "roles": [
+     {
+      "h": "h:finite-group",
+      "why": "Finiteness of $G$ makes the average a finite sum of $|G|$ terms.",
+      "steps": [
+       "s:average",
+       "s:retract"
+      ]
+     },
+     {
+      "h": "h:characteristic",
+      "why": "The characteristic condition lets the proof divide by $|G|$.",
+      "steps": [
+       "s:average",
+       "s:retract"
+      ]
+     },
+     {
+      "h": "h:finite-dimensional",
+      "why": "Finite dimension makes the induction on the dimension end.",
+      "steps": [
+       "s:decompose"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:linear-projection",
+      "slogan": "Choose a $k$-linear [projection](c:projection) $\\pi\\colon V \\to W$ that fixes every vector of $W$.",
+      "detail": "Every subspace of a vector space has a linear complement, so $V = W \\oplus U$ as vector spaces. The projection along $U$ is a $k$-linear map $\\pi$ with $\\pi(w) = w$ for $w \\in W$.",
+      "uses": [
+       "nm:complementary-subspaces"
+      ]
+     },
+     {
+      "id": "s:average",
+      "slogan": "Average the conjugates of $\\pi$ over the group to form the map $\\pi^\\circ$.",
+      "detail": "Set $\\pi^\\circ(v) = \\frac{1}{|G|}\\sum_{g \\in G} g^{-1}\\pi(g v)$. The sum is finite because $G$ is finite, and $1/|G|$ exists because the characteristic of $k$ does not divide $|G|$.",
+      "uses": []
+     },
+     {
+      "id": "s:equivariant",
+      "slogan": "Reindex the sum to show that $\\pi^\\circ$ commutes with the group action.",
+      "detail": "For $h \\in G$, $\\pi^\\circ(hv) = \\frac{1}{|G|}\\sum_g g^{-1}\\pi(ghv)$. The substitution $g' = gh$ turns this into $h\\,\\frac{1}{|G|}\\sum_{g'} g'^{-1}\\pi(g'v) = h\\,\\pi^\\circ(v)$.",
+      "uses": []
+     },
+     {
+      "id": "s:retract",
+      "slogan": "Check that $\\pi^\\circ$ still fixes every vector of $W$.",
+      "detail": "For $w \\in W$, $gw \\in W$ because $W$ is a [subrepresentation](c:subrepresentation), so $g^{-1}\\pi(gw) = g^{-1}gw = w$. The $|G|$ equal terms give $\\pi^\\circ(w) = w$.",
+      "uses": []
+     },
+     {
+      "id": "s:complement",
+      "slogan": "Take the kernel of $\\pi^\\circ$ as the $G$-invariant complement of $W$.",
+      "detail": "The map $\\pi^\\circ$ has image in $W$ and fixes $W$, so it is a projection onto $W$ and $V = W \\oplus \\ker \\pi^\\circ$. The kernel of a $G$-linear map is $G$-invariant.",
+      "uses": []
+     },
+     {
+      "id": "s:decompose",
+      "slogan": "Split $V$ again and again by induction on its dimension.",
+      "detail": "If $V \\neq 0$ is not irreducible, it has a subrepresentation $0 \\neq W \\neq V$, and $V = W \\oplus W'$ with both parts of smaller dimension. The induction hypothesis writes $W$ and $W'$ as direct sums of irreducible representations, so $V$ is one too.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:linear-projection",
+      "s:average"
+     ],
+     [
+      "s:average",
+      "s:equivariant"
+     ],
+     [
+      "s:average",
+      "s:retract"
+     ],
+     [
+      "s:equivariant",
+      "s:complement"
+     ],
+     [
+      "s:retract",
+      "s:complement"
+     ],
+     [
+      "s:complement",
+      "s:decompose"
+     ]
+    ],
+    "conclusion": "s:decompose",
+    "concepts": {
+     "c:finite-group": "Only a finite group can be averaged over by a finite sum.",
+     "c:characteristic": "The average divides by $|G|$, which must be nonzero in $k$.",
+     "c:subrepresentation": "Invariance of $W$ makes the averaged map fix $W$.",
+     "c:group-representation": "The group acts linearly, so the conjugates $g^{-1}\\pi g$ are linear maps.",
+     "c:direct-sum": "The complement splits the representation as a direct sum.",
+     "c:irreducible-representation": "Irreducible pieces are where the repeated splitting stops.",
+     "c:projection": "A projection fixing $W$ has a kernel complementary to $W$."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "MonoidAlgebra.Submodule.exists_isCompl",
+     "follows": true,
+     "note": "mathlib averages a k-linear left inverse of the inclusion (LinearMap.equivariantProjection, equivariantProjection_condition) and takes its kernel (LinearMap.isCompl_of_proj); the induction step is not part of the declaration."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q189136",
+  "statement": "If $a < b$ and $f\\colon [a, b] \\to \\mathbb{R}$ is [continuous](c:continuous-function) on $[a, b]$ and [differentiable](c:differentiable-function) on $(a, b)$, then some $c \\in (a, b)$ has [derivative](c:derivative) $f'(c) = \\frac{f(b) - f(a)}{b - a}$.",
+  "hypotheses": [
+   {
+    "id": "h:order",
+    "text": "The endpoints satisfy $a < b$.",
+    "concept": null
+   },
+   {
+    "id": "h:continuous",
+    "text": "The function $f$ is [continuous](c:continuous-function) on the closed interval $[a, b]$.",
+    "concept": "c:continuous-function"
+   },
+   {
+    "id": "h:differentiable",
+    "text": "The function $f$ is [differentiable](c:differentiable-function) at every point of the open interval $(a, b)$.",
+    "concept": "c:differentiable-function"
+   }
+  ],
+  "conclusion": "Some $c \\in (a, b)$ has $f'(c) = \\frac{f(b) - f(a)}{b - a}$.",
+  "formal": {
+   "decl": "exists_deriv_eq_slope",
+   "difference": null
+  },
+  "proofs": [
+   {
+    "id": "rolle-auxiliary",
+    "name": "Auxiliary function and Rolle's theorem",
+    "slogan": "Tilt $f$ by a multiple of $x$ to get a function with equal end values, and find a stationary point of it by Rolle's theorem.",
+    "scope": "The whole theorem. The hypothesis $a < b$ makes the open interval nonempty and the slope defined.",
+    "mechanisms": [
+     "m:mean-value",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:order",
+      "why": "It gives a nondegenerate interval for Rolle's theorem and a nonzero denominator $b - a$.",
+      "steps": [
+       "s:rolle",
+       "s:solve"
+      ]
+     },
+     {
+      "h": "h:continuous",
+      "why": "Continuity of $f$ makes the auxiliary function continuous on $[a, b]$.",
+      "steps": [
+       "s:auxiliary",
+       "s:rolle"
+      ]
+     },
+     {
+      "h": "h:differentiable",
+      "why": "Differentiability of $f$ makes the auxiliary function differentiable on $(a, b)$ and gives its derivative.",
+      "steps": [
+       "s:auxiliary",
+       "s:rolle"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:auxiliary",
+      "slogan": "Define the auxiliary function $h(x) = (b - a)\\,f(x) - (f(b) - f(a))\\,x$.",
+      "detail": "The function $h$ is [continuous](c:continuous-function) on $[a, b]$ and differentiable on $(a, b)$ with $h'(x) = (b - a)f'(x) - (f(b) - f(a))$, because it is a linear combination of $f$ and the identity.",
+      "uses": []
+     },
+     {
+      "id": "s:ends",
+      "slogan": "Compare the end values $h(a)$ and $h(b)$ of the auxiliary function.",
+      "detail": "$h(b) - h(a) = (b - a)(f(b) - f(a)) - (f(b) - f(a))(b - a) = 0$, so $h(a) = h(b)$.",
+      "uses": []
+     },
+     {
+      "id": "s:rolle",
+      "slogan": "Find a point $c \\in (a, b)$ with $h'(c) = 0$ by Rolle's theorem.",
+      "detail": "Rolle's theorem applies to $h$ on $[a, b]$: $a < b$, $h$ is continuous on $[a, b]$, differentiable on $(a, b)$, and $h(a) = h(b)$.",
+      "uses": [
+       "wd:Q193286"
+      ]
+     },
+     {
+      "id": "s:solve",
+      "slogan": "Solve the equation $h'(c) = 0$ for the [derivative](c:derivative) $f'(c)$.",
+      "detail": "$h'(c) = 0$ means $(b - a)\\,f'(c) = f(b) - f(a)$. Division by $b - a \\neq 0$ gives $f'(c) = \\frac{f(b) - f(a)}{b - a}$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:auxiliary",
+      "s:ends"
+     ],
+     [
+      "s:auxiliary",
+      "s:rolle"
+     ],
+     [
+      "s:ends",
+      "s:rolle"
+     ],
+     [
+      "s:rolle",
+      "s:solve"
+     ]
+    ],
+    "conclusion": "s:solve",
+    "concepts": {
+     "c:continuous-function": "Continuity on the closed interval passes to the auxiliary function for Rolle.",
+     "c:differentiable-function": "Differentiability inside the interval gives the derivative of the auxiliary function.",
+     "c:derivative": "The stationary point of the auxiliary function gives the required derivative value."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "exists_deriv_eq_slope",
+     "follows": true,
+     "note": "mathlib applies Cauchy's mean value theorem exists_ratio_hasDerivAt_eq_ratio_slope with g = id; that proof applies Rolle's theorem exists_hasDerivAt_eq_zero to h(x) = (g b - g a) f x - (f b - f a) g x."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:minkowski-s-inequality-for-functions",
+  "statement": "On a [measure space](c:measure-space) $(X, \\mu)$, for $1 \\le p < \\infty$ and [measurable](c:measurable-function) functions $f, g\\colon X \\to [0, \\infty]$, the [Lp norm](c:lp-norm) $\\|f\\|_p = (\\int_X f^p\\,d\\mu)^{1/p}$ satisfies $\\|f + g\\|_p \\le \\|f\\|_p + \\|g\\|_p$.",
+  "hypotheses": [
+   {
+    "id": "h:exponent",
+    "text": "The exponent satisfies $1 \\le p < \\infty$.",
+    "concept": null
+   },
+   {
+    "id": "h:measurable",
+    "text": "The functions $f$ and $g$ are [measurable](c:measurable-function), with values in $[0, \\infty]$.",
+    "concept": "c:measurable-function"
+   }
+  ],
+  "conclusion": "$(\\int_X (f + g)^p\\,d\\mu)^{1/p} \\le (\\int_X f^p\\,d\\mu)^{1/p} + (\\int_X g^p\\,d\\mu)^{1/p}$.",
+  "formal": {
+   "decl": "ENNReal.lintegral_Lp_add_le",
+   "difference": "The declaration needs only almost-everywhere measurability of $f$ and $g$; otherwise it states the same inequality."
+  },
+  "proofs": [
+   {
+    "id": "holder-split",
+    "name": "Hölder on a split power",
+    "slogan": "Split $(f + g)^p$ as $f(f + g)^{p-1} + g(f + g)^{p-1}$, bound each part by Hölder's inequality, and divide by the common factor.",
+    "scope": "The main case $p > 1$ with $0 < \\int (f + g)^p < \\infty$; step 1 settles the other cases. Real or complex functions follow from $|f + g| \\le |f| + |g|$.",
+    "mechanisms": [
+     "m:case-analysis",
+     "m:cauchy-schwarz",
+     "m:convexity"
+    ],
+    "roles": [
+     {
+      "h": "h:exponent",
+      "why": "The exponent $p > 1$ has a conjugate exponent $q$, and $p \\ge 1$ makes $t \\mapsto t^p$ convex.",
+      "steps": [
+       "s:cases",
+       "s:finite",
+       "s:holder"
+      ]
+     },
+     {
+      "h": "h:measurable",
+      "why": "Measurability makes the integrals defined and additive.",
+      "steps": [
+       "s:split",
+       "s:holder"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:cases",
+      "slogan": "Settle the cases of an infinite right side, $p = 1$ and $\\int (f + g)^p = 0$.",
+      "detail": "An infinite right side or a zero left side makes the inequality trivial, and for $p = 1$ additivity of the integral gives equality. Otherwise $p > 1$, and $q = p/(p - 1)$ satisfies $1/p + 1/q = 1$.",
+      "uses": []
+     },
+     {
+      "id": "s:finite",
+      "slogan": "Show that $\\int (f + g)^p$ is finite by the [convexity](c:convex-function) of $t \\mapsto t^p$.",
+      "detail": "Convexity gives $(a + b)^p \\le 2^{p-1}(a^p + b^p)$ for $a, b \\ge 0$. Integration bounds $\\int (f + g)^p$ by $2^{p-1}(\\int f^p + \\int g^p)$, which is finite in the main case.",
+      "uses": []
+     },
+     {
+      "id": "s:split",
+      "slogan": "Split the integrand as $(f + g)^p = f\\,(f + g)^{p-1} + g\\,(f + g)^{p-1}$.",
+      "detail": "The identity holds pointwise. Additivity of the integral of [measurable](c:measurable-function) nonnegative functions gives $\\int (f + g)^p = \\int f(f + g)^{p-1} + \\int g(f + g)^{p-1}$.",
+      "uses": []
+     },
+     {
+      "id": "s:holder",
+      "slogan": "Bound each part of the split by Hölder's inequality with exponents $p$ and $q$.",
+      "detail": "Hölder gives $\\int f(f + g)^{p-1} \\le \\|f\\|_p\\,(\\int (f + g)^{(p-1)q})^{1/q}$, and $(p - 1)q = p$. The same bound for $g$ gives $\\int (f + g)^p \\le (\\|f\\|_p + \\|g\\|_p)(\\int (f + g)^p)^{1/q}$.",
+      "uses": [
+       "nl:18096"
+      ]
+     },
+     {
+      "id": "s:divide",
+      "slogan": "Divide by the finite nonzero factor $(\\int (f + g)^p)^{1/q}$.",
+      "detail": "Since $1 - 1/q = 1/p$, the division gives $(\\int (f + g)^p)^{1/p} \\le \\|f\\|_p + \\|g\\|_p$, which is the inequality of [Lp norms](c:lp-norm).",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:cases",
+      "s:holder"
+     ],
+     [
+      "s:cases",
+      "s:divide"
+     ],
+     [
+      "s:finite",
+      "s:divide"
+     ],
+     [
+      "s:split",
+      "s:holder"
+     ],
+     [
+      "s:holder",
+      "s:divide"
+     ]
+    ],
+    "conclusion": "s:divide",
+    "concepts": {
+     "c:measure-space": "The integrals that define the norms are taken over this measure.",
+     "c:measurable-function": "Measurability makes the integrals exist and add.",
+     "c:lp-norm": "The inequality is the triangle inequality of this norm.",
+     "c:convex-function": "Convexity of $t^p$ shows that the left side is finite before the division."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "ENNReal.lintegral_Lp_add_le",
+     "follows": true,
+     "note": "mathlib settles the trivial cases, proves finiteness by lintegral_rpow_add_lt_top_of_lintegral_rpow_lt_top, and bounds the split integral by Hölder (lintegral_rpow_add_le_add_eLpNorm_mul_lintegral_rpow_add) in lintegral_Lp_add_le_aux."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q422187",
+  "statement": "A language $L$ of [words](c:word) over an alphabet $\\Sigma$ is [regular](c:regular-language) if and only if the Myhill–Nerode [equivalence relation](c:equivalence-relation), $u \\sim v$ when $uw \\in L \\Leftrightarrow vw \\in L$ for every word $w$, has finitely many classes, that is, iff $L$ has finitely many left quotients $u^{-1}L = \\{w : uw \\in L\\}$.",
+  "hypotheses": [
+   {
+    "id": "h:language",
+    "text": "The set $L$ consists of finite [words](c:word) over an alphabet $\\Sigma$.",
+    "concept": "c:word"
+   }
+  ],
+  "conclusion": "$L$ is accepted by a [deterministic finite automaton](c:dfa) exactly when $\\sim$ has finitely many classes.",
+  "formal": {
+   "decl": "Language.isRegular_iff_finite_range_leftQuotient",
+   "difference": "The declaration counts the left quotients $u^{-1}L$ instead of the classes of $\\sim$. The two counts agree because $u \\sim v$ means $u^{-1}L = v^{-1}L$."
+  },
+  "proofs": [
+   {
+    "id": "quotient-automaton",
+    "name": "Left quotients as states",
+    "slogan": "A finite automaton has at most one left quotient per state, and conversely the left quotients themselves are the states of an automaton for $L$.",
+    "scope": "Both directions, for any alphabet. The empty language has the single left quotient $\\emptyset$ and is regular.",
+    "mechanisms": [
+     "m:construction-explicit",
+     "m:quotient-construction",
+     "m:induction"
+    ],
+    "roles": [
+     {
+      "h": "h:language",
+      "why": "Words over $\\Sigma$ are the inputs whose left quotients the proof compares.",
+      "steps": [
+       "s:classes",
+       "s:state",
+       "s:build"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:classes",
+      "slogan": "Match the classes of $\\sim$ with the left quotients of $L$.",
+      "detail": "By definition $u \\sim v$ holds exactly when $u^{-1}L = v^{-1}L$. So $u \\mapsto u^{-1}L$ is a bijection from the classes of the [equivalence relation](c:equivalence-relation) onto the set of left quotients.",
+      "uses": []
+     },
+     {
+      "id": "s:state",
+      "slogan": "Show that in an automaton for $L$ the state after $u$ determines $u^{-1}L$.",
+      "detail": "Let a [DFA](c:dfa) $M$ with finite state set $Q$ accept $L$, and let $\\delta(u)$ be its state after reading $u$. Then $uw \\in L$ iff $M$ accepts $w$ from $\\delta(u)$, so $u^{-1}L$ depends only on $\\delta(u)$, and there are at most $|Q|$ left quotients.",
+      "uses": []
+     },
+     {
+      "id": "s:build",
+      "slogan": "Build an automaton whose states are the left quotients of $L$.",
+      "detail": "Take the start state $L$, the transition $(K, a) \\mapsto a^{-1}K$ and the accepting states $K$ that contain the empty word. The transitions stay in the set because $a^{-1}(u^{-1}L) = (ua)^{-1}L$, and finitely many quotients make the automaton finite.",
+      "uses": []
+     },
+     {
+      "id": "s:accepts",
+      "slogan": "Show by induction on the length of $w$ that the automaton reaches $w^{-1}L$.",
+      "detail": "Reading $a$ in the state $w^{-1}L$ leads to $a^{-1}(w^{-1}L) = (wa)^{-1}L$. So the automaton accepts $w$ iff the empty word lies in $w^{-1}L$, that is, iff $w \\in L$.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Combine the two directions with the bijection of step 1.",
+      "detail": "Step 2 shows that a [regular](c:regular-language) $L$ has finitely many left quotients, and steps 3 and 4 give a finite automaton for $L$ from finitely many quotients. Step 1 turns the count of quotients into the count of classes of $\\sim$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:classes",
+      "s:conclude"
+     ],
+     [
+      "s:state",
+      "s:conclude"
+     ],
+     [
+      "s:build",
+      "s:accepts"
+     ],
+     [
+      "s:accepts",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:word": "Quotients and automaton runs are defined by reading words letter by letter.",
+     "c:regular-language": "Regularity means acceptance by a finite automaton, the property characterized.",
+     "c:equivalence-relation": "The classes of the Myhill–Nerode relation are what the theorem counts.",
+     "c:dfa": "Automaton states bound the quotients, and quotients become automaton states."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Language.isRegular_iff_finite_range_leftQuotient",
+     "follows": true,
+     "note": "mathlib proves IsRegular.finite_range_leftQuotient by leftQuotient_accepts (the quotient after x is M.acceptsFrom (M.eval x)) and IsRegular.of_finite_range_leftQuotient by the automaton toDFA with accepts_toDFA."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1751823",
+  "statement": "Let $H$ be a [Hilbert space](c:hilbert-space) of dimension at least 2 and $e \\in H$ a unit vector. No [unitary operator](c:unitary-operator) $U$ on the [tensor product](c:tensor-product) $H \\otimes H$ copies every [quantum state](c:quantum-state): some unit vector $\\psi \\in H$ has $U(\\psi \\otimes e) \\neq \\psi \\otimes \\psi$.",
+  "hypotheses": [
+   {
+    "id": "h:dimension",
+    "text": "The [Hilbert space](c:hilbert-space) $H$ has dimension at least 2.",
+    "concept": "c:hilbert-space"
+   },
+   {
+    "id": "h:unitary",
+    "text": "The operator $U$ on $H \\otimes H$ is [unitary](c:unitary-operator), and the blank state $e \\in H$ is a fixed unit vector.",
+    "concept": "c:unitary-operator"
+   }
+  ],
+  "conclusion": "Some unit vector $\\psi \\in H$ has $U(\\psi \\otimes e) \\neq \\psi \\otimes \\psi$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "inner-product",
+    "name": "Inner products before and after",
+    "slogan": "A unitary copier keeps inner products, but copying squares them, so two copied states are equal or orthogonal.",
+    "scope": "The whole theorem, by contradiction. In dimension 1 every state is a multiple of one vector, and copying is possible, so the dimension bound is needed.",
+    "mechanisms": [
+     "m:contradiction",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:dimension",
+      "why": "It gives two unit vectors that are neither equal nor orthogonal.",
+      "steps": [
+       "s:assume"
+      ]
+     },
+     {
+      "h": "h:unitary",
+      "why": "Unitarity keeps inner products, which gives the equation of step 4.",
+      "steps": [
+       "s:after"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:assume",
+      "slogan": "Assume that $U$ copies every unit vector, and choose two test states.",
+      "detail": "Since $\\dim H \\ge 2$, take orthonormal $u, v$ and set $\\psi = u$ and $\\varphi = (u + v)/\\sqrt{2}$. These unit vectors have $\\langle \\varphi, \\psi \\rangle = 1/\\sqrt{2}$.",
+      "uses": []
+     },
+     {
+      "id": "s:before",
+      "slogan": "Compute the inner product of the inputs $\\varphi \\otimes e$ and $\\psi \\otimes e$.",
+      "detail": "The inner product of simple vectors in a [tensor product](c:tensor-product) factors: $\\langle \\varphi \\otimes e, \\psi \\otimes e \\rangle = \\langle \\varphi, \\psi \\rangle \\langle e, e \\rangle = \\langle \\varphi, \\psi \\rangle$.",
+      "uses": []
+     },
+     {
+      "id": "s:after",
+      "slogan": "Compute the inner product of the outputs $\\varphi \\otimes \\varphi$ and $\\psi \\otimes \\psi$.",
+      "detail": "The outputs have $\\langle \\varphi \\otimes \\varphi, \\psi \\otimes \\psi \\rangle = \\langle \\varphi, \\psi \\rangle^2$. A [unitary operator](c:unitary-operator) keeps inner products, so this equals the inner product of the inputs.",
+      "uses": []
+     },
+     {
+      "id": "s:contradict",
+      "slogan": "Solve $\\langle \\varphi, \\psi \\rangle = \\langle \\varphi, \\psi \\rangle^2$ and contradict the choice of states.",
+      "detail": "Steps 2 and 3 give $\\langle \\varphi, \\psi \\rangle = \\langle \\varphi, \\psi \\rangle^2$, so $\\langle \\varphi, \\psi \\rangle \\in \\{0, 1\\}$. The chosen states have $\\langle \\varphi, \\psi \\rangle = 1/\\sqrt{2}$, so $U$ fails to copy $\\psi$ or $\\varphi$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:assume",
+      "s:before"
+     ],
+     [
+      "s:assume",
+      "s:after"
+     ],
+     [
+      "s:before",
+      "s:contradict"
+     ],
+     [
+      "s:after",
+      "s:contradict"
+     ]
+    ],
+    "conclusion": "s:contradict",
+    "concepts": {
+     "c:hilbert-space": "The inner product of the Hilbert space is the quantity that copying breaks.",
+     "c:unitary-operator": "Unitarity keeps inner products between input and output states.",
+     "c:tensor-product": "Inner products of simple tensors factor into products of inner products.",
+     "c:quantum-state": "The states to copy are unit vectors of $H$."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The inner product proof, as in Nielsen and Chuang, Quantum Computation and Quantum Information (2000), chapter 12."
+    }
+   },
+   {
+    "id": "linearity",
+    "name": "Linearity on a superposition",
+    "slogan": "Copy two orthonormal states, then compare the linear image of their superposition with the copy of the superposition.",
+    "scope": "The whole theorem, by contradiction. The proof uses only the linearity of $U$, so no linear map copies every state.",
+    "mechanisms": [
+     "m:contradiction",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:dimension",
+      "why": "It gives two orthonormal states to superpose.",
+      "steps": [
+       "s:basis"
+      ]
+     },
+     {
+      "h": "h:unitary",
+      "why": "Only the [linearity](c:linearity) of the unitary operator $U$ is used.",
+      "steps": [
+       "s:linear"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:basis",
+      "slogan": "Choose orthonormal vectors $u, v \\in H$ and assume that $U$ copies every state.",
+      "detail": "Orthonormal $u, v$ exist since $\\dim H \\ge 2$. If $U$ copies every state, then $U(u \\otimes e) = u \\otimes u$ and $U(v \\otimes e) = v \\otimes v$.",
+      "uses": []
+     },
+     {
+      "id": "s:linear",
+      "slogan": "Apply $U$ to the superposition $\\chi = (u + v)/\\sqrt{2}$ by linearity.",
+      "detail": "Since $\\chi \\otimes e = (u \\otimes e + v \\otimes e)/\\sqrt{2}$, [linearity](c:linearity) gives $U(\\chi \\otimes e) = (u \\otimes u + v \\otimes v)/\\sqrt{2}$.",
+      "uses": []
+     },
+     {
+      "id": "s:copy",
+      "slogan": "Expand the required copy $\\chi \\otimes \\chi$ in the product basis.",
+      "detail": "Bilinearity of the [tensor product](c:tensor-product) gives $\\chi \\otimes \\chi = \\frac12(u \\otimes u + u \\otimes v + v \\otimes u + v \\otimes v)$, whose coefficient on $u \\otimes v$ is $\\frac12$.",
+      "uses": []
+     },
+     {
+      "id": "s:compare",
+      "slogan": "Compare the coefficients of $u \\otimes v$ in the two vectors.",
+      "detail": "The vectors $u \\otimes u$, $u \\otimes v$, $v \\otimes u$ and $v \\otimes v$ are orthonormal in $H \\otimes H$. The coefficient of $u \\otimes v$ is $0$ in step 2 and $\\frac12$ in step 3, so $U(\\chi \\otimes e) \\neq \\chi \\otimes \\chi$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:basis",
+      "s:linear"
+     ],
+     [
+      "s:basis",
+      "s:copy"
+     ],
+     [
+      "s:linear",
+      "s:compare"
+     ],
+     [
+      "s:copy",
+      "s:compare"
+     ]
+    ],
+    "conclusion": "s:compare",
+    "concepts": {
+     "c:hilbert-space": "Its dimension supplies two orthonormal states to superpose.",
+     "c:unitary-operator": "The copier is unitary, but the proof needs only its linearity.",
+     "c:tensor-product": "Copying is quadratic in the state inside the tensor product.",
+     "c:quantum-state": "The superposition $\\chi$ is itself a state that a copier must copy.",
+     "c:linearity": "Linearity forces the image of a superposition, which differs from its copy."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The linearity argument of W. K. Wootters and W. H. Zurek, A single quantum cannot be cloned, Nature 299 (1982), 802-803."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:orthogonality-of-characters",
+  "statement": "Let $G$ be a [finite group](c:finite-group) and $k$ an [algebraically closed field](c:algebraically-closed-field) whose characteristic does not divide $|G|$. For [irreducible](c:irreducible-representation) finite-dimensional representations $V, W$ of $G$ over $k$, the [characters](c:character-of-a-representation) satisfy $\\frac{1}{|G|}\\sum_{g \\in G} \\chi_V(g)\\,\\chi_W(g^{-1}) = 1$ if $V \\cong W$ and $0$ otherwise.",
+  "hypotheses": [
+   {
+    "id": "h:finite",
+    "text": "The group $G$ is [finite](c:finite-group).",
+    "concept": "c:finite-group"
+   },
+   {
+    "id": "h:closed",
+    "text": "The field $k$ is [algebraically closed](c:algebraically-closed-field).",
+    "concept": "c:algebraically-closed-field"
+   },
+   {
+    "id": "h:characteristic",
+    "text": "The characteristic of $k$ does not divide $|G|$.",
+    "concept": null
+   },
+   {
+    "id": "h:irreducible",
+    "text": "The representations $V$ and $W$ are finite dimensional and [irreducible](c:irreducible-representation).",
+    "concept": "c:irreducible-representation"
+   }
+  ],
+  "conclusion": "$\\frac{1}{|G|}\\sum_{g \\in G} \\chi_V(g)\\,\\chi_W(g^{-1})$ equals $1$ when $V \\cong W$ and $0$ otherwise.",
+  "formal": {
+   "decl": "FDRep.char_orthonormal",
+   "difference": null
+  },
+  "proofs": [
+   {
+    "id": "invariant-maps",
+    "name": "Dimension of invariant maps",
+    "slogan": "Read the sum as the average character of $G$ acting on $\\operatorname{Hom}_k(W, V)$, which counts the invariant maps, and count them by Schur's lemma.",
+    "scope": "The whole theorem. The equality holds in $k$, where $0$ and $1$ are images of dimensions; in characteristic 0 it is an equality of numbers.",
+    "mechanisms": [
+     "m:representation-characters",
+     "m:dimension-count"
+    ],
+    "roles": [
+     {
+      "h": "h:finite",
+      "why": "Finiteness makes the sum over $G$ and the averaging operator finite.",
+      "steps": [
+       "s:average"
+      ]
+     },
+     {
+      "h": "h:closed",
+      "why": "Algebraic closure makes every $G$-endomorphism of an irreducible representation a scalar.",
+      "steps": [
+       "s:schur"
+      ]
+     },
+     {
+      "h": "h:characteristic",
+      "why": "It makes $1/|G|$ exist in $k$, so the averaging operator is defined.",
+      "steps": [
+       "s:average"
+      ]
+     },
+     {
+      "h": "h:irreducible",
+      "why": "Finite dimension makes traces defined, and irreducibility makes Schur's lemma apply.",
+      "steps": [
+       "s:hom-character",
+       "s:schur"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:hom-character",
+      "slogan": "Compute the [character](c:character-of-a-representation) of $G$ acting on $\\operatorname{Hom}_k(W, V)$.",
+      "detail": "Let $g$ act by $f \\mapsto g f g^{-1}$. Since $\\operatorname{Hom}_k(W, V) \\cong W^* \\otimes V$, its character is $\\chi_W(g^{-1})\\,\\chi_V(g)$, the product of the dual and the tensor characters.",
+      "uses": []
+     },
+     {
+      "id": "s:average",
+      "slogan": "Average the action over $G$ to get a projection onto the invariant maps.",
+      "detail": "The operator $P = \\frac{1}{|G|}\\sum_g g$ exists because $|G|$ is invertible in $k$. It fixes every invariant map and has its image in the invariants, so it is a projection onto $\\operatorname{Hom}_G(W, V)$.",
+      "uses": []
+     },
+     {
+      "id": "s:trace",
+      "slogan": "Take the trace of the projection $P$ to count the invariant maps.",
+      "detail": "The trace of a projection is the dimension of its image. By step 1 the trace of $P$ is $\\frac{1}{|G|}\\sum_g \\chi_V(g)\\chi_W(g^{-1})$, so this sum equals $\\dim_k \\operatorname{Hom}_G(W, V)$ in $k$.",
+      "uses": []
+     },
+     {
+      "id": "s:schur",
+      "slogan": "Count the invariant maps between the irreducible representations by Schur's lemma.",
+      "detail": "A nonzero $G$-map between [irreducible](c:irreducible-representation) representations is an isomorphism, so $\\operatorname{Hom}_G(W, V) = 0$ if $V \\not\\cong W$. Over an [algebraically closed field](c:algebraically-closed-field) $\\operatorname{End}_G(V) = k$, so the dimension is 1 if $V \\cong W$.",
+      "uses": [
+       "wd:Q1816952"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:hom-character",
+      "s:trace"
+     ],
+     [
+      "s:average",
+      "s:trace"
+     ],
+     [
+      "s:trace",
+      "s:schur"
+     ]
+    ],
+    "conclusion": "s:schur",
+    "concepts": {
+     "c:finite-group": "The average over a finite group is a finite sum.",
+     "c:algebraically-closed-field": "Algebraic closure makes the endomorphisms of an irreducible representation scalars.",
+     "c:irreducible-representation": "Schur's lemma needs irreducible representations on both sides.",
+     "c:character-of-a-representation": "Characters turn the count of invariant maps into a trace computation."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "FDRep.char_orthonormal",
+     "follows": true,
+     "note": "mathlib rewrites the sum by scalar_product_char_eq_finrank_equivariant (char_linHom and average_char_eq_finrank_invariants, the trace of the averaging projection) and finishes with Schur's lemma finrank_hom_simple_simple."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q303402",
+  "statement": "For a [linear map](c:linear-map) $f\\colon V \\to W$ between [vector spaces](c:vector-space) over a field, with $V$ [finite dimensional](c:finite-dimensional-vector-space), $\\dim V = \\dim \\ker f + \\dim \\operatorname{im} f$: the [dimension](c:dimension-of-a-vector-space) of $V$ is the sum of the dimensions of the [kernel](c:kernel-of-a-homomorphism) and the [image](c:image).",
+  "hypotheses": [
+   {
+    "id": "h:linear",
+    "text": "The map $f\\colon V \\to W$ is [linear](c:linear-map) over a field $K$.",
+    "concept": "c:linear-map"
+   },
+   {
+    "id": "h:finite",
+    "text": "The domain $V$ is [finite dimensional](c:finite-dimensional-vector-space).",
+    "concept": "c:finite-dimensional-vector-space"
+   }
+  ],
+  "conclusion": "$\\dim V = \\dim \\ker f + \\dim \\operatorname{im} f$.",
+  "formal": {
+   "decl": "LinearMap.rank_range_add_rank_ker",
+   "difference": "The declaration states the equality of cardinal ranks for every vector space, finite dimensional or not, and for modules over any ring with the rank-nullity property."
+  },
+  "proofs": [
+   {
+    "id": "quotient-complement",
+    "name": "Quotient by the kernel",
+    "slogan": "Identify the image with the quotient by the kernel, and split the domain as the product of the quotient and the kernel.",
+    "scope": "The whole theorem. If $f = 0$, the kernel is $V$ and the image is $0$, and the steps still apply.",
+    "mechanisms": [
+     "m:homomorphism-kernel",
+     "m:quotient-construction",
+     "m:dimension-count"
+    ],
+    "roles": [
+     {
+      "h": "h:linear",
+      "why": "Linearity makes the kernel a subspace and the induced map on the quotient linear.",
+      "steps": [
+       "s:iso",
+       "s:complement"
+      ]
+     },
+     {
+      "h": "h:finite",
+      "why": "Finite dimension makes all the dimensions finite numbers that add as integers.",
+      "steps": [
+       "s:product"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:iso",
+      "slogan": "Identify the image with the quotient $V/\\ker f$ by the first isomorphism theorem.",
+      "detail": "The map $v + \\ker f \\mapsto f(v)$ is well defined, linear and injective, and its image is $\\operatorname{im} f$. So $V/\\ker f \\cong \\operatorname{im} f$, and the two spaces have the same [dimension](c:dimension-of-a-vector-space).",
+      "uses": [
+       "wd:Q1065966"
+      ]
+     },
+     {
+      "id": "s:complement",
+      "slogan": "Choose a complement $U$ of $\\ker f$ and identify it with the quotient.",
+      "detail": "Every subspace has a complement, so $V = \\ker f \\oplus U$. The quotient map restricts to an isomorphism $U \\cong V/\\ker f$, so $V \\cong (V/\\ker f) \\times \\ker f$.",
+      "uses": [
+       "nm:complementary-subspaces"
+      ]
+     },
+     {
+      "id": "s:product",
+      "slogan": "Add the dimensions of the two factors of the product.",
+      "detail": "A [basis](c:basis) of $V/\\ker f$ and a basis of $\\ker f$ together give a basis of the product. So $\\dim V = \\dim(V/\\ker f) + \\dim \\ker f$, and all three numbers are finite.",
+      "uses": []
+     },
+     {
+      "id": "s:combine",
+      "slogan": "Replace the quotient by the image in the dimension count.",
+      "detail": "Step 1 gives $\\dim(V/\\ker f) = \\dim \\operatorname{im} f$. Substitution in step 3 gives $\\dim V = \\dim \\operatorname{im} f + \\dim \\ker f$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:complement",
+      "s:product"
+     ],
+     [
+      "s:iso",
+      "s:combine"
+     ],
+     [
+      "s:product",
+      "s:combine"
+     ]
+    ],
+    "conclusion": "s:combine",
+    "concepts": {
+     "c:linear-map": "Linearity gives the kernel, the image and the induced isomorphism.",
+     "c:vector-space": "Over a field every subspace has a complement.",
+     "c:finite-dimensional-vector-space": "Finite dimension makes the dimension count an equation of integers.",
+     "c:dimension-of-a-vector-space": "Isomorphic spaces have equal dimension, and dimensions of products add.",
+     "c:kernel-of-a-homomorphism": "The kernel is the subspace divided out and counted.",
+     "c:image": "The image is isomorphic to the quotient by the kernel.",
+     "c:basis": "Joined bases of the two factors give a basis of the product."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "LinearMap.rank_range_add_rank_ker",
+     "follows": true,
+     "note": "mathlib uses quotKerEquivRange (first isomorphism theorem) and rank_quotient_add_rank, which over a division ring comes from quotient_prod_linearEquiv (a complement) and rank_prod'."
+    }
+   },
+   {
+    "id": "extend-kernel-basis",
+    "name": "Extension of a kernel basis",
+    "slogan": "Extend a basis of the kernel to a basis of $V$, and show that the images of the new vectors form a basis of the image.",
+    "scope": "The whole theorem. If $\\ker f = 0$ the kernel basis is empty, and if $f = 0$ no new vectors appear.",
+    "mechanisms": [
+     "m:dimension-count",
+     "m:construction-explicit"
+    ],
+    "roles": [
+     {
+      "h": "h:linear",
+      "why": "Linearity gives $f(v) = \\sum b_j f(v_j)$ and moves a relation among images into the kernel.",
+      "steps": [
+       "s:span",
+       "s:independent"
+      ]
+     },
+     {
+      "h": "h:finite",
+      "why": "Finite dimension gives finite bases to extend and count.",
+      "steps": [
+       "s:extend",
+       "s:count"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:extend",
+      "slogan": "Extend a basis $u_1, \\dots, u_k$ of $\\ker f$ to a basis $u_1, \\dots, u_k, v_1, \\dots, v_r$ of $V$.",
+      "detail": "A linearly independent list in a finite-dimensional space extends to a [basis](c:basis), by the exchange lemma. So $\\dim V = k + r$ with $k = \\dim \\ker f$.",
+      "uses": [
+       "wd:Q2338929"
+      ]
+     },
+     {
+      "id": "s:span",
+      "slogan": "Show that the vectors $f(v_1), \\dots, f(v_r)$ span the image.",
+      "detail": "Write $v = \\sum a_i u_i + \\sum b_j v_j$. Since $f(u_i) = 0$, $f(v) = \\sum b_j f(v_j)$, so every vector of $\\operatorname{im} f$ is a combination of the $f(v_j)$.",
+      "uses": []
+     },
+     {
+      "id": "s:independent",
+      "slogan": "Show that the vectors $f(v_1), \\dots, f(v_r)$ are linearly independent.",
+      "detail": "If $\\sum b_j f(v_j) = 0$, then $\\sum b_j v_j \\in \\ker f$, so $\\sum b_j v_j = \\sum a_i u_i$ for some $a_i$. Independence of the whole basis forces every $b_j = 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:count",
+      "slogan": "Count the vectors of the two bases to get the formula.",
+      "detail": "Steps 2 and 3 make $f(v_1), \\dots, f(v_r)$ a basis of $\\operatorname{im} f$, so $\\dim \\operatorname{im} f = r$. Then $\\dim V = k + r = \\dim \\ker f + \\dim \\operatorname{im} f$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:extend",
+      "s:span"
+     ],
+     [
+      "s:extend",
+      "s:independent"
+     ],
+     [
+      "s:extend",
+      "s:count"
+     ],
+     [
+      "s:span",
+      "s:count"
+     ],
+     [
+      "s:independent",
+      "s:count"
+     ]
+    ],
+    "conclusion": "s:count",
+    "concepts": {
+     "c:linear-map": "Linearity sends the kernel basis to zero and keeps combinations.",
+     "c:vector-space": "Bases and their extensions exist in vector spaces over a field.",
+     "c:finite-dimensional-vector-space": "Finite bases make the count a sum of integers.",
+     "c:dimension-of-a-vector-space": "The dimension is the number of vectors in a basis.",
+     "c:kernel-of-a-homomorphism": "The kernel basis is the start of the extended basis.",
+     "c:image": "The images of the new basis vectors form a basis of the image.",
+     "c:basis": "The proof counts the vectors of an extended basis."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The basis-extension proof, as in Axler, Linear Algebra Done Right, theorem 3.22 (fundamental theorem of linear maps)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q927051",
+  "statement": "Every nonempty [simply connected](c:simply-connected-space) [open set](c:open-set) $U \\subsetneq \\mathbb{C}$ has a [biholomorphic](c:biholomorphic-function) map $f$ onto the [unit disc](c:unit-disc) $D = \\{z : |z| < 1\\}$, and for a given $z_0 \\in U$ one can take $f(z_0) = 0$.",
+  "hypotheses": [
+   {
+    "id": "h:open",
+    "text": "The set $U$ is a nonempty [open set](c:open-set) in $\\mathbb{C}$.",
+    "concept": "c:open-set"
+   },
+   {
+    "id": "h:simply-connected",
+    "text": "The set $U$ is [simply connected](c:simply-connected-space).",
+    "concept": "c:simply-connected-space"
+   },
+   {
+    "id": "h:proper",
+    "text": "The set $U$ is not all of $\\mathbb{C}$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "There is a bijective [holomorphic](c:holomorphic-function) map $f\\colon U \\to D$ with holomorphic inverse and $f(z_0) = 0$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "extremal-derivative",
+    "name": "Extremal problem for the derivative",
+    "slogan": "Among injective holomorphic maps of $U$ into the disc that send $z_0$ to $0$, take one with the largest $|f'(z_0)|$ and show that it is onto.",
+    "scope": "The whole theorem, by the Koebe extremal argument; the inverse is holomorphic because an injective holomorphic map has a nonvanishing derivative. The hypothesis $U \\neq \\mathbb{C}$ is necessary, because Liouville's theorem excludes a bounded nonconstant entire map.",
+    "mechanisms": [
+     "m:extremal-choice",
+     "m:subsequence",
+     "m:contradiction"
+    ],
+    "roles": [
+     {
+      "h": "h:open",
+      "why": "An open nonempty set carries holomorphic maps and a base point $z_0$.",
+      "steps": [
+       "s:embed",
+       "s:normal"
+      ]
+     },
+     {
+      "h": "h:simply-connected",
+      "why": "Simple connectivity gives holomorphic square roots of nonvanishing functions.",
+      "steps": [
+       "s:embed",
+       "s:onto"
+      ]
+     },
+     {
+      "h": "h:proper",
+      "why": "A point $a \\notin U$ makes $z - a$ nonvanishing, which starts the first square root.",
+      "steps": [
+       "s:embed"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:embed",
+      "slogan": "Map $U$ injectively into the disc by a square root and a Möbius map.",
+      "detail": "Pick $a \\notin U$; on the simply connected $U$, $z - a$ has a holomorphic [square root](c:square-root) $h$, which is injective with $h(U) \\cap (-h(U)) = \\emptyset$. The open set $-h(U)$ contains a disc that $h(U)$ omits, so $r/(h - c)$, for its center $c$ and radius $r$, followed by a [Möbius transformation](c:moebius-transformation) of $D$ maps $U$ into $D$ with $z_0 \\mapsto 0$.",
+      "uses": [
+       "wd:Q834025"
+      ]
+     },
+     {
+      "id": "s:normal",
+      "slogan": "Show that the family $\\mathcal{F}$ of such maps is a [normal family](c:normal-family).",
+      "detail": "$\\mathcal{F}$ is the set of injective holomorphic $f\\colon U \\to D$ with $f(z_0) = 0$; step 1 makes it nonempty, and it is bounded by 1. Montel's theorem gives every sequence in $\\mathcal{F}$ a subsequence that converges uniformly on compact sets.",
+      "uses": [
+       "wd:Q535366"
+      ]
+     },
+     {
+      "id": "s:maximize",
+      "slogan": "Take the limit $f$ of a maximizing sequence for $|f'(z_0)|$ and show that $f$ lies in $\\mathcal{F}$.",
+      "detail": "Cauchy estimates bound $|f'(z_0)|$ on $\\mathcal{F}$, and a convergent subsequence of a maximizing sequence has a limit $f$ with $|f'(z_0)| = \\sup > 0$. So $f$ is not constant, Hurwitz's theorem makes it injective, and the maximum modulus principle gives $f(U) \\subseteq D$.",
+      "uses": [
+       "nm:cauchy-s-estimate-for-the-first-order-derivative",
+       "nm:holomorphic-stability-under-uniform-convergence",
+       "wd:Q1136043",
+       "nm:maximum-modulus-principle"
+      ]
+     },
+     {
+      "id": "s:onto",
+      "slogan": "Assume that $f$ omits a point $w \\in D$, and build a map $g \\in \\mathcal{F}$ from it.",
+      "detail": "Compose $f$ with the Möbius map $\\varphi_w$ that sends $w$ to $0$, take a holomorphic square root of the nonvanishing result, and move the value at $z_0$ back to $0$. The new $g \\in \\mathcal{F}$ satisfies $f = \\Phi \\circ g$, where $\\Phi\\colon D \\to D$ fixes $0$ and is not injective, so it is not a rotation.",
+      "uses": []
+     },
+     {
+      "id": "s:schwarz",
+      "slogan": "Contradict the maximality of $|f'(z_0)|$ by the Schwarz lemma.",
+      "detail": "The Schwarz lemma gives $|\\Phi'(0)| < 1$, so $|f'(z_0)| = |\\Phi'(0)|\\,|g'(z_0)| < |g'(z_0)|$, against the choice of $f$. So $f$ is onto $D$, and it is the required [biholomorphic](c:biholomorphic-function) map.",
+      "uses": [
+       "nm:schwarz-lemma"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:embed",
+      "s:normal"
+     ],
+     [
+      "s:normal",
+      "s:maximize"
+     ],
+     [
+      "s:maximize",
+      "s:onto"
+     ],
+     [
+      "s:maximize",
+      "s:schwarz"
+     ],
+     [
+      "s:onto",
+      "s:schwarz"
+     ]
+    ],
+    "conclusion": "s:schwarz",
+    "concepts": {
+     "c:simply-connected-space": "Simple connectivity gives the square roots in steps 1 and 4.",
+     "c:open-set": "The domain is open, so holomorphic maps on it make sense.",
+     "c:biholomorphic-function": "The extremal map is the required biholomorphic map onto the disc.",
+     "c:unit-disc": "The disc is the target, and its self-maps obey the Schwarz lemma.",
+     "c:holomorphic-function": "All maps of the family are holomorphic and injective.",
+     "c:square-root": "Square roots enlarge the derivative and give the first embedding.",
+     "c:moebius-transformation": "Disc automorphisms move chosen points to the origin.",
+     "c:normal-family": "Normality gives a convergent maximizing subsequence."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The Koebe extremal proof, as in Ahlfors, Complex Analysis, chapter 6, and Rudin, Real and Complex Analysis, chapter 14."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1687147",
+  "statement": "Every [impartial game](c:impartial-game) $G$ under the normal play convention whose plays all end is equivalent to the [nim](c:nim) heap $*\\mathcal{G}(G)$. Here the Grundy value $\\mathcal{G}(G)$ is the [minimum excludant](c:mex) of the Grundy values of the options of $G$, and equivalence means that $G + *\\mathcal{G}(G)$ is a win for the second player.",
+  "hypotheses": [
+   {
+    "id": "h:impartial",
+    "text": "The game $G$ is [impartial](c:impartial-game): from every position both players have the same moves.",
+    "concept": "c:impartial-game"
+   },
+   {
+    "id": "h:normal-play",
+    "text": "The option relation of $G$ is [well-founded](c:well-founded-relation), so every play ends, and the player who cannot move loses.",
+    "concept": "c:well-founded-relation"
+   }
+  ],
+  "conclusion": "The sum $G + *\\mathcal{G}(G)$ is a second-player win, so $G$ is equivalent to the nim heap $*\\mathcal{G}(G)$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "mex-induction",
+    "name": "Induction with mex replies",
+    "slogan": "By well-founded induction, answer every move in $G + *\\mathcal{G}(G)$ with a move to a sum $H + *\\mathcal{G}(H)$, which the induction hypothesis makes a second-player win.",
+    "scope": "All impartial games whose plays end. With infinitely many options at a position the Grundy values are ordinals, and the same proof works.",
+    "mechanisms": [
+     "m:strong-induction",
+     "m:case-analysis"
+    ],
+    "roles": [
+     {
+      "h": "h:impartial",
+      "why": "Both players have the same moves, so one value describes a position for either player and $G = -G$.",
+      "steps": [
+       "s:define",
+       "s:reduce"
+      ]
+     },
+     {
+      "h": "h:normal-play",
+      "why": "Well-foundedness makes the recursion and the induction valid, and normal play decides the end positions.",
+      "steps": [
+       "s:define",
+       "s:induct"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:define",
+      "slogan": "Define the Grundy value by recursion over the options of a position.",
+      "detail": "Set $\\mathcal{G}(G) = \\operatorname{mex}\\{\\mathcal{G}(G') : G' \\text{ an option of } G\\}$, the least value that no option attains. The recursion is valid because the option relation is [well-founded](c:well-founded-relation), and a position with no move gets $\\mathcal{G} = 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:reduce",
+      "slogan": "Reduce the equivalence $G \\approx *n$ to a second-player win in $G + *n$.",
+      "detail": "Two normal-play games are equivalent when their difference is a second-player win. An [impartial game](c:impartial-game) is its own negative, so $G \\approx *n$ holds when $G + *n$ is a second-player win.",
+      "uses": []
+     },
+     {
+      "id": "s:heap-move",
+      "slogan": "Answer a heap move from $*n$ to $*m$ with $m < n$ by a move in $G$.",
+      "detail": "Let $n = \\mathcal{G}(G)$. Since $m < n$ and $n$ is the [minimum excludant](c:mex), some option $G'$ of $G$ has $\\mathcal{G}(G') = m$, and the reply to $G' + *m$ reaches a sum of the form $H + *\\mathcal{G}(H)$.",
+      "uses": []
+     },
+     {
+      "id": "s:game-move",
+      "slogan": "Answer a move from $G$ to an option $G'$ according to the size of $m = \\mathcal{G}(G')$.",
+      "detail": "Here $m \\neq n$ by the definition of mex. If $m < n$, reduce the [nim](c:nim) heap to $*m$; if $m > n$, some option $G''$ of $G'$ has $\\mathcal{G}(G'') = n$, so move to $G'' + *n$.",
+      "uses": []
+     },
+     {
+      "id": "s:induct",
+      "slogan": "Conclude by induction that every sum $H + *\\mathcal{G}(H)$ is a second-player win.",
+      "detail": "Each reply in steps 3 and 4 reaches a sum $H + *\\mathcal{G}(H)$ with $H$ a later position of $G$, which is a second-player win by the induction hypothesis. So the second player wins $G + *n$, and step 2 gives $G \\approx *\\mathcal{G}(G)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:define",
+      "s:heap-move"
+     ],
+     [
+      "s:define",
+      "s:game-move"
+     ],
+     [
+      "s:heap-move",
+      "s:induct"
+     ],
+     [
+      "s:game-move",
+      "s:induct"
+     ],
+     [
+      "s:reduce",
+      "s:induct"
+     ]
+    ],
+    "conclusion": "s:induct",
+    "concepts": {
+     "c:impartial-game": "Impartiality makes each game its own negative, so sums replace differences.",
+     "c:nim": "Nim heaps are the normal forms to which every impartial game reduces.",
+     "c:mex": "The mex definition supplies the replies in both kinds of moves.",
+     "c:well-founded-relation": "Well-foundedness justifies the recursive definition and the induction."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard proof, as in Conway, On Numbers and Games (1976), and Siegel, Combinatorial Game Theory (2013)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q7617407",
+  "statement": "Let $A$ be a unital [C*-algebra](c:c-star-algebra), $H$ a [Hilbert space](c:hilbert-space) and $\\varphi\\colon A \\to B(H)$ a [completely positive map](c:completely-positive-map). Then there are a Hilbert space $K$, a unital $*$-representation $\\pi\\colon A \\to B(K)$ and a [bounded operator](c:bounded-operator) $V\\colon H \\to K$ with $\\varphi(a) = V^*\\pi(a)V$ for every $a \\in A$ and $\\|V\\|^2 = \\|\\varphi(1)\\|$.",
+  "hypotheses": [
+   {
+    "id": "h:unital",
+    "text": "The algebra $A$ is a unital [C*-algebra](c:c-star-algebra).",
+    "concept": "c:c-star-algebra"
+   },
+   {
+    "id": "h:completely-positive",
+    "text": "The linear map $\\varphi\\colon A \\to B(H)$ into the bounded operators on a [Hilbert space](c:hilbert-space) $H$ is [completely positive](c:completely-positive-map).",
+    "concept": "c:completely-positive-map"
+   }
+  ],
+  "conclusion": "$\\varphi(a) = V^*\\pi(a)V$ for a unital $*$-representation $\\pi$ of $A$ on a Hilbert space $K$ and a bounded $V\\colon H \\to K$ with $\\|V\\|^2 = \\|\\varphi(1)\\|$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "gns-type",
+    "name": "Construction on the tensor product",
+    "slogan": "Build $K$ from $A \\otimes H$ with the inner product that $\\varphi$ gives, let $A$ act by left multiplication, and embed $H$ through the unit of $A$.",
+    "scope": "The whole theorem, by an explicit construction. For $H = \\mathbb{C}$ and a state $\\varphi$ it is the [GNS construction](c:gns-construction).",
+    "mechanisms": [
+     "m:construction-explicit",
+     "m:quotient-construction",
+     "m:cauchy-schwarz"
+    ],
+    "roles": [
+     {
+      "h": "h:unital",
+      "why": "The unit gives the embedding $V\\xi = [1 \\otimes \\xi]$ and a unital representation.",
+      "steps": [
+       "s:embed",
+       "s:factor"
+      ]
+     },
+     {
+      "h": "h:completely-positive",
+      "why": "Complete positivity makes the form positive semidefinite and bounds left multiplication.",
+      "steps": [
+       "s:form",
+       "s:represent"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:form",
+      "slogan": "Define a [sesquilinear form](c:sesquilinear-form) on $A \\otimes H$ through $\\varphi$.",
+      "detail": "Set $\\langle a \\otimes \\xi, b \\otimes \\eta \\rangle = \\langle \\xi, \\varphi(a^*b)\\eta \\rangle_H$. For $x = \\sum_i a_i \\otimes \\xi_i$, $\\langle x, x \\rangle = \\sum_{i,j}\\langle \\xi_i, \\varphi(a_i^*a_j)\\xi_j \\rangle \\ge 0$, because $[a_i^*a_j] \\ge 0$ in $M_n(A)$ and $\\varphi$ is [completely positive](c:completely-positive-map).",
+      "uses": []
+     },
+     {
+      "id": "s:complete",
+      "slogan": "Divide out the null vectors and complete the quotient to a Hilbert space $K$.",
+      "detail": "The Cauchy-Schwarz inequality for the positive semidefinite form shows that $N = \\{x : \\langle x, x \\rangle = 0\\}$ is a subspace. The quotient $(A \\otimes H)/N$ is an inner product space, and its [completion](c:completion) is $K$.",
+      "uses": [
+       "nl:16121"
+      ]
+     },
+     {
+      "id": "s:represent",
+      "slogan": "Let $A$ act on $K$ by left multiplication $\\pi(a)[b \\otimes \\xi] = [ab \\otimes \\xi]$.",
+      "detail": "Since $a^*a \\le \\|a\\|^2 1$, the matrix $[b_i^*(\\|a\\|^2 - a^*a)b_j]$ is positive, and complete positivity gives $\\langle \\pi(a)x, \\pi(a)x \\rangle \\le \\|a\\|^2\\langle x, x \\rangle$. So $\\pi(a)$ keeps $N$, extends to $K$, and $\\pi$ is a unital $*$-homomorphism.",
+      "uses": []
+     },
+     {
+      "id": "s:embed",
+      "slogan": "Define the operator $V\\xi = [1 \\otimes \\xi]$ and compute its norm.",
+      "detail": "$\\|V\\xi\\|^2 = \\langle \\xi, \\varphi(1)\\xi \\rangle$, so $V$ is a [bounded operator](c:bounded-operator). Because $\\varphi(1) \\ge 0$, $\\|V\\|^2 = \\sup_{\\|\\xi\\| = 1}\\langle \\xi, \\varphi(1)\\xi \\rangle = \\|\\varphi(1)\\|$.",
+      "uses": []
+     },
+     {
+      "id": "s:factor",
+      "slogan": "Check the factorization $V^*\\pi(a)V = \\varphi(a)$ on pairs of vectors.",
+      "detail": "For $\\xi, \\eta \\in H$, $\\langle \\eta, V^*\\pi(a)V\\xi \\rangle = \\langle 1 \\otimes \\eta, a \\otimes \\xi \\rangle = \\langle \\eta, \\varphi(a)\\xi \\rangle$. This holds for all $\\xi, \\eta$, so $V^*\\pi(a)V = \\varphi(a)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:form",
+      "s:complete"
+     ],
+     [
+      "s:complete",
+      "s:represent"
+     ],
+     [
+      "s:complete",
+      "s:embed"
+     ],
+     [
+      "s:represent",
+      "s:factor"
+     ],
+     [
+      "s:embed",
+      "s:factor"
+     ]
+    ],
+    "conclusion": "s:factor",
+    "concepts": {
+     "c:c-star-algebra": "Positivity of matrices over the C*-algebra drives every estimate.",
+     "c:hilbert-space": "The new space $K$ is a Hilbert space built from $A$ and $H$.",
+     "c:completely-positive-map": "Complete positivity makes the inner product positive and $\\pi(a)$ bounded.",
+     "c:bounded-operator": "The map $V$ is bounded with norm given by $\\varphi(1)$.",
+     "c:gns-construction": "The proof extends the GNS construction from states to operator values.",
+     "c:sesquilinear-form": "The form on $A \\otimes H$ is the starting inner product.",
+     "c:completion": "Completion turns the quotient inner product space into a Hilbert space."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Stinespring's construction: W. F. Stinespring, Positive functions on C*-algebras, Proc. Amer. Math. Soc. 6 (1955), 211-216; also Paulsen, Completely Bounded Maps and Operator Algebras (2002), theorem 4.1."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1166774",
+  "statement": "Every [Boolean algebra](c:boolean-algebra) $B$ is isomorphic to a field of sets: the map $h(a) = \\{U : a \\in U\\}$ is an injective Boolean homomorphism from $B$ into the [power set](c:power-set) of the set $S(B)$ of [ultrafilters](c:ultrafilter) of $B$, and its image is the set of [clopen](c:clopen-subset) subsets of the [Stone space](c:stone-space) $S(B)$.",
+  "hypotheses": [
+   {
+    "id": "h:boolean",
+    "text": "The structure $B$ is a [Boolean algebra](c:boolean-algebra).",
+    "concept": "c:boolean-algebra"
+   }
+  ],
+  "conclusion": "The map $h$ is an isomorphism of $B$ onto the field of clopen subsets of $S(B)$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "ultrafilter-sets",
+    "name": "Sets of ultrafilters",
+    "slogan": "Send each element to the set of ultrafilters that contain it, separate elements by the ultrafilter theorem, and identify the image by compactness.",
+    "scope": "The whole theorem in ZF with the ultrafilter theorem. The trivial algebra $0 = 1$ has no ultrafilters and maps onto the field of subsets of the empty set.",
+    "mechanisms": [
+     "m:construction-explicit",
+     "m:zorn",
+     "m:finite-subcover"
+    ],
+    "roles": [
+     {
+      "h": "h:boolean",
+      "why": "Complements and distributivity give the prime property of ultrafilters and the separating element.",
+      "steps": [
+       "s:homomorphism",
+       "s:injective"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:homomorphism",
+      "slogan": "Check that $h$ turns meets, joins and complements into intersections, unions and complements.",
+      "detail": "An [ultrafilter](c:ultrafilter) contains $a \\wedge b$ iff it contains $a$ and $b$, contains $a \\vee b$ iff it contains $a$ or $b$, and contains exactly one of $a$ and $\\neg a$. So $h(a \\wedge b) = h(a) \\cap h(b)$, $h(a \\vee b) = h(a) \\cup h(b)$ and $h(\\neg a) = S(B) \\setminus h(a)$.",
+      "uses": []
+     },
+     {
+      "id": "s:injective",
+      "slogan": "Separate two different elements by an ultrafilter from the ultrafilter theorem.",
+      "detail": "If $a \\neq b$, then $a \\wedge \\neg b \\neq 0$ or $b \\wedge \\neg a \\neq 0$, say the first. The filter generated by $a \\wedge \\neg b$ is proper, and the ultrafilter theorem extends it to an ultrafilter $U \\in h(a) \\setminus h(b)$.",
+      "uses": [
+       "nl:1463",
+       "wd:Q872088"
+      ]
+     },
+     {
+      "id": "s:topology",
+      "slogan": "Give $S(B)$ the topology with base $\\{h(a)\\}$, and show that each $h(a)$ is clopen.",
+      "detail": "The sets $h(a)$ are closed under finite intersections, so they form a base. Each $h(a)$ is open, and it is closed because its complement is $h(\\neg a)$.",
+      "uses": []
+     },
+     {
+      "id": "s:compact",
+      "slogan": "Show that the Stone space $S(B)$ is compact with the ultrafilter theorem.",
+      "detail": "Suppose that basic sets $h(a_i)$ cover $S(B)$ but no finite subfamily does. Then every finite meet of the elements $\\neg a_i$ is nonzero, so they generate a proper filter, and an ultrafilter that contains it lies in no $h(a_i)$, a contradiction.",
+      "uses": [
+       "nl:1463"
+      ]
+     },
+     {
+      "id": "s:clopen",
+      "slogan": "Write every clopen set as a finite union of basic sets.",
+      "detail": "A [clopen](c:clopen-subset) set $C$ is closed in the [compact space](c:compact-space) $S(B)$, so it is compact. As an open set it is a union of basic sets, finitely many suffice, and $C = h(a_1 \\vee \\dots \\vee a_n)$; with steps 1 and 2, $h$ is an isomorphism onto the clopen sets.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:homomorphism",
+      "s:topology"
+     ],
+     [
+      "s:topology",
+      "s:compact"
+     ],
+     [
+      "s:compact",
+      "s:clopen"
+     ],
+     [
+      "s:homomorphism",
+      "s:clopen"
+     ],
+     [
+      "s:injective",
+      "s:clopen"
+     ]
+    ],
+    "conclusion": "s:clopen",
+    "concepts": {
+     "c:boolean-algebra": "The algebra operations are what $h$ must preserve.",
+     "c:power-set": "The field of sets lives inside the power set of $S(B)$.",
+     "c:ultrafilter": "Ultrafilters are the points of the representing set.",
+     "c:clopen-subset": "The image of $h$ is exactly the clopen sets.",
+     "c:stone-space": "The Stone space is the compact space of ultrafilters with basic sets $h(a)$.",
+     "c:compact-space": "Compactness makes every clopen set a finite union of basic sets."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard ultrafilter proof; M. H. Stone, The theory of representations for Boolean algebras, Trans. Amer. Math. Soc. 40 (1936), 37-111, gives it with prime ideals; see also Givant and Halmos, Introduction to Boolean Algebras (2009)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:15368",
+  "statement": "For vectors $x, y$ of a real or complex [inner product space](c:inner-product-space), such as $\\mathbb{R}^n$ with the Euclidean [norm](c:norm), $\\|x + y\\| \\le \\|x\\| + \\|y\\|$. Hence the distance $d(x, z) = \\|x - z\\|$ satisfies $d(x, z) \\le d(x, y) + d(y, z)$.",
+  "hypotheses": [
+   {
+    "id": "h:inner-product",
+    "text": "The space $E$ carries an inner product $\\langle \\cdot, \\cdot \\rangle$ with [norm](c:norm) $\\|x\\| = \\sqrt{\\langle x, x \\rangle}$.",
+    "concept": "c:inner-product-space"
+   }
+  ],
+  "conclusion": "$\\|x + y\\| \\le \\|x\\| + \\|y\\|$ and $d(x, z) \\le d(x, y) + d(y, z)$ for all $x, y, z \\in E$.",
+  "formal": {
+   "decl": "norm_add_le",
+   "difference": "The declaration states $\\|a + b\\| \\le \\|a\\| + \\|b\\|$ in every seminormed group, where it follows from the triangle inequality of the distance, an axiom of that structure. This statement is the inner product case, in which the inequality needs a proof."
+  },
+  "proofs": [
+   {
+    "id": "square-cauchy-schwarz",
+    "name": "Square and Cauchy-Schwarz",
+    "slogan": "Expand $\\|x + y\\|^2$, bound the cross term by the Cauchy-Schwarz inequality, and take square roots.",
+    "scope": "The whole theorem, for real and complex scalars. The case $x = 0$ or $y = 0$ gives equality and needs no separate treatment.",
+    "mechanisms": [
+     "m:cauchy-schwarz",
+     "m:algebraic-identity",
+     "m:triangle-inequality"
+    ],
+    "roles": [
+     {
+      "h": "h:inner-product",
+      "why": "The inner product gives the expansion of the square and the Cauchy-Schwarz bound.",
+      "steps": [
+       "s:expand",
+       "s:bound"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:expand",
+      "slogan": "Expand the square of the [norm](c:norm) of $x + y$.",
+      "detail": "Linearity and conjugate symmetry of the inner product give $\\|x + y\\|^2 = \\langle x + y, x + y \\rangle = \\|x\\|^2 + 2\\operatorname{Re}\\langle x, y \\rangle + \\|y\\|^2$.",
+      "uses": []
+     },
+     {
+      "id": "s:bound",
+      "slogan": "Bound the cross term $\\operatorname{Re}\\langle x, y \\rangle$ by the Cauchy-Schwarz inequality.",
+      "detail": "$\\operatorname{Re}\\langle x, y \\rangle \\le |\\langle x, y \\rangle| \\le \\|x\\|\\,\\|y\\|$. Substitution gives $\\|x + y\\|^2 \\le \\|x\\|^2 + 2\\|x\\|\\,\\|y\\| + \\|y\\|^2 = (\\|x\\| + \\|y\\|)^2$.",
+      "uses": [
+       "nl:16121"
+      ]
+     },
+     {
+      "id": "s:root",
+      "slogan": "Take square roots of the two nonnegative sides.",
+      "detail": "Both $\\|x + y\\|$ and $\\|x\\| + \\|y\\|$ are nonnegative, and $t \\mapsto t^2$ is increasing on $[0, \\infty)$. So the inequality of squares gives $\\|x + y\\| \\le \\|x\\| + \\|y\\|$.",
+      "uses": []
+     },
+     {
+      "id": "s:distance",
+      "slogan": "Insert the middle point $y$ to get the triangle inequality for the distance.",
+      "detail": "Write $x - z = (x - y) + (y - z)$ and apply step 3: $d(x, z) \\le \\|x - y\\| + \\|y - z\\| = d(x, y) + d(y, z)$. This is the axiom that makes $d$ a [metric](c:metric-space).",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:expand",
+      "s:bound"
+     ],
+     [
+      "s:bound",
+      "s:root"
+     ],
+     [
+      "s:root",
+      "s:distance"
+     ]
+    ],
+    "conclusion": "s:distance",
+    "concepts": {
+     "c:inner-product-space": "The inner product gives the norm, the expansion and the Cauchy-Schwarz bound.",
+     "c:norm": "The inequality compares norms of a sum and of its terms.",
+     "c:metric-space": "The norm inequality gives the triangle axiom of the induced metric."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "norm_add_le",
+     "follows": true,
+     "note": "norm_add_le is dist_triangle for the distance of the norm; for an inner product space mathlib proves that inequality in InnerProductSpace.Core.toNormedAddCommGroup (add_le') by norm_inner_le_norm and a comparison of squares."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:9294",
+  "statement": "Every irreducible positive-energy [unitary representation](c:unitary-representation) of the double cover of the [Poincaré group](c:poincare-group) is [induced](c:induced-representation) from a momentum orbit and an irreducible representation of its [stabilizer](c:stabilizer). Mass $m > 0$ adds a spin $s \\in \\frac12\\mathbb{N}$, mass $0$ with $p \\neq 0$ adds a helicity $h \\in \\frac12\\mathbb{Z}$ or a continuous spin, and different data give inequivalent representations.",
+  "hypotheses": [
+   {
+    "id": "h:irreducible",
+    "text": "The representation $\\pi$ is a strongly continuous, irreducible [unitary representation](c:unitary-representation) of $\\widetilde{P} = \\mathbb{R}^{1,3} \\rtimes SL(2,\\mathbb{C})$.",
+    "concept": "c:unitary-representation"
+   },
+   {
+    "id": "h:positive-energy",
+    "text": "The joint spectrum of the translations, the energy-momentum, lies in the closed forward cone $p^0 \\ge |\\vec p|$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The representation $\\pi$ is determined up to equivalence by its orbit and stabilizer data, and the list of these data has no repeats.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "little-group-method",
+    "name": "Mackey's little-group method",
+    "slogan": "Restrict to the translations, find the momentum orbit that carries their spectrum, and induce from the stabilizer of a momentum on that orbit.",
+    "scope": "An outline: the concentration of the spectrum on one orbit and the imprimitivity theorem rest on the cited work of Wigner and Mackey. The orbit $p = 0$ gives representations of $SL(2,\\mathbb{C})$ with trivial translations; the identification of particles with these representations is a physical postulate, not part of the theorem.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:spectral-decomposition",
+     "m:group-action-orbits",
+     "m:case-analysis"
+    ],
+    "roles": [
+     {
+      "h": "h:irreducible",
+      "why": "Irreducibility makes the spectral measure ergodic and the inducing representation irreducible.",
+      "steps": [
+       "s:orbit",
+       "s:imprimitivity"
+      ]
+     },
+     {
+      "h": "h:positive-energy",
+      "why": "Positive energy keeps only the forward orbits and excludes the tachyonic hyperboloids.",
+      "steps": [
+       "s:spectral",
+       "s:stabilizers"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:spectral",
+      "slogan": "Restrict $\\pi$ to the translation subgroup and take its joint spectral measure.",
+      "detail": "By the theorem of Stone, Naimark, Ambrose and Godement, the translations act as $\\pi(a) = \\int e^{i p \\cdot a}\\,dE(p)$ for a projection-valued measure $E$ on momentum space. Positive energy puts $E$ on the closed forward cone.",
+      "uses": []
+     },
+     {
+      "id": "s:orbit",
+      "slogan": "Show that the spectral measure lives on one $SL(2,\\mathbb{C})$ [orbit](c:orbit) of momenta.",
+      "detail": "Covariance $\\pi(g)E(S)\\pi(g)^{-1} = E(gS)$ makes $E$ quasi-invariant, and irreducibility makes it ergodic. Each forward orbit is cut out by the value of $p^2$ and by whether $p = 0$, so an ergodic measure sits on one orbit.",
+      "uses": []
+     },
+     {
+      "id": "s:imprimitivity",
+      "slogan": "Recover $\\pi$ as a representation [induced](c:induced-representation) from the stabilizer of one momentum.",
+      "detail": "The pair $(\\pi, E)$ is a system of imprimitivity on the orbit. Mackey's imprimitivity theorem gives $\\pi = \\operatorname{Ind}(e^{ip \\cdot a}\\sigma)$ for an irreducible unitary $\\sigma$ of the stabilizer $H_p$, and inequivalent $\\sigma$ give inequivalent $\\pi$.",
+      "uses": []
+     },
+     {
+      "id": "s:stabilizers",
+      "slogan": "Compute the [stabilizer](c:stabilizer) of a momentum on each positive-energy orbit.",
+      "detail": "For $p = (m, 0, 0, 0)$ with $m > 0$ the stabilizer is $SU(2)$. For $p = (1, 0, 0, 1)$ it is the double cover of the Euclidean group $E(2)$, and for $p = 0$ it is all of $SL(2,\\mathbb{C})$.",
+      "uses": []
+     },
+     {
+      "id": "s:list",
+      "slogan": "List the irreducible unitary representations of each stabilizer to obtain the labels.",
+      "detail": "The irreducible unitary representations of $SU(2)$ are the spins $s \\in \\frac12\\mathbb{N}$. Those of the cover of $E(2)$ are characters with helicity $h \\in \\frac12\\mathbb{Z}$, or infinite-dimensional ones with a radius $\\rho > 0$ and a sign, the continuous spins; with step 3 this gives the list without repeats.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:spectral",
+      "s:orbit"
+     ],
+     [
+      "s:orbit",
+      "s:imprimitivity"
+     ],
+     [
+      "s:orbit",
+      "s:stabilizers"
+     ],
+     [
+      "s:imprimitivity",
+      "s:list"
+     ],
+     [
+      "s:stabilizers",
+      "s:list"
+     ]
+    ],
+    "conclusion": "s:list",
+    "concepts": {
+     "c:unitary-representation": "The objects classified are irreducible unitary representations.",
+     "c:poincare-group": "The group is a semidirect product of translations and Lorentz transformations.",
+     "c:induced-representation": "Every representation in the list is induced from a stabilizer.",
+     "c:stabilizer": "The stabilizer of a momentum supplies the spin or helicity label.",
+     "c:orbit": "The momentum orbit supplies the mass label."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "E. Wigner, On unitary representations of the inhomogeneous Lorentz group, Annals of Mathematics 40 (1939), no. 1, 149-204",
+     "url": "https://doi.org/10.2307/1968551",
+     "note": "Wigner found the list; G. W. Mackey, Induced representations of locally compact groups I, Annals of Mathematics 55 (1952), 101-139, supplies the imprimitivity theorem that makes the completeness proof rigorous."
+    }
+   }
+  ]
+ }
+]
