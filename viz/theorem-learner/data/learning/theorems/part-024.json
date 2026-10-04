@@ -659,5 +659,640 @@
     }
    }
   ]
+ },
+ {
+  "id": "wd:Q3527118",
+  "statement": "Let $p$ be a prime and $f\\colon \\mathbb{Z}_p \\to \\mathbb{Q}_p$ be [continuous](c:continuous-function) on the [p-adic integers](c:p-adic-integer). Then the iterated [forward differences](c:forward-difference) $a_n = (\\Delta^n f)(0)$, with $\\Delta f(x) = f(x+1) - f(x)$, tend to $0$, and $f(x) = \\sum_{n \\ge 0} a_n \\binom{x}{n}$ with [uniform convergence](c:uniform-convergence) on $\\mathbb{Z}_p$.",
+  "hypotheses": [
+   {
+    "id": "h:prime",
+    "text": "The number $p$ is prime, and $\\mathbb{Z}_p$ and $\\mathbb{Q}_p$ carry the $p$-adic norm.",
+    "concept": null
+   },
+   {
+    "id": "h:continuous",
+    "text": "The function $f\\colon \\mathbb{Z}_p \\to \\mathbb{Q}_p$ is [continuous](c:continuous-function).",
+    "concept": "c:continuous-function"
+   }
+  ],
+  "conclusion": "The coefficients satisfy $a_n \\to 0$, and the Mahler series $\\sum_n a_n \\binom{x}{n}$ of [binomial coefficient](c:binomial-coefficient) polynomials converges uniformly to $f$.",
+  "formal": {
+   "decl": "PadicInt.hasSum_mahler",
+   "difference": "The declaration allows values in any complete ultrametric normed $\\mathbb{Z}_p$-module and states uniform convergence as a sum in the sup-norm space $C(\\mathbb{Z}_p, E)$. The decay $a_n \\to 0$ is the separate lemma PadicInt.fwdDiff_tendsto_zero."
+  },
+  "proofs": [
+   {
+    "id": "bojanic",
+    "name": "Bojanic's estimate",
+    "slogan": "Show that the forward differences at $0$ decay by Bojanic's $p$-adic estimate, sum the Mahler series, and match it with $f$ on the dense set of natural numbers.",
+    "scope": "The whole theorem; the case $f = 0$ is trivial. The norm $\\|f\\| = \\max_x |f(x)|_p$ is finite because $\\mathbb{Z}_p$ is compact.",
+    "mechanisms": [
+     "m:uniform-convergence",
+     "m:density-extension",
+     "m:induction"
+    ],
+    "roles": [
+     {
+      "h": "h:prime",
+      "why": "The prime $p$ divides $\\binom{p^t}{j}$ for $0 < j < p^t$, which gives the factor $1/p$, and the $p$-adic norm is an [ultrametric](c:is-ultrametric-dist).",
+      "steps": [
+       "s:bound",
+       "s:step",
+       "s:converge"
+      ]
+     },
+     {
+      "h": "h:continuous",
+      "why": "Continuity on the compact $\\mathbb{Z}_p$ gives [uniform continuity](c:uniform-continuity) and fixes $f$ by its values on a [dense set](c:dense-set).",
+      "steps": [
+       "s:uniform",
+       "s:dense"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:bound",
+      "slogan": "Bound every iterated difference $\\Delta^n f(0)$ by the sup norm of $f$.",
+      "detail": "The identity $\\Delta^n f(0) = \\sum_{k=0}^{n} (-1)^{n-k}\\binom{n}{k} f(k)$ has integer coefficients of norm at most $1$. The [ultrametric](c:is-ultrametric-dist) inequality gives $|\\Delta^n f(0)| \\le \\|f\\|$.",
+      "uses": []
+     },
+     {
+      "id": "s:uniform",
+      "slogan": "Choose $t$ with $|f(x) - f(y)| \\le \\|f\\|/p^s$ whenever $|x - y| \\le p^{-t}$.",
+      "detail": "The space $\\mathbb{Z}_p$ is compact, so the continuous $f$ has [uniform continuity](c:uniform-continuity) by the Heine-Cantor theorem. For each fixed $s$ this gives such a $t$.",
+      "uses": [
+       "wd:Q765987"
+      ]
+     },
+     {
+      "id": "s:step",
+      "slogan": "Bound $\\Delta^{n+p^t} f(0)$ by earlier differences divided by $p$ and by $\\|f\\|/p^s$.",
+      "detail": "Bojanic's identity writes $\\Delta^{n+p^t} f(0)$ as a combination of the $\\Delta^{n+j} f(0)$, $0 < j < p^t$, with coefficients $\\binom{p^t}{j}$ divisible by $p$, plus $\\sum_k \\pm\\binom{n}{k}\\big(f(k + p^t) - f(k)\\big)$. Step 2 bounds the last sum, so $|\\Delta^{n+p^t} f(0)| \\le \\max\\big(p^{-1}\\max_j |\\Delta^{n+j} f(0)|, \\|f\\|/p^s\\big)$.",
+      "uses": [
+       "nm:kummer-s-theorem"
+      ]
+     },
+     {
+      "id": "s:decay",
+      "slogan": "Induct on $k \\le s$ to show that the differences tend to $0$.",
+      "detail": "Steps 1 and 3 give $|\\Delta^{n + kp^t} f(0)| \\le \\|f\\|/p^k$ for every $n$ and every $k \\le s$. So $|a_m| \\le \\|f\\|/p^s$ for $m \\ge sp^t$, and since $s$ is arbitrary, $a_m \\to 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:converge",
+      "slogan": "Sum the Mahler series uniformly to a continuous function $g$.",
+      "detail": "The polynomial $\\binom{x}{n}$ maps $\\mathbb{N}$ into $\\mathbb{Z}$, so by continuity it maps $\\mathbb{Z}_p$ into $\\mathbb{Z}_p$. The terms have sup norm at most $|a_n| \\to 0$, which suffices for [uniform convergence](c:uniform-convergence) in the complete ultrametric space $C(\\mathbb{Z}_p, \\mathbb{Q}_p)$.",
+      "uses": []
+     },
+     {
+      "id": "s:agree",
+      "slogan": "Match $g$ with $f$ at each natural number by the Gregory-Newton formula.",
+      "detail": "At $x = m \\in \\mathbb{N}$ the terms with $n > m$ vanish. Newton's forward difference formula $f(m) = ((1 + \\Delta)^m f)(0) = \\sum_{n \\le m}\\binom{m}{n}\\Delta^n f(0)$ gives $g(m) = f(m)$.",
+      "uses": [
+       "nm:gregory-newton-formula"
+      ]
+     },
+     {
+      "id": "s:dense",
+      "slogan": "Extend the equality $f = g$ from $\\mathbb{N}$ to $\\mathbb{Z}_p$ by density.",
+      "detail": "The natural numbers form a [dense set](c:dense-set) in $\\mathbb{Z}_p$, and $f$ and $g$ are continuous, so $f = g$. Hence $f(x) = \\sum_n a_n\\binom{x}{n}$ uniformly on $\\mathbb{Z}_p$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:bound",
+      "s:decay"
+     ],
+     [
+      "s:uniform",
+      "s:step"
+     ],
+     [
+      "s:step",
+      "s:decay"
+     ],
+     [
+      "s:decay",
+      "s:converge"
+     ],
+     [
+      "s:converge",
+      "s:agree"
+     ],
+     [
+      "s:converge",
+      "s:dense"
+     ],
+     [
+      "s:agree",
+      "s:dense"
+     ]
+    ],
+    "conclusion": "s:dense",
+    "concepts": {
+     "c:continuous-function": "Continuity gives uniform estimates and the density argument.",
+     "c:p-adic-integer": "The functions live on the compact ring $\\mathbb{Z}_p$.",
+     "c:forward-difference": "Iterated forward differences at $0$ are the Mahler coefficients.",
+     "c:uniform-convergence": "The theorem asserts uniform convergence of the Mahler series.",
+     "c:binomial-coefficient": "The binomial polynomials $\\binom{x}{n}$ form the Mahler basis.",
+     "c:is-ultrametric-dist": "In an ultrametric space terms tending to zero make a convergent series.",
+     "c:uniform-continuity": "Uniform continuity makes $f(k + p^t) - f(k)$ small for all $k$.",
+     "c:dense-set": "Agreement on the dense set $\\mathbb{N}$ gives agreement everywhere."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "PadicInt.hasSum_mahler",
+     "follows": true,
+     "note": "mathlib follows Bojanic (1974): fwdDiff_tendsto_zero through fwdDiff_iter_le_of_forall_le, then hasSum_mahlerSeries, shift_eq_sum_fwdDiff_iter on natural numbers, and denseRange_natCast."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1148215",
+  "statement": "Every small [abelian category](c:abelian-category) $\\mathcal{A}$ has a [full and faithful](c:full-and-faithful-functor) [exact functor](c:exact-functor) $\\mathcal{A} \\to R\\text{-}\\mathrm{Mod}$ into the category of [modules](c:module) over some ring $R$.",
+  "hypotheses": [
+   {
+    "id": "h:small",
+    "text": "The category $\\mathcal{A}$ is small: its objects and morphisms form sets.",
+    "concept": null
+   },
+   {
+    "id": "h:abelian",
+    "text": "The category $\\mathcal{A}$ is an [abelian category](c:abelian-category).",
+    "concept": "c:abelian-category"
+   }
+  ],
+  "conclusion": "Some ring $R$ and some full, faithful and exact functor $F\\colon \\mathcal{A} \\to R\\text{-}\\mathrm{Mod}$ exist.",
+  "formal": {
+   "decl": "CategoryTheory.Abelian.freyd_mitchell",
+   "difference": "The declaration needs no smallness: it passes to a copy of the category in a larger universe, where the modules then live. Exactness appears as preservation of finite limits and finite colimits."
+  },
+  "proofs": [
+   {
+    "id": "ind-cogenerator",
+    "name": "Injective cogenerator of an ind-category",
+    "slogan": "Embed the category into the opposite of a Grothendieck category, find a projective separator there, and send each object to its module of morphisms from it.",
+    "scope": "An outline of the mathlib proof; steps 1 and 2 rest on the theory of ind-objects and Grothendieck categories (Kashiwara and Schapira, Categories and Sheaves, section 9.6). The ring is $R = \\mathrm{End}(G)^{\\mathrm{op}}$.",
+    "mechanisms": [
+     "m:yoneda",
+     "m:exact-sequence",
+     "m:construction-explicit"
+    ],
+    "roles": [
+     {
+      "h": "h:small",
+      "why": "Smallness makes $\\mathrm{Ind}(\\mathcal{A}^{\\mathrm{op}})$ a [Grothendieck abelian category](c:is-grothendieck-abelian) and lets one coproduct cover all objects of $\\mathcal{A}$.",
+      "steps": [
+       "s:ind",
+       "s:projective"
+      ]
+     },
+     {
+      "h": "h:abelian",
+      "why": "Abelianness makes the embedding exact and supplies kernels and cokernels for the fullness argument.",
+      "steps": [
+       "s:ind",
+       "s:full"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:ind",
+      "slogan": "Embed $\\mathcal{A}$ fully, faithfully and exactly into $D^{\\mathrm{op}}$ with $D = \\mathrm{Ind}(\\mathcal{A}^{\\mathrm{op}})$.",
+      "detail": "The Yoneda-type functor $\\mathcal{A}^{\\mathrm{op}} \\to \\mathrm{Ind}(\\mathcal{A}^{\\mathrm{op}})$ is full, faithful and exact, and $D$ is a [Grothendieck abelian category](c:is-grothendieck-abelian) because $\\mathcal{A}$ is small and abelian. Passing to opposites gives $\\mathcal{A} \\to D^{\\mathrm{op}}$.",
+      "uses": [
+       "nl:466"
+      ]
+     },
+     {
+      "id": "s:cogenerator",
+      "slogan": "Find an [injective](c:injective) cogenerator $I$ of the Grothendieck category $D$.",
+      "detail": "The small object argument gives enough injectives in $D$, and the special adjoint functor theorem gives all limits. Together with the generator of $D$, these facts give an injective cogenerator $I$.",
+      "uses": []
+     },
+     {
+      "id": "s:projective",
+      "slogan": "Form a [projective](c:projective) [separator](c:has-separator) $G$ of $D^{\\mathrm{op}}$ that maps onto the image of $\\mathcal{A}$.",
+      "detail": "In $D^{\\mathrm{op}}$ the object $I$ is a projective separator. Since $\\mathcal{A}$ is small, one coproduct $G$ of copies of $I$ in $D^{\\mathrm{op}}$ maps onto every object in the image of $\\mathcal{A}$, and $G$ is still a projective separator.",
+      "uses": []
+     },
+     {
+      "id": "s:hom",
+      "slogan": "Map $D^{\\mathrm{op}}$ to modules over $R = \\mathrm{End}(G)^{\\mathrm{op}}$ by the functor $\\mathrm{Hom}(G, -)$.",
+      "detail": "The functor $\\mathrm{Hom}(G, -)$ is faithful because $G$ is a separator, left exact as a Hom functor, and right exact because $G$ is projective. Composition with step 1 gives a faithful [exact functor](c:exact-functor) $\\mathcal{A} \\to R\\text{-}\\mathrm{Mod}$.",
+      "uses": []
+     },
+     {
+      "id": "s:full",
+      "slogan": "Show that the composite functor is full on objects that are quotients of $G$.",
+      "detail": "Let $q\\colon G \\to X$ be an epimorphism, $\\varphi\\colon \\mathrm{Hom}(G, X) \\to \\mathrm{Hom}(G, Y)$ be $R$-linear, and $f = \\varphi(q)$. Linearity and the separator property make $f$ vanish on $\\ker q$, so $f = gq$ for some $g\\colon X \\to Y$, and projectivity of $G$ gives $\\varphi = \\mathrm{Hom}(G, g)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:ind",
+      "s:hom"
+     ],
+     [
+      "s:ind",
+      "s:full"
+     ],
+     [
+      "s:cogenerator",
+      "s:projective"
+     ],
+     [
+      "s:projective",
+      "s:hom"
+     ],
+     [
+      "s:projective",
+      "s:full"
+     ],
+     [
+      "s:hom",
+      "s:full"
+     ]
+    ],
+    "conclusion": "s:full",
+    "concepts": {
+     "c:abelian-category": "The theorem represents any small abelian category concretely.",
+     "c:full-and-faithful-functor": "Fullness and faithfulness make morphisms correspond exactly.",
+     "c:exact-functor": "Exactness lets diagram chases with elements transfer back.",
+     "c:module": "The target is a category of modules, where elements exist.",
+     "c:is-grothendieck-abelian": "Grothendieck categories have enough injectives and all limits.",
+     "c:injective": "An injective cogenerator becomes projective in the opposite category.",
+     "c:projective": "Projectivity of $G$ makes the Hom functor right exact.",
+     "c:has-separator": "A separator makes the Hom functor faithful."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "CategoryTheory.Abelian.freyd_mitchell",
+     "follows": true,
+     "note": "mathlib builds FreydMitchell.functor with D = Ind(C^op): enough injectives in Grothendieck categories by the small object argument, an injective cogenerator (Generator/Abelian), and the full Hom functor of Abelian/Yoneda; see Kashiwara and Schapira, Categories and Sheaves, 9.6."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1153584",
+  "statement": "Let $(X, \\mu)$ be a measure space and let $f_n\\colon X \\to [0, \\infty]$ be [measurable functions](c:measurable-function) with $f_1 \\le f_2 \\le \\cdots$ [almost everywhere](c:almost-everywhere). If $f_n \\to f$ almost everywhere, then $\\int f_n\\,d\\mu \\to \\int f\\,d\\mu$ for the [Lebesgue integral](c:lebesgue-integral), with the value $\\infty$ allowed.",
+  "hypotheses": [
+   {
+    "id": "h:measurable",
+    "text": "Each $f_n$ is a [measurable function](c:measurable-function) with values in $[0, \\infty]$.",
+    "concept": "c:measurable-function"
+   },
+   {
+    "id": "h:monotone",
+    "text": "For almost every $x$ the sequence $f_n(x)$ is a nondecreasing [monotone sequence](c:monotone-sequence).",
+    "concept": "c:monotone-sequence"
+   },
+   {
+    "id": "h:limit",
+    "text": "The sequence $f_n(x)$ tends to $f(x)$ for [almost every](c:almost-everywhere) $x$.",
+    "concept": "c:almost-everywhere"
+   }
+  ],
+  "conclusion": "The integrals satisfy $\\lim_n \\int f_n\\,d\\mu = \\int f\\,d\\mu$ in $[0, \\infty]$.",
+  "formal": {
+   "decl": "MeasureTheory.integral_tendsto_of_tendsto_of_antitone",
+   "difference": "The declaration treats an almost everywhere nonincreasing sequence of integrable real functions with an integrable limit, for the Bochner integral. mathlib derives it from the nonnegative nondecreasing version MeasureTheory.lintegral_iSup by negation and subtraction of $f_0$."
+  },
+  "proofs": [
+   {
+    "id": "simple-functions",
+    "name": "Simple functions below the limit",
+    "slogan": "Bound the limit of the integrals above by monotonicity, and below by the integral of each simple function under $f$ through increasing level sets.",
+    "scope": "The whole theorem, with integrals in $[0, \\infty]$. The null set where the hypotheses fail is removed first.",
+    "mechanisms": [
+     "m:monotone-limit",
+     "m:approximation",
+     "m:supremum"
+    ],
+    "roles": [
+     {
+      "h": "h:measurable",
+      "why": "Measurability makes $f = \\sup_n f_n$ and the level sets $E_n$ measurable, so all integrals and measures are defined.",
+      "steps": [
+       "s:null",
+       "s:sets"
+      ]
+     },
+     {
+      "h": "h:monotone",
+      "why": "Monotonicity makes the integrals increase and the level sets $E_n$ grow.",
+      "steps": [
+       "s:upper",
+       "s:sets"
+      ]
+     },
+     {
+      "h": "h:limit",
+      "why": "The pointwise limit gives $f = \\sup_n f_n$, so the level sets cover $X$.",
+      "steps": [
+       "s:null",
+       "s:sets"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:null",
+      "slogan": "Remove a null set so that the hypotheses hold at every point.",
+      "detail": "Outside a null set $N$ the sequence increases and converges to $f$. Setting all $f_n$ and $f$ to $0$ on $N$ changes no integral and gives $f = \\sup_n f_n$ everywhere, so $f$ is measurable.",
+      "uses": []
+     },
+     {
+      "id": "s:upper",
+      "slogan": "Bound the increasing integrals above by $\\int f$.",
+      "detail": "Since $f_n \\le f_{n+1} \\le f$, monotonicity of the [Lebesgue integral](c:lebesgue-integral) gives $\\int f_n \\le \\int f_{n+1} \\le \\int f$. So $\\lim_n \\int f_n$ exists in $[0, \\infty]$ and is at most $\\int f$.",
+      "uses": []
+     },
+     {
+      "id": "s:sets",
+      "slogan": "Fix a simple function $s \\le f$ and $r < 1$, and form the level sets $E_n$.",
+      "detail": "Let $E_n = \\{x : r\\,s(x) \\le f_n(x)\\}$ for a [simple function](c:simple-function) $0 \\le s \\le f$ and $0 < r < 1$. These sets are measurable and increasing, and they cover $X$, because $r\\,s(x) < f(x) = \\sup_n f_n(x)$ wherever $s(x) > 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:lower",
+      "slogan": "Integrate $r\\,s$ over $E_n$ and let $n$ tend to infinity.",
+      "detail": "For each $n$, $\\int f_n \\ge \\int_{E_n} r\\,s = r\\sum_v v\\,\\mu(\\{s = v\\} \\cap E_n)$. Continuity of $\\mu$ along increasing sets gives the limit $r\\sum_v v\\,\\mu(\\{s = v\\}) = r\\int s$, so $\\lim_n \\int f_n \\ge r\\int s$.",
+      "uses": []
+     },
+     {
+      "id": "s:sup",
+      "slogan": "Take the supremum over $r < 1$ and over simple $s \\le f$.",
+      "detail": "Letting $r \\to 1$ gives $\\lim_n \\int f_n \\ge \\int s$, and $\\int f$ is the supremum of $\\int s$ over simple $s$ with $0 \\le s \\le f$. With step 2 this gives $\\lim_n \\int f_n = \\int f$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:null",
+      "s:upper"
+     ],
+     [
+      "s:null",
+      "s:sets"
+     ],
+     [
+      "s:sets",
+      "s:lower"
+     ],
+     [
+      "s:lower",
+      "s:sup"
+     ],
+     [
+      "s:upper",
+      "s:sup"
+     ]
+    ],
+    "conclusion": "s:sup",
+    "concepts": {
+     "c:measurable-function": "Measurability of each $f_n$ makes the level sets measurable.",
+     "c:almost-everywhere": "The hypotheses may fail on a null set, which integrals ignore.",
+     "c:lebesgue-integral": "The theorem exchanges a limit with the Lebesgue integral.",
+     "c:monotone-sequence": "Monotonicity gives increasing integrals and increasing level sets.",
+     "c:simple-function": "The integral of $f$ is the supremum over simple functions below $f$."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "MeasureTheory.integral_tendsto_of_tendsto_of_antitone",
+     "follows": true,
+     "note": "The declaration negates the sequence and applies integral_tendsto_of_tendsto_of_monotone, which subtracts f 0 and calls lintegral_tendsto_of_tendsto_of_monotone; its core MeasureTheory.lintegral_iSup is the simple-function argument these steps follow."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q10369454",
+  "statement": "Let $L(x, u^{(n)})$ be a [Lagrangian](c:lagrangian) with Euler-Lagrange expressions $E_i(L)$. Suppose that for all smooth functions $p_1, \\dots, p_r$ of $x$ the variation $\\delta u^i = \\sum_{\\alpha, J} a^{iJ}_\\alpha D_J p_\\alpha$ is a [gauge symmetry](c:gauge-symmetry), that is, it changes $L$ by a total divergence. Then $\\sum_{i, J} (-D)_J\\big(a^{iJ}_\\alpha E_i(L)\\big) = 0$ identically for $\\alpha = 1, \\dots, r$.",
+  "hypotheses": [
+   {
+    "id": "h:lagrangian",
+    "text": "The [Lagrangian](c:lagrangian) $L$ and the coefficients $a^{iJ}_\\alpha$ are smooth functions of $x$, $u$ and finitely many derivatives of $u$.",
+    "concept": "c:lagrangian"
+   },
+   {
+    "id": "h:symmetry",
+    "text": "For every choice of $p_1, \\dots, p_r$, the characteristic $Q_i = \\sum_{\\alpha, J} a^{iJ}_\\alpha D_J p_\\alpha$ gives $\\operatorname{pr} v_Q(L) = \\operatorname{Div} P$, with $P$ a smooth function of $x$, $u$, $p$ and their derivatives.",
+    "concept": "c:gauge-symmetry"
+   }
+  ],
+  "conclusion": "The $r$ differential identities $\\sum_{i, J} (-D)_J\\big(a^{iJ}_\\alpha E_i(L)\\big) = 0$ hold for all functions $u$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "euler-operator",
+    "name": "Integration by parts and the Euler operator",
+    "slogan": "Write the symmetry condition through the first variation formula, move all derivatives off the arbitrary functions $p_\\alpha$, and remove the divergence with the Euler operator.",
+    "scope": "The whole theorem, for any number $r \\ge 1$ of arbitrary functions. Here $(-D)_J = (-1)^{|J|}D_J$, and all sums over multi-indices $J$ are finite.",
+    "mechanisms": [
+     "m:symmetry",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:lagrangian",
+      "why": "Smoothness lets total derivatives and integration by parts act on every term.",
+      "steps": [
+       "s:first-variation",
+       "s:move"
+      ]
+     },
+     {
+      "h": "h:symmetry",
+      "why": "The symmetry makes the first variation along $Q$ a total [divergence](c:divergence) for every choice of $p$.",
+      "steps": [
+       "s:substitute"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:first-variation",
+      "slogan": "Write the first variation of $L$ along a characteristic $Q$.",
+      "detail": "Repeated use of $F\\,D_jG = D_j(FG) - G\\,D_jF$ gives $\\operatorname{pr} v_Q(L) = \\sum_i Q_i\\,E_i(L) + \\operatorname{Div} B$. Here $E_i$ is the [Euler-Lagrange](c:euler-lagrange-equation) operator in $u^i$, and $B$ depends linearly on $Q$ and its derivatives.",
+      "uses": [
+       "nl:2525",
+       "nm:integration-by-parts"
+      ]
+     },
+     {
+      "id": "s:substitute",
+      "slogan": "Insert the gauge characteristic $Q_i = \\sum_{\\alpha, J} a^{iJ}_\\alpha D_J p_\\alpha$ into the first variation.",
+      "detail": "The symmetry hypothesis gives $\\operatorname{pr} v_Q(L) = \\operatorname{Div} P$. With step 1 this gives $\\sum_{i, \\alpha, J} a^{iJ}_\\alpha\\,(D_J p_\\alpha)\\,E_i(L) = \\operatorname{Div}(P - B)$ for every choice of the functions $p_\\alpha$.",
+      "uses": []
+     },
+     {
+      "id": "s:move",
+      "slogan": "Move every [total derivative](c:total-derivative) off the functions $p_\\alpha$ by integration by parts.",
+      "detail": "The same rule gives $a^{iJ}_\\alpha (D_J p_\\alpha) E_i = p_\\alpha\\,(-D)_J(a^{iJ}_\\alpha E_i) + \\operatorname{Div} C$. Hence $\\sum_\\alpha p_\\alpha N_\\alpha = \\operatorname{Div} W$ with $N_\\alpha = \\sum_{i, J} (-D)_J(a^{iJ}_\\alpha E_i(L))$ and $W$ a function of $x$, $u$, $p$ and their derivatives.",
+      "uses": [
+       "nm:integration-by-parts"
+      ]
+     },
+     {
+      "id": "s:euler",
+      "slogan": "Apply the Euler operator in the variables $p_\\alpha$ to both sides.",
+      "detail": "The Euler operator annihilates every total [divergence](c:divergence), so it sends $\\operatorname{Div} W$ to $0$. The left side is linear in $p_\\alpha$ with coefficients $N_\\alpha$ free of $p$, so the Euler operator in $p_\\alpha$ sends it to $N_\\alpha$, and $N_\\alpha = 0$ for all $u$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:first-variation",
+      "s:substitute"
+     ],
+     [
+      "s:substitute",
+      "s:move"
+     ],
+     [
+      "s:move",
+      "s:euler"
+     ]
+    ],
+    "conclusion": "s:euler",
+    "concepts": {
+     "c:lagrangian": "The identities constrain the Euler-Lagrange expressions of this Lagrangian.",
+     "c:gauge-symmetry": "Symmetries with arbitrary functions are what produce identities.",
+     "c:euler-lagrange-equation": "The first variation exposes the Euler-Lagrange expressions $E_i(L)$.",
+     "c:divergence": "Symmetry and integration by parts produce total divergences, which the Euler operator kills.",
+     "c:total-derivative": "Total derivatives of $p_\\alpha$ are moved onto the coefficients."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard proof, as in P. J. Olver, Applications of Lie Groups to Differential Equations, 2nd ed., Springer GTM 107 (1993), theorem 5.66; E. Noether, Invariante Variationsprobleme (1918)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q2919401",
+  "statement": "Every nontrivial [absolute value](c:absolute-value) on the field of [rational numbers](c:rational-number) is equivalent either to the usual absolute value or to the $p$-adic absolute value $|x|_p = p^{-v_p(x)}$, built from the [p-adic valuation](c:p-adic-valuation), for exactly one [prime](c:prime-number) $p$. Two absolute values are equivalent when one is a positive power of the other.",
+  "hypotheses": [
+   {
+    "id": "h:nontrivial",
+    "text": "The [absolute value](c:absolute-value) $|\\cdot|$ on $\\mathbb{Q}$ is nontrivial: $|x| \\ne 1$ for some $x \\ne 0$.",
+    "concept": "c:absolute-value"
+   }
+  ],
+  "conclusion": "Either $|x| = |x|_\\infty^{s}$ for some $0 < s \\le 1$, or $|x| = |x|_p^{s}$ for some $s > 0$ and exactly one prime $p$.",
+  "formal": {
+   "decl": "Rat.AbsoluteValue.equiv_real_or_padic",
+   "difference": null
+  },
+  "proofs": [
+   {
+    "id": "bounded-or-unbounded",
+    "name": "Bounded or unbounded on the integers",
+    "slogan": "Split by whether the absolute value is at most one on the natural numbers; the bounded case singles out one prime, and the unbounded case forces a power of the usual absolute value.",
+    "scope": "The whole theorem. An absolute value on $\\mathbb{Q}$ is fixed by its values on the natural numbers, by multiplicativity and $|-1| = 1$.",
+    "mechanisms": [
+     "m:case-analysis",
+     "m:unique-factorization",
+     "m:euclidean-algorithm"
+    ],
+    "roles": [
+     {
+      "h": "h:nontrivial",
+      "why": "Nontriviality gives a prime $p$ with $|p| < 1$ in the bounded case.",
+      "steps": [
+       "s:prime"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:prime",
+      "slogan": "In the bounded case, find a [prime](c:prime-number) $p$ with $|p| < 1$.",
+      "detail": "Suppose $|n| \\le 1$ for all $n \\in \\mathbb{N}$. If every prime had $|q| = 1$, unique factorization and multiplicativity would give $|x| = 1$ for all $x \\ne 0$, against nontriviality.",
+      "uses": [
+       "wd:Q670235"
+      ]
+     },
+     {
+      "id": "s:other",
+      "slogan": "Show that $|m| = 1$ for every natural number $m$ prime to $p$.",
+      "detail": "If $|m| < 1$ with $\\gcd(m, p) = 1$, Bezout's identity gives $1 = a p^k + b m^k$ with integers $a, b$. Then $1 \\le |a||p|^k + |b||m|^k \\le |p|^k + |m|^k$, which is below $1$ for large $k$, a contradiction.",
+      "uses": [
+       "wd:Q513028"
+      ]
+     },
+     {
+      "id": "s:padic",
+      "slogan": "Identify the absolute value with a power of the $p$-adic absolute value.",
+      "detail": "Write $x = p^{v} m/n$ with $m, n$ prime to $p$, where $v = v_p(x)$ is the [p-adic valuation](c:p-adic-valuation). Steps 1 and 2 give $|x| = |p|^{v} = |x|_p^{s}$ with $s = -\\log|p|/\\log p > 0$, and $p$ is unique because $|q|_p = 1$ for primes $q \\ne p$.",
+      "uses": []
+     },
+     {
+      "id": "s:digits",
+      "slogan": "In the unbounded case, bound $|m|$ through the base-$n$ digits of $m^k$.",
+      "detail": "For $m, n \\ge 2$, write $m^k$ in base $n$ with at most $1 + k\\log m/\\log n$ digits, each of absolute value at most $n$. The triangle inequality, $k$-th roots and $k \\to \\infty$ give $|m| \\le \\max(1, |n|)^{\\log m/\\log n}$.",
+      "uses": []
+     },
+     {
+      "id": "s:real",
+      "slogan": "Show that $|n| = n^{s}$ for all $n \\ge 2$ with one exponent $s$ in $(0, 1]$.",
+      "detail": "If $|n| \\le 1$ for some $n \\ge 2$, step 4 gives $|m| \\le 1$ for all $m$, against unboundedness. So $|n| > 1$ for all $n \\ge 2$, step 4 in both directions gives $|m|^{1/\\log m} = |n|^{1/\\log n}$, and $|n| \\le n$ forces $s \\le 1$.",
+      "uses": []
+     },
+     {
+      "id": "s:combine",
+      "slogan": "Combine the two cases into the stated alternative.",
+      "detail": "An absolute value is either bounded by $1$ on $\\mathbb{N}$, where step 3 applies, or unbounded there, where step 5 and multiplicativity give $|x| = |x|_\\infty^{s}$ on $\\mathbb{Q}$. The cases exclude each other, since $|n|_p \\le 1$ for all $n$ but $|2|_\\infty^{s} > 1$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:prime",
+      "s:other"
+     ],
+     [
+      "s:prime",
+      "s:padic"
+     ],
+     [
+      "s:other",
+      "s:padic"
+     ],
+     [
+      "s:padic",
+      "s:combine"
+     ],
+     [
+      "s:digits",
+      "s:real"
+     ],
+     [
+      "s:real",
+      "s:combine"
+     ]
+    ],
+    "conclusion": "s:combine",
+    "concepts": {
+     "c:absolute-value": "The theorem classifies all absolute values on $\\mathbb{Q}$.",
+     "c:rational-number": "Multiplicativity reduces the field $\\mathbb{Q}$ to the natural numbers.",
+     "c:p-adic-valuation": "The exponent of $p$ in $x$ fixes the value $|x|$ in the bounded case.",
+     "c:prime-number": "In the bounded case exactly one prime has absolute value below one."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Rat.AbsoluteValue.equiv_real_or_padic",
+     "follows": true,
+     "note": "mathlib splits on boundedness on the natural numbers: equiv_padic_of_bounded (a least n with f n < 1 is prime, eq_one_of_not_dvd) and equiv_real_of_unbounded (apply_le_sum_digits, le_pow_log), following K. Conrad's notes."
+    }
+   }
+  ]
  }
 ]
