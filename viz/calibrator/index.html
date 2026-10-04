@@ -828,9 +828,11 @@ function validateInterview(doc) {
   };
 }
 const parseInterview = (toon) => validateInterview(decode(typeof toon === "string" ? tidy(toon) : toon));
-// The format of a pasted document, so that the page opens the right mode; null when it is not TOON with a format.
+// The format of a pasted document, so that the page opens the right mode; null when it has no format.
+// Throws a ToonError when the text is not TOON.
 function formatOf(toon) {
-  try { const d = decode(tidy(String(toon))); return isObject(d) && typeof d.format === "string" ? d.format : null; } catch { return null; }
+  const d = decode(tidy(String(toon)));
+  return isObject(d) && typeof d.format === "string" ? d.format : null;
 }
 
 // Interview state. submissions[id]: every submission of the question in order (the first is never changed);
@@ -932,6 +934,32 @@ function exportInterview(s, now) {
 }
 const exportInterviewToon = (s, now) => encode(exportInterview(s, now));
 const markInterviewExported = (s, now) => ({ ...iclone(s), exported_at: now });
+// Merge another copy of the same batch into base: the union of the submissions by (question_id, revision).
+// base keeps its position, drafts and export time. A revision that differs between the copies stops the merge.
+function mergeInterview(base, other, now) {
+  const ids = (s) => s.doc.questions.map((q) => q.question_id).join("\n"), batch = base.doc.batch.batch_id;
+  if (other.doc.batch.batch_id !== batch || ids(other) !== ids(base)) throw new SchemaError(`${other.doc.batch.batch_id} is not the same batch as ${batch}`);
+  const s = iclone(base);
+  let added = false;
+  for (const { question_id: id } of s.doc.questions) {
+    const a = base.submissions[id] || [], b = other.submissions[id] || [];
+    for (let i = 0; i < Math.min(a.length, b.length); i++) {
+      if (!same(a[i], b[i]) || a[i].at !== b[i].at) throw new SchemaError(`revision ${i + 1} of ${id} is different in the two copies of ${batch}: nothing was imported`);
+    }
+    if (b.length > a.length) { s.submissions[id] = deepFreeze([...a, ...b.slice(a.length)]); added = true; }
+    if (other.skipped[id]) s.skipped[id] = true;
+    if (other.shown[id] != null && !(s.shown[id] <= other.shown[id])) s.shown[id] = other.shown[id];
+  }
+  if (added) s.changed_at = now;
+  return s;
+}
+// Open an imported batch. Each copy of the same batch on this device (the previous one, then the saved one) is
+// merged into it, so a new answer always takes the revision after the highest one that any copy has.
+function importInterview(parsed, copies, now) {
+  let s = newInterview(parsed, now);
+  for (const c of copies) if (c && c.doc.batch.batch_id === s.doc.batch.batch_id) s = mergeInterview(c, s, now);
+  return s;
+}
 const interviewUnfinished = (s) => s.exported_at == null || s.changed_at > s.exported_at || interviewCounts(s).unseen > 0;
 function deserializeInterview(json) {
   const s = JSON.parse(json);
@@ -957,7 +985,7 @@ root.Calibrator = {
   Interview: {
     FORMAT: INTERVIEW_FORMAT, VERSION: INTERVIEW_VERSION, FIELDS: INTERVIEW_FIELDS, EXPORT_FIELDS: INTERVIEW_EXPORT_FIELDS,
     STATES: INTERVIEW_STATES, KINDS: ANSWER_KINDS, approxDate, validate: validateInterview, parse: parseInterview,
-    newState: newInterview, display: interviewDisplay, form, setDraft, submit, dontRemember, skip: interviewSkip,
+    newState: newInterview, merge: mergeInterview, import: importInterview, display: interviewDisplay, form, setDraft, submit, dontRemember, skip: interviewSkip,
     back: interviewBack, stateOf: interviewStateOf, counts: interviewCounts, isLast: ilast, exportDocument: exportInterview,
     exportToon: exportInterviewToon, markExported: markInterviewExported, unfinished: interviewUnfinished,
     serialize, deserialize: deserializeInterview,
@@ -1008,7 +1036,9 @@ function begin(doc) {
   showAsk();
 }
 function offer(toon) {
-  if (C.formatOf(toon) === I.FORMAT) { offerInterview(toon); return; }
+  let format;
+  try { format = C.formatOf(toon); } catch (e) { startMsg(`Not valid TOON: ${e.message}`, true); return; }
+  if (format === I.FORMAT) { offerInterview(toon); return; }
   let doc;
   try { doc = C.parseSession(toon); } catch (e) { startMsg(`Not a valid session: ${e.message}`, true); return; }
   const prev = loaded();
@@ -1069,31 +1099,33 @@ $("guard-replace").addEventListener("click", () => {
 
 /* ---------- Life interview ---------- */
 function isave() { if (V && !store.set(IKEY, I.serialize(V))) $("t-state").textContent = "Could not save on this device: export before closing."; }
-function iload() {
-  const json = store.get(IKEY);
+function iload(key = IKEY) {
+  const json = store.get(key);
   if (!json) return null;
   try { return I.deserialize(json); } catch { return null; }
 }
 const iloaded = () => V || iload();
 function showTalk() { $("start").hidden = true; $("ask").hidden = true; $("talk").hidden = false; irender(true); }
 function iresume(state) { V = I.display(state, now()); isave(); store.set(MODE, "interview"); showTalk(); }
-function ibegin(parsed) { pendingDoc = null; iresume(I.newState(parsed, now())); }
+function ibegin(state) { pendingDoc = null; iresume(state); }
 // An exported batch imports too: its answers become the first answers, and new submissions append revisions.
+// A copy of the same batch on this device is merged with it, never replaced.
 function offerInterview(toon) {
-  let parsed;
+  let parsed, next;
   try { parsed = I.parse(toon); } catch (e) { startMsg(`Not a valid interview: ${e.message}`, true); return; }
-  const prev = iloaded();
-  if (prev && prev.doc.batch.batch_id === parsed.doc.batch.batch_id) { iresume(prev); return; }
+  const prev = iloaded(), id = parsed.doc.batch.batch_id;
+  try { next = I.import(parsed, [iload(IPREVIOUS), prev], now()); } catch (e) { startMsg(`Not imported: ${e.message}`, true); return; }
+  if (prev && prev.doc.batch.batch_id === id) { iresume(next); return; }
   if (prev && I.unfinished(prev)) {
     const c = I.counts(prev);
-    pendingDoc = parsed; pendingMode = "interview";
-    $("guard-text").textContent = `An unfinished interview (${prev.doc.batch.batch_id}: ${c.answered} answered, ${c.dont_remember} not remembered, ${c.skipped} skipped, ${c.unseen} unseen) has not been exported. Replace it with ${parsed.doc.batch.batch_id}?`;
+    pendingDoc = next; pendingMode = "interview";
+    $("guard-text").textContent = `An unfinished interview (${prev.doc.batch.batch_id}: ${c.answered} answered, ${c.dont_remember} not remembered, ${c.skipped} skipped, ${c.unseen} unseen) has not been exported. Replace it with ${id}?`;
     $("guard").hidden = false; startMsg("");
     $("guard-resume").focus();
     return;
   }
   if (prev) store.set(IPREVIOUS, I.serialize(prev));
-  ibegin(parsed);
+  ibegin(next);
 }
 const tText = $("t-text"), tDate = $("t-date"), tConf = $("t-conf");
 const tState = (t) => { $("t-state").textContent = t; };

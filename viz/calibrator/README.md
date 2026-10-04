@@ -210,6 +210,13 @@ An exported batch imports again with all its submissions, so a later revision ad
 revision number. OptChat's `ingest` adds only the `(question_id, revision)` rows that it does not
 have yet.
 
+When this device has a copy of the same `batch_id` (`calibrator:interview` or
+`calibrator:interview-previous`), the import merges the copies: it keeps the union of the
+submissions by `(question_id, revision)`. A new answer thus takes the revision after the highest
+revision in all the copies. When one `(question_id, revision)` has different content in two copies,
+the page stops the import and shows a message. A file that is not TOON gives the message
+"Not valid TOON".
+
 ## Tests
 
 `node --test 'tests/*.test.mjs'` (Node 22, as CI runs it). `tests/calibrator.test.mjs` loads
@@ -222,7 +229,7 @@ session, and that a session saved before the life interview existed
 (`tests/fixtures/saved-session-v1.json`) restores and exports the same bytes.
 `tests/interview.test.mjs` checks the life interview: import and the format switch, schema
 rejection, drafts, submission and revisions, I don't remember and Skip, the export round-trip and
-the second import, and persistence.
+the second import, the merge of copies of the same batch, and persistence.
 `tests/fixtures/` holds a read-only copy of the site's `scripts/toon.py` and the TOON files it
 wrote (`python3 tests/fixtures/make_fixtures.py` regenerates them, `sample-session.toon` and
 `sample-interview.toon`);

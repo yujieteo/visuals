@@ -14,11 +14,18 @@ const T0 = Date.parse("2026-10-04T09:00:00Z");
 const start = () => I.display(I.newState(I.parse(sample), T0), T0);
 const fill = (s, text, confidence = "", event_date = "") => I.setDraft(s, { text, confidence, event_date });
 const Q1 = "interview-2026-10-04-sample-01", Q2 = "interview-2026-10-04-sample-02";
+// The sample batch under another batch_id.
+const otherBatch = () => {
+  const d = JSON.parse(read("tests/fixtures/sample-interview.json"));
+  d.batch.batch_id = "other-batch";
+  d.questions.forEach((q) => { q.batch_id = "other-batch"; });
+  return I.validate(d);
+};
 
 test("interview import: the sample batch decodes, validates and opens question 1, apart from probability sessions", () => {
   assert.equal(C.formatOf(sample), "optchat-interview");
   assert.equal(C.formatOf(read("sample-session.toon")), "calibrator-session");
-  assert.equal(C.formatOf("not toon at all: ["), null);
+  assert.throws(() => C.formatOf("not toon at all: ["), C.ToonError);
   assert.deepEqual(plain(C.decode(sample)), JSON.parse(read("tests/fixtures/sample-interview.json")));
   assert.equal(C.encode(JSON.parse(read("tests/fixtures/sample-interview.json"))), sample, "byte for byte what scripts/toon.py writes");
   const { doc } = I.parse(sample);
@@ -155,6 +162,48 @@ test("interview export round-trip: the export is the site's TOON, and imports ag
   const more = I.submit(fill(again, "Third version"), T0 + 300000).state;
   const rows = I.exportDocument(more, T0 + 400000).answers.filter((a) => a.question_id === Q1);
   assert.deepEqual(plain(rows.map((a) => a.revision)), [1, 2, 3]);
+});
+
+test("interview merge: a stale copy on this device takes the imported file's later revisions", () => {
+  // Device A answers Q1 and revises it; device B keeps a stale copy with revision 1 only.
+  const a1 = I.submit(fill(start(), "First"), T0 + 1000).state;
+  const stale = I.markExported(a1, T0 + 1500);
+  const a2 = I.submit(fill(I.back(I.display(a1, T0 + 2000)), "Second"), T0 + 3000).state;
+  const fromA = I.parse(I.exportToon(a2, T0 + 4000));
+  const merged = I.import(fromA, [null, stale], T0 + 5000);
+  assert.deepEqual(plain(merged.submissions[Q1].map((x) => x.text)), ["First", "Second"]);
+  assert.equal(merged.exported_at, stale.exported_at, "the device copy keeps its own state");
+  assert.equal(I.unfinished(merged), true, "the merged revisions are not yet exported from this device");
+  // A new answer on device B is revision 3, never a second revision 2.
+  const next = I.submit(fill(I.display(I.back(merged), T0 + 6000), "Third"), T0 + 7000).state;
+  const rows = I.exportDocument(next, T0 + 8000).answers.filter((x) => x.question_id === Q1);
+  assert.deepEqual(plain(rows.map((x) => [x.revision, x.text])), [[1, "First"], [2, "Second"], [3, "Third"]]);
+  // The stale file imported into the newer copy adds nothing and loses nothing.
+  const back = I.import(I.parse(I.exportToon(stale, T0)), [null, next], T0 + 9000);
+  assert.deepEqual(plain(back.submissions), plain(next.submissions));
+  assert.equal(back.changed_at, next.changed_at);
+  // The same revision with other content in the two copies stops the import.
+  const other = I.submit(fill(I.back(I.display(a1, T0 + 2000)), "Other second"), T0 + 3000).state;
+  assert.throws(() => I.import(fromA, [null, other], T0 + 5000), /revision 2 of .* is different in the two copies/);
+  // A copy of another batch is not merged.
+  const fresh = I.import(otherBatch(), [null, next], T0);
+  assert.deepEqual(plain(fresh.submissions), {});
+});
+
+test("interview merge: the original batch imported again after a replace continues the previous copy's revisions", () => {
+  // Batch X is answered, then replaced by another batch, so it moves to calibrator:interview-previous.
+  let x = I.submit(fill(start(), "First"), T0 + 1000).state;
+  x = I.submit(fill(I.back(I.display(x, T0 + 2000)), "Second"), T0 + 3000).state;
+  const previous = I.deserialize(I.serialize(x));
+  const y = I.display(I.newState(otherBatch(), T0), T0);
+  // The original, unanswered file of X is imported again: the previous copy's answers come back.
+  const again = I.import(I.parse(sample), [previous, y], T0 + 5000);
+  assert.deepEqual(plain(again.submissions[Q1].map((x) => x.text)), ["First", "Second"]);
+  const next = I.submit(fill(I.display(I.back(again), T0 + 6000), "Third"), T0 + 7000).state;
+  const rows = I.exportDocument(next, T0 + 8000).answers.filter((a) => a.question_id === Q1);
+  assert.deepEqual(plain(rows.map((a) => [a.revision, a.text])), [[1, "First"], [2, "Second"], [3, "Third"]]);
+  // The export of the continued batch is valid and imports again.
+  assert.equal(I.parse(I.exportToon(next, T0 + 8000)).history[Q1].length, 3);
 });
 
 test("interview persistence: a saved interview restores position, submissions, skips and drafts", () => {
