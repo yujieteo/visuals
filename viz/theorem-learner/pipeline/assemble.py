@@ -185,6 +185,8 @@ def build(explorer_path, out_path):
         for q in t["proofs"]:
             if q["source"]["kind"] == "lean":
                 lean_wanted.add(q["source"]["decl"])
+        if (t.get("formal") or {}).get("decl"):
+            lean_wanted.add(t["formal"]["decl"])
     catalog_locs = {}
     for i in order:
         f = next((e for e in det[i]["evs"] if e["kind"] == "formal declaration"), None)
@@ -223,6 +225,17 @@ def build(explorer_path, out_path):
             th["cn"] = seg(a["conclusion"])
             if formal and a.get("formal"):
                 formal["difference"] = a["formal"].get("difference")
+            elif not formal and (a.get("formal") or {}).get("decl") in locs:
+                # The catalog links no declaration, but the author found one in the pinned mathlib.
+                decl, loc = a["formal"]["decl"], locs[a["formal"]["decl"]]
+                fe = add_ev({"id": f"ev:lean:{decl}", "kind": "formal declaration", "status": "formal declaration", "source": "mathlib",
+                             "decl": decl, "revision": commit, "file": loc["file"], "lines": loc["lines"],
+                             "url": f"https://github.com/leanprover-community/mathlib4/blob/{commit}/{loc['file']}#L{loc['lines'][0]}-L{loc['lines'][1]}",
+                             "claim": decl, "reuse": "Apache-2.0"})
+                th["ev"].append(fe)
+                th["formal"] = formal = {"decl": decl, "ev": fe, "sig": None, "concl": None, "hyps": None,
+                                         "difference": a["formal"].get("difference")}
+                th["q"] += " " + decl.lower()
             th["unk"] = a.get("unknown")
             th["q"] += " " + learning.plain(a["statement"]).lower()
             for q in a["proofs"]:
