@@ -1,19 +1,11 @@
-// The page is one self-contained file: it requests nothing from the network, so it works offline and from
-// file://. index.html is the generated public artifact, read here as that contract.
+// The page is one self-contained file that works offline and from file://: it inlines d3, and the requests rule
+// in scripts/rules.py checks that it requests nothing from the network. index.html is the generated public artifact.
 import assert from "node:assert/strict";
 import test from "node:test";
 import vm from "node:vm";
 import { read } from "./beamdswitch-decks.mjs";
 
 const html = read("index.html");
-
-test("every script, stylesheet and image is inline: the page loads nothing from another origin", () => {
-  const tags = [...html.matchAll(/<(script|link|img|iframe|source)\b[^>]*>/gi)].map((m) => m[0]);
-  for (const tag of tags) {
-    const ref = /\b(?:src|href)="([^"]*)"/i.exec(tag)?.[1];
-    assert.ok(ref === undefined || ref.startsWith("data:") || ref.startsWith("#"), `no external resource: ${tag}`);
-  }
-});
 
 test("the inlined d3 is version 7.9.0 and provides what the page calls", () => {
   const d3 = vm.runInContext(/<script id="d3">\n([\s\S]*?)<\/script>/.exec(html)[1] + ";d3", vm.createContext({}));

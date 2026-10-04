@@ -9,7 +9,6 @@ import { parseDeck, splitSentences } from "./fixtures/beamdswitch/deck.mjs";
 import { parsePlot } from "./fixtures/beamdswitch/plot.mjs";
 
 export const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
-export const TEMPLATE_PATH = "tests/fixtures/beamdswitch/beamdswitch.js";
 
 /* SHA-256 of yujieteo/site templates/beamdswitch.js, the site's standard report template. Every
    page folder carries it unchanged. Set SITE_REPO to a site checkout to compare against the file. */
@@ -25,7 +24,7 @@ export function assertTemplateCopy(slug) {
 }
 
 /* Every deck names its narrator, so beamdswitch never narrates in silence: a voice id such as bf_emma. */
-export function assertVoice(deck, what) {
+function assertVoice(deck, what) {
   assert.match(deck.meta.voice ?? "", /^[a-z]{2}_[a-z]+$/, `${what}: declares a voice in its front matter`);
 }
 

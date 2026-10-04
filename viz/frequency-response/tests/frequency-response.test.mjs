@@ -972,10 +972,6 @@ test("the engine runs without DOM, storage, clock or randomness and is determini
   assert.equal(run(G), run(F));
 });
 
-test("the delivered page is a single file that loads no external resources", () => {
-  assert.doesNotMatch(html, /<script[^>]+src=|<link[^>]+stylesheet|https?:\/\/(?!www\.w3\.org)/);
-});
-
 test("page registers its WebMCP tools", async () => {
   // The tools the page registers; the site's catalogue stub (data/visuals/frequency-response.yaml in yujieteo/site) names the same set.
   const names = ["get_metadata", "get_current_system", "analyze_loop", "run_self_tests"];

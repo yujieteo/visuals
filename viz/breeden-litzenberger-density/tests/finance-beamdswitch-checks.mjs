@@ -31,7 +31,7 @@ export function assertTemplateCopy() {
 
 /* The page inlines each script in its own <script id="..."> block; returns that block's source. */
 /** @param {string} html @param {string} id */
-export const inlined = (html, id) => new RegExp(`<script id="${id}">\\n([\\s\\S]*?)</script>`).exec(html)?.[1];
+const inlined = (html, id) => new RegExp(`<script id="${id}">\\n([\\s\\S]*?)</script>`).exec(html)?.[1];
 /* A script without its JSDoc types, as build.py inlines report.js: the regular expressions of strip_types in
    ../../scripts/page_parts.py, so the page is the one built from the unannotated script. */
 /** @param {string} js */
@@ -48,7 +48,7 @@ export function assertInlined(html, id, source) {
 
 // Every deck names its narrator, so beamdswitch never narrates in silence: a voice id such as bf_emma.
 /** @param {Deck} deck @param {string} what */
-export function assertVoice(deck, what) {
+function assertVoice(deck, what) {
   assert.match(deck.meta.voice ?? "", /^[a-z]{2}_[a-z]+$/, `${what}: declares a voice in its front matter`);
 }
 

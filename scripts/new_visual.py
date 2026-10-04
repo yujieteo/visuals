@@ -6,7 +6,7 @@ A generated viz/<slug>/ passes scripts/check.py, CI and its browser checks as wr
 
   mechanical  the generator owns them and --update rewrites them: build.py, beamdswitch.js (the site's template,
               byte for byte), tsconfig.json, types/globals.d.ts, tests/<slug>-kit.test.mjs, .gitattributes, the
-              "uses" and "typecheck" keys of visual.json, generated.json and index.html (built by build.py)
+              "uses" and "typecheck" keys of visual.json (with --mathjax, also its MathJax allow.requests lines), generated.json and index.html (built by build.py)
   domain      written once from a starter, then the visual's own, never rewritten: src/model.js, src/view.js,
               src/body.html, src/style.css, report.js, raw.json, tests/<slug>-model.test.mjs, e2e/manifest.json,
               e2e/full.test.mjs, SKILLS.md, AGENTS.md and the catalogue fields of visual.json
@@ -76,6 +76,19 @@ def typecheck(options):
     return {"skip": ["kit", "beamdswitch", "model", "report", "view"]}
 
 
+# The vendored MathJax block computes its worker's URLs, which the requests rule reports; the vendor rule hash-checks
+# that block against scripts/vendor/, so a page cannot change those lines and allows them by name.
+MATHJAX_REQUESTS = [
+    "index.html calls new Worker(a): a computed URL the rule cannot check, so use a literal path",
+    "index.html calls importScripts('${Zi(r)}'): a computed URL the rule cannot check, so use a literal path",
+]
+
+
+def allowed_requests(options):
+    """The requests-rule lines a generated page must allow in visual.json."""
+    return list(MATHJAX_REQUESTS) if options.get("mathjax") else []
+
+
 def record(options):
     """generated.json: what the generator wrote the folder from."""
     template = kit.beamdswitch_template()
@@ -125,6 +138,8 @@ def visual_json(args, options):
         data["published"] = False
     data["uses"] = uses(options)
     data["typecheck"] = typecheck(options)
+    if requests := allowed_requests(options):
+        data["allow"] = {"requests": requests}
     return data
 
 
@@ -177,6 +192,9 @@ def drift(folder, page=True):
     missing = [tool for tool in KIT_TOOLS if tool not in meta.get("webmcp_tools", [])]
     if missing:
         problems.append(f"visual.json: webmcp_tools lacks the kit's {', '.join(missing)}")
+    allowed = meta.get("allow", {}).get("requests", [])
+    if any(line not in allowed for line in allowed_requests(options)):
+        problems.append(f"visual.json: allow.requests lacks the generator's MathJax lines; run scripts/new_visual.py --update {folder.name}")
     if not page:
         return problems
     try:
@@ -222,6 +240,8 @@ def update(slug, root=ROOT):
     for tool in reversed(KIT_TOOLS):
         if tool not in meta["webmcp_tools"]:
             meta["webmcp_tools"].insert(0, tool)
+    allowed = meta.setdefault("allow", {}).setdefault("requests", []) if allowed_requests(options) else []
+    allowed.extend(line for line in allowed_requests(options) if line not in allowed)
     (folder / "visual.json").write_text(json_text(meta), encoding="utf-8")
     (folder / "index.html").write_text(visual_build.page(folder), encoding="utf-8")
     print(f"updated viz/{slug}: mechanical files, visual.json uses and typecheck, index.html")

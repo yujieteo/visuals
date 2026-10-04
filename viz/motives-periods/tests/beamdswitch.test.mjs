@@ -4,7 +4,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
-import { assertSharedTemplate, checkDeck } from "./beamdswitch-deck-checks.mjs";
+import { checkDeck } from "./beamdswitch-deck-checks.mjs";
 
 const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
 const script = (id) => new RegExp(`<script id="${id}">([\\s\\S]*?)</script>`).exec(html)[1];
@@ -23,11 +23,6 @@ const CASES = [
   ["zeta, ζ(5, 3)", { example: "zeta", zeta: { composition: [5, 3], terms: 100000 } }],
   ...M.GRAPHS.map((g) => [`feynman, ${g.id}`, { example: "feynman", feynman: { graph: g.id } }]),
 ].map(([what, raw]) => ({ what, st: M.normalize(raw).state }));
-
-test("the page inlines the site's shared beamdswitch template unchanged", () => {
-  assertSharedTemplate();
-  assert.equal(script("motives-periods-beamdswitch"), `\n${readFileSync(new URL("./fixtures/beamdswitch/template.js", import.meta.url), "utf8")}`);
-});
 
 test("every example's deck opens in beamdswitch as the standard template", () => {
   for (const { what, st } of CASES) {

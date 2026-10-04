@@ -16,7 +16,7 @@ export const read = (path) => readFileSync(new URL(path, root), "utf8");
 const require = createRequire(import.meta.url);
 /** @param {string} path @returns {any} a CommonJS file of this repository; each caller types what it loads */
 export const load = (path) => require(new URL(path, root).pathname);
-export const TEMPLATE_PATH = "tests/fixtures/beamdswitch/beamdswitch.js";
+const TEMPLATE_PATH = "tests/fixtures/beamdswitch/beamdswitch.js";
 /** @type {BeamdswitchApi} */
 const TEMPLATE_API = require(`../${TEMPLATE_PATH}`);
 const SECTIONS = TEMPLATE_API.SECTIONS.map(([, title]) => title);
@@ -34,7 +34,7 @@ function assertSiteTemplate(copy, sitePath, what) {
 
 // Every deck names its narrator, so beamdswitch never narrates in silence: a voice id such as bf_emma.
 /** @param {{ meta: { voice?: string } }} deck @param {string} what */
-export function assertVoice(deck, what) {
+function assertVoice(deck, what) {
   assert.match(deck.meta.voice ?? "", /^[a-z]{2}_[a-z]+$/, `${what}: declares a voice in its front matter`);
 }
 

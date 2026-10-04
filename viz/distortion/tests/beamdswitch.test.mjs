@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
-import { assertSharedTemplate, checkDeck, checkDeckPlots, parseDeck, standIn } from "./beamdswitch-deck-checks.mjs";
+import { checkDeck, checkDeckPlots, parseDeck, standIn } from "./beamdswitch-deck-checks.mjs";
 
 const require = createRequire(import.meta.url);
 const D = require("../kinematics.js");
@@ -20,10 +20,6 @@ const CASES = [
   })),
 ].map((c) => ({ ...c, model: D.buildModel(c.state.structure) }));
 const deckFor = (c) => T.deck(D.report(c.model, c.state, META, { colourMap: c.contour }));
-
-test("the Distortion page inlines the site's shared beamdswitch template unchanged", () => {
-  assertSharedTemplate();
-});
 
 test("every view's deck opens in beamdswitch as the standard template, narrated on every slide", () => {
   for (const c of CASES) {

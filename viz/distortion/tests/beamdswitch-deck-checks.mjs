@@ -1,10 +1,9 @@
 /* Checks for the Structural Distortion Explorer's beamdswitch deck, and a small stand-in DOM to click
    its beamdswitch and Copy deck buttons in Node. Copied from the site's tests/beamdswitch-deck-checks.mjs,
    with paths pointing at this repository. The decks are parsed with beamdswitch's own parsers and the
-   report outline is read from read-only copies in tests/fixtures/beamdswitch/; the site's shared
-   template is pinned by its SHA-256. */
+   report outline is read from read-only copies in tests/fixtures/beamdswitch/. The template rule in
+   scripts/rules.py checks the site's shared template. */
 import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
 import { parseDeck, splitSentences } from "./fixtures/beamdswitch/deck.mjs";
@@ -13,9 +12,6 @@ import { parsePlot } from "./fixtures/beamdswitch/plot.mjs";
 export { parseDeck, parsePlot };
 
 const read = (path) => readFileSync(new URL(path, import.meta.url), "utf8");
-export const TEMPLATE = read("../beamdswitch.js");
-// SHA-256 of yujieteo/site templates/beamdswitch.js, which beamdswitch.js copies unchanged.
-const TEMPLATE_SHA256 = "f9ce9c6eb07842a2fa50dd72c828cb53c09f412c6bb1505d825d081b5b4362c7";
 export const SECTIONS = [...read("./fixtures/beamdswitch/beamdswitch-report.md").matchAll(/^# (.+)$/gm)].map((m) => m[1]);
 
 export const divs = (children, name, out = []) => {
@@ -58,13 +54,6 @@ export function checkDeckPlots(md, what) {
     assert.ok(Number.isFinite(c.f(x)), `${what}: "${c.src}" on "${frame.title}" is finite at x = ${x}`);
   }
   return { deck, plots };
-}
-
-/* The page's copy of the template is the site's shared one, unchanged, and the built page inlines
-   that copy verbatim. */
-export function assertSharedTemplate(page = "index.html") {
-  assert.equal(createHash("sha256").update(TEMPLATE).digest("hex"), TEMPLATE_SHA256, "beamdswitch.js must stay identical to the site's templates/beamdswitch.js");
-  assert.ok(read(`../${page}`).includes(TEMPLATE.trimEnd()), `${page} inlines beamdswitch.js`);
 }
 
 /* ---------- a stand-in DOM: enough for a page script to start and for its buttons to be clicked ---------- */

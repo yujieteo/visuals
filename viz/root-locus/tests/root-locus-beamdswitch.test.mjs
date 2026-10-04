@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import vm from "node:vm";
-import { checkDeck, standIn, TEMPLATE } from "./beamdswitch-deck-checks.mjs";
+import { checkDeck, standIn } from "./beamdswitch-deck-checks.mjs";
 
 const load = createRequire(import.meta.url);
 /** @type {BeamdswitchApi} */
@@ -141,10 +141,4 @@ test("while a field has an error the deck holds the last valid loop, and says so
   await p.$("saveDeckBtn").fire("click");
   assert.equal(p.$("ioStatus").textContent, "The fields have an error, so the record holds the last valid loop. Saved root-locus-beamdswitch.md: open it in beamdswitch.");
   assert.equal(await blobOf(p.saved[0]).text(), before);
-});
-
-test("the page inlines the site's shared beamdswitch template unchanged", () => {
-  const copy = readFileSync(new URL("../beamdswitch.js", import.meta.url), "utf8");
-  assert.equal(copy, TEMPLATE, "tests/fixtures/beamdswitch/beamdswitch.js and visuals/root-locus/beamdswitch.js must stay identical");
-  assert.equal(scripts[0], `\n${copy}\n`, "index.html inlines beamdswitch.js as its first script");
 });

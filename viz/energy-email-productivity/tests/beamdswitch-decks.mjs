@@ -11,7 +11,7 @@ import { parseDeck, splitSentences } from "./fixtures/beamdswitch/deck.mjs";
 const root = new URL("../", import.meta.url);
 export const read = (path) => readFileSync(new URL(path, root), "utf8");
 export const require = createRequire(import.meta.url);
-export const TEMPLATE_PATH = "tests/fixtures/beamdswitch/beamdswitch.js";
+const TEMPLATE_PATH = "tests/fixtures/beamdswitch/beamdswitch.js";
 const SECTIONS = require(`../${TEMPLATE_PATH}`).SECTIONS.map(([, title]) => title);
 
 // A site checkout to compare against as well, when one is at hand: SITE_REPO, or a sibling `site`.
@@ -25,7 +25,7 @@ function assertSiteTemplate(copy, sitePath, what) {
 }
 
 // Every deck names its narrator, so beamdswitch never narrates in silence: a voice id such as bf_emma.
-export function assertVoice(deck, what) {
+function assertVoice(deck, what) {
   assert.match(deck.meta.voice ?? "", /^[a-z]{2}_[a-z]+$/, `${what}: declares a voice in its front matter`);
 }
 

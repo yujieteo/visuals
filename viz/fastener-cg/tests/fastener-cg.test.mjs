@@ -48,6 +48,9 @@ test("the whole in-app verification set passes, published-reference cases includ
   assert.deepEqual([v.passed, v.failed, v.pass], [31, 0, true]);
   assert.ok(REFERENCE_CASES.every((c) => typeof c.run === "function" && !("pending" in c)), "no reference case is left pending");
   assert.equal(v.results.find((r) => r.id === "VR-02").checks.length, 154, "every value of the b = 3 in block of Table 13.1");
+  assert.equal(v.set, "M6 (v2)");
+  assert.equal(v.references.length, 2);
+  assert.match(v.scope, /not to the current AISC Manual/);
 });
 
 test("a failing or throwing case fails the set", () => {
@@ -1287,15 +1290,6 @@ test("Markdown report: same sections as tables, the governing trace, assumptions
   assert.ok(md.includes(v.scope) && v.references.every((r, i) => md.includes(`${i + 1}. ${r}`)), "footer cites the published references and their scope");
   assert.ok(!/!\[|<img|data:image/.test(md), "no embedded images");
   assert.equal(toJSON(parseMarkdown(md).pattern), toJSON(p), "the report still imports");
-});
-
-test("verification panel data lists every VC, VB, VI, property and VR case, all passing, with the references", () => {
-  const v = runVerification();
-  assert.ok(v.results.every((r) => r.status === "pass"));
-  assert.deepEqual(v.results.filter((r) => r.id.startsWith("VR-")).map((r) => r.id), ["VR-01", "VR-02", "VR-03"]);
-  assert.equal(v.set, "M6 (v2)");
-  assert.equal(v.references.length, 2);
-  assert.match(v.scope, /not to the current AISC Manual/);
 });
 
 test("reaction-vector legend names the shear source actually drawn: elastic when the ICR basis has no converged reactions", () => {

@@ -84,12 +84,68 @@ class RequestsTest(unittest.TestCase):
         html = ('<script>fetch("notes.md"); fetch(`deck/${slug}.md`); new Worker("../worker.js");</script>'
                 '<link rel="stylesheet" href="https://cdn.example.org/x.css"><img src="/visuals/x.png"><img src="raw.json">')
         problems = rules.request_problems(html, {})
-        self.assertEqual(len(problems), 5)
+        self.assertEqual(len(problems), 6)
         self.assertTrue(any("notes.md is private" in p for p in problems))
         self.assertTrue(any("https://cdn.example.org/x.css: a page makes no request outside its folder" in p for p in problems))
         self.assertTrue(any("../worker.js: a path outside" in p for p in problems))
         self.assertTrue(any("/visuals/x.png: a path outside" in p for p in problems))
         self.assertTrue(any("raw.json: not a published file" in p for p in problems))
+
+    def test_css_imports_and_urls_are_requests_too(self):
+        html = ('<style>@import url("https://fonts.example.org/f.css");.a{background:url(bg.png)}'
+                '.b{background:url("data:image/png;base64,AA")}</style><div style="background:url(\'//cdn.example.org/x.png\')"></div>')
+        self.assertEqual(rules.request_problems(html, {}), [
+            "index.html requests //cdn.example.org/x.png: a page makes no request outside its folder",
+            "index.html requests bg.png: not a published file (index.html, data.json or visual.json assets)",
+            "index.html requests https://fonts.example.org/f.css: a page makes no request outside its folder",
+        ])
+        self.assertEqual(rules.request_problems("<script>el.style.url(e)</script>", {}), [])
+
+    def test_network_apis_and_computed_fetch_urls_are_named(self):
+        html = ('<script>new XMLHttpRequest(); new WebSocket(u); navigator.sendBeacon(u); new EventSource(u);'
+                'fetch(base + "x.json");\n// fetch(url) in a comment is not a call\n</script>')
+        self.assertEqual(rules.request_problems(html, {}), [
+            "index.html uses EventSource: a page makes no request outside its folder, and reads its own files with fetch",
+            "index.html uses WebSocket: a page makes no request outside its folder, and reads its own files with fetch",
+            "index.html uses XMLHttpRequest: a page makes no request outside its folder, and reads its own files with fetch",
+            "index.html uses sendBeacon: a page makes no request outside its folder, and reads its own files with fetch",
+            'index.html calls fetch(base + "x.json"): a computed URL the rule cannot check, so use a literal path',
+        ])
+
+    def test_computed_urls_in_fetch_imports_and_workers_are_named(self):
+        cases = {
+            "fetch(`https://api.example.org/${q}`)": "fetch(`https://api.example.org/${q}`)",
+            'fetch("data.json" + q)': 'fetch("data.json" + q)',
+            "import(url)": "import(url)",
+            "new Worker(src)": "new Worker(src)",
+            "new SharedWorker(src)": "new SharedWorker(src)",
+            "importScripts('${u}')": "importScripts('${u}')",
+        }
+        for call, shown in cases.items():
+            with self.subTest(call=call):
+                self.assertEqual(rules.request_problems(f"<script>{call};</script>", {}), [
+                    f"index.html calls {shown}: a computed URL the rule cannot check, so use a literal path"])
+
+    def test_literal_urls_comments_and_prose_are_not_computed_calls(self):
+        html = ('<p>Paste to import (JSON or a report)</p><script>fetch(`data.json`); import("./x.js");'
+                '\n// import(url) in a comment\n</script>')
+        self.assertEqual(rules.request_problems(html, {"assets": ["x.js"]}), [])
+
+    def test_absolute_urls_set_from_script_are_named(self):
+        cases = ['img.src = "https://cdn.example.org/a.png"', 'new Audio("https://cdn.example.org/a.mp3")',
+                 "el.setAttribute('srcset', 'https://cdn.example.org/b.png')"]
+        for code in cases:
+            with self.subTest(code=code):
+                url = code.split("https://")[1].rstrip("\"')")
+                self.assertEqual(rules.request_problems(f"<script>{code};</script>", {}), [
+                    f"index.html sets https://{url} from script: a page makes no request outside its folder"])
+
+    def test_the_site_and_w3_namespaces_may_appear_in_script(self):
+        html = ('<script>img.src = "https://teoyujie.org/visuals/a.png";'
+                'document.createElementNS("http://www.w3.org/2000/svg", "svg");'
+                'el.setAttributeNS("http://www.w3.org/1999/xlink", "href", "#a");'
+                'a.href = "https://example.org/";\n// img.src = "https://cdn.example.org/x.png"\n</script>')
+        self.assertEqual(rules.request_problems(html, {}), [])
 
 
 class ContrastTest(unittest.TestCase):
@@ -120,6 +176,34 @@ class ContrastTest(unittest.TestCase):
         self.assertEqual(rules.rgb("var(--a)", tokens), (255, 255, 255))
         self.assertIsNone(rules.rgb("var(--c)", tokens))
         self.assertAlmostEqual(rules.ratio((0, 0, 0), (255, 255, 255)), 21.0)
+
+
+class ThemeTest(unittest.TestCase):
+    LIGHT = ':root[data-theme="light"]{color-scheme:light}'
+
+    def themed(self, head=None, css=""):
+        head = rules.THEME_SCRIPT if head is None else head
+        return f"<!doctype html><head>{head}<style>{THEMES}{self.LIGHT}{css}</style></head>".replace(
+            ':root[data-theme="dark"]{', ':root[data-theme="dark"]{color-scheme:dark;')
+
+    def test_the_site_theme_script_before_the_first_style_passes(self):
+        self.assertEqual(rules.theme_problems(self.themed()), [])
+
+    def test_a_missing_changed_or_late_theme_script_is_named(self):
+        self.assertEqual(rules.theme_problems(self.themed("")),
+                         ["index.html has no site-theme script (style_guide.THEME_SCRIPT), so it ignores the reader's theme choice"])
+        changed = rules.THEME_SCRIPT.replace('t === "dark"', 't === "night"')
+        self.assertEqual(rules.theme_problems(self.themed(changed)), ["index.html site-theme script is not style_guide.THEME_SCRIPT unchanged"])
+        late = self.themed("").replace("</style>", "</style>" + rules.THEME_SCRIPT)
+        self.assertEqual(rules.theme_problems(late),
+                         ["index.html site-theme script comes after the first <style>, so the page first paints in the wrong theme"])
+
+    def test_a_theme_block_must_set_its_own_color_scheme(self):
+        html = self.themed().replace("color-scheme:dark;", "").replace("color-scheme:light", "color-scheme:dark")
+        self.assertEqual(rules.theme_problems(html), [
+            'index.html [data-theme="dark"] sets color-scheme nowhere, not dark',
+            "index.html [data-theme=\"light\"] sets color-scheme ['dark'], not light",
+        ])
 
 
 class PythonTest(unittest.TestCase):

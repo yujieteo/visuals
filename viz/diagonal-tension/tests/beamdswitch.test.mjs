@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import vm from "node:vm";
-import { Element, assertSharedTemplate, checkDeck, standIn } from "./beamdswitch-deck-checks.mjs";
+import { Element, checkDeck, standIn } from "./beamdswitch-deck-checks.mjs";
 
 const html = readFileSync(new URL("../diagonal-tension.html", import.meta.url), "utf8");
 /** @param {string} id @returns {string} the text of the page's script with that id */
@@ -62,11 +62,6 @@ const CASES = [
   ["no stringers, an edge doubler", { ...DT.defaultState(), stringers: [], doubler: { x0: 0, y0: 0, Lx: 150, Ly: 120, t: 2 } }],
   ["negative shear flow, zero doubler thickness", { ...DT.defaultState(), load: { q: -40 }, doubler: { x0: 200, y0: 100, Lx: 200, Ly: 200, t: 0 } }],
 ];
-
-test("the page inlines the site's shared beamdswitch template unchanged", () => {
-  assertSharedTemplate("diagonal-tension.html");
-  assert.equal(script("dt-beamdswitch"), `\n${readFileSync(new URL("./fixtures/beamdswitch/template.js", import.meta.url), "utf8")}`);
-});
 
 test("every comparison's deck opens in beamdswitch as the standard template, narrated in bf_emma", () => {
   for (const [what, s] of CASES) {

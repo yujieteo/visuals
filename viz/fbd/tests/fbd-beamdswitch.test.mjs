@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import vm from "node:vm";
 import { loadCore, HTML_URL } from "../tools/core.mjs";
-import { checkDeck, standIn, Element, TEMPLATE } from "./beamdswitch-deck-checks.mjs";
+import { checkDeck, standIn, Element } from "./beamdswitch-deck-checks.mjs";
 
 const html = fs.readFileSync(HTML_URL, "utf8");
 const F = loadCore();
@@ -115,14 +115,6 @@ test("Copy beamdswitch deck copies the same deck, and saving falls back to the c
   assert.equal(neither.$("toast").textContent, "Could not save or copy the beamdswitch deck here.");
   await neither.menu("Copy beamdswitch deck");
   assert.equal(neither.$("toast").textContent, "Copy failed: the browser blocked clipboard access.");
-});
-
-test("the page inlines the site's shared beamdswitch template unchanged", () => {
-  const copy = fs.readFileSync(new URL("../beamdswitch.js", import.meta.url), "utf8");
-  assert.equal(copy, TEMPLATE, "beamdswitch.js must stay identical to the site's templates/beamdswitch.js (tests/fixtures/beamdswitch/template.js)");
-  const inlined = /<script id="fbd-beamdswitch" data-core>\n([\s\S]*?)\n<\/script>/.exec(html);
-  assert.ok(inlined, "index.html has the fbd-beamdswitch script");
-  assert.equal(inlined[1], copy, "index.html inlines beamdswitch.js unchanged");
 });
 
 test("long schedules split over slides of seven rows, each row its own body's or load's", () => {

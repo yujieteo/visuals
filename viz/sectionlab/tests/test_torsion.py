@@ -39,11 +39,6 @@ class TorsionTest(unittest.TestCase):
             self.assertTrue(entry["pass"], f"{fid} measured {entry['measured']} > stated {entry['stated']}")
             self.assertEqual(entry["measured"], float(f"{max(abs(c['rel_error']) for c in entry['checks']):.3g}"))
 
-    def test_the_page_inlines_the_same_table(self):
-        html = (HERE.parent / "index.html").read_text(encoding="utf-8")
-        data = json.loads((REF / "torsion-accuracy.json").read_text(encoding="utf-8"))
-        self.assertIn(json.dumps(data, ensure_ascii=False, separators=(",", ":")), html)
-
 
 if __name__ == "__main__":
     unittest.main()

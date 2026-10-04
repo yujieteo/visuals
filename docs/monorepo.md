@@ -63,8 +63,9 @@ deterministic rules that replaced review by reading (`scripts/rules.py`, `script
 | Step | Fails when |
 | --- | --- |
 | `template` | a copy of the beamdswitch template (`beamdswitch.js`, its test fixtures, the block the page inlines) differs from the SHA-256 `scripts/sync_template.py` records in `scripts/templates/beamdswitch.sha256` |
-| `requests` | the page requests a URL outside its published files (`index.html`, `data.json`, `assets`): another origin, an absolute or parent path, or `notes.md` |
+| `requests` | the page requests a URL outside its published files (`index.html`, `data.json`, `assets`), also from CSS `@import` or `url()`: another origin, an absolute or parent path, or `notes.md`; uses `XMLHttpRequest`, `WebSocket`, `EventSource` or `sendBeacon`; fetches, imports or starts a worker from a computed URL; or sets an absolute http(s) URL as a source from script (teoyujie.org and w3.org aside) |
 | `contrast` | a text token (`--fg`, `--muted`, `--focus`, `--hl`, `--ok`, `--warn`, `--bad`) is below 4.5:1 on `--bg`, `--control` or a series colour below 3:1, a control is outlined in a token below 3:1 (such as `--border`), in either theme, or the two dark-theme blocks disagree |
+| `theme` | the page does not carry the site's theme script (`style_guide.THEME_SCRIPT`) unchanged before its first `<style>`, or a `[data-theme]` block does not set the matching `color-scheme` |
 | `pydead` | the folder's Python has an unused import or local, or defines a function or class twice |
 | `deadcode` | tsc finds an unused local or import, unreachable code, or a `let`, `const` or class declared twice in the page's inline scripts (one global scope, as the browser runs them) or its test modules; it needs `npm ci` |
 | `sourcetests` | a test's every assertion checks the page's source text, or a value read out of it, instead of running its code |

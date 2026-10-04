@@ -9,8 +9,10 @@ For each viz/<slug>/, in order:
   tools    visual.json's webmcp_tools and SKILLS.md's WebMCP tools table name exactly the tools the page
            registers or defines (at least them, and agree with each other, when some are registered in a loop)
   template every copy of the site's beamdswitch template matches scripts/templates/beamdswitch.sha256
-  requests the page requests only the files the site publishes beside it, never notes.md
+  requests the page requests only the files the site publishes beside it, never notes.md, and its scripts
+           name no computed URL to fetch, import or a worker and set no absolute URL as a source
   contrast the page's colour tokens meet WCAG contrast in both themes
+  theme    the page carries the site's theme script unchanged, and each [data-theme] block sets its color-scheme
   pydead   unused imports and locals, and definitions made twice, in the folder's Python
   sourcetests  tests whose every assertion checks the page's source text instead of running its code
   deadcode unused locals and imports, unreachable code and duplicate declarations in the page's inline
@@ -128,6 +130,7 @@ def rule_steps(folder, data):
     for name, key, problems in (
         ("requests", "requests", rules.request_problems(html, data)),
         ("contrast", "contrast", rules.contrast_problems(html)),
+        ("theme", "theme", rules.theme_problems(html)),
         ("pydead", "python", rules.python_folder_problems(folder)),
         ("sourcetests", "sourcetests", rules.source_tests_problems(folder)),
     ):

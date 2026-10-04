@@ -57,10 +57,6 @@ const divs = (children, name, out = []) => {
 /** @param {DeckDiv} node */
 const textOf = (node) => node.children.flatMap((c) => (c.type === "md" ? [c.text] : [])).join("\n");
 
-test("beamdswitch.js is the site's shared template, unchanged", () => {
-  assert.equal(readFileSync(new URL("../beamdswitch.js", import.meta.url), "utf8"), readFileSync(new URL("./fixtures/beamdswitch/template.js", import.meta.url), "utf8"));
-});
-
 test("the deck for every preset, unit convention and origin parses in beamdswitch into the standard template", () => {
   const skeleton = readFileSync(new URL("./fixtures/beamdswitch/beamdswitch-report.md", import.meta.url), "utf8");
   const standard = [...skeleton.matchAll(/^# (.+)$/gm)].map((m) => m[1]);

@@ -103,7 +103,7 @@ It writes a complete `viz/<slug>/` that passes `scripts/check.py`, CI and its br
 | --- | --- | --- |
 | Folder layout, `visual.json` with its `uses` and `typecheck`, `generated.json` | `scripts/new_visual.py` | `scripts/check_repo.py` (schema), `generated` |
 | One self-contained offline page: metadata, canonical URL, Open Graph, `Visuals` link, no-JS text, print (§2, §3, §23, §39, §40) | `scripts/kit/shell.html`, built by `scripts/visual_build.py` from `build.py` | `build`, `requests`, browser `network`, `file-url` |
-| Style guide tokens, both themes, the site's theme script (§7) | `scripts/kit/style-tokens.css` (yujieteo/skills, recorded in `scripts/kit/SOURCES.json`), `scripts/style_guide.py` | `contrast`, browser `dark-mode` |
+| Style guide tokens, both themes, the site's theme script (§7) | `scripts/kit/style-tokens.css` (yujieteo/skills, recorded in `scripts/kit/SOURCES.json`), `scripts/style_guide.py` | `contrast`, `theme`, browser `dark-mode` |
 | Versioned state, URL fragment, Back and Forward, Reset, JSON import and export with validation (§5, §12, §13, §14) | `scripts/kit/kit.js` (`VisualKit`), inlined unchanged | `tests/<slug>-kit.test.mjs` (`scripts/kit/checks.mjs`), browser `url-state`, `back-forward`, `reset`, `json-round-trip` |
 | At least 3 read-only WebMCP tools | the kit's `get_metadata`, `get_state`, `get_markdown`, and the starter's `get_example` | `tools`, schema |
 | Cmd/Ctrl+K palette, keyboard and touch controls (§9, §10) | the kit | browser `command-palette`, `keyboard`, `overflow-320` |

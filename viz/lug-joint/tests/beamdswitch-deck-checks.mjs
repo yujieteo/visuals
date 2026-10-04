@@ -1,6 +1,6 @@
 /* Shared checks for this visualisation's beamdswitch deck (ported from yujieteo/site tests/beamdswitch-deck-checks.mjs),
    and a small stand-in DOM to click its beamdswitch and Copy deck buttons in Node. The deck is parsed with beamdswitch's
-   own parsers (read-only copies in tests/fixtures/beamdswitch/); TEMPLATE is the vendored copy of the site's templates/beamdswitch.js. */
+   own parsers (read-only copies in tests/fixtures/beamdswitch/). */
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
@@ -10,7 +10,6 @@ import { parsePlot } from "./fixtures/beamdswitch/plot.mjs";
 export { parseDeck, parsePlot };
 
 const read = (path) => readFileSync(new URL(path, import.meta.url), "utf8");
-export const TEMPLATE = read("./fixtures/beamdswitch/beamdswitch.js");
 export const SECTIONS = [...read("./fixtures/beamdswitch/report-template.md").matchAll(/^# (.+)$/gm)].map((m) => m[1]);
 
 export const divs = (children, name, out = []) => {
@@ -53,13 +52,6 @@ export function checkDeckPlots(md, what) {
     assert.ok(Number.isFinite(c.f(x)), `${what}: "${c.src}" on "${frame.title}" is finite at x = ${x}`);
   }
   return { deck, plots };
-}
-
-/* A visualisation's copy of the template is the site's shared one, unchanged, and its built page
-   inlines that copy verbatim. */
-export function assertSharedTemplate(slug, page = "index.html") {
-  assert.equal(read("../beamdswitch.js"), TEMPLATE, `tests/fixtures/beamdswitch/beamdswitch.js and beamdswitch.js must stay identical (${slug})`);
-  assert.ok(read(`../${page}`).includes(TEMPLATE.trimEnd()), `${page} inlines beamdswitch.js`);
 }
 
 /* ---------- a stand-in DOM: enough for a page script to start and for its buttons to be clicked ---------- */

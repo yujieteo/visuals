@@ -1,8 +1,8 @@
 /* Checks for the Étale Fundamental Group's beamdswitch deck, and a small stand-in DOM to click its
    beamdswitch and Copy deck buttons in Node. Copied from the site's tests/beamdswitch-deck-checks.mjs,
-   with paths pointing at this repository. The decks are parsed with beamdswitch's own parsers, and
-   the site's shared template and its report outline are compared against read-only copies, all in
-   tests/fixtures/beamdswitch/. */
+   with paths pointing at this repository. The decks are parsed with beamdswitch's own parsers, and the
+   site's report outline is read from a read-only copy, all in tests/fixtures/beamdswitch/. The template
+   rule in scripts/rules.py checks the shared template. */
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
@@ -12,7 +12,6 @@ import { parsePlot } from "./fixtures/beamdswitch/plot.mjs";
 export { parseDeck, parsePlot };
 
 const read = (path) => readFileSync(new URL(path, import.meta.url), "utf8");
-export const TEMPLATE = read("./fixtures/beamdswitch/template.js");
 export const SECTIONS = [...read("./fixtures/beamdswitch/beamdswitch-report.md").matchAll(/^# (.+)$/gm)].map((m) => m[1]);
 
 export const divs = (children, name, out = []) => {
@@ -44,13 +43,6 @@ export function checkDeck(md, what) {
     assert.ok(plot.curves.length > 0, what);
   }
   return deck;
-}
-
-/* The page's copy of the template is the site's shared one, unchanged, and the built page inlines
-   that copy verbatim. */
-export function assertSharedTemplate(page = "index.html") {
-  assert.equal(read("../beamdswitch.js"), TEMPLATE, "beamdswitch.js must stay identical to the site's templates/beamdswitch.js (tests/fixtures/beamdswitch/template.js)");
-  assert.ok(read(`../${page}`).includes(TEMPLATE.trimEnd()), `${page} inlines beamdswitch.js`);
 }
 
 /* ---------- a stand-in DOM: enough for a page script to start and for its buttons to be clicked ---------- */
