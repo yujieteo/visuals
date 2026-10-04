@@ -1159,5 +1159,461 @@
     }
    }
   ]
+ },
+ {
+  "id": "nm:roger-s-fixed-point-theorem",
+  "statement": "Fix a [Gödel numbering](c:godel-numbering) $e \\mapsto \\varphi_e$ of the [partial computable functions](c:partial-computable-function). For every total [computable function](c:computable-function) $f$ from codes to codes, some code $c$ satisfies $\\varphi_{f(c)} = \\varphi_c$.",
+  "hypotheses": [
+   {
+    "id": "h:computable",
+    "text": "The map $f$ from codes to codes is total and [computable](c:computable-function).",
+    "concept": "c:computable-function"
+   }
+  ],
+  "conclusion": "There is a code $c$ such that $c$ and $f(c)$ compute the same partial function.",
+  "formal": {
+   "decl": "Nat.Partrec.Code.fixed_point",
+   "difference": "The declaration uses mathlib's own coding Nat.Partrec.Code, with evaluation Code.eval, as the numbering."
+  },
+  "proofs": [
+   {
+    "id": "diagonal-code",
+    "name": "Diagonal code by currying",
+    "slogan": "Build codes that run the output of a self-application, compose them with $f$, and feed that composite its own code.",
+    "scope": "The whole theorem; the proof uses only a universal evaluator and the s-m-n theorem (currying) of the numbering.",
+    "mechanisms": [
+     "m:diagonal-argument",
+     "m:encoding",
+     "m:fixed-point"
+    ],
+    "roles": [
+     {
+      "h": "h:computable",
+      "why": "Totality and computability of $f$ make $f \\circ d$ a total computable function with a code $v$.",
+      "steps": [
+       "s:compose"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:g",
+      "slogan": "Define the partial computable function $g(x, y) = \\varphi_{\\varphi_x(x)}(y)$.",
+      "detail": "Run program $x$ on input $x$; if it halts with output $b$, run program $b$ on $y$. A universal program evaluates codes computably, so $g$ is [partial computable](c:partial-computable-function) and has a code $e$.",
+      "uses": []
+     },
+     {
+      "id": "s:curry",
+      "slogan": "Curry the code $e$ to get codes $d(x)$ with $\\varphi_{d(x)}(y) = g(x, y)$.",
+      "detail": "The s-m-n theorem gives a primitive recursive map $x \\mapsto d(x)$ with $\\varphi_{d(x)}(y) = g(x, y) = \\varphi_{\\varphi_x(x)}(y)$ for all $y$. In mathlib, $d(x)$ is the code curry $e$ $x$.",
+      "uses": []
+     },
+     {
+      "id": "s:compose",
+      "slogan": "Compose $f$ with $d$ and take a code $v$ of the total function $f \\circ d$.",
+      "detail": "The map $x \\mapsto f(d(x))$ is total and [computable](c:computable-function) because $f$ and $d$ are. So it has a code $v$ with $\\varphi_v(x) = f(d(x))$ for all $x$.",
+      "uses": []
+     },
+     {
+      "id": "s:fixed",
+      "slogan": "Take $c = d(v)$ and unfold both sides to get $\\varphi_{f(c)} = \\varphi_c$.",
+      "detail": "For every $y$, $\\varphi_c(y) = \\varphi_{d(v)}(y) = \\varphi_{\\varphi_v(v)}(y)$ by step 2, and $\\varphi_v(v) = f(d(v)) = f(c)$ halts. So $\\varphi_c(y) = \\varphi_{f(c)}(y)$ for all $y$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:g",
+      "s:curry"
+     ],
+     [
+      "s:curry",
+      "s:compose"
+     ],
+     [
+      "s:compose",
+      "s:fixed"
+     ],
+     [
+      "s:curry",
+      "s:fixed"
+     ]
+    ],
+    "conclusion": "s:fixed",
+    "concepts": {
+     "c:godel-numbering": "Programs are coded by numbers, so a program can receive its own code.",
+     "c:partial-computable-function": "The function $g$ and every $\\varphi_e$ are partial computable functions.",
+     "c:computable-function": "The map $f$ must be total and computable to have a code."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Nat.Partrec.Code.fixed_point",
+     "follows": true,
+     "note": "mathlib codes $g$ by exists_code from eval_part, curries with curry and primrec₂_curry, codes $f \\circ d$ by exists_code again and checks the fixed point by simp."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q7430892",
+  "statement": "Let $S$ be a finite set of relations on $\\{0, 1\\}$. The [satisfiability](c:boolean-satisfiability) problem $\\mathrm{SAT}(S)$ for conjunctions of $S$-constraints is in P if all relations of $S$ are 0-valid, or all 1-valid, Horn, dual Horn, bijunctive (2-CNF) or affine (linear over $\\mathbb{F}_2$); otherwise it is [NP-complete](c:np-complete).",
+  "hypotheses": [
+   {
+    "id": "h:finite",
+    "text": "The constraint language $S$ is a finite set of relations on $\\{0, 1\\}$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "$\\mathrm{SAT}(S)$ is solvable in polynomial time in the six listed cases and [NP-complete](c:np-complete) in every other case.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "polymorphisms",
+    "name": "Polymorphisms and pp-definitions",
+    "slogan": "Match the six tractable classes to six polymorphisms, and show that a language without them pp-defines an NP-complete relation.",
+    "scope": "An outline of the published proof; the classification of idempotent Boolean clones in step 5 rests on the cited work. Instances have no constants; constants appear only inside the hardness reduction.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:galois-correspondence",
+     "m:reduction",
+     "m:case-analysis"
+    ],
+    "roles": [
+     {
+      "h": "h:finite",
+      "why": "Finiteness makes each constraint checkable in constant time and keeps the pp-definitions of fixed size.",
+      "steps": [
+       "s:np",
+       "s:galois"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:np",
+      "slogan": "Place $\\mathrm{SAT}(S)$ in NP by guessing and checking an assignment.",
+      "detail": "An assignment of the variables is a certificate of polynomial size, and each constraint is checked in constant time because $S$ is finite. So $\\mathrm{SAT}(S)$ is in [NP](c:np-complexity-class).",
+      "uses": []
+     },
+     {
+      "id": "s:algorithms",
+      "slogan": "Solve each of the six classes in polynomial time with its own algorithm.",
+      "detail": "A constant assignment satisfies every 0-valid or 1-valid instance. Unit propagation decides Horn and dual Horn instances, the implication graph decides 2-CNF instances, and Gaussian elimination over $\\mathbb{F}_2$ decides affine instances.",
+      "uses": [
+       "nm:gaussian-elimination"
+      ]
+     },
+     {
+      "id": "s:polymorphisms",
+      "slogan": "Characterize the six classes by the [polymorphisms](c:polymorphism) $0$, $1$, $\\wedge$, $\\vee$, majority and $x \\oplus y \\oplus z$.",
+      "detail": "A relation is Horn exactly when it is closed under coordinatewise $\\wedge$, dual Horn under $\\vee$, bijunctive under majority and affine under $x \\oplus y \\oplus z$. The 0-valid and 1-valid cases are the constant polymorphisms.",
+      "uses": []
+     },
+     {
+      "id": "s:galois",
+      "slogan": "Reduce $\\mathrm{SAT}(R)$ to $\\mathrm{SAT}(S)$ when every polymorphism of $S$ preserves $R$.",
+      "detail": "By the [Galois connection](c:galois-connection) between relations and operations, such an $R$ has a primitive positive definition from $S$ and equality. Replacing each $R$-constraint by this definition, with fresh existential variables, is a polynomial-time reduction.",
+      "uses": []
+     },
+     {
+      "id": "s:hard",
+      "slogan": "Show that a language with none of the six polymorphisms pp-defines an NP-complete relation.",
+      "detail": "Without constant polymorphisms, $S$ pp-defines the constants or is closed under negation. The cited work shows that an idempotent Boolean [clone](c:clone) without $\\wedge$, $\\vee$, majority and minority holds only projections, so $S$ pp-defines 3-SAT clauses or not-all-equal 3-SAT.",
+      "uses": [
+       "wd:Q377276"
+      ]
+     },
+     {
+      "id": "s:dichotomy",
+      "slogan": "Combine the algorithms and the hardness reduction into the dichotomy.",
+      "detail": "If $S$ lies in one of the six classes, step 2 solves $\\mathrm{SAT}(S)$ in polynomial time. Otherwise $S$ has none of the six polymorphisms by step 3, and steps 1, 4 and 5 make $\\mathrm{SAT}(S)$ [NP-complete](c:np-complete).",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:np",
+      "s:dichotomy"
+     ],
+     [
+      "s:algorithms",
+      "s:dichotomy"
+     ],
+     [
+      "s:polymorphisms",
+      "s:hard"
+     ],
+     [
+      "s:polymorphisms",
+      "s:dichotomy"
+     ],
+     [
+      "s:galois",
+      "s:hard"
+     ],
+     [
+      "s:hard",
+      "s:dichotomy"
+     ]
+    ],
+    "conclusion": "s:dichotomy",
+    "concepts": {
+     "c:boolean-satisfiability": "The problems classified are restricted Boolean satisfiability problems.",
+     "c:np-complete": "Every language outside the six classes gives an NP-complete problem.",
+     "c:np-complexity-class": "Membership in NP is half of NP-completeness.",
+     "c:polymorphism": "The six tractable classes are exactly the languages with six polymorphisms.",
+     "c:galois-connection": "Polymorphisms determine which relations a language pp-defines.",
+     "c:clone": "Polymorphisms of a language form a clone, and clones are classified."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "H. Chen, A rendezvous of logic, complexity, and algebra, ACM SIGACT News 37 (2006), no. 4, 85-114",
+     "url": "https://arxiv.org/abs/cs/0611018",
+     "note": "A self-contained algebraic proof of the theorem of T. J. Schaefer, The complexity of satisfiability problems, Proceedings of the 10th ACM Symposium on Theory of Computing (1978), 216-226."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:schreier-s-lemma",
+  "statement": "Let $H$ be a [subgroup](c:subgroup) of a group $G$, let $R$ be a set of right [coset representatives](c:coset-representatives) of $H$ with $1 \\in R$, write $\\bar g \\in R$ for the representative of $Hg$, and let $S$ be a [generating set](c:generating-set) of $G$. Then $H$ is generated by the elements $rs\\,(\\overline{rs})^{-1}$ with $r \\in R$ and $s \\in S$.",
+  "hypotheses": [
+   {
+    "id": "h:transversal",
+    "text": "The set $R$ contains exactly one element of each right coset $Hg$, and $1 \\in R$.",
+    "concept": "c:coset-representatives"
+   },
+   {
+    "id": "h:generating",
+    "text": "The set $S$ [generates](c:generating-set) $G$.",
+    "concept": "c:generating-set"
+   }
+  ],
+  "conclusion": "$H = \\langle rs\\,(\\overline{rs})^{-1} : r \\in R,\\ s \\in S \\rangle$.",
+  "formal": {
+   "decl": "Subgroup.closure_mul_image_eq",
+   "difference": null
+  },
+  "proofs": [
+   {
+    "id": "transversal-closure",
+    "name": "Closure of the transversal products",
+    "slogan": "Show that the Schreier generators lie in $H$, that their subgroup times $R$ is all of $G$, and read off $H$ from the unique decomposition.",
+    "scope": "The whole theorem; $G$, $S$ and $R$ may be infinite. The normalization $1 \\in R$ is used in the last step.",
+    "mechanisms": [
+     "m:lagrange-counting",
+     "m:structural-induction"
+    ],
+    "roles": [
+     {
+      "h": "h:transversal",
+      "why": "The transversal supplies the representatives $\\bar g$ and, with $1 \\in R$, the unique decomposition $g = hr$.",
+      "steps": [
+       "s:inside",
+       "s:right-inv",
+       "s:read"
+      ]
+     },
+     {
+      "h": "h:generating",
+      "why": "Generation by $S$ lets right multiplications by $S \\cup S^{-1}$ reach every element.",
+      "steps": [
+       "s:all"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:inside",
+      "slogan": "Check that each Schreier generator lies in $H$.",
+      "detail": "For $g \\in G$, $g$ and $\\bar g$ lie in the same right [coset](c:coset) $Hg$, so $g\\,\\bar g^{-1} \\in H$. In particular $rs\\,(\\overline{rs})^{-1} \\in H$, and the [subgroup](c:subgroup) $U$ these elements generate lies in $H$.",
+      "uses": []
+     },
+     {
+      "id": "s:right-s",
+      "slogan": "Show that $UR$ is closed under right multiplication by each $s \\in S$.",
+      "detail": "For $u \\in U$ and $r \\in R$, $urs = u\\,\\big(rs\\,(\\overline{rs})^{-1}\\big)\\,\\overline{rs}$, and the middle factor is a Schreier generator. So $urs \\in UR$.",
+      "uses": []
+     },
+     {
+      "id": "s:right-inv",
+      "slogan": "Show that $UR$ is closed under right multiplication by each $s^{-1}$.",
+      "detail": "Let $r' = \\overline{rs^{-1}}$. Then $r's \\in Hr$, so $\\overline{r's} = r$, and $urs^{-1} = u\\,\\big(r's\\,(\\overline{r's})^{-1}\\big)^{-1} r' \\in UR$.",
+      "uses": []
+     },
+     {
+      "id": "s:all",
+      "slogan": "Generate $G$ from $1 \\in UR$ by right multiplications with $S \\cup S^{-1}$.",
+      "detail": "Every element of $G$ is a product $s_1^{\\pm 1} \\cdots s_k^{\\pm 1}$ because $S$ is a [generating set](c:generating-set). Starting from $1 = 1 \\cdot 1 \\in UR$, steps 2 and 3 give $UR = G$ by induction on $k$.",
+      "uses": []
+     },
+     {
+      "id": "s:read",
+      "slogan": "Decompose $h \\in H$ as $ur$ and force $r = 1$ by uniqueness.",
+      "detail": "By step 4, $h = ur$ with $u \\in U \\subseteq H$ and $r \\in R$. Then $r = u^{-1}h \\in H$ represents the coset $H$, so $r = 1$ because $1 \\in R$; hence $h = u$ and $U = H$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:inside",
+      "s:read"
+     ],
+     [
+      "s:right-s",
+      "s:all"
+     ],
+     [
+      "s:right-inv",
+      "s:all"
+     ],
+     [
+      "s:all",
+      "s:read"
+     ]
+    ],
+    "conclusion": "s:read",
+    "concepts": {
+     "c:subgroup": "The lemma gives generators of the subgroup $H$.",
+     "c:coset-representatives": "The representatives build the generators and give unique decompositions.",
+     "c:generating-set": "Generators of $G$ produce the Schreier generators of $H$.",
+     "c:coset": "An element and its representative lie in the same right coset."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Subgroup.closure_mul_image_eq",
+     "follows": true,
+     "note": "mathlib proves closure_mul_image_mul_eq_top by closure_induction_right and finishes with isComplement_iff_existsUnique_mul_inv_mem."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1816952",
+  "statement": "Let $V$ and $W$ be [irreducible representations](c:irreducible-representation) of a group $G$ over a field $k$. Every $G$-equivariant linear map ([module homomorphism](c:module-homomorphism)) $\\varphi\\colon V \\to W$ is zero or an isomorphism. If $k$ is [algebraically closed](c:algebraically-closed-field) and $V$ is finite dimensional, every $G$-equivariant $\\varphi\\colon V \\to V$ is a scalar $\\lambda\\,\\mathrm{id}$.",
+  "hypotheses": [
+   {
+    "id": "h:irreducible",
+    "text": "The representations $V$ and $W$ are nonzero and [irreducible](c:irreducible-representation).",
+    "concept": "c:irreducible-representation"
+   },
+   {
+    "id": "h:equivariant",
+    "text": "The linear map $\\varphi$ commutes with the action: $\\varphi(gv) = g\\,\\varphi(v)$ for all $g \\in G$.",
+    "concept": "c:module-homomorphism"
+   },
+   {
+    "id": "h:closed",
+    "text": "For the second part, the field $k$ is [algebraically closed](c:algebraically-closed-field).",
+    "concept": "c:algebraically-closed-field"
+   },
+   {
+    "id": "h:findim",
+    "text": "For the second part, $V$ is finite dimensional over $k$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "A $G$-map between irreducible representations is $0$ or invertible, and under the extra hypotheses every $G$-endomorphism of $V$ is a scalar multiple of the identity.",
+  "formal": {
+   "decl": "CategoryTheory.finrank_endomorphism_simple_eq_one",
+   "difference": "The declaration proves the second part only, as $\\dim_k \\mathrm{End}(X) = 1$ for a simple object $X$ of a $k$-linear category with kernels and finite-dimensional endomorphisms. The first part is CategoryTheory.isIso_of_hom_simple."
+  },
+  "proofs": [
+   {
+    "id": "kernel-image-eigenvalue",
+    "name": "Kernel, image and an eigenvalue",
+    "slogan": "Kernel and image of a $G$-map are subrepresentations, so the map is zero or invertible, and an eigenvalue turns any endomorphism into a scalar.",
+    "scope": "Part one holds over any field and in any dimension. Part two needs both extra hypotheses: rotations of $\\mathbb{R}^2$ commute with the rotation group but are not scalars.",
+    "mechanisms": [
+     "m:homomorphism-kernel",
+     "m:determinant"
+    ],
+    "roles": [
+     {
+      "h": "h:irreducible",
+      "why": "Irreducibility leaves only $0$ and the whole space as kernel and image.",
+      "steps": [
+       "s:dichotomy"
+      ]
+     },
+     {
+      "h": "h:equivariant",
+      "why": "Equivariance makes kernel and image $G$-stable and keeps $\\varphi - \\lambda\\,\\mathrm{id}$ equivariant.",
+      "steps": [
+       "s:sub",
+       "s:scalar"
+      ]
+     },
+     {
+      "h": "h:closed",
+      "why": "Algebraic closure gives a root of the characteristic polynomial.",
+      "steps": [
+       "s:eigen"
+      ]
+     },
+     {
+      "h": "h:findim",
+      "why": "Finite dimension gives a characteristic polynomial of positive degree.",
+      "steps": [
+       "s:eigen"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:sub",
+      "slogan": "Show that the kernel and the image of $\\varphi$ are [subrepresentations](c:subrepresentation).",
+      "detail": "If $\\varphi(v) = 0$, then $\\varphi(gv) = g\\,\\varphi(v) = 0$, so $\\ker\\varphi$ is $G$-stable. Likewise $g\\,\\varphi(v) = \\varphi(gv)$ shows that $\\operatorname{im}\\varphi$ is $G$-stable.",
+      "uses": []
+     },
+     {
+      "id": "s:dichotomy",
+      "slogan": "Force the kernel and the image to be zero or everything by irreducibility.",
+      "detail": "By irreducibility, $\\ker\\varphi$ is $0$ or $V$, and $\\operatorname{im}\\varphi$ is $0$ or $W$. If $\\varphi \\ne 0$, then $\\ker\\varphi = 0$ and $\\operatorname{im}\\varphi = W$, so $\\varphi$ is an isomorphism.",
+      "uses": []
+     },
+     {
+      "id": "s:eigen",
+      "slogan": "Pick an [eigenvalue](c:eigenvalue) $\\lambda$ of an equivariant endomorphism $\\varphi\\colon V \\to V$.",
+      "detail": "Since $V$ is finite dimensional and nonzero, the characteristic polynomial of $\\varphi$ has positive degree. It has a root $\\lambda \\in k$ because $k$ is [algebraically closed](c:algebraically-closed-field), so $\\varphi - \\lambda\\,\\mathrm{id}$ is not injective.",
+      "uses": []
+     },
+     {
+      "id": "s:scalar",
+      "slogan": "Show that $\\varphi - \\lambda\\,\\mathrm{id}$ is zero by the first part.",
+      "detail": "The map $\\varphi - \\lambda\\,\\mathrm{id}$ is $G$-equivariant and not an isomorphism, so step 2 makes it zero. Hence $\\varphi = \\lambda\\,\\mathrm{id}$, and with step 2 both parts hold.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:sub",
+      "s:dichotomy"
+     ],
+     [
+      "s:dichotomy",
+      "s:scalar"
+     ],
+     [
+      "s:eigen",
+      "s:scalar"
+     ]
+    ],
+    "conclusion": "s:scalar",
+    "concepts": {
+     "c:irreducible-representation": "Irreducibility leaves no proper nonzero kernel or image.",
+     "c:module-homomorphism": "An equivariant linear map is a homomorphism of $k[G]$-modules.",
+     "c:algebraically-closed-field": "Algebraic closure supplies the eigenvalue in part two.",
+     "c:subrepresentation": "Kernel and image are subrepresentations, so irreducibility applies to them.",
+     "c:eigenvalue": "Subtracting an eigenvalue gives a non-invertible equivariant map."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "CategoryTheory.finrank_endomorphism_simple_eq_one",
+     "follows": true,
+     "note": "mathlib gets part one from isIso_iff_nonzero (mono_of_nonzero_from_simple, isIso_of_mono_of_nonzero) and part two from finrank_endomorphism_eq_one with spectrum.nonempty_of_isAlgClosed_of_finiteDimensional."
+    }
+   }
+  ]
  }
 ]
