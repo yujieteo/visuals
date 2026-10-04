@@ -119,6 +119,7 @@ class RequestsTest(unittest.TestCase):
             "import(url)": "import(url)",
             "new Worker(src)": "new Worker(src)",
             "new SharedWorker(src)": "new SharedWorker(src)",
+            "importScripts('${u}')": "importScripts('${u}')",
         }
         for call, shown in cases.items():
             with self.subTest(call=call):

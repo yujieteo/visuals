@@ -168,7 +168,7 @@ def request_problems(html, data):
     for start, end in (m.span(1) for m in SCRIPT_TEXT.finditer(html)):
         for m in COMPUTED_CALL.finditer(html, start, end):
             arg, joined = m.group(2).strip(), m.group(3)
-            literal = arg[0] in "\"'" or (arg[0] == "`" and "${" not in arg)
+            literal = arg[0] in "\"'`" and "${" not in arg
             if not (literal and not joined) and not _in_comment(html, m.start()):
                 computed.add(f"{' '.join(m.group(1).split())}({arg}{(joined or '').rstrip()})")
         script_urls |= {m.group(3) for m in SCRIPT_URL.finditer(html, start, end)
