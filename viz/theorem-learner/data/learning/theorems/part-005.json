@@ -1,0 +1,2106 @@
+[
+ {
+  "id": "nm:laws-of-large-numbers",
+  "statement": "Let $X_1, X_2, \\dots$ be pairwise [independent](c:independence), [identically distributed](c:ident-distrib) real [random variables](c:random-variable) with $E|X_1| < \\infty$. Then the sample means $(X_1 + \\dots + X_n)/n$ converge [almost surely](c:almost-sure-convergence) to the [expected value](c:expected-value) $E[X_1]$.",
+  "hypotheses": [
+   {
+    "id": "h:integrable",
+    "text": "The variable $X_1$ is [integrable](c:integrable-function): $E|X_1| < \\infty$.",
+    "concept": "c:integrable-function"
+   },
+   {
+    "id": "h:independent",
+    "text": "The variables $X_i$ are pairwise [independent](c:independence).",
+    "concept": "c:independence"
+   },
+   {
+    "id": "h:identical",
+    "text": "The variables $X_i$ are [identically distributed](c:ident-distrib).",
+    "concept": "c:ident-distrib"
+   }
+  ],
+  "conclusion": "With probability one, $\\frac{1}{n}\\sum_{i=1}^{n} X_i \\to E[X_1]$ as $n \\to \\infty$.",
+  "formal": {
+   "decl": "ProbabilityTheory.strong_law_ae",
+   "difference": "The declaration allows values in a real Banach space and an arbitrary measure; it first treats the case $X_1 = 0$ almost everywhere and otherwise derives that the measure is a probability measure. For real variables on a probability space it states the same convergence."
+  },
+  "proofs": [
+   {
+    "id": "etemadi",
+    "name": "Etemadi truncation",
+    "slogan": "Truncate the variables, control the variances along a geometric subsequence, and fill the gaps between its indices by monotonicity.",
+    "scope": "The whole theorem, first for nonnegative variables and then for $X_i = X_i^+ - X_i^-$. The weak law follows, because almost sure convergence implies [convergence in probability](c:convergence-in-probability).",
+    "mechanisms": [
+     "m:borel-cantelli",
+     "m:subsequence",
+     "m:monotone-limit"
+    ],
+    "roles": [
+     {
+      "h": "h:integrable",
+      "why": "Integrability bounds $\\sum_i P(X_1 > i)$ and $\\sum_i E[Y_i^2]/i^2$ by multiples of $E[X_1]$.",
+      "steps": [
+       "s:truncate",
+       "s:variance"
+      ]
+     },
+     {
+      "h": "h:independent",
+      "why": "Pairwise independence makes the variance of a sum equal to the sum of the variances.",
+      "steps": [
+       "s:variance"
+      ]
+     },
+     {
+      "h": "h:identical",
+      "why": "Identical distribution gives $P(X_i > i) = P(X_1 > i)$ and the same truncation bounds for every $i$.",
+      "steps": [
+       "s:truncate",
+       "s:variance"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:positive",
+      "slogan": "Split each variable into its positive part and its negative part.",
+      "detail": "Write $X_i = X_i^+ - X_i^-$. Each family $(X_i^{+})$ and $(X_i^{-})$ is again pairwise [independent](c:independence), identically distributed and integrable, so it suffices to prove the theorem for $X_i \\ge 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:truncate",
+      "slogan": "Truncate the $i$-th variable at level $i$ and compare it with the original variable.",
+      "detail": "Let $Y_i = X_i \\mathbf{1}\\{X_i \\le i\\}$. Then $\\sum_i P(X_i \\ne Y_i) = \\sum_i P(X_1 > i) \\le E[X_1] < \\infty$, so almost surely $X_i = Y_i$ for all large $i$. Monotone convergence gives $E[Y_i] \\to E[X_1]$.",
+      "uses": [
+       "nm:borel-cantelli-lemma",
+       "wd:Q1153584"
+      ]
+     },
+     {
+      "id": "s:variance",
+      "slogan": "Bound the variances of the truncated sums along the indices $k_n = \\lfloor c^n \\rfloor$.",
+      "detail": "Fix $c > 1$ and let $T_k = Y_1 + \\dots + Y_k$. Pairwise independence gives $\\operatorname{Var} T_k = \\sum_{i \\le k} \\operatorname{Var} Y_i \\le \\sum_{i \\le k} E[Y_i^2]$, and a geometric sum estimate gives $\\sum_n \\operatorname{Var}(T_{k_n})/k_n^2 \\le C \\sum_i E[Y_i^2]/i^2 \\le C' E[X_1] < \\infty$. This [variance](c:variance) bound is the core estimate.",
+      "uses": []
+     },
+     {
+      "id": "s:subsequence",
+      "slogan": "Prove convergence along the geometric subsequence with Chebyshev's inequality and the Borel–Cantelli lemma.",
+      "detail": "For $\\varepsilon > 0$, Chebyshev's inequality gives $\\sum_n P(|T_{k_n} - E T_{k_n}| > \\varepsilon k_n) \\le \\varepsilon^{-2} \\sum_n \\operatorname{Var}(T_{k_n})/k_n^2 < \\infty$. Borel–Cantelli and the Cesàro limit $E[T_k]/k \\to E[X_1]$ give $T_{k_n}/k_n \\to E[X_1]$ almost surely.",
+      "uses": [
+       "nm:chebyshev-s-inequality",
+       "nm:borel-cantelli-lemma"
+      ]
+     },
+     {
+      "id": "s:interpolate",
+      "slogan": "Squeeze the full sequence between consecutive geometric indices by monotonicity.",
+      "detail": "Because $Y_i \\ge 0$, $T_m$ increases with $m$. For $k_n \\le m \\le k_{n+1}$, $T_{k_n}/k_{n+1} \\le T_m/m \\le T_{k_{n+1}}/k_n$, and $k_{n+1}/k_n \\to c$, so almost surely $E[X_1]/c \\le \\liminf T_m/m \\le \\limsup T_m/m \\le c\\,E[X_1]$.",
+      "uses": []
+     },
+     {
+      "id": "s:limit",
+      "slogan": "Let $c$ decrease to $1$ and return to the original variables.",
+      "detail": "Take $c = 1 + 1/j$ for $j = 1, 2, \\dots$; the countable intersection of these events gives $T_m/m \\to E[X_1]$ [almost surely](c:almost-sure-convergence). Since $X_i = Y_i$ for all large $i$, the two partial sums differ by a fixed amount, so $\\frac{1}{n}\\sum_{i \\le n} X_i \\to E[X_1]$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:positive",
+      "s:truncate"
+     ],
+     [
+      "s:positive",
+      "s:interpolate"
+     ],
+     [
+      "s:truncate",
+      "s:variance"
+     ],
+     [
+      "s:variance",
+      "s:subsequence"
+     ],
+     [
+      "s:truncate",
+      "s:subsequence"
+     ],
+     [
+      "s:subsequence",
+      "s:interpolate"
+     ],
+     [
+      "s:interpolate",
+      "s:limit"
+     ],
+     [
+      "s:truncate",
+      "s:limit"
+     ]
+    ],
+    "conclusion": "s:limit",
+    "concepts": {
+     "c:independence": "Pairwise independence is the only independence the variance bound needs.",
+     "c:ident-distrib": "Identical distribution makes every truncation bound depend on $X_1$ only.",
+     "c:random-variable": "The sample means are random variables whose limit the theorem controls.",
+     "c:almost-sure-convergence": "The conclusion holds outside one event of probability zero.",
+     "c:expected-value": "The expected value $E[X_1]$ is the limit of the sample means.",
+     "c:integrable-function": "Integrability makes the truncation errors summable.",
+     "c:convergence-in-probability": "The weak law is the weaker mode of convergence that follows.",
+     "c:variance": "Variance bounds feed Chebyshev's inequality along the subsequence."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "ProbabilityTheory.strong_law_ae",
+     "follows": true,
+     "note": "mathlib passes to strongly measurable versions and applies strong_law_ae_of_measurable, which follows Etemadi: positive and negative parts, truncation (sum_prob_mem_Ioc_le, tsum_prob_mem_Ioi_lt_top), the variance bound sum_variance_truncation_le along $c^k$, and monotone interpolation."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:pigeonhole-principle",
+  "statement": "If $f\\colon A \\to B$ is a map between [finite sets](c:finite-set) and $|A| > |B|$, then two different elements of $A$ have the same image; that is, $f$ is not an [injection](c:injection).",
+  "hypotheses": [
+   {
+    "id": "h:finite",
+    "text": "The sets $A$ and $B$ are [finite](c:finite-set).",
+    "concept": "c:finite-set"
+   },
+   {
+    "id": "h:more",
+    "text": "The [cardinality](c:cardinal-number) of $A$ is larger: $|A| > |B|$.",
+    "concept": "c:cardinal-number"
+   }
+  ],
+  "conclusion": "There are $a \\ne a'$ in $A$ with $f(a) = f(a')$.",
+  "formal": {
+   "decl": "Finset.inter_nonempty_of_card_lt_card_add_card",
+   "difference": "The declaration states that two subsets $t, u$ of a finite set $s$ with $|s| < |t| + |u|$ meet. The map form is the separate declaration Fintype.exists_ne_map_eq_of_card_lt."
+  },
+  "proofs": [
+   {
+    "id": "contrapositive-count",
+    "name": "Contrapositive count",
+    "slogan": "Assume that the map is injective, count its image exactly, and compare the image with the target set.",
+    "scope": "The whole principle. If $B = \\emptyset$ and $A \\ne \\emptyset$, no map $A \\to B$ exists and the statement is vacuous.",
+    "mechanisms": [
+     "m:pigeonhole",
+     "m:contrapositive",
+     "m:bijection"
+    ],
+    "roles": [
+     {
+      "h": "h:finite",
+      "why": "Finiteness makes $|A|$ and $|B|$ natural numbers, and a subset of a finite set has at most as many elements.",
+      "steps": [
+       "s:image",
+       "s:subset"
+      ]
+     },
+     {
+      "h": "h:more",
+      "why": "The inequality $|A| > |B|$ contradicts the bound $|A| \\le |B|$ that an injective map gives.",
+      "steps": [
+       "s:conclude"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:assume",
+      "slogan": "Assume that $f$ is injective, to prove the contrapositive $|A| \\le |B|$.",
+      "detail": "The contrapositive of the principle says: if $f$ is an [injection](c:injection), then $|A| \\le |B|$. So assume that $f(a) = f(a')$ implies $a = a'$.",
+      "uses": []
+     },
+     {
+      "id": "s:image",
+      "slogan": "Count the image $f(A)$ of the injective map exactly.",
+      "detail": "The map $a \\mapsto f(a)$ is a [bijection](c:bijection) from $A$ onto $f(A)$: it is onto by the definition of the image and injective by step 1. Hence $|f(A)| = |A|$.",
+      "uses": []
+     },
+     {
+      "id": "s:subset",
+      "slogan": "Compare the image with the target set $B$ by inclusion.",
+      "detail": "The image satisfies $f(A) \\subseteq B$. A [subset](c:subset) of a [finite set](c:finite-set) has at most as many elements as the set, so $|f(A)| \\le |B|$.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Combine the two counts and contradict the hypothesis $|A| > |B|$.",
+      "detail": "Steps 2 and 3 give $|A| = |f(A)| \\le |B|$, which contradicts $|A| > |B|$. So $f$ is not injective, and some $a \\ne a'$ have $f(a) = f(a')$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:assume",
+      "s:image"
+     ],
+     [
+      "s:image",
+      "s:conclude"
+     ],
+     [
+      "s:subset",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:finite-set": "Only finite sets have element counts that the proof can compare.",
+     "c:injection": "The proof shows that an injection cannot exist when $|A| > |B|$.",
+     "c:cardinal-number": "The principle compares the cardinalities of the two sets.",
+     "c:bijection": "An injective map is a bijection onto its image, so the image has $|A|$ elements.",
+     "c:subset": "The image is a subset of $B$, so it has at most $|B|$ elements."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Finset.inter_nonempty_of_card_lt_card_add_card",
+     "follows": true,
+     "note": "mathlib argues by contraposition: if $t \\cap u = \\emptyset$, then $|t| + |u| = |t \\cup u| \\le |s|$ (card_union_add_card_inter, card_le_card). The proof runs the same count on the image of the map."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1191319",
+  "statement": "Let $\\mu$ and $\\nu$ be [σ-finite measures](c:sigma-finite-measure) on a measurable space $X$, with $\\mu$ [absolutely continuous](c:absolutely-continuous-measure) with respect to $\\nu$. Then there is a [measurable function](c:measurable-function) $f \\ge 0$, the [Radon–Nikodym derivative](c:radon-nikodym-derivative) $d\\mu/d\\nu$, with $\\mu(E) = \\int_E f\\,d\\nu$ for every measurable set $E$.",
+  "hypotheses": [
+   {
+    "id": "h:sigma-finite",
+    "text": "The measures $\\mu$ and $\\nu$ are [σ-finite](c:sigma-finite-measure).",
+    "concept": "c:sigma-finite-measure"
+   },
+   {
+    "id": "h:abs-cont",
+    "text": "The measure $\\mu$ is [absolutely continuous](c:absolutely-continuous-measure) with respect to $\\nu$: $\\nu(E) = 0$ implies $\\mu(E) = 0$.",
+    "concept": "c:absolutely-continuous-measure"
+   }
+  ],
+  "conclusion": "Some measurable $f \\ge 0$ has $\\mu(E) = \\int_E f\\,d\\nu$ for every measurable set $E$.",
+  "formal": {
+   "decl": "MeasureTheory.Measure.absolutelyContinuous_iff_withDensity_rnDeriv_eq",
+   "difference": "The declaration is an equivalence, $\\mu \\ll \\nu$ if and only if $\\nu$ with density $d\\mu/d\\nu$ equals $\\mu$, under the class HaveLebesgueDecomposition, which σ-finite measures satisfy. The converse direction is the easy fact that a measure with a density is absolutely continuous."
+  },
+  "proofs": [
+   {
+    "id": "lebesgue-decomposition",
+    "name": "Lebesgue decomposition",
+    "slogan": "Build the largest density below $\\mu$, show that the rest of $\\mu$ is singular to $\\nu$, and let absolute continuity remove that rest.",
+    "scope": "Steps 1 to 4 treat finite measures, and step 5 extends the result to σ-finite measures. Without σ-finiteness the theorem fails: Lebesgue measure on $[0, 1]$ is absolutely continuous with respect to counting measure but has no density.",
+    "mechanisms": [
+     "m:supremum",
+     "m:monotone-limit",
+     "m:contradiction"
+    ],
+    "roles": [
+     {
+      "h": "h:sigma-finite",
+      "why": "σ-finiteness splits $X$ into pieces of finite measure, where the maximal density exists.",
+      "steps": [
+       "s:maximal",
+       "s:glue"
+      ]
+     },
+     {
+      "h": "h:abs-cont",
+      "why": "Absolute continuity makes the singular remainder vanish on the $\\nu$-null set that carries it.",
+      "steps": [
+       "s:kill"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:class",
+      "slogan": "Collect the functions whose $\\nu$-integrals stay below $\\mu$ on every set.",
+      "detail": "First let $\\mu$ and $\\nu$ be finite. Let $\\mathcal{F}$ be the set of measurable $g \\ge 0$ with $\\int_E g\\,d\\nu \\le \\mu(E)$ for every measurable $E$. Then $0 \\in \\mathcal{F}$, and $\\max(g, h) \\in \\mathcal{F}$ for $g, h \\in \\mathcal{F}$: split $E$ into the parts where $g \\ge h$ and $g < h$.",
+      "uses": []
+     },
+     {
+      "id": "s:maximal",
+      "slogan": "Take an increasing sequence in the class whose integrals reach the supremum.",
+      "detail": "Let $s = \\sup_{g \\in \\mathcal{F}} \\int g\\,d\\nu \\le \\mu(X) < \\infty$. Choose $g_n \\in \\mathcal{F}$ with $\\int g_n\\,d\\nu \\to s$ and replace $g_n$ by $\\max(g_1, \\dots, g_n)$. The monotone convergence theorem gives $f = \\lim g_n \\in \\mathcal{F}$ with $\\int f\\,d\\nu = s$.",
+      "uses": [
+       "wd:Q1153584"
+      ]
+     },
+     {
+      "id": "s:singular",
+      "slogan": "Show that the remainder $\\lambda = \\mu - f\\nu$ is singular to $\\nu$.",
+      "detail": "The measure $\\lambda(E) = \\mu(E) - \\int_E f\\,d\\nu$ is nonnegative. If it were not singular to $\\nu$, a [Hahn decomposition](c:is-hahn-decomposition) of the [signed measure](c:signed-measure) $\\lambda - \\varepsilon\\nu$ would give $\\varepsilon > 0$ and a set $P$ with $\\nu(P) > 0$ and $\\lambda \\ge \\varepsilon\\nu$ on subsets of $P$. Then $f + \\varepsilon\\mathbf{1}_P \\in \\mathcal{F}$ has integral above $s$, a contradiction.",
+      "uses": [
+       "wd:Q1568811"
+      ]
+     },
+     {
+      "id": "s:kill",
+      "slogan": "Remove the singular remainder with the absolute continuity of $\\mu$.",
+      "detail": "Singularity gives a set $N$ with $\\nu(N) = 0$ and $\\lambda(X \\setminus N) = 0$. Absolute continuity gives $\\mu(N) = 0$, so $\\lambda(N) \\le \\mu(N) = 0$. Hence $\\lambda = 0$ and $\\mu(E) = \\int_E f\\,d\\nu$.",
+      "uses": []
+     },
+     {
+      "id": "s:glue",
+      "slogan": "Glue the densities of the finite pieces of a countable partition.",
+      "detail": "For σ-finite $\\mu$ and $\\nu$, partition $X$ into measurable sets $A_n$ with $\\mu(A_n) < \\infty$ and $\\nu(A_n) < \\infty$. Steps 1 to 4 give densities $f_n$ on the pieces $A_n$, and $f = \\sum_n f_n \\mathbf{1}_{A_n}$ satisfies $\\mu(E) = \\sum_n \\mu(E \\cap A_n) = \\int_E f\\,d\\nu$ by countable additivity.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:class",
+      "s:maximal"
+     ],
+     [
+      "s:maximal",
+      "s:singular"
+     ],
+     [
+      "s:singular",
+      "s:kill"
+     ],
+     [
+      "s:kill",
+      "s:glue"
+     ]
+    ],
+    "conclusion": "s:glue",
+    "concepts": {
+     "c:sigma-finite-measure": "σ-finiteness splits the space into pieces of finite measure.",
+     "c:absolutely-continuous-measure": "Absolute continuity is the condition that removes the singular part.",
+     "c:measurable-function": "The density must be measurable so that its integrals are defined.",
+     "c:radon-nikodym-derivative": "The constructed density is the Radon–Nikodym derivative $d\\mu/d\\nu$.",
+     "c:is-hahn-decomposition": "A Hahn decomposition finds the set where the remainder beats $\\varepsilon\\nu$.",
+     "c:signed-measure": "The difference $\\lambda - \\varepsilon\\nu$ is a signed measure, not a measure."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "MeasureTheory.Measure.absolutelyContinuous_iff_withDensity_rnDeriv_eq",
+     "follows": true,
+     "note": "mathlib writes the Lebesgue decomposition (haveLebesgueDecomposition_add), built for finite measures from a maximal density (haveLebesgueDecomposition_of_finiteMeasure, exists_positive_of_not_mutuallySingular), and shows that absolute continuity kills the singular part (withDensity_rnDeriv_eq, singularPart_eq_zero)."
+    }
+   },
+   {
+    "id": "von-neumann",
+    "name": "Hilbert space (von Neumann)",
+    "slogan": "Represent integration against $\\mu$ as an inner product in $L^2(\\mu + \\nu)$ and solve the resulting identity for the density.",
+    "scope": "Steps 1 to 4 treat finite measures, and step 5 extends the result to σ-finite measures by a countable partition.",
+    "mechanisms": [
+     "m:duality",
+     "m:cauchy-schwarz",
+     "m:monotone-limit"
+    ],
+    "roles": [
+     {
+      "h": "h:sigma-finite",
+      "why": "Finite pieces make $\\rho = \\mu + \\nu$ finite, so the functional is bounded on $L^2(\\rho)$.",
+      "steps": [
+       "s:functional",
+       "s:sigma"
+      ]
+     },
+     {
+      "h": "h:abs-cont",
+      "why": "Absolute continuity turns $\\nu(\\{h = 1\\}) = 0$ into $\\mu(\\{h = 1\\}) = 0$.",
+      "steps": [
+       "s:range"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:functional",
+      "slogan": "Define the bounded functional $\\Phi(g) = \\int g\\,d\\mu$ on $L^2(\\rho)$, where $\\rho = \\mu + \\nu$.",
+      "detail": "For finite $\\mu$ and $\\nu$ the measure $\\rho$ is finite. The Cauchy–Schwarz inequality gives $|\\Phi(g)| \\le \\int |g|\\,d\\rho \\le \\rho(X)^{1/2}\\|g\\|_{L^2(\\rho)}$, so $\\Phi$ is a bounded linear functional on the [Hilbert space](c:hilbert-space) $L^2(\\rho)$.",
+      "uses": [
+       "nl:16121"
+      ]
+     },
+     {
+      "id": "s:riesz",
+      "slogan": "Represent the functional by a function $h$ with the Riesz representation theorem.",
+      "detail": "The Riesz representation theorem gives $h \\in L^2(\\rho)$ with $\\int g\\,d\\mu = \\int g h\\,d\\rho$ for all $g \\in L^2(\\rho)$. Since $\\rho = \\mu + \\nu$, this reads $\\int g(1 - h)\\,d\\mu = \\int g h\\,d\\nu$.",
+      "uses": [
+       "wd:Q1357684"
+      ]
+     },
+     {
+      "id": "s:range",
+      "slogan": "Show that $0 \\le h < 1$ holds $\\rho$-almost everywhere.",
+      "detail": "With $g = \\mathbf{1}_E$, $\\mu(E) = \\int_E h\\,d\\rho$ lies in $[0, \\rho(E)]$ for every $E$, so $0 \\le h \\le 1$ almost everywhere. On $Z = \\{h = 1\\}$ the identity of step 2 gives $\\nu(Z) = 0$, so absolute continuity gives $\\mu(Z) = 0$ and $\\rho(Z) = 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:series",
+      "slogan": "Insert $g = \\mathbf{1}_E(1 + h + \\dots + h^n)$ and let $n$ tend to infinity.",
+      "detail": "Step 2 gives $\\int_E (1 - h^{n+1})\\,d\\mu = \\int_E (h + h^2 + \\dots + h^{n+1})\\,d\\nu$. By step 3, $h^{n+1} \\to 0$ almost everywhere, and monotone convergence gives $\\mu(E) = \\int_E f\\,d\\nu$ with $f = h/(1 - h)$.",
+      "uses": [
+       "wd:Q1153584"
+      ]
+     },
+     {
+      "id": "s:sigma",
+      "slogan": "Extend the density to σ-finite measures over a countable partition.",
+      "detail": "Partition $X$ into sets $A_n$ of finite $\\mu$-measure and $\\nu$-measure, apply steps 1 to 4 on each $A_n$, and set $f = \\sum_n f_n \\mathbf{1}_{A_n}$. Countable additivity gives $\\mu(E) = \\int_E f\\,d\\nu$ for every measurable $E$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:functional",
+      "s:riesz"
+     ],
+     [
+      "s:riesz",
+      "s:range"
+     ],
+     [
+      "s:riesz",
+      "s:series"
+     ],
+     [
+      "s:range",
+      "s:series"
+     ],
+     [
+      "s:series",
+      "s:sigma"
+     ]
+    ],
+    "conclusion": "s:sigma",
+    "concepts": {
+     "c:sigma-finite-measure": "σ-finiteness splits the space into pieces of finite measure.",
+     "c:absolutely-continuous-measure": "Absolute continuity is the condition that removes the singular part.",
+     "c:measurable-function": "The density must be measurable so that its integrals are defined.",
+     "c:radon-nikodym-derivative": "The constructed density is the Radon–Nikodym derivative $d\\mu/d\\nu$.",
+     "c:hilbert-space": "The Riesz representation theorem needs the Hilbert space $L^2(\\rho)$."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "John von Neumann's Hilbert-space proof, as in W. Rudin, Real and Complex Analysis, theorem 6.10."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q379048",
+  "statement": "Let $X$ be a connected [compact Riemann surface](c:compact-riemann-surface) of [genus](c:genus-of-a-surface) $g$, let $D$ be a [divisor](c:divisor) on $X$ and $K$ a [canonical divisor](c:canonical-divisor). Then $\\ell(D) - \\ell(K - D) = \\deg D + 1 - g$, where $\\ell(D)$ is the dimension of the space of [meromorphic functions](c:meromorphic-function) $f$ with $f = 0$ or $\\operatorname{div} f + D \\ge 0$.",
+  "hypotheses": [
+   {
+    "id": "h:surface",
+    "text": "$X$ is a connected [compact Riemann surface](c:compact-riemann-surface) of genus $g$.",
+    "concept": "c:compact-riemann-surface"
+   },
+   {
+    "id": "h:divisor",
+    "text": "$D$ is a [divisor](c:divisor) on $X$, a finite integer combination of points.",
+    "concept": "c:divisor"
+   },
+   {
+    "id": "h:canonical",
+    "text": "$K$ is a [canonical divisor](c:canonical-divisor), the divisor of a nonzero meromorphic 1-form.",
+    "concept": "c:canonical-divisor"
+   }
+  ],
+  "conclusion": "$\\ell(D) - \\ell(K - D) = \\deg D + 1 - g$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "euler-characteristic",
+    "name": "Euler characteristic and Serre duality",
+    "slogan": "Show that $\\chi(\\mathcal{O}_D) = \\deg D + 1 - g$ by adding points one at a time, then rewrite $h^1(\\mathcal{O}_D)$ with Serre duality.",
+    "scope": "The whole theorem, with $g = \\dim H^1(X, \\mathcal{O})$, which equals the topological genus by Hodge theory. The finite dimension of $H^1(X, \\mathcal{O})$ and Serre duality are cited theorems, not proved here.",
+    "mechanisms": [
+     "m:euler-characteristic",
+     "m:long-exact-sequence",
+     "m:induction",
+     "m:duality"
+    ],
+    "roles": [
+     {
+      "h": "h:surface",
+      "why": "Compactness and connectedness give $H^0(X, \\mathcal{O}) = \\mathbb{C}$ and a finite $H^1(X, \\mathcal{O})$ of dimension $g$, and they allow Serre duality.",
+      "steps": [
+       "s:base",
+       "s:duality"
+      ]
+     },
+     {
+      "h": "h:divisor",
+      "why": "The divisor is reached from $0$ by adding and removing finitely many points.",
+      "steps": [
+       "s:skyscraper",
+       "s:induct"
+      ]
+     },
+     {
+      "h": "h:canonical",
+      "why": "The canonical divisor identifies the sheaf of 1-forms with divisor at least $D$ with $\\mathcal{O}_{K - D}$.",
+      "steps": [
+       "s:duality"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:base",
+      "slogan": "Compute the Euler characteristic $\\chi(\\mathcal{O}) = 1 - g$ of the structure sheaf.",
+      "detail": "A holomorphic function on the compact connected surface $X$ attains its maximum modulus, so it is constant and $H^0(X, \\mathcal{O}) = \\mathbb{C}$. The [sheaf cohomology](c:sheaf-cohomology) group $H^1(X, \\mathcal{O})$ is finite dimensional of dimension $g$. Hence $\\chi(\\mathcal{O}) = h^0 - h^1 = 1 - g$.",
+      "uses": [
+       "nm:maximum-modulus-principle"
+      ]
+     },
+     {
+      "id": "s:skyscraper",
+      "slogan": "Relate $\\mathcal{O}_D$ and $\\mathcal{O}_{D+P}$ by a [short exact sequence](c:exact-sequence) of sheaves.",
+      "detail": "The Laurent coefficient of order $-D(P) - 1$ at a point $P$ gives an exact sequence $0 \\to \\mathcal{O}_D \\to \\mathcal{O}_{D+P} \\to \\mathbb{C}_P \\to 0$, where $\\mathbb{C}_P$ is the [skyscraper sheaf](c:skyscraper-sheaf) at $P$. Its cohomology is $H^0 = \\mathbb{C}$ and $H^1 = 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:long",
+      "slogan": "Read off $\\chi(\\mathcal{O}_{D+P}) = \\chi(\\mathcal{O}_D) + 1$ from the long exact sequence.",
+      "detail": "The sequence $0 \\to H^0(\\mathcal{O}_D) \\to H^0(\\mathcal{O}_{D+P}) \\to \\mathbb{C} \\to H^1(\\mathcal{O}_D) \\to H^1(\\mathcal{O}_{D+P}) \\to 0$ is exact, so one sheaf has finite cohomology exactly when the other has. The alternating sum of the dimensions is zero, so $\\chi(\\mathcal{O}_{D+P}) = \\chi(\\mathcal{O}_D) + 1$.",
+      "uses": []
+     },
+     {
+      "id": "s:induct",
+      "slogan": "Reach every divisor from $0$ by adding and removing points one at a time.",
+      "detail": "Write $D = P_1 + \\dots + P_r - Q_1 - \\dots - Q_s$. Step 3, used forward and backward, starts from $\\chi(\\mathcal{O}) = 1 - g$ and gives $\\chi(\\mathcal{O}_D) = \\deg D + 1 - g$ for every [divisor](c:divisor) $D$.",
+      "uses": []
+     },
+     {
+      "id": "s:duality",
+      "slogan": "Replace $h^1(\\mathcal{O}_D)$ by $\\ell(K - D)$ with Serre duality.",
+      "detail": "Serre duality gives $H^1(X, \\mathcal{O}_D) \\cong H^0(X, \\Omega_{-D})^*$, where $\\Omega_{-D}$ is the sheaf of 1-forms $\\omega$ with $\\omega = 0$ or $\\operatorname{div}\\omega \\ge D$. If $K = \\operatorname{div}\\omega_0$, then $f \\mapsto f\\omega_0$ identifies $\\mathcal{O}_{K - D}$ with $\\Omega_{-D}$, so $h^1(\\mathcal{O}_D) = \\ell(K - D)$.",
+      "uses": [
+       "nl:11795"
+      ]
+     },
+     {
+      "id": "s:combine",
+      "slogan": "Substitute $h^0(\\mathcal{O}_D) = \\ell(D)$ and $h^1(\\mathcal{O}_D) = \\ell(K - D)$ into the Euler characteristic.",
+      "detail": "By definition $H^0(X, \\mathcal{O}_D)$ is the space of [meromorphic functions](c:meromorphic-function) with $f = 0$ or $\\operatorname{div} f + D \\ge 0$, so $h^0 = \\ell(D)$. Steps 4 and 5 give $\\ell(D) - \\ell(K - D) = \\chi(\\mathcal{O}_D) = \\deg D + 1 - g$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:base",
+      "s:induct"
+     ],
+     [
+      "s:skyscraper",
+      "s:long"
+     ],
+     [
+      "s:long",
+      "s:induct"
+     ],
+     [
+      "s:induct",
+      "s:combine"
+     ],
+     [
+      "s:duality",
+      "s:combine"
+     ]
+    ],
+    "conclusion": "s:combine",
+    "concepts": {
+     "c:compact-riemann-surface": "Compactness makes the cohomology finite and holomorphic functions constant.",
+     "c:genus-of-a-surface": "The genus enters as $\\dim H^1(X, \\mathcal{O})$ in the base case.",
+     "c:divisor": "The divisor prescribes the allowed poles and the required zeros.",
+     "c:canonical-divisor": "The canonical divisor turns 1-forms into functions in Serre duality.",
+     "c:meromorphic-function": "The spaces $\\ell(D)$ count meromorphic functions with bounded poles.",
+     "c:sheaf-cohomology": "The theorem is an identity between dimensions of sheaf cohomology groups.",
+     "c:exact-sequence": "The exact sequences relate the cohomology of $\\mathcal{O}_D$ and $\\mathcal{O}_{D+P}$.",
+     "c:skyscraper-sheaf": "Adding one point changes the sheaf by a skyscraper sheaf."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The sheaf-cohomology proof of O. Forster, Lectures on Riemann Surfaces (Springer, Graduate Texts in Mathematics 81), sections 14 to 17: finiteness, the Euler characteristic count and Serre duality."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:structure-theorem-for-finite-abelian-groups",
+  "statement": "Every finite [abelian group](c:abelian-group) $G$ is isomorphic to a [direct product](c:direct-product) $\\mathbb{Z}/p_1^{e_1} \\times \\dots \\times \\mathbb{Z}/p_k^{e_k}$ of [cyclic groups](c:cyclic-group) of [prime power](c:prime-power) order. The list of orders $p_1^{e_1}, \\dots, p_k^{e_k}$ is unique up to order.",
+  "hypotheses": [
+   {
+    "id": "h:abelian",
+    "text": "The group $G$ is [abelian](c:abelian-group).",
+    "concept": "c:abelian-group"
+   },
+   {
+    "id": "h:finite",
+    "text": "The group $G$ is a [finite group](c:finite-group).",
+    "concept": "c:finite-group"
+   }
+  ],
+  "conclusion": "$G \\cong \\mathbb{Z}/p_1^{e_1} \\times \\dots \\times \\mathbb{Z}/p_k^{e_k}$ for primes $p_i$ and exponents $e_i \\ge 1$, and the multiset of the factors $p_i^{e_i}$ depends only on $G$.",
+  "formal": {
+   "decl": "CommGroup.equiv_prod_multiplicative_zmod_of_finite",
+   "difference": "The declaration gives an isomorphism with a finite product of groups $\\mathbb{Z}/n_i$ with $n_i > 1$, without stating that the $n_i$ are prime powers. It does not state uniqueness."
+  },
+  "proofs": [
+   {
+    "id": "primary-splitting",
+    "name": "Primary parts and maximal-order splitting",
+    "slogan": "Split $G$ into $p$-primary parts, split each part into cyclic groups by elements of maximal order, and count the quotients $p^jG/p^{j+1}G$ for uniqueness.",
+    "scope": "The whole theorem; the trivial group is the empty product with $k = 0$. Steps 1 to 4 prove existence and step 5 proves uniqueness.",
+    "mechanisms": [
+     "m:strong-induction",
+     "m:quotient-construction",
+     "m:euclidean-algorithm",
+     "m:dimension-count"
+    ],
+    "roles": [
+     {
+      "h": "h:abelian",
+      "why": "Commutativity makes $G$ a $\\mathbb{Z}$-module, so sums of subgroups are subgroups and multiplication by $p$ is a homomorphism.",
+      "steps": [
+       "s:module",
+       "s:primary",
+       "s:unique"
+      ]
+     },
+     {
+      "h": "h:finite",
+      "why": "Finiteness gives an order $|G|$ that kills every element, and it makes the induction on $|P|$ terminate.",
+      "steps": [
+       "s:module",
+       "s:split"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:module",
+      "slogan": "Write $G$ additively as a finite torsion module over the integers.",
+      "detail": "Commutativity makes $n \\cdot g$ a $\\mathbb{Z}$-[module](c:module) structure on $G$. Lagrange's theorem gives $|G| \\cdot g = 0$ for every $g$, so $G$ is a finitely generated torsion module.",
+      "uses": [
+       "wd:Q505798"
+      ]
+     },
+     {
+      "id": "s:primary",
+      "slogan": "Split $G$ into the direct sum of its $p$-primary components.",
+      "detail": "Let $|G| = \\prod_p p^{a_p}$ and $G_p = \\{g : p^{a_p} g = 0\\}$. Bézout's identity gives integers $c_p$ with $\\sum_p c_p |G|/p^{a_p} = 1$, so $g = \\sum_p c_p (|G|/p^{a_p}) g$ with each term in $G_p$. Coprime orders make the sum direct: $G = \\bigoplus_p G_p$.",
+      "uses": []
+     },
+     {
+      "id": "s:split",
+      "slogan": "Split off the cyclic subgroup of an element of maximal order in a $p$-group.",
+      "detail": "Let $P$ be a finite abelian [p-group](c:p-group) and $a$ an element of maximal order $p^k$. By induction on $|P|$, $P/\\langle a\\rangle$ is a sum of cyclic groups, and each generator of order $p^j$ lifts to an element of order $p^j$ because $p^kP = 0$. The lifts span a complement, so $P$ is a direct sum of cyclic groups.",
+      "uses": []
+     },
+     {
+      "id": "s:assemble",
+      "slogan": "Assemble the cyclic summands of all primary components into one product.",
+      "detail": "Steps 2 and 3 give $G \\cong \\bigoplus_p \\bigoplus_i \\mathbb{Z}/p^{e_{p,i}}$ with $e_{p,i} \\ge 1$. In multiplicative notation this finite direct sum is the [direct product](c:direct-product) of the [cyclic groups](c:cyclic-group) $\\mathbb{Z}/p_i^{e_i}$.",
+      "uses": []
+     },
+     {
+      "id": "s:unique",
+      "slogan": "Recover the exponents from the orders of the quotients $p^jG/p^{j+1}G$.",
+      "detail": "For a decomposition as in step 4, multiplication by $p$ is bijective on the factors of order prime to $p$, so $|p^jG/p^{j+1}G| = p^{m_j}$, where $m_j$ is the number of factors $\\mathbb{Z}/p^e$ with $e > j$. These orders depend only on $G$, so they fix how many factors $\\mathbb{Z}/p^e$ occur for each $e$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:module",
+      "s:primary"
+     ],
+     [
+      "s:primary",
+      "s:assemble"
+     ],
+     [
+      "s:split",
+      "s:assemble"
+     ],
+     [
+      "s:assemble",
+      "s:unique"
+     ]
+    ],
+    "conclusion": "s:unique",
+    "concepts": {
+     "c:abelian-group": "Commutativity makes the group a module over the integers.",
+     "c:finite-group": "A finite group has an order that kills all its elements.",
+     "c:direct-product": "The classification writes the group as a direct product of factors.",
+     "c:cyclic-group": "The factors of the decomposition are cyclic groups.",
+     "c:prime-power": "Each factor has prime power order, which makes the list unique.",
+     "c:module": "The integer module structure is the frame of the mathlib route.",
+     "c:p-group": "The splitting step works inside one primary component, a $p$-group."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "CommGroup.equiv_prod_multiplicative_zmod_of_finite",
+     "follows": true,
+     "note": "mathlib transfers AddCommGroup.equiv_directSum_zmod_of_finite' through Additive G; that rests on the structure theorem for finitely generated modules over a principal ideal domain, with primary parts (Submodule.isInternal_prime_power_torsion_of_pid) and maximal-order splitting (Module.torsion_by_prime_power_decomposition). The uniqueness step is not in mathlib's statement."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:structure-theorem-of-finite-abelian-groups",
+  "statement": "Every finite [abelian group](c:abelian-group) $G$, written additively, is isomorphic to a [direct sum](c:direct-sum) $\\mathbb{Z}/p_1^{e_1} \\oplus \\dots \\oplus \\mathbb{Z}/p_k^{e_k}$ of [cyclic groups](c:cyclic-group) of [prime power](c:prime-power) order, and the prime powers $p_i^{e_i}$ are unique up to order.",
+  "hypotheses": [
+   {
+    "id": "h:abelian",
+    "text": "The group $G$ is [abelian](c:abelian-group).",
+    "concept": "c:abelian-group"
+   },
+   {
+    "id": "h:finite",
+    "text": "The group $G$ is a [finite group](c:finite-group).",
+    "concept": "c:finite-group"
+   }
+  ],
+  "conclusion": "$G \\cong \\bigoplus_{i=1}^{k} \\mathbb{Z}/p_i^{e_i}$ for primes $p_i$ and exponents $e_i \\ge 1$, and the multiset of the $p_i^{e_i}$ depends only on $G$.",
+  "formal": {
+   "decl": "AddCommGroup.equiv_directSum_zmod_of_finite'",
+   "difference": "The declaration gives a direct sum of groups $\\mathbb{Z}/n_i$ with $n_i > 1$ and does not state that the $n_i$ are prime powers, which the unprimed AddCommGroup.equiv_directSum_zmod_of_finite gives. Neither declaration states uniqueness."
+  },
+  "proofs": [
+   {
+    "id": "primary-splitting",
+    "name": "Primary parts and maximal-order splitting",
+    "slogan": "Split $G$ into $p$-primary parts, split each part into cyclic groups by elements of maximal order, and count the quotients $p^jG/p^{j+1}G$ for uniqueness.",
+    "scope": "The whole theorem; the trivial group is the empty sum with $k = 0$. Steps 1 to 4 prove existence and step 5 proves uniqueness.",
+    "mechanisms": [
+     "m:strong-induction",
+     "m:quotient-construction",
+     "m:euclidean-algorithm",
+     "m:dimension-count"
+    ],
+    "roles": [
+     {
+      "h": "h:abelian",
+      "why": "Commutativity makes $G$ a $\\mathbb{Z}$-module, so sums of subgroups are subgroups and multiplication by $p$ is a homomorphism.",
+      "steps": [
+       "s:module",
+       "s:primary",
+       "s:unique"
+      ]
+     },
+     {
+      "h": "h:finite",
+      "why": "Finiteness gives an order $|G|$ that kills every element, and it makes the induction on $|P|$ terminate.",
+      "steps": [
+       "s:module",
+       "s:split"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:module",
+      "slogan": "View $G$ as a finitely generated torsion module over the integers.",
+      "detail": "The integer multiples $n \\cdot g$ make the abelian group $G$ a $\\mathbb{Z}$-[module](c:module). Lagrange's theorem gives $|G| \\cdot g = 0$ for every $g$, so $G$ is a finitely generated torsion module with no free part.",
+      "uses": [
+       "wd:Q505798"
+      ]
+     },
+     {
+      "id": "s:primary",
+      "slogan": "Split $G$ into the direct sum of its $p$-primary components.",
+      "detail": "Let $|G| = \\prod_p p^{a_p}$ and $G_p = \\{g : p^{a_p} g = 0\\}$. Bézout's identity gives integers $c_p$ with $\\sum_p c_p |G|/p^{a_p} = 1$, so every $g$ is a sum of elements of the $G_p$. Coprime orders make the sum direct: $G = \\bigoplus_p G_p$.",
+      "uses": []
+     },
+     {
+      "id": "s:split",
+      "slogan": "Split off the cyclic subgroup of an element of maximal order in a $p$-group.",
+      "detail": "Let $P$ be a finite abelian [p-group](c:p-group) and $a$ an element of maximal order $p^k$. By induction on $|P|$, $P/\\langle a\\rangle$ is a sum of cyclic groups, and each generator of order $p^j$ lifts to an element of order $p^j$ because $p^kP = 0$. The lifts span a complement, so $P$ is a direct sum of cyclic groups.",
+      "uses": []
+     },
+     {
+      "id": "s:assemble",
+      "slogan": "Collect the cyclic summands of all primary components into one direct sum.",
+      "detail": "Steps 2 and 3 give $G \\cong \\bigoplus_p \\bigoplus_i \\mathbb{Z}/p^{e_{p,i}}$, a finite [direct sum](c:direct-sum) of [cyclic groups](c:cyclic-group). Summands with $e_{p,i} = 0$ are trivial and are dropped, so every exponent is at least $1$.",
+      "uses": []
+     },
+     {
+      "id": "s:unique",
+      "slogan": "Recover the exponents from the orders of the quotients $p^jG/p^{j+1}G$.",
+      "detail": "For a decomposition as in step 4, multiplication by $p$ is bijective on the factors of order prime to $p$, so $|p^jG/p^{j+1}G| = p^{m_j}$, where $m_j$ is the number of factors $\\mathbb{Z}/p^e$ with $e > j$. These orders depend only on $G$, so they fix how many factors $\\mathbb{Z}/p^e$ occur for each $e$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:module",
+      "s:primary"
+     ],
+     [
+      "s:primary",
+      "s:assemble"
+     ],
+     [
+      "s:split",
+      "s:assemble"
+     ],
+     [
+      "s:assemble",
+      "s:unique"
+     ]
+    ],
+    "conclusion": "s:unique",
+    "concepts": {
+     "c:abelian-group": "Commutativity makes the group a module over the integers.",
+     "c:finite-group": "A finite group has finitely many generators and an order that kills its elements.",
+     "c:direct-sum": "The classification writes the group as a direct sum of factors.",
+     "c:cyclic-group": "The summands of the decomposition are cyclic groups.",
+     "c:prime-power": "Each summand has prime power order, which makes the list unique.",
+     "c:module": "The integer module structure is the frame of the mathlib route.",
+     "c:p-group": "The splitting step works inside one primary component, a $p$-group."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "AddCommGroup.equiv_directSum_zmod_of_finite'",
+     "follows": true,
+     "note": "mathlib takes AddCommGroup.equiv_directSum_zmod_of_finite, which applies the structure theorem for finitely generated modules over a principal ideal domain (Module.equiv_free_prod_directSum, Module.torsion_by_prime_power_decomposition), and drops the trivial summands. The uniqueness step is not in mathlib's statement."
+    }
+   },
+   {
+    "id": "smith-normal-form",
+    "name": "Relation matrix and Smith normal form",
+    "slogan": "Present $G$ by an integer relation matrix, diagonalize the matrix by row and column operations, and split the diagonal factors by the Chinese remainder theorem.",
+    "scope": "Existence in steps 1 to 4 and uniqueness in step 5; the trivial group gives the empty sum.",
+    "mechanisms": [
+     "m:matrix-factorization",
+     "m:euclidean-algorithm",
+     "m:quotient-construction"
+    ],
+    "roles": [
+     {
+      "h": "h:abelian",
+      "why": "Commutativity makes $G$ a quotient of the free abelian group $\\mathbb{Z}^n$.",
+      "steps": [
+       "s:present",
+       "s:unique"
+      ]
+     },
+     {
+      "h": "h:finite",
+      "why": "Finiteness gives finitely many generators and a relation subgroup of full rank $n$.",
+      "steps": [
+       "s:present"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:present",
+      "slogan": "Present $G$ as the quotient of $\\mathbb{Z}^n$ by a relation subgroup $K$.",
+      "detail": "Choose generators $g_1, \\dots, g_n$ of $G$, and map the basis vector $e_i$ to $g_i$; commutativity makes this a surjective homomorphism $\\mathbb{Z}^n \\to G$ with kernel $K$. Since $|G|\\,\\mathbb{Z}^n \\subseteq K$, the subgroup $K$ is free of rank $n$, the image $A\\mathbb{Z}^n$ of an integer matrix $A$ with $\\det A \\ne 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:smith",
+      "slogan": "Diagonalize $A$ by invertible integer row and column operations.",
+      "detail": "Euclidean steps on rows and columns bring $A$ to its [Smith normal form](c:smith-normal-form) $UAV = \\operatorname{diag}(d_1, \\dots, d_n)$, with $U$ and $V$ invertible over $\\mathbb{Z}$ and $d_1 \\mid d_2 \\mid \\dots \\mid d_n$. All $d_i$ are positive because $\\det A \\neq 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:read",
+      "slogan": "Read off $G \\cong \\bigoplus_i \\mathbb{Z}/d_i$ from the diagonal form.",
+      "detail": "Let $D = \\operatorname{diag}(d_1, \\dots, d_n)$. Then $K = A\\mathbb{Z}^n = U^{-1}D\\mathbb{Z}^n$, so in the basis of $\\mathbb{Z}^n$ given by the columns of $U^{-1}$ the subgroup $K$ is $d_1\\mathbb{Z} \\oplus \\dots \\oplus d_n\\mathbb{Z}$. Hence $G \\cong \\mathbb{Z}^n/K \\cong \\bigoplus_i \\mathbb{Z}/d_i$.",
+      "uses": []
+     },
+     {
+      "id": "s:crt",
+      "slogan": "Split each factor $\\mathbb{Z}/d_i$ into prime power factors by the Chinese remainder theorem.",
+      "detail": "If $d = \\prod_p p^{a_p}$, the Chinese remainder theorem gives $\\mathbb{Z}/d \\cong \\bigoplus_p \\mathbb{Z}/p^{a_p}$, because distinct prime powers are coprime. Dropping the trivial factors gives a [direct sum](c:direct-sum) of [cyclic groups](c:cyclic-group) of [prime power](c:prime-power) order.",
+      "uses": [
+       "wd:Q193878"
+      ]
+     },
+     {
+      "id": "s:unique",
+      "slogan": "Recover the exponents from the orders of the quotients $p^jG/p^{j+1}G$.",
+      "detail": "For a decomposition as in step 4, multiplication by $p$ is bijective on the factors of order prime to $p$, so $|p^jG/p^{j+1}G| = p^{m_j}$, where $m_j$ is the number of factors $\\mathbb{Z}/p^e$ with $e > j$. These orders depend only on $G$, so they fix how many factors $\\mathbb{Z}/p^e$ occur for each $e$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:present",
+      "s:smith"
+     ],
+     [
+      "s:smith",
+      "s:read"
+     ],
+     [
+      "s:read",
+      "s:crt"
+     ],
+     [
+      "s:crt",
+      "s:unique"
+     ]
+    ],
+    "conclusion": "s:unique",
+    "concepts": {
+     "c:abelian-group": "Commutativity makes the group a module over the integers.",
+     "c:finite-group": "A finite group has finitely many generators and an order that kills its elements.",
+     "c:direct-sum": "The classification writes the group as a direct sum of factors.",
+     "c:cyclic-group": "The summands of the decomposition are cyclic groups.",
+     "c:prime-power": "Each summand has prime power order, which makes the list unique.",
+     "c:smith-normal-form": "The Smith normal form turns the relations into one relation per generator."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The proof by a presentation matrix and its Smith normal form, as in N. Jacobson, Basic Algebra I, chapter 3 (modules over a principal ideal domain)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:466",
+  "statement": "Let $C$ be a [locally small](c:locally-small) [category](c:category), $c$ an object of $C$ and $X\\colon C^{\\mathrm{op}} \\to \\mathbf{Set}$ a [presheaf](c:presheaf). Then $\\alpha \\mapsto \\alpha_c(\\mathrm{id}_c)$ is a bijection from the set of [natural transformations](c:natural-transformation) $C(-, c) \\Rightarrow X$ to the set $X(c)$, and this bijection is natural in $c$ and in $X$.",
+  "hypotheses": [
+   {
+    "id": "h:locally-small",
+    "text": "The category $C$ is [locally small](c:locally-small): each [hom-set](c:hom-set) $C(d, c)$ is a set.",
+    "concept": "c:locally-small"
+   },
+   {
+    "id": "h:presheaf",
+    "text": "$X$ is a [presheaf](c:presheaf) of sets on $C$, a [functor](c:functor) $C^{\\mathrm{op}} \\to \\mathbf{Set}$.",
+    "concept": "c:presheaf"
+   }
+  ],
+  "conclusion": "$\\operatorname{Nat}(C(-, c), X) \\cong X(c)$ by $\\alpha \\mapsto \\alpha_c(\\mathrm{id}_c)$, naturally in $c$ and $X$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "evaluate-identity",
+    "name": "Evaluation at the identity",
+    "slogan": "Evaluate a natural transformation at $\\mathrm{id}_c$, and rebuild the transformation from that one value by naturality.",
+    "scope": "The whole lemma, including naturality. Local smallness makes $C(-, c)$ a presheaf of sets, the [representable functor](c:representable-functor) of $c$.",
+    "mechanisms": [
+     "m:yoneda",
+     "m:construction-explicit"
+    ],
+    "roles": [
+     {
+      "h": "h:locally-small",
+      "why": "Local smallness makes $C(-, c)$ a presheaf of sets, so natural transformations into $X$ are defined.",
+      "steps": [
+       "s:evaluate"
+      ]
+     },
+     {
+      "h": "h:presheaf",
+      "why": "Functoriality of $X$ gives $X(f \\circ h) = X(h) \\circ X(f)$, which makes the rebuilt family natural.",
+      "steps": [
+       "s:determined",
+       "s:build"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:evaluate",
+      "slogan": "Define $\\Phi(\\alpha) = \\alpha_c(\\mathrm{id}_c)$ for each [natural transformation](c:natural-transformation) $\\alpha\\colon C(-, c) \\Rightarrow X$.",
+      "detail": "Because $C$ is locally small, $C(-, c)$ is a presheaf of sets, and $\\alpha$ has a component $\\alpha_c\\colon C(c, c) \\to X(c)$. Its value at $\\mathrm{id}_c$ is an element $\\Phi(\\alpha) \\in X(c)$.",
+      "uses": []
+     },
+     {
+      "id": "s:determined",
+      "slogan": "Show that naturality fixes every component of $\\alpha$ by its value at $\\mathrm{id}_c$.",
+      "detail": "For $f\\colon d \\to c$, write $f = \\mathrm{id}_c \\circ f = C(f, c)(\\mathrm{id}_c)$. Naturality of $\\alpha$ along $f$ gives $\\alpha_d(f) = X(f)(\\alpha_c(\\mathrm{id}_c))$. Hence two transformations with the same value of $\\Phi$ are equal, and $\\Phi$ is injective.",
+      "uses": []
+     },
+     {
+      "id": "s:build",
+      "slogan": "Build a natural transformation $\\alpha^x$ from each element $x \\in X(c)$.",
+      "detail": "Set $\\alpha^x_d(f) = X(f)(x)$ for $f\\colon d \\to c$. For $h\\colon e \\to d$, functoriality of the [presheaf](c:presheaf) gives $\\alpha^x_e(f \\circ h) = X(h)(X(f)(x)) = X(h)(\\alpha^x_d(f))$, so $\\alpha^x$ is natural.",
+      "uses": []
+     },
+     {
+      "id": "s:inverse",
+      "slogan": "Check that $x \\mapsto \\alpha^x$ is inverse to $\\Phi$.",
+      "detail": "First, $\\Phi(\\alpha^x) = X(\\mathrm{id}_c)(x) = x$. Step 2 gives $\\alpha = \\alpha^{\\Phi(\\alpha)}$ for every $\\alpha$. So $\\Phi$ is a bijection with inverse $x \\mapsto \\alpha^x$.",
+      "uses": []
+     },
+     {
+      "id": "s:natural",
+      "slogan": "Check that $\\Phi$ commutes with maps of presheaves and with maps $g\\colon c' \\to c$.",
+      "detail": "For $\\theta\\colon X \\Rightarrow X'$, $\\Phi(\\theta \\circ \\alpha) = \\theta_c(\\alpha_c(\\mathrm{id}_c)) = \\theta_c(\\Phi(\\alpha))$. For $g\\colon c' \\to c$, step 2 gives $\\Phi(\\alpha \\circ C(-, g)) = \\alpha_{c'}(g) = X(g)(\\Phi(\\alpha))$. So the bijection is a [natural isomorphism](c:natural-isomorphism).",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:evaluate",
+      "s:determined"
+     ],
+     [
+      "s:determined",
+      "s:inverse"
+     ],
+     [
+      "s:build",
+      "s:inverse"
+     ],
+     [
+      "s:inverse",
+      "s:natural"
+     ],
+     [
+      "s:determined",
+      "s:natural"
+     ]
+    ],
+    "conclusion": "s:natural",
+    "concepts": {
+     "c:locally-small": "Local smallness makes the hom-functor $C(-, c)$ take values in sets.",
+     "c:category": "The lemma holds in every locally small category.",
+     "c:presheaf": "The target $X$ is a presheaf whose functoriality drives the construction.",
+     "c:natural-transformation": "The lemma counts the natural transformations out of $C(-, c)$.",
+     "c:hom-set": "The representable presheaf sends $d$ to the hom-set $C(d, c)$.",
+     "c:functor": "A presheaf is a contravariant functor into sets.",
+     "c:representable-functor": "The source $C(-, c)$ is the representable functor of $c$.",
+     "c:natural-isomorphism": "Naturality in $c$ and $X$ makes the bijection a natural isomorphism."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard proof, as in S. Mac Lane, Categories for the Working Mathematician, section III.2, and E. Riehl, Category Theory in Context, theorem 2.2.4."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:analyticity-of-holomorphic-functions",
+  "statement": "Let $f$ be [holomorphic](c:holomorphic-function) on an [open set](c:open-set) $U \\subseteq \\mathbb{C}$. If the closed [disk](c:ball) $|z - z_0| \\le r$ lies in $U$, then $f(z) = \\sum_{n \\ge 0} a_n (z - z_0)^n$ for $|z - z_0| < r$, a convergent [power series](c:power-series). Hence $f$ is [analytic](c:analytic-function) on $U$.",
+  "hypotheses": [
+   {
+    "id": "h:open",
+    "text": "$U$ is an [open set](c:open-set) of $\\mathbb{C}$.",
+    "concept": "c:open-set"
+   },
+   {
+    "id": "h:holomorphic",
+    "text": "$f$ is [holomorphic](c:holomorphic-function) on $U$: it has a complex derivative at every point of $U$.",
+    "concept": "c:holomorphic-function"
+   },
+   {
+    "id": "h:disk",
+    "text": "The closed disk $|z - z_0| \\le r$ with $r > 0$ lies in $U$.",
+    "concept": "c:ball"
+   }
+  ],
+  "conclusion": "For $|z - z_0| < r$, $f(z) = \\sum_{n \\ge 0} a_n (z - z_0)^n$ with $a_n = \\frac{1}{2\\pi i}\\oint_{|w - z_0| = r} \\frac{f(w)}{(w - z_0)^{n+1}}\\,dw$, and $f$ is analytic on $U$.",
+  "formal": {
+   "decl": "DifferentiableOn.analyticAt",
+   "difference": "The declaration allows values in a complex Banach space and asks that $f$ be complex differentiable on a neighborhood of $z_0$. It gives analyticity at $z_0$ without the radius $r$ or the coefficient formula."
+  },
+  "proofs": [
+   {
+    "id": "cauchy-geometric",
+    "name": "Cauchy formula and geometric series",
+    "slogan": "Write $f$ by the Cauchy integral formula on a circle, expand the kernel as a geometric series, and integrate term by term.",
+    "scope": "The expansion on each closed disk in $U$; analyticity at every point follows because the open set $U$ contains such a disk around each of its points.",
+    "mechanisms": [
+     "m:complex-integration",
+     "m:uniform-convergence",
+     "m:fubini-swap"
+    ],
+    "roles": [
+     {
+      "h": "h:open",
+      "why": "Openness gives a disk inside $U$ around every point, so the expansion holds near every point of $U$.",
+      "steps": [
+       "s:analytic"
+      ]
+     },
+     {
+      "h": "h:holomorphic",
+      "why": "Holomorphy near the closed disk gives the Cauchy integral formula and a continuous, bounded $f$ on the circle.",
+      "steps": [
+       "s:cauchy",
+       "s:swap"
+      ]
+     },
+     {
+      "h": "h:disk",
+      "why": "The closed disk in $U$ supplies the circle of integration and the ratio $|z - z_0|/r < 1$.",
+      "steps": [
+       "s:cauchy",
+       "s:geometric"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:cauchy",
+      "slogan": "Write $f(z)$ by the Cauchy integral formula on the circle $|w - z_0| = r$.",
+      "detail": "The compact closed disk has a slightly larger open disk inside $U$, where $f$ is [holomorphic](c:holomorphic-function). The Cauchy integral formula gives the [contour integral](c:contour-integral) $f(z) = \\frac{1}{2\\pi i}\\oint_{|w - z_0| = r} \\frac{f(w)}{w - z}\\,dw$ for $|z - z_0| < r$.",
+      "uses": [
+       "nl:11500"
+      ]
+     },
+     {
+      "id": "s:geometric",
+      "slogan": "Expand the Cauchy kernel $1/(w - z)$ as a [geometric series](c:geometric-series) in $(z - z_0)/(w - z_0)$.",
+      "detail": "For $|w - z_0| = r$ and $q = |z - z_0|/r < 1$, $\\frac{1}{w - z} = \\frac{1}{w - z_0} \\cdot \\frac{1}{1 - (z - z_0)/(w - z_0)} = \\sum_{n \\ge 0} \\frac{(z - z_0)^n}{(w - z_0)^{n+1}}$. The $n$-th term has modulus $q^n/r$.",
+      "uses": [
+       "nm:geometric-series"
+      ]
+     },
+     {
+      "id": "s:swap",
+      "slogan": "Integrate the series term by term, using its [uniform convergence](c:uniform-convergence) on the circle.",
+      "detail": "The continuous $f$ is bounded by some $M$ on the circle, so the $n$-th term of $f(w)/(w - z)$ is at most $Mq^n/r$ for every $w$. Uniform convergence allows the exchange of sum and integral, so $f(z) = \\sum_n a_n (z - z_0)^n$ with $a_n$ as in the conclusion.",
+      "uses": []
+     },
+     {
+      "id": "s:analytic",
+      "slogan": "Find such a disk around every point of $U$ to conclude analyticity.",
+      "detail": "For $z_0 \\in U$, openness gives $r > 0$ with the closed disk $|z - z_0| \\le r$ inside $U$. Steps 1 to 3 give a [power series](c:power-series) for $f$ that converges on $|z - z_0| < r$, so $f$ is [analytic](c:analytic-function) at $z_0$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:cauchy",
+      "s:swap"
+     ],
+     [
+      "s:geometric",
+      "s:swap"
+     ],
+     [
+      "s:swap",
+      "s:analytic"
+     ]
+    ],
+    "conclusion": "s:analytic",
+    "concepts": {
+     "c:holomorphic-function": "Holomorphy is the hypothesis that the Cauchy integral formula needs.",
+     "c:open-set": "An open set contains a disk around each of its points.",
+     "c:ball": "The closed disk supplies the circle of integration.",
+     "c:power-series": "The conclusion is a power series expansion around $z_0$.",
+     "c:analytic-function": "A function with local power series expansions is analytic.",
+     "c:contour-integral": "The Cauchy formula writes $f(z)$ as a contour integral over the circle.",
+     "c:geometric-series": "The Cauchy kernel expands as a geometric series in $z - z_0$.",
+     "c:uniform-convergence": "Uniform convergence on the circle justifies termwise integration."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "DifferentiableOn.analyticAt",
+     "follows": true,
+     "note": "mathlib picks a closed ball inside the set (nhds_basis_closedBall) and applies DifferentiableOn.hasFPowerSeriesOnBall, which expands the Cauchy integral over the circle into cauchyPowerSeries."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q848092",
+  "statement": "For every $n \\ge 0$ and every [continuous](c:continuous-function) map $f\\colon S^n \\to \\mathbb{R}^n$, some point $x$ of the [sphere](c:sphere) $S^n$ has $f(x) = f(-x)$; that is, $f$ takes the same value at two points exchanged by the [antipodal map](c:antipodal-map).",
+  "hypotheses": [
+   {
+    "id": "h:continuous",
+    "text": "The map $f\\colon S^n \\to \\mathbb{R}^n$ is [continuous](c:continuous-function).",
+    "concept": "c:continuous-function"
+   }
+  ],
+  "conclusion": "Some $x \\in S^n$ has $f(x) = f(-x)$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "odd-degree",
+    "name": "Odd maps and degree",
+    "slogan": "Turn a counterexample into an odd map $S^n \\to S^{n-1}$, whose restriction to the equator has odd degree but also degree zero.",
+    "scope": "For $n = 0$ the claim holds because $\\mathbb{R}^0$ is a point, and for $n = 1$ the proof ends in step 3 by connectedness. Step 4 rests on Borsuk's theorem that an odd self-map of a sphere has odd degree, proved with homology mod $2$.",
+    "mechanisms": [
+     "m:contradiction",
+     "m:degree-winding",
+     "m:symmetry"
+    ],
+    "roles": [
+     {
+      "h": "h:continuous",
+      "why": "Continuity of $f$ makes the normalized difference $g$ continuous, so its restriction has a degree and extends over the hemisphere.",
+      "steps": [
+       "s:odd-map"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:assume",
+      "slogan": "Assume that $f(x) \\neq f(-x)$ for every point $x$ of $S^n$.",
+      "detail": "The proof is by contradiction, for $n \\ge 1$. Under this assumption the difference $f(x) - f(-x)$ never vanishes on the [sphere](c:sphere).",
+      "uses": []
+     },
+     {
+      "id": "s:odd-map",
+      "slogan": "Normalize the difference to a continuous odd map $g\\colon S^n \\to S^{n-1}$.",
+      "detail": "Set $g(x) = (f(x) - f(-x))/|f(x) - f(-x)|$. It is [continuous](c:continuous-function) because $f$ is continuous and the denominator never vanishes, and $g(-x) = -g(x)$, so $g$ commutes with the [antipodal map](c:antipodal-map).",
+      "uses": []
+     },
+     {
+      "id": "s:equator",
+      "slogan": "Restrict $g$ to the equator $S^{n-1}$ to get an odd map $h\\colon S^{n-1} \\to S^{n-1}$.",
+      "detail": "The equator is invariant under $x \\mapsto -x$, so $h$ is odd. For $n = 1$ the assumption already fails: $g$ maps the connected circle $S^1$ continuously into the two points of $S^0$, so $g$ is constant, against $g(-x) = -g(x)$.",
+      "uses": []
+     },
+     {
+      "id": "s:odd-degree",
+      "slogan": "Give the odd map $h$ an odd [degree](c:degree-of-a-map) when $n \\ge 2$.",
+      "detail": "Borsuk's theorem says that an odd map $S^m \\to S^m$ with $m \\ge 1$ has odd degree. Its proof compares the maps on [homology](c:homology) with coefficients in $\\mathbb{Z}/2$ induced by $h$ and by its quotient map of projective spaces. So $\\deg h$ is odd, in particular not zero.",
+      "uses": []
+     },
+     {
+      "id": "s:hemisphere",
+      "slogan": "Extend $h$ over the upper hemisphere to show that $\\deg h = 0$.",
+      "detail": "The upper hemisphere is a closed [ball](c:ball) with boundary $S^{n-1}$, and $g$ restricted to it extends $h$. Contracting the ball to its center gives a [null-homotopy](c:null-homotopy) of $h$, and homotopic maps have equal degrees, so $\\deg h = 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:contradict",
+      "slogan": "Compare the two degrees and reject the assumption.",
+      "detail": "Step 4 gives an odd degree and step 5 gives degree zero, which is even. So the assumption is false, and some $x \\in S^n$ has $f(x) = f(-x)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:assume",
+      "s:odd-map"
+     ],
+     [
+      "s:odd-map",
+      "s:equator"
+     ],
+     [
+      "s:equator",
+      "s:odd-degree"
+     ],
+     [
+      "s:equator",
+      "s:hemisphere"
+     ],
+     [
+      "s:odd-map",
+      "s:hemisphere"
+     ],
+     [
+      "s:odd-degree",
+      "s:contradict"
+     ],
+     [
+      "s:hemisphere",
+      "s:contradict"
+     ]
+    ],
+    "conclusion": "s:contradict",
+    "concepts": {
+     "c:continuous-function": "Continuity passes from $f$ to the odd map $g$ and its restriction.",
+     "c:sphere": "The theorem concerns maps defined on the sphere $S^n$.",
+     "c:antipodal-map": "The map $g$ commutes with the antipodal map, which forces an odd degree.",
+     "c:degree-of-a-map": "The degree of the equator map is both odd and zero.",
+     "c:homology": "Degree and Borsuk's parity theorem are read on homology groups.",
+     "c:ball": "The hemisphere is a ball, so the equator map extends over it.",
+     "c:null-homotopy": "A null-homotopic map of spheres has degree zero."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The degree proof in A. Hatcher, Algebraic Topology (Cambridge University Press, 2002), section 2.B, where an odd map of spheres is shown to have odd degree."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:burnside-s-lemma",
+  "statement": "Let a [finite group](c:finite-group) $G$ [act](c:group-action) on a finite set $X$, and let $X^g = \\{x \\in X : gx = x\\}$ be the set of [fixed points](c:fixed-point) of $g$. Then the number of [orbits](c:orbit) is $\\frac{1}{|G|}\\sum_{g \\in G} |X^g|$.",
+  "hypotheses": [
+   {
+    "id": "h:finite-group",
+    "text": "$G$ is a [finite group](c:finite-group).",
+    "concept": "c:finite-group"
+   },
+   {
+    "id": "h:action",
+    "text": "$G$ [acts](c:group-action) on the set $X$.",
+    "concept": "c:group-action"
+   },
+   {
+    "id": "h:finite-set",
+    "text": "The set $X$ is [finite](c:finite-set).",
+    "concept": "c:finite-set"
+   }
+  ],
+  "conclusion": "$|X/G| = \\frac{1}{|G|}\\sum_{g \\in G} |X^g|$.",
+  "formal": {
+   "decl": "MulAction.sum_card_fixedBy_eq_card_orbits_mul_card_group",
+   "difference": "The declaration states $\\sum_{g} |X^g| = |X/G| \\cdot |G|$, the same identity multiplied by $|G|$. It asks only that $G$, each $X^g$ and the orbit set be finite, not $X$."
+  },
+  "proofs": [
+   {
+    "id": "double-count",
+    "name": "Double counting of fixed pairs",
+    "slogan": "Count the pairs $(g, x)$ with $gx = x$ by group elements and by points, then sum the orbit-stabilizer ratios over each orbit.",
+    "scope": "The whole lemma. For $X = \\emptyset$ both sides are $0$.",
+    "mechanisms": [
+     "m:double-counting",
+     "m:group-action-orbits",
+     "m:lagrange-counting"
+    ],
+    "roles": [
+     {
+      "h": "h:finite-group",
+      "why": "Finiteness of $G$ makes $|G|$ and the orbit sizes finite numbers that the proof can divide by.",
+      "steps": [
+       "s:orbit-stabilizer",
+       "s:divide"
+      ]
+     },
+     {
+      "h": "h:action",
+      "why": "The action defines the fixed sets, the [stabilizers](c:stabilizer) and the orbits that the proof counts.",
+      "steps": [
+       "s:pairs",
+       "s:orbit-stabilizer"
+      ]
+     },
+     {
+      "h": "h:finite-set",
+      "why": "Finiteness of $X$ makes the set of fixed pairs finite and gives finitely many orbits.",
+      "steps": [
+       "s:pairs",
+       "s:orbit-sum"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:pairs",
+      "slogan": "Count the set $F = \\{(g, x) : gx = x\\}$ by group elements and by points.",
+      "detail": "Counting $F$ by its first coordinate gives $|F| = \\sum_{g \\in G} |X^g|$. Counting it by its second coordinate gives $|F| = \\sum_{x \\in X} |G_x|$, where $G_x$ is the [stabilizer](c:stabilizer) of $x$.",
+      "uses": []
+     },
+     {
+      "id": "s:orbit-stabilizer",
+      "slogan": "Replace each stabilizer size by $|G|/|Gx|$ with the orbit-stabilizer bijection.",
+      "detail": "The map $gG_x \\mapsto gx$ is a bijection from the cosets of $G_x$ onto the [orbit](c:orbit) $Gx$. Lagrange's theorem gives $|G| = |G_x|\\,|Gx|$, so $|G_x| = |G|/|Gx|$.",
+      "uses": [
+       "wd:Q505798"
+      ]
+     },
+     {
+      "id": "s:orbit-sum",
+      "slogan": "Sum $1/|Gx|$ over the points of each orbit to get one per orbit.",
+      "detail": "The orbits partition $X$, and every $x$ in an orbit $O$ has $|Gx| = |O|$. So $\\sum_{x \\in X} 1/|Gx| = \\sum_{O} \\sum_{x \\in O} 1/|O| = |X/G|$.",
+      "uses": []
+     },
+     {
+      "id": "s:divide",
+      "slogan": "Combine the three counts and divide by $|G|$.",
+      "detail": "Steps 1 to 3 give $\\sum_{g} |X^g| = \\sum_{x} |G|/|Gx| = |G|\\,|X/G|$. Divide by $|G| \\ge 1$ to get the number of orbits.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:pairs",
+      "s:divide"
+     ],
+     [
+      "s:orbit-stabilizer",
+      "s:divide"
+     ],
+     [
+      "s:orbit-sum",
+      "s:divide"
+     ]
+    ],
+    "conclusion": "s:divide",
+    "concepts": {
+     "c:finite-group": "The group must be finite so that the average over $G$ makes sense.",
+     "c:group-action": "The action supplies the fixed points, the stabilizers and the orbits.",
+     "c:fixed-point": "The lemma averages the numbers of fixed points of the group elements.",
+     "c:orbit": "The lemma counts the orbits of the action.",
+     "c:finite-set": "A finite set has finitely many fixed pairs and finitely many orbits.",
+     "c:stabilizer": "Stabilizer sizes link the pair count to the orbit sizes."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "MulAction.sum_card_fixedBy_eq_card_orbits_mul_card_group",
+     "follows": true,
+     "note": "mathlib builds a bijection from the pairs $(g, x)$ with $gx = x$ to the product of the orbit set and $G$ (sigmaFixedByEquivOrbitsProdGroup), which uses the orbit-stabilizer bijection on each orbit, and compares cardinalities (Fintype.card_sigma, Fintype.card_prod)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q107709489",
+  "statement": "Let $\\Sigma$ be a finite alphabet. A [language](c:language) $L \\subseteq \\Sigma^*$ is [regular](c:regular-language) if and only if $L$ is the set of finite [words](c:word) that satisfy some [sentence](c:sentence) of [monadic second-order logic](c:monadic-second-order-logic) with the order $<$ on positions and the letter predicates $P_a$.",
+  "hypotheses": [
+   {
+    "id": "h:alphabet",
+    "text": "The alphabet $\\Sigma$ is finite.",
+    "concept": null
+   }
+  ],
+  "conclusion": "$L$ is recognized by a [finite automaton](c:finite-automaton) exactly when $L$ is definable by a monadic second-order sentence.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "automata-formulas",
+    "name": "Runs as set variables, formulas as automata",
+    "slogan": "Describe an accepting run by existential set variables, and build an automaton for each formula by induction on its structure.",
+    "scope": "Both directions; the empty word is handled by one extra disjunct in the sentence of step 1. The successor relation $y = x + 1$ is first-order definable from $<$.",
+    "mechanisms": [
+     "m:encoding",
+     "m:structural-induction",
+     "m:construction-explicit"
+    ],
+    "roles": [
+     {
+      "h": "h:alphabet",
+      "why": "A finite alphabet gives finitely many letter predicates and finite automata over the alphabets $\\Sigma \\times \\{0, 1\\}^k$.",
+      "steps": [
+       "s:run",
+       "s:tracks"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:run",
+      "slogan": "Encode an accepting run of a deterministic automaton by one set variable per state.",
+      "detail": "Let a [deterministic finite automaton](c:dfa) $A$ have states $q_1, \\dots, q_m$, and let $X_j$ hold the positions after which $A$ is in state $q_j$. The sentence $\\exists X_1 \\dots \\exists X_m$ says that the $X_j$ partition the positions, that the first and each next position follow the transition map, and that the last position lies in an accepting $X_j$.",
+      "uses": []
+     },
+     {
+      "id": "s:tracks",
+      "slogan": "Read a formula with free set variables as a language over $\\Sigma \\times \\{0, 1\\}^k$.",
+      "detail": "A word with sets $X_1, \\dots, X_k$ of positions is a word over $\\Sigma \\times \\{0, 1\\}^k$ whose $j$-th track marks the positions in $X_j$. First-order variables become singleton sets, so the atomic formulas reduce to $X \\subseteq Y$, $X \\subseteq P_a$, $\\mathrm{Sing}(X)$ and $X < Y$.",
+      "uses": []
+     },
+     {
+      "id": "s:atomic",
+      "slogan": "Build a finite automaton for each atomic formula.",
+      "detail": "Each atomic formula is a simple condition on the tracks. For example, $X \\subseteq Y$ forbids a letter with $1$ on track $X$ and $0$ on track $Y$, and $\\mathrm{Sing}(X)$ needs exactly one $1$ on track $X$; a [finite automaton](c:finite-automaton) with at most three states checks each condition.",
+      "uses": []
+     },
+     {
+      "id": "s:boolean",
+      "slogan": "Close the recognized languages under disjunction and negation.",
+      "detail": "A product automaton recognizes the union of two [regular languages](c:regular-language). For negation, the subset construction gives a deterministic automaton, and the exchange of accepting and rejecting states gives the complement; an intersection with the words whose first-order tracks are singletons keeps the encoding valid.",
+      "uses": []
+     },
+     {
+      "id": "s:project",
+      "slogan": "Close the recognized languages under existential quantification by erasing a track.",
+      "detail": "The formula $\\exists X\\,\\varphi$ defines the image of the language of $\\varphi$ under the map that deletes track $X$. A [nondeterministic automaton](c:nfa) guesses the deleted bits, so the image is regular.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Combine both directions by induction on the structure of formulas.",
+      "detail": "Steps 3 to 5 give every formula a regular language over its extended alphabet; for a [sentence](c:sentence), $k = 0$ and the language is $L \\subseteq \\Sigma^*$ itself. With step 1, the regular languages are exactly the languages definable in [monadic second-order logic](c:monadic-second-order-logic).",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:run",
+      "s:conclude"
+     ],
+     [
+      "s:tracks",
+      "s:atomic"
+     ],
+     [
+      "s:tracks",
+      "s:boolean"
+     ],
+     [
+      "s:tracks",
+      "s:project"
+     ],
+     [
+      "s:atomic",
+      "s:conclude"
+     ],
+     [
+      "s:boolean",
+      "s:conclude"
+     ],
+     [
+      "s:project",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:language": "The theorem compares two ways to describe a language of finite words.",
+     "c:regular-language": "Regular languages are the automaton side of the equivalence.",
+     "c:word": "Positions of a word are the elements that the formulas quantify over.",
+     "c:sentence": "A sentence has no free variables, so it defines a language over $\\Sigma$.",
+     "c:monadic-second-order-logic": "Set quantifiers of the logic express the hidden run of an automaton.",
+     "c:finite-automaton": "Each formula gets a finite automaton for its language.",
+     "c:dfa": "A deterministic automaton has one run, which set variables can describe.",
+     "c:nfa": "Nondeterminism lets the automaton guess the bits of an erased track."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Büchi's translation between automata and formulas, as in W. Thomas, Languages, automata, and logic, in Handbook of Formal Languages, volume 3 (Springer, 1997)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:16209",
+  "statement": "Let $f = u + iv$ be defined on an open set containing $z_0 = x_0 + iy_0$ in $\\mathbb{C}$. Then $f$ has a [complex derivative](c:complex-derivative) at $z_0$ if and only if $f$ is [differentiable](c:differentiable-function) at $z_0$ as a map $\\mathbb{R}^2 \\to \\mathbb{R}^2$ and its [partial derivatives](c:partial-derivative) satisfy $u_x = v_y$ and $u_y = -v_x$ at $(x_0, y_0)$.",
+  "hypotheses": [
+   {
+    "id": "h:neighborhood",
+    "text": "The function $f\\colon U \\to \\mathbb{C}$ is defined on an [open set](c:open-set) $U$ that contains $z_0$.",
+    "concept": "c:open-set"
+   }
+  ],
+  "conclusion": "$f'(z_0)$ exists exactly when $f$ is real differentiable at $z_0$ with $u_x = v_y$ and $u_y = -v_x$ there; then $f'(z_0) = u_x + iv_x$.",
+  "formal": {
+   "decl": "differentiableAt_complex_iff_differentiableAt_real",
+   "difference": "The declaration allows values in any complex normed space and writes the Cauchy-Riemann condition as $Df(z_0)(i) = i\\,Df(z_0)(1)$ for the real derivative $Df(z_0)$, not in partial derivatives."
+  },
+  "proofs": [
+   {
+    "id": "complex-linearity",
+    "name": "Complex-linear real derivative",
+    "slogan": "A real-linear map of $\\mathbb{C}$ is complex-linear exactly when it sends $i$ to $i$ times the image of $1$, and this condition is the pair of Cauchy-Riemann equations.",
+    "scope": "Both directions of the equivalence at the single point $z_0$.",
+    "mechanisms": [
+     "m:algebraic-identity",
+     "m:coordinates"
+    ],
+    "roles": [
+     {
+      "h": "h:neighborhood",
+      "why": "An open set around $z_0$ lets the difference quotients and the real derivative be defined at $z_0$.",
+      "steps": [
+       "s:restrict",
+       "s:converse"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:restrict",
+      "slogan": "Restrict the complex derivative to a real-[linear map](c:linear-map) of $\\mathbb{C}$.",
+      "detail": "If $f'(z_0) = a$ exists, then $f(z_0 + h) = f(z_0) + ah + o(|h|)$. The map $h \\mapsto ah$ is real-linear, so $f$ is real differentiable at $z_0$ with $Df(z_0)h = ah$, and $Df(z_0)(i) = i\\,Df(z_0)(1)$.",
+      "uses": []
+     },
+     {
+      "id": "s:linear",
+      "slogan": "Show that a real-linear map $L$ with $L(i) = iL(1)$ is multiplication by $L(1)$.",
+      "detail": "For $h = s + ti$ with real $s$ and $t$, real linearity gives $L(h) = sL(1) + tL(i) = sL(1) + tiL(1) = hL(1)$. So $L$ is complex-linear.",
+      "uses": []
+     },
+     {
+      "id": "s:converse",
+      "slogan": "Turn a real derivative with $L(i) = iL(1)$ into a complex derivative.",
+      "detail": "If $f$ is real differentiable at $z_0$ with $L = Df(z_0)$ and $L(i) = iL(1)$, step 2 gives $f(z_0 + h) = f(z_0) + L(1)h + o(|h|)$. Divide by $h$: the difference quotient tends to $L(1)$, so $f'(z_0) = L(1)$.",
+      "uses": []
+     },
+     {
+      "id": "s:partials",
+      "slogan": "Write the condition $L(i) = iL(1)$ in [partial derivatives](c:partial-derivative).",
+      "detail": "The real derivative has $L(1) = u_x + iv_x$ and $L(i) = u_y + iv_y$, and $iL(1) = -v_x + iu_x$. Equal real parts and equal imaginary parts give $u_y = -v_x$ and $v_y = u_x$.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Combine both directions with the partial-derivative form of the condition.",
+      "detail": "Step 1 gives the forward direction and steps 2 and 3 give the converse, both with the condition $L(i) = iL(1)$. Step 4 turns that condition into $u_x = v_y$ and $u_y = -v_x$, and step 3 gives $f'(z_0) = L(1) = u_x + iv_x$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:restrict",
+      "s:conclude"
+     ],
+     [
+      "s:linear",
+      "s:converse"
+     ],
+     [
+      "s:converse",
+      "s:conclude"
+     ],
+     [
+      "s:partials",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:complex-derivative": "The theorem characterizes when the complex derivative exists.",
+     "c:differentiable-function": "Real differentiability supplies the real-linear map $Df(z_0)$.",
+     "c:partial-derivative": "The Cauchy-Riemann equations are relations between partial derivatives.",
+     "c:open-set": "An open domain makes the derivative at $z_0$ a two-sided limit.",
+     "c:linear-map": "Complex differentiability means that the real derivative is complex-linear."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "differentiableAt_complex_iff_differentiableAt_real",
+     "follows": true,
+     "note": "mathlib restricts scalars for the forward direction (DifferentiableAt.restrictScalars, DifferentiableAt.fderiv_restrictScalars) and, for the converse, upgrades the real derivative to a complex-linear map (ContinuousLinearMap.complexOfReal) and applies differentiableAt_iff_restrictScalars."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:4955",
+  "statement": "Let $E, F, G$ be [normed spaces](c:normed-space) over $\\mathbb{R}$ or $\\mathbb{C}$. If $f\\colon E \\to F$ is [differentiable](c:differentiable-function) at $x$ and $g\\colon F \\to G$ is differentiable at $f(x)$, then the [composition](c:composition-of-functions) $g \\circ f$ is differentiable at $x$ with [derivative](c:derivative) $D(g \\circ f)(x) = Dg(f(x)) \\circ Df(x)$. In one variable, $(g \\circ f)'(x) = g'(f(x))\\,f'(x)$.",
+  "hypotheses": [
+   {
+    "id": "h:f",
+    "text": "$f$ is [differentiable](c:differentiable-function) at $x$, with derivative the bounded [linear map](c:linear-map) $A = Df(x)$.",
+    "concept": "c:differentiable-function"
+   },
+   {
+    "id": "h:g",
+    "text": "$g$ is differentiable at $f(x)$, with derivative the bounded linear map $B = Dg(f(x))$.",
+    "concept": "c:differentiable-function"
+   }
+  ],
+  "conclusion": "$g \\circ f$ is differentiable at $x$ and $D(g \\circ f)(x) = B \\circ A$.",
+  "formal": {
+   "decl": "fderiv_comp",
+   "difference": "The declaration works over any nontrivially normed field and states only the formula for fderiv. The differentiability of $g \\circ f$ is the separate fact HasFDerivAt.comp."
+  },
+  "proofs": [
+   {
+    "id": "little-o",
+    "name": "Composition of linear approximations",
+    "slogan": "Insert the linear approximation of $f$ into that of $g$, and show that both error terms stay small compared with $|h|$.",
+    "scope": "The whole rule in any normed spaces; the one-variable formula is the case $E = F = G = \\mathbb{R}$, where $B \\circ A$ is multiplication by $g'(f(x))\\,f'(x)$.",
+    "mechanisms": [
+     "m:epsilon-delta",
+     "m:triangle-inequality"
+    ],
+    "roles": [
+     {
+      "h": "h:f",
+      "why": "Differentiability of $f$ gives the expansion $f(x + h) = f(x) + Ah + r(h)$ with a small error $r(h)$.",
+      "steps": [
+       "s:expand-f",
+       "s:bound-k"
+      ]
+     },
+     {
+      "h": "h:g",
+      "why": "Differentiability of $g$ at $f(x)$ gives the expansion of $g$ along the increment $k(h)$.",
+      "steps": [
+       "s:expand-g"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:expand-f",
+      "slogan": "Write the increment of $f$ as $k(h) = Ah + r(h)$ with $|r(h)| = o(|h|)$.",
+      "detail": "Differentiability of $f$ at $x$ gives $k(h) = f(x + h) - f(x) = Ah + r(h)$, where $|r(h)|/|h| \\to 0$ as $h \\to 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:bound-k",
+      "slogan": "Bound the increment by $|k(h)| \\le (\\|A\\| + 1)|h|$ for small $h$.",
+      "detail": "For small $|h|$, $|r(h)| \\le |h|$. The [linear map](c:linear-map) $A$ is bounded, so $|k(h)| \\le \\|A\\|\\,|h| + |h|$; in particular $k(h) \\to 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:expand-g",
+      "slogan": "Expand $g$ at $f(x)$ along the increment $k(h)$ and control its error.",
+      "detail": "Differentiability of $g$ gives $g(f(x) + k) = g(f(x)) + Bk + s(k)$, where for every $\\varepsilon > 0$, $|s(k)| \\le \\varepsilon |k|$ for small $|k|$. By step 2, $|s(k(h))| \\le \\varepsilon(\\|A\\| + 1)|h|$ for small $|h|$, so $s(k(h)) = o(|h|)$.",
+      "uses": []
+     },
+     {
+      "id": "s:linear-part",
+      "slogan": "Split the linear term $Bk(h)$ into $BAh$ and a small error.",
+      "detail": "Linearity gives $Bk(h) = BAh + Br(h)$, and $|Br(h)| \\le \\|B\\|\\,|r(h)| = o(|h|)$ because $B$ is bounded.",
+      "uses": []
+     },
+     {
+      "id": "s:combine",
+      "slogan": "Add the two error terms to get the [derivative](c:derivative) $B \\circ A$.",
+      "detail": "Since $f(x + h) = f(x) + k(h)$, steps 3 and 4 give $g(f(x + h)) = g(f(x)) + BAh + Br(h) + s(k(h))$, and the triangle inequality makes the last two terms together $o(|h|)$. So $g \\circ f$ is differentiable at $x$ with derivative the bounded linear map $B \\circ A$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:expand-f",
+      "s:bound-k"
+     ],
+     [
+      "s:expand-f",
+      "s:linear-part"
+     ],
+     [
+      "s:bound-k",
+      "s:expand-g"
+     ],
+     [
+      "s:expand-g",
+      "s:combine"
+     ],
+     [
+      "s:linear-part",
+      "s:combine"
+     ]
+    ],
+    "conclusion": "s:combine",
+    "concepts": {
+     "c:normed-space": "Norms measure the increments and the errors of the approximations.",
+     "c:differentiable-function": "Differentiability gives a linear approximation with a small error.",
+     "c:composition-of-functions": "The rule computes the derivative of the composition $g \\circ f$.",
+     "c:derivative": "The derivative of the composition is the composition of the derivatives.",
+     "c:linear-map": "Bounded linear maps send small errors to small errors."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "fderiv_comp",
+     "follows": true,
+     "note": "mathlib applies HasFDerivAt.comp, whose proof (HasFDerivAtFilter.comp) splits the error into the little-o error of $g$ along the increment of $f$ (isLittleOTVS.comp_tendsto, isBigOTVS_sub) plus $g'$ applied to the error of $f$; HasFDerivAt.fderiv then reads off fderiv."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1131601",
+  "statement": "Let $H$ be the [joint distribution](c:joint-distribution) function of a random vector $(X_1, \\dots, X_d)$ with [marginal distribution](c:marginal-distribution) functions $F_1, \\dots, F_d$. Then there is a [copula](c:copula) $C$ with $H(x_1, \\dots, x_d) = C(F_1(x_1), \\dots, F_d(x_d))$ for all $x \\in \\mathbb{R}^d$. If every $F_i$ is continuous, then $C$ is unique.",
+  "hypotheses": [
+   {
+    "id": "h:joint",
+    "text": "$H$ is the [joint distribution](c:joint-distribution) function of a random vector in $\\mathbb{R}^d$, with [marginal distribution](c:marginal-distribution) functions $F_1, \\dots, F_d$.",
+    "concept": "c:joint-distribution"
+   },
+   {
+    "id": "h:continuous",
+    "text": "For the uniqueness part, every marginal [distribution function](c:distribution-function) $F_i$ is continuous.",
+    "concept": "c:distribution-function"
+   }
+  ],
+  "conclusion": "Some copula $C$ has $H(x) = C(F_1(x_1), \\dots, F_d(x_d))$ for all $x \\in \\mathbb{R}^d$, and $C$ is unique when every $F_i$ is continuous.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "distributional-transform",
+    "name": "Distributional transform",
+    "slogan": "Randomize the jumps of each marginal to get uniform variables that recover the original ones, and take their joint distribution function as the copula.",
+    "scope": "Existence for arbitrary marginals in steps 1 to 5, and uniqueness for continuous marginals in step 6. Without continuity, $C$ is unique only on the product of the ranges of the $F_i$.",
+    "mechanisms": [
+     "m:construction-explicit",
+     "m:coupling"
+    ],
+    "roles": [
+     {
+      "h": "h:joint",
+      "why": "The random vector with distribution $H$ supplies the coordinates $X_i$ that the transform makes uniform.",
+      "steps": [
+       "s:space",
+       "s:sklar"
+      ]
+     },
+     {
+      "h": "h:continuous",
+      "why": "Continuous marginals have ranges that contain $(0, 1)$, where the formula fixes $C$.",
+      "steps": [
+       "s:unique"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:space",
+      "slogan": "Take a random vector $X$ with distribution $H$ and an independent uniform variable $V$.",
+      "detail": "On a product probability space, let $X = (X_1, \\dots, X_d)$ have joint distribution function $H$, and let $V$ have the [uniform distribution](c:uniform-distribution) on $[0, 1]$ and be independent of $X$.",
+      "uses": []
+     },
+     {
+      "id": "s:transform",
+      "slogan": "Define $U_i = F_i(X_i-) + V\\,(F_i(X_i) - F_i(X_i-))$ and show that $U_i$ is uniform.",
+      "detail": "For $u \\in (0, 1)$, let $t = \\inf\\{s : F_i(s) \\ge u\\}$. Then $U_i \\le u$ holds when $X_i < t$, fails almost surely when $X_i > t$, and holds with conditional probability $(u - F_i(t-))/(F_i(t) - F_i(t-))$ when $X_i = t$. So $P(U_i \\le u) = F_i(t-) + (u - F_i(t-)) = u$.",
+      "uses": []
+     },
+     {
+      "id": "s:recover",
+      "slogan": "Recover each coordinate as $X_i = F_i^{-1}(U_i)$ almost surely.",
+      "detail": "Here $F_i^{-1}(u) = \\inf\\{s : F_i(s) \\ge u\\}$. Since $F_i(X_i-) \\le U_i \\le F_i(X_i)$, the value $F_i^{-1}(U_i)$ is at most $X_i$, and it is smaller only if $U_i = F_i(X_i-)$ and $F_i$ is constant on an interval left of $X_i$, an event of probability zero.",
+      "uses": []
+     },
+     {
+      "id": "s:copula",
+      "slogan": "Take the joint distribution function $C$ of $(U_1, \\dots, U_d)$ as the copula.",
+      "detail": "By step 2 every $U_i$ is uniform on $[0, 1]$, so the [distribution function](c:distribution-function) $C(u) = P(U_1 \\le u_1, \\dots, U_d \\le u_d)$ has uniform marginals. So $C$ is a [copula](c:copula).",
+      "uses": []
+     },
+     {
+      "id": "s:sklar",
+      "slogan": "Rewrite $H$ through $C$ with the rule $F_i^{-1}(u) \\le x \\iff u \\le F_i(x)$.",
+      "detail": "The rule holds because $F_i$ is nondecreasing and right-continuous. With step 3, $H(x) = P(F_i^{-1}(U_i) \\le x_i \\text{ for all } i) = P(U_i \\le F_i(x_i) \\text{ for all } i) = C(F_1(x_1), \\dots, F_d(x_d))$.",
+      "uses": []
+     },
+     {
+      "id": "s:unique",
+      "slogan": "Show that the formula fixes $C$ on $[0, 1]^d$ when the marginals are continuous.",
+      "detail": "Any copula $C'$ with the same formula agrees with $C$ on the product of the ranges of the $F_i$. For continuous $F_i$ each range contains $(0, 1)$, and a copula is continuous because $|C(u) - C(v)| \\le \\sum_i |u_i - v_i|$, so $C' = C$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:space",
+      "s:transform"
+     ],
+     [
+      "s:transform",
+      "s:recover"
+     ],
+     [
+      "s:transform",
+      "s:copula"
+     ],
+     [
+      "s:recover",
+      "s:sklar"
+     ],
+     [
+      "s:copula",
+      "s:sklar"
+     ],
+     [
+      "s:sklar",
+      "s:unique"
+     ]
+    ],
+    "conclusion": "s:unique",
+    "concepts": {
+     "c:joint-distribution": "The theorem factors the joint distribution function through the marginals.",
+     "c:marginal-distribution": "The marginals are the inputs that the copula combines.",
+     "c:copula": "The copula carries all the dependence between the coordinates.",
+     "c:distribution-function": "Distribution functions and their generalized inverses drive every step.",
+     "c:uniform-distribution": "The transformed variables are uniform, so their joint law is a copula."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The distributional-transform proof of L. Rüschendorf, On the distributional transform, Sklar's theorem, and the empirical copula process, Journal of Statistical Planning and Inference (2009)."
+    }
+   }
+  ],
+  "new_concepts": [
+   {
+    "id": "c:copula",
+    "name": "copula",
+    "reminder": "A copula is a joint distribution function on the unit cube whose marginals are uniform.",
+    "definition": "A $d$-dimensional copula is the [distribution function](c:distribution-function) $C(u) = P(U_1 \\le u_1, \\dots, U_d \\le u_d)$ of a random vector $(U_1, \\dots, U_d)$ whose coordinates each have the [uniform distribution](c:uniform-distribution) on $[0, 1]$.",
+    "requires": [
+     "c:distribution-function",
+     "c:uniform-distribution"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "wd:Q190556",
+  "statement": "For every real number $x$ and every integer $n$, $(\\cos x + i\\sin x)^n = \\cos nx + i\\sin nx$, where $i$ is the [imaginary unit](c:imaginary-unit) of the [complex numbers](c:complex-number) and $\\cos$ and $\\sin$ are the [trigonometric functions](c:trigonometric-function).",
+  "hypotheses": [
+   {
+    "id": "h:real",
+    "text": "The angle $x$ is a real number.",
+    "concept": null
+   },
+   {
+    "id": "h:integer",
+    "text": "The exponent $n$ is an integer.",
+    "concept": null
+   }
+  ],
+  "conclusion": "$(\\cos x + i\\sin x)^n = \\cos nx + i\\sin nx$.",
+  "formal": {
+   "decl": "Complex.cos_add_sin_mul_I_pow",
+   "difference": "The declaration takes $n \\in \\mathbb{N}$ and a complex $z$, so it allows complex angles but omits negative exponents."
+  },
+  "proofs": [
+   {
+    "id": "euler-formula",
+    "name": "Euler's formula",
+    "slogan": "Write $\\cos x + i\\sin x$ as $e^{ix}$, raise the exponential to the $n$-th power, and convert back.",
+    "scope": "All integers $n$; step 3 treats $n < 0$ with $e^{-a} = 1/e^{a}$. For $n = 0$ both sides equal $1$.",
+    "mechanisms": [
+     "m:algebraic-identity",
+     "m:induction"
+    ],
+    "roles": [
+     {
+      "h": "h:real",
+      "why": "Euler's formula applies to the angle $x$ and to its multiples $nx$.",
+      "steps": [
+       "s:euler",
+       "s:back"
+      ]
+     },
+     {
+      "h": "h:integer",
+      "why": "An integer exponent is a repeated product or the inverse of one, which matches the exponent rule.",
+      "steps": [
+       "s:power",
+       "s:negative"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:euler",
+      "slogan": "Write $\\cos x + i\\sin x = e^{ix}$ by Euler's formula.",
+      "detail": "Euler's formula $e^{i\\theta} = \\cos\\theta + i\\sin\\theta$ follows from the power series of the [exponential function](c:exponential-function), cosine and sine. With $\\theta = x$ it gives $\\cos x + i\\sin x = e^{ix}$.",
+      "uses": [
+       "nl:16110"
+      ]
+     },
+     {
+      "id": "s:power",
+      "slogan": "Raise $e^{ix}$ to a natural power with the rule $e^{a+b} = e^a e^b$.",
+      "detail": "Induction on $n \\ge 0$ gives $(e^{ix})^n = e^{inx}$: the case $n = 0$ is $1 = e^0$, and $(e^{ix})^{n+1} = e^{inx}e^{ix} = e^{i(n+1)x}$.",
+      "uses": []
+     },
+     {
+      "id": "s:negative",
+      "slogan": "Extend the power rule to negative exponents with $e^{-a} = 1/e^{a}$.",
+      "detail": "For $n = -m$ with $m > 0$, the identity $e^{a}e^{-a} = e^{0} = 1$ and step 2 give $(e^{ix})^{-m} = 1/e^{imx} = e^{-imx} = e^{inx}$.",
+      "uses": []
+     },
+     {
+      "id": "s:back",
+      "slogan": "Convert $e^{inx}$ back to $\\cos nx + i\\sin nx$ by Euler's formula.",
+      "detail": "Euler's formula with the angle $nx$ gives $e^{inx} = \\cos nx + i\\sin nx$. Steps 1 to 3 give $(\\cos x + i\\sin x)^n = (e^{ix})^n = e^{inx}$ for every integer $n$, so the formula follows.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:euler",
+      "s:back"
+     ],
+     [
+      "s:power",
+      "s:negative"
+     ],
+     [
+      "s:power",
+      "s:back"
+     ],
+     [
+      "s:negative",
+      "s:back"
+     ]
+    ],
+    "conclusion": "s:back",
+    "concepts": {
+     "c:imaginary-unit": "The imaginary unit $i$ turns the pair of cosine and sine into one complex number.",
+     "c:complex-number": "The formula is an identity between powers of complex numbers.",
+     "c:trigonometric-function": "Cosine and sine of the multiple angle $nx$ form the right side.",
+     "c:exponential-function": "The exponential turns powers into multiples of the angle."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Complex.cos_add_sin_mul_I_pow",
+     "follows": true,
+     "note": "mathlib rewrites both sides with exp_mul_I ($\\cos z + \\sin z \\cdot i = e^{zi}$) and the power rule exp_nat_mul."
+    }
+   },
+   {
+    "id": "angle-addition",
+    "name": "Induction with angle addition",
+    "slogan": "Multiply by $\\cos x + i\\sin x$ one factor at a time with the angle-addition formulas, then invert the factor for negative $n$.",
+    "scope": "Steps 1 to 3 prove the case $n \\ge 0$ by induction, and step 4 treats $n < 0$.",
+    "mechanisms": [
+     "m:induction",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:real",
+      "why": "The angle-addition formulas hold for the real angles $nx$ and $x$.",
+      "steps": [
+       "s:step"
+      ]
+     },
+     {
+      "h": "h:integer",
+      "why": "Induction covers $n \\ge 0$, and inversion reduces $n < 0$ to the exponent $-n > 0$.",
+      "steps": [
+       "s:base",
+       "s:induct",
+       "s:inverse"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:base",
+      "slogan": "Check the case $n = 0$, where both sides equal $1$.",
+      "detail": "The left side is the empty product $(\\cos x + i\\sin x)^0 = 1$. The right side is $\\cos 0 + i\\sin 0 = 1 + 0 = 1$.",
+      "uses": []
+     },
+     {
+      "id": "s:step",
+      "slogan": "Multiply the case $n$ by $\\cos x + i\\sin x$ and expand with the angle-addition formulas.",
+      "detail": "The product $(\\cos nx + i\\sin nx)(\\cos x + i\\sin x)$ equals $(\\cos nx\\cos x - \\sin nx\\sin x) + i(\\sin nx\\cos x + \\cos nx\\sin x)$. The angle-addition formulas turn it into $\\cos(n+1)x + i\\sin(n+1)x$.",
+      "uses": []
+     },
+     {
+      "id": "s:induct",
+      "slogan": "Conclude the formula for all $n \\ge 0$ by induction on $n$.",
+      "detail": "Step 1 is the base case and step 2 is the induction step, so $(\\cos x + i\\sin x)^n = \\cos nx + i\\sin nx$ for every natural number $n$.",
+      "uses": []
+     },
+     {
+      "id": "s:inverse",
+      "slogan": "Invert $\\cos x + i\\sin x$ to reduce negative exponents to positive ones.",
+      "detail": "Since $(\\cos x + i\\sin x)(\\cos x - i\\sin x) = \\cos^2 x + \\sin^2 x = 1$, the inverse is $\\cos(-x) + i\\sin(-x)$. For $n = -m < 0$, step 3 with the angle $-x$ gives $(\\cos x + i\\sin x)^n = \\cos(-mx) + i\\sin(-mx) = \\cos nx + i\\sin nx$, which covers the remaining integers.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:base",
+      "s:induct"
+     ],
+     [
+      "s:step",
+      "s:induct"
+     ],
+     [
+      "s:induct",
+      "s:inverse"
+     ]
+    ],
+    "conclusion": "s:inverse",
+    "concepts": {
+     "c:imaginary-unit": "The imaginary unit $i$ turns the pair of cosine and sine into one complex number.",
+     "c:complex-number": "The formula is an identity between powers of complex numbers.",
+     "c:trigonometric-function": "Cosine and sine of the multiple angle $nx$ form the right side."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The classical induction proof from the angle-addition formulas of cosine and sine."
+    }
+   }
+  ]
+ }
+]
