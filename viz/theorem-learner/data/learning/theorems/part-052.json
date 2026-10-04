@@ -1,0 +1,1863 @@
+[
+ {
+  "id": "nm:decomposition-of-an-orthogonal-transformation-as-a-product-of-reflections",
+  "statement": "Every [orthogonal transformation](c:orthogonal-transformation) of a finite-dimensional real [inner product space](c:inner-product-space) $V$ is a product of at most $\\dim V$ [reflections](c:reflection-at-a-hyperplane) in hyperplanes.",
+  "hypotheses": [
+   {
+    "id": "h:space",
+    "text": "The space $V$ is a real [inner product space](c:inner-product-space) of finite dimension $n$.",
+    "concept": "c:inner-product-space"
+   },
+   {
+    "id": "h:orthogonal",
+    "text": "The map $\\varphi\\colon V\\to V$ is an [orthogonal transformation](c:orthogonal-transformation): a linear bijection that keeps the inner product.",
+    "concept": "c:orthogonal-transformation"
+   }
+  ],
+  "conclusion": "The map $\\varphi$ equals $\\rho_1\\cdots\\rho_k$ with $k\\le n$ and each $\\rho_i$ a [reflection](c:reflection-at-a-hyperplane) in a hyperplane; the identity is the empty product.",
+  "formal": {
+   "decl": "LinearIsometryEquiv.reflections_generate",
+   "difference": "The declaration says that the reflections generate the orthogonal group, with no bound on the number of factors. The bound $\\dim V$ is the stronger declaration LinearIsometryEquiv.reflections_generate_dim, and the steps follow its proof."
+  },
+  "proofs": [
+   {
+    "id": "fixed-space-induction",
+    "name": "Induction on the moved dimension",
+    "slogan": "Induct on the dimension of the orthogonal complement of the fixed space, and remove one dimension with one reflection.",
+    "scope": "The whole theorem, with the bound $\\dim V$. Let $W$ be the fixed space of $\\varphi$ and $m=\\dim W^\\perp\\le n$; the case $m=0$ is $\\varphi=\\mathrm{id}$, the empty product.",
+    "mechanisms": [
+     "m:strong-induction",
+     "m:dimension-count"
+    ],
+    "roles": [
+     {
+      "h": "h:space",
+      "why": "Finite dimension gives $\\dim W+\\dim W^\\perp=n$, so the induction on $m$ stops.",
+      "steps": [
+       "s:fixed",
+       "s:grow",
+       "s:induct"
+      ]
+     },
+     {
+      "h": "h:orthogonal",
+      "why": "Keeping the [inner product](c:inner-product-space) makes $W^\\perp$ invariant and gives $\\|\\varphi v\\|=\\|v\\|$, so one reflection swaps $v$ and $\\varphi v$.",
+      "steps": [
+       "s:invariant",
+       "s:reflect"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:fixed",
+      "slogan": "Name the fixed space $W$ of $\\varphi$ and measure its orthogonal complement.",
+      "detail": "Let $W=\\ker(\\mathrm{id}-\\varphi)$ and $m=\\dim W^\\perp$. If $m=0$, then $W=V$ and $\\varphi=\\mathrm{id}$, the empty product. Otherwise pick $v\\in W^\\perp$ with $v\\ne0$.",
+      "uses": []
+     },
+     {
+      "id": "s:invariant",
+      "slogan": "Show that $\\varphi$ maps $W^\\perp$ into itself.",
+      "detail": "For $w\\in W$ and $u\\in W^\\perp$, $\\langle\\varphi u,w\\rangle=\\langle\\varphi u,\\varphi w\\rangle=\\langle u,w\\rangle=0$. So $\\varphi v\\in W^\\perp$. Also $\\varphi v\\ne v$, because $W\\cap W^\\perp=0$ and $v\\ne0$.",
+      "uses": []
+     },
+     {
+      "id": "s:reflect",
+      "slogan": "Reflect in the hyperplane orthogonal to $x=v-\\varphi v$ to swap $v$ and $\\varphi v$.",
+      "detail": "Let $\\rho$ be the [reflection](c:reflection-at-a-hyperplane) in $x^\\perp$ with $x=v-\\varphi v\\ne0$. Because $\\|v\\|=\\|\\varphi v\\|$, we get $\\rho(v)=\\varphi v$ and $\\rho(\\varphi v)=v$.",
+      "uses": []
+     },
+     {
+      "id": "s:grow",
+      "slogan": "Show that $\\rho\\varphi$ fixes $W$ and $v$, so its fixed space is larger.",
+      "detail": "A vector $w\\in W$ has $\\varphi w=w$ and $\\langle w,x\\rangle=0$ because $v,\\varphi v\\in W^\\perp$, so $\\rho$ fixes $w$. Also $\\rho\\varphi v=v$. Hence the fixed space $W'$ of $\\rho\\varphi$ contains $W$ and $v\\notin W$, so $\\dim W'\\ge\\dim W+1$.",
+      "uses": []
+     },
+     {
+      "id": "s:induct",
+      "slogan": "Factor $\\rho\\varphi$ by the induction hypothesis and multiply by $\\rho$.",
+      "detail": "Now $\\dim W'^\\perp\\le m-1$, so $\\rho\\varphi=\\rho_1\\cdots\\rho_k$ with $k\\le m-1$ by induction. Since $\\rho^2=\\mathrm{id}$, $\\varphi=\\rho\\rho_1\\cdots\\rho_k$ is a product of at most $m\\le n$ reflections.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:fixed",
+      "s:invariant"
+     ],
+     [
+      "s:invariant",
+      "s:reflect"
+     ],
+     [
+      "s:reflect",
+      "s:grow"
+     ],
+     [
+      "s:fixed",
+      "s:grow"
+     ],
+     [
+      "s:grow",
+      "s:induct"
+     ]
+    ],
+    "conclusion": "s:induct",
+    "concepts": {
+     "c:orthogonal-transformation": "The proof factors this kind of map, which keeps lengths and inner products.",
+     "c:inner-product-space": "Orthogonal complements and reflections exist because of the inner product.",
+     "c:reflection-at-a-hyperplane": "Reflections are the factors, and one reflection swaps two vectors of equal length."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "LinearIsometryEquiv.reflections_generate",
+     "follows": true,
+     "note": "mathlib proves reflections_generate_dim_aux by strong induction on the dimension of the orthogonal complement of the fixed space, using reflection_sub and finrank_add_finrank_orthogonal, then takes the subgroup closure."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:26539",
+  "statement": "Let $S$ be a [rewriting system](c:rewriting-system) on a free [associative algebra](c:associative-algebra) $k\\langle X\\rangle$, compatible with a semigroup partial order with the [descending chain condition](c:descending-chain-condition). Every ambiguity of $S$ resolves if and only if the irreducible monomials, the [normal forms](c:normal-form), form a $k$-basis of $k\\langle X\\rangle/I$, where $I$ is the ideal of the rules.",
+  "hypotheses": [
+   {
+    "id": "h:system",
+    "text": "$S=\\{(W_\\sigma,f_\\sigma)\\}$ is a [rewriting system](c:rewriting-system) on $k\\langle X\\rangle$ over a commutative ring $k$: each $W_\\sigma$ is a monomial and $f_\\sigma\\in k\\langle X\\rangle$.",
+    "concept": "c:rewriting-system"
+   },
+   {
+    "id": "h:order",
+    "text": "The semigroup partial order $\\le$ on monomials has the [descending chain condition](c:descending-chain-condition), and each $f_\\sigma$ is a combination of monomials $<W_\\sigma$.",
+    "concept": "c:descending-chain-condition"
+   }
+  ],
+  "conclusion": "All ambiguities of $S$ resolve if and only if the irreducible monomials form a $k$-basis of $k\\langle X\\rangle/I$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "bergman",
+    "name": "Reduction-unique elements",
+    "slogan": "Show that resolvable ambiguities make every element reduction-unique by induction on monomials, then read off the basis.",
+    "scope": "An ambiguity is a word $ABC$ with $W_\\sigma=AB$, $W_\\tau=BC$ (overlap) or $W_\\sigma=B$, $W_\\tau=ABC$ (inclusion), and it resolves when both reductions reach one element. A reduction $r_{A\\sigma B}$ is the linear map that sends $AW_\\sigma B$ to $Af_\\sigma B$ and fixes the other monomials.",
+    "mechanisms": [
+     "m:strong-induction",
+     "m:quotient-construction",
+     "m:case-analysis"
+    ],
+    "roles": [
+     {
+      "h": "h:system",
+      "why": "The rules give the reductions, the ideal $I$ and the ambiguities that the proof joins.",
+      "steps": [
+       "s:local",
+       "s:direct",
+       "s:converse"
+      ]
+     },
+     {
+      "h": "h:order",
+      "why": "Compatibility makes each reduction decrease monomials; the [descending chain condition](c:descending-chain-condition) gives termination and the induction.",
+      "steps": [
+       "s:terminate",
+       "s:induct"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:terminate",
+      "slogan": "Reduce every element to an irreducible element in finitely many steps.",
+      "detail": "A reduction replaces one monomial by finitely many strictly smaller ones, because $\\le$ is compatible with $S$ and is a semigroup order. The multiset order on supports is well founded when $\\le$ is, so no infinite chain of reductions exists.",
+      "uses": []
+     },
+     {
+      "id": "s:final",
+      "slogan": "Define reduction-unique elements and their linear final-value map.",
+      "detail": "Call $a$ reduction-unique if every finite chain of reductions from $a$ to an irreducible element ends at one element $r_S(a)$. Reductions are linear and fix irreducible elements, so these elements form a submodule and $r_S$ is linear on it.",
+      "uses": []
+     },
+     {
+      "id": "s:local",
+      "slogan": "Join two reductions of one monomial by comparing their places in the word.",
+      "detail": "Let two reductions act on the monomial $W$. If their matched subwords are disjoint, the reductions commute and give a common result. If they overlap or one contains the other, $W=PABCR$ and the pair is an ambiguity; its resolution, with $P$ and $R$ attached, gives a common result.",
+      "uses": []
+     },
+     {
+      "id": "s:induct",
+      "slogan": "Show by [well-founded induction](c:well-founded-induction) that every monomial is reduction-unique.",
+      "detail": "Assume that all monomials below $W$ are reduction-unique. Two first reductions $r(W)$ and $r'(W)$ lie in the span of such monomials, so they are reduction-unique, and step 3 gives a common descendant. By step 2 their final values agree, so $W$ is reduction-unique; by linearity every element is.",
+      "uses": []
+     },
+     {
+      "id": "s:direct",
+      "slogan": "Split the algebra into the span of irreducible monomials and the [ideal](c:ideal) $I$.",
+      "detail": "Each reduction changes $a$ by an element of $I$, so $a-r_S(a)\\in I$. Also $r_S(A(W_\\sigma-f_\\sigma)B)=0$, since $AW_\\sigma B$ reduces to $Af_\\sigma B$ and final values are unique, so $I\\subseteq\\ker r_S$. Hence the irreducible monomials span a complement of $I$ and form a basis of the quotient.",
+      "uses": []
+     },
+     {
+      "id": "s:converse",
+      "slogan": "Resolve each ambiguity inside the quotient when the irreducible monomials form a basis.",
+      "detail": "For an ambiguity, $f_\\sigma C-Af_\\tau\\in I$, since both terms equal $ABC$ modulo $I$. Reduce $f_\\sigma C$ and $Af_\\tau$ to irreducible elements $g$ and $g'$. Then $g-g'\\in I\\cap\\mathrm{span}(\\text{irreducibles})=0$, so $g=g'$ and the ambiguity resolves.",
+      "uses": []
+     },
+     {
+      "id": "s:iff",
+      "slogan": "Join the two implications into the equivalence.",
+      "detail": "Steps 1 to 5 show that resolvable ambiguities give a basis of irreducible monomials. Step 6 shows the converse. So all ambiguities resolve if and only if the [normal forms](c:normal-form) form a basis of the quotient.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:terminate",
+      "s:induct"
+     ],
+     [
+      "s:final",
+      "s:induct"
+     ],
+     [
+      "s:local",
+      "s:induct"
+     ],
+     [
+      "s:induct",
+      "s:direct"
+     ],
+     [
+      "s:direct",
+      "s:iff"
+     ],
+     [
+      "s:terminate",
+      "s:converse"
+     ],
+     [
+      "s:converse",
+      "s:iff"
+     ]
+    ],
+    "conclusion": "s:iff",
+    "concepts": {
+     "c:rewriting-system": "The rules $W_\\sigma\\to f_\\sigma$ define the reductions that the proof studies.",
+     "c:associative-algebra": "The reductions act on the free associative algebra and generate its ideal $I$.",
+     "c:descending-chain-condition": "It makes reductions terminate and allows induction on monomials.",
+     "c:normal-form": "Irreducible monomials are the normal forms that must form a basis.",
+     "c:well-founded-induction": "Induction runs over monomials below $W$ in the well-founded order.",
+     "c:ideal": "The ideal $I$ generated by the rules is what the quotient divides out."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Bergman's argument: G. M. Bergman, The diamond lemma for ring theory, Advances in Mathematics 29 (1978), 178-218, theorem 1.2 (doi 10.1016/0001-8708(78)90010-5); it generalizes Newman's lemma."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:dirichlet-s-test",
+  "statement": "Let $a_n$ be a real [monotone sequence](c:monotone-sequence) decreasing to $0$, and let $b_n$ lie in a [Banach space](c:banach-space) with [bounded partial sums](c:bounded-partial-sums). Then the [series](c:series) $\\sum_n a_nb_n$ converges.",
+  "hypotheses": [
+   {
+    "id": "h:decrease",
+    "text": "The real sequence $a_n$ is a [monotone sequence](c:monotone-sequence) with $a_0\\ge a_1\\ge\\cdots$ and $a_n\\to0$.",
+    "concept": "c:monotone-sequence"
+   },
+   {
+    "id": "h:bounded",
+    "text": "The partial sums are [bounded](c:bounded-partial-sums): $\\|b_0+\\cdots+b_{n-1}\\|\\le M$ for all $n$.",
+    "concept": "c:bounded-partial-sums"
+   },
+   {
+    "id": "h:complete",
+    "text": "The terms $b_n$ lie in a [Banach space](c:banach-space), for example $\\mathbb R$ or $\\mathbb C$.",
+    "concept": "c:banach-space"
+   }
+  ],
+  "conclusion": "The series $\\sum_n a_nb_n$ converges.",
+  "formal": {
+   "decl": "Monotone.cauchySeq_series_mul_of_tendsto_zero_of_bounded",
+   "difference": "The declaration takes a nondecreasing sequence tending to $0$ (the decreasing case is the sibling Antitone declaration) and a normed real space, and it concludes that the partial sums are Cauchy. Completeness turns the Cauchy property into convergence."
+  },
+  "proofs": [
+   {
+    "id": "abel-summation",
+    "name": "Summation by parts",
+    "slogan": "Rewrite the partial sums by summation by parts, send the boundary term to zero, and bound the rest by a telescoping series.",
+    "scope": "The whole theorem. Write $B_n=b_0+\\cdots+b_{n-1}$ with $B_0=0$.",
+    "mechanisms": [
+     "m:algebraic-identity",
+     "m:telescoping",
+     "m:cauchy-completeness"
+    ],
+    "roles": [
+     {
+      "h": "h:decrease",
+      "why": "Monotonicity makes every difference $a_i-a_{i+1}$ nonnegative, and $a_n\\to0$ kills the boundary term.",
+      "steps": [
+       "s:boundary",
+       "s:bound"
+      ]
+     },
+     {
+      "h": "h:bounded",
+      "why": "The bound $\\|B_n\\|\\le M$ controls the boundary term and each summand.",
+      "steps": [
+       "s:boundary",
+       "s:bound"
+      ]
+     },
+     {
+      "h": "h:complete",
+      "why": "Completeness turns an absolutely convergent series into a convergent one.",
+      "steps": [
+       "s:abs"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:parts",
+      "slogan": "Rewrite the partial sum of $a_ib_i$ by [summation by parts](c:abel-summation).",
+      "detail": "Since $b_i=B_{i+1}-B_i$ and $B_0=0$, moving the difference from $b_i$ to $a_i$ gives, for every $N\\ge1$, the identity $\\sum_{i<N}a_ib_i=a_{N-1}B_N+\\sum_{i<N-1}(a_i-a_{i+1})B_{i+1}$.",
+      "uses": [
+       "nm:abel-s-lemma"
+      ]
+     },
+     {
+      "id": "s:boundary",
+      "slogan": "Show that the boundary term $a_{N-1}B_N$ tends to $0$.",
+      "detail": "We have $\\|a_{N-1}B_N\\|\\le M\\,a_{N-1}$, and $a_{N-1}\\to0$. So the boundary term tends to $0$ as $N\\to\\infty$.",
+      "uses": []
+     },
+     {
+      "id": "s:bound",
+      "slogan": "Bound the norms of the remaining terms by a [telescoping series](c:telescoping-series).",
+      "detail": "Because $a_i-a_{i+1}\\ge0$, $\\|(a_i-a_{i+1})B_{i+1}\\|\\le M(a_i-a_{i+1})$. The partial sums $\\sum_{i<N}(a_i-a_{i+1})=a_0-a_N$ converge to $a_0$, so the series of norms is bounded by $Ma_0$.",
+      "uses": []
+     },
+     {
+      "id": "s:abs",
+      "slogan": "Conclude that the remaining series converges absolutely, hence converges.",
+      "detail": "The series $\\sum(a_i-a_{i+1})B_{i+1}$ has a convergent series of norms by step 3. In a [Banach space](c:banach-space) an absolutely convergent series converges.",
+      "uses": [
+       "nm:absolutely-convergent-series-in-banach-spaces"
+      ]
+     },
+     {
+      "id": "s:combine",
+      "slogan": "Add the two convergent pieces to get convergence of $\\sum a_nb_n$.",
+      "detail": "By step 1 the partial sums of $\\sum a_nb_n$ equal $a_{N-1}B_N$ plus a partial sum of the convergent series of step 4. The first piece tends to $0$ and the second converges, so the partial sums converge.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:parts",
+      "s:boundary"
+     ],
+     [
+      "s:parts",
+      "s:bound"
+     ],
+     [
+      "s:bound",
+      "s:abs"
+     ],
+     [
+      "s:boundary",
+      "s:combine"
+     ],
+     [
+      "s:abs",
+      "s:combine"
+     ],
+     [
+      "s:parts",
+      "s:combine"
+     ]
+    ],
+    "conclusion": "s:combine",
+    "concepts": {
+     "c:monotone-sequence": "Monotonicity makes all differences $a_i-a_{i+1}$ nonnegative.",
+     "c:bounded-partial-sums": "Bounded partial sums bound the boundary term and each summand.",
+     "c:banach-space": "Completeness lets an absolutely convergent series converge.",
+     "c:series": "The goal is the convergence of the partial sums of the series.",
+     "c:abel-summation": "Summation by parts moves the difference from $b_i$ to $a_i$.",
+     "c:telescoping-series": "The sum of the differences $a_i-a_{i+1}$ collapses to $a_0-a_N$."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Monotone.cauchySeq_series_mul_of_tendsto_zero_of_bounded",
+     "follows": true,
+     "note": "mathlib rewrites with Finset.sum_range_by_parts, sends the boundary term to zero (NormedField.tendsto_zero_smul_of_tendsto_zero_of_bounded) and bounds the rest by b|f(n+1)-f(n)| (cauchySeq_range_of_norm_bounded)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:4048",
+  "statement": "Let $\\mathcal V$ be a closed [symmetric monoidal category](c:symmetric-monoidal-category), $\\mathcal C$ a $\\mathcal V$-[enriched category](c:enriched-category), $F\\colon\\mathcal C\\to\\mathcal V$ a $\\mathcal V$-[functor](c:enriched-functor) and $c$ an object of $\\mathcal C$. The [end](c:end) $\\int_d[\\mathcal C(c,d),Fd]$ exists, and the canonical map $Fc\\to\\int_d[\\mathcal C(c,d),Fd]$ is an isomorphism.",
+  "hypotheses": [
+   {
+    "id": "h:base",
+    "text": "$\\mathcal V$ is a closed [symmetric monoidal category](c:symmetric-monoidal-category) with unit $I$ and internal hom $[-,-]$.",
+    "concept": "c:symmetric-monoidal-category"
+   },
+   {
+    "id": "h:category",
+    "text": "$\\mathcal C$ is a $\\mathcal V$-[enriched category](c:enriched-category), with identities $j_c\\colon I\\to\\mathcal C(c,c)$.",
+    "concept": "c:enriched-category"
+   },
+   {
+    "id": "h:functor",
+    "text": "$F\\colon\\mathcal C\\to\\mathcal V$ is a $\\mathcal V$-[functor](c:enriched-functor): it has maps $F_{c,d}\\colon\\mathcal C(c,d)\\to[Fc,Fd]$ that keep identities and composition.",
+    "concept": "c:enriched-functor"
+   }
+  ],
+  "conclusion": "The maps $\\rho_d\\colon Fc\\to[\\mathcal C(c,d),Fd]$ form a universal wedge, so the [end](c:end) exists and equals $Fc$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "universal-wedge",
+    "name": "Universal wedge at the identity",
+    "slogan": "Show that the transposes of the action of $F$ form a wedge, and that evaluation at the identity of $c$ inverts them.",
+    "scope": "The whole theorem; wedges are written with generalized elements, as usual in enriched category theory. For $\\mathcal V=\\mathbf{Set}$ the statement is the Yoneda lemma.",
+    "mechanisms": [
+     "m:yoneda",
+     "m:universal-property"
+    ],
+    "roles": [
+     {
+      "h": "h:base",
+      "why": "Symmetry and closedness turn $F_{c,d}$ into $\\rho_d$ and let wedges be written with generalized elements.",
+      "steps": [
+       "s:wedge",
+       "s:evaluate"
+      ]
+     },
+     {
+      "h": "h:category",
+      "why": "The identity $j_c$ and the composition of $\\mathcal C$ define the evaluation map and the wedge relation.",
+      "steps": [
+       "s:evaluate",
+       "s:factor"
+      ]
+     },
+     {
+      "h": "h:functor",
+      "why": "Preserving composition gives the wedge condition, and preserving identities gives $\\sigma\\rho=1$.",
+      "steps": [
+       "s:wedge",
+       "s:retract"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:wedge",
+      "slogan": "Define $\\rho_d$ from the action of $F$ and check the wedge condition.",
+      "detail": "Let $\\rho_d$ be the transpose of $F_{c,d}\\colon\\mathcal C(c,d)\\to[Fc,Fd]$ under the symmetry of $\\otimes$. For $f\\colon c\\to d$ it sends $x\\in Fc$ to $F(f)(x)$. Extranaturality in $d$ is the composition axiom of $F$.",
+      "uses": []
+     },
+     {
+      "id": "s:evaluate",
+      "slogan": "Evaluate any wedge at the identity of $c$ to get a map into $Fc$.",
+      "detail": "Given a wedge $\\theta_d\\colon X\\to[\\mathcal C(c,d),Fd]$, let $\\sigma_\\theta\\colon X\\to Fc$ be $\\theta_c$ followed by evaluation at $j_c\\colon I\\to\\mathcal C(c,c)$, that is $x\\mapsto\\theta_c(x)(1_c)$.",
+      "uses": []
+     },
+     {
+      "id": "s:retract",
+      "slogan": "Show that evaluating $\\rho$ at the identity returns $1_{Fc}$.",
+      "detail": "The composite $Fc\\to[\\mathcal C(c,c),Fc]\\to Fc$ sends $x$ to $F(1_c)(x)$. Since $F$ preserves identities, $F(1_c)=1_{Fc}$, so $\\sigma_\\rho=1_{Fc}$.",
+      "uses": []
+     },
+     {
+      "id": "s:factor",
+      "slogan": "Show that every wedge factors through $\\rho$ by $\\sigma_\\theta$.",
+      "detail": "The wedge condition at the pair $(c,d)$, with $f\\colon c\\to d$ a generalized element of $\\mathcal C(c,d)$, reads $\\theta_d(x)(f)=F(f)(\\theta_c(x)(1_c))$. This says $\\theta_d=\\rho_d\\circ\\sigma_\\theta$ for every $d$.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Conclude that $\\rho$ is a universal wedge, so the end equals $Fc$.",
+      "detail": "If $\\theta=\\rho\\circ u$, then $\\sigma_\\theta=\\sigma_\\rho\\circ u=u$ by step 3, so the factorization of step 4 is unique. Hence $\\rho$ is a universal wedge: the [end](c:end) exists and $\\rho\\colon Fc\\cong\\int_d[\\mathcal C(c,d),Fd]$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:wedge",
+      "s:retract"
+     ],
+     [
+      "s:evaluate",
+      "s:retract"
+     ],
+     [
+      "s:wedge",
+      "s:factor"
+     ],
+     [
+      "s:evaluate",
+      "s:factor"
+     ],
+     [
+      "s:retract",
+      "s:conclude"
+     ],
+     [
+      "s:factor",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:symmetric-monoidal-category": "Symmetry turns the action $F_{c,d}$ into its transpose $\\rho_d$.",
+     "c:enriched-category": "The hom objects, identities and composition of $\\mathcal C$ define the wedge.",
+     "c:enriched-functor": "Preserving identities and composition gives the wedge and the retraction.",
+     "c:end": "The end is the universal wedge, and the proof shows that $Fc$ is it."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The end form of the enriched Yoneda lemma, as in G. M. Kelly, Basic Concepts of Enriched Category Theory, Cambridge University Press 1982 (reprinted in Reprints in Theory and Applications of Categories 10, 2005), chapter 2."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:euler-s-four-square-identity",
+  "statement": "For $a,b,c,d,x,y,z,w$ in a [commutative ring](c:commutative-ring), $(a^2+b^2+c^2+d^2)(x^2+y^2+z^2+w^2)=P^2+Q^2+R^2+S^2$, where $P=ax-by-cz-dw$, $Q=ay+bx+cw-dz$, $R=az-bw+cx+dy$ and $S=aw+bz-cy+dx$. This is a [polynomial identity](c:polynomial-identity).",
+  "hypotheses": [
+   {
+    "id": "h:ring",
+    "text": "The eight elements $a,b,c,d,x,y,z,w$ lie in a [commutative ring](c:commutative-ring).",
+    "concept": "c:commutative-ring"
+   }
+  ],
+  "conclusion": "$(a^2+b^2+c^2+d^2)(x^2+y^2+z^2+w^2)=P^2+Q^2+R^2+S^2$.",
+  "formal": {
+   "decl": "euler_four_squares",
+   "difference": null
+  },
+  "proofs": [
+   {
+    "id": "expand",
+    "name": "Expand and cancel",
+    "slogan": "Expand the four squares, collect the sixteen square terms, and cancel the twelve cross-term pairs.",
+    "scope": "The whole identity, over any commutative ring; it is a [polynomial identity](c:polynomial-identity) in eight variables, so one expansion proves all cases.",
+    "mechanisms": [
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:ring",
+      "why": "Commutativity lets the products $abxy$ and $bayx$ be the same term, so cross terms cancel.",
+      "steps": [
+       "s:squares",
+       "s:cross"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:expand",
+      "slogan": "Expand each of $P^2,Q^2,R^2,S^2$ into square terms and cross terms.",
+      "detail": "Each of $P,Q,R,S$ has four terms. Its square is the sum of the four squared terms plus twice the sum of the six pairwise products of its terms.",
+      "uses": []
+     },
+     {
+      "id": "s:squares",
+      "slogan": "Collect the sixteen square terms into the product of the two sums.",
+      "detail": "The squared terms are $a^2x^2,b^2y^2,c^2z^2,d^2w^2$ from $P$, then $a^2y^2,b^2x^2,c^2w^2,d^2z^2$ from $Q$, and likewise from $R$ and $S$. Each product $u^2v^2$ with $u\\in\\{a,b,c,d\\}$ and $v\\in\\{x,y,z,w\\}$ occurs exactly once, so they sum to $(a^2+b^2+c^2+d^2)(x^2+y^2+z^2+w^2)$.",
+      "uses": []
+     },
+     {
+      "id": "s:cross",
+      "slogan": "Cancel the twelve cross-term pairs.",
+      "detail": "Each of the twelve mixed products, such as $abxy$, occurs in exactly two of $P,Q,R,S$ with opposite signs: $-abxy$ in $P$ and $+abxy$ in $Q$. So all cross terms cancel.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Add the square terms and the cross terms to get the identity.",
+      "detail": "By steps 2 and 3, $P^2+Q^2+R^2+S^2$ equals the sixteen square terms plus zero. So it equals $(a^2+b^2+c^2+d^2)(x^2+y^2+z^2+w^2)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:expand",
+      "s:squares"
+     ],
+     [
+      "s:expand",
+      "s:cross"
+     ],
+     [
+      "s:squares",
+      "s:conclude"
+     ],
+     [
+      "s:cross",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:commutative-ring": "Commutativity makes the cross products cancel in pairs.",
+     "c:polynomial-identity": "The statement is one equality of polynomials, proved by expansion."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "euler_four_squares",
+     "follows": true,
+     "note": "mathlib proves it with the ring tactic: both sides expand to the same polynomial."
+    }
+   },
+   {
+    "id": "quaternion-norm",
+    "name": "Multiplicativity of the quaternion norm",
+    "slogan": "Read $P,Q,R,S$ as the coordinates of a quaternion product and use that the norm is multiplicative.",
+    "scope": "The same identity. The algebra $\\mathbb H_R=R\\oplus Ri\\oplus Rj\\oplus Rk$ is associative because it is the base change of the integer quaternions.",
+    "mechanisms": [
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:ring",
+      "why": "Over a commutative ring $R$ the [quaternion](c:quaternion) algebra is defined and its real part is central.",
+      "steps": [
+       "s:product",
+       "s:conjugate",
+       "s:multiplicative"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:product",
+      "slogan": "Identify $P,Q,R,S$ as the coordinates of a [quaternion](c:quaternion) product.",
+      "detail": "With $i^2=j^2=k^2=ijk=-1$, expanding the product $(a+bi+cj+dk)(x+yi+zj+wk)$ with the multiplication table gives $P+Qi+Rj+Sk$, with $P,Q,R,S$ as in the statement.",
+      "uses": []
+     },
+     {
+      "id": "s:conjugate",
+      "slogan": "Show that $q\\bar q$ is the sum of four squares.",
+      "detail": "For $q=a+v$ with $v=bi+cj+dk$ and $\\bar q=a-v$, we get $q\\bar q=a^2-v^2=a^2+b^2+c^2+d^2=:N(q)$, because $v^2=-(b^2+c^2+d^2)$ (the cross terms cancel as $ij=-ji$). Conjugation reverses products.",
+      "uses": []
+     },
+     {
+      "id": "s:multiplicative",
+      "slogan": "Show that the norm is multiplicative: $N(pq)=N(p)N(q)$.",
+      "detail": "$N(pq)=(pq)\\overline{pq}=p\\,(q\\bar q)\\,\\bar p=p\\,N(q)\\,\\bar p$. The element $N(q)\\in R$ is central, so this equals $N(q)\\,p\\bar p=N(p)N(q)$.",
+      "uses": []
+     },
+     {
+      "id": "s:read",
+      "slogan": "Read the norm of $pq$ in coordinates to get the identity.",
+      "detail": "By step 1, $pq$ has coordinates $P,Q,R,S$, so $N(pq)=P^2+Q^2+R^2+S^2$. By step 3 this equals $N(p)N(q)=(a^2+b^2+c^2+d^2)(x^2+y^2+z^2+w^2)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:product",
+      "s:read"
+     ],
+     [
+      "s:conjugate",
+      "s:multiplicative"
+     ],
+     [
+      "s:multiplicative",
+      "s:read"
+     ]
+    ],
+    "conclusion": "s:read",
+    "concepts": {
+     "c:commutative-ring": "The coordinates $a,\\dots,w$ and the real norms live in this ring.",
+     "c:polynomial-identity": "The conclusion is a polynomial identity that the norm law gives at once.",
+     "c:quaternion": "Quaternion multiplication packs the four sums into one product."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The classical quaternion proof (Euler's identity as the multiplicativity of the norm of Hamilton's quaternions); not the mathlib route."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q3526998",
+  "statement": "Let $Z\\subseteq A\\subseteq X$ be subspaces of a topological space with the [closure](c:closure) of $Z$ inside the [interior](c:interior) of $A$. Then the inclusion $(X\\setminus Z,A\\setminus Z)\\hookrightarrow(X,A)$ induces isomorphisms $H_n(X\\setminus Z,A\\setminus Z)\\to H_n(X,A)$ of [relative homology](c:relative-homology) for every $n$.",
+  "hypotheses": [
+   {
+    "id": "h:subspaces",
+    "text": "The sets $Z\\subseteq A\\subseteq X$ are subspaces of a topological space $X$.",
+    "concept": null
+   },
+   {
+    "id": "h:interior",
+    "text": "The [closure](c:closure) of $Z$ lies in the [interior](c:interior) of $A$.",
+    "concept": "c:interior"
+   }
+  ],
+  "conclusion": "The inclusion of pairs induces isomorphisms $H_n(X\\setminus Z,A\\setminus Z)\\cong H_n(X,A)$ in [relative homology](c:relative-homology) for all $n$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "small-chains",
+    "name": "Small chains by subdivision",
+    "slogan": "Subdivide singular chains until they are small for the cover by $A$ and $X\\setminus Z$, then compare the quotient chain complexes.",
+    "scope": "All $n\\ge0$, with singular homology. Put $B=X\\setminus Z$, so that $A\\cap B=A\\setminus Z$ and the claim is $H_n(B,A\\cap B)\\cong H_n(X,A)$.",
+    "mechanisms": [
+     "m:mayer-vietoris",
+     "m:homotopy-invariance",
+     "m:quotient-construction"
+    ],
+    "roles": [
+     {
+      "h": "h:subspaces",
+      "why": "The subspaces define $B=X\\setminus Z$, the pair $(B,A\\cap B)=(X\\setminus Z,A\\setminus Z)$ and the quotient chain complexes.",
+      "steps": [
+       "s:quotient",
+       "s:conclude"
+      ]
+     },
+     {
+      "h": "h:interior",
+      "why": "The closure-in-interior condition makes the interiors of $A$ and $B$ cover $X$, which the subdivision needs.",
+      "steps": [
+       "s:cover"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:cover",
+      "slogan": "Show that the interiors of $A$ and $B=X\\setminus Z$ cover $X$.",
+      "detail": "The [interior](c:interior) of $B$ is $X\\setminus\\overline Z$. A point outside $\\operatorname{int}A$ is outside $\\overline Z$, because $\\overline Z\\subseteq\\operatorname{int}A$, so it lies in $\\operatorname{int}B$. Hence $\\operatorname{int}A\\cup\\operatorname{int}B=X$.",
+      "uses": []
+     },
+     {
+      "id": "s:small",
+      "slogan": "Subdivide singular chains until each simplex lies in $A$ or in $B$.",
+      "detail": "Barycentric [subdivision](c:subdivision) makes the simplices of a chain smaller. By the Lebesgue number lemma for the open cover $\\{\\operatorname{int}A,\\operatorname{int}B\\}$ of a simplex, finitely many subdivisions put every piece inside $A$ or inside $B$. Subdivision is a chain map homotopic to the identity.",
+      "uses": [
+       "nl:18113"
+      ]
+     },
+     {
+      "id": "s:equivalence",
+      "slogan": "Show that small chains give a chain homotopy equivalence that respects $A$.",
+      "detail": "Let $C^{\\mathcal U}_n(X)=C_n(A)+C_n(B)$. Subdivision gives $\\rho\\colon C(X)\\to C^{\\mathcal U}(X)$ and a homotopy $D$ with $\\rho\\iota=1$ and $\\partial D+D\\partial=1-\\iota\\rho$, where $\\iota$ is the inclusion. Both $\\rho$ and $D$ send chains of $A$ to chains of $A$, so $C^{\\mathcal U}(X)/C(A)\\to C(X)/C(A)$ is a [chain homotopy equivalence](c:chain-homotopy-equivalence).",
+      "uses": []
+     },
+     {
+      "id": "s:quotient",
+      "slogan": "Identify $C(B)/C(A\\cap B)$ with $C^{\\mathcal U}(X)/C(A)$.",
+      "detail": "The inclusion $C_n(B)\\to C_n(A)+C_n(B)$ induces a map $C_n(B)/C_n(A\\cap B)\\to(C_n(A)+C_n(B))/C_n(A)$. It is an isomorphism of chain complexes, by the second isomorphism theorem for free abelian groups on simplices, since $C_n(A)\\cap C_n(B)=C_n(A\\cap B)$.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Compose the two isomorphisms in homology to get excision.",
+      "detail": "The map $H_n(B,A\\cap B)\\to H_n(X,A)$ induced by inclusion is the composite of the isomorphism of step 4 and the isomorphism of step 3. Since $B=X\\setminus Z$ and $A\\cap B=A\\setminus Z$, this is the claim.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:cover",
+      "s:small"
+     ],
+     [
+      "s:small",
+      "s:equivalence"
+     ],
+     [
+      "s:equivalence",
+      "s:conclude"
+     ],
+     [
+      "s:quotient",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:closure": "The condition that the closure of $Z$ lies in the interior of $A$ makes the interiors cover $X$.",
+     "c:interior": "Interiors of $A$ and $B$ are open sets that cover $X$, as subdivision needs.",
+     "c:relative-homology": "The claim compares relative homology of two pairs through quotient chain complexes.",
+     "c:subdivision": "Barycentric subdivision makes singular simplices small without changing homology.",
+     "c:chain-homotopy-equivalence": "A chain homotopy equivalence induces isomorphisms in homology."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The proof by small chains, as in A. Hatcher, Algebraic Topology, Cambridge University Press 2002, theorem 2.20 and proposition 2.21."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q4455033",
+  "statement": "A [bounded holomorphic function](c:bounded-holomorphic-function) $f$ on the [unit disc](c:unit-disc) has a [nontangential limit](c:nontangential-limit) at almost every point $e^{i\\theta}$ of the unit circle.",
+  "hypotheses": [
+   {
+    "id": "h:holomorphic",
+    "text": "The function $f$ is [holomorphic](c:holomorphic-function) on the open unit disc $\\mathbb D$.",
+    "concept": "c:holomorphic-function"
+   },
+   {
+    "id": "h:bounded",
+    "text": "There is $M$ with $|f(z)|\\le M$ for all $z\\in\\mathbb D$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "For almost every $\\theta$, $f(z)$ tends to one value as $z\\to e^{i\\theta}$ inside any Stolz angle $\\{|z-e^{i\\theta}|<\\alpha(1-|z|)\\}$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "poisson-lebesgue",
+    "name": "Poisson integral and Lebesgue points",
+    "slogan": "Write $f$ as the Poisson integral of a weak-star limit of its circle slices, then use convergence of Poisson integrals at Lebesgue points.",
+    "scope": "The whole theorem, for every opening $\\alpha$ of the Stolz angle. The exceptional set is the set of non-Lebesgue points of the boundary function $g$, which has measure zero.",
+    "mechanisms": [
+     "m:subsequence",
+     "m:epsilon-delta",
+     "m:approximation"
+    ],
+    "roles": [
+     {
+      "h": "h:holomorphic",
+      "why": "Holomorphy gives the Poisson formula for each slice $f(r\\,\\cdot)$, which becomes the representation $f=P[g]$.",
+      "steps": [
+       "s:poisson"
+      ]
+     },
+     {
+      "h": "h:bounded",
+      "why": "The bound $M$ keeps all slices in a ball of $L^\\infty$ and gives the weak-star limit $g$.",
+      "steps": [
+       "s:slices",
+       "s:weakstar"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:slices",
+      "slogan": "Bound the circle slices $f_r(t)=f(re^{it})$ uniformly in $L^\\infty$.",
+      "detail": "For $0<r<1$ we have $|f_r|\\le M$ on the unit circle $\\mathbb T$. So the slices lie in the ball of radius $M$ of $L^\\infty(\\mathbb T)=L^1(\\mathbb T)^*$.",
+      "uses": []
+     },
+     {
+      "id": "s:weakstar",
+      "slogan": "Extract a [weak-star](c:weak-star-topology) limit $g$ of the slices along $r_n\\to1$.",
+      "detail": "The space $L^1(\\mathbb T)$ is separable, so the sequential Banach-Alaoglu theorem gives a subsequence $f_{r_n}$ that converges weak-star to some $g\\in L^\\infty(\\mathbb T)$ with $\\|g\\|_\\infty\\le M$.",
+      "uses": [
+       "nm:sequential-banach-alaoglu-theorem"
+      ]
+     },
+     {
+      "id": "s:poisson",
+      "slogan": "Show that $f$ is the Poisson integral of $g$.",
+      "detail": "For $|z|<1$, the Poisson formula for the [holomorphic](c:holomorphic-function) function $f(r\\,\\cdot)$ gives $f(rz)=\\int P_z(t)f_r(t)\\,\\tfrac{dt}{2\\pi}$ with the [Poisson kernel](c:poisson-kernel) $P_z$. Let $r=r_n\\to1$: the left side tends to $f(z)$, and the right side tends to $\\int P_zg\\,\\tfrac{dt}{2\\pi}$ because $P_z\\in L^1$.",
+      "uses": [
+       "nm:poisson-integral-formula"
+      ]
+     },
+     {
+      "id": "s:kernel",
+      "slogan": "Compare the Poisson kernel in a Stolz angle with a centered approximate identity.",
+      "detail": "Let $\\varepsilon=1-|z|$ and let $z$ lie in the Stolz angle at $e^{i\\theta}$. Then $P_z(t)\\le C_\\alpha\\,\\varepsilon/(\\varepsilon^2+(t-\\theta)^2)$, and $\\int P_z\\,\\tfrac{dt}{2\\pi}=1$. So $P[g](z)-g(\\theta)=\\int P_z(t)\\,(g(t)-g(\\theta))\\,\\tfrac{dt}{2\\pi}$ is controlled by averages of $|g-g(\\theta)|$ near $\\theta$.",
+      "uses": []
+     },
+     {
+      "id": "s:lebesgue",
+      "slogan": "Show that $P[g](z)\\to g(\\theta)$ in the Stolz angle at every Lebesgue point $\\theta$.",
+      "detail": "Let $G(s)=\\int_{|t-\\theta|<s}|g-g(\\theta)|\\,dt$; at a Lebesgue point $G(s)=o(s)$. Split the integral at a small $\\delta$ and integrate by parts against the majorant of step 4: the part near $\\theta$ is small because $G(s)=o(s)$, and the far part is $O(\\varepsilon/\\delta^2)\\to0$.",
+      "uses": []
+     },
+     {
+      "id": "s:ae",
+      "slogan": "Note that almost every point is a Lebesgue point and conclude.",
+      "detail": "By the Lebesgue differentiation theorem, almost every $\\theta$ is a Lebesgue point of $g$. By steps 3 and 5, $f(z)=P[g](z)\\to g(\\theta)$ inside every Stolz angle at such $\\theta$, with the same value for every $\\alpha$.",
+      "uses": [
+       "wd:Q2275191"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:slices",
+      "s:weakstar"
+     ],
+     [
+      "s:weakstar",
+      "s:poisson"
+     ],
+     [
+      "s:poisson",
+      "s:lebesgue"
+     ],
+     [
+      "s:kernel",
+      "s:lebesgue"
+     ],
+     [
+      "s:lebesgue",
+      "s:ae"
+     ]
+    ],
+    "conclusion": "s:ae",
+    "concepts": {
+     "c:bounded-holomorphic-function": "These are the functions whose boundary behavior the theorem describes.",
+     "c:unit-disc": "The function lives on the disc, and the limits are taken at its boundary circle.",
+     "c:nontangential-limit": "The limit is taken inside Stolz angles, which the Poisson kernel estimate allows.",
+     "c:holomorphic-function": "Holomorphy gives the Poisson formula for the slices.",
+     "c:weak-star-topology": "Weak-star compactness gives a limit $g$ of the slices.",
+     "c:poisson-kernel": "The kernel represents $f$ through $g$ and acts as an approximate identity."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Fatou's classical argument (Poisson representation by a weak-star limit, then convergence of Poisson integrals at Lebesgue points), as in J. B. Garnett, Bounded Analytic Functions, Springer, chapter I."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q5473576",
+  "statement": "Let $(X_n)$ be an irreducible [Markov chain](c:markov-chain) on a countable state space $S$ with transition probabilities $p_{ik}$. It is [positive recurrent](c:positive-recurrence) if and only if there are a [Lyapunov function](c:lyapunov-function) $V\\colon S\\to[0,\\infty)$, a finite set $F\\subseteq S$ and $\\varepsilon>0$ with $\\sum_kp_{ik}V(k)<\\infty$ for $i\\in F$ and $\\sum_kp_{ik}V(k)\\le V(i)-\\varepsilon$ for $i\\notin F$.",
+  "hypotheses": [
+   {
+    "id": "h:chain",
+    "text": "The process $(X_n)$ is an irreducible [Markov chain](c:markov-chain) on a countable state space $S$.",
+    "concept": "c:markov-chain"
+   }
+  ],
+  "conclusion": "The chain is [positive recurrent](c:positive-recurrence) exactly when a function $V\\ge0$, a finite set $F$ and $\\varepsilon>0$ satisfy the two drift conditions.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "drift",
+    "name": "Drift and a stopped supermartingale",
+    "slogan": "Stop $V(X_n)+\\varepsilon n$ when the chain enters $F$ to bound the mean hitting time, then sum return times over the finite set.",
+    "scope": "Both directions of the equivalence. For the converse the proof takes $F=\\{0\\}$, $\\varepsilon=1$ and $V(i)=E_i[\\tau_0]$.",
+    "mechanisms": [
+     "m:martingale",
+     "m:monotone-limit",
+     "m:extremal-choice"
+    ],
+    "roles": [
+     {
+      "h": "h:chain",
+      "why": "Irreducibility spreads recurrence from one state to all states, and countability makes the sums over successors meaningful.",
+      "steps": [
+       "s:recur",
+       "s:induced",
+       "s:converse"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:supermart",
+      "slogan": "Stop $V(X_n)+\\varepsilon n$ at the hitting time of $F$ to get a supermartingale.",
+      "detail": "Let $\\tau=\\inf\\{n\\ge0:X_n\\in F\\}$, a [stopping time](c:stopping-time), and start at $i\\notin F$. On $\\{\\tau>n\\}$ the drift condition gives $E[V(X_{n+1})+\\varepsilon(n+1)\\mid\\mathcal F_n]\\le V(X_n)+\\varepsilon n$. So $M_n=V(X_{n\\wedge\\tau})+\\varepsilon(n\\wedge\\tau)$ is a nonnegative [supermartingale](c:martingale).",
+      "uses": []
+     },
+     {
+      "id": "s:hitting",
+      "slogan": "Bound the mean hitting time of $F$ by $V(i)/\\varepsilon$.",
+      "detail": "Since $M_n\\ge0$, $\\varepsilon E_i[n\\wedge\\tau]\\le E_iM_n\\le V(i)$. Monotone convergence gives $E_i[\\tau]\\le V(i)/\\varepsilon$. For $i\\in F$ the first-step formula gives $E_i[\\tau^+]\\le1+\\varepsilon^{-1}\\sum_kp_{ik}V(k)<\\infty$, with $\\tau^+$ the return time to $F$.",
+      "uses": [
+       "wd:Q1153584"
+      ]
+     },
+     {
+      "id": "s:recur",
+      "slogan": "Show that the chain visits $F$ infinitely often and is recurrent.",
+      "detail": "By step 2 and the strong Markov property, $\\tau^+<\\infty$ almost surely from each state of $F$. So the chain visits the finite set $F$ infinitely often, some $j\\in F$ is visited infinitely often, and $j$ is recurrent. Irreducibility makes every state recurrent.",
+      "uses": []
+     },
+     {
+      "id": "s:induced",
+      "slogan": "Bound the return time to $j$ through the chain observed on $F$.",
+      "detail": "Observed at its successive visits to $F$, the chain is an irreducible chain on the finite set $F$, so the number $N_j$ of its steps to return to $j$ has finite mean. The strong Markov property gives $E_j[T_j]\\le\\max_{y\\in F}E_y[\\tau^+]\\cdot E_j[N_j]<\\infty$. So $j$ is positive recurrent, and so is every state.",
+      "uses": []
+     },
+     {
+      "id": "s:converse",
+      "slogan": "Build $V(i)=E_i[\\tau_0]$ when the chain is positive recurrent.",
+      "detail": "Fix a state $0$, put $F=\\{0\\}$ and $V(i)=E_i[\\tau_0]$, finite by positive recurrence. For $i\\ne0$, the first-step formula gives $\\sum_kp_{ik}V(k)=V(i)-1$. For $i=0$, $\\sum_kp_{0k}V(k)=E_0[\\tau_0^+]-1<\\infty$.",
+      "uses": []
+     },
+     {
+      "id": "s:iff",
+      "slogan": "Join the two implications into the criterion.",
+      "detail": "Steps 1 to 4 show that the drift conditions give [positive recurrence](c:positive-recurrence). Step 5 shows that positive recurrence gives the drift conditions. So the chain is positive recurrent if and only if a [Lyapunov function](c:lyapunov-function) $V$, a finite set $F$ and $\\varepsilon>0$ exist.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:supermart",
+      "s:hitting"
+     ],
+     [
+      "s:hitting",
+      "s:recur"
+     ],
+     [
+      "s:recur",
+      "s:induced"
+     ],
+     [
+      "s:hitting",
+      "s:induced"
+     ],
+     [
+      "s:induced",
+      "s:iff"
+     ],
+     [
+      "s:converse",
+      "s:iff"
+     ]
+    ],
+    "conclusion": "s:iff",
+    "concepts": {
+     "c:markov-chain": "The proof studies hitting and return times of this chain.",
+     "c:positive-recurrence": "The goal is finite mean return times to every state.",
+     "c:lyapunov-function": "The function $V$ with negative drift outside $F$ drives the stopped process bound.",
+     "c:stopping-time": "The hitting time of $F$ is the stopping time that freezes the process.",
+     "c:martingale": "The stopped process is a supermartingale, so its mean cannot grow."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard drift argument for Foster's criterion; see for example P. Bremaud, Markov Chains: Gibbs Fields, Monte Carlo Simulation, and Queues, Springer 1999, chapter 5."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:frechet-von-neumann-jordan-theorem",
+  "statement": "Let $E$ be a [normed space](c:normed-space) over $\\mathbb R$ or $\\mathbb C$ whose norm satisfies the parallelogram law $\\|x+y\\|^2+\\|x-y\\|^2=2\\|x\\|^2+2\\|y\\|^2$. Then $E$ has an [inner product](c:inner-product-space) $\\langle\\cdot,\\cdot\\rangle$ with $\\langle x,x\\rangle=\\|x\\|^2$ for all $x$.",
+  "hypotheses": [
+   {
+    "id": "h:normed",
+    "text": "The space $E$ is a [normed space](c:normed-space) over $\\mathbb R$ or $\\mathbb C$.",
+    "concept": "c:normed-space"
+   },
+   {
+    "id": "h:parallelogram",
+    "text": "The norm satisfies the parallelogram law for all $x,y\\in E$.",
+    "concept": "c:inner-product-spaceable"
+   }
+  ],
+  "conclusion": "There is an [inner product](c:inner-product-space) on $E$ whose norm is the given norm.",
+  "formal": {
+   "decl": "nonempty_innerProductSpace",
+   "difference": "The declaration takes the parallelogram law as the typeclass InnerProductSpaceable, over any RCLike field, and concludes that an InnerProductSpace structure exists. Its inner product is conjugate-linear in the first slot, the mirror of the convention used here."
+  },
+  "proofs": [
+   {
+    "id": "polarization",
+    "name": "Polarization formula",
+    "slogan": "Define the inner product by the polarization formula, prove additivity from the parallelogram law, then extend homogeneity from integers to rationals, reals and $i$.",
+    "scope": "Real and complex scalars; in the real case the $i$ terms are absent and step 5 only checks positivity. Write $B(x,y)=\\tfrac14(\\|x+y\\|^2-\\|x-y\\|^2)$ for the real part.",
+    "mechanisms": [
+     "m:algebraic-identity",
+     "m:density-extension"
+    ],
+    "roles": [
+     {
+      "h": "h:parallelogram",
+      "why": "The law makes the polarized form additive in the first variable, the key algebraic step.",
+      "steps": [
+       "s:additive"
+      ]
+     },
+     {
+      "h": "h:normed",
+      "why": "Continuity of the norm gives real homogeneity, and $\\|iu\\|=\\|u\\|$ gives complex homogeneity and positivity.",
+      "steps": [
+       "s:real",
+       "s:complex"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:define",
+      "slogan": "Define $\\langle x,y\\rangle$ from the norm by the polarization formula.",
+      "detail": "Put $\\langle x,y\\rangle=\\tfrac14\\big(\\|x+y\\|^2-\\|x-y\\|^2+i\\|x+iy\\|^2-i\\|x-iy\\|^2\\big)$ in the complex case; drop the $i$ terms in the real case. Substitution gives $\\langle x,x\\rangle=\\|x\\|^2$ and $\\langle y,x\\rangle=\\overline{\\langle x,y\\rangle}$.",
+      "uses": [
+       "nl:10498"
+      ]
+     },
+     {
+      "id": "s:additive",
+      "slogan": "Prove additivity in the first variable from the parallelogram law.",
+      "detail": "Applying the law to $(x+y,x')$ and $(x-y,x')$ and subtracting gives $B(x+x',y)+B(x-x',y)=2B(x,y)$. Taking $x'=x$ gives $B(2x,y)=2B(x,y)$, so $B(a,y)+B(b,y)=2B(\\tfrac{a+b}2,y)=B(a+b,y)$. The $i$-part is the same expression for $(x,iy)$, so it is additive too.",
+      "uses": [
+       "nl:6954"
+      ]
+     },
+     {
+      "id": "s:rational",
+      "slogan": "Extend homogeneity from integers to rationals.",
+      "detail": "Since $\\|-x+y\\|=\\|x-y\\|$, $B(-x,y)=-B(x,y)$. Additivity gives $B(nx,y)=nB(x,y)$ for integers $n$, and applying this to $x/n$ gives $B(\\tfrac mnx,y)=\\tfrac mnB(x,y)$.",
+      "uses": []
+     },
+     {
+      "id": "s:real",
+      "slogan": "Extend homogeneity to real scalars by continuity and density.",
+      "detail": "For fixed $x,y$ the map $t\\mapsto B(tx,y)$ is continuous, because the norm is continuous. It agrees with $t\\mapsto tB(x,y)$ on the [dense set](c:dense-set) $\\mathbb Q$, so it agrees on $\\mathbb R$. The $i$-part is treated in the same way.",
+      "uses": []
+     },
+     {
+      "id": "s:complex",
+      "slogan": "Check the scalar $i$ and positivity to finish the inner product.",
+      "detail": "Since $\\|iu\\|=\\|u\\|$, the formula gives $\\langle ix,y\\rangle=i\\langle x,y\\rangle$, and with real homogeneity this is linearity over $\\mathbb C$. Also $\\langle x,x\\rangle=\\|x\\|^2>0$ for $x\\ne0$. So $\\langle\\cdot,\\cdot\\rangle$ is an inner product with $\\langle x,x\\rangle=\\|x\\|^2$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:define",
+      "s:additive"
+     ],
+     [
+      "s:additive",
+      "s:rational"
+     ],
+     [
+      "s:rational",
+      "s:real"
+     ],
+     [
+      "s:real",
+      "s:complex"
+     ],
+     [
+      "s:define",
+      "s:complex"
+     ]
+    ],
+    "conclusion": "s:complex",
+    "concepts": {
+     "c:normed-space": "Continuity of the norm and $\\|iu\\|=\\|u\\|$ drive the scalar steps.",
+     "c:inner-product-spaceable": "This is the parallelogram property that the proof turns into an inner product.",
+     "c:inner-product-space": "The goal is an inner product whose norm is the given norm.",
+     "c:dense-set": "The rationals are dense in the reals, so rational homogeneity extends to real."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "nonempty_innerProductSpace",
+     "follows": true,
+     "note": "mathlib defines inner_ by the polarization formula, proves add_left from the parallelogram identity, proves smul_left for natural numbers, integers and rationals (rat_prop), then for reals by continuity and density (real_prop), then for the scalar i (I_prop)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q5610188",
+  "statement": "For $n\\ge2$, $\\kappa\\in\\mathbb R$ and $D>0$, the compact [Riemannian manifolds](c:riemannian-manifold) of dimension $n$ with [Ricci curvature](c:ricci-curvature) at least $(n-1)\\kappa$ and diameter at most $D$ form a precompact family for the [Gromov-Hausdorff distance](c:gromov-hausdorff-distance).",
+  "hypotheses": [
+   {
+    "id": "h:manifolds",
+    "text": "The spaces $M_j$ are compact [Riemannian manifolds](c:riemannian-manifold) of dimension $n$.",
+    "concept": "c:riemannian-manifold"
+   },
+   {
+    "id": "h:ricci",
+    "text": "The [Ricci curvature](c:ricci-curvature) of each $M_j$ is at least $(n-1)\\kappa$.",
+    "concept": "c:ricci-curvature"
+   },
+   {
+    "id": "h:diameter",
+    "text": "The diameter of each $M_j$ is at most $D$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "Every sequence $M_j$ has a subsequence that converges in the [Gromov-Hausdorff distance](c:gromov-hausdorff-distance) to a [compact metric space](c:compact-metric-space).",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "precompactness",
+    "name": "Volume comparison and precompactness",
+    "slogan": "Bound the packing number of each manifold by volume comparison, then apply Gromov's precompactness argument for uniformly totally bounded spaces.",
+    "scope": "An outline: the Bishop-Gromov volume comparison and the precompactness criterion of the cited work are used without proof. The limit is a compact metric space, not necessarily a manifold.",
+    "mechanisms": [
+     "m:curvature-comparison",
+     "m:diagonal-argument",
+     "m:cited-deep-result"
+    ],
+    "roles": [
+     {
+      "h": "h:manifolds",
+      "why": "Compactness and finite volume let the balls of a separated set be compared by volume.",
+      "steps": [
+       "s:net"
+      ]
+     },
+     {
+      "h": "h:ricci",
+      "why": "The lower Ricci bound gives the Bishop-Gromov volume comparison.",
+      "steps": [
+       "s:volume"
+      ]
+     },
+     {
+      "h": "h:diameter",
+      "why": "Bounded diameter gives $B(x,D)=M$ and bounded distances between net points.",
+      "steps": [
+       "s:net",
+       "s:diagonal"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:volume",
+      "slogan": "Compare ball volumes by the Bishop-Gromov inequality.",
+      "detail": "If $\\mathrm{Ric}\\ge(n-1)\\kappa$, then $\\mathrm{vol}\\,B(p,r)/\\mathrm{vol}\\,B(p,R)\\ge v_\\kappa(r)/v_\\kappa(R)$ for $r\\le R$, where $v_\\kappa$ is the ball volume in the model space of curvature $\\kappa$. This is the volume comparison theorem of the cited work.",
+      "uses": []
+     },
+     {
+      "id": "s:net",
+      "slogan": "Bound the size of every maximal $\\varepsilon$-separated set by a number $N(\\varepsilon)$.",
+      "detail": "Let $x_1,\\dots,x_N$ be maximal $\\varepsilon$-separated in $M$. The balls $B(x_i,\\varepsilon/2)$ are disjoint, and each has volume at least $\\tfrac{v_\\kappa(\\varepsilon/2)}{v_\\kappa(D)}\\mathrm{vol}\\,M$, since $B(x_i,D)=M$. So $N\\le N(\\varepsilon)=v_\\kappa(D)/v_\\kappa(\\varepsilon/2)$, which depends only on $n,\\kappa,D,\\varepsilon$.",
+      "uses": []
+     },
+     {
+      "id": "s:diagonal",
+      "slogan": "Extract a subsequence whose nets have convergent distance matrices.",
+      "detail": "Take $\\varepsilon_m=1/m$ and an $\\varepsilon_m$-net of at most $N(\\varepsilon_m)$ points in each $M_j$, with nets nested across scales. Distances between net points lie in $[0,D]$. A diagonal argument gives a subsequence along which all these distances converge and the net sizes stabilize.",
+      "uses": []
+     },
+     {
+      "id": "s:limit",
+      "slogan": "Build a limit space from the limiting net points.",
+      "detail": "On the union of the limit nets, the limit of the distances is a pseudometric. Its quotient has at most $N(\\varepsilon_m)$ points that are $\\varepsilon_m$-dense for each $m$, so it is a [totally bounded](c:totally-bounded-space) space. Its completion $X_\\infty$ is a [compact metric space](c:compact-metric-space).",
+      "uses": []
+     },
+     {
+      "id": "s:converge",
+      "slogan": "Show that the subsequence converges to $X_\\infty$ in the Gromov-Hausdorff distance.",
+      "detail": "At scale $\\varepsilon_m$ and for large $j$, the nets of $M_j$ and of $X_\\infty$ are $\\varepsilon_m$-dense and their distance matrices differ by less than $\\varepsilon_m$. This gives a correspondence of distortion $O(\\varepsilon_m)$, so the [Gromov-Hausdorff distance](c:gromov-hausdorff-distance) tends to $0$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:volume",
+      "s:net"
+     ],
+     [
+      "s:net",
+      "s:diagonal"
+     ],
+     [
+      "s:diagonal",
+      "s:limit"
+     ],
+     [
+      "s:limit",
+      "s:converge"
+     ],
+     [
+      "s:diagonal",
+      "s:converge"
+     ]
+    ],
+    "conclusion": "s:converge",
+    "concepts": {
+     "c:riemannian-manifold": "The family consists of compact Riemannian manifolds whose balls have volumes.",
+     "c:ricci-curvature": "A lower Ricci bound is what gives volume comparison and the uniform packing bound.",
+     "c:gromov-hausdorff-distance": "Precompactness and convergence are measured in this distance.",
+     "c:compact-metric-space": "The limit is a compact metric space.",
+     "c:totally-bounded-space": "Uniform finite nets make the limit space totally bounded."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "D. Burago, Yu. Burago and S. Ivanov, A Course in Metric Geometry, Graduate Studies in Mathematics 33, American Mathematical Society, 2001, theorem 7.4.15 (Gromov's precompactness theorem), combined with the Bishop-Gromov volume comparison theorem.",
+     "note": "Steps 3 to 5 outline the proof of the precompactness criterion in the book; steps 1 and 2 turn the Ricci bound into the uniform covering bound that the criterion needs."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1568811",
+  "statement": "For every [signed measure](c:signed-measure) $\\mu$ on a [measurable space](c:measurable-space) $(X,\\Sigma)$ there are disjoint [measurable sets](c:measurable-set) $P,N$ with $P\\cup N=X$, $\\mu(E)\\ge0$ for measurable $E\\subseteq P$ and $\\mu(E)\\le0$ for measurable $E\\subseteq N$.",
+  "hypotheses": [
+   {
+    "id": "h:space",
+    "text": "The pair $(X,\\Sigma)$ is a [measurable space](c:measurable-space): $\\Sigma$ is a [sigma-algebra](c:sigma-algebra) of subsets of $X$.",
+    "concept": "c:sigma-algebra"
+   },
+   {
+    "id": "h:measure",
+    "text": "The map $\\mu\\colon\\Sigma\\to\\mathbb R$ is a [signed measure](c:signed-measure): $\\mu(\\emptyset)=0$ and $\\mu$ is countably additive.",
+    "concept": "c:signed-measure"
+   }
+  ],
+  "conclusion": "There are disjoint [measurable sets](c:measurable-set) $P,N$ with $P\\cup N=X$, $\\mu\\ge0$ on measurable subsets of $P$ and $\\mu\\le0$ on measurable subsets of $N$.",
+  "formal": {
+   "decl": "MeasureTheory.SignedMeasure.exists_isCompl_positive_negative",
+   "difference": "The statement is the same for real-valued signed measures; mathlib writes positivity and negativity as inequalities of restricted vector measures. The extended-valued case is not covered."
+  },
+  "proofs": [
+   {
+    "id": "minimal-negative-set",
+    "name": "Negative set of least measure",
+    "slogan": "Take a negative set of least measure and show that its complement is positive.",
+    "scope": "Real-valued signed measures. A set $B\\in\\Sigma$ is negative if $\\mu(E)\\le0$ for all measurable $E\\subseteq B$; the empty set is negative, so $m=\\inf\\mu(B)\\le0$ over negative $B$.",
+    "mechanisms": [
+     "m:extremal-choice",
+     "m:contradiction"
+    ],
+    "roles": [
+     {
+      "h": "h:space",
+      "why": "The [sigma-algebra](c:sigma-algebra) is closed under countable unions and differences, which the constructions need.",
+      "steps": [
+       "s:negative-subset",
+       "s:minimizing"
+      ]
+     },
+     {
+      "h": "h:measure",
+      "why": "Countable additivity and finite values make series converge and bound the measures of negative sets.",
+      "steps": [
+       "s:negative-subset",
+       "s:bounded",
+       "s:minimizing",
+       "s:positive"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:negative-subset",
+      "slogan": "Find a negative set of negative measure inside any set of negative measure.",
+      "detail": "Let $\\mu(E)<0$. Remove from $E$, one after the other, disjoint subsets $A_n$ of nearly largest positive measure. The series $\\sum\\mu(A_n)$ converges, so these measures tend to $0$, and the remainder $E'=E\\setminus\\bigcup A_n$ has no subset of positive measure and $\\mu(E')\\le\\mu(E)<0$.",
+      "uses": []
+     },
+     {
+      "id": "s:bounded",
+      "slogan": "Show that the measures of negative sets are bounded below.",
+      "detail": "Suppose negative sets $B_n$ have $\\mu(B_n)<-n$. The union $B=\\bigcup B_n$ is negative, so $\\mu(B)=\\mu(B_n)+\\mu(B\\setminus B_n)\\le\\mu(B_n)<-n$ for every $n$. This contradicts $\\mu(B)\\in\\mathbb R$.",
+      "uses": []
+     },
+     {
+      "id": "s:minimizing",
+      "slogan": "Take negative sets whose measures tend to the infimum and unite them.",
+      "detail": "Let $m=\\inf\\{\\mu(B):B\\text{ negative}\\}$, finite by step 2. Choose negative $B_n$ with $\\mu(B_n)\\to m$ and put $N=\\bigcup B_n$. By countable additivity $N$ is negative, and $\\mu(N)\\le\\mu(B_n)$ for all $n$, so $\\mu(N)=m$.",
+      "uses": []
+     },
+     {
+      "id": "s:positive",
+      "slogan": "Show by contradiction that $P=X\\setminus N$ is positive.",
+      "detail": "Suppose $E\\subseteq P$ is measurable with $\\mu(E)<0$. Step 1 gives a negative $D\\subseteq E$ with $\\mu(D)<0$. Then $N\\cup D$ is negative and $\\mu(N\\cup D)=m+\\mu(D)<m$, against the definition of $m$. So $\\mu\\ge0$ on measurable subsets of $P$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:negative-subset",
+      "s:positive"
+     ],
+     [
+      "s:bounded",
+      "s:minimizing"
+     ],
+     [
+      "s:minimizing",
+      "s:positive"
+     ]
+    ],
+    "conclusion": "s:positive",
+    "concepts": {
+     "c:signed-measure": "Real values and countable additivity make the infimum finite and series convergent.",
+     "c:measurable-space": "The pair $(X,\\Sigma)$ supplies the measurable sets that the construction uses.",
+     "c:measurable-set": "The sets $P$ and $N$ are built from measurable pieces.",
+     "c:sigma-algebra": "Closure under countable unions and differences keeps all constructed sets measurable."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "MeasureTheory.SignedMeasure.exists_isCompl_positive_negative",
+     "follows": true,
+     "note": "mathlib proves exists_subset_restrict_nonpos, bddBelow_measureOfNegatives and exists_compl_positive_negative: negative sets with measures tending to the infimum, their union, and a contradiction for the complement."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:13051",
+  "statement": "Let $X$ be a compact [Kähler manifold](c:kahler-manifold) of complex dimension $n$ with Kähler form $\\omega$. For $0\\le k\\le n$, the map $L^k\\colon H^{n-k}(X,\\mathbb R)\\to H^{n+k}(X,\\mathbb R)$, $[\\alpha]\\mapsto[\\omega^k\\wedge\\alpha]$, is an isomorphism of [de Rham cohomology](c:de-rham-cohomology) groups.",
+  "hypotheses": [
+   {
+    "id": "h:compact",
+    "text": "The manifold $X$ is a [compact manifold](c:compact-manifold) of complex dimension $n$.",
+    "concept": "c:compact-manifold"
+   },
+   {
+    "id": "h:kahler",
+    "text": "The manifold $X$ carries a Kähler form $\\omega$, so it is a [Kähler manifold](c:kahler-manifold).",
+    "concept": "c:kahler-manifold"
+   }
+  ],
+  "conclusion": "For $0\\le k\\le n$, wedge with $\\omega^k$ induces an isomorphism $H^{n-k}(X,\\mathbb R)\\to H^{n+k}(X,\\mathbb R)$ of [de Rham cohomology](c:de-rham-cohomology).",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "hodge-sl2",
+    "name": "Hodge theory and sl(2)",
+    "slogan": "Pass to harmonic forms, build an sl(2)-triple from the Lefschetz operator, and read the isomorphism from the weight symmetry of sl(2)-modules.",
+    "scope": "An outline of the published proof; the Kähler identities and the representation theory of $\\mathfrak{sl}(2)$ are used from the cited work. Cohomology is real, and complex coefficients follow by tensoring.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:eigenvector-basis"
+    ],
+    "roles": [
+     {
+      "h": "h:compact",
+      "why": "Compactness gives the Hodge theorem, finite-dimensional harmonic spaces and the $L^2$ adjoint $\\Lambda$.",
+      "steps": [
+       "s:hodge",
+       "s:sl2"
+      ]
+     },
+     {
+      "h": "h:kahler",
+      "why": "The Kähler condition gives the Kähler identities, so $L$ commutes with the Laplacian.",
+      "steps": [
+       "s:commute",
+       "s:sl2"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:hodge",
+      "slogan": "Represent each cohomology class by its unique [harmonic form](c:harmonic-form).",
+      "detail": "By the Hodge theorem, every class of $H^m(X,\\mathbb R)$ has exactly one harmonic representative. So $H^m(X,\\mathbb R)\\cong\\mathcal H^m=\\ker\\Delta$, and $\\mathcal H^*$ is finite dimensional.",
+      "uses": [
+       "nl:9050"
+      ]
+     },
+     {
+      "id": "s:commute",
+      "slogan": "Show that $L=\\omega\\wedge\\cdot$ and its adjoint $\\Lambda$ commute with the Laplacian.",
+      "detail": "The Kähler identities $[\\Lambda,\\bar\\partial]=-i\\partial^*$ and $[\\Lambda,\\partial]=i\\bar\\partial^*$ give $\\Delta_d=2\\Delta_{\\bar\\partial}$ and $[L,\\Delta]=[\\Lambda,\\Delta]=0$. So $L$ and $\\Lambda$ preserve harmonic forms.",
+      "uses": []
+     },
+     {
+      "id": "s:sl2",
+      "slogan": "Form an [sl2-triple](c:is-sl2-triple) $(L,\\Lambda,H)$ on harmonic forms.",
+      "detail": "In the exterior algebra of a Hermitian vector space, $[L,\\Lambda]=H$ where $H$ acts on $m$-forms as $m-n$, with $[H,L]=2L$ and $[H,\\Lambda]=-2\\Lambda$. So $\\mathcal H^*$ is a finite-dimensional representation of $\\mathfrak{sl}(2)$ on which $H$ has weight $m-n$ on $\\mathcal H^m$.",
+      "uses": []
+     },
+     {
+      "id": "s:weights",
+      "slogan": "Use the weight symmetry of finite-dimensional $\\mathfrak{sl}(2)$-modules for $L^k$.",
+      "detail": "In every finite-dimensional representation of $\\mathfrak{sl}(2)$, $L^k$ is an isomorphism from the weight $-k$ space to the weight $k$ space. Here these are $\\mathcal H^{n-k}$ and $\\mathcal H^{n+k}$.",
+      "uses": []
+     },
+     {
+      "id": "s:transfer",
+      "slogan": "Transfer the isomorphism to cohomology through the harmonic representatives.",
+      "detail": "Wedge with $\\omega^k$ maps harmonic forms to harmonic forms and represents $L^k$ on classes. By step 1, $L^k\\colon H^{n-k}\\to H^{n+k}$ is identified with the isomorphism $\\mathcal H^{n-k}\\to\\mathcal H^{n+k}$ of step 4.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:hodge",
+      "s:transfer"
+     ],
+     [
+      "s:commute",
+      "s:sl2"
+     ],
+     [
+      "s:sl2",
+      "s:weights"
+     ],
+     [
+      "s:weights",
+      "s:transfer"
+     ]
+    ],
+    "conclusion": "s:transfer",
+    "concepts": {
+     "c:de-rham-cohomology": "The isomorphism is a statement about de Rham classes, which harmonic forms represent.",
+     "c:kahler-manifold": "The Kähler identities that make $L$ commute with the Laplacian need this structure.",
+     "c:compact-manifold": "Compactness gives the Hodge theorem and the finite-dimensional harmonic spaces.",
+     "c:harmonic-form": "Harmonic forms are the unique representatives that carry the sl(2) action.",
+     "c:is-sl2-triple": "The triple $(L,\\Lambda,H)$ turns the problem into representation theory."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "D. Huybrechts, Complex Geometry: An Introduction, Universitext, Springer, 2005, chapter 3 (Kähler identities, Hodge theorem and the Lefschetz theorems).",
+     "url": "https://doi.org/10.1007/b137952",
+     "note": "The steps outline the book's proof: harmonic representatives, the Kähler identities, the sl(2)-triple and its weight symmetry."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q383238",
+  "statement": "Let $\\Omega\\subseteq\\mathbb C^n$ be open with $n\\ge2$, and let $K\\subset\\Omega$ be [compact](c:compact-space) with $\\Omega\\setminus K$ [connected](c:connected-space). Every [holomorphic function](c:holomorphic-function) on $\\Omega\\setminus K$ extends to a holomorphic function on $\\Omega$.",
+  "hypotheses": [
+   {
+    "id": "h:dimension",
+    "text": "The dimension satisfies $n\\ge2$.",
+    "concept": null
+   },
+   {
+    "id": "h:domain",
+    "text": "The set $\\Omega\\subseteq\\mathbb C^n$ is open, $K\\subset\\Omega$ is [compact](c:compact-space) and $\\Omega\\setminus K$ is [connected](c:connected-space).",
+    "concept": "c:compact-space"
+   },
+   {
+    "id": "h:function",
+    "text": "The function $f$ is [holomorphic](c:holomorphic-function) on $\\Omega\\setminus K$.",
+    "concept": "c:holomorphic-function"
+   }
+  ],
+  "conclusion": "There is a [holomorphic function](c:holomorphic-function) $F$ on $\\Omega$ with $F=f$ on $\\Omega\\setminus K$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "dbar-compact-support",
+    "name": "Compactly supported dbar solution",
+    "slogan": "Cut off $f$ near $K$, correct the cut-off by a compactly supported solution of the Cauchy-Riemann equation, and compare with $f$ by the identity theorem.",
+    "scope": "The case $\\Omega\\setminus K\\ne\\emptyset$; if it is empty, then $\\Omega=K$ is compact and open, which forces $\\Omega=\\emptyset$. Write $z=(z_1,z')$ with $z'\\in\\mathbb C^{n-1}$.",
+    "mechanisms": [
+     "m:partition-of-unity",
+     "m:analytic-continuation",
+     "m:complex-integration"
+    ],
+    "roles": [
+     {
+      "h": "h:dimension",
+      "why": "For $n\\ge2$ the set $\\{|z'|>R\\}$ is nonempty and connected, and the solution $u$ vanishes there.",
+      "steps": [
+       "s:solve",
+       "s:vanish"
+      ]
+     },
+     {
+      "h": "h:domain",
+      "why": "Compactness of $K$ gives a cutoff $\\chi$ with compact support; connectedness of $\\Omega\\setminus K$ lets the identity theorem spread $F=f$.",
+      "steps": [
+       "s:cutoff",
+       "s:agree"
+      ]
+     },
+     {
+      "h": "h:function",
+      "why": "Holomorphy of $f$ makes $\\bar\\partial g=-f\\bar\\partial\\chi$ and gives the function to compare with $F$.",
+      "steps": [
+       "s:closed",
+       "s:agree"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:cutoff",
+      "slogan": "Cut off $f$ near $K$ to get a smooth function $g$ on $\\Omega$.",
+      "detail": "Choose $\\chi\\in C_c^\\infty(\\Omega)$ with $\\chi=1$ near $K$. Then $g=(1-\\chi)f$, extended by $0$ where $\\chi=1$, is smooth on $\\Omega$ and equals $f$ outside $\\operatorname{supp}\\chi$.",
+      "uses": []
+     },
+     {
+      "id": "s:closed",
+      "slogan": "Show that $\\mu=\\bar\\partial g$ is a compactly supported $\\bar\\partial$-closed form.",
+      "detail": "Since $f$ is holomorphic, $\\mu=\\bar\\partial g=-f\\,\\bar\\partial\\chi$ with the [Dolbeault operator](c:dolbeault-operator) $\\bar\\partial$. Its support lies in the compact set $\\operatorname{supp}\\chi\\subset\\Omega$, and $\\bar\\partial\\mu=0$. Extend $\\mu$ by $0$ to $\\mathbb C^n$.",
+      "uses": []
+     },
+     {
+      "id": "s:solve",
+      "slogan": "Solve $\\bar\\partial u=\\mu$ by the Cauchy transform in $z_1$ and note that $u=0$ for large $|z'|$.",
+      "detail": "Put $u(z)=\\frac1{2\\pi i}\\int\\frac{\\mu_1(\\zeta,z')}{\\zeta-z_1}\\,d\\zeta\\wedge d\\bar\\zeta$. Because $\\bar\\partial\\mu=0$ and $\\mu$ has compact support, $u$ is smooth with $\\bar\\partial u=\\mu$. For $n\\ge2$ there are points with $|z'|$ large, and there $u(z)=0$, since then $\\mu_1(\\cdot,z')=0$.",
+      "uses": []
+     },
+     {
+      "id": "s:vanish",
+      "slogan": "Show that $u$ vanishes on the unbounded component of the complement of $\\operatorname{supp}\\chi$.",
+      "detail": "Let $G$ be the unbounded component of $\\mathbb C^n\\setminus\\operatorname{supp}\\chi$. There $\\bar\\partial u=\\mu=0$, so $u$ is holomorphic on the connected set $G$. It vanishes on $\\{|z'|>R\\}\\subset G$, so $u=0$ on $G$ by the identity theorem.",
+      "uses": [
+       "wd:Q1038716"
+      ]
+     },
+     {
+      "id": "s:extend",
+      "slogan": "Form $F=g-u$ and show that it is holomorphic on $\\Omega$.",
+      "detail": "On $\\Omega$ we have $\\bar\\partial F=\\bar\\partial g-\\bar\\partial u=\\mu-\\mu=0$. A smooth function with $\\bar\\partial F=0$ is [holomorphic](c:holomorphic-function).",
+      "uses": []
+     },
+     {
+      "id": "s:agree",
+      "slogan": "Compare $F$ with $f$ on $G\\cap\\Omega$ and spread the equality over $\\Omega\\setminus K$.",
+      "detail": "On $G\\cap\\Omega$ we have $\\chi=0$ and $u=0$, so $F=f$. This set is open, nonempty (the boundary of $G$ lies in $\\operatorname{supp}\\chi\\subset\\Omega$) and contained in $\\Omega\\setminus K$. Since $\\Omega\\setminus K$ is connected, the identity theorem gives $F=f$ on $\\Omega\\setminus K$.",
+      "uses": [
+       "wd:Q1038716"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:cutoff",
+      "s:closed"
+     ],
+     [
+      "s:closed",
+      "s:solve"
+     ],
+     [
+      "s:solve",
+      "s:vanish"
+     ],
+     [
+      "s:cutoff",
+      "s:extend"
+     ],
+     [
+      "s:solve",
+      "s:extend"
+     ],
+     [
+      "s:vanish",
+      "s:agree"
+     ],
+     [
+      "s:extend",
+      "s:agree"
+     ]
+    ],
+    "conclusion": "s:agree",
+    "concepts": {
+     "c:compact-space": "Compactness of $K$ gives a cutoff function with compact support.",
+     "c:connected-space": "Connectedness of $\\Omega\\setminus K$ lets the identity theorem spread the equality.",
+     "c:holomorphic-function": "Holomorphy of $f$ and $F$ is the property that is extended.",
+     "c:dolbeault-operator": "The operator $\\bar\\partial$ measures the failure of the cut-off function to be holomorphic."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The proof by compactly supported solutions of the Cauchy-Riemann equations, as in L. Hörmander, An Introduction to Complex Analysis in Several Variables, 3rd ed., North-Holland 1990, chapter 2 (section 2.3)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:hausdorff-s-maximality-principle",
+  "statement": "Every [partially ordered set](c:partial-order) has a maximal [chain](c:chain): a totally ordered subset that no totally ordered subset properly contains.",
+  "hypotheses": [
+   {
+    "id": "h:poset",
+    "text": "The set $P$ carries a [partial order](c:partial-order) $\\le$.",
+    "concept": "c:partial-order"
+   }
+  ],
+  "conclusion": "Some [chain](c:chain) $M\\subseteq P$ is maximal: no chain of $P$ properly contains $M$.",
+  "formal": {
+   "decl": "maxChain_spec",
+   "difference": "The declaration holds for any relation $r$ on a type, with chain meaning pairwise $r$-comparable, so it needs no partial order. It names the maximal chain explicitly as maxChain."
+  },
+  "proofs": [
+   {
+    "id": "tower",
+    "name": "Tower of chains",
+    "slogan": "Build the smallest tower of chains from successors and unions, show that it is totally ordered, and take its union.",
+    "scope": "Zermelo-style argument that uses the [axiom of choice](c:axiom-of-choice) once, to pick successors. The empty set is a chain, so the construction starts, and the proof also covers $P=\\emptyset$.",
+    "mechanisms": [
+     "m:structural-induction",
+     "m:contradiction"
+    ],
+    "roles": [
+     {
+      "h": "h:poset",
+      "why": "The order defines chains, and a successor adds elements that stay comparable with the whole chain.",
+      "steps": [
+       "s:succ",
+       "s:chains"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:succ",
+      "slogan": "Choose a successor chain for each chain by the [axiom of choice](c:axiom-of-choice).",
+      "detail": "For each chain $c$ that some chain properly contains, pick such a chain $\\operatorname{succ}(c)\\supsetneq c$ with a [choice function](c:choice-function). For every other chain $c$ put $\\operatorname{succ}(c)=c$. Then $c\\subseteq\\operatorname{succ}(c)$ for all chains $c$.",
+      "uses": []
+     },
+     {
+      "id": "s:tower",
+      "slogan": "Define the tower $T$ of subsets reachable from $\\emptyset$ by successors and unions.",
+      "detail": "Let $T$ be the smallest family of subsets of $P$ that contains $\\emptyset$, is closed under $\\operatorname{succ}$ and is closed under unions of subfamilies. It exists as the intersection of all such families, and it supports induction: a property that holds for $\\emptyset$, passes through $\\operatorname{succ}$ and unions holds on $T$.",
+      "uses": []
+     },
+     {
+      "id": "s:total",
+      "slogan": "Show that any two members of $T$ are comparable under inclusion.",
+      "detail": "Call $c\\in T$ extreme if $\\operatorname{succ}(d)\\subseteq c$ for every $d\\in T$ with $d\\subsetneq c$. For extreme $c$, the sets $d\\in T$ with $d\\subseteq c$ or $\\operatorname{succ}(c)\\subseteq d$ form a tower, hence equal $T$. The extreme sets form a tower too, so all members are extreme and comparable.",
+      "uses": []
+     },
+     {
+      "id": "s:chains",
+      "slogan": "Show that every member of $T$ is a chain of $P$.",
+      "detail": "Induct on $T$. The empty set is a chain, and $\\operatorname{succ}(c)$ is a chain when $c$ is. For a union of members, two of its elements lie in members that are comparable by step 3, hence both lie in the larger member, which is a chain.",
+      "uses": []
+     },
+     {
+      "id": "s:maximal",
+      "slogan": "Take $M=\\bigcup T$ and show that $M$ is a maximal chain.",
+      "detail": "The family $T$ is closed under unions, so $M\\in T$ is a chain by step 4, and $\\operatorname{succ}(M)\\in T$ gives $\\operatorname{succ}(M)\\subseteq M$. So $\\operatorname{succ}(M)=M$. If a chain properly contained $M$, then $\\operatorname{succ}(M)\\supsetneq M$ by step 1, a contradiction.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:succ",
+      "s:tower"
+     ],
+     [
+      "s:tower",
+      "s:total"
+     ],
+     [
+      "s:total",
+      "s:chains"
+     ],
+     [
+      "s:chains",
+      "s:maximal"
+     ],
+     [
+      "s:succ",
+      "s:maximal"
+     ]
+    ],
+    "conclusion": "s:maximal",
+    "concepts": {
+     "c:partial-order": "The order defines which subsets are chains.",
+     "c:chain": "Chains are the objects that the tower consists of and the maximal element is.",
+     "c:axiom-of-choice": "Choice picks a successor for every non-maximal chain.",
+     "c:choice-function": "A choice function assigns each non-maximal chain a larger chain."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "maxChain_spec",
+     "follows": true,
+     "note": "mathlib defines ChainClosure, the sets reachable from the empty set by SuccChain and unions, proves ChainClosure.total and ChainClosure.isChain, and takes maxChain as the union (succ_fixpoint_iff)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:infinite",
+  "statement": "If $f\\colon A\\to B$ is a function from an [infinite set](c:infinite-set) $A$ to a [finite set](c:finite-set) $B$, then some fiber $f^{-1}(\\{y\\})$ is infinite.",
+  "hypotheses": [
+   {
+    "id": "h:infinite",
+    "text": "The set $A$ is [infinite](c:infinite-set).",
+    "concept": "c:infinite-set"
+   },
+   {
+    "id": "h:finite",
+    "text": "The set $B$ is [finite](c:finite-set), and $f\\colon A\\to B$ is a function.",
+    "concept": "c:finite-set"
+   }
+  ],
+  "conclusion": "For some $y\\in B$ the fiber $f^{-1}(\\{y\\})$ is infinite.",
+  "formal": {
+   "decl": "Finite.exists_infinite_fiber",
+   "difference": null
+  },
+  "proofs": [
+   {
+    "id": "finite-union",
+    "name": "Finite union of finite fibers",
+    "slogan": "Assume that all fibers are finite, write $A$ as the union of the fibers, and contradict that $A$ is infinite.",
+    "scope": "All infinite sets $A$ and finite sets $B$; if $B$ is empty, no function from a nonempty set exists, and the contradiction below also covers this case.",
+    "mechanisms": [
+     "m:contradiction",
+     "m:pigeonhole"
+    ],
+    "roles": [
+     {
+      "h": "h:infinite",
+      "why": "Infiniteness of $A$ contradicts the finiteness that the assumption on the fibers gives.",
+      "steps": [
+       "s:contradict"
+      ]
+     },
+     {
+      "h": "h:finite",
+      "why": "A finite index set $B$ makes the union of the fibers a finite union.",
+      "steps": [
+       "s:finite-union"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:suppose",
+      "slogan": "Assume for contradiction that every fiber of $f$ is finite.",
+      "detail": "Suppose that $f^{-1}(\\{y\\})$ is a [finite set](c:finite-set) for every $y\\in B$. The aim is to show that then $A$ is finite.",
+      "uses": []
+     },
+     {
+      "id": "s:union",
+      "slogan": "Write $A$ as the [union](c:union) of the fibers over the points of $B$.",
+      "detail": "Every $a\\in A$ lies in the fiber $f^{-1}(\\{f(a)\\})$. So $A=\\bigcup_{y\\in B}f^{-1}(\\{y\\})$, and fibers over different points are disjoint.",
+      "uses": []
+     },
+     {
+      "id": "s:finite-union",
+      "slogan": "Show that a finite union of finite sets is finite.",
+      "detail": "By step 2, $|A|=\\sum_{y\\in B}|f^{-1}(\\{y\\})|$. This is a sum over the finite set $B$ of natural numbers, by step 1, so it is a natural number. Hence $A$ is finite.",
+      "uses": []
+     },
+     {
+      "id": "s:contradict",
+      "slogan": "Compare with the hypothesis that $A$ is infinite to reach a contradiction.",
+      "detail": "Step 3 makes $A$ finite, against the hypothesis that $A$ is [infinite](c:infinite-set). So the assumption of step 1 fails, and some fiber of $f$ is infinite.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:suppose",
+      "s:finite-union"
+     ],
+     [
+      "s:union",
+      "s:finite-union"
+     ],
+     [
+      "s:finite-union",
+      "s:contradict"
+     ]
+    ],
+    "conclusion": "s:contradict",
+    "concepts": {
+     "c:infinite-set": "Infiniteness of $A$ is what the finite union contradicts.",
+     "c:finite-set": "Finite $B$ and finite fibers give a finite $A$.",
+     "c:union": "The set $A$ is the union of its fibers."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Finite.exists_infinite_fiber",
+     "follows": true,
+     "note": "mathlib argues by contradiction: if all fibers are finite, it builds a Fintype structure on A from the finite union of the fibers (Finset.biUnion), which contradicts Infinite A."
+    }
+   }
+  ]
+ }
+]

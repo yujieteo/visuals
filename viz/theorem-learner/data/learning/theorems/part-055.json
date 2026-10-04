@@ -1,0 +1,1957 @@
+[
+ {
+  "id": "nm:chebyshev-s-sum-inequality",
+  "statement": "Let $f$ and $g$ be real functions on a [finite set](c:finite-set) $S$ with $n$ elements. Assume that they vary together: $g(i) < g(j)$ implies $f(i) \\le f(j)$ (for example, two [monotone sequences](c:monotone-sequence) with the same direction). Then $\\left(\\sum_{i \\in S} f(i)\\right)\\left(\\sum_{i \\in S} g(i)\\right) \\le n \\sum_{i \\in S} f(i)\\, g(i)$.",
+  "hypotheses": [
+   {
+    "id": "h:finite",
+    "text": "The index set $S$ is a [finite set](c:finite-set) with $n$ elements.",
+    "concept": "c:finite-set"
+   },
+   {
+    "id": "h:monovary",
+    "text": "The functions vary together: $g(i) < g(j)$ implies $f(i) \\le f(j)$ for all $i, j \\in S$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "$\\left(\\sum_{i \\in S} f(i)\\right)\\left(\\sum_{i \\in S} g(i)\\right) \\le n \\sum_{i \\in S} f(i)\\, g(i)$.",
+  "formal": {
+   "decl": "MonovaryOn.sum_smul_sum_le_card_smul_sum",
+   "difference": "mathlib is more general: $f$ takes values in a linearly ordered semiring, $g$ in an ordered module over it, and the product is a scalar action. The real case is an instance."
+  },
+  "proofs": [
+   {
+    "id": "cyclic-shifts",
+    "name": "Cyclic shifts and rearrangement",
+    "slogan": "Expand the product of the two sums over the $n$ cyclic shifts of the index set, and bound each shifted sum by the rearrangement inequality.",
+    "scope": "The whole theorem. If $S$ is empty both sides are $0$; otherwise the proof lists $S$ as $s_0, \\dots, s_{n-1}$ and shifts the indices cyclically.",
+    "mechanisms": [
+     "m:symmetry",
+     "m:averaging"
+    ],
+    "roles": [
+     {
+      "h": "h:finite",
+      "why": "Finiteness gives a cyclic [permutation](c:permutation) of $S$ and makes every sum finite.",
+      "steps": [
+       "s:cycle",
+       "s:add"
+      ]
+     },
+     {
+      "h": "h:monovary",
+      "why": "Varying together is the hypothesis of the rearrangement inequality.",
+      "steps": [
+       "s:rearrange"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:cycle",
+      "slogan": "Fix a cyclic permutation $\\sigma$ that moves $S$ around one cycle.",
+      "detail": "Write $S = \\{s_0, \\dots, s_{n-1}\\}$ and let $\\sigma(s_k) = s_{k+1 \\bmod n}$. For $m = 0, \\dots, n-1$ the map $\\sigma^m$ is a [permutation](c:permutation) of $S$.",
+      "uses": []
+     },
+     {
+      "id": "s:expand",
+      "slogan": "Expand the product of the two sums over all shifts.",
+      "detail": "Since $\\sigma$ is one $n$-cycle, every pair $(i, j) \\in S \\times S$ is $(i, \\sigma^m i)$ for exactly one $i$ and one $m \\in \\{0, \\dots, n-1\\}$. Hence $\\sum_i f(i) \\cdot \\sum_j g(j) = \\sum_{m=0}^{n-1} \\sum_i f(i)\\, g(\\sigma^m i)$.",
+      "uses": []
+     },
+     {
+      "id": "s:rearrange",
+      "slogan": "Bound each shifted sum by the unshifted sum.",
+      "detail": "The functions vary together, so the rearrangement inequality gives $\\sum_i f(i)\\, g(\\tau i) \\le \\sum_i f(i)\\, g(i)$ for every permutation $\\tau$ of $S$. Take $\\tau = \\sigma^m$.",
+      "uses": [
+       "nm:rearrangement-inequality"
+      ]
+     },
+     {
+      "id": "s:add",
+      "slogan": "Add the $n$ bounds to reach the stated inequality.",
+      "detail": "Each of the $n$ terms of the expansion is at most $\\sum_i f(i)\\, g(i)$. Hence $(\\sum f)(\\sum g) = \\sum_m \\sum_i f(i)\\, g(\\sigma^m i) \\le n \\sum_i f(i)\\, g(i)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:cycle",
+      "s:expand"
+     ],
+     [
+      "s:cycle",
+      "s:rearrange"
+     ],
+     [
+      "s:expand",
+      "s:add"
+     ],
+     [
+      "s:rearrange",
+      "s:add"
+     ]
+    ],
+    "conclusion": "s:add",
+    "concepts": {
+     "c:finite-set": "The finite index set carries a cyclic permutation and finite sums.",
+     "c:monotone-sequence": "Two monotone sequences with one direction are the main case of varying together.",
+     "c:permutation": "Each shift of the index set is a permutation of it."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "MonovaryOn.sum_smul_sum_le_card_smul_sum",
+     "follows": true,
+     "note": "mathlib lists the finite set as one cycle (exists_cycleOn), expands with sum_smul_sum_eq_sum_perm, and bounds each term by MonovaryOn.sum_smul_comp_perm_le_sum_smul."
+    }
+   },
+   {
+    "id": "double-sum",
+    "name": "Sum over all pairs",
+    "slogan": "Add the nonnegative products $(f(i) - f(j))(g(i) - g(j))$ over all ordered pairs and expand the sum.",
+    "scope": "The whole theorem; for $S$ empty both sides are $0$.",
+    "mechanisms": [
+     "m:algebraic-identity",
+     "m:double-counting"
+    ],
+    "roles": [
+     {
+      "h": "h:finite",
+      "why": "A finite index set makes the double sum finite and lets it be expanded.",
+      "steps": [
+       "s:expand"
+      ]
+     },
+     {
+      "h": "h:monovary",
+      "why": "Varying together fixes the sign of each product $(f(i) - f(j))(g(i) - g(j))$.",
+      "steps": [
+       "s:sign"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:sign",
+      "slogan": "Show that each product $(f(i) - f(j))(g(i) - g(j))$ is nonnegative.",
+      "detail": "If $g(i) < g(j)$ then $f(i) \\le f(j)$, so both factors are at most $0$ and the product is at least $0$. The case $g(i) > g(j)$ is the same with $i$ and $j$ exchanged, and $g(i) = g(j)$ gives $0$.",
+      "uses": []
+     },
+     {
+      "id": "s:sum",
+      "slogan": "Add the nonnegative products over all ordered pairs.",
+      "detail": "A sum of nonnegative numbers is nonnegative, so $\\sum_{i, j \\in S} (f(i) - f(j))(g(i) - g(j)) \\ge 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:expand",
+      "slogan": "Expand the double sum into four single sums.",
+      "detail": "The sum equals $\\sum_{i,j} \\big(f(i) g(i) - f(i) g(j) - f(j) g(i) + f(j) g(j)\\big) = 2n \\sum_i f(i) g(i) - 2 \\left(\\sum_i f(i)\\right)\\left(\\sum_j g(j)\\right)$.",
+      "uses": []
+     },
+     {
+      "id": "s:divide",
+      "slogan": "Compare the two forms of the sum and divide by $2$.",
+      "detail": "Steps 2 and 3 give $2n \\sum_i f(i) g(i) - 2 (\\sum f)(\\sum g) \\ge 0$. Dividing by $2$ gives the claim.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:sign",
+      "s:sum"
+     ],
+     [
+      "s:sum",
+      "s:divide"
+     ],
+     [
+      "s:expand",
+      "s:divide"
+     ]
+    ],
+    "conclusion": "s:divide",
+    "concepts": {
+     "c:finite-set": "Finiteness lets the double sum split into single sums.",
+     "c:monotone-sequence": "Two monotone sequences with one direction are the main case of varying together."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The classical double-sum proof of Chebyshev's sum inequality; it uses only the sign of $(f(i) - f(j))(g(i) - g(j))$."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q720469",
+  "statement": "Let $K$ be a [finite field](c:finite-field) of characteristic $p$. Let $f_1, \\dots, f_m$ be [polynomials](c:polynomial-ring) in $n$ variables over $K$ with $\\sum_i \\deg f_i < n$, where $\\deg$ is the [total degree](c:total-degree). Then $p$ divides the number of common zeros of $f_1, \\dots, f_m$ in $K^n$.",
+  "hypotheses": [
+   {
+    "id": "h:field",
+    "text": "The field $K$ is a [finite field](c:finite-field) of characteristic $p$, with $q$ elements.",
+    "concept": "c:finite-field"
+   },
+   {
+    "id": "h:polys",
+    "text": "The $f_1, \\dots, f_m$ are [polynomials](c:polynomial-ring) in $n$ variables over $K$.",
+    "concept": "c:polynomial-ring"
+   },
+   {
+    "id": "h:degree",
+    "text": "The [total degrees](c:total-degree) satisfy $\\sum_{i=1}^m \\deg f_i < n$.",
+    "concept": "c:total-degree"
+   }
+  ],
+  "conclusion": "The number of common zeros of $f_1, \\dots, f_m$ in $K^n$ is divisible by $p$.",
+  "formal": {
+   "decl": "char_dvd_card_solutions_of_sum_lt",
+   "difference": "mathlib indexes the polynomials by a finset and the variables by a finite type, and counts the zeros as a subtype of functions into $K$. The content is the same."
+  },
+  "proofs": [
+   {
+    "id": "indicator-polynomial",
+    "name": "Indicator polynomial",
+    "slogan": "Build a polynomial that equals $1$ on the common zeros and $0$ elsewhere, then show that its sum over $K^n$ is zero because its degree is too small.",
+    "scope": "The whole theorem, including $m = 0$ (then the number of zeros is $q^n$, divisible by $p$ since $n \\ge 1$). The proof writes $q = |K|$, a power of $p$.",
+    "mechanisms": [
+     "m:modular-arithmetic",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:field",
+      "why": "In a [finite field](c:finite-field), $x^{q-1} = 1$ for $x \\ne 0$, the unit group is cyclic, and $p \\mid q$.",
+      "steps": [
+       "s:indicator",
+       "s:power-sum",
+       "s:conclude"
+      ]
+     },
+     {
+      "h": "h:polys",
+      "why": "The polynomials define $F = \\prod_i (1 - f_i^{q-1})$, whose [total degree](c:total-degree) is bounded.",
+      "steps": [
+       "s:indicator",
+       "s:degree"
+      ]
+     },
+     {
+      "h": "h:degree",
+      "why": "The degree bound gives $\\deg F < (q-1)n$, which makes every monomial miss some variable's top power.",
+      "steps": [
+       "s:degree",
+       "s:vanish"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:indicator",
+      "slogan": "Form $F = \\prod_i (1 - f_i^{q-1})$ and check that it is the indicator of the common zeros.",
+      "detail": "If every $f_i(a) = 0$, each factor is $1$ and $F(a) = 1$. If some $f_i(a) \\ne 0$, then $f_i(a)^{q-1} = 1$ by Lagrange's theorem in the group $K^\\times$, so that factor is $0$ and $F(a) = 0$.",
+      "uses": [
+       "wd:Q505798"
+      ]
+     },
+     {
+      "id": "s:count",
+      "slogan": "Turn the number of common zeros into a sum of values of $F$.",
+      "detail": "By step 1, $\\sum_{a \\in K^n} F(a) = N \\cdot 1$ in $K$, where $N$ is the number of common zeros. Since $K$ has characteristic $p$, the number $p$ divides $N$ exactly when this sum is $0$.",
+      "uses": []
+     },
+     {
+      "id": "s:degree",
+      "slogan": "Bound the [total degree](c:total-degree) of $F$ by less than $(q-1)n$.",
+      "detail": "The factor $1 - f_i^{q-1}$ has degree at most $(q-1)\\deg f_i$. So $\\deg F \\le (q-1)\\sum_i \\deg f_i < (q-1)n$ by the degree hypothesis.",
+      "uses": []
+     },
+     {
+      "id": "s:power-sum",
+      "slogan": "Show that $\\sum_{x \\in K} x^k = 0$ for $0 \\le k < q - 1$.",
+      "detail": "For $k = 0$ the sum is $q \\cdot 1 = 0$ because $p \\mid q$. For $0 < k < q-1$ take a generator $g$ of the cyclic group $K^\\times$. Then $g^k \\ne 1$ and $S = \\sum_x (gx)^k = g^k S$, so $S = 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:vanish",
+      "slogan": "Sum each monomial of $F$ over $K^n$ one variable at a time to get $0$.",
+      "detail": "A monomial $x_1^{k_1} \\cdots x_n^{k_n}$ of $F$ has $\\sum_j k_j < (q-1)n$ by step 3, so some $k_j < q-1$. The sum over $K^n$ is a product of one-variable sums, and the $j$-th one is $0$ by step 4. Hence $\\sum_a F(a) = 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Combine the two facts to get $N \\equiv 0$ modulo $p$.",
+      "detail": "Step 2 says $N \\cdot 1 = \\sum_a F(a)$ in $K$, and step 5 says this sum is $0$. So $N \\cdot 1 = 0$ in $K$, which means $p \\mid N$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:indicator",
+      "s:count"
+     ],
+     [
+      "s:indicator",
+      "s:degree"
+     ],
+     [
+      "s:count",
+      "s:conclude"
+     ],
+     [
+      "s:degree",
+      "s:vanish"
+     ],
+     [
+      "s:power-sum",
+      "s:vanish"
+     ],
+     [
+      "s:vanish",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:finite-field": "The field supplies $x^{q-1} = 1$, a cyclic unit group and characteristic $p$.",
+     "c:polynomial-ring": "The polynomials combine into the single polynomial $F$.",
+     "c:total-degree": "The degree of $F$ must stay below $(q-1)n$ for the sum to vanish."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "char_dvd_card_solutions_of_sum_lt",
+     "follows": true,
+     "note": "mathlib forms F = prod (1 - f_i^(q-1)), proves its values are the indicator, and applies MvPolynomial.sum_eval_eq_zero after bounding totalDegree."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:1692",
+  "statement": "Let $\\mathcal{C}$ be a [closed symmetric monoidal category](c:closed-symmetric-monoidal-category) with pullbacks and $d$ an object. Let $\\mathrm{Chu}(\\mathcal{C}, d)$ have objects $(A, X, r\\colon A \\otimes X \\to d)$ and morphisms $(f, g)\\colon (A, X, r) \\to (B, Y, s)$ with $f\\colon A \\to B$, $g\\colon Y \\to X$ and $r(1 \\otimes g) = s(f \\otimes 1)$. Then it is a [star-autonomous category](c:star-autonomous-category).",
+  "hypotheses": [
+   {
+    "id": "h:category",
+    "text": "The category $\\mathcal{C}$ is a [closed symmetric monoidal category](c:closed-symmetric-monoidal-category) with pullbacks.",
+    "concept": "c:closed-symmetric-monoidal-category"
+   },
+   {
+    "id": "h:object",
+    "text": "The object $d$ is any object of $\\mathcal{C}$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The category $\\mathrm{Chu}(\\mathcal{C}, d)$ is a [star-autonomous category](c:star-autonomous-category).",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "barr-outline",
+    "name": "Barr's outline",
+    "slogan": "Build the tensor product and the internal hom from pullbacks, then check that swapping the two components is a duality with the dualizing object $(d, I)$.",
+    "scope": "An outline of Barr's proof: the coherence checks for the tensor rest on pasting of pullbacks and are in the cited work. Pullbacks in $\\mathcal{C}$ are needed for the tensor and the internal hom.",
+    "mechanisms": [
+     "m:universal-property",
+     "m:duality",
+     "m:cited-deep-result"
+    ],
+    "roles": [
+     {
+      "h": "h:category",
+      "why": "The closed structure and the pullbacks of $\\mathcal{C}$ build the tensor product and the internal hom; the symmetry gives the swap.",
+      "steps": [
+       "s:tensor",
+       "s:tensor-laws",
+       "s:hom"
+      ]
+     },
+     {
+      "h": "h:object",
+      "why": "The object $d$ is the target of every pairing and gives the dualizing object $(d, I)$.",
+      "steps": [
+       "s:category",
+       "s:dualizing"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:category",
+      "slogan": "Define the Chu category and check that it is a category.",
+      "detail": "Composition is $(f', g')(f, g) = (f'f, gg')$ and identities are $(1, 1)$. The two compatibility squares paste, so the composite is again a morphism. The first component is covariant and the second is contravariant, which gives the duality below.",
+      "uses": []
+     },
+     {
+      "id": "s:tensor",
+      "slogan": "Build the tensor product of two objects from a pullback.",
+      "detail": "For $(A, X, r)$ and $(B, Y, s)$ take $A \\otimes B$ as first component. The second component is the pullback $Z$ of $[A, Y] \\to [A \\otimes B, d] \\leftarrow [B, X]$, with maps from $s$ and $r$ by adjunction. The unit is $(I, d, I \\otimes d \\cong d)$.",
+      "uses": []
+     },
+     {
+      "id": "s:tensor-laws",
+      "slogan": "Check that the tensor is functorial, associative and symmetric.",
+      "detail": "Both bracketings of a triple tensor have the same iterated pullback as second component, and the symmetry of $\\mathcal{C}$ swaps the two legs of the pullback. Barr checks the coherence diagrams from the universal property of pullbacks.",
+      "uses": []
+     },
+     {
+      "id": "s:hom",
+      "slogan": "Construct the internal hom and prove the tensor-hom adjunction.",
+      "detail": "Set $[(A, X, r), (B, Y, s)] = (P, A \\otimes Y, \\cdot)$, with $P$ the pullback of $[A, B]$ and $[Y, X]$ over $[A \\otimes Y, d]$. A morphism out of a tensor unwinds to a pair of maps that matches a morphism into the hom, by the adjunction in $\\mathcal{C}$. So the Chu category is symmetric monoidal closed.",
+      "uses": []
+     },
+     {
+      "id": "s:dual",
+      "slogan": "Define the dual by swapping the two components and check that it is an involution.",
+      "detail": "Put $(A, X, r)^\\perp = (X, A, r \\circ \\tau)$, where $\\tau$ is the symmetry of $\\mathcal{C}$. This is a contravariant functor, and $(A^\\perp)^\\perp = A$ exactly.",
+      "uses": []
+     },
+     {
+      "id": "s:dualizing",
+      "slogan": "Show that $\\perp = (d, I)$ is a dualizing object.",
+      "detail": "The first component of $[(A, X, r), (d, I, \\cdot)]$ is the pullback of $[A, d]$ and $[I, X] \\cong X$ over $[A, d]$, which is $X$. So $[A, \\perp] \\cong A^\\perp$ naturally, and $A \\to [[A, \\perp], \\perp]$ is an isomorphism. This is the definition of a [star-autonomous category](c:star-autonomous-category), the structure behind multiplicative [linear logic](c:linear-logic).",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:category",
+      "s:tensor"
+     ],
+     [
+      "s:tensor",
+      "s:tensor-laws"
+     ],
+     [
+      "s:tensor-laws",
+      "s:hom"
+     ],
+     [
+      "s:category",
+      "s:dual"
+     ],
+     [
+      "s:hom",
+      "s:dualizing"
+     ],
+     [
+      "s:dual",
+      "s:dualizing"
+     ]
+    ],
+    "conclusion": "s:dualizing",
+    "concepts": {
+     "c:closed-symmetric-monoidal-category": "The base category supplies the tensor, the hom and the symmetry used throughout.",
+     "c:star-autonomous-category": "The proof shows the Chu category has a dualizing object and an involution.",
+     "c:linear-logic": "Star-autonomous categories interpret multiplicative linear logic."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "M. Barr, *-Autonomous categories, Lecture Notes in Mathematics 752, Springer, 1979 (appendix by Po-Hsiang Chu); M. Barr, The Chu construction, Theory and Applications of Categories 2 (1996), 17-35",
+     "url": "https://emis.univie.ac.at/journals/TAC/volumes/1996/n2/2-02abs.html",
+     "note": "Barr's appendix to LNM 752 defines the construction and proves it star-autonomous; the 1996 paper recasts the proof for a general closed monoidal category."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:complementary-subspaces",
+  "statement": "Let $p$ be a [linear subspace](c:linear-subspace) of a [vector space](c:vector-space) $V$ over a division ring. Then $V$ has a subspace $q$ with $p \\cap q = \\{0\\}$ and $p + q = V$.",
+  "hypotheses": [
+   {
+    "id": "h:space",
+    "text": "The set $V$ is a [vector space](c:vector-space) over a division ring $K$.",
+    "concept": "c:vector-space"
+   },
+   {
+    "id": "h:subspace",
+    "text": "The set $p$ is a [linear subspace](c:linear-subspace) of $V$.",
+    "concept": "c:linear-subspace"
+   }
+  ],
+  "conclusion": "Some subspace $q$ of $V$ satisfies $p \\cap q = \\{0\\}$ and $p + q = V$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "retraction",
+    "name": "Retraction onto the subspace",
+    "slogan": "Extend a basis of the subspace to a basis of the space, project onto the subspace along the new vectors, and take the kernel of that projection.",
+    "scope": "All dimensions; the extension of a basis needs Zorn's lemma in infinite dimension. The cases $p = 0$ and $p = V$ give $q = V$ and $q = 0$.",
+    "mechanisms": [
+     "m:zorn",
+     "m:linear-extension",
+     "m:homomorphism-kernel"
+    ],
+    "roles": [
+     {
+      "h": "h:space",
+      "why": "Every independent set of a vector space over a division ring extends to a basis.",
+      "steps": [
+       "s:extend"
+      ]
+     },
+     {
+      "h": "h:subspace",
+      "why": "A basis of $p$ is independent in $V$, and the retraction maps $V$ onto $p$.",
+      "steps": [
+       "s:extend",
+       "s:retract"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:extend",
+      "slogan": "Extend a [basis](c:basis) of $p$ to a basis of $V$.",
+      "detail": "A basis $B_p$ of $p$ is linearly independent in $V$, so it lies in a maximal independent subset $B$ of $V$ (Zorn's lemma). By maximality $B$ spans $V$, since a vector outside the span could be added.",
+      "uses": [
+       "nl:1475"
+      ]
+     },
+     {
+      "id": "s:retract",
+      "slogan": "Define a projection $\\rho$ onto $p$ and set $q$ equal to its kernel.",
+      "detail": "Let $\\rho$ be the linear map with $\\rho(b) = b$ for $b \\in B_p$ and $\\rho(b) = 0$ for $b \\in B \\setminus B_p$. Then $\\rho(v) = v$ for every $v \\in p$. Put $q = \\ker \\rho$, a subspace of $V$.",
+      "uses": []
+     },
+     {
+      "id": "s:meet",
+      "slogan": "Show that $p$ and $q$ meet only in the zero vector.",
+      "detail": "Let $v \\in p \\cap q$. Then $\\rho(v) = v$ because $v \\in p$, and $\\rho(v) = 0$ because $v \\in q$. So $v = 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:sum",
+      "slogan": "Split every vector into a part in $p$ and a part in $q$.",
+      "detail": "For $v \\in V$ write $v = \\rho(v) + (v - \\rho(v))$. The first part is in $p$, and $\\rho(v - \\rho(v)) = \\rho(v) - \\rho(\\rho(v)) = 0$, so the second part is in $q$.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Combine the two facts to read $V$ as the [internal direct sum](c:internal-direct-sum) of $p$ and $q$.",
+      "detail": "Steps 3 and 4 give $p \\cap q = \\{0\\}$ and $p + q = V$. So $q$ is a complement of $p$ and $V = p \\oplus q$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:extend",
+      "s:retract"
+     ],
+     [
+      "s:retract",
+      "s:meet"
+     ],
+     [
+      "s:retract",
+      "s:sum"
+     ],
+     [
+      "s:meet",
+      "s:conclude"
+     ],
+     [
+      "s:sum",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:vector-space": "The scalars form a division ring, which is enough for bases to exist.",
+     "c:linear-subspace": "The subspace $p$ is the image of the projection and the one to complement.",
+     "c:basis": "A basis of $p$ extended to $V$ defines the projection.",
+     "c:internal-direct-sum": "The conclusion says that $V$ splits as $p \\oplus q$."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Submodule.exists_isCompl",
+     "follows": true,
+     "note": "mathlib takes q as the kernel of a left inverse of p.subtype (a basis extension) and applies LinearMap.isCompl_of_proj."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q55647729",
+  "statement": "Let $X_1, X_2, \\dots$ be real [iid random variables](c:iid-random-variables) whose [moment generating function](c:moment-generating-function) is finite for every real $\\lambda$. Put $\\Lambda(\\lambda) = \\log E e^{\\lambda X_1}$ and $S_n = X_1 + \\dots + X_n$. Then $S_n / n$ satisfies a [large deviation principle](c:large-deviation-principle) with rate function $\\Lambda^*(x) = \\sup_\\lambda (\\lambda x - \\Lambda(\\lambda))$, the [Legendre transform](c:legendre-transform) of $\\Lambda$.",
+  "hypotheses": [
+   {
+    "id": "h:iid",
+    "text": "The $X_i$ are real [iid random variables](c:iid-random-variables).",
+    "concept": "c:iid-random-variables"
+   },
+   {
+    "id": "h:mgf",
+    "text": "The [moment generating function](c:moment-generating-function) $E e^{\\lambda X_1}$ is finite for every real $\\lambda$.",
+    "concept": "c:moment-generating-function"
+   }
+  ],
+  "conclusion": "For every closed set $F$, $\\limsup \\frac{1}{n} \\log P(S_n / n \\in F) \\le -\\inf_F \\Lambda^*$, and for every open set $G$, $\\liminf \\frac{1}{n} \\log P(S_n / n \\in G) \\ge -\\inf_G \\Lambda^*$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "chernoff-and-tilting",
+    "name": "Chernoff bound and tilting",
+    "slogan": "Get the upper bound from the exponential Markov inequality and the lower bound from a tilted law under which the target value is typical.",
+    "scope": "Both bounds. The half-line bound is the core estimate; closed sets reduce to two half-lines, and the lower bound is proved on small intervals around each point, which suffices for open sets.",
+    "mechanisms": [
+     "m:concentration",
+     "m:convexity"
+    ],
+    "roles": [
+     {
+      "h": "h:iid",
+      "why": "Independence turns $E e^{\\lambda S_n}$ into a power of one factor, and the law of large numbers holds for the tilted variables.",
+      "steps": [
+       "s:markov",
+       "s:tilt"
+      ]
+     },
+     {
+      "h": "h:mgf",
+      "why": "A finite $\\Lambda$ is convex and differentiable, so the tilted law exists for every $\\lambda$.",
+      "steps": [
+       "s:tilt",
+       "s:edge"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:markov",
+      "slogan": "Bound the probability of a half-line by the exponential Markov inequality.",
+      "detail": "Let $a \\ge \\mu = E X_1$ and $\\lambda \\ge 0$. Independence gives $P(S_n \\ge na) \\le e^{-\\lambda n a} (E e^{\\lambda X_1})^n$. By Jensen, $\\Lambda(\\lambda) \\ge \\lambda \\mu$, so negative $\\lambda$ never beat $0$, and the best bound is $e^{-n \\Lambda^*(a)}$.",
+      "uses": [
+       "nm:chernoff-bound"
+      ]
+     },
+     {
+      "id": "s:closed",
+      "slogan": "Cover a closed set by two half-lines to get the upper bound.",
+      "detail": "If $F$ contains $\\mu$, then $\\inf_F \\Lambda^* = 0$ and there is nothing to show. Otherwise $F \\subseteq (-\\infty, a] \\cup [b, \\infty)$ with $a < \\mu < b$ and $a, b$ in $F$ or infinite. Step 1 and its mirror image bound the probability by $2 e^{-n \\min(\\Lambda^*(a), \\Lambda^*(b))}$, and $\\Lambda^*$ is convex with minimum $0$ at $\\mu$, so this minimum is $\\inf_F \\Lambda^*$.",
+      "uses": []
+     },
+     {
+      "id": "s:tilt",
+      "slogan": "Tilt the law of each $X_i$ so that the target value $x$ becomes the mean.",
+      "detail": "Let $\\Lambda'(\\lambda) = x$ and define the [change of measure](c:change-of-measure) $dP_\\lambda = e^{\\lambda X_1 - \\Lambda(\\lambda)}\\, dP$ for each variable. Under $P_\\lambda$ the $X_i$ are iid with mean $x$, so $P_\\lambda(|S_n / n - x| < \\delta) \\to 1$ by the law of large numbers, and $\\lambda x - \\Lambda(\\lambda) = \\Lambda^*(x)$ because this concave function of $\\lambda$ has derivative $0$ there.",
+      "uses": []
+     },
+     {
+      "id": "s:lower",
+      "slogan": "Undo the tilt to bound the probability of a small interval from below.",
+      "detail": "Write $P(|S_n / n - x| < \\delta) = E_\\lambda\\big[e^{-\\lambda S_n + n \\Lambda(\\lambda)}; |S_n / n - x| < \\delta\\big] \\ge e^{-n(\\lambda x + |\\lambda| \\delta - \\Lambda(\\lambda))} P_\\lambda(|S_n / n - x| < \\delta)$. Take $\\frac{1}{n} \\log$, let $n \\to \\infty$, then $\\delta \\to 0$. The liminf is at least $-\\Lambda^*(x)$.",
+      "uses": []
+     },
+     {
+      "id": "s:edge",
+      "slogan": "Treat the values $x$ for which no tilting parameter exists.",
+      "detail": "The values $\\Lambda'(\\lambda)$ fill the open interval between the essential infimum and supremum of $X_1$. Beyond the closed interval, $\\Lambda^*(x) = \\infty$ and the bound is empty. At an endpoint $M$, $\\Lambda^*(M) = -\\log P(X_1 = M)$ and $P(|S_n / n - M| < \\delta) \\ge P(X_1 = M)^n$.",
+      "uses": []
+     },
+     {
+      "id": "s:combine",
+      "slogan": "Join the interval bounds to get the lower bound for open sets, and state the principle.",
+      "detail": "Let $G$ be open and $x \\in G$ with $\\Lambda^*(x) < \\infty$, and choose $\\delta$ with $(x - \\delta, x + \\delta) \\subseteq G$. Steps 4 and 5 give $\\liminf \\frac{1}{n} \\log P(S_n / n \\in G) \\ge -\\Lambda^*(x)$; take the best $x \\in G$. With step 2 this is the [large deviation principle](c:large-deviation-principle) with rate $\\Lambda^*$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:markov",
+      "s:closed"
+     ],
+     [
+      "s:tilt",
+      "s:lower"
+     ],
+     [
+      "s:tilt",
+      "s:edge"
+     ],
+     [
+      "s:lower",
+      "s:combine"
+     ],
+     [
+      "s:edge",
+      "s:combine"
+     ],
+     [
+      "s:closed",
+      "s:combine"
+     ]
+    ],
+    "conclusion": "s:combine",
+    "concepts": {
+     "c:moment-generating-function": "Its finiteness makes $\\Lambda$ smooth and convex, which the tilting needs.",
+     "c:large-deviation-principle": "The two bounds proved here are exactly the principle with rate $\\Lambda^*$.",
+     "c:legendre-transform": "The rate function is the Legendre transform of $\\Lambda$, attained at the tilt.",
+     "c:iid-random-variables": "Independence gives the product formula, identical laws give one $\\Lambda$.",
+     "c:change-of-measure": "The tilted law makes the target value the typical value."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The Chernoff and tilting proof as in Dembo and Zeitouni, Large Deviations Techniques and Applications, theorem 2.2.3, which also drops the assumption that the moment generating function is finite everywhere."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:decomposition-into-transpositions",
+  "statement": "Every [permutation](c:permutation) of a [finite set](c:finite-set) is a product of [transpositions](c:transposition). The identity is the empty product.",
+  "hypotheses": [
+   {
+    "id": "h:finite",
+    "text": "The set $\\Omega$ is a [finite set](c:finite-set).",
+    "concept": "c:finite-set"
+   },
+   {
+    "id": "h:perm",
+    "text": "The map $\\sigma$ is a [permutation](c:permutation) of $\\Omega$.",
+    "concept": "c:permutation"
+   }
+  ],
+  "conclusion": "There are transpositions $\\tau_1, \\dots, \\tau_k$ with $k \\ge 0$ and $\\sigma = \\tau_1 \\tau_2 \\cdots \\tau_k$.",
+  "formal": {
+   "decl": "Equiv.Perm.truncSwapFactors",
+   "difference": "mathlib states the existence as a Trunc, a computable form of the existential statement, giving a list of swaps whose product is the permutation."
+  },
+  "proofs": [
+   {
+    "id": "peel-one-point",
+    "name": "Peel off one moved point",
+    "slogan": "Multiply the permutation by one transposition to fix a moved point, and repeat until only the identity remains.",
+    "scope": "The whole theorem, by induction on the number of points that $\\sigma$ moves. The identity is the empty product, so sets with at most one point need no transposition.",
+    "mechanisms": [
+     "m:induction",
+     "m:strong-induction"
+    ],
+    "roles": [
+     {
+      "h": "h:finite",
+      "why": "Finiteness makes the number of moved points a natural number, so induction applies.",
+      "steps": [
+       "s:measure"
+      ]
+     },
+     {
+      "h": "h:perm",
+      "why": "Injectivity of $\\sigma$ shows that the points fixed by $\\sigma$ stay fixed after the multiplication.",
+      "steps": [
+       "s:peel",
+       "s:fixed"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:measure",
+      "slogan": "Count the points that the permutation moves.",
+      "detail": "Let $m(\\sigma)$ be the number of $x \\in \\Omega$ with $\\sigma(x) \\ne x$. It is a natural number because $\\Omega$ is finite, and $m(\\sigma) = 0$ exactly when $\\sigma$ is the identity.",
+      "uses": []
+     },
+     {
+      "id": "s:base",
+      "slogan": "Treat the case that the permutation moves no point.",
+      "detail": "If $m(\\sigma) = 0$, then $\\sigma$ is the identity. The identity is the empty product of [transpositions](c:transposition).",
+      "uses": []
+     },
+     {
+      "id": "s:peel",
+      "slogan": "Multiply by one transposition to fix a moved point.",
+      "detail": "If $m(\\sigma) > 0$, pick $x$ with $y = \\sigma(x) \\ne x$. Let $\\sigma' = (x\\ y)\\,\\sigma$. Then $\\sigma'(x) = (x\\ y)(y) = x$.",
+      "uses": []
+     },
+     {
+      "id": "s:fixed",
+      "slogan": "Check that $\\sigma'$ moves fewer points than $\\sigma$.",
+      "detail": "Let $\\sigma(z) = z$. Then $z \\ne x$, and $z \\ne y$ since $\\sigma(y) = y = \\sigma(x)$ would give $y = x$. So $(x\\ y)$ fixes $z$ and $\\sigma'(z) = z$; as $x$ is also fixed, $m(\\sigma') < m(\\sigma)$.",
+      "uses": []
+     },
+     {
+      "id": "s:induct",
+      "slogan": "Apply the induction hypothesis to $\\sigma'$ and multiply back.",
+      "detail": "By induction $\\sigma' = \\tau_1 \\cdots \\tau_k$ with transpositions $\\tau_j$. Since $(x\\ y)$ is its own inverse, $\\sigma = (x\\ y)\\,\\sigma' = (x\\ y)\\,\\tau_1 \\cdots \\tau_k$, a product of transpositions.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:measure",
+      "s:base"
+     ],
+     [
+      "s:measure",
+      "s:peel"
+     ],
+     [
+      "s:peel",
+      "s:fixed"
+     ],
+     [
+      "s:fixed",
+      "s:induct"
+     ],
+     [
+      "s:base",
+      "s:induct"
+     ]
+    ],
+    "conclusion": "s:induct",
+    "concepts": {
+     "c:finite-set": "Finiteness makes the count of moved points a natural number.",
+     "c:permutation": "The map is injective, so the new product is again a permutation.",
+     "c:transposition": "Each peeled factor is a transposition, and the product of them is the result."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Equiv.Perm.truncSwapFactors",
+     "follows": true,
+     "note": "mathlib's swapFactorsAux runs through a list of the points and multiplies by swap x (f x) whenever f x differs from x; the measure here is the same idea."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:degree-sum-formula",
+  "statement": "In a finite simple [graph](c:graph) with vertex set $V$ and edge set $E$, the degrees satisfy $\\sum_{v \\in V} \\deg(v) = 2\\,|E|$.",
+  "hypotheses": [
+   {
+    "id": "h:finite",
+    "text": "The vertex set $V$ is a [finite set](c:finite-set).",
+    "concept": "c:finite-set"
+   },
+   {
+    "id": "h:simple",
+    "text": "The [graph](c:graph) is simple: it has no loops and no multiple edges.",
+    "concept": "c:graph"
+   }
+  ],
+  "conclusion": "$\\sum_{v \\in V} \\deg(v) = 2\\,|E|$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "darts",
+    "name": "Counting darts",
+    "slogan": "Count the ordered pairs of adjacent vertices in two ways: by their first vertex, and by the edge that they form.",
+    "scope": "Finite simple graphs. The empty graph gives $0 = 0$.",
+    "mechanisms": [
+     "m:double-counting",
+     "m:bijection"
+    ],
+    "roles": [
+     {
+      "h": "h:finite",
+      "why": "Finiteness makes every count a natural number.",
+      "steps": [
+       "s:equate"
+      ]
+     },
+     {
+      "h": "h:simple",
+      "why": "Without loops the two darts of an [edge](c:edge) differ, and without multiple edges an edge is a pair of vertices.",
+      "steps": [
+       "s:darts",
+       "s:by-edge"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:darts",
+      "slogan": "Define the set $D$ of [darts](c:dart): ordered pairs $(u, v)$ with $u$ adjacent to $v$.",
+      "detail": "Each [edge](c:edge) $\\{u, v\\}$ gives the two darts $(u, v)$ and $(v, u)$. They differ because $u \\ne v$, as the graph has no loops.",
+      "uses": []
+     },
+     {
+      "id": "s:by-vertex",
+      "slogan": "Count the darts by their first vertex.",
+      "detail": "The darts that start at $v$ are $(v, w)$ for the neighbors $w$ of $v$, so there are $\\deg(v)$ of them. Hence $|D| = \\sum_v \\deg(v)$.",
+      "uses": []
+     },
+     {
+      "id": "s:by-edge",
+      "slogan": "Count the darts by the edge that they carry.",
+      "detail": "The map $(u, v) \\mapsto \\{u, v\\}$ from $D$ to $E$ is onto. Its fiber over $\\{u, v\\}$ is $\\{(u, v), (v, u)\\}$, which has two elements. Hence $|D| = 2|E|$.",
+      "uses": []
+     },
+     {
+      "id": "s:equate",
+      "slogan": "Equate the two counts of the set of darts.",
+      "detail": "Both counts equal the size of $D$, so $\\sum_v \\deg(v) = |D| = 2|E|$. This is double counting of the dart set.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:darts",
+      "s:by-vertex"
+     ],
+     [
+      "s:darts",
+      "s:by-edge"
+     ],
+     [
+      "s:by-vertex",
+      "s:equate"
+     ],
+     [
+      "s:by-edge",
+      "s:equate"
+     ]
+    ],
+    "conclusion": "s:equate",
+    "concepts": {
+     "c:graph": "The theorem concerns a finite simple graph and its degrees.",
+     "c:finite-set": "Finiteness makes every count a natural number.",
+     "c:edge": "Each edge produces exactly two darts.",
+     "c:dart": "The set of darts is the object counted twice."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "SimpleGraph.sum_degrees_eq_twice_card_edges",
+     "follows": true,
+     "note": "mathlib counts darts: dart_card_eq_sum_degrees by first vertex and dart_card_eq_twice_card_edges by edge."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:derangements-formula",
+  "statement": "The number $D_n$ of derangements of an $n$-element set, the [permutations](c:permutation) with no [fixed point](c:fixed-point), is $D_n = n! \\sum_{k=0}^{n} \\frac{(-1)^k}{k!}$.",
+  "hypotheses": [
+   {
+    "id": "h:finite",
+    "text": "The set $X$ is a [finite set](c:finite-set) with $n \\ge 0$ elements.",
+    "concept": "c:finite-set"
+   }
+  ],
+  "conclusion": "$D_n = n! \\sum_{k=0}^{n} (-1)^k / k!$.",
+  "formal": {
+   "decl": "card_derangements_eq_numDerangements",
+   "difference": "mathlib shows that the count equals numDerangements, defined by $d_0 = 1$, $d_1 = 0$, $d_{n+2} = (n+1)(d_n + d_{n+1})$. The closed sum is the separate theorem numDerangements_sum, written with ascFactorial."
+  },
+  "proofs": [
+   {
+    "id": "recursion",
+    "name": "Recursion and its solution",
+    "slogan": "Count derangements by the image of a fixed point to get $D_{n+2} = (n+1)(D_n + D_{n+1})$, then solve the recursion.",
+    "scope": "All $n \\ge 0$; $D_0 = 1$ (the empty permutation) and $D_1 = 0$ start the recursion, which is proved for sets of size $n + 2$.",
+    "mechanisms": [
+     "m:bijection",
+     "m:induction",
+     "m:telescoping"
+    ],
+    "roles": [
+     {
+      "h": "h:finite",
+      "why": "Finiteness makes $D_n$ a number that depends only on $n$ and lets the recursion split the set.",
+      "steps": [
+       "s:invariant",
+       "s:recursion"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:invariant",
+      "slogan": "Reduce the count to the standard set with $n$ elements.",
+      "detail": "A [bijection](c:bijection) between two $n$-element sets turns derangements into derangements by conjugation. So the number $D_n$ depends only on $n$.",
+      "uses": []
+     },
+     {
+      "id": "s:recursion",
+      "slogan": "Split by the image of the first point and by whether the image returns.",
+      "detail": "Let $|X| = n + 2$ and fix $a \\in X$. A derangement sends $a$ to one of $n + 1$ points $b$. If it sends $b$ back to $a$, the rest is a derangement of $n$ points; if not, skipping $a$ in the cycle gives a derangement of $n + 1$ points. Both are bijections, so $D_{n+2} = (n+1)(D_n + D_{n+1})$.",
+      "uses": []
+     },
+     {
+      "id": "s:sign",
+      "slogan": "Show that $D_{n+1} = (n+1) D_n + (-1)^{n+1}$.",
+      "detail": "The recursion gives $D_{n+2} - (n+2) D_{n+1} = -(D_{n+1} - (n+1) D_n)$. So $D_{n+1} - (n+1) D_n$ changes sign at each step, and it equals $D_1 - D_0 = -1$ at $n = 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:telescope",
+      "slogan": "Divide by $n!$ and add up the differences.",
+      "detail": "For $n \\ge 1$, step 3 gives $D_n / n! = D_{n-1} / (n-1)! + (-1)^n / n!$. Summing from $1$ to $n$ with $D_0 / 0! = 1$ gives $D_n / n! = \\sum_{k=0}^n (-1)^k / k!$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:invariant",
+      "s:recursion"
+     ],
+     [
+      "s:recursion",
+      "s:sign"
+     ],
+     [
+      "s:sign",
+      "s:telescope"
+     ]
+    ],
+    "conclusion": "s:telescope",
+    "concepts": {
+     "c:permutation": "Derangements are the permutations that the recursion counts.",
+     "c:fixed-point": "A derangement is a permutation without a fixed point.",
+     "c:finite-set": "Finiteness makes the number of derangements a natural number.",
+     "c:bijection": "A bijection of the sets carries derangements to derangements."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "card_derangements_eq_numDerangements",
+     "follows": true,
+     "note": "mathlib uses derangementsRecursionEquiv (card_derangements_fin_add_two) for the recursion, numDerangements_succ for the sign step and numDerangements_sum for the closed sum."
+    }
+   },
+   {
+    "id": "inclusion-exclusion",
+    "name": "Inclusion-exclusion",
+    "slogan": "Count the permutations that fix no point by inclusion-exclusion over the sets of points that are forced to be fixed.",
+    "scope": "All $n \\ge 0$; for $n = 0$ the sum has one term and $D_0 = 1$.",
+    "mechanisms": [
+     "m:inclusion-exclusion"
+    ],
+    "roles": [
+     {
+      "h": "h:finite",
+      "why": "Finiteness makes the sums over subsets finite and the counts $(n-k)!$ valid.",
+      "steps": [
+       "s:intersections",
+       "s:inclusion"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:events",
+      "slogan": "Let $A_i$ be the set of permutations that fix the point $i$.",
+      "detail": "A derangement is a [permutation](c:permutation) outside $A_1 \\cup \\dots \\cup A_n$. So $D_n = n! - |A_1 \\cup \\dots \\cup A_n|$.",
+      "uses": []
+     },
+     {
+      "id": "s:intersections",
+      "slogan": "Count the permutations that fix a given set $S$ of $k$ points.",
+      "detail": "A permutation in $\\bigcap_{i \\in S} A_i$ fixes the $k$ points of $S$ and permutes the other $n - k$ points freely. So $|\\bigcap_{i \\in S} A_i| = (n-k)!$.",
+      "uses": []
+     },
+     {
+      "id": "s:inclusion",
+      "slogan": "Apply inclusion-exclusion to the union of the sets $A_i$.",
+      "detail": "Inclusion-exclusion gives $D_n = \\sum_{S \\subseteq \\{1, \\dots, n\\}} (-1)^{|S|} \\left|\\bigcap_{i \\in S} A_i\\right|$, where the empty $S$ gives the term $n!$.",
+      "uses": [
+       "nm:principle-of-inclusion-exclusion"
+      ]
+     },
+     {
+      "id": "s:sum",
+      "slogan": "Group the subsets by size and simplify.",
+      "detail": "There are $\\binom{n}{k}$ subsets of size $k$. So $D_n = \\sum_k (-1)^k \\binom{n}{k} (n-k)! = \\sum_k (-1)^k\\, n! / k!$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:events",
+      "s:intersections"
+     ],
+     [
+      "s:events",
+      "s:inclusion"
+     ],
+     [
+      "s:intersections",
+      "s:inclusion"
+     ],
+     [
+      "s:inclusion",
+      "s:sum"
+     ]
+    ],
+    "conclusion": "s:sum",
+    "concepts": {
+     "c:permutation": "Derangements are the permutations outside every set $A_i$.",
+     "c:fixed-point": "The sets $A_i$ record the fixed points that are forbidden.",
+     "c:finite-set": "Finiteness makes the subset sums finite."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The classical inclusion-exclusion count of derangements (Montmort's problem)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1227702",
+  "statement": "Let $K$ be a [number field](c:number-field) with $r_1$ real and $r_2$ complex places. The [unit group](c:unit-group) of its [ring of integers](c:ring-of-integers) is the product of the finite cyclic group of roots of unity in $K$ and a free abelian group of rank $r_1 + r_2 - 1$.",
+  "hypotheses": [
+   {
+    "id": "h:field",
+    "text": "The field $K$ is a [number field](c:number-field), a finite extension of $\\mathbb{Q}$.",
+    "concept": "c:number-field"
+   }
+  ],
+  "conclusion": "$\\mathcal{O}_K^\\times \\cong \\mu(K) \\times \\mathbb{Z}^{r_1 + r_2 - 1}$, where $\\mu(K)$ is the finite cyclic group of roots of unity in $K$.",
+  "formal": {
+   "decl": "NumberField.Units.basisModTorsion",
+   "difference": "mathlib gives a $\\mathbb{Z}$-basis of the units modulo torsion, indexed by Fin (rank K), where the rank is the number of infinite places minus one. The product decomposition is exist_unique_eq_mul_prod, and finiteness of the torsion is a separate result."
+  },
+  "proofs": [
+   {
+    "id": "log-lattice",
+    "name": "Logarithmic lattice",
+    "slogan": "Map the units to a space by logarithms, show that the kernel is the roots of unity, and that the image is a lattice of full rank.",
+    "scope": "The whole theorem. Write $r = r_1 + r_2 - 1$ and let $w_0$ be one infinite place; the proof follows mathlib's module on the Dirichlet unit theorem.",
+    "mechanisms": [
+     "m:homomorphism-kernel",
+     "m:pigeonhole",
+     "m:dimension-count"
+    ],
+    "roles": [
+     {
+      "h": "h:field",
+      "why": "Being a number field gives finitely many places, finitely many integers of bounded size, and Minkowski's theorem on the lattice of integers.",
+      "steps": [
+       "s:kernel",
+       "s:discrete",
+       "s:unit"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:log",
+      "slogan": "Map each unit to the [logarithms](c:logarithm) of its absolute values at the places other than $w_0$.",
+      "detail": "Send a unit $u$ to $\\ell(u) = (n_w \\log |u|_w)_{w \\ne w_0}$ in $\\mathbb{R}^r$, where $n_w \\in \\{1, 2\\}$. Then $\\ell$ is a homomorphism. The product $\\prod_w |u|_w^{n_w} = |N(u)| = 1$ shows that the omitted coordinate is minus the sum of the others.",
+      "uses": []
+     },
+     {
+      "id": "s:kernel",
+      "slogan": "Show that the kernel of the map is the group of roots of unity.",
+      "detail": "If $\\ell(u) = 0$, all conjugates of $u$ have absolute value $1$. Only finitely many algebraic integers of $K$ have all conjugates bounded, so $\\ker \\ell$ is a finite subgroup of $K^\\times$, hence cyclic, made of roots of unity. Conversely a root of unity has all absolute values $1$.",
+      "uses": []
+     },
+     {
+      "id": "s:discrete",
+      "slogan": "Show that the image of the map is a discrete subgroup.",
+      "detail": "A ball of radius $R$ in $\\mathbb{R}^r$ contains only images of units whose conjugates are all bounded by $e^{cR}$. There are finitely many such integers, so the ball holds finitely many points of the image.",
+      "uses": []
+     },
+     {
+      "id": "s:unit",
+      "slogan": "For each place $w_1 \\ne w_0$, construct a unit that is small at every other place.",
+      "detail": "Minkowski's convex body theorem gives a sequence $x_n$ of nonzero integers of norm at most $B$ whose sizes decrease at every place $w \\ne w_1$. Only finitely many ideals have norm at most $B$, so by pigeonhole $x_m \\mathcal{O}_K = x_n \\mathcal{O}_K$ with $m < n$. Then $u = x_n / x_m$ is a unit with $|u|_w < 1$ for $w \\ne w_1$.",
+      "uses": [
+       "wd:Q1097021",
+       "nm:pigeonhole-principle"
+      ]
+     },
+     {
+      "id": "s:span",
+      "slogan": "Show that these $r$ units give independent vectors in $\\mathbb{R}^r$.",
+      "detail": "For the units $u_j$ built for the places $w_j \\ne w_0$, the matrix of the $\\ell(u_j)$ has negative entries off the diagonal. Each column sums to minus the $w_0$-coordinate of $\\ell(u_j)$, which is positive. So each diagonal entry dominates its column, the determinant is nonzero, and the images span $\\mathbb{R}^r$.",
+      "uses": []
+     },
+     {
+      "id": "s:lattice",
+      "slogan": "Conclude that the image is a [lattice](c:lattice-discrete-subgroup) of rank $r$ and split off the torsion.",
+      "detail": "A discrete subgroup of $\\mathbb{R}^r$ that spans $\\mathbb{R}^r$ is free abelian of rank $r$. The sequence $1 \\to \\mu(K) \\to \\mathcal{O}_K^\\times \\to \\operatorname{im} \\ell \\to 1$ splits because the quotient is free. So $\\mathcal{O}_K^\\times \\cong \\mu(K) \\times \\mathbb{Z}^r$ with $r = r_1 + r_2 - 1$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:log",
+      "s:kernel"
+     ],
+     [
+      "s:log",
+      "s:discrete"
+     ],
+     [
+      "s:log",
+      "s:span"
+     ],
+     [
+      "s:unit",
+      "s:span"
+     ],
+     [
+      "s:kernel",
+      "s:lattice"
+     ],
+     [
+      "s:discrete",
+      "s:lattice"
+     ],
+     [
+      "s:span",
+      "s:lattice"
+     ]
+    ],
+    "conclusion": "s:lattice",
+    "concepts": {
+     "c:number-field": "The field gives finitely many places and the lattice of integers.",
+     "c:unit-group": "The unit group is the group whose structure the theorem gives.",
+     "c:ring-of-integers": "The units are the invertible elements of the ring of integers.",
+     "c:logarithm": "Logarithms turn the multiplicative group of units into an additive group.",
+     "c:lattice-discrete-subgroup": "A discrete spanning subgroup of the space is a lattice with a basis."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "NumberField.Units.basisModTorsion",
+     "follows": true,
+     "note": "mathlib proves logEmbedding_ker, unitLattice_inter_ball_finite, exists_unit (Minkowski and pigeonhole), unitLattice_span_eq_top, unitLattice_rank, then takes basisModTorsion."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:divergence-of-the-harmonic-series",
+  "statement": "The partial sums $H_n = \\sum_{k=1}^{n} 1/k$ of the harmonic [series](c:series) tend to $+\\infty$: for every real $M$, some $N$ has $H_n > M$ for all $n \\ge N$.",
+  "hypotheses": [],
+  "conclusion": "$H_n \\to \\infty$ as $n \\to \\infty$, so the series $\\sum 1/k$ diverges.",
+  "formal": {
+   "decl": "Real.tendsto_sum_range_one_div_nat_succ_atTop",
+   "difference": null
+  },
+  "proofs": [
+   {
+    "id": "condensation",
+    "name": "Cauchy condensation",
+    "slogan": "Group the terms into blocks of length $2^k$, bound each block below by one half, and use that the partial sums increase.",
+    "scope": "The whole statement. This is the condensation test for $f(n) = 1/n$, the route of the mathlib p-series test.",
+    "mechanisms": [
+     "m:monotone-limit"
+    ],
+    "roles": [],
+    "steps": [
+     {
+      "id": "s:blocks",
+      "slogan": "Group the terms into blocks of length $2^k$.",
+      "detail": "For $k \\ge 0$ let $B_k = \\sum_{j=2^k+1}^{2^{k+1}} 1/j$. The block $B_k$ has $2^k$ terms.",
+      "uses": []
+     },
+     {
+      "id": "s:block-bound",
+      "slogan": "Bound each block from below by one half.",
+      "detail": "Every term of $B_k$ is at least $1/2^{k+1}$ because $1/j$ decreases. So $B_k \\ge 2^k \\cdot 2^{-(k+1)} = 1/2$.",
+      "uses": []
+     },
+     {
+      "id": "s:partial",
+      "slogan": "Add the blocks to bound $H_{2^m}$ from below.",
+      "detail": "The first $2^m$ terms are the term $1$ and the blocks $B_0, \\dots, B_{m-1}$. So $H_{2^m} = 1 + B_0 + \\dots + B_{m-1} \\ge 1 + m/2$.",
+      "uses": []
+     },
+     {
+      "id": "s:unbounded",
+      "slogan": "Show that the partial sums are unbounded.",
+      "detail": "Given a real number $M$, choose an integer $m > 2M$. Then $H_{2^m} \\ge 1 + m/2 > M$, so no bound holds for all partial sums.",
+      "uses": []
+     },
+     {
+      "id": "s:monotone",
+      "slogan": "Pass from the powers of $2$ to all $n$ because the sequence increases.",
+      "detail": "The [sequence](c:monotone-sequence) $H_n$ is increasing, so $H_n \\ge H_{2^m} > M$ for every $n \\ge 2^m$. Hence $H_n \\to \\infty$, a divergent [series](c:series).",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:blocks",
+      "s:block-bound"
+     ],
+     [
+      "s:block-bound",
+      "s:partial"
+     ],
+     [
+      "s:partial",
+      "s:unbounded"
+     ],
+     [
+      "s:unbounded",
+      "s:monotone"
+     ]
+    ],
+    "conclusion": "s:monotone",
+    "concepts": {
+     "c:series": "The partial sums of the series are the sequence that grows without bound.",
+     "c:monotone-sequence": "Increase of the partial sums turns one large value into all later values."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Real.tendsto_sum_range_one_div_nat_succ_atTop",
+     "follows": true,
+     "note": "mathlib shows not_summable_one_div_natCast through the p-series test summable_nat_pow_inv, which rests on Cauchy condensation (summable_condensed_iff_of_nonneg)."
+    }
+   },
+   {
+    "id": "integral-comparison",
+    "name": "Integral comparison",
+    "slogan": "Compare the sum with the integral of $1/x$, which grows like the logarithm.",
+    "scope": "The whole statement.",
+    "mechanisms": [
+     "m:fundamental-theorem-calculus"
+    ],
+    "roles": [],
+    "steps": [
+     {
+      "id": "s:compare",
+      "slogan": "Bound each term below by an integral over one unit interval.",
+      "detail": "For $k \\ge 1$ and $x \\in [k, k+1]$ we have $1/x \\le 1/k$. So $1/k \\ge \\int_k^{k+1} dx / x$.",
+      "uses": [
+       "nm:integral-test"
+      ]
+     },
+     {
+      "id": "s:sum",
+      "slogan": "Add the bounds for $k = 1, \\dots, n$ to get $H_n \\ge \\ln(n+1)$.",
+      "detail": "Summing the bounds of step 1 over $k = 1, \\dots, n$ gives $H_n \\ge \\int_1^{n+1} dx / x = \\ln(n+1)$.",
+      "uses": []
+     },
+     {
+      "id": "s:log",
+      "slogan": "Use that the logarithm is unbounded to conclude.",
+      "detail": "Given $M$, take $N = \\lceil e^M \\rceil$. For $n \\ge N$ we get $H_n \\ge \\ln(n+1) > M$. So $H_n \\to \\infty$ and the series diverges.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:compare",
+      "s:sum"
+     ],
+     [
+      "s:sum",
+      "s:log"
+     ]
+    ],
+    "conclusion": "s:log",
+    "concepts": {
+     "c:series": "The partial sums of the series are the sequence that grows without bound."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The integral comparison $H_n \\ge \\ln(n+1)$, standard in calculus texts."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:1308",
+  "statement": "Let $M$ be a set with two [binary operations](c:binary-operation) $\\circ$ and $\\star$ that have units $1_\\circ$ and $1_\\star$ and satisfy the [interchange law](c:interchange-law) $(a \\star b) \\circ (c \\star d) = (a \\circ c) \\star (b \\circ d)$. Then $\\circ = \\star$, the two units are equal, and the operation is associative and commutative: $M$ is a commutative [monoid](c:monoid).",
+  "hypotheses": [
+   {
+    "id": "h:units",
+    "text": "The operation $\\circ$ has a two-sided unit $1_\\circ$ and the operation $\\star$ has a two-sided unit $1_\\star$.",
+    "concept": null
+   },
+   {
+    "id": "h:interchange",
+    "text": "The operations satisfy the [interchange law](c:interchange-law) $(a \\star b) \\circ (c \\star d) = (a \\circ c) \\star (b \\circ d)$.",
+    "concept": "c:interchange-law"
+   }
+  ],
+  "conclusion": "The two operations are equal, they have the same unit, and they make $M$ a commutative [monoid](c:monoid).",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "unit-insertion",
+    "name": "Insert units and interchange",
+    "slogan": "Show that the two units agree, then write each product with units inserted and apply the interchange law to swap the operations and the order.",
+    "scope": "The whole theorem. Neither operation is assumed associative; associativity is derived in the fourth step.",
+    "mechanisms": [
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:units",
+      "why": "The units are inserted into products, and their equality is the first result.",
+      "steps": [
+       "s:units",
+       "s:equal",
+       "s:commute",
+       "s:associate"
+      ]
+     },
+     {
+      "h": "h:interchange",
+      "why": "The interchange law is the only rule that mixes the two operations.",
+      "steps": [
+       "s:units",
+       "s:equal",
+       "s:commute",
+       "s:associate"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:units",
+      "slogan": "Show that the two units are equal.",
+      "detail": "Use $1_\\star = 1_\\star \\star 1_\\star = (1_\\star \\circ 1_\\circ) \\star (1_\\circ \\circ 1_\\star) = (1_\\star \\star 1_\\circ) \\circ (1_\\circ \\star 1_\\star) = 1_\\circ \\circ 1_\\circ = 1_\\circ$. Call the common unit $1$.",
+      "uses": []
+     },
+     {
+      "id": "s:equal",
+      "slogan": "Show that the two operations are equal.",
+      "detail": "For $a, b \\in M$, the unit laws and the interchange law give $a \\star b = (a \\circ 1) \\star (1 \\circ b) = (a \\star 1) \\circ (1 \\star b) = a \\circ b$.",
+      "uses": []
+     },
+     {
+      "id": "s:commute",
+      "slogan": "Show that the operation is commutative.",
+      "detail": "Write $a \\circ b = (1 \\star a) \\circ (b \\star 1) = (1 \\circ b) \\star (a \\circ 1) = b \\star a = b \\circ a$, where the last step uses the equality of the operations.",
+      "uses": []
+     },
+     {
+      "id": "s:associate",
+      "slogan": "Show that the operation is associative.",
+      "detail": "Write $(a \\circ b) \\circ c = (a \\star b) \\circ (1 \\star c) = (a \\circ 1) \\star (b \\circ c) = a \\circ (b \\circ c)$, using the equality of the operations for the first and the last step.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Collect the results into a commutative [monoid](c:monoid).",
+      "detail": "The operation $\\circ = \\star$ is associative by step 4, has the unit $1$ by step 1, and is commutative by step 3. So $M$ is a commutative monoid.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:units",
+      "s:equal"
+     ],
+     [
+      "s:units",
+      "s:commute"
+     ],
+     [
+      "s:units",
+      "s:associate"
+     ],
+     [
+      "s:equal",
+      "s:commute"
+     ],
+     [
+      "s:equal",
+      "s:associate"
+     ],
+     [
+      "s:commute",
+      "s:conclude"
+     ],
+     [
+      "s:associate",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:binary-operation": "The theorem concerns two operations on one set.",
+     "c:interchange-law": "The law lets the proof swap the two operations in a product.",
+     "c:monoid": "A monoid is an associative operation with a unit, which the proof delivers."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The argument of B. Eckmann and P. J. Hilton, Group-like structures in general categories I, Mathematische Annalen 145 (1962), 227-255."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:extended-hales-jewett-theorem",
+  "statement": "Let $A$, $K$ and $D$ be finite sets. Then some finite set $N$ has this property: every coloring $A^N \\to K$ has a monochromatic [combinatorial subspace](c:combinatorial-subspace) of dimension $D$. Such a subspace fixes the coordinates outside disjoint nonempty blocks $S_e \\subseteq N$ for $e \\in D$, and sets all coordinates of $S_e$ to one letter $b_e \\in A$.",
+  "hypotheses": [
+   {
+    "id": "h:alphabet",
+    "text": "The alphabet $A$ is a [finite set](c:finite-set).",
+    "concept": "c:finite-set"
+   },
+   {
+    "id": "h:colors",
+    "text": "The set $K$ of colors is finite.",
+    "concept": null
+   },
+   {
+    "id": "h:dimension",
+    "text": "The set $D$ that indexes the dimensions is finite.",
+    "concept": null
+   }
+  ],
+  "conclusion": "Some finite $N$ makes every $K$-coloring of $A^N$ constant on a combinatorial subspace of dimension $D$.",
+  "formal": {
+   "decl": "Combinatorics.Subspace.exists_mono_in_high_dimension",
+   "difference": null
+  },
+  "proofs": [
+   {
+    "id": "reduce-to-lines",
+    "name": "Reduction to Hales-Jewett",
+    "slogan": "Apply the Hales-Jewett theorem to the larger alphabet $A^D$ and read each coordinate of a monochromatic line as $|D|$ coordinates over $A$.",
+    "scope": "The whole theorem. No case split is needed: an empty $D$ gives a single point, which is monochromatic.",
+    "mechanisms": [
+     "m:reduction"
+    ],
+    "roles": [
+     {
+      "h": "h:alphabet",
+      "why": "A finite alphabet makes $B = A^D$ finite, so the Hales-Jewett theorem applies to $B$.",
+      "steps": [
+       "s:alphabet",
+       "s:hj"
+      ]
+     },
+     {
+      "h": "h:colors",
+      "why": "The Hales-Jewett theorem needs finitely many colors.",
+      "steps": [
+       "s:hj"
+      ]
+     },
+     {
+      "h": "h:dimension",
+      "why": "A finite $D$ keeps $B$ finite and makes $N = M \\times D$ finite.",
+      "steps": [
+       "s:alphabet",
+       "s:pullback"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:alphabet",
+      "slogan": "Form the larger alphabet $B = A^D$ of functions $D \\to A$.",
+      "detail": "The set $B$ is finite because $A$ and $D$ are finite. A letter of $B$ packs one letter of $A$ for each $e \\in D$.",
+      "uses": []
+     },
+     {
+      "id": "s:hj",
+      "slogan": "Apply the Hales-Jewett theorem to the alphabet $B$ and the colors $K$.",
+      "detail": "The theorem gives a finite set $M$ such that every $K$-coloring of $B^M$ has a monochromatic [combinatorial line](c:combinatorial-line).",
+      "uses": [
+       "wd:Q1032886"
+      ]
+     },
+     {
+      "id": "s:pullback",
+      "slogan": "Pull the given coloring back along the flattening map.",
+      "detail": "Let $N = M \\times D$. A point $x \\in B^M$ flattens to $\\hat{x} \\in A^N$ by $\\hat{x}(i, e) = x(i)(e)$. Given $C\\colon A^N \\to K$, color $x$ by $C(\\hat{x})$.",
+      "uses": []
+     },
+     {
+      "id": "s:line",
+      "slogan": "Take a monochromatic line for the pulled-back coloring.",
+      "detail": "By step 2 there are a nonempty set $S \\subseteq M$ and letters $c_i \\in B$ for $i \\notin S$ such that the point $x_b$, equal to $b$ on $S$ and to $c_i$ at $i \\notin S$, has one color for all $b \\in B$.",
+      "uses": []
+     },
+     {
+      "id": "s:subspace",
+      "slogan": "Read the flattened line as a combinatorial subspace of dimension $D$.",
+      "detail": "For $e \\in D$ let $S_e = S \\times \\{e\\}$, a family of disjoint nonempty blocks. The point $\\hat{x}_b$ sets the block $S_e$ to the letter $b(e)$ and fixes every other coordinate $(i, e)$ to $c_i(e)$. As $b$ runs over $A^D$, these points form the subspace, and all have one color.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:alphabet",
+      "s:hj"
+     ],
+     [
+      "s:alphabet",
+      "s:pullback"
+     ],
+     [
+      "s:hj",
+      "s:pullback"
+     ],
+     [
+      "s:pullback",
+      "s:line"
+     ],
+     [
+      "s:hj",
+      "s:line"
+     ],
+     [
+      "s:line",
+      "s:subspace"
+     ]
+    ],
+    "conclusion": "s:subspace",
+    "concepts": {
+     "c:finite-set": "A finite alphabet keeps the enlarged alphabet finite.",
+     "c:combinatorial-subspace": "The conclusion is a monochromatic subspace of dimension $D$.",
+     "c:combinatorial-line": "A monochromatic line over the big alphabet becomes the subspace."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Combinatorics.Subspace.exists_mono_in_high_dimension",
+     "follows": true,
+     "note": "mathlib applies Line.exists_mono_in_high_dimension to the alphabet of functions from the dimension set to alpha and reindexes the line by the product of indices."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q914517",
+  "statement": "An odd [prime number](c:prime-number) $p$ is a sum of two squares of integers if and only if $p \\equiv 1 \\pmod 4$.",
+  "hypotheses": [
+   {
+    "id": "h:odd-prime",
+    "text": "The number $p$ is an odd [prime number](c:prime-number).",
+    "concept": "c:prime-number"
+   }
+  ],
+  "conclusion": "$p = x^2 + y^2$ for some integers $x, y$ exactly when $p \\equiv 1 \\pmod 4$.",
+  "formal": {
+   "decl": "Nat.Prime.sq_add_sq",
+   "difference": "The declaration proves one direction only: a prime with $p \\bmod 4 \\ne 3$ is a sum of two squares, which includes $p = 2$. The converse, that no prime $3 \\bmod 4$ is a sum of two squares, is not in it."
+  },
+  "proofs": [
+   {
+    "id": "gaussian-integers",
+    "name": "Gaussian integers",
+    "slogan": "Factor $x^2 + 1$ over the Gaussian integers to show that $p$ is not prime there, then read the two squares from the norm of a proper factor.",
+    "scope": "Both directions. The converse is a congruence check; the main direction uses the Gaussian integers $\\mathbb{Z}[i]$.",
+    "mechanisms": [
+     "m:modular-arithmetic",
+     "m:unique-factorization"
+    ],
+    "roles": [
+     {
+      "h": "h:odd-prime",
+      "why": "Oddness gives $p \\equiv 1 \\pmod 4$ from a sum of squares, and primality gives Wilson's theorem and the norm $N(\\alpha) = p$.",
+      "steps": [
+       "s:necessary",
+       "s:root",
+       "s:norm"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:necessary",
+      "slogan": "Show that an odd sum of two squares is $1$ modulo $4$.",
+      "detail": "A square is $0$ or $1$ modulo $4$. If $p = x^2 + y^2$ is odd, exactly one of $x, y$ is odd, so $p \\equiv 0 + 1 = 1 \\pmod 4$.",
+      "uses": []
+     },
+     {
+      "id": "s:root",
+      "slogan": "Find $x$ with $x^2 \\equiv -1 \\pmod p$ when $p \\equiv 1 \\pmod 4$.",
+      "detail": "Let $x = ((p-1)/2)!$. Pairing $j$ with $p - j$ in $(p-1)! \\equiv -1$ (Wilson) gives $-1 \\equiv (-1)^{(p-1)/2} x^2$. The exponent $(p-1)/2$ is even, so $x^2 \\equiv -1$.",
+      "uses": [
+       "wd:Q276082"
+      ]
+     },
+     {
+      "id": "s:not-prime",
+      "slogan": "Show that $p$ is not prime in the [Gaussian integers](c:gaussian-integer).",
+      "detail": "In $\\mathbb{Z}[i]$, $p$ divides $x^2 + 1 = (x + i)(x - i)$. It divides neither factor, because the quotient $(x \\pm i)/p$ has imaginary part $\\pm 1/p \\notin \\mathbb{Z}$. So $p$ is not a prime element.",
+      "uses": []
+     },
+     {
+      "id": "s:reducible",
+      "slogan": "Use unique factorization to show that $p$ is a product of two non-units.",
+      "detail": "The ring $\\mathbb{Z}[i]$ is a [Euclidean domain](c:euclidean-domain) for the norm $N(a + bi) = a^2 + b^2$. So it is a [unique factorization domain](c:unique-factorization-domain), and irreducible elements are prime. As $p$ is not prime and not a unit, $p = \\alpha\\beta$ with neither factor a unit.",
+      "uses": []
+     },
+     {
+      "id": "s:norm",
+      "slogan": "Take norms of the factorization to find the two squares.",
+      "detail": "$p^2 = N(p) = N(\\alpha) N(\\beta)$, and $N(\\alpha), N(\\beta) > 1$ because non-units have norm greater than $1$. As $p$ is prime, $N(\\alpha) = p$. Writing $\\alpha = a + bi$ gives $p = a^2 + b^2$.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Join the two directions into the equivalence.",
+      "detail": "Step 1 gives $p \\equiv 1 \\pmod 4$ from a sum of two squares. Steps 2 to 5 give a sum of two squares from $p \\equiv 1 \\pmod 4$. Together they prove the equivalence.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:necessary",
+      "s:conclude"
+     ],
+     [
+      "s:root",
+      "s:not-prime"
+     ],
+     [
+      "s:not-prime",
+      "s:reducible"
+     ],
+     [
+      "s:reducible",
+      "s:norm"
+     ],
+     [
+      "s:norm",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:prime-number": "Primality gives Wilson's theorem and forces the norm of a factor to be $p$.",
+     "c:gaussian-integer": "Factoring $x^2 + 1$ in the Gaussian integers detects the sum of two squares.",
+     "c:euclidean-domain": "The norm gives division with remainder in the Gaussian integers.",
+     "c:unique-factorization-domain": "Unique factorization makes irreducible elements prime."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Nat.Prime.sq_add_sq",
+     "follows": true,
+     "note": "mathlib shows p is not irreducible in the Gaussian integers (prime_iff_mod_four_eq_three_of_nat_prime, from ZMod.exists_sq_eq_neg_one_iff) and applies GaussianInt.sq_add_sq_of_nat_prime_of_not_irreducible; the converse is added here."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:fine-and-wilf-theorem",
+  "statement": "Let $w$ be a [word](c:word) with [periods](c:period-of-a-word) $p$ and $q$, where $p, q \\ge 1$, and length at least $p + q - \\gcd(p, q)$. Then $w$ has period $\\gcd(p, q)$. A word has period $p$ when $w_i = w_{i+p}$ for all positions $i$ with $i + p \\le |w|$.",
+  "hypotheses": [
+   {
+    "id": "h:per-p",
+    "text": "The word $w$ has [period](c:period-of-a-word) $p \\ge 1$.",
+    "concept": "c:period-of-a-word"
+   },
+   {
+    "id": "h:per-q",
+    "text": "The word $w$ has [period](c:period-of-a-word) $q \\ge 1$.",
+    "concept": "c:period-of-a-word"
+   },
+   {
+    "id": "h:length",
+    "text": "The length satisfies $|w| \\ge p + q - \\gcd(p, q)$, with the [greatest common divisor](c:greatest-common-divisor).",
+    "concept": "c:greatest-common-divisor"
+   }
+  ],
+  "conclusion": "The word $w$ has period $\\gcd(p, q)$.",
+  "formal": {
+   "decl": "List.HasPeriod.gcd",
+   "difference": "mathlib defines a period by $w$ being a prefix of take p w ++ w, and it allows $p$ or $q$ to be $0$, where every word has period $0$. This theorem takes $p, q \\ge 1$."
+  },
+  "proofs": [
+   {
+    "id": "euclid-induction",
+    "name": "Euclidean induction",
+    "slogan": "Subtract the smaller period from the larger one by dropping the first $q$ letters, as in the Euclidean algorithm, and induct on $p + q$.",
+    "scope": "For $p, q \\ge 1$. If $p = q$ the claim is the hypothesis; otherwise swap to get $p > q$ and write $g = \\gcd(p, q)$.",
+    "mechanisms": [
+     "m:euclidean-algorithm",
+     "m:strong-induction"
+    ],
+    "roles": [
+     {
+      "h": "h:per-p",
+      "why": "Period $p$ shifts letters by $p$, which gives period $p - q$ after the first $q$ letters are dropped.",
+      "steps": [
+       "s:reduce"
+      ]
+     },
+     {
+      "h": "h:per-q",
+      "why": "Period $q$ keeps the dropped word periodic and makes the first $q$ letters repeat in the rest.",
+      "steps": [
+       "s:reduce",
+       "s:glue"
+      ]
+     },
+     {
+      "h": "h:length",
+      "why": "The length bound passes to the shorter word with the periods $p - q$ and $q$.",
+      "steps": [
+       "s:length"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:reduce",
+      "slogan": "Drop the first $q$ letters and show that the rest has periods $p - q$ and $q$.",
+      "detail": "Let $p > q$ and let $w'$ be $w$ without its first $q$ letters. Every factor of $w$ keeps period $q$. Also $w'_{i + p - q} = w_{i+p} = w_i = w_{i+q} = w'_i$, so $w'$ has period $p - q$.",
+      "uses": []
+     },
+     {
+      "id": "s:length",
+      "slogan": "Check that $w'$ meets the length bound for the pair $(p - q, q)$.",
+      "detail": "Since $\\gcd(p - q, q) = g$, we get $|w'| = |w| - q \\ge (p - q) + q - g$. Also $|w'| \\ge p - g \\ge q$, because $g$ divides $p - q > 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:induct",
+      "slogan": "Apply the claim to $w'$ with the smaller pair of periods.",
+      "detail": "Since $(p - q) + q < p + q$, the induction hypothesis shows that $w'$ has period $\\gcd(p - q, q) = g$.",
+      "uses": []
+     },
+     {
+      "id": "s:glue",
+      "slogan": "Rebuild $w$ from $w'$ and show that $w$ has period $g$.",
+      "detail": "Write $w = u w'$ with $u$ the first $q$ letters of $w$. As $w$ has period $q$ and $|w'| \\ge q$, $u$ is also the first $q$ letters of $w'$. So position $j$ of $w$ holds letter $j$ or $j - q$ of $w'$, equal modulo $g$ since $g \\mid q$. Letters of $w'$ at positions equal modulo $g$ agree, so $w$ has period $g$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:reduce",
+      "s:length"
+     ],
+     [
+      "s:reduce",
+      "s:induct"
+     ],
+     [
+      "s:length",
+      "s:induct"
+     ],
+     [
+      "s:induct",
+      "s:glue"
+     ],
+     [
+      "s:length",
+      "s:glue"
+     ],
+     [
+      "s:reduce",
+      "s:glue"
+     ]
+    ],
+    "conclusion": "s:glue",
+    "concepts": {
+     "c:word": "The theorem is about a finite word and its letters at given positions.",
+     "c:period-of-a-word": "A period is the shift that leaves the word unchanged where defined.",
+     "c:greatest-common-divisor": "The new period is the gcd, reached by subtracting as in Euclid's algorithm."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "List.HasPeriod.gcd",
+     "follows": true,
+     "note": "mathlib drops the first q letters (drop_of_hasPeriod_add), inducts on (q, p) with gcd_sub_self_left, and glues with HasPeriod.take_append."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:first-isomorphism-theorem-for-commutative-rings",
+  "statement": "Let $f\\colon R \\to S$ be a surjective [ring homomorphism](c:ring-homomorphism) of commutative rings. Then $f$ induces a ring isomorphism from the [quotient ring](c:quotient-ring) $R / \\ker f$ onto $S$, given by $r + \\ker f \\mapsto f(r)$.",
+  "hypotheses": [
+   {
+    "id": "h:ring-hom",
+    "text": "The map $f\\colon R \\to S$ is a [ring homomorphism](c:ring-homomorphism) of commutative rings.",
+    "concept": "c:ring-homomorphism"
+   },
+   {
+    "id": "h:surjective",
+    "text": "The map $f$ is [surjective](c:surjection).",
+    "concept": "c:surjection"
+   }
+  ],
+  "conclusion": "The map $\\bar f\\colon R / \\ker f \\to S$ with $\\bar f(r + \\ker f) = f(r)$ is a well-defined ring isomorphism.",
+  "formal": {
+   "decl": "RingHom.quotientKerEquivOfSurjective",
+   "difference": "mathlib allows a noncommutative ring $R$ and a semiring $S$, with the kernel a two-sided ideal. This theorem is the commutative case."
+  },
+  "proofs": [
+   {
+    "id": "induced-map",
+    "name": "Induced map",
+    "slogan": "Define the map on cosets by $f$, check that it is well defined and a ring homomorphism, and show that it is bijective.",
+    "scope": "The whole theorem, including the zero ring (then $\\ker f = R$ and $S = 0$).",
+    "mechanisms": [
+     "m:homomorphism-kernel",
+     "m:quotient-construction"
+    ],
+    "roles": [
+     {
+      "h": "h:ring-hom",
+      "why": "Preservation of sums and products makes $\\bar f$ well defined and a homomorphism, and a trivial kernel makes it injective.",
+      "steps": [
+       "s:well-defined",
+       "s:hom",
+       "s:injective"
+      ]
+     },
+     {
+      "h": "h:surjective",
+      "why": "Surjectivity of $f$ gives surjectivity of $\\bar f$.",
+      "steps": [
+       "s:surjective"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:well-defined",
+      "slogan": "Show that the map on cosets does not depend on the chosen representative.",
+      "detail": "The kernel $I = \\ker f$ is an [ideal](c:ideal), so the quotient ring $R / I$ exists. If $r + I = r' + I$, then $r - r' \\in I$, so $f(r) - f(r') = f(r - r') = 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:hom",
+      "slogan": "Show that the induced map preserves sums, products and the unit.",
+      "detail": "We have $\\bar f((r + I) + (r' + I)) = f(r + r') = f(r) + f(r')$, and the same for products. Also $\\bar f(1 + I) = f(1) = 1$. These are the operations of the quotient ring.",
+      "uses": []
+     },
+     {
+      "id": "s:injective",
+      "slogan": "Show that the induced map has trivial kernel and is injective.",
+      "detail": "If $\\bar f(r + I) = f(r) = 0$, then $r \\in \\ker f = I$, so $r + I = 0$. If $\\bar f(a) = \\bar f(b)$, then $\\bar f(a - b) = 0$, so $a = b$.",
+      "uses": []
+     },
+     {
+      "id": "s:surjective",
+      "slogan": "Show that the induced map reaches every element of $S$.",
+      "detail": "Let $s \\in S$. Surjectivity of $f$ gives $r$ with $f(r) = s$, so $\\bar f(r + I) = s$.",
+      "uses": []
+     },
+     {
+      "id": "s:iso",
+      "slogan": "Combine bijectivity and the homomorphism property into an isomorphism.",
+      "detail": "A bijective ring homomorphism has an inverse that is also a ring homomorphism. So $\\bar f\\colon R / \\ker f \\to S$ is a ring isomorphism.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:well-defined",
+      "s:hom"
+     ],
+     [
+      "s:hom",
+      "s:injective"
+     ],
+     [
+      "s:hom",
+      "s:surjective"
+     ],
+     [
+      "s:injective",
+      "s:iso"
+     ],
+     [
+      "s:surjective",
+      "s:iso"
+     ]
+    ],
+    "conclusion": "s:iso",
+    "concepts": {
+     "c:ring-homomorphism": "The map $f$ respects sums and products, which the induced map inherits.",
+     "c:quotient-ring": "The quotient ring is the domain of the induced map.",
+     "c:surjection": "Surjectivity of $f$ is what makes the induced map onto $S$.",
+     "c:ideal": "The kernel is an ideal, which is what lets us form the quotient ring."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "RingHom.quotientKerEquivOfSurjective",
+     "follows": true,
+     "note": "mathlib builds the forward map by Ideal.Quotient.lift (RingHom.kerLift) and the inverse from a right inverse of f (quotientKerEquivOfRightInverse); here injectivity is checked directly."
+    }
+   }
+  ]
+ }
+]

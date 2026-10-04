@@ -1,0 +1,169 @@
+[
+ {
+  "id": "wd:Q752375",
+  "statement": "Every [continuous](c:continuous-function) real-valued function on a nonempty [compact space](c:compact-space) attains a maximum and a minimum.",
+  "hypotheses": [
+   {"id": "h:nonempty", "text": "The space $X$ is nonempty.", "concept": null},
+   {"id": "h:compact", "text": "The space $X$ is [compact](c:compact-space).", "concept": "c:compact-space"},
+   {"id": "h:continuous", "text": "The function $f\\colon X \\to \\mathbb{R}$ is [continuous](c:continuous-function).", "concept": "c:continuous-function"}
+  ],
+  "conclusion": "There are points $a, b \\in X$ with $f(a) \\le f(x) \\le f(b)$ for every $x \\in X$.",
+  "formal": {"decl": "IsCompact.exists_isMinOn", "difference": "The declaration gives the minimum only, for a function continuous on a compact set with values in a linear order with closed lower rays. The maximum is the separate declaration IsCompact.exists_isMaxOn."},
+  "proofs": [
+   {
+    "id": "compact-image",
+    "name": "Compact image",
+    "slogan": "The image of the compact space is a compact set of reals, and such a set contains its supremum and infimum.",
+    "scope": "The whole theorem. An empty space has no maximum, so the hypothesis $X \\neq \\emptyset$ is necessary; the proof uses it only to make the image nonempty.",
+    "mechanisms": ["m:continuous-image", "m:finite-subcover", "m:supremum"],
+    "roles": [
+     {"h": "h:compact", "why": "[Compactness](c:compact-space) of $X$ makes the image $f(X)$ compact.", "steps": ["s:image"]},
+     {"h": "h:continuous", "why": "Continuity pulls an [open cover](c:open-cover) of the image back to an open cover of $X$.", "steps": ["s:image"]},
+     {"h": "h:nonempty", "why": "A nonempty space has a nonempty image, so the supremum and infimum exist.", "steps": ["s:sup"]}
+    ],
+    "steps": [
+     {"id": "s:image", "slogan": "Push the [compact space](c:compact-space) forward to its [image](c:image) under $f$.", "detail": "Let $\\{V_i\\}$ be an [open cover](c:open-cover) of $f(X)$. The preimages $f^{-1}(V_i)$ are open because $f$ is [continuous](c:continuous-function), and they cover $X$. Finitely many of them cover $X$, so the matching finitely many $V_i$ cover $f(X)$. Hence $f(X)$ is compact.", "uses": []},
+     {"id": "s:closed-bounded", "slogan": "Show that the compact image is a [closed](c:closed-set) and [bounded set](c:bounded-set) of reals.", "detail": "The open intervals $(-n, n)$ cover $f(X)$ and finitely many suffice, so $f(X)$ is bounded. A compact subset of the Hausdorff space $\\mathbb{R}$ is closed, so $f(X)$ is closed.", "uses": []},
+     {"id": "s:sup", "slogan": "Take the [supremum](c:least-upper-bound) and the infimum of the nonempty bounded image.", "detail": "The image is nonempty because $X$ is nonempty, and it is bounded. The completeness of the [real numbers](c:real-number) gives $M = \\sup f(X)$ and $m = \\inf f(X)$.", "uses": []},
+     {"id": "s:attain", "slogan": "Find the supremum and the infimum inside the closed image.", "detail": "Every neighborhood of $M$ meets $f(X)$, so $M$ lies in the closure of $f(X)$, which is $f(X)$ because the image is [closed](c:closed-set). Hence $M = f(b)$ for some $b \\in X$. In the same way $m = f(a)$ for some $a \\in X$.", "uses": []}
+    ],
+    "edges": [["s:image", "s:closed-bounded"], ["s:closed-bounded", "s:sup"], ["s:sup", "s:attain"], ["s:closed-bounded", "s:attain"]],
+    "conclusion": "s:attain",
+    "concepts": {
+     "c:continuous-function": "The function must be continuous so that preimages of open sets are open.",
+     "c:compact-space": "Compactness is the property that passes from the space to its image.",
+     "c:open-cover": "The image is shown compact through an open cover and its preimage cover.",
+     "c:image": "The proof studies the set of values $f(X)$ instead of the function.",
+     "c:closed-set": "A closed set of reals contains the limits of its points, so it contains its supremum.",
+     "c:bounded-set": "A bounded set of reals has a finite supremum and infimum.",
+     "c:least-upper-bound": "The supremum is the candidate for the maximum value.",
+     "c:real-number": "Completeness of the reals supplies the supremum."
+    },
+    "source": {"kind": "lean", "decl": "IsCompact.exists_isMinOn", "follows": true, "note": "mathlib takes the compact image (IsCompact.image_of_continuousOn) and its least element (IsCompact.exists_isLeast)."}
+   },
+   {
+    "id": "local-bounds",
+    "name": "Local bounds and a reciprocal",
+    "slogan": "Bound the function near each point, keep finitely many bounds, then show that the supremum is a value.",
+    "scope": "The maximum; the minimum follows when the proof is applied to $-f$. The proof needs $X$ nonempty for the supremum to exist. Steps 1 to 3 alone prove boundedness; boundedness does not give attainment, and steps 4 and 5 supply it.",
+    "mechanisms": ["m:local-to-global", "m:finite-subcover", "m:supremum", "m:contradiction"],
+    "roles": [
+     {"h": "h:continuous", "why": "Continuity gives a bound near each point, and it makes the reciprocal $1/(M - f)$ continuous.", "steps": ["s:local", "s:reciprocal"]},
+     {"h": "h:compact", "why": "[Compactness](c:compact-space) reduces the cover by bounded neighborhoods to a finite cover.", "steps": ["s:finite"]},
+     {"h": "h:nonempty", "why": "A nonempty set of values has a supremum.", "steps": ["s:bound"]}
+    ],
+    "steps": [
+     {"id": "s:local", "slogan": "Cover the space by bounded neighborhoods.", "detail": "For each $x \\in X$, [continuity](c:continuous-function) at $x$ gives an open neighborhood $U_x$ on which $|f(y) - f(x)| < 1$, so $|f| < |f(x)| + 1$ on $U_x$. The sets $U_x$ form an [open cover](c:open-cover) of $X$.", "uses": []},
+     {"id": "s:finite", "slogan": "Select a finite subcover of the neighborhood cover.", "detail": "Because $X$ is [compact](c:compact-space), finitely many points $x_1, \\dots, x_n$ have neighborhoods $U_{x_1}, \\dots, U_{x_n}$ that still cover $X$. This finiteness is derived here; it is not a hypothesis.", "uses": []},
+     {"id": "s:bound", "slogan": "Take the largest of the finitely many local bounds.", "detail": "On $X$, $|f| \\le \\max_i (|f(x_i)| + 1)$; a [finite set](c:finite-set) of reals has a largest element because $n \\ge 1$, which holds since $X$ is nonempty. So $f$ is a [bounded function](c:bounded-function) and $M = \\sup f(X)$ is a [real number](c:real-number).", "uses": []},
+     {"id": "s:reciprocal", "slogan": "Assume that $M$ is not a value and form the reciprocal $g = 1/(M - f)$.", "detail": "If $f(x) < M$ for every $x$, then $g(x) = 1/(M - f(x))$ is defined, positive and [continuous](c:continuous-function) on $X$, because $M - f$ is continuous and never zero.", "uses": []},
+     {"id": "s:contradict", "slogan": "Bound the reciprocal by steps 1 to 3 and contradict the choice of $M$.", "detail": "Steps 1 to 3 applied to $g$ give $g \\le K$ for some $K > 0$. Then $M - f(x) \\ge 1/K$, so $f \\le M - 1/K$ on $X$, which contradicts $M = \\sup f(X)$. So $M = f(b)$ for some $b$.", "uses": []}
+    ],
+    "edges": [["s:local", "s:finite"], ["s:finite", "s:bound"], ["s:bound", "s:reciprocal"], ["s:reciprocal", "s:contradict"], ["s:bound", "s:contradict"]],
+    "conclusion": "s:contradict",
+    "concepts": {
+     "c:continuous-function": "Continuity gives a bound near each point and keeps the reciprocal continuous.",
+     "c:compact-space": "Compactness turns the local bounds into finitely many bounds.",
+     "c:open-cover": "The bounded neighborhoods form the open cover that compactness reduces.",
+     "c:finite-set": "Only a finite family of bounds has a largest member.",
+     "c:bounded-function": "Boundedness makes the supremum a real number, not infinity.",
+     "c:real-number": "The supremum exists because the reals are complete."
+    },
+    "source": {"kind": "authored", "note": "The classical proof by local boundedness and the reciprocal function, as in Rudin, Principles of Mathematical Analysis, theorem 4.16 and its exercise route; not the mathlib route."}
+   }
+  ]
+ },
+ {
+  "id": "wd:Q245098",
+  "statement": "If $f\\colon [a, b] \\to \\mathbb{R}$ is [continuous](c:continuous-function) and $y$ lies between $f(a)$ and $f(b)$, then $f(c) = y$ for some $c \\in [a, b]$.",
+  "hypotheses": [
+   {"id": "h:interval", "text": "The domain is a closed [interval](c:interval) $[a, b]$ with $a \\le b$.", "concept": "c:interval"},
+   {"id": "h:continuous", "text": "The function $f$ is [continuous](c:continuous-function) on $[a, b]$.", "concept": "c:continuous-function"},
+   {"id": "h:between", "text": "The value $y$ lies between $f(a)$ and $f(b)$.", "concept": null}
+  ],
+  "conclusion": "Some $c \\in [a, b]$ has $f(c) = y$.",
+  "formal": {"decl": "intermediate_value_Icc", "difference": "The declaration states that the image of $[a, b]$ contains $[f(a), f(b)]$, for a densely ordered, conditionally complete domain and an order-closed codomain. The case $f(b) \\le f(a)$ is the separate declaration intermediate_value_Icc'."},
+  "proofs": [
+   {
+    "id": "connected-image",
+    "name": "Connected image",
+    "slogan": "The interval is connected, so its image is connected, and a connected set of reals contains every value between two of its values.",
+    "scope": "The whole theorem, for either order of $f(a)$ and $f(b)$.",
+    "mechanisms": ["m:continuous-image"],
+    "roles": [
+     {"h": "h:interval", "why": "A closed [interval](c:interval) is a [connected space](c:connected-space).", "steps": ["s:connected"]},
+     {"h": "h:continuous", "why": "A continuous map keeps connectedness.", "steps": ["s:image"]},
+     {"h": "h:between", "why": "The two end values are points of the image, and $y$ lies between them.", "steps": ["s:fill"]}
+    ],
+    "steps": [
+     {"id": "s:connected", "slogan": "Show that the closed interval $[a, b]$ is a [connected space](c:connected-space).", "detail": "Suppose $[a, b] = U \\cup V$ with disjoint nonempty relatively open sets and $a \\in U$. Let $s = \\sup\\{x : [a, x] \\subseteq U\\}$. Openness of $U$ and of $V$ near $s$ gives a contradiction, so no such split exists.", "uses": []},
+     {"id": "s:image", "slogan": "Push the connected interval forward to its connected [image](c:image) under $f$.", "detail": "If $f([a, b])$ were split by two disjoint relatively open sets, their preimages under the [continuous](c:continuous-function) $f$ would split $[a, b]$, which step 1 excludes.", "uses": []},
+     {"id": "s:fill", "slogan": "Show that the connected image holds every value between $f(a)$ and $f(b)$.", "detail": "If $y$ lies between $f(a)$ and $f(b)$ but is not a value, the sets $\\{t < y\\}$ and $\\{t > y\\}$ split the image into two nonempty relatively open parts, against step 2. So $y = f(c)$ for some $c$.", "uses": []}
+    ],
+    "edges": [["s:connected", "s:image"], ["s:image", "s:fill"]],
+    "conclusion": "s:fill",
+    "concepts": {
+     "c:continuous-function": "Continuity is what makes the image connected.",
+     "c:interval": "The interval is the connected domain of the function.",
+     "c:connected-space": "Connectedness is the property that passes from the domain to the image.",
+     "c:image": "The proof studies the set of values $f([a, b])$."
+    },
+    "source": {"kind": "lean", "decl": "intermediate_value_Icc", "follows": true, "note": "mathlib applies IsPreconnected.intermediate_value to isPreconnected_Icc."}
+   },
+   {
+    "id": "supremum",
+    "name": "Supremum of the lower set",
+    "slogan": "Take the last point where $f$ is at most $y$ and show that $f$ equals $y$ there.",
+    "scope": "The case $f(a) \\le y \\le f(b)$; the other case follows when the proof is applied to $-f$ and $-y$.",
+    "mechanisms": ["m:supremum", "m:epsilon-delta"],
+    "roles": [
+     {"h": "h:between", "why": "The inequality $f(a) \\le y$ puts $a$ in the set $S$, and $y \\le f(b)$ controls the right end.", "steps": ["s:set", "s:above"]},
+     {"h": "h:interval", "why": "The bounded [interval](c:interval) makes $S$ bounded and keeps its supremum in $[a, b]$.", "steps": ["s:sup"]},
+     {"h": "h:continuous", "why": "Continuity at $c$ passes both inequalities through the limits.", "steps": ["s:below", "s:above"]}
+    ],
+    "steps": [
+     {"id": "s:set", "slogan": "Collect the points where $f$ stays at most $y$ into a set $S$.", "detail": "Let $S = \\{x \\in [a, b] : f(x) \\le y\\}$. Because $f(a) \\le y$, the point $a$ is in $S$, so $S$ is nonempty.", "uses": []},
+     {"id": "s:sup", "slogan": "Take the [supremum](c:least-upper-bound) $c$ of the nonempty bounded set $S$.", "detail": "The set $S$ is nonempty and bounded above by $b$, so the completeness of the [real numbers](c:real-number) gives $c = \\sup S$, and $a \\le c \\le b$.", "uses": []},
+     {"id": "s:below", "slogan": "Approach $c$ from inside $S$ to get $f(c) \\le y$.", "detail": "Choose $x_n \\in S$ with $x_n \\to c$. Then $f(x_n) \\le y$ and [continuity](c:continuous-function) gives $f(c) = \\lim f(x_n) \\le y$.", "uses": []},
+     {"id": "s:above", "slogan": "Approach $c$ from the right to get $f(c) \\ge y$.", "detail": "If $c = b$, then $f(c) = f(b) \\ge y$. If $c < b$, the points $c + 1/n$ (for large $n$) are not in $S$, so $f(c + 1/n) > y$, and continuity gives $f(c) \\ge y$.", "uses": []},
+     {"id": "s:equal", "slogan": "Combine the two inequalities into $f(c) = y$.", "detail": "Steps 3 and 4 give $y \\le f(c) \\le y$, so $f(c) = y$ with $c \\in [a, b]$.", "uses": []}
+    ],
+    "edges": [["s:set", "s:sup"], ["s:sup", "s:below"], ["s:sup", "s:above"], ["s:below", "s:equal"], ["s:above", "s:equal"]],
+    "conclusion": "s:equal",
+    "concepts": {
+     "c:continuous-function": "Continuity at the supremum turns limits of inequalities into inequalities.",
+     "c:interval": "The interval bounds the set $S$ and holds its supremum.",
+     "c:least-upper-bound": "The supremum of $S$ is the point where $f$ meets $y$.",
+     "c:real-number": "Completeness of the reals supplies the supremum."
+    },
+    "source": {"kind": "authored", "note": "The classical least-upper-bound proof (Bolzano's proof as usually taught)."}
+   },
+   {
+    "id": "bisection",
+    "name": "Bisection",
+    "slogan": "Halve the interval again and again, keep a half whose end values straddle $y$, and take the common point.",
+    "scope": "The case $f(a) \\le y \\le f(b)$; the other case follows from $-f$ and $-y$.",
+    "mechanisms": ["m:nested-intervals"],
+    "roles": [
+     {"h": "h:between", "why": "The first interval has $f(a) \\le y \\le f(b)$, which starts the halving.", "steps": ["s:halve"]},
+     {"h": "h:interval", "why": "A closed bounded [interval](c:interval) can be halved into closed intervals whose lengths go to zero.", "steps": ["s:halve", "s:nest"]},
+     {"h": "h:continuous", "why": "Continuity at the common point passes both end inequalities to the limit.", "steps": ["s:limit"]}
+    ],
+    "steps": [
+     {"id": "s:halve", "slogan": "Halve the current interval and keep a half whose end values straddle $y$.", "detail": "Given $[a_n, b_n]$ with $f(a_n) \\le y \\le f(b_n)$, let $m$ be its midpoint. If $f(m) \\le y$, keep $[m, b_n]$; otherwise keep $[a_n, m]$. The kept half has the same property.", "uses": []},
+     {"id": "s:nest", "slogan": "Repeat the halving to get nested intervals of length $(b - a)/2^n$.", "detail": "The intervals $[a_n, b_n]$ are nested, $a_n$ increases, $b_n$ decreases and $b_n - a_n = (b - a)/2^n \\to 0$.", "uses": []},
+     {"id": "s:point", "slogan": "Take the common point $c$ of the nested intervals.", "detail": "The bounded monotone sequences $a_n$ and $b_n$ converge in the [real numbers](c:real-number) to the same limit $c \\in [a, b]$.", "uses": []},
+     {"id": "s:limit", "slogan": "Pass to the limit at both ends to get $f(c) = y$.", "detail": "By [continuity](c:continuous-function), $f(c) = \\lim f(a_n) \\le y$ and $f(c) = \\lim f(b_n) \\ge y$, so $f(c) = y$.", "uses": []}
+    ],
+    "edges": [["s:halve", "s:nest"], ["s:nest", "s:point"], ["s:point", "s:limit"]],
+    "conclusion": "s:limit",
+    "concepts": {
+     "c:continuous-function": "Continuity at the common point turns the end inequalities into an equation.",
+     "c:interval": "Closed intervals can be halved and nested.",
+     "c:real-number": "Completeness of the reals gives the common point of the nested intervals."
+    },
+    "source": {"kind": "authored", "note": "The bisection proof, which is also the bisection method for root finding."}
+   }
+  ]
+ }
+]

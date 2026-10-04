@@ -1,0 +1,1924 @@
+[
+ {
+  "id": "nm:pepin-s-test",
+  "statement": "For $n \\ge 1$, the [Fermat number](c:fermat-number) $F_n = 2^{2^n} + 1$ is [prime](c:prime-number) if and only if $3^{(F_n - 1)/2} \\equiv -1 \\pmod{F_n}$.",
+  "hypotheses": [
+   {
+    "id": "h:index",
+    "text": "The index $n$ is an integer with $n \\ge 1$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The number $F_n$ is prime exactly when $3^{(F_n-1)/2} \\equiv -1 \\pmod{F_n}$.",
+  "formal": {
+   "decl": "Nat.pepin_primality",
+   "difference": "The declaration proves only the implication from the congruence to primality, and it does so for every $n \\ge 0$. The converse implication is not part of it."
+  },
+  "proofs": [
+   {
+    "id": "lucas-euler",
+    "name": "Lucas order argument and Euler criterion",
+    "slogan": "The congruence makes $3$ an element of order $F_n - 1$ modulo $F_n$, which forces $F_n$ to be prime; Euler's criterion and reciprocity give the converse.",
+    "scope": "Both directions for $n \\ge 1$. The direction from the congruence to primality holds for every $n$; $n \\ge 1$ is needed only for the converse, because $F_0 = 3$ is prime but $3^1 \\not\\equiv -1 \\pmod 3$.",
+    "mechanisms": [
+     "m:modular-arithmetic",
+     "m:lagrange-counting"
+    ],
+    "roles": [
+     {
+      "h": "h:index",
+      "why": "The bound $n \\ge 1$ gives $F_n \\equiv 1 \\pmod 4$ and $F_n \\equiv 2 \\pmod 3$, which the converse needs.",
+      "steps": [
+       "s:reciprocity"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:square",
+      "slogan": "Square the congruence to get $3^{F_n - 1} \\equiv 1$ modulo $F_n$.",
+      "detail": "Write $F = F_n$, so $F - 1 = 2^{2^n}$, and assume $3^{(F-1)/2} \\equiv -1 \\pmod F$. Squaring gives $3^{F-1} \\equiv (-1)^2 = 1 \\pmod F$. Hence $3$ is a unit modulo $F$.",
+      "uses": []
+     },
+     {
+      "id": "s:order",
+      "slogan": "Show that the order of $3$ modulo $F_n$ is exactly $F_n - 1$.",
+      "detail": "The [order](c:order-of-an-element) of $3$ divides $F - 1 = 2^{2^n}$, so it is a power of $2$. It does not divide $(F-1)/2 = 2^{2^n - 1}$, because $3^{(F-1)/2} \\equiv -1 \\not\\equiv 1$ as $F > 2$. So the order is $2^{2^n} = F - 1$.",
+      "uses": []
+     },
+     {
+      "id": "s:totient",
+      "slogan": "Compare the order with the size of the unit group to get primality.",
+      "detail": "The order of an element divides the order of the [group of units](c:group-of-units), which is $\\varphi(F)$, so $F - 1 \\le \\varphi(F)$. Also $\\varphi(F) \\le F - 1$, with equality only when every number from $1$ to $F-1$ is coprime to $F$. So $F$ is [prime](c:prime-number).",
+      "uses": [
+       "wd:Q505798"
+      ]
+     },
+     {
+      "id": "s:euler",
+      "slogan": "Rewrite the congruence as a [Legendre symbol](c:legendre-symbol) when $F_n$ is prime.",
+      "detail": "Let $F = F_n$ be prime. Euler's criterion gives $3^{(F-1)/2} \\equiv \\left(\\frac{3}{F}\\right) \\pmod F$. The symbol is $\\pm 1$, so the congruence holds exactly when the symbol is $-1$.",
+      "uses": []
+     },
+     {
+      "id": "s:reciprocity",
+      "slogan": "Compute the symbol $(3/F_n)$ by quadratic reciprocity.",
+      "detail": "For $n \\ge 1$, $4 \\mid 2^{2^n}$, so $F \\equiv 1 \\pmod 4$ and reciprocity gives $(3/F) = (F/3)$. Also $2^{2^n} = 4^{2^{n-1}} \\equiv 1 \\pmod 3$, so $F \\equiv 2 \\pmod 3$ and $(F/3) = (2/3) = -1$.",
+      "uses": [
+       "wd:Q472883"
+      ]
+     },
+     {
+      "id": "s:iff",
+      "slogan": "Join the two directions into the equivalence.",
+      "detail": "Steps 1 to 3 show that the congruence implies that $F_n$ is prime. Steps 4 and 5 show that a prime $F_n$ satisfies the congruence. Together the two implications give the equivalence.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:square",
+      "s:order"
+     ],
+     [
+      "s:order",
+      "s:totient"
+     ],
+     [
+      "s:totient",
+      "s:iff"
+     ],
+     [
+      "s:euler",
+      "s:reciprocity"
+     ],
+     [
+      "s:reciprocity",
+      "s:iff"
+     ]
+    ],
+    "conclusion": "s:iff",
+    "concepts": {
+     "c:fermat-number": "The theorem tests primality of these numbers.",
+     "c:prime-number": "Primality of $F_n$ is both the aim and the hypothesis of one direction.",
+     "c:order-of-an-element": "The order of $3$ detects that every nonzero residue is a unit.",
+     "c:group-of-units": "Its size $\\varphi(F)$ bounds the order of $3$.",
+     "c:legendre-symbol": "The symbol turns the power of $3$ into a reciprocity computation."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Nat.pepin_primality",
+     "follows": true,
+     "note": "mathlib applies lucas_primality with a = 3: the squared congruence gives 3^(F-1) = 1, and the only prime divisor 2 of F-1 gives 3^((F-1)/2) = -1 ≠ 1. The converse (steps 4 and 5, Euler criterion and reciprocity) is added here."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:2712",
+  "statement": "Every [modular tensor category](c:modular-tensor-category) $\\mathcal{C}$ gives a three-dimensional [topological quantum field theory](c:topological-quantum-field-theory): a closed oriented surface gets a finite-dimensional vector space, a 3-cobordism gets a linear map, and gluing becomes composition, up to a framing anomaly.",
+  "hypotheses": [
+   {
+    "id": "h:mtc",
+    "text": "The category $\\mathcal{C}$ is a [modular tensor category](c:modular-tensor-category): a semisimple ribbon category with finitely many simple objects and a nondegenerate $S$-matrix.",
+    "concept": "c:modular-tensor-category"
+   }
+  ],
+  "conclusion": "The assignment of spaces $V(\\Sigma)$ and maps $Z(M)$ is a TQFT up to the framing anomaly, and $Z(M)$ is computed from a [surgery](c:surgery) presentation of $M$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "surgery-kirby",
+    "name": "Surgery presentation and Kirby color",
+    "slogan": "Evaluate a surgery link with the Kirby color, show invariance under the Kirby moves, then extend to cobordisms and check gluing.",
+    "scope": "An outline of the published proof, which rests on the cited work for the link-invariant functor, the Kirby-move computations and the gluing formula. The framing anomaly is a phase fixed by the central charge and handled with Lagrangian subspaces.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:functoriality"
+    ],
+    "roles": [
+     {
+      "h": "h:mtc",
+      "why": "The ribbon structure gives the link functor, and nondegeneracy of the $S$-matrix gives invariance and gluing.",
+      "steps": [
+       "s:functor",
+       "s:moves",
+       "s:cobordism"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:functor",
+      "slogan": "Build an invariant of colored framed links from the ribbon structure.",
+      "detail": "The braiding, twist and duality of $\\mathcal{C}$ define a functor $F$ from colored ribbon graphs to $\\mathcal{C}$. Its value on a closed colored framed link in $S^3$ is a scalar and an isotopy [link invariant](c:link-invariant).",
+      "uses": []
+     },
+     {
+      "id": "s:kirby",
+      "slogan": "Color each component of a surgery link by the Kirby color.",
+      "detail": "Every closed oriented [3-manifold](c:3-manifold) $M$ is obtained by [surgery](c:surgery) on a framed link $L \\subset S^3$. Color each component by $\\Omega = \\sum_i \\dim(i)\\, i$ over the simple objects, and normalize the value of $F$ by powers of the global dimension and of a Gauss-sum phase raised to the signature of $L$.",
+      "uses": []
+     },
+     {
+      "id": "s:moves",
+      "slogan": "Check that the normalized value is unchanged by the two Kirby moves.",
+      "detail": "A handle slide leaves the value unchanged because an $\\Omega$-circle kills every nontrivial color through it, by nondegeneracy of the $S$-matrix. A blow-up multiplies the value by a Gauss sum of twists, which the normalization cancels.",
+      "uses": []
+     },
+     {
+      "id": "s:manifold",
+      "slogan": "Apply Kirby's theorem to get an invariant of closed 3-manifolds.",
+      "detail": "Two framed links give homeomorphic manifolds exactly when they differ by blow-ups, blow-downs and handle slides. So the normalized value depends only on $M$, and it is the value $Z(M)$ of the theory on a closed manifold.",
+      "uses": []
+     },
+     {
+      "id": "s:cobordism",
+      "slogan": "Extend the invariant to surfaces and cobordisms and check gluing.",
+      "detail": "Assign to a surface $\\Sigma$ the space $V(\\Sigma)$ spanned by colored ribbon graphs in a handlebody, and to a cobordism the matrix of the surgery-link evaluation. The gluing formula follows from the same absorption property of $\\Omega$. The result is a [TQFT](c:topological-quantum-field-theory) up to the anomaly.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:functor",
+      "s:kirby"
+     ],
+     [
+      "s:kirby",
+      "s:moves"
+     ],
+     [
+      "s:moves",
+      "s:manifold"
+     ],
+     [
+      "s:manifold",
+      "s:cobordism"
+     ]
+    ],
+    "conclusion": "s:cobordism",
+    "concepts": {
+     "c:modular-tensor-category": "The input category supplies the ribbon structure and the nondegenerate $S$-matrix.",
+     "c:topological-quantum-field-theory": "The output is a functor from cobordisms to vector spaces.",
+     "c:surgery": "Surgery on a framed link presents every closed 3-manifold.",
+     "c:link-invariant": "The functor on colored links gives the raw invariant that Kirby moves then test.",
+     "c:3-manifold": "The invariant is first defined for closed 3-manifolds."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "N. Reshetikhin and V. G. Turaev, Invariants of 3-manifolds via link polynomials and quantum groups, Inventiones Mathematicae 103 (1991), 547-597; and V. G. Turaev, Quantum Invariants of Knots and 3-Manifolds, de Gruyter Studies in Mathematics 18 (1994)",
+     "url": "https://eudml.org/doc/143870",
+     "note": "The 1991 paper builds the 3-manifold invariant by surgery and Kirby color; Turaev's book gives the TQFT for modular categories, with the anomaly and gluing."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1505529",
+  "statement": "Let $K \\subseteq \\mathbb{C}$ be [compact](c:compact-space), let $f$ be [holomorphic](c:holomorphic-function) on an open set $U \\supseteq K$, and let $A \\subseteq \\hat{\\mathbb{C}} \\setminus K$ meet every connected component of $\\hat{\\mathbb{C}} \\setminus K$. Then $f$ is a [uniform](c:uniform-convergence) limit on $K$ of [rational functions](c:rational-function) with poles only in $A$.",
+  "hypotheses": [
+   {
+    "id": "h:compact",
+    "text": "The set $K \\subseteq \\mathbb{C}$ is [compact](c:compact-space).",
+    "concept": "c:compact-space"
+   },
+   {
+    "id": "h:holomorphic",
+    "text": "The function $f$ is [holomorphic](c:holomorphic-function) on an open set $U \\supseteq K$.",
+    "concept": "c:holomorphic-function"
+   },
+   {
+    "id": "h:poles",
+    "text": "The set $A$ contains a point of each connected component of $\\hat{\\mathbb{C}} \\setminus K$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "For every $\\varepsilon > 0$ some [rational function](c:rational-function) $r$ with poles in $A$ has $|f - r| < \\varepsilon$ on $K$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "pole-pushing",
+    "name": "Pole pushing",
+    "slogan": "Write $f$ as a Cauchy integral, replace it by a sum of simple poles, then move each pole into $A$ inside its component.",
+    "scope": "The whole theorem; a pole at $\\infty$ stands for a polynomial term, and $K = \\emptyset$ is trivial. The complement is taken in the Riemann sphere $\\hat{\\mathbb{C}}$.",
+    "mechanisms": [
+     "m:complex-integration",
+     "m:approximation"
+    ],
+    "roles": [
+     {
+      "h": "h:compact",
+      "why": "Compactness gives a positive distance from $K$ to each pole and a finite grid of squares around $K$.",
+      "steps": [
+       "s:cycle",
+       "s:geometric"
+      ]
+     },
+     {
+      "h": "h:holomorphic",
+      "why": "Holomorphy on $U$ lets the Cauchy integral formula represent $f$ on $K$.",
+      "steps": [
+       "s:cycle"
+      ]
+     },
+     {
+      "h": "h:poles",
+      "why": "A point of $A$ in every component lets a pole move to $A$ inside that component.",
+      "steps": [
+       "s:component"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:cycle",
+      "slogan": "Express $f$ on $K$ by a Cauchy integral over a cycle in $U \\setminus K$.",
+      "detail": "Cover $K$ by a grid of small squares so that the squares meeting $K$ lie in $U$. The boundary of their union, after cancelling shared edges, is a cycle $\\gamma$ in $U \\setminus K$. Then $f(z) = \\frac{1}{2\\pi i}\\int_\\gamma \\frac{f(w)}{w - z}\\,dw$ for every $z \\in K$.",
+      "uses": [
+       "nl:11500"
+      ]
+     },
+     {
+      "id": "s:riemann",
+      "slogan": "Replace the integral by Riemann sums, which are rational functions with poles off $K$.",
+      "detail": "The distance $|w - z|$ is bounded below for $w \\in \\gamma$ and $z \\in K$, so Riemann sums $\\sum_j c_j/(w_j - z)$ converge to the integral [uniformly](c:uniform-convergence) on $K$. Each sum is a [rational function](c:rational-function) with poles $w_j \\in \\mathbb{C} \\setminus K$.",
+      "uses": []
+     },
+     {
+      "id": "s:geometric",
+      "slogan": "Move a single pole from $a$ to a nearby point $b$ by a geometric series.",
+      "detail": "Let $b \\notin K$ and $|a - b| < \\operatorname{dist}(b, K)$. For $z \\in K$, $\\frac{1}{z-a} = \\sum_{m \\ge 0} \\frac{(a-b)^m}{(z-b)^{m+1}}$, and the series converges uniformly on $K$. So $1/(z-a)$ is a uniform limit of polynomials in $1/(z-b)$.",
+      "uses": []
+     },
+     {
+      "id": "s:component",
+      "slogan": "Show that every pole in a component can move to the point of $A$ there.",
+      "detail": "Let $\\Omega$ be the set of $a$ in a component $V$ for which $1/(z-a)$ is a uniform limit on $K$ of rational functions with poles in $A$; such limits form an algebra. By step 3, $\\Omega$ and $V \\setminus \\Omega$ are open, and $\\Omega$ contains the point of $A$ in $V$ (for $\\infty$, expand in $z/a$ for large $|a|$). So $\\Omega = V$.",
+      "uses": []
+     },
+     {
+      "id": "s:assemble",
+      "slogan": "Combine the pole moves with the Riemann sums to approximate $f$.",
+      "detail": "Each pole $w_j$ of a Riemann sum lies in $\\mathbb{C} \\setminus K$, so $1/(z - w_j)$ is a uniform limit of rational functions with poles in $A$ by step 4. Sums and constant multiples keep this property, so step 2 gives a uniform approximation of $f$ on $K$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:cycle",
+      "s:riemann"
+     ],
+     [
+      "s:riemann",
+      "s:assemble"
+     ],
+     [
+      "s:geometric",
+      "s:component"
+     ],
+     [
+      "s:component",
+      "s:assemble"
+     ]
+    ],
+    "conclusion": "s:assemble",
+    "concepts": {
+     "c:compact-space": "Compactness keeps $K$ at positive distance from the poles.",
+     "c:holomorphic-function": "Holomorphy is what the Cauchy integral formula needs.",
+     "c:uniform-convergence": "Uniform convergence is the mode of approximation proved at each step.",
+     "c:rational-function": "Rational functions are the approximants and have the moved poles."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The classical proof by Cauchy integral and pole pushing, as in Rudin, Real and Complex Analysis, chapter 13 (Runge's theorem)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q7433295",
+  "statement": "Osterwalder-Schrader reconstruction: Euclidean Schwinger functions that are tempered with linear growth, Euclidean covariant, [reflection positive](c:reflection-positivity), symmetric and clustering are the [Wick rotation](c:wick-rotation) of the Wightman functions of a theory satisfying the [Wightman axioms](c:wightman-axioms).",
+  "hypotheses": [
+   {
+    "id": "h:growth",
+    "text": "The Schwinger functions $S_n$ are tempered distributions that satisfy the linear growth condition (E0').",
+    "concept": null
+   },
+   {
+    "id": "h:covariance",
+    "text": "The functions $S_n$ are covariant under Euclidean rotations and translations (E1).",
+    "concept": null
+   },
+   {
+    "id": "h:positivity",
+    "text": "The functions $S_n$ satisfy [reflection positivity](c:reflection-positivity) (E2).",
+    "concept": "c:reflection-positivity"
+   },
+   {
+    "id": "h:symmetry",
+    "text": "The functions $S_n$ are symmetric under permutations of their arguments (E3).",
+    "concept": null
+   },
+   {
+    "id": "h:cluster",
+    "text": "The functions $S_n$ have the cluster property (E4).",
+    "concept": null
+   }
+  ],
+  "conclusion": "A [Hilbert space](c:hilbert-space) with a unique vacuum, a positive-energy Poincaré representation and fields carry Wightman functions that continue analytically to the $S_n$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "reconstruction",
+    "name": "Hilbert space and analytic continuation",
+    "slogan": "Reflection positivity builds the Hilbert space, Euclidean time translation gives a positive Hamiltonian, and analytic continuation gives the Wightman functions.",
+    "scope": "An outline of the published reconstruction direction, which rests on the cited work for the continuation estimates. The linear growth condition is the one of part II, which repairs the continuation lemma of part I.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:analytic-continuation"
+    ],
+    "roles": [
+     {
+      "h": "h:positivity",
+      "why": "Reflection positivity makes the Euclidean inner product positive and bounds the time-translation semigroup.",
+      "steps": [
+       "s:hilbert",
+       "s:semigroup"
+      ]
+     },
+     {
+      "h": "h:covariance",
+      "why": "Translations give the semigroup and the momenta; rotations continue to Lorentz transformations.",
+      "steps": [
+       "s:semigroup",
+       "s:lorentz"
+      ]
+     },
+     {
+      "h": "h:growth",
+      "why": "The linear growth bound gives tempered boundary values after continuation.",
+      "steps": [
+       "s:continue"
+      ]
+     },
+     {
+      "h": "h:symmetry",
+      "why": "Permutation symmetry becomes locality at spacelike points after continuation.",
+      "steps": [
+       "s:locality"
+      ]
+     },
+     {
+      "h": "h:cluster",
+      "why": "The cluster property makes the vacuum the only invariant vector.",
+      "steps": [
+       "s:locality"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:hilbert",
+      "slogan": "Build the Hilbert space from positive-time test functions by reflection positivity.",
+      "detail": "On sequences of test functions supported at positive Euclidean time, the form $\\langle F, G\\rangle = \\sum_{n,m} S_{n+m}(\\theta F_n^* \\otimes G_m)$ is positive semidefinite by [reflection positivity](c:reflection-positivity). Quotient by null vectors and complete to get a [Hilbert space](c:hilbert-space) $\\mathcal{H}$, with vacuum $\\Omega$ the class of $1$.",
+      "uses": []
+     },
+     {
+      "id": "s:semigroup",
+      "slogan": "Turn Euclidean translations into a spatial unitary group and a positive Hamiltonian.",
+      "detail": "Spatial Euclidean translations act unitarily on $\\mathcal{H}$. Translations in Euclidean time act as a contraction semigroup $e^{-tH}$ with $H \\ge 0$ self-adjoint, because reflection positivity bounds the inner products. So energy and momentum satisfy the spectrum condition.",
+      "uses": []
+     },
+     {
+      "id": "s:continue",
+      "slogan": "Continue the Schwinger functions analytically to Wightman distributions.",
+      "detail": "The linear growth bound lets the $S_n$ extend analytically to complex times with positive imaginary part, with tempered boundary values at real times. These boundary values are the candidate Wightman functions, the [Wick rotation](c:wick-rotation) of the $S_n$.",
+      "uses": []
+     },
+     {
+      "id": "s:lorentz",
+      "slogan": "Extend Euclidean covariance to Lorentz covariance by analytic continuation.",
+      "detail": "Complexify the Euclidean rotations: the continued functions are invariant under the complex Lorentz group on the forward tube. Their boundary values transform under the real Lorentz group, which with step 2 gives a unitary Poincaré representation.",
+      "uses": []
+     },
+     {
+      "id": "s:locality",
+      "slogan": "Derive locality from symmetry and uniqueness of the vacuum from clustering.",
+      "detail": "Permutation symmetry of the $S_n$ gives symmetry of the continued functions at spacelike (Jost) points, hence locality. The cluster property makes the vacuum the unique translation-invariant vector.",
+      "uses": []
+     },
+     {
+      "id": "s:wightman",
+      "slogan": "Reconstruct the fields and check the [Wightman axioms](c:wightman-axioms).",
+      "detail": "The continued functions have positivity, covariance, spectrum, locality and a unique vacuum by steps 1 to 5, so the Wightman reconstruction gives fields on $\\mathcal{H}$ that satisfy the axioms. By construction their Wightman functions continue to the $S_n$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:hilbert",
+      "s:semigroup"
+     ],
+     [
+      "s:hilbert",
+      "s:wightman"
+     ],
+     [
+      "s:semigroup",
+      "s:continue"
+     ],
+     [
+      "s:semigroup",
+      "s:lorentz"
+     ],
+     [
+      "s:continue",
+      "s:lorentz"
+     ],
+     [
+      "s:continue",
+      "s:locality"
+     ],
+     [
+      "s:lorentz",
+      "s:wightman"
+     ],
+     [
+      "s:locality",
+      "s:wightman"
+     ]
+    ],
+    "conclusion": "s:wightman",
+    "concepts": {
+     "c:reflection-positivity": "Positivity of the reflected form defines the physical inner product.",
+     "c:wick-rotation": "The Wightman functions are the analytic continuation to real time.",
+     "c:wightman-axioms": "These axioms are what the reconstructed theory must satisfy.",
+     "c:hilbert-space": "The state space of the reconstructed theory."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "K. Osterwalder and R. Schrader, Axioms for Euclidean Green's functions II, Communications in Mathematical Physics 42 (1975), 281-305 (part I: Communications in Mathematical Physics 31 (1973), 83-112)",
+     "url": "https://doi.org/10.1007/BF01608978",
+     "note": "Part II contains the reconstruction theorem with the linear growth condition; the outline follows its sections on the Hilbert space, the semigroup and the continuation."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:teichmuller-tukey-lemma",
+  "statement": "Let $\\mathcal{F}$ be a nonempty family of sets of [finite character](c:finite-character): a set is in $\\mathcal{F}$ exactly when each of its finite subsets is. Then every member of $\\mathcal{F}$ lies in a [maximal element](c:maximal-element) of $\\mathcal{F}$ under inclusion.",
+  "hypotheses": [
+   {
+    "id": "h:character",
+    "text": "A set is in $\\mathcal{F}$ exactly when each of its finite subsets is in $\\mathcal{F}$.",
+    "concept": "c:finite-character"
+   },
+   {
+    "id": "h:nonempty",
+    "text": "The family $\\mathcal{F}$ has a member $x$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "Some member $m$ of $\\mathcal{F}$ has $x \\subseteq m$ and no member of $\\mathcal{F}$ properly contains $m$.",
+  "formal": {
+   "decl": "Order.IsOfFiniteCharacter.exists_maximal",
+   "difference": "The declaration states the same result: it names the member x and gives a maximal member above it. Nonemptiness of the family is the existence of x."
+  },
+  "proofs": [
+   {
+    "id": "zorn",
+    "name": "Zorn's lemma on the family",
+    "slogan": "Order the family by inclusion, show that the union of a chain stays in the family by finite character, and apply Zorn's lemma.",
+    "scope": "The whole theorem. Zorn's lemma is applied to the members that contain $x$, so only nonempty chains need an upper bound.",
+    "mechanisms": [
+     "m:zorn"
+    ],
+    "roles": [
+     {
+      "h": "h:character",
+      "why": "Finite character shows that the union of a chain belongs to $\\mathcal{F}$.",
+      "steps": [
+       "s:finite"
+      ]
+     },
+     {
+      "h": "h:nonempty",
+      "why": "The member $x$ gives a starting point and bounds the empty chain.",
+      "steps": [
+       "s:poset",
+       "s:zorn"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:poset",
+      "slogan": "Order $\\mathcal{F}$ by inclusion and fix the starting member $x$.",
+      "detail": "Inclusion makes $\\mathcal{F}$ a partially ordered set. Consider only members that contain $x$; this set is nonempty because it contains $x$.",
+      "uses": []
+     },
+     {
+      "id": "s:union",
+      "slogan": "Take a nonempty [chain](c:chain) $C$ of members and form its union $U$.",
+      "detail": "Let $C \\subseteq \\mathcal{F}$ be a nonempty chain of members containing $x$, and let $U = \\bigcup C$. Then $U \\supseteq x$ and $U$ contains every member of $C$.",
+      "uses": []
+     },
+     {
+      "id": "s:finite",
+      "slogan": "Show that every finite subset of $U$ lies in one member of the chain.",
+      "detail": "A finite subset $S \\subseteq U$ has finitely many elements, and each lies in some member of $C$. A chain is totally ordered, so the largest of these finitely many members contains $S$. That member is in $\\mathcal{F}$, so $S \\in \\mathcal{F}$ by finite character.",
+      "uses": []
+     },
+     {
+      "id": "s:member",
+      "slogan": "Conclude that $U$ is a member of $\\mathcal{F}$ and an upper bound of $C$.",
+      "detail": "Every finite subset of $U$ is in $\\mathcal{F}$, so $U \\in \\mathcal{F}$ by [finite character](c:finite-character). Thus $U$ is an [upper bound](c:upper-bound) of $C$ in $\\mathcal{F}$.",
+      "uses": []
+     },
+     {
+      "id": "s:zorn",
+      "slogan": "Apply Zorn's lemma to get a maximal member above $x$.",
+      "detail": "Every nonempty chain of members containing $x$ has an upper bound among such members. Zorn's lemma gives a member $m \\supseteq x$ that is maximal among them, hence maximal in $\\mathcal{F}$, since a larger member would contain $x$ too.",
+      "uses": [
+       "nl:1475"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:poset",
+      "s:union"
+     ],
+     [
+      "s:union",
+      "s:finite"
+     ],
+     [
+      "s:finite",
+      "s:member"
+     ],
+     [
+      "s:member",
+      "s:zorn"
+     ],
+     [
+      "s:poset",
+      "s:zorn"
+     ]
+    ],
+    "conclusion": "s:zorn",
+    "concepts": {
+     "c:finite-character": "Finite character moves membership from finite subsets to the union.",
+     "c:maximal-element": "The theorem produces a maximal element of the family.",
+     "c:chain": "Zorn's lemma needs an upper bound for every chain.",
+     "c:upper-bound": "The union of the chain is the upper bound that Zorn's lemma needs."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Order.IsOfFiniteCharacter.exists_maximal",
+     "follows": true,
+     "note": "mathlib applies zorn_subset_nonempty, takes the union of a chain as its upper bound, and shows the union is in F by finite character with directedness of the chain (IsChain.directedOn.exists_mem_subset_of_finite_of_subset_sUnion)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:triangle-counting-lemma",
+  "statement": "Let $G$ be a finite graph and $s, t, u$ disjoint vertex sets. If each pair is $\\varepsilon$-uniform (an [$\\varepsilon$-regular pair](c:epsilon-regular-pair)) with [edge density](c:edge-density) at least $2\\varepsilon$, then $G$ has at least $(1 - 2\\varepsilon)\\,\\varepsilon^3 |s||t||u|$ triangles.",
+  "hypotheses": [
+   {
+    "id": "h:disjoint",
+    "text": "The sets $s$, $t$ and $u$ are pairwise disjoint.",
+    "concept": null
+   },
+   {
+    "id": "h:uniform",
+    "text": "Each of the pairs $(s,t)$, $(s,u)$ and $(t,u)$ is an [$\\varepsilon$-regular pair](c:epsilon-regular-pair).",
+    "concept": "c:epsilon-regular-pair"
+   },
+   {
+    "id": "h:dense",
+    "text": "Each of the three pairs has [edge density](c:edge-density) at least $2\\varepsilon$.",
+    "concept": "c:edge-density"
+   }
+  ],
+  "conclusion": "The graph $G$ has at least $(1-2\\varepsilon)\\,\\varepsilon^3|s||t||u|$ triangles.",
+  "formal": {
+   "decl": "SimpleGraph.triangle_counting",
+   "difference": "The statement is the same for a graph on a finite vertex type, with $\\varepsilon$ real. The mathlib definition of uniformity uses the strict inequality $< \\varepsilon$ for the density change."
+  },
+  "proofs": [
+   {
+    "id": "good-vertices",
+    "name": "Count through good vertices",
+    "slogan": "Discard the few vertices of $s$ with too few neighbors in $t$ or $u$, count edges between neighborhoods of each good vertex, and sum.",
+    "scope": "The whole theorem; the bound is trivial when $\\varepsilon \\ge 1/2$ and the proof needs no case split. Triples are counted first, then turned into triangles.",
+    "mechanisms": [
+     "m:averaging",
+     "m:double-counting",
+     "m:bijection"
+    ],
+    "roles": [
+     {
+      "h": "h:uniform",
+      "why": "Uniformity bounds the bad vertices and gives the density between two neighborhoods.",
+      "steps": [
+       "s:bad",
+       "s:edges"
+      ]
+     },
+     {
+      "h": "h:dense",
+      "why": "Density at least $2\\varepsilon$ leaves each good vertex at least $\\varepsilon$ of the opposite set as neighbors.",
+      "steps": [
+       "s:good",
+       "s:edges"
+      ]
+     },
+     {
+      "h": "h:disjoint",
+      "why": "Disjointness makes the map from triples to vertex sets injective.",
+      "steps": [
+       "s:inject"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:bad",
+      "slogan": "Bound the vertices of $s$ that see too few vertices of $t$ or of $u$.",
+      "detail": "Call $x \\in s$ bad for $t$ if it has fewer than $(d(s,t) - \\varepsilon)|t|$ neighbors in $t$. If at least $\\varepsilon|s|$ vertices were bad, the density between them and $t$ would be below $d(s,t) - \\varepsilon$, against uniformity of $(s,t)$. So at most $\\varepsilon|s|$ vertices are bad for $t$, and likewise for $u$.",
+      "uses": []
+     },
+     {
+      "id": "s:good",
+      "slogan": "Keep the vertices of $s$ with many neighbors in both $t$ and $u$.",
+      "detail": "Let $s'$ be $s$ minus the two bad sets, so $|s'| \\ge (1 - 2\\varepsilon)|s|$. A vertex $x \\in s'$ has at least $(d(s,t) - \\varepsilon)|t| \\ge \\varepsilon|t|$ neighbors in $t$, because $d(s,t) \\ge 2\\varepsilon$, and likewise at least $\\varepsilon|u|$ neighbors in $u$.",
+      "uses": []
+     },
+     {
+      "id": "s:edges",
+      "slogan": "Count the edges between the two neighborhoods of a good vertex.",
+      "detail": "For $x \\in s'$ the neighborhoods $N_t(x)$ and $N_u(x)$ have sizes at least $\\varepsilon|t|$ and $\\varepsilon|u|$. Uniformity of $(t,u)$ gives density at least $d(t,u) - \\varepsilon \\ge \\varepsilon$ between them. So they span at least $\\varepsilon \\cdot \\varepsilon|t| \\cdot \\varepsilon|u| = \\varepsilon^3|t||u|$ edges $yz$.",
+      "uses": []
+     },
+     {
+      "id": "s:sum",
+      "slogan": "Add the counts over the good vertices to count triples.",
+      "detail": "Each such edge $yz$ gives a triple $(x,y,z) \\in s \\times t \\times u$ whose three pairs are adjacent, and triples with different $x$ differ. Summing over $x \\in s'$ gives at least $(1-2\\varepsilon)|s| \\cdot \\varepsilon^3|t||u|$ triples.",
+      "uses": []
+     },
+     {
+      "id": "s:inject",
+      "slogan": "Map each triple to its vertex set to get distinct triangles.",
+      "detail": "Because $s$, $t$, $u$ are disjoint, the map $(x,y,z) \\mapsto \\{x,y,z\\}$ is injective on $s \\times t \\times u$: the set shows which element lies in which part. Its image consists of 3-[cliques](c:clique), so $G$ has at least as many triangles as triples.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:bad",
+      "s:good"
+     ],
+     [
+      "s:good",
+      "s:edges"
+     ],
+     [
+      "s:edges",
+      "s:sum"
+     ],
+     [
+      "s:good",
+      "s:sum"
+     ],
+     [
+      "s:sum",
+      "s:inject"
+     ]
+    ],
+    "conclusion": "s:inject",
+    "concepts": {
+     "c:epsilon-regular-pair": "Uniformity controls densities after passing to large subsets.",
+     "c:edge-density": "Density at least $2\\varepsilon$ makes neighborhoods large.",
+     "c:clique": "A triangle is a clique on three vertices."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "SimpleGraph.triangle_counting",
+     "follows": true,
+     "note": "mathlib bounds the bad vertices (badVertices, card_badVertices_le), counts edges for good vertices (good_vertices_triangle_card), sums in triangle_counting', then injects triples into 3-cliques with card_le_card_of_injOn."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:vitali-caratheodory-theorem",
+  "statement": "Let $\\mu$ be a [σ-finite](c:sigma-finite-measure) weakly [regular](c:regular-measure) Borel measure on a topological space $X$, let $f$ be an [integrable](c:integrable-function) real function and $\\varepsilon > 0$. Then some [lower semicontinuous](c:lower-semicontinuous-function) integrable $g \\colon X \\to (-\\infty, \\infty]$ has $g > f$, $g < \\infty$ almost everywhere and $\\int g\\,d\\mu < \\int f\\,d\\mu + \\varepsilon$.",
+  "hypotheses": [
+   {
+    "id": "h:regular",
+    "text": "The measure $\\mu$ is a weakly [regular](c:regular-measure) Borel measure.",
+    "concept": "c:regular-measure"
+   },
+   {
+    "id": "h:sigma",
+    "text": "The measure $\\mu$ is [σ-finite](c:sigma-finite-measure).",
+    "concept": "c:sigma-finite-measure"
+   },
+   {
+    "id": "h:integrable",
+    "text": "The function $f \\colon X \\to \\mathbb{R}$ is [integrable](c:integrable-function).",
+    "concept": "c:integrable-function"
+   },
+   {
+    "id": "h:eps",
+    "text": "The tolerance $\\varepsilon$ is positive.",
+    "concept": null
+   }
+  ],
+  "conclusion": "A [lower semicontinuous](c:lower-semicontinuous-function) integrable $g > f$ exists, finite almost everywhere, with $\\int g\\,d\\mu < \\int f\\,d\\mu + \\varepsilon$.",
+  "formal": {
+   "decl": "MeasureTheory.exists_lt_lowerSemicontinuous_integral_lt",
+   "difference": "The declaration takes $g$ with values in the extended reals (EReal) and states integrability and the integral bound for its real part. The hypotheses and the strict inequality $f < g$ agree."
+  },
+  "proofs": [
+   {
+    "id": "positive-negative-parts",
+    "name": "Positive and negative parts",
+    "slogan": "Split $f$ into its parts, bound the positive part above by indicators of open sets and the negative part below by indicators of closed sets.",
+    "scope": "The whole theorem, for $f$ of either sign; $f \\ge 0$ is the case where the negative part is zero. The strict inequality $g > f$ uses $\\sigma$-finiteness.",
+    "mechanisms": [
+     "m:approximation",
+     "m:monotone-limit"
+    ],
+    "roles": [
+     {
+      "h": "h:regular",
+      "why": "Regularity approximates measurable sets from outside by open sets and from inside by closed sets.",
+      "steps": [
+       "s:upper",
+       "s:lower"
+      ]
+     },
+     {
+      "h": "h:sigma",
+      "why": "σ-finiteness lets a small extra term make the inequality $g^+ > f^+$ strict.",
+      "steps": [
+       "s:upper"
+      ]
+     },
+     {
+      "h": "h:integrable",
+      "why": "Integrability makes the parts finite and the integrals additive.",
+      "steps": [
+       "s:split",
+       "s:integral"
+      ]
+     },
+     {
+      "h": "h:eps",
+      "why": "A positive tolerance is split in two halves, one for each part.",
+      "steps": [
+       "s:split"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:split",
+      "slogan": "Split $f$ into its positive and negative parts.",
+      "detail": "Write $f = f^+ - f^-$ with $f^\\pm \\ge 0$ integrable, and put $\\delta = \\varepsilon/2$. It suffices to find a lower semicontinuous $g^+ > f^+$ with $\\int g^+ < \\int f^+ + \\delta$ and an upper semicontinuous $0 \\le g^- \\le f^-$ with $\\int g^- \\ge \\int f^- - \\delta$.",
+      "uses": []
+     },
+     {
+      "id": "s:upper",
+      "slogan": "Bound $f^+$ from above by indicators of open sets.",
+      "detail": "Write $f^+ = \\sum_n c_n 1_{s_n}$ with $c_n > 0$ ([simple functions](c:simple-function) in a series). Choose open $u_n \\supseteq s_n$ with $\\mu(u_n \\setminus s_n)$ very small by regularity, and add a small positive term, using $\\sigma$-finiteness, to make the inequality strict. The sum $g^+ = \\sum_n c_n 1_{u_n}$ plus this term is lower semicontinuous with $\\int g^+ < \\int f^+ + \\delta$ by monotone convergence.",
+      "uses": [
+       "wd:Q1153584"
+      ]
+     },
+     {
+      "id": "s:lower",
+      "slogan": "Bound $f^-$ from below by indicators of closed sets.",
+      "detail": "Keep finitely many terms of the series $f^- = \\sum_n c_n 1_{s_n}$, so that the tail has integral below $\\delta/2$. Shrink each kept $s_n$ to a closed $F_n \\subseteq s_n$ with small loss of measure. Then $g^- = \\sum_{n<N} c_n 1_{F_n}$ is upper semicontinuous, $0 \\le g^- \\le f^-$ and $\\int g^- \\ge \\int f^- - \\delta$.",
+      "uses": []
+     },
+     {
+      "id": "s:difference",
+      "slogan": "Form $g = g^+ - g^-$ and check semicontinuity and the strict order.",
+      "detail": "The function $g^-$ is finite, so $g^+ - g^-$ has no $\\infty - \\infty$ and takes values in $(-\\infty, \\infty]$. A lower semicontinuous function minus an upper semicontinuous one is lower semicontinuous. Also $g^+ > f^+$ and $-g^- \\ge -f^-$ give $g > f$, and $g^+ < \\infty$ almost everywhere since $g^+$ is integrable.",
+      "uses": []
+     },
+     {
+      "id": "s:integral",
+      "slogan": "Add the two integral bounds to estimate the integral of $g$.",
+      "detail": "Almost everywhere $g = g^+ - g^-$ is a real function, so $g$ is integrable and $\\int g = \\int g^+ - \\int g^- < (\\int f^+ + \\delta) - (\\int f^- - \\delta) = \\int f + 2\\delta = \\int f + \\varepsilon$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:split",
+      "s:upper"
+     ],
+     [
+      "s:split",
+      "s:lower"
+     ],
+     [
+      "s:upper",
+      "s:difference"
+     ],
+     [
+      "s:lower",
+      "s:difference"
+     ],
+     [
+      "s:difference",
+      "s:integral"
+     ],
+     [
+      "s:upper",
+      "s:integral"
+     ],
+     [
+      "s:lower",
+      "s:integral"
+     ]
+    ],
+    "conclusion": "s:integral",
+    "concepts": {
+     "c:sigma-finite-measure": "σ-finiteness makes the strict inequality possible.",
+     "c:regular-measure": "Regularity gives open and closed approximations of measurable sets.",
+     "c:integrable-function": "Integrability gives finite integrals and a splitting into parts.",
+     "c:lower-semicontinuous-function": "The required function is lower semicontinuous, built from indicators of open sets.",
+     "c:simple-function": "The parts are series of indicator functions of measurable sets."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "MeasureTheory.exists_lt_lowerSemicontinuous_integral_lt",
+     "follows": true,
+     "note": "mathlib splits f into toNNReal parts, applies exists_lt_lowerSemicontinuous_integral_gt_nnreal to the positive part and exists_upperSemicontinuous_le_integral_le to the negative part, and sets g = gp - gm."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q528987",
+  "statement": "Let $\\mathcal{A}$ be a unital $*$-subalgebra of $B(H)$ for a [Hilbert space](c:hilbert-space) $H$. Then the bicommutant $\\mathcal{A}''$, the [commutant](c:commutant) of $\\mathcal{A}'$, equals the closure of $\\mathcal{A}$ in the [strong operator topology](c:strong-operator-topology) and in the [weak operator topology](c:weak-operator-topology).",
+  "hypotheses": [
+   {
+    "id": "h:hilbert",
+    "text": "The space $H$ is a [Hilbert space](c:hilbert-space).",
+    "concept": "c:hilbert-space"
+   },
+   {
+    "id": "h:star",
+    "text": "The algebra $\\mathcal{A} \\subseteq B(H)$ is closed under adjoints.",
+    "concept": null
+   },
+   {
+    "id": "h:unital",
+    "text": "The algebra $\\mathcal{A}$ contains the identity operator.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The sets $\\mathcal{A}''$, the strong closure of $\\mathcal{A}$ and the weak closure of $\\mathcal{A}$ are equal.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "cyclic-projection",
+    "name": "Cyclic projection and amplification",
+    "slogan": "Commutants are weakly closed; conversely a projection onto a cyclic subspace lies in the commutant, and amplifying to $H^n$ handles finitely many vectors.",
+    "scope": "The whole theorem, for $H$ of any dimension. The chain of inclusions $\\mathcal{A}'' \\subseteq$ strong closure $\\subseteq$ weak closure $\\subseteq \\mathcal{A}''$ gives all three equalities.",
+    "mechanisms": [
+     "m:orthogonal-projection",
+     "m:symmetry"
+    ],
+    "roles": [
+     {
+      "h": "h:hilbert",
+      "why": "A Hilbert space has an orthogonal projection onto every closed subspace.",
+      "steps": [
+       "s:cyclic"
+      ]
+     },
+     {
+      "h": "h:star",
+      "why": "Closure under adjoints makes the orthogonal complement of an invariant subspace invariant.",
+      "steps": [
+       "s:cyclic"
+      ]
+     },
+     {
+      "h": "h:unital",
+      "why": "The identity puts $\\xi$ in the cyclic subspace $\\overline{\\mathcal{A}\\xi}$.",
+      "steps": [
+       "s:vector"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:closed",
+      "slogan": "Show that every commutant is closed in the weak operator topology.",
+      "detail": "If $T_\\alpha \\to T$ weakly and each $T_\\alpha$ commutes with $a$, then $\\langle Ta\\xi, \\eta\\rangle = \\lim \\langle T_\\alpha a \\xi, \\eta\\rangle = \\lim \\langle T_\\alpha \\xi, a^*\\eta\\rangle = \\langle aT\\xi, \\eta\\rangle$. So $\\mathcal{A}''$ is weakly closed and contains $\\mathcal{A}$, hence contains the weak closure, which contains the strong closure.",
+      "uses": []
+     },
+     {
+      "id": "s:cyclic",
+      "slogan": "Let $P$ project onto $\\overline{\\mathcal{A}\\xi}$ and show that $P$ lies in $\\mathcal{A}'$.",
+      "detail": "The subspace $M = \\overline{\\mathcal{A}\\xi}$ is invariant under $\\mathcal{A}$, and so is $M^\\perp$ because $\\mathcal{A}$ is closed under adjoints. So the [orthogonal projection](c:orthogonal-projection) $P$ onto $M$ commutes with every $a \\in \\mathcal{A}$.",
+      "uses": []
+     },
+     {
+      "id": "s:vector",
+      "slogan": "Show that every $T \\in \\mathcal{A}''$ keeps $\\xi$ in $\\overline{\\mathcal{A}\\xi}$.",
+      "detail": "Since $1 \\in \\mathcal{A}$, $\\xi \\in M$ and $P\\xi = \\xi$. For $T \\in \\mathcal{A}''$, $TP = PT$ because $P \\in \\mathcal{A}'$. Hence $T\\xi = TP\\xi = PT\\xi \\in M$.",
+      "uses": []
+     },
+     {
+      "id": "s:amplify",
+      "slogan": "Amplify to $H^n$ to treat finitely many vectors at once.",
+      "detail": "On $H^n$ let $\\mathcal{A}_n = \\{a \\oplus \\cdots \\oplus a\\}$, a unital $*$-algebra whose commutant is the matrices over $\\mathcal{A}'$. The operator $T \\oplus \\cdots \\oplus T$ commutes with these matrices, so it lies in $\\mathcal{A}_n''$. Step 3 on $(\\xi_1, \\dots, \\xi_n)$ gives $a \\in \\mathcal{A}$ with $\\|a\\xi_i - T\\xi_i\\| < \\varepsilon$ for all $i$.",
+      "uses": []
+     },
+     {
+      "id": "s:chain",
+      "slogan": "Chain the inclusions to get equality of the three sets.",
+      "detail": "Step 4 shows $\\mathcal{A}'' \\subseteq$ the [strong closure](c:strong-operator-topology) of $\\mathcal{A}$. The strong closure lies in the [weak closure](c:weak-operator-topology), which lies in $\\mathcal{A}''$ by step 1. So the three sets are equal.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:cyclic",
+      "s:vector"
+     ],
+     [
+      "s:vector",
+      "s:amplify"
+     ],
+     [
+      "s:amplify",
+      "s:chain"
+     ],
+     [
+      "s:closed",
+      "s:chain"
+     ]
+    ],
+    "conclusion": "s:chain",
+    "concepts": {
+     "c:hilbert-space": "Orthogonal projections onto closed subspaces exist in a Hilbert space.",
+     "c:commutant": "The bicommutant is the commutant of the commutant.",
+     "c:strong-operator-topology": "Strong closure is the closure obtained in the first equality.",
+     "c:weak-operator-topology": "Weak closure sits between the strong closure and the bicommutant.",
+     "c:orthogonal-projection": "The projection onto the cyclic subspace commutes with the algebra."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The classical cyclic-vector proof of the double commutant theorem, as in Murphy, C*-algebras and Operator Theory, section 4.1."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q356895",
+  "statement": "Let $H(s)$, $s \\in [0,1]$, be a $C^2$ family of bounded self-adjoint operators with a part $\\sigma_1(s)$ of the spectrum separated from the rest by a uniform [spectral gap](c:spectral-gap) $g > 0$, and let $P(s)$ be its spectral projection. If $i\\varepsilon\\,\\psi' = H\\psi$ ([Schrödinger equation](c:schrodinger-equation)) and $\\psi(0) \\in \\operatorname{Ran} P(0)$, then $\\|(1 - P(s))\\psi(s)\\| \\le C\\varepsilon\\|\\psi(0)\\|$.",
+  "hypotheses": [
+   {
+    "id": "h:smooth",
+    "text": "The operators $H(s)$ form a $C^2$ family of bounded [self-adjoint operators](c:self-adjoint-operator) on a Hilbert space.",
+    "concept": "c:self-adjoint-operator"
+   },
+   {
+    "id": "h:gap",
+    "text": "A part $\\sigma_1(s)$ of the spectrum of $H(s)$ lies at distance at least $g > 0$ from the rest of it, for every $s$.",
+    "concept": "c:spectral-gap"
+   },
+   {
+    "id": "h:evolution",
+    "text": "The state $\\psi$ solves $i\\varepsilon\\,\\psi'(s) = H(s)\\psi(s)$ on $[0,1]$.",
+    "concept": "c:schrodinger-equation"
+   },
+   {
+    "id": "h:start",
+    "text": "The initial state satisfies $P(0)\\psi(0) = \\psi(0)$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "For all $s \\in [0,1]$, $\\|(1 - P(s))\\psi(s)\\| \\le C\\varepsilon\\|\\psi(0)\\|$ with $C$ independent of $\\varepsilon$ and $\\psi$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "integration-by-parts",
+    "name": "Integration by parts (Kato)",
+    "slogan": "Write the leakage out of the spectral subspace as an integral of $P'$ along the evolution, then integrate by parts using a solution of $[H, Y] = P'$.",
+    "scope": "The whole theorem, in the bounded-operator setting with a $C^2$ family; a single eigenvalue with a gap is the main case. The constant $C$ depends on $g$, $\\sup\\|H\\|$ and the derivatives of $H$ only.",
+    "mechanisms": [
+     "m:fundamental-theorem-calculus",
+     "m:a-priori-estimate"
+    ],
+    "roles": [
+     {
+      "h": "h:smooth",
+      "why": "Self-adjointness makes the propagator unitary, and $C^2$ smoothness makes $Y$ a $C^1$ family.",
+      "steps": [
+       "s:leak",
+       "s:offdiag"
+      ]
+     },
+     {
+      "h": "h:gap",
+      "why": "The gap bounds the resolvent on the contour and so bounds $Y$ and $Y'$.",
+      "steps": [
+       "s:offdiag",
+       "s:solve"
+      ]
+     },
+     {
+      "h": "h:evolution",
+      "why": "The equation defines the propagator and gives the factor $1/\\varepsilon$ in the derivative of $W^*YW$.",
+      "steps": [
+       "s:leak",
+       "s:parts"
+      ]
+     },
+     {
+      "h": "h:start",
+      "why": "Starting in $\\operatorname{Ran}P(0)$ removes the term $Q(0)\\psi(0)$.",
+      "steps": [
+       "s:bound"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:leak",
+      "slogan": "Write the leakage out of $\\operatorname{Ran} P$ as an integral of $P'$.",
+      "detail": "Let $W$ be the [unitary](c:unitary-operator) propagator, $i\\varepsilon W' = HW$, $W(0) = 1$, and $Q = 1 - P$. Since $[H, Q] = 0$, $\\frac{d}{dr}(W^*QW) = W^*Q'W = -W^*P'W$. As $Q(0)P(0) = 0$, $Q(s)W(s)P(0) = -W(s)\\left(\\int_0^s W^*P'W\\,dr\\right)P(0)$.",
+      "uses": []
+     },
+     {
+      "id": "s:offdiag",
+      "slogan": "Show that $P$ is $C^2$ and that $P'$ is off-diagonal.",
+      "detail": "The Riesz formula $P = \\frac{1}{2\\pi i}\\oint_\\Gamma (z - H)^{-1}dz$, on a contour at distance at least $g/2$ from the spectrum, shows that $P \\in C^2$. Differentiating $P^2 = P$ gives $P' = PP'Q + QP'P$.",
+      "uses": []
+     },
+     {
+      "id": "s:solve",
+      "slogan": "Solve the commutator equation $[H, Y] = P'$ with the gap.",
+      "detail": "Put $R = (H - z)^{-1}$, $X = \\frac{1}{2\\pi i}\\oint_\\Gamma RP'R\\,dz$ and $Y = [P, X]$. With $HR = 1 + zR$, $[H, X] = [P, P']$ and then $[H, Y] = P'$, since $P'$ is off-diagonal. The bound $\\|R\\| \\le 2/g$ on $\\Gamma$ makes $\\|Y\\|$ and $\\|Y'\\|$ bounded independently of $\\varepsilon$.",
+      "uses": []
+     },
+     {
+      "id": "s:parts",
+      "slogan": "Integrate by parts to turn $P'$ into a factor $\\varepsilon$.",
+      "detail": "Since $\\frac{d}{dr}(W^*YW) = W^*Y'W + \\frac{i}{\\varepsilon}W^*[H,Y]W$, we get $W^*P'W = -i\\varepsilon\\left(\\frac{d}{dr}(W^*YW) - W^*Y'W\\right)$. Integrating gives $\\left\\|\\int_0^s W^*P'W\\,dr\\right\\| \\le \\varepsilon\\left(\\|Y(s)\\| + \\|Y(0)\\| + \\int_0^1\\|Y'\\|\\right)$.",
+      "uses": []
+     },
+     {
+      "id": "s:bound",
+      "slogan": "Bound the leakage by $C\\varepsilon$ and read off the claim.",
+      "detail": "By step 1 and $\\psi(0) = P(0)\\psi(0)$, $\\|(1 - P(s))\\psi(s)\\| = \\|Q(s)W(s)P(0)\\psi(0)\\|$ is at most $\\left\\|\\int_0^s W^*P'W\\,dr\\right\\|\\|\\psi(0)\\|$. Step 4 bounds this by $C\\varepsilon\\|\\psi(0)\\|$ with $C = 2\\sup\\|Y\\| + \\sup\\|Y'\\|$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:offdiag",
+      "s:solve"
+     ],
+     [
+      "s:solve",
+      "s:parts"
+     ],
+     [
+      "s:leak",
+      "s:bound"
+     ],
+     [
+      "s:parts",
+      "s:bound"
+     ]
+    ],
+    "conclusion": "s:bound",
+    "concepts": {
+     "c:spectral-gap": "The gap bounds the resolvent and so the solution $Y$ of the commutator equation.",
+     "c:schrodinger-equation": "The evolution equation defines the propagator that carries the state.",
+     "c:self-adjoint-operator": "Self-adjointness makes the evolution unitary and the spectral projection orthogonal.",
+     "c:unitary-operator": "A unitary propagator keeps norms, so the leakage is measured exactly."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Kato's integration-by-parts proof of the adiabatic theorem (T. Kato, J. Phys. Soc. Japan 5 (1950), 435-439), in the form of S. Teufel, Adiabatic Perturbation Theory in Quantum Dynamics, Lecture Notes in Mathematics 1821; first stated by Born and Fock (1928)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q3527009",
+  "statement": "Let $\\alpha_1, \\dots, \\alpha_n$ be nonzero [algebraic numbers](c:algebraic-number) whose [logarithms](c:logarithm) are linearly independent over $\\mathbb{Q}$. For algebraic $\\beta_0, \\dots, \\beta_n$ not all zero, of degree at most $d$ and height at most $B$, the form $\\Lambda = \\beta_0 + \\beta_1\\log\\alpha_1 + \\dots + \\beta_n\\log\\alpha_n$ is nonzero and $|\\Lambda| > B^{-C}$, with $C$ effective.",
+  "hypotheses": [
+   {
+    "id": "h:algebraic",
+    "text": "The numbers $\\alpha_1, \\dots, \\alpha_n$ are nonzero [algebraic numbers](c:algebraic-number).",
+    "concept": "c:algebraic-number"
+   },
+   {
+    "id": "h:independent",
+    "text": "The logarithms $\\log\\alpha_1, \\dots, \\log\\alpha_n$ (fixed branches) are linearly independent over $\\mathbb{Q}$.",
+    "concept": null
+   },
+   {
+    "id": "h:coefficients",
+    "text": "The coefficients $\\beta_0, \\dots, \\beta_n$ are algebraic, not all zero, of degree at most $d$ and height at most $B$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The form $\\Lambda$ is nonzero and $|\\Lambda| > B^{-C}$, where $C$ is effectively computable from $n$, $d$ and the $\\alpha_j$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "gelfond-baker-method",
+    "name": "Auxiliary function (Baker)",
+    "slogan": "Assume a small or vanishing form, build an auxiliary function by Siegel's lemma, extrapolate its zeros, and reach a contradiction with nonvanishing.",
+    "scope": "An outline of the published proof, which rests on the cited work for the auxiliary function, the extrapolation estimates and the nonvanishing lemma. The qualitative statement is the case of exact vanishing.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:contradiction"
+    ],
+    "roles": [
+     {
+      "h": "h:algebraic",
+      "why": "Algebraic values give algebraic numbers with a Liouville lower bound at every extrapolation.",
+      "steps": [
+       "s:auxiliary",
+       "s:extrapolate"
+      ]
+     },
+     {
+      "h": "h:independent",
+      "why": "Independence over $\\mathbb{Q}$ makes the exponentials distinct and the interpolation matrix nonsingular.",
+      "steps": [
+       "s:interpolate"
+      ]
+     },
+     {
+      "h": "h:coefficients",
+      "why": "The degree and height bounds control the sizes in Siegel's lemma and in the lower bounds.",
+      "steps": [
+       "s:reduce",
+       "s:extrapolate"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:reduce",
+      "slogan": "Set up an induction on $n$ and assume the form is zero or very small.",
+      "detail": "Assume the theorem for fewer [logarithms](c:logarithm) and suppose that $|\\Lambda| \\le B^{-C}$ or $\\Lambda = 0$. After normalizing the coefficients, this expresses one logarithm approximately by the others with algebraic coefficients.",
+      "uses": []
+     },
+     {
+      "id": "s:auxiliary",
+      "slogan": "Construct an auxiliary function with Siegel's lemma.",
+      "detail": "Siegel's lemma on a linear system with more unknowns than equations gives algebraic integer coefficients, not all zero and of controlled size. They define an exponential polynomial in the values $\\alpha_j^{z}$ that vanishes to high order at many integer points.",
+      "uses": []
+     },
+     {
+      "id": "s:extrapolate",
+      "slogan": "Show that the function vanishes at many more integer points.",
+      "detail": "The Schwarz lemma bounds the function and its derivatives at a larger set of integer points by a tiny number. Each value is an algebraic number of controlled degree and height, so it is zero or exceeds a Liouville-type lower bound. The two bounds clash, so it is zero; repeating enlarges the set.",
+      "uses": []
+     },
+     {
+      "id": "s:interpolate",
+      "slogan": "Turn the many vanishing conditions into a nonsingular linear system.",
+      "detail": "The vanishing conditions form a linear system in the coefficients with a Vandermonde-type matrix. By a nonvanishing lemma for exponential polynomials, which uses the independence over $\\mathbb{Q}$, this matrix has full rank.",
+      "uses": []
+     },
+     {
+      "id": "s:contradict",
+      "slogan": "Contradict the choice of coefficients to prove nonvanishing and the bound.",
+      "detail": "A system of full rank forces all coefficients to be zero, against Siegel's lemma. So the assumption on $\\Lambda$ fails: $\\Lambda \\neq 0$ and $|\\Lambda| > B^{-C}$. Tracking all the parameters gives an explicit constant $C$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:reduce",
+      "s:auxiliary"
+     ],
+     [
+      "s:auxiliary",
+      "s:extrapolate"
+     ],
+     [
+      "s:extrapolate",
+      "s:interpolate"
+     ],
+     [
+      "s:interpolate",
+      "s:contradict"
+     ],
+     [
+      "s:reduce",
+      "s:contradict"
+     ]
+    ],
+    "conclusion": "s:contradict",
+    "concepts": {
+     "c:algebraic-number": "Algebraic numbers have Liouville lower bounds, which drive the extrapolation.",
+     "c:logarithm": "The linear form in logarithms is the object that the proof bounds from below."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "A. Baker, Linear forms in the logarithms of algebraic numbers (I), Mathematika 13 (1966), 204-216; parts II-IV, Mathematika 14 (1967) and 15 (1968); and A. Baker, Transcendental Number Theory, Cambridge University Press (1975)",
+     "url": "https://doi.org/10.1112/S0025579300003971",
+     "note": "Part I proves the independence over algebraic numbers; the effective lower bound is in the later parts and in the book."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:27118",
+  "statement": "Every [algebra](c:algebraic-structure) $A$ of a fixed signature is isomorphic to a [subdirect product](c:subdirect-product) of subdirectly irreducible algebras, each a [homomorphic image](c:homomorphic-image) of $A$.",
+  "hypotheses": [
+   {
+    "id": "h:algebra",
+    "text": "The structure $A$ is an [algebra](c:algebraic-structure): a set with a family of finitary operations.",
+    "concept": "c:algebraic-structure"
+   }
+  ],
+  "conclusion": "The algebra $A$ embeds in a product $\\prod_i A/\\theta_i$ of subdirectly irreducible quotients with every projection onto.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "maximal-congruences",
+    "name": "Maximal congruences by Zorn",
+    "slogan": "For each pair of distinct elements take a congruence that is maximal among those separating them; the quotients are subdirectly irreducible and jointly separate all points.",
+    "scope": "The whole theorem. A trivial algebra is the empty product, so the case $|A| \\le 1$ needs no index; otherwise the index set is the set of pairs $a \\ne b$.",
+    "mechanisms": [
+     "m:zorn",
+     "m:quotient-construction",
+     "m:homomorphism-kernel"
+    ],
+    "roles": [
+     {
+      "h": "h:algebra",
+      "why": "The operations make a union of a chain of congruences a congruence and let quotients inherit the structure.",
+      "steps": [
+       "s:maximal",
+       "s:irreducible"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:separate",
+      "slogan": "Fix two distinct elements and collect the congruences that keep them apart.",
+      "detail": "For $a \\ne b$ in $A$ let $\\mathcal{K}_{ab}$ be the set of [congruences](c:con) $\\theta$ of $A$ with $(a,b) \\notin \\theta$. It is nonempty, since it contains the identity congruence $\\Delta$.",
+      "uses": []
+     },
+     {
+      "id": "s:maximal",
+      "slogan": "Choose a congruence $\\theta_{ab}$ that is maximal in $\\mathcal{K}_{ab}$.",
+      "detail": "The union of a chain of congruences in $\\mathcal{K}_{ab}$ is a congruence, because an operation involves finitely many arguments that lie in one member of the chain. It still omits $(a,b)$. So Zorn's lemma gives a maximal $\\theta_{ab} \\in \\mathcal{K}_{ab}$.",
+      "uses": [
+       "nl:1475"
+      ]
+     },
+     {
+      "id": "s:irreducible",
+      "slogan": "Show that the quotient by a maximal congruence is subdirectly irreducible.",
+      "detail": "Congruences of $A/\\theta_{ab}$ correspond to congruences of $A$ that contain $\\theta_{ab}$. By maximality each congruence strictly above $\\theta_{ab}$ contains $(a,b)$. So every nonidentity congruence of the quotient contains the pair of the distinct classes $[a], [b]$, and the congruence generated by that pair is the smallest nonidentity one.",
+      "uses": []
+     },
+     {
+      "id": "s:embed",
+      "slogan": "Embed $A$ into the product of these quotients.",
+      "detail": "The intersection of all $\\theta_{ab}$ is the identity congruence, since $(a,b) \\notin \\theta_{ab}$ for each $a \\ne b$. So $x \\mapsto ([x]_{ab})_{a \\ne b}$ is an injective homomorphism $A \\to \\prod_{a \\ne b} A/\\theta_{ab}$.",
+      "uses": []
+     },
+     {
+      "id": "s:subdirect",
+      "slogan": "Check that every projection is onto, so the image is a subdirect product.",
+      "detail": "Each coordinate map $A \\to A/\\theta_{ab}$ is a quotient map, hence onto. So $A$ is isomorphic to a [subdirect product](c:subdirect-product) of subdirectly irreducible algebras, each a [homomorphic image](c:homomorphic-image) of $A$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:separate",
+      "s:maximal"
+     ],
+     [
+      "s:maximal",
+      "s:irreducible"
+     ],
+     [
+      "s:maximal",
+      "s:embed"
+     ],
+     [
+      "s:irreducible",
+      "s:subdirect"
+     ],
+     [
+      "s:embed",
+      "s:subdirect"
+     ]
+    ],
+    "conclusion": "s:subdirect",
+    "concepts": {
+     "c:algebraic-structure": "The theorem is about algebras with operations and their congruences.",
+     "c:subdirect-product": "The embedding with onto projections is the subdirect representation.",
+     "c:homomorphic-image": "Each factor is a quotient, hence a homomorphic image, of $A$.",
+     "c:con": "Maximal congruences give the irreducible quotients and the separating family."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Birkhoff's proof (G. Birkhoff, Subdirect unions in universal algebra, Bulletin of the AMS 50 (1944), 764-768), as in Burris and Sankappanavar, A Course in Universal Algebra, chapter II section 8."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:27813",
+  "statement": "Let a [compact Lie group](c:compact-lie-group) $G$ act smoothly on a [smooth manifold](c:smooth-manifold) $M$ with a fixed point $p$. Then $p$ has a $G$-invariant open neighborhood $V$ and a [diffeomorphism](c:diffeomorph) $\\psi$ from $V$ onto a $G$-invariant neighborhood of $0$ in $T_pM$ with $\\psi(g \\cdot x) = d(g)_p\\,\\psi(x)$.",
+  "hypotheses": [
+   {
+    "id": "h:group",
+    "text": "The group $G$ is a [compact Lie group](c:compact-lie-group).",
+    "concept": "c:compact-lie-group"
+   },
+   {
+    "id": "h:action",
+    "text": "The [group action](c:group-action) of $G$ on the manifold $M$ is smooth.",
+    "concept": "c:group-action"
+   },
+   {
+    "id": "h:fixed",
+    "text": "The point $p \\in M$ is fixed by every element of $G$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "In the chart $\\psi$ near $p$, the action of $G$ is the linear action $g \\mapsto d(g)_p$ on $T_pM$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "haar-averaging",
+    "name": "Averaging a chart over the group",
+    "slogan": "Average a chart at the fixed point over the group with Haar measure, so that the averaged chart intertwines the action with its linearization.",
+    "scope": "The whole theorem, including a trivial group or a point manifold. The averaged chart is a diffeomorphism only near $p$, so the proof ends with a restriction to an invariant neighborhood.",
+    "mechanisms": [
+     "m:symmetry",
+     "m:averaging",
+     "m:partition-of-unity"
+    ],
+    "roles": [
+     {
+      "h": "h:group",
+      "why": "Compactness gives an invariant neighborhood and a finite invariant Haar measure.",
+      "steps": [
+       "s:invariant",
+       "s:average"
+      ]
+     },
+     {
+      "h": "h:action",
+      "why": "Smoothness of the action makes the integrand, and so the averaged chart, smooth.",
+      "steps": [
+       "s:average",
+       "s:equivariant"
+      ]
+     },
+     {
+      "h": "h:fixed",
+      "why": "The fixed point lets $G$ act on $T_pM$ and gives $d(\\varphi \\circ g)_p = d\\varphi_p\\,\\rho(g)$.",
+      "steps": [
+       "s:rep",
+       "s:derivative"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:invariant",
+      "slogan": "Find a $G$-invariant open neighborhood of $p$ inside a chart.",
+      "detail": "Take a chart $\\varphi\\colon U \\to T_pM$ with $\\varphi(p) = 0$ and $d\\varphi_p = \\mathrm{id}$. The action sends $G \\times \\{p\\}$ into $U$ and $G$ is compact, so some open $W \\ni p$ has $G \\cdot W \\subseteq U$. Then $V = G \\cdot W$ is open, invariant and inside $U$.",
+      "uses": [
+       "nl:17327"
+      ]
+     },
+     {
+      "id": "s:rep",
+      "slogan": "Let $G$ act linearly on $T_pM$ through the derivative at $p$.",
+      "detail": "Each $g$ fixes $p$, so $\\rho(g) = d(g)_p$ is a linear map of $T_pM$. The chain rule gives $\\rho(gh) = \\rho(g)\\rho(h)$, so $\\rho$ is a smooth representation.",
+      "uses": []
+     },
+     {
+      "id": "s:average",
+      "slogan": "Average the chart over $G$ with the Haar measure.",
+      "detail": "Let $dg$ be the normalized [Haar measure](c:haar-measure) and set $\\psi(x) = \\int_G \\rho(g)^{-1}\\varphi(g \\cdot x)\\,dg$ for $x \\in V$. This is defined because $g \\cdot x \\in V \\subseteq U$. The integrand is smooth in $(g, x)$ and $G$ is compact, so $\\psi$ is smooth.",
+      "uses": []
+     },
+     {
+      "id": "s:equivariant",
+      "slogan": "Show that $\\psi$ intertwines the action and the representation.",
+      "detail": "For $h \\in G$, $\\psi(h \\cdot x) = \\int_G \\rho(g)^{-1}\\varphi(gh \\cdot x)\\,dg = \\rho(h)\\int_G \\rho(gh)^{-1}\\varphi(gh \\cdot x)\\,dg = \\rho(h)\\psi(x)$, by right invariance of Haar measure on the compact group $G$.",
+      "uses": []
+     },
+     {
+      "id": "s:derivative",
+      "slogan": "Compute that the derivative of $\\psi$ at $p$ is the identity.",
+      "detail": "Differentiate under the integral at $p$. Since $g \\cdot p = p$, $d(\\varphi \\circ g)_p = d\\varphi_p\\,\\rho(g) = \\rho(g)$, so $d\\psi_p = \\int_G \\rho(g)^{-1}\\rho(g)\\,dg = \\mathrm{id}$.",
+      "uses": []
+     },
+     {
+      "id": "s:diffeo",
+      "slogan": "Restrict $\\psi$ to an invariant neighborhood on which it is a diffeomorphism.",
+      "detail": "The inverse function theorem gives an open $W' \\ni p$ on which $\\psi$ is a diffeomorphism onto an open set. The tube lemma gives a $G$-invariant open $V' \\subseteq W'$ containing $p$. Then $\\psi(V')$ is open and, by step 4, invariant under $\\rho(G)$.",
+      "uses": [
+       "wd:Q931001",
+       "nl:17327"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:invariant",
+      "s:average"
+     ],
+     [
+      "s:rep",
+      "s:average"
+     ],
+     [
+      "s:average",
+      "s:equivariant"
+     ],
+     [
+      "s:average",
+      "s:derivative"
+     ],
+     [
+      "s:equivariant",
+      "s:diffeo"
+     ],
+     [
+      "s:derivative",
+      "s:diffeo"
+     ]
+    ],
+    "conclusion": "s:diffeo",
+    "concepts": {
+     "c:compact-lie-group": "Compactness gives the invariant neighborhood and the finite Haar measure.",
+     "c:smooth-manifold": "The chart and the tangent space at the fixed point live on the manifold.",
+     "c:diffeomorph": "The linearizing chart is a diffeomorphism near the fixed point.",
+     "c:group-action": "The action is what the averaged chart makes linear.",
+     "c:haar-measure": "Invariance of Haar measure makes the averaged chart equivariant."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The averaging proof of S. Bochner, Compact groups of differentiable transformations, Annals of Mathematics 46 (1945), 372-381."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q5037752",
+  "statement": "Let $f$ be defined on $[t_0 - a, t_0 + a] \\times \\bar{B}(y_0, b) \\subseteq \\mathbb{R} \\times \\mathbb{R}^n$, measurable in $t$ for each $y$, continuous in $y$ for each $t$, and bounded by an integrable $m(t)$. Then the [initial value problem](c:initial-value-problem) $y' = f(t,y)$, $y(t_0) = y_0$ has an [absolutely continuous](c:absolutely-continuous-function) solution on some interval around $t_0$.",
+  "hypotheses": [
+   {
+    "id": "h:measurable",
+    "text": "For each $y$, the function $t \\mapsto f(t, y)$ is measurable.",
+    "concept": null
+   },
+   {
+    "id": "h:continuous",
+    "text": "For each $t$, the function $y \\mapsto f(t, y)$ is continuous.",
+    "concept": null
+   },
+   {
+    "id": "h:bound",
+    "text": "A function $m$ that is integrable on $[t_0 - a, t_0 + a]$ satisfies $|f(t,y)| \\le m(t)$ on the domain.",
+    "concept": null
+   }
+  ],
+  "conclusion": "For some $\\beta > 0$ there is an [absolutely continuous](c:absolutely-continuous-function) $y$ on $[t_0 - \\beta, t_0 + \\beta]$ with $y(t) = y_0 + \\int_{t_0}^t f(s, y(s))\\,ds$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "delayed-euler",
+    "name": "Delayed Euler approximation",
+    "slogan": "Build delayed Euler approximations, extract a uniform limit by Arzelà-Ascoli, and pass to the limit in the integral equation by dominated convergence.",
+    "scope": "The interval $[t_0, t_0 + \\beta]$; the left side follows by reversing time, and the two solutions join at $t_0$. No uniqueness is claimed.",
+    "mechanisms": [
+     "m:approximation",
+     "m:subsequence",
+     "m:dominated-convergence"
+    ],
+    "roles": [
+     {
+      "h": "h:measurable",
+      "why": "Measurability in $t$ makes the integrands of the approximations and of the limit measurable.",
+      "steps": [
+       "s:approximate",
+       "s:limit"
+      ]
+     },
+     {
+      "h": "h:continuous",
+      "why": "Continuity in $y$ makes the integrands converge pointwise to the limit integrand.",
+      "steps": [
+       "s:limit"
+      ]
+     },
+     {
+      "h": "h:bound",
+      "why": "The integrable bound keeps the approximations in the ball, makes them equicontinuous, and dominates the limit.",
+      "steps": [
+       "s:interval",
+       "s:equicont",
+       "s:limit"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:interval",
+      "slogan": "Choose a short interval on which the integral of $m$ stays below $b$.",
+      "detail": "Since $m$ is integrable, pick $\\beta \\in (0, a]$ with $\\int_{t_0}^{t_0+\\beta} m \\le b$ and $\\int_{t_0-\\beta}^{t_0} m \\le b$. The right half is treated first; reversing time $t \\mapsto 2t_0 - t$ gives the left half.",
+      "uses": []
+     },
+     {
+      "id": "s:approximate",
+      "slogan": "Define delayed approximations by the method of steps.",
+      "detail": "Set $y_k(t) = y_0$ for $t \\le t_0$ and $y_k(t) = y_0 + \\int_{t_0}^t f(s, y_k(s - 1/k))\\,ds$ on $[t_0, t_0 + \\beta]$. This defines $y_k$ interval by interval, since the integrand on each interval of length $1/k$ uses earlier values only. It is measurable, because $y_k$ is continuous and $f$ is continuous in $y$, and $|y_k - y_0| \\le b$.",
+      "uses": []
+     },
+     {
+      "id": "s:equicont",
+      "slogan": "Show that the approximations are uniformly bounded and equicontinuous.",
+      "detail": "For all $k$, $|y_k(t) - y_0| \\le b$ and $|y_k(t) - y_k(t')| \\le \\left|\\int_{t'}^t m\\right|$. Integrability of $m$ makes the right side small when $|t - t'|$ is small, uniformly in $k$. So the family is [equicontinuous](c:equicontinuity) and bounded.",
+      "uses": []
+     },
+     {
+      "id": "s:subsequence",
+      "slogan": "Extract a uniformly convergent subsequence of the approximations.",
+      "detail": "By the Arzelà-Ascoli theorem a subsequence converges uniformly on $[t_0, t_0 + \\beta]$ to a continuous $y$ with $|y - y_0| \\le b$. Then $y_k(s - 1/k) \\to y(s)$ uniformly, because $y$ is uniformly continuous.",
+      "uses": [
+       "wd:Q1477053"
+      ]
+     },
+     {
+      "id": "s:limit",
+      "slogan": "Pass to the limit in the integral equation by dominated convergence.",
+      "detail": "For each $s$, continuity in $y$ gives $f(s, y_k(s - 1/k)) \\to f(s, y(s))$, and these integrands are bounded by $m(s)$. Dominated convergence gives $y(t) = y_0 + \\int_{t_0}^t f(s, y(s))\\,ds$. So $y$ is [absolutely continuous](c:absolutely-continuous-function) and $y' = f(t, y)$ almost everywhere.",
+      "uses": [
+       "wd:Q1067156"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:interval",
+      "s:approximate"
+     ],
+     [
+      "s:approximate",
+      "s:equicont"
+     ],
+     [
+      "s:equicont",
+      "s:subsequence"
+     ],
+     [
+      "s:subsequence",
+      "s:limit"
+     ],
+     [
+      "s:approximate",
+      "s:limit"
+     ]
+    ],
+    "conclusion": "s:limit",
+    "concepts": {
+     "c:initial-value-problem": "The theorem gives a solution of the initial value problem.",
+     "c:absolutely-continuous-function": "The solution is an integral, so it is absolutely continuous.",
+     "c:equicontinuity": "Equicontinuity is the hypothesis of the Arzelà-Ascoli theorem."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The delayed-argument proof of Coddington and Levinson, Theory of Ordinary Differential Equations, chapter 2, section 1."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1614464",
+  "statement": "Let $F$ and the Cauchy data $\\varphi_0, \\dots, \\varphi_{k-1}$ be [analytic](c:analytic-function) near the initial point. Then the [partial differential equation](c:partial-differential-equation) $\\partial_t^k u = F(x, t, \\partial_x^\\alpha\\partial_t^j u)$ with $|\\alpha| + j \\le k$, $j < k$ and $\\partial_t^j u(x, 0) = \\varphi_j(x)$ has a solution analytic near that point, unique among analytic solutions.",
+  "hypotheses": [
+   {
+    "id": "h:equation",
+    "text": "The function $F$ is [analytic](c:analytic-function) near the initial values of its arguments, and the equation has the normal form with $t$-derivatives of order below $k$ on the right.",
+    "concept": "c:analytic-function"
+   },
+   {
+    "id": "h:data",
+    "text": "The Cauchy data $\\varphi_0, \\dots, \\varphi_{k-1}$ on $\\{t = 0\\}$ are analytic.",
+    "concept": null
+   }
+  ],
+  "conclusion": "A solution analytic near the initial point exists, and any two analytic solutions agree near it.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "majorants",
+    "name": "Method of majorants",
+    "slogan": "Reduce to a first-order system, fix the Taylor coefficients by recursion, and prove that the formal series converges by comparison with an explicit majorant.",
+    "scope": "An outline of the published proof, which rests on the cited work for the reduction and the explicit majorant solution. The solution is analytic and local; only analytic uniqueness is claimed.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:generating-function",
+     "m:analytic-continuation"
+    ],
+    "roles": [
+     {
+      "h": "h:equation",
+      "why": "Analytic coefficients give a recursion with a convergent majorant series.",
+      "steps": [
+       "s:reduce",
+       "s:formal",
+       "s:majorant"
+      ]
+     },
+     {
+      "h": "h:data",
+      "why": "Analytic data become zero data after subtraction and start the recursion.",
+      "steps": [
+       "s:reduce",
+       "s:formal"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:reduce",
+      "slogan": "Reduce the problem to a first-order system with zero data.",
+      "detail": "Introduce the lower derivatives $\\partial_x^\\alpha\\partial_t^j u$ as new unknowns, differentiate the equation once if $F$ is nonlinear in the highest derivatives, subtract the data and add $t$ as an unknown. This gives a first-order quasilinear system $v_t = \\sum_i B_i(v)\\,v_{x_i} + c(v)$ with $v(x, 0) = 0$ and analytic $B_i$, $c$.",
+      "uses": []
+     },
+     {
+      "id": "s:formal",
+      "slogan": "Determine the Taylor coefficients of a solution by recursion.",
+      "detail": "Differentiating the system expresses each $\\partial_x^\\alpha\\partial_t^m v(0,0)$ as a polynomial with nonnegative integer coefficients in the Taylor coefficients of $B_i$, $c$ and in lower derivatives of $v$. Since $v = 0$ at $t = 0$, the recursion starts. So there is one formal [power series](c:power-series), and at most one analytic solution.",
+      "uses": []
+     },
+     {
+      "id": "s:majorant",
+      "slogan": "Compare with a majorant problem that has larger coefficients.",
+      "detail": "Choose analytic $\\hat B_i$, $\\hat c$ whose Taylor coefficients are at least the absolute values of those of $B_i$, $c$. The recursion for the majorant problem has the same polynomials, which have nonnegative coefficients, so its coefficients dominate those of $v$ in absolute value.",
+      "uses": []
+     },
+     {
+      "id": "s:solve",
+      "slogan": "Solve the majorant problem explicitly.",
+      "detail": "Take the majorant coefficients from a simple rational function of $x_1 + \\dots + x_n$ and the unknown, and seek a solution that depends on $x$ only through $x_1 + \\dots + x_n$. This reduces the majorant problem to a scalar equation with an explicit solution, analytic near $0$.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Conclude that the formal series converges and solves the system.",
+      "detail": "The Taylor series of the explicit majorant solution converges near $0$, so by comparison the formal series of $v$ converges near $0$ and defines an [analytic](c:analytic-function) function. The system holds as an identity of convergent power series, so $v$ is a solution; uniqueness is step 2.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:reduce",
+      "s:formal"
+     ],
+     [
+      "s:formal",
+      "s:majorant"
+     ],
+     [
+      "s:majorant",
+      "s:solve"
+     ],
+     [
+      "s:solve",
+      "s:conclude"
+     ],
+     [
+      "s:formal",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:analytic-function": "Analyticity of data and solution is the setting and the output of the theorem.",
+     "c:partial-differential-equation": "The theorem solves this equation locally as a Cauchy problem.",
+     "c:power-series": "The solution is built as a power series whose convergence is the main point."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "L. C. Evans, Partial Differential Equations, 2nd edition, Graduate Studies in Mathematics 19, American Mathematical Society, 2010, section 4.6 (Cauchy-Kovalevskaya theorem)",
+     "note": "Evans reduces to a first-order system with zero data, determines the series by recursion and proves convergence with a majorant that is solved explicitly."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:15914",
+  "statement": "Let $S$ be a consistent, recursively axiomatized [formal system](c:formal-system) that contains Robinson arithmetic. Then some number $L$ has the property that $S$ proves no sentence $K(x) > L$, where $K$ is [Kolmogorov complexity](c:kolmogorov-complexity) and $x$ is a string.",
+  "hypotheses": [
+   {
+    "id": "h:effective",
+    "text": "The system $S$ is recursively axiomatized, so its theorems form a [recursively enumerable set](c:recursively-enumerable-set).",
+    "concept": "c:recursively-enumerable-set"
+   },
+   {
+    "id": "h:consistent",
+    "text": "The system $S$ is a [consistent theory](c:consistent-theory).",
+    "concept": "c:consistent-theory"
+   },
+   {
+    "id": "h:arithmetic",
+    "text": "The system $S$ contains Robinson arithmetic, so it proves every true statement 'the machine $U$ on program $p$ halts with output $x$'.",
+    "concept": null
+   }
+  ],
+  "conclusion": "For some $L$ and every string $x$, the system $S$ does not prove $K(x) > L$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "berry-paradox",
+    "name": "Berry paradox with a proof search",
+    "slogan": "A short program searches the proofs of $S$ for a claim of high complexity and outputs the string it finds, so that string has low complexity.",
+    "scope": "The whole theorem, for the fixed universal machine $U$ that defines $K$. The constant $L$ depends on $S$ through the length $c$ of the search routine.",
+    "mechanisms": [
+     "m:encoding",
+     "m:contradiction"
+    ],
+    "roles": [
+     {
+      "h": "h:effective",
+      "why": "Recursive axiomatization lets a program list the theorems of $S$.",
+      "steps": [
+       "s:search"
+      ]
+     },
+     {
+      "h": "h:arithmetic",
+      "why": "Proving every true halting statement lets $S$ prove the upper bound on $K(x_0)$.",
+      "steps": [
+       "s:upper"
+      ]
+     },
+     {
+      "h": "h:consistent",
+      "why": "Consistency is contradicted by a proof of both $K(x_0) > L$ and $K(x_0) < L$.",
+      "steps": [
+       "s:contradict"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:search",
+      "slogan": "Define a program $Q_N$ that searches the proofs of $S$.",
+      "detail": "For a number $N$, let $Q_N$ list the theorems of $S$, which is possible because they form a [recursively enumerable set](c:recursively-enumerable-set). It halts at the first theorem of the form $K(x) > N$ and outputs $x$.",
+      "uses": []
+     },
+     {
+      "id": "s:length",
+      "slogan": "Bound the length of $Q_N$ in terms of $N$.",
+      "detail": "The program $Q_N$ consists of a fixed search routine and the number $N$ in a self-delimiting binary code. So $|Q_N| \\le c + 2\\log_2 N$ for a constant $c$ that does not depend on $N$.",
+      "uses": []
+     },
+     {
+      "id": "s:choose",
+      "slogan": "Choose $L$ with $L > c + 2\\log_2 L$.",
+      "detail": "Since $\\log_2 L$ grows more slowly than $L$, such an $L$ exists. Fix it. The rest of the proof shows that $S$ proves no sentence $K(x) > L$.",
+      "uses": []
+     },
+     {
+      "id": "s:halts",
+      "slogan": "Assume a proof exists and show that the search halts.",
+      "detail": "Suppose that $S$ proves $K(x) > L$ for some string $x$. Then the search of $Q_L$ reaches a theorem $K(x_0) > L$ and halts with output $x_0$, so $U(Q_L) = x_0$.",
+      "uses": []
+     },
+     {
+      "id": "s:upper",
+      "slogan": "Show that $S$ also proves $K(x_0) < L$.",
+      "detail": "Now $K(x_0) \\le |Q_L| \\le c + 2\\log_2 L < L$ by the choice of $L$. The statement $U(Q_L) = x_0$ is true, so $S$ proves it, and $S$ proves $K(x_0) < L$ from it.",
+      "uses": []
+     },
+     {
+      "id": "s:contradict",
+      "slogan": "Derive that $S$ is inconsistent.",
+      "detail": "The system $S$ proves both $K(x_0) > L$ and $K(x_0) < L$, so it proves a contradiction. This contradicts [consistency](c:consistent-theory), so no sentence $K(x) > L$ is provable.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:search",
+      "s:length"
+     ],
+     [
+      "s:search",
+      "s:halts"
+     ],
+     [
+      "s:length",
+      "s:choose"
+     ],
+     [
+      "s:choose",
+      "s:halts"
+     ],
+     [
+      "s:halts",
+      "s:upper"
+     ],
+     [
+      "s:length",
+      "s:upper"
+     ],
+     [
+      "s:choose",
+      "s:upper"
+     ],
+     [
+      "s:upper",
+      "s:contradict"
+     ],
+     [
+      "s:halts",
+      "s:contradict"
+     ]
+    ],
+    "conclusion": "s:contradict",
+    "concepts": {
+     "c:formal-system": "The theorem bounds what a formal system can prove.",
+     "c:kolmogorov-complexity": "The unprovable claims say that a string has high complexity.",
+     "c:recursively-enumerable-set": "The theorems of $S$ can be listed by a program.",
+     "c:consistent-theory": "Consistency is what the final contradiction refutes."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The Berry-paradox proof of G. J. Chaitin, Information-theoretic limitations of formal systems, Journal of the ACM 21 (1974), 403-424; see also Li and Vitanyi, An Introduction to Kolmogorov Complexity and Its Applications."
+    }
+   }
+  ]
+ }
+]

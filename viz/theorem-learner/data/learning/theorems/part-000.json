@@ -1,0 +1,2074 @@
+[
+ {
+  "id": "wd:Q670235",
+  "statement": "Every integer $n > 1$ is a product of [prime numbers](c:prime-number), and this [prime factorization](c:prime-factorization) is unique up to the order of the factors: two products of primes that equal $n$ contain the same primes with the same multiplicities.",
+  "hypotheses": [
+   {
+    "id": "h:greater-than-one",
+    "text": "The integer $n$ satisfies $n > 1$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "There are primes $p_1, \\dots, p_r$ with $n = p_1 \\cdots p_r$, and any primes $q_1, \\dots, q_s$ with $n = q_1 \\cdots q_s$ are the same list after reordering.",
+  "formal": {
+   "decl": "Nat.primeFactorsList_unique",
+   "difference": "The declaration states only uniqueness, for every natural number $n$: a list of primes with product $n$ is a permutation of the canonical list Nat.primeFactorsList n. Existence is the separate declaration Nat.prod_primeFactorsList."
+  },
+  "proofs": [
+   {
+    "id": "least-factor-cancel",
+    "name": "Least prime factors and cancellation",
+    "slogan": "Build a canonical factorization from least prime factors, then match any other factorization with it by Euclid's lemma and cancellation.",
+    "scope": "The whole theorem; for $n = 1$ both lists are empty, which is the convention for the empty product. Step 3 proves Euclid's lemma from Bézout's identity.",
+    "mechanisms": [
+     "m:well-ordering",
+     "m:strong-induction",
+     "m:euclidean-algorithm"
+    ],
+    "roles": [
+     {
+      "h": "h:greater-than-one",
+      "why": "Because $n > 1$, the number $n$ has a divisor greater than $1$, so a least one exists and the factorization starts.",
+      "steps": [
+       "s:least",
+       "s:exist"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:least",
+      "slogan": "Show that the least divisor $p > 1$ of $n$ is a [prime number](c:prime-number).",
+      "detail": "The set of divisors of $n$ greater than $1$ contains $n$, so it has a least element $p$. A divisor $d$ of $p$ with $1 < d < p$ would also [divide](c:divisibility) $n$ and be smaller than $p$. So $p$ is prime.",
+      "uses": []
+     },
+     {
+      "id": "s:exist",
+      "slogan": "Split off the least prime factor and factor the cofactor by strong induction.",
+      "detail": "Write $n = pm$ with $p$ from step 1. If $m = 1$, then $n = p$; if $m > 1$, then $m < n$, so $m$ is a product of primes by induction, and so is $n$. This gives the canonical list of least prime factors.",
+      "uses": [
+       "nm:principle-of-mathematical-induction"
+      ]
+     },
+     {
+      "id": "s:euclid",
+      "slogan": "Derive Euclid's lemma from Bézout's identity: a prime dividing $ab$ divides $a$ or $b$.",
+      "detail": "Let the prime $p$ divide $ab$ but not $a$. Then the [greatest common divisor](c:greatest-common-divisor) of $p$ and $a$ is $1$, so Bézout's identity gives integers $x, y$ with $px + ay = 1$. Then $b = pbx + aby$ is divisible by $p$.",
+      "uses": [
+       "wd:Q513028"
+      ]
+     },
+     {
+      "id": "s:match",
+      "slogan": "Match each prime of another factorization with a canonical prime and cancel it.",
+      "detail": "Let $q_1 \\cdots q_s = n$ with all $q_j$ prime, and let $p_1 \\cdots p_r$ be the list of step 2. By step 3 and induction on $r$, $q_1$ divides some $p_i$, so $q_1 = p_i$. Cancel both and induct on $s$; the empty product $1$ has no prime divisor, so the lists end together.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:least",
+      "s:exist"
+     ],
+     [
+      "s:exist",
+      "s:match"
+     ],
+     [
+      "s:euclid",
+      "s:match"
+     ]
+    ],
+    "conclusion": "s:match",
+    "concepts": {
+     "c:prime-number": "The factors are primes, which cannot be split further.",
+     "c:prime-factorization": "The theorem asserts that this factorization exists and is unique.",
+     "c:divisibility": "Divisibility drives both the least-divisor step and the cancellation.",
+     "c:greatest-common-divisor": "A greatest common divisor $1$ lets Bézout's identity prove Euclid's lemma."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Nat.primeFactorsList_unique",
+     "follows": true,
+     "note": "mathlib compares the list with the canonical list Nat.primeFactorsList n of least prime factors (Nat.prod_primeFactorsList) by List.perm_of_prod_eq_prod, which cancels a common prime; Nat.prime_iff supplies Euclid's lemma."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:gibbs-inequality",
+  "statement": "Let $p = (p_1, \\dots, p_n)$ and $q = (q_1, \\dots, q_n)$ be [probability distributions](c:probability-distribution) with $q_i > 0$ whenever $p_i > 0$. Then the [Kullback–Leibler divergence](c:kullback-leibler-divergence) $D(p \\,\\|\\, q) = \\sum_{p_i > 0} p_i \\log(p_i/q_i)$ is nonnegative, and it is $0$ only when $p = q$.",
+  "hypotheses": [
+   {
+    "id": "h:distributions",
+    "text": "The vectors $p$ and $q$ are [probability distributions](c:probability-distribution) on $\\{1, \\dots, n\\}$: nonnegative entries with sum $1$.",
+    "concept": "c:probability-distribution"
+   },
+   {
+    "id": "h:support",
+    "text": "Every $i$ with $p_i > 0$ has $q_i > 0$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "$\\sum_{p_i > 0} p_i \\log(p_i/q_i) \\ge 0$, with equality if and only if $p = q$.",
+  "formal": {
+   "decl": "InformationTheory.integral_llr_add_sub_measure_univ_nonneg",
+   "difference": "The declaration works with finite measures $\\mu \\ll \\nu$ and an integrable log-likelihood ratio and proves $\\int \\log\\frac{d\\mu}{d\\nu}\\,d\\mu + \\nu(X) - \\mu(X) \\ge 0$, which is $D \\ge 0$ for probability measures. It does not state the equality case."
+  },
+  "proofs": [
+   {
+    "id": "kl-function",
+    "name": "Pointwise convex function",
+    "slogan": "Write the divergence as a weighted sum of values of $\\phi(x) = x \\log x + 1 - x$, which is nonnegative with its only zero at $1$.",
+    "scope": "The whole theorem, with the equality case. Terms with $p_i = 0$ contribute $0$ by the convention $0 \\log 0 = 0$.",
+    "mechanisms": [
+     "m:convexity"
+    ],
+    "roles": [
+     {
+      "h": "h:distributions",
+      "why": "The sums $\\sum p_i = \\sum q_i = 1$ cancel the linear terms of $\\phi$ and force $p = q$ in the equality case.",
+      "steps": [
+       "s:rewrite",
+       "s:sum"
+      ]
+     },
+     {
+      "h": "h:support",
+      "why": "Every $i$ with $p_i > 0$ lies in $S = \\{i : q_i > 0\\}$, so the ratios $p_i/q_i$ are defined.",
+      "steps": [
+       "s:rewrite"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:phi",
+      "slogan": "Show that the [convex function](c:convex-function) $\\phi$ has its strict minimum $0$ at $1$.",
+      "detail": "Let $\\phi(x) = x \\log x + 1 - x$ on $[0, \\infty)$, with $\\phi(0) = 1$. Its derivative is $\\log x$ and its second derivative $1/x > 0$, so $\\phi$ is strictly convex with $\\phi'(1) = 0$. Hence $\\phi \\ge \\phi(1) = 0$, with equality only at $x = 1$.",
+      "uses": []
+     },
+     {
+      "id": "s:rewrite",
+      "slogan": "Rewrite the divergence as a sum of terms $q_i \\phi(p_i/q_i)$ with $q_i > 0$.",
+      "detail": "Let $S = \\{i : q_i > 0\\}$; it contains every $i$ with $p_i > 0$. Then $\\sum_{i \\in S} q_i \\phi(p_i/q_i) = \\sum_{p_i > 0} p_i \\log(p_i/q_i) + \\sum_{i \\in S} q_i - \\sum_{i \\in S} p_i$, and both last sums equal $1$.",
+      "uses": []
+     },
+     {
+      "id": "s:sum",
+      "slogan": "Add the nonnegative terms and find when their sum vanishes.",
+      "detail": "By step 1 each term $q_i \\phi(p_i/q_i)$ is at least $0$, so $D(p \\,\\|\\, q) \\ge 0$. If $D = 0$, every term vanishes, so $p_i = q_i$ on $S$, and $\\sum_{i \\notin S} p_i = 0$ gives $p = q$. Conversely $p = q$ makes every logarithm $0$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:phi",
+      "s:sum"
+     ],
+     [
+      "s:rewrite",
+      "s:sum"
+     ]
+    ],
+    "conclusion": "s:sum",
+    "concepts": {
+     "c:probability-distribution": "Both distributions sum to one, which cancels the linear terms of $\\phi$.",
+     "c:kullback-leibler-divergence": "The divergence is the quantity shown to be nonnegative.",
+     "c:convex-function": "Strict convexity of $\\phi$ gives nonnegativity and the equality case."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "InformationTheory.integral_llr_add_sub_measure_univ_nonneg",
+     "follows": true,
+     "note": "mathlib rewrites the integral as the integral of klFun of the Radon-Nikodym derivative (integral_klFun_rnDeriv) and applies klFun_nonneg, which follows from convexOn_klFun and its zero derivative at 1."
+    }
+   },
+   {
+    "id": "jensen",
+    "name": "Jensen's inequality for the logarithm",
+    "slogan": "Apply Jensen's inequality to the concave logarithm with weights $p_i$ to bound $-D(p \\,\\|\\, q)$ by $\\log \\sum q_i \\le 0$.",
+    "scope": "The whole theorem; the equality case uses the strict form of Jensen's inequality.",
+    "mechanisms": [
+     "m:convexity"
+    ],
+    "roles": [
+     {
+      "h": "h:distributions",
+      "why": "The weights $p_i$ sum to $1$, and $\\sum q_i \\le 1$ bounds the [logarithm](c:logarithm) by $0$.",
+      "steps": [
+       "s:jensen",
+       "s:bound"
+      ]
+     },
+     {
+      "h": "h:support",
+      "why": "The ratios $q_i/p_i$ are positive where $p_i > 0$, so their logarithms are finite.",
+      "steps": [
+       "s:negate"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:negate",
+      "slogan": "Write $-D(p \\,\\|\\, q)$ as the $p$-weighted mean of $\\log(q_i/p_i)$ over $P = \\{i : p_i > 0\\}$.",
+      "detail": "By definition $-D(p \\,\\|\\, q) = \\sum_{i \\in P} p_i \\log(q_i/p_i)$. Each $q_i/p_i$ with $i \\in P$ is positive by the support hypothesis, so each term is finite.",
+      "uses": []
+     },
+     {
+      "id": "s:jensen",
+      "slogan": "Move the mean inside the concave [logarithm](c:logarithm) by Jensen's inequality.",
+      "detail": "The logarithm is strictly concave and the weights $p_i$, $i \\in P$, sum to $1$. Jensen's inequality gives $\\sum_{i \\in P} p_i \\log(q_i/p_i) \\le \\log \\sum_{i \\in P} q_i$, with equality only when $q_i/p_i$ is constant on $P$.",
+      "uses": [
+       "nm:jensen-s-inequality",
+       "nm:strict-jensen-inequality"
+      ]
+     },
+     {
+      "id": "s:bound",
+      "slogan": "Bound the logarithm of the partial sum of $q$ by $\\log 1 = 0$.",
+      "detail": "Since $\\sum_{i \\in P} q_i \\le 1$, the logarithm is at most $0$, so $D(p \\,\\|\\, q) \\ge 0$. Equality forces $q_i = c\\,p_i$ on $P$ and $\\sum_{i \\in P} q_i = 1$, so $c = 1$ and $q$ vanishes off $P$; hence $p = q$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:negate",
+      "s:jensen"
+     ],
+     [
+      "s:jensen",
+      "s:bound"
+     ]
+    ],
+    "conclusion": "s:bound",
+    "concepts": {
+     "c:probability-distribution": "The entries of $p$ serve as the weights of the mean.",
+     "c:kullback-leibler-divergence": "Its negative is the mean that Jensen's inequality bounds.",
+     "c:logarithm": "Concavity of the logarithm drives the Jensen step."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The classical proof by Jensen's inequality, as in Cover and Thomas, Elements of Information Theory, theorem 2.6.3 (information inequality)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1068976",
+  "statement": "Let $K$ be an [algebraically closed field](c:algebraically-closed-field) and $I$ an [ideal](c:ideal) of the [polynomial ring](c:polynomial-ring) $K[x_1, \\dots, x_n]$. A polynomial $f$ vanishes at every common zero of $I$ in $K^n$ if and only if $f^m \\in I$ for some $m \\ge 1$. In other words, $I(V(I))$ equals the [radical](c:radical-ideal) $\\sqrt{I}$.",
+  "hypotheses": [
+   {
+    "id": "h:closed",
+    "text": "The field $K$ is [algebraically closed](c:algebraically-closed-field).",
+    "concept": "c:algebraically-closed-field"
+   },
+   {
+    "id": "h:finite",
+    "text": "The [polynomial ring](c:polynomial-ring) has finitely many variables $x_1, \\dots, x_n$.",
+    "concept": "c:polynomial-ring"
+   }
+  ],
+  "conclusion": "$I(V(I)) = \\sqrt{I}$, where $V(I) \\subseteq K^n$ is the set of common zeros of $I$ and $I(V(I))$ is the ideal of polynomials that vanish on it.",
+  "formal": {
+   "decl": "MvPolynomial.vanishingIdeal_zeroLocus_eq_radical",
+   "difference": "The declaration is more general: the coefficients lie in any subfield $k$ of the algebraically closed field $K$, the variables are indexed by a finite type, and the zeros are taken in $K^\\sigma$. With $k = K$ it is this statement."
+  },
+  "proofs": [
+   {
+    "id": "jacobson",
+    "name": "Maximal ideals are points",
+    "slogan": "Identify every maximal ideal with the ideal of a point, and write the radical as the intersection of the maximal ideals that contain $I$.",
+    "scope": "The whole theorem. Steps 2 and 4 rest on Zariski's lemma, which follows from the Artin–Tate lemma or from Noether normalization.",
+    "mechanisms": [
+     "m:quotient-construction",
+     "m:field-extension-degree"
+    ],
+    "roles": [
+     {
+      "h": "h:closed",
+      "why": "An algebraic extension of the algebraically closed field $K$ is $K$ itself, so each residue field is $K$.",
+      "steps": [
+       "s:point"
+      ]
+     },
+     {
+      "h": "h:finite",
+      "why": "With finitely many variables each quotient is a finitely generated algebra, as Zariski's lemma needs.",
+      "steps": [
+       "s:zariski",
+       "s:jacobson"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:easy",
+      "slogan": "Show $\\sqrt{I} \\subseteq I(V(I))$ by evaluating powers at common zeros.",
+      "detail": "If $f^m \\in I$ and $a \\in V(I)$, then $f(a)^m = 0$. A field has no nonzero [nilpotent elements](c:nilpotent-element), so $f(a) = 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:zariski",
+      "slogan": "Show that each residue field of the polynomial ring is a finite extension of $K$.",
+      "detail": "Let $L$ be a field that is a finitely generated $K$-algebra, for example $K[x]/\\mathfrak{m}$ for a [maximal ideal](c:maximal-ideal) $\\mathfrak{m}$. Zariski's lemma, a consequence of the Artin–Tate lemma, says that $L$ is a finite [field extension](c:field-extension) of $K$.",
+      "uses": [
+       "nl:24008",
+       "nm:noether-normalization-lemma"
+      ]
+     },
+     {
+      "id": "s:point",
+      "slogan": "Identify each maximal ideal $\\mathfrak{m}$ with the ideal of a point $a \\in K^n$.",
+      "detail": "By step 2, $K[x]/\\mathfrak{m}$ is algebraic over $K$, so it equals $K$ because $K$ is algebraically closed. Let $a_i \\in K$ be the image of $x_i$; then $\\mathfrak{m}$ contains the maximal ideal $(x_1 - a_1, \\dots, x_n - a_n)$ of polynomials vanishing at $a$, so the two are equal.",
+      "uses": []
+     },
+     {
+      "id": "s:jacobson",
+      "slogan": "Write $\\sqrt{I}$ as the intersection of the maximal ideals that contain $I$.",
+      "detail": "For a prime $P$ and $g \\notin P$, a maximal ideal of $(K[x]/P)[1/g]$ has a residue field finite over $K$ by step 2, so its preimage is a maximal ideal containing $P$ but not $g$. So every prime, and hence $\\sqrt{I}$, is an intersection of maximal ideals: $K[x]$ is a [Jacobson ring](c:is-jacobson-ring).",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Show that a polynomial vanishing on $V(I)$ lies in every maximal ideal containing $I$.",
+      "detail": "Let $f \\in I(V(I))$ and $\\mathfrak{m} \\supseteq I$ maximal. By step 3, $\\mathfrak{m}$ is the ideal of a point $a$, and $a \\in V(I)$ because $I \\subseteq \\mathfrak{m}$; so $f(a) = 0$ and $f \\in \\mathfrak{m}$. Step 4 gives $f \\in \\sqrt{I}$, and step 1 gives the other inclusion.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:zariski",
+      "s:point"
+     ],
+     [
+      "s:zariski",
+      "s:jacobson"
+     ],
+     [
+      "s:point",
+      "s:conclude"
+     ],
+     [
+      "s:jacobson",
+      "s:conclude"
+     ],
+     [
+      "s:easy",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:algebraically-closed-field": "Algebraic closedness makes every residue field equal to $K$.",
+     "c:ideal": "The theorem describes the polynomials that vanish on the zeros of $I$.",
+     "c:polynomial-ring": "The polynomial ring is where both ideals of the identity live.",
+     "c:radical-ideal": "The radical is the algebraic answer to the geometric question.",
+     "c:nilpotent-element": "Fields have no nilpotents, so a vanishing power forces vanishing.",
+     "c:maximal-ideal": "Maximal ideals correspond to the points of $K^n$.",
+     "c:field-extension": "Zariski's lemma makes residue fields finite extensions of $K$.",
+     "c:is-jacobson-ring": "The Jacobson property turns the radical into an intersection of maximal ideals."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "MvPolynomial.vanishingIdeal_zeroLocus_eq_radical",
+     "follows": true,
+     "note": "mathlib rewrites the radical as the Jacobson radical (Ideal.radical_eq_jacobson, MvPolynomial over a field is a Jacobson ring) and identifies each maximal ideal with the vanishing ideal of a point (eq_vanishingIdeal_singleton_of_isMaximal, by integrality of the quotient and IsAlgClosed.lift)."
+    }
+   },
+   {
+    "id": "rabinowitsch",
+    "name": "Rabinowitsch trick",
+    "slogan": "Derive the strong form from the weak Nullstellensatz by adding a variable $y$ and the relation $1 - yf$.",
+    "scope": "The whole theorem; the case $f = 0$ is trivial. Step 1 rests on Zariski's lemma.",
+    "mechanisms": [
+     "m:field-extension-degree",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:closed",
+      "why": "It gives every proper ideal a common zero in step 1.",
+      "steps": [
+       "s:weak"
+      ]
+     },
+     {
+      "h": "h:finite",
+      "why": "With finitely many variables, $K[x, y]$ is again a polynomial ring in finitely many variables, so step 1 applies to it.",
+      "steps": [
+       "s:weak",
+       "s:extra"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:weak",
+      "slogan": "Prove the weak Nullstellensatz: every proper ideal has a common zero.",
+      "detail": "A proper ideal $J$ lies in a [maximal ideal](c:maximal-ideal) $\\mathfrak{m}$. By Zariski's lemma, $K[x]/\\mathfrak{m}$ is a finite extension of $K$, so it equals $K$. The images $a_i$ of the variables give a point $a$ at which every element of $J$ vanishes.",
+      "uses": [
+       "nl:24008"
+      ]
+     },
+     {
+      "id": "s:easy",
+      "slogan": "Show $\\sqrt{I} \\subseteq I(V(I))$ by evaluating powers at common zeros.",
+      "detail": "If $f^m \\in I$ and $a \\in V(I)$, then $f(a)^m = 0$. A field has no nonzero [nilpotent elements](c:nilpotent-element), so $f(a) = 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:extra",
+      "slogan": "Add a variable $y$ and show that $I + (1 - yf)$ has no common zero.",
+      "detail": "Let $f \\in I(V(I))$ and $J = I + (1 - yf)$ in $K[x_1, \\dots, x_n, y]$. At a common zero $(a, b)$ of $J$ we have $a \\in V(I)$, so $f(a) = 0$ and $1 - b f(a) = 1 \\ne 0$. So $J$ has no zero, and step 1 gives $1 \\in J$.",
+      "uses": []
+     },
+     {
+      "id": "s:substitute",
+      "slogan": "Substitute $y = 1/f$ and clear denominators to get $f^m \\in I$.",
+      "detail": "Write $1 = \\sum_i g_i(x, y) h_i(x) + g_0(x, y)(1 - yf)$ with $h_i \\in I$. Put $y = 1/f$ in the field of rational functions and multiply by $f^m$, where $m$ bounds the $y$-degrees of the $g_i$. This gives $f^m = \\sum_i \\tilde g_i(x) h_i(x) \\in I$.",
+      "uses": []
+     },
+     {
+      "id": "s:equal",
+      "slogan": "Combine the two inclusions into $I(V(I)) = \\sqrt{I}$.",
+      "detail": "Steps 3 and 4 show that every $f \\in I(V(I))$ has a power in $I$, so $I(V(I)) \\subseteq \\sqrt{I}$. Step 2 gives the reverse inclusion.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:weak",
+      "s:extra"
+     ],
+     [
+      "s:extra",
+      "s:substitute"
+     ],
+     [
+      "s:substitute",
+      "s:equal"
+     ],
+     [
+      "s:easy",
+      "s:equal"
+     ]
+    ],
+    "conclusion": "s:equal",
+    "concepts": {
+     "c:algebraically-closed-field": "Algebraic closedness makes every residue field equal to $K$.",
+     "c:ideal": "The theorem describes the polynomials that vanish on the zeros of $I$.",
+     "c:polynomial-ring": "The polynomial ring is where both ideals of the identity live.",
+     "c:radical-ideal": "The radical is the algebraic answer to the geometric question.",
+     "c:nilpotent-element": "Fields have no nilpotents, so a vanishing power forces vanishing.",
+     "c:maximal-ideal": "A maximal ideal above a proper ideal supplies the common zero."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Rabinowitsch's trick (1930), as in Cox, Little and O'Shea, Ideals, Varieties, and Algorithms, chapter 4, section 1."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:18096",
+  "statement": "Let $(X, \\mu)$ be a [measure space](c:measure-space) and let $p, q > 1$ be [Hölder conjugate exponents](c:holder-conjugate-exponents), $1/p + 1/q = 1$. For measurable $f, g\\colon X \\to [0, \\infty)$, $\\int fg\\,d\\mu \\le \\left(\\int f^p\\,d\\mu\\right)^{1/p} \\left(\\int g^q\\,d\\mu\\right)^{1/q}$, where the [Lebesgue integrals](c:lebesgue-integral) take values in $[0, \\infty]$.",
+  "hypotheses": [
+   {
+    "id": "h:conjugate",
+    "text": "The exponents satisfy $p, q > 1$ and $1/p + 1/q = 1$.",
+    "concept": "c:holder-conjugate-exponents"
+   },
+   {
+    "id": "h:measurable",
+    "text": "The functions $f, g\\colon X \\to [0, \\infty)$ are measurable.",
+    "concept": null
+   }
+  ],
+  "conclusion": "$\\int fg\\,d\\mu \\le \\|f\\|_p \\|g\\|_q$, the product of the [Lp](c:lp-space) norms of $f$ and $g$.",
+  "formal": {
+   "decl": "NNReal.lintegral_mul_le_Lp_mul_Lq",
+   "difference": "The declaration asks only that $f$ and $g$ are almost everywhere measurable; otherwise it states the same inequality for lower Lebesgue integrals."
+  },
+  "proofs": [
+   {
+    "id": "young",
+    "name": "Normalize and integrate Young's inequality",
+    "slogan": "Normalize both functions to unit norm, apply Young's inequality at each point, and integrate.",
+    "scope": "The whole theorem. Zero and infinite norms are handled first; the main case has $0 < \\|f\\|_p, \\|g\\|_q < \\infty$.",
+    "mechanisms": [
+     "m:convexity",
+     "m:case-analysis"
+    ],
+    "roles": [
+     {
+      "h": "h:conjugate",
+      "why": "The relation $1/p + 1/q = 1$ makes Young's inequality hold and the integrated bound equal to $1$.",
+      "steps": [
+       "s:young",
+       "s:integrate"
+      ]
+     },
+     {
+      "h": "h:measurable",
+      "why": "Measurability makes the integrals defined, and a zero integral of $f^p$ forces $f = 0$ almost everywhere.",
+      "steps": [
+       "s:degenerate",
+       "s:integrate"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:degenerate",
+      "slogan": "Dispose of the cases where a norm is zero or infinite.",
+      "detail": "Let $A = (\\int f^p)^{1/p}$ and $B = (\\int g^q)^{1/q}$. If $A = 0$, then $f = 0$ almost everywhere, so the left side is $0$; the case $B = 0$ is the same. If both are nonzero and one is infinite, the right side is $\\infty$.",
+      "uses": []
+     },
+     {
+      "id": "s:young",
+      "slogan": "Prove Young's inequality $ab \\le a^p/p + b^q/q$ for $a, b \\ge 0$.",
+      "detail": "The case $ab = 0$ is trivial. For $a, b > 0$, concavity of the logarithm with weights $1/p$ and $1/q$ gives $\\log(a^p/p + b^q/q) \\ge \\frac{1}{p}\\log a^p + \\frac{1}{q}\\log b^q = \\log(ab)$.",
+      "uses": [
+       "nl:25104"
+      ]
+     },
+     {
+      "id": "s:normalize",
+      "slogan": "Divide $f$ by $A$ and $g$ by $B$ to get unit norms.",
+      "detail": "In the remaining case $0 < A, B < \\infty$, the functions $F = f/A$ and $G = g/B$ satisfy $\\int F^p\\,d\\mu = \\int G^q\\,d\\mu = 1$. Both sides of the inequality scale in the same way, so it suffices to show $\\int FG\\,d\\mu \\le 1$.",
+      "uses": []
+     },
+     {
+      "id": "s:integrate",
+      "slogan": "Integrate Young's inequality for $F(x)$ and $G(x)$ over $X$.",
+      "detail": "At each point $FG \\le F^p/p + G^q/q$, so the [Lebesgue integral](c:lebesgue-integral) gives $\\int FG\\,d\\mu \\le 1/p + 1/q = 1$. Multiplying by $AB$ gives $\\int fg\\,d\\mu \\le AB$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:degenerate",
+      "s:normalize"
+     ],
+     [
+      "s:normalize",
+      "s:integrate"
+     ],
+     [
+      "s:young",
+      "s:integrate"
+     ]
+    ],
+    "conclusion": "s:integrate",
+    "concepts": {
+     "c:measure-space": "The inequality holds on any measure space, finite or not.",
+     "c:holder-conjugate-exponents": "Conjugacy makes the integrated Young bound exactly one.",
+     "c:lebesgue-integral": "Monotonicity and linearity of the integral carry the pointwise bound.",
+     "c:lp-space": "The right side is the product of the two Lp norms."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "NNReal.lintegral_mul_le_Lp_mul_Lq",
+     "follows": true,
+     "note": "mathlib reduces to ENNReal.lintegral_mul_le_Lp_mul_Lq, which treats zero norms (lintegral_mul_eq_zero_of_lintegral_rpow_eq_zero) and infinite norms (lintegral_mul_le_Lp_mul_Lq_of_ne_zero_of_eq_top) first, then normalizes by the norms and integrates young_inequality (lintegral_mul_le_one_of_lintegral_rpow_eq_one)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q913849",
+  "statement": "For every real $m \\times n$ matrix $A$, the payoff matrix of a two-player [zero-sum game](c:zero-sum-game), $\\max_{x \\in \\Delta_m} \\min_{y \\in \\Delta_n} x^{\\top} A y = \\min_{y \\in \\Delta_n} \\max_{x \\in \\Delta_m} x^{\\top} A y$. Here $\\Delta_k$ is the [simplex](c:simplex) of probability vectors in $\\mathbb{R}^k$, the set of [mixed strategies](c:mixed-strategy).",
+  "hypotheses": [
+   {
+    "id": "h:finite",
+    "text": "The game has finitely many pure strategies, $m, n \\ge 1$, and a real payoff matrix $A$.",
+    "concept": null
+   },
+   {
+    "id": "h:mixed",
+    "text": "Both players use [mixed strategies](c:mixed-strategy), points of the [convex](c:convex-set) and [compact](c:compact-space) simplices $\\Delta_m$ and $\\Delta_n$.",
+    "concept": "c:mixed-strategy"
+   }
+  ],
+  "conclusion": "The max-min value $v_1$ equals the min-max value $v_2$, and both extrema are attained.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "alternative",
+    "name": "Theorem of the alternative",
+    "slogan": "Separate the origin from the convex hull of the columns and the unit vectors to show that $v_1 < v_2$ is impossible.",
+    "scope": "The whole theorem. The inequality $v_1 \\le v_2$ holds for every payoff function; the separation argument gives the reverse.",
+    "mechanisms": [
+     "m:separation",
+     "m:compactness-extremum",
+     "m:contradiction"
+    ],
+    "roles": [
+     {
+      "h": "h:finite",
+      "why": "Finitely many strategies make the payoffs finitely many linear functions on $\\mathbb{R}^m$, where separation works.",
+      "steps": [
+       "s:attain",
+       "s:alternative"
+      ]
+     },
+     {
+      "h": "h:mixed",
+      "why": "The simplices are compact for the extrema and convex, so normalized combinations are mixed strategies.",
+      "steps": [
+       "s:attain",
+       "s:alternative",
+       "s:shift"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:attain",
+      "slogan": "Show that the maxima and minima exist on the compact simplices.",
+      "detail": "The map $x \\mapsto \\min_y x^{\\top} A y = \\min_j (x^{\\top} A)_j$ is a minimum of finitely many linear functions, so it is continuous. The simplex $\\Delta_m$ is nonempty and [compact](c:compact-space), so the maximum $v_1$ exists; in the same way $v_2$ exists.",
+      "uses": [
+       "wd:Q752375"
+      ]
+     },
+     {
+      "id": "s:weak",
+      "slogan": "Prove the max-min inequality $v_1 \\le v_2$ by comparing at a common pair.",
+      "detail": "For all $x \\in \\Delta_m$ and $y \\in \\Delta_n$, $\\min_{y'} x^{\\top} A y' \\le x^{\\top} A y \\le \\max_{x'} x'^{\\top} A y$. Take the maximum over $x$ on the left and the minimum over $y$ on the right.",
+      "uses": []
+     },
+     {
+      "id": "s:alternative",
+      "slogan": "Separate the origin from the [convex hull](c:convex-hull) of the columns and the unit vectors.",
+      "detail": "Let $C$ be the convex hull of the columns of $A$ and the unit vectors $e_i$. If $0 \\in C$, normalizing the column weights gives $y \\in \\Delta_n$ with $Ay \\le 0$, so $v_2 \\le 0$. Otherwise a [separating hyperplane](c:separating-hyperplane) gives $x$ with $x \\cdot c > 0$ on $C$, so $x > 0$ and its normalization has $x^{\\top} A > 0$, so $v_1 > 0$.",
+      "uses": [
+       "nl:10213"
+      ]
+     },
+     {
+      "id": "s:shift",
+      "slogan": "Apply the alternative to the shifted matrix $A - cJ$ for each real $c$.",
+      "detail": "Let $J$ be the all-ones matrix. For probability vectors $x^{\\top} J y = 1$, so both values of $A - cJ$ are those of $A$ minus $c$. Step 3 gives, for every real $c$, either $v_2 \\le c$ or $v_1 > c$.",
+      "uses": []
+     },
+     {
+      "id": "s:equal",
+      "slogan": "Choose $c$ strictly between $v_1$ and $v_2$ to exclude $v_1 < v_2$.",
+      "detail": "If $v_1 < v_2$, the number $c = (v_1 + v_2)/2$ has $v_2 > c$ and $v_1 < c$, which contradicts step 4. So $v_1 \\ge v_2$, and step 2 gives $v_1 = v_2$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:attain",
+      "s:weak"
+     ],
+     [
+      "s:attain",
+      "s:alternative"
+     ],
+     [
+      "s:alternative",
+      "s:shift"
+     ],
+     [
+      "s:shift",
+      "s:equal"
+     ],
+     [
+      "s:weak",
+      "s:equal"
+     ]
+    ],
+    "conclusion": "s:equal",
+    "concepts": {
+     "c:zero-sum-game": "The matrix lists one player's gain, which is the other's loss.",
+     "c:simplex": "Mixed strategies form simplices, which are compact and convex.",
+     "c:mixed-strategy": "Mixing pure strategies makes the payoff bilinear on convex sets.",
+     "c:convex-set": "Convexity keeps normalized combinations inside the strategy sets.",
+     "c:compact-space": "Compactness of the simplices makes the extrema attained.",
+     "c:convex-hull": "The hull of columns and unit vectors carries the alternative.",
+     "c:separating-hyperplane": "Separation from the origin yields a strategy with positive payoffs."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The classical proof through the theorem of the alternative for matrices, as in von Neumann and Morgenstern, Theory of Games and Economic Behavior (1944), chapter III."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1564541",
+  "statement": "Let $A$ be a real $n \\times n$ matrix, $n \\ge 1$, with all entries positive. Then its [spectral radius](c:spectral-radius) $r$ is a positive [eigenvalue](c:eigenvalue) with an [eigenvector](c:eigenvector) whose entries are all positive, $r$ is a simple root of the [characteristic polynomial](c:characteristic-polynomial), and every other complex eigenvalue $\\lambda$ satisfies $|\\lambda| < r$.",
+  "hypotheses": [
+   {
+    "id": "h:square",
+    "text": "The matrix $A$ is a real $n \\times n$ matrix with $n \\ge 1$.",
+    "concept": null
+   },
+   {
+    "id": "h:positive",
+    "text": "Every entry $a_{ij}$ of $A$ is positive, so $A$ is a strictly positive [nonnegative matrix](c:nonnegative-matrix).",
+    "concept": "c:nonnegative-matrix"
+   }
+  ],
+  "conclusion": "The number $r = \\rho(A) > 0$ is a simple eigenvalue with a positive eigenvector, and $|\\lambda| < r$ for every eigenvalue $\\lambda \\ne r$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "collatz-wielandt",
+    "name": "Collatz–Wielandt maximization",
+    "slogan": "Maximize the largest $t$ with $Ax \\ge tx$ over nonnegative vectors, show that a maximizer is a positive eigenvector, and compare every other eigenvalue with it.",
+    "scope": "The whole theorem; for $n = 1$ every step is immediate. Inequalities between vectors hold entry by entry.",
+    "mechanisms": [
+     "m:extremal-choice",
+     "m:compactness-extremum",
+     "m:triangle-inequality"
+    ],
+    "roles": [
+     {
+      "h": "h:square",
+      "why": "A square matrix has eigenvalues and a characteristic polynomial, and $n \\ge 1$ makes the simplex of nonnegative unit-sum vectors nonempty.",
+      "steps": [
+       "s:maximize"
+      ]
+     },
+     {
+      "h": "h:positive",
+      "why": "Positivity sends every nonzero nonnegative vector to a positive vector and forces the equality cases to align.",
+      "steps": [
+       "s:maximize",
+       "s:eigen",
+       "s:strict"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:maximize",
+      "slogan": "Maximize the Collatz–Wielandt ratio $t(x) = \\min_i (Ax)_i/x_i$ over nonnegative vectors.",
+      "detail": "For $x \\ge 0$, $x \\ne 0$, let $t(x)$ be the largest $t$ with $Ax \\ge tx$. Since $t(Ax) \\ge t(x)$ and $t$ is continuous on the compact set $A(\\Delta)$ of positive vectors, $t$ attains its supremum $r$ at some $x$, and $r \\ge \\min_i \\sum_j a_{ij} > 0$.",
+      "uses": [
+       "wd:Q752375"
+      ]
+     },
+     {
+      "id": "s:eigen",
+      "slogan": "Show that a maximizer $x$ is a positive [eigenvector](c:eigenvector) for $r$.",
+      "detail": "Let $w = Ax - rx \\ge 0$. If $w \\ne 0$, then $Aw > 0$, so $y = Ax$ satisfies $Ay > ry$ and $t(y) > r$, against maximality. So $Ax = rx$ and $x = Ax/r > 0$; in the same way every nonnegative $z \\ne 0$ with $Az \\ge rz$ is a positive eigenvector.",
+      "uses": []
+     },
+     {
+      "id": "s:simple",
+      "slogan": "Show that $r$ is a simple root of the [characteristic polynomial](c:characteristic-polynomial).",
+      "detail": "If a real eigenvector $w$ for $r$ is not a multiple of $x$, some $x - cw \\ge 0$ is a nonzero eigenvector with a zero entry, against step 2; so the eigenspace is a line. Steps 1 and 2 for $A^{\\top}$ give $u > 0$ with $u^{\\top} A = r u^{\\top}$, and a Jordan chain $(A - rI)w = x$ would give $0 = u^{\\top} x > 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:bound",
+      "slogan": "Bound every eigenvalue by $r$ with the triangle inequality.",
+      "detail": "If $Az = \\lambda z$ with $z \\in \\mathbb{C}^n$ nonzero, then $|\\lambda|\\,|z| = |Az| \\le A|z|$ entry by entry. So $t(|z|) \\ge |\\lambda|$, hence $|\\lambda| \\le r$, and $r$ is the [spectral radius](c:spectral-radius).",
+      "uses": [
+       "nl:15368"
+      ]
+     },
+     {
+      "id": "s:strict",
+      "slogan": "Show that an eigenvalue with $|\\lambda| = r$ equals $r$.",
+      "detail": "If $|\\lambda| = r$, step 4 gives $A|z| \\ge r|z|$, so step 2 gives $A|z| = r|z|$, and step 3 makes $|z|$ a positive multiple of $x$. Then $|\\sum_j a_{ij} z_j| = \\sum_j a_{ij} |z_j|$ with all $a_{ij} > 0$, so $z = e^{i\\theta}|z|$ for one angle $\\theta$, and $\\lambda = r$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:maximize",
+      "s:eigen"
+     ],
+     [
+      "s:eigen",
+      "s:simple"
+     ],
+     [
+      "s:maximize",
+      "s:bound"
+     ],
+     [
+      "s:bound",
+      "s:strict"
+     ],
+     [
+      "s:eigen",
+      "s:strict"
+     ],
+     [
+      "s:simple",
+      "s:strict"
+     ]
+    ],
+    "conclusion": "s:strict",
+    "concepts": {
+     "c:spectral-radius": "The largest eigenvalue modulus turns out to be the maximized ratio.",
+     "c:eigenvalue": "The theorem locates the dominant eigenvalue and isolates it.",
+     "c:eigenvector": "The maximizer is the positive Perron eigenvector.",
+     "c:characteristic-polynomial": "Simplicity concerns the multiplicity of $r$ as a root.",
+     "c:nonnegative-matrix": "Strict positivity of the entries forces strict inequalities in each step."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Wielandt's proof by the Collatz–Wielandt function, as in Horn and Johnson, Matrix Analysis, chapter 8."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q11518",
+  "statement": "In a [right triangle](c:right-triangle) with legs of lengths $a$ and $b$ and hypotenuse of length $c$, $a^2 + b^2 = c^2$.",
+  "hypotheses": [
+   {
+    "id": "h:euclidean",
+    "text": "The triangle $ABC$ lies in a [Euclidean space](c:euclidean-space), with side lengths given by the [Euclidean distance](c:euclidean-distance).",
+    "concept": "c:euclidean-space"
+   },
+   {
+    "id": "h:right",
+    "text": "The [angle](c:angle) at $C$ is a right angle, and $a = BC$, $b = CA$, $c = AB$.",
+    "concept": "c:angle"
+   }
+  ],
+  "conclusion": "$a^2 + b^2 = c^2$.",
+  "formal": {
+   "decl": "EuclideanGeometry.dist_sq_eq_dist_sq_add_dist_sq_iff_angle_eq_pi_div_two",
+   "difference": "The declaration states an equivalence, so it also gives the converse: the relation between the squared distances forces a right angle. It holds in every real inner product space, with the right angle at the middle point $p_2$."
+  },
+  "proofs": [
+   {
+    "id": "inner-product",
+    "name": "Expand the inner product",
+    "slogan": "Write the legs as vectors from the right-angle vertex and expand the squared length of their difference; the cross term vanishes.",
+    "scope": "The whole theorem, for a nondegenerate triangle in any Euclidean space.",
+    "mechanisms": [
+     "m:coordinates",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:euclidean",
+      "why": "The Euclidean distance is the norm of an [inner product](c:inner-product-space), which can be expanded.",
+      "steps": [
+       "s:vectors",
+       "s:expand"
+      ]
+     },
+     {
+      "h": "h:right",
+      "why": "A right angle at $C$ means that the two leg vectors are orthogonal.",
+      "steps": [
+       "s:orthogonal"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:vectors",
+      "slogan": "Write the legs as the vectors $u = A - C$ and $v = B - C$.",
+      "detail": "In a Euclidean space the [Euclidean distance](c:euclidean-distance) is the norm of a difference, so $b = \\|u\\|$, $a = \\|v\\|$ and $c = \\|A - B\\| = \\|u - v\\|$.",
+      "uses": []
+     },
+     {
+      "id": "s:expand",
+      "slogan": "Expand $\\|u - v\\|^2$ by bilinearity of the [inner product](c:inner-product-space).",
+      "detail": "The norm comes from the inner product, so $\\|u - v\\|^2 = \\langle u - v, u - v \\rangle = \\|u\\|^2 - 2\\langle u, v \\rangle + \\|v\\|^2$ by bilinearity and symmetry.",
+      "uses": []
+     },
+     {
+      "id": "s:orthogonal",
+      "slogan": "Translate the right angle at $C$ into $\\langle u, v \\rangle = 0$.",
+      "detail": "The angle at $C$ is $\\arccos(\\langle u, v \\rangle / (\\|u\\|\\,\\|v\\|))$, with $u, v \\ne 0$ for a triangle. It equals $\\pi/2$ exactly when $\\langle u, v \\rangle = 0$, that is, when the legs are [orthogonal](c:orthogonality).",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Drop the zero cross term to get $c^2 = a^2 + b^2$.",
+      "detail": "Substituting $\\langle u, v \\rangle = 0$ into step 2 gives $\\|u - v\\|^2 = \\|u\\|^2 + \\|v\\|^2$. By step 1 this reads $c^2 = b^2 + a^2$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:vectors",
+      "s:expand"
+     ],
+     [
+      "s:vectors",
+      "s:orthogonal"
+     ],
+     [
+      "s:expand",
+      "s:conclude"
+     ],
+     [
+      "s:orthogonal",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:right-triangle": "The theorem concerns exactly the triangles with one right angle.",
+     "c:euclidean-space": "The space supplies the inner product behind lengths and angles.",
+     "c:euclidean-distance": "Side lengths are norms of difference vectors.",
+     "c:angle": "The angle at $C$ is defined through the inner product.",
+     "c:inner-product-space": "Bilinear expansion of the inner product produces the cross term.",
+     "c:orthogonality": "Orthogonal legs make the cross term vanish."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "EuclideanGeometry.dist_sq_eq_dist_sq_add_dist_sq_iff_angle_eq_pi_div_two",
+     "follows": true,
+     "note": "mathlib rewrites distances as norms of differences (dist_eq_norm_vsub) and applies norm_sub_sq_eq_norm_sq_add_norm_sq_iff_angle_eq_pi_div_two, which expands the norm and uses inner_eq_zero_iff_angle_eq_pi_div_two."
+    }
+   },
+   {
+    "id": "similar-triangles",
+    "name": "Altitude and similar triangles",
+    "slogan": "Drop the altitude to the hypotenuse, which cuts the triangle into two triangles similar to it, and add the two ratio equations.",
+    "scope": "The whole theorem. The right angle makes the other two angles acute, so the foot of the altitude lies between $A$ and $B$.",
+    "mechanisms": [
+     "m:similarity",
+     "m:geometric-construction"
+    ],
+    "roles": [
+     {
+      "h": "h:euclidean",
+      "why": "Euclidean geometry gives the angle sum $\\pi$ and the angle-angle criterion for [similar triangles](c:similar-triangles).",
+      "steps": [
+       "s:altitude",
+       "s:similar"
+      ]
+     },
+     {
+      "h": "h:right",
+      "why": "The right angle at $C$ matches the right angles at the foot $H$ and makes the other angles acute.",
+      "steps": [
+       "s:altitude",
+       "s:similar"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:altitude",
+      "slogan": "Drop the altitude from $C$ to the hypotenuse with foot $H$.",
+      "detail": "The angles at $A$ and $B$ add up to $\\pi/2$, so both are acute. Hence $H$ lies between $A$ and $B$, and $AH + HB = c$.",
+      "uses": []
+     },
+     {
+      "id": "s:similar",
+      "slogan": "Show that the triangles $ACH$ and $CBH$ are similar to $ABC$.",
+      "detail": "Triangles $ACH$ and $ABC$ share the angle at $A$, and each has a right angle, at $H$ and at $C$. By the angle-angle criterion they are [similar](c:similar-triangles); in the same way $CBH$ and $ABC$ share the angle at $B$.",
+      "uses": []
+     },
+     {
+      "id": "s:ratios",
+      "slogan": "Equate ratios of matching sides to get $b^2 = c \\cdot AH$ and $a^2 = c \\cdot HB$.",
+      "detail": "From $ACH \\sim ABC$, $AC/AB = AH/AC$, so $b^2 = c \\cdot AH$. From $CBH \\sim ABC$, $BC/AB = HB/BC$, so $a^2 = c \\cdot HB$.",
+      "uses": []
+     },
+     {
+      "id": "s:add",
+      "slogan": "Add the two equations and use $AH + HB = c$.",
+      "detail": "Adding gives $a^2 + b^2 = c\\,(AH + HB)$, and step 1 gives $AH + HB = c$. So $a^2 + b^2 = c^2$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:altitude",
+      "s:similar"
+     ],
+     [
+      "s:similar",
+      "s:ratios"
+     ],
+     [
+      "s:ratios",
+      "s:add"
+     ],
+     [
+      "s:altitude",
+      "s:add"
+     ]
+    ],
+    "conclusion": "s:add",
+    "concepts": {
+     "c:right-triangle": "The right angle is what makes the two parts similar to the whole.",
+     "c:euclidean-space": "Euclidean geometry gives the angle sum and the similarity criteria.",
+     "c:euclidean-distance": "Side lengths are the distances whose ratios the proof compares.",
+     "c:angle": "Equal angles identify the similar triangles.",
+     "c:similar-triangles": "Similarity turns equal angles into equal side ratios."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The classical proof by the altitude and similar triangles; Euclid, Elements, book VI, proposition 8, gives the similarity of the two parts to the whole."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q467756",
+  "statement": "Let $M$ be a smooth [oriented](c:orientation-of-a-manifold) $n$-dimensional [manifold with boundary](c:manifold-with-boundary), $n \\ge 1$, with $\\partial M$ given the induced orientation, and let $\\omega$ be a smooth $(n-1)$-[form](c:differential-form) with compact support. Then the integral of the [exterior derivative](c:exterior-derivative) $d\\omega$ over $M$ equals the integral of $\\omega$ over $\\partial M$: $\\int_M d\\omega = \\int_{\\partial M} \\omega$.",
+  "hypotheses": [
+   {
+    "id": "h:manifold",
+    "text": "$M$ is a smooth $n$-dimensional [manifold with boundary](c:manifold-with-boundary) with $n \\ge 1$.",
+    "concept": "c:manifold-with-boundary"
+   },
+   {
+    "id": "h:oriented",
+    "text": "$M$ is [oriented](c:orientation-of-a-manifold), and $\\partial M$ carries the induced outward-normal-first orientation.",
+    "concept": "c:orientation-of-a-manifold"
+   },
+   {
+    "id": "h:compact-support",
+    "text": "$\\omega$ is a smooth $(n-1)$-[form](c:differential-form) on $M$ with compact support.",
+    "concept": "c:differential-form"
+   }
+  ],
+  "conclusion": "$\\int_M d\\omega = \\int_{\\partial M} \\omega$; in particular $\\int_M d\\omega = 0$ when $\\partial M = \\emptyset$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "partition-of-unity",
+    "name": "Half-space computation and partition of unity",
+    "slogan": "Prove the formula on the half-space by Fubini and the fundamental theorem of calculus, then glue the charts with a partition of unity.",
+    "scope": "The whole theorem, with $\\partial M = \\emptyset$ and $n = 1$, where $\\partial M$ is a finite set of signed points. Interior charts map to $\\mathbb{R}^n$, where step 1 gives $0$ on both sides.",
+    "mechanisms": [
+     "m:fundamental-theorem-calculus",
+     "m:fubini-swap",
+     "m:partition-of-unity",
+     "m:local-to-global"
+    ],
+    "roles": [
+     {
+      "h": "h:manifold",
+      "why": "Charts identify $M$ locally with $\\mathbb{R}^n$ or the half-space $\\mathbb{H}^n$ and carry boundary to boundary.",
+      "steps": [
+       "s:charts",
+       "s:local"
+      ]
+     },
+     {
+      "h": "h:oriented",
+      "why": "Oriented charts make the integrals defined and match the boundary orientation of $\\mathbb{H}^n$.",
+      "steps": [
+       "s:halfspace",
+       "s:local"
+      ]
+     },
+     {
+      "h": "h:compact-support",
+      "why": "Compact support removes the boundary terms at infinity and makes the partition of unity finite.",
+      "steps": [
+       "s:halfspace",
+       "s:charts",
+       "s:sum"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:halfspace",
+      "slogan": "Prove the formula for a compactly supported form on the half-space $\\mathbb{H}^n$.",
+      "detail": "Write $\\omega = \\sum_i \\omega_i\\, dx_1 \\wedge \\cdots \\widehat{dx_i} \\cdots \\wedge dx_n$, so $d\\omega = \\sum_i (-1)^{i-1} \\partial_i \\omega_i\\, dx_1 \\wedge \\cdots \\wedge dx_n$. By Fubini and the fundamental theorem of calculus the terms with $i < n$ integrate to $0$, and the term $i = n$ gives $(-1)^n \\int_{\\mathbb{R}^{n-1}} \\omega_n(x', 0)\\,dx' = \\int_{\\partial \\mathbb{H}^n} \\omega$.",
+      "uses": [
+       "wd:Q1149022",
+       "wd:Q1217677"
+      ]
+     },
+     {
+      "id": "s:charts",
+      "slogan": "Cover the support by finitely many oriented charts and choose a subordinate [partition of unity](c:partition-of-unity).",
+      "detail": "The support of $\\omega$ is compact, so finitely many positively oriented charts onto open sets of $\\mathbb{R}^n$ or $\\mathbb{H}^n$ cover it. A smooth partition of unity $\\psi_1, \\dots, \\psi_k$ subordinate to them has $\\sum_\\alpha \\psi_\\alpha = 1$ on the support.",
+      "uses": []
+     },
+     {
+      "id": "s:local",
+      "slogan": "Transfer each piece $\\psi_\\alpha \\omega$ to the half-space through its chart.",
+      "detail": "Integrals of $n$-forms are invariant under orientation-preserving diffeomorphisms, and $d$ commutes with pullback. Charts send boundary to boundary with the induced orientation, so step 1 gives $\\int_M d(\\psi_\\alpha \\omega) = \\int_{\\partial M} \\psi_\\alpha \\omega$.",
+      "uses": []
+     },
+     {
+      "id": "s:sum",
+      "slogan": "Sum the local identities over the finite partition of unity.",
+      "detail": "Since $\\sum_\\alpha \\psi_\\alpha \\omega = \\omega$, linearity of $d$ gives $\\sum_\\alpha d(\\psi_\\alpha \\omega) = d\\omega$. Summing step 3 over $\\alpha$ gives $\\int_M d\\omega = \\sum_\\alpha \\int_{\\partial M} \\psi_\\alpha \\omega = \\int_{\\partial M} \\omega$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:halfspace",
+      "s:local"
+     ],
+     [
+      "s:charts",
+      "s:local"
+     ],
+     [
+      "s:local",
+      "s:sum"
+     ],
+     [
+      "s:charts",
+      "s:sum"
+     ]
+    ],
+    "conclusion": "s:sum",
+    "concepts": {
+     "c:orientation-of-a-manifold": "Orientation fixes the signs of both integrals and of the boundary.",
+     "c:manifold-with-boundary": "Boundary charts model the manifold on the half-space, where the boundary term appears.",
+     "c:differential-form": "Forms are the objects that integrate over oriented manifolds.",
+     "c:exterior-derivative": "The derivative $d\\omega$ is the form integrated over $M$.",
+     "c:partition-of-unity": "It splits $\\omega$ into pieces supported in single charts."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard proof, as in J. M. Lee, Introduction to Smooth Manifolds, 2nd edition, theorem 16.11."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1048874",
+  "statement": "The [Gaussian curvature](c:gaussian-curvature) $K$ of a [regular surface](c:regular-surface) $S \\subset \\mathbb{R}^3$ depends only on its [first fundamental form](c:first-fundamental-form): in local coordinates $K$ is a function of $E, F, G$ and their derivatives up to order two. Hence a local [isometry](c:isometry) $\\varphi\\colon S \\to S'$ satisfies $K'(\\varphi(p)) = K(p)$ for every $p \\in S$.",
+  "hypotheses": [
+   {
+    "id": "h:regular",
+    "text": "$S$ and $S'$ are [regular surfaces](c:regular-surface) in $\\mathbb{R}^3$, smooth with a unit normal field on each coordinate patch.",
+    "concept": "c:regular-surface"
+   },
+   {
+    "id": "h:isometry",
+    "text": "The map $\\varphi\\colon S \\to S'$ is a local [isometry](c:isometry): its differential preserves the first fundamental form.",
+    "concept": "c:isometry"
+   }
+  ],
+  "conclusion": "$K$ is expressed by $E, F, G$ and their first and second derivatives, so $K'(\\varphi(p)) = K(p)$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "gauss-formula",
+    "name": "Gauss formula from the frame equations",
+    "slogan": "Write the second derivatives of a parametrization in the frame $x_u, x_v, N$, and compare mixed third derivatives to express $EK$ through the Christoffel symbols.",
+    "scope": "The whole theorem, one coordinate patch at a time; the patches cover the surface.",
+    "mechanisms": [
+     "m:coordinates",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:regular",
+      "why": "Regularity gives a parametrization with independent $x_u, x_v$ and a smooth unit normal, so the frame exists.",
+      "steps": [
+       "s:frame",
+       "s:christoffel"
+      ]
+     },
+     {
+      "h": "h:isometry",
+      "why": "An isometry carries a parametrization to one with the same $E, F, G$.",
+      "steps": [
+       "s:transfer"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:frame",
+      "slogan": "Expand $x_{uu}$, $x_{uv}$ and $x_{vv}$ in the frame $x_u, x_v, N$.",
+      "detail": "For a parametrization $x(u, v)$ with unit normal $N$, write $x_{uu} = \\Gamma^1_{11} x_u + \\Gamma^2_{11} x_v + eN$, $x_{uv} = \\Gamma^1_{12} x_u + \\Gamma^2_{12} x_v + fN$ and $x_{vv} = \\Gamma^1_{22} x_u + \\Gamma^2_{22} x_v + gN$. Here $e, f, g$ are the coefficients of the [second fundamental form](c:second-fundamental-form), and $K = (eg - f^2)/(EG - F^2)$.",
+      "uses": []
+     },
+     {
+      "id": "s:christoffel",
+      "slogan": "Show that the [Christoffel symbols](c:christoffel-symbols) depend only on $E, F, G$ and their first derivatives.",
+      "detail": "Take inner products of the frame equations with $x_u$ and $x_v$; for example $\\Gamma^1_{11} E + \\Gamma^2_{11} F = \\frac12 E_u$ and $\\Gamma^1_{11} F + \\Gamma^2_{11} G = F_u - \\frac12 E_v$. These linear systems have determinant $EG - F^2 > 0$, so they determine the symbols.",
+      "uses": []
+     },
+     {
+      "id": "s:compare",
+      "slogan": "Compare the $x_v$ components of $(x_{uu})_v$ and $(x_{uv})_u$.",
+      "detail": "These third derivatives are equal. Expand both with the frame equations and the Weingarten equations for $N_u, N_v$; the $x_v$ component gives the Gauss formula, which writes $-EK$ as a polynomial in the Christoffel symbols and their first derivatives.",
+      "uses": []
+     },
+     {
+      "id": "s:intrinsic",
+      "slogan": "Divide the Gauss formula by $E > 0$ to express $K$ intrinsically.",
+      "detail": "Since $E = \\|x_u\\|^2 > 0$, steps 2 and 3 express $K$ through $E, F, G$ and their derivatives up to order two. No term depends on $N$ or on the embedding.",
+      "uses": []
+     },
+     {
+      "id": "s:transfer",
+      "slogan": "Transport the parametrization by the local isometry and compare the curvatures.",
+      "detail": "If $\\varphi$ is a local isometry, $y = \\varphi \\circ x$ parametrizes $S'$ near $\\varphi(p)$ with the same $E, F, G$ as $x$. The formula of step 4 then gives $K'(\\varphi(p)) = K(p)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:frame",
+      "s:christoffel"
+     ],
+     [
+      "s:frame",
+      "s:compare"
+     ],
+     [
+      "s:christoffel",
+      "s:intrinsic"
+     ],
+     [
+      "s:compare",
+      "s:intrinsic"
+     ],
+     [
+      "s:intrinsic",
+      "s:transfer"
+     ]
+    ],
+    "conclusion": "s:transfer",
+    "concepts": {
+     "c:gaussian-curvature": "The curvature is the quantity shown to be intrinsic.",
+     "c:regular-surface": "Regular parametrizations give the moving frame of the computation.",
+     "c:first-fundamental-form": "Its coefficients $E, F, G$ are the only data in the final formula.",
+     "c:isometry": "Isometries preserve $E, F, G$, hence the curvature.",
+     "c:second-fundamental-form": "Its coefficients define $K$ but drop out of the final formula.",
+     "c:christoffel-symbols": "They carry the intrinsic data into the Gauss formula."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The classical derivation of the Gauss formula, as in M. do Carmo, Differential Geometry of Curves and Surfaces, section 4-3."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:union-bound",
+  "statement": "For a [probability measure](c:probability-measure) $P$ and a finite or countable family of events $A_1, A_2, \\dots$, the probability of their [countable union](c:countable-union-of-events) is at most the sum of their probabilities: $P\\big(\\bigcup_i A_i\\big) \\le \\sum_i P(A_i)$.",
+  "hypotheses": [
+   {
+    "id": "h:measure",
+    "text": "$P$ is a [probability measure](c:probability-measure) on the events, so it is countably additive.",
+    "concept": "c:probability-measure"
+   },
+   {
+    "id": "h:countable",
+    "text": "The family of events $A_1, A_2, \\dots$ is finite or countable.",
+    "concept": "c:countable-union-of-events"
+   }
+  ],
+  "conclusion": "$P\\big(\\bigcup_i A_i\\big) \\le \\sum_i P(A_i)$, where the sum may exceed $1$.",
+  "formal": {
+   "decl": "MeasureTheory.measure_iUnion_le",
+   "difference": "The declaration holds for every outer measure, hence for every measure, with values in $[0, \\infty]$ and any countable index type. It needs no measurability of the sets."
+  },
+  "proofs": [
+   {
+    "id": "disjoint-pieces",
+    "name": "Disjoint pieces",
+    "slogan": "Replace the events by disjoint pieces with the same union, add their probabilities, and bound each piece by its event.",
+    "scope": "Finite and countable families; a finite family is extended by empty events. The empty family gives $0 \\le 0$.",
+    "mechanisms": [
+     "m:well-ordering"
+    ],
+    "roles": [
+     {
+      "h": "h:measure",
+      "why": "Countable additivity evaluates the disjoint union, and monotonicity compares each piece with its event.",
+      "steps": [
+       "s:additive",
+       "s:monotone"
+      ]
+     },
+     {
+      "h": "h:countable",
+      "why": "A countable family can be indexed by the natural numbers, so a least index exists and additivity applies.",
+      "steps": [
+       "s:disjoint",
+       "s:additive"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:disjoint",
+      "slogan": "Replace the events by the disjoint sets $B_i = A_i \\setminus \\bigcup_{j < i} A_j$.",
+      "detail": "Index the events by $i = 1, 2, \\dots$. A point of $\\bigcup_i A_i$ lies in $B_i$ for the least $i$ with the point in $A_i$, so the $B_i$ are pairwise disjoint, $B_i \\subseteq A_i$, and $\\bigcup_i B_i = \\bigcup_i A_i$.",
+      "uses": []
+     },
+     {
+      "id": "s:additive",
+      "slogan": "Evaluate the union by countable additivity on the disjoint pieces.",
+      "detail": "The sets $B_i$ are events and pairwise disjoint, so countable additivity of the [measure](c:measure) gives $P\\big(\\bigcup_i A_i\\big) = P\\big(\\bigcup_i B_i\\big) = \\sum_i P(B_i)$.",
+      "uses": []
+     },
+     {
+      "id": "s:monotone",
+      "slogan": "Bound each term $P(B_i)$ by $P(A_i)$ through monotonicity.",
+      "detail": "Since $B_i \\subseteq A_i$, monotonicity gives $P(B_i) \\le P(A_i)$ for every $i$. Summing these nonnegative terms gives $\\sum_i P(B_i) \\le \\sum_i P(A_i)$, which with step 2 is the bound.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:disjoint",
+      "s:additive"
+     ],
+     [
+      "s:additive",
+      "s:monotone"
+     ],
+     [
+      "s:disjoint",
+      "s:monotone"
+     ]
+    ],
+    "conclusion": "s:monotone",
+    "concepts": {
+     "c:probability-measure": "Countable additivity of the probability gives the sum over pieces.",
+     "c:countable-union-of-events": "The bound controls exactly this union of events.",
+     "c:measure": "Additivity and monotonicity of measures carry every step."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "MeasureTheory.measure_iUnion_le",
+     "follows": true,
+     "note": "mathlib reduces to a family indexed by the natural numbers (rel_iSup_tsum), passes to disjointed pieces (iUnion_disjointed), applies subadditivity to the disjoint family and bounds each piece by disjointed_subset."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q9993851",
+  "statement": "Let $V$ be a real [Hilbert space](c:hilbert-space) and $B$ a bounded [bilinear form](c:bilinear-form) on $V$ that is [coercive](c:coercivity): $B(v, v) \\ge c\\|v\\|^2$ for some $c > 0$. Then for every bounded [linear functional](c:linear-functional) $f$ on $V$ there is a unique $u \\in V$, the [weak solution](c:weak-solution), with $B(u, v) = f(v)$ for all $v \\in V$, and $\\|u\\| \\le \\|f\\|/c$.",
+  "hypotheses": [
+   {
+    "id": "h:hilbert",
+    "text": "$V$ is a real [Hilbert space](c:hilbert-space).",
+    "concept": "c:hilbert-space"
+   },
+   {
+    "id": "h:bounded",
+    "text": "$B$ is bilinear and bounded: $|B(u, v)| \\le C\\|u\\|\\,\\|v\\|$ for some constant $C$.",
+    "concept": "c:bilinear-form"
+   },
+   {
+    "id": "h:coercive",
+    "text": "$B$ is [coercive](c:coercivity): $B(v, v) \\ge c\\|v\\|^2$ for all $v$, with $c > 0$.",
+    "concept": "c:coercivity"
+   },
+   {
+    "id": "h:functional",
+    "text": "$f$ is a bounded [linear functional](c:linear-functional) on $V$.",
+    "concept": "c:linear-functional"
+   }
+  ],
+  "conclusion": "There is exactly one $u \\in V$ with $B(u, v) = f(v)$ for all $v \\in V$, and $\\|u\\| \\le \\|f\\|/c$.",
+  "formal": {
+   "decl": "IsCoercive.continuousLinearEquivOfBilin",
+   "difference": "The declaration builds the continuous linear equivalence $B^\\sharp\\colon V \\to V$ with $B(v, w) = \\langle B^\\sharp v, w \\rangle$. The weak solution is $u = (B^\\sharp)^{-1} w_f$, where $w_f$ represents $f$ by the Riesz theorem, and the bound comes from the separate lemma IsCoercive.antilipschitz."
+  },
+  "proofs": [
+   {
+    "id": "riesz-operator",
+    "name": "Riesz operator bounded below",
+    "slogan": "Represent the form by an operator through the Riesz theorem, show that coercivity makes it injective with closed and dense range, and invert it.",
+    "scope": "The whole theorem. Uniqueness and the bound come from the lower bound of step 2.",
+    "mechanisms": [
+     "m:orthogonal-projection",
+     "m:cauchy-completeness",
+     "m:a-priori-estimate"
+    ],
+    "roles": [
+     {
+      "h": "h:hilbert",
+      "why": "Completeness gives limits of Cauchy sequences, and the inner product gives Riesz representatives and orthogonal complements.",
+      "steps": [
+       "s:operator",
+       "s:closed",
+       "s:dense",
+       "s:solve"
+      ]
+     },
+     {
+      "h": "h:bounded",
+      "why": "Boundedness makes each $B(v, \\cdot)$ a bounded functional and the operator $A$ continuous.",
+      "steps": [
+       "s:operator",
+       "s:closed"
+      ]
+     },
+     {
+      "h": "h:coercive",
+      "why": "Coercivity bounds $A$ from below and makes the orthogonal complement of its range zero.",
+      "steps": [
+       "s:below",
+       "s:dense"
+      ]
+     },
+     {
+      "h": "h:functional",
+      "why": "The bounded functional $f$ has a Riesz representative $w_f$, which is the right side to invert.",
+      "steps": [
+       "s:solve"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:operator",
+      "slogan": "Represent $B$ by a bounded operator $A$ with $B(v, w) = \\langle Av, w \\rangle$.",
+      "detail": "For fixed $v$, the map $w \\mapsto B(v, w)$ is a bounded linear functional, so the Riesz representation theorem gives a unique $Av \\in V$ with $B(v, w) = \\langle Av, w \\rangle$. The map $A$ is linear, and $\\|Av\\| \\le C\\|v\\|$.",
+      "uses": [
+       "wd:Q1357684"
+      ]
+     },
+     {
+      "id": "s:below",
+      "slogan": "Bound $A$ from below by coercivity and the Cauchy–Schwarz inequality.",
+      "detail": "For every $v$, $c\\|v\\|^2 \\le B(v, v) = \\langle Av, v \\rangle \\le \\|Av\\|\\,\\|v\\|$, so $\\|Av\\| \\ge c\\|v\\|$. In particular $A$ is injective.",
+      "uses": [
+       "nl:16121"
+      ]
+     },
+     {
+      "id": "s:closed",
+      "slogan": "Show that the range of $A$ is closed by a Cauchy sequence argument.",
+      "detail": "If $Av_n \\to w$, then $\\|v_n - v_m\\| \\le \\|Av_n - Av_m\\|/c$, so $(v_n)$ is a [Cauchy sequence](c:cauchy-sequence) and converges to some $v$ by completeness. Continuity of $A$ gives $Av = w$.",
+      "uses": []
+     },
+     {
+      "id": "s:dense",
+      "slogan": "Show that the range has zero [orthogonal](c:orthogonality) complement, so it is all of $V$.",
+      "detail": "If $\\langle Av, w \\rangle = 0$ for all $v$, then $v = w$ gives $c\\|w\\|^2 \\le B(w, w) = \\langle Aw, w \\rangle = 0$, so $w = 0$. By the projection theorem, a closed subspace with zero orthogonal complement is all of $V$.",
+      "uses": [
+       "wd:Q3527215"
+      ]
+     },
+     {
+      "id": "s:solve",
+      "slogan": "Solve $Au = w_f$ for the Riesz representative $w_f$ of $f$.",
+      "detail": "The Riesz theorem gives $w_f$ with $f(v) = \\langle w_f, v \\rangle$ and $\\|w_f\\| = \\|f\\|$. Since $A$ is bijective, $u = A^{-1} w_f$ satisfies $B(u, v) = \\langle Au, v \\rangle = f(v)$ for all $v$; it is unique by injectivity, and $\\|u\\| \\le \\|Au\\|/c = \\|f\\|/c$.",
+      "uses": [
+       "wd:Q1357684"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:operator",
+      "s:below"
+     ],
+     [
+      "s:below",
+      "s:closed"
+     ],
+     [
+      "s:operator",
+      "s:dense"
+     ],
+     [
+      "s:closed",
+      "s:dense"
+     ],
+     [
+      "s:dense",
+      "s:solve"
+     ],
+     [
+      "s:below",
+      "s:solve"
+     ]
+    ],
+    "conclusion": "s:solve",
+    "concepts": {
+     "c:hilbert-space": "Completeness and the inner product drive the Riesz and projection steps.",
+     "c:bilinear-form": "The bounded form becomes an operator on the space.",
+     "c:coercivity": "Coercivity gives the lower bound and the zero orthogonal complement.",
+     "c:linear-functional": "The right side $f$ is represented by a vector.",
+     "c:weak-solution": "The solution $u$ satisfies the equation against every test vector.",
+     "c:cauchy-sequence": "Preimages of a convergent sequence form a Cauchy sequence.",
+     "c:orthogonality": "A zero orthogonal complement makes the closed range everything."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "IsCoercive.continuousLinearEquivOfBilin",
+     "follows": true,
+     "note": "mathlib builds the operator by the Riesz map (continuousLinearMapOfBilin), proves bounded_below and antilipschitz, then ker_eq_bot, isClosed_range and range_eq_top through the double orthogonal complement (Submodule.orthogonal_orthogonal)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:weierstrass-trigonometric-approximation-theorem",
+  "statement": "Every [continuous](c:continuous-function) $2\\pi$-periodic function $f\\colon \\mathbb{R} \\to \\mathbb{C}$ is a [uniform limit](c:uniform-convergence) of [trigonometric polynomials](c:trigonometric-polynomial) $\\sum_{|n| \\le N} c_n e^{inx}$: for every $\\varepsilon > 0$ some trigonometric polynomial $p$ satisfies $|f(x) - p(x)| < \\varepsilon$ for all real $x$.",
+  "hypotheses": [
+   {
+    "id": "h:continuous",
+    "text": "The function $f\\colon \\mathbb{R} \\to \\mathbb{C}$ is [continuous](c:continuous-function).",
+    "concept": "c:continuous-function"
+   },
+   {
+    "id": "h:periodic",
+    "text": "The function $f$ is $2\\pi$-periodic: $f(x + 2\\pi) = f(x)$ for all real $x$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "For every $\\varepsilon > 0$ there is a trigonometric polynomial $p$ with $\\sup_x |f(x) - p(x)| < \\varepsilon$.",
+  "formal": {
+   "decl": "span_fourier_closure_eq_top",
+   "difference": "The declaration works on the circle $\\mathbb{R}/T\\mathbb{Z}$ for any period $T > 0$ and states that the span of the monomials $e^{2\\pi i n x/T}$ is dense in $C(\\mathbb{R}/T\\mathbb{Z}, \\mathbb{C})$ for the sup norm. With $T = 2\\pi$ this is the same statement."
+  },
+  "proofs": [
+   {
+    "id": "stone-weierstrass",
+    "name": "Stone–Weierstrass on the circle",
+    "slogan": "View $f$ as a continuous function on the compact circle and check that trigonometric polynomials form a point-separating, conjugation-closed unital subalgebra.",
+    "scope": "The whole theorem; real-valued $f$ is a special case.",
+    "mechanisms": [
+     "m:approximation"
+    ],
+    "roles": [
+     {
+      "h": "h:continuous",
+      "why": "Continuity makes $f$ an element of $C(\\mathbb{T}, \\mathbb{C})$, where Stone–Weierstrass applies.",
+      "steps": [
+       "s:circle"
+      ]
+     },
+     {
+      "h": "h:periodic",
+      "why": "Periodicity lets $f$ factor through the circle $\\mathbb{T} = \\mathbb{R}/2\\pi\\mathbb{Z}$.",
+      "steps": [
+       "s:circle"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:circle",
+      "slogan": "Identify $f$ with a continuous function on the compact [circle](c:circle) $\\mathbb{T} = \\mathbb{R}/2\\pi\\mathbb{Z}$.",
+      "detail": "Because $f$ is $2\\pi$-periodic, it factors through the quotient $\\mathbb{T}$, and the factor is continuous. The circle is a compact Hausdorff space, and uniform approximation on $\\mathbb{R}$ is approximation in the sup norm of $C(\\mathbb{T}, \\mathbb{C})$.",
+      "uses": []
+     },
+     {
+      "id": "s:algebra",
+      "slogan": "Check that trigonometric polynomials form a [subalgebra](c:subalgebra) closed under conjugation.",
+      "detail": "With $e_n(x) = e^{inx}$ we have $e_m e_n = e_{m+n}$, $e_0 = 1$ and $\\overline{e_n} = e_{-n}$. So the span of the $e_n$ is a unital subalgebra of $C(\\mathbb{T}, \\mathbb{C})$ that is closed under complex conjugation.",
+      "uses": []
+     },
+     {
+      "id": "s:separate",
+      "slogan": "Show that $e_1(x) = e^{ix}$ separates the points of the circle.",
+      "detail": "If $e^{ix} = e^{iy}$, then $x - y \\in 2\\pi\\mathbb{Z}$, so $x$ and $y$ are the same point of $\\mathbb{T}$. Hence the subalgebra separates points.",
+      "uses": []
+     },
+     {
+      "id": "s:stone",
+      "slogan": "Conclude density from the complex Stone–Weierstrass theorem.",
+      "detail": "On a compact Hausdorff space, a unital subalgebra of the continuous complex functions that separates points and is closed under conjugation is dense in the sup norm. So some trigonometric polynomial is within $\\varepsilon$ of $f$ everywhere.",
+      "uses": [
+       "wd:Q939927"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:circle",
+      "s:separate"
+     ],
+     [
+      "s:circle",
+      "s:stone"
+     ],
+     [
+      "s:algebra",
+      "s:stone"
+     ],
+     [
+      "s:separate",
+      "s:stone"
+     ]
+    ],
+    "conclusion": "s:stone",
+    "concepts": {
+     "c:continuous-function": "Only continuous functions on the circle can be uniform limits here.",
+     "c:uniform-convergence": "The approximation is in the sup norm, uniform in $x$.",
+     "c:trigonometric-polynomial": "These are the approximating functions, and they form the subalgebra.",
+     "c:circle": "Periodic functions live on the compact circle.",
+     "c:subalgebra": "Closure under products is what Stone–Weierstrass requires."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "span_fourier_closure_eq_top",
+     "follows": true,
+     "note": "mathlib proves fourierSubalgebra_closure_eq_top by ContinuousMap.starSubalgebra_topologicalClosure_eq_top_of_separatesPoints and fourierSubalgebra_separatesPoints, then identifies the subalgebra with the span (fourierSubalgebra_coe)."
+    }
+   },
+   {
+    "id": "fejer",
+    "name": "Fejér kernel",
+    "slogan": "Convolve $f$ with the Fejér kernel, a positive approximate identity, and use uniform continuity to show that these Cesàro means converge uniformly.",
+    "scope": "The whole theorem, with the explicit approximants $\\sigma_N f$, the Cesàro means of the Fourier series of $f$.",
+    "mechanisms": [
+     "m:approximation",
+     "m:epsilon-delta"
+    ],
+    "roles": [
+     {
+      "h": "h:continuous",
+      "why": "Continuity on the compact circle gives uniform continuity for the near part and boundedness for the far part.",
+      "steps": [
+       "s:near",
+       "s:far"
+      ]
+     },
+     {
+      "h": "h:periodic",
+      "why": "Periodicity makes the convolution over one period well defined.",
+      "steps": [
+       "s:convolve"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:kernel",
+      "slogan": "Define the Fejér kernel $F_N$ and record its three properties.",
+      "detail": "Let $F_N(x) = \\sum_{|n| \\le N} \\big(1 - \\frac{|n|}{N+1}\\big) e^{inx} = \\frac{1}{N+1} \\Big(\\frac{\\sin((N+1)x/2)}{\\sin(x/2)}\\Big)^2$. Then $F_N \\ge 0$, $\\frac{1}{2\\pi}\\int_{-\\pi}^{\\pi} F_N = 1$, and $F_N(x) \\le \\frac{1}{(N+1)\\sin^2(\\delta/2)}$ for $\\delta \\le |x| \\le \\pi$.",
+      "uses": []
+     },
+     {
+      "id": "s:convolve",
+      "slogan": "Form the [convolution](c:convolution) $\\sigma_N f = f * F_N$, which is a trigonometric polynomial.",
+      "detail": "Let $\\sigma_N f(x) = \\frac{1}{2\\pi}\\int_{-\\pi}^{\\pi} f(x - t) F_N(t)\\,dt$, defined because $f$ is periodic. Expanding $F_N$ gives $\\sigma_N f(x) = \\sum_{|n| \\le N} \\big(1 - \\frac{|n|}{N+1}\\big) \\hat f(n) e^{inx}$, the Cesàro mean of the [Fourier series](c:fourier-series).",
+      "uses": []
+     },
+     {
+      "id": "s:near",
+      "slogan": "Bound the error integral near $t = 0$ by uniform continuity.",
+      "detail": "Since $F_N \\ge 0$ has mean $1$, $|\\sigma_N f(x) - f(x)| \\le \\frac{1}{2\\pi}\\int |f(x - t) - f(x)| F_N(t)\\,dt$. [Uniform continuity](c:uniform-continuity) gives $\\delta > 0$ with $|f(x - t) - f(x)| < \\varepsilon/2$ for $|t| < \\delta$, so that part is below $\\varepsilon/2$.",
+      "uses": [
+       "wd:Q765987"
+      ]
+     },
+     {
+      "id": "s:far",
+      "slogan": "Bound the far part by the decay of $F_N$ for large $N$.",
+      "detail": "For $\\delta \\le |t| \\le \\pi$, the integrand is at most $2\\|f\\|_\\infty / ((N+1)\\sin^2(\\delta/2))$, which is below $\\varepsilon/2$ for large $N$, uniformly in $x$. So $\\|\\sigma_N f - f\\|_\\infty < \\varepsilon$, and $\\sigma_N f$ is the required trigonometric polynomial.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:kernel",
+      "s:convolve"
+     ],
+     [
+      "s:kernel",
+      "s:near"
+     ],
+     [
+      "s:kernel",
+      "s:far"
+     ],
+     [
+      "s:convolve",
+      "s:near"
+     ],
+     [
+      "s:near",
+      "s:far"
+     ]
+    ],
+    "conclusion": "s:far",
+    "concepts": {
+     "c:continuous-function": "Continuity gives uniform continuity and boundedness on one period.",
+     "c:uniform-convergence": "The Cesàro means converge to $f$ uniformly.",
+     "c:trigonometric-polynomial": "Each Cesàro mean is a trigonometric polynomial of degree $N$.",
+     "c:convolution": "Averaging $f$ against the kernel produces the approximants.",
+     "c:fourier-series": "The approximants are Cesàro means of the Fourier series.",
+     "c:uniform-continuity": "One $\\delta$ works for every $x$, which makes the bound uniform."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Fejér's theorem (1900), as in Stein and Shakarchi, Fourier Analysis: An Introduction, chapter 2, section 5."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q220680",
+  "statement": "Let $(X, d)$ be a nonempty [complete metric space](c:complete-metric-space) and $T\\colon X \\to X$ a [contraction](c:contraction-mapping): $d(Tx, Ty) \\le k\\,d(x, y)$ with a constant $0 \\le k < 1$. Then $T$ has a unique [fixed point](c:fixed-point) $x^*$, and for every $x_0 \\in X$ the iterates $x_n = T^n x_0$ converge to $x^*$ with $d(x_n, x^*) \\le k^n d(x_0, x_1)/(1 - k)$.",
+  "hypotheses": [
+   {
+    "id": "h:nonempty",
+    "text": "The space $X$ is nonempty.",
+    "concept": null
+   },
+   {
+    "id": "h:complete",
+    "text": "The metric space $X$ is [complete](c:complete-metric-space).",
+    "concept": "c:complete-metric-space"
+   },
+   {
+    "id": "h:contraction",
+    "text": "The map $T$ is a [contraction](c:contraction-mapping) with a constant $k \\in [0, 1)$.",
+    "concept": "c:contraction-mapping"
+   }
+  ],
+  "conclusion": "$T$ has exactly one fixed point $x^*$, and $d(T^n x_0, x^*) \\le k^n d(x_0, Tx_0)/(1 - k)$ for every $x_0 \\in X$ and every $n$.",
+  "formal": {
+   "decl": "ContractingWith.exists_fixedPoint",
+   "difference": "The declaration works in an extended metric space from a start point $x$ with $d(x, Tx) < \\infty$ and gives existence, convergence and the rate. Uniqueness is the separate declaration ContractingWith.fixedPoint_unique'."
+  },
+  "proofs": [
+   {
+    "id": "picard-iteration",
+    "name": "Picard iteration",
+    "slogan": "Iterate the contraction from any point, show that the iterates form a Cauchy sequence with geometric bounds, and pass to the limit.",
+    "scope": "The whole theorem; the case $k = 0$, where $T$ is constant, is included.",
+    "mechanisms": [
+     "m:contraction-iteration",
+     "m:cauchy-completeness",
+     "m:triangle-inequality"
+    ],
+    "roles": [
+     {
+      "h": "h:nonempty",
+      "why": "A start point $x_0$ exists, so the iteration can begin.",
+      "steps": [
+       "s:geometric"
+      ]
+     },
+     {
+      "h": "h:complete",
+      "why": "Completeness gives the limit of the Cauchy sequence of iterates.",
+      "steps": [
+       "s:limit"
+      ]
+     },
+     {
+      "h": "h:contraction",
+      "why": "The factor $k < 1$ gives geometric decay, continuity of $T$ and uniqueness.",
+      "steps": [
+       "s:geometric",
+       "s:cauchy",
+       "s:fixed",
+       "s:unique"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:geometric",
+      "slogan": "Bound consecutive distances by $d(x_{n+1}, x_n) \\le k^n d(x_1, x_0)$.",
+      "detail": "For $n \\ge 1$, $d(x_{n+1}, x_n) = d(Tx_n, Tx_{n-1}) \\le k\\, d(x_n, x_{n-1})$. Induction on $n$ gives the bound.",
+      "uses": [
+       "nm:principle-of-mathematical-induction"
+      ]
+     },
+     {
+      "id": "s:cauchy",
+      "slogan": "Sum the geometric bounds to show that $(x_n)$ is a [Cauchy sequence](c:cauchy-sequence).",
+      "detail": "For $m > n$, the triangle inequality and step 1 give $d(x_n, x_m) \\le \\sum_{j=n}^{m-1} k^j d(x_1, x_0) \\le k^n d(x_0, x_1)/(1 - k)$. Since $k < 1$, the right side tends to $0$.",
+      "uses": [
+       "nl:15368",
+       "nm:sum-of-a-geometric-series"
+      ]
+     },
+     {
+      "id": "s:limit",
+      "slogan": "Take the limit $x^*$ and let $m \\to \\infty$ in the Cauchy estimate.",
+      "detail": "Completeness gives $x^* = \\lim x_m$. Letting $m \\to \\infty$ in step 2, continuity of $d$ gives $d(x_n, x^*) \\le k^n d(x_0, x_1)/(1 - k)$.",
+      "uses": []
+     },
+     {
+      "id": "s:fixed",
+      "slogan": "Pass to the limit in $x_{n+1} = Tx_n$ to get $Tx^* = x^*$.",
+      "detail": "A contraction is Lipschitz, hence continuous. So $Tx^* = \\lim Tx_n = \\lim x_{n+1} = x^*$, and $x^*$ is a [fixed point](c:fixed-point).",
+      "uses": []
+     },
+     {
+      "id": "s:unique",
+      "slogan": "Compare any fixed point $y$ with $x^*$ to show uniqueness.",
+      "detail": "If $Ty = y$, then $d(x^*, y) = d(Tx^*, Ty) \\le k\\, d(x^*, y)$. Since $k < 1$, this forces $d(x^*, y) = 0$, so $y = x^*$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:geometric",
+      "s:cauchy"
+     ],
+     [
+      "s:cauchy",
+      "s:limit"
+     ],
+     [
+      "s:limit",
+      "s:fixed"
+     ],
+     [
+      "s:fixed",
+      "s:unique"
+     ]
+    ],
+    "conclusion": "s:unique",
+    "concepts": {
+     "c:complete-metric-space": "Completeness supplies the limit of the iterates.",
+     "c:contraction-mapping": "The contraction factor gives geometric decay of the steps.",
+     "c:fixed-point": "The limit of the iterates is the fixed point.",
+     "c:cauchy-sequence": "Geometric bounds make the iterates a Cauchy sequence."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "ContractingWith.exists_fixedPoint",
+     "follows": true,
+     "note": "mathlib bounds consecutive iterates geometrically (LipschitzWith.edist_iterate_succ_le_geometric), gets a Cauchy sequence (cauchySeq_of_edist_le_geometric), takes its limit (cauchySeq_tendsto_of_complete), shows that it is fixed by continuity (isFixedPt_of_tendsto_iterate) and gets the rate from edist_le_of_edist_le_geometric_of_tendsto."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:chernoff-bound",
+  "statement": "Let $X$ be a real [random variable](c:random-variable), $\\varepsilon \\in \\mathbb{R}$ and $t \\ge 0$ with $E[e^{tX}] < \\infty$. Then $P(X \\ge \\varepsilon) \\le e^{-t\\varepsilon} E[e^{tX}]$. Hence $P(X \\ge \\varepsilon) \\le \\inf_{t \\ge 0} e^{-t\\varepsilon} M_X(t)$, where $M_X(t) = E[e^{tX}]$ is the [moment generating function](c:moment-generating-function).",
+  "hypotheses": [
+   {
+    "id": "h:nonnegative",
+    "text": "The parameter satisfies $t \\ge 0$.",
+    "concept": null
+   },
+   {
+    "id": "h:integrable",
+    "text": "The [expected value](c:expected-value) $E[e^{tX}]$ is finite.",
+    "concept": "c:expected-value"
+   }
+  ],
+  "conclusion": "$P(X \\ge \\varepsilon) \\le e^{-t\\varepsilon} M_X(t)$ for each such $t$, and so $P(X \\ge \\varepsilon) \\le \\inf_{t \\ge 0} e^{-t\\varepsilon} M_X(t)$.",
+  "formal": {
+   "decl": "ProbabilityTheory.measure_ge_le_exp_mul_mgf",
+   "difference": "The declaration holds for any finite measure in place of a probability measure. It gives the bound for one $t$; the infimum over $t$ is not part of it."
+  },
+  "proofs": [
+   {
+    "id": "markov-exponential",
+    "name": "Markov's inequality for the exponential",
+    "slogan": "Turn the tail event into an event about $e^{tX}$ and apply Markov's inequality to this nonnegative variable.",
+    "scope": "The whole theorem; for $t = 0$ the bound reads $P(X \\ge \\varepsilon) \\le 1$. Values of $t$ with $M_X(t) = \\infty$ give a trivial bound in the infimum.",
+    "mechanisms": [
+     "m:concentration"
+    ],
+    "roles": [
+     {
+      "h": "h:nonnegative",
+      "why": "For $t \\ge 0$ the map $x \\mapsto e^{tx}$ is nondecreasing, so the event inclusion holds.",
+      "steps": [
+       "s:inclusion"
+      ]
+     },
+     {
+      "h": "h:integrable",
+      "why": "A finite mean of $e^{tX}$ makes the Markov bound finite.",
+      "steps": [
+       "s:markov"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:inclusion",
+      "slogan": "Include the event $\\{X \\ge \\varepsilon\\}$ in the event $\\{e^{tX} \\ge e^{t\\varepsilon}\\}$.",
+      "detail": "For $t \\ge 0$ the [exponential function](c:exponential-function) $x \\mapsto e^{tx}$ is nondecreasing, so $X \\ge \\varepsilon$ implies $e^{tX} \\ge e^{t\\varepsilon}$. For $t = 0$ the second event is the whole space.",
+      "uses": []
+     },
+     {
+      "id": "s:markov",
+      "slogan": "Apply Markov's inequality to $e^{tX}$ at the level $e^{t\\varepsilon}$.",
+      "detail": "The variable $e^{tX}$ is positive with finite mean $M_X(t)$. Markov's inequality gives $P(e^{tX} \\ge e^{t\\varepsilon}) \\le E[e^{tX}]/e^{t\\varepsilon} = e^{-t\\varepsilon} M_X(t)$.",
+      "uses": [
+       "nm:markov-s-inequality"
+      ]
+     },
+     {
+      "id": "s:combine",
+      "slogan": "Combine the inclusion with the Markov bound by monotonicity of $P$.",
+      "detail": "Monotonicity of probability and step 1 give $P(X \\ge \\varepsilon) \\le P(e^{tX} \\ge e^{t\\varepsilon})$. Step 2 bounds the right side by $e^{-t\\varepsilon} M_X(t)$.",
+      "uses": []
+     },
+     {
+      "id": "s:optimize",
+      "slogan": "Take the infimum of the bound over all $t \\ge 0$.",
+      "detail": "The left side does not depend on $t$, and step 3 holds for every $t \\ge 0$ with $M_X(t) < \\infty$; for the other $t$ the bound is $\\infty$. So $P(X \\ge \\varepsilon) \\le \\inf_{t \\ge 0} e^{-t\\varepsilon} M_X(t)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:inclusion",
+      "s:combine"
+     ],
+     [
+      "s:markov",
+      "s:combine"
+     ],
+     [
+      "s:combine",
+      "s:optimize"
+     ]
+    ],
+    "conclusion": "s:optimize",
+    "concepts": {
+     "c:random-variable": "The bound controls the upper tail of this variable.",
+     "c:moment-generating-function": "The bound is stated through the moment generating function.",
+     "c:expected-value": "Markov's inequality bounds a tail probability by an expected value.",
+     "c:exponential-function": "A monotone exponential turns the tail event into a Markov event."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "ProbabilityTheory.measure_ge_le_exp_mul_mgf",
+     "follows": true,
+     "note": "mathlib rewrites the event with exp_le_exp and applies Markov's inequality mul_meas_ge_le_integral_of_nonneg to exp(tX); it checks the case t = 0 separately."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:21828",
+  "statement": "Let $X$ have density $f(x; \\theta)$ for $\\theta$ in an open interval $\\Theta$, with the regularity conditions below, and let $T(X)$ be an [unbiased estimator](c:unbiased-estimator) of $g(\\theta)$ with finite [variance](c:variance). Then $\\mathrm{Var}_\\theta(T) \\ge g'(\\theta)^2/I(\\theta)$, where $I(\\theta) = E_\\theta\\big[(\\partial_\\theta \\log f(X; \\theta))^2\\big]$ is the [Fisher information](c:fisher-information).",
+  "hypotheses": [
+   {
+    "id": "h:family",
+    "text": "The densities $f(x; \\theta) > 0$ have a common support and are differentiable in $\\theta \\in \\Theta$.",
+    "concept": null
+   },
+   {
+    "id": "h:regular",
+    "text": "Differentiation in $\\theta$ passes under the integral sign in $\\int f\\,dx = 1$ and in $\\int T f\\,dx = g(\\theta)$.",
+    "concept": null
+   },
+   {
+    "id": "h:information",
+    "text": "The [Fisher information](c:fisher-information) satisfies $0 < I(\\theta) < \\infty$.",
+    "concept": "c:fisher-information"
+   },
+   {
+    "id": "h:unbiased",
+    "text": "The estimator is [unbiased](c:unbiased-estimator), $E_\\theta[T] = g(\\theta)$ for all $\\theta \\in \\Theta$, and $\\mathrm{Var}_\\theta(T) < \\infty$.",
+    "concept": "c:unbiased-estimator"
+   }
+  ],
+  "conclusion": "$\\mathrm{Var}_\\theta(T) \\ge g'(\\theta)^2/I(\\theta)$; for $g(\\theta) = \\theta$ this is $\\mathrm{Var}_\\theta(T) \\ge 1/I(\\theta)$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "score-covariance",
+    "name": "Score and Cauchy–Schwarz",
+    "slogan": "Show that the score has mean zero and covariance $g'(\\theta)$ with the estimator, then bound this covariance by the Cauchy–Schwarz inequality.",
+    "scope": "The one-parameter case at a fixed $\\theta \\in \\Theta$; discrete families work the same way with sums.",
+    "mechanisms": [
+     "m:cauchy-schwarz"
+    ],
+    "roles": [
+     {
+      "h": "h:family",
+      "why": "Differentiability with a common support makes the score $\\partial_\\theta \\log f$ defined.",
+      "steps": [
+       "s:score"
+      ]
+     },
+     {
+      "h": "h:regular",
+      "why": "Differentiation under the integral gives the mean of the score and its covariance with the estimator.",
+      "steps": [
+       "s:score",
+       "s:covariance"
+      ]
+     },
+     {
+      "h": "h:information",
+      "why": "Finite positive information is the variance of the score, and it allows the final division.",
+      "steps": [
+       "s:score",
+       "s:divide"
+      ]
+     },
+     {
+      "h": "h:unbiased",
+      "why": "Unbiasedness gives the identity whose derivative is $g'(\\theta)$, and finite variance makes Cauchy–Schwarz apply.",
+      "steps": [
+       "s:covariance",
+       "s:cauchy-schwarz"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:score",
+      "slogan": "Define the score $S = \\partial_\\theta \\log f(X; \\theta)$ and show that its mean is zero.",
+      "detail": "Since $\\partial_\\theta f = S f$, differentiating $\\int f\\,dx = 1$ under the integral gives $E_\\theta[S] = \\int \\partial_\\theta f\\,dx = 0$. So $\\mathrm{Var}_\\theta(S) = E_\\theta[S^2] = I(\\theta)$.",
+      "uses": []
+     },
+     {
+      "id": "s:covariance",
+      "slogan": "Differentiate the unbiasedness identity to get $\\mathrm{Cov}_\\theta(T, S) = g'(\\theta)$.",
+      "detail": "Differentiating $\\int T f\\,dx = g(\\theta)$ under the integral gives $g'(\\theta) = \\int T S f\\,dx = E_\\theta[TS]$. Since $E_\\theta[S] = 0$, this equals $\\mathrm{Cov}_\\theta(T, S)$.",
+      "uses": []
+     },
+     {
+      "id": "s:cauchy-schwarz",
+      "slogan": "Bound the covariance by the Cauchy–Schwarz inequality.",
+      "detail": "The Cauchy–Schwarz inequality for the centered variables $T - g(\\theta)$ and $S$ gives $g'(\\theta)^2 = \\mathrm{Cov}_\\theta(T, S)^2 \\le \\mathrm{Var}_\\theta(T)\\,\\mathrm{Var}_\\theta(S) = \\mathrm{Var}_\\theta(T)\\, I(\\theta)$.",
+      "uses": [
+       "nl:16121"
+      ]
+     },
+     {
+      "id": "s:divide",
+      "slogan": "Divide by the positive Fisher information to get the bound.",
+      "detail": "Since $0 < I(\\theta) < \\infty$, dividing step 3 by $I(\\theta)$ gives $\\mathrm{Var}_\\theta(T) \\ge g'(\\theta)^2/I(\\theta)$. For $g(\\theta) = \\theta$ the bound is $1/I(\\theta)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:score",
+      "s:covariance"
+     ],
+     [
+      "s:score",
+      "s:cauchy-schwarz"
+     ],
+     [
+      "s:covariance",
+      "s:cauchy-schwarz"
+     ],
+     [
+      "s:cauchy-schwarz",
+      "s:divide"
+     ]
+    ],
+    "conclusion": "s:divide",
+    "concepts": {
+     "c:unbiased-estimator": "Unbiasedness gives the identity whose derivative is $g'(\\theta)$.",
+     "c:variance": "The theorem bounds the variance of the estimator from below.",
+     "c:fisher-information": "The information is the variance of the score."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The classical score argument, as in Casella and Berger, Statistical Inference, 2nd edition, theorem 7.3.9."
+    }
+   }
+  ]
+ }
+]

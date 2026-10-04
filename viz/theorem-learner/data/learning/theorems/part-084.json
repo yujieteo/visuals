@@ -1,0 +1,1867 @@
+[
+ {
+  "id": "nm:sedrakyan-s-lemma",
+  "statement": "For real numbers $f_1,\\dots,f_n$ and positive real numbers $g_1,\\dots,g_n$ with $n \\ge 1$, $\\left(\\sum f_i\\right)^2 / \\sum g_i \\le \\sum f_i^2 / g_i$.",
+  "hypotheses": [
+   {
+    "id": "h:positive",
+    "text": "Each $g_i$ is a positive real number.",
+    "concept": null
+   },
+   {
+    "id": "h:finite",
+    "text": "The family has finitely many terms $f_i, g_i$ for $i = 1,\\dots,n$, with $n \\ge 1$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The square of the [sum](c:sum) of the $f_i$, divided by the sum of the $g_i$, is at most the sum of the [fractions](c:rational-number) $f_i^2/g_i$.",
+  "formal": {
+   "decl": "Finset.sq_sum_div_le_sum_sq_div",
+   "difference": "mathlib works in any linearly ordered semifield and allows an empty index set, where both sides are 0 because division by zero is 0. The statement here takes real numbers and $n \\ge 1$."
+  },
+  "proofs": [
+   {
+    "id": "cauchy-schwarz",
+    "name": "Cauchy-Schwarz",
+    "slogan": "Bound the squared sum by the Cauchy-Schwarz product of the sums of $f_i^2/g_i$ and of $g_i$, then divide by $\\sum g_i$.",
+    "scope": "The whole inequality for $n \\ge 1$. The empty family is excluded here; mathlib covers it with the convention $0/0 = 0$.",
+    "mechanisms": [
+     "m:cauchy-schwarz"
+    ],
+    "roles": [
+     {
+      "h": "h:positive",
+      "why": "Positivity of $g_i$ defines the [fractions](c:rational-number) $f_i^2/g_i$, makes them nonnegative and makes $\\sum g_i$ positive.",
+      "steps": [
+       "s:terms",
+       "s:divide"
+      ]
+     },
+     {
+      "h": "h:finite",
+      "why": "A finite family allows the finite Cauchy-Schwarz inequality for sums.",
+      "steps": [
+       "s:cs"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:terms",
+      "slogan": "Set $p_i = f_i^2/g_i$ and $q_i = g_i$, both nonnegative with $p_i q_i = f_i^2$.",
+      "detail": "Because $g_i > 0$, the quotient $p_i = f_i^2/g_i$ is defined and $p_i \\ge 0$. Also $p_i q_i = f_i^2$, so $|f_i| = \\sqrt{p_i q_i}$.",
+      "uses": []
+     },
+     {
+      "id": "s:cs",
+      "slogan": "Bound the squared sum of the $f_i$ by the product of the sums of $p_i$ and $q_i$.",
+      "detail": "Cauchy-Schwarz for the vectors $(\\sqrt{p_i})$ and $(\\sqrt{q_i})$ gives $\\left(\\sum |f_i|\\right)^2 \\le \\left(\\sum p_i\\right)\\left(\\sum q_i\\right)$, and $\\left(\\sum f_i\\right)^2 \\le \\left(\\sum |f_i|\\right)^2$. mathlib reaches the same bound without square roots from $f_i^2 \\le p_i q_i$.",
+      "uses": [
+       "nl:16121"
+      ]
+     },
+     {
+      "id": "s:divide",
+      "slogan": "Divide by the positive sum $\\sum g_i$ to reach the claimed inequality.",
+      "detail": "Since $n \\ge 1$ and every $g_i > 0$, we have $\\sum g_i > 0$. Dividing $\\left(\\sum f_i\\right)^2 \\le \\left(\\sum f_i^2/g_i\\right)\\left(\\sum g_i\\right)$ by it gives the claim.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:terms",
+      "s:cs"
+     ],
+     [
+      "s:cs",
+      "s:divide"
+     ],
+     [
+      "s:terms",
+      "s:divide"
+     ]
+    ],
+    "conclusion": "s:divide",
+    "concepts": {
+     "c:rational-number": "Each term $f_i^2/g_i$ is a fraction that needs a positive denominator.",
+     "c:sum": "The inequality compares two finite sums of fractions and sums of the data."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Finset.sq_sum_div_le_sum_sq_div",
+     "follows": true,
+     "note": "mathlib sets the two sequences $f_i^2/g_i$ and $g_i$, uses sum_sq_le_sum_mul_sum_of_sq_le_mul for the Cauchy-Schwarz bound, then div_le_of_le_mul₀."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:17803",
+  "statement": "Let $X$ be a [smooth manifold](c:smooth-manifold). The functor $E \\mapsto \\Gamma(E)$ sends a smooth [vector bundle](c:vector-bundle) of bounded rank on $X$ to its module of smooth sections over $C^\\infty(X)$. It is an equivalence onto the finitely generated [projective modules](c:projective-module) over $C^\\infty(X)$.",
+  "hypotheses": [
+   {
+    "id": "h:manifold",
+    "text": "The space $X$ is a [smooth manifold](c:smooth-manifold) of finite dimension $n$, Hausdorff and second countable.",
+    "concept": "c:smooth-manifold"
+   },
+   {
+    "id": "h:bundles",
+    "text": "The bundles are smooth [vector bundles](c:vector-bundle) whose ranks are bounded above on $X$.",
+    "concept": "c:vector-bundle"
+   }
+  ],
+  "conclusion": "The section functor is [fully faithful](c:fully-faithful), and every finitely generated projective $C^\\infty(X)$-module is isomorphic to $\\Gamma(E)$ for some bundle $E$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "idempotents",
+    "name": "Idempotent matrices",
+    "slogan": "Embed each bundle in a trivial bundle to get a projective module, read bundle maps off module maps, and build bundles from idempotent matrices.",
+    "scope": "The whole theorem. The rank bound is needed: infinitely many components with growing rank give a module that is not finitely generated.",
+    "mechanisms": [
+     "m:partition-of-unity",
+     "m:local-to-global"
+    ],
+    "roles": [
+     {
+      "h": "h:manifold",
+      "why": "Finite dimension and second countability give a finite trivializing cover and a [partition of unity](c:partition-of-unity).",
+      "steps": [
+       "s:embed"
+      ]
+     },
+     {
+      "h": "h:bundles",
+      "why": "Local triviality gives the embedding in a trivial bundle, and the rank bound keeps $N$ finite.",
+      "steps": [
+       "s:embed",
+       "s:bundle"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:embed",
+      "slogan": "Embed the bundle $E$ in a trivial bundle $X \\times \\mathbb{R}^N$.",
+      "detail": "Since $\\dim X = n$, finitely many open sets $U_1,\\dots,U_m$ trivialize $E$ and cover $X$ (the sets $U_j$ are disjoint unions of chart domains). A [partition of unity](c:partition-of-unity) $\\rho_j$ with trivializations $\\tau_j$ gives the fiberwise injective bundle map $e \\mapsto (\\rho_j \\tau_j(e))_j$ into $X \\times \\mathbb{R}^N$, with $N \\le rm$ for ranks at most $r$.",
+      "uses": []
+     },
+     {
+      "id": "s:projective",
+      "slogan": "Split off the image of $E$ to show that $\\Gamma(E)$ is finitely generated projective.",
+      "detail": "A fiber metric on $X \\times \\mathbb{R}^N$ gives a smooth orthogonal projection $P(x)$ onto the image of $E_x$. Then $P$ is an idempotent matrix over $C^\\infty(X)$ and $\\Gamma(E) \\cong P\\,C^\\infty(X)^N$, a direct summand of a [free module](c:free-module) of rank $N$.",
+      "uses": []
+     },
+     {
+      "id": "s:full",
+      "slogan": "Show that every $C^\\infty(X)$-linear map of section modules acts fiberwise.",
+      "detail": "Let $T\\colon \\Gamma(E) \\to \\Gamma(F)$ be linear and $s \\in \\Gamma(E)$ with $s(x) = 0$. Then $s = \\sum_j a_j\\,(Pe_j)$ with $a_j(x) = 0$, so $T(s) = \\sum_j a_j\\,T(Pe_j)$ vanishes at $x$. Hence $T$ induces linear maps $T_x\\colon E_x \\to F_x$, smooth in $x$ because each $T(Pe_j)$ is smooth, and $T = \\Gamma(T_\\bullet)$.",
+      "uses": []
+     },
+     {
+      "id": "s:idempotent",
+      "slogan": "Present a finitely generated projective module $Q$ as the image of an idempotent matrix.",
+      "detail": "A finitely generated projective $Q$ is a direct summand of some $C^\\infty(X)^N$. So $Q \\cong e\\,C^\\infty(X)^N$ for the idempotent matrix $e = e^2$ that projects onto $Q$ along a complement.",
+      "uses": []
+     },
+     {
+      "id": "s:bundle",
+      "slogan": "Build the bundle with fibers $\\operatorname{im} e(x)$ and check that its sections form $Q$.",
+      "detail": "The rank of $e(x)$ equals its trace, which is continuous and integer valued, so it is locally constant. Near $x_0$, the vectors $e(x)v_i$ for a basis $v_i$ of $\\operatorname{im} e(x_0)$ stay independent and give smooth local frames. So $E = \\{(x, v) : e(x)v = v\\}$ is a smooth subbundle of rank at most $N$ with $\\Gamma(E) = e\\,C^\\infty(X)^N \\cong Q$.",
+      "uses": []
+     },
+     {
+      "id": "s:equivalence",
+      "slogan": "Combine full faithfulness and essential surjectivity into an equivalence of categories.",
+      "detail": "The steps on embedding and on module maps show that $\\Gamma$ lands in finitely generated projective modules and is fully faithful (faithful because sections span every fiber). The steps on idempotents and bundles show that $\\Gamma$ hits every such module up to isomorphism.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:embed",
+      "s:projective"
+     ],
+     [
+      "s:projective",
+      "s:full"
+     ],
+     [
+      "s:full",
+      "s:equivalence"
+     ],
+     [
+      "s:projective",
+      "s:equivalence"
+     ],
+     [
+      "s:idempotent",
+      "s:bundle"
+     ],
+     [
+      "s:bundle",
+      "s:equivalence"
+     ]
+    ],
+    "conclusion": "s:equivalence",
+    "concepts": {
+     "c:free-module": "The trivial bundle gives a free module that contains the section module.",
+     "c:fully-faithful": "Full faithfulness says that module maps are exactly bundle maps.",
+     "c:partition-of-unity": "It glues local trivializations into a global embedding.",
+     "c:projective-module": "Direct summands of free modules are exactly the modules that bundles give.",
+     "c:smooth-manifold": "The manifold supplies charts, finite dimension and smooth bump functions.",
+     "c:vector-bundle": "Bundles are the geometric objects matched with modules of sections."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard proof of Swan's theorem, as in Nestruev, Smooth Manifolds and Observables, theorem 11.33, and Swan, Vector bundles and projective modules, Trans. AMS 105 (1962), 264-277."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q7597316",
+  "statement": "A [finitely generated group](c:finitely-generated-group) $G$ has more than one [end](c:ends-of-a-group) if and only if $G$ is a nontrivial [amalgamated free product](c:amalgamated-product) $A *_C B$ or an [HNN extension](c:hnn-extension) $A *_C$ over a finite subgroup $C$. For a product, nontrivial means $C \\ne A$ and $C \\ne B$.",
+  "hypotheses": [
+   {
+    "id": "h:fg",
+    "text": "The group $G$ is [finitely generated](c:finitely-generated-group).",
+    "concept": "c:finitely-generated-group"
+   }
+  ],
+  "conclusion": "$G$ has more than one end exactly when $G$ splits nontrivially over a finite subgroup.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "structure-tree",
+    "name": "Structure tree of nested cuts",
+    "slogan": "Cut the Cayley graph along finite edge sets, build a $G$-tree from nested cuts of least size, and read the splitting from Bass-Serre theory.",
+    "scope": "An outline of the published proof; the nested cut construction and the Bass-Serre structure theorem rest on the cited work. Two-ended groups are included, since they are virtually infinite cyclic and split over a finite subgroup.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:group-action-orbits",
+     "m:extremal-choice"
+    ],
+    "roles": [
+     {
+      "h": "h:fg",
+      "why": "A finite generating set gives a locally finite [Cayley graph](c:cayley-graph) and a finite quotient graph for the decomposition.",
+      "steps": [
+       "s:ends",
+       "s:bass"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:ends",
+      "slogan": "Translate 'more than one end' into a finite cut of the Cayley graph.",
+      "detail": "Fix a finite generating set. $G$ has more than one [end](c:ends-of-a-group) iff finitely many edges of its [Cayley graph](c:cayley-graph) separate it into two infinite parts, iff some $E \\subseteq G$ has $E$ and $G \\setminus E$ infinite with finite edge boundary. Such an $E$ is called almost invariant.",
+      "uses": []
+     },
+     {
+      "id": "s:easy",
+      "slogan": "Show that a splitting over a finite subgroup gives an almost invariant set.",
+      "detail": "Bass-Serre theory turns the splitting into an action on a [tree](c:tree) $T$ with finite edge stabilizers and no global fixed point. Cut $T$ at an edge $e$ and pull the sides back along an orbit map $g \\mapsto gv$. The boundary in the Cayley graph is finite, since the elements that carry a bounded path across $e$ form finitely many cosets of the finite group $\\operatorname{Stab}(e)$; the cited proof also checks that both sides are infinite.",
+      "uses": []
+     },
+     {
+      "id": "s:cuts",
+      "slogan": "Choose a $G$-invariant family of nested cuts of least boundary size.",
+      "detail": "Assume that $G$ has more than one end. Dicks and Dunwoody show that among almost invariant sets of least boundary size one can build a $G$-invariant family $\\mathcal{E}$ of cuts, closed under complement, whose members are pairwise nested.",
+      "uses": []
+     },
+     {
+      "id": "s:tree",
+      "slogan": "Build the structure tree whose edges are the nested cuts.",
+      "detail": "The family $\\mathcal{E}$ is partially ordered by inclusion. Its elements give the edges, and the order defines the vertices, of a [tree](c:tree) $T$ on which $G$ acts without inversions.",
+      "uses": []
+     },
+     {
+      "id": "s:stabilizers",
+      "slogan": "Show that edge stabilizers are finite and that $G$ fixes no vertex.",
+      "detail": "If $H$ stabilizes a cut $E$, then $H$ preserves the finite set of boundary edges of $E$. The group $G$ acts freely on itself, so an infinite $H$ would give infinitely many boundary edges as the orbit of one of them. The cited proof also checks that $G$ fixes no vertex of $T$.",
+      "uses": []
+     },
+     {
+      "id": "s:bass",
+      "slogan": "Read the splitting from the action on the tree by Bass-Serre theory.",
+      "detail": "$G$ acts on $T$ without inversions, with finite edge stabilizers and no fixed vertex. Since $G$ is finitely generated, a minimal invariant subtree has finite quotient graph. So $G$ is the fundamental group of a finite graph of groups with finite edge groups, hence a nontrivial [amalgamated free product](c:amalgamated-product) or [HNN extension](c:hnn-extension) over a finite subgroup.",
+      "uses": []
+     },
+     {
+      "id": "s:equivalence",
+      "slogan": "Combine the two directions into the equivalence.",
+      "detail": "The step on splittings gives more than one end from a splitting over a finite subgroup. The steps on cuts, trees and Bass-Serre theory give a splitting from more than one end.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:ends",
+      "s:easy"
+     ],
+     [
+      "s:ends",
+      "s:cuts"
+     ],
+     [
+      "s:cuts",
+      "s:tree"
+     ],
+     [
+      "s:tree",
+      "s:stabilizers"
+     ],
+     [
+      "s:stabilizers",
+      "s:bass"
+     ],
+     [
+      "s:bass",
+      "s:equivalence"
+     ],
+     [
+      "s:easy",
+      "s:equivalence"
+     ]
+    ],
+    "conclusion": "s:equivalence",
+    "concepts": {
+     "c:amalgamated-product": "One half of the splitting conclusion is an amalgam over a finite subgroup.",
+     "c:cayley-graph": "The group acts on its Cayley graph, where cuts and ends live.",
+     "c:ends-of-a-group": "Ends count the infinite pieces of the Cayley graph at infinity.",
+     "c:finitely-generated-group": "Finite generation gives the Cayley graph and the finite quotient graph.",
+     "c:hnn-extension": "The other half of the splitting conclusion is an HNN extension.",
+     "c:tree": "The structure tree carries the action that gives the splitting."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "W. Dicks and M. J. Dunwoody, Groups Acting on Graphs, Cambridge Studies in Advanced Mathematics 17, Cambridge University Press, 1989 (Chapter II)",
+     "note": "The finitely generated case is due to J. R. Stallings (On torsion-free groups with infinitely many ends, Annals of Mathematics 88 (1968), 312-334, and Group Theory and Three-Dimensional Manifolds, Yale University Press, 1971). The steps follow the structure tree construction of Dunwoody and Dicks."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q739403",
+  "statement": "Let $B$ and $C$ be points of a Euclidean space, $D$ a point strictly between them and $A$ any point. For the [cevian](c:cevian) $AD$ of the [triangle](c:triangle) $ABC$, $AB^2 \\cdot DC + AC^2 \\cdot BD = BC\\,(AD^2 + BD \\cdot DC)$.",
+  "hypotheses": [
+   {
+    "id": "h:euclid",
+    "text": "The points $A$, $B$, $C$, $D$ lie in a Euclidean space.",
+    "concept": "c:triangle"
+   },
+   {
+    "id": "h:between",
+    "text": "The point $D$ lies strictly between $B$ and $C$.",
+    "concept": "c:cevian"
+   }
+  ],
+  "conclusion": "$AB^2 \\cdot DC + AC^2 \\cdot BD = BC\\,(AD^2 + BD \\cdot DC)$.",
+  "formal": {
+   "decl": "EuclideanGeometry.dist_sq_mul_dist_add_dist_sq_mul_dist",
+   "difference": null
+  },
+  "proofs": [
+   {
+    "id": "law-of-cosines",
+    "name": "Law of cosines at the cevian foot",
+    "slogan": "Apply the law of cosines at $D$ in the two small triangles and eliminate the cosine of the supplementary angles.",
+    "scope": "The whole theorem, including the case where $A$ lies on line $BC$, since the law of cosines also holds for degenerate triangles.",
+    "mechanisms": [
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:euclid",
+      "why": "The law of cosines holds in a Euclidean space.",
+      "steps": [
+       "s:law"
+      ]
+     },
+     {
+      "h": "h:between",
+      "why": "A point strictly between $B$ and $C$ makes the angles at $D$ supplementary and gives $BC = BD + DC$.",
+      "steps": [
+       "s:supplement",
+       "s:length"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:law",
+      "slogan": "Write the law of cosines for the triangles $ABD$ and $ACD$ at the vertex $D$.",
+      "detail": "Put $m = BD$, $n = DC$, $d = AD$ and $\\theta = \\angle ADB$. The law of cosines gives $AB^2 = d^2 + m^2 - 2dm\\cos\\theta$ and $AC^2 = d^2 + n^2 - 2dn\\cos\\angle ADC$.",
+      "uses": [
+       "nm:law-of-cosines"
+      ]
+     },
+     {
+      "id": "s:supplement",
+      "slogan": "Show that the two angles at $D$ are supplementary.",
+      "detail": "Since $D$ lies strictly between $B$ and $C$, the [angle](c:angle) $\\angle BDC$ equals $\\pi$. Hence $\\angle ADB + \\angle ADC = \\pi$ and $\\cos\\angle ADC = -\\cos\\theta$.",
+      "uses": []
+     },
+     {
+      "id": "s:eliminate",
+      "slogan": "Eliminate $\\cos\\theta$ by multiplying the identities by $n$ and $m$ and adding.",
+      "detail": "The two identities become $AB^2 = d^2 + m^2 - 2dm\\cos\\theta$ and $AC^2 = d^2 + n^2 + 2dn\\cos\\theta$. Multiply the first by $n$, the second by $m$ and add; the cosine terms cancel and the sum is $n\\,AB^2 + m\\,AC^2 = (m+n)d^2 + mn(m+n)$.",
+      "uses": []
+     },
+     {
+      "id": "s:length",
+      "slogan": "Replace $m + n$ by $BC$ to reach the stated formula.",
+      "detail": "Because $D$ lies between $B$ and $C$, $BC = BD + DC = m + n$. Substituting gives $AB^2 \\cdot DC + AC^2 \\cdot BD = BC\\,(AD^2 + BD \\cdot DC)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:law",
+      "s:eliminate"
+     ],
+     [
+      "s:supplement",
+      "s:eliminate"
+     ],
+     [
+      "s:eliminate",
+      "s:length"
+     ]
+    ],
+    "conclusion": "s:length",
+    "concepts": {
+     "c:angle": "The two angles at $D$ add to a straight angle, so their cosines are opposite.",
+     "c:cevian": "The segment $AD$ from a vertex to the opposite side is the cevian.",
+     "c:triangle": "The identity relates the sides of a triangle to a segment from a vertex."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "EuclideanGeometry.dist_sq_mul_dist_add_dist_sq_mul_dist",
+     "follows": true,
+     "note": "mathlib rewrites with the law of cosines at p twice, angle_add_angle_eq_pi_of_angle_eq_pi, Real.cos_pi_sub and dist_eq_add_dist_of_angle_eq_pi, then closes with ring."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q3893473",
+  "statement": "Every complete [hyperbolic 3-manifold](c:hyperbolic-3-manifold) with finitely generated fundamental group is topologically tame: it is homeomorphic to the interior of a compact 3-manifold.",
+  "hypotheses": [
+   {
+    "id": "h:complete",
+    "text": "The manifold $M$ is a complete [hyperbolic 3-manifold](c:hyperbolic-3-manifold).",
+    "concept": "c:hyperbolic-3-manifold"
+   },
+   {
+    "id": "h:fg",
+    "text": "The fundamental group $\\pi_1(M)$ is [finitely generated](c:finitely-generated-group).",
+    "concept": "c:finitely-generated-group"
+   }
+  ],
+  "conclusion": "$M$ is homeomorphic to the interior of a compact 3-manifold with boundary.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "shrinkwrapping",
+    "name": "Shrinkwrapping surfaces",
+    "slogan": "Pull surfaces tight into CAT(-1) surfaces by shrinkwrapping, find simple geodesics that exit each end, and conclude that every end is a product.",
+    "scope": "An outline of the published proof of Marden's conjecture; shrinkwrapping, the exiting geodesics and the end reductions rest on the cited work. Here $M = \\mathbb{H}^3/\\Gamma$ for a torsion-free [Kleinian group](c:kleinian-group) $\\Gamma$, and Agol gave an independent proof.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:energy-functional"
+    ],
+    "roles": [
+     {
+      "h": "h:complete",
+      "why": "Completeness makes $M$ a quotient $\\mathbb{H}^3/\\Gamma$, so geodesics and shrinkwrapped surfaces exist and behave as in hyperbolic space.",
+      "steps": [
+       "s:shrinkwrap",
+       "s:geodesics"
+      ]
+     },
+     {
+      "h": "h:fg",
+      "why": "Finite generation of $\\pi_1(M)$ gives a [compact core](c:compact-core) by Scott's theorem.",
+      "steps": [
+       "s:core"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:core",
+      "slogan": "Fix a compact core and reduce to the ends of the manifold.",
+      "detail": "By Scott's core theorem, $M$ has a [compact core](c:compact-core) $C$ with $\\pi_1(C) = \\pi_1(M)$. $M$ is tame iff every end has a neighborhood homeomorphic to $S \\times [0,\\infty)$ for a compact surface $S$. The proof treats one end at a time.",
+      "uses": []
+     },
+     {
+      "id": "s:shrinkwrap",
+      "slogan": "Produce CAT(-1) surfaces in a given homotopy class by shrinkwrapping.",
+      "detail": "Calegari and Gabai introduce shrinkwrapping. Using [minimal surface](c:minimal-surface) techniques, a surface is pulled tight into a CAT(-1) surface in its homotopy class (sections 1 and 2 of the paper).",
+      "uses": []
+     },
+     {
+      "id": "s:geodesics",
+      "slogan": "Find simple geodesics that exit the end of a parabolic-free manifold.",
+      "detail": "In section 3, shrinkwrapped surfaces near the end give $\\epsilon$-separated simple closed [geodesics](c:geodesic) that leave every compact set. This is the geometric input for the topological conclusion.",
+      "uses": []
+     },
+     {
+      "id": "s:canary",
+      "slogan": "Prove the model case, Canary's theorem, with shrinkwrapped surfaces.",
+      "detail": "Section 4 proves Canary's theorem by shrinkwrapping. It models the general case, which follows the same pattern.",
+      "uses": []
+     },
+     {
+      "id": "s:reduction",
+      "slogan": "Reduce the general case to the model case by end reductions.",
+      "detail": "Section 5 develops the topological theory of end reductions in 3-manifolds. It replaces an end of $M$ by an end to which the model argument applies.",
+      "uses": []
+     },
+     {
+      "id": "s:cusps",
+      "slogan": "Extend the exiting geodesic argument to manifolds with parabolic cusps.",
+      "detail": "Section 7 treats the case where $\\pi_1(M)$ contains parabolic elements. It adapts shrinkwrapping and the exiting geodesics to the cusped manifold.",
+      "uses": []
+     },
+     {
+      "id": "s:main",
+      "slogan": "Conclude that every end is tame, so $M$ is the interior of a compact 3-manifold.",
+      "detail": "Section 6 combines the steps: every end of $M$ is tame. A tame end has a collar $S \\times [0,\\infty)$, so $M$ is homeomorphic to the interior of the compact manifold obtained from the core by adding these boundary surfaces.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:core",
+      "s:shrinkwrap"
+     ],
+     [
+      "s:shrinkwrap",
+      "s:geodesics"
+     ],
+     [
+      "s:geodesics",
+      "s:canary"
+     ],
+     [
+      "s:canary",
+      "s:reduction"
+     ],
+     [
+      "s:geodesics",
+      "s:cusps"
+     ],
+     [
+      "s:reduction",
+      "s:main"
+     ],
+     [
+      "s:cusps",
+      "s:main"
+     ],
+     [
+      "s:core",
+      "s:main"
+     ]
+    ],
+    "conclusion": "s:main",
+    "concepts": {
+     "c:compact-core": "The compact core carries the topology; tameness is about the ends outside it.",
+     "c:finitely-generated-group": "Finite generation of the fundamental group gives the compact core.",
+     "c:geodesic": "Closed geodesics exiting the end are the geometric tameness witness.",
+     "c:hyperbolic-3-manifold": "The manifold is the setting where geodesics and surfaces have hyperbolic geometry.",
+     "c:kleinian-group": "The manifold is the quotient of hyperbolic space by a Kleinian group.",
+     "c:minimal-surface": "Shrinkwrapping uses minimal surface techniques to tighten a surface."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "D. Calegari and D. Gabai, Shrinkwrapping and the taming of hyperbolic 3-manifolds, Journal of the American Mathematical Society 19 (2006), 385-446",
+     "url": "https://www.ams.org/journals/jams/2006-19-02/S0894-0347-05-00513-8",
+     "note": "Agol gave an independent proof: I. Agol, Tameness of hyperbolic 3-manifolds, arXiv:math/0405568 (2004). The steps follow the section structure of Calegari and Gabai."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:three-subgroups-lemma",
+  "statement": "Let $H_1, H_2, H_3$ be [subgroups](c:subgroup) of a group $G$, and let $[X,Y]$ be the [commutator subgroup](c:commutator-subgroup) generated by all $[x,y]$ with $x \\in X$, $y \\in Y$. If $[[H_2,H_3],H_1] = 1$ and $[[H_3,H_1],H_2] = 1$, then $[[H_1,H_2],H_3] = 1$.",
+  "hypotheses": [
+   {
+    "id": "h:subgroups",
+    "text": "The sets $H_1, H_2, H_3$ are [subgroups](c:subgroup) of a group $G$.",
+    "concept": "c:subgroup"
+   },
+   {
+    "id": "h:first",
+    "text": "The subgroup $[[H_2,H_3],H_1]$ is trivial.",
+    "concept": "c:commutator-subgroup"
+   },
+   {
+    "id": "h:second",
+    "text": "The subgroup $[[H_3,H_1],H_2]$ is trivial.",
+    "concept": "c:commutator-subgroup"
+   }
+  ],
+  "conclusion": "The subgroup $[[H_1,H_2],H_3]$ is trivial.",
+  "formal": {
+   "decl": "Subgroup.commutator_commutator_eq_bot_of_rotate",
+   "difference": null
+  },
+  "proofs": [
+   {
+    "id": "hall-witt",
+    "name": "Hall-Witt identity",
+    "slogan": "Expand $[z,[x,y]]$ by the Hall-Witt identity into two commutators that the hypotheses kill.",
+    "scope": "The whole lemma. With a normal subgroup $N$ in place of $1$, the same proof works in $G/N$.",
+    "mechanisms": [
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:subgroups",
+      "why": "Subgroups are closed under inverses and products, so centralizers and generators reduce the claim to elements.",
+      "steps": [
+       "s:reduce",
+       "s:vanish"
+      ]
+     },
+     {
+      "h": "h:first",
+      "why": "It kills $[x^{-1},[y^{-1},z]]$, because $[y^{-1},z]$ lies in $[H_2,H_3]$ and $x^{-1}$ lies in $H_1$.",
+      "steps": [
+       "s:vanish"
+      ]
+     },
+     {
+      "h": "h:second",
+      "why": "It kills $[y,[z^{-1},x^{-1}]]$, because $[z^{-1},x^{-1}]$ lies in $[H_3,H_1]$ and $y$ lies in $H_2$.",
+      "steps": [
+       "s:vanish"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:reduce",
+      "slogan": "Reduce the claim to commuting single elements.",
+      "detail": "The [commutator subgroup](c:commutator-subgroup) $[H_1,H_2]$ is generated by the [commutators](c:group-commutator) $[x,y]$ with $x \\in H_1$, $y \\in H_2$, and the centralizer of $H_3$ is a subgroup. So $[[H_1,H_2],H_3] = 1$ iff $[z,[x,y]] = 1$ for all $x \\in H_1$, $y \\in H_2$, $z \\in H_3$.",
+      "uses": []
+     },
+     {
+      "id": "s:identity",
+      "slogan": "Expand $[z,[x,y]]$ with the Hall-Witt identity.",
+      "detail": "With $[a,b] = aba^{-1}b^{-1}$, one has $[z,[x,y]] = xz\\,[y,[z^{-1},x^{-1}]]^{-1}\\,z^{-1}y\\,[x^{-1},[y^{-1},z]]^{-1}\\,y^{-1}x^{-1}$. This is a form of the Hall-Witt identity; expanding both sides in the free group on $x,y,z$ confirms it.",
+      "uses": [
+       "nm:hall-witt-identity"
+      ]
+     },
+     {
+      "id": "s:vanish",
+      "slogan": "Show that both inner commutators are trivial by the hypotheses.",
+      "detail": "The element $[z^{-1},x^{-1}]$ lies in $[H_3,H_1]$ and $y \\in H_2$, so the second hypothesis gives $[y,[z^{-1},x^{-1}]] = 1$. The element $[y^{-1},z]$ lies in $[H_2,H_3]$ and $x^{-1} \\in H_1$, so the first hypothesis gives $[x^{-1},[y^{-1},z]] = 1$.",
+      "uses": []
+     },
+     {
+      "id": "s:collapse",
+      "slogan": "Collapse the product to $1$ and conclude that $H_3$ centralizes $[H_1,H_2]$.",
+      "detail": "The identity becomes $xz\\,z^{-1}y\\,y^{-1}x^{-1} = 1$, so $[z,[x,y]] = 1$ for all $x, y, z$. By the first step, $[[H_1,H_2],H_3] = 1$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:reduce",
+      "s:collapse"
+     ],
+     [
+      "s:identity",
+      "s:vanish"
+     ],
+     [
+      "s:identity",
+      "s:collapse"
+     ],
+     [
+      "s:vanish",
+      "s:collapse"
+     ]
+    ],
+    "conclusion": "s:collapse",
+    "concepts": {
+     "c:commutator-subgroup": "The hypotheses and the conclusion are statements about commutator subgroups.",
+     "c:group-commutator": "The identity expresses one commutator through two others.",
+     "c:subgroup": "The three sets are subgroups, so their commutators generate subgroups."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Subgroup.commutator_commutator_eq_bot_of_rotate",
+     "follows": true,
+     "note": "mathlib rewrites with centralizers (commutator_le, mem_centralizer_iff_commutator_eq_one), proves the Hall-Witt form as a trans step, and kills both factors with the hypotheses."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:titu-s-lemma",
+  "statement": "For real numbers $a_1,\\dots,a_n$ and positive real numbers $b_1,\\dots,b_n$ with $n \\ge 1$, $\\sum a_i^2/b_i \\ge \\left(\\sum a_i\\right)^2 / \\sum b_i$.",
+  "hypotheses": [
+   {
+    "id": "h:positive",
+    "text": "Each $b_i$ is a positive real number.",
+    "concept": null
+   },
+   {
+    "id": "h:finite",
+    "text": "The family has finitely many terms $a_i, b_i$ for $i = 1,\\dots,n$, with $n \\ge 1$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The [sum](c:sum) of the [fractions](c:rational-number) $a_i^2/b_i$ is at least the square of the sum of the $a_i$ divided by the sum of the $b_i$.",
+  "formal": {
+   "decl": "Finset.sq_sum_div_le_sum_sq_div",
+   "difference": "mathlib works in any linearly ordered semifield and allows an empty index set, where both sides are 0 because division by zero is 0. The statement here takes real numbers and $n \\ge 1$."
+  },
+  "proofs": [
+   {
+    "id": "cauchy-schwarz",
+    "name": "Cauchy-Schwarz",
+    "slogan": "Bound the squared sum by the Cauchy-Schwarz product of the sums of $a_i^2/b_i$ and of $b_i$, then divide by $\\sum b_i$.",
+    "scope": "The whole inequality for $n \\ge 1$. The empty family is excluded here; mathlib covers it with the convention $0/0 = 0$.",
+    "mechanisms": [
+     "m:cauchy-schwarz"
+    ],
+    "roles": [
+     {
+      "h": "h:positive",
+      "why": "Positivity of $b_i$ defines the [fractions](c:rational-number) $a_i^2/b_i$, makes them nonnegative and makes $\\sum b_i$ positive.",
+      "steps": [
+       "s:terms",
+       "s:divide"
+      ]
+     },
+     {
+      "h": "h:finite",
+      "why": "A finite family allows the finite Cauchy-Schwarz inequality for sums.",
+      "steps": [
+       "s:cs"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:terms",
+      "slogan": "Set $p_i = a_i^2/b_i$ and $q_i = b_i$, both nonnegative with $p_i q_i = a_i^2$.",
+      "detail": "Because $b_i > 0$, the quotient $p_i = a_i^2/b_i$ is defined and $p_i \\ge 0$. Also $p_i q_i = a_i^2$, so $|a_i| = \\sqrt{p_i q_i}$.",
+      "uses": []
+     },
+     {
+      "id": "s:cs",
+      "slogan": "Bound the squared sum of the $a_i$ by the product of the sums of $p_i$ and $q_i$.",
+      "detail": "Cauchy-Schwarz for the vectors $(\\sqrt{p_i})$ and $(\\sqrt{q_i})$ gives $\\left(\\sum |a_i|\\right)^2 \\le \\left(\\sum p_i\\right)\\left(\\sum q_i\\right)$, and $\\left(\\sum a_i\\right)^2 \\le \\left(\\sum |a_i|\\right)^2$.",
+      "uses": [
+       "nl:16121"
+      ]
+     },
+     {
+      "id": "s:divide",
+      "slogan": "Divide by the positive sum $\\sum b_i$ to reach the claimed inequality.",
+      "detail": "Since $n \\ge 1$ and every $b_i > 0$, we have $\\sum b_i > 0$. Dividing $\\left(\\sum a_i\\right)^2 \\le \\left(\\sum a_i^2/b_i\\right)\\left(\\sum b_i\\right)$ by it gives the claim.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:terms",
+      "s:cs"
+     ],
+     [
+      "s:cs",
+      "s:divide"
+     ],
+     [
+      "s:terms",
+      "s:divide"
+     ]
+    ],
+    "conclusion": "s:divide",
+    "concepts": {
+     "c:rational-number": "Each term $a_i^2/b_i$ is a fraction that needs a positive denominator.",
+     "c:sum": "The inequality compares two finite sums of fractions and sums of the data."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Finset.sq_sum_div_le_sum_sq_div",
+     "follows": true,
+     "note": "mathlib sets the two sequences $a_i^2/b_i$ and $b_i$, uses sum_sq_le_sum_mul_sum_of_sq_le_mul for the Cauchy-Schwarz bound, then div_le_of_le_mul₀."
+    }
+   },
+   {
+    "id": "completing-the-square",
+    "name": "Completing the square with a parameter",
+    "slogan": "Complete the square in each term with a free parameter $t$, add the bounds, and choose $t$ equal to $\\sum a_i / \\sum b_i$.",
+    "scope": "The whole inequality for $n \\ge 1$. Equality holds exactly when all quotients $a_i/b_i$ are equal.",
+    "mechanisms": [
+     "m:algebraic-identity",
+     "m:convexity"
+    ],
+    "roles": [
+     {
+      "h": "h:positive",
+      "why": "Positivity of $b_i$ lets us divide $(a_i - t b_i)^2 \\ge 0$ by $b_i$ and makes $t$ defined.",
+      "steps": [
+       "s:square",
+       "s:choose"
+      ]
+     },
+     {
+      "h": "h:finite",
+      "why": "A finite family lets us add the termwise bounds over all $i$.",
+      "steps": [
+       "s:add"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:square",
+      "slogan": "Bound each fraction below by a linear expression in a real parameter $t$.",
+      "detail": "For every real $t$, [completing the square](c:completing-the-square) gives $(a_i - t b_i)^2 \\ge 0$. Dividing by $b_i > 0$ gives $a_i^2/b_i \\ge 2t a_i - t^2 b_i$.",
+      "uses": []
+     },
+     {
+      "id": "s:add",
+      "slogan": "Add the termwise bounds over all indices $i$.",
+      "detail": "Summing over $i$ gives $\\sum a_i^2/b_i \\ge 2t \\sum a_i - t^2 \\sum b_i$ for every real $t$.",
+      "uses": []
+     },
+     {
+      "id": "s:choose",
+      "slogan": "Choose $t = \\sum a_i / \\sum b_i$, which is defined because the $b_i$ are positive.",
+      "detail": "Put $S = \\sum a_i$ and $B = \\sum b_i > 0$, and let $t = S/B$. The right side becomes $2S^2/B - S^2/B = S^2/B$, which is the claim.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:square",
+      "s:add"
+     ],
+     [
+      "s:add",
+      "s:choose"
+     ]
+    ],
+    "conclusion": "s:choose",
+    "concepts": {
+     "c:completing-the-square": "A perfect square, scaled by $1/b_i$, gives the termwise bound.",
+     "c:rational-number": "Each term $a_i^2/b_i$ is a fraction that needs a positive denominator.",
+     "c:sum": "The inequality compares two finite sums of fractions and sums of the data."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The tangent-line (completing the square) proof, a standard alternative to the Cauchy-Schwarz proof of Engel's form."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q7825061",
+  "statement": "Let $M$ be a complete [Riemannian manifold](c:riemannian-manifold) with [sectional curvature](c:sectional-curvature) at least $k$. Take a [geodesic triangle](c:geodesic-triangle) in $M$ with minimizing sides, of perimeter less than $2\\pi/\\sqrt{k}$ if $k > 0$. Each angle of it is at least the matching angle of the comparison triangle with the same side lengths in the model plane $M_k^2$.",
+  "hypotheses": [
+   {
+    "id": "h:complete",
+    "text": "The manifold $M$ is a complete [Riemannian manifold](c:riemannian-manifold).",
+    "concept": "c:riemannian-manifold"
+   },
+   {
+    "id": "h:curvature",
+    "text": "Every [sectional curvature](c:sectional-curvature) of $M$ is at least $k$.",
+    "concept": "c:sectional-curvature"
+   },
+   {
+    "id": "h:triangle",
+    "text": "The [geodesic triangle](c:geodesic-triangle) has minimizing sides, and its perimeter is less than $2\\pi/\\sqrt{k}$ when $k > 0$.",
+    "concept": "c:geodesic-triangle"
+   }
+  ],
+  "conclusion": "Each angle of the triangle is at least the corresponding angle of the comparison triangle in $M_k^2$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "hinge-globalization",
+    "name": "Hinges, Rauch and globalization",
+    "slogan": "Prove the comparison for small hinges with Rauch's theorem, then extend it to all hinges by a continuity argument and Alexandrov's gluing lemma.",
+    "scope": "An outline of the published proof; the gluing lemma and the continuity argument rest on the cited work. Complete manifolds supply the minimizing geodesics that the argument needs.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:curvature-comparison",
+     "m:local-to-global"
+    ],
+    "roles": [
+     {
+      "h": "h:complete",
+      "why": "Completeness gives minimizing [geodesics](c:geodesic) between points and lets limits of hinges stay in $M$.",
+      "steps": [
+       "s:continuity"
+      ]
+     },
+     {
+      "h": "h:curvature",
+      "why": "The lower curvature bound makes Jacobi fields grow no faster than in the model plane.",
+      "steps": [
+       "s:local",
+       "s:continuity"
+      ]
+     },
+     {
+      "h": "h:triangle",
+      "why": "The triangle supplies the three hinges at its vertices, and the perimeter bound keeps them inside the model comparison range.",
+      "steps": [
+       "s:hinge",
+       "s:conclude"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:hinge",
+      "slogan": "Restate the angle comparison for triangles as a comparison for hinges.",
+      "detail": "A hinge is a pair of minimizing geodesics from a point $p$, of lengths $a$ and $b$, with angle $\\alpha$ between them. The hinge version says that the distance between the far endpoints is at most the closing distance of the model hinge with the same data. The angle and hinge versions imply each other.",
+      "uses": []
+     },
+     {
+      "id": "s:local",
+      "slogan": "Prove the hinge comparison for small hinges with Rauch's theorem.",
+      "detail": "On a small ball, the Rauch comparison theorem shows that $\\exp_p \\circ (\\exp^k_{\\tilde p})^{-1}$ from the model ball to $M$ does not increase lengths of curves. A small hinge is the image of the model hinge, so its closing distance in $M$ is at most the model value.",
+      "uses": [
+       "wd:Q7296106"
+      ]
+     },
+     {
+      "id": "s:alexandrov",
+      "slogan": "Glue model triangles along a common side to compare subdivided triangles.",
+      "detail": "Alexandrov's lemma compares the angles of two model triangles that share a side. It lets the comparison for two smaller triangles, cut by a geodesic from a vertex, give the comparison for the triangle they form.",
+      "uses": []
+     },
+     {
+      "id": "s:continuity",
+      "slogan": "Extend the comparison from small hinges to all hinges by a continuity argument.",
+      "detail": "Vary the size of a hinge from small to the given size. The local case starts the argument. The gluing step and the existence of minimizing geodesics in the complete manifold $M$ keep the comparison true at every size.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Apply the hinge comparison at each vertex to get the angle comparison.",
+      "detail": "The hinge comparison at each vertex of the triangle is equivalent to the statement that the angle there is at least the comparison angle. This holds for every angle of the triangle.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:hinge",
+      "s:local"
+     ],
+     [
+      "s:local",
+      "s:continuity"
+     ],
+     [
+      "s:alexandrov",
+      "s:continuity"
+     ],
+     [
+      "s:continuity",
+      "s:conclude"
+     ],
+     [
+      "s:hinge",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:geodesic": "Minimizing geodesics form the sides of triangles and hinges.",
+     "c:geodesic-triangle": "The triangle formed by minimizing geodesics is the object being compared.",
+     "c:riemannian-manifold": "The manifold carries the metric whose geodesics and curvature are compared.",
+     "c:sectional-curvature": "The lower bound on sectional curvature drives the comparison with the model plane."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "J. Cheeger and D. G. Ebin, Comparison Theorems in Riemannian Geometry, North-Holland Mathematical Library 9, North-Holland, 1975 (reprinted by AMS Chelsea Publishing, 2008), Chapter 2",
+     "url": "https://www.ams.org/books/chel/365",
+     "note": "The theorem is due to V. A. Toponogov, Riemannian spaces with curvature bounded below, Uspekhi Matematicheskikh Nauk 14 (1959), 87-130. The steps follow the hinge version, Rauch's theorem and the globalization argument."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q7853325",
+  "statement": "Let $n$ be a squarefree positive integer. Let $A_n, B_n, C_n, D_n$ count integer triples $(x,y,z)$ with $n = 2x^2+y^2+32z^2$, $n = 2x^2+y^2+8z^2$, $n = 8x^2+2y^2+64z^2$, $n = 8x^2+2y^2+16z^2$ respectively. A [congruent number](c:congruent-number) $n$ has $2A_n = B_n$ if odd and $2C_n = D_n$ if even. If the Birch and Swinnerton-Dyer conjecture holds for $y^2 = x^3 - n^2x$, the converse holds.",
+  "hypotheses": [
+   {
+    "id": "h:squarefree",
+    "text": "The integer $n$ is positive and squarefree.",
+    "concept": null
+   },
+   {
+    "id": "h:bsd",
+    "text": "For the converse only: the Birch and Swinnerton-Dyer conjecture holds for the [elliptic curve](c:elliptic-curve) $E_n\\colon y^2 = x^3 - n^2x$.",
+    "concept": "c:elliptic-curve"
+   }
+  ],
+  "conclusion": "A congruent $n$ satisfies $2A_n = B_n$ (odd) or $2C_n = D_n$ (even); under the conjecture, the equality implies that $n$ is congruent.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "waldspurger",
+    "name": "Waldspurger and Coates-Wiles",
+    "slogan": "Tie congruence to the rank of an elliptic curve, the rank to a central $L$-value, and the $L$-value to a weight 3/2 coefficient that counts lattice points.",
+    "scope": "An outline of Tunnell's proof; the construction of the weight 3/2 form, Waldspurger's formula and the theorem of Coates and Wiles rest on the cited work. The forward direction is unconditional; the converse needs the conjecture.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:modularity",
+     "m:reduction"
+    ],
+    "roles": [
+     {
+      "h": "h:squarefree",
+      "why": "Waldspurger's formula applies to squarefree twists and their coefficients, so the count formula needs $n$ squarefree.",
+      "steps": [
+       "s:waldspurger",
+       "s:count"
+      ]
+     },
+     {
+      "h": "h:bsd",
+      "why": "The conjecture turns a vanishing central $L$-value into a point of infinite order.",
+      "steps": [
+       "s:bsd"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:rank",
+      "slogan": "Translate congruence of $n$ into positive rank of the curve $E_n$.",
+      "detail": "A rational right triangle of area $n$ corresponds to a rational point of order greater than 2 on the [elliptic curve](c:elliptic-curve) $E_n$. The torsion of $E_n(\\mathbb{Q})$ is exactly its points of order at most 2. So $n$ is a [congruent number](c:congruent-number) iff $E_n(\\mathbb{Q})$ has positive rank.",
+      "uses": []
+     },
+     {
+      "id": "s:coates-wiles",
+      "slogan": "Show that a nonzero central value $L(E_n,1)$ forces rank zero.",
+      "detail": "Coates and Wiles proved, for curves with complex multiplication, that $L(E,1) \\ne 0$ implies that $E(\\mathbb{Q})$ is finite. So a congruent $n$ has $L(E_n,1) = 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:weight-three-halves",
+      "slogan": "Construct an explicit modular form of weight 3/2 for the curve.",
+      "detail": "Tunnell uses the Serre-Stark theorem to write a [modular form](c:modular-form) $g = \\sum c(m)q^m$ of weight 3/2 as a product of an explicit theta series and a weight 1 form. Under the Shimura correspondence, $g$ matches the weight 2 newform of the curve $y^2 = x^3 - x$.",
+      "uses": []
+     },
+     {
+      "id": "s:waldspurger",
+      "slogan": "Relate $L(E_n,1)$ to the square of a coefficient of that form.",
+      "detail": "Waldspurger's theorem gives $L(E_n,1) = \\kappa\\, c(n)^2/\\sqrt{n}$ for squarefree $n$, with an explicit nonzero constant $\\kappa$. So $L(E_n,1) = 0$ iff $c(n) = 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:count",
+      "slogan": "Read $c(n)$ as a difference of lattice point counts.",
+      "detail": "The explicit form gives, up to a nonzero constant, $c(n) = A_n - B_n/2$ for odd $n$, and an analogous coefficient $C_n - D_n/2$ for even $n$. So $c(n) = 0$ iff $2A_n = B_n$ (odd) or $2C_n = D_n$ (even).",
+      "uses": []
+     },
+     {
+      "id": "s:bsd",
+      "slogan": "Assume the conjecture to turn a vanishing central value into positive rank.",
+      "detail": "The Birch and Swinnerton-Dyer conjecture predicts $\\operatorname{ord}_{s=1} L(E_n,s) = \\operatorname{rank} E_n(\\mathbb{Q})$. So $L(E_n,1) = 0$ gives rank at least 1, and $n$ is congruent by the first step.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Combine the unconditional direction with the conditional converse.",
+      "detail": "If $n$ is congruent, the steps on rank, Coates-Wiles, Waldspurger and counts give the equality. Conversely, an equality gives $c(n) = 0$, hence $L(E_n,1) = 0$, hence rank at least 1 under the conjecture, and $n$ is congruent.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:rank",
+      "s:coates-wiles"
+     ],
+     [
+      "s:weight-three-halves",
+      "s:waldspurger"
+     ],
+     [
+      "s:waldspurger",
+      "s:count"
+     ],
+     [
+      "s:coates-wiles",
+      "s:count"
+     ],
+     [
+      "s:count",
+      "s:bsd"
+     ],
+     [
+      "s:rank",
+      "s:bsd"
+     ],
+     [
+      "s:bsd",
+      "s:conclude"
+     ],
+     [
+      "s:count",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:congruent-number": "Congruent numbers are the areas of rational right triangles that the theorem decides.",
+     "c:elliptic-curve": "The curve $E_n$ turns the triangle problem into a rank question.",
+     "c:modular-form": "A weight 3/2 modular form carries the lattice point counts in its coefficients."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "J. B. Tunnell, A classical Diophantine problem and modular forms of weight 3/2, Inventiones Mathematicae 72 (1983), 323-334",
+     "url": "https://doi.org/10.1007/BF01389327",
+     "note": "The steps use J. Coates and A. Wiles, On the conjecture of Birch and Swinnerton-Dyer, Inventiones Mathematicae 39 (1977), and J.-L. Waldspurger's formula for coefficients of half-integral weight forms."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:uniform-time-existence",
+  "statement": "Let $M$ be a Hausdorff [manifold](c:manifold) without boundary and $v$ a $C^1$ [vector field](c:vector-field) on $M$. Suppose $\\varepsilon > 0$ is such that through every point $x$ there is an integral curve of $v$ defined on $(-\\varepsilon, \\varepsilon)$ with value $x$ at time 0. Then every point lies on an integral curve defined on all of $\\mathbb{R}$.",
+  "hypotheses": [
+   {
+    "id": "h:manifold",
+    "text": "The space $M$ is a Hausdorff [manifold](c:manifold) without boundary.",
+    "concept": "c:manifold"
+   },
+   {
+    "id": "h:field",
+    "text": "The field $v$ is a $C^1$ [vector field](c:vector-field) on $M$.",
+    "concept": "c:vector-field"
+   },
+   {
+    "id": "h:uniform",
+    "text": "There is $\\varepsilon > 0$ such that every point $x$ has an integral curve $\\gamma$ with $\\gamma(0) = x$ defined on $(-\\varepsilon,\\varepsilon)$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "Every point $x \\in M$ lies on an integral curve $\\gamma\\colon \\mathbb{R} \\to M$ with $\\gamma(0) = x$.",
+  "formal": {
+   "decl": "exists_isMIntegralCurve_of_isMIntegralCurveOn",
+   "difference": "mathlib allows a manifold modeled on any real normed space, including infinite-dimensional ones. The statement here is the same result."
+  },
+  "proofs": [
+   {
+    "id": "supremum-gluing",
+    "name": "Supremum of radii and gluing",
+    "slogan": "Take the supremum of the radii of symmetric integral curves through $x$, and glue in two restarted curves to exceed it.",
+    "scope": "The whole theorem. Uniqueness of integral curves, which needs the field to be $C^1$ and the manifold Hausdorff, lets the curves be glued.",
+    "mechanisms": [
+     "m:supremum",
+     "m:contradiction",
+     "m:local-to-global"
+    ],
+    "roles": [
+     {
+      "h": "h:manifold",
+      "why": "The Hausdorff property is needed for uniqueness of integral curves, which makes the glued pieces agree.",
+      "steps": [
+       "s:glue",
+       "s:join"
+      ]
+     },
+     {
+      "h": "h:field",
+      "why": "A $C^1$ field gives uniqueness of integral curves, and time shifts of integral curves stay integral curves.",
+      "steps": [
+       "s:restart",
+       "s:glue",
+       "s:join"
+      ]
+     },
+     {
+      "h": "h:uniform",
+      "why": "The uniform radius $\\varepsilon$ lets the curve be restarted at every point and starts the supremum argument.",
+      "steps": [
+       "s:set",
+       "s:restart"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:set",
+      "slogan": "Collect the radii of symmetric integral curves through $x$ into a set $S$.",
+      "detail": "Let $S$ be the set of $a > 0$ such that some integral curve $\\gamma$ of $v$ has $\\gamma(0) = x$ and is defined on $(-a, a)$. The hypothesis puts $\\varepsilon$ in $S$, so $S$ is nonempty. The goal is to show that $S$ is unbounded.",
+      "uses": []
+     },
+     {
+      "id": "s:sup",
+      "slogan": "Assume that $S$ is bounded and take its [supremum](c:least-upper-bound) $A \\ge \\varepsilon$.",
+      "detail": "Choose $a \\in S$ with $a > A - \\varepsilon/2$ and an integral curve $\\gamma$ through $x$ on $(-a, a)$. Put $t_0 = A - \\varepsilon/2$, so $0 < t_0 < a$.",
+      "uses": []
+     },
+     {
+      "id": "s:restart",
+      "slogan": "Restart the flow at the points $\\gamma(t_0)$ and $\\gamma(-t_0)$.",
+      "detail": "The hypothesis gives integral curves of radius $\\varepsilon$ through $\\gamma(t_0)$ and $\\gamma(-t_0)$. A time shift of an integral curve is an integral curve, so shifting by $t_0$ and $-t_0$ gives curves $\\gamma_+$ on $(t_0 - \\varepsilon, t_0 + \\varepsilon)$ and $\\gamma_-$ on $(-t_0 - \\varepsilon, -t_0 + \\varepsilon)$ that agree with $\\gamma$ at $t_0$ and $-t_0$.",
+      "uses": []
+     },
+     {
+      "id": "s:glue",
+      "slogan": "Glue $\\gamma_-$, $\\gamma$ and $\\gamma_+$ into one integral curve on $(-A - \\varepsilon/2,\\, A + \\varepsilon/2)$.",
+      "detail": "Two integral curves that agree at one time agree on their whole common interval, by uniqueness. So the three curves agree on their overlaps and define one integral curve through $x$ on the interval, since $t_0 + \\varepsilon = A + \\varepsilon/2$.",
+      "uses": [
+       "nm:uniqueness-of-integral-curves"
+      ]
+     },
+     {
+      "id": "s:contradict",
+      "slogan": "Contradict the choice of $A$ because $A + \\varepsilon/2$ lies in $S$.",
+      "detail": "The glued curve shows $A + \\varepsilon/2 \\in S$, but $A = \\sup S$. So $S$ is unbounded.",
+      "uses": []
+     },
+     {
+      "id": "s:join",
+      "slogan": "Join integral curves of growing radius into one curve defined on $\\mathbb{R}$.",
+      "detail": "For every $a > 0$ some integral curve through $x$ is defined on $(-a, a)$. Two of them agree on the common interval by uniqueness, so they define one integral curve $\\gamma\\colon \\mathbb{R} \\to M$ with $\\gamma(0) = x$.",
+      "uses": [
+       "nm:uniqueness-of-integral-curves"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:set",
+      "s:sup"
+     ],
+     [
+      "s:sup",
+      "s:restart"
+     ],
+     [
+      "s:restart",
+      "s:glue"
+     ],
+     [
+      "s:sup",
+      "s:glue"
+     ],
+     [
+      "s:glue",
+      "s:contradict"
+     ],
+     [
+      "s:contradict",
+      "s:join"
+     ]
+    ],
+    "conclusion": "s:join",
+    "concepts": {
+     "c:least-upper-bound": "The supremum of the radii is the quantity that the gluing step exceeds.",
+     "c:manifold": "Integral curves live on the manifold, and charts give local existence and uniqueness.",
+     "c:vector-field": "The vector field defines the integral curves that are extended in time."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "exists_isMIntegralCurve_of_isMIntegralCurveOn",
+     "follows": true,
+     "note": "mathlib takes the set of radii and its sSup, restarts at the points of the curve with isMIntegralCurveOn_comp_add and isMIntegralCurveOn_comp_sub, glues with isMIntegralCurveOn_piecewise, and ends with exists_isMIntegralCurve_iff_exists_isMIntegralCurveOn_Ioo."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q10859514",
+  "statement": "Take fermions with real positive masses in a vector-like theory coupled to a [gauge field](c:gauge-field), with theta angle zero. Then vector-like global symmetries, such as isospin and baryon number, are not spontaneously broken.",
+  "hypotheses": [
+   {
+    "id": "h:vectorlike",
+    "text": "The fermions form a vector-like representation of the [gauge field](c:gauge-field)'s group, with real positive masses.",
+    "concept": "c:gauge-field"
+   },
+   {
+    "id": "h:theta",
+    "text": "The theta angle is zero.",
+    "concept": null
+   }
+  ],
+  "conclusion": "Every order parameter of a vector-like global symmetry has vanishing vacuum expectation value.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "positivity",
+    "name": "Positivity and propagator bound",
+    "slogan": "Use the positive Euclidean measure and a bound on the quark propagator to show that non-singlet two-point functions decay, so no order parameter is nonzero.",
+    "scope": "A theorem of theoretical physics, argued at the level of rigor of the Euclidean [path integral](c:path-integral), as in the cited paper. The steps follow Vafa and Witten, and the propagator bound rests on that paper.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:cauchy-schwarz",
+     "m:a-priori-estimate"
+    ],
+    "roles": [
+     {
+      "h": "h:vectorlike",
+      "why": "Vector-like matter makes the Dirac operator anti-Hermitian, which gives a positive determinant and a propagator bound.",
+      "steps": [
+       "s:measure",
+       "s:propagator"
+      ]
+     },
+     {
+      "h": "h:theta",
+      "why": "A zero theta angle keeps the weight of each gauge field configuration real and positive.",
+      "steps": [
+       "s:measure"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:measure",
+      "slogan": "Show that the Euclidean measure over gauge fields is positive.",
+      "detail": "For zero theta angle and real positive mass $m$, the Dirac operator $\\slashed{D}_A$ is anti-Hermitian in every background $A$. So the [determinant](c:determinant) $\\det(\\slashed{D}_A + m) = \\prod_\\lambda (\\lambda^2 + m^2)$ is positive. The [path integral](c:path-integral) then averages over $A$ with a positive weight.",
+      "uses": []
+     },
+     {
+      "id": "s:propagator",
+      "slogan": "Bound the quark propagator in each fixed gauge background.",
+      "detail": "Anti-Hermiticity gives $\\|(\\slashed{D}_A + m)^{-1}\\| \\le 1/m$ in every background $A$. Vafa and Witten derive from it an upper bound on the propagator that decays exponentially in the distance.",
+      "uses": []
+     },
+     {
+      "id": "s:schwarz",
+      "slogan": "Bound a non-singlet two-point function by the squared propagator, using $\\gamma_5$-Hermiticity.",
+      "detail": "With $S_A(y,x) = \\gamma_5 S_A(x,y)^\\dagger \\gamma_5$ and equal masses, the [two-point function](c:correlation-function) of a bilinear with nonzero isospin is an average over $A$ of a trace of two propagators. The positive measure and the Schwarz inequality bound its size by the average of the squared propagator norm.",
+      "uses": []
+     },
+     {
+      "id": "s:decay",
+      "slogan": "Conclude that every non-singlet two-point function decays at large distance.",
+      "detail": "The propagator bound makes the average of the squared propagator tend to zero with the distance. So $|\\langle O(x) O^\\dagger(y)\\rangle| \\to 0$ as $|x - y| \\to \\infty$ for every operator $O$ with nonzero vector-like charge.",
+      "uses": []
+     },
+     {
+      "id": "s:order",
+      "slogan": "Exclude an order parameter with nonzero vacuum expectation value.",
+      "detail": "In a vacuum where the symmetry is spontaneously broken, an order parameter $O$ with $\\langle O\\rangle \\ne 0$ has $\\langle O(x) O^\\dagger(y)\\rangle \\to |\\langle O\\rangle|^2 \\ne 0$ at large distance, by clustering. This contradicts the decay, so $\\langle O\\rangle = 0$ for every order parameter.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:measure",
+      "s:schwarz"
+     ],
+     [
+      "s:propagator",
+      "s:schwarz"
+     ],
+     [
+      "s:schwarz",
+      "s:decay"
+     ],
+     [
+      "s:propagator",
+      "s:decay"
+     ],
+     [
+      "s:decay",
+      "s:order"
+     ]
+    ],
+    "conclusion": "s:order",
+    "concepts": {
+     "c:correlation-function": "The decay of two-point functions is what excludes a nonzero order parameter.",
+     "c:determinant": "The fermion determinant is the weight that must be positive.",
+     "c:gauge-field": "The fermions couple to the gauge field, whose background enters each propagator.",
+     "c:path-integral": "The vacuum expectation values are Euclidean path integrals with a positive measure."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "C. Vafa and E. Witten, Restrictions on symmetry breaking in vector-like gauge theories, Nuclear Physics B 234 (1984), 173-188",
+     "url": "https://collaborate.princeton.edu/en/publications/restrictions-on-symmetry-breaking-in-vector-like-gauge-theories/",
+     "note": "The proof rests on positivity of the Euclidean measure and an exponentially decaying bound on the quark propagator."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q7911648",
+  "statement": "A randomized polynomial-time map sends a Boolean formula $\\varphi$ on $n$ variables to a formula $\\varphi'$ such that: if $\\varphi$ is unsatisfiable, so is $\\varphi'$; if $\\varphi$ is satisfiable, $\\varphi'$ has exactly one satisfying assignment with probability at least $1/(8n+8)$. Hence a polynomial-time algorithm for [Unique-SAT](c:unique-sat) gives [NP](c:np-complexity-class) $=$ RP.",
+  "hypotheses": [
+   {
+    "id": "h:formula",
+    "text": "The input $\\varphi$ is a Boolean formula in conjunctive normal form on $n$ variables.",
+    "concept": null
+   },
+   {
+    "id": "h:usat",
+    "text": "For the consequence only: there is a polynomial-time algorithm for [Unique-SAT](c:unique-sat).",
+    "concept": "c:unique-sat"
+   }
+  ],
+  "conclusion": "The map isolates a solution with probability at least $1/(8n+8)$, and a polynomial-time Unique-SAT algorithm gives $\\mathrm{NP} = \\mathrm{RP}$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "hashing",
+    "name": "Isolation by pairwise independent hashing",
+    "slogan": "Guess the scale of the number of solutions, add a random affine hash constraint, and show that exactly one solution survives with constant probability.",
+    "scope": "The whole theorem. A satisfiable $\\varphi$ has $1 \\le m \\le 2^n$ solutions; an unsatisfiable $\\varphi$ stays unsatisfiable under any added constraint.",
+    "mechanisms": [
+     "m:reduction",
+     "m:linearity-of-expectation",
+     "m:inclusion-exclusion"
+    ],
+    "roles": [
+     {
+      "h": "h:formula",
+      "why": "The solution set $S \\subseteq \\{0,1\\}^n$ of the formula is what the hash constraint thins out.",
+      "steps": [
+       "s:scale",
+       "s:hash"
+      ]
+     },
+     {
+      "h": "h:usat",
+      "why": "A polynomial-time [Unique-SAT](c:unique-sat) algorithm decides each hashed formula, which puts SAT in RP.",
+      "steps": [
+       "s:amplify"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:scale",
+      "slogan": "Guess the scale $k$ of the number of solutions.",
+      "detail": "Let $S$ be the set of solutions and $m = |S| \\ge 1$. The integer $k = \\lfloor \\log_2 m \\rfloor + 2$ lies in $\\{2,\\dots,n+2\\}$ and satisfies $2^{k-2} \\le m < 2^{k-1}$. Choose $k$ uniformly in that range; it is the right value with probability $1/(n+1)$.",
+      "uses": []
+     },
+     {
+      "id": "s:hash",
+      "slogan": "Add the constraint $h(x) = 0$ for a random affine map $h$.",
+      "detail": "Choose a uniform $k \\times n$ matrix $M$ and vector $b$ over $\\mathbb{F}_2$, and put $h(x) = Mx + b$. This is [pairwise independent hashing](c:pairwise-independent-hashing): $\\Pr[h(x) = 0] = 2^{-k}$ and $\\Pr[h(x) = h(y) = 0] = 2^{-2k}$ for $x \\ne y$. Write $h(x) = 0$ as a CNF with auxiliary variables fixed by $x$, and let $\\varphi'$ be its conjunction with $\\varphi$; solutions of $\\varphi'$ match the $x \\in S$ with $h(x) = 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:isolate",
+      "slogan": "Bound the chance that exactly one solution survives the hash.",
+      "detail": "Let $N = |\\{x \\in S : h(x) = 0\\}|$. Since $\\mathbf{1}[N = 1] \\ge N - N(N-1)$, the probability is at least $\\mathbb{E}N - \\mathbb{E}N(N-1) = m2^{-k} - m(m-1)2^{-2k} \\ge t(1-t)$ with $t = m2^{-k} \\in [1/4, 1/2)$. So it is at least $1/8$ when $k$ is right.",
+      "uses": []
+     },
+     {
+      "id": "s:probability",
+      "slogan": "Multiply the two probabilities to get the isolation bound.",
+      "detail": "The scale is right with probability $1/(n+1)$, and then exactly one solution survives with probability at least $1/8$. So $\\varphi'$ is uniquely satisfiable with probability at least $1/(8n+8)$. If $\\varphi$ is unsatisfiable, so is $\\varphi'$, because a solution of $\\varphi'$ solves $\\varphi$.",
+      "uses": []
+     },
+     {
+      "id": "s:amplify",
+      "slogan": "Repeat the reduction and call the Unique-SAT algorithm to put SAT in RP.",
+      "detail": "Run $8(n+1)$ independent trials and accept if the [Unique-SAT](c:unique-sat) algorithm accepts some $\\varphi'$. An unsatisfiable $\\varphi$ is never accepted, and a satisfiable one is accepted with probability at least $1 - e^{-1} > 1/2$. So [SAT](c:boolean-satisfiability-problem) is in RP, and NP-completeness of SAT gives $\\mathrm{NP} \\subseteq \\mathrm{RP}$; the inclusion $\\mathrm{RP} \\subseteq \\mathrm{NP}$ is standard.",
+      "uses": [
+       "wd:Q377276"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:scale",
+      "s:isolate"
+     ],
+     [
+      "s:hash",
+      "s:isolate"
+     ],
+     [
+      "s:isolate",
+      "s:probability"
+     ],
+     [
+      "s:scale",
+      "s:probability"
+     ],
+     [
+      "s:hash",
+      "s:probability"
+     ],
+     [
+      "s:probability",
+      "s:amplify"
+     ]
+    ],
+    "conclusion": "s:amplify",
+    "concepts": {
+     "c:boolean-satisfiability-problem": "SAT is NP-complete, so putting it in RP puts all of NP in RP.",
+     "c:np-complexity-class": "The consequence is that NP collapses to its randomized subclass RP.",
+     "c:pairwise-independent-hashing": "Pairwise independence gives the exact first and second moments of the survivor count.",
+     "c:unique-sat": "The algorithm for formulas with at most one solution is what the reduction feeds."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The isolation argument of Valiant and Vazirani, NP is as easy as detecting unique solutions, Theoretical Computer Science 47 (1986), 85-93, with pairwise independent hashing."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1896455",
+  "statement": "Let $ABCD$ be a [quadrilateral](c:quadrilateral), convex or not, in the plane or in space. The [midpoints](c:midpoint) $P, Q, R, S$ of $AB, BC, CD, DA$ form a [parallelogram](c:parallelogram) $PQRS$ whose sides are parallel to the diagonals $AC$ and $BD$ and have half their lengths.",
+  "hypotheses": [
+   {
+    "id": "h:quadrilateral",
+    "text": "The points $A, B, C, D$ are the vertices of a [quadrilateral](c:quadrilateral) with sides $AB, BC, CD, DA$.",
+    "concept": "c:quadrilateral"
+   },
+   {
+    "id": "h:midpoints",
+    "text": "The points $P, Q, R, S$ are the [midpoints](c:midpoint) of $AB, BC, CD, DA$.",
+    "concept": "c:midpoint"
+   }
+  ],
+  "conclusion": "$\\overrightarrow{PQ} = \\overrightarrow{SR} = \\tfrac12 \\overrightarrow{AC}$ and $\\overrightarrow{QR} = \\overrightarrow{PS} = \\tfrac12 \\overrightarrow{BD}$, so $PQRS$ is a [parallelogram](c:parallelogram).",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "vectors",
+    "name": "Position vectors",
+    "slogan": "Write the midpoints as averages of position vectors and compare opposite sides with half of a diagonal.",
+    "scope": "The whole theorem for any four points. The parallelogram is degenerate, with $P, Q, R, S$ collinear, exactly when $AC$ and $BD$ are parallel.",
+    "mechanisms": [
+     "m:coordinates",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:quadrilateral",
+      "why": "The four vertices have position vectors $a, b, c, d$ from a common origin.",
+      "steps": [
+       "s:average"
+      ]
+     },
+     {
+      "h": "h:midpoints",
+      "why": "Each midpoint is the average of the position vectors of its two endpoints.",
+      "steps": [
+       "s:average"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:average",
+      "slogan": "Write each [midpoint](c:midpoint) as an average of position vectors.",
+      "detail": "Put position vectors $a, b, c, d$. Then $p = (a+b)/2$, $q = (b+c)/2$, $r = (c+d)/2$ and $s = (d+a)/2$.",
+      "uses": []
+     },
+     {
+      "id": "s:first-diagonal",
+      "slogan": "Compare the sides $PQ$ and $SR$ with the diagonal $AC$.",
+      "detail": "Compute $q - p = (c - a)/2$ and $r - s = (c - a)/2$. So $\\overrightarrow{PQ} = \\overrightarrow{SR} = \\tfrac12\\overrightarrow{AC}$.",
+      "uses": []
+     },
+     {
+      "id": "s:second-diagonal",
+      "slogan": "Compare the sides $QR$ and $PS$ with the diagonal $BD$.",
+      "detail": "Compute $r - q = (d - b)/2$ and $s - p = (d - b)/2$. So $\\overrightarrow{QR} = \\overrightarrow{PS} = \\tfrac12\\overrightarrow{BD}$.",
+      "uses": []
+     },
+     {
+      "id": "s:parallelogram",
+      "slogan": "Conclude that opposite sides are equal vectors, so $PQRS$ is a [parallelogram](c:parallelogram).",
+      "detail": "Equal opposite side vectors make $PQRS$ a parallelogram: opposite sides are parallel and equal, and the sides are parallel to the diagonals with half their lengths.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:average",
+      "s:first-diagonal"
+     ],
+     [
+      "s:average",
+      "s:second-diagonal"
+     ],
+     [
+      "s:first-diagonal",
+      "s:parallelogram"
+     ],
+     [
+      "s:second-diagonal",
+      "s:parallelogram"
+     ]
+    ],
+    "conclusion": "s:parallelogram",
+    "concepts": {
+     "c:midpoint": "Midpoints are the averages of the endpoint position vectors.",
+     "c:parallelogram": "Equal opposite side vectors are exactly the parallelogram condition.",
+     "c:quadrilateral": "The four vertices of any quadrilateral are the data of the argument."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard vector proof; the midpoint theorem applied to triangles $ABC$ and $ACD$ gives the same result."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q7999144",
+  "statement": "Let $A\\colon [0,\\infty) \\to [0,\\infty)$ be nondecreasing with [Laplace transform](c:laplace-transform) $f(s) = \\int_0^\\infty A(x)e^{-sx}\\,dx$ convergent for $\\operatorname{Re} s > 1$. If $f(s) - \\frac{1}{s-1}$ extends continuously to $\\operatorname{Re} s \\ge 1$, for example when $f$ has only a simple [pole](c:pole) of residue 1 there, then $e^{-x}A(x) \\to 1$ as $x \\to \\infty$.",
+  "hypotheses": [
+   {
+    "id": "h:monotone",
+    "text": "The function $A$ is nonnegative and [nondecreasing](c:monotone-function).",
+    "concept": "c:monotone-function"
+   },
+   {
+    "id": "h:converges",
+    "text": "The integral $f(s)$ converges for $\\operatorname{Re} s > 1$.",
+    "concept": null
+   },
+   {
+    "id": "h:boundary",
+    "text": "The function $f(s) - \\frac{1}{s-1}$ extends continuously to the closed half-plane $\\operatorname{Re} s \\ge 1$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "$e^{-x}A(x) \\to 1$ as $x \\to \\infty$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "fejer",
+    "name": "Fejér kernel smoothing",
+    "slogan": "Smooth the measure $dA$ with a Fejér kernel, show that the smoothed values tend to 1, and recover $A$ pointwise from monotonicity.",
+    "scope": "The whole theorem in the continuous extension form. The [Dirichlet series](c:dirichlet-series) version, $\\sum_{n \\le x} a_n \\sim cx$ for $a_n \\ge 0$ and a simple pole of residue $c$ at 1, follows with $A(x) = \\sum_{n \\le e^x} a_n$.",
+    "mechanisms": [
+     "m:characteristic-function",
+     "m:monotone-limit"
+    ],
+    "roles": [
+     {
+      "h": "h:monotone",
+      "why": "Monotonicity makes $dA$ a positive measure and gives the slow decrease $A(x+u) \\ge A(x)$ that turns smoothed limits into pointwise limits.",
+      "steps": [
+       "s:bounded",
+       "s:squeeze"
+      ]
+     },
+     {
+      "h": "h:converges",
+      "why": "Convergence for $\\operatorname{Re} s > 1$ defines the transform that is evaluated on lines $\\operatorname{Re} s = 1 + \\varepsilon$.",
+      "steps": [
+       "s:setup",
+       "s:smooth"
+      ]
+     },
+     {
+      "h": "h:boundary",
+      "why": "The continuous extension makes the boundary values $G(y)$ continuous, so the Riemann-Lebesgue lemma applies.",
+      "steps": [
+       "s:smooth"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:setup",
+      "slogan": "Pass from $f$ to the Laplace-Stieltjes transform of $dA$.",
+      "detail": "For $\\operatorname{Re} s > 1$, integration by parts gives $g(s) = s f(s) = \\int e^{-sx}\\,dA(x)$. Then $g(s) - \\frac{1}{s-1} = s\\bigl(f(s) - \\frac{1}{s-1}\\bigr) + 1$ also extends continuously to $\\operatorname{Re} s \\ge 1$, with boundary values $G(y)$ at $1 + iy$.",
+      "uses": []
+     },
+     {
+      "id": "s:smooth",
+      "slogan": "Smooth $dA$ with a Fejér kernel and move to the line $\\operatorname{Re} s = 1$.",
+      "detail": "Let $K_\\lambda(u) = \\frac{1 - \\cos \\lambda u}{\\pi \\lambda u^2}$, a nonnegative kernel of integral 1 whose [Fourier transform](c:fourier-transform) $(1 - |y|/\\lambda)_+$ has compact support. Integrate $g(1+\\varepsilon+iy) - \\frac{1}{\\varepsilon + iy}$ against $e^{ixy}(1 - |y|/\\lambda)$, let $\\varepsilon \\downarrow 0$ by monotone convergence, and use the Riemann-Lebesgue lemma. This gives $\\int e^{-t}K_\\lambda(x - t)\\,dA(t) \\to 1$ as $x \\to \\infty$, for every $\\lambda$.",
+      "uses": []
+     },
+     {
+      "id": "s:bounded",
+      "slogan": "Bound $e^{-x}A(x)$ using the smoothed limit for one fixed kernel.",
+      "detail": "The kernel $K_1(u)$ is at least $c > 0$ for $|u| \\le 1$, and the smoothed integral is bounded in $x$. So $e^{-x}\\bigl(A(x+1) - A(x-1)\\bigr) \\le C$, and summing over steps of length 2 gives $A(x) \\le C'e^x$. Hence $a(x) = e^{-x}A(x)$ is bounded by some $M$.",
+      "uses": []
+     },
+     {
+      "id": "s:average",
+      "slogan": "Show that the averages of $a(x) = e^{-x}A(x)$ against $K_\\lambda$ tend to 1.",
+      "detail": "Write $a(x) = \\int k(x - t)\\,d\\sigma(t)$ with $k(u) = e^{-u}\\mathbf{1}_{u \\ge 0}$ and $d\\sigma = e^{-t}dA$. Then $(a * K_\\lambda)(x) = \\int k(w)\\,\\Phi_\\lambda(x - w)\\,dw$ with $\\Phi_\\lambda = K_\\lambda * \\sigma$ bounded and tending to 1. Dominated convergence gives $(a * K_\\lambda)(x) \\to \\int k = 1$.",
+      "uses": []
+     },
+     {
+      "id": "s:squeeze",
+      "slogan": "Squeeze $a(x)$ between shifted averages by monotonicity and let $\\lambda \\to \\infty$.",
+      "detail": "Monotonicity of $A$ gives $a(x+u) \\ge e^{-u}a(x)$ for $u \\ge 0$. With the tail bound $\\int_{|v| > h} K_\\lambda \\le 2/(\\lambda h)$ this yields $a(x) \\le e^{2h}(a * K_\\lambda)(x+h)/(1 - \\frac{2}{\\lambda h})$ and $a(x) \\ge e^{-2h}\\bigl((a * K_\\lambda)(x-h) - \\frac{2M}{\\lambda h}\\bigr)$. Let $x \\to \\infty$, then $\\lambda \\to \\infty$, then $h \\to 0$: $\\limsup a \\le 1 \\le \\liminf a$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:setup",
+      "s:smooth"
+     ],
+     [
+      "s:smooth",
+      "s:bounded"
+     ],
+     [
+      "s:smooth",
+      "s:average"
+     ],
+     [
+      "s:bounded",
+      "s:average"
+     ],
+     [
+      "s:average",
+      "s:squeeze"
+     ],
+     [
+      "s:bounded",
+      "s:squeeze"
+     ]
+    ],
+    "conclusion": "s:squeeze",
+    "concepts": {
+     "c:dirichlet-series": "The Dirichlet series form follows from this form by a change of variable.",
+     "c:fourier-transform": "The kernel has a compactly supported Fourier transform, so only a bounded segment of the line matters.",
+     "c:laplace-transform": "The hypothesis is about the Laplace transform of $A$ near the line $\\operatorname{Re} s = 1$.",
+     "c:monotone-function": "Monotonicity of $A$ lets smoothed information give pointwise information.",
+     "c:pole": "A simple pole of residue 1 at $s = 1$ is a case that the hypothesis covers."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Korevaar's Fourier-analytic proof of the Wiener-Ikehara theorem (J. Korevaar, A century of complex Tauberian theory, Bull. AMS 39 (2002), 475-531); the theorem is due to Ikehara (1931), after Wiener."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:assouad-s-dual-vc-bound",
+  "statement": "Let $\\mathcal{A}$ be a finite [family of sets](c:family-of-sets) with [VC dimension](c:vc-dimension) at most $d$, and $X$ a finite ground set. The dual family $\\{\\{A \\in \\mathcal{A} : x \\in A\\} : x \\in X\\}$ has VC dimension at most $2^{d+1} - 1$.",
+  "hypotheses": [
+   {
+    "id": "h:family",
+    "text": "The family $\\mathcal{A}$ is a finite [family of sets](c:family-of-sets) of subsets of a set, and $X$ is a finite subset of that set.",
+    "concept": "c:family-of-sets"
+   },
+   {
+    "id": "h:vc",
+    "text": "The [VC dimension](c:vc-dimension) of $\\mathcal{A}$ is at most $d$.",
+    "concept": "c:vc-dimension"
+   }
+  ],
+  "conclusion": "The dual family $\\mathcal{A}^*_X = \\{\\{A \\in \\mathcal{A} : x \\in A\\} : x \\in X\\}$ has VC dimension at most $2^{d+1} - 1$.",
+  "formal": {
+   "decl": "Finset.vcDim_dualFamily_le",
+   "difference": null
+  },
+  "proofs": [
+   {
+    "id": "bitstring-coding",
+    "name": "Bitstring coding",
+    "slogan": "Assume that the dual family shatters a large subfamily, code its members by bit strings, and read off a large set that the original family shatters.",
+    "scope": "The whole bound, by contradiction. If the dual VC dimension is at least $2^{d+1}$, the argument produces a shattered set of size $d+1$ in $\\mathcal{A}$.",
+    "mechanisms": [
+     "m:contradiction",
+     "m:encoding"
+    ],
+    "roles": [
+     {
+      "h": "h:family",
+      "why": "The dual family is built from $\\mathcal{A}$ and $X$, and each column picks a ground point that reads one bit.",
+      "steps": [
+       "s:assume",
+       "s:columns"
+      ]
+     },
+     {
+      "h": "h:vc",
+      "why": "The bound $\\operatorname{VC}(\\mathcal{A}) \\le d$ forbids a shattered set of size $d+1$.",
+      "steps": [
+       "s:contradict"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:assume",
+      "slogan": "Assume that the dual family [shatters](c:shattering) a subfamily $S$ of size at least $2^{d+1}$.",
+      "detail": "Suppose the dual VC dimension exceeds $2^{d+1} - 1$. Then some set $S$ of at least $2^{d+1}$ members of $\\mathcal{A}$ is [shattered](c:shattering) by the dual family: every subfamily of $S$ is $S \\cap \\{A : x \\in A\\}$ for some $x \\in X$.",
+      "uses": []
+     },
+     {
+      "id": "s:embed",
+      "slogan": "Label $2^{d+1}$ members of $S$ by the bit strings of length $d+1$.",
+      "detail": "Since $|S| \\ge 2^{d+1}$, choose an injection $b \\mapsto A_b$ from $\\{0,1\\}^{d+1}$ into $S$.",
+      "uses": []
+     },
+     {
+      "id": "s:columns",
+      "slogan": "Pick for each bit position a ground point that reads that bit.",
+      "detail": "For $k \\le d+1$, the subfamily $\\{A_b : b_k = 1\\}$ of $S$ is cut out of $S$ by some column of the dual family, because the dual family shatters $S$. So there is $x_k \\in X$ with $x_k \\in A_b$ if and only if $b_k = 1$, for all $b$.",
+      "uses": []
+     },
+     {
+      "id": "s:shatter",
+      "slogan": "Show that the points $x_k$ are distinct and that $\\mathcal{A}$ shatters them.",
+      "detail": "For $b = e_j$ the point $x_j$ lies in $A_{e_j}$ and no other $x_k$ does, so the $x_k$ are distinct. For $U \\subseteq T = \\{x_1,\\dots,x_{d+1}\\}$, let $b_k = 1$ iff $x_k \\in U$; then $A_b \\cap T = U$. So $\\mathcal{A}$ [shatters](c:shattering) $T$, a set of size $d+1$.",
+      "uses": [
+       "nm:bitstring-coding-assouad-1983-theorem-2-13"
+      ]
+     },
+     {
+      "id": "s:contradict",
+      "slogan": "Contradict the bound $\\operatorname{VC}(\\mathcal{A}) \\le d$.",
+      "detail": "A shattered set of size $d+1$ gives $\\operatorname{VC}(\\mathcal{A}) \\ge d+1 > d$, a contradiction. So the dual VC dimension is at most $2^{d+1} - 1$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:assume",
+      "s:embed"
+     ],
+     [
+      "s:embed",
+      "s:columns"
+     ],
+     [
+      "s:assume",
+      "s:columns"
+     ],
+     [
+      "s:columns",
+      "s:shatter"
+     ],
+     [
+      "s:shatter",
+      "s:contradict"
+     ]
+    ],
+    "conclusion": "s:contradict",
+    "concepts": {
+     "c:family-of-sets": "The theorem is about a finite family of subsets and its dual family.",
+     "c:shattering": "Shattering by the dual family gives all bit patterns; shattering by $\\mathcal{A}$ is the goal.",
+     "c:vc-dimension": "The VC dimension is the size of the largest shattered set, the quantity bounded."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Finset.vcDim_dualFamily_le",
+     "follows": true,
+     "note": "mathlib argues by contradiction with exists_shatters_of_dualFamily_shatters (bitstring coding) and Shatters.card_le_vcDim."
+    }
+   }
+  ]
+ }
+]

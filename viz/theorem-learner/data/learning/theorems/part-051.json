@@ -1,0 +1,1917 @@
+[
+ {
+  "id": "wd:Q1457052",
+  "statement": "Assuming the [axiom of choice](c:axiom-of-choice), every set $X$ carries a [well-order](c:is-well-order): a total order in which every nonempty subset has a least element.",
+  "hypotheses": [
+   {
+    "id": "h:choice",
+    "text": "The [axiom of choice](c:axiom-of-choice) holds.",
+    "concept": "c:axiom-of-choice"
+   },
+   {
+    "id": "h:set",
+    "text": "$X$ is an arbitrary set.",
+    "concept": null
+   }
+  ],
+  "conclusion": "Some total order on $X$ is a [well-order](c:is-well-order).",
+  "formal": {
+   "decl": "exists_wellFoundedLT",
+   "difference": "mathlib works in Lean's classical logic, where choice is built in, so the declaration has no choice hypothesis. It gives a linear order whose $<$ is well-founded, which is the same as a well-order."
+  },
+  "proofs": [
+   {
+    "id": "cardinal-embedding",
+    "name": "Embedding into the cardinals",
+    "slogan": "Embed the set into the well-ordered cardinals, then pull the well-order back along the embedding.",
+    "scope": "The whole theorem for a set $X$ in a fixed universe, where the cardinals mean the cardinals of sets of that universe. The empty set is covered, and choice enters through the comparison of sizes.",
+    "mechanisms": [
+     "m:zorn",
+     "m:diagonal-argument",
+     "m:well-ordering"
+    ],
+    "roles": [
+     {
+      "h": "h:choice",
+      "why": "Choice, through Zorn's lemma, lets any two sets be compared by size.",
+      "steps": [
+       "s:compare"
+      ]
+     },
+     {
+      "h": "h:set",
+      "why": "The set $X$ is the object that is embedded and then ordered.",
+      "steps": [
+       "s:embed",
+       "s:pullback"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:compare",
+      "slogan": "Compare two sets by a maximal partial injection from Zorn's lemma.",
+      "detail": "Order the partial injections from $A$ to $B$ by extension. Chains have unions as upper bounds, so Zorn's lemma gives a maximal one $g$. If $g$ missed some $a \\in A$ and some $b \\in B$, then $g \\cup \\{(a,b)\\}$ would extend it. So $g$ is total or onto, and $A$ injects into $B$ or $B$ into $A$.",
+      "uses": [
+       "nl:1475"
+      ]
+     },
+     {
+      "id": "s:cantor",
+      "slogan": "Show by Cantor's theorem that the cardinals do not embed into $X$.",
+      "detail": "Suppose an injection $e$ of the [cardinals](c:cardinal-number) into $X$ exists. Define $g\\colon X \\to \\mathrm{Card}$ by $g(e(\\kappa)) = \\kappa$ and $g = 0$ elsewhere, so $g$ is onto. Put $\\kappa = \\sum_x g(x)$ and pick $x$ with $g(x) = 2^{\\kappa}$. Then $g(x) \\le \\kappa < 2^{\\kappa}$ by Cantor's theorem, a contradiction.",
+      "uses": [
+       "wd:Q474881"
+      ]
+     },
+     {
+      "id": "s:embed",
+      "slogan": "Conclude that an injection from $X$ into the cardinals exists.",
+      "detail": "By the comparison step, the cardinals embed into $X$ or $X$ embeds into the cardinals. The first case is excluded, so there is an [injection](c:injection) $f\\colon X \\to \\mathrm{Card}$.",
+      "uses": []
+     },
+     {
+      "id": "s:order",
+      "slogan": "Order the cardinals by size and note that this order is a well-order.",
+      "detail": "Each cardinal is the least [ordinal](c:ordinal) of its size, and the ordinals are well-ordered. So every nonempty set of cardinals has a least member.",
+      "uses": []
+     },
+     {
+      "id": "s:pullback",
+      "slogan": "Pull the well-order of the cardinals back along $f$.",
+      "detail": "Put $x < y$ when $f(x) < f(y)$. Because $f$ is injective, this is a [total order](c:total-order) on $X$. A nonempty $S \\subseteq X$ has a least image $f(s)$ in the cardinals, and then $s$ is the least element of $S$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:compare",
+      "s:embed"
+     ],
+     [
+      "s:cantor",
+      "s:embed"
+     ],
+     [
+      "s:embed",
+      "s:pullback"
+     ],
+     [
+      "s:order",
+      "s:pullback"
+     ]
+    ],
+    "conclusion": "s:pullback",
+    "concepts": {
+     "c:axiom-of-choice": "Choice is what makes any two sets comparable by size.",
+     "c:is-well-order": "The pulled-back order is the required well-order.",
+     "c:cardinal-number": "Cardinals form the well-ordered target of the embedding.",
+     "c:injection": "An injection transfers the order from the cardinals to $X$.",
+     "c:ordinal": "Ordinals show that sets of cardinals have least members.",
+     "c:total-order": "Injectivity makes the pulled-back relation total."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "exists_wellFoundedLT",
+     "follows": true,
+     "note": "mathlib pulls back the order of Cardinal along embeddingToCardinal, which exists by Function.Embedding.total (Zorn's lemma) and Cardinal.cantor."
+    }
+   },
+   {
+    "id": "zorn",
+    "name": "Zorn on well-ordered subsets",
+    "slogan": "Order the well-ordered subsets of $X$ by end extension, take a maximal one by Zorn's lemma, and show that it is all of $X$.",
+    "scope": "The whole theorem; the empty set is the smallest well-ordered subset. Choice enters through Zorn's lemma.",
+    "mechanisms": [
+     "m:zorn",
+     "m:extremal-choice"
+    ],
+    "roles": [
+     {
+      "h": "h:choice",
+      "why": "Zorn's lemma, which is equivalent to choice, gives a maximal well-ordered subset.",
+      "steps": [
+       "s:zorn"
+      ]
+     },
+     {
+      "h": "h:set",
+      "why": "The set $X$ supplies the subsets that are ordered and the new element that extends a maximal one.",
+      "steps": [
+       "s:poset",
+       "s:extend"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:poset",
+      "slogan": "Collect the well-ordered subsets of $X$ and order them by end extension.",
+      "detail": "Let $\\mathcal{W}$ be the set of pairs $(A, <_A)$ with $A \\subseteq X$ and $<_A$ a [well-order](c:is-well-order) of $A$. Write $(A, <_A) \\preceq (B, <_B)$ when $A \\subseteq B$, the orders agree on $A$, and $A$ is an initial segment of $B$. This is a [partial order](c:partial-order), and $(\\emptyset, \\emptyset)$ lies in $\\mathcal{W}$.",
+      "uses": []
+     },
+     {
+      "id": "s:chains",
+      "slogan": "Show that every chain in $\\mathcal{W}$ has an upper bound.",
+      "detail": "The union of a chain of pairs, with the union of their orders, is a well-order. A nonempty subset meets some member $A$ of the chain, and its least element in $A$ is least in the union because $A$ is an initial segment of every later member. So the union is an [upper bound](c:upper-bound).",
+      "uses": []
+     },
+     {
+      "id": "s:zorn",
+      "slogan": "Take a maximal element $(M, <_M)$ of $\\mathcal{W}$ by Zorn's lemma.",
+      "detail": "The set $\\mathcal{W}$ is nonempty and every chain has an upper bound. Zorn's lemma, which needs the [axiom of choice](c:axiom-of-choice), gives a maximal pair $(M, <_M)$.",
+      "uses": [
+       "nl:1475"
+      ]
+     },
+     {
+      "id": "s:extend",
+      "slogan": "Show that $M = X$ by adding a new top element to $M$.",
+      "detail": "Suppose $x \\in X \\setminus M$. Put $x$ above every element of $M$. This gives a well-order of $M \\cup \\{x\\}$ that extends $(M, <_M)$ strictly, which contradicts maximality. So $M = X$ and $<_M$ is a well-order of $X$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:poset",
+      "s:chains"
+     ],
+     [
+      "s:chains",
+      "s:zorn"
+     ],
+     [
+      "s:zorn",
+      "s:extend"
+     ]
+    ],
+    "conclusion": "s:extend",
+    "concepts": {
+     "c:axiom-of-choice": "Zorn's lemma, which is equivalent to choice, produces the maximal element.",
+     "c:is-well-order": "The elements of the poset are well-ordered subsets, and the maximal one is the goal.",
+     "c:partial-order": "End extension is the partial order to which Zorn's lemma applies.",
+     "c:upper-bound": "Zorn's lemma needs an upper bound for every chain."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard Zorn's lemma proof, as in Halmos, Naive Set Theory (the chapters on Zorn's lemma and the well-ordering theorem)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q7996766",
+  "statement": "Let $A \\subseteq \\mathbb{R}^n$ be a [closed set](c:closed-set) and let $(f^\\alpha)_{|\\alpha| \\le m}$ be continuous functions on $A$ that satisfy Whitney's Taylor condition of order $m$. Then some $F \\in C^m(\\mathbb{R}^n)$ has $\\partial^\\alpha F = f^\\alpha$ on $A$ for every $|\\alpha| \\le m$.",
+  "hypotheses": [
+   {
+    "id": "h:closed",
+    "text": "The set $A \\subseteq \\mathbb{R}^n$ is [closed](c:closed-set).",
+    "concept": "c:closed-set"
+   },
+   {
+    "id": "h:jet",
+    "text": "The functions $f^\\alpha\\colon A \\to \\mathbb{R}$, $|\\alpha| \\le m$, are continuous.",
+    "concept": null
+   },
+   {
+    "id": "h:whitney",
+    "text": "For $|\\alpha| \\le m$, $f^\\alpha(x) = \\sum_{|\\beta| \\le m - |\\alpha|} f^{\\alpha + \\beta}(a)(x - a)^\\beta / \\beta! + o(|x - a|^{m - |\\alpha|})$ as $x, a \\in A$ and $|x - a| \\to 0$, uniformly on compact sets.",
+    "concept": null
+   }
+  ],
+  "conclusion": "Some $F \\in C^m(\\mathbb{R}^n)$ satisfies $\\partial^\\alpha F = f^\\alpha$ on $A$ for every $|\\alpha| \\le m$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "whitney-cubes",
+    "name": "Whitney cubes and a partition of unity",
+    "slogan": "Cut the complement of $A$ into Whitney cubes, glue Taylor polynomials of the data by a partition of unity, and estimate the derivatives near $A$.",
+    "scope": "An outline of Whitney's proof for jets of finite order $m$; the estimates of steps 4 and 5 rest on the cited paper. The cases $A = \\emptyset$ and $A = \\mathbb{R}^n$ are trivial.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:partition-of-unity",
+     "m:taylor-expansion"
+    ],
+    "roles": [
+     {
+      "h": "h:closed",
+      "why": "The complement of a closed set is open, so Whitney cubes can fill it.",
+      "steps": [
+       "s:cubes"
+      ]
+     },
+     {
+      "h": "h:jet",
+      "why": "The data $f^\\alpha(a)$ at the points of $A$ define the Taylor polynomials that are glued.",
+      "steps": [
+       "s:taylor"
+      ]
+     },
+     {
+      "h": "h:whitney",
+      "why": "The compatibility condition makes neighboring Taylor polynomials agree to high order.",
+      "steps": [
+       "s:glue",
+       "s:estimate"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:cubes",
+      "slogan": "Cut the open complement of $A$ into Whitney cubes.",
+      "detail": "Whitney decomposes $\\mathbb{R}^n \\setminus A$ into countably many closed dyadic cubes $Q_k$ with disjoint interiors, whose side lengths are comparable to their distance from $A$. The decomposition is locally finite in the complement.",
+      "uses": []
+     },
+     {
+      "id": "s:partition",
+      "slogan": "Build a smooth partition of unity subordinate to slightly enlarged cubes.",
+      "detail": "Enlarge each $Q_k$ slightly and take [smooth bump functions](c:cont-diff-bump), normalized to a [smooth partition of unity](c:smooth-partition-of-unity) $(\\varphi_k)$ on $\\mathbb{R}^n \\setminus A$. Then $|\\partial^\\gamma \\varphi_k| \\le C_\\gamma\\, \\ell(Q_k)^{-|\\gamma|}$ for each multi-index $\\gamma$.",
+      "uses": []
+     },
+     {
+      "id": "s:taylor",
+      "slogan": "Attach to each cube the Taylor polynomial of the data at a nearest point of $A$.",
+      "detail": "For each $k$ choose $a_k \\in A$ nearest to $Q_k$, and let $P_k(x) = \\sum_{|\\beta| \\le m} f^\\beta(a_k)(x - a_k)^\\beta / \\beta!$ be the degree-$m$ [Taylor polynomial](c:taylor-series) of the data at $a_k$.",
+      "uses": []
+     },
+     {
+      "id": "s:glue",
+      "slogan": "Define $F$ as $f^0$ on $A$ and as $\\sum_k \\varphi_k P_k$ off $A$.",
+      "detail": "The sum is locally finite, so $F$ is smooth on $\\mathbb{R}^n \\setminus A$. Whitney's condition shows that polynomials $P_j$ and $P_k$ of neighboring cubes satisfy $|\\partial^\\alpha (P_j - P_k)(x)| = o(\\mathrm{dist}(x, A)^{m - |\\alpha|})$ on the cubes.",
+      "uses": []
+     },
+     {
+      "id": "s:estimate",
+      "slogan": "Estimate the derivatives of $F$ near $A$ to prove $F \\in C^m$ with the given derivatives.",
+      "detail": "For $a \\in A$ write $F - P_a = \\sum_k \\varphi_k (P_k - P_a)$ off $A$ and differentiate with the Leibniz rule and the bounds on $\\partial^\\gamma \\varphi_k$. This gives $\\partial^\\alpha (F - P_a)(x) = o(|x - a|^{m - |\\alpha|})$, so $\\partial^\\alpha F(a) = f^\\alpha(a)$ and $\\partial^\\alpha F$ is continuous across $A$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:cubes",
+      "s:partition"
+     ],
+     [
+      "s:partition",
+      "s:glue"
+     ],
+     [
+      "s:taylor",
+      "s:glue"
+     ],
+     [
+      "s:glue",
+      "s:estimate"
+     ]
+    ],
+    "conclusion": "s:estimate",
+    "concepts": {
+     "c:closed-set": "Closedness makes the complement open, so cubes can fill it.",
+     "c:cont-diff-bump": "Smooth bumps on the cubes are the building blocks of the partition.",
+     "c:smooth-partition-of-unity": "The partition of unity glues the local polynomials into one smooth function.",
+     "c:taylor-series": "Taylor polynomials of the data are the local models that are glued."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "H. Whitney, Analytic extensions of differentiable functions defined in closed sets, Transactions of the American Mathematical Society 36 (1934), no. 1, 63-89",
+     "url": "https://doi.org/10.1090/S0002-9947-1934-1501735-3",
+     "note": "Whitney's own proof by cube decomposition; the same construction is in E. M. Stein, Singular Integrals and Differentiability Properties of Functions, Princeton University Press, 1970, chapter VI."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:3422",
+  "statement": "For every [quasi-category](c:quasi-category) $C$, unstraightening is an equivalence of $\\infty$-categories from $\\mathrm{Fun}(C^{op}, \\mathrm{Cat}_\\infty)$ onto the $\\infty$-category of [Cartesian fibrations](c:cartesian-fibration) over $C$. It sends a functor $F$ to a fibration whose fibre over an object $c$ is $F(c)$.",
+  "hypotheses": [
+   {
+    "id": "h:category",
+    "text": "$C$ is an $\\infty$-category, modeled as a [quasi-category](c:quasi-category).",
+    "concept": "c:quasi-category"
+   }
+  ],
+  "conclusion": "Unstraightening is an equivalence from $\\mathrm{Fun}(C^{op}, \\mathrm{Cat}_\\infty)$ onto the Cartesian fibrations over $C$, and the fibre over $c$ of the image of $F$ is $F(c)$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "straightening",
+    "name": "Straightening and unstraightening",
+    "slogan": "Straighten marked simplicial sets over $C$ into diagrams, prove that straightening is a Quillen equivalence by reducing to simplices, then read off the equivalence of fibrant objects.",
+    "scope": "An outline of Lurie's proof; the Quillen equivalence of steps 2 to 4 rests on the cited book. Lurie treats coCartesian fibrations, and the Cartesian case follows by taking opposites.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:adjunction",
+     "m:local-to-global"
+    ],
+    "roles": [
+     {
+      "h": "h:category",
+      "why": "The simplicial set $C$ is the base over which fibrations and diagrams are compared.",
+      "steps": [
+       "s:define",
+       "s:general",
+       "s:fibrant"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:define",
+      "slogan": "Define straightening and unstraightening over a simplicial set $S$ by cone constructions.",
+      "detail": "For a [simplicial set](c:simplicial-set) $S$, Lurie builds $\\mathrm{St}_S$ from marked simplicial sets over $S$ to simplicial functors on $\\mathfrak{C}[S]$. It is the left Kan extension of the cone construction on simplices, and it has a right adjoint $\\mathrm{Un}_S$.",
+      "uses": []
+     },
+     {
+      "id": "s:quillen",
+      "slogan": "Show that straightening is a left Quillen functor for the coCartesian model structure.",
+      "detail": "Marked simplicial sets over $S$ carry the coCartesian model structure, whose fibrant objects are coCartesian fibrations with their coCartesian edges marked. The diagrams carry the projective structure. The cited work checks that $\\mathrm{St}_S$ preserves cofibrations and acyclic cofibrations, which makes $(\\mathrm{St}_S, \\mathrm{Un}_S)$ a [Quillen adjunction](c:quillen-adjunction).",
+      "uses": []
+     },
+     {
+      "id": "s:point",
+      "slogan": "Prove that the Quillen adjunction is an equivalence over a point and over a simplex.",
+      "detail": "Over $S = \\Delta^0$ straightening is weakly equivalent to the identity of marked simplicial sets. The cited work then proves the equivalence over a simplex $\\Delta^n$ by an inductive comparison.",
+      "uses": []
+     },
+     {
+      "id": "s:general",
+      "slogan": "Extend the equivalence from simplices to every simplicial set by gluing.",
+      "detail": "Both sides turn colimits over the simplices of $S$ into homotopy limits of model categories. Hence the equivalence over simplices gives the equivalence for $S$, and it respects categorical equivalences $S \\to S'$. This covers the quasi-category $C$.",
+      "uses": []
+     },
+     {
+      "id": "s:fibrant",
+      "slogan": "Pass to fibrant objects to get an equivalence of $\\infty$-categories with fibres $F(c)$.",
+      "detail": "A Quillen equivalence induces an equivalence of underlying $\\infty$-categories. The fibrant objects are the coCartesian fibrations over $C$ and the functors $C \\to \\mathrm{Cat}_\\infty$, and the fibre of $\\mathrm{Un}(F)$ over $c$ is $F(c)$.",
+      "uses": []
+     },
+     {
+      "id": "s:opposite",
+      "slogan": "Take opposites to turn coCartesian fibrations into Cartesian fibrations.",
+      "detail": "A Cartesian fibration $X \\to C$ gives a coCartesian fibration $X^{op} \\to C^{op}$. Apply the previous equivalence to $C^{op}$ and compose with the involution $\\mathrm{op}$ of $\\mathrm{Cat}_\\infty$ to get $\\mathrm{Fun}(C^{op}, \\mathrm{Cat}_\\infty)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:define",
+      "s:quillen"
+     ],
+     [
+      "s:quillen",
+      "s:point"
+     ],
+     [
+      "s:point",
+      "s:general"
+     ],
+     [
+      "s:general",
+      "s:fibrant"
+     ],
+     [
+      "s:fibrant",
+      "s:opposite"
+     ]
+    ],
+    "conclusion": "s:opposite",
+    "concepts": {
+     "c:quasi-category": "The base $C$ is a quasi-category, the model for an $\\infty$-category here.",
+     "c:cartesian-fibration": "Cartesian fibrations are the objects that correspond to functors.",
+     "c:simplicial-set": "Straightening is defined first over arbitrary simplicial sets.",
+     "c:quillen-adjunction": "The Quillen adjunction carries the equivalence between fibrations and diagrams."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "J. Lurie, Higher Topos Theory, Annals of Mathematics Studies 170, Princeton University Press, 2009, chapters 2 and 3 (Theorem 3.2.0.1)",
+     "url": "https://arxiv.org/abs/math/0608040",
+     "note": "Lurie proves the coCartesian straightening equivalence in chapter 3; the Cartesian form is the opposite version."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q2995691",
+  "statement": "A smooth [almost complex structure](c:almost-complex-structure) $J$ on a manifold $M$ comes from a holomorphic atlas, so that $M$ is a [complex manifold](c:complex-manifold) with structure $J$, if and only if the [Nijenhuis tensor](c:nijenhuis-tensor) of $J$ vanishes.",
+  "hypotheses": [
+   {
+    "id": "h:acs",
+    "text": "$J$ is a smooth [almost complex structure](c:almost-complex-structure) on the smooth manifold $M$ of real dimension $2n$.",
+    "concept": "c:almost-complex-structure"
+   }
+  ],
+  "conclusion": "The structure $J$ is induced by holomorphic charts exactly when $N_J(X, Y) = [X, Y] + J[JX, Y] + J[X, JY] - [JX, JY]$ is zero for all vector fields $X, Y$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "newlander-nirenberg",
+    "name": "Complex coordinates by solving a PDE system",
+    "slogan": "Show that holomorphic charts force a vanishing Nijenhuis tensor, and conversely find $n$ independent solutions of the system that $J$-holomorphy defines.",
+    "scope": "An outline of the published proof for smooth $J$; the solution of the system in step 5 rests on the cited paper. The easy direction is computed in full.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:local-to-global",
+     "m:a-priori-estimate"
+    ],
+    "roles": [
+     {
+      "h": "h:acs",
+      "why": "Smoothness of $J$ gives smooth coefficients for the system and a smooth frame for the computation.",
+      "steps": [
+       "s:easy",
+       "s:normal",
+       "s:solve"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:easy",
+      "slogan": "Compute that a holomorphic atlas forces the Nijenhuis tensor to vanish.",
+      "detail": "In holomorphic coordinates $J$ has constant coefficients, and the coordinate fields $\\partial_{x_j}, \\partial_{y_j}$ commute, with $J\\partial_{x_j} = \\partial_{y_j}$. So $N_J$ vanishes on this frame. Since $N_J$ is a [tensor](c:nijenhuis-tensor), it vanishes everywhere.",
+      "uses": []
+     },
+     {
+      "id": "s:involutive",
+      "slogan": "Rewrite the vanishing of $N_J$ as involutivity of the bundle $T^{0,1}$.",
+      "detail": "Let $T^{0,1} \\subseteq T_{\\mathbb{C}}M$ be the $(-i)$-eigenbundle of $J$. For real $X, Y$ the sections $X + iJX$ and $Y + iJY$ of $T^{0,1}$ have a [Lie bracket](c:lie-bracket-of-vector-fields) whose $(1,0)$-part is $\\frac12 (N_J(X,Y) - iJN_J(X,Y))$. Such sections span $T^{0,1}$, so $N_J = 0$ if and only if $[T^{0,1}, T^{0,1}] \\subseteq T^{0,1}$.",
+      "uses": []
+     },
+     {
+      "id": "s:reduce",
+      "slogan": "Reduce complex coordinates to $n$ independent solutions of a first-order system.",
+      "detail": "A function $f$ is $J$-holomorphic when $\\bar Z f = 0$ for every section $\\bar Z$ of $T^{0,1}$. If $z^1, \\dots, z^n$ are solutions with $dz^1 \\wedge \\dots \\wedge dz^n \\neq 0$ at a point, the inverse function theorem makes them complex coordinates near it, and $J$ is standard in them.",
+      "uses": [
+       "wd:Q931001"
+      ]
+     },
+     {
+      "id": "s:normal",
+      "slogan": "Normalize $J$ at a point and write $T^{0,1}$ as a perturbation of the standard bundle.",
+      "detail": "Choose coordinates in which $J(0)$ is the standard structure. Near $0$ the bundle $T^{0,1}$ is spanned by $\\partial_{\\bar z_k} + \\sum_j a_k^j\\, \\partial_{z_j}$ with smooth $a_k^j$ and $a(0) = 0$. A solution must satisfy $\\partial_{\\bar z_k} f = -\\sum_j a_k^j\\, \\partial_{z_j} f$.",
+      "uses": []
+     },
+     {
+      "id": "s:solve",
+      "slogan": "Solve the system near $0$ for $n$ solutions with independent differentials.",
+      "detail": "Involutivity makes the operators of the system commute. Newlander and Nirenberg solve the system near $0$ by an iteration based on estimates for the one-variable $\\bar\\partial$-operator, and obtain $n$ solutions $z^j$ with $dz^1 \\wedge \\dots \\wedge dz^n \\neq 0$ at $0$.",
+      "uses": []
+     },
+     {
+      "id": "s:patch",
+      "slogan": "Show that the local complex coordinates form a holomorphic atlas.",
+      "detail": "Two such charts $z$ and $w$ overlap in an open set. Each $w^k$ is $J$-holomorphic, so in the coordinates $z$, where $J$ is standard, it is an ordinary [holomorphic function](c:holomorphic-function) of $z$. So the transition maps are holomorphic, and $J$ is induced by the atlas.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Combine the two directions into the equivalence.",
+      "detail": "The computation of step 1 gives that a holomorphic atlas implies $N_J = 0$. Steps 2 to 6 give that $N_J = 0$ implies a holomorphic atlas inducing $J$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:easy",
+      "s:conclude"
+     ],
+     [
+      "s:involutive",
+      "s:solve"
+     ],
+     [
+      "s:reduce",
+      "s:normal"
+     ],
+     [
+      "s:normal",
+      "s:solve"
+     ],
+     [
+      "s:solve",
+      "s:patch"
+     ],
+     [
+      "s:patch",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:almost-complex-structure": "The structure $J$ is the object that must be shown integrable.",
+     "c:complex-manifold": "A holomorphic atlas is what the theorem produces from $J$.",
+     "c:nijenhuis-tensor": "Its vanishing is the integrability condition that is shown necessary and sufficient.",
+     "c:lie-bracket-of-vector-fields": "Involutivity of $T^{0,1}$ is a statement about this bracket.",
+     "c:holomorphic-function": "Holomorphic functions of one chart's coordinates give the transition maps."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "A. Newlander and L. Nirenberg, Complex analytic coordinates in almost complex manifolds, Annals of Mathematics (2) 65 (1957), 391-404",
+     "note": "The original proof reduces integrability to finding n independent solutions of a system of commuting first-order operators; Malgrange (1969) and Webster (1989) give other proofs."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:23061",
+  "statement": "Let $(M, \\omega)$ be a closed [symplectic manifold](c:symplectic-manifold) and $H\\colon S^1 \\times M \\to \\mathbb{R}$ a smooth time-dependent [Hamiltonian](c:hamiltonian) all of whose 1-periodic orbits are nondegenerate. Then $H$ has at least $\\sum_k b_k(M; \\mathbb{Q})$ contractible 1-periodic orbits, where $b_k$ is the $k$-th [Betti number](c:betti-number).",
+  "hypotheses": [
+   {
+    "id": "h:symplectic",
+    "text": "$(M, \\omega)$ is a closed [symplectic manifold](c:symplectic-manifold).",
+    "concept": "c:symplectic-manifold"
+   },
+   {
+    "id": "h:nondegenerate",
+    "text": "Every 1-periodic orbit of the [Hamiltonian](c:hamiltonian) $H$ is nondegenerate, that is, the differential of the time-one flow has no eigenvalue $1$ along it.",
+    "concept": "c:hamiltonian"
+   }
+  ],
+  "conclusion": "The number of contractible 1-periodic orbits of $H$ is at least $\\sum_k b_k(M; \\mathbb{Q})$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "floer-homology",
+    "name": "Floer homology",
+    "slogan": "Count the periodic orbits as generators of a Floer chain complex whose homology is the homology of $M$, so the number of orbits is at least the total Betti number.",
+    "scope": "An outline of the published proof over the rationals; the construction of Floer homology for all closed symplectic manifolds, in steps 2 and 3, rests on the cited paper. Abouzaid and Blumberg extend the bound to coefficients in a field of characteristic $p$.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:energy-functional",
+     "m:homotopy-invariance"
+    ],
+    "roles": [
+     {
+      "h": "h:symplectic",
+      "why": "Closedness gives compact moduli spaces of trajectories, and $\\omega$ gives the action functional and the compatible almost complex structure.",
+      "steps": [
+       "s:action",
+       "s:complex",
+       "s:compact"
+      ]
+     },
+     {
+      "h": "h:nondegenerate",
+      "why": "Nondegeneracy makes the orbits isolated, so they form a finite set of generators.",
+      "steps": [
+       "s:action",
+       "s:count"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:action",
+      "slogan": "Express the contractible periodic orbits as critical points of the action functional.",
+      "detail": "On a covering of the space of contractible loops in $M$, the [action functional](c:action-functional) $\\mathcal{A}_H(x) = -\\int u^*\\omega + \\int_0^1 H_t(x(t))\\,dt$, with $u$ a disc bounded by $x$, is well defined. Its critical points are the contractible 1-periodic orbits of $H$, and they are nondegenerate by hypothesis.",
+      "uses": []
+     },
+     {
+      "id": "s:complex",
+      "slogan": "Build the Floer chain complex from the orbits and the cylinders that join them.",
+      "detail": "Choose an almost complex structure compatible with $\\omega$. The complex $CF_*(H)$, over the Novikov field $\\Lambda \\supseteq \\mathbb{Q}$, has one generator per orbit. Its differential counts index-one solutions of $\\partial_s u + J(\\partial_t u - X_H) = 0$, which are [pseudoholomorphic](c:pseudoholomorphic-curve) cylinders and negative gradient lines of $\\mathcal{A}_H$.",
+      "uses": []
+     },
+     {
+      "id": "s:compact",
+      "slogan": "Make the counts finite and prove $\\partial^2 = 0$ by compactness and virtual techniques.",
+      "detail": "Moduli spaces of finite-energy cylinders compactify by Gromov-Floer compactness, with broken trajectories and bubbles at the boundary. Fukaya and Ono use Kuranishi structures and virtual chains to define the counts on every closed symplectic manifold. The boundary of the one-dimensional moduli spaces gives $\\partial^2 = 0$.",
+      "uses": [
+       "wd:Q5610188"
+      ]
+     },
+     {
+      "id": "s:invariance",
+      "slogan": "Show that the Floer homology does not depend on $H$ and on the almost complex structure.",
+      "detail": "A homotopy between two data gives a chain map by counting solutions of a continuation equation. The composition of the continuation maps for a homotopy and its reverse is chain homotopic to the identity. So the [Floer homology](c:floer-homology) $HF_*(H)$ is independent of the choices.",
+      "uses": []
+     },
+     {
+      "id": "s:morse",
+      "slogan": "Identify $HF_*(H)$ with the homology of $M$ by a small Morse Hamiltonian.",
+      "detail": "Take $H$ to be a $C^2$-small time-independent Morse function. Its 1-periodic orbits are its critical points, and the Floer trajectories are its gradient lines, so $CF_*(H)$ is the Morse complex and $HF_*(H) \\cong H_*(M; \\Lambda)$, by [Morse homology](c:morse-homology).",
+      "uses": []
+     },
+     {
+      "id": "s:count",
+      "slogan": "Bound the number of orbits below by the rank of the homology.",
+      "detail": "For the given nondegenerate $H$, the complex $CF_*(H)$ has one generator per contractible orbit. Hence the number of orbits equals $\\dim_\\Lambda CF_*(H) \\ge \\dim_\\Lambda HF_*(H) = \\sum_k b_k(M; \\mathbb{Q})$, using the [Betti numbers](c:betti-number) of step 5.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:action",
+      "s:complex"
+     ],
+     [
+      "s:complex",
+      "s:compact"
+     ],
+     [
+      "s:compact",
+      "s:invariance"
+     ],
+     [
+      "s:compact",
+      "s:morse"
+     ],
+     [
+      "s:invariance",
+      "s:count"
+     ],
+     [
+      "s:morse",
+      "s:count"
+     ]
+    ],
+    "conclusion": "s:count",
+    "concepts": {
+     "c:symplectic-manifold": "The symplectic form defines the action functional and the Floer equation.",
+     "c:hamiltonian": "The Hamiltonian defines the flow whose periodic orbits are counted.",
+     "c:betti-number": "The total Betti number is the lower bound for the orbit count.",
+     "c:action-functional": "Its critical points are the periodic orbits, and its gradient lines are the trajectories.",
+     "c:pseudoholomorphic-curve": "The Floer trajectories are pseudoholomorphic cylinders.",
+     "c:floer-homology": "It equals the homology of $M$ and has the orbits as generators.",
+     "c:morse-homology": "For a small Morse Hamiltonian the Floer complex is the Morse complex."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "K. Fukaya and K. Ono, Arnold conjecture and Gromov-Witten invariant, Topology 38 (1999), no. 5, 933-1048",
+     "url": "https://doi.org/10.1016/S0040-9383(98)00042-1",
+     "note": "Floer proved the monotone case; Fukaya-Ono and, independently, Liu-Tian handle all closed symplectic manifolds with rational coefficients. Abouzaid and Blumberg, arXiv:2103.01507, treat coefficients of characteristic p."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q4815879",
+  "statement": "Let $G$ be a [compact Lie group](c:compact-lie-group) and $X$ a finite [$G$-CW complex](c:g-cw-complex). The projection $EG \\times X \\to X$ induces a map $K_G^*(X) \\to K^*(EG \\times_G X)$ that identifies the target with the completion of the [equivariant K-theory](c:equivariant-k-theory) $K_G^*(X)$ at the augmentation ideal $I \\subseteq R(G)$.",
+  "hypotheses": [
+   {
+    "id": "h:group",
+    "text": "$G$ is a [compact Lie group](c:compact-lie-group).",
+    "concept": "c:compact-lie-group"
+   },
+   {
+    "id": "h:space",
+    "text": "$X$ is a finite [$G$-CW complex](c:g-cw-complex).",
+    "concept": "c:g-cw-complex"
+   }
+  ],
+  "conclusion": "The induced map $K_G^*(X) \\to K^*(EG \\times_G X)$ exhibits $K^*(EG \\times_G X)$ as the $I$-adic completion of $K_G^*(X)$; for $X$ a point, $K^*(BG) \\cong R(G)^\\wedge_I$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "completion",
+    "name": "Comparison of two topologies",
+    "slogan": "Compare equivariant K-theory with the K-theory of the Borel construction, and reduce the completion isomorphism to the case of a torus.",
+    "scope": "An outline of the published argument for finite $G$-CW complexes; the comparison of topologies and the torus case in steps 2 to 5 rest on the cited paper. For $G$ trivial the theorem says $K^*(X) = K^*(X)$.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:exact-sequence",
+     "m:local-to-global",
+     "m:reduction"
+    ],
+    "roles": [
+     {
+      "h": "h:group",
+      "why": "Compactness gives representation rings, a faithful unitary representation and a maximal torus.",
+      "steps": [
+       "s:tori",
+       "s:circle"
+      ]
+     },
+     {
+      "h": "h:space",
+      "why": "Finiteness makes the cell induction finite and keeps the K-groups finitely generated over $R(G)$.",
+      "steps": [
+       "s:orbits",
+       "s:conclude"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:map",
+      "slogan": "Define the comparison map through the free action on $EG \\times X$.",
+      "detail": "The projection $EG \\times X \\to X$ gives $K_G^*(X) \\to K_G^*(EG \\times X)$. The group acts freely on $EG \\times X$, so $K_G^*(EG \\times X) = K^*(EG \\times_G X)$.",
+      "uses": []
+     },
+     {
+      "id": "s:continuous",
+      "slogan": "Show that the map is continuous, so that it factors through the completion.",
+      "detail": "Filter $EG \\times_G X$ by the images of the skeleta of $EG$. An element of the [augmentation ideal](c:augmentation-ideal) maps to a virtual bundle of rank zero, which vanishes on the 1-skeleton. So a product of $k$ such elements vanishes on the $(2k-1)$-skeleton, and the $I$-adic topology is finer than the skeletal one.",
+      "uses": []
+     },
+     {
+      "id": "s:orbits",
+      "slogan": "Reduce finite $G$-complexes to orbits by induction on cells.",
+      "detail": "The completion at $I$ is exact on finitely generated modules over the Noetherian ring $R(G)$ by the Artin-Rees lemma. So both sides are cohomology theories on finite $G$-complexes, and the five lemma reduces the claim to orbits $G/H$, where $K_G^*(G/H) = R(H)$ and $EG \\times_G G/H \\simeq BH$.",
+      "uses": [
+       "nm:artin-rees-lemma",
+       "nl:3517"
+      ]
+     },
+     {
+      "id": "s:tori",
+      "slogan": "Reduce to a maximal torus by a faithful unitary representation.",
+      "detail": "A faithful representation $G \\subseteq U(m)$ gives $K_G^*(Y) = K_{U(m)}^*(U(m) \\times_G Y)$, which reduces the claim to $U(m)$. For $U(m)$, the representation ring of its [maximal torus](c:maximal-torus) $T$ is a free $R(U(m))$-module, which reduces the claim to $T$.",
+      "uses": []
+     },
+     {
+      "id": "s:circle",
+      "slogan": "Prove the torus case one circle factor at a time with Bott periodicity.",
+      "detail": "For a character $L$ of a torus, Bott periodicity gives a Thom isomorphism and a Gysin sequence for the sphere bundle of $L$ in both theories, with the Euler class $1 - L$ in the connecting map. Comparing the two sequences, with the Mittag-Leffler condition for the skeletal inverse limits, and inducting on the rank gives the claim for tori.",
+      "uses": [
+       "wd:Q4948983"
+      ]
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Assemble the reductions into the isomorphism for every finite $G$-CW complex.",
+      "detail": "The torus case gives $U(m)$ and then every $H \\subseteq U(m)$ for a point. The orbit case follows, and the five lemma with induction on cells gives the completion isomorphism for every finite $G$-complex $X$, in particular $K^*(BG) \\cong R(G)^\\wedge_I$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:map",
+      "s:continuous"
+     ],
+     [
+      "s:continuous",
+      "s:orbits"
+     ],
+     [
+      "s:continuous",
+      "s:circle"
+     ],
+     [
+      "s:orbits",
+      "s:tori"
+     ],
+     [
+      "s:tori",
+      "s:circle"
+     ],
+     [
+      "s:circle",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:compact-lie-group": "Compactness gives representation rings, unitary embeddings and maximal tori.",
+     "c:g-cw-complex": "Cell induction over a finite $G$-complex reduces the claim to orbits.",
+     "c:equivariant-k-theory": "It is the theory whose completion is identified.",
+     "c:augmentation-ideal": "Its adic topology is compared with the skeletal topology.",
+     "c:maximal-torus": "The torus is the group where the Gysin sequences are compared."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "M. F. Atiyah and G. B. Segal, Equivariant K-theory and completion, Journal of Differential Geometry 3 (1969), 1-18",
+     "url": "https://doi.org/10.4310/jdg/1214428815",
+     "note": "Atiyah proved the case of finite groups in Characters and cohomology of finite groups, Publications Mathematiques de l'IHES 9 (1961), 23-64."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:behrend-s-construction",
+  "statement": "For every integer $N \\ge 1$ there is a set $S \\subseteq \\{0, \\dots, N-1\\}$ with no solution of $x + z = 2y$ other than $x = y = z$, that is, no nontrivial 3-term [arithmetic progression](c:arithmetic-progression), and $|S| \\ge N e^{-4\\sqrt{\\ln N}}$.",
+  "hypotheses": [
+   {
+    "id": "h:n",
+    "text": "$N$ is a positive integer.",
+    "concept": null
+   }
+  ],
+  "conclusion": "Some set $S \\subseteq \\{0, \\dots, N-1\\}$ with no nontrivial 3-term progression has $|S| \\ge N e^{-4\\sqrt{\\ln N}}$.",
+  "formal": {
+   "decl": "Behrend.roth_lower_bound",
+   "difference": "The declaration states the bound $N e^{-4\\sqrt{\\ln N}} \\le r(N)$ for the Roth number $r(N)$, the largest size of a progression-free subset of $\\{0, \\dots, N-1\\}$, and it also covers $N = 0$. The set itself comes from the proof (Behrend.sphere), not from the statement."
+  },
+  "proofs": [
+   {
+    "id": "sphere-digits",
+    "name": "Spheres and base-$(2d-1)$ digits",
+    "slogan": "Read the integer points of a sphere as digits to get a progression-free set, pick a rich sphere by pigeonhole, and tune the parameters.",
+    "scope": "The whole bound; the cases $N < 4096$ are handled apart by a single point. All digit vectors have $n$ digits below $d$ for the chosen $n$ and $d$.",
+    "mechanisms": [
+     "m:construction-explicit",
+     "m:pigeonhole",
+     "m:convexity"
+    ],
+    "roles": [
+     {
+      "h": "h:n",
+      "why": "A positive $N$ makes the logarithm nonnegative and the choice of $n$ and $d$ meaningful.",
+      "steps": [
+       "s:params",
+       "s:small"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:sphere",
+      "slogan": "Show that the integer points on a sphere contain no nontrivial progression.",
+      "detail": "Let $x, y, z$ lie on the [sphere](c:sphere) $|v| = r$ with $x + z = 2y$. Then $|x + z| = 2r = |x| + |z|$. Equality in the Cauchy-Schwarz inequality forces $x$ and $z$ to be nonnegative multiples of each other, so $x = z$ because $|x| = |z|$. Hence $y = x = z$.",
+      "uses": [
+       "nl:16121"
+      ]
+     },
+     {
+      "id": "s:digits",
+      "slogan": "Read digit vectors as integers in base $2d-1$ to keep progression-freeness.",
+      "detail": "For $x \\in \\{0, \\dots, d-1\\}^n$ put $\\phi(x) = \\sum_i x_i (2d-1)^i$, a number in [base-$(2d-1)$ digits](c:base-p-digits). Sums of two digit vectors have digits below $2d-1$, so adding in this base has no carries. Hence $\\phi$ is injective, and $\\phi(x) + \\phi(z) = 2\\phi(y)$ holds if and only if $x + z = 2y$.",
+      "uses": []
+     },
+     {
+      "id": "s:pigeon",
+      "slogan": "Choose the sphere with the most points by the pigeonhole principle.",
+      "detail": "The $d^n$ points of the box have $|x|^2 \\in \\{0, \\dots, n(d-1)^2\\}$. Some sphere therefore holds at least $d^n / (n d^2)$ of them. By the two steps above, $\\{0, \\dots, (2d-1)^n - 1\\}$ has a progression-free subset of size at least $d^{n-2}/n$.",
+      "uses": [
+       "nm:pigeonhole-principle"
+      ]
+     },
+     {
+      "id": "s:params",
+      "slogan": "Choose $n = \\lceil \\sqrt{\\ln N} \\rceil$ and $d = \\lfloor N^{1/n} / 2 \\rfloor$.",
+      "detail": "Then $(2d-1)^n \\le N$, so a progression-free subset of $\\{0, \\dots, (2d-1)^n - 1\\}$ lies in $\\{0, \\dots, N-1\\}$. For $N \\ge 4096$ one has $n \\ge 3$ and $d > N^{1/n}/e$.",
+      "uses": []
+     },
+     {
+      "id": "s:estimate",
+      "slogan": "Bound $d^{n-2}/n$ from below by $N e^{-4\\sqrt{\\ln N}}$ when $N \\ge 4096$.",
+      "detail": "From $d > N^{1/n}/e$ we get $d^{n-2}/n > N \\cdot N^{-2/n} \\cdot e^{-(n-2)}/n$. Put $x = \\sqrt{\\ln N}$. Then $N^{-2/n} \\ge e^{-2x}$ because $n \\ge x$, and $e^{-(n-2)}/n > e^{1-x}/(x+1) \\ge e^{-2x}$ because $n < x + 1$ and $e^{x+1} \\ge x + 1$.",
+      "uses": []
+     },
+     {
+      "id": "s:small",
+      "slogan": "Treat the cases $1 \\le N < 4096$ with a single point.",
+      "detail": "For these $N$ we have $N e^{-4\\sqrt{\\ln N}} \\le 1$, and the set $\\{0\\}$ has one element and no nontrivial progression. So the bound holds with $|S| = 1$.",
+      "uses": []
+     },
+     {
+      "id": "s:combine",
+      "slogan": "Combine the large and small cases into the bound for every $N \\ge 1$.",
+      "detail": "For $N \\ge 4096$ the steps above give a set of size above $N e^{-4\\sqrt{\\ln N}}$ in $\\{0, \\dots, N-1\\}$ without nontrivial progressions. For $N < 4096$ the single point works.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:sphere",
+      "s:pigeon"
+     ],
+     [
+      "s:digits",
+      "s:pigeon"
+     ],
+     [
+      "s:pigeon",
+      "s:estimate"
+     ],
+     [
+      "s:params",
+      "s:estimate"
+     ],
+     [
+      "s:estimate",
+      "s:combine"
+     ],
+     [
+      "s:small",
+      "s:combine"
+     ]
+    ],
+    "conclusion": "s:combine",
+    "concepts": {
+     "c:arithmetic-progression": "The set must avoid three-term arithmetic progressions.",
+     "c:sphere": "Spheres have no progressions because they are strictly convex.",
+     "c:base-p-digits": "Base-$(2d-1)$ digits turn the progression-free sphere into integers."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Behrend.roth_lower_bound",
+     "follows": true,
+     "note": "mathlib uses Behrend.threeAPFree_sphere, threeAPFree_image_sphere, exists_large_sphere and bound_aux, then nValue, dValue and roth_lower_bound_explicit for the parameters."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q4941364",
+  "statement": "A [cooperative game](c:cooperative-game) $(N, v)$ with finitely many players has a nonempty core, the set of $x \\in \\mathbb{R}^N$ with $x(N) = v(N)$ and $x(S) \\ge v(S)$ for all coalitions $S$, if and only if it is [balanced](c:balanced-collection): $\\sum_S \\lambda_S v(S) \\le v(N)$ whenever $\\lambda_S \\ge 0$ and $\\sum_{S \\ni i} \\lambda_S = 1$ for every player $i$.",
+  "hypotheses": [
+   {
+    "id": "h:game",
+    "text": "$(N, v)$ is a [cooperative game](c:cooperative-game) with a finite player set $N$ and $v(\\emptyset) = 0$.",
+    "concept": "c:cooperative-game"
+   }
+  ],
+  "conclusion": "The core of $(N, v)$ is nonempty exactly when $(N, v)$ is balanced.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "lp-duality",
+    "name": "Linear programming duality",
+    "slogan": "Write the core as the optimal face of a linear program, take its dual, whose feasible points are the balanced weights, and compare the two optimal values.",
+    "scope": "The whole theorem for $N \\ne \\emptyset$; for $N = \\emptyset$ both sides hold trivially. Coalitions $S$ are the nonempty subsets of $N$.",
+    "mechanisms": [
+     "m:duality",
+     "m:reduction"
+    ],
+    "roles": [
+     {
+      "h": "h:game",
+      "why": "The finite player set gives a finite linear program, and $v$ gives its right-hand sides and the dual objective.",
+      "steps": [
+       "s:primal",
+       "s:bounded",
+       "s:dual",
+       "s:compare"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:primal",
+      "slogan": "Write core membership as an optimum of a linear program.",
+      "detail": "Consider the program: minimize $\\sum_i x_i$ over $x \\in \\mathbb{R}^N$ with $x(S) \\ge v(S)$ for all coalitions $S$. The constraint for $S = N$ gives $x(N) \\ge v(N)$. So a feasible $x$ is in the core if and only if its value equals $v(N)$.",
+      "uses": []
+     },
+     {
+      "id": "s:bounded",
+      "slogan": "Show that the program is feasible and bounded, so that it has an optimal value $p^*$.",
+      "detail": "Let $m = \\max_S |v(S)|$. The point $x_i = m$ is feasible, because $x(S) = |S|\\, m \\ge m \\ge v(S)$. The value is at least $v(N)$. A feasible [linear program](c:linear-programming) that is bounded below attains its minimum $p^* \\ge v(N)$, and the core is nonempty if and only if $p^* = v(N)$.",
+      "uses": []
+     },
+     {
+      "id": "s:dual",
+      "slogan": "Form the dual program over weights $\\lambda_S \\ge 0$.",
+      "detail": "The dual is: maximize $\\sum_S \\lambda_S v(S)$ subject to $\\lambda_S \\ge 0$ and $\\sum_{S \\ni i} \\lambda_S = 1$ for each $i$. The constraints are equations because the variables $x_i$ are free. The feasible points are exactly the weights of [balanced collections](c:balanced-collection).",
+      "uses": []
+     },
+     {
+      "id": "s:strong",
+      "slogan": "Equate the two optimal values by strong duality.",
+      "detail": "The primal program is feasible and bounded. By [linear programming duality](c:linear-programming-duality), a consequence of Farkas' lemma, the dual has an optimal solution with value $d^* = p^*$.",
+      "uses": [
+       "nm:farkas-lemma"
+      ]
+     },
+     {
+      "id": "s:compare",
+      "slogan": "Compare $d^*$ with $v(N)$ to read off balancedness.",
+      "detail": "The weights $\\lambda_N = 1$ and $\\lambda_S = 0$ otherwise are feasible, so $d^* \\ge v(N)$. The game is balanced if and only if $d^* \\le v(N)$, that is, $d^* = v(N)$. With $d^* = p^*$ and step 2, this holds if and only if the core is nonempty.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:primal",
+      "s:bounded"
+     ],
+     [
+      "s:bounded",
+      "s:strong"
+     ],
+     [
+      "s:dual",
+      "s:strong"
+     ],
+     [
+      "s:strong",
+      "s:compare"
+     ],
+     [
+      "s:bounded",
+      "s:compare"
+     ]
+    ],
+    "conclusion": "s:compare",
+    "concepts": {
+     "c:cooperative-game": "The game supplies the coalition values that define the program.",
+     "c:balanced-collection": "Feasible dual weights are the weights of balanced collections.",
+     "c:linear-programming": "Core membership is rewritten as a linear program.",
+     "c:linear-programming-duality": "Duality equates the primal minimum with the dual maximum."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The linear programming duality argument of L. S. Shapley, On balanced sets and cores, Naval Research Logistics Quarterly 14 (1967), 453-460; Bondareva proved the result independently in 1963."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q856032",
+  "statement": "In the asynchronous network model, no read/write [distributed system](c:distributed-system) with at least two nodes guarantees both atomic [consistency](c:consistency), where every read returns the latest completed write, and availability, where every request to a working node gets a response, in all executions in which the network may lose messages.",
+  "hypotheses": [
+   {
+    "id": "h:nodes",
+    "text": "The system has at least two nodes, which implement one register with initial value $v_0$.",
+    "concept": null
+   },
+   {
+    "id": "h:async",
+    "text": "The network is asynchronous: nodes share no clock, and the network may lose any message.",
+    "concept": null
+   },
+   {
+    "id": "h:rw",
+    "text": "The register supports reads and writes, and some value $v_1 \\ne v_0$ can be written.",
+    "concept": null
+   }
+  ],
+  "conclusion": "Every implementation has an execution, with lost messages, that breaks atomic consistency or availability.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "partition-argument",
+    "name": "Partition and indistinguishable executions",
+    "slogan": "Cut the nodes into two groups that cannot talk, write in one group, read in the other, and note that the reader cannot see the write.",
+    "scope": "The proof of Gilbert and Lynch for the asynchronous model, by contradiction. Availability is required only from nodes that do not fail.",
+    "mechanisms": [
+     "m:contradiction",
+     "m:construction-explicit"
+    ],
+    "roles": [
+     {
+      "h": "h:nodes",
+      "why": "Two nodes give two groups, one for the write and one for the read.",
+      "steps": [
+       "s:assume",
+       "s:partition"
+      ]
+     },
+     {
+      "h": "h:async",
+      "why": "Lost messages keep the groups apart, and the lack of clocks makes the two executions look the same to the second group.",
+      "steps": [
+       "s:partition",
+       "s:indist"
+      ]
+     },
+     {
+      "h": "h:rw",
+      "why": "A write of $v_1 \\ne v_0$ followed by a read gives the contradicting values.",
+      "steps": [
+       "s:read",
+       "s:contradict"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:assume",
+      "slogan": "Assume an implementation that is available and atomic in every execution.",
+      "detail": "Suppose an algorithm keeps one register that starts at $v_0$. It answers every request to a working node (availability) and makes every execution atomic ([consistency](c:consistency)), even when messages are lost. Split the nodes into nonempty groups $G_1 \\ni n_1$ and $G_2 \\ni n_2$.",
+      "uses": []
+     },
+     {
+      "id": "s:partition",
+      "slogan": "Run an execution in which the network loses every message between the groups.",
+      "detail": "In execution $\\alpha_1$ the network loses all messages between $G_1$ and $G_2$, which the model allows. A client sends a write of $v_1$ to $n_1$. By availability $n_1$ answers, so the write completes while $G_2$ hears nothing.",
+      "uses": []
+     },
+     {
+      "id": "s:read",
+      "slogan": "Start a read at $n_2$ after the write has completed.",
+      "detail": "After the write completes in $\\alpha_1$, a client sends a read to $n_2$. By availability $n_2$ answers with some value $r$.",
+      "uses": []
+     },
+     {
+      "id": "s:indist",
+      "slogan": "Show that $G_2$ cannot tell $\\alpha_1$ from an execution without the write.",
+      "detail": "Execution $\\alpha_2$ has no write and no message from $G_1$. Nodes without clocks cannot tell the time, so every node of $G_2$ sees the same events in $\\alpha_1$ and $\\alpha_2$. In $\\alpha_2$ atomicity forces $r = v_0$, so $n_2$ also answers $r = v_0$ in $\\alpha_1$.",
+      "uses": []
+     },
+     {
+      "id": "s:contradict",
+      "slogan": "Contradict atomic consistency in the first execution.",
+      "detail": "In $\\alpha_1$ the read starts after the write of $v_1$ has completed, so atomic consistency requires $r = v_1$. But $r = v_0 \\ne v_1$. So no implementation is both available and atomic when messages may be lost.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:assume",
+      "s:partition"
+     ],
+     [
+      "s:partition",
+      "s:read"
+     ],
+     [
+      "s:read",
+      "s:indist"
+     ],
+     [
+      "s:partition",
+      "s:indist"
+     ],
+     [
+      "s:indist",
+      "s:contradict"
+     ]
+    ],
+    "conclusion": "s:contradict",
+    "concepts": {
+     "c:distributed-system": "The system is a set of nodes that replicate one register.",
+     "c:consistency": "Atomic consistency is the property that the read breaks."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The proof of S. Gilbert and N. Lynch, Brewer's conjecture and the feasibility of consistent, available, partition-tolerant web services, SIGACT News 33 (2002), no. 2, 51-59."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:22096",
+  "statement": "Let $n \\ge 1$. The map $C(A) = (I - A)(I + A)^{-1}$ is defined on every real [skew-symmetric matrix](c:skew-symmetric-matrix) $A$, and it is an involutive bijection onto the set of real [orthogonal matrices](c:orthogonal-matrix) with no eigenvalue $-1$. Every such matrix has determinant $1$, and the inverse map is given by the same formula.",
+  "hypotheses": [
+   {
+    "id": "h:real",
+    "text": "The matrices are real $n \\times n$ matrices with $n \\ge 1$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The map $C$ is a bijection from skew-symmetric matrices onto orthogonal matrices without eigenvalue $-1$, and $C \\circ C$ is the identity.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "direct-computation",
+    "name": "Direct computation",
+    "slogan": "Show that $I + A$ is invertible, that $C(A)$ is orthogonal without eigenvalue $-1$, that the same formula gives a skew matrix back, and that applying it twice returns the start.",
+    "scope": "The whole theorem for real matrices; the determinant claim follows in step 3. The case $A = 0$ gives $C(0) = I$.",
+    "mechanisms": [
+     "m:algebraic-identity",
+     "m:bijection"
+    ],
+    "roles": [
+     {
+      "h": "h:real",
+      "why": "Over the reals, $x^T x > 0$ for $x \\ne 0$, which makes $I + A$ invertible.",
+      "steps": [
+       "s:invertible"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:invertible",
+      "slogan": "Show that $I + A$ is invertible for every skew-symmetric $A$.",
+      "detail": "If $(I + A)x = 0$, then $x^Tx = -x^TAx$. But $x^TAx = (x^TAx)^T = x^TA^Tx = -x^TAx$, so $x^TAx = 0$. Hence $x^Tx = 0$ and $x = 0$. The same holds for $I - A = I + (-A)$.",
+      "uses": []
+     },
+     {
+      "id": "s:orthogonal",
+      "slogan": "Show that $Q = (I - A)(I + A)^{-1}$ is [orthogonal](c:orthogonal-matrix).",
+      "detail": "The matrices $I - A$, $I + A$ and their inverses commute, being functions of $A$. Since $A^T = -A$, we get $Q^T = (I - A)^{-1}(I + A)$. So $Q^TQ = (I - A)^{-1}(I + A)(I - A)(I + A)^{-1} = I$.",
+      "uses": []
+     },
+     {
+      "id": "s:eigenvalue",
+      "slogan": "Show that $Q$ has no eigenvalue $-1$ and that $\\det Q = 1$.",
+      "detail": "We have $I + Q = ((I + A) + (I - A))(I + A)^{-1} = 2(I + A)^{-1}$, which is invertible, so $-1$ is not an eigenvalue. Also $\\det Q = \\det(I - A)/\\det(I + A) = 1$, because $\\det(I - A) = \\det((I + A)^T)$.",
+      "uses": []
+     },
+     {
+      "id": "s:inverse",
+      "slogan": "Show that the same formula sends such a $Q$ to a skew-symmetric matrix.",
+      "detail": "Let $Q$ be orthogonal with $I + Q$ invertible, and put $B = (I - Q)(I + Q)^{-1}$. Using $Q^T = Q^{-1}$ we get $B^T = (I + Q^{-1})^{-1}(I - Q^{-1}) = (I + Q)^{-1}(Q - I) = -B$, since $I - Q$ and $(I + Q)^{-1}$ commute.",
+      "uses": []
+     },
+     {
+      "id": "s:involution",
+      "slogan": "Check that applying the formula twice returns the start, so the map is a bijection.",
+      "detail": "For $Q = C(A)$ we have $I + Q = 2(I + A)^{-1}$ and $I - Q = 2A(I + A)^{-1}$, so $C(Q) = 2A(I + A)^{-1} \\cdot \\tfrac12 (I + A) = A$. The same computation holds for any $M$ with $I + M$ invertible, so $C \\circ C$ is the identity on both sets.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:invertible",
+      "s:orthogonal"
+     ],
+     [
+      "s:invertible",
+      "s:eigenvalue"
+     ],
+     [
+      "s:orthogonal",
+      "s:involution"
+     ],
+     [
+      "s:eigenvalue",
+      "s:involution"
+     ],
+     [
+      "s:inverse",
+      "s:involution"
+     ]
+    ],
+    "conclusion": "s:involution",
+    "concepts": {
+     "c:skew-symmetric-matrix": "These matrices form the domain, and the formula needs $A^T = -A$.",
+     "c:orthogonal-matrix": "The transform lands in the matrices with $Q^TQ = I$."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard computation; the transform is due to A. Cayley (1846)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:2037",
+  "statement": "Let $A$ be a real [star-algebra](c:star-algebra), a unital algebra with a linear involution $*$ that reverses products. On $A \\times A$ put $(a, b)(c, d) = (ac - d^*b,\\ da + bc^*)$ and $(a, b)^* = (a^*, -b)$. Then $A \\times A$ is a real star-algebra of dimension $2\\dim A$ with unit $(1, 0)$, and $a \\mapsto (a, 0)$ embeds $A$ in it.",
+  "hypotheses": [
+   {
+    "id": "h:alg",
+    "text": "$A$ is a real [star-algebra](c:star-algebra): a real vector space with a bilinear product, a unit $1$, and a linear map $*$ with $1^* = 1$, $a^{**} = a$ and $(ab)^* = b^*a^*$.",
+    "concept": "c:star-algebra"
+   }
+  ],
+  "conclusion": "The double $A \\times A$ is a real star-algebra of dimension $2 \\dim A$ with unit $(1, 0)$, and $a \\mapsto (a, 0)$ is an injective star-algebra homomorphism.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "verification",
+    "name": "Direct verification",
+    "slogan": "Check bilinearity, the unit, the involution and its reversal of products, and the embedding, each by a short computation in $A$.",
+    "scope": "The doubling itself; associativity and commutativity of $A$ are not assumed and do not pass to the double in general. Doubling the reals three times gives, in turn, the complex numbers, the [quaternions](c:quaternion) and the [octonions](c:octonion).",
+    "mechanisms": [
+     "m:algebraic-identity",
+     "m:construction-explicit"
+    ],
+    "roles": [
+     {
+      "h": "h:alg",
+      "why": "The unit, the linear involution and the reversal rule of $A$ supply every identity that the checks use.",
+      "steps": [
+       "s:bilinear",
+       "s:unit",
+       "s:involution",
+       "s:reverse",
+       "s:collect"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:bilinear",
+      "slogan": "Check that the product and the involution of the double are real-linear in each argument.",
+      "detail": "Each entry of the product is built from products in $A$, the linear map $*$ and sums. So the product is bilinear over $\\mathbb{R}$. The map $(a, b) \\mapsto (a^*, -b)$ is linear, and $\\dim(A \\times A) = 2\\dim A$.",
+      "uses": []
+     },
+     {
+      "id": "s:unit",
+      "slogan": "Verify that $(1, 0)$ is a two-sided unit.",
+      "detail": "We have $(1, 0)(c, d) = (c - d^* \\cdot 0,\\ d \\cdot 1 + 0 \\cdot c^*) = (c, d)$ and $(a, b)(1, 0) = (a - 0 \\cdot b,\\ 0 \\cdot a + b \\cdot 1^*) = (a, b)$, because $1^* = 1$.",
+      "uses": []
+     },
+     {
+      "id": "s:involution",
+      "slogan": "Check that the new star is an involution that fixes the unit.",
+      "detail": "We have $(a, b)^{**} = (a^{**}, b) = (a, b)$ and $(1, 0)^* = (1^*, 0) = (1, 0)$.",
+      "uses": []
+     },
+     {
+      "id": "s:reverse",
+      "slogan": "Verify that the new star reverses products.",
+      "detail": "Both $((a, b)(c, d))^*$ and $(c, d)^*(a, b)^*$ equal $(c^*a^* - b^*d,\\ -da - bc^*)$. The computation uses $(xy)^* = y^*x^*$ and $x^{**} = x$ in $A$.",
+      "uses": []
+     },
+     {
+      "id": "s:collect",
+      "slogan": "Embed $A$ by $a \\mapsto (a, 0)$ and collect the checks into the theorem.",
+      "detail": "We have $(a, 0)(c, 0) = (ac, 0)$ and $(a, 0)^* = (a^*, 0)$, and the map is linear and injective. So $A$ is a star-subalgebra with the same unit. With the four checks above, the double is a real star-algebra of dimension $2 \\dim A$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:bilinear",
+      "s:collect"
+     ],
+     [
+      "s:unit",
+      "s:collect"
+     ],
+     [
+      "s:involution",
+      "s:collect"
+     ],
+     [
+      "s:reverse",
+      "s:collect"
+     ]
+    ],
+    "conclusion": "s:collect",
+    "concepts": {
+     "c:star-algebra": "A star-algebra is the structure that is doubled and must be recovered.",
+     "c:quaternion": "Doubling the complex numbers gives the quaternions.",
+     "c:octonion": "Doubling the quaternions gives the octonions."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The direct verification; the construction is due to L. E. Dickson (1919), and J. C. Baez, The octonions, Bulletin of the AMS 39 (2002), describes it."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:3255",
+  "statement": "Every continuous map $f\\colon X \\to Y$ between [CW complexes](c:cw-complex) is [homotopic](c:homotopy) to a [cellular map](c:cellular-map), that is, a map $g$ with $g(X^n) \\subseteq Y^n$ for every $n$.",
+  "hypotheses": [
+   {
+    "id": "h:cw",
+    "text": "$X$ and $Y$ are [CW complexes](c:cw-complex), with skeleta $X^n$ and $Y^n$.",
+    "concept": "c:cw-complex"
+   },
+   {
+    "id": "h:map",
+    "text": "The map $f\\colon X \\to Y$ is continuous.",
+    "concept": null
+   }
+  ],
+  "conclusion": "Some cellular map $g\\colon X \\to Y$ is [homotopic](c:homotopy) to $f$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "skeleton-induction",
+    "name": "Induction on skeleta",
+    "slogan": "Deform the map one skeleton at a time, push the image of each cell off the cells of higher dimension, and join the infinitely many deformations.",
+    "scope": "The whole theorem; the same proof gives a homotopy fixed on any subcomplex where $f$ is already cellular. The case $n = 0$ moves each vertex along a path to a vertex of $Y$.",
+    "mechanisms": [
+     "m:induction",
+     "m:approximation",
+     "m:dimension-count"
+    ],
+    "roles": [
+     {
+      "h": "h:cw",
+      "why": "Cells give the skeleta, the finite subcomplex that holds the image of a cell, and the weak topology for the final homotopy.",
+      "steps": [
+       "s:finite",
+       "s:push",
+       "s:limit"
+      ]
+     },
+     {
+      "h": "h:map",
+      "why": "The map $f$ is the starting point of the deformations, and its compact images lie in finite subcomplexes.",
+      "steps": [
+       "s:induct",
+       "s:finite"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:induct",
+      "slogan": "Deform the map skeleton by skeleton, starting with the vertices.",
+      "detail": "For $n = 0$ join $f(v)$ to a vertex of $Y$ by a path, which is possible because every path component of $Y$ has a vertex. Now suppose $f$ is cellular on $X^{n-1}$. The map is deformed over each $n$-cell with characteristic map $\\Phi\\colon D^n \\to X$, fixed on $\\partial D^n$.",
+      "uses": []
+     },
+     {
+      "id": "s:finite",
+      "slogan": "Find the cells of $Y$ of dimension above $n$ that meet the image of an $n$-cell.",
+      "detail": "The compact set $f\\Phi(D^n)$ lies in a finite subcomplex of $Y$. Take a cell $e^k$ of it with $k > n$ that meets the image. Since $f\\Phi(\\partial D^n) \\subseteq Y^{n-1}$, the boundary of the disc misses $e^k$.",
+      "uses": []
+     },
+     {
+      "id": "s:compress",
+      "slogan": "Compress $f\\Phi$ off a point of $e^k$ by simplicial approximation.",
+      "detail": "Let $\\Psi\\colon D^k \\to Y$ be the characteristic map of $e^k$. Deform $f\\Phi$, fixed on $\\partial D^n$, so that it is piecewise linear in the chart $\\Psi$ over a smaller closed ball. The image of an $n$-dimensional piecewise linear map in a $k$-dimensional chart with $k > n$ misses some point $p \\in e^k$.",
+      "uses": [
+       "wd:Q3983972"
+      ]
+     },
+     {
+      "id": "s:push",
+      "slogan": "Push the image radially off $p$ to remove the cell $e^k$ from it.",
+      "detail": "Inside the cell, radial projection from $p$ is a [deformation retraction](c:deformation-retract) of $Y \\setminus \\{p\\}$ onto $Y \\setminus e^k$. It gives a homotopy of $f\\Phi$, fixed on $\\partial D^n$, to a map that misses $e^k$. Repeat for the finitely many cells above dimension $n$ to land in $Y^n$.",
+      "uses": []
+     },
+     {
+      "id": "s:extend",
+      "slogan": "Extend the deformations of all $n$-cells over $X$ by the homotopy extension property.",
+      "detail": "The deformations of the $n$-cells, fixed on $X^{n-1}$, give a homotopy of $f|_{X^n}$. The pair $(X, X^n)$ has the [homotopy extension property](c:homotopy-extension-property), so the homotopy extends to $X$ and ends in a map that is cellular on $X^n$.",
+      "uses": [
+       "nl:2969"
+      ]
+     },
+     {
+      "id": "s:limit",
+      "slogan": "Join the infinitely many deformations into one homotopy.",
+      "detail": "Perform the deformation of stage $n$ during the time $[1/2^{n+1}, 1/2^n]$. On each skeleton the homotopy is stationary after finitely many stages, so it is continuous in the weak topology. Its final map $g$ is cellular.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:induct",
+      "s:finite"
+     ],
+     [
+      "s:finite",
+      "s:compress"
+     ],
+     [
+      "s:compress",
+      "s:push"
+     ],
+     [
+      "s:push",
+      "s:extend"
+     ],
+     [
+      "s:extend",
+      "s:limit"
+     ]
+    ],
+    "conclusion": "s:limit",
+    "concepts": {
+     "c:cw-complex": "Cells and skeleta structure the deformation, and the weak topology gives continuity.",
+     "c:homotopy": "The result is a homotopy between the given map and a cellular map.",
+     "c:cellular-map": "A cellular map respects skeleta, which is what the induction achieves.",
+     "c:deformation-retract": "Removing a point from a cell deformation retracts onto its boundary.",
+     "c:homotopy-extension-property": "It extends the deformation of a skeleton to the whole complex."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The proof of A. Hatcher, Algebraic Topology, Cambridge University Press, 2002, Theorem 4.8."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:9701",
+  "statement": "Let $G$ be a path-connected [topological group](c:topological-group) and $n \\ge 1$. Gluing trivial bundles over the two closed hemispheres of $S^n$ along a map $g\\colon S^{n-1} \\to G$ gives a [principal bundle](c:principal-bundle) $P_g$, and $g \\mapsto P_g$ induces a bijection from $\\pi_{n-1}(G)$ onto the isomorphism classes of principal $G$-bundles over $S^n$.",
+  "hypotheses": [
+   {
+    "id": "h:group",
+    "text": "$G$ is a path-connected [topological group](c:topological-group).",
+    "concept": "c:topological-group"
+   },
+   {
+    "id": "h:dim",
+    "text": "The dimension satisfies $n \\ge 1$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The clutching map is a well-defined bijection from $\\pi_{n-1}(G)$ onto the isomorphism classes of principal $G$-bundles over $S^n$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "clutching-classification",
+    "name": "Clutching and homotopy invariance",
+    "slogan": "Build the bundle from a gluing map, show that every bundle arises because hemispheres are contractible, and show that gluing maps agree up to homotopy exactly for isomorphic bundles.",
+    "scope": "The whole theorem; bundles over the contractible [hemispheres](c:hemisphere) are trivial because the base is paracompact. For $n = 1$ both sides are single points, since $G$ is path-connected.",
+    "mechanisms": [
+     "m:construction-explicit",
+     "m:homotopy-invariance",
+     "m:sheaf-gluing"
+    ],
+    "roles": [
+     {
+      "h": "h:group",
+      "why": "Path-connectedness lets constants be moved to the identity, and the group structure turns free homotopy classes into based ones.",
+      "steps": [
+       "s:inject",
+       "s:classes"
+      ]
+     },
+     {
+      "h": "h:dim",
+      "why": "A dimension $n \\ge 1$ makes the equator $S^{n-1}$ nonempty, so there is something to glue along.",
+      "steps": [
+       "s:glue"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:glue",
+      "slogan": "Glue trivial bundles over the two hemispheres along $g$ to build $P_g$.",
+      "detail": "Let $D_\\pm$ be the closed hemispheres, with $D_+ \\cap D_- = S^{n-1}$. Put $P_g = (D_+ \\times G \\,\\sqcup\\, D_- \\times G)/\\!\\sim$ with $(x, h)_+ \\sim (x, g(x)h)_-$ for $x \\in S^{n-1}$, and let $G$ act by right multiplication. On slightly enlarged open hemispheres, extend $g$ radially, so that $P_g$ is locally trivial there.",
+      "uses": []
+     },
+     {
+      "id": "s:surjective",
+      "slogan": "Show that every principal bundle $P$ over $S^n$ is isomorphic to some $P_g$.",
+      "detail": "The hemispheres $D_\\pm$ are [contractible](c:contractible-space), and $S^n$ is [paracompact](c:paracompact-space), so $P|_{D_\\pm}$ is trivial. Choose trivializations $\\tau_\\pm$. Over the equator, $\\tau_-(p) = g(x)\\,\\tau_+(p)$ for a unique continuous $g(x) \\in G$, and $P \\cong P_g$.",
+      "uses": []
+     },
+     {
+      "id": "s:homotopy",
+      "slogan": "Show that homotopic gluing maps give isomorphic bundles.",
+      "detail": "A homotopy $g_t$ gives a map $S^{n-1} \\times [0, 1] \\to G$ and, by the same construction, a bundle over $S^n \\times [0, 1]$ that restricts to $P_{g_0}$ and $P_{g_1}$ at the ends. Such restrictions are isomorphic over a paracompact base, so $P_{g_0} \\cong P_{g_1}$.",
+      "uses": []
+     },
+     {
+      "id": "s:inject",
+      "slogan": "Show that an isomorphism $P_g \\cong P_{g'}$ makes $g$ and $g'$ homotopic.",
+      "detail": "An isomorphism restricts over $D_\\pm$ to maps $h_\\pm\\colon D_\\pm \\to G$ with $g'(x)h_+(x) = h_-(x)g(x)$ on the equator. Since $D_\\pm$ is contractible, $h_\\pm$ is homotopic to a constant $c_\\pm$, so $g' \\simeq c_- g c_+^{-1}$. A path from each $c_\\pm$ to the identity in the path-connected $G$ gives $g' \\simeq g$.",
+      "uses": []
+     },
+     {
+      "id": "s:classes",
+      "slogan": "Identify free homotopy classes of maps $S^{n-1} \\to G$ with $\\pi_{n-1}(G)$.",
+      "detail": "For a topological group, $g \\mapsto g(*)^{-1}g$ sends freely homotopic maps to based homotopic maps and is the identity on based maps. So free classes equal based classes, and the steps above make $\\pi_{n-1}(G) \\to \\{\\text{bundles}\\}/\\!\\cong$ well defined, onto and one to one.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:glue",
+      "s:surjective"
+     ],
+     [
+      "s:glue",
+      "s:homotopy"
+     ],
+     [
+      "s:homotopy",
+      "s:classes"
+     ],
+     [
+      "s:surjective",
+      "s:classes"
+     ],
+     [
+      "s:inject",
+      "s:classes"
+     ]
+    ],
+    "conclusion": "s:classes",
+    "concepts": {
+     "c:topological-group": "The group structure allows products of maps and translation to based maps.",
+     "c:principal-bundle": "The glued space is a principal bundle, and these bundles are classified.",
+     "c:hemisphere": "Each closed hemisphere carries a trivial bundle that is glued to the other.",
+     "c:contractible-space": "Contractible bases force bundles to be trivial and maps to be null-homotopic.",
+     "c:paracompact-space": "Paracompact bases give triviality over contractible sets and homotopy invariance."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The classical clutching argument, as in N. Steenrod, The Topology of Fibre Bundles, Princeton University Press, 1951, and in A. Hatcher, Vector Bundles and K-Theory, Proposition 1.11, for vector bundles."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q376166",
+  "statement": "Every sequent $\\Gamma \\Rightarrow \\Delta$ that has a derivation in the [sequent calculus](c:sequent-calculus) G3c for classical first-order logic, with the [cut rule](c:cut-rule) allowed, also has a [cut-free proof](c:cut-free-proof).",
+  "hypotheses": [
+   {
+    "id": "h:calculus",
+    "text": "Derivations use the rules of the sequent calculus G3c, with the cut rule added.",
+    "concept": "c:sequent-calculus"
+   },
+   {
+    "id": "h:derivable",
+    "text": "The sequent $\\Gamma \\Rightarrow \\Delta$ has a derivation that may use cuts.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The sequent $\\Gamma \\Rightarrow \\Delta$ has a derivation in G3c without the cut rule.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "cut-admissibility",
+    "name": "Admissibility of cut by double induction",
+    "slogan": "Show that cut is admissible by induction on the weight of the cut formula and the heights of the premises, then remove the cuts of any derivation from the top.",
+    "scope": "The calculus G3c has multiset sequents and no primitive weakening or contraction; Gentzen's LK derives the same sequents. The argument is for classical first-order logic.",
+    "mechanisms": [
+     "m:structural-induction",
+     "m:strong-induction",
+     "m:case-analysis"
+    ],
+    "roles": [
+     {
+      "h": "h:calculus",
+      "why": "The shape of the rules gives invertibility, admissible contraction and the principal-case reductions.",
+      "steps": [
+       "s:structural",
+       "s:setup",
+       "s:nonprincipal",
+       "s:principal"
+      ]
+     },
+     {
+      "h": "h:derivable",
+      "why": "The given derivation is the object whose cuts are removed from the top.",
+      "steps": [
+       "s:eliminate"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:structural",
+      "slogan": "Prove that weakening, inversion and contraction are admissible in G3c.",
+      "detail": "By induction on the height of derivations, weakening by a formula keeps the height. Every rule of G3c is invertible with premises of no greater height. Contraction on either side is then admissible, by induction on the height with inversion. These facts let the later steps ignore structural rules.",
+      "uses": []
+     },
+     {
+      "id": "s:setup",
+      "slogan": "State cut admissibility as an induction on the weight of the cut formula.",
+      "detail": "Claim: from cut-free derivations $\\mathcal{D}_1$ of $\\Gamma \\Rightarrow \\Delta, C$ and $\\mathcal{D}_2$ of $C, \\Gamma' \\Rightarrow \\Delta'$ we obtain a cut-free derivation of $\\Gamma, \\Gamma' \\Rightarrow \\Delta, \\Delta'$. Induct on the weight of $C$, and for a fixed weight on the sum of the heights of $\\mathcal{D}_1$ and $\\mathcal{D}_2$.",
+      "uses": []
+     },
+     {
+      "id": "s:nonprincipal",
+      "slogan": "Permute the cut upward when the cut formula is not principal or a premise is an axiom.",
+      "detail": "If $\\mathcal{D}_1$ ends in a rule whose principal formula is not that occurrence of $C$, apply the cut to the premises of the rule and then the rule again, renaming eigenvariables. The height sum has dropped. The case of $\\mathcal{D}_2$ is the same. If a premise is an axiom, the conclusion is an axiom or follows from the other premise by weakening.",
+      "uses": []
+     },
+     {
+      "id": "s:principal",
+      "slogan": "Replace a cut on a principal formula by cuts on subformulas.",
+      "detail": "If $C$ is principal in the last rule of both premises, invert the rules and cut on the immediate subformulas, which have smaller weight. For $A \\wedge B$, cut on $A$ and then on $B$. For $\\forall$ and $\\exists$ the rules keep $C$, so first cut $C$ against the shorter premise, then cut the instance $A[t/x]$. Contraction removes duplicates.",
+      "uses": []
+     },
+     {
+      "id": "s:eliminate",
+      "slogan": "Remove all cuts from an arbitrary derivation, starting from an uppermost cut.",
+      "detail": "In a derivation with cuts, an uppermost cut has cut-free premises, so the admissibility claim gives a cut-free derivation of its conclusion. Replacing the cut by it lowers the number of cuts. Repeat until no cut is left.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:structural",
+      "s:nonprincipal"
+     ],
+     [
+      "s:structural",
+      "s:principal"
+     ],
+     [
+      "s:setup",
+      "s:nonprincipal"
+     ],
+     [
+      "s:setup",
+      "s:principal"
+     ],
+     [
+      "s:nonprincipal",
+      "s:eliminate"
+     ],
+     [
+      "s:principal",
+      "s:eliminate"
+     ]
+    ],
+    "conclusion": "s:eliminate",
+    "concepts": {
+     "c:sequent-calculus": "The calculus G3c defines the derivations that are transformed.",
+     "c:cut-rule": "The cut rule is the rule that is shown admissible.",
+     "c:cut-free-proof": "A cut-free proof is the output of the elimination."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The proof for G3c in A. S. Troelstra and H. Schwichtenberg, Basic Proof Theory, 2nd ed., Cambridge University Press, 2000, section 4.1, after G. Gentzen's Hauptsatz (1935)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:870",
+  "statement": "In a [Boolean algebra](c:boolean-algebra), [negation](c:negation) exchanges meets and joins: $\\neg(a \\wedge b) = \\neg a \\vee \\neg b$ and $\\neg(a \\vee b) = \\neg a \\wedge \\neg b$.",
+  "hypotheses": [
+   {
+    "id": "h:ba",
+    "text": "$B$ is a [Boolean algebra](c:boolean-algebra) whose complement is $\\neg$.",
+    "concept": "c:boolean-algebra"
+   },
+   {
+    "id": "h:elements",
+    "text": "The elements $a$ and $b$ belong to $B$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "Both $\\neg(a \\wedge b) = \\neg a \\vee \\neg b$ and $\\neg(a \\vee b) = \\neg a \\wedge \\neg b$ hold.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "complements",
+    "name": "Uniqueness of complements",
+    "slogan": "Show that $\\neg a \\vee \\neg b$ is a complement of $a \\wedge b$, so it equals $\\neg(a \\wedge b)$ by uniqueness, and get the dual law by double negation.",
+    "scope": "The whole theorem for every Boolean algebra, including the two-element algebra of truth values. The dual law follows from the first.",
+    "mechanisms": [
+     "m:algebraic-identity",
+     "m:symmetry"
+    ],
+    "roles": [
+     {
+      "h": "h:ba",
+      "why": "Distributivity and the complement laws $x \\wedge \\neg x = 0$ and $x \\vee \\neg x = 1$ drive every computation.",
+      "steps": [
+       "s:unique",
+       "s:meet",
+       "s:join",
+       "s:first",
+       "s:second"
+      ]
+     },
+     {
+      "h": "h:elements",
+      "why": "The computations are done for the given elements $a$ and $b$.",
+      "steps": [
+       "s:meet",
+       "s:join"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:unique",
+      "slogan": "Prove that complements in a Boolean algebra are unique.",
+      "detail": "Suppose $x \\wedge y = 0 = x \\wedge z$ and $x \\vee y = 1 = x \\vee z$. Then $y = y \\wedge (x \\vee z) = (y \\wedge x) \\vee (y \\wedge z) = y \\wedge z$, and in the same way $z = z \\wedge y$. So $y = z$.",
+      "uses": []
+     },
+     {
+      "id": "s:meet",
+      "slogan": "Check that $(a \\wedge b) \\wedge (\\neg a \\vee \\neg b) = 0$.",
+      "detail": "By distributivity the left side is $(a \\wedge b \\wedge \\neg a) \\vee (a \\wedge b \\wedge \\neg b)$. Each term contains a pair $x \\wedge \\neg x = 0$, so the join is $0$.",
+      "uses": []
+     },
+     {
+      "id": "s:join",
+      "slogan": "Check that $(a \\wedge b) \\vee (\\neg a \\vee \\neg b) = 1$.",
+      "detail": "By distributivity the left side is $(a \\vee \\neg a \\vee \\neg b) \\wedge (b \\vee \\neg a \\vee \\neg b)$. Each factor contains a pair $x \\vee \\neg x = 1$, so each factor is $1$ and the meet is $1$.",
+      "uses": []
+     },
+     {
+      "id": "s:first",
+      "slogan": "Conclude $\\neg(a \\wedge b) = \\neg a \\vee \\neg b$ from uniqueness of complements.",
+      "detail": "The two checks show that $\\neg a \\vee \\neg b$ is a complement of $a \\wedge b$. By the uniqueness step it equals $\\neg(a \\wedge b)$.",
+      "uses": []
+     },
+     {
+      "id": "s:second",
+      "slogan": "Derive the law for joins from the law for meets by double negation.",
+      "detail": "Apply the first law to $\\neg a$ and $\\neg b$, and use $\\neg\\neg x = x$, which holds because $x$ is a complement of $\\neg x$. This gives $\\neg(\\neg a \\wedge \\neg b) = a \\vee b$. Negating both sides gives $\\neg a \\wedge \\neg b = \\neg(a \\vee b)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:unique",
+      "s:first"
+     ],
+     [
+      "s:meet",
+      "s:first"
+     ],
+     [
+      "s:join",
+      "s:first"
+     ],
+     [
+      "s:first",
+      "s:second"
+     ]
+    ],
+    "conclusion": "s:second",
+    "concepts": {
+     "c:boolean-algebra": "Its complement and distributive laws give every computation.",
+     "c:negation": "Negation is the complement that is shown to swap meets and joins."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard proof by uniqueness of complements, as in B. A. Davey and H. A. Priestley, Introduction to Lattices and Order, 2nd ed., Cambridge University Press, 2002, chapter 4."
+    }
+   },
+   {
+    "id": "adjunction",
+    "name": "Negation as a pseudocomplement",
+    "slogan": "Characterize $\\neg x$ as the largest element disjoint from $x$, compare the lower sets of both sides, then use double negation.",
+    "scope": "Steps 2 and 3 use only the characterization of step 1, which defines negation in every [Heyting algebra](c:heyting-algebra), so the law for joins also holds in [intuitionistic logic](c:intuitionistic-logic). Step 4 needs $\\neg\\neg x = x$, which fails there.",
+    "mechanisms": [
+     "m:adjunction",
+     "m:duality"
+    ],
+    "roles": [
+     {
+      "h": "h:ba",
+      "why": "The complement gives the characterization $y \\le \\neg x$ if and only if $y \\wedge x = 0$, and double negation gives the dual law.",
+      "steps": [
+       "s:char",
+       "s:dual"
+      ]
+     },
+     {
+      "h": "h:elements",
+      "why": "The comparison of lower sets is done for the given elements $a$ and $b$.",
+      "steps": [
+       "s:or",
+       "s:equal"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:char",
+      "slogan": "Characterize negation by $y \\le \\neg x$ if and only if $y \\wedge x = 0$.",
+      "detail": "If $y \\le \\neg x$, then $y \\wedge x \\le \\neg x \\wedge x = 0$. If $y \\wedge x = 0$, then $y = y \\wedge (x \\vee \\neg x) = (y \\wedge x) \\vee (y \\wedge \\neg x) = y \\wedge \\neg x \\le \\neg x$.",
+      "uses": []
+     },
+     {
+      "id": "s:or",
+      "slogan": "Show that $y \\le \\neg(a \\vee b)$ if and only if $y \\le \\neg a \\wedge \\neg b$.",
+      "detail": "By step 1, $y \\le \\neg(a \\vee b)$ iff $y \\wedge (a \\vee b) = 0$ iff $(y \\wedge a) \\vee (y \\wedge b) = 0$ iff $y \\wedge a = 0$ and $y \\wedge b = 0$ iff $y \\le \\neg a$ and $y \\le \\neg b$ iff $y \\le \\neg a \\wedge \\neg b$.",
+      "uses": []
+     },
+     {
+      "id": "s:equal",
+      "slogan": "Conclude $\\neg(a \\vee b) = \\neg a \\wedge \\neg b$ by testing with $y$ equal to each side.",
+      "detail": "Two elements with the same set of lower bounds are equal. Taking $y = \\neg(a \\vee b)$ gives one inequality, and $y = \\neg a \\wedge \\neg b$ gives the other.",
+      "uses": []
+     },
+     {
+      "id": "s:dual",
+      "slogan": "Derive the law for meets from the law for joins by double negation.",
+      "detail": "Apply step 3 to $\\neg a$ and $\\neg b$ and use $\\neg\\neg x = x$ in a Boolean algebra. This gives $\\neg(\\neg a \\vee \\neg b) = a \\wedge b$. Negating both sides gives $\\neg a \\vee \\neg b = \\neg(a \\wedge b)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:char",
+      "s:or"
+     ],
+     [
+      "s:or",
+      "s:equal"
+     ],
+     [
+      "s:equal",
+      "s:dual"
+     ]
+    ],
+    "conclusion": "s:dual",
+    "concepts": {
+     "c:boolean-algebra": "Its complement gives the characterization of negation and double negation.",
+     "c:negation": "Negation is the pseudocomplement that is characterized by disjointness.",
+     "c:heyting-algebra": "Negation is a pseudocomplement there, so steps 2 and 3 hold in it.",
+     "c:intuitionistic-logic": "Its propositions form a Heyting algebra, so the law for joins holds there."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The order-theoretic proof through the adjunction $y \\wedge x \\le 0$ if and only if $y \\le \\neg x$, which is the Heyting algebra route to De Morgan's law for joins."
+    }
+   }
+  ]
+ }
+]

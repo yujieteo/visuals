@@ -1,0 +1,1803 @@
+[
+ {
+  "id": "nm:triple-product",
+  "statement": "For $u, v, w \\in R^3$ over a commutative ring $R$, the dot product $u \\cdot (v \\times w)$ equals the [determinant](c:determinant) of the matrix with rows $u, v, w$, where $v \\times w$ is the [cross product](c:cross-product).",
+  "hypotheses": [
+   {
+    "id": "h:ring",
+    "text": "The ring $R$ is commutative.",
+    "concept": null
+   },
+   {
+    "id": "h:vectors",
+    "text": "The vectors $u, v, w$ lie in $R^3$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "$u \\cdot (v \\times w) = \\det(u; v; w)$, where the rows of the matrix are $u, v, w$.",
+  "formal": {
+   "decl": "triple_product_eq_det",
+   "difference": null
+  },
+  "proofs": [
+   {
+    "id": "expansion",
+    "name": "Coordinate expansion",
+    "slogan": "Expand both sides in coordinates and match the six signed products.",
+    "scope": "The whole identity over any commutative ring. The proof divides by nothing, so it needs no field and no nonzero vector.",
+    "mechanisms": [
+     "m:algebraic-identity",
+     "m:determinant"
+    ],
+    "roles": [
+     {
+      "h": "h:ring",
+      "why": "Commutativity lets each product of three entries be reordered when the terms are compared.",
+      "steps": [
+       "s:compare"
+      ]
+     },
+     {
+      "h": "h:vectors",
+      "why": "The nine coordinates of $u, v, w$ are the variables of both polynomials.",
+      "steps": [
+       "s:cross",
+       "s:dot",
+       "s:det"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:cross",
+      "slogan": "Write the three coordinates of the [cross product](c:cross-product) $v \\times w$.",
+      "detail": "By definition $v \\times w = (v_2 w_3 - v_3 w_2,\\; v_3 w_1 - v_1 w_3,\\; v_1 w_2 - v_2 w_1)$. Each coordinate is an integer polynomial in the entries of $v$ and $w$.",
+      "uses": []
+     },
+     {
+      "id": "s:dot",
+      "slogan": "Dot the result with $u$ to get a sum of six products.",
+      "detail": "$u \\cdot (v \\times w) = u_1(v_2 w_3 - v_3 w_2) + u_2(v_3 w_1 - v_1 w_3) + u_3(v_1 w_2 - v_2 w_1)$. This has six terms, and each term takes one entry from each vector.",
+      "uses": []
+     },
+     {
+      "id": "s:det",
+      "slogan": "Expand the [determinant](c:determinant) over the six permutations of $\\{1, 2, 3\\}$.",
+      "detail": "The $3 \\times 3$ determinant is $u_1 v_2 w_3 + u_2 v_3 w_1 + u_3 v_1 w_2 - u_1 v_3 w_2 - u_2 v_1 w_3 - u_3 v_2 w_1$. The sign of each term is the sign of its permutation.",
+      "uses": []
+     },
+     {
+      "id": "s:compare",
+      "slogan": "Match the six terms of both sides to get the identity.",
+      "detail": "Both expansions hold the same six monomials with the same signs. They are equal as polynomials, so they stay equal after any substitution of entries from a commutative ring.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:cross",
+      "s:dot"
+     ],
+     [
+      "s:dot",
+      "s:compare"
+     ],
+     [
+      "s:det",
+      "s:compare"
+     ]
+    ],
+    "conclusion": "s:compare",
+    "concepts": {
+     "c:cross-product": "The identity expresses the dot product with the cross product through coordinates.",
+     "c:determinant": "The determinant expands as a signed sum over permutations."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "triple_product_eq_det",
+     "follows": true,
+     "note": "mathlib rewrites with vec3_dotProduct, cross_apply and det_fin_three, then closes the goal with ring."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:11722",
+  "statement": "Every [second-countable](c:second-countable-space) [regular](c:regular-space) Hausdorff space is [metrizable](c:metrizable-space).",
+  "hypotheses": [
+   {
+    "id": "h:second",
+    "text": "The space $X$ is [second-countable](c:second-countable-space).",
+    "concept": "c:second-countable-space"
+   },
+   {
+    "id": "h:regular",
+    "text": "The space $X$ is [regular](c:regular-space).",
+    "concept": "c:regular-space"
+   },
+   {
+    "id": "h:hausdorff",
+    "text": "The space $X$ is [Hausdorff](c:hausdorff-space), so its points are closed.",
+    "concept": "c:hausdorff-space"
+   }
+  ],
+  "conclusion": "Some metric on $X$ induces the topology of $X$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "embedding",
+    "name": "Embedding in a countable product",
+    "slogan": "Build countably many Urysohn functions that separate points from closed sets, embed $X$ in $[0,1]^{\\mathbb{N}}$ and pull back its metric.",
+    "scope": "The whole theorem. Regularity with $T_1$ gives normality here, which Urysohn's lemma needs; the empty space is trivial.",
+    "mechanisms": [
+     "m:construction-explicit",
+     "m:local-to-global"
+    ],
+    "roles": [
+     {
+      "h": "h:second",
+      "why": "A countable base gives the Lindelöf property and keeps the family of functions countable.",
+      "steps": [
+       "s:normal",
+       "s:urysohn"
+      ]
+     },
+     {
+      "h": "h:regular",
+      "why": "Regularity gives normality and lets a base set be shrunk to a closed set inside a larger base set.",
+      "steps": [
+       "s:normal",
+       "s:separate"
+      ]
+     },
+     {
+      "h": "h:hausdorff",
+      "why": "Points are closed, so two distinct points are separated and the embedding is injective.",
+      "steps": [
+       "s:embed"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:normal",
+      "slogan": "Show that $X$ is [normal](c:normal-space).",
+      "detail": "A space with a countable base is [Lindelöf](c:lindelof-space). Cover disjoint closed sets $A, B$ by countably many open sets $U_n$ and $V_n$ with $\\overline{U_n} \\cap B = \\emptyset$ and $\\overline{V_n} \\cap A = \\emptyset$. The sets $U_n \\setminus \\bigcup_{j \\le n} \\overline{V_j}$ and $V_n \\setminus \\bigcup_{j \\le n} \\overline{U_j}$ have disjoint open unions that contain $A$ and $B$.",
+      "uses": []
+     },
+     {
+      "id": "s:urysohn",
+      "slogan": "Choose countably many continuous functions that are one on a closed base set and zero outside a larger one.",
+      "detail": "Let $\\{B_n\\}$ be a countable base. For each pair $(n, m)$ with $\\overline{B_n} \\subseteq B_m$, Urysohn's lemma on the normal space gives a continuous $g_{n,m}\\colon X \\to [0,1]$ equal to $1$ on $\\overline{B_n}$ and $0$ outside $B_m$. There are countably many such functions.",
+      "uses": [
+       "nl:10682"
+      ]
+     },
+     {
+      "id": "s:separate",
+      "slogan": "Check that the functions separate each point from each closed set.",
+      "detail": "Let $x \\in U$ with $U$ open. Choose $B_m$ with $x \\in B_m \\subseteq U$, then by regularity $B_n$ with $x \\in B_n$ and $\\overline{B_n} \\subseteq B_m$. So $g_{n,m}(x) = 1$ and $g_{n,m} = 0$ outside $U$.",
+      "uses": []
+     },
+     {
+      "id": "s:embed",
+      "slogan": "Embed $X$ in the [product space](c:product-topology) $[0,1]^{\\mathbb{N}}$ by the list of functions.",
+      "detail": "Enumerate the functions as $g_k$ and set $F(x) = (g_k(x))_k$. $F$ is continuous because each coordinate is, and injective because points are closed, so $x$ is separated from $\\{y\\}$ for $x \\ne y$. $F$ is open onto its image: if $x \\in U$, take $k$ with $g_k(x) > 0$ and $g_k = 0$ outside $U$; then $\\{w : w_k > 0\\} \\cap F(X) \\subseteq F(U)$.",
+      "uses": []
+     },
+     {
+      "id": "s:metric",
+      "slogan": "Pull back the metric of the product to $X$.",
+      "detail": "The product $[0,1]^{\\mathbb{N}}$ has the metric $d(a, b) = \\sum_k 2^{-k} |a_k - b_k|$, which induces the product topology. Since $F$ is a homeomorphism onto its image, $\\rho(x, y) = d(F(x), F(y))$ is a metric on $X$ that induces its topology.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:normal",
+      "s:urysohn"
+     ],
+     [
+      "s:urysohn",
+      "s:separate"
+     ],
+     [
+      "s:separate",
+      "s:embed"
+     ],
+     [
+      "s:embed",
+      "s:metric"
+     ]
+    ],
+    "conclusion": "s:metric",
+    "concepts": {
+     "c:second-countable-space": "A countable base gives countably many functions and the Lindelöf property.",
+     "c:regular-space": "Regularity shrinks a base set to a closed set inside a larger one.",
+     "c:metrizable-space": "The goal is a metric that induces the topology of $X$.",
+     "c:normal-space": "Urysohn's lemma applies only to normal spaces.",
+     "c:lindelof-space": "Countable subcovers give the two disjoint open sets of normality.",
+     "c:product-topology": "The embedding lands in a countable product, which is metrizable.",
+     "c:hausdorff-space": "Closed points make the family of functions separate distinct points."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The classical proof of Urysohn, as in Munkres, Topology, theorem 34.1."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:20289",
+  "statement": "Every [second-countable](c:second-countable-space) [regular](c:regular-space) Hausdorff space $X$ embeds in the [Hilbert cube](c:hilbert-cube), so $X$ is [metrizable](c:metrizable-space).",
+  "hypotheses": [
+   {
+    "id": "h:second",
+    "text": "The space $X$ is [second-countable](c:second-countable-space).",
+    "concept": "c:second-countable-space"
+   },
+   {
+    "id": "h:regular",
+    "text": "The space $X$ is [regular](c:regular-space).",
+    "concept": "c:regular-space"
+   },
+   {
+    "id": "h:hausdorff",
+    "text": "The space $X$ is [Hausdorff](c:hausdorff-space), so its points are closed.",
+    "concept": "c:hausdorff-space"
+   }
+  ],
+  "conclusion": "$X$ is homeomorphic to a subspace of $[0,1]^{\\mathbb{N}}$, and some metric on $X$ induces its topology.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "embedding",
+    "name": "Embedding in the Hilbert cube",
+    "slogan": "Build countably many Urysohn functions that separate points from closed sets, embed $X$ in $[0,1]^{\\mathbb{N}}$ and pull back its metric.",
+    "scope": "The whole theorem. Regularity with $T_1$ gives normality here, which Urysohn's lemma needs; the empty space is trivial.",
+    "mechanisms": [
+     "m:construction-explicit",
+     "m:local-to-global"
+    ],
+    "roles": [
+     {
+      "h": "h:second",
+      "why": "A countable base gives the Lindelöf property and keeps the family of functions countable.",
+      "steps": [
+       "s:normal",
+       "s:urysohn"
+      ]
+     },
+     {
+      "h": "h:regular",
+      "why": "Regularity gives normality and lets a base set be shrunk to a closed set inside a larger base set.",
+      "steps": [
+       "s:normal",
+       "s:separate"
+      ]
+     },
+     {
+      "h": "h:hausdorff",
+      "why": "Points are closed, so two distinct points are separated and the embedding is injective.",
+      "steps": [
+       "s:embed"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:normal",
+      "slogan": "Show that $X$ is [normal](c:normal-space).",
+      "detail": "A space with a countable base is [Lindelöf](c:lindelof-space). Cover disjoint closed sets $A, B$ by countably many open sets $U_n$ and $V_n$ with $\\overline{U_n} \\cap B = \\emptyset$ and $\\overline{V_n} \\cap A = \\emptyset$. The sets $U_n \\setminus \\bigcup_{j \\le n} \\overline{V_j}$ and $V_n \\setminus \\bigcup_{j \\le n} \\overline{U_j}$ have disjoint open unions that contain $A$ and $B$.",
+      "uses": []
+     },
+     {
+      "id": "s:urysohn",
+      "slogan": "Choose countably many continuous functions that are one on a closed base set and zero outside a larger one.",
+      "detail": "Let $\\{B_n\\}$ be a countable base. For each pair $(n, m)$ with $\\overline{B_n} \\subseteq B_m$, Urysohn's lemma on the normal space gives a continuous $g_{n,m}\\colon X \\to [0,1]$ equal to $1$ on $\\overline{B_n}$ and $0$ outside $B_m$. There are countably many such functions.",
+      "uses": [
+       "nl:10682"
+      ]
+     },
+     {
+      "id": "s:separate",
+      "slogan": "Check that the functions separate each point from each closed set.",
+      "detail": "Let $x \\in U$ with $U$ open. Choose $B_m$ with $x \\in B_m \\subseteq U$, then by regularity $B_n$ with $x \\in B_n$ and $\\overline{B_n} \\subseteq B_m$. So $g_{n,m}(x) = 1$ and $g_{n,m} = 0$ outside $U$.",
+      "uses": []
+     },
+     {
+      "id": "s:embed",
+      "slogan": "Embed $X$ in the [product space](c:product-topology) $[0,1]^{\\mathbb{N}}$ by the list of functions.",
+      "detail": "Enumerate the functions as $g_k$ and set $F(x) = (g_k(x))_k$. $F$ is continuous because each coordinate is, and injective because points are closed, so $x$ is separated from $\\{y\\}$ for $x \\ne y$. $F$ is open onto its image: if $x \\in U$, take $k$ with $g_k(x) > 0$ and $g_k = 0$ outside $U$; then $\\{w : w_k > 0\\} \\cap F(X) \\subseteq F(U)$.",
+      "uses": []
+     },
+     {
+      "id": "s:metric",
+      "slogan": "Pull back the metric of the product to $X$.",
+      "detail": "The product $[0,1]^{\\mathbb{N}}$ has the metric $d(a, b) = \\sum_k 2^{-k} |a_k - b_k|$, which induces the product topology. Since $F$ is a homeomorphism onto its image, $\\rho(x, y) = d(F(x), F(y))$ is a metric on $X$ that induces its topology.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:normal",
+      "s:urysohn"
+     ],
+     [
+      "s:urysohn",
+      "s:separate"
+     ],
+     [
+      "s:separate",
+      "s:embed"
+     ],
+     [
+      "s:embed",
+      "s:metric"
+     ]
+    ],
+    "conclusion": "s:metric",
+    "concepts": {
+     "c:second-countable-space": "A countable base gives countably many functions and the Lindelöf property.",
+     "c:regular-space": "Regularity shrinks a base set to a closed set inside a larger one.",
+     "c:metrizable-space": "The goal is a metric that induces the topology of $X$.",
+     "c:normal-space": "Urysohn's lemma applies only to normal spaces.",
+     "c:lindelof-space": "Countable subcovers give the two disjoint open sets of normality.",
+     "c:product-topology": "The embedding lands in a countable product, which is metrizable.",
+     "c:hausdorff-space": "Closed points make the family of functions separate distinct points.",
+     "c:hilbert-cube": "The product $[0,1]^{\\mathbb{N}}$ is the Hilbert cube that receives $X$."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The classical proof of Urysohn, as in Munkres, Topology, theorem 34.1."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:6184",
+  "statement": "Let $\\mathcal{C}$ be a [modular tensor category](c:modular-tensor-category) with simple objects $X_0 = \\mathbf{1}, \\dots, X_r$ and unitary S-matrix $S$. Then $X_i \\otimes X_j$ contains $X_k$ with multiplicity $N_{ij}^k = \\sum_s S_{is} S_{js} \\overline{S_{ks}} / S_{0s}$, and the space of [conformal blocks](c:conformal-block) of a closed surface of genus $g$ has dimension $\\sum_s S_{0s}^{2-2g}$.",
+  "hypotheses": [
+   {
+    "id": "h:mtc",
+    "text": "The category $\\mathcal{C}$ is a [modular tensor category](c:modular-tensor-category): finite, semisimple, braided and ribbon, with invertible S-matrix.",
+    "concept": "c:modular-tensor-category"
+   },
+   {
+    "id": "h:genus",
+    "text": "The surface $\\Sigma_g$ is closed and oriented of genus $g \\ge 0$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The fusion multiplicities $N_{ij}^k$ and the genus-$g$ dimension have the stated sums over the simple objects.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "diagonalization",
+    "name": "Diagonalizing the fusion ring by S",
+    "slogan": "The S-matrix diagonalizes the fusion ring, and gluing along the diagonal form gives the dimension of every state space.",
+    "scope": "An outline for a modular tensor category with the unitary normalization of $S$; each step rests on the cited book. The Chern-Simons and WZW versions agree with it through the [moduli of bundles](c:moduli-of-bundles) and further identification theorems.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:spectral-decomposition"
+    ],
+    "roles": [
+     {
+      "h": "h:mtc",
+      "why": "Modularity makes $S$ invertible, and the braided ribbon structure gives the commutative fusion ring and the S-matrix formulas.",
+      "steps": [
+       "s:ring",
+       "s:characters",
+       "s:diagonal",
+       "s:formula"
+      ]
+     },
+     {
+      "h": "h:genus",
+      "why": "The genus fixes how many handles are glued, hence the exponent $2 - 2g$.",
+      "steps": [
+       "s:genus"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:ring",
+      "slogan": "Form the commutative [fusion ring](c:fusion-ring) of the simple objects.",
+      "detail": "The tensor product gives $X_i \\otimes X_j = \\bigoplus_k N_{ij}^k X_k$. The braiding $X_i \\otimes X_j \\cong X_j \\otimes X_i$ makes this ring commutative, so the matrices $N_i = (N_{ij}^k)_{j,k}$ commute.",
+      "uses": []
+     },
+     {
+      "id": "s:characters",
+      "slogan": "Show that each column of the S-matrix gives a character of the fusion ring.",
+      "detail": "A computation with Hopf links and the double braiding gives $\\frac{S_{is}}{S_{0s}} \\frac{S_{js}}{S_{0s}} = \\sum_k N_{ij}^k \\frac{S_{ks}}{S_{0s}}$. The denominator $S_{0s}$ is nonzero because $S$ is invertible.",
+      "uses": []
+     },
+     {
+      "id": "s:diagonal",
+      "slogan": "Diagonalize all fusion matrices at once by the S-matrix.",
+      "detail": "The relation says that the column $(S_{js})_j$ is an eigenvector of every $N_i$ with eigenvalue $S_{is}/S_{0s}$. These $r + 1$ columns form the invertible matrix $S$, so $N_i = S D_i S^{-1}$ with $D_i = \\operatorname{diag}(S_{is}/S_{0s})$.",
+      "uses": []
+     },
+     {
+      "id": "s:formula",
+      "slogan": "Read the multiplicities from the entries of $S D_i S^{-1}$.",
+      "detail": "For unitary $S$, $(S^{-1})_{sk} = \\overline{S_{ks}}$. The $(j, k)$ entry of $S D_i S^{-1}$ is $N_{ij}^k = \\sum_s S_{js} \\frac{S_{is}}{S_{0s}} \\overline{S_{ks}}$, which is the fusion formula.",
+      "uses": []
+     },
+     {
+      "id": "s:sphere",
+      "slogan": "Iterate the fusion formula to count blocks on a sphere with punctures.",
+      "detail": "In the modular functor of $\\mathcal{C}$, the sphere with $n$ punctures labeled $a_1, \\dots, a_n$ has a space of dimension equal to the multiplicity of $\\mathbf{1}$ in $X_{a_1} \\otimes \\dots \\otimes X_{a_n}$. Iterating the fusion formula and using $\\sum_k \\overline{S_{ks}} S_{kt} = \\delta_{st}$ gives $\\sum_s S_{0s}^{2-n} \\prod_l S_{a_l s}$.",
+      "uses": []
+     },
+     {
+      "id": "s:genus",
+      "slogan": "Cut the genus-$g$ surface along $g$ circles and sum over the labels.",
+      "detail": "Cutting along $g$ circles gives a sphere with $2g$ punctures labeled $i_1, i_1^*, \\dots, i_g, i_g^*$, and $\\dim V(\\Sigma_g)$ is the sum of the sphere dimensions over all labels. Since $S_{i^* s} = \\overline{S_{is}}$ and $\\sum_i |S_{is}|^2 = 1$, the sum equals $\\sum_s S_{0s}^{2-2g}$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:ring",
+      "s:characters"
+     ],
+     [
+      "s:characters",
+      "s:diagonal"
+     ],
+     [
+      "s:diagonal",
+      "s:formula"
+     ],
+     [
+      "s:formula",
+      "s:sphere"
+     ],
+     [
+      "s:sphere",
+      "s:genus"
+     ]
+    ],
+    "conclusion": "s:genus",
+    "concepts": {
+     "c:modular-tensor-category": "Modularity makes $S$ invertible, which diagonalizes the fusion ring.",
+     "c:conformal-block": "The conformal blocks of the surface form the space whose dimension is computed.",
+     "c:fusion-ring": "The fusion ring is the commutative algebra that $S$ diagonalizes.",
+     "c:moduli-of-bundles": "At level $k$ the dimension equals that of sections on the moduli of bundles."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "B. Bakalov and A. Kirillov Jr., Lectures on Tensor Categories and Modular Functors, University Lecture Series 21, American Mathematical Society, 2001 (Section 3.1 for the fusion formula); conjectured in E. Verlinde, Fusion rules and modular transformations in 2D conformal field theory, Nuclear Physics B 300 (1988), 360-376.",
+     "note": "Steps 1 to 4 follow the book's proof that S diagonalizes the fusion rules; steps 5 and 6 follow the gluing argument for the associated modular functor."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:8146",
+  "statement": "In an [abelian category](c:abelian-category), take a commutative $3 \\times 3$ diagram whose three columns are short [exact sequences](c:exact-sequence). If the two bottom rows are short exact, then the top row is short exact. Dually, if the two top rows are short exact, then the bottom row is.",
+  "hypotheses": [
+   {
+    "id": "h:abelian",
+    "text": "The ambient category is [abelian](c:abelian-category).",
+    "concept": "c:abelian-category"
+   },
+   {
+    "id": "h:columns",
+    "text": "The diagram commutes and its three columns are short exact sequences.",
+    "concept": null
+   },
+   {
+    "id": "h:rows",
+    "text": "Two adjacent rows (the bottom two for the first claim) are short exact sequences.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The remaining outer row is a short exact sequence.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "snake",
+    "name": "Snake lemma",
+    "slogan": "Apply the snake lemma to the vertical maps between the two exact rows, then check injectivity on the left.",
+    "scope": "The first claim in detail, with objects $X_{ij}$ (row $i$, column $j$) and maps $u_i\\colon X_{i1} \\to X_{i2}$, $v_i\\colon X_{i2} \\to X_{i3}$, $a_j\\colon X_{1j} \\to X_{2j}$, $b_j\\colon X_{2j} \\to X_{3j}$. The dual claim follows in the opposite category.",
+    "mechanisms": [
+     "m:exact-sequence"
+    ],
+    "roles": [
+     {
+      "h": "h:abelian",
+      "why": "Kernels, cokernels and the snake lemma exist in an [abelian category](c:abelian-category), and its opposite category is abelian.",
+      "steps": [
+       "s:snake",
+       "s:dual"
+      ]
+     },
+     {
+      "h": "h:columns",
+      "why": "Exact columns make each $b_j$ an epimorphism with kernel $X_{1j}$ and make $a_1$ a monomorphism.",
+      "steps": [
+       "s:vertical",
+       "s:mono"
+      ]
+     },
+     {
+      "h": "h:rows",
+      "why": "Exact rows 2 and 3 are the two rows of the snake diagram, and row 2 makes $u_2$ a monomorphism.",
+      "steps": [
+       "s:snake",
+       "s:mono"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:vertical",
+      "slogan": "Read the maps between rows 2 and 3 as a morphism of short exact sequences.",
+      "detail": "The squares of the [commutative diagram](c:commutative-diagram) commute and rows 2 and 3 are exact, so $(b_1, b_2, b_3)$ maps row 2 to row 3. By exactness of the columns, each $b_j$ is an epimorphism with kernel $X_{1j}$.",
+      "uses": []
+     },
+     {
+      "id": "s:snake",
+      "slogan": "Run the snake lemma on this morphism of rows.",
+      "detail": "The snake lemma gives an exact sequence $\\ker b_1 \\to \\ker b_2 \\to \\ker b_3 \\to \\operatorname{coker} b_1 \\to \\dots$. The [cokernels](c:cokernel) vanish, so $X_{11} \\to X_{12} \\to X_{13} \\to 0$ is exact.",
+      "uses": [
+       "nl:1777"
+      ]
+     },
+     {
+      "id": "s:mono",
+      "slogan": "Show that the left map of row 1 is a monomorphism.",
+      "detail": "By commutativity, $a_2 u_1 = u_2 a_1$. The right side is a composite of two monomorphisms (column 1 and row 2), so $a_2 u_1$ is a monomorphism, hence $u_1$ is one.",
+      "uses": []
+     },
+     {
+      "id": "s:top",
+      "slogan": "Join the exact tail and the monomorphism to get a short exact top row.",
+      "detail": "Row 1 is $0 \\to X_{11} \\to X_{12} \\to X_{13} \\to 0$. It is injective on the left by the previous step and exact at $X_{12}$ and surjective on the right by the snake lemma.",
+      "uses": []
+     },
+     {
+      "id": "s:dual",
+      "slogan": "Pass to the opposite category to get the dual claim.",
+      "detail": "The opposite of an abelian category is abelian. It turns the columns into short exact sequences and exchanges the top and bottom rows, so the argument above proves the second claim.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:vertical",
+      "s:snake"
+     ],
+     [
+      "s:snake",
+      "s:top"
+     ],
+     [
+      "s:mono",
+      "s:top"
+     ],
+     [
+      "s:top",
+      "s:dual"
+     ]
+    ],
+    "conclusion": "s:dual",
+    "concepts": {
+     "c:abelian-category": "Abelian categories have kernels, cokernels and the snake lemma, and they are self-dual.",
+     "c:exact-sequence": "Exactness of rows and columns is the hypothesis and the conclusion.",
+     "c:commutative-diagram": "Commuting squares make the vertical maps a morphism of rows.",
+     "c:cokernel": "The vanishing cokernels turn the snake sequence into a short tail."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard snake-lemma proof of the nine lemma; see Weibel, An Introduction to Homological Algebra, chapter 1 on diagram lemmas."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:alexander-s-subbasis-theorem",
+  "statement": "Let $X$ be a topological space whose topology is generated by a [subbasis](c:subbasis) $S$, and let $s \\subseteq X$. If every cover of $s$ by members of $S$ has a finite subcover, then $s$ is [compact](c:compact-space).",
+  "hypotheses": [
+   {
+    "id": "h:subbasis",
+    "text": "The topology of $X$ is generated by the [subbasis](c:subbasis) $S$.",
+    "concept": "c:subbasis"
+   },
+   {
+    "id": "h:cover",
+    "text": "Every cover of $s$ by members of $S$ has a finite subcover.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The set $s$ is [compact](c:compact-space).",
+  "formal": {
+   "decl": "isCompact_generateFrom",
+   "difference": null
+  },
+  "proofs": [
+   {
+    "id": "ultrafilter",
+    "name": "Ultrafilter proof",
+    "slogan": "Suppose an ultrafilter on the set has no limit, choose subbasic neighborhoods outside it, and contradict the finite subcover.",
+    "scope": "The whole theorem for any subset $s$, including the empty set. The proof uses the ultrafilter theorem, which rests on Zorn's lemma.",
+    "mechanisms": [
+     "m:zorn",
+     "m:finite-subcover",
+     "m:contradiction"
+    ],
+    "roles": [
+     {
+      "h": "h:subbasis",
+      "why": "Neighborhoods of a point have a base of finite intersections of members of $S$.",
+      "steps": [
+       "s:subbasic"
+      ]
+     },
+     {
+      "h": "h:cover",
+      "why": "It gives a finite subcover of the cover by the chosen subbasic sets.",
+      "steps": [
+       "s:finite"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:ultra",
+      "slogan": "Reduce compactness of $s$ to convergence of [ultrafilters](c:ultrafilter) that contain $s$.",
+      "detail": "A set $s$ is [compact](c:compact-space) if and only if every ultrafilter $F$ with $s \\in F$ converges to a point of $s$. One direction needs the ultrafilter theorem: a cover with no finite subcover gives a filter that an ultrafilter extends, and it has no limit in $s$. Fix such an $F$ and suppose that it converges to no point of $s$.",
+      "uses": [
+       "nl:1463"
+      ]
+     },
+     {
+      "id": "s:subbasic",
+      "slogan": "Choose for each point of $s$ a subbasic neighborhood outside the ultrafilter.",
+      "detail": "The neighborhoods of $x$ have a base of finite intersections of members of $S$ that contain $x$. If every such member lay in $F$, then $F$ would converge to $x$. So each $x \\in s$ has some $t_x \\in S$ with $x \\in t_x$ and $t_x \\notin F$.",
+      "uses": []
+     },
+     {
+      "id": "s:finite",
+      "slogan": "Cover $s$ by the chosen sets and select a finite subcover.",
+      "detail": "The sets $t_x$ lie in $S$ and cover $s$. The hypothesis gives $t_1, \\dots, t_n$ among them with $s \\subseteq t_1 \\cup \\dots \\cup t_n$.",
+      "uses": []
+     },
+     {
+      "id": "s:complement",
+      "slogan": "Show that the finite union of the chosen sets is not in the ultrafilter.",
+      "detail": "Each $t_i \\notin F$, so $X \\setminus t_i \\in F$ because $F$ is an ultrafilter. A filter is closed under finite intersections, so $\\bigcap_i (X \\setminus t_i) \\in F$. This set is the complement of $t_1 \\cup \\dots \\cup t_n$, so the union is not in $F$.",
+      "uses": []
+     },
+     {
+      "id": "s:contradict",
+      "slogan": "Contradict $s \\in F$ to conclude that every such ultrafilter converges in $s$.",
+      "detail": "Since $s \\in F$ and $s \\subseteq t_1 \\cup \\dots \\cup t_n$, the union is in $F$, because filters are closed upward. This contradicts the previous step. So every ultrafilter containing $s$ converges to a point of $s$, and $s$ is compact.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:ultra",
+      "s:subbasic"
+     ],
+     [
+      "s:subbasic",
+      "s:finite"
+     ],
+     [
+      "s:finite",
+      "s:complement"
+     ],
+     [
+      "s:complement",
+      "s:contradict"
+     ],
+     [
+      "s:finite",
+      "s:contradict"
+     ]
+    ],
+    "conclusion": "s:contradict",
+    "concepts": {
+     "c:subbasis": "Subbasic sets generate the neighborhoods, so only they need a finite subcover.",
+     "c:compact-space": "Compactness of $s$ is the goal, tested through ultrafilter convergence.",
+     "c:ultrafilter": "An ultrafilter decides for each set whether it or its complement is large."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "isCompact_generateFrom",
+     "follows": true,
+     "note": "mathlib uses isCompact_iff_ultrafilter_le_nhds' and nhds_generateFrom, then Filter.biInter_mem and the ultrafilter complement rule."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:artin-rees-lemma",
+  "statement": "Let $R$ be a [Noetherian ring](c:noetherian-ring), $I$ an ideal, $M$ a [finitely generated](c:finitely-generated-module) $R$-module and $N \\subseteq M$ a submodule. Then some $k \\ge 0$ satisfies $I^n M \\cap N = I^{n-k}(I^k M \\cap N)$ for every $n \\ge k$.",
+  "hypotheses": [
+   {
+    "id": "h:noetherian",
+    "text": "The ring $R$ is [Noetherian](c:noetherian-ring).",
+    "concept": "c:noetherian-ring"
+   },
+   {
+    "id": "h:fg",
+    "text": "The module $M$ is [finitely generated](c:finitely-generated-module) over $R$.",
+    "concept": "c:finitely-generated-module"
+   }
+  ],
+  "conclusion": "For some $k$ and all $n \\ge k$, $I^n M \\cap N = I^{n-k}(I^k M \\cap N)$.",
+  "formal": {
+   "decl": "Ideal.exists_pow_inf_eq_pow_smul",
+   "difference": null
+  },
+  "proofs": [
+   {
+    "id": "rees-algebra",
+    "name": "Rees algebra",
+    "slogan": "The induced filtration on $N$ is a finitely generated module over the Noetherian Rees algebra, so it is stable.",
+    "scope": "The whole lemma. The case $I = R$ or $N = 0$ is included; then the equality is trivial for any $k$.",
+    "mechanisms": [
+     "m:construction-explicit"
+    ],
+    "roles": [
+     {
+      "h": "h:noetherian",
+      "why": "It makes $I$ finitely generated, the Rees algebra Noetherian and submodules of finitely generated modules finitely generated.",
+      "steps": [
+       "s:rees",
+       "s:sub"
+      ]
+     },
+     {
+      "h": "h:fg",
+      "why": "Finitely many generators of $M$ generate the graded module $\\bigoplus I^n M$ over the Rees algebra.",
+      "steps": [
+       "s:module"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:rees",
+      "slogan": "Form the [Rees algebra](c:rees-algebra) $R' = \\bigoplus_n I^n t^n$ and show that it is Noetherian.",
+      "detail": "Since $R$ is Noetherian, $I = (a_1, \\dots, a_r)$. Then $R'$ is generated over $R$ by $a_1 t, \\dots, a_r t$, so it is a quotient of $R[X_1, \\dots, X_r]$. That ring is Noetherian by the Hilbert basis theorem, so $R'$ is Noetherian.",
+      "uses": []
+     },
+     {
+      "id": "s:module",
+      "slogan": "Show that the graded module $M' = \\bigoplus_n I^n M\\, t^n$ is finitely generated over $R'$.",
+      "detail": "The [I-adic filtration](c:i-adic-filtration) $I^n M$ satisfies $I \\cdot I^n M = I^{n+1} M$. If $m_1, \\dots, m_q$ generate $M$, each element of $I^n M$ is $\\sum a_i m_i$ with $a_i \\in I^n$, so the degree-$0$ elements $m_i$ generate $M'$ over $R'$.",
+      "uses": []
+     },
+     {
+      "id": "s:sub",
+      "slogan": "Show that $N' = \\bigoplus_n (N \\cap I^n M)\\, t^n$ is a finitely generated $R'$-submodule.",
+      "detail": "$I \\cdot (N \\cap I^n M) \\subseteq N \\cap I^{n+1} M$, so $N'$ is an $R'$-submodule of $M'$. A [Noetherian module](c:noetherian-module) has finitely generated submodules, and $M'$ is Noetherian because it is finitely generated over the Noetherian ring $R'$.",
+      "uses": []
+     },
+     {
+      "id": "s:degree",
+      "slogan": "Choose homogeneous generators of $N'$ and bound their degrees by $k$.",
+      "detail": "Take finitely many homogeneous generators of $N'$, all of degree at most $k$. For $n \\ge k$ every element of degree $n$ is a sum of products $a y$ with $y \\in N \\cap I^j M$, $j \\le k$, and $a \\in I^{n-j}$. So $N \\cap I^n M = \\sum_{j \\le k} I^{n-j}(N \\cap I^j M)$.",
+      "uses": []
+     },
+     {
+      "id": "s:shift",
+      "slogan": "Move the powers of $I$ to compare each term with degree $k$.",
+      "detail": "For $j \\le k \\le n$: $I^{n-j}(N \\cap I^j M) = I^{n-k} I^{k-j}(N \\cap I^j M) \\subseteq I^{n-k}(N \\cap I^k M)$. So $N \\cap I^n M \\subseteq I^{n-k}(N \\cap I^k M)$. The reverse inclusion holds because $I^{n-k}(N \\cap I^k M) \\subseteq N \\cap I^n M$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:rees",
+      "s:sub"
+     ],
+     [
+      "s:module",
+      "s:sub"
+     ],
+     [
+      "s:sub",
+      "s:degree"
+     ],
+     [
+      "s:degree",
+      "s:shift"
+     ]
+    ],
+    "conclusion": "s:shift",
+    "concepts": {
+     "c:noetherian-ring": "The Noetherian property makes $I$ finitely generated and the Rees algebra Noetherian.",
+     "c:finitely-generated-module": "Finite generation of $M$ passes to the graded module over the Rees algebra.",
+     "c:rees-algebra": "The Rees algebra turns the filtration into a graded module over a Noetherian ring.",
+     "c:i-adic-filtration": "The filtration $I^n M$ is the one whose induced filtration on $N$ is studied.",
+     "c:noetherian-module": "A Noetherian module has finitely generated submodules, here the module $N'$."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Ideal.exists_pow_inf_eq_pow_smul",
+     "follows": true,
+     "note": "mathlib intersects the stable I-adic filtration of M with the trivial filtration on N (Ideal.Filtration.Stable.inter_right, via a finitely generated Rees module) and reads off the stability index."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q790236",
+  "statement": "Let $n$ and $k$ be positive integers with $k \\mid n$. The $k$-subsets of an $n$-element set split into $\\binom{n-1}{k-1}$ families, each a partition of the $n$-set. So the complete $k$-uniform [hypergraph](c:hypergraph) on $n$ vertices decomposes into disjoint [perfect matchings](c:perfect-matching).",
+  "hypotheses": [
+   {
+    "id": "h:divides",
+    "text": "The integers satisfy $1 \\le k \\le n$ and $k$ divides $n$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The edges of the complete $k$-uniform hypergraph form $\\binom{n-1}{k-1}$ disjoint perfect matchings.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "flow-rounding",
+    "name": "Induction with flow rounding",
+    "slogan": "Add the vertices one at a time to a family of partitions and use integral flows to keep the counts exact.",
+    "scope": "The whole theorem, written with $N = \\binom{n-1}{k-1}$, $q = n/k$ and binomials zero when the lower index is negative or too large. The case $k = n$ is trivial and falls under the same argument.",
+    "mechanisms": [
+     "m:induction",
+     "m:augmenting-path",
+     "m:double-counting"
+    ],
+    "roles": [
+     {
+      "h": "h:divides",
+      "why": "Divisibility makes $q = n/k$ an integer, the number of parts, and forces every final part to have exactly $k$ elements.",
+      "steps": [
+       "s:invariant",
+       "s:start",
+       "s:finish"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:invariant",
+      "slogan": "State the invariant for each stage $m$ from $0$ to $n$.",
+      "detail": "A stage-$m$ system is $N$ multisets $A_1, \\dots, A_N$, each of $q$ subsets of $[m]$ (empty sets allowed) that partition $[m]$. Every $S \\subseteq [m]$ occurs $\\binom{n-m}{k-|S|}$ times in total over all $A_i$, with the [binomial coefficient](c:binomial-coefficient) zero when $|S| > k$.",
+      "uses": []
+     },
+     {
+      "id": "s:start",
+      "slogan": "Start at stage $0$ with $q$ copies of the empty set in each multiset.",
+      "detail": "Each $A_i$ is $q$ copies of $\\emptyset$, which partitions $[0] = \\emptyset$. The empty set occurs $Nq = \\binom{n-1}{k-1} \\frac{n}{k} = \\binom{n}{k}$ times, as the invariant requires.",
+      "uses": []
+     },
+     {
+      "id": "s:matrix",
+      "slogan": "Build the matrix of fractional placements for the new element $m+1$.",
+      "detail": "At stage $m < n$ put $x_{iS} = \\operatorname{mult}_i(S) (k - |S|)/(n - m)$, for $i \\le N$ and distinct sets $S$. Row $i$ sums to $(qk - m)/(n - m) = 1$, because the parts of $A_i$ partition $[m]$. The column of $S$ sums to $\\binom{n-m-1}{k-|S|-1}$, an integer.",
+      "uses": []
+     },
+     {
+      "id": "s:round",
+      "slogan": "Round the matrix to integers with the same row and column sums.",
+      "detail": "Integrality of flows in the [flow network](c:flow-network) of rows and columns gives integers $y_{iS} \\in \\{\\lfloor x_{iS} \\rfloor, \\lceil x_{iS} \\rceil\\}$ with the same row and column sums. All $x_{iS} \\le 1$ and each row sums to $1$, so each row has exactly one entry $1$ and the others are $0$.",
+      "uses": [
+       "wd:Q608294"
+      ]
+     },
+     {
+      "id": "s:extend",
+      "slogan": "Add $m+1$ to one chosen part of each multiset and check the invariant.",
+      "detail": "For each $i$, add $m+1$ to one copy of the set $S$ with $y_{iS} = 1$. Each $A_i$ still partitions $[m+1]$. Of the $\\binom{n-m}{k-|S|}$ copies of $S$, exactly $\\binom{n-m-1}{k-|S|-1}$ gain $m+1$, and $\\binom{n-m-1}{k-|S|}$ remain, by Pascal's rule, which is the invariant at stage $m+1$.",
+      "uses": []
+     },
+     {
+      "id": "s:finish",
+      "slogan": "Read the decomposition from stage $n$.",
+      "detail": "At stage $n$ each $A_i$ partitions $[n]$ into $q$ sets of size at most $k$, so every size is exactly $k$ because $qk = n$. Each $k$-set occurs $\\binom{0}{0} = 1$ time in total. So the $N$ partitions use every $k$-subset exactly once.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:invariant",
+      "s:start"
+     ],
+     [
+      "s:invariant",
+      "s:matrix"
+     ],
+     [
+      "s:matrix",
+      "s:round"
+     ],
+     [
+      "s:round",
+      "s:extend"
+     ],
+     [
+      "s:extend",
+      "s:finish"
+     ],
+     [
+      "s:start",
+      "s:finish"
+     ]
+    ],
+    "conclusion": "s:finish",
+    "concepts": {
+     "c:hypergraph": "The decomposed object is the complete $k$-uniform hypergraph.",
+     "c:perfect-matching": "Each family of $k$-sets that partitions the vertex set is a perfect matching.",
+     "c:binomial-coefficient": "Binomial coefficients count the copies of each set and obey Pascal's rule.",
+     "c:flow-network": "Integral flows round the fractional matrix without changing its sums."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The flow proof of Brouwer and Schrijver, Uniform hypergraphs, in Packing and Covering in Combinatorics (Mathematical Centre Tracts 106), 1979; the theorem is due to Baranyai (1975)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q4878586",
+  "statement": "Let $G\\colon \\mathcal{D} \\to \\mathcal{C}$ have a left [adjoint](c:adjoint-functor) $F$. Then $G$ is monadic, meaning that the [comparison functor](c:comparison-functor) from $\\mathcal{D}$ to the [algebras](c:algebra-over-a-monad) of the [monad](c:monad) $GF$ is an equivalence, if and only if $G$ creates [coequalizers](c:coequalizer) of $G$-split pairs.",
+  "hypotheses": [
+   {
+    "id": "h:adjoint",
+    "text": "The functor $G$ has a left [adjoint](c:adjoint-functor) $F$.",
+    "concept": "c:adjoint-functor"
+   }
+  ],
+  "conclusion": "$G$ is monadic if and only if $G$ creates coequalizers of $G$-split pairs.",
+  "formal": {
+   "decl": "CategoryTheory.Monad.monadicOfCreatesGSplitCoequalizers",
+   "difference": "The declaration proves only the direction from creating coequalizers of $G$-split pairs to monadicity. The converse is the separate declaration createsGSplitCoequalizersOfMonadic."
+  },
+  "proofs": [
+   {
+    "id": "comparison-functor",
+    "name": "Comparison functor and its adjoint",
+    "slogan": "Build a left adjoint of the comparison functor by split coequalizers and show that its unit and counit are isomorphisms.",
+    "scope": "Both directions. A $G$-split pair is a pair $f, g$ in $\\mathcal{D}$ such that $Gf, Gg$ has a split coequalizer in $\\mathcal{C}$; the sufficiency steps are the ones that mathlib proves.",
+    "mechanisms": [
+     "m:adjunction",
+     "m:universal-property"
+    ],
+    "roles": [
+     {
+      "h": "h:adjoint",
+      "why": "The left adjoint $F$ defines the monad $T = GF$, the comparison functor $K$ and the pairs $(Fa, \\varepsilon_{FA})$.",
+      "steps": [
+       "s:comparison",
+       "s:pair",
+       "s:left",
+       "s:unit",
+       "s:counit",
+       "s:necessity"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:comparison",
+      "slogan": "Form the [comparison functor](c:comparison-functor) $K\\colon \\mathcal{D} \\to \\mathcal{C}^T$ for $T = GF$.",
+      "detail": "Let $\\varepsilon$ be the counit of $F \\dashv G$. Set $K(d) = (Gd, G\\varepsilon_d)$, an [algebra](c:algebra-over-a-monad) for $T$. The functor $G$ is monadic exactly when $K$ is an equivalence.",
+      "uses": []
+     },
+     {
+      "id": "s:pair",
+      "slogan": "Attach to each algebra $(A, a)$ a $G$-split pair with a created coequalizer.",
+      "detail": "The pair $Fa, \\varepsilon_{FA}\\colon FGFA \\rightrightarrows FA$ goes under $G$ to a pair with the [split coequalizer](c:has-split-coequalizer) $a\\colon GFA \\to A$, with splittings $\\eta_A$ and $\\eta_{GFA}$. If $G$ creates such coequalizers, then the pair has a coequalizer $L(A, a)$ in $\\mathcal{D}$ that $G$ sends to $a$.",
+      "uses": []
+     },
+     {
+      "id": "s:left",
+      "slogan": "Show that $L$ is a left adjoint of $K$.",
+      "detail": "A map $L(A, a) \\to d$ is a map $FA \\to d$ that coequalizes the pair. By $F \\dashv G$ it is a map $A \\to Gd$ compatible with $a$ and $G\\varepsilon_d$, which is an algebra map $(A, a) \\to K d$. This bijection is natural in $(A, a)$ and $d$.",
+      "uses": []
+     },
+     {
+      "id": "s:unit",
+      "slogan": "Show that the unit $(A, a) \\to K L(A, a)$ is an isomorphism.",
+      "detail": "The functor $G$ preserves the coequalizer $L(A, a)$, and $a$ is also a coequalizer of the $G$-image of the pair. So $G L(A, a) \\cong A$. The unit is an algebra map that is this isomorphism in $\\mathcal{C}$, so it is an isomorphism of algebras.",
+      "uses": []
+     },
+     {
+      "id": "s:counit",
+      "slogan": "Show that the counit $L K d \\to d$ is an isomorphism.",
+      "detail": "The pair $FGFGd \\rightrightarrows FGd$ has coequalizer $L K d$. Its $G$-image has the split coequalizer $G\\varepsilon_d\\colon GFGd \\to Gd$, and $\\varepsilon_d$ is a cocone over the pair. A functor that creates such coequalizers reflects them, so $d$ is the coequalizer and $LKd \\cong d$.",
+      "uses": []
+     },
+     {
+      "id": "s:necessity",
+      "slogan": "Prove the converse: a monadic functor creates coequalizers of split pairs.",
+      "detail": "Creation is invariant under equivalence, so take $G = U\\colon \\mathcal{C}^T \\to \\mathcal{C}$. For a $U$-split pair of algebra maps, the split coequalizer in $\\mathcal{C}$ is absolute, so $T$ preserves it. Hence its target carries a unique algebra structure that makes the coequalizer map a map of algebras, and this is a coequalizer in $\\mathcal{C}^T$.",
+      "uses": []
+     },
+     {
+      "id": "s:final",
+      "slogan": "Combine both directions into the stated equivalence.",
+      "detail": "If $G$ creates coequalizers of $G$-split pairs, the unit and counit are isomorphisms, so $K$ is an equivalence. Conversely a monadic $G$ creates them by the previous step.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:comparison",
+      "s:pair"
+     ],
+     [
+      "s:pair",
+      "s:left"
+     ],
+     [
+      "s:left",
+      "s:unit"
+     ],
+     [
+      "s:left",
+      "s:counit"
+     ],
+     [
+      "s:unit",
+      "s:final"
+     ],
+     [
+      "s:counit",
+      "s:final"
+     ],
+     [
+      "s:comparison",
+      "s:necessity"
+     ],
+     [
+      "s:necessity",
+      "s:final"
+     ]
+    ],
+    "conclusion": "s:final",
+    "concepts": {
+     "c:adjoint-functor": "The adjunction defines the monad, the comparison functor and the pairs.",
+     "c:comparison-functor": "Monadicity means that this functor is an equivalence.",
+     "c:algebra-over-a-monad": "The comparison functor lands in the algebras of the monad $GF$.",
+     "c:monad": "The monad $GF$ encodes the structure that $G$ must recover.",
+     "c:coequalizer": "Coequalizers of split pairs build the adjoint and are created by $G$.",
+     "c:has-split-coequalizer": "A split coequalizer is absolute, so every functor preserves it."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "CategoryTheory.Monad.monadicOfCreatesGSplitCoequalizers",
+     "follows": true,
+     "note": "mathlib turns creation into existence, preservation and reflection of coequalizers of G-split pairs, then uses monadicOfHasPreservesReflectsGSplitCoequalizers; the converse is createsGSplitCoequalizersOfMonadic."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:15342",
+  "statement": "Let $T$ be a theory in [first-order logic](c:first-order-logic) over a language $L \\cup \\{P\\}$, where $P$ is an $n$-ary predicate not in $L$. If $T$ defines $P$ [implicitly](c:implicit-definition) over $L$, then $P$ is explicitly definable: some $L$-formula $\\theta(\\bar{x})$ has $T \\models \\forall \\bar{x}\\,(P(\\bar{x}) \\leftrightarrow \\theta(\\bar{x}))$.",
+  "hypotheses": [
+   {
+    "id": "h:theory",
+    "text": "The theory $T$ is a set of sentences of [first-order logic](c:first-order-logic) in the language $L \\cup \\{P\\}$.",
+    "concept": "c:first-order-logic"
+   },
+   {
+    "id": "h:implicit",
+    "text": "The theory $T$ defines $P$ [implicitly](c:implicit-definition): two models of $T$ with the same $L$-reduct interpret $P$ in the same way.",
+    "concept": "c:implicit-definition"
+   }
+  ],
+  "conclusion": "Some $L$-formula $\\theta(\\bar{x})$ satisfies $T \\models \\forall \\bar{x}\\,(P(\\bar{x}) \\leftrightarrow \\theta(\\bar{x}))$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "craig",
+    "name": "From Craig interpolation",
+    "slogan": "Two copies of the theory entail the equivalence of the copies, and a Craig interpolant of that entailment is the explicit definition.",
+    "scope": "The direction from implicit to explicit definability. The converse is immediate, since an explicit definition fixes $P$ in every model with a given $L$-reduct.",
+    "mechanisms": [
+     "m:compactness-logic"
+    ],
+    "roles": [
+     {
+      "h": "h:theory",
+      "why": "The axioms of $T$ are copied, and a finite part of them is enough by compactness.",
+      "steps": [
+       "s:copy",
+       "s:finite"
+      ]
+     },
+     {
+      "h": "h:implicit",
+      "why": "It says that $P$ and its copy $P'$ agree in every model of the two copies.",
+      "steps": [
+       "s:copy"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:copy",
+      "slogan": "Copy the theory with a fresh predicate and turn implicit definability into an entailment.",
+      "detail": "Let $T'$ be $T$ with $P$ replaced by a new symbol $P'$. A model of $T \\cup T'$ restricts to two models of $T$ with one $L$-reduct, so $P$ and $P'$ agree. With new constants $\\bar c$, $T \\cup T' \\models P(\\bar c) \\to P'(\\bar c)$.",
+      "uses": []
+     },
+     {
+      "id": "s:finite",
+      "slogan": "Reduce the entailment to one sentence by compactness.",
+      "detail": "By the compactness theorem, finitely many axioms suffice. Let $\\varphi(P)$ be the conjunction of the needed axioms of $T$, and $\\varphi(P')$ its copy. Then $\\varphi(P) \\wedge \\varphi(P') \\models P(\\bar c) \\to P'(\\bar c)$.",
+      "uses": [
+       "wd:Q1149458"
+      ]
+     },
+     {
+      "id": "s:separate",
+      "slogan": "Move the copy to the right side so that the sides share only the language $L$.",
+      "detail": "The entailment is equivalent to $\\varphi(P) \\wedge P(\\bar c) \\models \\varphi(P') \\to P'(\\bar c)$. The left side uses $P$ and the right side uses $P'$. Their common symbols are those of $L$ and the constants $\\bar c$.",
+      "uses": []
+     },
+     {
+      "id": "s:interpolant",
+      "slogan": "Take a Craig interpolant in the common language.",
+      "detail": "Craig interpolation gives a sentence $\\theta(\\bar c)$ in the symbols of $L$ and $\\bar c$ with $\\varphi(P) \\wedge P(\\bar c) \\models \\theta(\\bar c)$ and $\\theta(\\bar c) \\models \\varphi(P') \\to P'(\\bar c)$.",
+      "uses": [
+       "wd:Q1052021"
+      ]
+     },
+     {
+      "id": "s:define",
+      "slogan": "Rename the copy back and read off the explicit definition.",
+      "detail": "Rename $P'$ to $P$ in the second entailment: $\\theta(\\bar c) \\wedge \\varphi(P) \\models P(\\bar c)$. With the first entailment, $\\varphi(P) \\models P(\\bar c) \\leftrightarrow \\theta(\\bar c)$. The constants $\\bar c$ are new, so $T \\models \\forall \\bar x\\,(P(\\bar x) \\leftrightarrow \\theta(\\bar x))$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:copy",
+      "s:finite"
+     ],
+     [
+      "s:finite",
+      "s:separate"
+     ],
+     [
+      "s:separate",
+      "s:interpolant"
+     ],
+     [
+      "s:interpolant",
+      "s:define"
+     ]
+    ],
+    "conclusion": "s:define",
+    "concepts": {
+     "c:first-order-logic": "Compactness and Craig interpolation are theorems of first-order logic.",
+     "c:implicit-definition": "Implicit definability is the hypothesis that the copied theory turns into an entailment."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard derivation of Beth's theorem from Craig interpolation, as in Chang and Keisler, Model Theory, section 2.2."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q865665",
+  "statement": "Let $g$ be a [spherically symmetric](c:spherical-symmetry) solution of the vacuum [Einstein field equations](c:einstein-field-equations), with area radius $r$. Near a point where $\\nabla r$ is spacelike, there are coordinates with $g = -(1 - 2m/r)\\,dt^2 + (1 - 2m/r)^{-1} dr^2 + r^2 d\\Omega^2$ for a constant $m$. So $g$ is the [Schwarzschild metric](c:schwarzschild-metric) and is [static](c:static-spacetime).",
+  "hypotheses": [
+   {
+    "id": "h:sym",
+    "text": "The metric $g$ is spherically symmetric: $SO(3)$ acts by isometries with orbits that are 2-spheres of area $4\\pi r^2$.",
+    "concept": "c:spherical-symmetry"
+   },
+   {
+    "id": "h:vacuum",
+    "text": "The metric $g$ solves the vacuum Einstein field equations $G_{\\mu\\nu} = 0$ with no cosmological constant.",
+    "concept": "c:einstein-field-equations"
+   },
+   {
+    "id": "h:spacelike",
+    "text": "The gradient $\\nabla r$ of the area radius is spacelike on the region considered.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The metric is Schwarzschild's with a constant $m$, so it has the timelike Killing field $\\partial_t$ and is static.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "field-equations",
+    "name": "Coordinates and field equations",
+    "slogan": "Choose area-radius coordinates, solve the vacuum equations for the two metric functions, and absorb the leftover function of time.",
+    "scope": "The region where $\\nabla r$ is spacelike, the exterior of a spherical body. Where $\\nabla r$ is timelike, swapping $t$ and $r$ gives the Schwarzschild interior, and $\\nabla r = 0$ on an open set admits no vacuum solution.",
+    "mechanisms": [
+     "m:symmetry",
+     "m:coordinates"
+    ],
+    "roles": [
+     {
+      "h": "h:sym",
+      "why": "It reduces the metric to a 2-dimensional Lorentzian part and the sphere part $r^2 d\\Omega^2$.",
+      "steps": [
+       "s:warp"
+      ]
+     },
+     {
+      "h": "h:spacelike",
+      "why": "A spacelike gradient makes $r$ a coordinate whose level curves are timelike, so the 2-metric is diagonal in $(t, r)$.",
+      "steps": [
+       "s:coord"
+      ]
+     },
+     {
+      "h": "h:vacuum",
+      "why": "The equations $G_{tr} = G_{tt} = G_{rr} = 0$ fix the two metric functions.",
+      "steps": [
+       "s:equations",
+       "s:mass",
+       "s:lapse"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:warp",
+      "slogan": "Write the metric as a warped product over a 2-dimensional quotient.",
+      "detail": "Spherical symmetry gives $g = h_{ab}\\,dx^a dx^b + r^2 d\\Omega^2$, where $h$ is a Lorentzian metric on the 2-dimensional space of orbits and $r$ is a function on it.",
+      "uses": []
+     },
+     {
+      "id": "s:coord",
+      "slogan": "Use $r$ as a coordinate and diagonalize the 2-metric.",
+      "detail": "Since $\\nabla r$ is spacelike, $dr \\ne 0$ and the level curves of $r$ are timelike. Choose $t$ constant along the curves orthogonal to them. Then $g = -e^{2\\alpha(t,r)} dt^2 + e^{2\\beta(t,r)} dr^2 + r^2 d\\Omega^2$.",
+      "uses": []
+     },
+     {
+      "id": "s:equations",
+      "slogan": "Compute the three Einstein tensor components that involve $t$ and $r$.",
+      "detail": "$G_{tr} = \\frac{2}{r}\\partial_t \\beta$, $G_{tt} = \\frac{1}{r^2} e^{2(\\alpha - \\beta)}\\bigl(2r\\,\\partial_r\\beta - 1 + e^{2\\beta}\\bigr)$ and $G_{rr} = \\frac{1}{r^2}\\bigl(2r\\,\\partial_r \\alpha + 1 - e^{2\\beta}\\bigr)$. The angular equation then follows from the contracted Bianchi identity.",
+      "uses": []
+     },
+     {
+      "id": "s:mass",
+      "slogan": "Solve $G_{tr} = 0$ and $G_{tt} = 0$ to get $e^{-2\\beta} = 1 - 2m/r$.",
+      "detail": "$G_{tr} = 0$ gives $\\partial_t\\beta = 0$. Then $G_{tt} = 0$ is $\\partial_r\\bigl(r(1 - e^{-2\\beta})\\bigr) = 0$, so $r(1 - e^{-2\\beta}) = 2m$ for a constant $m$. Hence $e^{2\\beta} = (1 - 2m/r)^{-1}$, and $1 - 2m/r > 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:lapse",
+      "slogan": "Solve $G_{rr} = 0$ for $\\alpha$ and absorb the leftover function of time.",
+      "detail": "$G_{rr} = 0$ gives $\\partial_r\\alpha = (e^{2\\beta} - 1)/(2r) = \\tfrac12 \\partial_r \\ln(1 - 2m/r)$. So $\\alpha = \\tfrac12 \\ln(1 - 2m/r) + f(t)$, and replacing $t$ by $\\int e^{f(t)}\\,dt$ removes $f$. The metric is then the Schwarzschild metric, independent of $t$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:warp",
+      "s:coord"
+     ],
+     [
+      "s:coord",
+      "s:equations"
+     ],
+     [
+      "s:equations",
+      "s:mass"
+     ],
+     [
+      "s:mass",
+      "s:lapse"
+     ]
+    ],
+    "conclusion": "s:lapse",
+    "concepts": {
+     "c:spherical-symmetry": "It reduces the problem to a 2-dimensional metric and the sphere part.",
+     "c:einstein-field-equations": "The vacuum equations fix the metric functions.",
+     "c:schwarzschild-metric": "The solved metric is the Schwarzschild metric with mass parameter $m$.",
+     "c:static-spacetime": "The final metric has a timelike Killing field orthogonal to $t$-slices."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The classical coordinate proof, as in Carroll, Spacetime and Geometry, chapter 7 (the derivation of the Schwarzschild metric from spherical symmetry)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:20111",
+  "statement": "Every complex [character](c:character-of-a-representation) of a finite group $G$ is a $\\mathbb{Z}$-linear combination of characters [induced](c:induced-representation) from linear characters of subgroups of [elementary subgroups](c:elementary-subgroup) of $G$.",
+  "hypotheses": [
+   {
+    "id": "h:finite",
+    "text": "The group $G$ is finite.",
+    "concept": null
+   },
+   {
+    "id": "h:complex",
+    "text": "The characters are those of finite-dimensional complex representations of $G$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "Each character $\\chi$ equals $\\sum_j n_j \\operatorname{Ind}_{H_j}^G \\lambda_j$ with $n_j \\in \\mathbb{Z}$ and $\\lambda_j$ a linear character of $H_j \\le G$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "brauer-tate",
+    "name": "Brauer and Tate",
+    "slogan": "Show that induction from elementary subgroups spans an ideal that contains the unit character, then reduce elementary subgroups to linear characters.",
+    "scope": "An outline of the published proof; steps 2 and 3 rest on the cited chapter. The trivial group is elementary and the statement is immediate for it.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:representation-characters"
+    ],
+    "roles": [
+     {
+      "h": "h:finite",
+      "why": "Finiteness gives the elementary subgroups, the integer $|G|$ and the primes dividing it.",
+      "steps": [
+       "s:local",
+       "s:artin",
+       "s:unit"
+      ]
+     },
+     {
+      "h": "h:complex",
+      "why": "Over $\\mathbb{C}$ characters form the ring $R(G)$ of virtual characters, with induction and restriction.",
+      "steps": [
+       "s:ideal",
+       "s:monomial"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:ideal",
+      "slogan": "Show that characters induced from elementary subgroups span an ideal of the character ring.",
+      "detail": "Let $R(G)$ be the ring of virtual characters and $I$ the subgroup spanned by $\\operatorname{Ind}_H^G \\psi$ with $H$ elementary and $\\psi \\in R(H)$. By Frobenius reciprocity, $\\chi \\cdot \\operatorname{Ind}_H^G \\psi = \\operatorname{Ind}_H^G(\\operatorname{Res}_H \\chi \\cdot \\psi)$, so $I$ is an [ideal](c:ideal).",
+      "uses": [
+       "wd:Q48998319"
+      ]
+     },
+     {
+      "id": "s:local",
+      "slogan": "For each prime $p$, find an integer prime to $p$ in the ideal.",
+      "detail": "For a prime $p$, Brauer's construction with $p$-regular parts and $p$-elementary subgroups, as organized by Tate, gives an integer $n_p$ with $p \\nmid n_p$ such that $n_p \\cdot 1_G \\in I$.",
+      "uses": []
+     },
+     {
+      "id": "s:artin",
+      "slogan": "Put the integer $|G|$ in the ideal through cyclic subgroups.",
+      "detail": "Cyclic groups are elementary. Artin's induction theorem gives $|G| \\cdot 1_G$ as an integer combination of characters induced from cyclic subgroups, so $|G| \\cdot 1_G \\in I$.",
+      "uses": [
+       "nl:27531"
+      ]
+     },
+     {
+      "id": "s:unit",
+      "slogan": "Combine the integers to get the unit character and the whole ring.",
+      "detail": "The integers $|G|$ and $n_p$, for the primes $p$ dividing $|G|$, have greatest common divisor $1$. So $1_G \\in I$. An ideal that contains $1_G$ is $R(G)$, so every character is an integer combination of characters induced from elementary subgroups.",
+      "uses": []
+     },
+     {
+      "id": "s:monomial",
+      "slogan": "Replace elementary subgroups by linear characters of their subgroups.",
+      "detail": "An elementary subgroup is nilpotent, and every irreducible character of a finite nilpotent group is induced from a linear character of a subgroup. Induction in stages turns each $\\operatorname{Ind}_H^G \\psi$ into an integer combination of $\\operatorname{Ind}_K^G \\lambda$ with $\\lambda$ linear.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:ideal",
+      "s:local"
+     ],
+     [
+      "s:ideal",
+      "s:unit"
+     ],
+     [
+      "s:local",
+      "s:unit"
+     ],
+     [
+      "s:artin",
+      "s:unit"
+     ],
+     [
+      "s:unit",
+      "s:monomial"
+     ]
+    ],
+    "conclusion": "s:monomial",
+    "concepts": {
+     "c:character-of-a-representation": "Characters are the elements that the ring of virtual characters records.",
+     "c:induced-representation": "Induction from subgroups produces the building blocks of the combination.",
+     "c:elementary-subgroup": "Elementary subgroups are the subgroups whose induced characters span the ring.",
+     "c:ideal": "An ideal containing the unit character is the whole ring."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "J.-P. Serre, Linear Representations of Finite Groups, Graduate Texts in Mathematics 42, Springer, 1977, chapter 10 (Brauer's theorem; monomial groups in chapter 8); after R. Brauer, On Artin's L-series with general group characters, Annals of Mathematics 48 (1947), 502-514.",
+     "url": "https://link.springer.com/doi/10.1007/978-1-4684-9458-7",
+     "note": "Steps 1 to 4 follow the Brauer-Tate proof in Serre's chapter 10, and step 5 uses that nilpotent groups are monomial."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:10570",
+  "statement": "Let $G$ be a connected [reductive group](c:reductive-group) over an algebraically closed field, $B$ a [Borel subgroup](c:borel-subgroup), $T \\subseteq B$ a [maximal torus](c:maximal-torus) and $W = N_G(T)/T$ the [Weyl group](c:weyl-group). Then $G$ is the disjoint union of the [double cosets](c:double-coset) $BwB$ for $w \\in W$.",
+  "hypotheses": [
+   {
+    "id": "h:reductive",
+    "text": "The group $G$ is a connected [reductive group](c:reductive-group) over an algebraically closed field.",
+    "concept": "c:reductive-group"
+   },
+   {
+    "id": "h:borel",
+    "text": "The subgroup $B$ is a [Borel subgroup](c:borel-subgroup) of $G$ that contains the maximal torus $T$.",
+    "concept": "c:borel-subgroup"
+   }
+  ],
+  "conclusion": "$G = \\bigsqcup_{w \\in W} BwB$, and the double cosets $BwB$ for different $w \\in W$ are disjoint.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "bn-pair",
+    "name": "Through the BN-pair",
+    "slogan": "Show that the Borel subgroup and the normalizer of the torus form a BN-pair, then derive the cell decomposition from its axioms.",
+    "scope": "An outline of the published proof; the rank-one computation and the length argument rest on the cited text. The double coset $BwB$ depends only on $w \\in W$ because $T \\subseteq B$.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:group-action-orbits"
+    ],
+    "roles": [
+     {
+      "h": "h:reductive",
+      "why": "Reductivity gives root subgroups $U_\\alpha$, the Weyl group generated by simple reflections and the rank-one subgroups.",
+      "steps": [
+       "s:rank-one",
+       "s:axioms"
+      ]
+     },
+     {
+      "h": "h:borel",
+      "why": "The Borel subgroup $B$ and its torus $T$ define the simple roots and the BN-pair $(B, N_G(T))$.",
+      "steps": [
+       "s:axioms",
+       "s:cells",
+       "s:disjoint"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:rank-one",
+      "slogan": "Study the minimal [parabolic subgroups](c:parabolic-subgroup) of semisimple rank one.",
+      "detail": "For a simple root $\\alpha$ with reflection $s = s_\\alpha$, the group $P_\\alpha = B \\cup BsB$ is a subgroup. This follows from a computation in the rank-one group generated by $T$, $U_\\alpha$ and $U_{-\\alpha}$, which is built from $SL_2$ or $PGL_2$.",
+      "uses": []
+     },
+     {
+      "id": "s:axioms",
+      "slogan": "Verify the axioms of a [BN-pair](c:bn-pair) for $B$ and $N = N_G(T)$.",
+      "detail": "$B \\cap N = T$ is normal in $N$, and $W = N/T$ is generated by the simple reflections. $G$ is generated by $B$ and $N$. For simple $s$, $sBs \\ne B$ because $sU_\\alpha s^{-1} = U_{-\\alpha} \\not\\subseteq B$, and $sBw \\subseteq BwB \\cup BswB$ by step 1.",
+      "uses": []
+     },
+     {
+      "id": "s:cells",
+      "slogan": "Show that the union of the cells $BwB$ is closed under products and equals $G$.",
+      "detail": "For simple $s$, $BsB \\cdot BwB \\subseteq BwB \\cup BswB$ by the last axiom. Writing $w$ as a product of simple reflections shows that the union of all cells is closed under products and inverses. It contains $B$ and $N$, which generate $G$, so it is $G$.",
+      "uses": []
+     },
+     {
+      "id": "s:disjoint",
+      "slogan": "Compare lengths of Weyl group elements to show that different cells are disjoint.",
+      "detail": "If $BwB = Bw'B$, induction on the length $\\ell(w) + \\ell(w')$ with the axiom $sBw \\subseteq BwB \\cup BswB$ and $sBs \\ne B$ gives $w = w'$. So $G$ is the disjoint union of the cells $BwB$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:rank-one",
+      "s:axioms"
+     ],
+     [
+      "s:axioms",
+      "s:cells"
+     ],
+     [
+      "s:cells",
+      "s:disjoint"
+     ],
+     [
+      "s:axioms",
+      "s:disjoint"
+     ]
+    ],
+    "conclusion": "s:disjoint",
+    "concepts": {
+     "c:reductive-group": "Reductivity supplies the root subgroups and the Weyl group.",
+     "c:borel-subgroup": "The Borel subgroup is the base of the cells $BwB$.",
+     "c:maximal-torus": "The torus defines the Weyl group through its normalizer.",
+     "c:weyl-group": "The Weyl group indexes the cells and is generated by simple reflections.",
+     "c:double-coset": "The cells $BwB$ are the double cosets that decompose $G$.",
+     "c:parabolic-subgroup": "Minimal parabolic subgroups carry the rank-one computation.",
+     "c:bn-pair": "The BN-pair axioms give both the cover and the disjointness of the cells."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "J. E. Humphreys, Linear Algebraic Groups, Graduate Texts in Mathematics 21, Springer, 1975, section 28 (Bruhat decomposition).",
+     "note": "Step 1 is the rank-one analysis of that section; steps 2 to 4 are the Tits-system argument that the section uses to prove the decomposition."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q4998912",
+  "statement": "Take an [M/M/1 queue](c:m-m-1-queue) with Poisson arrivals of rate $\\lambda$ and exponential service of rate $\\mu > \\lambda$, in the stationary regime. Then the departures form a [Poisson process](c:poisson-process) of rate $\\lambda$, and the departures before time $t$ are independent of the queue length at time $t$.",
+  "hypotheses": [
+   {
+    "id": "h:mm1",
+    "text": "The queue is an [M/M/1 queue](c:m-m-1-queue): one server, Poisson arrivals of rate $\\lambda$ and independent exponential service times of rate $\\mu$.",
+    "concept": "c:m-m-1-queue"
+   },
+   {
+    "id": "h:stable",
+    "text": "The rates satisfy $\\lambda < \\mu$.",
+    "concept": null
+   },
+   {
+    "id": "h:stationary",
+    "text": "The queue length process is [stationary](c:stationary-stochastic-process).",
+    "concept": "c:stationary-stochastic-process"
+   }
+  ],
+  "conclusion": "The departure process is Poisson of rate $\\lambda$, and the departures before $t$ are independent of the queue length $N(t)$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "reversibility",
+    "name": "Time reversibility",
+    "slogan": "The stationary queue length is a reversible chain, so reversing time turns departures into arrivals.",
+    "scope": "The M/M/1 queue on the whole time line, in the stationary regime. The queue length is the birth-death chain on $\\{0, 1, 2, \\dots\\}$ with up rate $\\lambda$ and down rate $\\mu$ from every state $n \\ge 1$.",
+    "mechanisms": [
+     "m:symmetry"
+    ],
+    "roles": [
+     {
+      "h": "h:mm1",
+      "why": "It makes the queue length a birth-death chain whose upward jumps are the Poisson arrivals.",
+      "steps": [
+       "s:chain",
+       "s:swap",
+       "s:independent"
+      ]
+     },
+     {
+      "h": "h:stable",
+      "why": "It gives the stationary law $\\pi_n = (1 - \\rho)\\rho^n$ with $\\rho = \\lambda/\\mu < 1$.",
+      "steps": [
+       "s:chain"
+      ]
+     },
+     {
+      "h": "h:stationary",
+      "why": "Stationarity defines the chain on the whole time line, so the reversed process is defined and has the same law.",
+      "steps": [
+       "s:balance"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:chain",
+      "slogan": "Model the queue length as a birth-death [Markov chain](c:markov-chain) with its stationary law.",
+      "detail": "The queue length $N(t)$ jumps up at rate $\\lambda$ and down at rate $\\mu$ when $N > 0$. Since $\\lambda < \\mu$, it has the stationary law $\\pi_n = (1 - \\rho)\\rho^n$ with $\\rho = \\lambda/\\mu$.",
+      "uses": []
+     },
+     {
+      "id": "s:balance",
+      "slogan": "Check detailed balance to show that the stationary chain is reversible.",
+      "detail": "$\\pi_n \\lambda = \\pi_{n+1} \\mu$ for every $n \\ge 0$. So the stationary chain is [time reversible](c:time-reversible-stochastic-process): $\\tilde N(t) = N(-t)$ has the same law as $N(t)$.",
+      "uses": []
+     },
+     {
+      "id": "s:swap",
+      "slogan": "Identify the departures of $N$ with the arrivals of the reversed process.",
+      "detail": "The upward jumps of $N$ are the arrivals, and the downward jumps are the departures. A downward jump of $N$ at time $s$ is an upward jump of $\\tilde N$ at time $-s$. So the departures of $N$ are the arrivals of $\\tilde N$.",
+      "uses": []
+     },
+     {
+      "id": "s:poisson",
+      "slogan": "Transfer the Poisson law of the arrivals to the departures.",
+      "detail": "The upward jumps of $N$ form a Poisson process of rate $\\lambda$. Since $\\tilde N$ has the same law as $N$, its upward jumps are also Poisson of rate $\\lambda$. These are the departures of $N$.",
+      "uses": []
+     },
+     {
+      "id": "s:independent",
+      "slogan": "Use the independence of future arrivals from the past to separate past departures from the present.",
+      "detail": "Arrivals after time $u$ are independent of $(N(s))_{s \\le u}$, because arrivals have independent increments and service times are independent of arrivals. For $\\tilde N$, this says that the departures of $N$ before time $-u$ are independent of $(N(s))_{s \\ge -u}$, in particular of $N(-u)$.",
+      "uses": []
+     },
+     {
+      "id": "s:final",
+      "slogan": "Combine the Poisson law and the independence into Burke's theorem.",
+      "detail": "Step 4 gives that the departure process is Poisson of rate $\\lambda$. Step 5, with $t = -u$, gives that the departures before $t$ are independent of $N(t)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:chain",
+      "s:balance"
+     ],
+     [
+      "s:balance",
+      "s:swap"
+     ],
+     [
+      "s:swap",
+      "s:poisson"
+     ],
+     [
+      "s:swap",
+      "s:independent"
+     ],
+     [
+      "s:poisson",
+      "s:final"
+     ],
+     [
+      "s:independent",
+      "s:final"
+     ]
+    ],
+    "conclusion": "s:final",
+    "concepts": {
+     "c:m-m-1-queue": "The queue length of this queue is a birth-death chain.",
+     "c:poisson-process": "The arrivals are Poisson, and the departures are shown to be Poisson.",
+     "c:stationary-stochastic-process": "Stationarity lets the chain run on the whole line and be reversed.",
+     "c:markov-chain": "The queue length is a continuous-time Markov chain with explicit rates.",
+     "c:time-reversible-stochastic-process": "Reversibility swaps departures and arrivals without changing the law."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The reversibility proof of Reich (1957), as in Kelly, Reversibility and Stochastic Networks, Wiley, 1979, chapter 2; the theorem is due to Burke (1956)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:burnside-s-normal-p-complement-theorem",
+  "statement": "Let $G$ be a finite group and $P$ a [Sylow](c:sylow-subgroup) $p$-subgroup with $N_G(P) \\le C_G(P)$. Then $G$ has a normal $p$-complement: a [normal subgroup](c:normal-subgroup) $K$ with $G = KP$ and $K \\cap P = 1$.",
+  "hypotheses": [
+   {
+    "id": "h:finite",
+    "text": "The group $G$ is finite.",
+    "concept": null
+   },
+   {
+    "id": "h:sylow",
+    "text": "The subgroup $P$ is a [Sylow](c:sylow-subgroup) $p$-subgroup of $G$.",
+    "concept": "c:sylow-subgroup"
+   },
+   {
+    "id": "h:central",
+    "text": "The [normalizer](c:normalizer) of $P$ lies in its centralizer: $N_G(P) \\le C_G(P)$.",
+    "concept": "c:normalizer"
+   }
+  ],
+  "conclusion": "There is a normal subgroup $K$ of $G$ with $G = KP$ and $K \\cap P = 1$.",
+  "formal": {
+   "decl": "MonoidHom.ker_transferSylow_isComplement'",
+   "difference": "The declaration needs only that $P$ has finite index and that $G$ has finitely many Sylow $p$-subgroups, not that $G$ is finite. It gives the complement as the kernel of the transfer to $P$."
+  },
+  "proofs": [
+   {
+    "id": "transfer",
+    "name": "Transfer to the Sylow subgroup",
+    "slogan": "The transfer to $P$ is the power map by the index on $P$, hence bijective there, and its kernel is the normal complement.",
+    "scope": "The whole theorem. If $P = 1$ then $K = G$ and the statement is trivial.",
+    "mechanisms": [
+     "m:homomorphism-kernel",
+     "m:lagrange-counting"
+    ],
+    "roles": [
+     {
+      "h": "h:finite",
+      "why": "Finiteness gives a finite index $[G:P]$, so the transfer is defined and the index is prime to $p$.",
+      "steps": [
+       "s:abelian",
+       "s:power"
+      ]
+     },
+     {
+      "h": "h:sylow",
+      "why": "The index is prime to $p$, and Sylow's theorem conjugates Sylow subgroups inside a centralizer.",
+      "steps": [
+       "s:fusion",
+       "s:power"
+      ]
+     },
+     {
+      "h": "h:central",
+      "why": "It makes $P$ abelian and makes every element of $N_G(P)$ centralize $P$.",
+      "steps": [
+       "s:abelian",
+       "s:fusion"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:abelian",
+      "slogan": "Show that $P$ is abelian and define the [transfer homomorphism](c:transfer-homomorphism) $\\phi\\colon G \\to P$.",
+      "detail": "$P \\le N_G(P) \\le C_G(P)$ gives $P \\le C_G(P)$, so $P$ is abelian. The transfer from $G$ to the finite-index subgroup $P$ is then a homomorphism $\\phi\\colon G \\to P$.",
+      "uses": []
+     },
+     {
+      "id": "s:cycles",
+      "slogan": "Evaluate $\\phi(g)$ for $g \\in P$ on the cycles of $g$ acting on the cosets $G/P$.",
+      "detail": "The element $g$ permutes the cosets $G/P$ in cycles. A cycle of length $k$ through the coset of a representative $x$ contributes $x^{-1} g^k x \\in P$, and $\\phi(g)$ is the product of the contributions of all cycles.",
+      "uses": []
+     },
+     {
+      "id": "s:fusion",
+      "slogan": "Show that each contribution $x^{-1} g^k x$ equals $g^k$.",
+      "detail": "$g^k$ and $x^{-1} g^k x$ lie in the abelian group $P$, so $P$ and $xPx^{-1}$ both lie in $C = C_G(g^k)$. They are Sylow subgroups of $C$, so $c\\,xPx^{-1}c^{-1} = P$ for some $c \\in C$. Then $cx \\in N_G(P) \\le C_G(P)$, so $x^{-1} g^k x = (cx)^{-1} g^k (cx) = g^k$.",
+      "uses": [
+       "wd:Q1057919"
+      ]
+     },
+     {
+      "id": "s:power",
+      "slogan": "Show that $\\phi(g) = g^{[G:P]}$ on $P$, so $\\phi$ restricted to $P$ is bijective.",
+      "detail": "The cycle lengths sum to $[G:P]$, so $\\phi(g) = g^{[G:P]}$ for $g \\in P$. The index is prime to $p$ and $P$ is an abelian $p$-group, so $g \\mapsto g^{[G:P]}$ is an automorphism of $P$.",
+      "uses": []
+     },
+     {
+      "id": "s:complement",
+      "slogan": "Take the kernel of $\\phi$ and check that it is a normal complement of $P$.",
+      "detail": "$K = \\ker \\phi$ is normal. $K \\cap P = 1$ because $\\phi$ is injective on $P$. For $g \\in G$, surjectivity on $P$ gives $x \\in P$ with $\\phi(x) = \\phi(g)$, so $g x^{-1} \\in K$ and $G = KP$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:abelian",
+      "s:cycles"
+     ],
+     [
+      "s:cycles",
+      "s:fusion"
+     ],
+     [
+      "s:fusion",
+      "s:power"
+     ],
+     [
+      "s:power",
+      "s:complement"
+     ]
+    ],
+    "conclusion": "s:complement",
+    "concepts": {
+     "c:sylow-subgroup": "Sylow theory gives index prime to $p$ and conjugacy inside a centralizer.",
+     "c:normal-subgroup": "The kernel of the transfer is the normal complement.",
+     "c:normalizer": "The condition $N_G(P) \\le C_G(P)$ forces equal conjugates in $P$ to be equal.",
+     "c:transfer-homomorphism": "The transfer maps $G$ to $P$ and restricts to a power map on $P$."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "MonoidHom.ker_transferSylow_isComplement'",
+     "follows": true,
+     "note": "mathlib shows transferSylow_domRestrict_eq_pow, makes it bijective with P.not_dvd_index and powEquiv', and builds the complement with isComplement'_of_disjoint_and_mul_eq_univ."
+    }
+   }
+  ]
+ }
+]

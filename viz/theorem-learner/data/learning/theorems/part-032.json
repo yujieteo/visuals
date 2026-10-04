@@ -1,0 +1,1959 @@
+[
+ {
+  "id": "wd:Q954210",
+  "statement": "For every [space-constructible function](c:space-constructible-function) $f$ with $f(n) \\ge \\log_2 n$, every language that a [nondeterministic Turing machine](c:nondeterministic-turing-machine) decides in [space](c:space-complexity) $O(f(n))$ is decided by a deterministic Turing machine in space $O(f(n)^2)$: $\\mathsf{NSPACE}(f(n)) \\subseteq \\mathsf{DSPACE}(f(n)^2)$.",
+  "hypotheses": [
+   {
+    "id": "h:constructible",
+    "text": "The function $f$ is [space-constructible](c:space-constructible-function): a deterministic machine computes $f(n)$ from $1^n$ in space $O(f(n))$.",
+    "concept": "c:space-constructible-function"
+   },
+   {
+    "id": "h:log",
+    "text": "The bound satisfies $f(n) \\ge \\log_2 n$ for all large $n$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "$\\mathsf{NSPACE}(f(n)) \\subseteq \\mathsf{DSPACE}(f(n)^2)$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "midpoint-recursion",
+    "name": "Midpoint recursion on the configuration graph",
+    "slogan": "Decide reachability in the configuration graph by recursive midpoint search, so the depth and each frame cost $O(f(n))$ space.",
+    "scope": "The whole theorem for a machine $M$ that uses space $c\\,f(n)$ on inputs of length $n$. First modify $M$ to erase its tape before it accepts, so that it has one accepting configuration.",
+    "mechanisms": [
+     "m:reduction",
+     "m:graph-traversal",
+     "m:induction"
+    ],
+    "roles": [
+     {
+      "h": "h:log",
+      "why": "With $f(n) \\ge \\log n$ the input head position fits in $O(f(n))$ bits, so each configuration has a short code.",
+      "steps": [
+       "s:config"
+      ]
+     },
+     {
+      "h": "h:constructible",
+      "why": "The simulator computes $f(n)$ within space $O(f(n))$, so it knows the code length and the recursion depth.",
+      "steps": [
+       "s:construct"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:config",
+      "slogan": "Encode each [configuration](c:cfg) of $M$ on the input by a string of $O(f(n))$ bits.",
+      "detail": "A configuration is the state, the work tape content, the work head position and the input head position. Because $f(n) \\ge \\log n$, it has a code of length $d\\,f(n)$, so there are at most $2^{d f(n)}$ configurations. $M$ accepts if and only if the accepting configuration has [reachability](c:reachability) from the start configuration in at most $2^{d f(n)}$ moves.",
+      "uses": []
+     },
+     {
+      "id": "s:construct",
+      "slogan": "Compute $f(n)$ deterministically and fix the depth $k = d\\,f(n)$.",
+      "detail": "Because $f$ is [space-constructible](c:space-constructible-function), the simulator marks off $f(n)$ cells in space $O(f(n))$. This gives the code length and the exponent $k$ of the path bound $2^k$ without writing $2^k$ out.",
+      "uses": []
+     },
+     {
+      "id": "s:midpoint",
+      "slogan": "Reduce a path of length at most $2^i$ to two paths of length at most $2^{i-1}$.",
+      "detail": "Let $R(u,v,i)$ say that a path of at most $2^i$ moves leads from $u$ to $v$. Then $R(u,v,0)$ holds when $u = v$ or $v$ follows $u$ in one move, and for $i \\ge 1$, $R(u,v,i)$ holds if and only if $R(u,w,i-1)$ and $R(w,v,i-1)$ hold for some configuration $w$.",
+      "uses": []
+     },
+     {
+      "id": "s:space",
+      "slogan": "Evaluate $R(\\mathrm{start},\\mathrm{accept},k)$ by a depth-first recursion that reuses its space.",
+      "detail": "The deterministic procedure tries each $w$ in turn and calls itself twice, and each frame stores only $u$, $v$, $i$ and the current $w$, which is $O(f(n))$ bits. The depth is $k = O(f(n))$, so the total space is $O(f(n)^2)$, and the procedure accepts exactly when $M$ accepts.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:config",
+      "s:midpoint"
+     ],
+     [
+      "s:config",
+      "s:space"
+     ],
+     [
+      "s:construct",
+      "s:space"
+     ],
+     [
+      "s:midpoint",
+      "s:space"
+     ]
+    ],
+    "conclusion": "s:space",
+    "concepts": {
+     "c:space-constructible-function": "Constructibility lets the simulator compute its depth within the space budget.",
+     "c:nondeterministic-turing-machine": "Its nondeterministic choices become a search for a path of configurations.",
+     "c:space-complexity": "Space is the resource that the recursion bounds by $O(f(n)^2)$.",
+     "c:cfg": "Configurations are the vertices of the graph that the recursion searches.",
+     "c:reachability": "Acceptance is reachability of the accepting configuration from the start."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard proof of W. J. Savitch, Relationships between nondeterministic and deterministic tape complexities, Journal of Computer and System Sciences 4 (1970), 177-192; see M. Sipser, Introduction to the Theory of Computation, Theorem 8.5."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:11795",
+  "statement": "Let $X$ be a compact [complex manifold](c:complex-manifold) of dimension $n$ with [canonical bundle](c:canonical-bundle) $K_X$, and let $E$ be a [holomorphic vector bundle](c:holomorphic-vector-bundle) on $X$. For each $q$, the pairing $(\\alpha,\\beta) \\mapsto \\int_X \\alpha\\wedge\\beta$ induces an isomorphism $H^q(X,E) \\cong H^{n-q}(X,E^*\\otimes K_X)^*$ of finite-dimensional [sheaf cohomology](c:sheaf-cohomology) spaces.",
+  "hypotheses": [
+   {
+    "id": "h:compact",
+    "text": "$X$ is a compact [complex manifold](c:complex-manifold) of complex dimension $n$ without boundary.",
+    "concept": "c:complex-manifold"
+   },
+   {
+    "id": "h:bundle",
+    "text": "$E$ is a [holomorphic vector bundle](c:holomorphic-vector-bundle) of finite rank on $X$.",
+    "concept": "c:holomorphic-vector-bundle"
+   }
+  ],
+  "conclusion": "The integration pairing $H^q(X,E) \\times H^{n-q}(X,E^*\\otimes K_X) \\to \\mathbb{C}$ is perfect, so $H^q(X,E) \\cong H^{n-q}(X,E^*\\otimes K_X)^*$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "hodge-star",
+    "name": "Harmonic forms and the Hodge star",
+    "slogan": "Represent classes by harmonic Dolbeault forms and pair each harmonic form with its conjugate Hodge star to show that the integration pairing is perfect.",
+    "scope": "An outline of the analytic proof; the Hodge theorem for the $\\bar\\partial$-Laplacian in step 3 rests on the cited work. For $q < 0$ or $q > n$ both sides are zero.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:duality",
+     "m:stokes"
+    ],
+    "roles": [
+     {
+      "h": "h:compact",
+      "why": "Compactness without boundary lets Stokes's theorem remove exact terms and makes the harmonic spaces finite dimensional.",
+      "steps": [
+       "s:pairing",
+       "s:harmonic"
+      ]
+     },
+     {
+      "h": "h:bundle",
+      "why": "Holomorphy of $E$ gives the operator $\\bar\\partial_E$ and the Dolbeault complex of $E$-valued forms.",
+      "steps": [
+       "s:dolbeault"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:dolbeault",
+      "slogan": "Replace both cohomology groups by [Dolbeault cohomology](c:dolbeault-cohomology) of bundle-valued forms.",
+      "detail": "The Dolbeault theorem gives $H^q(X,E) \\cong H^{0,q}_{\\bar\\partial}(X,E)$. An $E^*\\otimes K_X$-valued $(0,p)$-form is an $E^*$-valued $(n,p)$-form, so $H^{n-q}(X,E^*\\otimes K_X) \\cong H^{n,n-q}_{\\bar\\partial}(X,E^*)$.",
+      "uses": [
+       "nl:11794"
+      ]
+     },
+     {
+      "id": "s:pairing",
+      "slogan": "Show that the integration pairing is well defined on cohomology classes.",
+      "detail": "Contract $E$ with $E^*$ to get an $(n,n)$-form $\\alpha\\wedge\\beta$ and integrate it. If $\\alpha = \\bar\\partial\\gamma$ and $\\bar\\partial\\beta = 0$, then $\\alpha\\wedge\\beta = d(\\gamma\\wedge\\beta)$ because $\\gamma\\wedge\\beta$ has type $(n,n-1)$, and Stokes's theorem on the closed manifold gives $\\int_X \\alpha\\wedge\\beta = 0$.",
+      "uses": [
+       "wd:Q467756"
+      ]
+     },
+     {
+      "id": "s:harmonic",
+      "slogan": "Choose Hermitian metrics and take the harmonic representative of each class.",
+      "detail": "With metrics on $X$ and $E$, the Laplacian $\\Delta = \\bar\\partial\\bar\\partial^* + \\bar\\partial^*\\bar\\partial$ is elliptic. The cited Hodge theorem says that each class has a unique [harmonic](c:harmonic-form) representative and that the harmonic spaces are finite dimensional.",
+      "uses": []
+     },
+     {
+      "id": "s:star",
+      "slogan": "Map harmonic $E$-valued forms to harmonic $E^*$-valued forms by the conjugate [Hodge star](c:hodge-star).",
+      "detail": "The conjugate-linear operator $\\bar *_E$ sends $E$-valued $(0,q)$-forms to $E^*$-valued $(n,n-q)$-forms and satisfies $\\bar\\partial^* = -\\bar *\\,\\bar\\partial\\,\\bar *$. Hence it maps harmonic forms bijectively onto harmonic forms.",
+      "uses": []
+     },
+     {
+      "id": "s:perfect",
+      "slogan": "Pair each harmonic form with its star to get a positive number.",
+      "detail": "For harmonic $\\alpha \\ne 0$, $\\int_X \\alpha\\wedge\\bar *_E\\alpha = \\|\\alpha\\|_{L^2}^2 > 0$, so the pairing is nondegenerate in the first slot. Step 4 gives the same in the second slot, and finite dimension turns the nondegenerate pairing into the isomorphism.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:dolbeault",
+      "s:pairing"
+     ],
+     [
+      "s:dolbeault",
+      "s:harmonic"
+     ],
+     [
+      "s:pairing",
+      "s:perfect"
+     ],
+     [
+      "s:harmonic",
+      "s:star"
+     ],
+     [
+      "s:harmonic",
+      "s:perfect"
+     ],
+     [
+      "s:star",
+      "s:perfect"
+     ]
+    ],
+    "conclusion": "s:perfect",
+    "concepts": {
+     "c:complex-manifold": "The manifold carries the Dolbeault complex and integration of $(n,n)$-forms.",
+     "c:canonical-bundle": "Twisting by $K_X$ turns $(0,p)$-forms into $(n,p)$-forms for the pairing.",
+     "c:holomorphic-vector-bundle": "The bundle supplies the operator $\\bar\\partial_E$ and its dual bundle.",
+     "c:sheaf-cohomology": "Both sides of the duality are sheaf cohomology groups.",
+     "c:dolbeault-cohomology": "Dolbeault classes are forms that can be wedged and integrated.",
+     "c:harmonic-form": "Harmonic representatives make the positivity argument possible.",
+     "c:hodge-star": "The conjugate Hodge star gives each class its dual partner."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "D. Huybrechts, Complex Geometry: An Introduction, Universitext, Springer, Berlin, 2005, Section 4.1, Proposition 4.1.15",
+     "url": "https://doi.org/10.1007/b137952",
+     "note": "The proof by harmonic forms and the conjugate Hodge star, with the Hodge theorem for bundle-valued forms in the same section. The algebraic version over any field is proved in R. Hartshorne, Algebraic Geometry, Springer, 1977, Section III.7."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q4455030",
+  "statement": "On a [Hilbert space](c:hilbert-space) $H$, the map $A \\mapsto (e^{itA})_{t\\in\\mathbb{R}}$ is a bijection from the [self-adjoint operators](c:self-adjoint-operator) on $H$, possibly unbounded, onto the strongly continuous one-parameter groups of [unitary operators](c:unitary-operator). The inverse sends $U$ to its generator $A\\psi = \\lim_{t\\to0}(U_t\\psi - \\psi)/(it)$, defined on the vectors $\\psi$ where this limit exists.",
+  "hypotheses": [
+   {
+    "id": "h:self-adjoint",
+    "text": "In the forward direction, $A$ is a [self-adjoint operator](c:self-adjoint-operator) on $H$.",
+    "concept": "c:self-adjoint-operator"
+   },
+   {
+    "id": "h:group",
+    "text": "In the converse direction, each $U_t$ is [unitary](c:unitary-operator), $U_0 = I$ and $U_{s+t} = U_sU_t$.",
+    "concept": "c:unitary-operator"
+   },
+   {
+    "id": "h:strong",
+    "text": "In the converse direction, $t \\mapsto U_t\\psi$ is continuous for every $\\psi \\in H$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "Each $e^{itA}$ is a strongly continuous unitary group with generator $A$, and every such group equals $e^{itA}$ for exactly one self-adjoint $A$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "generator",
+    "name": "Functional calculus and the generator",
+    "slogan": "Build $e^{itA}$ by the spectral theorem, and show conversely that the generator of a unitary group is densely defined and self-adjoint and generates the group.",
+    "scope": "Both directions and injectivity. Unbounded $A$ is the main case; a bounded $A$ gives a norm-continuous group.",
+    "mechanisms": [
+     "m:spectral-decomposition",
+     "m:dominated-convergence",
+     "m:approximation"
+    ],
+    "roles": [
+     {
+      "h": "h:self-adjoint",
+      "why": "Self-adjointness gives a [spectral measure](c:spectral-measure), which defines $e^{itA}$ and identifies its generator.",
+      "steps": [
+       "s:forward",
+       "s:recover"
+      ]
+     },
+     {
+      "h": "h:group",
+      "why": "The group law and unitarity give $U_t^* = U_{-t}$, which makes the generator symmetric and drives the deficiency argument.",
+      "steps": [
+       "s:dense",
+       "s:deficiency"
+      ]
+     },
+     {
+      "h": "h:strong",
+      "why": "Strong continuity makes the smoothed vectors $\\int f(t)U_t\\psi\\,dt$ exist and converge to $\\psi$, and makes orbits differentiable on the domain.",
+      "steps": [
+       "s:dense",
+       "s:identify"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:forward",
+      "slogan": "Define $U_t = e^{itA}$ by integration against the [spectral measure](c:spectral-measure) of $A$.",
+      "detail": "The spectral theorem gives $A = \\int\\lambda\\,dE(\\lambda)$, and $U_t = \\int e^{it\\lambda}\\,dE(\\lambda)$ is a unitary group because $|e^{it\\lambda}| = 1$ and $e^{i(s+t)\\lambda} = e^{is\\lambda}e^{it\\lambda}$. Strong continuity follows from $\\|U_t\\psi - \\psi\\|^2 = \\int|e^{it\\lambda} - 1|^2\\,d\\mu_\\psi$ and dominated convergence.",
+      "uses": [
+       "wd:Q1425077",
+       "wd:Q1067156"
+      ]
+     },
+     {
+      "id": "s:recover",
+      "slogan": "Show that the generator of $e^{itB}$ is exactly $B$ for self-adjoint $B$.",
+      "detail": "For $\\psi \\in D(B)$, $\\|(U_t\\psi - \\psi)/(it) - B\\psi\\|^2 = \\int|(e^{it\\lambda}-1)/(it) - \\lambda|^2\\,d\\mu_\\psi \\to 0$ by dominated convergence with bound $4\\lambda^2$. If the limit exists, Fatou's lemma gives $\\int\\lambda^2\\,d\\mu_\\psi < \\infty$, so $\\psi \\in D(B)$. Hence $A \\mapsto e^{itA}$ is injective.",
+      "uses": [
+       "wd:Q1067156"
+      ]
+     },
+     {
+      "id": "s:dense",
+      "slogan": "Smooth vectors by $\\psi_f = \\int f(t)U_t\\psi\\,dt$ to show that the generator is densely defined.",
+      "detail": "For $f \\in C_c^\\infty(\\mathbb{R})$, $(U_s\\psi_f - \\psi_f)/s = \\int\\frac{f(t-s) - f(t)}{s}U_t\\psi\\,dt \\to -\\psi_{f'}$, so $\\psi_f \\in D(A)$; also $U_t$ maps $D(A)$ into itself. An approximate identity $f$ gives $\\psi_f \\to \\psi$, so $D(A)$ is [dense](c:dense-set).",
+      "uses": []
+     },
+     {
+      "id": "s:deficiency",
+      "slogan": "Show that $A$ is symmetric and that $A^*\\varphi = \\pm i\\varphi$ forces $\\varphi = 0$.",
+      "detail": "From $U_t^* = U_{-t}$ one gets $\\langle A\\varphi,\\psi\\rangle = \\langle\\varphi,A\\psi\\rangle$ on $D(A)$. If $A^*\\varphi = i\\varphi$, then $g(t) = \\langle U_t\\psi,\\varphi\\rangle$ satisfies $g' = g$ for $\\psi \\in D(A)$, so the bounded $g$ vanishes and $\\varphi \\perp D(A)$, hence $\\varphi = 0$; the case $-i$ is the same. So the closure $\\bar A$ is self-adjoint.",
+      "uses": []
+     },
+     {
+      "id": "s:identify",
+      "slogan": "Compare $U_t$ with $e^{it\\bar A}$ and conclude that $U_t = e^{itA}$ with $A$ self-adjoint.",
+      "detail": "For $\\psi \\in D(A)$, $w(t) = U_t\\psi - e^{it\\bar A}\\psi$ satisfies $w' = i\\bar A w$ and $w(0) = 0$, so $\\frac{d}{dt}\\|w\\|^2 = 2\\operatorname{Re}\\langle i\\bar Aw,w\\rangle = 0$ and $w = 0$. By density $U_t = e^{it\\bar A}$, and step 2 shows that its generator $A$ equals $\\bar A$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:forward",
+      "s:recover"
+     ],
+     [
+      "s:forward",
+      "s:identify"
+     ],
+     [
+      "s:recover",
+      "s:identify"
+     ],
+     [
+      "s:dense",
+      "s:deficiency"
+     ],
+     [
+      "s:deficiency",
+      "s:identify"
+     ],
+     [
+      "s:dense",
+      "s:identify"
+     ]
+    ],
+    "conclusion": "s:identify",
+    "concepts": {
+     "c:hilbert-space": "The inner product gives adjoints, unitarity and the norm identity for $w$.",
+     "c:self-adjoint-operator": "Self-adjoint operators are the generators in the correspondence.",
+     "c:unitary-operator": "Unitary groups form the other side of the bijection.",
+     "c:spectral-measure": "The spectral measure defines $e^{itA}$ and computes its generator.",
+     "c:dense-set": "A densely defined generator has an adjoint, which the deficiency argument needs."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard proof in M. Reed and B. Simon, Methods of Modern Mathematical Physics I: Functional Analysis, Academic Press, 1980, Theorems VIII.7 and VIII.8."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1057919",
+  "statement": "Let $G$ be a [finite group](c:finite-group), $p$ a prime and $|G| = p^a m$ with $p \\nmid m$. Then $G$ has a subgroup of order $p^k$ for every $p^k \\mid |G|$; every [p-subgroup](c:p-group) lies in a [Sylow subgroup](c:sylow-subgroup), of order $p^a$; all Sylow $p$-subgroups are [conjugate](c:conjugate-subgroup); and their number $n_p$ satisfies $n_p \\equiv 1 \\pmod p$ and $n_p \\mid m$.",
+  "hypotheses": [
+   {
+    "id": "h:finite",
+    "text": "$G$ is a [finite group](c:finite-group).",
+    "concept": "c:finite-group"
+   },
+   {
+    "id": "h:prime",
+    "text": "$p$ is a prime number.",
+    "concept": null
+   }
+  ],
+  "conclusion": "Subgroups of every order $p^k$ dividing $|G|$ exist, Sylow $p$-subgroups contain every $p$-subgroup up to conjugacy and are all conjugate, and $n_p \\equiv 1 \\pmod p$ with $n_p \\mid m$.",
+  "formal": {
+   "decl": "Sylow.exists_subgroup_card_pow_prime",
+   "difference": "The declaration proves only the first part: a subgroup of order $p^n$ for each $p^n$ dividing $|G|$. Conjugacy and the count are the separate declarations Sylow.isPretransitive_of_finite, card_sylow_modEq_one and Sylow.card_dvd_index."
+  },
+  "proofs": [
+   {
+    "id": "grow-and-count",
+    "name": "Growing p-subgroups and counting fixed points",
+    "slogan": "Grow a $p$-subgroup one factor of $p$ at a time inside its normalizer, then let $p$-groups act on cosets and on Sylow subgroups and count fixed points modulo $p$.",
+    "scope": "All three parts. For $a = 0$ the Sylow subgroup is trivial and $n_p = 1$, and the arguments still apply.",
+    "mechanisms": [
+     "m:group-action-orbits",
+     "m:lagrange-counting",
+     "m:induction",
+     "m:modular-arithmetic"
+    ],
+    "roles": [
+     {
+      "h": "h:finite",
+      "why": "Finiteness makes all orbit and coset counts finite numbers that can be reduced modulo $p$.",
+      "steps": [
+       "s:fixed",
+       "s:grow",
+       "s:contain",
+       "s:divide"
+      ]
+     },
+     {
+      "h": "h:prime",
+      "why": "Primality makes every nontrivial orbit of a $p$-group have size divisible by $p$, and it gives Cauchy's theorem.",
+      "steps": [
+       "s:fixed",
+       "s:grow"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:fixed",
+      "slogan": "Count the fixed points of a [p-group](c:p-group) action modulo $p$.",
+      "detail": "Let a $p$-group $P$ [act](c:group-action) on a finite set $X$. Each orbit has size $[P : P_x]$, a power of $p$, so $|X| \\equiv |X^P| \\pmod p$, where $X^P$ is the set of fixed points.",
+      "uses": [
+       "nl:16640",
+       "wd:Q505798"
+      ]
+     },
+     {
+      "id": "s:grow",
+      "slogan": "Enlarge a subgroup of order $p^k$ to one of order $p^{k+1}$ inside its [normalizer](c:normalizer).",
+      "detail": "Let $|H| = p^k$ with $p^{k+1} \\mid |G|$, and let $H$ act on $G/H$ by left multiplication; the fixed cosets form $N(H)/H$. Step 1 gives $[N(H):H] \\equiv [G:H] \\equiv 0 \\pmod p$, so Cauchy's theorem gives a subgroup of order $p$ in $N(H)/H$, whose preimage has order $p^{k+1}$. Induction from $H = \\{1\\}$ gives part 1.",
+      "uses": [
+       "wd:Q1139041",
+       "wd:Q505798"
+      ]
+     },
+     {
+      "id": "s:contain",
+      "slogan": "Let a $p$-subgroup act on the cosets of a Sylow subgroup and find a fixed coset.",
+      "detail": "Let $S$ be a [Sylow subgroup](c:sylow-subgroup) from step 2 and let a $p$-subgroup $P$ act on $G/S$, a set of size $m \\not\\equiv 0 \\pmod p$. Step 1 gives a fixed coset $gS$, so $P \\le gSg^{-1}$. If $P$ is Sylow, then $P = gSg^{-1}$ by order, which gives part 2.",
+      "uses": []
+     },
+     {
+      "id": "s:mod",
+      "slogan": "Let a Sylow subgroup act on all Sylow subgroups by conjugation and show that it fixes only itself.",
+      "detail": "If $S$ normalizes the Sylow subgroup $T$, then $S$ and $T$ are Sylow subgroups of $N(T)$, so step 3 makes them [conjugate](c:conjugate-subgroup) in $N(T)$. Since $T$ is normal in $N(T)$, $S = T$. Step 1 then gives $n_p \\equiv 1 \\pmod p$.",
+      "uses": []
+     },
+     {
+      "id": "s:divide",
+      "slogan": "Compute $n_p$ as an index and remove the factor $p^a$.",
+      "detail": "By step 3, $G$ acts transitively on the Sylow subgroups by conjugation with stabilizer $N(S)$, so $n_p = [G:N(S)]$ divides $|G| = p^a m$. Step 4 makes $n_p$ prime to $p$, so $n_p \\mid m$.",
+      "uses": [
+       "wd:Q505798"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:fixed",
+      "s:grow"
+     ],
+     [
+      "s:fixed",
+      "s:contain"
+     ],
+     [
+      "s:fixed",
+      "s:mod"
+     ],
+     [
+      "s:grow",
+      "s:contain"
+     ],
+     [
+      "s:contain",
+      "s:mod"
+     ],
+     [
+      "s:contain",
+      "s:divide"
+     ],
+     [
+      "s:mod",
+      "s:divide"
+     ]
+    ],
+    "conclusion": "s:divide",
+    "concepts": {
+     "c:finite-group": "All counts are finite and can be reduced modulo $p$.",
+     "c:p-group": "Orbits of a $p$-group have $p$-power sizes, which drives every count.",
+     "c:sylow-subgroup": "Sylow subgroups are the maximal $p$-subgroups that the proof builds and counts.",
+     "c:conjugate-subgroup": "Conjugation permutes the Sylow subgroups transitively.",
+     "c:normalizer": "The normalizer holds the fixed cosets and is the conjugation stabilizer.",
+     "c:group-action": "Each part comes from a well-chosen action of a $p$-group."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Sylow.exists_subgroup_card_pow_prime",
+     "follows": true,
+     "note": "mathlib grows a subgroup of order $p^n$ to order $p^{n+1}$ (Sylow.exists_subgroup_card_pow_succ) with IsPGroup.card_modEq_card_fixedPoints, fixedPointsMulLeftCosetsEquivQuotient and Cauchy's theorem exists_prime_orderOf_dvd_card'. Steps 3 to 5 follow Sylow.isPretransitive_of_finite, card_sylow_modEq_one and Sylow.card_dvd_index."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q721695",
+  "statement": "For a set $P$ of $n$ points and a set $L$ of $m$ lines in the Euclidean plane, the number $I$ of incidences, the pairs $(p,\\ell)$ with $p \\in P$, $\\ell \\in L$ and $p \\in \\ell$, satisfies $I \\le 4\\,n^{2/3}m^{2/3} + 4n + m$. In particular $I = O(n^{2/3}m^{2/3} + n + m)$.",
+  "hypotheses": [
+   {
+    "id": "h:points",
+    "text": "$P$ is a set of $n$ distinct points and $L$ a set of $m$ distinct lines in $\\mathbb{R}^2$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "$I(P,L) \\le 4\\,n^{2/3}m^{2/3} + 4n + m$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "crossing-lemma",
+    "name": "Crossing-number proof",
+    "slogan": "Turn the incidences into a drawn graph whose crossings are few because two lines meet at most once, and compare with the crossing lemma.",
+    "scope": "The whole bound with the stated constants; if $n = 0$ or $m = 0$ then $I = 0$. The matching lower bound from a grid example is not part of this statement.",
+    "mechanisms": [
+     "m:probabilistic-method",
+     "m:euler-characteristic",
+     "m:case-analysis"
+    ],
+    "roles": [
+     {
+      "h": "h:points",
+      "why": "Distinct lines meet in at most one point, and two distinct points lie on one line only, so the drawn graph is simple and has few crossings.",
+      "steps": [
+       "s:graph",
+       "s:few"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:graph",
+      "slogan": "Join consecutive points on each line to form a drawn graph.",
+      "detail": "Let $G$ have vertex set $P$, and on each line join consecutive points of $P$ by the segment between them. A line with $k \\ge 1$ points gives $k - 1$ edges, so $G$ has $e \\ge I - m$ edges, and no edge repeats because two points lie on one line only.",
+      "uses": []
+     },
+     {
+      "id": "s:euler",
+      "slogan": "Bound the crossings of any drawing below by $e - 3v$.",
+      "detail": "A simple [planar graph](c:planar-graph) with $v$ vertices has at most $3v$ edges by Euler's formula. Deleting one edge for each crossing leaves a planar drawing, so every drawing of a simple graph has at least $e - 3v$ crossings.",
+      "uses": [
+       "nm:polyhedron-formula"
+      ]
+     },
+     {
+      "id": "s:sample",
+      "slogan": "Sample the vertices at random to raise the lower bound to $e^3/(64v^2)$.",
+      "detail": "Keep each vertex with probability $q$ and apply step 2 to the induced drawing. A crossing uses four distinct vertices, so taking [expectations](c:expected-value) gives $q^4\\,\\mathrm{cr} \\ge q^2 e - 3qv$. With $q = 4v/e \\le 1$ when $e \\ge 4v$, this gives the [crossing number](c:crossing-number) bound $\\mathrm{cr} \\ge e^3/(64v^2)$.",
+      "uses": []
+     },
+     {
+      "id": "s:few",
+      "slogan": "Bound the crossings of the drawing above by $m^2$.",
+      "detail": "Two crossing edges lie on two different lines, and two different lines meet in at most one point. So the drawing has at most $\\binom{m}{2} \\le m^2$ crossings.",
+      "uses": []
+     },
+     {
+      "id": "s:combine",
+      "slogan": "Combine the two crossing bounds in two cases.",
+      "detail": "If $e < 4n$, then $I < 4n + m$. Otherwise steps 3 and 4 give $(I - m)^3/(64n^2) \\le e^3/(64n^2) \\le m^2$, so $I \\le 4\\,n^{2/3}m^{2/3} + m$. In both cases $I \\le 4\\,n^{2/3}m^{2/3} + 4n + m$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:graph",
+      "s:sample"
+     ],
+     [
+      "s:euler",
+      "s:sample"
+     ],
+     [
+      "s:graph",
+      "s:few"
+     ],
+     [
+      "s:graph",
+      "s:combine"
+     ],
+     [
+      "s:sample",
+      "s:combine"
+     ],
+     [
+      "s:few",
+      "s:combine"
+     ]
+    ],
+    "conclusion": "s:combine",
+    "concepts": {
+     "c:planar-graph": "Euler's formula for planar graphs gives the base crossing bound.",
+     "c:expected-value": "Linearity of expectation amplifies the weak bound by random sampling.",
+     "c:crossing-number": "The crossing lemma ties the number of edges to the number of crossings."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "L. A. Székely, Crossing numbers and hard Erdős problems in discrete geometry, Combinatorics, Probability and Computing 6 (1997), 353-358; the crossing lemma is due to Ajtai, Chvátal, Newborn and Szemerédi and to Leighton."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q574902",
+  "statement": "Let $T$ be a [consistent theory](c:consistent-theory) in the language of arithmetic that contains [Robinson arithmetic](c:robinson-arithmetic) $Q$. No formula $\\tau(x)$ satisfies $T \\vdash \\varphi \\leftrightarrow \\tau(\\ulcorner\\varphi\\urcorner)$ for every sentence $\\varphi$, where $\\ulcorner\\varphi\\urcorner$ is the [Gödel number](c:godel-numbering) of $\\varphi$. With $T$ the true sentences of $\\mathbb{N}$: arithmetical truth is not definable in arithmetic.",
+  "hypotheses": [
+   {
+    "id": "h:consistent",
+    "text": "$T$ is [consistent](c:consistent-theory).",
+    "concept": "c:consistent-theory"
+   },
+   {
+    "id": "h:robinson",
+    "text": "$T$ proves every axiom of [Robinson arithmetic](c:robinson-arithmetic) $Q$.",
+    "concept": "c:robinson-arithmetic"
+   }
+  ],
+  "conclusion": "No arithmetic formula $\\tau(x)$ is a truth predicate for $T$; in particular no formula defines the set of Gödel numbers of sentences true in $\\mathbb{N}$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "liar-sentence",
+    "name": "Liar sentence from the diagonal lemma",
+    "slogan": "Build by the diagonal lemma a sentence that says of itself that it is not true, which makes any truth predicate inconsistent.",
+    "scope": "The syntactic form; the semantic form follows with $T = \\mathrm{Th}(\\mathbb{N})$, which is consistent and contains $Q$ because $\\mathbb{N}$ is a model of both.",
+    "mechanisms": [
+     "m:encoding",
+     "m:diagonal-argument",
+     "m:contradiction"
+    ],
+    "roles": [
+     {
+      "h": "h:robinson",
+      "why": "Robinson arithmetic represents the computable diagonal function, which the diagonal lemma needs.",
+      "steps": [
+       "s:code",
+       "s:liar"
+      ]
+     },
+     {
+      "h": "h:consistent",
+      "why": "A theory that proves $\\lambda \\leftrightarrow \\neg\\lambda$ is inconsistent, which contradicts this hypothesis.",
+      "steps": [
+       "s:contradict"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:code",
+      "slogan": "Represent the diagonal function on [Gödel numbers](c:godel-numbering) by a formula of arithmetic.",
+      "detail": "The map $d$ that sends the code of a formula $\\psi(x)$ to the code of $\\psi(\\ulcorner\\psi\\urcorner)$ is computable. Every computable function is representable in $Q$, so a formula $\\delta(x,y)$ satisfies $Q \\vdash \\forall y\\,(\\delta(\\overline{k},y) \\leftrightarrow y = \\overline{d(k)})$ for each $k$.",
+      "uses": [
+       "nm:godel-s-beta-function-lemma"
+      ]
+     },
+     {
+      "id": "s:liar",
+      "slogan": "Build the liar sentence $\\lambda$ with $T \\vdash \\lambda \\leftrightarrow \\neg\\tau(\\ulcorner\\lambda\\urcorner)$.",
+      "detail": "Let $\\theta(x) = \\exists y\\,(\\delta(x,y) \\wedge \\neg\\tau(y))$ and $\\lambda = \\theta(\\ulcorner\\theta\\urcorner)$. Then $d(\\ulcorner\\theta\\urcorner) = \\ulcorner\\lambda\\urcorner$, and step 1 gives $T \\vdash \\lambda \\leftrightarrow \\neg\\tau(\\ulcorner\\lambda\\urcorner)$. This is the diagonal lemma for the formula $\\neg\\tau(x)$.",
+      "uses": []
+     },
+     {
+      "id": "s:combine",
+      "slogan": "Instantiate the assumed truth predicate at the liar sentence.",
+      "detail": "If $T \\vdash \\varphi \\leftrightarrow \\tau(\\ulcorner\\varphi\\urcorner)$ for every sentence $\\varphi$, then $T \\vdash \\lambda \\leftrightarrow \\tau(\\ulcorner\\lambda\\urcorner)$. With step 2 this gives $T \\vdash \\lambda \\leftrightarrow \\neg\\lambda$.",
+      "uses": []
+     },
+     {
+      "id": "s:contradict",
+      "slogan": "Derive both $\\lambda$ and $\\neg\\lambda$ and contradict consistency.",
+      "detail": "From $\\lambda \\leftrightarrow \\neg\\lambda$, propositional logic proves both $\\lambda$ and $\\neg\\lambda$, so $T$ is inconsistent. This contradicts the hypothesis, so no such $\\tau$ exists; for $T = \\mathrm{Th}(\\mathbb{N})$, a formula that defines truth would be such a $\\tau$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:code",
+      "s:liar"
+     ],
+     [
+      "s:liar",
+      "s:combine"
+     ],
+     [
+      "s:combine",
+      "s:contradict"
+     ]
+    ],
+    "conclusion": "s:contradict",
+    "concepts": {
+     "c:consistent-theory": "Consistency is what the liar sentence contradicts.",
+     "c:robinson-arithmetic": "This weak theory already represents the diagonal function.",
+     "c:godel-numbering": "Coding lets a formula speak about sentences through numbers."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard diagonal-lemma proof of A. Tarski, Der Wahrheitsbegriff in den formalisierten Sprachen, Studia Philosophica 1 (1936); it appears in standard logic texts such as H. B. Enderton, A Mathematical Introduction to Logic."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q3229352",
+  "statement": "Let $\\mathcal{F}$ be a family of closed [balls](c:ball) $\\bar B(x,r)$, $r \\ge 0$, in a [metric space](c:metric-space), with bounded radii. Then $\\mathcal{F}$ has a pairwise disjoint subfamily $\\mathcal{G}$ such that every $\\bar B(x,r) \\in \\mathcal{F}$ meets some $\\bar B(y,s) \\in \\mathcal{G}$ with $r \\le 2s$, and hence $\\bar B(x,r) \\subseteq \\bar B(y,5s)$.",
+  "hypotheses": [
+   {
+    "id": "h:balls",
+    "text": "Each member of $\\mathcal{F}$ is a closed [ball](c:ball) $\\bar B(x,r)$ with $r \\ge 0$ in a [metric space](c:metric-space) $X$.",
+    "concept": "c:ball"
+   },
+   {
+    "id": "h:bounded",
+    "text": "The radii are bounded: $\\sup\\{r : \\bar B(x,r) \\in \\mathcal{F}\\} < \\infty$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "A disjoint subfamily $\\mathcal{G} \\subseteq \\mathcal{F}$ satisfies $\\bigcup\\mathcal{F} \\subseteq \\bigcup_{\\bar B(y,s) \\in \\mathcal{G}} \\bar B(y,5s)$.",
+  "formal": {
+   "decl": "Vitali.exists_disjoint_covering_ae",
+   "difference": "The declaration is the measure-theoretic Vitali covering theorem that this lemma feeds: from a fine family of closed sets with a doubling bound it extracts a countable disjoint subfamily that covers almost all of a set. The lemma itself is Vitali.exists_disjoint_subfamily_covering_enlargement_closedBall, with any factor $\\tau > 3$ in place of $5$."
+  },
+  "proofs": [
+   {
+    "id": "zorn-good-families",
+    "name": "Zorn on good disjoint families",
+    "slogan": "Take by Zorn's lemma a maximal disjoint family in which every ball that meets the family meets a comparable member, and show that maximality leaves no ball out.",
+    "scope": "The whole lemma with ratio $2$; any ratio $\\tau > 1$ works the same way and gives the factor $1 + 2\\tau$. An empty family gives $\\mathcal{G} = \\emptyset$.",
+    "mechanisms": [
+     "m:zorn",
+     "m:extremal-choice",
+     "m:contradiction",
+     "m:triangle-inequality"
+    ],
+    "roles": [
+     {
+      "h": "h:balls",
+      "why": "A meeting point of two balls and the triangle inequality turn a meeting with a larger ball into containment in its enlargement.",
+      "steps": [
+       "s:enlarge"
+      ]
+     },
+     {
+      "h": "h:bounded",
+      "why": "Bounded radii give a finite supremum of the radii of the balls that miss the family.",
+      "steps": [
+       "s:extend"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:good",
+      "slogan": "Call a disjoint subfamily good when each ball that meets it meets a member at least half as large.",
+      "detail": "A subfamily $\\mathcal{U}$ is good if its balls are pairwise disjoint and every $\\bar B(x,r) \\in \\mathcal{F}$ that meets a member of $\\mathcal{U}$ meets some $\\bar B(y,s) \\in \\mathcal{U}$ with $r \\le 2s$. The empty family is good.",
+      "uses": []
+     },
+     {
+      "id": "s:zorn",
+      "slogan": "Choose a maximal good family by Zorn's lemma for inclusion.",
+      "detail": "The union of a [chain](c:chain) of good families is good: two of its balls lie in one member of the chain, so they are disjoint, and a witness in one member stays in the union. Zorn's lemma gives a maximal good family $\\mathcal{G}$.",
+      "uses": [
+       "nl:1475"
+      ]
+     },
+     {
+      "id": "s:extend",
+      "slogan": "Show that every ball meets $\\mathcal{G}$ by adding a large missing ball otherwise.",
+      "detail": "Suppose the set $\\mathcal{A}$ of balls that miss all of $\\mathcal{G}$ is nonempty; let $M < \\infty$ be the supremum of their radii and pick $B' \\in \\mathcal{A}$ with radius $s' > M/2$, or any $B'$ if $M = 0$. A ball that meets $B'$ either meets $\\mathcal{G}$ or lies in $\\mathcal{A}$ with radius $\\le M \\le 2s'$, so $\\mathcal{G} \\cup \\{B'\\}$ is good, which contradicts maximality.",
+      "uses": []
+     },
+     {
+      "id": "s:enlarge",
+      "slogan": "Enlarge the comparable member by the triangle inequality.",
+      "detail": "Each $\\bar B(x,r) \\in \\mathcal{F}$ meets $\\mathcal{G}$ by step 3, so by goodness it meets some $\\bar B(y,s) \\in \\mathcal{G}$ with $r \\le 2s$. For $z$ in $\\bar B(x,r)$, $d(z,y) \\le 2r + s \\le 5s$, so $\\bar B(x,r) \\subseteq \\bar B(y,5s)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:good",
+      "s:zorn"
+     ],
+     [
+      "s:zorn",
+      "s:extend"
+     ],
+     [
+      "s:good",
+      "s:extend"
+     ],
+     [
+      "s:extend",
+      "s:enlarge"
+     ]
+    ],
+    "conclusion": "s:enlarge",
+    "concepts": {
+     "c:ball": "The lemma selects disjoint balls and enlarges them by the factor $5$.",
+     "c:metric-space": "The triangle inequality of the metric gives the enlargement bound.",
+     "c:chain": "Zorn's lemma needs an upper bound for every chain of good families."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Vitali.exists_disjoint_subfamily_covering_enlargement_closedBall",
+     "follows": true,
+     "note": "The linked declaration Vitali.exists_disjoint_covering_ae starts from this lemma. mathlib proves Vitali.exists_disjoint_subfamily_covering_enlargement by zorn_subset on the good families and deduces the closed-ball form."
+    }
+   },
+   {
+    "id": "dyadic-layers",
+    "name": "Greedy selection by radius layers",
+    "slogan": "Sort the balls into layers of comparable radius and choose maximal disjoint subfamilies layer by layer, from the largest radii down.",
+    "scope": "The whole lemma; balls of radius $0$ form a last layer that is treated in the same way. In a separable space each choice is a countable greedy induction; in general it uses Zorn's lemma.",
+    "mechanisms": [
+     "m:extremal-choice",
+     "m:induction",
+     "m:triangle-inequality"
+    ],
+    "roles": [
+     {
+      "h": "h:balls",
+      "why": "The triangle inequality turns a meeting with a ball of at least half the radius into containment in its $5$-fold enlargement.",
+      "steps": [
+       "s:enlarge"
+      ]
+     },
+     {
+      "h": "h:bounded",
+      "why": "A finite $R = \\sup r$ puts every positive radius into some layer $R/2^{j+1} < r \\le R/2^j$.",
+      "steps": [
+       "s:layers"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:layers",
+      "slogan": "Split the family into layers of radii between $R/2^{j+1}$ and $R/2^j$.",
+      "detail": "Let $R = \\sup r < \\infty$ and $\\mathcal{F}_j = \\{\\bar B(x,r) \\in \\mathcal{F} : R/2^{j+1} < r \\le R/2^j\\}$ for $j \\ge 0$. Every ball of positive radius lies in exactly one layer.",
+      "uses": []
+     },
+     {
+      "id": "s:select",
+      "slogan": "Choose a maximal disjoint subfamily of each layer that avoids the earlier choices.",
+      "detail": "Let $\\mathcal{G}_j$ be a maximal disjoint subfamily of the balls in $\\mathcal{F}_j$ that miss every ball of $\\mathcal{G}_0 \\cup \\dots \\cup \\mathcal{G}_{j-1}$. Such families exist by Zorn's lemma, and $\\mathcal{G} = \\bigcup_j \\mathcal{G}_j$ is disjoint.",
+      "uses": [
+       "nl:1475"
+      ]
+     },
+     {
+      "id": "s:meet",
+      "slogan": "Show that each ball of layer $j$ meets a chosen ball of radius above $R/2^{j+1}$.",
+      "detail": "If $B \\in \\mathcal{F}_j$ missed all of $\\mathcal{G}_0, \\dots, \\mathcal{G}_j$, it could be added to $\\mathcal{G}_j$, which contradicts maximality. So $B$ meets some $\\bar B(y,s) \\in \\mathcal{G}_i$ with $i \\le j$, and $s > R/2^{i+1} \\ge R/2^{j+1} \\ge r/2$.",
+      "uses": []
+     },
+     {
+      "id": "s:enlarge",
+      "slogan": "Enlarge the met ball by the triangle inequality.",
+      "detail": "With $r \\le 2s$ and a common point of $\\bar B(x,r)$ and $\\bar B(y,s)$, every $z \\in \\bar B(x,r)$ satisfies $d(z,y) \\le 2r + s \\le 5s$. So $\\bar B(x,r) \\subseteq \\bar B(y,5s)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:layers",
+      "s:select"
+     ],
+     [
+      "s:select",
+      "s:meet"
+     ],
+     [
+      "s:layers",
+      "s:meet"
+     ],
+     [
+      "s:meet",
+      "s:enlarge"
+     ]
+    ],
+    "conclusion": "s:enlarge",
+    "concepts": {
+     "c:ball": "The layers sort balls by radius, and the chosen balls are enlarged by $5$.",
+     "c:metric-space": "The triangle inequality of the metric gives the enlargement bound."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The layer-by-layer selection as in L. C. Evans and R. F. Gariepy, Measure Theory and Fine Properties of Functions, CRC Press, 1992, Section 1.5.1."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q3527185",
+  "statement": "Let $f\\colon X \\to Y$ be a map between connected [CW complexes](c:cw-complex). If $f_*\\colon \\pi_n(X,x_0) \\to \\pi_n(Y,f(x_0))$ is an isomorphism of [homotopy groups](c:homotopy-group) for every $n \\ge 1$, that is, $f$ is a [weak homotopy equivalence](c:weak-homotopy-equivalence), then $f$ is a [homotopy equivalence](c:homotopy-equivalence).",
+  "hypotheses": [
+   {
+    "id": "h:cw",
+    "text": "$X$ and $Y$ are connected [CW complexes](c:cw-complex).",
+    "concept": "c:cw-complex"
+   },
+   {
+    "id": "h:iso",
+    "text": "$f_*\\colon \\pi_n(X,x_0) \\to \\pi_n(Y,f(x_0))$ is an isomorphism for every $n \\ge 1$.",
+    "concept": "c:homotopy-group"
+   }
+  ],
+  "conclusion": "Some map $g\\colon Y \\to X$ satisfies $g \\circ f \\simeq \\mathrm{id}_X$ and $f \\circ g \\simeq \\mathrm{id}_Y$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "mapping-cylinder",
+    "name": "Mapping cylinder and compression",
+    "slogan": "Replace $f$ by the inclusion of $X$ into its mapping cylinder, show that the relative homotopy groups vanish, and compress the cylinder onto $X$ cell by cell.",
+    "scope": "The whole theorem; for disconnected complexes apply it to each component when $f$ is a bijection on components. When $f$ is the inclusion of a subcomplex, steps 3 and 4 alone suffice.",
+    "mechanisms": [
+     "m:long-exact-sequence",
+     "m:homotopy-invariance",
+     "m:induction"
+    ],
+    "roles": [
+     {
+      "h": "h:cw",
+      "why": "The CW structure makes $f$ cellular up to homotopy and lets the compression go one cell at a time.",
+      "steps": [
+       "s:cellular",
+       "s:compress"
+      ]
+     },
+     {
+      "h": "h:iso",
+      "why": "The isomorphisms make the relative homotopy groups of the cylinder vanish.",
+      "steps": [
+       "s:relative"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:cellular",
+      "slogan": "Make $f$ cellular and form its [mapping cylinder](c:mapping-cylinder) $M_f$.",
+      "detail": "By cellular approximation $f$ is homotopic to a [cellular map](c:cellular-map), and the conclusion is invariant under homotopy, so assume $f$ cellular. Then $M_f$ is a CW complex with $X$ and $Y$ as subcomplexes, and it has a [deformation retraction](c:deformation-retract) $r\\colon M_f \\to Y$ with $r|_X = f$.",
+      "uses": [
+       "nl:3255"
+      ]
+     },
+     {
+      "id": "s:relative",
+      "slogan": "Show that the [relative homotopy groups](c:relative-homotopy-group) $\\pi_n(M_f, X)$ vanish.",
+      "detail": "The inclusion $i\\colon X \\to M_f$ satisfies $r \\circ i = f$, and $r$ is a homotopy equivalence, so $i_*$ is an isomorphism on every $\\pi_n$. The long exact sequence of the pair $(M_f, X)$ then gives $\\pi_n(M_f, X) = 0$ for all $n \\ge 1$.",
+      "uses": []
+     },
+     {
+      "id": "s:compress",
+      "slogan": "Compress a map of a CW pair into the subspace one cell at a time.",
+      "detail": "Let $(W,A)$ be a CW pair and $\\phi\\colon (W,A) \\to (Z,B)$ with $\\pi_n(Z,B) = 0$ for all $n$. By induction over the cells of $W \\setminus A$, each $n$-cell gives an element of $\\pi_n(Z,B)$, which is zero, so $\\phi$ on that cell deforms into $B$ rel its boundary; the homotopy extension property extends each deformation over $W$.",
+      "uses": []
+     },
+     {
+      "id": "s:retract",
+      "slogan": "Deform the cylinder onto $X$ by compressing its identity map.",
+      "detail": "Step 2 allows step 3 for $\\mathrm{id}\\colon (M_f, X) \\to (M_f, X)$. This gives a homotopy rel $X$ from the identity to a retraction $\\rho\\colon M_f \\to X$, so $X$ is a deformation retract of $M_f$ and $i$ is a homotopy equivalence.",
+      "uses": []
+     },
+     {
+      "id": "s:compose",
+      "slogan": "Compose the two homotopy equivalences to recover $f$.",
+      "detail": "Since $f = r \\circ i$ with $i$ and $r$ homotopy equivalences, $f$ is a [homotopy equivalence](c:homotopy-equivalence). A homotopy inverse is $g = \\rho \\circ j$, where $j\\colon Y \\to M_f$ is the inclusion.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:cellular",
+      "s:relative"
+     ],
+     [
+      "s:cellular",
+      "s:retract"
+     ],
+     [
+      "s:relative",
+      "s:retract"
+     ],
+     [
+      "s:compress",
+      "s:retract"
+     ],
+     [
+      "s:retract",
+      "s:compose"
+     ],
+     [
+      "s:cellular",
+      "s:compose"
+     ]
+    ],
+    "conclusion": "s:compose",
+    "concepts": {
+     "c:cw-complex": "The cells give the induction that compresses the cylinder.",
+     "c:homotopy-group": "Isomorphisms on homotopy groups are the hypothesis that the theorem upgrades.",
+     "c:weak-homotopy-equivalence": "This names the hypothesis; the theorem promotes it on CW complexes.",
+     "c:homotopy-equivalence": "This is the conclusion, built from the cylinder.",
+     "c:mapping-cylinder": "The cylinder turns $f$ into the inclusion of a subcomplex.",
+     "c:cellular-map": "A cellular map has a mapping cylinder that is a CW complex.",
+     "c:deformation-retract": "The cylinder retracts onto $Y$, and compression retracts it onto $X$.",
+     "c:relative-homotopy-group": "Their vanishing is exactly what the compression needs."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "A. Hatcher, Algebraic Topology, Cambridge University Press, 2002, Theorem 4.5 with the compression Lemma 4.6."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:9227",
+  "statement": "Let $a_i, a_i^\\dagger$ satisfy the [canonical commutation relations](c:canonical-commutation-relation), and let $\\phi_1,\\dots,\\phi_m,\\psi_1,\\dots,\\psi_n$ be linear combinations of them. With [normal ordering](c:normal-ordering) $:\\;:$ and contraction $\\langle\\phi\\psi\\rangle = \\phi\\psi - {:}\\phi\\psi{:}$, the product ${:}\\phi_1\\cdots\\phi_m{:}\\,{:}\\psi_1\\cdots\\psi_n{:}$ equals $\\sum_M \\prod_{(i,j)\\in M}\\langle\\phi_i\\psi_j\\rangle\\,{:}\\prod_{i\\notin M}\\phi_i\\prod_{j\\notin M}\\psi_j{:}$ over all partial matchings $M$ between the $\\phi_i$ and the $\\psi_j$.",
+  "hypotheses": [
+   {
+    "id": "h:ccr",
+    "text": "The operators satisfy $[a_i,a_j^\\dagger] = \\delta_{ij}$ and $[a_i,a_j] = [a_i^\\dagger,a_j^\\dagger] = 0$.",
+    "concept": "c:canonical-commutation-relation"
+   },
+   {
+    "id": "h:linear",
+    "text": "Each $\\phi_i$ and $\\psi_j$ is a finite linear combination of the [creation and annihilation operators](c:creation-and-annihilation-operators).",
+    "concept": "c:creation-and-annihilation-operators"
+   }
+  ],
+  "conclusion": "The product of two normal-ordered monomials is the sum, over all partial matchings between them, of the product of the matched contractions times the normal-ordered product of the unmatched factors.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "commute-annihilators",
+    "name": "Moving annihilators to the right",
+    "slogan": "Split each field into creation and annihilation parts, move the annihilation parts of the left factor to the right, and collect one scalar contraction per swap.",
+    "scope": "The whole formula for bosonic [free field](c:free-field) modes; for $m = 0$ or $n = 0$ only the empty matching occurs and the formula is trivial. Fermionic fields give the same formula with signs.",
+    "mechanisms": [
+     "m:algebraic-identity",
+     "m:induction"
+    ],
+    "roles": [
+     {
+      "h": "h:ccr",
+      "why": "The relations make each commutator of an annihilation part with a creation part a scalar, and make like parts commute.",
+      "steps": [
+       "s:split",
+       "s:commute"
+      ]
+     },
+     {
+      "h": "h:linear",
+      "why": "Linearity lets each field split into one creation part and one annihilation part.",
+      "steps": [
+       "s:split"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:split",
+      "slogan": "Split each field into its creation part and its annihilation part.",
+      "detail": "Write $\\phi = \\phi^+ + \\phi^-$, with $\\phi^+$ a combination of the $a_i^\\dagger$ and $\\phi^-$ of the $a_i$. Then $\\langle\\phi\\psi\\rangle = \\phi^-\\psi^+ - \\psi^+\\phi^- = [\\phi^-,\\psi^+]$ is a scalar, and creation parts commute with each other, as do annihilation parts.",
+      "uses": []
+     },
+     {
+      "id": "s:expand",
+      "slogan": "Expand each normal-ordered monomial as a sum over subsets.",
+      "detail": "Normal ordering puts creation parts to the left, so ${:}\\phi_1\\cdots\\phi_m{:} = \\sum_S \\prod_{i\\in S}\\phi_i^+\\prod_{i\\notin S}\\phi_i^-$ over subsets $S \\subseteq \\{1,\\dots,m\\}$. The same holds for the $\\psi_j$ with subsets $T$.",
+      "uses": []
+     },
+     {
+      "id": "s:commute",
+      "slogan": "Move one annihilation part past a product of creation parts.",
+      "detail": "Because $[c,\\cdot\\,]$ is a derivation and each $[c,b_j]$ is a scalar, $c\\,b_1\\cdots b_k = b_1\\cdots b_k\\,c + \\sum_j [c,b_j]\\prod_{l\\ne j}b_l$. Each term either moves $c$ to the far right or removes $c$ and one $b_j$ for a scalar factor.",
+      "uses": []
+     },
+     {
+      "id": "s:match",
+      "slogan": "Induct on the number of annihilation parts to get a sum over matchings.",
+      "detail": "Applying step 3 to each annihilation part in turn gives $\\prod_{i\\in A}\\phi_i^-\\prod_{j\\in B}\\psi_j^+ = \\sum_M \\prod_{(i,j)\\in M}[\\phi_i^-,\\psi_j^+]\\prod_{j\\in B\\setminus M}\\psi_j^+\\prod_{i\\in A\\setminus M}\\phi_i^-$ over partial matchings $M$ of $A$ with $B$. Induction on $|A|$ proves this.",
+      "uses": []
+     },
+     {
+      "id": "s:regroup",
+      "slogan": "Regroup the terms by matching to rebuild the normal-ordered product.",
+      "detail": "Insert step 4 into the product of the expansions of step 2; every term is now normal ordered. For a fixed matching $M$, the sum over the choices for the unmatched factors rebuilds ${:}\\prod_{i\\notin M}\\phi_i\\prod_{j\\notin M}\\psi_j{:}$ by step 2, with coefficient $\\prod_{(i,j)\\in M}\\langle\\phi_i\\psi_j\\rangle$ by step 1.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:split",
+      "s:expand"
+     ],
+     [
+      "s:split",
+      "s:commute"
+     ],
+     [
+      "s:commute",
+      "s:match"
+     ],
+     [
+      "s:expand",
+      "s:regroup"
+     ],
+     [
+      "s:match",
+      "s:regroup"
+     ],
+     [
+      "s:split",
+      "s:regroup"
+     ]
+    ],
+    "conclusion": "s:regroup",
+    "concepts": {
+     "c:canonical-commutation-relation": "The relations make every contraction a scalar.",
+     "c:creation-and-annihilation-operators": "Each field splits into one creation and one annihilation part.",
+     "c:normal-ordering": "Normal order is the form in which both sides are written.",
+     "c:free-field": "Free-field modes obey exactly these commutation relations."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard induction on annihilation operators, after G. C. Wick, The evaluation of the collision matrix, Physical Review 80 (1950), 268-272."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:10946",
+  "statement": "Let $\\Phi$ be a nonvanishing function on $\\mathbb{R}$ with $\\Phi(\\pm\\infty) = 1$, Hölder continuous on $\\mathbb{R}\\cup\\{\\infty\\}$, with [winding number](c:winding-number) $0$ about the origin. Then $\\Phi = \\Phi_+\\Phi_-$ on $\\mathbb{R}$, where $\\Phi_\\pm$ is [holomorphic](c:holomorphic-function) and nonvanishing in the upper or lower [half-plane](c:half-plane), continuous up to $\\mathbb{R}$ and equal to $1$ at infinity. This [factorization](c:factorization) is unique.",
+  "hypotheses": [
+   {
+    "id": "h:nonzero",
+    "text": "$\\Phi\\colon\\mathbb{R}\\to\\mathbb{C}$ is continuous, never zero, and $\\Phi(x) \\to 1$ as $x \\to \\pm\\infty$.",
+    "concept": null
+   },
+   {
+    "id": "h:holder",
+    "text": "$\\Phi$ is Hölder continuous on the circle $\\mathbb{R}\\cup\\{\\infty\\}$.",
+    "concept": null
+   },
+   {
+    "id": "h:index",
+    "text": "The closed curve $\\Phi(\\mathbb{R}\\cup\\{\\infty\\})$ has [winding number](c:winding-number) $0$ about $0$.",
+    "concept": "c:winding-number"
+   }
+  ],
+  "conclusion": "There are unique $\\Phi_+$ and $\\Phi_-$, holomorphic and nonvanishing in the upper and lower half-planes, continuous up to $\\mathbb{R}$, tending to $1$ at infinity, with $\\Phi = \\Phi_+\\Phi_-$ on $\\mathbb{R}$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "cauchy-log",
+    "name": "Logarithm and Cauchy integrals",
+    "slogan": "Take a logarithm of the function, split it additively with Cauchy integrals and the Plemelj formulas, and exponentiate the two parts.",
+    "scope": "Existence and uniqueness under the stated normalization. A nonzero winding number $\\kappa$ adds a factor $((x-i)/(x+i))^{\\kappa}$ and is excluded here.",
+    "mechanisms": [
+     "m:complex-integration",
+     "m:analytic-continuation"
+    ],
+    "roles": [
+     {
+      "h": "h:nonzero",
+      "why": "A nonvanishing function has a continuous logarithm, and the limit $1$ at infinity fixes it to be $0$ at one end.",
+      "steps": [
+       "s:log"
+      ]
+     },
+     {
+      "h": "h:index",
+      "why": "Winding number zero makes the continuous logarithm return to $0$ at the other end.",
+      "steps": [
+       "s:log"
+      ]
+     },
+     {
+      "h": "h:holder",
+      "why": "Hölder continuity makes the Cauchy integrals have continuous boundary values that obey the Plemelj formulas.",
+      "steps": [
+       "s:cauchy"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:log",
+      "slogan": "Choose a continuous [logarithm](c:logarithm) $L$ of $\\Phi$ that vanishes at infinity.",
+      "detail": "Because $\\Phi$ never vanishes, a continuous branch $L = \\log\\Phi$ exists on $\\mathbb{R}$ with $L(-\\infty) = 0$, and $L(+\\infty) - L(-\\infty)$ is $2\\pi i$ times the winding number, which is $0$. $L$ is Hölder on $\\mathbb{R}\\cup\\{\\infty\\}$ because $\\log$ is Lipschitz near the compact image of $\\Phi$.",
+      "uses": []
+     },
+     {
+      "id": "s:cauchy",
+      "slogan": "Split $L$ into upper and lower parts by the Cauchy integral.",
+      "detail": "Set $L_\\pm(z) = \\frac{1}{2\\pi i}\\int_{\\mathbb{R}}\\frac{L(t)}{t-z}\\,dt$ for $\\pm\\operatorname{Im} z > 0$. These are holomorphic and tend to $0$ at infinity, and by the Sokhotski–Plemelj theorem their boundary values are continuous and satisfy $L_+(x) - L_-(x) = L(x)$ on $\\mathbb{R}$.",
+      "uses": [
+       "wd:Q1543149"
+      ]
+     },
+     {
+      "id": "s:exp",
+      "slogan": "Exponentiate the two parts to get the factors.",
+      "detail": "Put $\\Phi_+ = e^{L_+}$ and $\\Phi_- = e^{-L_-}$. They are holomorphic and nonvanishing in their half-planes, continuous up to $\\mathbb{R}$, tend to $1$ at infinity, and $\\Phi_+\\Phi_- = e^{L_+ - L_-} = e^{L} = \\Phi$ on $\\mathbb{R}$.",
+      "uses": []
+     },
+     {
+      "id": "s:unique",
+      "slogan": "Glue the quotients of two factorizations into a bounded entire function.",
+      "detail": "If also $\\Phi = \\Psi_+\\Psi_-$, then $\\Phi_+/\\Psi_+ = \\Psi_-/\\Phi_-$ on $\\mathbb{R}$. The function equal to the left side above $\\mathbb{R}$ and the right side below is continuous across $\\mathbb{R}$, so Morera's theorem makes it [entire](c:entire-function); it is bounded with limit $1$, so Liouville's theorem makes it $1$.",
+      "uses": [
+       "wd:Q1140119",
+       "wd:Q576478"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:log",
+      "s:cauchy"
+     ],
+     [
+      "s:cauchy",
+      "s:exp"
+     ],
+     [
+      "s:exp",
+      "s:unique"
+     ]
+    ],
+    "conclusion": "s:unique",
+    "concepts": {
+     "c:winding-number": "Index zero lets the logarithm vanish at both ends of the line.",
+     "c:holomorphic-function": "The two factors must be holomorphic in opposite half-planes.",
+     "c:half-plane": "Each factor and each Cauchy integral lives on one half-plane.",
+     "c:factorization": "The theorem writes the function as a product of two one-sided factors.",
+     "c:logarithm": "The logarithm turns the product problem into an additive splitting problem.",
+     "c:entire-function": "Gluing the two quotients gives an entire function for Liouville's theorem."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The classical Cauchy-integral construction, as in F. D. Gakhov, Boundary Value Problems, Pergamon, 1966, and B. Noble, Methods Based on the Wiener-Hopf Technique, Pergamon, 1958."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:1475",
+  "statement": "Assume the [axiom of choice](c:axiom-of-choice). If every [chain](c:chain) in a [partially ordered set](c:partial-order) $P$ has an [upper bound](c:upper-bound) in $P$, then $P$ has a [maximal element](c:maximal-element): some $m \\in P$ such that no $a \\in P$ satisfies $m < a$.",
+  "hypotheses": [
+   {
+    "id": "h:chains",
+    "text": "Every [chain](c:chain) $C \\subseteq P$, the empty chain included, has an upper bound in $P$.",
+    "concept": "c:chain"
+   },
+   {
+    "id": "h:choice",
+    "text": "The [axiom of choice](c:axiom-of-choice) holds.",
+    "concept": "c:axiom-of-choice"
+   }
+  ],
+  "conclusion": "Some $m \\in P$ satisfies $m \\le a \\Rightarrow a = m$ for every $a \\in P$.",
+  "formal": {
+   "decl": "exists_maximal_of_chains_bounded",
+   "difference": "The declaration works for any transitive relation $\\prec$ and gives $m$ with $m \\prec a \\Rightarrow a \\prec m$, which is maximality for a partial order. Choice is built into Lean's logic, so it is not a hypothesis there."
+  },
+  "proofs": [
+   {
+    "id": "maximal-chain",
+    "name": "Upper bound of a maximal chain",
+    "slogan": "Take a maximal chain, take an upper bound of it, and show that nothing lies strictly above that bound.",
+    "scope": "The whole lemma. The empty chain has an upper bound, so $P$ is nonempty.",
+    "mechanisms": [
+     "m:extremal-choice",
+     "m:contradiction"
+    ],
+    "roles": [
+     {
+      "h": "h:choice",
+      "why": "Choice builds the maximal chain through the Hausdorff maximal principle.",
+      "steps": [
+       "s:maxchain"
+      ]
+     },
+     {
+      "h": "h:chains",
+      "why": "The maximal chain has an upper bound.",
+      "steps": [
+       "s:bound"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:maxchain",
+      "slogan": "Choose a maximal chain $C$ by the Hausdorff maximal principle.",
+      "detail": "The Hausdorff maximal principle gives a chain $C \\subseteq P$ that lies in no strictly larger chain. mathlib builds $C$ as the closure of the empty chain under unions and a successor map that a choice function picks.",
+      "uses": [
+       "nl:1551"
+      ]
+     },
+     {
+      "id": "s:bound",
+      "slogan": "Take an upper bound $m$ of the maximal chain.",
+      "detail": "By hypothesis the chain $C$ has an [upper bound](c:upper-bound) $m \\in P$. So $c \\le m$ for every $c \\in C$.",
+      "uses": []
+     },
+     {
+      "id": "s:extend",
+      "slogan": "Add any element above $m$ to the chain and keep a chain.",
+      "detail": "Let $m \\le a$. Every $c \\in C$ satisfies $c \\le m \\le a$, so by transitivity $C \\cup \\{a\\}$ is still a [chain](c:chain).",
+      "uses": []
+     },
+     {
+      "id": "s:maximal",
+      "slogan": "Use maximality of the chain to force $a = m$.",
+      "detail": "Maximality of $C$ gives $C \\cup \\{a\\} = C$, so $a \\in C$ and therefore $a \\le m$. With $m \\le a$, antisymmetry gives $a = m$, so $m$ is a [maximal element](c:maximal-element).",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:maxchain",
+      "s:bound"
+     ],
+     [
+      "s:bound",
+      "s:extend"
+     ],
+     [
+      "s:extend",
+      "s:maximal"
+     ],
+     [
+      "s:maxchain",
+      "s:maximal"
+     ]
+    ],
+    "conclusion": "s:maximal",
+    "concepts": {
+     "c:axiom-of-choice": "Choice supplies the selections that build the maximal element.",
+     "c:chain": "Chains are the subsets whose upper bounds the hypothesis supplies.",
+     "c:partial-order": "Antisymmetry and transitivity of the order are used in the final step.",
+     "c:upper-bound": "Bounds of chains are the raw material for the maximal element.",
+     "c:maximal-element": "A maximal element is what the lemma produces."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "exists_maximal_of_chains_bounded",
+     "follows": true,
+     "note": "mathlib takes the maximal chain maxChain with maxChain_spec, built from a chosen successor map (the Hausdorff principle), bounds it by the hypothesis, and closes with IsChain.insert and maximality."
+    }
+   },
+   {
+    "id": "transfinite",
+    "name": "Transfinite recursion",
+    "slogan": "If no element were maximal, choose strict upper bounds again and again along the ordinals and get an injection of all ordinals into a set.",
+    "scope": "The whole lemma by contradiction, in ZFC.",
+    "mechanisms": [
+     "m:contradiction",
+     "m:strong-induction"
+    ],
+    "roles": [
+     {
+      "h": "h:choice",
+      "why": "Choice picks one strict upper bound for every chain at once.",
+      "steps": [
+       "s:choose"
+      ]
+     },
+     {
+      "h": "h:chains",
+      "why": "Each chain has an upper bound, which becomes a strict bound when no element is maximal.",
+      "steps": [
+       "s:choose"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:choose",
+      "slogan": "Assume that no element is maximal and choose a strict upper bound for every chain.",
+      "detail": "If no element is maximal, each chain $C$ has an upper bound $u$ and some $u' > u$, which is a strict upper bound of $C$. The axiom of choice gives a function $g$ with $c < g(C)$ for every chain $C$ and every $c \\in C$.",
+      "uses": []
+     },
+     {
+      "id": "s:recur",
+      "slogan": "Define $a_\\alpha = g(\\{a_\\beta : \\beta < \\alpha\\})$ by transfinite recursion.",
+      "detail": "By [transfinite induction](c:transfinite-induction) on the [ordinal](c:ordinal) $\\alpha$, the set $\\{a_\\beta : \\beta < \\alpha\\}$ is a chain with $a_\\beta < a_\\gamma$ for $\\beta < \\gamma < \\alpha$. So $g$ applies to it, and $a_\\alpha$ lies strictly above every earlier term.",
+      "uses": []
+     },
+     {
+      "id": "s:inject",
+      "slogan": "Show that $\\alpha \\mapsto a_\\alpha$ injects all ordinals into $P$ and derive a contradiction.",
+      "detail": "Strict increase makes the map injective on the class of all ordinals. By replacement on its image, a subset of $P$, the ordinals would form a set, which contradicts the Burali-Forti paradox.",
+      "uses": [
+       "nl:8535"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:choose",
+      "s:recur"
+     ],
+     [
+      "s:recur",
+      "s:inject"
+     ]
+    ],
+    "conclusion": "s:inject",
+    "concepts": {
+     "c:axiom-of-choice": "Choice supplies the selections that build the maximal element.",
+     "c:chain": "Chains are the subsets whose upper bounds the hypothesis supplies.",
+     "c:partial-order": "Antisymmetry and transitivity of the order are used in the final step.",
+     "c:upper-bound": "Bounds of chains are the raw material for the maximal element.",
+     "c:maximal-element": "A maximal element is what the lemma produces.",
+     "c:transfinite-induction": "Transfinite recursion builds the strictly increasing sequence.",
+     "c:ordinal": "The sequence is indexed by all ordinals, too many for a set."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The classical proof by transfinite recursion, as in T. Jech, Set Theory, Springer, 2003, Chapter 5."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q318767",
+  "statement": "Let $\\sum_{n\\ge0} a_n$ be a convergent series of complex numbers with sum $l$, and let $f(z) = \\sum a_n z^n$ be its [power series](c:power-series) on $|z| < 1$. Then $f(z) \\to l$ as $z \\to 1$ inside any [Stolz angle](c:stolz-angle) $S_M = \\{z : |z| < 1,\\ |1-z| < M(1-|z|)\\}$; in particular $f(x) \\to l$ as $x \\to 1^-$.",
+  "hypotheses": [
+   {
+    "id": "h:converge",
+    "text": "The [partial sums](c:partial-sum) $s_N = \\sum_{n<N} a_n$ converge to $l$.",
+    "concept": "c:partial-sum"
+   },
+   {
+    "id": "h:angle",
+    "text": "The point $z$ stays in a fixed [Stolz angle](c:stolz-angle) $S_M$ with $M > 1$.",
+    "concept": "c:stolz-angle"
+   }
+  ],
+  "conclusion": "$f(z) \\to l$ as $z \\to 1$ with $z \\in S_M$.",
+  "formal": {
+   "decl": "Complex.tendsto_tsum_powerSeries_nhdsWithin_stolzCone",
+   "difference": "The declaration takes the approach region to be the cone $|\\operatorname{Im} z| < s(1 - \\operatorname{Re} z)$, which near $1$ lies inside some Stolz set $S_M$. The Stolz set form is Complex.tendsto_tsum_powerSeries_nhdsWithin_stolzSet."
+  },
+  "proofs": [
+   {
+    "id": "summation-by-parts",
+    "name": "Summation by parts",
+    "slogan": "Write $l - f(z)$ as $(1-z)$ times a power series in the tails $l - s_{n+1}$, then bound its head by $|1-z|$ and its tail by the Stolz angle.",
+    "scope": "The whole theorem. The real case follows because $[0,1)$ lies in $S_M$ for every $M > 1$.",
+    "mechanisms": [
+     "m:algebraic-identity",
+     "m:epsilon-delta"
+    ],
+    "roles": [
+     {
+      "h": "h:converge",
+      "why": "Convergence makes the tails $l - s_{n+1}$ bounded, and small beyond some index $N$.",
+      "steps": [
+       "s:rewrite",
+       "s:split"
+      ]
+     },
+     {
+      "h": "h:angle",
+      "why": "In $S_M$ the ratio $|1-z|/(1-|z|)$ stays below $M$, which controls the tail.",
+      "steps": [
+       "s:tail"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:rewrite",
+      "slogan": "Rewrite $l - f(z)$ as $(1-z)\\sum_n (l - s_{n+1}) z^n$ by summation by parts.",
+      "detail": "For $|z| < 1$, summation by parts gives $f(z) = (1-z)\\sum_n s_{n+1} z^n$, and $l = (1-z)\\sum_n l\\,z^n$. Subtraction gives $l - f(z) = (1-z)\\sum_n (l - s_{n+1}) z^n$; the series converges because the tails are bounded.",
+      "uses": [
+       "nm:abel-s-lemma"
+      ]
+     },
+     {
+      "id": "s:split",
+      "slogan": "Split the series at an index $N$ beyond which the tails are below $\\varepsilon$.",
+      "detail": "Given $\\varepsilon > 0$, convergence of the [partial sums](c:partial-sum) gives $N$ with $|l - s_{n+1}| < \\varepsilon$ for $n \\ge N$. Write the series as a head over $n < N$ and a tail over $n \\ge N$.",
+      "uses": []
+     },
+     {
+      "id": "s:tail",
+      "slogan": "Bound the tail by $\\varepsilon M$ inside the Stolz angle.",
+      "detail": "The tail has modulus at most $\\varepsilon|1-z|\\sum_n |z|^n = \\varepsilon|1-z|/(1-|z|)$. Inside the [Stolz angle](c:stolz-angle) $S_M$ this is less than $\\varepsilon M$.",
+      "uses": []
+     },
+     {
+      "id": "s:head",
+      "slogan": "Bound the head by a constant times $|1-z|$.",
+      "detail": "Since $|z|^n \\le 1$, the head has modulus at most $|1-z|\\,C_N$ with $C_N = \\sum_{n<N}|l - s_{n+1}|$. This tends to $0$ as $z \\to 1$.",
+      "uses": []
+     },
+     {
+      "id": "s:limit",
+      "slogan": "Combine both bounds and let $\\varepsilon$ tend to zero.",
+      "detail": "For $z \\in S_M$ with $|1-z| < \\varepsilon/(C_N+1)$, $|l - f(z)| \\le |1-z|\\,C_N + \\varepsilon M < (M+1)\\varepsilon$. Since $\\varepsilon$ is arbitrary, $f(z) \\to l$ inside $S_M$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:rewrite",
+      "s:split"
+     ],
+     [
+      "s:split",
+      "s:tail"
+     ],
+     [
+      "s:split",
+      "s:head"
+     ],
+     [
+      "s:tail",
+      "s:limit"
+     ],
+     [
+      "s:head",
+      "s:limit"
+     ]
+    ],
+    "conclusion": "s:limit",
+    "concepts": {
+     "c:power-series": "The theorem concerns the boundary behaviour of a power series at $z = 1$.",
+     "c:stolz-angle": "The angle keeps $|1-z|/(1-|z|)$ bounded, which controls the tail.",
+     "c:partial-sum": "The tails of the partial sums become the new coefficients."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Complex.tendsto_tsum_powerSeries_nhdsWithin_stolzCone",
+     "follows": true,
+     "note": "mathlib reduces the cone to a Stolz set (nhdsWithin_stolzCone_le_nhdsWithin_stolzSet) and proves tendsto_tsum_powerSeries_nhdsWithin_stolzSet from the rearrangement abel_aux, splitting the sum at an index as here."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:966",
+  "statement": "Let $D$ be a [complete](c:complete-category), [locally small](c:locally-small) category and $G\\colon D \\to C$ a functor. Then $G$ has a left [adjoint](c:adjoint-functor) if and only if $G$ preserves small [limits](c:limit-category-theory) and satisfies the [solution set condition](c:solution-set-condition): for each object $c$ of $C$, some set of arrows $f_i\\colon c \\to Gd_i$ lets every $h\\colon c \\to Gd$ factor as $h = G(t)\\circ f_i$.",
+  "hypotheses": [
+   {
+    "id": "h:complete",
+    "text": "$D$ has all small limits.",
+    "concept": "c:complete-category"
+   },
+   {
+    "id": "h:small",
+    "text": "$D$ is [locally small](c:locally-small): each class of arrows $D(x,y)$ is a set.",
+    "concept": "c:locally-small"
+   }
+  ],
+  "conclusion": "$G$ is a right adjoint exactly when it preserves small limits and has solution sets.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "initial-object",
+    "name": "Initial objects of comma categories",
+    "slogan": "Build an initial object of each comma category $c \\downarrow G$ from a weakly initial product and a joint equalizer, then assemble these objects into a left adjoint.",
+    "scope": "Both directions; the last step proves the easy direction. The category $C$ is arbitrary.",
+    "mechanisms": [
+     "m:universal-property",
+     "m:adjunction"
+    ],
+    "roles": [
+     {
+      "h": "h:complete",
+      "why": "Completeness of $D$ makes each comma category complete, so products and equalizers exist there.",
+      "steps": [
+       "s:comma"
+      ]
+     },
+     {
+      "h": "h:small",
+      "why": "Local smallness makes the endomorphisms of the weakly initial product a set, so their joint equalizer exists.",
+      "steps": [
+       "s:comma",
+       "s:equalize"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:comma",
+      "slogan": "Show that the [comma category](c:comma) $c \\downarrow G$ is complete and locally small.",
+      "detail": "Its objects are arrows $c \\to Gd$. A limit of a diagram of such arrows is the limit $\\lim d_i$ in $D$ with the induced arrow $c \\to G(\\lim d_i) \\cong \\lim Gd_i$, which exists because $G$ preserves limits. Its hom-sets are subsets of hom-sets of $D$.",
+      "uses": []
+     },
+     {
+      "id": "s:weak",
+      "slogan": "Take the product of the solution set as a weakly initial object.",
+      "detail": "The arrows $f_i$ form a set of objects of $c \\downarrow G$, and every object receives an arrow from one of them. Their product $P$ in $c \\downarrow G$ therefore maps to every object, so $P$ is weakly initial.",
+      "uses": []
+     },
+     {
+      "id": "s:equalize",
+      "slogan": "Equalize all endomorphisms of $P$ to get an initial object.",
+      "detail": "Let $e\\colon E \\to P$ be the joint [equalizer](c:equalizer) of all endomorphisms of $P$; $E$ maps to every object through $P$. If $u, v\\colon E \\to x$ have equalizer $k$ and $s\\colon P \\to \\mathrm{dom}\\,k$, then $eks$ is an endomorphism, so $ekse = e$ and $kse = 1_E$ because $e$ is monic. So $k$ is split epi, $u = v$, and $E$ is an [initial object](c:initial-object).",
+      "uses": []
+     },
+     {
+      "id": "s:adjoint",
+      "slogan": "Assemble the initial objects of the comma categories into a left adjoint.",
+      "detail": "An initial object $\\eta_c\\colon c \\to G(Fc)$ of $c \\downarrow G$ is a universal arrow, and a left adjoint is the same as a choice of universal arrow for every $c$. Universality defines $F$ on arrows and gives $D(Fc,d) \\cong C(c,Gd)$ naturally.",
+      "uses": []
+     },
+     {
+      "id": "s:converse",
+      "slogan": "Prove the converse from the universal arrows of a given left adjoint.",
+      "detail": "If $F \\dashv G$, the unit $\\eta_c$ alone is a solution set, since $h = G(h^\\flat)\\circ\\eta_c$. The natural bijection $C(c, G\\lim d_i) \\cong D(Fc, \\lim d_i) \\cong \\lim C(c, Gd_i)$ and the Yoneda lemma show that $G$ preserves limits.",
+      "uses": [
+       "nl:466"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:comma",
+      "s:weak"
+     ],
+     [
+      "s:comma",
+      "s:equalize"
+     ],
+     [
+      "s:weak",
+      "s:equalize"
+     ],
+     [
+      "s:equalize",
+      "s:adjoint"
+     ],
+     [
+      "s:adjoint",
+      "s:converse"
+     ]
+    ],
+    "conclusion": "s:converse",
+    "concepts": {
+     "c:complete-category": "Completeness supplies products and equalizers in each comma category.",
+     "c:locally-small": "Local smallness keeps the endomorphisms of $P$ a set.",
+     "c:adjoint-functor": "The theorem produces the left adjoint and characterizes its existence.",
+     "c:limit-category-theory": "Preserved limits make the comma categories complete.",
+     "c:solution-set-condition": "Solution sets give a small weakly initial family.",
+     "c:comma": "Initial objects of comma categories are the universal arrows.",
+     "c:equalizer": "The joint equalizer cuts the weakly initial object down to an initial one.",
+     "c:initial-object": "An initial object of $c \\downarrow G$ is the unit at $c$."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Freyd's general adjoint functor theorem as proved in S. Mac Lane, Categories for the Working Mathematician, 2nd ed., Springer, 1998, Theorem V.6.2."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q776578",
+  "statement": "A ring $R$ is [semisimple](c:semisimple-ring) if and only if $R \\cong M_{n_1}(D_1) \\times \\cdots \\times M_{n_k}(D_k)$ for some $k \\ge 0$, integers $n_i \\ge 1$ and [division rings](c:division-ring) $D_i$. The number $k$ and the pairs $(n_i, D_i)$ are unique up to order and isomorphism of the $D_i$. In particular a simple [Artinian ring](c:artinian-ring) is a [matrix ring](c:matrix-ring) $M_n(D)$.",
+  "hypotheses": [
+   {
+    "id": "h:semisimple",
+    "text": "For the forward direction, $R$ is semisimple: as a left module over itself it is a direct sum of [simple](c:is-simple-module) left ideals.",
+    "concept": "c:semisimple-ring"
+   }
+  ],
+  "conclusion": "Semisimple rings are exactly the finite products of matrix rings over division rings, and $R$ determines the factors.",
+  "formal": {
+   "decl": "IsSimpleRing.exists_algEquiv_matrix_divisionRing",
+   "difference": "The declaration treats only a simple Artinian algebra and gives $R \\cong M_n(D)$ without uniqueness. The product form is IsSemisimpleRing.exists_algEquiv_pi_matrix_divisionRing; neither states the converse or the uniqueness."
+  },
+  "proofs": [
+   {
+    "id": "endomorphisms",
+    "name": "Endomorphisms of the regular module",
+    "slogan": "Split $R$ into blocks of isomorphic simple left ideals and compute $R^{op} \\cong \\mathrm{End}_R(R)$ as a product of matrix rings by Schur's lemma.",
+    "scope": "Existence, the converse, uniqueness and the simple Artinian case. The zero ring is the empty product with $k = 0$.",
+    "mechanisms": [
+     "m:homomorphism-kernel",
+     "m:dimension-count"
+    ],
+    "roles": [
+     {
+      "h": "h:semisimple",
+      "why": "Semisimplicity splits the regular module $_RR$ into simple left ideals.",
+      "steps": [
+       "s:decompose"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:simple",
+      "slogan": "Show that a simple Artinian ring is semisimple with one simple type.",
+      "detail": "An Artinian ring has a minimal left ideal $I$. The sum of the left ideals $Ia$, $a \\in R$, is a nonzero two-sided ideal, so it is $R$, and each $Ia$ is zero or isomorphic to $I$. So $_RR$ is a sum of copies of $I$, hence semisimple with $k = 1$.",
+      "uses": []
+     },
+     {
+      "id": "s:decompose",
+      "slogan": "Split $R$ into finitely many simple left ideals and group them by type.",
+      "detail": "Write $_RR = \\bigoplus_\\lambda I_\\lambda$ with [simple](c:is-simple-module) left ideals; the element $1$ has finitely many nonzero components, and they generate $R$, so the sum is finite. Grouping isomorphic summands gives $_RR \\cong S_1^{n_1} \\oplus \\cdots \\oplus S_k^{n_k}$ with pairwise non-isomorphic simple modules $S_i$.",
+      "uses": []
+     },
+     {
+      "id": "s:schur",
+      "slogan": "Compute the maps between simple modules by Schur's lemma.",
+      "detail": "A nonzero map between simple modules has zero kernel and full image, so it is an isomorphism. Hence $E_i = \\mathrm{End}_R(S_i)$ is a [division ring](c:division-ring) and $\\mathrm{Hom}_R(S_i, S_j) = 0$ for $i \\ne j$.",
+      "uses": [
+       "wd:Q1816952"
+      ]
+     },
+     {
+      "id": "s:endo",
+      "slogan": "Identify $R^{op}$ with $\\mathrm{End}_R(R)$ and compute it as a product of matrix rings.",
+      "detail": "Right multiplications give $R^{op} \\cong \\mathrm{End}_R(_RR)$. By step 3 an endomorphism of $\\bigoplus_i S_i^{n_i}$ is a family of $n_i \\times n_i$ matrices over $E_i$, so the [endomorphism ring](c:endomorphism-ring) is $\\prod_i M_{n_i}(E_i)$. Transposition gives $R \\cong \\prod_i M_{n_i}(D_i)$ with $D_i = E_i^{op}$.",
+      "uses": []
+     },
+     {
+      "id": "s:converse",
+      "slogan": "Show that each $M_n(D)$ is semisimple by splitting it into columns.",
+      "detail": "As a left module, $M_n(D)$ is the direct sum of its $n$ columns, each isomorphic to $D^n$, and $D^n$ is simple because matrices move any nonzero vector to any vector. A finite product of semisimple rings is semisimple, since its regular module is the sum of those of the factors.",
+      "uses": []
+     },
+     {
+      "id": "s:unique",
+      "slogan": "Recover $k$, the $n_i$ and the $D_i$ from the simple modules of $R$.",
+      "detail": "For $R \\cong \\prod_i M_{n_i}(D_i)$, step 5 shows that the simple $R$-modules are the column modules $D_i^{n_i}$, pairwise non-isomorphic since different factors annihilate them. So $k$ is the number of simple types, $n_i$ is the multiplicity of the $i$-th type in $_RR$, and $D_i \\cong \\mathrm{End}_R(D_i^{n_i})^{op}$, as in step 4.",
+      "uses": [
+       "wd:Q2226709"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:simple",
+      "s:endo"
+     ],
+     [
+      "s:decompose",
+      "s:endo"
+     ],
+     [
+      "s:schur",
+      "s:endo"
+     ],
+     [
+      "s:endo",
+      "s:unique"
+     ],
+     [
+      "s:converse",
+      "s:unique"
+     ]
+    ],
+    "conclusion": "s:unique",
+    "concepts": {
+     "c:semisimple-ring": "Semisimplicity is the hypothesis that splits the ring into simple left ideals.",
+     "c:division-ring": "Schur's lemma makes the endomorphism rings of simple modules division rings.",
+     "c:artinian-ring": "The Artinian condition gives the minimal left ideal in the simple case.",
+     "c:matrix-ring": "Endomorphisms of $S^n$ are matrices over $\\mathrm{End}(S)$.",
+     "c:is-simple-module": "Simple left ideals are the building blocks of the decomposition.",
+     "c:endomorphism-ring": "The ring is recovered as the opposite of its endomorphism ring."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "IsSimpleRing.exists_algEquiv_matrix_divisionRing",
+     "follows": true,
+     "note": "mathlib uses that a simple Artinian ring is isotypic (IsSimpleRing.isIsotypic), writes $R$ as the opposite of $\\mathrm{End}_R(R)$ (moduleEndSelf), turns $\\mathrm{End}(S^n)$ into matrices (endVecAlgEquivMatrixEnd) and transposes the opposite (mopMatrix); the product form uses isotypicComponents. The converse and uniqueness steps are added here."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:ballot-problem",
+  "statement": "In an election candidate $A$ receives $p$ votes and candidate $B$ receives $q$ votes, with $p > q \\ge 0$. If all orders of counting the $p + q$ ballots are equally likely, then the probability that $A$ is strictly ahead of $B$ throughout the count is $\\frac{p-q}{p+q}$.",
+  "hypotheses": [
+   {
+    "id": "h:votes",
+    "text": "The vote totals satisfy $p > q \\ge 0$.",
+    "concept": null
+   },
+   {
+    "id": "h:uniform",
+    "text": "The counting order has the [uniform distribution](c:uniform-distribution) on the $\\binom{p+q}{q}$ possible orders.",
+    "concept": "c:uniform-distribution"
+   }
+  ],
+  "conclusion": "The probability that $A$ stays strictly ahead during the whole count is $(p-q)/(p+q)$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "reflection",
+    "name": "Reflection of bad orders",
+    "slogan": "Count the bad counting orders by reflecting the part before the first tie, which pairs bad orders that start with $A$ with orders that start with $B$.",
+    "scope": "All $p > q \\ge 0$; for $q = 0$ there are no bad orders and the probability is $1$.",
+    "mechanisms": [
+     "m:bijection",
+     "m:symmetry"
+    ],
+    "roles": [
+     {
+      "h": "h:votes",
+      "why": "With $p > q$ the path ends above $0$, so every path that starts with $B$ meets $0$ again, which the reflection needs.",
+      "steps": [
+       "s:reflect"
+      ]
+     },
+     {
+      "h": "h:uniform",
+      "why": "Equally likely orders turn the probability into a ratio of counts.",
+      "steps": [
+       "s:paths",
+       "s:ratio"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:paths",
+      "slogan": "Encode each counting order as a path of the running vote difference.",
+      "detail": "Record $+1$ for an $A$ ballot and $-1$ for a $B$ ballot; the partial sums form a [random walk](c:random-walk) path from $0$ to $p - q$. There are $\\binom{p+q}{q}$ equally likely paths, and an order is good when every partial sum after the start is positive.",
+      "uses": []
+     },
+     {
+      "id": "s:startb",
+      "slogan": "Count the orders that start with a $B$ ballot.",
+      "detail": "Every order whose first ballot is $B$ is bad, because the first partial sum is $-1$. There are $\\binom{p+q-1}{q-1}$ such orders, a [binomial coefficient](c:binomial-coefficient) that counts the places of the other $q - 1$ ballots for $B$.",
+      "uses": []
+     },
+     {
+      "id": "s:reflect",
+      "slogan": "Reflect a bad path that starts with $A$ up to its first zero.",
+      "detail": "A bad path that starts with $+1$ returns to $0$ at a first time $\\tau$. Negating the steps before $\\tau$ gives a path that starts with $-1$ and has the same end. This is a bijection onto the paths that start with $-1$, because each of them must cross $0$ before it reaches $p - q > 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:ratio",
+      "slogan": "Subtract the bad orders and divide by the total.",
+      "detail": "The bad orders number $2\\binom{p+q-1}{q-1}$, and $\\binom{p+q-1}{q-1} = \\frac{q}{p+q}\\binom{p+q}{q}$. So the probability of a good order is $1 - \\frac{2q}{p+q} = \\frac{p-q}{p+q}$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:paths",
+      "s:startb"
+     ],
+     [
+      "s:paths",
+      "s:reflect"
+     ],
+     [
+      "s:startb",
+      "s:ratio"
+     ],
+     [
+      "s:reflect",
+      "s:ratio"
+     ]
+    ],
+    "conclusion": "s:ratio",
+    "concepts": {
+     "c:uniform-distribution": "Uniformity makes the probability a ratio of path counts.",
+     "c:random-walk": "The vote difference is a walk, and a good order keeps it positive.",
+     "c:binomial-coefficient": "Paths with fixed numbers of steps are counted by binomial coefficients."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The reflection argument usually credited to D. André (1887); see W. Feller, An Introduction to Probability Theory and Its Applications, Vol. 1, Chapter III."
+    }
+   },
+   {
+    "id": "last-ballot",
+    "name": "Induction on the last ballot",
+    "slogan": "Condition on the last ballot counted and check that $(p-q)/(p+q)$ satisfies the resulting recursion.",
+    "scope": "Induction on $p + q$ over all pairs $p \\ge q \\ge 0$ with $p + q \\ge 1$, where the case $p = q$ has probability $0$ and agrees with the formula.",
+    "mechanisms": [
+     "m:induction",
+     "m:case-analysis"
+    ],
+    "roles": [
+     {
+      "h": "h:votes",
+      "why": "The final margin $p - q > 0$ makes the last partial sum positive, so only the earlier count matters.",
+      "steps": [
+       "s:condition"
+      ]
+     },
+     {
+      "h": "h:uniform",
+      "why": "Under the uniform order the last ballot is for $A$ with probability $p/(p+q)$, and the earlier ballots stay uniform.",
+      "steps": [
+       "s:condition"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:base",
+      "slogan": "Check the formula in the boundary cases $q = 0$ and $p = q$.",
+      "detail": "If $q = 0$, $A$ is always ahead, and $(p-0)/(p+0) = 1$. If $p = q$, the count ends in a tie, so $A$ is not strictly ahead throughout, and the formula gives $0$.",
+      "uses": []
+     },
+     {
+      "id": "s:condition",
+      "slogan": "Condition on the last ballot to get a recursion for the probability $P(p,q)$.",
+      "detail": "The last ballot is for $A$ with [conditional probability](c:conditional-probability) $p/(p+q)$, and given that, the first $p+q-1$ ballots form a uniform order of $p - 1$ and $q$ votes. Since the final margin is positive, $A$ stays ahead exactly when $A$ stays ahead in that shorter count. So $P(p,q) = \\frac{p}{p+q}P(p-1,q) + \\frac{q}{p+q}P(p,q-1)$.",
+      "uses": []
+     },
+     {
+      "id": "s:verify",
+      "slogan": "Verify that $(p-q)/(p+q)$ satisfies the recursion and close the induction.",
+      "detail": "With the induction hypothesis, the right side is $\\frac{p}{p+q}\\cdot\\frac{p-1-q}{p+q-1} + \\frac{q}{p+q}\\cdot\\frac{p-q+1}{p+q-1} = \\frac{(p-q)(p+q-1)}{(p+q)(p+q-1)} = \\frac{p-q}{p+q}$. The base cases of step 1 start the induction.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:base",
+      "s:verify"
+     ],
+     [
+      "s:condition",
+      "s:verify"
+     ]
+    ],
+    "conclusion": "s:verify",
+    "concepts": {
+     "c:uniform-distribution": "Uniformity is kept when the last ballot is removed.",
+     "c:conditional-probability": "Conditioning on the last ballot splits the probability into two cases."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard induction on the number of ballots, by conditioning on the last ballot counted."
+    }
+   }
+  ]
+ }
+]

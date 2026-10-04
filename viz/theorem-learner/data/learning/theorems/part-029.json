@@ -1,0 +1,2036 @@
+[
+ {
+  "id": "nm:sturm-bound-for-level-1-modular-forms",
+  "statement": "Let $f = \\sum_{n \\ge 0} a_n q^n$ be the [q-expansion](c:q-expansion) of a [modular form](c:modular-form) $f$ of integer weight $k$ for $SL_2(\\mathbb{Z})$. If $a_n = 0$ for every $n \\le \\lfloor k/12 \\rfloor$, then $f = 0$.",
+  "hypotheses": [
+   {
+    "id": "h:modular",
+    "text": "The function $f$ is a [modular form](c:modular-form) of weight $k \\in \\mathbb{Z}$ for $SL_2(\\mathbb{Z})$.",
+    "concept": "c:modular-form"
+   },
+   {
+    "id": "h:vanish",
+    "text": "The [q-expansion](c:q-expansion) coefficients satisfy $a_n = 0$ for all integers $0 \\le n \\le \\lfloor k/12 \\rfloor$.",
+    "concept": "c:q-expansion"
+   }
+  ],
+  "conclusion": "The form $f$ is identically zero.",
+  "formal": {
+   "decl": "ModularForm.sturm_bound_levelOne",
+   "difference": "The declaration bounds the order by $\\lfloor \\max(k, 0)/12 \\rfloor$, so for negative $k$ it also assumes $a_0 = 0$. For $k \\ge 0$ it states the same."
+  },
+  "proofs": [
+   {
+    "id": "discriminant-induction",
+    "name": "Division by the discriminant",
+    "slogan": "Divide by the discriminant $\\Delta$, which lowers the weight by $12$ and the order of vanishing by $1$, and induct down to negative weight.",
+    "scope": "The whole theorem. Negative weights are the base case, where every form is zero; weights $0 \\le k < 12$ reach it after one division.",
+    "mechanisms": [
+     "m:strong-induction",
+     "m:maximum-principle"
+    ],
+    "roles": [
+     {
+      "h": "h:modular",
+      "why": "Modularity gives the invariance behind the maximum argument and makes $f/\\Delta$ modular of weight $k - 12$.",
+      "steps": [
+       "s:negative",
+       "s:divide"
+      ]
+     },
+     {
+      "h": "h:vanish",
+      "why": "The vanishing of $a_0$ makes $f$ a [cusp form](c:cusp-form), and the other zero coefficients pass to $f/\\Delta$.",
+      "steps": [
+       "s:cusp",
+       "s:order"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:negative",
+      "slogan": "Show by the maximum modulus principle that every form of negative weight is zero.",
+      "detail": "For $k \\le 0$, each $z$ has an $SL_2(\\mathbb{Z})$-translate $\\xi$ with $\\operatorname{Im}\\xi \\ge 1/2$ and $|f(z)| \\le |f(\\xi)|$, so $|f|$, read as a function of $q$ on the unit disc, attains its maximum. So $f$ is constant, and $f(-1/z) = z^k f(z)$ forces the constant to be $0$ when $k < 0$.",
+      "uses": [
+       "nm:maximum-modulus-principle"
+      ]
+     },
+     {
+      "id": "s:cusp",
+      "slogan": "Read off $a_0 = 0$, so that $f$ is a [cusp form](c:cusp-form).",
+      "detail": "For $k \\ge 0$ the bound $\\lfloor k/12 \\rfloor \\ge 0$ includes $n = 0$, so the constant term vanishes. Then $f(z) \\to 0$ as $\\operatorname{Im} z \\to \\infty$, which defines a cusp form.",
+      "uses": []
+     },
+     {
+      "id": "s:divide",
+      "slogan": "Divide the cusp form by the discriminant $\\Delta$ to get a form $g$ of weight $k - 12$.",
+      "detail": "The discriminant $\\Delta = q\\prod_{n \\ge 1}(1 - q^n)^{24}$ is a cusp form of weight $12$ with no zeros on the upper half-plane. So $g = f/\\Delta$ is holomorphic with weight $k - 12$, and it stays bounded at the cusp because $f$ vanishes there at least to the order $1$ of $\\Delta$.",
+      "uses": []
+     },
+     {
+      "id": "s:order",
+      "slogan": "Compare [q-expansions](c:q-expansion) to get $\\operatorname{ord}(g) = \\operatorname{ord}(f) - 1$.",
+      "detail": "The expansion of $\\Delta$ starts with $q$, so $f = \\Delta g$ gives $\\operatorname{ord}(f) = 1 + \\operatorname{ord}(g)$. Hence the coefficients of $g$ vanish for all $n \\le \\lfloor k/12 \\rfloor - 1 = \\lfloor (k - 12)/12 \\rfloor$.",
+      "uses": []
+     },
+     {
+      "id": "s:induct",
+      "slogan": "Induct on the weight to get $g = 0$, and hence $f = \\Delta g = 0$.",
+      "detail": "For $k < 0$, step 1 gives $f = 0$ directly. For $0 \\le k < 12$ the weight $k - 12$ is negative, so step 1 gives $g = 0$; for $k \\ge 12$ the strong induction hypothesis at weight $k - 12$ gives $g = 0$.",
+      "uses": [
+       "nm:sturm-bound-for-level-1-modular-forms-natural-weight"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:cusp",
+      "s:divide"
+     ],
+     [
+      "s:divide",
+      "s:order"
+     ],
+     [
+      "s:order",
+      "s:induct"
+     ],
+     [
+      "s:divide",
+      "s:induct"
+     ],
+     [
+      "s:negative",
+      "s:induct"
+     ]
+    ],
+    "conclusion": "s:induct",
+    "concepts": {
+     "c:modular-form": "The theorem bounds how many coefficients determine a modular form.",
+     "c:q-expansion": "The order of the q-expansion is the quantity that each division lowers.",
+     "c:cusp-form": "Only a cusp form can be divided by $\\Delta$ and stay holomorphic at the cusp."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "ModularForm.sturm_bound_levelOne",
+     "follows": true,
+     "note": "mathlib splits off negative weight with levelOne_neg_weight_rank_zero and runs strong induction in sturm_bound_levelOne_nat, using CuspForm.discriminantEquiv and discriminant_qExpansion_order."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q3983968",
+  "statement": "Let $p_1, p_2, q_1, q_2$ be continuous on $[a, b]$ with $0 < p_2 \\le p_1$ and $q_1 \\le q_2$. Let $u \\ne 0$ solve the [second-order linear equation](c:second-order-linear-ode) $(p_1 y')' + q_1 y = 0$ with zeros $z_1 < z_2$, and $v \\ne 0$ solve $(p_2 y')' + q_2 y = 0$. Then $v$ vanishes in $(z_1, z_2)$, or $v = \\lambda u$ on $[z_1, z_2]$.",
+  "hypotheses": [
+   {
+    "id": "h:coefficients",
+    "text": "The functions $p_1, p_2, q_1, q_2$ are continuous on $[a, b]$ and $p_2 > 0$.",
+    "concept": null
+   },
+   {
+    "id": "h:comparison",
+    "text": "The coefficients satisfy $p_2 \\le p_1$ and $q_1 \\le q_2$ on $[a, b]$.",
+    "concept": null
+   },
+   {
+    "id": "h:u",
+    "text": "The function $u \\ne 0$ solves the [Sturm-Liouville](c:sturm-liouville-problem) equation $(p_1 y')' + q_1 y = 0$, and $u(z_1) = u(z_2) = 0$ with $z_1 < z_2$.",
+    "concept": "c:second-order-linear-ode"
+   },
+   {
+    "id": "h:v",
+    "text": "The function $v \\ne 0$ solves $(p_2 y')' + q_2 y = 0$.",
+    "concept": "c:second-order-linear-ode"
+   }
+  ],
+  "conclusion": "Either $v(x) = 0$ for some $x \\in (z_1, z_2)$, or $v = \\lambda u$ on $[z_1, z_2]$ for some constant $\\lambda$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "picone-identity",
+    "name": "Picone identity",
+    "slogan": "Assume that $v$ has no zero inside, integrate Picone's identity over $[z_1, z_2]$, and read off that every nonnegative term vanishes.",
+    "scope": "The whole theorem; if $v$ vanishes in $(z_1, z_2)$ there is nothing to prove. A zero of $v$ at $z_1$ or $z_2$ is handled by a limit in step 3.",
+    "mechanisms": [
+     "m:fundamental-theorem-calculus",
+     "m:algebraic-identity",
+     "m:case-analysis"
+    ],
+    "roles": [
+     {
+      "h": "h:coefficients",
+      "why": "Continuity and $p_2 > 0$ give uniqueness for both equations, so zeros are simple, and they let the last Picone term force $(u/v)' = 0$.",
+      "steps": [
+       "s:simple",
+       "s:vanish"
+      ]
+     },
+     {
+      "h": "h:comparison",
+      "why": "The inequalities make the first two terms of the Picone derivative nonnegative.",
+      "steps": [
+       "s:identity"
+      ]
+     },
+     {
+      "h": "h:u",
+      "why": "The equation for $u$ enters the derivative, and the zeros of $u$ kill the boundary terms.",
+      "steps": [
+       "s:identity",
+       "s:boundary"
+      ]
+     },
+     {
+      "h": "h:v",
+      "why": "The equation for $v$ enters the derivative, and $v \\ne 0$ inside allows the division by $v$.",
+      "steps": [
+       "s:identity",
+       "s:boundary"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:simple",
+      "slogan": "Show that nontrivial solutions of both equations have only simple zeros.",
+      "detail": "Each equation is a linear first-order system for $(y, p_i y')$ with continuous coefficients $1/p_i$ and $q_i$, since $p_1 \\ge p_2 > 0$. If $y(z) = y'(z) = 0$, uniqueness of solutions gives $y \\equiv 0$.",
+      "uses": [
+       "wd:Q530152"
+      ]
+     },
+     {
+      "id": "s:identity",
+      "slogan": "Differentiate the Picone function $\\frac{u}{v}(p_1 u' v - p_2 u v')$ where $v \\ne 0$.",
+      "detail": "Assume $v \\ne 0$ on $(z_1, z_2)$; the bracket is a weighted [Wronskian](c:wronskian) of $u$ and $v$. With $(p_1 u')' = -q_1 u$ and $(p_2 v')' = -q_2 v$, the derivative is $(q_2 - q_1) u^2 + (p_1 - p_2) u'^2 + p_2 (u' - u v'/v)^2 \\ge 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:boundary",
+      "slogan": "Show that the Picone function tends to $0$ at both ends $z_1$ and $z_2$.",
+      "detail": "The function equals $p_1 u u' - p_2 u^2 v'/v$, and $u(z_i) = 0$. If $v(z_i) \\ne 0$ the limit is $0$ at once; if $v(z_i) = 0$, both zeros are simple, so $u/v \\to u'(z_i)/v'(z_i)$ and $p_2 u (u/v) v' \\to 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:integrate",
+      "slogan": "Integrate the nonnegative derivative over $(z_1, z_2)$ to get the integral $0$.",
+      "detail": "By the fundamental theorem of calculus, the integral over $[z_1 + \\epsilon, z_2 - \\epsilon]$ is the difference of the end values, which tends to $0$ by step 3. A continuous nonnegative function with integral $0$ is zero, so all three terms vanish on $(z_1, z_2)$.",
+      "uses": [
+       "wd:Q1217677"
+      ]
+     },
+     {
+      "id": "s:vanish",
+      "slogan": "Deduce $(u/v)' = 0$ and hence $v = \\lambda u$ on $[z_1, z_2]$.",
+      "detail": "Since $p_2 > 0$, the last term gives $u' v - u v' = 0$, so $u = c v$ on $(z_1, z_2)$. If $c = 0$, then $u$ vanishes on an interval, against step 1; so $v = \\lambda u$ with $\\lambda = 1/c$, and continuity extends this to $[z_1, z_2]$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:identity",
+      "s:boundary"
+     ],
+     [
+      "s:simple",
+      "s:boundary"
+     ],
+     [
+      "s:identity",
+      "s:integrate"
+     ],
+     [
+      "s:boundary",
+      "s:integrate"
+     ],
+     [
+      "s:integrate",
+      "s:vanish"
+     ],
+     [
+      "s:simple",
+      "s:vanish"
+     ]
+    ],
+    "conclusion": "s:vanish",
+    "concepts": {
+     "c:second-order-linear-ode": "Both equations are linear of second order, so their solutions have simple zeros.",
+     "c:sturm-liouville-problem": "The self-adjoint form $(p y')' + q y$ makes the cross terms cancel in Picone's identity.",
+     "c:wronskian": "The Picone bracket is a weighted Wronskian that compares the two solutions."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Picone's identity (M. Picone, 1910), as in C. A. Swanson, Comparison and Oscillation Theory of Linear Differential Equations, Academic Press, 1968, chapter 1."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:whitney-weak-embedding-theorem",
+  "statement": "Every [compact](c:compact-manifold) Hausdorff [smooth manifold](c:smooth-manifold) $M$ admits, for some $n$, a smooth injective [immersion](c:immersion) $e\\colon M \\to \\mathbb{R}^n$, and such an $e$ is a [smooth embedding](c:is-smooth-embedding).",
+  "hypotheses": [
+   {
+    "id": "h:smooth",
+    "text": "The space $M$ is a finite-dimensional [smooth manifold](c:smooth-manifold).",
+    "concept": "c:smooth-manifold"
+   },
+   {
+    "id": "h:hausdorff",
+    "text": "The space $M$ is a [Hausdorff space](c:hausdorff-space).",
+    "concept": "c:hausdorff-space"
+   },
+   {
+    "id": "h:compact",
+    "text": "The manifold $M$ is [compact](c:compact-manifold).",
+    "concept": "c:compact-manifold"
+   }
+  ],
+  "conclusion": "There are $n$ and a smooth injective immersion $e\\colon M \\to \\mathbb{R}^n$ that is a homeomorphism onto its image.",
+  "formal": {
+   "decl": "SmoothBumpCovering.exists_immersion_euclidean",
+   "difference": "The declaration assumes a finite smooth bump covering of $M$, which compactness supplies. It does not state that $e$ is a homeomorphism onto its image."
+  },
+  "proofs": [
+   {
+    "id": "bump-charts",
+    "name": "Charts cut off by bump functions",
+    "slogan": "Cover $M$ by finitely many charts with bump functions, and record each chart times its bump together with the bump itself.",
+    "scope": "The whole theorem; an empty $M$ is trivial. The construction gives $n = N(d + 1)$ for $N$ charts on a manifold of dimension $d$.",
+    "mechanisms": [
+     "m:finite-subcover",
+     "m:construction-explicit",
+     "m:local-to-global"
+    ],
+    "roles": [
+     {
+      "h": "h:smooth",
+      "why": "Smooth charts and smooth [bump functions](c:bump-function) exist on a finite-dimensional manifold.",
+      "steps": [
+       "s:cover",
+       "s:map",
+       "s:immersion"
+      ]
+     },
+     {
+      "h": "h:hausdorff",
+      "why": "Hausdorffness makes the bump supports closed, so the cut-off charts extend by zero, and makes compact images closed.",
+      "steps": [
+       "s:map",
+       "s:embedding"
+      ]
+     },
+     {
+      "h": "h:compact",
+      "why": "Compactness leaves finitely many charts and makes $e$ a closed map.",
+      "steps": [
+       "s:cover",
+       "s:embedding"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:cover",
+      "slogan": "Choose finitely many charts $\\varphi_i$ with [bump functions](c:bump-function) $\\rho_i$ that equal $1$ near each point.",
+      "detail": "For each $x$ pick a chart around $x$ and a smooth bump supported in the chart domain that equals $1$ on a neighborhood of $x$. These neighborhoods cover $M$, so finitely many bumps $\\rho_1, \\dots, \\rho_N$ suffice.",
+      "uses": []
+     },
+     {
+      "id": "s:map",
+      "slogan": "Define $e(x) = (\\rho_i(x)\\varphi_i(x), \\rho_i(x))_{i \\le N}$ in $(\\mathbb{R}^d \\times \\mathbb{R})^N$.",
+      "detail": "Each $\\rho_i \\varphi_i$ is smooth on the chart domain and zero outside the closed support of $\\rho_i$, so it is smooth on $M$. Hence $e$ is a smooth map into $\\mathbb{R}^{N(d + 1)}$.",
+      "uses": []
+     },
+     {
+      "id": "s:injective",
+      "slogan": "Show that $e$ is injective through a chart whose bump equals $1$.",
+      "detail": "Let $e(x) = e(y)$ and choose $i$ with $\\rho_i(x) = 1$. Then $\\rho_i(y) = 1$, so $y$ lies in the chart domain and $\\varphi_i(x) = \\varphi_i(y)$; the chart is an [injection](c:injection), so $x = y$.",
+      "uses": []
+     },
+     {
+      "id": "s:immersion",
+      "slogan": "Show that $de_x$ is injective because one block of $e$ equals a chart near $x$.",
+      "detail": "Near $x$ some $\\rho_i$ equals $1$, so the $i$-th $\\mathbb{R}^d$-block of $e$ equals $\\varphi_i$ there. The [differential](c:differential) of a chart is an isomorphism, so $de_x$ followed by the projection to this block is injective, and so is $de_x$.",
+      "uses": []
+     },
+     {
+      "id": "s:embedding",
+      "slogan": "Show that the injective map on the compact space is a homeomorphism onto its image.",
+      "detail": "A closed subset of the compact $M$ is compact, so its image is compact and hence closed in the Hausdorff space $\\mathbb{R}^n$. So $e$ is a closed continuous bijection onto $e(M)$, hence a homeomorphism, and with step 4 a [smooth embedding](c:is-smooth-embedding).",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:cover",
+      "s:map"
+     ],
+     [
+      "s:map",
+      "s:injective"
+     ],
+     [
+      "s:cover",
+      "s:injective"
+     ],
+     [
+      "s:map",
+      "s:immersion"
+     ],
+     [
+      "s:cover",
+      "s:immersion"
+     ],
+     [
+      "s:injective",
+      "s:embedding"
+     ],
+     [
+      "s:immersion",
+      "s:embedding"
+     ]
+    ],
+    "conclusion": "s:embedding",
+    "concepts": {
+     "c:smooth-manifold": "Charts and smooth bump functions come from the smooth structure.",
+     "c:compact-manifold": "Compactness reduces the bump cover to finitely many charts.",
+     "c:hausdorff-space": "Hausdorffness keeps bump supports closed and compact images closed.",
+     "c:immersion": "The map must have an injective differential at every point.",
+     "c:is-smooth-embedding": "The goal is an injective immersion that is a homeomorphism onto its image.",
+     "c:bump-function": "Bump functions cut each chart off so that it extends to all of $M$.",
+     "c:injection": "Injectivity of each chart gives injectivity of $e$.",
+     "c:differential": "The differential of $e$ contains the differential of a chart as a block."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "SmoothBumpCovering.exists_immersion_euclidean",
+     "follows": true,
+     "note": "mathlib builds embeddingPiTangent, proves embeddingPiTangent_injective and embeddingPiTangent_injective_mfderiv, and moves to Euclidean space by ContinuousLinearEquiv.ofFinrankEq; step 5 is not part of the declaration."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q3527279",
+  "statement": "Let $f \\in L^1(\\mathbb{R})$. The linear span of the [translates](c:translation) $x \\mapsto f(x - a)$, $a \\in \\mathbb{R}$, is [dense](c:dense-subspace) in the [L1 space](c:l1-space) $L^1(\\mathbb{R})$ if and only if the [Fourier transform](c:fourier-transform) $\\hat f(\\xi)$ is nonzero for every $\\xi \\in \\mathbb{R}$.",
+  "hypotheses": [
+   {
+    "id": "h:integrable",
+    "text": "The function $f$ is integrable on $\\mathbb{R}$, that is $f \\in L^1(\\mathbb{R})$.",
+    "concept": "c:l1-space"
+   }
+  ],
+  "conclusion": "The translates of $f$ span a dense subspace of $L^1(\\mathbb{R})$ exactly when $\\hat f$ has no real zero.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "local-inverses",
+    "name": "Local inverses and closed ideals",
+    "slogan": "The closed span of the translates is a closed ideal; local inverses of $\\hat f$ put every function with compactly supported transform in it, and such functions are dense.",
+    "scope": "An outline of the published proof for $L^1(\\mathbb{R})$; the local inversion of step 3 rests on the cited work. The $L^2$ form, with $\\hat f \\ne 0$ almost everywhere, is a different statement.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:characteristic-function",
+     "m:local-to-global",
+     "m:approximation"
+    ],
+    "roles": [
+     {
+      "h": "h:integrable",
+      "why": "Integrability makes $\\hat f$ continuous and puts $f$ in the convolution [Banach algebra](c:banach-algebra) $L^1(\\mathbb{R})$.",
+      "steps": [
+       "s:necessary",
+       "s:ideal",
+       "s:local"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:necessary",
+      "slogan": "Show necessity: a real zero of $\\hat f$ gives a functional that kills every translate.",
+      "detail": "If $\\hat f(\\xi_0) = 0$, then $\\Lambda(g) = \\hat g(\\xi_0)$ is a nonzero bounded linear functional on $L^1$. The translate $f(\\cdot - a)$ has transform $e^{-ia\\xi}\\hat f(\\xi)$, so $\\Lambda$ vanishes on the span and on its closure, which is therefore not all of $L^1$.",
+      "uses": []
+     },
+     {
+      "id": "s:ideal",
+      "slogan": "Show that the closed span $I$ of the translates is a closed [ideal](c:ideal) under [convolution](c:convolution).",
+      "detail": "For $g \\in L^1$ and $h \\in I$, $g * h = \\int g(a)\\, h(\\cdot - a)\\, da$ is an $L^1$-limit of combinations of translates of $h$, because $a \\mapsto h(\\cdot - a)$ is continuous into $L^1$. So $g * h \\in I$.",
+      "uses": []
+     },
+     {
+      "id": "s:local",
+      "slogan": "Invert $\\hat f$ near each point by Wiener's local inversion lemma.",
+      "detail": "Since $\\hat f(\\xi_0) \\ne 0$, the cited work gives $g \\in L^1$ with $\\hat g\\,\\hat f = 1$ on a neighborhood of $\\xi_0$. It writes $\\hat f$ near $\\xi_0$ as a small perturbation of a constant and sums a geometric series in $L^1$.",
+      "uses": []
+     },
+     {
+      "id": "s:compact",
+      "slogan": "Put every $h$ whose transform has compact support into $I$.",
+      "detail": "Cover $\\operatorname{supp}\\hat h$ by finitely many such neighborhoods and take $k_j \\in L^1$ whose transforms form a [partition of unity](c:partition-of-unity) on it. Then $\\hat h = \\sum_j \\hat h\\,\\hat k_j\\,\\hat g_j\\,\\hat f$, so $h = \\sum_j h * k_j * g_j * f$ lies in $I$.",
+      "uses": [
+       "wd:Q2638931",
+       "wd:Q3984053"
+      ]
+     },
+     {
+      "id": "s:dense",
+      "slogan": "Approximate every $L^1$ function by Fejér means and conclude $I = L^1(\\mathbb{R})$.",
+      "detail": "The Fejér kernels $K_n$ have compactly supported transforms and form an approximate identity, so $h * K_n \\to h$ in $L^1$, and each $h * K_n$ lies in $I$ by step 4. So $I$ is dense and closed, hence $I = L^1$; with step 1 this proves the equivalence.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:ideal",
+      "s:compact"
+     ],
+     [
+      "s:local",
+      "s:compact"
+     ],
+     [
+      "s:compact",
+      "s:dense"
+     ],
+     [
+      "s:necessary",
+      "s:dense"
+     ]
+    ],
+    "conclusion": "s:dense",
+    "concepts": {
+     "c:translation": "The theorem asks when translates of one function approximate everything.",
+     "c:dense-subspace": "Density of the span is the property that the theorem characterizes.",
+     "c:l1-space": "The whole argument takes place in the space $L^1(\\mathbb{R})$.",
+     "c:fourier-transform": "Zeros of the Fourier transform decide density.",
+     "c:banach-algebra": "Under convolution, $L^1(\\mathbb{R})$ is a Banach algebra whose closed ideals are the invariant subspaces.",
+     "c:ideal": "The closed span of translates is a closed convolution ideal.",
+     "c:convolution": "Convolution turns into multiplication of Fourier transforms.",
+     "c:partition-of-unity": "A partition of unity on the Fourier side glues the local inverses."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "N. Wiener, Tauberian theorems, Annals of Mathematics 33 (1932), 1-100",
+     "url": "https://doi.org/10.2307/1968102",
+     "note": "The outline is the standard local-inversion route, also given in W. Rudin, Functional Analysis, chapter 9."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q4695203",
+  "statement": "Let $f_1, \\dots, f_4$ map a [distributive lattice](c:distributive-lattice) $L$ to $[0, \\infty)$, with $f_1(a) f_2(b) \\le f_3(a \\wedge b) f_4(a \\vee b)$ for all $a, b$. Then $f_1(A) f_2(B) \\le f_3(A \\wedge B) f_4(A \\vee B)$ for finite $A, B \\subseteq L$, where $f(X) = \\sum_{x \\in X} f(x)$ and $A \\wedge B$, $A \\vee B$ hold the meets and joins.",
+  "hypotheses": [
+   {
+    "id": "h:distributive",
+    "text": "The lattice $L$ is a [distributive lattice](c:distributive-lattice).",
+    "concept": "c:distributive-lattice"
+   },
+   {
+    "id": "h:nonnegative",
+    "text": "The four functions take values in $[0, \\infty)$.",
+    "concept": null
+   },
+   {
+    "id": "h:pointwise",
+    "text": "The inequality $f_1(a) f_2(b) \\le f_3(a \\wedge b) f_4(a \\vee b)$ holds for all $a, b \\in L$.",
+    "concept": null
+   },
+   {
+    "id": "h:finite",
+    "text": "The sets $A$ and $B$ are [finite](c:finite-set) subsets of $L$.",
+    "concept": "c:finite-set"
+   }
+  ],
+  "conclusion": "The sums satisfy $f_1(A) f_2(B) \\le f_3(A \\wedge B)\\, f_4(A \\vee B)$.",
+  "formal": {
+   "decl": "four_functions_theorem",
+   "difference": "The declaration allows values in any linearly ordered commutative semiring with the property ExistsAddOfLE, such as $\\mathbb{N}$ or $\\mathbb{R}$. For real values it states the same."
+  },
+  "proofs": [
+   {
+    "id": "birkhoff-collapse",
+    "name": "Birkhoff reduction and collapse",
+    "slogan": "Embed the finite lattice in a power set and prove the power set case by induction on the ground set, collapsing one element at a time.",
+    "scope": "The whole theorem. An empty $A$ or $B$ makes the left side $0$; the collapse step rests on the case of a two-element lattice.",
+    "mechanisms": [
+     "m:induction",
+     "m:algebraic-identity",
+     "m:case-analysis"
+    ],
+    "roles": [
+     {
+      "h": "h:distributive",
+      "why": "Distributivity makes the generated sublattice finite and lets Birkhoff's theorem embed it in a power set.",
+      "steps": [
+       "s:sublattice",
+       "s:birkhoff"
+      ]
+     },
+     {
+      "h": "h:nonnegative",
+      "why": "Nonnegativity keeps the hypothesis after extension by zero and drives the two-point inequality.",
+      "steps": [
+       "s:birkhoff",
+       "s:two-point"
+      ]
+     },
+     {
+      "h": "h:pointwise",
+      "why": "The pointwise inequality supplies the four inequalities of each collapse step.",
+      "steps": [
+       "s:birkhoff",
+       "s:collapse"
+      ]
+     },
+     {
+      "h": "h:finite",
+      "why": "Finite sets $A$ and $B$ generate a finite sublattice.",
+      "steps": [
+       "s:sublattice"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:sublattice",
+      "slogan": "Restrict to the finite [sublattice](c:is-sublattice) generated by $A \\cup B$.",
+      "detail": "In a distributive lattice every element generated by finitely many elements is a join of meets of them, so the generated sublattice is finite. It contains $A \\wedge B$ and $A \\vee B$, so the claim does not change.",
+      "uses": []
+     },
+     {
+      "id": "s:birkhoff",
+      "slogan": "Embed the finite lattice into a [power set](c:power-set) and extend the functions by zero.",
+      "detail": "Birkhoff's representation theorem gives an injective [lattice homomorphism](c:lattice-hom) into the subsets of a finite set $U$. Extend each $f_i$ by $0$ off the image; the hypothesis still holds, since the left side is $0$ off the image and the embedding keeps meets and joins.",
+      "uses": [
+       "wd:Q17005116"
+      ]
+     },
+     {
+      "id": "s:two-point",
+      "slogan": "Prove $(a_0 + a_1)(b_0 + b_1) \\le (c_0 + c_1)(d_0 + d_1)$ from four product inequalities.",
+      "detail": "With all numbers $\\ge 0$, $a_0 b_0 \\le c_0 d_0$, $a_1 b_1 \\le c_1 d_1$ and $a_0 b_1, a_1 b_0 \\le c_0 d_1$, only cross terms need care. For $c_0 d_1 > 0$, $(c_0 d_1 - a_0 b_1)(c_0 d_1 - a_1 b_0) \\ge 0$ and $a_0 b_0 a_1 b_1 \\le c_0 d_0 c_1 d_1$ give $a_0 b_1 + a_1 b_0 \\le c_0 d_1 + c_1 d_0$.",
+      "uses": []
+     },
+     {
+      "id": "s:collapse",
+      "slogan": "Collapse one element $u$ of the ground set and check the hypothesis for the collapsed functions.",
+      "detail": "For $S \\subseteq U \\setminus \\{u\\}$ let $F_1(S)$ sum $f_1(T)$ over $T \\in A$ with $T \\setminus \\{u\\} = S$, and form $F_2, F_3, F_4$ from $B$, $A \\wedge B$, $A \\vee B$ alike. The hypothesis at $S, S \\cup \\{u\\}, S', S' \\cup \\{u\\}$ gives the inputs of step 3, so $F_1(S) F_2(S') \\le F_3(S \\cap S') F_4(S \\cup S')$.",
+      "uses": []
+     },
+     {
+      "id": "s:induction",
+      "slogan": "Induct on the size of the ground set to prove the power set case.",
+      "detail": "For $U = \\emptyset$ the claim is the hypothesis at $\\emptyset$ or reads $0 \\le$ a nonnegative number. In the step, the induction hypothesis for $F_1, \\dots, F_4$ gives the claim, since $\\sum_S F_1(S) = f_1(A)$ and likewise for the other sums; applied to the functions of step 2, this proves the theorem.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:sublattice",
+      "s:birkhoff"
+     ],
+     [
+      "s:birkhoff",
+      "s:induction"
+     ],
+     [
+      "s:two-point",
+      "s:collapse"
+     ],
+     [
+      "s:collapse",
+      "s:induction"
+     ]
+    ],
+    "conclusion": "s:induction",
+    "concepts": {
+     "c:distributive-lattice": "Distributivity is exactly what Birkhoff's representation needs.",
+     "c:finite-set": "Finite sums and a finite generated sublattice need finite sets.",
+     "c:is-sublattice": "The sublattice generated by $A \\cup B$ holds every set in the claim.",
+     "c:power-set": "In a power set lattice the induction removes one element at a time.",
+     "c:lattice-hom": "The embedding keeps meets and joins, so the hypothesis transfers."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "four_functions_theorem",
+     "follows": true,
+     "note": "mathlib passes to the latticeClosure of s and t, applies exists_birkhoff_representation, and proves Finset.four_functions_theorem by Finset.induction with collapse, collapse_modular and the two-point lemma ineq."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:arden-s-lemma",
+  "statement": "Let $L, M, N$ be [formal languages](c:language) over an alphabet, and let the empty [word](c:word) $\\varepsilon$ not lie in $M$. Then $L = ML \\cup N$ if and only if $L = M^*N$, where $M^*$ is the [Kleene star](c:kleene-star) of $M$.",
+  "hypotheses": [
+   {
+    "id": "h:no-empty",
+    "text": "The empty word $\\varepsilon$ is not an element of $M$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The equation $L = ML \\cup N$ holds exactly when $L = M^*N$, so $M^*N$ is its unique solution.",
+  "formal": {
+   "decl": "Language.self_eq_mul_add_iff",
+   "difference": null
+  },
+  "proofs": [
+   {
+    "id": "length-induction",
+    "name": "Induction on word length",
+    "slogan": "Show that $M^*N$ solves the equation, then squeeze any solution between $M^*N$ from below by powers of $M$ and from above by induction on word length.",
+    "scope": "Both directions. Only the inclusion $L \\subseteq M^*N$ uses $\\varepsilon \\notin M$; without it, $L = \\Sigma^*$ also solves $L = \\{\\varepsilon\\}L \\cup N$.",
+    "mechanisms": [
+     "m:strong-induction",
+     "m:induction",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:no-empty",
+      "why": "Every word of $M$ has length at least $1$, so the remaining suffix in $L$ is strictly shorter.",
+      "steps": [
+       "s:upper"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:solves",
+      "slogan": "Check that $M^*N$ solves the equation by unfolding $M^* = \\{\\varepsilon\\} \\cup MM^*$.",
+      "detail": "Concatenation distributes over union, so $M(M^*N) \\cup N = (MM^* \\cup \\{\\varepsilon\\})N = M^*N$. This gives the direction from $L = M^*N$ to $L = ML \\cup N$.",
+      "uses": []
+     },
+     {
+      "id": "s:powers",
+      "slogan": "Show $M^iN \\subseteq L$ for every $i$ by induction on $i$.",
+      "detail": "Assume $L = ML \\cup N$. Then $M^0N = N \\subseteq L$, and $M^iN \\subseteq L$ gives $M^{i+1}N = M(M^iN) \\subseteq ML \\subseteq L$. The union over $i$ gives $M^*N \\subseteq L$, since the [Kleene star](c:kleene-star) is $\\bigcup_i M^i$.",
+      "uses": []
+     },
+     {
+      "id": "s:upper",
+      "slogan": "Show $L \\subseteq M^*N$ by strong induction on the length of a [word](c:word).",
+      "detail": "Let $x \\in L$. If $x \\in N$, then $x \\in M^*N$; otherwise $x = yz$ with $y \\in M$ and $z \\in L$. As $\\varepsilon \\notin M$, $|z| < |x|$, so $z \\in M^*N$ by induction and $x \\in MM^*N \\subseteq M^*N$.",
+      "uses": []
+     },
+     {
+      "id": "s:iff",
+      "slogan": "Combine the two inclusions with step 1 into the equivalence.",
+      "detail": "Steps 2 and 3 show that every solution of $L = ML \\cup N$ equals $M^*N$. Step 1 shows the converse, so the two equations are equivalent.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:powers",
+      "s:iff"
+     ],
+     [
+      "s:upper",
+      "s:iff"
+     ],
+     [
+      "s:solves",
+      "s:iff"
+     ]
+    ],
+    "conclusion": "s:iff",
+    "concepts": {
+     "c:language": "The unknown of the equation is a language.",
+     "c:word": "Word length is the measure of the strong induction.",
+     "c:kleene-star": "The Kleene star $M^*$ gives the closed form of the solution."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Language.self_eq_mul_add_iff",
+     "follows": true,
+     "note": "mathlib proves one inclusion by Nat.strong_induction_on on the length, the other through kstar_eq_iSup_pow and induction on the power, and the converse by one_add_self_mul_kstar_eq_kstar."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1052678",
+  "statement": "Let $X$ be a [complete metric space](c:complete-metric-space) and $U_1, U_2, \\dots$ a sequence of [open](c:open-set) [dense](c:dense-set) subsets of $X$. Then $\\bigcap_n U_n$ is dense in $X$.",
+  "hypotheses": [
+   {
+    "id": "h:complete",
+    "text": "The space $X$ is a [complete metric space](c:complete-metric-space).",
+    "concept": "c:complete-metric-space"
+   },
+   {
+    "id": "h:open",
+    "text": "Each set $U_n$ is [open](c:open-set) in $X$.",
+    "concept": "c:open-set"
+   },
+   {
+    "id": "h:dense",
+    "text": "Each set $U_n$ is [dense](c:dense-set) in $X$.",
+    "concept": "c:dense-set"
+   }
+  ],
+  "conclusion": "The intersection $\\bigcap_n U_n$ meets every nonempty open set, so $X$ is a [Baire space](c:baire-space).",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "nested-balls",
+    "name": "Nested closed balls",
+    "slogan": "Inside any open set, choose shrinking closed balls that enter $U_1, U_2, \\dots$ in turn; their centers converge to a point of every $U_n$.",
+    "scope": "The whole theorem; finite families and the empty space are included. The locally compact Hausdorff form uses compact closures in place of completeness.",
+    "mechanisms": [
+     "m:nested-intervals",
+     "m:cauchy-completeness"
+    ],
+    "roles": [
+     {
+      "h": "h:complete",
+      "why": "Completeness gives a limit for the Cauchy sequence of centers.",
+      "steps": [
+       "s:limit"
+      ]
+     },
+     {
+      "h": "h:open",
+      "why": "Openness leaves room for a small closed ball inside each set $B(x_n, r_n) \\cap U_{n+1}$.",
+      "steps": [
+       "s:balls"
+      ]
+     },
+     {
+      "h": "h:dense",
+      "why": "Density makes each $U_{n+1}$ meet the previous open ball.",
+      "steps": [
+       "s:balls"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:target",
+      "slogan": "Fix a nonempty open set $W$ and look for a point of $W$ in every $U_n$.",
+      "detail": "A set is dense exactly when it meets every nonempty open set. So it suffices to find a point of $W \\cap \\bigcap_n U_n$ for an arbitrary nonempty open $W$.",
+      "uses": []
+     },
+     {
+      "id": "s:balls",
+      "slogan": "Choose nested closed balls $\\bar B(x_n, r_n) \\subseteq W \\cap U_n$ with $r_n < 1/n$.",
+      "detail": "The set $W \\cap U_1$ is open and nonempty, since $U_1$ is dense, so it contains a closed ball $\\bar B(x_1, r_1)$ with $r_1 < 1$. Given $\\bar B(x_n, r_n)$, the open set $B(x_n, r_n) \\cap U_{n+1}$ is nonempty by density, so it contains a closed ball $\\bar B(x_{n+1}, r_{n+1})$ with $r_{n+1} < 1/(n+1)$.",
+      "uses": []
+     },
+     {
+      "id": "s:cauchy",
+      "slogan": "Show that the centers $x_n$ form a [Cauchy sequence](c:cauchy-sequence).",
+      "detail": "For $m \\ge n$ the center $x_m$ lies in $\\bar B(x_n, r_n)$, so $d(x_m, x_n) \\le r_n < 1/n$. Hence the distances go to $0$ uniformly in $m \\ge n$.",
+      "uses": []
+     },
+     {
+      "id": "s:limit",
+      "slogan": "Take the limit $x$ of the centers in the complete space $X$.",
+      "detail": "Completeness gives $x = \\lim x_m$. Each closed ball $\\bar B(x_n, r_n)$ contains $x_m$ for all $m \\ge n$ and is closed, so it contains $x$.",
+      "uses": [
+       "wd:Q1050203"
+      ]
+     },
+     {
+      "id": "s:inside",
+      "slogan": "Place the limit $x$ in $W$ and in every $U_n$.",
+      "detail": "The point $x$ lies in $\\bar B(x_n, r_n) \\subseteq W \\cap U_n$ for every $n$. So $W \\cap \\bigcap_n U_n$ is nonempty, and step 1 gives density.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:target",
+      "s:balls"
+     ],
+     [
+      "s:balls",
+      "s:cauchy"
+     ],
+     [
+      "s:cauchy",
+      "s:limit"
+     ],
+     [
+      "s:balls",
+      "s:limit"
+     ],
+     [
+      "s:limit",
+      "s:inside"
+     ],
+     [
+      "s:target",
+      "s:inside"
+     ]
+    ],
+    "conclusion": "s:inside",
+    "concepts": {
+     "c:complete-metric-space": "Completeness supplies the limit point of the nested balls.",
+     "c:open-set": "Open sets contain small closed balls around their points.",
+     "c:dense-set": "Dense sets meet every nonempty open ball.",
+     "c:baire-space": "The conclusion says that $X$ is a Baire space.",
+     "c:cauchy-sequence": "The shrinking radii make the centers a Cauchy sequence."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard nested-ball proof, as in W. Rudin, Real and Complex Analysis, theorem 5.6."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:428",
+  "statement": "Let $T$ be a [monad](c:monad) on a category $\\mathcal C$ with unit $\\eta$ and multiplication $\\mu$, and let $(A, a)$ be a [T-algebra](c:algebra-over-a-monad). The free algebras $B_n = T^{n+1}A$, with faces built from $\\mu$ and $a$ and degeneracies built from $\\eta$, form a [simplicial object](c:simplicial-object) in T-algebras, augmented over $A$ by $a$, with an [extra degeneracy](c:extra-degeneracy) in $\\mathcal C$.",
+  "hypotheses": [
+   {
+    "id": "h:monad",
+    "text": "The triple $(T, \\eta, \\mu)$ is a [monad](c:monad) on $\\mathcal C$: $\\mu$ is associative and $\\eta$ is a two-sided unit for it.",
+    "concept": "c:monad"
+   },
+   {
+    "id": "h:algebra",
+    "text": "The map $a\\colon TA \\to A$ is a [T-algebra](c:algebra-over-a-monad) structure: $a \\circ \\eta_A = 1_A$ and $a \\circ Ta = a \\circ \\mu_A$.",
+    "concept": "c:algebra-over-a-monad"
+   }
+  ],
+  "conclusion": "The bar construction is a [resolution](c:resolution) of $A$ by free algebras, and $A$ is the [split coequalizer](c:has-split-coequalizer) of $\\mu_A, Ta\\colon T^2A \\rightrightarrows TA$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "monad-laws",
+    "name": "Simplicial identities from the monad laws",
+    "slogan": "Check the simplicial identities from the associativity, unit and action laws, then use the unit $\\eta$ once more as an extra degeneracy.",
+    "scope": "The whole construction. The extra degeneracy is a map in $\\mathcal C$ only, not a map of T-algebras, and the augmentation $B_0 = TA \\to A$ is $a$.",
+    "mechanisms": [
+     "m:construction-explicit",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:monad",
+      "why": "Associativity and the unit laws of $\\mu$ and $\\eta$ give the simplicial identities and the extra degeneracy.",
+      "steps": [
+       "s:maps",
+       "s:identities",
+       "s:extra"
+      ]
+     },
+     {
+      "h": "h:algebra",
+      "why": "The action laws make $a$ a face and an augmentation, and make $\\eta_A$ a section of $a$.",
+      "steps": [
+       "s:identities",
+       "s:augment"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:maps",
+      "slogan": "Define faces $d_i = T^i\\mu_{T^{n-1-i}A}$ for $i < n$, $d_n = T^n a$, and degeneracies $s_i = T^{i+1}\\eta_{T^{n-i}A}$.",
+      "detail": "The faces map $B_n$ to $B_{n-1}$ and the degeneracies map $B_n$ to $B_{n+1}$. Each map is $T$ applied to a map or a component of $\\mu$, which is an algebra map between free algebras by associativity, so all of them are maps of T-algebras.",
+      "uses": []
+     },
+     {
+      "id": "s:identities",
+      "slogan": "Verify the simplicial identities from the monad laws and the algebra laws.",
+      "detail": "The relations $d_i d_j = d_{j-1} d_i$ for $i < j$ follow from associativity of $\\mu$, from $a \\circ Ta = a \\circ \\mu_A$ for the last face, and from naturality otherwise. The relations $d_i s_i = d_{i+1} s_i = 1$ follow from $\\mu \\circ T\\eta = \\mu \\circ \\eta T = 1$ and $a \\circ \\eta_A = 1$, and the mixed relations from naturality.",
+      "uses": []
+     },
+     {
+      "id": "s:augment",
+      "slogan": "Augment the object by $a\\colon TA \\to A$ and check $a \\circ \\mu_A = a \\circ Ta$.",
+      "detail": "On $B_1 = T^2A$ the faces are $d_0 = \\mu_A$ and $d_1 = Ta$, and the action law gives $a d_0 = a d_1$. The same law makes $a$ an algebra map from $(TA, \\mu_A)$ to $(A, a)$.",
+      "uses": []
+     },
+     {
+      "id": "s:extra",
+      "slogan": "Define the extra degeneracy $s_{-1} = \\eta_{T^{n+1}A}$ and check its identities in $\\mathcal C$.",
+      "detail": "The unit law gives $d_0 s_{-1} = \\mu \\circ \\eta T = 1$, and on $A$ the map $s_{-1} = \\eta_A$ satisfies $a \\circ \\eta_A = 1$. Naturality of $\\eta$ gives $d_{i+1} s_{-1} = s_{-1} d_i$ for all $i \\ge 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:split",
+      "slogan": "Conclude that $a$ is a split coequalizer of $\\mu_A$ and $Ta$ in $\\mathcal C$ and in T-algebras.",
+      "detail": "The sections $\\eta_A$ and $\\eta_{TA}$ satisfy $a \\eta_A = 1$, $\\mu_A \\eta_{TA} = 1$ and $Ta\\, \\eta_{TA} = \\eta_A a$, so the fork is a [split coequalizer](c:has-split-coequalizer), which every functor keeps. Because $T$ keeps it, the factorization through $a$ of an algebra map is again an algebra map.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:maps",
+      "s:identities"
+     ],
+     [
+      "s:maps",
+      "s:augment"
+     ],
+     [
+      "s:maps",
+      "s:extra"
+     ],
+     [
+      "s:identities",
+      "s:split"
+     ],
+     [
+      "s:augment",
+      "s:split"
+     ],
+     [
+      "s:extra",
+      "s:split"
+     ]
+    ],
+    "conclusion": "s:split",
+    "concepts": {
+     "c:monad": "The monad laws are the only input of the simplicial identities.",
+     "c:algebra-over-a-monad": "The algebra structure supplies the last face and the augmentation.",
+     "c:simplicial-object": "The construction produces a simplicial object of free algebras.",
+     "c:extra-degeneracy": "The unit gives an extra degeneracy, which contracts the augmented object onto $A$.",
+     "c:resolution": "The free algebras resolve $A$ through the contractible augmented object.",
+     "c:has-split-coequalizer": "A split coequalizer is absolute, so $A$ is a coequalizer in algebras too."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard bar resolution of a monad algebra, as in C. A. Weibel, An Introduction to Homological Algebra, section 8.6, stated there dually for comonads."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q4975963",
+  "statement": "Let $h$ be a [contravariant functor](c:contravariant-functor) from the [homotopy category](c:homotopy-category) of pointed connected [CW complexes](c:cw-complex) to pointed sets that turns [wedge sums](c:wedge-sum) into products and satisfies the Mayer-Vietoris axiom. Then there are such a complex $K$ and $u \\in h(K)$ with $[X, K] \\to h(X)$, $f \\mapsto f^*u$, bijective for every $X$.",
+  "hypotheses": [
+   {
+    "id": "h:homotopy",
+    "text": "The functor $h$ is a [contravariant functor](c:contravariant-functor) on the homotopy category of pointed connected CW complexes, so homotopic maps induce equal maps.",
+    "concept": "c:contravariant-functor"
+   },
+   {
+    "id": "h:wedge",
+    "text": "The map $h(\\bigvee_\\alpha X_\\alpha) \\to \\prod_\\alpha h(X_\\alpha)$ is a bijection for every family of complexes.",
+    "concept": "c:wedge-sum"
+   },
+   {
+    "id": "h:mv",
+    "text": "If $X = A \\cup B$ for subcomplexes $A$ and $B$, then classes on $A$ and $B$ that agree on $A \\cap B$ come from one class on $X$.",
+    "concept": "c:mayer-vietoris-sequence"
+   }
+  ],
+  "conclusion": "The functor $h$ is [representable](c:representable-functor): $h \\cong [-, K]$ through the universal element $u$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "cell-attachment",
+    "name": "Universal element by attaching cells",
+    "slogan": "Build $K$ by attaching cells until $u$ induces bijections $\\pi_n(K) \\cong h(S^n)$, then extend maps cell by cell to show that $u$ is universal.",
+    "scope": "An outline of the published proof; steps 2 and 3 rest on the cited work and on the Whitehead theorem. The conditions are also necessary, since $[-, K]$ satisfies them.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:mayer-vietoris",
+     "m:homotopy-invariance"
+    ],
+    "roles": [
+     {
+      "h": "h:homotopy",
+      "why": "Homotopy invariance makes $f \\mapsto f^*u$ well defined on homotopy classes and turns extensions over a cylinder into homotopies.",
+      "steps": [
+       "s:extend",
+       "s:injective",
+       "s:bijection"
+      ]
+     },
+     {
+      "h": "h:wedge",
+      "why": "The wedge axiom gives a class on a wedge of spheres, group structures on $h(S^n)$, and a single point $h(\\ast)$.",
+      "steps": [
+       "s:spheres",
+       "s:kill",
+       "s:surjective"
+      ]
+     },
+     {
+      "h": "h:mv",
+      "why": "Mayer-Vietoris extends the class over attached cells, over the union of the stages and over glued complexes.",
+      "steps": [
+       "s:kill",
+       "s:extend"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:spheres",
+      "slogan": "Start with a wedge of spheres whose class hits every element of every $h(S^n)$.",
+      "detail": "Let $K_1 = \\bigvee S^n_\\alpha$, with one sphere for each $n \\ge 1$ and each $\\alpha \\in h(S^n)$. The wedge axiom gives $u_1 \\in h(K_1)$ that restricts to $\\alpha$ on $S^n_\\alpha$, so $T_{u_1}\\colon \\pi_n(K_1) \\to h(S^n)$, $[f] \\mapsto f^*u_1$, is onto.",
+      "uses": []
+     },
+     {
+      "id": "s:kill",
+      "slogan": "Attach cells along kernel elements and extend the class by the Mayer-Vietoris axiom.",
+      "detail": "For each $[f]$ in the kernel of the homomorphism $T_{u_k}$ on the [homotopy groups](c:homotopy-group) of $K_k$, attach a cell along $f$; Mayer-Vietoris extends $u_k$ since $f^*u_k = 0$. The union $K$ of the stages carries a class $u$ with every $T_u\\colon \\pi_n(K) \\to h(S^n)$ bijective, by cellular approximation.",
+      "uses": [
+       "nl:3255"
+      ]
+     },
+     {
+      "id": "s:extend",
+      "slogan": "Extend a map from a subcomplex into $K$ along any class that matches $u$.",
+      "detail": "Let $(X, A)$ be a CW pair, $g\\colon A \\to K$ and $x \\in h(X)$ with $x|_A = g^*u$. Step 2 applied to $K \\cup_g X$ gives $K' \\supseteq K \\cup_g X$ with a universal class, so $K \\to K'$ is a [weak homotopy equivalence](c:weak-homotopy-equivalence), and by the Whitehead theorem a retraction of $K'$ onto $K$ gives the extension.",
+      "uses": [
+       "wd:Q3527185"
+      ]
+     },
+     {
+      "id": "s:surjective",
+      "slogan": "Take $A$ to be the base point to show that $f \\mapsto f^*u$ is onto.",
+      "detail": "For $x \\in h(X)$ the pair $(X, \\ast)$ with the constant map meets the condition of step 3, because $h(\\ast)$ is a single point by the wedge axiom. Step 3 gives $f\\colon X \\to K$ with $f^*u = x$.",
+      "uses": []
+     },
+     {
+      "id": "s:injective",
+      "slogan": "Apply step 3 to the reduced cylinder on $X$ to show that $f \\mapsto f^*u$ is one-to-one.",
+      "detail": "Let $f_0^*u = f_1^*u$. On $X \\wedge I_+$ with the subcomplex $X \\vee X$ at the two ends, the class pulled back from $X$ restricts to $f_0^*u$ and $f_1^*u$. So step 3 extends $f_0 \\vee f_1$ to a homotopy from $f_0$ to $f_1$.",
+      "uses": []
+     },
+     {
+      "id": "s:bijection",
+      "slogan": "Combine both parts into the natural bijection $[X, K] \\cong h(X)$.",
+      "detail": "Steps 4 and 5 make $T_u\\colon [X, K] \\to h(X)$ bijective for every $X$, and $T_u$ is natural because $(f g)^*u = g^* f^* u$. So the pair $(K, u)$ makes $h$ a [representable functor](c:representable-functor).",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:spheres",
+      "s:kill"
+     ],
+     [
+      "s:kill",
+      "s:extend"
+     ],
+     [
+      "s:extend",
+      "s:surjective"
+     ],
+     [
+      "s:extend",
+      "s:injective"
+     ],
+     [
+      "s:surjective",
+      "s:bijection"
+     ],
+     [
+      "s:injective",
+      "s:bijection"
+     ]
+    ],
+    "conclusion": "s:bijection",
+    "concepts": {
+     "c:contravariant-functor": "The functor reverses maps, like a cohomology theory.",
+     "c:homotopy-category": "Working up to homotopy is what makes the representing complex exist.",
+     "c:cw-complex": "Cell structures let the proof build $K$ and extend maps cell by cell.",
+     "c:wedge-sum": "The wedge axiom turns classes on spheres into one class.",
+     "c:mayer-vietoris-sequence": "The Mayer-Vietoris axiom extends classes over attached cells.",
+     "c:representable-functor": "The conclusion says $h$ is represented by $K$.",
+     "c:homotopy-group": "Bijectivity on $\\pi_n$ is the test for a universal class.",
+     "c:weak-homotopy-equivalence": "Whitehead's theorem turns the weak equivalence $K \\to K'$ into a retraction."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "E. H. Brown, Cohomology theories, Annals of Mathematics 75 (1962), 467-484",
+     "url": "https://doi.org/10.2307/1970209",
+     "note": "The outline follows the textbook account in A. Hatcher, Algebraic Topology, Cambridge University Press, 2002, section 4.E."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1033910",
+  "statement": "If $f\\colon A \\to B$ and $g\\colon B \\to A$ are [injections](c:injection), then there is a [bijection](c:bijection) $h\\colon A \\to B$. So [cardinal numbers](c:cardinal-number) with $|A| \\le |B|$ and $|B| \\le |A|$ satisfy $|A| = |B|$.",
+  "hypotheses": [
+   {
+    "id": "h:f",
+    "text": "The map $f\\colon A \\to B$ is [injective](c:injection).",
+    "concept": "c:injection"
+   },
+   {
+    "id": "h:g",
+    "text": "The map $g\\colon B \\to A$ is injective.",
+    "concept": "c:injection"
+   }
+  ],
+  "conclusion": "Some bijection $h\\colon A \\to B$ exists; it equals $f$ on a subset $S \\subseteq A$ and $g^{-1}$ on $A \\setminus S$.",
+  "formal": {
+   "decl": "Function.Embedding.schroeder_bernstein",
+   "difference": null
+  },
+  "proofs": [
+   {
+    "id": "least-fixed-point",
+    "name": "Least fixed point",
+    "slogan": "Find a set $S \\subseteq A$ with $A \\setminus S = g(B \\setminus f(S))$ as a least fixed point, and glue $f$ on $S$ with $g^{-1}$ off $S$.",
+    "scope": "The whole theorem, with no choice principle. An empty $B$ forces an empty $A$, and the empty map is then the bijection.",
+    "mechanisms": [
+     "m:fixed-point",
+     "m:construction-explicit",
+     "m:case-analysis"
+    ],
+    "roles": [
+     {
+      "h": "h:f",
+      "why": "Injectivity of $f$ makes $h$ injective on $S$.",
+      "steps": [
+       "s:bijective"
+      ]
+     },
+     {
+      "h": "h:g",
+      "why": "Injectivity of $g$ makes $g^{-1}$ a well-defined injective map on $g(B)$.",
+      "steps": [
+       "s:define",
+       "s:bijective"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:operator",
+      "slogan": "Define the [monotone](c:monotone-function) map $F(S) = A \\setminus g(B \\setminus f(S))$ on subsets of $A$.",
+      "detail": "If $S \\subseteq S'$, then $B \\setminus f(S') \\subseteq B \\setminus f(S)$, so $F(S) \\subseteq F(S')$. The subsets of $A$ form a [complete lattice](c:complete-lattice) under inclusion.",
+      "uses": []
+     },
+     {
+      "id": "s:fixed",
+      "slogan": "Take the intersection $S$ of all sets $T$ with $F(T) \\subseteq T$ as a [fixed point](c:fixed-point).",
+      "detail": "Monotonicity gives $F(S) \\subseteq F(T) \\subseteq T$ for each such $T$, so $F(S) \\subseteq S$. Then $F(F(S)) \\subseteq F(S)$, so $F(S)$ is one of the sets $T$ and $S \\subseteq F(S)$; hence $F(S) = S$.",
+      "uses": []
+     },
+     {
+      "id": "s:complement",
+      "slogan": "Rewrite the fixed point as $A \\setminus S = g(B \\setminus f(S))$.",
+      "detail": "Taking complements in $F(S) = S$ gives $A \\setminus S = g(B \\setminus f(S))$. So every point of $A \\setminus S$ is $g(b)$ for some $b \\notin f(S)$.",
+      "uses": []
+     },
+     {
+      "id": "s:define",
+      "slogan": "Define $h = f$ on $S$ and $h = g^{-1}$ on $A \\setminus S$.",
+      "detail": "By step 3 and injectivity of $g$, the inverse $g^{-1}$ is defined on $A \\setminus S$ and maps it onto $B \\setminus f(S)$. So $h$ maps $S$ onto $f(S)$ and $A \\setminus S$ onto $B \\setminus f(S)$.",
+      "uses": []
+     },
+     {
+      "id": "s:bijective",
+      "slogan": "Check that $h$ is injective and surjective.",
+      "detail": "Both pieces are injective, and their images $f(S)$ and $B \\setminus f(S)$ are disjoint, so $h$ is injective. The two images cover $B$, so $h$ is surjective.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:operator",
+      "s:fixed"
+     ],
+     [
+      "s:fixed",
+      "s:complement"
+     ],
+     [
+      "s:complement",
+      "s:define"
+     ],
+     [
+      "s:define",
+      "s:bijective"
+     ]
+    ],
+    "conclusion": "s:bijective",
+    "concepts": {
+     "c:injection": "The two injections are the only input of the theorem.",
+     "c:bijection": "The proof assembles a bijection from pieces of the two injections.",
+     "c:cardinal-number": "The result makes the order of cardinal numbers antisymmetric.",
+     "c:monotone-function": "Monotonicity of $F$ makes the least fixed point exist.",
+     "c:complete-lattice": "Intersections in the lattice of subsets give the least fixed point.",
+     "c:fixed-point": "The fixed point $S$ is where the bijection switches from $f$ to $g^{-1}$."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Function.Embedding.schroeder_bernstein",
+     "follows": true,
+     "note": "mathlib proves schroeder_bernstein_of_rel with the least fixed point OrderHom.lfp of s ↦ (g '' (f '' s)ᶜ)ᶜ and glues f with invFun g by Set.piecewise."
+    }
+   },
+   {
+    "id": "chains",
+    "name": "Chains of ancestors",
+    "slogan": "Follow each element back through alternating preimages, sort the elements by where this chain stops, and match the classes by $f$ or $g$.",
+    "scope": "The whole theorem. Chains that never stop, including cycles, go with $f$.",
+    "mechanisms": [
+     "m:case-analysis",
+     "m:bijection",
+     "m:construction-explicit"
+    ],
+    "roles": [
+     {
+      "h": "h:f",
+      "why": "Injectivity of $f$ makes parents in $A$ unique and $f$ injective on its classes.",
+      "steps": [
+       "s:ancestors",
+       "s:match"
+      ]
+     },
+     {
+      "h": "h:g",
+      "why": "Injectivity of $g$ makes parents in $B$ unique and $g$ injective on its class.",
+      "steps": [
+       "s:ancestors",
+       "s:match"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:ancestors",
+      "slogan": "Trace the ancestors of each element through $g^{-1}$ and $f^{-1}$ alternately.",
+      "detail": "An element $x \\in A$ has the parent $g^{-1}(x)$ if $x \\in g(B)$, and $y \\in B$ has the parent $f^{-1}(y)$ if $y \\in f(A)$. Injectivity makes each parent unique, so each element has one chain of ancestors.",
+      "uses": []
+     },
+     {
+      "id": "s:classify",
+      "slogan": "Sort $A$ and $B$ into classes by where the chain of ancestors stops.",
+      "detail": "Let $A_A, B_A$ hold the elements whose chain stops in $A \\setminus g(B)$, let $A_B, B_B$ hold those whose chain stops in $B \\setminus f(A)$, and let $A_\\infty, B_\\infty$ hold those whose chain never stops. These classes partition $A$ and $B$.",
+      "uses": []
+     },
+     {
+      "id": "s:match",
+      "slogan": "Show that $f$ maps $A_A \\cup A_\\infty$ onto $B_A \\cup B_\\infty$ and $g$ maps $B_B$ onto $A_B$.",
+      "detail": "The parent of $f(x)$ is $x$, so $f(x)$ has the same stopping place as $x$. Every $y \\in B_A \\cup B_\\infty$ has a parent, so it is some $f(x)$; likewise every $x \\in A_B$ has a parent and equals $g(y)$ with $y \\in B_B$.",
+      "uses": []
+     },
+     {
+      "id": "s:glue",
+      "slogan": "Glue $f$ on $A_A \\cup A_\\infty$ with $g^{-1}$ on $A_B$ into a bijection.",
+      "detail": "Step 3 gives bijections between the matching classes, since $f$ and $g$ are injective. The classes partition $A$ and $B$, so the pieces form one bijection $h\\colon A \\to B$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:ancestors",
+      "s:classify"
+     ],
+     [
+      "s:classify",
+      "s:match"
+     ],
+     [
+      "s:ancestors",
+      "s:match"
+     ],
+     [
+      "s:match",
+      "s:glue"
+     ]
+    ],
+    "conclusion": "s:glue",
+    "concepts": {
+     "c:injection": "The two injections are the only input of the theorem.",
+     "c:bijection": "The proof assembles a bijection from pieces of the two injections.",
+     "c:cardinal-number": "The result makes the order of cardinal numbers antisymmetric."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The chain argument of J. Konig (1906), as in P. R. Halmos, Naive Set Theory, section 22."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:8674",
+  "statement": "If $G$ is a [finite group](c:finite-group) and $p$ is a [prime](c:prime-number) that divides $|G|$, then $G$ has an element of [order](c:order-of-an-element) $p$.",
+  "hypotheses": [
+   {
+    "id": "h:finite",
+    "text": "The group $G$ is a [finite group](c:finite-group).",
+    "concept": "c:finite-group"
+   },
+   {
+    "id": "h:prime",
+    "text": "The number $p$ is a [prime](c:prime-number) that divides $|G|$.",
+    "concept": "c:prime-number"
+   }
+  ],
+  "conclusion": "Some $g \\in G$ has order exactly $p$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "mckay",
+    "name": "Counting rotated tuples",
+    "slogan": "Let the cyclic group of order $p$ rotate the $p$-tuples with product $e$, and count the fixed tuples modulo $p$.",
+    "scope": "The whole theorem, with no induction and no case split.",
+    "mechanisms": [
+     "m:group-action-orbits",
+     "m:modular-arithmetic"
+    ],
+    "roles": [
+     {
+      "h": "h:finite",
+      "why": "Finiteness makes $X$ a finite set, so counting modulo $p$ makes sense.",
+      "steps": [
+       "s:tuples",
+       "s:count"
+      ]
+     },
+     {
+      "h": "h:prime",
+      "why": "Primality makes orbit sizes $1$ or $p$, and $p \\mid |G|$ makes $p$ divide $|X|$.",
+      "steps": [
+       "s:tuples",
+       "s:orbits",
+       "s:element"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:tuples",
+      "slogan": "Form the set $X$ of $p$-tuples in $G$ whose product is $e$.",
+      "detail": "A tuple $(g_1, \\dots, g_p)$ lies in $X$ exactly when $g_p = (g_1 \\cdots g_{p-1})^{-1}$. So $|X| = |G|^{p-1}$, which $p$ divides.",
+      "uses": []
+     },
+     {
+      "id": "s:rotate",
+      "slogan": "Let the [cyclic group](c:cyclic-group) of order $p$ act on $X$ by rotating tuples.",
+      "detail": "If $g_1 g_2 \\cdots g_p = e$, then $g_2 \\cdots g_p g_1 = g_1^{-1}(g_1 \\cdots g_p) g_1 = e$. So rotation maps $X$ to $X$ and gives a [group action](c:group-action) of $\\mathbb{Z}/p\\mathbb{Z}$ on $X$.",
+      "uses": []
+     },
+     {
+      "id": "s:orbits",
+      "slogan": "Show that every orbit of the rotation has size $1$ or $p$.",
+      "detail": "The size of an orbit is the index of a stabilizer in $\\mathbb{Z}/p\\mathbb{Z}$, so it divides $p$ by Lagrange's theorem. Since $p$ is prime, the size is $1$ or $p$.",
+      "uses": [
+       "wd:Q505798"
+      ]
+     },
+     {
+      "id": "s:count",
+      "slogan": "Count modulo $p$ to find a fixed tuple other than $(e, \\dots, e)$.",
+      "detail": "The orbits partition $X$, so $|X|$ is congruent modulo $p$ to the number of fixed tuples. This number is divisible by $p$ and at least $1$, because $(e, \\dots, e)$ is fixed, so it is at least $p \\ge 2$.",
+      "uses": []
+     },
+     {
+      "id": "s:element",
+      "slogan": "Read a fixed tuple $(g, \\dots, g)$ with $g \\ne e$ as an element of order $p$.",
+      "detail": "A tuple fixed by rotation has all entries equal, so it is $(g, \\dots, g)$ with $g^p = e$. Since $g \\ne e$ and $p$ is prime, the [order](c:order-of-an-element) of $g$ is $p$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:tuples",
+      "s:rotate"
+     ],
+     [
+      "s:rotate",
+      "s:orbits"
+     ],
+     [
+      "s:orbits",
+      "s:count"
+     ],
+     [
+      "s:tuples",
+      "s:count"
+     ],
+     [
+      "s:count",
+      "s:element"
+     ]
+    ],
+    "conclusion": "s:element",
+    "concepts": {
+     "c:finite-group": "Finiteness of $G$ makes the counting and the induction possible.",
+     "c:prime-number": "Primality of $p$ is what forces an element of order exactly $p$.",
+     "c:order-of-an-element": "The goal is an element whose order is exactly $p$.",
+     "c:cyclic-group": "The cyclic group of order $p$ acts by rotation.",
+     "c:group-action": "Counting orbits of the action gives the congruence."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "McKay's counting proof: J. H. McKay, Another proof of Cauchy's group theorem, American Mathematical Monthly 66 (1959), 119."
+    }
+   },
+   {
+    "id": "class-equation",
+    "name": "Induction through the class equation",
+    "slogan": "Prove the abelian case through a cyclic subgroup and a quotient, then reduce the general case to a proper centralizer or to the center.",
+    "scope": "Strong induction on $|G|$. The abelian case and the nonabelian case are treated separately.",
+    "mechanisms": [
+     "m:strong-induction",
+     "m:group-action-orbits",
+     "m:quotient-construction",
+     "m:case-analysis"
+    ],
+    "roles": [
+     {
+      "h": "h:finite",
+      "why": "Finiteness allows strong induction on $|G|$ and makes the class equation a finite sum.",
+      "steps": [
+       "s:abelian",
+       "s:class",
+       "s:centralizer"
+      ]
+     },
+     {
+      "h": "h:prime",
+      "why": "Primality makes $p$ divide an index when it does not divide the subgroup order, and gives the power of order $p$.",
+      "steps": [
+       "s:abelian",
+       "s:center"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:abelian",
+      "slogan": "Prove the abelian case with a cyclic subgroup and its quotient.",
+      "detail": "Pick $g \\ne e$ of order $m$; if $p \\mid m$, then $g^{m/p}$ has order $p$. Otherwise the [quotient group](c:quotient-group) $G/\\langle g \\rangle$ is smaller with order divisible by $p$, so induction gives $h$ whose coset has order $p$; then $p$ divides the order $r$ of $h$, and $h^{r/p}$ has order $p$.",
+      "uses": []
+     },
+     {
+      "id": "s:class",
+      "slogan": "Write the class equation $|G| = |Z(G)| + \\sum_i [G : C_G(x_i)]$ over the noncentral classes.",
+      "detail": "Conjugation is an action of $G$ on itself whose fixed points form the [center](c:center) $Z(G)$. Each noncentral [conjugacy class](c:conjugacy-class) has size $[G : C_G(x_i)] > 1$, so its centralizer $C_G(x_i)$ is a proper subgroup.",
+      "uses": [
+       "nl:16640"
+      ]
+     },
+     {
+      "id": "s:centralizer",
+      "slogan": "Apply the induction hypothesis to a proper centralizer whose order $p$ divides.",
+      "detail": "If $p$ divides $|C_G(x_i)|$ for some noncentral $x_i$, then $C_G(x_i)$ is a smaller group with order divisible by $p$. Induction gives an element of order $p$ in it, hence in $G$.",
+      "uses": []
+     },
+     {
+      "id": "s:center",
+      "slogan": "Otherwise show that $p$ divides $|Z(G)|$ and apply the abelian case to the center.",
+      "detail": "If $p$ divides no $|C_G(x_i)|$, then $p$ divides every index $[G : C_G(x_i)] = |G|/|C_G(x_i)|$. The class equation gives $p \\mid |Z(G)|$, and step 1 applied to the abelian group $Z(G)$ gives an element of order $p$.",
+      "uses": [
+       "wd:Q505798"
+      ]
+     },
+     {
+      "id": "s:cases",
+      "slogan": "Combine the cases to get an element of order $p$ in $G$.",
+      "detail": "An abelian $G$ is handled by step 1. A nonabelian $G$ falls under step 3 or step 4, so the induction step holds for every finite group whose order $p$ divides.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:abelian",
+      "s:cases"
+     ],
+     [
+      "s:abelian",
+      "s:center"
+     ],
+     [
+      "s:class",
+      "s:centralizer"
+     ],
+     [
+      "s:class",
+      "s:center"
+     ],
+     [
+      "s:centralizer",
+      "s:cases"
+     ],
+     [
+      "s:center",
+      "s:cases"
+     ]
+    ],
+    "conclusion": "s:cases",
+    "concepts": {
+     "c:finite-group": "Finiteness of $G$ makes the counting and the induction possible.",
+     "c:prime-number": "Primality of $p$ is what forces an element of order exactly $p$.",
+     "c:order-of-an-element": "The goal is an element whose order is exactly $p$.",
+     "c:quotient-group": "The quotient by a cyclic subgroup carries the induction in the abelian case.",
+     "c:center": "If no centralizer helps, the center has order divisible by $p$.",
+     "c:conjugacy-class": "Sizes of conjugacy classes are the indices in the class equation."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The classical proof by strong induction on $|G|$ through the class equation."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q179208",
+  "statement": "Every [group](c:group) $G$ is isomorphic to a [subgroup](c:subgroup) of the [symmetric group](c:symmetric-group) $\\operatorname{Sym}(G)$ through $g \\mapsto \\lambda_g$, where $\\lambda_g(x) = gx$.",
+  "hypotheses": [
+   {
+    "id": "h:group",
+    "text": "The set $G$ with its operation is a [group](c:group).",
+    "concept": "c:group"
+   }
+  ],
+  "conclusion": "The map $g \\mapsto \\lambda_g$ is an isomorphism from $G$ onto a subgroup of $\\operatorname{Sym}(G)$.",
+  "formal": {
+   "decl": "Equiv.Perm.subgroupOfMulAction",
+   "difference": "The declaration takes any faithful action of $G$ on a set $H$ and identifies $G$ with its image in $\\operatorname{Sym}(H)$. The theorem is the case $H = G$ with left multiplication, which is faithful."
+  },
+  "proofs": [
+   {
+    "id": "left-regular",
+    "name": "Left regular action",
+    "slogan": "Let $G$ act on itself by left multiplication; this action is faithful, so the permutation representation is injective.",
+    "scope": "The whole theorem, for finite and infinite groups. The trivial group maps onto the trivial subgroup.",
+    "mechanisms": [
+     "m:homomorphism-kernel",
+     "m:construction-explicit"
+    ],
+    "roles": [
+     {
+      "h": "h:group",
+      "why": "Associativity, the identity and inverses make each $\\lambda_g$ a bijection and make the action faithful.",
+      "steps": [
+       "s:action",
+       "s:faithful"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:action",
+      "slogan": "Define $\\lambda_g(x) = gx$ and check that each $\\lambda_g$ is a [permutation](c:permutation) of $G$.",
+      "detail": "Associativity gives $\\lambda_g \\lambda_h = \\lambda_{gh}$, and $\\lambda_e$ is the identity. So $\\lambda_{g^{-1}}$ inverts $\\lambda_g$, and $\\lambda$ is a [group action](c:group-action) of $G$ on itself by bijections.",
+      "uses": []
+     },
+     {
+      "id": "s:hom",
+      "slogan": "Read $g \\mapsto \\lambda_g$ as a [group homomorphism](c:group-homomorphism) $G \\to \\operatorname{Sym}(G)$.",
+      "detail": "The rule $\\lambda_{gh} = \\lambda_g \\circ \\lambda_h$ from step 1 is the homomorphism property. So the image $\\{\\lambda_g : g \\in G\\}$ is a subgroup of $\\operatorname{Sym}(G)$.",
+      "uses": []
+     },
+     {
+      "id": "s:faithful",
+      "slogan": "Show that the action is faithful, so the homomorphism is injective.",
+      "detail": "If $\\lambda_g = \\lambda_h$, then $g = \\lambda_g(e) = \\lambda_h(e) = h$. So the [kernel](c:kernel-of-a-homomorphism) of $g \\mapsto \\lambda_g$ is trivial.",
+      "uses": []
+     },
+     {
+      "id": "s:image",
+      "slogan": "Restrict the injective homomorphism to an isomorphism onto its image.",
+      "detail": "An injective homomorphism is a bijection onto its image, and the inverse bijection is again a homomorphism. So $G$ is isomorphic to the subgroup $\\{\\lambda_g : g \\in G\\}$.",
+      "uses": [
+       "wd:Q1187646"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:action",
+      "s:hom"
+     ],
+     [
+      "s:hom",
+      "s:faithful"
+     ],
+     [
+      "s:faithful",
+      "s:image"
+     ],
+     [
+      "s:hom",
+      "s:image"
+     ]
+    ],
+    "conclusion": "s:image",
+    "concepts": {
+     "c:group": "Only the group axioms enter the proof.",
+     "c:subgroup": "The image of $G$ is the required subgroup of permutations.",
+     "c:symmetric-group": "The group $G$ is realized inside the symmetric group on its own elements.",
+     "c:permutation": "Left multiplication by an element permutes the elements of the group.",
+     "c:group-action": "Left multiplication is the action whose permutations represent the group.",
+     "c:group-homomorphism": "The map $g \\mapsto \\lambda_g$ respects products.",
+     "c:kernel-of-a-homomorphism": "A trivial kernel makes the representation injective."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Equiv.Perm.subgroupOfMulAction",
+     "follows": true,
+     "note": "mathlib uses MulAction.toPermHom, gets injectivity from FaithfulSMul through MulAction.toPerm_injective, and inverts on the range with MulEquiv.ofLeftInverse'; the case H = G uses RightCancelMonoid.faithfulSMul."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1076274",
+  "statement": "Let $K$ be a [metrizable](c:metrizable-space) compact [convex set](c:convex-set) in a [locally convex](c:locally-convex-space) Hausdorff space $E$. Every $x \\in K$ is the [barycenter](c:barycenter) of a Borel [probability measure](c:probability-measure) $\\mu$ on $K$ carried by the [extreme points](c:extreme-point): $\\mu(\\operatorname{ext} K) = 1$ and $\\ell(x) = \\int_K \\ell\\, d\\mu$ for every continuous linear functional $\\ell$.",
+  "hypotheses": [
+   {
+    "id": "h:space",
+    "text": "The space $E$ is a real [locally convex](c:locally-convex-space) Hausdorff topological vector space.",
+    "concept": "c:locally-convex-space"
+   },
+   {
+    "id": "h:compact-convex",
+    "text": "The set $K \\subseteq E$ is compact and [convex](c:convex-set).",
+    "concept": "c:convex-set"
+   },
+   {
+    "id": "h:metrizable",
+    "text": "The set $K$ is [metrizable](c:metrizable-space).",
+    "concept": "c:metrizable-space"
+   }
+  ],
+  "conclusion": "Each $x \\in K$ has a representing probability measure $\\mu$ with $\\mu(\\operatorname{ext} K) = 1$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "strictly-convex-envelope",
+    "name": "Strictly convex function and its concave envelope",
+    "slogan": "Build a strictly convex continuous function $f$, take a representing measure that makes $\\int f$ maximal by Hahn-Banach, and show that it lives where $f$ meets its concave envelope.",
+    "scope": "The metrizable case, which is Choquet's theorem. The Bishop-de Leeuw extension to nonmetrizable $K$ is a different statement and is not proved here.",
+    "mechanisms": [
+     "m:linear-extension",
+     "m:convexity"
+    ],
+    "roles": [
+     {
+      "h": "h:space",
+      "why": "Local convexity gives enough continuous linear functionals to separate the points of $K$.",
+      "steps": [
+       "s:strict"
+      ]
+     },
+     {
+      "h": "h:compact-convex",
+      "why": "Compactness gives closed midpoint sets and the Riesz representation; convexity defines extreme points and midpoints.",
+      "steps": [
+       "s:gdelta",
+       "s:envelope",
+       "s:measure"
+      ]
+     },
+     {
+      "h": "h:metrizable",
+      "why": "Metrizability makes $C(K)$ separable and makes $\\operatorname{ext} K$ a Borel set.",
+      "steps": [
+       "s:gdelta",
+       "s:strict"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:gdelta",
+      "slogan": "Show that $\\operatorname{ext} K$ is a $G_\\delta$ set and hence a Borel set.",
+      "detail": "Fix a metric $d$ on $K$. The set $F_n$ of midpoints $(y + z)/2$ with $y, z \\in K$ and $d(y, z) \\ge 1/n$ is a continuous image of a compact set, hence closed, and $K \\setminus \\operatorname{ext} K = \\bigcup_n F_n$.",
+      "uses": []
+     },
+     {
+      "id": "s:strict",
+      "slogan": "Build a continuous [strictly convex function](c:strictly-convex-function) $f$ on $K$ from a sequence of functionals.",
+      "detail": "By Hahn-Banach, continuous linear functionals separate points, and their restrictions lie in the separable space $C(K)$, so some sequence $\\ell_n$ of them still separates the points of $K$. Then $f = \\sum_n 2^{-n} \\ell_n^2/(1 + \\|\\ell_n\\|_\\infty^2)$ is continuous and strictly convex on $K$.",
+      "uses": [
+       "nl:10213"
+      ]
+     },
+     {
+      "id": "s:envelope",
+      "slogan": "Define the concave envelope $\\bar f$ and show $\\{f = \\bar f\\} \\subseteq \\operatorname{ext} K$.",
+      "detail": "Let $\\bar f$ be the infimum of all continuous [concave functions](c:concave-function) $g \\ge f$ on $K$, so $\\bar f$ is concave and $\\bar f \\ge f$. If $x = (y + z)/2$ with $y \\ne z$, then $f(x) < (f(y) + f(z))/2 \\le (\\bar f(y) + \\bar f(z))/2 \\le \\bar f(x)$.",
+      "uses": []
+     },
+     {
+      "id": "s:measure",
+      "slogan": "Extend $t f \\mapsto t \\bar f(x)$ by Hahn-Banach below $p(h) = \\bar h(x)$ to a representing measure $\\mu$.",
+      "detail": "The map $p$ is sublinear on $C(K)$ and $t \\bar f(x) \\le p(t f)$ for all real $t$, so Hahn-Banach gives a linear $\\mu \\le p$ with $\\mu(f) = \\bar f(x)$. Then $h \\le 0$ gives $\\mu(h) \\le 0$, and continuous affine $a$ gives $\\mu(a) = a(x)$; by Riesz, $\\mu$ is a probability measure with barycenter $x$.",
+      "uses": [
+       "wd:Q866116",
+       "nm:riesz-markov-kakutani-representation-theorem"
+      ]
+     },
+     {
+      "id": "s:carried",
+      "slogan": "Show $\\mu(\\bar f - f) = 0$, so that $\\mu$ is carried by $\\operatorname{ext} K$.",
+      "detail": "The continuous concave $g \\ge f$ form a downward directed family with infimum $\\bar f$, so $\\mu(\\bar f) = \\inf_g \\mu(g) \\le \\inf_g g(x) = \\bar f(x) = \\mu(f)$. As $\\bar f - f \\ge 0$, $\\mu$ is carried by $\\{f = \\bar f\\}$, which lies in the Borel set $\\operatorname{ext} K$, so $\\mu(\\operatorname{ext} K) = 1$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:strict",
+      "s:envelope"
+     ],
+     [
+      "s:envelope",
+      "s:measure"
+     ],
+     [
+      "s:measure",
+      "s:carried"
+     ],
+     [
+      "s:envelope",
+      "s:carried"
+     ],
+     [
+      "s:gdelta",
+      "s:carried"
+     ]
+    ],
+    "conclusion": "s:carried",
+    "concepts": {
+     "c:metrizable-space": "Metrizability gives a separating sequence of functionals and a Borel set of extreme points.",
+     "c:convex-set": "Convexity of $K$ defines midpoints and extreme points.",
+     "c:locally-convex-space": "Local convexity supplies the continuous linear functionals that separate points.",
+     "c:barycenter": "The measure must have barycenter $x$, tested on continuous affine functions.",
+     "c:probability-measure": "Hahn-Banach and Riesz produce the representing probability measure.",
+     "c:extreme-point": "The measure must be carried by the extreme points.",
+     "c:strictly-convex-function": "Strict convexity makes the contact set of $f$ and its envelope consist of extreme points.",
+     "c:concave-function": "Concave majorants define the envelope $\\bar f$ and the sublinear bound $p$."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Choquet's proof in the metrizable case, as in R. R. Phelps, Lectures on Choquet's Theorem, 2nd ed., Lecture Notes in Mathematics 1757, Springer, 2001, section 3."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:convergence-in-distribution",
+  "statement": "Let $\\Omega$ be a topological space whose σ-algebra contains the open sets, and give its [probability measures](c:probability-measure) the [weak topology](c:weak-convergence-of-measures) generated by $\\mu \\mapsto \\int g\\, d\\mu$ for nonnegative bounded continuous $g$. Then $\\mu_i \\to \\mu$ if and only if $\\int f\\, d\\mu_i \\to \\int f\\, d\\mu$ for every [bounded continuous function](c:bounded-continuous-function) $f\\colon \\Omega \\to \\mathbb{R}$.",
+  "hypotheses": [
+   {
+    "id": "h:opens",
+    "text": "Every open subset of $\\Omega$ is measurable.",
+    "concept": null
+   },
+   {
+    "id": "h:probability",
+    "text": "The measures $\\mu_i$ and $\\mu$ are [probability measures](c:probability-measure) on $\\Omega$.",
+    "concept": "c:probability-measure"
+   }
+  ],
+  "conclusion": "Weak convergence, and so [convergence in distribution](c:convergence-in-distribution) of random variables with these laws, is tested by all real bounded continuous functions.",
+  "formal": {
+   "decl": "MeasureTheory.ProbabilityMeasure.tendsto_iff_forall_integral_tendsto",
+   "difference": "The declaration states convergence along an arbitrary filter, which covers sequences and nets. It builds the topology through the finite measures, as here."
+  },
+  "proofs": [
+   {
+    "id": "positive-parts",
+    "name": "Positive and negative parts",
+    "slogan": "Convergence in the induced topology means convergence of every nonnegative test integral, and a real test function is a difference of two nonnegative ones.",
+    "scope": "Both directions, for sequences, nets or filters. The same argument without step 1 proves the version for finite measures.",
+    "mechanisms": [
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:opens",
+      "why": "Measurable open sets make continuous functions measurable, so the test integrals exist.",
+      "steps": [
+       "s:split",
+       "s:converse"
+      ]
+     },
+     {
+      "h": "h:probability",
+      "why": "Probability measures are finite, so bounded functions have finite integrals, and they form a subspace of the finite measures.",
+      "steps": [
+       "s:subspace",
+       "s:split"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:subspace",
+      "slogan": "Regard the probability measures as a subspace of the finite measures with the same test topology.",
+      "detail": "The topology on probability measures is induced by the injective inclusion into finite measures. So $\\mu_i \\to \\mu$ among probability measures exactly when it holds among finite measures.",
+      "uses": []
+     },
+     {
+      "id": "s:coordinates",
+      "slogan": "Translate convergence in the induced topology into convergence of each test integral.",
+      "detail": "The weak topology is the coarsest topology that makes each map $\\nu \\mapsto \\int g\\, d\\nu$ continuous. In such a topology a net converges exactly when its image under every generating map converges, so $\\mu_i \\to \\mu$ if and only if $\\int g\\, d\\mu_i \\to \\int g\\, d\\mu$ for every nonnegative bounded continuous $g$.",
+      "uses": []
+     },
+     {
+      "id": "s:split",
+      "slogan": "Split a real bounded continuous $f$ into $f^+ - f^-$ and pass to the limit in each part.",
+      "detail": "The functions $f^+ = \\max(f, 0)$ and $f^- = \\max(-f, 0)$ are nonnegative, bounded and continuous, with finite integrals. Linearity gives $\\int f\\, d\\mu_i = \\int f^+\\, d\\mu_i - \\int f^-\\, d\\mu_i$, and both terms converge by step 2.",
+      "uses": []
+     },
+     {
+      "id": "s:converse",
+      "slogan": "Read each nonnegative test function as a real test function for the converse.",
+      "detail": "A nonnegative bounded continuous $g$ is also a real [bounded continuous function](c:bounded-continuous-function), and its integral against a finite measure is the same finite number in both senses. So the real condition contains every condition of step 2.",
+      "uses": []
+     },
+     {
+      "id": "s:equiv",
+      "slogan": "Combine both directions into the stated equivalence.",
+      "detail": "Step 3 shows that weak convergence gives convergence of all real test integrals, and step 4 with step 2 gives the converse. Step 1 transfers the result from finite measures to probability measures.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:subspace",
+      "s:equiv"
+     ],
+     [
+      "s:coordinates",
+      "s:split"
+     ],
+     [
+      "s:coordinates",
+      "s:converse"
+     ],
+     [
+      "s:split",
+      "s:equiv"
+     ],
+     [
+      "s:converse",
+      "s:equiv"
+     ]
+    ],
+    "conclusion": "s:equiv",
+    "concepts": {
+     "c:probability-measure": "The criterion concerns convergence of probability measures.",
+     "c:weak-convergence-of-measures": "The weak topology is defined by nonnegative test integrals.",
+     "c:bounded-continuous-function": "Bounded continuous functions are the test functions of the criterion.",
+     "c:convergence-in-distribution": "Convergence in distribution is weak convergence of the laws."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "MeasureTheory.ProbabilityMeasure.tendsto_iff_forall_integral_tendsto",
+     "follows": true,
+     "note": "mathlib combines tendsto_nhds_iff_toFiniteMeasure_tendsto_nhds with FiniteMeasure.tendsto_iff_forall_integral_tendsto, which uses tendsto_iff_forall_lintegral_tendsto and the nnrealPart of f and -f."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q3527189",
+  "statement": "Let $N$ be a [normal subgroup](c:normal-subgroup) of a group $G$ and $\\pi\\colon G \\to G/N$ the quotient map. Then $H \\mapsto \\pi(H) = H/N$ is a bijection from the subgroups of $G$ that contain $N$ onto the subgroups of the [quotient group](c:quotient-group) $G/N$, with inverse $K \\mapsto \\pi^{-1}(K)$, and both maps preserve inclusion.",
+  "hypotheses": [
+   {
+    "id": "h:normal",
+    "text": "The subgroup $N$ is a [normal subgroup](c:normal-subgroup) of $G$.",
+    "concept": "c:normal-subgroup"
+   }
+  ],
+  "conclusion": "The subgroups of $G$ that contain $N$ and the subgroups of $G/N$ correspond by an inclusion-preserving bijection, an isomorphism of [subgroup lattices](c:lattice-of-subgroups).",
+  "formal": {
+   "decl": "QuotientGroup.quotientQuotientEquivQuotient",
+   "difference": "The declaration is the third isomorphism theorem $(G/N)/(M/N) \\cong G/M$ for a normal $M \\supseteq N$, not the correspondence of subgroups. mathlib states the correspondence as QuotientGroup.comapMk'OrderIso."
+  },
+  "proofs": [
+   {
+    "id": "image-preimage",
+    "name": "Images and preimages under the quotient map",
+    "slogan": "Show that preimage and image under the surjective quotient map are inverse, inclusion-preserving maps between the two sets of subgroups.",
+    "scope": "The whole theorem. The case $N = G$ gives one subgroup on each side, and $N = \\{e\\}$ gives the identity correspondence.",
+    "mechanisms": [
+     "m:quotient-construction",
+     "m:homomorphism-kernel",
+     "m:bijection"
+    ],
+    "roles": [
+     {
+      "h": "h:normal",
+      "why": "Normality makes $G/N$ a group and $\\pi$ a surjective homomorphism with kernel $N$.",
+      "steps": [
+       "s:preimage",
+       "s:image-preimage",
+       "s:preimage-image"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:preimage",
+      "slogan": "Show that $\\pi^{-1}(K)$ is a [subgroup](c:subgroup) of $G$ that contains $N$.",
+      "detail": "The preimage of a subgroup under a [group homomorphism](c:group-homomorphism) is a subgroup. It contains $N = \\pi^{-1}(\\{e\\})$ because $e \\in K$.",
+      "uses": []
+     },
+     {
+      "id": "s:image-preimage",
+      "slogan": "Show $\\pi(\\pi^{-1}(K)) = K$ by the surjectivity of $\\pi$.",
+      "detail": "Every $k \\in K$ equals $\\pi(g)$ for some $g \\in G$, since $\\pi$ is onto, and then $g \\in \\pi^{-1}(K)$. The other inclusion holds for every map.",
+      "uses": []
+     },
+     {
+      "id": "s:preimage-image",
+      "slogan": "Show $\\pi^{-1}(\\pi(H)) = H$ when $N \\subseteq H$.",
+      "detail": "If $\\pi(g) = \\pi(h)$ with $h \\in H$, then $h^{-1} g \\in \\ker \\pi = N \\subseteq H$, so $g \\in H$. Hence $\\pi^{-1}(\\pi(H)) = HN = H$.",
+      "uses": []
+     },
+     {
+      "id": "s:order",
+      "slogan": "Show that both maps preserve and reflect inclusion.",
+      "detail": "Images and preimages preserve inclusion. If $\\pi^{-1}(K_1) \\subseteq \\pi^{-1}(K_2)$, then applying $\\pi$ and step 2 gives $K_1 \\subseteq K_2$.",
+      "uses": []
+     },
+     {
+      "id": "s:bijection",
+      "slogan": "Combine the two inverse maps into an inclusion-preserving bijection.",
+      "detail": "Steps 1 to 3 show that $H \\mapsto \\pi(H)$ and $K \\mapsto \\pi^{-1}(K)$ are mutually inverse maps between the two sets, and step 4 shows that they respect inclusion. The image $\\pi(H)$ is the set of cosets $hN$, which is $H/N$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:preimage",
+      "s:bijection"
+     ],
+     [
+      "s:image-preimage",
+      "s:order"
+     ],
+     [
+      "s:image-preimage",
+      "s:bijection"
+     ],
+     [
+      "s:preimage-image",
+      "s:bijection"
+     ],
+     [
+      "s:order",
+      "s:bijection"
+     ]
+    ],
+    "conclusion": "s:bijection",
+    "concepts": {
+     "c:normal-subgroup": "Normality of $N$ makes the quotient map a homomorphism with kernel $N$.",
+     "c:quotient-group": "The subgroups of $G/N$ are one side of the correspondence.",
+     "c:lattice-of-subgroups": "The correspondence is an isomorphism of subgroup lattices.",
+     "c:subgroup": "Preimages of subgroups are subgroups that contain the kernel.",
+     "c:group-homomorphism": "Images and preimages under a homomorphism keep subgroups."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "QuotientGroup.comapMk'OrderIso",
+     "follows": true,
+     "note": "mathlib defines comapMk'OrderIso with Subgroup.comap and Subgroup.map along mk', using map_comap_eq_self, comap_map_mk' and comap_le_comap_of_surjective; the catalog's declaration is the third isomorphism theorem instead."
+    }
+   }
+  ]
+ }
+]

@@ -1,0 +1,1864 @@
+[
+ {
+  "id": "nm:law-of-total-probability",
+  "statement": "Let $P$ be a [probability measure](c:probability-measure) and $B_1,\\dots,B_n$ a [finite partition](c:finpartition) of the sample space into events. Then every event $A$ has $P(A)=\\sum_{i=1}^n P(B_i)\\,P(A\\mid B_i)$, where a term with $P(B_i)=0$ counts as $0$.",
+  "hypotheses": [
+   {
+    "id": "h:measure",
+    "text": "$P$ is a [probability measure](c:probability-measure) on a measurable space $(\\Omega,\\mathcal F)$.",
+    "concept": "c:probability-measure"
+   },
+   {
+    "id": "h:partition",
+    "text": "The sets $B_1,\\dots,B_n\\in\\mathcal F$ form a [finite partition](c:finpartition) of $\\Omega$: they are pairwise disjoint and their union is $\\Omega$.",
+    "concept": "c:finpartition"
+   },
+   {
+    "id": "h:event",
+    "text": "The set $A$ is a [measurable set](c:measurable-set) of $\\mathcal F$, an event.",
+    "concept": "c:measurable-set"
+   }
+  ],
+  "conclusion": "$P(A)=\\sum_{i=1}^n P(B_i)\\,P(A\\mid B_i)$, reading a term with $P(B_i)=0$ as $0$.",
+  "formal": {
+   "decl": "ProbabilityTheory.sum_meas_smul_cond_fiber",
+   "difference": "The declaration is an equality of measures, $\\sum_x\\mu(X^{-1}\\{x\\})\\,\\mu[\\cdot\\mid X^{-1}\\{x\\}]=\\mu$, for a finite measure and a measurable map $X$ into a finite discrete space. The fibers of $X$ form a finite partition, and evaluating at $A$ gives this statement."
+  },
+  "proofs": [
+   {
+    "id": "partition-sum",
+    "name": "Split along the partition",
+    "slogan": "Cut the event along the partition and rewrite each piece with the definition of conditional probability.",
+    "scope": "The whole theorem, for a finite partition. A block $B_i$ with $P(B_i)=0$ is treated in step 1.",
+    "mechanisms": [
+     "m:case-analysis",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:measure",
+      "why": "Additivity of the [probability measure](c:probability-measure) turns the disjoint pieces into a sum.",
+      "steps": [
+       "s:product",
+       "s:add"
+      ]
+     },
+     {
+      "h": "h:partition",
+      "why": "The [finite partition](c:finpartition) cuts $A$ into disjoint pieces that cover it.",
+      "steps": [
+       "s:split"
+      ]
+     },
+     {
+      "h": "h:event",
+      "why": "Measurability makes each $A\\cap B_i$ a set that $P$ measures.",
+      "steps": [
+       "s:split",
+       "s:add"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:product",
+      "slogan": "Rewrite each term $P(B_i)P(A\\mid B_i)$ as the intersection probability $P(A\\cap B_i)$.",
+      "detail": "If $P(B_i)>0$, the definition $P(A\\mid B_i)=P(A\\cap B_i)/P(B_i)$ gives the claim. If $P(B_i)=0$, then $P(A\\cap B_i)\\le P(B_i)=0$, and the term is $0$ by convention, so both sides are $0$.",
+      "uses": []
+     },
+     {
+      "id": "s:split",
+      "slogan": "Cut the event $A$ into the disjoint pieces $A\\cap B_i$.",
+      "detail": "The $B_i$ cover $\\Omega$, so $A=\\bigcup_i (A\\cap B_i)$. The $B_i$ are pairwise disjoint, so the pieces are pairwise disjoint, and each piece is measurable as an intersection of two measurable sets.",
+      "uses": []
+     },
+     {
+      "id": "s:add",
+      "slogan": "Add the probabilities of the disjoint pieces by finite additivity.",
+      "detail": "Finite additivity of $P$ on pairwise disjoint measurable sets gives $P(A)=\\sum_{i=1}^n P(A\\cap B_i)$.",
+      "uses": []
+     },
+     {
+      "id": "s:combine",
+      "slogan": "Substitute step 1 into step 3 to obtain the formula.",
+      "detail": "Replace each $P(A\\cap B_i)$ by $P(B_i)P(A\\mid B_i)$. This gives $P(A)=\\sum_{i=1}^n P(B_i)P(A\\mid B_i)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:product",
+      "s:combine"
+     ],
+     [
+      "s:split",
+      "s:add"
+     ],
+     [
+      "s:add",
+      "s:combine"
+     ]
+    ],
+    "conclusion": "s:combine",
+    "concepts": {
+     "c:probability-measure": "Additivity of $P$ adds the disjoint pieces.",
+     "c:finpartition": "The partition cuts $A$ into disjoint covering pieces.",
+     "c:measurable-set": "Measurability makes each piece $A\\cap B_i$ measurable."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "ProbabilityTheory.sum_meas_smul_cond_fiber",
+     "follows": true,
+     "note": "mathlib evaluates both measures on a measurable set: cond_mul_eq_inter rewrites each term as the measure of the intersection, and measure_biUnion_finset adds the disjoint pieces."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q256303",
+  "statement": "Let a linear [finite difference](c:finite-difference-method) scheme $u^{n+1}=C(\\Delta t)u^n$ be [consistent](c:consistency) with a well-posed linear initial value problem on a [Banach space](c:banach-space). Then the scheme is convergent if and only if it is stable.",
+  "hypotheses": [
+   {
+    "id": "h:scheme",
+    "text": "The scheme $u^{n+1}=C(\\Delta t)u^n$ uses bounded linear operators $C(\\Delta t)$ on a [Banach space](c:banach-space) $B$, with the mesh tied to $\\Delta t$.",
+    "concept": "c:banach-space"
+   },
+   {
+    "id": "h:wellposed",
+    "text": "The initial value problem $u'=Au$, $u(0)=f$ is well posed: its solution operators $E(t)$ satisfy $E(t+s)=E(t)E(s)$, are strongly continuous, and obey $\\|E(t)\\|\\le Me^{\\omega t}$.",
+    "concept": null
+   },
+   {
+    "id": "h:consistent",
+    "text": "The scheme is [consistent](c:consistency): for $f$ in a dense subspace $D$, $\\|(C(\\Delta t)-E(\\Delta t))E(t)f\\|=o(\\Delta t)$ uniformly for $0\\le t\\le T$.",
+    "concept": "c:consistency"
+   }
+  ],
+  "conclusion": "Convergence ($C(\\Delta t)^nf\\to E(t)f$ for every $f$ as $\\Delta t\\to0$ and $n\\Delta t\\to t$) holds exactly when stability ($\\|C(\\Delta t)^n\\|\\le K$ for $0<\\Delta t\\le\\Delta_0$ and $n\\Delta t\\le T$) holds.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "telescoping-density",
+    "name": "Uniform boundedness and telescoping",
+    "slogan": "Convergence gives stability by uniform boundedness, and stability with consistency gives convergence by telescoping the error and extending from a dense set.",
+    "scope": "The linear Banach space setting of Lax and Richtmyer, for a fixed final time $T$. Stability means a bound $K$ for $0<\\Delta t\\le\\Delta_0$ and $n\\Delta t\\le T$.",
+    "mechanisms": [
+     "m:telescoping",
+     "m:density-extension",
+     "m:epsilon-over-three"
+    ],
+    "roles": [
+     {
+      "h": "h:scheme",
+      "why": "Linearity and boundedness of $C(\\Delta t)$ let the uniform boundedness principle and the telescoping identity apply.",
+      "steps": [
+       "s:uniform",
+       "s:telescope"
+      ]
+     },
+     {
+      "h": "h:wellposed",
+      "why": "The solution operators give the exact solution, and their bound and strong continuity control the error terms.",
+      "steps": [
+       "s:orbits",
+       "s:telescope",
+       "s:extend"
+      ]
+     },
+     {
+      "h": "h:consistent",
+      "why": "Consistency makes each one step error $o(\\Delta t)$ on the dense subspace.",
+      "steps": [
+       "s:dense-error"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:orbits",
+      "slogan": "Show that convergence keeps every orbit $C(\\Delta t)^nf$ bounded.",
+      "detail": "Fix $f$. A sequence $(\\Delta t_j,n_j)$ with $\\Delta t_j\\to0$ and $n_j\\Delta t_j\\le T$ has a subsequence with $n_j\\Delta t_j\\to t$, and along it $C(\\Delta t_j)^{n_j}f\\to E(t)f$. So the norms along every such sequence are bounded.",
+      "uses": []
+     },
+     {
+      "id": "s:uniform",
+      "slogan": "Apply uniform boundedness to obtain one stability constant $K$.",
+      "detail": "Suppose no constant works for any $\\Delta_0$. Then there are $(\\Delta t_j,n_j)$ with $\\Delta t_j\\le1/j$ and $\\|C(\\Delta t_j)^{n_j}\\|>j$. By step 1 these operators are pointwise bounded on the [Banach space](c:banach-space), so the uniform boundedness principle bounds their norms, a contradiction. Hence the scheme is stable.",
+      "uses": [
+       "wd:Q1426292"
+      ]
+     },
+     {
+      "id": "s:telescope",
+      "slogan": "Write the error as a sum of one step consistency errors.",
+      "detail": "Since $E((j+1)\\Delta t)=E(\\Delta t)E(j\\Delta t)$, the identity $C^nf-E(n\\Delta t)f=\\sum_{j=0}^{n-1}C^{\\,n-1-j}\\bigl(C-E(\\Delta t)\\bigr)E(j\\Delta t)f$ holds, where $C=C(\\Delta t)$.",
+      "uses": []
+     },
+     {
+      "id": "s:dense-error",
+      "slogan": "Bound the error on the dense subspace by stability and consistency.",
+      "detail": "Let $f\\in D$ and $\\varepsilon(\\Delta t)\\to0$ be the uniform consistency bound. Each term of step 3 has norm at most $K\\varepsilon(\\Delta t)\\Delta t$, because $j\\Delta t\\le T$. So $\\|C^nf-E(n\\Delta t)f\\|\\le KT\\varepsilon(\\Delta t)\\to0$.",
+      "uses": []
+     },
+     {
+      "id": "s:extend",
+      "slogan": "Extend convergence from the [dense](c:dense-set) subspace to the whole space.",
+      "detail": "For $f$ in $B$ and $\\eta>0$ choose $g\\in D$ with $\\|f-g\\|<\\eta$. Then $C^nf-E(t)f$ splits into four terms bounded by $K\\eta$, $o(1)$, $Me^{\\omega T}\\eta$ and $o(1)$, the last by strong continuity. So $\\limsup\\|C^nf-E(t)f\\|\\le(K+Me^{\\omega T})\\eta$ for every $\\eta$.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Join the two implications into the equivalence.",
+      "detail": "Steps 1 and 2 show that convergence gives stability. Steps 3 to 5 show that stability, with consistency and well-posedness, gives convergence. Together they prove the equivalence.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:orbits",
+      "s:uniform"
+     ],
+     [
+      "s:uniform",
+      "s:conclude"
+     ],
+     [
+      "s:telescope",
+      "s:dense-error"
+     ],
+     [
+      "s:dense-error",
+      "s:extend"
+     ],
+     [
+      "s:extend",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:finite-difference-method": "The scheme under study is a linear finite difference method.",
+     "c:consistency": "Consistency makes the one step error small on the dense subspace.",
+     "c:banach-space": "Completeness of the space is needed for the uniform boundedness principle.",
+     "c:dense-set": "Consistency holds on a dense set, and the error bound passes to all data."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The Lax-Richtmyer argument in a Banach space; see Richtmyer and Morton, Difference Methods for Initial-Value Problems, 2nd edition (1967), and Strikwerda, Finite Difference Schemes and Partial Differential Equations, which states it as the Lax-Richtmyer equivalence theorem."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q191693",
+  "statement": "Let $\\mu$ and $\\nu$ be [σ-finite](c:sigma-finite-measure) [measures](c:measure) on one measurable space. Then $\\nu=\\nu_a+\\nu_s$ for a unique pair of measures with $\\nu_a$ [absolutely continuous](c:absolutely-continuous-measure) with respect to $\\mu$ and $\\nu_s$ [singular](c:singular-measure) with respect to $\\mu$.",
+  "hypotheses": [
+   {
+    "id": "h:sigma-finite",
+    "text": "$\\mu$ and $\\nu$ are [σ-finite measures](c:sigma-finite-measure) on the same measurable space.",
+    "concept": "c:sigma-finite-measure"
+   }
+  ],
+  "conclusion": "Exactly one pair of measures $(\\nu_a,\\nu_s)$ has $\\nu=\\nu_a+\\nu_s$, $\\nu_a\\ll\\mu$ and $\\nu_s\\perp\\mu$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "via-radon-nikodym",
+    "name": "Via Radon-Nikodym",
+    "slogan": "Write both measures as densities against their sum, and split $\\nu$ along the set where the density of $\\mu$ vanishes.",
+    "scope": "Existence is proved from the Radon-Nikodym theorem; uniqueness is proved directly and needs no finiteness. The notation $\\nu_s\\perp\\mu$ means that a set $N$ has $\\mu(N)=0$ and $\\nu_s(N^c)=0$.",
+    "mechanisms": [
+     "m:construction-explicit",
+     "m:reduction"
+    ],
+    "roles": [
+     {
+      "h": "h:sigma-finite",
+      "why": "[σ-finiteness](c:sigma-finite-measure) makes $\\lambda=\\mu+\\nu$ σ-finite and gives the finite densities of Radon-Nikodym.",
+      "steps": [
+       "s:common"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:common",
+      "slogan": "Choose the σ-finite dominating measure $\\lambda=\\mu+\\nu$ and write both as densities.",
+      "detail": "The sum of two σ-finite measures is σ-finite, and $\\mu,\\nu\\ll\\lambda$ because $\\mu,\\nu\\le\\lambda$. The Radon-Nikodym theorem gives measurable $f,g\\ge0$ with $\\mu=f\\lambda$ and $\\nu=g\\lambda$.",
+      "uses": [
+       "wd:Q1191319"
+      ]
+     },
+     {
+      "id": "s:split",
+      "slogan": "Split $\\nu$ along the zero set $N=\\{f=0\\}$ of the density of $\\mu$.",
+      "detail": "Define $\\nu_s(A)=\\nu(A\\cap N)$ and $\\nu_a(A)=\\nu(A\\cap N^c)$. Both are measures, since each restricts $\\nu$ to a measurable set, and $\\nu_a+\\nu_s=\\nu$.",
+      "uses": []
+     },
+     {
+      "id": "s:singular",
+      "slogan": "Show that $\\nu_s$ is carried by a $\\mu$-null set.",
+      "detail": "The set $N$ has $\\mu(N)=\\int_Nf\\,d\\lambda=0$, and $\\nu_s(N^c)=\\nu(\\emptyset)=0$. So $\\nu_s\\perp\\mu$, and $\\nu_s$ is [singular](c:singular-measure) with respect to $\\mu$.",
+      "uses": []
+     },
+     {
+      "id": "s:ac",
+      "slogan": "Show that $\\nu_a$ vanishes on every $\\mu$-null set.",
+      "detail": "Let $\\mu(A)=0$. Then $\\int_Af\\,d\\lambda=0$, so $f=0$ $\\lambda$-almost everywhere on $A$. Since $f>0$ on $N^c$, $\\lambda(A\\cap N^c)=0$, and $\\nu_a(A)=\\nu(A\\cap N^c)=0$ because $\\nu\\ll\\lambda$. So $\\nu_a$ is [absolutely continuous](c:absolutely-continuous-measure).",
+      "uses": []
+     },
+     {
+      "id": "s:unique",
+      "slogan": "Compare two decompositions on a common $\\mu$-null set.",
+      "detail": "Let $\\nu=\\alpha+\\beta=\\alpha'+\\beta'$ be two decompositions with $\\beta,\\beta'$ carried by $\\mu$-null sets $N,N'$. For $M=N\\cup N'$, $\\mu(M)=0$ gives $\\alpha(A\\cap M)=0$, and $\\beta(A\\setminus M)=0$. Hence $\\beta(A)=\\nu(A\\cap M)=\\beta'(A)$ and $\\alpha(A)=\\nu(A\\setminus M)=\\alpha'(A)$.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Combine existence and uniqueness into the decomposition theorem.",
+      "detail": "Steps 3 and 4 show that $\\nu_a$ and $\\nu_s$ have the required properties, which gives existence. Step 5 shows that no other pair has them.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:common",
+      "s:split"
+     ],
+     [
+      "s:split",
+      "s:singular"
+     ],
+     [
+      "s:split",
+      "s:ac"
+     ],
+     [
+      "s:singular",
+      "s:conclude"
+     ],
+     [
+      "s:ac",
+      "s:conclude"
+     ],
+     [
+      "s:unique",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:sigma-finite-measure": "σ-finiteness gives densities and a σ-finite sum measure.",
+     "c:measure": "The theorem splits one measure into two measures.",
+     "c:absolutely-continuous-measure": "The part $\\nu_a$ must vanish on $\\mu$-null sets.",
+     "c:singular-measure": "The part $\\nu_s$ must live on a $\\mu$-null set."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "A deduction from the Radon-Nikodym theorem. Folland, Real Analysis, Theorem 3.8, proves both theorems together by von Neumann's argument."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q842953",
+  "statement": "Let $A\\subseteq\\mathbb{R}^n$ be Lebesgue measurable and $\\lambda$ [Lebesgue measure](c:lebesgue-measure). For almost every $x\\in A$ the ratio $\\lambda(A\\cap B(x,r))/\\lambda(B(x,r))$ tends to $1$ as $r\\to0$, and for almost every $x\\notin A$ it tends to $0$.",
+  "hypotheses": [
+   {
+    "id": "h:measurable",
+    "text": "The set $A\\subseteq\\mathbb{R}^n$ is Lebesgue measurable.",
+    "concept": null
+   }
+  ],
+  "conclusion": "Almost every point of $A$ is a [density point](c:density-point) of $A$ with density $1$, and almost every point outside $A$ has density $0$.",
+  "formal": {
+   "decl": "Besicovitch.ae_tendsto_measure_inter_div",
+   "difference": "The declaration gives density $1$ at almost every point of an arbitrary set, for any locally finite measure on a Besicovitch metric space, with closed balls. The density $0$ half for measurable sets is the separate declaration Besicovitch.ae_tendsto_measure_inter_div_of_measurableSet."
+  },
+  "proofs": [
+   {
+    "id": "vitali-differentiation",
+    "name": "Differentiation of measures",
+    "slogan": "Differentiate the measure $\\lambda(A\\cap\\cdot)$ against $\\lambda$ along a Vitali family of balls, and read off the density.",
+    "scope": "The whole theorem, in two parts: density $1$ at almost every point of $A$ and density $0$ at almost every point outside. The case of a Lebesgue measurable but not Borel set is reduced to the Borel case in step 1.",
+    "mechanisms": [
+     "m:reduction"
+    ],
+    "roles": [
+     {
+      "h": "h:measurable",
+      "why": "Measurability of $A$ makes $\\rho=\\lambda(A\\cap\\cdot)$ a measure with density $\\mathbf 1_A$.",
+      "steps": [
+       "s:borel",
+       "s:density"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:borel",
+      "slogan": "Replace $A$ by a Borel set that differs from it by a null set.",
+      "detail": "A Lebesgue measurable set is a Borel set changed by a null set. A null set changes no ratio $\\lambda(A\\cap B)/\\lambda(B)$ and no almost everywhere statement, so we may assume that $A$ is Borel.",
+      "uses": []
+     },
+     {
+      "id": "s:vitali",
+      "slogan": "Show that the closed balls form a Vitali family for Lebesgue measure.",
+      "detail": "By the Besicovitch covering theorem in $\\mathbb{R}^n$, from every fine cover by closed balls one can pick a disjoint subfamily covering almost every point. This is what lets ratios over shrinking balls be differentiated.",
+      "uses": [
+       "wd:Q137164"
+      ]
+     },
+     {
+      "id": "s:differentiate",
+      "slogan": "Differentiate the locally finite measure $\\rho=\\lambda(A\\cap\\cdot)$ against $\\lambda$.",
+      "detail": "For almost every $x$, the ratio $\\rho(\\bar B(x,r))/\\lambda(\\bar B(x,r))$ tends to the derivative $d\\rho/d\\lambda(x)$ as $r\\to0$. This is the differentiation theorem along the Vitali family of step 2.",
+      "uses": [
+       "wd:Q2275191"
+      ]
+     },
+     {
+      "id": "s:density",
+      "slogan": "Identify the derivative of $\\rho$ with the indicator function of $A$.",
+      "detail": "Since $\\rho=\\mathbf 1_A\\,\\lambda$ has density $\\mathbf 1_A$ with respect to $\\lambda$, its Radon-Nikodym derivative is $\\mathbf 1_A$ almost everywhere.",
+      "uses": [
+       "wd:Q1191319"
+      ]
+     },
+     {
+      "id": "s:read",
+      "slogan": "Read the limit as density $1$ on $A$ and density $0$ outside $A$.",
+      "detail": "Steps 3 and 4 give $\\lambda(A\\cap B(x,r))/\\lambda(B(x,r))\\to\\mathbf 1_A(x)$ for almost every $x$. The limit is $1$ for $x\\in A$ and $0$ for $x\\notin A$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:borel",
+      "s:density"
+     ],
+     [
+      "s:vitali",
+      "s:differentiate"
+     ],
+     [
+      "s:differentiate",
+      "s:density"
+     ],
+     [
+      "s:density",
+      "s:read"
+     ]
+    ],
+    "conclusion": "s:read",
+    "concepts": {
+     "c:lebesgue-measure": "The measure $\\lambda$ whose ratios over balls are differentiated.",
+     "c:density-point": "The conclusion says that almost every point of $A$ is a density point."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Besicovitch.ae_tendsto_measure_inter_div",
+     "follows": true,
+     "note": "mathlib applies VitaliFamily.ae_tendsto_measure_inter_div to Besicovitch.vitaliFamily, which rests on ae_tendsto_rnDeriv (differentiation of measures) and the Besicovitch covering theorem; a general set is replaced by a measurable hull."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:lusin-separation-theorem",
+  "statement": "Let $X$ be a [Hausdorff space](c:hausdorff-space) and $s,t\\subseteq X$ disjoint [analytic sets](c:analytic-set). Then some [Borel set](c:borel-set) $U$ satisfies $s\\subseteq U$ and $U\\cap t=\\emptyset$.",
+  "hypotheses": [
+   {
+    "id": "h:hausdorff",
+    "text": "The space $X$ is a [Hausdorff space](c:hausdorff-space).",
+    "concept": "c:hausdorff-space"
+   },
+   {
+    "id": "h:analytic",
+    "text": "The sets $s$ and $t$ are [analytic](c:analytic-set): each is empty or a continuous image of a Polish space.",
+    "concept": "c:analytic-set"
+   },
+   {
+    "id": "h:disjoint",
+    "text": "The sets $s$ and $t$ are disjoint.",
+    "concept": null
+   }
+  ],
+  "conclusion": "A Borel set $U$ contains $s$ and misses $t$.",
+  "formal": {
+   "decl": "MeasureTheory.AnalyticSet.measurablySeparable",
+   "difference": "The declaration works in any Hausdorff space with a σ-algebra containing the open sets, and its analytic sets are empty or continuous images of $\\mathbb N^{\\mathbb N}$. The Borel case is the smallest such σ-algebra."
+  },
+  "proofs": [
+   {
+    "id": "cylinders",
+    "name": "Nested cylinders",
+    "slogan": "If the two analytic sets were not separable, nested cylinders would converge to two points whose disjoint neighborhoods separate the images, a contradiction.",
+    "scope": "The whole theorem. If $s$ or $t$ is empty, a separating set is $\\emptyset$ or $X$, so the proof treats nonempty sets.",
+    "mechanisms": [
+     "m:contradiction",
+     "m:nested-intervals"
+    ],
+    "roles": [
+     {
+      "h": "h:analytic",
+      "why": "[Analyticity](c:analytic-set) writes $s$ and $t$ as images of the Baire space under continuous maps.",
+      "steps": [
+       "s:param"
+      ]
+     },
+     {
+      "h": "h:disjoint",
+      "why": "Disjointness gives $f(x)\\neq g(y)$ for the limit points.",
+      "steps": [
+       "s:limit"
+      ]
+     },
+     {
+      "h": "h:hausdorff",
+      "why": "The [Hausdorff](c:hausdorff-space) property separates $f(x)$ and $g(y)$ by disjoint open sets.",
+      "steps": [
+       "s:contradict"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:param",
+      "slogan": "Write the two analytic sets as images of Baire space under continuous maps.",
+      "detail": "A nonempty analytic set is the image of $\\mathbb N^{\\mathbb N}$ under a continuous map (equivalently, the image of a [Polish space](c:polish-space)). So $s=f(\\mathbb N^{\\mathbb N})$ and $t=g(\\mathbb N^{\\mathbb N})$. Call two sets separable if a [Borel set](c:borel-set) contains the first and misses the second.",
+      "uses": []
+     },
+     {
+      "id": "s:union",
+      "slogan": "Show that countable unions of pairwise separable sets are separable.",
+      "detail": "Let Borel sets $U_{ij}$ contain $P_i$ and miss $Q_j$ for all $i,j$. Then $U=\\bigcup_i\\bigcap_jU_{ij}$ is Borel, contains every $P_i$, and misses every $Q_j$.",
+      "uses": []
+     },
+     {
+      "id": "s:split",
+      "slogan": "Split a non-separable pair of cylinder images into smaller non-separable pairs.",
+      "detail": "For a finite sequence $u$, let $C_u$ be the set of sequences that extend $u$. Then $C_u=\\bigcup_iC_{ui}$. If $f(C_u)$ and $g(C_v)$ are not separable, step 2 gives $i,j$ with $f(C_{ui})$ and $g(C_{vj})$ not separable.",
+      "uses": []
+     },
+     {
+      "id": "s:limit",
+      "slogan": "Choose nested cylinders with non-separable images and take their limit points.",
+      "detail": "Suppose $s$ and $t$ are not separable. Start from the empty sequences and apply step 3 again and again. The chosen sequences converge to $x$ and $y$, and $f(C_{x|n})$, $g(C_{y|n})$ are not separable for every $n$. Since $s\\cap t=\\emptyset$, $f(x)\\neq g(y)$.",
+      "uses": []
+     },
+     {
+      "id": "s:contradict",
+      "slogan": "Separate $f(x)$ and $g(y)$ by open sets and reach a contradiction.",
+      "detail": "Choose disjoint open sets $V\\ni f(x)$ and $W\\ni g(y)$. By continuity, for large $n$, $f(C_{x|n})\\subseteq V$ and $g(C_{y|n})\\subseteq W$. The open set $V$ is Borel and separates the two images, against step 4. So $s$ and $t$ are separable.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:param",
+      "s:split"
+     ],
+     [
+      "s:union",
+      "s:split"
+     ],
+     [
+      "s:split",
+      "s:limit"
+     ],
+     [
+      "s:param",
+      "s:limit"
+     ],
+     [
+      "s:limit",
+      "s:contradict"
+     ],
+     [
+      "s:param",
+      "s:contradict"
+     ]
+    ],
+    "conclusion": "s:contradict",
+    "concepts": {
+     "c:hausdorff-space": "Hausdorff separation gives disjoint open sets around two distinct points.",
+     "c:analytic-set": "Analytic sets are continuous images of Baire space.",
+     "c:borel-set": "The separating set is Borel, and open sets are Borel.",
+     "c:polish-space": "Analytic sets can also be defined as images of Polish spaces."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "MeasureTheory.AnalyticSet.measurablySeparable",
+     "follows": true,
+     "note": "mathlib follows Kechris, Theorem 14.7: MeasurablySeparable.iUnion is the union step, and measurablySeparable_range_of_disjoint builds the nested cylinders and finishes with t2_separation."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q204884",
+  "statement": "Let $P$ be a sentence of [Peano arithmetic](c:peano-arithmetic) $\\mathrm{PA}$ with [provability predicate](c:provability-predicate) $\\mathrm{Prov}$. If $\\mathrm{PA}\\vdash\\mathrm{Prov}(\\ulcorner P\\urcorner)\\to P$, then $\\mathrm{PA}\\vdash P$.",
+  "hypotheses": [
+   {
+    "id": "h:sentence",
+    "text": "$P$ is a sentence in the language of arithmetic.",
+    "concept": null
+   },
+   {
+    "id": "h:implication",
+    "text": "$\\mathrm{PA}$ proves $\\mathrm{Prov}(\\ulcorner P\\urcorner)\\to P$, where $\\mathrm{Prov}$ is the [provability predicate](c:provability-predicate).",
+    "concept": "c:provability-predicate"
+   }
+  ],
+  "conclusion": "$\\mathrm{PA}$ proves $P$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "fixed-point",
+    "name": "Fixed point of provability",
+    "slogan": "Take a sentence that says if it is provable then $P$ holds, and show inside $\\mathrm{PA}$ that its provability gives $P$.",
+    "scope": "The proof uses the three derivability conditions: if $\\mathrm{PA}\\vdash\\varphi$ then $\\mathrm{PA}\\vdash\\mathrm{Prov}(\\ulcorner\\varphi\\urcorner)$; $\\mathrm{Prov}$ distributes over implication; and $\\mathrm{PA}\\vdash\\mathrm{Prov}(\\ulcorner\\varphi\\urcorner)\\to\\mathrm{Prov}(\\ulcorner\\mathrm{Prov}(\\ulcorner\\varphi\\urcorner)\\urcorner)$. All three hold for [Peano arithmetic](c:peano-arithmetic).",
+    "mechanisms": [
+     "m:encoding"
+    ],
+    "roles": [
+     {
+      "h": "h:sentence",
+      "why": "The diagonal lemma needs the formula $\\mathrm{Prov}(x)\\to P$ to have only $x$ free, which holds because $P$ is a sentence.",
+      "steps": [
+       "s:fixed"
+      ]
+     },
+     {
+      "h": "h:implication",
+      "why": "The assumed implication $\\mathrm{Prov}(\\ulcorner P\\urcorner)\\to P$ turns provability of $P$ into truth of $P$ inside $\\mathrm{PA}$.",
+      "steps": [
+       "s:hypothesis"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:fixed",
+      "slogan": "Build a sentence $\\psi$ that says: if I am provable, then $P$.",
+      "detail": "The diagonal lemma applied to the formula $\\mathrm{Prov}(x)\\to P$ gives a sentence $\\psi$ with $\\mathrm{PA}\\vdash\\psi\\leftrightarrow(\\mathrm{Prov}(\\ulcorner\\psi\\urcorner)\\to P)$. We write $\\mathrm{Prov}\\,\\psi$ for $\\mathrm{Prov}(\\ulcorner\\psi\\urcorner)$.",
+      "uses": [
+       "wd:Q200787"
+      ]
+     },
+     {
+      "id": "s:distribute",
+      "slogan": "Push the fixed point equation inside the [provability predicate](c:provability-predicate).",
+      "detail": "From $\\mathrm{PA}\\vdash\\psi\\to(\\mathrm{Prov}\\,\\psi\\to P)$, necessitation gives $\\mathrm{PA}\\vdash\\mathrm{Prov}(\\psi\\to(\\mathrm{Prov}\\,\\psi\\to P))$. Distributing $\\mathrm{Prov}$ twice gives $\\mathrm{PA}\\vdash\\mathrm{Prov}\\,\\psi\\to(\\mathrm{Prov}\\,\\mathrm{Prov}\\,\\psi\\to\\mathrm{Prov}\\,P)$.",
+      "uses": []
+     },
+     {
+      "id": "s:iterate",
+      "slogan": "Use provability of provability to reach $\\mathrm{Prov}\\,P$ from $\\mathrm{Prov}\\,\\psi$.",
+      "detail": "The third derivability condition gives $\\mathrm{PA}\\vdash\\mathrm{Prov}\\,\\psi\\to\\mathrm{Prov}\\,\\mathrm{Prov}\\,\\psi$. Combined with step 2 it gives $\\mathrm{PA}\\vdash\\mathrm{Prov}\\,\\psi\\to\\mathrm{Prov}\\,P$.",
+      "uses": []
+     },
+     {
+      "id": "s:hypothesis",
+      "slogan": "Compose with the hypothesis to prove $\\mathrm{Prov}\\,\\psi\\to P$ and then $\\psi$.",
+      "detail": "Chain step 3 with the hypothesis $\\mathrm{PA}\\vdash\\mathrm{Prov}\\,P\\to P$ to get $\\mathrm{PA}\\vdash\\mathrm{Prov}\\,\\psi\\to P$. By the fixed point equation of step 1, this says $\\mathrm{PA}\\vdash\\psi$.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Prove that $\\psi$ is provable, then detach $P$.",
+      "detail": "Necessitation applied to $\\mathrm{PA}\\vdash\\psi$ gives $\\mathrm{PA}\\vdash\\mathrm{Prov}\\,\\psi$. Modus ponens with $\\mathrm{PA}\\vdash\\mathrm{Prov}\\,\\psi\\to P$ gives $\\mathrm{PA}\\vdash P$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:fixed",
+      "s:distribute"
+     ],
+     [
+      "s:distribute",
+      "s:iterate"
+     ],
+     [
+      "s:iterate",
+      "s:hypothesis"
+     ],
+     [
+      "s:fixed",
+      "s:hypothesis"
+     ],
+     [
+      "s:hypothesis",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:peano-arithmetic": "The theory in which the derivability conditions and the diagonal lemma hold.",
+     "c:provability-predicate": "Its derivability conditions drive the whole derivation."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The Hilbert-Bernays-Loeb derivation. M. H. Loeb, Solution of a problem of Leon Henkin, Journal of Symbolic Logic 20 (1955), 115-118; see also Boolos, The Logic of Provability."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1068283",
+  "statement": "Let $M$ be an infinite structure for a [first-order](c:first-order-logic) language $L$, and $\\kappa$ an infinite [cardinal](c:cardinal-number) with $\\kappa\\ge|L|$. Then some $L$-structure $N$ of cardinality $\\kappa$ has an [elementary embedding](c:elementary-embedding) $N\\to M$ or $M\\to N$.",
+  "hypotheses": [
+   {
+    "id": "h:structure",
+    "text": "$M$ is an infinite structure for a [first-order](c:first-order-logic) language $L$.",
+    "concept": "c:first-order-logic"
+   },
+   {
+    "id": "h:cardinal",
+    "text": "$\\kappa$ is an infinite [cardinal](c:cardinal-number) with $\\kappa\\ge|L|$, the number of symbols of $L$.",
+    "concept": "c:cardinal-number"
+   }
+  ],
+  "conclusion": "Some $L$-structure of cardinality $\\kappa$ embeds elementarily into $M$ or receives an elementary embedding from $M$.",
+  "formal": {
+   "decl": "FirstOrder.Language.exists_elementaryEmbedding_card_eq",
+   "difference": "The declaration says the same, with explicit universe levels, so that cardinalities are compared through lifts, and with $N$ a bundled structure."
+  },
+  "proofs": [
+   {
+    "id": "skolem-hull-compactness",
+    "name": "Skolem hulls and compactness",
+    "slogan": "Go down by taking the Skolem hull of a set of size $\\kappa$, and go up by compactness on the elementary diagram followed by a descent to size $\\kappa$.",
+    "scope": "The whole theorem, split by whether $\\kappa\\le|M|$. The expanded language $L(M)$ in the upward case has at most $\\kappa$ symbols.",
+    "mechanisms": [
+     "m:case-analysis",
+     "m:compactness-logic"
+    ],
+    "roles": [
+     {
+      "h": "h:structure",
+      "why": "Infinity of $M$ makes the finite pieces of the diagram satisfiable, and $M$ supplies Skolem witnesses.",
+      "steps": [
+       "s:closure",
+       "s:large"
+      ]
+     },
+     {
+      "h": "h:cardinal",
+      "why": "The bound $\\kappa\\ge\\max(\\aleph_0,|L|)$ keeps the Skolem language and the expanded language within size $\\kappa$.",
+      "steps": [
+       "s:closure",
+       "s:shrink"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:cases",
+      "slogan": "Split on whether $\\kappa$ is at most the cardinality of $M$.",
+      "detail": "If $\\kappa\\le|M|$, steps 2 and 3 give $N$ with an embedding $N\\to M$. If $\\kappa>|M|$, steps 4 and 5 give $N$ with an embedding $M\\to N$. Step 6 collects both cases.",
+      "uses": []
+     },
+     {
+      "id": "s:closure",
+      "slogan": "Close a set of $\\kappa$ elements of $M$ under Skolem functions.",
+      "detail": "Add to $L$ a Skolem function for each formula $\\exists y\\,\\varphi(\\bar x,y)$, interpreted in $M$ by chosen witnesses. There are at most $\\max(\\aleph_0,|L|)\\le\\kappa$ such symbols. The closure $S$ of a set of $\\kappa$ elements (possible as $\\kappa\\le|M|$) has size exactly $\\kappa$.",
+      "uses": []
+     },
+     {
+      "id": "s:tv",
+      "slogan": "Check that the closure is an [elementary](c:elementary-embedding) substructure by the Tarski-Vaught test.",
+      "detail": "If $M\\models\\exists y\\,\\varphi(\\bar a,y)$ with $\\bar a$ in $S$, the Skolem function of $\\varphi$ gives a witness in $S$. The Tarski-Vaught test then shows that $S$ is an elementary substructure of $M$, so the inclusion $S\\to M$ is an elementary embedding.",
+      "uses": [
+       "nm:tarski-vaught-test"
+      ]
+     },
+     {
+      "id": "s:large",
+      "slogan": "Add constants for $M$ and for $\\kappa$ distinct new elements, and apply compactness.",
+      "detail": "Expand $L$ by constants $c_a$ for $a\\in M$ and $d_i$ for $i<\\kappa$. The elementary diagram of $M$ with the sentences $d_i\\neq d_j$ for $i\\neq j$ is finitely satisfiable in $M$, as $M$ is infinite. The compactness theorem gives a model $N_0$ with at least $\\kappa$ elements.",
+      "uses": [
+       "wd:Q1149458"
+      ]
+     },
+     {
+      "id": "s:shrink",
+      "slogan": "Shrink $N_0$ to size $\\kappa$ by the downward case in the language $L(M)$.",
+      "detail": "The language $L(M)$ has $|L|+|M|\\le\\kappa$ symbols because $|M|<\\kappa$. Steps 2 and 3 for $N_0$ give an elementary substructure $N$ of size $\\kappa$ that still models the elementary diagram of $M$. So $a\\mapsto c_a^N$ is an elementary embedding $M\\to N$.",
+      "uses": []
+     },
+     {
+      "id": "s:combine",
+      "slogan": "Collect the two cases into the structure $N$ of cardinality $\\kappa$.",
+      "detail": "In the first case $N=S$ and $S\\to M$ is elementary. In the second case $N$ from step 5 receives an elementary embedding from $M$. Both $N$ have cardinality $\\kappa$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:cases",
+      "s:closure"
+     ],
+     [
+      "s:closure",
+      "s:tv"
+     ],
+     [
+      "s:tv",
+      "s:combine"
+     ],
+     [
+      "s:cases",
+      "s:large"
+     ],
+     [
+      "s:large",
+      "s:shrink"
+     ],
+     [
+      "s:tv",
+      "s:shrink"
+     ],
+     [
+      "s:shrink",
+      "s:combine"
+     ]
+    ],
+    "conclusion": "s:combine",
+    "concepts": {
+     "c:first-order-logic": "Skolem functions and the compactness theorem belong to first-order logic.",
+     "c:cardinal-number": "The cardinal $\\kappa$ is the target size, and the language size is compared with it.",
+     "c:elementary-embedding": "Elementary embeddings are the maps that the proof builds in both directions."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "FirstOrder.Language.exists_elementaryEmbedding_card_eq",
+     "follows": true,
+     "note": "mathlib splits the cases: exists_elementaryEmbedding_card_eq_of_le uses the Skolem hull exists_elementarySubstructure_card_eq, and the ge case applies exists_large_model_of_infinite_model to the elementary diagram, then the downward case in L[[M]]."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:26992",
+  "statement": "Let $A$ be a continuous matrix function and $Y$ the solution (the [time-ordered exponential](c:time-ordered-exponential) of $A$) of $Y'=A(t)Y$, $Y(0)=I$. For small $t$, $Y(t)=e^{\\Omega(t)}$ with the [matrix exponential](c:matrix-exponential), where $\\Omega(0)=0$ and $\\Omega'=\\sum_{k\\ge0}\\frac{B_k}{k!}\\mathrm{ad}_\\Omega^kA$. Then $\\Omega=\\int_0^tA+\\frac12\\int_0^t\\!\\int_0^{t_1}[A(t_1),A(t_2)]\\,dt_2\\,dt_1+\\cdots$.",
+  "hypotheses": [
+   {
+    "id": "h:continuous",
+    "text": "$A\\colon[0,T]\\to\\mathbb{C}^{n\\times n}$ is continuous.",
+    "concept": null
+   },
+   {
+    "id": "h:initial",
+    "text": "$Y$ solves the [differential equation](c:ordinary-differential-equation) $Y'=A(t)Y$ with $Y(0)=I$.",
+    "concept": "c:ordinary-differential-equation"
+   },
+   {
+    "id": "h:small",
+    "text": "The time $t$ is small: $0\\le t<\\tau$ for some $\\tau>0$ that depends on $A$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "$Y(t)=e^{\\Omega(t)}$ for $\\Omega$ the solution of the Magnus equation, and $\\Omega$ expands as $\\Omega_1+\\Omega_2+\\cdots$ with the stated first two terms.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "dexp-inversion",
+    "name": "Inverting the derivative of the exponential",
+    "slogan": "Differentiate $e^{\\Omega}$, invert the resulting operator with the Bernoulli series, and solve the equation that $\\Omega$ must satisfy.",
+    "scope": "The local statement and the first two terms. The sharp convergence condition $\\int_0^t\\|A\\|<\\pi$ for the whole series is not proved here.",
+    "mechanisms": [
+     "m:fixed-point",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:continuous",
+      "why": "Continuity of $A$ gives the Picard solution $\\Omega$ and the uniqueness of the linear solution.",
+      "steps": [
+       "s:solve",
+       "s:match"
+      ]
+     },
+     {
+      "h": "h:initial",
+      "why": "The condition $Y(0)=I$ matches $\\Omega(0)=0$ and fixes the solution.",
+      "steps": [
+       "s:match"
+      ]
+     },
+     {
+      "h": "h:small",
+      "why": "A small time keeps $\\|\\Omega\\|<\\pi$, so the operator of step 1 is invertible and the series of step 2 converges.",
+      "steps": [
+       "s:invert",
+       "s:solve"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:dexp",
+      "slogan": "Differentiate $e^{\\Omega(t)}$ with the Duhamel formula.",
+      "detail": "For a differentiable matrix function, $\\frac{d}{dt}e^{\\Omega}=\\int_0^1e^{s\\Omega}\\Omega'e^{(1-s)\\Omega}ds$. Since $e^{s\\Omega}Xe^{-s\\Omega}=e^{s\\,\\mathrm{ad}_\\Omega}X$, this equals $\\bigl(\\frac{e^{\\mathrm{ad}_\\Omega}-1}{\\mathrm{ad}_\\Omega}\\Omega'\\bigr)e^{\\Omega}$, where $\\mathrm{ad}_\\Omega X=[\\Omega,X]$ uses the [Lie bracket](c:lie-bracket).",
+      "uses": []
+     },
+     {
+      "id": "s:invert",
+      "slogan": "Invert $\\frac{e^{x}-1}{x}$ on the adjoint operator with the Bernoulli series.",
+      "detail": "The series $x/(e^x-1)=\\sum_kB_kx^k/k!$ in the [Bernoulli numbers](c:bernoulli-number) has radius $2\\pi$, and $\\|\\mathrm{ad}_\\Omega\\|\\le2\\|\\Omega\\|$. So for $\\|\\Omega\\|<\\pi$ the operator of step 1 is invertible, with inverse $\\sum_k\\frac{B_k}{k!}\\mathrm{ad}_\\Omega^k$.",
+      "uses": []
+     },
+     {
+      "id": "s:solve",
+      "slogan": "Solve the Magnus equation for $\\Omega$ near $t=0$ by Picard iteration.",
+      "detail": "The right side $F(t,\\Omega)=\\sum_k\\frac{B_k}{k!}\\mathrm{ad}_\\Omega^kA(t)$ is continuous in $t$ and analytic in $\\Omega$ on $\\|\\Omega\\|<\\pi$. The Picard-Lindelöf theorem gives a unique solution with $\\Omega(0)=0$ on some $[0,\\tau)$ with $\\|\\Omega\\|<\\pi$.",
+      "uses": []
+     },
+     {
+      "id": "s:match",
+      "slogan": "Show that $e^{\\Omega}$ solves $Y'=AY$ and so equals $Y$.",
+      "detail": "The Magnus equation and step 2 give $\\frac{e^{\\mathrm{ad}_\\Omega}-1}{\\mathrm{ad}_\\Omega}\\Omega'=A$, so step 1 gives $\\frac{d}{dt}e^{\\Omega}=Ae^{\\Omega}$ with $e^{\\Omega(0)}=I$. A linear [differential equation](c:ordinary-differential-equation) with continuous coefficients has one solution for each initial value, so $e^{\\Omega}=Y$, the [time-ordered exponential](c:time-ordered-exponential) of $A$.",
+      "uses": []
+     },
+     {
+      "id": "s:expand",
+      "slogan": "Iterate the Magnus equation to read off the first two terms.",
+      "detail": "Replace $A$ by $\\varepsilon A$ and expand $\\Omega$ in powers of $\\varepsilon$; for small $t$ the expansion converges at $\\varepsilon=1$. Order $\\varepsilon$ gives $\\Omega_1'=A$, so $\\Omega_1=\\int_0^tA$. Order $\\varepsilon^2$ gives $\\Omega_2'=-\\frac12[\\Omega_1,A]=\\frac12[A,\\Omega_1]$, so $\\Omega_2=\\frac12\\int_0^t\\int_0^{t_1}[A(t_1),A(t_2)]\\,dt_2\\,dt_1$.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Combine the exponential form with the expansion of $\\Omega$.",
+      "detail": "Step 4 gives $Y=e^{\\Omega}$ with $\\Omega$ the solution of the Magnus equation, and step 5 gives its expansion. Together they are the stated formula.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:dexp",
+      "s:invert"
+     ],
+     [
+      "s:invert",
+      "s:solve"
+     ],
+     [
+      "s:dexp",
+      "s:match"
+     ],
+     [
+      "s:invert",
+      "s:match"
+     ],
+     [
+      "s:solve",
+      "s:match"
+     ],
+     [
+      "s:solve",
+      "s:expand"
+     ],
+     [
+      "s:match",
+      "s:conclude"
+     ],
+     [
+      "s:expand",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:time-ordered-exponential": "The solution $Y$ is the time-ordered exponential of $A$.",
+     "c:matrix-exponential": "The theorem writes the solution as the exponential of one matrix $\\Omega$.",
+     "c:ordinary-differential-equation": "Uniqueness for the linear equation identifies $e^{\\Omega}$ with $Y$.",
+     "c:lie-bracket": "The adjoint operator $\\mathrm{ad}_\\Omega$ is built from the commutator bracket.",
+     "c:bernoulli-number": "Bernoulli numbers are the coefficients of the inverse operator series."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "W. Magnus, On the exponential solution of differential equations for a linear operator, Communications on Pure and Applied Mathematics 7 (1954), 649-673; derivation as in Blanes, Casas, Oteo and Ros, The Magnus expansion and some of its applications, Physics Reports 470 (2009), 151-238."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q6783821",
+  "statement": "Let $k$ be a field and $a,b,c\\in k[x]$ nonzero [polynomials](c:polynomial) with $a,b$ coprime and $a+b+c=0$, whose [derivatives](c:derivative) are not all zero. Then $\\max(\\deg a,\\deg b,\\deg c)<\\deg\\mathrm{rad}(abc)$, where the [radical](c:radical) is the product of the distinct monic prime factors.",
+  "hypotheses": [
+   {
+    "id": "h:nonzero",
+    "text": "$a,b,c$ are nonzero [polynomials](c:polynomial) over a field $k$.",
+    "concept": "c:polynomial"
+   },
+   {
+    "id": "h:coprime",
+    "text": "The polynomials $a$ and $b$ are coprime.",
+    "concept": null
+   },
+   {
+    "id": "h:sum",
+    "text": "$a+b+c=0$.",
+    "concept": null
+   },
+   {
+    "id": "h:derivative",
+    "text": "The [derivatives](c:derivative) $a',b',c'$ are not all zero.",
+    "concept": "c:derivative"
+   }
+  ],
+  "conclusion": "Each of $\\deg a,\\deg b,\\deg c$ is less than $\\deg\\mathrm{rad}(abc)$.",
+  "formal": {
+   "decl": "Polynomial.abc",
+   "difference": "The declaration states a dichotomy: every degree plus $1$ is at most $\\deg\\mathrm{rad}(abc)$, or $a'=b'=c'=0$. This theorem assumes that the second branch fails."
+  },
+  "proofs": [
+   {
+    "id": "wronskian",
+    "name": "Wronskian",
+    "slogan": "Bound the degree of the Wronskian from below by the non-radical part of $abc$ and from above by $\\deg a+\\deg b-1$.",
+    "scope": "The whole theorem. The Wronskian $W=a'b-ab'$ is nonzero by the derivative hypothesis, and the symmetry of $a,b,c$ gives all three degree bounds.",
+    "mechanisms": [
+     "m:unique-factorization",
+     "m:algebraic-identity",
+     "m:symmetry"
+    ],
+    "roles": [
+     {
+      "h": "h:sum",
+      "why": "The relation $a+b+c=0$ makes the three Wronskians of pairs equal.",
+      "steps": [
+       "s:wronskian"
+      ]
+     },
+     {
+      "h": "h:coprime",
+      "why": "Coprimality of $a$ and $b$ gives pairwise coprimality, which forces $W=0$ to mean zero derivatives and lets the divisors multiply.",
+      "steps": [
+       "s:zero",
+       "s:product"
+      ]
+     },
+     {
+      "h": "h:nonzero",
+      "why": "Nonzero polynomials have degrees, and their [radicals](c:radical) and quotients are defined.",
+      "steps": [
+       "s:divides",
+       "s:degree"
+      ]
+     },
+     {
+      "h": "h:derivative",
+      "why": "Not all [derivatives](c:derivative) vanish, so the Wronskian is nonzero.",
+      "steps": [
+       "s:zero"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:wronskian",
+      "slogan": "Show that the [Wronskian](c:wronskian) $W=a'b-ab'$ is the same for each pair.",
+      "detail": "Differentiating $a+b+c=0$ gives $a'+b'+c'=0$. Substituting $c=-a-b$ shows $a'b-ab'=b'c-bc'=c'a-ca'$. Also $a,b,c$ are pairwise coprime, since a common factor of two of them divides the third.",
+      "uses": []
+     },
+     {
+      "id": "s:zero",
+      "slogan": "Show that $W=0$ forces $a'=b'=c'=0$.",
+      "detail": "If $a'b=ab'$, then $a\\mid a'b$, so $a\\mid a'$ as $a$ and $b$ are coprime. Since $\\deg a'<\\deg a$ unless $a'=0$, we get $a'=0$. Likewise $b'=0$, and $c'=-a'-b'=0$. So the hypothesis on derivatives gives $W\\ne0$.",
+      "uses": []
+     },
+     {
+      "id": "s:divides",
+      "slogan": "Show that $a/\\mathrm{rad}\\,a$, $b/\\mathrm{rad}\\,b$ and $c/\\mathrm{rad}\\,c$ divide $W$.",
+      "detail": "Factor into primes. If $p^e$ exactly divides $a$ with $e\\ge1$, then $p^{e-1}$ divides $a'$, so $a/\\mathrm{rad}\\,a$ divides $a'$ and $a$, hence $W=a'b-ab'$. The same argument gives $b/\\mathrm{rad}\\,b\\mid W$, and $c/\\mathrm{rad}\\,c$ divides $W=c'a-ca'$.",
+      "uses": [
+       "wd:Q670235"
+      ]
+     },
+     {
+      "id": "s:product",
+      "slogan": "Multiply the three coprime divisors to get $abc/\\mathrm{rad}(abc)\\mid W$.",
+      "detail": "The three quotients are pairwise coprime because $a,b,c$ are. So their product divides $W$. For pairwise coprime $a,b,c$, $\\mathrm{rad}(abc)=\\mathrm{rad}\\,a\\,\\mathrm{rad}\\,b\\,\\mathrm{rad}\\,c$, so the product equals $abc/\\mathrm{rad}(abc)$.",
+      "uses": []
+     },
+     {
+      "id": "s:degree",
+      "slogan": "Compare degrees to bound $\\deg c$ by $\\deg\\mathrm{rad}(abc)-1$.",
+      "detail": "Because $\\deg a'\\le\\deg a-1$ and $\\deg b'\\le\\deg b-1$, a nonzero $W$ has $\\deg W\\le\\deg a+\\deg b-1$. Step 4 gives $\\deg(abc)-\\deg\\mathrm{rad}(abc)\\le\\deg W$, so $\\deg c+1\\le\\deg\\mathrm{rad}(abc)$.",
+      "uses": []
+     },
+     {
+      "id": "s:symmetry",
+      "slogan": "Repeat the argument for $a$ and $b$ by symmetry.",
+      "detail": "The hypotheses are symmetric in $a,b,c$, and $W=b'c-bc'=c'a-ca'$. Using these forms of $W$ in step 5 gives $\\deg a+1\\le\\deg\\mathrm{rad}(abc)$ and $\\deg b+1\\le\\deg\\mathrm{rad}(abc)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:wronskian",
+      "s:zero"
+     ],
+     [
+      "s:wronskian",
+      "s:divides"
+     ],
+     [
+      "s:wronskian",
+      "s:product"
+     ],
+     [
+      "s:divides",
+      "s:product"
+     ],
+     [
+      "s:zero",
+      "s:degree"
+     ],
+     [
+      "s:product",
+      "s:degree"
+     ],
+     [
+      "s:degree",
+      "s:symmetry"
+     ]
+    ],
+    "conclusion": "s:symmetry",
+    "concepts": {
+     "c:polynomial": "The theorem compares degrees of polynomials over a field.",
+     "c:derivative": "Derivatives control multiplicities of factors and the degree of $W$.",
+     "c:radical": "The radical of a polynomial is the product of its distinct prime factors.",
+     "c:wronskian": "The Wronskian links the non-radical part of $abc$ to its degree."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Polynomial.abc",
+     "follows": true,
+     "note": "mathlib uses wronskian_eq_of_sum_zero, divRadical_dvd_wronskian_left and right, IsCoprime.wronskian_eq_zero_iff, and abc_subcall with natDegree_wronskian_lt_add, after Snyder and Lemmermeyer."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:mean-of-product-of-independent-random-variables",
+  "statement": "Let $X,Y$ be [independent](c:independence) real random variables with finite [expected value](c:expected-value). Then $XY$ is integrable and $E[XY]=E[X]\\,E[Y]$.",
+  "hypotheses": [
+   {
+    "id": "h:independent",
+    "text": "The random variables $X$ and $Y$ are [independent](c:independence).",
+    "concept": "c:independence"
+   },
+   {
+    "id": "h:integrable",
+    "text": "$X$ and $Y$ are [integrable](c:integrable-function).",
+    "concept": "c:integrable-function"
+   }
+  ],
+  "conclusion": "The product $XY$ is integrable and $E[XY]=E[X]\\,E[Y]$.",
+  "formal": {
+   "decl": "ProbabilityTheory.IndepFun.integral_mul_eq_mul_integral",
+   "difference": "The declaration needs only almost everywhere strong measurability, for real or complex values, with no integrability hypothesis: a non-integrable function has integral $0$, so both sides vanish when a factor is not integrable. This theorem adds integrability and also concludes that $XY$ is integrable."
+  },
+  "proofs": [
+   {
+    "id": "product-law-fubini",
+    "name": "Product law and Fubini",
+    "slogan": "The joint law of independent variables is the product of the laws, so Tonelli gives integrability and Fubini splits the integral of $xy$.",
+    "scope": "The whole theorem, for real random variables with finite expectation. Integrability of $XY$ is proved first, so the final integral is defined.",
+    "mechanisms": [
+     "m:fubini-swap",
+     "m:change-of-variables"
+    ],
+    "roles": [
+     {
+      "h": "h:independent",
+      "why": "[Independence](c:independence) is exactly the statement that the joint law is a product measure.",
+      "steps": [
+       "s:law"
+      ]
+     },
+     {
+      "h": "h:integrable",
+      "why": "[Integrability](c:integrable-function) of $X$ and $Y$ makes $|x||y|$ integrable for the product law and lets Fubini apply.",
+      "steps": [
+       "s:integrable",
+       "s:fubini"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:law",
+      "slogan": "Identify the joint law of $(X,Y)$ with the product of the two laws.",
+      "detail": "Independence says $P(X\\in S,Y\\in T)=P(X\\in S)P(Y\\in T)$ for Borel sets $S,T$. Rectangles determine a measure on $\\mathbb{R}^2$, so the law of $(X,Y)$ is the [product measure](c:product-measure) $\\mu_X\\otimes\\mu_Y$.",
+      "uses": []
+     },
+     {
+      "id": "s:integrable",
+      "slogan": "Show that $XY$ is integrable by Tonelli's theorem.",
+      "detail": "By step 1 and the change of variables, $E|XY|=\\int|xy|\\,d(\\mu_X\\otimes\\mu_Y)$. Tonelli's theorem turns this into $\\int|x|\\,d\\mu_X\\int|y|\\,d\\mu_Y=E|X|\\,E|Y|<\\infty$.",
+      "uses": [
+       "wd:Q7820874"
+      ]
+     },
+     {
+      "id": "s:fubini",
+      "slogan": "Compute $\\int xy\\,d(\\mu_X\\otimes\\mu_Y)$ as an iterated integral.",
+      "detail": "Since $xy$ is integrable for the product law, Fubini's theorem gives $\\int\\bigl(\\int xy\\,d\\mu_X(x)\\bigr)d\\mu_Y(y)=\\int x\\,d\\mu_X\\cdot\\int y\\,d\\mu_Y$.",
+      "uses": [
+       "wd:Q1149022"
+      ]
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Return to the sample space to obtain $E[XY]=E[X]E[Y]$.",
+      "detail": "By the change of variables for the law of $(X,Y)$, $E[XY]=\\int xy\\,d(\\mu_X\\otimes\\mu_Y)$. Step 3 gives $\\int x\\,d\\mu_X\\int y\\,d\\mu_Y=E[X]\\,E[Y]$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:law",
+      "s:integrable"
+     ],
+     [
+      "s:integrable",
+      "s:fubini"
+     ],
+     [
+      "s:fubini",
+      "s:conclude"
+     ],
+     [
+      "s:law",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:independence": "Independence makes the joint law a product measure.",
+     "c:expected-value": "The theorem compares $E[XY]$ with $E[X]E[Y]$.",
+     "c:integrable-function": "Integrability lets Tonelli and Fubini apply to $xy$.",
+     "c:product-measure": "The joint law of independent variables is the product measure."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "ProbabilityTheory.IndepFun.integral_mul_eq_mul_integral",
+     "follows": true,
+     "note": "mathlib reaches it through integral_smul_eq_smul_integral and integral_bilin_comp_comp: map_prod_eq_prod_map_map gives the product law, then integral_map and integral_prod_bilin (Fubini) split the integral."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q193882",
+  "statement": "Let $ABC$ be a [triangle](c:triangle) and $D,E,F$ points on the lines $BC,CA,AB$, none of them a vertex. Then $D,E,F$ are [collinear](c:collinear-points) if and only if $\\frac{BD}{DC}\\cdot\\frac{CE}{EA}\\cdot\\frac{AF}{FB}=-1$, with [signed ratios](c:signed-ratio) along each line.",
+  "hypotheses": [
+   {
+    "id": "h:triangle",
+    "text": "$ABC$ is a nondegenerate [triangle](c:triangle).",
+    "concept": "c:triangle"
+   },
+   {
+    "id": "h:points",
+    "text": "The points $D,E,F$ lie on the lines $BC$, $CA$, $AB$ and differ from $A$, $B$, $C$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The points $D,E,F$ are collinear exactly when the product of the three signed ratios equals $-1$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "affine-function",
+    "name": "Signed distance to the line",
+    "slogan": "Express each signed ratio through the values of one affine function that vanishes on the line, and the product becomes $-1$.",
+    "scope": "Both directions. The converse uses the forward direction on the line $DE$, after excluding the case $DE\\parallel AB$.",
+    "mechanisms": [
+     "m:coordinates",
+     "m:case-analysis"
+    ],
+    "roles": [
+     {
+      "h": "h:triangle",
+      "why": "A nondegenerate [triangle](c:triangle) gives three distinct side lines, so no point of the transversal lies on two of them.",
+      "steps": [
+       "s:affine",
+       "s:parallel"
+      ]
+     },
+     {
+      "h": "h:points",
+      "why": "The points $D,E,F$ off the vertices keep $h(A),h(B),h(C)$ nonzero and make the ratios defined.",
+      "steps": [
+       "s:affine",
+       "s:ratio",
+       "s:meet"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:affine",
+      "slogan": "Describe the transversal $\\ell$ as the zero set of an [affine](c:affine-map) function $h$.",
+      "detail": "Let $h(P)=n\\cdot P-c$ with $\\ell=\\{h=0\\}$. No vertex lies on $\\ell$: if $B\\in\\ell$ then $D=B$ when $\\ell\\neq BC$, and $E=C$ when $\\ell=BC$, both excluded. The vertices $A$ and $C$ are the same. So $h(A),h(B),h(C)\\neq0$.",
+      "uses": []
+     },
+     {
+      "id": "s:ratio",
+      "slogan": "Express each [signed ratio](c:signed-ratio) through the values of $h$ at the vertices.",
+      "detail": "If $D=B+t(C-B)$, then $h(D)=(1-t)h(B)+t\\,h(C)=0$, so $BD/DC=t/(1-t)=-h(B)/h(C)$. In the same way $CE/EA=-h(C)/h(A)$ and $AF/FB=-h(A)/h(B)$.",
+      "uses": []
+     },
+     {
+      "id": "s:product",
+      "slogan": "Multiply the three ratios to obtain $-1$ for collinear points.",
+      "detail": "The product is $(-1)^3\\,h(B)h(C)h(A)/\\bigl(h(C)h(A)h(B)\\bigr)=-1$. This proves the direction from [collinear](c:collinear-points) points to the product.",
+      "uses": []
+     },
+     {
+      "id": "s:parallel",
+      "slogan": "Rule out that the line $DE$ is parallel to $AB$ when the product is $-1$.",
+      "detail": "Let $h$ vanish on $\\ell=DE$. By the argument of step 1 for $D$ and $E$ alone, this line contains no vertex, so step 2 gives $\\frac{BD}{DC}\\frac{CE}{EA}=\\frac{h(B)}{h(A)}$. If $\\ell\\parallel AB$ then $h(A)=h(B)$, so this is $1$, and the hypothesis forces $AF/FB=-1$. No point of $AB$ has $AF/FB=t/(1-t)=-1$, so $\\ell$ meets $AB$ at a point $F'$.",
+      "uses": []
+     },
+     {
+      "id": "s:meet",
+      "slogan": "Apply the forward direction to $D,E,F'$ and compare with $F$.",
+      "detail": "The line $\\ell$ contains no vertex, so $F'$ is not a vertex and step 3 gives $\\frac{BD}{DC}\\frac{CE}{EA}\\frac{AF'}{F'B}=-1$. With the hypothesis, $AF'/F'B=AF/FB$. The map $P\\mapsto AP/PB=t/(1-t)$ is injective on the line $AB$ without $B$, so $F=F'$ lies on $\\ell$.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Join the two directions into the equivalence.",
+      "detail": "Step 3 shows that collinear points give the product $-1$. Steps 4 and 5 show that the product $-1$ puts $F$ on the line $DE$. Together they prove the equivalence.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:affine",
+      "s:ratio"
+     ],
+     [
+      "s:ratio",
+      "s:product"
+     ],
+     [
+      "s:ratio",
+      "s:parallel"
+     ],
+     [
+      "s:parallel",
+      "s:meet"
+     ],
+     [
+      "s:product",
+      "s:meet"
+     ],
+     [
+      "s:product",
+      "s:conclude"
+     ],
+     [
+      "s:meet",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:triangle": "The triangle has three distinct side lines meeting at the vertices.",
+     "c:collinear-points": "Collinearity of $D,E,F$ is the geometric side of the equivalence.",
+     "c:signed-ratio": "Signed ratios are the quantities whose product equals $-1$.",
+     "c:affine-map": "An affine function is linear on each line, which turns ratios into value ratios."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard affine proof by a function vanishing on the transversal; compare Coxeter and Greitzer, Geometry Revisited, chapter 3."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q649469",
+  "statement": "Let $E$ be an [elliptic curve](c:elliptic-curve) over $\\mathbb{Q}$ with [conductor](c:conductor-number-theory) $N$. Then some normalized weight two [cusp form](c:cusp-form) $f=q+\\sum_{n\\ge2}a_nq^n$ for $\\Gamma_0(N)$, an eigenform of the [Hecke algebra](c:hecke-algebra), has $a_p=a_p(E)$ for every prime $p$.",
+  "hypotheses": [
+   {
+    "id": "h:curve",
+    "text": "$E$ is an [elliptic curve](c:elliptic-curve) over $\\mathbb{Q}$ with [conductor](c:conductor-number-theory) $N$.",
+    "concept": "c:elliptic-curve"
+   }
+  ],
+  "conclusion": "A weight two newform of level $N$ has the same Fourier coefficients $a_p$ as the point counts of $E$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "taylor-wiles",
+    "name": "Modularity lifting and the 3-5 switch",
+    "slogan": "Prove that the Galois representations of the curve are modular by Taylor-Wiles lifting from a modular residual representation, switching between the primes 3 and 5.",
+    "scope": "An outline of the published proof; each step rests on the cited work of Wiles, Taylor-Wiles, Conrad-Diamond-Taylor and Breuil-Conrad-Diamond-Taylor.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:modularity"
+    ],
+    "roles": [
+     {
+      "h": "h:curve",
+      "why": "The curve $E$ and its [conductor](c:conductor-number-theory) supply the Galois representations, the local conditions, and the level of the form.",
+      "steps": [
+       "s:galois",
+       "s:lifting",
+       "s:attach"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:galois",
+      "slogan": "Attach the $\\ell$-adic [Galois representations](c:galois-representation) to the curve.",
+      "detail": "The action of $\\mathrm{Gal}(\\bar{\\mathbb Q}/\\mathbb Q)$ on the $\\ell$-adic Tate module of $E$ gives $\\rho_{E,\\ell}$ and its reduction $\\bar\\rho_{E,\\ell}$. The Frobenius at $p\\nmid N\\ell$ has trace $a_p(E)$ and determinant $p$.",
+      "uses": []
+     },
+     {
+      "id": "s:residual",
+      "slogan": "Show that $\\bar\\rho_{E,3}$ is modular when it is irreducible.",
+      "detail": "If $\\bar\\rho_{E,3}$ is irreducible, its image in $\\mathrm{GL}_2(\\mathbb F_3)$ is solvable. The Langlands-Tunnell theorem attaches a weight one form to a complex lift, and a congruence of weight one with weight two [modular forms](c:modular-form) makes $\\bar\\rho_{E,3}$ modular.",
+      "uses": []
+     },
+     {
+      "id": "s:lifting",
+      "slogan": "Lift modularity from the residual representation to $\\rho_{E,\\ell}$ by Taylor-Wiles patching.",
+      "detail": "Wiles and Taylor-Wiles show that the universal deformation ring equals the [Hecke algebra](c:hecke-algebra), by patching Galois cohomology groups. Conrad-Diamond-Taylor and Breuil-Conrad-Diamond-Taylor extend this to potentially Barsotti-Tate conditions at $3$, which removes the semistability assumption. So an irreducible modular $\\bar\\rho_{E,\\ell}$ makes $\\rho_{E,\\ell}$ modular, for $\\ell=3,5$.",
+      "uses": []
+     },
+     {
+      "id": "s:switch",
+      "slogan": "Switch to the prime 5 when $\\bar\\rho_{E,3}$ is reducible.",
+      "detail": "Wiles finds a curve $E'$ with $\\bar\\rho_{E',5}\\cong\\bar\\rho_{E,5}$ and $\\bar\\rho_{E',3}$ irreducible, using a rational point on a twisted modular curve. Steps 2 and 3 make $E'$ modular, so $\\bar\\rho_{E,5}$ is modular, and step 3 at $\\ell=5$ makes $\\rho_{E,5}$ modular.",
+      "uses": []
+     },
+     {
+      "id": "s:attach",
+      "slogan": "Turn the modular Galois representation into a [cusp form](c:cusp-form) with $a_p=a_p(E)$.",
+      "detail": "Modularity of $\\rho_{E,\\ell}$ means $\\rho_{E,\\ell}\\cong\\rho_f$ for a weight two Hecke eigenform $f$. Comparing Frobenius traces gives $a_p(f)=a_p(E)$ for $p\\nmid N\\ell$. Carayol's local-global compatibility fixes the level $N$, and strong multiplicity one gives equality at every prime.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:galois",
+      "s:residual"
+     ],
+     [
+      "s:galois",
+      "s:lifting"
+     ],
+     [
+      "s:residual",
+      "s:lifting"
+     ],
+     [
+      "s:lifting",
+      "s:switch"
+     ],
+     [
+      "s:residual",
+      "s:switch"
+     ],
+     [
+      "s:lifting",
+      "s:attach"
+     ],
+     [
+      "s:switch",
+      "s:attach"
+     ]
+    ],
+    "conclusion": "s:attach",
+    "concepts": {
+     "c:elliptic-curve": "The curve is the object that the theorem shows to be modular.",
+     "c:conductor-number-theory": "The conductor is the level of the modular form.",
+     "c:cusp-form": "The final output is a weight two cusp form matching the curve.",
+     "c:hecke-algebra": "The Hecke algebra is the side of the identity $R=\\mathbb T$.",
+     "c:galois-representation": "Galois representations carry the arithmetic of the curve into the proof.",
+     "c:modular-form": "Modular forms are the target of the residual and lifted representations."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "C. Breuil, B. Conrad, F. Diamond and R. Taylor, On the modularity of elliptic curves over Q: wild 3-adic exercises, Journal of the American Mathematical Society 14 (2001), 843-939",
+     "url": "https://doi.org/10.1090/S0894-0347-01-00370-8",
+     "note": "Completes the proof begun by A. Wiles (Annals of Mathematics 141 (1995), 443-551) and R. Taylor and A. Wiles (ibid., 553-572) for semistable curves, with Conrad-Diamond-Taylor, Journal of the American Mathematical Society 12 (1999), 521-567."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:28172",
+  "statement": "Let $X$ be a compact connected oriented [smooth manifold](c:smooth-manifold) without boundary, and $\\omega_0,\\omega_1$ positive [volume forms](c:volume-form) with $\\int_X\\omega_0=\\int_X\\omega_1$. Then a diffeomorphism $\\varphi$ of $X$, [isotopic](c:isotopy) to the identity, satisfies $\\varphi^*\\omega_1=\\omega_0$.",
+  "hypotheses": [
+   {
+    "id": "h:manifold",
+    "text": "$X$ is a compact, connected, oriented [smooth manifold](c:smooth-manifold) of dimension $d\\ge1$ without boundary.",
+    "concept": "c:smooth-manifold"
+   },
+   {
+    "id": "h:forms",
+    "text": "$\\omega_0$ and $\\omega_1$ are positive [volume forms](c:volume-form): nowhere zero top forms that agree with the orientation.",
+    "concept": "c:volume-form"
+   },
+   {
+    "id": "h:volume",
+    "text": "The total volumes agree: $\\int_X\\omega_0=\\int_X\\omega_1$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "A diffeomorphism $\\varphi$ of $X$, [isotopic](c:isotopy) to the identity, has $\\varphi^*\\omega_1=\\omega_0$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "moser-trick",
+    "name": "Moser's trick",
+    "slogan": "Join the two volume forms by a segment, solve for a vector field that cancels the change, and integrate it to the diffeomorphism.",
+    "scope": "The case $d\\ge1$; for $d=0$ the manifold is a point and $\\omega_0=\\omega_1$ already. The flow exists up to time $1$ because $X$ is compact.",
+    "mechanisms": [
+     "m:homotopy-invariance",
+     "m:construction-explicit"
+    ],
+    "roles": [
+     {
+      "h": "h:manifold",
+      "why": "Compactness gives a flow for all time, and connectedness with orientation makes top cohomology one dimensional.",
+      "steps": [
+       "s:exact",
+       "s:flow"
+      ]
+     },
+     {
+      "h": "h:forms",
+      "why": "Both forms are positive [volume forms](c:volume-form), so every point of the segment is a volume form and can be inverted.",
+      "steps": [
+       "s:path",
+       "s:vector"
+      ]
+     },
+     {
+      "h": "h:volume",
+      "why": "Equal total volume makes the difference $\\omega_1-\\omega_0$ integrate to zero, hence exact.",
+      "steps": [
+       "s:exact"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:path",
+      "slogan": "Join the two volume forms by the segment $\\omega_t=(1-t)\\omega_0+t\\omega_1$.",
+      "detail": "Write $\\omega_1=h\\,\\omega_0$ with a positive function $h$. Then $\\omega_t=((1-t)+th)\\,\\omega_0$ has a positive coefficient for $t\\in[0,1]$, so every $\\omega_t$ is a positive [volume form](c:volume-form).",
+      "uses": []
+     },
+     {
+      "id": "s:exact",
+      "slogan": "Show that $\\omega_1-\\omega_0$ is exact, using top degree [de Rham cohomology](c:de-rham-cohomology).",
+      "detail": "On a compact connected oriented $d$-manifold, integration is an isomorphism $H^d_{dR}(X)\\to\\mathbb{R}$, by Poincaré duality. The form $\\omega_1-\\omega_0$ has integral $0$, so $\\omega_1-\\omega_0=d\\alpha$ for a smooth $(d-1)$-form $\\alpha$.",
+      "uses": [
+       "wd:Q2063099"
+      ]
+     },
+     {
+      "id": "s:vector",
+      "slogan": "Solve $\\iota_{v_t}\\omega_t=-\\alpha$ for a time dependent [vector field](c:vector-field) $v_t$.",
+      "detail": "Since $\\omega_t$ vanishes nowhere, $v\\mapsto\\iota_v\\omega_t$ is a linear isomorphism from $T_xX$ to $\\Lambda^{d-1}T^*_xX$ at each point. So a unique smooth $v_t$ satisfies $\\iota_{v_t}\\omega_t=-\\alpha$, and it depends smoothly on $t$.",
+      "uses": []
+     },
+     {
+      "id": "s:flow",
+      "slogan": "Integrate $v_t$ to a [flow](c:flow) of diffeomorphisms $\\varphi_t$ for $t\\in[0,1]$.",
+      "detail": "On a compact manifold the solutions of $\\dot\\varphi_t=v_t\\circ\\varphi_t$, $\\varphi_0=\\mathrm{id}$, exist for all $t\\in[0,1]$. Each $\\varphi_t$ is a diffeomorphism, so $t\\mapsto\\varphi_t$ is an [isotopy](c:isotopy) from the identity.",
+      "uses": []
+     },
+     {
+      "id": "s:constant",
+      "slogan": "Show that $\\varphi_t^*\\omega_t$ is constant in $t$.",
+      "detail": "We have $\\frac{d}{dt}\\varphi_t^*\\omega_t=\\varphi_t^*(\\mathcal L_{v_t}\\omega_t+\\partial_t\\omega_t)$. Cartan's formula and $d\\omega_t=0$ give $\\mathcal L_{v_t}\\omega_t=d\\iota_{v_t}\\omega_t=-d\\alpha$, and $\\partial_t\\omega_t=\\omega_1-\\omega_0=d\\alpha$. The sum is $0$, so $\\varphi_1^*\\omega_1=\\varphi_0^*\\omega_0=\\omega_0$.",
+      "uses": [
+       "nm:cartan-s-formula"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:path",
+      "s:vector"
+     ],
+     [
+      "s:exact",
+      "s:vector"
+     ],
+     [
+      "s:vector",
+      "s:flow"
+     ],
+     [
+      "s:flow",
+      "s:constant"
+     ],
+     [
+      "s:path",
+      "s:constant"
+     ],
+     [
+      "s:exact",
+      "s:constant"
+     ]
+    ],
+    "conclusion": "s:constant",
+    "concepts": {
+     "c:smooth-manifold": "Compact smooth manifolds give flows for all time.",
+     "c:volume-form": "The segment of volume forms is what the vector field must transport.",
+     "c:isotopy": "The flow is an isotopy from the identity, as the theorem asks.",
+     "c:de-rham-cohomology": "Top degree cohomology shows that equal volumes make the difference exact.",
+     "c:vector-field": "The vector field $v_t$ generates the diffeomorphism.",
+     "c:flow": "The flow of $v_t$ is the isotopy that carries one form to the other."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The Moser trick, from J. Moser, On the volume elements on a manifold, Transactions of the American Mathematical Society 120 (1965), 286-294."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1119094",
+  "statement": "Let $A>0$ and $F$ an [entire function](c:entire-function). Then $F$ is the [Fourier transform](c:fourier-transform) $F(z)=\\int_{-A}^{A}\\varphi(t)e^{izt}dt$ of some $\\varphi\\in L^2(-A,A)$ if and only if $F$ has [exponential type](c:function-of-exponential-type) at most $A$, meaning $|F(z)|\\le Ce^{A|z|}$, and $F|_{\\mathbb R}$ lies in [$L^2(\\mathbb R)$](c:lp-space).",
+  "hypotheses": [
+   {
+    "id": "h:entire",
+    "text": "$F$ is an [entire function](c:entire-function).",
+    "concept": "c:entire-function"
+   },
+   {
+    "id": "h:width",
+    "text": "$A>0$ is a fixed real number.",
+    "concept": null
+   }
+  ],
+  "conclusion": "$F$ is a transform of an $L^2$ function supported in $[-A,A]$ exactly when it has type at most $A$ and is square integrable on $\\mathbb{R}$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "plancherel-pl",
+    "name": "Plancherel and Phragmen-Lindeloef",
+    "slogan": "Write the restriction to the real line as an $L^2$ transform, bound the function on horizontal lines, and push the weighted bound to infinity to localize the support.",
+    "scope": "An outline of the published proof for the $L^2$ version; the bound on horizontal lines in step 3 rests on the cited work (the Plancherel-Pólya inequality).",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:characteristic-function",
+     "m:maximum-principle"
+    ],
+    "roles": [
+     {
+      "h": "h:entire",
+      "why": "Holomorphy of $F$ on the plane lets Phragmén-Lindelöf bound it on horizontal lines.",
+      "steps": [
+       "s:easy",
+       "s:lines"
+      ]
+     },
+     {
+      "h": "h:width",
+      "why": "The number $A>0$ is the half width of the support and the type of $F$.",
+      "steps": [
+       "s:easy",
+       "s:support"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:easy",
+      "slogan": "Prove the easy direction by estimating the integral directly.",
+      "detail": "If $F(z)=\\int_{-A}^{A}\\varphi(t)e^{izt}dt$ with $\\varphi\\in L^2(-A,A)$, differentiation under the integral shows that $F$ is entire. Also $|F(z)|\\le\\|\\varphi\\|_1e^{A|\\mathrm{Im}\\,z|}\\le\\|\\varphi\\|_1e^{A|z|}$, and Plancherel gives $F|_{\\mathbb R}\\in L^2$.",
+      "uses": [
+       "wd:Q2096184"
+      ]
+     },
+     {
+      "id": "s:plancherel",
+      "slogan": "Write $F|_{\\mathbb R}$ as the [Fourier transform](c:fourier-transform) of a function $\\varphi\\in L^2(\\mathbb{R})$.",
+      "detail": "For the converse, $F|_{\\mathbb R}\\in L^2(\\mathbb R)$, so Plancherel gives $\\varphi\\in L^2(\\mathbb R)$ with $F(x)=\\int\\varphi(t)e^{ixt}dt$ in the $L^2$ sense. It remains to show that $\\varphi$ vanishes outside $[-A,A]$.",
+      "uses": [
+       "wd:Q2096184"
+      ]
+     },
+     {
+      "id": "s:lines",
+      "slogan": "Bound $F$ on every horizontal line by Phragmén-Lindelöf.",
+      "detail": "Applying Phragmén-Lindelöf in the four quadrants to $e^{\\pm iAz}F$ gives, in the cited work, $\\|F(\\cdot+iy)\\|_{L^2}\\le e^{A|y|}\\|F|_{\\mathbb R}\\|_{L^2}$ for every real $y$. This is the Plancherel-Pólya step for a function of [exponential type](c:function-of-exponential-type).",
+      "uses": [
+       "wd:Q4378868"
+      ]
+     },
+     {
+      "id": "s:weighted",
+      "slogan": "Turn the line bound into a weighted bound on $\\varphi$.",
+      "detail": "The cited work shows that on the line $\\mathrm{Im}\\,z=y$ the same $\\varphi$ appears with the factor $e^{-yt}$. Plancherel on that line then gives $\\int|\\varphi(t)|^2e^{-2yt}dt\\le e^{2A|y|}\\int|\\varphi|^2dt$ for every real $y$.",
+      "uses": []
+     },
+     {
+      "id": "s:support",
+      "slogan": "Let $|y|\\to\\infty$ to force $\\varphi=0$ outside $[-A,A]$.",
+      "detail": "For $\\delta>0$ and $y<0$, keep only $t>A+\\delta$ on the left: $e^{2|y|(A+\\delta)}\\int_{t>A+\\delta}|\\varphi|^2\\le e^{2A|y|}\\int|\\varphi|^2$. So $\\int_{t>A+\\delta}|\\varphi|^2\\le e^{-2|y|\\delta}\\int|\\varphi|^2\\to0$. The side $t<-A$ uses $y>0$, so $F(z)=\\int_{-A}^{A}\\varphi(t)e^{izt}dt$.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Combine the two directions into the equivalence.",
+      "detail": "Step 1 shows that a transform of an $L^2$ function supported in $[-A,A]$ is entire of type at most $A$ and square integrable on $\\mathbb R$. Steps 2 to 5 show the converse.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:plancherel",
+      "s:weighted"
+     ],
+     [
+      "s:lines",
+      "s:weighted"
+     ],
+     [
+      "s:weighted",
+      "s:support"
+     ],
+     [
+      "s:support",
+      "s:conclude"
+     ],
+     [
+      "s:easy",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:entire-function": "The function $F$ is entire, so Phragmén-Lindelöf applies on the whole plane.",
+     "c:fourier-transform": "The function $F$ is the Fourier transform of a function supported in $[-A,A]$.",
+     "c:function-of-exponential-type": "The growth bound $e^{A|z|}$ is what limits the support to $[-A,A]$.",
+     "c:lp-space": "Square integrability on the real line lets Plancherel apply."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "W. Rudin, Real and Complex Analysis, 3rd edition, McGraw-Hill, 1987, Chapter 19 (Holomorphic Fourier Transforms), the section on the two theorems of Paley and Wiener",
+     "note": "The theorem is due to R. E. A. C. Paley and N. Wiener, Fourier Transforms in the Complex Domain, AMS Colloquium Publications 19 (1934). The bound on horizontal lines is the Plancherel-Pólya inequality for entire functions of exponential type."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q282649",
+  "statement": "In the ring $\\mathbb Z[[x]]$ of [formal power series](c:formal-power-series), the [infinite product](c:infinite-product) $\\prod_{n\\ge1}(1-x^n)$ equals $\\sum_{k\\in\\mathbb Z}(-1)^kx^{k(3k-1)/2}$.",
+  "hypotheses": [],
+  "conclusion": "The coefficient of $x^m$ in $\\prod_{n\\ge1}(1-x^n)$ is $(-1)^k$ if $m=k(3k-1)/2$ for an integer $k$, and $0$ otherwise.",
+  "formal": {
+   "decl": "PowerSeries.WithPiTopology.hasProd_one_sub_X_pow",
+   "difference": "The declaration says that the product converges to pentagonalSeries R, the series with coefficient $(-1)^k$ at each pentagonal number, over any commutative topological ring $R$. This theorem is the case $R=\\mathbb Z$; the sum form is the separate declaration hasSum_pentagonalSeries."
+  },
+  "proofs": [
+   {
+    "id": "recurrence",
+    "name": "Telescoping recurrence",
+    "slogan": "Write the product as $1-x-x^2A_0$, derive a recurrence for the series $A_k$ by telescoping, and iterate it to peel off one pentagonal pair at a time.",
+    "scope": "The identity in $\\mathbb Z[[x]]$, where all products and sums converge coefficient-wise. There are no hypotheses.",
+    "mechanisms": [
+     "m:telescoping",
+     "m:induction",
+     "m:generating-function"
+    ],
+    "roles": [],
+    "steps": [
+     {
+      "id": "s:aux",
+      "slogan": "Define the auxiliary series $A_k=\\sum_{n\\ge0}x^{(k+1)n}\\prod_{i=0}^{n}(1-x^{k+i+1})$.",
+      "detail": "The $n$-th term has order at least $(k+1)n$, so $A_k$ is a well defined [formal power series](c:formal-power-series). The [infinite product](c:infinite-product) $\\prod_{n\\ge1}(1-x^n)$ converges coefficient-wise, because $x^n$ has order $n$.",
+      "uses": []
+     },
+     {
+      "id": "s:peel",
+      "slogan": "Peel the product apart as $\\prod_{n\\ge1}(1-x^n)=1-x-x^2A_0$.",
+      "detail": "For finite $N$, $\\prod_{n<N}(1-a_n)=1-\\sum_{n<N}a_n\\prod_{i<n}(1-a_i)$. With $a_n=x^{n+1}$ and $N\\to\\infty$, the terms $n=0$ and $n\\ge1$ give $x$ and $x^2A_0$.",
+      "uses": []
+     },
+     {
+      "id": "s:recur",
+      "slogan": "Telescope to get the recurrence $A_k=1-x^{2k+3}-x^{3k+5}A_{k+1}$.",
+      "detail": "Put $a_{k,n}=x^{(k+1)n}\\prod_{i=0}^n(1-x^{k+i+1})$ and $b_{k,n}=x^{(k+1)n}(x^{2k+n+3}-1)\\prod_{i<n}(1-x^{k+i+2})$. Expansion gives $a_{k,n}+x^{3k+5}a_{k+1,n}=b_{k,n+1}-b_{k,n}$. Summing over $n$, with $b_{k,N}\\to0$ and $b_{k,0}=x^{2k+3}-1$, gives the recurrence.",
+      "uses": []
+     },
+     {
+      "id": "s:iterate",
+      "slogan": "Iterate the recurrence $j$ times to split off the pentagonal terms.",
+      "detail": "Substituting the recurrence into itself gives $\\prod_{n\\ge1}(1-x^n)=\\sum_{k=0}^{j}(-1)^k\\bigl(x^{k(3k+1)/2}-x^{(k+1)(3k+2)/2}\\bigr)+(-1)^{j+1}x^{(j+1)(3j+4)/2}A_j$ for every $j\\ge0$. Induction on $j$ proves it, and $j=0$ is step 2.",
+      "uses": []
+     },
+     {
+      "id": "s:tail",
+      "slogan": "Show that the tail term has order tending to infinity.",
+      "detail": "The tail has order at least $(j+1)(3j+4)/2$, because $A_j$ is a power series. So as $j\\to\\infty$ the partial sums converge coefficient-wise to the product.",
+      "uses": []
+     },
+     {
+      "id": "s:read",
+      "slogan": "Read the sum as $\\sum_{k\\in\\mathbb Z}(-1)^kx^{k(3k-1)/2}$.",
+      "detail": "With $g(m)=m(3m-1)/2$, the exponents are $k(3k+1)/2=g(-k)$ and $(k+1)(3k+2)/2=g(k+1)$, and the signs are $(-1)^k$ and $(-1)^{k+1}$. So every integer $m$ appears exactly once, with sign $(-1)^m$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:aux",
+      "s:peel"
+     ],
+     [
+      "s:aux",
+      "s:recur"
+     ],
+     [
+      "s:peel",
+      "s:iterate"
+     ],
+     [
+      "s:recur",
+      "s:iterate"
+     ],
+     [
+      "s:iterate",
+      "s:tail"
+     ],
+     [
+      "s:tail",
+      "s:read"
+     ],
+     [
+      "s:iterate",
+      "s:read"
+     ]
+    ],
+    "conclusion": "s:read",
+    "concepts": {
+     "c:formal-power-series": "All series live in $\\mathbb Z[[x]]$, where order controls convergence.",
+     "c:infinite-product": "The left side is an infinite product that converges coefficient-wise."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "PowerSeries.WithPiTopology.hasProd_one_sub_X_pow",
+     "follows": true,
+     "note": "mathlib uses Pentagonal.tprod_one_sub_pow: aux_sub_aux telescopes, tsum_powMulProdOneSubPow gives the recurrence, and the tail has order tending to infinity."
+    }
+   }
+  ]
+ }
+]

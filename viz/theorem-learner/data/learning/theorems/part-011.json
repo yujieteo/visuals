@@ -1,0 +1,2112 @@
+[
+ {
+  "id": "nl:26879",
+  "statement": "Every square matrix $A$ over a [field](c:field) factors as $PA = LU$, where $P$ is a [permutation matrix](c:permutation-matrix), $L$ is [lower triangular](c:lower-triangular-matrix) with ones on the diagonal and $U$ is [upper triangular](c:upper-triangular-matrix). If the leading principal minors of orders $1, \\dots, n-1$ are nonzero, $P = I$ works.",
+  "hypotheses": [
+   {
+    "id": "h:square",
+    "text": "The matrix $A$ is an $n \\times n$ matrix over a [field](c:field) $K$.",
+    "concept": "c:field"
+   },
+   {
+    "id": "h:minors",
+    "text": "For the case $P = I$: the leading principal minors $\\Delta_1, \\dots, \\Delta_{n-1}$ of $A$ are nonzero.",
+    "concept": "c:determinant"
+   }
+  ],
+  "conclusion": "There are $P$, $L$ and $U$ as stated with $PA = LU$, and $P = I$ when the leading minors $\\Delta_1, \\dots, \\Delta_{n-1}$ are nonzero.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "elimination",
+    "name": "Gaussian elimination with row swaps",
+    "slogan": "Elimination with row swaps turns $A$ into $U$ by unit lower [triangular](c:triangular-matrix) steps, and collecting the steps gives $L$ and $P$.",
+    "scope": "The whole theorem for $n \\ge 1$; a column with no nonzero entry on or below the diagonal needs no elimination, and its swap is the identity. Step 5 treats the case of nonzero leading minors.",
+    "mechanisms": [
+     "m:matrix-factorization",
+     "m:induction",
+     "m:determinant"
+    ],
+    "roles": [
+     {
+      "h": "h:square",
+      "why": "Division by a nonzero pivot needs a [field](c:field), and the square shape makes $U$ square.",
+      "steps": [
+       "s:pivot",
+       "s:upper"
+      ]
+     },
+     {
+      "h": "h:minors",
+      "why": "Nonzero leading minors make every pivot nonzero, so no swap is needed.",
+      "steps": [
+       "s:minors"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:pivot",
+      "slogan": "Swap a nonzero pivot into row $k$ and clear the entries below it.",
+      "detail": "At stage $k$, a transposition matrix $P_k$ moves a row $i \\ge k$ with nonzero entry in column $k$ to row $k$ ($P_k = I$ if there is none). Subtracting $\\ell_{ik} = a_{ik}/a_{kk}$ times row $k$ from each row $i > k$ is multiplication by $M_k = I - \\ell_k e_k^{T}$, a unit [lower triangular matrix](c:lower-triangular-matrix).",
+      "uses": [
+       "nm:gaussian-elimination"
+      ]
+     },
+     {
+      "id": "s:upper",
+      "slogan": "Repeat the stage for each column to reach an upper triangular matrix.",
+      "detail": "After stages $k = 1, \\dots, n-1$, the matrix $U = M_{n-1}P_{n-1} \\cdots M_1 P_1 A$ has zeros below the diagonal, so it is [upper triangular](c:upper-triangular-matrix). Each stage combines only rows $k, \\dots, n$, so it keeps the zeros of earlier columns.",
+      "uses": []
+     },
+     {
+      "id": "s:commute",
+      "slogan": "Move every row swap to the right of the elimination matrices.",
+      "detail": "For $j > k$ the swap $P_j$ exchanges two rows with index greater than $k$, so $P_j M_k = \\tilde M_k P_j$ with $\\tilde M_k$ equal to $M_k$ with permuted multipliers, still unit lower triangular. Hence $\\tilde M_{n-1} \\cdots \\tilde M_1 P A = U$ with the [permutation matrix](c:permutation-matrix) $P = P_{n-1} \\cdots P_1$.",
+      "uses": []
+     },
+     {
+      "id": "s:minors",
+      "slogan": "Show that nonzero leading minors give nonzero pivots without any swap.",
+      "detail": "Without swaps, stage $k$ adds multiples of row $k$ to later rows, so it keeps every leading principal minor. After $k-1$ stages the leading $k \\times k$ block is upper triangular, so $\\Delta_k = u_{11} \\cdots u_{kk}$ by the [determinant](c:determinant) of a triangular block, and $u_{kk} = \\Delta_k / \\Delta_{k-1} \\ne 0$ for $k < n$. So every $P_k = I$.",
+      "uses": []
+     },
+     {
+      "id": "s:invert",
+      "slogan": "Invert the product of unit lower triangular matrices to obtain $L$.",
+      "detail": "Products and inverses of unit lower triangular matrices are unit lower triangular, with $\\tilde M_k^{-1} = I + \\tilde\\ell_k e_k^{T}$. So $L = (\\tilde M_{n-1} \\cdots \\tilde M_1)^{-1}$ is unit lower triangular and $PA = LU$, with $P = I$ in the case of step 4.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:pivot",
+      "s:upper"
+     ],
+     [
+      "s:upper",
+      "s:commute"
+     ],
+     [
+      "s:commute",
+      "s:invert"
+     ],
+     [
+      "s:pivot",
+      "s:minors"
+     ],
+     [
+      "s:minors",
+      "s:invert"
+     ]
+    ],
+    "conclusion": "s:invert",
+    "concepts": {
+     "c:field": "Pivots must be invertible scalars, so the entries lie in a field.",
+     "c:permutation-matrix": "The row swaps collect into one permutation matrix $P$.",
+     "c:lower-triangular-matrix": "Each elimination step and the factor $L$ are unit lower triangular.",
+     "c:upper-triangular-matrix": "Elimination ends at the upper triangular factor $U$.",
+     "c:triangular-matrix": "Triangular matrices are closed under products and inverses here.",
+     "c:determinant": "Leading minors are determinants that equal products of pivots."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Gaussian elimination with partial pivoting, as in G. H. Golub and C. F. Van Loan, Matrix Computations, chapter 3."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:levy-s-upward-theorem",
+  "statement": "Let $(\\mathcal F_n)$ be a [filtration](c:filtration) on a finite measure space $(\\Omega, \\mathcal F, \\mu)$, let $g$ be an [integrable function](c:integrable-function) and let $\\mathcal F_\\infty = \\bigvee_n \\mathcal F_n$. Then the [conditional expectations](c:conditional-expectation) $E[g \\mid \\mathcal F_n]$ converge to $E[g \\mid \\mathcal F_\\infty]$ in $L^1$ and [almost everywhere](c:almost-everywhere).",
+  "hypotheses": [
+   {
+    "id": "h:finite",
+    "text": "The measure $\\mu$ is finite.",
+    "concept": null
+   },
+   {
+    "id": "h:filtration",
+    "text": "The $\\sigma$-algebras $\\mathcal F_n \\subseteq \\mathcal F$ increase with $n$ and form a [filtration](c:filtration).",
+    "concept": "c:filtration"
+   },
+   {
+    "id": "h:integrable",
+    "text": "The function $g$ is [integrable](c:integrable-function).",
+    "concept": "c:integrable-function"
+   }
+  ],
+  "conclusion": "$\\|E[g \\mid \\mathcal F_n] - E[g \\mid \\mathcal F_\\infty]\\|_1 \\to 0$ and $E[g \\mid \\mathcal F_n] \\to E[g \\mid \\mathcal F_\\infty]$ almost everywhere.",
+  "formal": {
+   "decl": "MeasureTheory.tendsto_eLpNorm_condExp",
+   "difference": "The declaration gives the $L^1$ convergence only; the almost everywhere convergence is MeasureTheory.tendsto_ae_condExp. It has no integrability hypothesis, because mathlib sets the conditional expectation of a non-integrable function to $0$."
+  },
+  "proofs": [
+   {
+    "id": "tower-and-vitali",
+    "name": "Tower property, martingale limit and Vitali",
+    "slogan": "Replace $g$ by $h = E[g \\mid \\mathcal F_\\infty]$, let the martingale $E[h \\mid \\mathcal F_n]$ converge, upgrade by uniform integrability and identify the limit with $h$.",
+    "scope": "The whole theorem for real-valued $g$. If $\\mu = 0$, every statement is trivial.",
+    "mechanisms": [
+     "m:martingale",
+     "m:reduction"
+    ],
+    "roles": [
+     {
+      "h": "h:finite",
+      "why": "A finite measure lets the martingale convergence theorem apply and makes almost everywhere convergence imply convergence in measure.",
+      "steps": [
+       "s:ae",
+       "s:l1"
+      ]
+     },
+     {
+      "h": "h:filtration",
+      "why": "Increasing $\\sigma$-algebras give the tower property, make $(M_n)$ a martingale and make $\\bigcup_n \\mathcal F_n$ a π-system.",
+      "steps": [
+       "s:tower",
+       "s:ui",
+       "s:identify"
+      ]
+     },
+     {
+      "h": "h:integrable",
+      "why": "Integrability of $g$ makes $h$ integrable and bounds the martingale in $L^1$.",
+      "steps": [
+       "s:tower",
+       "s:ui"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:tower",
+      "slogan": "Replace $g$ by $h = E[g \\mid \\mathcal F_\\infty]$ through the tower property.",
+      "detail": "Since $\\mathcal F_n \\subseteq \\mathcal F_\\infty$, the tower property gives $E[h \\mid \\mathcal F_n] = E[g \\mid \\mathcal F_n]$ almost everywhere for every $n$. So it suffices to prove $M_n = E[h \\mid \\mathcal F_n] \\to h$ for the $\\mathcal F_\\infty$-measurable [integrable function](c:integrable-function) $h$.",
+      "uses": [
+       "nm:tower-property-of-the-conditional-expectation"
+      ]
+     },
+     {
+      "id": "s:ui",
+      "slogan": "Show that the [martingale](c:martingale) $M_n$ is bounded in $L^1$ and uniformly integrable.",
+      "detail": "Conditional Jensen gives $|M_n| \\le E[|h| \\mid \\mathcal F_n]$, so $\\|M_n\\|_1 \\le \\|h\\|_1$, $\\mu(|M_n| > K) \\le \\|h\\|_1 / K$ and $\\int_{\\{|M_n| > K\\}} |M_n| \\le \\int_{\\{|M_n| > K\\}} |h|$. Absolute continuity of the integral of $|h|$ makes this small uniformly in $n$, which is [uniform integrability](c:uniform-integrability).",
+      "uses": [
+       "nm:conditional-jensen-s-inequality"
+      ]
+     },
+     {
+      "id": "s:ae",
+      "slogan": "Let the $L^1$-bounded martingale converge almost everywhere to a limit $M_\\infty$.",
+      "detail": "The almost everywhere martingale convergence theorem gives an $\\mathcal F_\\infty$-measurable $M_\\infty$ with $M_n \\to M_\\infty$ [almost everywhere](c:almost-everywhere). Fatou's lemma and the bound $\\|M_n\\|_1 \\le \\|h\\|_1$ make $M_\\infty$ integrable.",
+      "uses": [
+       "nm:almost-everywhere-martingale-convergence-theorem"
+      ]
+     },
+     {
+      "id": "s:l1",
+      "slogan": "Upgrade the almost everywhere convergence to $L^1$ convergence by Vitali's theorem.",
+      "detail": "On a finite measure space, almost everywhere convergence implies [convergence in measure](c:convergence-in-measure). With uniform integrability, the Vitali convergence theorem gives $\\|M_n - M_\\infty\\|_1 \\to 0$.",
+      "uses": [
+       "wd:Q11352023"
+      ]
+     },
+     {
+      "id": "s:identify",
+      "slogan": "Identify $M_\\infty$ with $h$ by integrals over the sets of $\\bigcup_n \\mathcal F_n$.",
+      "detail": "For $A \\in \\mathcal F_m$ and $n \\ge m$, $\\int_A M_n = \\int_A h$, and the $L^1$ limit gives $\\int_A M_\\infty = \\int_A h$. These sets form a [π-system](c:pi-system) that generates $\\mathcal F_\\infty$, so Dynkin's theorem extends the equality to $\\mathcal F_\\infty$ and $M_\\infty = h$ almost everywhere. Hence $E[g \\mid \\mathcal F_n] = M_n \\to h$ almost everywhere and in $L^1$.",
+      "uses": [
+       "nm:dynkin-s-theorem"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:tower",
+      "s:ui"
+     ],
+     [
+      "s:ui",
+      "s:ae"
+     ],
+     [
+      "s:ae",
+      "s:l1"
+     ],
+     [
+      "s:ui",
+      "s:l1"
+     ],
+     [
+      "s:l1",
+      "s:identify"
+     ],
+     [
+      "s:ae",
+      "s:identify"
+     ],
+     [
+      "s:tower",
+      "s:identify"
+     ]
+    ],
+    "conclusion": "s:identify",
+    "concepts": {
+     "c:filtration": "The increasing sigma-algebras define the martingale and its limit sigma-algebra.",
+     "c:integrable-function": "Integrability of $g$ gives an integrable $h$ and an $L^1$ bound.",
+     "c:conditional-expectation": "The theorem is about limits of conditional expectations of one function.",
+     "c:almost-everywhere": "The martingale limit exists outside a null set.",
+     "c:martingale": "The sequence $E[h \\mid \\mathcal F_n]$ is a martingale, so it converges.",
+     "c:uniform-integrability": "Uniform integrability turns almost everywhere convergence into $L^1$ convergence.",
+     "c:convergence-in-measure": "Vitali's theorem needs convergence in measure, which a.e. convergence gives.",
+     "c:pi-system": "Equality of integrals on a generating π-system extends to the sigma-algebra."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "MeasureTheory.tendsto_eLpNorm_condExp",
+     "follows": true,
+     "note": "mathlib reduces to $E[g \\mid \\mathcal F_\\infty]$ by condExp_condExp_of_le; Integrable.tendsto_eLpNorm_condExp then uses uniformIntegrable_condExp_filtration, Submartingale.ae_tendsto_limitProcess, the π-system identification of Integrable.tendsto_ae_condExp and Vitali (tendsto_Lp_finite_of_tendstoInMeasure)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:maximum-modulus-principle",
+  "statement": "Let $U \\subseteq \\mathbb{C}$ be an [open set](c:open-set) and $f\\colon U \\to \\mathbb{C}$ a [holomorphic function](c:holomorphic-function). If $|f|$ has a local maximum at $c \\in U$, then $f$ is constant on a neighborhood of $c$.",
+  "hypotheses": [
+   {
+    "id": "h:holomorphic",
+    "text": "The function $f$ is [holomorphic](c:holomorphic-function) on the [open set](c:open-set) $U$.",
+    "concept": "c:holomorphic-function"
+   },
+   {
+    "id": "h:local-max",
+    "text": "The [modulus](c:norm) $|f|$ has a local maximum at $c \\in U$: $|f(z)| \\le |f(c)|$ for all $z$ near $c$.",
+    "concept": "c:norm"
+   }
+  ],
+  "conclusion": "There is $r > 0$ with $f(z) = f(c)$ for all $z$ with $|z - c| \\le r$.",
+  "formal": {
+   "decl": "Complex.eventually_eq_of_isLocalMax_norm",
+   "difference": "The declaration is more general: $f\\colon E \\to F$ maps between complex normed spaces with $F$ strictly convex, and $f$ need only be differentiable near $c$. Constancy on a connected domain is the separate declaration Complex.eqOn_of_isPreconnected_of_isMaxOn_norm."
+  },
+  "proofs": [
+   {
+    "id": "circle-average",
+    "name": "Cauchy formula on circles and strict convexity",
+    "slogan": "The Cauchy integral formula makes $f(c)$ an average over circles, so $|f|$ is constant near $c$, and the function $f + f(c)$ then forces $f$ to be constant.",
+    "scope": "The local statement; for a connected $U$ the identity theorem then gives constancy on all of $U$. The point $w = c$ needs no argument.",
+    "mechanisms": [
+     "m:complex-integration",
+     "m:maximum-principle",
+     "m:triangle-inequality"
+    ],
+    "roles": [
+     {
+      "h": "h:holomorphic",
+      "why": "Holomorphy on a disc in the open set gives the Cauchy integral formula and continuity of $f$.",
+      "steps": [
+       "s:ball",
+       "s:cauchy",
+       "s:shift"
+      ]
+     },
+     {
+      "h": "h:local-max",
+      "why": "The local maximum gives $|f| \\le |f(c)|$ on a disc, the bound that the circle average must meet with equality.",
+      "steps": [
+       "s:ball",
+       "s:norm",
+       "s:shift"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:ball",
+      "slogan": "Choose a closed disc around $c$ on which $f$ is holomorphic and $|f| \\le |f(c)|$.",
+      "detail": "Since $U$ is open and $|f|$ has a local maximum at $c$, there is $r > 0$ with $\\overline{D}(c, r) \\subseteq U$ and $|f(z)| \\le |f(c)|$ on $\\overline{D}(c, r)$. Both properties hold on every smaller concentric disc.",
+      "uses": []
+     },
+     {
+      "id": "s:cauchy",
+      "slogan": "Write $f(c)$ as the average of $f$ over the circle through a point $w$.",
+      "detail": "For $w \\ne c$ in the disc and $\\rho = |w - c|$, the Cauchy integral formula gives $f(c) = \\frac{1}{2\\pi} \\int_0^{2\\pi} f(c + \\rho e^{i\\theta}) \\, d\\theta$.",
+      "uses": [
+       "nl:11500"
+      ]
+     },
+     {
+      "id": "s:norm",
+      "slogan": "Show that $|f(w)| = |f(c)|$ by a strict estimate of the circle average.",
+      "detail": "If $|f(w)| < |f(c)|$, continuity gives $|f| < |f(c)|$ on an arc of the circle, and $|f| \\le |f(c)|$ on the rest. Then $|f(c)| \\le \\frac{1}{2\\pi}\\int_0^{2\\pi} |f(c + \\rho e^{i\\theta})| \\, d\\theta < |f(c)|$, a contradiction. So $|f| = |f(c)|$ on the disc.",
+      "uses": []
+     },
+     {
+      "id": "s:shift",
+      "slogan": "Apply steps 2 and 3 to $f + f(c)$ to get $|f(w) + f(c)| = 2|f(c)|$.",
+      "detail": "The function $f + f(c)$ is holomorphic, and $|f(z) + f(c)| \\le |f(z)| + |f(c)| \\le 2|f(c)|$ on the disc, with equality at $z = c$. So its modulus also has a maximum at $c$, and steps 2 and 3 give $|f(w) + f(c)| = 2|f(c)|$.",
+      "uses": []
+     },
+     {
+      "id": "s:equal",
+      "slogan": "Use equality in the triangle inequality to conclude $f(w) = f(c)$.",
+      "detail": "Now $|f(w)| = |f(c)|$ and $|f(w) + f(c)| = |f(w)| + |f(c)|$. Because $\\mathbb{C}$ is a [strictly convex space](c:strict-convex-space), equality in the triangle inequality puts $f(w)$ and $f(c)$ on one ray from $0$, and equal moduli give $f(w) = f(c)$.",
+      "uses": [
+       "nl:15368"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:ball",
+      "s:cauchy"
+     ],
+     [
+      "s:cauchy",
+      "s:norm"
+     ],
+     [
+      "s:ball",
+      "s:norm"
+     ],
+     [
+      "s:norm",
+      "s:shift"
+     ],
+     [
+      "s:norm",
+      "s:equal"
+     ],
+     [
+      "s:shift",
+      "s:equal"
+     ]
+    ],
+    "conclusion": "s:equal",
+    "concepts": {
+     "c:open-set": "Openness of $U$ gives a closed disc around $c$ inside $U$.",
+     "c:holomorphic-function": "Holomorphy gives the Cauchy integral formula on every circle in the disc.",
+     "c:norm": "The hypothesis bounds the modulus, and the proof compares moduli of averages.",
+     "c:strict-convex-space": "Strict convexity of $\\mathbb{C}$ turns equal norms into equal values."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Complex.eventually_eq_of_isLocalMax_norm",
+     "follows": true,
+     "note": "mathlib takes a closed ball (nhds_basis_closedBall), proves the norm constant from the Cauchy formula along complex lines (norm_max_aux₁ with circleIntegral_sub_inv_smul, norm_eqOn_closedBall_of_isMaxOn), and gets $f$ constant from $f + f(c)$ and strict convexity (eq_of_isMaxOn_of_ball_subset)."
+    }
+   },
+   {
+    "id": "parseval",
+    "name": "Power series and Parseval",
+    "slogan": "Expand $f$ in a power series at $c$ and compare the mean of $|f|^2$ on a circle with $|f(c)|^2$.",
+    "scope": "The local statement on a disc of convergence inside $U$ on which $|f| \\le |f(c)|$.",
+    "mechanisms": [
+     "m:taylor-expansion",
+     "m:characteristic-function"
+    ],
+    "roles": [
+     {
+      "h": "h:holomorphic",
+      "why": "Holomorphy on the open set gives a convergent power series on a disc around $c$.",
+      "steps": [
+       "s:series"
+      ]
+     },
+     {
+      "h": "h:local-max",
+      "why": "The local maximum bounds the circle mean of $|f|^2$ by $|f(c)|^2$.",
+      "steps": [
+       "s:compare"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:series",
+      "slogan": "Expand $f$ as a power series on a disc around $c$.",
+      "detail": "A [holomorphic function](c:holomorphic-function) on the [open set](c:open-set) $U$ is analytic, so $f(z) = \\sum_{n \\ge 0} a_n (z - c)^n$ on a disc $|z - c| < R$ inside $U$, with $a_0 = f(c)$. Shrink $R$ so that $|f| \\le |f(c)|$ on this disc.",
+      "uses": [
+       "nm:cauchy-integral-formula-for-derivatives"
+      ]
+     },
+     {
+      "id": "s:parseval",
+      "slogan": "Compute the mean of $|f|^2$ on a circle by orthogonality of the exponentials $e^{in\\theta}$.",
+      "detail": "For $0 < \\rho < R$ the series converges uniformly on $|z - c| = \\rho$, and $\\int_0^{2\\pi} e^{i(n-m)\\theta}\\,d\\theta = 0$ for $n \\ne m$. Hence $\\frac{1}{2\\pi}\\int_0^{2\\pi} |f(c + \\rho e^{i\\theta})|^2 \\, d\\theta = \\sum_{n \\ge 0} |a_n|^2 \\rho^{2n}$.",
+      "uses": []
+     },
+     {
+      "id": "s:compare",
+      "slogan": "Bound the mean by $|f(c)|^2$ and deduce that all higher coefficients vanish.",
+      "detail": "The bound $|f| \\le |f(c)|$ makes the mean at most $|f(c)|^2 = |a_0|^2$, so $\\sum_{n \\ge 1} |a_n|^2 \\rho^{2n} \\le 0$. Hence $a_n = 0$ for $n \\ge 1$, and $f = a_0 = f(c)$ on the disc.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:series",
+      "s:parseval"
+     ],
+     [
+      "s:parseval",
+      "s:compare"
+     ],
+     [
+      "s:series",
+      "s:compare"
+     ]
+    ],
+    "conclusion": "s:compare",
+    "concepts": {
+     "c:open-set": "Openness of $U$ leaves room for a disc of convergence around $c$.",
+     "c:holomorphic-function": "Holomorphic functions have convergent power series, the object of this proof.",
+     "c:norm": "The modulus bound controls the mean square of $f$ on circles."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The classical Gutzmer-Parseval argument for power series; not the mathlib route."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:18093",
+  "statement": "Let $(X, \\mu)$ be a measure space, $1 \\le p < \\infty$ and $f, g \\in L^p(\\mu)$. Then $f + g \\in L^p(\\mu)$ and $\\|f + g\\|_p \\le \\|f\\|_p + \\|g\\|_p$, so the $p$-[norm](c:norm) satisfies the triangle inequality on the [Lp space](c:lp-space).",
+  "hypotheses": [
+   {
+    "id": "h:exponent",
+    "text": "The exponent satisfies $1 \\le p < \\infty$.",
+    "concept": null
+   },
+   {
+    "id": "h:lp",
+    "text": "The functions $f$ and $g$ lie in the [Lp space](c:lp-space): they are measurable with $\\int |f|^p \\, d\\mu < \\infty$ and $\\int |g|^p \\, d\\mu < \\infty$.",
+    "concept": "c:lp-space"
+   }
+  ],
+  "conclusion": "$\\|f + g\\|_p \\le \\|f\\|_p + \\|g\\|_p$; in particular $\\|f + g\\|_p < \\infty$.",
+  "formal": {
+   "decl": "NNReal.Lp_add_le_tsum",
+   "difference": "The declaration treats nonnegative families $f, g\\colon \\iota \\to [0, \\infty)$ with summable $p$-th powers, which is the counting measure case. It also states that $(f_i + g_i)^p$ is summable."
+  },
+  "proofs": [
+   {
+    "id": "duality",
+    "name": "Hölder duality",
+    "slogan": "Test $|f| + |g|$ against the Hölder-extremal function of unit $q$-norm and split the pairing into two Hölder bounds.",
+    "scope": "The case $p = 1$ follows from $|f + g| \\le |f| + |g|$ by integration, so the steps treat $1 < p < \\infty$. The case $\\||f| + |g|\\|_p = 0$ is trivial.",
+    "mechanisms": [
+     "m:duality",
+     "m:convexity"
+    ],
+    "roles": [
+     {
+      "h": "h:exponent",
+      "why": "The bound $p \\ge 1$ makes $t \\mapsto t^p$ convex and gives the conjugate exponent $q = p/(p-1)$.",
+      "steps": [
+       "s:finite",
+       "s:holder"
+      ]
+     },
+     {
+      "h": "h:lp",
+      "why": "Finite $p$-norms of $f$ and $g$ make $\\||f| + |g|\\|_p$ finite, so the extremal function is defined.",
+      "steps": [
+       "s:finite",
+       "s:extremal"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:finite",
+      "slogan": "Bound $(|f| + |g|)^p$ by convexity of $t \\mapsto t^p$ to stay in $L^p$.",
+      "detail": "[Convexity](c:convex-function) of $t^p$ on $[0, \\infty)$ gives $\\left(\\frac{a + b}{2}\\right)^p \\le \\frac{a^p + b^p}{2}$, so $(|f| + |g|)^p \\le 2^{p-1}(|f|^p + |g|^p)$. Integration gives $\\|h\\|_p < \\infty$ for $h = |f| + |g|$, and $|f + g| \\le h$.",
+      "uses": []
+     },
+     {
+      "id": "s:holder",
+      "slogan": "Apply Hölder's inequality with the conjugate exponent $q = p/(p-1)$.",
+      "detail": "For measurable $\\varphi \\ge 0$ with $\\|\\varphi\\|_q \\le 1$, Hölder's inequality gives $\\int |f| \\varphi \\, d\\mu \\le \\|f\\|_p \\|\\varphi\\|_q \\le \\|f\\|_p$, and in the same way $\\int |g| \\varphi \\, d\\mu \\le \\|g\\|_p$.",
+      "uses": [
+       "nl:18096"
+      ]
+     },
+     {
+      "id": "s:extremal",
+      "slogan": "Choose $\\varphi = h^{p-1} / \\|h\\|_p^{p-1}$, the function that attains the duality bound for $h$.",
+      "detail": "If $0 < \\|h\\|_p < \\infty$, then $\\varphi^q = h^p / \\|h\\|_p^p$ because $(p-1)q = p$, so $\\|\\varphi\\|_q = 1$. Also $\\int h \\varphi \\, d\\mu = \\|h\\|_p^p / \\|h\\|_p^{p-1} = \\|h\\|_p$.",
+      "uses": []
+     },
+     {
+      "id": "s:split",
+      "slogan": "Split the pairing of $h$ with $\\varphi$ into the two Hölder bounds.",
+      "detail": "By steps 2 and 3, $\\|f + g\\|_p \\le \\|h\\|_p = \\int |f| \\varphi \\, d\\mu + \\int |g| \\varphi \\, d\\mu \\le \\|f\\|_p + \\|g\\|_p$. This is the triangle inequality for the $p$-[norm](c:norm).",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:finite",
+      "s:extremal"
+     ],
+     [
+      "s:holder",
+      "s:split"
+     ],
+     [
+      "s:extremal",
+      "s:split"
+     ]
+    ],
+    "conclusion": "s:split",
+    "concepts": {
+     "c:norm": "The inequality is the triangle inequality of the $p$-norm.",
+     "c:lp-space": "Membership in $L^p$ makes all norms in the argument finite.",
+     "c:convex-function": "Convexity of $t^p$ shows that $|f| + |g|$ stays in $L^p$."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "NNReal.Lp_add_le_tsum",
+     "follows": true,
+     "note": "mathlib proves the finite-sum case NNReal.Lp_add_le by the same duality (isGreatest_Lp, from Hölder inner_le_Lp_mul_Lq) and passes to infinite sums by bounding partial sums; the steps run the duality for a general measure."
+    }
+   },
+   {
+    "id": "convexity",
+    "name": "Convexity of the unit ball",
+    "slogan": "Normalize $f$ and $g$ to unit norm and use convexity of $t \\mapsto t^p$ to keep their weighted average in the unit ball.",
+    "scope": "All $1 \\le p < \\infty$. If $\\|f\\|_p = 0$ or $\\|g\\|_p = 0$, that function vanishes almost everywhere and the inequality is an equality.",
+    "mechanisms": [
+     "m:convexity"
+    ],
+    "roles": [
+     {
+      "h": "h:exponent",
+      "why": "For $p \\ge 1$ the map $t \\mapsto t^p$ is convex on $[0, \\infty)$.",
+      "steps": [
+       "s:convex"
+      ]
+     },
+     {
+      "h": "h:lp",
+      "why": "Finite norms $a$ and $b$ allow the normalization.",
+      "steps": [
+       "s:normalize"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:normalize",
+      "slogan": "Set $a = \\|f\\|_p$ and $b = \\|g\\|_p$ and normalize the two functions.",
+      "detail": "Assume $a, b > 0$ and put $u = |f|/a$ and $v = |g|/b$, so $\\int u^p \\, d\\mu = \\int v^p \\, d\\mu = 1$. With $\\lambda = a/(a+b) \\in (0, 1)$, we get $\\frac{|f| + |g|}{a + b} = \\lambda u + (1 - \\lambda) v$.",
+      "uses": []
+     },
+     {
+      "id": "s:convex",
+      "slogan": "Bound the $p$-th power of the average by the average of the $p$-th powers.",
+      "detail": "[Convexity](c:convex-function) of $t \\mapsto t^p$ on $[0, \\infty)$ for $p \\ge 1$ gives $(\\lambda u + (1-\\lambda) v)^p \\le \\lambda u^p + (1 - \\lambda) v^p$ at every point.",
+      "uses": []
+     },
+     {
+      "id": "s:integrate",
+      "slogan": "Integrate the pointwise bound and undo the normalization.",
+      "detail": "Integration gives $\\int \\left(\\frac{|f| + |g|}{a + b}\\right)^p d\\mu \\le \\lambda + (1 - \\lambda) = 1$. Hence $\\|f + g\\|_p \\le \\||f| + |g|\\|_p \\le a + b$, which is finite, so $f + g$ lies in the [Lp space](c:lp-space).",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:normalize",
+      "s:convex"
+     ],
+     [
+      "s:convex",
+      "s:integrate"
+     ],
+     [
+      "s:normalize",
+      "s:integrate"
+     ]
+    ],
+    "conclusion": "s:integrate",
+    "concepts": {
+     "c:norm": "The proof shows that the unit ball of the $p$-norm is convex.",
+     "c:lp-space": "Normalization uses the finite $L^p$ norms of $f$ and $g$.",
+     "c:convex-function": "Convexity of $t^p$ is the only inequality the proof needs."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard convexity proof: the unit ball of $L^p$ is convex because $t \\mapsto t^p$ is convex; not the mathlib route."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q284960",
+  "statement": "Let $A$ be an [abelian variety](c:abelian-variety) over a [number field](c:number-field) $K$. Then the group $A(K)$ of $K$-[rational points](c:rational-point) of $A$ is a [finitely generated](c:finitely-generated-group) [abelian group](c:abelian-group).",
+  "hypotheses": [
+   {
+    "id": "h:abelian",
+    "text": "The variety $A$ is an [abelian variety](c:abelian-variety) defined over $K$.",
+    "concept": "c:abelian-variety"
+   },
+   {
+    "id": "h:number-field",
+    "text": "The field $K$ is a [number field](c:number-field), a finite extension of $\\mathbb{Q}$.",
+    "concept": "c:number-field"
+   }
+  ],
+  "conclusion": "$A(K) \\cong \\mathbb{Z}^r \\oplus T$ for some rank $r \\ge 0$ and some finite group $T$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "descent",
+    "name": "Weak Mordell–Weil theorem and height descent",
+    "slogan": "Show that $A(K)/mA(K)$ is finite, then use a canonical height to descend from any point to finitely many points of small height.",
+    "scope": "An outline of the published proof; steps 1 and 2 rest on the cited work. The case of an [elliptic curve](c:elliptic-curve) over $\\mathbb{Q}$ is Mordell's theorem of 1922.",
+    "mechanisms": [
+     "m:height-descent",
+     "m:exact-sequence",
+     "m:cited-deep-result"
+    ],
+    "roles": [
+     {
+      "h": "h:abelian",
+      "why": "The group law and a symmetric ample divisor on $A$ give the Kummer map and the quadratic canonical height.",
+      "steps": [
+       "s:weak",
+       "s:height"
+      ]
+     },
+     {
+      "h": "h:number-field",
+      "why": "Over a number field the class group is finite, the unit groups are finitely generated and Northcott's finiteness holds.",
+      "steps": [
+       "s:weak",
+       "s:northcott"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:weak",
+      "slogan": "Prove the weak Mordell–Weil theorem: $A(K)/mA(K)$ is finite for an integer $m \\ge 2$.",
+      "detail": "Over a finite extension $L$ of $K$ that contains the points of $A[m]$, the Kummer map embeds $A(L)/mA(L)$ into homomorphisms $\\mathrm{Gal}(\\bar K/L) \\to A[m]$ unramified outside a finite set $S$ of primes. Finiteness of the [ideal class group](c:ideal-class-group) and finite generation of the $S$-units bound these, and the kernel of $A(K)/mA(K) \\to A(L)/mA(L)$ is finite by Galois cohomology.",
+      "uses": [
+       "wd:Q1227702"
+      ]
+     },
+     {
+      "id": "s:height",
+      "slogan": "Construct the canonical height $\\hat h$ on $A(K)$ from a symmetric ample divisor.",
+      "detail": "A [height function](c:height-function) $h$ from a symmetric ample divisor satisfies $h(2P) = 4h(P) + O(1)$. The Néron–Tate limit $\\hat h(P) = \\lim_n 4^{-n} h(2^n P)$ is a nonnegative quadratic form on $A(K)$ with $\\hat h = h + O(1)$.",
+      "uses": []
+     },
+     {
+      "id": "s:northcott",
+      "slogan": "Show that only finitely many points of $A(K)$ have bounded canonical height.",
+      "detail": "Since $\\hat h = h + O(1)$, a bound on $\\hat h$ bounds the Weil height of the projective coordinates of the point. Northcott's theorem gives only finitely many points of $\\mathbb{P}^N(K)$ of bounded height.",
+      "uses": [
+       "nm:northcott-s-theorem"
+      ]
+     },
+     {
+      "id": "s:descent",
+      "slogan": "Descend from any point to points of small height and conclude finite generation.",
+      "detail": "Let $Q_1, \\dots, Q_s$ represent $A(K)/mA(K)$ and $c = \\max_i \\sqrt{\\hat h(Q_i)}$. Writing $P = mP_1 + Q_i$, the seminorm $\\sqrt{\\hat h}$ gives $\\sqrt{\\hat h(P_1)} \\le (\\sqrt{\\hat h(P)} + c)/m$, which is smaller than $\\sqrt{\\hat h(P)}$ when that exceeds $c$. So the finitely many points with $\\sqrt{\\hat h} \\le c$ and the $Q_i$ generate $A(K)$, and the structure theorem gives $\\mathbb{Z}^r \\oplus T$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:weak",
+      "s:descent"
+     ],
+     [
+      "s:height",
+      "s:northcott"
+     ],
+     [
+      "s:height",
+      "s:descent"
+     ],
+     [
+      "s:northcott",
+      "s:descent"
+     ]
+    ],
+    "conclusion": "s:descent",
+    "concepts": {
+     "c:abelian-variety": "The group structure of the abelian variety drives both the Kummer map and the height.",
+     "c:number-field": "Arithmetic finiteness over number fields makes the weak theorem and Northcott work.",
+     "c:rational-point": "The theorem describes the group of points with coordinates in $K$.",
+     "c:finitely-generated-group": "Finite generation is what the descent proves.",
+     "c:abelian-group": "The rational points form an abelian group under the group law.",
+     "c:elliptic-curve": "Elliptic curves are the one-dimensional case, Mordell's original theorem.",
+     "c:height-function": "Heights measure arithmetic size, and the descent makes them decrease.",
+     "c:ideal-class-group": "Finiteness of the class group bounds the Kummer extensions."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "M. Hindry and J. H. Silverman, Diophantine Geometry: An Introduction, Graduate Texts in Mathematics 201, Springer, 2000, Part C",
+     "url": "https://doi.org/10.1007/978-1-4612-1210-2",
+     "note": "Part C proves the weak Mordell–Weil theorem and the descent with the canonical heights of Part B; the theorem is due to L. J. Mordell (1922) for elliptic curves over $\\mathbb{Q}$ and A. Weil (1929)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:16318",
+  "statement": "Let $n \\ge 2$ identical particles of half-integer spin have the one-particle [Hilbert space](c:hilbert-space) $\\mathcal H$. If two of the one-particle states $\\psi_1, \\dots, \\psi_n \\in \\mathcal H$ are equal, then the [antisymmetric](c:antisymmetric-wave-function) $n$-particle state $\\psi_1 \\wedge \\dots \\wedge \\psi_n$ is zero, so no two such particles occupy the same one-particle state.",
+  "hypotheses": [
+   {
+    "id": "h:fermions",
+    "text": "The particles are identical and have half-integer spin.",
+    "concept": null
+   },
+   {
+    "id": "h:equal",
+    "text": "Two of the one-particle states coincide: $\\psi_i = \\psi_j$ for some $i \\ne j$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "$\\psi_1 \\wedge \\dots \\wedge \\psi_n = 0$, so this configuration gives no normalizable state.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "antisymmetrizer",
+    "name": "Sign of a transposition",
+    "slogan": "A transposition fixes the product state but changes the sign of the antisymmetrizer, so the antisymmetrized state equals its own negative.",
+    "scope": "The step from half-integer spin to antisymmetry is the spin-statistics theorem, which the proof cites. The rest is linear algebra in $\\mathcal H^{\\otimes n}$.",
+    "mechanisms": [
+     "m:symmetry",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:fermions",
+      "why": "Half-integer spin makes the particles fermions, so their joint states are antisymmetric.",
+      "steps": [
+       "s:antisym"
+      ]
+     },
+     {
+      "h": "h:equal",
+      "why": "Equal states make the product vector invariant under the transposition of the two places.",
+      "steps": [
+       "s:fixed"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:antisym",
+      "slogan": "Place the joint state in the antisymmetric subspace by the spin-statistics theorem.",
+      "detail": "The spin-statistics theorem makes particles of half-integer spin fermions, so their states lie in the range of $\\mathcal A = \\frac{1}{n!}\\sum_{\\sigma \\in S_n} \\operatorname{sgn}(\\sigma) P_\\sigma$ on the [tensor product](c:tensor-product) $\\mathcal H^{\\otimes n}$, where $P_\\sigma$ permutes the factors. The state with one-particle states $\\psi_k$ is $\\psi_1 \\wedge \\dots \\wedge \\psi_n = \\mathcal A \\Psi$ with $\\Psi = \\psi_1 \\otimes \\dots \\otimes \\psi_n$.",
+      "uses": [
+       "wd:Q523876"
+      ]
+     },
+     {
+      "id": "s:fixed",
+      "slogan": "Show that the transposition $\\tau = (i\\,j)$ fixes the product vector $\\Psi$.",
+      "detail": "The operator $P_\\tau$ exchanges the factors in places $i$ and $j$ of $\\Psi = \\psi_1 \\otimes \\dots \\otimes \\psi_n$. Since $\\psi_i = \\psi_j$, the exchange returns the same vector, so $P_\\tau \\Psi = \\Psi$.",
+      "uses": []
+     },
+     {
+      "id": "s:sign",
+      "slogan": "Compute $\\mathcal A P_\\tau = -\\mathcal A$ from the [sign](c:signature-of-a-permutation) of a transposition.",
+      "detail": "Since $P_\\sigma P_\\tau = P_{\\sigma\\tau}$, the substitution $\\rho = \\sigma\\tau$ gives $\\mathcal A P_\\tau = \\frac{1}{n!}\\sum_\\rho \\operatorname{sgn}(\\rho\\tau^{-1}) P_\\rho = \\operatorname{sgn}(\\tau)\\,\\mathcal A$. A transposition has sign $-1$.",
+      "uses": []
+     },
+     {
+      "id": "s:vanish",
+      "slogan": "Conclude that the antisymmetrized state equals its negative and therefore vanishes.",
+      "detail": "By steps 2 and 3, $\\mathcal A \\Psi = \\mathcal A P_\\tau \\Psi = -\\mathcal A \\Psi$, so $2\\mathcal A\\Psi = 0$ and $\\mathcal A \\Psi = 0$ in the complex vector space. A zero vector has norm $0$ and is no [quantum state](c:quantum-state), so the two particles cannot share the state $\\psi_i$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:antisym",
+      "s:fixed"
+     ],
+     [
+      "s:antisym",
+      "s:sign"
+     ],
+     [
+      "s:fixed",
+      "s:vanish"
+     ],
+     [
+      "s:sign",
+      "s:vanish"
+     ]
+    ],
+    "conclusion": "s:vanish",
+    "concepts": {
+     "c:hilbert-space": "One-particle states are vectors of the Hilbert space $\\mathcal H$.",
+     "c:antisymmetric-wave-function": "Fermion states are antisymmetric, and antisymmetry forces the vanishing.",
+     "c:tensor-product": "Joint states of $n$ particles live in the tensor power $\\mathcal H^{\\otimes n}$.",
+     "c:signature-of-a-permutation": "The sign $-1$ of a transposition makes the state its own negative.",
+     "c:quantum-state": "A physical state needs a nonzero vector, which the zero vector is not."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard argument, as in D. J. Griffiths, Introduction to Quantum Mechanics, section 5.1, with the spin-statistics theorem as the physical input."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q386292",
+  "statement": "Let $\\pi(x)$ be the number of [primes](c:prime-number) $p \\le x$. Then $\\pi(x)$ is [asymptotic](c:asymptotic) to $x / \\log x$ as $x \\to \\infty$, where $\\log$ is the natural [logarithm](c:logarithm): $\\pi(x) \\log x / x \\to 1$.",
+  "hypotheses": [],
+  "conclusion": "$\\lim_{x \\to \\infty} \\pi(x) \\log x / x = 1$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "newman",
+    "name": "Newman's analytic proof",
+    "slogan": "Show that the [Riemann zeta function](c:riemann-zeta-function) has no zeros on $\\operatorname{Re} s = 1$, feed this into Newman's Tauberian theorem for Laplace transforms, and deduce $\\theta(x) \\sim x$.",
+    "scope": "An outline of Newman's proof in Zagier's account; the analytic theorem of step 4 rests on a contour integral of the cited paper. The proof works with $\\theta(x) = \\sum_{p \\le x} \\log p$ and $\\Phi(s) = \\sum_p \\log p \\; p^{-s}$.",
+    "mechanisms": [
+     "m:complex-integration",
+     "m:analytic-continuation",
+     "m:cited-deep-result"
+    ],
+    "roles": [],
+    "steps": [
+     {
+      "id": "s:chebyshev",
+      "slogan": "Bound the [Chebyshev function](c:chebyshev-function) $\\theta(x)$ by $O(x)$ through the central binomial coefficient.",
+      "detail": "Every prime $p$ with $n < p \\le 2n$ divides $\\binom{2n}{n} \\le 4^n$, so $\\theta(2n) - \\theta(n) \\le 2n \\log 2$. Summing this bound over $x, x/2, x/4, \\dots$ gives $\\theta(x) = O(x)$.",
+      "uses": []
+     },
+     {
+      "id": "s:zeta",
+      "slogan": "Continue $\\zeta(s) - \\frac{1}{s-1}$ to $\\operatorname{Re} s > 0$ and show $\\zeta(s) \\ne 0$ on $\\operatorname{Re} s = 1$.",
+      "detail": "The Euler product gives $\\zeta(s) \\ne 0$ for $\\operatorname{Re} s > 1$, and $\\zeta(s) - \\frac{1}{s-1} = \\sum_n \\int_n^{n+1} (n^{-s} - x^{-s}) \\, dx$ is holomorphic for $\\operatorname{Re} s > 0$. A zero at $1 + i\\alpha$ would make $\\sum_{r=-2}^{2} \\binom{4}{2+r} \\Phi(1 + \\varepsilon + ir\\alpha) = \\sum_p \\frac{\\log p}{p^{1+\\varepsilon}} (p^{i\\alpha/2} + p^{-i\\alpha/2})^4 \\ge 0$ tend to $-\\infty$ as $\\varepsilon \\to 0^+$.",
+      "uses": []
+     },
+     {
+      "id": "s:phi",
+      "slogan": "Show that $\\Phi(s) - \\frac{1}{s-1}$ extends holomorphically to $\\operatorname{Re} s \\ge 1$.",
+      "detail": "The logarithmic derivative of the Euler product gives $-\\zeta'(s)/\\zeta(s) = \\Phi(s) + \\sum_p \\frac{\\log p}{p^s(p^s - 1)}$, and the last sum is holomorphic for $\\operatorname{Re} s > 1/2$. Since $\\zeta$ has a simple pole at $1$ and no zeros on $\\operatorname{Re} s \\ge 1$, $\\Phi(s) - \\frac{1}{s-1}$ is holomorphic there.",
+      "uses": []
+     },
+     {
+      "id": "s:tauber",
+      "slogan": "Prove Newman's analytic theorem for Laplace transforms by a contour integral.",
+      "detail": "Let $f$ be bounded and locally integrable on $[0, \\infty)$, and let its [Laplace transform](c:laplace-transform) $g(z) = \\int_0^\\infty f(t) e^{-zt} \\, dt$ extend holomorphically to $\\operatorname{Re} z \\ge 0$. The Cauchy integral formula for $g(z) e^{zT}(1 + z^2/R^2)/z$ on a contour bulging left of the imaginary axis shows $\\int_0^T f(t) \\, dt \\to g(0)$ as $T \\to \\infty$.",
+      "uses": [
+       "nl:11500"
+      ]
+     },
+     {
+      "id": "s:integral",
+      "slogan": "Apply the analytic theorem to $f(t) = \\theta(e^t) e^{-t} - 1$.",
+      "detail": "Step 1 makes $f$ bounded, and $\\int_0^\\infty f(t) e^{-zt}\\,dt = \\frac{\\Phi(z+1)}{z+1} - \\frac{1}{z}$ is holomorphic on $\\operatorname{Re} z \\ge 0$ by step 3. Hence $\\int_1^\\infty \\frac{\\theta(x) - x}{x^2}\\,dx$ converges.",
+      "uses": []
+     },
+     {
+      "id": "s:asymp",
+      "slogan": "Deduce $\\theta(x) \\sim x$ from the convergent integral, and then $\\pi(x) \\sim x/\\log x$.",
+      "detail": "If $\\theta(x) \\ge \\lambda x$ with $\\lambda > 1$ for arbitrarily large $x$, then $\\int_x^{\\lambda x} \\frac{\\theta(t) - t}{t^2}\\,dt \\ge \\int_1^\\lambda \\frac{\\lambda - t}{t^2}\\,dt > 0$ for those $x$, against convergence; $\\lambda < 1$ is similar. Then $\\theta(x) \\le \\pi(x)\\log x$ and $\\theta(x) \\ge (1 - \\varepsilon)\\log x\\,(\\pi(x) - x^{1-\\varepsilon})$ give $\\pi(x) \\log x / x \\to 1$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:zeta",
+      "s:phi"
+     ],
+     [
+      "s:phi",
+      "s:integral"
+     ],
+     [
+      "s:chebyshev",
+      "s:integral"
+     ],
+     [
+      "s:tauber",
+      "s:integral"
+     ],
+     [
+      "s:integral",
+      "s:asymp"
+     ]
+    ],
+    "conclusion": "s:asymp",
+    "concepts": {
+     "c:prime-number": "The theorem counts primes up to $x$.",
+     "c:asymptotic": "The claim is an asymptotic equivalence, a limit of a ratio.",
+     "c:logarithm": "The density of primes near $x$ is about $1/\\log x$.",
+     "c:riemann-zeta-function": "Zeros of zeta on the line $\\operatorname{Re} s = 1$ would block the proof.",
+     "c:chebyshev-function": "The weighted count $\\theta(x)$ is easier to control than $\\pi(x)$.",
+     "c:laplace-transform": "Newman's theorem turns analytic continuation of a Laplace transform into convergence."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "D. Zagier, Newman's short proof of the prime number theorem, The American Mathematical Monthly 104 (1997), no. 8, 705-708",
+     "url": "https://www.jstor.org/stable/2975232",
+     "note": "Zagier's account of D. J. Newman's 1980 proof; the steps follow its parts (I) to (VI) and its analytic theorem."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q372037",
+  "statement": "Let $X = U \\cup V$ be an [open cover](c:open-cover) by [path-connected](c:path-connected-space) sets with $U \\cap V$ path-connected and $x_0 \\in U \\cap V$. Then the map $\\Phi$ induced by the inclusions from the [free product](c:free-product) $\\pi_1(U) * \\pi_1(V)$ to $\\pi_1(X)$ is surjective with kernel the [normal subgroup](c:normal-subgroup) $N$ generated by $i_U(\\omega)\\, i_V(\\omega)^{-1}$, $\\omega \\in \\pi_1(U \\cap V)$.",
+  "hypotheses": [
+   {
+    "id": "h:open",
+    "text": "The sets $U$ and $V$ are open in $X$ and $X = U \\cup V$.",
+    "concept": "c:open-cover"
+   },
+   {
+    "id": "h:pieces",
+    "text": "The sets $U$ and $V$ are [path-connected](c:path-connected-space).",
+    "concept": "c:path-connected-space"
+   },
+   {
+    "id": "h:intersection",
+    "text": "The intersection $U \\cap V$ is path-connected and contains the base point $x_0$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The [fundamental group](c:fundamental-group) $\\pi_1(X, x_0)$ is the [amalgamated free product](c:amalgamated-product) $\\pi_1(U) *_{\\pi_1(U \\cap V)} \\pi_1(V)$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "subdivision",
+    "name": "Subdivision of loops and homotopies",
+    "slogan": "Subdivide loops and homotopies into pieces that lie in $U$ or in $V$, and track how the factorizations change from piece to piece.",
+    "scope": "The whole theorem for two open sets, as a case of Hatcher's proof for covers with path-connected double and triple intersections.",
+    "mechanisms": [
+     "m:mayer-vietoris",
+     "m:homotopy-invariance",
+     "m:homomorphism-kernel"
+    ],
+    "roles": [
+     {
+      "h": "h:open",
+      "why": "Openness makes the preimages of $U$ and $V$ an [open cover](c:open-cover) of $I$ and of $I \\times I$.",
+      "steps": [
+       "s:subdivide",
+       "s:grid"
+      ]
+     },
+     {
+      "h": "h:pieces",
+      "why": "Path-connectedness of $U$ and of $V$ joins a grid vertex that lies in one set only to $x_0$ inside that set.",
+      "steps": [
+       "s:grid"
+      ]
+     },
+     {
+      "h": "h:intersection",
+      "why": "Path-connectedness of $U \\cap V$ joins division points and grid vertices in both sets to $x_0$ inside $U \\cap V$.",
+      "steps": [
+       "s:surject",
+       "s:grid"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:subdivide",
+      "slogan": "Subdivide a loop at $x_0$ into paths that each lie in $U$ or in $V$.",
+      "detail": "For a loop $f$, the preimages of $U$ and $V$ form an [open cover](c:open-cover) of the compact interval $[0, 1]$. The Lebesgue number lemma gives $0 = s_0 < \\dots < s_m = 1$ with each $f([s_{k-1}, s_k])$ in $U$ or in $V$; merging neighbors in the same set puts each $f(s_k)$, $0 < k < m$, in $U \\cap V$.",
+      "uses": [
+       "nl:18113"
+      ]
+     },
+     {
+      "id": "s:surject",
+      "slogan": "Join each division point to $x_0$ inside $U \\cap V$ to prove that $\\Phi$ is surjective.",
+      "detail": "Choose paths $g_k$ in $U \\cap V$ from $x_0$ to $f(s_k)$, and let $f_k$ be the restriction of $f$ to $[s_{k-1}, s_k]$. Then $[f] = [f_1 \\bar g_1][g_1 f_2 \\bar g_2] \\cdots [g_{m-1} f_m]$, and each factor is a loop at $x_0$ in $U$ or in $V$.",
+      "uses": []
+     },
+     {
+      "id": "s:relations",
+      "slogan": "Check that the [normal subgroup](c:normal-subgroup) $N$ lies in the kernel of $\\Phi$.",
+      "detail": "For a loop $\\omega$ in $U \\cap V$, the classes $i_U(\\omega)$ and $i_V(\\omega)$ have the same image in $\\pi_1(X)$. So $\\Phi(i_U(\\omega) i_V(\\omega)^{-1}) = 1$, and the kernel is normal, so it contains $N$.",
+      "uses": []
+     },
+     {
+      "id": "s:grid",
+      "slogan": "Cut a homotopy between two factorizations into small rectangles that map into $U$ or $V$.",
+      "detail": "Two words of the [free product](c:free-product) with the same image give a homotopy $F\\colon I \\times I \\to X$ between their products of loops. The Lebesgue number lemma gives a grid of rectangles that $F$ maps into $U$ or $V$, with each vertex in at most three rectangles; join each vertex image to $x_0$ inside the sets of its rectangles.",
+      "uses": [
+       "nl:18113"
+      ]
+     },
+     {
+      "id": "s:moves",
+      "slogan": "Show that crossing one rectangle changes the word only by an element of $N$.",
+      "detail": "Pushing the path across one rectangle replaces a factor by a homotopic loop in the same open set, or regards a loop in $U \\cap V$ as a loop in $U$ instead of $V$. These moves change the word by elements of $N$, so every element of $\\ker \\Phi$ lies in $N$.",
+      "uses": []
+     },
+     {
+      "id": "s:iso",
+      "slogan": "Pass to the quotient by $N$ to obtain the isomorphism.",
+      "detail": "Steps 2, 3 and 5 show that $\\Phi$ is surjective with kernel $N$. The first isomorphism theorem gives $(\\pi_1(U) * \\pi_1(V))/N \\cong \\pi_1(X, x_0)$, and the left side is the [amalgamated free product](c:amalgamated-product) by definition.",
+      "uses": [
+       "wd:Q1065966"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:subdivide",
+      "s:surject"
+     ],
+     [
+      "s:surject",
+      "s:iso"
+     ],
+     [
+      "s:relations",
+      "s:iso"
+     ],
+     [
+      "s:grid",
+      "s:moves"
+     ],
+     [
+      "s:moves",
+      "s:iso"
+     ]
+    ],
+    "conclusion": "s:iso",
+    "concepts": {
+     "c:open-cover": "Open sets let the Lebesgue number lemma subdivide loops and homotopies.",
+     "c:path-connected-space": "Path-connectedness lets every subdivision point be joined to the base point.",
+     "c:free-product": "Words in the free product record a loop as a product of pieces.",
+     "c:normal-subgroup": "The relations from loops in $U \\cap V$ generate the kernel as a normal subgroup.",
+     "c:fundamental-group": "The theorem computes the fundamental group of $X$ from its pieces.",
+     "c:amalgamated-product": "The quotient of the free product by $N$ is the amalgamated product."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "A. Hatcher, Algebraic Topology, Theorem 1.20 and its proof."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:sequential-banach-alaoglu-theorem",
+  "statement": "Let $E$ be a [separable](c:separable-space) [normed space](c:normed-space) over $\\mathbb{R}$ or $\\mathbb{C}$. Then every closed [ball](c:ball) of the [dual space](c:dual-space) $E^*$ is sequentially compact in the [weak-* topology](c:weak-topology-2): every sequence in the ball has a subsequence $(\\varphi_{k_j})$ with $\\varphi_{k_j}(x) \\to \\varphi(x)$ for all $x \\in E$, for some $\\varphi$ in the ball.",
+  "hypotheses": [
+   {
+    "id": "h:separable",
+    "text": "The normed space $E$ is [separable](c:separable-space): it has a countable dense subset.",
+    "concept": "c:separable-space"
+   },
+   {
+    "id": "h:bounded",
+    "text": "The sequence $(\\varphi_k)$ lies in a closed ball $\\{\\varphi \\in E^* : \\|\\varphi - \\varphi_0\\| \\le r\\}$ of the dual.",
+    "concept": "c:ball"
+   }
+  ],
+  "conclusion": "Some subsequence of $(\\varphi_k)$ converges in the weak-* topology to a functional $\\varphi$ with $\\|\\varphi - \\varphi_0\\| \\le r$.",
+  "formal": {
+   "decl": "WeakDual.isSeqCompact_closedBall",
+   "difference": "The declaration is more general: the scalars may be any proper nontrivially normed field and $E$ may be seminormed."
+  },
+  "proofs": [
+   {
+    "id": "metrizable-compact",
+    "name": "Compact and metrizable",
+    "slogan": "The ball is weak-* compact by Banach–Alaoglu, separability makes it metrizable, and a compact metrizable space is sequentially compact.",
+    "scope": "The whole theorem for $r \\ge 0$; for $r < 0$ the ball is empty and the claim is vacuous.",
+    "mechanisms": [
+     "m:subsequence",
+     "m:reduction"
+    ],
+    "roles": [
+     {
+      "h": "h:separable",
+      "why": "Separability supplies the countable dense sequence that defines the metric.",
+      "steps": [
+       "s:separate",
+       "s:metric"
+      ]
+     },
+     {
+      "h": "h:bounded",
+      "why": "The ball is bounded and weak-* closed, which the Banach–Alaoglu theorem needs.",
+      "steps": [
+       "s:compact"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:compact",
+      "slogan": "Show that the closed ball is weak-* compact by the Banach–Alaoglu theorem.",
+      "detail": "The ball is norm bounded, and it is weak-* closed as the intersection of the weak-* closed sets $\\{\\varphi : |\\varphi(x) - \\varphi_0(x)| \\le r\\|x\\|\\}$. The Banach–Alaoglu theorem makes bounded weak-* closed sets of $E^*$ compact in the [weak-* topology](c:weak-topology-2).",
+      "uses": [
+       "wd:Q537618"
+      ]
+     },
+     {
+      "id": "s:separate",
+      "slogan": "Separate the points of the dual by evaluations at a dense sequence.",
+      "detail": "Let $(x_n)$ be a [dense](c:dense-set) sequence in $E$. The maps $\\varphi \\mapsto \\varphi(x_n)$ are weak-* continuous, and if $\\varphi(x_n) = \\psi(x_n)$ for all $n$, then $\\varphi = \\psi$ by continuity and density.",
+      "uses": []
+     },
+     {
+      "id": "s:metric",
+      "slogan": "Build a metric for the weak-* topology on the compact ball.",
+      "detail": "Set $d(\\varphi, \\psi) = \\sum_n 2^{-n} \\min(1, |\\varphi(x_n) - \\psi(x_n)|)$, a metric by step 2 whose topology is weaker than the weak-* topology. The identity from the compact ball to the Hausdorff space $(\\text{ball}, d)$ is a continuous bijection, hence a homeomorphism, so the ball is [metrizable](c:metrizable-space).",
+      "uses": []
+     },
+     {
+      "id": "s:seq",
+      "slogan": "Extract a convergent subsequence in the compact metric ball.",
+      "detail": "A compact metric space is [sequentially compact](c:seq-compact-space), so every sequence in the ball has a subsequence that converges in $d$, hence in the weak-* topology, to a point of the ball.",
+      "uses": [
+       "nm:sequential-compactness-is-equivalent-to-compactness-bolzano-weierstrass"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:compact",
+      "s:metric"
+     ],
+     [
+      "s:separate",
+      "s:metric"
+     ],
+     [
+      "s:metric",
+      "s:seq"
+     ],
+     [
+      "s:compact",
+      "s:seq"
+     ]
+    ],
+    "conclusion": "s:seq",
+    "concepts": {
+     "c:separable-space": "A countable dense set gives countably many coordinates for a metric.",
+     "c:normed-space": "The dual of a normed space carries the operator norm and its balls.",
+     "c:ball": "Closed balls are the bounded weak-* closed sets that become compact.",
+     "c:dual-space": "The compact set lives in the dual space $E^*$.",
+     "c:weak-topology-2": "Compactness holds for the weak-* topology, not for the norm topology.",
+     "c:dense-set": "Evaluations at a dense sequence already separate functionals.",
+     "c:metrizable-space": "Metrizability turns compactness into sequential compactness.",
+     "c:seq-compact-space": "Sequential compactness is the conclusion of the theorem."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "WeakDual.isSeqCompact_closedBall",
+     "follows": true,
+     "note": "mathlib applies isSeqCompact_of_isBounded_of_isClosed: Banach–Alaoglu compactness (isCompact_of_bounded_of_closed), metrizability from a countable separating family (metrizable_of_isCompact, exists_countable_separating) and IsSeqCompact.range."
+    }
+   },
+   {
+    "id": "diagonal",
+    "name": "Diagonal subsequence",
+    "slogan": "Make the sequence converge at each point of a dense sequence by a diagonal argument, then extend the convergence to all of $E$ by the uniform bound.",
+    "scope": "The whole theorem; $M = \\|\\varphi_0\\| + r$ bounds every $\\|\\varphi_k\\|$.",
+    "mechanisms": [
+     "m:diagonal-argument",
+     "m:subsequence",
+     "m:epsilon-over-three"
+    ],
+    "roles": [
+     {
+      "h": "h:separable",
+      "why": "Separability gives the countable dense sequence for the diagonal argument.",
+      "steps": [
+       "s:diag",
+       "s:cauchy"
+      ]
+     },
+     {
+      "h": "h:bounded",
+      "why": "The uniform bound $M$ gives bounded scalar sequences, controls the error term and puts the limit in the ball.",
+      "steps": [
+       "s:diag",
+       "s:cauchy",
+       "s:limit"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:diag",
+      "slogan": "Choose nested subsequences that converge at $x_1, x_2, \\dots$ and take the diagonal.",
+      "detail": "Let $(x_n)$ be a [dense](c:dense-set) sequence in $E$. The scalars $\\varphi_k(x_n)$ satisfy $|\\varphi_k(x_n)| \\le M\\|x_n\\|$, so the Bolzano–Weierstrass theorem gives nested subsequences converging at $x_1$, then at $x_2$, and so on; the diagonal subsequence $(\\psi_j)$ converges at every $x_n$.",
+      "uses": [
+       "wd:Q468391"
+      ]
+     },
+     {
+      "id": "s:cauchy",
+      "slogan": "Show that $\\psi_j(x)$ is a Cauchy sequence for every $x \\in E$.",
+      "detail": "Given $x$ and $\\varepsilon > 0$, pick $x_n$ with $\\|x - x_n\\| < \\varepsilon$. Then $|\\psi_j(x) - \\psi_l(x)| \\le 2M\\varepsilon + |\\psi_j(x_n) - \\psi_l(x_n)|$, which is below $(2M+1)\\varepsilon$ for large $j$ and $l$.",
+      "uses": []
+     },
+     {
+      "id": "s:limit",
+      "slogan": "Define the limit functional and check that it lies in the ball.",
+      "detail": "Set $\\varphi(x) = \\lim_j \\psi_j(x)$; it is linear as a pointwise limit of linear maps. Also $|\\varphi(x) - \\varphi_0(x)| = \\lim_j |\\psi_j(x) - \\varphi_0(x)| \\le r\\|x\\|$, so $\\varphi$ lies in the closed [ball](c:ball) of $E^*$ and $\\psi_j \\to \\varphi$ in the weak-* topology.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:diag",
+      "s:cauchy"
+     ],
+     [
+      "s:cauchy",
+      "s:limit"
+     ]
+    ],
+    "conclusion": "s:limit",
+    "concepts": {
+     "c:separable-space": "Separability makes a diagonal argument over countably many points possible.",
+     "c:normed-space": "The norm of $E$ controls the error $|\\psi_j(x) - \\psi_j(x_n)|$.",
+     "c:ball": "The closed ball bound passes to the pointwise limit.",
+     "c:dual-space": "The limit is again a bounded linear functional in $E^*$.",
+     "c:weak-topology-2": "Pointwise convergence on $E$ is convergence in the weak-* topology.",
+     "c:dense-set": "Convergence on a dense sequence extends to all of $E$."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The classical diagonal argument with a three-epsilon extension from a dense sequence; not the mathlib route."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q643826",
+  "statement": "Let $X_n$ and $Y_n$ be [random variables](c:random-variable) on one probability space with values in separable normed spaces, with $X_n \\to X$ [in distribution](c:convergence-in-distribution) and $Y_n \\to c$ [in probability](c:convergence-in-probability) for a constant $c$. Then $(X_n, Y_n) \\to (X, c)$ in distribution, so $g(X_n, Y_n) \\to g(X, c)$ for every [continuous](c:continuous-function) $g$; in particular $X_n + Y_n \\to X + c$.",
+  "hypotheses": [
+   {
+    "id": "h:dist",
+    "text": "The sequence $X_n$ converges to $X$ [in distribution](c:convergence-in-distribution).",
+    "concept": "c:convergence-in-distribution"
+   },
+   {
+    "id": "h:prob",
+    "text": "Each $Y_n$ lives on the probability space of $X_n$, and $Y_n \\to c$ [in probability](c:convergence-in-probability) for a constant $c$.",
+    "concept": "c:convergence-in-probability"
+   },
+   {
+    "id": "h:continuous",
+    "text": "The map $g$ is [continuous](c:continuous-function) on the product of the two value spaces.",
+    "concept": "c:continuous-function"
+   }
+  ],
+  "conclusion": "$g(X_n, Y_n) \\to g(X, c)$ in distribution.",
+  "formal": {
+   "decl": "MeasureTheory.TendstoInDistribution.continuous_comp_prodMk_of_tendstoInMeasure_const",
+   "difference": "The declaration works along any countably generated filter and lets the limit $X$ live on another probability space; the value spaces are second countable seminormed groups."
+  },
+  "proofs": [
+   {
+    "id": "converging-together",
+    "name": "Converging together and continuous mapping",
+    "slogan": "Show that $(X_n, c) \\to (X, c)$, that $(X_n, Y_n)$ stays close to it in probability, and apply the continuous mapping theorem.",
+    "scope": "The whole theorem; the classical cases take $g(x, y) = x + y$ and $g(x, y) = yx$.",
+    "mechanisms": [
+     "m:triangle-inequality",
+     "m:continuous-image",
+     "m:approximation"
+    ],
+    "roles": [
+     {
+      "h": "h:dist",
+      "why": "Convergence of $X_n$ gives the limit of the comparison pair $(X_n, c)$.",
+      "steps": [
+       "s:const"
+      ]
+     },
+     {
+      "h": "h:prob",
+      "why": "Convergence of $Y_n$ to a constant makes the two pairs close in probability; the common space makes the pair defined.",
+      "steps": [
+       "s:close",
+       "s:together"
+      ]
+     },
+     {
+      "h": "h:continuous",
+      "why": "Continuity of $g$ lets the continuous mapping theorem carry the limit through $g$.",
+      "steps": [
+       "s:map"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:const",
+      "slogan": "Push $X_n \\to X$ forward along the continuous map $x \\mapsto (x, c)$.",
+      "detail": "The map $x \\mapsto (x, c)$ is [continuous](c:continuous-function), so the continuous mapping theorem gives $(X_n, c) \\to (X, c)$ in distribution.",
+      "uses": [
+       "wd:Q5165492"
+      ]
+     },
+     {
+      "id": "s:close",
+      "slogan": "Show that the distance between $(X_n, Y_n)$ and $(X_n, c)$ tends to zero in probability.",
+      "detail": "The distance is $\\|(0, Y_n - c)\\| = \\|Y_n - c\\|$, and $P(\\|Y_n - c\\| \\ge \\varepsilon) \\to 0$ for every $\\varepsilon > 0$ because $Y_n \\to c$ [in probability](c:convergence-in-probability).",
+      "uses": []
+     },
+     {
+      "id": "s:together",
+      "slogan": "Show that pairs close in probability share the limit in distribution, using bounded Lipschitz test functions.",
+      "detail": "For $F$ with oscillation at most $M$ and [Lipschitz](c:lipschitz-function) constant $L$, $|E F(X_n, Y_n) - E F(X_n, c)| \\le L\\varepsilon + M\\,P(\\|Y_n - c\\| \\ge \\varepsilon)$. With steps 1 and 2, $E F(X_n, Y_n) \\to E F(X, c)$, and bounded Lipschitz functions determine convergence in distribution, so $(X_n, Y_n) \\to (X, c)$.",
+      "uses": []
+     },
+     {
+      "id": "s:map",
+      "slogan": "Apply the continuous mapping theorem to $g$ and the convergent pair.",
+      "detail": "Since $g$ is continuous and $(X_n, Y_n) \\to (X, c)$ [in distribution](c:convergence-in-distribution), the continuous mapping theorem gives $g(X_n, Y_n) \\to g(X, c)$ in distribution.",
+      "uses": [
+       "wd:Q5165492"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:const",
+      "s:together"
+     ],
+     [
+      "s:close",
+      "s:together"
+     ],
+     [
+      "s:together",
+      "s:map"
+     ]
+    ],
+    "conclusion": "s:map",
+    "concepts": {
+     "c:random-variable": "The theorem combines two sequences of random variables on one space.",
+     "c:convergence-in-distribution": "Convergence in distribution is the mode of the hypothesis and the conclusion.",
+     "c:convergence-in-probability": "Convergence in probability to a constant keeps the pair close to $(X_n, c)$.",
+     "c:continuous-function": "Continuous maps preserve convergence in distribution.",
+     "c:lipschitz-function": "Lipschitz test functions turn small distances into small changes of expectations."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "MeasureTheory.TendstoInDistribution.continuous_comp_prodMk_of_tendstoInMeasure_const",
+     "follows": true,
+     "note": "mathlib proves TendstoInDistribution.prodMk_of_tendstoInMeasure_const with tendstoInDistribution_of_tendstoInMeasure_sub (bounded Lipschitz test functions) and then applies TendstoInDistribution.continuous_comp."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:szemeredi-regularity-lemma",
+  "statement": "For every $\\varepsilon > 0$ and integer $l \\ge 1$ there is $M(\\varepsilon, l)$ such that every finite [graph](c:graph) with at least $l$ vertices has an equipartition (a [partition](c:finpartition) with part sizes differing by at most one) into $k$ parts, $l \\le k \\le M(\\varepsilon, l)$, in which at most $\\varepsilon k(k-1)$ ordered pairs of distinct parts fail to be $\\varepsilon$-regular.",
+  "hypotheses": [
+   {
+    "id": "h:epsilon",
+    "text": "The parameter satisfies $\\varepsilon > 0$.",
+    "concept": null
+   },
+   {
+    "id": "h:graph",
+    "text": "The graph $G$ is a finite simple [graph](c:graph) on $n$ vertices.",
+    "concept": "c:graph"
+   },
+   {
+    "id": "h:size",
+    "text": "The graph has at least $l$ vertices: $n \\ge l$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "There is an equipartition into $k$ parts, $l \\le k \\le M(\\varepsilon, l)$, in which all but $\\varepsilon k(k-1)$ ordered pairs $(A, B)$ of distinct parts satisfy $|d(A', B') - d(A, B)| < \\varepsilon$ for all $A' \\subseteq A$ and $B' \\subseteq B$ with $|A'| \\ge \\varepsilon |A|$ and $|B'| \\ge \\varepsilon |B|$, where $d$ is the [edge density](c:edge-density).",
+  "formal": {
+   "decl": "szemeredi_regularity",
+   "difference": "The declaration gives the explicit bound SzemerediRegularity.bound ε l for $M(\\varepsilon, l)$."
+  },
+  "proofs": [
+   {
+    "id": "energy-increment",
+    "name": "Energy increment",
+    "slogan": "Refine a non-regular equipartition so that its energy rises by $\\varepsilon^5/4$; since the energy stays at most $1$, the refinement stops after at most $4/\\varepsilon^5$ rounds.",
+    "scope": "The whole lemma; step 1 treats graphs with at most $M$ vertices. For $\\varepsilon \\ge 1$ every equipartition works, so steps 2 to 5 assume $\\varepsilon < 1$.",
+    "mechanisms": [
+     "m:induction",
+     "m:cauchy-schwarz",
+     "m:case-analysis"
+    ],
+    "roles": [
+     {
+      "h": "h:epsilon",
+      "why": "A positive $\\varepsilon$ makes the energy gain $\\varepsilon^5/4$ positive, so the number of rounds is finite.",
+      "steps": [
+       "s:increment",
+       "s:stop"
+      ]
+     },
+     {
+      "h": "h:graph",
+      "why": "A finite graph has edge densities in $[0, 1]$, so the energy is defined and bounded by $1$.",
+      "steps": [
+       "s:energy"
+      ]
+     },
+     {
+      "h": "h:size",
+      "why": "At least $l$ vertices allow the singleton partition or a starting equipartition with $t \\ge l$ parts.",
+      "steps": [
+       "s:small",
+       "s:start"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:small",
+      "slogan": "Take the partition into singletons when the graph has at most $M$ vertices.",
+      "detail": "If $l \\le n \\le M$, the singletons form an equipartition with $n$ parts. Two singletons always form an $\\varepsilon$-regular pair, because a subset of a singleton with at least $\\varepsilon$ elements is the singleton itself.",
+      "uses": []
+     },
+     {
+      "id": "s:start",
+      "slogan": "Start from an arbitrary equipartition with $t$ parts for a fixed large $t \\ge l$.",
+      "detail": "For $n > M$, choose an equipartition into $t = t(\\varepsilon, l)$ parts with $t \\ge l$ and $4^t \\varepsilon^5 \\ge 100$. The constant $M$ is fixed in step 5 so that $n$ is large enough for every later refinement.",
+      "uses": []
+     },
+     {
+      "id": "s:energy",
+      "slogan": "Define the energy of a partition and bound it by one.",
+      "detail": "For parts $V_1, \\dots, V_k$, set $q = k^{-2} \\sum_{i \\ne j} d(V_i, V_j)^2$. Every [edge density](c:edge-density) lies in $[0, 1]$, so $0 \\le q \\le 1$.",
+      "uses": []
+     },
+     {
+      "id": "s:increment",
+      "slogan": "Refine each part by the witness sets of its irregular pairs to raise the energy by $\\varepsilon^5/4$.",
+      "detail": "If more than $\\varepsilon k(k-1)$ pairs are irregular, cut each part by the witness sets $A', B'$ of its irregular pairs and re-cut into an equipartition with at most $k\\,4^k$ parts. The defect form of the Cauchy–Schwarz inequality shows that each irregular pair adds about $\\varepsilon^4$ to its share of the energy, so $q$ rises by at least $\\varepsilon^5/4$.",
+      "uses": [
+       "nl:16121"
+      ]
+     },
+     {
+      "id": "s:stop",
+      "slogan": "Stop after at most $4/\\varepsilon^5$ increments and bound the final number of parts.",
+      "detail": "Since $q \\le 1$ and each round adds $\\varepsilon^5/4$, an $\\varepsilon$-regular equipartition appears within $4/\\varepsilon^5$ rounds. The number of parts stays between $t \\ge l$ and the $(\\lfloor 4/\\varepsilon^5 \\rfloor + 1)$-fold iterate of $k \\mapsto k\\,4^k$ at $t$, which with a margin for the re-cuts defines $M(\\varepsilon, l)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:start",
+      "s:increment"
+     ],
+     [
+      "s:energy",
+      "s:increment"
+     ],
+     [
+      "s:increment",
+      "s:stop"
+     ],
+     [
+      "s:energy",
+      "s:stop"
+     ],
+     [
+      "s:small",
+      "s:stop"
+     ]
+    ],
+    "conclusion": "s:stop",
+    "concepts": {
+     "c:graph": "The lemma partitions the vertex set of any finite graph.",
+     "c:finpartition": "The proof refines finite partitions of the vertex set step by step.",
+     "c:edge-density": "Regularity and energy are both defined through edge densities."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "szemeredi_regularity",
+     "follows": true,
+     "note": "mathlib, after Dillies and Mehta, iterates the increment partition (SzemerediRegularity.increment, energy_increment, card_increment) by induction on the number of rounds, with the explicit bounds stepBound, initialBound and bound."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1137014",
+  "statement": "Let $(X_i)_{i \\in I}$ be any family of [compact](c:compact-space) topological spaces. Then the product $\\prod_{i \\in I} X_i$ with the [product topology](c:product-topology) is compact.",
+  "hypotheses": [
+   {
+    "id": "h:compact",
+    "text": "Every factor $X_i$ is [compact](c:compact-space).",
+    "concept": "c:compact-space"
+   }
+  ],
+  "conclusion": "The product space $\\prod_{i \\in I} X_i$ is compact.",
+  "formal": {
+   "decl": "isCompact_pi_infinite",
+   "difference": "The declaration states it for compact subsets $s_i \\subseteq X_i$: the set of $x$ with $x_i \\in s_i$ for all $i$ is compact. The case $s_i = X_i$ is this theorem."
+  },
+  "proofs": [
+   {
+    "id": "ultrafilters",
+    "name": "Ultrafilter limits",
+    "slogan": "An [ultrafilter](c:ultrafilter) on the product projects to an ultrafilter on each factor, each projection converges, and the chosen limits form a limit of the ultrafilter.",
+    "scope": "The whole theorem, with the axiom of choice, which Tychonoff's theorem implies. An empty factor makes the product empty, and the empty space is compact.",
+    "mechanisms": [
+     "m:zorn",
+     "m:finite-subcover"
+    ],
+    "roles": [
+     {
+      "h": "h:compact",
+      "why": "Compactness of each factor makes each projected ultrafilter converge.",
+      "steps": [
+       "s:choose"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:criterion",
+      "slogan": "Characterize compactness by convergence of every ultrafilter.",
+      "detail": "A space is compact if and only if every ultrafilter on it converges. If an open cover has no finite subcover, the complements of the finite unions generate a [filter](c:filter), and the ultrafilter lemma extends it to an ultrafilter that converges nowhere.",
+      "uses": [
+       "nl:1463"
+      ]
+     },
+     {
+      "id": "s:project",
+      "slogan": "Push an ultrafilter $\\mathcal U$ on the product forward along each projection $p_i$.",
+      "detail": "The image $p_i(\\mathcal U) = \\{A \\subseteq X_i : p_i^{-1}(A) \\in \\mathcal U\\}$ is an ultrafilter on $X_i$, because taking preimages under $p_i$ preserves complements and intersections.",
+      "uses": []
+     },
+     {
+      "id": "s:choose",
+      "slogan": "Choose a limit $x_i$ of each projected ultrafilter in its compact factor.",
+      "detail": "Each $X_i$ is [compact](c:compact-space), so $p_i(\\mathcal U)$ converges to some $x_i \\in X_i$ by step 1. The [axiom of choice](c:axiom-of-choice) picks one limit for every $i$ at once and gives the point $x = (x_i)_{i \\in I}$.",
+      "uses": []
+     },
+     {
+      "id": "s:converge",
+      "slogan": "Show that $\\mathcal U$ converges to $x$ in the product topology.",
+      "detail": "A basic neighborhood of $x$ in the [product topology](c:product-topology) is $\\bigcap_{i \\in F} p_i^{-1}(W_i)$ with $F$ finite and $W_i$ open around $x_i$. Each $p_i^{-1}(W_i)$ lies in $\\mathcal U$ because $p_i(\\mathcal U) \\to x_i$, so the finite intersection lies in $\\mathcal U$, and the product is compact by step 1.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:criterion",
+      "s:choose"
+     ],
+     [
+      "s:project",
+      "s:choose"
+     ],
+     [
+      "s:choose",
+      "s:converge"
+     ],
+     [
+      "s:criterion",
+      "s:converge"
+     ]
+    ],
+    "conclusion": "s:converge",
+    "concepts": {
+     "c:compact-space": "Compactness of the factors gives limits of the projected ultrafilters.",
+     "c:product-topology": "Convergence in the product topology is convergence in each coordinate.",
+     "c:ultrafilter": "Ultrafilters converge in compact spaces and project to ultrafilters.",
+     "c:filter": "A cover without finite subcover yields a filter that extends to an ultrafilter.",
+     "c:axiom-of-choice": "Choice selects one limit in each of the possibly infinitely many factors."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "isCompact_pi_infinite",
+     "follows": true,
+     "note": "mathlib uses isCompact_iff_ultrafilter_le_nhds and nhds_pi: it maps the ultrafilter by each evaluation, chooses the limits with choose and assembles them."
+    }
+   },
+   {
+    "id": "alexander",
+    "name": "Alexander's subbase theorem",
+    "slogan": "By Alexander's subbase theorem, test only covers by cylinder sets $p_i^{-1}(U)$, and find a point outside any such cover without a finite subcover.",
+    "scope": "The whole theorem. Alexander's theorem uses Zorn's lemma, and the choice of one uncovered point in each factor uses the axiom of choice.",
+    "mechanisms": [
+     "m:zorn",
+     "m:finite-subcover",
+     "m:contradiction"
+    ],
+    "roles": [
+     {
+      "h": "h:compact",
+      "why": "Compactness of the factor $X_i$ turns a cover of $X_i$ from $\\mathcal C_i$ into a finite one.",
+      "steps": [
+       "s:factor"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:subbase",
+      "slogan": "Reduce to covers by subbasic cylinder sets with Alexander's subbase theorem.",
+      "detail": "The sets $p_i^{-1}(U)$ with $U \\subseteq X_i$ open form a subbase of the [product topology](c:product-topology). Alexander's subbase theorem says that a space is compact when every cover by subbasic sets has a finite subcover.",
+      "uses": [
+       "nm:alexander-s-subbasis-theorem"
+      ]
+     },
+     {
+      "id": "s:factor",
+      "slogan": "Find in each factor a point that the cover sets of that factor miss.",
+      "detail": "Let $\\mathcal C$ be a cover by cylinders with no finite subcover, and let $\\mathcal C_i = \\{U : p_i^{-1}(U) \\in \\mathcal C\\}$. If $\\mathcal C_i$ covered the [compact](c:compact-space) $X_i$, finitely many of its sets would cover $X_i$, and their cylinders would cover the product. So some $x_i \\in X_i$ lies in no member of $\\mathcal C_i$.",
+      "uses": []
+     },
+     {
+      "id": "s:point",
+      "slogan": "Assemble the uncovered coordinates into a point that no cylinder of the cover contains.",
+      "detail": "The [axiom of choice](c:axiom-of-choice) picks $x_i$ for every $i$ and gives $x = (x_i)$. If $x \\in p_i^{-1}(U) \\in \\mathcal C$, then $x_i \\in U \\in \\mathcal C_i$, against the choice of $x_i$; so $\\mathcal C$ is not a cover, a contradiction, and the product is compact.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:subbase",
+      "s:factor"
+     ],
+     [
+      "s:factor",
+      "s:point"
+     ],
+     [
+      "s:subbase",
+      "s:point"
+     ]
+    ],
+    "conclusion": "s:point",
+    "concepts": {
+     "c:compact-space": "Compactness of one factor gives the finite subcover that leads to the contradiction.",
+     "c:product-topology": "The cylinder sets form a subbase of the product topology.",
+     "c:axiom-of-choice": "Choice assembles one uncovered coordinate from every factor."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard proof by Alexander's subbase theorem; not the mathlib route."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q11352023",
+  "statement": "Let $(X, \\mu)$ be a measure space, $1 \\le p < \\infty$, and $f_n, g$ in the [Lp space](c:lp-space) $L^p(\\mu)$. Then $\\|f_n - g\\|_p \\to 0$ if and only if $f_n \\to g$ [in measure](c:convergence-in-measure), $(f_n)$ is [uniformly integrable](c:uniform-integrability) (sets of small measure carry uniformly small $p$-norm) and uniformly tight (some set of finite measure carries all but a uniformly small $p$-norm).",
+  "hypotheses": [
+   {
+    "id": "h:exponent",
+    "text": "The exponent satisfies $1 \\le p < \\infty$.",
+    "concept": null
+   },
+   {
+    "id": "h:lp",
+    "text": "The functions $f_n$ and $g$ lie in the [Lp space](c:lp-space) $L^p(\\mu)$.",
+    "concept": "c:lp-space"
+   }
+  ],
+  "conclusion": "$f_n \\to g$ in $L^p$ exactly when $f_n \\to g$ in measure and $(f_n)$ is uniformly integrable and uniformly tight.",
+  "formal": {
+   "decl": "MeasureTheory.tendstoInMeasure_iff_tendsto_Lp",
+   "difference": null
+  },
+  "proofs": [
+   {
+    "id": "egorov-subsequence",
+    "name": "Subsequences, Egorov and Markov",
+    "slogan": "Forward, pass to almost everywhere convergent subsequences, cut off a finite-measure set by tightness and use Egorov with uniform integrability; backward, use Markov's inequality and the $L^p$ error.",
+    "scope": "Both directions; for $\\mu = 0$ everything is trivial. Steps 1 to 4 prove the forward direction, and steps 5 and 6 the converse.",
+    "mechanisms": [
+     "m:subsequence",
+     "m:epsilon-over-three",
+     "m:dominated-convergence"
+    ],
+    "roles": [
+     {
+      "h": "h:exponent",
+      "why": "For $p \\ge 1$ the $p$-norm obeys Minkowski's inequality, and $p < \\infty$ lets Markov's inequality and small sets control it.",
+      "steps": [
+       "s:estimate",
+       "s:markov",
+       "s:ui-tight"
+      ]
+     },
+     {
+      "h": "h:lp",
+      "why": "Each single function of $L^p$, such as $g$, is uniformly integrable and tight.",
+      "steps": [
+       "s:tight",
+       "s:egorov",
+       "s:ui-tight"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:subseq",
+      "slogan": "Reduce the forward direction to almost everywhere convergence by passing to subsequences.",
+      "detail": "A real sequence tends to $0$ if every subsequence has a further subsequence tending to $0$. Every subsequence of $(f_n)$ still converges [in measure](c:convergence-in-measure), so it has a further subsequence converging to $g$ [almost everywhere](c:almost-everywhere), and it keeps uniform integrability and tightness.",
+      "uses": []
+     },
+     {
+      "id": "s:tight",
+      "slogan": "Cut off a set $E$ of finite measure by uniform tightness.",
+      "detail": "Given $\\varepsilon > 0$, tightness of $(f_n)$ and of the single function $g$ gives $E$ with $\\mu(E) < \\infty$, $\\|f_n 1_{E^c}\\|_p \\le \\varepsilon$ for all $n$ and $\\|g 1_{E^c}\\|_p \\le \\varepsilon$.",
+      "uses": []
+     },
+     {
+      "id": "s:egorov",
+      "slogan": "Apply Egorov's theorem on $E$ to get uniform convergence off a small set.",
+      "detail": "[Uniform integrability](c:uniform-integrability) of $(f_n)$ and of $g$ gives $\\delta > 0$ with $\\|f_n 1_A\\|_p \\le \\varepsilon$ and $\\|g 1_A\\|_p \\le \\varepsilon$ when $\\mu(A) \\le \\delta$. Egorov's theorem on the finite measure set $E$ gives $B \\subseteq E$ with $\\mu(B) \\le \\delta$ and $f_n \\to g$ [uniformly](c:uniform-convergence) on $E \\setminus B$.",
+      "uses": [
+       "wd:Q1191709"
+      ]
+     },
+     {
+      "id": "s:estimate",
+      "slogan": "Add the three pieces with Minkowski's inequality to bound $\\|f_n - g\\|_p$.",
+      "detail": "Splitting over $E \\setminus B$, $B$ and $E^c$, Minkowski's inequality gives $\\|f_n - g\\|_p \\le \\mu(E)^{1/p} \\sup_{E \\setminus B} |f_n - g| + 2\\varepsilon + 2\\varepsilon$. The first term tends to $0$, so $\\limsup_n \\|f_n - g\\|_p \\le 4\\varepsilon$ along the subsequence.",
+      "uses": [
+       "nl:18093"
+      ]
+     },
+     {
+      "id": "s:markov",
+      "slogan": "Derive convergence in measure from $L^p$ convergence by Markov's inequality.",
+      "detail": "For $\\eta > 0$, Markov's inequality applied to $|f_n - g|^p$ gives $\\mu(|f_n - g| \\ge \\eta) \\le \\eta^{-p} \\|f_n - g\\|_p^p$, which tends to $0$.",
+      "uses": [
+       "nm:markov-s-inequality"
+      ]
+     },
+     {
+      "id": "s:ui-tight",
+      "slogan": "Transfer uniform integrability and tightness from finitely many functions and $g$ to the sequence.",
+      "detail": "Choose $N$ with $\\|f_n - g\\|_p \\le \\varepsilon$ for $n > N$; then $\\|f_n 1_A\\|_p \\le \\|g 1_A\\|_p + \\varepsilon$. Dominated convergence makes each single function of $L^p$ uniformly integrable and tight, so $g, f_1, \\dots, f_N$ give one $\\delta$ and one set $E$ that work for every $n$.",
+      "uses": [
+       "wd:Q1067156",
+       "nl:18093"
+      ]
+     },
+     {
+      "id": "s:combine",
+      "slogan": "Join the two directions into the stated equivalence.",
+      "detail": "Steps 1 to 4 show that convergence in measure, uniform integrability and uniform tightness give $\\|f_n - g\\|_p \\to 0$. Steps 5 and 6 show that $L^p$ convergence gives the three properties.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:subseq",
+      "s:egorov"
+     ],
+     [
+      "s:tight",
+      "s:egorov"
+     ],
+     [
+      "s:tight",
+      "s:estimate"
+     ],
+     [
+      "s:egorov",
+      "s:estimate"
+     ],
+     [
+      "s:estimate",
+      "s:combine"
+     ],
+     [
+      "s:markov",
+      "s:combine"
+     ],
+     [
+      "s:ui-tight",
+      "s:combine"
+     ]
+    ],
+    "conclusion": "s:combine",
+    "concepts": {
+     "c:lp-space": "The theorem characterizes convergence in the norm of $L^p$.",
+     "c:convergence-in-measure": "Convergence in measure gives almost everywhere convergent subsequences.",
+     "c:uniform-integrability": "Uniform integrability controls the norm on the small exceptional set.",
+     "c:almost-everywhere": "Egorov's theorem needs almost everywhere convergence on $E$.",
+     "c:uniform-convergence": "Uniform convergence off a small set bounds the main piece."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "MeasureTheory.tendstoInMeasure_iff_tendsto_Lp",
+     "follows": true,
+     "note": "mathlib proves tendsto_Lp_of_tendstoInMeasure by subsequences (TendstoInMeasure.exists_seq_tendsto_ae) and tendsto_Lp_of_tendsto_ae, which uses tightness and Egorov (tendstoUniformlyOn_of_ae_tendsto'); the converse is tendstoInMeasure_of_tendsto_eLpNorm, unifIntegrable_of_tendsto_Lp and unifTight_of_tendsto_Lp."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:almost-everywhere-martingale-convergence-theorem",
+  "statement": "Let $(f_n)$ be a submartingale, a [martingale](c:martingale) up to $E[f_{n+1} \\mid \\mathcal F_n] \\ge f_n$, for a [filtration](c:filtration) $(\\mathcal F_n)$ on a finite measure space, with $\\|f_n\\|_1 \\le R$ for all $n$. Then $f_n$ converges [almost everywhere](c:almost-everywhere) to a real-valued function that is measurable for $\\mathcal F_\\infty = \\bigvee_n \\mathcal F_n$.",
+  "hypotheses": [
+   {
+    "id": "h:finite",
+    "text": "The measure $\\mu$ is finite.",
+    "concept": null
+   },
+   {
+    "id": "h:submartingale",
+    "text": "The process $(f_n)$ is adapted to the [filtration](c:filtration) $(\\mathcal F_n)$, integrable, and satisfies $E[f_{n+1} \\mid \\mathcal F_n] \\ge f_n$.",
+    "concept": "c:martingale"
+   },
+   {
+    "id": "h:bounded",
+    "text": "The process is bounded in $L^1$: $\\|f_n\\|_1 \\le R$ for all $n$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "There is an $\\mathcal F_\\infty$-measurable $f_\\infty\\colon \\Omega \\to \\mathbb{R}$ with $f_n \\to f_\\infty$ almost everywhere.",
+  "formal": {
+   "decl": "MeasureTheory.Submartingale.ae_tendsto_limitProcess",
+   "difference": null
+  },
+  "proofs": [
+   {
+    "id": "upcrossings",
+    "name": "Upcrossings and Fatou",
+    "slogan": "Doob's upcrossing estimate makes the upcrossings of every rational interval finite almost everywhere, and Fatou's lemma rules out infinite limits.",
+    "scope": "The whole theorem; the limit is set to $0$ on the null set where the sequence has no finite limit.",
+    "mechanisms": [
+     "m:martingale",
+     "m:monotone-limit",
+     "m:union-bound",
+     "m:contradiction"
+    ],
+    "roles": [
+     {
+      "h": "h:finite",
+      "why": "A finite measure makes $E[(f_N - a)^+] \\le R + |a|\\,\\mu(\\Omega)$ finite.",
+      "steps": [
+       "s:upcross"
+      ]
+     },
+     {
+      "h": "h:submartingale",
+      "why": "The submartingale property drives Doob's upcrossing estimate, and adaptedness makes the limit $\\mathcal F_\\infty$-measurable.",
+      "steps": [
+       "s:upcross",
+       "s:measurable"
+      ]
+     },
+     {
+      "h": "h:bounded",
+      "why": "The $L^1$ bound makes the upcrossing bound uniform in $N$ and Fatou's bound finite.",
+      "steps": [
+       "s:upcross",
+       "s:fatou"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:upcross",
+      "slogan": "Bound the expected number of upcrossings of $[a, b]$ by Doob's upcrossing estimate.",
+      "detail": "Let $U_N(a, b)$ count the upcrossings of $[a, b]$ by $f_0, \\dots, f_N$. Doob's estimate for the submartingale gives $(b - a)\\, E[U_N(a, b)] \\le E[(f_N - a)^+] \\le R + |a|\\,\\mu(\\Omega)$ for every $N$.",
+      "uses": [
+       "nm:doob-s-upcrossing-estimate"
+      ]
+     },
+     {
+      "id": "s:finite-up",
+      "slogan": "Show that all rational intervals have finitely many upcrossings outside one null set.",
+      "detail": "Monotone convergence gives $E[U_\\infty(a, b)] \\le (R + |a|\\,\\mu(\\Omega))/(b - a) < \\infty$, so $U_\\infty(a, b) < \\infty$ [almost everywhere](c:almost-everywhere). The union of the exceptional null sets over the countably many rational pairs $a < b$ is still null.",
+      "uses": [
+       "wd:Q1153584"
+      ]
+     },
+     {
+      "id": "s:no-osc",
+      "slogan": "Exclude oscillation, because finite upcrossings force $\\liminf f_n = \\limsup f_n$.",
+      "detail": "If $\\liminf_n f_n(\\omega) < a < b < \\limsup_n f_n(\\omega)$ for rationals $a, b$, the sequence crosses $[a, b]$ upward infinitely often. So outside the null set of step 2, $f_n(\\omega)$ has a limit in $[-\\infty, \\infty]$.",
+      "uses": []
+     },
+     {
+      "id": "s:fatou",
+      "slogan": "Bound $\\liminf |f_n|$ by Fatou's lemma to exclude infinite limits.",
+      "detail": "Fatou's lemma gives $E[\\liminf_n |f_n|] \\le \\liminf_n E|f_n| \\le R$, so $\\liminf_n |f_n| < \\infty$ almost everywhere. Hence a limit in $[-\\infty, \\infty]$ is finite almost everywhere.",
+      "uses": []
+     },
+     {
+      "id": "s:measurable",
+      "slogan": "Define the limit function and check that it is $\\mathcal F_\\infty$-measurable.",
+      "detail": "Set $f_\\infty = \\lim_n f_n$ where a finite limit exists and $f_\\infty = 0$ elsewhere; by steps 3 and 4, $f_n \\to f_\\infty$ almost everywhere. Each $f_n$ is $\\mathcal F_n$-measurable for the [filtration](c:filtration), hence $\\mathcal F_\\infty$-measurable, so the convergence set and $f_\\infty$ are $\\mathcal F_\\infty$-measurable.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:upcross",
+      "s:finite-up"
+     ],
+     [
+      "s:finite-up",
+      "s:no-osc"
+     ],
+     [
+      "s:no-osc",
+      "s:measurable"
+     ],
+     [
+      "s:fatou",
+      "s:measurable"
+     ]
+    ],
+    "conclusion": "s:measurable",
+    "concepts": {
+     "c:martingale": "The submartingale inequality is what the upcrossing estimate needs.",
+     "c:filtration": "The limit is measurable for the sigma-algebra generated by the filtration.",
+     "c:almost-everywhere": "The convergence holds outside a countable union of null sets."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "MeasureTheory.Submartingale.ae_tendsto_limitProcess",
+     "follows": true,
+     "note": "mathlib combines Submartingale.upcrossings_ae_lt_top (from the upcrossing estimate), the Fatou bound on $\\liminf \\|f_n\\|$ and tendsto_of_upcrossings_lt_top in exists_ae_tendsto_of_bdd, then takes an $\\mathcal F_\\infty$-measurable version through the trimmed measure."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q755991",
+  "statement": "Let $D\\colon \\Gamma(E) \\to \\Gamma(F)$ be an [elliptic](c:elliptic-operator) differential operator between smooth complex [vector bundles](c:vector-bundle) over a closed [compact manifold](c:compact-manifold) $M$. Then $D$ is Fredholm, and its analytical [index](c:fredholm-index) $\\dim \\ker D - \\dim \\operatorname{coker} D$ equals its topological index, computed from the symbol class in the [K-theory](c:topological-k-theory) of $T^*M$ or, by the cohomological formula, from [characteristic classes](c:characteristic-class).",
+  "hypotheses": [
+   {
+    "id": "h:compact",
+    "text": "The manifold $M$ is smooth, [compact](c:compact-manifold) and without boundary.",
+    "concept": "c:compact-manifold"
+   },
+   {
+    "id": "h:elliptic",
+    "text": "The operator $D$ is a linear differential operator whose principal symbol $\\sigma(D)(x, \\xi)\\colon E_x \\to F_x$ is invertible for every nonzero covector $\\xi$.",
+    "concept": "c:elliptic-operator"
+   }
+  ],
+  "conclusion": "$\\operatorname{ind}_a(D) = \\operatorname{ind}_t(D)$, where $\\operatorname{ind}_t(D)$ is the image of $[\\sigma(D)] \\in K_c(T^*M)$ under the topological pushforward $K_c(T^*M) \\to K_c(T^*\\mathrm{pt}) = \\mathbb{Z}$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "k-theory-embedding",
+    "name": "K-theory embedding proof",
+    "slogan": "Show that both indices are homomorphisms on $K_c(T^*M)$ that obey the same excision and Thom axioms, and that these axioms force equality with the topological index.",
+    "scope": "An outline of the second proof of Atiyah and Singer; every step rests on the cited paper. The cohomological formula follows later from the Chern character (Index III).",
+    "mechanisms": [
+     "m:index-computation",
+     "m:functoriality",
+     "m:cited-deep-result"
+    ],
+    "roles": [
+     {
+      "h": "h:compact",
+      "why": "Compactness makes the parametrix errors compact operators and allows an embedding of $M$ in $\\mathbb{R}^N$.",
+      "steps": [
+       "s:fredholm",
+       "s:topological"
+      ]
+     },
+     {
+      "h": "h:elliptic",
+      "why": "An invertible symbol off the zero section gives a parametrix and a class in $K_c(T^*M)$.",
+      "steps": [
+       "s:fredholm",
+       "s:homotopy"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:fredholm",
+      "slogan": "Build a parametrix for $D$ to show that $D$ is Fredholm.",
+      "detail": "Ellipticity lets one invert the symbol and build a [pseudodifferential operator](c:pseudodifferential-operator) $Q$ with $QD - 1$ and $DQ - 1$ of order $-1$. On Sobolev spaces of the compact manifold these errors are compact by Rellich's lemma, so $D$ is Fredholm.",
+      "uses": []
+     },
+     {
+      "id": "s:homotopy",
+      "slogan": "Show that the analytical index depends only on the symbol class in $K_c(T^*M)$.",
+      "detail": "The Fredholm index is constant under norm-continuous deformations, and elliptic pseudodifferential operators with homotopic symbols deform into each other. So the analytical index defines a homomorphism $\\operatorname{ind}_a\\colon K_c(T^*M) \\to \\mathbb{Z}$.",
+      "uses": []
+     },
+     {
+      "id": "s:axioms",
+      "slogan": "Prove that the analytical index respects open embeddings and the Thom isomorphism.",
+      "detail": "For an open embedding of manifolds, the index of an operator trivial at infinity does not depend on the ambient manifold (excision). For an embedding with normal bundle $N$, the index is compatible with the [Thom isomorphism](c:thom-isomorphism) $K_c(T^*M) \\to K_c(T^*N)$, by Bott periodicity on the fibres and a multiplicative property.",
+      "uses": [
+       "wd:Q4948983"
+      ]
+     },
+     {
+      "id": "s:topological",
+      "slogan": "Define the topological index by embedding $M$ in $\\mathbb{R}^N$ and pushing the symbol to a point.",
+      "detail": "Embed $M$ in $\\mathbb{R}^N$, map $K_c(T^*M)$ by the Thom isomorphism to the tubular neighborhood, extend by zero to $K_c(T^*\\mathbb{R}^N)$, and use Bott periodicity $K_c(T^*\\mathbb{R}^N) \\cong \\mathbb{Z}$. The result does not depend on the embedding.",
+      "uses": [
+       "wd:Q4948983"
+      ]
+     },
+     {
+      "id": "s:compare",
+      "slogan": "Show that the axioms force the analytical index to equal the topological index.",
+      "detail": "Both indices satisfy the excision and Thom axioms and agree on a point, where both are the identity of $\\mathbb{Z}$. Running the definition of $\\operatorname{ind}_t$ through these axioms gives $\\operatorname{ind}_a = \\operatorname{ind}_t$ on all of $K_c(T^*M)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:fredholm",
+      "s:homotopy"
+     ],
+     [
+      "s:homotopy",
+      "s:axioms"
+     ],
+     [
+      "s:axioms",
+      "s:compare"
+     ],
+     [
+      "s:topological",
+      "s:compare"
+     ]
+    ],
+    "conclusion": "s:compare",
+    "concepts": {
+     "c:elliptic-operator": "Ellipticity makes the operator Fredholm and its symbol a K-theory class.",
+     "c:vector-bundle": "The operator acts on sections of vector bundles over $M$.",
+     "c:compact-manifold": "Compactness gives finite-dimensional kernel and cokernel.",
+     "c:fredholm-index": "The analytical index is the Fredholm index of $D$.",
+     "c:topological-k-theory": "Both indices are homomorphisms out of compactly supported K-theory of $T^*M$.",
+     "c:characteristic-class": "The cohomological form of the topological index uses characteristic classes.",
+     "c:pseudodifferential-operator": "Pseudodifferential operators give the parametrix and the needed deformations.",
+     "c:thom-isomorphism": "Compatibility with the Thom isomorphism is the key axiom."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "M. F. Atiyah and I. M. Singer, The index of elliptic operators I, Annals of Mathematics 87 (1968), 484-530",
+     "url": "https://doi.org/10.2307/1970715",
+     "note": "The K-theoretic embedding proof; the cohomological formula with the Chern character and the Todd class is in The index of elliptic operators III, Annals of Mathematics 87 (1968), 546-604."
+    }
+   }
+  ]
+ }
+]

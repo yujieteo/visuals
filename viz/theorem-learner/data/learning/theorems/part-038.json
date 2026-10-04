@@ -1,0 +1,1809 @@
+[
+ {
+  "id": "nm:differentiability-of-the-limit-of-a-sequence-of-functions",
+  "statement": "Let $I$ be an open interval and $f_n\\colon I\\to\\mathbb{R}$ differentiable. If $f_n\\to g$ [pointwise](c:pointwise-convergence) on $I$ and $f_n'\\to h$ [uniformly](c:uniform-convergence) on $I$, then $g$ is differentiable on $I$ with [derivative](c:derivative) $g'=h$.",
+  "hypotheses": [
+   {
+    "id": "h:differentiable",
+    "text": "Each $f_n$ is differentiable on $I$ with [derivative](c:derivative) $f_n'$.",
+    "concept": "c:derivative"
+   },
+   {
+    "id": "h:pointwise",
+    "text": "The sequence $f_n$ converges [pointwise](c:pointwise-convergence) to $g$ on $I$.",
+    "concept": "c:pointwise-convergence"
+   },
+   {
+    "id": "h:uniform",
+    "text": "The derivatives $f_n'$ converge [uniformly](c:uniform-convergence) on $I$ to a function $h$.",
+    "concept": "c:uniform-convergence"
+   }
+  ],
+  "conclusion": "The function $g$ is differentiable at every $x\\in I$ and $g'(x)=h(x)$.",
+  "formal": {
+   "decl": "hasFDerivAt_of_tendstoUniformly",
+   "difference": "The declaration takes a normed space over the reals or complex numbers as domain, values in a normed space, and any filter in place of $n\\to\\infty$. The open-set form is hasFDerivAt_of_tendstoUniformlyOn."
+  },
+  "proofs": [
+   {
+    "id": "difference-quotients",
+    "name": "Uniform difference quotients",
+    "slogan": "Show that the difference quotients of $f_n$ converge uniformly, then split the error into three small terms.",
+    "scope": "The whole statement at one fixed point $x\\in I$; the open interval $I$ is convex, so the segment from $x$ to $y$ stays in $I$.",
+    "mechanisms": [
+     "m:mean-value",
+     "m:epsilon-over-three",
+     "m:uniform-convergence"
+    ],
+    "roles": [
+     {
+      "h": "h:differentiable",
+      "why": "Differentiability of $f_n-f_m$ allows the mean value theorem, and differentiability of $f_n$ at $x$ controls the last term.",
+      "steps": [
+       "s:mvt",
+       "s:local"
+      ]
+     },
+     {
+      "h": "h:pointwise",
+      "why": "Pointwise limits turn the Cauchy bound on quotients into a bound for the quotient of $g$.",
+      "steps": [
+       "s:limit"
+      ]
+     },
+     {
+      "h": "h:uniform",
+      "why": "Uniform convergence makes the derivatives uniformly Cauchy and close to $h$ at $x$.",
+      "steps": [
+       "s:cauchy",
+       "s:split"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:mvt",
+      "slogan": "Bound the difference of two difference quotients by the derivative gap.",
+      "detail": "Fix $x\\in I$ and put $q_n(y)=\\frac{f_n(y)-f_n(x)}{y-x}$ for $y\\ne x$. The mean value theorem for $f_n-f_m$ gives $|q_n(y)-q_m(y)|\\le\\sup_I|f_n'-f_m'|$.",
+      "uses": [
+       "wd:Q189136"
+      ]
+     },
+     {
+      "id": "s:cauchy",
+      "slogan": "Make the difference quotients uniformly Cauchy in $y$.",
+      "detail": "The derivatives converge [uniformly](c:uniform-convergence), so for $\\varepsilon>0$ there is $N$ with $\\sup_I|f_n'-f_m'|\\le\\varepsilon$ for $n,m\\ge N$. Step 1 gives $|q_n(y)-q_m(y)|\\le\\varepsilon$ for all $y\\ne x$ and $n,m\\ge N$.",
+      "uses": []
+     },
+     {
+      "id": "s:limit",
+      "slogan": "Let $m$ tend to infinity to bound $q_n-q$ uniformly.",
+      "detail": "Pointwise convergence gives $q_m(y)\\to q(y)=\\frac{g(y)-g(x)}{y-x}$. Letting $m\\to\\infty$ in step 2 gives $|q_n(y)-q(y)|\\le\\varepsilon$ for all $y\\ne x$ and $n\\ge N$.",
+      "uses": []
+     },
+     {
+      "id": "s:split",
+      "slogan": "Split $q(y)-h(x)$ into three terms and choose $n$.",
+      "detail": "Write $|q(y)-h(x)|\\le|q(y)-q_n(y)|+|q_n(y)-f_n'(x)|+|f_n'(x)-h(x)|$. The first term is at most $\\varepsilon$ by step 3. Fix $n\\ge N$ so large that the third term is below $\\varepsilon$.",
+      "uses": []
+     },
+     {
+      "id": "s:local",
+      "slogan": "Shrink $y$ toward $x$ so that the middle term is small.",
+      "detail": "Since $f_n$ is [differentiable](c:derivative) at $x$, there is $\\delta>0$ with $|q_n(y)-f_n'(x)|<\\varepsilon$ for $0<|y-x|<\\delta$. Then $|q(y)-h(x)|<3\\varepsilon$ for these $y$, so $g'(x)=h(x)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:mvt",
+      "s:cauchy"
+     ],
+     [
+      "s:cauchy",
+      "s:limit"
+     ],
+     [
+      "s:limit",
+      "s:split"
+     ],
+     [
+      "s:split",
+      "s:local"
+     ]
+    ],
+    "conclusion": "s:local",
+    "concepts": {
+     "c:uniform-convergence": "Uniform convergence of $f_n'$ makes the quotients uniformly Cauchy.",
+     "c:pointwise-convergence": "Pointwise convergence defines $g$ and the limit quotient $q$.",
+     "c:derivative": "The derivative is the limit of the difference quotient that the proof controls."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "hasFDerivAt_of_tendstoUniformly",
+     "follows": true,
+     "note": "mathlib shows that the difference quotients converge uniformly (uniformCauchySeqOnFilter_of_fderiv, difference_quotients_converge_uniformly) and finishes with an epsilon/3 split in hasFDerivAt_of_tendstoUniformlyOnFilter."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:differentiability-of-the-sum-of-a-series-of-functions",
+  "statement": "Let $f_n$ be differentiable on an open interval $I$ with a [summable bound](c:summable-bound) $|f_n'|\\le u_n$ on $I$. If the [series](c:series) $\\sum f_n(x_0)$ converges at one point $x_0\\in I$, then $\\sum f_n$ converges on $I$ and its sum is differentiable with derivative $\\sum f_n'$.",
+  "hypotheses": [
+   {
+    "id": "h:differentiable",
+    "text": "Each $f_n\\colon I\\to\\mathbb{R}$ is [differentiable](c:differentiable-function) on the open interval $I$.",
+    "concept": "c:differentiable-function"
+   },
+   {
+    "id": "h:bound",
+    "text": "The derivatives have a [summable bound](c:summable-bound): $|f_n'(x)|\\le u_n$ for all $n$ and $x\\in I$, and $\\sum u_n$ converges.",
+    "concept": "c:summable-bound"
+   },
+   {
+    "id": "h:anchor",
+    "text": "The [series](c:series) $\\sum f_n(x_0)$ converges for one point $x_0\\in I$.",
+    "concept": "c:series"
+   }
+  ],
+  "conclusion": "The series $\\sum f_n(x)$ converges for every $x\\in I$, and its sum $F$ is differentiable with $F'=\\sum f_n'$.",
+  "formal": {
+   "decl": "differentiable_tsum",
+   "difference": "The declaration drops the hypothesis at $x_0$, because mathlib gives a non-summable sum the value $0$, and it states differentiability without the formula for the derivative. It works on a normed space with values in a Banach space; the formula is hasFDerivAt_tsum."
+  },
+  "proofs": [
+   {
+    "id": "limit-of-partial-sums",
+    "name": "Limit of partial sums",
+    "slogan": "Prove uniform convergence of the derivative series and pointwise convergence of the series, then differentiate the limit of the partial sums.",
+    "scope": "The whole statement for real functions on an open interval; the declaration's case of no convergence anywhere is excluded by the hypothesis at $x_0$.",
+    "mechanisms": [
+     "m:uniform-convergence",
+     "m:mean-value"
+    ],
+    "roles": [
+     {
+      "h": "h:differentiable",
+      "why": "Differentiable terms make each partial sum differentiable with the sum of the derivatives.",
+      "steps": [
+       "s:swap"
+      ]
+     },
+     {
+      "h": "h:bound",
+      "why": "The bound $u_n$ gives the uniform tail estimate and the comparison for the series.",
+      "steps": [
+       "s:uniform-derivatives",
+       "s:converge"
+      ]
+     },
+     {
+      "h": "h:anchor",
+      "why": "Convergence at $x_0$ is the base point that the mean value estimate transfers to every $x$.",
+      "steps": [
+       "s:converge"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:uniform-derivatives",
+      "slogan": "Show that the partial sums of $\\sum f_n'$ converge uniformly on $I$.",
+      "detail": "Let $G(x)=\\sum f_n'(x)$, which converges absolutely by comparison with $\\sum u_n$. The tail satisfies $|G(x)-\\sum_{n<N}f_n'(x)|\\le\\sum_{n\\ge N}u_n$, which tends to $0$ independently of $x$.",
+      "uses": [
+       "nm:direct-comparison-test"
+      ]
+     },
+     {
+      "id": "s:converge",
+      "slogan": "Show that the series $\\sum f_n$ converges at every point of $I$.",
+      "detail": "The mean value theorem gives $|f_n(x)-f_n(x_0)|\\le u_n|x-x_0|$. Comparison with $\\sum u_n|x-x_0|$ shows that $\\sum(f_n(x)-f_n(x_0))$ converges, and so does $\\sum f_n(x)$.",
+      "uses": [
+       "wd:Q189136",
+       "nm:direct-comparison-test"
+      ]
+     },
+     {
+      "id": "s:swap",
+      "slogan": "Differentiate the partial sums and pass to the limit.",
+      "detail": "Each partial sum $S_N=\\sum_{n<N}f_n$ is differentiable with $S_N'=\\sum_{n<N}f_n'$. By steps 1 and 2, $S_N\\to F$ pointwise and $S_N'\\to G$ uniformly, so the limit theorem for derivatives gives $F'=G$ on $I$.",
+      "uses": [
+       "nm:differentiability-of-the-limit-of-a-sequence-of-functions"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:uniform-derivatives",
+      "s:swap"
+     ],
+     [
+      "s:converge",
+      "s:swap"
+     ]
+    ],
+    "conclusion": "s:swap",
+    "concepts": {
+     "c:summable-bound": "The summable bound controls both the derivative tails and the series terms.",
+     "c:series": "The theorem concerns the convergence and the sum of the series.",
+     "c:differentiable-function": "Differentiable terms give differentiable partial sums."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "differentiable_tsum",
+     "follows": true,
+     "note": "mathlib proves hasFDerivAt_tsum: the partial sums converge uniformly in derivative (tendstoUniformlyOn_tsum) and hasFDerivAt_of_tendstoUniformlyOn passes to the limit; differentiable_tsum adds the no-convergence case."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q595466",
+  "statement": "Let $X$ be a [compact space](c:compact-space) and $f_n\\colon X\\to\\mathbb{R}$ [continuous](c:continuous-function) with $f_n\\le f_{n+1}$. If $f_n$ converges pointwise to a continuous function $f$, then $f_n\\to f$ [uniformly](c:uniform-convergence) on $X$.",
+  "hypotheses": [
+   {
+    "id": "h:compact",
+    "text": "The space $X$ is [compact](c:compact-space).",
+    "concept": "c:compact-space"
+   },
+   {
+    "id": "h:continuous",
+    "text": "Each $f_n\\colon X\\to\\mathbb{R}$ is [continuous](c:continuous-function).",
+    "concept": "c:continuous-function"
+   },
+   {
+    "id": "h:monotone",
+    "text": "The sequence is [monotone](c:monotone-sequence): $f_n(x)\\le f_{n+1}(x)$ for all $n$ and $x$.",
+    "concept": "c:monotone-sequence"
+   },
+   {
+    "id": "h:pointwise",
+    "text": "The sequence converges [pointwise](c:pointwise-convergence): $f_n(x)\\to f(x)$ for every $x\\in X$.",
+    "concept": "c:pointwise-convergence"
+   },
+   {
+    "id": "h:limit",
+    "text": "The limit function $f$ is [continuous](c:continuous-function).",
+    "concept": "c:continuous-function"
+   }
+  ],
+  "conclusion": "$\\sup_{x\\in X}|f(x)-f_n(x)|\\to0$ as $n\\to\\infty$.",
+  "formal": {
+   "decl": "Monotone.tendstoLocallyUniformly_of_forall_tendsto",
+   "difference": "The declaration gives locally uniform convergence on any topological space, for an index preorder and values in a normed lattice. Uniform convergence on a compact space is the companion declaration Monotone.tendstoUniformly_of_forall_tendsto."
+  },
+  "proofs": [
+   {
+    "id": "finite-subcover",
+    "name": "Finite subcover of small gaps",
+    "slogan": "Find a neighborhood of each point where the gap to the limit is small for all later indices, then cover the compact space by finitely many.",
+    "scope": "The whole statement for an increasing sequence; a decreasing sequence follows by replacing $f_n$ and $f$ with $-f_n$ and $-f$.",
+    "mechanisms": [
+     "m:finite-subcover",
+     "m:local-to-global",
+     "m:monotone-limit"
+    ],
+    "roles": [
+     {
+      "h": "h:compact",
+      "why": "Compactness turns the local neighborhoods into a finite family, hence one index $N$.",
+      "steps": [
+       "s:subcover"
+      ]
+     },
+     {
+      "h": "h:continuous",
+      "why": "The continuous $f_{n_x}$ makes the set where the gap is small open.",
+      "steps": [
+       "s:open"
+      ]
+     },
+     {
+      "h": "h:monotone",
+      "why": "Monotonicity keeps the gap small for all later indices and fixes its sign.",
+      "steps": [
+       "s:below",
+       "s:open"
+      ]
+     },
+     {
+      "h": "h:pointwise",
+      "why": "Pointwise convergence gives, at each point, an index with a small gap.",
+      "steps": [
+       "s:below",
+       "s:pick"
+      ]
+     },
+     {
+      "h": "h:limit",
+      "why": "Continuity of $f$ makes the gap $f-f_{n_x}$ continuous.",
+      "steps": [
+       "s:open"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:below",
+      "slogan": "Show that every $f_n$ lies below the limit $f$.",
+      "detail": "For fixed $x$ the real sequence $f_m(x)$ is increasing with limit $f(x)$, so $f_n(x)\\le f(x)$ for every $n$. Hence the gaps $f-f_n$ are nonnegative and decrease as $n$ grows.",
+      "uses": []
+     },
+     {
+      "id": "s:pick",
+      "slogan": "Choose, for each point, an index with a small gap.",
+      "detail": "Fix $\\varepsilon>0$. For each $x\\in X$ [pointwise](c:pointwise-convergence) convergence gives an index $n_x$ with $f(x)-f_{n_x}(x)<\\varepsilon$.",
+      "uses": []
+     },
+     {
+      "id": "s:open",
+      "slogan": "Spread the small gap over an open neighborhood of each point.",
+      "detail": "The function $f-f_{n_x}$ is [continuous](c:continuous-function), so $U_x=\\{y: f(y)-f_{n_x}(y)<\\varepsilon\\}$ is open and contains $x$. For $m\\ge n_x$ and $y\\in U_x$, monotonicity gives $0\\le f(y)-f_m(y)\\le f(y)-f_{n_x}(y)<\\varepsilon$.",
+      "uses": []
+     },
+     {
+      "id": "s:subcover",
+      "slogan": "Select a finite subcover of the open cover $\\{U_x\\}$.",
+      "detail": "The sets $U_x$ cover the [compact space](c:compact-space) $X$, so finitely many of them, $U_{x_1},\\dots,U_{x_k}$, cover $X$. Put $N=\\max_i n_{x_i}$.",
+      "uses": []
+     },
+     {
+      "id": "s:uniform",
+      "slogan": "Take the largest index to bound the gap on all of $X$.",
+      "detail": "Let $m\\ge N$ and $y\\in X$. Choose $i$ with $y\\in U_{x_i}$; then $m\\ge n_{x_i}$, so $0\\le f(y)-f_m(y)<\\varepsilon$. Hence $\\sup_X|f-f_m|\\le\\varepsilon$ for all $m\\ge N$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:below",
+      "s:open"
+     ],
+     [
+      "s:pick",
+      "s:open"
+     ],
+     [
+      "s:open",
+      "s:subcover"
+     ],
+     [
+      "s:subcover",
+      "s:uniform"
+     ]
+    ],
+    "conclusion": "s:uniform",
+    "concepts": {
+     "c:compact-space": "Compactness gives a finite subcover, so finitely many indices suffice.",
+     "c:continuous-function": "Continuity makes the set of small gap values open.",
+     "c:monotone-sequence": "Monotonicity keeps the gap small for every later index.",
+     "c:pointwise-convergence": "Pointwise convergence gives an index with a small gap at each point.",
+     "c:uniform-convergence": "Uniform convergence is the conclusion, one index for all points."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Monotone.tendstoLocallyUniformly_of_forall_tendsto",
+     "follows": true,
+     "note": "mathlib shows F n x ≤ f x with ge_of_tendsto, then uses isOpen_lt for the open set where the gap is below epsilon; compactness gives Monotone.tendstoUniformly_of_forall_tendsto."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:direct-comparison-test",
+  "statement": "Let $a_n$ be terms in a [complete](c:complete-metric-space) normed space and $b_n$ real numbers with $\\|a_n\\|\\le b_n$ for all $n$. If the [series](c:series) $\\sum b_n$ converges, then $\\sum a_n$ converges.",
+  "hypotheses": [
+   {
+    "id": "h:bound",
+    "text": "The terms satisfy $\\|a_n\\|\\le b_n$ for every $n$.",
+    "concept": null
+   },
+   {
+    "id": "h:convergent",
+    "text": "The [series](c:series) $\\sum b_n$ of real numbers converges.",
+    "concept": "c:series"
+   },
+   {
+    "id": "h:complete",
+    "text": "The normed space that holds the terms $a_n$ is [complete](c:complete-metric-space), for example $\\mathbb{R}$ or $\\mathbb{C}$.",
+    "concept": "c:complete-metric-space"
+   }
+  ],
+  "conclusion": "The series $\\sum a_n$ converges.",
+  "formal": {
+   "decl": "cauchySeq_range_of_norm_bounded",
+   "difference": "The declaration states only that the partial sums of $\\sum a_n$ form a Cauchy sequence, in any seminormed group. Convergence needs completeness, which is the hypothesis here."
+  },
+  "proofs": [
+   {
+    "id": "cauchy-blocks",
+    "name": "Cauchy blocks",
+    "slogan": "Bound each block of terms $a_k$ by the same block of $b_k$, so the partial sums are Cauchy, and use completeness.",
+    "scope": "The whole statement; if the bound holds only from some index on, the finitely many early terms do not change convergence.",
+    "mechanisms": [
+     "m:cauchy-completeness",
+     "m:triangle-inequality"
+    ],
+    "roles": [
+     {
+      "h": "h:bound",
+      "why": "The bound $\\|a_k\\|\\le b_k$ moves the estimate from $a$-blocks to $b$-blocks.",
+      "steps": [
+       "s:block"
+      ]
+     },
+     {
+      "h": "h:convergent",
+      "why": "Convergence of $\\sum b_n$ makes its tails small.",
+      "steps": [
+       "s:cauchy-b"
+      ]
+     },
+     {
+      "h": "h:complete",
+      "why": "Completeness turns a Cauchy sequence of partial sums into a limit.",
+      "steps": [
+       "s:limit"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:cauchy-b",
+      "slogan": "Show that the tails of $\\sum b_n$ are small.",
+      "detail": "A convergent real series satisfies the Cauchy criterion. So for $\\varepsilon>0$ there is $N$ with $\\sum_{k=m}^{n-1}b_k<\\varepsilon$ for $n>m\\ge N$.",
+      "uses": [
+       "nm:cauchy-criterion"
+      ]
+     },
+     {
+      "id": "s:block",
+      "slogan": "Bound each block of $a$-terms by the same block of $b$-terms.",
+      "detail": "For $n>m$ the triangle inequality gives $\\|\\sum_{k=m}^{n-1}a_k\\|\\le\\sum_{k=m}^{n-1}\\|a_k\\|$. The hypothesis $\\|a_k\\|\\le b_k$ bounds this by $\\sum_{k=m}^{n-1}b_k$.",
+      "uses": []
+     },
+     {
+      "id": "s:cauchy-a",
+      "slogan": "Conclude that the partial sums of $\\sum a_n$ are Cauchy.",
+      "detail": "Put $A_n=\\sum_{k<n}a_k$. For $n>m\\ge N$, steps 1 and 2 give $\\|A_n-A_m\\|\\le\\sum_{k=m}^{n-1}b_k<\\varepsilon$, so $(A_n)$ is a [Cauchy sequence](c:cauchy-sequence).",
+      "uses": []
+     },
+     {
+      "id": "s:limit",
+      "slogan": "Take the limit of the Cauchy sequence in the complete space.",
+      "detail": "The space is [complete](c:complete-metric-space), so $(A_n)$ converges to some $A$. This says that the series $\\sum a_n$ converges to $A$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:cauchy-b",
+      "s:cauchy-a"
+     ],
+     [
+      "s:block",
+      "s:cauchy-a"
+     ],
+     [
+      "s:cauchy-a",
+      "s:limit"
+     ]
+    ],
+    "conclusion": "s:limit",
+    "concepts": {
+     "c:series": "The theorem compares two series through their partial sums.",
+     "c:complete-metric-space": "Completeness gives the limit of the Cauchy partial sums.",
+     "c:cauchy-sequence": "The partial sums of $\\sum a_n$ are shown to be Cauchy."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "cauchySeq_range_of_norm_bounded",
+     "follows": true,
+     "note": "mathlib uses Metric.cauchySeq_iff', sum_Ico_eq_sub, norm_sum_le and sum_le_sum to bound each block of f by the same block of g."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:3628",
+  "statement": "Let $A\\colon[0,T]\\to M_n(\\mathbb{C})$ be continuous and let $U$ solve the [ordinary differential equation](c:ordinary-differential-equation) $U'=AU$, $U(0)=1$. Then $U(t)=\\sum_{k\\ge0}\\int_{t\\ge t_1\\ge\\dots\\ge t_k\\ge0}A(t_1)\\cdots A(t_k)\\,dt_1\\cdots dt_k$, the [time-ordered exponential](c:time-ordered-exponential) of $A$, and the series converges uniformly.",
+  "hypotheses": [
+   {
+    "id": "h:continuous",
+    "text": "The matrix function $A\\colon[0,T]\\to M_n(\\mathbb{C})$ is continuous.",
+    "concept": null
+   },
+   {
+    "id": "h:ode",
+    "text": "The function $U\\colon[0,T]\\to M_n(\\mathbb{C})$ is differentiable with $U'(t)=A(t)U(t)$ and $U(0)=1$.",
+    "concept": "c:ordinary-differential-equation"
+   }
+  ],
+  "conclusion": "For every $t\\in[0,T]$, $U(t)$ is the sum of the series of time-ordered integrals, and the series converges uniformly on $[0,T]$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "picard",
+    "name": "Picard iteration",
+    "slogan": "Iterate the integral equation to get the time-ordered terms, bound them by $(Mt)^k/k!$, sum them and identify the sum with $U$ by uniqueness.",
+    "scope": "Matrix-valued $A$ on a compact interval; the same proof works for bounded operators on a Banach space.",
+    "mechanisms": [
+     "m:contraction-iteration",
+     "m:induction",
+     "m:uniform-convergence",
+     "m:fundamental-theorem-calculus"
+    ],
+    "roles": [
+     {
+      "h": "h:continuous",
+      "why": "Continuity makes the integrals exist and gives a finite bound $M$ on $\\|A\\|$.",
+      "steps": [
+       "s:iterate",
+       "s:bound"
+      ]
+     },
+     {
+      "h": "h:ode",
+      "why": "The equation $U'=AU$ gives the integral equation that fixes $U$ uniquely.",
+      "steps": [
+       "s:unique"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:iterate",
+      "slogan": "Define the iterated integrals by repeated integration.",
+      "detail": "Put $T_0=1$ and $T_{k+1}(t)=\\int_0^tA(s)T_k(s)\\,ds$. Unfolding the recursion gives $T_k(t)=\\int_{t\\ge t_1\\ge\\dots\\ge t_k\\ge0}A(t_1)\\cdots A(t_k)\\,dt$, the $k$-th term of the formula.",
+      "uses": []
+     },
+     {
+      "id": "s:bound",
+      "slogan": "Bound the $k$-th term by $(Mt)^k/k!$ by induction.",
+      "detail": "Let $M=\\max_{[0,T]}\\|A\\|$, which is finite because $A$ is continuous. The bound holds for $k=0$. If it holds for $k$, then $\\|T_{k+1}(t)\\|\\le\\int_0^tM(Ms)^k/k!\\,ds=(Mt)^{k+1}/(k+1)!$.",
+      "uses": []
+     },
+     {
+      "id": "s:converge",
+      "slogan": "Sum the series by comparison with the exponential series.",
+      "detail": "Since $\\sum_k(MT)^k/k!=e^{MT}$ converges, the series $V=\\sum_kT_k$ converges absolutely and [uniformly](c:uniform-convergence) on $[0,T]$, and $V$ is continuous.",
+      "uses": [
+       "nm:direct-comparison-test"
+      ]
+     },
+     {
+      "id": "s:equation",
+      "slogan": "Show that the sum $V$ solves the differential equation.",
+      "detail": "Uniform convergence lets the integral pass through the sum: $\\int_0^tA\\,V\\,ds=\\sum_k\\int_0^tA\\,T_k\\,ds=\\sum_kT_{k+1}(t)=V(t)-1$. So $V=1+\\int_0^tAV$, hence $V'=AV$ and $V(0)=1$.",
+      "uses": []
+     },
+     {
+      "id": "s:unique",
+      "slogan": "Identify $U$ with $V$ by uniqueness of solutions.",
+      "detail": "Integrating $U'=AU$ gives $U=1+\\int_0^tAU$. The difference $D=U-V$ then satisfies $\\|D(t)\\|\\le M\\int_0^t\\|D(s)\\|\\,ds$, and Grönwall's lemma gives $D=0$. So $U=V$ is the series.",
+      "uses": [
+       "nm:gronwall-lemma"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:iterate",
+      "s:bound"
+     ],
+     [
+      "s:iterate",
+      "s:equation"
+     ],
+     [
+      "s:bound",
+      "s:converge"
+     ],
+     [
+      "s:converge",
+      "s:equation"
+     ],
+     [
+      "s:equation",
+      "s:unique"
+     ]
+    ],
+    "conclusion": "s:unique",
+    "concepts": {
+     "c:ordinary-differential-equation": "The formula solves this linear equation, and uniqueness fixes the solution.",
+     "c:time-ordered-exponential": "The series of time-ordered integrals is the time-ordered exponential.",
+     "c:uniform-convergence": "Uniform convergence lets the integral pass through the infinite sum."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Picard iteration of the integral equation, as in the Peano-Baker series of linear ODE theory; the nLab page on the Dyson formula states the result."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:eigenvalues-from-rayleigh-quotient",
+  "statement": "Let $T$ be a bounded [self-adjoint operator](c:self-adjoint-operator) on a [Hilbert space](c:hilbert-space) and $x_0\\ne0$. If the [Rayleigh quotient](c:rayleigh-quotient) $R(x)=\\langle Tx,x\\rangle/\\|x\\|^2$ has a [local extremum](c:local-extremum) at $x_0$ on the sphere $\\|x\\|=\\|x_0\\|$, then $x_0$ is an eigenvector of $T$ with eigenvalue $R(x_0)$.",
+  "hypotheses": [
+   {
+    "id": "h:selfadjoint",
+    "text": "The operator $T$ is a bounded [self-adjoint operator](c:self-adjoint-operator) on a [Hilbert space](c:hilbert-space) $H$.",
+    "concept": "c:self-adjoint-operator"
+   },
+   {
+    "id": "h:nonzero",
+    "text": "The vector $x_0$ is not zero.",
+    "concept": null
+   },
+   {
+    "id": "h:extremum",
+    "text": "The [Rayleigh quotient](c:rayleigh-quotient) has a [local extremum](c:local-extremum) at $x_0$ on the sphere of radius $\\|x_0\\|$.",
+    "concept": "c:local-extremum"
+   }
+  ],
+  "conclusion": "$Tx_0=R(x_0)\\,x_0$, so $x_0$ is an [eigenvector](c:eigenvector) of $T$ with [eigenvalue](c:eigenvalue) $R(x_0)$.",
+  "formal": {
+   "decl": "IsSelfAdjoint.hasEigenvector_of_isLocalExtrOn",
+   "difference": "The declaration states the extremum for the form $x\\mapsto\\operatorname{Re}\\langle Tx,x\\rangle$ on the sphere, which equals $\\|x_0\\|^2R$ there, over a real or complex scalar field. It assumes that $H$ is complete, as here."
+  },
+  "proofs": [
+   {
+    "id": "lagrange",
+    "name": "Lagrange multipliers",
+    "slogan": "Treat the sphere as a constraint, obtain Lagrange multipliers for the quadratic form, and solve them into an eigenvalue equation.",
+    "scope": "Real or complex scalars; the complex case reduces to the real one in the first step.",
+    "mechanisms": [
+     "m:energy-functional",
+     "m:reduction"
+    ],
+    "roles": [
+     {
+      "h": "h:selfadjoint",
+      "why": "Self-adjointness makes $\\langle Tx,x\\rangle$ real and gives the derivative $2\\langle Tx_0,\\cdot\\rangle$.",
+      "steps": [
+       "s:real",
+       "s:derivatives"
+      ]
+     },
+     {
+      "h": "h:nonzero",
+      "why": "A nonzero $x_0$ excludes the degenerate multiplier and makes $x_0$ an eigenvector.",
+      "steps": [
+       "s:solve",
+       "s:value"
+      ]
+     },
+     {
+      "h": "h:extremum",
+      "why": "The constrained extremum is what the Lagrange rule needs.",
+      "steps": [
+       "s:lagrange"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:real",
+      "slogan": "Regard $H$ as a real Hilbert space with the inner product $\\operatorname{Re}\\langle\\cdot,\\cdot\\rangle$.",
+      "detail": "For self-adjoint $T$ the number $\\langle Tx,x\\rangle$ is real, so the quadratic form is unchanged. The operator $T$ stays symmetric for the real inner product, and the claim $Tx_0=cx_0$ with real $c$ is the same, so real scalars suffice.",
+      "uses": []
+     },
+     {
+      "id": "s:derivatives",
+      "slogan": "Compute the derivatives of the quadratic form and of the constraint.",
+      "detail": "The form $q(x)=\\langle Tx,x\\rangle$ has derivative $2\\langle Tx_0,\\cdot\\rangle$ at $x_0$, because $T$ is symmetric. The constraint function $\\|x\\|^2$ has derivative $2\\langle x_0,\\cdot\\rangle$ there.",
+      "uses": []
+     },
+     {
+      "id": "s:lagrange",
+      "slogan": "Obtain [Lagrange multipliers](c:lagrange-multiplier) $a,b$, not both zero, from the constrained extremum.",
+      "detail": "At a local extremum of $q$ on the level set of $\\|x\\|^2$ the two derivatives are linearly dependent. This gives $(a,b)\\ne(0,0)$ with $a\\langle x_0,\\cdot\\rangle+b\\langle Tx_0,\\cdot\\rangle=0$, so $ax_0+bTx_0=0$ by the Riesz representation.",
+      "uses": []
+     },
+     {
+      "id": "s:solve",
+      "slogan": "Exclude $b=0$ and solve for $Tx_0$.",
+      "detail": "If $b=0$, then $a\\ne0$ and $ax_0=0$ gives $x_0=0$, against the hypothesis. So $b\\ne0$ and $Tx_0=c\\,x_0$ with $c=-a/b$.",
+      "uses": []
+     },
+     {
+      "id": "s:value",
+      "slogan": "Pair the equation with $x_0$ to identify the eigenvalue.",
+      "detail": "Taking the inner product of $Tx_0=cx_0$ with $x_0$ gives $\\langle Tx_0,x_0\\rangle=c\\|x_0\\|^2$, so $c=R(x_0)$. Since $x_0\\ne0$, the vector $x_0$ is an eigenvector with this eigenvalue.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:real",
+      "s:derivatives"
+     ],
+     [
+      "s:derivatives",
+      "s:lagrange"
+     ],
+     [
+      "s:lagrange",
+      "s:solve"
+     ],
+     [
+      "s:solve",
+      "s:value"
+     ]
+    ],
+    "conclusion": "s:value",
+    "concepts": {
+     "c:self-adjoint-operator": "Self-adjointness gives the derivative of the quadratic form.",
+     "c:hilbert-space": "The inner product and completeness give the Riesz representation of functionals.",
+     "c:rayleigh-quotient": "The quotient is the function whose extremum the hypothesis assumes.",
+     "c:local-extremum": "A constrained local extremum is what the multiplier rule needs.",
+     "c:lagrange-multiplier": "The multipliers turn the extremum into a linear dependence.",
+     "c:eigenvector": "The equation $Tx_0=cx_0$ with $x_0\\ne0$ makes $x_0$ an eigenvector.",
+     "c:eigenvalue": "The multiplier $c$ is identified with $R(x_0)$ as the eigenvalue."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "IsSelfAdjoint.hasEigenvector_of_isLocalExtrOn",
+     "follows": true,
+     "note": "mathlib gets multipliers from IsLocalExtrOn.exists_multipliers_of_hasStrictFDerivAt_1d (linearly_dependent_of_isLocalExtrOn) and solves for T x₀ in eq_smul_self_of_isLocalExtrOn_real."
+    }
+   }
+  ],
+  "new_concepts": [
+   {
+    "id": "c:rayleigh-quotient",
+    "name": "Rayleigh quotient",
+    "reminder": "The Rayleigh quotient of a self-adjoint operator at a nonzero vector is the normalized quadratic form.",
+    "definition": "For a bounded self-adjoint operator $T$ on a Hilbert space, the Rayleigh quotient at $x\\ne0$ is $R(x)=\\langle Tx,x\\rangle/\\|x\\|^2$, a real number.",
+    "requires": [
+     "c:self-adjoint-operator",
+     "c:hilbert-space"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "nl:5111",
+  "statement": "Let $R,S$ be rings and $F\\colon\\mathrm{Mod}\\text{-}R\\to\\mathrm{Mod}\\text{-}S$ a functor of right modules that preserves [colimits](c:colimit). Then $B=F(R)$ is an $R$-$S$-[bimodule](c:bimodule) and $F\\cong-\\otimes_RB$, the [tensor product](c:tensor-product) functor. Conversely, every functor $-\\otimes_RB$ preserves colimits.",
+  "hypotheses": [
+   {
+    "id": "h:rings",
+    "text": "The rings $R$ and $S$ have a unit, and the categories are those of right modules.",
+    "concept": null
+   },
+   {
+    "id": "h:colimits",
+    "text": "The functor $F$ preserves all small [colimits](c:colimit).",
+    "concept": "c:colimit"
+   }
+  ],
+  "conclusion": "The module $F(R)$ is an $R$-$S$-[bimodule](c:bimodule) $B$, $F(M)\\cong M\\otimes_RB$ naturally in $M$, and every functor $-\\otimes_RB$ preserves colimits.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "watts",
+    "name": "Watts' argument",
+    "slogan": "Make $F(R)$ a bimodule, compare $-\\otimes_RF(R)$ with $F$ on free modules, and extend by presentations.",
+    "scope": "Right modules over unital rings; the case of left modules is symmetric.",
+    "mechanisms": [
+     "m:adjunction",
+     "m:universal-property",
+     "m:functoriality"
+    ],
+    "roles": [
+     {
+      "h": "h:rings",
+      "why": "The unit makes $R$ a generator, so free modules and presentations exist.",
+      "steps": [
+       "s:bimodule",
+       "s:presentation"
+      ]
+     },
+     {
+      "h": "h:colimits",
+      "why": "Preserving coproducts and cokernels makes $F$ additive and agree with the tensor functor.",
+      "steps": [
+       "s:bimodule",
+       "s:free",
+       "s:presentation"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:bimodule",
+      "slogan": "Make $B=F(R)$ an $R$-$S$-[bimodule](c:bimodule).",
+      "detail": "The module $F(R)$ is a right $S$-module. For $r\\in R$ the map $\\lambda_r\\colon R\\to R$, $x\\mapsto rx$, is right $R$-linear, and $r\\cdot b=F(\\lambda_r)(b)$ defines a left $R$-action that commutes with the $S$-action. The functor $F$ is additive, because it preserves finite coproducts, which are biproducts.",
+      "uses": []
+     },
+     {
+      "id": "s:map",
+      "slogan": "Define a natural map from $M\\otimes_RB$ to $F(M)$.",
+      "detail": "For $m\\in M$ let $\\hat m\\colon R\\to M$, $r\\mapsto mr$. The map $(m,b)\\mapsto F(\\hat m)(b)$ is additive and $R$-balanced, so it gives $\\eta_M\\colon M\\otimes_RB\\to F(M)$, natural in $M$ and $S$-linear.",
+      "uses": []
+     },
+     {
+      "id": "s:free",
+      "slogan": "Show that $\\eta$ is an isomorphism on free modules.",
+      "detail": "For $M=R$ the map $\\eta_R\\colon R\\otimes_RB\\to F(R)=B$ is the canonical isomorphism, because $\\hat 1=\\mathrm{id}_R$. A [free module](c:free-module) $R^{(I)}$ is a coproduct of copies of $R$, and both $F$ and $-\\otimes_RB$ preserve coproducts, so $\\eta$ is an isomorphism on it.",
+      "uses": []
+     },
+     {
+      "id": "s:presentation",
+      "slogan": "Extend the isomorphism to every module by a free presentation.",
+      "detail": "Choose a presentation $R^{(J)}\\to R^{(I)}\\to M\\to0$. Both functors preserve cokernels, so $\\eta_M$ is the map between the cokernels of two isomorphic maps, and it is an isomorphism.",
+      "uses": []
+     },
+     {
+      "id": "s:converse",
+      "slogan": "Prove the converse and the uniqueness of $B$ by adjunction.",
+      "detail": "The functor $-\\otimes_RB$ has the right adjoint $\\mathrm{Hom}_S(B,-)$, so it preserves all colimits. Since $R\\otimes_RB\\cong B$, the bimodule $B$ is determined by the functor as $F(R)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:bimodule",
+      "s:map"
+     ],
+     [
+      "s:map",
+      "s:free"
+     ],
+     [
+      "s:free",
+      "s:presentation"
+     ],
+     [
+      "s:presentation",
+      "s:converse"
+     ]
+    ],
+    "conclusion": "s:converse",
+    "concepts": {
+     "c:colimit": "Preserving colimits is the hypothesis that gives additivity and the comparison isomorphism.",
+     "c:bimodule": "The bimodule $B$ carries the structure that defines the tensor functor.",
+     "c:tensor-product": "The tensor product with $B$ is the functor that equals $F$.",
+     "c:free-module": "Free modules are the generators on which the comparison map is checked."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The argument of C. E. Watts, Intrinsic characterizations of some additive functors, Proc. Amer. Math. Soc. 11 (1960), 5-8, and S. Eilenberg (1960)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q852973",
+  "statement": "A bounded [convex polyhedron](c:convex-polyhedron) in $\\mathbb{R}^3$ with $V$ vertices, $E$ edges and $F$ faces satisfies $V-E+F=2$.",
+  "hypotheses": [
+   {
+    "id": "h:convex",
+    "text": "The solid $P$ is a bounded [convex polyhedron](c:convex-polyhedron) in $\\mathbb{R}^3$ with nonempty interior.",
+    "concept": "c:convex-polyhedron"
+   }
+  ],
+  "conclusion": "The numbers of vertices, edges and faces of $P$ satisfy $V-E+F=2$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "spherical-area",
+    "name": "Spherical area (Legendre)",
+    "slogan": "Project the faces to a sphere, add their areas by Girard's formula, and count angles and sides.",
+    "scope": "The whole statement; the value $2$ is the Euler characteristic of the boundary [sphere](c:sphere). Every face is a convex polygon and every edge borders exactly two faces.",
+    "mechanisms": [
+     "m:geometric-construction",
+     "m:double-counting",
+     "m:euler-characteristic"
+    ],
+    "roles": [
+     {
+      "h": "h:convex",
+      "why": "Convexity gives a radial projection from an interior point that is a bijection onto the sphere.",
+      "steps": [
+       "s:project"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:project",
+      "slogan": "Project the boundary radially onto a sphere around an interior point.",
+      "detail": "Choose an interior point $O$ and project the boundary of $P$ from $O$ onto the unit [sphere](c:sphere). By convexity this is a bijection. An edge and $O$ span a plane through $O$, so edges go to great-circle arcs, and the faces become convex spherical polygons that tile the sphere.",
+      "uses": []
+     },
+     {
+      "id": "s:girard",
+      "slogan": "Express the area of each spherical polygon by its angles.",
+      "detail": "A spherical $n$-gon with angles $\\alpha_1,\\dots,\\alpha_n$ has area $\\sum\\alpha_i-(n-2)\\pi$. This is Girard's formula for triangles, extended to $n$-gons by cutting them into triangles.",
+      "uses": []
+     },
+     {
+      "id": "s:sum",
+      "slogan": "Add the areas of all faces to get the area of the sphere.",
+      "detail": "The areas add up to $4\\pi$. With $n_f$ the number of sides of face $f$ and $\\Sigma$ the sum of all face angles, this reads $4\\pi=\\Sigma-\\pi\\sum_fn_f+2\\pi F$.",
+      "uses": []
+     },
+     {
+      "id": "s:count",
+      "slogan": "Count the angles around vertices and the sides of faces.",
+      "detail": "The face angles at one vertex fill the full angle $2\\pi$ around it, so $\\Sigma=2\\pi V$. Each edge borders exactly two faces, so $\\sum_fn_f=2E$.",
+      "uses": []
+     },
+     {
+      "id": "s:solve",
+      "slogan": "Substitute the counts and solve for $V-E+F$.",
+      "detail": "The sum formula becomes $4\\pi=2\\pi V-2\\pi E+2\\pi F$. Dividing by $2\\pi$ gives $V-E+F=2$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:project",
+      "s:girard"
+     ],
+     [
+      "s:project",
+      "s:count"
+     ],
+     [
+      "s:girard",
+      "s:sum"
+     ],
+     [
+      "s:sum",
+      "s:solve"
+     ],
+     [
+      "s:count",
+      "s:solve"
+     ]
+    ],
+    "conclusion": "s:solve",
+    "concepts": {
+     "c:convex-polyhedron": "Convexity makes the radial projection a bijection and the faces convex.",
+     "c:sphere": "The projected faces tile the sphere, whose area is $4\\pi$."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Legendre's proof by spherical area, Elements de geometrie (1794), which rests on Girard's formula for the area of a spherical triangle."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q650738",
+  "statement": "Let $G$ be a finite $n$-player game with [minmax payoffs](c:minmax-payoff) $\\underline v_i$. If $v$ is a convex combination of payoff vectors of $G$ with $v_i\\ge\\underline v_i$ for all $i$, then $v$ is the payoff of a [Nash equilibrium](c:nash-equilibrium) of the infinitely [repeated game](c:repeated-game) with limit-of-means payoffs.",
+  "hypotheses": [
+   {
+    "id": "h:game",
+    "text": "The game $G$ is finite with $n$ players, and its [repeated game](c:repeated-game) is played forever with past actions observed.",
+    "concept": "c:repeated-game"
+   },
+   {
+    "id": "h:feasible",
+    "text": "The vector $v$ is feasible: it is a convex combination of payoff vectors $u(a)$ of pure action profiles $a$.",
+    "concept": null
+   },
+   {
+    "id": "h:rational",
+    "text": "The vector $v$ is individually rational: $v_i\\ge\\underline v_i$ for every player $i$, with $\\underline v_i$ the [minmax payoff](c:minmax-payoff).",
+    "concept": "c:minmax-payoff"
+   }
+  ],
+  "conclusion": "The repeated game has a [Nash equilibrium](c:nash-equilibrium) whose payoff vector is $v$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "trigger",
+    "name": "Trigger strategies",
+    "slogan": "Follow a path with average payoff $v$ and punish any deviator forever with the minmax strategy against that player.",
+    "scope": "The payoff of a player is the expected limit inferior of the average stage payoff of that player. The discounted and subgame-perfect versions need further arguments, as in Fudenberg and Maskin (1986).",
+    "mechanisms": [
+     "m:construction-explicit",
+     "m:averaging"
+    ],
+    "roles": [
+     {
+      "h": "h:game",
+      "why": "Observed past actions let the players detect a deviation and switch to punishment.",
+      "steps": [
+       "s:strategy"
+      ]
+     },
+     {
+      "h": "h:feasible",
+      "why": "Feasibility gives a path of action profiles whose average payoff tends to $v$.",
+      "steps": [
+       "s:path"
+      ]
+     },
+     {
+      "h": "h:rational",
+      "why": "The inequality $v_i\\ge\\underline v_i$ makes the punishment at least as bad as the path.",
+      "steps": [
+       "s:punish",
+       "s:equilibrium"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:path",
+      "slogan": "Build a path of action profiles with average payoff tending to $v$.",
+      "detail": "Write $v=\\sum_k\\lambda_ku(b^k)$ with pure profiles $b^k$ and weights $\\lambda_k\\ge0$ that sum to $1$. Play the profiles in blocks of growing length, so that $b^k$ fills a share tending to $\\lambda_k$ of the first $T$ periods. The average payoff then tends to $v$.",
+      "uses": []
+     },
+     {
+      "id": "s:punish",
+      "slogan": "Fix a minmax punishment profile against each player.",
+      "detail": "For each player $i$ let $\\alpha^i_{-i}$ be mixed actions of the others with $\\max_{a_i}u_i(a_i,\\alpha^i_{-i})=\\underline v_i$. Against $\\alpha^i_{-i}$ player $i$ gets at most $\\underline v_i$ per period in expectation, whatever that player does.",
+      "uses": []
+     },
+     {
+      "id": "s:strategy",
+      "slogan": "Define the trigger strategies from the path and the punishments.",
+      "detail": "Each player follows the path $(a^t)$. If player $i$ alone deviates in some period, all others play $\\alpha^i_{-i}$ in every later period. Actions are observed, so a deviation from the pure path identifies the deviator.",
+      "uses": []
+     },
+     {
+      "id": "s:equilibrium",
+      "slogan": "Show that no single player gains by deviating.",
+      "detail": "Say player $i$ first deviates in period $\\tau$. The expected stage payoff of player $i$ is at most $\\underline v_i$ afterwards, so the expected average of player $i$ up to $T$ is at most $\\underline v_i+C\\tau/T$. By Fatou's lemma the payoff of player $i$ is at most $\\underline v_i\\le v_i$.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Conclude that the strategy profile is a [Nash equilibrium](c:nash-equilibrium) with payoff $v$.",
+      "detail": "If all players follow the strategies, each gets $v_i$ in the limit. By the previous step no player gains by a single deviation, so the profile is a Nash equilibrium with payoff $v$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:path",
+      "s:strategy"
+     ],
+     [
+      "s:punish",
+      "s:strategy"
+     ],
+     [
+      "s:strategy",
+      "s:equilibrium"
+     ],
+     [
+      "s:path",
+      "s:conclude"
+     ],
+     [
+      "s:equilibrium",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:repeated-game": "The proof builds strategies for the game repeated forever.",
+     "c:minmax-payoff": "The minmax payoff bounds what a deviator gets under punishment.",
+     "c:nash-equilibrium": "The strategy profile is shown to be a Nash equilibrium."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard grim-trigger proof, as in M. J. Osborne and A. Rubinstein, A Course in Game Theory (MIT Press, 1994), Chapter 8."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q3527079",
+  "statement": "For every $K\\ge1$ there are $d(K)$ and $f(K)$ such that every finite set $A\\subset\\mathbb{Z}$ with [sumset](c:sumset) size $|A+A|\\le K|A|$ lies in a [generalized arithmetic progression](c:generalized-arithmetic-progression) of dimension at most $d(K)$ and size at most $f(K)|A|$.",
+  "hypotheses": [
+   {
+    "id": "h:finite",
+    "text": "The set $A$ is a finite nonempty set of integers.",
+    "concept": null
+   },
+   {
+    "id": "h:doubling",
+    "text": "The [sumset](c:sumset) $A+A$ has at most $K|A|$ elements, for a constant $K\\ge1$.",
+    "concept": "c:sumset"
+   }
+  ],
+  "conclusion": "The set $A$ lies in a generalized arithmetic progression $P$ with $\\dim P\\le d(K)$ and $|P|\\le f(K)|A|$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "ruzsa",
+    "name": "Ruzsa's proof",
+    "slogan": "Model the set in a cyclic group, find a large progression in $2A'-2A'$ by Fourier analysis, lift it and cover $A$ by translates.",
+    "scope": "An outline of Ruzsa's proof, where the Fourier and geometry-of-numbers steps rest on the cited work. The bounds $d(K)$ and $f(K)$ depend on $K$ only.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:characteristic-function",
+     "m:reduction"
+    ],
+    "roles": [
+     {
+      "h": "h:finite",
+      "why": "A finite set embeds by a Freiman isomorphism into a cyclic group of comparable size.",
+      "steps": [
+       "s:model"
+      ]
+     },
+     {
+      "h": "h:doubling",
+      "why": "Small doubling bounds all iterated sumsets and the density in the cyclic group.",
+      "steps": [
+       "s:plunnecke",
+       "s:cover"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:plunnecke",
+      "slogan": "Bound all iterated sumsets by the Plünnecke-Ruzsa inequality.",
+      "detail": "From $|A+A|\\le K|A|$ the inequality of Plünnecke and Ruzsa gives $|kA-lA|\\le K^{k+l}|A|$ for all $k,l$. In particular $|8A-8A|\\le K^{16}|A|$ and $|3A-2A|\\le K^5|A|$.",
+      "uses": [
+       "nm:plunnecke-ruzsa-inequality"
+      ]
+     },
+     {
+      "id": "s:model",
+      "slogan": "Model a large part of $A$ inside a cyclic group.",
+      "detail": "Ruzsa's modeling lemma gives a prime $N>2|8A-8A|$ and a subset $A'\\subseteq A$ with $|A'|\\ge|A|/8$ that is Freiman-isomorphic of order $8$ to a subset of $\\mathbb{Z}/N\\mathbb{Z}$. This subset has density at least $c(K)>0$.",
+      "uses": []
+     },
+     {
+      "id": "s:bohr",
+      "slogan": "Find a large Bohr set inside $2A'-2A'$ by Fourier analysis.",
+      "detail": "In $\\mathbb{Z}/N\\mathbb{Z}$ the set $2A'-2A'$ contains a Bohr set of bounded rank and fixed radius. Bogolyubov's argument gives this from the Fourier transform of the indicator of $A'$.",
+      "uses": []
+     },
+     {
+      "id": "s:gap",
+      "slogan": "Find a proper generalized progression inside the Bohr set.",
+      "detail": "Geometry of numbers shows that a Bohr set of bounded rank contains a proper [generalized arithmetic progression](c:generalized-arithmetic-progression) $Q$ of bounded dimension and size at least $c'(K)N$.",
+      "uses": []
+     },
+     {
+      "id": "s:cover",
+      "slogan": "Lift the progression to the integers and cover $A$ by translates.",
+      "detail": "The Freiman isomorphism lifts $Q$ to a progression $P\\subseteq2A-2A$ of the same dimension and size. Ruzsa's covering lemma, with $|A+P|\\le K^5|A|$, gives a set $X$ of bounded size with $A\\subseteq X+P-P$. This set lies in a progression of dimension $\\dim P+|X|$ and size at most $2^{\\dim P+|X|}|P|$.",
+      "uses": [
+       "nm:ruzsa-s-covering-lemma"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:plunnecke",
+      "s:model"
+     ],
+     [
+      "s:model",
+      "s:bohr"
+     ],
+     [
+      "s:bohr",
+      "s:gap"
+     ],
+     [
+      "s:gap",
+      "s:cover"
+     ],
+     [
+      "s:plunnecke",
+      "s:cover"
+     ]
+    ],
+    "conclusion": "s:cover",
+    "concepts": {
+     "c:sumset": "Small sumset size is the doubling hypothesis that every step uses.",
+     "c:generalized-arithmetic-progression": "The progression that contains $A$ is the object the theorem produces."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "I. Z. Ruzsa, Generalized arithmetical progressions and sumsets, Acta Mathematica Hungarica 65 (1994), 379-388",
+     "url": "https://doi.org/10.1007/BF01876039",
+     "note": "The outline follows Ruzsa's proof, also presented in T. Tao and V. Vu, Additive Combinatorics (Cambridge University Press, 2006), Chapter 5. The theorem is due to G. A. Freiman (1973)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1455794",
+  "statement": "Let $X$ be an $n$-[connected](c:n-connected-space) pointed [CW complex](c:cw-complex), $n\\ge0$. The [suspension](c:suspension) map $E\\colon\\pi_q(X)\\to\\pi_{q+1}(\\Sigma X)$ on [homotopy groups](c:homotopy-group) is an isomorphism for $q\\le2n$ and surjective for $q=2n+1$.",
+  "hypotheses": [
+   {
+    "id": "h:connected",
+    "text": "The space $X$ is $n$-[connected](c:n-connected-space), that is, $\\pi_i(X)=0$ for all $i\\le n$, with $n\\ge0$.",
+    "concept": "c:n-connected-space"
+   },
+   {
+    "id": "h:cw",
+    "text": "The space $X$ is a pointed [CW complex](c:cw-complex).",
+    "concept": "c:cw-complex"
+   }
+  ],
+  "conclusion": "The map $E\\colon\\pi_q(X)\\to\\pi_{q+1}(\\Sigma X)$ is bijective for $q\\le2n$ and surjective for $q=2n+1$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "excision",
+    "name": "Homotopy excision",
+    "slogan": "Write the suspension as two cones glued along $X$ and apply homotopy excision to the pair of cones.",
+    "scope": "All $n\\ge0$, where $0$-connected means path-connected. The ingredient is the Blakers-Massey excision theorem for homotopy groups.",
+    "mechanisms": [
+     "m:long-exact-sequence",
+     "m:mayer-vietoris",
+     "m:homotopy-invariance"
+    ],
+    "roles": [
+     {
+      "h": "h:connected",
+      "why": "Connectivity of $X$ gives the connectivity of the two pairs of cones and the range of $q$.",
+      "steps": [
+       "s:connectivity",
+       "s:range"
+      ]
+     },
+     {
+      "h": "h:cw",
+      "why": "The CW structure makes the cones subcomplexes of $\\Sigma X$, as excision needs.",
+      "steps": [
+       "s:cones",
+       "s:excision"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:cones",
+      "slogan": "Write $\\Sigma X$ as the union of two cones glued along $X$.",
+      "detail": "The [suspension](c:suspension) is $\\Sigma X=C_+X\\cup C_-X$ with $C_+X\\cap C_-X=X$. Both cones are contractible subcomplexes of the CW complex $\\Sigma X$.",
+      "uses": []
+     },
+     {
+      "id": "s:connectivity",
+      "slogan": "Show that both pairs of a cone and $X$ are $(n+1)$-connected.",
+      "detail": "The long exact sequence of the pair and the contractibility of the cone give $\\pi_i(C_\\pm X,X)\\cong\\pi_{i-1}(X)$. This group vanishes for $i\\le n+1$.",
+      "uses": []
+     },
+     {
+      "id": "s:excision",
+      "slogan": "Apply homotopy excision to the triad $(\\Sigma X;C_+X,C_-X)$.",
+      "detail": "Both pairs are $(n+1)$-connected and $X$ is path-connected. The Blakers-Massey theorem then makes $\\pi_i(C_+X,X)\\to\\pi_i(\\Sigma X,C_-X)$ bijective for $i<2n+2$ and surjective for $i=2n+2$.",
+      "uses": [
+       "nl:10436"
+      ]
+     },
+     {
+      "id": "s:identify",
+      "slogan": "Identify the resulting composite with the suspension map.",
+      "detail": "The boundary maps $\\pi_{q+1}(C_+X,X)\\cong\\pi_q(X)$ and $\\pi_{q+1}(\\Sigma X,C_-X)\\cong\\pi_{q+1}(\\Sigma X)$ are bijections, because the cones are contractible. The composite $\\pi_q(X)\\to\\pi_{q+1}(\\Sigma X)$ is the suspension map $E$, up to the sign of the convention.",
+      "uses": []
+     },
+     {
+      "id": "s:range",
+      "slogan": "Convert the range of $i=q+1$ into the range of $q$.",
+      "detail": "Put $i=q+1$. Then $i<2n+2$ means $q\\le2n$, and $i=2n+2$ means $q=2n+1$. So $E$ is bijective for $q\\le2n$ and surjective for $q=2n+1$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:cones",
+      "s:connectivity"
+     ],
+     [
+      "s:cones",
+      "s:identify"
+     ],
+     [
+      "s:connectivity",
+      "s:excision"
+     ],
+     [
+      "s:excision",
+      "s:range"
+     ],
+     [
+      "s:identify",
+      "s:range"
+     ]
+    ],
+    "conclusion": "s:range",
+    "concepts": {
+     "c:n-connected-space": "Connectivity of $X$ sets the connectivity of the pairs and the stable range.",
+     "c:cw-complex": "The CW structure makes the cones subcomplexes, which excision needs.",
+     "c:suspension": "The suspension is the union of two cones glued along $X$.",
+     "c:homotopy-group": "The theorem compares homotopy groups of $X$ and of its suspension."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "A. Hatcher, Algebraic Topology (Cambridge University Press, 2002), Section 4.2, which derives Freudenthal's theorem from homotopy excision."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q5508973",
+  "statement": "In a market with finitely many states of positive probability and finitely many trading dates, there is no [arbitrage](c:arbitrage) if and only if some probability $Q$ [equivalent](c:equivalent-measure) to $P$ makes the discounted prices [martingales](c:martingale). Then the market is complete if and only if $Q$ is unique.",
+  "hypotheses": [
+   {
+    "id": "h:finite",
+    "text": "The probability space $\\Omega$ is finite and $P(\\omega)>0$ for every state $\\omega$.",
+    "concept": null
+   },
+   {
+    "id": "h:market",
+    "text": "Trading takes place at finitely many dates, discounted prices are adapted, and strategies are predictable and self-financing.",
+    "concept": null
+   }
+  ],
+  "conclusion": "There is no arbitrage if and only if an equivalent martingale measure exists, and then the market is complete if and only if this measure is unique.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "separation",
+    "name": "Separation of gains",
+    "slogan": "Treat the gains of all strategies as a subspace of $\\mathbb{R}^\\Omega$, separate it from the probability simplex, and read the martingale measure off the separating vector.",
+    "scope": "Finite $\\Omega$ and a finite horizon, as in Harrison and Pliska. Infinite state spaces and continuous time need the theorems of Dalang, Morton and Willinger and of Delbaen and Schachermayer.",
+    "mechanisms": [
+     "m:separation",
+     "m:duality",
+     "m:martingale"
+    ],
+    "roles": [
+     {
+      "h": "h:finite",
+      "why": "Finite dimension, a compact simplex and positive state probabilities make the separation work and give equivalence.",
+      "steps": [
+       "s:easy",
+       "s:separate"
+      ]
+     },
+     {
+      "h": "h:market",
+      "why": "Predictable self-financing strategies give the linear space of gains and the test strategies.",
+      "steps": [
+       "s:gains",
+       "s:martingale"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:gains",
+      "slogan": "Collect the gains of all strategies into a linear subspace $K$ of $\\mathbb{R}^\\Omega$.",
+      "detail": "A predictable self-financing strategy $H$ has terminal gain $G_H=\\sum_tH_t\\cdot(S_t-S_{t-1})$. The map $H\\mapsto G_H$ is linear, so $K=\\{G_H\\}$ is a subspace. An [arbitrage](c:arbitrage) is a gain $G\\in K$ with $G\\ge0$ and $G\\ne0$.",
+      "uses": []
+     },
+     {
+      "id": "s:easy",
+      "slogan": "Show that an equivalent martingale measure excludes arbitrage.",
+      "detail": "Under a [martingale](c:martingale) measure $Q$ each gain satisfies $E_Q[G_H]=0$, being a martingale transform. A gain $G\\ge0$ with $E_Q[G]=0$ vanishes in every state, because $Q(\\omega)>0$ for all $\\omega$.",
+      "uses": []
+     },
+     {
+      "id": "s:separate",
+      "slogan": "Separate $K$ from the simplex of probability vectors.",
+      "detail": "Without arbitrage, $K$ is disjoint from the compact convex simplex $\\Delta=\\{x\\ge0,\\ \\sum x_\\omega=1\\}$. Strict separation gives $y$ with $y\\cdot x>0$ on $\\Delta$ and $y\\cdot k=0$ on $K$, because $K$ is a subspace. Testing vertices gives $y(\\omega)>0$ for every $\\omega$.",
+      "uses": [
+       "nl:10213"
+      ]
+     },
+     {
+      "id": "s:martingale",
+      "slogan": "Normalize $y$ to a measure $Q$ and show that prices are martingales.",
+      "detail": "Put $Q(\\omega)=y(\\omega)/\\sum y$. Then $Q$ is [equivalent](c:equivalent-measure) to $P$ and $E_Q[G]=0$ on $K$. For a date $t$, an asset $i$ and an event $A\\in\\mathcal{F}_{t-1}$, the strategy that holds one unit of asset $i$ on $A$ during $(t-1,t]$ gives $E_Q[1_A(S^i_t-S^i_{t-1})]=0$, so $S^i$ is a $Q$-martingale.",
+      "uses": []
+     },
+     {
+      "id": "s:complete",
+      "slogan": "Show that completeness holds exactly when $Q$ is unique.",
+      "detail": "Attainable claims form the subspace $W=\\mathbb{R}+K$, and a martingale measure is a probability with $E_Q[G]=0$ on $K$. If $W=\\mathbb{R}^\\Omega$, two such measures agree on all indicators. If not, take $z\\ne0$ orthogonal to $W$; then $Q+\\epsilon z$ is a second martingale measure for small $\\epsilon$.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Combine the two directions and the uniqueness criterion.",
+      "detail": "The easy step shows that a martingale measure excludes arbitrage. The separation steps show that excluded arbitrage gives a martingale measure. Together they prove the first equivalence, and the uniqueness criterion proves the second for a market without arbitrage.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:gains",
+      "s:easy"
+     ],
+     [
+      "s:gains",
+      "s:separate"
+     ],
+     [
+      "s:separate",
+      "s:martingale"
+     ],
+     [
+      "s:martingale",
+      "s:complete"
+     ],
+     [
+      "s:easy",
+      "s:conclude"
+     ],
+     [
+      "s:martingale",
+      "s:conclude"
+     ],
+     [
+      "s:complete",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:arbitrage": "Absence of arbitrage is the condition that the gain subspace avoids the positive cone.",
+     "c:equivalent-measure": "The measure $Q$ must charge exactly the states that $P$ charges.",
+     "c:martingale": "Martingale prices under $Q$ are what the separating vector produces."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The finite-state argument of J. M. Harrison and S. R. Pliska, Stochastic Processes and their Applications 11 (1981), 215-260, with the separation step of D. M. Kreps (1981)."
+    }
+   }
+  ],
+  "new_concepts": [
+   {
+    "id": "c:arbitrage",
+    "name": "Arbitrage",
+    "reminder": "An arbitrage is a trading strategy that needs no capital, never loses and wins in some state.",
+    "definition": "An arbitrage is a self-financing strategy with initial value $0$ whose terminal gain $G$ satisfies $G\\ge0$ in every state and $G>0$ with positive probability.",
+    "requires": []
+   }
+  ]
+ },
+ {
+  "id": "nm:gaussian-elimination",
+  "statement": "Every square [matrix](c:matrix) $M$ over a field $k$ can be reduced to a [diagonal matrix](c:diagonal-matrix) by [elementary row](c:elementary-row-operation) and column operations that add a multiple of one line to another: there are products $L,L'$ of [transvections](c:transvection) with $LML'$ diagonal.",
+  "hypotheses": [
+   {
+    "id": "h:square",
+    "text": "The [matrix](c:matrix) $M$ is square of size $n\\times n$, with $n\\ge0$.",
+    "concept": "c:matrix"
+   },
+   {
+    "id": "h:field",
+    "text": "The entries of $M$ lie in a field $k$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "There are products $L,L'$ of transvection matrices and a diagonal matrix $D$ with $LML'=D$.",
+  "formal": {
+   "decl": "Matrix.Pivot.exists_list_transvec_mul_mul_list_transvec_eq_diagonal",
+   "difference": "The declaration indexes rows and columns by an arbitrary finite type; this statement uses $\\{1,\\dots,n\\}$, which is the same by reindexing."
+  },
+  "proofs": [
+   {
+    "id": "pivot-induction",
+    "name": "Pivot and induction",
+    "slogan": "Move a nonzero pivot to the corner, clear its row and column by transvections, and induct on the size of the remaining block.",
+    "scope": "All sizes $n\\ge0$; the empty matrix is already diagonal, and a matrix with zero first row and column skips the pivot step.",
+    "mechanisms": [
+     "m:induction",
+     "m:matrix-factorization",
+     "m:case-analysis"
+    ],
+    "roles": [
+     {
+      "h": "h:square",
+      "why": "The size $n$ drives the induction on the block that remains after the pivot.",
+      "steps": [
+       "s:induct",
+       "s:assemble"
+      ]
+     },
+     {
+      "h": "h:field",
+      "why": "A field allows division by the nonzero pivot, so the multiples exist.",
+      "steps": [
+       "s:clear"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:pivot",
+      "slogan": "Move a nonzero entry to the corner by one transvection.",
+      "detail": "If the first row and column of $M$ are zero, skip this step. Otherwise some entry $M_{i0}$ or $M_{0j}$ is nonzero. If $M_{00}=0$, add that row to row $0$, or that column to column $0$; this is a [transvection](c:transvection) and gives $M_{00}\\ne0$.",
+      "uses": []
+     },
+     {
+      "id": "s:clear",
+      "slogan": "Clear the first column and the first row with transvections.",
+      "detail": "With $a=M_{00}\\ne0$, subtract $M_{i0}/a$ times row $0$ from row $i$ for each $i\\ne0$. Then subtract $M_{0j}/a$ times column $0$ from column $j$ for each $j\\ne0$. The result is $\\mathrm{diag}(a,M')$ with $M'$ of size $n-1$.",
+      "uses": []
+     },
+     {
+      "id": "s:induct",
+      "slogan": "Reduce the smaller block by the induction hypothesis.",
+      "detail": "By induction on the size there are products $L_1,L_1'$ of transvections of size $n-1$ with $L_1M'L_1'$ diagonal. Embed them as transvections of size $n$ that act on the indices $1,\\dots,n-1$ only.",
+      "uses": []
+     },
+     {
+      "id": "s:assemble",
+      "slogan": "Multiply the transvections to obtain the diagonal form.",
+      "detail": "The embedded transvections fix row $0$ and column $0$ of $\\mathrm{diag}(a,M')$. So the product of all transvections turns $M$ into $\\mathrm{diag}(a,L_1M'L_1')$, which is diagonal.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:pivot",
+      "s:clear"
+     ],
+     [
+      "s:clear",
+      "s:induct"
+     ],
+     [
+      "s:induct",
+      "s:assemble"
+     ]
+    ],
+    "conclusion": "s:assemble",
+    "concepts": {
+     "c:matrix": "The theorem reduces an arbitrary square matrix to a simpler one.",
+     "c:diagonal-matrix": "Diagonal form is the goal of the reduction.",
+     "c:elementary-row-operation": "Adding a multiple of one line to another is the elementary operation used.",
+     "c:transvection": "Each step multiplies by a transvection matrix, an elementary operation of determinant one."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Matrix.Pivot.exists_list_transvec_mul_mul_list_transvec_eq_diagonal",
+     "follows": true,
+     "note": "mathlib builds a two-block diagonal matrix with one pivot (exists_isTwoBlockDiagonal_list_transvec_mul_mul_list_transvec) and inducts on the size (exists_list_transvec_mul_mul_list_transvec_eq_diagonal_aux)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q2226677",
+  "statement": "Let $A$ be a [Banach algebra](c:banach-algebra) over $\\mathbb{C}$ with unit $1\\ne0$ in which every nonzero element is [invertible](c:invertible). Then $\\lambda\\mapsto\\lambda1$ is an algebra isomorphism $\\mathbb{C}\\to A$.",
+  "hypotheses": [
+   {
+    "id": "h:banach",
+    "text": "The algebra $A$ is a unital [Banach algebra](c:banach-algebra) over $\\mathbb{C}$ with $1\\ne0$.",
+    "concept": "c:banach-algebra"
+   },
+   {
+    "id": "h:division",
+    "text": "Every nonzero element of $A$ is [invertible](c:invertible).",
+    "concept": "c:invertible"
+   }
+  ],
+  "conclusion": "Every $a\\in A$ equals $\\lambda1$ for exactly one $\\lambda\\in\\mathbb{C}$, so $\\lambda\\mapsto\\lambda1$ is an algebra isomorphism $\\mathbb{C}\\to A$.",
+  "formal": {
+   "decl": "NormedRing.algEquivComplexOfComplete",
+   "difference": "The declaration assumes that the nonzero elements are exactly the units, which gives $1\\ne0$, and it uses a complete normed ring. It builds the inverse by choosing a point of the spectrum; the isometry property is the separate declaration algebraMap_isometry."
+  },
+  "proofs": [
+   {
+    "id": "spectrum",
+    "name": "Nonempty spectrum",
+    "slogan": "Show that every element has a spectral point by Liouville's theorem, and use invertibility of nonzero elements to turn it into a scalar.",
+    "scope": "The whole statement; the zero algebra is excluded by $1\\ne0$. A complex Banach [division algebra](c:division-algebra) is $\\mathbb{C}$.",
+    "mechanisms": [
+     "m:contradiction",
+     "m:complex-integration"
+    ],
+    "roles": [
+     {
+      "h": "h:banach",
+      "why": "Completeness gives the Neumann series, analyticity and decay of the resolvent, and $1\\ne0$ gives injectivity.",
+      "steps": [
+       "s:entire",
+       "s:bounded",
+       "s:liouville",
+       "s:iso"
+      ]
+     },
+     {
+      "h": "h:division",
+      "why": "Invertibility of nonzero elements turns a non-invertible $a-\\lambda1$ into zero.",
+      "steps": [
+       "s:scalar"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:resolvent",
+      "slogan": "Assume that the [spectrum](c:spectrum-of-an-operator) of $a$ is empty and form the resolvent.",
+      "detail": "Suppose that $a-\\lambda1$ is invertible for every $\\lambda\\in\\mathbb{C}$. Then $R(\\lambda)=(a-\\lambda1)^{-1}$ exists for all $\\lambda$, and $R(\\lambda)\\ne0$ because $1\\ne0$.",
+      "uses": []
+     },
+     {
+      "id": "s:entire",
+      "slogan": "Show that $\\varphi\\circ R$ is entire for every bounded functional $\\varphi$.",
+      "detail": "The Neumann series $(1-x)^{-1}=\\sum x^k$ for $\\|x\\|<1$ shows that inversion is analytic on the invertible elements. So $R$ is analytic, and $\\varphi\\circ R$ is an entire function.",
+      "uses": []
+     },
+     {
+      "id": "s:bounded",
+      "slogan": "Show that $R(\\lambda)$ is bounded and tends to $0$ at infinity.",
+      "detail": "For $|\\lambda|>\\|a\\|$ write $R(\\lambda)=-\\lambda^{-1}(1-a/\\lambda)^{-1}$, and bound the Neumann series. This gives $\\|R(\\lambda)\\|\\to0$ as $|\\lambda|\\to\\infty$. On a large disc the continuous $R$ is bounded, so $R$ is bounded.",
+      "uses": []
+     },
+     {
+      "id": "s:liouville",
+      "slogan": "Apply Liouville's theorem to get $R=0$ and a contradiction.",
+      "detail": "Each $\\varphi\\circ R$ is bounded and entire and tends to $0$, so it is $0$ by Liouville's theorem. The Hahn-Banach theorem then gives $R(0)=0$, which contradicts $R(0)\\ne0$.",
+      "uses": [
+       "wd:Q576478",
+       "wd:Q866116"
+      ]
+     },
+     {
+      "id": "s:scalar",
+      "slogan": "Use invertibility of nonzero elements to write $a=\\lambda1$.",
+      "detail": "So some $\\lambda$ has $a-\\lambda1$ not invertible. Every nonzero element is invertible, so $a-\\lambda1=0$ and $a=\\lambda1$.",
+      "uses": []
+     },
+     {
+      "id": "s:iso",
+      "slogan": "Check that $\\lambda\\mapsto\\lambda1$ is a bijective algebra map.",
+      "detail": "The map is an algebra homomorphism. It is injective because $1\\ne0$ in $A$, so $\\lambda1=0$ forces $\\lambda=0$, and it is surjective by the previous step.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:resolvent",
+      "s:entire"
+     ],
+     [
+      "s:resolvent",
+      "s:bounded"
+     ],
+     [
+      "s:entire",
+      "s:liouville"
+     ],
+     [
+      "s:bounded",
+      "s:liouville"
+     ],
+     [
+      "s:liouville",
+      "s:scalar"
+     ],
+     [
+      "s:scalar",
+      "s:iso"
+     ]
+    ],
+    "conclusion": "s:iso",
+    "concepts": {
+     "c:banach-algebra": "Completeness and the norm give the Neumann series and the analytic resolvent.",
+     "c:invertible": "Invertibility of nonzero elements forces a non-invertible element to be zero.",
+     "c:spectrum-of-an-operator": "The proof shows that the spectrum of every element is nonempty.",
+     "c:division-algebra": "The theorem says the only complex Banach division algebra is $\\mathbb{C}$."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "NormedRing.algEquivComplexOfComplete",
+     "follows": true,
+     "note": "mathlib picks a point of spectrum.nonempty (a Liouville argument) as the scalar, and hA turns the non-invertible a - λ1 into 0."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:geometric-series",
+  "statement": "Let $\\xi$ lie in a [normed division ring](c:normed-division-ring), such as $\\mathbb{R}$ or $\\mathbb{C}$, with $\\|\\xi\\|<1$. Then the [geometric series](c:geometric-series) $\\sum_{n\\ge0}\\xi^n$ converges to $(1-\\xi)^{-1}$.",
+  "hypotheses": [
+   {
+    "id": "h:ring",
+    "text": "The element $\\xi$ lies in a [normed division ring](c:normed-division-ring), so $\\|ab\\|=\\|a\\|\\|b\\|$ and nonzero elements are invertible.",
+    "concept": "c:normed-division-ring"
+   },
+   {
+    "id": "h:small",
+    "text": "The norm of $\\xi$ satisfies $\\|\\xi\\|<1$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The series $\\sum_{n\\ge0}\\xi^n$ converges and its sum is $(1-\\xi)^{-1}$.",
+  "formal": {
+   "decl": "tsum_geometric_of_norm_lt_one",
+   "difference": "The declaration states the value of the infinite sum; convergence is the companion declaration hasSum_geometric_of_norm_lt_one, which this theorem includes."
+  },
+  "proofs": [
+   {
+    "id": "telescoping",
+    "name": "Telescoping partial sums",
+    "slogan": "Telescope the partial sums to $(1-\\xi^n)(1-\\xi)^{-1}$ and let $\\xi^n$ tend to zero.",
+    "scope": "The whole statement; for $\\xi=0$ the series is $1$ and the proof still applies.",
+    "mechanisms": [
+     "m:telescoping",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:ring",
+      "why": "Multiplicativity of the norm gives $\\|\\xi^n\\|=\\|\\xi\\|^n$, and the division ring allows inverting $1-\\xi$.",
+      "steps": [
+       "s:invert",
+       "s:power"
+      ]
+     },
+     {
+      "h": "h:small",
+      "why": "The bound $\\|\\xi\\|<1$ makes $\\xi^n\\to0$ and gives $\\xi\\ne1$.",
+      "steps": [
+       "s:invert",
+       "s:power"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:telescope",
+      "slogan": "Telescope the [partial sum](c:partial-sum) to get $(1-\\xi)S_n=1-\\xi^n$.",
+      "detail": "Write $S_n=\\sum_{k<n}\\xi^k$. Multiplying out gives $(1-\\xi)S_n=\\sum_{k<n}(\\xi^k-\\xi^{k+1})=1-\\xi^n$, because the inner terms cancel in pairs.",
+      "uses": []
+     },
+     {
+      "id": "s:invert",
+      "slogan": "Divide by $1-\\xi$, which is invertible.",
+      "detail": "Since $\\|\\xi\\|<1$, we have $\\xi\\ne1$, so $1-\\xi\\ne0$ and it is invertible in the division ring. Powers of $\\xi$ commute with $1-\\xi$, so $S_n=(1-\\xi)^{-1}(1-\\xi^n)$.",
+      "uses": []
+     },
+     {
+      "id": "s:power",
+      "slogan": "Show that the powers $\\xi^n$ tend to $0$.",
+      "detail": "Multiplicativity of the norm gives $\\|\\xi^n\\|=\\|\\xi\\|^n$. This tends to $0$ because $0\\le\\|\\xi\\|<1$.",
+      "uses": []
+     },
+     {
+      "id": "s:limit",
+      "slogan": "Pass to the [limit](c:limit-of-a-sequence) in the formula for $S_n$.",
+      "detail": "Multiplication is continuous, so $S_n=(1-\\xi)^{-1}(1-\\xi^n)\\to(1-\\xi)^{-1}$. The partial sums converge to $(1-\\xi)^{-1}$, so the series converges with this sum.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:telescope",
+      "s:invert"
+     ],
+     [
+      "s:invert",
+      "s:limit"
+     ],
+     [
+      "s:power",
+      "s:limit"
+     ]
+    ],
+    "conclusion": "s:limit",
+    "concepts": {
+     "c:normed-division-ring": "Multiplicative norm and inverses are exactly what the proof uses.",
+     "c:geometric-series": "The theorem gives the sum of this series.",
+     "c:partial-sum": "The proof finds a closed form for each partial sum.",
+     "c:limit-of-a-sequence": "The sum is the limit of the partial sums."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "tsum_geometric_of_norm_lt_one",
+     "follows": true,
+     "note": "mathlib uses geom_sum_eq for the partial sums and tendsto_pow_atTop_nhds_zero_of_norm_lt_one in hasSum_geometric_of_norm_lt_one."
+    }
+   }
+  ]
+ }
+]

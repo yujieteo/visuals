@@ -1,0 +1,2132 @@
+[
+ {
+  "id": "nm:lucas-lehmer-primality-test",
+  "statement": "Let $p \\ge 3$, let $M_p = 2^p - 1$ be the [Mersenne number](c:mersenne-number), and let $s_0 = 4$, $s_{i+1} = s_i^2 - 2$. Then $M_p$ is [prime](c:prime-number) if and only if $s_{p-2} \\equiv 0$ [modulo](c:modular-arithmetic) $M_p$.",
+  "hypotheses": [
+   {
+    "id": "h:p",
+    "text": "The exponent $p$ is an integer with $p \\ge 3$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "$M_p$ is prime exactly when $M_p$ divides $s_{p-2}$.",
+  "formal": {
+   "decl": "lucas_lehmer_sufficiency",
+   "difference": "The declaration proves only the sufficiency direction, for every $p > 1$. The converse is the separate declaration lucas_lehmer_necessity, for $p \\ge 3$."
+  },
+  "proofs": [
+   {
+    "id": "order-of-omega",
+    "name": "Order of 2 plus root 3",
+    "slogan": "Write $s_i$ through powers of $\\omega = 2 + \\sqrt3$; an order count modulo a prime factor gives sufficiency, and the Frobenius map modulo a prime $M_p$ gives necessity.",
+    "scope": "Both directions for $p \\ge 3$. For $p = 2$ the test fails although $M_2 = 3$ is prime, which is why $p \\ge 3$ is assumed.",
+    "mechanisms": [
+     "m:modular-arithmetic",
+     "m:contradiction",
+     "m:extremal-choice"
+    ],
+    "roles": [
+     {
+      "h": "h:p",
+      "why": "The bound $p \\ge 3$ makes $M_p$ odd, gives $M_p \\equiv 7 \\pmod 8$, and makes $p$ odd when $M_p$ is prime.",
+      "steps": [
+       "s:order",
+       "s:symbols",
+       "s:sufficiency"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:closed-form",
+      "slogan": "Write $s_i$ as $\\omega^{2^i} + \\bar\\omega^{2^i}$ in the ring $X_q = (\\mathbb{Z}/q)[\\sqrt3]$.",
+      "detail": "For a prime $q$, let $X_q$ hold the elements $a + b\\sqrt3$ with $a, b \\in \\mathbb{Z}/q$, and put $\\omega = 2 + \\sqrt3$, $\\bar\\omega = 2 - \\sqrt3$, so $\\omega\\bar\\omega = 1$. Induction on $i$ gives $s_i = \\omega^{2^i} + \\bar\\omega^{2^i}$, because $(\\omega^{2^i} + \\bar\\omega^{2^i})^2 - 2 = \\omega^{2^{i+1}} + \\bar\\omega^{2^{i+1}}$.",
+      "uses": []
+     },
+     {
+      "id": "s:order",
+      "slogan": "Show that $\\omega$ has order exactly $2^p$ for a prime factor $q$ of $M_p$.",
+      "detail": "Assume $q \\mid M_p$ and $q \\mid s_{p-2}$. Then $\\omega^{2^{p-2}} = -\\bar\\omega^{2^{p-2}}$, and multiplication by $\\omega^{2^{p-2}}$ gives $\\omega^{2^{p-1}} = -1$, so $\\omega^{2^p} = 1$. As $q$ is odd, $-1 \\ne 1$, so the [order](c:order-of-an-element) of $\\omega$ is $2^p$.",
+      "uses": []
+     },
+     {
+      "id": "s:bound",
+      "slogan": "Bound the order of $\\omega$ by the number of units of $X_q$.",
+      "detail": "The ring $X_q$ has $q^2$ elements and $0$ is not a unit, so its [group of units](c:group-of-units) has at most $q^2 - 1$ elements. The $2^p$ distinct powers of $\\omega$ are units, so $2^p < q^2$.",
+      "uses": []
+     },
+     {
+      "id": "s:sufficiency",
+      "slogan": "Take the least prime factor of a composite $M_p$ and reach a contradiction.",
+      "detail": "Suppose $M_p \\mid s_{p-2}$ but $M_p$ is not prime. Its least prime factor $q$ satisfies $q^2 \\le M_p < 2^p$, which contradicts $2^p < q^2$ from step 3. So $M_p$ is prime.",
+      "uses": []
+     },
+     {
+      "id": "s:symbols",
+      "slogan": "Compute the [Legendre symbols](c:legendre-symbol) of 2 and 3 modulo a prime $q = M_p$.",
+      "detail": "If $q = M_p$ is prime, then $p$ is prime, hence odd. Since $q \\equiv 7 \\pmod 8$, $(2/q) = 1$. Since $q \\equiv 3 \\pmod 4$ and $q \\equiv 1 \\pmod 3$, quadratic reciprocity gives $(3/q) = -(q/3) = -1$.",
+      "uses": [
+       "wd:Q472883"
+      ]
+     },
+     {
+      "id": "s:necessity",
+      "slogan": "Evaluate $\\omega^{(q+1)/2}$ in the field $X_q$ with the [Frobenius](c:frobenius) map.",
+      "detail": "As 3 is not a square, $X_q$ is the [finite field](c:finite-field) of order $q^2$, and Frobenius with Euler's criterion gives $(1+\\sqrt3)^q = 1 - \\sqrt3$, so $(1+\\sqrt3)^{q+1} = -2$. With $(1+\\sqrt3)^2 = 2\\omega$ and $2^{(q-1)/2} = 1$ this gives $\\omega^{2^{p-1}} = -1$. Multiplication by $\\bar\\omega^{2^{p-2}}$ and step 1 give $s_{p-2} = 0$ in $\\mathbb{Z}/q$.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Combine the two directions into the equivalence for every $p \\ge 3$.",
+      "detail": "Step 4 shows that $M_p \\mid s_{p-2}$ makes $M_p$ prime. Step 6 shows that a prime $M_p$ divides $s_{p-2}$. Together they give the equivalence.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:closed-form",
+      "s:order"
+     ],
+     [
+      "s:order",
+      "s:bound"
+     ],
+     [
+      "s:bound",
+      "s:sufficiency"
+     ],
+     [
+      "s:sufficiency",
+      "s:conclude"
+     ],
+     [
+      "s:symbols",
+      "s:necessity"
+     ],
+     [
+      "s:closed-form",
+      "s:necessity"
+     ],
+     [
+      "s:necessity",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:mersenne-number": "The test decides primality of the Mersenne number $M_p$.",
+     "c:prime-number": "Primality of $M_p$ is the conclusion, and prime factors drive the contradiction.",
+     "c:modular-arithmetic": "The sequence is reduced modulo $M_p$ and modulo its prime factors.",
+     "c:order-of-an-element": "The order $2^p$ of $\\omega$ forces a large prime factor.",
+     "c:group-of-units": "The unit group of $X_q$ is too small for an element of order $2^p$.",
+     "c:legendre-symbol": "The symbols of 2 and 3 fix the powers in the Frobenius computation.",
+     "c:frobenius": "Frobenius turns $(1+\\sqrt3)^q$ into its conjugate $1 - \\sqrt3$.",
+     "c:finite-field": "For prime $M_p$ the ring $X_q$ is a field, so Frobenius applies."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "lucas_lehmer_sufficiency",
+     "follows": true,
+     "note": "mathlib gets sufficiency from LucasLehmer.order_ineq (order_ω and card_units_lt) and Nat.minFac_sq_le_self; the necessity steps follow lucas_lehmer_necessity with pow_ω, legendreSym_mersenne_two and legendreSym_mersenne_three."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1966978",
+  "statement": "Let $\\mu_n$ and $\\mu$ be Borel [probability measures](c:probability-measure) on $\\mathbb{R}^d$ with [characteristic functions](c:characteristic-function) $\\varphi_n(t) = \\int e^{i\\langle t, x\\rangle}\\,d\\mu_n(x)$ and $\\varphi$. Then $\\mu_n \\to \\mu$ [in distribution](c:convergence-in-distribution) if and only if $\\varphi_n(t) \\to \\varphi(t)$ for every $t \\in \\mathbb{R}^d$.",
+  "hypotheses": [
+   {
+    "id": "h:probability",
+    "text": "Each $\\mu_n$ and $\\mu$ is a Borel [probability measure](c:probability-measure) on $\\mathbb{R}^d$.",
+    "concept": "c:probability-measure"
+   }
+  ],
+  "conclusion": "The measures $\\mu_n$ converge weakly to $\\mu$ exactly when $\\varphi_n \\to \\varphi$ pointwise on $\\mathbb{R}^d$.",
+  "formal": {
+   "decl": "MeasureTheory.ProbabilityMeasure.tendsto_iff_tendsto_charFun",
+   "difference": "The declaration states the theorem for probability measures on any finite-dimensional real inner product space, which includes $\\mathbb{R}^d$."
+  },
+  "proofs": [
+   {
+    "id": "tightness-uniqueness",
+    "name": "Tightness, Prokhorov and uniqueness",
+    "slogan": "Test weak convergence on $e^{i\\langle t,x\\rangle}$, and for the converse get tightness from the characteristic functions and identify every subsequential limit.",
+    "scope": "Both directions, with the limit $\\mu$ given in advance. The stronger form, where the pointwise limit is only assumed continuous at $0$, is not covered.",
+    "mechanisms": [
+     "m:characteristic-function",
+     "m:subsequence",
+     "m:dominated-convergence"
+    ],
+    "roles": [
+     {
+      "h": "h:probability",
+      "why": "Total mass $1$ makes $e^{i\\langle t,x\\rangle}$ integrable, bounds $|1 - \\varphi_n|$ by $2$, and keeps weak limits probability measures.",
+      "steps": [
+       "s:forward",
+       "s:tight",
+       "s:compact"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:forward",
+      "slogan": "Integrate the bounded continuous function $x \\mapsto e^{i\\langle t, x\\rangle}$ against $\\mu_n$.",
+      "detail": "Weak convergence gives $\\int g\\,d\\mu_n \\to \\int g\\,d\\mu$ for every [bounded continuous function](c:bounded-continuous-function) $g$. The real and imaginary parts of $e^{i\\langle t,x\\rangle}$ are such functions, so $\\varphi_n(t) \\to \\varphi(t)$.",
+      "uses": []
+     },
+     {
+      "id": "s:tight",
+      "slogan": "Bound the tails of $\\mu_n$ by averages of $1 - \\varphi_n$ near $0$.",
+      "detail": "For a unit vector $z$ and $r > 0$, Fubini gives $\\mu_n\\{|\\langle z,x\\rangle| \\ge r\\} \\le \\frac r2 \\int_{-2/r}^{2/r} (1 - \\varphi_n(sz))\\,ds$. Dominated convergence turns the right side into the same average of $1 - \\varphi$, which is small for large $r$ since $\\varphi$ is continuous with $\\varphi(0) = 1$. A basis of directions then gives the [tightness](c:tightness) of $\\{\\mu_n\\}$.",
+      "uses": [
+       "wd:Q1149022",
+       "wd:Q1067156"
+      ]
+     },
+     {
+      "id": "s:compact",
+      "slogan": "Extract weakly convergent subsequences with Prokhorov's theorem.",
+      "detail": "A tight family of probability measures on $\\mathbb{R}^d$ is relatively compact for weak convergence. So every [subsequence](c:subsequence) of $(\\mu_n)$ has a further subsequence that converges weakly to some probability measure $\\nu$.",
+      "uses": [
+       "wd:Q7249519"
+      ]
+     },
+     {
+      "id": "s:identify",
+      "slogan": "Identify each subsequential limit $\\nu$ with $\\mu$ through its characteristic function.",
+      "detail": "Step 1 applied to the convergent subsequence gives $\\varphi_\\nu(t) = \\lim_k \\varphi_{n_k}(t) = \\varphi(t)$ for all $t$. Trigonometric polynomials separate points, so the characteristic function determines a probability measure, and $\\nu = \\mu$.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Conclude weak convergence of the whole sequence by the subsequence principle.",
+      "detail": "If $\\int g\\,d\\mu_n \\not\\to \\int g\\,d\\mu$ for some bounded continuous $g$, a subsequence stays $\\varepsilon$ away, yet steps 3 and 4 give a further subsequence whose integrals tend to $\\int g\\,d\\mu$. So $\\mu_n \\to \\mu$, and step 1 gives the other direction.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:forward",
+      "s:identify"
+     ],
+     [
+      "s:tight",
+      "s:compact"
+     ],
+     [
+      "s:compact",
+      "s:identify"
+     ],
+     [
+      "s:identify",
+      "s:conclude"
+     ],
+     [
+      "s:forward",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:probability-measure": "Weak limits of tight probability measures stay probability measures.",
+     "c:characteristic-function": "Characteristic functions both detect convergence and identify the limit.",
+     "c:convergence-in-distribution": "This is the convergence that the theorem characterizes.",
+     "c:bounded-continuous-function": "Weak convergence is tested on bounded continuous functions such as $e^{i\\langle t,x\\rangle}$.",
+     "c:tightness": "Tightness is what Prokhorov's theorem needs for compactness.",
+     "c:subsequence": "The proof identifies the limit along every convergent subsequence."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "MeasureTheory.ProbabilityMeasure.tendsto_iff_tendsto_charFun",
+     "follows": true,
+     "note": "mathlib proves the forward direction with ProbabilityMeasure.tendsto_iff_forall_integral_rclike_tendsto and the converse with isTightMeasureSet_of_tendsto_charFun, isCompact_closure_of_isTightMeasureSet and ProbabilityMeasure.tendsto_of_tight_of_separatesPoints."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q6757284",
+  "statement": "Let $1 \\le p_0 < p_1 \\le \\infty$ and let $T$ be a [sublinear operator](c:sublinear-operator) from $L^{p_0} + L^{p_1}$ of a $\\sigma$-finite [measure space](c:measure-space) to measurable functions on another. If $T$ is of [weak type](c:weak-type-estimate) $(p_0, p_0)$ and $(p_1, p_1)$, then for each $p_0 < p < p_1$ there is $C_p$ with $\\|Tf\\|_p \\le C_p\\|f\\|_p$ on the [Lebesgue space](c:lp-space) $L^p$.",
+  "hypotheses": [
+   {
+    "id": "h:exponents",
+    "text": "The exponents satisfy $1 \\le p_0 < p < p_1 \\le \\infty$.",
+    "concept": null
+   },
+   {
+    "id": "h:sublinear",
+    "text": "The operator is [sublinear](c:sublinear-operator): $|T(f+g)| \\le |Tf| + |Tg|$ and $|T(cf)| = |c|\\,|Tf|$.",
+    "concept": "c:sublinear-operator"
+   },
+   {
+    "id": "h:weak0",
+    "text": "The operator is of [weak type](c:weak-type-estimate) $(p_0, p_0)$: $\\mu\\{|Tf| > \\lambda\\} \\le (A_0\\|f\\|_{p_0}/\\lambda)^{p_0}$ for all $\\lambda > 0$.",
+    "concept": "c:weak-type-estimate"
+   },
+   {
+    "id": "h:weak1",
+    "text": "The operator is of weak type $(p_1, p_1)$ with constant $A_1$, read as $\\|Tf\\|_\\infty \\le A_1\\|f\\|_\\infty$ when $p_1 = \\infty$.",
+    "concept": "c:weak-type-estimate"
+   }
+  ],
+  "conclusion": "For $p_0 < p < p_1$, $T$ is bounded on $L^p$, with $\\|Tf\\|_p \\le C_p\\|f\\|_p$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "split-at-height",
+    "name": "Splitting at height lambda",
+    "slogan": "Cut $f$ at height $\\lambda$ into an $L^{p_0}$ part and an $L^{p_1}$ part, apply the weak-type bounds to each part, and integrate over $\\lambda$.",
+    "scope": "The case $p_1 < \\infty$, with $C_p^p = p\\,2^p\\big(A_0^{p_0}/(p - p_0) + A_1^{p_1}/(p_1 - p)\\big)$. For $p_1 = \\infty$ cut at height $\\lambda/A_1$, so $|Tf_1| \\le \\lambda$ and only the $p_0$ term remains.",
+    "mechanisms": [
+     "m:interpolation",
+     "m:fubini-swap"
+    ],
+    "roles": [
+     {
+      "h": "h:exponents",
+      "why": "The inequalities $p_0 < p < p_1$ put the two pieces in $L^{p_0}$ and $L^{p_1}$ and make both $\\lambda$ integrals finite.",
+      "steps": [
+       "s:split",
+       "s:tonelli"
+      ]
+     },
+     {
+      "h": "h:sublinear",
+      "why": "Sublinearity bounds $|Tf|$ by $|Tf_0| + |Tf_1|$.",
+      "steps": [
+       "s:sublinear"
+      ]
+     },
+     {
+      "h": "h:weak0",
+      "why": "The weak $(p_0, p_0)$ bound controls the large part $f_0$.",
+      "steps": [
+       "s:weak"
+      ]
+     },
+     {
+      "h": "h:weak1",
+      "why": "The weak $(p_1, p_1)$ bound controls the small part $f_1$.",
+      "steps": [
+       "s:weak"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:split",
+      "slogan": "Split $f$ at height $\\lambda$ into a large part $f_0$ and a small part $f_1$.",
+      "detail": "For $\\lambda > 0$ put $f_0 = f\\,1_{\\{|f| > \\lambda\\}}$ and $f_1 = f\\,1_{\\{|f| \\le \\lambda\\}}$. Since $p_0 < p < p_1$, $|f_0|^{p_0} \\le \\lambda^{p_0 - p}|f|^p$ and $|f_1|^{p_1} \\le \\lambda^{p_1 - p}|f|^p$, so $f_0 \\in L^{p_0}$ and $f_1 \\in L^{p_1}$.",
+      "uses": []
+     },
+     {
+      "id": "s:sublinear",
+      "slogan": "Bound the distribution function of $Tf$ by those of $Tf_0$ and $Tf_1$.",
+      "detail": "Sublinearity gives $|Tf| \\le |Tf_0| + |Tf_1|$, so $|Tf| > 2\\lambda$ forces $|Tf_0| > \\lambda$ or $|Tf_1| > \\lambda$. With $d_g(s) = \\mu\\{|g| > s\\}$ this gives $d_{Tf}(2\\lambda) \\le d_{Tf_0}(\\lambda) + d_{Tf_1}(\\lambda)$.",
+      "uses": []
+     },
+     {
+      "id": "s:weak",
+      "slogan": "Insert the two weak-type bounds into the distribution estimate.",
+      "detail": "The [weak-type estimates](c:weak-type-estimate), applied to $f_0 \\in L^{p_0}$ and to $f_1 \\in L^{p_1}$, bound the two terms of step 2. Together they give $d_{Tf}(2\\lambda) \\le (A_0/\\lambda)^{p_0}\\int_{\\{|f| > \\lambda\\}}|f|^{p_0}\\,d\\mu + (A_1/\\lambda)^{p_1}\\int_{\\{|f| \\le \\lambda\\}}|f|^{p_1}\\,d\\mu$.",
+      "uses": []
+     },
+     {
+      "id": "s:layer",
+      "slogan": "Write the $L^p$ norm of $Tf$ through its distribution function.",
+      "detail": "Tonelli's theorem gives the layer-cake formula $\\|g\\|_p^p = p\\int_0^\\infty s^{p-1} d_g(s)\\,ds$. With $s = 2\\lambda$ this reads $\\|Tf\\|_p^p = p\\,2^p\\int_0^\\infty \\lambda^{p-1} d_{Tf}(2\\lambda)\\,d\\lambda$.",
+      "uses": [
+       "wd:Q7820874"
+      ]
+     },
+     {
+      "id": "s:tonelli",
+      "slogan": "Swap the $\\lambda$ and $x$ integrals and compute the inner integrals.",
+      "detail": "Tonelli gives $\\int_0^\\infty \\lambda^{p-1-p_0}\\int_{\\{|f| > \\lambda\\}}|f|^{p_0}\\,d\\mu\\,d\\lambda = \\int |f|^{p_0}\\int_0^{|f|}\\lambda^{p-1-p_0}\\,d\\lambda\\,d\\mu = \\|f\\|_p^p/(p - p_0)$. The second term gives $\\|f\\|_p^p/(p_1 - p)$ in the same way, so $\\|Tf\\|_p^p \\le C_p^p\\|f\\|_p^p$.",
+      "uses": [
+       "wd:Q7820874"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:split",
+      "s:sublinear"
+     ],
+     [
+      "s:sublinear",
+      "s:weak"
+     ],
+     [
+      "s:split",
+      "s:weak"
+     ],
+     [
+      "s:weak",
+      "s:tonelli"
+     ],
+     [
+      "s:layer",
+      "s:tonelli"
+     ]
+    ],
+    "conclusion": "s:tonelli",
+    "concepts": {
+     "c:sublinear-operator": "Sublinearity is all the proof needs in place of linearity.",
+     "c:measure-space": "Distribution functions and Tonelli live on a sigma-finite measure space.",
+     "c:weak-type-estimate": "Weak-type bounds at the end points control the two pieces.",
+     "c:lp-space": "The conclusion is boundedness on the intermediate space $L^p$."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard real-interpolation proof by splitting at height lambda, as in L. Grafakos, Classical Fourier Analysis, theorem 1.3.2."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:partial-derivatives-commute",
+  "statement": "Let $U \\subseteq \\mathbb{R}^n$ be [open](c:open-set) and let $f\\colon U \\to \\mathbb{R}$ be [differentiable](c:differentiable-function) on $U$, with derivative $f'$ differentiable at $x \\in U$. Then the [second derivative](c:second-derivative) $f''(x)$ is symmetric, and the mixed [partial derivatives](c:partial-derivative) agree: $\\partial_i\\partial_j f(x) = \\partial_j\\partial_i f(x)$ for all $i, j$.",
+  "hypotheses": [
+   {
+    "id": "h:open",
+    "text": "The set $U \\subseteq \\mathbb{R}^n$ is [open](c:open-set) and contains $x$.",
+    "concept": "c:open-set"
+   },
+   {
+    "id": "h:differentiable",
+    "text": "The function $f$ is [differentiable](c:differentiable-function) at every point $y$ of $U$, with derivative $f'(y)$.",
+    "concept": "c:differentiable-function"
+   },
+   {
+    "id": "h:twice",
+    "text": "The map $y \\mapsto f'(y)$ is differentiable at $x$, with derivative $f''(x)$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "For all vectors $v, w$, $f''(x)(v)(w) = f''(x)(w)(v)$; in particular $\\partial_i\\partial_j f(x) = \\partial_j\\partial_i f(x)$.",
+  "formal": {
+   "decl": "second_derivative_symmetric",
+   "difference": "The declaration works in normed spaces over $\\mathbb{R}$ or $\\mathbb{C}$ and asks $f$ to be differentiable everywhere; second_derivative_symmetric_of_eventually is the local form. It states $f''(v)(w) = f''(w)(v)$, and the partial derivatives are the case $v = e_i$, $w = e_j$."
+  },
+  "proofs": [
+   {
+    "id": "alternate-sum",
+    "name": "Alternate sum over a small parallelogram",
+    "slogan": "Expand an alternate sum of $f$ over a small parallelogram to second order, and note that this sum is symmetric in the two directions.",
+    "scope": "Real scalars and any vectors $v, w$; the partial derivatives are the case $v = e_i$, $w = e_j$. The proof needs no continuity of the second partial derivatives.",
+    "mechanisms": [
+     "m:taylor-expansion",
+     "m:mean-value",
+     "m:symmetry"
+    ],
+    "roles": [
+     {
+      "h": "h:open",
+      "why": "Openness keeps the corners $x + h(\\cdot)$ inside $U$ for small $h > 0$.",
+      "steps": [
+       "s:taylor",
+       "s:alternate"
+      ]
+     },
+     {
+      "h": "h:differentiable",
+      "why": "Differentiability on $U$ lets the mean value inequality run along each segment.",
+      "steps": [
+       "s:taylor"
+      ]
+     },
+     {
+      "h": "h:twice",
+      "why": "Differentiability of $f'$ at $x$ makes the error of the linear model of $f'$ equal to $o(h)$.",
+      "steps": [
+       "s:taylor"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:taylor",
+      "slogan": "Expand $f(x + hu + hw) - f(x + hu)$ to second order in $h$.",
+      "detail": "Apply the mean value inequality on $[0,1]$ to $g(t) = f(x + hu + thw) - th f'(x)w - th^2 f''(x)(u)(w) - \\tfrac{t^2h^2}{2}f''(x)(w)(w)$. Differentiability of $f'$ at $x$ makes $g'(t) = o(h^2)$ uniformly in $t$. So $f(x + hu + hw) - f(x + hu) = hf'(x)w + h^2f''(x)(u)(w) + \\tfrac{h^2}{2}f''(x)(w)(w) + o(h^2)$.",
+      "uses": [
+       "wd:Q189136"
+      ]
+     },
+     {
+      "id": "s:alternate",
+      "slogan": "Form the alternate sum $\\Delta(h)$ of $f$ at four corners and expand it.",
+      "detail": "Let $\\Delta(h) = f(x + 2hv + 2hw) - f(x + 2hv + hw) - f(x + hv + 2hw) + f(x + hv + hw)$. Step 1 with $u = 2v + w$ and with $u = v + w$, subtracted, gives $\\Delta(h) = h^2 f''(x)(v)(w) + o(h^2)$.",
+      "uses": []
+     },
+     {
+      "id": "s:symmetric",
+      "slogan": "Swap the roles of $v$ and $w$, which leaves $\\Delta(h)$ unchanged.",
+      "detail": "The four corners of $\\Delta(h)$ are symmetric in $v$ and $w$, so $\\Delta_{v,w}(h) = \\Delta_{w,v}(h)$. Subtracting the two expansions from step 2 gives $h^2\\big(f''(x)(v)(w) - f''(x)(w)(v)\\big) = o(h^2)$.",
+      "uses": []
+     },
+     {
+      "id": "s:limit",
+      "slogan": "Divide by $h^2$ and let $h$ tend to $0$ from above.",
+      "detail": "The constant $f''(x)(v)(w) - f''(x)(w)(v)$ is $o(1)$, so it is $0$ and the [second derivative](c:second-derivative) is symmetric. With $v = e_i$, $w = e_j$ the value $f''(x)(e_i)(e_j)$ is a mixed [partial derivative](c:partial-derivative), so $\\partial_i\\partial_j f(x) = \\partial_j\\partial_i f(x)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:taylor",
+      "s:alternate"
+     ],
+     [
+      "s:alternate",
+      "s:symmetric"
+     ],
+     [
+      "s:symmetric",
+      "s:limit"
+     ]
+    ],
+    "conclusion": "s:limit",
+    "concepts": {
+     "c:open-set": "The small parallelogram must stay inside the domain.",
+     "c:differentiable-function": "Differentiability along segments feeds the mean value inequality.",
+     "c:second-derivative": "Symmetry of the bilinear map $f''(x)$ is the real content.",
+     "c:partial-derivative": "Mixed partial derivatives are values of $f''(x)$ on basis vectors."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "second_derivative_symmetric",
+     "follows": true,
+     "note": "mathlib reduces to second_derivative_symmetric_of_eventually and Convex.second_derivative_within_at_symmetric, using Convex.taylor_approx_two_segment and Convex.isLittleO_alternate_sum_square."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q2063099",
+  "statement": "Let $M$ be a [closed oriented manifold](c:closed-oriented-manifold) of dimension $n$, oriented over a commutative ring $R$, with [fundamental class](c:fundamental-class) $[M] \\in H_n(M;R)$. Then for every $k$ the [cap product](c:cap-product) $\\varphi \\mapsto [M] \\frown \\varphi$ is an isomorphism from the [cohomology](c:cohomology) $H^k(M;R)$ to the [homology](c:homology) $H_{n-k}(M;R)$.",
+  "hypotheses": [
+   {
+    "id": "h:closed",
+    "text": "The [manifold](c:manifold) $M$ is compact, without boundary, of dimension $n$.",
+    "concept": "c:manifold"
+   },
+   {
+    "id": "h:oriented",
+    "text": "The manifold $M$ is $R$-oriented, so it has a [fundamental class](c:fundamental-class) $[M]$.",
+    "concept": "c:fundamental-class"
+   }
+  ],
+  "conclusion": "For every $k$, $[M] \\frown -\\colon H^k(M;R) \\to H_{n-k}(M;R)$ is an isomorphism.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "mayer-vietoris-induction",
+    "name": "Compact supports and Mayer-Vietoris induction",
+    "slogan": "Prove a compactly supported duality for every oriented manifold by building it from convex pieces of $\\mathbb{R}^n$ with Mayer-Vietoris sequences and direct limits.",
+    "scope": "An outline of Hatcher's proof; the sign-commutativity of the cap-product ladder with the Mayer-Vietoris sequences rests on the cited work. Noncompact manifolds enter only as an intermediate step.",
+    "mechanisms": [
+     "m:mayer-vietoris",
+     "m:local-to-global",
+     "m:exact-sequence",
+     "m:cited-deep-result"
+    ],
+    "roles": [
+     {
+      "h": "h:closed",
+      "why": "Compactness makes $M$ itself the largest compact subset, so compactly supported cohomology is ordinary cohomology.",
+      "steps": [
+       "s:closed"
+      ]
+     },
+     {
+      "h": "h:oriented",
+      "why": "The $R$-orientation supplies the classes $\\mu_K$ and the fundamental class $[M]$.",
+      "steps": [
+       "s:define",
+       "s:closed"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:define",
+      "slogan": "Define the duality map $D_M$ on [compactly supported](c:compact-support) cohomology of an oriented manifold.",
+      "detail": "For compact $K \\subseteq M$ the orientation gives $\\mu_K \\in H_n(M, M - K)$, and cap product with $\\mu_K$ maps $H^k(M, M - K)$ to $H_{n-k}(M)$. These maps agree under inclusions $K \\subseteq L$, so they define $D_M\\colon H^k_c(M) = \\varinjlim_K H^k(M, M - K) \\to H_{n-k}(M)$.",
+      "uses": []
+     },
+     {
+      "id": "s:euclidean",
+      "slogan": "Check that $D_M$ is an isomorphism for $M = \\mathbb{R}^n$.",
+      "detail": "With $K$ running over balls $B$, $H^k(\\mathbb{R}^n, \\mathbb{R}^n - B)$ is $R$ for $k = n$ and $0$ otherwise. Cap product with $\\mu_B$ sends a generator of $H^n$ to a generator of $H_0(\\mathbb{R}^n) = R$, so $D$ is an isomorphism in every degree.",
+      "uses": []
+     },
+     {
+      "id": "s:union",
+      "slogan": "Pass from open sets $U$, $V$ and $U \\cap V$ to $U \\cup V$ with the five lemma.",
+      "detail": "The [Mayer-Vietoris sequences](c:mayer-vietoris-sequence) for $H^*_c$ and for $H_*$ form a ladder with rungs $D$, and Hatcher's lemma 3.36 shows that its squares commute up to sign. If $D_U$, $D_V$ and $D_{U \\cap V}$ are isomorphisms, the five lemma makes $D_{U \\cup V}$ one.",
+      "uses": [
+       "nl:3517"
+      ]
+     },
+     {
+      "id": "s:limit",
+      "slogan": "Pass to an increasing union of open sets by direct limits.",
+      "detail": "If $M = \\bigcup_i U_i$ with open $U_1 \\subseteq U_2 \\subseteq \\cdots$, then $H^k_c(M) = \\varinjlim H^k_c(U_i)$ and $H_{n-k}(M) = \\varinjlim H_{n-k}(U_i)$, compatibly with $D$. A direct limit of isomorphisms is an isomorphism.",
+      "uses": []
+     },
+     {
+      "id": "s:build",
+      "slogan": "Build every open subset of $\\mathbb{R}^n$, and then the manifold, from convex charts.",
+      "detail": "Convex open sets are homeomorphic to $\\mathbb{R}^n$, and finite unions of them follow by induction with step 3, since intersections of convex sets are convex. Every open set of $\\mathbb{R}^n$ is an increasing union of such finite unions, so step 4 applies; the same two steps applied to chart domains give every $R$-oriented manifold.",
+      "uses": []
+     },
+     {
+      "id": "s:closed",
+      "slogan": "Specialize to the closed manifold, where $D_M$ is the cap product with $[M]$.",
+      "detail": "If $M$ is compact, then $K = M$ is the largest compact set, so $H^k_c(M) = H^k(M)$ and $\\mu_M$ is the [fundamental class](c:fundamental-class) $[M]$. Hence $D_M(\\varphi) = [M] \\frown \\varphi$ is an isomorphism $H^k(M;R) \\to H_{n-k}(M;R)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:define",
+      "s:euclidean"
+     ],
+     [
+      "s:define",
+      "s:union"
+     ],
+     [
+      "s:define",
+      "s:limit"
+     ],
+     [
+      "s:euclidean",
+      "s:build"
+     ],
+     [
+      "s:union",
+      "s:build"
+     ],
+     [
+      "s:limit",
+      "s:build"
+     ],
+     [
+      "s:build",
+      "s:closed"
+     ]
+    ],
+    "conclusion": "s:closed",
+    "concepts": {
+     "c:closed-oriented-manifold": "Closed and oriented are exactly what make the cap-product map defined and bijective.",
+     "c:manifold": "Local Euclidean charts let the proof start from convex sets.",
+     "c:fundamental-class": "The fundamental class is the class one caps with.",
+     "c:cap-product": "The duality isomorphism is cap product with orientation classes.",
+     "c:cohomology": "Cohomology, with compact supports, is the source of the duality map.",
+     "c:homology": "Homology in complementary degree is the target of the duality map.",
+     "c:compact-support": "Compact supports make the statement local enough to glue.",
+     "c:mayer-vietoris-sequence": "Mayer-Vietoris sequences glue the isomorphism over unions."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "A. Hatcher, Algebraic Topology, Cambridge University Press, 2002, section 3.3, theorems 3.30 and 3.35",
+     "url": "https://pi.math.cornell.edu/~hatcher/AT/ATpage.html",
+     "note": "Hatcher proves the compactly supported duality (theorem 3.35) by this induction, with lemma 3.36 for the Mayer-Vietoris ladder, and deduces theorem 3.30."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:4223",
+  "statement": "Let $\\omega$ be a smooth [differential form](c:differential-form) of degree $k \\ge 1$ on a [smooth manifold](c:smooth-manifold) $M$ that is [closed](c:closed-differential-form), $d\\omega = 0$. Then every point has an open neighborhood $U$ and a $(k-1)$-form $\\eta$ on $U$ with $\\omega|_U = d\\eta$. On a [star-shaped](c:star-domain) open subset of $\\mathbb{R}^n$ one can take $U$ to be the whole set.",
+  "hypotheses": [
+   {
+    "id": "h:manifold",
+    "text": "The space $M$ is a [smooth manifold](c:smooth-manifold), or a star-shaped open subset of $\\mathbb{R}^n$.",
+    "concept": "c:smooth-manifold"
+   },
+   {
+    "id": "h:degree",
+    "text": "The degree of $\\omega$ is $k \\ge 1$.",
+    "concept": null
+   },
+   {
+    "id": "h:closed",
+    "text": "The form is [closed](c:closed-differential-form): its [exterior derivative](c:exterior-derivative) $d\\omega$ is $0$.",
+    "concept": "c:closed-differential-form"
+   }
+  ],
+  "conclusion": "Locally, and on a whole star-shaped set, $\\omega = d\\eta$ for a $(k-1)$-form $\\eta$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "homotopy-operator",
+    "name": "Radial homotopy operator",
+    "slogan": "On a star-shaped chart build an operator $K$ with $dK + Kd = \\mathrm{id}$ on $k$-forms, so a closed form is $d$ of $K\\omega$.",
+    "scope": "Steps 2 to 4 prove the star-shaped case and step 5 transfers it to manifolds. For $k = 0$ the claim fails: a closed $0$-form is only locally constant.",
+    "mechanisms": [
+     "m:construction-explicit",
+     "m:fundamental-theorem-calculus"
+    ],
+    "roles": [
+     {
+      "h": "h:manifold",
+      "why": "Charts give each point a neighborhood diffeomorphic to a ball, which is star-shaped.",
+      "steps": [
+       "s:chart",
+       "s:transfer"
+      ]
+     },
+     {
+      "h": "h:degree",
+      "why": "For $k \\ge 1$ the term $t^k$ vanishes at $t = 0$, so the homotopy formula has no constant term.",
+      "steps": [
+       "s:formula"
+      ]
+     },
+     {
+      "h": "h:closed",
+      "why": "Closedness removes the term $Kd\\omega$ from the homotopy formula.",
+      "steps": [
+       "s:exact"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:chart",
+      "slogan": "Map a neighborhood of the point onto a ball $B$ centered at $0$.",
+      "detail": "A chart around the point, shrunk and translated, maps an open neighborhood $U$ diffeomorphically onto an open ball $B \\subseteq \\mathbb{R}^n$ centered at $0$. A ball is [star-shaped](c:star-domain) about $0$, and pullback by a diffeomorphism commutes with $d$.",
+      "uses": []
+     },
+     {
+      "id": "s:operator",
+      "slogan": "Define the [homotopy operator](c:homotopy-operator) $K$ by integrating along rays from $0$.",
+      "detail": "For a $k$-form $\\omega$ on $B$ set $(K\\omega)_x = \\int_0^1 t^{k-1}\\,\\iota_x\\,\\omega_{tx}\\,dt$, where $\\iota_x$ inserts the position vector $x$. The point $tx$ lies in $B$ for $t \\in [0,1]$ because $B$ is star-shaped, and $K\\omega$ is smooth by differentiation under the integral.",
+      "uses": []
+     },
+     {
+      "id": "s:formula",
+      "slogan": "Compute $dK\\omega + Kd\\omega = \\omega$ for every $k$-form with $k \\ge 1$.",
+      "detail": "For $\\omega = f\\,dx_I$, differentiation under the integral gives $dK\\omega + Kd\\omega = \\Big(\\int_0^1 \\frac{d}{dt}\\big(t^k f(tx)\\big)\\,dt\\Big)\\,dx_I$. Since $k \\ge 1$, the integrand is the derivative of a function that is $0$ at $t = 0$, so the integral is $f(x)$.",
+      "uses": []
+     },
+     {
+      "id": "s:exact",
+      "slogan": "Set $\\eta = K\\omega$ and use $d\\omega = 0$ to get $d\\eta = \\omega$ on $B$.",
+      "detail": "The [exterior derivative](c:exterior-derivative) of $\\omega$ is $0$, so the formula of step 3 reduces to $dK\\omega = \\omega$. This proves the claim for star-shaped open sets.",
+      "uses": []
+     },
+     {
+      "id": "s:transfer",
+      "slogan": "Pull the primitive back to the neighborhood $U$ through the chart.",
+      "detail": "Let $\\phi\\colon U \\to B$ be the chart and apply step 4 to the closed form $(\\phi^{-1})^*\\omega$ on $B$. Since pullback commutes with $d$, the form $\\phi^*\\eta$ satisfies $d(\\phi^*\\eta) = \\omega|_U$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:chart",
+      "s:operator"
+     ],
+     [
+      "s:operator",
+      "s:formula"
+     ],
+     [
+      "s:formula",
+      "s:exact"
+     ],
+     [
+      "s:exact",
+      "s:transfer"
+     ],
+     [
+      "s:chart",
+      "s:transfer"
+     ]
+    ],
+    "conclusion": "s:transfer",
+    "concepts": {
+     "c:differential-form": "The lemma produces a primitive form of one lower degree.",
+     "c:smooth-manifold": "Charts reduce the manifold case to a ball in $\\mathbb{R}^n$.",
+     "c:closed-differential-form": "Closedness is the hypothesis that makes the form exact.",
+     "c:exterior-derivative": "The operator $K$ is a one-sided inverse of $d$ on closed forms.",
+     "c:star-domain": "Rays from the center stay in the set, so $K$ is defined.",
+     "c:homotopy-operator": "The operator $K$ witnesses that $d$ has no cohomology locally."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard homotopy-operator proof, as in M. Spivak, Calculus on Manifolds, theorem 4-11."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q7208500",
+  "statement": "Let $p_n \\in [0,1]$ with $np_n \\to \\lambda$, and let $X_n$ have the [binomial distribution](c:binomial-distribution) $B(n, p_n)$. Then for every fixed integer $k \\ge 0$, $P(X_n = k) = \\binom{n}{k}p_n^k(1-p_n)^{n-k}$ has the [limit](c:limit-of-a-sequence) $e^{-\\lambda}\\lambda^k/k!$, the probability of $k$ under the [Poisson distribution](c:poisson-distribution) with mean $\\lambda$.",
+  "hypotheses": [
+   {
+    "id": "h:rate",
+    "text": "The products $np_n$ converge to a real number $\\lambda$.",
+    "concept": "c:limit-of-a-sequence"
+   },
+   {
+    "id": "h:unit",
+    "text": "Each $p_n$ lies in $[0,1]$, so $B(n, p_n)$ is a probability distribution.",
+    "concept": null
+   }
+  ],
+  "conclusion": "For each $k$, $\\binom{n}{k}p_n^k(1-p_n)^{n-k} \\to e^{-\\lambda}\\lambda^k/k!$ as $n \\to \\infty$.",
+  "formal": {
+   "decl": "ProbabilityTheory.tendsto_choose_mul_pow_of_tendsto_mul_atTop",
+   "difference": "The declaration states the limit of the formula $\\binom{n}{k}p_n^k(1-p_n)^{n-k}$ for any real sequence with $np_n \\to r$, without $p_n \\in [0,1]$ and without random variables."
+  },
+  "proofs": [
+   {
+    "id": "factor-limits",
+    "name": "Limits of three factors",
+    "slogan": "Split the binomial probability into $\\binom nk p_n^k$, $(1-p_n)^n$ and $(1-p_n)^{-k}$, and take the limit of each factor.",
+    "scope": "Every fixed $k \\ge 0$ and every real limit $\\lambda$; the factorization is used only for $n \\ge k$ and $p_n < 1/2$, which hold for large $n$.",
+    "mechanisms": [
+     "m:epsilon-delta",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:rate",
+      "why": "The limit $np_n \\to \\lambda$ drives every factor: it gives $p_n \\to 0$, the power $\\lambda^k$ and the exponential $e^{-\\lambda}$.",
+      "steps": [
+       "s:p-zero",
+       "s:choose",
+       "s:exp"
+      ]
+     },
+     {
+      "h": "h:unit",
+      "why": "The limit of the formula does not use $0 \\le p_n \\le 1$; the hypothesis only makes the terms probabilities.",
+      "unused": true
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:p-zero",
+      "slogan": "Show that $p_n \\to 0$ from $p_n = (np_n)/n$.",
+      "detail": "The numerator $np_n$ converges to $\\lambda$ and the denominator $n$ tends to infinity, so $p_n \\to 0$. In particular $p_n < 1/2$ for all large $n$.",
+      "uses": []
+     },
+     {
+      "id": "s:split",
+      "slogan": "Factor $(1-p_n)^{n-k}$ as $(1-p_n)^n$ divided by $(1-p_n)^k$.",
+      "detail": "For $n \\ge k$ and $p_n < 1/2$ the number $1 - p_n$ is nonzero, so $\\binom nk p_n^k(1-p_n)^{n-k} = \\binom nk p_n^k \\cdot (1-p_n)^n \\cdot (1-p_n)^{-k}$. By step 1 this holds for all large $n$.",
+      "uses": []
+     },
+     {
+      "id": "s:choose",
+      "slogan": "Show that $\\binom nk p_n^k$ tends to $\\lambda^k/k!$.",
+      "detail": "Write $\\binom nk p_n^k = \\frac{n(n-1)\\cdots(n-k+1)}{n^k}\\cdot\\frac{(np_n)^k}{k!}$ with the [binomial coefficient](c:binomial-coefficient) expanded. The first factor is $\\prod_{j<k}(1 - j/n) \\to 1$, and $(np_n)^k \\to \\lambda^k$.",
+      "uses": []
+     },
+     {
+      "id": "s:exp",
+      "slogan": "Show that $(1 - p_n)^n$ tends to $e^{-\\lambda}$.",
+      "detail": "Write $(1-p_n)^n = (1 + x_n/n)^n$ with $x_n = -np_n \\to -\\lambda$. The limit $(1 + x_n/n)^n \\to e^{-\\lambda}$ for convergent $x_n$ is the standard limit of the [exponential function](c:exponential-function).",
+      "uses": []
+     },
+     {
+      "id": "s:inverse",
+      "slogan": "Show that $(1-p_n)^{-k}$ tends to $1$.",
+      "detail": "By step 1, $1 - p_n \\to 1$, so $(1-p_n)^k \\to 1$, and its reciprocal also tends to $1$ because the limit is nonzero.",
+      "uses": []
+     },
+     {
+      "id": "s:product",
+      "slogan": "Multiply the three limits to get $e^{-\\lambda}\\lambda^k/k!$.",
+      "detail": "By step 2 the binomial probability equals the product of the three factors for large $n$. The limit of a product is the product of the limits, so it tends to $\\frac{\\lambda^k}{k!}\\cdot e^{-\\lambda}\\cdot 1$, the [Poisson distribution](c:poisson-distribution) probability.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:p-zero",
+      "s:split"
+     ],
+     [
+      "s:p-zero",
+      "s:inverse"
+     ],
+     [
+      "s:split",
+      "s:product"
+     ],
+     [
+      "s:choose",
+      "s:product"
+     ],
+     [
+      "s:exp",
+      "s:product"
+     ],
+     [
+      "s:inverse",
+      "s:product"
+     ]
+    ],
+    "conclusion": "s:product",
+    "concepts": {
+     "c:binomial-distribution": "The theorem approximates binomial probabilities.",
+     "c:poisson-distribution": "The limit values are the Poisson probabilities.",
+     "c:limit-of-a-sequence": "Each factor is handled by an ordinary limit of a sequence.",
+     "c:binomial-coefficient": "Its expansion shows that $\\binom nk \\approx n^k/k!$.",
+     "c:exponential-function": "The factor $(1 - p_n)^n$ converges to an exponential."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "ProbabilityTheory.tendsto_choose_mul_pow_of_tendsto_mul_atTop",
+     "follows": true,
+     "note": "mathlib combines tendsto_choose_mul_pow_atTop, tendsto_zero_of_tendsto_mul_atTop and Real.tendsto_one_add_pow_exp_of_tendsto."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:principle-of-inclusion-exclusion",
+  "statement": "For [finite sets](c:finite-set) $A_1, \\dots, A_n$, the size of their [union](c:union) is $|A_1 \\cup \\dots \\cup A_n| = \\sum_{\\emptyset \\ne T \\subseteq \\{1, \\dots, n\\}} (-1)^{|T|+1}\\,\\big|\\bigcap_{i \\in T} A_i\\big|$, a sum over the nonempty members of the [power set](c:power-set) of $\\{1, \\dots, n\\}$.",
+  "hypotheses": [
+   {
+    "id": "h:finite",
+    "text": "Each set $A_i$ is a [finite set](c:finite-set).",
+    "concept": "c:finite-set"
+   }
+  ],
+  "conclusion": "The size of the union is the alternating sum of the sizes of the intersections.",
+  "formal": {
+   "decl": "Finset.inclusion_exclusion_sum_biUnion",
+   "difference": "The declaration sums any function $f$ with values in an abelian group over the union; the size formula is the case $f = 1$, stated as Finset.inclusion_exclusion_card_biUnion."
+  },
+  "proofs": [
+   {
+    "id": "indicator-product",
+    "name": "Product of indicator differences",
+    "slogan": "Count each element separately: the product $\\prod_i (1 - 1_{A_i}(a))$ is $0$ on the union, and its expansion is the alternating sum.",
+    "scope": "All $n \\ge 0$; for $n = 0$ both sides are $0$.",
+    "mechanisms": [
+     "m:inclusion-exclusion",
+     "m:fubini-swap",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:finite",
+      "why": "Finiteness makes all sizes finite numbers, so the sums can be exchanged.",
+      "steps": [
+       "s:pointwise"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:pointwise",
+      "slogan": "Write both sides as sums over the elements $a$ of the [union](c:union) $A$.",
+      "detail": "For nonempty $T$ the intersection $\\bigcap_{i \\in T}A_i$ lies in $A$, so its size is $\\sum_{a \\in A}\\prod_{i \\in T}1_{A_i}(a)$. Exchanging the finite sums makes the right side $\\sum_{a \\in A}\\sum_{T \\ne \\emptyset}(-1)^{|T|+1}\\prod_{i \\in T}1_{A_i}(a)$.",
+      "uses": []
+     },
+     {
+      "id": "s:expand",
+      "slogan": "Expand the product $\\prod_{i=1}^n (1 - 1_{A_i}(a))$ over all subsets $T$.",
+      "detail": "Multiplying out gives $\\prod_{i=1}^n(1 - 1_{A_i}(a)) = \\sum_{T \\subseteq \\{1,\\dots,n\\}}(-1)^{|T|}\\prod_{i \\in T}1_{A_i}(a)$, a sum over the [power set](c:power-set). The term for $T = \\emptyset$ is $1$.",
+      "uses": []
+     },
+     {
+      "id": "s:vanish",
+      "slogan": "Show that the product vanishes for every element of the union.",
+      "detail": "If $a \\in A$, then $a \\in A_i$ for some $i$, and the factor $1 - 1_{A_i}(a)$ is $0$. So the whole product is $0$.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Read off that each element of the union contributes exactly $1$.",
+      "detail": "By steps 2 and 3, $\\sum_{T \\ne \\emptyset}(-1)^{|T|+1}\\prod_{i \\in T}1_{A_i}(a) = 1$ for each $a \\in A$. By step 1 the right side is $\\sum_{a \\in A} 1 = |A|$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:pointwise",
+      "s:conclude"
+     ],
+     [
+      "s:expand",
+      "s:conclude"
+     ],
+     [
+      "s:vanish",
+      "s:conclude"
+     ],
+     [
+      "s:expand",
+      "s:vanish"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:finite-set": "Sizes of finite sets are sums of indicator values.",
+     "c:union": "Every counted element lies in the union, where the product vanishes.",
+     "c:power-set": "The alternating sum runs over subsets of the index set."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Finset.inclusion_exclusion_sum_biUnion",
+     "follows": true,
+     "note": "mathlib rewrites the difference of the two sides as a sum of prod (1 - indicator) over the union and closes with prod_indicator_biUnion_finset_sub_indicator."
+    }
+   },
+   {
+    "id": "induction-on-n",
+    "name": "Induction on the number of sets",
+    "slogan": "Peel off the last set with the two-set formula, and apply the induction hypothesis twice.",
+    "scope": "Induction on $n$; the case $n = 1$ is trivial and $n = 2$ is step 1.",
+    "mechanisms": [
+     "m:induction",
+     "m:inclusion-exclusion"
+    ],
+    "roles": [
+     {
+      "h": "h:finite",
+      "why": "Finiteness makes the sizes subtractable in the two-set formula.",
+      "steps": [
+       "s:two-sets"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:two-sets",
+      "slogan": "Prove $|A \\cup B| = |A| + |B| - |A \\cap B|$ for two finite sets.",
+      "detail": "The [union](c:union) $A \\cup B$ is the disjoint union of $A$ and $B \\setminus A$, and $B$ is the disjoint union of $B \\setminus A$ and $A \\cap B$. Adding sizes gives the formula.",
+      "uses": []
+     },
+     {
+      "id": "s:peel",
+      "slogan": "Apply the two-set formula to $A_1 \\cup \\dots \\cup A_{n-1}$ and $A_n$.",
+      "detail": "Distributivity gives $(A_1 \\cup \\dots \\cup A_{n-1}) \\cap A_n = \\bigcup_{i<n}(A_i \\cap A_n)$. So $|A_1 \\cup \\dots \\cup A_n| = |A_1 \\cup \\dots \\cup A_{n-1}| + |A_n| - \\big|\\bigcup_{i<n}(A_i \\cap A_n)\\big|$.",
+      "uses": []
+     },
+     {
+      "id": "s:hypothesis",
+      "slogan": "Expand both unions of $n-1$ sets by the induction hypothesis.",
+      "detail": "The hypothesis for $A_1, \\dots, A_{n-1}$ gives a sum over nonempty $T \\subseteq \\{1, \\dots, n-1\\}$. For the sets $A_i \\cap A_n$ it gives terms $(-1)^{|T|+1}|\\bigcap_{i \\in T \\cup \\{n\\}}A_i|$, which enter with a minus sign.",
+      "uses": []
+     },
+     {
+      "id": "s:regroup",
+      "slogan": "Regroup the terms as one sum over nonempty subsets of $\\{1, \\dots, n\\}$.",
+      "detail": "Subsets without $n$ come from the first sum. The term $|A_n|$ is $T = \\{n\\}$, and the second sum gives every $T \\cup \\{n\\}$ with sign $(-1)^{|T \\cup \\{n\\}|+1}$, so each nonempty subset appears once with the right sign.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:two-sets",
+      "s:peel"
+     ],
+     [
+      "s:peel",
+      "s:hypothesis"
+     ],
+     [
+      "s:hypothesis",
+      "s:regroup"
+     ]
+    ],
+    "conclusion": "s:regroup",
+    "concepts": {
+     "c:finite-set": "Finite sizes can be added and subtracted.",
+     "c:union": "The union of $n$ sets is split as a union of two sets.",
+     "c:power-set": "The regrouped sum runs over the nonempty subsets of the index set."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The classical induction on the number of sets, as in R. A. Brualdi, Introductory Combinatorics, chapter 6."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:26878",
+  "statement": "Every real $m \\times n$ matrix $A$ factors as $A = QR$ with $Q$ an [orthogonal matrix](c:orthogonal-matrix) of size $m \\times m$ and $R$ an [upper triangular](c:upper-triangular-matrix) $m \\times n$ matrix, that is $r_{ij} = 0$ for $i > j$.",
+  "hypotheses": [
+   {
+    "id": "h:real",
+    "text": "The matrix $A$ is an $m \\times n$ matrix with real entries.",
+    "concept": null
+   }
+  ],
+  "conclusion": "There are an orthogonal $Q$ and an upper triangular $R$ with $A = QR$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "gram-schmidt",
+    "name": "Gram-Schmidt on the columns",
+    "slogan": "Orthonormalize the columns of $A$ in order, complete the result to an orthonormal basis, and read off $R = Q^{\\mathsf T}A$.",
+    "scope": "All $m, n$ and every rank: a column that depends on the earlier ones adds no new vector. For $m = 0$ or $n = 0$ the claim is empty.",
+    "mechanisms": [
+     "m:orthogonal-projection",
+     "m:construction-explicit",
+     "m:matrix-factorization"
+    ],
+    "roles": [
+     {
+      "h": "h:real",
+      "why": "Real entries give the dot product, so orthogonal projections and orthonormal vectors exist.",
+      "steps": [
+       "s:columns",
+       "s:extend"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:columns",
+      "slogan": "Run the Gram-Schmidt process on the columns $a_1, \\dots, a_n$ in order.",
+      "detail": "Keep an orthonormal list $q_1, \\dots, q_r$. If $a_j$ is not in its span, add $q_{r+1} = (a_j - \\sum_{i \\le r}\\langle a_j, q_i\\rangle q_i)/\\|\\cdot\\|$; otherwise add nothing. After column $j$ the list has $r(j) \\le j$ vectors.",
+      "uses": [
+       "nm:gram-schmidt-orthogonalisation"
+      ]
+     },
+     {
+      "id": "s:span",
+      "slogan": "Show that each column $a_j$ lies in the span of $q_1, \\dots, q_{r(j)}$.",
+      "detail": "Either $a_j$ was already in the span of the earlier vectors, or $a_j$ equals its projection plus a multiple of the new vector $q_{r(j)}$. In both cases $a_j = \\sum_{i \\le r(j)}\\langle q_i, a_j\\rangle q_i$.",
+      "uses": []
+     },
+     {
+      "id": "s:extend",
+      "slogan": "Complete $q_1, \\dots, q_r$ to an orthonormal basis of $\\mathbb{R}^m$.",
+      "detail": "Gram-Schmidt applied to the list followed by the standard basis gives an [orthonormal basis](c:orthonormal-basis) $q_1, \\dots, q_m$. The matrix $Q$ with these columns satisfies $Q^{\\mathsf T}Q = I$, so it is orthogonal.",
+      "uses": []
+     },
+     {
+      "id": "s:triangular",
+      "slogan": "Set $R = Q^{\\mathsf T}A$ and check that it is upper triangular.",
+      "detail": "The entry $r_{ij} = \\langle q_i, a_j\\rangle$ is $0$ for $i > r(j)$ by step 2, and $r(j) \\le j$, so $r_{ij} = 0$ for $i > j$. Since $QQ^{\\mathsf T} = I$, $A = QR$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:columns",
+      "s:span"
+     ],
+     [
+      "s:columns",
+      "s:extend"
+     ],
+     [
+      "s:span",
+      "s:triangular"
+     ],
+     [
+      "s:extend",
+      "s:triangular"
+     ]
+    ],
+    "conclusion": "s:triangular",
+    "concepts": {
+     "c:orthogonal-matrix": "The orthonormal columns form the orthogonal factor $Q$.",
+     "c:upper-triangular-matrix": "Column $j$ uses only the first $j$ basis vectors.",
+     "c:orthonormal-basis": "The completed orthonormal list gives a square $Q$."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The Gram-Schmidt construction, as in G. H. Golub and C. F. Van Loan, Matrix Computations, section 5.2."
+    }
+   },
+   {
+    "id": "householder",
+    "name": "Householder reflections",
+    "slogan": "Clear the first column below the diagonal with one reflection, and repeat on the lower right block.",
+    "scope": "Induction on $\\min(m, n)$; when it is $0$ the matrix $A$ is already upper triangular with $Q = I$.",
+    "mechanisms": [
+     "m:induction",
+     "m:matrix-factorization",
+     "m:construction-explicit"
+    ],
+    "roles": [
+     {
+      "h": "h:real",
+      "why": "Real entries make $I - 2uu^{\\mathsf T}/(u^{\\mathsf T}u)$ an orthogonal [reflection](c:reflection-at-a-hyperplane).",
+      "steps": [
+       "s:reflect"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:reflect",
+      "slogan": "Find an orthogonal $H$ with $Hx = \\|x\\|e_1$ for a given vector $x$.",
+      "detail": "If $x = \\|x\\|e_1$ take $H = I$. Otherwise put $u = x - \\|x\\|e_1$; the [reflection](c:reflection-at-a-hyperplane) $H = I - 2uu^{\\mathsf T}/(u^{\\mathsf T}u)$ is symmetric, orthogonal, and swaps $x$ and $\\|x\\|e_1$ because they have equal length.",
+      "uses": []
+     },
+     {
+      "id": "s:first-column",
+      "slogan": "Apply the reflection for the first column to the whole matrix.",
+      "detail": "With $x = a_1$, the matrix $H_1A$ has first column $\\|a_1\\|e_1$. So $H_1A = \\begin{pmatrix}\\|a_1\\| & * \\\\ 0 & B\\end{pmatrix}$ with $B$ of size $(m-1) \\times (n-1)$.",
+      "uses": []
+     },
+     {
+      "id": "s:recurse",
+      "slogan": "Factor the lower right block $B$ by the induction hypothesis.",
+      "detail": "The induction hypothesis gives $B = Q'R'$ with $Q'$ orthogonal and $R'$ upper triangular. The block matrix $\\mathrm{diag}(1, Q')$ is orthogonal.",
+      "uses": []
+     },
+     {
+      "id": "s:assemble",
+      "slogan": "Assemble $Q = H_1\\,\\mathrm{diag}(1, Q')$ and check $A = QR$.",
+      "detail": "The matrix $R = \\mathrm{diag}(1, Q'^{\\mathsf T})H_1A$ has first column $\\|a_1\\|e_1$ and lower right block $R'$, so it is [upper triangular](c:upper-triangular-matrix). A product of orthogonal matrices is an [orthogonal matrix](c:orthogonal-matrix), and $QR = A$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:reflect",
+      "s:first-column"
+     ],
+     [
+      "s:first-column",
+      "s:recurse"
+     ],
+     [
+      "s:recurse",
+      "s:assemble"
+     ],
+     [
+      "s:first-column",
+      "s:assemble"
+     ]
+    ],
+    "conclusion": "s:assemble",
+    "concepts": {
+     "c:orthogonal-matrix": "Reflections and their products are orthogonal.",
+     "c:upper-triangular-matrix": "Each reflection clears one column below the diagonal.",
+     "c:reflection-at-a-hyperplane": "A hyperplane reflection moves a column onto the first axis."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Householder triangularization, as in L. N. Trefethen and D. Bau, Numerical Linear Algebra, lecture 10."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1893717",
+  "statement": "Let $C$ be a set of [partial computable functions](c:partial-computable-function) $\\mathbb{N} \\rightharpoonup \\mathbb{N}$ that contains at least one of them but not all of them. Then the index set $\\{e : \\varphi_e \\in C\\}$, where $\\varphi_e$ is the function computed by program $e$, is not [decidable](c:decidability).",
+  "hypotheses": [
+   {
+    "id": "h:some",
+    "text": "Some partial computable function $f$ belongs to $C$.",
+    "concept": "c:partial-computable-function"
+   },
+   {
+    "id": "h:not-all",
+    "text": "Some partial computable function $g$ does not belong to $C$.",
+    "concept": "c:partial-computable-function"
+   }
+  ],
+  "conclusion": "No algorithm decides, from a program $e$, whether $\\varphi_e \\in C$.",
+  "formal": {
+   "decl": "ComputablePred.rice",
+   "difference": "The declaration proves the contrapositive: if membership of the computed function in $C$ is decidable and $C$ contains one partial recursive function, then $C$ contains every partial recursive function."
+  },
+  "proofs": [
+   {
+    "id": "recursion-theorem",
+    "name": "Kleene's recursion theorem",
+    "slogan": "A decider for $C$ would let a program compute $g$ when it lies in $C$ and $f$ when it does not, and a self-referential program breaks both cases.",
+    "scope": "The whole theorem, by contradiction.",
+    "mechanisms": [
+     "m:encoding",
+     "m:contradiction",
+     "m:case-analysis"
+    ],
+    "roles": [
+     {
+      "h": "h:some",
+      "why": "The function $f \\in C$ is the output when the program is judged outside $C$.",
+      "steps": [
+       "s:program",
+       "s:cases"
+      ]
+     },
+     {
+      "h": "h:not-all",
+      "why": "The function $g \\notin C$ is the output when the program is judged inside $C$.",
+      "steps": [
+       "s:program",
+       "s:cases"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:assume",
+      "slogan": "Assume a total computable function $\\chi$ decides the index set.",
+      "detail": "Suppose $\\chi(e) = 1$ when $\\varphi_e \\in C$ and $\\chi(e) = 0$ otherwise, with $\\chi$ total and computable. This is the [decidability](c:decidability) to be refuted.",
+      "uses": []
+     },
+     {
+      "id": "s:program",
+      "slogan": "Define $h(c, x) = g(x)$ if $\\chi(c) = 1$ and $h(c, x) = f(x)$ otherwise.",
+      "detail": "The function $h$ is partial computable: compute $\\chi(c)$, which always halts, then run the program for $g$ or for $f$ on $x$.",
+      "uses": []
+     },
+     {
+      "id": "s:fixed",
+      "slogan": "Get a program $c$ with $\\varphi_c(x) = h(c, x)$ from the recursion theorem.",
+      "detail": "Kleene's recursion theorem gives a [fixed point](c:fixed-point) for the computable transformation of programs: a program $c$ whose function is $x \\mapsto h(c, x)$.",
+      "uses": [
+       "wd:Q1933521"
+      ]
+     },
+     {
+      "id": "s:cases",
+      "slogan": "Check both values of $\\chi(c)$ and reach a contradiction in each case.",
+      "detail": "If $\\varphi_c \\in C$, then $\\chi(c) = 1$ and $\\varphi_c = g \\notin C$. If $\\varphi_c \\notin C$, then $\\varphi_c = f \\in C$. Both cases are impossible, so the index set is not decidable.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:assume",
+      "s:program"
+     ],
+     [
+      "s:program",
+      "s:fixed"
+     ],
+     [
+      "s:fixed",
+      "s:cases"
+     ]
+    ],
+    "conclusion": "s:cases",
+    "concepts": {
+     "c:partial-computable-function": "The property $C$ is a set of such functions, so it is semantic.",
+     "c:decidability": "The theorem denies decidability of the index set.",
+     "c:fixed-point": "The self-referential program is a fixed point of a program transformation."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "ComputablePred.rice",
+     "follows": true,
+     "note": "mathlib applies Nat.Partrec.Code.fixed_point₂ to the function that runs g or f according to the decider, then splits on whether eval c lies in C."
+    }
+   },
+   {
+    "id": "halting-reduction",
+    "name": "Reduction from the halting problem",
+    "slogan": "Turn each program into one that computes a fixed $f \\in C$ exactly when the program halts, so a decider for $C$ decides halting.",
+    "scope": "The whole theorem; the first step passes to the complement of $C$ when needed.",
+    "mechanisms": [
+     "m:reduction",
+     "m:contradiction"
+    ],
+    "roles": [
+     {
+      "h": "h:some",
+      "why": "A function in $C$ is the output of the built programs when the given program halts.",
+      "steps": [
+       "s:wlog"
+      ]
+     },
+     {
+      "h": "h:not-all",
+      "why": "A function outside $C$ lets the complement play the role of $C$ when the empty function lies in $C$.",
+      "steps": [
+       "s:wlog"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:wlog",
+      "slogan": "Arrange that the nowhere-defined function lies outside $C$ and some $f$ lies in $C$.",
+      "detail": "If the empty function $\\emptyset$ lies in $C$, replace $C$ by its complement among the [partial computable functions](c:partial-computable-function), which contains $g$. The index set of the complement is decidable exactly when that of $C$ is.",
+      "uses": []
+     },
+     {
+      "id": "s:build",
+      "slogan": "Build, for each program $e$, a program $P(e)$ that runs $e$ on $0$ and then computes $f$.",
+      "detail": "On input $y$, the program $P(e)$ first runs $\\varphi_e(0)$; if this halts, it outputs $f(y)$. By the s-m-n theorem, $e \\mapsto P(e)$ is a total computable function.",
+      "uses": []
+     },
+     {
+      "id": "s:compute",
+      "slogan": "Compute the function of $P(e)$ in both cases of halting.",
+      "detail": "If $\\varphi_e(0)$ halts, then $\\varphi_{P(e)} = f \\in C$. Otherwise $\\varphi_{P(e)} = \\emptyset \\notin C$. So $\\varphi_e(0)$ halts exactly when $P(e)$ lies in the index set.",
+      "uses": []
+     },
+     {
+      "id": "s:reduce",
+      "slogan": "Compose a decider for the index set with $P$ to decide halting.",
+      "detail": "A decider $\\chi$ for the index set would make $e \\mapsto \\chi(P(e))$ decide whether $\\varphi_e(0)$ halts. The [halting problem](c:halting-problem) forbids this, so the index set is not decidable.",
+      "uses": [
+       "nm:halting-problem"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:wlog",
+      "s:build"
+     ],
+     [
+      "s:build",
+      "s:compute"
+     ],
+     [
+      "s:wlog",
+      "s:compute"
+     ],
+     [
+      "s:compute",
+      "s:reduce"
+     ]
+    ],
+    "conclusion": "s:reduce",
+    "concepts": {
+     "c:partial-computable-function": "The built programs compute either $f$ or the empty function.",
+     "c:decidability": "A decider for $C$ would yield a decider for halting.",
+     "c:halting-problem": "Undecidability of halting on input $0$ is the source problem."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The classical many-one reduction from the halting problem, as in M. Sipser, Introduction to the Theory of Computation, chapter 5."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q7888360",
+  "statement": "Let $M$ be a [finitely generated module](c:finitely-generated-module) over a [principal ideal domain](c:principal-ideal-domain) $R$. Then $M \\cong R^n \\oplus R/(p_1^{e_1}) \\oplus \\dots \\oplus R/(p_s^{e_s})$ with $n \\ge 0$, [irreducible](c:irreducible) elements $p_i$ and $e_i \\ge 1$. The rank $n$ and the list of ideals $(p_i^{e_i})$, up to order, are determined by $M$.",
+  "hypotheses": [
+   {
+    "id": "h:pid",
+    "text": "The ring $R$ is a [principal ideal domain](c:principal-ideal-domain).",
+    "concept": "c:principal-ideal-domain"
+   },
+   {
+    "id": "h:fg",
+    "text": "The [module](c:module) $M$ is finitely generated over $R$.",
+    "concept": "c:finitely-generated-module"
+   }
+  ],
+  "conclusion": "$M$ is a free module of unique rank plus a direct sum of cyclic modules $R/(p^e)$ that is unique up to order.",
+  "formal": {
+   "decl": "Module.equiv_free_prod_directSum",
+   "difference": "The declaration proves existence only; it does not state that the rank and the prime powers are unique."
+  },
+  "proofs": [
+   {
+    "id": "torsion-split",
+    "name": "Torsion part, free quotient and invariants",
+    "slogan": "Decompose the torsion submodule into cyclic primary parts, split off the free quotient, and read the rank and the exponents from invariants of $M$.",
+    "scope": "Existence (steps 1 to 4, the mathlib route) and uniqueness (step 5). The zero module is the case $n = s = 0$.",
+    "mechanisms": [
+     "m:local-global",
+     "m:strong-induction",
+     "m:dimension-count"
+    ],
+    "roles": [
+     {
+      "h": "h:pid",
+      "why": "Principal ideals give unique factorization of annihilators, freeness of torsion-free modules, and the field $R/(p)$.",
+      "steps": [
+       "s:primary",
+       "s:cyclic",
+       "s:free",
+       "s:invariants"
+      ]
+     },
+     {
+      "h": "h:fg",
+      "why": "Finite generation makes the torsion part finitely generated with nonzero annihilator, and the free quotient of finite rank.",
+      "steps": [
+       "s:primary",
+       "s:cyclic",
+       "s:free"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:primary",
+      "slogan": "Split the [torsion module](c:torsion-module) $T \\subseteq M$ into its $p$-primary parts.",
+      "detail": "The torsion elements form a submodule $T$, finitely generated because $R$ is Noetherian, so some $a \\ne 0$ kills $T$. Factor $a = u\\prod_i p_i^{k_i}$; the Chinese remainder theorem gives $T = \\bigoplus_i T[p_i^{k_i}]$.",
+      "uses": [
+       "wd:Q193878",
+       "wd:Q670235"
+      ]
+     },
+     {
+      "id": "s:cyclic",
+      "slogan": "Write each finitely generated $p$-primary module as a sum of cyclic modules $R/(p^e)$.",
+      "detail": "Choose $x$ of maximal order $p^e$. By induction on the number of generators, $T[p^\\infty]/Rx$ is a sum of cyclic modules, and each generator lifts to an element of the same order because $p^e$ kills everything. So $Rx \\cong R/(p^e)$ splits off.",
+      "uses": []
+     },
+     {
+      "id": "s:free",
+      "slogan": "Show that the quotient $M/T$ is a [free module](c:free-module) of finite rank $n$.",
+      "detail": "The quotient $M/T$ is finitely generated and torsion-free. Over a principal ideal domain such a module embeds in a finitely generated free module, and submodules of free modules are free, so $M/T \\cong R^n$.",
+      "uses": []
+     },
+     {
+      "id": "s:split",
+      "slogan": "Split the quotient map $M \\to M/T$ because free modules are projective.",
+      "detail": "A free module is a [projective module](c:projective-module), so the identity of $M/T \\cong R^n$ lifts to a section $R^n \\to M$. The splitting lemma gives $M \\cong T \\oplus R^n$, and steps 1 and 2 decompose $T$.",
+      "uses": [
+       "nm:splitting-lemma"
+      ]
+     },
+     {
+      "id": "s:invariants",
+      "slogan": "Compute the rank and the number of summands $R/(p^e)$ with $e \\ge j$ as invariants.",
+      "detail": "For any such decomposition, $n = \\dim_K(K \\otimes_R M)$ with $K$ the [field of fractions](c:field-of-fractions), and the torsion part is $T$. For each irreducible $p$, $\\dim_{R/(p)}\\big(p^{j-1}T/p^jT\\big)$ counts the summands $R/(p^e)$ with $e \\ge j$, since other primes act invertibly.",
+      "uses": []
+     },
+     {
+      "id": "s:unique",
+      "slogan": "Combine existence with the invariants to get uniqueness of the decomposition.",
+      "detail": "Step 4 gives the decomposition. The numbers of step 5 depend only on $M$, and their differences in $j$ give the multiplicity of each $R/(p^e)$, so $n$ and the list $(p_i^{e_i})$ are unique up to order and units.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:primary",
+      "s:cyclic"
+     ],
+     [
+      "s:cyclic",
+      "s:split"
+     ],
+     [
+      "s:free",
+      "s:split"
+     ],
+     [
+      "s:split",
+      "s:unique"
+     ],
+     [
+      "s:invariants",
+      "s:unique"
+     ]
+    ],
+    "conclusion": "s:unique",
+    "concepts": {
+     "c:finitely-generated-module": "Finite generation keeps every piece finite and the rank finite.",
+     "c:principal-ideal-domain": "The PID property drives factorization, freeness and the residue fields.",
+     "c:irreducible": "Irreducible elements are the primes of the cyclic summands.",
+     "c:module": "The theorem classifies modules over the ring.",
+     "c:torsion-module": "The torsion submodule carries the cyclic part.",
+     "c:free-module": "The torsion-free quotient is free and gives $R^n$.",
+     "c:projective-module": "Projectivity of free modules splits the extension.",
+     "c:field-of-fractions": "The rank is a dimension over the field of fractions."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Module.equiv_free_prod_directSum",
+     "follows": true,
+     "note": "mathlib uses equiv_directSum_of_isTorsion (via Submodule.exists_isInternal_prime_power_torsion_of_pid and torsion_by_prime_power_decomposition), Module.basisOfFiniteTypeTorsionFree' and Module.projective_lifting_property; the uniqueness step goes beyond the declaration."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:9630",
+  "statement": "Let $R$ be a [real closed field](c:is-real-closed), such as $\\mathbb{R}$. If $S \\subseteq R^{n+1}$ is a [semialgebraic set](c:semialgebraic-set), then its image under the projection $(x_1, \\dots, x_{n+1}) \\mapsto (x_1, \\dots, x_n)$ is a semialgebraic subset of $R^n$.",
+  "hypotheses": [
+   {
+    "id": "h:real-closed",
+    "text": "The field $R$ is a [real closed field](c:is-real-closed).",
+    "concept": "c:is-real-closed"
+   },
+   {
+    "id": "h:semialgebraic",
+    "text": "The set $S$ is a finite boolean combination of sets $\\{P > 0\\}$ and $\\{P = 0\\}$ with [polynomials](c:polynomial) $P$ over $R$.",
+    "concept": "c:semialgebraic-set"
+   }
+  ],
+  "conclusion": "The projection of $S$ to $R^n$ is semialgebraic.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "sign-tables",
+    "name": "Sign tables with parameters",
+    "slogan": "Show that the sign table of a family of polynomials in the last variable depends only on the signs of finitely many polynomials in the parameters.",
+    "scope": "An outline of the proof in Bochnak, Coste and Roy, which follows Hörmander; the induction on degrees in step 3 rests on the cited work.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:strong-induction",
+     "m:case-analysis"
+    ],
+    "roles": [
+     {
+      "h": "h:real-closed",
+      "why": "Real closedness gives polynomials the intermediate value property, so signs change only at roots.",
+      "steps": [
+       "s:sign-table"
+      ]
+     },
+     {
+      "h": "h:semialgebraic",
+      "why": "The finite boolean description of $S$ supplies the finite family of polynomials.",
+      "steps": [
+       "s:reduce"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:reduce",
+      "slogan": "Reduce to one basic set given by sign conditions on polynomials $P_1, \\dots, P_s$.",
+      "detail": "A [semialgebraic set](c:semialgebraic-set) is a finite union of sets $\\{(x, y) : \\operatorname{sign}P_j(x, y) = \\epsilon_j \\text{ for all } j\\}$, and projection commutes with finite unions. So it suffices to describe the set of $x \\in R^n$ for which some $y \\in R$ meets the sign conditions.",
+      "uses": []
+     },
+     {
+      "id": "s:close",
+      "slogan": "Enlarge the family by derivatives in $y$ and by remainders of Euclidean division.",
+      "detail": "Split the parameter space into finitely many semialgebraic pieces by the vanishing of leading coefficients, so that degrees in $y$ are fixed on each piece. On each piece add the derivatives $\\partial_y P_j$ and the remainders of divisions; degrees drop, so the family stays finite with coefficients [polynomial](c:polynomial) in $x$.",
+      "uses": []
+     },
+     {
+      "id": "s:sign-table",
+      "slogan": "Prove by induction on degree that signs of polynomials in $x$ fix the sign table.",
+      "detail": "The sign table lists the signs of all members at their ordered real roots and on the intervals between. In a [real closed field](c:is-real-closed) the signs of $P$ there follow from the table of $P'$ and the lower-degree remainders, so by induction finitely many polynomials in $x$ fix the table.",
+      "uses": []
+     },
+     {
+      "id": "s:finite",
+      "slogan": "Describe the parameters with a given sign table as a semialgebraic set.",
+      "detail": "Each realizable sign table corresponds to a boolean combination of sign conditions on the polynomials in $x$ from step 3. There are finitely many tables, so these sets form a finite partition of $R^n$ into semialgebraic sets.",
+      "uses": []
+     },
+     {
+      "id": "s:project",
+      "slogan": "Take the union of the pieces whose sign table contains the required sign condition.",
+      "detail": "A point $x$ lies in the projection exactly when its sign table has a root or an interval where each $P_j$ has sign $\\epsilon_j$. So the projection is a finite union of pieces from step 4; applied once per quantifier this gives [quantifier elimination](c:elimination-of-quantifiers).",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:reduce",
+      "s:close"
+     ],
+     [
+      "s:close",
+      "s:sign-table"
+     ],
+     [
+      "s:sign-table",
+      "s:finite"
+     ],
+     [
+      "s:finite",
+      "s:project"
+     ],
+     [
+      "s:reduce",
+      "s:project"
+     ]
+    ],
+    "conclusion": "s:project",
+    "concepts": {
+     "c:is-real-closed": "Real closedness makes sign tables depend only on algebraic data.",
+     "c:semialgebraic-set": "Semialgebraic sets are the class shown closed under projection.",
+     "c:polynomial": "All conditions are signs of polynomials in the parameters.",
+     "c:elimination-of-quantifiers": "Projection of semialgebraic sets is the geometric form of quantifier elimination."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "J. Bochnak, M. Coste and M.-F. Roy, Real Algebraic Geometry, Ergebnisse der Mathematik und ihrer Grenzgebiete 36, Springer, 1998, chapters 1 and 2",
+     "url": "https://doi.org/10.1007/978-3-662-03718-8",
+     "note": "The book proves the Tarski-Seidenberg principle by Hörmander's parametrized sign tables and deduces the projection theorem for semialgebraic sets."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q620602",
+  "statement": "Let $N$ particles with masses $m_k$ move by Newton's law $m_k\\ddot{\\mathbf r}_k = \\mathbf F_k$, with bounded positions and velocities. If the [time averages](c:time-average) of the kinetic energy $T$ and of $\\sum_k \\mathbf F_k\\cdot\\mathbf r_k$ exist, then $2\\langle T\\rangle = -\\langle\\sum_k \\mathbf F_k\\cdot\\mathbf r_k\\rangle$. If $\\mathbf F_k = -\\nabla_k V$ with $V$ [homogeneous](c:homogeneous-function) of degree $n$, then $2\\langle T\\rangle = n\\langle V\\rangle$.",
+  "hypotheses": [
+   {
+    "id": "h:newton",
+    "text": "Each particle obeys $m_k\\ddot{\\mathbf r}_k = \\mathbf F_k$, and $T = \\frac12\\sum_k m_k|\\dot{\\mathbf r}_k|^2$.",
+    "concept": null
+   },
+   {
+    "id": "h:bounded",
+    "text": "The positions and velocities are [bounded functions](c:bounded-function) of $t \\ge 0$.",
+    "concept": "c:bounded-function"
+   },
+   {
+    "id": "h:averages",
+    "text": "The [time averages](c:time-average) $\\langle g\\rangle = \\lim_{\\tau \\to \\infty}\\frac1\\tau\\int_0^\\tau g\\,dt$ of $T$ and of $\\sum_k \\mathbf F_k\\cdot\\mathbf r_k$ exist.",
+    "concept": "c:time-average"
+   },
+   {
+    "id": "h:homogeneous",
+    "text": "For the second claim, $\\mathbf F_k = -\\nabla_k V$ with $V$ a differentiable [homogeneous function](c:homogeneous-function) of degree $n$.",
+    "concept": "c:homogeneous-function"
+   }
+  ],
+  "conclusion": "$2\\langle T\\rangle = -\\langle\\sum_k \\mathbf F_k\\cdot\\mathbf r_k\\rangle$, and $2\\langle T\\rangle = n\\langle V\\rangle$ for a homogeneous potential of degree $n$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "virial-derivative",
+    "name": "Derivative of the virial",
+    "slogan": "Differentiate the virial $G = \\sum_k m_k\\dot{\\mathbf r}_k\\cdot\\mathbf r_k$, average over time, and use boundedness to make the average of $\\dot G$ vanish.",
+    "scope": "Both claims; the second uses the homogeneity hypothesis. For gravity or Coulomb forces $n = -1$, so $2\\langle T\\rangle = -\\langle V\\rangle$.",
+    "mechanisms": [
+     "m:fundamental-theorem-calculus",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:newton",
+      "why": "Newton's law replaces $m_k\\ddot{\\mathbf r}_k$ by the force in $\\dot G$.",
+      "steps": [
+       "s:derivative"
+      ]
+     },
+     {
+      "h": "h:bounded",
+      "why": "Bounded positions and velocities make the virial $G$ bounded.",
+      "steps": [
+       "s:bounded"
+      ]
+     },
+     {
+      "h": "h:averages",
+      "why": "Existence of the averages lets the limit split into two averages.",
+      "steps": [
+       "s:limit"
+      ]
+     },
+     {
+      "h": "h:homogeneous",
+      "why": "Homogeneity turns the virial of the forces into $-nV$.",
+      "steps": [
+       "s:euler"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:derivative",
+      "slogan": "Differentiate the virial $G = \\sum_k m_k\\dot{\\mathbf r}_k\\cdot\\mathbf r_k$ along the motion.",
+      "detail": "The product rule gives $\\dot G = \\sum_k m_k|\\dot{\\mathbf r}_k|^2 + \\sum_k m_k\\ddot{\\mathbf r}_k\\cdot\\mathbf r_k$. Newton's law turns this into $\\dot G = 2T + \\sum_k \\mathbf F_k\\cdot\\mathbf r_k$.",
+      "uses": []
+     },
+     {
+      "id": "s:average",
+      "slogan": "Average the identity for $\\dot G$ over the interval $[0, \\tau]$.",
+      "detail": "The fundamental theorem of calculus gives $\\frac{G(\\tau) - G(0)}{\\tau} = \\frac1\\tau\\int_0^\\tau 2T\\,dt + \\frac1\\tau\\int_0^\\tau \\sum_k \\mathbf F_k\\cdot\\mathbf r_k\\,dt$ for every $\\tau > 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:bounded",
+      "slogan": "Bound the virial by the bounds on positions and velocities.",
+      "detail": "If $|\\mathbf r_k| \\le L$ and $|\\dot{\\mathbf r}_k| \\le W$ for all $t \\ge 0$, then $|G| \\le \\sum_k m_k LW$. So $|G(\\tau) - G(0)|/\\tau \\le 2\\sum_k m_k LW/\\tau$, which tends to $0$.",
+      "uses": []
+     },
+     {
+      "id": "s:limit",
+      "slogan": "Let $\\tau \\to \\infty$ in the averaged identity to get the first claim.",
+      "detail": "The left side of step 2 tends to $0$ by step 3. The right side tends to $2\\langle T\\rangle + \\langle\\sum_k \\mathbf F_k\\cdot\\mathbf r_k\\rangle$ because both [time averages](c:time-average) exist, so $2\\langle T\\rangle = -\\langle\\sum_k \\mathbf F_k\\cdot\\mathbf r_k\\rangle$.",
+      "uses": []
+     },
+     {
+      "id": "s:euler",
+      "slogan": "Rewrite the virial of the forces with Euler's theorem on homogeneous functions.",
+      "detail": "For a [homogeneous function](c:homogeneous-function) $V$ of degree $n$, Euler's theorem gives $\\sum_k \\mathbf r_k\\cdot\\nabla_k V = nV$, so $\\sum_k \\mathbf F_k\\cdot\\mathbf r_k = -nV$. Step 4 then gives $2\\langle T\\rangle = n\\langle V\\rangle$.",
+      "uses": [
+       "wd:Q25378679"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:derivative",
+      "s:average"
+     ],
+     [
+      "s:average",
+      "s:limit"
+     ],
+     [
+      "s:bounded",
+      "s:limit"
+     ],
+     [
+      "s:limit",
+      "s:euler"
+     ]
+    ],
+    "conclusion": "s:euler",
+    "concepts": {
+     "c:time-average": "The theorem is an identity between long-time averages.",
+     "c:homogeneous-function": "Homogeneity of the potential gives the ratio $n$ between averages.",
+     "c:bounded-function": "Boundedness of the motion kills the average of $\\dot G$."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The classical argument of Clausius, as in H. Goldstein, Classical Mechanics, section 3.4 (the virial theorem)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q850495",
+  "statement": "Let $A_1, \\dots, A_n$ be linear combinations of bosonic [creation and annihilation operators](c:creation-and-annihilation-operators) with the [canonical commutation relations](c:canonical-commutation-relation). Then $A_1\\cdots A_n$ is the sum over all sets of disjoint pairs $i < j$ of the product of the contractions $\\langle A_iA_j\\rangle = A_iA_j - {:}A_iA_j{:}$ and the [normal-ordered](c:normal-ordering) product of the unpaired $A_l$. So $\\langle 0|A_1\\cdots A_n|0\\rangle$ is a sum over [perfect matchings](c:perfect-matching).",
+  "hypotheses": [
+   {
+    "id": "h:ccr",
+    "text": "The operators $a_1, \\dots, a_m$ satisfy $[a_i, a_j^\\dagger] = \\delta_{ij}$ and $[a_i, a_j] = [a_i^\\dagger, a_j^\\dagger] = 0$.",
+    "concept": "c:canonical-commutation-relation"
+   },
+   {
+    "id": "h:linear",
+    "text": "Each $A_l$ is a linear combination of the [creation and annihilation operators](c:creation-and-annihilation-operators) $a_i^\\dagger$ and $a_i$.",
+    "concept": "c:creation-and-annihilation-operators"
+   },
+   {
+    "id": "h:vacuum",
+    "text": "For the last claim, $|0\\rangle$ is a unit vector with $a_i|0\\rangle = 0$ for every $i$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "Wick's expansion of $A_1\\cdots A_n$ holds, and $\\langle 0|A_1\\cdots A_n|0\\rangle$ is the sum over perfect matchings of products of contractions, so it is $0$ for odd $n$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "induction-on-length",
+    "name": "Induction on the number of operators",
+    "slogan": "Split each operator into creation and annihilation parts, move one new operator into normal order, and induct on the number of factors.",
+    "scope": "Bosonic operators and ordinary products; the fermionic and time-ordered forms follow the same induction with signs or time order. The case $n = 0$ is the empty product $1$.",
+    "mechanisms": [
+     "m:induction",
+     "m:bijection",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:ccr",
+      "why": "The relations make each commutator $[A_i^-, A_j^+]$ a scalar, so contractions are numbers.",
+      "steps": [
+       "s:split",
+       "s:lemma"
+      ]
+     },
+     {
+      "h": "h:linear",
+      "why": "Linearity lets each operator split into one creation part and one annihilation part.",
+      "steps": [
+       "s:split"
+      ]
+     },
+     {
+      "h": "h:vacuum",
+      "why": "Annihilation parts kill the vacuum, so normal-ordered terms have zero expectation.",
+      "steps": [
+       "s:vacuum"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:split",
+      "slogan": "Split each $A_l$ into a creation part $A_l^+$ and an annihilation part $A_l^-$.",
+      "detail": "[Normal ordering](c:normal-ordering) puts every creation part to the left of every annihilation part, extended multilinearly. Expanding $A_iA_j$ gives $A_iA_j - {:}A_iA_j{:} = [A_i^-, A_j^+]$, a scalar by the [canonical commutation relations](c:canonical-commutation-relation); this is the contraction $\\langle A_iA_j\\rangle$.",
+      "uses": []
+     },
+     {
+      "id": "s:lemma",
+      "slogan": "Move one more operator $B$ into a normal-ordered product ${:}A_1\\cdots A_k{:}$.",
+      "detail": "The part $B^-$ already stands in normal position on the right. The part $B^+$ moves left past each $A_l^-$ by $A_l^-B^+ = B^+A_l^- + \\langle A_lB\\rangle$, so ${:}A_1\\cdots A_k{:}\\,B = {:}A_1\\cdots A_kB{:} + \\sum_l \\langle A_lB\\rangle\\,{:}A_1\\cdots\\widehat{A_l}\\cdots A_k{:}$.",
+      "uses": []
+     },
+     {
+      "id": "s:induct",
+      "slogan": "Multiply the expansion for $n$ factors on the right by $A_{n+1}$.",
+      "detail": "Assume the expansion for $A_1\\cdots A_n$ and multiply each term by $A_{n+1}$. Step 2 splits each term into one term with $n+1$ unpaired and one term for each unpaired $l$ now paired with $n+1$.",
+      "uses": []
+     },
+     {
+      "id": "s:match",
+      "slogan": "Match the new terms with the pairings of $\\{1, \\dots, n+1\\}$.",
+      "detail": "A set of disjoint pairs in $\\{1, \\dots, n+1\\}$ leaves $n+1$ unpaired or pairs it with one $l$; removing that pair gives a unique pairing of $\\{1, \\dots, n\\}$ with $l$ unpaired. So every pairing appears exactly once, which proves the expansion for $n+1$ factors.",
+      "uses": []
+     },
+     {
+      "id": "s:vacuum",
+      "slogan": "Take the vacuum expectation, which removes every normal-ordered product of positive length.",
+      "detail": "In $\\langle 0|{:}B_1\\cdots B_k{:}|0\\rangle$ with $k \\ge 1$, an annihilation part on the right kills $|0\\rangle$ or a creation part on the left kills $\\langle 0|$. Only pairings with no unpaired index survive, the [perfect matchings](c:perfect-matching), and for odd $n$ there are none.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:split",
+      "s:lemma"
+     ],
+     [
+      "s:lemma",
+      "s:induct"
+     ],
+     [
+      "s:induct",
+      "s:match"
+     ],
+     [
+      "s:match",
+      "s:vacuum"
+     ]
+    ],
+    "conclusion": "s:vacuum",
+    "concepts": {
+     "c:creation-and-annihilation-operators": "Each factor splits into a creation and an annihilation part.",
+     "c:canonical-commutation-relation": "These relations make every contraction a scalar.",
+     "c:normal-ordering": "Normal-ordered products are the building blocks of the expansion.",
+     "c:perfect-matching": "Vacuum expectations keep only the complete pairings."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard induction on the number of operators, as in G. C. Wick, The evaluation of the collision matrix, Physical Review 80 (1950), 268-272."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1551745",
+  "statement": "Let $A$ ($n \\times n$) and $C$ ($k \\times k$) be invertible matrices over a field, $U$ an $n \\times k$ and $V$ a $k \\times n$ matrix, with $C^{-1} + VA^{-1}U$ invertible. Then the [low-rank update](c:low-rank-update) $A + UCV$ is invertible, and its [inverse](c:matrix-inverse) is $(A + UCV)^{-1} = A^{-1} - A^{-1}U(C^{-1} + VA^{-1}U)^{-1}VA^{-1}$.",
+  "hypotheses": [
+   {
+    "id": "h:a",
+    "text": "The $n \\times n$ matrix $A$ is invertible.",
+    "concept": "c:matrix-inverse"
+   },
+   {
+    "id": "h:c",
+    "text": "The $k \\times k$ matrix $C$ is invertible.",
+    "concept": "c:matrix-inverse"
+   },
+   {
+    "id": "h:capacitance",
+    "text": "The $k \\times k$ matrix $S = C^{-1} + VA^{-1}U$ is invertible.",
+    "concept": null
+   }
+  ],
+  "conclusion": "$A + UCV$ is invertible with inverse $A^{-1} - A^{-1}US^{-1}VA^{-1}$.",
+  "formal": {
+   "decl": "Matrix.invOf_add_mul_mul",
+   "difference": "The declaration works over any ring and also assumes that $A + UCV$ is invertible; the construction Matrix.invertibleAddMulMul shows that this follows from the other hypotheses."
+  },
+  "proofs": [
+   {
+    "id": "direct-check",
+    "name": "Direct multiplication",
+    "slogan": "Multiply $A + UCV$ by the proposed inverse on both sides and simplify with $C^{-1} + VA^{-1}U = S$.",
+    "scope": "The whole identity, over any ring, since only associativity and the given inverses are used.",
+    "mechanisms": [
+     "m:algebraic-identity",
+     "m:construction-explicit"
+    ],
+    "roles": [
+     {
+      "h": "h:a",
+      "why": "The inverse $A^{-1}$ appears in the candidate and cancels $A$.",
+      "steps": [
+       "s:candidate",
+       "s:right",
+       "s:left"
+      ]
+     },
+     {
+      "h": "h:c",
+      "why": "The inverse $C^{-1}$ lets $UC(C^{-1} + VA^{-1}U)$ expand to $U + UCVA^{-1}U$.",
+      "steps": [
+       "s:right",
+       "s:left"
+      ]
+     },
+     {
+      "h": "h:capacitance",
+      "why": "The inverse $S^{-1}$ appears in the candidate and cancels $S$.",
+      "steps": [
+       "s:candidate",
+       "s:right",
+       "s:left"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:candidate",
+      "slogan": "Set $X = A^{-1} - A^{-1}US^{-1}VA^{-1}$ with $S = C^{-1} + VA^{-1}U$.",
+      "detail": "Both $A^{-1}$ and $S^{-1}$ exist by hypothesis, so $X$ is a well-defined $n \\times n$ matrix. It is the candidate for the [inverse](c:matrix-inverse) of $A + UCV$.",
+      "uses": []
+     },
+     {
+      "id": "s:right",
+      "slogan": "Show that $(A + UCV)X$ is the identity matrix.",
+      "detail": "Expanding gives $I + UCVA^{-1} - US^{-1}VA^{-1} - UCVA^{-1}US^{-1}VA^{-1}$. The last two terms are $-UC(C^{-1} + VA^{-1}U)S^{-1}VA^{-1} = -UCVA^{-1}$, so the product is the [identity matrix](c:identity-matrix).",
+      "uses": []
+     },
+     {
+      "id": "s:left",
+      "slogan": "Show that $X(A + UCV)$ is the identity matrix.",
+      "detail": "Expanding gives $I + A^{-1}UCV - A^{-1}US^{-1}V - A^{-1}US^{-1}VA^{-1}UCV$. The last two terms are $-A^{-1}US^{-1}(C^{-1} + VA^{-1}U)CV = -A^{-1}UCV$, so the product is $I$.",
+      "uses": []
+     },
+     {
+      "id": "s:unique",
+      "slogan": "Conclude that $X$ is the unique inverse of $A + UCV$.",
+      "detail": "A matrix with a left and a right inverse is invertible, and its inverse is unique. So $A + UCV$ is invertible and $(A + UCV)^{-1} = X$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:candidate",
+      "s:right"
+     ],
+     [
+      "s:candidate",
+      "s:left"
+     ],
+     [
+      "s:right",
+      "s:unique"
+     ],
+     [
+      "s:left",
+      "s:unique"
+     ]
+    ],
+    "conclusion": "s:unique",
+    "concepts": {
+     "c:low-rank-update": "The rank-$k$ update needs only the new $k \\times k$ inverse $S^{-1}$.",
+     "c:matrix-inverse": "The identity expresses one inverse through two others.",
+     "c:identity-matrix": "Both products of the candidate with $A + UCV$ reduce to the identity."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Matrix.invOf_add_mul_mul",
+     "follows": true,
+     "note": "mathlib builds Matrix.invertibleAddMulMul from add_mul_mul_invOf_mul_eq_one and add_mul_mul_invOf_mul_eq_one', then uses uniqueness of the inverse."
+    }
+   },
+   {
+    "id": "block-elimination",
+    "name": "Two block eliminations",
+    "slogan": "Invert one block matrix by eliminating either diagonal block first, and compare the two top left blocks.",
+    "scope": "The whole identity, including the invertibility of $A + UCV$, which comes out of the block factorization.",
+    "mechanisms": [
+     "m:matrix-factorization",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:a",
+      "why": "Eliminating with $A$ needs $A^{-1}$.",
+      "steps": [
+       "s:eliminate-a"
+      ]
+     },
+     {
+      "h": "h:c",
+      "why": "The lower right block $-C^{-1}$ must exist and be invertible for the second elimination.",
+      "steps": [
+       "s:block",
+       "s:eliminate-c"
+      ]
+     },
+     {
+      "h": "h:capacitance",
+      "why": "The [Schur complement](c:schur-complement) of $A$ is $-S$, which must be invertible.",
+      "steps": [
+       "s:eliminate-a"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:block",
+      "slogan": "Form the [block matrix](c:partitioned-matrix) $M$ with blocks $A$, $U$, $V$ and $-C^{-1}$.",
+      "detail": "Let $M = \\begin{pmatrix} A & U \\\\ V & -C^{-1}\\end{pmatrix}$, a square matrix of size $n + k$. Its two diagonal blocks are invertible.",
+      "uses": []
+     },
+     {
+      "id": "s:eliminate-a",
+      "slogan": "Eliminate with $A$ and get the top left block of $M^{-1}$.",
+      "detail": "Block elimination gives $M = \\begin{pmatrix} I & 0 \\\\ VA^{-1} & I\\end{pmatrix}\\begin{pmatrix} A & 0 \\\\ 0 & -S\\end{pmatrix}\\begin{pmatrix} I & A^{-1}U \\\\ 0 & I\\end{pmatrix}$, with [Schur complement](c:schur-complement) $-S$. All factors are invertible, so $M$ is, and the top left block of $M^{-1}$ is $A^{-1} - A^{-1}US^{-1}VA^{-1}$.",
+      "uses": []
+     },
+     {
+      "id": "s:eliminate-c",
+      "slogan": "Eliminate with $-C^{-1}$ and identify the top left block of $M^{-1}$ again.",
+      "detail": "Elimination with $D = -C^{-1}$ gives $M = \\begin{pmatrix} I & UD^{-1} \\\\ 0 & I\\end{pmatrix}\\begin{pmatrix} A + UCV & 0 \\\\ 0 & D\\end{pmatrix}\\begin{pmatrix} I & 0 \\\\ D^{-1}V & I\\end{pmatrix}$. As $M$ is invertible, so is $A + UCV$, and the top left block of $M^{-1}$ is $(A + UCV)^{-1}$.",
+      "uses": []
+     },
+     {
+      "id": "s:compare",
+      "slogan": "Equate the two expressions for the top left block of $M^{-1}$.",
+      "detail": "Steps 2 and 3 compute the same block of the same [inverse](c:matrix-inverse) $M^{-1}$. So $(A + UCV)^{-1} = A^{-1} - A^{-1}US^{-1}VA^{-1}$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:block",
+      "s:eliminate-a"
+     ],
+     [
+      "s:block",
+      "s:eliminate-c"
+     ],
+     [
+      "s:eliminate-a",
+      "s:eliminate-c"
+     ],
+     [
+      "s:eliminate-a",
+      "s:compare"
+     ],
+     [
+      "s:eliminate-c",
+      "s:compare"
+     ]
+    ],
+    "conclusion": "s:compare",
+    "concepts": {
+     "c:low-rank-update": "The block view explains why the update costs only a $k \\times k$ inverse.",
+     "c:matrix-inverse": "Both sides are blocks of one inverse matrix.",
+     "c:schur-complement": "Each elimination produces a Schur complement, one of them $A + UCV$.",
+     "c:partitioned-matrix": "The bordered block matrix holds all four pieces of the identity."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Block Gaussian elimination with Schur complements, one of the derivations surveyed in H. V. Henderson and S. R. Searle, On deriving the inverse of a sum of matrices, SIAM Review 23 (1981), 53-60."
+    }
+   }
+  ]
+ }
+]

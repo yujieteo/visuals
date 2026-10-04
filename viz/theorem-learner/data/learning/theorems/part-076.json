@@ -1,0 +1,1881 @@
+[
+ {
+  "id": "nm:complex-roots-of-unity",
+  "statement": "For a positive integer $n$, the [complex](c:complex-number) solutions of $z^n = 1$ are exactly the numbers $\\exp(2\\pi i k/n)$ with $0 \\le k < n$, where $\\exp$ is the [exponential function](c:exponential-function). These are the [roots of unity](c:roots-of-unity) of order dividing $n$.",
+  "hypotheses": [
+   {
+    "id": "h:n",
+    "text": "The integer $n$ is positive.",
+    "concept": null
+   }
+  ],
+  "conclusion": "A complex number $z$ has $z^n = 1$ if and only if $z = \\exp(2\\pi i k/n)$ for some integer $k$ with $0 \\le k < n$.",
+  "formal": {
+   "decl": "Complex.mem_rootsOfUnity",
+   "difference": "The declaration works in the unit group $\\mathbb{C}^\\times$ and writes $z^n = 1$ as membership in the group of $n$-th roots of unity. Every solution of $z^n = 1$ is a unit, so the two statements agree."
+  },
+  "proofs": [
+   {
+    "id": "count-roots",
+    "name": "Powers of a primitive root",
+    "slogan": "Show that the $n$ numbers $\\exp(2\\pi i k/n)$ are distinct roots of $z^n - 1$, then count roots.",
+    "scope": "All $n \\ge 1$. The case $n = 1$ gives the single root $1$.",
+    "mechanisms": [
+     "m:algebraic-identity",
+     "m:modular-arithmetic"
+    ],
+    "roles": [
+     {
+      "h": "h:n",
+      "why": "A positive $n$ makes $2\\pi i k/n$ defined and gives $z^n - 1$ degree $n$ with at most $n$ roots.",
+      "steps": [
+       "s:root",
+       "s:bound"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:root",
+      "slogan": "Check that each $\\exp(2\\pi i k/n)$ solves $z^n = 1$.",
+      "detail": "The [exponential function](c:exponential-function) satisfies $\\exp(w)^n = \\exp(nw)$, so $\\exp(2\\pi i k/n)^n = \\exp(2\\pi i k)$. By Euler's formula $\\exp(2\\pi i k) = \\cos 2\\pi k + i \\sin 2\\pi k = 1$ for every integer $k$.",
+      "uses": [
+       "nl:16110"
+      ]
+     },
+     {
+      "id": "s:order",
+      "slogan": "Show that $\\zeta = \\exp(2\\pi i/n)$ has order exactly $n$.",
+      "detail": "By Euler's formula $\\exp(w) = 1$ exactly when $w \\in 2\\pi i \\mathbb{Z}$. So $\\zeta^j = \\exp(2\\pi i j/n) = 1$ exactly when $n$ divides $j$, and $\\zeta$ has order $n$.",
+      "uses": [
+       "nl:16110"
+      ]
+     },
+     {
+      "id": "s:distinct",
+      "slogan": "Deduce that $1, \\zeta, \\dots, \\zeta^{n-1}$ are $n$ distinct numbers.",
+      "detail": "If $\\zeta^i = \\zeta^j$ with $0 \\le i < j < n$, then $\\zeta^{j-i} = 1$ with $0 < j - i < n$. This contradicts that $\\zeta$ has order $n$.",
+      "uses": []
+     },
+     {
+      "id": "s:bound",
+      "slogan": "Bound the number of roots of $z^n - 1$ by its degree.",
+      "detail": "A nonzero [polynomial](c:polynomial) of degree $n$ over a field has at most $n$ [roots](c:root-of-a-polynomial). So $z^n - 1$ has at most $n$ complex roots.",
+      "uses": []
+     },
+     {
+      "id": "s:match",
+      "slogan": "Match the $n$ distinct roots with all the roots.",
+      "detail": "The $n$ distinct numbers $\\zeta^k = \\exp(2\\pi i k/n)$ are roots by the first step, and there are at most $n$ roots. So they are all the roots: every $z$ with $z^n = 1$ equals $\\exp(2\\pi i k/n)$ for some $0 \\le k < n$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:root",
+      "s:match"
+     ],
+     [
+      "s:order",
+      "s:distinct"
+     ],
+     [
+      "s:distinct",
+      "s:match"
+     ],
+     [
+      "s:bound",
+      "s:match"
+     ]
+    ],
+    "conclusion": "s:match",
+    "concepts": {
+     "c:exponential-function": "The exponential turns the additive angle $2\\pi k/n$ into a multiplicative root.",
+     "c:complex-number": "The roots live in the complex numbers, which hold all roots of $z^n - 1$.",
+     "c:roots-of-unity": "The theorem lists all solutions of $z^n = 1$.",
+     "c:polynomial": "The polynomial $z^n - 1$ has degree $n$, which bounds its roots.",
+     "c:root-of-a-polynomial": "A polynomial of degree $n$ has at most $n$ roots, so the list is complete."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Complex.mem_rootsOfUnity",
+     "follows": true,
+     "note": "mathlib shows that exp(2 pi i/n) is a primitive n-th root (Complex.isPrimitiveRoot_exp), takes every root as a power of it (IsPrimitiveRoot.eq_pow_of_pow_eq_one), and checks the converse with Complex.exp_nat_mul and Complex.exp_eq_one_iff."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:convergence-of-p-series-for-p-1",
+  "statement": "For a real number $p$, the [series](c:series) $\\sum_{n \\ge 1} 1/n^p$ converges if and only if $p > 1$.",
+  "hypotheses": [
+   {
+    "id": "h:p",
+    "text": "The exponent $p$ is a real number.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The series $\\sum_{n \\ge 1} n^{-p}$ converges exactly when $p > 1$.",
+  "formal": {
+   "decl": "Real.summable_one_div_nat_rpow",
+   "difference": "The declaration indexes the terms from $n = 0$, and the extra term does not change summability. It states summability of the family, which for nonnegative terms means convergence of the series."
+  },
+  "proofs": [
+   {
+    "id": "condensation",
+    "name": "Cauchy condensation",
+    "slogan": "Condense the series to a geometric series with ratio $2^{1-p}$ and read off when that series converges.",
+    "scope": "All real $p$: the case $p \\le 0$ by the term test, the case $p > 0$ by condensation.",
+    "mechanisms": [
+     "m:case-analysis",
+     "m:reduction"
+    ],
+    "roles": [
+     {
+      "h": "h:p",
+      "why": "A real exponent splits into $p \\le 0$, where terms do not vanish, and $p > 0$, where terms decrease.",
+      "steps": [
+       "s:small",
+       "s:antitone"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:small",
+      "slogan": "Dispose of the case $p \\le 0$ by the term test.",
+      "detail": "If $p \\le 0$ then $n^{-p} \\ge 1$ for all $n \\ge 1$, so the terms do not tend to $0$ and the [series](c:series) diverges. This agrees with the claim, because $p \\le 0$ gives $p \\not> 1$.",
+      "uses": []
+     },
+     {
+      "id": "s:antitone",
+      "slogan": "Note that for $p > 0$ the terms $n^{-p}$ are positive and decrease.",
+      "detail": "For $p > 0$ the map $n \\mapsto n^{-p}$ is positive and nonincreasing. So the Cauchy condensation test applies to the series.",
+      "uses": []
+     },
+     {
+      "id": "s:condense",
+      "slogan": "Condense the series to $\\sum 2^k (2^k)^{-p}$.",
+      "detail": "For a nonincreasing nonnegative sequence $a_n$, the series $\\sum a_n$ converges iff $\\sum 2^k a_{2^k}$ converges, since the block $a_{2^k}, \\dots, a_{2^{k+1}-1}$ lies between $2^k a_{2^{k+1}}$ and $2^k a_{2^k}$. For $a_n = n^{-p}$ we get $2^k 2^{-kp} = (2^{1-p})^k$.",
+      "uses": []
+     },
+     {
+      "id": "s:geometric",
+      "slogan": "Test the geometric series with ratio $r = 2^{1-p}$.",
+      "detail": "A [geometric series](c:geometric-series) $\\sum r^k$ with $r > 0$ converges iff $r < 1$, and then its sum is $1/(1-r)$. Here $2^{1-p} < 1$ iff $1 - p < 0$ iff $p > 1$.",
+      "uses": [
+       "nm:geometric-series"
+      ]
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Join both cases to get convergence exactly when $p > 1$.",
+      "detail": "For $p \\le 0$ the series diverges and $p \\not> 1$. For $p > 0$ it converges iff $p > 1$. So in every case the series converges iff $p > 1$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:small",
+      "s:conclude"
+     ],
+     [
+      "s:antitone",
+      "s:condense"
+     ],
+     [
+      "s:condense",
+      "s:geometric"
+     ],
+     [
+      "s:geometric",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:series": "The theorem decides when this series converges.",
+     "c:geometric-series": "The condensed series is geometric, and its ratio decides convergence."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Real.summable_one_div_nat_rpow",
+     "follows": true,
+     "note": "mathlib proves Real.summable_nat_rpow_inv with summable_condensed_iff_of_nonneg (Cauchy condensation) and the geometric series test for 0 <= p, and with the term test for p < 0."
+    }
+   },
+   {
+    "id": "integral-test",
+    "name": "Integral test",
+    "slogan": "Compare the series with the integral of $x^{-p}$ over $[1, \\infty)$ through the integral test.",
+    "scope": "The case $p > 0$, where $x^{-p}$ is positive and decreasing. The case $p \\le 0$ is the term test of the first proof.",
+    "mechanisms": [
+     "m:case-analysis",
+     "m:fundamental-theorem-calculus"
+    ],
+    "roles": [
+     {
+      "h": "h:p",
+      "why": "The sign of $p$ decides whether the integral test applies or the terms fail to vanish.",
+      "steps": [
+       "s:small",
+       "s:decreasing",
+       "s:integral"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:small",
+      "slogan": "Dispose of the case $p \\le 0$ by the term test.",
+      "detail": "If $p \\le 0$ then $n^{-p} \\ge 1$, so the terms do not tend to $0$ and the [series](c:series) diverges. This agrees with the claim, because $p \\le 0$ gives $p \\not> 1$.",
+      "uses": []
+     },
+     {
+      "id": "s:decreasing",
+      "slogan": "Check that $x^{-p}$ is positive and decreasing on $[1, \\infty)$ for $p > 0$.",
+      "detail": "For $p > 0$ the function $f(x) = x^{-p}$ has $f'(x) = -p x^{-p-1} < 0$ and $f > 0$. So $f$ is positive and decreasing, as the integral test needs.",
+      "uses": []
+     },
+     {
+      "id": "s:integral",
+      "slogan": "Compute the integral $\\int_1^T x^{-p}\\,dx$ and its limit as $T \\to \\infty$.",
+      "detail": "For $p \\ne 1$ the integral is $(T^{1-p} - 1)/(1-p)$, which tends to $1/(p-1)$ if $p > 1$ and to $\\infty$ if $0 < p < 1$; for $p = 1$ it is $\\ln T \\to \\infty$. So the [improper integral](c:improper-integral) is finite iff $p > 1$.",
+      "uses": []
+     },
+     {
+      "id": "s:compare",
+      "slogan": "Compare the series with the integral to settle every case.",
+      "detail": "For $p > 0$ the integral test says that $\\sum f(n)$ converges iff $\\int_1^\\infty f$ is finite, and by the last step this holds iff $p > 1$. With the case $p \\le 0$, the series converges iff $p > 1$.",
+      "uses": [
+       "nm:integral-test"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:small",
+      "s:compare"
+     ],
+     [
+      "s:decreasing",
+      "s:compare"
+     ],
+     [
+      "s:integral",
+      "s:compare"
+     ]
+    ],
+    "conclusion": "s:compare",
+    "concepts": {
+     "c:series": "The theorem decides when this series converges.",
+     "c:improper-integral": "Finiteness of the improper integral decides convergence of the series."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The integral test comparison taught in calculus courses; it needs no condensation lemma."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q5172143",
+  "statement": "The open [unit disc](c:unit-disc) is dense in the [maximal ideal space](c:maximal-ideal-space) of the [Banach algebra](c:banach-algebra) $H^\\infty$ of [bounded holomorphic functions](c:bounded-holomorphic-function) on it. Equivalently, if $f_1, \\dots, f_n \\in H^\\infty$ and $\\sum_j |f_j| \\ge \\delta > 0$ on the disc, then $\\sum_j f_j g_j = 1$ for some $g_j \\in H^\\infty$.",
+  "hypotheses": [
+   {
+    "id": "h:algebra",
+    "text": "$H^\\infty$ is the [Banach algebra](c:banach-algebra) of bounded holomorphic functions on the open unit disc $D$, with the supremum norm.",
+    "concept": "c:banach-algebra"
+   },
+   {
+    "id": "h:space",
+    "text": "$M$ is the [maximal ideal space](c:maximal-ideal-space) of $H^\\infty$ with the Gelfand topology, and $D$ sits in $M$ by point evaluations.",
+    "concept": "c:maximal-ideal-space"
+   }
+  ],
+  "conclusion": "The image of $D$ is dense in $M$, and the Bezout form $\\sum_j f_j g_j = 1$ holds whenever $\\inf_D \\sum_j |f_j| > 0$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "wolff",
+    "name": "Wolff's dbar proof",
+    "slogan": "Reduce density to a Bezout equation, build smooth solutions, and correct them by bounded solutions of $\\bar\\partial$ equations with Carleson control.",
+    "scope": "The outline follows T. Wolff's proof for any finite number $n$ of functions, and the Carleson-measure and bounded-solution steps rest on the cited work (Carleson's 1962 proof is a different, constructive argument).",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:a-priori-estimate",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:algebra",
+      "why": "The algebra supplies the functions $f_j$, the constants, and the analytic solutions $g_j$ with their bounds.",
+      "steps": [
+       "s:normalize",
+       "s:conclude"
+      ]
+     },
+     {
+      "h": "h:space",
+      "why": "Points of $M$ are the characters of $H^\\infty$, so a character killing the $f_j$ contradicts $\\sum f_j g_j = 1$.",
+      "steps": [
+       "s:gelfand"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:gelfand",
+      "slogan": "Reduce density of the disc to the Bezout equation by Gelfand theory.",
+      "detail": "If $D$ were not dense, a basic neighborhood of a character $\\varphi$, given by finitely many functions, would miss $D$. Subtracting constants gives $f_1, \\dots, f_n$ with $\\varphi(f_j) = 0$ and $\\max_j |f_j| \\ge \\delta$ on $D$. If $\\sum f_j g_j = 1$ held, applying $\\varphi$ would give $0 = 1$.",
+      "uses": []
+     },
+     {
+      "id": "s:normalize",
+      "slogan": "Normalize the data and form smooth, non-analytic solutions $\\tilde g_j$.",
+      "detail": "Scale so that $\\|f_j\\|_\\infty \\le 1$, which gives $\\sum_j |f_j|^2 \\ge \\delta^2$ on $D$. Put $\\tilde g_j = \\overline{f_j} / \\sum_k |f_k|^2$. These are smooth, bounded by $\\delta^{-2}$, and satisfy $\\sum_j f_j \\tilde g_j = 1$, but they are not analytic.",
+      "uses": []
+     },
+     {
+      "id": "s:correct",
+      "slogan": "Correct the $\\tilde g_j$ by antisymmetric solutions $b_{jk}$ of a $\\bar\\partial$ equation.",
+      "detail": "Set $g_j = \\tilde g_j + \\sum_k b_{jk} f_k$ with $b_{jk} = -b_{kj}$ and $\\bar\\partial b_{jk} = \\tilde g_j \\bar\\partial \\tilde g_k - \\tilde g_k \\bar\\partial \\tilde g_j$. Since $\\sum_k f_k \\bar\\partial \\tilde g_k = \\bar\\partial(\\sum_k f_k \\tilde g_k) = 0$, we get $\\bar\\partial g_j = 0$. Antisymmetry gives $\\sum_j f_j g_j = 1$.",
+      "uses": []
+     },
+     {
+      "id": "s:carleson",
+      "slogan": "Show that the data of the $\\bar\\partial$ equations are controlled by a Carleson measure.",
+      "detail": "Each $|\\bar\\partial \\tilde g_k|$ is at most a constant, depending on $\\delta$ and $n$, times $\\sum_l |f_l'|$. For $f \\in H^\\infty$ the measure $|f'|^2 (1 - |z|^2)\\,dx\\,dy$ is a [Carleson measure](c:carleson-measure) of norm at most $C \\|f\\|_\\infty^2$ (Littlewood-Paley). So the data have Carleson norm bounded in terms of $\\delta$ and $n$.",
+      "uses": []
+     },
+     {
+      "id": "s:solve",
+      "slogan": "Solve each $\\bar\\partial$ equation with a bounded antisymmetric solution.",
+      "detail": "Data with this Carleson control have a bounded solution $b$, with $\\|b\\|_\\infty$ bounded in terms of the Carleson norm (Wolff's argument, and Jones's explicit formula). The data are antisymmetric in $(j, k)$, so replacing $b_{jk}$ by $(b_{jk} - b_{kj})/2$ keeps a solution and makes the family antisymmetric.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Assemble bounded analytic $g_j$ with $\\sum f_j g_j = 1$ and conclude density.",
+      "detail": "The functions $g_j = \\tilde g_j + \\sum_k b_{jk} f_k$ are bounded and analytic, and they solve the Bezout equation with bounds depending on $\\delta$ and $n$ only. By the first step, $D$ is dense in $M$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:gelfand",
+      "s:conclude"
+     ],
+     [
+      "s:normalize",
+      "s:correct"
+     ],
+     [
+      "s:normalize",
+      "s:carleson"
+     ],
+     [
+      "s:carleson",
+      "s:solve"
+     ],
+     [
+      "s:correct",
+      "s:solve"
+     ],
+     [
+      "s:correct",
+      "s:conclude"
+     ],
+     [
+      "s:solve",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:unit-disc": "The disc is the set whose density in the spectrum is proved.",
+     "c:maximal-ideal-space": "Its points are the characters; density means no character escapes the disc.",
+     "c:banach-algebra": "Gelfand theory of this algebra links ideals, characters and the Bezout equation.",
+     "c:bounded-holomorphic-function": "The functions $f_j$ and the solutions $g_j$ must be bounded and analytic.",
+     "c:carleson-measure": "Carleson measures control the data so that the $\\bar\\partial$ equation has bounded solutions."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "J. B. Garnett, Bounded Analytic Functions, Graduate Texts in Mathematics 236, Springer, 2007 (the corona theorem and T. Wolff's proof)",
+     "url": "https://doi.org/10.1007/0-387-49763-3",
+     "note": "The book gives Wolff's dbar proof of the corona theorem, after L. Carleson, Interpolations by bounded analytic functions and the corona problem, Annals of Mathematics 76 (1962), 547-559, which first proved it."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q660799",
+  "statement": "Let $f$ be [differentiable](c:differentiable-function) on $[a, b]$, with one-sided derivatives at the endpoints. If $m$ lies strictly between $f'(a)$ and $f'(b)$, then $f'(c) = m$ for some $c \\in (a, b)$. So a [derivative](c:derivative) has the intermediate value property.",
+  "hypotheses": [
+   {
+    "id": "h:differentiable",
+    "text": "The function $f \\colon [a, b] \\to \\mathbb{R}$ is [differentiable](c:differentiable-function) at every point, with one-sided derivatives at $a$ and $b$.",
+    "concept": "c:differentiable-function"
+   },
+   {
+    "id": "h:between",
+    "text": "The number $m$ lies strictly between $f'(a)$ and $f'(b)$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "Some $c$ with $a < c < b$ has $f'(c) = m$.",
+  "formal": {
+   "decl": "exists_hasDerivWithinAt_eq_of_gt_of_lt",
+   "difference": "The declaration covers the case $f'(a) < m < f'(b)$. The case $f'(a) > m > f'(b)$ is the separate declaration exists_hasDerivWithinAt_eq_of_lt_of_gt."
+  },
+  "proofs": [
+   {
+    "id": "minimum",
+    "name": "Minimum of $f - mx$",
+    "slogan": "Subtract $mx$ from $f$, minimize on $[a, b]$, and show that the minimum point is interior, where the derivative vanishes.",
+    "scope": "The case $f'(a) < m < f'(b)$; the other case follows by applying the proof to $-f$ and $-m$. Strict inequalities force $a < b$.",
+    "mechanisms": [
+     "m:compactness-extremum"
+    ],
+    "roles": [
+     {
+      "h": "h:differentiable",
+      "why": "Differentiability gives continuity for the minimum and the derivative at the minimum point.",
+      "steps": [
+       "s:min",
+       "s:fermat"
+      ]
+     },
+     {
+      "h": "h:between",
+      "why": "The signs of $g'(a)$ and $g'(b)$ keep the minimum away from both endpoints.",
+      "steps": [
+       "s:shift",
+       "s:ends"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:shift",
+      "slogan": "Subtract $mx$ to move the target value to $0$.",
+      "detail": "Let $g(x) = f(x) - mx$. Then $g$ is differentiable on $[a, b]$ with $g' = f' - m$, so $g'(a) < 0 < g'(b)$. A point where $g' = 0$ gives $f' = m$.",
+      "uses": []
+     },
+     {
+      "id": "s:min",
+      "slogan": "Find a point where $g$ attains its minimum on $[a, b]$.",
+      "detail": "A [differentiable function](c:differentiable-function) is continuous, so $g$ is continuous on the closed bounded interval $[a, b]$. The extreme value theorem gives $c \\in [a, b]$ with $g(c) = \\min g$.",
+      "uses": [
+       "wd:Q752375"
+      ]
+     },
+     {
+      "id": "s:ends",
+      "slogan": "Exclude both endpoints as minimum points.",
+      "detail": "Since $g'(a) < 0$, there are points $x > a$ near $a$ with $g(x) < g(a)$, so $a$ is not a minimum point. Since $g'(b) > 0$, there are points $x < b$ near $b$ with $g(x) < g(b)$, so $b$ is not one either.",
+      "uses": []
+     },
+     {
+      "id": "s:fermat",
+      "slogan": "Show that the interior minimum point has derivative zero.",
+      "detail": "Now $c \\in (a, b)$ is a [local extremum](c:local-extremum) of the differentiable function $g$ on an open interval. Fermat's theorem gives $g'(c) = 0$, that is, $f'(c) = m$ with $a < c < b$.",
+      "uses": [
+       "wd:Q727102"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:shift",
+      "s:min"
+     ],
+     [
+      "s:shift",
+      "s:ends"
+     ],
+     [
+      "s:min",
+      "s:ends"
+     ],
+     [
+      "s:ends",
+      "s:fermat"
+     ],
+     [
+      "s:min",
+      "s:fermat"
+     ]
+    ],
+    "conclusion": "s:fermat",
+    "concepts": {
+     "c:differentiable-function": "Differentiability supplies continuity and the derivative of $g$ at each point.",
+     "c:derivative": "The theorem is about the values of the derivative $f'$.",
+     "c:local-extremum": "An interior minimum is a local extremum, which forces a zero derivative."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "exists_hasDerivWithinAt_eq_of_gt_of_lt",
+     "follows": true,
+     "note": "mathlib minimizes f - m x on [a, b] with IsCompact.exists_isMinOn, excludes the endpoints with one-sided derivative signs (posTangentConeAt), and applies IsLocalMin.hasDerivAt_eq_zero (Fermat)."
+    }
+   },
+   {
+    "id": "secant-slope",
+    "name": "Secant slopes",
+    "slogan": "Use continuous secant slopes and the intermediate value theorem to find a secant of slope $m$, then the mean value theorem.",
+    "scope": "The case $f'(a) < m < f'(b)$; the other case follows from $-f$ and $-m$. The proof needs no compactness argument.",
+    "mechanisms": [
+     "m:mean-value",
+     "m:case-analysis"
+    ],
+    "roles": [
+     {
+      "h": "h:differentiable",
+      "why": "Differentiability makes the slope functions continuous and allows the mean value theorem.",
+      "steps": [
+       "s:slopes",
+       "s:mvt"
+      ]
+     },
+     {
+      "h": "h:between",
+      "why": "The inequalities $f'(a) < m < f'(b)$ put $m$ between values of the slope functions.",
+      "steps": [
+       "s:ivt"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:slopes",
+      "slogan": "Define the secant slope from $a$ and the secant slope to $b$.",
+      "detail": "Let $S(x) = (f(x) - f(a))/(x - a)$ for $x \\in (a, b]$ and $S(a) = f'(a)$. Let $T(x) = (f(b) - f(x))/(b - x)$ for $x \\in [a, b)$ and $T(b) = f'(b)$. Both are [continuous](c:continuous-function) on their intervals, and $S(b) = T(a) = \\sigma$, the slope of the whole chord.",
+      "uses": []
+     },
+     {
+      "id": "s:ivt",
+      "slogan": "Find a secant slope equal to $m$ by the intermediate value theorem.",
+      "detail": "If $\\sigma \\ge m$, then $S(a) < m \\le S(b)$, so $S(x_0) = m$ for some $x_0 \\in (a, b]$. If $\\sigma < m$, then $T(a) < m < T(b)$, so $T(x_1) = m$ for some $x_1 \\in [a, b)$.",
+      "uses": [
+       "wd:Q245098"
+      ]
+     },
+     {
+      "id": "s:mvt",
+      "slogan": "Turn the secant slope $m$ into a derivative value by the mean value theorem.",
+      "detail": "In the first case $f$ has chord slope $m$ on $[a, x_0]$ with $x_0 > a$, so $f'(c) = m$ for some $c \\in (a, x_0)$. In the second case the same holds on $[x_1, b]$ with $x_1 < b$. Either way $c \\in (a, b)$.",
+      "uses": [
+       "wd:Q189136"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:slopes",
+      "s:ivt"
+     ],
+     [
+      "s:ivt",
+      "s:mvt"
+     ]
+    ],
+    "conclusion": "s:mvt",
+    "concepts": {
+     "c:differentiable-function": "Differentiability gives the continuity of the slope functions at the endpoints.",
+     "c:derivative": "The values $f'(a)$ and $f'(b)$ are the endpoint values of the slopes.",
+     "c:continuous-function": "Continuity of the slopes allows the intermediate value theorem."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The classical secant-slope proof of Darboux's theorem, which uses the intermediate value and mean value theorems and no compactness."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:18998",
+  "statement": "Let $X$ be a compact [Kähler manifold](c:kahler-manifold) and $\\alpha$ a $d$-closed form of type $(p, q)$. If $\\alpha$ is $d$-exact, $\\partial$-exact or $\\bar\\partial$-exact, then $\\alpha = \\partial\\bar\\partial\\beta$ for some form $\\beta$ of type $(p-1, q-1)$.",
+  "hypotheses": [
+   {
+    "id": "h:kahler",
+    "text": "$X$ is a compact [Kähler manifold](c:kahler-manifold).",
+    "concept": "c:kahler-manifold"
+   },
+   {
+    "id": "h:closed",
+    "text": "The complex-valued form $\\alpha$ has type $(p, q)$ and $d\\alpha = 0$.",
+    "concept": null
+   },
+   {
+    "id": "h:exact",
+    "text": "The form $\\alpha$ is $d$-exact, $\\partial$-exact or $\\bar\\partial$-exact.",
+    "concept": null
+   }
+  ],
+  "conclusion": "There is a form $\\beta$ of type $(p-1, q-1)$ with $\\alpha = \\partial\\bar\\partial\\beta$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "hodge-decomposition",
+    "name": "Hodge decomposition and Kähler identities",
+    "slogan": "Write $\\alpha$ as $\\partial\\gamma$, split $\\gamma$ by the $\\bar\\partial$ Hodge decomposition, and show that the leftover term vanishes.",
+    "scope": "Complex-valued forms of pure type $(p, q)$. If $p = 0$ or $q = 0$ there is no form $\\beta$ and the claim reads $\\alpha = 0$; the proof gives it, because $\\gamma$ or $\\bar\\partial^* G\\gamma$ then has no component.",
+    "mechanisms": [
+     "m:orthogonal-projection",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:kahler",
+      "why": "Compactness gives the Hodge decomposition, and the Kähler identities give $\\Delta_d = 2\\Delta_\\partial = 2\\Delta_{\\bar\\partial}$ and $\\partial\\bar\\partial^* = -\\bar\\partial^*\\partial$.",
+      "steps": [
+       "s:harmonic",
+       "s:swap"
+      ]
+     },
+     {
+      "h": "h:closed",
+      "why": "Since $d\\alpha = 0$ and the types differ, $\\partial\\alpha = 0$ and $\\bar\\partial\\alpha = 0$ separately.",
+      "steps": [
+       "s:partial",
+       "s:kill"
+      ]
+     },
+     {
+      "h": "h:exact",
+      "why": "Each kind of exactness makes $\\alpha$ orthogonal to the harmonic forms.",
+      "steps": [
+       "s:harmonic"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:harmonic",
+      "slogan": "Show that the harmonic part of $\\alpha$ is zero.",
+      "detail": "On a compact Kähler manifold the Kähler identities give $\\Delta_d = 2\\Delta_\\partial = 2\\Delta_{\\bar\\partial}$, so the three operators have the same [harmonic forms](c:harmonic-form). A $d$-exact, $\\partial$-exact or $\\bar\\partial$-exact form is orthogonal to them, so $H(\\alpha) = 0$.",
+      "uses": [
+       "nl:9050"
+      ]
+     },
+     {
+      "id": "s:partial",
+      "slogan": "Write $\\alpha$ as $\\partial\\gamma$ with the Hodge decomposition for $\\partial$.",
+      "detail": "With $H(\\alpha) = 0$ we have $\\alpha = \\partial\\partial^* G\\alpha + \\partial^*\\partial G\\alpha$, where $G$ is the Green operator. As $G$ commutes with $\\partial$ and $\\partial\\alpha = 0$, the second term is $\\partial^* G \\partial\\alpha = 0$. So $\\alpha = \\partial\\gamma$ with $\\gamma = \\partial^* G\\alpha$ of type $(p-1, q)$.",
+      "uses": [
+       "nl:9050"
+      ]
+     },
+     {
+      "id": "s:decompose",
+      "slogan": "Split $\\gamma$ by the $\\bar\\partial$ [Hodge decomposition](c:hodge-decomposition).",
+      "detail": "We have $\\gamma = H\\gamma + \\bar\\partial\\bar\\partial^* G\\gamma + \\bar\\partial^*\\bar\\partial G\\gamma$. Harmonic forms are $\\partial$-closed, so $\\partial H\\gamma = 0$. Hence $\\alpha = \\partial\\bar\\partial\\beta + \\partial\\bar\\partial^*\\bar\\partial G\\gamma$ with $\\beta = \\bar\\partial^* G\\gamma$.",
+      "uses": [
+       "nl:9050"
+      ]
+     },
+     {
+      "id": "s:swap",
+      "slogan": "Move $\\partial$ past $\\bar\\partial^*$ with the Kähler identity.",
+      "detail": "The Kähler identity gives $\\partial\\bar\\partial^* = -\\bar\\partial^*\\partial$. So the last term equals $\\rho = -\\bar\\partial^*\\eta$ with $\\eta = \\partial\\bar\\partial G\\gamma$, a $\\bar\\partial^*$-exact form.",
+      "uses": []
+     },
+     {
+      "id": "s:kill",
+      "slogan": "Show that the $\\bar\\partial^*$-exact remainder $\\rho$ is zero.",
+      "detail": "Both $\\alpha$ and $\\partial\\bar\\partial\\beta$ are $\\bar\\partial$-closed, so $\\rho = \\alpha - \\partial\\bar\\partial\\beta$ is $\\bar\\partial$-closed. Then $\\|\\rho\\|^2 = \\langle -\\bar\\partial^*\\eta, \\rho\\rangle = -\\langle \\eta, \\bar\\partial\\rho\\rangle = 0$, so $\\rho = 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Read off $\\alpha = \\partial\\bar\\partial\\beta$ with $\\beta = \\bar\\partial^* G\\gamma$.",
+      "detail": "With $\\rho = 0$ the splitting gives $\\alpha = \\partial\\bar\\partial\\beta$. The form $\\gamma$ has type $(p-1, q)$ and $\\bar\\partial^*$ lowers $q$ by one, so $\\beta$ has type $(p-1, q-1)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:harmonic",
+      "s:partial"
+     ],
+     [
+      "s:partial",
+      "s:decompose"
+     ],
+     [
+      "s:decompose",
+      "s:swap"
+     ],
+     [
+      "s:swap",
+      "s:kill"
+     ],
+     [
+      "s:kill",
+      "s:conclude"
+     ],
+     [
+      "s:decompose",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:kahler-manifold": "The Kähler identities make the three Laplacians agree and let $\\partial$ pass $\\bar\\partial^*$.",
+     "c:harmonic-form": "Harmonic forms are common to $d$, $\\partial$ and $\\bar\\partial$, and exact forms avoid them.",
+     "c:hodge-decomposition": "The decomposition splits $\\gamma$ into harmonic, exact and coexact parts."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard proof of the ddbar lemma, as in Huybrechts, Complex Geometry, Corollary 3.2.10, after Deligne, Griffiths, Morgan and Sullivan (1975)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q2533936",
+  "statement": "For a [convex polyhedron](c:convex-polyhedron), the angular defects at the vertices add up to $4\\pi$. The defect at a vertex $v$ is $\\delta(v) = 2\\pi$ minus the sum of the face [angles](c:angle) at $v$. This is Descartes's theorem on total angular defect.",
+  "hypotheses": [
+   {
+    "id": "h:convex",
+    "text": "$P$ is a [convex polyhedron](c:convex-polyhedron): a bounded convex solid whose faces are convex polygons.",
+    "concept": "c:convex-polyhedron"
+   }
+  ],
+  "conclusion": "$\\sum_v \\delta(v) = 4\\pi$, the sum running over all vertices of $P$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "euler-count",
+    "name": "Angle count and Euler's formula",
+    "slogan": "Count the total of all face angles by faces and by edges, then use Euler's formula $V - E + F = 2$.",
+    "scope": "A convex polyhedron with $V$ vertices, $E$ edges and $F$ faces, every face a convex polygon with at least three sides.",
+    "mechanisms": [
+     "m:double-counting",
+     "m:euler-characteristic"
+    ],
+    "roles": [
+     {
+      "h": "h:convex",
+      "why": "Convexity makes each face a planar convex polygon, each edge border two faces, and Euler's formula hold.",
+      "steps": [
+       "s:faces",
+       "s:edges",
+       "s:euler"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:sum",
+      "slogan": "Write the total defect as $2\\pi V$ minus the sum of all face angles.",
+      "detail": "Add $\\delta(v) = 2\\pi - (\\text{sum of the face angles at } v)$ over the $V$ vertices. Each [angle](c:angle) of each face sits at exactly one vertex, so the total defect is $2\\pi V$ minus the sum $\\Sigma$ of all face angles.",
+      "uses": []
+     },
+     {
+      "id": "s:faces",
+      "slogan": "Compute the angle sum of each face from its number of sides.",
+      "detail": "A convex polygon with $n$ sides has [angle sum](c:angle-sum) $(n - 2)\\pi$. So $\\Sigma = \\pi \\sum_F (n_F - 2)$, where $n_F$ is the number of sides of the face $F$.",
+      "uses": []
+     },
+     {
+      "id": "s:edges",
+      "slogan": "Count the sides of all faces through the edges.",
+      "detail": "Each edge borders exactly two faces, so $\\sum_F n_F = 2E$. Hence $\\Sigma = \\pi(2E - 2F) = 2\\pi(E - F)$.",
+      "uses": []
+     },
+     {
+      "id": "s:euler",
+      "slogan": "Combine the counts with Euler's polyhedron formula.",
+      "detail": "The total defect is $2\\pi V - 2\\pi(E - F) = 2\\pi(V - E + F)$. Euler's formula for a convex polyhedron gives $V - E + F = 2$, so the total defect is $4\\pi$.",
+      "uses": [
+       "nm:polyhedron-formula"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:sum",
+      "s:euler"
+     ],
+     [
+      "s:faces",
+      "s:edges"
+     ],
+     [
+      "s:edges",
+      "s:euler"
+     ]
+    ],
+    "conclusion": "s:euler",
+    "concepts": {
+     "c:convex-polyhedron": "Convexity gives planar convex faces and the validity of Euler's formula.",
+     "c:angle": "The defect measures the angle shortfall at a vertex.",
+     "c:angle-sum": "The polygon angle sum turns the sum of angles into a count of sides."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The classical derivation of Descartes's total defect theorem from Euler's polyhedron formula by counting angles."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:27897",
+  "statement": "Let $S$ be a closed orientable [surface](c:surface) of genus $g \\ge 1$. The natural homomorphism from the extended [mapping class group](c:mapping-class-group) $\\mathrm{Mod}^{\\pm}(S)$ to the [outer automorphism](c:outer-automorphism) group $\\mathrm{Out}(\\pi_1(S))$ of its [fundamental group](c:fundamental-group) is an isomorphism.",
+  "hypotheses": [
+   {
+    "id": "h:surface",
+    "text": "$S$ is a closed, connected, orientable [surface](c:surface) of genus $g \\ge 1$.",
+    "concept": "c:surface"
+   }
+  ],
+  "conclusion": "The map sending the isotopy class of a homeomorphism to its class of induced automorphisms of $\\pi_1(S)$ modulo inner automorphisms is bijective.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "quasi-isometry",
+    "name": "Quasi-isometry and linking at infinity",
+    "slogan": "Show injectivity by homotopy implies isotopy, and surjectivity by extending quasi-isometries to the circle at infinity and realizing curve systems.",
+    "scope": "The outline treats $g \\ge 2$, where the universal cover is the hyperbolic plane. For $g = 1$ both groups equal $GL_2(\\mathbb{Z})$ by a direct computation.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:covering-lift",
+     "m:homotopy-invariance"
+    ],
+    "roles": [
+     {
+      "h": "h:surface",
+      "why": "A closed surface of genus at least $2$ is aspherical and has a hyperbolic structure, so $\\pi_1$ acts cocompactly on the hyperbolic plane.",
+      "steps": [
+       "s:injective",
+       "s:qi"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:map",
+      "slogan": "Define the homomorphism from mapping classes to outer automorphisms.",
+      "detail": "A homeomorphism $f$ induces an automorphism of $\\pi_1(S, x)$ after the choice of a path from $x$ to $f(x)$, and another path changes it by an inner automorphism. Isotopic homeomorphisms give the same outer class, so $\\mathrm{Mod}^{\\pm}(S) \\to \\mathrm{Out}(\\pi_1(S))$ is a well-defined homomorphism.",
+      "uses": []
+     },
+     {
+      "id": "s:injective",
+      "slogan": "Show that a trivial outer action forces the mapping class to be trivial.",
+      "detail": "The closed surface is aspherical, so a homeomorphism that induces an inner automorphism is homotopic to the identity. Homotopic homeomorphisms of a closed surface are isotopic (Baer, Epstein), so the kernel of the map is trivial.",
+      "uses": []
+     },
+     {
+      "id": "s:qi",
+      "slogan": "Turn an automorphism of $\\pi_1$ into a homeomorphism of the circle at infinity.",
+      "detail": "The group $\\pi_1(S)$ acts cocompactly on the [hyperbolic plane](c:hyperbolic-plane). By the Svarc-Milnor lemma an automorphism $\\varphi$ gives a $\\varphi$-equivariant [quasi-isometry](c:quasi-isometry) of the plane, which extends to a homeomorphism of the boundary circle.",
+      "uses": []
+     },
+     {
+      "id": "s:linking",
+      "slogan": "Show that the boundary map preserves simple closed curves and their intersection pattern.",
+      "detail": "A closed curve is homotopic to a simple one iff the endpoint pairs of the axes of its lifts are never linked on the circle, and two simple classes can be made disjoint iff no endpoint pairs link. The boundary homeomorphism preserves linking, so $\\varphi$ preserves simple classes and disjointness.",
+      "uses": []
+     },
+     {
+      "id": "s:realize",
+      "slogan": "Realize the automorphism by a homeomorphism, so the map is onto.",
+      "detail": "Take a finite system of simple closed curves that cuts $S$ into disks. Its image under $\\varphi$ is a system of simple closed curves with the same intersection pattern, so a homeomorphism carries one regular neighborhood to the other and extends over the disks. It induces $\\varphi$ up to an inner automorphism, so the map is onto and, with injectivity, an isomorphism.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:map",
+      "s:injective"
+     ],
+     [
+      "s:injective",
+      "s:realize"
+     ],
+     [
+      "s:qi",
+      "s:linking"
+     ],
+     [
+      "s:linking",
+      "s:realize"
+     ]
+    ],
+    "conclusion": "s:realize",
+    "concepts": {
+     "c:surface": "The theorem concerns homeomorphisms and fundamental groups of a closed surface.",
+     "c:mapping-class-group": "The extended mapping class group is the source of the map.",
+     "c:fundamental-group": "Its outer automorphism group is the target and carries the hyperbolic action.",
+     "c:outer-automorphism": "Automorphisms are taken modulo inner ones because of the basepoint choice.",
+     "c:hyperbolic-plane": "The universal cover of the surface is the hyperbolic plane with its circle at infinity.",
+     "c:quasi-isometry": "An automorphism of $\\pi_1$ induces a quasi-isometry that extends to the boundary."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "B. Farb and D. Margalit, A Primer on Mapping Class Groups, Princeton Mathematical Series 49, Princeton University Press, 2012, Chapter 8 (Theorem 8.1)",
+     "url": "https://doi.org/10.1515/9781400839049",
+     "note": "Chapter 8 gives the quasi-isometry proof, which uses linking at infinity of axes of isometries of the hyperbolic plane."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q5278348",
+  "statement": "Give each cell of an $n \\times n$ array a list of $n$ colours, chosen arbitrarily. Then one colour can be chosen in each cell, from its own list, so that no colour repeats in any row or column.",
+  "hypotheses": [
+   {
+    "id": "h:array",
+    "text": "The array is $n \\times n$ with $n \\ge 1$.",
+    "concept": null
+   },
+   {
+    "id": "h:lists",
+    "text": "Each cell $(i, j)$ has a list $L(i, j)$ of $n$ colours, and the lists may overlap in any way.",
+    "concept": null
+   }
+  ],
+  "conclusion": "Some choice $c(i, j) \\in L(i, j)$ has no repeated colour in a row or a column, so it is a proper [list colouring](c:list-colouring) of the cells.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "galvin",
+    "name": "Kernels and stable matchings",
+    "slogan": "Orient the row and column conflicts by a Latin square, get kernels from stable matchings, and colour from lists by induction.",
+    "scope": "All $n \\ge 1$ and all lists. This is Galvin's proof, which shows that the list chromatic index of $K_{n,n}$ is $n$.",
+    "mechanisms": [
+     "m:induction",
+     "m:reduction"
+    ],
+    "roles": [
+     {
+      "h": "h:array",
+      "why": "The $n \\times n$ shape allows a Latin square on the cells and bounds the out-degree by $n - 1$.",
+      "steps": [
+       "s:latin",
+       "s:orient"
+      ]
+     },
+     {
+      "h": "h:lists",
+      "why": "A list of size $n$ exceeds the out-degree $n - 1$, which makes the induction run.",
+      "steps": [
+       "s:colour",
+       "s:finish"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:latin",
+      "slogan": "Fix a [Latin square](c:latin-square) $\\ell$ on the cells.",
+      "detail": "Put $\\ell(i, j) = ((i + j) \\bmod n) + 1$. Each symbol $1, \\dots, n$ occurs once in each row and once in each column, so the symbols in a row, or in a column, are distinct.",
+      "uses": []
+     },
+     {
+      "id": "s:orient",
+      "slogan": "Orient the conflicts so that every cell has out-degree $n - 1$.",
+      "detail": "Two cells conflict if they share a row or a column. Orient a row conflict from the smaller symbol to the larger, and a column conflict from the larger to the smaller. A cell with symbol $s$ has $n - s$ out-arcs along its row and $s - 1$ along its column, $n - 1$ in total.",
+      "uses": []
+     },
+     {
+      "id": "s:kernel",
+      "slogan": "Show that every induced subdigraph has a [kernel](c:kernel-of-a-digraph).",
+      "detail": "A kernel is an independent set $K$ such that every vertex outside $K$ has an arc into $K$. View a set $C$ of cells as the edges of a [bipartite graph](c:bipartite-graph) between rows and columns, where rows prefer larger symbols and columns smaller ones. A stable matching of $C$ exists by Gale and Shapley, and it is exactly a kernel of $C$.",
+      "uses": []
+     },
+     {
+      "id": "s:colour",
+      "slogan": "Prove that lists larger than the out-degree allow a proper colouring.",
+      "detail": "Claim: if every induced subdigraph has a kernel and $|L(v)| >$ out-degree of $v$, a proper list colouring exists. Let $C$ be the cells whose list holds a colour $c$, take a kernel $K$ of $C$, colour $K$ with $c$, delete $K$, and remove $c$ from the lists of $C \\setminus K$. Each such cell has an arc into $K$, so its list and out-degree both drop by one, and induction on the number of cells finishes.",
+      "uses": []
+     },
+     {
+      "id": "s:finish",
+      "slogan": "Colour the conflict graph from the lists to finish the proof.",
+      "detail": "Each list has $n$ colours and each out-degree is $n - 1$, so the claim applies to the oriented conflict graph. A proper colouring gives distinct colours to cells in the same row or column.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:latin",
+      "s:orient"
+     ],
+     [
+      "s:orient",
+      "s:kernel"
+     ],
+     [
+      "s:orient",
+      "s:finish"
+     ],
+     [
+      "s:kernel",
+      "s:colour"
+     ],
+     [
+      "s:colour",
+      "s:finish"
+     ]
+    ],
+    "conclusion": "s:finish",
+    "concepts": {
+     "c:list-colouring": "The goal is a colouring where each cell takes a colour from its list.",
+     "c:latin-square": "A Latin square gives distinct symbols in each line, used to orient the conflicts.",
+     "c:kernel-of-a-digraph": "A kernel is the set of cells that receive one colour in the induction.",
+     "c:bipartite-graph": "Cells are edges between rows and columns, which gives stable matchings."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "F. Galvin, The list chromatic index of a bipartite multigraph, J. Combin. Theory Ser. B 63 (1995), 153-158; the presentation follows Aigner and Ziegler, Proofs from THE BOOK."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q5311783",
+  "statement": "Let $(X_t)_{t \\in T}$ be a centred [Gaussian process](c:gaussian-process) and $d(s, t) = (\\mathbb{E}|X_s - X_t|^2)^{1/2}$. Then the [expected value](c:expected-value) $\\mathbb{E} \\sup_t X_t \\le 24 \\int_0^\\infty \\sqrt{\\ln N(T, d, \\varepsilon)}\\,d\\varepsilon$, where $\\ln N(T, d, \\varepsilon)$ is the [metric entropy](c:metric-entropy) of $(T, d)$.",
+  "hypotheses": [
+   {
+    "id": "h:gaussian",
+    "text": "$(X_t)_{t \\in T}$ is a centred [Gaussian process](c:gaussian-process): every finite subfamily is a centred jointly Gaussian vector.",
+    "concept": "c:gaussian-process"
+   },
+   {
+    "id": "h:metric",
+    "text": "$d$ is the canonical metric $d(s, t) = \\|X_s - X_t\\|_{L^2}$, and $N(T, d, \\varepsilon)$ is the least number of $d$-balls of radius $\\varepsilon$ centred in $T$ that cover $T$.",
+    "concept": "c:metric-entropy"
+   }
+  ],
+  "conclusion": "$\\mathbb{E} \\sup_{t \\in T} X_t \\le 24 \\int_0^\\infty \\sqrt{\\ln N(T, d, \\varepsilon)}\\,d\\varepsilon$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "chaining",
+    "name": "Dyadic chaining",
+    "slogan": "Write each $X_t$ as a telescoping chain through nets of scale $2^{-k}$, bound each link by the Gaussian maximal inequality, and sum.",
+    "scope": "The supremum over an infinite $T$ means the supremum of $\\mathbb{E}\\max_F X_t$ over finite $F \\subseteq T$. If the integral is infinite there is nothing to prove.",
+    "mechanisms": [
+     "m:telescoping",
+     "m:concentration"
+    ],
+    "roles": [
+     {
+      "h": "h:gaussian",
+      "why": "Gaussian variables have exponential moments, which gives the maximal inequality for each link.",
+      "steps": [
+       "s:max",
+       "s:link"
+      ]
+     },
+     {
+      "h": "h:metric",
+      "why": "The metric $d$ gives the nets and the standard deviations of the increments.",
+      "steps": [
+       "s:chain",
+       "s:link",
+       "s:integral"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:max",
+      "slogan": "Bound the expected maximum of finitely many Gaussians.",
+      "detail": "Let $Y_1, \\dots, Y_M$ be centred Gaussian with variance at most $\\sigma^2$. For $\\lambda > 0$, Jensen gives $e^{\\lambda \\mathbb{E}\\max Y_i} \\le \\mathbb{E}\\, e^{\\lambda \\max Y_i} \\le M e^{\\lambda^2 \\sigma^2/2}$. Taking $\\lambda = \\sqrt{2 \\ln M}/\\sigma$ gives $\\mathbb{E}\\max_i Y_i \\le \\sigma \\sqrt{2 \\ln M}$.",
+      "uses": []
+     },
+     {
+      "id": "s:chain",
+      "slogan": "Write $X_t$ as a telescoping chain through nets of scale $2^{-k}$.",
+      "detail": "Let $T$ be finite with diameter $D$, put $\\varepsilon_k = 2^{-k}D$ and take $\\varepsilon_k$-nets $T_k \\subseteq T$ of size $N_k = N(T, d, \\varepsilon_k)$, with $T_0 = \\{t_0\\}$. With $\\pi_k(t)$ a nearest point of $T_k$, $X_t = X_{t_0} + \\sum_{k=1}^K (X_{\\pi_k t} - X_{\\pi_{k-1} t})$ almost surely for large $K$.",
+      "uses": []
+     },
+     {
+      "id": "s:link",
+      "slogan": "Bound the expected supremum of each link by the maximal inequality.",
+      "detail": "At level $k$ the pair $(\\pi_k t, \\pi_{k-1} t)$ takes at most $N_k N_{k-1} \\le N_k^2$ values, and each increment is centred Gaussian with standard deviation at most $\\varepsilon_k + \\varepsilon_{k-1} = 3\\varepsilon_k$. The first step gives $\\mathbb{E}\\sup_t X_t \\le \\sum_k 3\\varepsilon_k \\sqrt{2 \\ln N_k^2} = 6\\sum_k \\varepsilon_k \\sqrt{\\ln N_k}$, since $\\mathbb{E} X_{t_0} = 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:integral",
+      "slogan": "Compare the sum over scales with the entropy integral.",
+      "detail": "Since $\\varepsilon_k = 2(\\varepsilon_k - \\varepsilon_{k+1})$ and $N(T, d, \\varepsilon) \\ge N_k$ for $\\varepsilon \\le \\varepsilon_k$, we get $\\varepsilon_k \\sqrt{\\ln N_k} \\le 2\\int_{\\varepsilon_{k+1}}^{\\varepsilon_k} \\sqrt{\\ln N(T, d, \\varepsilon)}\\,d\\varepsilon$. Summing gives $\\mathbb{E}\\sup_T X_t \\le 12\\int_0^\\infty \\sqrt{\\ln N(T, d, \\varepsilon)}\\,d\\varepsilon$ for finite $T$.",
+      "uses": []
+     },
+     {
+      "id": "s:general",
+      "slogan": "Extend the finite bound to every index set $T$.",
+      "detail": "For finite $F \\subseteq T$ we have $N(F, d, 2\\varepsilon) \\le N(T, d, \\varepsilon)$, because each $\\varepsilon$-ball of a cover that meets $F$ lies in a $2\\varepsilon$-ball centred in $F$. So the entropy integral of $F$ is at most twice that of $T$, and the bound for $F$ with constant $12$ gives $24$ for $T$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:max",
+      "s:link"
+     ],
+     [
+      "s:chain",
+      "s:link"
+     ],
+     [
+      "s:link",
+      "s:integral"
+     ],
+     [
+      "s:integral",
+      "s:general"
+     ]
+    ],
+    "conclusion": "s:general",
+    "concepts": {
+     "c:gaussian-process": "The increments of the process are Gaussian, so a maximal inequality applies.",
+     "c:metric-entropy": "Covering numbers measure the size of $T$ at each scale.",
+     "c:expected-value": "The theorem bounds the expectation of the supremum, which the links control."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "R. M. Dudley's chaining argument (1967) in its dyadic form, as in Vershynin, High-Dimensional Probability, section 8.1."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q976607",
+  "statement": "Let $r, s \\ge 1$. Every sequence of at least $(r-1)(s-1) + 1$ distinct real numbers has an increasing [subsequence](c:subsequence) of length $r$ or a decreasing subsequence of length $s$.",
+  "hypotheses": [
+   {
+    "id": "h:rs",
+    "text": "The numbers $r$ and $s$ are positive integers.",
+    "concept": null
+   },
+   {
+    "id": "h:seq",
+    "text": "The sequence $a_1, \\dots, a_N$ has distinct real terms and $N \\ge (r-1)(s-1) + 1$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "Some increasing subsequence has length $r$, or some decreasing subsequence has length $s$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "labels",
+    "name": "Labels and pigeonhole",
+    "slogan": "Label each term by the lengths of the longest monotone runs ending there, show that labels are distinct, and count.",
+    "scope": "All $r, s \\ge 1$. The cases $r = 1$ and $s = 1$ are included, since one term is a monotone subsequence of length $1$.",
+    "mechanisms": [
+     "m:pigeonhole",
+     "m:contradiction"
+    ],
+    "roles": [
+     {
+      "h": "h:rs",
+      "why": "The integers $r$ and $s$ bound the labels by $(r-1)(s-1)$ pairs.",
+      "steps": [
+       "s:assume",
+       "s:pigeon"
+      ]
+     },
+     {
+      "h": "h:seq",
+      "why": "Distinct terms make every comparison strict, and the length $N$ exceeds the number of labels.",
+      "steps": [
+       "s:distinct",
+       "s:pigeon"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:label",
+      "slogan": "Label each term $a_i$ with the longest monotone lengths ending at it.",
+      "detail": "Let $x_i$ be the length of the longest increasing [subsequence](c:subsequence) ending at $a_i$, and $y_i$ the length of the longest decreasing one. Both are at least $1$.",
+      "uses": []
+     },
+     {
+      "id": "s:distinct",
+      "slogan": "Show that two different terms have different labels.",
+      "detail": "Take $i < j$. If $a_i < a_j$, appending $a_j$ to a longest increasing run ending at $a_i$ gives $x_j > x_i$; if $a_i > a_j$, the same argument gives $y_j > y_i$. The terms are distinct, so one case holds and the labels differ.",
+      "uses": []
+     },
+     {
+      "id": "s:assume",
+      "slogan": "Suppose that no increasing run has length $r$ and no decreasing run has length $s$.",
+      "detail": "A run of length at least $r$ contains one of length exactly $r$, so every $x_i \\le r - 1$ and every $y_i \\le s - 1$. Then each label lies in a set of at most $(r-1)(s-1)$ pairs.",
+      "uses": []
+     },
+     {
+      "id": "s:pigeon",
+      "slogan": "Compare the number of labels with the number of terms by pigeonhole.",
+      "detail": "There are $N \\ge (r-1)(s-1) + 1$ terms but at most $(r-1)(s-1)$ labels, so two terms share a label. This contradicts the second step, so the assumption fails.",
+      "uses": [
+       "nm:pigeonhole-principle"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:label",
+      "s:distinct"
+     ],
+     [
+      "s:label",
+      "s:assume"
+     ],
+     [
+      "s:distinct",
+      "s:pigeon"
+     ],
+     [
+      "s:assume",
+      "s:pigeon"
+     ]
+    ],
+    "conclusion": "s:pigeon",
+    "concepts": {
+     "c:subsequence": "The labels record the lengths of increasing and decreasing subsequences."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The pigeonhole proof with pair labels, due to A. Seidenberg (1959)."
+    }
+   },
+   {
+    "id": "dilworth",
+    "name": "Dilworth's theorem",
+    "slogan": "Order the positions so that chains are increasing runs and antichains are decreasing runs, then cover by chains.",
+    "scope": "All $r \\ge 1$ and $s \\ge 2$. For $s = 1$ any single term is a decreasing subsequence of length $1$.",
+    "mechanisms": [
+     "m:pigeonhole",
+     "m:reduction"
+    ],
+    "roles": [
+     {
+      "h": "h:rs",
+      "why": "The integer $s$ bounds the width of the order, and $r$ bounds the chain sizes in the count.",
+      "steps": [
+       "s:width",
+       "s:largest"
+      ]
+     },
+     {
+      "h": "h:seq",
+      "why": "Distinct terms make incomparable positions a decreasing pair, and $N$ is large enough for the final count.",
+      "steps": [
+       "s:poset",
+       "s:largest"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:poset",
+      "slogan": "Order the positions by $i \\prec j$ when $i < j$ and $a_i < a_j$.",
+      "detail": "This relation is irreflexive and transitive, so it is a partial order. A chain is an increasing [subsequence](c:subsequence). Two positions $i < j$ are incomparable iff $a_i > a_j$, so an [antichain](c:antichain) is a decreasing subsequence.",
+      "uses": []
+     },
+     {
+      "id": "s:width",
+      "slogan": "Bound the width by $s - 1$ when no decreasing run has length $s$.",
+      "detail": "Assume that no decreasing subsequence has length $s$. Then every antichain has at most $s - 1$ elements, so the width of the order is at most $s - 1$.",
+      "uses": []
+     },
+     {
+      "id": "s:cover",
+      "slogan": "Cover all positions by at most $s - 1$ chains.",
+      "detail": "Dilworth's theorem says that a finite poset is covered by as many chains as its width. So the $N$ positions split into at most $s - 1$ chains.",
+      "uses": [
+       "wd:Q1134776"
+      ]
+     },
+     {
+      "id": "s:largest",
+      "slogan": "Take the largest chain and bound its size from below.",
+      "detail": "If every chain had at most $r - 1$ elements, then $N \\le (s-1)(r-1)$, which contradicts $N \\ge (r-1)(s-1) + 1$. So some chain has at least $r$ elements, an increasing subsequence of length $r$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:poset",
+      "s:width"
+     ],
+     [
+      "s:width",
+      "s:cover"
+     ],
+     [
+      "s:cover",
+      "s:largest"
+     ]
+    ],
+    "conclusion": "s:largest",
+    "concepts": {
+     "c:subsequence": "Chains of the order are increasing subsequences of the sequence.",
+     "c:antichain": "Antichains of the order are decreasing subsequences, which Dilworth's theorem bounds."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "A standard derivation of the Erdos-Szekeres theorem from Dilworth's theorem, an alternative to the labelling proof."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:first-bird-wadler-duality-theorem",
+  "statement": "Let $f$ be an [associative operation](c:associative-operation) on a type $\\alpha$, and let $a \\in \\alpha$ satisfy $f(a, x) = f(x, a)$ for all $x$. Then for every [list](c:list) $l$ over $\\alpha$, the left [fold](c:fold) $\\mathrm{foldl}\\, f\\, a\\, l$ equals the right fold $\\mathrm{foldr}\\, f\\, a\\, l$.",
+  "hypotheses": [
+   {
+    "id": "h:assoc",
+    "text": "The operation $f$ is [associative](c:associative-operation): $f(f(x, y), z) = f(x, f(y, z))$.",
+    "concept": "c:associative-operation"
+   },
+   {
+    "id": "h:commute",
+    "text": "The element $a$ commutes with every $x$: $f(a, x) = f(x, a)$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "$\\mathrm{foldl}\\, f\\, a\\, l = \\mathrm{foldr}\\, f\\, a\\, l$ for every list $l$.",
+  "formal": {
+   "decl": "List.foldl_eq_foldr_of_commute",
+   "difference": "The declaration states the same equation, with associativity as a typeclass. The classical Bird-Wadler form takes $a$ to be an identity of $f$, which commutes with every element, so it is a special case."
+  },
+  "proofs": [
+   {
+    "id": "induction",
+    "name": "Induction on the list",
+    "slogan": "Induct on the list, and use associativity to move the commuting start value past the first element.",
+    "scope": "All lists, including the empty list, by induction on the length.",
+    "mechanisms": [
+     "m:induction",
+     "m:structural-induction"
+    ],
+    "roles": [
+     {
+      "h": "h:assoc",
+      "why": "Associativity moves a prefix element out of the left fold.",
+      "steps": [
+       "s:assoc"
+      ]
+     },
+     {
+      "h": "h:commute",
+      "why": "Commuting lets the start value $a$ trade places with the first element $x$.",
+      "steps": [
+       "s:commute"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:base",
+      "slogan": "Check the empty list.",
+      "detail": "For $l = [\\,]$ both folds return $a$. So $\\mathrm{foldl}\\, f\\, a\\, [\\,] = a = \\mathrm{foldr}\\, f\\, a\\, [\\,]$.",
+      "uses": []
+     },
+     {
+      "id": "s:unfold",
+      "slogan": "Unfold both folds on the list $x :: l$.",
+      "detail": "By definition $\\mathrm{foldl}\\, f\\, a\\, (x :: l) = \\mathrm{foldl}\\, f\\, (f(a, x))\\, l$ and $\\mathrm{foldr}\\, f\\, a\\, (x :: l) = f(x, \\mathrm{foldr}\\, f\\, a\\, l)$.",
+      "uses": []
+     },
+     {
+      "id": "s:commute",
+      "slogan": "Swap the start value with $x$ by the commuting hypothesis.",
+      "detail": "Since $f(a, x) = f(x, a)$, we get $\\mathrm{foldl}\\, f\\, (f(a, x))\\, l = \\mathrm{foldl}\\, f\\, (f(x, a))\\, l$.",
+      "uses": []
+     },
+     {
+      "id": "s:assoc",
+      "slogan": "Pull $x$ out of the left [fold](c:fold) by associativity.",
+      "detail": "By induction on $l$, associativity gives $\\mathrm{foldl}\\, f\\, (f(x, b))\\, l = f(x, \\mathrm{foldl}\\, f\\, b\\, l)$ for every $b$. With $b = a$ this reads $\\mathrm{foldl}\\, f\\, (f(x, a))\\, l = f(x, \\mathrm{foldl}\\, f\\, a\\, l)$.",
+      "uses": []
+     },
+     {
+      "id": "s:hypothesis",
+      "slogan": "Replace the left fold by the right fold with the induction hypothesis.",
+      "detail": "The hypothesis for $l$ gives $\\mathrm{foldl}\\, f\\, a\\, l = \\mathrm{foldr}\\, f\\, a\\, l$. Hence $f(x, \\mathrm{foldl}\\, f\\, a\\, l) = f(x, \\mathrm{foldr}\\, f\\, a\\, l) = \\mathrm{foldr}\\, f\\, a\\, (x :: l)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:base",
+      "s:hypothesis"
+     ],
+     [
+      "s:unfold",
+      "s:commute"
+     ],
+     [
+      "s:commute",
+      "s:assoc"
+     ],
+     [
+      "s:assoc",
+      "s:hypothesis"
+     ]
+    ],
+    "conclusion": "s:hypothesis",
+    "concepts": {
+     "c:associative-operation": "Associativity lets a prefix element move out of the left fold.",
+     "c:list": "The proof inducts on the structure of the list.",
+     "c:fold": "The two folds, from the left and from the right, are the objects compared."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "List.foldl_eq_foldr_of_commute",
+     "follows": true,
+     "note": "mathlib inducts on the list and closes both cases with simp and List.foldl_assoc, which moves a prefix value out of foldl by associativity."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:8251",
+  "statement": "Let $R$ be a ring, $M$ a right and $N$ a left $R$-module, and $F_\\bullet \\to M$ a [flat resolution](c:flat-resolution). Then $H_n(F_\\bullet \\otimes_R N) \\cong \\mathrm{Tor}_n^R(M, N)$ for every $n \\ge 0$. So the [Tor functor](c:tor-functor) can be computed with flat resolutions as well as with projective ones.",
+  "hypotheses": [
+   {
+    "id": "h:modules",
+    "text": "$M$ is a right $R$-module and $N$ is a left $R$-module over a ring $R$.",
+    "concept": null
+   },
+   {
+    "id": "h:flat",
+    "text": "$F_\\bullet \\to M$ is a [flat resolution](c:flat-resolution): an exact complex $\\cdots \\to F_1 \\to F_0 \\to M \\to 0$ in which every $F_i$ is a [flat module](c:flat-module).",
+    "concept": "c:flat-resolution"
+   }
+  ],
+  "conclusion": "$\\mathrm{Tor}_n^R(M, N) \\cong H_n(F_\\bullet \\otimes_R N)$ for every $n \\ge 0$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "dimension-shifting",
+    "name": "Dimension shifting",
+    "slogan": "Show that flat modules have no higher Tor, then shift dimensions along the short exact sequences cut from the resolution.",
+    "scope": "Degrees $n \\ge 0$, with $\\mathrm{Tor}$ defined by a projective resolution of either variable and balanced. The isomorphisms are shown degree by degree, and their naturality is not repeated.",
+    "mechanisms": [
+     "m:long-exact-sequence",
+     "m:exact-sequence"
+    ],
+    "roles": [
+     {
+      "h": "h:modules",
+      "why": "The two module structures make $\\otimes_R$ and $\\mathrm{Tor}$ defined and balanced.",
+      "steps": [
+       "s:acyclic",
+       "s:zero"
+      ]
+     },
+     {
+      "h": "h:flat",
+      "why": "Flatness of each $F_i$ makes $\\mathrm{Tor}_{\\ge 1}(F_i, N)$ vanish, and exactness gives the short exact sequences.",
+      "steps": [
+       "s:acyclic",
+       "s:split",
+       "s:shift"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:acyclic",
+      "slogan": "Show that a flat module $F$ has $\\mathrm{Tor}_n(F, N) = 0$ for $n \\ge 1$.",
+      "detail": "Tor is balanced, so $\\mathrm{Tor}_n(F, N) = H_n(F \\otimes Q_\\bullet)$ for a [projective resolution](c:has-projective-resolution) $Q_\\bullet \\to N$. Since $F$ is flat, $F \\otimes -$ is exact, so $H_n(F \\otimes Q_\\bullet) = F \\otimes H_n(Q_\\bullet) = 0$ for $n \\ge 1$.",
+      "uses": []
+     },
+     {
+      "id": "s:split",
+      "slogan": "Cut the flat resolution into short exact sequences.",
+      "detail": "Put $K_{-1} = M$ and $K_i = \\ker(F_i \\to K_{i-1})$. Exactness gives [short exact sequences](c:exact-sequence) $0 \\to K_i \\to F_i \\to K_{i-1} \\to 0$, and each $F_{i+1} \\to K_i$ is onto.",
+      "uses": []
+     },
+     {
+      "id": "s:shift",
+      "slogan": "Shift dimensions along the short exact sequences.",
+      "detail": "The long exact Tor sequence and $\\mathrm{Tor}_{\\ge 1}(F_i, N) = 0$ give $\\mathrm{Tor}_m(K_{i-1}, N) \\cong \\mathrm{Tor}_{m-1}(K_i, N)$ for $m \\ge 2$, and $\\mathrm{Tor}_1(K_{i-1}, N) = \\ker(K_i \\otimes N \\to F_i \\otimes N)$. Hence $\\mathrm{Tor}_n(M, N) \\cong \\ker(K_{n-1} \\otimes N \\to F_{n-1} \\otimes N)$ for $n \\ge 1$.",
+      "uses": []
+     },
+     {
+      "id": "s:identify",
+      "slogan": "Identify this kernel with the homology $H_n(F_\\bullet \\otimes N)$ for $n \\ge 1$.",
+      "detail": "Right exactness gives an exact sequence $K_n \\otimes N \\to F_n \\otimes N \\xrightarrow{\\pi} K_{n-1} \\otimes N \\to 0$, and $\\mathrm{im}(F_{n+1} \\otimes N \\to F_n \\otimes N) = \\ker \\pi$. With $\\varphi \\colon K_{n-1} \\otimes N \\to F_{n-1} \\otimes N$ the differential is $\\varphi\\pi$, and $\\pi$ maps $\\ker(\\varphi\\pi)$ onto $\\ker \\varphi$ with kernel $\\ker \\pi$. So $H_n(F_\\bullet \\otimes N) \\cong \\ker \\varphi$.",
+      "uses": []
+     },
+     {
+      "id": "s:zero",
+      "slogan": "Check degree zero by right exactness of the tensor product.",
+      "detail": "The sequence $F_1 \\otimes N \\to F_0 \\otimes N \\to M \\otimes N \\to 0$ is exact, so $H_0(F_\\bullet \\otimes N) = M \\otimes N = \\mathrm{Tor}_0(M, N)$.",
+      "uses": []
+     },
+     {
+      "id": "s:assemble",
+      "slogan": "Combine the degrees into the isomorphism for every $n \\ge 0$.",
+      "detail": "The last two steps and the dimension shift give $H_n(F_\\bullet \\otimes N) \\cong \\mathrm{Tor}_n(M, N)$ for $n = 0$ and for all $n \\ge 1$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:acyclic",
+      "s:shift"
+     ],
+     [
+      "s:split",
+      "s:shift"
+     ],
+     [
+      "s:shift",
+      "s:identify"
+     ],
+     [
+      "s:split",
+      "s:identify"
+     ],
+     [
+      "s:identify",
+      "s:assemble"
+     ],
+     [
+      "s:zero",
+      "s:assemble"
+     ]
+    ],
+    "conclusion": "s:assemble",
+    "concepts": {
+     "c:flat-resolution": "The resolution is the complex whose tensor product with $N$ is studied.",
+     "c:tor-functor": "Tor is the derived functor of the tensor product that the resolution computes.",
+     "c:flat-module": "Flat terms have no higher Tor, so they act like projective terms.",
+     "c:has-projective-resolution": "Tor is defined with a projective resolution, here of the second variable.",
+     "c:exact-sequence": "The resolution is cut into short exact sequences for dimension shifting."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard dimension-shifting argument that acyclic resolutions compute derived functors, as in Weibel, An Introduction to Homological Algebra, chapters 2 and 3."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1424481",
+  "statement": "For every [finite group](c:finite-group) $G$ there is a finite simple undirected graph $\\Gamma$ whose [automorphism group](c:automorphism-group) is isomorphic to $G$.",
+  "hypotheses": [
+   {
+    "id": "h:group",
+    "text": "$G$ is a [finite group](c:finite-group).",
+    "concept": "c:finite-group"
+   }
+  ],
+  "conclusion": "$\\mathrm{Aut}(\\Gamma) \\cong G$ for some finite simple undirected graph $\\Gamma$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "cayley-gadgets",
+    "name": "Colour Cayley digraph with gadgets",
+    "slogan": "Encode $G$ as a coloured Cayley digraph with automorphism group $G$, then replace each coloured arc by a rigid gadget.",
+    "scope": "All finite groups. The trivial group uses one vertex, and the generator list has at least two entries (with repeats if needed) so that group vertices have degree at least $4$.",
+    "mechanisms": [
+     "m:construction-explicit",
+     "m:group-action-orbits"
+    ],
+    "roles": [
+     {
+      "h": "h:group",
+      "why": "Finiteness makes every element a positive word in the generators and makes $\\Gamma$ finite.",
+      "steps": [
+       "s:cayley",
+       "s:left"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:cayley",
+      "slogan": "Build the coloured [Cayley graph](c:cayley-graph) of $G$ as a digraph.",
+      "detail": "Let $G \\ne 1$ and choose generators $s_1, \\dots, s_k \\ne e$ of $G$ with $k \\ge 2$, repeating one if needed. Let $\\Delta$ have vertex set $G$ and, for each $g \\in G$ and $i \\le k$, an arc $g \\to g s_i$ of colour $i$.",
+      "uses": []
+     },
+     {
+      "id": "s:left",
+      "slogan": "Show that the colour-preserving automorphisms of $\\Delta$ are the left multiplications.",
+      "detail": "Left multiplication by $h$ maps the arc $g \\to g s_i$ to $hg \\to hg s_i$ of colour $i$. Conversely let $\\psi$ preserve colours and put $h = \\psi(e)$. The only arc of colour $i$ leaving $\\psi(g)$ ends at $\\psi(g) s_i$, so $\\psi(g s_i) = \\psi(g) s_i$, and $\\psi(w) = hw$ for every positive word $w$.",
+      "uses": []
+     },
+     {
+      "id": "s:gadget",
+      "slogan": "Replace each coloured arc by a gadget of paths.",
+      "detail": "For the arc $u \\to v$ of colour $i$ add new vertices $a, b$ and edges $ua$, $ab$, $bv$. Attach a pendant path of length $1$ at $a$ and a pendant path of length $i + 1$ at $b$. The result is a finite simple graph $\\Gamma$ with vertex set $G$ plus the gadget vertices.",
+      "uses": []
+     },
+     {
+      "id": "s:recover",
+      "slogan": "Recover the vertices and coloured arcs of $\\Delta$ from $\\Gamma$ by degrees.",
+      "detail": "A vertex $g \\in G$ has degree $2k \\ge 4$ in $\\Gamma$, and every new vertex has degree at most $3$, so every automorphism of $\\Gamma$ preserves $G$. Each gadget is a component of $\\Gamma - G$, joined to $u$ at $a$ and to $v$ at $b$. The pendant lengths $1 \\ne i + 1$ distinguish $a$ from $b$ and give the colour $i$.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Conclude that $\\mathrm{Aut}(\\Gamma)$ is isomorphic to $G$.",
+      "detail": "An automorphism of $\\Gamma$ maps gadgets to gadgets, matching $a$ with $a'$ and $b$ with $b'$, so it restricts to a colour-preserving automorphism of $\\Delta$. Conversely each such automorphism extends uniquely over the gadgets, and one that is trivial on $G$ is trivial on every gadget. So $\\mathrm{Aut}(\\Gamma) \\cong \\mathrm{Aut}_{\\mathrm{col}}(\\Delta) \\cong G$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:cayley",
+      "s:left"
+     ],
+     [
+      "s:cayley",
+      "s:gadget"
+     ],
+     [
+      "s:gadget",
+      "s:recover"
+     ],
+     [
+      "s:left",
+      "s:conclude"
+     ],
+     [
+      "s:recover",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:finite-group": "Finiteness gives a finite generating list and a finite graph.",
+     "c:automorphism-group": "The graph is built so that its automorphism group is exactly $G$.",
+     "c:cayley-graph": "The coloured Cayley graph carries the left action of $G$ as its symmetries."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The coloured Cayley graph with replaced arcs, after R. Frucht, Herstellung von Graphen mit vorgegebener abstrakter Gruppe, Compositio Mathematica 6 (1939), 239-250; the gadgets here are chosen for a short check."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:functional-equation-for-the-riemann-zeta-function-in-logarithmic-derivative-form",
+  "statement": "Let $s \\in \\mathbb{C}$ be not an integer, with $\\zeta(s) \\ne 0$. Then $\\frac{\\zeta'}{\\zeta}(s) = -\\frac{\\zeta'}{\\zeta}(1 - s) + \\log(2\\pi) - \\psi(s) + \\frac{\\pi}{2}\\tan\\frac{\\pi s}{2}$, where $\\zeta$ is the [Riemann zeta function](c:riemann-zeta-function) and $\\psi = \\Gamma'/\\Gamma$ is the [digamma function](c:digamma-function).",
+  "hypotheses": [
+   {
+    "id": "h:nonint",
+    "text": "The number $s$ is not an integer.",
+    "concept": null
+   },
+   {
+    "id": "h:nonzero",
+    "text": "$\\zeta(s) \\ne 0$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The [logarithmic derivative](c:logarithmic-derivative) of $\\zeta$ at $s$ equals $-\\frac{\\zeta'}{\\zeta}(1-s) + \\log(2\\pi) - \\psi(s) + \\frac{\\pi}{2}\\tan\\frac{\\pi s}{2}$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "log-derivative",
+    "name": "Logarithmic derivative of the functional equation",
+    "slogan": "Take the logarithmic derivative of the functional equation at a point where every factor is analytic and nonzero.",
+    "scope": "A point $s$ off the integers, so $s \\ne 1$ and no factor has a pole or a zero at $s$. The hypothesis $\\zeta(s) \\ne 0$ makes $\\zeta'/\\zeta$ defined at $s$.",
+    "mechanisms": [
+     "m:analytic-continuation",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:nonint",
+      "why": "Off the integers, $\\zeta$ and $\\Gamma$ are analytic, $\\Gamma$ has no pole, and $\\cos(\\pi s/2) \\ne 0$.",
+      "steps": [
+       "s:equation",
+       "s:factors"
+      ]
+     },
+     {
+      "h": "h:nonzero",
+      "why": "A nonzero $\\zeta(s)$ makes the logarithmic derivative of $\\zeta$ at $s$ defined and the product nonzero.",
+      "steps": [
+       "s:factors",
+       "s:derive"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:equation",
+      "slogan": "State the functional equation on a neighborhood of $s$.",
+      "detail": "For $z$ not an integer, $\\zeta(1 - z) = 2(2\\pi)^{-z}\\Gamma(z)\\cos(\\pi z/2)\\,\\zeta(z)$. The integers form a closed set, so this holds for all $z$ in a neighborhood of $s$.",
+      "uses": []
+     },
+     {
+      "id": "s:factors",
+      "slogan": "Check that every factor is analytic and nonzero at $s$.",
+      "detail": "At $s$: $\\zeta$ is analytic since $s \\ne 1$; $\\Gamma$ is analytic and never zero since $s \\notin \\{0, -1, -2, \\dots\\}$; $(2\\pi)^{-z}$ is entire and nonzero; $\\cos(\\pi s/2) \\ne 0$ since $s$ is not an odd integer. With $\\zeta(s) \\ne 0$ the product is nonzero, so $\\zeta(1 - s) \\ne 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:derive",
+      "slogan": "Differentiate the logarithm of both sides at $s$.",
+      "detail": "The two sides agree near $s$, so their logarithmic derivatives agree at $s$. The left side gives $-\\frac{\\zeta'}{\\zeta}(1 - s)$. The [logarithmic derivative](c:logarithmic-derivative) of a product is the sum over its factors: $-\\log(2\\pi) + \\psi(s) - \\frac{\\pi}{2}\\tan\\frac{\\pi s}{2} + \\frac{\\zeta'}{\\zeta}(s)$.",
+      "uses": []
+     },
+     {
+      "id": "s:solve",
+      "slogan": "Solve the resulting equation for $\\zeta'/\\zeta(s)$.",
+      "detail": "We have $-\\frac{\\zeta'}{\\zeta}(1 - s) = -\\log(2\\pi) + \\psi(s) - \\frac{\\pi}{2}\\tan\\frac{\\pi s}{2} + \\frac{\\zeta'}{\\zeta}(s)$. Moving the terms gives $\\frac{\\zeta'}{\\zeta}(s) = -\\frac{\\zeta'}{\\zeta}(1 - s) + \\log(2\\pi) - \\psi(s) + \\frac{\\pi}{2}\\tan\\frac{\\pi s}{2}$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:equation",
+      "s:derive"
+     ],
+     [
+      "s:factors",
+      "s:derive"
+     ],
+     [
+      "s:derive",
+      "s:solve"
+     ]
+    ],
+    "conclusion": "s:solve",
+    "concepts": {
+     "c:riemann-zeta-function": "The functional equation of $\\zeta$ is the identity that is differentiated.",
+     "c:digamma-function": "The digamma function is the logarithmic derivative of the Gamma factor.",
+     "c:logarithmic-derivative": "The logarithmic derivative turns the product in the equation into a sum."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "logDeriv_riemannZeta_one_sub",
+     "follows": true,
+     "note": "mathlib rewrites the functional equation near s (riemannZeta_one_sub, logDeriv_congr_nhds), then applies logDeriv_comp and logDeriv_fun_mul to the product, with digamma_def for the Gamma factor."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:22920",
+  "statement": "Let $(X, \\mu, T)$ be an [ergodic](c:ergodic) [measure-preserving system](c:measure-preserving-system) on a standard probability space. Then $X$ has a factor $Y$ that is reached from the trivial factor by a transfinite tower of [compact extensions](c:compact-extension), such that $X$ is a [weakly mixing](c:weak-mixing) extension of $Y$.",
+  "hypotheses": [
+   {
+    "id": "h:system",
+    "text": "$(X, \\mu, T)$ is a [measure-preserving system](c:measure-preserving-system) on a standard probability space.",
+    "concept": "c:measure-preserving-system"
+   },
+   {
+    "id": "h:ergodic",
+    "text": "The transformation $T$ is [ergodic](c:ergodic).",
+    "concept": "c:ergodic"
+   }
+  ],
+  "conclusion": "There is a factor $Y$ of $X$ such that $Y$ is a transfinite tower of compact extensions of the trivial factor and $X \\to Y$ is weakly mixing.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "dichotomy-tower",
+    "name": "Dichotomy and transfinite tower",
+    "slogan": "Show that each extension is weakly mixing or has an intermediate compact extension, then climb a transfinite tower until it stops.",
+    "scope": "The ergodic case; the general case relativizes over the invariant factor, and a system that is a tower itself has trivial weakly mixing part. The outline is a sketch: the dichotomy in the second step rests on the cited work.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:zorn"
+    ],
+    "roles": [
+     {
+      "h": "h:system",
+      "why": "The standard probability space makes $L^2(X)$ separable and gives relative products over factors.",
+      "steps": [
+       "s:define",
+       "s:terminate"
+      ]
+     },
+     {
+      "h": "h:ergodic",
+      "why": "Ergodicity makes the trivial factor a valid base, whose invariant functions are constants.",
+      "steps": [
+       "s:tower"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:define",
+      "slogan": "Define compact and weakly mixing extensions through the relative product.",
+      "detail": "For a factor $Y$ of $X$, the relative product $X \\times_Y X$ carries the relatively independent self-joining. $X$ is [weakly mixing](c:weak-mixing) over $Y$ if the only invariant functions in $L^2(X \\times_Y X)$ come from $Y$. $X$ is [compact](c:compact-extension) over $Y$ if $L^2(X)$ is spanned by finite-rank invariant $L^\\infty(Y)$-modules.",
+      "uses": []
+     },
+     {
+      "id": "s:dichotomy",
+      "slogan": "Prove the dichotomy: weakly mixing, or an intermediate compact extension exists.",
+      "detail": "If $X$ is not weakly mixing over $Y$, there is an invariant function in $L^2(X \\times_Y X)$ not coming from $Y$. As an $L^\\infty(Y)$-linear Hilbert-Schmidt operator it gives a nonzero finite-rank invariant $L^\\infty(Y)$-module in $L^2(X)$ orthogonal to $L^2(Y)$. It generates a factor $Z$ with $Y < Z \\le X$ that is compact over $Y$ (Furstenberg and Zimmer).",
+      "uses": []
+     },
+     {
+      "id": "s:tower",
+      "slogan": "Build a transfinite tower of compact extensions by recursion, taking joins at limits.",
+      "detail": "Let $Y_0$ be the trivial factor. If $X$ is not weakly mixing over $Y_\\alpha$, the dichotomy gives a compact extension $Y_{\\alpha+1} > Y_\\alpha$ inside $X$. At a limit ordinal $\\lambda$ let $Y_\\lambda$ be the join of the $Y_\\beta$ with $\\beta < \\lambda$.",
+      "uses": []
+     },
+     {
+      "id": "s:terminate",
+      "slogan": "Show that the recursion stops at a countable ordinal.",
+      "detail": "The factors $Y_\\alpha$ increase strictly, so their $L^2$ spaces form a strictly increasing chain of closed subspaces of the separable space $L^2(X)$. Such a chain is countable, so the recursion stops at a countable ordinal $\\eta$.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Conclude that $X$ is weakly mixing over the top of the tower.",
+      "detail": "At the stopping ordinal $\\eta$ the recursion could not continue, so $X$ is weakly mixing over $Y_\\eta$ by the dichotomy. And $Y_\\eta$ is reached from the trivial factor by the tower of compact extensions.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:define",
+      "s:dichotomy"
+     ],
+     [
+      "s:dichotomy",
+      "s:tower"
+     ],
+     [
+      "s:tower",
+      "s:terminate"
+     ],
+     [
+      "s:terminate",
+      "s:conclude"
+     ],
+     [
+      "s:dichotomy",
+      "s:conclude"
+     ],
+     [
+      "s:tower",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:ergodic": "Ergodicity gives the trivial factor as the base of the tower.",
+     "c:measure-preserving-system": "The system and its factors are the objects the tower is built from.",
+     "c:compact-extension": "Compact extensions are the steps of the tower.",
+     "c:weak-mixing": "Weak mixing over the top factor is the end state of the recursion."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "H. Furstenberg, Ergodic behavior of diagonal measures and a theorem of Szemeredi on arithmetic progressions, Journal d'Analyse Mathematique 31 (1977), 204-256",
+     "url": "https://doi.org/10.1007/BF02813304",
+     "note": "The paper proves the dichotomy and the tower for ergodic systems; R. J. Zimmer developed the same structure theory for group actions in 1976."
+    }
+   }
+  ]
+ }
+]

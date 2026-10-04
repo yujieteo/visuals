@@ -1,0 +1,1884 @@
+[
+ {
+  "id": "nl:25104",
+  "statement": "For real numbers $a, b \\ge 0$ and [Hölder conjugate exponents](c:holder-conjugate-exponents) $p, q > 1$ with $1/p + 1/q = 1$, $ab \\le a^p/p + b^q/q$, with equality if and only if $a^p = b^q$.",
+  "hypotheses": [
+   {
+    "id": "h:nonneg",
+    "text": "The numbers $a$ and $b$ are nonnegative reals.",
+    "concept": null
+   },
+   {
+    "id": "h:conjugate",
+    "text": "The exponents satisfy $p, q > 1$ and $1/p + 1/q = 1$, so they are [Hölder conjugate](c:holder-conjugate-exponents).",
+    "concept": "c:holder-conjugate-exponents"
+   }
+  ],
+  "conclusion": "$ab \\le a^p/p + b^q/q$, and equality holds exactly when $a^p = b^q$.",
+  "formal": {
+   "decl": "ENNReal.young_inequality",
+   "difference": "The declaration states the inequality for extended nonnegative reals, where a or b may be infinite, and omits the equality case. The equality case is the separate declaration Real.young_inequality_eq_iff_of_nonneg."
+  },
+  "proofs": [
+   {
+    "id": "weighted-amgm",
+    "name": "Weighted AM-GM",
+    "slogan": "Apply the weighted AM-GM inequality to $a^p$ and $b^q$ with the weights $1/p$ and $1/q$.",
+    "scope": "The whole theorem for finite $a, b \\ge 0$, including $a = 0$ or $b = 0$. The extended-real case of the declaration adds only the trivial case $a = \\infty$ or $b = \\infty$.",
+    "mechanisms": [
+     "m:convexity"
+    ],
+    "roles": [
+     {
+      "h": "h:nonneg",
+      "why": "Nonnegative bases make the real powers defined and give $(a^p)^{1/p} = a$.",
+      "steps": [
+       "s:amgm",
+       "s:simplify"
+      ]
+     },
+     {
+      "h": "h:conjugate",
+      "why": "Conjugacy turns $1/p$ and $1/q$ into weights with sum one.",
+      "steps": [
+       "s:weights",
+       "s:equality"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:weights",
+      "slogan": "Check that $1/p$ and $1/q$ are positive weights with sum one.",
+      "detail": "Because $p, q > 1$, the numbers $1/p$ and $1/q$ lie in $(0, 1)$. The conjugacy relation $1/p + 1/q = 1$ makes them the weights of a [weighted mean](c:weighted-mean).",
+      "uses": []
+     },
+     {
+      "id": "s:amgm",
+      "slogan": "Apply the two-term weighted AM-GM inequality to $x = a^p$ and $y = b^q$.",
+      "detail": "For weights $w_1 + w_2 = 1$ and $x, y \\ge 0$, weighted AM-GM gives $x^{w_1} y^{w_2} \\le w_1 x + w_2 y$. With $x = a^p$, $y = b^q$, $w_1 = 1/p$ and $w_2 = 1/q$, the right side is $a^p/p + b^q/q$.",
+      "uses": [
+       "nm:arithmetic-mean-geometric-mean"
+      ]
+     },
+     {
+      "id": "s:simplify",
+      "slogan": "Simplify the geometric mean $(a^p)^{1/p} (b^q)^{1/q}$ to the product $ab$.",
+      "detail": "For $a, b \\ge 0$ the power rule gives $(a^p)^{1/p} = a$ and $(b^q)^{1/q} = b$. So the left side of step 2 is $ab$, and the inequality follows.",
+      "uses": []
+     },
+     {
+      "id": "s:equality",
+      "slogan": "Characterize equality by the strict convexity of the [exponential function](c:exponential-function).",
+      "detail": "For $a, b > 0$ write $a^p = e^s$, $b^q = e^t$; then $ab = e^{s/p + t/q} \\le e^s/p + e^t/q$, with equality only if $s = t$ because $\\exp$ is [strictly convex](c:strictly-convex-function). If $a = 0$ or $b = 0$, equality forces both to vanish. Conversely $a^p = b^q = c$ gives $ab = c = c/p + c/q$.",
+      "uses": [
+       "nm:strict-jensen-inequality"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:weights",
+      "s:amgm"
+     ],
+     [
+      "s:amgm",
+      "s:simplify"
+     ],
+     [
+      "s:simplify",
+      "s:equality"
+     ],
+     [
+      "s:weights",
+      "s:equality"
+     ]
+    ],
+    "conclusion": "s:equality",
+    "concepts": {
+     "c:holder-conjugate-exponents": "The conjugate exponents give the two weights of the mean.",
+     "c:weighted-mean": "Young's inequality is a two-term weighted mean inequality.",
+     "c:exponential-function": "Writing powers as exponentials exposes the convexity behind equality.",
+     "c:strictly-convex-function": "Strict convexity of the exponential forces equal points at equality."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "ENNReal.young_inequality",
+     "follows": true,
+     "note": "mathlib reduces to NNReal.young_inequality_real and Real.young_inequality_of_nonneg, which apply geom_mean_le_arith_mean2_weighted; equality uses geom_mean_eq_arith_mean2_weighted_iff_of_nonneg."
+    }
+   },
+   {
+    "id": "area",
+    "name": "Area under a power curve",
+    "slogan": "Cover the rectangle $[0, a] \\times [0, b]$ by the region under $y = x^{p-1}$ and the region left of the same curve.",
+    "scope": "The whole theorem for $a, b \\ge 0$. If $a = 0$ or $b = 0$ the rectangle has area zero and the argument still applies.",
+    "mechanisms": [
+     "m:fundamental-theorem-calculus",
+     "m:geometric-construction"
+    ],
+    "roles": [
+     {
+      "h": "h:nonneg",
+      "why": "Nonnegative $a$ and $b$ give a rectangle in the first quadrant, where the curve lives.",
+      "steps": [
+       "s:cover"
+      ]
+     },
+     {
+      "h": "h:conjugate",
+      "why": "Conjugacy makes $y^{q-1}$ the inverse of $x^{p-1}$ and gives $(p - 1)q = p$.",
+      "steps": [
+       "s:curve",
+       "s:equal"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:curve",
+      "slogan": "Define the increasing function $f(x) = x^{p-1}$ and its inverse $g(y) = y^{q-1}$.",
+      "detail": "Conjugacy gives $(p - 1)(q - 1) = 1$, so $g(f(x)) = x$ for $x \\ge 0$ and $g$ is the [inverse function](c:inverse-function) of $f$. Both functions are continuous and strictly increasing on $[0, \\infty)$ with value $0$ at $0$.",
+      "uses": []
+     },
+     {
+      "id": "s:integrals",
+      "slogan": "Compute the two areas $\\int_0^a f = a^p/p$ and $\\int_0^b g = b^q/q$.",
+      "detail": "The power rule gives $\\int_0^a x^{p-1}\\,dx = a^p/p$ and $\\int_0^b y^{q-1}\\,dy = b^q/q$. The first [integral](c:riemann-integral) is the area under the graph over $[0, a]$; the second is the area between the graph and the $y$-axis for $0 \\le y \\le b$.",
+      "uses": []
+     },
+     {
+      "id": "s:cover",
+      "slogan": "Show that the two regions together cover the rectangle $[0, a] \\times [0, b]$.",
+      "detail": "A point $(x, y)$ of the rectangle with $y \\le f(x)$ lies under the graph, and a point with $y > f(x)$ has $x < g(y)$, so it lies left of the graph. The regions overlap only on the graph, which has area zero, so $ab \\le a^p/p + b^q/q$.",
+      "uses": []
+     },
+     {
+      "id": "s:equal",
+      "slogan": "Show that the excess area vanishes exactly when $b = a^{p-1}$.",
+      "detail": "If $b < f(a)$, the region under the graph has a part of positive area above the rectangle; if $b > f(a)$, the other region sticks out to the right. Equality $b = a^{p-1}$ is equivalent to $b^q = a^{(p-1)q} = a^p$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:curve",
+      "s:integrals"
+     ],
+     [
+      "s:curve",
+      "s:cover"
+     ],
+     [
+      "s:integrals",
+      "s:cover"
+     ],
+     [
+      "s:cover",
+      "s:equal"
+     ],
+     [
+      "s:curve",
+      "s:equal"
+     ]
+    ],
+    "conclusion": "s:equal",
+    "concepts": {
+     "c:holder-conjugate-exponents": "Conjugate exponents make the two power curves inverse to each other.",
+     "c:inverse-function": "The second region is the area under the inverse function.",
+     "c:riemann-integral": "The two areas are computed as integrals of power functions."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The classical area argument of W. H. Young (1912), as in Hardy, Littlewood and Pólya, Inequalities (1934)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:arithmetic-mean-geometric-mean",
+  "statement": "For finitely many reals $z_i \\ge 0$ and weights $w_i \\ge 0$ with $\\sum_i w_i = 1$, the weighted geometric mean is at most the [weighted arithmetic mean](c:weighted-mean): $\\prod_i z_i^{w_i} \\le \\sum_i w_i z_i$. Equal weights give $\\sqrt[n]{z_1 \\cdots z_n} \\le (z_1 + \\dots + z_n)/n$.",
+  "hypotheses": [
+   {
+    "id": "h:weights-nonneg",
+    "text": "Every weight satisfies $w_i \\ge 0$.",
+    "concept": null
+   },
+   {
+    "id": "h:weights-sum",
+    "text": "The weights have sum one: $\\sum_i w_i = 1$, so they define a [weighted mean](c:weighted-mean).",
+    "concept": "c:weighted-mean"
+   },
+   {
+    "id": "h:values-nonneg",
+    "text": "Every value satisfies $z_i \\ge 0$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "$\\prod_i z_i^{w_i} \\le \\sum_i w_i z_i$.",
+  "formal": {
+   "decl": "Real.geom_mean_le_arith_mean_weighted",
+   "difference": "The declaration states the weighted form over a finite index set. The equal-weight form is the substitution w_i = 1/n."
+  },
+  "proofs": [
+   {
+    "id": "jensen-exp",
+    "name": "Jensen for the exponential",
+    "slogan": "Write each positive $z_i$ as $e^{\\log z_i}$ and apply Jensen's inequality to the convex exponential function.",
+    "scope": "Two cases: some $z_i = 0$ has positive weight, or every $z_i$ with positive weight is positive. Terms with $w_i = 0$ contribute $z_i^0 = 1$ to the product and $0$ to the sum, with $0^0 = 1$.",
+    "mechanisms": [
+     "m:convexity",
+     "m:case-analysis"
+    ],
+    "roles": [
+     {
+      "h": "h:weights-nonneg",
+      "why": "Nonnegative weights keep the sum nonnegative in the zero case and are needed for Jensen's inequality.",
+      "steps": [
+       "s:zero",
+       "s:jensen"
+      ]
+     },
+     {
+      "h": "h:weights-sum",
+      "why": "Weights with sum one form a convex combination, which Jensen's inequality requires.",
+      "steps": [
+       "s:jensen"
+      ]
+     },
+     {
+      "h": "h:values-nonneg",
+      "why": "Nonnegative values make the real powers defined and the right side nonnegative.",
+      "steps": [
+       "s:zero",
+       "s:logs"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:zero",
+      "slogan": "Settle the case where some zero value $z_i$ has positive weight.",
+      "detail": "If $z_i = 0$ and $w_i > 0$, then $z_i^{w_i} = 0$, so the product is $0$. The sum $\\sum_j w_j z_j$ is nonnegative because all weights and values are nonnegative.",
+      "uses": []
+     },
+     {
+      "id": "s:logs",
+      "slogan": "Write the product as the exponential $\\exp(\\sum_i w_i \\log z_i)$.",
+      "detail": "Drop the indices with $w_i = 0$; they contribute $1$ to the product and $0$ to the sum. In the case left after step 1, every remaining $z_i$ is positive, so $z_i^{w_i} = e^{w_i \\log z_i}$ with the [logarithm](c:logarithm) defined.",
+      "uses": []
+     },
+     {
+      "id": "s:jensen",
+      "slogan": "Apply Jensen's inequality to the convex exponential at the points $\\log z_i$.",
+      "detail": "The [exponential function](c:exponential-function) is [convex](c:convex-function), and the weights are nonnegative with sum one. Jensen's inequality gives $\\exp(\\sum_i w_i \\log z_i) \\le \\sum_i w_i e^{\\log z_i} = \\sum_i w_i z_i$.",
+      "uses": [
+       "nm:jensen-s-inequality"
+      ]
+     },
+     {
+      "id": "s:combine",
+      "slogan": "Combine the two cases into the inequality for all nonnegative values.",
+      "detail": "Step 1 covers a weighted zero, and steps 2 and 3 give $\\prod_i z_i^{w_i} \\le \\sum_i w_i z_i$ when every weighted value is positive. The two cases exhaust all possibilities.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:zero",
+      "s:combine"
+     ],
+     [
+      "s:logs",
+      "s:jensen"
+     ],
+     [
+      "s:jensen",
+      "s:combine"
+     ]
+    ],
+    "conclusion": "s:combine",
+    "concepts": {
+     "c:weighted-mean": "The right side is the weighted arithmetic mean that bounds the product.",
+     "c:logarithm": "Logarithms turn the weighted product into a weighted sum.",
+     "c:exponential-function": "The exponential undoes the logarithm and carries the convexity.",
+     "c:convex-function": "Convexity of the exponential is the inequality's real content."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Real.geom_mean_le_arith_mean_weighted",
+     "follows": true,
+     "note": "mathlib splits off a weighted zero (Finset.prod_eq_zero) and applies ConvexOn.map_sum_le to convexOn_exp at the points log z_i."
+    }
+   },
+   {
+    "id": "polya",
+    "name": "Pólya's tangent-line bound",
+    "slogan": "Bound each ratio $z_i/A$ by $e^{z_i/A - 1}$, where $A$ is the arithmetic mean, and multiply the weighted bounds.",
+    "scope": "The case $A = \\sum_i w_i z_i > 0$. If $A = 0$, every $z_i$ with $w_i > 0$ is zero, and some $w_i > 0$ exists, so both sides are $0$.",
+    "mechanisms": [
+     "m:convexity",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:weights-nonneg",
+      "why": "Nonnegative exponents $w_i$ keep each inequality when both sides are raised to the power $w_i$.",
+      "steps": [
+       "s:normalize"
+      ]
+     },
+     {
+      "h": "h:weights-sum",
+      "why": "The weight sum one makes the exponent vanish and turns $A^{\\sum w_i}$ into $A$.",
+      "steps": [
+       "s:multiply"
+      ]
+     },
+     {
+      "h": "h:values-nonneg",
+      "why": "Nonnegative values make the ratios $z_i/A$ nonnegative, so their real powers are defined.",
+      "steps": [
+       "s:normalize"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:tangent",
+      "slogan": "Prove the tangent-line bound $x \\le e^{x - 1}$ for every real $x$.",
+      "detail": "The function $h(x) = e^{x-1} - x$ has $h'(x) = e^{x-1} - 1$, which is negative for $x < 1$ and positive for $x > 1$. So $h$ has its minimum $h(1) = 0$; this is the tangent line of the convex [exponential function](c:exponential-function) at $x = 1$.",
+      "uses": []
+     },
+     {
+      "id": "s:normalize",
+      "slogan": "Divide by the arithmetic mean $A = \\sum_i w_i z_i$ and bound each ratio $z_i/A$.",
+      "detail": "For $A > 0$, step 1 gives $0 \\le z_i/A \\le e^{z_i/A - 1}$. Raising both sides to the power $w_i \\ge 0$ keeps the order: $(z_i/A)^{w_i} \\le e^{w_i(z_i/A - 1)}$.",
+      "uses": []
+     },
+     {
+      "id": "s:multiply",
+      "slogan": "Multiply the weighted bounds and evaluate the exponent with the weight sum.",
+      "detail": "The product of the right sides is $\\exp(\\sum_i w_i z_i/A - \\sum_i w_i) = e^{1 - 1} = 1$. The product of the left sides is $\\prod_i z_i^{w_i}/A^{\\sum_i w_i} = \\prod_i z_i^{w_i}/A$, so $\\prod_i z_i^{w_i} \\le A$, the [weighted mean](c:weighted-mean).",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:tangent",
+      "s:normalize"
+     ],
+     [
+      "s:normalize",
+      "s:multiply"
+     ]
+    ],
+    "conclusion": "s:multiply",
+    "concepts": {
+     "c:weighted-mean": "The arithmetic mean $A$ normalizes the values and is the bound.",
+     "c:exponential-function": "The bound $x \\le e^{x-1}$ turns the product into an exponential of a sum."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "G. Pólya's proof by the bound $x \\le e^{x-1}$, as in J. M. Steele, The Cauchy-Schwarz Master Class (2004), chapter 2."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q474881",
+  "statement": "For every [set](c:set) $A$, no function $f\\colon A \\to \\mathcal{P}(A)$ into the [power set](c:power-set) is a [surjection](c:surjection). Hence $|A| < |\\mathcal{P}(A)|$.",
+  "hypotheses": [
+   {
+    "id": "h:map",
+    "text": "The map $f\\colon A \\to \\mathcal{P}(A)$ is any function from a [set](c:set) $A$ to its power set.",
+    "concept": "c:set"
+   }
+  ],
+  "conclusion": "Some subset of $A$ is not a value of $f$, and $|A| < |\\mathcal{P}(A)|$.",
+  "formal": {
+   "decl": "Function.cantor_surjective",
+   "difference": "The declaration proves only that no map from a type to its power set is surjective. The strict cardinal inequality is the separate declaration Cardinal.cantor."
+  },
+  "proofs": [
+   {
+    "id": "diagonal",
+    "name": "Diagonal set",
+    "slogan": "Form the set of points that are not in their own image and show that no point maps onto it.",
+    "scope": "The whole theorem, including $A = \\emptyset$, where the empty map misses $\\emptyset \\in \\mathcal{P}(A)$.",
+    "mechanisms": [
+     "m:diagonal-argument",
+     "m:contradiction"
+    ],
+    "roles": [
+     {
+      "h": "h:map",
+      "why": "The map is arbitrary, so the diagonal set defeats every candidate surjection.",
+      "steps": [
+       "s:diagonal",
+       "s:contradict"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:diagonal",
+      "slogan": "Define the diagonal set $D = \\{a \\in A : a \\notin f(a)\\}$.",
+      "detail": "The set $D$ is a [subset](c:subset) of $A$, so $D \\in \\mathcal{P}(A)$. Membership of $a$ in $D$ is the negation of membership of $a$ in $f(a)$.",
+      "uses": []
+     },
+     {
+      "id": "s:contradict",
+      "slogan": "Assume that $D = f(d)$ for some $d$ and derive a contradiction.",
+      "detail": "If $f(d) = D$, then $d \\in D$ holds if and only if $d \\notin f(d) = D$. A statement equivalent to its own negation is false, so no such $d$ exists and $f$ is not a [surjection](c:surjection).",
+      "uses": []
+     },
+     {
+      "id": "s:inject",
+      "slogan": "Embed $A$ into $\\mathcal{P}(A)$ by the singleton map $a \\mapsto \\{a\\}$.",
+      "detail": "Distinct points have distinct singletons, so this map is an [injection](c:injection). Hence $|A| \\le |\\mathcal{P}(A)|$.",
+      "uses": []
+     },
+     {
+      "id": "s:strict",
+      "slogan": "Combine the injection and the missing surjection into $|A| < |\\mathcal{P}(A)|$.",
+      "detail": "Equal [cardinal numbers](c:cardinal-number) would give a bijection $A \\to \\mathcal{P}(A)$, which is a surjection. Step 2 excludes this, so the inequality of step 3 is strict.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:diagonal",
+      "s:contradict"
+     ],
+     [
+      "s:contradict",
+      "s:strict"
+     ],
+     [
+      "s:inject",
+      "s:strict"
+     ]
+    ],
+    "conclusion": "s:strict",
+    "concepts": {
+     "c:set": "The argument works for every set, finite or infinite.",
+     "c:power-set": "The diagonal set is an element of the power set.",
+     "c:surjection": "The theorem denies the existence of a surjection onto the power set.",
+     "c:subset": "The diagonal set is a subset built from the map itself.",
+     "c:injection": "The singleton injection gives the non-strict inequality.",
+     "c:cardinal-number": "The conclusion compares the cardinal numbers of the two sets."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Function.cantor_surjective",
+     "follows": true,
+     "note": "mathlib takes a preimage of {a | a ∉ f a} and derives the contradiction with iff_not_self; Cardinal.cantor gives the strict inequality."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q2471737",
+  "statement": "If a point $x$ lies in the [convex hull](c:convex-hull) of a set $P \\subseteq \\mathbb{R}^d$, then $x$ is a convex combination of at most $d + 1$ [affinely independent](c:affine-independence) points of $P$. So $x$ lies in a [simplex](c:simplex) with vertices in $P$.",
+  "hypotheses": [
+   {
+    "id": "h:hull",
+    "text": "The point $x$ lies in the [convex hull](c:convex-hull) of a set $P \\subseteq \\mathbb{R}^d$.",
+    "concept": "c:convex-hull"
+   }
+  ],
+  "conclusion": "There are affinely independent points $p_1, \\dots, p_m \\in P$ with $m \\le d + 1$ and $x$ in their convex hull.",
+  "formal": {
+   "decl": "convexHull_eq_union",
+   "difference": "The declaration writes the convex hull as the union of the hulls of affinely independent finite subsets, over any linearly ordered field and any vector space. The bound m ≤ d + 1 then follows because an affinely independent set in R^d has at most d + 1 points."
+  },
+  "proofs": [
+   {
+    "id": "minimal-representation",
+    "name": "Minimal representation",
+    "slogan": "Take a representation of $x$ with the fewest points and show that an affine dependence would give a shorter one.",
+    "scope": "The whole theorem. The hypothesis excludes $P = \\emptyset$, whose hull is empty.",
+    "mechanisms": [
+     "m:extremal-choice",
+     "m:dimension-count",
+     "m:contradiction"
+    ],
+    "roles": [
+     {
+      "h": "h:hull",
+      "why": "Membership in the hull supplies a first finite convex combination.",
+      "steps": [
+       "s:finite"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:finite",
+      "slogan": "Write $x$ as a convex combination of finitely many points of $P$.",
+      "detail": "The [convex hull](c:convex-hull) of $P$ is the set of finite sums $\\sum_i \\lambda_i p_i$ with $p_i \\in P$, $\\lambda_i \\ge 0$ and $\\sum_i \\lambda_i = 1$. So $x$ has such a representation.",
+      "uses": []
+     },
+     {
+      "id": "s:minimal",
+      "slogan": "Choose a representation $x = \\sum_{i=1}^m \\lambda_i p_i$ with the fewest points.",
+      "detail": "The number of points is a positive integer, so a least one exists. Minimality forces every $\\lambda_i > 0$, because a point with weight zero could be dropped.",
+      "uses": []
+     },
+     {
+      "id": "s:dependence",
+      "slogan": "Suppose that the points are affinely dependent and choose a nonzero relation among them.",
+      "detail": "[Affine independence](c:affine-independence) fails exactly when some $\\mu \\ne 0$ has $\\sum_i \\mu_i p_i = 0$ and $\\sum_i \\mu_i = 0$. Because the $\\mu_i$ sum to zero and are not all zero, some $\\mu_i$ is positive.",
+      "uses": []
+     },
+     {
+      "id": "s:shorten",
+      "slogan": "Shift the weights along the relation until one weight reaches zero.",
+      "detail": "Let $t = \\min\\{\\lambda_i/\\mu_i : \\mu_i > 0\\}$ and $\\lambda_i' = \\lambda_i - t\\mu_i$. Then $\\lambda_i' \\ge 0$, $\\sum_i \\lambda_i' = 1$, $\\sum_i \\lambda_i' p_i = x$ and some $\\lambda_j' = 0$, which gives a shorter representation against minimality.",
+      "uses": []
+     },
+     {
+      "id": "s:count",
+      "slogan": "Bound the number of affinely independent points in $\\mathbb{R}^d$ by $d + 1$.",
+      "detail": "If $m \\ge d + 2$, the linear map $\\mu \\mapsto (\\sum_i \\mu_i p_i, \\sum_i \\mu_i)$ from $\\mathbb{R}^m$ to $\\mathbb{R}^{d+1}$ has a nonzero kernel by rank-nullity, an affine dependence. So the minimal points are affinely independent, $m \\le d + 1$, and they span a [simplex](c:simplex) that contains $x$.",
+      "uses": [
+       "wd:Q303402"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:finite",
+      "s:minimal"
+     ],
+     [
+      "s:minimal",
+      "s:dependence"
+     ],
+     [
+      "s:dependence",
+      "s:shorten"
+     ],
+     [
+      "s:minimal",
+      "s:shorten"
+     ],
+     [
+      "s:shorten",
+      "s:count"
+     ]
+    ],
+    "conclusion": "s:count",
+    "concepts": {
+     "c:convex-hull": "The hull is the set of finite convex combinations of points of $P$.",
+     "c:affine-independence": "An affine dependence is exactly what lets the proof drop a point.",
+     "c:simplex": "Affinely independent points span a simplex that contains $x$."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "convexHull_eq_union",
+     "follows": true,
+     "note": "mathlib picks a minimal-cardinality finset (Caratheodory.minCardFinsetOfMemConvexHull) and drops a point of an affinely dependent set (Caratheodory.mem_convexHull_erase)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1308502",
+  "statement": "In the untyped [lambda calculus](c:lambda-calculus), [beta-reduction](c:beta-reduction) is [confluent](c:confluence): if $M \\twoheadrightarrow_\\beta N_1$ and $M \\twoheadrightarrow_\\beta N_2$, then some term $P$ satisfies $N_1 \\twoheadrightarrow_\\beta P$ and $N_2 \\twoheadrightarrow_\\beta P$.",
+  "hypotheses": [
+   {
+    "id": "h:left",
+    "text": "The term $M$ reduces to $N_1$ in zero or more [beta-reduction](c:beta-reduction) steps.",
+    "concept": "c:beta-reduction"
+   },
+   {
+    "id": "h:right",
+    "text": "The term $M$ reduces to $N_2$ in zero or more beta-reduction steps.",
+    "concept": null
+   }
+  ],
+  "conclusion": "Some term $P$ satisfies $N_1 \\twoheadrightarrow_\\beta P$ and $N_2 \\twoheadrightarrow_\\beta P$.",
+  "formal": {
+   "decl": "FreeAddGroup.Red.church_rosser",
+   "difference": "The declaration proves confluence of word reduction in free additive groups, a different rewriting system, not of beta-reduction. Its proof has the same shape: a one-step diamond property and the tiling lemma Relation.church_rosser."
+  },
+  "proofs": [
+   {
+    "id": "parallel-reduction",
+    "name": "Parallel reduction",
+    "slogan": "Contract many redexes at once, prove the diamond property for this parallel reduction, and tile the diamonds over reduction sequences.",
+    "scope": "The whole theorem, with terms taken up to renaming of bound variables. Zero-step reductions are included, so $N_1 = M$ or $N_2 = M$ is covered.",
+    "mechanisms": [
+     "m:structural-induction",
+     "m:induction"
+    ],
+    "roles": [
+     {
+      "h": "h:left",
+      "why": "The first reduction sequence gives one side of the grid of diamonds.",
+      "steps": [
+       "s:tile"
+      ]
+     },
+     {
+      "h": "h:right",
+      "why": "The second reduction sequence gives the other side of the grid.",
+      "steps": [
+       "s:tile"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:parallel",
+      "slogan": "Define parallel reduction $\\Rightarrow$, which contracts any chosen set of redexes in one step.",
+      "detail": "The rules are $x \\Rightarrow x$; $M \\Rightarrow M'$ gives $\\lambda x.M \\Rightarrow \\lambda x.M'$; and $M \\Rightarrow M'$, $N \\Rightarrow N'$ give $MN \\Rightarrow M'N'$ and $(\\lambda x.M)N \\Rightarrow M'[x := N']$. This [reduction](c:reduction) may contract nested redexes together.",
+      "uses": []
+     },
+     {
+      "id": "s:sandwich",
+      "slogan": "Show that one beta step is a parallel step and a parallel step is a beta sequence.",
+      "detail": "Induction on terms and on the rules gives $\\to_\\beta \\subseteq \\Rightarrow \\subseteq \\twoheadrightarrow_\\beta$. Hence the reflexive-transitive closure of $\\Rightarrow$ equals $\\twoheadrightarrow_\\beta$, the closure of [beta-reduction](c:beta-reduction).",
+      "uses": []
+     },
+     {
+      "id": "s:subst",
+      "slogan": "Prove that parallel reduction is compatible with substitution.",
+      "detail": "If $M \\Rightarrow M'$ and $N \\Rightarrow N'$, then $M[x := N] \\Rightarrow M'[x := N']$. The proof is an induction on the derivation of $M \\Rightarrow M'$, with the substitution lemma in the redex case.",
+      "uses": []
+     },
+     {
+      "id": "s:diamond",
+      "slogan": "Prove the diamond property of $\\Rightarrow$ with the complete development $M^*$.",
+      "detail": "Let $M^*$ contract every redex of $M$ at once. Induction on the derivation of $M \\Rightarrow N$, with step 3 in the redex case, gives $N \\Rightarrow M^*$, so any two parallel steps from $M$ meet at $M^*$.",
+      "uses": []
+     },
+     {
+      "id": "s:tile",
+      "slogan": "Tile the one-step diamonds to join two parallel reduction sequences.",
+      "detail": "Induction on the lengths of the two sequences fills a grid with the diamonds of step 4; its far corner $P$ is reachable from $N_1$ and from $N_2$. By step 2 these sequences are beta reductions, so beta-reduction is [confluent](c:confluence).",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:parallel",
+      "s:sandwich"
+     ],
+     [
+      "s:parallel",
+      "s:subst"
+     ],
+     [
+      "s:subst",
+      "s:diamond"
+     ],
+     [
+      "s:parallel",
+      "s:diamond"
+     ],
+     [
+      "s:diamond",
+      "s:tile"
+     ],
+     [
+      "s:sandwich",
+      "s:tile"
+     ]
+    ],
+    "conclusion": "s:tile",
+    "concepts": {
+     "c:lambda-calculus": "The terms and the redexes are those of the untyped lambda calculus.",
+     "c:beta-reduction": "Beta-reduction is the relation whose confluence the theorem asserts.",
+     "c:confluence": "Confluence is the joinability that the tiling produces.",
+     "c:reduction": "Parallel reduction is an auxiliary relation with the same closure."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The Tait and Martin-Löf proof with Takahashi's complete development, as in H. P. Barendregt, The Lambda Calculus: Its Syntax and Semantics, chapter 3. The tiling step is the argument of mathlib's Relation.church_rosser."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1765521",
+  "statement": "Let $(X_n)_{n \\ge 0}$ be a supermartingale for a [filtration](c:filtration) $(\\mathcal{F}_n)$ with $\\sup_n \\mathbb{E}|X_n| < \\infty$. Then $X_n$ converges [almost surely](c:almost-sure-convergence) to an integrable limit $X_\\infty$. If $(X_n)$ is also [uniformly integrable](c:uniform-integrability), then $X_n \\to X_\\infty$ in $L^1$. The same holds for submartingales and [martingales](c:martingale).",
+  "hypotheses": [
+   {
+    "id": "h:super",
+    "text": "The process $(X_n)$ is adapted and integrable, with [conditional expectations](c:conditional-expectation) $\\mathbb{E}[X_{n+1} \\mid \\mathcal{F}_n] \\le X_n$.",
+    "concept": "c:martingale"
+   },
+   {
+    "id": "h:bounded",
+    "text": "The process is bounded in $L^1$: $\\sup_n \\mathbb{E}|X_n| < \\infty$.",
+    "concept": "c:l1-space"
+   },
+   {
+    "id": "h:ui",
+    "text": "For the $L^1$ statement, the family $(X_n)$ is [uniformly integrable](c:uniform-integrability).",
+    "concept": "c:uniform-integrability"
+   }
+  ],
+  "conclusion": "$X_n \\to X_\\infty$ almost surely with $\\mathbb{E}|X_\\infty| < \\infty$, and also in $L^1$ under uniform integrability.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "upcrossings",
+    "name": "Upcrossings",
+    "slogan": "Bound the expected number of upcrossings of each rational interval, exclude oscillation, and pass to the limit with Fatou's lemma.",
+    "scope": "Supermartingales; a submartingale $X$ follows by applying the proof to $-X$. Steps 1 to 4 give almost sure convergence, and step 5 adds $L^1$ convergence under uniform integrability.",
+    "mechanisms": [
+     "m:martingale",
+     "m:monotone-limit"
+    ],
+    "roles": [
+     {
+      "h": "h:super",
+      "why": "The supermartingale property makes the upcrossing strategy lose money on average.",
+      "steps": [
+       "s:upcross"
+      ]
+     },
+     {
+      "h": "h:bounded",
+      "why": "The $L^1$ bound makes the upcrossing bound and the Fatou bound finite.",
+      "steps": [
+       "s:upcross",
+       "s:finite",
+       "s:fatou"
+      ]
+     },
+     {
+      "h": "h:ui",
+      "why": "Uniform integrability turns almost sure convergence into $L^1$ convergence.",
+      "steps": [
+       "s:l1"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:upcross",
+      "slogan": "Bound the expected upcrossings of $[a, b]$ by Doob's upcrossing inequality.",
+      "detail": "Let $U_N[a, b]$ count the upcrossings of $[a, b]$ by $X_0, \\dots, X_N$. Betting on each upcrossing is a predictable strategy, so the supermartingale property gives $(b - a)\\,\\mathbb{E}\\,U_N[a, b] \\le \\mathbb{E}(X_N - a)^- \\le \\sup_n \\mathbb{E}|X_n| + |a|$.",
+      "uses": [
+       "nm:doob-s-upcrossing-estimate"
+      ]
+     },
+     {
+      "id": "s:finite",
+      "slogan": "Let $N \\to \\infty$ to show that each interval has finitely many upcrossings almost surely.",
+      "detail": "By monotone convergence, $U_\\infty[a, b] = \\lim_N U_N[a, b]$ has $\\mathbb{E}\\,U_\\infty[a, b] \\le (\\sup_n \\mathbb{E}|X_n| + |a|)/(b - a) < \\infty$. So $U_\\infty[a, b] < \\infty$ almost surely.",
+      "uses": [
+       "wd:Q1153584"
+      ]
+     },
+     {
+      "id": "s:converge",
+      "slogan": "Exclude oscillation by a countable union over rational pairs $a < b$.",
+      "detail": "If the [limit inferior](c:limit-inferior) of $X_n$ is below its limit superior, some rational pair $a < b$ lies between them and $X$ crosses $[a, b]$ infinitely often. A countable union of null events is null, so $X_n$ converges almost surely to some $X_\\infty \\in [-\\infty, \\infty]$.",
+      "uses": []
+     },
+     {
+      "id": "s:fatou",
+      "slogan": "Apply Fatou's lemma to show that the limit is finite and integrable.",
+      "detail": "Fatou's lemma gives $\\mathbb{E}|X_\\infty| \\le \\liminf_n \\mathbb{E}|X_n| \\le \\sup_n \\mathbb{E}|X_n| < \\infty$. So $X_\\infty$ is an [integrable function](c:integrable-function) and is finite almost surely.",
+      "uses": []
+     },
+     {
+      "id": "s:l1",
+      "slogan": "Upgrade the almost sure convergence to $L^1$ convergence by uniform integrability.",
+      "detail": "A uniformly integrable sequence that converges almost surely converges in $L^1$ by the Vitali convergence theorem. So $\\mathbb{E}|X_n - X_\\infty| \\to 0$ when $(X_n)$ is uniformly integrable.",
+      "uses": [
+       "wd:Q11352023"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:upcross",
+      "s:finite"
+     ],
+     [
+      "s:finite",
+      "s:converge"
+     ],
+     [
+      "s:converge",
+      "s:fatou"
+     ],
+     [
+      "s:fatou",
+      "s:l1"
+     ]
+    ],
+    "conclusion": "s:l1",
+    "concepts": {
+     "c:filtration": "The filtration defines predictable betting strategies on upcrossings.",
+     "c:almost-sure-convergence": "Almost sure convergence is the first conclusion of the theorem.",
+     "c:uniform-integrability": "Uniform integrability is the extra hypothesis for $L^1$ convergence.",
+     "c:martingale": "Martingales are supermartingales, so they are covered by the proof.",
+     "c:conditional-expectation": "The supermartingale inequality is stated with conditional expectations.",
+     "c:limit-inferior": "Convergence means that the limit inferior equals the limit superior.",
+     "c:integrable-function": "Fatou's lemma shows that the limit is integrable."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Doob's upcrossing proof, as in D. Williams, Probability with Martingales (1991), chapters 11 and 13."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:27519",
+  "statement": "There is a constant $p_{\\mathrm{th}} > 0$ such that, if each location of a noisy [quantum circuit](c:quantum-circuit) fails independently with probability $p < p_{\\mathrm{th}}$, every ideal circuit with $T$ locations can be simulated with error at most $\\varepsilon$ by a noisy circuit with $O(T\\,\\mathrm{polylog}(T/\\varepsilon))$ locations.",
+  "hypotheses": [
+   {
+    "id": "h:noise",
+    "text": "Each location (gate, preparation, measurement or wait) fails independently with probability at most $p$.",
+    "concept": null
+   },
+   {
+    "id": "h:below",
+    "text": "The fault rate is below the threshold: $p < p_{\\mathrm{th}}$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The noisy circuit reproduces the output distribution of the ideal circuit up to error $\\varepsilon$, with polylogarithmic overhead.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "concatenation",
+    "name": "Concatenated distance-3 codes",
+    "slogan": "Encode recursively in a distance-3 code so that each level squares the effective failure rate, then choose the number of levels.",
+    "scope": "An outline of the published proof for independent stochastic noise. The gadget constructions and the count of malignant fault pairs rest on the cited work.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:union-bound",
+     "m:induction"
+    ],
+    "roles": [
+     {
+      "h": "h:noise",
+      "why": "Independent faults make the probability of two faults in one rectangle at most $A p^2$.",
+      "steps": [
+       "s:pairs"
+      ]
+     },
+     {
+      "h": "h:below",
+      "why": "A rate below $1/A$ makes the iterated bound decay doubly exponentially.",
+      "steps": [
+       "s:concat"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:gadgets",
+      "slogan": "Replace each location by a fault-tolerant gadget on a distance-3 code.",
+      "detail": "Each logical [qubit](c:qbit) is encoded in a distance-3 [error correcting code](c:error-correcting-code) such as Steane's 7-qubit code. Each gate becomes an encoded gate followed by error correction, and the cited work builds these gadgets so that one fault in an extended rectangle leaves a correctable error.",
+      "uses": []
+     },
+     {
+      "id": "s:pairs",
+      "slogan": "Bound the failure probability of one extended rectangle by counting fault pairs.",
+      "detail": "An extended rectangle fails only if it contains at least two faults. With at most $A$ pairs of locations in a rectangle, a union bound gives failure probability at most $A p^2$.",
+      "uses": [
+       "nm:union-bound"
+      ]
+     },
+     {
+      "id": "s:concat",
+      "slogan": "Concatenate the code $k$ times and iterate the bound level by level.",
+      "detail": "In the [concatenated code](c:concatenated-code), a level-$k$ rectangle acts like a level-$(k-1)$ location with failure rate $p_k \\le A p_{k-1}^2$. Hence $p_k \\le (A p)^{2^k}/A$, which decays doubly exponentially when $p < p_{\\mathrm{th}} = 1/A$.",
+      "uses": []
+     },
+     {
+      "id": "s:levels",
+      "slogan": "Choose the number $k$ of levels so that the total failure probability is at most $\\varepsilon$.",
+      "detail": "A union bound over the $T$ simulated locations needs $T p_k \\le \\varepsilon$, so $k = O(\\log\\log(T/\\varepsilon))$ levels suffice. Each level multiplies the size by a constant, so the overhead is $\\mathrm{polylog}(T/\\varepsilon)$.",
+      "uses": [
+       "nm:union-bound"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:gadgets",
+      "s:pairs"
+     ],
+     [
+      "s:pairs",
+      "s:concat"
+     ],
+     [
+      "s:concat",
+      "s:levels"
+     ]
+    ],
+    "conclusion": "s:levels",
+    "concepts": {
+     "c:quantum-circuit": "The theorem simulates an ideal quantum circuit by a noisy one.",
+     "c:qbit": "Each logical qubit is stored in many physical qubits.",
+     "c:error-correcting-code": "A distance-3 code corrects any single fault in a gadget.",
+     "c:concatenated-code": "Concatenation squares the failure rate at each level."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "P. Aliferis, D. Gottesman and J. Preskill, Quantum accuracy threshold for concatenated distance-3 codes, Quantum Information and Computation 6 (2006), 97-165",
+     "url": "https://arxiv.org/abs/quant-ph/0504218",
+     "note": "Earlier threshold proofs are due to Aharonov and Ben-Or, Knill, Laflamme and Zurek, and Kitaev (1996-1997)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q902618",
+  "statement": "Let $A(t)$ be a continuous $n \\times n$ matrix function with period $T > 0$. Then every [fundamental matrix](c:fundamental-matrix) of the [linear ODE](c:linear-ode) $x' = A(t)x$ has the form $\\Phi(t) = P(t)e^{tB}$, where $P$ is continuously differentiable, invertible and $T$-periodic and $B$ is a constant complex matrix.",
+  "hypotheses": [
+   {
+    "id": "h:continuous",
+    "text": "The coefficient matrix $A\\colon \\mathbb{R} \\to \\mathbb{C}^{n \\times n}$ is continuous.",
+    "concept": null
+   },
+   {
+    "id": "h:periodic",
+    "text": "The coefficients are [periodic](c:periodic-coefficients): $A(t + T) = A(t)$ for all $t$, with $T > 0$.",
+    "concept": "c:periodic-coefficients"
+   },
+   {
+    "id": "h:fundamental",
+    "text": "$\\Phi$ is a [fundamental matrix](c:fundamental-matrix): its columns are $n$ linearly independent solutions of $x' = A(t)x$.",
+    "concept": "c:fundamental-matrix"
+   }
+  ],
+  "conclusion": "$\\Phi(t) = P(t)e^{tB}$ with $P(t + T) = P(t)$ invertible for all $t$ and $B$ constant.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "monodromy",
+    "name": "Monodromy matrix and its logarithm",
+    "slogan": "Show that the shifted fundamental matrix is the original times a constant monodromy matrix, take a logarithm of it, and define $P$ by division.",
+    "scope": "The complex form of the theorem. For real $A$ the same steps with a real logarithm of $M^2$ give a real $P$ of period $2T$.",
+    "mechanisms": [
+     "m:matrix-factorization",
+     "m:construction-explicit"
+    ],
+    "roles": [
+     {
+      "h": "h:continuous",
+      "why": "Continuity of $A$ gives existence and uniqueness of solutions of the linear system.",
+      "steps": [
+       "s:monodromy"
+      ]
+     },
+     {
+      "h": "h:periodic",
+      "why": "Periodicity makes the shifted matrix solve the same equation.",
+      "steps": [
+       "s:shift"
+      ]
+     },
+     {
+      "h": "h:fundamental",
+      "why": "Invertibility of $\\Phi$ makes the monodromy matrix invertible, so it has a logarithm.",
+      "steps": [
+       "s:shift",
+       "s:monodromy"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:shift",
+      "slogan": "Show that the shifted matrix $\\Psi(t) = \\Phi(t + T)$ is again a fundamental matrix.",
+      "detail": "Periodicity gives $\\Psi'(t) = A(t + T)\\Phi(t + T) = A(t)\\Psi(t)$. The matrix $\\Psi(t)$ is invertible because $\\Phi(t + T)$ is, so $\\Psi$ is a [fundamental matrix](c:fundamental-matrix).",
+      "uses": []
+     },
+     {
+      "id": "s:monodromy",
+      "slogan": "Show that $\\Phi(t + T) = \\Phi(t)M$ for the constant matrix $M = \\Phi(0)^{-1}\\Phi(T)$.",
+      "detail": "Both $\\Phi(t + T)$ and $\\Phi(t)M$ solve $X' = A(t)X$ with the value $\\Phi(T)$ at $t = 0$. Uniqueness for the linear initial value problem gives equality for all $t$, and $M$ is the invertible [monodromy](c:monodromy) matrix.",
+      "uses": [
+       "wd:Q530152"
+      ]
+     },
+     {
+      "id": "s:log",
+      "slogan": "Take a [matrix logarithm](c:matrix-logarithm) $B$ with $e^{TB} = M$.",
+      "detail": "Every invertible complex matrix has a logarithm: on a Jordan block $\\lambda(I + N)$ with $\\lambda \\ne 0$ and $N$ nilpotent, use $(\\log\\lambda)I + \\sum_{k \\ge 1} (-1)^{k+1}N^k/k$, a finite sum. Set $B = T^{-1}\\log M$.",
+      "uses": []
+     },
+     {
+      "id": "s:define",
+      "slogan": "Define $P(t) = \\Phi(t)e^{-tB}$ and check that $P$ has period $T$.",
+      "detail": "$P$ is invertible and continuously differentiable as a product of such matrices, with the [matrix exponential](c:matrix-exponential) $e^{-tB}$. Steps 2 and 3 give $P(t + T) = \\Phi(t)Me^{-TB}e^{-tB} = P(t)$, so $P$ is a [periodic function](c:periodic-function) and $\\Phi(t) = P(t)e^{tB}$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:shift",
+      "s:monodromy"
+     ],
+     [
+      "s:monodromy",
+      "s:log"
+     ],
+     [
+      "s:log",
+      "s:define"
+     ],
+     [
+      "s:monodromy",
+      "s:define"
+     ]
+    ],
+    "conclusion": "s:define",
+    "concepts": {
+     "c:fundamental-matrix": "The theorem describes the structure of every fundamental matrix.",
+     "c:linear-ode": "Linearity makes products $\\Phi(t)M$ solutions again.",
+     "c:periodic-coefficients": "Periodic coefficients make the time shift a symmetry of the equation.",
+     "c:monodromy": "The monodromy matrix records how solutions change over one period.",
+     "c:matrix-logarithm": "A logarithm of the monodromy matrix gives the constant matrix $B$.",
+     "c:matrix-exponential": "The factor $e^{tB}$ carries the non-periodic part of the solution.",
+     "c:periodic-function": "The factor $P$ is the periodic part of the fundamental matrix."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Floquet's argument (1883), as in E. A. Coddington and N. Levinson, Theory of Ordinary Differential Equations (1955), chapter 3."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q428134",
+  "statement": "In the [linear regression](c:linear-regression) model $y = X\\beta + \\varepsilon$ with $X$ of full column rank, $\\mathbb{E}\\varepsilon = 0$ and $\\operatorname{Cov}(\\varepsilon) = \\sigma^2 I$, the [least squares](c:least-squares) estimator $\\hat\\beta = (X^\\top X)^{-1}X^\\top y$ has the least [variance](c:variance) among linear [unbiased estimators](c:unbiased-estimator): $\\operatorname{Var}(c^\\top\\tilde\\beta) \\ge \\operatorname{Var}(c^\\top\\hat\\beta)$ for every $c$.",
+  "hypotheses": [
+   {
+    "id": "h:rank",
+    "text": "The $n \\times p$ design matrix $X$ is fixed and has rank $p$.",
+    "concept": null
+   },
+   {
+    "id": "h:mean",
+    "text": "The errors have mean zero: $\\mathbb{E}\\varepsilon = 0$.",
+    "concept": null
+   },
+   {
+    "id": "h:spherical",
+    "text": "The errors are uncorrelated with common variance: the [covariance matrix](c:covariance-matrix) is $\\operatorname{Cov}(\\varepsilon) = \\sigma^2 I$.",
+    "concept": "c:covariance-matrix"
+   },
+   {
+    "id": "h:competitor",
+    "text": "The competitor $\\tilde\\beta = Cy$ is linear in $y$ and unbiased: $\\mathbb{E}\\tilde\\beta = \\beta$ for every $\\beta$.",
+    "concept": "c:unbiased-estimator"
+   }
+  ],
+  "conclusion": "$\\operatorname{Cov}(\\tilde\\beta) - \\operatorname{Cov}(\\hat\\beta)$ is [positive semidefinite](c:positive-semidefinite-matrix), so $\\operatorname{Var}(c^\\top\\tilde\\beta) \\ge \\operatorname{Var}(c^\\top\\hat\\beta)$ for every $c \\in \\mathbb{R}^p$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "decomposition",
+    "name": "Decompose the competitor",
+    "slogan": "Write the competitor's matrix as the least squares matrix plus a correction $D$ with $DX = 0$, and expand the covariance.",
+    "scope": "The whole theorem. If $\\sigma^2 = 0$, both covariances vanish and the inequality is an equality.",
+    "mechanisms": [
+     "m:orthogonal-projection",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:rank",
+      "why": "Full rank makes $X^\\top X$ invertible, so $\\hat\\beta$ is defined.",
+      "steps": [
+       "s:ols"
+      ]
+     },
+     {
+      "h": "h:mean",
+      "why": "Zero-mean errors give $\\mathbb{E}\\,Cy = CX\\beta$.",
+      "steps": [
+       "s:ols",
+       "s:constraint"
+      ]
+     },
+     {
+      "h": "h:spherical",
+      "why": "Spherical errors give $\\operatorname{Cov}(Cy) = \\sigma^2 CC^\\top$.",
+      "steps": [
+       "s:expand"
+      ]
+     },
+     {
+      "h": "h:competitor",
+      "why": "Unbiasedness for every $\\beta$ forces $CX = I$.",
+      "steps": [
+       "s:constraint"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:ols",
+      "slogan": "Show that the least squares estimator is linear and unbiased.",
+      "detail": "Full rank makes $X^\\top X$ invertible, so $\\hat\\beta = C_0 y$ with $C_0 = (X^\\top X)^{-1}X^\\top$. Then $\\mathbb{E}\\hat\\beta = C_0 X\\beta = \\beta$ because $\\mathbb{E}\\varepsilon = 0$; so it is an [unbiased estimator](c:unbiased-estimator).",
+      "uses": []
+     },
+     {
+      "id": "s:constraint",
+      "slogan": "Translate unbiasedness of $\\tilde\\beta = Cy$ into the matrix equation $CX = I$.",
+      "detail": "$\\mathbb{E}\\,Cy = CX\\beta$, and this equals $\\beta$ for every $\\beta$ only if $CX = I$. Write $C = C_0 + D$; because $C_0 X = I$, the correction satisfies $DX = 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:expand",
+      "slogan": "Expand the covariance of $Cy$ and show that the cross terms vanish.",
+      "detail": "$\\operatorname{Cov}(Cy) = C\\operatorname{Cov}(\\varepsilon)C^\\top = \\sigma^2(C_0 + D)(C_0 + D)^\\top$. The cross term $DC_0^\\top = DX(X^\\top X)^{-1}$ is $0$, so $\\operatorname{Cov}(\\tilde\\beta) = \\operatorname{Cov}(\\hat\\beta) + \\sigma^2 DD^\\top$ with $\\operatorname{Cov}(\\hat\\beta) = \\sigma^2(X^\\top X)^{-1}$.",
+      "uses": []
+     },
+     {
+      "id": "s:psd",
+      "slogan": "Conclude from the identity $c^\\top DD^\\top c = |D^\\top c|^2 \\ge 0$.",
+      "detail": "The matrix $\\sigma^2 DD^\\top$ is [positive semidefinite](c:positive-semidefinite-matrix). Hence $\\operatorname{Var}(c^\\top\\tilde\\beta) - \\operatorname{Var}(c^\\top\\hat\\beta) = \\sigma^2|D^\\top c|^2 \\ge 0$ for every $c$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:ols",
+      "s:constraint"
+     ],
+     [
+      "s:ols",
+      "s:expand"
+     ],
+     [
+      "s:constraint",
+      "s:expand"
+     ],
+     [
+      "s:expand",
+      "s:psd"
+     ]
+    ],
+    "conclusion": "s:psd",
+    "concepts": {
+     "c:linear-regression": "The model $y = X\\beta + \\varepsilon$ is the setting of the theorem.",
+     "c:least-squares": "The least squares estimator is the claimed best estimator.",
+     "c:variance": "The theorem compares variances of linear combinations of estimators.",
+     "c:unbiased-estimator": "Unbiasedness restricts the competitors to matrices with $CX = I$.",
+     "c:covariance-matrix": "The error covariance $\\sigma^2 I$ makes the cross terms vanish.",
+     "c:positive-semidefinite-matrix": "The covariance gap $\\sigma^2 DD^\\top$ is positive semidefinite."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard matrix proof, as in G. A. F. Seber and A. J. Lee, Linear Regression Analysis, 2nd ed. (2003), chapter 3."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1153441",
+  "statement": "Let a [Lie group](c:lie-group) $G$ act linearly on $\\mathbb{R}^n$, let $V$ be a smooth $G$-invariant potential, and let $\\phi_0$ be a minimum of $V$ with [stabilizer](c:stabilizer) $H$. Then the mass matrix $\\partial_i\\partial_j V(\\phi_0)$ has at least $\\dim G - \\dim H$ zero eigenvalues: each broken generator gives a massless Goldstone boson.",
+  "hypotheses": [
+   {
+    "id": "h:action",
+    "text": "A [Lie group](c:lie-group) $G$ acts linearly on the field space $\\mathbb{R}^n$.",
+    "concept": "c:group-action"
+   },
+   {
+    "id": "h:invariant",
+    "text": "The potential $V\\colon \\mathbb{R}^n \\to \\mathbb{R}$ is smooth and $G$-invariant: $V(g\\phi) = V(\\phi)$.",
+    "concept": null
+   },
+   {
+    "id": "h:vacuum",
+    "text": "The vacuum $\\phi_0$ is a minimum of $V$ with stabilizer $H$, so the symmetry is [spontaneously broken](c:spontaneously-broken-symmetry) when $H \\ne G$.",
+    "concept": "c:spontaneously-broken-symmetry"
+   }
+  ],
+  "conclusion": "The [Hessian](c:hessian) of $V$ at $\\phi_0$ vanishes on the tangent space of the orbit $G\\phi_0$, which has dimension $\\dim G - \\dim H$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "differentiate-invariance",
+    "name": "Differentiate the invariance twice",
+    "slogan": "Differentiate the invariance of the potential along each generator, then differentiate again at the vacuum, where the gradient vanishes.",
+    "scope": "The classical (tree-level) theorem; the same argument applied to the quantum effective potential gives the version of Goldstone, Salam and Weinberg. Only the vanishing gradient at $\\phi_0$ is used.",
+    "mechanisms": [
+     "m:symmetry",
+     "m:dimension-count"
+    ],
+    "roles": [
+     {
+      "h": "h:action",
+      "why": "The linear action supplies the generators $X$ and the orbit through $\\phi_0$.",
+      "steps": [
+       "s:first",
+       "s:count"
+      ]
+     },
+     {
+      "h": "h:invariant",
+      "why": "Invariance gives the identity that the proof differentiates twice.",
+      "steps": [
+       "s:first"
+      ]
+     },
+     {
+      "h": "h:vacuum",
+      "why": "At the vacuum the gradient vanishes, and its stabilizer fixes the count of broken generators.",
+      "steps": [
+       "s:second",
+       "s:count"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:first",
+      "slogan": "Differentiate $V(e^{sX}\\phi) = V(\\phi)$ at $s = 0$ for each generator $X$.",
+      "detail": "For $X$ in the [Lie algebra](c:lie-algebra) $\\mathfrak{g}$, acting by a matrix on $\\mathbb{R}^n$, invariance gives $\\sum_i \\partial_i V(\\phi)\\,(X\\phi)_i = 0$ for every $\\phi$.",
+      "uses": []
+     },
+     {
+      "id": "s:second",
+      "slogan": "Differentiate the identity again in $\\phi$ and evaluate it at the vacuum.",
+      "detail": "Differentiation in $\\phi_j$ gives $\\sum_i \\partial_j\\partial_i V(\\phi)(X\\phi)_i + \\sum_i \\partial_i V(\\phi)X_{ij} = 0$. At the minimum $\\phi_0$ the gradient vanishes, so $\\operatorname{Hess} V(\\phi_0)\\,X\\phi_0 = 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:count",
+      "slogan": "Count the independent zero modes $X\\phi_0$ by rank-nullity.",
+      "detail": "The linear map $X \\mapsto X\\phi_0$ on $\\mathfrak{g}$ has as kernel the Lie algebra of the [stabilizer](c:stabilizer) $H$. By rank-nullity its image, the tangent space of the [orbit](c:orbit), has dimension $\\dim G - \\dim H$ and lies in the kernel of the [Hessian](c:hessian).",
+      "uses": [
+       "wd:Q303402"
+      ]
+     },
+     {
+      "id": "s:massless",
+      "slogan": "Read the zero eigenvalues of the mass matrix as massless particles.",
+      "detail": "Expanding $V$ to second order around $\\phi_0$ gives the mass matrix $\\partial_i\\partial_j V(\\phi_0)$ of the field fluctuations. Step 3 gives at least $\\dim G - \\dim H$ zero [eigenvalues](c:eigenvalue), one massless Goldstone field for each broken generator.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:first",
+      "s:second"
+     ],
+     [
+      "s:second",
+      "s:count"
+     ],
+     [
+      "s:count",
+      "s:massless"
+     ]
+    ],
+    "conclusion": "s:massless",
+    "concepts": {
+     "c:lie-group": "The continuous symmetry group supplies the generators.",
+     "c:stabilizer": "The stabilizer's generators are unbroken and give no zero mode.",
+     "c:spontaneously-broken-symmetry": "Broken symmetry means $H \\ne G$, so the count is positive.",
+     "c:hessian": "The Hessian at the vacuum is the mass matrix of the fields.",
+     "c:lie-algebra": "Each Lie algebra element gives one infinitesimal invariance identity.",
+     "c:orbit": "Moving along the vacuum orbit costs no energy.",
+     "c:eigenvalue": "Zero eigenvalues of the mass matrix are massless particles."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The classical proof, as in M. E. Peskin and D. V. Schroeder, An Introduction to Quantum Field Theory (1995), section 11.1; the quantum version is J. Goldstone, A. Salam and S. Weinberg, Broken symmetries, Phys. Rev. 127 (1962), 965-970."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1032886",
+  "statement": "For every finite alphabet $A$ and every finite number $r$ of colors there is a dimension $N$ such that every coloring of the cube $A^N$ with $r$ colors has a monochromatic [combinatorial line](c:combinatorial-line).",
+  "hypotheses": [
+   {
+    "id": "h:alphabet",
+    "text": "The alphabet $A$ is a [finite set](c:finite-set).",
+    "concept": "c:finite-set"
+   },
+   {
+    "id": "h:colors",
+    "text": "The number $r$ of colors is finite.",
+    "concept": null
+   }
+  ],
+  "conclusion": "Some dimension $N$ makes every $r$-coloring of $A^N$ contain a combinatorial line whose points all have one color.",
+  "formal": {
+   "decl": "Combinatorics.Line.exists_mono_in_high_dimension",
+   "difference": null
+  },
+  "proofs": [
+   {
+    "id": "color-focusing",
+    "name": "Color focusing",
+    "slogan": "Induct on the alphabet size, and in the step build more and more color-focused lines until two of them share a color.",
+    "scope": "Induction on $|A|$; an empty alphabet makes the claim vacuous. The step from $A$ to $A' = A \\cup \\{\\ast\\}$ uses the theorem for $A$ with a much larger number of colors.",
+    "mechanisms": [
+     "m:induction",
+     "m:pigeonhole"
+    ],
+    "roles": [
+     {
+      "h": "h:alphabet",
+      "why": "Finiteness of $A$ allows the induction on its size and keeps the slice colorings finite in number.",
+      "steps": [
+       "s:base",
+       "s:product"
+      ]
+     },
+     {
+      "h": "h:colors",
+      "why": "Finitely many colors keep the slice colorings finite and bound the number of distinct colors.",
+      "steps": [
+       "s:product",
+       "s:finish"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:base",
+      "slogan": "Settle the empty alphabet and set up the step from $A$ to $A' = A \\cup \\{\\ast\\}$.",
+      "detail": "For an empty alphabet there is nothing to color, so the claim holds. The step assumes the theorem for $A$ with every finite number of colors and proves it for $A'$.",
+      "uses": []
+     },
+     {
+      "id": "s:claim",
+      "slogan": "State the key claim: in high dimension there are $k$ color-focused lines or a monochromatic line.",
+      "detail": "Lines in $A'^N$ are color-focused if they share the point with letter $\\ast$, and each line is monochromatic on its points with letters from $A$, in distinct colors. The claim is proved by induction on $k$, and $k = 0$ is trivial.",
+      "uses": []
+     },
+     {
+      "id": "s:product",
+      "slogan": "Split the coordinates as $\\iota \\sqcup \\iota'$ and color $A^{\\iota'}$ by whole slices.",
+      "detail": "A coloring of $A'^{\\iota \\sqcup \\iota'}$ colors each $v \\in A^{\\iota'}$ by the induced coloring of its slice $A'^{\\iota}$, with at most $r^{|A'|^{|\\iota|}}$ colors. The theorem for $A$ gives a [combinatorial line](c:combinatorial-line) $l'$ in $A^{\\iota'}$ on which all slices carry the same coloring $C'$.",
+      "uses": []
+     },
+     {
+      "id": "s:extend",
+      "slogan": "Combine $k$ focused lines for $C'$ with the line $l'$ into $k + 1$ focused lines.",
+      "detail": "By the claim for $k$ in dimension $\\iota$, $C'$ has a monochromatic line or $k$ focused lines with focus $f$. If a line has the color of $f$, it is monochromatic; otherwise the products of the $k$ lines with $l'$ and the line through $f$ along $l'$ give $k + 1$ focused lines.",
+      "uses": []
+     },
+     {
+      "id": "s:finish",
+      "slogan": "Take $k = r + 1$ and note that $r + 1$ lines cannot have distinct colors.",
+      "detail": "Only $r$ colors exist, so by the pigeonhole principle the focused alternative of the claim fails for $k = r + 1$. Hence the claim gives a monochromatic line, which completes the step from $A$ to $A'$.",
+      "uses": [
+       "nm:pigeonhole-principle"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:claim",
+      "s:extend"
+     ],
+     [
+      "s:product",
+      "s:extend"
+     ],
+     [
+      "s:extend",
+      "s:finish"
+     ],
+     [
+      "s:base",
+      "s:finish"
+     ]
+    ],
+    "conclusion": "s:finish",
+    "concepts": {
+     "c:combinatorial-line": "The theorem finds a monochromatic combinatorial line, and the step uses one in $A^{\\iota'}$.",
+     "c:finite-set": "A finite alphabet allows induction on its number of letters."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Combinatorics.Line.exists_mono_in_high_dimension",
+     "follows": true,
+     "note": "mathlib proves exists_mono_in_high_dimension' by induction on α through Option α, with ColorFocused families of AlmostMono lines and the constructions Line.prod and Line.vertical."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:integral-test",
+  "statement": "Let $f\\colon [0, \\infty) \\to \\mathbb{R}$ be nonnegative and nonincreasing. Then the [series](c:series) $\\sum_{n \\ge 0} f(n)$ converges if and only if the [improper integral](c:improper-integral) $\\int_0^\\infty f(x)\\,dx$ converges, and then $\\int_0^\\infty f \\le \\sum_{n \\ge 0} f(n) \\le f(0) + \\int_0^\\infty f$.",
+  "hypotheses": [
+   {
+    "id": "h:nonneg",
+    "text": "The function $f$ is nonnegative on $[0, \\infty)$.",
+    "concept": null
+   },
+   {
+    "id": "h:decreasing",
+    "text": "The function $f$ is nonincreasing, a [monotone function](c:monotone-function) on $[0, \\infty)$.",
+    "concept": "c:monotone-function"
+   }
+  ],
+  "conclusion": "The series and the integral converge together, with $\\int_0^\\infty f \\le \\sum_{n \\ge 0} f(n) \\le f(0) + \\int_0^\\infty f$.",
+  "formal": {
+   "decl": "AntitoneOn.tsum_le_integral",
+   "difference": "The declaration gives only the upper bound, and it assumes integrability on (0, ∞); summability from integrability is AntitoneOn.summable_of_integrableOn_Ioi_zero. The converse and the lower bound are not part of it."
+  },
+  "proofs": [
+   {
+    "id": "unit-intervals",
+    "name": "Squeeze on unit intervals",
+    "slogan": "Squeeze the integral over each interval $[n, n + 1]$ between $f(n + 1)$ and $f(n)$ and add the inequalities.",
+    "scope": "The whole theorem. The integrals over bounded intervals exist because a monotone function is Riemann integrable.",
+    "mechanisms": [
+     "m:monotone-limit"
+    ],
+    "roles": [
+     {
+      "h": "h:nonneg",
+      "why": "Nonnegativity makes the partial sums and the integrals $\\int_0^X f$ increase.",
+      "steps": [
+       "s:monotone"
+      ]
+     },
+     {
+      "h": "h:decreasing",
+      "why": "Monotonicity squeezes $f$ on each unit interval between its end values.",
+      "steps": [
+       "s:local"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:local",
+      "slogan": "Bound the integral over $[n, n + 1]$ by the values of $f$ at the two ends.",
+      "detail": "For $x \\in [n, n + 1]$, monotonicity gives $f(n + 1) \\le f(x) \\le f(n)$. A monotone function is [Riemann integrable](c:riemann-integral) there, so $f(n + 1) \\le \\int_n^{n+1} f \\le f(n)$.",
+      "uses": []
+     },
+     {
+      "id": "s:sum",
+      "slogan": "Add the local bounds to compare partial sums with integrals.",
+      "detail": "Summation over $n < N$ gives $\\sum_{n=1}^{N} f(n) \\le \\int_0^N f \\le \\sum_{n=0}^{N-1} f(n)$. So the partial sum $S_N = \\sum_{n=0}^{N} f(n)$ satisfies $\\int_0^{N+1} f \\le S_N \\le f(0) + \\int_0^N f$.",
+      "uses": []
+     },
+     {
+      "id": "s:monotone",
+      "slogan": "Show that the partial sums and the integrals $\\int_0^X f$ both increase.",
+      "detail": "Because $f \\ge 0$, $S_N$ increases with $N$ and $\\int_0^X f$ increases with $X$. A nondecreasing quantity converges exactly when it is bounded above.",
+      "uses": [
+       "wd:Q1153584"
+      ]
+     },
+     {
+      "id": "s:compare",
+      "slogan": "Transfer boundedness between the sums and the integrals and pass to the limit.",
+      "detail": "By step 2, a bound on the [improper integral](c:improper-integral) bounds every $S_N$, and a bound on the [series](c:series) bounds every $\\int_0^{N+1} f$. Step 3 gives convergence of both, and $N \\to \\infty$ in step 2 gives the two inequalities.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:local",
+      "s:sum"
+     ],
+     [
+      "s:sum",
+      "s:compare"
+     ],
+     [
+      "s:monotone",
+      "s:compare"
+     ]
+    ],
+    "conclusion": "s:compare",
+    "concepts": {
+     "c:series": "The test decides the convergence of the series.",
+     "c:improper-integral": "The improper integral is the comparison object for the series.",
+     "c:monotone-function": "Monotonicity gives the squeeze on each unit interval.",
+     "c:riemann-integral": "Monotone functions are Riemann integrable on bounded intervals."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "AntitoneOn.tsum_le_integral",
+     "follows": true,
+     "note": "mathlib bounds f(n + 1) by the integral over [n, n + 1] (AntitoneOn.sum_le_integral), derives AntitoneOn.tsum_add_one_le_integral and AntitoneOn.summable_of_integrableOn_Ioi_zero, and splits off f(0)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q2046647",
+  "statement": "Let $(X_t)_{t \\in [a, b]}$ be a centered, square-integrable [stochastic process](c:stochastic-process) with continuous [covariance function](c:covariance-function) $K$. Let $e_k$ be the orthonormal eigenfunctions of the integral operator with kernel $K$, with eigenvalues $\\lambda_k > 0$. Then $X_t = \\sum_k Z_k e_k(t)$ in mean square, uniformly in $t$, where $Z_k = \\int_a^b X_t e_k(t)\\,dt$ are uncorrelated with variance $\\lambda_k$.",
+  "hypotheses": [
+   {
+    "id": "h:centered",
+    "text": "The process is centered with finite second moments: $\\mathbb{E}X_t = 0$ and $\\mathbb{E}X_t^2 < \\infty$.",
+    "concept": "c:stochastic-process"
+   },
+   {
+    "id": "h:continuous",
+    "text": "The [covariance function](c:covariance-function) $K(s, t) = \\mathbb{E}X_sX_t$ is continuous on $[a, b]^2$.",
+    "concept": "c:covariance-function"
+   },
+   {
+    "id": "h:eigen",
+    "text": "The $e_k$ form an [orthonormal basis](c:orthonormal-basis) of the closed range of the [integral operator](c:integral-operator) with kernel $K$, with $\\int_a^b K(s, t)e_k(t)\\,dt = \\lambda_k e_k(s)$.",
+    "concept": "c:integral-operator"
+   }
+  ],
+  "conclusion": "$\\sup_{t} \\mathbb{E}\\big(X_t - \\sum_{k \\le N} Z_k e_k(t)\\big)^2 \\to 0$ as $N \\to \\infty$, and $\\mathbb{E}Z_jZ_k = \\lambda_k\\delta_{jk}$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "mercer",
+    "name": "Mercer expansion of the covariance",
+    "slogan": "Compute the covariances of the coefficients from the eigenvalue equation, then identify the mean-square error with the tail of Mercer's series.",
+    "scope": "The whole theorem; the $Z_k$ are mean-square Riemann integrals, which exist because $K$ is continuous. The eigenvalues are nonnegative because $K$ is positive semidefinite.",
+    "mechanisms": [
+     "m:spectral-decomposition",
+     "m:fubini-swap"
+    ],
+    "roles": [
+     {
+      "h": "h:centered",
+      "why": "Mean zero and finite variance make $K$ the covariance and give $\\mathbb{E}Z_k = 0$.",
+      "steps": [
+       "s:coeff",
+       "s:error"
+      ]
+     },
+     {
+      "h": "h:continuous",
+      "why": "Continuity of $K$ is the hypothesis of Mercer's theorem and makes the $Z_k$ well defined.",
+      "steps": [
+       "s:mercer"
+      ]
+     },
+     {
+      "h": "h:eigen",
+      "why": "The eigenvalue equation turns integrals of $K$ against $e_k$ into $\\lambda_k e_k$.",
+      "steps": [
+       "s:coeff"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:mercer",
+      "slogan": "Expand the covariance function by Mercer's theorem.",
+      "detail": "$K$ is continuous, symmetric and positive semidefinite, so Mercer's theorem gives $K(s, t) = \\sum_k \\lambda_k e_k(s)e_k(t)$ with absolute and uniform convergence on $[a, b]^2$.",
+      "uses": [
+       "wd:Q1716166"
+      ]
+     },
+     {
+      "id": "s:coeff",
+      "slogan": "Compute $\\mathbb{E}X_tZ_k$ and $\\mathbb{E}Z_jZ_k$ by exchanging expectation and integration.",
+      "detail": "Fubini's theorem gives $\\mathbb{E}X_tZ_k = \\int_a^b K(t, s)e_k(s)\\,ds = \\lambda_k e_k(t)$. Integrating again against $e_j$ gives $\\mathbb{E}Z_jZ_k = \\lambda_k\\delta_{jk}$ by orthonormality, and $\\mathbb{E}Z_k = 0$.",
+      "uses": [
+       "wd:Q1149022"
+      ]
+     },
+     {
+      "id": "s:error",
+      "slogan": "Expand the mean-square error of the partial sum $S_N(t) = \\sum_{k \\le N} Z_k e_k(t)$.",
+      "detail": "Step 2 gives $\\mathbb{E}(X_t - S_N(t))^2 = K(t, t) - 2\\sum_{k \\le N}\\lambda_k e_k(t)^2 + \\sum_{k \\le N}\\lambda_k e_k(t)^2 = K(t, t) - \\sum_{k \\le N}\\lambda_k e_k(t)^2$.",
+      "uses": []
+     },
+     {
+      "id": "s:limit",
+      "slogan": "Let $N \\to \\infty$ and use the uniform convergence of Mercer's series on the diagonal.",
+      "detail": "By step 1 the right side of step 3 tends to $0$ uniformly in $t \\in [a, b]$. So $S_N(t) \\to X_t$ in mean square, uniformly in $t$, with the uncorrelated coefficients of step 2.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:coeff",
+      "s:error"
+     ],
+     [
+      "s:error",
+      "s:limit"
+     ],
+     [
+      "s:mercer",
+      "s:limit"
+     ]
+    ],
+    "conclusion": "s:limit",
+    "concepts": {
+     "c:stochastic-process": "The theorem expands a whole process in a deterministic basis.",
+     "c:covariance-function": "The covariance function is the kernel whose eigenfunctions form the basis.",
+     "c:orthonormal-basis": "Orthonormality of the $e_k$ makes the coefficients uncorrelated.",
+     "c:integral-operator": "The eigenfunctions come from the integral operator with kernel $K$."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The classical proof by Mercer's theorem (Karhunen 1946, Loève 1955); see M. Loève, Probability Theory (Van Nostrand, 1955)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q371685",
+  "statement": "Over an alphabet of $D \\ge 1$ letters, every finite [uniquely decodable code](c:uniquely-decodable-code) with codeword lengths $\\ell_1, \\dots, \\ell_m$ satisfies $\\sum_i D^{-\\ell_i} \\le 1$. Conversely, if positive integers $\\ell_1, \\dots, \\ell_m$ satisfy this inequality, some [prefix code](c:prefix-code) has exactly these codeword lengths.",
+  "hypotheses": [
+   {
+    "id": "h:alphabet",
+    "text": "The alphabet is finite with $D \\ge 1$ letters.",
+    "concept": null
+   },
+   {
+    "id": "h:decodable",
+    "text": "For the inequality: the finite code is [uniquely decodable](c:uniquely-decodable-code), so distinct sequences of codewords have distinct concatenations.",
+    "concept": "c:uniquely-decodable-code"
+   },
+   {
+    "id": "h:lengths",
+    "text": "For the converse: the positive integers $\\ell_1, \\dots, \\ell_m$ satisfy $\\sum_i D^{-\\ell_i} \\le 1$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "Unique decodability gives $\\sum_i D^{-\\ell_i} \\le 1$, and lengths with this property are the lengths of a prefix code.",
+  "formal": {
+   "decl": "InformationTheory.IsUniquelyDecodable.finsetSum_one_div_card_pow_length_le_one",
+   "difference": "The declaration proves only the inequality for a finite uniquely decodable code. The converse construction of a prefix code is not part of it."
+  },
+  "proofs": [
+   {
+    "id": "power-and-greedy",
+    "name": "Power counting and greedy construction",
+    "slogan": "Raise the Kraft sum to a high power and count concatenations by length, then build a prefix code greedily for the converse.",
+    "scope": "Steps 1 to 3 prove the inequality and steps 4 and 5 the converse with base-$D$ expansions for $D \\ge 2$. For $D = 1$ the inequality allows a single length, and one word is a prefix code.",
+    "mechanisms": [
+     "m:double-counting",
+     "m:contradiction",
+     "m:construction-explicit"
+    ],
+    "roles": [
+     {
+      "h": "h:alphabet",
+      "why": "The $D$ letters bound the number of words of length $\\ell$ by $D^\\ell$ and give base-$D$ expansions.",
+      "steps": [
+       "s:count",
+       "s:assign"
+      ]
+     },
+     {
+      "h": "h:decodable",
+      "why": "Unique decodability makes distinct tuples of codewords give distinct concatenations.",
+      "steps": [
+       "s:count"
+      ]
+     },
+     {
+      "h": "h:lengths",
+      "why": "The inequality keeps each start point $c_i$ below $1$ and separates the intervals of the codewords.",
+      "steps": [
+       "s:assign",
+       "s:prefix"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:power",
+      "slogan": "Expand the $r$-th power of the Kraft sum $K = \\sum_w D^{-|w|}$ over $r$-tuples of codewords.",
+      "detail": "$K^r = \\sum_{(w_1, \\dots, w_r)} D^{-(|w_1| + \\dots + |w_r|)}$, and the exponent is the length of the concatenation $w_1 \\cdots w_r$. With $L$ the largest codeword length, this length is at most $rL$.",
+      "uses": []
+     },
+     {
+      "id": "s:count",
+      "slogan": "Bound the tuples whose concatenation has length $\\ell$ by the $D^\\ell$ words of that length.",
+      "detail": "Unique decodability makes the map from tuples to concatenations injective, and there are $D^\\ell$ words of length $\\ell$. Each length $\\ell \\le rL$ contributes at most $D^\\ell D^{-\\ell} = 1$, so $K^r \\le rL$.",
+      "uses": []
+     },
+     {
+      "id": "s:growth",
+      "slogan": "Compare the exponential growth of $K^r$ with the linear bound $rL$.",
+      "detail": "If $K > 1$, then $K^r/(rL) \\to \\infty$ as $r \\to \\infty$, which contradicts step 2 for large $r$. Hence $K \\le 1$.",
+      "uses": []
+     },
+     {
+      "id": "s:assign",
+      "slogan": "Sort the lengths and give word $i$ the first $\\ell_i$ digits of $c_i = \\sum_{j < i} D^{-\\ell_j}$.",
+      "detail": "Sort $\\ell_1 \\le \\dots \\le \\ell_m$. The hypothesis gives $c_i \\le 1 - D^{-\\ell_i} < 1$, and $c_i$ is a multiple of $D^{-\\ell_i}$, so its base-$D$ expansion has at most $\\ell_i$ digits; let $w_i$ be these $\\ell_i$ digits.",
+      "uses": []
+     },
+     {
+      "id": "s:prefix",
+      "slogan": "Check that no word $w_i$ is a prefix of a later word $w_k$.",
+      "detail": "For $i < k$, $c_k \\ge c_i + D^{-\\ell_i}$, so $c_k$ lies outside the interval $[c_i, c_i + D^{-\\ell_i})$ of numbers whose expansion starts with $w_i$. Hence the words are distinct and form a [prefix code](c:prefix-code) with the given lengths.",
+      "uses": []
+     },
+     {
+      "id": "s:combine",
+      "slogan": "Join the inequality of steps 1 to 3 with the construction of steps 4 and 5.",
+      "detail": "Steps 1 to 3 prove the inequality for every uniquely decodable code, and steps 4 and 5 realize every admissible length list by a prefix code. Together they give both parts of the theorem.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:power",
+      "s:count"
+     ],
+     [
+      "s:count",
+      "s:growth"
+     ],
+     [
+      "s:assign",
+      "s:prefix"
+     ],
+     [
+      "s:growth",
+      "s:combine"
+     ],
+     [
+      "s:prefix",
+      "s:combine"
+     ]
+    ],
+    "conclusion": "s:combine",
+    "concepts": {
+     "c:uniquely-decodable-code": "Unique decodability makes the count of concatenations injective.",
+     "c:prefix-code": "The converse constructs a prefix code from admissible lengths."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "InformationTheory.IsUniquelyDecodable.finsetSum_one_div_card_pow_length_le_one",
+     "follows": true,
+     "note": "mathlib bounds K^r by r times the largest length (kraft_mcmillan_inequality_aux) and lets r grow (tendsto_self_mul_const_pow_of_abs_lt_one); the converse steps are authored, after Kraft (1949)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1129636",
+  "statement": "Let $T$ be a [complete](c:complete-statistic) [sufficient statistic](c:sufficient-statistic) for a family $\\{P_\\theta\\}$. If $\\delta(T)$ is an [unbiased estimator](c:unbiased-estimator) of $g(\\theta)$ with finite variance, then $\\delta(T)$ has the least [variance](c:variance) among all unbiased estimators of $g(\\theta)$ for every $\\theta$, and it is the only such estimator up to almost sure equality.",
+  "hypotheses": [
+   {
+    "id": "h:sufficient",
+    "text": "The statistic $T$ is [sufficient](c:sufficient-statistic) for $\\theta$.",
+    "concept": "c:sufficient-statistic"
+   },
+   {
+    "id": "h:complete",
+    "text": "The statistic $T$ is [complete](c:complete-statistic): $\\mathbb{E}_\\theta h(T) = 0$ for all $\\theta$ implies $h(T) = 0$ almost surely.",
+    "concept": "c:complete-statistic"
+   },
+   {
+    "id": "h:unbiased",
+    "text": "The estimator $\\delta(T)$ depends on the data only through $T$, is unbiased for $g(\\theta)$ and has finite variance.",
+    "concept": "c:unbiased-estimator"
+   }
+  ],
+  "conclusion": "$\\delta(T)$ is the unique uniformly minimum-variance unbiased estimator of $g(\\theta)$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "rao-blackwell-completeness",
+    "name": "Rao-Blackwell and completeness",
+    "slogan": "Improve any unbiased estimator by conditioning on $T$, and use completeness to show that the improvement is always $\\delta(T)$.",
+    "scope": "The whole theorem; competitors with infinite variance need no argument. Uniqueness holds almost surely under every $P_\\theta$.",
+    "mechanisms": [
+     "m:orthogonal-projection"
+    ],
+    "roles": [
+     {
+      "h": "h:sufficient",
+      "why": "Sufficiency makes $\\mathbb{E}[W \\mid T]$ a statistic that does not depend on $\\theta$.",
+      "steps": [
+       "s:condition"
+      ]
+     },
+     {
+      "h": "h:complete",
+      "why": "Completeness forces two unbiased functions of $T$ to agree.",
+      "steps": [
+       "s:complete"
+      ]
+     },
+     {
+      "h": "h:unbiased",
+      "why": "Unbiasedness of $\\delta(T)$ gives $\\mathbb{E}_\\theta(\\varphi - \\delta)(T) = 0$ for every $\\theta$.",
+      "steps": [
+       "s:complete",
+       "s:conclude"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:condition",
+      "slogan": "Condition an arbitrary unbiased estimator $W$ on $T$ to get $\\varphi(T) = \\mathbb{E}[W \\mid T]$.",
+      "detail": "Sufficiency makes the [conditional expectation](c:conditional-expectation) $\\mathbb{E}_\\theta[W \\mid T]$ free of $\\theta$, so $\\varphi(T)$ is a statistic. The tower property gives $\\mathbb{E}_\\theta\\varphi(T) = \\mathbb{E}_\\theta W = g(\\theta)$.",
+      "uses": []
+     },
+     {
+      "id": "s:rao",
+      "slogan": "Bound the variance of $\\varphi(T)$ by the variance of $W$.",
+      "detail": "The conditional variance formula gives $\\operatorname{Var}_\\theta W = \\operatorname{Var}_\\theta\\varphi(T) + \\mathbb{E}_\\theta\\operatorname{Var}_\\theta(W \\mid T)$. So $\\operatorname{Var}_\\theta\\varphi(T) \\le \\operatorname{Var}_\\theta W$, with equality only if $W = \\varphi(T)$ almost surely.",
+      "uses": [
+       "wd:Q579515"
+      ]
+     },
+     {
+      "id": "s:complete",
+      "slogan": "Show that $\\varphi(T) = \\delta(T)$ almost surely by completeness.",
+      "detail": "The function $h = \\varphi - \\delta$ has $\\mathbb{E}_\\theta h(T) = g(\\theta) - g(\\theta) = 0$ for every $\\theta$. [Completeness](c:complete-statistic) gives $h(T) = 0$ almost surely, so $\\varphi(T) = \\delta(T)$.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Conclude minimality and uniqueness of $\\delta(T)$ from steps 2 and 3.",
+      "detail": "Steps 2 and 3 give $\\operatorname{Var}_\\theta\\delta(T) \\le \\operatorname{Var}_\\theta W$ for every $\\theta$ and every unbiased $W$. If $W$ also has least variance, equality holds in step 2, so $W = \\varphi(T) = \\delta(T)$ almost surely.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:condition",
+      "s:rao"
+     ],
+     [
+      "s:condition",
+      "s:complete"
+     ],
+     [
+      "s:rao",
+      "s:conclude"
+     ],
+     [
+      "s:complete",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:complete-statistic": "Completeness makes the unbiased function of $T$ unique.",
+     "c:sufficient-statistic": "Sufficiency makes conditioning on $T$ produce a statistic.",
+     "c:unbiased-estimator": "The theorem compares all unbiased estimators of $g(\\theta)$.",
+     "c:variance": "Variance is the risk that the optimal estimator minimizes.",
+     "c:conditional-expectation": "Conditioning on $T$ is the Rao-Blackwell improvement."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard proof from the Rao-Blackwell theorem, as in E. L. Lehmann and G. Casella, Theory of Point Estimation, 2nd ed. (1998), chapter 2."
+    }
+   }
+  ]
+ }
+]

@@ -1,0 +1,1855 @@
+[
+ {
+  "id": "nm:vertical-angles-theorem",
+  "statement": "Let two [straight lines](c:straight-line) meet at a point $O$. Let $A$ and $C$ lie on opposite sides of $O$ on one line, and $B$ and $D$ on opposite sides of $O$ on the other line. Then the [angles](c:angle) $\\angle AOB$ and $\\angle COD$ are equal.",
+  "hypotheses": [
+   {
+    "id": "h:line-ac",
+    "text": "The point $O$ lies strictly between $A$ and $C$ on a [straight line](c:straight-line), so $\\angle AOC = \\pi$.",
+    "concept": "c:straight-line"
+   },
+   {
+    "id": "h:line-bd",
+    "text": "The point $O$ lies strictly between $B$ and $D$ on a second straight line, so $\\angle BOD = \\pi$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The [angles](c:angle) satisfy $\\angle AOB = \\angle COD$.",
+  "formal": {
+   "decl": "EuclideanGeometry.angle_eq_angle_of_angle_eq_pi_of_angle_eq_pi",
+   "difference": null
+  },
+  "proofs": [
+   {
+    "id": "supplements",
+    "name": "Two supplements of one angle",
+    "slogan": "Each of the two angles is a supplement of the same angle, so the two angles are equal.",
+    "scope": "The whole theorem, in a Euclidean space of any dimension. The proof needs only the supplement rule for a straight angle and the symmetry of an angle in its two arms.",
+    "mechanisms": [
+     "m:algebraic-identity",
+     "m:symmetry"
+    ],
+    "roles": [
+     {
+      "h": "h:line-ac",
+      "why": "The straight angle $AOC$ is split by the ray $OD$ into two angles that add to $\\pi$.",
+      "steps": [
+       "s:split-d"
+      ]
+     },
+     {
+      "h": "h:line-bd",
+      "why": "The straight angle $BOD$ is split by the ray $OA$ into two angles that add to $\\pi$.",
+      "steps": [
+       "s:split-a"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:split-a",
+      "slogan": "Split the straight angle $BOD$ by the ray $OA$.",
+      "detail": "Because $\\angle BOD = \\pi$, the rays $OB$ and $OD$ are opposite. The angles that $OA$ makes with them add to $\\pi$: $\\angle AOB + \\angle AOD = \\pi$.",
+      "uses": []
+     },
+     {
+      "id": "s:split-d",
+      "slogan": "Split the straight angle $AOC$ by the ray $OD$.",
+      "detail": "Because $\\angle AOC = \\pi$ in the same way, the rays $OA$ and $OC$ are opposite. The angles that $OD$ makes with them add to $\\pi$: $\\angle DOA + \\angle DOC = \\pi$.",
+      "uses": []
+     },
+     {
+      "id": "s:symmetry",
+      "slogan": "Swap the arms of one angle to match the two sums.",
+      "detail": "An [angle](c:angle) does not depend on the order of its two arms, so $\\angle DOA = \\angle AOD$. Both sums now contain this one angle.",
+      "uses": []
+     },
+     {
+      "id": "s:subtract",
+      "slogan": "Subtract the shared angle from both sums.",
+      "detail": "Step 1 gives $\\angle AOB = \\pi - \\angle AOD$. Steps 2 and 3 give $\\angle DOC = \\pi - \\angle DOA = \\pi - \\angle AOD$. So $\\angle AOB = \\angle DOC = \\angle COD$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:split-a",
+      "s:subtract"
+     ],
+     [
+      "s:split-d",
+      "s:subtract"
+     ],
+     [
+      "s:symmetry",
+      "s:subtract"
+     ]
+    ],
+    "conclusion": "s:subtract",
+    "concepts": {
+     "c:angle": "Angles add along a straight line and do not depend on the order of their arms.",
+     "c:straight-line": "A straight line gives a straight angle $\\pi$ that a ray splits into two supplements."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "EuclideanGeometry.angle_eq_angle_of_angle_eq_pi_of_angle_eq_pi",
+     "follows": true,
+     "note": "mathlib uses angle_add_angle_eq_pi_of_angle_eq_pi twice and angle_comm, then closes with linarith."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:15588",
+  "statement": "Let $X$ be a smooth projective [algebraic curve](c:algebraic-curve) over an algebraically closed field $k$, $x \\in X$ a closed point and $G$ a semisimple group over $k$. The [moduli stack](c:moduli-stack) of $G$-[bundles](c:principal-bundle) on $X$ is the double quotient stack $G(X \\setminus x) \\backslash G(K_x) / G(\\mathcal{O}_x)$.",
+  "hypotheses": [
+   {
+    "id": "h:curve",
+    "text": "The scheme $X$ is a smooth projective [algebraic curve](c:algebraic-curve) over an algebraically closed field $k$, and $x \\in X$ is a closed point.",
+    "concept": "c:algebraic-curve"
+   },
+   {
+    "id": "h:group",
+    "text": "The group $G$ is a semisimple (smooth, affine, connected) algebraic group over $k$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The [moduli stack](c:moduli-stack) $\\mathrm{Bun}_G(X)$ of $G$-[bundles](c:principal-bundle) is isomorphic to the double quotient stack of $G(K_x)$, where $K_x$ is the field of [Laurent series](c:laurent-series) and $\\mathcal{O}_x$ the ring of power series at $x$, by $G(X \\setminus x)$ on the left and $G(\\mathcal{O}_x)$ on the right.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "gluing-triviality",
+    "name": "Gluing and local triviality",
+    "slogan": "Glue a bundle from its restrictions to the complement of the point and to the formal disc, and trivialize both pieces.",
+    "scope": "An outline for a semisimple group and one point; the cited works carry the detail. Reductive groups such as $GL_n$ need finitely many points, which gives the adelic form of the quotient.",
+    "mechanisms": [
+     "m:sheaf-gluing",
+     "m:quotient-construction",
+     "m:cited-deep-result"
+    ],
+    "roles": [
+     {
+      "h": "h:curve",
+      "why": "The curve and the point give the complement $X \\setminus x$, the formal disc and the punctured disc to glue.",
+      "steps": [
+       "s:glue",
+       "s:complement"
+      ]
+     },
+     {
+      "h": "h:group",
+      "why": "Smoothness of $G$ trivializes bundles on the disc, and semisimplicity gives local triviality on the complement.",
+      "steps": [
+       "s:disc",
+       "s:complement"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:glue",
+      "slogan": "Describe a $G$-bundle on $X$ by gluing data on $X \\setminus x$ and on the formal disc.",
+      "detail": "By the Beauville-Laszlo theorem, a $G$-bundle on $X$ is the same as a $G$-bundle on $X \\setminus x$, a $G$-bundle on the formal disc $\\mathrm{Spec}\\,\\mathcal{O}_x$ and an isomorphism of their restrictions to the punctured disc $\\mathrm{Spec}\\,K_x$. This holds in families over any test algebra.",
+      "uses": [
+       "wd:Q4877965"
+      ]
+     },
+     {
+      "id": "s:disc",
+      "slogan": "Trivialize every $G$-bundle on the formal disc.",
+      "detail": "A $G$-bundle on the formal disc is trivial because $G$ is smooth and $k$ is algebraically closed: a section lifts through each infinitesimal thickening, as in Hensel's lemma. In families the trivialization exists étale locally on the base.",
+      "uses": [
+       "nl:18422"
+      ]
+     },
+     {
+      "id": "s:complement",
+      "slogan": "Trivialize every $G$-bundle on the complement of $x$.",
+      "detail": "Drinfeld and Simpson prove that, for a semisimple group, a $G$-bundle on $X \\times S$ is trivial over $(X \\setminus x) \\times S$ after an étale base change of $S$. This local triviality theorem is the deepest input.",
+      "uses": []
+     },
+     {
+      "id": "s:quotient",
+      "slogan": "Write the stack of gluing data as a double quotient.",
+      "detail": "After steps 2 and 3 a bundle is a trivial bundle on $X \\setminus x$, a trivial bundle on the disc and a gluing element $g \\in G(K_x)$. The automorphisms of the two trivial bundles are $G(X \\setminus x)$ and $G(\\mathcal{O}_x)$, and they act on $g$ from the left and from the right.",
+      "uses": []
+     },
+     {
+      "id": "s:iso",
+      "slogan": "Check that the quotient map into $\\mathrm{Bun}_G(X)$ is an isomorphism of stacks.",
+      "detail": "The map sends $g$ to the bundle that $g$ glues from the two trivial bundles. By step 1 it is fully faithful, and by steps 2 and 3 it is essentially surjective étale locally. So it is an isomorphism of stacks.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:glue",
+      "s:quotient"
+     ],
+     [
+      "s:disc",
+      "s:quotient"
+     ],
+     [
+      "s:complement",
+      "s:quotient"
+     ],
+     [
+      "s:quotient",
+      "s:iso"
+     ],
+     [
+      "s:glue",
+      "s:iso"
+     ]
+    ],
+    "conclusion": "s:iso",
+    "concepts": {
+     "c:algebraic-curve": "The proof cuts the curve into a punctured complement and a formal disc.",
+     "c:moduli-stack": "The double quotient describes the whole stack of bundles, not only its points.",
+     "c:principal-bundle": "Bundles are glued from trivial pieces on the complement and on the disc.",
+     "c:laurent-series": "The gluing elements are $G$-valued Laurent series at the point."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "J. Heinloth, Uniformization of G-bundles, Mathematische Annalen 347 (2010), 499-528",
+     "url": "https://doi.org/10.1007/s00208-009-0443-4",
+     "note": "The outline is the standard argument: Beauville and Laszlo, Un lemme de descente (1995), for the gluing, and Drinfeld and Simpson, B-structures on G-bundles and local triviality (1995), for the triviality; Heinloth extends it to group schemes over the curve."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q7980241",
+  "statement": "In a relativistic quantum field theory, let a massless particle have one-particle states $|p,h\\rangle$ of helicity $h$. (a) If there is a conserved [Lorentz-covariant](c:lorentz-invariance) current $J^\\mu$ and $|h| > 1/2$, the particle has charge $0$. (b) If there is a conserved Lorentz-covariant stress-energy tensor $T^{\\mu\\nu}$, no massless particle has $|h| > 1$.",
+  "hypotheses": [
+   {
+    "id": "h:massless",
+    "text": "The particle is massless with states $|p,h\\rangle$ of momentum $p$ ($p^2 = 0$) and helicity $h$, normalized by $\\langle p'|p\\rangle = 2E(2\\pi)^3\\delta^3(p - p')$.",
+    "concept": null
+   },
+   {
+    "id": "h:covariant",
+    "text": "The operator is a [Lorentz-covariant](c:lorentz-invariance) [tensor operator](c:tensor-operator): a vector $J^\\mu$ in part (a) and a symmetric rank 2 tensor $T^{\\mu\\nu}$ in part (b).",
+    "concept": "c:tensor-operator"
+   },
+   {
+    "id": "h:conserved",
+    "text": "The operator is a [conserved current](c:conserved-current) and its [charge](c:charge-of-a-conserved-current) acts on one-particle states: $\\int J^0\\,d^3x$ gives $q$ and $\\int T^{0\\mu}\\,d^3x$ gives $p^\\mu$.",
+    "concept": "c:conserved-current"
+   },
+   {
+    "id": "h:continuous",
+    "text": "The matrix elements $\\langle p',h|O(0)|p,h\\rangle$ of the operator are continuous in $p'$ near $p$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "In part (a) the charge $q$ is $0$ when $|h| > 1/2$. In part (b) no massless particle with $|h| > 1$ exists.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "breit-rotation",
+    "name": "Breit frame and rotation phase",
+    "slogan": "A rotation about the axis of a back-to-back pair forces the matrix element to vanish, against its non-zero forward value.",
+    "scope": "Parts (a) and (b) together: the proof treats a covariant operator $O$ of rank $r$, with $r = 1$ for $J^\\mu$ and $r = 2$ for $T^{\\mu\\nu}$. It is a physics-level proof that assumes the continuity of the matrix elements.",
+    "mechanisms": [
+     "m:symmetry",
+     "m:contradiction"
+    ],
+    "roles": [
+     {
+      "h": "h:massless",
+      "why": "The states fix the normalization and the helicity phases under rotation.",
+      "steps": [
+       "s:forward",
+       "s:rotate"
+      ]
+     },
+     {
+      "h": "h:covariant",
+      "why": "Covariance moves any momentum pair to a back-to-back pair and sets the rotation phases of the operator.",
+      "steps": [
+       "s:breit",
+       "s:rotate"
+      ]
+     },
+     {
+      "h": "h:conserved",
+      "why": "The conserved [charge](c:charge-of-a-conserved-current) fixes the forward matrix element.",
+      "steps": [
+       "s:forward"
+      ]
+     },
+     {
+      "h": "h:continuous",
+      "why": "Continuity carries the vanishing from distinct momenta to equal momenta.",
+      "steps": [
+       "s:limit"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:forward",
+      "slogan": "Compute the forward matrix element from the conserved charge.",
+      "detail": "Integrating $\\langle p'|O(x)|p\\rangle = e^{i(p'-p)\\cdot x}\\langle p'|O(0)|p\\rangle$ over space and using the charge gives $\\langle p,h|J^0(0)|p,h\\rangle = 2Eq$ and $\\langle p,h|T^{0\\nu}(0)|p,h\\rangle = 2Ep^\\nu$. Covariance and $p^2 = 0$ then give $\\langle p,h|J^\\mu|p,h\\rangle = 2q\\,p^\\mu$ and $\\langle p,h|T^{\\mu\\nu}|p,h\\rangle = 2p^\\mu p^\\nu$.",
+      "uses": []
+     },
+     {
+      "id": "s:breit",
+      "slogan": "Move any two non-parallel momenta to a back-to-back pair by a Lorentz transformation.",
+      "detail": "For massless $p$ and $p'$ that are not parallel, $p \\cdot p' > 0$. In the frame where $p + p'$ has no spatial part, $p = E(1, \\hat n)$ and $p' = E(1, -\\hat n)$. Covariance changes the matrix element only by phases of the two states, so it vanishes for all such pairs if it vanishes in this frame.",
+      "uses": []
+     },
+     {
+      "id": "s:rotate",
+      "slogan": "Rotate about the common axis and compare the phases of the matrix element.",
+      "detail": "A [rotation](c:rotation) by $\\theta$ about $\\hat n$ multiplies $|p,h\\rangle$ by $e^{-ih\\theta}$ and $|p',h\\rangle$ by $e^{ih\\theta}$, because $p'$ points along $-\\hat n$. The $O$ components of spin weight $\\lambda$ with $|\\lambda| \\le r$ turn by $e^{i\\lambda\\theta}$. So the matrix element satisfies $M = e^{i(2h - \\lambda)\\theta}M$ for its weight $\\lambda$ part.",
+      "uses": []
+     },
+     {
+      "id": "s:vanish",
+      "slogan": "Conclude that the back-to-back matrix element vanishes when $2|h| > r$.",
+      "detail": "The relation of step 3 holds for all $\\theta$, so each weight $\\lambda$ part vanishes unless $2h = \\lambda$. That needs $2|h| \\le r$. So for $2|h| > r$ every component vanishes in the back-to-back frame, and by step 2 for every pair of non-parallel momenta.",
+      "uses": []
+     },
+     {
+      "id": "s:limit",
+      "slogan": "Let $p'$ tend to $p$ and compare with the forward value.",
+      "detail": "By continuity the matrix element also vanishes at $p' = p$. This contradicts $2q\\,p^\\mu \\ne 0$ in part (a) unless $q = 0$, and it contradicts $2p^\\mu p^\\nu \\ne 0$ in part (b). So $q = 0$ for $|h| > 1/2$, and no massless particle with $|h| > 1$ exists.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:breit",
+      "s:rotate"
+     ],
+     [
+      "s:rotate",
+      "s:vanish"
+     ],
+     [
+      "s:breit",
+      "s:vanish"
+     ],
+     [
+      "s:vanish",
+      "s:limit"
+     ],
+     [
+      "s:forward",
+      "s:limit"
+     ]
+    ],
+    "conclusion": "s:limit",
+    "concepts": {
+     "c:lorentz-invariance": "Covariance moves any momentum pair to a back-to-back pair and fixes the forward form.",
+     "c:tensor-operator": "The rank of the operator bounds the rotation phases that it can carry.",
+     "c:conserved-current": "Conservation makes the charge a time-independent number that fixes the forward element.",
+     "c:charge-of-a-conserved-current": "The charge $q$ sets the non-zero forward matrix element.",
+     "c:rotation": "Rotation about the pair axis gives the phases that clash for high helicity."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The argument of S. Weinberg and E. Witten, Limits on massless particles, Physics Letters B 96 (1980) 59-62, written at the level of a physics proof."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q7996769",
+  "statement": "Let $M$ be a smooth $m$-[manifold](c:smooth-manifold), Hausdorff and second countable, with $m > 1$. Then $M$ has an [immersion](c:immersion) into $\\mathbb{R}^{2m-1}$.",
+  "hypotheses": [
+   {
+    "id": "h:manifold",
+    "text": "The space $M$ is a smooth $m$-[manifold](c:smooth-manifold) that is Hausdorff and second countable.",
+    "concept": "c:smooth-manifold"
+   },
+   {
+    "id": "h:dimension",
+    "text": "The dimension satisfies $m > 1$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "There is a smooth [immersion](c:immersion) $M \\to \\mathbb{R}^{2m-1}$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "generic-projection",
+    "name": "Generic projection and cancelling cross-caps",
+    "slogan": "Embed the manifold in a Euclidean space, project generically to dimension $2m$ and then $2m-1$, and cancel the isolated singular points.",
+    "scope": "An outline of Whitney's theorem: steps 1 and 2 are standard and step 4 rests on the cited paper. The family also holds a one-to-one immersion into $\\mathbb{R}^{2m}$ and an immersion into $S^{2m-1}$.",
+    "mechanisms": [
+     "m:dimension-count",
+     "m:partition-of-unity",
+     "m:cited-deep-result"
+    ],
+    "roles": [
+     {
+      "h": "h:manifold",
+      "why": "Second countability and the Hausdorff property give an embedding in Euclidean space.",
+      "steps": [
+       "s:embed",
+       "s:project",
+       "s:cross-caps"
+      ]
+     },
+     {
+      "h": "h:dimension",
+      "why": "The cancellation of singular points needs $m > 1$; the circle has no immersion into $\\mathbb{R}$.",
+      "steps": [
+       "s:cancel"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:embed",
+      "slogan": "Embed the manifold $M$ in a Euclidean space.",
+      "detail": "Because $M$ is Hausdorff and second countable, the Whitney weak embedding theorem gives an embedding $M \\to \\mathbb{R}^{2m+1}$, built from charts and a partition of unity.",
+      "uses": [
+       "nm:whitney-weak-embedding-theorem"
+      ]
+     },
+     {
+      "id": "s:project",
+      "slogan": "Project the embedded manifold to $\\mathbb{R}^{2m}$ along a generic direction.",
+      "detail": "Projection along a unit vector $v$ is an [immersion](c:immersion) iff $v$ is tangent to $M$ nowhere. Tangent directions form a manifold of dimension $2m - 1$ that maps to $\\mathbb{RP}^{2m}$. By Sard's theorem the image has measure zero, so a good $v$ exists.",
+      "uses": [
+       "wd:Q583147"
+      ]
+     },
+     {
+      "id": "s:cross-caps",
+      "slogan": "Project once more along a generic direction and locate the singular points.",
+      "detail": "Now the manifold of tangent directions has dimension $2m - 1$ and maps to $\\mathbb{RP}^{2m-1}$, the same dimension. By [transversality](c:transversality) a generic direction is hit at isolated points only, so the projection into $\\mathbb{R}^{2m-1}$ fails to be an immersion only at isolated points, the cross-caps.",
+      "uses": []
+     },
+     {
+      "id": "s:cancel",
+      "slogan": "Cancel the isolated singular points by Whitney's local deformations.",
+      "detail": "The cited paper moves the cross-caps along paths and cancels them by local modifications. The dimension $m > 1$ gives room for these moves. After the cancellation the map has rank $m$ everywhere, so it is an immersion into $\\mathbb{R}^{2m-1}$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:embed",
+      "s:project"
+     ],
+     [
+      "s:project",
+      "s:cross-caps"
+     ],
+     [
+      "s:cross-caps",
+      "s:cancel"
+     ]
+    ],
+    "conclusion": "s:cancel",
+    "concepts": {
+     "c:smooth-manifold": "Smoothness and second countability allow an embedding and generic projections.",
+     "c:immersion": "An immersion is a map of full rank $m$ at every point, which the projections must keep.",
+     "c:transversality": "Transversality makes the bad directions isolated in the last projection."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "H. Whitney, The singularities of a smooth n-manifold in (2n-1)-space, Annals of Mathematics 45 (1944), 247-293",
+     "note": "Steps 1 and 2 are the weak Whitney embedding and immersion by Sard's theorem; steps 3 and 4 follow the cited paper's analysis of the singularities of maps into $(2n-1)$-space."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:additive-subgroups-of-r",
+  "statement": "Every additive [subgroup](c:subgroup) $S$ of $\\mathbb{R}$ is either [dense](c:dense-set) in $\\mathbb{R}$ or equal to $a\\mathbb{Z}$ for some real $a \\ge 0$.",
+  "hypotheses": [
+   {
+    "id": "h:subgroup",
+    "text": "The set $S$ is an additive [subgroup](c:subgroup) of $(\\mathbb{R}, +)$.",
+    "concept": "c:subgroup"
+   }
+  ],
+  "conclusion": "The subgroup $S$ is [dense](c:dense-set) in $\\mathbb{R}$, or $S = a\\mathbb{Z}$ is a [cyclic group](c:cyclic-group) for some $a \\ge 0$.",
+  "formal": {
+   "decl": "AddSubgroup.dense_or_cyclic",
+   "difference": "The declaration holds in any Archimedean linearly ordered additive commutative group with the order topology, not only $\\mathbb{R}$. It writes the cyclic case as $S = \\mathrm{closure}\\{a\\}$ with any $a$."
+  },
+  "proofs": [
+   {
+    "id": "least-positive",
+    "name": "Least positive element or arbitrarily small elements",
+    "slogan": "Either $S$ has arbitrarily small positive elements and is dense, or it has a least positive element $a$ and equals $a\\mathbb{Z}$.",
+    "scope": "The whole theorem. The subgroup $\\{0\\}$ is the cyclic case $a = 0$.",
+    "mechanisms": [
+     "m:case-analysis",
+     "m:supremum",
+     "m:division-algorithm"
+    ],
+    "roles": [
+     {
+      "h": "h:subgroup",
+      "why": "Closure under sums and differences gives the multiples of a small element and the remainder $s - na$ in $S$.",
+      "steps": [
+       "s:dense",
+       "s:least",
+       "s:multiples"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:split",
+      "slogan": "Split by whether $S$ has positive elements below every $\\varepsilon > 0$.",
+      "detail": "Case A: for every $\\varepsilon > 0$ some $g \\in S$ has $0 < g < \\varepsilon$. Case B: for some $\\varepsilon > 0$ no element of $S$ lies in $(0, \\varepsilon)$. Every subgroup falls in one of these cases.",
+      "uses": []
+     },
+     {
+      "id": "s:dense",
+      "slogan": "In case A, step across any interval with multiples of a small element.",
+      "detail": "Take $x < y$ and $g \\in S$ with $0 < g < y - x$. By the [Archimedean property](c:archimedean) let $n = \\lfloor x/g \\rfloor + 1$. Then $x < ng \\le x + g < y$ and $ng \\in S$, so $S$ meets $(x, y)$ and $S$ is [dense](c:dense-set).",
+      "uses": []
+     },
+     {
+      "id": "s:least",
+      "slogan": "In case B, find the least positive element of $S$.",
+      "detail": "If $S = \\{0\\}$ then $S = 0\\mathbb{Z}$. Otherwise $S$ has a positive element, and $a = \\inf\\{s \\in S : s > 0\\} \\ge \\varepsilon$. If $a \\notin S$, choose $t < s$ in $S$ with $a < t < s < a + \\varepsilon$. Then $0 < s - t < \\varepsilon$ and $s - t \\in S$, which is false. So $a \\in S$.",
+      "uses": []
+     },
+     {
+      "id": "s:multiples",
+      "slogan": "In case B, show that every element of $S$ is an integer multiple of $a$.",
+      "detail": "For $s \\in S$ let $n = \\lfloor s/a \\rfloor$. Then $s - na \\in S$ and $0 \\le s - na < a$, so $s - na = 0$ by the minimality of $a$. Hence $S \\subseteq a\\mathbb{Z}$. Also $a\\mathbb{Z} \\subseteq S$ because $S$ is a [subgroup](c:subgroup).",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Join the two cases to state the dichotomy.",
+      "detail": "Case A gives a dense subgroup. Case B gives the [cyclic group](c:cyclic-group) $S = a\\mathbb{Z}$ with $a \\ge 0$. So every subgroup is dense or cyclic.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:split",
+      "s:dense"
+     ],
+     [
+      "s:split",
+      "s:least"
+     ],
+     [
+      "s:least",
+      "s:multiples"
+     ],
+     [
+      "s:dense",
+      "s:conclude"
+     ],
+     [
+      "s:multiples",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:subgroup": "Closure under differences makes $s - na$ an element of $S$.",
+     "c:dense-set": "In case A the subgroup meets every open interval.",
+     "c:archimedean": "Some multiple of a small positive number passes any real number.",
+     "c:cyclic-group": "In case B the subgroup is generated by its least positive element."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "AddSubgroup.dense_or_cyclic",
+     "follows": true,
+     "note": "mathlib splits on whether $S$ has positive elements below every $\\varepsilon$: dense_of_not_isolated_zero gives density, and cyclic_of_isolated_zero takes the least positive element."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q925854",
+  "statement": "In a [triangle](c:triangle) $ABC$, let the [angle bisector](c:angle-bisector) from $A$ meet the side $BC$ at $D$. Then $BD/DC = AB/AC$.",
+  "hypotheses": [
+   {
+    "id": "h:triangle",
+    "text": "The points $A$, $B$, $C$ form a nondegenerate [triangle](c:triangle).",
+    "concept": "c:triangle"
+   },
+   {
+    "id": "h:bisector",
+    "text": "The point $D$ lies on the segment $BC$ and $\\angle BAD = \\angle DAC$, so $AD$ is the [angle bisector](c:angle-bisector) at $A$.",
+    "concept": "c:angle-bisector"
+   }
+  ],
+  "conclusion": "The point $D$ divides $BC$ in the ratio $BD/DC = AB/AC$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "parallel-line",
+    "name": "Parallel line and similar triangles",
+    "slogan": "Draw a parallel to the bisector through $C$, find an isosceles triangle, and compare similar triangles.",
+    "scope": "The whole theorem for any triangle. The point $D$ lies strictly between $B$ and $C$ because $AD$ is inside the angle at $A$.",
+    "mechanisms": [
+     "m:geometric-construction",
+     "m:similarity"
+    ],
+    "roles": [
+     {
+      "h": "h:triangle",
+      "why": "Because $A$ is not on the line $BC$, the parallel to $AD$ through $C$ meets the line $AB$.",
+      "steps": [
+       "s:parallel"
+      ]
+     },
+     {
+      "h": "h:bisector",
+      "why": "The equal angles at $A$ make triangle $ACE$ isosceles.",
+      "steps": [
+       "s:isosceles",
+       "s:similar"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:parallel",
+      "slogan": "Draw the line through $C$ parallel to $AD$ and let it meet line $BA$ at $E$.",
+      "detail": "The line $AD$ is not parallel to $AB$, so the parallel through $C$ meets line $AB$ at a point $E$. Because $D$ lies between $B$ and $C$, the point $A$ lies between $B$ and $E$.",
+      "uses": []
+     },
+     {
+      "id": "s:isosceles",
+      "slogan": "Show that triangle $ACE$ is isosceles with $AE = AC$.",
+      "detail": "As $AD \\parallel EC$, the angle $\\angle AEC$ equals $\\angle BAD$ (corresponding angles) and $\\angle ACE$ equals $\\angle DAC$ (alternate angles). The bisector gives $\\angle BAD = \\angle DAC$, so $\\angle AEC = \\angle ACE$ and $AE = AC$.",
+      "uses": [
+       "nm:isosceles-triangle-theorem"
+      ]
+     },
+     {
+      "id": "s:similar",
+      "slogan": "Show that triangles $BAD$ and $BEC$ are [similar triangles](c:similar-triangles).",
+      "detail": "They share the angle at $B$, and $\\angle BAD = \\angle BEC$ by the parallel lines. So they are similar and $BD/BC = BA/BE$.",
+      "uses": []
+     },
+     {
+      "id": "s:ratio",
+      "slogan": "Subtract to turn the ratio of wholes into a ratio of parts.",
+      "detail": "Write $BC = BD + DC$ and $BE = BA + AE$ in $BD/BC = BA/BE$. Cross-multiplying and cancelling $BD \\cdot BA$ gives $BD \\cdot AE = BA \\cdot DC$, that is $BD/DC = AB/AE$.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Replace $AE$ by $AC$ to finish.",
+      "detail": "Step 2 gives $AE = AC$. Substituting this into the result of step 4 gives $BD/DC = AB/AE = AB/AC$, which is the claim.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:parallel",
+      "s:isosceles"
+     ],
+     [
+      "s:parallel",
+      "s:similar"
+     ],
+     [
+      "s:similar",
+      "s:ratio"
+     ],
+     [
+      "s:ratio",
+      "s:conclude"
+     ],
+     [
+      "s:isosceles",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:triangle": "The triangle supplies the sides and angles that the construction compares.",
+     "c:angle-bisector": "The equal angles at $A$ make the auxiliary triangle isosceles.",
+     "c:similar-triangles": "Similar triangles turn the parallel line into equal ratios of sides."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Euclid, Elements VI.3, which draws the parallel through $C$ and meets $BA$ produced."
+    }
+   },
+   {
+    "id": "law-of-sines",
+    "name": "Law of sines in two triangles",
+    "slogan": "Write the law of sines in triangles $ABD$ and $ACD$ and divide, because the angles at $D$ have equal sines.",
+    "scope": "The whole theorem for any triangle; the point $D$ lies strictly between $B$ and $C$.",
+    "mechanisms": [
+     "m:algebraic-identity",
+     "m:symmetry"
+    ],
+    "roles": [
+     {
+      "h": "h:triangle",
+      "why": "The two small triangles $ABD$ and $ACD$ share the side $AD$ and the sides of $ABC$.",
+      "steps": [
+       "s:abd",
+       "s:acd"
+      ]
+     },
+     {
+      "h": "h:bisector",
+      "why": "The bisector makes $\\sin\\angle BAD = \\sin\\angle DAC$, and $D$ on $BC$ makes the angles at $D$ supplementary.",
+      "steps": [
+       "s:supplement"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:abd",
+      "slogan": "Write the law of sines in triangle $ABD$.",
+      "detail": "The law of sines gives $BD/\\sin\\angle BAD = AB/\\sin\\angle ADB$, so $BD = AB \\sin\\angle BAD / \\sin\\angle ADB$.",
+      "uses": [
+       "nm:law-of-sines"
+      ]
+     },
+     {
+      "id": "s:acd",
+      "slogan": "Write the law of sines in triangle $ACD$.",
+      "detail": "In the same way $DC/\\sin\\angle DAC = AC/\\sin\\angle ADC$, so $DC = AC \\sin\\angle DAC / \\sin\\angle ADC$.",
+      "uses": [
+       "nm:law-of-sines"
+      ]
+     },
+     {
+      "id": "s:supplement",
+      "slogan": "Show that the two sine ratios equal $1$.",
+      "detail": "The points $B$, $D$, $C$ are collinear with $D$ between them, so $\\angle ADB + \\angle ADC = \\pi$ and $\\sin\\angle ADB = \\sin\\angle ADC$. The bisector gives $\\angle BAD = \\angle DAC$, so $\\sin\\angle BAD = \\sin\\angle DAC$.",
+      "uses": []
+     },
+     {
+      "id": "s:divide",
+      "slogan": "Divide the two expressions to cancel the sines.",
+      "detail": "Dividing the formula for $BD$ by the formula for $DC$ gives $BD/DC = (AB/AC)\\cdot(\\sin\\angle BAD/\\sin\\angle DAC)\\cdot(\\sin\\angle ADC/\\sin\\angle ADB)$. By step 3 the last two factors are $1$, so $BD/DC = AB/AC$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:abd",
+      "s:divide"
+     ],
+     [
+      "s:acd",
+      "s:divide"
+     ],
+     [
+      "s:supplement",
+      "s:divide"
+     ]
+    ],
+    "conclusion": "s:divide",
+    "concepts": {
+     "c:triangle": "The sides and angles of the two small triangles carry the law of sines.",
+     "c:angle-bisector": "The bisector gives equal angles, and so equal sines, at $A$."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard trigonometric proof of the angle bisector theorem."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q733081",
+  "statement": "The angle $60^\\circ$ cannot be trisected with an unmarked straightedge and a compass: the number $\\cos 20^\\circ$ is not a [constructible number](c:constructible-number). So no such method trisects every angle.",
+  "hypotheses": [
+   {
+    "id": "h:tools",
+    "text": "Only an unmarked straightedge and a compass are allowed, starting from a given unit length.",
+    "concept": null
+   },
+   {
+    "id": "h:angle",
+    "text": "The given angle is $60^\\circ$, which is constructible.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The number $\\cos 20^\\circ$ is not a [constructible number](c:constructible-number), so the angle $20^\\circ$ cannot be constructed and $60^\\circ$ cannot be trisected.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "degree-three",
+    "name": "Degree three of $2\\cos 20^\\circ$",
+    "slogan": "A trisection would make $2\\cos 20^\\circ$ constructible, but this number has degree $3$ over the rationals.",
+    "scope": "The angle $60^\\circ$, which shows that no method trisects every angle. Some angles, such as $90^\\circ$, can be trisected.",
+    "mechanisms": [
+     "m:field-extension-degree",
+     "m:algebraic-identity",
+     "m:contradiction"
+    ],
+    "roles": [
+     {
+      "h": "h:tools",
+      "why": "Straightedge and compass steps solve only linear and quadratic equations, which bounds the degree by a power of $2$.",
+      "steps": [
+       "s:power-of-two"
+      ]
+     },
+     {
+      "h": "h:angle",
+      "why": "The value $\\cos 60^\\circ = 1/2$ turns the triple-angle formula into a cubic equation.",
+      "steps": [
+       "s:reduce",
+       "s:cubic"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:reduce",
+      "slogan": "Reduce a trisection of $60^\\circ$ to a constructible number.",
+      "detail": "If a construction gave an angle of $20^\\circ$, a perpendicular would give the length $\\cos 20^\\circ$. So $x = 2\\cos 20^\\circ$ would be a [constructible number](c:constructible-number).",
+      "uses": []
+     },
+     {
+      "id": "s:cubic",
+      "slogan": "Show that $x = 2\\cos 20^\\circ$ is a root of $x^3 - 3x - 1$.",
+      "detail": "The identity $\\cos 3\\theta = 4\\cos^3\\theta - 3\\cos\\theta$ at $\\theta = 20^\\circ$ gives $1/2 = 4c^3 - 3c$ for $c = \\cos 20^\\circ$. With $x = 2c$ this reads $x^3 - 3x = 1$.",
+      "uses": []
+     },
+     {
+      "id": "s:irreducible",
+      "slogan": "Show that $x^3 - 3x - 1$ is an [irreducible polynomial](c:irreducible-polynomial) over $\\mathbb{Q}$.",
+      "detail": "A rational root would be $\\pm 1$ by the rational root theorem. But $1 - 3 - 1 = -3$ and $-1 + 3 - 1 = 1$. A cubic without a rational root is irreducible, so it is the minimal polynomial of $x$ and the [degree](c:degree-of-an-extension) $[\\mathbb{Q}(x) : \\mathbb{Q}]$ is $3$.",
+      "uses": [
+       "wd:Q180345"
+      ]
+     },
+     {
+      "id": "s:power-of-two",
+      "slogan": "Show that every constructible number has degree a power of $2$ over $\\mathbb{Q}$.",
+      "detail": "Each construction step meets lines and circles whose equations have coefficients in the current field, so it adds the root of a linear or quadratic equation. A constructible number lies in a tower of [field extensions](c:field-extension) of degree $2$ each, so its field has degree $2^k$ over $\\mathbb{Q}$ by the tower law.",
+      "uses": []
+     },
+     {
+      "id": "s:contradict",
+      "slogan": "Compare the degrees $3$ and $2^k$ to reach a contradiction.",
+      "detail": "If $x$ were constructible, then $\\mathbb{Q}(x)$ would lie in a field of degree $2^k$ over $\\mathbb{Q}$. By the tower law $3 = [\\mathbb{Q}(x) : \\mathbb{Q}]$ would divide $2^k$, which is false. So $x$ is not constructible.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:reduce",
+      "s:contradict"
+     ],
+     [
+      "s:cubic",
+      "s:irreducible"
+     ],
+     [
+      "s:irreducible",
+      "s:contradict"
+     ],
+     [
+      "s:power-of-two",
+      "s:contradict"
+     ]
+    ],
+    "conclusion": "s:contradict",
+    "concepts": {
+     "c:constructible-number": "A trisection would make $2\\cos 20^\\circ$ constructible, which the degree argument excludes.",
+     "c:irreducible-polynomial": "Irreducibility makes the cubic the minimal polynomial of $2\\cos 20^\\circ$.",
+     "c:degree-of-an-extension": "The degree $3$ of $\\mathbb{Q}(x)$ clashes with powers of $2$.",
+     "c:field-extension": "Constructions build a tower of quadratic extensions of the rationals."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Wantzel's argument of 1837 as taught in Galois theory texts, for example Stewart, Galois Theory."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1704878",
+  "statement": "Let $X = V/\\Lambda$ be a [complex torus](c:complex-torus). Every holomorphic [line bundle](c:line-bundle) on $X$ is isomorphic to $L(H, \\alpha)$ for a unique pair $(H, \\alpha)$. Here $H$ is a [Hermitian form](c:hermitian-form) on $V$ with $\\mathrm{Im}\\,H(\\Lambda, \\Lambda) \\subseteq \\mathbb{Z}$, and $\\alpha \\colon \\Lambda \\to U(1)$ satisfies $\\alpha(\\lambda + \\mu) = \\alpha(\\lambda)\\alpha(\\mu)e^{i\\pi\\,\\mathrm{Im} H(\\lambda, \\mu)}$.",
+  "hypotheses": [
+   {
+    "id": "h:torus",
+    "text": "The space $X = V/\\Lambda$ is a [complex torus](c:complex-torus): $V \\cong \\mathbb{C}^g$ and $\\Lambda \\subset V$ is a [lattice](c:lattice-discrete-subgroup) of rank $2g$.",
+    "concept": "c:complex-torus"
+   },
+   {
+    "id": "h:bundle",
+    "text": "The sheaf $L$ is a holomorphic [line bundle](c:line-bundle) on $X$.",
+    "concept": "c:line-bundle"
+   }
+  ],
+  "conclusion": "There is exactly one pair $(H, \\alpha)$ with $L \\cong L(H, \\alpha)$, where $L(H, \\alpha)$ has the factor of automorphy $e_\\lambda(v) = \\alpha(\\lambda)\\exp\\!\\big(\\pi H(v, \\lambda) + \\tfrac{\\pi}{2}H(\\lambda, \\lambda)\\big)$, and every pair gives a line bundle.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "factors-of-automorphy",
+    "name": "Factors of automorphy and the Chern class",
+    "slogan": "Describe line bundles by factors of automorphy, read $H$ from the Chern class, and fix $\\alpha$ by the unitary characters.",
+    "scope": "An outline of the proof in the cited books; they carry out the cocycle computations. The statement covers all complex tori, not only abelian varieties.",
+    "mechanisms": [
+     "m:exact-sequence",
+     "m:cited-deep-result",
+     "m:universal-property"
+    ],
+    "roles": [
+     {
+      "h": "h:torus",
+      "why": "The lattice quotient lets a bundle be described on $V$ with the action of $\\Lambda$, and gives the cohomology of $X$.",
+      "steps": [
+       "s:automorphy",
+       "s:characters"
+      ]
+     },
+     {
+      "h": "h:bundle",
+      "why": "The bundle has a pullback to $V$, a Chern class and a class modulo characters.",
+      "steps": [
+       "s:automorphy",
+       "s:chern",
+       "s:match"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:automorphy",
+      "slogan": "Pull the bundle back to $V$ and describe it by a factor of automorphy.",
+      "detail": "The pullback of $L$ to the contractible Stein space $V$ is trivial. So $L$ is given by holomorphic units $e_\\lambda$ on $V$ with $e_{\\lambda + \\mu}(v) = e_\\lambda(v + \\mu)e_\\mu(v)$, and isomorphism classes are the classes of such cocycles.",
+      "uses": []
+     },
+     {
+      "id": "s:chern",
+      "slogan": "Read an alternating form $E$ from the first [Chern class](c:chern-class) of $L$.",
+      "detail": "The class $c_1(L) \\in H^2(X, \\mathbb{Z})$ is an alternating form $E \\colon \\Lambda \\times \\Lambda \\to \\mathbb{Z}$. By the Lefschetz theorem on $(1,1)$-classes, such an $E$ comes from a line bundle iff $E(iv, iw) = E(v, w)$. This means $E = \\mathrm{Im}\\,H$ for a unique [Hermitian form](c:hermitian-form) $H$.",
+      "uses": [
+       "wd:Q6516736"
+      ]
+     },
+     {
+      "id": "s:construct",
+      "slogan": "Construct the bundle $L(H, \\alpha)$ for each admissible pair.",
+      "detail": "A semicharacter $\\alpha$ for $H$ exists: define it on a basis of the [lattice](c:lattice-discrete-subgroup) and extend. Then $e_\\lambda(v) = \\alpha(\\lambda)\\exp(\\pi H(v, \\lambda) + \\tfrac{\\pi}{2}H(\\lambda, \\lambda))$ satisfies the cocycle identity, and the bundle $L(H, \\alpha)$ has $c_1 = \\mathrm{Im}\\,H$.",
+      "uses": []
+     },
+     {
+      "id": "s:characters",
+      "slogan": "Identify the bundles with Chern class zero with the unitary characters of $\\Lambda$.",
+      "detail": "By the exponential sequence the bundles with $c_1 = 0$ form $H^1(X, \\mathcal{O})/H^1(X, \\mathbb{Z})$. The map $H^1(X, \\mathbb{R}) \\to H^1(X, \\mathcal{O})$ is an isomorphism (Dolbeault). So this group is $\\mathrm{Hom}(\\Lambda, U(1))$, and each such bundle has one unitary character as factor of automorphy.",
+      "uses": [
+       "nl:11794"
+      ]
+     },
+     {
+      "id": "s:match",
+      "slogan": "Divide $L$ by $L(H, \\alpha_0)$ to isolate the character part and fix the pair.",
+      "detail": "If $c_1(L) = \\mathrm{Im}\\,H$, then $L \\otimes L(H, \\alpha_0)^{-1}$ has $c_1 = 0$, so it is given by a unitary character $\\chi$ and $L \\cong L(H, \\alpha_0\\chi)$. Uniqueness: $c_1$ fixes $H$, and a nontrivial character $\\chi$ gives a nontrivial bundle by step 4.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:automorphy",
+      "s:chern"
+     ],
+     [
+      "s:automorphy",
+      "s:characters"
+     ],
+     [
+      "s:chern",
+      "s:construct"
+     ],
+     [
+      "s:chern",
+      "s:match"
+     ],
+     [
+      "s:construct",
+      "s:match"
+     ],
+     [
+      "s:characters",
+      "s:match"
+     ]
+    ],
+    "conclusion": "s:match",
+    "concepts": {
+     "c:complex-torus": "The torus is the quotient $V/\\Lambda$ on which the factors of automorphy live.",
+     "c:line-bundle": "The theorem classifies holomorphic line bundles by pairs $(H, \\alpha)$.",
+     "c:hermitian-form": "The Chern class of a bundle is the imaginary part of a Hermitian form.",
+     "c:lattice-discrete-subgroup": "The lattice acts on $V$ and carries the characters $\\alpha$.",
+     "c:chern-class": "The first Chern class of $L$ gives the form $E$ and then $H$."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "D. Mumford, Abelian Varieties, Tata Institute of Fundamental Research Studies in Mathematics 5, Oxford University Press, 1970; also C. Birkenhake and H. Lange, Complex Abelian Varieties, 2nd edition, Springer, 2004",
+     "note": "Both books prove the theorem in their chapter or section on line bundles on complex tori; the outline above follows that route."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:approximate-parallelogram-law",
+  "statement": "Let $E$ be an [elliptic curve](c:elliptic-curve) given by a Weierstrass equation over a number field $K$, and let $h$ be the [naive height](c:naive-height) of the $x$-coordinate, with $h(O) = 0$. There is a constant $C$ such that $|h(P+Q) + h(P-Q) - 2h(P) - 2h(Q)| \\le C$ for all $P, Q \\in E(K)$.",
+  "hypotheses": [
+   {
+    "id": "h:curve",
+    "text": "The curve $E$ is an [elliptic curve](c:elliptic-curve) given by a Weierstrass equation over a number field $K$.",
+    "concept": "c:elliptic-curve"
+   },
+   {
+    "id": "h:height",
+    "text": "The function $h$ is the logarithmic [naive height](c:naive-height) of the $x$-coordinate of a point, with $h(O) = 0$.",
+    "concept": "c:naive-height"
+   }
+  ],
+  "conclusion": "There is $C \\ge 0$, depending only on the Weierstrass model, with $|h(P+Q) + h(P-Q) - 2h(P) - 2h(Q)| \\le C$ for all $P, Q \\in E(K)$.",
+  "formal": {
+   "decl": "WeierstrassCurve.Affine.approx_parallelogram_law",
+   "difference": "The declaration holds over any field with admissible absolute values (number fields and function fields), not only number fields."
+  },
+  "proofs": [
+   {
+    "id": "symmetric-functions",
+    "name": "Symmetric functions of the two $x$-coordinates",
+    "slogan": "Pass to the symmetric functions of the two $x$-coordinates, where addition and subtraction form a degree $2$ map of the projective plane.",
+    "scope": "The whole theorem. The constant $C$ depends only on the Weierstrass model and the absolute values.",
+    "mechanisms": [
+     "m:algebraic-identity",
+     "m:triangle-inequality"
+    ],
+    "roles": [
+     {
+      "h": "h:curve",
+      "why": "The addition law and the nonzero discriminant give the degree $2$ map $\\Phi$ without common zeros.",
+      "steps": [
+       "s:addsub",
+       "s:morphism"
+      ]
+     },
+     {
+      "h": "h:height",
+      "why": "The height of a pair is compared with the sum of the two heights, and then with the heights of the sum and the difference.",
+      "steps": [
+       "s:sym",
+       "s:combine"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:sym",
+      "slogan": "Replace the pair $(P, Q)$ by the point $[1 : x_P + x_Q : x_P x_Q]$ of the plane.",
+      "detail": "Write $\\sigma(P, Q)$ for this point of the projective plane. The height of the symmetric functions of two numbers is the sum of their heights up to a constant. So $|h(\\sigma(P, Q)) - h(P) - h(Q)| \\le C_1$.",
+      "uses": []
+     },
+     {
+      "id": "s:addsub",
+      "slogan": "Express $\\sigma(P+Q, P-Q)$ through $\\sigma(P, Q)$ by the addition formula.",
+      "detail": "The addition law gives $\\sigma(P+Q, P-Q) = t \\cdot \\Phi(\\sigma(P, Q))$ with a nonzero scalar $t$. Here $\\Phi$ is a map of three homogeneous quadratic polynomials in $(1, s, u)$ whose coefficients depend only on the curve.",
+      "uses": []
+     },
+     {
+      "id": "s:morphism",
+      "slogan": "Show that $\\Phi$ has no common zero, so that its height scales by $2$.",
+      "detail": "Because the discriminant is nonzero, the three quadrics of $\\Phi$ have no common zero in the plane. So $\\Phi$ is a morphism of degree $2$, and the height obeys $|h(\\Phi(z)) - 2h(z)| \\le C_2$ for all points $z$.",
+      "uses": []
+     },
+     {
+      "id": "s:combine",
+      "slogan": "Combine the three estimates with the invariance of the height under scaling.",
+      "detail": "Scaling by $t$ does not change the height, so $h(\\sigma(P+Q, P-Q)) = h(\\Phi(\\sigma(P, Q)))$. By step 1 twice and step 3, $h(P+Q) + h(P-Q)$ differs from $2h(P) + 2h(Q)$ by at most $C_1 + C_2 + 2C_1 = 3C_1 + C_2$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:sym",
+      "s:combine"
+     ],
+     [
+      "s:addsub",
+      "s:combine"
+     ],
+     [
+      "s:morphism",
+      "s:combine"
+     ]
+    ],
+    "conclusion": "s:combine",
+    "concepts": {
+     "c:elliptic-curve": "The group law on the curve gives the addition formula for $x$-coordinates.",
+     "c:naive-height": "The naive height is the quantity that the estimates compare."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "WeierstrassCurve.Affine.approx_parallelogram_law",
+     "follows": true,
+     "note": "mathlib uses abs_logHeight_sym2x_sub_le, abs_logHeight_addSubMap_sub_two_mul_logHeight_le and Point.sym2x_add_sub_eq_addSubMap_sym2x, with the constant $3C_1 + C_2$."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q3527011",
+  "statement": "There are absolute constants $c_1, c_2 > 0$ such that every set $P$ of $n$ points in the plane has a [straight line](c:straight-line) with at least $c_1 n$ points of $P$, or determines a [line arrangement](c:line-arrangement) of at least $c_2 n^2$ distinct lines, each through two points of $P$.",
+  "hypotheses": [
+   {
+    "id": "h:points",
+    "text": "The set $P$ consists of $n$ points in the real plane.",
+    "concept": null
+   }
+  ],
+  "conclusion": "Some [straight line](c:straight-line) holds at least $c_1 n$ points of $P$, or at least $c_2 n^2$ distinct lines each hold at least two points of $P$, forming a [line arrangement](c:line-arrangement).",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "szemeredi-trotter",
+    "name": "Szemerédi-Trotter and pair counting",
+    "slogan": "Count the pairs of points by the line that carries them, and let Szemerédi-Trotter bound the pairs on rich lines.",
+    "scope": "The first theorem of Beck, with unspecified absolute constants. The record names several results of Beck, and this proof treats the one that follows from the Szemerédi-Trotter theorem.",
+    "mechanisms": [
+     "m:double-counting",
+     "m:case-analysis"
+    ],
+    "roles": [
+     {
+      "h": "h:points",
+      "why": "The $n$ points give $\\binom{n}{2}$ pairs, each on exactly one line.",
+      "steps": [
+       "s:pairs",
+       "s:rich",
+       "s:poor"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:st",
+      "slogan": "State the Szemerédi-Trotter bound for rich lines.",
+      "detail": "Let $L_k$ be the set of lines with at least $k$ points of $P$. The incidence bound $I \\le C(n^{2/3}|L_k|^{2/3} + n + |L_k|)$ with $I \\ge k|L_k|$ gives $|L_k| \\le C'(n^2/k^3 + n/k)$ for $k \\ge 2C$.",
+      "uses": [
+       "wd:Q721695"
+      ]
+     },
+     {
+      "id": "s:pairs",
+      "slogan": "Count the pairs of points by the line that carries them.",
+      "detail": "Each pair of points of $P$ lies on exactly one [straight line](c:straight-line). So $\\sum_\\ell \\binom{k_\\ell}{2} = \\binom{n}{2}$, where $k_\\ell = |\\ell \\cap P|$ and the sum runs over the lines with $k_\\ell \\ge 2$.",
+      "uses": []
+     },
+     {
+      "id": "s:rich",
+      "slogan": "Assume that no line holds $n/K$ points and bound the pairs on rich lines.",
+      "detail": "Suppose every line holds fewer than $n/K$ points. Group the lines with $2^j \\le k_\\ell < 2^{j+1}$ for $m/2 \\le 2^j < n/K$. Step 1 gives at most $C'(n^2 2^{-3j} + n 2^{-j})$ lines per group, each with at most $2^{2j+1}$ pairs. Summing over $j$, lines with at least $m$ points carry at most $C''(n^2/m + n^2/K)$ pairs.",
+      "uses": []
+     },
+     {
+      "id": "s:poor",
+      "slogan": "Choose $m$ and $K$ large so that poor lines carry at least $n^2/8$ pairs.",
+      "detail": "Take $m = K$ large with $C''(n^2/m + n^2/K) \\le n^2/8$. Since $\\binom{n}{2} \\ge n^2/4$ for $n \\ge 2$, at least $n^2/8$ pairs lie on lines with fewer than $m$ points.",
+      "uses": []
+     },
+     {
+      "id": "s:count",
+      "slogan": "Divide by the pairs per poor line to bound the number of lines.",
+      "detail": "A line with fewer than $m$ points carries fewer than $m^2/2$ pairs. So at least $n^2/(4m^2)$ lines each hold two points of $P$. With $c_1 = 1/K$ and $c_2 = 1/(4m^2)$ one of the two alternatives holds; for $n < 2$ the first one is trivial.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:st",
+      "s:rich"
+     ],
+     [
+      "s:pairs",
+      "s:rich"
+     ],
+     [
+      "s:rich",
+      "s:poor"
+     ],
+     [
+      "s:pairs",
+      "s:poor"
+     ],
+     [
+      "s:poor",
+      "s:count"
+     ]
+    ],
+    "conclusion": "s:count",
+    "concepts": {
+     "c:straight-line": "Each pair of points lies on one line, and the line holds the pair count.",
+     "c:line-arrangement": "The lines through two points form the arrangement that the proof counts."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Derived from the Szemerédi-Trotter theorem, the route of J. Beck, Combinatorica 3 (1983), 281-297."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q931404",
+  "statement": "Let $S$ be a smooth Riemannian surface, $p \\in S$, and let $C(r)$ and $A(r)$ be the circumference and the area of the [geodesic circle](c:geodesic-circle) and disc of radius $r$ about $p$. Then the [Gaussian curvature](c:gaussian-curvature) satisfies $K(p) = \\lim_{r \\to 0} \\frac{3(2\\pi r - C(r))}{\\pi r^3} = \\lim_{r \\to 0} \\frac{12(\\pi r^2 - A(r))}{\\pi r^4}$.",
+  "hypotheses": [
+   {
+    "id": "h:surface",
+    "text": "The surface $S$ is a smooth Riemannian surface, for example a regular surface in $\\mathbb{R}^3$.",
+    "concept": null
+   },
+   {
+    "id": "h:point",
+    "text": "The point $p$ lies in $S$ and the radius $r$ is below the injectivity radius at $p$, so the [geodesic circle](c:geodesic-circle) of radius $r$ is defined.",
+    "concept": "c:geodesic-circle"
+   }
+  ],
+  "conclusion": "The [Gaussian curvature](c:gaussian-curvature) is $K(p) = \\lim_{r \\to 0} 3(2\\pi r - C(r))/(\\pi r^3) = \\lim_{r \\to 0} 12(\\pi r^2 - A(r))/(\\pi r^4)$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "polar-expansion",
+    "name": "Geodesic polar coordinates and a Taylor expansion",
+    "slogan": "Expand the metric in geodesic polar coordinates, where the curvature controls the third order term of the circle length.",
+    "scope": "The whole theorem for a smooth surface, with $r$ below the injectivity radius at $p$. The error terms are uniform in the angle $\\theta$ by smoothness.",
+    "mechanisms": [
+     "m:taylor-expansion",
+     "m:coordinates"
+    ],
+    "roles": [
+     {
+      "h": "h:surface",
+      "why": "Smoothness gives the Taylor expansion of the metric coefficient, and the Gauss formula relates it to curvature.",
+      "steps": [
+       "s:polar",
+       "s:gauss",
+       "s:taylor"
+      ]
+     },
+     {
+      "h": "h:point",
+      "why": "A radius below the injectivity radius gives polar coordinates and a well-defined circle and disc.",
+      "steps": [
+       "s:polar",
+       "s:integrate"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:polar",
+      "slogan": "Write the metric as $dr^2 + f(r, \\theta)^2 d\\theta^2$ in geodesic [polar coordinates](c:polar-coordinates) at $p$.",
+      "detail": "The exponential map at $p$ is a diffeomorphism on a small disc. The Gauss lemma makes the radial geodesics orthogonal to the [geodesic circles](c:geodesic-circle). Smoothness at the origin gives $f(0, \\theta) = 0$ and $\\partial_r f(0, \\theta) = 1$.",
+      "uses": []
+     },
+     {
+      "id": "s:gauss",
+      "slogan": "Relate $f$ to the [Gaussian curvature](c:gaussian-curvature) by the formula $f_{rr} = -Kf$.",
+      "detail": "For a metric $dr^2 + f^2 d\\theta^2$ the Gaussian curvature is $K = -f_{rr}/f$. So $f_{rr}(r, \\theta) = -K(r, \\theta) f(r, \\theta)$.",
+      "uses": [
+       "wd:Q1048874"
+      ]
+     },
+     {
+      "id": "s:taylor",
+      "slogan": "Expand $f$ at $r = 0$ to third order.",
+      "detail": "Differentiating $f_{rr} = -Kf$ gives $f_{rr}(0, \\theta) = 0$ and $f_{rrr}(0, \\theta) = -K(p) f_r(0, \\theta) = -K(p)$. Taylor's theorem gives $f(r, \\theta) = r - K(p) r^3/6 + O(r^4)$, uniformly in $\\theta$.",
+      "uses": []
+     },
+     {
+      "id": "s:integrate",
+      "slogan": "Integrate $f$ over the circle and over the disc.",
+      "detail": "$C(r) = \\int_0^{2\\pi} f\\,d\\theta = 2\\pi r - \\pi K(p) r^3/3 + O(r^4)$. Then $A(r) = \\int_0^r C(s)\\,ds = \\pi r^2 - \\pi K(p) r^4/12 + O(r^5)$.",
+      "uses": []
+     },
+     {
+      "id": "s:solve",
+      "slogan": "Solve both expansions for $K(p)$ and let $r$ tend to $0$.",
+      "detail": "The first expansion gives $3(2\\pi r - C(r))/(\\pi r^3) = K(p) + O(r)$. The second gives $12(\\pi r^2 - A(r))/(\\pi r^4) = K(p) + O(r)$. Both quotients tend to $K(p)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:polar",
+      "s:gauss"
+     ],
+     [
+      "s:polar",
+      "s:taylor"
+     ],
+     [
+      "s:gauss",
+      "s:taylor"
+     ],
+     [
+      "s:taylor",
+      "s:integrate"
+     ],
+     [
+      "s:integrate",
+      "s:solve"
+     ]
+    ],
+    "conclusion": "s:solve",
+    "concepts": {
+     "c:geodesic-circle": "The circle and disc of radius $r$ about $p$ carry the lengths and areas that are compared.",
+     "c:gaussian-curvature": "The curvature enters through $f_{rr} = -Kf$ and appears in the third order term.",
+     "c:polar-coordinates": "Geodesic polar coordinates reduce the metric to one coefficient $f(r, \\theta)$."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The proof of M. do Carmo, Differential Geometry of Curves and Surfaces, in the section on geodesic polar coordinates."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q3527019",
+  "statement": "Let $K$ be a [number field](c:number-field) and let $F_1, \\dots, F_s$ be [homogeneous forms](c:homogeneous-form) of odd degrees $d_1, \\dots, d_s$ in $n$ variables over $K$. If $n$ is large enough in terms of $K$, $s$ and the degrees, the forms have a common zero $x \\in K^n$ with $x \\neq 0$, a [rational point](c:rational-point) of the projective variety.",
+  "hypotheses": [
+   {
+    "id": "h:field",
+    "text": "The field $K$ is a [number field](c:number-field).",
+    "concept": "c:number-field"
+   },
+   {
+    "id": "h:forms",
+    "text": "The polynomials $F_1, \\dots, F_s \\in K[x_1, \\dots, x_n]$ are [homogeneous forms](c:homogeneous-form) of odd degrees $d_1, \\dots, d_s$.",
+    "concept": "c:homogeneous-form"
+   },
+   {
+    "id": "h:many",
+    "text": "The number $n$ of variables exceeds a bound $N$ that depends only on $K$, $s$ and the degrees.",
+    "concept": null
+   }
+  ],
+  "conclusion": "There is a vector $x \\in K^n$, $x \\neq 0$, with $F_1(x) = \\dots = F_s(x) = 0$, that is a [rational point](c:rational-point) of the projective variety of the forms.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "orthogonal-sequences",
+    "name": "Orthogonal sequences and diagonal forms",
+    "slogan": "Find many mutually orthogonal vectors, so that the forms become diagonal on their span, and solve the diagonal system.",
+    "scope": "An outline of Birch's theorem for number fields; the cited paper carries the induction. Other versions, such as a zero subspace of prescribed dimension, are not proved here.",
+    "mechanisms": [
+     "m:induction",
+     "m:reduction",
+     "m:cited-deep-result"
+    ],
+    "roles": [
+     {
+      "h": "h:field",
+      "why": "Over a number field a diagonal system of odd degrees in many variables has a nonzero solution.",
+      "steps": [
+       "s:solve"
+      ]
+     },
+     {
+      "h": "h:forms",
+      "why": "Odd degrees give, in each orthogonality equation, a variable of odd degree below the top degree, so induction applies.",
+      "steps": [
+       "s:orthogonal",
+       "s:build"
+      ]
+     },
+     {
+      "h": "h:many",
+      "why": "A large number of variables gives a long orthogonal sequence and so a diagonal system in many variables.",
+      "steps": [
+       "s:build",
+       "s:solve"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:orthogonal",
+      "slogan": "Define orthogonal sequences, on whose span the forms are diagonal.",
+      "detail": "Vectors $x_1, \\dots, x_m \\in K^n$ are orthogonal for the forms if $F_j(\\sum_i t_i x_i) = \\sum_i t_i^{d_j} F_j(x_i)$ for all $t$ and all $j$. On the span of such a sequence, only pure powers $t_i^{d_j}$ occur.",
+      "uses": []
+     },
+     {
+      "id": "s:build",
+      "slogan": "Build a long orthogonal sequence by induction on the degrees.",
+      "detail": "Orthogonality of $x_1, \\dots, x_m$ is a system of multihomogeneous equations of total degree $d_j$, and in each equation some variable occurs with odd degree below $d_j$. Induction on the odd degrees solves it when $n$ is large, and $m$ grows with $n$.",
+      "uses": []
+     },
+     {
+      "id": "s:diagonal",
+      "slogan": "Restrict the system to the span to get a diagonal system.",
+      "detail": "Substituting $x = \\sum_i t_i x_i$ turns the system into $\\sum_i F_j(x_i)\\, t_i^{d_j} = 0$ for $j = 1, \\dots, s$, in the $m$ variables $t_i$.",
+      "uses": []
+     },
+     {
+      "id": "s:solve",
+      "slogan": "Solve the diagonal system of odd degrees over $K$.",
+      "detail": "A diagonal system of odd degrees in sufficiently many variables has a nonzero solution $t \\in K^m$, which is the base case of the induction. The cited construction keeps the $x_i$ independent, so $x = \\sum_i t_i x_i$ is a nonzero common zero of the forms.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:orthogonal",
+      "s:build"
+     ],
+     [
+      "s:build",
+      "s:diagonal"
+     ],
+     [
+      "s:orthogonal",
+      "s:diagonal"
+     ],
+     [
+      "s:diagonal",
+      "s:solve"
+     ]
+    ],
+    "conclusion": "s:solve",
+    "concepts": {
+     "c:number-field": "The base case of diagonal forms is known over number fields.",
+     "c:homogeneous-form": "Homogeneous forms let the orthogonality conditions be written as multihomogeneous equations.",
+     "c:rational-point": "The common zero is a rational point of the projective variety."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "B. J. Birch, Homogeneous forms of odd degree in a large number of variables, Mathematika 4 (1957), 102-105",
+     "url": "https://resolve.cambridge.org/core/journals/mathematika/article/abs/homogeneous-forms-of-odd-degree-in-a-large-number-of-variables/1563D770E73F1BD8343DAC35388E709D",
+     "note": "The outline names the ingredients of Birch's inductive argument with orthogonal sequences; the cited paper holds the details."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q107535899",
+  "statement": "Let $\\omega \\subseteq \\mathbb{R}^n$ be a connected open set and $T_\\omega = \\omega + i\\mathbb{R}^n \\subseteq \\mathbb{C}^n$ the [tube domain](c:tube-domain) over $\\omega$. Every [holomorphic function](c:holomorphic-function) on $T_\\omega$ has a [holomorphic extension](c:holomorphic-extension) to the tube over the [convex hull](c:convex-hull) of $\\omega$.",
+  "hypotheses": [
+   {
+    "id": "h:connected",
+    "text": "The set $\\omega \\subseteq \\mathbb{R}^n$ is open and connected.",
+    "concept": null
+   },
+   {
+    "id": "h:holomorphic",
+    "text": "The function $f$ is [holomorphic](c:holomorphic-function) on the [tube domain](c:tube-domain) $T_\\omega$.",
+    "concept": "c:holomorphic-function"
+   }
+  ],
+  "conclusion": "There is a unique holomorphic function $F$ on $T_{\\mathrm{ch}(\\omega)} = \\mathrm{ch}(\\omega) + i\\mathbb{R}^n$ with $F = f$ on $T_\\omega$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "analytic-discs",
+    "name": "Analytic discs and the continuity principle",
+    "slogan": "Fill the tube over the convex hull with analytic discs whose boundaries lie in the tube, and extend the function along them.",
+    "scope": "An outline of Bochner's theorem in the analytic-disc form; the cited works carry the averaging estimates and the single-valuedness argument.",
+    "mechanisms": [
+     "m:analytic-continuation",
+     "m:local-to-global",
+     "m:cited-deep-result"
+    ],
+    "roles": [
+     {
+      "h": "h:connected",
+      "why": "Connectedness lets the boundary values be deformed inside $\\omega$ from one point to many points.",
+      "steps": [
+       "s:centers",
+       "s:family"
+      ]
+     },
+     {
+      "h": "h:holomorphic",
+      "why": "The function is holomorphic on the tube and so extends along discs with boundary in the tube.",
+      "steps": [
+       "s:continuity",
+       "s:glue"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:disc",
+      "slogan": "Build analytic discs from boundary values in $\\omega$.",
+      "detail": "Let $\\varphi \\colon S^1 \\to \\omega$ be continuous. The harmonic extension $u$ of $\\varphi$ to the unit disc and a conjugate function $\\tilde u$ give a holomorphic disc $\\zeta \\mapsto u(\\zeta) + i\\tilde u(\\zeta)$. Its boundary lies in $T_\\omega$, because only the real part is restricted.",
+      "uses": []
+     },
+     {
+      "id": "s:centers",
+      "slogan": "Show that the centers of such discs fill the tube over the [convex hull](c:convex-hull).",
+      "detail": "The center has real part $u(0) = \\frac{1}{2\\pi}\\int \\varphi\\,d\\theta$, an average of points of $\\omega$. Since $\\omega$ is connected, such averages reach every point of the convex hull. The imaginary part of the center is free, by adding a constant to $\\tilde u$.",
+      "uses": []
+     },
+     {
+      "id": "s:family",
+      "slogan": "Deform a constant disc into each disc, keeping its boundary in the tube.",
+      "detail": "A constant disc with value in $\\omega$ lies inside $T_\\omega$. Deform the boundary function $\\varphi$ continuously inside the connected set $\\omega$. All boundaries stay in $T_\\omega$, while the interiors leave it.",
+      "uses": []
+     },
+     {
+      "id": "s:continuity",
+      "slogan": "Extend $f$ along the family by Hartogs's continuity principle.",
+      "detail": "A holomorphic function on a domain extends to a neighborhood of each disc of a continuous family whose boundaries stay in the domain and whose first disc lies in it. So $f$ extends near each center, hence near every point of $T_{\\mathrm{ch}(\\omega)}$.",
+      "uses": [
+       "wd:Q383238"
+      ]
+     },
+     {
+      "id": "s:glue",
+      "slogan": "Check that the local extensions agree and glue them into one function.",
+      "detail": "Extensions obtained along different families agree near the start by the identity theorem, and the cited works show that they agree everywhere. So they glue to one holomorphic function $F$ on $T_{\\mathrm{ch}(\\omega)}$, which is unique by the identity theorem.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:disc",
+      "s:centers"
+     ],
+     [
+      "s:disc",
+      "s:family"
+     ],
+     [
+      "s:centers",
+      "s:continuity"
+     ],
+     [
+      "s:family",
+      "s:continuity"
+     ],
+     [
+      "s:continuity",
+      "s:glue"
+     ]
+    ],
+    "conclusion": "s:glue",
+    "concepts": {
+     "c:tube-domain": "The tube is the domain where only the real part is restricted.",
+     "c:holomorphic-function": "Holomorphy is the property that the extension must keep.",
+     "c:holomorphic-extension": "The discs produce the extension of $f$ to the larger tube.",
+     "c:convex-hull": "The averages of boundary values fill exactly the convex hull of $\\omega$."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "S. Bochner, A theorem on analytic continuation of functions in several variables, Annals of Mathematics 39 (1938), 14-19",
+     "note": "The outline follows the analytic-disc presentation of the argument, as in later treatments and in Bochner and Martin, Several Complex Variables (1948), not Bochner's original wording."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:5470",
+  "statement": "Let $U \\subseteq \\mathbb{R}^n$ be open and $f \\colon U \\to \\mathbb{R}$ a function. If $f \\circ c$ is smooth for every [smooth curve](c:smooth-curve) $c \\colon \\mathbb{R} \\to U$, then $f$ is smooth. So the [diffeology](c:diffeology) of smooth curves determines the smooth functions on $U$.",
+  "hypotheses": [
+   {
+    "id": "h:domain",
+    "text": "The set $U \\subseteq \\mathbb{R}^n$ is open.",
+    "concept": null
+   },
+   {
+    "id": "h:curves",
+    "text": "For every [smooth curve](c:smooth-curve) $c \\colon \\mathbb{R} \\to U$ the composite $f \\circ c$ is smooth.",
+    "concept": "c:smooth-curve"
+   }
+  ],
+  "conclusion": "The function $f$ is smooth ($C^\\infty$) on $U$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "baire-bounds",
+    "name": "Baire category and uniform bounds",
+    "slogan": "Turn smoothness along every curve into locally uniform bounds on all derivatives, and then conclude that the function is smooth.",
+    "scope": "An outline of Boman's theorem for real functions on open sets of $\\mathbb{R}^n$. Vector valued maps follow by components, and maps of manifolds by charts. The cited proofs carry out the estimates.",
+    "mechanisms": [
+     "m:baire-category",
+     "m:a-priori-estimate",
+     "m:cited-deep-result"
+    ],
+    "roles": [
+     {
+      "h": "h:domain",
+      "why": "Balls inside $U$ give a complete space of curves and room for the local estimates.",
+      "steps": [
+       "s:baire",
+       "s:bounds"
+      ]
+     },
+     {
+      "h": "h:curves",
+      "why": "Smoothness along every curve, not only lines, is what the bounds and the conclusion draw on.",
+      "steps": [
+       "s:lines",
+       "s:baire",
+       "s:smooth"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:lines",
+      "slogan": "Restrict $f$ to straight lines to get directional derivatives of all orders.",
+      "detail": "Every line $t \\mapsto x + tv$ is a [smooth curve](c:smooth-curve), so $t \\mapsto f(x + tv)$ is smooth. Hence all iterated directional derivatives $\\frac{d^k}{dt^k} f(x + tv)|_{t=0}$ exist.",
+      "uses": []
+     },
+     {
+      "id": "s:baire",
+      "slogan": "Bound the derivatives along curves uniformly by the Baire category theorem.",
+      "detail": "If the derivatives of $f \\circ c$ were unbounded on every open set of a suitable complete space of curves, a Baire argument would give a curve $c$ with $f \\circ c$ not smooth. So these derivatives are bounded locally uniformly over curves with bounded derivatives.",
+      "uses": [
+       "wd:Q1052678"
+      ]
+     },
+     {
+      "id": "s:bounds",
+      "slogan": "Deduce locally bounded directional derivatives of every order.",
+      "detail": "Straight lines through points of a small ball are such curves. So $|d^k f(x)(v, \\dots, v)| \\le C_k$ for $x$ in a smaller ball and $|v| \\le 1$, for every $k$.",
+      "uses": []
+     },
+     {
+      "id": "s:smooth",
+      "slogan": "Conclude that these bounds make $f$ of class $C^k$ for every $k$.",
+      "detail": "The cited proofs show that bounds of all orders, together with smoothness along curves rather than lines alone, make the directional derivatives depend polynomially on the direction. Taylor estimates then give $f \\in C^k$ for every $k$, so $f$ is smooth.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:lines",
+      "s:baire"
+     ],
+     [
+      "s:baire",
+      "s:bounds"
+     ],
+     [
+      "s:bounds",
+      "s:smooth"
+     ]
+    ],
+    "conclusion": "s:smooth",
+    "concepts": {
+     "c:smooth-curve": "Smooth curves are the test objects that detect smoothness of $f$.",
+     "c:diffeology": "The smooth curves generate the diffeology that the theorem identifies with the usual one."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "J. Boman, Differentiability of a function and of its compositions with functions of one variable, Mathematica Scandinavica 20 (1967), 249-268",
+     "url": "https://www.mscand.dk/article/view/10835",
+     "note": "The outline follows Boman's proof; A. Kriegl and P. W. Michor, The Convenient Setting of Global Analysis (1997), theorem 3.4, presents it with proof."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q4971339",
+  "statement": "Let $ABCD$ be a [rectangle](c:rectangle) in a Euclidean space and let $P$ be any point of that space. Then $PA^2 + PC^2 = PB^2 + PD^2$.",
+  "hypotheses": [
+   {
+    "id": "h:parallelogram",
+    "text": "The diagonals $AC$ and $BD$ have the same midpoint, so $ABCD$ is a [parallelogram](c:parallelogram).",
+    "concept": "c:parallelogram"
+   },
+   {
+    "id": "h:right",
+    "text": "The angle at $A$ is a right angle: $\\angle BAD = \\pi/2$.",
+    "concept": null
+   },
+   {
+    "id": "h:point",
+    "text": "The point $P$ is any point of the Euclidean space, in or out of the plane of $ABCD$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The squared distances satisfy $PA^2 + PC^2 = PB^2 + PD^2$.",
+  "formal": {
+   "decl": "EuclideanGeometry.dist_sq_add_dist_sq_eq_dist_sq_add_dist_sq_of_angle_eq_pi_div_two",
+   "difference": null
+  },
+  "proofs": [
+   {
+    "id": "vector-identity",
+    "name": "Vector identity",
+    "slogan": "Expand the four squared distances in vectors from $A$ and see that the cross term is $2\\langle u, v \\rangle$, which is zero.",
+    "scope": "The whole theorem, in a Euclidean space of any dimension. The proof does not need $P$ to lie in the plane of the rectangle.",
+    "mechanisms": [
+     "m:algebraic-identity",
+     "m:coordinates"
+    ],
+    "roles": [
+     {
+      "h": "h:parallelogram",
+      "why": "Equal midpoints of the diagonals give $C - A = (B - A) + (D - A)$.",
+      "steps": [
+       "s:vectors"
+      ]
+     },
+     {
+      "h": "h:right",
+      "why": "The right angle at $A$ makes the inner product of the two sides zero.",
+      "steps": [
+       "s:right"
+      ]
+     },
+     {
+      "h": "h:point",
+      "why": "The point $P$ enters as the vector $x$ in the expansion, with no restriction.",
+      "steps": [
+       "s:expand"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:vectors",
+      "slogan": "Put the origin at $A$ and write $B$, $D$, $P$ as vectors $u$, $v$, $x$.",
+      "detail": "Let $u = B - A$, $v = D - A$ and $x = P - A$. The equal midpoints of $AC$ and $BD$ give $C - A = u + v$.",
+      "uses": []
+     },
+     {
+      "id": "s:expand",
+      "slogan": "Expand the four squared distances with the [inner product](c:inner-product-space).",
+      "detail": "$PA^2 = |x|^2$, $PC^2 = |x - u - v|^2$, $PB^2 = |x - u|^2$ and $PD^2 = |x - v|^2$. By bilinearity, $PA^2 + PC^2 = PB^2 + PD^2 + 2\\langle u, v \\rangle$.",
+      "uses": []
+     },
+     {
+      "id": "s:right",
+      "slogan": "Turn the right angle at $A$ into $\\langle u, v \\rangle = 0$.",
+      "detail": "The angle $\\angle BAD$ is the angle between $u$ and $v$, and it equals $\\pi/2$. So $\\langle u, v \\rangle = |u||v|\\cos(\\pi/2) = 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Remove the cross term to get the identity.",
+      "detail": "With $\\langle u, v \\rangle = 0$, the identity of step 2 reads $PA^2 + PC^2 = PB^2 + PD^2$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:vectors",
+      "s:expand"
+     ],
+     [
+      "s:expand",
+      "s:conclude"
+     ],
+     [
+      "s:right",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:rectangle": "Equal diagonal midpoints and a right angle encode that the four points form a rectangle.",
+     "c:parallelogram": "The parallelogram gives the relation $C - A = (B - A) + (D - A)$.",
+     "c:inner-product-space": "The inner product expands squared distances and detects the right angle."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "EuclideanGeometry.dist_sq_add_dist_sq_eq_dist_sq_add_dist_sq_of_angle_eq_pi_div_two",
+     "follows": true,
+     "note": "mathlib proves the identity with the cross term $2\\langle b - a, d - a \\rangle$ (dist_sq_add_dist_sq_eq_dist_sq_add_dist_sq_add_two_mul_inner) and its iff form, then uses $\\angle bad = \\pi/2$."
+    }
+   },
+   {
+    "id": "pythagoras",
+    "name": "Pythagorean theorem in coordinates",
+    "slogan": "Write each squared distance as a sum of two squares by the Pythagorean theorem, then add opposite corners.",
+    "scope": "First a point $P$ in the plane of the rectangle, then a point outside the plane by one more right triangle.",
+    "mechanisms": [
+     "m:coordinates",
+     "m:case-analysis"
+    ],
+    "roles": [
+     {
+      "h": "h:parallelogram",
+      "why": "A parallelogram with a right angle has four right angles, with opposite sides parallel to the axes.",
+      "steps": [
+       "s:place"
+      ]
+     },
+     {
+      "h": "h:right",
+      "why": "The right angle lets the sides lie along the coordinate axes.",
+      "steps": [
+       "s:place"
+      ]
+     },
+     {
+      "h": "h:point",
+      "why": "The point $P$ is in the plane or at a height $z$ above it.",
+      "steps": [
+       "s:square",
+       "s:lift"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:place",
+      "slogan": "Place the rectangle in coordinates with its sides along the axes.",
+      "detail": "Put $A = (0, 0)$, $B = (w, 0)$, $D = (0, h)$ and $C = (w, h)$, and let $P = (x, y)$ lie in the plane of the [rectangle](c:rectangle).",
+      "uses": []
+     },
+     {
+      "id": "s:square",
+      "slogan": "Write each squared distance as a sum of two squares by the Pythagorean theorem.",
+      "detail": "The segment from $P$ to a corner is the hypotenuse of a right triangle whose legs are parallel to the axes. So $PA^2 = x^2 + y^2$, $PB^2 = (w - x)^2 + y^2$, $PC^2 = (w - x)^2 + (h - y)^2$ and $PD^2 = x^2 + (h - y)^2$.",
+      "uses": [
+       "wd:Q11518"
+      ]
+     },
+     {
+      "id": "s:add",
+      "slogan": "Add the squares for opposite corners.",
+      "detail": "Both $PA^2 + PC^2$ and $PB^2 + PD^2$ equal $x^2 + y^2 + (w - x)^2 + (h - y)^2$.",
+      "uses": []
+     },
+     {
+      "id": "s:lift",
+      "slogan": "Lift a point outside the plane by one more right triangle.",
+      "detail": "If $P$ is at height $z$ above its foot $P'$ in the plane, the Pythagorean theorem gives $PX^2 = P'X^2 + z^2$ for each corner $X$. The extra $z^2$ appears on both sides, so the identity holds for $P$.",
+      "uses": [
+       "wd:Q11518"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:place",
+      "s:square"
+     ],
+     [
+      "s:square",
+      "s:add"
+     ],
+     [
+      "s:add",
+      "s:lift"
+     ]
+    ],
+    "conclusion": "s:lift",
+    "concepts": {
+     "c:rectangle": "The rectangle in coordinates has sides along the axes, so distances split into two squares.",
+     "c:parallelogram": "A parallelogram with a right angle is a rectangle."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The classical proof from the Pythagorean theorem."
+    }
+   }
+  ]
+ }
+]

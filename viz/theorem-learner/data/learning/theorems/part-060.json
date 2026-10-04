@@ -1,0 +1,1726 @@
+[
+ {
+  "id": "wd:Q846840",
+  "statement": "Let $\\omega(n)$ count the distinct [prime factors](c:prime-factor) of $n$. For real $a \\le b$, the proportion of $n \\le x$ with $a \\le (\\omega(n) - \\log\\log n)/\\sqrt{\\log\\log n} \\le b$ tends, as $x \\to \\infty$, to $\\frac{1}{\\sqrt{2\\pi}}\\int_a^b e^{-t^2/2}\\,dt$, the [normal distribution](c:normal-distribution) probability of $[a, b]$.",
+  "hypotheses": [
+   {
+    "id": "h:omega",
+    "text": "The function $\\omega$ is the additive [arithmetic function](c:arithmetic-function) that counts the primes dividing $n$.",
+    "concept": "c:arithmetic-function"
+   },
+   {
+    "id": "h:window",
+    "text": "The reals satisfy $a \\le b$, and $n$ is drawn uniformly from $1, \\dots, x$ as $x \\to \\infty$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The density of integers $n \\le x$ whose normalized value of $\\omega(n)$ lies in $[a, b]$ converges to the standard Gaussian probability of $[a, b]$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "moments",
+    "name": "Method of moments",
+    "slogan": "Truncate $\\omega$ to small primes, compare its moments with those of independent Bernoulli variables, and match the Gaussian moments.",
+    "scope": "An outline of the moment proof of Granville and Soundararajan; step 3 rests on their moment computation. The integers $n \\le x$ with $\\log\\log n \\ne \\log\\log x + o(1)$ form a set of size $o(x)$.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:sieve",
+     "m:approximation"
+    ],
+    "roles": [
+     {
+      "h": "h:omega",
+      "why": "The count $\\omega(n) = \\sum_p 1_{p \\mid n}$ is a sum of divisibility events that behave like independent events.",
+      "steps": [
+       "s:truncate",
+       "s:independence"
+      ]
+     },
+     {
+      "h": "h:window",
+      "why": "Uniform $n \\le x$ turns counts into densities, and the window $[a, b]$ closes the argument with a Gaussian probability.",
+      "steps": [
+       "s:method",
+       "s:conclude"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:truncate",
+      "slogan": "Truncate $\\omega(n)$ to the primes up to $z = x^{1/\\log\\log\\log x}$.",
+      "detail": "Let $\\omega_z(n)$ count the primes $p \\le z$ dividing $n$. The mean of $\\omega - \\omega_z$ over $n \\le x$ is at most $\\sum_{z < p \\le x} 1/p + o(1) = O(\\log\\log\\log\\log x)$ by Mertens' theorem. By Markov's inequality, $\\omega - \\omega_z = o(\\sqrt{\\log\\log x})$ for almost all $n \\le x$.",
+      "uses": [
+       "wd:Q1196729"
+      ]
+     },
+     {
+      "id": "s:independence",
+      "slogan": "Compare divisibility by distinct primes with [independent random variables](c:independent-random-variables) of mean $1/p$.",
+      "detail": "For squarefree $d \\le z^k$, exactly $x/d + O(1)$ integers $n \\le x$ are divisible by $d$. Expand the $k$-th moment of $\\sum_{p \\le z}(1_{p \\mid n} - 1/p)$ as a sum over $k$-tuples of primes. Each term equals its value for independent Bernoulli variables $X_p$ with $P(X_p = 1) = 1/p$, up to $O(2^k/x)$, and $z^k = x^{o(1)}$.",
+      "uses": []
+     },
+     {
+      "id": "s:moments",
+      "slogan": "Compute the moments of the independent sum and match them with Gaussian moments.",
+      "detail": "Let $S = \\sum_{p \\le z}(X_p - 1/p)$ with [variance](c:variance) $\\sigma^2 = \\sum_{p \\le z}\\frac1p(1 - \\frac1p) \\sim \\log\\log x$. Group the $k$-tuples of primes by their pattern of equal entries. This gives $E[S^k] = (\\mu_k + o(1))\\sigma^k$, where $\\mu_k$ is the $k$-th standard normal moment, $0$ for odd $k$ and $(k-1)!!$ for even $k$.",
+      "uses": []
+     },
+     {
+      "id": "s:method",
+      "slogan": "Pass from convergence of all moments to [convergence in distribution](c:convergence-in-distribution).",
+      "detail": "The normal law is determined by its moments. By steps 2 and 3, every moment of $(\\omega_z(n) - \\sum_{p \\le z}1/p)/\\sigma$ over $n \\le x$ converges to the normal moment. Hence this variable converges in distribution to the standard normal law.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Replace the centering and scaling by $\\log\\log n$ and $\\sqrt{\\log\\log n}$.",
+      "detail": "We have $\\sum_{p \\le z}1/p = \\log\\log x + O(\\log\\log\\log\\log x)$, $\\sigma^2 \\sim \\log\\log x$, and $\\log\\log n = \\log\\log x + o(1)$ for almost all $n$. With step 1, these changes move the normalized value by $o(1)$ in probability. Slutsky's lemma keeps the standard normal limit.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:truncate",
+      "s:independence"
+     ],
+     [
+      "s:independence",
+      "s:moments"
+     ],
+     [
+      "s:moments",
+      "s:method"
+     ],
+     [
+      "s:method",
+      "s:conclude"
+     ],
+     [
+      "s:truncate",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:prime-factor": "The function $\\omega$ counts prime factors, so the proof sums over primes.",
+     "c:normal-distribution": "The limit law of the normalized count is the standard normal law.",
+     "c:arithmetic-function": "Additivity of $\\omega$ makes it a sum over primes.",
+     "c:independent-random-variables": "Independent Bernoulli variables model divisibility by distinct primes.",
+     "c:variance": "The variance of the model sum sets the scaling $\\sqrt{\\log\\log x}$.",
+     "c:convergence-in-distribution": "Moment convergence gives the distributional limit that the theorem states."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "A. Granville and K. Soundararajan, Sieving and the Erdős-Kac theorem, in: Equidistribution in Number Theory, An Introduction (A. Granville and Z. Rudnick, eds.), NATO Science Series II 237, Springer, 2007",
+     "url": "https://arxiv.org/abs/math/0606039",
+     "note": "Method-of-moments proof. The original proof is P. Erdős and M. Kac, The Gaussian law of errors in the theory of additive arithmetic functions, American Journal of Mathematics 62 (1940), 738-742."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1506253",
+  "statement": "There are infinitely many [prime numbers](c:prime-number): for every natural number $n$ there is a prime $p$ with $p \\ge n$.",
+  "hypotheses": [],
+  "conclusion": "For every $n$ some prime $p$ satisfies $n \\le p$, so the set of primes is infinite.",
+  "formal": {
+   "decl": "Nat.exists_infinite_primes",
+   "difference": "The declaration states the unbounded form, a prime $p \\ge n$ for every $n$. This form is equivalent to the infinitude of the set of primes."
+  },
+  "proofs": [
+   {
+    "id": "factorial-plus-one",
+    "name": "Factorial plus one",
+    "slogan": "Take a prime divisor of $n! + 1$ and show that it is at least $n$.",
+    "scope": "Every $n \\in \\mathbb{N}$, including $n = 0$ and $n = 1$, where $n! = 1$ and $N = 2$. The number $N = n! + 1$ is at least $2$ in all cases.",
+    "mechanisms": [
+     "m:construction-explicit",
+     "m:contradiction"
+    ],
+    "roles": [],
+    "steps": [
+     {
+      "id": "s:form",
+      "slogan": "Form the number $N = n! + 1$ from the [factorial](c:factorial) of $n$.",
+      "detail": "Since $n! \\ge 1$, we get $N \\ge 2$. So $N$ has a divisor greater than $1$.",
+      "uses": []
+     },
+     {
+      "id": "s:prime",
+      "slogan": "Choose the least divisor $p > 1$ of $N$ and show that $p$ is a [prime number](c:prime-number).",
+      "detail": "A number $N \\ge 2$ has a least divisor $p > 1$. A divisor $d$ of $p$ with $1 < d < p$ would divide $N$ and be smaller than $p$. So $p$ has no such divisor and $p$ is prime.",
+      "uses": []
+     },
+     {
+      "id": "s:bound",
+      "slogan": "Assume $p < n$ and show that $p$ divides $n!$.",
+      "detail": "If $p < n$, then $1 \\le p \\le n$, so $p$ is one of the factors of $n! = 1 \\cdot 2 \\cdots n$. Hence $p \\mid n!$.",
+      "uses": []
+     },
+     {
+      "id": "s:contradict",
+      "slogan": "Deduce $p \\mid 1$, which is impossible for a prime.",
+      "detail": "Now $p \\mid n!$ and $p \\mid N = n! + 1$, so [divisibility](c:divisibility) gives $p \\mid N - n! = 1$. A prime does not divide $1$. So the assumption $p < n$ is false, and $p \\ge n$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:form",
+      "s:prime"
+     ],
+     [
+      "s:prime",
+      "s:bound"
+     ],
+     [
+      "s:bound",
+      "s:contradict"
+     ],
+     [
+      "s:prime",
+      "s:contradict"
+     ],
+     [
+      "s:form",
+      "s:contradict"
+     ]
+    ],
+    "conclusion": "s:contradict",
+    "concepts": {
+     "c:prime-number": "The theorem is about primes, and the proof constructs one.",
+     "c:divisibility": "Divisibility of both $n!$ and $n! + 1$ by $p$ forces $p \\mid 1$.",
+     "c:factorial": "The factorial $n!$ is divisible by every number up to $n$."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Nat.exists_infinite_primes",
+     "follows": true,
+     "note": "mathlib takes p = minFac (n! + 1) (Nat.minFac_prime), then shows n ≤ p with Nat.dvd_factorial and Nat.dvd_add_iff_right."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q3526990",
+  "statement": "At a point $p$ of a [regular surface](c:regular-surface) with unit normal $N$, there are orthonormal tangent vectors $e_1, e_2$ and numbers $k_1 \\le k_2$, the [principal curvatures](c:principal-curvature), such that the [normal curvature](c:normal-curvature) in the unit direction $\\cos\\theta\\, e_1 + \\sin\\theta\\, e_2$ is $k_1\\cos^2\\theta + k_2\\sin^2\\theta$. So $k_1$ and $k_2$ are the least and greatest normal curvatures at $p$.",
+  "hypotheses": [
+   {
+    "id": "h:surface",
+    "text": "The surface $S \\subset \\mathbb{R}^3$ is [regular](c:regular-surface), with a smooth unit normal field $N$ near $p$.",
+    "concept": "c:regular-surface"
+   }
+  ],
+  "conclusion": "The normal curvature in direction $\\theta$ is $k_1\\cos^2\\theta + k_2\\sin^2\\theta$, and it lies between $k_1$ and $k_2$, with both values attained.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "spectral",
+    "name": "Spectral theorem for the shape operator",
+    "slogan": "The normal curvature is a quadratic form of a self-adjoint operator, and the spectral theorem diagonalizes it in an orthonormal basis.",
+    "scope": "Every point $p$ of the surface. At an umbilic point, where $k_1 = k_2$, every orthonormal basis is principal and the normal curvature is constant.",
+    "mechanisms": [
+     "m:eigenvector-basis",
+     "m:spectral-decomposition"
+    ],
+    "roles": [
+     {
+      "h": "h:surface",
+      "why": "The smooth normal field $N$ defines the shape operator $A = -dN_p$ and the form $\\langle Av, v\\rangle$.",
+      "steps": [
+       "s:form",
+       "s:symmetric"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:form",
+      "slogan": "Write the [normal curvature](c:normal-curvature) as the quadratic form $\\langle Av, v\\rangle$ of the shape operator $A = -dN_p$.",
+      "detail": "For a curve $\\gamma$ on $S$ with $\\gamma(0) = p$ and unit velocity $v$, the normal curvature is $\\langle \\gamma''(0), N\\rangle$. Differentiating $\\langle \\gamma', N\\rangle = 0$ gives $\\langle \\gamma'', N\\rangle = -\\langle \\gamma', dN(\\gamma')\\rangle$. So $k_n(v) = \\langle Av, v\\rangle$, the [second fundamental form](c:second-fundamental-form) of $v$.",
+      "uses": []
+     },
+     {
+      "id": "s:symmetric",
+      "slogan": "Show that $A$ is a [self-adjoint operator](c:self-adjoint-operator) on the tangent plane.",
+      "detail": "For a parametrization $X(u, w)$, differentiating $\\langle N, X_u\\rangle = 0$ in $w$ and $\\langle N, X_w\\rangle = 0$ in $u$ gives $\\langle N_w, X_u\\rangle = -\\langle N, X_{uw}\\rangle = \\langle N_u, X_w\\rangle$. So $\\langle AX_u, X_w\\rangle = \\langle X_u, AX_w\\rangle$. By bilinearity, $A$ is self-adjoint on $T_pS$.",
+      "uses": []
+     },
+     {
+      "id": "s:diagonalize",
+      "slogan": "Diagonalize $A$ in an [orthonormal basis](c:orthonormal-basis) of [eigenvectors](c:eigenvector).",
+      "detail": "A self-adjoint operator on the plane $T_pS$ has an orthonormal basis $e_1, e_2$ of eigenvectors with real eigenvalues $k_1 \\le k_2$. These eigenvalues are the [principal curvatures](c:principal-curvature), and $e_1, e_2$ are the principal directions.",
+      "uses": [
+       "wd:Q1425077"
+      ]
+     },
+     {
+      "id": "s:expand",
+      "slogan": "Expand the unit vector $v = \\cos\\theta\\, e_1 + \\sin\\theta\\, e_2$ in the quadratic form.",
+      "detail": "Then $Av = k_1\\cos\\theta\\, e_1 + k_2\\sin\\theta\\, e_2$. Orthonormality of $e_1, e_2$ kills the cross terms, so $\\langle Av, v\\rangle = k_1\\cos^2\\theta + k_2\\sin^2\\theta$.",
+      "uses": []
+     },
+     {
+      "id": "s:extremes",
+      "slogan": "Bound the formula between $k_1$ and $k_2$ to find the extreme curvatures.",
+      "detail": "Write $k_n = k_1 + (k_2 - k_1)\\sin^2\\theta$ with $0 \\le \\sin^2\\theta \\le 1$. Hence $k_1 \\le k_n \\le k_2$, with equality at $\\theta = 0$ and $\\theta = \\pi/2$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:form",
+      "s:symmetric"
+     ],
+     [
+      "s:symmetric",
+      "s:diagonalize"
+     ],
+     [
+      "s:diagonalize",
+      "s:expand"
+     ],
+     [
+      "s:form",
+      "s:expand"
+     ],
+     [
+      "s:expand",
+      "s:extremes"
+     ]
+    ],
+    "conclusion": "s:extremes",
+    "concepts": {
+     "c:regular-surface": "A regular surface has a tangent plane and a smooth normal at $p$.",
+     "c:principal-curvature": "The principal curvatures are the eigenvalues of the shape operator.",
+     "c:normal-curvature": "The normal curvature is the quantity that the formula computes.",
+     "c:second-fundamental-form": "The second fundamental form is the quadratic form $v \\mapsto \\langle Av, v\\rangle$.",
+     "c:self-adjoint-operator": "Self-adjointness is the hypothesis of the spectral theorem.",
+     "c:orthonormal-basis": "The orthonormal eigenbasis diagonalizes the form with no cross terms.",
+     "c:eigenvector": "The principal directions are the eigenvectors of the shape operator."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The classical proof of Euler's formula via the self-adjoint shape operator, as in do Carmo, Differential Geometry of Curves and Surfaces, chapter 3."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:factor-and-remainder-theorems",
+  "statement": "Let $R$ be a [commutative ring](c:commutative-ring), $p \\in R[x]$ a [polynomial](c:polynomial) and $a \\in R$. Dividing $p$ by $x - a$ leaves the constant remainder $p(a)$. So $x - a$ divides $p$ exactly when $a$ is a [root](c:root) of $p$.",
+  "hypotheses": [
+   {
+    "id": "h:ring",
+    "text": "The coefficients lie in a [commutative ring](c:commutative-ring) $R$.",
+    "concept": "c:commutative-ring"
+   },
+   {
+    "id": "h:poly",
+    "text": "The [polynomial](c:polynomial) $p \\in R[x]$ and the element $a \\in R$ are given.",
+    "concept": "c:polynomial"
+   }
+  ],
+  "conclusion": "We have $p = (x - a)q + p(a)$ for some $q \\in R[x]$, and $(x - a) \\mid p$ if and only if $p(a) = 0$.",
+  "formal": {
+   "decl": "Polynomial.dvd_iff_isRoot",
+   "difference": "The declaration states the factor theorem only, for a commutative ring. The remainder formula is the separate declaration Polynomial.mod_X_sub_C_eq_C_eval."
+  },
+  "proofs": [
+   {
+    "id": "divide-by-monic",
+    "name": "Division by a monic linear polynomial",
+    "slogan": "Divide by the monic polynomial $x - a$, read the remainder as a constant, and evaluate at $a$.",
+    "scope": "All commutative rings, including rings with zero divisors, because division by $x - a$ needs only that its leading coefficient is $1$. The case $p = 0$ gives $q = 0$ and remainder $0$.",
+    "mechanisms": [
+     "m:division-algorithm",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:ring",
+      "why": "Division by a monic polynomial needs no inverse in $R$, so any commutative ring works.",
+      "steps": [
+       "s:divide"
+      ]
+     },
+     {
+      "h": "h:poly",
+      "why": "The polynomial $p$ is divided, and the element $a$ is the evaluation point.",
+      "steps": [
+       "s:divide",
+       "s:evaluate",
+       "s:factor"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:divide",
+      "slogan": "Divide $p$ by the monic polynomial $x - a$ with remainder.",
+      "detail": "Because $x - a$ has leading coefficient $1$, [polynomial division](c:polynomial-division) runs over any commutative ring. It gives $p = (x - a)q + r$ with $\\deg r < 1$, and the pair $(q, r)$ is unique.",
+      "uses": []
+     },
+     {
+      "id": "s:evaluate",
+      "slogan": "Evaluate both sides at $a$ to identify the remainder.",
+      "detail": "A polynomial of degree below $1$ is a constant $c \\in R$. Evaluation at $a$ is a ring homomorphism, so $p(a) = (a - a)q(a) + c = c$. Hence the remainder is the constant $p(a)$.",
+      "uses": []
+     },
+     {
+      "id": "s:factor",
+      "slogan": "Read the factor theorem off the remainder.",
+      "detail": "If $p = (x - a)s$, uniqueness of division gives remainder $0$, so $p(a) = 0$. If $p(a) = 0$, the remainder is $0$ and $p = (x - a)q$. So $x - a$ divides $p$ exactly when $a$ is a [root](c:root) of $p$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:divide",
+      "s:evaluate"
+     ],
+     [
+      "s:evaluate",
+      "s:factor"
+     ],
+     [
+      "s:divide",
+      "s:factor"
+     ]
+    ],
+    "conclusion": "s:factor",
+    "concepts": {
+     "c:commutative-ring": "The division step works in every commutative ring.",
+     "c:polynomial": "The theorem concerns division and evaluation of polynomials.",
+     "c:root": "A root is a point where the remainder $p(a)$ vanishes.",
+     "c:polynomial-division": "Division by $x - a$ produces the quotient and the constant remainder."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Polynomial.dvd_iff_isRoot",
+     "follows": true,
+     "note": "mathlib divides by the monic X - C a and reads the remainder with Polynomial.modByMonic_X_sub_C_eq_C_eval, then uses modByMonic_eq_zero_iff_dvd and mul_divByMonic_eq_iff_isRoot."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:3517",
+  "statement": "Let a [commutative diagram](c:commutative-diagram) of abelian groups have [exact](c:exact-sequence) rows $A \\to B \\to C \\to D \\to E$ and $A' \\to B' \\to C' \\to D' \\to E'$, with vertical maps $\\alpha, \\dots, \\varepsilon$. If $\\beta, \\delta$ are isomorphisms, $\\alpha$ is onto and $\\varepsilon$ is one-to-one, then $\\gamma$ is an isomorphism. This covers four isomorphisms $\\alpha, \\beta, \\delta, \\varepsilon$.",
+  "hypotheses": [
+   {
+    "id": "h:rows",
+    "text": "The two rows are [exact sequences](c:exact-sequence) of abelian groups.",
+    "concept": "c:exact-sequence"
+   },
+   {
+    "id": "h:commute",
+    "text": "Every square of the diagram [commutes](c:commutative-diagram).",
+    "concept": "c:commutative-diagram"
+   },
+   {
+    "id": "h:inner",
+    "text": "The maps $\\beta$ and $\\delta$ are isomorphisms.",
+    "concept": null
+   },
+   {
+    "id": "h:outer",
+    "text": "The map $\\alpha$ is surjective and the map $\\varepsilon$ is injective.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The middle map $\\gamma$ is an isomorphism.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "diagram-chase",
+    "name": "Diagram chase",
+    "slogan": "Chase elements through the diagram once for injectivity of $\\gamma$ and once for surjectivity.",
+    "scope": "Abelian groups written additively; the same chase works for modules. Injectivity of $\\gamma$ uses $\\alpha$ onto and $\\beta, \\delta$ one-to-one, and surjectivity uses $\\varepsilon$ one-to-one and $\\beta, \\delta$ onto.",
+    "mechanisms": [
+     "m:exact-sequence"
+    ],
+    "roles": [
+     {
+      "h": "h:rows",
+      "why": "Exactness turns a vanishing image into a preimage at $B$, $C$, $D$, $B'$, $C'$ and $D'$.",
+      "steps": [
+       "s:push",
+       "s:pull",
+       "s:lift",
+       "s:correct"
+      ]
+     },
+     {
+      "h": "h:commute",
+      "why": "Commuting squares move an element from one row to the other without changing its image.",
+      "steps": [
+       "s:push",
+       "s:pull",
+       "s:lift",
+       "s:correct"
+      ]
+     },
+     {
+      "h": "h:inner",
+      "why": "Injectivity of $\\beta, \\delta$ drives the injectivity half, and surjectivity of $\\beta, \\delta$ drives the surjectivity half.",
+      "steps": [
+       "s:push",
+       "s:pull",
+       "s:lift",
+       "s:correct"
+      ]
+     },
+     {
+      "h": "h:outer",
+      "why": "Surjectivity of $\\alpha$ closes the injectivity chase, and injectivity of $\\varepsilon$ starts the surjectivity chase.",
+      "steps": [
+       "s:pull",
+       "s:lift"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:push",
+      "slogan": "Take $c \\in C$ with $\\gamma(c) = 0$ and push it to $D$.",
+      "detail": "Name the row maps $f, g, h, k$ and primed copies. By commutativity $\\delta(h(c)) = h'(\\gamma(c)) = 0$, and $\\delta$ is injective, so $h(c) = 0$. By [exactness](c:exact-sequence) at $C$, $c = g(b)$ for some $b \\in B$.",
+      "uses": []
+     },
+     {
+      "id": "s:pull",
+      "slogan": "Pull $\\beta(b)$ back to $A$ to show that $c = 0$.",
+      "detail": "Now $g'(\\beta(b)) = \\gamma(g(b)) = 0$, so $\\beta(b) = f'(a')$ for some $a' \\in A'$. Surjectivity of $\\alpha$ gives $a' = \\alpha(a)$, and $\\beta(b) = f'\\alpha(a) = \\beta f(a)$. Injectivity of $\\beta$ gives $b = f(a)$, so $c = gf(a) = 0$. Hence $\\gamma$ is injective.",
+      "uses": []
+     },
+     {
+      "id": "s:lift",
+      "slogan": "Take $c' \\in C'$ and lift $h'(c')$ to an element of $C$.",
+      "detail": "As $\\delta$ is onto, $h'(c') = \\delta(d)$ for some $d \\in D$. Then $\\varepsilon(k(d)) = k'\\delta(d) = k'h'(c') = 0$, so $k(d) = 0$ because $\\varepsilon$ is injective. By exactness at $D$, $d = h(c)$ for some $c \\in C$.",
+      "uses": []
+     },
+     {
+      "id": "s:correct",
+      "slogan": "Correct $c'$ by $\\gamma(c)$ to land in the image of $B'$.",
+      "detail": "We get $h'(c' - \\gamma(c)) = \\delta(d) - \\delta h(c) = 0$, so $c' - \\gamma(c) = g'(b')$ for some $b' \\in B'$. Since $\\beta$ is onto, $b' = \\beta(b)$, and $g'\\beta(b) = \\gamma g(b)$. Hence $c' = \\gamma(c + g(b))$, and $\\gamma$ is surjective.",
+      "uses": []
+     },
+     {
+      "id": "s:iso",
+      "slogan": "Combine injectivity and surjectivity to show that $\\gamma$ is an [isomorphism](c:isomorphism).",
+      "detail": "A bijective homomorphism of abelian groups has an inverse that is also a homomorphism. So $\\gamma$ is an isomorphism.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:push",
+      "s:pull"
+     ],
+     [
+      "s:lift",
+      "s:correct"
+     ],
+     [
+      "s:pull",
+      "s:iso"
+     ],
+     [
+      "s:correct",
+      "s:iso"
+     ]
+    ],
+    "conclusion": "s:iso",
+    "concepts": {
+     "c:commutative-diagram": "Commuting squares link elements of the two rows.",
+     "c:exact-sequence": "Exactness gives a preimage for each element that maps to zero.",
+     "c:isomorphism": "The conclusion is that the middle map is bijective with a homomorphic inverse."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard diagram chase, as in Hatcher, Algebraic Topology, section 2.1."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q900831",
+  "statement": "Let $T$ be a measure-preserving bijection of $(X, \\mu)$ and $M$ a measure-preserving involution with $MTM = T^{-1}$ ([time reversal](c:time-reversal)). For an initial [density](c:probability-density-function) $f > 0$, let $\\Sigma = \\ln\\bigl(f/f\\circ MT\\bigr)$ be the entropy production. Then $P(\\Sigma \\in B) = E[e^{-\\Sigma};\\, \\Sigma \\in -B]$ for each Borel set $B$.",
+  "hypotheses": [
+   {
+    "id": "h:evolution",
+    "text": "The map $T$ is a [measure-preserving](c:measure-preserving-map) bijection of the phase space $(X, \\mu)$.",
+    "concept": "c:measure-preserving-map"
+   },
+   {
+    "id": "h:reversal",
+    "text": "A measure-preserving involution $M$ satisfies $MTM = T^{-1}$.",
+    "concept": "c:time-reversal"
+   },
+   {
+    "id": "h:density",
+    "text": "The initial state has a [probability density](c:probability-density-function) $f > 0$ with respect to $\\mu$.",
+    "concept": "c:probability-density-function"
+   }
+  ],
+  "conclusion": "Entropy production $s$ is $e^{s}$ times as probable as $-s$, so for $s = At$ the probability ratio is $e^{At}$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "reversal-involution",
+    "name": "Time-reversal involution",
+    "slogan": "The map $MT$ reverses the sign of the entropy production, and a change of variables turns that into the exponential ratio.",
+    "scope": "The transient form of Evans and Searles for reversible measure-preserving dynamics, with $\\Sigma$ defined as above. The steady-state form of Gallavotti and Cohen is a separate theorem.",
+    "mechanisms": [
+     "m:change-of-variables",
+     "m:symmetry"
+    ],
+    "roles": [
+     {
+      "h": "h:evolution",
+      "why": "Measure preservation of $T$ makes $MT$ preserve $\\mu$, so the change of variables has Jacobian $1$.",
+      "steps": [
+       "s:involution"
+      ]
+     },
+     {
+      "h": "h:reversal",
+      "why": "The relation $MTM = T^{-1}$ makes $MT$ an involution.",
+      "steps": [
+       "s:involution"
+      ]
+     },
+     {
+      "h": "h:density",
+      "why": "Positivity of $f$ defines $\\Sigma$ and gives $f(Rx) = f(x)e^{-\\Sigma(x)}$.",
+      "steps": [
+       "s:odd",
+       "s:change"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:involution",
+      "slogan": "Show that $R = MT$ is a measure-preserving involution.",
+      "detail": "From $MTM = T^{-1}$ we get $MT = T^{-1}M$, so $R^2 = MTMT = T^{-1}T = \\mathrm{id}$. Both $M$ and $T$ preserve $\\mu$, so $R$ is a [measure-preserving](c:measure-preserving-map) bijection that is its own inverse.",
+      "uses": []
+     },
+     {
+      "id": "s:odd",
+      "slogan": "Show that $\\Sigma(Rx) = -\\Sigma(x)$.",
+      "detail": "Since $MT(Rx) = R^2x = x$, we get $\\Sigma(Rx) = \\ln\\bigl(f(Rx)/f(x)\\bigr) = -\\Sigma(x)$. The condition $f > 0$ keeps the logarithms defined.",
+      "uses": []
+     },
+     {
+      "id": "s:change",
+      "slogan": "Substitute $x = Ry$ in the integral for $P(\\Sigma \\in B)$.",
+      "detail": "We have $P(\\Sigma \\in B) = \\int 1_B(\\Sigma(x))f(x)\\,d\\mu(x)$. Since $R$ preserves $\\mu$, this equals $\\int 1_B(\\Sigma(Ry))f(Ry)\\,d\\mu(y)$. By the odd step, $1_B(\\Sigma(Ry)) = 1_{-B}(\\Sigma(y))$, and the definition of $\\Sigma$ gives $f(Ry) = f(y)e^{-\\Sigma(y)}$.",
+      "uses": []
+     },
+     {
+      "id": "s:ratio",
+      "slogan": "Read off the identity and the ratio $e^{s}$ between the values $s$ and $-s$.",
+      "detail": "The integral equals $\\int 1_{-B}(\\Sigma)e^{-\\Sigma}f\\,d\\mu = E[e^{-\\Sigma};\\,\\Sigma \\in -B]$. For $B = \\{s\\}$, $e^{-\\Sigma} = e^{s}$ on $\\{\\Sigma = -s\\}$, so $P(\\Sigma = s) = e^{s}P(\\Sigma = -s)$. For $B = [s, s + \\epsilon]$ and $\\epsilon \\to 0$, the densities satisfy $p(s) = e^{s}p(-s)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:involution",
+      "s:odd"
+     ],
+     [
+      "s:involution",
+      "s:change"
+     ],
+     [
+      "s:odd",
+      "s:change"
+     ],
+     [
+      "s:change",
+      "s:ratio"
+     ]
+    ],
+    "conclusion": "s:ratio",
+    "concepts": {
+     "c:time-reversal": "The reversal $M$ with $MTM = T^{-1}$ makes $MT$ an involution.",
+     "c:probability-density-function": "The density $f$ defines $\\Sigma$ and the weight $e^{-\\Sigma}$.",
+     "c:measure-preserving-map": "Measure preservation gives Jacobian $1$ in the change of variables."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The Evans-Searles transient fluctuation theorem: D. J. Evans and D. J. Searles, Physical Review E 50 (1994), 1645, and Advances in Physics 51 (2002), 1529."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:formula-for-pythagorean-triples",
+  "statement": "Integers $x, y, z$ form a [Pythagorean triple](c:pythagorean-triple), $x^2 + y^2 = z^2$, if and only if there are integers $k, m, n$ with $(x, y) = (k(m^2 - n^2),\\, 2kmn)$ or $(x, y) = (2kmn,\\, k(m^2 - n^2))$, and $z = \\pm k(m^2 + n^2)$.",
+  "hypotheses": [],
+  "conclusion": "The integer triple satisfies $x^2 + y^2 = z^2$ exactly when it has the stated form.",
+  "formal": {
+   "decl": "PythagoreanTriple.classification",
+   "difference": null
+  },
+  "proofs": [
+   {
+    "id": "rational-circle",
+    "name": "Rational points of the unit circle",
+    "slogan": "Reduce to a coprime triple, parametrize the rational point of the unit circle by a slope, and compare reduced fractions.",
+    "scope": "All integer triples, including those with $x = 0$ or $y = 0$ and negative entries. The triple $(0, 0, 0)$ is covered by $k = 0$.",
+    "mechanisms": [
+     "m:reduction",
+     "m:modular-arithmetic",
+     "m:algebraic-identity"
+    ],
+    "roles": [],
+    "steps": [
+     {
+      "id": "s:identity",
+      "slogan": "Verify that every triple of the stated form satisfies $x^2 + y^2 = z^2$.",
+      "detail": "Expanding gives $(m^2 - n^2)^2 + (2mn)^2 = (m^2 + n^2)^2$. Multiplying by $k^2$ and changing the sign of $z$ or the order of $x, y$ keeps the equation.",
+      "uses": []
+     },
+     {
+      "id": "s:reduce",
+      "slogan": "Divide a solution by $g = \\gcd(x, y)$ to get a triple with [coprime](c:coprime-integers) legs.",
+      "detail": "If $x = y = 0$, then $z = 0$ and $k = 0$ works. Otherwise $g^2 \\mid z^2$ gives $g \\mid z$, and $(x_0, y_0, z_0) = (x/g, y/g, z/g)$ is a solution with $\\gcd(x_0, y_0) = 1$, so $z_0 \\ne 0$. It suffices to classify it and to take $k = g$.",
+      "uses": []
+     },
+     {
+      "id": "s:parity",
+      "slogan": "Show that exactly one of $x_0, y_0$ is even, and say $x_0$ is even.",
+      "detail": "Both are not even, because they are coprime. Both odd gives $z_0^2 \\equiv 2 \\pmod 4$, which is impossible. By symmetry take $x_0$ even and $y_0$ odd; then $z_0$ is odd, and we may take $z_0 > 0$. This uses [parity](c:parity).",
+      "uses": []
+     },
+     {
+      "id": "s:circle",
+      "slogan": "Parametrize the [rational point](c:rational-point) $(x_0/z_0, y_0/z_0)$ of the unit circle by a slope.",
+      "detail": "If $x_0 = 0$, then $y_0 = \\pm 1$ and $(k, m, n) = (\\pm 1, 1, 0)$ works. Otherwise the ray from $(0, -1)$ through $(u, w) = (x_0/z_0, y_0/z_0)$ meets the $u$-axis at the rational $t = u/(1 + w) = n/m$ in lowest terms. [Stereographic projection](c:stereographic-projection) gives $u = 2mn/(m^2 + n^2)$ and $w = (m^2 - n^2)/(m^2 + n^2)$.",
+      "uses": []
+     },
+     {
+      "id": "s:fractions",
+      "slogan": "Compare reduced fractions to read off $y_0 = m^2 - n^2$ and $z_0 = m^2 + n^2$.",
+      "detail": "If $m, n$ were both odd, then $x_0/z_0 = mn/((m^2 + n^2)/2)$ would be reduced with odd numerator, against $x_0$ even. So $m, n$ have opposite parity, and $\\gcd(m^2 - n^2, m^2 + n^2) = 1$. Equal reduced fractions with positive denominators give $y_0 = m^2 - n^2$, $z_0 = m^2 + n^2$, and then $x_0 = 2mn$.",
+      "uses": []
+     },
+     {
+      "id": "s:assemble",
+      "slogan": "Multiply back by $k$ and restore the order of the legs and the sign of $z$.",
+      "detail": "Then $(x, y, z) = k(2mn, m^2 - n^2, m^2 + n^2)$ with $k = g$. Swapping $x$ and $y$ when needed gives the other order, and the sign of $z$ gives the other sign. With the identity step, this proves both directions.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:reduce",
+      "s:parity"
+     ],
+     [
+      "s:parity",
+      "s:circle"
+     ],
+     [
+      "s:circle",
+      "s:fractions"
+     ],
+     [
+      "s:parity",
+      "s:fractions"
+     ],
+     [
+      "s:fractions",
+      "s:assemble"
+     ],
+     [
+      "s:identity",
+      "s:assemble"
+     ]
+    ],
+    "conclusion": "s:assemble",
+    "concepts": {
+     "c:pythagorean-triple": "The theorem lists all integer solutions of $x^2 + y^2 = z^2$.",
+     "c:coprime-integers": "Coprime legs make the reduced fractions comparable.",
+     "c:parity": "Parity shows that exactly one leg is even and fixes the parity of $m, n$.",
+     "c:rational-point": "A Pythagorean triple gives a rational point of the unit circle.",
+     "c:stereographic-projection": "Projecting from $(0, -1)$ parametrizes the rational points by slopes."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "PythagoreanTriple.classification",
+     "follows": true,
+     "note": "mathlib divides by the gcd (PythagoreanTriple.normalize), then classifies coprime triples through the rational parametrization of the circle (isPrimitiveClassified_of_coprime_of_odd_of_pos)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q111982312",
+  "statement": "There are [recursively enumerable](c:recursively-enumerable-set) sets $A, B \\subseteq \\mathbb{N}$ such that $A \\not\\le_T B$ and $B \\not\\le_T A$, where $\\le_T$ is [Turing reducibility](c:turing-reduction).",
+  "hypotheses": [],
+  "conclusion": "Neither of the two enumerable sets is Turing reducible to the other.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "finite-injury",
+    "name": "Finite injury priority argument",
+    "slogan": "Build $A$ and $B$ in stages, defeat one oracle program per requirement, and let higher priority requirements injure lower ones finitely often.",
+    "scope": "The requirements $R_{2e}\\colon A \\ne \\Phi_e^B$ and $R_{2e+1}\\colon B \\ne \\Phi_e^A$ for all $e$. A restraint protects each computation, and each requirement is injured finitely often.",
+    "mechanisms": [
+     "m:diagonal-argument",
+     "m:strong-induction",
+     "m:construction-explicit"
+    ],
+    "roles": [],
+    "steps": [
+     {
+      "id": "s:requirements",
+      "slogan": "State requirements $R_{2e}$ and $R_{2e+1}$ that defeat the $e$-th [oracle machine](c:oracle-machine).",
+      "detail": "Let $\\Phi_e$ list the oracle machines. It is enough to meet, for all $e$, $R_{2e}\\colon A \\ne \\Phi_e^B$ and $R_{2e+1}\\colon B \\ne \\Phi_e^A$. A smaller index means a higher priority.",
+      "uses": []
+     },
+     {
+      "id": "s:strategy",
+      "slogan": "Pick a follower $x$ for $R_{2e}$ and wait for $\\Phi_e^B(x)$ to output $0$.",
+      "detail": "Keep $x \\notin A$ until a stage $s$ with $\\Phi_{e,s}^{B_s}(x) = 0$. Then enumerate $x$ into $A$ and restrain $B$ below the use of that computation. So $\\Phi_e^B(x) = 0 \\ne 1 = A(x)$. If no such stage comes, $x \\notin A$ and $\\Phi_e^B(x) \\ne 0 = A(x)$. The case $R_{2e+1}$ swaps $A$ and $B$.",
+      "uses": []
+     },
+     {
+      "id": "s:injury",
+      "slogan": "Let a requirement that acts discard the followers of all lower requirements.",
+      "detail": "When $R_i$ acts, every $R_j$ with $j > i$ drops its follower and restraint and later picks a new follower larger than all current restraints of higher requirements. A requirement is injured only when a higher requirement acts.",
+      "uses": []
+     },
+     {
+      "id": "s:construction",
+      "slogan": "Run the construction in stages so that $A$ and $B$ are [recursively enumerable](c:recursively-enumerable-set).",
+      "detail": "At stage $s + 1$, find the least $i$ whose follower has a computation that converges to $0$ and is not forbidden by a higher restraint. Let $R_i$ act and reset all $R_j$ with $j > i$. Numbers enter $A$ and $B$ only by this effective action.",
+      "uses": []
+     },
+     {
+      "id": "s:finite",
+      "slogan": "Show by induction on $i$ that $R_i$ acts finitely often and is met.",
+      "detail": "Assume that $R_0, \\dots, R_{i-1}$ stop acting after a stage $s_0$. Then the follower of $R_i$ is never again discarded, and its restraint is respected by all lower requirements. So $R_i$ acts at most once more, and by the strategy step $R_i$ is met.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:requirements",
+      "s:strategy"
+     ],
+     [
+      "s:strategy",
+      "s:injury"
+     ],
+     [
+      "s:strategy",
+      "s:construction"
+     ],
+     [
+      "s:injury",
+      "s:construction"
+     ],
+     [
+      "s:construction",
+      "s:finite"
+     ],
+     [
+      "s:strategy",
+      "s:finite"
+     ],
+     [
+      "s:injury",
+      "s:finite"
+     ]
+    ],
+    "conclusion": "s:finite",
+    "concepts": {
+     "c:recursively-enumerable-set": "The sets $A$ and $B$ are built by an effective enumeration.",
+     "c:turing-reduction": "The requirements say that no oracle program reduces one set to the other.",
+     "c:oracle-machine": "Each requirement defeats one oracle machine $\\Phi_e$."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The finite injury priority argument, as in Soare, Recursively Enumerable Sets and Degrees, Springer 1987, chapter VII; originally Friedberg (1957) and Muchnik (1956)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q4455031",
+  "statement": "Every simple [planar graph](c:planar-graph) has a drawing in the plane without crossings in which every edge is a straight line segment.",
+  "hypotheses": [
+   {
+    "id": "h:simple",
+    "text": "The [graph](c:graph) $G$ is finite and simple, with no loops and no multiple edges.",
+    "concept": "c:graph"
+   },
+   {
+    "id": "h:planar",
+    "text": "The graph $G$ is [planar](c:planar-graph).",
+    "concept": "c:planar-graph"
+   }
+  ],
+  "conclusion": "The graph $G$ has a crossing-free drawing with straight edges.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "star-shaped-polygon",
+    "name": "Induction with star-shaped polygons",
+    "slogan": "Triangulate, remove a vertex of degree at most five, redraw by induction, and put the vertex in the kernel of its polygon.",
+    "scope": "Graphs with at least $3$ vertices; smaller graphs are drawn directly. The proof shows that every triangulation has a straight-line drawing with a prescribed triangular outer face.",
+    "mechanisms": [
+     "m:induction",
+     "m:extremal-choice",
+     "m:geometric-construction",
+     "m:euler-characteristic"
+    ],
+    "roles": [
+     {
+      "h": "h:simple",
+      "why": "A simple graph forbids multiple edges, so the added chords must avoid existing edges.",
+      "steps": [
+       "s:chords"
+      ]
+     },
+     {
+      "h": "h:planar",
+      "why": "Planarity gives the embedding that supplies faces, Euler's formula and the link cycle of a vertex.",
+      "steps": [
+       "s:triangulate",
+       "s:degree",
+       "s:hole"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:triangulate",
+      "slogan": "Add edges until $G$ is a [triangulation](c:triangulation) with outer face $abc$.",
+      "detail": "Adding an edge inside a face with more than three sides keeps the graph simple and planar. Repeat until all faces are triangles. A drawing of the larger graph contains a drawing of $G$. Prove by induction on $n$ that a triangulation has a straight-line drawing with outer face $abc$.",
+      "uses": []
+     },
+     {
+      "id": "s:degree",
+      "slogan": "Find a vertex $v \\notin \\{a, b, c\\}$ of degree at most five.",
+      "detail": "For $n \\ge 4$, Euler's formula gives $3n - 6$ edges and degree sum $6n - 12$, and every degree is at least $3$. If all vertices outside $\\{a, b, c\\}$ had degree at least $6$, the sum would be at least $9 + 6(n - 3) = 6n - 9$. So some $v$ has degree $d \\in \\{3, 4, 5\\}$.",
+      "uses": [
+       "nm:polyhedron-formula"
+      ]
+     },
+     {
+      "id": "s:hole",
+      "slogan": "Remove $v$ and note that its neighbors form a cycle around a face.",
+      "detail": "The faces at $v$ are triangles, so the neighbors $u_1, \\dots, u_d$ of $v$ form a cycle $C$. It bounds a face of $G - v$ that holds no vertex, and the outer face $abc$ is unchanged because $v \\notin \\{a, b, c\\}$.",
+      "uses": []
+     },
+     {
+      "id": "s:chords",
+      "slogan": "Triangulate $C$ by chords that are not yet edges of $G$.",
+      "detail": "For $d = 3$ add none. For $d = 4$ both diagonals cannot be edges, since $v, u_1, \\dots, u_4$ would then span $K_5$; add the missing one. For $d = 5$ a chord $u_ju_{j+2}$ in $G$ separates $u_{j+1}$ from $u_{j+3}, u_{j+4}$ by the [Jordan curve](c:jordan-curve) theorem, so add the two chords from a suitable $u_i$.",
+      "uses": [
+       "wd:Q260928"
+      ]
+     },
+     {
+      "id": "s:induct",
+      "slogan": "Draw the smaller triangulation with straight edges by induction.",
+      "detail": "The graph $G - v$ plus the chords is a triangulation on $n - 1$ vertices with outer face $abc$. The induction hypothesis gives a crossing-free straight-line drawing of it with outer face $abc$.",
+      "uses": []
+     },
+     {
+      "id": "s:place",
+      "slogan": "Delete the chords and place $v$ at a point from which every vertex of the [polygon](c:polygon) is visible.",
+      "detail": "Deleting the chords leaves the polygon $C$ with at most $5$ sides and no vertex inside. A polygon with at most five sides is [star-shaped](c:star-domain), with an interior point that sees all its vertices. Put $v$ there and join it by straight segments to $u_1, \\dots, u_d$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:triangulate",
+      "s:degree"
+     ],
+     [
+      "s:degree",
+      "s:hole"
+     ],
+     [
+      "s:hole",
+      "s:chords"
+     ],
+     [
+      "s:chords",
+      "s:induct"
+     ],
+     [
+      "s:induct",
+      "s:place"
+     ],
+     [
+      "s:hole",
+      "s:place"
+     ],
+     [
+      "s:triangulate",
+      "s:induct"
+     ]
+    ],
+    "conclusion": "s:place",
+    "concepts": {
+     "c:planar-graph": "Planarity supplies the embedding that the whole induction redraws.",
+     "c:graph": "The graph is simple, so each chord must be a new edge.",
+     "c:triangulation": "A triangulation has only triangular faces, so the neighbors of $v$ form a cycle.",
+     "c:jordan-curve": "A closed curve made of edges separates the plane into two regions.",
+     "c:polygon": "The removed vertex leaves a polygon with at most five sides.",
+     "c:star-domain": "A star-shaped polygon has a point that sees every vertex."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard induction proof via star-shaped polygons with at most five sides. The theorem is due to Wagner (1936), Fáry (1948) and Stein (1951)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1008566",
+  "statement": "If $P$ is a nonconstant [polynomial](c:polynomial) with complex coefficients, every [root](c:complex-roots) of $P'$ lies in the [convex hull](c:convex-hull) of the set of roots of $P$.",
+  "hypotheses": [
+   {
+    "id": "h:nonconstant",
+    "text": "The [polynomial](c:polynomial) $P \\in \\mathbb{C}[z]$ has degree at least $1$.",
+    "concept": "c:polynomial"
+   }
+  ],
+  "conclusion": "We have $\\{z : P'(z) = 0\\} \\subseteq \\operatorname{conv}\\{z : P(z) = 0\\}$.",
+  "formal": {
+   "decl": "Polynomial.rootSet_derivative_subset_convexHull_rootSet",
+   "difference": null
+  },
+  "proofs": [
+   {
+    "id": "center-of-mass",
+    "name": "Center of mass of the roots",
+    "slogan": "Write $P'/P$ as a sum of simple fractions and solve $P'(z) = 0$ for $z$ as a weighted average of the roots.",
+    "scope": "A root $z$ of $P'$ that is not a root of $P$ is a weighted average of the roots; a root of both is already in the hull. The multiplicities of the roots enter as weights.",
+    "mechanisms": [
+     "m:algebraic-identity",
+     "m:averaging",
+     "m:case-analysis"
+    ],
+    "roles": [
+     {
+      "h": "h:nonconstant",
+      "why": "A nonconstant polynomial splits into linear factors with at least one root, so the total weight is positive.",
+      "steps": [
+       "s:factor",
+       "s:center"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:factor",
+      "slogan": "Factor $P$ into linear factors over $\\mathbb{C}$.",
+      "detail": "By the fundamental theorem of algebra, $P(z) = c\\prod_{j=1}^{k}(z - \\rho_j)^{m_j}$ with distinct roots $\\rho_j$, multiplicities $m_j \\ge 1$ and $c \\ne 0$. Here $k \\ge 1$ because $\\deg P \\ge 1$.",
+      "uses": [
+       "wd:Q192760"
+      ]
+     },
+     {
+      "id": "s:logderiv",
+      "slogan": "Write the [logarithmic derivative](c:logarithmic-derivative) $P'/P$ as a sum of simple fractions.",
+      "detail": "By the product rule, for $P(z) \\ne 0$ we get $P'(z)/P(z) = \\sum_{j} m_j/(z - \\rho_j)$.",
+      "uses": []
+     },
+     {
+      "id": "s:balance",
+      "slogan": "Turn $P'(z) = 0$ into a weighted balance of the roots around $z$.",
+      "detail": "Let $P'(z) = 0$ and $P(z) \\ne 0$. Then $\\sum_j m_j/(z - \\rho_j) = 0$. Conjugating and using $1/\\bar{w} = w/|w|^2$ gives $\\sum_j w_j(z - \\rho_j) = 0$ with weights $w_j = m_j/|z - \\rho_j|^2 > 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:center",
+      "slogan": "Solve the balance for $z$ as a weighted average of the roots.",
+      "detail": "From $z\\sum_j w_j = \\sum_j w_j\\rho_j$ and $\\sum_j w_j > 0$ we get $z = \\sum_j \\lambda_j\\rho_j$ with $\\lambda_j = w_j/\\sum_i w_i \\ge 0$ and $\\sum_j \\lambda_j = 1$. So $z$ is a convex combination of the roots.",
+      "uses": []
+     },
+     {
+      "id": "s:hull",
+      "slogan": "Add the case $P(z) = 0$ and place every root of $P'$ in the hull.",
+      "detail": "If $P(z) = 0$, then $z$ is itself a root of $P$, so it lies in the [convex hull](c:convex-hull) of the roots. Otherwise the previous step puts $z$ in the hull. Hence every root of $P'$ lies in it.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:factor",
+      "s:logderiv"
+     ],
+     [
+      "s:logderiv",
+      "s:balance"
+     ],
+     [
+      "s:balance",
+      "s:center"
+     ],
+     [
+      "s:center",
+      "s:hull"
+     ],
+     [
+      "s:factor",
+      "s:hull"
+     ]
+    ],
+    "conclusion": "s:hull",
+    "concepts": {
+     "c:polynomial": "The theorem compares the roots of a polynomial and of its derivative.",
+     "c:complex-roots": "The roots live in the complex plane, where the hull is taken.",
+     "c:convex-hull": "The hull is the set of weighted averages of the roots.",
+     "c:logarithmic-derivative": "The logarithmic derivative $P'/P$ is the sum of the simple fractions."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Polynomial.rootSet_derivative_subset_convexHull_rootSet",
+     "follows": true,
+     "note": "mathlib writes z as the center of mass of the roots with weights multiplicity over |z - w|^2 (Polynomial.eq_centerMass_of_eval_derivative_eq_zero), then applies Finset.centerMass_mem_convexHull."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:19597",
+  "statement": "Let $X$ and $Y$ be [compact Hausdorff spaces](c:compact-hausdorff-space). The [maximal ideals](c:maximal-ideal) of $C(X)$ are the ideals $m_x = \\{f : f(x) = 0\\}$, and $x \\mapsto m_x$ is a homeomorphism onto them with the hull-kernel topology. Also $g \\mapsto g^*$ is a bijection from continuous maps $X \\to Y$ to unital $\\mathbb{R}$-algebra maps $C(Y) \\to C(X)$.",
+  "hypotheses": [
+   {
+    "id": "h:compact-hausdorff",
+    "text": "The spaces $X$ and $Y$ are [compact Hausdorff](c:compact-hausdorff-space).",
+    "concept": "c:compact-hausdorff-space"
+   },
+   {
+    "id": "h:real-valued",
+    "text": "The algebra $C(X)$ is the [ring of continuous functions](c:ring-of-continuous-functions) $X \\to \\mathbb{R}$ with pointwise operations, and $C(Y)$ likewise.",
+    "concept": "c:ring-of-continuous-functions"
+   }
+  ],
+  "conclusion": "The space $X$ is recovered from the algebra $C(X)$, and continuous maps correspond to algebra maps in the opposite direction.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "maximal-ideals",
+    "name": "Maximal ideals of C(X)",
+    "slogan": "Show that the maximal ideals of $C(X)$ are the point ideals, use Urysohn functions for the topology, and read maps off the kernels.",
+    "scope": "The topology is the hull-kernel topology on the maximal ideals, whose closed sets are the hulls $\\{x : I \\subseteq m_x\\}$ of ideals $I$. The empty space has no maximal ideals and the statement holds trivially.",
+    "mechanisms": [
+     "m:finite-subcover",
+     "m:duality"
+    ],
+    "roles": [
+     {
+      "h": "h:compact-hausdorff",
+      "why": "Compactness gives the finite subcover that proves every maximal ideal is a point ideal, and the Hausdorff property gives Urysohn functions.",
+      "steps": [
+       "s:every",
+       "s:injective",
+       "s:topology",
+       "s:maps"
+      ]
+     },
+     {
+      "h": "h:real-valued",
+      "why": "Evaluation maps $C(X) \\to \\mathbb{R}$ are surjective ring maps, and positive functions are invertible in $C(X)$.",
+      "steps": [
+       "s:points",
+       "s:every"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:points",
+      "slogan": "Show that each $m_x$ is a [maximal ideal](c:maximal-ideal).",
+      "detail": "Evaluation $\\mathrm{ev}_x\\colon C(X) \\to \\mathbb{R}$ is a surjective ring homomorphism, since constants map to themselves. So $C(X)/m_x \\cong \\mathbb{R}$ is a field, and $m_x = \\ker \\mathrm{ev}_x$ is maximal.",
+      "uses": []
+     },
+     {
+      "id": "s:every",
+      "slogan": "Show that every maximal ideal equals some $m_x$ by compactness.",
+      "detail": "Suppose a proper ideal $I$ lies in no $m_x$. Each $x$ has $f_x \\in I$ with $f_x(x) \\ne 0$, nonzero on a neighborhood $U_x$. Finitely many $U_{x_i}$ cover $X$. Then $g = \\sum_i f_{x_i}^2 \\in I$ is positive everywhere, so $1/g \\in C(X)$ and $I = C(X)$, a contradiction.",
+      "uses": []
+     },
+     {
+      "id": "s:injective",
+      "slogan": "Separate two points by a continuous function with Urysohn's lemma.",
+      "detail": "A compact Hausdorff space is a [normal space](c:normal-space). For $x \\ne y$, Urysohn's lemma gives $f \\in C(X)$ with $f(x) = 0$ and $f(y) = 1$. So $f \\in m_x \\setminus m_y$, and $m_x \\ne m_y$.",
+      "uses": [
+       "nl:10682"
+      ]
+     },
+     {
+      "id": "s:topology",
+      "slogan": "Match the closed sets of $X$ with the hull-kernel closed sets.",
+      "detail": "For closed $F \\subseteq X$ let $I_F = \\{f : f|_F = 0\\}$. If $x \\notin F$, Urysohn gives $f \\in I_F$ with $f(x) \\ne 0$, so $F = \\{x : I_F \\subseteq m_x\\}$. Each hull $\\{x : I \\subseteq m_x\\}$ is an intersection of zero sets, which are closed.",
+      "uses": [
+       "nl:10682"
+      ]
+     },
+     {
+      "id": "s:maps",
+      "slogan": "Turn a unital algebra map $\\varphi\\colon C(Y) \\to C(X)$ into a continuous map $g$.",
+      "detail": "For $x \\in X$, $\\mathrm{ev}_x \\circ \\varphi$ is a surjective ring map to $\\mathbb{R}$, so its kernel is a maximal ideal $m_{g(x)}$. Then $\\varphi(f)(x) = f(g(x))$ because $f - f(g(x)) \\in m_{g(x)}$. Each $f \\circ g = \\varphi(f)$ is continuous, and $Y$ has the initial topology of $C(Y)$ by Urysohn, so $g$ is continuous.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Check that $g \\mapsto g^*$ and $\\varphi \\mapsto g_\\varphi$ are inverse bijections.",
+      "detail": "For continuous $g$, the map $g^*(f) = f \\circ g$ returns $g$, since $\\ker(\\mathrm{ev}_x \\circ g^*) = m_{g(x)}$ and $x \\mapsto m_x$ is injective. For $\\varphi$, the previous step gives $\\varphi = g_\\varphi^*$. With the homeomorphism $X \\cong \\mathrm{Max}\\,C(X)$, this is the theorem.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:points",
+      "s:every"
+     ],
+     [
+      "s:every",
+      "s:topology"
+     ],
+     [
+      "s:injective",
+      "s:topology"
+     ],
+     [
+      "s:points",
+      "s:maps"
+     ],
+     [
+      "s:every",
+      "s:maps"
+     ],
+     [
+      "s:injective",
+      "s:maps"
+     ],
+     [
+      "s:maps",
+      "s:conclude"
+     ],
+     [
+      "s:topology",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:compact-hausdorff-space": "Compactness and the Hausdorff property drive the maximal ideal and Urysohn steps.",
+     "c:maximal-ideal": "Maximal ideals of $C(X)$ are the points of the recovered space.",
+     "c:ring-of-continuous-functions": "The algebra $C(X)$ is the object from which $X$ is recovered.",
+     "c:normal-space": "Normality gives Urysohn functions that separate points and closed sets."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Gelfand and Kolmogorov (1939); the maximal ideal argument is the standard one, as in Gillman and Jerison, Rings of Continuous Functions."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:6142",
+  "statement": "Let $G$ be a Hausdorff [locally compact group](c:locally-compact-group). For $x \\ne y$ in $G$ there is an irreducible [unitary representation](c:unitary-representation) $\\pi$ of $G$ with $\\pi(x) \\ne \\pi(y)$.",
+  "hypotheses": [
+   {
+    "id": "h:lcg",
+    "text": "The group $G$ is a Hausdorff [locally compact group](c:locally-compact-group).",
+    "concept": "c:locally-compact-group"
+   }
+  ],
+  "conclusion": "The irreducible unitary representations of $G$ separate the points of $G$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "positive-definite",
+    "name": "Positive-definite functions and Krein-Milman",
+    "slogan": "Separate the point from the identity by a positive-definite function, move to an extreme one, and take its irreducible GNS representation.",
+    "scope": "An outline of the proof in Folland; step 2 rests on Raikov's theorem on the weak-star topology. It suffices to separate $x \\ne e$ from $e$, by replacing the pair $(x, y)$ with $(y^{-1}x, e)$.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:approximation"
+    ],
+    "roles": [
+     {
+      "h": "h:lcg",
+      "why": "Local compactness gives a Haar measure and compact neighborhoods, and the Hausdorff property makes $x \\notin VV^{-1}$ possible.",
+      "steps": [
+       "s:regular",
+       "s:convex"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:regular",
+      "slogan": "Separate $x \\ne e$ from $e$ with a positive-definite function from the [regular representation](c:regular-representation).",
+      "detail": "Choose a compact neighborhood $V$ of $e$ with $x \\notin VV^{-1}$. For $f = 1_V \\in L^2(G)$ with [Haar measure](c:haar-measure), $\\varphi_f(y) = \\langle\\lambda(y)f, f\\rangle/\\|f\\|^2$ is a continuous [positive-definite function](c:positive-definite-function) with $\\varphi_f(e) = 1$ and $\\varphi_f(x) = \\mu(xV \\cap V)/\\mu(V) = 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:convex",
+      "slogan": "Place the normalized positive-definite functions in a weak-star compact convex set.",
+      "detail": "Let $P_1$ be the set of continuous positive-definite $\\varphi$ with $\\varphi(e) = 1$. It is convex and weak-star compact in $L^\\infty(G) = L^1(G)^*$. By Raikov's theorem the weak-star topology on $P_1$ is uniform convergence on compact sets, so evaluation at $x$ is continuous on $P_1$.",
+      "uses": []
+     },
+     {
+      "id": "s:extreme",
+      "slogan": "Find an [extreme point](c:extreme-point) $\\varphi$ of $P_1$ with $\\varphi(x) \\ne 1$.",
+      "detail": "By the Krein-Milman theorem, $P_1$ is the closed convex hull of its extreme points. The set $\\{\\varphi \\in P_1 : \\varphi(x) = 1\\}$ is closed and convex. If it held every extreme point, it would equal $P_1$, against $\\varphi_f(x) = 0$.",
+      "uses": [
+       "wd:Q642620"
+      ]
+     },
+     {
+      "id": "s:gns",
+      "slogan": "Turn the extreme point into an irreducible representation by the [GNS construction](c:gns-construction).",
+      "detail": "A positive-definite $\\varphi$ gives a unitary representation $\\pi_\\varphi$ with cyclic vector $\\xi$ and $\\varphi(y) = \\langle\\pi_\\varphi(y)\\xi, \\xi\\rangle$. If $\\varphi$ is extreme in $P_1$, then $\\pi_\\varphi$ is [irreducible](c:irreducible-representation): an invariant subspace would split $\\varphi$ into two other members of $P_1$.",
+      "uses": [
+       "nl:3764"
+      ]
+     },
+     {
+      "id": "s:separate",
+      "slogan": "Read off $\\pi(x) \\ne I$ and separate any two points.",
+      "detail": "Here $\\langle\\pi(x)\\xi, \\xi\\rangle = \\varphi(x) \\ne 1 = \\langle\\xi, \\xi\\rangle$, so $\\pi(x)\\xi \\ne \\xi$ and $\\pi(x) \\ne I$. For $x \\ne y$, apply this to $y^{-1}x \\ne e$: $\\pi(y^{-1}x) \\ne I$ means $\\pi(x) \\ne \\pi(y)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:regular",
+      "s:extreme"
+     ],
+     [
+      "s:convex",
+      "s:extreme"
+     ],
+     [
+      "s:extreme",
+      "s:gns"
+     ],
+     [
+      "s:gns",
+      "s:separate"
+     ]
+    ],
+    "conclusion": "s:separate",
+    "concepts": {
+     "c:locally-compact-group": "Local compactness supplies Haar measure and the regular representation.",
+     "c:unitary-representation": "The theorem concerns unitary representations on Hilbert spaces.",
+     "c:regular-representation": "The left regular representation provides the first separating function.",
+     "c:haar-measure": "Haar measure defines $L^2(G)$ and the overlap $\\mu(xV \\cap V)$.",
+     "c:positive-definite-function": "Positive-definite functions correspond to cyclic unitary representations.",
+     "c:extreme-point": "Extreme points of the normalized set give irreducible representations.",
+     "c:gns-construction": "The GNS construction builds the representation from the function.",
+     "c:irreducible-representation": "Irreducibility is the property that extremality gives."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "G. B. Folland, A Course in Abstract Harmonic Analysis, 2nd edition, CRC Press, 2016, chapter 3 (functions of positive type and the Gelfand-Raikov theorem)",
+     "note": "The original proof is I. M. Gelfand and D. A. Raikov, Irreducible unitary representations of locally bicompact groups, Matematicheskii Sbornik 13 (55) (1943)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:5529",
+  "statement": "If $a$ is an [algebraic number](c:algebraic-number) other than $0$ and $1$, and $b$ is an algebraic [irrational number](c:irrational-number), then $a^b = e^{b\\log a}$ is a [transcendental number](c:transcendental-number), for every choice of $\\log a$.",
+  "hypotheses": [
+   {
+    "id": "h:base",
+    "text": "The base $a$ is an [algebraic number](c:algebraic-number) with $a \\ne 0$ and $a \\ne 1$.",
+    "concept": "c:algebraic-number"
+   },
+   {
+    "id": "h:exponent",
+    "text": "The exponent $b$ is algebraic and [irrational](c:irrational-number).",
+    "concept": "c:irrational-number"
+   }
+  ],
+  "conclusion": "The number $a^b$ is transcendental.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "gelfond-interpolation",
+    "name": "Gelfond interpolation",
+    "slogan": "Assume $a^b$ is algebraic, build an auxiliary exponential polynomial that vanishes at many integers, and squeeze its first nonzero value between two bounds.",
+    "scope": "An outline of Gelfond's proof. The exponent $b$ must be algebraic: for $a = 2$ and $b = \\log_2 3$, the power $a^b = 3$ is algebraic.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:interpolation",
+     "m:contradiction"
+    ],
+    "roles": [
+     {
+      "h": "h:base",
+      "why": "The algebraic base $a \\ne 0, 1$ gives $\\log a \\ne 0$ and algebraic values $a^{r\\ell}$ at integers $\\ell$.",
+      "steps": [
+       "s:assume",
+       "s:auxiliary",
+       "s:nonvanishing"
+      ]
+     },
+     {
+      "h": "h:exponent",
+      "why": "The algebraic irrational $b$ makes the exponents $r + sb$ distinct and puts $a^{bs\\ell}$ in the number field.",
+      "steps": [
+       "s:assume",
+       "s:auxiliary",
+       "s:nonvanishing"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:assume",
+      "slogan": "Assume $\\gamma = a^b$ is algebraic and fix a [number field](c:number-field) $K$ that holds $a, b, \\gamma$.",
+      "detail": "Suppose, for contradiction, that $\\gamma$ is algebraic. Then $a, b, \\gamma$ lie in a number field $K$ of degree $d$. Because $b \\notin \\mathbb{Q}$, the numbers $r + sb$ for integers $r, s$ are pairwise distinct.",
+      "uses": []
+     },
+     {
+      "id": "s:auxiliary",
+      "slogan": "Build the auxiliary function $F(z) = \\sum_{r,s \\le q} c_{rs}\\,a^{(r + sb)z}$ with integer coefficients.",
+      "detail": "At an integer $\\ell$, $F(\\ell) = \\sum c_{rs}a^{r\\ell}\\gamma^{s\\ell}$ lies in $K$. Siegel's lemma gives integers $c_{rs}$, not all zero and of controlled size, with $F(\\ell) = 0$ for $1 \\le \\ell \\le L$, for a suitable $L$ of order $q^2/d$.",
+      "uses": []
+     },
+     {
+      "id": "s:nonvanishing",
+      "slogan": "Show that $F$ is not zero at all integers, and let $\\ell_0$ be the first integer where $F(\\ell_0) \\ne 0$.",
+      "detail": "The exponents $(r + sb)\\log a$ are distinct, so the exponential terms are linearly independent and $F \\not\\equiv 0$. The independence argument of the cited proof gives a nonzero value $F(\\ell_0)$ at an integer $\\ell_0$ not much larger than $L$.",
+      "uses": []
+     },
+     {
+      "id": "s:lower",
+      "slogan": "Bound $|F(\\ell_0)|$ from below by a norm estimate.",
+      "detail": "$F(\\ell_0)$ is a nonzero element of $K$ whose denominator and conjugates are controlled by the size of the $c_{rs}$. Its norm is a nonzero rational with bounded denominator, so $|F(\\ell_0)|$ is at least an explicit small positive number.",
+      "uses": []
+     },
+     {
+      "id": "s:upper",
+      "slogan": "Bound $|F(\\ell_0)|$ from above by the Schwarz lemma.",
+      "detail": "The entire function $F$ has exponential growth and vanishes at $1, \\dots, \\ell_0 - 1$. The Schwarz lemma on a large disc gives an upper bound for $|F(\\ell_0)|$ that is far smaller than the lower bound, for suitable $q$ and $L$.",
+      "uses": [
+       "nm:schwarz-lemma"
+      ]
+     },
+     {
+      "id": "s:contradict",
+      "slogan": "Compare the two bounds to contradict the algebraicity of $a^b$.",
+      "detail": "For large $q$ and well-chosen $L$, the upper bound is smaller than the lower bound, which is impossible. So $\\gamma = a^b$ is not algebraic.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:assume",
+      "s:auxiliary"
+     ],
+     [
+      "s:auxiliary",
+      "s:nonvanishing"
+     ],
+     [
+      "s:nonvanishing",
+      "s:lower"
+     ],
+     [
+      "s:nonvanishing",
+      "s:upper"
+     ],
+     [
+      "s:lower",
+      "s:contradict"
+     ],
+     [
+      "s:upper",
+      "s:contradict"
+     ]
+    ],
+    "conclusion": "s:contradict",
+    "concepts": {
+     "c:algebraic-number": "The base, the exponent and the assumed value $a^b$ are algebraic.",
+     "c:irrational-number": "Irrationality of $b$ makes the exponents $r + sb$ distinct.",
+     "c:transcendental-number": "The theorem says that $a^b$ is not a root of any rational polynomial.",
+     "c:number-field": "All values of the auxiliary function at integers lie in one number field."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "A. O. Gelfond, Sur le septième problème de Hilbert, Izvestiya Akademii Nauk SSSR, Seriya Matematicheskaya 7 (1934); see also A. O. Gelfond, Transcendental and Algebraic Numbers, Dover, New York, 1960",
+     "note": "Gelfond's interpolation method. Schneider proved the same theorem independently in 1934 by a different method."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q5588002",
+  "statement": "A [quantum circuit](c:quantum-circuit) on $n$ qubits that starts in $|0\\rangle^{\\otimes n}$, uses only Hadamard, phase and CNOT gates, and measures Pauli observables can be simulated exactly by a classical probabilistic algorithm. Its running time is polynomial in $n$ and in the number of gates and measurements.",
+  "hypotheses": [
+   {
+    "id": "h:start",
+    "text": "The input is the computational basis state $|0\\rangle^{\\otimes n}$.",
+    "concept": null
+   },
+   {
+    "id": "h:gates",
+    "text": "Every gate is a Hadamard, a phase gate or a CNOT, which generate the [Clifford group](c:clifford-group).",
+    "concept": "c:clifford-group"
+   },
+   {
+    "id": "h:measure",
+    "text": "Every measurement is of an operator in the [Pauli group](c:pauli-group).",
+    "concept": "c:pauli-group"
+   }
+  ],
+  "conclusion": "The joint distribution of all measurement outcomes is sampled exactly in polynomial time.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "tableau",
+    "name": "Stabilizer tableau",
+    "slogan": "Track the state by $n$ Pauli generators, conjugate them under Clifford gates, and update them under Pauli measurements.",
+    "scope": "Exact simulation of the measurement statistics, not of amplitudes. Non-Clifford gates are excluded, and the argument stops there.",
+    "mechanisms": [
+     "m:matrix-factorization",
+     "m:case-analysis"
+    ],
+    "roles": [
+     {
+      "h": "h:start",
+      "why": "The state $|0\\rangle^{\\otimes n}$ has the known stabilizer generators $Z_1, \\dots, Z_n$.",
+      "steps": [
+       "s:stabilizer"
+      ]
+     },
+     {
+      "h": "h:gates",
+      "why": "Clifford gates conjugate Pauli operators to Pauli operators, so the generators stay Pauli.",
+      "steps": [
+       "s:gate"
+      ]
+     },
+     {
+      "h": "h:measure",
+      "why": "A Pauli measurement either commutes with all generators or anticommutes with one.",
+      "steps": [
+       "s:split",
+       "s:deterministic",
+       "s:random"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:stabilizer",
+      "slogan": "Describe the state by $n$ independent commuting Pauli generators.",
+      "detail": "The state $|0\\rangle^{\\otimes n}$ is the unique state stabilized by $Z_1, \\dots, Z_n$. In general, $n$ independent commuting signed Paulis fix a unique state ([stabilizer formalism](c:stabilizer-formalism)). Store each generator as $2n$ bits and a sign, in $O(n^2)$ bits in all.",
+      "uses": []
+     },
+     {
+      "id": "s:gate",
+      "slogan": "Update the generators by conjugation under each Clifford gate.",
+      "detail": "If $g$ stabilizes $|\\psi\\rangle$, then $UgU^\\dagger$ stabilizes $U|\\psi\\rangle$. For $H$, $S$ and CNOT, conjugation sends a Pauli to a Pauli by a fixed bit rule on one or two qubits. One gate updates the $n$ generators in $O(n)$ time.",
+      "uses": []
+     },
+     {
+      "id": "s:split",
+      "slogan": "Split a Pauli measurement by whether $P$ commutes with every generator.",
+      "detail": "Two Paulis commute or anticommute, and the symplectic product of their bit vectors tells which. Testing $P$ against the $n$ generators takes $O(n^2)$ bit operations.",
+      "uses": []
+     },
+     {
+      "id": "s:deterministic",
+      "slogan": "If $P$ commutes with all generators, read the outcome by linear algebra.",
+      "detail": "Then $\\pm P$ lies in the stabilizer group, so the outcome is certain. Solving a linear system over $\\mathbb{F}_2$ writes $P$ as a product of generators and fixes the sign, in $O(n^3)$ time. The state does not change.",
+      "uses": []
+     },
+     {
+      "id": "s:random",
+      "slogan": "If $P$ anticommutes with a generator, flip a fair coin and update the generators.",
+      "detail": "Let $g_j$ anticommute with $P$. Replace every other anticommuting generator $g_k$ by $g_kg_j$, which commutes with $P$. Both outcomes $\\pm 1$ have probability $1/2$. Replace $g_j$ by $\\pm P$ to match the outcome.",
+      "uses": []
+     },
+     {
+      "id": "s:cost",
+      "slogan": "Add the costs to get an exact polynomial-time sampler.",
+      "detail": "Each gate costs $O(n)$ and each measurement $O(n^3)$. Every outcome probability is $0$, $1/2$ or $1$, so fair coins sample it exactly. For $m$ operations the total time is $O(mn^3)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:stabilizer",
+      "s:gate"
+     ],
+     [
+      "s:stabilizer",
+      "s:split"
+     ],
+     [
+      "s:split",
+      "s:deterministic"
+     ],
+     [
+      "s:split",
+      "s:random"
+     ],
+     [
+      "s:gate",
+      "s:cost"
+     ],
+     [
+      "s:deterministic",
+      "s:cost"
+     ],
+     [
+      "s:random",
+      "s:cost"
+     ]
+    ],
+    "conclusion": "s:cost",
+    "concepts": {
+     "c:quantum-circuit": "The theorem concerns circuits of gates and measurements on $n$ qubits.",
+     "c:clifford-group": "Clifford gates map Pauli operators to Pauli operators under conjugation.",
+     "c:pauli-group": "Pauli measurements and generators keep the state description small.",
+     "c:stabilizer-formalism": "The stabilizer group describes the state with $n$ generators."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The stabilizer simulation of Nielsen and Chuang, Quantum Computation and Quantum Information, section 10.5.4; the tableau form is in Aaronson and Gottesman, Physical Review A 70 (2004), 052328."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q974405",
+  "statement": "Let $A$ be a linear operator on a [Banach space](c:banach-space) $X$, with $M \\ge 1$ and $\\omega \\in \\mathbb{R}$. Then $A$ generates a [strongly continuous semigroup](c:c0-semigroup) with $\\|T(t)\\| \\le Me^{\\omega t}$ if and only if $A$ is [closed](c:closed-operator) and densely defined, every $\\lambda > \\omega$ lies in the resolvent set, and $\\|R(\\lambda, A)^n\\| \\le M/(\\lambda - \\omega)^n$ for all $n \\ge 1$.",
+  "hypotheses": [
+   {
+    "id": "h:banach",
+    "text": "The space $X$ is a [Banach space](c:banach-space) and $A$ is a linear operator with domain $D(A) \\subseteq X$.",
+    "concept": "c:banach-space"
+   },
+   {
+    "id": "h:constants",
+    "text": "The constants satisfy $M \\ge 1$ and $\\omega \\in \\mathbb{R}$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The operator $A$ generates a $C_0$-semigroup of type $(M, \\omega)$ exactly when it is closed, densely defined and has the [resolvent](c:resolvent) bounds. The case $M = 1$, $\\omega = 0$ gives contraction semigroups, with $\\|R(\\lambda, A)\\| \\le 1/\\lambda$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "yosida-approximation",
+    "name": "Yosida approximation",
+    "slogan": "Approximate $A$ by bounded operators $A_\\lambda$, bound their exponentials uniformly, and take the strong limit as $\\lambda \\to \\infty$.",
+    "scope": "Both directions; the sufficiency proof is the Yosida approximation. We take $\\omega$ as given and use only $\\lambda \\ge 2|\\omega|$, and $R(\\lambda)$ stands for $R(\\lambda, A)$.",
+    "mechanisms": [
+     "m:approximation",
+     "m:a-priori-estimate"
+    ],
+    "roles": [
+     {
+      "h": "h:banach",
+      "why": "Completeness of $X$ lets the integrals and the strong limits of the approximants exist.",
+      "steps": [
+       "s:necessity",
+       "s:converge"
+      ]
+     },
+     {
+      "h": "h:constants",
+      "why": "The constants $M$ and $\\omega$ set the growth bound of the approximating semigroups.",
+      "steps": [
+       "s:bound"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:necessity",
+      "slogan": "Obtain the resolvent of a generator as the [Laplace transform](c:laplace-transform) of its semigroup.",
+      "detail": "A generator $A$ of $T$ with $\\|T(t)\\| \\le Me^{\\omega t}$ is closed and densely defined. For $\\lambda > \\omega$, $R(\\lambda)x = \\int_0^\\infty e^{-\\lambda t}T(t)x\\,dt$ is $(\\lambda - A)^{-1}$, and $R(\\lambda)^n x = \\frac{1}{(n-1)!}\\int_0^\\infty t^{n-1}e^{-\\lambda t}T(t)x\\,dt$. So $\\|R(\\lambda)^n\\| \\le M/(\\lambda - \\omega)^n$.",
+      "uses": []
+     },
+     {
+      "id": "s:yosida",
+      "slogan": "Define the bounded operators $A_\\lambda = \\lambda^2 R(\\lambda) - \\lambda$ and show that $A_\\lambda x \\to Ax$.",
+      "detail": "Assume the conditions on $A$. For $x \\in D(A)$, $\\lambda R(\\lambda)x - x = R(\\lambda)Ax \\to 0$, and $\\lambda R(\\lambda)$ is uniformly bounded for large $\\lambda$, so $\\lambda R(\\lambda)x \\to x$ for all $x$ by [density](c:dense-set) of $D(A)$. Hence $A_\\lambda x = \\lambda R(\\lambda)Ax \\to Ax$ for $x \\in D(A)$.",
+      "uses": []
+     },
+     {
+      "id": "s:bound",
+      "slogan": "Bound the exponentials $e^{tA_\\lambda}$ uniformly in $\\lambda$.",
+      "detail": "Since $e^{tA_\\lambda} = e^{-\\lambda t}\\sum_n (t\\lambda^2)^n R(\\lambda)^n/n!$, the resolvent bound gives $\\|e^{tA_\\lambda}\\| \\le M\\exp\\bigl(t\\lambda\\omega/(\\lambda - \\omega)\\bigr)$. For $\\lambda \\ge 2|\\omega|$ this is at most $Me^{2|\\omega|t}$.",
+      "uses": []
+     },
+     {
+      "id": "s:converge",
+      "slogan": "Show that $e^{tA_\\lambda}x$ converges for $x \\in D(A)$ and define $T(t)$ as the limit.",
+      "detail": "The operators $A_\\lambda, A_\\mu$ commute, so $e^{tA_\\lambda}x - e^{tA_\\mu}x = \\int_0^t e^{(t-s)A_\\mu}e^{sA_\\lambda}(A_\\lambda x - A_\\mu x)\\,ds$. By the bound, its norm is at most $tM^2e^{2|\\omega|t}\\|A_\\lambda x - A_\\mu x\\| \\to 0$. Define $T(t)x = \\lim e^{tA_\\lambda}x$, locally uniform in $t$, and extend by density; $T$ is a $C_0$-semigroup with $\\|T(t)\\| \\le Me^{\\omega t}$.",
+      "uses": []
+     },
+     {
+      "id": "s:generator",
+      "slogan": "Identify the generator of $T$ with $A$.",
+      "detail": "For $x \\in D(A)$, $e^{tA_\\lambda}x - x = \\int_0^t e^{sA_\\lambda}A_\\lambda x\\,ds$, and $\\lambda \\to \\infty$ gives $T(t)x - x = \\int_0^t T(s)Ax\\,ds$. So the generator $B$ extends $A$. For large $\\lambda$, both $\\lambda - A$ and $\\lambda - B$ are bijective, the latter by step 1, so $B = A$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:yosida",
+      "s:bound"
+     ],
+     [
+      "s:bound",
+      "s:converge"
+     ],
+     [
+      "s:yosida",
+      "s:converge"
+     ],
+     [
+      "s:converge",
+      "s:generator"
+     ],
+     [
+      "s:yosida",
+      "s:generator"
+     ],
+     [
+      "s:necessity",
+      "s:generator"
+     ]
+    ],
+    "conclusion": "s:generator",
+    "concepts": {
+     "c:banach-space": "Completeness lets the approximating exponentials converge to a limit operator.",
+     "c:c0-semigroup": "The theorem characterizes generators of strongly continuous semigroups.",
+     "c:closed-operator": "A generator is closed, and closedness lets the resolvent exist.",
+     "c:resolvent": "The resolvent powers carry the growth bounds of the semigroup.",
+     "c:laplace-transform": "The resolvent of a generator is the Laplace transform of its semigroup.",
+     "c:dense-set": "Density of $D(A)$ extends the limits from $D(A)$ to all of $X$."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The Yosida approximation proof, as in Pazy, Semigroups of Linear Operators and Applications to Partial Differential Equations, Springer 1983, chapter 1."
+    }
+   }
+  ]
+ }
+]

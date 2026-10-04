@@ -1,0 +1,1808 @@
+[
+ {
+  "id": "nm:differentiability-of-integrals-with-respect-to-parameters",
+  "statement": "Let $(X, \\mu)$ be a [measure space](c:measure-space), $U \\subseteq \\mathbb{R}$ an open interval, and $f(x, \\cdot)$ [integrable](c:integrable-function) on $X$ for each $x \\in U$. If for almost every $t$ the map $x \\mapsto f(x, t)$ is [differentiable](c:differentiable-function) on $U$ with $|\\partial_x f(x, t)| \\le g(t)$ for an integrable $g$, then $F(x) = \\int_X f(x, t)\\, d\\mu(t)$ has $F'(x) = \\int_X \\partial_x f(x, t)\\, d\\mu(t)$ on $U$.",
+  "hypotheses": [
+   {
+    "id": "h:integrable",
+    "text": "For each $x$ in the open interval $U$, the function $t \\mapsto f(x, t)$ is [integrable](c:integrable-function) on $X$.",
+    "concept": "c:integrable-function"
+   },
+   {
+    "id": "h:differentiable",
+    "text": "For almost every $t \\in X$, the map $x \\mapsto f(x, t)$ is [differentiable](c:differentiable-function) at every point of $U$.",
+    "concept": "c:differentiable-function"
+   },
+   {
+    "id": "h:dominated",
+    "text": "An integrable function $g$ gives, for almost every $t$, the bound $|\\partial_x f(x, t)| \\le g(t)$ for all $x \\in U$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The function $F(x) = \\int_X f(x, t)\\, d\\mu(t)$ is differentiable on $U$, with $F'(x) = \\int_X \\partial_x f(x, t)\\, d\\mu(t)$.",
+  "formal": {
+   "decl": "IntervalIntegrable.ae_hasDerivAt_integral",
+   "difference": "The linked declaration is a different result: for an interval integrable $f$, the integral $\\int_c^x f$ has derivative $f(x)$ at almost every $x$, which is differentiation in the upper limit. The parameter rule itself is mathlib's hasDerivAt_integral_of_dominated_loc_of_deriv_le, which the proof follows."
+  },
+  "proofs": [
+   {
+    "id": "dominated-quotients",
+    "name": "Dominated difference quotients",
+    "slogan": "Bound the difference quotients of $f$ by $g$ with the mean value theorem, and pass to the limit under the integral by dominated convergence.",
+    "scope": "The derivative at one point $x_0 \\in U$, which is arbitrary. The null set of bad $t$ is the same for all $x$, and the proof discards it.",
+    "mechanisms": [
+     "m:dominated-convergence",
+     "m:mean-value"
+    ],
+    "roles": [
+     {
+      "h": "h:integrable",
+      "why": "Integrability of each $f(x, \\cdot)$ makes $F$ defined and each difference quotient integrable.",
+      "steps": [
+       "s:quotient",
+       "s:derivative"
+      ]
+     },
+     {
+      "h": "h:differentiable",
+      "why": "Differentiability in $x$ gives the pointwise limit of the quotients and the mean value points.",
+      "steps": [
+       "s:quotient",
+       "s:mvt"
+      ]
+     },
+     {
+      "h": "h:dominated",
+      "why": "The bound $g$ is the integrable majorant that dominated convergence needs.",
+      "steps": [
+       "s:mvt"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:quotient",
+      "slogan": "Form the [difference quotients](c:difference-quotient) of $f$ in $x$ along a sequence $h_n \\to 0$.",
+      "detail": "Fix $x_0 \\in U$ and $h_n \\to 0$ with $h_n \\neq 0$ and $x_0 + h_n \\in U$. Let $q_n(t) = (f(x_0 + h_n, t) - f(x_0, t))/h_n$; each $q_n$ is [integrable](c:integrable-function), and $q_n(t) \\to \\partial_x f(x_0, t)$ for almost every $t$.",
+      "uses": []
+     },
+     {
+      "id": "s:mvt",
+      "slogan": "Bound every difference quotient by $g(t)$ with the mean value theorem.",
+      "detail": "For almost every $t$, the mean value theorem on the segment from $x_0$ to $x_0 + h_n$, which lies in the interval $U$, gives $q_n(t) = \\partial_x f(\\xi, t)$ for some $\\xi$. Hence $|q_n(t)| \\le g(t)$.",
+      "uses": [
+       "wd:Q189136"
+      ]
+     },
+     {
+      "id": "s:dct",
+      "slogan": "Pass to the limit under the integral by dominated convergence.",
+      "detail": "The limit $\\partial_x f(x_0, \\cdot)$ is measurable as an almost everywhere limit and bounded by $g$, so it is integrable. The dominated convergence theorem for the [Lebesgue integral](c:lebesgue-integral) gives $\\int q_n\\, d\\mu \\to \\int \\partial_x f(x_0, t)\\, d\\mu(t)$.",
+      "uses": [
+       "wd:Q1067156"
+      ]
+     },
+     {
+      "id": "s:derivative",
+      "slogan": "Identify the integrated quotients with the difference quotients of $F$.",
+      "detail": "Linearity of the integral gives $\\int q_n\\, d\\mu = (F(x_0 + h_n) - F(x_0))/h_n$. Every sequence $h_n \\to 0$ gives the same limit, so $F'(x_0)$ exists and equals $\\int \\partial_x f(x_0, t)\\, d\\mu(t)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:quotient",
+      "s:mvt"
+     ],
+     [
+      "s:quotient",
+      "s:dct"
+     ],
+     [
+      "s:mvt",
+      "s:dct"
+     ],
+     [
+      "s:dct",
+      "s:derivative"
+     ],
+     [
+      "s:quotient",
+      "s:derivative"
+     ]
+    ],
+    "conclusion": "s:derivative",
+    "concepts": {
+     "c:measure-space": "The integral runs over a measure space, where dominated convergence holds.",
+     "c:integrable-function": "Integrability makes $F$ and each integrated quotient finite.",
+     "c:differentiable-function": "Differentiability in $x$ supplies the pointwise limit of the quotients.",
+     "c:difference-quotient": "The quotients of $f$ integrate to the difference quotients of $F$.",
+     "c:lebesgue-integral": "The Lebesgue integral allows the limit exchange by dominated convergence."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "hasDerivAt_integral_of_dominated_loc_of_deriv_le",
+     "follows": true,
+     "note": "mathlib turns the derivative bound into a Lipschitz bound by the mean value inequality (Convex.lipschitzOnWith_of_nnnorm_hasDerivWithin_le) and passes to the limit by dominated convergence in hasFDerivAt_integral_of_dominated_loc_of_lip."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:680",
+  "statement": "The [normalized chain complex](c:normalized-chain-complex) functor $N$, with $N_n(A) = \\bigcap_{i=1}^{n} \\ker d_i$ and differential $d_0$, is an [equivalence of categories](c:equivalence-of-categories) from [simplicial abelian groups](c:simplicial-abelian-group) to [chain complexes](c:chain-complex) of abelian groups concentrated in degrees $n \\ge 0$.",
+  "hypotheses": [
+   {
+    "id": "h:abelian",
+    "text": "The simplicial objects are [simplicial abelian groups](c:simplicial-abelian-group).",
+    "concept": "c:simplicial-abelian-group"
+   },
+   {
+    "id": "h:connective",
+    "text": "The [chain complexes](c:chain-complex) are connective: $C_n = 0$ for $n < 0$.",
+    "concept": "c:chain-complex"
+   }
+  ],
+  "conclusion": "A functor $\\Gamma$ with natural isomorphisms $N\\Gamma \\cong \\mathrm{id}$ and $\\Gamma N \\cong \\mathrm{id}$ exists, so $N$ is an equivalence.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "normalized-splitting",
+    "name": "Normalized splitting and the functor Gamma",
+    "slogan": "Split each simplicial group into normalized pieces indexed by surjections, and rebuild a simplicial group from a chain complex by the same direct sum.",
+    "scope": "The whole theorem; the same proof works in any abelian category. Degree 0 is included, where $N_0(A) = A_0$.",
+    "mechanisms": [
+     "m:construction-explicit",
+     "m:induction"
+    ],
+    "roles": [
+     {
+      "h": "h:abelian",
+      "why": "Abelian groups have kernels, direct sums and differences, which define $N$ and $\\Gamma$.",
+      "steps": [
+       "s:normalize",
+       "s:split",
+       "s:gamma"
+      ]
+     },
+     {
+      "h": "h:connective",
+      "why": "The functor $N$ only produces, and $\\Gamma$ only reads, degrees $n \\ge 0$.",
+      "steps": [
+       "s:ngamma"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:normalize",
+      "slogan": "Define the normalized complex and check that $d_0$ squares to zero on it.",
+      "detail": "For $x \\in N_n(A)$ and $i \\ge 1$, the simplicial identity $d_i d_0 = d_0 d_{i+1}$ gives $d_i d_0 x = 0$, so $d_0 x \\in N_{n-1}(A)$. The identity $d_0 d_0 = d_0 d_1$ gives $d_0 d_0 x = 0$, so $N(A)$ is a [chain complex](c:chain-complex), natural in $A$.",
+      "uses": []
+     },
+     {
+      "id": "s:split",
+      "slogan": "Decompose $A_n$ as a direct sum of copies of $N_k(A)$ indexed by surjections $[n] \\to [k]$.",
+      "detail": "Induction on $n$ with the simplicial identities shows that the maps $\\sigma^*\\colon N_k(A) \\to A_n$, for surjections $\\sigma\\colon [n] \\to [k]$, give an isomorphism $\\bigoplus_\\sigma N_k(A) \\cong A_n$. The summands with $\\sigma \\neq \\mathrm{id}$ form the degenerate part $D_n(A)$, so $N(A)$ is the [Moore complex](c:moore-complex) modulo degeneracies.",
+      "uses": []
+     },
+     {
+      "id": "s:gamma",
+      "slogan": "Define $\\Gamma(C)_n$ as the direct sum of the groups $C_k$ over surjections $[n] \\to [k]$.",
+      "detail": "For $\\theta\\colon [m] \\to [n]$ and the summand of $\\sigma$, factor $\\sigma\\theta = \\mu\\tau$ with $\\tau$ surjective and $\\mu$ injective. Send $C_k$ to the summand of $\\tau$ by the identity if $\\mu = \\mathrm{id}$, by $\\partial$ if $\\mu$ is the coface $\\delta^0$, and by zero otherwise; uniqueness of the factorization makes $\\Gamma(C)$ a simplicial abelian group.",
+      "uses": []
+     },
+     {
+      "id": "s:ngamma",
+      "slogan": "Show that $N\\Gamma(C)$ is the summand of the identity surjections, so $N\\Gamma \\cong \\mathrm{id}$.",
+      "detail": "The summands of $\\Gamma(C)_n$ with $\\sigma \\neq \\mathrm{id}$ are the degenerate part, so step 2 gives $N_n\\Gamma(C) \\cong \\Gamma(C)_n/D_n = C_n$. On this summand $d_0$ acts as $\\partial$, so $N\\Gamma(C) \\cong C$ naturally.",
+      "uses": []
+     },
+     {
+      "id": "s:gamman",
+      "slogan": "Show that the map $\\Gamma N(A) \\to A$ given by $\\sigma^*$ on each summand is a natural isomorphism.",
+      "detail": "The maps $\\sigma^*\\colon N_k(A) \\to A_n$ commute with the simplicial operators by the definition of $\\Gamma$. Step 2 says that together they form an isomorphism in each degree, so $\\Gamma N \\cong \\mathrm{id}$ naturally in $A$.",
+      "uses": []
+     },
+     {
+      "id": "s:equivalence",
+      "slogan": "Combine the two natural isomorphisms into an equivalence of categories.",
+      "detail": "Steps 4 and 5 give natural isomorphisms $N\\Gamma \\cong \\mathrm{id}$ and $\\Gamma N \\cong \\mathrm{id}$. So $N$ and $\\Gamma$ are inverse [equivalences of categories](c:equivalence-of-categories) between simplicial abelian groups and connective chain complexes.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:normalize",
+      "s:split"
+     ],
+     [
+      "s:normalize",
+      "s:ngamma"
+     ],
+     [
+      "s:split",
+      "s:ngamma"
+     ],
+     [
+      "s:gamma",
+      "s:ngamma"
+     ],
+     [
+      "s:split",
+      "s:gamman"
+     ],
+     [
+      "s:gamma",
+      "s:gamman"
+     ],
+     [
+      "s:ngamma",
+      "s:equivalence"
+     ],
+     [
+      "s:gamman",
+      "s:equivalence"
+     ]
+    ],
+    "conclusion": "s:equivalence",
+    "concepts": {
+     "c:normalized-chain-complex": "The functor $N$ is the equivalence that the theorem asserts.",
+     "c:equivalence-of-categories": "The conclusion is an equivalence given by two natural isomorphisms.",
+     "c:simplicial-abelian-group": "Simplicial abelian groups form the source category of $N$.",
+     "c:chain-complex": "Connective chain complexes form the target category of $N$.",
+     "c:moore-complex": "The normalized complex is the Moore complex modulo degenerate simplices."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard proof by the normalized splitting, as in C. A. Weibel, An Introduction to Homological Algebra (Cambridge, 1994), section 8.4, and P. G. Goerss and J. F. Jardine, Simplicial Homotopy Theory (Birkhauser, 1999), section III.2."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q25378679",
+  "statement": "Let $C \\subseteq \\mathbb{R}^n$ be an open cone and $f\\colon C \\to \\mathbb{R}$ [homogeneous](c:homogeneous-function) of degree $k$, that is $f(tx) = t^k f(x)$ for all $x \\in C$ and $t > 0$. If $f$ is [differentiable](c:differentiable-function) at $x \\in C$, then $\\sum_{i=1}^n x_i\\, \\partial_i f(x) = k\\, f(x)$.",
+  "hypotheses": [
+   {
+    "id": "h:cone",
+    "text": "The domain $C$ is open, and $tx \\in C$ whenever $x \\in C$ and $t > 0$.",
+    "concept": null
+   },
+   {
+    "id": "h:homogeneous",
+    "text": "The function is [homogeneous](c:homogeneous-function) of degree $k$: $f(tx) = t^k f(x)$ for all $x \\in C$ and $t > 0$.",
+    "concept": "c:homogeneous-function"
+   },
+   {
+    "id": "h:differentiable",
+    "text": "The function $f$ is [differentiable](c:differentiable-function) at the point $x$.",
+    "concept": "c:differentiable-function"
+   }
+  ],
+  "conclusion": "The [gradient](c:gradient) satisfies $x \\cdot \\nabla f(x) = k\\, f(x)$.",
+  "formal": {
+   "decl": "HasFDerivAt.apply_self_eq_smul_of_eventuallyEq",
+   "difference": "The declaration is a local, more general form: it assumes $f(tx) = w(t) f(x)$ only for $t$ near 1, for any $w$ differentiable at 1, over any nontrivially normed field and with vector values. The theorem is the case $w(t) = t^k$, where $w'(1) = k$."
+  },
+  "proofs": [
+   {
+    "id": "ray-derivative",
+    "name": "Derivative along the ray",
+    "slogan": "Differentiate $t \\mapsto f(tx)$ at $t = 1$ once by the chain rule and once through homogeneity, and compare the two values.",
+    "scope": "The whole statement, for every real degree $k$. For $k = 0$ the identity says that $f$ has zero derivative along rays.",
+    "mechanisms": [
+     "m:reduction",
+     "m:symmetry"
+    ],
+    "roles": [
+     {
+      "h": "h:cone",
+      "why": "The cone keeps the ray $\\{tx : t > 0\\}$ in the domain, so $g(t) = f(tx)$ is defined near $t = 1$.",
+      "steps": [
+       "s:ray"
+      ]
+     },
+     {
+      "h": "h:homogeneous",
+      "why": "Homogeneity makes $g(t) = t^k f(x)$, a power function with derivative $k f(x)$ at 1.",
+      "steps": [
+       "s:power"
+      ]
+     },
+     {
+      "h": "h:differentiable",
+      "why": "Differentiability at $x$ lets the chain rule compute $g'(1)$.",
+      "steps": [
+       "s:chain"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:ray",
+      "slogan": "Restrict $f$ to the ray through $x$ by setting $g(t) = f(tx)$.",
+      "detail": "Because $C$ is a cone, $tx \\in C$ for every $t > 0$, so $g\\colon (0, \\infty) \\to \\mathbb{R}$ is defined. The line map $t \\mapsto tx$ has [derivative](c:derivative) $x$ and sends $t = 1$ to $x$.",
+      "uses": []
+     },
+     {
+      "id": "s:chain",
+      "slogan": "Compute $g'(1)$ by the chain rule as the derivative of $f$ applied to $x$.",
+      "detail": "The chain rule gives $g'(1) = Df(x)(x) = \\sum_i x_i\\, \\partial_i f(x)$, which is $x \\cdot \\nabla f(x)$ in terms of the [partial derivatives](c:partial-derivative) of $f$.",
+      "uses": [
+       "nl:4955"
+      ]
+     },
+     {
+      "id": "s:power",
+      "slogan": "Compute $g'(1)$ again from the formula $g(t) = t^k f(x)$.",
+      "detail": "Homogeneity gives $g(t) = t^k f(x)$ for all $t > 0$, so $g'(1) = k \\cdot 1^{k-1} f(x) = k\\, f(x)$.",
+      "uses": []
+     },
+     {
+      "id": "s:compare",
+      "slogan": "Equate the two values of $g'(1)$ by uniqueness of the derivative.",
+      "detail": "A function has at most one derivative at a point, so steps 2 and 3 give $x \\cdot \\nabla f(x) = k\\, f(x)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:ray",
+      "s:chain"
+     ],
+     [
+      "s:ray",
+      "s:power"
+     ],
+     [
+      "s:chain",
+      "s:compare"
+     ],
+     [
+      "s:power",
+      "s:compare"
+     ]
+    ],
+    "conclusion": "s:compare",
+    "concepts": {
+     "c:homogeneous-function": "Homogeneity fixes $f$ along each ray as a power of $t$.",
+     "c:differentiable-function": "Differentiability at $x$ is what the chain rule needs.",
+     "c:gradient": "The conclusion is an identity for the gradient paired with $x$.",
+     "c:derivative": "The proof computes one derivative of one variable in two ways.",
+     "c:partial-derivative": "The chain rule expresses the ray derivative through partial derivatives."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "HasFDerivAt.apply_self_eq_smul_of_eventuallyEq",
+     "follows": true,
+     "note": "mathlib composes $f$ with $t \\mapsto t \\cdot x$ by HasFDerivAt.comp_hasDerivAt_of_eq and compares with the derivative of $t \\mapsto w(t) f(x)$ by HasDerivAt.unique after HasDerivAt.congr_of_eventuallyEq."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q5437947",
+  "statement": "Let $f_1, f_2, \\dots$ be real [measurable functions](c:measurable-function) on a [measure space](c:measure-space), and let $g$ be an [integrable function](c:integrable-function) with $|f_n| \\le g$ for all $n$. Then the [limit inferior](c:limit-inferior) and the [limit superior](c:limit-superior) of the $f_n$ are integrable, and $\\int \\liminf_n f_n \\le \\liminf_n \\int f_n \\le \\limsup_n \\int f_n \\le \\int \\limsup_n f_n$.",
+  "hypotheses": [
+   {
+    "id": "h:measurable",
+    "text": "Each $f_n$ is a real-valued [measurable function](c:measurable-function).",
+    "concept": "c:measurable-function"
+   },
+   {
+    "id": "h:dominated",
+    "text": "Some [integrable function](c:integrable-function) $g$ satisfies $|f_n| \\le g$ for every $n$.",
+    "concept": "c:integrable-function"
+   }
+  ],
+  "conclusion": "The functions $\\liminf f_n$ and $\\limsup f_n$ are integrable, and $\\int \\liminf f_n \\le \\liminf \\int f_n \\le \\limsup \\int f_n \\le \\int \\limsup f_n$.",
+  "formal": {
+   "decl": "MeasureTheory.lintegral_liminf_le",
+   "difference": "The declaration proves only the first inequality (Fatou's lemma), for nonnegative extended-real functions along any countably generated filter, with no domination hypothesis. The other two inequalities and the integrability of the limits are not part of it."
+  },
+  "proofs": [
+   {
+    "id": "fatou-twice",
+    "name": "Fatou's lemma applied twice",
+    "slogan": "Prove Fatou's lemma by monotone convergence, then apply it to $g + f_n$ and to $g - f_n$.",
+    "scope": "The whole chain. Step 2 is Fatou's lemma for any nonnegative measurable sequence, where integrals may be infinite; domination makes all later integrals finite.",
+    "mechanisms": [
+     "m:monotone-limit",
+     "m:dominated-convergence"
+    ],
+    "roles": [
+     {
+      "h": "h:measurable",
+      "why": "Measurability makes the tail infima and the shifted sequences measurable, so their integrals exist.",
+      "steps": [
+       "s:tails",
+       "s:lower",
+       "s:upper"
+      ]
+     },
+     {
+      "h": "h:dominated",
+      "why": "The bound $g$ makes $g + f_n$ and $g - f_n$ nonnegative and keeps every integral finite.",
+      "steps": [
+       "s:lower",
+       "s:upper",
+       "s:chain"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:tails",
+      "slogan": "Form the tail infima $e_n = \\inf_{k \\ge n} h_k$ of a nonnegative measurable sequence $h_k$.",
+      "detail": "Each $e_n$ is a [nonnegative measurable function](c:nonnegative-measurable-function), $e_n \\le h_k$ for every $k \\ge n$, and $e_n$ increases to $\\liminf_k h_k$.",
+      "uses": []
+     },
+     {
+      "id": "s:fatou",
+      "slogan": "Integrate the tail infima by monotone convergence to get Fatou's lemma.",
+      "detail": "The monotone convergence theorem for the [Lebesgue integral](c:lebesgue-integral) gives $\\int \\liminf_k h_k = \\lim_n \\int e_n$. Since $\\int e_n \\le \\inf_{k \\ge n} \\int h_k$, this limit is at most $\\liminf_k \\int h_k$.",
+      "uses": [
+       "wd:Q1153584"
+      ]
+     },
+     {
+      "id": "s:lower",
+      "slogan": "Shift the sequence to $g + f_n \\ge 0$ and apply Fatou's lemma for the lower bound.",
+      "detail": "Fatou's lemma gives $\\int (g + \\liminf f_n) \\le \\liminf \\int (g + f_n) = \\int g + \\liminf \\int f_n$. Subtract the finite number $\\int g$; also $|\\liminf f_n| \\le g$, so $\\liminf f_n$ is integrable.",
+      "uses": []
+     },
+     {
+      "id": "s:upper",
+      "slogan": "Reflect the sequence to $g - f_n \\ge 0$ and apply Fatou's lemma for the upper bound.",
+      "detail": "Here $\\liminf (g - f_n) = g - \\limsup f_n$, so Fatou's lemma gives $\\int g - \\int \\limsup f_n \\le \\int g - \\limsup \\int f_n$. Subtract $\\int g$; also $|\\limsup f_n| \\le g$, so $\\limsup f_n$ is integrable.",
+      "uses": []
+     },
+     {
+      "id": "s:chain",
+      "slogan": "Join the two bounds through $\\liminf \\le \\limsup$ for the real sequence of integrals.",
+      "detail": "The integrals $\\int f_n$ lie in $[-\\int g, \\int g]$, so they form a bounded real sequence with $\\liminf \\le \\limsup$. Steps 3 and 4 then give the full chain.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:tails",
+      "s:fatou"
+     ],
+     [
+      "s:fatou",
+      "s:lower"
+     ],
+     [
+      "s:fatou",
+      "s:upper"
+     ],
+     [
+      "s:lower",
+      "s:chain"
+     ],
+     [
+      "s:upper",
+      "s:chain"
+     ]
+    ],
+    "conclusion": "s:chain",
+    "concepts": {
+     "c:measurable-function": "Measurability lets every function in the proof be integrated.",
+     "c:measure-space": "The integrals are taken over an arbitrary measure space.",
+     "c:integrable-function": "The integrable bound $g$ makes the shifted sequences nonnegative and finite.",
+     "c:limit-inferior": "Fatou's lemma bounds the integral of the limit inferior.",
+     "c:limit-superior": "The upper bound comes from the limit superior through $g - f_n$.",
+     "c:nonnegative-measurable-function": "Fatou's lemma needs nonnegative measurable functions, so the proof shifts by $g$.",
+     "c:lebesgue-integral": "Monotone convergence of Lebesgue integrals drives Fatou's lemma."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "MeasureTheory.lintegral_liminf_le",
+     "follows": true,
+     "note": "Steps 1 and 2 follow mathlib's lintegral_liminf_le' (lintegral_iSup for the increasing tail infima and le_iInf2_lintegral for the bound); steps 3 to 5 add the dominated two-sided chain."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:four-color-problem",
+  "statement": "The regions of every map in the plane can be [colored](c:graph-coloring) with at most four colors so that any two regions that share a boundary arc, not just a point, get different colors.",
+  "hypotheses": [
+   {
+    "id": "h:finite-map",
+    "text": "The map has finitely many regions, and each region is a connected open set in the plane.",
+    "concept": null
+   },
+   {
+    "id": "h:arc",
+    "text": "Two regions are neighbors only when they share a boundary arc of positive length.",
+    "concept": null
+   }
+  ],
+  "conclusion": "Some assignment of at most four colors to the regions gives any two neighboring regions different colors.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "dual-graph",
+    "name": "Reduction to the dual graph",
+    "slogan": "Turn the map into its dual planar graph, color the graph by the four color theorem, and copy the colors back to the regions.",
+    "scope": "The whole statement, given the graph form of the four color theorem. The unbounded region, if the map has one, counts as a region.",
+    "mechanisms": [
+     "m:reduction",
+     "m:duality"
+    ],
+    "roles": [
+     {
+      "h": "h:finite-map",
+      "why": "Finitely many connected regions give a finite graph with one vertex per region.",
+      "steps": [
+       "s:dual"
+      ]
+     },
+     {
+      "h": "h:arc",
+      "why": "Only shared arcs become edges, so regions that meet at a point impose no condition.",
+      "steps": [
+       "s:dual",
+       "s:transfer"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:dual",
+      "slogan": "Place one vertex in each region and one edge across each shared boundary arc.",
+      "detail": "Choose a point inside each region. For each arc shared by two regions, draw a curve between their chosen points that crosses the arc once and otherwise stays inside the two regions.",
+      "uses": []
+     },
+     {
+      "id": "s:planar",
+      "slogan": "Check that the dual graph is a loopless [planar graph](c:planar-graph).",
+      "detail": "Curves for different arcs can be chosen disjoint except at their ends, because each runs inside its two regions and crosses only its own arc. An arc separates two different regions, so no edge is a loop.",
+      "uses": []
+     },
+     {
+      "id": "s:color",
+      "slogan": "Color the vertices of the dual graph with four colors by the four color theorem.",
+      "detail": "The four color theorem gives every loopless planar graph a proper vertex [coloring](c:graph-coloring) with at most four colors. Apply it to the dual graph.",
+      "uses": [
+       "wd:Q184410"
+      ]
+     },
+     {
+      "id": "s:transfer",
+      "slogan": "Give each region the color of its vertex.",
+      "detail": "Two neighboring regions share an arc, so their vertices are joined by an edge and get different colors. Regions that meet only at points have no edge, and the statement does not require different colors for them.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:dual",
+      "s:planar"
+     ],
+     [
+      "s:planar",
+      "s:color"
+     ],
+     [
+      "s:color",
+      "s:transfer"
+     ],
+     [
+      "s:dual",
+      "s:transfer"
+     ]
+    ],
+    "conclusion": "s:transfer",
+    "concepts": {
+     "c:graph-coloring": "A coloring of the map is a proper coloring of its dual graph.",
+     "c:planar-graph": "Planarity of the dual graph lets the four color theorem apply."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard duality reduction from maps to planar graphs, as in K. Appel and W. Haken, Every planar map is four colorable, Illinois Journal of Mathematics 21 (1977)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q184410",
+  "statement": "Every finite loopless [planar graph](c:planar-graph) has a proper vertex [coloring](c:graph-coloring) with at most four colors, so that adjacent vertices get different colors.",
+  "hypotheses": [
+   {
+    "id": "h:planar",
+    "text": "The graph $G$ is finite and [planar](c:planar-graph).",
+    "concept": "c:planar-graph"
+   },
+   {
+    "id": "h:loopless",
+    "text": "The graph $G$ has no loops.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The [chromatic number](c:chromatic-number) of $G$ is at most 4.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "unavoidable-reducible",
+    "name": "Unavoidable set of reducible configurations",
+    "slogan": "Show that a minimal counterexample contains one of 633 configurations and that no minimal counterexample can contain any of them.",
+    "scope": "An outline of the computer-assisted published proof; the reducibility checks of step 2 and the discharging checks of step 4 rest on the cited work.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:strong-induction",
+     "m:euler-characteristic"
+    ],
+    "roles": [
+     {
+      "h": "h:planar",
+      "why": "Planarity lets the counterexample be a triangulation, and Euler's formula fixes its total charge.",
+      "steps": [
+       "s:minimal",
+       "s:charge"
+      ]
+     },
+     {
+      "h": "h:loopless",
+      "why": "A loop makes a proper coloring impossible, so the minimal counterexample is a simple graph.",
+      "steps": [
+       "s:minimal"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:minimal",
+      "slogan": "Take a counterexample with fewest vertices and make it an internally 6-connected [triangulation](c:triangulation).",
+      "detail": "Adding edges inside faces keeps planarity and only restricts colorings, so a minimal counterexample $G$ can be taken to be a triangulation. Birkhoff's arguments on short separating cycles show that $G$ is internally 6-connected.",
+      "uses": []
+     },
+     {
+      "id": "s:reducible",
+      "slogan": "Verify by computer that each of 633 configurations is a [reducible configuration](c:reducible-configuration).",
+      "detail": "For each configuration, every four-coloring of its surrounding ring extends inside after [Kempe chain](c:kempe-chain) recolorings, either directly or after the configuration is replaced by a smaller one. So no minimal counterexample contains any of the 633 configurations.",
+      "uses": []
+     },
+     {
+      "id": "s:charge",
+      "slogan": "Give each vertex $v$ the charge $10(6 - \\deg v)$, with total $120$.",
+      "detail": "For a triangulation with $V$ vertices, Euler's formula for the [Euler characteristic](c:euler-characteristic) of the sphere gives $3V - 6$ edges. So $\\sum_v (6 - \\deg v) = 12$, and the total charge is $120 > 0$.",
+      "uses": [
+       "nm:polyhedron-formula"
+      ]
+     },
+     {
+      "id": "s:discharge",
+      "slogan": "Move charge by 32 rules and find a configuration near a vertex with positive charge.",
+      "detail": "The rules keep the total charge, so some vertex keeps positive charge. The cited work checks, partly by computer, that such a vertex has one of the 633 configurations in its second neighborhood, so the set is unavoidable.",
+      "uses": []
+     },
+     {
+      "id": "s:contradict",
+      "slogan": "Combine unavoidability with reducibility to rule out the minimal counterexample.",
+      "detail": "Step 4 puts one of the 633 configurations in $G$, and step 2 then gives $G$ a four-coloring. This contradicts the choice of $G$, so every loopless planar graph is four-colorable.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:minimal",
+      "s:charge"
+     ],
+     [
+      "s:minimal",
+      "s:discharge"
+     ],
+     [
+      "s:charge",
+      "s:discharge"
+     ],
+     [
+      "s:discharge",
+      "s:contradict"
+     ],
+     [
+      "s:reducible",
+      "s:contradict"
+     ],
+     [
+      "s:minimal",
+      "s:contradict"
+     ]
+    ],
+    "conclusion": "s:contradict",
+    "concepts": {
+     "c:planar-graph": "Planarity gives triangulations and the charge total from Euler's formula.",
+     "c:graph-coloring": "The theorem asks for a proper coloring with four colors.",
+     "c:chromatic-number": "The conclusion bounds the chromatic number of the graph by 4.",
+     "c:triangulation": "The minimal counterexample is a triangulation, which fixes the vertex degrees' sum.",
+     "c:reducible-configuration": "Reducible configurations cannot occur in a minimal counterexample.",
+     "c:kempe-chain": "Kempe chain recolorings prove that the configurations are reducible.",
+     "c:euler-characteristic": "The Euler characteristic of the sphere makes the total charge positive."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "N. Robertson, D. P. Sanders, P. Seymour and R. Thomas, The four-colour theorem, Journal of Combinatorial Theory, Series B 70 (1997), 2-44",
+     "url": "https://thomas.math.gatech.edu/PAP/fc.pdf",
+     "note": "Simplifies K. Appel and W. Haken, Every planar map is four colorable, Illinois Journal of Mathematics 21 (1977); G. Gonthier checked the proof in the Coq proof assistant (Notices of the AMS 55, 2008)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q5567394",
+  "statement": "Let $H$ be a separable real or complex [Hilbert space](c:hilbert-space) with $\\dim H \\ge 3$. If $\\mu$ maps the [orthogonal projections](c:orthogonal-projection) of $H$ to $[0, 1]$, with $\\mu(I) = 1$ and $\\mu(\\sum_i P_i) = \\sum_i \\mu(P_i)$ for every countable family of mutually orthogonal projections, then $\\mu(P) = \\operatorname{tr}(\\rho P)$ for a unique [density operator](c:density-operator) $\\rho$.",
+  "hypotheses": [
+   {
+    "id": "h:separable",
+    "text": "The space $H$ is a separable real or complex [Hilbert space](c:hilbert-space).",
+    "concept": "c:hilbert-space"
+   },
+   {
+    "id": "h:dimension",
+    "text": "The dimension of $H$ is at least 3.",
+    "concept": null
+   },
+   {
+    "id": "h:measure",
+    "text": "The map $\\mu$ takes values in $[0, 1]$, has $\\mu(I) = 1$ and is countably additive on mutually orthogonal projections.",
+    "concept": null
+   }
+  ],
+  "conclusion": "A unique [density operator](c:density-operator) $\\rho$ gives $\\mu(P) = \\operatorname{tr}(\\rho P)$ for every orthogonal projection $P$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "frame-functions",
+    "name": "Frame functions",
+    "slogan": "Restrict the measure to rank-one projections, prove the resulting frame function quadratic on three-dimensional real subspaces, and glue the pieces into a density operator.",
+    "scope": "An outline of Gleason's proof; the continuity lemma of step 2 and the harmonic analysis of step 3 rest on the cited work. Dimension 2 is excluded because there any $f$ with $f(x) + f(x^\\perp) = 1$ is a frame function.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:local-to-global",
+     "m:spectral-decomposition"
+    ],
+    "roles": [
+     {
+      "h": "h:separable",
+      "why": "Separability makes orthonormal bases countable, so countable additivity applies to them.",
+      "steps": [
+       "s:frame",
+       "s:trace"
+      ]
+     },
+     {
+      "h": "h:dimension",
+      "why": "Dimension at least 3 supplies the three-dimensional real subspaces where the key lemma works.",
+      "steps": [
+       "s:continuity",
+       "s:extend"
+      ]
+     },
+     {
+      "h": "h:measure",
+      "why": "Additivity on orthogonal projections gives the frame condition and the final trace formula.",
+      "steps": [
+       "s:frame",
+       "s:trace"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:frame",
+      "slogan": "Define the frame function $f(x) = \\mu(P_x)$ on unit vectors.",
+      "detail": "Here $P_x$ is the projection onto the line of $x$. For an orthonormal basis $(e_i)$, countable by separability, the $P_{e_i}$ are mutually orthogonal with sum $I$, so $f \\ge 0$ and $\\sum_i f(e_i) = 1$.",
+      "uses": []
+     },
+     {
+      "id": "s:continuity",
+      "slogan": "Prove that every nonnegative frame function on the unit sphere of $\\mathbb{R}^3$ is continuous.",
+      "detail": "This is Gleason's key lemma. The cited work compares the values of $f$ along great circles and orthogonal frames, and shows that the oscillation of $f$ near every point is zero.",
+      "uses": []
+     },
+     {
+      "id": "s:quadratic",
+      "slogan": "Show that a continuous frame function on the sphere of $\\mathbb{R}^3$ comes from a [quadratic form](c:quadratic-form).",
+      "detail": "Expand $f$ in spherical harmonics. Averaging the frame condition over rotations kills every harmonic of degree other than 0 and 2, so $f(x) = \\langle Tx, x\\rangle$ for a symmetric operator $T$.",
+      "uses": []
+     },
+     {
+      "id": "s:extend",
+      "slogan": "Glue the quadratic forms on three-dimensional real subspaces into one form $\\langle \\rho x, x\\rangle$ on $H$.",
+      "detail": "Extend $f$ by $f(x) = \\|x\\|^2 f(x/\\|x\\|)$; on each three-dimensional real subspace with real inner products it is a frame function, hence quadratic by steps 2 and 3. So $f$ satisfies the parallelogram law, and $0 \\le f(x) \\le \\|x\\|^2$ gives a bounded [positive operator](c:positive-operator) $\\rho$ with $f(x) = \\langle \\rho x, x\\rangle$.",
+      "uses": []
+     },
+     {
+      "id": "s:trace",
+      "slogan": "Identify $\\mu(P)$ with $\\operatorname{tr}(\\rho P)$ and prove that $\\rho$ is unique.",
+      "detail": "For a basis $\\sum_i \\langle \\rho e_i, e_i\\rangle = 1$, so $\\rho$ is a [trace-class operator](c:trace-class-operator) of trace 1, a density operator. For a projection $P$ and an orthonormal basis $(u_j)$ of its range, additivity gives $\\mu(P) = \\sum_j \\langle \\rho u_j, u_j\\rangle = \\operatorname{tr}(\\rho P)$; polarization shows that these values determine $\\rho$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:continuity",
+      "s:quadratic"
+     ],
+     [
+      "s:quadratic",
+      "s:extend"
+     ],
+     [
+      "s:frame",
+      "s:extend"
+     ],
+     [
+      "s:extend",
+      "s:trace"
+     ],
+     [
+      "s:frame",
+      "s:trace"
+     ]
+    ],
+    "conclusion": "s:trace",
+    "concepts": {
+     "c:hilbert-space": "The measure lives on the projections of a separable Hilbert space.",
+     "c:orthogonal-projection": "The measure is defined on orthogonal projections and is additive on orthogonal ones.",
+     "c:density-operator": "The density operator is the object that the theorem produces.",
+     "c:quadratic-form": "The frame function is shown to be a quadratic form.",
+     "c:positive-operator": "A nonnegative bounded quadratic form comes from a positive operator.",
+     "c:trace-class-operator": "Total weight 1 over a basis makes $\\rho$ trace class."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "A. M. Gleason, Measures on the closed subspaces of a Hilbert space, Journal of Mathematics and Mechanics 6 (1957), 885-893",
+     "note": "Gleason's original proof. R. Cooke, M. Keane and W. Moran, An elementary proof of Gleason's theorem, Mathematical Proceedings of the Cambridge Philosophical Society 98 (1985), 117-128, give an elementary proof of the three-dimensional case."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:1536",
+  "statement": "For a [pseudofunctor](c:pseudofunctor) $F\\colon C^{op} \\to \\mathrm{Cat}$, the [Grothendieck construction](c:grothendieck-construction) $\\int F$ has objects $(c, x)$ with $x \\in F(c)$ and morphisms $(f, \\varphi)$ from $(c, x)$ to $(d, y)$ with $f\\colon c \\to d$ and $\\varphi\\colon x \\to F(f)(y)$. Its projection to $C$ is a [Grothendieck fibration](c:grothendieck-fibration), and $F \\mapsto \\int F$ is an equivalence from pseudofunctors to [fibred categories](c:fibred-category) over $C$.",
+  "hypotheses": [
+   {
+    "id": "h:pseudofunctor",
+    "text": "The map $F$ from $C^{op}$ to [Cat](c:cat) is a [pseudofunctor](c:pseudofunctor), with coherent natural isomorphisms $F(f)F(g) \\cong F(gf)$ and $F(\\mathrm{id}_c) \\cong \\mathrm{id}$.",
+    "concept": "c:pseudofunctor"
+   }
+  ],
+  "conclusion": "The projection $\\int F \\to C$ is a fibration, and every fibred category over $C$ is equivalent over $C$ to $\\int F$ for a pseudofunctor $F$ that is unique up to equivalence.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "construction-and-fibers",
+    "name": "Construction and inverse by fibers",
+    "slogan": "Check that $\\int F$ is a category with cartesian lifts, and recover $F$ from any fibration through its fibers and chosen pullbacks.",
+    "scope": "The construction, its fibration property and the two round trips on objects; the action on morphisms and 2-cells follows the same pattern. Choosing a [cleavage](c:cleavage) uses the axiom of choice.",
+    "mechanisms": [
+     "m:construction-explicit",
+     "m:universal-property"
+    ],
+    "roles": [
+     {
+      "h": "h:pseudofunctor",
+      "why": "The coherence isomorphisms of $F$ define composition in $\\int F$, make it associative and unital, and give its cartesian lifts.",
+      "steps": [
+       "s:category",
+       "s:cartesian",
+       "s:round1"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:category",
+      "slogan": "Define composition in $\\int F$ through the coherence isomorphisms of $F$.",
+      "detail": "Set $(g, \\psi)\\circ(f, \\varphi) = (gf, \\mu_{f,g} \\circ F(f)(\\psi) \\circ \\varphi)$, where $\\mu_{f,g}\\colon F(f)F(g) \\cong F(gf)$. The coherence axioms of the pseudofunctor give associativity, and the unit isomorphisms give the identities.",
+      "uses": []
+     },
+     {
+      "id": "s:cartesian",
+      "slogan": "Show that each morphism $(f, \\mathrm{id})\\colon (c, F(f)y) \\to (d, y)$ is a [cartesian morphism](c:cartesian-morphism).",
+      "detail": "A morphism $(fh, \\varphi)$ from $(b, x)$ to $(d, y)$ factors through it by exactly one morphism over $h$, namely $(h, \\mu_{h,f}^{-1} \\circ \\varphi)$. So every morphism of $C$ has cartesian lifts, and the projection $\\int F \\to C$ is a fibration.",
+      "uses": []
+     },
+     {
+      "id": "s:fibers",
+      "slogan": "Build a pseudofunctor from a fibration $p\\colon E \\to C$ with a cleavage by fibers and pullbacks.",
+      "detail": "Set $F_E(c) = E_c$, the fiber over $c$, and let $f^*\\colon E_d \\to E_c$ send $y$ to the source of the chosen cartesian lift of $f$ at $y$. The universal property of cartesian morphisms makes $f^*$ a functor and gives coherent isomorphisms $f^*g^* \\cong (gf)^*$.",
+      "uses": []
+     },
+     {
+      "id": "s:round1",
+      "slogan": "Show that the fibers of $\\int F$ and their chosen pullbacks recover $F$.",
+      "detail": "The fiber of $\\int F$ over $c$ has the morphisms $(\\mathrm{id}_c, \\varphi)$ with $\\varphi\\colon x \\to F(\\mathrm{id}_c)(y) \\cong y$, so it is equivalent to $F(c)$. The cartesian lifts of step 2 make the pullback along $f$ equal to $F(f)$.",
+      "uses": []
+     },
+     {
+      "id": "s:round2",
+      "slogan": "Show that the functor $\\int F_E \\to E$ that sends $(c, x)$ to $x$ is an equivalence over $C$.",
+      "detail": "A morphism $x \\to y$ of $E$ over $f$ factors uniquely as a vertical morphism $x \\to f^*y$ followed by the chosen lift, and this is exactly a morphism of $\\int F_E$. So the functor is bijective on objects and fully faithful, an equivalence of [fibred categories](c:fibred-category).",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Combine the two round trips into the equivalence between pseudofunctors and fibrations.",
+      "detail": "Steps 4 and 5 give $F_{\\int F} \\simeq F$ and $\\int F_E \\simeq E$ over $C$, naturally in $F$ and $E$. So the [Grothendieck construction](c:grothendieck-construction) is an equivalence, with the fiber pseudofunctor as inverse.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:category",
+      "s:cartesian"
+     ],
+     [
+      "s:cartesian",
+      "s:round1"
+     ],
+     [
+      "s:fibers",
+      "s:round1"
+     ],
+     [
+      "s:fibers",
+      "s:round2"
+     ],
+     [
+      "s:round1",
+      "s:conclude"
+     ],
+     [
+      "s:round2",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:pseudofunctor": "The input of the construction is a pseudofunctor with coherence isomorphisms.",
+     "c:cat": "The pseudofunctor takes values in the 2-category of categories.",
+     "c:grothendieck-construction": "The construction is the category $\\int F$ that the proof checks.",
+     "c:grothendieck-fibration": "The projection of $\\int F$ is shown to be a Grothendieck fibration.",
+     "c:fibred-category": "Fibred categories are the other side of the equivalence.",
+     "c:cartesian-morphism": "Cartesian lifts make the projection a fibration and define pullbacks.",
+     "c:cleavage": "A chosen cleavage turns a fibration back into a pseudofunctor."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard verification, as in A. Vistoli, Notes on Grothendieck topologies, fibered categories and descent theory, in Fundamental Algebraic Geometry (AMS, 2005), chapter 3; the construction goes back to SGA 1, expose VI."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q779220",
+  "statement": "Let $k$ be a field and $R = k[x_1, \\dots, x_n]$ the graded [polynomial ring](c:polynomial-ring). Every finitely generated [graded module](c:graded-module) $M$ over $R$ has a graded [free resolution](c:free-resolution) $0 \\to F_n \\to \\dots \\to F_1 \\to F_0 \\to M \\to 0$ of length at most $n$ by finitely generated free modules.",
+  "hypotheses": [
+   {
+    "id": "h:field",
+    "text": "The coefficient ring $k$ is a field.",
+    "concept": null
+   },
+   {
+    "id": "h:module",
+    "text": "The module $M$ is a finitely generated [graded module](c:graded-module) over $R = k[x_1, \\dots, x_n]$.",
+    "concept": "c:graded-module"
+   }
+  ],
+  "conclusion": "Some exact sequence $0 \\to F_n \\to \\dots \\to F_0 \\to M \\to 0$ has each $F_i$ a finitely generated graded [free module](c:free-module).",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "koszul-tor",
+    "name": "Minimal resolution and the Koszul complex",
+    "slogan": "Count the free modules of a minimal resolution by Tor against the residue field, and compute Tor from the Koszul complex, which stops at degree $n$.",
+    "scope": "The graded statement as given, for every $n \\ge 0$. The module $M = 0$ has the zero resolution.",
+    "mechanisms": [
+     "m:exact-sequence",
+     "m:dimension-count"
+    ],
+    "roles": [
+     {
+      "h": "h:field",
+      "why": "A field makes $R/\\mathfrak{m} = k$ a field, so ranks equal dimensions of Tor groups and graded Nakayama applies.",
+      "steps": [
+       "s:tor-ranks",
+       "s:length"
+      ]
+     },
+     {
+      "h": "h:module",
+      "why": "Finite generation and the grading give finite minimal homogeneous generating sets at each stage.",
+      "steps": [
+       "s:minimal"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:minimal",
+      "slogan": "Build a minimal graded free resolution from minimal homogeneous generators of each kernel.",
+      "detail": "The ring $R$ is Noetherian, so each kernel is finitely generated, and a minimal homogeneous generating set maps a graded free module onto it. By graded Nakayama, minimality means that each differential maps $F_i$ into $\\mathfrak{m}F_{i-1}$, where $\\mathfrak{m} = (x_1, \\dots, x_n)$.",
+      "uses": [
+       "wd:Q656645",
+       "nl:7346"
+      ]
+     },
+     {
+      "id": "s:tor-ranks",
+      "slogan": "Read off the rank of $F_i$ as $\\dim_k \\mathrm{Tor}_i^R(M, k)$.",
+      "detail": "Tensoring the minimal resolution with $k = R/\\mathfrak{m}$ makes every differential zero, because its image lies in $\\mathfrak{m}F_{i-1}$. Hence the [Tor functor](c:tor-functor) gives $\\mathrm{Tor}_i^R(M, k) \\cong F_i \\otimes_R k$, a $k$-space of dimension $\\operatorname{rank} F_i$.",
+      "uses": []
+     },
+     {
+      "id": "s:koszul",
+      "slogan": "Resolve $k$ by the [Koszul complex](c:koszul-complex) of $x_1, \\dots, x_n$, which has length $n$.",
+      "detail": "The variables form a [regular sequence](c:regular-sequence) in $R$, so the Koszul complex with $K_i = \\Lambda^i R^n$ is a graded free resolution of $k$. Its terms vanish for $i > n$.",
+      "uses": []
+     },
+     {
+      "id": "s:balance",
+      "slogan": "Compute Tor from the Koszul side to get $\\mathrm{Tor}_i^R(M, k) = 0$ for $i > n$.",
+      "detail": "Tor can be computed from a resolution of either argument, so $\\mathrm{Tor}_i^R(M, k) = H_i(M \\otimes_R K)$. This homology vanishes for $i > n$ because $K_i = 0$ there.",
+      "uses": []
+     },
+     {
+      "id": "s:length",
+      "slogan": "Conclude that $F_i = 0$ for $i > n$, so the minimal resolution has length at most $n$.",
+      "detail": "Steps 2 and 4 give $\\operatorname{rank} F_i = 0$ for $i > n$. So $0 \\to F_n \\to \\dots \\to F_0 \\to M \\to 0$ is a [free resolution](c:free-resolution) of length at most $n$ by finitely generated free modules.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:minimal",
+      "s:tor-ranks"
+     ],
+     [
+      "s:tor-ranks",
+      "s:length"
+     ],
+     [
+      "s:koszul",
+      "s:balance"
+     ],
+     [
+      "s:balance",
+      "s:length"
+     ],
+     [
+      "s:minimal",
+      "s:length"
+     ]
+    ],
+    "conclusion": "s:length",
+    "concepts": {
+     "c:polynomial-ring": "The theorem bounds resolutions over a polynomial ring in $n$ variables.",
+     "c:graded-module": "The grading makes minimal resolutions and graded Nakayama available.",
+     "c:free-resolution": "The conclusion is a free resolution of bounded length.",
+     "c:free-module": "Each term of the resolution is a finitely generated free module.",
+     "c:tor-functor": "Tor groups count the free generators of the minimal resolution.",
+     "c:koszul-complex": "The Koszul complex resolves $k$ in length exactly $n$.",
+     "c:regular-sequence": "The variables form a regular sequence, so the Koszul complex is exact."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The Koszul-complex proof of the graded syzygy theorem, as in D. Eisenbud, Commutative Algebra with a View Toward Algebraic Geometry (Springer GTM 150, 1995)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1420905",
+  "statement": "Let $L/K$ be a finite [cyclic extension](c:cyclic-extension) whose [Galois group](c:galois-group) is generated by $\\sigma$, of order $n$. If $a \\in L$ has [norm](c:norm-map) $N_{L/K}(a) = a\\,\\sigma(a) \\cdots \\sigma^{n-1}(a) = 1$, then $a = b/\\sigma(b)$ for some $b \\in L^\\times$.",
+  "hypotheses": [
+   {
+    "id": "h:cyclic",
+    "text": "The [field extension](c:field-extension) $L/K$ is finite Galois with cyclic group generated by $\\sigma$, of order $n$.",
+    "concept": "c:cyclic-extension"
+   },
+   {
+    "id": "h:norm",
+    "text": "The element $a \\in L$ satisfies $a\\,\\sigma(a) \\cdots \\sigma^{n-1}(a) = 1$.",
+    "concept": "c:norm-map"
+   }
+  ],
+  "conclusion": "Some nonzero $b \\in L$ satisfies $a = b/\\sigma(b)$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "independence-of-automorphisms",
+    "name": "Independence of automorphisms",
+    "slogan": "Build $b$ as a twisted sum of the conjugates of one element, which is nonzero by Dedekind's independence of automorphisms.",
+    "scope": "The whole theorem, including $n = 1$, where $a = 1$ and $b = 1$ works. In [Galois cohomology](c:galois-cohomology) terms the proof shows $H^1(\\langle\\sigma\\rangle, L^\\times) = 0$.",
+    "mechanisms": [
+     "m:construction-explicit",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:cyclic",
+      "why": "The powers $1, \\sigma, \\dots, \\sigma^{n-1}$ are distinct automorphisms, and $\\sigma^n = \\mathrm{id}$.",
+      "steps": [
+       "s:independence",
+       "s:shift"
+      ]
+     },
+     {
+      "h": "h:norm",
+      "why": "The norm condition makes $a \\neq 0$ and closes the twisted sum after $n$ shifts.",
+      "steps": [
+       "s:sum",
+       "s:shift"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:independence",
+      "slogan": "Show that the distinct automorphisms $1, \\sigma, \\dots, \\sigma^{n-1}$ are linearly independent over $L$.",
+      "detail": "Take a nontrivial relation $\\sum_i c_i \\sigma^i = 0$ with fewest nonzero terms, and pick $y$ with $\\sigma^i(y) \\neq \\sigma^j(y)$ for two indices $i \\neq j$ in it. Comparing the relation at $xy$ with $\\sigma^i(y)$ times the relation at $x$ gives a shorter nontrivial relation, a contradiction. So the automorphisms have [linear independence](c:linear-independence) over $L$.",
+      "uses": []
+     },
+     {
+      "id": "s:sum",
+      "slogan": "Form the twisted sum $\\theta(c) = \\sum_{i=0}^{n-1} a_i\\, \\sigma^i(c)$ with $a_i = a\\,\\sigma(a) \\cdots \\sigma^{i-1}(a)$.",
+      "detail": "Here $a_0 = 1$, and each $a_i$ is nonzero because the norm condition gives $a \\neq 0$. By step 1 the map $\\theta$ is not identically zero, so some $c$ gives $b = \\theta(c) \\neq 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:shift",
+      "slogan": "Multiply $\\sigma(b)$ by $a$ and show that the result is $b$.",
+      "detail": "Since $a\\,\\sigma(a_i) = a_{i+1}$, the product is $a\\,\\sigma(b) = \\sum_{i=0}^{n-1} a_{i+1}\\sigma^{i+1}(c)$. Its last term has $a_n = N_{L/K}(a) = 1$ and $\\sigma^n = \\mathrm{id}$, so it equals the term $a_0 c$ of $b$, and $a\\,\\sigma(b) = b$.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Divide by $\\sigma(b)$ to get $a = b/\\sigma(b)$.",
+      "detail": "Because $b \\neq 0$ and $\\sigma$ is injective, $\\sigma(b) \\neq 0$. So the equation $a\\,\\sigma(b) = b$ gives $a = b/\\sigma(b)$ with $b \\in L^\\times$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:independence",
+      "s:sum"
+     ],
+     [
+      "s:sum",
+      "s:shift"
+     ],
+     [
+      "s:shift",
+      "s:conclude"
+     ],
+     [
+      "s:sum",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:cyclic-extension": "A cyclic group lets one automorphism generate all conjugates.",
+     "c:galois-group": "The Galois group supplies the distinct automorphisms $\\sigma^i$.",
+     "c:norm-map": "Norm 1 is exactly the condition that closes the twisted sum.",
+     "c:field-extension": "The theorem concerns elements of a finite field extension.",
+     "c:galois-cohomology": "The result is the vanishing of the first cohomology of $L^\\times$.",
+     "c:linear-independence": "Independence of the automorphisms makes the twisted sum nonzero."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Artin's proof by independence of characters, as in S. Lang, Algebra, chapter VI, section 6 (Hilbert's theorem 90)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:2938",
+  "statement": "Let $A$ be a commutative [smooth](c:smooth-algebra) algebra over a field $k$. Then antisymmetrization, $a_0\\, da_1 \\wedge \\dots \\wedge da_n \\mapsto \\sum_{\\sigma \\in S_n} \\operatorname{sgn}(\\sigma)\\, a_0 \\otimes a_{\\sigma(1)} \\otimes \\dots \\otimes a_{\\sigma(n)}$, is an isomorphism $\\Omega^n_{A/k} \\cong HH_n(A)$ from [Kähler differentials](c:kahler-differential) to [Hochschild homology](c:hochschild-homology), and [Hochschild cohomology](c:hochschild-cohomology) is $HH^n(A, A) \\cong \\Lambda^n_A \\operatorname{Der}_k(A)$, for every $n$.",
+  "hypotheses": [
+   {
+    "id": "h:field",
+    "text": "The base ring $k$ is a field.",
+    "concept": null
+   },
+   {
+    "id": "h:smooth",
+    "text": "The algebra $A$ is commutative and [smooth](c:smooth-algebra) of finite type over $k$.",
+    "concept": "c:smooth-algebra"
+   }
+  ],
+  "conclusion": "For every $n$, antisymmetrization gives $\\Omega^n_{A/k} \\cong HH_n(A)$, and $HH^n(A, A) \\cong \\Lambda^n_A \\operatorname{Der}_k(A)$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "local-koszul",
+    "name": "Local Koszul resolution of the diagonal",
+    "slogan": "Write Hochschild groups as Tor and Ext over $A \\otimes_k A$, localize, and resolve $A$ by the Koszul complex of the regular sequence that cuts out the diagonal.",
+    "scope": "An outline of the published proof; the regular-immersion property of step 4 rests on the cited work and on standard facts about smooth algebras. Degree 0 is $HH_0(A) = A = \\Omega^0_{A/k}$.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:local-global"
+    ],
+    "roles": [
+     {
+      "h": "h:field",
+      "why": "Over a field $A$ is flat, so the bar complex resolves $A$ over $A \\otimes_k A$.",
+      "steps": [
+       "s:tor"
+      ]
+     },
+     {
+      "h": "h:smooth",
+      "why": "Smoothness makes the diagonal ideal locally generated by a regular sequence, with $I/I^2 \\cong \\Omega^1_{A/k}$ projective.",
+      "steps": [
+       "s:regular"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:tor",
+      "slogan": "Express Hochschild homology and cohomology as Tor and Ext over $A^e = A \\otimes_k A$.",
+      "detail": "Over a field $A$ is flat, so the bar complex is a projective resolution of $A$ as an $A^e$-module. Hence $HH_n(A)$ is the [Tor](c:tor-functor) group $\\mathrm{Tor}_n^{A^e}(A, A)$, and $HH^n(A, A) = \\mathrm{Ext}^n_{A^e}(A, A)$.",
+      "uses": []
+     },
+     {
+      "id": "s:map",
+      "slogan": "Check that antisymmetrization gives a natural map from forms to Hochschild homology.",
+      "detail": "Because $A$ is commutative, the Hochschild boundary of an antisymmetrized tensor cancels in pairs, and the Leibniz relations of $\\Omega$ go to boundaries. So antisymmetrization gives a well defined map $\\varepsilon\\colon \\Omega^n_{A/k} \\to HH_n(A)$, natural in $A$.",
+      "uses": []
+     },
+     {
+      "id": "s:localize",
+      "slogan": "Reduce the claim to the local rings of $A^e$ at primes that contain the diagonal ideal.",
+      "detail": "A map of $A$-modules is an isomorphism when it is one after [localization](c:localization-of-a-ring) at every prime. Tor, Ext of finitely presented modules and $\\Omega$ commute with localization, so it suffices to work at primes containing $I = \\ker(A^e \\to A)$.",
+      "uses": []
+     },
+     {
+      "id": "s:regular",
+      "slogan": "Show that smoothness makes $I$ locally generated by a [regular sequence](c:regular-sequence) of length $d$.",
+      "detail": "For $A$ smooth of relative dimension $d$, the diagonal $\\operatorname{Spec} A \\to \\operatorname{Spec} A^e$ is a regular immersion. So $I$ is locally generated by a regular sequence $t_1, \\dots, t_d$, and $I/I^2 \\cong \\Omega^1_{A/k}$ is projective of rank $d$.",
+      "uses": []
+     },
+     {
+      "id": "s:koszul",
+      "slogan": "Compute Tor and Ext from the local [Koszul complex](c:koszul-complex) of $t_1, \\dots, t_d$.",
+      "detail": "The Koszul complex resolves $A$ locally over $A^e$, and its differentials vanish after $A \\otimes_{A^e} -$ or $\\operatorname{Hom}_{A^e}(-, A)$. So $\\mathrm{Tor}_n = \\Lambda^n(I/I^2) = \\Omega^n_{A/k}$ and $\\mathrm{Ext}^n = \\Lambda^n \\operatorname{Der}_k(A)$, and the first identification is the map $\\varepsilon$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:tor",
+      "s:localize"
+     ],
+     [
+      "s:map",
+      "s:localize"
+     ],
+     [
+      "s:localize",
+      "s:koszul"
+     ],
+     [
+      "s:regular",
+      "s:koszul"
+     ],
+     [
+      "s:tor",
+      "s:koszul"
+     ]
+    ],
+    "conclusion": "s:koszul",
+    "concepts": {
+     "c:smooth-algebra": "Smoothness is what makes the diagonal a regular immersion.",
+     "c:kahler-differential": "Kähler differentials are the forms that compute Hochschild homology.",
+     "c:hochschild-homology": "Hochschild homology is the invariant that the theorem identifies.",
+     "c:hochschild-cohomology": "Hochschild cohomology is identified with polyvector fields by the same resolution.",
+     "c:tor-functor": "Hochschild homology is a Tor group over the enveloping algebra.",
+     "c:localization-of-a-ring": "Localization reduces the isomorphism to local rings.",
+     "c:regular-sequence": "A regular sequence cuts out the diagonal locally.",
+     "c:koszul-complex": "The Koszul complex is the small local resolution of $A$."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "G. Hochschild, B. Kostant and A. Rosenberg, Differential forms on regular affine algebras, Transactions of the American Mathematical Society 102 (1962), 383-408",
+     "url": "https://www.ams.org/tran/1962-102-03/S0002-9947-1962-0142598-8/",
+     "note": "HKR treat regular affine algebras over a perfect field; J.-L. Loday, Cyclic Homology (Springer, 1992), section 3.4, gives the Koszul proof for smooth algebras."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:9050",
+  "statement": "Let $X$ be a compact [Kähler manifold](c:kahler-manifold). Then $H^k(X; \\mathbb{C}) = \\bigoplus_{p+q=k} H^{p,q}(X)$, where $H^{p,q}(X)$ is the space of [de Rham cohomology](c:de-rham-cohomology) classes represented by closed forms of type $(p,q)$. Moreover $H^{q,p}(X) = \\overline{H^{p,q}(X)}$ and $H^{p,q}(X) \\cong H^q(X, \\Omega^p)$.",
+  "hypotheses": [
+   {
+    "id": "h:compact",
+    "text": "The complex manifold $X$ is a [compact manifold](c:compact-manifold) without boundary.",
+    "concept": "c:compact-manifold"
+   },
+   {
+    "id": "h:kahler",
+    "text": "The manifold $X$ carries a Kähler metric, whose Kähler form $\\omega$ is closed.",
+    "concept": "c:kahler-manifold"
+   }
+  ],
+  "conclusion": "The [Hodge decomposition](c:hodge-decomposition) $H^k(X; \\mathbb{C}) = \\bigoplus_{p+q=k} H^{p,q}(X)$ holds, with $H^{q,p} = \\overline{H^{p,q}}$ and $H^{p,q} \\cong H^q(X, \\Omega^p)$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "harmonic-forms",
+    "name": "Harmonic forms and the Kähler identities",
+    "slogan": "Represent classes by harmonic forms, and use the Kähler identities to show that the Laplacian keeps the type, so harmonic forms split by type.",
+    "scope": "An outline; the elliptic theory of steps 1 and 2 and the Kähler identities of step 3 rest on the cited work. The harmonic forms depend on the metric, but the subspaces $H^{p,q}(X)$ do not.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:a-priori-estimate",
+     "m:spectral-decomposition"
+    ],
+    "roles": [
+     {
+      "h": "h:compact",
+      "why": "Compactness makes the Laplacians Fredholm, which gives unique harmonic representatives.",
+      "steps": [
+       "s:harmonic",
+       "s:dolbeault"
+      ]
+     },
+     {
+      "h": "h:kahler",
+      "why": "The closed Kähler form gives the Kähler identities and $\\Delta_d = 2\\Delta_{\\bar\\partial}$.",
+      "steps": [
+       "s:identities"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:harmonic",
+      "slogan": "Represent each de Rham class by a unique [harmonic form](c:harmonic-form) for $\\Delta_d = dd^* + d^*d$.",
+      "detail": "On a compact Riemannian manifold, $\\Delta_d$ is a self-adjoint [elliptic operator](c:elliptic-operator). Elliptic theory gives $A^k = \\mathcal{H}^k \\oplus \\operatorname{im} d \\oplus \\operatorname{im} d^*$, so each class in $H^k(X; \\mathbb{C})$ has exactly one harmonic representative.",
+      "uses": []
+     },
+     {
+      "id": "s:dolbeault",
+      "slogan": "Represent each [Dolbeault cohomology](c:dolbeault-cohomology) class by a unique $\\Delta_{\\bar\\partial}$-harmonic form.",
+      "detail": "The same elliptic theory for $\\Delta_{\\bar\\partial} = \\bar\\partial\\bar\\partial^* + \\bar\\partial^*\\bar\\partial$ on $(p,q)$-forms gives $H^{p,q}_{\\bar\\partial}(X) \\cong \\mathcal{H}^{p,q}_{\\bar\\partial}$. Dolbeault's theorem identifies $H^{p,q}_{\\bar\\partial}(X)$ with $H^q(X, \\Omega^p)$.",
+      "uses": [
+       "nl:11794"
+      ]
+     },
+     {
+      "id": "s:identities",
+      "slogan": "Derive the Kähler identities and the relation $\\Delta_d = 2\\Delta_{\\bar\\partial} = 2\\Delta_\\partial$.",
+      "detail": "Because $d\\omega = 0$, the metric agrees with the flat metric to second order at each point, and this gives $[\\Lambda, \\bar\\partial] = -i\\partial^*$ and $[\\Lambda, \\partial] = i\\bar\\partial^*$. Expanding $\\Delta_d$ with these identities gives $\\Delta_d = 2\\Delta_{\\bar\\partial} = 2\\Delta_\\partial$.",
+      "uses": []
+     },
+     {
+      "id": "s:bidegree",
+      "slogan": "Split each $\\Delta_d$-harmonic form into harmonic components of pure type $(p,q)$.",
+      "detail": "The operator $\\Delta_{\\bar\\partial}$ keeps the type, so by step 3 the operator $\\Delta_d$ does too. A form is $\\Delta_d$-harmonic exactly when each $(p,q)$-component is, so $\\mathcal{H}^k = \\bigoplus_{p+q=k} \\mathcal{H}^{p,q}$, and $\\overline{\\mathcal{H}^{p,q}} = \\mathcal{H}^{q,p}$ because $\\Delta_d$ is real.",
+      "uses": []
+     },
+     {
+      "id": "s:decompose",
+      "slogan": "Transfer the splitting of harmonic forms to cohomology through steps 1 and 2.",
+      "detail": "A closed $(p,q)$-form has the class of its harmonic part, which lies in $\\mathcal{H}^{p,q}$, so $H^{p,q}(X)$ is the image of $\\mathcal{H}^{p,q}$ and step 1 makes the sum direct. Step 2 and $\\Delta_d = 2\\Delta_{\\bar\\partial}$ give $H^{p,q}(X) \\cong \\mathcal{H}^{p,q}_{\\bar\\partial} \\cong H^q(X, \\Omega^p)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:harmonic",
+      "s:bidegree"
+     ],
+     [
+      "s:identities",
+      "s:bidegree"
+     ],
+     [
+      "s:bidegree",
+      "s:decompose"
+     ],
+     [
+      "s:harmonic",
+      "s:decompose"
+     ],
+     [
+      "s:dolbeault",
+      "s:decompose"
+     ],
+     [
+      "s:identities",
+      "s:decompose"
+     ]
+    ],
+    "conclusion": "s:decompose",
+    "concepts": {
+     "c:kahler-manifold": "The Kähler condition gives the identities that make the Laplacian keep the type.",
+     "c:de-rham-cohomology": "The decomposition is a splitting of de Rham cohomology.",
+     "c:compact-manifold": "Compactness makes elliptic theory give harmonic representatives.",
+     "c:hodge-decomposition": "The Hodge decomposition is the conclusion of the theorem.",
+     "c:harmonic-form": "Harmonic forms are the canonical representatives that split by type.",
+     "c:elliptic-operator": "Ellipticity of the Laplacians gives the orthogonal decomposition of forms.",
+     "c:dolbeault-cohomology": "Dolbeault cohomology identifies $H^{p,q}$ with sheaf cohomology $H^q(X, \\Omega^p)$."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "C. Voisin, Hodge Theory and Complex Algebraic Geometry I, Cambridge Studies in Advanced Mathematics 76, Cambridge University Press, 2002",
+     "url": "https://doi.org/10.1017/CBO9780511615344",
+     "note": "Chapter 5 proves the Hodge theorem for elliptic Laplacians on compact manifolds; chapter 6 proves the Kähler identities and the Hodge decomposition."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q2094241",
+  "statement": "Let $M$ be a connected [Riemannian manifold](c:riemannian-manifold) with distance $d$. These are equivalent: (a) $(M, d)$ is a [complete metric space](c:complete-metric-space); (b) closed bounded sets are compact; (c) every [geodesic](c:geodesic) is defined on all of $\\mathbb{R}$; (d) for some $p$, the [exponential map](c:exponential-map) $\\exp_p$ is defined on all of $T_pM$. If they hold, any two points are joined by a minimizing geodesic.",
+  "hypotheses": [
+   {
+    "id": "h:manifold",
+    "text": "The space $M$ is a finite-dimensional smooth [Riemannian manifold](c:riemannian-manifold) without boundary, with Riemannian distance $d$.",
+    "concept": "c:riemannian-manifold"
+   },
+   {
+    "id": "h:connected",
+    "text": "The manifold $M$ is connected.",
+    "concept": null
+   }
+  ],
+  "conclusion": "Conditions (a) to (d) are equivalent, and each of them gives a geodesic of length $d(p, q)$ between any two points $p$ and $q$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "shooting",
+    "name": "Shooting toward the target",
+    "slogan": "Shoot a geodesic from $p$ toward $q$ to get minimizing geodesics, then close the cycle of implications from (d) to (b) to (a) to (c) to (d).",
+    "scope": "The whole theorem. Step 1 proves the minimizing geodesic under (d) at $p$, and (c) gives (d) at every point.",
+    "mechanisms": [
+     "m:compactness-extremum",
+     "m:cauchy-completeness",
+     "m:contradiction"
+    ],
+    "roles": [
+     {
+      "h": "h:manifold",
+      "why": "The smooth Riemannian structure gives local geodesics, small geodesic spheres and normal neighborhoods.",
+      "steps": [
+       "s:shoot",
+       "s:extend"
+      ]
+     },
+     {
+      "h": "h:connected",
+      "why": "Connectedness makes $d(p, q)$ finite for every $q$, so step 1 reaches every point.",
+      "steps": [
+       "s:shoot"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:shoot",
+      "slogan": "Join $p$ to any point $q$ by a minimizing geodesic when $\\exp_p$ is defined on all of $T_pM$.",
+      "detail": "Let $r = d(p, q)$, choose a point $\\exp_p(\\delta v)$ nearest to $q$ on a small geodesic sphere around $p$, and set $\\gamma(t) = \\exp_p(tv)$. The set of $t \\in [\\delta, r]$ with $d(\\gamma(t), q) = r - t$ is closed, contains $\\delta$, and is open by the same sphere argument at $\\gamma(t)$. So $\\gamma(r) = q$, and $\\gamma$ has length $r$.",
+      "uses": []
+     },
+     {
+      "id": "s:bounded",
+      "slogan": "Show that (d) makes every closed bounded set compact.",
+      "detail": "By step 1, a closed set inside the ball $B(p, R)$ lies in the image under $\\exp_p$ of the closed ball of radius $R$ in $T_pM$. That ball is compact by the Heine-Borel theorem and $\\exp_p$ is continuous, so the closed set is a closed subset of a compact set.",
+      "uses": [
+       "wd:Q253214"
+      ]
+     },
+     {
+      "id": "s:cauchy",
+      "slogan": "Show that (b) makes $(M, d)$ a [complete metric space](c:complete-metric-space).",
+      "detail": "A Cauchy sequence is bounded, so its closure is a closed bounded set, which is compact by (b). A subsequence converges, and then the whole Cauchy sequence converges.",
+      "uses": []
+     },
+     {
+      "id": "s:extend",
+      "slogan": "Show that (a) extends every geodesic to all of $\\mathbb{R}$.",
+      "detail": "Suppose that a unit-speed geodesic $\\gamma$ is maximal on $[0, s)$ with $s < \\infty$. Since $d(\\gamma(t), \\gamma(t')) \\le |t - t'|$, the points $\\gamma(t_n)$ with $t_n \\to s$ converge to some $q$, and a uniformly normal neighborhood of $q$ extends $\\gamma$ beyond $s$, a contradiction; so (c), [geodesic completeness](c:geodesic-completeness), holds.",
+      "uses": []
+     },
+     {
+      "id": "s:close",
+      "slogan": "Close the cycle of implications and add the minimizing geodesics.",
+      "detail": "Condition (c) gives (d) at every point, so steps 2, 3 and 4 give $(d) \\Rightarrow (b) \\Rightarrow (a) \\Rightarrow (c) \\Rightarrow (d)$. Under these conditions step 1 applies at every $p$, so any two points are joined by a minimizing geodesic.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:shoot",
+      "s:bounded"
+     ],
+     [
+      "s:bounded",
+      "s:close"
+     ],
+     [
+      "s:cauchy",
+      "s:close"
+     ],
+     [
+      "s:extend",
+      "s:close"
+     ],
+     [
+      "s:shoot",
+      "s:close"
+     ]
+    ],
+    "conclusion": "s:close",
+    "concepts": {
+     "c:riemannian-manifold": "The metric gives geodesics, the exponential map and the distance $d$.",
+     "c:complete-metric-space": "Metric completeness is condition (a) of the equivalence.",
+     "c:geodesic": "Minimizing geodesics are both a tool and an output of the proof.",
+     "c:exponential-map": "A globally defined exponential map lets the shooting argument reach every point.",
+     "c:geodesic-completeness": "Geodesic completeness is condition (c) of the equivalence."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard proof, as in M. P. do Carmo, Riemannian Geometry (Birkhauser, 1992), chapter 7, theorem 2.8."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1139430",
+  "statement": "Let $A$ be a finite-dimensional real algebra with unit, not necessarily associative, with a positive-definite [quadratic form](c:quadratic-form) $N$ such that $N(xy) = N(x)N(y)$. Then $A$ is isomorphic to exactly one of $\\mathbb{R}$, $\\mathbb{C}$, the [quaternions](c:quaternion) $\\mathbb{H}$ and the [octonions](c:octonion) $\\mathbb{O}$.",
+  "hypotheses": [
+   {
+    "id": "h:unital",
+    "text": "The real algebra $A$ has a unit $1$.",
+    "concept": null
+   },
+   {
+    "id": "h:finite",
+    "text": "The algebra $A$ is finite-dimensional over $\\mathbb{R}$.",
+    "concept": null
+   },
+   {
+    "id": "h:composition",
+    "text": "A positive-definite quadratic form $N$ on $A$ satisfies $N(xy) = N(x)N(y)$, so $A$ is a [composition algebra](c:composition-algebra).",
+    "concept": "c:composition-algebra"
+   }
+  ],
+  "conclusion": "The algebra $A$ is isomorphic to $\\mathbb{R}$, $\\mathbb{C}$, $\\mathbb{H}$ or $\\mathbb{O}$, and to only one of them.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "doubling",
+    "name": "Cayley-Dickson doubling",
+    "slogan": "Grow a chain of subalgebras from $\\mathbb{R}1$ by doubling, and show that doubling inside $A$ must stop after the octonions.",
+    "scope": "The whole classification: the list is complete and has no repeats. The proof shows that finite dimension is automatic.",
+    "mechanisms": [
+     "m:construction-explicit",
+     "m:algebraic-identity",
+     "m:dimension-count"
+    ],
+    "roles": [
+     {
+      "h": "h:unital",
+      "why": "The unit starts the chain with $\\mathbb{R}1$ and defines the conjugation.",
+      "steps": [
+       "s:conjugate",
+       "s:chain"
+      ]
+     },
+     {
+      "h": "h:finite",
+      "why": "The doubling chain stops at the octonions by step 3, so the proof does not need finite dimension.",
+      "unused": true
+     },
+     {
+      "h": "h:composition",
+      "why": "Multiplicativity of the positive-definite form gives the conjugation identities, orthogonal unit vectors and multiplicative norms on subalgebras.",
+      "steps": [
+       "s:conjugate",
+       "s:double",
+       "s:chain"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:conjugate",
+      "slogan": "Define the conjugation $\\bar x = 2\\langle x, 1\\rangle 1 - x$ and derive $x \\bar x = N(x) 1$.",
+      "detail": "Polarizing $N(xy) = N(x)N(y)$ gives $\\langle xy, xz\\rangle = N(x)\\langle y, z\\rangle$ and related identities for the inner product of $N$. From them follow $x\\bar x = \\bar x x = N(x)1$, $\\overline{xy} = \\bar y\\,\\bar x$ and $\\langle xy, z\\rangle = \\langle y, \\bar x z\\rangle$.",
+      "uses": []
+     },
+     {
+      "id": "s:double",
+      "slogan": "Double a proper subalgebra $B$ that contains $1$ by a unit vector $j$ orthogonal to $B$.",
+      "detail": "Since $N$ is positive definite and $B$ is finite-dimensional, $A = B \\oplus B^\\perp$, so a unit vector $j \\perp B$ exists. The identities of step 1 give $Bj \\perp B$ and $(a + bj)(c + dj) = (ac - \\bar d b) + (da + b\\bar c)j$, so $B \\oplus Bj$ is a subalgebra isomorphic to the Cayley-Dickson double of $B$.",
+      "uses": [
+       "nl:2037"
+      ]
+     },
+     {
+      "id": "s:assoc",
+      "slogan": "Show that the double of $B$ has a multiplicative norm exactly when $B$ is associative.",
+      "detail": "Expanding $N((a + bj)(c + dj)) = N(a + bj)N(c + dj)$ leaves a cross term that vanishes for all entries exactly when $B$ is associative. In the same way the double is associative only if $B$ is commutative, and commutative only if $B = \\mathbb{R}1$.",
+      "uses": []
+     },
+     {
+      "id": "s:chain",
+      "slogan": "Double from $\\mathbb{R}1$ to $\\mathbb{C}$, $\\mathbb{H}$ and $\\mathbb{O}$ until the subalgebra fills $A$.",
+      "detail": "Each double is a subalgebra of $A$, so its norm is multiplicative. Doubling $\\mathbb{R}$, $\\mathbb{C}$ and the [quaternions](c:quaternion) gives $\\mathbb{C}$, $\\mathbb{H}$ and the [octonions](c:octonion); $\\mathbb{O}$ is not associative, so by step 3 it cannot be doubled inside $A$, and $A$ is one of the four.",
+      "uses": []
+     },
+     {
+      "id": "s:distinct",
+      "slogan": "Separate the four algebras by their dimensions 1, 2, 4 and 8.",
+      "detail": "Isomorphic algebras have equal dimension, so no algebra appears twice in the list. Each of the four is a composition algebra under its Euclidean norm, by step 3 applied to $\\mathbb{R}$, $\\mathbb{C}$ and $\\mathbb{H}$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:conjugate",
+      "s:double"
+     ],
+     [
+      "s:conjugate",
+      "s:assoc"
+     ],
+     [
+      "s:double",
+      "s:chain"
+     ],
+     [
+      "s:assoc",
+      "s:chain"
+     ],
+     [
+      "s:assoc",
+      "s:distinct"
+     ],
+     [
+      "s:chain",
+      "s:distinct"
+     ]
+    ],
+    "conclusion": "s:distinct",
+    "concepts": {
+     "c:quadratic-form": "The multiplicative quadratic form drives every identity in the proof.",
+     "c:quaternion": "The quaternions are the double of $\\mathbb{C}$ and the last associative step.",
+     "c:octonion": "The octonions are the last double, because they are not associative.",
+     "c:composition-algebra": "The theorem classifies composition algebras with positive-definite norm."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The Cayley-Dickson doubling proof, as in J. H. Conway and D. A. Smith, On Quaternions and Octonions (A K Peters, 2003), chapter 6."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:3373",
+  "statement": "Let $X \\subset \\mathbb{CP}^N$ be a smooth [projective variety](c:projective-variety) of complex dimension $n$, and let $Y = X \\cap H$ be a [hyperplane section](c:hyperplane-section). Then the restriction map $H^k(X; \\mathbb{Z}) \\to H^k(Y; \\mathbb{Z})$ in [cohomology](c:cohomology) is an isomorphism for $k < n - 1$ and injective for $k = n - 1$.",
+  "hypotheses": [
+   {
+    "id": "h:smooth",
+    "text": "The variety $X \\subset \\mathbb{CP}^N$ is smooth, projective and of complex dimension $n$.",
+    "concept": "c:projective-variety"
+   },
+   {
+    "id": "h:hyperplane",
+    "text": "The set $Y$ is $X \\cap H$ for a hyperplane $H \\subset \\mathbb{CP}^N$.",
+    "concept": "c:hyperplane-section"
+   }
+  ],
+  "conclusion": "The map $H^k(X; \\mathbb{Z}) \\to H^k(Y; \\mathbb{Z})$ is bijective for $k < n - 1$ and injective for $k = n - 1$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "andreotti-frankel",
+    "name": "Morse theory on the affine complement",
+    "slogan": "Show by Morse theory that the affine complement $X \\setminus Y$ has no homology above degree $n$, then use duality and the exact sequence of the pair.",
+    "scope": "An outline; the index bound of step 2 rests on the cited work. The section $Y$ may be singular, and if $X \\subset H$ then $Y = X$ and the claim is trivial.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:duality",
+     "m:long-exact-sequence"
+    ],
+    "roles": [
+     {
+      "h": "h:smooth",
+      "why": "Smoothness makes $X$ a compact oriented $2n$-manifold and $X \\setminus Y$ a complex submanifold of $\\mathbb{C}^N$.",
+      "steps": [
+       "s:affine",
+       "s:duality"
+      ]
+     },
+     {
+      "h": "h:hyperplane",
+      "why": "Removing a hyperplane leaves $\\mathbb{C}^N$, so the complement of $Y$ is affine.",
+      "steps": [
+       "s:affine"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:affine",
+      "slogan": "Identify $U = X \\setminus Y$ with a closed complex submanifold of $\\mathbb{C}^N$.",
+      "detail": "Since $\\mathbb{CP}^N \\setminus H \\cong \\mathbb{C}^N$, the set $U$ is a smooth [affine variety](c:affine-variety) of complex dimension $n$, closed in $\\mathbb{C}^N$.",
+      "uses": []
+     },
+     {
+      "id": "s:morse",
+      "slogan": "Bound the Morse indices of a squared distance function on $U$ by $n$.",
+      "detail": "For a generic point $a$, the function $f(x) = |x - a|^2$ is a proper [Morse function](c:morse-function) on $U$. Andreotti and Frankel show that its Hessian at each critical point has index at most $n$, because the complex structure pairs negative and positive directions. So $U$ has the homotopy type of a [CW complex](c:cw-complex) of dimension at most $n$, and $H_j(U) = 0$ for $j > n$.",
+      "uses": [
+       "wd:Q4756099"
+      ]
+     },
+     {
+      "id": "s:duality",
+      "slogan": "Identify the [relative cohomology](c:relative-cohomology) $H^k(X, Y)$ with $H_{2n-k}(U)$ by Lefschetz duality.",
+      "detail": "The variety $X$ is a compact oriented manifold of real dimension $2n$, and $Y$ is a closed subvariety, hence a neighborhood retract. Lefschetz duality, the relative form of Poincaré duality, gives $H^k(X, Y; \\mathbb{Z}) \\cong H_{2n-k}(X \\setminus Y; \\mathbb{Z})$.",
+      "uses": [
+       "wd:Q2063099"
+      ]
+     },
+     {
+      "id": "s:vanish",
+      "slogan": "Combine duality with the cell bound to get $H^k(X, Y) = 0$ for $k < n$.",
+      "detail": "For $k < n$ the degree $2n - k$ is larger than $n$. So steps 2 and 3 give $H^k(X, Y) \\cong H_{2n-k}(U) = 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:sequence",
+      "slogan": "Read the restriction maps off the long exact sequence of the pair $(X, Y)$.",
+      "detail": "The sequence $H^k(X, Y) \\to H^k(X) \\to H^k(Y) \\to H^{k+1}(X, Y)$ is exact. For $k < n - 1$ both outer groups vanish, so restriction is bijective; for $k = n - 1$ the left group vanishes, so restriction is injective.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:affine",
+      "s:morse"
+     ],
+     [
+      "s:morse",
+      "s:vanish"
+     ],
+     [
+      "s:duality",
+      "s:vanish"
+     ],
+     [
+      "s:vanish",
+      "s:sequence"
+     ]
+    ],
+    "conclusion": "s:sequence",
+    "concepts": {
+     "c:projective-variety": "The theorem compares a smooth projective variety with its section.",
+     "c:hyperplane-section": "The hyperplane section is the subvariety whose cohomology is compared.",
+     "c:cohomology": "The conclusion is about restriction maps in integral cohomology.",
+     "c:affine-variety": "The complement of the section is affine, which bounds its topology.",
+     "c:morse-function": "A distance function is the Morse function that builds the complement.",
+     "c:cw-complex": "The complement is homotopy equivalent to a CW complex of dimension at most $n$.",
+     "c:relative-cohomology": "Relative cohomology of the pair measures the failure of restriction."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "A. Andreotti and T. Frankel, The Lefschetz theorem on hyperplane sections, Annals of Mathematics 69 (1959), 713-717",
+     "url": "https://doi.org/10.2307/1970034",
+     "note": "The Morse-theoretic proof; J. Milnor, Morse Theory (Annals of Mathematics Studies 51, 1963), section 7, presents the same argument."
+    }
+   }
+  ]
+ }
+]
