@@ -50,6 +50,7 @@ These visuals have data from an outside source but no refresh script, because a 
 | --- | --- |
 | `fpl-expected-goals` | No builder: the page text tells the story of one dated gameweek snapshot, so new data needs new text. |
 | `tampines-food-map`, `tampines-food` | The ratings come from Google Maps in a browser, and the picks from food guides that a person reads. |
+| `ubi-hougang-food` | The picks come from food guides that a person reads, and each place is checked by hand against a mall directory or a closure notice. |
 | `work-lanyards` | A hand-made snapshot of Amazon.sg listings, which answer a script with a bot check. |
 | `social-values-surveydata`, `graduate-employment-survey`, `tourist-attractions` | A provided dataset of one survey wave. A new wave is a new dataset, and the claims in `build.py` are about this one. |
 | `manchester-city-finances` | The figures come from published accounts and news articles that a person reads. |
