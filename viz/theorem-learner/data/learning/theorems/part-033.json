@@ -689,9 +689,7 @@
       "id": "s:equivalent",
       "slogan": "Conclude equivalence from the positive density $Z$.",
       "detail": "Step 4 gives $\\mu_h(A) = \\int_A Z\\,d\\mu$, so $\\mu_h \\ll \\mu$ with derivative $Z$. Because $Z > 0$ by step 2, also $\\mu(A) = \\int_A Z^{-1}\\,d\\mu_h$, so the measures are [equivalent](c:equivalent-measure).",
-      "uses": [
-       "wd:Q1191319"
-      ]
+      "uses": []
      }
     ],
     "edges": [
@@ -1160,6 +1158,482 @@
      "decl": "Complex.norm_deriv_le_of_forall_mem_sphere_norm_le",
      "follows": true,
      "note": "mathlib maps F into its completion (UniformSpace.Completion.toComplL) and applies norm_iteratedDeriv_le_of_forall_mem_sphere_norm_le with n = 1, which bounds the Cauchy circle integral by length times maximum."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:chain-rule-for-manifolds",
+  "statement": "Let $M, M', M''$ be [manifolds](c:manifold) with corners modelled on normed spaces over $\\mathbb{R}$ or $\\mathbb{C}$, and let $f\\colon M \\to M'$ and $g\\colon M' \\to M''$. If $f$ has [manifold derivative](c:manifold-derivative) $f'$ at $x$ and $g$ has manifold derivative $g'$ at $f(x)$, then $g \\circ f$ has manifold derivative $g' \\circ f'$ at $x$.",
+  "hypotheses": [
+   {
+    "id": "h:f",
+    "text": "The map $f$ is continuous at $x$, and its expression in [charts](c:charted-space) at $x$ and $f(x)$ has [Fréchet derivative](c:frechet-derivative) $f'$ at the image of $x$.",
+    "concept": "c:manifold-derivative"
+   },
+   {
+    "id": "h:g",
+    "text": "The map $g$ is continuous at $f(x)$, and its expression in charts at $f(x)$ and $g(f(x))$ has Fréchet derivative $g'$ at the image of $f(x)$.",
+    "concept": "c:manifold-derivative"
+   }
+  ],
+  "conclusion": "The composite $g \\circ f$ has manifold derivative $g' \\circ f'$ from the [tangent space](c:tangent-space) $T_xM$ to $T_{g(f(x))}M''$.",
+  "formal": {
+   "decl": "HasMFDerivAt.comp",
+   "difference": "The declaration allows any nontrivially normed field as the field of scalars."
+  },
+  "proofs": [
+   {
+    "id": "charts",
+    "name": "Chain rule in charts",
+    "slogan": "Write $g \\circ f$ in charts as the composite of the chart expressions of $g$ and $f$ near $x$, and apply the chain rule for Fréchet derivatives.",
+    "scope": "The whole theorem. Derivatives are taken within the range of the model with corners, which is the whole model space for manifolds without boundary.",
+    "mechanisms": [
+     "m:coordinates",
+     "m:functoriality"
+    ],
+    "roles": [
+     {
+      "h": "h:f",
+      "why": "It gives continuity of $f$ at $x$ and the derivative $f'$ of the chart expression of $f$.",
+      "steps": [
+       "s:continuity",
+       "s:domain",
+       "s:fderiv"
+      ]
+     },
+     {
+      "h": "h:g",
+      "why": "It gives continuity of $g$ at $f(x)$ and the derivative $g'$ of the chart expression of $g$.",
+      "steps": [
+       "s:continuity",
+       "s:fderiv"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:continuity",
+      "slogan": "Combine the two continuity conditions to get continuity of $g \\circ f$ at $x$.",
+      "detail": "The map $f$ is continuous at $x$ and $g$ is continuous at $f(x)$, so $g \\circ f$ is continuous at $x$. This is the first half of the definition of a [manifold derivative](c:manifold-derivative).",
+      "uses": []
+     },
+     {
+      "id": "s:domain",
+      "slogan": "Find a neighbourhood of $x$ that $f$ maps into the chart domain at $f(x)$.",
+      "detail": "The [chart](c:charted-space) domain at $f(x)$ is an [open set](c:open-set) that contains $f(x)$, and $f$ is continuous at $x$. So its preimage under $f$ is a neighbourhood of $x$, and its image in the chart at $x$ is a neighbourhood of $\\varphi(x)$ within the model range.",
+      "uses": []
+     },
+     {
+      "id": "s:composite",
+      "slogan": "Show that the chart expression of $g \\circ f$ equals the composite of the chart expressions there.",
+      "detail": "Write $\\tilde f = \\psi \\circ f \\circ \\varphi^{-1}$ and $\\tilde g = \\chi \\circ g \\circ \\psi^{-1}$. On the neighbourhood of step 2, $\\psi^{-1}(\\psi(f(y))) = f(y)$, so $\\chi \\circ (g \\circ f) \\circ \\varphi^{-1} = \\tilde g \\circ \\tilde f$ there.",
+      "uses": []
+     },
+     {
+      "id": "s:fderiv",
+      "slogan": "Differentiate $\\tilde g \\circ \\tilde f$ by the chain rule for Fréchet derivatives.",
+      "detail": "The [Fréchet derivative](c:frechet-derivative) of $\\tilde g$ at $\\tilde f(\\varphi(x)) = \\psi(f(x))$ is $g'$, and that of $\\tilde f$ at $\\varphi(x)$ is $f'$. The chain rule gives the derivative $g' \\circ f'$ for $\\tilde g \\circ \\tilde f$, and step 3 passes it to the chart expression of $g \\circ f$, because a derivative depends only on a neighbourhood.",
+      "uses": [
+       "nm:derivative-of-a-composition-of-functions",
+       "nl:4955"
+      ]
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Join continuity and the chart derivative into the manifold derivative of $g \\circ f$.",
+      "detail": "Steps 1 and 4 are the two conditions in the definition of a manifold derivative. So $g \\circ f$ has manifold derivative $g' \\circ f'$ from the [tangent space](c:tangent-space) at $x$ to the one at $g(f(x))$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:domain",
+      "s:composite"
+     ],
+     [
+      "s:composite",
+      "s:fderiv"
+     ],
+     [
+      "s:continuity",
+      "s:conclude"
+     ],
+     [
+      "s:fderiv",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:manifold": "The maps act between manifolds, so derivatives are read in charts.",
+     "c:manifold-derivative": "The theorem computes the manifold derivative of a composite map.",
+     "c:tangent-space": "The derivatives are linear maps between tangent spaces.",
+     "c:charted-space": "Charts turn the maps into maps between normed spaces.",
+     "c:frechet-derivative": "In charts the manifold derivative is a Fréchet derivative.",
+     "c:open-set": "The open chart domain gives the neighbourhood where charts cancel."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "HasMFDerivAt.comp",
+     "follows": true,
+     "note": "mathlib rewrites to HasMFDerivWithinAt.comp, which localises with extChartAt_preimage_mem_nhdsWithin and applies HasFDerivWithinAt.comp to the chart expressions writtenInExtChartAt."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:connected-subsets-of-r",
+  "statement": "A subset $S \\subseteq \\mathbb{R}$ is [connected](c:connected-space) (the empty set included) if and only if it is an [interval](c:interval): $\\emptyset$, $\\mathbb{R}$, $[a, b]$ with $a \\le b$, $[a, b)$, $(a, b]$ or $(a, b)$ with $a < b$, or $[a, \\infty)$, $(a, \\infty)$, $(-\\infty, b]$, $(-\\infty, b)$. Distinct entries of this list are distinct sets.",
+  "hypotheses": [
+   {
+    "id": "h:real",
+    "text": "The set $S$ lies in the [real numbers](c:real-number) with their usual order topology.",
+    "concept": "c:real-number"
+   }
+  ],
+  "conclusion": "The connected subsets of $\\mathbb{R}$ are exactly the sets of the list, each given by one type and one choice of endpoints.",
+  "formal": {
+   "decl": "setOfPred_isPreconnected_eq_of_ordered",
+   "difference": "The declaration classifies preconnected sets in any densely ordered, conditionally complete linear order with the order topology, and its list has repeats such as $\\emptyset = (a, a)$. It does not state that distinct entries give distinct sets."
+  },
+  "proofs": [
+   {
+    "id": "order-convex",
+    "name": "Order-convexity and suprema",
+    "slogan": "Show that connected sets contain every point between two of their points, classify such sets by infimum and supremum, and prove each interval connected by a supremum argument.",
+    "scope": "The whole classification, with $\\emptyset$ counted as connected as in mathlib. A reader who requires connected sets to be nonempty drops $\\emptyset$ from the list.",
+    "mechanisms": [
+     "m:supremum",
+     "m:case-analysis",
+     "m:contradiction"
+    ],
+    "roles": [
+     {
+      "h": "h:real",
+      "why": "Completeness and density of $\\mathbb{R}$ supply the infimum, the supremum and the point $s$ of the argument.",
+      "steps": [
+       "s:shape",
+       "s:connected"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:convex",
+      "slogan": "Show that a connected set contains every point between two of its points.",
+      "detail": "Let $x < c < y$ with $x, y \\in S$ and $c \\notin S$. Then $S \\cap (-\\infty, c)$ and $S \\cap (c, \\infty)$ are disjoint, relatively open, nonempty and cover $S$, so $S$ is not [connected](c:connected-space).",
+      "uses": []
+     },
+     {
+      "id": "s:shape",
+      "slogan": "Classify an order-convex set by its infimum, its supremum and whether it contains them.",
+      "detail": "Let $S$ be nonempty with $a = \\inf S \\in [-\\infty, \\infty)$ and $b = \\sup S \\in (-\\infty, \\infty]$, which exist by the [least upper bound](c:least-upper-bound) property. Order-convexity gives $(a, b) \\subseteq S \\subseteq [a, b]$, so $S$ is the [interval](c:interval) with ends $a, b$ that contains exactly those finite ends that lie in $S$.",
+      "uses": []
+     },
+     {
+      "id": "s:distinct",
+      "slogan": "Show that the infimum, the supremum and the end types determine the entry.",
+      "detail": "Each entry of the list has its left end as infimum and its right end as supremum, and it contains a finite end exactly when its bracket is closed. The condition $a < b$ for the non-closed bounded types excludes empty duplicates, so different entries are different sets.",
+      "uses": []
+     },
+     {
+      "id": "s:connected",
+      "slogan": "Prove that each interval is connected by a supremum argument.",
+      "detail": "Suppose an interval $I = U \\cup V$ with $U, V$ disjoint, nonempty and relatively open, and $x \\in U$, $y \\in V$, $x < y$. Let $s = \\sup\\{t \\in [x, y] : [x, t] \\subseteq U\\}$; then $s \\in I$, and openness of $U$ or of $V$ near $s$ contradicts the choice of $s$.",
+      "uses": []
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Join both directions and the uniqueness into the classification.",
+      "detail": "Steps 1 and 2 put every connected set in the list, step 4 shows that every entry is connected, and step 3 shows that the list has no repeats.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:convex",
+      "s:shape"
+     ],
+     [
+      "s:shape",
+      "s:conclude"
+     ],
+     [
+      "s:distinct",
+      "s:conclude"
+     ],
+     [
+      "s:connected",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:connected-space": "The theorem lists exactly the connected subsets of the line.",
+     "c:interval": "Intervals are the answer of the classification.",
+     "c:real-number": "Completeness and density of the reals drive both directions.",
+     "c:least-upper-bound": "Infimum and supremum fix the ends of each interval."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "setOfPred_isPreconnected_eq_of_ordered",
+     "follows": true,
+     "note": "mathlib combines setOfPred_isPreconnected_subset_of_ordered (IsPreconnected.mem_intervals, a case split on sInf and sSup of an order-connected set) with isPreconnected_Icc and the other interval lemmas."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:continuity-of-integrals-with-respect-to-parameters",
+  "statement": "Let $X$ be a [first-countable space](c:first-countable-space), $\\mu$ a measure on $[a, b]$ and $F\\colon X \\times [a, b] \\to \\mathbb{R}$. If each $F(x, \\cdot)$ is [measurable](c:measurable-function), $|F(x, t)| \\le g(t)$ for all $x$ and almost every $t$ with $g$ [integrable](c:integrable-function), and $x \\mapsto F(x, t)$ is [continuous](c:continuous-function) for almost every $t$, then $x \\mapsto \\int_a^b F(x, t)\\,d\\mu(t)$ is continuous.",
+  "hypotheses": [
+   {
+    "id": "h:first-countable",
+    "text": "The parameter space $X$ is [first-countable](c:first-countable-space), for example a metric space.",
+    "concept": "c:first-countable-space"
+   },
+   {
+    "id": "h:measurable",
+    "text": "For each $x$, the function $t \\mapsto F(x, t)$ is [measurable](c:measurable-function) on $[a, b]$.",
+    "concept": "c:measurable-function"
+   },
+   {
+    "id": "h:dominated",
+    "text": "Some $\\mu$-[integrable](c:integrable-function) $g$ on $[a, b]$ satisfies $|F(x, t)| \\le g(t)$ for every $x$ and almost every $t$.",
+    "concept": "c:integrable-function"
+   },
+   {
+    "id": "h:continuous",
+    "text": "For almost every $t$, the function $x \\mapsto F(x, t)$ is [continuous](c:continuous-function).",
+    "concept": "c:continuous-function"
+   }
+  ],
+  "conclusion": "The function $x \\mapsto \\int_a^b F(x, t)\\,d\\mu(t)$ is continuous on $X$.",
+  "formal": {
+   "decl": "intervalIntegral.continuous_of_dominated_interval",
+   "difference": "The declaration allows values in any real normed space and integrates over the oriented interval from $a$ to $b$. Its hypotheses are stated almost everywhere on $(\\min(a, b), \\max(a, b)]$."
+  },
+  "proofs": [
+   {
+    "id": "dominated",
+    "name": "Dominated convergence along sequences",
+    "slogan": "Check continuity along convergent sequences of parameters and pass to the limit under the integral by dominated convergence.",
+    "scope": "Continuity at every point $x_0 \\in X$. The bound may fail on a null set that depends on $x$; only countably many $x_n$ enter, so this is harmless.",
+    "mechanisms": [
+     "m:dominated-convergence"
+    ],
+    "roles": [
+     {
+      "h": "h:first-countable",
+      "why": "First countability reduces continuity to convergence along sequences.",
+      "steps": [
+       "s:sequences"
+      ]
+     },
+     {
+      "h": "h:measurable",
+      "why": "Measurability makes each $F(x_n, \\cdot)$ a candidate for dominated convergence.",
+      "steps": [
+       "s:limit"
+      ]
+     },
+     {
+      "h": "h:dominated",
+      "why": "The integrable bound dominates every $F(x_n, \\cdot)$.",
+      "steps": [
+       "s:bound"
+      ]
+     },
+     {
+      "h": "h:continuous",
+      "why": "Continuity in $x$ for almost every $t$ gives the pointwise limit.",
+      "steps": [
+       "s:pointwise"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:sequences",
+      "slogan": "Reduce continuity at $x_0$ to convergence along sequences $x_n \\to x_0$.",
+      "detail": "In a [first-countable space](c:first-countable-space), a function is continuous at $x_0$ when it maps every sequence $x_n \\to x_0$ to a sequence that converges to its value at $x_0$. So fix such a sequence.",
+      "uses": []
+     },
+     {
+      "id": "s:pointwise",
+      "slogan": "Show that $F(x_n, t) \\to F(x_0, t)$ for almost every $t$.",
+      "detail": "Outside one null set of $t$, the function $x \\mapsto F(x, t)$ is [continuous](c:continuous-function). For these $t$, $x_n \\to x_0$ gives $F(x_n, t) \\to F(x_0, t)$.",
+      "uses": []
+     },
+     {
+      "id": "s:bound",
+      "slogan": "Bound all the functions $F(x_n, \\cdot)$ by the one integrable function $g$.",
+      "detail": "For each $n$, $|F(x_n, t)| \\le g(t)$ outside a null set $N_n$. The countable union of the sets $N_n$ is null, so the bound holds for all $n$ at almost every $t$.",
+      "uses": []
+     },
+     {
+      "id": "s:limit",
+      "slogan": "Pass to the limit under the [integral](c:integral) by dominated convergence.",
+      "detail": "The functions $F(x_n, \\cdot)$ are [measurable](c:measurable-function), converge almost everywhere by step 2, and are dominated by the [integrable](c:integrable-function) $g$ by step 3. The dominated convergence theorem gives $\\int_a^b F(x_n, t)\\,d\\mu \\to \\int_a^b F(x_0, t)\\,d\\mu$, so the integral is continuous at $x_0$.",
+      "uses": [
+       "wd:Q1067156"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:sequences",
+      "s:pointwise"
+     ],
+     [
+      "s:sequences",
+      "s:bound"
+     ],
+     [
+      "s:pointwise",
+      "s:limit"
+     ],
+     [
+      "s:bound",
+      "s:limit"
+     ]
+    ],
+    "conclusion": "s:limit",
+    "concepts": {
+     "c:first-countable-space": "First countability lets sequences test continuity.",
+     "c:measurable-function": "Dominated convergence needs measurable integrands.",
+     "c:integrable-function": "The integrable bound is the dominating function.",
+     "c:continuous-function": "Continuity in the parameter gives pointwise convergence of integrands.",
+     "c:integral": "The theorem concerns an integral that depends on a parameter."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "intervalIntegral.continuous_of_dominated_interval",
+     "follows": true,
+     "note": "mathlib applies continuousAt_of_dominated_interval at each point, which uses dominated convergence along the neighbourhood filter, countably generated by first countability."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:continuity-of-the-sum-of-a-series-of-functions",
+  "statement": "Let $X$ be a [topological space](c:topological-space) and $f_n\\colon X \\to E$ [continuous](c:continuous-function) functions into a [Banach space](c:banach-space) $E$. If $\\|f_n(x)\\| \\le u_n$ for all $n$ and $x$, with $\\sum_n u_n < \\infty$ (a [summable bound](c:summable-bound)), then $x \\mapsto \\sum_{n=0}^{\\infty} f_n(x)$ is continuous.",
+  "hypotheses": [
+   {
+    "id": "h:continuous",
+    "text": "Each function $f_n$ is [continuous](c:continuous-function).",
+    "concept": "c:continuous-function"
+   },
+   {
+    "id": "h:banach",
+    "text": "The target $E$ is a [Banach space](c:banach-space), or any complete normed abelian group.",
+    "concept": "c:banach-space"
+   },
+   {
+    "id": "h:bound",
+    "text": "The numbers $u_n$ satisfy $\\|f_n(x)\\| \\le u_n$ for all $x$ and $\\sum_n u_n < \\infty$.",
+    "concept": "c:summable-bound"
+   }
+  ],
+  "conclusion": "The sum $S(x) = \\sum_n f_n(x)$ exists for every $x$ and is continuous on $X$.",
+  "formal": {
+   "decl": "continuous_tsum",
+   "difference": "The declaration allows any index type, with unconditional sums, and a complete normed abelian group as target; for the index set $\\mathbb{N}$ it states the same."
+  },
+  "proofs": [
+   {
+    "id": "m-test",
+    "name": "Weierstrass M-test and uniform limit",
+    "slogan": "The summable bound makes the partial sums converge uniformly, and a uniform limit of continuous functions is continuous.",
+    "scope": "The whole theorem; for empty $X$ there is nothing to prove.",
+    "mechanisms": [
+     "m:uniform-convergence",
+     "m:epsilon-over-three",
+     "m:cauchy-completeness"
+    ],
+    "roles": [
+     {
+      "h": "h:continuous",
+      "why": "Continuity of each term makes every partial sum continuous.",
+      "steps": [
+       "s:partial"
+      ]
+     },
+     {
+      "h": "h:banach",
+      "why": "Completeness makes the absolutely convergent series converge.",
+      "steps": [
+       "s:pointwise"
+      ]
+     },
+     {
+      "h": "h:bound",
+      "why": "The summable bound controls the series at each point and the tails uniformly.",
+      "steps": [
+       "s:pointwise",
+       "s:uniform"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:pointwise",
+      "slogan": "Show that the series converges at each point by absolute convergence.",
+      "detail": "At each $x$, $\\sum_n \\|f_n(x)\\| \\le \\sum_n u_n < \\infty$. An [absolutely convergent](c:absolute-convergence) series in a complete space converges, so $S(x)$ exists.",
+      "uses": [
+       "nm:absolutely-convergent-series-in-banach-spaces"
+      ]
+     },
+     {
+      "id": "s:uniform",
+      "slogan": "Bound the tails of the series uniformly by the tails of $\\sum u_n$.",
+      "detail": "For every $x$, $\\|S(x) - \\sum_{n < N} f_n(x)\\| \\le \\sum_{n \\ge N} u_n$, which tends to $0$ independently of $x$. So the partial sums converge [uniformly](c:uniform-convergence) to $S$.",
+      "uses": []
+     },
+     {
+      "id": "s:partial",
+      "slogan": "Show that each partial sum is continuous as a finite sum.",
+      "detail": "Addition in a normed space is continuous, so a finite sum of continuous functions is continuous. Hence every partial sum $S_N = \\sum_{n < N} f_n$ is continuous.",
+      "uses": []
+     },
+     {
+      "id": "s:limit",
+      "slogan": "Pass continuity to the uniform limit by a three-epsilon estimate.",
+      "detail": "Given $x_0$ and $\\varepsilon > 0$, choose $N$ with $\\|S - S_N\\| < \\varepsilon/3$ on $X$ and a neighbourhood $U$ of $x_0$ with $\\|S_N(x) - S_N(x_0)\\| < \\varepsilon/3$ on $U$. Then $\\|S(x) - S(x_0)\\| < \\varepsilon$ on $U$.",
+      "uses": [
+       "nm:continuity-of-the-limit-of-a-sequence-of-functions"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:pointwise",
+      "s:uniform"
+     ],
+     [
+      "s:uniform",
+      "s:limit"
+     ],
+     [
+      "s:partial",
+      "s:limit"
+     ]
+    ],
+    "conclusion": "s:limit",
+    "concepts": {
+     "c:topological-space": "Continuity on a general topological space needs only neighbourhoods.",
+     "c:continuous-function": "Continuity passes from the terms to the sum.",
+     "c:banach-space": "Completeness of the target makes the series converge.",
+     "c:summable-bound": "The summable bound is the M-test hypothesis.",
+     "c:absolute-convergence": "Absolute convergence gives the sum at each point.",
+     "c:uniform-convergence": "Uniform convergence carries continuity to the limit."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "continuous_tsum",
+     "follows": true,
+     "note": "mathlib applies continuousOn_tsum, which combines tendstoUniformlyOn_tsum (the Weierstrass M-test) with TendstoUniformlyOn.continuousOn and continuousOn_finsetSum."
     }
    }
   ]

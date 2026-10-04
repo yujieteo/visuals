@@ -486,5 +486,678 @@
     }
    }
   ]
+ },
+ {
+  "id": "wd:Q226014",
+  "statement": "Let $T$ be a [measure-preserving map](c:measure-preserving-map) of a space $X$ with a [finite measure](c:finite-measure) $\\mu$, and let $A$ be a [measurable set](c:measurable-set). Then [almost every](c:almost-everywhere) point $x \\in A$ returns to $A$ infinitely often: $T^n x \\in A$ for infinitely many $n$.",
+  "hypotheses": [
+   {
+    "id": "h:finite",
+    "text": "The measure $\\mu$ is [finite](c:finite-measure): $\\mu(X) < \\infty$.",
+    "concept": "c:finite-measure"
+   },
+   {
+    "id": "h:preserving",
+    "text": "The map $T\\colon X \\to X$ is measurable and [measure preserving](c:measure-preserving-map): $\\mu(T^{-1}E) = \\mu(E)$ for every measurable $E$.",
+    "concept": "c:measure-preserving-map"
+   },
+   {
+    "id": "h:measurable",
+    "text": "The set $A$ is [measurable](c:measurable-set).",
+    "concept": "c:measurable-set"
+   }
+  ],
+  "conclusion": "The points $x \\in A$ with $T^n x \\in A$ for only finitely many $n$ form a [null set](c:null-set).",
+  "formal": {
+   "decl": "MeasureTheory.Conservative.ae_mem_imp_frequently_image_mem",
+   "difference": "The declaration assumes only that $T$ is conservative, a wider class that contains every measure-preserving map of a finite measure space (MeasurePreserving.conservative). It also allows null-measurable sets."
+  },
+  "proofs": [
+   {
+    "id": "conservative",
+    "name": "Conservativity and a last return time",
+    "slogan": "Find returning points in every set of positive measure, upgrade this to returns at arbitrarily late times, and show that late non-returners form null sets.",
+    "scope": "The whole theorem; the case $\\mu(A) = 0$ is trivial. Steps 1 and 2 prove that $T$ is conservative, the hypothesis of the mathlib theorem.",
+    "mechanisms": [
+     "m:pigeonhole",
+     "m:contradiction",
+     "m:extremal-choice"
+    ],
+    "roles": [
+     {
+      "h": "h:finite",
+      "why": "A finite total measure cannot hold $N$ almost disjoint sets of measure $\\mu(E)$ when $N\\mu(E) > \\mu(X)$.",
+      "steps": [
+       "s:pigeonhole"
+      ]
+     },
+     {
+      "h": "h:preserving",
+      "why": "Preimages keep the measure $\\mu(E)$, and measurability of $T$ keeps the sets $B_n$ measurable.",
+      "steps": [
+       "s:pigeonhole",
+       "s:null"
+      ]
+     },
+     {
+      "h": "h:measurable",
+      "why": "Measurability of $A$ makes each set $B_n$ measurable.",
+      "steps": [
+       "s:null"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:pigeonhole",
+      "slogan": "Find a returning point in every set of positive measure by pigeonhole on its preimages.",
+      "detail": "Let $\\mu(E) > 0$ and choose $N$ with $N\\mu(E) > \\mu(X)$. The sets $T^{-k}E$, $0 \\le k < N$, all have measure $\\mu(E)$, so some $T^{-i}E \\cap T^{-j}E$ with $i < j$ has positive measure. It equals $T^{-i}(E \\cap T^{-(j-i)}E)$, so some $x \\in E$ has $T^{j-i}x \\in E$.",
+      "uses": [
+       "nm:pigeonhole-principle"
+      ]
+     },
+     {
+      "id": "s:late",
+      "slogan": "Show by contradiction that $\\mu(E \\cap T^{-m}E) > 0$ for infinitely many $m$.",
+      "detail": "Otherwise let $N$ be the largest such $m$ (with $m = 0$ allowed) and remove from $E \\cap T^{-N}E$ the null sets $E \\cap T^{-n}E$, $n > N$. Step 1 applied to the remaining set $F$ gives $x \\in F$ and $k \\ge 1$ with $T^k x \\in F$. Then $x \\in E$ and $T^{N+k}x \\in E$, against $x \\notin E \\cap T^{-(N+k)}E$.",
+      "uses": []
+     },
+     {
+      "id": "s:null",
+      "slogan": "Show that the points of $A$ that never return after time $n$ form a null set.",
+      "detail": "Let $B_n = \\{x \\in A : T^m x \\notin A \\text{ for all } m \\ge n\\}$, a measurable set. If $\\mu(B_n) > 0$, step 2 gives $m \\ge n$ and $x \\in B_n$ with $T^m x \\in B_n \\subseteq A$, which contradicts $x \\in B_n$.",
+      "uses": []
+     },
+     {
+      "id": "s:union",
+      "slogan": "Take the countable union of the null sets $B_n$.",
+      "detail": "A point of $A$ that returns only finitely often lies in some $B_n$. The union $\\bigcup_n B_n$ is a countable union of [null sets](c:null-set), so [almost every](c:almost-everywhere) $x \\in A$ returns infinitely often.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:pigeonhole",
+      "s:late"
+     ],
+     [
+      "s:late",
+      "s:null"
+     ],
+     [
+      "s:null",
+      "s:union"
+     ]
+    ],
+    "conclusion": "s:union",
+    "concepts": {
+     "c:measure-preserving-map": "Preimages under the map keep their measure.",
+     "c:finite-measure": "A finite total measure cannot hold too many sets of equal positive measure.",
+     "c:measurable-set": "The returning set and its preimages must be measurable.",
+     "c:almost-everywhere": "The theorem holds outside a set of measure zero.",
+     "c:null-set": "The exceptional points form a countable union of null sets."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "MeasureTheory.Conservative.ae_mem_imp_frequently_image_mem",
+     "follows": true,
+     "note": "mathlib proves MeasurePreserving.conservative by pigeonhole (exists_mem_iterate_mem_of_measure_univ_lt_mul_measure), then uses frequently_measure_inter_ne_zero and measure_mem_forall_ge_image_notMem_eq_zero."
+    }
+   },
+   {
+    "id": "tail-sets",
+    "name": "Equal measure of tail sets",
+    "slogan": "Compare the set of points that visit $A$ at some time $n \\ge N$ with its preimage, and use that both have the same finite measure.",
+    "scope": "The whole theorem, without the notion of a conservative map.",
+    "mechanisms": [
+     "m:monotone-limit"
+    ],
+    "roles": [
+     {
+      "h": "h:finite",
+      "why": "Finiteness allows the subtraction $\\mu(A_0) - \\mu(A_N)$.",
+      "steps": [
+       "s:equal"
+      ]
+     },
+     {
+      "h": "h:preserving",
+      "why": "Measure preservation gives $\\mu(T^{-N}A_0) = \\mu(A_0)$.",
+      "steps": [
+       "s:equal"
+      ]
+     },
+     {
+      "h": "h:measurable",
+      "why": "Measurability of $A$ and of $T$ makes the tail sets measurable.",
+      "steps": [
+       "s:tails"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:tails",
+      "slogan": "Define the tail sets $A_N = \\bigcup_{n \\ge N} T^{-n}A$ of points that visit $A$ at a time $n \\ge N$.",
+      "detail": "Each $A_N$ is a [measurable set](c:measurable-set), $A \\subseteq A_0$, the sets decrease in $N$, and $T^{-N}A_0 = A_N$.",
+      "uses": []
+     },
+     {
+      "id": "s:equal",
+      "slogan": "Show that every tail set has the same measure as $A_0$.",
+      "detail": "Measure preservation gives $\\mu(A_N) = \\mu(T^{-N}A_0) = \\mu(A_0)$. Since $A_N \\subseteq A_0$ and $\\mu(A_0) < \\infty$, $\\mu(A_0 \\setminus A_N) = \\mu(A_0) - \\mu(A_N) = 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:missing",
+      "slogan": "Show that the points of $A$ outside a tail set form a null set.",
+      "detail": "Since $A \\subseteq A_0$, the set $A \\setminus A_N$ lies in $A_0 \\setminus A_N$, so $\\mu(A \\setminus A_N) = 0$ for every $N$.",
+      "uses": []
+     },
+     {
+      "id": "s:intersect",
+      "slogan": "Intersect over $N$ to get the points that return infinitely often.",
+      "detail": "A point $x \\in A$ returns infinitely often exactly when $x \\in \\bigcap_N A_N$. The exceptional set $A \\setminus \\bigcap_N A_N = \\bigcup_N (A \\setminus A_N)$ is a countable union of [null sets](c:null-set), so it is null.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:tails",
+      "s:equal"
+     ],
+     [
+      "s:equal",
+      "s:missing"
+     ],
+     [
+      "s:tails",
+      "s:missing"
+     ],
+     [
+      "s:missing",
+      "s:intersect"
+     ],
+     [
+      "s:tails",
+      "s:intersect"
+     ]
+    ],
+    "conclusion": "s:intersect",
+    "concepts": {
+     "c:measure-preserving-map": "Preservation gives each tail set the measure of $A_0$.",
+     "c:finite-measure": "Finite measure lets equal measures of nested sets give a null difference.",
+     "c:measurable-set": "The tail sets are measurable because $A$ is.",
+     "c:almost-everywhere": "The theorem holds outside a set of measure zero.",
+     "c:null-set": "The exceptional set is a countable union of null sets."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The classical tail-set proof, as in P. Walters, An Introduction to Ergodic Theory, chapter 1."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q380576",
+  "statement": "For every measurable $\\mu\\colon \\mathbb{C} \\to \\mathbb{C}$ with $\\|\\mu\\|_\\infty < 1$, the [Beltrami equation](c:beltrami-equation) $\\partial_{\\bar z} f = \\mu\\,\\partial_z f$ has exactly one [quasiconformal](c:quasiconformal-map) [homeomorphism](c:homeomorphism) solution $f\\colon \\mathbb{C} \\to \\mathbb{C}$ in the [Sobolev space](c:sobolev-space) $W^{1,2}_{\\mathrm{loc}}$ with $f(0) = 0$ and $f(1) = 1$.",
+  "hypotheses": [
+   {
+    "id": "h:measurable",
+    "text": "The coefficient $\\mu$ is a [measurable function](c:measurable-function) on $\\mathbb{C}$.",
+    "concept": "c:measurable-function"
+   },
+   {
+    "id": "h:bound",
+    "text": "The coefficient satisfies $\\|\\mu\\|_\\infty \\le k < 1$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "There is exactly one quasiconformal homeomorphism $f$ of $\\mathbb{C}$ with $f(0) = 0$, $f(1) = 1$ and $\\partial_{\\bar z} f = \\mu\\,\\partial_z f$ almost everywhere.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "beurling-transform",
+    "name": "Beurling transform and Neumann series",
+    "slogan": "Invert $I - \\mu T$ for the Beurling transform $T$ on $L^p$, build the solution from the Cauchy transform, and prove that it is a unique homeomorphism.",
+    "scope": "An outline of the published proof; the $L^p$ bound of the Beurling transform and the homeomorphism property rest on the cited work. Steps 2 to 4 assume that $\\mu$ has compact support.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:contraction-iteration",
+     "m:interpolation",
+     "m:approximation"
+    ],
+    "roles": [
+     {
+      "h": "h:measurable",
+      "why": "Measurability makes $\\mu h$ a function in $L^p$, so the operator $h \\mapsto \\mu T h$ acts on $L^p$.",
+      "steps": [
+       "s:neumann"
+      ]
+     },
+     {
+      "h": "h:bound",
+      "why": "The bound $k < 1$ with $C_p \\to 1$ makes $\\mu T$ a contraction for some $p > 2$, and it bounds the distortion of the approximating maps.",
+      "steps": [
+       "s:neumann",
+       "s:homeo"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:transforms",
+      "slogan": "Bound the Beurling transform $T$ on $L^p$ with norm $C_p \\to 1$ as $p \\to 2$.",
+      "detail": "The Cauchy transform $Ph$ satisfies $\\partial_{\\bar z} Ph = h$, and $Th = \\partial_z Ph$ is a singular integral that is an isometry of $L^2$. Calderón-Zygmund theory bounds $T$ on every $L^p$, $1 < p < \\infty$, and Riesz-Thorin interpolation gives $C_p \\to 1$ as $p \\to 2$.",
+      "uses": [
+       "wd:Q245902"
+      ]
+     },
+     {
+      "id": "s:neumann",
+      "slogan": "Solve $h = \\mu T h + \\mu$ by a Neumann series for compactly supported $\\mu$.",
+      "detail": "Choose $p > 2$ with $k\\,C_p < 1$. Then $h \\mapsto \\mu T h$ is a contraction of $L^p$, so $h = \\sum_{j \\ge 0} (\\mu T)^j \\mu$ converges, and $h$ has compact support with $\\mu$.",
+      "uses": [
+       "wd:Q220680"
+      ]
+     },
+     {
+      "id": "s:solution",
+      "slogan": "Set $f(z) = z + Ph(z)$ and check the [Beltrami equation](c:beltrami-equation).",
+      "detail": "Then $\\partial_{\\bar z} f = h$ and $\\partial_z f = 1 + Th$, so $\\partial_{\\bar z} f = \\mu\\,\\partial_z f$. Since $h \\in L^p$ with $p > 2$, $f$ lies in the [Sobolev space](c:sobolev-space) $W^{1,p}_{\\mathrm{loc}}$ and is Hölder continuous.",
+      "uses": []
+     },
+     {
+      "id": "s:homeo",
+      "slogan": "Approximate $\\mu$ by smooth coefficients to show that $f$ is a homeomorphism.",
+      "detail": "For smooth compactly supported $\\mu_n \\to \\mu$ with $\\|\\mu_n\\|_\\infty \\le k$, the solutions $f_n$ are diffeomorphisms. The cited work shows that the $f_n$ and their inverses are equicontinuous and converge uniformly, so $f$ is a quasiconformal [homeomorphism](c:homeomorphism).",
+      "uses": []
+     },
+     {
+      "id": "s:general",
+      "slogan": "Remove the support condition by the reflection $z \\mapsto 1/z$ and a composition.",
+      "detail": "Split $\\mu$ into its parts inside and outside the unit disc. The cited work conjugates the outer part by $z \\mapsto 1/z$ to a compactly supported coefficient, solves it, solves for the coefficient of the remaining factor, and normalizes the composition to fix $0$ and $1$.",
+      "uses": []
+     },
+     {
+      "id": "s:unique",
+      "slogan": "Prove uniqueness, since two normalized solutions differ by a conformal map that fixes $0$ and $1$.",
+      "detail": "If $f$ and $g$ are normalized solutions, $g \\circ f^{-1}$ is a $W^{1,2}_{\\mathrm{loc}}$ homeomorphism with $\\partial_{\\bar z} = 0$, so Weyl's lemma makes it conformal on $\\mathbb{C}$. Such a map is $az + b$, and the normalization makes it the identity; with step 5 this gives exactly one solution.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:transforms",
+      "s:neumann"
+     ],
+     [
+      "s:transforms",
+      "s:solution"
+     ],
+     [
+      "s:neumann",
+      "s:solution"
+     ],
+     [
+      "s:solution",
+      "s:homeo"
+     ],
+     [
+      "s:homeo",
+      "s:general"
+     ],
+     [
+      "s:general",
+      "s:unique"
+     ]
+    ],
+    "conclusion": "s:unique",
+    "concepts": {
+     "c:beltrami-equation": "The theorem solves this equation for every admissible coefficient.",
+     "c:quasiconformal-map": "Solutions with $\\|\\mu\\|_\\infty < 1$ are quasiconformal maps.",
+     "c:homeomorphism": "The solution must be a bijective continuous map with continuous inverse.",
+     "c:sobolev-space": "The solution has locally integrable weak derivatives.",
+     "c:measurable-function": "Only measurability and a bound are asked of the coefficient."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "L. V. Ahlfors and L. Bers, Riemann's mapping theorem for variable metrics, Annals of Mathematics 72 (1960), 385-404",
+     "url": "https://www.jstor.org/stable/1970141",
+     "note": "The Neumann series with the Calderón-Zygmund bound is the Ahlfors-Bers method; a textbook account is L. V. Ahlfors, Lectures on Quasiconformal Mappings, chapter V."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q7272004",
+  "statement": "Let $k$ be a field or a [principal ideal domain](c:principal-ideal-domain) and $n \\ge 0$. Every finitely generated [projective module](c:projective-module) over the [polynomial ring](c:polynomial-ring) $k[x_1, \\dots, x_n]$ is [free](c:free-module).",
+  "hypotheses": [
+   {
+    "id": "h:pid",
+    "text": "The coefficient ring $k$ is a field or a [principal ideal domain](c:principal-ideal-domain).",
+    "concept": "c:principal-ideal-domain"
+   },
+   {
+    "id": "h:fg",
+    "text": "The module $P$ is finitely generated and [projective](c:projective-module) over $k[x_1, \\dots, x_n]$.",
+    "concept": "c:projective-module"
+   }
+  ],
+  "conclusion": "$P \\cong k[x_1, \\dots, x_n]^r$ for some $r \\ge 0$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "patching-horrocks",
+    "name": "Horrocks' theorem and Quillen patching",
+    "slogan": "Induct on the number of variables: invert monic polynomials, use the induction hypothesis there, and descend freeness by Horrocks' theorem and Quillen patching.",
+    "scope": "An outline of the published proof; Horrocks' theorem and the patching theorem rest on the cited work. The case $n = 0$ is the structure theorem over a principal ideal domain.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:induction",
+     "m:local-global"
+    ],
+    "roles": [
+     {
+      "h": "h:pid",
+      "why": "A principal ideal domain gives free modules at $n = 0$ and stays principal after inverting monic polynomials.",
+      "steps": [
+       "s:base",
+       "s:localize"
+      ]
+     },
+     {
+      "h": "h:fg",
+      "why": "Finite generation and projectivity are the hypotheses of Horrocks' theorem, of patching and of the induction hypothesis.",
+      "steps": [
+       "s:localize",
+       "s:descend"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:base",
+      "slogan": "Settle $n = 0$ by the structure theorem over a principal ideal domain.",
+      "detail": "A finitely generated projective module over $k$ is a direct summand of some $k^m$, so it is torsion free. The structure theorem makes it [free](c:free-module).",
+      "uses": [
+       "wd:Q7888360"
+      ]
+     },
+     {
+      "id": "s:horrocks",
+      "slogan": "Prove Horrocks' theorem: over a [local ring](c:local-ring), freeness after inverting monic polynomials gives freeness.",
+      "detail": "For a local ring $R$ and a finitely generated projective $R[t]$-module $P$, the cited work shows that $P$ is free if $P$ becomes free after inverting all [monic polynomials](c:monic-polynomial) of $R[t]$.",
+      "uses": []
+     },
+     {
+      "id": "s:patching",
+      "slogan": "Patch local extendedness to global extendedness by Quillen's patching theorem.",
+      "detail": "If $P_{\\mathfrak m}$ is extended from $R_{\\mathfrak m}$ for every maximal ideal $\\mathfrak m$ of $R$, then $P \\cong (P/tP) \\otimes_R R[t]$. With step 2: if $P$ becomes free after inverting the monic polynomials of $R[t]$, then $P$ is extended from $R$.",
+      "uses": []
+     },
+     {
+      "id": "s:localize",
+      "slogan": "Invert the monic polynomials in $x_n$ over $k$ and apply the induction hypothesis.",
+      "detail": "The [localization](c:localization-of-a-ring) $k\\langle x_n \\rangle$ of $k[x_n]$ at its monic polynomials is again a field or a principal ideal domain. Over it, $P$ becomes a finitely generated projective module over a polynomial ring in $n - 1$ variables, so it is free by induction.",
+      "uses": []
+     },
+     {
+      "id": "s:descend",
+      "slogan": "Descend freeness to $P$ through $R = k[x_1, \\dots, x_{n-1}]$ and $t = x_n$.",
+      "detail": "Monic polynomials in $x_n$ over $k$ are monic over $R$, so $P$ is free after inverting the monic polynomials of $R[x_n]$, and step 3 gives $P \\cong P_0 \\otimes_R R[x_n]$ with $P_0 = P/x_nP$. The module $P_0$ is finitely generated projective over $R$, free by induction, so $P$ is free.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:base",
+      "s:localize"
+     ],
+     [
+      "s:base",
+      "s:descend"
+     ],
+     [
+      "s:horrocks",
+      "s:patching"
+     ],
+     [
+      "s:patching",
+      "s:descend"
+     ],
+     [
+      "s:localize",
+      "s:descend"
+     ]
+    ],
+    "conclusion": "s:descend",
+    "concepts": {
+     "c:principal-ideal-domain": "Over a PID, projective modules are free, which starts the induction.",
+     "c:projective-module": "The theorem shows that these modules are free.",
+     "c:polynomial-ring": "The induction removes one variable of the polynomial ring at a time.",
+     "c:free-module": "Freeness is the conclusion at every stage of the induction.",
+     "c:local-ring": "Horrocks' theorem works over a local base ring.",
+     "c:monic-polynomial": "Inverting monic polynomials gives the ring where freeness is known.",
+     "c:localization-of-a-ring": "The proof passes to localizations at monic polynomials and at maximal ideals."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "D. Quillen, Projective modules over polynomial rings, Inventiones Mathematicae 36 (1976), 167-171",
+     "url": "https://doi.org/10.1007/BF01390008",
+     "note": "Suslin proved the theorem independently (Doklady Akad. Nauk SSSR 229, 1976); T. Y. Lam, Serre's Problem on Projective Modules, Springer 2006, gives the full account, including the principal ideal domain case."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1974087",
+  "statement": "Let $U \\subseteq \\mathbb{C}$ be open, $c \\in U$, and let $f$ be [holomorphic](c:holomorphic-function) on $U \\setminus \\{c\\}$ and [bounded](c:bounded-function) on a [punctured neighborhood](c:punctured-neighborhood) of $c$. Then $\\lim_{z \\to c} f(z)$ exists, and $f$ extended by this value is holomorphic on $U$.",
+  "hypotheses": [
+   {
+    "id": "h:open",
+    "text": "The set $U \\subseteq \\mathbb{C}$ is open and contains $c$.",
+    "concept": null
+   },
+   {
+    "id": "h:holomorphic",
+    "text": "The function $f$ is [holomorphic](c:holomorphic-function) on $U \\setminus \\{c\\}$.",
+    "concept": "c:holomorphic-function"
+   },
+   {
+    "id": "h:bounded",
+    "text": "The function $f$ is [bounded](c:bounded-function) on $\\{z : 0 < |z - c| < r\\}$ for some $r > 0$.",
+    "concept": "c:bounded-function"
+   }
+  ],
+  "conclusion": "The limit $L = \\lim_{z \\to c} f(z)$ exists, and the function equal to $f$ off $c$ and to $L$ at $c$ is holomorphic on $U$.",
+  "formal": {
+   "decl": "Complex.differentiableOn_update_limUnder_insert_of_isLittleO",
+   "difference": "The declaration assumes only $f(z) - f(c) = o(1/(z - c))$ as $z \\to c$, which boundedness implies. It allows values in a complex Banach space."
+  },
+  "proofs": [
+   {
+    "id": "multiply-by-z-c",
+    "name": "Multiply by z - c and divide",
+    "slogan": "Multiply by $z - c$ to get a function that is continuous at $c$, show that it is analytic there, and divide the factor back out.",
+    "scope": "The whole theorem; the value at $c$ is $F'(c)$, which is the limit of $f$.",
+    "mechanisms": [
+     "m:complex-integration",
+     "m:taylor-expansion"
+    ],
+    "roles": [
+     {
+      "h": "h:open",
+      "why": "Openness gives a closed disc around $c$ inside $U$.",
+      "steps": [
+       "s:analytic"
+      ]
+     },
+     {
+      "h": "h:holomorphic",
+      "why": "Holomorphy off $c$ makes $F$ holomorphic off $c$ and the extension holomorphic away from $c$.",
+      "steps": [
+       "s:aux",
+       "s:extend"
+      ]
+     },
+     {
+      "h": "h:bounded",
+      "why": "Boundedness makes $F(z) = (z - c) f(z)$ tend to $0$, so $F$ is continuous at $c$.",
+      "steps": [
+       "s:aux"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:aux",
+      "slogan": "Form $F(z) = (z - c) f(z)$ and set $F(c) = 0$.",
+      "detail": "$F$ is [holomorphic](c:holomorphic-function) on $U \\setminus \\{c\\}$ as a product of holomorphic functions. Since $|f| \\le M$ near $c$, $|F(z)| \\le M|z - c| \\to 0$, so $F$ is continuous at $c$.",
+      "uses": []
+     },
+     {
+      "id": "s:analytic",
+      "slogan": "Represent $F$ by the Cauchy integral formula on a disc around $c$.",
+      "detail": "On a closed disc $\\bar D \\subseteq U$ around $c$, $F$ is continuous and holomorphic except at the single point $c$. The Cauchy-Goursat theorem still holds with one exceptional point of continuity, so the Cauchy integral formula holds on $D$ and $F(z) = \\sum_{k \\ge 0} a_k (z - c)^k$ there.",
+      "uses": [
+       "nm:cauchy-goursat-theorem",
+       "nl:11500"
+      ]
+     },
+     {
+      "id": "s:divide",
+      "slogan": "Divide the power series by $z - c$, using $a_0 = F(c) = 0$.",
+      "detail": "Since $a_0 = F(c) = 0$, the [power series](c:power-series) $g(z) = \\sum_{k \\ge 0} a_{k+1}(z - c)^k$ is holomorphic on $D$, and $g(z) = F(z)/(z - c) = f(z)$ for $z \\ne c$.",
+      "uses": []
+     },
+     {
+      "id": "s:extend",
+      "slogan": "Define $f(c) = g(c)$ and check holomorphy on all of $U$.",
+      "detail": "Then $\\lim_{z \\to c} f(z) = g(c) = a_1 = F'(c)$ exists. The extended function equals $g$ on $D$ and $f$ on $U \\setminus \\{c\\}$, so it is holomorphic on $U$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:aux",
+      "s:analytic"
+     ],
+     [
+      "s:aux",
+      "s:divide"
+     ],
+     [
+      "s:analytic",
+      "s:divide"
+     ],
+     [
+      "s:divide",
+      "s:extend"
+     ]
+    ],
+    "conclusion": "s:extend",
+    "concepts": {
+     "c:holomorphic-function": "Holomorphy off $c$ is what the extension upgrades to all of $U$.",
+     "c:bounded-function": "Boundedness near $c$ is the condition that removes the singularity.",
+     "c:punctured-neighborhood": "The bound is only asked on a punctured neighborhood of $c$.",
+     "c:power-series": "A power series expansion around $c$ defines the extension."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Complex.differentiableOn_update_limUnder_insert_of_isLittleO",
+     "follows": true,
+     "note": "mathlib reduces to differentiableOn_update_limUnder_of_isLittleO, which takes $(z - c) f(z)$, proves it analytic by analyticAt_of_differentiable_on_punctured_nhds_of_continuousAt (Cauchy formula off a countable set) and divides with dslope."
+    }
+   },
+   {
+    "id": "square-factor",
+    "name": "Square factor and Taylor series",
+    "slogan": "Multiply by $(z - c)^2$ to get a function with value and derivative zero at $c$, and expand it in a Taylor series.",
+    "scope": "The whole theorem; it uses that a function complex differentiable on an open set is analytic.",
+    "mechanisms": [
+     "m:taylor-expansion",
+     "m:epsilon-delta"
+    ],
+    "roles": [
+     {
+      "h": "h:open",
+      "why": "Openness gives a disc around $c$ inside $U$ for the Taylor series.",
+      "steps": [
+       "s:taylor"
+      ]
+     },
+     {
+      "h": "h:holomorphic",
+      "why": "Holomorphy off $c$ makes $h$ holomorphic off $c$ and the extension holomorphic away from $c$.",
+      "steps": [
+       "s:square",
+       "s:extend"
+      ]
+     },
+     {
+      "h": "h:bounded",
+      "why": "Boundedness gives $|h(z)| \\le M|z - c|^2$, so $h'(c) = 0$.",
+      "steps": [
+       "s:square",
+       "s:derivative"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:square",
+      "slogan": "Form $h(z) = (z - c)^2 f(z)$ and set $h(c) = 0$.",
+      "detail": "$h$ is [holomorphic](c:holomorphic-function) on $U \\setminus \\{c\\}$ as a product of holomorphic functions. Because $f$ is [bounded](c:bounded-function) by $M$ near $c$, $|h(z)| \\le M|z - c|^2$ there.",
+      "uses": []
+     },
+     {
+      "id": "s:derivative",
+      "slogan": "Show that $h$ is complex differentiable at $c$ with $h'(c) = 0$.",
+      "detail": "The difference quotient is $(h(z) - h(c))/(z - c) = (z - c) f(z)$, of modulus at most $M|z - c| \\to 0$. So $h'(c) = 0$, and $h$ is holomorphic on all of $U$.",
+      "uses": []
+     },
+     {
+      "id": "s:taylor",
+      "slogan": "Expand $h$ in its Taylor series around $c$, whose first two coefficients vanish.",
+      "detail": "A holomorphic function is analytic by the Cauchy integral formula, so $h(z) = \\sum_{k \\ge 0} a_k (z - c)^k$ on a disc $D \\subseteq U$ around $c$. Here $a_0 = h(c) = 0$ and $a_1 = h'(c) = 0$.",
+      "uses": [
+       "nl:11500"
+      ]
+     },
+     {
+      "id": "s:extend",
+      "slogan": "Divide by $(z - c)^2$ and define $f(c) = a_2$.",
+      "detail": "On $D \\setminus \\{c\\}$, $f(z) = \\sum_{k \\ge 0} a_{k+2}(z - c)^k$, a [power series](c:power-series) that is holomorphic on $D$. So $\\lim_{z \\to c} f(z) = a_2$, and $f$ extended by $a_2$ is holomorphic on $U$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:square",
+      "s:derivative"
+     ],
+     [
+      "s:derivative",
+      "s:taylor"
+     ],
+     [
+      "s:taylor",
+      "s:extend"
+     ]
+    ],
+    "conclusion": "s:extend",
+    "concepts": {
+     "c:holomorphic-function": "Holomorphy off $c$ is what the extension upgrades to all of $U$.",
+     "c:bounded-function": "Boundedness near $c$ is the condition that removes the singularity.",
+     "c:punctured-neighborhood": "The bound is only asked on a punctured neighborhood of $c$.",
+     "c:power-series": "A power series expansion around $c$ defines the extension."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard proof of Riemann's theorem through $(z - c)^2 f(z)$, as in the Wikipedia article Removable singularity and in complex analysis textbooks."
+    }
+   }
+  ]
  }
 ]
