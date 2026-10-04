@@ -1,10 +1,15 @@
 """scripts/check.py: the steps a folder calls for, the WebMCP tools check and the allow list of the rule steps."""
+import contextlib
+import io
+import subprocess
 import sys
 import unittest
+from unittest import mock
 
 from helpers import Layout, metadata
 
-from check import default_checks, rule_steps, tools_problems
+import check
+from check import default_checks, evidence, main, rule_steps, tools_problems
 
 SKILLS = "# A visual\n\n## WebMCP tools\n\n| Tool | Input | Returns |\n| --- | --- | --- |\n{rows}\n## Exports\n\n| `not_a_tool` | x | y |\n"
 
@@ -92,6 +97,104 @@ class RuleStepsTest(unittest.TestCase):
             problem = 'tests/page.test.mjs: test "the page has a title" only checks source text; run the code and assert on what it does'
             self.assertEqual(dict(rule_steps(folder, metadata()))["sourcetests"], [problem])
             self.assertEqual(dict(rule_steps(folder, metadata(allow={"sourcetests": [problem]})))["sourcetests"], [])
+
+
+def toon(layout, *args):
+    """Run check.py --toon on ``layout``'s visuals; return (stdout, exit code)."""
+    out = io.StringIO()
+    with mock.patch.object(check, "ROOT", layout.root), mock.patch.object(check, "TSC", layout.root / "none"), \
+            contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
+        with self_exit() as code:
+            main(["--toon", *args])
+    return out.getvalue(), code[0]
+
+
+@contextlib.contextmanager
+def self_exit():
+    code = [0]
+    try:
+        yield code
+    except SystemExit as exit:
+        code[0] = exit.code
+
+
+class ToonTest(unittest.TestCase):
+    """--toon never passes what it did not check: every filter reports its count and the total."""
+
+    def layout(self):
+        layout = Layout().__enter__()
+        self.addCleanup(layout.__exit__)
+        layout.visual("alpha")
+        layout.visual("beta")
+        return layout
+
+    def test_every_visual_passing_passes_and_the_output_names_the_log(self):
+        layout = self.layout()
+        out, code = toon(layout)
+        self.assertEqual(code, 0)
+        self.assertTrue(out.startswith("verdict: pass\nfailures[0]"))
+        self.assertIn("  2,2,2,0,every visual", out)
+        log = out.split("log: ", 1)[1].split("\n", 1)[0]
+        self.assertIn("checking 2 visual(s)", (layout.root / log).read_text(encoding="utf-8"))
+
+    def test_a_named_visual_gives_a_verdict_on_it_and_says_how_many_were_not_checked(self):
+        out, code = toon(self.layout(), "alpha")
+        self.assertEqual(code, 0)
+        self.assertIn("verdict: pass (on 1 of 2 visuals; 1 not checked)\n", out)
+        self.assertIn("  1,1,2,1,named", out)
+        self.assertIn("1 visual(s) were not checked; run `python3 scripts/check.py --toon` for every visual", out)
+
+    def test_a_failing_step_comes_first_with_its_place_and_fails_the_verdict(self):
+        layout = self.layout()
+        (layout.root / "viz" / "alpha" / "build.py").write_text("import os\nraise SystemExit('stale: index.html:3 differs')\n", encoding="utf-8")
+        out, code = toon(layout, "alpha")
+        self.assertEqual(code, 1)
+        self.assertIn("verdict: fail (on 1 of 2 visuals; 1 not checked)\n", out)
+        self.assertIn('failures[2]{visual,step,file_line,evidence}:\n  alpha,build,"viz/alpha/index.html:3","stale: index.html:3 differs"\n', out)
+        self.assertIn('alpha,pydead,"viz/alpha/build.py:1","build.py:1: import os is unused"', out)
+
+    def test_an_unknown_visual_an_unknown_ref_and_a_change_selecting_nothing_exit_2(self):
+        layout = self.layout()
+        out, code = toon(layout, "alpha", "gamma")
+        self.assertEqual((code, out.splitlines()[:2]), (2, ["verdict: error", "error: unknown visual(s): gamma; a visual is a viz/<slug>/ folder with visual.json"]))
+        out, code = toon(layout, "--changed", "no-such-ref-anywhere")
+        self.assertEqual((code, out.splitlines()[1]), (2, "error: --changed: no-such-ref-anywhere is not a known ref"))
+        git = ["git", "-c", "user.name=t", "-c", "user.email=t@example.org", "-c", "commit.gpgsign=false"]
+        subprocess.run(["git", "init", "-q"], cwd=layout.root, check=True)
+        subprocess.run([*git, "commit", "-q", "--allow-empty", "-m", "base"], cwd=layout.root, check=True)
+        with mock.patch.object(check.changed, "selection", return_value=([], None)):
+            out, code = toon(layout, "--changed", "HEAD")
+        self.assertEqual((code, out.splitlines()[1]), (2, "error: --changed HEAD: the change selects no visual, so the filter matches nothing"))
+
+    def test_require_typecheck_without_typescript_is_an_environment_error(self):
+        out, code = toon(self.layout(), "alpha", "--require-typecheck")
+        self.assertEqual((code, out.splitlines()), (2, [
+            "verdict: error",
+            "error: --require-typecheck: typescript is not installed",
+            "help[1]{next}:",
+            '  "Run `npm ci` at the repository root, then run this command again"',
+        ]))
+
+    def test_scoped_is_not_an_option(self):
+        with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as raised:
+            main(["--toon", "alpha", "--scoped"])
+        self.assertEqual(raised.exception.code, 2)
+
+
+class EvidenceTest(unittest.TestCase):
+    def test_a_rule_problem_gives_its_own_place(self):
+        self.assertEqual(evidence("a", ["build.py:3: import os is unused"], b""), ("build.py:3: import os is unused", "viz/a/build.py:3"))
+
+    def test_a_command_gives_its_failure_line_and_the_place_a_failure_names_over_a_stack_frame(self):
+        output = (f"ok 1\n    at file://{check.ROOT.as_posix()}/viz/a/tests/x.test.mjs:9:3\n"
+                  "SyntaxError: Identifier 'test' has already been declared\n"
+                  "viz/a/tests/y.mjs(4,2): error TS2300: Duplicate identifier 'test'.\n").encode()
+        self.assertEqual(evidence("a", (0, len(output)), output),
+                         ("SyntaxError: Identifier 'test' has already been declared", "viz/a/tests/y.mjs:4"))
+
+    def test_output_without_a_place_gives_its_first_failure_line_or_its_first_line(self):
+        self.assertEqual(evidence("a", (0, 22), b"one\nTraceback: failed\n"), ("Traceback: failed", ""))
+        self.assertEqual(evidence("a", (0, 0), b""), ("no output; read the log", ""))
 
 
 if __name__ == "__main__":

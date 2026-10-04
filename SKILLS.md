@@ -14,7 +14,21 @@ What a visual must be (artifact contract, state and export, interaction and acce
 1. Work inside `viz/<slug>/` only. Edit the data, `src/` or `build.py` and run `python3 build.py` when the folder has a builder (it regenerates `index.html`; never hand-edit a generated page); otherwise edit `index.html` directly.
 2. Keep `visual.json` true: its `webmcp_tools` and the WebMCP tools table in `SKILLS.md` name exactly the tools the page registers, and `fetched` is the date of the data. `schema/visual.schema.json` says what each field means.
 3. Put its tests in its own `tests/` (`*.test.mjs` for `node --test`, `test_*.py` for unittest). A test reads only its own folder and the shared tooling, never another visual's folder: CI runs it on a checkout without them. A test runs the page's code and asserts on what it does; the `sourcetests` step fails a test that only searches the page's source text. Time any test you add and keep it fast.
-4. Check it: `python3 scripts/check.py <slug>`, and `node e2e/bin/page-axi.js check <slug>` for the page in a browser, then `python3 scripts/check.py --changed` for everything the branch touches. Run `npm ci` once first, so the type and dead-code checks run too. Fix a failure; do not add it to `allow` in `visual.json` unless the finding is deliberate, and then say why in the pull request.
+4. Check it: `python3 scripts/check.py --toon <slug>`, and `node e2e/bin/page-axi.js check <slug>` for the page in a browser, then `python3 scripts/check.py --toon --changed` for everything the branch touches. Run `npm ci` once first, so the type and dead-code checks run too. Fix a failure; do not add it to `allow` in `visual.json` unless the finding is deliberate, and then say why in the pull request.
+
+## One-call verdicts
+
+Agents call these and read their output; do not pipe a check's output through `tail` or `grep`, and do not sort type errors by hand. Each prints one short TOON verdict, the failures first with their `file:line`, counts and `help` lines with the next command, and writes the full output to a log in `build/logs/` whose path it prints. Exit 0 is a pass, 1 a failure, 2 a usage or environment error.
+
+| Command | Verdict on |
+| --- | --- |
+| `python3 scripts/check.py --toon` | every visual's checks |
+| `python3 scripts/check.py --toon <slug>...` | the named visuals only |
+| `python3 scripts/check.py --toon --changed [BASE]` | the visuals the branch changes |
+| `npm run typecheck -- --summary` | every tsc project: the shared tooling and each visual with a `tsconfig.json`; errors by code and by file, the first 20 in place order, inline-script errors at their page line |
+| `npm run typecheck -- --summary [<slug>...] [--file PATH] [--since REF] [--first N]` | the same, with the errors filtered |
+
+A selection or filter never passes silently. Named visuals or projects get a verdict on them, and the verdict line says how many of the total were not checked. A `--file` or `--since` filter only narrows the errors listed: the verdict fails on every error in a checked project and on every tsc run that exits non-zero. An unknown visual, a missing path, an unknown ref, or a filter that matches nothing exits 2.
 
 ## Refresh data
 
@@ -111,7 +125,7 @@ To make a visual by hand instead, create `viz/<slug>/` with `index.html`, the da
 
 ## Change shared tooling
 
-`scripts/`, `schema/`, `tests/` (the tooling's own tests), `design-tokens.json`, `package.json`, the tsconfig files and CI are shared: a change there runs every visual's checks. Run `python3 scripts/check_repo.py`, `npm ci && npm run typecheck`, the tooling tests (`python3 -m unittest discover -s tests -p 'test_*.py'` and `node --test tests/*.test.mjs`), and `python3 scripts/check.py --all`. A new check goes in `scripts/rules.py` (or the browser harness, for a check that needs a browser), runs no network, replays at least one past finding in its tests, and fixes or lists in `allow` every existing violation.
+`scripts/`, `schema/`, `tests/` (the tooling's own tests), `design-tokens.json`, `package.json`, the tsconfig files and CI are shared: a change there runs every visual's checks. Run `python3 scripts/check_repo.py`, `npm ci && npm run typecheck -- --summary`, the tooling tests (`python3 -m unittest discover -s tests -p 'test_*.py'` and `node --test tests/*.test.mjs`), and `python3 scripts/check.py --toon`. A new check goes in `scripts/rules.py` (or the browser harness, for a check that needs a browser), runs no network, replays at least one past finding in its tests, and fixes or lists in `allow` every existing violation.
 
 ## Rules
 

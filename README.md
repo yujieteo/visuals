@@ -14,6 +14,8 @@ in a browser, then:
 python3 scripts/check.py <slug>        # one visual's checks, from its folder
 python3 scripts/check.py --changed     # the visuals your branch changes (against origin/main)
 python3 scripts/check.py --all         # every visual
+python3 scripts/check.py --toon --changed  # one TOON verdict for agents; full output in build/logs/
+npm run typecheck -- --summary         # every tsc project's errors as one TOON verdict, by code and file
 node e2e/bin/page-axi.js check <slug>  # open the page headless at 3 widths in both themes: one verdict, screenshots in build/page-axi/<slug>/
 python3 scripts/check_repo.py          # every visual.json, the folder rules, no absolute home paths, no tracked artifacts
 python3 scripts/refresh.py <slug>      # refresh one visual's data from its source; --dry-run writes nothing

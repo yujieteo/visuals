@@ -51,7 +51,7 @@ and the byte-identical `beamdswitch` and `report` templates), `uses` (shared fil
 
 ## Checks
 
-`python3 scripts/check.py <slug>...` (or `--changed [base]`, `--all`) runs, from each visual's folder:
+`python3 scripts/check.py <slug>...` (or `--changed [base]`, `--all`; `--toon` for one TOON verdict with the full output in `build/logs/`, see [SKILLS.md](../SKILLS.md#one-call-verdicts)) runs, from each visual's folder:
 `build.py --verify` when there is a builder, its `tests/*.test.{mjs,cjs}` with `node --test`, its
 `tests/test_*.py` with unittest, its `tsconfig.json` with `tsc` after the shared extractor copies the page's
 inline scripts, less the ones `typecheck.skip` names and blocks holding only a build placeholder, into
