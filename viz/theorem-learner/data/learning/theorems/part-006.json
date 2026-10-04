@@ -1348,5 +1348,687 @@
     }
    }
   ]
+ },
+ {
+  "id": "wd:Q978688",
+  "statement": "Let $A = (a_{ij})$ be an $n \\times n$ [matrix](c:matrix) over $\\mathbb{C}$, or over any field with an [absolute value](c:absolute-value). Every [eigenvalue](c:eigenvalue) $\\lambda$ of $A$ lies in some closed [disc](c:ball) $\\{z : |z - a_{kk}| \\le R_k\\}$ with radius $R_k = \\sum_{j \\ne k} |a_{kj}|$.",
+  "hypotheses": [
+   {
+    "id": "h:matrix",
+    "text": "The [matrix](c:matrix) $A$ is square, $n \\times n$, with entries in $\\mathbb{C}$ or in a field with an [absolute value](c:absolute-value).",
+    "concept": "c:matrix"
+   },
+   {
+    "id": "h:eigenvalue",
+    "text": "The scalar $\\lambda$ is an [eigenvalue](c:eigenvalue) of $A$.",
+    "concept": "c:eigenvalue"
+   }
+  ],
+  "conclusion": "Some index $k$ has $|\\lambda - a_{kk}| \\le \\sum_{j \\ne k} |a_{kj}|$.",
+  "formal": {
+   "decl": "eigenvalue_mem_ball",
+   "difference": null
+  },
+  "proofs": [
+   {
+    "id": "largest-coordinate",
+    "name": "Largest coordinate of an eigenvector",
+    "slogan": "Read the eigenvalue equation in the row of the largest coordinate of an eigenvector and bound it by the triangle inequality.",
+    "scope": "The whole theorem. For $n = 0$ there is no eigenvalue, because the zero space has no nonzero vector.",
+    "mechanisms": [
+     "m:extremal-choice",
+     "m:triangle-inequality"
+    ],
+    "roles": [
+     {
+      "h": "h:matrix",
+      "why": "A square matrix acts on $K^n$, and the absolute value measures the entries $a_{ij}$.",
+      "steps": [
+       "s:row",
+       "s:bound"
+      ]
+     },
+     {
+      "h": "h:eigenvalue",
+      "why": "An eigenvalue supplies a nonzero eigenvector $v$.",
+      "steps": [
+       "s:vector"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:vector",
+      "slogan": "Choose an [eigenvector](c:eigenvector) $v \\ne 0$ with $Av = \\lambda v$.",
+      "detail": "An eigenvalue has a nonzero eigenvector, so in particular $n \\ge 1$. This disposes of the empty case, in which no eigenvalue exists.",
+      "uses": []
+     },
+     {
+      "id": "s:max",
+      "slogan": "Pick an index $i$ where $|v_i|$ is largest.",
+      "detail": "A finite set of absolute values has a largest member $|v_i|$. Since $v \\ne 0$, $|v_i| > 0$ and $|v_j / v_i| \\le 1$ for every $j$.",
+      "uses": []
+     },
+     {
+      "id": "s:row",
+      "slogan": "Isolate the diagonal term in row $i$ of $Av = \\lambda v$.",
+      "detail": "Row $i$ reads $\\sum_j a_{ij} v_j = \\lambda v_i$, so $(\\lambda - a_{ii}) v_i = \\sum_{j \\ne i} a_{ij} v_j$. Divide both sides by $v_i \\ne 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:bound",
+      "slogan": "Bound the off-diagonal sum by the triangle inequality and $|v_j / v_i| \\le 1$.",
+      "detail": "This gives $|\\lambda - a_{ii}| \\le \\sum_{j \\ne i} |a_{ij}| \\, |v_j / v_i| \\le \\sum_{j \\ne i} |a_{ij}| = R_i$. So $\\lambda$ lies in the disc with center $a_{ii}$ and radius $R_i$; take $k = i$.",
+      "uses": [
+       "nl:15368"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:vector",
+      "s:max"
+     ],
+     [
+      "s:vector",
+      "s:row"
+     ],
+     [
+      "s:max",
+      "s:row"
+     ],
+     [
+      "s:row",
+      "s:bound"
+     ],
+     [
+      "s:max",
+      "s:bound"
+     ]
+    ],
+    "conclusion": "s:bound",
+    "concepts": {
+     "c:matrix": "The rows of the matrix give the equations that are bounded.",
+     "c:absolute-value": "The absolute value turns the row equation into an inequality.",
+     "c:eigenvalue": "The eigenvalue is the point placed in a Gershgorin disc.",
+     "c:ball": "Each Gershgorin disc is a closed ball around a diagonal entry.",
+     "c:eigenvector": "The largest coordinate of an eigenvector selects the right row."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "eigenvalue_mem_ball",
+     "follows": true,
+     "note": "mathlib takes an eigenvector (HasEigenvalue.exists_hasEigenvector), a coordinate of largest norm (Finset.exists_mem_eq_sup') and bounds row i with norm_sum_le; the empty index type is excluded first."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q830124",
+  "statement": "Let $W$ be a $d$-dimensional [Brownian motion](c:brownian-motion) on $[0, T]$ under $P$, and $\\theta$ a progressively measurable process with $\\int_0^T |\\theta_s|^2 ds < \\infty$ almost surely. If $Z_t = \\exp(\\int_0^t \\theta \\cdot dW - \\frac{1}{2}\\int_0^t |\\theta|^2 ds)$ is a [martingale](c:martingale), then $\\tilde W_t = W_t - \\int_0^t \\theta_s ds$ is a Brownian motion under the [change of measure](c:change-of-measure) $dQ = Z_T \\, dP$.",
+  "hypotheses": [
+   {
+    "id": "h:brownian",
+    "text": "The process $W$ is a $d$-dimensional [Brownian motion](c:brownian-motion) on $[0, T]$ with respect to a filtration $(\\mathcal{F}_t)$ under $P$.",
+    "concept": "c:brownian-motion"
+   },
+   {
+    "id": "h:drift",
+    "text": "The process $\\theta$ is progressively measurable with $\\int_0^T |\\theta_s|^2 ds < \\infty$ almost surely.",
+    "concept": null
+   },
+   {
+    "id": "h:martingale",
+    "text": "The process $Z_t = \\exp(\\int_0^t \\theta \\cdot dW - \\frac{1}{2}\\int_0^t |\\theta|^2 ds)$ is a [martingale](c:martingale) on $[0, T]$, for example under Novikov's condition.",
+    "concept": "c:martingale"
+   }
+  ],
+  "conclusion": "Under $Q$ with $dQ/dP = Z_T$, the process $\\tilde W$ is a $d$-dimensional Brownian motion on $[0, T]$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "levy-characterization",
+    "name": "Lévy's characterization",
+    "slogan": "Show that $\\tilde W$ is a continuous $Q$-local martingale with covariations $\\delta_{ij} t$, and apply Lévy's characterization of Brownian motion.",
+    "scope": "The whole theorem on the finite horizon $[0, T]$. The martingale hypothesis on $Z$ is what makes $Q$ a probability measure.",
+    "mechanisms": [
+     "m:martingale",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:brownian",
+      "why": "Brownian motion has covariations $\\delta_{ij} t$ and supports the Itô calculus.",
+      "steps": [
+       "s:ito",
+       "s:product",
+       "s:levy"
+      ]
+     },
+     {
+      "h": "h:drift",
+      "why": "Square integrability of $\\theta$ defines $\\int \\theta \\cdot dW$ and the drift $\\int \\theta \\, ds$.",
+      "steps": [
+       "s:ito",
+       "s:product"
+      ]
+     },
+     {
+      "h": "h:martingale",
+      "why": "The martingale property gives $E_P[Z_T] = 1$ and the density $Z_t$ on $\\mathcal{F}_t$.",
+      "steps": [
+       "s:measure"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:measure",
+      "slogan": "Check that $Q$ is a probability measure equivalent to $P$ with density process $Z$.",
+      "detail": "$Z$ is a positive martingale with $Z_0 = 1$, so $E_P[Z_T] = 1$ and $Q$ is an [equivalent measure](c:equivalent-measure). The martingale property gives $dQ/dP = Z_t$ on $\\mathcal{F}_t$.",
+      "uses": []
+     },
+     {
+      "id": "s:ito",
+      "slogan": "Compute $dZ = Z \\theta \\cdot dW$ by Itô's formula.",
+      "detail": "Apply Itô's formula to the exponential of $X_t = \\int_0^t \\theta \\cdot dW - \\frac{1}{2}\\int_0^t |\\theta|^2 ds$; the drift $-\\frac{1}{2}|\\theta|^2$ cancels the second-order term. So $Z_t = 1 + \\int_0^t Z_s \\theta_s \\cdot dW_s$, a [stochastic integral](c:stochastic-integral).",
+      "uses": []
+     },
+     {
+      "id": "s:bayes",
+      "slogan": "Reduce $Q$-local martingales to $P$-local martingales of the form $MZ$.",
+      "detail": "Bayes' rule gives $E_Q[X \\mid \\mathcal{F}_s] = E_P[X Z_t \\mid \\mathcal{F}_s]/Z_s$ for $\\mathcal{F}_t$-measurable $X$, a formula for the [conditional expectation](c:conditional-expectation) under $Q$. Hence a continuous adapted $M$ is a $Q$-local martingale when $MZ$ is a $P$-local martingale.",
+      "uses": []
+     },
+     {
+      "id": "s:product",
+      "slogan": "Show by the Itô product rule that $\\tilde W^i Z$ is a $P$-local martingale.",
+      "detail": "$d(\\tilde W^i Z) = \\tilde W^i dZ + Z \\, dW^i - Z \\theta^i dt + d\\langle W^i, Z \\rangle$, and $d\\langle W^i, Z \\rangle = Z \\theta^i dt$. The $dt$ terms cancel, so $\\tilde W^i Z$ is a stochastic integral against $W$, and step 3 makes $\\tilde W^i$ a continuous $Q$-local martingale.",
+      "uses": []
+     },
+     {
+      "id": "s:levy",
+      "slogan": "Keep the covariations $\\delta_{ij} t$ under $Q$ and apply Lévy's characterization.",
+      "detail": "The drift has finite variation, so $\\langle \\tilde W^i, \\tilde W^j \\rangle_t = \\langle W^i, W^j \\rangle_t = \\delta_{ij} t$, and these limits in probability do not change under the equivalent $Q$. Lévy's characterization then makes $\\tilde W$ a $Q$-Brownian motion.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:measure",
+      "s:bayes"
+     ],
+     [
+      "s:ito",
+      "s:product"
+     ],
+     [
+      "s:bayes",
+      "s:product"
+     ],
+     [
+      "s:product",
+      "s:levy"
+     ],
+     [
+      "s:measure",
+      "s:levy"
+     ]
+    ],
+    "conclusion": "s:levy",
+    "concepts": {
+     "c:brownian-motion": "Brownian motion is both the input $W$ and the output $\\tilde W$.",
+     "c:martingale": "The density $Z$ is a martingale, and local martingales characterize $\\tilde W$.",
+     "c:change-of-measure": "The new measure $Q$ removes the drift from $W$.",
+     "c:equivalent-measure": "Equivalence keeps null sets and quadratic variations under $Q$.",
+     "c:stochastic-integral": "The density and $\\tilde W^i Z$ are stochastic integrals against $W$.",
+     "c:conditional-expectation": "Bayes' rule moves conditional expectations between the two measures."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard proof through Lévy's characterization, as in I. Karatzas and S. E. Shreve, Brownian Motion and Stochastic Calculus, section 3.5."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:11363",
+  "statement": "There is a universal constant $K \\le \\pi/(2\\ln(1 + \\sqrt{2}))$ with this property. If a real [bilinear form](c:bilinear-form) with matrix $(a_{ij})$ satisfies $|\\sum_{i,j} a_{ij} s_i t_j| \\le 1$ for all signs $s_i, t_j \\in \\{-1, 1\\}$, then $|\\sum_{i,j} a_{ij} \\langle x_i, y_j \\rangle| \\le K$ for all vectors $x_i, y_j$ of norm at most 1 in any real [Hilbert space](c:hilbert-space).",
+  "hypotheses": [
+   {
+    "id": "h:signs",
+    "text": "The real $m \\times n$ matrix $(a_{ij})$ satisfies $|\\sum_{i,j} a_{ij} s_i t_j| \\le 1$ for all $s_i, t_j \\in \\{-1, 1\\}$.",
+    "concept": null
+   },
+   {
+    "id": "h:vectors",
+    "text": "The vectors $x_1, \\dots, x_m, y_1, \\dots, y_n$ lie in a real [Hilbert space](c:hilbert-space) and have norm at most 1.",
+    "concept": "c:hilbert-space"
+   }
+  ],
+  "conclusion": "$|\\sum_{i,j} a_{ij} \\langle x_i, y_j \\rangle| \\le \\pi/(2\\ln(1 + \\sqrt{2})) \\approx 1.782$, a bound independent of $m$, $n$ and the space.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "krivine-rounding",
+    "name": "Krivine's rounding",
+    "slogan": "Map the vectors to unit vectors with inner products $\\sin(c\\langle x_i, y_j \\rangle)$, round them by a random Gaussian hyperplane, and average the sign patterns.",
+    "scope": "The whole real statement, with $c = \\ln(1 + \\sqrt{2})$. Only finitely many vectors occur, so all computations take place in a finite-dimensional space.",
+    "mechanisms": [
+     "m:probabilistic-method",
+     "m:linearity-of-expectation",
+     "m:symmetry",
+     "m:construction-explicit"
+    ],
+    "roles": [
+     {
+      "h": "h:signs",
+      "why": "The bound on sign patterns bounds every outcome of the random rounding.",
+      "steps": [
+       "s:average"
+      ]
+     },
+     {
+      "h": "h:vectors",
+      "why": "Norms at most 1 allow the lift to unit vectors, which the tensor construction needs.",
+      "steps": [
+       "s:unit",
+       "s:krivine"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:unit",
+      "slogan": "Replace the vectors by unit vectors with the same inner products.",
+      "detail": "In $H \\oplus \\mathbb{R}^{m+n}$ with new orthonormal vectors $e_i, f_j$, put $x_i' = x_i + \\sqrt{1 - |x_i|^2} \\, e_i$ and $y_j' = y_j + \\sqrt{1 - |y_j|^2} \\, f_j$. These are [unit vectors](c:unit-vector) with $\\langle x_i', y_j' \\rangle = \\langle x_i, y_j \\rangle$.",
+      "uses": []
+     },
+     {
+      "id": "s:krivine",
+      "slogan": "Build unit vectors $u_i, v_j$ with $\\langle u_i, v_j \\rangle = \\sin(c\\langle x_i, y_j \\rangle)$.",
+      "detail": "Let $c = \\ln(1 + \\sqrt{2})$, so $\\sinh c = 1$. In a sum of [tensor powers](c:tensor-power) put $u = \\bigoplus_k \\sqrt{c^{2k+1}/(2k+1)!} \\, x^{\\otimes(2k+1)}$ and $v = \\bigoplus_k (-1)^k \\sqrt{c^{2k+1}/(2k+1)!} \\, y^{\\otimes(2k+1)}$; the sine series gives $\\langle u, v \\rangle = \\sin(c\\langle x, y \\rangle)$ and $|u|^2 = |v|^2 = \\sinh c = 1$.",
+      "uses": []
+     },
+     {
+      "id": "s:gaussian",
+      "slogan": "Prove Grothendieck's identity for the signs of Gaussian projections.",
+      "detail": "For unit vectors $u, v \\in \\mathbb{R}^k$ at angle $\\theta$ and a standard [Gaussian](c:normal-distribution) vector $g$, rotation invariance gives $P(\\operatorname{sign}\\langle g, u \\rangle \\ne \\operatorname{sign}\\langle g, v \\rangle) = \\theta/\\pi$. Hence $E[\\operatorname{sign}\\langle g, u \\rangle \\operatorname{sign}\\langle g, v \\rangle] = 1 - 2\\theta/\\pi = (2/\\pi)\\arcsin\\langle u, v \\rangle$.",
+      "uses": []
+     },
+     {
+      "id": "s:round",
+      "slogan": "Round with $s_i = \\operatorname{sign}\\langle g, u_i \\rangle$ and $t_j = \\operatorname{sign}\\langle g, v_j \\rangle$.",
+      "detail": "The finitely many $u_i, v_j$ span a copy of $\\mathbb{R}^k$, and step 3 there gives $E[s_i t_j] = (2/\\pi)\\arcsin(\\sin(c\\langle x_i, y_j \\rangle)) = (2c/\\pi)\\langle x_i, y_j \\rangle$, because $|c\\langle x_i, y_j \\rangle| \\le c < \\pi/2$.",
+      "uses": []
+     },
+     {
+      "id": "s:average",
+      "slogan": "Average the sign bound to bound the sum of inner products.",
+      "detail": "Linearity of expectation gives $\\sum a_{ij} \\langle x_i, y_j \\rangle = (\\pi/2c) \\, E[\\sum a_{ij} s_i t_j]$. Every sign pattern gives $|\\sum a_{ij} s_i t_j| \\le 1$, so $|\\sum a_{ij} \\langle x_i, y_j \\rangle| \\le \\pi/(2c)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:unit",
+      "s:krivine"
+     ],
+     [
+      "s:krivine",
+      "s:round"
+     ],
+     [
+      "s:gaussian",
+      "s:round"
+     ],
+     [
+      "s:round",
+      "s:average"
+     ]
+    ],
+    "conclusion": "s:average",
+    "concepts": {
+     "c:bilinear-form": "The form is bounded on signs and must be bounded on vectors.",
+     "c:hilbert-space": "The vectors live in a Hilbert space with an inner product.",
+     "c:unit-vector": "The tensor construction and the sign identity need unit vectors.",
+     "c:tensor-power": "Odd tensor powers realize the sine of an inner product.",
+     "c:normal-distribution": "A rotation-invariant Gaussian vector gives a uniformly random hyperplane."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Krivine's proof with Grothendieck's identity (J.-L. Krivine, Constantes de Grothendieck et fonctions de type positif sur les sphères, Advances in Mathematics 31 (1979), 16-30)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q2022775",
+  "statement": "Let $T$ be a [compact](c:compact-operator) [self-adjoint operator](c:self-adjoint-operator) on a real or complex [Hilbert space](c:hilbert-space) $H$. There is a finite or countable [orthonormal set](c:orthonormal-set) $(e_k)$ of [eigenvectors](c:eigenvector) with nonzero real eigenvalues $\\lambda_k$, $|\\lambda_k|$ nonincreasing and $\\lambda_k \\to 0$ if the set is infinite, such that $Tx = \\sum_k \\lambda_k \\langle x, e_k \\rangle e_k$ for every $x \\in H$.",
+  "hypotheses": [
+   {
+    "id": "h:hilbert",
+    "text": "The space $H$ is a real or complex [Hilbert space](c:hilbert-space).",
+    "concept": "c:hilbert-space"
+   },
+   {
+    "id": "h:compact",
+    "text": "The operator $T$ is [compact](c:compact-operator): it maps bounded sets to relatively compact sets.",
+    "concept": "c:compact-operator"
+   },
+   {
+    "id": "h:self-adjoint",
+    "text": "The operator $T$ is [self-adjoint](c:self-adjoint-operator): $\\langle Tx, y \\rangle = \\langle x, Ty \\rangle$ for all $x, y$.",
+    "concept": "c:self-adjoint-operator"
+   }
+  ],
+  "conclusion": "$Tx = \\sum_k \\lambda_k \\langle x, e_k \\rangle e_k$ for all $x$, with orthonormal eigenvectors $e_k$ and real eigenvalues $\\lambda_k \\to 0$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "successive-maxima",
+    "name": "Successive maximal eigenvalues",
+    "slogan": "Find an eigenvalue of modulus $\\|T\\|$, split it off on the orthogonal complement, repeat, and show that the remainders tend to zero.",
+    "scope": "The whole theorem; if $T = 0$, in particular if $H = 0$, the set is empty and both sides vanish. The construction stops after finitely many steps exactly when $T$ has finite rank.",
+    "mechanisms": [
+     "m:eigenvector-basis",
+     "m:subsequence",
+     "m:induction",
+     "m:extremal-choice"
+    ],
+    "roles": [
+     {
+      "h": "h:hilbert",
+      "why": "Completeness and the inner product give orthogonal complements and the expansion estimate.",
+      "steps": [
+       "s:top",
+       "s:expand"
+      ]
+     },
+     {
+      "h": "h:compact",
+      "why": "Compactness gives the convergent subsequence and forces $\\lambda_k \\to 0$.",
+      "steps": [
+       "s:top",
+       "s:decay"
+      ]
+     },
+     {
+      "h": "h:self-adjoint",
+      "why": "Self-adjointness gives $\\|T\\| = \\sup |\\langle Tx, x \\rangle|$, real eigenvalues and invariant complements.",
+      "steps": [
+       "s:top",
+       "s:real"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:top",
+      "slogan": "Find an eigenvector with eigenvalue $\\pm\\|T\\|$ for a nonzero compact self-adjoint $T$.",
+      "detail": "Self-adjointness gives $\\|T\\| = \\sup_{|x| = 1} |\\langle Tx, x \\rangle|$, so unit vectors $x_n$ have $\\langle Tx_n, x_n \\rangle \\to \\lambda = \\pm\\|T\\|$ and $\\|Tx_n - \\lambda x_n\\|^2 \\le 2\\lambda^2 - 2\\lambda\\langle Tx_n, x_n \\rangle \\to 0$. Compactness gives $Tx_{n_k} \\to y$, so $\\lambda x_{n_k} \\to y$, $|y| = |\\lambda| > 0$ and $Ty = \\lambda y$.",
+      "uses": []
+     },
+     {
+      "id": "s:real",
+      "slogan": "Show that eigenvalues are real and that orthogonal complements of eigenvectors stay invariant.",
+      "detail": "For an [eigenvector](c:eigenvector) $x$, $\\lambda\\langle x, x \\rangle = \\langle Tx, x \\rangle = \\langle x, Tx \\rangle = \\bar\\lambda\\langle x, x \\rangle$, so $\\lambda$ is real. If $Te = \\lambda e$ and $x \\perp e$, then $\\langle Tx, e \\rangle = \\lambda\\langle x, e \\rangle = 0$, so $\\{e_1, \\dots, e_k\\}^\\perp$ is invariant under $T$.",
+      "uses": []
+     },
+     {
+      "id": "s:iterate",
+      "slogan": "Repeat step 1 on the orthogonal complements of the eigenvectors already found.",
+      "detail": "On $H_{k+1} = \\{e_1, \\dots, e_k\\}^\\perp$ the restriction of $T$ is compact and self-adjoint, so step 1 gives a unit $e_{k+1}$ with $|\\lambda_{k+1}| = \\|T|_{H_{k+1}}\\| \\le |\\lambda_k|$. Stop when the restriction is zero.",
+      "uses": []
+     },
+     {
+      "id": "s:decay",
+      "slogan": "Show by compactness that $\\lambda_k \\to 0$ for an infinite sequence.",
+      "detail": "If $|\\lambda_k| \\ge \\delta > 0$ for infinitely many $k$, then $\\|Te_k - Te_l\\|^2 = \\lambda_k^2 + \\lambda_l^2 \\ge 2\\delta^2$ for these $k \\ne l$. So $(Te_k)$ has no convergent subsequence, against the compactness of $T$.",
+      "uses": []
+     },
+     {
+      "id": "s:expand",
+      "slogan": "Bound the remainder of the expansion by $|\\lambda_{N+1}| \\, \\|x\\|$.",
+      "detail": "The vector $r_N = x - \\sum_{k \\le N} \\langle x, e_k \\rangle e_k$ lies in $H_{N+1}$ and has $\\|r_N\\| \\le \\|x\\|$. So $\\|Tx - \\sum_{k \\le N} \\lambda_k \\langle x, e_k \\rangle e_k\\| = \\|Tr_N\\| \\le |\\lambda_{N+1}| \\, \\|x\\| \\to 0$, and the remainder is zero if the process stops.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:top",
+      "s:iterate"
+     ],
+     [
+      "s:real",
+      "s:iterate"
+     ],
+     [
+      "s:iterate",
+      "s:decay"
+     ],
+     [
+      "s:iterate",
+      "s:expand"
+     ],
+     [
+      "s:decay",
+      "s:expand"
+     ]
+    ],
+    "conclusion": "s:expand",
+    "concepts": {
+     "c:compact-operator": "Compactness produces eigenvectors and makes the eigenvalues tend to zero.",
+     "c:self-adjoint-operator": "Self-adjointness makes the eigenvalues real and the complements invariant.",
+     "c:hilbert-space": "Orthogonal complements and orthonormal expansions need the Hilbert space structure.",
+     "c:orthonormal-set": "The eigenvectors form the orthonormal set of the expansion.",
+     "c:eigenvector": "Each step splits off one eigenvector of the restricted operator."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard proof by successive maximal eigenvalues, as in M. Reed and B. Simon, Methods of Modern Mathematical Physics I: Functional Analysis, theorem VI.16."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q897769",
+  "statement": "In every finite [bipartite graph](c:bipartite-graph), the maximum number of edges in a [matching](c:matching) equals the minimum number of vertices in a [vertex cover](c:vertex-cover).",
+  "hypotheses": [
+   {
+    "id": "h:bipartite",
+    "text": "The graph $G$ is [bipartite](c:bipartite-graph), with parts $L$ and $R$.",
+    "concept": "c:bipartite-graph"
+   },
+   {
+    "id": "h:finite",
+    "text": "The graph $G$ is finite.",
+    "concept": null
+   }
+  ],
+  "conclusion": "$\\nu(G) = \\tau(G)$: a maximum matching and a minimum vertex cover have the same size.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "alternating-paths",
+    "name": "Alternating paths from unmatched vertices",
+    "slogan": "Take a maximum matching, collect the vertices reachable from unmatched left vertices by alternating paths, and read off a cover of the same size.",
+    "scope": "The whole theorem; a graph without edges has the empty matching and the empty cover.",
+    "mechanisms": [
+     "m:augmenting-path",
+     "m:graph-traversal",
+     "m:extremal-choice"
+    ],
+    "roles": [
+     {
+      "h": "h:bipartite",
+      "why": "Every edge joins $L$ to $R$, so alternating paths enter $R$ by non-matching edges and $L$ by matching edges.",
+      "steps": [
+       "s:reach",
+       "s:cover"
+      ]
+     },
+     {
+      "h": "h:finite",
+      "why": "Finiteness gives a maximum matching and finite counts.",
+      "steps": [
+       "s:reach"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:easy",
+      "slogan": "Show that every vertex cover is at least as large as every matching.",
+      "detail": "Each edge of a matching $M$ has an end in a cover $C$, and these ends are distinct because matching edges are disjoint. So $|M| \\le |C|$.",
+      "uses": []
+     },
+     {
+      "id": "s:reach",
+      "slogan": "Collect the vertices reachable from unmatched left vertices by alternating paths.",
+      "detail": "Take a maximum matching $M$, which exists because $G$ is finite. Let $U \\subseteq L$ be the unmatched left vertices and $Z$ the vertices joined to $U$ by paths that alternate between non-matching and matching edges.",
+      "uses": []
+     },
+     {
+      "id": "s:matched",
+      "slogan": "Show that every right vertex in $Z$ is matched to a left vertex in $Z$.",
+      "detail": "An unmatched $v \\in R \\cap Z$ would end an [augmenting path](c:augmenting-path) from $U$, which Berge's lemma excludes for a maximum matching. So $v$ is matched, and its partner continues the alternating path, so it lies in $L \\cap Z$.",
+      "uses": [
+       "wd:Q552367"
+      ]
+     },
+     {
+      "id": "s:cover",
+      "slogan": "Show that $C = (L \\setminus Z) \\cup (R \\cap Z)$ is a vertex cover.",
+      "detail": "Let $uv$ be an edge with $u \\in L \\cap Z$ and $v \\in R$. If $uv \\notin M$, the alternating path to $u$ extends to $v$; if $uv \\in M$, the path reaches $u$ through this matching edge from $v$. Either way $v \\in R \\cap Z \\subseteq C$.",
+      "uses": []
+     },
+     {
+      "id": "s:size",
+      "slogan": "Assign each vertex of $C$ its own matching edge to get $|C| \\le |M|$.",
+      "detail": "Vertices of $L \\setminus Z$ are matched because $U \\subseteq Z$, vertices of $R \\cap Z$ by step 3, and no matching edge has both ends in $C$. So $|C| \\le |M|$, and step 1 gives $\\tau(G) = |C| = |M| = \\nu(G)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:easy",
+      "s:size"
+     ],
+     [
+      "s:reach",
+      "s:matched"
+     ],
+     [
+      "s:reach",
+      "s:cover"
+     ],
+     [
+      "s:matched",
+      "s:size"
+     ],
+     [
+      "s:cover",
+      "s:size"
+     ]
+    ],
+    "conclusion": "s:size",
+    "concepts": {
+     "c:bipartite-graph": "The two parts fix the direction of alternating paths.",
+     "c:matching": "A maximum matching is the start of the construction.",
+     "c:vertex-cover": "The cover read off from the reachable set has the matching's size.",
+     "c:augmenting-path": "The absence of augmenting paths makes every reachable right vertex matched."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The alternating-path proof, as in R. Diestel, Graph Theory, theorem 2.1.1."
+    }
+   },
+   {
+    "id": "max-flow-min-cut",
+    "name": "Max-flow min-cut",
+    "slogan": "Turn the graph into a unit-capacity network, identify integral flows with matchings, and read a vertex cover from a minimum cut.",
+    "scope": "The whole theorem, through the max-flow min-cut theorem and the integrality of maximum flows for integer capacities.",
+    "mechanisms": [
+     "m:duality",
+     "m:augmenting-path"
+    ],
+    "roles": [
+     {
+      "h": "h:bipartite",
+      "why": "The two parts give the two middle layers of the network.",
+      "steps": [
+       "s:network",
+       "s:cut"
+      ]
+     },
+     {
+      "h": "h:finite",
+      "why": "Finiteness gives a finite network with a maximum flow of finite value.",
+      "steps": [
+       "s:flow",
+       "s:minmax"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:network",
+      "slogan": "Build a [flow network](c:flow-network) from a source through $L$ and $R$ to a sink.",
+      "detail": "Add a source $s$ with an arc of capacity 1 to each $u \\in L$ and an arc of capacity 1 from each $v \\in R$ to a sink $t$. Orient each edge $uv$ from $L$ to $R$ with infinite capacity.",
+      "uses": []
+     },
+     {
+      "id": "s:flow",
+      "slogan": "Identify integral flows with matchings of the same value.",
+      "detail": "Integer capacities give a maximum flow with values 0 or 1. Its middle arcs with flow 1 form a [matching](c:matching), since each $u$ receives and each $v$ sends at most one unit; conversely a matching gives a flow of value $|M|$.",
+      "uses": []
+     },
+     {
+      "id": "s:cut",
+      "slogan": "Read a vertex cover from a cut $(S, T)$ of finite capacity.",
+      "detail": "A finite cut has no middle arc from $L \\cap S$ to $R \\cap T$. So every edge has its left end in $L \\cap T$ or its right end in $R \\cap S$, and $C = (L \\cap T) \\cup (R \\cap S)$ is a vertex cover whose size is the capacity of the cut.",
+      "uses": []
+     },
+     {
+      "id": "s:minmax",
+      "slogan": "Equate the maximum flow value with the minimum cut capacity.",
+      "detail": "The max-flow min-cut theorem gives a cut whose capacity equals the maximum flow value, which is at most $|L|$. Steps 2 and 3 give a matching and a vertex cover of that size, so $\\tau(G) \\le \\nu(G)$; the reverse holds because each matching edge needs its own cover vertex.",
+      "uses": [
+       "wd:Q608294"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:network",
+      "s:flow"
+     ],
+     [
+      "s:network",
+      "s:cut"
+     ],
+     [
+      "s:flow",
+      "s:minmax"
+     ],
+     [
+      "s:cut",
+      "s:minmax"
+     ]
+    ],
+    "conclusion": "s:minmax",
+    "concepts": {
+     "c:bipartite-graph": "The parts become the layers between source and sink.",
+     "c:matching": "Matchings correspond to integral flows in the network.",
+     "c:vertex-cover": "Finite cuts correspond to vertex covers of equal size.",
+     "c:flow-network": "The network turns the matching problem into a flow problem."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard reduction to the max-flow min-cut theorem with integral flows (Ford and Fulkerson)."
+    }
+   }
+  ]
  }
 ]

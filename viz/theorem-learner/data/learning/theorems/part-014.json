@@ -1252,5 +1252,441 @@
     }
    }
   ]
+ },
+ {
+  "id": "wd:Q1149458",
+  "statement": "A set $T$ of [first-order](c:first-order-logic) [sentences](c:sentence) has a [model](c:model) if and only if every finite subset of $T$ has a model.",
+  "hypotheses": [
+   {
+    "id": "h:sentences",
+    "text": "$T$ is a set of first-order [sentences](c:sentence) in some language $L$.",
+    "concept": "c:sentence"
+   }
+  ],
+  "conclusion": "$T$ is satisfiable exactly when it is finitely satisfiable.",
+  "formal": {
+   "decl": "FirstOrder.Language.Theory.isSatisfiable_iff_isFinitelySatisfiable",
+   "difference": null
+  },
+  "proofs": [
+   {
+    "id": "ultraproduct",
+    "name": "Ultraproduct of finite models",
+    "slogan": "Take a model of each finite subset, glue the models by an ultraproduct along an ultrafilter that eventually contains each sentence, and apply Łoś's theorem.",
+    "scope": "Both directions; the forward direction is immediate. Structures are nonempty, and an empty $T$ gets the model chosen for its only finite subset $\\emptyset$.",
+    "mechanisms": [
+     "m:compactness-logic",
+     "m:quotient-construction"
+    ],
+    "roles": [
+     {
+      "h": "h:sentences",
+      "why": "First-order sentences are exactly what Łoś's theorem transfers to the ultraproduct.",
+      "steps": [
+       "s:easy",
+       "s:los"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:easy",
+      "slogan": "Reuse a model of $T$ as a model of each finite subset.",
+      "detail": "A structure that satisfies every sentence of $T$ satisfies every sentence of each subset of $T$. So a model of $T$ is a model of each finite subset.",
+      "uses": []
+     },
+     {
+      "id": "s:models",
+      "slogan": "Choose a model $M_\\Delta$ for each finite subset $\\Delta \\subseteq T$.",
+      "detail": "Let $I$ be the set of finite subsets of $T$. Finite satisfiability gives, for each $\\Delta \\in I$, a structure $M_\\Delta$ that satisfies every sentence of $\\Delta$; the axiom of choice picks one for each $\\Delta$.",
+      "uses": []
+     },
+     {
+      "id": "s:ultrafilter",
+      "slogan": "Extend the sets $\\{\\Delta : \\Delta \\supseteq \\Delta_0\\}$ to an [ultrafilter](c:ultrafilter) $U$ on $I$.",
+      "detail": "The sets $\\uparrow\\Delta_0 = \\{\\Delta \\in I : \\Delta \\supseteq \\Delta_0\\}$ are nonempty and $\\uparrow\\Delta_0 \\cap \\uparrow\\Delta_1 = \\uparrow(\\Delta_0 \\cup \\Delta_1)$, so they have the [finite intersection property](c:finite-intersection-property). The ultrafilter theorem extends them to an ultrafilter $U$ on $I$.",
+      "uses": [
+       "nl:1463"
+      ]
+     },
+     {
+      "id": "s:ultraproduct",
+      "slogan": "Form the [ultraproduct](c:ultraproduct) $M = \\prod_\\Delta M_\\Delta / U$.",
+      "detail": "Take families $(a_\\Delta)$ with $a_\\Delta \\in M_\\Delta$ and identify two of them when they agree on a set in $U$. Functions act coordinatewise, and a relation holds in $M$ when it holds on a set in $U$.",
+      "uses": []
+     },
+     {
+      "id": "s:los",
+      "slogan": "Transfer each sentence of $T$ to the ultraproduct by Łoś's theorem.",
+      "detail": "Łoś's theorem says that $M \\models \\varphi$ exactly when $\\{\\Delta : M_\\Delta \\models \\varphi\\} \\in U$. For $\\varphi \\in T$ this set contains $\\uparrow\\{\\varphi\\}$, which lies in $U$, so $M \\models \\varphi$. Hence $M$ is a model of $T$.",
+      "uses": [
+       "nl:17903"
+      ]
+     },
+     {
+      "id": "s:equivalence",
+      "slogan": "Combine both directions into the stated equivalence.",
+      "detail": "Step 1 gives finite satisfiability from satisfiability. Steps 2 to 5 build a model of $T$ from models of its finite subsets, so the two properties are equivalent.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:models",
+      "s:ultraproduct"
+     ],
+     [
+      "s:ultrafilter",
+      "s:ultraproduct"
+     ],
+     [
+      "s:ultraproduct",
+      "s:los"
+     ],
+     [
+      "s:ultrafilter",
+      "s:los"
+     ],
+     [
+      "s:easy",
+      "s:equivalence"
+     ],
+     [
+      "s:los",
+      "s:equivalence"
+     ]
+    ],
+    "conclusion": "s:equivalence",
+    "concepts": {
+     "c:first-order-logic": "Łoś's theorem holds for first-order formulas, not for stronger logics.",
+     "c:sentence": "Satisfaction of sentences is what passes to the ultraproduct.",
+     "c:model": "The proof builds a model of $T$ from models of finite parts.",
+     "c:ultrafilter": "The ultrafilter decides which coordinates count as almost all.",
+     "c:finite-intersection-property": "It lets the sets $\\uparrow\\Delta_0$ extend to an ultrafilter.",
+     "c:ultraproduct": "The ultraproduct glues the finite models into one structure."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "FirstOrder.Language.Theory.isSatisfiable_iff_isFinitelySatisfiable",
+     "follows": true,
+     "note": "mathlib picks a model of each finite subset, forms Filter.Product along Ultrafilter.of atTop on the finite subsets, and applies Ultraproduct.sentence_realize, which is Łoś's theorem."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q931001X",
+  "statement": "Let $F\\colon U \\to \\mathbb{R}^n$ be a [smooth map](c:smooth-map) on an open set $U \\subseteq \\mathbb{R}^m$ whose [Jacobian matrix](c:jacobian-matrix) has constant [rank](c:rank-of-a-matrix) $r$. Then each $p \\in U$ has [diffeomorphisms](c:diffeomorph) $\\varphi$ near $p$ and $\\psi$ near $F(p)$ with $\\psi \\circ F \\circ \\varphi^{-1}(x_1, \\dots, x_m) = (x_1, \\dots, x_r, 0, \\dots, 0)$.",
+  "hypotheses": [
+   {
+    "id": "h:smooth",
+    "text": "$F\\colon U \\to \\mathbb{R}^n$ is a [smooth map](c:smooth-map) on an open set $U \\subseteq \\mathbb{R}^m$.",
+    "concept": "c:smooth-map"
+   },
+   {
+    "id": "h:constant-rank",
+    "text": "The [Jacobian matrix](c:jacobian-matrix) $DF(x)$ has the same [rank](c:rank-of-a-matrix) $r$ at every $x \\in U$.",
+    "concept": "c:rank-of-a-matrix"
+   }
+  ],
+  "conclusion": "Near each point, after smooth changes of coordinates in the source and the target, $F$ is the linear projection $(x_1, \\dots, x_m) \\mapsto (x_1, \\dots, x_r, 0, \\dots, 0)$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "inverse-function",
+    "name": "Two coordinate changes",
+    "slogan": "Straighten the first $r$ components of $F$ by the inverse function theorem, use constant rank to kill the dependence on the other variables, then straighten the image.",
+    "scope": "The local statement at one point $p$; all neighborhoods may shrink. For $r = 0$ the map is locally constant, and $r = m$ or $r = n$ give the immersion and submersion theorems.",
+    "mechanisms": [
+     "m:coordinates",
+     "m:construction-explicit"
+    ],
+    "roles": [
+     {
+      "h": "h:smooth",
+      "why": "Smoothness lets the inverse function theorem apply to $\\varphi$ and keeps every map smooth.",
+      "steps": [
+       "s:phi"
+      ]
+     },
+     {
+      "h": "h:constant-rank",
+      "why": "Rank $r$ at $p$ gives the invertible block; rank $r$ near $p$ kills $\\partial \\tilde R / \\partial v$.",
+      "steps": [
+       "s:reorder",
+       "s:independent"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:reorder",
+      "slogan": "Reorder the coordinates so that the top-left $r \\times r$ block of $DF(p)$ is invertible.",
+      "detail": "Since $DF(p)$ has rank $r$, it has an invertible $r \\times r$ minor, and permutations of coordinates move it to the top left. Write $x = (u, v) \\in \\mathbb{R}^r \\times \\mathbb{R}^{m-r}$ and $F = (Q, R)$ with $Q$ the first $r$ components.",
+      "uses": []
+     },
+     {
+      "id": "s:phi",
+      "slogan": "Straighten the first $r$ components with the map $\\varphi(u, v) = (Q(u, v), v)$.",
+      "detail": "The [Jacobian matrix](c:jacobian-matrix) of $\\varphi$ at $p$ is block triangular with the invertible block $\\partial Q / \\partial u$ and the identity, so it is invertible. The inverse function theorem makes $\\varphi$ a [diffeomorphism](c:diffeomorph) near $p$, and $F \\circ \\varphi^{-1}(y, v) = (y, \\tilde R(y, v))$ for a smooth $\\tilde R$.",
+      "uses": [
+       "wd:Q931001"
+      ]
+     },
+     {
+      "id": "s:independent",
+      "slogan": "Show from the constant rank that $\\tilde R$ does not depend on $v$.",
+      "detail": "The Jacobian of $F \\circ \\varphi^{-1}$ has the blocks $I_r$, $0$, $\\partial \\tilde R / \\partial y$ and $\\partial \\tilde R / \\partial v$, and its rank is $r$ because $\\varphi$ is a diffeomorphism. A nonzero entry of $\\partial \\tilde R / \\partial v$ would give rank $r + 1$, so $\\tilde R(y, v) = S(y)$ on a product neighborhood.",
+      "uses": []
+     },
+     {
+      "id": "s:psi",
+      "slogan": "Straighten the image with the map $\\psi(y, z) = (y, z - S(y))$.",
+      "detail": "The map $\\psi$ is a diffeomorphism with inverse $(y, w) \\mapsto (y, w + S(y))$. Then $\\psi \\circ F \\circ \\varphi^{-1}(y, v) = (y, S(y) - S(y)) = (y, 0)$, which is the stated normal form.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:reorder",
+      "s:phi"
+     ],
+     [
+      "s:phi",
+      "s:independent"
+     ],
+     [
+      "s:independent",
+      "s:psi"
+     ]
+    ],
+    "conclusion": "s:psi",
+    "concepts": {
+     "c:smooth-map": "Smoothness is needed for the inverse function theorem.",
+     "c:jacobian-matrix": "Its block form controls both coordinate changes.",
+     "c:rank-of-a-matrix": "Constant rank forces the extra block to vanish.",
+     "c:diffeomorph": "The coordinate changes are diffeomorphisms near $p$ and $F(p)$."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard proof from the inverse function theorem, as in J. M. Lee, Introduction to Smooth Manifolds, 2nd ed., theorem 4.12 (the rank theorem)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:continuity-of-the-limit-of-a-sequence-of-functions",
+  "statement": "Let $X$ be a [topological space](c:topological-space) and $(Y, d)$ a [metric space](c:metric-space). If [continuous](c:continuous-function) functions $f_n\\colon X \\to Y$ [converge uniformly](c:uniform-convergence) to $f$, then $f$ is continuous.",
+  "hypotheses": [
+   {
+    "id": "h:continuous",
+    "text": "Each $f_n\\colon X \\to Y$ is [continuous](c:continuous-function).",
+    "concept": "c:continuous-function"
+   },
+   {
+    "id": "h:uniform",
+    "text": "The functions $f_n$ converge [uniformly](c:uniform-convergence) to $f$: $\\sup_{x \\in X} d(f_n(x), f(x)) \\to 0$.",
+    "concept": "c:uniform-convergence"
+   }
+  ],
+  "conclusion": "The limit function $f$ is continuous on $X$.",
+  "formal": {
+   "decl": "continuous_of_uniform_approx_of_continuous",
+   "difference": "The declaration allows any uniform space $Y$ and asks only that for each entourage some continuous function lies uniformly close to $f$, which a uniformly convergent sequence supplies."
+  },
+  "proofs": [
+   {
+    "id": "three-epsilon",
+    "name": "Three-epsilon estimate",
+    "slogan": "Approximate $f$ uniformly by one continuous $f_N$, use the continuity of $f_N$ at the point, and add three small distances.",
+    "scope": "Continuity at an arbitrary point $x_0 \\in X$, which gives continuity on all of $X$.",
+    "mechanisms": [
+     "m:epsilon-over-three",
+     "m:uniform-convergence"
+    ],
+    "roles": [
+     {
+      "h": "h:uniform",
+      "why": "Uniform convergence gives one $f_N$ within $\\varepsilon/3$ of $f$ at every point.",
+      "steps": [
+       "s:approx"
+      ]
+     },
+     {
+      "h": "h:continuous",
+      "why": "Continuity of $f_N$ at $x_0$ gives the neighborhood of the estimate.",
+      "steps": [
+       "s:neighborhood"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:approx",
+      "slogan": "Choose one index $N$ with $f_N$ uniformly within $\\varepsilon/3$ of $f$.",
+      "detail": "Fix $x_0 \\in X$ and $\\varepsilon > 0$. Uniform convergence gives $N$ with $d(f_N(x), f(x)) < \\varepsilon/3$ for every $x \\in X$ at once.",
+      "uses": []
+     },
+     {
+      "id": "s:neighborhood",
+      "slogan": "Find a [neighborhood](c:neighborhood) of $x_0$ on which $f_N$ varies by less than $\\varepsilon/3$.",
+      "detail": "The function $f_N$ is continuous at $x_0$, so some open neighborhood $V$ of $x_0$ has $d(f_N(x), f_N(x_0)) < \\varepsilon/3$ for all $x \\in V$.",
+      "uses": []
+     },
+     {
+      "id": "s:triangle",
+      "slogan": "Add the three distances on $V$ by the triangle inequality.",
+      "detail": "For $x \\in V$, $d(f(x), f(x_0)) \\le d(f(x), f_N(x)) + d(f_N(x), f_N(x_0)) + d(f_N(x_0), f(x_0)) < \\varepsilon$. Since $x_0$ and $\\varepsilon$ are arbitrary, $f$ is continuous.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:approx",
+      "s:neighborhood"
+     ],
+     [
+      "s:approx",
+      "s:triangle"
+     ],
+     [
+      "s:neighborhood",
+      "s:triangle"
+     ]
+    ],
+    "conclusion": "s:triangle",
+    "concepts": {
+     "c:topological-space": "Continuity on $X$ needs only neighborhoods, not a metric.",
+     "c:metric-space": "Distances in $Y$ are split into three small parts.",
+     "c:continuous-function": "Continuity of one approximant carries over to the limit.",
+     "c:uniform-convergence": "One index $N$ must work at every point simultaneously.",
+     "c:neighborhood": "The neighborhood of $x_0$ comes from continuity of $f_N$."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "continuous_of_uniform_approx_of_continuous",
+     "follows": true,
+     "note": "mathlib reduces to continuousWithinAt_of_locally_uniform_approx_of_continuousWithinAt, which takes a symmetric entourage whose triple composite lies in the given one: the uniform-space form of the three $\\varepsilon/3$ terms."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:cramer-s-rule",
+  "statement": "Let $A$ be an $n \\times n$ [matrix](c:matrix) over a [commutative ring](c:commutative-ring) $R$ whose [determinant](c:determinant) is a [unit](c:unit), for example a nonzero real number, and let $b \\in R^n$. The [linear system](c:system-of-linear-equations) $Ax = b$ has exactly one solution, $x_i = \\det A_i / \\det A$, where $A_i$ is $A$ with column $i$ replaced by $b$.",
+  "hypotheses": [
+   {
+    "id": "h:square",
+    "text": "$A$ is an $n \\times n$ [matrix](c:matrix) over a [commutative ring](c:commutative-ring) $R$, and $b \\in R^n$.",
+    "concept": "c:matrix"
+   },
+   {
+    "id": "h:unit",
+    "text": "The [determinant](c:determinant) $\\det A$ is a [unit](c:unit) of $R$.",
+    "concept": "c:unit"
+   }
+  ],
+  "conclusion": "The unique solution of $Ax = b$ is $x_i = \\det A_i / \\det A$ for $i = 1, \\dots, n$.",
+  "formal": {
+   "decl": "Matrix.mulVec_cramer",
+   "difference": "The declaration states $A\\,x = (\\det A)\\, b$ for the vector $x_i = \\det A_i$, with no hypothesis on $\\det A$. Division by $\\det A$ and uniqueness of the solution are not part of it."
+  },
+  "proofs": [
+   {
+    "id": "adjugate",
+    "name": "Adjugate identity",
+    "slogan": "Identify the Cramer vector with the adjugate times $b$, use $A \\operatorname{adj}(A) = (\\det A) I$, and divide by the determinant.",
+    "scope": "Existence and uniqueness for every $n \\ge 1$; for $n = 0$ both sides are the empty vector.",
+    "mechanisms": [
+     "m:determinant",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:square",
+      "why": "A square matrix over a commutative ring has a determinant, cofactors and an adjugate.",
+      "steps": [
+       "s:cramer-adjugate",
+       "s:mul-adjugate"
+      ]
+     },
+     {
+      "h": "h:unit",
+      "why": "Invertibility of $\\det A$ allows the division in both directions.",
+      "steps": [
+       "s:divide",
+       "s:unique"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:cramer-adjugate",
+      "slogan": "Expand $\\det A_i$ along column $i$ to get the $i$-th entry of $\\operatorname{adj}(A)\\, b$.",
+      "detail": "Laplace expansion along column $i$ gives $\\det A_i = \\sum_j b_j C_{ji}$, where $C_{ji}$ is the cofactor of $A$ at $(j, i)$. The [adjugate](c:adjugate-matrix) has $(i, j)$ entry $C_{ji}$, so the vector $(\\det A_i)_i$ equals $\\operatorname{adj}(A)\\, b$.",
+      "uses": [
+       "nl:26835"
+      ]
+     },
+     {
+      "id": "s:mul-adjugate",
+      "slogan": "Show that $A \\operatorname{adj}(A) = \\operatorname{adj}(A)\\, A = (\\det A)\\, I$.",
+      "detail": "The $(k, i)$ entry of $A \\operatorname{adj}(A)$ is $\\sum_j a_{kj} C_{ij}$, the Laplace expansion along row $i$ of $A$ with row $i$ replaced by row $k$. It is $\\det A$ for $k = i$ and $0$ for $k \\ne i$, since a matrix with two equal rows has determinant $0$; columns give the other product.",
+      "uses": [
+       "nl:26835"
+      ]
+     },
+     {
+      "id": "s:divide",
+      "slogan": "Divide by $\\det A$ to obtain a solution of $Ax = b$.",
+      "detail": "Steps 1 and 2 give $A\\, (\\det A_i)_i = A \\operatorname{adj}(A)\\, b = (\\det A)\\, b$. Multiplication by $(\\det A)^{-1}$ shows that $x_i = \\det A_i / \\det A$ solves $Ax = b$.",
+      "uses": []
+     },
+     {
+      "id": "s:unique",
+      "slogan": "Show that every solution equals the solution of step 3.",
+      "detail": "If $Ax = b$, then $(\\det A)\\, x = \\operatorname{adj}(A) A x = \\operatorname{adj}(A)\\, b = (\\det A_i)_i$ by steps 1 and 2. Division by $\\det A$ gives $x_i = \\det A_i / \\det A$, so the solution of step 3 is the only one.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:cramer-adjugate",
+      "s:divide"
+     ],
+     [
+      "s:mul-adjugate",
+      "s:divide"
+     ],
+     [
+      "s:cramer-adjugate",
+      "s:unique"
+     ],
+     [
+      "s:mul-adjugate",
+      "s:unique"
+     ],
+     [
+      "s:divide",
+      "s:unique"
+     ]
+    ],
+    "conclusion": "s:unique",
+    "concepts": {
+     "c:matrix": "The coefficients of the system form a square matrix.",
+     "c:commutative-ring": "Determinant identities need commuting entries.",
+     "c:determinant": "Each unknown is a quotient of two determinants.",
+     "c:unit": "Division by the determinant needs it to be invertible.",
+     "c:system-of-linear-equations": "The rule solves the square system $Ax = b$.",
+     "c:adjugate-matrix": "The adjugate times $b$ is the vector of numerators."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Matrix.mulVec_cramer",
+     "follows": true,
+     "note": "mathlib rewrites with cramer_eq_adjugate_mulVec, then mulVec_mulVec and mul_adjugate; the division and uniqueness steps are added here."
+    }
+   }
+  ]
  }
 ]

@@ -1265,5 +1265,681 @@
     }
    }
   ]
+ },
+ {
+  "id": "wd:Q1082910",
+  "statement": "For every natural number $n$, the number of [partitions](c:integer-partition) of $n$ into odd parts equals the number of partitions of $n$ into distinct parts.",
+  "hypotheses": [
+   {
+    "id": "h:natural",
+    "text": "The number $n$ is a natural number, $n \\ge 0$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The partitions of $n$ into odd parts and the partitions of $n$ into distinct parts are equal in number.",
+  "formal": {
+   "decl": "Nat.Partition.card_odds_eq_card_distincts",
+   "difference": null
+  },
+  "proofs": [
+   {
+    "id": "generating-functions",
+    "name": "Equal generating functions",
+    "slogan": "Write both counts as coefficients of infinite products and turn one product into the other with $1 + x^k = (1 - x^{2k})/(1 - x^k)$.",
+    "scope": "All $n$ at once, as an identity of [formal power series](c:formal-power-series) over $\\mathbb{Z}$. The case $n = 0$ is the empty partition on both sides.",
+    "mechanisms": [
+     "m:generating-function",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:natural",
+      "why": "The count for $n$ is the coefficient of $x^n$ in each series.",
+      "steps": [
+       "s:coefficients"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:odd",
+      "slogan": "Write the [generating function](c:generating-function) of partitions into odd parts as a product.",
+      "detail": "A choice of multiplicity for each odd part $k$ gives $\\sum_n o(n)\\, x^n = \\prod_{k \\text{ odd}} (1 + x^k + x^{2k} + \\cdots) = \\prod_{k \\text{ odd}} \\frac{1}{1 - x^k}$. Each coefficient depends on finitely many factors, so the product is defined.",
+      "uses": []
+     },
+     {
+      "id": "s:distinct",
+      "slogan": "Write the generating function of partitions into distinct parts as a product.",
+      "detail": "In a partition into distinct parts each part $k \\ge 1$ occurs at most once. So $\\sum_n d(n)\\, x^n = \\prod_{k \\ge 1} (1 + x^k)$.",
+      "uses": []
+     },
+     {
+      "id": "s:multiply",
+      "slogan": "Multiply both products by the series $P = \\prod_{k \\ge 1} (1 - x^k)$.",
+      "detail": "The odd factors cancel: $P \\prod_{k \\text{ odd}} \\frac{1}{1 - x^k} = \\prod_{k \\text{ even}} (1 - x^k) = \\prod_{j \\ge 1} (1 - x^{2j})$. Also $P \\prod_{k \\ge 1} (1 + x^k) = \\prod_{k \\ge 1} (1 - x^{2k})$, the same product.",
+      "uses": []
+     },
+     {
+      "id": "s:cancel",
+      "slogan": "Cancel the nonzero series $P$ in the integral domain of formal power series.",
+      "detail": "The series $P$ has constant term $1$, so it is not zero, and $\\mathbb{Z}[[x]]$ has no zero divisors. Hence the two generating functions are equal.",
+      "uses": []
+     },
+     {
+      "id": "s:coefficients",
+      "slogan": "Compare the coefficients of $x^n$ in the two equal series.",
+      "detail": "Equal [formal power series](c:formal-power-series) have equal coefficients. So $o(n) = d(n)$ for every $n \\ge 0$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:odd",
+      "s:multiply"
+     ],
+     [
+      "s:distinct",
+      "s:multiply"
+     ],
+     [
+      "s:multiply",
+      "s:cancel"
+     ],
+     [
+      "s:cancel",
+      "s:coefficients"
+     ]
+    ],
+    "conclusion": "s:coefficients",
+    "concepts": {
+     "c:integer-partition": "The theorem compares two classes of partitions of $n$.",
+     "c:generating-function": "Generating functions turn the two counts into infinite products.",
+     "c:formal-power-series": "The product identities hold in the ring of formal power series."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Nat.Partition.card_odds_eq_card_distincts",
+     "follows": true,
+     "note": "mathlib specializes Glaisher's theorem (card_restricted_eq_card_countRestricted, $m = 2$), proved by generating functions: both products times $\\prod (1 - X^{i+1})$ become $\\prod (1 - X^{(i+1)m})$, then mul_right_cancel₀."
+    }
+   },
+   {
+    "id": "glaisher-bijection",
+    "name": "Binary splitting and merging",
+    "slogan": "Split each distinct part $2^a m$ with $m$ odd into $2^a$ copies of $m$, and undo this by merging copies along binary expansions.",
+    "scope": "A bijection for each $n$. The empty partition of $0$ corresponds to itself.",
+    "mechanisms": [
+     "m:bijection",
+     "m:unique-factorization"
+    ],
+    "roles": [
+     {
+      "h": "h:natural",
+      "why": "Both maps keep the sum $n$ of the parts.",
+      "steps": [
+       "s:split",
+       "s:merge"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:split",
+      "slogan": "Split each distinct part $2^a m$, with $m$ odd, into $2^a$ parts equal to $m$.",
+      "detail": "Every positive integer is $2^a m$ with $m$ odd in exactly one way. Splitting each part keeps the sum $n$ and gives a [partition](c:integer-partition) into odd parts.",
+      "uses": [
+       "wd:Q670235"
+      ]
+     },
+     {
+      "id": "s:merge",
+      "slogan": "Merge the copies of each odd part along the [binary](c:binary-digit) expansion of its multiplicity.",
+      "detail": "If the odd part $m$ occurs $r$ times, write $r = 2^{a_1} + \\dots + 2^{a_j}$ with distinct exponents. Replace the $r$ copies by the parts $2^{a_1} m, \\dots, 2^{a_j} m$, which keeps the sum $n$.",
+      "uses": []
+     },
+     {
+      "id": "s:distinct",
+      "slogan": "Show that the merged parts are pairwise distinct.",
+      "detail": "Two merged parts $2^{a} m$ and $2^{a'} m'$ are equal only if $m = m'$ and $a = a'$, by uniqueness of the odd part and the power of $2$. The exponents for one $m$ are distinct, so all merged parts are distinct.",
+      "uses": [
+       "wd:Q670235"
+      ]
+     },
+     {
+      "id": "s:inverse",
+      "slogan": "Check that splitting and merging undo each other.",
+      "detail": "In a partition into distinct parts, the parts with odd part $m$ are $2^{a_1} m, \\dots, 2^{a_j} m$ with distinct $a_i$; splitting gives $r = \\sum 2^{a_i}$ copies, and the binary expansion of $r$ returns the same $a_i$. Conversely splitting the merged parts returns $r$ copies, so the maps are inverse bijections.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:split",
+      "s:inverse"
+     ],
+     [
+      "s:merge",
+      "s:distinct"
+     ],
+     [
+      "s:distinct",
+      "s:inverse"
+     ],
+     [
+      "s:merge",
+      "s:inverse"
+     ]
+    ],
+    "conclusion": "s:inverse",
+    "concepts": {
+     "c:integer-partition": "The bijection matches distinct-part partitions with odd-part partitions.",
+     "c:binary-digit": "Binary digits of a multiplicity tell how to merge the copies."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Glaisher's bijection, the standard bijective proof of Euler's partition theorem."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:integration-by-parts",
+  "statement": "If $u$ and $v$ are [differentiable](c:differentiable-function) at every point of $[a, b]$ and their [derivatives](c:derivative) $u'$ and $v'$ are [integrable](c:integrable-function) on $[a, b]$, then $\\int_a^b u\\, v'\\, dx = u(b)\\, v(b) - u(a)\\, v(a) - \\int_a^b u'\\, v\\, dx$.",
+  "hypotheses": [
+   {
+    "id": "h:u-diff",
+    "text": "The function $u$ is [differentiable](c:differentiable-function) at every point of $[a, b]$, with derivative $u'$.",
+    "concept": "c:differentiable-function"
+   },
+   {
+    "id": "h:v-diff",
+    "text": "The function $v$ is differentiable at every point of $[a, b]$, with derivative $v'$.",
+    "concept": "c:differentiable-function"
+   },
+   {
+    "id": "h:integrable",
+    "text": "The [derivatives](c:derivative) $u'$ and $v'$ are [integrable](c:integrable-function) on $[a, b]$.",
+    "concept": "c:integrable-function"
+   }
+  ],
+  "conclusion": "$\\int_a^b u\\, v'\\, dx = u(b)\\, v(b) - u(a)\\, v(a) - \\int_a^b u'\\, v\\, dx$.",
+  "formal": {
+   "decl": "intervalIntegral.integral_mul_deriv_eq_deriv_mul",
+   "difference": "The declaration allows values in any complete normed real algebra, where the order of the factors matters, and either order of $a$ and $b$."
+  },
+  "proofs": [
+   {
+    "id": "product-rule-ftc",
+    "name": "Product rule and fundamental theorem",
+    "slogan": "Integrate the product rule $(uv)' = u'v + uv'$ with the fundamental theorem of calculus and move one term to the other side.",
+    "scope": "The whole theorem. For $a = b$ both sides are zero.",
+    "mechanisms": [
+     "m:fundamental-theorem-calculus"
+    ],
+    "roles": [
+     {
+      "h": "h:u-diff",
+      "why": "Differentiability of $u$ gives the product rule and makes $u$ continuous.",
+      "steps": [
+       "s:product",
+       "s:continuous"
+      ]
+     },
+     {
+      "h": "h:v-diff",
+      "why": "Differentiability of $v$ gives the product rule and makes $v$ continuous.",
+      "steps": [
+       "s:product",
+       "s:continuous"
+      ]
+     },
+     {
+      "h": "h:integrable",
+      "why": "Integrability of $u'$ and $v'$ makes $u'v$, $uv'$ and their sum integrable.",
+      "steps": [
+       "s:integrable"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:product",
+      "slogan": "Differentiate the product $uv$ by the product rule.",
+      "detail": "At each $x \\in [a, b]$, $(uv)'(x) = u'(x)\\, v(x) + u(x)\\, v'(x)$. This follows from $u(y)v(y) - u(x)v(x) = (u(y) - u(x))\\, v(y) + u(x)\\, (v(y) - v(x))$ and the continuity of $v$ at $x$.",
+      "uses": []
+     },
+     {
+      "id": "s:continuous",
+      "slogan": "Note that $u$ and $v$ are continuous and bounded on $[a, b]$.",
+      "detail": "A function that is differentiable at a point is [continuous](c:continuous-function) there. A continuous function on the compact interval $[a, b]$ is bounded.",
+      "uses": [
+       "wd:Q752375"
+      ]
+     },
+     {
+      "id": "s:integrable",
+      "slogan": "Show that $u'v$ and $uv'$ are integrable on $[a, b]$.",
+      "detail": "An integrable function times a bounded continuous function is integrable. So $u'v$, $uv'$ and their sum $(uv)'$ are [integrable](c:integrable-function) on $[a, b]$.",
+      "uses": []
+     },
+     {
+      "id": "s:ftc",
+      "slogan": "Integrate $(uv)'$ over $[a, b]$ by the fundamental theorem of calculus.",
+      "detail": "The product $uv$ is differentiable at every point of $[a, b]$ with integrable derivative. So $\\int_a^b (u'v + uv')\\, dx = u(b)\\,v(b) - u(a)\\,v(a)$.",
+      "uses": [
+       "wd:Q1217677"
+      ]
+     },
+     {
+      "id": "s:rearrange",
+      "slogan": "Split the integral and move $\\int_a^b u'v\\, dx$ to the other side.",
+      "detail": "Both $u'v$ and $uv'$ are integrable, so linearity of the integral gives $\\int_a^b u v'\\, dx = u(b)\\,v(b) - u(a)\\,v(a) - \\int_a^b u' v\\, dx$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:product",
+      "s:ftc"
+     ],
+     [
+      "s:continuous",
+      "s:integrable"
+     ],
+     [
+      "s:integrable",
+      "s:ftc"
+     ],
+     [
+      "s:integrable",
+      "s:rearrange"
+     ],
+     [
+      "s:ftc",
+      "s:rearrange"
+     ]
+    ],
+    "conclusion": "s:rearrange",
+    "concepts": {
+     "c:differentiable-function": "Differentiability gives the product rule at every point.",
+     "c:derivative": "The derivative of $uv$ is the integrand that the fundamental theorem evaluates.",
+     "c:integrable-function": "Integrability lets the fundamental theorem and linearity apply.",
+     "c:continuous-function": "Continuity of $u$ and $v$ makes the products integrable."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "intervalIntegral.integral_mul_deriv_eq_deriv_mul",
+     "follows": true,
+     "note": "mathlib rewrites with integral_deriv_mul_eq_sub_of_hasDeriv_right (the fundamental theorem for $uv$) and integral_sub, with integrability from IntervalIntegrable.mul_continuousOn."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q617417",
+  "statement": "If a piecewise $C^1$ [Jordan curve](c:jordan-curve) in the plane has length ([perimeter](c:perimeter)) $L$ and encloses a region of [area](c:area) $A$, then $L^2 \\ge 4\\pi A$, with equality if and only if the curve is a circle.",
+  "hypotheses": [
+   {
+    "id": "h:curve",
+    "text": "The curve is a piecewise $C^1$ [Jordan curve](c:jordan-curve) in the plane with length $L$.",
+    "concept": "c:jordan-curve"
+   },
+   {
+    "id": "h:region",
+    "text": "The number $A$ is the [area](c:area) of the bounded region inside the curve.",
+    "concept": "c:area"
+   }
+  ],
+  "conclusion": "$L^2 \\ge 4\\pi A$, and $L^2 = 4\\pi A$ holds only for a circle.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "fourier-series",
+    "name": "Hurwitz's Fourier series proof",
+    "slogan": "Parametrize by arc length, expand the curve in a Fourier series, and compare the Parseval sums for the length and the area.",
+    "scope": "The whole theorem for piecewise $C^1$ curves, including the equality case. The curve is taken with positive orientation.",
+    "mechanisms": [
+     "m:characteristic-function",
+     "m:stokes",
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:curve",
+      "why": "A piecewise $C^1$ curve has a constant-speed parametrization with square-integrable velocity, so Parseval applies.",
+      "steps": [
+       "s:param",
+       "s:fourier"
+      ]
+     },
+     {
+      "h": "h:region",
+      "why": "Green's theorem writes the enclosed area as an integral over the curve.",
+      "steps": [
+       "s:area"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:param",
+      "slogan": "Parametrize the curve by a multiple of arc length on $[0, 2\\pi]$.",
+      "detail": "Write the curve as $z(t) = x(t) + i y(t)$, $0 \\le t \\le 2\\pi$, positively oriented, with constant speed $|z'(t)| = L / 2\\pi$. Then $\\int_0^{2\\pi} |z'(t)|^2\\, dt = L^2 / 2\\pi$.",
+      "uses": []
+     },
+     {
+      "id": "s:area",
+      "slogan": "Write the enclosed area as a boundary integral by Green's theorem.",
+      "detail": "Green's theorem gives $A = \\frac12 \\int_0^{2\\pi} (x y' - y x')\\, dt = \\frac12 \\int_0^{2\\pi} \\operatorname{Im}(\\bar z z')\\, dt$ for the positively oriented curve.",
+      "uses": [
+       "wd:Q321237"
+      ]
+     },
+     {
+      "id": "s:fourier",
+      "slogan": "Expand $z$ and $z'$ in [Fourier series](c:fourier-series).",
+      "detail": "Write $z(t) = \\sum_{n \\in \\mathbb{Z}} c_n e^{int}$. Because $z$ is continuous, periodic and piecewise $C^1$, the Fourier coefficients of $z'$ are $i n c_n$.",
+      "uses": []
+     },
+     {
+      "id": "s:parseval",
+      "slogan": "Compute the length and the area with Parseval's identity.",
+      "detail": "Parseval's identity gives $L^2 / 2\\pi = \\int_0^{2\\pi} |z'|^2\\, dt = 2\\pi \\sum n^2 |c_n|^2$ and $A = \\frac12 \\operatorname{Im} \\int_0^{2\\pi} \\bar z z'\\, dt = \\pi \\sum n |c_n|^2$. So $L^2 - 4\\pi A = 4\\pi^2 \\sum_{n} (n^2 - n)\\, |c_n|^2$.",
+      "uses": [
+       "nm:parseval-s-identity"
+      ]
+     },
+     {
+      "id": "s:conclude",
+      "slogan": "Read the inequality and the equality case from the coefficient sum.",
+      "detail": "Every integer has $n^2 - n = n(n-1) \\ge 0$, so $L^2 \\ge 4\\pi A$. Equality forces $c_n = 0$ for $n \\ne 0, 1$, so $z(t) = c_0 + c_1 e^{it}$ is a circle; a circle gives equality.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:param",
+      "s:fourier"
+     ],
+     [
+      "s:param",
+      "s:parseval"
+     ],
+     [
+      "s:area",
+      "s:parseval"
+     ],
+     [
+      "s:fourier",
+      "s:parseval"
+     ],
+     [
+      "s:parseval",
+      "s:conclude"
+     ]
+    ],
+    "conclusion": "s:conclude",
+    "concepts": {
+     "c:jordan-curve": "A simple closed curve bounds the region whose area is compared.",
+     "c:perimeter": "The length of the curve is the perimeter of the region.",
+     "c:area": "The area is the quantity that the squared length bounds.",
+     "c:fourier-series": "Fourier coefficients turn the length and the area into sums."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Hurwitz's proof (1902), as in E. M. Stein and R. Shakarchi, Fourier Analysis: An Introduction, chapter 4."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:4536",
+  "statement": "For vectors $u, v, w \\in R^3$ over a [commutative ring](c:commutative-ring) $R$, the [cross product](c:cross-product) satisfies $u \\times (v \\times w) + v \\times (w \\times u) + w \\times (u \\times v) = 0$.",
+  "hypotheses": [
+   {
+    "id": "h:ring",
+    "text": "The scalars form a [commutative ring](c:commutative-ring) $R$, and $u, v, w \\in R^3$.",
+    "concept": "c:commutative-ring"
+   }
+  ],
+  "conclusion": "The cyclic sum of the double cross products is the zero vector.",
+  "formal": {
+   "decl": "jacobi_cross",
+   "difference": null
+  },
+  "proofs": [
+   {
+    "id": "leibniz-form",
+    "name": "Leibniz form and antisymmetry",
+    "slogan": "Check the Leibniz form of the identity coordinate by coordinate, then turn it into the cyclic form with antisymmetry.",
+    "scope": "The whole identity over any commutative ring.",
+    "mechanisms": [
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:ring",
+      "why": "Commutativity of $R$ lets the coordinate polynomials cancel.",
+      "steps": [
+       "s:antisymmetry",
+       "s:leibniz"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:antisymmetry",
+      "slogan": "Show from the coordinate formula that the cross product is antisymmetric.",
+      "detail": "With $u \\times v = (u_2 v_3 - u_3 v_2,\\ u_3 v_1 - u_1 v_3,\\ u_1 v_2 - u_2 v_1)$, commutativity of $R$ gives $u \\times u = 0$ and $v \\times u = -(u \\times v)$.",
+      "uses": []
+     },
+     {
+      "id": "s:leibniz",
+      "slogan": "Check the Leibniz form of the identity coordinate by coordinate.",
+      "detail": "The Leibniz form is $u \\times (v \\times w) = (u \\times v) \\times w + v \\times (u \\times w)$, and each coordinate of both sides is a cubic polynomial in the coordinates. Expansion in the [commutative ring](c:commutative-ring) $R$ shows that they agree; so $u \\times -$ acts as a derivation of the [Lie bracket](c:lie-bracket) $\\times$.",
+      "uses": []
+     },
+     {
+      "id": "s:rearrange",
+      "slogan": "Rewrite two terms of the Leibniz form with antisymmetry to get the cyclic sum.",
+      "detail": "Antisymmetry gives $(u \\times v) \\times w = -\\,w \\times (u \\times v)$ and $v \\times (u \\times w) = -\\,v \\times (w \\times u)$. Substitution into the Leibniz form gives $u \\times (v \\times w) + v \\times (w \\times u) + w \\times (u \\times v) = 0$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:antisymmetry",
+      "s:rearrange"
+     ],
+     [
+      "s:leibniz",
+      "s:rearrange"
+     ]
+    ],
+    "conclusion": "s:rearrange",
+    "concepts": {
+     "c:commutative-ring": "Commutativity of the scalars makes the coordinate polynomials cancel.",
+     "c:cross-product": "The identity is about cross products of three vectors.",
+     "c:lie-bracket": "The Leibniz form says that the cross product acts as a Lie bracket."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "jacobi_cross",
+     "follows": true,
+     "note": "mathlib proves jacobi_cross as lie_jacobi for the Lie ring structure Cross.lieRing on Fin 3 → R, whose Leibniz axiom is leibniz_cross (coordinates and ring) and whose antisymmetry is cross_anticomm."
+    }
+   },
+   {
+    "id": "bac-cab",
+    "name": "Triple product expansion",
+    "slogan": "Expand each double cross product by the rule $u \\times (v \\times w) = (u \\cdot w)\\, v - (u \\cdot v)\\, w$ and cancel the six terms in pairs.",
+    "scope": "The whole identity over any commutative ring.",
+    "mechanisms": [
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:ring",
+      "why": "Commutativity proves the expansion rule and makes the dot product symmetric, which pairs the terms.",
+      "steps": [
+       "s:expand",
+       "s:cancel"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:expand",
+      "slogan": "Prove the expansion $u \\times (v \\times w) = (u \\cdot w)\\, v - (u \\cdot v)\\, w$ by coordinates.",
+      "detail": "The first coordinate of the left side is $u_2 (v_1 w_2 - v_2 w_1) - u_3 (v_3 w_1 - v_1 w_3)$. Adding and subtracting $u_1 v_1 w_1$ gives $(u \\cdot w)\\, v_1 - (u \\cdot v)\\, w_1$; the other coordinates follow by cyclic symmetry.",
+      "uses": [
+       "nm:triple-product"
+      ]
+     },
+     {
+      "id": "s:cycle",
+      "slogan": "Write the expansions of the three cyclic terms.",
+      "detail": "The rule gives $u \\times (v \\times w) = (u \\cdot w)\\, v - (u \\cdot v)\\, w$, $v \\times (w \\times u) = (v \\cdot u)\\, w - (v \\cdot w)\\, u$ and $w \\times (u \\times v) = (w \\cdot v)\\, u - (w \\cdot u)\\, v$.",
+      "uses": []
+     },
+     {
+      "id": "s:cancel",
+      "slogan": "Add the three expansions and cancel the terms in pairs.",
+      "detail": "Over a [commutative ring](c:commutative-ring) the dot product is symmetric. So $(u \\cdot w)\\, v$ cancels $-(w \\cdot u)\\, v$, and in the same way the terms in $u$ and in $w$ cancel; the sum is the zero vector.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:expand",
+      "s:cycle"
+     ],
+     [
+      "s:cycle",
+      "s:cancel"
+     ]
+    ],
+    "conclusion": "s:cancel",
+    "concepts": {
+     "c:commutative-ring": "Commutativity makes the dot product symmetric, so the terms cancel.",
+     "c:cross-product": "The identity is about cross products of three vectors."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The classical proof through the vector triple product expansion (the BAC-CAB rule, mathlib cross_cross_eq_smul_sub_smul)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1699024",
+  "statement": "Every [convex body](c:convex-body) $K \\subset \\mathbb{R}^n$ contains a unique [ellipsoid](c:ellipsoid) $E$ of maximal volume, and $K \\subseteq c + n(E - c)$, where $c$ is the center of $E$.",
+  "hypotheses": [
+   {
+    "id": "h:body",
+    "text": "The set $K \\subset \\mathbb{R}^n$, $n \\ge 1$, is a [convex body](c:convex-body): a compact [convex set](c:convex-set) with nonempty interior.",
+    "concept": "c:convex-body"
+   }
+  ],
+  "conclusion": "The maximal inscribed ellipsoid exists and is unique, and its dilation by the factor $n$ about its center contains $K$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "compactness-and-enlargement",
+    "name": "Compactness, averaging and enlargement",
+    "slogan": "Get a maximal ellipsoid by compactness, prove uniqueness by averaging, and show that a point of $K$ beyond distance $n$ would allow a larger ellipsoid.",
+    "scope": "The whole theorem for $n \\ge 1$. Steps 4 and 5 first move $E$ to the unit ball by an affine map, which keeps ratios of volumes.",
+    "mechanisms": [
+     "m:compactness-extremum",
+     "m:convexity",
+     "m:contradiction"
+    ],
+    "roles": [
+     {
+      "h": "h:body",
+      "why": "Compactness bounds the ellipsoids, convexity puts averages and hulls inside $K$, and the interior gives positive volume.",
+      "steps": [
+       "s:exist",
+       "s:average",
+       "s:centers",
+       "s:enlarge"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:exist",
+      "slogan": "Maximize the volume over the compact set of ellipsoids inside $K$.",
+      "detail": "Write an ellipsoid as $AB + c$ with $A$ symmetric positive semidefinite and $B$ the [unit ball](c:unit-ball); its volume is $\\det A \\cdot |B|$. The pairs $(A, c)$ with $AB + c \\subseteq K$ form a closed bounded set and $\\det$ is continuous, so a maximizer exists, with $\\det A > 0$ because $K$ contains a ball.",
+      "uses": [
+       "wd:Q253214",
+       "wd:Q752375"
+      ]
+     },
+     {
+      "id": "s:average",
+      "slogan": "Average two maximal ellipsoids and compare their [determinants](c:determinant).",
+      "detail": "For maximal $A_1 B + c_1$ and $A_2 B + c_2$, convexity puts $\\frac{A_1 + A_2}{2} B + \\frac{c_1 + c_2}{2}$ in $K$. With eigenvalues $\\lambda_i$ of $A_1^{-1/2} A_2 A_1^{-1/2}$, whose product is $1$, AM-GM gives $\\det \\frac{A_1 + A_2}{2} = \\det A_1 \\prod \\frac{1 + \\lambda_i}{2} \\ge \\det A_1$; maximality forces equality, so $A_1 = A_2$.",
+      "uses": [
+       "nm:arithmetic-mean-geometric-mean-inequality"
+      ]
+     },
+     {
+      "id": "s:centers",
+      "slogan": "Show that two maximal ellipsoids with the same matrix have the same center.",
+      "detail": "The [affine map](c:affine-map) $y \\mapsto A^{-1}(y - c_1)$ turns them into $B$ and $B + d$. If $d \\ne 0$, the [convex hull](c:convex-hull) of $B \\cup (B + d)$ contains the ellipsoid with center $d/2$, semi-axis $1 + |d|/2$ along $d$ and $1$ across, which has larger volume. So $d = 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:enlarge",
+      "slogan": "Build a larger ellipsoid in the hull of the ball and a far point.",
+      "detail": "Move $E$ to $B$ and suppose that $x \\in K$ has $|x| = t > n$, say $x = t e_1$. For small $\\varepsilon > 0$, a support-function check shows that the ellipsoid with center $\\varepsilon e_1$, semi-axis $1 + \\varepsilon$ along $e_1$ and $(1 - 2\\varepsilon/(t-1))^{1/2}$ across lies in the convex hull of $B \\cup \\{x\\}$.",
+      "uses": []
+     },
+     {
+      "id": "s:volume",
+      "slogan": "Compare the volumes and conclude that $K$ lies in $nB$.",
+      "detail": "The volume ratio $(1 + \\varepsilon)(1 - 2\\varepsilon/(t-1))^{(n-1)/2}$ has derivative $1 - (n-1)/(t-1) > 0$ at $\\varepsilon = 0$, so it exceeds $1$ for small $\\varepsilon$, against maximality. Hence $K \\subseteq nB$, that is $K \\subseteq c + n(E - c)$; with steps 2 and 3, $E$ is unique.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:exist",
+      "s:average"
+     ],
+     [
+      "s:average",
+      "s:centers"
+     ],
+     [
+      "s:centers",
+      "s:volume"
+     ],
+     [
+      "s:exist",
+      "s:enlarge"
+     ],
+     [
+      "s:enlarge",
+      "s:volume"
+     ]
+    ],
+    "conclusion": "s:volume",
+    "concepts": {
+     "c:convex-body": "The theorem is about ellipsoids inscribed in a convex body.",
+     "c:ellipsoid": "Ellipsoids are the competitors whose volume is maximized.",
+     "c:convex-set": "Convexity puts averaged ellipsoids and convex hulls inside $K$.",
+     "c:unit-ball": "Every ellipsoid is an affine image of the unit ball.",
+     "c:determinant": "The volume of $AB + c$ is $\\det A$ times the ball volume.",
+     "c:affine-map": "Affine maps move the maximal ellipsoid to the unit ball.",
+     "c:convex-hull": "Hulls of balls and points contain the larger competing ellipsoids."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "A direct proof by compactness, determinant averaging and an explicit larger ellipsoid; F. John's original 1948 proof uses Lagrange-multiplier conditions instead."
+    }
+   }
+  ]
  }
 ]

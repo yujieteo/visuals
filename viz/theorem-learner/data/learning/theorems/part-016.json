@@ -1,0 +1,2107 @@
+[
+ {
+  "id": "wd:Q1933521",
+  "statement": "For every [partial computable function](c:partial-computable-function) $f(e, x)$ of two variables there is an index $e$ with $\\varphi_e(x) = f(e, x)$ for all $x$, both sides undefined together, where $\\varphi_e$ is the function computed by the [program](c:program) with [Gödel number](c:godel-numbering) $e$.",
+  "hypotheses": [
+   {
+    "id": "h:numbering",
+    "text": "The indexing $e \\mapsto \\varphi_e$ is a standard [Gödel numbering](c:godel-numbering) of programs, with a universal program and the s-m-n property.",
+    "concept": "c:godel-numbering"
+   },
+   {
+    "id": "h:computable",
+    "text": "The function $f(e, x)$ is a [partial computable function](c:partial-computable-function) of two variables.",
+    "concept": "c:partial-computable-function"
+   }
+  ],
+  "conclusion": "Some index $e$ has $\\varphi_e(x) = f(e, x)$ for every $x$, with both sides undefined together.",
+  "formal": {
+   "decl": "Nat.Partrec.Code.fixed_point₂",
+   "difference": "The declaration indexes programs by the inductive type Nat.Partrec.Code with its evaluation map instead of by natural numbers, and it states $\\mathrm{eval}\\ c = f\\ c$ as an equality of partial functions."
+  },
+  "proofs": [
+   {
+    "id": "diagonal",
+    "name": "Diagonal fixed point",
+    "slogan": "Curry $f$ into a total computable map $h$ on programs, then build a fixed point of $h$ with a diagonal program.",
+    "scope": "The whole theorem, including a function $f$ that is nowhere defined. The fixed point index exists because the maps $h$ and $d$ are total, even where $f$ is undefined.",
+    "mechanisms": [
+     "m:diagonal-argument",
+     "m:encoding"
+    ],
+    "roles": [
+     {
+      "h": "h:numbering",
+      "why": "The universal program and the s-m-n property make $g$ computable and give the total maps $h$ and $d$.",
+      "steps": [
+       "s:curry",
+       "s:diagonal"
+      ]
+     },
+     {
+      "h": "h:computable",
+      "why": "A program for $f$ exists, and the curried map $h$ is built from it.",
+      "steps": [
+       "s:code"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:code",
+      "slogan": "Choose a program $c_f$ that computes the function $f$.",
+      "detail": "Because $f$ is [partial computable](c:partial-computable-function), some program $c_f$ computes it: $\\varphi_{c_f}(\\langle e, x\\rangle) = f(e, x)$ for a computable pairing $\\langle e, x\\rangle$.",
+      "uses": []
+     },
+     {
+      "id": "s:curry",
+      "slogan": "Curry the program $c_f$ into a total [computable](c:computable-function) map $h$ on indices.",
+      "detail": "The s-m-n property gives a total computable $h$ with $\\varphi_{h(e)}(x) = \\varphi_{c_f}(\\langle e, x\\rangle) = f(e, x)$. It now suffices to find $e$ with $\\varphi_e = \\varphi_{h(e)}$.",
+      "uses": []
+     },
+     {
+      "id": "s:diagonal",
+      "slogan": "Build the diagonal map $d$ with $\\varphi_{d(x)} = \\varphi_{\\varphi_x(x)}$.",
+      "detail": "The function $g(x, y) = \\varphi_{\\varphi_x(x)}(y)$ is partial computable through the universal program. The s-m-n property turns it into a total computable $d$ with $\\varphi_{d(x)}(y) = g(x, y)$; if $\\varphi_x(x)$ is undefined, $\\varphi_{d(x)}$ is nowhere defined.",
+      "uses": []
+     },
+     {
+      "id": "s:compose",
+      "slogan": "Find an index $m$ for the total composite map $h \\circ d$.",
+      "detail": "The map $h \\circ d$ is total and computable, so some program $m$ computes it. In particular $\\varphi_m(m) = h(d(m))$ is defined.",
+      "uses": []
+     },
+     {
+      "id": "s:fixed",
+      "slogan": "Set $e = d(m)$ and check that $\\varphi_e = \\varphi_{h(e)}$.",
+      "detail": "For every $y$, $\\varphi_{d(m)}(y) = \\varphi_{\\varphi_m(m)}(y) = \\varphi_{h(d(m))}(y)$. So $e = d(m)$ is a [fixed point](c:fixed-point) of $h$ up to program equivalence, which is Rogers' theorem.",
+      "uses": [
+       "nm:roger-s-fixed-point-theorem"
+      ]
+     },
+     {
+      "id": "s:unfold",
+      "slogan": "Unfold the curried map to get $\\varphi_e(x) = f(e, x)$.",
+      "detail": "By steps 2 and 5, $\\varphi_e(x) = \\varphi_{h(e)}(x) = f(e, x)$ for every $x$, and the two sides are undefined together.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:code",
+      "s:curry"
+     ],
+     [
+      "s:curry",
+      "s:compose"
+     ],
+     [
+      "s:diagonal",
+      "s:compose"
+     ],
+     [
+      "s:diagonal",
+      "s:fixed"
+     ],
+     [
+      "s:compose",
+      "s:fixed"
+     ],
+     [
+      "s:fixed",
+      "s:unfold"
+     ],
+     [
+      "s:curry",
+      "s:unfold"
+     ]
+    ],
+    "conclusion": "s:unfold",
+    "concepts": {
+     "c:partial-computable-function": "The function $f$ is partial computable, so a program computes it.",
+     "c:program": "Programs are the objects that the theorem makes refer to themselves.",
+     "c:godel-numbering": "The numbering lets programs take indices of programs as inputs.",
+     "c:computable-function": "The curried map and the diagonal map are total computable functions.",
+     "c:fixed-point": "The required index is a fixed point of the curried map $h$."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Nat.Partrec.Code.fixed_point₂",
+     "follows": true,
+     "note": "mathlib takes a code for f (exists_code), curries it (primrec₂_curry) and applies Rogers' theorem Nat.Partrec.Code.fixed_point, whose fixed point is the diagonal code curry cg (encode cF)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q576478",
+  "statement": "Every [bounded](c:bounded-function) [entire function](c:entire-function) is constant: if $f\\colon \\mathbb{C} \\to \\mathbb{C}$ is [holomorphic](c:holomorphic-function) on the whole plane and $|f(z)| \\le M$ for all $z$, then $f$ is constant.",
+  "hypotheses": [
+   {
+    "id": "h:entire",
+    "text": "The function $f\\colon \\mathbb{C} \\to \\mathbb{C}$ is [holomorphic](c:holomorphic-function) on the whole plane.",
+    "concept": "c:holomorphic-function"
+   },
+   {
+    "id": "h:bounded",
+    "text": "Some real $M$ has $|f(z)| \\le M$ for every $z \\in \\mathbb{C}$.",
+    "concept": "c:bounded-function"
+   }
+  ],
+  "conclusion": "$f(z) = f(w)$ for all $z, w \\in \\mathbb{C}$.",
+  "formal": {
+   "decl": "Differentiable.apply_eq_apply_of_bounded",
+   "difference": "The declaration allows any complex normed spaces $E$ and $F$ as domain and codomain and assumes that the range is bounded. It reduces to the plane by restricting $f$ to the complex line through $z$ and $w$."
+  },
+  "proofs": [
+   {
+    "id": "cauchy-estimate",
+    "name": "Cauchy estimate on large circles",
+    "slogan": "Bound the derivative at each point by Cauchy's estimate on circles of any radius, so the derivative vanishes and $f$ is constant.",
+    "scope": "The whole theorem. The proof replaces $M$ by $\\max(M, 1)$ so that the radius $M/\\varepsilon$ is positive.",
+    "mechanisms": [
+     "m:complex-integration",
+     "m:mean-value"
+    ],
+    "roles": [
+     {
+      "h": "h:entire",
+      "why": "Holomorphy on every disc gives Cauchy's formula on circles of every radius, and the derivative exists everywhere.",
+      "steps": [
+       "s:estimate",
+       "s:vanish",
+       "s:constant"
+      ]
+     },
+     {
+      "h": "h:bounded",
+      "why": "The single bound $M$ holds on every circle, so the estimate $M/R$ tends to zero.",
+      "steps": [
+       "s:estimate",
+       "s:vanish"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:estimate",
+      "slogan": "Bound $|f'(c)|$ by $M/R$ with the circle of radius $R$ about $c$.",
+      "detail": "Cauchy's integral formula gives $f'(c) = \\frac{1}{2\\pi i}\\oint_{|z-c|=R} \\frac{f(z)}{(z-c)^2}\\,dz$. With $|f| \\le M$ on the circle, the integral has modulus at most $\\frac{1}{2\\pi} \\cdot 2\\pi R \\cdot M/R^2 = M/R$.",
+      "uses": [
+       "nm:cauchy-s-estimate-for-the-first-order-derivative"
+      ]
+     },
+     {
+      "id": "s:vanish",
+      "slogan": "Let the radius grow to show that $f'(c) = 0$ at every point $c$.",
+      "detail": "The bound holds for every $R > 0$ because $f$ is an [entire function](c:entire-function). For $\\varepsilon > 0$ take $R = M/\\varepsilon$ to get $|f'(c)| \\le \\varepsilon$, so $f'(c) = 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:constant",
+      "slogan": "Integrate the zero [derivative](c:complex-derivative) along the segment from $z$ to $w$.",
+      "detail": "The function $t \\mapsto f(z + t(w - z))$ on $[0, 1]$ has derivative $(w - z) f'(z + t(w - z)) = 0$. A function with zero derivative on an interval is constant, so $f(z) = f(w)$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:estimate",
+      "s:vanish"
+     ],
+     [
+      "s:vanish",
+      "s:constant"
+     ]
+    ],
+    "conclusion": "s:constant",
+    "concepts": {
+     "c:bounded-function": "The bound $M$ makes Cauchy's estimate $M/R$ tend to zero.",
+     "c:entire-function": "Holomorphy on all of $\\mathbb{C}$ allows circles of every radius.",
+     "c:holomorphic-function": "Holomorphy gives Cauchy's integral formula for the derivative.",
+     "c:complex-derivative": "The proof shows that the complex derivative vanishes everywhere."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Differentiable.apply_eq_apply_of_bounded",
+     "follows": true,
+     "note": "mathlib composes f with the line t ↦ t • (w - z) + z; liouville_theorem_aux bounds the derivative by norm_deriv_le_of_forall_mem_sphere_norm_le and ends with is_const_of_deriv_eq_zero."
+    }
+   },
+   {
+    "id": "disc-means",
+    "name": "Mean values over large discs",
+    "slogan": "Write $f(a)$ and $f(b)$ as averages over two huge discs that almost coincide, so their difference tends to zero.",
+    "scope": "The whole theorem, for any two points $a$ and $b$. The proof needs only the bound $M$ and the area mean value formula.",
+    "mechanisms": [
+     "m:complex-integration",
+     "m:triangle-inequality"
+    ],
+    "roles": [
+     {
+      "h": "h:entire",
+      "why": "Holomorphy on every disc gives the mean value formula for discs of every radius.",
+      "steps": [
+       "s:circle",
+       "s:disc"
+      ]
+     },
+     {
+      "h": "h:bounded",
+      "why": "The bound $M$ controls the integral over the thin symmetric difference of the two discs.",
+      "steps": [
+       "s:bound"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:circle",
+      "slogan": "Write $f(a)$ as the mean of $f$ over each circle about $a$.",
+      "detail": "Cauchy's integral formula with $z = a + re^{it}$ gives $f(a) = \\frac{1}{2\\pi}\\int_0^{2\\pi} f(a + re^{it})\\,dt$ for every $r > 0$, because $f$ is an [entire function](c:entire-function).",
+      "uses": [
+       "nl:11500"
+      ]
+     },
+     {
+      "id": "s:disc",
+      "slogan": "Integrate the circle means over the radius to get disc means.",
+      "detail": "Multiply by $r$ and integrate over $0 \\le r \\le R$ to get $f(a) = \\frac{1}{\\pi R^2}\\int_{D(a, R)} f\\,dA$. This is the area [mean value property](c:mean-value-property).",
+      "uses": [
+       "nm:mean-value-property"
+      ]
+     },
+     {
+      "id": "s:difference",
+      "slogan": "Subtract the disc means about $a$ and $b$ with the same radius $R$.",
+      "detail": "Then $f(a) - f(b) = \\frac{1}{\\pi R^2}\\left(\\int_{D(a,R)} f\\,dA - \\int_{D(b,R)} f\\,dA\\right)$. The integral over the common part $D(a,R) \\cap D(b,R)$ cancels, so only the symmetric difference of the discs remains.",
+      "uses": []
+     },
+     {
+      "id": "s:bound",
+      "slogan": "Bound the integral over the symmetric difference of the two discs.",
+      "detail": "For $R \\ge d = |a - b|$ the symmetric difference lies in the annulus $R - d \\le |z - a| \\le R + d$, of area $4\\pi R d$. With $|f| \\le M$ this gives $|f(a) - f(b)| \\le 4Md/R$.",
+      "uses": []
+     },
+     {
+      "id": "s:limit",
+      "slogan": "Let $R$ tend to infinity to get $f(a) = f(b)$.",
+      "detail": "The bound $4M|a - b|/R$ tends to $0$, and the left side does not depend on $R$. Hence $f(a) = f(b)$ for all $a, b \\in \\mathbb{C}$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:circle",
+      "s:disc"
+     ],
+     [
+      "s:disc",
+      "s:difference"
+     ],
+     [
+      "s:difference",
+      "s:bound"
+     ],
+     [
+      "s:bound",
+      "s:limit"
+     ]
+    ],
+    "conclusion": "s:limit",
+    "concepts": {
+     "c:bounded-function": "The bound $M$ makes the thin annulus contribute almost nothing.",
+     "c:entire-function": "Holomorphy on all of $\\mathbb{C}$ allows discs of every radius.",
+     "c:holomorphic-function": "Holomorphy gives the circle mean formula through Cauchy's formula.",
+     "c:mean-value-property": "The value at a point is the average over any disc about it."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Nelson's proof, E. Nelson, A proof of Liouville's theorem, Proceedings of the American Mathematical Society 12 (1961), 995; written there for bounded harmonic functions."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:local-existence-of-integral-curves",
+  "statement": "Let $v$ be a $C^1$ [vector field](c:vector-field) on a $C^1$ [manifold](c:manifold) $M$ without boundary. For every point $x_0 \\in M$ and time $t_0 \\in \\mathbb{R}$ there is a curve $\\gamma$ on an open interval around $t_0$ with $\\gamma(t_0) = x_0$ and $\\gamma'(t) = v(\\gamma(t))$.",
+  "hypotheses": [
+   {
+    "id": "h:manifold",
+    "text": "The space $M$ is a $C^1$ [manifold](c:manifold) without boundary, modeled on $\\mathbb{R}^n$ or on a Banach space.",
+    "concept": "c:manifold"
+   },
+   {
+    "id": "h:field",
+    "text": "The [vector field](c:vector-field) $v$, a section of the [tangent bundle](c:tangent-bundle), is $C^1$ near $x_0$.",
+    "concept": "c:vector-field"
+   }
+  ],
+  "conclusion": "Some curve $\\gamma$, defined on an open interval around $t_0$, has $\\gamma(t_0) = x_0$ and $\\gamma'(t) = v(\\gamma(t))$ for every $t$ in that interval.",
+  "formal": {
+   "decl": "exists_isMIntegralCurveAt_of_contMDiffAt_boundaryless",
+   "difference": "The declaration works for manifolds modeled on any Banach space and asks the field to be $C^1$ only at $x_0$, which implies $C^1$ near $x_0$. It returns a curve on all of $\\mathbb{R}$ that is an integral curve on a neighborhood of $t_0$."
+  },
+  "proofs": [
+   {
+    "id": "chart-picard",
+    "name": "Chart and Picard–Lindelöf",
+    "slogan": "Write the field in a chart as an ordinary differential equation, solve it by Picard–Lindelöf, and carry the solution back to the manifold.",
+    "scope": "The whole theorem. The absence of boundary makes $x_0$ an interior point, so a chart sends a neighborhood of $x_0$ onto an open set.",
+    "mechanisms": [
+     "m:contraction-iteration"
+    ],
+    "roles": [
+     {
+      "h": "h:manifold",
+      "why": "Charts exist, and the absence of boundary gives an open chart image around $\\varphi(x_0)$.",
+      "steps": [
+       "s:chart",
+       "s:pullback"
+      ]
+     },
+     {
+      "h": "h:field",
+      "why": "A $C^1$ field has a $C^1$ local representative, which is Lipschitz near $\\varphi(x_0)$.",
+      "steps": [
+       "s:chart",
+       "s:lipschitz"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:chart",
+      "slogan": "Take a chart $\\varphi$ at $x_0$ and express $v$ as a map $F$ on an open set.",
+      "detail": "Let $\\varphi$ be a chart at $x_0$ whose image $U$ is open, which holds because $M$ has no boundary. The local representative $F(y) = d\\varphi\\big(v(\\varphi^{-1}(y))\\big)$ is a $C^1$ map near $\\varphi(x_0)$.",
+      "uses": []
+     },
+     {
+      "id": "s:lipschitz",
+      "slogan": "Show that the $C^1$ map $F$ is Lipschitz on a closed ball around $\\varphi(x_0)$.",
+      "detail": "The derivative of $F$ is continuous, so it is bounded by some $L$ on a small closed ball. The mean value inequality makes $F$ a [Lipschitz function](c:lipschitz-function) with constant $L$ there, and $F$ is bounded there.",
+      "uses": []
+     },
+     {
+      "id": "s:solve",
+      "slogan": "Solve $y' = F(y)$ with $y(t_0) = \\varphi(x_0)$ by the Picard–Lindelöf theorem.",
+      "detail": "On a short interval around $t_0$, Picard iteration converges to a solution $y$ of this [ordinary differential equation](c:ordinary-differential-equation) that stays in the ball, because $F$ is bounded and Lipschitz there and the model space is complete. Continuity keeps $y(t)$ in $U$ for $t$ near $t_0$.",
+      "uses": [
+       "wd:Q530152"
+      ]
+     },
+     {
+      "id": "s:pullback",
+      "slogan": "Set $\\gamma = \\varphi^{-1} \\circ y$ and check the integral curve equation.",
+      "detail": "Then $\\gamma(t_0) = x_0$. The chain rule gives $d\\varphi(\\gamma'(t)) = y'(t) = F(\\varphi(\\gamma(t))) = d\\varphi(v(\\gamma(t)))$, and $d\\varphi$ is invertible, so $\\gamma'(t) = v(\\gamma(t))$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:chart",
+      "s:lipschitz"
+     ],
+     [
+      "s:lipschitz",
+      "s:solve"
+     ],
+     [
+      "s:chart",
+      "s:pullback"
+     ],
+     [
+      "s:solve",
+      "s:pullback"
+     ]
+    ],
+    "conclusion": "s:pullback",
+    "concepts": {
+     "c:vector-field": "The field gives the velocity that the curve must follow.",
+     "c:manifold": "Charts of the manifold turn the problem into one on an open set.",
+     "c:tangent-bundle": "The field is a section of the tangent bundle, read in a chart.",
+     "c:lipschitz-function": "Picard–Lindelöf needs a Lipschitz right-hand side.",
+     "c:ordinary-differential-equation": "In a chart the integral curve equation is an ODE."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "exists_isMIntegralCurveAt_of_contMDiffAt_boundaryless",
+     "follows": true,
+     "note": "mathlib calls exists_isMIntegralCurveAt_of_contMDiffAt: it reads the field in extChartAt (contMDiffAt_iff), solves the ODE by ContDiffAt.exists_forall_mem_closedBall_exists_eq_forall_mem_Ioo_hasDerivAt₀ (Picard–Lindelöf) and maps back with tangentCoordChange."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q922367",
+  "statement": "Let $a \\ge 1$, $b > 1$, $f \\ge 0$, and let $T$ satisfy the [recurrence](c:recurrence-relation) $T(n) = aT(n/b) + f(n)$ on powers $n = b^k$, with $T(1) > 0$; put $c = \\log_b a$. In [asymptotic notation](c:asymptotic-notation): if $f = O(n^{c-\\varepsilon})$, then $T = \\Theta(n^c)$; if $f = \\Theta(n^c)$, then $T = \\Theta(n^c \\log n)$; if $f = \\Omega(n^{c+\\varepsilon})$ and $af(n/b) \\le \\lambda f(n)$ with $\\lambda < 1$, then $T = \\Theta(f)$.",
+  "hypotheses": [
+   {
+    "id": "h:recurrence",
+    "text": "The function $T$ satisfies $T(1) > 0$ and the [recurrence](c:recurrence-relation) $T(n) = aT(n/b) + f(n)$ for $n = b^k$, $k \\ge 1$, with constants $a \\ge 1$ and $b > 1$.",
+    "concept": "c:recurrence-relation"
+   },
+   {
+    "id": "h:nonneg",
+    "text": "The driving function $f$ is nonnegative.",
+    "concept": null
+   },
+   {
+    "id": "h:small",
+    "text": "Case 1: $f(n) = O(n^{c - \\varepsilon})$ for some $\\varepsilon > 0$.",
+    "concept": null
+   },
+   {
+    "id": "h:equal",
+    "text": "Case 2: $f(n) = \\Theta(n^c)$.",
+    "concept": null
+   },
+   {
+    "id": "h:large",
+    "text": "Case 3: $f(n) = \\Omega(n^{c + \\varepsilon})$ for some $\\varepsilon > 0$, and $af(n/b) \\le \\lambda f(n)$ for some $\\lambda < 1$ and all large $n$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "In the three cases $T(n) = \\Theta(n^c)$, $T(n) = \\Theta(n^c \\log n)$ and $T(n) = \\Theta(f(n))$, respectively.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "recursion-tree",
+    "name": "Recursion tree",
+    "slogan": "Unroll the recurrence into a sum over the levels of the recursion tree and compare the level sums with a geometric series.",
+    "scope": "Exact powers $n = b^k$ with $k = \\log_b n$; floors and ceilings need a separate standard argument. In case 3 the regularity bound is used on the levels where $n/b^j$ is large, and the other levels add $O(n^c)$.",
+    "mechanisms": [
+     "m:induction",
+     "m:case-analysis"
+    ],
+    "roles": [
+     {
+      "h": "h:recurrence",
+      "why": "The recurrence unrolls into the leaf term and the level sums.",
+      "steps": [
+       "s:unroll",
+       "s:leaves"
+      ]
+     },
+     {
+      "h": "h:nonneg",
+      "why": "Nonnegative level sums give the lower bounds $T(n) \\ge a^k T(1)$ and $T(n) \\ge f(n)$.",
+      "steps": [
+       "s:leaves",
+       "s:case3"
+      ]
+     },
+     {
+      "h": "h:small",
+      "why": "The bound $f = O(n^{c-\\varepsilon})$ makes the level sums an increasing geometric series.",
+      "steps": [
+       "s:case1"
+      ]
+     },
+     {
+      "h": "h:equal",
+      "why": "The bound $f = \\Theta(n^c)$ makes every level sum $\\Theta(n^c)$.",
+      "steps": [
+       "s:case2"
+      ]
+     },
+     {
+      "h": "h:large",
+      "why": "Regularity makes the level sums a decreasing geometric series, and $f = \\Omega(n^{c+\\varepsilon})$ absorbs the leaves.",
+      "steps": [
+       "s:case3",
+       "s:combine"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:unroll",
+      "slogan": "Unroll the [recurrence](c:recurrence-relation) $k = \\log_b n$ times by induction on $k$.",
+      "detail": "Induction on $k$ gives $T(n) = a^k T(1) + \\sum_{j=0}^{k-1} a^j f(n/b^j)$ for $n = b^k$. Level $j$ of the [divide-and-conquer](c:divide-and-conquer) recursion tree has $a^j$ subproblems of size $n/b^j$.",
+      "uses": []
+     },
+     {
+      "id": "s:leaves",
+      "slogan": "Count the leaf term $a^k T(1)$ as $\\Theta(n^c)$.",
+      "detail": "Since $a^{\\log_b n} = n^{\\log_b a} = n^c$ and $T(1) > 0$ is a constant, the leaves contribute $\\Theta(n^c)$. The other terms are nonnegative because $f \\ge 0$, so $T(n) = \\Omega(n^c)$ in every case.",
+      "uses": []
+     },
+     {
+      "id": "s:case1",
+      "slogan": "Bound the level sums by an increasing [geometric series](c:geometric-series) in case 1.",
+      "detail": "With $f(m) \\le C m^{c-\\varepsilon}$ and $a = b^c$, level $j$ is at most $C n^{c-\\varepsilon} b^{\\varepsilon j}$. The sum over $j < k$ is $O(n^{c-\\varepsilon} b^{\\varepsilon k}) = O(n^c)$, so $T(n) = \\Theta(n^c)$.",
+      "uses": [
+       "nm:sum-of-a-geometric-series"
+      ]
+     },
+     {
+      "id": "s:case2",
+      "slogan": "Show that every level sum is $\\Theta(n^c)$ in case 2.",
+      "detail": "With $f(m) = \\Theta(m^c)$, level $j$ is $a^j \\Theta((n/b^j)^c) = \\Theta(n^c)$. There are $k = \\log_b n$ levels, so the level sums give $\\Theta(n^c \\log n)$, which dominates the leaves.",
+      "uses": []
+     },
+     {
+      "id": "s:case3",
+      "slogan": "Bound the level sums by a decreasing geometric series in case 3.",
+      "detail": "Iteration of $af(m/b) \\le \\lambda f(m)$ gives $a^j f(n/b^j) \\le \\lambda^j f(n)$ on the levels where $n/b^j$ is large, so these levels sum to at most $f(n)/(1-\\lambda)$. The finitely many remaining levels have bounded subproblem sizes and add $O(a^k) = O(n^c)$; the top level alone is $f(n)$.",
+      "uses": [
+       "nm:sum-of-a-geometric-series"
+      ]
+     },
+     {
+      "id": "s:combine",
+      "slogan": "Add the leaf term to the level sums in each of the three cases.",
+      "detail": "Step 2 with steps 3, 4 and 5 gives $\\Theta(n^c)$, $\\Theta(n^c \\log n)$ and $\\Theta(f(n))$. In case 3 the leaves and the bottom levels are $O(n^c) = O(f(n))$, because $f = \\Omega(n^{c+\\varepsilon})$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:unroll",
+      "s:leaves"
+     ],
+     [
+      "s:unroll",
+      "s:case1"
+     ],
+     [
+      "s:unroll",
+      "s:case2"
+     ],
+     [
+      "s:unroll",
+      "s:case3"
+     ],
+     [
+      "s:leaves",
+      "s:combine"
+     ],
+     [
+      "s:case1",
+      "s:combine"
+     ],
+     [
+      "s:case2",
+      "s:combine"
+     ],
+     [
+      "s:case3",
+      "s:combine"
+     ]
+    ],
+    "conclusion": "s:combine",
+    "concepts": {
+     "c:recurrence-relation": "The recurrence unrolls into an explicit sum over tree levels.",
+     "c:asymptotic-notation": "Each case compares $f$ with $n^c$ up to constant factors.",
+     "c:divide-and-conquer": "The recursion tree records how subproblems split level by level.",
+     "c:geometric-series": "Level sums form geometric series whose largest term dominates."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The recursion-tree proof of Cormen, Leiserson, Rivest and Stein, Introduction to Algorithms, 3rd edition, section 4.6 (lemmas 4.2 to 4.4)."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:matiyasevic-s-theorem",
+  "statement": "[Exponentiation](c:power) is Diophantine: there is a [polynomial](c:polynomial) $P$ with integer coefficients such that, for natural numbers $x, y, z$, $z = x^y$ holds exactly when the [Diophantine equation](c:diophantine-equation) $P(x, y, z, w_1, \\dots, w_k) = 0$ has a solution in natural numbers $w_1, \\dots, w_k$.",
+  "hypotheses": [
+   {
+    "id": "h:naturals",
+    "text": "The variables $x, y, z$ and the witnesses $w_i$ range over the natural numbers.",
+    "concept": null
+   }
+  ],
+  "conclusion": "The relation $z = x^y$ is the projection of the natural-number zero set of one integer polynomial.",
+  "formal": {
+   "decl": "Dioph.pow_dioph",
+   "difference": "The declaration shows that $v \\mapsto f(v)^{g(v)}$ is a Diophantine function whenever $f$ and $g$ are, which gives the statement when $f$ and $g$ are coordinate projections. It builds the polynomial through closure of Diophantine sets under conjunction, disjunction and existential quantifiers."
+  },
+  "proofs": [
+   {
+    "id": "pell",
+    "name": "Pell equation solutions",
+    "slogan": "Express $x^y$ through the solutions $X_n(a), Y_n(a)$ of the Pell equation $X^2 - (a^2-1)Y^2 = 1$, which form a Diophantine relation in $a$ and $n$.",
+    "scope": "The whole relation; the cases $y = 0$ ($z = 1$) and $x = 0$, $y > 0$ ($z = 0$) are direct, and the Pell argument covers $x, y > 0$. With the Davis–Putnam–Robinson theorem, the result makes every [recursively enumerable set](c:recursively-enumerable-set) Diophantine.",
+    "mechanisms": [
+     "m:modular-arithmetic",
+     "m:case-analysis"
+    ],
+    "roles": [
+     {
+      "h": "h:naturals",
+      "why": "Natural-number witnesses express residues, divisibility and inequalities such as $z < t$ by equations.",
+      "steps": [
+       "s:closure",
+       "s:recover"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:closure",
+      "slogan": "Show that Diophantine relations are closed under conjunction, disjunction and existential quantifiers.",
+      "detail": "If $P = 0$ and $Q = 0$ define two relations, then $PQ = 0$ defines their union and $P^2 + Q^2 = 0$ their intersection. A quantifier turns a variable into a witness, $u < v$ becomes $v = u + r + 1$, and $A \\equiv B \\pmod t$ becomes $A = B + tq$ or $B = A + tq$.",
+      "uses": []
+     },
+     {
+      "id": "s:pell",
+      "slogan": "Show that the relation $X = X_n(a)$, $Y = Y_n(a)$ for $a > 1$ is Diophantine.",
+      "detail": "For $a > 1$ the natural solutions of the [Pell equation](c:pell-equation) $X^2 - (a^2-1)Y^2 = 1$ are exactly $X_n + Y_n\\sqrt{a^2-1} = (a + \\sqrt{a^2-1})^n$. Matiyasevich's lemma characterizes $(X_n, Y_n)$ among them by more Pell equations and congruences, through $Y_n^2 \\mid Y_t \\Rightarrow Y_n \\mid t$ and $Y_n(b) \\equiv n \\pmod{b-1}$.",
+      "uses": [
+       "wd:Q853067"
+      ]
+     },
+     {
+      "id": "s:congruence",
+      "slogan": "Prove $X_n(a) - (a - x)Y_n(a) \\equiv x^n$ modulo $t = 2ax - x^2 - 1$.",
+      "detail": "The solutions satisfy $X_{n+1} = aX_n + (a^2-1)Y_n$ and $Y_{n+1} = X_n + aY_n$. A direct computation gives $X_{n+1} - (a-x)Y_{n+1} - x\\big(X_n - (a-x)Y_n\\big) = (2ax - x^2 - 1)Y_n$, so induction on $n$ gives the congruence.",
+      "uses": []
+     },
+     {
+      "id": "s:large",
+      "slogan": "Force $a > x^y$ by a Pell condition with witnesses $w \\ge x, y$ and $s$.",
+      "detail": "Require $a^2 - ((w+1)^2 - 1)(ws)^2 = 1$ with $a > 1$. Then $a = X_m(w+1)$ with $w \\mid Y_m(w+1) \\equiv m \\pmod w$, so $m \\ge w$ and $a \\ge (w+1)^w > x^y$; conversely $m = w$ gives such an $a$.",
+      "uses": []
+     },
+     {
+      "id": "s:recover",
+      "slogan": "Recover $z = x^y$ as the residue of $X_y(a) - (a - x)Y_y(a)$ modulo $t$.",
+      "detail": "Since $x^y < a$, also $x^y < 2ax - x^2 - 1 = t$. So the conditions $X_y(a) \\equiv Y_y(a)(a - x) + z \\pmod t$ and $z < t$ hold exactly when $z = x^y$, as both are residues below $t$.",
+      "uses": []
+     },
+     {
+      "id": "s:assemble",
+      "slogan": "Assemble the case formula for $z = x^y$ into one polynomial equation.",
+      "detail": "Steps 2 to 5 give: $z = x^y$ if and only if $y = 0, z = 1$, or $y > 0, x = 0, z = 0$, or $x, y > 0$ and witnesses $w, a, t, s$ satisfy the Pell, congruence and size conditions. Step 1 turns this formula into one polynomial $P$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:pell",
+      "s:recover"
+     ],
+     [
+      "s:congruence",
+      "s:recover"
+     ],
+     [
+      "s:large",
+      "s:recover"
+     ],
+     [
+      "s:closure",
+      "s:assemble"
+     ],
+     [
+      "s:recover",
+      "s:assemble"
+     ]
+    ],
+    "conclusion": "s:assemble",
+    "concepts": {
+     "c:power": "The proof captures $x^y$ with polynomial conditions only.",
+     "c:polynomial": "All conditions merge into a single integer polynomial equation.",
+     "c:diophantine-equation": "The relation is the solvability of a Diophantine equation in witnesses.",
+     "c:pell-equation": "Pell solutions grow exponentially and encode $x^y$ by a congruence.",
+     "c:recursively-enumerable-set": "Diophantine exponentiation is the missing step for all recursively enumerable sets."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "Dioph.pow_dioph",
+     "follows": true,
+     "note": "mathlib combines pell_dioph (from Pell.matiyasevic) with Pell.eq_pow_of_pell, which rests on the congruence Pell.x_sub_y_dvd_pow and the bound eq_pow_of_pell_lem, and assembles the set with Dioph closure lemmas."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:optional-sampling-theorem",
+  "statement": "Let $(f_n)_{n \\ge 0}$ be a [martingale](c:martingale) for a [filtration](c:filtration) $(\\mathcal{F}_n)$ on a probability space, and let $\\sigma, \\tau$ be [stopping times](c:stopping-time) with $\\tau \\le N$ for a constant $N$. Then $f_{\\sigma \\wedge \\tau}$ equals the [conditional expectation](c:conditional-expectation) $E[f_\\tau \\mid \\mathcal{F}_\\sigma]$ [almost surely](c:almost-everywhere).",
+  "hypotheses": [
+   {
+    "id": "h:martingale",
+    "text": "The process $(f_n)_{n \\in \\mathbb{N}}$ is a [martingale](c:martingale) for $(\\mathcal{F}_n)$: each $f_n$ is $\\mathcal{F}_n$-measurable and integrable, and $E[f_{n+1} \\mid \\mathcal{F}_n] = f_n$.",
+    "concept": "c:martingale"
+   },
+   {
+    "id": "h:stopping",
+    "text": "The maps $\\sigma$ and $\\tau$ are [stopping times](c:stopping-time): $\\{\\sigma = n\\}, \\{\\tau = n\\} \\in \\mathcal{F}_n$ for every $n$, and $\\sigma$ may take the value $\\infty$.",
+    "concept": "c:stopping-time"
+   },
+   {
+    "id": "h:bounded",
+    "text": "The stopping time $\\tau$ is bounded: $\\tau \\le N$ for a constant $N$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "$f_{\\sigma \\wedge \\tau} = E[f_\\tau \\mid \\mathcal{F}_\\sigma]$ almost surely, where $\\mathcal{F}_\\sigma$ is the σ-algebra of events $A$ with $A \\cap \\{\\sigma \\le n\\} \\in \\mathcal{F}_n$ for all $n$.",
+  "formal": {
+   "decl": "MeasureTheory.Martingale.stoppedValue_min_ae_eq_condExp",
+   "difference": "The declaration allows a σ-finite measure, values in a Banach space and any discrete, locally finite index order with a least element, with an extra σ-finiteness assumption on a trimmed measure. For a probability space and the index set $\\mathbb{N}$ it states the same thing."
+  },
+  "proofs": [
+   {
+    "id": "tower-split",
+    "name": "Tower property and a split",
+    "slogan": "Show that $f_\\rho = E[f_N \\mid \\mathcal{F}_\\rho]$ for bounded $\\rho$, apply the tower property, and compare $\\mathcal{F}_{\\sigma\\wedge\\tau}$ with $\\mathcal{F}_\\sigma$ on $\\{\\sigma \\le \\tau\\}$ and on $\\{\\tau < \\sigma\\}$.",
+    "scope": "The whole theorem. Only $\\tau$ needs the bound $N$; $\\sigma$ may be unbounded or infinite.",
+    "mechanisms": [
+     "m:martingale",
+     "m:case-analysis"
+    ],
+    "roles": [
+     {
+      "h": "h:martingale",
+      "why": "The martingale property moves $f_N$ to $f_k$ on each event $A \\cap \\{\\rho = k\\}$.",
+      "steps": [
+       "s:const"
+      ]
+     },
+     {
+      "h": "h:stopping",
+      "why": "Stopping times make $\\{\\rho = k\\}$, $\\{\\sigma \\le \\tau\\}$ and $f_\\tau$ measurable for the right σ-algebras.",
+      "steps": [
+       "s:const",
+       "s:le",
+       "s:gt"
+      ]
+     },
+     {
+      "h": "h:bounded",
+      "why": "The bound $\\tau \\le N$ makes $f_\\tau$ a finite sum of integrable terms and lets step 1 apply to $\\tau$ and $\\sigma \\wedge \\tau$.",
+      "steps": [
+       "s:const",
+       "s:tower"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:const",
+      "slogan": "Show that $f_\\rho = E[f_N \\mid \\mathcal{F}_\\rho]$ for every [stopping time](c:stopping-time) $\\rho \\le N$.",
+      "detail": "For $A \\in \\mathcal{F}_\\rho$ the set $A \\cap \\{\\rho = k\\}$ lies in $\\mathcal{F}_k$, so the martingale property gives $E[f_N; A \\cap \\{\\rho = k\\}] = E[f_k; A \\cap \\{\\rho = k\\}]$. The sum over $k \\le N$ gives $E[f_N; A] = E[f_\\rho; A]$, and $f_\\rho = \\sum_k 1_{\\{\\rho = k\\}} f_k$ is $\\mathcal{F}_\\rho$-measurable and integrable.",
+      "uses": []
+     },
+     {
+      "id": "s:tower",
+      "slogan": "Apply the tower property to get $f_{\\sigma\\wedge\\tau} = E[f_\\tau \\mid \\mathcal{F}_{\\sigma\\wedge\\tau}]$.",
+      "detail": "Step 1 gives $f_\\tau = E[f_N \\mid \\mathcal{F}_\\tau]$ and $f_{\\sigma\\wedge\\tau} = E[f_N \\mid \\mathcal{F}_{\\sigma\\wedge\\tau}]$. Since $\\mathcal{F}_{\\sigma\\wedge\\tau} \\subseteq \\mathcal{F}_\\tau$, the tower property gives $E[f_\\tau \\mid \\mathcal{F}_{\\sigma\\wedge\\tau}] = E[f_N \\mid \\mathcal{F}_{\\sigma\\wedge\\tau}] = f_{\\sigma\\wedge\\tau}$.",
+      "uses": [
+       "nm:tower-property-of-the-conditional-expectation"
+      ]
+     },
+     {
+      "id": "s:le",
+      "slogan": "Compare the two conditional expectations of $f_\\tau$ on the event $\\{\\sigma \\le \\tau\\}$.",
+      "detail": "The event $\\{\\sigma \\le \\tau\\}$ lies in $\\mathcal{F}_{\\sigma\\wedge\\tau}$, and a subset of it lies in $\\mathcal{F}_\\sigma$ exactly when it lies in $\\mathcal{F}_{\\sigma\\wedge\\tau}$, because $\\sigma\\wedge\\tau = \\sigma$ there. So the two [σ-algebras](c:sigma-algebra) agree on this event, and $E[f_\\tau \\mid \\mathcal{F}_{\\sigma\\wedge\\tau}] = E[f_\\tau \\mid \\mathcal{F}_\\sigma]$ almost surely on it.",
+      "uses": []
+     },
+     {
+      "id": "s:gt",
+      "slogan": "Show that both conditional expectations equal $f_\\tau$ on the event $\\{\\tau < \\sigma\\}$.",
+      "detail": "The function $f_\\tau 1_{\\{\\tau \\le \\sigma\\}}$ is $\\mathcal{F}_\\sigma$-measurable and $\\{\\tau \\le \\sigma\\} \\in \\mathcal{F}_\\sigma$, so $E[f_\\tau \\mid \\mathcal{F}_\\sigma] = f_\\tau$ almost surely on this event. The same argument with $\\mathcal{F}_{\\sigma\\wedge\\tau}$ gives $E[f_\\tau \\mid \\mathcal{F}_{\\sigma\\wedge\\tau}] = f_\\tau$ there.",
+      "uses": []
+     },
+     {
+      "id": "s:combine",
+      "slogan": "Join the two events to get $f_{\\sigma\\wedge\\tau} = E[f_\\tau \\mid \\mathcal{F}_\\sigma]$ almost surely.",
+      "detail": "The events $\\{\\sigma \\le \\tau\\}$ and $\\{\\tau < \\sigma\\}$ cover the space. Steps 3 and 4 give $E[f_\\tau \\mid \\mathcal{F}_{\\sigma\\wedge\\tau}] = E[f_\\tau \\mid \\mathcal{F}_\\sigma]$ almost surely on each, and step 2 identifies the left side with $f_{\\sigma\\wedge\\tau}$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:const",
+      "s:tower"
+     ],
+     [
+      "s:tower",
+      "s:combine"
+     ],
+     [
+      "s:le",
+      "s:combine"
+     ],
+     [
+      "s:gt",
+      "s:combine"
+     ]
+    ],
+    "conclusion": "s:combine",
+    "concepts": {
+     "c:martingale": "The martingale property links $f_N$ to every earlier $f_k$.",
+     "c:filtration": "The filtration defines the stopping times and the σ-algebras $\\mathcal{F}_\\rho$.",
+     "c:stopping-time": "Stopping at $\\sigma \\wedge \\tau$ keeps the events $\\{\\rho = k\\}$ in $\\mathcal{F}_k$.",
+     "c:conditional-expectation": "The theorem identifies the stopped value as a conditional expectation.",
+     "c:almost-everywhere": "Conditional expectations are unique only up to null sets.",
+     "c:sigma-algebra": "The proof compares the σ-algebras $\\mathcal{F}_{\\sigma\\wedge\\tau}$ and $\\mathcal{F}_\\sigma$ event by event."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "MeasureTheory.Martingale.stoppedValue_min_ae_eq_condExp",
+     "follows": true,
+     "note": "mathlib applies Martingale.stoppedValue_ae_eq_condExp_of_le to σ ∧ τ ≤ τ, then splits on {σ ≤ τ} with condExp_min_stopping_time_ae_eq_restrict_le and condExp_stoppedValue_stopping_time_ae_eq_restrict_le."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1443036",
+  "statement": "For every [square-integrable](c:lp-space) function $f$ on the [circle](c:circle-group) $\\mathbb{R}/T\\mathbb{Z}$, the [Fourier coefficients](c:fourier-coefficients) $\\hat f(n) = \\frac{1}{T}\\int_0^T f(t)e^{-2\\pi i n t/T}\\,dt$ satisfy $\\sum_{n \\in \\mathbb{Z}} |\\hat f(n)|^2 = \\frac{1}{T}\\int_0^T |f(t)|^2\\,dt$.",
+  "hypotheses": [
+   {
+    "id": "h:period",
+    "text": "The period $T$ is positive.",
+    "concept": null
+   },
+   {
+    "id": "h:l2",
+    "text": "The function $f$ lies in the [space](c:lp-space) $L^2$ of the circle $\\mathbb{R}/T\\mathbb{Z}$ with the normalized measure $dt/T$.",
+    "concept": "c:lp-space"
+   }
+  ],
+  "conclusion": "The series $\\sum_{n \\in \\mathbb{Z}} |\\hat f(n)|^2$ converges to $\\frac{1}{T}\\int_0^T |f(t)|^2\\,dt$.",
+  "formal": {
+   "decl": "tsum_sq_fourierCoeff",
+   "difference": null
+  },
+  "proofs": [
+   {
+    "id": "fourier-basis",
+    "name": "Fourier basis",
+    "slogan": "Show that the exponentials $e_n$ form an orthonormal basis of $L^2$, then read off Parseval's identity for that basis.",
+    "scope": "The whole theorem, for complex-valued $f$; real-valued $f$ is a special case.",
+    "mechanisms": [
+     "m:approximation",
+     "m:density-extension",
+     "m:orthogonal-projection"
+    ],
+    "roles": [
+     {
+      "h": "h:period",
+      "why": "A positive period gives the normalized measure $dt/T$ for which the exponentials are orthonormal.",
+      "steps": [
+       "s:orthonormal"
+      ]
+     },
+     {
+      "h": "h:l2",
+      "why": "Square-integrability puts $f$ in the Hilbert space where the basis expansion converges.",
+      "steps": [
+       "s:parseval"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:orthonormal",
+      "slogan": "Show that the exponentials $e_n(t) = e^{2\\pi i n t/T}$ form an [orthonormal set](c:orthonormal-set).",
+      "detail": "For $m \\ne n$, $\\frac{1}{T}\\int_0^T e^{2\\pi i (m-n)t/T}\\,dt = 0$, and for $m = n$ the integral is $1$. The coefficient $\\hat f(n)$ is the inner product $\\langle f, e_n\\rangle$.",
+      "uses": []
+     },
+     {
+      "id": "s:uniform",
+      "slogan": "Approximate continuous functions uniformly by [trigonometric polynomials](c:trigonometric-polynomial).",
+      "detail": "The span of the $e_n$ is a subalgebra of the continuous functions on the circle that contains the constants, is closed under conjugation and separates points. The complex Stone–Weierstrass theorem makes it uniformly dense.",
+      "uses": [
+       "nl:18776"
+      ]
+     },
+     {
+      "id": "s:dense",
+      "slogan": "Show that the span of the exponentials is [dense](c:dense-set) in $L^2$.",
+      "detail": "Continuous functions are dense in $L^2$ of the circle, and uniform convergence implies $L^2$ convergence for a probability measure. With step 2 the span is dense, so the $e_n$ form an [orthonormal basis](c:orthonormal-basis).",
+      "uses": []
+     },
+     {
+      "id": "s:parseval",
+      "slogan": "Apply Parseval's identity for the orthonormal basis $(e_n)$ to $f$.",
+      "detail": "For an orthonormal basis of a [Hilbert space](c:hilbert-space), $\\|f\\|^2 = \\sum_n |\\langle f, e_n\\rangle|^2$, because the partial sums are orthogonal projections that converge to $f$. Here $\\|f\\|^2 = \\frac{1}{T}\\int_0^T |f|^2\\,dt$ and $\\langle f, e_n\\rangle = \\hat f(n)$.",
+      "uses": [
+       "nm:parseval-s-identity"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:orthonormal",
+      "s:dense"
+     ],
+     [
+      "s:uniform",
+      "s:dense"
+     ],
+     [
+      "s:dense",
+      "s:parseval"
+     ],
+     [
+      "s:orthonormal",
+      "s:parseval"
+     ]
+    ],
+    "conclusion": "s:parseval",
+    "concepts": {
+     "c:lp-space": "The identity is the norm identity in the Hilbert space $L^2$.",
+     "c:circle-group": "Functions live on the circle, where the exponentials are characters.",
+     "c:fourier-coefficients": "The coefficients are the coordinates of $f$ in the exponential basis.",
+     "c:orthonormal-set": "Orthonormality makes the squared coefficients add up without cross terms.",
+     "c:trigonometric-polynomial": "Trigonometric polynomials are the finite combinations that approximate $f$.",
+     "c:dense-set": "Density of the span makes the orthonormal set complete.",
+     "c:orthonormal-basis": "Parseval's identity holds for a complete orthonormal family.",
+     "c:hilbert-space": "Completeness of $L^2$ gives convergence of the basis expansion."
+    },
+    "source": {
+     "kind": "lean",
+     "decl": "tsum_sq_fourierCoeff",
+     "follows": true,
+     "note": "mathlib builds fourierBasis from orthonormal_fourier and span_fourierLp_closure_eq_top (Stone–Weierstrass and density of continuous functions), then hasSum_sq_fourierCoeff uses HilbertBasis.hasSum_repr and lp.hasSum_norm."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1140200",
+  "statement": "Every language in [NP](c:np-complexity-class) has a [probabilistically checkable proof](c:probabilistically-checkable-proof) system with $O(\\log n)$ random bits and $O(1)$ queries: a polynomial-time verifier accepts some proof of every true instance with probability $1$ and accepts any proof of a false instance with probability at most $1/2$. So $\\mathrm{NP} = \\mathrm{PCP}(O(\\log n), O(1))$.",
+  "hypotheses": [
+   {
+    "id": "h:np",
+    "text": "The language $L$ is in [NP](c:np-complexity-class).",
+    "concept": "c:np-complexity-class"
+   }
+  ],
+  "conclusion": "Some polynomial-time verifier for $L$ uses $O(\\log n)$ random bits, reads $O(1)$ proof symbols, has perfect completeness and has soundness error at most $1/2$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "gap-amplification",
+    "name": "Gap amplification",
+    "slogan": "Reduce NP to a constraint graph problem, then amplify its unsatisfiability gap to a constant by graph powering and alphabet reduction.",
+    "scope": "An outline of Dinur's proof that NP lies in $\\mathrm{PCP}(O(\\log n), O(1))$; steps 2 to 4 rest on the cited work. The reverse inclusion holds because a verifier has only polynomially many random strings, which an NP machine can check one by one.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:reduction"
+    ],
+    "roles": [
+     {
+      "h": "h:np",
+      "why": "Membership in NP gives the polynomial-time reduction to constraint graphs.",
+      "steps": [
+       "s:csp"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:csp",
+      "slogan": "Reduce the NP language to constraint graphs with a gap of $1/m$.",
+      "detail": "By the Cook–Levin theorem and the [NP-completeness](c:np-complete) of graph 3-coloring, each instance maps in polynomial time to a constraint [graph](c:graph) with $m$ constraints over a 3-letter alphabet. A yes-instance gives a satisfiable graph; a no-instance gives a graph where every assignment violates at least a fraction $1/m$ of the constraints.",
+      "uses": [
+       "wd:Q377276"
+      ]
+     },
+     {
+      "id": "s:expander",
+      "slogan": "Preprocess the constraint graph into a regular expander graph with self-loops.",
+      "detail": "Dinur replaces each vertex by an expander cloud with equality constraints and adds expander edges and self-loops. The size grows linearly, and the unsatisfied fraction drops by at most a constant factor.",
+      "uses": []
+     },
+     {
+      "id": "s:power",
+      "slogan": "Raise the graph to a constant power $t$ to multiply the gap by about $\\sqrt{t}$.",
+      "detail": "In the powered graph a vertex holds opinions on its neighborhood of radius $t$, and constraints check walks. Dinur's amplification lemma shows that the unsatisfied fraction grows by a factor of order $\\sqrt{t}$ up to a constant cap, while the alphabet grows but stays constant.",
+      "uses": []
+     },
+     {
+      "id": "s:alphabet",
+      "slogan": "Reduce the alphabet to a fixed size by composition with an assignment tester.",
+      "detail": "Each constraint is encoded with an [error-correcting code](c:error-correcting-code-2), such as the Hadamard code, and replaced by a constant-size system from an assignment tester, a PCP of proximity. This step loses only a constant factor of the gap.",
+      "uses": []
+     },
+     {
+      "id": "s:iterate",
+      "slogan": "Repeat the three operations $O(\\log m)$ times to reach a constant gap.",
+      "detail": "With $t$ fixed large, one round at least doubles the gap until it reaches a fixed constant, and it multiplies the size by a constant. After $O(\\log m)$ rounds the graph has polynomial size, a fixed alphabet and a constant gap, and satisfiable graphs stay satisfiable.",
+      "uses": []
+     },
+     {
+      "id": "s:verifier",
+      "slogan": "Turn the final constraint graph into a verifier that reads two symbols.",
+      "detail": "The proof is an assignment to the final graph. The verifier picks a random constraint with $O(\\log n)$ bits and reads its two endpoint values; a constant number of repetitions pushes the soundness error below $1/2$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:csp",
+      "s:expander"
+     ],
+     [
+      "s:expander",
+      "s:power"
+     ],
+     [
+      "s:power",
+      "s:alphabet"
+     ],
+     [
+      "s:alphabet",
+      "s:iterate"
+     ],
+     [
+      "s:iterate",
+      "s:verifier"
+     ]
+    ],
+    "conclusion": "s:verifier",
+    "concepts": {
+     "c:np-complexity-class": "The theorem gives every NP language a probabilistic verifier.",
+     "c:probabilistically-checkable-proof": "The final constraint graph is read as a checkable proof.",
+     "c:np-complete": "An NP-complete problem carries every NP language into constraint graphs.",
+     "c:graph": "Constraints sit on the edges of a graph that the proof transforms.",
+     "c:error-correcting-code-2": "Codes make alphabet reduction possible with constant loss of gap."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "I. Dinur, The PCP theorem by gap amplification, Journal of the ACM 54(3) (2007), Article 12",
+     "url": "https://doi.org/10.1145/1236457.1236459",
+     "note": "Dinur's combinatorial proof. The original proofs are S. Arora and S. Safra, Journal of the ACM 45 (1998), 70-122, and S. Arora, C. Lund, R. Motwani, M. Sudan and M. Szegedy, Journal of the ACM 45 (1998), 501-555."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:4156",
+  "statement": "Let a Hermitian scalar field $\\varphi$ on four-dimensional [Minkowski space](c:minkowski-space) satisfy the [Wightman axioms](c:wightman-axioms) with vacuum $\\Omega$. Then there is an [antiunitary operator](c:antiunitary-operator) $\\Theta$ with $\\Theta\\Omega = \\Omega$ and $\\Theta\\varphi(x)\\Theta^{-1} = \\varphi(-x)$ for all $x$.",
+  "hypotheses": [
+   {
+    "id": "h:wightman",
+    "text": "The field satisfies the [Wightman axioms](c:wightman-axioms): Poincaré covariance, the spectral condition, locality and a cyclic vacuum $\\Omega$.",
+    "concept": "c:wightman-axioms"
+   },
+   {
+    "id": "h:scalar",
+    "text": "The field $\\varphi$ is one Hermitian scalar field.",
+    "concept": null
+   },
+   {
+    "id": "h:dimension",
+    "text": "Spacetime is four-dimensional [Minkowski space](c:minkowski-space).",
+    "concept": "c:minkowski-space"
+   }
+  ],
+  "conclusion": "An antiunitary $\\Theta$ fixes the vacuum and maps $\\varphi(x)$ to $\\varphi(-x)$, so the combined PCT transformation is a symmetry of the theory.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "jost",
+    "name": "Complex Lorentz group and Jost points",
+    "slogan": "Continue the Wightman functions to the extended tube, where the complex Lorentz group contains $-1$, and use locality at Jost points.",
+    "scope": "An outline for one Hermitian scalar field; fields with spin need sign factors and normal commutation relations. Steps 1, 2 and 4 rest on the cited analyticity results.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:analytic-continuation",
+     "m:symmetry"
+    ],
+    "roles": [
+     {
+      "h": "h:wightman",
+      "why": "The spectral condition gives analyticity, covariance gives Lorentz invariance, locality gives symmetry at Jost points, and the cyclic vacuum makes $\\Theta$ densely defined.",
+      "steps": [
+       "s:tube",
+       "s:complex-lorentz",
+       "s:jost",
+       "s:theta"
+      ]
+     },
+     {
+      "h": "h:scalar",
+      "why": "A Hermitian scalar field has no spin factors, and Hermiticity relates $W_n$ to its complex conjugate.",
+      "steps": [
+       "s:theta"
+      ]
+     },
+     {
+      "h": "h:dimension",
+      "why": "In four dimensions $-1$ has determinant $1$ and lies in the connected complex Lorentz group.",
+      "steps": [
+       "s:inversion"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:tube",
+      "slogan": "Extend each Wightman function by [analytic continuation](c:analytic-continuation) into the forward tube.",
+      "detail": "The spectral condition puts the Fourier transform of $W_n(x_1, \\dots, x_n) = \\langle \\Omega, \\varphi(x_1) \\cdots \\varphi(x_n)\\Omega\\rangle$ in a product of light cones. So $W_n$ is the boundary value of a holomorphic function on the forward tube in the complex difference variables.",
+      "uses": []
+     },
+     {
+      "id": "s:complex-lorentz",
+      "slogan": "Extend Lorentz invariance to the complex Lorentz group on the extended tube.",
+      "detail": "The Bargmann–Hall–Wightman theorem shows that invariance under the real proper orthochronous [Lorentz group](c:lorentz-group) extends to the proper complex Lorentz group $L_+(\\mathbb{C})$. The function $W_n$ extends single-valued to the extended tube, the union of the images of the tube.",
+      "uses": []
+     },
+     {
+      "id": "s:inversion",
+      "slogan": "Use that $-1$ lies in $L_+(\\mathbb{C})$ to get $W_n(z) = W_n(-z)$ on the extended tube.",
+      "detail": "In four dimensions $-1$ has determinant $1$, and $L_+(\\mathbb{C})$ is connected, so $-1$ joins the identity inside it, but not inside the real group. Hence $W_n(z_1, \\dots, z_n) = W_n(-z_1, \\dots, -z_n)$ on the extended tube.",
+      "uses": []
+     },
+     {
+      "id": "s:jost",
+      "slogan": "Use locality at Jost points to reverse the order of the arguments.",
+      "detail": "Jost points are the real points of the extended tube, and at them all differences $x_j - x_k$ are spacelike. Locality makes the fields commute there, so the analytic functions give $W_n(x_1, \\dots, x_n) = W_n(x_n, \\dots, x_1)$ at Jost points.",
+      "uses": []
+     },
+     {
+      "id": "s:identity",
+      "slogan": "Extend $W_n(x_1, \\dots, x_n) = W_n(-x_n, \\dots, -x_1)$ from Jost points to all points.",
+      "detail": "Steps 3 and 4 give this identity at Jost points, which form a nonempty real open set. The identity theorem extends it to the extended tube, and boundary values give it for all real points as distributions.",
+      "uses": [
+       "wd:Q1038716"
+      ]
+     },
+     {
+      "id": "s:theta",
+      "slogan": "Define $\\Theta$ on the vectors $\\varphi(f_1) \\cdots \\varphi(f_n)\\Omega$ and check that it is antiunitary.",
+      "detail": "Set $\\Theta\\,\\varphi(f_1) \\cdots \\varphi(f_n)\\Omega = \\varphi(\\bar f_1^-) \\cdots \\varphi(\\bar f_n^-)\\Omega$ with $f^-(x) = f(-x)$, extended antilinearly. Step 5 and Hermiticity give $\\langle \\Theta\\Psi, \\Theta\\Phi\\rangle = \\langle \\Phi, \\Psi\\rangle$, so $\\Theta$ is well defined and extends from the dense span to an [antiunitary operator](c:antiunitary-operator).",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:tube",
+      "s:complex-lorentz"
+     ],
+     [
+      "s:complex-lorentz",
+      "s:inversion"
+     ],
+     [
+      "s:complex-lorentz",
+      "s:jost"
+     ],
+     [
+      "s:inversion",
+      "s:identity"
+     ],
+     [
+      "s:jost",
+      "s:identity"
+     ],
+     [
+      "s:identity",
+      "s:theta"
+     ]
+    ],
+    "conclusion": "s:theta",
+    "concepts": {
+     "c:minkowski-space": "The field lives on four-dimensional Minkowski space, where $-1$ is a complex rotation.",
+     "c:wightman-axioms": "The axioms supply analyticity, covariance, locality and the vacuum.",
+     "c:antiunitary-operator": "Time reversal forces the PCT operator to be antilinear.",
+     "c:lorentz-group": "Its complexification contains the total inversion $-1$.",
+     "c:analytic-continuation": "Identities proved at real Jost points spread to the whole tube."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "R. Jost, Eine Bemerkung zum CTP-Theorem, Helvetica Physica Acta 30 (1957), 409-416",
+     "note": "Jost's proof, as presented in R. F. Streater and A. S. Wightman, PCT, Spin and Statistics, and All That, W. A. Benjamin, 1964, chapter 4."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:10498",
+  "statement": "Let $B$ be a [symmetric bilinear form](c:is-symm) on a vector space $V$ over a field of characteristic not $2$, and let $Q(x) = B(x, x)$ be its [quadratic form](c:quadratic-form). Then $B(x, y) = \\frac{1}{2}\\big(Q(x+y) - Q(x) - Q(y)\\big) = \\frac{1}{4}\\big(Q(x+y) - Q(x-y)\\big)$ for all $x, y \\in V$.",
+  "hypotheses": [
+   {
+    "id": "h:bilinear",
+    "text": "The map $B\\colon V \\times V \\to F$ is a [bilinear form](c:bilinear-form).",
+    "concept": "c:bilinear-form"
+   },
+   {
+    "id": "h:symmetric",
+    "text": "The form is symmetric: $B(x, y) = B(y, x)$ for all $x, y$.",
+    "concept": "c:is-symm"
+   },
+   {
+    "id": "h:char",
+    "text": "The field $F$ has characteristic not $2$, so $2$ and $4$ are invertible in $F$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "$B(x, y) = \\frac{1}{2}\\big(Q(x+y) - Q(x) - Q(y)\\big) = \\frac{1}{4}\\big(Q(x+y) - Q(x-y)\\big)$, so $Q$ determines $B$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "expand",
+    "name": "Expansion",
+    "slogan": "Expand $Q(x + y)$ and $Q(x - y)$ by bilinearity, merge the cross terms by symmetry, and divide by $2$ or $4$.",
+    "scope": "Both forms of the identity, for all $x, y$ including $x = 0$ or $y = 0$. For a real [inner product](c:inner-product-space) it reads $4\\langle x, y\\rangle = \\|x+y\\|^2 - \\|x-y\\|^2$; a complex Hermitian form needs the four-term version with $Q(x \\pm iy)$.",
+    "mechanisms": [
+     "m:algebraic-identity"
+    ],
+    "roles": [
+     {
+      "h": "h:bilinear",
+      "why": "Bilinearity expands $Q(x \\pm y)$ into four terms.",
+      "steps": [
+       "s:expand"
+      ]
+     },
+     {
+      "h": "h:symmetric",
+      "why": "Symmetry merges $B(x, y)$ and $B(y, x)$ into one term.",
+      "steps": [
+       "s:symmetry"
+      ]
+     },
+     {
+      "h": "h:char",
+      "why": "Division by $2$ and $4$ is possible only when the characteristic is not $2$.",
+      "steps": [
+       "s:solve"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:expand",
+      "slogan": "Expand $Q(x+y)$ and $Q(x-y)$ by bilinearity.",
+      "detail": "Bilinearity gives $Q(x+y) = B(x,x) + B(x,y) + B(y,x) + B(y,y)$ and $Q(x-y) = B(x,x) - B(x,y) - B(y,x) + B(y,y)$.",
+      "uses": []
+     },
+     {
+      "id": "s:symmetry",
+      "slogan": "Merge the two cross terms into $2B(x, y)$ by symmetry.",
+      "detail": "Since $B(y,x) = B(x,y)$, the expansions become $Q(x+y) = Q(x) + 2B(x,y) + Q(y)$ and $Q(x-y) = Q(x) - 2B(x,y) + Q(y)$.",
+      "uses": []
+     },
+     {
+      "id": "s:solve",
+      "slogan": "Solve for $B(x, y)$ by division by $2$ and by $4$.",
+      "detail": "The first equation gives $2B(x,y) = Q(x+y) - Q(x) - Q(y)$, and the difference of the two gives $4B(x,y) = Q(x+y) - Q(x-y)$. Division by $2$ and $4$ is allowed because the characteristic is not $2$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:expand",
+      "s:symmetry"
+     ],
+     [
+      "s:symmetry",
+      "s:solve"
+     ]
+    ],
+    "conclusion": "s:solve",
+    "concepts": {
+     "c:is-symm": "Symmetry makes the two cross terms equal.",
+     "c:quadratic-form": "The identity recovers the form from its quadratic form.",
+     "c:bilinear-form": "Bilinearity lets $Q(x \\pm y)$ split into four terms.",
+     "c:inner-product-space": "An inner product is the main example of such a form."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard expansion by bilinearity, found in any linear algebra text."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nm:polyhedron-formula",
+  "statement": "For a [convex polyhedron](c:convex-polyhedron) with $V$ vertices, $E$ edges and $F$ faces, $V - E + F = 2$.",
+  "hypotheses": [
+   {
+    "id": "h:convex",
+    "text": "The solid is a bounded [convex polyhedron](c:convex-polyhedron) in $\\mathbb{R}^3$ with nonempty interior.",
+    "concept": "c:convex-polyhedron"
+   }
+  ],
+  "conclusion": "$V - E + F = 2$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "deletion",
+    "name": "Projection and edge deletion",
+    "slogan": "Project the polyhedron to a connected plane graph, then delete edges and leaves while $V - E + F$ stays fixed.",
+    "scope": "Every convex polyhedron; in the plane graph the unbounded region stands for the face behind the projection point. The reduction ends at one vertex, where $1 - 0 + 1 = 2$.",
+    "mechanisms": [
+     "m:induction",
+     "m:euler-characteristic"
+    ],
+    "roles": [
+     {
+      "h": "h:convex",
+      "why": "Convexity makes the projection from a point near a face a plane drawing of the boundary graph with matching faces.",
+      "steps": [
+       "s:project"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:project",
+      "slogan": "Project the boundary from a point just outside one face onto the plane of that face.",
+      "detail": "Choose a point $p$ outside the polyhedron, close to the center of a face $f_0$. By convexity, the rays from $p$ give a connected [planar graph](c:planar-graph) in the plane of $f_0$ with $V$ vertices and $E$ edges; the other $F - 1$ faces become bounded regions and $f_0$ becomes the unbounded region.",
+      "uses": []
+     },
+     {
+      "id": "s:cycle",
+      "slogan": "Delete an edge that lies on a cycle and merge its two faces.",
+      "detail": "An edge on a cycle borders two different faces, because the cycle separates the plane by the Jordan curve theorem. Removing it keeps the graph connected and lowers $E$ and $F$ by one, so $V - E + F$ does not change.",
+      "uses": [
+       "wd:Q260928"
+      ]
+     },
+     {
+      "id": "s:leaf",
+      "slogan": "Delete a leaf vertex with its edge when no cycle remains.",
+      "detail": "A connected graph without cycles is a [tree](c:tree), and a tree with two or more vertices has a vertex of degree one. Removing it with its edge lowers $V$ and $E$ by one and keeps the single face, so $V - E + F$ does not change.",
+      "uses": []
+     },
+     {
+      "id": "s:base",
+      "slogan": "Count $V - E + F$ for the single remaining vertex.",
+      "detail": "Each deletion lowers $E$, so the process ends with one vertex, no edges and one face, where $V - E + F = 1 - 0 + 1 = 2$. By steps 2 and 3 the original graph has the same value, the [Euler characteristic](c:euler-characteristic) of the sphere.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:project",
+      "s:cycle"
+     ],
+     [
+      "s:project",
+      "s:leaf"
+     ],
+     [
+      "s:cycle",
+      "s:base"
+     ],
+     [
+      "s:leaf",
+      "s:base"
+     ]
+    ],
+    "conclusion": "s:base",
+    "concepts": {
+     "c:convex-polyhedron": "Convexity makes the boundary project to a plane graph without overlaps.",
+     "c:planar-graph": "The count is done on a connected plane graph with the same numbers.",
+     "c:tree": "Once cycles are gone the graph is a tree, which has a leaf.",
+     "c:euler-characteristic": "The invariant $V - E + F$ is the Euler characteristic of the sphere."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The classical induction by edge deletion on a plane projection, a modern form of Cauchy's 1813 proof."
+    }
+   },
+   {
+    "id": "tree-cotree",
+    "name": "Spanning tree and dual tree",
+    "slogan": "Split the edges into a spanning tree of the polyhedron graph and the duals of a spanning tree of the dual graph.",
+    "scope": "Every convex polyhedron, through its boundary graph on the sphere; the dual graph has one vertex for each face.",
+    "mechanisms": [
+     "m:double-counting",
+     "m:bijection"
+    ],
+    "roles": [
+     {
+      "h": "h:convex",
+      "why": "Convexity makes the boundary a sphere, where a closed curve separates and a tree does not.",
+      "steps": [
+       "s:dual-tree"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:spanning",
+      "slogan": "Choose a [spanning tree](c:spanning-tree) $T$ of the vertex and edge graph.",
+      "detail": "The [graph](c:graph) of vertices and edges of the polyhedron is connected, so it has a spanning tree $T$. A tree on $V$ vertices has $V - 1$ edges.",
+      "uses": []
+     },
+     {
+      "id": "s:dual",
+      "slogan": "Form the dual graph and the set $T^*$ of duals of the edges outside $T$.",
+      "detail": "The dual graph has one vertex for each face and one dual edge across each edge, joining the two faces on its sides. Let $T^*$ be the set of dual edges that cross edges not in $T$.",
+      "uses": []
+     },
+     {
+      "id": "s:dual-tree",
+      "slogan": "Show that $T^*$ is a spanning tree of the dual graph.",
+      "detail": "A cycle in $T^*$ would be a closed curve on the sphere that separates two vertices, by the Jordan curve theorem, but the connected tree $T$ joins them without crossing $T^*$. Also $T$ has no cycle, so it does not separate the sphere, and any two faces join through edges outside $T$.",
+      "uses": [
+       "wd:Q260928"
+      ]
+     },
+     {
+      "id": "s:count",
+      "slogan": "Count the edges of both trees to get $E = (V - 1) + (F - 1)$.",
+      "detail": "Every edge lies in $T$ or has its dual in $T^*$, never both. The tree $T^*$ on $F$ dual vertices has $F - 1$ edges, so $E = (V - 1) + (F - 1)$, which is $V - E + F = 2$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:spanning",
+      "s:dual"
+     ],
+     [
+      "s:dual",
+      "s:dual-tree"
+     ],
+     [
+      "s:spanning",
+      "s:dual-tree"
+     ],
+     [
+      "s:dual-tree",
+      "s:count"
+     ],
+     [
+      "s:spanning",
+      "s:count"
+     ]
+    ],
+    "conclusion": "s:count",
+    "concepts": {
+     "c:convex-polyhedron": "The boundary of a convex polyhedron is a sphere with a cell structure.",
+     "c:spanning-tree": "Two spanning trees share out all the edges between them.",
+     "c:graph": "The vertices and edges form a connected graph on the sphere."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The spanning tree and dual tree proof due to von Staudt (1847), as in Aigner and Ziegler, Proofs from THE BOOK, chapter on Euler's formula."
+    }
+   }
+  ]
+ },
+ {
+  "id": "nl:18523",
+  "statement": "Let $P$ be a properly supported [pseudodifferential operator](c:pseudodifferential-operator) of order $m$ on a manifold $X$ whose [principal symbol](c:principal-symbol) $p$ is real and homogeneous of degree $m$. If $u$ is a [distribution](c:distribution) with $Pu$ smooth, then the [wave front set](c:wave-front-set) $WF(u)$ lies in $p^{-1}(0)$ and is invariant under the Hamiltonian flow of $p$, so it is a union of null [bicharacteristics](c:bicharacteristic).",
+  "hypotheses": [
+   {
+    "id": "h:operator",
+    "text": "The operator $P$ is a properly supported [pseudodifferential operator](c:pseudodifferential-operator) of order $m$ on the manifold $X$.",
+    "concept": "c:pseudodifferential-operator"
+   },
+   {
+    "id": "h:real",
+    "text": "Its [principal symbol](c:principal-symbol) $p$ on $T^*X \\setminus 0$ is real-valued and homogeneous of degree $m$.",
+    "concept": "c:principal-symbol"
+   },
+   {
+    "id": "h:smooth",
+    "text": "The distribution $u$ satisfies $Pu \\in C^\\infty(X)$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "$WF(u) \\subseteq p^{-1}(0)$, and $WF(u)$ is invariant under the flow of the [Hamiltonian vector field](c:hamiltonian-vector-field) $H_p$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "fio-normal-form",
+    "name": "Normal form by Fourier integral operators",
+    "slogan": "Use elliptic regularity off the characteristic set, and conjugate $P$ near each characteristic point to the model operator $D_{x_1}$ by Fourier integral operators.",
+    "scope": "An outline of the Duistermaat–Hörmander proof; steps 3 and 4 rest on the cited normal form and calculus. Characteristic points where $H_p$ vanishes or is radial need only homogeneity, since $WF(u)$ is conic.",
+    "mechanisms": [
+     "m:cited-deep-result",
+     "m:local-to-global"
+    ],
+    "roles": [
+     {
+      "h": "h:operator",
+      "why": "Proper support and the symbol calculus give parametrices and conjugation by Fourier integral operators.",
+      "steps": [
+       "s:elliptic",
+       "s:conjugate"
+      ]
+     },
+     {
+      "h": "h:real",
+      "why": "A real homogeneous principal symbol has a flow on $T^*X \\setminus 0$ that a canonical transformation can straighten.",
+      "steps": [
+       "s:radial",
+       "s:canonical"
+      ]
+     },
+     {
+      "h": "h:smooth",
+      "why": "A smooth right-hand side adds no wave front set, in the parametrix and in the model equation.",
+      "steps": [
+       "s:elliptic",
+       "s:model"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:elliptic",
+      "slogan": "Show that $WF(u) \\subseteq p^{-1}(0)$ with a microlocal parametrix.",
+      "detail": "Where $p \\ne 0$, $P$ is microlocally elliptic and has a microlocal parametrix $Q$ with $QP = I + R$, where $R$ is smoothing there. Then $u = QPu - Ru$ is smooth microlocally at such points, so they are not in $WF(u)$.",
+      "uses": []
+     },
+     {
+      "id": "s:radial",
+      "slogan": "Treat the characteristic points where $H_p$ vanishes or points in the radial direction.",
+      "detail": "By homogeneity of $p$, the integral curve of $H_p$ through such a point stays on the ray $\\{(x, t\\xi) : t > 0\\}$. Since $WF(u)$ is conic, it is invariant along these curves.",
+      "uses": []
+     },
+     {
+      "id": "s:canonical",
+      "slogan": "Straighten $p$ near a characteristic point by a homogeneous canonical transformation.",
+      "detail": "Near a point of $p^{-1}(0)$ where $H_p$ is not radial, write $p = eq$ with $e$ elliptic of order $m - 1$ and $q$ real of order $1$. A homogeneous [canonical transformation](c:canonical-transformation) $\\chi$ takes $q$ to $\\xi_1$ and the null bicharacteristics of $p$ to lines in the $x_1$ direction.",
+      "uses": []
+     },
+     {
+      "id": "s:conjugate",
+      "slogan": "Conjugate $P$ to $D_{x_1}$ microlocally by elliptic [Fourier integral operators](c:fourier-integral-operator).",
+      "detail": "Quantization of $\\chi$ gives elliptic Fourier integral operators $A$ and $B$ with $BPA = D_{x_1}$ microlocally near the image point, after transport equations remove the lower-order terms. These operators move wave front sets by $\\chi$ and keep smoothness.",
+      "uses": []
+     },
+     {
+      "id": "s:model",
+      "slogan": "Prove the result for the model equation $D_{x_1} v = g$ with smooth $g$.",
+      "detail": "Microlocally, $v$ equals a smooth function plus a solution of $D_{x_1} w = 0$, which is constant in $x_1$. So if a point is outside $WF(v)$, every point on its line in the $x_1$ direction is outside it too.",
+      "uses": []
+     },
+     {
+      "id": "s:propagate",
+      "slogan": "Transfer the model result back by $\\chi$ and chain the local pieces along each bicharacteristic.",
+      "detail": "Step 4 carries step 5 back to $u$ near each non-radial characteristic point, so $WF(u)$ is locally invariant under the flow of $H_p$. Overlapping local pieces, with steps 1 and 2, give invariance along whole [bicharacteristics](c:bicharacteristic).",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:elliptic",
+      "s:propagate"
+     ],
+     [
+      "s:radial",
+      "s:propagate"
+     ],
+     [
+      "s:canonical",
+      "s:conjugate"
+     ],
+     [
+      "s:conjugate",
+      "s:propagate"
+     ],
+     [
+      "s:model",
+      "s:propagate"
+     ]
+    ],
+    "conclusion": "s:propagate",
+    "concepts": {
+     "c:pseudodifferential-operator": "The operator class is closed under parametrices and conjugation.",
+     "c:principal-symbol": "Its zero set and Hamiltonian flow govern where singularities sit and move.",
+     "c:distribution": "The solution $u$ may be any distribution, however singular.",
+     "c:wave-front-set": "The wave front set records where and in which directions $u$ is singular.",
+     "c:bicharacteristic": "Singularities travel along null bicharacteristics of $p$.",
+     "c:hamiltonian-vector-field": "The flow of $H_p$ is the motion that preserves $WF(u)$.",
+     "c:canonical-transformation": "It straightens the Hamiltonian flow into the $x_1$ direction.",
+     "c:fourier-integral-operator": "These operators realize the canonical transformation on distributions."
+    },
+    "source": {
+     "kind": "cited",
+     "ref": "J. J. Duistermaat and L. Hörmander, Fourier integral operators II, Acta Mathematica 128 (1972), 183-269, section 6.1",
+     "url": "https://doi.org/10.1007/BF02392165",
+     "note": "Theorem 6.1.1 there; the proof conjugates the operator microlocally to D_{x_1} by Fourier integral operators."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q3345678",
+  "statement": "Let $K\\colon X \\times X \\to \\mathbb{C}$ be a [positive definite kernel](c:positive-definite-kernel) on a set $X$. Then there is exactly one [Hilbert space](c:hilbert-space) $H$ of functions on $X$ that contains every $K_x = K(\\cdot, x)$ and has $f(x) = \\langle f, K_x\\rangle$ for all $f \\in H$ and $x \\in X$: the [reproducing kernel Hilbert space](c:rkhs) of $K$.",
+  "hypotheses": [
+   {
+    "id": "h:kernel",
+    "text": "The kernel is Hermitian, $K(x, y) = \\overline{K(y, x)}$, and [positive definite](c:positive-definite-kernel): $\\sum_{i,j} \\bar c_i c_j K(x_i, x_j) \\ge 0$ for all finite families of points $x_i$ and scalars $c_i$.",
+    "concept": "c:positive-definite-kernel"
+   }
+  ],
+  "conclusion": "A unique Hilbert space $H$ of functions on $X$ has $K_x \\in H$ and $f(x) = \\langle f, K_x\\rangle$ for all $f \\in H$ and $x \\in X$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "completion",
+    "name": "Completion of the span of kernel sections",
+    "slogan": "Put an inner product on the span of the functions $K_x$, complete it inside the functions on $X$, and show that every such space is this completion.",
+    "scope": "Existence and uniqueness; the empty set $X$ gives $H = \\{0\\}$. Real symmetric kernels work in the same way with real scalars.",
+    "mechanisms": [
+     "m:cauchy-completeness",
+     "m:density-extension",
+     "m:cauchy-schwarz"
+    ],
+    "roles": [
+     {
+      "h": "h:kernel",
+      "why": "Hermitian symmetry and positivity make the form on the span a semi-inner product.",
+      "steps": [
+       "s:span",
+       "s:reproduce"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:span",
+      "slogan": "Define the inner product $\\langle K_y, K_x\\rangle = K(x, y)$ on the span $H_0$ of the $K_x$.",
+      "detail": "For $f = \\sum_i a_i K_{x_i}$ and $g = \\sum_j b_j K_{y_j}$ set $\\langle f, g\\rangle = \\sum_{i,j} a_i \\bar b_j K(y_j, x_i) = \\sum_j \\bar b_j f(y_j)$. The last form shows that it depends only on $f$ and $g$, and positivity of $K$ gives $\\langle f, f\\rangle \\ge 0$.",
+      "uses": []
+     },
+     {
+      "id": "s:reproduce",
+      "slogan": "Check the reproducing property and definiteness on $H_0$ with Cauchy–Schwarz.",
+      "detail": "The choice $g = K_x$ gives $\\langle f, K_x\\rangle = f(x)$. The Cauchy–Schwarz inequality for the semi-inner product gives $|f(x)|^2 \\le \\langle f, f\\rangle K(x, x)$, so $\\langle f, f\\rangle = 0$ forces $f = 0$.",
+      "uses": [
+       "nl:16121"
+      ]
+     },
+     {
+      "id": "s:complete",
+      "slogan": "Complete $H_0$ by the pointwise limits of its [Cauchy sequences](c:cauchy-sequence).",
+      "detail": "If $(f_n)$ is Cauchy in $H_0$, then $|f_n(x) - f_m(x)| \\le \\|f_n - f_m\\| K(x,x)^{1/2}$, so $f_n$ converges pointwise. Let $H$ be the space of these limits with $\\|f\\| = \\lim \\|f_n\\|$; this is well defined because $\\langle f_n, f_m\\rangle = \\sum_j \\bar b_j f_n(y_j) \\to 0$ for fixed $m$ when $f_n \\to 0$ pointwise.",
+      "uses": []
+     },
+     {
+      "id": "s:extend",
+      "slogan": "Extend the reproducing property from $H_0$ to $H$ by continuity.",
+      "detail": "For $f = \\lim f_n$ in $H$, $f(x) = \\lim f_n(x) = \\lim \\langle f_n, K_x\\rangle = \\langle f, K_x\\rangle$. So $H$ is a Hilbert space of functions with reproducing kernel $K$.",
+      "uses": []
+     },
+     {
+      "id": "s:unique",
+      "slogan": "Show that every other such space $G$ equals $H$ with the same norm.",
+      "detail": "$G$ contains $H_0$ with the same inner product, since $\\langle K_y, K_x\\rangle_G = K_y(x) = K(x, y)$. If $f \\in G$ is orthogonal to every $K_x$, then $f(x) = \\langle f, K_x\\rangle = 0$, so $H_0$ is [dense](c:dense-set) in $G$; norm limits in $G$ are pointwise limits, so $G = H$.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:span",
+      "s:reproduce"
+     ],
+     [
+      "s:reproduce",
+      "s:complete"
+     ],
+     [
+      "s:complete",
+      "s:extend"
+     ],
+     [
+      "s:reproduce",
+      "s:extend"
+     ],
+     [
+      "s:span",
+      "s:unique"
+     ],
+     [
+      "s:complete",
+      "s:unique"
+     ],
+     [
+      "s:extend",
+      "s:unique"
+     ]
+    ],
+    "conclusion": "s:unique",
+    "concepts": {
+     "c:positive-definite-kernel": "Positive definiteness makes the form on the span positive.",
+     "c:hilbert-space": "The space must be complete, which the completion step provides.",
+     "c:rkhs": "The constructed space is the reproducing kernel Hilbert space of $K$.",
+     "c:cauchy-sequence": "Cauchy sequences in the span converge pointwise to new functions.",
+     "c:dense-set": "Density of the span forces any other such space to equal $H$."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Aronszajn's construction, N. Aronszajn, Theory of reproducing kernels, Transactions of the American Mathematical Society 68 (1950), 337-404."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q245902",
+  "statement": "Let $1 \\le p_0, p_1, q_0, q_1 \\le \\infty$ and let $T$ be a linear map from complex [simple functions](c:simple-function) on a [σ-finite](c:sigma-finite) measure space to measurable functions on another, with the [Lebesgue space](c:lp-space) bounds $\\|Tf\\|_{q_j} \\le M_j\\|f\\|_{p_j}$ for $j = 0, 1$. For $0 < \\theta < 1$ let $\\frac{1}{p} = \\frac{1-\\theta}{p_0} + \\frac{\\theta}{p_1}$ and $\\frac{1}{q} = \\frac{1-\\theta}{q_0} + \\frac{\\theta}{q_1}$. Then $\\|Tf\\|_q \\le M_0^{1-\\theta}M_1^\\theta\\|f\\|_p$.",
+  "hypotheses": [
+   {
+    "id": "h:spaces",
+    "text": "The two measure spaces are [σ-finite](c:sigma-finite), and the scalars are complex.",
+    "concept": "c:sigma-finite"
+   },
+   {
+    "id": "h:linear",
+    "text": "The map $T$ is linear on [simple functions](c:simple-function) with support of finite measure.",
+    "concept": "c:simple-function"
+   },
+   {
+    "id": "h:bounds",
+    "text": "The bounds $\\|Tf\\|_{q_j} \\le M_j\\|f\\|_{p_j}$ hold for $j = 0, 1$, with $1 \\le p_j, q_j \\le \\infty$.",
+    "concept": "c:lp-space"
+   },
+   {
+    "id": "h:theta",
+    "text": "The exponents satisfy $0 < \\theta < 1$, $\\frac{1}{p} = \\frac{1-\\theta}{p_0} + \\frac{\\theta}{p_1}$ and $\\frac{1}{q} = \\frac{1-\\theta}{q_0} + \\frac{\\theta}{q_1}$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "$\\|Tf\\|_q \\le M_0^{1-\\theta}M_1^\\theta\\|f\\|_p$ for every simple $f$, so $T$ extends to a bounded operator from $L^p$ to $L^q$ when $p < \\infty$.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "three-lines",
+    "name": "Three lines lemma",
+    "slogan": "Embed $f$ and a dual test function in analytic families, and bound the resulting entire function on a strip by the three lines lemma.",
+    "scope": "Simple $f$ with $\\|f\\|_p = 1$; when $p = \\infty$ or $q = 1$ the family $f_z = f$ or $g_z = g$ is constant. The method is the model of [complex interpolation](c:complex-interpolation).",
+    "mechanisms": [
+     "m:interpolation",
+     "m:maximum-principle",
+     "m:duality"
+    ],
+    "roles": [
+     {
+      "h": "h:spaces",
+      "why": "Complex scalars allow the analytic families, and σ-finiteness gives the duality formula for the norm.",
+      "steps": [
+       "s:dual",
+       "s:families"
+      ]
+     },
+     {
+      "h": "h:linear",
+      "why": "Linearity makes $T(f_z)$ a finite combination of fixed functions with analytic coefficients.",
+      "steps": [
+       "s:entire"
+      ]
+     },
+     {
+      "h": "h:bounds",
+      "why": "The two end bounds control $\\Phi$ on the two boundary lines of the strip.",
+      "steps": [
+       "s:edges"
+      ]
+     },
+     {
+      "h": "h:theta",
+      "why": "The exponent relations give $f_\\theta = f$ and $g_\\theta = g$, and $0 < \\theta < 1$ puts $\\theta$ inside the strip.",
+      "steps": [
+       "s:families",
+       "s:three-lines"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:dual",
+      "slogan": "Reduce the claim to $|\\int (Tf)g\\,d\\nu| \\le M_0^{1-\\theta}M_1^\\theta$ for simple $f$ and $g$.",
+      "detail": "By homogeneity take $\\|f\\|_p = 1$. By duality and σ-finiteness, $\\|Tf\\|_q$ is the supremum of $|\\int (Tf)g\\,d\\nu|$ over simple $g$ with $\\|g\\|_{q'} = 1$, where $q'$ is the [conjugate exponent](c:holder-conjugate-exponents).",
+      "uses": []
+     },
+     {
+      "id": "s:families",
+      "slogan": "Form the analytic families $f_z$ and $g_z$ with matching exponents on the strip.",
+      "detail": "Let $\\frac{1}{p(z)} = \\frac{1-z}{p_0} + \\frac{z}{p_1}$ and $\\frac{1}{q'(z)} = \\frac{1-z}{q_0'} + \\frac{z}{q_1'}$. Set $f_z = |f|^{p/p(z)} \\frac{f}{|f|}$ and $g_z = |g|^{q'/q'(z)} \\frac{g}{|g|}$, which give $f_\\theta = f$ and $g_\\theta = g$.",
+      "uses": []
+     },
+     {
+      "id": "s:entire",
+      "slogan": "Show that $\\Phi(z) = \\int T(f_z)\\,g_z\\,d\\nu$ is entire and bounded on the strip $0 \\le \\mathrm{Re}\\, z \\le 1$.",
+      "detail": "Since $f$ and $g$ are simple, $f_z$ and $g_z$ are finite sums of indicator functions with coefficients of the form $c\\,a^{\\alpha z}$ with $a > 0$. Linearity of $T$ makes $\\Phi$ a finite sum of such exponentials, so $\\Phi$ is entire and bounded on the strip.",
+      "uses": []
+     },
+     {
+      "id": "s:edges",
+      "slogan": "Bound $|\\Phi|$ by $M_0$ on $\\mathrm{Re}\\, z = 0$ and by $M_1$ on $\\mathrm{Re}\\, z = 1$.",
+      "detail": "On $\\mathrm{Re}\\, z = 0$, $|f_z| = |f|^{p/p_0}$ and $|g_z| = |g|^{q'/q_0'}$, so $\\|f_z\\|_{p_0} = \\|g_z\\|_{q_0'} = 1$. Hölder's inequality and the first bound give $|\\Phi(z)| \\le M_0$; the line $\\mathrm{Re}\\, z = 1$ gives $M_1$ in the same way.",
+      "uses": [
+       "nl:18096"
+      ]
+     },
+     {
+      "id": "s:three-lines",
+      "slogan": "Bound $|\\Phi(\\theta)|$ by Hadamard's three lines lemma on the strip.",
+      "detail": "The three lines lemma for bounded holomorphic functions on the strip gives $|\\Phi(\\theta)| \\le M_0^{1-\\theta}M_1^\\theta$. Since $\\Phi(\\theta) = \\int (Tf)g\\,d\\nu$, step 1 gives $\\|Tf\\|_q \\le M_0^{1-\\theta}M_1^\\theta$.",
+      "uses": [
+       "wd:Q3527250"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:dual",
+      "s:families"
+     ],
+     [
+      "s:families",
+      "s:entire"
+     ],
+     [
+      "s:families",
+      "s:edges"
+     ],
+     [
+      "s:entire",
+      "s:three-lines"
+     ],
+     [
+      "s:edges",
+      "s:three-lines"
+     ],
+     [
+      "s:dual",
+      "s:three-lines"
+     ]
+    ],
+    "conclusion": "s:three-lines",
+    "concepts": {
+     "c:simple-function": "Simple functions make $\\Phi$ a finite sum of exponentials.",
+     "c:sigma-finite": "σ-finiteness gives the duality formula for the $L^q$ norm.",
+     "c:lp-space": "The theorem interpolates bounds between Lebesgue spaces.",
+     "c:complex-interpolation": "The analytic families are the prototype of the complex method.",
+     "c:holder-conjugate-exponents": "The dual exponent $q'$ pairs $Tf$ with test functions."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "Thorin's proof with the three lines lemma, as in Grafakos, Classical Fourier Analysis, section 1.3, and Stein and Weiss, Introduction to Fourier Analysis on Euclidean Spaces, chapter V."
+    }
+   }
+  ]
+ },
+ {
+  "id": "wd:Q1191862",
+  "statement": "Let $f$ and $g$ be [holomorphic](c:holomorphic-function) on an open set containing a closed region $K$ whose boundary $\\partial K$ is a piecewise smooth [simple closed curve](c:simple-closed-curve). If $|g(z)| < |f(z)|$ for all $z \\in \\partial K$, then $f$ and $f + g$ have the same number of zeros inside $K$, counted with multiplicity.",
+  "hypotheses": [
+   {
+    "id": "h:holomorphic",
+    "text": "The functions $f$ and $g$ are [holomorphic](c:holomorphic-function) on an open set $U$ that contains $K$.",
+    "concept": "c:holomorphic-function"
+   },
+   {
+    "id": "h:region",
+    "text": "The region $K$ is the closure of the inside of a piecewise smooth [simple closed curve](c:simple-closed-curve) $\\partial K$, oriented counterclockwise.",
+    "concept": "c:simple-closed-curve"
+   },
+   {
+    "id": "h:strict",
+    "text": "The strict inequality $|g(z)| < |f(z)|$ holds at every point $z \\in \\partial K$.",
+    "concept": null
+   }
+  ],
+  "conclusion": "$f$ and $f + g$ have the same finite number of zeros inside $K$, counted with multiplicity.",
+  "formal": null,
+  "proofs": [
+   {
+    "id": "quotient-winding",
+    "name": "Winding of the quotient",
+    "slogan": "Write $f + g = f(1 + g/f)$ and show that $1 + g/f$ winds zero times around $0$ along the boundary.",
+    "scope": "The whole theorem. Neither function vanishes on $\\partial K$, so both zero counts are finite and the argument principle applies.",
+    "mechanisms": [
+     "m:complex-integration",
+     "m:degree-winding"
+    ],
+    "roles": [
+     {
+      "h": "h:holomorphic",
+      "why": "Holomorphy makes $h'/h$ meromorphic with residues equal to multiplicities, and makes $q$ holomorphic near $\\partial K$.",
+      "steps": [
+       "s:argument",
+       "s:split"
+      ]
+     },
+     {
+      "h": "h:region",
+      "why": "A simple closed boundary winds once around each interior point, so the residue sum counts each zero once.",
+      "steps": [
+       "s:argument"
+      ]
+     },
+     {
+      "h": "h:strict",
+      "why": "The strict inequality keeps zeros off $\\partial K$ and puts $q$ in the disc $|w - 1| < 1$.",
+      "steps": [
+       "s:nonzero",
+       "s:disc"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:nonzero",
+      "slogan": "Show that $f$ and $f + g$ have no zeros on the boundary $\\partial K$.",
+      "detail": "On $\\partial K$, $|f| > |g| \\ge 0$ and $|f + g| \\ge |f| - |g| > 0$. So neither function vanishes identically on the connected set $K$, and its zeros in the compact set $K$ are isolated and finite in number.",
+      "uses": []
+     },
+     {
+      "id": "s:argument",
+      "slogan": "Count the zeros by the [contour integral](c:contour-integral) of the [logarithmic derivative](c:logarithmic-derivative).",
+      "detail": "The argument principle gives $N(h) = \\frac{1}{2\\pi i}\\oint_{\\partial K} \\frac{h'}{h}\\,dz$ for $h = f$ and $h = f + g$. It follows from the residue theorem, because $h'/h$ has a simple pole with residue equal to the multiplicity at each zero.",
+      "uses": [
+       "wd:Q830513"
+      ]
+     },
+     {
+      "id": "s:split",
+      "slogan": "Split the logarithmic derivative of $f + g$ as $f'/f + q'/q$ with $q = 1 + g/f$.",
+      "detail": "Near $\\partial K$, where $f \\ne 0$, $f + g = fq$ with $q = 1 + g/f$ holomorphic. So $\\frac{(f+g)'}{f+g} = \\frac{f'}{f} + \\frac{q'}{q}$ there, and $N(f+g) - N(f) = \\frac{1}{2\\pi i}\\oint_{\\partial K} \\frac{q'}{q}\\,dz$.",
+      "uses": []
+     },
+     {
+      "id": "s:disc",
+      "slogan": "Show that the boundary values of $q$ lie in the disc $|w - 1| < 1$.",
+      "detail": "On $\\partial K$, $|q - 1| = |g|/|f| < 1$. This disc misses $0$ and carries a branch of $\\log w$, so $\\oint_{\\partial K} q'/q\\,dz = \\oint_{\\partial K} d(\\log q) = 0$: the [winding number](c:winding-number) of $q(\\partial K)$ around $0$ is zero.",
+      "uses": []
+     },
+     {
+      "id": "s:equal",
+      "slogan": "Conclude that $N(f + g) - N(f) = 0$.",
+      "detail": "Steps 3 and 4 give $N(f+g) - N(f) = \\frac{1}{2\\pi i}\\oint_{\\partial K} q'/q\\,dz = 0$. So $f$ and $f + g$ have the same number of zeros inside $K$, counted with multiplicity.",
+      "uses": []
+     }
+    ],
+    "edges": [
+     [
+      "s:nonzero",
+      "s:argument"
+     ],
+     [
+      "s:nonzero",
+      "s:split"
+     ],
+     [
+      "s:argument",
+      "s:split"
+     ],
+     [
+      "s:nonzero",
+      "s:disc"
+     ],
+     [
+      "s:split",
+      "s:equal"
+     ],
+     [
+      "s:disc",
+      "s:equal"
+     ]
+    ],
+    "conclusion": "s:equal",
+    "concepts": {
+     "c:holomorphic-function": "Holomorphy makes the argument principle count zeros with multiplicity.",
+     "c:simple-closed-curve": "A simple boundary winds once around each zero inside.",
+     "c:contour-integral": "The zero count is a contour integral over the boundary.",
+     "c:logarithmic-derivative": "The logarithmic derivative turns products into sums of zero counts.",
+     "c:winding-number": "The quotient $q$ has winding number zero around the origin."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The standard proof by the argument principle, as in Ahlfors, Complex Analysis, chapter 4, section 5.2."
+    }
+   },
+   {
+    "id": "homotopy",
+    "name": "Homotopy of the zero count",
+    "slogan": "Deform $f$ into $f + g$ through $f + tg$ and show that the integer zero count varies continuously, so it stays constant.",
+    "scope": "The whole theorem. Every function $f + tg$ with $0 \\le t \\le 1$ is nonzero on $\\partial K$.",
+    "mechanisms": [
+     "m:complex-integration",
+     "m:degree-winding"
+    ],
+    "roles": [
+     {
+      "h": "h:holomorphic",
+      "why": "Holomorphy of $f + tg$ lets the argument principle count its zeros.",
+      "steps": [
+       "s:count"
+      ]
+     },
+     {
+      "h": "h:region",
+      "why": "The simple closed boundary makes the integral count each interior zero once.",
+      "steps": [
+       "s:count"
+      ]
+     },
+     {
+      "h": "h:strict",
+      "why": "The strict inequality keeps every $f + tg$ away from zero on the boundary.",
+      "steps": [
+       "s:family"
+      ]
+     }
+    ],
+    "steps": [
+     {
+      "id": "s:family",
+      "slogan": "Join $f$ to $f + g$ by the [homotopy](c:homotopy) $h_t = f + tg$ for $0 \\le t \\le 1$.",
+      "detail": "On $\\partial K$, $|h_t| \\ge |f| - t|g| \\ge |f| - |g| > 0$. By compactness of $\\partial K$, some $\\delta > 0$ has $|h_t| \\ge \\delta$ on $\\partial K$ for all $t$.",
+      "uses": []
+     },
+     {
+      "id": "s:count",
+      "slogan": "Write the zero count $N(t)$ of $h_t$ as a [contour integral](c:contour-integral).",
+      "detail": "By the argument principle, $N(t) = \\frac{1}{2\\pi i}\\oint_{\\partial K} \\frac{f' + tg'}{f + tg}\\,dz$ is the number of zeros of $h_t$ inside $K$, counted with multiplicity.",
+      "uses": [
+       "wd:Q830513"
+      ]
+     },
+     {
+      "id": "s:continuous",
+      "slogan": "Show that $N(t)$ depends continuously on $t$.",
+      "detail": "The integrand is jointly continuous in $(t, z)$ on $[0, 1] \\times \\partial K$, because the denominator stays at least $\\delta$ in modulus. So the integral is a continuous function of $t$.",
+      "uses": []
+     },
+     {
+      "id": "s:constant",
+      "slogan": "Conclude that the continuous integer-valued function $N$ is constant on $[0, 1]$.",
+      "detail": "A continuous function from the interval $[0, 1]$ to the integers is constant by the intermediate value theorem. So $N(0) = N(1)$: $f$ and $f + g$ have the same number of zeros.",
+      "uses": [
+       "wd:Q245098"
+      ]
+     }
+    ],
+    "edges": [
+     [
+      "s:family",
+      "s:count"
+     ],
+     [
+      "s:family",
+      "s:continuous"
+     ],
+     [
+      "s:count",
+      "s:continuous"
+     ],
+     [
+      "s:continuous",
+      "s:constant"
+     ]
+    ],
+    "conclusion": "s:constant",
+    "concepts": {
+     "c:holomorphic-function": "Each $f + tg$ is holomorphic, so its zeros are counted by an integral.",
+     "c:simple-closed-curve": "A simple boundary winds once around each zero inside.",
+     "c:homotopy": "The family $f + tg$ deforms $f$ into $f + g$ without boundary zeros.",
+     "c:contour-integral": "The zero count is a contour integral that depends continuously on $t$."
+    },
+    "source": {
+     "kind": "authored",
+     "note": "The homotopy proof, as in Stein and Shakarchi, Complex Analysis, chapter 3, section 4."
+    }
+   }
+  ]
+ }
+]
