@@ -1,0 +1,276 @@
+<p class="lede">A catalog of named mathematical results from mathlib4, Wikidata, Wikipedia, nLab and the TheoremSearch dataset. Each result has rubric scores with their evidence, Lean measurements, prerequisite paths, concrete comparisons and field shares over time. Use it to find the result to learn next. The file works offline and never refreshes its sources.</p>
+<p id="snapshot-line" class="note"></p>
+<p id="loading" class="callout" role="status" aria-live="polite">Decoding the catalog. This takes a few seconds on a slow device.</p>
+
+<div class="examples no-print" role="group" aria-label="Examples">
+<span class="label">Examples:</span>
+<button type="button" data-example="calibration">Calibration cases</button>
+<button type="button" data-example="tail-bounds">Tail bounds</button>
+<button type="button" data-example="local-lemma">Union bound against the local lemma</button>
+<button type="button" data-example="learn-probability">Learn probability</button>
+<button type="button" data-example="azuma-path">Path to Azuma-Hoeffding</button>
+<button type="button" data-example="atiyah-singer">Atiyah-Singer relations</button>
+<button type="button" data-example="applied-fields">Application fields</button>
+<button type="button" data-example="no-simplicity">Without simplicity</button>
+<button type="button" data-example="sources">Sources and rubric</button>
+<button type="button" id="restore-view" hidden>Restore the saved view</button>
+</div>
+
+<nav class="tabs no-print" aria-label="Views">
+<button type="button" data-field="view" value="learn">Learn next</button>
+<button type="button" data-field="view" value="catalog">Catalog and scores</button>
+<button type="button" data-field="view" value="compare">Comparisons</button>
+<button type="button" data-field="view" value="connections">Connections and paths</button>
+<button type="button" data-field="view" value="fields">Fields over time</button>
+<button type="button" data-field="view" value="about">Sources and rubric</button>
+</nav>
+
+<section id="weights" class="card weights no-print" aria-label="Rubric weights">
+<div class="row">
+<label class="field">Weights
+<select id="preset" data-field="preset">
+<option value="balanced">Balanced</option>
+<option value="practitioner">Practitioner</option>
+<option value="researcher">Researcher</option>
+<option value="custom">Custom</option>
+</select></label>
+<div id="custom-weights" class="weight-inputs" role="group" aria-label="Custom weights (0 excludes a component)">
+<label>Effectiveness <input type="number" data-field="w_eff" min="0" max="100" step="1"></label>
+<label>Research influence <input type="number" data-field="w_res" min="0" max="100" step="1"></label>
+<label>Practical impact <input type="number" data-field="w_pra" min="0" max="100" step="1"></label>
+<label>Reach <input type="number" data-field="w_rea" min="0" max="100" step="1"></label>
+<label>Low hypothesis burden <input type="number" data-field="w_hyp" min="0" max="100" step="1"></label>
+<label>Proof simplicity <input type="number" data-field="w_pro" min="0" max="100" step="1"></label>
+<label>Application simplicity <input type="number" data-field="w_app" min="0" max="100" step="1"></label>
+</div>
+</div>
+<p id="weights-line" class="note"></p>
+</section>
+
+<!-- Learn next -->
+<section id="view-learn" class="view" aria-labelledby="h-learn">
+<h2 id="h-learn">Learn next</h2>
+<div class="lab">
+<div>
+<p id="learn-summary" class="note"></p>
+<ol id="recs" class="recs"></ol>
+<details class="card">
+<summary>Learning rules (te-learn/1)</summary>
+<dl id="learn-rules" class="rules"></dl>
+</details>
+</div>
+<div class="card">
+<h3>Your profile</h3>
+<div class="field"><span class="label">Learning depth</span>
+<div class="seg" role="group" aria-label="Learning depth">
+<button type="button" data-field="depth" value="understand">Understand</button>
+<button type="button" data-field="depth" value="apply">Apply</button>
+<button type="button" data-field="depth" value="prove">Prove</button>
+</div></div>
+<label class="field">Reader level
+<select data-field="reader">
+<option value="school">School</option>
+<option value="undergrad">Undergraduate</option>
+<option value="graduate">Graduate</option>
+<option value="research">Research</option>
+</select></label>
+<label class="field"><span>Study budget: <output data-field="budget"></output> (<span id="budget-band"></span>)</span>
+<input id="budget" type="range" data-field="budget" min="1" max="5" step="1"></label>
+<label class="field" for="interests">Interests (arXiv ids, comma-separated)</label>
+<input id="interests" type="text" list="taxonomy-ids" placeholder="math.PR, stat, cs.LG" autocomplete="off">
+<datalist id="taxonomy-ids"></datalist>
+<p id="interests-line" class="note"></p>
+<p class="label">Known results: <span id="known-count" class="num">0</span></p>
+<div class="actions">
+<button type="button" id="save-profile">Save profile JSON</button>
+<label class="btn" for="load-profile">Load profile JSON</label>
+<input type="file" id="load-profile" class="visually-hidden" accept="application/json,.json">
+<button type="button" id="reset-known">Clear known results</button>
+</div>
+<p id="profile-status" class="note" role="status" aria-live="polite"></p>
+</div>
+</div>
+</section>
+
+<!-- Catalog -->
+<section id="view-catalog" class="view" aria-labelledby="h-catalog">
+<h2 id="h-catalog">Catalog and scores</h2>
+<details id="filters" class="card filters" open>
+<summary>Filters</summary>
+<div class="filter-grid">
+<label class="field wide">Search
+<input id="q" type="search" autocomplete="off" placeholder="name, alias, concept, Lean name, category"></label>
+<label class="field">Result type
+<select data-field="rtype">
+<option value="results">Named results (scored types)</option>
+<option value="all">All records</option>
+<option value="theorem">Theorem</option>
+<option value="lemma">Lemma</option>
+<option value="inequality">Inequality</option>
+<option value="identity">Identity</option>
+<option value="principle">Principle</option>
+<option value="formula">Formula</option>
+<option value="criterion">Criterion</option>
+<option value="conjecture-proved">Proved conjecture</option>
+<option value="construction">Construction</option>
+<option value="classification">Classification</option>
+<option value="other-result">Other result</option>
+<option value="non-results">Not a result (definitions, topics)</option>
+<option value="unscored">Unknown aggregate</option>
+</select></label>
+<label class="field">arXiv group <select id="f-grp" data-filter="grp"></select></label>
+<label class="field">arXiv archive <select id="f-arch" data-filter="arch"></select></label>
+<label class="field">arXiv category <select id="f-cat" data-filter="cat"></select></label>
+<label class="field">Application category <select id="f-acat" data-filter="acat"></select></label>
+<label class="field">Needed reader level at most
+<select data-field="level">
+<option value="any">Any</option><option value="school">School</option><option value="undergrad">Undergraduate</option><option value="graduate">Graduate</option><option value="research">Research</option>
+</select></label>
+<label class="field">Formalization
+<select data-field="formal"><option value="any">Any</option><option value="formal">Linked to mathlib</option><option value="informal">Not linked to mathlib</option></select></label>
+<label class="field">Source
+<select data-field="source">
+<option value="any">Any</option><option value="mathlib">mathlib</option><option value="wikidata">Wikidata</option><option value="wikipedia">Wikipedia</option><option value="nlab">nLab</option><option value="theoremsearch">TheoremSearch dataset</option><option value="theoremgraph">TheoremGraph</option><option value="freek100">Freek 100 list</option><option value="overview">mathlib overview</option><option value="undergrad">mathlib undergraduate list</option><option value="curated">Curated names</option>
+</select></label>
+<label class="field">Evidence completeness
+<select data-field="ev"><option value="any">Any</option><option value="thin">Thin</option><option value="partial">Partial</option><option value="broad">Broad</option></select></label>
+<label class="field">Assessment consistency
+<select data-field="cons"><option value="any">Any</option><option value="single">One assessment</option><option value="consistent">Two, consistent</option><option value="disagreement">Two, disagreement</option></select></label>
+<label class="field">Low hypothesis burden at least
+<select data-field="min_hyp"><option value="0">Any</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></label>
+<label class="field">Proof simplicity at least
+<select data-field="min_pro"><option value="0">Any</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></label>
+<label class="field">Application simplicity at least
+<select data-field="min_app"><option value="0">Any</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></label>
+<label class="field">First use from year (0: any)
+<input type="number" data-field="y0" min="0" max="2100" step="1"></label>
+<label class="field">First use to year (2100: any)
+<input type="number" data-field="y1" min="0" max="2100" step="1"></label>
+<label class="field">Comparison case
+<select data-field="incase"><option value="any">Any</option><option value="tail-binomial">Tail of a binomial</option><option value="existence-ksat">Existence for k-SAT</option><option value="union-three">Union of three events</option><option value="euler-genus-two">Euler characteristic, genus 2</option></select></label>
+<label class="field">Known-result status
+<select data-field="known"><option value="any">Any</option><option value="known">Known</option><option value="unknown">Not known</option></select></label>
+</div>
+<p class="note" id="search-help"></p>
+</details>
+<div class="chips-row">
+<p id="filter-count" class="note" aria-live="polite"></p>
+<ul id="chips" class="chips" aria-label="Active filters"></ul>
+<button type="button" id="clear-filters">Reset filters</button>
+</div>
+<div class="row table-tools no-print">
+<details class="cols">
+<summary>Visible columns</summary>
+<div id="col-boxes" class="col-boxes"></div>
+</details>
+<button type="button" id="save-csv">Save table CSV</button>
+<button type="button" id="copy-csv">Copy table CSV</button>
+</div>
+<div id="table-wrap" class="table-wrap" tabindex="0" role="region" aria-label="Catalog table: scroll for more rows">
+<table id="catalog" class="catalog">
+<thead id="catalog-head"></thead>
+<tbody id="catalog-body"></tbody>
+</table>
+</div>
+<p class="note">Scores are 0 to 4 per component. u: unknown, na: not applicable. A weighted u or na makes the aggregate unknown; the interval shows its range with 0 and 4 in place of the missing scores. The table draws only the rows near the scroll position; every row stays available through search, sort and the CSV export.</p>
+<figure class="card">
+<figcaption class="label">Impact against effort (ordinal; no ratio)</figcaption>
+<svg id="effort-chart" class="chart" viewBox="0 0 640 300" role="img" aria-label="Aggregate score against judged effort band for the filtered results"></svg>
+<p id="effort-note" class="note"></p>
+<details><summary>Table: results per effort band and score range</summary><div id="effort-table"></div></details>
+</figure>
+<section id="formal-lib" class="card" aria-labelledby="h-formal" hidden>
+<h3 id="h-formal">Formal library: every mathlib theorem</h3>
+<p class="note">The pinned mathlib build holds these theorems, named and unnamed, with technical lemmas. They are measured, not scored: no judge assessed them, so they have no rubric score. A linked theorem is the formal statement of a catalog result. This list decodes only when you open it.</p>
+<div class="row no-print">
+<button type="button" id="formal-open">Show the formal library</button>
+<label for="formal-q">Name or module contains</label>
+<input id="formal-q" type="search" autocomplete="off" spellcheck="false" disabled>
+<label for="formal-link">Show</label>
+<select id="formal-link" disabled><option value="all">all theorems</option><option value="linked">linked to a catalog result</option><option value="unlinked">unnamed (no catalog result)</option></select>
+</div>
+<p id="formal-count" class="note" aria-live="polite"></p>
+<div id="formal-wrap" class="table-wrap" tabindex="0" role="region" aria-label="Formal library table: scroll for more rows" hidden>
+<table id="formal-table" class="catalog data">
+<thead><tr><th scope="col">Declaration</th><th scope="col">Module</th><th scope="col">Hypotheses</th><th scope="col">Typeclasses</th><th scope="col">Data arguments</th><th scope="col">Statement tokens</th><th scope="col">Proof tokens</th><th scope="col">Proof term nodes</th><th scope="col">Uses sorry</th><th scope="col">Catalog result</th></tr></thead>
+<tbody id="formal-body"></tbody>
+</table>
+</div>
+</section>
+</section>
+
+<!-- Comparisons -->
+<section id="view-compare" class="view" aria-labelledby="h-compare">
+<h2 id="h-compare">Comparisons</h2>
+<div class="seg wrap" role="group" aria-label="Comparison case">
+<button type="button" data-field="cmp" value="tail-binomial">Tail of a binomial</button>
+<button type="button" data-field="cmp" value="existence-ksat">Existence for k-SAT</button>
+<button type="button" data-field="cmp" value="union-three">Union of three events</button>
+<button type="button" data-field="cmp" value="euler-genus-two">Euler characteristic, genus 2</button>
+</div>
+<div id="case"></div>
+<h3>Pinned results</h3>
+<div id="pinned"></div>
+</section>
+
+<!-- Connections -->
+<section id="view-connections" class="view" aria-labelledby="h-connections">
+<h2 id="h-connections">Connections and prerequisite paths</h2>
+<label class="field" for="pick">Result
+<input id="pick" type="text" list="result-names" autocomplete="off" placeholder="Type a result name"></label>
+<datalist id="result-names"></datalist>
+<div class="lab">
+<div>
+<h3>Prerequisite path</h3>
+<div id="path"></div>
+</div>
+<figure class="card">
+<figcaption class="label">Relations of the selected result</figcaption>
+<svg id="graph" class="chart" viewBox="0 0 420 420" role="img" aria-label="The selected result and its related results, grouped by relation type"></svg>
+<p class="note">The lists below give the same relations as text.</p>
+</figure>
+</div>
+<div id="relations"></div>
+</section>
+
+<!-- Fields over time -->
+<section id="view-fields" class="view" aria-labelledby="h-fields">
+<h2 id="h-fields">Fields over time</h2>
+<div class="row">
+<label class="field">History
+<select data-field="fview">
+<option value="application">Documented applications</option>
+<option value="influence">Research influence</option>
+<option value="activity">Research activity (papers)</option>
+<option value="utility">Utility-weighted (experimental)</option>
+<option value="formal">Formal library</option>
+<option value="capability">Capability</option>
+<option value="assessment">Assessment history</option>
+</select></label>
+<label class="field">Categories
+<select data-field="fby"><option value="theorem">Theorem categories</option><option value="application">Application categories</option></select></label>
+<label class="field">Taxonomy level
+<select data-field="flevel"><option value="group">Group</option><option value="archive">Archive</option><option value="category">Category</option></select></label>
+<div class="field"><span class="label">Mode</span>
+<div class="seg" role="group" aria-label="Evidence mode">
+<button type="button" data-field="mode" value="historical">Historical</button>
+<button type="button" data-field="mode" value="retrospective">Retrospective</button>
+</div></div>
+</div>
+<div id="history"></div>
+</section>
+
+<!-- About -->
+<section id="view-about" class="view" aria-labelledby="h-about">
+<h2 id="h-about">Sources, coverage, rubric and snapshot</h2>
+<div id="about"></div>
+</section>
+
+<!-- The selected result page: shown in the catalog, connections and learn views -->
+<article id="result" class="card result" aria-labelledby="result-name"></article>
+
+<details class="card no-print" id="deck-fallback">
+<summary>Show the beamdswitch deck as text</summary>
+<p class="note">Select the text and copy it if the Save and Copy buttons do not work in this browser.</p>
+<textarea id="deck-text" readonly rows="14" aria-label="Beamdswitch deck text"></textarea>
+</details>
