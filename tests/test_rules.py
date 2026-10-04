@@ -84,7 +84,7 @@ class RequestsTest(unittest.TestCase):
         html = ('<script>fetch("notes.md"); fetch(`deck/${slug}.md`); new Worker("../worker.js");</script>'
                 '<link rel="stylesheet" href="https://cdn.example.org/x.css"><img src="/visuals/x.png"><img src="raw.json">')
         problems = rules.request_problems(html, {})
-        self.assertEqual(len(problems), 5)
+        self.assertEqual(len(problems), 6)
         self.assertTrue(any("notes.md is private" in p for p in problems))
         self.assertTrue(any("https://cdn.example.org/x.css: a page makes no request outside its folder" in p for p in problems))
         self.assertTrue(any("../worker.js: a path outside" in p for p in problems))
@@ -109,8 +109,42 @@ class RequestsTest(unittest.TestCase):
             "index.html uses WebSocket: a page makes no request outside its folder, and reads its own files with fetch",
             "index.html uses XMLHttpRequest: a page makes no request outside its folder, and reads its own files with fetch",
             "index.html uses sendBeacon: a page makes no request outside its folder, and reads its own files with fetch",
-            'index.html calls fetch(base + "x.json"): a computed URL the rule cannot check, so fetch a literal path',
+            'index.html calls fetch(base + "x.json"): a computed URL the rule cannot check, so use a literal path',
         ])
+
+    def test_computed_urls_in_fetch_imports_and_workers_are_named(self):
+        cases = {
+            "fetch(`https://api.example.org/${q}`)": "fetch(`https://api.example.org/${q}`)",
+            'fetch("data.json" + q)': 'fetch("data.json" + q)',
+            "import(url)": "import(url)",
+            "new Worker(src)": "new Worker(src)",
+            "new SharedWorker(src)": "new SharedWorker(src)",
+        }
+        for call, shown in cases.items():
+            with self.subTest(call=call):
+                self.assertEqual(rules.request_problems(f"<script>{call};</script>", {}), [
+                    f"index.html calls {shown}: a computed URL the rule cannot check, so use a literal path"])
+
+    def test_literal_urls_comments_prose_and_vendored_blocks_are_not_computed_calls(self):
+        html = ('<p>Paste to import (JSON or a report)</p><script>fetch(`data.json`); import("./x.js");'
+                '\n// import(url) in a comment\n</script><script data-vendor="mathjax">new Worker(a);</script>')
+        self.assertEqual(rules.request_problems(html, {"assets": ["x.js"]}), [])
+
+    def test_absolute_urls_set_from_script_are_named(self):
+        cases = ['img.src = "https://cdn.example.org/a.png"', 'new Audio("https://cdn.example.org/a.mp3")',
+                 "el.setAttribute('srcset', 'https://cdn.example.org/b.png')"]
+        for code in cases:
+            with self.subTest(code=code):
+                url = code.split("https://")[1].rstrip("\"')")
+                self.assertEqual(rules.request_problems(f"<script>{code};</script>", {}), [
+                    f"index.html sets https://{url} from script: a page makes no request outside its folder"])
+
+    def test_the_site_and_w3_namespaces_may_appear_in_script(self):
+        html = ('<script>img.src = "https://teoyujie.org/visuals/a.png";'
+                'document.createElementNS("http://www.w3.org/2000/svg", "svg");'
+                'el.setAttributeNS("http://www.w3.org/1999/xlink", "href", "#a");'
+                'a.href = "https://example.org/";\n// img.src = "https://cdn.example.org/x.png"\n</script>')
+        self.assertEqual(rules.request_problems(html, {}), [])
 
 
 class ContrastTest(unittest.TestCase):

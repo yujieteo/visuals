@@ -9,8 +9,11 @@ and scripts/check_repo.py the repository-wide ones. No check reads the network.
                 a builder inlines beamdswitch.js and report.js unchanged
   requests      the page requests nothing outside the files the site publishes beside it (index.html,
                 data.json and visual.json "assets"): no absolute or parent paths, no notes.md, also from CSS
-                @import and url(), no fetch of a computed URL, and no XMLHttpRequest, WebSocket, EventSource
-                or sendBeacon at all
+                @import and url(); no XMLHttpRequest, WebSocket, EventSource or sendBeacon at all; and in a
+                script that is not a vendored block, no fetch, import(), importScripts, Worker or SharedWorker
+                of a computed URL (a template literal with ${}, a literal joined with +, or a name), and no
+                absolute http(s) URL set as a src, srcset or poster or passed to new Audio (teoyujie.org and
+                the w3.org namespaces aside)
   contrast      the page's colour tokens meet WCAG contrast in both themes (text 4.5:1 on --bg, controls
                 and series 3:1), no control is outlined in a token below 3:1 (such as --border), and its two
                 dark-theme blocks agree
@@ -121,7 +124,12 @@ REQUEST_CALL = re.compile(r"\b(fetch|new\s+Worker|new\s+SharedWorker|import|impo
 STYLE_TEXT = re.compile(r"<style\b[^>]*>(.*?)</style>|\bstyle\s*=\s*\"([^\"]*)\"", re.I | re.S)
 CSS_REQUEST = re.compile(r"@import\s+(?:url\(\s*)?([\"']?)([^\"')\s;]+)\1|\burl\(\s*([\"']?)([^\"')]+?)\3\s*\)", re.I)
 NETWORK_API = re.compile(r"\b(XMLHttpRequest|WebSocket|EventSource|sendBeacon)\b")
-COMPUTED_FETCH = re.compile(r"\bfetch\s*\(\s*([^`\"'\s)][^,)]*)")
+COMPUTED_CALL = re.compile(r"(?<![\w$])(fetch|new\s+Worker|new\s+SharedWorker|import|importScripts)\s*\(\s*"
+                           r"(`[^`]*`|\"[^\"\n]*\"|'[^'\n]*'|[^`\"'\s)][^,)]*)(\s*\+[^,)]*)?")
+SCRIPT_URL = re.compile(r"(?:\.(?:src|srcset|poster)\s*=\s*|setAttribute\(\s*([\"'])(?:src|srcset|poster)\1\s*,\s*|"
+                        r"\bnew\s+Audio\s*\(\s*)([`\"'])(https?://[^`\"'\s]*)\2", re.I)
+SCRIPT_TEXT = re.compile(r"<script\b(?![^>]*\bdata-vendor=)[^>]*>(.*?)</script>", re.I | re.S)
+SCRIPT_URL_HOSTS = re.compile(r"^https?://(?:[\w-]+\.)*(?:teoyujie\.org|w3\.org)(?:[/:?#]|$)", re.I)
 FREE_SCHEMES = ("data:", "blob:", "#", "about:")
 
 
@@ -156,8 +164,19 @@ def request_problems(html, data):
     problems = []
     for api in sorted({m.group(1) for m in NETWORK_API.finditer(html) if not _in_comment(html, m.start())}):
         problems.append(f"index.html uses {api}: a page makes no request outside its folder, and reads its own files with fetch")
-    for arg in sorted({m.group(1).strip() for m in COMPUTED_FETCH.finditer(html) if not _in_comment(html, m.start())}):
-        problems.append(f"index.html calls fetch({arg}): a computed URL the rule cannot check, so fetch a literal path")
+    computed, script_urls = set(), set()
+    for start, end in (m.span(1) for m in SCRIPT_TEXT.finditer(html)):
+        for m in COMPUTED_CALL.finditer(html, start, end):
+            arg, joined = m.group(2).strip(), m.group(3)
+            literal = arg[0] in "\"'" or (arg[0] == "`" and "${" not in arg)
+            if not (literal and not joined) and not _in_comment(html, m.start()):
+                computed.add(f"{' '.join(m.group(1).split())}({arg}{(joined or '').rstrip()})")
+        script_urls |= {m.group(3) for m in SCRIPT_URL.finditer(html, start, end)
+                        if not SCRIPT_URL_HOSTS.match(m.group(3)) and not _in_comment(html, m.start())}
+    for call in sorted(computed):
+        problems.append(f"index.html calls {call}: a computed URL the rule cannot check, so use a literal path")
+    for url in sorted(script_urls):
+        problems.append(f"index.html sets {url} from script: a page makes no request outside its folder")
     for url in sorted(set(page_requests(html))):
         path = url.split("#")[0].split("?")[0].removeprefix("./")
         if re.match(r"^(?:[a-z][a-z0-9+.-]*:)?//", url, re.I):
