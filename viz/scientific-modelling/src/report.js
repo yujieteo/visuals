@@ -196,7 +196,7 @@
           "| Variable | Dimensionless | Scale | Offset | Status | Reason |", "| --- | --- | --- | --- | --- | --- |",
           ...nd.scales.map((sc) => `| ${m(sc.tex)} | ${m(sc.hatTex)} | ${m(sc.chosen.tex)}${sc.chosen.value ? ` (${cell(sc.chosen.value)} in SI units)` : ""} | ${m(sc.offsetTex)} | ${STATUS[sc.status]} | ${cell(sc.chosen.reason)} |`),
           "", "Other candidates:", "",
-          ...(others.length ? others.map(({ sc, c }) => `- ${m(sc.tex)}: ${m(c.tex ?? "?")}. ${cell(c.reason)}${c.valid ? "" : ` Refused: ${cell(c.signWhy || c.error || "its dimension is wrong")}.`}${c.ratio ? ` Ratio of the chosen scale to this one: ${m(c.ratio.tex)}${c.ratio.names.length ? ` = ${c.ratio.names.map((x) => m(x.tex)).join(", ")}, ${cell(c.ratio.names.map((x) => x.name).join(", "))} (a proposed name)` : ""}.` : ""}`)
+          ...(others.length ? others.map(({ sc, c }) => `- ${m(sc.tex)}: ${m(c.tex ?? "?")}. ${cell(c.reason)}${c.valid ? "" : ` Refused: ${cell(c.signWhy || c.error || c.dimWhy)}.`}${c.ratio ? ` Ratio of the chosen scale to this one: ${m(c.ratio.tex)}${c.ratio.names.length ? ` = ${c.ratio.names.map((x) => m(x.tex)).join(", ")}, ${cell(c.ratio.names.map((x) => x.name).join(", "))} (a proposed name)` : ""}.` : ""}`)
             : ["- None: no other mechanism or prescribed value gives a scale."]),
           ...nd.scales.filter((sc) => sc.changed).map((sc) => `\n**${STATUS.unresolved}:** ${cell(sc.changed)}`),
         ].join("\n"),

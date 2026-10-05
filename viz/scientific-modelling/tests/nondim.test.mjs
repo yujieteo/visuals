@@ -169,3 +169,31 @@ test("SymPy agrees: its independent substitution and chain rule give the same fa
   }
   assert.ok(compared >= 17, `${compared} forms compared`);
 });
+
+test("a scale with more than one term: the domain length L − L_1 inverts exactly, and the time balance through it is found", () => {
+  const inp = R.inputs(R.fromExample(ENGINE, "transient-slab"));
+  const L = inp.variables.find((v) => v.symbol === "L");
+  inp.variables.push(R.variable({ ...L, id: "v-L1", symbol: "L_1", tex: "L_1", meaning: "The inner face" }));
+  for (const v of inp.variables) if (v.symbol === "L" || v.symbol === "L_1") v.value = v.symbol === "L" ? "2" : "1";
+  inp.conditions = inp.conditions.map((c) => (c.id === "c-centre" ? { ...c, at: "x = L_1" } : c));
+  const nd = N.nondimensionalize(C.interpret(inp, ENGINE), { scales: [], finder: null, groups: DATA.groups.groups });
+  assert.ok(nd.ready, nd.message);
+  const v = Object.fromEntries(nd.variables.map((x) => [x.name, x]));
+  assert.ok(S.equal(S.read(v.x.scalePlain), S.read("L - L_1")) && v.x.offsetPlain === "L_1");
+  assert.ok(S.equal(S.read(v.t.scalePlain), S.read("rho*c_p*(L - L_1)^2/k")), "t_c = ρc_p(L − L_1)²/k");
+  sameForm(nd, "e-heat", "d(theta,tau) = d(theta,X,X)");
+  sameForm(nd, "c-surface", "-d(theta,X) = h*(L - L_1)/k*theta");
+  assert.deepEqual(["c-centre", "c-surface"].map((id) => eq(nd, id).at.plain), ["0", "1"]);
+  assert.ok(nd.checks.every((c) => c.passed), nd.checks.filter((c) => !c.passed).map((c) => c.id).join(", "));
+});
+
+test("a supplied scale whose terms have different dimensions is refused, with the term that has the wrong dimension", () => {
+  const inp = R.inputs(R.fromExample(ENGINE, "lumped-body"));
+  const t = inp.variables.find((v) => v.symbol === "t");
+  inp.scales.push({ id: `s-${t.id}`, for: t.id, scale: "rho*c_p*L_c/h + h", offset: "0", symbol: "tau", reason: "A sum of a time and a coefficient." });
+  const nd = N.nondimensionalize(C.interpret(inp, ENGINE), { scales: inp.scales, finder: null, groups: DATA.groups.groups });
+  const sup = nd.scales.find((s) => s.name === "t").candidates.find((c) => c.supplied);
+  assert.equal(sup.valid, false);
+  assert.equal(sup.dimOk, false);
+  assert.match(sup.dimWhy, /^its term h has the dimension /);
+});

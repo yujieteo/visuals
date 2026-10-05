@@ -188,8 +188,13 @@
       return acc;
     }
     const { pivot, rest } = normalizeSum(p, ctx);
-    if (rest.size === 1) return pow(mul(single(pivot.coef, pivot.mono), rest), E_, ctx);
     return mul(pow(single(pivot.coef, pivot.mono), E_, ctx), atomPoly(sumAtom(rest), E_));
+  }
+  /** A sum as one term, pivot × its sum atom: the form that pow(p, -1) inverts, so p·p^-1 = 1 after any product. */
+  function factor(p, ctx = PLAIN) {
+    if (p.size < 2) return p;
+    const { pivot, rest } = normalizeSum(p, ctx);
+    return mul(single(pivot.coef, pivot.mono), atomPoly(sumAtom(rest)));
   }
 
   const FNS = new Set(["exp", "log", "log10", "sin", "cos", "tan", "sinh", "cosh", "tanh", "erf", "erfc", "abs"]);
@@ -309,6 +314,19 @@
     }
     return true;
   }
+  /**
+   * Is a equal to b once each sum under a negative integer power is multiplied out of a − b? Exact: a sum atom
+   * spread across terms, a·(1 + c)^-1 + a·c·(1 + c)^-1, is a and not a different canonical form.
+   */
+  function equalCleared(a, b, ctx = PLAIN) {
+    let d = sub(a, b);
+    for (;;) {
+      let atom = null, n = Q.ZERO;
+      for (const t of d.values()) for (const [x, e] of t.mono) if (x.t === "sum" && Q.isInteger(e) && Q.sign(e) < 0 && (!atom || atom.key === x.key)) { atom = x; if (Q.sign(Q.add(e, n)) < 0) n = Q.neg(e); }
+      if (!atom) return d.size === 0;
+      d = subst(mul(d, atomPoly(atom, n)), {}, ctx);
+    }
+  }
   /** The terms in key order. */
   const terms = (p) => [...p.keys()].sort().map((k) => /** @type {any} */ (p.get(k)));
   /** Every name in an expression, also inside function arguments and sums. */
@@ -410,6 +428,6 @@
     return fromAst(r.ast, ctx);
   }
 
-  return { Unsupported, PLAIN, MAX_POWER, zero, one, constant, single, symbol, derivative, atomPoly, symAtom, add, sub, neg, scale, mul, pow, fn,
-    fromAst, diff, subst, equal, constantOf, terms, names, key, monoKey, monoMul, isVarAtom, hasVar, normalizeSum, tex, termTex, plain, read };
+  return { Unsupported, PLAIN, MAX_POWER, zero, one, constant, single, symbol, derivative, atomPoly, symAtom, add, sub, neg, scale, mul, pow, factor, fn,
+    fromAst, diff, subst, equal, equalCleared, constantOf, terms, names, key, monoKey, monoMul, isVarAtom, hasVar, normalizeSum, tex, termTex, plain, read };
 });

@@ -345,8 +345,7 @@
     ].join("\n");
 
     $("nondim-enters").innerHTML = `<p>No scale may hide a physical parameter. Each parameter below enters a scale, a coefficient or a condition.</p><ul class="plain-list">${nd.enters.map((/** @type {any} */ e) => `<li>${e.hidden ? `${chip("unresolved")} ` : ""}<strong>${esc(e.label)}</strong>: ${e.hidden ? "does not enter the dimensionless model." : esc(e.where.join(", "))}${e.onlyScales ? ` <span class="note">Only through the scales: it changes the units of the dimensionless variables, not the dimensionless solution.</span>` : ""}</li>`).join("")}</ul>`;
-    const ref = d.results.find((/** @type {any} */ r) => r.id === "r-nd-reference");
-    $("nondim-checks").innerHTML = `<ul class="plain-list">${nd.checks.map((/** @type {any} */ c) => `<li>${chip(c.status)} ${c.passed ? "Passed" : "<strong>Failed</strong>"}: ${esc(c.title)}. <span class="note">${esc(c.detail)}</span></li>`).join("")}</ul>${ref ? `<p>${chip(ref.status)} ${esc(ref.title)}</p>` : ""}`;
+    $("nondim-checks").innerHTML = `<ul class="plain-list">${nd.checks.map((/** @type {any} */ c) => `<li>${chip(c.status)} ${c.passed ? "Passed" : "<strong>Failed</strong>"}: ${esc(c.title)}. <span class="note">${esc(c.detail)}</span></li>`).join("")}</ul>`;
   }
 
   /** @param {any} d @param {string} tool */

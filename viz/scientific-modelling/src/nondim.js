@@ -249,6 +249,7 @@
       let d = U.NONE.slice();
       for (const [a, e] of mono) {
         if (a.t === "num") continue;
+        if (a.t === "sum" && S.terms(a.base).every((t) => { const b = dimOfMono(t.mono); return b && U.isNone(b); })) continue;
         if (a.t !== "sym") return null;
         const x = dimOf(a.name);
         if (!x) return null;
@@ -282,22 +283,26 @@
       if (p.size === 0) return { s: "zero", why: "the scale is 0" };
       const c = S.constantOf(p);
       if (c) return { s: "nonzero", why: "" };
-      if (p.size === 1) {
-        const t = S.terms(p)[0];
-        let worst = { s: "nonzero", why: "" };
-        for (const [a] of t.mono) {
-          if (a.t === "num") continue;
-          if (a.t !== "sym") return { s: "unknown", why: "the scale holds a function or a field" };
-          const s = nameSign(a.name);
-          if (s.s === "zero") return s;
-          if (s.s === "unknown") worst = s;
-        }
-        return worst;
+      if (p.size > 1) {
+        const x = evalExact(p);
+        if (x) return Q.isZero(x) ? { s: "zero", why: `the values make ${S.plain(p)} = 0` } : { s: "nonzero", why: "" };
+        if (relationsDeclared.has(S.key(p))) return { s: "nonzero", why: "" };
       }
-      const x = evalExact(p);
-      if (x) return Q.isZero(x) ? { s: "zero", why: `the values make ${S.plain(p)} = 0` } : { s: "nonzero", why: "" };
-      if (relationsDeclared.has(S.key(p))) return { s: "nonzero", why: "" };
-      return { s: "unknown", why: `the model does not declare ${S.plain(p)} nonzero` };
+      // A sum is its pivot times (1 + the rest): each factor must be nonzero.
+      const t = S.terms(S.factor(p, ctx))[0];
+      let worst = { s: "nonzero", why: "" };
+      for (const [a] of t.mono) {
+        if (a.t === "num") continue;
+        let s;
+        if (a.t === "sym") s = nameSign(a.name);
+        else if (a.t === "sum") {
+          const x = evalExact(a.base);
+          s = !x ? { s: "unknown", why: `the model does not declare ${S.plain(p)} nonzero` } : Q.isZero(x) ? { s: "zero", why: `the values make ${S.plain(p)} = 0` } : { s: "nonzero", why: "" };
+        } else return { s: "unknown", why: "the scale holds a function or a field" };
+        if (s.s === "zero") return s;
+        if (s.s === "unknown") worst = s;
+      }
+      return worst;
     }
 
     /** Monomial helpers on exponent maps (name -> rational). */
@@ -370,7 +375,7 @@
     const unknown = (n) => `__scale_${n}`;
     /** Forward substitution: v = offset + scale·v̂, ∂f/∂x = (S_f/S_x) ∂f̂/∂x̂. */
     function forwardMap(choice) {
-      const sc = (n) => choice.get(n) ?? S.symbol(unknown(n));
+      const sc = (n) => (choice.has(n) ? S.factor(choice.get(n), ctx) : S.symbol(unknown(n)));
       return {
         sym: (n) => (hat.has(n) ? S.add(offsets.get(n).poly, S.mul(sc(n), S.symbol(/** @type {string} */ (hat.get(n))))) : null),
         d: (f, xs) => {
@@ -381,16 +386,17 @@
     }
     /** Reverse substitution: v̂ = (v − offset)/scale, ∂f̂/∂x̂ = (S_x/S_f) ∂f/∂x. */
     function inverseMap(choice) {
+      const sc = (n) => S.factor(choice.get(n), ctx);
       return {
         sym: (n) => {
           const v = unhat.get(n);
-          return v ? S.mul(S.sub(S.symbol(v), offsets.get(v).poly), S.pow(/** @type {any} */ (choice.get(v)), Q.q(-1), ctx)) : null;
+          return v ? S.mul(S.sub(S.symbol(v), offsets.get(v).poly), S.pow(sc(v), Q.q(-1), ctx)) : null;
         },
         d: (h, xs) => {
           const f = unhat.get(h);
           if (!f) return null;
           const orig = xs.map((x) => /** @type {string} */ (unhat.get(x)));
-          return S.mul(...orig.map((x) => choice.get(x)), S.pow(/** @type {any} */ (choice.get(f)), Q.q(-1), ctx), S.derivative(f, orig));
+          return S.mul(...orig.map(sc), S.pow(sc(f), Q.q(-1), ctx), S.derivative(f, orig));
         },
       };
     }
@@ -451,8 +457,9 @@
           if (unk.length !== 1 || unk[0][0].name !== unknown(target)) continue;
           const e = unk[0][1];
           const rest = ratio.filter(([x]) => !(x.t === "sym" && x.name.startsWith("__scale_")));
-          if (rest.some(([x]) => x.t !== "sym" && x.t !== "num")) continue;
-          const scale = normal(S.pow(S.single(Q.ONE, rest.filter(([x]) => x.t === "sym")), Q.div(Q.q(-1), e), ctx));
+          const known = ([x]) => x.t === "sym" || (x.t === "sum" && ![...S.names(x.base)].some((n) => n.startsWith("__scale_")));
+          if (rest.some((x) => x[0].t !== "num" && !known(x))) continue;
+          const scale = normal(S.pow(S.single(Q.ONE, rest.filter(known)), Q.div(Q.q(-1), e), ctx));
           const oi = orders(terms[i].vmono), oj = orders(terms[j].vmono);
           // A prescribed value against the field's value is the prescribed difference, not a balance.
           if (cond && !oi.space && !oj.space && !oi.time && !oj.time) continue;
@@ -507,10 +514,13 @@
       merged.sort((a, b) => a.rank - b.rank);
       return merged.map((c, i) => {
         const sign = c.poly ? scaleSign(c.poly) : { s: "unknown", why: c.error };
-        const dim = c.poly ? (c.poly.size === 1 ? dimOfMono(monoOf(c.poly).mono) : dimOfMono(monoOf(c.poly).mono)) : null;
-        const dimOk = Boolean(dim && v.dim && U.deq(dim, v.dim));
+        const termDims = c.poly ? S.terms(c.poly).map((t) => ({ t, d: dimOfMono(t.mono) })) : [];
+        const wrong = termDims.find((x) => !x.d || !v.dim || !U.deq(x.d, v.dim));
+        const dim = termDims.length && !wrong ? termDims[0].d : wrong?.d ?? null;
+        const dimOk = Boolean(termDims.length && !wrong);
+        const dimWhy = wrong ? `${termDims.length > 1 ? `its term ${labelP(S.single(wrong.t.coef, wrong.t.mono))} has` : "it has"} the dimension ${wrong.d ? U.text(wrong.d) : "?"}, not that of ${labelOf(name)}` : "";
         const val = c.poly ? evalExact(c.poly) : null;
-        return { ...c, n: i + 1, sign: sign.s, signWhy: sign.why, dimOk, dim: dim ? U.text(dim) : null, value: val ? C_num(val) : null, valid: Boolean(c.poly) && sign.s === "nonzero" && dimOk };
+        return { ...c, n: i + 1, sign: sign.s, signWhy: sign.why, dimOk, dim: dim ? U.text(dim) : null, value: val ? C_num(val) : null, dimWhy, valid: Boolean(c.poly) && sign.s === "nonzero" && dimOk };
       });
     }
     const hatLabel = (name) => labelOf(/** @type {string} */ (hat.get(name)));
@@ -553,7 +563,7 @@
     const missing = scales.filter((s) => !s.chosen);
     if (missing.length) {
       return { ready: false, reason: "no-scale", blockedBy: [],
-        message: `No nonzero scale is available for ${missing.map((s) => labelOf(s.name)).join(", ")}. ${missing.map((s) => s.refused.map((c) => `${labelP(c.poly ?? S.zero())} is refused: ${c.signWhy || "its dimension is wrong"}.`).join(" ")).join(" ")}`.trim(),
+        message: `No nonzero scale is available for ${missing.map((s) => labelOf(s.name)).join(", ")}. ${missing.map((s) => s.refused.map((c) => `${labelP(c.poly ?? S.zero())} is refused: ${c.signWhy || c.dimWhy}.`).join(" ")).join(" ")}`.trim(),
         next: "Supply a nonzero scale in the model's scales, or declare a domain that excludes 0 for the variables of a candidate scale." };
     }
 
@@ -561,18 +571,19 @@
     const varRows = scales.map((s) => {
       const h = /** @type {string} */ (hat.get(s.name));
       const off = offsets.get(s.name).poly;
-      const sc = /** @type {any} */ (choice.get(s.name));
+      const scale = /** @type {any} */ (choice.get(s.name));
+      const sc = S.factor(scale, ctx);
       const forward = S.mul(S.sub(S.symbol(s.name), off), S.pow(sc, Q.q(-1), ctx));
       const inverse = S.add(off, S.mul(sc, S.symbol(h)));
       // The inverse in the forward definition gives v̂ again, and the forward one in the inverse gives v.
       const back = S.subst(forward, { sym: (n) => (n === s.name ? inverse : null) }, ctx);
       const there = S.subst(inverse, { sym: (n) => (n === h ? forward : null) }, ctx);
       const ok = S.equal(back, S.symbol(h)) && S.equal(there, S.symbol(s.name));
-      const scaleShow = show(sc);
+      const scaleShow = show(scale);
       const fwdMono = off.size === 0 ? normal(forward) : null;
       return { name: s.name, id: s.v.id, hat: h, hatTex: hatTex.get(h), kind: s.v.kind, time: isTimeVar(s.v), meaning: s.v.meaning,
-        scaleTex: scaleShow, scalePlain: S.plain(sc), offsetTex: off.size ? show(off) : "0", offsetPlain: S.plain(off), offsetWhy: offsets.get(s.name).why,
-        defTex: `${hatTex.get(h)}=${off.size ? (sc.size === 1 && /\\frac/.test(scaleShow) ? `${show(normal(S.pow(sc, Q.q(-1), ctx)))}\\,\\left(${texOf(s.name)}-${show(off)}\\right)` : `\\frac{${texOf(s.name)}-${show(off)}}{${scaleShow}}`) : monoDisplay(monoOf(/** @type {any} */ (fwdMono)).coef, compact(expMap(monoOf(/** @type {any} */ (fwdMono)).mono))).tex}`,
+        scaleTex: scaleShow, scalePlain: S.plain(scale), offsetTex: off.size ? show(off) : "0", offsetPlain: S.plain(off), offsetWhy: offsets.get(s.name).why,
+        defTex: `${hatTex.get(h)}=${off.size ? (scale.size === 1 && /\\frac/.test(scaleShow) ? `${show(normal(S.pow(scale, Q.q(-1), ctx)))}\\,\\left(${texOf(s.name)}-${show(off)}\\right)` : `\\frac{${texOf(s.name)}-${show(off)}}{${scaleShow}}`) : monoDisplay(monoOf(/** @type {any} */ (fwdMono)).coef, compact(expMap(monoOf(/** @type {any} */ (fwdMono)).mono))).tex}`,
         invTex: `${texOf(s.name)}=${off.size ? `${show(off)}+${wrapSum(scaleShow)}\\,${hatTex.get(h)}` : `${wrapSum(scaleShow)}\\,${hatTex.get(h)}`}`,
         inverseOk: ok };
     });
@@ -664,7 +675,7 @@
       // The reverse substitution: multiply by the factor, put back the dimensional variables, compare exactly.
       const back = normal(S.subst(S.mul(S.sub(dl, dr), factor), imap, ctx));
       const orig = normal(S.sub(read(item.ast.l), read(item.ast.r)));
-      const reverseOk = S.equal(back, orig);
+      const reverseOk = S.equalCleared(back, orig, ctx);
       let at = null;
       // A condition's location, or the "at x = 0" of a definition such as the base heat flow.
       const atText = cond ? item.at : /^\s*at\s+/i.test(item.domainText ?? "") ? item.domainText.replace(/^\s*at\s+/i, "") : null;
@@ -675,8 +686,9 @@
         const locPoly = !r.error && r.ast.k === "rel" ? S.fromAst(r.ast.r) : null;
         if (locPoly) {
           const x = /** @type {string} */ (atVar);
-          const hx = normal(S.mul(S.sub(locPoly, offsets.get(x).poly), S.pow(/** @type {any} */ (choice.get(x)), Q.q(-1), ctx)));
-          const backLoc = normal(S.add(offsets.get(x).poly, S.mul(/** @type {any} */ (choice.get(x)), hx)));
+          const sx = S.factor(/** @type {any} */ (choice.get(x)), ctx);
+          const hx = normal(S.mul(S.sub(locPoly, offsets.get(x).poly), S.pow(sx, Q.q(-1), ctx)));
+          const backLoc = normal(S.add(offsets.get(x).poly, S.mul(sx, hx)));
           at = { tex: `${hatTex.get(/** @type {string} */ (hat.get(x)))}=${show(hx)}`, plain: S.plain(hx), poly: hx, ok: S.equal(backLoc, normal(locPoly)) };
         }
       }
@@ -703,7 +715,7 @@
         const x = coord.ast.name;
         const texs = asts.map((r) => {
           if (r.ast.k === "sym" && r.ast.name === x) return /** @type {string} */ (hatTex.get(/** @type {string} */ (hat.get(x))));
-          const p = normal(S.mul(S.sub(S.fromAst(r.ast), offsets.get(x).poly), S.pow(/** @type {any} */ (choice.get(x)), Q.q(-1), ctx)));
+          const p = normal(S.mul(S.sub(S.fromAst(r.ast), offsets.get(x).poly), S.pow(S.factor(/** @type {any} */ (choice.get(x)), ctx), Q.q(-1), ctx)));
           return show(p);
         });
         const relTex = { "<": "<", ">": ">", "<=": "\\le", ">=": "\\ge", "≤": "\\le", "≥": "\\ge", "=": "=", "!=": "\\ne" };
@@ -743,7 +755,7 @@
       const disp = monoDisplay(Q.ONE, map);
       const isGeo = [...map.keys()].every((n) => geometryQuantities.has(bySym.get(n)?.quantity ?? "") || (bySym.get(n)?.dim && /^L/.test(U.text(/** @type {any} */ (bySym.get(n)).dim)) && U.text(/** @type {any} */ (bySym.get(n)).dim).split(" ").length === 1));
       const role = g.role === "output" ? "output" : g.role === "geometry" || isGeo ? "geometry" : "parameter";
-      const names = role === "output" || true ? F.recognize(allVars, disp.exps, catalogue) : [];
+      const names = F.recognize(allVars, disp.exps, catalogue);
       const key = F.groupKey(allVars, disp.exps);
       const value = F.value(allVars.map((v) => {
         if (v.value) return v;
@@ -867,7 +879,7 @@
     check("x-nd-nonzero", "No chosen scale can be 0", scales.every((s) => s.chosen.sign === "nonzero"), scales.map((s) => `${labelOf(s.name)}: ${labelP((/** @type {any} */ (choice.get(s.name))))}`).join(", ") + ".");
     check("x-nd-inverse", "Each dimensionless variable and its inverse compose to the identity", varRows.every((r) => r.inverseOk), "The inverse in the forward definition gives the dimensionless variable, and the forward definition in the inverse gives the variable.");
     check("x-nd-coefficients", "Every coefficient of the dimensionless model is dimensionless", transformed.every((t) => t.dimensionless), "The exponents of each base dimension sum to 0 in every coefficient, also inside function arguments.");
-    check("x-nd-reverse", "The reverse substitution recovers every equation and condition", transformed.every((t) => t.reverseOk && (!t.at || t.at.ok)), `${transformed.filter((t) => t.reverseOk).length} of ${transformed.length} forms come back exactly${Object.keys(ruleOf).length || ruleOf.size ? ", under the definitions " + [...new Set([...ruleOf.values()].map((r) => r.id).filter(Boolean))].join(", ") : ""}.`);
+    check("x-nd-reverse", "The reverse substitution recovers every equation and condition", transformed.every((t) => t.reverseOk && (!t.at || t.at.ok)), `${transformed.filter((t) => t.reverseOk).length} of ${transformed.length} forms come back exactly${ruleOf.size ? ", under the definitions " + [...new Set([...ruleOf.values()].map((r) => r.id).filter(Boolean))].join(", ") : ""}.`);
     check("x-nd-hidden", "Every physical parameter enters a scale, a coefficient or a condition", enters.every((e) => !e.hidden), enters.filter((e) => e.hidden).map((e) => `${e.label} does not enter the dimensionless model.`).join(" ") || `All ${enters.length} parameters enter the dimensionless model.`);
     if (pi) check("x-nd-pi", "Each dimensionless quantity of the Pi set is a product of powers of the Pi groups", pi.rows.filter((r) => !r.outside && r.vec).every((r) => r.inPi), `${pi.rows.filter((r) => r.inPi).length} quantities are products of powers of the ${pi.basis} basis.`);
 
@@ -889,7 +901,7 @@
         chosen: plainCandidate(s.chosen, s), status: s.chosen.source === SUPPLIED ? "confirmed" : "proposed",
         candidates: s.list.map((c) => ({ ...plainCandidate(c, s), chosen: c === s.chosen || Boolean(c.poly && s.chosen.poly && S.equal(c.poly, s.chosen.poly)),
           ratio: c.poly && c.valid && c !== s.chosen ? ratioOf(/** @type {any} */ (s.chosen.poly), c.poly) : null })),
-        changed: s.changedFrom ? `${labelOf(/** @type {string} */ (hat.get(s.name)))} cannot use ${labelP((s.changedFrom.poly ?? S.zero()))} as its scale: ${s.changedFrom.signWhy || "its dimension is wrong"}. It uses ${labelP((/** @type {any} */ (s.chosen.poly)))} instead (${s.chosen.mechanism}). ${labelOf(/** @type {string} */ (hat.get(s.name)))} now measures ${offsets.get(s.name).poly.size ? `${labelOf(s.name)} − ${labelP((offsets.get(s.name).poly))}` : labelOf(s.name)} in units of ${labelP((/** @type {any} */ (s.chosen.poly)))}, not ${labelP((s.changedFrom.poly ?? S.zero()))}.` : null,
+        changed: s.changedFrom ? `${labelOf(/** @type {string} */ (hat.get(s.name)))} cannot use ${labelP((s.changedFrom.poly ?? S.zero()))} as its scale: ${s.changedFrom.signWhy || s.changedFrom.dimWhy}. It uses ${labelP((/** @type {any} */ (s.chosen.poly)))} instead (${s.chosen.mechanism}). ${labelOf(/** @type {string} */ (hat.get(s.name)))} now measures ${offsets.get(s.name).poly.size ? `${labelOf(s.name)} − ${labelP((offsets.get(s.name).poly))}` : labelOf(s.name)} in units of ${labelP((/** @type {any} */ (s.chosen.poly)))}, not ${labelP((s.changedFrom.poly ?? S.zero()))}.` : null,
       })),
       variables: varRows.map(({ name, id, hat: h, hatTex: ht, kind, time, defTex, invTex, inverseOk, scaleTex, scalePlain, offsetTex, offsetPlain }) => ({ name, id, hat: h, hatTex: ht, kind, time, defTex, invTex, inverseOk, scaleTex, scalePlain, offsetTex, offsetPlain })),
       derivatives: derivRows.map(({ tex: t, plain, reason }) => ({ tex: t, plain, reason })),
@@ -911,7 +923,7 @@
     /** A candidate as plain data. */
     function plainCandidate(c, s) {
       return { n: c.n, symbols: c.poly ? [...S.names(c.poly)] : [], tex: c.poly ? show(c.poly) : null, label: c.poly ? labelP((c.poly)) : null, plain: c.poly ? S.plain(c.poly) : null, source: ["supplied", "natural", "balance"][c.source],
-        reason: c.reason, also: c.also, mechanism: c.mechanism, items: c.items, sign: c.sign, signWhy: c.signWhy, dim: c.dim, dimOk: c.dimOk, value: c.value, valid: c.valid, supplied: c.supplied ?? null, error: c.error || null,
+        reason: c.reason, also: c.also, mechanism: c.mechanism, items: c.items, sign: c.sign, signWhy: c.signWhy, dim: c.dim, dimOk: c.dimOk, dimWhy: c.dimWhy, value: c.value, valid: c.valid, supplied: c.supplied ?? null, error: c.error || null,
         record: c.poly ? { for: s.v.id, scale: S.plain(c.poly), offset: S.plain(offsets.get(s.name).poly), symbol: hat.get(s.name), reason: c.reason } : null };
     }
     /** The ratio chosen/alternative as a monomial, with its familiar name. */
