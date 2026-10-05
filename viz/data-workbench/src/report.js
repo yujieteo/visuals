@@ -4,7 +4,7 @@
  * report the kit writes as the Markdown record and the site's beamdswitch template writes as a narrated deck.
  * Names and values from the data go only into list items and table cells, escaped, and never into narration,
  * which beamdswitch reads aloud and which must hold plain words. Piece 5 replaces the deck with the full export
- * package; this one records the inspection.
+ * package; this one records the inspection and the accounting of each table's charts.
  */
 (function (root, factory) {
   const api = factory();
@@ -29,7 +29,7 @@
     const open = (t) => t.profiled.reduce((a, c) => a + c.suggestions.length, 0);
     const subtitle = tables.length ? `${count(tables.length, "table", "tables")}, ${count(rows, "row", "rows")}` : "No table imported yet";
     return {
-      meta: { title: "Universal Data Workbench: import and inspect", subtitle, voice: "bf_emma" },
+      meta: { title: "Universal Data Workbench: import, inspect and chart", subtitle, voice: "bf_emma" },
       narration: tables.length ? `This deck records ${count(tables.length, "table", "tables")} imported and inspected on one device.` : "This deck records an empty workbench: no table is imported yet.",
       setup: [{
         title: "What was imported",
@@ -44,6 +44,7 @@
           "- Missing: empty values, and values made missing by approval. Markers such as NA are counted apart; nothing becomes missing without approval.",
           "- Unusual values: robust z = |x − median| / (1.4826 × MAD) above 3.5. They stay in the data.",
           "- Roles: measure, identifier, category, ordered category, time, event label, interval start or end, unknown. A storage type alone never makes a measure.",
+          "- Charts: grammar v1. Each column is a measure (Q), a category (C), a time (T), a label (L) or excluded with its reason; every single-field chart, pair chart and timeline of those classes is a candidate, valid, excluded, failed or incomplete.",
           `- Engine: DuckDB ${cell(d.engine?.duckdb)} (DuckDB-WASM ${cell(d.engine?.duckdbWasm)}) in this browser, memory budget ${cell(d.engine?.budget)}.`,
         ].join("\n"),
         narration: "A column is read as a type when at least ninety five percent of its values fit that type. Missing values, markers and unusual values are counted, and none is removed or filled.",
@@ -58,8 +59,9 @@
           ...(t.rejected.count ? [`- ${count(t.rejected.count, "line", "lines")} of the CSV could not be read and are listed in the page.`] : []),
           ...t.profiled.flatMap((c) => c.errors.map((e) => `- ${cell(c.name)}: ${cell(e.text)}`)),
           ...(t.notProfiled.length ? [`- Not profiled: ${t.notProfiled.map(cell).join(", ")}`] : []),
+          ...(t.charts ? [`- Charts (grammar v${cell(t.charts.grammar)}): ${count(t.charts.total, "candidate", "candidates")} from ${t.charts.fields.q} measures, ${t.charts.fields.c} categories, ${t.charts.fields.t} times and ${t.charts.fields.l} labels; ${n(t.charts.valid)} valid, ${n(t.charts.excluded)} excluded, ${n(t.charts.failed)} failed, ${n(t.charts.incomplete)} incomplete${t.charts.edited ? `; ${n(t.charts.edited)} edited by you` : ""}.`] : ["- Charts: not generated yet."]),
         ].join("\n"),
-        narration: `This table has ${count(t.rows, "row", "rows")} and ${count(t.columns, "column", "columns")}. ${errors(t) ? `${count(errors(t), "value or line is", "values or lines are")} suspected data errors.` : "No suspected data error was found."} ${open(t) ? `${count(open(t), "correction waits", "corrections wait")} for approval.` : ""}`,
+        narration: `This table has ${count(t.rows, "row", "rows")} and ${count(t.columns, "column", "columns")}. ${errors(t) ? `${count(errors(t), "value or line is", "values or lines are")} suspected data errors.` : "No suspected data error was found."} ${open(t) ? `${count(open(t), "correction waits", "corrections wait")} for approval.` : ""}${t.charts ? ` ${count(t.charts.valid, "chart is", "charts are")} valid.` : ""}`,
       })) : [{ title: "No table yet", body: "- Import a file or open an example to see its profile.", narration: "There is no table to profile yet." }],
       checks: [{
         title: "Conversions and what comes next",
@@ -68,7 +70,7 @@
           "",
           `- Still to come: ${(d.pieces ?? []).map((p) => cell(p.title)).join("; ")}.`,
         ].join("\n"),
-        narration: `The log records ${count(d.log?.length ?? 0, "conversion or choice", "conversions or choices")}. This is a preview: charts, statistics, publication figures, the export package, SQL and the phone checks are still to come.`,
+        narration: `The log records ${count(d.log?.length ?? 0, "conversion or choice", "conversions or choices")}. This is a preview: statistics, publication figures, the export package, SQL and the phone checks are still to come.`,
         key: tables.length && tables.every((t) => t.status === "complete") ? "Every value stays as written; each change is approved and logged." : "The inspection is not complete yet.",
       }],
     };

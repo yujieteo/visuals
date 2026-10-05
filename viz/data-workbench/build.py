@@ -12,7 +12,8 @@ Parquet extension, which the site fetches by SHA-256 and publishes in runtime/ b
     scripts   the data block (#dw-data: examples with their files, engine versions, the steps to come), Apache
               Arrow and the DuckDB-WASM client from vendor/ (each checked against vendor/manifest.json), the kit
               (scripts/kit/kit.js), the beamdswitch template, then src/: sql, infer, preflight, sha256, examples,
-              profile, engine, report and app, each in a <script id> of its own
+              profile, engine, report, grammar, chartspec, chartsql, render, charts, gallery and app, each in a
+              <script id> of its own
 
     python3 build.py            # write index.html
     python3 build.py --verify   # check index.html is current without writing it
@@ -31,13 +32,15 @@ SCRIPTS = ROOT / "scripts"
 sys.path.insert(0, str(SCRIPTS))
 from style_guide import THEME_SCRIPT  # noqa: E402
 
-MODULES = ("sql", "infer", "preflight", "sha256", "examples", "profile", "engine", "report", "app")
+MODULES = ("sql", "infer", "preflight", "sha256", "examples", "profile", "engine", "report", "grammar", "chartspec", "chartsql", "render", "charts",
+           "gallery", "app")
 # The page reads nothing from the network itself; the engine's worker, started from runtime/, reads the engine and
 # the Parquet extension from the same folder. Inline scripts and styles are the page's own.
 CSP = ("default-src 'none'; script-src 'unsafe-inline'; worker-src 'self'; connect-src 'self'; img-src data: blob:; "
        "style-src 'unsafe-inline'; font-src data:; base-uri 'none'; form-action 'none'")
 DESCRIPTION = ("Import CSV and Parquet tables and inspect every column on this device: types and roles with their "
-               "uncertainty, missing values, parse failures, unusual values and corrections that wait for approval.")
+               "uncertainty, missing values, parse failures, unusual values and corrections that wait for approval; "
+               "then every valid chart of a documented grammar, each accounted for.")
 
 
 def read(path):

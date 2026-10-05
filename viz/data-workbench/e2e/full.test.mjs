@@ -2,7 +2,9 @@
 // without their downloads, so this file stages the page itself with the pinned engine files (runtime_files.py
 // stage), as the site publishes it, and points the harness at that folder. Every check then imports and profiles
 // real tables in each browser project: the examples, a CSV and a Parquet file chosen through the file input, a
-// file too large for the budget, Cancel while reading, an approval by keyboard, the Markdown record and the deck.
+// file too large for the budget, Cancel while reading, an approval by keyboard, the Markdown record and the deck,
+// and the charts: every candidate of the planted example, the full-size view, an edit with facets, a refused edit
+// and a page of timeline events, with the time to the first figure.
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
@@ -30,11 +32,15 @@ const { parseDeck } = await import("../../../scripts/templates/beamdswitch/deck.
 /** @param {import("playwright").Page} page */
 const kitState = (page) => page.evaluate(() => /** @type {any} */ (window).VisualKit.app.state);
 
-/** Wait until a table is imported and every column profiled, and the page is idle. @param {import("playwright").Page} page @param {string} name */
+/**
+ * Wait until a table is imported, every column profiled and its charts generated, and the page is idle.
+ * @param {import("playwright").Page} page @param {string} name
+ */
 const ready = (page, name) => page.waitForFunction((n) => {
   const tab = document.getElementById(`tab-${n}`);
-  return !!tab && !/profiling|incomplete/.test(tab.textContent ?? "") && /** @type {HTMLElement} */ (document.getElementById("progress")).hidden;
-}, name, { timeout: 120_000 });
+  const charts = document.querySelector('#charts-view [data-accounting="complete"], #charts-view [data-accounting="incomplete"]');
+  return !!tab && !/profiling|incomplete/.test(tab.textContent ?? "") && !!charts && /** @type {HTMLElement} */ (document.getElementById("progress")).hidden;
+}, name, { timeout: 180_000 });
 
 /** The text of the selected table's view. @param {import("playwright").Page} page */
 const view = (page) => page.locator("#table-view").innerText();
@@ -194,6 +200,62 @@ if (selected) {
           assert.match(text, /1 column kept/, "the table says only some columns were kept");
           assert.match(text, /3,000,000/, "every row of the kept column is imported");
           console.log(`${project.name}: one column of a ${(readFileSync(big).length / 2 ** 20).toFixed(0)} MiB CSV (3,000,000 rows) imported and profiled in ${seconds} s`);
+          assert.deepEqual(s.observed.pageErrors, [], "no uncaught errors");
+          assert.deepEqual(s.observed.unexpectedRequests, [], "no requests outside the artifact");
+        } finally {
+          await s.close();
+        }
+      });
+
+      test("charts: every candidate of the planted example; the full-size view, an edit with facets, a refused edit, a page of events", { timeout: 300_000 }, async () => {
+        const s = await openSession(browser, project, targets.origin(artifact));
+        try {
+          await s.page.goto(targets.httpUrl(artifact), { waitUntil: "load" });
+          await settle(s.page, 'html[data-ready="true"]');
+          const started = Date.now();
+          await s.page.locator('button[value="planted"]').click();
+          await s.page.locator("#charts-view .figure-open img").first().waitFor({ timeout: 180_000 });
+          const first = ((Date.now() - started) / 1000).toFixed(1);
+          await ready(s.page, "planted");
+          const all = ((Date.now() - started) / 1000).toFixed(1);
+          const accounting = await s.page.locator("[data-accounting]").innerText();
+          assert.match(accounting, /155 candidates of grammar v1: 155 valid, 0 excluded, 0 failed, 0 incomplete/, "every candidate accounted for");
+          console.log(`${project.name}: planted example (2,000 rows): first figure ${first} s after the click, all 155 candidates ${all} s`);
+          await s.page.locator("details.scope summary").click();
+          assert.match(await s.page.locator("details.scope").innerText(), /order_id\s+excluded\s+An identifier, never a measure/, "the scope lists each exclusion with its reason");
+          // The full-size view: an edit with facets, recorded in the figure and the log.
+          await s.page.locator("#chart-kind").selectOption("box-by-group");
+          await s.page.locator('[data-candidate="planted.box-by-group.region.score"]').click();
+          const figure = s.page.locator("#viewer-figure svg");
+          await figure.waitFor({ timeout: 60_000 });
+          assert.match(await figure.locator("title").first().textContent() ?? "", /score by region/);
+          await s.page.locator("#edit-facet").selectOption("segment");
+          await s.page.locator("#edit-title").fill("Score by region, each segment apart");
+          await s.page.locator("#viewer-edit button[type=submit]").click();
+          await s.page.locator("#log").getByText("Edited the chart planted.box-by-group.region.score").waitFor({ timeout: 60_000 });
+          await s.page.locator("#viewer-figure svg").waitFor();
+          const drawn = await s.page.locator("#viewer-figure svg").innerHTML();
+          assert.match(drawn, /segment: A/, "one panel a segment");
+          assert.match(drawn, /Score by region, each segment apart/);
+          assert.match(await s.page.locator("#viewer-kind").innerText(), /edited/);
+          // A change the grammar forbids is refused with its reason, and nothing changes.
+          await s.page.locator("#viewer-close").click();
+          await s.page.locator("#chart-kind").selectOption("scatter");
+          await s.page.locator('[data-candidate="planted.scatter.dose.response"]').click();
+          await s.page.locator("#viewer-figure svg").waitFor({ timeout: 60_000 });
+          await s.page.locator("#edit-yScale").selectOption("log10");
+          await s.page.locator("#viewer-edit button[type=submit]").click();
+          await s.page.locator("#viewer-error").getByText(/a log scale needs every value above 0, and response has values at or below 0/).waitFor();
+          await s.page.locator("#viewer-close").click();
+          // A timeline holds 500 events a figure; the next page follows in time order.
+          await s.page.locator("#chart-kind").selectOption("point-timeline");
+          await s.page.locator('[data-candidate="planted.point-timeline.order_date.comment"]').click();
+          await s.page.locator("#viewer-figure svg").waitFor({ timeout: 60_000 });
+          await s.page.getByRole("button", { name: "Later events" }).click();
+          await s.page.locator("#viewer-pages").getByText("Page 2 of 4").waitFor();
+          await s.page.locator("#viewer-figure svg").waitFor({ timeout: 60_000 });
+          assert.match(await s.page.locator("#viewer-figure svg").innerHTML(), /Events 501–1,000 of 2,000, page 2 of 4/);
+          await s.page.locator("#viewer-close").click();
           assert.deepEqual(s.observed.pageErrors, [], "no uncaught errors");
           assert.deepEqual(s.observed.unexpectedRequests, [], "no requests outside the artifact");
         } finally {
