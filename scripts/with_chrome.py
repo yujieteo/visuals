@@ -34,9 +34,8 @@ def main(argv):
         sys.exit(subprocess.run(command).returncode)
     port = free_port()
     url = f"http://127.0.0.1:{port}"
-    # Chrome's helper processes can still be writing into the profile as the browser exits, so a cleanup
-    # error must not replace the command's own exit status.
-    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as profile:
+    profile = tempfile.mkdtemp()
+    try:
         browser = subprocess.Popen([chrome, "--headless=new", f"--remote-debugging-port={port}", "--remote-allow-origins=*",
                                     "--no-sandbox", "--disable-gpu", f"--user-data-dir={profile}", "about:blank"],
                                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -57,6 +56,11 @@ def main(argv):
             except subprocess.TimeoutExpired:
                 browser.kill()
                 browser.wait()
+    finally:
+        # Chrome's helper processes can still be writing into the profile as the browser exits, so a cleanup
+        # error must not replace the command's own exit status. (Not TemporaryDirectory(ignore_cleanup_errors=True):
+        # that needs Python 3.10, and the tooling runs on the Python 3.9 macOS ships as python3.)
+        shutil.rmtree(profile, ignore_errors=True)
 
 
 if __name__ == "__main__":
