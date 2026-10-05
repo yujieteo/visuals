@@ -475,10 +475,13 @@ datasets per seed and 3 fixed seeds.
   absolute deviation) run one at a time.
 - Preflight before each import: a file whose estimate does not fit what is left is refused before anything is
   imported, with three choices: a seeded sample of rows that fits (seed 20261005, labelled as a sample
-  everywhere), fewer columns (chosen by the person), or skip. Never a silent cut.
+  everywhere), fewer columns (chosen by the person), or skip. Never a silent cut. A queued file's choice is checked
+  again just before its import, against what earlier imports left: a sample shrinks to fit; any other choice that no
+  longer fits waits for a new one.
 - Progress with counts; Cancel at any time stops the running query; completed tables and profiled columns are
   kept; a cancelled read keeps nothing; an incomplete table says why and offers to profile the rest. A query that
-  reaches the memory limit fails with its reason, never with a partial table.
+  reaches the memory limit fails with its reason, never with a partial table. After an import reaches the limit, the
+  file is offered again as a sample or fewer columns, sized for twice the estimate that proved too low.
 - Caps for later steps: 10,000 candidates a table, 50,000 scatter points, 40×40 or 13×13 heatmaps, 500 timeline
   events a figure, PNG canvases of at most 16.7 megapixels.
 - [Target] first figures within 10 s and complete processing within 2 min for 1M rows × 50 columns (250 MB) on the
