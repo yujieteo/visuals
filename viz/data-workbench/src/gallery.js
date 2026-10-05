@@ -97,6 +97,8 @@
       // The first run of a table is timed from the start of its import: the time to first figures a person waits.
       Object.assign(st, { plan, classes, ctx, status: "generating", reason: "", timing: { begun: st.timing ? null : table.begun ?? null, start: now(), first: null, done: null } });
       charts.set(table.name, st);
+      // Figures kept from the last run show at once: they are the first figures of this one.
+      if (st.candidates.some((c) => c.outcome === "valid")) st.timing.first = now();
       const todo = st.candidates.filter((c) => c.outcome === "pending");
       let done = 0, last = 0;
       for (const cand of todo) {

@@ -208,6 +208,9 @@ SELECT label, epoch(t)::DOUBLE AS t, p, q, raw, n, first, (SELECT count(*) FROM 
   (SELECT count(*) FROM d)::DOUBLE AS rows FROM ev ORDER BY ev.t, first, label LIMIT ${size} OFFSET ${(page - 1) * size}`;
   }
 
+  /** The number of point events once duplicates merge (label, time, precision and qualifier). */
+  const pointEventCount = (rel) => `WITH d AS (${rel}) SELECT count(*)::DOUBLE AS n FROM (SELECT DISTINCT label, t, p, q FROM d)`;
+
   /** One page of intervals in order of their start (an unknown start by its end); an end before its start is left out and counted. */
   function intervalEvents(rel, page, size) {
     const reversed = `s IS NOT NULL AND e IS NOT NULL AND NOT ${endsAfter("e", "pe", "s")}`;
@@ -224,5 +227,5 @@ FROM ev ORDER BY coalesce(ev.s, ev.e), first, label LIMIT ${size} OFFSET ${(page
     return `WITH d AS (${rel}) SELECT epoch(least(min(s), min(e)))::DOUBLE AS lo, epoch(greatest(max(${spanEnd("s", "ps")}), max(${spanEnd("e", "pe")})))::DOUBLE AS hi FROM d WHERE NOT (${reversed})`;
   }
 
-  return { measure, category, time, label, relation, numbers, histogram, bins2d, box, outliers, levels, kept, grouped, period, PLACEABLE, placeable, timeRange, count, points, intervalCheck, pointEvents, intervalEvents, intervalRange };
+  return { measure, category, time, label, relation, numbers, histogram, bins2d, box, outliers, levels, kept, grouped, period, PLACEABLE, placeable, timeRange, count, points, intervalCheck, pointEvents, pointEventCount, intervalEvents, intervalRange };
 });

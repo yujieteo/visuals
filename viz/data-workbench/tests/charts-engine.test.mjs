@@ -247,6 +247,8 @@ test("timelines hold 500 events a figure, split in time order", async () => {
   assert.ok(two.data.events[0].t >= one.data.events[499].t, "page 2 starts where page 1 ends");
   const three = await chart(t, "point-timeline", ["day", "label"], { page: 3 });
   assert.equal(three.data.events.length, 200);
+  const past = await chart(t, "point-timeline", ["day", "label"], { page: 9 });
+  assert.deepEqual([past.data.events.length, past.data.page.pages], [0, 3], "a page past the last says how many there are");
 });
 
 test("a precision column is read the same way by the profile and the chart: the partial-date reading", async () => {

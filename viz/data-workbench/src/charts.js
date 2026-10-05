@@ -359,9 +359,11 @@
         const rows = await query(ChartSql.pointEvents(r, page.page, page.size));
         const first = rows[0];
         if (!first) {
+          // A page past the last: the pages follow the events once duplicates merge, not the rows.
           const n = (await query(ChartSql.count(r)))[0].n;
           if (!n) return done(0);
-          return done(n, { events: [], page: { page: page.page, pages: Math.ceil(n / page.size), size: page.size, events: 0, merged: 0 }, panels: [{ facet: null }] });
+          const events = (await query(ChartSql.pointEventCount(r)))[0].n;
+          return done(n, { events: [], page: { page: page.page, pages: Math.max(1, Math.ceil(events / page.size)), size: page.size, events, merged: 0 }, panels: [{ facet: null }] });
         }
         const pages = Math.max(1, Math.ceil(first.events / page.size));
         if (first.merged) facts.notes.push(`${first.merged} event${first.merged === 1 ? "" : "s"} with the same label and date ${first.merged === 1 ? "merges" : "merge"} several rows, shown with a count (×n).`);

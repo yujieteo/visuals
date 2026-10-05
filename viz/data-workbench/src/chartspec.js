@@ -470,7 +470,8 @@
     const period = spec.transform.find((/** @type {any} */ t) => t.id === "period:x");
     const timeField = ctx.fields[spec.encoding.x?.field];
     if (period && timeField && !periodsFor(timeField.precision).includes(period.unit)) {
-      errors.push(`transform.period:x: ${timeField.name} is known to the ${timeField.precision === "year" ? "year" : "day"}, so it cannot be counted by ${period.unit}`);
+      const known = { year: "the year", mixed: "the year, month or day", day: "the day" }[/** @type {"year" | "mixed" | "day"} */ (timeField.precision)] ?? "the day";
+      errors.push(`transform.period:x: ${timeField.name} is known to ${known}, so it cannot be counted by ${period.unit}`);
     }
     const agg = spec.transform.find((/** @type {any} */ t) => t.id === "aggregate");
     if (agg?.fn === "sum" && !ctx.fields[spec.encoding.y?.field]?.additive) errors.push(`transform.aggregate: a sum needs ${spec.encoding.y?.field} marked additive by you`);
