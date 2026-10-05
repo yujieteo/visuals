@@ -127,6 +127,14 @@ test("identifiers against measures: names, leading zeros and dense unique runs m
   assert.equal(t.col("customer_id").identifier.repeats, 0);
   assert.equal(t.col("ticket").identifier.repeats, 0, "NA markers in an identifier column are not repeated identifiers");
   assert.ok(t.col("ticket").identifier.first.every((/** @type {any} */ r) => r.value !== "NA"));
+  const parents = await load("parents", encode(["parent_id", ...Array.from({ length: 40 }, (_, i) => (i % 4 === 0 ? "-1" : String(100 + i)))].join("\n")));
+  const pid = parents.col("parent_id");
+  assert.equal(pid.role, "identifier");
+  assert.deepEqual(pid.suggestions.map((/** @type {any} */ x) => x.id), ["parent_id::sentinel::-1"]);
+  assert.equal(pid.identifier.repeats, 9, "before approval, -1 repeats");
+  const column = parents.imported.columns.find((/** @type {any} */ c) => c.name === "parent_id");
+  const approved = await Profile.profileColumn(e.query, { table: "parents", rowColumn: parents.imported.rowColumn, column, override: pid.suggestions[0].change });
+  assert.equal(approved.identifier.repeats, 0, "an approved stand-in is not a repeated identifier");
 });
 
 test("approval: an approved correction changes the reading and is counted; the source table is unchanged", async () => {
