@@ -59,6 +59,8 @@
     log: [],
     seq: 0,
     open: new Set(),
+    /** Fields the person marked additive, by "table\u0000field": a sum of their values means something. */
+    additive: /** @type {Record<string, boolean>} */ ({}),
   };
   const budget = () => (store.budgetChoice === "auto" ? device.budget : Number(store.budgetChoice));
   const used = () => store.tables.reduce((a, t) => a + t.estimate, 0);
@@ -214,6 +216,7 @@
   }
 
   async function importOne(item) {
+    const begun = performance.now();
     const api = await ensureEngine();
     progress(`Reading ${item.fileName}`, 0, 0);
     const sample = item.choice === "sample" ? item.decision.sample : null;
@@ -243,7 +246,7 @@
     const table = {
       name: item.name, kind: item.kind, example: item.example?.id ?? null,
       file: { name: item.fileName, bytes: item.bytes, sha256: "" }, estimate, imported, sample, columnsKept: columns,
-      columns: [], status: "profiling", reason: "", overrides: {}, dismissed: [],
+      columns: [], status: "profiling", reason: "", overrides: {}, dismissed: [], begun,
     };
     store.tables.push(table);
     store.queue = store.queue.filter((q) => q !== item);
@@ -289,6 +292,10 @@
     if (left && !table.reason) table.reason = store.stop ? "you cancelled" : "stopped";
     if (left) note({ kind: "cancelled", table: table.name, text: `Profiling of ${table.name} stopped (${table.reason}) after ${table.columns.length} of ${all.length} columns; ${plural(left, "column is", "columns are")} not profiled.` });
     refresh();
+    // Every valid chart follows, without a question or a choice: queued after this work, so it never runs inside it.
+    // Its time to the first figure counts from the import only when nothing stopped in between.
+    if (table.status === "complete") Gallery.generate(table);
+    else table.begun = null;
   }
 
   /** Re-profile one column after a change, keeping its place. */
@@ -322,6 +329,8 @@
       try {
         const after = await reprofile(table, colName);
         note({ kind, table: table.name, column: colName, text: `${text} ${effect(after)}` });
+        // A changed reading, role or unit changes the charts: bring them up to date.
+        if (Gallery.state(table.name) || table.status === "complete") Gallery.generate(table);
       } catch (error) {
         set(before);
         note({ kind: "failed", table: table.name, column: colName, text: `Not applied (${Engine.cancelled(error) ? "cancelled" : message(error)}): ${text}` });
@@ -360,6 +369,7 @@
       ["date", "Dates YYYY-MM-DD", "date", { kind: "date" }],
       ...Sql.DATE_FORMATS.map((f) => [`date-format:${f.id}`, `Dates ${f.label}`, "date", { kind: "date-format", format: f.id }]),
       ...Sql.DATE_FORMATS.map((f) => [`date-formats:${f.id}`, `Dates YYYY-MM-DD and ${f.label}`, "date", { kind: "date-formats", format: f.id }]),
+      ["date-partial", "Dates to the year, month or day (1850, c. 1850, 1850-03)", "date", { kind: "date-partial" }],
       ["datetime", "Date-times without a zone", "datetime", { kind: "datetime" }],
       ["datetime-zoned", "Date-times with a zone offset", "datetime", { kind: "datetime-zoned" }],
       ["time", "Times of day", "time", { kind: "time" }],
@@ -405,6 +415,7 @@
     const api = await ensureEngine();
     await api.query(`DROP TABLE ${Sql.ident(table.name)}`);
     store.tables = store.tables.filter((t) => t !== table);
+    Gallery.drop(table.name);
     if (store.selected === table.name) store.selected = store.tables[0]?.name ?? "";
     note({ kind: "removed", table: table.name, text: `Removed ${table.name} from the workbench; the file itself is unchanged.` });
     refresh();
@@ -455,6 +466,7 @@
     const base = {
       text: "as written", source: "the file's own type", integer: "whole numbers", "integer-sep": 'whole numbers, "," thousands separators removed',
       decimal: "decimals", "decimal-sep": 'decimals, "," thousands separators removed', boolean: "yes or no", date: "YYYY-MM-DD",
+      "date-partial": "dates to the year, month or day as written, with qualifiers kept",
       datetime: "ISO date-times, zone unknown", "datetime-zoned": "ISO date-times with offsets, in UTC", time: "times of day",
     }[r.kind];
     const layout = (id) => Sql.DATE_FORMATS.find((f) => f.id === id)?.label ?? id;
@@ -469,6 +481,7 @@
     drawEngine();
     drawQueue();
     drawTables();
+    Gallery.draw();
     drawExamples();
     drawLog();
   }
@@ -784,10 +797,18 @@
         })),
         failedColumns: t.columns.filter((c) => c.failed).map((c) => ({ name: c.name, error: c.failed })),
         notProfiled: t.imported.columns.filter((c) => c.name !== t.imported.rowColumn && !t.columns.some((p) => p.name === c.name)).map((c) => c.name),
+        charts: Gallery.summary(t.name),
       })),
       log: store.log.map((e) => e.text),
     };
   }
+
+  /* ---------- charts ---------- */
+
+  const Gallery = window.DWGallery.mount({
+    store, h, byId, fmtInt, plural, busy, exclusive, progress, refresh, ensureEngine, note, message, cancel,
+    cancelled: Engine.cancelled, outOfMemory: Engine.outOfMemory,
+  });
 
   /* ---------- start ---------- */
 
@@ -818,6 +839,7 @@
       drop.addEventListener("drop", (ev) => { ev.preventDefault(); drop.classList.remove("over"); addFiles([...(ev.dataTransfer?.files ?? [])]); });
       byId("import").addEventListener("click", importQueue);
       byId("cancel").addEventListener("click", cancel);
+      Gallery.bind();
       byId("budget").addEventListener("change", (ev) => { store.budgetChoice = ev.target.value; refresh(); });
       const select = byId("budget");
       select.append(...Preflight.CHOICES.map((b) => h("option", { value: String(b), text: Preflight.bytes(b) })));
@@ -831,6 +853,18 @@
         execute: async (/** @type {any} */ input) => {
           const t = snapshot().tables.find((x) => x.name === input?.table);
           return { content: [{ type: "text", text: t ? JSON.stringify(t, null, 2) : `No table named ${JSON.stringify(input?.table)}; get_tables lists them.` }] };
+        } },
+      { name: "get_candidates", description: "Return one table's chart candidates of grammar v1: the search scope (fields of each class, the count formula), the accounting (valid, excluded, failed, incomplete) and each candidate's id, kind, fields, outcome and reason, 1,000 at a time from offset. Given an id, return that candidate's chart specification. Never returns rows or plotted points.",
+        inputSchema: { type: "object", properties: {
+          table: { type: "string", description: "The table name, as get_tables lists it" },
+          outcome: { type: "string", enum: ["valid", "excluded", "failed", "incomplete", "pending"], description: "Only candidates with this outcome" },
+          offset: { type: "integer", minimum: 0, description: "Skip this many candidates of the list" },
+          id: { type: "string", description: "One candidate's id: return its specification" },
+        }, required: ["table"], additionalProperties: false }, annotations: { readOnlyHint: true },
+        execute: async (/** @type {any} */ input) => {
+          const out = tableOf(input?.table) ? Gallery.candidates(input.table, { outcome: input?.outcome, offset: input?.offset, id: input?.id }) : undefined;
+          const text = out ? JSON.stringify(out, null, 2) : !tableOf(input?.table) ? `No table named ${JSON.stringify(input?.table)}; get_tables lists them.` : input?.id ? `No candidate ${JSON.stringify(input.id)} in ${input.table}.` : `The charts of ${input.table} are not generated yet.`;
+          return { content: [{ type: "text", text }] };
         } },
     ],
     commands: [

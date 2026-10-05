@@ -54,7 +54,8 @@ def fetch(cache=DEFAULT_CACHE, quiet=False, entries=None):
                 data = response.read()
             if len(data) != entry["bytes"] or hashlib.sha256(data).hexdigest() != entry["sha256"]:
                 sys.exit(f"runtime_files.py: {entry['url']} does not match its pin")
-            partial = path.with_suffix(".part")
+            # A name of this process's own, so checks that fetch at the same time never write one file together.
+            partial = path.with_name(f"{path.name}.{os.getpid()}.part")
             partial.write_bytes(data)
             partial.replace(path)
             if not quiet:
@@ -64,14 +65,23 @@ def fetch(cache=DEFAULT_CACHE, quiet=False, entries=None):
 
 
 def place(source, target):
-    """Hard-link (or copy) one cached file to its published place."""
+    """Hard-link (or copy) one cached file to its published place. The file appears whole and at once, so checks
+    that lay out the engine at the same time (node --test runs test files in parallel) never see a partial one."""
     target.parent.mkdir(parents=True, exist_ok=True)
-    if target.exists():
-        target.unlink()
+    temp = target.with_name(f".{target.name}.{os.getpid()}.part")
     try:
-        os.link(source, target)
+        os.link(source, temp)
     except OSError:
-        shutil.copyfile(source, target)
+        shutil.copyfile(source, temp)
+    os.replace(temp, target)
+
+
+def write(target, data):
+    """Write bytes to a file whole and at once, as place() does."""
+    target.parent.mkdir(parents=True, exist_ok=True)
+    temp = target.with_name(f".{target.name}.{os.getpid()}.part")
+    temp.write_bytes(data)
+    os.replace(temp, target)
 
 
 def stage(out, cache=DEFAULT_CACHE):
@@ -102,9 +112,8 @@ def node(cache=DEFAULT_CACHE):
     place(files["node/duckdb-node-blocking.cjs"], root / "dist" / "duckdb-node-blocking.cjs")
     place(files["runtime/duckdb-eh.wasm"], root / "dist" / "duckdb-eh.wasm")
     arrow = root / "node_modules" / "apache-arrow"
-    arrow.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(HERE / "vendor" / "apache-arrow" / "Arrow.esnext.min.js", arrow / "Arrow.esnext.min.js")
-    (arrow / "package.json").write_text('{"name": "apache-arrow", "version": "17.0.0", "main": "Arrow.esnext.min.js"}\n', encoding="utf-8")
+    write(arrow / "Arrow.esnext.min.js", (HERE / "vendor" / "apache-arrow" / "Arrow.esnext.min.js").read_bytes())
+    write(arrow / "package.json", b'{"name": "apache-arrow", "version": "17.0.0", "main": "Arrow.esnext.min.js"}\n')
     extension = "runtime/extensions/v1.5.4/wasm_eh/parquet.duckdb_extension.wasm"
     home = root / "home"
     place(files[extension], home / ".duckdb" / "extensions" / NODE_REPOSITORY.rsplit("/", 1)[1] / "v1.5.4" / "wasm_eh" / Path(extension).name)

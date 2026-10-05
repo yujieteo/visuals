@@ -315,7 +315,7 @@ step n]** with its evidence.
 | Step | Scope | Status |
 | --- | --- | --- |
 | 1 | Import and inspect: CSV and Parquet import, profiles, suspected errors, suggested corrections with approval, the resource preflight, progress and Cancel, built-in examples | built |
-| 2 | Charts and candidates: the chart specification and its validator, grammar v1, the candidate enumerator and its accounting, the SVG renderer and timelines, the gallery and edits | to come |
+| 2 | Charts and candidates: the chart specification and its validator, grammar v1, the candidate enumerator and its accounting, the SVG renderer and timelines, the gallery and edits | built |
 | 3 | Statistics and ranking: study metadata, test catalogue v1, families, Benjamini–Yekutieli, independence checks, ranking, redundancy, both lists and highlights | to come |
 | 4 | Publication figures: SVG, PDF and PNG writers, fonts, the General, Nature and Science presets, figure checks | to come |
 | 5 | Export package and beamdswitch: the one-operation zip, report.md, the JSON files, the manifest, deck.md, project save and reopen | to come |
@@ -341,9 +341,15 @@ step n]** with its evidence.
   release) by SHA-256 into the ignored `build/`, so the engine is exercised in CI, not only locally; the folder's
   browser checks stage the page with its engine and run in every CI browser project.
 - No runtime request leaves the folder; the page opens from the site, not from `file://`.
-- WebMCP: `get_metadata`, `get_state`, `get_markdown` (the kit), `get_tables`, `get_profile`; later steps add
-  `get_candidates` and `get_findings`. No tool returns rows; the page says that an agent the person connects can
-  read what the tools return.
+- WebMCP: `get_metadata`, `get_state`, `get_markdown` (the kit), `get_tables`, `get_profile`, and from step 2
+  `get_candidates` (the accounting, each candidate's outcome and reason, one specification by id); step 3 adds
+  `get_findings`. No tool returns rows or plotted points; the page says that an agent the person connects can read
+  what the tools return.
+- Charts (step 2): `src/grammar.js` (classes, candidates, the count), `src/chartspec.js` (the specification, its
+  JSON Schema, the rules, edits), `src/chartsql.js` (every chart query), `src/charts.js` (the fixed rules on the
+  data, one candidate's outcome), `src/render.js` (the scene graph in millimetres and its SVG), `src/gallery.js`
+  (the gallery, the full-size view and its edits). [grammar.md](grammar.md) documents grammar v1 and is published
+  beside the page.
 
 ### SQL dialect [Choice]
 
@@ -391,6 +397,11 @@ factor (flagged above 1). Custom SQL the controls cannot represent is kept verba
 - Corrections that change meaning (a date layout, a marker or sentinel as missing, a type, a role, a unit) are
   suggested and applied only after approval, each logged with its effect; "Return to the inferred reading" undoes
   a column's changes.
+- **[Changed in step 2]** A text column whose values are dates known to the year, the month or the day (`1850`,
+  `c. 1850`, `1851-03`, `1860?`, at least 95% of the values present) reads as dates with the reading "dates to the
+  year, month or day": each value keeps its precision and its qualifier as written, and orders by the first day of
+  its span. The plan's timeline rules need this precision; without it such columns read as text and no timeline
+  could keep "c. 1850" (tests/charts-engine.test.mjs, "timelines: dates known to the year or month").
 
 ### Finite grammar v1 [Choice] (step 2)
 
@@ -411,12 +422,47 @@ order is x. Count per table: 2q + c + t + 2·C(q,2) + 2qc + C(c,2) + tq + tc + t
 control only (a C field with at most 12 levels). Outcomes: valid, excluded (rule and reason), failed (error),
 incomplete (cancelled or resource limit). The grammar version is recorded in every specification.
 
+**[Built in step 2]** [grammar.md](grammar.md) holds every rule as built. Where the plan left a choice or changed:
+
+- **[Changed in step 2]** T also holds dates known only to the year or month (the reading above) and whole
+  numbers from 1000 to 2999 whose role is time (years). Times of day are excluded: the plan's T is dates and
+  date-times. A role decides before the type: an identifier is excluded, an event label on text is L, a category
+  or ordered category is C; numbers in another role (interval start, event label) are excluded with that reason.
+- **[Changed in step 2]** The plan's "timeline bindings" term is exact: tl point timelines and C(t,2)·l interval
+  timelines, each pair of time fields once; the start is the field whose role is interval start, else the earlier
+  column. An end's span counts in the 90% rule, so `1850` ends at or after `1850-06-01`.
+- Excluded in step 2: an invalid specification, no row with every field present, and the interval rule. The
+  ranking's rejections (fewer than 5 complete rows, zero variance) come with step 3.
+- Rows with a field missing (empty, a marker, a value that does not read) are left out of that chart and counted
+  on the figure; nothing is filled.
+- Other is drawn as "Other (k levels)", grey. Ordered categories (numbers, yes or no, dates, the role ordered
+  category) keep their value order; others are ordered by count. Bars of an unordered category are horizontal.
+- Box plots: whiskers to the most extreme values within 1.5 × IQR of the quartiles; at most 200 distinct values
+  beyond them are drawn a box, the rest counted.
+- **[Changed in step 2]** Periods: never finer than the values allow (a date has no hours; years only years);
+  weeks start on Monday; values with an offset are grouped in UTC. The plan's cap of 500 periods had no unit
+  beyond the year, so a span of more than 500 years is counted by decade, century or millennium, stated on the
+  figure (tests/charts-engine.test.mjs, "a span of more than 500 years"). With dates of mixed precision, a unit is used
+  only when at most 5% of the values are too coarse to place in it, and those are counted on the figure, not
+  drawn; otherwise a year-only value would sit in January.
+- Facets: one panel a level on shared scales; timelines are not faceted.
+
 ### Chart specification [Choice] (step 2)
 
 JSON with data (table id), transform (ordered transformation record ids), encoding, scale, layout (size in mm,
 facets) and annotation (title, labels, units only from the source or the person, caption, notes, findings). A JSON
 Schema validates each specification before it is drawn; the same specification drives generation, comparison,
 editing and export.
+
+**[Built in step 2]** Version 1 (`src/chartspec.js`, `SCHEMA`): `transform` holds the chart's own operations as
+records with ids (complete, bin, bin2d, box, top, period, aggregate, sample, merge-duplicates, order-check, page);
+step 6 adds references to table transformation records. `edits` lists each change the person made. After the
+schema, the rules are checked: each channel's field and class, a log scale only over values above 0, bars from
+zero on a linear axis, a facet of at most 12 levels not already encoded, a sum only of a field the person marked
+additive. Figures are 180 mm wide (the general preset's width) and 110 mm tall (timelines 140 mm), drawn as a scene
+graph in millimetres and written as SVG with every label a `<text>`; step 4 writes the same scene graph as PDF and
+PNG. They are white paper with one blue for marks and a light-to-dark blue for counts (the dataviz reference
+palette's light steps), text at least 6 pt and lines at least 0.5 pt, in both page themes, as they will export.
 
 ### Ranking [Choice] (step 3)
 
@@ -494,6 +540,10 @@ datasets per seed and 3 fixed seeds.
   unknown" and never shifted; date-only values stay dates. Precision (year, month, day, time) and qualifiers (c.,
   circa, ~, ?) are kept; a year-only date draws as a hatched span; no invented day. A missing end or start is drawn
   open to the axis edge and labelled. The same label at the same date merges into one mark with a count.
+  **[Built in step 2]** A month-only date is a hatched span over its month too; qualified dates draw open or dashed;
+  the merge key is label, date, precision and qualifier; a row whose end comes before its start is counted and not
+  drawn; labels that find no room are counted and their marks drawn in a strip at the bottom; 500 events a figure,
+  in time order, with the next page in the full-size view.
 - Publication figures: a scene graph to SVG (text as `<text>`), PDF (pdf-lib with fontkit, TrueType subsets as real
   text, MediaBox in mm) and PNG (canvas at the set dpi, pHYs set). An Arial-metric open font (Liberation Sans or
   Arimo) is vendored with its licence; the person may load their own. Presets: General (180 mm, 300 dpi, text at
@@ -521,6 +571,23 @@ datasets per seed and 3 fixed seeds.
   ratings and scores.
 - The preflight refusal (unit and in every browser project), a seeded sample's determinism, the memory estimate
   against what the engine holds, the memory limit, Cancel while reading, and a first import benchmark.
+
+### Verification fixtures (step 2 part)
+
+- Exact candidate sets with outcomes and reasons: `tests/fixtures/small.csv` (2 Q, 1 C, 1 T, 1 identifier, 1 label:
+  16 candidates, all valid) and `tests/fixtures/timeline.csv` (4 T, 1 L: 14 candidates, 4 interval timelines
+  excluded by the 90% rule), with `*-candidates.json`; the planted example (155 candidates, all valid).
+- Accounting: the enumerated set equals the formula for many class counts, every candidate gets one outcome, and
+  candidates beyond the 10,000 cap are counted by kind (tests/charts-rules.test.mjs).
+- Timelines: point events, intervals, dates known to the year or month with qualifiers, missing starts and ends,
+  an end before its start, duplicates merged with their count, the same label at two dates, offsets ordered in UTC
+  and naive values unshifted, 1,200 events in three figures (tests/charts-engine.test.mjs).
+- Rules on the engine: the log rule and Freedman–Diaconis bins on the log axis, 29 levels and Other, a seeded
+  scatter sample of 50,000, means with their t intervals against direct SQL, a sum of an additive field, facets.
+- Time to the first figures, measured on 2026-10-06 on the reference device (Apple M5, 16 GB): the planted example
+  (2,000 rows × 15 columns) shows its first figure 1.3 s after the click in Chrome (Playwright Chromium) and all 155
+  candidates after 2.3 s; in Node with the pinned engine, 100,000 rows × 15 columns give the first figure 2.5 s
+  after the import began and all 160 candidates after 26 s. The 1 million row target is step 7's.
 
 ### Built-in examples (step 1)
 

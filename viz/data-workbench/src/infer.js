@@ -4,7 +4,8 @@
  * agreed ones of spec.md ("Types and semantic roles"):
  *
  *   type     the most specific reading that at least 95% of the values present fit (THRESHOLD), in the order
- *            boolean, integer, decimal, ISO date, ISO date-time, time, one other date layout; else categorical
+ *            boolean, integer, decimal, ISO date, ISO date-time, time, one other date layout, dates known to the
+ *            year, month or day (1850, c. 1850, 1850-03); else categorical
  *            (at most 1,000 levels and fewer than half the values distinct) or text. The share is the uncertainty.
  *   role     measure, identifier, category, ordered category, time, event label, interval start, interval end or
  *            unknown, each with its reasons. A storage type alone never makes a measure.
@@ -105,6 +106,11 @@
     if (layouts.length === 1) {
       const r = pick("date", { kind: "date-format", format: layouts[0].id }, layouts[0].n);
       r.notes.push(`Dates are read in the layout ${layouts[0].label}, the only layout that fits.`);
+      return r;
+    }
+    if (!layouts.length && share(s.partial_date) >= THRESHOLD) {
+      const r = pick("date", { kind: "date-partial" }, s.partial_date);
+      r.notes.push("Dates are known to the year, the month or the day, as written: each keeps its precision, and qualifiers such as c. and ? are kept.");
       return r;
     }
     const text = textType(s, valued, base);

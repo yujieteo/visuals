@@ -50,6 +50,11 @@
     zoned: "[0-9]{4}-[0-9]{2}-[0-9]{2}[T ][0-9]{2}:[0-9]{2}(:[0-9]{2}([.][0-9]+)?)?(Z|[+-][0-9]{2}(:?[0-9]{2})?)",
     time: "[0-9]{1,2}:[0-9]{2}(:[0-9]{2}([.][0-9]+)?)?",
     uuid: "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}",
+    // A date known to the year, the month or the day, with an optional qualifier before it (c., ca., circa, about,
+    // approx., ~) or a question mark after it: 1850, c. 1850, 1850-03, 1850-03-12?. The precision is kept.
+    partial: "((?i:c[.]|ca[.]|circa|about|approx[.]?)\\s*|~\\s*)?[0-9]{4}(-[0-9]{2}(-[0-9]{2})?)?[?]?",
+    partialCore: "[0-9]{4}(-[0-9]{2}(-[0-9]{2})?)?",
+    partialQualified: "^((?i:c[.]|ca[.]|circa|about|approx)|~)|[?]$",
     // A value that starts like any date, date-time or time the workbench reads (a partial match, from the start).
     dateLike: "^([0-9]{1,4}[-/.][0-9]{1,2}[-/.][0-9]{1,4}|[0-9]{1,2} [A-Za-z]{3} [0-9]{4}|[A-Za-z]{3} [0-9]{1,2} [0-9]{4}|[0-9]{1,2}:[0-9]{2})",
   };
@@ -156,6 +161,7 @@
    * How a column's values are read for analysis. kind "source" uses a typed source value as it is (Parquet);
    * the others read text: "integer", "integer-sep" (thousands separators ","), "decimal", "decimal-sep",
    * "boolean", "date" (ISO), "date-format" (one layout of DATE_FORMATS), "date-formats" (ISO and one layout),
+   * "date-partial" (dates known to the year, month or day, with qualifiers such as c. and ?),
    * "datetime" (ISO, no zone), "datetime-zoned" (ISO with Z or an offset, ordered in UTC), "time", "text".
    * missingText and missingNumbers are values that approval turned into missing values.
    * @typedef {{ kind: string, format?: string, missingText?: string[], missingNumbers?: number[] }} Reading
@@ -166,7 +172,7 @@
     switch (reading.kind) {
       case "integer": case "integer-sep": case "decimal": case "decimal-sep": return "DOUBLE";
       case "boolean": return "BOOLEAN";
-      case "date": case "date-format": case "date-formats": return "DATE";
+      case "date": case "date-format": case "date-formats": case "date-partial": return "DATE";
       case "datetime": return "TIMESTAMP";
       case "datetime-zoned": return "TIMESTAMPTZ";
       case "time": return "TIME";
@@ -195,12 +201,27 @@
         const f = formatOf(reading.format);
         return `CASE WHEN ${match(y, PATTERN.date)} THEN TRY_CAST(${y} AS DATE) WHEN ${match(y, f.shape)} THEN CAST(try_strptime(${y}, ${literal(f.format)}) AS DATE) END`;
       }
+      case "date-partial": {
+        // The first day of the year or month a value names, for order and summaries; the precision stays with the
+        // value as written (partialPrecision), so no day is invented in a chart.
+        const core = `regexp_extract(${y}, ${literal(PATTERN.partialCore)}, 0)`;
+        return `CASE WHEN ${match(y, PATTERN.partial)} THEN TRY_CAST(CASE length(${core}) WHEN 4 THEN ${core} || '-01-01' WHEN 7 THEN ${core} || '-01' ELSE ${core} END AS DATE) END`;
+      }
       case "datetime": return `CASE WHEN ${match(y, PATTERN.datetime)} AND NOT ${match(y, PATTERN.zoned)} THEN TRY_CAST(${y} AS TIMESTAMP) END`;
       case "datetime-zoned": return `CASE WHEN ${match(y, PATTERN.zoned)} THEN TRY_CAST(${y} AS TIMESTAMPTZ) END`;
       case "time": return `CASE WHEN ${match(y, PATTERN.time)} THEN TRY_CAST(${y} AS TIME) END`;
       default: return x;
     }
   }
+
+  /** The precision of a date-partial value as written: 'year', 'month' or 'day'. @param {string} column */
+  function partialPrecision(column) {
+    const core = `regexp_extract(trim(${ident(column)}), ${literal(PATTERN.partialCore)}, 0)`;
+    return `CASE length(${core}) WHEN 4 THEN 'year' WHEN 7 THEN 'month' ELSE 'day' END`;
+  }
+
+  /** Whether a date-partial value carries a qualifier (c., circa, ~, ?), as written. @param {string} column */
+  const partialQualified = (column) => `regexp_matches(trim(${ident(column)}), ${literal(PATTERN.partialQualified)})`;
 
   function formatOf(id) {
     const f = DATE_FORMATS.find((d) => d.id === id);
@@ -215,7 +236,7 @@
   }
 
   /* Readings whose values are not numbers: approved missing numbers (sentinels) never apply to them. */
-  const NOT_NUMERIC = ["text", "boolean", "date", "date-format", "date-formats", "datetime", "datetime-zoned", "time"];
+  const NOT_NUMERIC = ["text", "boolean", "date", "date-format", "date-formats", "date-partial", "datetime", "datetime-zoned", "time"];
 
   /** The value used for analysis: the parsed value, with approved missing text and numbers turned into NULL.
    * @param {string} column @param {Reading} reading */
@@ -250,6 +271,7 @@
   ${count(`lower(${y}) IN (${inList([...BOOLEAN_TRUE, ...BOOLEAN_FALSE])})`)} AS bool,
   ${count(`length(${y}) = 36 AND ${match(y, PATTERN.uuid)}`)} AS uuid,
   ${count(`regexp_matches(${y}, ${literal(PATTERN.dateLike)})`)} AS date_like,
+  ${count(match(y, PATTERN.partial))} AS partial_date,
   coalesce(min(length(${y})) FILTER (WHERE ${valued(column, true)}), 0)::DOUBLE AS len_min,
   coalesce(max(length(${y})) FILTER (WHERE ${valued(column, true)}), 0)::DOUBLE AS len_max,
   coalesce(avg(length(${y})) FILTER (WHERE ${valued(column, true)}), 0)::DOUBLE AS len_mean
@@ -444,7 +466,7 @@ SELECT (SELECT coalesce(sum(n - 1), 0) FROM c WHERE n > 1)::DOUBLE AS repeats, v
 
   return {
     FOLDER, MARKERS, BOOLEAN_TRUE, BOOLEAN_FALSE, PATTERN, DATE_FORMATS, SENTINELS,
-    ident, literal, setup, filePath, describeFile, importFile, csvDialect, csvRejects, csvRejectCount,
+    ident, literal, number, valued, present, partialPrecision, partialQualified, setup, filePath, describeFile, importFile, csvDialect, csvRejects, csvRejectCount,
     parquetSchema, parquetSize, parquetRows, dropTemp, describeTable, rowCount, readingType, parse, typed, formatOf,
     textStats, textDateStats, NO_DATES, typedStats, distinctCount, recount, readDistinct, failureDistinct, markerValues, readingCounts, failureExamples, impossibleDates, stageNumbers, dropNumbers, numericSummary, numericBins,
     robustOutliers, sentinelCounts, timeSummary, timeBins, topValues, duplicates, firstValues,
