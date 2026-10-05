@@ -1,0 +1,726 @@
+# 6. Scientific Modelling and Dimensional Analysis
+
+Specification version: 1.0  
+Date: 2026-10-05  
+Status: Agreed scope. Implementation requirements.
+
+## 1. Purpose and scope
+
+Help researchers derive, check, and compare physical models for heat transfer, fluid dynamics, aerodynamics, structural analysis, and coupled physics.
+
+Provide 3 tools through one shared model:
+
+1. Dimensionless Number Finder.
+2. Model Nondimensionalizer.
+3. Regime Map Builder.
+
+Support Buckingham Pi analysis, dominant balance, asymptotic analysis, stability analysis, and bifurcation analysis.
+
+Provide automatic calculations for declared model classes. Accept custom equations and state which calculations the tool supports.
+
+Require traceable derivations and reproducible hand calculations. Require evidence for physical claims and regime boundaries.
+
+Use ASD-STE100 for all descriptions, instructions, explanations, captions, errors, and narration. Preserve mathematical notation and technical names.
+
+## 2. Shared model
+
+Store these items in one versioned model:
+
+| Item | Required content |
+| --- | --- |
+| Purpose | Research question, observable, and intended calculation |
+| Variables | Symbols, meanings, dimensions, units, values or ranges, and allowed domains |
+| Equations | Governing equations, constitutive laws, closures, sources, and constraints |
+| Geometry | Domain, lengths, aspect ratios, interfaces, and coordinate system |
+| Conditions | Boundary conditions, initial conditions, and interface conditions |
+| Assumptions | Physical assumptions, mathematical assumptions, and their sources |
+| Scales | Reference values, characteristic scales, alternatives, and reasons for each choice |
+| Analyses | Dimensionless groups, transformed equations, reduced models, spectra, and solution branches |
+| Evidence | References, exact checks, numerical checks, uncertainty, and validity ranges |
+| History | Model version, input changes, derivation dependencies, and calculation settings |
+
+Give each variable, equation, assumption, derivation step, result, and evidence item a stable identifier.
+
+Link each result to its inputs and derivation. Invalidate dependent results after an input change. Preserve the previous version for comparison.
+
+Separate these result statuses:
+
+- Proposed interpretation.
+- Researcher-confirmed interpretation.
+- Exact dimensional or algebraic check.
+- Numerical check with stated tolerance.
+- Physical claim with cited evidence.
+- Unresolved or unsupported calculation.
+
+A dimensional check does not establish physical validity. A numerical check does not establish a mathematical proof.
+
+## 3. Model entry and validation
+
+Accept equations, variable tables, physical scales, and editable standard examples. Accept symbolic and numerical inputs.
+
+Show the interpreted variables, equations, geometry, and conditions before analysis. Require the researcher to confirm this interpretation.
+
+Check dimensions before any transformation. Identify undefined symbols, conflicting units, missing conditions, and incomplete constitutive laws.
+
+Distinguish absolute temperature from temperature difference. Convert affine units correctly before multiplication, division, or exponentiation.
+
+Preserve the physical meaning of dimensionless quantities, including angles, aspect ratios, fractions, and material parameters.
+
+Identify algebraic dependencies between inputs. Do not count constrained physical inputs as freely adjustable parameters.
+
+Require a declared domain for fractional powers, logarithms, and division. Identify zero or invalid reference scales.
+
+For each missing input, explain which calculation requires it. Preserve calculations that do not depend on that input.
+
+## 4. Dimensionless Number Finder
+
+### Inputs
+
+Require physical variables, their dimensions, and the quantity of interest. Accept known constraints and preferred reference variables.
+
+### Calculation
+
+Construct the dimension matrix $D$. Use one column per supplied variable and one row per base dimension.
+
+Calculate the exact rank $r$ and a basis for $\ker D$. For $n$ supplied variables, return $n-r$ independent monomial groups.
+
+State the assumptions of this calculation. Distinguish algebraic independence of group exponents from independent physical variation under constraints.
+
+Select $r$ repeating variables with independent dimension columns. Explain the selection. Let the researcher select another valid set.
+
+Use exact rational exponents when the input dimensions permit them. Show row reduction and the exponent equations.
+
+For each exponent vector $a$, require:
+
+$$
+D a=0,\qquad \Pi=\prod_{j=1}^{n}q_j^{a_j}.
+$$
+
+Verify the rank of the returned exponent basis. Show dimensional cancellation for every group.
+
+### Results
+
+Return a complete independent basis relative to the supplied variables. State that the basis is not unique.
+
+Suggest familiar groups when their definitions match the supplied variables. Preserve the exact definitions and characteristic lengths.
+
+Explain transformations between equivalent bases. Distinguish a recognized name from a confirmed physical interpretation.
+
+Identify quantities that the researcher must supply before a physical correlation is possible. Buckingham Pi analysis does not determine that correlation.
+
+## 5. Worked Buckingham Pi calculation
+
+Use the variables $h,k,\rho,\mu,c_p,U,L$ for a heat-transfer example. Assume positive reference quantities and no additional input constraints.
+
+| Symbol | Meaning | Dimension |
+| --- | --- | --- |
+| $h$ | Heat-transfer coefficient | $\mathsf{M}\mathsf{T}^{-3}\mathsf{\Theta}^{-1}$ |
+| $k$ | Thermal conductivity | $\mathsf{M}\mathsf{L}\mathsf{T}^{-3}\mathsf{\Theta}^{-1}$ |
+| $\rho$ | Density | $\mathsf{M}\mathsf{L}^{-3}$ |
+| $\mu$ | Dynamic viscosity | $\mathsf{M}\mathsf{L}^{-1}\mathsf{T}^{-1}$ |
+| $c_p$ | Specific heat capacity | $\mathsf{L}^{2}\mathsf{T}^{-2}\mathsf{\Theta}^{-1}$ |
+| $U$ | Reference speed | $\mathsf{L}\mathsf{T}^{-1}$ |
+| $L$ | Reference length | $\mathsf{L}$ |
+
+The dimension matrix has columns in that order:
+
+$$
+D=\begin{pmatrix}
+1&1&1&1&0&0&0\\
+0&1&-3&-1&2&1&1\\
+-3&-3&0&-1&-2&-1&0\\
+-1&-1&0&0&-1&0&0
+\end{pmatrix}.
+$$
+
+Choose $\rho,U,L,k$ as repeating variables. Their dimension columns form this square matrix:
+
+$$
+D_R=\begin{pmatrix}
+1&0&0&1\\
+-3&1&1&1\\
+0&-1&0&-3\\
+0&0&0&-1
+\end{pmatrix},\qquad \det D_R=-1.
+$$
+
+The determinant is nonzero, so the rank is $4$. Thus $n-r=7-4=3$.
+
+For each other variable $q$, set:
+
+$$
+\Pi_q=q\rho^a U^b L^c k^d.
+$$
+
+Solve these systems in the order mass, length, time, and temperature:
+
+| Variable | Exponent equations | Solution $(a,b,c,d)$ | Group |
+| --- | --- | --- | --- |
+| $h$ | $1+a+d=0$; $-3a+b+c+d=0$; $-3-b-3d=0$; $-1-d=0$ | $(0,0,1,-1)$ | $hL/k$ |
+| $\mu$ | $1+a+d=0$; $-1-3a+b+c+d=0$; $-1-b-3d=0$; $-d=0$ | $(-1,-1,-1,0)$ | $\mu/(\rho UL)$ |
+| $c_p$ | $a+d=0$; $2-3a+b+c+d=0$; $-2-b-3d=0$; $-1-d=0$ | $(1,1,1,-1)$ | $\rho c_pUL/k$ |
+
+The direct basis is $Nu,Re^{-1},Pe$. Use an equivalent familiar basis:
+
+$$
+Nu=\frac{hL}{k},\qquad
+Re=\frac{\rho UL}{\mu},\qquad
+Pr=\frac{\mu c_p}{k},\qquad Pe=Re\,Pr.
+$$
+
+Show dimensional cancellation:
+
+$$
+[Nu]=\frac{\mathsf{M}\mathsf{L}\mathsf{T}^{-3}\mathsf{\Theta}^{-1}}
+{\mathsf{M}\mathsf{L}\mathsf{T}^{-3}\mathsf{\Theta}^{-1}}=1,
+$$
+
+$$
+[Re]=\frac{\mathsf{M}\mathsf{L}^{-1}\mathsf{T}^{-1}}
+{\mathsf{M}\mathsf{L}^{-1}\mathsf{T}^{-1}}=1,
+\qquad
+[Pr]=\frac{\mathsf{M}\mathsf{L}\mathsf{T}^{-3}\mathsf{\Theta}^{-1}}
+{\mathsf{M}\mathsf{L}\mathsf{T}^{-3}\mathsf{\Theta}^{-1}}=1.
+$$
+
+Verify independence with the exponent columns for $Nu,Re,Pr$. The rows for $h,\rho,c_p$ form the identity matrix.
+
+These groups do not specify a universal relation $Nu=f(Re,Pr)$. Geometry, boundary conditions, and additional physics can require further inputs.
+
+## 6. Model Nondimensionalizer
+
+### Inputs
+
+Require the equations, closures, geometry, and conditions. Accept supplied scales or derive candidate scales from the model.
+
+### Scale selection
+
+Suggest characteristic lengths, speeds, times, temperature differences, pressures, stresses, displacements, and material reference values where applicable.
+
+Explain each scale through a physical mechanism or equation balance. Show competing scales when more than one mechanism is relevant.
+
+Do not hide a physical parameter through a scale choice. Show where that parameter enters the scales, coefficients, geometry, or conditions.
+
+Require nonzero scales. If a scale fails, suggest another valid scale and state the changed interpretation.
+
+### Derivation
+
+Define each dimensionless variable and its inverse transformation. Show the derivative transformations and substitution into every equation.
+
+Show the common factor that each equation removes. Rewrite constitutive laws, sources, boundary conditions, initial conditions, and interface conditions.
+
+List the remaining independent parameters, dimensionless functions, geometry ratios, and prescribed data. Distinguish parameters from coordinates and solution fields.
+
+Compare the parameters with the Buckingham Pi basis. Explain additional groups from geometry, conditions, or variables absent from the original list.
+
+Verify the reverse substitution. Recover the dimensional equations and conditions under the stated assumptions.
+
+## 7. Worked slab nondimensionalization
+
+Use a slab with half-thickness $L$, constant material properties, and uniform initial temperature $T_i$.
+
+Apply symmetry at the centre and convection at the outer surface. Assume $T_i\ne T_\infty$.
+
+$$
+\rho c_p\frac{\partial T}{\partial t}
+=k\frac{\partial^2T}{\partial x^2},\qquad 0<x<L,
+$$
+
+$$
+T_x(0,t)=0,\qquad
+-kT_x(L,t)=h\bigl(T(L,t)-T_\infty\bigr),\qquad
+T(x,0)=T_i.
+$$
+
+Define:
+
+$$
+\alpha=\frac{k}{\rho c_p},\qquad
+X=\frac{x}{L},\qquad
+\tau=\frac{\alpha t}{L^2},\qquad
+\theta=\frac{T-T_\infty}{T_i-T_\infty}.
+$$
+
+The derivative transformations are:
+
+$$
+T_t=(T_i-T_\infty)\frac{\alpha}{L^2}\theta_\tau,
+\qquad
+T_{xx}=\frac{T_i-T_\infty}{L^2}\theta_{XX}.
+$$
+
+Substitution and cancellation give:
+
+$$
+\theta_\tau=\theta_{XX},\qquad
+\theta_X(0,\tau)=0,\qquad
+-\theta_X(1,\tau)=Bi\,\theta(1,\tau),\qquad
+\theta(X,0)=1,
+$$
+
+$$
+Bi=\frac{hL}{k}.
+$$
+
+The remaining constant parameter is $Bi$. The Fourier number $Fo=\alpha t/L^2=\tau$ is the dimensionless time coordinate.
+
+Use this example to verify the equation, the surface sign, the initial condition, and the inverse transformation.
+
+## 8. Mathematical regime determination
+
+Use the dimensionless equations to derive regime criteria. Buckingham Pi analysis alone does not establish these criteria.
+
+### Dominant balance
+
+Compare complete terms with their estimated field and derivative scales. Do not compare coefficients alone.
+
+Derive candidate balances and reduced equations. Record the neglected terms and assumptions.
+
+State the inequalities that support each balance. Check the residual of the reduced solution in the full equations.
+
+Identify crossover regions where competing terms have comparable size. Label these as balance crossovers unless further evidence establishes a transition.
+
+### Asymptotic analysis
+
+Declare the small or large parameter and the limit path. State which other parameters remain fixed or vary with it.
+
+Derive the approximation order by order. Show the equations, conditions, and solvability requirements at each order.
+
+Check whether the reduction loses differential order or boundary conditions. Derive inner regions and matching conditions when required.
+
+Distinguish a formal expansion, an estimated remainder, and a proved error bound. State the spatial and temporal validity range.
+
+Check overlapping approximations against each other. Identify regions where no supported approximation meets the selected tolerance.
+
+### Stability analysis
+
+Define the base state, disturbance class, boundary conditions, and stability concept. Verify the base state before perturbation.
+
+Derive the perturbation equations and eigenvalue problem where applicable. Report growth rates, frequencies, eigenmodes, and numerical residuals.
+
+State whether the result concerns temporal, spatial, convective, absolute, energy, or static stability.
+
+For nonlinear stability claims, require a separate derivation or evidence. A linear stability result must retain its stated scope.
+
+### Bifurcation analysis
+
+Declare the nonlinear model, control parameters, branch seeds, and parameter domain.
+
+Calculate supported equilibrium or periodic branches. Use continuation where required. Mark folds, branch points, and candidate Hopf points with their evidence.
+
+Classify a bifurcation only when the required nonlinear conditions are checked. Show the amplitude equation or equivalent classification calculation where available.
+
+Identify stable branches, unstable branches, coexistence, and hysteresis where the evidence supports them.
+
+Report the branches that the calculation found. State search coverage. Do not claim exhaustive branch discovery without a separate completeness argument.
+
+## 9. Regime Map Builder
+
+### Inputs
+
+Require the dimensionless model, parameter domain, observable, and regime criteria. Accept cited correlations and imported numerical results with provenance.
+
+Enforce physical constraints during parameter exploration. Show derived or dependent parameters beside the independent controls.
+
+### Display
+
+Provide 1D diagrams and 2D slices of higher-dimensional spaces. Let the researcher select the axes and fixed parameters.
+
+Display all fixed parameters, assumptions, geometry, and conditions beside the map. Offer linear and logarithmic axes where valid.
+
+Support separate layers for balances, approximation error, stability, and bifurcations. Permit overlapping regions and multiple stable states.
+
+Distinguish these boundary types:
+
+| Boundary type | Required criterion |
+| --- | --- |
+| Balance crossover | Stated comparison of terms or mechanisms |
+| Approximation boundary | Stated error measure and tolerance |
+| Stability boundary | Stated stability test and neutral condition |
+| Bifurcation boundary | Stated branch condition and classification evidence |
+| Empirical boundary | Cited correlation, measured data, and validity range |
+
+Show uncertainty bands or unresolved regions when appropriate. Do not interpolate across unsupported regions as if they were established.
+
+Let the researcher select a point or boundary. Show its dimensional reconstruction, governing balance, derivation, evidence, and applicable reduced model.
+
+Show asymptotic limit paths and intersections. Identify limits that require coupled parameter changes.
+
+## 10. Declared model catalogue
+
+Include every family below in the first release. Each entry defines a bounded automatic model, not arbitrary support for the entire field.
+
+| Family | Initial automatic model | Standard example and main check |
+| --- | --- | --- |
+| Lumped thermal models | Uniform-temperature body with stated thermal capacity and linear surface exchange | Temperature decay and conservation of energy |
+| Transient conduction | Constant-property 1D slab with specified surface conditions | Symmetric slab with convection, exact modes, and asymptotic comparisons |
+| Advection–diffusion | Constant-property scalar transport with prescribed velocity in a declared domain | Channel transport, Péclet dependence, and conservation |
+| Radiation | Lumped thermal body with grey surface exchange against a prescribed enclosure | Nonlinear temperature balance, equilibrium, and local stability |
+| Fins and extended surfaces | Constant-section 1D fin with stated surface exchange and tip conditions | Temperature profile, fin efficiency, and base heat flow |
+| Multilayer conduction | 1D layers with declared contact resistances and material properties | Temperature jumps, heat continuity, and resistance limits |
+| Heat exchangers | Constant-property parallel-flow and counterflow models with stated inlet conditions | Effectiveness, heat balance, and equal capacity rates |
+| Phase change | One-phase and declared two-phase Stefan models | Interface position, similarity solution, and latent-energy balance |
+| Viscous heat generation | Plane Couette flow with Newtonian viscosity and stated thermal conditions | Dissipation, temperature profile, and total energy balance |
+| Thermocapillary heat transport | Laminar layer with a declared free surface and thermal gradient | Tangential stress, flow direction, and coupled heat transport |
+| Condensation | Laminar film on a vertical wall under declared assumptions | Film thickness, heat flux, and latent-energy balance |
+| Boiling correlations | Named correlations for stated fluids, surfaces, pressures, and phase regimes | Reference data and strict validity-range checks |
+| Radiation in a medium | 1D grey absorbing slab with declared optical properties and boundary radiation | Radiative-transfer reference and optical-thickness limits |
+| Internal viscous flow | Newtonian channel and pipe models with stated flow and thermal conditions | Poiseuille flow and a declared heat-transfer example |
+| Buoyancy convection | Boussinesq layer with declared geometry and thermal conditions | Rayleigh–Bénard onset and nonlinear branches |
+| Free-surface flow | 1D shallow-water model with a declared bed, wet domain, and admissible boundary data | Subcritical and supercritical flow, with a hydraulic-jump check |
+| Compressible nozzle flow | Quasi-1D ideal-gas model with declared area and thermodynamic assumptions | Sonic condition, mass-flow maximum, and conservation |
+| Boundary layers | Steady laminar boundary layer with a declared outer flow and wall conditions | Flat-plate similarity solution and inner–outer scale consistency |
+| External aerodynamic flow | 2D incompressible potential flow for declared simple geometries and thin-airfoil cases | Surface pressure, lift, and stated viscous limits |
+| Beams and columns | Linear Euler–Bernoulli beam and Euler column with declared supports and loads | Deflection, critical load, and eigenmodes |
+| Plates and shells | Linear thin rectangular plate and a separate axisymmetric cylindrical-shell model | Pressure response and reference solutions under declared supports |
+| Vibration | Linear damped oscillator and discretized beam modes | Natural frequencies, damping, and frequency response |
+| Nonlinear buckling | Perfect and imperfect nonlinear column models with declared supports and load control | Branch continuation, critical load, and symmetry checks |
+| Conjugate heat transfer | Declared fluid–solid channel with interface continuity of temperature and heat flux | Interface balances and mesh convergence |
+| Thermoelasticity | Small-strain elastic rod and plate with prescribed thermal fields or declared thermal coupling | Free expansion, constrained thermal stress, and energy checks |
+| Fluid–structure interaction | Reduced airfoil section with pitch, plunge, and a declared aerodynamic model | Modal damping, flutter onset, and a convergence check |
+
+Require a model declaration for each entry:
+
+- Exact equations, closures, geometry, and supported conditions.
+- Parameter domain and physical assumptions.
+- Supported symbolic and numerical operations.
+- Applicable mathematical analyses and explicit limitations.
+- Standard example, reference result, and acceptance tolerances.
+- Solver, discretization, convergence criteria, and reproducibility settings.
+
+Provide all 4 mathematical analysis methods across the catalogue. State which methods apply to each model and why.
+
+An absent bifurcation is not a failed feature. An unsupported nonlinear calculation must not appear as a confirmed result.
+
+Treat turbulence, shocks, dry fronts, contact, plasticity, damage, and arbitrary 3D coupled problems as separate declarations when required.
+
+Thermal contact resistance is included in multilayer conduction. Mechanical contact requires a separate structural declaration.
+
+### Heat-transfer examples
+
+Use multiple examples per heat-transfer mechanism. The slab is one conduction example, not the complete thermal test suite.
+
+| Example | Dimensionless content | Required check |
+| --- | --- | --- |
+| Lumped body with convection | $Bi$, dimensionless time, and temperature ratio | Derive the decay time and compare with a spatial model |
+| Transient slab | $Bi$, $Fo$, and normalized temperature | Recover the surface conditions and reference modes |
+| Transient cylinder | Radius-based $Bi$, $Fo$, and geometry ratios | Recover the cylindrical diffusion operator and reference solution |
+| Transient sphere | Radius-based $Bi$ and $Fo$ | Recover the spherical diffusion operator and reference solution |
+| Multilayer wall | Conductivity ratios, thickness ratios, and normalized contact resistance | Verify heat continuity and interface temperature jumps |
+| Solid with volumetric heat generation | $q'''L^2/(k\Delta T)$ and boundary parameters | Verify the source term and total heat balance |
+| Straight fin | $mL$, transverse $Bi$, and geometry ratios | Recover temperature, base heat flow, and efficiency |
+| Forced convection over a plate | Local and mean $Nu$, $Re$, $Pr$, and $Pe$ | Preserve the length and heat-transfer definitions |
+| Forced convection in a tube | $Nu$, $Re$, $Pr$, and entrance-scale ratios | Separate wall-temperature and wall-flux conditions |
+| Natural convection at a wall | $Gr$, $Ra$, $Pr$, and orientation | Verify buoyancy scaling and the correlation domain |
+| Natural convection in an enclosure | $Ra$, $Pr$, aspect ratio, and thermal conditions | Verify the conductive base state and onset criterion |
+| Mixed convection | Consistent $Re$, $Gr$, $Ri$, and gravity direction | Recover forced and buoyancy limits |
+| Parallel-flow heat exchanger | $NTU$, $C_r$, and effectiveness | Verify equal heat loss and gain |
+| Counterflow heat exchanger | $NTU$, $C_r$, and effectiveness | Recover the equal-capacity-rate limit |
+| Surface radiation | Emissivity, view factors, and absolute temperature ratios | Verify reciprocal exchange and energy balance |
+| Combined convection and radiation | Radiation ratio and temperature ratio | Verify the full nonlinear balance and linearization limit |
+| Radiation in an absorbing slab | Optical thickness and boundary temperature ratios | Compare with a radiative-transfer reference |
+| Melting or solidification front | Phase-specific $Ste$, conductivity ratios, and diffusivity ratios | Verify interface motion and latent-energy balance |
+| Laminar film condensation | Declared sensible-to-latent ratio and film-flow parameters | Recover the reference film and heat flux |
+| Pool-boiling correlation | Correlation-specific groups and fluid-property ratios | Enforce the fluid, surface, pressure, and phase limits |
+| Couette flow with viscous heat generation | $Ec$, $Br$, and $Pr$ | Recover the zero-dissipation limit and energy balance |
+| Thermocapillary flow | $Ma_T$, $Pr$, geometry ratios, and surface thermal conditions | Verify tangential stress and its sign |
+| Conjugate fluid–solid heat transfer | Fluid $Pe$, solid-to-fluid conductivity ratio, and geometry ratios | Verify interface temperature and heat-flux continuity |
+
+Declare automatic conduction examples for the slab, cylinder, sphere, multilayer wall, volumetric source, and constant-section fin.
+
+For each convection example, declare either a governing-equation model or a named correlation. State which result type the example supplies.
+
+For correlation examples, reproduce the Pi calculation from the declared variable set. Preserve the empirical constants and their source separately.
+
+### Heat-transfer definitions and scale conventions
+
+Store each group as a formula with explicit reference quantities. Do not identify groups by name alone.
+
+Use these definitions where the declared model supports them:
+
+$$
+\alpha=\frac{k}{\rho c_p},\qquad \nu=\frac{\mu}{\rho},\qquad
+Nu=\frac{hL}{k_f},\qquad Bi=\frac{hL_c}{k_s},\qquad
+Fo=\frac{\alpha_s t}{L_c^2}.
+$$
+
+$$
+Re=\frac{UL}{\nu},\qquad Pr=\frac{\nu}{\alpha_f},\qquad
+Pe=Re\,Pr,\qquad St_h=\frac{h}{\rho c_pU}=\frac{Nu}{Re\,Pr}.
+$$
+
+$$
+Gr=\frac{g\beta\Delta T L^3}{\nu^2},\qquad
+Ra=Gr\,Pr,\qquad
+Ri=\frac{Gr}{Re^2}=\frac{g\beta\Delta T L}{U^2}.
+$$
+
+$$
+NTU=\frac{U_{HX}A}{C_{\min}},\qquad
+C_r=\frac{C_{\min}}{C_{\max}},\qquad
+C=\dot m c_p,\qquad
+\varepsilon_{HX}=\frac{\dot Q}{C_{\min}(T_{h,in}-T_{c,in})}.
+$$
+
+$$
+Ste=\frac{c_p\Delta T}{\ell},\qquad
+Ec=\frac{U^2}{c_p\Delta T},\qquad
+Br=\frac{\mu U^2}{k_f\Delta T}=Pr\,Ec.
+$$
+
+$$
+Ma_T=\frac{|\mathrm d\gamma/\mathrm dT|\,|\Delta T| L}{\mu\alpha_f},\qquad
+\tau_{opt}=\kappa_a L.
+$$
+
+Here $k_f$ and $k_s$ refer to fluid and solid conductivity. The symbols $\gamma$ and $\kappa_a$ denote surface tension and absorption coefficient.
+
+The symbol $U$ denotes speed. The symbol $U_{HX}$ denotes the overall heat-transfer coefficient.
+
+Use distinct symbols for the convection coefficient, latent heat, specific enthalpy, emissivity, and heat-exchanger effectiveness.
+
+State the phase and temperature interval for $Ste$. Record the exact Jakob-number convention when a selected source uses that name.
+
+Declare whether $\Delta T$ is a positive scale or a signed difference. Preserve physical signs in the equations and regime criteria.
+
+State the Biot length. Distinguish $L_c=V/A_s$ from the radius or half-thickness in a spatial solution.
+
+For $Ri$, use consistent lengths, fluid properties, temperature differences, and reference velocity. Distinguish bulk Richardson number from gradient Richardson number.
+
+For $Nu$ and $St_h$, state whether the quantities are local or averaged. Use compatible definitions in algebraic identities.
+
+Enforce $Pe=RePr$, $Ra=GrPr$, and $Br=PrEc$ when their definitions share the same reference properties.
+
+Do not provide independent controls for algebraically dependent groups. Recalculate derived groups after every parameter change.
+
+For radiation, use absolute temperatures. State the reference temperature and retain the temperature ratio in the nonlinear model.
+
+Compare surface radiation with convection or conduction through a declared coefficient ratio. Include the linearization factor when the model uses a linear approximation.
+
+Apply an optically thick radiation approximation only within its declared assumptions. Preserve the full radiative-transfer reference for comparison.
+
+Preserve the sign of the surface-tension derivative separately from the positive $Ma_T$ magnitude.
+
+For boiling and condensation, record pressure, fluid, orientation, surface condition, and phase regime. Reject extrapolation outside the selected correlation domain.
+
+### Additional hand-calculation example: straight fin
+
+Assume a constant-section fin with constant conductivity, uniform surface convection, a prescribed base temperature, and an insulated tip.
+
+Use $A_c$ for cross-sectional area and $P$ for exposed perimeter. Let $\Delta T=T_b-T_\infty\ne0$.
+
+$$
+kA_cT_{xx}-hP(T-T_\infty)=0,\qquad
+T(0)=T_b,\qquad T_x(L)=0.
+$$
+
+Define:
+
+$$
+X=\frac{x}{L},\qquad
+\theta=\frac{T-T_\infty}{\Delta T},\qquad
+\lambda=mL,\qquad m^2=\frac{hP}{kA_c}.
+$$
+
+Show the dimension of $m^2$:
+
+$$
+[m^2]=\frac{(\mathrm W\,\mathrm m^{-2}\,\mathrm K^{-1})(\mathrm m)}
+{(\mathrm W\,\mathrm m^{-1}\,\mathrm K^{-1})(\mathrm m^2)}
+=\mathrm m^{-2}.
+$$
+
+Thus $\lambda$ is dimensionless. Substitution gives:
+
+$$
+\theta_{XX}-\lambda^2\theta=0,\qquad
+\theta(0)=1,\qquad\theta_X(1)=0.
+$$
+
+Solve and check the conditions:
+
+$$
+\theta(X)=\frac{\cosh[\lambda(1-X)]}{\cosh\lambda},\qquad
+\frac{\dot Q L}{kA_c\Delta T}=\lambda\tanh\lambda,
+\qquad \eta_f=\frac{\tanh\lambda}{\lambda}.
+$$
+
+For the supplied variables $\dot Q,k,h,P,A_c,L,\Delta T$, the time row equals $-3$ times the mass row.
+
+The mass, length, and temperature rows for $k,L,\Delta T$ form a matrix with determinant $1$. Thus the rank is $3$.
+
+The supplied variable set therefore has $7-3=4$ independent groups.
+
+One complete basis is:
+
+$$
+\frac{\dot Q L}{kA_c\Delta T},\qquad
+\frac{hPL^2}{kA_c},\qquad
+\frac{PL}{A_c},\qquad
+\frac{A_c}{L^2}.
+$$
+
+The declared 1D equation combines some geometric information into $\lambda$. Explain this reduction separately from the complete Pi basis.
+
+Check the limits $\lambda\to0$ and $\lambda\to\infty$. Verify the base heat flow against total surface heat loss.
+
+Derive the transverse-conduction validity condition separately. A solution of the 1D fin equation does not establish that condition.
+
+## 11. Initial acceptance suite
+
+Retain the 4 agreed anchor tests:
+
+These anchor tests do not replace the expanded heat-transfer suite.
+
+| Test | Required results |
+| --- | --- |
+| Transient slab conduction | Hand derivation, dimensionless conditions, reference temperature solution, and approximation error map |
+| Rayleigh–Bénard convection | Dimensionless equations, base state, neutral curve, and a nonlinear branch calculation under stated conditions |
+| Compressible nozzle flow | Conservation derivation, dimensionless parameters, sonic critical condition, and mass-flow check |
+| Euler column buckling | Dimensionless load, critical eigenvalue, mode, and explicit separation from nonlinear post-buckling claims |
+
+For nonlinear buckling, supply the nonlinear model before branch classification. A linear critical-load calculation does not determine the finite branch amplitude.
+
+For flutter, separate linear onset from nonlinear oscillation amplitude. Require a nonlinear model for the latter claim.
+
+Add at least one reproducible acceptance example for every other catalogue entry. The release requires all entries to pass their declared checks.
+
+Do not use one universal transition threshold. Fix the geometry, conditions, model, observable, and criterion for each reference result.
+
+## 12. Hand calculations and traceability
+
+Provide a complete hand-calculation report for every standard example.
+
+For custom calculations, show the applicable symbolic steps and the numerical procedure. Preserve an explicit unsupported status when a step cannot be derived.
+
+Show these items:
+
+1. Physical setup and assumptions.
+2. Variable and dimension tables.
+3. Dimension matrix, row reduction, rank, and nullspace basis.
+4. Repeating variables and exponent equations.
+5. Dimensional cancellation and independence checks.
+6. Scale choices and derivative transformations.
+7. Dimensionless equations and all conditions.
+8. Regime derivation, reduced equations, and validity conditions.
+9. Stability or bifurcation calculations where applicable.
+10. Reference checks, numerical tolerances, and unresolved claims.
+
+Label the reason for every step. Link the step to its assumptions and evidence.
+
+Distinguish exact symbolic work from numerical approximation. For numerical work, supply a small worked example and reproducible settings.
+
+Do not describe a numerical spectrum or mesh calculation as a complete hand calculation.
+
+## 13. Reports and Beamdswitch
+
+Generate the interactive view, full Markdown report, and Beamdswitch deck from the same model version and derivation record.
+
+Use the Beamdswitch report structure:
+
+| Section | Required content |
+| --- | --- |
+| Set-up | Question, model, variables, units, assumptions, geometry, and conditions |
+| Method | Pi derivation, scale choices, mathematical analysis, and numerical procedure |
+| Results | Groups, dimensionless equations, reduced models, spectra, branches, and regime maps |
+| Checks and takeaway | Exact checks, numerical checks, evidence, limits, and the final key conclusion |
+
+Provide narration for every frame. Use plain spoken prose for narration. Keep equations in the frame body.
+
+End the Checks section with a key frame. Preserve the existing shared Beamdswitch template.
+
+Show the same parameter values, definitions, and result statuses in every output. Include the full hand calculation in the report or deck appendix.
+
+Use Markdown with inline and display mathematics. Render mathematics with MathJax and Fira Math in web outputs.
+
+Select the MathJax Fira font set. Pin renderer and font versions. Use accessible mathematics and selectable text.
+
+Keep the short view concise. Provide full derivations through explicit expansion, focus, click, or touch.
+
+Do not truncate an exported derivation. For large numerical data, show aggregates and link to the full result.
+
+## 14. Verification and completion
+
+Require these checks before a model entry qualifies for automatic support:
+
+- Exact dimension-matrix rank and nullspace checks.
+- Independence checks and equivalent-basis checks.
+- Dimensionless equation and condition checks.
+- Reverse substitution to the dimensional model.
+- Reference-solution or conservation checks.
+- Discretization, timestep, or continuation convergence where applicable.
+- Residuals for base states, modes, and solution branches.
+- Explicit error measures and acceptance tolerances.
+- Agreement between reports, decks, and the interactive view.
+- Mathematical display checks for MathJax and Fira Math.
+
+Include failure examples for inconsistent dimensions, zero scales, missing conditions, dependent inputs, and unsupported analyses.
+
+Keep unresolved results visible. State the failed check and the next useful action.
+
+A model declaration is complete when it includes a reproducible derivation, reference example, supported methods, and measurable acceptance criteria.
+
+The software release is complete when every required catalogue entry passes those criteria and all output formats agree.
+
+## 15. Source basis
+
+The model declarations and catalogue boundaries are design requirements. They do not claim implemented automatic support.
+
+The sources below support the mathematical distinctions and selected reference examples:
+
+- [Matt Pocock’s Grill-me method](https://github.com/mattpocock/skills/blob/main/skills/productivity/grilling/SKILL.md) supports the decision process for this specification.
+- [MIT: Buckingham Pi theorem](https://ocw.mit.edu/courses/2-25-advanced-fluid-mechanics-fall-2013/c0a4521f55e9191d557c167e99e97469_MIT2_25F13_The_Buckingham.pdf) supports independent groups and the need for additional physical relations.
+- [Ribando: transient plane-wall solution](https://www.robertribando.com/xls/heat-transfer/htttransanal/) supplies a reference for the slab conditions and solution.
+- [Wen, Goluskin, and Doering: Rayleigh–Bénard convection](https://www.cambridge.org/core/journals/journal-of-fluid-mechanics/article/steady-rayleighbenard-convection-between-noslip-boundaries/B4F358EB0AE83BBE9D85968DC5DDD64D) supplies a specified convection model and branch evidence.
+- [NASA: mass-flow choking](https://www.grc.nasa.gov/www/k-12/BGP/mflchk.html) supplies the nozzle mass-flow derivation and sonic condition.
+- [MIT: structural buckling](https://ocw.mit.edu/courses/16-01-unified-engineering-i-ii-iii-iv-fall-2005-spring-2006/1f1b4e82bae2ff8ce609bc96fe20eedb_sprh04.pdf) supplies the Euler-column reference.
+- [MIT: boundary-layer derivation](https://web.mit.edu/16.110/www/aero_analysis_problem.html) supports inner and outer scale distinctions.
+- [MIT: Plates and Shells](https://ocw.mit.edu/courses/2-081j-plates-and-shells-spring-2007/) supports separate structural model declarations.
+- [Yong and Mahadevan: nonlinear beam model](https://arxiv.org/html/2501.08028v1) supports model-specific nonlinear buckling classification.
+- [NASA: flutter boundary study](https://ntrs.nasa.gov/api/citations/19860016812/downloads/19860016812.pdf) supports a reduced flutter reference.
+- [Farrell, Beentjes, and Birkisson: branch discovery](https://arxiv.org/abs/1603.00809) supports explicit limits on continuation coverage.
+- [MathJax: font support](https://docs.mathjax.org/en/latest/output/fonts.html) specifies the Fira font set and renderer configuration.
+- [MIT: heat transfer from a fin](https://web.mit.edu/16.unified/www/FALL/thermodynamics/notes/node128.html) supplies the insulated-tip fin derivation.
+- [Bannerman: heat exchangers](https://www.marcusbannerman.co.uk/HMMT/23-Heat-Exchangers.pdf) supplies the effectiveness and NTU reference.
+- [COMSOL: heat-transfer coefficient definitions](https://doc.comsol.com/6.3/doc/com.comsol.help.heat/heat_ug_theory.07.094.html) supports explicit convection scales and group definitions.
+- [COMSOL: radiation in an optically thick medium](https://doc.comsol.com/6.4/doc/com.comsol.help.heat/heat_ug_theory.07.076.html) states the Rosseland approximation assumptions.
+- [Font: one-phase Stefan model](https://upcommons.upc.edu/server/api/core/bitstreams/30970d48-f98c-4241-9c04-4b8cfe0c4c0c/content) supplies a phase-change reference and an explicit group convention.
+- [MIT: viscous heat-generation example](https://www.mit.edu/course/2/2.810/www/files/quizzes/2016_quizzes/2016_Quiz1_Solutions.pdf) supplies a dissipation reference.
+- [COMSOL: Marangoni effect](https://www.comsol.com/multiphysics/marangoni-effect) supplies the interfacial stress and heat-transport model.
+
+## Agreed decisions (build plan, 2026-10-05)
+
+The captain approved the build plan of task VISU-9 on 2026-10-05 with these answers. They govern the implementation; the sections above are the specification itself, unchanged.
+
+1. **Home and deploy.** The page lives in yujieteo/visuals as `viz/scientific-modelling/`, live at <https://teoyujie.org/visuals/scientific-modelling/>. It deploys after each merged piece. Each deploy before piece 9 is a preview that lists the families still to come.
+2. **One page.** One page and one gallery entry: the three tools read and write the same model record.
+3. **Engine.** The engine is written for the page in plain JavaScript: exact BigInt rational arithmetic, a bounded symbolic engine for the declared equation forms, and its own numerical solvers. A pinned Python script in `tools/` (SymPy, SciPy and mpmath through `uv run --with`) computes independent reference values once; the folder commits them with the versions, and the tests compare the engine with them. The page works offline and from `file://`.
+4. **Nine pull requests**, merged in order:
+   1. Core model and Dimensionless Number Finder.
+   2. Model Nondimensionalizer.
+   3. Conduction families, dominant balance, asymptotics and Regime Map Builder v1.
+   4. Stability, bifurcation, buoyancy and surface radiation.
+   5. Structures.
+   6. Flows.
+   7. Convective heat transfer.
+   8. Exchangers, phase change and radiative transfer.
+   9. Flutter and release gate.
+5. **Flutter reference.** No PDF of NASA report 19860016812. Use the open Georgia Tech typical-section example (Hodges and Pierce parameters a = −1/5, e = −1/10, μ = 20, r = 2/5, σ = 2/5; <https://aeresources.gatech.edu/aeroelasticity/Webpage/Flutter/Examples/Examples.php>), checked by two independent methods (a Theodorsen frequency-domain method and a time-domain state-space model with the R. T. Jones approximation of the Wagner function) and a convergence check. The NASA report leaves the sources.
+
+### Assumptions recorded with the plan
+
+- Slug `scientific-modelling`; category "interactive model"; "first release" (section 10) is the state after piece 9.
+- Equations are entered as plain text, such as `rho*c_p*d(T,t) = k*d(T,x,x)`, with a typeset preview; a LaTeX subset is also accepted.
+- The model record persists in the browser and as versioned JSON export and import; the URL holds the tool, the example and the view.
+- Language review: the ste-axi checker and a separate agent review in each pull request; the captain's review is final; the page claims no certified conformance.
+- Turbulence, shocks, dry fronts, mechanical contact, plasticity, damage and arbitrary 3D coupled problems show "separate declaration required".
+- Deck voice `bf_emma`.
+
+### Piece 1 (this folder's first pull request)
+
+- The view state of the shared kit is the view (example, tool, repeating set, row-reduction step, basis, detail). The model record is separate: one record per example, kept in the browser, with its own model JSON.
+- The Finder runs only on a confirmed version. An edit after confirmation invalidates exactly the results that read a changed input; the checks before analysis always run on the current version.
+- Repeating variables: the record's preferred reference variables first, then table order; the quantity of interest, dimensionless inputs, fields, coordinates and scales that can be 0 are not used, each with its reason. The researcher can enter another set; the page refuses an invalid set with its reason.
+- Familiar names come from `data/groups.json`, stored as formulas over quantities with their reference quantities. Matching uses the variable's quantity, phase and kind, never its symbol.
+- Condition count: a field with derivative order p in a coordinate needs p conditions in that coordinate, after the constitutive laws of other fields are substituted. The rule does not check well-posedness.
+- Familiar groups and definitions that the specification does not define (Euler, Weber and Froude numbers) are left out until a source is cited.
