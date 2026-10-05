@@ -1,0 +1,255 @@
+{
+  "about": "The editable standard examples and the failure examples, as model records of schema version 1 (src/record.js). Each variable, equation, condition and assumption has a stable id. Values are illustrative inputs for the example, not measured data.",
+  "examples": [
+    {
+      "id": "heat-transfer-pi",
+      "label": "Convection: Pi groups",
+      "group": "standard",
+      "title": "Convective heat transfer: the worked Buckingham Pi calculation",
+      "purpose": { "question": "On which independent dimensionless groups does the heat-transfer coefficient of a body in a flow depend?", "observable": "v-h", "calculation": "pi-groups" },
+      "variables": [
+        { "id": "v-h", "symbol": "h", "meaning": "Heat-transfer coefficient", "quantity": "heat-transfer-coefficient", "unit": "W/(m^2*K)", "dimension": "M T^-3 Theta^-1", "kind": "parameter", "domain": "positive", "pi": true, "average": "" },
+        { "id": "v-k", "symbol": "k", "meaning": "Thermal conductivity of the fluid", "quantity": "thermal-conductivity", "phase": "fluid", "unit": "W/(m*K)", "dimension": "M L T^-3 Theta^-1", "kind": "parameter", "domain": "positive", "pi": true },
+        { "id": "v-rho", "symbol": "rho", "meaning": "Density", "quantity": "density", "unit": "kg/m^3", "dimension": "M L^-3", "kind": "parameter", "domain": "positive", "pi": true },
+        { "id": "v-mu", "symbol": "mu", "meaning": "Dynamic viscosity", "quantity": "dynamic-viscosity", "unit": "Pa*s", "dimension": "M L^-1 T^-1", "kind": "parameter", "domain": "positive", "pi": true },
+        { "id": "v-cp", "symbol": "c_p", "meaning": "Specific heat capacity", "quantity": "specific-heat", "unit": "J/(kg*K)", "dimension": "L^2 T^-2 Theta^-1", "kind": "parameter", "domain": "positive", "pi": true },
+        { "id": "v-U", "symbol": "U", "meaning": "Reference speed", "quantity": "speed", "unit": "m/s", "dimension": "L T^-1", "kind": "parameter", "domain": "positive", "pi": true },
+        { "id": "v-L", "symbol": "L", "meaning": "Reference length", "quantity": "length", "unit": "m", "dimension": "L", "kind": "parameter", "domain": "positive", "pi": true }
+      ],
+      "equations": [],
+      "geometry": { "domain": "A body of characteristic length L in a uniform flow of speed U", "coordinates": "None, because the calculation uses the Pi variables only", "lengths": ["v-L"], "interfaces": "The body surface" },
+      "conditions": [],
+      "assumptions": [
+        { "id": "a-positive", "kind": "mathematical", "text": "All reference quantities are positive.", "source": "spec-5" },
+        { "id": "a-free", "kind": "mathematical", "text": "The inputs have no additional constraints.", "source": "spec-5" },
+        { "id": "a-fluid", "kind": "physical", "text": "k is the conductivity of the fluid, so hL/k is a Nusselt number and not a Biot number.", "source": "spec-10" }
+      ],
+      "scales": [],
+      "preferred": ["v-rho", "v-U", "v-L", "v-k"],
+      "evidence": [{ "id": "ev-spec5", "source": "spec-5", "claim": "The worked calculation gives rank 4 and the groups hL/k, μ/(ρUL) and ρc_pUL/k for the repeating variables ρ, U, L, k." }]
+    },
+    {
+      "id": "straight-fin",
+      "label": "Straight fin",
+      "group": "standard",
+      "title": "Straight fin with an insulated tip: the complete Pi basis",
+      "purpose": { "question": "On which dimensionless groups does the base heat flow of a fin with a constant cross-section and an insulated tip depend?", "observable": "v-Q", "calculation": "pi-groups" },
+      "variables": [
+        { "id": "v-Q", "symbol": "Q_dot", "meaning": "Heat flow at the fin base", "quantity": "heat-flow", "unit": "W", "kind": "parameter", "domain": "real", "pi": true },
+        { "id": "v-k", "symbol": "k", "meaning": "Thermal conductivity of the fin", "quantity": "thermal-conductivity", "phase": "solid", "unit": "W/(m*K)", "value": "200", "kind": "parameter", "domain": "positive", "pi": true },
+        { "id": "v-h", "symbol": "h", "meaning": "Surface heat-transfer coefficient", "quantity": "heat-transfer-coefficient", "unit": "W/(m^2*K)", "value": "25", "kind": "parameter", "domain": "positive", "pi": true },
+        { "id": "v-P", "symbol": "P", "meaning": "Exposed perimeter", "quantity": "perimeter", "unit": "m", "value": "0.044", "kind": "parameter", "domain": "positive", "pi": true },
+        { "id": "v-Ac", "symbol": "A_c", "meaning": "Cross-sectional area", "quantity": "area", "unit": "m^2", "value": "4e-5", "kind": "parameter", "domain": "positive", "pi": true },
+        { "id": "v-L", "symbol": "L", "meaning": "Fin length", "quantity": "length", "unit": "m", "value": "0.05", "kind": "parameter", "domain": "positive", "pi": true },
+        { "id": "v-dT", "symbol": "Delta_T", "tex": "\\Delta T", "meaning": "Base excess temperature T_b − T_∞", "quantity": "temperature-difference", "unit": "K", "value": "60", "kind": "parameter", "domain": "nonzero", "pi": true },
+        { "id": "v-Tb", "symbol": "T_b", "meaning": "Base temperature", "quantity": "absolute-temperature", "unit": "degC", "value": "80", "kind": "parameter", "domain": "positive", "pi": false },
+        { "id": "v-Tinf", "symbol": "T_inf", "meaning": "Ambient temperature", "quantity": "absolute-temperature", "unit": "degC", "value": "20", "kind": "parameter", "domain": "positive", "pi": false },
+        { "id": "v-T", "symbol": "T", "meaning": "Fin temperature", "quantity": "absolute-temperature", "unit": "K", "kind": "field", "domain": "positive", "pi": false },
+        { "id": "v-x", "symbol": "x", "meaning": "Distance from the base", "quantity": "length", "unit": "m", "kind": "coordinate", "domain": "nonnegative", "pi": false }
+      ],
+      "equations": [
+        { "id": "e-fin", "kind": "governing", "text": "k*A_c*d(T,x,x) - h*P*(T - T_inf) = 0", "domain": "0 < x < L" },
+        { "id": "e-dT", "kind": "definition", "text": "Delta_T = T_b - T_inf" },
+        { "id": "e-Q", "kind": "definition", "text": "Q_dot = -k*A_c*d(T,x)", "domain": "at x = 0" }
+      ],
+      "geometry": { "domain": "A straight fin of length L, constant cross-section A_c and exposed perimeter P", "coordinates": "x along the fin, from the base (x = 0) to the tip (x = L)", "lengths": ["v-L"], "interfaces": "The base at x = 0 and the insulated tip at x = L" },
+      "conditions": [
+        { "id": "c-base", "kind": "boundary", "text": "T = T_b", "at": "x = 0" },
+        { "id": "c-tip", "kind": "boundary", "text": "d(T,x) = 0", "at": "x = L" }
+      ],
+      "assumptions": [
+        { "id": "a-k", "kind": "physical", "text": "The conductivity is constant.", "source": "spec-10" },
+        { "id": "a-h", "kind": "physical", "text": "The surface convection is uniform.", "source": "spec-10" },
+        { "id": "a-tip", "kind": "physical", "text": "The tip is insulated.", "source": "spec-10" },
+        { "id": "a-dT", "kind": "mathematical", "text": "ΔT = T_b − T_∞ is not 0.", "relation": "Delta_T != 0", "source": "spec-10" },
+        { "id": "a-1d", "kind": "physical", "text": "Temperature varies along x only. The transverse-conduction validity condition needs a separate derivation.", "source": "spec-10" }
+      ],
+      "scales": [],
+      "preferred": ["v-k", "v-L", "v-dT"],
+      "evidence": [
+        { "id": "ev-spec10", "source": "spec-10", "claim": "The time row equals −3 times the mass row, the rank is 3 and the variable set has 4 independent groups." },
+        { "id": "ev-mitfin", "source": "mit-fin", "claim": "m²L² = hPL²/(kA) is the fin parameter of the insulated-tip solution." }
+      ]
+    },
+    {
+      "id": "transient-slab",
+      "label": "Transient slab",
+      "group": "standard",
+      "title": "Transient slab with surface convection: the groups before nondimensionalization",
+      "purpose": { "question": "On which dimensionless groups does the temperature depend in a slab that cools by convection at its surface?", "observable": "v-DT", "calculation": "pi-groups" },
+      "variables": [
+        { "id": "v-DT", "symbol": "DT", "tex": "T-T_\\infty", "meaning": "Local excess of temperature, T − T_∞", "quantity": "temperature-difference", "unit": "K", "kind": "field", "domain": "real", "pi": true },
+        { "id": "v-DTi", "symbol": "DT_i", "tex": "T_i-T_\\infty", "meaning": "Initial excess of temperature, T_i − T_∞", "quantity": "temperature-difference", "unit": "K", "kind": "parameter", "domain": "nonzero", "pi": true },
+        { "id": "v-x", "symbol": "x", "meaning": "Distance from the centre plane", "quantity": "length", "unit": "m", "kind": "coordinate", "domain": "nonnegative", "pi": true },
+        { "id": "v-t", "symbol": "t", "meaning": "Time", "quantity": "time", "unit": "s", "kind": "coordinate", "domain": "nonnegative", "pi": true },
+        { "id": "v-L", "symbol": "L", "meaning": "Half-thickness", "quantity": "length", "unit": "m", "kind": "parameter", "domain": "positive", "pi": true },
+        { "id": "v-k", "symbol": "k", "meaning": "Thermal conductivity of the slab", "quantity": "thermal-conductivity", "phase": "solid", "unit": "W/(m*K)", "kind": "parameter", "domain": "positive", "pi": true },
+        { "id": "v-alpha", "symbol": "alpha", "meaning": "Thermal diffusivity", "quantity": "thermal-diffusivity", "unit": "m^2/s", "kind": "parameter", "domain": "positive", "pi": true },
+        { "id": "v-h", "symbol": "h", "meaning": "Surface heat-transfer coefficient", "quantity": "heat-transfer-coefficient", "unit": "W/(m^2*K)", "kind": "parameter", "domain": "positive", "pi": true },
+        { "id": "v-rho", "symbol": "rho", "meaning": "Density", "quantity": "density", "unit": "kg/m^3", "kind": "parameter", "domain": "positive", "pi": false },
+        { "id": "v-cp", "symbol": "c_p", "meaning": "Specific heat capacity", "quantity": "specific-heat", "unit": "J/(kg*K)", "kind": "parameter", "domain": "positive", "pi": false },
+        { "id": "v-T", "symbol": "T", "meaning": "Slab temperature", "quantity": "absolute-temperature", "unit": "K", "kind": "field", "domain": "positive", "pi": false },
+        { "id": "v-Ti", "symbol": "T_i", "meaning": "Uniform initial temperature", "quantity": "absolute-temperature", "unit": "K", "kind": "parameter", "domain": "positive", "pi": false },
+        { "id": "v-Tinf", "symbol": "T_inf", "meaning": "Fluid temperature", "quantity": "absolute-temperature", "unit": "K", "kind": "parameter", "domain": "positive", "pi": false }
+      ],
+      "equations": [
+        { "id": "e-heat", "kind": "governing", "text": "rho*c_p*d(T,t) = k*d(T,x,x)", "domain": "0 < x < L, t > 0" },
+        { "id": "e-alpha", "kind": "definition", "text": "alpha = k/(rho*c_p)" },
+        { "id": "e-DT", "kind": "definition", "text": "DT = T - T_inf" },
+        { "id": "e-DTi", "kind": "definition", "text": "DT_i = T_i - T_inf" }
+      ],
+      "geometry": { "domain": "A slab of half-thickness L, symmetric about its centre plane", "coordinates": "x from the centre plane (x = 0) to the surface (x = L), and time t", "lengths": ["v-L"], "interfaces": "The surface at x = L, in contact with a fluid at T_∞" },
+      "conditions": [
+        { "id": "c-centre", "kind": "boundary", "text": "d(T,x) = 0", "at": "x = 0" },
+        { "id": "c-surface", "kind": "boundary", "text": "-k*d(T,x) = h*(T - T_inf)", "at": "x = L" },
+        { "id": "c-initial", "kind": "initial", "text": "T = T_i", "at": "t = 0" }
+      ],
+      "assumptions": [
+        { "id": "a-const", "kind": "physical", "text": "The material properties are constant.", "source": "spec-7" },
+        { "id": "a-sym", "kind": "physical", "text": "The slab is symmetric about its centre plane.", "source": "spec-7" },
+        { "id": "a-diff", "kind": "mathematical", "text": "T_i is not equal to T_∞.", "relation": "DT_i != 0", "source": "spec-7" },
+        { "id": "a-rhocp", "kind": "physical", "text": "ρ and c_p enter the equation only as ρc_p, so α = k/(ρc_p) replaces them in the Pi set.", "source": "spec-7" }
+      ],
+      "scales": [],
+      "preferred": ["v-L", "v-k", "v-alpha", "v-DTi"],
+      "evidence": [{ "id": "ev-spec7", "source": "spec-7", "claim": "The slab conditions and the groups X, Fo = τ, θ and Bi." }]
+    },
+    {
+      "id": "fail-dimensions",
+      "label": "Failure: inconsistent dimensions",
+      "group": "failure",
+      "failure": "inconsistent-dimensions",
+      "title": "Failure example: a slab equation with inconsistent dimensions",
+      "purpose": { "question": "On which dimensionless groups does this slab depend, and is its equation dimensionally consistent?", "observable": "v-DT", "calculation": "pi-groups" },
+      "variables": "transient-slab",
+      "equations": [
+        { "id": "e-heat", "kind": "governing", "text": "rho*c_p*d(T,t) = k*d(T,x)", "domain": "0 < x < L, t > 0", "note": "The right side has a first derivative where the heat equation has a second derivative." },
+        { "id": "e-alpha", "kind": "definition", "text": "alpha = k/(rho*c_p)" },
+        { "id": "e-DT", "kind": "definition", "text": "DT = T - T_inf" },
+        { "id": "e-DTi", "kind": "definition", "text": "DT_i = T_i - T_inf" }
+      ],
+      "geometry": "transient-slab",
+      "conditions": "transient-slab",
+      "assumptions": "transient-slab",
+      "scales": [],
+      "preferred": ["v-L", "v-k", "v-alpha", "v-DTi"],
+      "evidence": []
+    },
+    {
+      "id": "fail-zero-scale",
+      "label": "Failure: zero scale",
+      "group": "failure",
+      "failure": "zero-scale",
+      "title": "Failure example: a zero reference speed",
+      "purpose": { "question": "On which groups does the heat-transfer coefficient depend when the reference speed is 0?", "observable": "v-h", "calculation": "pi-groups" },
+      "variables": "heat-transfer-pi",
+      "overrides": { "v-U": { "value": "0", "domain": "nonnegative", "meaning": "Reference speed (no flow)" } },
+      "equations": [],
+      "geometry": "heat-transfer-pi",
+      "conditions": [],
+      "assumptions": [
+        { "id": "a-fluid", "kind": "physical", "text": "k is the conductivity of the fluid.", "source": "spec-10" },
+        { "id": "a-still", "kind": "physical", "text": "The fluid does not move: U = 0.", "source": "spec-3" }
+      ],
+      "scales": [],
+      "preferred": ["v-rho", "v-U", "v-L", "v-k"],
+      "evidence": []
+    },
+    {
+      "id": "fail-dependent",
+      "label": "Failure: dependent inputs",
+      "group": "failure",
+      "failure": "dependent-inputs",
+      "title": "Failure example: ν supplied beside μ and ρ",
+      "purpose": { "question": "How many groups can vary independently when ν = μ/ρ is also supplied?", "observable": "v-h", "calculation": "pi-groups" },
+      "variables": "heat-transfer-pi",
+      "extra": [{ "id": "v-nu", "symbol": "nu", "meaning": "Kinematic viscosity", "quantity": "kinematic-viscosity", "unit": "m^2/s", "kind": "parameter", "domain": "positive", "pi": true }],
+      "equations": [{ "id": "e-nu", "kind": "definition", "text": "nu = mu/rho" }],
+      "geometry": "heat-transfer-pi",
+      "conditions": [],
+      "assumptions": "heat-transfer-pi",
+      "scales": [],
+      "preferred": ["v-rho", "v-U", "v-L", "v-k"],
+      "evidence": []
+    },
+    {
+      "id": "fail-conditions",
+      "label": "Failure: missing conditions",
+      "group": "failure",
+      "failure": "missing-conditions",
+      "title": "Failure example: a slab with one of its three conditions",
+      "purpose": { "question": "Which conditions does the slab need before nondimensionalization?", "observable": "v-DT", "calculation": "pi-groups" },
+      "variables": "transient-slab",
+      "equations": "transient-slab",
+      "geometry": "transient-slab",
+      "conditions": [{ "id": "c-centre", "kind": "boundary", "text": "d(T,x) = 0", "at": "x = 0" }],
+      "assumptions": "transient-slab",
+      "scales": [],
+      "preferred": ["v-L", "v-k", "v-alpha", "v-DTi"],
+      "evidence": []
+    },
+    {
+      "id": "fail-entry",
+      "label": "Failure: entry errors",
+      "group": "failure",
+      "failure": "entry-errors",
+      "title": "Failure example: an undefined symbol, units that disagree and an open constitutive law",
+      "purpose": { "question": "Is the flux form of the slab model complete?", "observable": "v-DT", "calculation": "pi-groups" },
+      "variables": "transient-slab",
+      "overrides": { "v-k": { "dimension": "M L T^-2 Theta^-1" } },
+      "extra": [{ "id": "v-q", "symbol": "q", "meaning": "Heat flux in the x direction", "quantity": "heat-flux", "unit": "W/m^2", "kind": "field", "domain": "real", "pi": false }],
+      "equations": [
+        { "id": "e-heat", "kind": "governing", "text": "rho*c_p*d(T,t) = -d(q,x)", "domain": "0 < x < L, t > 0", "note": "The flux form: it needs a constitutive law for q, such as q = -k*d(T,x)." },
+        { "id": "e-alpha", "kind": "definition", "text": "alpha = k/(rho*c_p)" },
+        { "id": "e-DT", "kind": "definition", "text": "DT = T - T_inf" },
+        { "id": "e-DTi", "kind": "definition", "text": "DT_i = T_i - T_inf" }
+      ],
+      "geometry": "transient-slab",
+      "conditions": [
+        { "id": "c-centre", "kind": "boundary", "text": "d(T,x) = 0", "at": "x = 0" },
+        { "id": "c-surface", "kind": "boundary", "text": "-k*d(T,x) = h_c*(T - T_inf)", "at": "x = L", "note": "h_c is a wrong name for h." },
+        { "id": "c-initial", "kind": "initial", "text": "T = T_i", "at": "t = 0" }
+      ],
+      "assumptions": "transient-slab",
+      "scales": [],
+      "preferred": ["v-L", "v-k", "v-alpha", "v-DTi"],
+      "evidence": []
+    },
+    {
+      "id": "fail-unsupported",
+      "label": "Failure: unsupported analysis",
+      "group": "failure",
+      "failure": "unsupported-analysis",
+      "title": "Failure example: stability of a custom slab with a reaction heat source",
+      "purpose": { "question": "Is the steady temperature of a slab with an Arrhenius heat source stable?", "observable": "v-Tmax", "calculation": "stability" },
+      "variables": [
+        { "id": "v-Tmax", "symbol": "T_max", "meaning": "Largest steady temperature", "quantity": "absolute-temperature", "unit": "K", "kind": "parameter", "domain": "positive", "pi": true },
+        { "id": "v-k", "symbol": "k", "meaning": "Thermal conductivity", "quantity": "thermal-conductivity", "phase": "solid", "unit": "W/(m*K)", "kind": "parameter", "domain": "positive", "pi": true },
+        { "id": "v-L", "symbol": "L", "meaning": "Half-thickness", "quantity": "length", "unit": "m", "kind": "parameter", "domain": "positive", "pi": true },
+        { "id": "v-q0", "symbol": "q_0", "meaning": "Pre-exponential volumetric heat source", "quantity": "volumetric-heat-source", "unit": "W/m^3", "kind": "parameter", "domain": "positive", "pi": true },
+        { "id": "v-E", "symbol": "E", "meaning": "Molar activation energy", "quantity": "activation-energy", "unit": "J/mol", "kind": "parameter", "domain": "positive", "pi": true },
+        { "id": "v-R", "symbol": "R", "meaning": "Molar gas constant", "quantity": "gas-constant", "unit": "J/(mol*K)", "kind": "constant", "domain": "positive", "pi": true },
+        { "id": "v-Tw", "symbol": "T_w", "meaning": "Wall temperature", "quantity": "absolute-temperature", "unit": "degC", "value": "150", "kind": "parameter", "domain": "positive", "pi": true },
+        { "id": "v-rho", "symbol": "rho", "meaning": "Density", "quantity": "density", "unit": "kg/m^3", "kind": "parameter", "domain": "positive", "pi": false },
+        { "id": "v-cp", "symbol": "c_p", "meaning": "Specific heat capacity", "quantity": "specific-heat", "unit": "J/(kg*K)", "kind": "parameter", "domain": "positive", "pi": false },
+        { "id": "v-T", "symbol": "T", "meaning": "Temperature", "quantity": "absolute-temperature", "unit": "K", "kind": "field", "domain": "positive", "pi": false },
+        { "id": "v-x", "symbol": "x", "meaning": "Distance from the centre plane", "quantity": "length", "unit": "m", "kind": "coordinate", "domain": "nonnegative", "pi": false },
+        { "id": "v-t", "symbol": "t", "meaning": "Time", "quantity": "time", "unit": "s", "kind": "coordinate", "domain": "nonnegative", "pi": false }
+      ],
+      "equations": [{ "id": "e-heat", "kind": "governing", "text": "rho*c_p*d(T,t) = k*d(T,x,x) + q_0*exp(-E/(R*T))", "domain": "0 < x < L, t > 0" }],
+      "geometry": { "domain": "A slab of half-thickness L with walls at T_w", "coordinates": "x from the centre plane, and time t", "lengths": ["v-L"], "interfaces": "The walls at x = ±L" },
+      "conditions": [
+        { "id": "c-centre", "kind": "boundary", "text": "d(T,x) = 0", "at": "x = 0" },
+        { "id": "c-wall", "kind": "boundary", "text": "T = T_w", "at": "x = L" },
+        { "id": "c-initial", "kind": "initial", "text": "T = T_w", "at": "t = 0" }
+      ],
+      "assumptions": [
+        { "id": "a-const", "kind": "physical", "text": "The material properties are constant.", "source": "spec-3" },
+        { "id": "a-abs", "kind": "physical", "text": "The Arrhenius term uses the absolute temperature T in K.", "source": "spec-3" }
+      ],
+      "scales": [],
+      "preferred": ["v-k", "v-L", "v-E", "v-Tw"],
+      "evidence": []
+    }
+  ]
+}
