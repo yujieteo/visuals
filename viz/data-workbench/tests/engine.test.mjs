@@ -156,6 +156,13 @@ test("approved missing numbers apply only to numeric readings: a date reading of
   assert.deepEqual(await values({ kind: "text", missingNumbers: [-999] }), ["-999", "5", "2026-01-02"], "a text reading keeps every value");
 });
 
+test("yes or no in mixed letter case reads as yes or no, with two levels", async () => {
+  const words = ["Yes", "No", "yes", "no", "YES"];
+  const t = await load("answers", encode(["answer", ...Array.from({ length: 60 }, (_, i) => words[i % 5])].join("\n")));
+  const c = t.col("answer");
+  assert.deepEqual([c.type, c.role, c.summary.top.map((/** @type {any} */ r) => r.value)], ["boolean", "category", ["true", "false"]]);
+});
+
 test("Parquet: types, decimals and zoned timestamps are kept; nested columns are excluded with a reason", async () => {
   const open = await engine({ locked: false });
   const dir = mkdtempSync(join(tmpdir(), "dw-parquet-"));

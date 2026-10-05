@@ -1858,7 +1858,8 @@ SELECT (SELECT coalesce(sum(n - 1), 0) FROM c WHERE n > 1)::DOUBLE AS repeats, v
     const share = (n) => n / valued;
     /** @param {string} type @param {any} reading @param {number} fits */
     const pick = (type, reading, fits) => ({ ...base, type, reading, share: share(fits), fits });
-    if (share(s.bool) >= THRESHOLD && s.distinct_values <= 4) return pick("boolean", { kind: "boolean" }, s.bool);
+    // Yes or no in any letter case: Yes, YES and yes are one value (the reading compares in lower case).
+    if (share(s.bool) >= THRESHOLD) return pick("boolean", { kind: "boolean" }, s.bool);
     if (share(s.int_plain) >= THRESHOLD) return pick("integer", { kind: "integer" }, s.int_plain);
     if (s.int_sep > 0 && share(s.int_plain + s.int_sep) >= THRESHOLD) {
       const r = pick("integer", { kind: "integer-sep" }, s.int_plain + s.int_sep);

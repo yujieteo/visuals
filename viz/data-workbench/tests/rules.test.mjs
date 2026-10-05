@@ -35,6 +35,7 @@ test("type: the most specific reading that 95% of the values present fit, with t
   assert.deepEqual([sep.type, sep.reading.kind], ["integer", "integer-sep"]);
   assert.equal(Infer.readText(counts(100, { int_plain: 50, dec_plain: 100 })).type, "decimal");
   assert.equal(Infer.readText(counts(10, { bool: 10, distinct_values: 2 })).type, "boolean");
+  assert.equal(Infer.readText(counts(60, { bool: 60, distinct_values: 5 })).type, "boolean", "Yes, YES, yes, No and no are still yes or no");
   assert.equal(Infer.readText(counts(10, { date_iso: 10, date_shape: 10 })).type, "date");
   const zoned = Infer.readText(counts(10, { dt_zoned: 10 }));
   assert.deepEqual([zoned.type, zoned.reading.kind], ["datetime", "datetime-zoned"]);
