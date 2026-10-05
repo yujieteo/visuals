@@ -291,17 +291,16 @@ FROM ${ident(table)}`;
    * some values missing. Otherwise the count of distinct values as written stands, and no second pass runs.
    */
   const recount = (reading) => ["boolean", "integer-sep", "decimal", "decimal-sep", "date-format", "date-formats"].includes(reading.kind)
-    || (reading.missingText ?? []).length > 0 || (reading.missingNumbers ?? []).length > 0;
+    || (reading.missingNumbers ?? []).length > 0;
 
   /**
    * Distinct values present under a reading, alone for the same reason as distinctCount. Whole numbers are compared
-   * as their digits without separators, as written otherwise, so "007" and "7" stay two codes (as the identifier
-   * summaries count them) and identifiers longer than 15 digits never merge.
+   * as their digits without separators, so "007" and "7" stay two codes (as the identifier summaries count them)
+   * and identifiers longer than 15 digits never merge; other values by the value they read as.
    */
   function readDistinct(table, column, reading, textSource) {
-    const x = ident(column);
     const whole = textSource && (reading.kind === "integer" || reading.kind === "integer-sep");
-    const key = whole ? `replace(trim(${x}), ',', '')` : textSource && reading.kind === "text" ? x : `CAST(${typed(column, reading)} AS VARCHAR)`;
+    const key = whole ? `replace(trim(${ident(column)}), ',', '')` : typed(column, reading);
     return `SELECT count(*)::DOUBLE AS distinct_values FROM (SELECT DISTINCT ${key} FROM ${ident(table)} WHERE ${present(column, reading, textSource)})`;
   }
 
@@ -329,6 +328,10 @@ FROM ${ident(table)}`;
   count(*) FILTER (WHERE ${ok} AND (${typed(column, reading)}) IS NULL AND NOT (${ok}${notApproved(column, reading)} AND (${parse(column, reading)}) IS NULL))::DOUBLE AS made_missing
 FROM ${ident(table)}`;
   }
+
+  /** How many distinct values do not read under the reading: few by the 95% rule, so this count is cheap. */
+  const failureDistinct = (table, column, reading, textSource) =>
+    `SELECT count(*)::DOUBLE AS n FROM (SELECT DISTINCT ${ident(column)} FROM ${ident(table)} WHERE ${valued(column, textSource)}${notApproved(column, reading)} AND (${parse(column, reading)}) IS NULL)`;
 
   /** Up to `limit` distinct values that do not read under the reading, most frequent first, with the first row. */
   function failureExamples(table, column, reading, rowColumn, textSource, limit = 20) {
@@ -443,7 +446,7 @@ SELECT (SELECT coalesce(sum(n - 1), 0) FROM c WHERE n > 1)::DOUBLE AS repeats, v
     FOLDER, MARKERS, BOOLEAN_TRUE, BOOLEAN_FALSE, PATTERN, DATE_FORMATS, SENTINELS,
     ident, literal, setup, filePath, describeFile, importFile, csvDialect, csvRejects, csvRejectCount,
     parquetSchema, parquetSize, parquetRows, dropTemp, describeTable, rowCount, readingType, parse, typed, formatOf,
-    textStats, textDateStats, NO_DATES, typedStats, distinctCount, recount, readDistinct, markerValues, readingCounts, failureExamples, impossibleDates, stageNumbers, dropNumbers, numericSummary, numericBins,
+    textStats, textDateStats, NO_DATES, typedStats, distinctCount, recount, readDistinct, failureDistinct, markerValues, readingCounts, failureExamples, impossibleDates, stageNumbers, dropNumbers, numericSummary, numericBins,
     robustOutliers, sentinelCounts, timeSummary, timeBins, topValues, duplicates, firstValues,
   };
 });

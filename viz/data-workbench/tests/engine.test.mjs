@@ -134,6 +134,9 @@ test("identifiers against measures: names, leading zeros and dense unique runs m
   const codeColumn = codes.imported.columns.find((/** @type {any} */ c) => c.name === "code");
   const unmarked = await Profile.profileColumn(e.query, { table: "codes", rowColumn: codes.imported.rowColumn, column: codeColumn, override: code.suggestions.find((/** @type {any} */ x) => x.id === "code::markers").change });
   assert.deepEqual([code.distinct, unmarked.distinct, unmarked.identifier?.repeats ?? 0], [32, 32, 0], "007 and 7 stay two codes after approval, as the identifier summaries count them");
+  const odd = ["unk", "5*", "3+", "4-", "2/", "1~", "n.a.", "?5"];
+  const graded = await load("graded", encode(["rating", ...Array.from({ length: 200 }, (_, i) => String(1 + (i % 5))), ...odd].join("\n")));
+  assert.deepEqual([graded.col("rating").type, graded.col("rating").distinct, graded.col("rating").role], ["integer", 5, "ordered category"], "values that do not read are not levels");
   const long = await load("orders18", encode(["order_number", ...Array.from({ length: 100 }, (_, i) => String(100000000000000001n + BigInt(i)))].join("\n")));
   assert.deepEqual([long.col("order_number").distinct, long.col("order_number").role], [100, "identifier"], "18-digit identifiers stay distinct");
   const parents = await load("parents", encode(["parent_id", ...Array.from({ length: 40 }, (_, i) => (i % 4 === 0 ? "-1" : String(100 + i)))].join("\n")));
