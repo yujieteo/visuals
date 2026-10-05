@@ -1,8 +1,9 @@
 // Monte Carlo Probability Workbench: the fuller browser checks (§28). The view state lives in the kit (URL
 // fragment, Back and Forward, Cmd/Ctrl+K, Reset, view JSON, Markdown record, deck); the run lives beside it.
 // Beyond the kit's checks this file drives the run controls (Step, Run, Pause, Reset run, Space and "."), the
-// cancel of a large run, which must not report a partial result as complete, and the round trip of the run
-// record: save it, load it, replay it, and get identical estimates.
+// cancel of a large run, which must not report a partial result as complete, the round trip of the run record (save
+// it, load it, replay it, and get identical estimates), and the variance-reduction methods of group 2: a link to a
+// stratified run with its gain, and the common-random-numbers card that switches to separate streams.
 import assert from "node:assert/strict";
 import { assertBeamdswitchDeck, assertDarkMode, assertReducedMotion, blur, fullSuite, jsonRoundTrip, markdownExport, resetsToDefaults, saved, settlesTo, using } from "../../../e2e/lib/full.js";
 import { kitState } from "../../../e2e/lib/kit.js";
@@ -32,6 +33,32 @@ await fullSuite("monte-carlo-workbench", {
       assert.match(await link.page.locator("#notice").innerText(), /not a valid value/, "a stale link resets with a notice");
     } finally {
       await link.close();
+    }
+    // Group 2: a variance-reduction link restores its method, comparison and strata, and the run shows the gain.
+    const vr = await ctx.open("#model=exp-cuniform&method=stratified&compare=independent&strata=4");
+    try {
+      await runSettles(vr.page, ["done"]);
+      const state = await kitState(vr.page);
+      assert.deepEqual([state.method, state.compare, state.strata], ["stratified", "independent", 4]);
+      assert.ok(await vr.page.locator("#strata-field").isVisible(), "the strata controls show for stratification");
+      const ratio = await vr.page.evaluate(() => /** @type {any} */ (window).Workbench.summary()[0].alts[0].quantities[0].gain.ratio);
+      assert.ok(ratio > 20, `16 strata of a smooth integrand: variance ratio ${ratio}`);
+      assert.match(await vr.page.locator("#compare-table").innerText(), /ratio/, "the comparison table shows the variance ratio");
+    } finally {
+      await vr.close();
+    }
+    // Common random numbers hurt when the alternatives move apart; the card's button switches to separate streams.
+    const crn = await ctx.open("#model=normal-festival-stall");
+    try {
+      await runSettles(crn.page, ["done"]);
+      const ratio = () => crn.page.evaluate(() => /** @type {any} */ (window).Workbench.summary()[0].diffs[0].quantities[0].crn);
+      assert.ok((await ratio()) < 0.7, "the paired difference of the two stalls loses with common random numbers");
+      await crn.page.locator('#crn-card [data-streams="separate"]').click();
+      await crn.page.waitForFunction(() => /** @type {any} */ (window).Workbench.run?.status === "done" && /streams=separate/.test(location.hash), null, { timeout: 60_000 });
+      const sep = await ratio();
+      assert.ok(sep > 0.8 && sep < 1.25, `separate streams give a ratio near 1: ${sep}`);
+    } finally {
+      await crn.close();
     }
   }),
 
