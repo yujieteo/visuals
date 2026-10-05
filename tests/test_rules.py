@@ -131,6 +131,20 @@ class RequestsTest(unittest.TestCase):
                 '\n// import(url) in a comment\n</script>')
         self.assertEqual(rules.request_problems(html, {"assets": ["x.js"]}), [])
 
+    def test_a_method_named_import_is_not_a_dynamic_import(self):
+        # calibrator's I.import(parsed, ...) read as import(parsed); dotted fetch and importScripts still load a URL.
+        html = ('<script>next = I.import(parsed, [prev], now()); api?.import(rows); store.import("raw.json");'
+                'window.fetch(url); self.importScripts(src); new Worker(src); await import(url); (import(mod));'
+                'window.fetch("notes.md");</script>')
+        self.assertEqual(rules.request_problems(html, {}), [
+            "index.html calls fetch(url): a computed URL the rule cannot check, so use a literal path",
+            "index.html calls import(mod): a computed URL the rule cannot check, so use a literal path",
+            "index.html calls import(url): a computed URL the rule cannot check, so use a literal path",
+            "index.html calls importScripts(src): a computed URL the rule cannot check, so use a literal path",
+            "index.html calls new Worker(src): a computed URL the rule cannot check, so use a literal path",
+            "index.html requests notes.md: notes.md is private and never published",
+        ])
+
     def test_absolute_urls_set_from_script_are_named(self):
         cases = ['img.src = "https://cdn.example.org/a.png"', 'new Audio("https://cdn.example.org/a.mp3")',
                  "el.setAttribute('srcset', 'https://cdn.example.org/b.png')"]

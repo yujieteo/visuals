@@ -120,11 +120,13 @@ def vendor_problems(html):
 REQUEST_TAG = re.compile(r"<(script|img|iframe|source|video|audio|link|embed|object|track)\b([^>]*)>", re.I)
 REQUEST_ATTR = re.compile(r"\b(src|href|data)\s*=\s*([\"'])([^\"']*)\2", re.I)
 LINK_REQUEST = re.compile(r"\brel\s*=\s*[\"']?[^\"'>]*\b(?:stylesheet|preload|modulepreload|icon|manifest|prefetch)\b", re.I)
-REQUEST_CALL = re.compile(r"\b(fetch|new\s+Worker|new\s+SharedWorker|import|importScripts)\s*\(\s*([`\"'])([^`\"']*)\2")
+# REQUEST_CALL and COMPUTED_CALL skip an import after a dot: that is a method of the name, such as calibrator's
+# I.import(parsed, ...), never a dynamic import(). A dotted fetch or importScripts (window.fetch) still loads a URL.
+REQUEST_CALL = re.compile(r"\b(fetch|new\s+Worker|new\s+SharedWorker|(?<!\.)import|importScripts)\s*\(\s*([`\"'])([^`\"']*)\2")
 STYLE_TEXT = re.compile(r"<style\b[^>]*>(.*?)</style>|\bstyle\s*=\s*\"([^\"]*)\"", re.I | re.S)
 CSS_REQUEST = re.compile(r"@import\s+(?:url\(\s*)?([\"']?)([^\"')\s;]+)\1|\burl\(\s*([\"']?)([^\"')]+?)\3\s*\)", re.I)
 NETWORK_API = re.compile(r"\b(XMLHttpRequest|WebSocket|EventSource|sendBeacon)\b")
-COMPUTED_CALL = re.compile(r"(?<![\w$])(fetch|new\s+Worker|new\s+SharedWorker|import|importScripts)\s*\(\s*"
+COMPUTED_CALL = re.compile(r"(?<![\w$])(fetch|new\s+Worker|new\s+SharedWorker|(?<!\.)import|importScripts)\s*\(\s*"
                            r"(`[^`]*`|\"[^\"\n]*\"|'[^'\n]*'|[^`\"'\s)][^,)]*)(\s*\+[^,)]*)?")
 SCRIPT_URL = re.compile(r"(?:\.(?:src|srcset|poster)\s*=\s*|setAttribute\(\s*([\"'])(?:src|srcset|poster)\1\s*,\s*|"
                         r"\bnew\s+Audio\s*\(\s*)([`\"'])(https?://[^`\"'\s]*)\2", re.I)
