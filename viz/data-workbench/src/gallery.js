@@ -84,7 +84,8 @@
         const prev = old.get(c.id);
         if (prev && !prev.edited && prev.sig === sig && (prev.outcome === "valid" || prev.outcome === "excluded")) return prev;
         if (prev) forget(prev);
-        const fresh = { ...c, sig, outcome: "pending", reason: "", spec: null, edited: false, svg: null, version: (prev?.version ?? 0) + 1, desc: "" };
+        // Every candidate holds a specification from the start, so an open view can always show its form.
+        const fresh = { ...c, sig, outcome: "pending", reason: "", spec: ChartSpec.make(c, ctx), edited: false, svg: null, version: (prev?.version ?? 0) + 1, desc: "" };
         if (prev?.edited) {
           const v = ChartSpec.validate(prev.spec, ctx);
           if (v.ok) Object.assign(fresh, { spec: prev.spec, edited: true });
@@ -331,7 +332,9 @@
           h("button", { type: "button", "aria-pressed": String(viewer.zoom === z), onclick: () => { viewer.zoom = z; zoom(); drawZoomButtons(); }, "data-zoom": z, text: l }))));
       const figure = byId("viewer-figure");
       figure.replaceChildren(h("p", { class: "note", text: "Drawing…" }));
-      try {
+      if (cand.outcome !== "valid") {
+        figure.replaceChildren(h("p", { class: "note", text: cand.outcome === "pending" ? "This chart is being computed again; it shows here once it is drawn." : `${cand.outcome[0].toUpperCase()}${cand.outcome.slice(1)}: ${cand.reason}` }));
+      } else try {
         const svg = await svgOf(st, cand, shownSpec(cand));
         figure.innerHTML = svg;
         zoom();
@@ -511,10 +514,12 @@
         // The chart as the table holds it now: a regeneration that ran first may have replaced the object.
         const live = stateOf(st.ctx.table)?.candidates.find((c) => c.id === cand.id);
         if (!live) { refuse("Not applied: this chart is no longer a candidate of the table."); return; }
+        if (live.outcome === "pending") { refuse("Not applied: the charts of this table are being generated again; apply once they are complete."); return; }
         commitMark();
         forget(live);
         cand = live;
-        Object.assign(cand, { spec: next, edited: true, desc: out.drawn.desc, facts: out.data.facts, pages: out.data.page?.pages ?? 1, svg: keep(out.drawn.svg), version: cand.version + 1 });
+        // The edit holds and is drawn: whatever the generated chart's outcome was, this chart is valid.
+        Object.assign(cand, { outcome: "valid", reason: "", spec: next, edited: true, desc: out.drawn.desc, facts: out.data.facts, pages: out.data.page?.pages ?? 1, svg: keep(out.drawn.svg), version: cand.version + 1 });
         viewer.page = 1;
         applied = true;
         app.note({ kind: "chart", table: st.ctx.table, text: `Edited the chart ${cand.id}: ${next.edits[next.edits.length - 1]}.` });
@@ -528,10 +533,12 @@
     }
 
     /** Draw a chart as generated again, as one piece of work, so an earlier Cancel cannot leave it pending. */
-    function revert(st, cand) {
+    function revert(st, chosen) {
       return app.busy("Drawing", async () => {
+        const cand = stateOf(st.ctx.table)?.candidates.find((c) => c.id === chosen.id);
+        if (!cand) return;
         forget(cand);
-        Object.assign(cand, { spec: null, edited: false, outcome: "pending", version: cand.version + 1 });
+        Object.assign(cand, { spec: ChartSpec.make(cand, st.ctx), edited: false, outcome: "pending", version: cand.version + 1 });
         const api = await app.ensureEngine();
         await computeOne(api, st, cand);
         if (cand.outcome === "pending") Object.assign(cand, { outcome: "incomplete", reason: "Not computed: you cancelled." });
