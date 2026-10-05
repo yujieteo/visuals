@@ -21,6 +21,8 @@
   const SPEC_VERSION = "1";
   const SEED = 20261005;
   const PERIODS = ["auto", "hour", "day", "week", "month", "quarter", "year"];
+  /** The periods a time field's precision allows: a date has no hours; years are counted by year only. */
+  const periodsFor = (precision) => (precision === "year" ? ["auto", "year"] : precision === "time" ? PERIODS : PERIODS.filter((p) => p !== "hour"));
   const LIMITS = { width: [40, 500], height: [30, 500], bins: [5, 100], top: [1, 29], groups: [1, 12], facetColumns: [1, 6], text: 200, notes: 2000 };
 
   const field = { type: "object", required: ["field", "class"], additionalProperties: false,
@@ -461,6 +463,11 @@
       if (fields.includes(facet.field)) errors.push(`layout.facet: ${facet.field} is already encoded in the chart`);
       if (spec.kind.endsWith("timeline")) errors.push("layout.facet: timelines are not faceted in v1");
     }
+    const period = spec.transform.find((/** @type {any} */ t) => t.id === "period:x");
+    const timeField = ctx.fields[spec.encoding.x?.field];
+    if (period && timeField && !periodsFor(timeField.precision).includes(period.unit)) {
+      errors.push(`transform.period:x: ${timeField.name} is known to the ${timeField.precision === "year" ? "year" : "day"}, so it cannot be counted by ${period.unit}`);
+    }
     const agg = spec.transform.find((/** @type {any} */ t) => t.id === "aggregate");
     if (agg?.fn === "sum" && !ctx.fields[spec.encoding.y?.field]?.additive) errors.push(`transform.aggregate: a sum needs ${spec.encoding.y?.field} marked additive by you`);
     for (const t of spec.transform) {
@@ -470,5 +477,5 @@
     return { ok: errors.length === 0, errors };
   }
 
-  return { SPEC_VERSION, SEED, PERIODS, LIMITS, SCHEMA, validateSchema, make, edit, validate, axisLabel, autoTitle };
+  return { SPEC_VERSION, SEED, PERIODS, periodsFor, LIMITS, SCHEMA, validateSchema, make, edit, validate, axisLabel, autoTitle };
 });

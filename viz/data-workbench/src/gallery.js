@@ -389,7 +389,11 @@
       const t = (tid) => spec.transform.find((/** @type {any} */ x) => x.id === tid);
       const trans = [];
       if (t("bin:x")) trans.push(field("bins", "Bins (5 to 100; empty for the Freedman–Diaconis rule)", h("input", { id: id("bins"), name: "bins", type: "number", min: "5", max: "100", step: "1", value: t("bin:x").bins ?? "", placeholder: "by the rule" })));
-      if (t("period:x")) trans.push(field("unit", "Time period", select("unit", ChartSpec.PERIODS.map((p) => [p, p === "auto" ? "By the rule (at least 20 periods)" : p]), t("period:x").unit)));
+      if (t("period:x")) {
+        // Only periods the field's precision allows: a date has no hours, years are counted by year.
+        const units = ChartSpec.periodsFor(st.ctx.fields[spec.encoding.x.field]?.precision);
+        trans.push(field("unit", "Time period", select("unit", units.map((p) => [p, p === "auto" ? "By the rule (at least 20 periods)" : p]), t("period:x").unit)));
+      }
       if (t("top:x")) trans.push(field("top", `Levels of ${spec.encoding.x.field} kept (the rest as Other)`, h("input", { id: id("top"), name: "top", type: "number", min: "1", max: spec.kind === "bar" ? "29" : "12", step: "1", value: t("top:x").n })));
       if (t("top:y")) trans.push(field("topY", `Levels of ${spec.encoding.y.field} kept (the rest as Other)`, h("input", { id: id("topY"), name: "topY", type: "number", min: "1", max: "12", step: "1", value: t("top:y").n })));
       const agg = t("aggregate");

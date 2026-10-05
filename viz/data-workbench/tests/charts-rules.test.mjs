@@ -179,6 +179,9 @@ test("the validator refuses what the grammar forbids, each with its reason", () 
   refused({ ...scatter, id: "Bad Id" }, /does not match/);
   refused({ ...scatter, layout: { ...scatter.layout, width: 10 } }, /at least 40/);
   refused(ChartSpec.edit(ChartSpec.make(cand("point-timeline", ["day", "note"]), ctx), { facet: "grp" }, ctx), /timelines are not faceted/);
+  refused(ChartSpec.edit(ChartSpec.make(cand("count-series", ["day"]), ctx), { unit: "hour" }, ctx), /day is known to the day, so it cannot be counted by hour/);
+  assert.equal(ChartSpec.validate(ChartSpec.edit(ChartSpec.make(cand("count-series", ["day"]), ctx), { unit: "week" }, ctx), ctx).ok, true);
+  assert.deepEqual(ChartSpec.periodsFor("year"), ["auto", "year"]);
   const additive = { ...ctx, fields: { ...ctx.fields, a: { ...ctx.fields.a, additive: true } } };
   assert.equal(ChartSpec.validate(ChartSpec.edit(ChartSpec.make(cand("mean-bar", ["grp", "a"]), additive), { fn: "sum" }, additive), additive).ok, true, "a sum of a field marked additive is allowed");
 });

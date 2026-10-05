@@ -3151,6 +3151,8 @@ SELECT (SELECT coalesce(sum(n - 1), 0) FROM c WHERE n > 1)::DOUBLE AS repeats, v
   const SPEC_VERSION = "1";
   const SEED = 20261005;
   const PERIODS = ["auto", "hour", "day", "week", "month", "quarter", "year"];
+  /** The periods a time field's precision allows: a date has no hours; years are counted by year only. */
+  const periodsFor = (precision) => (precision === "year" ? ["auto", "year"] : precision === "time" ? PERIODS : PERIODS.filter((p) => p !== "hour"));
   const LIMITS = { width: [40, 500], height: [30, 500], bins: [5, 100], top: [1, 29], groups: [1, 12], facetColumns: [1, 6], text: 200, notes: 2000 };
 
   const field = { type: "object", required: ["field", "class"], additionalProperties: false,
@@ -3591,6 +3593,11 @@ SELECT (SELECT coalesce(sum(n - 1), 0) FROM c WHERE n > 1)::DOUBLE AS repeats, v
       if (fields.includes(facet.field)) errors.push(`layout.facet: ${facet.field} is already encoded in the chart`);
       if (spec.kind.endsWith("timeline")) errors.push("layout.facet: timelines are not faceted in v1");
     }
+    const period = spec.transform.find((/** @type {any} */ t) => t.id === "period:x");
+    const timeField = ctx.fields[spec.encoding.x?.field];
+    if (period && timeField && !periodsFor(timeField.precision).includes(period.unit)) {
+      errors.push(`transform.period:x: ${timeField.name} is known to the ${timeField.precision === "year" ? "year" : "day"}, so it cannot be counted by ${period.unit}`);
+    }
     const agg = spec.transform.find((/** @type {any} */ t) => t.id === "aggregate");
     if (agg?.fn === "sum" && !ctx.fields[spec.encoding.y?.field]?.additive) errors.push(`transform.aggregate: a sum needs ${spec.encoding.y?.field} marked additive by you`);
     for (const t of spec.transform) {
@@ -3600,7 +3607,7 @@ SELECT (SELECT coalesce(sum(n - 1), 0) FROM c WHERE n > 1)::DOUBLE AS repeats, v
     return { ok: errors.length === 0, errors };
   }
 
-  return { SPEC_VERSION, SEED, PERIODS, LIMITS, SCHEMA, validateSchema, make, edit, validate, axisLabel, autoTitle };
+  return { SPEC_VERSION, SEED, PERIODS, periodsFor, LIMITS, SCHEMA, validateSchema, make, edit, validate, axisLabel, autoTitle };
 });
 </script>
 <script id="chartsql">
@@ -5530,7 +5537,11 @@ FROM ev ORDER BY coalesce(ev.s, ev.e), first, label LIMIT ${size} OFFSET ${(page
       const t = (tid) => spec.transform.find((/** @type {any} */ x) => x.id === tid);
       const trans = [];
       if (t("bin:x")) trans.push(field("bins", "Bins (5 to 100; empty for the Freedman–Diaconis rule)", h("input", { id: id("bins"), name: "bins", type: "number", min: "5", max: "100", step: "1", value: t("bin:x").bins ?? "", placeholder: "by the rule" })));
-      if (t("period:x")) trans.push(field("unit", "Time period", select("unit", ChartSpec.PERIODS.map((p) => [p, p === "auto" ? "By the rule (at least 20 periods)" : p]), t("period:x").unit)));
+      if (t("period:x")) {
+        // Only periods the field's precision allows: a date has no hours, years are counted by year.
+        const units = ChartSpec.periodsFor(st.ctx.fields[spec.encoding.x.field]?.precision);
+        trans.push(field("unit", "Time period", select("unit", units.map((p) => [p, p === "auto" ? "By the rule (at least 20 periods)" : p]), t("period:x").unit)));
+      }
       if (t("top:x")) trans.push(field("top", `Levels of ${spec.encoding.x.field} kept (the rest as Other)`, h("input", { id: id("top"), name: "top", type: "number", min: "1", max: spec.kind === "bar" ? "29" : "12", step: "1", value: t("top:x").n })));
       if (t("top:y")) trans.push(field("topY", `Levels of ${spec.encoding.y.field} kept (the rest as Other)`, h("input", { id: id("topY"), name: "topY", type: "number", min: "1", max: "12", step: "1", value: t("top:y").n })));
       const agg = t("aggregate");
