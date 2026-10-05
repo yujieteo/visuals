@@ -373,8 +373,8 @@ focus N
     return used.some((u) => u.design === "control") ? "The control-variate estimator uses a control mean 0.1 standard deviation above the true mean, so its estimate has a bias of 0.1 β σ_C." : "This failure acts on the control-variate method only. Choose that method to see it.";
   }
 
-  /** The last reference computation. @type {{ key: string, status: any[], refs: any[], win: any }} */
-  let memo = { key: "", status: [], refs: [], win: null };
+  /** The last 24 reference computations, by record and parameter settings, the most recent last. @type {Map<string, { status: any[], refs: any[], win: any }>} */
+  const memo = new Map();
 
   /**
    * Everything the page shows that follows from the state alone. Plain data: no NaN or Infinity.
@@ -394,11 +394,15 @@ focus N
     if (textErrors.length || paramErrors.length || !c.ok) return { ok: false, errors: [...textErrors, ...paramErrors.map((e) => `Parameter settings: ${e}`), ...(c.ok ? [] : c.errors)], ...base };
     // The reference values cost most; they depend on the record and the parameter settings only.
     const key = JSON.stringify([record, overrides]);
-    if (memo.key !== key) {
+    let known = memo.get(key);
+    if (known) memo.delete(key);
+    else {
       const status = En.momentStatus(c), refs = En.reference(c, status);
-      memo = { key, status, refs, win: windowOf(c, refs) };
+      known = { status, refs, win: windowOf(c, refs) };
+      if (memo.size >= 24) memo.delete(/** @type {string} */ (memo.keys().next().value));
     }
-    const { status, refs, win } = memo;
+    memo.set(key, known);
+    const { status, refs, win } = known;
     const a = Math.min(state.alt, c.alternatives.length) - 1;
     const q = Math.min(state.quantity, c.quantities.length) - 1;
     const failureNote = noteOf(state);

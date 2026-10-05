@@ -23,8 +23,10 @@
     if (a !== 0 && (a < 1e-4 || a >= 1e7)) return v.toExponential(2);
     return String(+v.toPrecision(4));
   }
-  /** Words that read as speech: names with underscores become spaces. @param {string} s */
-  const say = (s) => String(s).replace(/_/g, " ").replace(/[$\\`*#|<>×%&≈^]/g, " ").replace(/\s+/g, " ").trim();
+  const SUP = /** @type {Record<string, string>} */ ({ "⁰": "0", "¹": "1", "²": "2", "³": "3", "⁴": "4", "⁵": "5", "⁶": "6", "⁷": "7", "⁸": "8", "⁹": "9", "⁻": "minus " });
+  /** Words that read as speech: names with underscores become spaces, and a superscript becomes "squared" or a power. @param {string} s */
+  const say = (s) => String(s).replace(/_/g, " ").replace(/²(?![⁰¹²³⁴⁵⁶⁷⁸⁹])/g, " squared").replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹⁻]+/g, (m) => ` to the power ${[...m].map((ch) => SUP[ch]).join("")}`)
+    .replace(/[$\\`*#|<>×%&≈^]/g, " ").replace(/\s+/g, " ").trim();
   /** @param {string} s */
   const cell = (s) => String(s).replace(/\|/g, "/");
 

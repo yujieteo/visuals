@@ -361,8 +361,9 @@
       return Math.exp((p.a - 1) * Math.log(x) + (p.b - 1) * Math.log1p(-x) - S.lbeta(p.a, p.b));
     },
     pmf: zero,
-    cdf: (x, p) => (x <= 0 ? 0 : x >= 1 ? 1 : S.ibeta(x, p.a, p.b)),
-    sf: (x, p) => (x <= 0 ? 1 : x >= 1 ? 0 : S.ibetac(x, p.a, p.b)),
+    // Each side from its own tail: 1 − x is exact for x ≥ 1/2, so neither function loses the precision of a small tail.
+    cdf: (x, p) => (x <= 0 ? 0 : x >= 1 ? 1 : x <= 0.5 ? S.ibeta(x, p.a, p.b) : 1 - S.ibeta(1 - x, p.b, p.a)),
+    sf: (x, p) => (x <= 0 ? 1 : x >= 1 ? 0 : x <= 0.5 ? 1 - S.ibeta(x, p.a, p.b) : S.ibeta(1 - x, p.b, p.a)),
     quantile: (u, p) => solved(beta, u, p, p.a / (p.a + p.b)),
     isf: (v, p) => solved(beta, v, p, p.a / (p.a + p.b), true),
     moments: (p) => { const s = p.a + p.b; return { mean: p.a / s, variance: (p.a * p.b) / (s * s * (s + 1)), order: Infinity }; },

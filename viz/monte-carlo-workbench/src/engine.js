@@ -32,8 +32,13 @@
   });
   /** Stratification uses K = 2^s strata, 1 ≤ s ≤ 6, so each block of 1,024 replicates holds 1024/K ≥ 16 in each stratum. */
   const MAX_STRATA = 6;
-  /** The quadrature of a reference evaluates the model at most this many times, and integrates over at most 2 continuous variables. */
-  const QUAD = { evaluations: 2000000, continuous: 2 };
+  /**
+   * The work budget of the quadrature of a reference for each alternative: an evaluation of the model counts 1 and a
+   * CDF evaluation inside a numerical quantile counts 6, about their relative costs. The page computes references
+   * when the model changes, so the budget keeps that below about 0.1 s for each alternative; a model beyond it shows
+   * no reference, with the reason. The quadrature integrates over at most 2 continuous variables.
+   */
+  const QUAD = { work: 800000, quantile: 6, continuous: 2 };
   const ONE_MINUS = 1 - 2 ** -53;
   const TAIL_BREAKS = [2 ** -30, 2 ** -26, 2 ** -22, 2 ** -18, 2 ** -14, 2 ** -10, 2 ** -6, 2 ** -3];
 
@@ -54,7 +59,7 @@
    * @property {{ name: string, expr: string, note?: string }} [control] the control variate of the control-variate method
    */
   /**
-   * @typedef {{ seed: number, method: string, compare?: string, failure?: string, overrides?: Record<string, string>, streams?: "common" | "separate", strata?: number, stratify?: string }} Settings
+   * @typedef {{ seed: number, method: string, compare?: string, failure?: string, overrides?: Record<string, string>, streams?: string, strata?: number, stratify?: string }} Settings
    * `stratify` names the variable whose uniform the stratified method divides into strata; "" picks the focus variable, else the first scalar variable.
    */
 
@@ -335,7 +340,7 @@
       }
       if ((m?.[1] === "sum " || m?.[1] === "mean ") && terms.has(name)) return { mean: null, sd: null, why: `sum() or mean() of ${name} and ${name} itself are not independent terms` };
       const mo = n.law.moments(p), r = n.repeat, scale = m?.[1] === "mean " ? 1 / r : 1;
-      if (mo.mean === null) return { mean: null, sd: null, why: `the mean of ${name} is infinite` };
+      if (mo.mean === null) return { mean: null, sd: null, why: `the mean of ${name} is infinite`, infinite: true };
       mean += k * scale * r * mo.mean;
       variance = variance === null || mo.variance === null ? null : variance + k * k * scale * scale * r * mo.variance;
     }
@@ -798,6 +803,13 @@
         }
       }
       if (classes.every((t) => t.cls === "finite" || t.cls === "bounded" || t.cls === "light") && growth) return { mean: "finite", variance: "finite", reason: "Every variable it reads has finite moments of all orders, and the expression grows at most as a polynomial." };
+      // An affine function of independent variables (or of the components of a vector law) has a mean exactly when
+      // each of its terms has one, and a variance exactly when each term has one.
+      if (q.kind === "expectation") {
+        const lin = c.alternatives.map((/** @type {any} */ alt) => controlMoments(q.trees[0], c, alt.values));
+        if (lin.every((/** @type {any} */ m) => m.mean !== null)) return { mean: "finite", variance: lin.every((/** @type {any} */ m) => m.sd !== null) ? "finite" : "infinite", reason: "The quantity is an affine function of variables with known moments, so linearity gives its mean, and its variance exists exactly when each term has a variance." };
+        if (lin.some((/** @type {any} */ m) => m.infinite)) return { mean: "infinite", variance: "infinite", reason: "The quantity is an affine function of variables, and one of them has an infinite mean." };
+      }
       return { mean: "unknown", variance: "unknown", reason: "The page cannot show that the moments exist. A variable it reads has a heavy or unknown tail, or the expression grows faster than a polynomial." };
     });
   }
@@ -908,11 +920,11 @@
     if (c.nodes.some((/** @type {any} */ n) => n.type === "var" && n.law.continuous)) {
       return c.alternatives.map((/** @type {any} */ alt, /** @type {number} */ a) => {
         // Linearity gives the mean of an affine function of independent variables with known means.
-        const closed = closedForm(c, a, status).map((v, k) => {
+        const closed = closedForm(c, a, status, true).map((v, k) => {
           const q = c.quantities[k];
           return v !== null || q.kind !== "expectation" || status[k].mean !== "finite" ? v : controlMoments(q.trees[0], c, alt.values).mean;
         });
-        const r = closed.every((v) => v !== null) ? { values: closed, reason: "", neglected: 0, marginal: null, method: "closed" } : quadrature(c, status, a);
+        const r = closed.every((v) => v !== null) ? { values: closed, reason: "", neglected: 0, marginal: null, method: "closed" } : quadrature(c, status, a, closed);
         return { ...r, values: r.values.map((/** @type {number | null} */ v, /** @type {number} */ k) => (closed[k] !== null ? closed[k] : v)), closed: closed.map((v) => v !== null) };
       });
     }
@@ -930,10 +942,11 @@
    * quadrature over (0, 1/2) of the quantile function and of the inverse survival function of each continuous
    * variable, so a parameter that reads an earlier variable gives the conditional law. The integrand is the vector
    * of every quantity (numerator and denominator) and the neglected mass. At most 2 continuous variables and 200,000
-   * evaluations of the model; a vector law or a repeated variable has no quadrature.
-   * @param {any} c @param {any[]} status @param {number} a
+   * evaluations of the model; a vector law or a repeated variable has no quadrature. A quantity with a closed form
+   * stays out of the integrand.
+   * @param {any} c @param {any[]} status @param {number} a @param {(number | null)[]} closed
    */
-  function quadrature(c, status, a) {
+  function quadrature(c, status, a, closed) {
     const Q = c.quantities.length, D = 2 * Q + 1, none = c.quantities.map(() => null);
     const vars = c.nodes.filter((/** @type {any} */ n) => n.type === "var");
     const rep = vars.find((/** @type {any} */ n) => n.repeat > 1), vec = vars.find((/** @type {any} */ n) => n.law.dim), cont = vars.filter((/** @type {any} */ n) => n.law.continuous);
@@ -942,16 +955,33 @@
         : cont.length > QUAD.continuous ? `The model has ${cont.length} continuous variables, and the quadrature takes at most ${QUAD.continuous}.` : "";
     if (why) return { values: none, reason: why, neglected: 0, marginal: null, method: "quadrature" };
     const env = c.alternatives[a].values.slice();
-    // A component whose quadrature missed its tolerance at any level has no reference value.
-    const missed = new Uint8Array(D);
-    let left = QUAD.evaluations;
+    // A component whose quadrature missed its tolerance at any level has no reference value. An expectation with no
+    // finite mean gets none either, so it stays 0 in the integrand and does not drive the adaptive splitting.
+    const missed = new Uint8Array(D), skip = c.quantities.map((/** @type {any} */ q, /** @type {number} */ k) => closed[k] !== null || (q.kind !== "probability" && status[k].mean !== "finite"));
+    // The variables that the integrated quantities read, directly or through definitions and parameters of other
+    // variables. A variable that no such quantity reads needs no sum and no integral.
+    /** @type {Set<string>} */
+    const needed = new Set();
+    /** @param {string} name */
+    const need = (name) => {
+      if (needed.has(name)) return;
+      needed.add(name);
+      const n = c.nodes.find((/** @type {any} */ x) => x.name === name);
+      if (n) for (const r of n.reads) need(r);
+    };
+    c.quantities.forEach((/** @type {any} */ q, /** @type {number} */ k) => { if (!skip[k]) for (const r of q.reads) need(r); });
+    // One continuous variable allows a tight tolerance; two need a looser one, because the inner integral repeats at each outer node.
+    const nested = vars.filter((/** @type {any} */ n) => n.law.continuous && needed.has(n.name)).length > 1;
+    let leaves = 0;
+    const solved0 = S.work();
     /** @param {number} i @param {number} depth @returns {Float64Array} */
     const walk = (i, depth) => {
       if (i === c.nodes.length) {
-        if (--left < 0) throw new QuadratureStop(`The quadrature needs more than ${QUAD.evaluations.toLocaleString("en-US")} evaluations of the model.`);
+        if (++leaves + QUAD.quantile * (S.work() - solved0) > QUAD.work) throw new QuadratureStop("The quadrature needs more work than its budget for one alternative, so the page shows no reference value.");
         const out = new Float64Array(D);
         for (let q = 0; q < Q; q++) {
           const qu = c.quantities[q];
+          if (skip[q]) continue;
           if (qu.kind === "ratio") { out[2 * q] = scalar(qu.num(env), qu.name); out[2 * q + 1] = scalar(qu.den(env), qu.name); }
           else { const x = scalar(qu.fn(env), qu.name); out[2 * q] = qu.kind === "probability" ? +(x !== 0) : x; }
         }
@@ -964,9 +994,11 @@
       const errs = node.law.check(pr.params);
       if (errs.length) throw new E.ExprError(`Variable ${node.name}: ${errs[0]}`);
       const law = node.law, p = pr.params, out = new Float64Array(D);
+      if (!needed.has(node.name)) { env[node.slot] = law.continuous ? law.quantile(0.5, p) : law.support(p).lo; return walk(i + 1, depth); }
       if (law.continuous) {
         // Break points at u = 2^-30, 2^-26, …, 2^-2 resolve the tail; a jump below 2^-30 moves a probability by less than 1e-9.
-        const o = depth === 0 ? { rel: 1e-8, abs: 1e-10, maxPanels: 200, breaks: TAIL_BREAKS, openLo: true } : { rel: 1e-9, abs: 1e-11, maxPanels: 80, breaks: TAIL_BREAKS, openLo: true };
+        const o = !nested ? { rel: 1e-10, abs: 1e-12, maxPanels: 300, breaks: TAIL_BREAKS, openLo: true }
+          : depth === 0 ? { rel: 1e-6, abs: 1e-8, maxPanels: 200, breaks: TAIL_BREAKS, openLo: true } : { rel: 1e-7, abs: 1e-9, maxPanels: 80, breaks: TAIL_BREAKS, openLo: true };
         /** @param {(u: number, p: any) => number} g */
         const f = (g) => (/** @type {number} */ u) => { env[node.slot] = g(Math.max(u, 1e-300), p); return walk(i + 1, depth + 1); };
         for (const g of [law.quantile, law.isf]) {
@@ -1016,21 +1048,31 @@
    * also cover a heavy tail such as the zeta law.
    * @param {any} c @param {number} a @param {any[]} status @returns {(number | null)[]}
    */
-  function closedForm(c, a, status) {
+  function closedForm(c, a, status, anyModel = false) {
     const none = c.quantities.map(() => null);
-    if (c.nodes.length !== 1 || c.nodes[0].type !== "var" || !c.nodes[0].constant || c.nodes[0].repeat !== 1 || c.nodes[0].law.dim) return none;
-    const node = c.nodes[0], law = node.law, pr = argsAt(node, c.alternatives[a].values);
-    if (pr.error || law.check(pr.params).length) return none;
-    const p = pr.params, env = c.alternatives[a].values;
+    const scalar = (/** @type {any} */ n) => n?.type === "var" && n.constant && n.repeat === 1 && !n.law.dim;
+    // The discrete path keeps group 1's rule: one variable and nothing else. With a continuous variable, a variable
+    // with constant parameters has its own law as its marginal law, whatever else the model holds.
+    if (!anyModel && (c.nodes.length !== 1 || !scalar(c.nodes[0]))) return none;
+    const env = c.alternatives[a].values.slice();
+    for (const n of c.nodes) if (n.type === "def" && fixed(n.tree, c)) env[n.slot] = n.fn(env);
     const FLIP = /** @type {Record<string, string>} */ ({ "<": ">", "<=": ">=", ">": "<", ">=": "<=", "==": "==", "!=": "!=" });
+    /** The node and its parameters when t names a scalar variable with constant parameters. @param {any} t */
+    const lawOf = (t) => {
+      const node = t.t === "id" ? c.nodes.find((/** @type {any} */ n) => n.name === t.name) : null;
+      if (!scalar(node)) return null;
+      const pr = argsAt(node, env);
+      return pr.error || node.law.check(pr.params).length ? null : { law: node.law, p: pr.params };
+    };
     return c.quantities.map((/** @type {any} */ q, /** @type {number} */ k) => {
       const t = q.trees[0];
-      if (q.kind === "expectation" && t.t === "id" && t.name === node.name) return status[k].mean === "finite" ? law.moments(p).mean : null;
+      if (q.kind === "expectation" && t.t === "id") { const m = lawOf(t); return m && status[k].mean === "finite" ? m.law.moments(m.p).mean : null; }
       if (q.kind !== "probability" || t.t !== "bin" || !(t.op in FLIP)) return null;
-      let op = t.op, side = t.b;
-      if (t.a.t === "id" && t.a.name === node.name && fixed(t.b, c)) side = t.b;
-      else if (t.b.t === "id" && t.b.name === node.name && fixed(t.a, c)) { side = t.a; op = FLIP[op]; }
+      let op = t.op, side = t.b, m = lawOf(t.a);
+      if (m && fixed(t.b, c)) side = t.b;
+      else if ((m = lawOf(t.b)) && fixed(t.a, c)) { side = t.a; op = FLIP[op]; }
       else return null;
+      const { law, p } = m;
       const v = E.compile(side, c.slots)(env);
       if (typeof v !== "number" || Number.isNaN(v)) return null;
       // A continuous law gives every single point probability 0, so P(X < v) = P(X ≤ v) = F(v).
@@ -1185,8 +1227,9 @@
   function gainOf(kind, s, design, mu, iv) {
     if (design === "plain" || kind === "ratio" || !iv.se || (design === "control" && mu === null)) return null;
     if (design === "antithetic") {
-      const one = s.ind, sigma2 = one.n > 1 ? one.m2 / (one.n - 1) : 0, pair = s.n > 1 ? s.m2 / (s.n - 1) : 0;
-      return { ratio: sigma2 / one.n / (iv.se * iv.se), rho: sigma2 > 0 ? (2 * pair) / sigma2 - 1 : null };
+      // ρ from the plug-in variances of the single values and of the pair means: Var(pair mean) = σ²(1 + ρ)/2.
+      const one = s.ind, sigma2 = one.n > 1 ? one.m2 / (one.n - 1) : 0, rho = one.m2 > 0 ? Math.max(-1, Math.min(1, (2 * s.m2 * one.n) / (s.n * one.m2) - 1)) : null;
+      return { ratio: sigma2 / one.n / (iv.se * iv.se), rho };
     }
     const sigma2 = s.n > 1 ? s.m2 / (s.n - 1) : 0, ratio = sigma2 / s.n / (iv.se * iv.se);
     if (design === "control") return { ratio, rho: s.m2 > 0 && s.cbb > 0 ? s.cab / Math.sqrt(s.m2 * s.cbb) : null, beta: s.cbb > 0 ? s.cab / s.cbb : 0 };

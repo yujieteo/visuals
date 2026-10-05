@@ -207,10 +207,13 @@
   /** The x with S(x) = v: the inverse survival function, precise for a small v where 1 − v rounds to 1. @param {number} v @param {{ cdf(x: number): number, sf(x: number): number, pdf(x: number): number, lo: number, hi: number, guess: number }} f */
   const solveSurvival = (v, f) => (v > 0.5 ? solve(1 - v, false, f) : solve(v, true, f));
 
+  /** The number of CDF evaluations of every numerical quantile so far: a deterministic measure of their work. */
+  let solved = 0;
+
   /** @param {number} target @param {boolean} upper @param {{ cdf(x: number): number, sf(x: number): number, pdf(x: number): number, lo: number, hi: number, guess: number }} f */
   function solve(target, upper, f) {
     /** Increasing in x, zero at the quantile. @param {number} x */
-    const g = (x) => (upper ? target - f.sf(x) : f.cdf(x) - target);
+    const g = (x) => { solved++; return upper ? target - f.sf(x) : f.cdf(x) - target; };
     let lo = f.lo, hi = f.hi, x = Number.isFinite(f.guess) ? f.guess : 0;
     if (!(x > lo && x < hi)) x = Number.isFinite(lo) && Number.isFinite(hi) ? (lo + hi) / 2 : Number.isFinite(lo) ? lo + 1 : Number.isFinite(hi) ? hi - 1 : 0;
     let step = Math.max(1, Math.abs(x));
@@ -223,10 +226,15 @@
       if (gx === 0) return x;
       if (gx < 0) lo = x;
       else hi = x;
+      // No double lies strictly inside the bracket: return the end where g is nearer 0.
+      const mid = (lo + hi) / 2;
+      if (!(mid > lo && mid < hi)) return Math.abs(g(lo)) <= Math.abs(g(hi)) ? lo : hi;
       const d = f.pdf(x), newton = x - gx / d;
-      const next = d > 0 && Number.isFinite(newton) && newton > lo && newton < hi ? newton : (lo + hi) / 2;
-      if (Math.abs(next - x) <= 4e-16 * Math.abs(x) + 1e-300 || hi - lo <= 4e-16 * Math.max(Math.abs(lo), Math.abs(hi))) return next;
-      x = next;
+      if (d > 0 && Number.isFinite(newton) && newton > lo && newton < hi) {
+        // A Newton step of at most one unit in the last place has converged.
+        if (Math.abs(newton - x) <= 2.3e-16 * Math.abs(x) + 1e-300) return newton;
+        x = newton;
+      } else x = mid;
     }
     return x;
   }
@@ -339,5 +347,5 @@
   /** The upper tail of the chi-square law with df degrees of freedom. @param {number} x @param {number} df */
   const chiSquareSf = (x, df) => gammaPQ(df / 2, x / 2).Q;
 
-  return { lgamma, lchoose, lbeta, hurwitz, zeta, harmonic, gammaPQ, ibeta, ibetac, ibetaInv, normalCdf, normalPdf, normalQuantile, solveQuantile, solveSurvival, integrate, clopperPearson, wilson, zeroHitBound, chiSquareSf };
+  return { work: () => solved, lgamma, lchoose, lbeta, hurwitz, zeta, harmonic, gammaPQ, ibeta, ibetac, ibetaInv, normalCdf, normalPdf, normalQuantile, solveQuantile, solveSurvival, integrate, clopperPearson, wilson, zeroHitBound, chiSquareSf };
 });

@@ -36,7 +36,8 @@
     "to": "categorical",
     "relation": "relabelled case: a categorical law with 2 labels"
    }
-  ]
+  ],
+  "type": "discrete"
  },
  {
   "id": "binomial",
@@ -59,7 +60,7 @@
   "limits": [
    "n = 1 gives the Bernoulli law.",
    "If n → ∞ and np → λ, the law converges to Poisson(λ): the law of small numbers.",
-   "If n → ∞ with p fixed in (0, 1), (X − np)/√(np(1 − p)) converges in law to the standard normal law (de Moivre–Laplace). Group 2 adds the normal law.",
+   "If n → ∞ with p fixed in (0, 1), (X − np)/√(np(1 − p)) converges in law to the standard normal law (de Moivre–Laplace).",
    "Hypergeometric(N, K, n) converges to Binomial(n, p) as N → ∞ with K/N → p.",
    "Each component of a multinomial count vector has a binomial law."
   ],
@@ -89,8 +90,17 @@
    {
     "to": "multinomial",
     "relation": "each multinomial component, and the case k = 2"
+   },
+   {
+    "to": "normal",
+    "relation": "the standardised count converges to N(0, 1) (de Moivre–Laplace)"
+   },
+   {
+    "to": "beta",
+    "relation": "the beta law is the conjugate prior of p"
    }
-  ]
+  ],
+  "type": "discrete"
  },
  {
   "id": "categorical",
@@ -134,7 +144,8 @@
     "to": "uniform",
     "relation": "equal weights"
    }
-  ]
+  ],
+  "type": "discrete"
  },
  {
   "id": "multinomial",
@@ -158,7 +169,7 @@
    "Each component has the law X_j ~ Binomial(n, p_j).",
    "k = 2 gives (X_1, n − X_1) with X_1 ~ Binomial(n, p_1).",
    "n = 1 gives the indicator vector of one categorical draw.",
-   "As n → ∞, (X − np)/√n converges in law to a multivariate normal law with covariance diag(p) − pp^T. Group 2 adds that law."
+   "As n → ∞, (X − np)/√n converges in law to a multivariate normal law with covariance diag(p) − pp^T."
   ],
   "moments": {
    "mean": "\\mathbb{E}[X_j] = n p_j",
@@ -178,8 +189,17 @@
    {
     "to": "categorical",
     "relation": "the case n = 1"
+   },
+   {
+    "to": "mvnormal",
+    "relation": "the standardised count vector converges to a multivariate normal law"
+   },
+   {
+    "to": "dirichlet",
+    "relation": "the Dirichlet law is the conjugate prior of the category probabilities"
    }
-  ]
+  ],
+  "type": "discrete"
  },
  {
   "id": "uniform",
@@ -202,7 +222,7 @@
   "limits": [
    "a = b gives a point mass.",
    "The Zipf law with s = 0 on 1, …, N is the discrete uniform law on 1, …, N.",
-   "(X − a)/m converges in law to Uniform(0, 1) as m → ∞. Group 2 adds that law.",
+   "(X − a)/m converges in law to the continuous uniform law U(0, 1) as m → ∞.",
    "The sum of 2 discrete uniform values that are independent has a triangular PMF, not a uniform one."
   ],
   "moments": {
@@ -223,8 +243,13 @@
    {
     "to": "zipf",
     "relation": "the Zipf law with s = 0"
+   },
+   {
+    "to": "cuniform",
+    "relation": "the limit of (X − a)/m, and ⌊a + (b − a + 1)U⌋ of a continuous uniform value"
    }
-  ]
+  ],
+  "type": "discrete"
  },
  {
   "id": "geometric",
@@ -242,7 +267,7 @@
   "limits": [
    "p = 1 gives a point mass at 0.",
    "The geometric law is the negative binomial law with r = 1.",
-   "pX converges in law to Exponential(1) as p → 0. Group 2 adds that law.",
+   "pX converges in law to Exponential(1) as p → 0.",
    "It is the only law on {0, 1, 2, …} without memory: P(X ≥ s + t | X ≥ s) = P(X ≥ t)."
   ],
   "moments": {
@@ -259,8 +284,13 @@
    {
     "to": "negbin",
     "relation": "special case r = 1"
+   },
+   {
+    "to": "exponential",
+    "relation": "⌊X⌋ of an exponential value; pX converges to Exponential(1) as p → 0"
    }
-  ]
+  ],
+  "type": "discrete"
  },
  {
   "id": "negbin",
@@ -304,8 +334,13 @@
    {
     "to": "poisson",
     "relation": "limit: r → ∞ with the mean fixed"
+   },
+   {
+    "to": "gamma",
+    "relation": "a Poisson count with a gamma rate is negative binomial"
    }
-  ]
+  ],
+  "type": "discrete"
  },
  {
   "id": "poisson",
@@ -325,7 +360,7 @@
    "Binomial(n, λ/n) converges to Poisson(λ) as n → ∞.",
    "The negative binomial law with mean λ converges to Poisson(λ) as r → ∞.",
    "The sum of independent Poisson(λ_1) and Poisson(λ_2) values has the law Poisson(λ_1 + λ_2).",
-   "(X − λ)/√λ converges in law to the standard normal law as λ → ∞. Group 2 adds that law."
+   "(X − λ)/√λ converges in law to the standard normal law as λ → ∞."
   ],
   "moments": {
    "mean": "\\lambda",
@@ -345,8 +380,21 @@
    {
     "to": "negbin",
     "relation": "limit of the negative binomial law as r → ∞"
+   },
+   {
+    "to": "normal",
+    "relation": "the standardised count converges to N(0, 1) as λ → ∞"
+   },
+   {
+    "to": "exponential",
+    "relation": "the times between the events of a Poisson process are exponential"
+   },
+   {
+    "to": "erlang",
+    "relation": "P(N(t) < k) = P(Erlang(k, λ) > t)"
    }
-  ]
+  ],
+  "type": "discrete"
  },
  {
   "id": "hypergeometric",
@@ -391,7 +439,8 @@
     "to": "binomial",
     "relation": "limit: N → ∞ with K/N → p"
    }
-  ]
+  ],
+  "type": "discrete"
  },
  {
   "id": "zipf",
@@ -430,6 +479,696 @@
    {
     "to": "uniform",
     "relation": "the case s = 0"
+   }
+  ],
+  "type": "discrete"
+ },
+ {
+  "id": "cuniform",
+  "name": "Continuous uniform",
+  "type": "continuous",
+  "convention": "X takes a value in [a, b], and intervals of equal length inside [a, b] have equal probability.",
+  "pdf": "f(x) = \\frac{1}{b-a}, \\quad a \\le x \\le b",
+  "params": [
+   {
+    "name": "a",
+    "tex": "a",
+    "domain": "a \\in \\mathbb{R}"
+   },
+   {
+    "name": "b",
+    "tex": "b",
+    "domain": "b > a"
+   }
+  ],
+  "support": "[a, b]",
+  "limits": [
+   "a = 0 and b = 1 give the standard uniform law U(0, 1), the input of every sampler of this page.",
+   "Beta(1, 1) is U(0, 1).",
+   "If U ~ U(0, 1), then −log(U)/λ has the exponential law with rate λ, and log(U/(1 − U)) has the standard logistic law.",
+   "For integers a ≤ b, ⌊a + (b − a + 1)U⌋ has the discrete uniform law on {a, …, b}.",
+   "The sum of n independent U(0, 1) values has the Irwin–Hall law. For a large n it is near the normal law with mean n/2 and variance n/12."
+  ],
+  "moments": {
+   "mean": "\\frac{a+b}{2}",
+   "variance": "\\frac{(b-a)^2}{12}",
+   "existence": "All moments exist, because the support is bounded. The MGF exists for all real t."
+  },
+  "transforms": {
+   "mgf": "M(t) = \\frac{e^{tb} - e^{ta}}{t(b-a)}, \\ t \\ne 0, \\quad M(0) = 1",
+   "cf": "\\varphi(t) = \\frac{e^{itb} - e^{ita}}{it(b-a)}, \\ t \\ne 0"
+  },
+  "links": [
+   {
+    "to": "beta",
+    "relation": "U(0, 1) is Beta(1, 1)"
+   },
+   {
+    "to": "exponential",
+    "relation": "−log(U)/λ is exponential: the inverse transform"
+   },
+   {
+    "to": "logistic",
+    "relation": "log(U/(1 − U)) is standard logistic"
+   },
+   {
+    "to": "uniform",
+    "relation": "the discrete version: ⌊a + (b − a + 1)U⌋"
+   }
+  ]
+ },
+ {
+  "id": "normal",
+  "name": "Normal",
+  "type": "continuous",
+  "convention": "X has the mean μ and the standard deviation σ. The density is symmetric about μ.",
+  "pdf": "f(x) = \\frac{1}{\\sigma\\sqrt{2\\pi}} \\exp\\left(-\\frac{(x-\\mu)^2}{2\\sigma^2}\\right)",
+  "params": [
+   {
+    "name": "mu",
+    "tex": "\\mu",
+    "domain": "\\mu \\in \\mathbb{R}"
+   },
+   {
+    "name": "sigma",
+    "tex": "\\sigma",
+    "domain": "\\sigma > 0"
+   }
+  ],
+  "support": "\\mathbb{R}",
+  "limits": [
+   "σ → 0 gives the point mass at μ.",
+   "The central limit theorem: a normalised sum of i.i.d. values with a finite variance converges in law to N(0, 1).",
+   "Binomial(n, p) is near N(np, np(1 − p)) for a large n (de Moivre–Laplace), and Poisson(λ) is near N(λ, λ) for a large λ.",
+   "Student's t law with ν degrees of freedom converges to N(0, 1) as ν → ∞.",
+   "If Z ~ N(0, 1), then Z² has the chi-square law with 1 degree of freedom.",
+   "Each component of a multivariate normal vector is normal.",
+   "A normal law whose variance is exponential gives the Laplace law."
+  ],
+  "moments": {
+   "mean": "\\mu",
+   "variance": "\\sigma^2",
+   "existence": "All moments exist. P(|X − μ| > kσ) is about 0.317, 0.0455 and 0.0027 for k = 1, 2 and 3. The MGF exists for all real t."
+  },
+  "transforms": {
+   "mgf": "M(t) = \\exp\\left(\\mu t + \\tfrac{1}{2}\\sigma^2 t^2\\right)",
+   "cf": "\\varphi(t) = \\exp\\left(i\\mu t - \\tfrac{1}{2}\\sigma^2 t^2\\right)"
+  },
+  "links": [
+   {
+    "to": "mvnormal",
+    "relation": "each component of a multivariate normal vector"
+   },
+   {
+    "to": "student",
+    "relation": "the limit of Student's t law as ν → ∞"
+   },
+   {
+    "to": "chisq",
+    "relation": "Z² is χ²(1); a sum of ν squares is χ²(ν)"
+   },
+   {
+    "to": "binomial",
+    "relation": "the limit of the standardised binomial law (de Moivre–Laplace)"
+   },
+   {
+    "to": "poisson",
+    "relation": "the limit of the standardised Poisson law as λ → ∞"
+   },
+   {
+    "to": "laplace",
+    "relation": "a normal law with an exponential variance is Laplace"
+   }
+  ]
+ },
+ {
+  "id": "mvnormal",
+  "name": "Multivariate normal",
+  "type": "continuous",
+  "convention": "X = (X₁, …, X_k) has the mean vector μ and the covariance matrix Σ, which is symmetric and positive definite. The model text writes Σ as k² entries, row by row.",
+  "pdf": "f(x) = (2\\pi)^{-k/2} \\det(\\Sigma)^{-1/2} \\exp\\left(-\\tfrac{1}{2}(x-\\mu)^{\\top}\\Sigma^{-1}(x-\\mu)\\right), \\quad x \\in \\mathbb{R}^k",
+  "params": [
+   {
+    "name": "mu",
+    "tex": "\\mu",
+    "domain": "\\mu \\in \\mathbb{R}^k, \\ 1 \\le k \\le 20"
+   },
+   {
+    "name": "cov",
+    "tex": "\\Sigma",
+    "domain": "\\Sigma = \\Sigma^{\\top}, \\ \\Sigma \\ \\text{positive definite}"
+   }
+  ],
+  "support": "\\mathbb{R}^k",
+  "limits": [
+   "k = 1 gives the normal law N(μ, Σ₁₁).",
+   "Each component X_j is N(μ_j, Σ_jj). Each linear form a + bᵀX is normal, with the mean a + bᵀμ and the variance bᵀΣb.",
+   "Components with covariance 0 are independent. This is true for the normal law, not for other laws.",
+   "X = μ + LZ, with L the Cholesky factor of Σ and Z a vector of independent N(0, 1) values.",
+   "For |ρ| < 1 the joint tails are asymptotically independent: the normal law has no tail dependence. Group 5 adds copulas with tail dependence."
+  ],
+  "moments": {
+   "mean": "\\mathbb{E}X = \\mu",
+   "variance": "\\operatorname{Cov}X = \\Sigma",
+   "existence": "All moments exist. The page reads the vector through its components X[j], their sums and their linear forms."
+  },
+  "transforms": {
+   "mgf": "M(t) = \\exp\\left(t^{\\top}\\mu + \\tfrac{1}{2}t^{\\top}\\Sigma t\\right), \\quad t \\in \\mathbb{R}^k",
+   "cf": "\\varphi(t) = \\exp\\left(i t^{\\top}\\mu - \\tfrac{1}{2}t^{\\top}\\Sigma t\\right)"
+  },
+  "links": [
+   {
+    "to": "normal",
+    "relation": "each component and each linear form is normal"
+   },
+   {
+    "to": "multinomial",
+    "relation": "the limit of the standardised multinomial count vector"
+   }
+  ]
+ },
+ {
+  "id": "exponential",
+  "name": "Exponential",
+  "type": "continuous",
+  "convention": "X is a waiting time with a constant rate λ: P(X > t) = e^(−λt). The mean is 1/λ.",
+  "pdf": "f(x) = \\lambda e^{-\\lambda x}, \\quad x \\ge 0",
+  "params": [
+   {
+    "name": "rate",
+    "tex": "\\lambda",
+    "domain": "\\lambda > 0"
+   }
+  ],
+  "support": "[0, \\infty)",
+  "limits": [
+   "Memorylessness: P(X > s + t | X > s) = P(X > t). It is the only continuous law with this property.",
+   "Exponential(λ) is Gamma(1, 1/λ) and Erlang(1, λ).",
+   "The times between the events of a Poisson process with rate λ are i.i.d. Exponential(λ). Thus the count of events in [0, t] is Poisson(λt).",
+   "⌊X⌋ has the geometric law with the success probability 1 − e^(−λ).",
+   "The minimum of independent exponential values with rates λ_i is exponential with the rate Σλ_i.",
+   "The difference of two i.i.d. exponential values has the Laplace law.",
+   "χ²(2) is the exponential law with rate 1/2."
+  ],
+  "moments": {
+   "mean": "\\frac{1}{\\lambda}",
+   "variance": "\\frac{1}{\\lambda^2}",
+   "existence": "All moments exist: E[X^r] = r!/λ^r. The MGF exists for t < λ."
+  },
+  "transforms": {
+   "mgf": "M(t) = \\frac{\\lambda}{\\lambda - t}, \\quad t < \\lambda",
+   "cf": "\\varphi(t) = \\frac{\\lambda}{\\lambda - it}"
+  },
+  "links": [
+   {
+    "to": "gamma",
+    "relation": "the special case k = 1, θ = 1/λ"
+   },
+   {
+    "to": "erlang",
+    "relation": "the special case k = 1"
+   },
+   {
+    "to": "geometric",
+    "relation": "⌊X⌋ is geometric with p = 1 − e^(−λ)"
+   },
+   {
+    "to": "poisson",
+    "relation": "the waiting times of a Poisson process"
+   },
+   {
+    "to": "laplace",
+    "relation": "the difference of two i.i.d. exponential values is Laplace"
+   },
+   {
+    "to": "cuniform",
+    "relation": "−log(U)/λ for U ~ U(0, 1)"
+   },
+   {
+    "to": "chisq",
+    "relation": "χ²(2) is exponential with rate 1/2"
+   }
+  ]
+ },
+ {
+  "id": "gamma",
+  "name": "Gamma",
+  "type": "continuous",
+  "convention": "X has the shape k and the scale θ, so its mean is kθ. For an integer k it is the sum of k independent exponential values with mean θ.",
+  "pdf": "f(x) = \\frac{x^{k-1} e^{-x/\\theta}}{\\Gamma(k)\\,\\theta^k}, \\quad x > 0",
+  "params": [
+   {
+    "name": "k",
+    "tex": "k",
+    "domain": "k > 0"
+   },
+   {
+    "name": "theta",
+    "tex": "\\theta",
+    "domain": "\\theta > 0"
+   }
+  ],
+  "support": "(0, \\infty)",
+  "limits": [
+   "k = 1 gives the exponential law with rate 1/θ.",
+   "An integer k gives the Erlang law: Erlang(k, λ) = Gamma(k, 1/λ).",
+   "Gamma(ν/2, 2) is the chi-square law with ν degrees of freedom.",
+   "For independent values with the same scale, Gamma(k₁, θ) + Gamma(k₂, θ) = Gamma(k₁ + k₂, θ).",
+   "As k → ∞, (X − kθ)/(θ√k) converges in law to N(0, 1).",
+   "If G₁ ~ Gamma(a, 1) and G₂ ~ Gamma(b, 1) are independent, then G₁/(G₁ + G₂) ~ Beta(a, b). Normalised gamma values give the Dirichlet law.",
+   "A Poisson count whose rate has a gamma law has the negative binomial law."
+  ],
+  "moments": {
+   "mean": "k\\theta",
+   "variance": "k\\theta^2",
+   "existence": "All moments exist: E[X^r] = θ^r Γ(k + r)/Γ(k). The density is unbounded at 0 for k < 1. The MGF exists for t < 1/θ."
+  },
+  "transforms": {
+   "mgf": "M(t) = (1 - \\theta t)^{-k}, \\quad t < 1/\\theta",
+   "cf": "\\varphi(t) = (1 - i\\theta t)^{-k}"
+  },
+  "links": [
+   {
+    "to": "exponential",
+    "relation": "the special case k = 1"
+   },
+   {
+    "to": "erlang",
+    "relation": "an integer shape: Erlang(k, λ) = Gamma(k, 1/λ)"
+   },
+   {
+    "to": "chisq",
+    "relation": "χ²(ν) = Gamma(ν/2, 2)"
+   },
+   {
+    "to": "beta",
+    "relation": "G₁/(G₁ + G₂) is beta"
+   },
+   {
+    "to": "dirichlet",
+    "relation": "normalised gamma values are Dirichlet"
+   },
+   {
+    "to": "negbin",
+    "relation": "a gamma mixture of Poisson laws is negative binomial"
+   }
+  ]
+ },
+ {
+  "id": "erlang",
+  "name": "Erlang",
+  "type": "continuous",
+  "convention": "X is the sum of k independent exponential phases, each with rate λ: the time of the k-th event of a Poisson process with rate λ.",
+  "pdf": "f(x) = \\frac{\\lambda^k x^{k-1} e^{-\\lambda x}}{(k-1)!}, \\quad x \\ge 0",
+  "params": [
+   {
+    "name": "k",
+    "tex": "k",
+    "domain": "k \\in \\{1, 2, \\dots\\}"
+   },
+   {
+    "name": "rate",
+    "tex": "\\lambda",
+    "domain": "\\lambda > 0"
+   }
+  ],
+  "support": "[0, \\infty)",
+  "limits": [
+   "k = 1 gives the exponential law.",
+   "Erlang(k, λ) = Gamma(k, 1/λ).",
+   "P(X > t) = P(N(t) < k) = Σ_{j<k} e^(−λt)(λt)^j/j!, with N(t) ~ Poisson(λt).",
+   "As k → ∞ with the mean k/λ fixed, X converges to the constant k/λ: the coefficient of variation is 1/√k."
+  ],
+  "moments": {
+   "mean": "\\frac{k}{\\lambda}",
+   "variance": "\\frac{k}{\\lambda^2}",
+   "existence": "All moments exist. The MGF exists for t < λ."
+  },
+  "transforms": {
+   "mgf": "M(t) = \\left(\\frac{\\lambda}{\\lambda - t}\\right)^k, \\quad t < \\lambda",
+   "cf": "\\varphi(t) = \\left(\\frac{\\lambda}{\\lambda - it}\\right)^k"
+  },
+  "links": [
+   {
+    "to": "exponential",
+    "relation": "the special case k = 1, and the law of each phase"
+   },
+   {
+    "to": "gamma",
+    "relation": "Erlang(k, λ) = Gamma(k, 1/λ)"
+   },
+   {
+    "to": "poisson",
+    "relation": "P(X > t) = P(N(t) < k) for a Poisson process"
+   }
+  ]
+ },
+ {
+  "id": "beta",
+  "name": "Beta",
+  "type": "continuous",
+  "convention": "X is a proportion in [0, 1] with the shapes a and b. The mean is a/(a + b).",
+  "pdf": "f(x) = \\frac{x^{a-1}(1-x)^{b-1}}{B(a, b)}, \\quad 0 < x < 1",
+  "params": [
+   {
+    "name": "a",
+    "tex": "a",
+    "domain": "a > 0"
+   },
+   {
+    "name": "b",
+    "tex": "b",
+    "domain": "b > 0"
+   }
+  ],
+  "support": "[0, 1]",
+  "limits": [
+   "Beta(1, 1) is U(0, 1).",
+   "a < 1 and b < 1 give a U shape. a = b gives a law that is symmetric about 1/2.",
+   "G₁/(G₁ + G₂) with independent G₁ ~ Gamma(a, 1) and G₂ ~ Gamma(b, 1).",
+   "Each component of a Dirichlet vector is beta, and the Dirichlet law with 2 parts is the beta law.",
+   "Beta(a, b) is the conjugate prior of a binomial success probability: after k successes in n trials, the posterior is Beta(a + k, b + n − k).",
+   "If Y ~ Beta(d₁/2, d₂/2), then d₂Y/(d₁(1 − Y)) has the F law."
+  ],
+  "moments": {
+   "mean": "\\frac{a}{a+b}",
+   "variance": "\\frac{ab}{(a+b)^2(a+b+1)}",
+   "existence": "All moments exist, because the support is bounded. The density is unbounded at 0 for a < 1 and at 1 for b < 1."
+  },
+  "transforms": {
+   "mgf": "M(t) = {}_1F_1(a; a+b; t)",
+   "cf": "\\varphi(t) = {}_1F_1(a; a+b; it)"
+  },
+  "links": [
+   {
+    "to": "cuniform",
+    "relation": "Beta(1, 1) is U(0, 1)"
+   },
+   {
+    "to": "gamma",
+    "relation": "G₁/(G₁ + G₂) of independent gamma values"
+   },
+   {
+    "to": "dirichlet",
+    "relation": "the case k = 2, and each component"
+   },
+   {
+    "to": "binomial",
+    "relation": "the conjugate prior of the success probability"
+   },
+   {
+    "to": "fisher",
+    "relation": "d₂Y/(d₁(1 − Y)) is F"
+   }
+  ]
+ },
+ {
+  "id": "dirichlet",
+  "name": "Dirichlet",
+  "type": "continuous",
+  "convention": "X = (X₁, …, X_k) is a vector of proportions with X_j ≥ 0 and Σ X_j = 1. The concentrations α_j set the means α_j/α₀, with α₀ = Σ α_j. A larger α₀ gives a smaller spread.",
+  "pdf": "f(x) = \\frac{\\Gamma(\\alpha_0)}{\\prod_j \\Gamma(\\alpha_j)} \\prod_{j=1}^{k} x_j^{\\alpha_j - 1}, \\quad x \\in \\Delta_{k-1}",
+  "params": [
+   {
+    "name": "alpha",
+    "tex": "\\alpha",
+    "domain": "\\alpha_j > 0, \\ k \\ge 2"
+   }
+  ],
+  "support": "\\Delta_{k-1} = \\{x \\in [0,1]^k : \\textstyle\\sum_j x_j = 1\\}",
+  "limits": [
+   "k = 2 gives the beta law: X₁ ~ Beta(α₁, α₂).",
+   "Each component X_j ~ Beta(α_j, α₀ − α_j).",
+   "X_j = G_j/Σ G_i, with independent G_j ~ Gamma(α_j, 1).",
+   "It is the conjugate prior of multinomial probabilities: after the counts n_j, the posterior is Dirichlet(α_j + n_j).",
+   "α_j = 1 for every j gives the uniform law on the simplex."
+  ],
+  "moments": {
+   "mean": "\\mathbb{E}X_j = \\frac{\\alpha_j}{\\alpha_0}",
+   "variance": "\\operatorname{Var}X_j = \\frac{\\alpha_j(\\alpha_0 - \\alpha_j)}{\\alpha_0^2(\\alpha_0+1)}, \\quad \\operatorname{Cov}(X_i, X_j) = -\\frac{\\alpha_i\\alpha_j}{\\alpha_0^2(\\alpha_0+1)}",
+   "existence": "All moments exist, because each component is in [0, 1]."
+  },
+  "transforms": {
+   "mgf": "M(t) = \\mathbb{E}\\,e^{t^{\\top}X} \\ \\text{is finite for every} \\ t \\in \\mathbb{R}^k \\ \\text{(no closed form)}",
+   "cf": "\\varphi(t) = \\mathbb{E}\\,e^{i t^{\\top}X} \\ \\text{(no closed form)}"
+  },
+  "links": [
+   {
+    "to": "beta",
+    "relation": "each component, and the case k = 2"
+   },
+   {
+    "to": "gamma",
+    "relation": "normalised independent gamma values"
+   },
+   {
+    "to": "multinomial",
+    "relation": "the conjugate prior of the category probabilities"
+   }
+  ]
+ },
+ {
+  "id": "chisq",
+  "name": "Chi-square",
+  "type": "continuous",
+  "convention": "X is the sum of ν squared independent standard normal values. A real ν > 0 gives Gamma(ν/2, 2).",
+  "pdf": "f(x) = \\frac{x^{\\nu/2-1} e^{-x/2}}{2^{\\nu/2}\\,\\Gamma(\\nu/2)}, \\quad x > 0",
+  "params": [
+   {
+    "name": "nu",
+    "tex": "\\nu",
+    "domain": "\\nu > 0"
+   }
+  ],
+  "support": "(0, \\infty)",
+  "limits": [
+   "χ²(ν) = Gamma(ν/2, 2).",
+   "χ²(2) is the exponential law with rate 1/2.",
+   "(X − ν)/√(2ν) converges in law to N(0, 1) as ν → ∞. The right tail converges slowly.",
+   "For n i.i.d. normal values with variance σ², (n − 1)S²/σ² ~ χ²(n − 1).",
+   "Z/√(V/ν), with Z ~ N(0, 1) and V ~ χ²(ν) independent, has Student's t law.",
+   "(V₁/d₁)/(V₂/d₂), with independent chi-square values, has the F law."
+  ],
+  "moments": {
+   "mean": "\\nu",
+   "variance": "2\\nu",
+   "existence": "All moments exist. The MGF exists for t < 1/2."
+  },
+  "transforms": {
+   "mgf": "M(t) = (1 - 2t)^{-\\nu/2}, \\quad t < 1/2",
+   "cf": "\\varphi(t) = (1 - 2it)^{-\\nu/2}"
+  },
+  "links": [
+   {
+    "to": "normal",
+    "relation": "the sum of ν squared standard normal values"
+   },
+   {
+    "to": "gamma",
+    "relation": "χ²(ν) = Gamma(ν/2, 2)"
+   },
+   {
+    "to": "exponential",
+    "relation": "ν = 2 gives the exponential law with rate 1/2"
+   },
+   {
+    "to": "student",
+    "relation": "V in T = Z/√(V/ν)"
+   },
+   {
+    "to": "fisher",
+    "relation": "the ratio of two scaled chi-square values is F"
+   }
+  ]
+ },
+ {
+  "id": "student",
+  "name": "Student's t",
+  "type": "continuous",
+  "convention": "T = Z/√(V/ν), with Z ~ N(0, 1) and V ~ χ²(ν) independent. The page uses the standard t law: write μ + sT for a location μ and a scale s.",
+  "pdf": "f(t) = \\frac{\\Gamma\\left(\\frac{\\nu+1}{2}\\right)}{\\sqrt{\\nu\\pi}\\,\\Gamma\\left(\\frac{\\nu}{2}\\right)} \\left(1 + \\frac{t^2}{\\nu}\\right)^{-\\frac{\\nu+1}{2}}",
+  "params": [
+   {
+    "name": "nu",
+    "tex": "\\nu",
+    "domain": "\\nu > 0"
+   }
+  ],
+  "support": "\\mathbb{R}",
+  "limits": [
+   "ν = 1 gives the Cauchy law, which has no mean. Group 3 adds the Cauchy law.",
+   "ν → ∞ gives N(0, 1).",
+   "T² ~ F(1, ν).",
+   "The tail is regularly varying: P(T > t) ~ c t^(−ν) as t → ∞.",
+   "T is a scale mixture of normal laws: T = Z/√W with νW ~ χ²(ν)."
+  ],
+  "moments": {
+   "mean": "0 \\ (\\nu > 1)",
+   "variance": "\\frac{\\nu}{\\nu-2} \\ (\\nu > 2)",
+   "existence": "E|T|^r is finite if and only if r < ν. Thus the mean exists only for ν > 1, and the variance only for ν > 2. The MGF is infinite for every t ≠ 0."
+  },
+  "transforms": {
+   "mgf": "M(t) = \\infty \\ \\text{for every} \\ t \\ne 0",
+   "cf": "\\varphi(t) = \\frac{K_{\\nu/2}\\left(\\sqrt{\\nu}\\,|t|\\right)\\left(\\sqrt{\\nu}\\,|t|\\right)^{\\nu/2}}{\\Gamma(\\nu/2)\\,2^{\\nu/2-1}}"
+  },
+  "links": [
+   {
+    "to": "normal",
+    "relation": "the limit as ν → ∞, and Z in Z/√(V/ν)"
+   },
+   {
+    "to": "chisq",
+    "relation": "V in Z/√(V/ν)"
+   },
+   {
+    "to": "fisher",
+    "relation": "T² ~ F(1, ν)"
+   }
+  ]
+ },
+ {
+  "id": "fisher",
+  "name": "F (Fisher–Snedecor)",
+  "type": "continuous",
+  "convention": "X = (V₁/d₁)/(V₂/d₂), with independent V₁ ~ χ²(d₁) and V₂ ~ χ²(d₂): the ratio of two variance estimates.",
+  "pdf": "f(x) = \\frac{1}{B\\left(\\frac{d_1}{2}, \\frac{d_2}{2}\\right)} \\left(\\frac{d_1}{d_2}\\right)^{d_1/2} x^{d_1/2 - 1} \\left(1 + \\frac{d_1}{d_2}x\\right)^{-\\frac{d_1+d_2}{2}}, \\quad x > 0",
+  "params": [
+   {
+    "name": "d1",
+    "tex": "d_1",
+    "domain": "d_1 > 0"
+   },
+   {
+    "name": "d2",
+    "tex": "d_2",
+    "domain": "d_2 > 0"
+   }
+  ],
+  "support": "(0, \\infty)",
+  "limits": [
+   "T² ~ F(1, ν) for Student's T with ν degrees of freedom.",
+   "d₁X converges in law to χ²(d₁) as d₂ → ∞.",
+   "1/X ~ F(d₂, d₁).",
+   "d₁X/(d₁X + d₂) ~ Beta(d₁/2, d₂/2).",
+   "The right tail is regularly varying with index d₂/2."
+  ],
+  "moments": {
+   "mean": "\\frac{d_2}{d_2 - 2} \\ (d_2 > 2)",
+   "variance": "\\frac{2 d_2^2 (d_1 + d_2 - 2)}{d_1 (d_2 - 2)^2 (d_2 - 4)} \\ (d_2 > 4)",
+   "existence": "E[X^r] is finite if and only if r < d₂/2. Thus the mean needs d₂ > 2, and the variance needs d₂ > 4. The MGF is infinite for every t > 0."
+  },
+  "transforms": {
+   "mgf": "M(t) = \\infty \\ \\text{for every} \\ t > 0",
+   "cf": "\\varphi(t) = \\frac{\\Gamma\\left(\\frac{d_1+d_2}{2}\\right)}{\\Gamma\\left(\\frac{d_2}{2}\\right)}\\, U\\left(\\tfrac{d_1}{2},\\, 1 - \\tfrac{d_2}{2},\\, -\\tfrac{d_2}{d_1}\\, i t\\right)"
+  },
+  "links": [
+   {
+    "to": "chisq",
+    "relation": "the ratio of two scaled chi-square values"
+   },
+   {
+    "to": "student",
+    "relation": "T² ~ F(1, ν)"
+   },
+   {
+    "to": "beta",
+    "relation": "d₁X/(d₁X + d₂) is Beta(d₁/2, d₂/2)"
+   }
+  ]
+ },
+ {
+  "id": "logistic",
+  "name": "Logistic",
+  "type": "continuous",
+  "convention": "X has the location μ and the scale s. Its CDF is the logistic (sigmoid) function of (x − μ)/s.",
+  "pdf": "f(x) = \\frac{e^{-(x-\\mu)/s}}{s\\left(1 + e^{-(x-\\mu)/s}\\right)^2}, \\qquad F(x) = \\frac{1}{1 + e^{-(x-\\mu)/s}}",
+  "params": [
+   {
+    "name": "mu",
+    "tex": "\\mu",
+    "domain": "\\mu \\in \\mathbb{R}"
+   },
+   {
+    "name": "s",
+    "tex": "s",
+    "domain": "s > 0"
+   }
+  ],
+  "support": "\\mathbb{R}",
+  "limits": [
+   "The CDF is the inverse of the logit function log(p/(1 − p)).",
+   "log(U/(1 − U)) for U ~ U(0, 1) is standard logistic.",
+   "The difference of two i.i.d. standard Gumbel values is standard logistic.",
+   "The variance is s²π²/3. At the same variance its tails are heavier than normal tails: P(X > μ + 3σ) is about 0.0043, against 0.00135 for the normal law.",
+   "A logistic latent variable gives the logit model of a binary response, and the Elo model of a game."
+  ],
+  "moments": {
+   "mean": "\\mu",
+   "variance": "\\frac{s^2\\pi^2}{3}",
+   "existence": "All moments exist. The MGF exists for |t| < 1/s."
+  },
+  "transforms": {
+   "mgf": "M(t) = e^{\\mu t}\\,\\frac{\\pi s t}{\\sin(\\pi s t)}, \\quad |t| < 1/s",
+   "cf": "\\varphi(t) = e^{i\\mu t}\\,\\frac{\\pi s t}{\\sinh(\\pi s t)}"
+  },
+  "links": [
+   {
+    "to": "cuniform",
+    "relation": "log(U/(1 − U)) of a uniform value"
+   },
+   {
+    "to": "laplace",
+    "relation": "each is the rejection proposal of the other, with M = 2"
+   }
+  ]
+ },
+ {
+  "id": "laplace",
+  "name": "Laplace",
+  "type": "continuous",
+  "convention": "X has the location μ and the scale b: a symmetric law with a sharp peak at μ and exponential tails, P(|X − μ| > t) = e^(−t/b).",
+  "pdf": "f(x) = \\frac{1}{2b} e^{-|x-\\mu|/b}",
+  "params": [
+   {
+    "name": "mu",
+    "tex": "\\mu",
+    "domain": "\\mu \\in \\mathbb{R}"
+   },
+   {
+    "name": "b",
+    "tex": "b",
+    "domain": "b > 0"
+   }
+  ],
+  "support": "\\mathbb{R}",
+  "limits": [
+   "The difference of two i.i.d. exponential values with mean b is Laplace(0, b).",
+   "|X − μ| is exponential with mean b.",
+   "A normal law whose variance is exponential gives the Laplace law: a scale mixture.",
+   "The median of a sample is the maximum likelihood estimate of μ, as the mean is for the normal law.",
+   "The Laplace mechanism of differential privacy adds Laplace(0, Δ/ε) noise to a statistic with sensitivity Δ."
+  ],
+  "moments": {
+   "mean": "\\mu",
+   "variance": "2b^2",
+   "existence": "All moments exist. The MGF exists for |t| < 1/b."
+  },
+  "transforms": {
+   "mgf": "M(t) = \\frac{e^{\\mu t}}{1 - b^2 t^2}, \\quad |t| < 1/b",
+   "cf": "\\varphi(t) = \\frac{e^{i\\mu t}}{1 + b^2 t^2}"
+  },
+  "links": [
+   {
+    "to": "exponential",
+    "relation": "the difference of two exponential values; |X − μ| is exponential"
+   },
+   {
+    "to": "normal",
+    "relation": "a scale mixture of normal laws with an exponential variance"
+   },
+   {
+    "to": "logistic",
+    "relation": "each is the rejection proposal of the other, with M = 2"
    }
   ]
  }

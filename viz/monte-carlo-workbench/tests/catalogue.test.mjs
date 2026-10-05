@@ -1,23 +1,28 @@
-// The catalogue as data: every law of the group with each required part, a behaviour experiment and three workflows
-// of its own; every workflow with its 7 parts and a model that compiles and runs; two-way links between laws; every
-// method with its 6 parts; every theory panel with its 6 parts and a linked experiment that opens; every dataset
-// with its source, date and licence; and a glossary entry for each technical abbreviation of the reader text.
+// The catalogue as data: every law of groups 1 and 2 with each required part, a behaviour experiment and three
+// workflows of its own; every workflow with its 7 parts and a model that compiles and runs; two-way links between
+// laws; every method with its 6 parts; every theory panel with its 6 parts and a linked experiment that opens; every
+// dataset with its source, date and licence; and a glossary entry for each technical abbreviation of the reader text.
 import assert from "node:assert/strict";
 import test from "node:test";
 import { D, En, L, M, data, recordOf } from "./helpers.mjs";
 
-const GROUP = ["bernoulli", "binomial", "categorical", "multinomial", "uniform", "geometric", "negbin", "poisson", "hypergeometric", "zipf"];
+const DISCRETE = ["bernoulli", "binomial", "categorical", "multinomial", "uniform", "geometric", "negbin", "poisson", "hypergeometric", "zipf"];
+const CONTINUOUS = ["cuniform", "normal", "mvnormal", "exponential", "gamma", "erlang", "beta", "dirichlet", "chisq", "student", "fisher", "logistic", "laplace"];
+const GROUP = [...DISCRETE, ...CONTINUOUS];
 
-test("the discrete group holds its 10 laws, each with every required part and a sampler in the code", () => {
+test("groups 1 and 2 hold their 10 discrete and 13 continuous laws, each with every required part and a sampler in the code", () => {
   assert.deepEqual(data.laws.map((/** @type {any} */ l) => l.id), GROUP);
   for (const l of data.laws) {
-    for (const k of ["name", "convention", "pmf", "support"]) assert.ok(l[k]?.length > 3, `${l.id}: ${k}`);
+    const continuous = CONTINUOUS.includes(l.id);
+    assert.equal(l.type, continuous ? "continuous" : "discrete", `${l.id}: type`);
+    for (const k of ["name", "convention", continuous ? "pdf" : "pmf", "support"]) assert.ok(l[k]?.length > 3, `${l.id}: ${k}`);
     assert.ok(l.params.length >= 1 && l.params.every((/** @type {any} */ p) => p.domain), `${l.id}: parameters with domains`);
     assert.ok(l.limits.length >= 2, `${l.id}: limiting cases`);
     for (const k of ["mean", "variance", "existence"]) assert.ok(l.moments[k], `${l.id}: moments.${k}`);
-    for (const k of ["pgf", "mgf", "cf"]) assert.ok(l.transforms[k], `${l.id}: transforms.${k}`);
+    for (const k of continuous ? ["mgf", "cf"] : ["pgf", "mgf", "cf"]) assert.ok(l.transforms[k], `${l.id}: transforms.${k}`);
     const code = L.BY_ID[l.id];
     assert.ok(code, `${l.id} has code`);
+    assert.equal(!!code.continuous, continuous, `${l.id}: the code and the catalogue agree that the law is ${continuous ? "continuous" : "discrete"}`);
     assert.deepEqual(code.params.map((/** @type {any} */ p) => p.name).sort(), l.params.map((/** @type {any} */ p) => p.name).sort(), `${l.id}: the same parameter names in the catalogue and the code`);
   }
 });
@@ -63,17 +68,23 @@ test("each workflow has its 7 parts, a data statement, a decision, and a model t
 });
 
 test("each method has its estimator, assumptions, settings, suitable example, failure example and comparison", () => {
-  assert.deepEqual(data.methods.map((/** @type {any} */ m) => m.id), ["independent", "inverse", "rejection"]);
+  assert.deepEqual(data.methods.map((/** @type {any} */ m) => m.id), ["independent", "inverse", "rejection", "stratified", "antithetic", "control", "crn"]);
+  assert.deepEqual(data.methods.filter((/** @type {any} */ m) => m.family === "Variance reduction").map((/** @type {any} */ m) => m.id), ["stratified", "antithetic", "control", "crn"]);
   for (const m of data.methods) {
     for (const k of ["estimator", "estimatorText"]) assert.ok(m[k]?.length > 10, `${m.id}: ${k}`);
     assert.ok(m.assumptions.length >= 2 && m.settings.length >= 2, `${m.id}: assumptions and settings`);
-    for (const k of ["suitable", "failure", "comparison"]) assert.ok(data.models.some((/** @type {any} */ x) => x.id === m[k].model) && m[k].text.length > 40, `${m.id}: ${k}`);
+    for (const k of ["suitable", "failure", "comparison"]) {
+      assert.ok(data.models.some((/** @type {any} */ x) => x.id === m[k].model) && m[k].text.length > 40 && !/TODO/.test(m[k].text), `${m.id}: ${k}`);
+      for (const key of Object.keys(m[k].settings ?? {})) assert.notEqual(M.FIELDS[key], undefined, `${m.id}: ${k} sets the state field ${key}`);
+    }
     assert.ok(data.methods.some((/** @type {any} */ x) => x.id === m.comparison.with && x.id !== m.id), `${m.id}: compared with another method`);
+    // Every method but common random numbers is a value of the method field; common random numbers is the streams field.
+    assert.ok(m.id === "crn" ? M.FIELDS.streams.values?.includes("common") : M.FIELDS.method.values?.includes(m.id), `${m.id}: the state can select it`);
   }
 });
 
 test("each theory panel has a statement, assumptions, a proof sketch, a reference, a counterexample and a linked experiment", () => {
-  assert.deepEqual(data.theory.map((/** @type {any} */ t) => t.id), ["lln", "clt", "consistency", "variance"]);
+  assert.deepEqual(data.theory.map((/** @type {any} */ t) => t.id), ["lln", "clt", "consistency", "variance", "reduction"]);
   for (const t of data.theory) {
     for (const k of ["title", "statement", "proof", "reference", "counterexample"]) assert.ok(t[k]?.length > 20, `${t.id}: ${k}`);
     assert.ok(t.assumptions.length >= 2, `${t.id}: assumptions`);
@@ -94,15 +105,15 @@ test("each real dataset states its source, date and licence, and its counts fit 
   assert.deepEqual([total("horse-kicks"), total("rutherford-geiger"), total("weldon")], [200, 2608, 26306]);
 });
 
-test("the groups list piece 1 here and the 9 groups to come, in merge order", () => {
+test("the groups list pieces 1 and 2 here and the 8 groups to come, in merge order", () => {
   assert.deepEqual(data.groups.map((/** @type {any} */ g) => g.piece), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
-  assert.deepEqual(data.groups.map((/** @type {any} */ g) => g.status), ["here", ...Array(9).fill("to come")]);
+  assert.deepEqual(data.groups.map((/** @type {any} */ g) => g.status), ["here", "here", ...Array(8).fill("to come")]);
 });
 
 test("every technical abbreviation of the reader text has a glossary entry", () => {
   const glossary = new Set(data.glossary.map((/** @type {any} */ g) => g.term));
   const text = JSON.stringify({ laws: data.laws, models: data.models.map((/** @type {any} */ m) => ({ ...m, dsl: "" })), methods: data.methods, theory: data.theory });
-  const found = new Set([...text.matchAll(/\b(PMF|CDF|PGF|MGF|CF|CLT|LLN|MLE|i\.i\.d\.)(?![\w])/g)].map((m) => m[1]));
+  const found = new Set([...text.matchAll(/\b(PMF|PDF|CDF|PGF|MGF|CF|CLT|LLN|MLE|PERT|i\.i\.d\.)(?![\w])/g)].map((m) => m[1]));
   assert.ok(found.size >= 5, [...found].join(" "));
   for (const t of found) assert.ok(glossary.has(t), `the glossary defines ${t}`);
   assert.equal(glossary.size, data.glossary.length, "no term is defined twice");

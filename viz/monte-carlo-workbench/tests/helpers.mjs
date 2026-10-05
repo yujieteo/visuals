@@ -9,6 +9,8 @@ export const Rng = require("../src/rng.js");
 export const S = require("../src/special.js");
 /** @type {typeof import("../src/expr.js")} */
 export const X = require("../src/expr.js");
+/** @type {typeof import("../src/continuous.js")} */
+export const C = require("../src/continuous.js");
 /** @type {typeof import("../src/laws.js")} */
 export const L = require("../src/laws.js");
 /** @type {typeof import("../src/engine.js")} */
@@ -37,13 +39,14 @@ export function recordOf(id) {
 
 /**
  * Run a record to `blocks` blocks of 1,024 replicates, merged in order, and return the compiled model, the moment
- * status, the references, the merged statistics and the summary.
- * @param {any} record @param {any} settings @param {number} blocks
+ * status, the references, the merged statistics and the summary. `known` passes the status and references of an
+ * earlier call with the same record and parameters, which do not depend on the seed or the method.
+ * @param {any} record @param {any} settings @param {number} blocks @param {{ status: any[], refs: any[] }} [known]
  */
-export function runModel(record, settings, blocks) {
+export function runModel(record, settings, blocks, known) {
   const c = En.prepare(record, { method: "independent", compare: "none", failure: "none", overrides: {}, ...settings });
   if (!c.ok) throw new Error(c.errors.join(" "));
-  const status = En.momentStatus(c), refs = En.reference(c, status);
+  const status = known?.status ?? En.momentStatus(c), refs = known?.refs ?? En.reference(c, status);
   let acc = En.empty(c);
   for (let b = 0; b < blocks; b++) acc = En.merge(acc, En.block(c, b, { references: refs.map((/** @type {any} */ r) => r.values) }), c);
   return { c, status, refs, acc, summary: En.summary(c, acc, status, refs) };
