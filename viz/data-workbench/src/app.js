@@ -379,7 +379,9 @@
       const choice = choices.find((r) => r.id === pick);
       if (choice) {
         next.type = choice.type;
-        next.reading = { ...choice.reading, missingText: col.reading.missingText, missingNumbers: col.reading.missingNumbers };
+        // Approved missing text carries over; approved missing numbers only to another numeric reading.
+        const numeric = choice.type === "integer" || choice.type === "decimal";
+        next.reading = { ...choice.reading, missingText: col.reading.missingText, ...(numeric ? { missingNumbers: col.reading.missingNumbers } : {}) };
         parts.push(`read as ${choice.label.toLowerCase()}`);
       }
     }

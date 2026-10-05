@@ -184,6 +184,14 @@ test("interval roles: a role the person set pairs with an inferred one", () => {
   assert.deepEqual([alone.role, alone.roleReasons], ["interval start", []], "paired again, the start drops the note that it had no end");
 });
 
+test("approved missing numbers apply only to numeric readings, never to dates or text", () => {
+  const Sql = require("../src/sql.js");
+  assert.match(Sql.typed("t", { kind: "decimal", missingNumbers: [-999] }), /IN \(-999\)/);
+  for (const kind of ["date", "datetime", "time", "text", "boolean"]) {
+    assert.doesNotMatch(Sql.typed("t", { kind, missingNumbers: [-999] }), /-999/, `${kind} ignores -999`);
+  }
+});
+
 test("names: tables get safe unique names; the row column never collides with a source column", () => {
   assert.equal(Profile.tableName("Sales 2024 (final).csv", []), "sales_2024_final");
   assert.equal(Profile.tableName("2024.csv", []), "t_2024");

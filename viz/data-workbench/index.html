@@ -1576,11 +1576,14 @@ Z.makeVector=Tg;Z.tableFromArrays=function(a){const b={};a=Object.entries(a);for
     return textSource ? `(${x} IS NOT NULL AND trim(${x}) <> '' AND lower(trim(${x})) NOT IN (${inList(MARKERS)}))` : `(${x} IS NOT NULL)`;
   }
 
+  /* Readings whose values are not numbers: approved missing numbers (sentinels) never apply to them. */
+  const NOT_NUMERIC = ["text", "boolean", "date", "date-format", "date-formats", "datetime", "datetime-zoned", "time"];
+
   /** The value used for analysis: the parsed value, with approved missing text and numbers turned into NULL.
    * @param {string} column @param {Reading} reading */
   function typed(column, reading) {
     let e = parse(column, reading);
-    const text = reading.missingText ?? [], numbers = reading.missingNumbers ?? [];
+    const text = reading.missingText ?? [], numbers = NOT_NUMERIC.includes(reading.kind) ? [] : reading.missingNumbers ?? [];
     if (text.length) e = `CASE WHEN lower(trim(CAST(${ident(column)} AS VARCHAR))) IN (${inList(text.map((t) => t.toLowerCase()))}) THEN NULL ELSE ${e} END`;
     if (numbers.length) e = `CASE WHEN (${e}) IN (${numbers.map(number).join(", ")}) THEN NULL ELSE ${e} END`;
     return e;
@@ -3179,7 +3182,9 @@ SELECT (SELECT coalesce(sum(n - 1), 0) FROM c WHERE n > 1)::DOUBLE AS repeats, v
       const choice = choices.find((r) => r.id === pick);
       if (choice) {
         next.type = choice.type;
-        next.reading = { ...choice.reading, missingText: col.reading.missingText, missingNumbers: col.reading.missingNumbers };
+        // Approved missing text carries over; approved missing numbers only to another numeric reading.
+        const numeric = choice.type === "integer" || choice.type === "decimal";
+        next.reading = { ...choice.reading, missingText: col.reading.missingText, ...(numeric ? { missingNumbers: col.reading.missingNumbers } : {}) };
         parts.push(`read as ${choice.label.toLowerCase()}`);
       }
     }

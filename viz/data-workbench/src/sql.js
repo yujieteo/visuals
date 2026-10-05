@@ -214,11 +214,14 @@
     return textSource ? `(${x} IS NOT NULL AND trim(${x}) <> '' AND lower(trim(${x})) NOT IN (${inList(MARKERS)}))` : `(${x} IS NOT NULL)`;
   }
 
+  /* Readings whose values are not numbers: approved missing numbers (sentinels) never apply to them. */
+  const NOT_NUMERIC = ["text", "boolean", "date", "date-format", "date-formats", "datetime", "datetime-zoned", "time"];
+
   /** The value used for analysis: the parsed value, with approved missing text and numbers turned into NULL.
    * @param {string} column @param {Reading} reading */
   function typed(column, reading) {
     let e = parse(column, reading);
-    const text = reading.missingText ?? [], numbers = reading.missingNumbers ?? [];
+    const text = reading.missingText ?? [], numbers = NOT_NUMERIC.includes(reading.kind) ? [] : reading.missingNumbers ?? [];
     if (text.length) e = `CASE WHEN lower(trim(CAST(${ident(column)} AS VARCHAR))) IN (${inList(text.map((t) => t.toLowerCase()))}) THEN NULL ELSE ${e} END`;
     if (numbers.length) e = `CASE WHEN (${e}) IN (${numbers.map(number).join(", ")}) THEN NULL ELSE ${e} END`;
     return e;
