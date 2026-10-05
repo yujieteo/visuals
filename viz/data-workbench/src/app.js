@@ -419,7 +419,7 @@
       const text = id === "planted" ? Examples.planted() : DATA.files[id];
       const data = new TextEncoder().encode(text);
       await busy(`Opening ${meta.title}`, async () => {
-        progress(store.engine.api ? `Opening ${meta.title}` : "Starting the engine: the first visit downloads about 37 MB, then the browser keeps it", 0, 0);
+        progress(store.engine.api ? `Opening ${meta.title}` : "Starting the engine: the first visit downloads about 40 MB, then the browser keeps it", 0, 0);
         let api;
         try { api = await ensureEngine(); } catch { return; }
         // Hash before registering: the engine takes the bytes over, which empties this copy.
