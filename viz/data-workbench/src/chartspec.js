@@ -160,15 +160,18 @@
     "interval-timeline": (f) => `${f[2]} from ${f[0]} to ${f[1]}`,
   };
 
+  /** Generated text within the specification's limit, cut with an ellipsis: long column names stay chartable. */
+  const cut = (text) => (text.length > LIMITS.text ? `${text.slice(0, LIMITS.text - 1)}…` : text);
+
   /** The generated title of a chart of these fields: a sum is titled as one. */
   function autoTitle(kind, fields, fn) {
-    if (fn === "sum" && kind === "mean-bar") return `Sum of ${fields[1]} by ${fields[0]}`;
-    if (fn === "sum" && kind === "mean-series") return `Sum of ${fields[1]} over ${fields[0]}`;
-    return TITLES[/** @type {keyof typeof TITLES} */ (kind)](fields);
+    if (fn === "sum" && kind === "mean-bar") return cut(`Sum of ${fields[1]} by ${fields[0]}`);
+    if (fn === "sum" && kind === "mean-series") return cut(`Sum of ${fields[1]} over ${fields[0]}`);
+    return cut(TITLES[/** @type {keyof typeof TITLES} */ (kind)](fields));
   }
 
   /** The label of a field's axis: its name, with its unit only when the source or the person gave one. */
-  const axisLabel = (info) => (info.unit ? `${info.name} (${info.unit})` : info.name);
+  const axisLabel = (info) => cut(info.unit ? `${info.name} (${info.unit})` : info.name);
 
   /** The scale of one channel under the fixed rules. @param {FieldInfo} info */
   function scaleOf(info, kind, channel) {
@@ -275,7 +278,7 @@
       encoding,
       scale: scales,
       layout: { width: 180, height: timeline ? 140 : 110, unit: "mm", facet: null },
-      annotation: { title: TITLES[candidate.kind](candidate.fields), labels, units, caption: "", notes: [], findings: [] },
+      annotation: { title: autoTitle(candidate.kind, candidate.fields, undefined), labels, units, caption: "", notes: [], findings: [] },
       edits: [],
     };
   }

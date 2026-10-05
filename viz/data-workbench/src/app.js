@@ -293,7 +293,9 @@
     if (left) note({ kind: "cancelled", table: table.name, text: `Profiling of ${table.name} stopped (${table.reason}) after ${table.columns.length} of ${all.length} columns; ${plural(left, "column is", "columns are")} not profiled.` });
     refresh();
     // Every valid chart follows, without a question or a choice: queued after this work, so it never runs inside it.
+    // Its time to the first figure counts from the import only when nothing stopped in between.
     if (table.status === "complete") Gallery.generate(table);
+    else table.begun = null;
   }
 
   /** Re-profile one column after a change, keeping its place. */

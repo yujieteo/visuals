@@ -3290,15 +3290,18 @@ SELECT (SELECT coalesce(sum(n - 1), 0) FROM c WHERE n > 1)::DOUBLE AS repeats, v
     "interval-timeline": (f) => `${f[2]} from ${f[0]} to ${f[1]}`,
   };
 
+  /** Generated text within the specification's limit, cut with an ellipsis: long column names stay chartable. */
+  const cut = (text) => (text.length > LIMITS.text ? `${text.slice(0, LIMITS.text - 1)}…` : text);
+
   /** The generated title of a chart of these fields: a sum is titled as one. */
   function autoTitle(kind, fields, fn) {
-    if (fn === "sum" && kind === "mean-bar") return `Sum of ${fields[1]} by ${fields[0]}`;
-    if (fn === "sum" && kind === "mean-series") return `Sum of ${fields[1]} over ${fields[0]}`;
-    return TITLES[/** @type {keyof typeof TITLES} */ (kind)](fields);
+    if (fn === "sum" && kind === "mean-bar") return cut(`Sum of ${fields[1]} by ${fields[0]}`);
+    if (fn === "sum" && kind === "mean-series") return cut(`Sum of ${fields[1]} over ${fields[0]}`);
+    return cut(TITLES[/** @type {keyof typeof TITLES} */ (kind)](fields));
   }
 
   /** The label of a field's axis: its name, with its unit only when the source or the person gave one. */
-  const axisLabel = (info) => (info.unit ? `${info.name} (${info.unit})` : info.name);
+  const axisLabel = (info) => cut(info.unit ? `${info.name} (${info.unit})` : info.name);
 
   /** The scale of one channel under the fixed rules. @param {FieldInfo} info */
   function scaleOf(info, kind, channel) {
@@ -3405,7 +3408,7 @@ SELECT (SELECT coalesce(sum(n - 1), 0) FROM c WHERE n > 1)::DOUBLE AS repeats, v
       encoding,
       scale: scales,
       layout: { width: 180, height: timeline ? 140 : 110, unit: "mm", facet: null },
-      annotation: { title: TITLES[candidate.kind](candidate.fields), labels, units, caption: "", notes: [], findings: [] },
+      annotation: { title: autoTitle(candidate.kind, candidate.fields, undefined), labels, units, caption: "", notes: [], findings: [] },
       edits: [],
     };
   }
@@ -6013,7 +6016,9 @@ FROM ev ORDER BY coalesce(ev.s, ev.e), first, label LIMIT ${size} OFFSET ${(page
     if (left) note({ kind: "cancelled", table: table.name, text: `Profiling of ${table.name} stopped (${table.reason}) after ${table.columns.length} of ${all.length} columns; ${plural(left, "column is", "columns are")} not profiled.` });
     refresh();
     // Every valid chart follows, without a question or a choice: queued after this work, so it never runs inside it.
+    // Its time to the first figure counts from the import only when nothing stopped in between.
     if (table.status === "complete") Gallery.generate(table);
+    else table.begun = null;
   }
 
   /** Re-profile one column after a change, keeping its place. */

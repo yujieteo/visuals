@@ -146,6 +146,19 @@ test("every generated specification passes the JSON Schema and the rules, for ev
   assert.equal(ChartSpec.make(cand("mean-bar", ["grp", "a"]), ctx).scale.y.type, "linear", "a mean bar starts at zero on a linear axis, whatever the log rule says");
 });
 
+test("long column names stay chartable: generated titles and labels are cut to the specification's limit", () => {
+  const ctx = context();
+  const q = (name) => ({ ...ctx.fields.b, name });
+  const a = "How satisfied were you with the time it took to resolve your most recent request, on a scale of one to ten? (Q17)";
+  const b = "How likely are you to recommend this service to a friend or colleague, given everything you know about it? (Q18)";
+  const long = { ...ctx, fields: { ...ctx.fields, [a]: q(a), [b]: q(b) } };
+  const spec = ChartSpec.make({ id: Grammar.candidateId("small", "scatter", [a, b]), kind: "scatter", fields: [a, b] }, long);
+  assert.deepEqual(ChartSpec.validate(spec, long), { ok: true, errors: [] });
+  assert.equal(spec.annotation.title.length, ChartSpec.LIMITS.text);
+  assert.ok(spec.annotation.title.endsWith("…"));
+  assert.equal(ChartSpec.edit(spec, { swap: true }, long).annotation.title.length, ChartSpec.LIMITS.text, "a generated title stays generated after a swap");
+});
+
 test("the validator refuses what the grammar forbids, each with its reason", () => {
   const ctx = context();
   const refused = (spec, why) => {
