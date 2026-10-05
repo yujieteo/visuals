@@ -203,6 +203,8 @@
       imported = await Profile.importFile(api.query, { kind: item.kind, path: item.path, table: item.name, n: item.id, columns, sample, stopped: () => store.stop });
     } catch (error) {
       item.status = "refused";
+      // A stop after the table was created leaves it in the engine: drop it, so nothing of the file is kept.
+      await api.query(`DROP TABLE IF EXISTS ${Sql.ident(item.name)}`).catch(() => {});
       if (Engine.cancelled(error)) {
         item.problem = "Cancelled while reading: nothing of this file was kept.";
         note({ kind: "cancelled", table: item.name, text: `Import of ${item.fileName} cancelled while reading; nothing was kept.` });
@@ -734,7 +736,7 @@
         sample: t.sample, columnsKept: t.columnsKept, dialect: t.imported.dialect, rejected: t.imported.rejected, parquet: t.imported.parquet,
         profiled: t.columns.filter((c) => !c.failed).map((c) => ({
           name: c.name, sourceType: c.sourceType, type: c.type, reading: readingText(c.reading), share: c.share, role: c.role, certainty: c.certainty,
-          roleReasons: c.roleReasons, valued: c.valued, distinct: c.distinct, missing: { nulls: c.missing.nulls, blanks: c.missing.blanks, markers: c.missing.markers, madeMissing: c.madeMissing },
+          roleReasons: c.roleReasons, valued: c.valued, distinct: c.distinct, missing: (({ missing, markers }) => ({ missing, markers }))(missingOf(c)),
           failures: c.failures.count, failureExamples: c.failures.examples.map((f) => f.value), errors: c.errors.map((e) => ({ kind: e.kind, count: e.count, text: e.text, examples: e.examples })),
           unusual: c.unusual ? { count: c.unusual.count, rule: c.unusual.rule } : null, summary: c.summary ? { ...c.summary, bins: undefined } : null,
           suggestions: c.suggestions.filter((s) => !t.dismissed.includes(s.id)).map((s) => ({ id: s.id, text: s.text })), unit: c.unit, yourChanges: c.overridden,

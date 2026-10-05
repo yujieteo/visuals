@@ -85,7 +85,7 @@
         examples: outliers.map((r) => ({ value: r.value, z: r.z, n: r.n })), madZero: !(s.mad > 0) };
       col.sentinels = Infer.sentinels(await query(Sql.sentinelCounts(table, name, reading)));
     } else if (reads && TIME.includes(type)) {
-      const s = await one(query, Sql.timeSummary(table, name, reading));
+      const s = await one(query, Sql.timeSummary(table, name, reading, sourceType));
       col.summary = { kind: "time", ...s, bins: type === "time" ? [] : await query(Sql.timeBins(table, name, reading)) };
     } else if (type === "boolean" || type === "categorical") {
       col.summary = { kind: "levels", top: await query(Sql.topValues(table, name, reading)) };
@@ -114,7 +114,7 @@
   function errors(col) {
     const out = [];
     const label = Infer.TYPE_LABEL[col.type] ?? col.type;
-    const impossible = col.impossible.reduce((a, r) => a + r.n, 0);
+    const impossible = col.impossible[0]?.total ?? 0;
     const other = col.failures.count - impossible;
     if (impossible > 0) out.push({ kind: "impossible-date", count: impossible, text: `${impossible} date${impossible === 1 ? "" : "s"} name no real day`, examples: col.impossible.map((r) => r.value) });
     if (other > 0) out.push({ kind: "parse", count: other, text: `${other} value${other === 1 ? " does" : "s do"} not read as ${label}`, examples: col.failures.examples.filter((e) => !col.impossible.some((i) => i.value === String(e.value).trim())).map((e) => e.value) });

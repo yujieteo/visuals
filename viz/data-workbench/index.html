@@ -1672,10 +1672,10 @@ FROM ${ident(table)} WHERE ${valued(column, textSource)}${notApproved(column, re
 GROUP BY value ORDER BY n DESC, first_row LIMIT ${limit}`;
   }
 
-  /** Values with an ISO date shape that name no real day, such as 2026-02-30. */
+  /** Values with an ISO date shape that name no real day, such as 2026-02-30: the most frequent, with the total. */
   function impossibleDates(table, column, limit = 10) {
     const y = `trim(${ident(column)})`;
-    return `SELECT ${y} AS value, count(*)::DOUBLE AS n FROM ${ident(table)}
+    return `SELECT ${y} AS value, count(*)::DOUBLE AS n, (sum(count(*)) OVER ())::DOUBLE AS total FROM ${ident(table)}
 WHERE ${match(y, PATTERN.date)} AND TRY_CAST(${y} AS DATE) IS NULL GROUP BY value ORDER BY n DESC, value LIMIT ${limit}`;
   }
 
@@ -1736,10 +1736,11 @@ SELECT (SELECT min(v) FROM w WHERE v NOT IN (${list})) AS other_min, (SELECT max
   }
 
   /** Time summary: count, first and last value as text, distinct values and the span in days. */
-  function timeSummary(table, column, reading) {
-    const type = readingType(reading, "");
-    // A TIMESTAMPTZ converts to TIMESTAMP in UTC without the time-zone extension, which the engine does not load.
-    const span = type === "TIME" ? "NULL" : "date_diff('day', CAST(min(v) AS TIMESTAMP), CAST(max(v) AS TIMESTAMP))::DOUBLE";
+  function timeSummary(table, column, reading, sourceType = "") {
+    const type = readingType(reading, sourceType).toUpperCase();
+    // A TIMESTAMPTZ converts to TIMESTAMP in UTC without the time-zone extension, which the engine does not load; a
+    // time of day has no span in days.
+    const span = type.startsWith("TIME") && !type.startsWith("TIMESTAMP") ? "NULL" : "date_diff('day', CAST(min(v) AS TIMESTAMP), CAST(max(v) AS TIMESTAMP))::DOUBLE";
     return `WITH w AS (SELECT ${typed(column, reading)} AS v FROM ${ident(table)})
 SELECT count(v)::DOUBLE AS n, CAST(min(v) AS VARCHAR) AS min, CAST(max(v) AS VARCHAR) AS max,
   count(DISTINCT v)::DOUBLE AS distinct_values, ${span} AS span_days FROM w`;
@@ -1962,7 +1963,8 @@ SELECT (SELECT coalesce(sum(n - 1), 0) FROM c WHERE n > 1)::DOUBLE AS repeats, v
       return { role: "time", certainty: "certain", reasons: [`The values read as ${TYPE_LABEL[c.type]}s.`], possibleTime: false };
     }
     if (c.type === "integer" || c.type === "decimal") {
-      const possibleTime = yearLike && (!!yearWord || c.distinct >= 2);
+      // Years: whole numbers from 1000 to 2999, named as years or spanning at most two centuries.
+      const possibleTime = yearLike && (!!yearWord || (!!n && n.max - n.min <= 200));
       if (possibleTime) reasons.push(`Whole numbers from ${n.min} to ${n.max}${yearWord ? ` in a column named "${c.name}"` : ""}: these may be years.`);
       if (c.distinct <= 12) return { role: "ordered category", certainty: "possible", reasons: [`Numbers with ${c.distinct} distinct values: read as ordered levels.`, ...reasons], possibleTime };
       return { role: "measure", certainty: possibleTime ? "possible" : "likely", reasons: [`Numbers with ${c.distinct} distinct values.`, ...reasons], possibleTime };
@@ -2409,7 +2411,7 @@ SELECT (SELECT coalesce(sum(n - 1), 0) FROM c WHERE n > 1)::DOUBLE AS repeats, v
         examples: outliers.map((r) => ({ value: r.value, z: r.z, n: r.n })), madZero: !(s.mad > 0) };
       col.sentinels = Infer.sentinels(await query(Sql.sentinelCounts(table, name, reading)));
     } else if (reads && TIME.includes(type)) {
-      const s = await one(query, Sql.timeSummary(table, name, reading));
+      const s = await one(query, Sql.timeSummary(table, name, reading, sourceType));
       col.summary = { kind: "time", ...s, bins: type === "time" ? [] : await query(Sql.timeBins(table, name, reading)) };
     } else if (type === "boolean" || type === "categorical") {
       col.summary = { kind: "levels", top: await query(Sql.topValues(table, name, reading)) };
@@ -2438,7 +2440,7 @@ SELECT (SELECT coalesce(sum(n - 1), 0) FROM c WHERE n > 1)::DOUBLE AS repeats, v
   function errors(col) {
     const out = [];
     const label = Infer.TYPE_LABEL[col.type] ?? col.type;
-    const impossible = col.impossible.reduce((a, r) => a + r.n, 0);
+    const impossible = col.impossible[0]?.total ?? 0;
     const other = col.failures.count - impossible;
     if (impossible > 0) out.push({ kind: "impossible-date", count: impossible, text: `${impossible} date${impossible === 1 ? "" : "s"} name no real day`, examples: col.impossible.map((r) => r.value) });
     if (other > 0) out.push({ kind: "parse", count: other, text: `${other} value${other === 1 ? " does" : "s do"} not read as ${label}`, examples: col.failures.examples.filter((e) => !col.impossible.some((i) => i.value === String(e.value).trim())).map((e) => e.value) });
@@ -2708,7 +2710,7 @@ SELECT (SELECT coalesce(sum(n - 1), 0) FROM c WHERE n > 1)::DOUBLE AS repeats, v
         body: [
           "- A CSV is imported as text, every value as written; a Parquet file keeps its own types.",
           "- A column reads as a type when at least 95% of the values present fit it: yes or no, whole number, decimal, ISO date, ISO date-time, time, or one other date layout. Else it is categorical (at most 1,000 levels, under half distinct) or text.",
-          "- Empty values and markers such as NA count as missing apart; nothing becomes missing without approval.",
+          "- Missing: empty values, and values made missing by approval. Markers such as NA are counted apart; nothing becomes missing without approval.",
           "- Unusual values: robust z = |x − median| / (1.4826 × MAD) above 3.5. They stay in the data.",
           "- Roles: measure, identifier, category, ordered category, time, event label, interval start or end, unknown. A storage type alone never makes a measure.",
           `- Engine: DuckDB ${cell(d.engine?.duckdb)} (DuckDB-WASM ${cell(d.engine?.duckdbWasm)}) in this browser, memory budget ${cell(d.engine?.budget)}.`,
@@ -2718,9 +2720,9 @@ SELECT (SELECT coalesce(sum(n - 1), 0) FROM c WHERE n > 1)::DOUBLE AS repeats, v
       results: tables.length ? tables.map((t) => ({
         title: `${cell(t.name)}: ${count(t.rows, "row", "rows")}`,
         body: [
-          "| Column | Read as | Fits | Role | Missing | Distinct |",
-          "| --- | --- | --- | --- | --- | --- |",
-          ...t.profiled.map((c) => `| ${cell(c.name)} | ${LABEL[c.type] ?? cell(c.type)} | ${pct(c.share)} | ${cell(c.role)} | ${n(c.missing.nulls + c.missing.blanks + c.missing.markers + (c.missing.madeMissing ?? 0))} | ${n(c.distinct)} |`),
+          "| Column | Read as | Fits | Role | Missing | Markers | Distinct |",
+          "| --- | --- | --- | --- | --- | --- | --- |",
+          ...t.profiled.map((c) => `| ${cell(c.name)} | ${LABEL[c.type] ?? cell(c.type)} | ${pct(c.share)} | ${cell(c.role)} | ${n(c.missing.missing)} | ${n(c.missing.markers)} | ${n(c.distinct)} |`),
           "",
           ...(t.rejected.count ? [`- ${count(t.rejected.count, "line", "lines")} of the CSV could not be read and are listed in the page.`] : []),
           ...t.profiled.flatMap((c) => c.errors.map((e) => `- ${cell(c.name)}: ${cell(e.text)}`)),
@@ -2950,6 +2952,8 @@ SELECT (SELECT coalesce(sum(n - 1), 0) FROM c WHERE n > 1)::DOUBLE AS repeats, v
       imported = await Profile.importFile(api.query, { kind: item.kind, path: item.path, table: item.name, n: item.id, columns, sample, stopped: () => store.stop });
     } catch (error) {
       item.status = "refused";
+      // A stop after the table was created leaves it in the engine: drop it, so nothing of the file is kept.
+      await api.query(`DROP TABLE IF EXISTS ${Sql.ident(item.name)}`).catch(() => {});
       if (Engine.cancelled(error)) {
         item.problem = "Cancelled while reading: nothing of this file was kept.";
         note({ kind: "cancelled", table: item.name, text: `Import of ${item.fileName} cancelled while reading; nothing was kept.` });
@@ -3481,7 +3485,7 @@ SELECT (SELECT coalesce(sum(n - 1), 0) FROM c WHERE n > 1)::DOUBLE AS repeats, v
         sample: t.sample, columnsKept: t.columnsKept, dialect: t.imported.dialect, rejected: t.imported.rejected, parquet: t.imported.parquet,
         profiled: t.columns.filter((c) => !c.failed).map((c) => ({
           name: c.name, sourceType: c.sourceType, type: c.type, reading: readingText(c.reading), share: c.share, role: c.role, certainty: c.certainty,
-          roleReasons: c.roleReasons, valued: c.valued, distinct: c.distinct, missing: { nulls: c.missing.nulls, blanks: c.missing.blanks, markers: c.missing.markers, madeMissing: c.madeMissing },
+          roleReasons: c.roleReasons, valued: c.valued, distinct: c.distinct, missing: (({ missing, markers }) => ({ missing, markers }))(missingOf(c)),
           failures: c.failures.count, failureExamples: c.failures.examples.map((f) => f.value), errors: c.errors.map((e) => ({ kind: e.kind, count: e.count, text: e.text, examples: e.examples })),
           unusual: c.unusual ? { count: c.unusual.count, rule: c.unusual.rule } : null, summary: c.summary ? { ...c.summary, bins: undefined } : null,
           suggestions: c.suggestions.filter((s) => !t.dismissed.includes(s.id)).map((s) => ({ id: s.id, text: s.text })), unit: c.unit, yourChanges: c.overridden,

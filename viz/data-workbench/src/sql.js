@@ -311,10 +311,10 @@ FROM ${ident(table)} WHERE ${valued(column, textSource)}${notApproved(column, re
 GROUP BY value ORDER BY n DESC, first_row LIMIT ${limit}`;
   }
 
-  /** Values with an ISO date shape that name no real day, such as 2026-02-30. */
+  /** Values with an ISO date shape that name no real day, such as 2026-02-30: the most frequent, with the total. */
   function impossibleDates(table, column, limit = 10) {
     const y = `trim(${ident(column)})`;
-    return `SELECT ${y} AS value, count(*)::DOUBLE AS n FROM ${ident(table)}
+    return `SELECT ${y} AS value, count(*)::DOUBLE AS n, (sum(count(*)) OVER ())::DOUBLE AS total FROM ${ident(table)}
 WHERE ${match(y, PATTERN.date)} AND TRY_CAST(${y} AS DATE) IS NULL GROUP BY value ORDER BY n DESC, value LIMIT ${limit}`;
   }
 
@@ -375,10 +375,11 @@ SELECT (SELECT min(v) FROM w WHERE v NOT IN (${list})) AS other_min, (SELECT max
   }
 
   /** Time summary: count, first and last value as text, distinct values and the span in days. */
-  function timeSummary(table, column, reading) {
-    const type = readingType(reading, "");
-    // A TIMESTAMPTZ converts to TIMESTAMP in UTC without the time-zone extension, which the engine does not load.
-    const span = type === "TIME" ? "NULL" : "date_diff('day', CAST(min(v) AS TIMESTAMP), CAST(max(v) AS TIMESTAMP))::DOUBLE";
+  function timeSummary(table, column, reading, sourceType = "") {
+    const type = readingType(reading, sourceType).toUpperCase();
+    // A TIMESTAMPTZ converts to TIMESTAMP in UTC without the time-zone extension, which the engine does not load; a
+    // time of day has no span in days.
+    const span = type.startsWith("TIME") && !type.startsWith("TIMESTAMP") ? "NULL" : "date_diff('day', CAST(min(v) AS TIMESTAMP), CAST(max(v) AS TIMESTAMP))::DOUBLE";
     return `WITH w AS (SELECT ${typed(column, reading)} AS v FROM ${ident(table)})
 SELECT count(v)::DOUBLE AS n, CAST(min(v) AS VARCHAR) AS min, CAST(max(v) AS VARCHAR) AS max,
   count(DISTINCT v)::DOUBLE AS distinct_values, ${span} AS span_days FROM w`;

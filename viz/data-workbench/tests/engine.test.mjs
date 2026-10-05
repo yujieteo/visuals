@@ -98,6 +98,15 @@ test("data integrity: date layouts read on their own when one fits, and wait for
   assert.deepEqual(mixed.suggestions.map((/** @type {any} */ s) => s.id), ["mixed::layouts::dmy-slash"]);
 });
 
+test("impossible dates are counted in full, however many distinct ones there are", async () => {
+  const lines = ["day"];
+  for (let i = 0; i < 300; i++) lines.push(`2025-${String(1 + (i % 12)).padStart(2, "0")}-${String(1 + (i % 28)).padStart(2, "0")}`);
+  for (let y = 2001; y <= 2015; y++) lines.push(`${y}-02-30`);
+  const t = await load("days", encode(lines.join("\n")));
+  assert.deepEqual(t.col("day").errors.map((/** @type {any} */ x) => [x.kind, x.count]), [["impossible-date", 15]]);
+  assert.equal(t.col("day").errors[0].examples.length, 10, "the ten most frequent are shown");
+});
+
 test("identifiers against measures: names, leading zeros and dense unique runs make identifiers; storage type alone does not", async () => {
   const lines = ["customer_id,zip,row,code,population,price,year,rating,score"];
   for (let i = 0; i < 40; i++) {
@@ -141,7 +150,8 @@ test("Parquet: types, decimals and zoned timestamps are kept; nested columns are
   try {
     const file = join(dir, "typed.parquet");
     await open.query(`COPY (SELECT i AS id, (i * 1.25)::DECIMAL(10,2) AS amount, to_timestamp(1767225600 + i * 3600) AS seen,
-      {'a': i, 'b': 'x'} AS nested, [i, i + 1] AS list, CAST(i * 3 AS VARCHAR) AS text_number, 'same' AS constant
+      {'a': i, 'b': 'x'} AS nested, [i, i + 1] AS list, CAST(i * 3 AS VARCHAR) AS text_number, 'same' AS constant,
+      make_time(8, i, 0) AS clock
       FROM range(1, 31) t(i)) TO '${file}' (FORMAT parquet)`);
     const t = await load("typed", readFileSync(file), "parquet");
     assert.equal(t.imported.rows, 30);
@@ -155,7 +165,9 @@ test("Parquet: types, decimals and zoned timestamps are kept; nested columns are
       list: ["BIGINT[]", "unsupported", "unknown"],
       text_number: ["VARCHAR", "integer", "measure"],
       constant: ["VARCHAR", "categorical", "unknown"],
+      clock: ["TIME", "time", "time"],
     });
+    assert.deepEqual([t.col("clock").summary.min, t.col("clock").summary.max, t.col("clock").summary.span_days], ["08:01:00", "08:30:00", null], "a time of day has no span in days");
     assert.equal(t.imported.columns.find((/** @type {any} */ c) => c.name === "amount").source, "INT64 (DECIMAL)", "the physical type and its annotation");
     assert.equal(t.col("seen").summary.min, "2026-01-01 01:00:00+00", "zoned times are ordered and shown in UTC");
     assert.match(t.col("nested").roleReasons[0], /nested or binary/);

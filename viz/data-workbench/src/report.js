@@ -41,7 +41,7 @@
         body: [
           "- A CSV is imported as text, every value as written; a Parquet file keeps its own types.",
           "- A column reads as a type when at least 95% of the values present fit it: yes or no, whole number, decimal, ISO date, ISO date-time, time, or one other date layout. Else it is categorical (at most 1,000 levels, under half distinct) or text.",
-          "- Empty values and markers such as NA count as missing apart; nothing becomes missing without approval.",
+          "- Missing: empty values, and values made missing by approval. Markers such as NA are counted apart; nothing becomes missing without approval.",
           "- Unusual values: robust z = |x − median| / (1.4826 × MAD) above 3.5. They stay in the data.",
           "- Roles: measure, identifier, category, ordered category, time, event label, interval start or end, unknown. A storage type alone never makes a measure.",
           `- Engine: DuckDB ${cell(d.engine?.duckdb)} (DuckDB-WASM ${cell(d.engine?.duckdbWasm)}) in this browser, memory budget ${cell(d.engine?.budget)}.`,
@@ -51,9 +51,9 @@
       results: tables.length ? tables.map((t) => ({
         title: `${cell(t.name)}: ${count(t.rows, "row", "rows")}`,
         body: [
-          "| Column | Read as | Fits | Role | Missing | Distinct |",
-          "| --- | --- | --- | --- | --- | --- |",
-          ...t.profiled.map((c) => `| ${cell(c.name)} | ${LABEL[c.type] ?? cell(c.type)} | ${pct(c.share)} | ${cell(c.role)} | ${n(c.missing.nulls + c.missing.blanks + c.missing.markers + (c.missing.madeMissing ?? 0))} | ${n(c.distinct)} |`),
+          "| Column | Read as | Fits | Role | Missing | Markers | Distinct |",
+          "| --- | --- | --- | --- | --- | --- | --- |",
+          ...t.profiled.map((c) => `| ${cell(c.name)} | ${LABEL[c.type] ?? cell(c.type)} | ${pct(c.share)} | ${cell(c.role)} | ${n(c.missing.missing)} | ${n(c.missing.markers)} | ${n(c.distinct)} |`),
           "",
           ...(t.rejected.count ? [`- ${count(t.rejected.count, "line", "lines")} of the CSV could not be read and are listed in the page.`] : []),
           ...t.profiled.flatMap((c) => c.errors.map((e) => `- ${cell(c.name)}: ${cell(e.text)}`)),

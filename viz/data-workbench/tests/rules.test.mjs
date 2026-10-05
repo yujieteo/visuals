@@ -91,6 +91,8 @@ test("roles: identifiers are kept apart from measures; a storage type alone neve
   assert.equal(role({ name: "same", type: "categorical", distinct: 1 }), "unknown");
   const year = Infer.role({ name: "year", type: "integer", valued: 30, distinct: 30, numeric: num(1990, 2019, 30), lenMin: 4, lenMax: 4 });
   assert.deepEqual([year.role, year.possibleTime], ["measure", true], "years are a measure flagged as possible time, never an identifier");
+  const price = Infer.role({ name: "price", type: "integer", valued: 30, distinct: 30, numeric: num(1000, 2950, 30), lenMin: 4, lenMax: 4 });
+  assert.deepEqual([price.role, price.possibleTime], ["measure", false], "whole numbers from 1000 to 2999 over more than two centuries, not named as years, are not years");
 });
 
 test("roles: a start time pairs with an end time; one alone is plain time", () => {
@@ -190,7 +192,7 @@ test("the planted example is the same bytes from the same seed, with its pattern
 
 test("the record and the deck: names from the data stay out of narration, and beamdswitch's own parser reads the deck", () => {
   const column = (name, over = {}) => ({ name, sourceType: "VARCHAR", type: "integer", reading: "whole numbers", share: 0.96, role: "measure", certainty: "likely",
-    roleReasons: [], valued: 28, distinct: 20, missing: { nulls: 0, blanks: 1, markers: 2, madeMissing: 0 }, failures: 1, failureExamples: ["abc"],
+    roleReasons: [], valued: 28, distinct: 20, missing: { missing: 1, markers: 2 }, failures: 1, failureExamples: ["abc"],
     errors: [{ kind: "parse", count: 1, text: "1 value does not read as integer", examples: ["abc"] }], unusual: null, summary: null, suggestions: [], unit: "", yourChanges: [], ...over });
   const snapshot = {
     engine: { duckdb: "v1.5.4", duckdbWasm: "1.33.1-dev57.0", budget: "2.0 GiB" },
@@ -204,7 +206,7 @@ test("the record and the deck: names from the data stay out of narration, and be
   assert.deepEqual(deck.frames.filter((f) => f.kind === "section").map((f) => f.title), ["Set-up", "Method", "Results", "Checks and takeaway"]);
   assert.ok(deck.frames.filter((f) => f.kind === "frame").every((f) => f.narration && !/[$|*_#]/.test(f.narration)), "narration is plain words");
   const record = VisualKit.markdown(report);
-  assert.match(record, /\| \$weird\\\|name_\* \| integer \| 96\.0% \| measure \| 3 \| 20 \|/, "a column row, with its bar escaped");
+  assert.match(record, /\| \$weird\\\|name_\* \| integer \| 96\.0% \| measure \| 1 \| 2 \| 20 \|/, "a column row, with its bar escaped, and markers apart from missing values");
   assert.match(record, /^\| \\# heading /m, "a name that would start a heading stays in its cell");
   assert.doesNotMatch(Report.report({ ...snapshot, tables: [] }).results[0].body, /odd_name/);
 });

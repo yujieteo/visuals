@@ -180,7 +180,8 @@
       return { role: "time", certainty: "certain", reasons: [`The values read as ${TYPE_LABEL[c.type]}s.`], possibleTime: false };
     }
     if (c.type === "integer" || c.type === "decimal") {
-      const possibleTime = yearLike && (!!yearWord || c.distinct >= 2);
+      // Years: whole numbers from 1000 to 2999, named as years or spanning at most two centuries.
+      const possibleTime = yearLike && (!!yearWord || (!!n && n.max - n.min <= 200));
       if (possibleTime) reasons.push(`Whole numbers from ${n.min} to ${n.max}${yearWord ? ` in a column named "${c.name}"` : ""}: these may be years.`);
       if (c.distinct <= 12) return { role: "ordered category", certainty: "possible", reasons: [`Numbers with ${c.distinct} distinct values: read as ordered levels.`, ...reasons], possibleTime };
       return { role: "measure", certainty: possibleTime ? "possible" : "likely", reasons: [`Numbers with ${c.distinct} distinct values.`, ...reasons], possibleTime };
