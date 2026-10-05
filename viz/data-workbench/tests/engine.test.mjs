@@ -127,6 +127,8 @@ test("identifiers against measures: names, leading zeros and dense unique runs m
   assert.equal(t.col("customer_id").identifier.repeats, 0);
   assert.equal(t.col("ticket").identifier.repeats, 0, "NA markers in an identifier column are not repeated identifiers");
   assert.ok(t.col("ticket").identifier.first.every((/** @type {any} */ r) => r.value !== "NA"));
+  const long = await load("orders18", encode(["order_number", ...Array.from({ length: 100 }, (_, i) => String(100000000000000001n + BigInt(i)))].join("\n")));
+  assert.deepEqual([long.col("order_number").distinct, long.col("order_number").role], [100, "identifier"], "18-digit identifiers stay distinct");
   const parents = await load("parents", encode(["parent_id", ...Array.from({ length: 40 }, (_, i) => (i % 4 === 0 ? "-1" : String(100 + i)))].join("\n")));
   const pid = parents.col("parent_id");
   assert.equal(pid.role, "identifier");
@@ -182,7 +184,7 @@ test("Parquet: types, decimals and zoned timestamps are kept; nested columns are
     const file = join(dir, "typed.parquet");
     await open.query(`COPY (SELECT i AS id, (i * 1.25)::DECIMAL(10,2) AS amount, to_timestamp(1767225600 + i * 3600) AS seen,
       {'a': i, 'b': 'x'} AS nested, [i, i + 1] AS list, CAST(i * 3 AS VARCHAR) AS text_number, 'same' AS constant,
-      make_time(8, i, 0) AS clock
+      make_time(8, i, 0) AS clock, CASE WHEN i % 10 = 0 THEN -999 ELSE i % 12 + 1 END AS level
       FROM range(1, 31) t(i)) TO '${file}' (FORMAT parquet)`);
     const t = await load("typed", readFileSync(file), "parquet");
     assert.equal(t.imported.rows, 30);
@@ -197,7 +199,13 @@ test("Parquet: types, decimals and zoned timestamps are kept; nested columns are
       text_number: ["VARCHAR", "integer", "measure"],
       constant: ["VARCHAR", "categorical", "unknown"],
       clock: ["TIME", "time", "time"],
+      level: ["BIGINT", "integer", "measure"],
     });
+    const level = t.col("level");
+    assert.deepEqual([level.distinct, level.suggestions.map((/** @type {any} */ x) => x.id)], [13, ["level::sentinel::-999"]]);
+    const column = t.imported.columns.find((/** @type {any} */ c) => c.name === "level");
+    const approved = await Profile.profileColumn(e.query, { table: "typed", rowColumn: t.imported.rowColumn, column, override: level.suggestions[0].change });
+    assert.deepEqual([approved.distinct, approved.role], [12, "ordered category"], "an approved stand-in leaves the distinct count of a Parquet column too");
     assert.deepEqual([t.col("clock").summary.min, t.col("clock").summary.max, t.col("clock").summary.span_days], ["08:01:00", "08:30:00", null], "a time of day has no span in days");
     assert.equal(t.imported.columns.find((/** @type {any} */ c) => c.name === "amount").source, "INT64 (DECIMAL)", "the physical type and its annotation");
     assert.equal(t.col("seen").summary.min, "2026-01-01 01:00:00+00", "zoned times are ordered and shown in UTC");

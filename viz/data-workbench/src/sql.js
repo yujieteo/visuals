@@ -285,9 +285,17 @@ FROM ${ident(table)}`;
   const distinctCount = (table, column, textSource) =>
     `SELECT count(*)::DOUBLE AS distinct_values FROM (SELECT DISTINCT ${ident(column)} FROM ${ident(table)} WHERE ${valued(column, textSource)})`;
 
-  /** Distinct values as read (so "Yes" and "yes", or "1,000" and "1000", are one value), alone for the same reason. */
-  const readDistinct = (table, column, reading, textSource) =>
-    `SELECT count(*)::DOUBLE AS distinct_values FROM (SELECT DISTINCT v FROM (SELECT ${typed(column, reading)} AS v FROM ${ident(table)} WHERE ${valued(column, textSource)}) WHERE v IS NOT NULL)`;
+  /**
+   * Distinct values present under a reading (so "Yes" and "yes", or "1,000" and "1000", are one value), alone for
+   * the same reason. Numbers written as text are compared as their digits, never as doubles, which would merge
+   * identifiers longer than 15 digits.
+   */
+  function readDistinct(table, column, reading, textSource) {
+    const x = ident(column);
+    const digits = ["integer", "integer-sep", "decimal", "decimal-sep"].includes(reading.kind);
+    const key = textSource && digits ? `replace(trim(${x}), ',', '')` : textSource && reading.kind === "text" ? x : `CAST(${typed(column, reading)} AS VARCHAR)`;
+    return `SELECT count(*)::DOUBLE AS distinct_values FROM (SELECT DISTINCT ${key} FROM ${ident(table)} WHERE ${present(column, reading, textSource)})`;
+  }
 
   /** The text values present, by count: the markers a file uses for missing values. */
   const markerValues = (table, column) => {
