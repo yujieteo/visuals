@@ -1,0 +1,77 @@
+[
+ {
+  "id": "lln",
+  "title": "The strong law of large numbers",
+  "statement": "\\begin{gathered} X_1, X_2, \\dots \\ \\text{i.i.d.}, \\quad \\mathbb{E}|X_1| < \\infty \\\\ \\Longrightarrow \\ \\bar X_n = \\frac{1}{n}\\sum_{i=1}^{n} X_i \\to \\mathbb{E} X_1 \\ \\text{almost surely} \\end{gathered}",
+  "assumptions": [
+   "The X_i have the same law.",
+   "The X_i are pairwise independent (Etemadi). Full independence is the classical condition.",
+   "E|X_1| < ∞."
+  ],
+  "proof": "Truncate: Y_k = X_k 1{|X_k| ≤ k}. Integrability gives Σ P(X_k ≠ Y_k) < ∞, so X_k = Y_k for all large k (Borel–Cantelli). Chebyshev's inequality on a geometric subsequence n_j = ⌊α^j⌋ with α > 1 gives almost sure convergence of the truncated means. For X ≥ 0, monotonicity covers the indices between the n_j. Then split X = X⁺ − X⁻.",
+  "reference": "R. Durrett, Probability: Theory and Examples, 5th ed., Cambridge University Press, 2019, Theorem 2.4.1. N. Etemadi, An elementary proof of the strong law of large numbers, Z. Wahrscheinlichkeitstheorie verw. Gebiete 55 (1981) 119–122.",
+  "counterexample": "The zeta law with s = 1.8 has E[X] = ∞. Then X̄_n → ∞ almost surely, so no finite limit exists.",
+  "experiment": {
+   "model": "exp-zipf",
+   "settings": {}
+  }
+ },
+ {
+  "id": "clt",
+  "title": "The central limit theorem and the CLT interval",
+  "statement": "\\begin{gathered} X_i \\ \\text{i.i.d.}, \\quad 0 < \\sigma^2 = \\operatorname{Var} X_1 < \\infty \\\\ \\Longrightarrow \\ \\frac{\\sqrt{n}\\,(\\bar X_n - \\mu)}{\\sigma} \\Rightarrow N(0, 1) \\end{gathered}",
+  "assumptions": [
+   "The X_i are i.i.d.",
+   "The variance σ² is finite and positive.",
+   "The coverage 0.95 of the interval X̄_n ± 1.96 s_n/√n is a limit as n → ∞. A bound for a given n needs more, for example E|X|³ < ∞ (Berry–Esseen)."
+  ],
+  "proof": "Let φ be the characteristic function of X_1 − μ. Then φ(u) = 1 − σ²u²/2 + o(u²), and the characteristic function of the normalised sum is φ(t/(σ√n))^n. Its limit is e^(−t²/2). Lévy's continuity theorem gives convergence in law. Slutsky's lemma replaces σ by s_n.",
+  "reference": "R. Durrett, Probability: Theory and Examples, 5th ed., 2019, Theorem 3.4.1. B. V. Gnedenko and A. N. Kolmogorov, Limit Distributions for Sums of Independent Random Variables, Addison-Wesley, 1954.",
+  "counterexample": "The zeta law with s = 2.5 has a finite mean and an infinite variance. Then (S_n − nμ)/n^(2/3) converges in law to a stable law with index 1.5, not to a normal law. Thus the CLT interval has no coverage guarantee. The block coverage in the diagnostics shows the effect in a run.",
+  "experiment": {
+   "model": "exp-zipf",
+   "settings": {
+    "params": "s=2.5"
+   }
+  }
+ },
+ {
+  "id": "consistency",
+  "title": "Consistency of the estimator and exactness of rejection",
+  "statement": "\\begin{gathered} \\mathbb{E}|g(X)| < \\infty \\ \\Rightarrow \\ \\mathbb{E}\\hat\\theta_n = \\theta, \\ \\hat\\theta_n \\to \\theta \\ \\text{a.s.} \\\\ p \\le M q \\ \\Rightarrow \\ Y \\mid \\text{accept} \\sim p \\end{gathered}",
+  "assumptions": [
+   "Each replicate draws exactly from the model law.",
+   "E|g(X)| < ∞.",
+   "For rejection: p and q each sum to 1, and p(k) ≤ M q(k) for every k. The acceptance uniform is independent of the proposal."
+  ],
+  "proof": "Unbiasedness follows from the linearity of expectation, and consistency from the strong law. For rejection, P(accept, Y = k) = q(k) p(k)/(M q(k)) = p(k)/M. The sum over k gives P(accept) = 1/M. Divide to get P(Y = k | accept) = p(k).",
+  "reference": "L. Devroye, Non-Uniform Random Variate Generation, Springer, 1986, chapter II. S. Asmussen and P. W. Glynn, Stochastic Simulation: Algorithms and Analysis, Springer, 2007, chapter II.",
+  "counterexample": "If M is too small, the accepted values follow min(p, Mq) after normalisation, not p. The estimator is then consistent for the wrong quantity.",
+  "experiment": {
+   "model": "exp-poisson",
+   "settings": {
+    "method": "rejection",
+    "failure": "envelope"
+   }
+  }
+ },
+ {
+  "id": "variance",
+  "title": "Monte Carlo error and the zero-hit bound",
+  "statement": "\\begin{gathered} \\operatorname{Var}\\hat\\theta_n = \\frac{\\sigma_g^2}{n} \\\\ 0 \\ \\text{hits in} \\ n \\ \\Rightarrow \\ p \\le 1 - \\alpha^{1/n} \\ \\text{at confidence} \\ 1 - \\alpha, \\quad 1 - 0.05^{1/n} \\approx \\frac{3}{n} \\end{gathered}",
+  "assumptions": [
+   "The replicates are independent.",
+   "σ_g² = Var g(X) is finite for Var θ̂_n = σ_g²/n.",
+   "For the zero-hit bound, each replicate shows the event independently with the same probability p."
+  ],
+  "proof": "The variance of a sum of independent terms is the sum of their variances, so Var θ̂_n = σ_g²/n for any dimension of X. For the bound: P(0 hits) = (1 − p)^n, which is at most α if and only if p ≥ 1 − α^(1/n). Thus a test at level α rejects every p above the bound.",
+  "reference": "S. Asmussen and P. W. Glynn, Stochastic Simulation, 2007, chapter III. J. A. Hanley and A. Lippman-Hand, If nothing goes wrong, is everything all right? JAMA 249 (1983) 1743–1745.",
+  "counterexample": "If replicates reuse 16 streams, the draws repeat and are not independent. The formula s/√n then understates the error by a factor near √(n/16), and the intervals cover the reference less often.",
+  "experiment": {
+   "model": "binomial-overbooking",
+   "settings": {
+    "failure": "stream_reuse"
+   }
+  }
+ }
+]

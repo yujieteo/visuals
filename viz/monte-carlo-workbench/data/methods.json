@@ -1,0 +1,102 @@
+[
+ {
+  "id": "independent",
+  "name": "Independent sampling",
+  "family": "Direct simulation",
+  "estimator": "\\hat\\theta_n = \\frac{1}{n} \\sum_{i=1}^{n} g(X_i), \\quad X_i \\ \\text{i.i.d. from the model}",
+  "estimatorText": "The sample mean of the quantity over n independent replicates. For an event, it is the fraction of replicates with the event. Each value comes from the reference sampler of its law, which the law card names.",
+  "assumptions": [
+   "The sampler of each law draws exactly from that law, up to floating-point round-off.",
+   "Replicates use different streams, so they are independent.",
+   "E|g(X)| < ∞ for consistency, and Var g(X) < ∞ for the CLT interval."
+  ],
+  "settings": [
+   "Sample size n, a power of 2.",
+   "Seed, an integer from 0 to 2^32 − 1.",
+   "Each law uses its reference sampler, which the law panel names."
+  ],
+  "suitable": {
+   "model": "binomial-overbooking",
+   "text": "The quantities of the flight workflow have bounds, and their probabilities are not small. 65,536 replicates give intervals much narrower than the differences between the alternatives."
+  },
+  "failure": {
+   "model": "exp-zipf",
+   "settings": {},
+   "text": "For the zeta law with s = 1.8, E[X] is infinite. The sample mean tends to ∞, so it has no finite limit, and no number of replicates gives a valid estimate of a mean."
+  },
+  "comparison": {
+   "with": "inverse",
+   "model": "binomial-overbooking",
+   "text": "Both methods draw from the same law. The inverse transform maps one uniform to one value by a monotone function. Thus the alternatives with the same streams stay closely coupled, and the paired differences usually have a smaller variance."
+  }
+ },
+ {
+  "id": "inverse",
+  "name": "Inverse transform",
+  "family": "Direct simulation",
+  "estimator": "X_i = F^{-1}(U_i) = \\min\\{k : F(k) \\ge U_i\\}, \\quad U_i \\sim \\mathrm{Uniform}(0, 1)",
+  "estimatorText": "Each value is the quantile function at one uniform. The estimator of the quantity is the same sample mean.",
+  "assumptions": [
+   "U is uniform on (0, 1), with 53 random bits.",
+   "The page computes F with an error much smaller than the Monte Carlo error.",
+   "The search reaches the whole support: a cut table loses the tail."
+  ],
+  "settings": [
+   "A CDF table with binary search for a support of at most 65,536 points.",
+   "A sequential search from the mode for the binomial, Poisson, negative binomial and hypergeometric laws.",
+   "For the zeta law, a table to rank 4,096, then bisection on the survival function with the Hurwitz zeta function."
+  ],
+  "suitable": {
+   "model": "geometric-retries",
+   "text": "The geometric law has a closed-form inverse: X = ⌊log U / log(1 − p)⌋. This equals F⁻¹(1 − U), which has the same law as F⁻¹(U). 1 uniform gives 1 value at a fixed cost."
+  },
+  "failure": {
+   "model": "poisson-rutherford-geiger",
+   "settings": {
+    "method": "inverse",
+    "failure": "table_cut"
+   },
+   "text": "A table that stops at the 0.99 quantile returns the last table value for every U above 0.99. The estimate of P(N > 10) is then 0, although the true value is about 0.002."
+  },
+  "comparison": {
+   "with": "rejection",
+   "model": "exp-poisson",
+   "text": "The inverse transform uses 1 uniform for each value. The rejection method uses a random number of uniforms, with mean 2M. Thus the inverse transform costs less here. Also, the same uniform gives the same value in each alternative, which keeps the alternatives coupled."
+  }
+ },
+ {
+  "id": "rejection",
+  "name": "Rejection sampling",
+  "family": "Direct simulation",
+  "estimator": "\\text{propose } Y \\sim q, \\ \\text{accept if } U \\le \\frac{p(Y)}{M q(Y)}; \\quad \\mathbb{P}(\\text{accept}) = \\frac{1}{M}",
+  "estimatorText": "Each accepted proposal is one value of the target law. The estimator of the quantity is the same sample mean. The acceptance rate estimates 1/M.",
+  "assumptions": [
+   "p(k) ≤ M q(k) for every k: the envelope M q dominates the target p.",
+   "The proposal and the acceptance uniform are independent.",
+   "M is finite. The page refuses the method when 1/M < 0.001."
+  ],
+  "settings": [
+   "Finite support: the uniform proposal on the support, with M = (number of points) × max p.",
+   "Poisson and negative binomial laws: a geometric proposal, with M at the maximum of p/q.",
+   "Geometric law: a geometric proposal with success probability p/2, M = 2.",
+   "Zeta law: the Pareto proposal of Devroye, with acceptance probability above 1/2."
+  ],
+  "suitable": {
+   "model": "zipf-cascade",
+   "text": "The zeta law has no closed-form inverse, and a CDF table cannot hold its long tail. The Pareto proposal of Devroye covers the whole tail and accepts more than half of the proposals."
+  },
+  "failure": {
+   "model": "exp-poisson",
+   "settings": {
+    "method": "rejection",
+    "failure": "envelope"
+   },
+   "text": "With the envelope constant halved, the envelope no longer covers the target. The accepted values then follow min(p, Mq) after normalisation, not p. The page counts the proposals where p/(Mq) > 1."
+  },
+  "comparison": {
+   "with": "inverse",
+   "model": "exp-poisson",
+   "text": "Both methods are exact. Rejection costs about 2M uniforms for each value, against 1 for the inverse transform. Compare the time for each replicate in the comparison table."
+  }
+ }
+]

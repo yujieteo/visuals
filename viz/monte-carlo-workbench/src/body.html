@@ -1,0 +1,204 @@
+<p class="lede">Model a practical problem, check its assumptions and compare decisions with Monte Carlo simulation. Each result has a tag: a theorem under stated assumptions, a numerical approximation, or an observation of one finite run.</p>
+<nav class="flow no-print" aria-label="Workflow">
+<ol>
+<li><a href="#wb-problem">Problem</a></li>
+<li><a href="#workbench-left">Candidate models</a></li>
+<li><a href="#wb-right">Assumptions</a></li>
+<li><a href="#wb-controls">Simulation method</a></li>
+<li><a href="#wb-right">Diagnostics</a></li>
+<li><a href="#wb-results">Model comparison</a></li>
+<li><a href="#wb-decision">Decision report</a></li>
+</ol>
+</nav>
+<details class="groups">
+<summary>This page holds group 1 of 10: the core and the discrete laws. Groups 2 to 10 are not yet available.</summary>
+@@GROUPS@@
+</details>
+<div class="wb" id="workbench">
+<aside class="wb-left card" id="workbench-left" aria-label="Problem, model, example and method navigation">
+<div class="seg wide" role="group" aria-label="Left panel">
+<button type="button" data-field="nav" value="examples">Examples</button>
+<button type="button" data-field="nav" value="editor">Editor</button>
+<button type="button" data-field="nav" value="library">Library</button>
+</div>
+<section id="nav-examples" aria-label="Examples">
+<label class="label" for="search">Search by decision, phenomenon, law or method</label>
+<input id="search" type="search" data-field="q" placeholder="for example: capacity, heavy tail, rejection" autocomplete="off">
+<div id="example-list"></div>
+</section>
+<section id="nav-editor" aria-label="Expert editor" hidden>
+<label class="label" for="editor-text">Model text</label>
+<textarea id="editor-text" rows="20" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
+<p class="row"><button type="button" id="editor-apply" class="primary">Apply as the custom model</button> <button type="button" id="editor-show">Show the current model</button> <button type="button" id="editor-restore">Restore the autosave</button></p>
+<p id="editor-status" class="note" role="status" aria-live="polite"></p>
+<ul id="editor-errors" class="errors"></ul>
+<p id="autosave-status" class="note"></p>
+<details>
+<summary>Model text: one line for each part</summary>
+<ul class="syntax">
+<li><code>title: …</code> and <code>problem: …</code></li>
+<li><code>param name = 0.5 {unit} "note"</code>: a parameter</li>
+<li><code>X ~ poisson(lambda = rate) repeat 10 {unit}</code>: a random variable, with an optional number of i.i.d. copies</li>
+<li><code>Y := max(X - c, 0)</code>: a definition</li>
+<li><code>prob name = X > 3</code>, <code>mean name = Y</code>, <code>ratio name = E[A] / E[B]</code>: quantities</li>
+<li><code>alt "Label": c = 4; rate = 2</code>: a decision alternative</li>
+<li><code>minimise name</code> or <code>maximise name</code>, and <code>require name &lt;= 0.05</code></li>
+<li><code>focus X</code>: the focus variable, which the distribution plot shows</li>
+</ul>
+<p class="note">Laws: <code>bernoulli(p), binomial(n, p), categorical(p), multinomial(n, p), uniform(a, b), geometric(p), negbin(r, p), poisson(lambda), hypergeometric(N, K, n), zipf(s, N)</code>.</p>
+<p class="note">Functions: <code>abs, sqrt, exp, log, log1p, floor, ceil, round, pow, min, max, pmin, pmax, if, sum, mean, prod, len, count, distinct, maxcount, any, all, normalize</code>. The parser accepts no other name, so an expression cannot run code.</p>
+</details>
+</section>
+<section id="nav-library" aria-label="Library" hidden>
+<h3>Laws</h3>
+<ul id="law-list" class="plain"></ul>
+<h3>Methods</h3>
+<ul id="method-list" class="plain"></ul>
+<h3>Theory</h3>
+<ul id="theory-list" class="plain"></ul>
+</section>
+</aside>
+<section class="wb-centre" aria-label="Experiment and linked visuals">
+<header id="wb-problem" class="card">
+<p class="label" id="model-kind"></p>
+<h2 id="model-title"></h2>
+<p id="model-problem"></p>
+<p id="model-data" class="note"></p>
+</header>
+<div id="model-errors" class="callout bad" role="alert" hidden></div>
+<section id="wb-controls" class="card" aria-label="Simulation settings">
+<div class="controls">
+<label>Method
+<select id="method" data-field="method"><option value="independent">Independent sampling</option><option value="inverse">Inverse transform</option><option value="rejection">Rejection sampling</option></select></label>
+<label>Compare with
+<select id="compare" data-field="compare"><option value="none">No comparison</option><option value="independent">Independent sampling</option><option value="inverse">Inverse transform</option><option value="rejection">Rejection sampling</option></select></label>
+<label>Assumption failure
+<select id="failure" data-field="failure"><option value="none">None</option><option value="envelope">Envelope too small (rejection)</option><option value="stream_reuse">Reused streams (dependent draws)</option><option value="table_cut">Table cut at the 0.99 quantile (inverse)</option></select></label>
+<label>Seed
+<input id="seed" type="number" data-field="seed" min="0" max="4294967295" step="1"></label>
+</div>
+<div class="field">
+<label for="size">Number of replicates n for each alternative: <output id="size-out" for="size"></output></label>
+<input id="size" type="range" data-field="size" min="10" max="22" step="1">
+</div>
+<p id="failure-note" class="note"></p>
+<div class="run-row" role="group" aria-label="Run controls">
+<button type="button" id="run-step" aria-keyshortcuts=".">Step</button>
+<button type="button" id="run-go" class="primary" aria-keyshortcuts="Space">Run</button>
+<button type="button" id="run-pause" aria-keyshortcuts="Space">Pause</button>
+<button type="button" id="run-reset">Reset run</button>
+<label class="check"><input type="checkbox" id="autorun" checked> Run on each change</label>
+</div>
+<progress id="run-progress" max="1" value="0" aria-label="Run progress">0 %</progress>
+<p id="run-status" role="status" aria-live="polite"></p>
+</section>
+<section id="wb-params" class="card" aria-labelledby="params-head">
+<h3 id="params-head">Parameters</h3>
+<div id="param-fields" class="params"></div>
+<p class="note">A value is a number or an expression of the earlier parameters, such as <code>2*rate</code> or <code>[0.2, 0.8]</code>. Press Enter or leave the field to apply it.</p>
+</section>
+<figure class="card" id="fig-dist">
+<figcaption class="label">Law of the focus variable</figcaption>
+<div class="row">
+<div class="seg" role="group" aria-label="Distribution plot">
+<button type="button" data-field="plot" value="pmf">PMF</button><button type="button" data-field="plot" value="cdf">CDF</button><button type="button" data-field="plot" value="survival">Survival</button><button type="button" data-field="plot" value="quantile">Quantile</button>
+</div>
+<div class="seg" role="group" aria-label="Vertical axis">
+<button type="button" data-field="yscale" value="linear">Linear</button><button type="button" data-field="yscale" value="log">Log</button>
+</div>
+<label>Alternative <select id="alt-select" aria-label="Alternative in the plots"></select></label>
+</div>
+<div id="dist-plot" class="plot"></div>
+<p id="dist-note" class="note"></p>
+<p class="row exports"><button type="button" id="dist-plot-svg">Save SVG</button> <button type="button" id="dist-plot-png">Save PNG</button></p>
+</figure>
+<figure class="card" id="fig-conv">
+<figcaption class="label">Convergence of the estimate</figcaption>
+<label>Quantity <select id="quantity-select" aria-label="Quantity in the plots"></select></label>
+<div id="conv-plot" class="plot"></div>
+<p id="conv-note" class="note"></p>
+<p class="row exports"><button type="button" id="conv-plot-svg">Save SVG</button> <button type="button" id="conv-plot-png">Save PNG</button> <button type="button" id="save-trace">Save trace CSV</button></p>
+</figure>
+<section id="wb-results" class="card" aria-labelledby="results-head">
+<h3 id="results-head">Estimates and reference values</h3>
+<div id="results-table" class="table-scroll"></div>
+</section>
+<section id="wb-decision" class="card" aria-labelledby="decision-head">
+<h3 id="decision-head">Decision report</h3>
+<div id="decision-body" class="table-scroll"></div>
+</section>
+<figure class="card" id="fig-compare" hidden>
+<figcaption class="label">Estimator comparison</figcaption>
+<div id="compare-plot" class="plot"></div>
+<div id="compare-table" class="table-scroll"></div>
+<p class="row exports"><button type="button" id="compare-plot-svg">Save SVG</button> <button type="button" id="compare-plot-png">Save PNG</button></p>
+</figure>
+<section id="wb-sweep" class="card" aria-labelledby="sweep-head">
+<h3 id="sweep-head">Parameter sweep</h3>
+<div class="controls">
+<label>Parameter <select id="sweep-param" aria-label="Swept parameter"></select></label>
+<label>From <input id="sweep-from" type="number" data-field="sweep_from" step="any"></label>
+<label>To <input id="sweep-to" type="number" data-field="sweep_to" step="any"></label>
+<label>Points <input id="sweep-points" type="number" data-field="sweep_points" min="3" max="21" step="1"></label>
+</div>
+<p class="row"><button type="button" id="sweep-run">Run the sweep</button></p>
+<p id="sweep-status" class="note" role="status" aria-live="polite"></p>
+<div id="sweep-plot" class="plot"></div>
+<p class="row exports"><button type="button" id="sweep-plot-svg">Save SVG</button> <button type="button" id="sweep-plot-png">Save PNG</button></p>
+</section>
+<section id="wb-models" class="card" aria-labelledby="models-head">
+<h3 id="models-head">The model as a graph, as equations and as text</h3>
+<div id="graph-plot" class="plot"></div>
+<p class="note">Rectangles are parameters, ellipses are random variables, rounded boxes are definitions and quantities.</p>
+<div id="variable-table" class="table-scroll"></div>
+<div id="equations"></div>
+<details><summary>Model text</summary><pre id="model-text" class="mono"></pre></details>
+<p class="row exports"><button type="button" id="graph-plot-svg">Save SVG</button> <button type="button" id="graph-plot-png">Save PNG</button></p>
+</section>
+<section id="wb-records" class="card" aria-labelledby="records-head">
+<h3 id="records-head">Records and exports</h3>
+<p class="row"><button type="button" id="save-model">Save model record</button> <label class="btn" for="load-model">Load model record</label><input type="file" id="load-model" class="visually-hidden" accept="application/json,.json"></p>
+<p class="row"><button type="button" id="save-run">Save run record</button> <label class="btn" for="load-run">Load run record and replay</label><input type="file" id="load-run" class="visually-hidden" accept="application/json,.json"> <button type="button" id="save-csv">Save results CSV</button></p>
+<p id="record-status" class="note" role="status" aria-live="polite"></p>
+<p id="replay-status" class="note" role="status" aria-live="polite"></p>
+<p class="row"><button type="button" id="bench">Measure speed</button></p>
+<p id="bench-status" class="note" role="status" aria-live="polite"></p>
+<p class="note">A run record holds the seed, the generator version, the stream scheme, the model and the method settings. The same record gives the same integer stream on every browser. The last digits of a floating-point result can differ between browsers.</p>
+</section>
+</section>
+<aside class="wb-right card" id="wb-right" aria-label="Theory, assumptions, diagnostics and interpretation">
+<div class="seg wide" role="group" aria-label="Right panel">
+<button type="button" data-field="panel" value="theory">Theory</button>
+<button type="button" data-field="panel" value="assumptions">Assumptions</button>
+<button type="button" data-field="panel" value="diagnostics">Diagnostics</button>
+<button type="button" data-field="panel" value="interpretation">Interpretation</button>
+</div>
+<section id="panel-theory" aria-label="Theory" hidden>
+<label class="label" for="theory-select">Theory panel</label>
+<select id="theory-select" data-field="theory"><option value="lln">The strong law of large numbers</option><option value="clt">The central limit theorem</option><option value="consistency">Consistency and rejection</option><option value="variance">Monte Carlo error and zero hits</option></select>
+<div id="theory-body"></div>
+</section>
+<section id="panel-assumptions" aria-label="Assumptions" hidden></section>
+<section id="panel-diagnostics" aria-label="Diagnostics" hidden></section>
+<section id="panel-interpretation" aria-label="Interpretation" hidden></section>
+</aside>
+</div>
+<section id="law-card" class="card" aria-label="Law"></section>
+<section id="method-card" class="card" aria-label="Method"></section>
+<section id="glossary-card" class="card" aria-labelledby="glossary-head">
+<h2 id="glossary-head">Glossary</h2>
+@@GLOSSARY@@
+</section>
+<section id="about" class="card" aria-labelledby="about-head">
+<h2 id="about-head">About this workbench</h2>
+<p>The page is one HTML file. It holds its code, its catalogue, its data and its mathematical fonts, and it makes no network request. Open it from a file or from the site.</p>
+<h3>Catalogue of this group</h3>
+@@CATALOGUE@@
+<h3>Real datasets</h3>
+@@DATASETS@@
+<h3>Generator and limits</h3>
+<p>The generator is Philox4x32-10 (Salmon, Moraes, Dror and Shaw, 2011). The tests check it against the known-answer vectors of Random123. Each stream comes from the seed, the stream name, the replicate and the variable, so the result does not depend on the number of workers.</p>
+@@LIMITS@@
+<h3>Language</h3>
+<p>The text follows the rules of ASD-STE100 Simplified Technical English as closely as the mathematics allows. A checker and a review checked it. The page does not claim certified conformance. Mathematical notation keeps its full meaning, and the glossary defines each technical term.</p>
+</section>
