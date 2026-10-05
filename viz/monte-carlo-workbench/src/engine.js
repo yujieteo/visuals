@@ -752,10 +752,20 @@
    * growth of the expression. A probability is bounded. A quantity that reads a heavy-tailed variable is decided only
    * when it is that variable, or an affine function of it; other cases are "unknown", never guessed. The classes:
    * "finite" (finitely many values), "bounded" (a continuous law on a bounded interval), "light" (every moment
-   * exists), "heavy" (moments exist only below an order) and "unknown".
+   * exists), "heavy" (moments exist only below an order) and "unknown". The status of a quantity holds for every
+   * alternative; with several alternatives, `alts` gives the status of each one, because a heavy tail can change
+   * between them (Student's t with ν = 1.5 or 30).
    * @param {any} c a compiled model
    */
   function momentStatus(c) {
+    const all = statusOf(c);
+    if (c.alternatives.length < 2) return all;
+    const each = c.alternatives.map((/** @type {any} */ alt) => statusOf({ ...c, alternatives: [alt] }));
+    return all.map((/** @type {any} */ s, /** @type {number} */ k) => ({ ...s, alts: each.map((/** @type {any[]} */ e) => ({ mean: e[k].mean, variance: e[k].variance })) }));
+  }
+
+  /** @param {any} c */
+  function statusOf(c) {
     /** @type {Map<string, { cls: "finite" | "bounded" | "light" | "heavy" | "unknown", order: number }>} */
     const tails = new Map();
     for (const n of c.nodes) {
@@ -1191,9 +1201,9 @@
       const alts = c.alternatives.map((/** @type {any} */ alt, /** @type {number} */ a) => ({
         label: alt.label,
         quantities: c.quantities.map((/** @type {any} */ q, /** @type {number} */ k) => {
-          const s = m.acc[a][k], mu = controlMean(c, design, a, k), iv = interval(q.kind, s, status[k].variance, design, mu);
+          const st = status[k].alts?.[a] ?? status[k], s = m.acc[a][k], mu = controlMean(c, design, a, k), iv = interval(q.kind, s, st.variance, design, mu);
           // An infinite mean is the stronger reason: the sample mean then has no finite limit at all.
-          if (status[k].mean === "infinite" && iv.lo === null) iv.how = "no interval: the mean is infinite, so the sample mean has no finite limit";
+          if (st.mean === "infinite" && iv.lo === null) iv.how = "no interval: the mean is infinite, so the sample mean has no finite limit";
           const one = design === "antithetic" ? s.ind : s, sd = one.n > 1 ? Math.sqrt(one.m2 / (one.n - 1)) : null;
           const cov = m.cover[a]?.[k];
           return { name: q.name, kind: q.kind, n: one.n, hits: q.kind === "probability" ? s.hits : null, ...iv, sampleSd: q.kind === "probability" ? null : sd,
@@ -1207,7 +1217,8 @@
         quantities: c.quantities.map((/** @type {any} */ q, /** @type {number} */ k) => {
           if (q.kind === "ratio") return { name: q.name, est: null, lo: null, hi: null, how: "no paired interval for a ratio", crn: null };
           const s = m.diffs[p][k], ma = controlMean(c, design, pair[0], k), mb = controlMean(c, design, pair[1], k);
-          const iv = interval("expectation", s, status[k].variance === "infinite" ? "infinite" : "unknown", design, ma === null || mb === null ? null : mb - ma);
+          const heavy = [pair[0], pair[1]].some((a) => (status[k].alts?.[a] ?? status[k]).variance === "infinite");
+          const iv = interval("expectation", s, heavy ? "infinite" : "unknown", design, ma === null || mb === null ? null : mb - ma);
           const sa = alts[pair[0]].quantities[k].se, sb = alts[pair[1]].quantities[k].se;
           const crn = iv.se && sa !== null && sb !== null && (sa > 0 || sb > 0) ? (sa * sa + sb * sb) / (iv.se * iv.se) : null;
           return { name: q.name, est: iv.est, lo: iv.lo, hi: iv.hi, se: iv.se, crn, how: `paired difference ${c.alternatives[pair[1]].label} − ${c.alternatives[pair[0]].label}, ${c.settings.streams === "common" ? "common random numbers" : "separate streams"}` };

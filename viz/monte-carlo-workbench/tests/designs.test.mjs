@@ -128,3 +128,13 @@ test("moment status of continuous models: heavy tails by their order, light loca
   assert.deepEqual(status("G ~ gamma(k = 2, theta = 1)\nB ~ beta(a = G, b = 2)\nmean m = B\n"), [["finite", "finite"]], "a beta law is bounded whatever its shapes");
   assert.deepEqual(status("U ~ cuniform(a = 0.5, b = 1)\nmean m = 1/U\n"), [["unknown", "unknown"]], "a division by a random value is not a polynomial");
 });
+
+test("each alternative has its own moment status: a CLT interval for ν = 30 and none for ν = 1.5", () => {
+  const r = run("param nu = 3\nT ~ student(nu = nu)\nmean m = T\nalt \"heavy\": nu = 1.5\nalt \"light\": nu = 30\n", { seed: 3 });
+  assert.equal(r.status[0].variance, "infinite", "the quantity's status is that of its worst alternative");
+  assert.deepEqual(r.status[0].alts, [{ mean: "finite", variance: "infinite" }, { mean: "finite", variance: "finite" }]);
+  const [heavy, light] = r.sm[0].alts.map((/** @type {any} */ a) => a.quantities[0]);
+  assert.equal(heavy.lo, null, "ν = 1.5: no CLT interval");
+  assert.ok(light.lo !== null && Math.abs(z(light)) < 5.5, "ν = 30: a CLT interval that covers the reference 0");
+  assert.equal(r.sm[0].diffs[0].quantities[0].lo, null, "a paired difference with a heavy alternative has no interval");
+});

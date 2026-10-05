@@ -251,13 +251,13 @@
     const outside = h && h.values ? (h.under + h.over) / h.values : 0, w = d.focus.window, end = w.lo + w.bins * w.width - (d.focus.continuous ? 0 : 1);
     $("dist-note").textContent = `${d.focus.name}${d.alternatives.length > 1 ? `, ${d.alternatives[a]}` : ""}. ${h ? `${count(h.values)} values, ${(outside * 100).toFixed(2)} % outside the window ${fmt(w.lo)} to ${fmt(end)}${h.max !== null ? `, largest value ${fmt(h.max)}` : ""}.` : "No run yet."} ${d.focus.theory ? "The reference law comes from the law itself or from the enumeration." : d.focus.continuous ? "No reference law: the focus is a function of several variables. A pilot sample of 2,048 replicates sets the window." : "No reference law: the support is too large to enumerate."}`;
     const ref = d.references[a]?.values[q] ?? null;
-    const qd = d.quantities[q];
+    const qd = d.quantities[q], st = qd.status.alts?.[a] ?? qd.status;
     // No band where the variance is infinite: the interval of each block would claim a precision that the law lacks.
-    const band = qd.status.variance !== "infinite";
+    const band = st.variance !== "infinite";
     const trace = run && run.accum.trace.length ? run.accum.trace.map((/** @type {any} */ t) => { const e = t.est[0][a][q]; return { n: t.n, est: e[0], lo: band ? e[1] : null, hi: band ? e[2] : null }; }) : [];
-    $("conv-plot").innerHTML = P.convergence({ trace, reference: ref, ylabel: `${qd.name}${qd.unit ? ` [${qd.unit}]` : ""}`, ylog: qd.status.mean === "infinite" && trace.some((/** @type {any} */ t) => t.est > 0) });
+    $("conv-plot").innerHTML = P.convergence({ trace, reference: ref, ylabel: `${qd.name}${qd.unit ? ` [${qd.unit}]` : ""}`, ylog: st.mean === "infinite" && trace.some((/** @type {any} */ t) => t.est > 0) });
     // An infinite mean comes with an infinite variance, so it is tested first: it is the stronger statement.
-    $("conv-note").textContent = qd.status.mean === "infinite" ? "The mean is infinite: the line shows a finite-run observation with no finite limit." : qd.status.variance === "infinite" ? "The variance is infinite: the page draws no interval band, and the estimate converges slowly." : "The band is the 95 % interval after each block.";
+    $("conv-note").textContent = st.mean === "infinite" ? "The mean is infinite: the line shows a finite-run observation with no finite limit." : st.variance === "infinite" ? "The variance is infinite: the page draws no interval band, and the estimate converges slowly." : "The band is the 95 % interval after each block.";
   }
 
   /** @param {any} q @param {any} status */
@@ -280,12 +280,12 @@
     /** @type {string[]} */
     const rows = [];
     d.alternatives.forEach((/** @type {string} */ label, /** @type {number} */ a) => d.quantities.forEach((/** @type {any} */ qd, /** @type {number} */ k) => {
-      const q = m0?.alts[a].quantities[k];
+      const q = m0?.alts[a].quantities[k], st = qd.status.alts?.[a] ?? qd.status;
       const ref = d.references[a].values[k];
       const r = d.references[a], how = r.method === "quadrature" ? "adaptive quadrature over the quantile functions" : "enumeration";
-      const refNote = ref === null ? (qd.status.mean === "infinite" ? "None: the mean is infinite." : r.reason || (r.method === "quadrature" && qd.status.mean !== "finite" ? "None: the page cannot show that the mean exists." : "No reference.")) : r.closed?.[k] ? "closed form" : r.neglected ? `${how}, neglected mass ≤ ${fmt(r.neglected)}` : how;
+      const refNote = ref === null ? (st.mean === "infinite" ? "None: the mean is infinite." : r.reason || (r.method === "quadrature" && qd.status.mean !== "finite" ? "None: the page cannot show that the mean exists." : "No reference.")) : r.closed?.[k] ? "closed form" : r.neglected ? `${how}, neglected mass ≤ ${fmt(r.neglected)}` : how;
       rows.push(`<tr><th scope="row">${esc(label)}</th><td><span class="mono">${esc(qd.name)}</span><br><span class="note">${esc(qd.note)}${qd.unit ? ` [${esc(qd.unit)}]` : ""}</span></td>
-<td class="num">${q ? precise(q.est, q.lo, q.hi)[0] : "–"}${q?.hits !== null && q?.hits !== undefined ? `<br><span class="note">${count(q.hits)} hits</span>` : ""}</td><td class="num">${q ? intervalCell(q, qd.status) : "–"}</td>
+<td class="num">${q ? precise(q.est, q.lo, q.hi)[0] : "–"}${q?.hits !== null && q?.hits !== undefined ? `<br><span class="note">${count(q.hits)} hits</span>` : ""}</td><td class="num">${q ? intervalCell(q, st) : "–"}</td>
 <td class="num">${fmt(ref)}<br><span class="note">${esc(refNote)}</span></td><td>${q ? tag("observation") : ""}${ref !== null ? tag(d.references[a].closed?.[k] ? "theorem" : "numerical") : ""}</td></tr>`);
     }));
     $("results-table").innerHTML = `<table><caption>Estimates after ${count(run?.accum.n ?? 0)} replicates for each alternative. Seed ${s.seed}. ${run && run.status !== "done" && run.accum.blocks ? "<strong>Partial: the run is not complete.</strong>" : ""}</caption>
@@ -353,12 +353,16 @@ ${diffs ? `<details><summary>Paired differences, ${s.streams === "common" ? "com
     const diag = [];
     d.quantities.forEach((/** @type {any} */ q, /** @type {number} */ k) => {
       const est = m0?.alts.map((/** @type {any} */ alt) => alt.quantities[k]) ?? [];
-      const cov = est.map((/** @type {any} */ x, /** @type {number} */ a) => x.coverage ? `${esc(d.alternatives[a])}: ${x.coverage.hit} of ${x.coverage.of} blocks (${fmt((100 * x.coverage.hit) / x.coverage.of)} %)` : "").filter(Boolean);
+      // Where the alternatives differ in their tails, each one says whether its CLT interval is valid.
+      const infinite = (/** @type {number} */ a) => (q.status.alts?.[a] ?? q.status).variance === "infinite", mixed = d.alternatives.some((/** @type {string} */ _, /** @type {number} */ a) => infinite(a) !== infinite(0));
+      const cov = est.map((/** @type {any} */ x, /** @type {number} */ a) => x.coverage ? `${esc(d.alternatives[a])}: ${x.coverage.hit} of ${x.coverage.of} blocks (${fmt((100 * x.coverage.hit) / x.coverage.of)} %)${mixed && infinite(a) ? ", a CLT interval that is not valid here because the variance is infinite" : ""}` : "").filter(Boolean);
       const zero = est.some((/** @type {any} */ x) => x.hits === 0);
-      diag.push(`<li><span class="mono">${esc(q.name)}</span>: mean <strong>${q.status.mean}</strong>, variance <strong>${q.status.variance}</strong>. ${esc(q.status.reason)} ${q.status.mean === "unknown" ? tag("observation") : tag("theorem")}
-${q.status.variance === "infinite" ? "<br>No CLT interval: a finite sample variance would show a precision that the law does not have." : ""}
+      const byAlt = (q.status.alts ?? []).some((/** @type {any} */ x) => x.mean !== q.status.mean || x.variance !== q.status.variance)
+        ? ` By alternative: ${q.status.alts.map((/** @type {any} */ x, /** @type {number} */ i) => `${esc(d.alternatives[i])}, mean ${x.mean}, variance ${x.variance}`).join("; ")}.` : "";
+      diag.push(`<li><span class="mono">${esc(q.name)}</span>: mean <strong>${q.status.mean}</strong>, variance <strong>${q.status.variance}</strong>${q.status.alts ? " in the worst alternative" : ""}. ${esc(q.status.reason)}${byAlt} ${q.status.mean === "unknown" ? tag("observation") : tag("theorem")}
+${q.status.variance === "infinite" ? `<br>No CLT interval${mixed ? " for an alternative with an infinite variance" : ""}: a finite sample variance would show a precision that the law does not have.` : ""}
 ${zero ? `<br>At least one alternative had 0 hits. The interval is the exact zero-hit bound 1 − 0.05^(1/n) ≈ 3/n = ${fmt(3 / (run?.accum.n || 1))}.` : ""}
-${cov.length ? `<br>${q.status.variance === "infinite" ? "Block coverage of a CLT interval, which is not valid here because the variance is infinite" : "Block coverage of the 95 % interval"}: ${cov.join("; ")}. ${tag("observation")}` : ""}</li>`);
+${cov.length ? `<br>${q.status.variance === "infinite" && !mixed ? "Block coverage of a CLT interval, which is not valid here because the variance is infinite" : "Block coverage of the 95 % interval"}: ${cov.join("; ")}. ${tag("observation")}` : ""}</li>`);
     });
     const rej = m0?.rejection;
     const sampler = En.METHODS[s.method].sampler === "reference" ? "independent" : En.METHODS[s.method].sampler;
@@ -616,7 +620,7 @@ ${fit ? `<h4>Data: ${esc(ds.title)}</h4><p>${count(fit.n)} observations, mean ${
   function traceCsv() {
     const d = app.derived, rows = ["n,alternative,quantity,estimate,lo,hi"];
     for (const t of run?.accum.trace ?? []) d.alternatives.forEach((/** @type {string} */ a, /** @type {number} */ i) => d.quantities.forEach((/** @type {any} */ q, /** @type {number} */ k) => {
-      const e = t.est[0][i][k], band = q.status.variance !== "infinite";
+      const e = t.est[0][i][k], band = (q.status.alts?.[i] ?? q.status).variance !== "infinite";
       rows.push([t.n, `"${a.replace(/"/g, '""')}"`, q.name, e[0] ?? "", band ? e[1] ?? "" : "", band ? e[2] ?? "" : ""].join(","));
     }));
     return `${rows.join("\n")}\n`;
