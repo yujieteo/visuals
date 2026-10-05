@@ -3041,9 +3041,12 @@ SELECT (SELECT coalesce(sum(n - 1), 0) FROM c WHERE n > 1)::DOUBLE AS repeats, v
     return { terms, total, text: "2q + c + t + 2·C(q,2) + 2qc + C(c,2) + tq + tc + tl + C(t,2)·l" };
   }
 
-  /** A name as part of an id: lower case, [a-z0-9_]; a name that changes gets a short hash of itself, so ids stay unique. */
+  /**
+   * A name as part of an id: lower case, [a-z0-9_], at most 60 characters; a name that changes gets a short hash of
+   * itself, so ids stay unique and short enough for the specification's schema and for file names.
+   */
   function slug(name) {
-    const s = String(name).toLowerCase().replace(/[^a-z0-9_]+/g, "_").replace(/^_+|_+$/g, "") || "field";
+    const s = (String(name).toLowerCase().replace(/[^a-z0-9_]+/g, "_").replace(/^_+|_+$/g, "") || "field").slice(0, 60);
     if (s === name) return s;
     let h = 0x811c9dc5;
     for (const ch of String(name)) {
@@ -5056,9 +5059,12 @@ FROM ev ORDER BY coalesce(ev.s, ev.e), first, label LIMIT ${size} OFFSET ${(page
         if (check.no_start) facts.notes.push(`${check.no_start} interval${check.no_start === 1 ? " has" : "s have"} no start: drawn open to the left edge, "start unknown".`);
         if (check.no_end) facts.notes.push(`${check.no_end} interval${check.no_end === 1 ? " has" : "s have"} no end: drawn open to the right edge, "end unknown".`);
         if (head.merged) facts.notes.push(`${head.merged} interval${head.merged === 1 ? "" : "s"} with the same label, start and end ${head.merged === 1 ? "merges" : "merge"} several rows, shown with a count (×n).`);
-        return done(check.rows, { zone: sf.zone, share, range: { lo: range.lo, hi: range.hi },
+        // Rows used are the rows drawn: a row whose end comes before its start is counted in a note, not as used.
+        const drawn = done(check.rows - (check.both_ends - check.ordered), { zone: sf.zone, share, range: { lo: range.lo, hi: range.hi },
           events: rows.map((x) => ({ label: x.label, s: x.s, e: x.e, ps: x.ps, pe: x.pe, qs: !!x.qs, qe: !!x.qe, sraw: x.sraw, eraw: x.eraw, n: x.n, first: x.first })),
           page: { page: page.page, pages: Math.max(1, Math.ceil(head.events / page.size)), size: page.size, events: head.events, merged: head.merged }, panels: [{ facet: null }] });
+        facts.left = Math.max(0, ctx.rows - check.rows);
+        return drawn;
       }
       default:
         throw new Error(`no computation for ${spec.kind}`);
@@ -5238,6 +5244,8 @@ FROM ev ORDER BY coalesce(ev.s, ev.e), first, label LIMIT ${size} OFFSET ${(page
       st.status = counts.incomplete ? "incomplete" : "complete";
       if (left.length) st.reason = "you cancelled";
       else if (sum(plan.overflow)) st.reason = `${fmtInt(sum(plan.overflow))} candidates beyond the cap of ${fmtInt(plan.max)}`;
+      // An open full-size view shows the chart as regenerated.
+      if (viewer.id && viewer.table === table.name && /** @type {HTMLDialogElement} */ (byId("viewer")).open) drawViewer();
       app.note({ kind: "charts", table: table.name, text: `Charts of ${table.name} (grammar v${Grammar.VERSION}): ${plural(counts.total, "candidate", "candidates")}; ${fmtInt(counts.valid)} valid, ${fmtInt(counts.excluded)} excluded, ${fmtInt(counts.failed)} failed, ${fmtInt(counts.incomplete)} incomplete${st.reason ? ` (${st.reason})` : ""}.` });
       app.refresh();
     }
@@ -5544,12 +5552,13 @@ FROM ev ORDER BY coalesce(ev.s, ev.e), first, label LIMIT ${size} OFFSET ${(page
           field("facet", "Facets: one panel a level", select("facet", [["", "None"], ...facets.map((f) => [f.name, `${f.name} (${f.levels} levels)`])], spec.layout.facet?.field ?? "")),
           field("facetColumns", "Facet columns", h("input", { id: id("facetColumns"), name: "facetColumns", type: "number", min: "1", max: "6", step: "1", value: spec.layout.facet?.columns ?? 3 })),
         ]));
-      const form = h("form", { class: "edit", onsubmit: (ev) => { ev.preventDefault(); apply(st, cand, ev.target); } },
+      // The chart is found again by its id when the form is sent: a regeneration may have replaced it meanwhile.
+      const form = h("form", { class: "edit", onsubmit: (ev) => { ev.preventDefault(); const now = current(); if (now.cand) apply(now.st, now.cand, ev.target); } },
         groups,
         h("p", { id: "viewer-error", class: "warn-text", role: "alert", text: viewer.error }),
         h("p", { class: "actions" },
           h("button", { type: "submit", class: "primary", disabled: viewer.busy, text: "Apply" }),
-          cand.edited ? h("button", { type: "button", disabled: viewer.busy, onclick: () => revert(st, cand), text: "Return to the generated chart" }) : null),
+          cand.edited ? h("button", { type: "button", disabled: viewer.busy, onclick: () => { const now = current(); if (now.cand) revert(now.st, now.cand); }, text: "Return to the generated chart" }) : null),
         h("p", { class: "note", text: "Each change is checked against the grammar's rules before it is drawn (a log scale needs values above 0; bars start at zero; facets need a category of at most 12 levels), and recorded in the specification and the log." }));
       return [form];
     }
@@ -5630,8 +5639,12 @@ FROM ev ORDER BY coalesce(ev.s, ev.e), first, label LIMIT ${size} OFFSET ${(page
           return d.excluded ? { excluded: d.excluded } : { data: d, drawn: Render.render(next, d) };
         });
         if (out.excluded) { refuse(`Not applied: ${out.excluded}`); return; }
+        // The chart as the table holds it now: a regeneration that ran first may have replaced the object.
+        const live = stateOf(st.ctx.table)?.candidates.find((c) => c.id === cand.id);
+        if (!live) { refuse("Not applied: this chart is no longer a candidate of the table."); return; }
         commitMark();
-        forget(cand);
+        forget(live);
+        cand = live;
         Object.assign(cand, { spec: next, edited: true, desc: out.drawn.desc, facts: out.data.facts, pages: out.data.page?.pages ?? 1, svg: keep(out.drawn.svg), version: cand.version + 1 });
         viewer.page = 1;
         applied = true;

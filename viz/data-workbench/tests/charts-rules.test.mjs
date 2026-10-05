@@ -109,6 +109,9 @@ test("ids: stable, filename-safe, and unique even when two names slug alike", ()
   assert.match(Grammar.slug("Price (USD)"), /^price_usd-[0-9a-f]{6}$/);
   assert.notEqual(Grammar.slug("a b"), Grammar.slug("a-b"));
   assert.equal(Grammar.slug("Price (USD)"), Grammar.slug("Price (USD)"));
+  const long = Grammar.candidateId("t", "interval-timeline", ["a".repeat(300), "b".repeat(300), "c".repeat(300)]);
+  assert.ok(long.length <= 400, `${long.length} characters`);
+  assert.equal(ChartSpec.validateSchema(ChartSpec.SCHEMA.properties.id, long).length, 0, "the longest id still passes the schema");
 });
 
 /* ---------- specifications ---------- */

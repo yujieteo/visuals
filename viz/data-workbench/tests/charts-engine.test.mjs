@@ -207,6 +207,7 @@ test("interval timelines: open ends drawn to the edge and labelled, an end befor
   assert.match(svg, /Railway opened \(end unknown\)/);
   assert.match(svg, /Mine closed \(start unknown\)/);
   assert.ok(data.share >= 0.9);
+  assert.deepEqual([data.facts.used, data.facts.left], [12, 0], "12 of 13 rows drawn; the reversed one is a note, not a missing value");
   const treaty = by("Treaty signed");
   assert.deepEqual([treaty.ps, treaty.pe], ["year", "year"], "1850 to 1852: both ends known to the year");
 });

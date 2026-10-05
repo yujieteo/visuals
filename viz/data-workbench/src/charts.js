@@ -386,9 +386,12 @@
         if (check.no_start) facts.notes.push(`${check.no_start} interval${check.no_start === 1 ? " has" : "s have"} no start: drawn open to the left edge, "start unknown".`);
         if (check.no_end) facts.notes.push(`${check.no_end} interval${check.no_end === 1 ? " has" : "s have"} no end: drawn open to the right edge, "end unknown".`);
         if (head.merged) facts.notes.push(`${head.merged} interval${head.merged === 1 ? "" : "s"} with the same label, start and end ${head.merged === 1 ? "merges" : "merge"} several rows, shown with a count (×n).`);
-        return done(check.rows, { zone: sf.zone, share, range: { lo: range.lo, hi: range.hi },
+        // Rows used are the rows drawn: a row whose end comes before its start is counted in a note, not as used.
+        const drawn = done(check.rows - (check.both_ends - check.ordered), { zone: sf.zone, share, range: { lo: range.lo, hi: range.hi },
           events: rows.map((x) => ({ label: x.label, s: x.s, e: x.e, ps: x.ps, pe: x.pe, qs: !!x.qs, qe: !!x.qe, sraw: x.sraw, eraw: x.eraw, n: x.n, first: x.first })),
           page: { page: page.page, pages: Math.max(1, Math.ceil(head.events / page.size)), size: page.size, events: head.events, merged: head.merged }, panels: [{ facet: null }] });
+        facts.left = Math.max(0, ctx.rows - check.rows);
+        return drawn;
       }
       default:
         throw new Error(`no computation for ${spec.kind}`);

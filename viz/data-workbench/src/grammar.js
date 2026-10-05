@@ -117,9 +117,12 @@
     return { terms, total, text: "2q + c + t + 2·C(q,2) + 2qc + C(c,2) + tq + tc + tl + C(t,2)·l" };
   }
 
-  /** A name as part of an id: lower case, [a-z0-9_]; a name that changes gets a short hash of itself, so ids stay unique. */
+  /**
+   * A name as part of an id: lower case, [a-z0-9_], at most 60 characters; a name that changes gets a short hash of
+   * itself, so ids stay unique and short enough for the specification's schema and for file names.
+   */
   function slug(name) {
-    const s = String(name).toLowerCase().replace(/[^a-z0-9_]+/g, "_").replace(/^_+|_+$/g, "") || "field";
+    const s = (String(name).toLowerCase().replace(/[^a-z0-9_]+/g, "_").replace(/^_+|_+$/g, "") || "field").slice(0, 60);
     if (s === name) return s;
     let h = 0x811c9dc5;
     for (const ch of String(name)) {

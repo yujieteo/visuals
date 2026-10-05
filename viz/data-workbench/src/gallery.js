@@ -113,6 +113,8 @@
       st.status = counts.incomplete ? "incomplete" : "complete";
       if (left.length) st.reason = "you cancelled";
       else if (sum(plan.overflow)) st.reason = `${fmtInt(sum(plan.overflow))} candidates beyond the cap of ${fmtInt(plan.max)}`;
+      // An open full-size view shows the chart as regenerated.
+      if (viewer.id && viewer.table === table.name && /** @type {HTMLDialogElement} */ (byId("viewer")).open) drawViewer();
       app.note({ kind: "charts", table: table.name, text: `Charts of ${table.name} (grammar v${Grammar.VERSION}): ${plural(counts.total, "candidate", "candidates")}; ${fmtInt(counts.valid)} valid, ${fmtInt(counts.excluded)} excluded, ${fmtInt(counts.failed)} failed, ${fmtInt(counts.incomplete)} incomplete${st.reason ? ` (${st.reason})` : ""}.` });
       app.refresh();
     }
@@ -419,12 +421,13 @@
           field("facet", "Facets: one panel a level", select("facet", [["", "None"], ...facets.map((f) => [f.name, `${f.name} (${f.levels} levels)`])], spec.layout.facet?.field ?? "")),
           field("facetColumns", "Facet columns", h("input", { id: id("facetColumns"), name: "facetColumns", type: "number", min: "1", max: "6", step: "1", value: spec.layout.facet?.columns ?? 3 })),
         ]));
-      const form = h("form", { class: "edit", onsubmit: (ev) => { ev.preventDefault(); apply(st, cand, ev.target); } },
+      // The chart is found again by its id when the form is sent: a regeneration may have replaced it meanwhile.
+      const form = h("form", { class: "edit", onsubmit: (ev) => { ev.preventDefault(); const now = current(); if (now.cand) apply(now.st, now.cand, ev.target); } },
         groups,
         h("p", { id: "viewer-error", class: "warn-text", role: "alert", text: viewer.error }),
         h("p", { class: "actions" },
           h("button", { type: "submit", class: "primary", disabled: viewer.busy, text: "Apply" }),
-          cand.edited ? h("button", { type: "button", disabled: viewer.busy, onclick: () => revert(st, cand), text: "Return to the generated chart" }) : null),
+          cand.edited ? h("button", { type: "button", disabled: viewer.busy, onclick: () => { const now = current(); if (now.cand) revert(now.st, now.cand); }, text: "Return to the generated chart" }) : null),
         h("p", { class: "note", text: "Each change is checked against the grammar's rules before it is drawn (a log scale needs values above 0; bars start at zero; facets need a category of at most 12 levels), and recorded in the specification and the log." }));
       return [form];
     }
@@ -505,8 +508,12 @@
           return d.excluded ? { excluded: d.excluded } : { data: d, drawn: Render.render(next, d) };
         });
         if (out.excluded) { refuse(`Not applied: ${out.excluded}`); return; }
+        // The chart as the table holds it now: a regeneration that ran first may have replaced the object.
+        const live = stateOf(st.ctx.table)?.candidates.find((c) => c.id === cand.id);
+        if (!live) { refuse("Not applied: this chart is no longer a candidate of the table."); return; }
         commitMark();
-        forget(cand);
+        forget(live);
+        cand = live;
         Object.assign(cand, { spec: next, edited: true, desc: out.drawn.desc, facts: out.data.facts, pages: out.data.page?.pages ?? 1, svg: keep(out.drawn.svg), version: cand.version + 1 });
         viewer.page = 1;
         applied = true;
