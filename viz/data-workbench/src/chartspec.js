@@ -320,22 +320,6 @@
       if (sc && channel !== "x2") next.scale[channel] = sc;
       said.push(`${channel}: ${before} → ${name}`);
     }
-    if (change.swap && next.encoding.x && next.encoding.y?.field) {
-      for (const key of ["encoding", "scale"]) [next[key].x, next[key].y] = [next[key].y, next[key].x];
-      const tx = step(next, "top:x"), ty = step(next, "top:y");
-      if (tx && ty) [tx.n, ty.n] = [ty.n, tx.n];
-      [next.annotation.labels.x, next.annotation.labels.y] = [next.annotation.labels.y, next.annotation.labels.x];
-      const ux = next.annotation.units.x, uy = next.annotation.units.y;
-      delete next.annotation.units.x;
-      delete next.annotation.units.y;
-      if (uy) next.annotation.units.x = uy;
-      if (ux) next.annotation.units.y = ux;
-      said.push("x and y swapped");
-    }
-    if (said.length) {
-      const complete = step(next, "complete");
-      complete.fields = kind.channels.map((c) => next.encoding[c].field);
-    }
     const bin = step(next, "bin:x");
     if (bin && change.bins !== undefined && change.bins !== bin.bins) {
       bin.bins = change.bins === null ? null : Math.round(change.bins);
@@ -361,7 +345,6 @@
       next.encoding.y.aggregate = change.fn;
       said.push(`aggregate: ${change.fn}`);
     }
-    if (generatedTitle) next.annotation.title = autoTitle(next.kind, fieldsNow(), fnNow());
     for (const [key, channel] of [["xScale", "x"], ["yScale", "y"]]) {
       const sc = next.scale[channel];
       const want = change[key];
@@ -378,16 +361,37 @@
       page.page = Math.max(1, Math.round(change.page));
       said.push(`events page ${page.page}`);
     }
-    const texts = [["title", "title"], ["xLabel", "x label"], ["yLabel", "y label"]];
-    for (const [key, what] of texts) {
+    // Axis labels as the form names them: the axes before any swap below.
+    for (const [key, at] of [["xLabel", "x"], ["yLabel", "y"]]) {
       if (change[key] === undefined) continue;
       const value = String(change[key]).slice(0, LIMITS.text);
-      const at = key === "title" ? null : key === "xLabel" ? "x" : "y";
-      const current = at ? next.annotation.labels[at] : next.annotation.title;
-      if (value === current) continue;
-      if (at) next.annotation.labels[at] = value;
-      else next.annotation.title = value;
-      said.push(`${what}: "${value}"`);
+      if (value === next.annotation.labels[at]) continue;
+      next.annotation.labels[at] = value;
+      said.push(`${at} label: "${value}"`);
+    }
+    // A swap comes after every change the form names by axis, so each change stays with the field it was made for,
+    // and the swap carries it to the other axis.
+    if (change.swap && next.encoding.x && next.encoding.y?.field) {
+      for (const key of ["encoding", "scale"]) [next[key].x, next[key].y] = [next[key].y, next[key].x];
+      const tx = step(next, "top:x"), ty = step(next, "top:y");
+      if (tx && ty) [tx.n, ty.n] = [ty.n, tx.n];
+      [next.annotation.labels.x, next.annotation.labels.y] = [next.annotation.labels.y, next.annotation.labels.x];
+      const ux = next.annotation.units.x, uy = next.annotation.units.y;
+      delete next.annotation.units.x;
+      delete next.annotation.units.y;
+      if (uy) next.annotation.units.x = uy;
+      if (ux) next.annotation.units.y = ux;
+      said.push("x and y swapped");
+    }
+    const fields = kind.channels.map((c) => next.encoding[c].field);
+    if (fields.join("\u0000") !== spec.transform.find((/** @type {any} */ t) => t.id === "complete").fields.join("\u0000")) step(next, "complete").fields = fields;
+    if (generatedTitle) next.annotation.title = autoTitle(next.kind, fieldsNow(), fnNow());
+    if (change.title !== undefined) {
+      const value = String(change.title).slice(0, LIMITS.text);
+      if (value !== next.annotation.title) {
+        next.annotation.title = value;
+        said.push(`title: "${value}"`);
+      }
     }
     if (change.caption !== undefined && change.caption !== next.annotation.caption) {
       next.annotation.caption = String(change.caption).slice(0, LIMITS.notes);

@@ -195,7 +195,9 @@ test("edits: each change is recorded; a field's axis label follows the field unl
   assert.deepEqual(swapped.edits, ["x and y swapped"]);
   const titled = ChartSpec.edit(spec, { title: "Mass against b", xLabel: "Mass", facet: "grp", width: 120, height: 90 }, ctx);
   assert.deepEqual(titled.layout, { width: 120, height: 90, unit: "mm", facet: { field: "grp", columns: 3 } });
-  assert.match(titled.edits[0], /title: "Mass against b"; x label: "Mass"; width 120 mm; height 90 mm; facets by grp/);
+  assert.match(titled.edits[0], /x label: "Mass"; title: "Mass against b"; width 120 mm; height 90 mm; facets by grp/);
+  const both = ChartSpec.edit(spec, { xScale: "linear", yLabel: "Change in b", swap: true }, ctx);
+  assert.deepEqual([both.encoding.y.field, both.scale.y.type, both.scale.y.rule, both.annotation.labels.x], ["a", "linear", "set", "Change in b"], "changes named by axis stay with their field across a swap made at the same time");
   assert.equal(ChartSpec.validate(titled, ctx).ok, true);
   assert.equal(ChartSpec.edit(ChartSpec.make(cand("histogram", ["a"]), ctx), { x: "b" }, ctx).annotation.title, "Distribution of b", "a generated title follows the field");
   assert.equal(swapped.annotation.title, "a against b", "and the swap");
