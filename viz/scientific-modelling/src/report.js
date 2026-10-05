@@ -196,7 +196,7 @@
           "| Variable | Dimensionless | Scale | Offset | Status | Reason |", "| --- | --- | --- | --- | --- | --- |",
           ...nd.scales.map((sc) => `| ${m(sc.tex)} | ${m(sc.hatTex)} | ${m(sc.chosen.tex)}${sc.chosen.value ? ` (${cell(sc.chosen.value)} in SI units)` : ""} | ${m(sc.offsetTex)} | ${STATUS[sc.status]} | ${cell(sc.chosen.reason)} |`),
           "", "Other candidates:", "",
-          ...(others.length ? others.map(({ sc, c }) => `- ${m(sc.tex)}: ${m(c.tex ?? "?")}. ${cell(c.reason)}${c.valid ? "" : ` Refused: ${cell(c.signWhy || c.error || "its dimension is wrong")}.`}${c.ratio ? ` Ratio of the chosen scale to this one: ${m(c.ratio.tex)}${c.ratio.names.length ? ` (${cell(c.ratio.names.map((x) => x.name).join(", "))}, a proposed name)` : ""}.` : ""}`)
+          ...(others.length ? others.map(({ sc, c }) => `- ${m(sc.tex)}: ${m(c.tex ?? "?")}. ${cell(c.reason)}${c.valid ? "" : ` Refused: ${cell(c.signWhy || c.error || "its dimension is wrong")}.`}${c.ratio ? ` Ratio of the chosen scale to this one: ${m(c.ratio.tex)}${c.ratio.names.length ? ` = ${c.ratio.names.map((x) => m(x.tex)).join(", ")}, ${cell(c.ratio.names.map((x) => x.name).join(", "))} (a proposed name)` : ""}.` : ""}`)
             : ["- None: no other mechanism or prescribed value gives a scale."]),
           ...nd.scales.filter((sc) => sc.changed).map((sc) => `\n**${STATUS.unresolved}:** ${cell(sc.changed)}`),
         ].join("\n"),
@@ -216,7 +216,7 @@
           "", "Substitute:", "", dm(e.substitutedTex), "", "Simplify:", "", dm(e.simplifiedTex), "",
           `Divide by the common factor ${m(e.factorTex)}, the coefficient of ${cell(e.reference || "the first term")}:`, "",
           dm(`${e.dimensionlessTex}${where(e)}`), ""].join("\n")).join("\n"),
-        narration: `The tool substitutes the new variables into each of the ${words(nd.equations.length)} equations and conditions. Then it simplifies each one and divides it by its common factor, which is the coefficient of the term with the highest derivative of a field.`,
+        narration: `The tool substitutes the new variables into each of the ${words(nd.equations.length)} equations and conditions. Then it simplifies each one and divides it by its common factor. That factor is the coefficient of the term with the highest derivative of a field.`,
       });
     }
 
@@ -230,7 +230,7 @@
         title: `Hand calculation 7: the dimensionless model, ${count(params.length, "independent parameter", "independent parameters")}`,
         body: [...nd.equations.filter((e) => !e.output).map((e) => `- ${e.id}: ${m(`${e.namedTex}${where(e)}`)}`),
           ...nd.equations.filter((e) => e.output).map((e) => `- ${e.id}, defines ${e.output}: ${m(`${e.namedTex}${where(e)}`)}`),
-          "", named.length ? `Names, each a ${STATUS.proposed.toLowerCase()} until the researcher confirms it: ${named.map((p) => `${m(`${p.names[0].tex}=${p.tex}`)} (${cell(p.names[0].name)}${p.confirmed === p.names[0].id ? `, ${STATUS.confirmed}` : ""})`).join(", ")}.` : "No group of the model has a familiar name."].join("\n"),
+          "", named.length ? `The page proposes these names, each a ${STATUS.proposed.toLowerCase()} until the researcher confirms it: ${named.map((p) => `${m(`${p.names[0].tex}=${p.tex}`)} (${cell(p.names[0].name)}${p.confirmed === p.names[0].id ? `, ${STATUS.confirmed}` : ""})`).join(", ")}.` : "No group of the model has a familiar name."].join("\n"),
         narration: params.length ? `The dimensionless model has ${n(params.length, "independent parameter", "independent parameters")}. ${cap(params.map(spokenParam).join(" and "))} ${params.length > 1 ? "are" : "is"} the only physical input left in the equations and conditions.`
           : "The dimensionless model has no parameter. Its solution is the same for every value of the physical parameters.",
       });
@@ -245,7 +245,7 @@
           ...(pi ? pi.rows.map((r) => `- ${m(r.tex)} (${r.what}): ${r.inPi ? m(`=${r.comboTex}`) : cell(r.note ?? "")}`) : []),
           ...(pi && pi.absent.length ? ["", `Not used on their own: ${pi.absent.map((a) => m(a.tex)).join(", ")}. ${cell(pi.absentWhy)}`] : []),
           "", "**Where each physical parameter enters:**", "",
-          ...nd.enters.map((e) => `- ${cell(e.label)}: ${e.hidden ? "**does not enter the dimensionless model**" : cell(e.where.join("; "))}`),
+          ...nd.enters.map((e) => `- ${cell(e.label)}: ${e.hidden ? "**does not enter the dimensionless model**" : cell(e.where.join(", "))}`),
         ].join("\n"),
         narration: `The parameters stay apart from the dimensionless fields and coordinates. ${pi ? `The model uses ${words(pi.rank)} of the ${words(pi.m)} Pi groups.${pi.absent.length ? " The others do not appear on their own, and the frame says why." : ""}` : "The Finder did not run, so the frame has no comparison."} ${nd.enters.every((e) => !e.hidden) ? "Every physical parameter enters a scale, a coefficient or a condition." : "A physical parameter does not enter the dimensionless model, and the frame names it."}`,
       });

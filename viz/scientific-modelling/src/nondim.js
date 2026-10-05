@@ -458,7 +458,7 @@
           if (cond && !oi.space && !oj.space && !oi.time && !oj.time) continue;
           const mi = mechanism(terms[i].vmono, terms[i].coef, cond, temperature), mj = mechanism(terms[j].vmono, terms[j].coef, cond, temperature);
           out.push({ poly: scale, source: BALANCE, rank: (cond ? 1 : 0) * 100 - (oi.space + oj.space + oi.time + oj.time),
-            reason: `${cap(mi)} balances ${mj} in ${item.id}.`, mechanism: `${mi} and ${mj}`, items: [item.id] });
+            reason: `In ${item.id}, ${mi} and ${mj} have the same size.`, mechanism: `${mi} and ${mj}`, items: [item.id] });
         }
       }
       return out;
@@ -593,7 +593,7 @@
       const rhs = normal(S.subst(lhs, fmap, ctx));
       const factorLabel = (p) => { const l = labelP(p); return /[ /+−-]/.test(l) ? `(${l})` : l; };
       const maps = [...new Set(xs)].map((x) => `${labelOf(x)} = ${offsets.get(x).poly.size ? `${labelP(offsets.get(x).poly)} + ` : ""}${factorLabel(/** @type {any} */ (choice.get(x)))}${hatLabel(x)}`);
-      return { tex: `${tex(lhs)}=${show(rhs)}`, plain: `${S.plain(lhs)} = ${S.plain(rhs)}`, field: f, vars: xs, reason: `Chain rule for the affine map${maps.length > 1 ? "s" : ""} ${maps.join(" and ")}: each derivative in ${[...new Set(xs.map(labelOf))].join(" or ")} divides by the scale, and the offset of ${labelOf(f)} drops out.` };
+      return { tex: `${tex(lhs)}=${show(rhs)}`, plain: `${S.plain(lhs)} = ${S.plain(rhs)}`, field: f, vars: xs, reason: `Chain rule for the affine map${maps.length > 1 ? "s" : ""} ${maps.join(" and ")}. Each derivative in ${[...new Set(xs.map(labelOf))].join(" or ")} divides by the scale. The offset of ${labelOf(f)} drops out.` };
     });
 
     /** TeX of an equation with each field, coordinate and derivative replaced by its transformation, before any
@@ -824,12 +824,13 @@
       const rankModel = span.length ? LA.rank(LA.transpose(span)) : 0;
       // Why a Pi group is absent: a variable of it does not occur in the equations, or occurs only in combinations.
       const used = new Set([...items, ...outputs.map((o) => o.eq)].flatMap((e) => e.symbols));
+      for (const c of conds) { const r = E.read(c.at ?? ""); if (!r.error) for (const x of E.symbols(r.ast)) used.add(x); }
       // A defined parameter (L_c = V/A_s) is in the model when its definition's names are.
       for (const d of paramDefs) if (d.eq.symbols.some((x) => x !== d.symbol && used.has(x))) used.add(d.symbol);
       const missingVars = [...new Set(absent.flatMap((g) => g.contains.map((id) => vars.find((v) => v.id === id)).filter((v) => v && !used.has(v.symbol)).map((v) => labelOf(v.symbol))))];
       const absentWhy = !absent.length ? "" : missingVars.length
-        ? `The equations and conditions do not contain ${missingVars.join(", ")}, so no group with ${missingVars.length > 1 ? "them" : "it"} can appear. ${absent.length > missingVars.length ? "The other variables occur only in the combinations above. " : ""}The Pi basis is complete for the supplied variables; the declared model needs fewer groups.`
-        : "The equations contain these variables only in the combinations above. The Pi basis is complete for the supplied variables; the declared model needs fewer groups.";
+        ? `The equations and conditions do not contain ${missingVars.join(", ")}, so no group with ${missingVars.length > 1 ? "them" : "it"} can appear. ${absent.length > missingVars.length ? "The other variables occur only in the combinations above. " : ""}The Pi basis is complete for the supplied variables. The declared model needs fewer groups.`
+        : "The equations contain these variables only in the combinations above. The Pi basis is complete for the supplied variables. The declared model needs fewer groups.";
       pi = { m: finder.m, rank: rankModel, rows, absent, absentWhy, basis: finder.familiar ? "familiar" : "direct" };
     }
 
@@ -874,11 +875,11 @@
       { id: "s-nd-scales", item: 6, title: "Scales", reason: "Each scale comes from the geometry, a prescribed value or a balance of two terms. A scale must not be 0, and no scale may hide a parameter.", evidence: ["spec-6"] },
       { id: "s-nd-variables", item: 6, title: "Dimensionless variables and their inverses", reason: "Each variable becomes offset + scale × dimensionless variable. The forward and the inverse map compose to the identity.", evidence: ["spec-6", "spec-7"] },
       { id: "s-nd-derivatives", item: 6, title: "Derivative transformations", reason: "For an affine map, each derivative divides by the scale of its coordinate, and the offset of the field drops out.", evidence: ["spec-7"] },
-      { id: "s-nd-substitution", item: 7, title: "Substitution and common factors", reason: "The tool substitutes into every equation and condition and divides by the coefficient of the term with the highest derivative of a field.", evidence: ["spec-6", "spec-7"] },
+      { id: "s-nd-substitution", item: 7, title: "Substitution and common factors", reason: "The tool substitutes into every equation and condition. Then it divides each one by the coefficient of the term with the highest derivative of a field.", evidence: ["spec-6", "spec-7"] },
       { id: "s-nd-parameters", item: 7, title: "Parameters, fields, coordinates and data", reason: "The coefficients that remain are the parameters. The tool keeps them apart from the dimensionless fields and coordinates.", evidence: ["spec-6"] },
       { id: "s-nd-reverse", item: 7, title: "Reverse substitution", reason: "The tool multiplies by the common factor and substitutes the dimensional variables back. The result must equal the original equation exactly.", evidence: ["spec-6"] },
     ];
-    if (pi) steps.splice(5, 0, { id: "s-nd-pi", item: 7, title: "Comparison with the Pi basis", reason: "Each dimensionless quantity is a product of powers of the Finder's groups. Groups that the model does not use are named, with the reason.", evidence: ["spec-6", "mit-pi"] });
+    if (pi) steps.splice(5, 0, { id: "s-nd-pi", item: 7, title: "Comparison with the Pi basis", reason: "Each dimensionless quantity is a product of powers of the Finder's groups. The step names each group that the model does not use, with the reason.", evidence: ["spec-6", "mit-pi"] });
 
     return {
       ready: true,
@@ -888,7 +889,7 @@
         chosen: plainCandidate(s.chosen, s), status: s.chosen.source === SUPPLIED ? "confirmed" : "proposed",
         candidates: s.list.map((c) => ({ ...plainCandidate(c, s), chosen: c === s.chosen || Boolean(c.poly && s.chosen.poly && S.equal(c.poly, s.chosen.poly)),
           ratio: c.poly && c.valid && c !== s.chosen ? ratioOf(/** @type {any} */ (s.chosen.poly), c.poly) : null })),
-        changed: s.changedFrom ? `${labelOf(/** @type {string} */ (hat.get(s.name)))} uses ${labelP((/** @type {any} */ (s.chosen.poly)))} (${s.chosen.mechanism}), because ${labelP((s.changedFrom.poly ?? S.zero()))} cannot be a scale: ${s.changedFrom.signWhy || "its dimension is wrong"}. ${labelOf(/** @type {string} */ (hat.get(s.name)))} now measures ${offsets.get(s.name).poly.size ? `${labelOf(s.name)} − ${labelP((offsets.get(s.name).poly))}` : labelOf(s.name)} in units of ${labelP((/** @type {any} */ (s.chosen.poly)))}, not ${labelP((s.changedFrom.poly ?? S.zero()))}.` : null,
+        changed: s.changedFrom ? `${labelOf(/** @type {string} */ (hat.get(s.name)))} cannot use ${labelP((s.changedFrom.poly ?? S.zero()))} as its scale: ${s.changedFrom.signWhy || "its dimension is wrong"}. It uses ${labelP((/** @type {any} */ (s.chosen.poly)))} instead (${s.chosen.mechanism}). ${labelOf(/** @type {string} */ (hat.get(s.name)))} now measures ${offsets.get(s.name).poly.size ? `${labelOf(s.name)} − ${labelP((offsets.get(s.name).poly))}` : labelOf(s.name)} in units of ${labelP((/** @type {any} */ (s.chosen.poly)))}, not ${labelP((s.changedFrom.poly ?? S.zero()))}.` : null,
       })),
       variables: varRows.map(({ name, id, hat: h, hatTex: ht, kind, time, defTex, invTex, inverseOk, scaleTex, scalePlain, offsetTex, offsetPlain }) => ({ name, id, hat: h, hatTex: ht, kind, time, defTex, invTex, inverseOk, scaleTex, scalePlain, offsetTex, offsetPlain })),
       derivatives: derivRows.map(({ tex: t, plain, reason }) => ({ tex: t, plain, reason })),
@@ -925,7 +926,8 @@
         const names = F.recognize(allVars, disp.exps.map((e) => Q.mul(e, Q.q(k))), catalogue);
         if (names.length) {
           const power = Q.q(1, k);
-          return { tex: disp.tex, label: disp.label, names: names.map((n) => ({ id: n.id, tex: k === 1 ? n.tex : `\\left(${n.tex}\\right)^{${Q.str(power)}}`, label: k === 1 ? n.label : `(${n.label})^${Q.str(power)}`, name: k === 1 ? n.name : `${n.name}, to the power ${Q.str(power)}`, power: Q.str(power) })) };
+          const phrase = { 1: "", 2: "the square root of ", "-1": "the reciprocal of ", "-2": "the reciprocal square root of " }[String(k)];
+          return { tex: disp.tex, label: disp.label, names: names.map((n) => ({ id: n.id, tex: k === 1 ? n.tex : `\\left(${n.tex}\\right)^{${Q.str(power)}}`, label: k === 1 ? n.label : `(${n.label})^${Q.str(power)}`, name: `${phrase}the ${n.name.split(",")[0]}`.replace(/^the the /, "the "), power: Q.str(power) })) };
         }
       }
       return { tex: disp.tex, label: disp.label, names: [] };

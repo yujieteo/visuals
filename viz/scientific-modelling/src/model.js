@@ -232,7 +232,7 @@
     if (valued.length) add({ id: "r-nd-values", kind: "values", title: `The entered values give ${valued.map((p) => `${p.names[0] ? p.names[0].label : p.label} = ${valueText(p.value)}`).join(", ")}.`, status: valued.every((p) => p.value.exact) ? "exact" : "numerical", inputs: nd.inputs, steps: ["s-nd-parameters"] });
     if (nd.pi) {
       const outside = nd.pi.rows.filter((r) => !r.inPi);
-      add({ id: "r-nd-pi", kind: "pi", title: `${nd.pi.rows.filter((r) => r.inPi).length} dimensionless quantities are products of powers of the Pi groups. The model uses ${nd.pi.rank} of the ${nd.pi.m} groups${nd.pi.absent.length ? `; ${nd.pi.absent.map((a) => a.label).join(", ")} ${nd.pi.absent.length > 1 ? "do" : "does"} not appear on ${nd.pi.absent.length > 1 ? "their" : "its"} own` : ""}.${outside.length ? ` ${outside.length} ${outside.length > 1 ? "quantities use" : "quantity uses"} variables outside the Pi set.` : ""}`,
+      add({ id: "r-nd-pi", kind: "pi", title: `${nd.pi.rows.filter((r) => r.inPi).length} dimensionless quantities are products of powers of the Pi groups. The model uses ${nd.pi.rank} of the ${nd.pi.m} groups.${nd.pi.absent.length ? ` ${nd.pi.absent.map((a) => a.label).join(", ")} ${nd.pi.absent.length > 1 ? "do" : "does"} not appear on ${nd.pi.absent.length > 1 ? "their" : "its"} own.` : ""}${outside.length ? ` ${outside.length} ${outside.length > 1 ? "quantities use" : "quantity uses"} variables outside the Pi set.` : ""}`,
         status: "exact", inputs: [...new Set([...piInputs, ...nd.inputs])], steps: ["s-nd-pi"], evidence: ["spec-6", "mit-pi"] });
     }
     const hidden = nd.enters.filter((e) => e.hidden);
