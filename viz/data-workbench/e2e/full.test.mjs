@@ -82,6 +82,16 @@ await fullSuite(SLUG, {
     await s.page.keyboard.press("Enter");
     assert.equal(await summary.evaluate((el) => /** @type {HTMLDetailsElement} */ (el.parentElement).open), true, "Enter opens a column's details");
     assert.match(await s.page.locator("details.column[open]").first().innerText(), /2 made missing by approval/);
+    // An approved reading survives a later change of unit made through the column's form.
+    await s.page.locator('[data-suggestion="mixed::layouts::dmy-slash"]').click();
+    await s.page.locator("#log").getByText("Approved: Read mixed as dates").waitFor({ timeout: 60_000 });
+    await s.page.waitForFunction(() => /** @type {HTMLElement} */ (document.getElementById("progress")).hidden);
+    const mixed = s.page.locator("details.column", { has: s.page.locator("summary", { hasText: /^mixed/ }) });
+    await mixed.locator("summary").click();
+    await mixed.getByLabel("Unit (optional)").fill("day");
+    await mixed.getByRole("button", { name: "Apply" }).click();
+    await s.page.locator("#log").getByText("You set messy.mixed: unit day").waitFor({ timeout: 60_000 });
+    assert.match(await s.page.locator("#log").innerText(), /You set messy\.mixed: unit day\. mixed reads as date \(YYYY-MM-DD and DD\/MM\/YYYY\)/, "the approved layouts stay");
   }),
 
   "command-palette": (ctx) => using(ctx.open, async (s) => {

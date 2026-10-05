@@ -3068,6 +3068,7 @@ SELECT (SELECT coalesce(sum(n - 1), 0) FROM c WHERE n > 1)::DOUBLE AS repeats, v
       ["boolean", "Yes or no", "boolean", { kind: "boolean" }],
       ["date", "Dates YYYY-MM-DD", "date", { kind: "date" }],
       ...Sql.DATE_FORMATS.map((f) => [`date-format:${f.id}`, `Dates ${f.label}`, "date", { kind: "date-format", format: f.id }]),
+      ...Sql.DATE_FORMATS.map((f) => [`date-formats:${f.id}`, `Dates YYYY-MM-DD and ${f.label}`, "date", { kind: "date-formats", format: f.id }]),
       ["datetime", "Date-times without a zone", "datetime", { kind: "datetime" }],
       ["datetime-zoned", "Date-times with a zone offset", "datetime", { kind: "datetime-zoned" }],
       ["time", "Times of day", "time", { kind: "time" }],
@@ -3075,15 +3076,20 @@ SELECT (SELECT coalesce(sum(n - 1), 0) FROM c WHERE n > 1)::DOUBLE AS repeats, v
     return list.map(([id, label, type, reading]) => ({ id, label, type, reading, inferred: own.kind === reading.kind && own.format === reading.format && (type === col.inferred.type || reading.kind !== "text") }));
   }
 
+  /** The choice that names a column's current reading, if one does; the form then shows it selected. */
+  const currentChoice = (col, choices) => choices.find((r) => r.type === col.type && r.reading.kind === col.reading.kind && r.reading.format === col.reading.format && (col.type !== "categorical" || r.id === "category"));
+
   async function change(table, colName, form) {
     const col = table.columns.find((c) => c.name === colName);
     const data = new FormData(form);
     const next = { ...(table.overrides[colName] ?? {}) };
     const parts = [];
     const pick = String(data.get("reading") ?? "");
-    if (col.textSource && pick) {
-      const choice = readingChoices(col).find((r) => r.id === pick);
-      if (choice && (choice.type !== col.type || choice.reading.kind !== col.reading.kind || choice.reading.format !== col.reading.format)) {
+    const choices = col.textSource ? readingChoices(col) : [];
+    // An empty pick keeps the reading; so does picking the reading in use, whatever else changes.
+    if (pick && pick !== currentChoice(col, choices)?.id) {
+      const choice = choices.find((r) => r.id === pick);
+      if (choice) {
         next.type = choice.type;
         next.reading = { ...choice.reading, missingText: col.reading.missingText, missingNumbers: col.reading.missingNumbers };
         parts.push(`read as ${choice.label.toLowerCase()}`);
@@ -3451,12 +3457,14 @@ SELECT (SELECT coalesce(sum(n - 1), 0) FROM c WHERE n > 1)::DOUBLE AS repeats, v
 
   function changeForm(t, c) {
     const choices = c.textSource ? readingChoices(c) : [];
-    const current = choices.find((r) => r.type === c.type && r.reading.kind === c.reading.kind && r.reading.format === c.reading.format && (c.type !== "categorical" || r.id === "category"));
+    const current = currentChoice(c, choices);
     const id = (x) => `${x}-${t.name}-${c.position}`;
     const form = h("form", { class: "change", onsubmit: (ev) => { ev.preventDefault(); change(t, c.name, ev.target); } },
       h("p", { class: "label", text: "Change how this column is read" }),
       c.textSource ? h("div", { class: "field" }, h("label", { for: id("reading"), text: "Read as" }),
-        h("select", { id: id("reading"), name: "reading" }, choices.map((r) => h("option", { value: r.id, selected: r === current, text: r.label + (r.inferred ? " (inferred)" : "") })))) : null,
+        h("select", { id: id("reading"), name: "reading" },
+          current ? null : h("option", { value: "", selected: true, text: `Keep: ${readingText(c.reading)}` }),
+          choices.map((r) => h("option", { value: r.id, selected: r === current, text: r.label + (r.inferred ? " (inferred)" : "") })))) : null,
       h("div", { class: "field" }, h("label", { for: id("role"), text: "Role" }),
         h("select", { id: id("role"), name: "role" }, ROLES.map((r) => h("option", { value: r, selected: r === c.role, text: r + (r === c.inferredRole ? " (inferred)" : "") })))),
       h("div", { class: "field" }, h("label", { for: id("unit"), text: "Unit (optional)" }), h("input", { id: id("unit"), name: "unit", type: "text", maxlength: "24", value: c.unit ?? "", placeholder: "none given" })),
