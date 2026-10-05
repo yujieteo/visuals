@@ -104,8 +104,8 @@
     col.inferredReasons = r.reasons;
     col.possibleTime = r.possibleTime;
     if (col.role === "identifier") {
-      const dup = await query(Sql.duplicates(table, name));
-      col.identifier = { repeats: dup[0]?.repeats ?? 0, repeated: dup.map((d) => ({ value: d.value, n: d.n })), first: await query(Sql.firstValues(table, name, rowColumn)) };
+      const dup = await query(Sql.duplicates(table, name, reading, textSource));
+      col.identifier = { repeats: dup[0]?.repeats ?? 0, repeated: dup.map((d) => ({ value: d.value, n: d.n })), first: await query(Sql.firstValues(table, name, rowColumn, reading, textSource)) };
       col.unusual = null;
     }
     col.errors = errors(col);

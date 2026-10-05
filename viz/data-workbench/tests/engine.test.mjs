@@ -125,6 +125,8 @@ test("identifiers against measures: names, leading zeros and dense unique runs m
   assert.equal(t.col("zip").type, "integer", "the type says integer; the role says identifier");
   assert.equal(t.col("customer_id").unusual, null, "identifiers get no unusual-value check");
   assert.equal(t.col("customer_id").identifier.repeats, 0);
+  assert.equal(t.col("ticket").identifier.repeats, 0, "NA markers in an identifier column are not repeated identifiers");
+  assert.ok(t.col("ticket").identifier.first.every((/** @type {any} */ r) => r.value !== "NA"));
 });
 
 test("approval: an approved correction changes the reading and is counted; the source table is unchanged", async () => {

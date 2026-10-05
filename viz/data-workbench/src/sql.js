@@ -409,16 +409,16 @@ FROM w, r WHERE v IS NOT NULL AND hi > lo GROUP BY bin ORDER BY bin`;
 SELECT v AS value, n, (SELECT count(*) FROM c WHERE n = 1)::DOUBLE AS singletons FROM c ORDER BY n DESC, v LIMIT ${limit}`;
   }
 
-  /** Repeated identifier values: how many values repeat one seen before, and the most repeated. */
-  function duplicates(table, column, limit = 5) {
+  /** Repeated identifier values (missing values and markers left out): how many repeat one seen before, and the most repeated. */
+  function duplicates(table, column, reading, textSource, limit = 5) {
     const x = `CAST(${ident(column)} AS VARCHAR)`;
-    return `WITH c AS (SELECT ${x} AS v, count(*)::DOUBLE AS n FROM ${ident(table)} WHERE ${ident(column)} IS NOT NULL GROUP BY v)
+    return `WITH c AS (SELECT ${x} AS v, count(*)::DOUBLE AS n FROM ${ident(table)} WHERE ${valued(column, textSource)}${notApproved(column, reading)} GROUP BY v)
 SELECT (SELECT coalesce(sum(n - 1), 0) FROM c WHERE n > 1)::DOUBLE AS repeats, v AS value, n FROM c WHERE n > 1 ORDER BY n DESC, v LIMIT ${limit}`;
   }
 
-  /** The first values of a column in source order: examples for text and identifiers. */
-  const firstValues = (table, column, rowColumn, limit = 3) =>
-    `SELECT CAST(${ident(column)} AS VARCHAR) AS value FROM ${ident(table)} WHERE ${ident(column)} IS NOT NULL ORDER BY ${ident(rowColumn)} LIMIT ${limit}`;
+  /** The first values present in a column in source order (no blanks or markers): examples for identifiers. */
+  const firstValues = (table, column, rowColumn, reading, textSource, limit = 3) =>
+    `SELECT CAST(${ident(column)} AS VARCHAR) AS value FROM ${ident(table)} WHERE ${valued(column, textSource)}${notApproved(column, reading)} ORDER BY ${ident(rowColumn)} LIMIT ${limit}`;
 
   return {
     FOLDER, MARKERS, BOOLEAN_TRUE, BOOLEAN_FALSE, PATTERN, DATE_FORMATS, SENTINELS,

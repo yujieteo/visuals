@@ -70,18 +70,19 @@
     const pick = (type, reading, fits) => ({ ...base, type, reading, share: share(fits), fits });
     // Yes or no in any letter case: Yes, YES and yes are one value (the reading compares in lower case).
     if (share(s.bool) >= THRESHOLD) return pick("boolean", { kind: "boolean" }, s.bool);
-    if (share(s.int_plain) >= THRESHOLD) return pick("integer", { kind: "integer" }, s.int_plain);
+    // Any value written with thousands separators makes the reading remove them, so "1,234" beside "987" reads too.
     if (s.int_sep > 0 && share(s.int_plain + s.int_sep) >= THRESHOLD) {
       const r = pick("integer", { kind: "integer-sep" }, s.int_plain + s.int_sep);
       r.notes.push("Thousands separators (,) are removed to read the numbers.");
       return r;
     }
-    if (share(s.dec_plain) >= THRESHOLD) return pick("decimal", { kind: "decimal" }, s.dec_plain);
+    if (share(s.int_plain) >= THRESHOLD) return pick("integer", { kind: "integer" }, s.int_plain);
     if (s.dec_sep > 0 && share(s.dec_plain + s.dec_sep) >= THRESHOLD) {
       const r = pick("decimal", { kind: "decimal-sep" }, s.dec_plain + s.dec_sep);
       r.notes.push("Thousands separators (,) are removed to read the numbers.");
       return r;
     }
+    if (share(s.dec_plain) >= THRESHOLD) return pick("decimal", { kind: "decimal" }, s.dec_plain);
     if (share(s.date_iso) >= THRESHOLD) return pick("date", { kind: "date" }, s.date_iso);
     if (share(s.dt_zoned) >= THRESHOLD) {
       const r = pick("datetime", { kind: "datetime-zoned" }, s.dt_zoned);
