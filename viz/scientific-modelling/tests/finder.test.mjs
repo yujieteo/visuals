@@ -108,7 +108,7 @@ test("the researcher's repeating set: a valid set changes the basis to an equiva
   assert.deepEqual(own.repeating.symbols, ["rho", "L", "k", "mu"]);
   assert.equal(own.repeating.override.error, null);
   assert.deepEqual(own.groups.map((g) => g.names[0].label), ["Nu", "Pr", "Re"]);
-  for (const [set, reason] of [["rho,L,k", /rank is 4/], ["rho,U,L,mu", /not independent/], ["rho,U,L,zz", /not in the Pi set/]]) {
+  for (const [set, reason] of [["rho,L,k", /rank is 4/], ["rho,U,L,mu", /not independent/], ["rho,U,L,zz", /not in the Pi set/], ["h,rho,U,L", /quantity of interest/]]) {
     const f = run("heat-transfer-pi", { repeating: set }).finder;
     assert.match(f.repeating.override.error, reason, set);
     assert.deepEqual(f.repeating.symbols, ["rho", "U", "L", "k"], `${set}: the automatic set stays`);
@@ -127,4 +127,16 @@ test("a dimensionless input keeps its meaning and forms a group by itself; a con
   assert.deepEqual(hl.names.map((n) => n.id).sort(), ["Bi", "Nu"]);
   assert.ok(hl.names.every((n) => n.assumes.some((a) => /is the (fluid|solid) conductivity/.test(a))), "each name states the phase it assumes");
   assert.ok(hl.names.find((n) => n.id === "Bi").assumes.includes("L is the Biot length"), "Bi also states that L must be the Biot length");
+});
+
+test("group values: a range that contains 0 widens an even power to 0 and makes a divisor undefined; a fractional power gives a range", () => {
+  const F = require("../src/finder.js");
+  const h = (lo, hi) => ({ value: { exact: true, lo: Q.parse(lo), hi: Q.parse(hi) } });
+  assert.deepEqual([F.value([h("-1", "2")], [Q.q(2)]).lo, F.value([h("-1", "2")], [Q.q(2)]).hi], ["0", "4"]);
+  assert.deepEqual([F.value([h("-1", "2")], [Q.q(3)]).lo, F.value([h("-1", "2")], [Q.q(3)]).hi], ["-1", "8"]);
+  assert.equal(F.value([h("-1", "2")], [Q.q(-1)]).text, "undefined: a divisor can be 0");
+  assert.equal(F.value([h("0", "0")], [Q.q(-1)]).text, "undefined: a divisor is 0");
+  assert.deepEqual([F.value([h("-1", "2"), h("-3", "1")], [Q.q(2), Q.q(1)]).lo, F.value([h("-1", "2"), h("-3", "1")], [Q.q(2), Q.q(1)]).hi], ["-12", "4"]);
+  assert.deepEqual(F.value([h("1/100", "1")], [Q.parse("1/2")]), { exact: false, text: "0.1 to 1", float: 0.1 });
+  assert.deepEqual(F.value([h("1/100", "1"), h("-2", "-1")], [Q.parse("-1/2"), Q.q(1)]), { exact: false, text: "-20 to -1", float: -20 });
 });

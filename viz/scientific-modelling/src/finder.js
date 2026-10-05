@@ -210,7 +210,7 @@
       else if (idx.length !== r) error = `the set has ${idx.length} variables, but the rank is ${r}`;
       else if (LA.rank(LA.columns(D, idx)) !== r) error = "their dimension columns are not independent";
       else {
-        const bad = idx.map((j) => [vars[j], scaleProblem(vars[j])]).find(([v, p]) => p && v.id !== qoi && !/coordinate|field/.test(p));
+        const bad = idx.map((j) => [vars[j], scaleProblem(vars[j])]).find(([, p]) => p);
         if (bad) error = `${bad[0].symbol} cannot be a reference scale: ${bad[1]}`;
       }
       override = { ids: opts.repeating.slice(), error };
@@ -411,28 +411,37 @@
     return { exps, coef: Q.inv(coef) };
   }
 
-  /** The exact value or range of a group from the variables' SI values; null when one is missing or not exact. */
+  /**
+   * The exact value or range of a group from the variables' SI values; null when one is missing or not exact. Each
+   * factor x^e gets its own range (0 is inside the range of an even power when x can change sign), and the group's
+   * range comes from the corners of those factor ranges, because the variables are independent.
+   */
   function value(vars, exps) {
     const used = vars.map((v, j) => [v, exps[j]]).filter(([, e]) => !Q.isZero(e));
     if (!used.length || used.some(([v, e]) => !v.value || !v.value.exact || (!Q.isInteger(e) && Q.sign(v.value.lo) <= 0))) return null;
-    if (used.some(([, e]) => !Q.isInteger(e))) {
-      // A fractional power: a floating-point value, labelled as such.
-      const at = used.reduce((p, [v, e]) => p * Q.toNumber(v.value.lo) ** Q.toNumber(e), 1);
-      return { exact: false, text: String(Number(at.toPrecision(6))), float: at };
+    const ranges = [];
+    for (const [v, e] of used) {
+      const { lo, hi } = v.value;
+      const straddles = Q.sign(lo) < 0 && Q.sign(hi) > 0;
+      if (Q.sign(e) < 0 && (straddles || Q.isZero(lo) || Q.isZero(hi))) return { exact: true, undefined: true, text: Q.isZero(lo) && Q.isZero(hi) ? "undefined: a divisor is 0" : "undefined: a divisor can be 0" };
+      if (!Q.isInteger(e)) { ranges.push([Q.toNumber(lo) ** Q.toNumber(e), Q.toNumber(hi) ** Q.toNumber(e)].sort((a, b) => a - b)); continue; }
+      const a = Q.pow(lo, e.n), b = Q.pow(hi, e.n);
+      const [mn, mx] = Q.cmp(a, b) <= 0 ? [a, b] : [b, a];
+      ranges.push([straddles && e.n % 2n === 0n ? Q.ZERO : mn, mx]);
     }
+    const exact = ranges.every((x) => typeof x[0] !== "number");
+    const box = exact ? ranges : ranges.map((x) => x.map((y) => (typeof y === "number" ? y : Q.toNumber(y))));
+    const mul = exact ? Q.mul : (a, b) => a * b;
+    const less = exact ? (a, b) => Q.cmp(a, b) < 0 : (a, b) => a < b;
     let lo = null, hi = null;
-    const corners = 1 << used.length;
-    for (let c = 0; c < corners; c++) {
-      let p = Q.ONE;
-      let ok = true;
-      used.forEach(([v, e], i) => {
-        const x = c & (1 << i) ? v.value.hi : v.value.lo;
-        if (Q.isZero(x) && Q.sign(e) < 0) { ok = false; return; }
-        p = Q.mul(p, Q.pow(x, e.n));
-      });
-      if (!ok) return { exact: true, undefined: true, text: "undefined: a divisor is 0" };
-      if (!lo || Q.cmp(p, lo) < 0) lo = p;
-      if (!hi || Q.cmp(p, hi) > 0) hi = p;
+    for (let c = 0; c < 1 << box.length; c++) {
+      const p = box.reduce((acc, x, i) => mul(acc, x[c & (1 << i) ? 1 : 0]), exact ? Q.ONE : 1);
+      if (lo === null || less(p, lo)) lo = p;
+      if (hi === null || less(hi, p)) hi = p;
+    }
+    if (!exact) {
+      const short = (x) => String(Number(x.toPrecision(6)));
+      return { exact: false, text: lo === hi ? short(lo) : `${short(lo)} to ${short(hi)}`, float: lo };
     }
     const exactText = (x) => (x.d === 1n || x.d.toString().length <= 6 ? Q.str(x) : null);
     return { exact: true, lo: Q.str(lo), hi: Q.str(hi), loFloat: Q.toNumber(lo), hiFloat: Q.toNumber(hi), fraction: exactText(lo) };

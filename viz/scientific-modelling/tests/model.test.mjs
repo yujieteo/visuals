@@ -54,6 +54,18 @@ test("invalidation: after confirmation, an edit invalidates exactly the results 
   assert.equal(again.finder.groups.find((g) => g.label === "hL/k").value.lo, "1/100");
 });
 
+test("invalidation: a new Pi variable, a variable that joins the Pi set and a new relation between Pi variables invalidate the Finder", () => {
+  const rec = R.confirm(R.fromExample(ENGINE, "heat-transfer-pi"));
+  const finder = ["r-rank", "r-group-g1", "r-basis", "r-relation"];
+  const staleAfter = (r, mutate) => Model.derive(state("heat-transfer-pi"), DATA, R.edit(r, mutate, "Edited.")).results.filter((x) => !x.valid).map((x) => x.id);
+  const gravity = (pi) => (inp) => { inp.variables.push(R.variable({ id: "v-g", symbol: "g", meaning: "Gravity", quantity: "acceleration", unit: "m/s^2", pi })); };
+  assert.deepEqual(finder.filter((x) => !staleAfter(rec, gravity(true)).includes(x)), [], "a new Pi variable");
+  assert.deepEqual(finder.filter((x) => staleAfter(rec, gravity(false)).includes(x)), [], "a new variable outside the Pi set");
+  assert.deepEqual(finder.filter((x) => !staleAfter(rec, (inp) => { inp.equations.push({ id: "e-x", kind: "constraint", text: "U = mu/(rho*L)" }); }).includes(x)), [], "a new relation between Pi variables");
+  const g = R.confirm(R.edit(rec, gravity(false), "Added g."));
+  assert.deepEqual(finder.filter((x) => !staleAfter(g, (inp) => { inp.variables.find((v) => v.id === "v-g").pi = true; }).includes(x)), [], "a variable that joins the Pi set");
+});
+
 test("confirmation gates the analysis: before it, only the checks before analysis run; the six statuses are separate", () => {
   const d = Model.derive(state("heat-transfer-pi"), DATA);
   assert.equal(d.finder, null);

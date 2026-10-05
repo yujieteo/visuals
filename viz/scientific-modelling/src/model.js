@@ -88,7 +88,11 @@
       const hit = inputs.filter((id) => changes.all.includes(id));
       results.push({ evidence: [], steps: [], tex: null, ...r, inputs, valid: !hit.length, invalidatedBy: hit });
     };
-    const piInputs = interpBase ? [...interpBase.piVariables, "purpose", "preferred"] : [];
+    const piInputs = interpBase ? [...new Set([interpBase, interp].flatMap((it) => {
+      const syms = new Set(it.variables.filter((v) => it.piVariables.includes(v.id)).map((v) => v.symbol));
+      const relations = it.equations.filter((e) => ["definition", "constraint"].includes(e.kind) && (e.symbols ?? []).every((s) => syms.has(s)));
+      return [...it.piVariables, ...relations.map((e) => e.id)];
+    })), "purpose", "preferred"] : [];
     add({ id: "r-interpretation", kind: "interpretation", title: confirmed ? `The researcher confirmed the interpretation of version ${rec.version}.` : `The interpretation of version ${rec.version} is not confirmed.`,
       status: confirmed ? "confirmed" : "proposed", inputs: [] });
     for (const e of interp.equations) {
@@ -128,7 +132,7 @@
       if (finder.constraints.items.length) {
         const fixed = finder.m - finder.constraints.free;
         add({ id: "r-free", kind: "constraints", title: `The ${finder.m} groups are algebraically independent, but only ${finder.constraints.free} of them can vary. ${finder.constraints.items.length === 1 ? "The relation" : `The ${finder.constraints.items.length} relations`} ${finder.constraints.items.map((c) => c.label).join(", ")} ${finder.constraints.items.length === 1 ? "fixes" : "fix"} ${fixed} group${fixed === 1 ? "" : "s"}.`,
-          status: "exact", inputs: [...piInputs, ...finder.constraints.items.map((c) => c.id)], steps: ["s-pi-constraints"], evidence: ["mit-pi"] });
+          status: "exact", inputs: piInputs, steps: ["s-pi-constraints"], evidence: ["mit-pi"] });
       }
       if (ref) {
         add({ id: "r-reference", kind: "reference", title: `SymPy ${data.references.versions.sympy} gives the same matrix D, rank ${ref.rank} and a kernel of the same span${ref.det_DR !== null && ref.preferred.join(",") === finder.repeating.symbols.join(",") ? `, and det D_R = ${ref.det_DR}` : ""}.`,
