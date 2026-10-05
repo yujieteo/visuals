@@ -173,10 +173,13 @@
     list("equations", KINDS.equation, (e) => { if (!isText(e.text, 600)) fail(`${e.id}: the equation must be text.`); });
     list("conditions", KINDS.condition, (c) => { if (!isText(c.text, 600) || !isText(c.at ?? "", 100)) fail(`${c.id}: the condition needs text and a location.`); });
     list("assumptions", KINDS.assumption, (a) => { if (!isText(a.text, 600)) fail(`${a.id}: the assumption must be text.`); });
-    list("scales", null);
+    list("scales", null, (sc) => {
+      if (!isText(sc.for ?? "", 60) || !isText(sc.scale ?? "", 300) || !isText(sc.offset ?? "", 300) || !isText(sc.symbol ?? "", 40) || !isText(sc.reason ?? "", 600)) fail(`${sc.id}: a scale needs text for its variable, scale, offset, symbol and reason.`);
+    });
     list("evidence", null, (e) => { if (!isText(e.claim ?? "", 600) || !isText(e.source ?? "", 100)) fail(`${e.id}: an evidence item needs a claim and a source.`); });
     if (!doc.geometry || typeof doc.geometry !== "object") fail("geometry must be an object.");
     if (!Array.isArray(doc.preferred) || doc.preferred.some((p) => !ids.has(p))) fail("preferred must list variable ids of this record.");
+    if (Array.isArray(doc.scales) && Array.isArray(doc.variables) && doc.scales.some((sc) => sc && sc.for && !doc.variables.some((v) => v && v.id === sc.for))) fail("Each scale must name a variable id of this record.");
     if (doc.purpose && doc.purpose.observable && !ids.has(doc.purpose.observable)) fail("The quantity of interest must be a variable id of this record.");
     if (errors.length) return { errors };
     const rec = {

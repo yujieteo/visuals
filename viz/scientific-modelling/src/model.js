@@ -1,22 +1,24 @@
 /* Scientific Modelling: the page's model for the shared kit (scripts/kit/kit.js). The kit's state is the view:
  * the example, the tool, the researcher's repeating set, the row-reduction step, the basis shown and the detail
  * level, all in the URL. The model record itself (src/record.js) is the researcher's, kept in this browser and in
- * the model JSON. derive(state, data, record) interprets the record's current version, runs the Finder on the
- * confirmed version, marks the results that a later edit invalidates, and returns plain data that the view, the
- * Markdown report and the beamdswitch deck all read, so the three outputs show the same values and statuses.
+ * the model JSON; it also holds the scales the researcher chose. derive(state, data, record) interprets the
+ * record's current version, runs the Finder and the Nondimensionalizer on the confirmed version, marks the results
+ * that a later edit invalidates, and returns plain data that the view, the Markdown report and the beamdswitch deck
+ * all read, so the three outputs show the same values and statuses.
  */
 (function (root, factory) {
   if (typeof module === "object" && module.exports) {
-    module.exports = factory(require("./rational.js"), require("./units.js"), require("./record.js"), require("./check.js"), require("./finder.js"));
-  } else root.Model = factory(root.SM.Q, root.SM.U, root.SM.R, root.SM.C, root.SM.F);
-})(typeof self !== "undefined" ? self : this, function (Q, U, R, C, F) {
+    module.exports = factory(require("./rational.js"), require("./units.js"), require("./record.js"), require("./check.js"), require("./finder.js"), require("./nondim.js"));
+  } else root.Model = factory(root.SM.Q, root.SM.U, root.SM.R, root.SM.C, root.SM.F, root.SM.N);
+})(typeof self !== "undefined" ? self : this, function (Q, U, R, C, F, N) {
   "use strict";
 
   const SLUG = "scientific-modelling";
   const SCHEMA_VERSION = 1;
-  const EXAMPLE_IDS = ["heat-transfer-pi", "straight-fin", "transient-slab", "fail-dimensions", "fail-zero-scale", "fail-dependent", "fail-conditions", "fail-entry", "fail-unsupported"];
-  const EXAMPLE_LABELS = ["Convection: Pi groups", "Straight fin", "Transient slab", "Failure: inconsistent dimensions", "Failure: zero scale", "Failure: dependent inputs",
-    "Failure: missing conditions", "Failure: entry errors", "Failure: unsupported analysis"];
+  const EXAMPLE_IDS = ["heat-transfer-pi", "straight-fin", "transient-slab", "lumped-body", "fail-dimensions", "fail-zero-scale", "fail-zero-temperature-scale", "fail-dependent",
+    "fail-conditions", "fail-entry", "fail-unsupported"];
+  const EXAMPLE_LABELS = ["Convection: Pi groups", "Straight fin", "Transient slab", "Lumped body", "Failure: inconsistent dimensions", "Failure: zero scale",
+    "Failure: zero temperature scale", "Failure: dependent inputs", "Failure: missing conditions", "Failure: entry errors", "Failure: unsupported analysis"];
   const MAX_STEP = 60;
 
   /** The view state (§5): every field is in the URL when it differs from its default. */
@@ -80,6 +82,7 @@
     const repeating = interpBase ? repeatingIds(state.repeating, interpBase.variables) : null;
     const finder = interpBase ? F.find(interpBase, { repeating, preferred: base.preferred, groups: D.groups.groups, confirmed: rec.interpretations ?? {} }) : null;
     const ref = referenceFor(finder, data.references);
+    const nondim = interpBase ? N.nondimensionalize(interpBase, { scales: base.scales ?? [], finder: finder && finder.ready ? finder : null, groups: D.groups.groups, confirmed: rec.interpretations ?? {} }) : null;
 
     /* ---------- results: the Analyses item, each with status, inputs, steps and evidence ---------- */
     const results = [];
@@ -152,6 +155,10 @@
           status: "evidence", inputs: piInputs, steps: ["s-pi-correlation"], evidence: ["mit-pi"] });
       }
     }
+    if (nondim && nondim.ready) addNondim(nondim, interpBase, add, piInputs);
+    else if (nondim && !nondim.ready && nondim.reason !== "blocked" && (nondim.reason !== "no-equations" || interpBase.calcs.find((c) => c.id === "nondimensionalize")?.intended)) {
+      add({ id: "r-nd-unresolved", kind: "nondim", title: `Nondimensionalization: ${nondim.message}`, status: "unresolved", inputs: interpBase.equations.map((e) => e.id).concat((base.scales ?? []).map((x) => x.id)), next: nondim.next, steps: [], evidence: ["spec-6"] });
+    }
     // Calculations the record asks for that this piece cannot run, or that a failed check blocks.
     for (const c of interp.calcs) {
       if (c.ready || (!c.available && !c.intended)) continue;
@@ -176,12 +183,63 @@
     return {
       title: rec.title, origin: rec.origin, version: rec.version, confirmed, confirmedVersion: rec.confirmed ? rec.confirmed.version : null,
       edited: rec.version > 1 || rec.origin !== state.example, tool: state.tool, toolName: TOOLS[state.tool], basis: state.basis, basisName: BASES[state.basis],
-      interp: plainInterp(interp), finder, results, counts, changes, steps, shownStep, zeroNote, basisGroups,
+      interp: plainInterp(interp), finder, nondim, results, counts, changes, steps, shownStep, zeroNote, basisGroups,
       reference: ref ? { versions: data.references.versions, rank: ref.rank, groups: ref.groups, det: ref.det_DR } : null,
       history: rec.history, previousVersion: rec.previous ? rec.previous.version : null,
       previousDiff: rec.previous ? R.diff(rec.previous.inputs, current) : null,
       settings: rec.settings,
     };
+  }
+
+  /**
+   * The Nondimensionalizer's results: the scales, each dimensionless equation and condition, the parameters and
+   * their names, the comparison with the Pi basis, the parameters that enter, and the reverse substitution.
+   */
+  function addNondim(nd, it, add, piInputs) {
+    const idOf = (sym) => it.variables.find((v) => v.symbol === sym)?.id;
+    const scaleInputs = nd.scales.map((s) => `s-${s.id}`);
+    for (const s of nd.scales) {
+      const ids = [`s-${s.id}`, s.id, ...s.chosen.items, ...(s.chosen.symbols ?? []).map(idOf).filter(Boolean)];
+      const v = nd.variables.find((x) => x.name === s.name);
+      add({ id: `r-nd-scale-${s.id}`, kind: "scale", title: `The scale of ${s.label} is ${s.chosen.label}. ${s.chosen.reason}`, tex: v ? v.defTex : null,
+        status: s.status, inputs: [...new Set(ids)], steps: ["s-nd-scales", "s-nd-variables"], evidence: ["spec-6"] });
+      if (s.changed) {
+        add({ id: `r-nd-refused-${s.id}`, kind: "scale", title: s.changed, status: "unresolved", inputs: [...new Set(ids)], steps: ["s-nd-scales"], evidence: ["spec-6"],
+          next: `Check the values, or supply another nonzero scale for ${s.label} in the model's scales.` });
+      }
+    }
+    for (const e of nd.equations) {
+      const what = e.cond ? "Condition" : e.output ? "Definition" : "Equation";
+      add({ id: `r-nd-eq-${e.id}`, kind: "dimensionless", title: `${what} ${e.id} in dimensionless form${e.factorTex === "1" ? "" : ", after division by its common factor"}.`,
+        tex: `${e.dimensionlessTex}${e.at ? `\\quad\\text{at }${e.at.tex}` : ""}`, status: e.dimensionless && e.reverseOk ? "exact" : "unresolved",
+        inputs: [...new Set([...e.inputs, ...scaleInputs])], steps: ["s-nd-substitution"], evidence: ["spec-6"] });
+    }
+    const ok = nd.equations.every((e) => e.reverseOk && (!e.at || e.at.ok));
+    add({ id: "r-nd-reverse", kind: "reverse", title: ok ? `The reverse substitution recovers each of the ${nd.equations.length} equations and conditions exactly${nd.definitions.length ? `, under the definitions ${[...new Set(nd.definitions.map((d) => d.id).filter(Boolean))].join(", ")}` : ""}.`
+      : `The reverse substitution does not recover ${nd.equations.filter((e) => !e.reverseOk).map((e) => e.id).join(", ")}.`, status: ok ? "exact" : "unresolved", inputs: nd.inputs, steps: ["s-nd-reverse"], evidence: ["spec-6"] });
+    const params = nd.parameters.filter((p) => p.role === "parameter" && p.independent);
+    const paramName = (p) => (p.names[0] ? `${p.names[0].label} = ${p.label}` : p.label);
+    add({ id: "r-nd-parameters", kind: "parameters", title: params.length ? `The dimensionless model has ${params.length} independent parameter${params.length > 1 ? "s" : ""}: ${params.map(paramName).join(", ")}.`
+      : "The dimensionless model has no parameter: its solution is the same for every value of the physical parameters.", status: "exact", inputs: nd.inputs, steps: ["s-nd-parameters"], evidence: ["spec-6"] });
+    for (const p of nd.parameters) {
+      for (const nm of p.names) {
+        if (p.role === "output" && nm.id === "theta") continue;
+        add({ id: `r-nd-name-${p.id}-${nm.id}`, kind: "name", title: `${p.label} matches the stored formula of the ${nm.name}, ${nm.plain}${nm.power < 0 ? ", as its reciprocal" : ""}.${nm.assumes.length ? ` This match assumes that ${nm.assumes.join(" and that ")}.` : ""}`,
+          tex: `${p.tex}=${nm.tex}`, status: p.confirmed === nm.id ? "confirmed" : "proposed", inputs: p.contains, steps: ["s-nd-parameters"], evidence: [nm.source], name: nm.id, key: p.key });
+      }
+    }
+    const valued = nd.parameters.filter((p) => p.value && p.role !== "output");
+    if (valued.length) add({ id: "r-nd-values", kind: "values", title: `The entered values give ${valued.map((p) => `${p.names[0] ? p.names[0].label : p.label} = ${valueText(p.value)}`).join(", ")}.`, status: valued.every((p) => p.value.exact) ? "exact" : "numerical", inputs: nd.inputs, steps: ["s-nd-parameters"] });
+    if (nd.pi) {
+      const outside = nd.pi.rows.filter((r) => !r.inPi);
+      add({ id: "r-nd-pi", kind: "pi", title: `${nd.pi.rows.filter((r) => r.inPi).length} dimensionless quantities are products of powers of the Pi groups. The model uses ${nd.pi.rank} of the ${nd.pi.m} groups${nd.pi.absent.length ? `; ${nd.pi.absent.map((a) => a.label).join(", ")} ${nd.pi.absent.length > 1 ? "do" : "does"} not appear on ${nd.pi.absent.length > 1 ? "their" : "its"} own` : ""}.${outside.length ? ` ${outside.length} ${outside.length > 1 ? "quantities use" : "quantity uses"} variables outside the Pi set.` : ""}`,
+        status: "exact", inputs: [...new Set([...piInputs, ...nd.inputs])], steps: ["s-nd-pi"], evidence: ["spec-6", "mit-pi"] });
+    }
+    const hidden = nd.enters.filter((e) => e.hidden);
+    if (hidden.length) {
+      for (const h of hidden) add({ id: `r-nd-hidden-${h.id}`, kind: "hidden", title: `${h.label} does not enter the dimensionless model: it cancels from every equation and condition, and no scale contains it.`, status: "unresolved", inputs: [h.id, ...nd.inputs], steps: ["s-nd-parameters"], evidence: ["spec-6"],
+        next: `Check whether ${h.label} belongs in the model. A parameter that cancels has no effect on the solution.` });
+    } else add({ id: "r-nd-enters", kind: "hidden", title: `Each of the ${nd.enters.length} physical parameters enters a scale, a coefficient or a condition, so no scale hides a parameter.`, status: "exact", inputs: nd.inputs, steps: ["s-nd-parameters"], evidence: ["spec-6"] });
   }
 
   /** The plain label of a group: its familiar name when it has one (the confirmed one first), else its formula. */

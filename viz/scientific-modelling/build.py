@@ -10,7 +10,7 @@ with its Fira font), and writes:
   index.html   the kit's shell with every script, style, datum and font inlined; no runtime request
 
 The engine modules are classic scripts that the tests load with require(), in this order: rational, linalg,
-units, expr, record, check, finder, model, report; then view.js, which runs only in the browser.
+units, expr, sym, record, check, finder, nondim, model, report; then view.js, which runs only in the browser.
 
 Usage:
     python3 build.py            # write raw.json and index.html
@@ -29,7 +29,7 @@ import visual_kit as kit  # noqa: E402
 from visual_build import script  # noqa: E402
 
 DATA = ["examples", "quantities", "groups", "sources", "roadmap", "references"]
-MODULES = ["rational", "linalg", "units", "expr", "record", "check", "finder", "model", "report", "view"]
+MODULES = ["rational", "linalg", "units", "expr", "sym", "record", "check", "finder", "nondim", "model", "report", "view"]
 SUBJECT = "Engineering modelling"
 
 

@@ -147,6 +147,14 @@ test("agreement: the page's derived data, the Markdown report and the deck of on
       for (const v of d.interp.variables.filter((x) => x.value)) assert.ok(md.includes(v.value), `${ex}: the value of ${v.symbol}`);
       for (const item of ["Hand calculation 1", "Hand calculation 2", "Hand calculation 3", "Hand calculation 4", "Hand calculation 5"]) assert.ok(md.includes(item), `${ex}: ${item}`);
     }
+    if (d.nondim && d.nondim.ready) {
+      for (const sc of d.nondim.scales) assert.ok(md.includes(sc.chosen.tex) && deck.includes(sc.chosen.tex), `${ex}: the scale of ${sc.name}`);
+      for (const v of d.nondim.variables) assert.ok(md.includes(v.defTex) && md.includes(v.invTex), `${ex}: the definition and inverse of ${v.hat}`);
+      for (const e of d.nondim.equations) {
+        for (const t of [e.substitutedTex, e.simplifiedTex, e.dimensionlessTex, e.namedTex]) assert.ok(md.includes(t) && deck.includes(t), `${ex}: ${e.id} in full, ${t}`);
+      }
+      for (const item of ["Hand calculation 6", "Hand calculation 7"]) assert.ok(md.includes(item), `${ex}: ${item}`);
+    }
     assert.match(deck, /^voice: bf_emma$/m);
   }
 });
