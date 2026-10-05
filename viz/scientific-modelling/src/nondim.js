@@ -956,7 +956,6 @@
     const [m, e] = x.toExponential(5).split("e");
     return `${Number(m)}×10^${Number(e)}`;
   }
-  const cap = (t) => t.charAt(0).toUpperCase() + t.slice(1);
   /** Does TeX hold a + or − outside braces and \\left( \\right) pairs, after its first character? */
   function topLevelSum(t) {
     let depth = 0;
