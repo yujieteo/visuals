@@ -129,6 +129,11 @@ test("identifiers against measures: names, leading zeros and dense unique runs m
   assert.ok(t.col("ticket").identifier.first.every((/** @type {any} */ r) => r.value !== "NA"));
   const ratings = await load("ratings", encode(["rating", ...Array.from({ length: 60 }, (_, i) => (i % 2 ? `${1 + (i % 6)}.0` : String(1 + (i % 6))))].join("\n")));
   assert.deepEqual([ratings.col("rating").type, ratings.col("rating").distinct], ["decimal", 6], "4 and 4.0 are one value");
+  const codes = await load("codes", encode(["code", "007", "7", "NA", ...Array.from({ length: 30 }, (_, i) => String(20 + i))].join("\n")));
+  const code = codes.col("code");
+  const codeColumn = codes.imported.columns.find((/** @type {any} */ c) => c.name === "code");
+  const unmarked = await Profile.profileColumn(e.query, { table: "codes", rowColumn: codes.imported.rowColumn, column: codeColumn, override: code.suggestions.find((/** @type {any} */ x) => x.id === "code::markers").change });
+  assert.deepEqual([code.distinct, unmarked.distinct, unmarked.identifier?.repeats ?? 0], [32, 32, 0], "007 and 7 stay two codes after approval, as the identifier summaries count them");
   const long = await load("orders18", encode(["order_number", ...Array.from({ length: 100 }, (_, i) => String(100000000000000001n + BigInt(i)))].join("\n")));
   assert.deepEqual([long.col("order_number").distinct, long.col("order_number").role], [100, "identifier"], "18-digit identifiers stay distinct");
   const parents = await load("parents", encode(["parent_id", ...Array.from({ length: 40 }, (_, i) => (i % 4 === 0 ? "-1" : String(100 + i)))].join("\n")));

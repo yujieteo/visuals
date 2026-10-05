@@ -295,14 +295,13 @@ FROM ${ident(table)}`;
 
   /**
    * Distinct values present under a reading, alone for the same reason as distinctCount. Whole numbers are compared
-   * exactly (as 128-bit integers, else as their digits), so identifiers longer than 15 digits never merge.
+   * as their digits without separators, as written otherwise, so "007" and "7" stay two codes (as the identifier
+   * summaries count them) and identifiers longer than 15 digits never merge.
    */
   function readDistinct(table, column, reading, textSource) {
     const x = ident(column);
-    const digits = `replace(trim(${x}), ',', '')`;
     const whole = textSource && (reading.kind === "integer" || reading.kind === "integer-sep");
-    const key = whole ? `coalesce(CAST(TRY_CAST(${digits} AS HUGEINT) AS VARCHAR), ${digits})`
-      : textSource && reading.kind === "text" ? x : `CAST(${typed(column, reading)} AS VARCHAR)`;
+    const key = whole ? `replace(trim(${x}), ',', '')` : textSource && reading.kind === "text" ? x : `CAST(${typed(column, reading)} AS VARCHAR)`;
     return `SELECT count(*)::DOUBLE AS distinct_values FROM (SELECT DISTINCT ${key} FROM ${ident(table)} WHERE ${present(column, reading, textSource)})`;
   }
 
