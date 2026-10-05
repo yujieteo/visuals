@@ -297,11 +297,26 @@
     const col = table.columns.find((c) => c.name === colName);
     const s = col?.suggestions.find((x) => x.id === id);
     if (!s) return;
-    await busy("Applying", async () => {
-      progress(`Applying: ${s.text}`, 0, 0);
-      table.overrides[colName] = { ...(table.overrides[colName] ?? {}), ...s.change };
-      const after = await reprofile(table, colName);
-      note({ kind: "approved", table: table.name, column: colName, text: `Approved: ${s.text} ${effect(after)}` });
+    await applyOverride(table, colName, { ...(table.overrides[colName] ?? {}), ...s.change }, "approved", `Approved: ${s.text}`);
+  }
+
+  /**
+   * Give a column a new override (undefined: none) and profile it again. When that fails or is cancelled, the
+   * column keeps its old override and profile, and the log says the change was not applied.
+   */
+  function applyOverride(table, colName, next, kind, text) {
+    return busy("Applying", async () => {
+      progress(text, 0, 0);
+      const before = table.overrides[colName];
+      const set = (value) => { if (value) table.overrides[colName] = value; else delete table.overrides[colName]; };
+      set(next);
+      try {
+        const after = await reprofile(table, colName);
+        note({ kind, table: table.name, column: colName, text: `${text} ${effect(after)}` });
+      } catch (error) {
+        set(before);
+        note({ kind: "failed", table: table.name, column: colName, text: `Not applied (${Engine.cancelled(error) ? "cancelled" : message(error)}): ${text}` });
+      }
     });
   }
 
@@ -367,20 +382,11 @@
     const unit = String(data.get("unit") ?? "").trim().slice(0, 24);
     if (unit !== (col.unit ?? "")) { next.unit = unit; parts.push(unit ? `unit ${unit}` : "no unit"); }
     if (!parts.length) return;
-    await busy("Applying", async () => {
-      progress(`Changing ${colName}`, 0, 0);
-      table.overrides[colName] = next;
-      const after = await reprofile(table, colName);
-      note({ kind: "changed", table: table.name, column: colName, text: `You set ${table.name}.${colName}: ${parts.join(", ")}. ${effect(after)}` });
-    });
+    await applyOverride(table, colName, next, "changed", `You set ${table.name}.${colName}: ${parts.join(", ")}.`);
   }
 
   async function revert(table, colName) {
-    await busy("Applying", async () => {
-      delete table.overrides[colName];
-      const after = await reprofile(table, colName);
-      note({ kind: "reverted", table: table.name, column: colName, text: `Returned ${table.name}.${colName} to what the workbench inferred. ${effect(after)}` });
-    });
+    await applyOverride(table, colName, undefined, "reverted", `Returned ${table.name}.${colName} to what the workbench inferred.`);
   }
 
   const removeTable = (table) => exclusive(() => removeNow(table));
