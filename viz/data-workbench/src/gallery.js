@@ -497,17 +497,17 @@
       }
     }
 
-    async function revert(st, cand) {
-      const spec = ChartSpec.make(cand, st.ctx);
-      forget(cand);
-      Object.assign(cand, { spec: null, edited: false, outcome: "pending", svg: null, version: cand.version + 1 });
-      const api = await app.ensureEngine();
-      await app.exclusive(() => computeOne(api, st, cand));
-      if (!cand.spec) cand.spec = spec;
-      app.note({ kind: "chart", table: st.ctx.table, text: `Returned the chart ${cand.id} to the generated one.` });
-      viewer.error = "";
-      app.refresh();
-      drawViewer();
+    /** Draw a chart as generated again, as one piece of work, so an earlier Cancel cannot leave it pending. */
+    function revert(st, cand) {
+      return app.busy("Drawing", async () => {
+        forget(cand);
+        Object.assign(cand, { spec: null, edited: false, outcome: "pending", version: cand.version + 1 });
+        const api = await app.ensureEngine();
+        await computeOne(api, st, cand);
+        if (cand.outcome === "pending") Object.assign(cand, { outcome: "incomplete", reason: "Not computed: you cancelled." });
+        app.note({ kind: "chart", table: st.ctx.table, text: `Returned the chart ${cand.id} to the generated one: ${cand.outcome}.` });
+        viewer.error = "";
+      }).finally(() => drawViewer());
     }
 
     /* ---------- what the record and the tools read ---------- */

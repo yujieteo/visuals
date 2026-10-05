@@ -149,11 +149,19 @@ SELECT level, sort_key, n, (SELECT count(*) FROM lv)::DOUBLE AS levels, (SELECT 
     return `WITH d AS (${rel}) SELECT ${cols.join(", ")}, count(*)::DOUBLE AS n${stats} FROM d GROUP BY ALL ORDER BY ALL`;
   }
 
+  /* Periods of several years, which date_trunc would count from year 1 (its centuries start in 2001). */
+  const YEARS = { decade: 10, century: 100, millennium: 1000 };
+
   /** The period a time value falls in, as seconds since 1970 (UTC). */
-  const period = (alias, unit) => `epoch(date_trunc(${literal(unit)}, ${ident(alias)}))::DOUBLE`;
+  function period(alias, unit) {
+    const k = YEARS[/** @type {keyof typeof YEARS} */ (unit)];
+    if (k) return `epoch(make_timestamp(CAST(floor(year(${ident(alias)}) / ${k}) * ${k} AS BIGINT), 1, 1, 0, 0, 0))::DOUBLE`;
+    return `epoch(date_trunc(${literal(unit)}, ${ident(alias)}))::DOUBLE`;
+  }
 
   /** Which precisions a period can place: a value known only to the year cannot be placed in a month. */
-  const PLACEABLE = { year: ["year", "month", "day", "time"], quarter: ["month", "day", "time"], month: ["month", "day", "time"], week: ["day", "time"], day: ["day", "time"], hour: ["time"] };
+  const ALL = ["year", "month", "day", "time"];
+  const PLACEABLE = { millennium: ALL, century: ALL, decade: ALL, year: ALL, quarter: ["month", "day", "time"], month: ["month", "day", "time"], week: ["day", "time"], day: ["day", "time"], hour: ["time"] };
   const placeable = (precisionAlias, unit) => `${ident(precisionAlias)} IN (${PLACEABLE[/** @type {keyof typeof PLACEABLE} */ (unit)].map(literal).join(", ")})`;
 
   /** The first and last time, and how many values are known only to the year or the month (dates with their precision). */

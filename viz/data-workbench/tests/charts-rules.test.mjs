@@ -178,6 +178,8 @@ test("edits: each change is recorded; a field's axis label follows the field unl
   assert.deepEqual(titled.layout, { width: 120, height: 90, unit: "mm", facet: { field: "grp", columns: 3 } });
   assert.match(titled.edits[0], /title: "Mass against b"; x label: "Mass"; width 120 mm; height 90 mm; facets by grp/);
   assert.equal(ChartSpec.validate(titled, ctx).ok, true);
+  const heat = ChartSpec.edit(ChartSpec.edit(ChartSpec.make(cand("count-heatmap", ["grp", "many"]), ctx), { top: 3 }, ctx), { swap: true }, ctx);
+  assert.deepEqual([heat.encoding.x.field, heat.transform.find((t) => t.id === "top:x").n, heat.transform.find((t) => t.id === "top:y").n], ["many", 12, 3], "levels kept move with their field");
   const hist = ChartSpec.edit(ChartSpec.make(cand("histogram", ["b"]), ctx), { bins: 12 }, ctx);
   assert.deepEqual(hist.transform.find((t) => t.id === "bin:x"), { id: "bin:x", op: "bin", channel: "x", method: "set", bins: 12 });
   assert.equal(spec.edits.length, 0, "the original is never changed");
@@ -218,6 +220,12 @@ test("time periods: the coarsest giving at least 20, at most 500; values too coa
   assert.deepEqual([few.unit, few.unplaced], ["month", 3], "3% known only to the year: by month, those 3 counted as not placed");
   assert.ok(Charts.choosePeriod(range(20000), "time", "hour").periods.length <= 501, "never more than 500 periods");
   assert.equal(Charts.floorPeriod(Date.UTC(2024, 0, 3, 12) / 1000, "week"), Date.UTC(2024, 0, 1) / 1000, "weeks start on Monday");
+  const long = { lo: Render.utc(1100), hi: Render.utc(2000), n: 900, p_year: 0, p_month: 0 };
+  const decades = Charts.choosePeriod(long, "day");
+  assert.deepEqual([decades.unit, decades.asked, decades.periods.length], ["decade", "year", 91], "901 years would be more than 500 periods: by decade");
+  assert.equal(Charts.choosePeriod({ ...long, lo: Render.utc(-3000) }, "day").unit, "century");
+  assert.equal(Render.utc(50) < Render.utc(1950), true, "the year 50 is not 1950");
+  assert.equal(Render.timeLabel(Render.utc(1850), "decade"), "1850–1859");
 });
 
 /* ---------- drawing ---------- */

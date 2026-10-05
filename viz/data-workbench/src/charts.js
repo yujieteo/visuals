@@ -102,41 +102,11 @@
     return { bins, width: span / bins, lo, raw };
   }
 
-  const DAY = 86400;
-  const UNITS = ["year", "quarter", "month", "week", "day", "hour"];
-  /** The units a precision allows, coarsest first: a date has no hours, a year only years. */
-  const ALLOWED = { year: ["year"], mixed: ["year", "quarter", "month", "week", "day"], day: ["year", "quarter", "month", "week", "day"], time: UNITS };
-
-  /** The start of the period holding t (seconds since 1970, UTC). */
-  function floorPeriod(t, unit) {
-    const d = new Date(t * 1000);
-    const y = d.getUTCFullYear(), m = d.getUTCMonth();
-    switch (unit) {
-      case "year": return Date.UTC(y, 0, 1) / 1000;
-      case "quarter": return Date.UTC(y, m - (m % 3), 1) / 1000;
-      case "month": return Date.UTC(y, m, 1) / 1000;
-      case "week": {
-        const day = Math.floor(t / DAY);
-        return (day - ((day + 3) % 7)) * DAY;
-      }
-      case "day": return Math.floor(t / DAY) * DAY;
-      default: return Math.floor(t / 3600) * 3600;
-    }
-  }
-
-  /** The start of the next period. */
-  function nextPeriod(t, unit) {
-    const d = new Date(t * 1000);
-    const y = d.getUTCFullYear(), m = d.getUTCMonth();
-    switch (unit) {
-      case "year": return Date.UTC(y + 1, 0, 1) / 1000;
-      case "quarter": return Date.UTC(y, m + 3, 1) / 1000;
-      case "month": return Date.UTC(y, m + 1, 1) / 1000;
-      case "week": return t + 7 * DAY;
-      case "day": return t + DAY;
-      default: return t + 3600;
-    }
-  }
+  const UNITS = Render.UNITS;
+  /** The units a precision allows, coarsest first: a date has no hours, a year only years. Decades, centuries and
+   * millennia are never chosen by the rule; they only keep a span of more than 500 years within 500 periods. */
+  const ALLOWED = { year: ["year"], mixed: ["year", "quarter", "month", "week", "day"], day: ["year", "quarter", "month", "week", "day"], time: ["year", "quarter", "month", "week", "day", "hour"] };
+  const floorPeriod = Render.floorPeriod, nextPeriod = Render.nextPeriod;
 
   /** The periods from the one holding lo to the one holding hi, at most `cap` + 1 of them. */
   function periodsBetween(lo, hi, unit, cap = MAX_PERIODS) {
@@ -160,9 +130,10 @@
       const list = usable.length ? usable : ["year"];
       unit = list.find((u) => periodsBetween(range.lo, range.hi, u).length >= MIN_PERIODS) ?? list[list.length - 1];
     }
-    // Coarser until at most 500 periods.
+    const asked = unit;
+    // Coarser until at most 500 periods: past years, 10, 100 or 1,000 years a period.
     while (periodsBetween(range.lo, range.hi, unit).length > MAX_PERIODS && UNITS.indexOf(unit) > 0) unit = UNITS[UNITS.indexOf(unit) - 1];
-    return { unit, periods: periodsBetween(range.lo, range.hi, unit), unplaced: unplaced(unit), chosen: want !== "auto" && allowed.includes(want) };
+    return { unit, asked, periods: periodsBetween(range.lo, range.hi, unit), unplaced: unplaced(unit), chosen: want !== "auto" && allowed.includes(want) };
   }
 
   /* ---------- computing a chart ---------- */
@@ -286,6 +257,7 @@
         if (!range.n) return done(0);
         const per = choosePeriod(range, tf.precision, step(spec, "period:x").unit);
         facts.period = per.unit;
+        if (per.unit !== per.asked) facts.notes.push(`By ${per.asked}, the span would need more than ${MAX_PERIODS} periods: drawn by ${per.unit}.`);
         if (per.unplaced) facts.notes.push(`${per.unplaced} value${per.unplaced === 1 ? " is" : "s are"} known only to the ${per.unit === "week" || per.unit === "day" ? "year or month" : "year"} and cannot be placed in a ${per.unit}: not drawn.`);
         const placed = `SELECT * FROM (${r}) WHERE ${ChartSql.placeable("p", per.unit)}`;
         if (spec.kind === "period-heatmap") {

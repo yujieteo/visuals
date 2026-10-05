@@ -117,10 +117,61 @@
   const logLabel = (v) => number(10 ** v, 10 ** Math.floor(v + 1e-9));
 
   const pad2 = (n) => String(n).padStart(2, "0");
+
+  /* ---------- calendar periods (UTC) ---------- */
+
+  const DAY = 86400;
+  /** Periods from the coarsest: decades, centuries and millennia only keep long spans within 500 periods. */
+  const UNITS = ["millennium", "century", "decade", "year", "quarter", "month", "week", "day", "hour"];
+  const YEARS = { decade: 10, century: 100, millennium: 1000 };
+
+  /** Seconds since 1970 of a UTC date; years before 100 stay themselves (Date.UTC would read 50 as 1950). */
+  function utc(y, m = 0, d = 1) {
+    const t = new Date(Date.UTC(2000, m, d));
+    t.setUTCFullYear(y + Math.floor(m / 12), ((m % 12) + 12) % 12, d);
+    return t.getTime() / 1000;
+  }
+
+  /** The start of the period holding t (seconds since 1970, UTC). Weeks start on Monday. */
+  function floorPeriod(t, unit) {
+    const d = new Date(t * 1000);
+    const y = d.getUTCFullYear(), m = d.getUTCMonth();
+    const k = YEARS[/** @type {keyof typeof YEARS} */ (unit)];
+    if (k) return utc(Math.floor(y / k) * k);
+    switch (unit) {
+      case "year": return utc(y);
+      case "quarter": return utc(y, m - (m % 3));
+      case "month": return utc(y, m);
+      case "week": {
+        const day = Math.floor(t / DAY);
+        return (day - ((day + 3) % 7)) * DAY;
+      }
+      case "day": return Math.floor(t / DAY) * DAY;
+      default: return Math.floor(t / 3600) * 3600;
+    }
+  }
+
+  /** The start of the period after the one starting at t. */
+  function nextPeriod(t, unit) {
+    const d = new Date(t * 1000);
+    const y = d.getUTCFullYear(), m = d.getUTCMonth();
+    const k = YEARS[/** @type {keyof typeof YEARS} */ (unit)];
+    if (k) return utc(y + k);
+    switch (unit) {
+      case "year": return utc(y + 1);
+      case "quarter": return utc(y, m + 3);
+      case "month": return utc(y, m + 1);
+      case "week": return t + 7 * DAY;
+      case "day": return t + DAY;
+      default: return t + 3600;
+    }
+  }
   /** A time as text at a unit's precision (UTC fields of the value). */
   function timeLabel(t, unit) {
     const d = new Date(t * 1000);
     const y = d.getUTCFullYear(), m = d.getUTCMonth(), day = d.getUTCDate();
+    const k = YEARS[/** @type {keyof typeof YEARS} */ (unit)];
+    if (k) return `${y}–${y + k - 1}`;
     if (unit === "year") return String(y);
     if (unit === "quarter") return `Q${Math.floor(m / 3) + 1} ${y}`;
     if (unit === "month") return `${MONTHS[m]} ${y}`;
@@ -128,7 +179,6 @@
     return `${y}-${pad2(m + 1)}-${pad2(day)}`;
   }
 
-  const DAY = 86400;
   const STEPS = [["hour", 1], ["hour", 3], ["hour", 6], ["hour", 12], ["day", 1], ["day", 2], ["day", 7], ["day", 14], ["month", 1], ["month", 3], ["month", 6],
     ["year", 1], ["year", 2], ["year", 5], ["year", 10], ["year", 20], ["year", 50], ["year", 100], ["year", 200], ["year", 500], ["year", 1000]];
 
@@ -145,7 +195,7 @@
         if (unit === "month") m = Math.ceil(m / n) * n;
         else y = Math.ceil(y / n) * n;
         for (;;) {
-          const t = Date.UTC(y, m, 1) / 1000;
+          const t = utc(y, m);
           if (t < lo) { if (unit === "month") m += n; else y += n; continue; }
           if (t > hi || ticks.length > max) break;
           ticks.push(t);
@@ -511,17 +561,7 @@
     }
   }
 
-  /** The start of the next period (as in src/charts.js), for drawing a period's width. */
-  function nextOf(t, unit) {
-    const d = new Date(t * 1000);
-    const y = d.getUTCFullYear(), m = d.getUTCMonth();
-    if (unit === "year") return Date.UTC(y + 1, 0, 1) / 1000;
-    if (unit === "quarter") return Date.UTC(y, m + 3, 1) / 1000;
-    if (unit === "month") return Date.UTC(y, m + 1, 1) / 1000;
-    if (unit === "week") return t + 7 * DAY;
-    if (unit === "day") return t + DAY;
-    return t + 3600;
-  }
+  const nextOf = nextPeriod;
 
   /* ---------- timelines ---------- */
 
@@ -638,7 +678,10 @@
       case "binned-heatmap": return "Rows per cell of a 40 × 40 grid; darker is more; empty cells are white.";
       case "box-by-group": return `One box a group${data.other ? ` (${levelsLine(t("top:x").n, "groups")})` : ""}: quartiles, median, whiskers within 1.5 × IQR, points beyond.`;
       case "mean-bar": return data.fn === "sum" ? "Bars show the sum per group from zero (a field you marked additive); n under each group." : "Bars show the mean per group from zero; lines show its 95% t interval; n under each group.";
-      case "count-heatmap": return `Rows per pair of levels${data.other.x || data.other.y ? ` (${levelsLine(12, "levels")} on ${data.other.x && data.other.y ? "each axis" : data.other.x ? "the x axis" : "the y axis"})` : ""}; darker is more.`;
+      case "count-heatmap": {
+        const kept = [data.other.x ? `the ${t("top:x").n} most frequent levels of x` : "", data.other.y ? `the ${t("top:y").n} most frequent levels of y` : ""].filter(Boolean);
+        return `Rows per pair of levels${kept.length ? ` (${kept.join(" and ")} kept, the rest as Other)` : ""}; darker is more.`;
+      }
       case "mean-series": {
         const ns = data.panels.flatMap((p) => p.series.map((s) => s.n)).filter((n) => n > 0);
         return `${data.fn === "sum" ? "Sum" : "Mean"} per ${unitWord(data.unit)}${data.fn === "mean" ? " with its 95% t interval (band)" : ""}; n per ${unitWord(data.unit)} from ${count(Math.min(...ns))} to ${count(Math.max(...ns))}.`;
@@ -797,5 +840,5 @@
     return { svg: toSvg(sc, spec.annotation.title, desc, id), desc, collisions: sc.collisions, dropped: sc.dropped, marks: sc.items.length };
   }
 
-  return { PT, COLOR, SEQUENTIAL, SIZE, LINE, WIDTHS, textWidth, fit, wrap, number, linearTicks, niceDomain, logTicks, timeTicks, timeLabel, shade, luminance, lanes, eventLabel, autoCaption, render, KIND_LABEL };
+  return { UNITS, utc, floorPeriod, nextPeriod, PT, COLOR, SEQUENTIAL, SIZE, LINE, WIDTHS, textWidth, fit, wrap, number, linearTicks, niceDomain, logTicks, timeTicks, timeLabel, shade, luminance, lanes, eventLabel, autoCaption, render, KIND_LABEL };
 });

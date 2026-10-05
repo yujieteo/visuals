@@ -83,7 +83,8 @@ Step 3 adds the ranking's rejection rules (fewer than 5 complete rows, zero vari
 - **Levels.** Bars keep the 29 most frequent levels; groups and heatmap axes keep 12; the rest is one bar, box or
   row "Other (k levels)". Categories are ordered by count; numbers, yes or no and dates by value.
 - **Periods.** The coarsest of year, quarter, month, week (from Monday), day or hour that gives at least 20
-  periods; never finer than the values (a date has no hours, years only years), never more than 500 periods. With
+  periods; never finer than the values (a date has no hours, years only years), never more than 500 periods: a
+  span of more than 500 years is counted by decade, century or millennium, and the figure says so. With
   dates known only to the year or month, a unit is used only when at most 5% of the values are too coarse for it;
   those are counted and not drawn. Periods are in UTC for values with an offset; values without one are not
   shifted.

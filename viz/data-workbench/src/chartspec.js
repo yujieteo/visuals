@@ -306,6 +306,8 @@
     }
     if (change.swap && next.encoding.x && next.encoding.y?.field) {
       for (const key of ["encoding", "scale"]) [next[key].x, next[key].y] = [next[key].y, next[key].x];
+      const tx = step(next, "top:x"), ty = step(next, "top:y");
+      if (tx && ty) [tx.n, ty.n] = [ty.n, tx.n];
       [next.annotation.labels.x, next.annotation.labels.y] = [next.annotation.labels.y, next.annotation.labels.x];
       const ux = next.annotation.units.x, uy = next.annotation.units.y;
       delete next.annotation.units.x;

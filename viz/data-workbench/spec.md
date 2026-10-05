@@ -440,7 +440,9 @@ incomplete (cancelled or resource limit). The grammar version is recorded in eve
 - Box plots: whiskers to the most extreme values within 1.5 × IQR of the quartiles; at most 200 distinct values
   beyond them are drawn a box, the rest counted.
 - **[Changed in step 2]** Periods: never finer than the values allow (a date has no hours; years only years);
-  weeks start on Monday; values with an offset are grouped in UTC. With dates of mixed precision, a unit is used
+  weeks start on Monday; values with an offset are grouped in UTC. The plan's cap of 500 periods had no unit
+  beyond the year, so a span of more than 500 years is counted by decade, century or millennium, stated on the
+  figure (tests/charts-engine.test.mjs, "a span of more than 500 years"). With dates of mixed precision, a unit is used
   only when at most 5% of the values are too coarse to place in it, and those are counted on the figure, not
   drawn; otherwise a year-only value would sit in January.
 - Facets: one panel a level on shared scales; timelines are not faceted.

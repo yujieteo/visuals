@@ -94,6 +94,17 @@ test("a count time series of two years of days is by month; every row is counted
   assert.equal(data.panels[0].series.reduce((a, s) => a + s.n, 0), 2000);
 });
 
+test("a span of more than 500 years is counted by decade, every row once, and the figure says why", async () => {
+  const lines = ["happened"];
+  for (let i = 0; i < 900; i++) lines.push(`${1100 + i}-06-15`);
+  const t = await load("centuries", encode(lines.join("\n")));
+  const { data, svg } = await chart(t, "count-series", ["happened"]);
+  assert.deepEqual([data.unit, data.periods.length], ["decade", 90]);
+  assert.equal(data.panels[0].series.reduce((/** @type {number} */ a, /** @type {any} */ x) => a + x.n, 0), 900);
+  assert.ok(data.panels[0].series.every((/** @type {any} */ x) => x.n === 10), "ten years a decade");
+  assert.match(svg, /By year, the span would need more than 500 periods: drawn by decade\./);
+});
+
 test("the log rule, Freedman–Diaconis bins and their edits, on the engine", async () => {
   const u = Examples.random(11);
   const lines = ["size,weight"];
@@ -117,6 +128,8 @@ test("a category of 40 levels: the 29 most frequent, then Other with the rest of
   for (let k = 0; k < 40; k++) for (let i = 0; i <= k; i++) lines.push(`kind_${String(k).padStart(2, "0")}`);
   const t = await load("kinds", encode(lines.join("\n")));
   const { data } = await chart(t, "bar", ["kind"]);
+  const heat = await chart(t, "bar", ["kind"], { top: 5 });
+  assert.match(heat.svg, /the 5 most frequent levels kept, the rest as Other/);
   const bars = data.panels[0].bars;
   assert.equal(bars.length, 30);
   assert.equal(bars[0].level, "kind_39", "by count");

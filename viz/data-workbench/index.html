@@ -3433,6 +3433,8 @@ SELECT (SELECT coalesce(sum(n - 1), 0) FROM c WHERE n > 1)::DOUBLE AS repeats, v
     }
     if (change.swap && next.encoding.x && next.encoding.y?.field) {
       for (const key of ["encoding", "scale"]) [next[key].x, next[key].y] = [next[key].y, next[key].x];
+      const tx = step(next, "top:x"), ty = step(next, "top:y");
+      if (tx && ty) [tx.n, ty.n] = [ty.n, tx.n];
       [next.annotation.labels.x, next.annotation.labels.y] = [next.annotation.labels.y, next.annotation.labels.x];
       const ux = next.annotation.units.x, uy = next.annotation.units.y;
       delete next.annotation.units.x;
@@ -3737,11 +3739,19 @@ SELECT level, sort_key, n, (SELECT count(*) FROM lv)::DOUBLE AS levels, (SELECT 
     return `WITH d AS (${rel}) SELECT ${cols.join(", ")}, count(*)::DOUBLE AS n${stats} FROM d GROUP BY ALL ORDER BY ALL`;
   }
 
+  /* Periods of several years, which date_trunc would count from year 1 (its centuries start in 2001). */
+  const YEARS = { decade: 10, century: 100, millennium: 1000 };
+
   /** The period a time value falls in, as seconds since 1970 (UTC). */
-  const period = (alias, unit) => `epoch(date_trunc(${literal(unit)}, ${ident(alias)}))::DOUBLE`;
+  function period(alias, unit) {
+    const k = YEARS[/** @type {keyof typeof YEARS} */ (unit)];
+    if (k) return `epoch(make_timestamp(CAST(floor(year(${ident(alias)}) / ${k}) * ${k} AS BIGINT), 1, 1, 0, 0, 0))::DOUBLE`;
+    return `epoch(date_trunc(${literal(unit)}, ${ident(alias)}))::DOUBLE`;
+  }
 
   /** Which precisions a period can place: a value known only to the year cannot be placed in a month. */
-  const PLACEABLE = { year: ["year", "month", "day", "time"], quarter: ["month", "day", "time"], month: ["month", "day", "time"], week: ["day", "time"], day: ["day", "time"], hour: ["time"] };
+  const ALL = ["year", "month", "day", "time"];
+  const PLACEABLE = { millennium: ALL, century: ALL, decade: ALL, year: ALL, quarter: ["month", "day", "time"], month: ["month", "day", "time"], week: ["day", "time"], day: ["day", "time"], hour: ["time"] };
   const placeable = (precisionAlias, unit) => `${ident(precisionAlias)} IN (${PLACEABLE[/** @type {keyof typeof PLACEABLE} */ (unit)].map(literal).join(", ")})`;
 
   /** The first and last time, and how many values are known only to the year or the month (dates with their precision). */
@@ -3920,10 +3930,61 @@ FROM ev ORDER BY coalesce(ev.s, ev.e), first, label LIMIT ${size} OFFSET ${(page
   const logLabel = (v) => number(10 ** v, 10 ** Math.floor(v + 1e-9));
 
   const pad2 = (n) => String(n).padStart(2, "0");
+
+  /* ---------- calendar periods (UTC) ---------- */
+
+  const DAY = 86400;
+  /** Periods from the coarsest: decades, centuries and millennia only keep long spans within 500 periods. */
+  const UNITS = ["millennium", "century", "decade", "year", "quarter", "month", "week", "day", "hour"];
+  const YEARS = { decade: 10, century: 100, millennium: 1000 };
+
+  /** Seconds since 1970 of a UTC date; years before 100 stay themselves (Date.UTC would read 50 as 1950). */
+  function utc(y, m = 0, d = 1) {
+    const t = new Date(Date.UTC(2000, m, d));
+    t.setUTCFullYear(y + Math.floor(m / 12), ((m % 12) + 12) % 12, d);
+    return t.getTime() / 1000;
+  }
+
+  /** The start of the period holding t (seconds since 1970, UTC). Weeks start on Monday. */
+  function floorPeriod(t, unit) {
+    const d = new Date(t * 1000);
+    const y = d.getUTCFullYear(), m = d.getUTCMonth();
+    const k = YEARS[/** @type {keyof typeof YEARS} */ (unit)];
+    if (k) return utc(Math.floor(y / k) * k);
+    switch (unit) {
+      case "year": return utc(y);
+      case "quarter": return utc(y, m - (m % 3));
+      case "month": return utc(y, m);
+      case "week": {
+        const day = Math.floor(t / DAY);
+        return (day - ((day + 3) % 7)) * DAY;
+      }
+      case "day": return Math.floor(t / DAY) * DAY;
+      default: return Math.floor(t / 3600) * 3600;
+    }
+  }
+
+  /** The start of the period after the one starting at t. */
+  function nextPeriod(t, unit) {
+    const d = new Date(t * 1000);
+    const y = d.getUTCFullYear(), m = d.getUTCMonth();
+    const k = YEARS[/** @type {keyof typeof YEARS} */ (unit)];
+    if (k) return utc(y + k);
+    switch (unit) {
+      case "year": return utc(y + 1);
+      case "quarter": return utc(y, m + 3);
+      case "month": return utc(y, m + 1);
+      case "week": return t + 7 * DAY;
+      case "day": return t + DAY;
+      default: return t + 3600;
+    }
+  }
   /** A time as text at a unit's precision (UTC fields of the value). */
   function timeLabel(t, unit) {
     const d = new Date(t * 1000);
     const y = d.getUTCFullYear(), m = d.getUTCMonth(), day = d.getUTCDate();
+    const k = YEARS[/** @type {keyof typeof YEARS} */ (unit)];
+    if (k) return `${y}–${y + k - 1}`;
     if (unit === "year") return String(y);
     if (unit === "quarter") return `Q${Math.floor(m / 3) + 1} ${y}`;
     if (unit === "month") return `${MONTHS[m]} ${y}`;
@@ -3931,7 +3992,6 @@ FROM ev ORDER BY coalesce(ev.s, ev.e), first, label LIMIT ${size} OFFSET ${(page
     return `${y}-${pad2(m + 1)}-${pad2(day)}`;
   }
 
-  const DAY = 86400;
   const STEPS = [["hour", 1], ["hour", 3], ["hour", 6], ["hour", 12], ["day", 1], ["day", 2], ["day", 7], ["day", 14], ["month", 1], ["month", 3], ["month", 6],
     ["year", 1], ["year", 2], ["year", 5], ["year", 10], ["year", 20], ["year", 50], ["year", 100], ["year", 200], ["year", 500], ["year", 1000]];
 
@@ -3948,7 +4008,7 @@ FROM ev ORDER BY coalesce(ev.s, ev.e), first, label LIMIT ${size} OFFSET ${(page
         if (unit === "month") m = Math.ceil(m / n) * n;
         else y = Math.ceil(y / n) * n;
         for (;;) {
-          const t = Date.UTC(y, m, 1) / 1000;
+          const t = utc(y, m);
           if (t < lo) { if (unit === "month") m += n; else y += n; continue; }
           if (t > hi || ticks.length > max) break;
           ticks.push(t);
@@ -4314,17 +4374,7 @@ FROM ev ORDER BY coalesce(ev.s, ev.e), first, label LIMIT ${size} OFFSET ${(page
     }
   }
 
-  /** The start of the next period (as in src/charts.js), for drawing a period's width. */
-  function nextOf(t, unit) {
-    const d = new Date(t * 1000);
-    const y = d.getUTCFullYear(), m = d.getUTCMonth();
-    if (unit === "year") return Date.UTC(y + 1, 0, 1) / 1000;
-    if (unit === "quarter") return Date.UTC(y, m + 3, 1) / 1000;
-    if (unit === "month") return Date.UTC(y, m + 1, 1) / 1000;
-    if (unit === "week") return t + 7 * DAY;
-    if (unit === "day") return t + DAY;
-    return t + 3600;
-  }
+  const nextOf = nextPeriod;
 
   /* ---------- timelines ---------- */
 
@@ -4441,7 +4491,10 @@ FROM ev ORDER BY coalesce(ev.s, ev.e), first, label LIMIT ${size} OFFSET ${(page
       case "binned-heatmap": return "Rows per cell of a 40 × 40 grid; darker is more; empty cells are white.";
       case "box-by-group": return `One box a group${data.other ? ` (${levelsLine(t("top:x").n, "groups")})` : ""}: quartiles, median, whiskers within 1.5 × IQR, points beyond.`;
       case "mean-bar": return data.fn === "sum" ? "Bars show the sum per group from zero (a field you marked additive); n under each group." : "Bars show the mean per group from zero; lines show its 95% t interval; n under each group.";
-      case "count-heatmap": return `Rows per pair of levels${data.other.x || data.other.y ? ` (${levelsLine(12, "levels")} on ${data.other.x && data.other.y ? "each axis" : data.other.x ? "the x axis" : "the y axis"})` : ""}; darker is more.`;
+      case "count-heatmap": {
+        const kept = [data.other.x ? `the ${t("top:x").n} most frequent levels of x` : "", data.other.y ? `the ${t("top:y").n} most frequent levels of y` : ""].filter(Boolean);
+        return `Rows per pair of levels${kept.length ? ` (${kept.join(" and ")} kept, the rest as Other)` : ""}; darker is more.`;
+      }
       case "mean-series": {
         const ns = data.panels.flatMap((p) => p.series.map((s) => s.n)).filter((n) => n > 0);
         return `${data.fn === "sum" ? "Sum" : "Mean"} per ${unitWord(data.unit)}${data.fn === "mean" ? " with its 95% t interval (band)" : ""}; n per ${unitWord(data.unit)} from ${count(Math.min(...ns))} to ${count(Math.max(...ns))}.`;
@@ -4600,7 +4653,7 @@ FROM ev ORDER BY coalesce(ev.s, ev.e), first, label LIMIT ${size} OFFSET ${(page
     return { svg: toSvg(sc, spec.annotation.title, desc, id), desc, collisions: sc.collisions, dropped: sc.dropped, marks: sc.items.length };
   }
 
-  return { PT, COLOR, SEQUENTIAL, SIZE, LINE, WIDTHS, textWidth, fit, wrap, number, linearTicks, niceDomain, logTicks, timeTicks, timeLabel, shade, luminance, lanes, eventLabel, autoCaption, render, KIND_LABEL };
+  return { UNITS, utc, floorPeriod, nextPeriod, PT, COLOR, SEQUENTIAL, SIZE, LINE, WIDTHS, textWidth, fit, wrap, number, linearTicks, niceDomain, logTicks, timeTicks, timeLabel, shade, luminance, lanes, eventLabel, autoCaption, render, KIND_LABEL };
 });
 </script>
 <script id="charts">
@@ -4708,41 +4761,11 @@ FROM ev ORDER BY coalesce(ev.s, ev.e), first, label LIMIT ${size} OFFSET ${(page
     return { bins, width: span / bins, lo, raw };
   }
 
-  const DAY = 86400;
-  const UNITS = ["year", "quarter", "month", "week", "day", "hour"];
-  /** The units a precision allows, coarsest first: a date has no hours, a year only years. */
-  const ALLOWED = { year: ["year"], mixed: ["year", "quarter", "month", "week", "day"], day: ["year", "quarter", "month", "week", "day"], time: UNITS };
-
-  /** The start of the period holding t (seconds since 1970, UTC). */
-  function floorPeriod(t, unit) {
-    const d = new Date(t * 1000);
-    const y = d.getUTCFullYear(), m = d.getUTCMonth();
-    switch (unit) {
-      case "year": return Date.UTC(y, 0, 1) / 1000;
-      case "quarter": return Date.UTC(y, m - (m % 3), 1) / 1000;
-      case "month": return Date.UTC(y, m, 1) / 1000;
-      case "week": {
-        const day = Math.floor(t / DAY);
-        return (day - ((day + 3) % 7)) * DAY;
-      }
-      case "day": return Math.floor(t / DAY) * DAY;
-      default: return Math.floor(t / 3600) * 3600;
-    }
-  }
-
-  /** The start of the next period. */
-  function nextPeriod(t, unit) {
-    const d = new Date(t * 1000);
-    const y = d.getUTCFullYear(), m = d.getUTCMonth();
-    switch (unit) {
-      case "year": return Date.UTC(y + 1, 0, 1) / 1000;
-      case "quarter": return Date.UTC(y, m + 3, 1) / 1000;
-      case "month": return Date.UTC(y, m + 1, 1) / 1000;
-      case "week": return t + 7 * DAY;
-      case "day": return t + DAY;
-      default: return t + 3600;
-    }
-  }
+  const UNITS = Render.UNITS;
+  /** The units a precision allows, coarsest first: a date has no hours, a year only years. Decades, centuries and
+   * millennia are never chosen by the rule; they only keep a span of more than 500 years within 500 periods. */
+  const ALLOWED = { year: ["year"], mixed: ["year", "quarter", "month", "week", "day"], day: ["year", "quarter", "month", "week", "day"], time: ["year", "quarter", "month", "week", "day", "hour"] };
+  const floorPeriod = Render.floorPeriod, nextPeriod = Render.nextPeriod;
 
   /** The periods from the one holding lo to the one holding hi, at most `cap` + 1 of them. */
   function periodsBetween(lo, hi, unit, cap = MAX_PERIODS) {
@@ -4766,9 +4789,10 @@ FROM ev ORDER BY coalesce(ev.s, ev.e), first, label LIMIT ${size} OFFSET ${(page
       const list = usable.length ? usable : ["year"];
       unit = list.find((u) => periodsBetween(range.lo, range.hi, u).length >= MIN_PERIODS) ?? list[list.length - 1];
     }
-    // Coarser until at most 500 periods.
+    const asked = unit;
+    // Coarser until at most 500 periods: past years, 10, 100 or 1,000 years a period.
     while (periodsBetween(range.lo, range.hi, unit).length > MAX_PERIODS && UNITS.indexOf(unit) > 0) unit = UNITS[UNITS.indexOf(unit) - 1];
-    return { unit, periods: periodsBetween(range.lo, range.hi, unit), unplaced: unplaced(unit), chosen: want !== "auto" && allowed.includes(want) };
+    return { unit, asked, periods: periodsBetween(range.lo, range.hi, unit), unplaced: unplaced(unit), chosen: want !== "auto" && allowed.includes(want) };
   }
 
   /* ---------- computing a chart ---------- */
@@ -4892,6 +4916,7 @@ FROM ev ORDER BY coalesce(ev.s, ev.e), first, label LIMIT ${size} OFFSET ${(page
         if (!range.n) return done(0);
         const per = choosePeriod(range, tf.precision, step(spec, "period:x").unit);
         facts.period = per.unit;
+        if (per.unit !== per.asked) facts.notes.push(`By ${per.asked}, the span would need more than ${MAX_PERIODS} periods: drawn by ${per.unit}.`);
         if (per.unplaced) facts.notes.push(`${per.unplaced} value${per.unplaced === 1 ? " is" : "s are"} known only to the ${per.unit === "week" || per.unit === "day" ? "year or month" : "year"} and cannot be placed in a ${per.unit}: not drawn.`);
         const placed = `SELECT * FROM (${r}) WHERE ${ChartSql.placeable("p", per.unit)}`;
         if (spec.kind === "period-heatmap") {
@@ -5586,17 +5611,17 @@ FROM ev ORDER BY coalesce(ev.s, ev.e), first, label LIMIT ${size} OFFSET ${(page
       }
     }
 
-    async function revert(st, cand) {
-      const spec = ChartSpec.make(cand, st.ctx);
-      forget(cand);
-      Object.assign(cand, { spec: null, edited: false, outcome: "pending", svg: null, version: cand.version + 1 });
-      const api = await app.ensureEngine();
-      await app.exclusive(() => computeOne(api, st, cand));
-      if (!cand.spec) cand.spec = spec;
-      app.note({ kind: "chart", table: st.ctx.table, text: `Returned the chart ${cand.id} to the generated one.` });
-      viewer.error = "";
-      app.refresh();
-      drawViewer();
+    /** Draw a chart as generated again, as one piece of work, so an earlier Cancel cannot leave it pending. */
+    function revert(st, cand) {
+      return app.busy("Drawing", async () => {
+        forget(cand);
+        Object.assign(cand, { spec: null, edited: false, outcome: "pending", version: cand.version + 1 });
+        const api = await app.ensureEngine();
+        await computeOne(api, st, cand);
+        if (cand.outcome === "pending") Object.assign(cand, { outcome: "incomplete", reason: "Not computed: you cancelled." });
+        app.note({ kind: "chart", table: st.ctx.table, text: `Returned the chart ${cand.id} to the generated one: ${cand.outcome}.` });
+        viewer.error = "";
+      }).finally(() => drawViewer());
     }
 
     /* ---------- what the record and the tools read ---------- */
