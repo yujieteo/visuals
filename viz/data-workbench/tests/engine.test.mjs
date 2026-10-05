@@ -148,6 +148,14 @@ test("approval: an approved correction changes the reading and is counted; the s
   assert.deepEqual((await e.query(`SELECT temp FROM messy WHERE __row = 2`))[0], { temp: "-999" });
 });
 
+test("approved missing numbers apply only to numeric readings: a date reading of the same column still runs", async () => {
+  await load("stand_in", encode("v\n-999\n5\n2026-01-02\n"));
+  const values = async (/** @type {any} */ reading) => (await e.query(`SELECT CAST(${Sql.typed("v", reading)} AS VARCHAR) AS x FROM stand_in ORDER BY __row`)).map((r) => r.x);
+  assert.deepEqual(await values({ kind: "decimal", missingNumbers: [-999] }), [null, "5.0", null], "-999 is missing as a number");
+  assert.deepEqual(await values({ kind: "date", missingNumbers: [-999] }), [null, null, "2026-01-02"], "a date reading ignores the stand-in and reads the date");
+  assert.deepEqual(await values({ kind: "text", missingNumbers: [-999] }), ["-999", "5", "2026-01-02"], "a text reading keeps every value");
+});
+
 test("Parquet: types, decimals and zoned timestamps are kept; nested columns are excluded with a reason", async () => {
   const open = await engine({ locked: false });
   const dir = mkdtempSync(join(tmpdir(), "dw-parquet-"));

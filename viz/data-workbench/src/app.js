@@ -192,7 +192,10 @@
     const r = Preflight.recheck({ choice: item.choice, estimate: item.estimate, rows: item.rows, columns: item.columns.length, kept: item.keep.length, sample: item.decision.sample }, budget(), used());
     item.decision = { ...item.decision, ...r.decision };
     item.problem = r.problem;
-    if (!r.ok) item.choice = "";
+    if (!r.ok) {
+      item.choice = "";
+      item.keep = item.keep.slice(0, Math.max(1, r.decision.maxColumns));
+    }
     return r.ok;
   }
 
