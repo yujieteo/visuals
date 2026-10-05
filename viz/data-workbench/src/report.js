@@ -4,7 +4,8 @@
  * report the kit writes as the Markdown record and the site's beamdswitch template writes as a narrated deck.
  * Names and values from the data go only into list items and table cells, escaped, and never into narration,
  * which beamdswitch reads aloud and which must hold plain words. Piece 5 replaces the deck with the full export
- * package; this one records the inspection and the accounting of each table's charts.
+ * package; this one records the inspection, the accounting of each table's charts and its findings: the family of
+ * hypotheses with its counts, and each list's highlights with their adjusted p-values.
  */
 (function (root, factory) {
   const api = factory();
@@ -29,7 +30,7 @@
     const open = (t) => t.profiled.reduce((a, c) => a + c.suggestions.length, 0);
     const subtitle = tables.length ? `${count(tables.length, "table", "tables")}, ${count(rows, "row", "rows")}` : "No table imported yet";
     return {
-      meta: { title: "Universal Data Workbench: import, inspect and chart", subtitle, voice: "bf_emma" },
+      meta: { title: "Universal Data Workbench: import, inspect, chart and rank", subtitle, voice: "bf_emma" },
       narration: tables.length ? `This deck records ${count(tables.length, "table", "tables")} imported and inspected on one device.` : "This deck records an empty workbench: no table is imported yet.",
       setup: [{
         title: "What was imported",
@@ -45,6 +46,8 @@
           "- Unusual values: robust z = |x − median| / (1.4826 × MAD) above 3.5. They stay in the data.",
           "- Roles: measure, identifier, category, ordered category, time, event label, interval start or end, unknown. A storage type alone never makes a measure.",
           "- Charts: grammar v1. Each column is a measure (Q), a category (C), a time (T), a label (L) or excluded with its reason; every single-field chart, pair chart and timeline of those classes is a candidate, valid, excluded, failed or incomplete.",
+          "- Statistics: test catalogue v1. Each table is one family of hypotheses, listed before any test; a test runs only when its checks pass, and raw p-values are adjusted by Benjamini–Yekutieli over the tests that ran. An adjusted p-value at or below 0.05 is exploratory evidence. Without study details, independence is assumed, not confirmed, and tests are refused where the data contradicts it.",
+          "- Ranking: unusualness = usefulness × the share of complete rows − penalties. Two lists, unusual patterns and statistically supported patterns, each with distinct highlights.",
           `- Engine: DuckDB ${cell(d.engine?.duckdb)} (DuckDB-WASM ${cell(d.engine?.duckdbWasm)}) in this browser, memory budget ${cell(d.engine?.budget)}.`,
         ].join("\n"),
         narration: "A column is read as a type when at least ninety five percent of its values fit that type. Missing values, markers and unusual values are counted, and none is removed or filled.",
@@ -60,8 +63,9 @@
           ...t.profiled.flatMap((c) => c.errors.map((e) => `- ${cell(c.name)}: ${cell(e.text)}`)),
           ...(t.notProfiled.length ? [`- Not profiled: ${t.notProfiled.map(cell).join(", ")}`] : []),
           ...(t.charts ? [`- Charts (grammar v${cell(t.charts.grammar)}): ${count(t.charts.total, "candidate", "candidates")} from ${t.charts.fields.q} measures, ${t.charts.fields.c} categories, ${t.charts.fields.t} times and ${t.charts.fields.l} labels; ${n(t.charts.valid)} valid, ${n(t.charts.excluded)} excluded, ${n(t.charts.failed)} failed, ${n(t.charts.incomplete)} incomplete${t.charts.edited ? `; ${n(t.charts.edited)} edited by you` : ""}.`] : ["- Charts: not generated yet."]),
+          ...findings(t.findings),
         ].join("\n"),
-        narration: `This table has ${count(t.rows, "row", "rows")} and ${count(t.columns, "column", "columns")}. ${errors(t) ? `${count(errors(t), "value or line is", "values or lines are")} suspected data errors.` : "No suspected data error was found."} ${open(t) ? `${count(open(t), "correction waits", "corrections wait")} for approval.` : ""}${t.charts ? ` ${count(t.charts.valid, "chart is", "charts are")} valid.` : ""}`,
+        narration: `This table has ${count(t.rows, "row", "rows")} and ${count(t.columns, "column", "columns")}. ${errors(t) ? `${count(errors(t), "value or line is", "values or lines are")} suspected data errors.` : "No suspected data error was found."} ${open(t) ? `${count(open(t), "correction waits", "corrections wait")} for approval.` : ""}${t.charts ? ` ${count(t.charts.valid, "chart is", "charts are")} valid.` : ""}${t.findings?.family?.status === "complete" ? ` The statistics tested ${count(t.findings.family.m, "hypothesis", "hypotheses")}, and ${count(t.findings.family.flagged, "has", "have")} an adjusted p value at or below 0.05, which is exploratory evidence, not proof.` : ""}`,
       })) : [{ title: "No table yet", body: "- Import a file or open an example to see its profile.", narration: "There is no table to profile yet." }],
       checks: [{
         title: "Conversions and what comes next",
@@ -70,10 +74,26 @@
           "",
           `- Still to come: ${(d.pieces ?? []).map((p) => cell(p.title)).join("; ")}.`,
         ].join("\n"),
-        narration: `The log records ${count(d.log?.length ?? 0, "conversion or choice", "conversions or choices")}. This is a preview: statistics, publication figures, the export package, SQL and the phone checks are still to come.`,
+        narration: `The log records ${count(d.log?.length ?? 0, "conversion or choice", "conversions or choices")}. This is a preview: publication figures, the export package, SQL and the phone checks are still to come.`,
         key: tables.length && tables.every((t) => t.status === "complete") ? "Every value stays as written; each change is approved and logged." : "The inspection is not complete yet.",
       }],
     };
+  }
+
+  /**
+   * A table's findings as list items: the family's counts, then each list's highlights (titles name fields, so they
+   * stay in the body, escaped, and never in narration).
+   * @param {any} f the findings of the snapshot
+   */
+  function findings(f) {
+    if (!f?.family) return ["- Findings: the statistics have not run yet."];
+    const fam = f.family;
+    const head = `- Findings (catalogue v${cell(fam.catalogue)}), family ${cell(fam.name)}, run ${n(fam.run)}: ${count(fam.size, "hypothesis", "hypotheses")}, ${n(fam.m)} tested, ${n(fam.notTested)} not tested; ${fam.status === "complete" ? `${n(fam.flagged)} with an adjusted p-value at or below 0.05 (Benjamini–Yekutieli)` : "incomplete, so no adjusted p-values"}; ${fam.study?.independent === "yes" ? "independence stated" : "independence assumed, not confirmed"}.`;
+    if (!f.unusual) return [head];
+    const p = (x) => (x < 1e-4 ? (x === 0 ? "< 1e-300" : x.toExponential(1)) : String(Math.round(x * 1e4) / 1e4));
+    return [head,
+      `- Unusual patterns (${n(f.unusual.charts)} charts), highlighted: ${f.unusual.highlighted.length ? f.unusual.highlighted.map(cell).join("; ") : "none"}.`,
+      `- Statistically supported patterns (${n(f.supported.charts)} charts), highlighted: ${f.supported.highlighted.length ? f.supported.highlighted.map((t, i) => `${cell(t)} (adjusted p-value ${p(f.supported.adjusted[i])})`).join("; ") : "none"}.`];
   }
 
   return { report };

@@ -13,6 +13,7 @@
  *   levels      the most frequent levels of a category, with the count of every level
  *   grouped     counts, means, standard deviations and sums per group, period or cell
  *   timeRange   the first and last time and how many values are known only to the year or month
+ *   check       the complete rows and whether an encoded field holds one value only (the ranking's rejections)
  *   points      the points of a scatter plot: all of them, or a seeded sample of 50,000
  *   events      a page of timeline events, duplicates merged; intervalCheck the share of ends at or after starts
  */
@@ -174,6 +175,9 @@ SELECT level, sort_key, n, (SELECT count(*) FROM lv)::DOUBLE AS levels, (SELECT 
   /** The number of rows of a relation. */
   const count = (rel) => `WITH d AS (${rel}) SELECT count(*)::DOUBLE AS n FROM d`;
 
+  /** The rows of a relation, and for each alias whether it holds one value only among them (`alias_one`). */
+  const check = (rel, aliases) => `WITH d AS (${rel}) SELECT count(*)::DOUBLE AS n${aliases.map((a) => `, (min(${ident(a)}) = max(${ident(a)})) AS ${ident(`${a}_one`)}`).join("")} FROM d`;
+
   /** The points of a scatter plot in source order: every point, or a seeded reservoir sample of `rows`. */
   function points(rel, facet, sample) {
     const cols = `${facet ? "f, " : ""}x, y`;
@@ -227,5 +231,5 @@ FROM ev ORDER BY coalesce(ev.s, ev.e), first, label LIMIT ${size} OFFSET ${(page
     return `WITH d AS (${rel}) SELECT epoch(least(min(s), min(e)))::DOUBLE AS lo, epoch(greatest(max(${spanEnd("s", "ps")}), max(${spanEnd("e", "pe")})))::DOUBLE AS hi FROM d WHERE NOT (${reversed})`;
   }
 
-  return { measure, category, time, label, relation, numbers, histogram, bins2d, box, outliers, levels, kept, grouped, period, PLACEABLE, placeable, timeRange, count, points, intervalCheck, pointEvents, pointEventCount, intervalEvents, intervalRange };
+  return { measure, category, time, label, relation, numbers, histogram, bins2d, box, outliers, levels, kept, grouped, period, PLACEABLE, placeable, timeRange, count, check, points, intervalCheck, pointEvents, pointEventCount, intervalEvents, intervalRange };
 });

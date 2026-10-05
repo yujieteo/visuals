@@ -252,7 +252,7 @@
   function scene(width, height) {
     const items = [];
     const s = {
-      width, height, items, collisions: 0, dropped: 0, hatch: false,
+      width, height, items, collisions: 0, dropped: 0, overlapped: 0, hatch: false,
       rect: (x, y, w, h, o = {}) => items.push({ t: "rect", x, y, w: Math.max(0, w), h: Math.max(0, h), ...o }),
       line: (x1, y1, x2, y2, o = {}) => items.push({ t: "line", x1, y1, x2, y2, stroke: COLOR.axis, sw: LINE.thin, ...o }),
       path: (d, o = {}) => items.push({ t: "path", d, ...o }),
@@ -490,7 +490,14 @@
         const n = shared.n;
         const r = n <= 500 ? 0.8 : n <= 5000 ? 0.55 : 0.35;
         const opacity = n <= 1000 ? 0.8 : n <= 10000 ? 0.45 : 0.25;
-        for (let i = 0; i < panel.xs.length; i++) sc.circle(x(panel.xs[i]), y(panel.ys[i]), r, { fill: COLOR.mark, opacity });
+        // A mark whose cell of one mark's width already holds a mark overlaps it: the count is the overplotting.
+        const seen = new Set();
+        for (let i = 0; i < panel.xs.length; i++) {
+          const cx = x(panel.xs[i]), cy = y(panel.ys[i]);
+          const cell = `${Math.floor((cx - plot.x) / (2 * r))},${Math.floor((cy - plot.y) / (2 * r))}`;
+          if (seen.has(cell)) sc.overlapped += 1; else seen.add(cell);
+          sc.circle(cx, cy, r, { fill: COLOR.mark, opacity });
+        }
         return;
       }
       case "binned-heatmap": {
@@ -838,7 +845,7 @@
     }
     const id = String(spec.id).replace(/[^a-z0-9_-]+/gi, "-");
     const desc = describe(spec, data);
-    return { svg: toSvg(sc, spec.annotation.title, desc, id), desc, collisions: sc.collisions, dropped: sc.dropped, marks: sc.items.length };
+    return { svg: toSvg(sc, spec.annotation.title, desc, id), desc, collisions: sc.collisions, dropped: sc.dropped, overlapped: sc.overlapped, marks: sc.items.length };
   }
 
   return { UNITS, utc, floorPeriod, nextPeriod, PT, COLOR, SEQUENTIAL, SIZE, LINE, WIDTHS, textWidth, fit, wrap, number, linearTicks, niceDomain, logTicks, timeTicks, timeLabel, shade, luminance, lanes, eventLabel, autoCaption, render, KIND_LABEL };

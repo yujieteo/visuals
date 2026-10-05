@@ -11,8 +11,8 @@
  * change is validated before it is drawn and recorded in the specification and in the conversion log.
  */
 (function (root, factory) {
-  root.DWGallery = factory(root.DWGrammar, root.DWChartSpec, root.DWCharts, root.DWRender);
-})(typeof self !== "undefined" ? self : this, function (Grammar, ChartSpec, Charts, Render) {
+  root.DWGallery = factory(root.DWGrammar, root.DWChartSpec, root.DWCharts, root.DWRender, root.DWRank);
+})(typeof self !== "undefined" ? self : this, function (Grammar, ChartSpec, Charts, Render, Rank) {
   "use strict";
 
   const PAGE = 24;
@@ -67,9 +67,14 @@
       }), ctx.rows, ctx.sample]);
     }
 
-    /** Generate (or bring up to date) the charts of a table, as one piece of work with progress and Cancel. */
+    /**
+     * Generate (or bring up to date) the charts of a table, as one piece of work with progress and Cancel; then, unless
+     * it was cancelled, the page's next step for the table (its statistics and ranking).
+     */
     function generate(table) {
-      return app.busy(`Charts of ${table.name}`, () => generateNow(table));
+      return app.busy(`Charts of ${table.name}`, () => generateNow(table)).then(() => {
+        if (!store.stop && stateOf(table.name)) app.charted?.(table);
+      });
     }
 
     async function generateNow(table) {
@@ -133,7 +138,8 @@
         if (r.outcome !== "valid") return Object.assign(cand, { outcome: r.outcome, reason: r.reason });
         const out = r.drawn, data = r.data;
         forget(cand);
-        Object.assign(cand, { outcome: "valid", reason: "", desc: out.desc, collisions: out.collisions, dropped: out.dropped, facts: data.facts, pages: data.page?.pages ?? 1, svg: keep(out.svg), version: cand.version + 1 });
+        Object.assign(cand, { outcome: "valid", reason: "", desc: out.desc, collisions: out.collisions, dropped: out.dropped, facts: data.facts, features: Rank.features(spec, data, out),
+          pages: data.page?.pages ?? 1, svg: keep(out.svg), version: cand.version + 1 });
       } catch (error) {
         if (app.cancelled(error) || store.stop) return Object.assign(cand, { outcome: "pending" });
         if (app.outOfMemory(error)) return Object.assign(cand, { outcome: "incomplete", reason: "Resource limit: the engine reached its memory budget." });
@@ -515,6 +521,9 @@
       try {
         const api = await app.ensureEngine();
         const out = await app.exclusive(async () => {
+          // An edit is held to the ranking's rejections too: at least 5 complete rows, no field with one value.
+          const rejected = await Charts.rejection(api.query, next, ctx);
+          if (rejected) return { excluded: rejected };
           const d = await Charts.compute(api.query, next, ctx);
           return d.excluded ? { excluded: d.excluded } : { data: d, drawn: Render.render(next, d) };
         });
@@ -527,7 +536,8 @@
         forget(live);
         cand = live;
         // The edit holds and is drawn: whatever the generated chart's outcome was, this chart is valid.
-        Object.assign(cand, { outcome: "valid", reason: "", spec: next, edited: true, desc: out.drawn.desc, facts: out.data.facts, pages: out.data.page?.pages ?? 1, svg: keep(out.drawn.svg), version: cand.version + 1 });
+        Object.assign(cand, { outcome: "valid", reason: "", spec: next, edited: true, desc: out.drawn.desc, facts: out.data.facts, features: Rank.features(next, out.data, out.drawn),
+          pages: out.data.page?.pages ?? 1, svg: keep(out.drawn.svg), version: cand.version + 1 });
         viewer.page = 1;
         applied = true;
         app.note({ kind: "chart", table: st.ctx.table, text: `Edited the chart ${cand.id}: ${next.edits[next.edits.length - 1]}.` });
@@ -588,7 +598,20 @@
       dialog.addEventListener("close", () => { viewer.id = ""; });
     }
 
-    return { generate, draw, drop, summary, candidates, bind, state: stateOf };
+    /**
+     * A small picture of a valid chart that opens it full size, for the lists of findings.
+     * @param {string} tableName @param {string} id @param {string} label
+     */
+    function thumb(tableName, id, label) {
+      const st = stateOf(tableName);
+      const cand = st?.candidates.find((c) => c.id === id);
+      if (!st || !cand || cand.outcome !== "valid") return null;
+      const img = h("img", { alt: cand.desc, loading: "lazy", width: "240", height: String(Math.round((240 * cand.spec.layout.height) / cand.spec.layout.width)) });
+      pictureOf(st, cand, img);
+      return h("button", { type: "button", class: "figure-open thumb", "data-thumb": id, "aria-label": `Open full size: ${label}`, onclick: () => open(tableName, id) }, img);
+    }
+
+    return { generate, draw, drop, summary, candidates, bind, thumb, open, state: stateOf };
   }
 
   return { mount };

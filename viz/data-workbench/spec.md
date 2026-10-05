@@ -316,7 +316,7 @@ step n]** with its evidence.
 | --- | --- | --- |
 | 1 | Import and inspect: CSV and Parquet import, profiles, suspected errors, suggested corrections with approval, the resource preflight, progress and Cancel, built-in examples | built |
 | 2 | Charts and candidates: the chart specification and its validator, grammar v1, the candidate enumerator and its accounting, the SVG renderer and timelines, the gallery and edits | built |
-| 3 | Statistics and ranking: study metadata, test catalogue v1, families, Benjamini–Yekutieli, independence checks, ranking, redundancy, both lists and highlights | to come |
+| 3 | Statistics and ranking: study metadata, test catalogue v1, families, Benjamini–Yekutieli, independence checks, ranking, redundancy, both lists and highlights | built |
 | 4 | Publication figures: SVG, PDF and PNG writers, fonts, the General, Nature and Science presets, figure checks | to come |
 | 5 | Export package and beamdswitch: the one-operation zip, report.md, the JSON files, the manifest, deck.md, project save and reopen | to come |
 | 6 | SQL and table algebra: the SQL editor, visual controls, the statement whitelist, transformation records, join diagnostics | to come |
@@ -350,6 +350,12 @@ step n]** with its evidence.
   data, one candidate's outcome), `src/render.js` (the scene graph in millimetres and its SVG), `src/gallery.js`
   (the gallery, the full-size view and its edits). [grammar.md](grammar.md) documents grammar v1 and is published
   beside the page.
+- Statistics (step 3): `src/stats.js` (the distributions, tests T1 to T8, Benjamini–Yekutieli, the descriptive
+  measures), `src/statsql.js` (what the engine computes for them), `src/family.js` (members, independence, the
+  tests, the adjustment), `src/rank.js` (features of a drawn chart, scores, both lists, redundancy, highlights,
+  explanations), `src/findings.js` (the Findings section, the study details, subset families, `get_findings`).
+  [catalog.md](catalog.md) documents test catalogue v1, the family and the ranking, and is published beside the
+  page. The highlight count is view state in the URL (`highlights`, 0 to 50, default 6).
 
 ### SQL dialect [Choice]
 
@@ -482,6 +488,27 @@ chosen cluster or sharing more than one field with a chosen one; 6 by default, 0
 distinct exist, stated. Each highlight separates "Observed" (the numbers) from "Why highlighted" (the rule scores)
 and carries fixed non-causal cautions. No causal claims, invented units or meanings.
 
+**[Built in step 3]** [catalog.md](catalog.md) holds every rule as built. Where the plan left a choice or changed:
+
+- The rejections are chart outcomes (`Charts.evaluate`): fewer than 5 rows with every field present (an interval
+  timeline: a label and at least one end), or one value only in an encoded field other than labels, excludes the
+  chart with its reason before it is computed. They change outcomes, not the candidate set, so grammar v1 and its
+  fixtures stay.
+- Sizes the plan left open: the density penalty is 0.1; a rare-value share is large at 1% of values with robust z
+  above 3.5; for a bar chart, the rarity of its rarest level, 1 − k · its share, is large at 0.95 (scored for at
+  most 29 levels); a bimodality coefficient above 0.555 scores 1, else 0; a count time series is scored by the
+  trend and largest shift of its counts, a period-by-category heatmap by Cramér's V with the periods as levels;
+  timelines have no effect measure and score 0. Overplotting: more than half the points fall in a cell of one
+  mark's width already holding one (`Render.render` counts them). Small groups: a box or mean bar, or a period of a
+  mean time series, of fewer than 5 rows.
+- A chart in list 2 is ordered by the smallest adjusted p-value of its supported hypotheses (a mean time series has
+  two). The lists need a complete family; an incomplete one shows its members and a button to run again.
+- **[Changed in step 3]** Values the profile flags as stand-ins for no value (open sentinel suggestions, such as
+  -999) are left out of every statistic and counted on the finding; the figure still draws them. Section 3 asks to
+  show suspected data errors apart from patterns in usable data: with them, the five -999 values of the planted
+  example's temp_c gave it a skewness of −19.8, the most skewed field of the table; without them, 0.04
+  (tests/findings-engine.test.mjs, "discovery").
+
 ### Hypothesis families and test catalogue v1 [Choice] (step 3)
 
 One family per analysed table per run (each imported table automatically, each query result the person selects,
@@ -504,6 +531,28 @@ evidence: an identifier repeating in at least 10% of its values, or lag-1 autoco
 independent observations (yes, no, unknown), repeated measurements, sample design. Reference values come from
 SciPy, statsmodels and pymannkendall through a pinned `tools/` script; calibration uses at least 200 synthetic null
 datasets per seed and 3 fixed seeds.
+
+**[Built in step 3]** [catalog.md](catalog.md) holds every rule as built, with its references and calibration.
+Where the plan left a choice or changed:
+
+- **[Changed in step 3]** T7 uses the Hamed–Rao correction of lags 1 to 3, and the correction never narrows the
+  variance (pymannkendall `hamed_rao_modification_test(lag=3)`, the original test where the factor falls below 1).
+  The plan's reference, pymannkendall's default of every lag, rejected 8.4% and 8.5% of 3,000 simulated trend-free
+  series of 24 and 60 periods at the 5% level; this correction rejected 4.3% and 4.5%, and stays within the bound of
+  tests/calibration.test.mjs.
+- T8 as planned is conservative with few periods (0.3% of trend-free 24-period series rejected at 5%): the planted
+  example's sales shift, over 24 months, has a raw p of 0.025 and is not supported after the adjustment; it leads
+  the unusual-pattern list by its effect (14 long-run SDs).
+- T×Q tests use the period means of the mean time series' rule; a series is regular when at most 10% of the periods
+  between its first and last are empty. A category of more than 12 levels is tested with its 12 most frequent
+  levels and Other, as drawn. T5's interval is Woolf's, unbounded when a cell is 0 (SciPy answers NaN there). T6
+  draws each random table as multivariate hypergeometric rows, seeded by the hypothesis id's first 8 hex digits.
+- Serial correlation is checked for each measure in the order of each time field: p = P(Z > (r1 + 1/n) √n). With no
+  time field, row order is not taken as time order. The identifier rule counts values that repeat an earlier one.
+- Study details are each table's own. "Yes" tags the tests "Independence stated by you" but never overrides the
+  data's checks; a stratified or convenience design adds a caution to every result.
+- A subset family (one level of a category of at most 12 levels) has its own ids, tests and adjustment, and is shown
+  apart: the two lists rank the table's charts only.
 
 ### Resource policy [Choice] (step 1)
 
@@ -588,6 +637,25 @@ datasets per seed and 3 fixed seeds.
   (2,000 rows × 15 columns) shows its first figure 1.3 s after the click in Chrome (Playwright Chromium) and all 155
   candidates after 2.3 s; in Node with the pinned engine, 100,000 rows × 15 columns give the first figure 2.5 s
   after the import began and all 160 candidates after 26 s. The 1 million row target is step 7's.
+
+### Verification fixtures (step 3 part)
+
+- Reference cases (tests/stats.test.mjs): every distribution, test, effect and interval of T1 to T8, and
+  Benjamini–Yekutieli, against `tests/fixtures/stats-reference.json` (SciPy 1.13.1, statsmodels 0.14.6,
+  pymannkendall 1.4.3, NumPy 2.0.2); the same data through the page's SQL with the pinned engine
+  (tests/findings-engine.test.mjs), including DuckDB's skewness and kurtosis against SciPy's.
+- Calibration (tests/calibration.test.mjs): 3 seeds × 200 null tables, any adjusted p-value at or below 0.05 in 0% to
+  2% of families and each test's raw rate within its binomial bound; with planted effects, a mean false discovery
+  proportion of 0.8% to 1.3%.
+- Discovery (tests/findings-engine.test.mjs): the planted rare region, cluster of unusual weights, dose–response,
+  group difference and level shift each have unusualness 1 and lead the unusual-pattern list; the dose–response and
+  the group difference are statistically supported; every highlight is explained, Observed apart from Why
+  highlighted; the -999 stand-ins are left out and counted.
+- Hypotheses once: the family has C(q,2) + qc + C(c,2) + 2tq members with distinct ids, stable across runs; the
+  scatter plot and binned heatmap of a pair share one; m counts the tests that ran; one adjustment over the family.
+- Independence, study details, the rejection rules, a subset family (tests/findings-engine.test.mjs); the ranking's
+  penalties, orders, clusters and highlights (tests/rank-rules.test.mjs); the page in every browser project
+  (e2e/full.test.mjs).
 
 ### Built-in examples (step 1)
 

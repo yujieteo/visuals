@@ -16,26 +16,15 @@
  * The same seed gives the same bytes on every device; the Node checks pin its SHA-256.
  */
 (function (root, factory) {
-  const api = factory();
-  if (typeof module === "object" && module.exports) module.exports = api;
-  else root.DWExamples = api;
-})(typeof self !== "undefined" ? self : this, function () {
+  if (typeof module === "object" && module.exports) module.exports = factory(require("./stats.js"));
+  else root.DWExamples = factory(root.DWStats);
+})(typeof self !== "undefined" ? self : this, function (Stats) {
   "use strict";
 
   const SEED = 20261005;
   const ROWS = 2000;
 
-  /** mulberry32: a small seeded generator of uniform numbers in [0, 1). */
-  function random(seed) {
-    let a = seed >>> 0;
-    return () => {
-      a = (a + 0x6d2b79f5) >>> 0;
-      let t = a;
-      t = Math.imul(t ^ (t >>> 15), t | 1);
-      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    };
-  }
+  const { random } = Stats;
 
   /** A standard normal draw (Box-Muller) from a uniform generator. */
   const normal = (u) => Math.sqrt(-2 * Math.log(1 - u())) * Math.cos(2 * Math.PI * u());

@@ -64,12 +64,15 @@ The first 10,000 candidates of a table are generated; the rest are incomplete, c
 Every candidate ends with one outcome:
 
 - **valid**: its specification passed validation, and it was computed and drawn;
-- **excluded**: its specification is invalid, no row has a value for every field, or an interval timeline's end
-  is at or after its start in fewer than 90% of the rows with both (a year or month counts its whole span);
+- **excluded**: its specification is invalid; fewer than 5 rows have a value for every field (an interval
+  timeline: a label and at least one end); an encoded field other than labels has one value only among those rows
+  (zero variance); or an interval timeline's end is at or after its start in fewer than 90% of the rows with both
+  (a year or month counts its whole span). An excluded chart is never ranked;
 - **failed**: the engine or the drawing failed, with the error;
 - **incomplete**: cancelled before it was computed, beyond the 10,000 cap, or stopped at the memory budget.
 
-Step 3 adds the ranking's rejection rules (fewer than 5 complete rows, zero variance on an encoded field).
+The 5-row and zero-variance rules are the ranking's rejections (catalog.md), added in step 3: they change outcomes,
+never the candidate set, so the grammar's version and the fixtures' candidate sets stay.
 
 ## Fixed rules
 
