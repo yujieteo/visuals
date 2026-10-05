@@ -228,7 +228,7 @@
 
   /**
    * Counts that decide how a text column reads, first pass: missing values, markers, numbers, yes or no, UUIDs,
-   * lengths, and how many values look like a date or a time at all. The second pass (textDateStats) runs only on a
+   * lengths of the values present (trimmed, blanks and markers left out), and how many look like a date or a time at all. The second pass (textDateStats) runs only on a
    * column where at least 5% of the values look like one, which keeps a numeric or text column to one cheap scan.
    */
   function textStats(table, column) {
@@ -247,9 +247,9 @@
   ${count(`lower(${y}) IN (${inList([...BOOLEAN_TRUE, ...BOOLEAN_FALSE])})`)} AS bool,
   ${count(`length(${y}) = 36 AND ${match(y, PATTERN.uuid)}`)} AS uuid,
   ${count(`regexp_matches(${y}, ${literal(PATTERN.dateLike)})`)} AS date_like,
-  coalesce(min(length(${x})), 0)::DOUBLE AS len_min,
-  coalesce(max(length(${x})), 0)::DOUBLE AS len_max,
-  coalesce(avg(length(${x})), 0)::DOUBLE AS len_mean
+  coalesce(min(length(${y})) FILTER (WHERE ${valued(column, true)}), 0)::DOUBLE AS len_min,
+  coalesce(max(length(${y})) FILTER (WHERE ${valued(column, true)}), 0)::DOUBLE AS len_max,
+  coalesce(avg(length(${y})) FILTER (WHERE ${valued(column, true)}), 0)::DOUBLE AS len_mean
 FROM ${ident(table)}`;
   }
 

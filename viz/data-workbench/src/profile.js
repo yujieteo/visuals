@@ -99,6 +99,7 @@
     col.inferredRole = r.role;
     col.certainty = ov.role ? "set by you" : r.certainty;
     col.roleReasons = r.reasons;
+    col.inferredReasons = r.reasons;
     col.possibleTime = r.possibleTime;
     if (col.role === "identifier") {
       const dup = await query(Sql.duplicates(table, name));
@@ -156,7 +157,7 @@
     live.forEach((c, i) => {
       if (c.overridden.includes("role")) return;
       c.role = paired[i].role;
-      if (paired[i].pairedNote && !c.roleReasons.includes(paired[i].pairedNote)) c.roleReasons = [...c.roleReasons, paired[i].pairedNote];
+      c.roleReasons = paired[i].pairedNote ? [...c.inferredReasons, paired[i].pairedNote] : c.inferredReasons;
     });
   }
 

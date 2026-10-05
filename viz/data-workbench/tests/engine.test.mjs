@@ -112,14 +112,14 @@ test("impossible dates are counted in full, however many distinct ones there are
 });
 
 test("identifiers against measures: names, leading zeros and dense unique runs make identifiers; storage type alone does not", async () => {
-  const lines = ["customer_id,zip,row,code,population,price,year,rating,score"];
+  const lines = ["ticket,customer_id,zip,row,code,population,price,year,rating,score"];
   for (let i = 0; i < 40; i++) {
-    lines.push([5000 + i * 37, String(1000 + i * 13).padStart(6, "0"), i + 1, `K${String(i * 7919 % 99991).padStart(5, "0")}X`, 1000 + ((i * 7919) ** 2 % 9999991),
+    lines.push([i % 13 === 5 ? "NA" : `TCK${String(1 + i * 7).padStart(5, "0")}`, 5000 + i * 37, String(1000 + i * 13).padStart(6, "0"), i + 1, `K${String(i * 7919 % 99991).padStart(5, "0")}X`, 1000 + ((i * 7919) ** 2 % 9999991),
       (9.99 + i * 1.37).toFixed(2), 1980 + i, (i % 5) + 1, (i * 37 % 41) / 4].join(","));
   }
   const t = await load("ids", encode(lines.join("\n")));
   const roles = Object.fromEntries(t.profile.columns.map((/** @type {any} */ c) => [c.name, c.role]));
-  assert.deepEqual(roles, { customer_id: "identifier", zip: "identifier", row: "identifier", code: "identifier", population: "measure", price: "measure", year: "measure", rating: "ordered category", score: "measure" });
+  assert.deepEqual(roles, { ticket: "identifier", customer_id: "identifier", zip: "identifier", row: "identifier", code: "identifier", population: "measure", price: "measure", year: "measure", rating: "ordered category", score: "measure" });
   assert.equal(t.col("year").possibleTime, true);
   assert.deepEqual(t.col("year").suggestions.map((/** @type {any} */ s) => s.id), ["year::year"]);
   assert.equal(t.col("zip").type, "integer", "the type says integer; the role says identifier");

@@ -160,13 +160,18 @@ test("preflight again at import: a choice made before earlier imports is checked
 });
 
 test("interval roles: a role the person set pairs with an inferred one", () => {
-  const col = (name, inferredRole, role = inferredRole, overridden = []) => ({ name, inferredRole, role, overridden, roleReasons: [] });
+  const col = (name, inferredRole, role = inferredRole, overridden = []) => ({ name, inferredRole, role, overridden, roleReasons: [], inferredReasons: [] });
   const opened = col("opened", "interval start", "time"), due = col("due", "time", "interval end", ["role"]);
   Profile.pairRoles([opened, due]);
   assert.deepEqual([opened.role, due.role], ["interval start", "interval end"], "an end the person set pairs with the inferred start");
   const alone = col("opened", "interval start"), changed = col("closed", "interval end", "measure", ["role"]);
   Profile.pairRoles([alone, changed]);
   assert.deepEqual([alone.role, changed.role], ["time", "measure"], "a start whose end the person changed is plain time");
+  assert.match(alone.roleReasons.join(" "), /No end column was found/);
+  changed.overridden = [];
+  changed.role = "interval end";
+  Profile.pairRoles([alone, changed]);
+  assert.deepEqual([alone.role, alone.roleReasons], ["interval start", []], "paired again, the start drops the note that it had no end");
 });
 
 test("names: tables get safe unique names; the row column never collides with a source column", () => {

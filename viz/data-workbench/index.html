@@ -1589,7 +1589,7 @@ Z.makeVector=Tg;Z.tableFromArrays=function(a){const b={};a=Object.entries(a);for
 
   /**
    * Counts that decide how a text column reads, first pass: missing values, markers, numbers, yes or no, UUIDs,
-   * lengths, and how many values look like a date or a time at all. The second pass (textDateStats) runs only on a
+   * lengths of the values present (trimmed, blanks and markers left out), and how many look like a date or a time at all. The second pass (textDateStats) runs only on a
    * column where at least 5% of the values look like one, which keeps a numeric or text column to one cheap scan.
    */
   function textStats(table, column) {
@@ -1608,9 +1608,9 @@ Z.makeVector=Tg;Z.tableFromArrays=function(a){const b={};a=Object.entries(a);for
   ${count(`lower(${y}) IN (${inList([...BOOLEAN_TRUE, ...BOOLEAN_FALSE])})`)} AS bool,
   ${count(`length(${y}) = 36 AND ${match(y, PATTERN.uuid)}`)} AS uuid,
   ${count(`regexp_matches(${y}, ${literal(PATTERN.dateLike)})`)} AS date_like,
-  coalesce(min(length(${x})), 0)::DOUBLE AS len_min,
-  coalesce(max(length(${x})), 0)::DOUBLE AS len_max,
-  coalesce(avg(length(${x})), 0)::DOUBLE AS len_mean
+  coalesce(min(length(${y})) FILTER (WHERE ${valued(column, true)}), 0)::DOUBLE AS len_min,
+  coalesce(max(length(${y})) FILTER (WHERE ${valued(column, true)}), 0)::DOUBLE AS len_max,
+  coalesce(avg(length(${y})) FILTER (WHERE ${valued(column, true)}), 0)::DOUBLE AS len_mean
 FROM ${ident(table)}`;
   }
 
@@ -2452,6 +2452,7 @@ SELECT (SELECT coalesce(sum(n - 1), 0) FROM c WHERE n > 1)::DOUBLE AS repeats, v
     col.inferredRole = r.role;
     col.certainty = ov.role ? "set by you" : r.certainty;
     col.roleReasons = r.reasons;
+    col.inferredReasons = r.reasons;
     col.possibleTime = r.possibleTime;
     if (col.role === "identifier") {
       const dup = await query(Sql.duplicates(table, name));
@@ -2509,7 +2510,7 @@ SELECT (SELECT coalesce(sum(n - 1), 0) FROM c WHERE n > 1)::DOUBLE AS repeats, v
     live.forEach((c, i) => {
       if (c.overridden.includes("role")) return;
       c.role = paired[i].role;
-      if (paired[i].pairedNote && !c.roleReasons.includes(paired[i].pairedNote)) c.roleReasons = [...c.roleReasons, paired[i].pairedNote];
+      c.roleReasons = paired[i].pairedNote ? [...c.inferredReasons, paired[i].pairedNote] : c.inferredReasons;
     });
   }
 
@@ -2985,9 +2986,10 @@ SELECT (SELECT coalesce(sum(n - 1), 0) FROM c WHERE n > 1)::DOUBLE AS repeats, v
 
   /** Import every queued file that has a choice, one after another, then profile each. */
   function importQueue() {
-    const items = store.queue.filter(importable);
-    if (!items.length) return Promise.resolve();
+    if (!store.queue.some(importable)) return Promise.resolve();
     return busy("Importing", async () => {
+      // Chosen when this run's turn comes, so a second click never imports a file twice.
+      const items = store.queue.filter(importable);
       for (const item of items) {
         if (store.stop) break;
         if (stillFits(item)) await importOne(item);
@@ -3006,8 +3008,9 @@ SELECT (SELECT coalesce(sum(n - 1), 0) FROM c WHERE n > 1)::DOUBLE AS repeats, v
       imported = await Profile.importFile(api.query, { kind: item.kind, path: item.path, table: item.name, n: item.id, columns, sample, stopped: () => store.stop });
     } catch (error) {
       item.status = "refused";
-      // A stop after the table was created leaves it in the engine: drop it, so nothing of the file is kept.
-      await api.query(`DROP TABLE IF EXISTS ${Sql.ident(item.name)}`).catch(() => {});
+      // A stop after the table was created leaves it in the engine: drop it, so nothing of the file is kept. A name
+      // that is already an imported table's is never dropped.
+      if (!tableOf(item.name)) await api.query(`DROP TABLE IF EXISTS ${Sql.ident(item.name)}`).catch(() => {});
       if (Engine.cancelled(error)) {
         item.problem = "Cancelled while reading: nothing of this file was kept.";
         note({ kind: "cancelled", table: item.name, text: `Import of ${item.fileName} cancelled while reading; nothing was kept.` });

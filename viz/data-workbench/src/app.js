@@ -198,9 +198,10 @@
 
   /** Import every queued file that has a choice, one after another, then profile each. */
   function importQueue() {
-    const items = store.queue.filter(importable);
-    if (!items.length) return Promise.resolve();
+    if (!store.queue.some(importable)) return Promise.resolve();
     return busy("Importing", async () => {
+      // Chosen when this run's turn comes, so a second click never imports a file twice.
+      const items = store.queue.filter(importable);
       for (const item of items) {
         if (store.stop) break;
         if (stillFits(item)) await importOne(item);
@@ -219,8 +220,9 @@
       imported = await Profile.importFile(api.query, { kind: item.kind, path: item.path, table: item.name, n: item.id, columns, sample, stopped: () => store.stop });
     } catch (error) {
       item.status = "refused";
-      // A stop after the table was created leaves it in the engine: drop it, so nothing of the file is kept.
-      await api.query(`DROP TABLE IF EXISTS ${Sql.ident(item.name)}`).catch(() => {});
+      // A stop after the table was created leaves it in the engine: drop it, so nothing of the file is kept. A name
+      // that is already an imported table's is never dropped.
+      if (!tableOf(item.name)) await api.query(`DROP TABLE IF EXISTS ${Sql.ident(item.name)}`).catch(() => {});
       if (Engine.cancelled(error)) {
         item.problem = "Cancelled while reading: nothing of this file was kept.";
         note({ kind: "cancelled", table: item.name, text: `Import of ${item.fileName} cancelled while reading; nothing was kept.` });
