@@ -53,8 +53,9 @@ a measure; time is x.
 Count per table: 2q + c + t + 2·C(q,2) + 2qc + C(c,2) + tq + tc + tl + C(t,2)·l. An interval timeline takes each
 pair of time fields once: the one whose role is interval start is the start, otherwise the earlier column.
 
-A candidate's id is `table.kind.field...`, each field name in lower case with other characters as `_`; a name that
-changes that way gets the first six hex digits of its FNV-1a hash, so ids stay unique and usable as file names.
+A candidate's id is `table.kind.field...`, each field name in lower case with other characters as `_`, cut to 60
+characters; a name that changes that way gets the first six hex digits of its FNV-1a hash, so ids stay unique and
+usable as file names.
 
 The first 10,000 candidates of a table are generated; the rest are incomplete, counted by kind.
 
