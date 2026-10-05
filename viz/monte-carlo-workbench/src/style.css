@@ -1,0 +1,113 @@
+/* Monte Carlo Probability Workbench: the three panels and their parts, after the style guide's tokens and the
+   kit's layout. Wide screens show navigation, experiment and theory side by side; narrower screens stack them. */
+main { width: min(100% - 2rem, 96rem); }
+h3 { margin: var(--space-4) 0 var(--space-2); font-size: 1rem; }
+h4 { margin: var(--space-3) 0 var(--space-1); font-size: var(--text-sm); }
+.mono, code, pre { font-family: var(--mono); font-size: var(--text-sm); }
+pre { overflow-x: auto; white-space: pre-wrap; overflow-wrap: anywhere; }
+.row { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; margin: var(--space-2) 0; }
+.flow ol { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-2); margin: 0 0 var(--space-3); padding: 0; list-style: none; font-size: var(--text-sm); }
+.flow li:not(:last-child)::after { content: " →"; color: var(--muted); }
+.groups { margin: 0 0 var(--space-4); font-size: var(--text-sm); }
+.groups li { margin: var(--space-1) 0; }
+
+.wb { display: grid; grid-template-columns: minmax(14rem, 18rem) minmax(0, 1fr) minmax(16rem, 22rem); gap: var(--space-4); align-items: start; }
+.wb > * { min-width: 0; }
+.wb-centre { display: grid; gap: var(--space-4); }
+.wb-centre > * { margin: 0; min-width: 0; }
+.wb-left, .wb-right { position: sticky; top: var(--space-2); max-height: calc(100vh - 1rem); overflow: auto; }
+@media (max-width: 75rem) {
+  .wb { grid-template-columns: minmax(13rem, 16rem) minmax(0, 1fr); }
+  .wb-right { grid-column: 1 / -1; position: static; max-height: none; }
+}
+@media (max-width: 48rem) {
+  .wb { grid-template-columns: minmax(0, 1fr); }
+  .wb-left { position: static; max-height: 28rem; }
+}
+
+.seg.wide { display: flex; width: 100%; }
+.seg.wide > button { flex: 1 1 auto; padding: 0.25rem 0.4rem; }
+.seg { flex-wrap: wrap; }
+input[type="search"], #nav-editor textarea, #theory-select { width: 100%; }
+#nav-editor textarea { font: var(--text-xs)/1.5 var(--mono); }
+.law-head { margin: var(--space-3) 0 var(--space-1); color: var(--muted); font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.06em; }
+.model-list, .plain { margin: 0; padding: 0; list-style: none; }
+.model-list li, .plain li { margin: 0 0 var(--space-1); }
+button.link {
+  display: inline; min-height: 0; padding: 0; border: 0; border-radius: 0; background: none; color: var(--focus);
+  font-size: inherit; text-align: left; white-space: normal; text-decoration: underline; text-underline-offset: 2px;
+}
+button.link:hover { background: none; }
+.model-list button.link { display: block; width: 100%; padding: var(--space-1) var(--space-2); border-radius: var(--r); color: var(--fg); text-decoration: none; font-size: var(--text-sm); }
+.model-list button.link:hover { background: var(--surface); }
+.model-list button.current { background: var(--surface); box-shadow: inset 3px 0 0 var(--focus); }
+.model-list .kind { display: block; color: var(--muted); font-size: var(--text-xs); }
+.syntax { padding-left: 1.1rem; font-size: var(--text-sm); }
+.errors { color: var(--bad); font-size: var(--text-sm); }
+
+.controls { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+.controls label, .params label { display: grid; gap: var(--space-1); font-size: var(--text-sm); }
+.controls select, .controls input { max-width: 100%; }
+#seed { width: 9.5rem; }
+#sweep-from, #sweep-to { width: 8rem; }
+#sweep-points { width: 5rem; }
+.run-row { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; margin: var(--space-3) 0 var(--space-2); }
+.check { display: inline-flex; gap: var(--space-1); align-items: center; font-size: var(--text-sm); }
+progress { width: 100%; height: 0.5rem; accent-color: var(--focus); }
+#run-status { margin: var(--space-1) 0 0; font-size: var(--text-sm); }
+.params { display: grid; grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr)); gap: var(--space-3); }
+.param input { width: 100%; font-family: var(--mono); }
+.param .note { margin: 0; }
+.unit { color: var(--muted); }
+
+.plot { margin: var(--space-2) 0; }
+.chart .bars rect { fill: var(--c1); opacity: 0.55; }
+.chart .pmf-ref circle { fill: var(--c2); }
+.chart .s1 { stroke: var(--c1); }
+.chart .s2 { stroke: var(--c2); }
+.chart .s3 { stroke: var(--c3); }
+.chart .s4 { stroke: var(--c4); }
+.chart .dot.s1 { fill: var(--c1); }
+.chart .dot.s2 { fill: var(--c2); }
+.chart .dot.s3 { fill: var(--c3); }
+.chart .dot.s4 { fill: var(--c4); }
+.chart line.s1, .chart line.s2, .chart line.s3, .chart line.s4 { stroke-width: 2; }
+.chart .ref-law { stroke-dasharray: 5 3; }
+.chart .band { fill: var(--c1); opacity: 0.16; stroke: none; }
+.chart.graph .node rect, .chart.graph .node ellipse { fill: var(--bg); stroke: var(--axis); stroke-width: 1.5; }
+.chart.graph .node.var ellipse { stroke: var(--c1); stroke-width: 2; }
+.chart.graph .node.quantity rect { stroke: var(--c2); stroke-width: 2; }
+.chart.graph .node text { fill: var(--fg); font-family: var(--mono); }
+.chart.graph .edge { stroke: var(--axis); stroke-width: 1; }
+.chart.graph .arrowhead { fill: var(--axis); }
+.exports { margin: 0; }
+.exports button { min-height: 1.9rem; font-size: var(--text-xs); }
+
+.table-scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+caption { margin-bottom: var(--space-2); color: var(--muted); text-align: left; }
+th, td { padding: var(--space-1) var(--space-2); border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
+td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+tr.best th { box-shadow: inset 3px 0 0 var(--ok); }
+.tag { display: inline-block; margin: 0 var(--space-1) var(--space-1) 0; padding: 0 0.4rem; border: 1px solid var(--control); border-radius: 999px; color: var(--fg); font-size: var(--text-xs); white-space: nowrap; }
+.tag-theorem { border-color: var(--ok); }
+.tag-numerical { border-color: var(--focus); }
+.tag-observation { border-color: var(--warn); }
+.verdict-met { color: var(--ok); }
+.verdict-not-met, .bad-text { color: var(--bad); }
+.verdict-not-separable, .warn-text { color: var(--warn); }
+.callout.bad { border-left-color: var(--bad); }
+
+.formula { margin: var(--space-2) 0; overflow-x: auto; overflow-y: hidden; }
+.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: var(--space-4); }
+#law-card, #method-card, #glossary-card, #about { margin-top: var(--space-4); }
+#glossary dl, #glossary { display: grid; grid-template-columns: minmax(9rem, max-content) minmax(0, 1fr); gap: var(--space-1) var(--space-4); margin: 0; font-size: var(--text-sm); }
+#glossary dt { font-weight: 600; }
+#glossary dd { margin: 0; }
+@media (max-width: 40rem) { #glossary { grid-template-columns: minmax(0, 1fr); } #glossary dd { margin-bottom: var(--space-2); } }
+.readout dd { overflow-x: auto; }
+@media print {
+  .wb { grid-template-columns: minmax(0, 1fr); }
+  .wb-left { display: none; }
+  .wb-right { position: static; max-height: none; }
+}

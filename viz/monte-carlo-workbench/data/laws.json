@@ -1,0 +1,436 @@
+[
+ {
+  "id": "bernoulli",
+  "name": "Bernoulli",
+  "convention": "X takes the value 1 (success) with probability p and the value 0 (failure) with probability 1 − p.",
+  "pmf": "\\mathbb{P}(X = k) = p^k (1-p)^{1-k}, \\quad k \\in \\{0, 1\\}",
+  "params": [
+   {
+    "name": "p",
+    "tex": "p",
+    "domain": "0 \\le p \\le 1"
+   }
+  ],
+  "support": "\\{0, 1\\}",
+  "limits": [
+   "p = 0 and p = 1 give point masses at 0 and at 1.",
+   "Bernoulli(p) is Binomial(1, p).",
+   "A categorical law with 2 labels is 1 + X with X ~ Bernoulli(p_2)."
+  ],
+  "moments": {
+   "mean": "p",
+   "variance": "p(1-p)",
+   "existence": "All moments exist: E[X^r] = p for every r ≥ 1. The MGF exists for all real t."
+  },
+  "transforms": {
+   "pgf": "G(z) = 1 - p + pz",
+   "mgf": "M(t) = 1 - p + p e^{t}, \\ t \\in \\mathbb{R}",
+   "cf": "\\varphi(t) = 1 - p + p e^{it}"
+  },
+  "links": [
+   {
+    "to": "binomial",
+    "relation": "special case: Binomial(1, p)"
+   },
+   {
+    "to": "categorical",
+    "relation": "relabelled case: a categorical law with 2 labels"
+   }
+  ]
+ },
+ {
+  "id": "binomial",
+  "name": "Binomial",
+  "convention": "X counts the successes in n independent trials. Each trial has the same success probability p.",
+  "pmf": "\\mathbb{P}(X = k) = \\binom{n}{k} p^k (1-p)^{n-k}, \\quad k = 0, 1, \\dots, n",
+  "params": [
+   {
+    "name": "n",
+    "tex": "n",
+    "domain": "n \\in \\{0, 1, 2, \\dots\\}"
+   },
+   {
+    "name": "p",
+    "tex": "p",
+    "domain": "0 \\le p \\le 1"
+   }
+  ],
+  "support": "\\{0, 1, \\dots, n\\}",
+  "limits": [
+   "n = 1 gives the Bernoulli law.",
+   "If n → ∞ and np → λ, the law converges to Poisson(λ): the law of small numbers.",
+   "If n → ∞ with p fixed in (0, 1), (X − np)/√(np(1 − p)) converges in law to the standard normal law (de Moivre–Laplace). Group 2 adds the normal law.",
+   "Hypergeometric(N, K, n) converges to Binomial(n, p) as N → ∞ with K/N → p.",
+   "Each component of a multinomial count vector has a binomial law."
+  ],
+  "moments": {
+   "mean": "np",
+   "variance": "np(1-p)",
+   "existence": "All moments exist. The MGF exists for all real t."
+  },
+  "transforms": {
+   "pgf": "G(z) = (1 - p + pz)^n",
+   "mgf": "M(t) = (1 - p + p e^{t})^n",
+   "cf": "\\varphi(t) = (1 - p + p e^{it})^n"
+  },
+  "links": [
+   {
+    "to": "bernoulli",
+    "relation": "special case n = 1"
+   },
+   {
+    "to": "poisson",
+    "relation": "limit: n → ∞ with np → λ"
+   },
+   {
+    "to": "hypergeometric",
+    "relation": "limit of the hypergeometric law as N → ∞ with K/N → p"
+   },
+   {
+    "to": "multinomial",
+    "relation": "each multinomial component, and the case k = 2"
+   }
+  ]
+ },
+ {
+  "id": "categorical",
+  "name": "Categorical",
+  "convention": "X takes the label j ∈ {1, …, k} with probability p_j. The labels are names. Their order and their values as numbers are a convention, so the CDF and the mean depend on the labels.",
+  "pmf": "\\mathbb{P}(X = j) = p_j, \\quad j = 1, \\dots, k, \\quad \\textstyle\\sum_j p_j = 1",
+  "params": [
+   {
+    "name": "p",
+    "tex": "(p_1, \\dots, p_k)",
+    "domain": "p_j \\ge 0, \\ \\textstyle\\sum_j p_j = 1, \\ k \\le 100"
+   }
+  ],
+  "support": "\\{1, \\dots, k\\}",
+  "limits": [
+   "k = 1 gives a point mass.",
+   "k = 2 gives a relabelled Bernoulli law.",
+   "Equal weights p_j = 1/k give the discrete uniform law on 1, …, k.",
+   "The indicator vector of one categorical draw is Multinomial(1, p)."
+  ],
+  "moments": {
+   "mean": "\\textstyle\\sum_j j\\,p_j",
+   "variance": "\\textstyle\\sum_j j^2 p_j - \\left(\\sum_j j\\,p_j\\right)^2",
+   "existence": "All moments exist, because the support is finite. They depend on the labels."
+  },
+  "transforms": {
+   "pgf": "G(z) = \\textstyle\\sum_{j=1}^{k} p_j z^j",
+   "mgf": "M(t) = \\textstyle\\sum_{j=1}^{k} p_j e^{jt}",
+   "cf": "\\varphi(t) = \\textstyle\\sum_{j=1}^{k} p_j e^{ijt}"
+  },
+  "links": [
+   {
+    "to": "bernoulli",
+    "relation": "the case k = 2, relabelled"
+   },
+   {
+    "to": "multinomial",
+    "relation": "Multinomial(1, p) is the indicator vector of one draw"
+   },
+   {
+    "to": "uniform",
+    "relation": "equal weights"
+   }
+  ]
+ },
+ {
+  "id": "multinomial",
+  "name": "Multinomial",
+  "convention": "X = (X_1, …, X_k) counts the draws in each of k categories after n categorical trials that are independent, with probabilities p.",
+  "pmf": "\\mathbb{P}(X = x) = \\frac{n!}{x_1! \\cdots x_k!} \\prod_{j=1}^{k} p_j^{x_j}, \\quad x_j \\ge 0, \\ \\textstyle\\sum_j x_j = n",
+  "params": [
+   {
+    "name": "n",
+    "tex": "n",
+    "domain": "n \\in \\{0, 1, 2, \\dots\\}"
+   },
+   {
+    "name": "p",
+    "tex": "(p_1, \\dots, p_k)",
+    "domain": "p_j \\ge 0, \\ \\textstyle\\sum_j p_j = 1"
+   }
+  ],
+  "support": "\\{x \\in \\mathbb{N}^k : x_1 + \\dots + x_k = n\\}",
+  "limits": [
+   "Each component has the law X_j ~ Binomial(n, p_j).",
+   "k = 2 gives (X_1, n − X_1) with X_1 ~ Binomial(n, p_1).",
+   "n = 1 gives the indicator vector of one categorical draw.",
+   "As n → ∞, (X − np)/√n converges in law to a multivariate normal law with covariance diag(p) − pp^T. Group 2 adds that law."
+  ],
+  "moments": {
+   "mean": "\\mathbb{E}[X_j] = n p_j",
+   "variance": "\\operatorname{Var}(X_j) = n p_j (1 - p_j), \\quad \\operatorname{Cov}(X_i, X_j) = -n p_i p_j \\ (i \\ne j)",
+   "existence": "All moments exist. The components have a negative covariance, because they share the fixed total n."
+  },
+  "transforms": {
+   "pgf": "G(z_1, \\dots, z_k) = \\left(\\textstyle\\sum_j p_j z_j\\right)^n",
+   "mgf": "M(t) = \\left(\\textstyle\\sum_j p_j e^{t_j}\\right)^n",
+   "cf": "\\varphi(t) = \\left(\\textstyle\\sum_j p_j e^{i t_j}\\right)^n"
+  },
+  "links": [
+   {
+    "to": "binomial",
+    "relation": "each component, and the case k = 2"
+   },
+   {
+    "to": "categorical",
+    "relation": "the case n = 1"
+   }
+  ]
+ },
+ {
+  "id": "uniform",
+  "name": "Discrete uniform",
+  "convention": "X takes each integer from a to b with the same probability 1/m, with m = b − a + 1.",
+  "pmf": "\\mathbb{P}(X = k) = \\frac{1}{b - a + 1}, \\quad k = a, a + 1, \\dots, b",
+  "params": [
+   {
+    "name": "a",
+    "tex": "a",
+    "domain": "a \\in \\mathbb{Z}"
+   },
+   {
+    "name": "b",
+    "tex": "b",
+    "domain": "b \\in \\mathbb{Z}, \\ a \\le b"
+   }
+  ],
+  "support": "\\{a, a + 1, \\dots, b\\}",
+  "limits": [
+   "a = b gives a point mass.",
+   "The Zipf law with s = 0 on 1, …, N is the discrete uniform law on 1, …, N.",
+   "(X − a)/m converges in law to Uniform(0, 1) as m → ∞. Group 2 adds that law.",
+   "The sum of 2 discrete uniform values that are independent has a triangular PMF, not a uniform one."
+  ],
+  "moments": {
+   "mean": "\\frac{a + b}{2}",
+   "variance": "\\frac{m^2 - 1}{12}, \\quad m = b - a + 1",
+   "existence": "All moments exist, because the support is finite."
+  },
+  "transforms": {
+   "pgf": "G(z) = \\frac{z^a (1 - z^m)}{m (1 - z)}, \\ z \\ne 1",
+   "mgf": "M(t) = \\frac{e^{at}(1 - e^{mt})}{m(1 - e^{t})}, \\ t \\ne 0",
+   "cf": "\\varphi(t) = \\frac{e^{iat}(1 - e^{imt})}{m(1 - e^{it})}, \\ t \\notin 2\\pi\\mathbb{Z}"
+  },
+  "links": [
+   {
+    "to": "categorical",
+    "relation": "a categorical law with equal weights, relabelled"
+   },
+   {
+    "to": "zipf",
+    "relation": "the Zipf law with s = 0"
+   }
+  ]
+ },
+ {
+  "id": "geometric",
+  "name": "Geometric",
+  "convention": "X counts the failures before the first success in independent trials with success probability p. The other convention counts the trials, Y = X + 1 on {1, 2, …}.",
+  "pmf": "\\mathbb{P}(X = k) = p (1-p)^k, \\quad k = 0, 1, 2, \\dots",
+  "params": [
+   {
+    "name": "p",
+    "tex": "p",
+    "domain": "0 < p \\le 1"
+   }
+  ],
+  "support": "\\{0, 1, 2, \\dots\\}",
+  "limits": [
+   "p = 1 gives a point mass at 0.",
+   "The geometric law is the negative binomial law with r = 1.",
+   "pX converges in law to Exponential(1) as p → 0. Group 2 adds that law.",
+   "It is the only law on {0, 1, 2, …} without memory: P(X ≥ s + t | X ≥ s) = P(X ≥ t)."
+  ],
+  "moments": {
+   "mean": "\\frac{1-p}{p}",
+   "variance": "\\frac{1-p}{p^2}",
+   "existence": "All moments exist. The MGF exists for t < −log(1 − p)."
+  },
+  "transforms": {
+   "pgf": "G(z) = \\frac{p}{1 - (1-p) z}, \\ |z| < \\frac{1}{1-p}",
+   "mgf": "M(t) = \\frac{p}{1 - (1-p) e^{t}}, \\ t < -\\log(1-p)",
+   "cf": "\\varphi(t) = \\frac{p}{1 - (1-p) e^{it}}"
+  },
+  "links": [
+   {
+    "to": "negbin",
+    "relation": "special case r = 1"
+   }
+  ]
+ },
+ {
+  "id": "negbin",
+  "name": "Negative binomial",
+  "convention": "X counts the failures before success number r in independent trials with success probability p. A real r > 0 gives the gamma–Poisson mixture: Λ has a gamma law with shape r and scale (1 − p)/p, and X | Λ ~ Poisson(Λ).",
+  "pmf": "\\mathbb{P}(X = k) = \\frac{\\Gamma(k + r)}{k!\\,\\Gamma(r)} p^r (1-p)^k, \\quad k = 0, 1, 2, \\dots",
+  "params": [
+   {
+    "name": "r",
+    "tex": "r",
+    "domain": "r > 0"
+   },
+   {
+    "name": "p",
+    "tex": "p",
+    "domain": "0 < p \\le 1"
+   }
+  ],
+  "support": "\\{0, 1, 2, \\dots\\}",
+  "limits": [
+   "r = 1 gives the geometric law.",
+   "For an integer r, X is the sum of r geometric values that are independent.",
+   "If r → ∞ with the mean μ = r(1 − p)/p fixed, the law converges to Poisson(μ).",
+   "With the mean μ, the variance is μ + μ²/r. Thus the law shows overdispersion: its variance is larger than its mean."
+  ],
+  "moments": {
+   "mean": "\\mu = \\frac{r(1-p)}{p}",
+   "variance": "\\frac{r(1-p)}{p^2} = \\mu + \\frac{\\mu^2}{r}",
+   "existence": "All moments exist. The MGF exists for t < −log(1 − p)."
+  },
+  "transforms": {
+   "pgf": "G(z) = \\left(\\frac{p}{1 - (1-p) z}\\right)^r",
+   "mgf": "M(t) = \\left(\\frac{p}{1 - (1-p) e^{t}}\\right)^r, \\ t < -\\log(1-p)",
+   "cf": "\\varphi(t) = \\left(\\frac{p}{1 - (1-p) e^{it}}\\right)^r"
+  },
+  "links": [
+   {
+    "to": "geometric",
+    "relation": "special case r = 1"
+   },
+   {
+    "to": "poisson",
+    "relation": "limit: r → ∞ with the mean fixed"
+   }
+  ]
+ },
+ {
+  "id": "poisson",
+  "name": "Poisson",
+  "convention": "X counts events. The parameter λ is the mean count.",
+  "pmf": "\\mathbb{P}(X = k) = e^{-\\lambda} \\frac{\\lambda^k}{k!}, \\quad k = 0, 1, 2, \\dots",
+  "params": [
+   {
+    "name": "lambda",
+    "tex": "\\lambda",
+    "domain": "\\lambda \\ge 0"
+   }
+  ],
+  "support": "\\{0, 1, 2, \\dots\\}",
+  "limits": [
+   "λ = 0 gives a point mass at 0.",
+   "Binomial(n, λ/n) converges to Poisson(λ) as n → ∞.",
+   "The negative binomial law with mean λ converges to Poisson(λ) as r → ∞.",
+   "The sum of independent Poisson(λ_1) and Poisson(λ_2) values has the law Poisson(λ_1 + λ_2).",
+   "(X − λ)/√λ converges in law to the standard normal law as λ → ∞. Group 2 adds that law."
+  ],
+  "moments": {
+   "mean": "\\lambda",
+   "variance": "\\lambda",
+   "existence": "All moments exist. The MGF exists for all real t."
+  },
+  "transforms": {
+   "pgf": "G(z) = e^{\\lambda (z - 1)}",
+   "mgf": "M(t) = \\exp\\left(\\lambda (e^{t} - 1)\\right)",
+   "cf": "\\varphi(t) = \\exp\\left(\\lambda (e^{it} - 1)\\right)"
+  },
+  "links": [
+   {
+    "to": "binomial",
+    "relation": "limit of Binomial(n, λ/n)"
+   },
+   {
+    "to": "negbin",
+    "relation": "limit of the negative binomial law as r → ∞"
+   }
+  ]
+ },
+ {
+  "id": "hypergeometric",
+  "name": "Hypergeometric",
+  "convention": "X counts the success items in n draws without replacement from N items, of which K are success items.",
+  "pmf": "\\mathbb{P}(X = k) = \\frac{\\binom{K}{k} \\binom{N-K}{n-k}}{\\binom{N}{n}}, \\quad \\max(0, n + K - N) \\le k \\le \\min(n, K)",
+  "params": [
+   {
+    "name": "N",
+    "tex": "N",
+    "domain": "N \\ge 1"
+   },
+   {
+    "name": "K",
+    "tex": "K",
+    "domain": "0 \\le K \\le N"
+   },
+   {
+    "name": "n",
+    "tex": "n",
+    "domain": "0 \\le n \\le N"
+   }
+  ],
+  "support": "\\{\\max(0, n + K - N), \\dots, \\min(n, K)\\}",
+  "limits": [
+   "n = N gives a point mass at K.",
+   "As N → ∞ with K/N → p, the law converges to Binomial(n, p).",
+   "The variance is the binomial variance times the finite population correction (N − n)/(N − 1)."
+  ],
+  "moments": {
+   "mean": "n \\frac{K}{N}",
+   "variance": "n \\frac{K}{N}\\left(1 - \\frac{K}{N}\\right) \\frac{N - n}{N - 1}",
+   "existence": "All moments exist, because the support is finite."
+  },
+  "transforms": {
+   "pgf": "G(z) = \\textstyle\\sum_k \\mathbb{P}(X = k)\\, z^k, \\ \\text{a polynomial of degree} \\min(n, K)",
+   "mgf": "M(t) = G(e^{t})",
+   "cf": "\\varphi(t) = G(e^{it})"
+  },
+  "links": [
+   {
+    "to": "binomial",
+    "relation": "limit: N → ∞ with K/N → p"
+   }
+  ]
+ },
+ {
+  "id": "zipf",
+  "name": "Zipf and zeta",
+  "convention": "X is a rank from 1 to N with a probability proportional to k^(−s). N = ∞ gives the zeta law, which needs s > 1.",
+  "pmf": "\\mathbb{P}(X = k) = \\frac{k^{-s}}{H_{N,s}}, \\ k = 1, \\dots, N, \\qquad \\mathbb{P}(X = k) = \\frac{k^{-s}}{\\zeta(s)}, \\ k \\ge 1 \\ (N = \\infty)",
+  "params": [
+   {
+    "name": "s",
+    "tex": "s",
+    "domain": "s \\ge 0 \\ (N < \\infty), \\quad s > 1 \\ (N = \\infty)"
+   },
+   {
+    "name": "N",
+    "tex": "N",
+    "domain": "N \\in \\{1, 2, \\dots\\} \\cup \\{\\infty\\}"
+   }
+  ],
+  "support": "\\{1, \\dots, N\\}",
+  "limits": [
+   "s = 0 gives the discrete uniform law on 1, …, N.",
+   "N → ∞ with s > 1 gives the zeta law.",
+   "The zeta law has a regularly varying tail: P(X > k) ~ k^(1 − s)/((s − 1)ζ(s)) as k → ∞."
+  ],
+  "moments": {
+   "mean": "\\frac{H_{N,s-1}}{H_{N,s}}, \\quad \\frac{\\zeta(s-1)}{\\zeta(s)} \\ (N = \\infty, s > 2)",
+   "variance": "\\frac{H_{N,s-2}}{H_{N,s}} - \\mathbb{E}[X]^2, \\quad \\frac{\\zeta(s-2)}{\\zeta(s)} - \\frac{\\zeta(s-1)^2}{\\zeta(s)^2} \\ (N = \\infty, s > 3)",
+   "existence": "For a finite N, all moments exist. For the zeta law, E[X^r] is finite if and only if r < s − 1. Thus the mean is infinite for s ≤ 2 and the variance is infinite for s ≤ 3. The MGF of the zeta law is infinite for every t > 0."
+  },
+  "transforms": {
+   "pgf": "G(z) = \\frac{\\operatorname{Li}_s(z)}{\\zeta(s)}, \\ |z| \\le 1 \\ (N = \\infty)",
+   "mgf": "M(t) = \\infty \\ \\text{for every} \\ t > 0 \\ (N = \\infty)",
+   "cf": "\\varphi(t) = \\frac{\\operatorname{Li}_s(e^{it})}{\\zeta(s)} \\ (N = \\infty)"
+  },
+  "links": [
+   {
+    "to": "uniform",
+    "relation": "the case s = 0"
+   }
+  ]
+ }
+]

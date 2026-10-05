@@ -1,0 +1,1917 @@
+{
+ "format": "monte-carlo-workbench/catalogue",
+ "version": 1,
+ "laws": [
+  {
+   "id": "bernoulli",
+   "name": "Bernoulli",
+   "convention": "X takes the value 1 (success) with probability p and the value 0 (failure) with probability 1 − p.",
+   "pmf": "\\mathbb{P}(X = k) = p^k (1-p)^{1-k}, \\quad k \\in \\{0, 1\\}",
+   "params": [
+    {
+     "name": "p",
+     "tex": "p",
+     "domain": "0 \\le p \\le 1"
+    }
+   ],
+   "support": "\\{0, 1\\}",
+   "limits": [
+    "p = 0 and p = 1 give point masses at 0 and at 1.",
+    "Bernoulli(p) is Binomial(1, p).",
+    "A categorical law with 2 labels is 1 + X with X ~ Bernoulli(p_2)."
+   ],
+   "moments": {
+    "mean": "p",
+    "variance": "p(1-p)",
+    "existence": "All moments exist: E[X^r] = p for every r ≥ 1. The MGF exists for all real t."
+   },
+   "transforms": {
+    "pgf": "G(z) = 1 - p + pz",
+    "mgf": "M(t) = 1 - p + p e^{t}, \\ t \\in \\mathbb{R}",
+    "cf": "\\varphi(t) = 1 - p + p e^{it}"
+   },
+   "links": [
+    {
+     "to": "binomial",
+     "relation": "special case: Binomial(1, p)"
+    },
+    {
+     "to": "categorical",
+     "relation": "relabelled case: a categorical law with 2 labels"
+    }
+   ]
+  },
+  {
+   "id": "binomial",
+   "name": "Binomial",
+   "convention": "X counts the successes in n independent trials. Each trial has the same success probability p.",
+   "pmf": "\\mathbb{P}(X = k) = \\binom{n}{k} p^k (1-p)^{n-k}, \\quad k = 0, 1, \\dots, n",
+   "params": [
+    {
+     "name": "n",
+     "tex": "n",
+     "domain": "n \\in \\{0, 1, 2, \\dots\\}"
+    },
+    {
+     "name": "p",
+     "tex": "p",
+     "domain": "0 \\le p \\le 1"
+    }
+   ],
+   "support": "\\{0, 1, \\dots, n\\}",
+   "limits": [
+    "n = 1 gives the Bernoulli law.",
+    "If n → ∞ and np → λ, the law converges to Poisson(λ): the law of small numbers.",
+    "If n → ∞ with p fixed in (0, 1), (X − np)/√(np(1 − p)) converges in law to the standard normal law (de Moivre–Laplace). Group 2 adds the normal law.",
+    "Hypergeometric(N, K, n) converges to Binomial(n, p) as N → ∞ with K/N → p.",
+    "Each component of a multinomial count vector has a binomial law."
+   ],
+   "moments": {
+    "mean": "np",
+    "variance": "np(1-p)",
+    "existence": "All moments exist. The MGF exists for all real t."
+   },
+   "transforms": {
+    "pgf": "G(z) = (1 - p + pz)^n",
+    "mgf": "M(t) = (1 - p + p e^{t})^n",
+    "cf": "\\varphi(t) = (1 - p + p e^{it})^n"
+   },
+   "links": [
+    {
+     "to": "bernoulli",
+     "relation": "special case n = 1"
+    },
+    {
+     "to": "poisson",
+     "relation": "limit: n → ∞ with np → λ"
+    },
+    {
+     "to": "hypergeometric",
+     "relation": "limit of the hypergeometric law as N → ∞ with K/N → p"
+    },
+    {
+     "to": "multinomial",
+     "relation": "each multinomial component, and the case k = 2"
+    }
+   ]
+  },
+  {
+   "id": "categorical",
+   "name": "Categorical",
+   "convention": "X takes the label j ∈ {1, …, k} with probability p_j. The labels are names. Their order and their values as numbers are a convention, so the CDF and the mean depend on the labels.",
+   "pmf": "\\mathbb{P}(X = j) = p_j, \\quad j = 1, \\dots, k, \\quad \\textstyle\\sum_j p_j = 1",
+   "params": [
+    {
+     "name": "p",
+     "tex": "(p_1, \\dots, p_k)",
+     "domain": "p_j \\ge 0, \\ \\textstyle\\sum_j p_j = 1, \\ k \\le 100"
+    }
+   ],
+   "support": "\\{1, \\dots, k\\}",
+   "limits": [
+    "k = 1 gives a point mass.",
+    "k = 2 gives a relabelled Bernoulli law.",
+    "Equal weights p_j = 1/k give the discrete uniform law on 1, …, k.",
+    "The indicator vector of one categorical draw is Multinomial(1, p)."
+   ],
+   "moments": {
+    "mean": "\\textstyle\\sum_j j\\,p_j",
+    "variance": "\\textstyle\\sum_j j^2 p_j - \\left(\\sum_j j\\,p_j\\right)^2",
+    "existence": "All moments exist, because the support is finite. They depend on the labels."
+   },
+   "transforms": {
+    "pgf": "G(z) = \\textstyle\\sum_{j=1}^{k} p_j z^j",
+    "mgf": "M(t) = \\textstyle\\sum_{j=1}^{k} p_j e^{jt}",
+    "cf": "\\varphi(t) = \\textstyle\\sum_{j=1}^{k} p_j e^{ijt}"
+   },
+   "links": [
+    {
+     "to": "bernoulli",
+     "relation": "the case k = 2, relabelled"
+    },
+    {
+     "to": "multinomial",
+     "relation": "Multinomial(1, p) is the indicator vector of one draw"
+    },
+    {
+     "to": "uniform",
+     "relation": "equal weights"
+    }
+   ]
+  },
+  {
+   "id": "multinomial",
+   "name": "Multinomial",
+   "convention": "X = (X_1, …, X_k) counts the draws in each of k categories after n categorical trials that are independent, with probabilities p.",
+   "pmf": "\\mathbb{P}(X = x) = \\frac{n!}{x_1! \\cdots x_k!} \\prod_{j=1}^{k} p_j^{x_j}, \\quad x_j \\ge 0, \\ \\textstyle\\sum_j x_j = n",
+   "params": [
+    {
+     "name": "n",
+     "tex": "n",
+     "domain": "n \\in \\{0, 1, 2, \\dots\\}"
+    },
+    {
+     "name": "p",
+     "tex": "(p_1, \\dots, p_k)",
+     "domain": "p_j \\ge 0, \\ \\textstyle\\sum_j p_j = 1"
+    }
+   ],
+   "support": "\\{x \\in \\mathbb{N}^k : x_1 + \\dots + x_k = n\\}",
+   "limits": [
+    "Each component has the law X_j ~ Binomial(n, p_j).",
+    "k = 2 gives (X_1, n − X_1) with X_1 ~ Binomial(n, p_1).",
+    "n = 1 gives the indicator vector of one categorical draw.",
+    "As n → ∞, (X − np)/√n converges in law to a multivariate normal law with covariance diag(p) − pp^T. Group 2 adds that law."
+   ],
+   "moments": {
+    "mean": "\\mathbb{E}[X_j] = n p_j",
+    "variance": "\\operatorname{Var}(X_j) = n p_j (1 - p_j), \\quad \\operatorname{Cov}(X_i, X_j) = -n p_i p_j \\ (i \\ne j)",
+    "existence": "All moments exist. The components have a negative covariance, because they share the fixed total n."
+   },
+   "transforms": {
+    "pgf": "G(z_1, \\dots, z_k) = \\left(\\textstyle\\sum_j p_j z_j\\right)^n",
+    "mgf": "M(t) = \\left(\\textstyle\\sum_j p_j e^{t_j}\\right)^n",
+    "cf": "\\varphi(t) = \\left(\\textstyle\\sum_j p_j e^{i t_j}\\right)^n"
+   },
+   "links": [
+    {
+     "to": "binomial",
+     "relation": "each component, and the case k = 2"
+    },
+    {
+     "to": "categorical",
+     "relation": "the case n = 1"
+    }
+   ]
+  },
+  {
+   "id": "uniform",
+   "name": "Discrete uniform",
+   "convention": "X takes each integer from a to b with the same probability 1/m, with m = b − a + 1.",
+   "pmf": "\\mathbb{P}(X = k) = \\frac{1}{b - a + 1}, \\quad k = a, a + 1, \\dots, b",
+   "params": [
+    {
+     "name": "a",
+     "tex": "a",
+     "domain": "a \\in \\mathbb{Z}"
+    },
+    {
+     "name": "b",
+     "tex": "b",
+     "domain": "b \\in \\mathbb{Z}, \\ a \\le b"
+    }
+   ],
+   "support": "\\{a, a + 1, \\dots, b\\}",
+   "limits": [
+    "a = b gives a point mass.",
+    "The Zipf law with s = 0 on 1, …, N is the discrete uniform law on 1, …, N.",
+    "(X − a)/m converges in law to Uniform(0, 1) as m → ∞. Group 2 adds that law.",
+    "The sum of 2 discrete uniform values that are independent has a triangular PMF, not a uniform one."
+   ],
+   "moments": {
+    "mean": "\\frac{a + b}{2}",
+    "variance": "\\frac{m^2 - 1}{12}, \\quad m = b - a + 1",
+    "existence": "All moments exist, because the support is finite."
+   },
+   "transforms": {
+    "pgf": "G(z) = \\frac{z^a (1 - z^m)}{m (1 - z)}, \\ z \\ne 1",
+    "mgf": "M(t) = \\frac{e^{at}(1 - e^{mt})}{m(1 - e^{t})}, \\ t \\ne 0",
+    "cf": "\\varphi(t) = \\frac{e^{iat}(1 - e^{imt})}{m(1 - e^{it})}, \\ t \\notin 2\\pi\\mathbb{Z}"
+   },
+   "links": [
+    {
+     "to": "categorical",
+     "relation": "a categorical law with equal weights, relabelled"
+    },
+    {
+     "to": "zipf",
+     "relation": "the Zipf law with s = 0"
+    }
+   ]
+  },
+  {
+   "id": "geometric",
+   "name": "Geometric",
+   "convention": "X counts the failures before the first success in independent trials with success probability p. The other convention counts the trials, Y = X + 1 on {1, 2, …}.",
+   "pmf": "\\mathbb{P}(X = k) = p (1-p)^k, \\quad k = 0, 1, 2, \\dots",
+   "params": [
+    {
+     "name": "p",
+     "tex": "p",
+     "domain": "0 < p \\le 1"
+    }
+   ],
+   "support": "\\{0, 1, 2, \\dots\\}",
+   "limits": [
+    "p = 1 gives a point mass at 0.",
+    "The geometric law is the negative binomial law with r = 1.",
+    "pX converges in law to Exponential(1) as p → 0. Group 2 adds that law.",
+    "It is the only law on {0, 1, 2, …} without memory: P(X ≥ s + t | X ≥ s) = P(X ≥ t)."
+   ],
+   "moments": {
+    "mean": "\\frac{1-p}{p}",
+    "variance": "\\frac{1-p}{p^2}",
+    "existence": "All moments exist. The MGF exists for t < −log(1 − p)."
+   },
+   "transforms": {
+    "pgf": "G(z) = \\frac{p}{1 - (1-p) z}, \\ |z| < \\frac{1}{1-p}",
+    "mgf": "M(t) = \\frac{p}{1 - (1-p) e^{t}}, \\ t < -\\log(1-p)",
+    "cf": "\\varphi(t) = \\frac{p}{1 - (1-p) e^{it}}"
+   },
+   "links": [
+    {
+     "to": "negbin",
+     "relation": "special case r = 1"
+    }
+   ]
+  },
+  {
+   "id": "negbin",
+   "name": "Negative binomial",
+   "convention": "X counts the failures before success number r in independent trials with success probability p. A real r > 0 gives the gamma–Poisson mixture: Λ has a gamma law with shape r and scale (1 − p)/p, and X | Λ ~ Poisson(Λ).",
+   "pmf": "\\mathbb{P}(X = k) = \\frac{\\Gamma(k + r)}{k!\\,\\Gamma(r)} p^r (1-p)^k, \\quad k = 0, 1, 2, \\dots",
+   "params": [
+    {
+     "name": "r",
+     "tex": "r",
+     "domain": "r > 0"
+    },
+    {
+     "name": "p",
+     "tex": "p",
+     "domain": "0 < p \\le 1"
+    }
+   ],
+   "support": "\\{0, 1, 2, \\dots\\}",
+   "limits": [
+    "r = 1 gives the geometric law.",
+    "For an integer r, X is the sum of r geometric values that are independent.",
+    "If r → ∞ with the mean μ = r(1 − p)/p fixed, the law converges to Poisson(μ).",
+    "With the mean μ, the variance is μ + μ²/r. Thus the law shows overdispersion: its variance is larger than its mean."
+   ],
+   "moments": {
+    "mean": "\\mu = \\frac{r(1-p)}{p}",
+    "variance": "\\frac{r(1-p)}{p^2} = \\mu + \\frac{\\mu^2}{r}",
+    "existence": "All moments exist. The MGF exists for t < −log(1 − p)."
+   },
+   "transforms": {
+    "pgf": "G(z) = \\left(\\frac{p}{1 - (1-p) z}\\right)^r",
+    "mgf": "M(t) = \\left(\\frac{p}{1 - (1-p) e^{t}}\\right)^r, \\ t < -\\log(1-p)",
+    "cf": "\\varphi(t) = \\left(\\frac{p}{1 - (1-p) e^{it}}\\right)^r"
+   },
+   "links": [
+    {
+     "to": "geometric",
+     "relation": "special case r = 1"
+    },
+    {
+     "to": "poisson",
+     "relation": "limit: r → ∞ with the mean fixed"
+    }
+   ]
+  },
+  {
+   "id": "poisson",
+   "name": "Poisson",
+   "convention": "X counts events. The parameter λ is the mean count.",
+   "pmf": "\\mathbb{P}(X = k) = e^{-\\lambda} \\frac{\\lambda^k}{k!}, \\quad k = 0, 1, 2, \\dots",
+   "params": [
+    {
+     "name": "lambda",
+     "tex": "\\lambda",
+     "domain": "\\lambda \\ge 0"
+    }
+   ],
+   "support": "\\{0, 1, 2, \\dots\\}",
+   "limits": [
+    "λ = 0 gives a point mass at 0.",
+    "Binomial(n, λ/n) converges to Poisson(λ) as n → ∞.",
+    "The negative binomial law with mean λ converges to Poisson(λ) as r → ∞.",
+    "The sum of independent Poisson(λ_1) and Poisson(λ_2) values has the law Poisson(λ_1 + λ_2).",
+    "(X − λ)/√λ converges in law to the standard normal law as λ → ∞. Group 2 adds that law."
+   ],
+   "moments": {
+    "mean": "\\lambda",
+    "variance": "\\lambda",
+    "existence": "All moments exist. The MGF exists for all real t."
+   },
+   "transforms": {
+    "pgf": "G(z) = e^{\\lambda (z - 1)}",
+    "mgf": "M(t) = \\exp\\left(\\lambda (e^{t} - 1)\\right)",
+    "cf": "\\varphi(t) = \\exp\\left(\\lambda (e^{it} - 1)\\right)"
+   },
+   "links": [
+    {
+     "to": "binomial",
+     "relation": "limit of Binomial(n, λ/n)"
+    },
+    {
+     "to": "negbin",
+     "relation": "limit of the negative binomial law as r → ∞"
+    }
+   ]
+  },
+  {
+   "id": "hypergeometric",
+   "name": "Hypergeometric",
+   "convention": "X counts the success items in n draws without replacement from N items, of which K are success items.",
+   "pmf": "\\mathbb{P}(X = k) = \\frac{\\binom{K}{k} \\binom{N-K}{n-k}}{\\binom{N}{n}}, \\quad \\max(0, n + K - N) \\le k \\le \\min(n, K)",
+   "params": [
+    {
+     "name": "N",
+     "tex": "N",
+     "domain": "N \\ge 1"
+    },
+    {
+     "name": "K",
+     "tex": "K",
+     "domain": "0 \\le K \\le N"
+    },
+    {
+     "name": "n",
+     "tex": "n",
+     "domain": "0 \\le n \\le N"
+    }
+   ],
+   "support": "\\{\\max(0, n + K - N), \\dots, \\min(n, K)\\}",
+   "limits": [
+    "n = N gives a point mass at K.",
+    "As N → ∞ with K/N → p, the law converges to Binomial(n, p).",
+    "The variance is the binomial variance times the finite population correction (N − n)/(N − 1)."
+   ],
+   "moments": {
+    "mean": "n \\frac{K}{N}",
+    "variance": "n \\frac{K}{N}\\left(1 - \\frac{K}{N}\\right) \\frac{N - n}{N - 1}",
+    "existence": "All moments exist, because the support is finite."
+   },
+   "transforms": {
+    "pgf": "G(z) = \\textstyle\\sum_k \\mathbb{P}(X = k)\\, z^k, \\ \\text{a polynomial of degree} \\min(n, K)",
+    "mgf": "M(t) = G(e^{t})",
+    "cf": "\\varphi(t) = G(e^{it})"
+   },
+   "links": [
+    {
+     "to": "binomial",
+     "relation": "limit: N → ∞ with K/N → p"
+    }
+   ]
+  },
+  {
+   "id": "zipf",
+   "name": "Zipf and zeta",
+   "convention": "X is a rank from 1 to N with a probability proportional to k^(−s). N = ∞ gives the zeta law, which needs s > 1.",
+   "pmf": "\\mathbb{P}(X = k) = \\frac{k^{-s}}{H_{N,s}}, \\ k = 1, \\dots, N, \\qquad \\mathbb{P}(X = k) = \\frac{k^{-s}}{\\zeta(s)}, \\ k \\ge 1 \\ (N = \\infty)",
+   "params": [
+    {
+     "name": "s",
+     "tex": "s",
+     "domain": "s \\ge 0 \\ (N < \\infty), \\quad s > 1 \\ (N = \\infty)"
+    },
+    {
+     "name": "N",
+     "tex": "N",
+     "domain": "N \\in \\{1, 2, \\dots\\} \\cup \\{\\infty\\}"
+    }
+   ],
+   "support": "\\{1, \\dots, N\\}",
+   "limits": [
+    "s = 0 gives the discrete uniform law on 1, …, N.",
+    "N → ∞ with s > 1 gives the zeta law.",
+    "The zeta law has a regularly varying tail: P(X > k) ~ k^(1 − s)/((s − 1)ζ(s)) as k → ∞."
+   ],
+   "moments": {
+    "mean": "\\frac{H_{N,s-1}}{H_{N,s}}, \\quad \\frac{\\zeta(s-1)}{\\zeta(s)} \\ (N = \\infty, s > 2)",
+    "variance": "\\frac{H_{N,s-2}}{H_{N,s}} - \\mathbb{E}[X]^2, \\quad \\frac{\\zeta(s-2)}{\\zeta(s)} - \\frac{\\zeta(s-1)^2}{\\zeta(s)^2} \\ (N = \\infty, s > 3)",
+    "existence": "For a finite N, all moments exist. For the zeta law, E[X^r] is finite if and only if r < s − 1. Thus the mean is infinite for s ≤ 2 and the variance is infinite for s ≤ 3. The MGF of the zeta law is infinite for every t > 0."
+   },
+   "transforms": {
+    "pgf": "G(z) = \\frac{\\operatorname{Li}_s(z)}{\\zeta(s)}, \\ |z| \\le 1 \\ (N = \\infty)",
+    "mgf": "M(t) = \\infty \\ \\text{for every} \\ t > 0 \\ (N = \\infty)",
+    "cf": "\\varphi(t) = \\frac{\\operatorname{Li}_s(e^{it})}{\\zeta(s)} \\ (N = \\infty)"
+   },
+   "links": [
+    {
+     "to": "uniform",
+     "relation": "the case s = 0"
+    }
+   ]
+  }
+ ],
+ "models": [
+  {
+   "id": "exp-bernoulli",
+   "law": "bernoulli",
+   "title": "Rare events and the zero-hit bound",
+   "observe": "With p = 0.0002 and 8,192 replicates, the run often shows 0, 1 or 2 hits. After 0 hits, the CLT interval is the point 0, and it does not contain p. The exact zero-hit bound 1 − 0.05^(1/n), about 3/n, stays valid. Increase the number of replicates n. Then the width of the Wilson interval decreases.",
+   "settings": {
+    "size": 13
+   },
+   "dsl": "title: Rare events and the zero-hit bound\nproblem: How many draws show a rare event, and what does a run with no hits tell?\nparam p = 0.0002 \"probability of the event in one draw\"\nX ~ bernoulli(p = p) \"indicator of the event\"\nprob hit = X == 1 \"probability of the event\"\nfocus X\n",
+   "kind": "experiment"
+  },
+  {
+   "id": "bernoulli-common-cause",
+   "law": "bernoulli",
+   "domain": "IT reliability",
+   "title": "A third server or a second power feed?",
+   "decision": "Decision: install a third server, or a second power feed. Estimated quantity: the daily outage probability θ = P(down = 1) for each alternative.",
+   "reason": "On one day, each fault either occurs or does not, so each fault is a Bernoulli variable. A common power fault C stops all servers at once. This is the shared-cause idea of the beta-factor model in reliability work.",
+   "inputs": "pc = 0.0005 and pf = 0.01 per day are illustrative values. The unit is a probability for each day. There is no data. The model assumes identical, independent days.",
+   "dependence": "C acts on every server. Given C = 0, the faults A, B and T are independent. Thus all dependence comes from the one shared cause.",
+   "method": "Independent draws of the 4 indicators in each replicate. The estimator is the fraction of replicates with an outage. All alternatives use the same streams, so the paired differences usually have a smaller variance than with independent streams.",
+   "diagnostics": "The Wilson interval, and the exact zero-hit bound when a run has no outage. The enumeration of the 16 joint states gives the exact reference. Other candidate models: fault times with repair times, and server faults that depend on the load.",
+   "interpretation": "The second power feed lowers the outage probability most, because the common fault dominates. A third server acts only on the small term pf². It does not change the larger term pc. Reject the model if outages cluster on consecutive days, or if server faults correlate without a power fault.",
+   "data": {
+    "kind": "synthetic",
+    "text": "Synthetic: the illustrative parameters above define the model that makes the data. These values are illustrative and not calibrated evidence."
+   },
+   "settings": {
+    "size": 18
+   },
+   "dsl": "title: A third server or a second power feed?\nproblem: A service runs on redundant servers. One shared power feed can stop all servers at once. Find the change that gives the lower daily outage probability.\nparam pc = 0.0005 \"daily probability of a common power fault\"\nparam pf = 0.01 \"daily probability of an independent fault of one server\"\nparam third = 0 \"1 when a third server is installed\"\nC ~ bernoulli(p = pc) \"common power fault\"\nA ~ bernoulli(p = pf) \"fault of server A\"\nB ~ bernoulli(p = pf) \"fault of server B\"\nT ~ bernoulli(p = pf) \"fault of the third server, if installed\"\ndown := C or (A and B and (third == 0 or T)) \"the service stops\"\nprob outage = down == 1 \"daily outage probability\"\nalt \"2 servers\": third = 0\nalt \"3 servers\": third = 1\nalt \"2 servers and a second power feed\": third = 0; pc = 0.00005\nminimise outage\nfocus down\n",
+   "kind": "workflow"
+  },
+  {
+   "id": "bernoulli-screening",
+   "law": "bernoulli",
+   "domain": "Medicine",
+   "title": "Screen, treat everyone, or treat no one?",
+   "decision": "Decision: treat after a positive test, treat everyone, or treat no one. Estimated quantity: the expected cost for each person, and the probability of disease after a positive test.",
+   "reason": "A person has the disease or not, and a test is positive or not. Both are Bernoulli variables. The test result depends on the disease state through the sensitivity and the specificity.",
+   "inputs": "Prevalence 0.02, sensitivity 0.9 and specificity 0.95 are illustrative values. Costs are in cost units: 1 for one treatment, 40 for one untreated case. There is no data.",
+   "dependence": "T depends on D: P(T = 1 | D = 1) = sens and P(T = 1 | D = 0) = 1 − spec. Different people are independent.",
+   "method": "Independent draws of D, then of T given D. The cost estimator is a sample mean. The probability of disease after a positive test is a ratio of 2 means, with a delta-method interval.",
+   "diagnostics": "CLT intervals for the costs, which have finite bounds. The paired differences compare the policies on the same people. Other candidate models: a prevalence with its own uncertainty, and test errors that depend on the stage of the disease.",
+   "interpretation": "With these values, the policy that treats after a positive test costs about 0.15 cost units for each person. No treatment costs 0.8, and treatment of everyone costs 1. Only about 27 % of positive tests come from a person with the disease. Reject the model if the sensitivity or the specificity differs between groups of patients.",
+   "data": {
+    "kind": "synthetic",
+    "text": "Synthetic: the illustrative parameters above define the model that makes the data. These values are illustrative and not calibrated evidence."
+   },
+   "settings": {
+    "size": 16
+   },
+   "dsl": "title: Screen, treat everyone, or treat no one?\nproblem: A test detects a disease with errors. Find the policy with the least expected cost for each person.\nparam prev = 0.02 \"prevalence of the disease\"\nparam sens = 0.9 \"probability of a positive test for a person with the disease\"\nparam spec = 0.95 \"probability of a negative test for a person without the disease\"\nparam ctreat = 1 {cost units} \"cost of one treatment\"\nparam cmiss = 40 {cost units} \"cost of one untreated case\"\nparam policy = 1 \"1 = treat when positive, 2 = treat all, 3 = treat none\"\nD ~ bernoulli(p = prev) \"the person has the disease\"\nT ~ bernoulli(p = if(D, sens, 1 - spec)) \"the test is positive\"\ntreat := if(policy == 1, T, policy == 2) \"the person gets the treatment\"\nloss := ctreat*treat + cmiss*D*(1 - treat) {cost units}\nmean cost = loss {cost units per person}\nratio ppv = E[D*T] / E[T] \"probability of disease after a positive test\"\nalt \"Treat after a positive test\": policy = 1\nalt \"Treat everyone\": policy = 2\nalt \"Treat no one\": policy = 3\nminimise cost\nfocus T\n",
+   "kind": "workflow"
+  },
+  {
+   "id": "bernoulli-sensor-vote",
+   "law": "bernoulli",
+   "domain": "Aerospace",
+   "title": "The vote threshold of a launch abort system",
+   "decision": "Decision: the number k of sensor alarms that starts an abort. Estimated quantity: the expected cost for each launch, with the probabilities of a false abort and of a missed fault.",
+   "reason": "Each sensor alarm and the fault itself are Bernoulli variables. Given the fault state, each sensor alarms with a fixed probability.",
+   "inputs": "P(fault) = 0.001, P(alarm | fault) = 0.95 and P(alarm | no fault) = 0.02 are illustrative values. Costs: 1 cost unit for an abort without a fault, 500 for a launch that continues with a fault.",
+   "dependence": "The 3 alarms are independent given Fault. They are dependent without that condition, because all of them follow Fault.",
+   "method": "Independent draws of Fault, then of S1, S2 and S3 given Fault. The cost estimator is a sample mean. The 3 alternatives use the same streams.",
+   "diagnostics": "The enumeration of the 16 joint states gives exact reference values. The missed-fault probability is rare, so the zero-hit bound matters for a small number of replicates. Other candidate model: a common-mode sensor error, which makes the alarms dependent given Fault.",
+   "interpretation": "k = 2 gives the least expected cost. k = 1 aborts too often, and k = 3 misses too many faults. A run needs about 10^6 replicates, because a missed fault with k = 2 has a probability near 7 in a million. A smaller run often shows no missed fault, and its cost estimate is then too low. Reject the model if the sensors share a power supply or a software fault.",
+   "data": {
+    "kind": "synthetic",
+    "text": "Synthetic: the illustrative parameters above define the model that makes the data. These values are illustrative and not calibrated evidence."
+   },
+   "settings": {
+    "size": 20
+   },
+   "dsl": "title: The vote threshold of a launch abort system\nproblem: 3 sensors watch for a fault. The system aborts when at least k sensors alarm. Find the best k.\nparam pfault = 0.001 \"probability of a real fault in one launch\"\nparam pdet = 0.95 \"probability that one sensor alarms when a fault is present\"\nparam pfa = 0.02 \"probability that one sensor alarms when no fault is present\"\nparam k = 2 {sensors} \"number of alarms that starts an abort\"\nparam cabort = 1 {cost units} \"cost of an abort without a fault\"\nparam closs = 500 {cost units} \"cost of a launch that continues with a fault\"\nFault ~ bernoulli(p = pfault) \"a real fault is present\"\nS1 ~ bernoulli(p = if(Fault, pdet, pfa)) \"alarm of sensor 1\"\nS2 ~ bernoulli(p = if(Fault, pdet, pfa)) \"alarm of sensor 2\"\nS3 ~ bernoulli(p = if(Fault, pdet, pfa)) \"alarm of sensor 3\"\nabort := S1 + S2 + S3 >= k \"the system aborts\"\nloss := cabort*abort*(1 - Fault) + closs*Fault*(1 - abort) {cost units}\nmean cost = loss {cost units per launch}\nprob false_abort = abort and not Fault \"abort without a fault\"\nprob missed = Fault and not abort \"launch with a fault\"\nalt \"k = 1\": k = 1\nalt \"k = 2\": k = 2\nalt \"k = 3\": k = 3\nminimise cost\nfocus abort\n",
+   "kind": "workflow"
+  },
+  {
+   "id": "exp-binomial",
+   "law": "binomial",
+   "title": "The law of small numbers",
+   "observe": "Each alternative keeps the mean np = 3. As n grows, P(X = 0) = (1 − 3/n)^n moves to e^(−3) ≈ 0.0498, the Poisson value. The reference values show the limit. The estimates show the same trend within their intervals.",
+   "settings": {
+    "size": 15
+   },
+   "dsl": "title: The law of small numbers\nproblem: How close is Binomial(n, 3/n) to Poisson(3) for a small n?\nparam lambda = 3 \"mean count\"\nparam n = 10 {trials}\nX ~ binomial(n = n, p = lambda / n) {successes}\nprob zero = X == 0 \"probability of no success\"\nprob six_plus = X >= 6 \"probability of 6 or more successes\"\nalt \"n = 6\": n = 6\nalt \"n = 30\": n = 30\nalt \"n = 1000\": n = 1000\nfocus X\n",
+   "kind": "experiment"
+  },
+  {
+   "id": "binomial-overbooking",
+   "law": "binomial",
+   "domain": "Airline revenue",
+   "title": "How many tickets to sell for a 180-seat flight",
+   "decision": "Decision: the number of tickets to sell. Estimated quantity: the expected net revenue for each flight, and the probability that at least one passenger loses the seat.",
+   "reason": "Each ticket holder comes to the flight or not. If the ticket holders act independently with the same probability, the number who come is binomial.",
+   "inputs": "180 seats, P(show) = 0.93, a fare of 200 and a compensation of 600 currency units are illustrative values. The airline does not refund the fare. There is no data.",
+   "dependence": "None in this model: ticket holders are independent. Groups that travel together break this assumption.",
+   "method": "The inverse transform or independent draws of X. The estimators are sample means. The alternatives use the same streams, so the paired differences usually have a smaller variance than with independent streams.",
+   "diagnostics": "Exact reference values by enumeration of the 193 support points. The constraint P(any passenger loses the seat) ≤ 0.05 uses the interval, not only the estimate. Other candidate models: the beta-binomial law for groups, and a show probability that depends on the fare class.",
+   "interpretation": "186 tickets give more revenue than 180, and they meet the constraint. 192 tickets do not meet the constraint. Reject the model if many passengers travel in groups, because the variance of X is then larger.",
+   "data": {
+    "kind": "synthetic",
+    "text": "Synthetic: the illustrative parameters above define the model that makes the data. These values are illustrative and not calibrated evidence."
+   },
+   "settings": {
+    "size": 16
+   },
+   "dsl": "title: How many tickets to sell for a 180-seat flight\nproblem: Some ticket holders do not come to the flight. More tickets than seats raise the revenue, but some passengers can lose their seats. Find the number of tickets to sell.\nparam seats = 180 {seats}\nparam tickets = 186 {tickets}\nparam pshow = 0.93 \"probability that one ticket holder comes to the flight\"\nparam fare = 200 {currency units} \"fare, not refunded\"\nparam comp = 600 {currency units} \"compensation for one passenger who loses the seat\"\nX ~ binomial(n = tickets, p = pshow) {passengers} \"ticket holders who come to the flight\"\nbumped := max(X - seats, 0) {passengers} \"passengers who lose the seat\"\nmean net = fare*tickets - comp*bumped {currency units per flight}\nprob any_bumped = bumped >= 1 \"at least one passenger loses the seat\"\nalt \"Sell 180\": tickets = 180\nalt \"Sell 186\": tickets = 186\nalt \"Sell 192\": tickets = 192\nmaximise net\nrequire any_bumped <= 0.05\nfocus X\n",
+   "kind": "workflow"
+  },
+  {
+   "id": "binomial-acceptance",
+   "law": "binomial",
+   "domain": "Manufacturing quality",
+   "title": "An inspection plan for parts from a supplier",
+   "decision": "Decision: the size nsample of the inspection sample and the acceptance number c. Estimated quantity: the probability of acceptance of a good lot (1 % defects) and of a bad lot (8 % defects). The limits: accept at least 95 % of good lots and at most 10 % of bad lots.",
+   "reason": "A large lot holds many parts, so each sampled part has a defect independently with the lot fraction. Thus the number of parts with a defect in the sample has a law near the binomial law.",
+   "inputs": "The acceptable quality level 1 % and the limit 8 % are illustrative values. The unit of X is parts with a defect. There is no data.",
+   "dependence": "None: parts are independent within the sample. The binomial law replaces the hypergeometric law, which is exact for a finite lot.",
+   "method": "Independent draws of the 2 counts. Each estimator is a fraction of replicates. Sweep nsample or c to see how the probabilities of acceptance change.",
+   "diagnostics": "The page checks each risk constraint against the interval. Exact references come from the enumeration. Other candidate model: the hypergeometric law for a small lot.",
+   "interpretation": "No plan with nsample = 50 meets both limits. With c = 1, the plan rejects 8.9 % of good lots. With c = 2, it accepts 22.6 % of bad lots. The plan nsample = 100, c = 3 meets both limits. Reject the binomial model if the sample is more than about 10 % of the lot.",
+   "data": {
+    "kind": "synthetic",
+    "text": "Synthetic: the illustrative parameters above define the model that makes the data. These values are illustrative and not calibrated evidence."
+   },
+   "settings": {
+    "size": 15
+   },
+   "dsl": "title: An inspection plan for parts from a supplier\nproblem: Inspect n parts from each large lot. Accept the lot when at most c parts have a defect. Find a plan that accepts good lots and rejects bad lots.\nparam nsample = 50 {parts}\nparam c = 2 {parts} \"acceptance number\"\nparam aql = 0.01 \"defect fraction of a good lot\"\nparam ltpd = 0.08 \"defect fraction of a bad lot\"\nG ~ binomial(n = nsample, p = aql) {parts with a defect} \"count in a sample from a good lot\"\nBd ~ binomial(n = nsample, p = ltpd) {parts with a defect} \"count in a sample from a bad lot\"\nprob accept_good = G <= c \"acceptance of a good lot\"\nprob accept_bad = Bd <= c \"acceptance of a bad lot\"\nalt \"n = 50, c = 1\": nsample = 50; c = 1\nalt \"n = 50, c = 2\": nsample = 50; c = 2\nalt \"n = 100, c = 3\": nsample = 100; c = 3\nminimise accept_bad\nrequire accept_good >= 0.95\nrequire accept_bad <= 0.1\nfocus G\n",
+   "kind": "workflow"
+  },
+  {
+   "id": "binomial-weldon",
+   "law": "binomial",
+   "domain": "History of statistics",
+   "title": "Are Weldon's dice fair?",
+   "decision": "Decision: keep or reject the fair-dice model for Weldon's dice. Estimated quantity: P(X ≥ 7), the probability of 7 or more dice with 5 or 6, under the fair model and under the fitted model.",
+   "reason": "One throw of 12 dice gives 12 trials. Each die shows 5 or 6 with probability 1/3 if it is fair. Thus the count of such dice is Binomial(12, p).",
+   "inputs": "Real data: 26,306 throws, with the counts of dice that show 5 or 6. The fitted p is the maximum likelihood estimate, the mean count divided by 12. The unit of X is dice.",
+   "dependence": "None in the model: dice and throws are independent. A die with a bias affects every throw, so it changes p and not the independence.",
+   "method": "Independent draws of X under each alternative. The estimator of P(X ≥ 7) is a fraction of replicates. The data panel compares the observed counts with the expected counts.",
+   "diagnostics": "The chi-square test of the data against Binomial(12, 1/3) and against the fitted law, with pooled cells. Other candidate model: different values of p for different dice. That model gives the same mean count but a different variance.",
+   "interpretation": "The fair model fails the chi-square test, and the fitted p = 0.3377 passes it. Dice that show 5 or 6 a little more often than 1/3 explain the data. Do not read the fitted p as the bias of one die, because the data mix 12 dice. Reject the binomial model if the counts spread less than a binomial law allows, because dice with different p give a smaller variance. Also reject it if the counts spread more, because p then changes between throws.",
+   "data": {
+    "kind": "real",
+    "dataset": "weldon"
+   },
+   "settings": {
+    "size": 16
+   },
+   "dsl": "title: Are Weldon's dice fair?\nproblem: W. F. R. Weldon threw 12 dice 26,306 times and counted the dice that showed 5 or 6. Find whether the fair-dice model explains the counts.\nparam ndice = 12 {dice}\nparam p = 1/3 \"probability that one die shows 5 or 6\"\nX ~ binomial(n = ndice, p = p) {dice that show 5 or 6}\nprob seven_plus = X >= 7 \"7 or more dice show 5 or 6\"\nmean average = X {dice} \"mean count\"\nalt \"Fair dice\": p = 1/3\nalt \"Fitted p = 0.3377\": p = 0.3377\nfocus X\n",
+   "kind": "workflow"
+  },
+  {
+   "id": "exp-categorical",
+   "law": "categorical",
+   "title": "Labels carry no order",
+   "observe": "The probability of the rarest category does not change when the labels change order. The mean of the labels changes from 1.75 to 3.25. Thus a mean or a CDF of a categorical law describes the labels, not the law. Compare the alias method with the inverse transform: both give the same law, at a different cost for each draw.",
+   "settings": {
+    "size": 15,
+    "compare": "inverse"
+   },
+   "dsl": "title: Labels carry no order\nproblem: The same categorical law under 2 labellings gives the same probabilities but a different mean.\nparam w = [0.5, 0.3, 0.15, 0.05] \"probabilities of the categories\"\nK ~ categorical(p = w) {label}\nrelabel := [4, 3, 2, 1][K] {label} \"the same category with the labels in the opposite order\"\nprob rare = K == 4 \"probability of the rarest category\"\nmean label_mean = K {label} \"mean of the labels as numbers\"\nmean relabel_mean = relabel {label} \"mean after the labels change order\"\nfocus K\n",
+   "kind": "experiment"
+  },
+  {
+   "id": "categorical-triage",
+   "law": "categorical",
+   "domain": "Emergency care",
+   "title": "Should the emergency department open an observation unit?",
+   "decision": "Decision: open an observation unit if more than 10 % of arrivals stay over 8 hours. Estimated quantity: the probability of a stay over 8 hours, and the mean stay.",
+   "reason": "Each arrival gets one of 5 triage levels. The levels are labels with probabilities, so the level is a categorical variable.",
+   "inputs": "The level probabilities and the mean stays are illustrative values. The stay is a count of whole hours. There is no data.",
+   "dependence": "The stay depends on the level: H | L ~ Poisson(stay_L). Arrivals are independent.",
+   "method": "Independent draws: the alias method for L, then a Poisson draw for H. The estimators are fractions and means of replicates.",
+   "diagnostics": "Exact reference values by enumeration of the level and the stay. Other candidate model: a continuous stay with a gamma law (group 2) or a lognormal law (group 3). The Poisson count of hours has a variance equal to its mean, which can be too small for real stays.",
+   "interpretation": "With these values, about 5 % of arrivals stay over 8 hours, so the department does not need the unit. Reject the Poisson stay model if the variance of the stay in one level is larger than its mean.",
+   "data": {
+    "kind": "synthetic",
+    "text": "Synthetic: the illustrative parameters above define the model that makes the data. These values are illustrative and not calibrated evidence."
+   },
+   "settings": {
+    "size": 16
+   },
+   "dsl": "title: Should the emergency department open an observation unit?\nproblem: Each arrival gets a triage level from 1 (most urgent) to 5. The length of stay depends on the level. Open an observation unit when stays over 8 hours are common.\nparam w = [0.01, 0.12, 0.40, 0.35, 0.12] \"probabilities of triage levels 1 to 5\"\nparam stay = [9, 7, 4.5, 2.5, 1.5] {hours} \"mean stay for each level\"\nparam limit = 8 {hours}\nL ~ categorical(p = w) {level}\nH ~ poisson(lambda = stay[L]) {hours} \"length of stay in whole hours\"\nprob long_stay = H > limit \"a stay over the limit\"\nmean hours = H {hours per arrival}\nrequire long_stay <= 0.1\nfocus L\n",
+   "kind": "workflow"
+  },
+  {
+   "id": "categorical-returns",
+   "law": "categorical",
+   "domain": "Retail logistics",
+   "title": "Does a size guide lower the cost of returns?",
+   "decision": "Decision: add a size guide to the shop, or not. Estimated quantity: the expected cost for each order. The cost for each return is a second quantity, and it can mislead.",
+   "reason": "Each order ends in one of 5 outcomes: kept, or returned for one of 4 reasons. The outcome is a categorical variable.",
+   "inputs": "The outcome probabilities, the costs to process each outcome and the guide cost of 0.1 currency units for each order are illustrative values. There is no data.",
+   "dependence": "None: orders are independent. The size guide changes the outcome probabilities.",
+   "method": "Independent draws with the alias method. The cost for each order is a sample mean. The cost for each return is a ratio estimator.",
+   "diagnostics": "Exact references by enumeration of the 5 outcomes. The paired difference between the alternatives uses the same streams. Other candidate model: one order with several returned items, with a multinomial count for each order.",
+   "interpretation": "The size guide lowers the cost for each order. But the cost for each return increases, because size returns have a low cost, and the guide makes them rare. Thus the cost for each return is the wrong quantity for this decision. Reject the model if the guide also changes the number of orders.",
+   "data": {
+    "kind": "synthetic",
+    "text": "Synthetic: the illustrative parameters above define the model that makes the data. These values are illustrative and not calibrated evidence."
+   },
+   "settings": {
+    "size": 16
+   },
+   "dsl": "title: Does a size guide lower the cost of returns?\nproblem: Each order is kept or returned for one reason. A size guide changes the mix of outcomes. Compare the expected cost for each order.\nparam w = [0.80, 0.05, 0.08, 0.05, 0.02] \"probabilities: kept, defect, wrong size, changed mind, damage in transit\"\nparam cost = [0, 12, 6, 6, 15] {currency units} \"cost to process each outcome\"\nparam guide = 0 {currency units per order} \"cost of the size guide\"\nR ~ categorical(p = w) {outcome}\nmean cost_per_order = cost[R] + guide {currency units per order}\nprob size_return = R == 3 \"a return for a wrong size\"\nratio cost_per_return = E[cost[R]] / E[R >= 2] {currency units per return}\nalt \"No size guide\": w = [0.80, 0.05, 0.08, 0.05, 0.02]; guide = 0\nalt \"Size guide\": w = [0.832, 0.05, 0.048, 0.05, 0.02]; guide = 0.1\nminimise cost_per_order\nfocus R\n",
+   "kind": "workflow"
+  },
+  {
+   "id": "categorical-camera-trap",
+   "law": "categorical",
+   "domain": "Wildlife ecology",
+   "title": "Send a ranger after a camera alarm?",
+   "decision": "Decision: send a ranger after an alarm only if a lynx is more likely than not. Estimated quantity: P(lynx | alarm) for the current and a new classifier.",
+   "reason": "Each detection is one animal of one species. The species is a label with a probability, so it is a categorical variable.",
+   "inputs": "The species mix and the alarm probabilities are illustrative values. There is no data.",
+   "dependence": "The alarm depends on the species: P(A = 1 | lynx) = hit, and P(A = 1 | other species) = false_alarm.",
+   "method": "Independent draws of S, then of A given S. The quantity P(lynx | alarm) is a ratio of means.",
+   "diagnostics": "Exact reference values by enumeration of 8 states. The delta-method interval of the ratio. Other candidate model: detections that are not independent, because one animal can pass the camera several times.",
+   "interpretation": "With the current classifier, about 61 % of alarms are a lynx. The new classifier gives about 82 %, although it misses more lynx. Reject the model if the species mix changes with the season.",
+   "data": {
+    "kind": "synthetic",
+    "text": "Synthetic: the illustrative parameters above define the model that makes the data. These values are illustrative and not calibrated evidence."
+   },
+   "settings": {
+    "size": 16
+   },
+   "dsl": "title: Send a ranger after a camera alarm?\nproblem: A camera trap classifies each animal. An alarm marks a possible lynx, a protected species. Find whether an alarm makes a lynx likely enough for a ranger visit.\nparam w = [0.60, 0.25, 0.05, 0.10] \"probabilities: deer, wild boar, lynx, other\"\nparam hit = 0.9 \"probability of an alarm for a lynx\"\nparam false_alarm = 0.03 \"probability of an alarm for another animal\"\nS ~ categorical(p = w) {species}\nA ~ bernoulli(p = if(S == 3, hit, false_alarm)) \"the camera raises an alarm\"\nratio lynx_given_alarm = E[(S == 3)*A] / E[A] \"probability of a lynx after an alarm\"\nprob alarm = A == 1 \"probability of an alarm\"\nalt \"Current classifier\": false_alarm = 0.03\nalt \"New classifier\": false_alarm = 0.01; hit = 0.85\nrequire lynx_given_alarm >= 0.5\nfocus S\n",
+   "kind": "workflow"
+  },
+  {
+   "id": "exp-multinomial",
+   "law": "multinomial",
+   "title": "Counts compete for a fixed total",
+   "observe": "The covariance of the first 2 counts is −n p_1 p_2 = −3, although the categorical draws are independent. The counts share one total. If one category gets a high count, the other categories get fewer draws.",
+   "settings": {
+    "size": 15
+   },
+   "dsl": "title: Counts compete for a fixed total\nproblem: Category counts in n draws have a negative covariance, because they share one total.\nparam n = 20 {draws}\nparam w = [0.5, 0.3, 0.2] \"category probabilities\"\nX ~ multinomial(n = n, p = w) {counts}\nmean cov12 = (X[1] - n*w[1]) * (X[2] - n*w[2]) \"covariance of the first 2 counts\"\nprob first_wins = X[1] > X[2] and X[1] > X[3] \"category 1 has the largest count\"\nfocus X[1]\n",
+   "kind": "experiment"
+  },
+  {
+   "id": "multinomial-size-stock",
+   "law": "multinomial",
+   "domain": "Retail",
+   "title": "How many shirts of each size to stock",
+   "decision": "Decision: the stock of each shirt size for one week. Estimated quantity: the expected number of customers without their size, and the probability of any shortage.",
+   "reason": "Each of the n weekly sales is one size. If buyers are independent with fixed size probabilities, the size counts are multinomial.",
+   "inputs": "200 sales each week and the size probabilities are illustrative values. The unit is shirts. There is no data.",
+   "dependence": "The counts share the fixed total n = 200, so they have a negative covariance. A model with a random total would remove this link.",
+   "method": "Each replicate draws the counts one at a time from conditional binomial laws. The estimator of the shortage is a sample mean of a bounded quantity.",
+   "diagnostics": "The page has no reference value here, because the 1.4 million outcomes exceed the enumeration limit. The CLT interval is valid as n → ∞, because the bounded shortage has a finite variance. Other candidate model: a Poisson total with independent Poisson counts for each size.",
+   "interpretation": "Compare the alternatives with their paired intervals. 10 extra shirts lower the shortage, at a cost that the model does not include. Reject the model if the weekly total itself varies much.",
+   "data": {
+    "kind": "synthetic",
+    "text": "Synthetic: the illustrative parameters above define the model that makes the data. These values are illustrative and not calibrated evidence."
+   },
+   "settings": {
+    "size": 15
+   },
+   "dsl": "title: How many shirts of each size to stock\nproblem: A store sells 200 shirts a week in 4 sizes. Find the stock of each size that keeps unmet demand low.\nparam n = 200 {shirts per week}\nparam w = [0.15, 0.35, 0.35, 0.15] \"probabilities of sizes S, M, L and XL\"\nparam stock = [30, 70, 70, 30] {shirts}\nX ~ multinomial(n = n, p = w) {shirts}\nunmet := sum(pmax(X - stock, 0)) {shirts} \"customers without their size\"\nmean short = unmet {shirts per week}\nprob any_short = unmet > 0 \"at least one customer without the size\"\nalt \"Proportional 30, 70, 70, 30\": stock = [30, 70, 70, 30]\nalt \"Wider middle 26, 74, 74, 26\": stock = [26, 74, 74, 26]\nalt \"10 more shirts 33, 72, 72, 33\": stock = [33, 72, 72, 33]\nminimise short\nfocus X[2]\n",
+   "kind": "workflow"
+  },
+  {
+   "id": "multinomial-poll",
+   "law": "multinomial",
+   "domain": "Election polls",
+   "title": "How large must a poll be to name the leader?",
+   "decision": "Decision: the number of respondents. Estimated quantity: the probability that the poll names the party with the largest true share.",
+   "reason": "Each respondent picks one of 4 parties. If respondents are a simple random sample from a large population, the counts are multinomial.",
+   "inputs": "The true shares 38 %, 35 %, 17 % and 10 % are illustrative values. The unit is respondents. There is no data.",
+   "dependence": "The counts share the total n. Thus X_1 − X_2 has the variance n[(p_1 + p_2) − (p_1 − p_2)^2], larger than for independent counts.",
+   "method": "Each replicate draws the counts one at a time from conditional binomial laws. The estimator is the fraction of polls that name party 1.",
+   "diagnostics": "References by enumeration are not available for n ≥ 500. Other candidate models: a design effect from cluster samples, and the non-response of some groups.",
+   "interpretation": "With a lead of 3 points, 1,000 respondents name the leader in about 86 % of polls. 2,000 respondents meet the 90 % target. Reject the model for quota or online panels, where the sample is not random.",
+   "data": {
+    "kind": "synthetic",
+    "text": "Synthetic: the illustrative parameters above define the model that makes the data. These values are illustrative and not calibrated evidence."
+   },
+   "settings": {
+    "size": 14
+   },
+   "dsl": "title: How large must a poll be to name the leader?\nproblem: A poll asks n voters to choose among 4 parties. Find the probability that the poll names the true leader.\nparam n = 1000 {respondents}\nparam w = [0.38, 0.35, 0.17, 0.10] \"true shares of the 4 parties\"\nX ~ multinomial(n = n, p = w) {respondents}\nprob correct = X[1] > max(X[2], X[3], X[4]) \"the poll names the true leader\"\nalt \"n = 500\": n = 500\nalt \"n = 1000\": n = 1000\nalt \"n = 2000\": n = 2000\nrequire correct >= 0.9\nfocus X[1]\n",
+   "kind": "workflow"
+  },
+  {
+   "id": "multinomial-hardy-weinberg",
+   "law": "multinomial",
+   "domain": "Population genetics",
+   "title": "Do genotype counts depart from Hardy–Weinberg proportions?",
+   "decision": "Decision: flag the sample for a departure from Hardy–Weinberg proportions if the p-value is below 0.05. Estimated quantity: the Monte Carlo p-value P(T ≥ t_obs) of the chi-square statistic T.",
+   "reason": "Under the null model, each person has genotype AA, Aa or aa with the Hardy–Weinberg probabilities (q², 2q(1 − q), (1 − q)²). Thus the genotype counts are multinomial.",
+   "inputs": "Synthetic counts AA = 58, Aa = 84, aa = 58 from 200 people. The allele frequency estimate is q = 0.5, and the observed statistic is t_obs = 5.12.",
+   "dependence": "None: the people have no family relation. The counts share the total n.",
+   "method": "Independent draws of the counts under the null model with q = 0.5. In each replicate, a new estimate of q replaces the true q, as for the observed statistic. The p-value estimator is the fraction of replicates with T ≥ t_obs. This is a parametric bootstrap.",
+   "diagnostics": "An enumeration of all 20,301 outcomes gives the exact p-value of this bootstrap. The chi-square law with 1 degree of freedom gives 0.024. A version that keeps q fixed gives about 0.08, near the chi-square law with 2 degrees of freedom, because it ignores the estimation of q. Other candidate method: the exact test that conditions on the allele counts (Wigginton, Cutler and Abecasis 2005).",
+   "interpretation": "The p-value is near 0.025, so the page flags the sample. The sample has 84 heterozygotes, against 100 under the model. The bootstrap uses the estimate of q in place of the unknown q, so the p-value is approximate. Reject the Hardy–Weinberg model at the 5 % level when the p-value is below 0.05. Attribute the departure to population structure or relatedness only with other evidence.",
+   "data": {
+    "kind": "synthetic",
+    "text": "Synthetic: the counts are the expected counts of a model with inbreeding coefficient F = 0.16 and allele frequency 0.5. No random draw made them. The model gives the probabilities (0.29, 0.42, 0.29)."
+   },
+   "settings": {
+    "size": 15
+   },
+   "dsl": "title: Do genotype counts depart from Hardy–Weinberg proportions?\nproblem: A sample of 200 people has genotype counts AA, Aa and aa. Find a Monte Carlo p-value for the chi-square statistic under Hardy–Weinberg proportions.\nparam n = 200 {people}\nparam q = 0.5 \"allele frequency of A, estimated from the sample\"\nparam t_obs = 5.12 \"chi-square statistic of the observed counts\"\nX ~ multinomial(n = n, p = [q^2, 2*q*(1 - q), (1 - q)^2]) {people}\nqhat := (2*X[1] + X[2]) / (2*n) \"allele frequency estimated from the replicate\"\nE1 := n*qhat^2 {people} \"expected count of AA\"\nE2 := n*2*qhat*(1 - qhat) {people} \"expected count of Aa\"\nE3 := n*(1 - qhat)^2 {people} \"expected count of aa\"\nstat := if(E1 > 0, (X[1] - E1)^2/E1, 0) + if(E2 > 0, (X[2] - E2)^2/E2, 0) + if(E3 > 0, (X[3] - E3)^2/E3, 0) \"chi-square statistic\"\nprob pvalue = stat >= t_obs \"Monte Carlo p-value\"\nmean stat_mean = stat \"mean of the statistic\"\nfocus X[2]\n",
+   "kind": "workflow"
+  },
+  {
+   "id": "exp-uniform",
+   "law": "uniform",
+   "title": "The sum of 2 dice",
+   "observe": "Each die is uniform on 1 to 6, but the sum S is not uniform: its PMF is a triangle with its peak at 7. Change the plot to the CDF to see the steps, and to the quantile function to see the inverse steps.",
+   "settings": {
+    "size": 15
+   },
+   "dsl": "title: The sum of 2 dice\nproblem: The sum of 2 independent discrete uniform values is not uniform. Its PMF is a triangle.\nD1 ~ uniform(a = 1, b = 6) {pips} \"first die\"\nD2 ~ uniform(a = 1, b = 6) {pips} \"second die\"\nS := D1 + D2 {pips} \"sum of the 2 dice\"\nprob seven = S == 7 \"probability of a sum of 7\"\nprob twelve = S == 12 \"probability of a sum of 12\"\nfocus S\n",
+   "kind": "experiment"
+  },
+  {
+   "id": "uniform-randomised-response",
+   "law": "uniform",
+   "domain": "Survey privacy",
+   "title": "A die that protects survey answers",
+   "decision": "Decision: the number t of die faces on which a respondent answers the sensitive question truthfully. Estimated quantity: the probability that the estimate of the share π is within 0.05, and the disclosure risk P(trait | yes).",
+   "reason": "A fair die gives each face 1 to 6 with probability 1/6, which is the discrete uniform law. The die hides the answer of each respondent, because the interviewer does not see the face.",
+   "inputs": "500 respondents and a true share π = 0.15 are illustrative values. On faces 1 to t the respondent answers truthfully, on face t + 1 says yes, and on the other faces says no.",
+   "dependence": "The die and the trait of each respondent are independent. Respondents are independent.",
+   "method": "Independent draws of 500 traits and 500 die faces in each replicate. The estimate is π̂ = (ȳ − 1/6)/(t/6), which has no bias for every t.",
+   "diagnostics": "No enumeration: each replicate has 1,000 variables. The CLT interval of the quantity within is valid as n → ∞, because the bounded quantity has a finite variance. Other candidate design: the Warner design, where the die selects the question instead of the answer.",
+   "interpretation": "More truthful faces give a more precise estimate but a higher disclosure risk. With the limit P(trait | yes) ≤ 0.5, t = 4 is the best design here. Reject the model if respondents do not follow the die, for example if they always say no.",
+   "data": {
+    "kind": "synthetic",
+    "text": "Synthetic: the illustrative parameters above define the model that makes the data. These values are illustrative and not calibrated evidence."
+   },
+   "settings": {
+    "size": 12
+   },
+   "dsl": "title: A die that protects survey answers\nproblem: Each respondent rolls a die in private. On faces 1 to t the respondent answers the sensitive question truthfully, on face t + 1 says yes, and on the other faces says no. Find the best t.\nparam share = 0.15 \"true share with the sensitive trait\"\nparam t = 4 {faces} \"faces with a truthful answer\"\ntrait ~ bernoulli(p = share) repeat 500 \"the trait of each respondent\"\nD ~ uniform(a = 1, b = 6) repeat 500 {pips} \"the private die face of each respondent\"\nY := if(D <= t, trait, D == t + 1) \"the answer of each respondent, 1 = yes\"\nest := (mean(Y) - 1/6) / (t/6) \"unbiased estimate of the share\"\nprob within = abs(est - share) <= 0.05 \"the estimate is within 0.05 of the share\"\nmean mse = (est - share)^2 \"mean squared error of the estimate\"\nratio disclosure = E[mean(trait*Y)] / E[mean(Y)] \"disclosure risk: P(trait | yes) for one respondent\"\nalt \"t = 3\": t = 3\nalt \"t = 4\": t = 4\nalt \"t = 5\": t = 5\nmaximise within\nrequire disclosure <= 0.5\nfocus D\n",
+   "kind": "workflow"
+  },
+  {
+   "id": "uniform-birthday-ids",
+   "law": "uniform",
+   "domain": "Software engineering",
+   "title": "How many bits for random record IDs?",
+   "decision": "Decision: the size m of the ID space. Estimated quantity: the probability that 2 of 500 new records get the same ID.",
+   "reason": "A good random ID generator gives each ID from 1 to m with the same probability, which is the discrete uniform law.",
+   "inputs": "500 records in one batch. The 3 alternatives use 20, 24 and 32 bits. There is no data.",
+   "dependence": "None: the IDs are independent draws.",
+   "method": "Independent draws of 500 IDs with unbiased integers. The estimator is the fraction of batches with a repeated ID.",
+   "diagnostics": "The approximation 1 − exp(−k(k − 1)/(2m)) gives about 0.112, 0.0074 and 0.000029. For 32 bits, a run often has no hits, so the zero-hit bound is the relevant interval. Other candidate model: a generator with a bias, which raises the collision probability.",
+   "interpretation": "20 bits give a collision in about 1 of 9 batches. Only 32 bits meet the limit of 0.001. Reject the model if the generator has a small internal state, such as a 32-bit seed for 64-bit IDs.",
+   "data": {
+    "kind": "synthetic",
+    "text": "Synthetic: the illustrative parameters above define the model that makes the data. These values are illustrative and not calibrated evidence."
+   },
+   "settings": {
+    "size": 14
+   },
+   "dsl": "title: How many bits for random record IDs?\nproblem: A system gives each of 500 new records a random ID from 1 to m. Find an m that makes a collision in one batch rare.\nparam m = 1048576 {IDs} \"number of possible IDs\"\nID ~ uniform(a = 1, b = m) repeat 500 {ID}\nprob collision = distinct(ID) < 500 \"at least 2 records share an ID\"\nalt \"20 bits\": m = 1048576\nalt \"24 bits\": m = 16777216\nalt \"32 bits\": m = 4294967296\nrequire collision <= 0.001\nfocus ID\n",
+   "kind": "workflow"
+  },
+  {
+   "id": "uniform-board-game",
+   "law": "uniform",
+   "domain": "Game design",
+   "title": "Which dice make a race last 5 turns?",
+   "decision": "Decision: the dice rule of a board game. Estimated quantity: the probability that a token reaches square 35 from square 0 within 5 turns.",
+   "reason": "A fair die gives each face with the same probability, which is the discrete uniform law.",
+   "inputs": "The target square 35 and the 5 turns are design values. The rules are 2 six-sided dice, or one twelve-sided die, for each turn.",
+   "dependence": "None: the dice are independent.",
+   "method": "Independent draws of 5 throws for each rule. The estimator is a fraction of replicates.",
+   "diagnostics": "No enumeration: the repeated variables have too many joint outcomes. Both rules have a similar mean of 35 and 32.5 squares, but different variances. Other candidate rule: a twelve-sided die with a reroll on 1.",
+   "interpretation": "2 six-sided dice keep the probability between 0.45 and 0.55. The twelve-sided die gives a lower mean and a larger spread. Reject the model if players can choose to move less than the dice show.",
+   "data": {
+    "kind": "synthetic",
+    "text": "Synthetic: the illustrative parameters above define the model that makes the data. These values are illustrative and not calibrated evidence."
+   },
+   "settings": {
+    "size": 15
+   },
+   "dsl": "title: Which dice make a race last 5 turns?\nproblem: A token starts on square 0 and must reach square 35 in 5 turns. Compare 2 dice rules: the sum of 2 six-sided dice, or one twelve-sided die.\nparam target = 35 {squares}\nparam rule = 1 \"1 = 2 six-sided dice, 2 = one twelve-sided die\"\nA ~ uniform(a = 1, b = 6) repeat 5 {squares} \"first six-sided die in each turn\"\nB ~ uniform(a = 1, b = 6) repeat 5 {squares} \"second six-sided die in each turn\"\nC ~ uniform(a = 1, b = 12) repeat 5 {squares} \"twelve-sided die in each turn\"\nmoves := if(rule == 1, sum(A) + sum(B), sum(C)) {squares}\nprob finish = moves >= target \"the token reaches the target in 5 turns\"\nalt \"2 six-sided dice\": rule = 1\nalt \"One twelve-sided die\": rule = 2\nrequire finish >= 0.45\nrequire finish <= 0.55\nfocus C\n",
+   "kind": "workflow"
+  },
+  {
+   "id": "exp-geometric",
+   "law": "geometric",
+   "title": "The geometric law has no memory",
+   "observe": "After s = 5 failures, the probability of at least t = 3 more failures is P(X ≥ 8 | X ≥ 5) = 0.8^3 = 0.512. The probability of at least 3 failures from the start has the same value. The ratio estimator for the conditional probability uses only the replicates with X ≥ s, so its interval is wider.",
+   "settings": {
+    "size": 15
+   },
+   "dsl": "title: The geometric law has no memory\nproblem: After s failures, the number of further failures has the same law as at the start.\nparam p = 0.2 \"success probability of each trial\"\nparam s = 5 {failures}\nparam t = 3 {failures}\nX ~ geometric(p = p) {failures}\nratio memory = E[X >= s + t] / E[X >= s] \"P(X ≥ s + t | X ≥ s)\"\nprob fresh = X >= t \"P(X ≥ t)\"\nfocus X\n",
+   "kind": "experiment"
+  },
+  {
+   "id": "geometric-retries",
+   "law": "geometric",
+   "domain": "Radio networks",
+   "title": "How many retries before the link drops a message?",
+   "decision": "Decision: the retry limit of a radio link. Estimated quantity: the probability that the link drops a message, and the mean time spent on one message.",
+   "reason": "Each attempt succeeds or fails with a fixed probability, independently of the earlier attempts. The number of failed attempts before the first success is then geometric.",
+   "inputs": "P(success of one attempt) = 0.7 and 20 ms for each attempt are illustrative values. There is no data.",
+   "dependence": "None in this model. On a real channel, failures come in bursts. A two-state Markov channel (the process group) describes that.",
+   "method": "Independent draws by a count of failed Bernoulli trials, or by the closed-form inverse transform. The estimators are fractions and means.",
+   "diagnostics": "Exact reference values: P(X > L) = 0.3^(L + 1). Other candidate model: the Gilbert–Elliott channel with bursts of failures.",
+   "interpretation": "5 retries meet the drop limit of 0.001 with the least delay. Reject the model if failures cluster in time, because the drop probability is then much larger than 0.3^(L + 1).",
+   "data": {
+    "kind": "synthetic",
+    "text": "Synthetic: the illustrative parameters above define the model that makes the data. These values are illustrative and not calibrated evidence."
+   },
+   "settings": {
+    "size": 17
+   },
+   "dsl": "title: How many retries before the link drops a message?\nproblem: A radio link repeats a message until the receiver confirms it. Each attempt fails with a fixed probability. Find the retry limit.\nparam psucc = 0.7 \"probability that one attempt succeeds\"\nparam limit = 3 {retries}\nparam slot = 20 {ms} \"time of one attempt\"\nX ~ geometric(p = psucc) {failed attempts}\nprob dropped = X > limit \"the message is dropped\"\nmean delay = slot*min(X + 1, limit + 1) {ms} \"time spent on the message\"\nalt \"3 retries\": limit = 3\nalt \"5 retries\": limit = 5\nalt \"7 retries\": limit = 7\nminimise delay\nrequire dropped <= 0.001\nfocus X\n",
+   "kind": "workflow"
+  },
+  {
+   "id": "geometric-relay-replacement",
+   "law": "geometric",
+   "domain": "Maintenance",
+   "title": "Does planned replacement help a relay with a constant fault rate?",
+   "decision": "Decision: replace a relay after T switch cycles, or only after a fault. Estimated quantity: the long-run cost for each cycle, by the renewal–reward theorem.",
+   "reason": "If each cycle has the same fault probability, independently of the age of the relay, the number of cycles without a fault is geometric.",
+   "inputs": "P(fault on one cycle) = 0.0005, a fault replacement of 50 and a planned replacement of 10 currency units are illustrative values.",
+   "dependence": "None: cycles are independent. Successive relays are independent, which makes the replacements a renewal process.",
+   "method": "Independent draws of X. The cost rate is a ratio of means E[cost]/E[life], with a delta-method interval.",
+   "diagnostics": "Exact references by enumeration up to a neglected mass below 10^-13. Other candidate model: a fault probability that grows with age (wear), for example a discrete Weibull law.",
+   "interpretation": "Planned replacement only adds cost, because the geometric law has no memory: an old relay is as good as a new one. Reject the model if the fault rate grows with the number of cycles. Then planned replacement can help.",
+   "data": {
+    "kind": "synthetic",
+    "text": "Synthetic: the illustrative parameters above define the model that makes the data. These values are illustrative and not calibrated evidence."
+   },
+   "settings": {
+    "size": 16
+   },
+   "dsl": "title: Does planned replacement help a relay with a constant fault rate?\nproblem: A relay fails on each switch cycle with a constant probability. A planned replacement after T cycles costs less than a replacement after a fault. Compare the cost for each cycle.\nparam p = 0.0005 \"probability of a fault on one cycle\"\nparam T = 1000 {cycles} \"planned replacement age\"\nparam cfail = 50 {currency units} \"cost of a replacement after a fault\"\nparam cplan = 10 {currency units} \"cost of a planned replacement\"\nX ~ geometric(p = p) {cycles without a fault}\nlife := min(X + 1, T) {cycles} \"cycles until the replacement\"\ncost := if(X + 1 <= T, cfail, cplan) {currency units} \"cost of the replacement\"\nratio cost_rate = E[cost] / E[life] {currency units per cycle}\nalt \"Replace at 500 cycles\": T = 500\nalt \"Replace at 2,000 cycles\": T = 2000\nalt \"Replace only after a fault\": T = 1000000000\nminimise cost_rate\nfocus X\n",
+   "kind": "workflow"
+  },
+  {
+   "id": "geometric-survey-visits",
+   "law": "geometric",
+   "domain": "Field ecology",
+   "title": "How many visits before a site counts as empty?",
+   "decision": "Decision: the number of visits v after which a site with no detection counts as unoccupied. Estimated quantity: P(present | no detection in v visits).",
+   "reason": "If the species is present, each visit detects it with a fixed probability, independently of the other visits. The number of visits without a detection is then geometric.",
+   "inputs": "Occupancy 0.4 and detection 0.3 for each visit are illustrative values. There is no data.",
+   "dependence": "The detection depends on the occupancy Z: an absent species is never detected.",
+   "method": "Independent draws of Z and X. The quantity is a ratio of means.",
+   "diagnostics": "Exact references: ψ(1 − d)^v / (1 − ψ + ψ(1 − d)^v). Other candidate model: a detection probability that changes with the weather or the season.",
+   "interpretation": "After 4 visits with no detection, the probability that the site holds the species is 0.14. 8 visits meet the 5 % limit. Reject the model if the detection probability falls on later visits.",
+   "data": {
+    "kind": "synthetic",
+    "text": "Synthetic: the illustrative parameters above define the model that makes the data. These values are illustrative and not calibrated evidence."
+   },
+   "settings": {
+    "size": 16
+   },
+   "dsl": "title: How many visits before a site counts as empty?\nproblem: A surveyor visits a site until the species shows. The species may be absent. Find the number of visits after which a site counts as unoccupied.\nparam psi = 0.4 \"probability that the species occupies the site\"\nparam d = 0.3 \"probability of detection on one visit when the species is present\"\nparam v = 4 {visits}\nZ ~ bernoulli(p = psi) \"the species occupies the site\"\nX ~ geometric(p = d) {visits without a detection}\nseen := Z and X < v \"a detection within v visits\"\nratio present_unseen = E[Z*(1 - seen)] / E[1 - seen] \"probability of presence after v visits with no detection\"\nprob detected = seen == 1 \"a detection within v visits\"\nalt \"2 visits\": v = 2\nalt \"4 visits\": v = 4\nalt \"8 visits\": v = 8\nrequire present_unseen <= 0.05\nfocus X\n",
+   "kind": "workflow"
+  },
+  {
+   "id": "exp-negbin",
+   "law": "negbin",
+   "title": "Overdispersion against the Poisson law",
+   "observe": "N and Y have the same mean μ = 4. The variance of N is μ + μ²/r = 12, so the ratio Var(N)/μ is 3, where the Poisson law gives 1. The right tail of N is heavier: P(N ≥ 12) is about 40 times P(Y ≥ 12). Use the log axis on the survival plot.",
+   "settings": {
+    "size": 16,
+    "plot": "survival",
+    "yscale": "log"
+   },
+   "dsl": "title: Overdispersion against the Poisson law\nproblem: A gamma mixture of Poisson laws has the same mean as a Poisson law, but a larger variance and a heavier right tail.\nparam mu = 4 {events} \"mean count\"\nparam r = 2 \"gamma shape: a smaller r gives more spread\"\nN ~ negbin(r = r, p = r / (r + mu)) {events}\nY ~ poisson(lambda = mu) {events}\nmean dispersion = (N - mu)^2 / mu \"Var(N)/μ\"\nprob tail_nb = N >= 12 \"P(N ≥ 12)\"\nprob tail_poisson = Y >= 12 \"P(Y ≥ 12)\"\nfocus N\n",
+   "kind": "experiment"
+  },
+  {
+   "id": "negbin-claims",
+   "law": "negbin",
+   "domain": "Motor insurance",
+   "title": "A no-claim discount for drivers with different risks",
+   "decision": "Decision: the claim count c at which a driver loses the no-claim discount. Estimated quantity: the share of drivers who lose it, under the negative binomial model and under a Poisson model.",
+   "reason": "Drivers differ in risk. If the claim rate of one driver has a gamma law and the claims are Poisson given that rate, the claim count is negative binomial.",
+   "inputs": "A mean of 0.8 claims a year and a gamma shape r = 1.5 are illustrative values. There is no data.",
+   "dependence": "The gamma rate gives each driver a fixed risk, so the claim counts of one driver in different years are dependent. This model looks at one year only.",
+   "method": "Independent draws by the gamma–Poisson mixture. The estimators are fractions of replicates.",
+   "diagnostics": "Exact references by enumeration. The Poisson model with the same mean gives a smaller share in the tail. Other candidate model: a zero-inflated count for drivers who never claim.",
+   "interpretation": "With c = 3, about 8 % of drivers lose the discount, against 5 % in the Poisson model. A Poisson model would understate the tail. Reject the model if the spread between drivers changes with the age of the driver.",
+   "data": {
+    "kind": "synthetic",
+    "text": "Synthetic: the illustrative parameters above define the model that makes the data. These values are illustrative and not calibrated evidence."
+   },
+   "settings": {
+    "size": 16
+   },
+   "dsl": "title: A no-claim discount for drivers with different risks\nproblem: Drivers differ in risk, so claim counts spread more than a Poisson law allows. Find the claim count at which a driver loses the discount.\nparam mu = 0.8 {claims per year} \"mean claim count\"\nparam r = 1.5 \"gamma shape of the risk spread\"\nparam c = 2 {claims} \"claim count that removes the discount\"\nN ~ negbin(r = r, p = r / (r + mu)) {claims}\nY ~ poisson(lambda = mu) {claims} \"the same mean without risk spread\"\nprob lose = N >= c \"share of drivers who lose the discount\"\nprob lose_poisson = Y >= c \"the same share under the Poisson model\"\nalt \"c = 1\": c = 1\nalt \"c = 2\": c = 2\nalt \"c = 3\": c = 3\nmaximise lose\nrequire lose <= 0.15\nfocus N\n",
+   "kind": "workflow"
+  },
+  {
+   "id": "negbin-hospital-beds",
+   "law": "negbin",
+   "domain": "Hospital operations",
+   "title": "Surge beds for daily admissions",
+   "decision": "Decision: the number of beds for daily admissions. Estimated quantity: the probability of an overflow day and the mean excess admissions.",
+   "reason": "Daily admissions vary more than a Poisson law allows, because the rate itself changes from day to day. A gamma rate gives the negative binomial law.",
+   "inputs": "A mean of 20 admissions a day and r = 8 are illustrative values. The variance is then 20 + 400/8 = 70.",
+   "dependence": "This model treats days as independent. Real admissions have weekly patterns and sequences of busy days.",
+   "method": "Independent draws or the inverse transform from the mode. The estimators are fractions and means.",
+   "diagnostics": "Exact references by enumeration. Other candidate models: the Poisson law, which underestimates the overflow, and a model with a weekly pattern.",
+   "interpretation": "40 beds probably meet the limit 0.02: the reference overflow probability is 0.019. A run needs about 10^5 replicates to separate the estimate from the limit. Until then the page reports the constraint as not separable. Reject the model if busy days cluster.",
+   "data": {
+    "kind": "synthetic",
+    "text": "Synthetic: the illustrative parameters above define the model that makes the data. These values are illustrative and not calibrated evidence."
+   },
+   "settings": {
+    "size": 16
+   },
+   "dsl": "title: Surge beds for daily admissions\nproblem: Daily admissions spread more than a Poisson law allows. Find the number of beds that keeps overflow days rare.\nparam mu = 20 {admissions per day}\nparam r = 8 \"dispersion: a smaller r gives more spread\"\nparam beds = 30 {beds}\nA ~ negbin(r = r, p = r / (r + mu)) {admissions}\nprob overflow = A > beds \"a day with more admissions than beds\"\nmean excess = max(A - beds, 0) {admissions per day}\nalt \"30 beds\": beds = 30\nalt \"35 beds\": beds = 35\nalt \"40 beds\": beds = 40\nminimise excess\nrequire overflow <= 0.02\nfocus A\n",
+   "kind": "workflow"
+  },
+  {
+   "id": "negbin-parasites",
+   "law": "negbin",
+   "domain": "Parasitology",
+   "title": "Treat the fish with the most parasites",
+   "decision": "Decision: the parasite count t at which a fish gets treatment. Estimated quantity: the share of fish treated, and the share of parasites in treated fish.",
+   "reason": "Parasites aggregate: most fish carry few and a few carry many. The negative binomial law with a small r is the standard model of this aggregation.",
+   "inputs": "A mean of 6 parasites and r = 0.8 are illustrative values. There is no data.",
+   "dependence": "None: fish are independent. The gamma–Poisson mixture gives each fish its own exposure.",
+   "method": "Independent draws by the gamma–Poisson mixture. The share of parasites in treated fish is a ratio of means.",
+   "diagnostics": "Exact references by enumeration. Other candidate model: a zero-inflated Poisson law, with uninfected fish and a Poisson count for the others.",
+   "interpretation": "t = 10 treats about 22 % of the fish and removes about 61 % of the parasites. Reject the model if the counts come from fish of different ages, because each age group then needs its own r.",
+   "data": {
+    "kind": "synthetic",
+    "text": "Synthetic: the illustrative parameters above define the model that makes the data. These values are illustrative and not calibrated evidence."
+   },
+   "settings": {
+    "size": 16
+   },
+   "dsl": "title: Treat the fish with the most parasites\nproblem: A few fish carry most of the parasites. Find a count threshold for treatment that removes most parasites but treats few fish.\nparam mu = 6 {parasites per fish}\nparam r = 0.8 \"aggregation: a small r gives strong aggregation\"\nparam t = 10 {parasites} \"treatment threshold\"\nN ~ negbin(r = r, p = r / (r + mu)) {parasites}\nprob treated = N >= t \"share of fish treated\"\nratio removed = E[N*(N >= t)] / E[N] \"share of parasites in treated fish\"\nalt \"t = 5\": t = 5\nalt \"t = 10\": t = 10\nalt \"t = 20\": t = 20\nmaximise removed\nrequire treated <= 0.3\nfocus N\n",
+   "kind": "workflow"
+  },
+  {
+   "id": "exp-poisson",
+   "law": "poisson",
+   "title": "Independent Poisson counts add",
+   "observe": "T = A + B has the law Poisson(5). The reference P(T ≤ 2) = 18.5 e^(−5) ≈ 0.1247 comes from the enumeration of A and B. The estimate of E[(T − 5)^2] is near 5. This agrees with Var T = E[T] = 5.",
+   "settings": {
+    "size": 15
+   },
+   "dsl": "title: Independent Poisson counts add\nproblem: The sum of independent Poisson counts is a Poisson count with the sum of the rates.\nparam l1 = 2 {events} \"rate of A\"\nparam l2 = 3 {events} \"rate of B\"\nA ~ poisson(lambda = l1) {events}\nB ~ poisson(lambda = l2) {events}\nT := A + B {events} \"the total count\"\nprob low = T <= 2 \"P(T ≤ 2)\"\nmean spread = (T - l1 - l2)^2 \"the variance of T\"\nfocus T\n",
+   "kind": "experiment"
+  },
+  {
+   "id": "poisson-horse-kicks",
+   "law": "poisson",
+   "domain": "Military records",
+   "title": "Was a year with 2 deaths unusual?",
+   "decision": "Decision: start an inquiry into a corps-year with 2 or more deaths, or not. Estimated quantity: P(N ≥ 2) and P(N ≥ 4) for one corps in one year.",
+   "reason": "A death by horse kick is a rare event with many soldiers at risk. Many independent rare events give a count with a law near the Poisson law, by the law of small numbers.",
+   "inputs": "Real data: deaths by horse kick in 10 Prussian army corps from 1875 to 1894, 200 corps-years. The rate estimate is the mean count, 122/200 = 0.61 deaths for each corps-year.",
+   "dependence": "None in the model: corps and years are independent. If the corps have different sizes, the counts do not have one law.",
+   "method": "Independent draws of N. The estimators are fractions of replicates. The data panel compares the observed counts with the fitted Poisson counts.",
+   "diagnostics": "The chi-square test of the data against Poisson(0.61), with pooled cells. Other candidate model: the negative binomial law, if the corps differ in risk.",
+   "interpretation": "A corps-year with 2 or more deaths has a probability of about 0.13, so such a year is common. Only 4 or more deaths would be rare. Reject the model if one corps shows much higher counts than the others.",
+   "data": {
+    "kind": "real",
+    "dataset": "horse-kicks"
+   },
+   "settings": {
+    "size": 16
+   },
+   "dsl": "title: Was a year with 2 deaths unusual?\nproblem: Bortkiewicz counted deaths by horse kick in Prussian army corps from 1875 to 1894. Find whether a corps-year with 2 or more deaths needs an inquiry.\nparam lambda = 0.61 {deaths per corps-year} \"maximum likelihood estimate from 200 corps-years\"\nN ~ poisson(lambda = lambda) {deaths}\nprob two_plus = N >= 2 \"2 or more deaths in a corps-year\"\nprob four_plus = N >= 4 \"4 or more deaths in a corps-year\"\nfocus N\n",
+   "kind": "workflow"
+  },
+  {
+   "id": "poisson-rutherford-geiger",
+   "law": "poisson",
+   "domain": "Radiation detection",
+   "title": "A counter that saturates above 10 particles",
+   "decision": "Decision: the length of one count interval. Estimated quantity: the probability that one interval holds more than 10 particles, which saturates the counter.",
+   "reason": "Radioactive decays of many independent atoms give a Poisson count in a fixed interval. The rate is constant over the experiment, because the half-life is long.",
+   "inputs": "Real data: Rutherford and Geiger counted alpha particles in 2,608 intervals of 7.5 s. The rate estimate is 10,097/(2,608 × 7.5 s) = 0.5162 particles each second.",
+   "dependence": "None: decays in different intervals are independent. The dead time of a real counter breaks this assumption at high rates.",
+   "method": "Independent draws of N for each interval length. The estimator is a fraction of replicates.",
+   "diagnostics": "The chi-square test of the data against the fitted Poisson law. Other candidate model: a counter with dead time, which records fewer counts than particles at high rates.",
+   "interpretation": "Intervals of 7.5 s saturate in about 0.2 % of readings. Intervals of 5 s meet the limit of 0.05 % and keep the most counts in each interval. Reject the model if the activity of the source falls during the experiment.",
+   "data": {
+    "kind": "real",
+    "dataset": "rutherford-geiger"
+   },
+   "settings": {
+    "size": 17
+   },
+   "dsl": "title: A counter that saturates above 10 particles\nproblem: Rutherford and Geiger counted alpha particles in 2,608 intervals of 7.5 s. A counter saturates above 10 counts in one interval. Find the interval length.\nparam rate = 0.5162 {particles per s} \"10,097 particles in 2,608 intervals of 7.5 s\"\nparam interval = 7.5 {s} \"length of one interval\"\nN ~ poisson(lambda = rate*interval) {particles}\nprob saturate = N > 10 \"the counter saturates\"\nmean count = N {particles per interval}\nalt \"7.5 s\": interval = 7.5\nalt \"5 s\": interval = 5\nalt \"3 s\": interval = 3\nmaximise count\nrequire saturate <= 0.0005\nfocus N\n",
+   "kind": "workflow"
+  },
+  {
+   "id": "poisson-spare-parts",
+   "law": "poisson",
+   "domain": "Maintenance logistics",
+   "title": "Spare seals for a remote pump station",
+   "decision": "Decision: the number of spare seals on site. Estimated quantity: the expected cost of unused and unavailable seals, and the probability of a stockout before the next delivery.",
+   "reason": "Seal faults come at random times at a constant rate. The number of faults between 2 deliveries is then Poisson.",
+   "inputs": "0.3 faults a week and a delivery every 8 weeks are illustrative values. So are the costs: 2 currency units to keep one unused seal, and 50 for each seal that is not available.",
+   "dependence": "None: faults are independent. A fault that damages a second seal would break this assumption.",
+   "method": "Independent draws or the inverse transform from the mode. The estimators are fractions and means of bounded quantities.",
+   "diagnostics": "Exact references by enumeration. Other candidate model: a negative binomial demand, if the fault rate changes between periods.",
+   "interpretation": "5 seals meet the stockout limit 0.05 with the least cost. Reject the model if faults cluster after a pressure surge.",
+   "data": {
+    "kind": "synthetic",
+    "text": "Synthetic: the illustrative parameters above define the model that makes the data. These values are illustrative and not calibrated evidence."
+   },
+   "settings": {
+    "size": 16
+   },
+   "dsl": "title: Spare seals for a remote pump station\nproblem: Pump seals fail at random times. The station gets new parts every 8 weeks. Find the number of spare seals to keep.\nparam rate = 0.3 {faults per week}\nparam weeks = 8 {weeks}\nparam stock = 5 {seals}\nparam hold = 2 {currency units} \"holding cost of one unused seal\"\nparam short = 50 {currency units} \"cost of one seal that is not available\"\nD ~ poisson(lambda = rate*weeks) {seals needed}\nprob stockout = D > stock \"more faults than spare seals\"\nmean cost = hold*max(stock - D, 0) + short*max(D - stock, 0) {currency units per period}\nalt \"3 seals\": stock = 3\nalt \"5 seals\": stock = 5\nalt \"7 seals\": stock = 7\nminimise cost\nrequire stockout <= 0.05\nfocus D\n",
+   "kind": "workflow"
+  },
+  {
+   "id": "exp-hypergeometric",
+   "law": "hypergeometric",
+   "title": "Draws without replacement vary less",
+   "observe": "X counts the successes in 20 draws without replacement from 50 items. Y counts them in 20 draws with replacement. Both have the mean 8. The variance of X is 4.8 × 30/49 ≈ 2.94, the binomial variance times the finite population correction (N − n)/(N − 1).",
+   "settings": {
+    "size": 15
+   },
+   "dsl": "title: Draws without replacement vary less\nproblem: Draws without replacement from a finite population have a smaller variance than draws with replacement.\nparam N = 50 {items}\nparam K = 20 {items} \"success items\"\nparam n = 20 {draws}\nX ~ hypergeometric(N = N, K = K, n = n) {successes} \"without replacement\"\nY ~ binomial(n = n, p = K / N) {successes} \"with replacement\"\nmean var_without = (X - n*K/N)^2 \"variance of X\"\nmean var_with = (Y - n*K/N)^2 \"variance of Y\"\nfocus X\n",
+   "kind": "experiment"
+  },
+  {
+   "id": "hypergeometric-capture-recapture",
+   "law": "hypergeometric",
+   "domain": "Fisheries ecology",
+   "title": "How many fish to recapture for a population estimate?",
+   "decision": "Decision: the size n of the second catch. Estimated quantity: the probability that the Chapman estimate is within 20 % of the true population.",
+   "reason": "In the second catch, the team takes n fish without replacement from N fish, of which K have a mark. The count of marked fish in the catch is hypergeometric.",
+   "inputs": "N = 2,000 fish (unknown in the field) and K = 200 marked fish are illustrative values. There is no data.",
+   "dependence": "None in the model. Fish that avoid traps after the first catch would break the equal-catch assumption.",
+   "method": "Inverse transform from the mode, or urn simulation. The Chapman estimate (K + 1)(n + 1)/(X + 1) − 1 is a function of X.",
+   "diagnostics": "Exact references by enumeration of the support. The bias of the Chapman estimate is small but not zero. Other candidate model: a population that changes between the 2 catches.",
+   "interpretation": "A second catch of 400 fish gives an estimate within 20 % in more than 80 % of studies. 100 or 200 fish do not. Reject the model if marked fish die more often or mix poorly with the others.",
+   "data": {
+    "kind": "synthetic",
+    "text": "Synthetic: the illustrative parameters above define the model that makes the data. These values are illustrative and not calibrated evidence."
+   },
+   "settings": {
+    "size": 15
+   },
+   "dsl": "title: How many fish to recapture for a population estimate?\nproblem: A team marks K fish, releases them, and later catches n fish. The count of marked fish in the catch gives an estimate of the population size. Find the size of the second catch.\nparam Npop = 2000 {fish} \"true population size, unknown in the field\"\nparam K = 200 {fish} \"marked fish\"\nparam n = 200 {fish} \"size of the second catch\"\nX ~ hypergeometric(N = Npop, K = K, n = n) {marked fish in the catch}\nNhat := (K + 1)*(n + 1)/(X + 1) - 1 {fish} \"Chapman estimate\"\nprob within20 = abs(Nhat - Npop) <= 0.2*Npop \"the estimate is within 20 %\"\nmean bias = Nhat - Npop {fish} \"bias of the estimate\"\nalt \"n = 100\": n = 100\nalt \"n = 200\": n = 200\nalt \"n = 400\": n = 400\nmaximise within20\nrequire within20 >= 0.8\nfocus X\n",
+   "kind": "workflow"
+  },
+  {
+   "id": "hypergeometric-ballot-audit",
+   "law": "hypergeometric",
+   "domain": "Election audits",
+   "title": "How many ballots to audit in a batch?",
+   "decision": "Decision: the number n of ballots to check by hand. Estimated quantity: the probability that the audit finds at least one of 10 misread ballots.",
+   "reason": "The auditors take n ballots without replacement from a batch of N, of which K are misread. The count of misread ballots found is hypergeometric.",
+   "inputs": "A batch of 500 ballots with 10 misread ballots is an illustrative case. There is no data.",
+   "dependence": "None: the audit draws a simple random sample of ballots.",
+   "method": "Inverse transform from the mode. A binomial count Y with p = K/N shows the error of the binomial approximation.",
+   "diagnostics": "Exact references by enumeration. Other candidate model: the binomial approximation Y. It gives a slightly smaller probability, because draws with replacement can repeat a ballot.",
+   "interpretation": "150 ballots find a misread ballot with a probability above 0.9. 100 ballots give about 0.89, just below the target. Reject the model if the misread ballots cluster in one part of the batch and the sample is not random.",
+   "data": {
+    "kind": "synthetic",
+    "text": "Synthetic: the illustrative parameters above define the model that makes the data. These values are illustrative and not calibrated evidence."
+   },
+   "settings": {
+    "size": 16
+   },
+   "dsl": "title: How many ballots to audit in a batch?\nproblem: A batch of 500 paper ballots may hold 10 misread ballots. An audit checks n ballots by hand. Find n so that the audit finds at least one misread ballot.\nparam N = 500 {ballots}\nparam K = 10 {ballots} \"misread ballots in the batch\"\nparam n = 100 {ballots} \"ballots checked by hand\"\nX ~ hypergeometric(N = N, K = K, n = n) {misread ballots found}\nY ~ binomial(n = n, p = K / N) {misread ballots found} \"the binomial approximation\"\nprob found = X >= 1 \"the audit finds a misread ballot\"\nprob found_binomial = Y >= 1 \"the same probability under the binomial approximation\"\nalt \"n = 50\": n = 50\nalt \"n = 100\": n = 100\nalt \"n = 150\": n = 150\nrequire found >= 0.9\nfocus X\n",
+   "kind": "workflow"
+  },
+  {
+   "id": "hypergeometric-card-deck",
+   "law": "hypergeometric",
+   "domain": "Card game design",
+   "title": "How many lands in a 60-card deck?",
+   "decision": "Decision: the number of land cards in a 60-card deck. Estimated quantity: the probability of a first hand of 7 cards with 2 to 4 lands. At most 10 % of hands can have 5 or more lands.",
+   "reason": "A shuffled deck gives a hand of 7 cards without replacement. The count of lands in the hand is hypergeometric.",
+   "inputs": "Deck size 60 and hand size 7 are game rules. The land counts 22, 24 and 26 are the alternatives.",
+   "dependence": "None: a fair shuffle gives every hand the same probability.",
+   "method": "Urn simulation of 7 draws, or the inverse transform. The estimators are fractions of replicates.",
+   "diagnostics": "Exact references by enumeration. Other candidate model: a rule that lets a player draw a new hand, which changes the law of the kept hand.",
+   "interpretation": "26 lands give the highest probability of a hand with 2 to 4 lands, 0.78, but too many hands with 5 or more lands. 24 lands give almost the same value, 0.77, and meet the limit. Reject the model if the players do not shuffle the deck well.",
+   "data": {
+    "kind": "synthetic",
+    "text": "Synthetic: the illustrative parameters above define the model that makes the data. These values are illustrative and not calibrated evidence."
+   },
+   "settings": {
+    "size": 16
+   },
+   "dsl": "title: How many lands in a 60-card deck?\nproblem: A deck has 60 cards. A first hand has 7 cards. Find the number of land cards that makes a hand with 2 to 4 lands likely.\nparam deck = 60 {cards}\nparam lands = 24 {cards}\nparam hand = 7 {cards}\nX ~ hypergeometric(N = deck, K = lands, n = hand) {lands in the hand}\nprob keepable = X >= 2 and X <= 4 \"a hand with 2 to 4 lands\"\nprob flood = X >= 5 \"a hand with 5 or more lands\"\nalt \"22 lands\": lands = 22\nalt \"24 lands\": lands = 24\nalt \"26 lands\": lands = 26\nmaximise keepable\nrequire flood <= 0.1\nfocus X\n",
+   "kind": "workflow"
+  },
+  {
+   "id": "exp-zipf",
+   "law": "zipf",
+   "title": "An infinite mean stops the law of large numbers",
+   "observe": "For the zeta law with s = 1.8, E[X] is infinite. The sample mean tends to ∞, so it has no finite limit. It increases in a step each time a very large rank appears. The page shows no interval and no reference value, because no finite mean exists.",
+   "settings": {
+    "size": 18,
+    "plot": "survival",
+    "yscale": "log"
+   },
+   "dsl": "title: An infinite mean stops the law of large numbers\nproblem: For the zeta law with s ≤ 2 the mean is infinite, so the sample mean grows without limit.\nparam s = 1.8 \"tail exponent\"\nX ~ zipf(s = s, N = inf) {rank}\nmean average = X {rank} \"sample mean of X\"\nprob big = X > 1000 \"P(X > 1000)\"\nfocus X\n",
+   "kind": "experiment"
+  },
+  {
+   "id": "zipf-cache",
+   "law": "zipf",
+   "domain": "Web systems",
+   "title": "How large should a web cache be?",
+   "decision": "Decision: the number C of pages in the cache. Estimated quantity: the hit ratio, the probability that a request finds its page in the cache.",
+   "reason": "The popularity of a page often falls with its rank as a power law. A Zipf law with exponent near 1 is a standard model of web requests.",
+   "inputs": "10,000 pages and the exponent s = 0.9 are illustrative values. The cache holds the C most popular pages.",
+   "dependence": "None: requests are independent. Real requests show bursts of repeated pages, which help a cache.",
+   "method": "Inverse transform with a CDF table. The estimator is the fraction of requests with X ≤ C.",
+   "diagnostics": "Exact references: H(C, s)/H(N, s). Other candidate model: popularity that changes over time, which needs a cache that adapts.",
+   "interpretation": "1,000 pages give a hit ratio near 0.67 and meet the target 0.6. 500 pages give about 0.59. Reject the model if the exponent varies between days, because the hit ratio depends strongly on s.",
+   "data": {
+    "kind": "synthetic",
+    "text": "Synthetic: the illustrative parameters above define the model that makes the data. These values are illustrative and not calibrated evidence."
+   },
+   "settings": {
+    "size": 16
+   },
+   "dsl": "title: How large should a web cache be?\nproblem: Requests follow a Zipf popularity law over 10,000 pages. The cache holds the C most popular pages. Find a C with a hit ratio of at least 0.6.\nparam s = 0.9 \"Zipf exponent\"\nparam pages = 10000 {pages}\nparam C = 1000 {pages} \"pages in the cache\"\nX ~ zipf(s = s, N = pages) {page rank}\nprob hit = X <= C \"the request finds its page in the cache\"\nalt \"C = 100\": C = 100\nalt \"C = 500\": C = 500\nalt \"C = 1000\": C = 1000\nrequire hit >= 0.6\nfocus X\n",
+   "kind": "workflow"
+  },
+  {
+   "id": "zipf-dictionary",
+   "law": "zipf",
+   "domain": "Text processing",
+   "title": "How large must the dictionary of a spell checker be?",
+   "decision": "Decision: the number D of words in the dictionary of a spell checker. Estimated quantity: the probability that a message of 300 words holds more than 30 words outside the dictionary.",
+   "reason": "Word frequencies in text fall with rank roughly as a power law with exponent near 1 (Zipf's law of word frequencies).",
+   "inputs": "A vocabulary of 50,000 ranks and the exponent s = 1.1 are illustrative values. A message has 300 words.",
+   "dependence": "This model draws the 300 words independently. In real text, words repeat and follow topics, so the words are not independent.",
+   "method": "Inverse transform with a CDF table for each of the 300 words. The estimator is a fraction of messages.",
+   "diagnostics": "No enumeration: each message has 300 variables. Other candidate model: a topic model in which the rank law changes from message to message.",
+   "interpretation": "Only the dictionary of 20,000 words keeps messages with more than 30 unknown words below 5 %. Even then a message holds about 14 unknown words, because the Zipf tail is long. Reject the independence assumption for long texts, where words repeat.",
+   "data": {
+    "kind": "synthetic",
+    "text": "Synthetic: the illustrative parameters above define the model that makes the data. These values are illustrative and not calibrated evidence."
+   },
+   "settings": {
+    "size": 13
+   },
+   "dsl": "title: How large must the dictionary of a spell checker be?\nproblem: Word ranks in text roughly follow a Zipf law. A message has 300 words. Find the dictionary size D so that few messages hold more than 30 unknown words.\nparam s = 1.1 \"Zipf exponent of word ranks\"\nparam vocab = 50000 {words}\nparam D = 5000 {words} \"words in the dictionary\"\nW ~ zipf(s = s, N = vocab) repeat 300 {word rank}\nunknown := sum(W > D) {words} \"words outside the dictionary\"\nprob many_unknown = unknown > 30 \"more than 30 unknown words\"\nmean unknown_mean = unknown {words per message}\nalt \"D = 2,000\": D = 2000\nalt \"D = 5,000\": D = 5000\nalt \"D = 20,000\": D = 20000\nrequire many_unknown <= 0.05\nfocus W\n",
+   "kind": "workflow"
+  },
+  {
+   "id": "zipf-cascade",
+   "law": "zipf",
+   "domain": "Social media operations",
+   "title": "Server capacity for viral posts",
+   "decision": "Decision: plan capacity for posts with more than 10,000 shares. Estimated quantity: P(X > 10,000) for one post, and the mean number of shares.",
+   "reason": "Share counts of posts have a power-law tail. The zeta law is the discrete law with P(X = k) proportional to k^(−s) on all positive integers.",
+   "inputs": "The tail exponents s = 2.3 and s = 2.1 are illustrative values. There is no data.",
+   "dependence": "None: posts are independent in this model. Real shares spread through a network, which the branching processes of the process group describe.",
+   "method": "Rejection from a Pareto proposal (Devroye). The tail probability estimator is a fraction of replicates. The mean estimator is a sample mean.",
+   "diagnostics": "The mean is finite for s > 2, but the variance is infinite for s ≤ 3. Thus the page gives no CLT interval for the mean. The tail probability has an exact reference from the Hurwitz zeta function. Other candidate model: a lognormal law, which has all moments.",
+   "interpretation": "About 3 in a million posts pass 10,000 shares when s = 2.3. A small change of s changes this probability several times. Plan from the tail probability and its sensitivity to s, not from the mean. Reject the model if the real counts have a tail that decays faster.",
+   "data": {
+    "kind": "synthetic",
+    "text": "Synthetic: the illustrative parameters above define the model that makes the data. These values are illustrative and not calibrated evidence."
+   },
+   "settings": {
+    "size": 20
+   },
+   "dsl": "title: Server capacity for viral posts\nproblem: The number of shares of a post follows a power law. Plan capacity for the rare post with more than 10,000 shares.\nparam s = 2.3 \"tail exponent of the zeta law\"\nX ~ zipf(s = s, N = inf) {shares}\nprob viral = X > 10000 \"a post with more than 10,000 shares\"\nmean average = X {shares per post}\nalt \"s = 2.3\": s = 2.3\nalt \"s = 2.1\": s = 2.1\nfocus X\n",
+   "kind": "workflow"
+  }
+ ],
+ "methods": [
+  {
+   "id": "independent",
+   "name": "Independent sampling",
+   "family": "Direct simulation",
+   "estimator": "\\hat\\theta_n = \\frac{1}{n} \\sum_{i=1}^{n} g(X_i), \\quad X_i \\ \\text{i.i.d. from the model}",
+   "estimatorText": "The sample mean of the quantity over n independent replicates. For an event, it is the fraction of replicates with the event. Each value comes from the reference sampler of its law, which the law card names.",
+   "assumptions": [
+    "The sampler of each law draws exactly from that law, up to floating-point round-off.",
+    "Replicates use different streams, so they are independent.",
+    "E|g(X)| < ∞ for consistency, and Var g(X) < ∞ for the CLT interval."
+   ],
+   "settings": [
+    "Sample size n, a power of 2.",
+    "Seed, an integer from 0 to 2^32 − 1.",
+    "Each law uses its reference sampler, which the law panel names."
+   ],
+   "suitable": {
+    "model": "binomial-overbooking",
+    "text": "The quantities of the flight workflow have bounds, and their probabilities are not small. 65,536 replicates give intervals much narrower than the differences between the alternatives."
+   },
+   "failure": {
+    "model": "exp-zipf",
+    "settings": {},
+    "text": "For the zeta law with s = 1.8, E[X] is infinite. The sample mean tends to ∞, so it has no finite limit, and no number of replicates gives a valid estimate of a mean."
+   },
+   "comparison": {
+    "with": "inverse",
+    "model": "binomial-overbooking",
+    "text": "Both methods draw from the same law. The inverse transform maps one uniform to one value by a monotone function. Thus the alternatives with the same streams stay closely coupled, and the paired differences usually have a smaller variance."
+   }
+  },
+  {
+   "id": "inverse",
+   "name": "Inverse transform",
+   "family": "Direct simulation",
+   "estimator": "X_i = F^{-1}(U_i) = \\min\\{k : F(k) \\ge U_i\\}, \\quad U_i \\sim \\mathrm{Uniform}(0, 1)",
+   "estimatorText": "Each value is the quantile function at one uniform. The estimator of the quantity is the same sample mean.",
+   "assumptions": [
+    "U is uniform on (0, 1), with 53 random bits.",
+    "The page computes F with an error much smaller than the Monte Carlo error.",
+    "The search reaches the whole support: a cut table loses the tail."
+   ],
+   "settings": [
+    "A CDF table with binary search for a support of at most 65,536 points.",
+    "A sequential search from the mode for the binomial, Poisson, negative binomial and hypergeometric laws.",
+    "For the zeta law, a table to rank 4,096, then bisection on the survival function with the Hurwitz zeta function."
+   ],
+   "suitable": {
+    "model": "geometric-retries",
+    "text": "The geometric law has a closed-form inverse: X = ⌊log U / log(1 − p)⌋. This equals F⁻¹(1 − U), which has the same law as F⁻¹(U). 1 uniform gives 1 value at a fixed cost."
+   },
+   "failure": {
+    "model": "poisson-rutherford-geiger",
+    "settings": {
+     "method": "inverse",
+     "failure": "table_cut"
+    },
+    "text": "A table that stops at the 0.99 quantile returns the last table value for every U above 0.99. The estimate of P(N > 10) is then 0, although the true value is about 0.002."
+   },
+   "comparison": {
+    "with": "rejection",
+    "model": "exp-poisson",
+    "text": "The inverse transform uses 1 uniform for each value. The rejection method uses a random number of uniforms, with mean 2M. Thus the inverse transform costs less here. Also, the same uniform gives the same value in each alternative, which keeps the alternatives coupled."
+   }
+  },
+  {
+   "id": "rejection",
+   "name": "Rejection sampling",
+   "family": "Direct simulation",
+   "estimator": "\\text{propose } Y \\sim q, \\ \\text{accept if } U \\le \\frac{p(Y)}{M q(Y)}; \\quad \\mathbb{P}(\\text{accept}) = \\frac{1}{M}",
+   "estimatorText": "Each accepted proposal is one value of the target law. The estimator of the quantity is the same sample mean. The acceptance rate estimates 1/M.",
+   "assumptions": [
+    "p(k) ≤ M q(k) for every k: the envelope M q dominates the target p.",
+    "The proposal and the acceptance uniform are independent.",
+    "M is finite. The page refuses the method when 1/M < 0.001."
+   ],
+   "settings": [
+    "Finite support: the uniform proposal on the support, with M = (number of points) × max p.",
+    "Poisson and negative binomial laws: a geometric proposal, with M at the maximum of p/q.",
+    "Geometric law: a geometric proposal with success probability p/2, M = 2.",
+    "Zeta law: the Pareto proposal of Devroye, with acceptance probability above 1/2."
+   ],
+   "suitable": {
+    "model": "zipf-cascade",
+    "text": "The zeta law has no closed-form inverse, and a CDF table cannot hold its long tail. The Pareto proposal of Devroye covers the whole tail and accepts more than half of the proposals."
+   },
+   "failure": {
+    "model": "exp-poisson",
+    "settings": {
+     "method": "rejection",
+     "failure": "envelope"
+    },
+    "text": "With the envelope constant halved, the envelope no longer covers the target. The accepted values then follow min(p, Mq) after normalisation, not p. The page counts the proposals where p/(Mq) > 1."
+   },
+   "comparison": {
+    "with": "inverse",
+    "model": "exp-poisson",
+    "text": "Both methods are exact. Rejection costs about 2M uniforms for each value, against 1 for the inverse transform. Compare the time for each replicate in the comparison table."
+   }
+  }
+ ],
+ "theory": [
+  {
+   "id": "lln",
+   "title": "The strong law of large numbers",
+   "statement": "\\begin{gathered} X_1, X_2, \\dots \\ \\text{i.i.d.}, \\quad \\mathbb{E}|X_1| < \\infty \\\\ \\Longrightarrow \\ \\bar X_n = \\frac{1}{n}\\sum_{i=1}^{n} X_i \\to \\mathbb{E} X_1 \\ \\text{almost surely} \\end{gathered}",
+   "assumptions": [
+    "The X_i have the same law.",
+    "The X_i are pairwise independent (Etemadi). Full independence is the classical condition.",
+    "E|X_1| < ∞."
+   ],
+   "proof": "Truncate: Y_k = X_k 1{|X_k| ≤ k}. Integrability gives Σ P(X_k ≠ Y_k) < ∞, so X_k = Y_k for all large k (Borel–Cantelli). Chebyshev's inequality on a geometric subsequence n_j = ⌊α^j⌋ with α > 1 gives almost sure convergence of the truncated means. For X ≥ 0, monotonicity covers the indices between the n_j. Then split X = X⁺ − X⁻.",
+   "reference": "R. Durrett, Probability: Theory and Examples, 5th ed., Cambridge University Press, 2019, Theorem 2.4.1. N. Etemadi, An elementary proof of the strong law of large numbers, Z. Wahrscheinlichkeitstheorie verw. Gebiete 55 (1981) 119–122.",
+   "counterexample": "The zeta law with s = 1.8 has E[X] = ∞. Then X̄_n → ∞ almost surely, so no finite limit exists.",
+   "experiment": {
+    "model": "exp-zipf",
+    "settings": {}
+   }
+  },
+  {
+   "id": "clt",
+   "title": "The central limit theorem and the CLT interval",
+   "statement": "\\begin{gathered} X_i \\ \\text{i.i.d.}, \\quad 0 < \\sigma^2 = \\operatorname{Var} X_1 < \\infty \\\\ \\Longrightarrow \\ \\frac{\\sqrt{n}\\,(\\bar X_n - \\mu)}{\\sigma} \\Rightarrow N(0, 1) \\end{gathered}",
+   "assumptions": [
+    "The X_i are i.i.d.",
+    "The variance σ² is finite and positive.",
+    "The coverage 0.95 of the interval X̄_n ± 1.96 s_n/√n is a limit as n → ∞. A bound for a given n needs more, for example E|X|³ < ∞ (Berry–Esseen)."
+   ],
+   "proof": "Let φ be the characteristic function of X_1 − μ. Then φ(u) = 1 − σ²u²/2 + o(u²), and the characteristic function of the normalised sum is φ(t/(σ√n))^n. Its limit is e^(−t²/2). Lévy's continuity theorem gives convergence in law. Slutsky's lemma replaces σ by s_n.",
+   "reference": "R. Durrett, Probability: Theory and Examples, 5th ed., 2019, Theorem 3.4.1. B. V. Gnedenko and A. N. Kolmogorov, Limit Distributions for Sums of Independent Random Variables, Addison-Wesley, 1954.",
+   "counterexample": "The zeta law with s = 2.5 has a finite mean and an infinite variance. Then (S_n − nμ)/n^(2/3) converges in law to a stable law with index 1.5, not to a normal law. Thus the CLT interval has no coverage guarantee. The block coverage in the diagnostics shows the effect in a run.",
+   "experiment": {
+    "model": "exp-zipf",
+    "settings": {
+     "params": "s=2.5"
+    }
+   }
+  },
+  {
+   "id": "consistency",
+   "title": "Consistency of the estimator and exactness of rejection",
+   "statement": "\\begin{gathered} \\mathbb{E}|g(X)| < \\infty \\ \\Rightarrow \\ \\mathbb{E}\\hat\\theta_n = \\theta, \\ \\hat\\theta_n \\to \\theta \\ \\text{a.s.} \\\\ p \\le M q \\ \\Rightarrow \\ Y \\mid \\text{accept} \\sim p \\end{gathered}",
+   "assumptions": [
+    "Each replicate draws exactly from the model law.",
+    "E|g(X)| < ∞.",
+    "For rejection: p and q each sum to 1, and p(k) ≤ M q(k) for every k. The acceptance uniform is independent of the proposal."
+   ],
+   "proof": "Unbiasedness follows from the linearity of expectation, and consistency from the strong law. For rejection, P(accept, Y = k) = q(k) p(k)/(M q(k)) = p(k)/M. The sum over k gives P(accept) = 1/M. Divide to get P(Y = k | accept) = p(k).",
+   "reference": "L. Devroye, Non-Uniform Random Variate Generation, Springer, 1986, chapter II. S. Asmussen and P. W. Glynn, Stochastic Simulation: Algorithms and Analysis, Springer, 2007, chapter II.",
+   "counterexample": "If M is too small, the accepted values follow min(p, Mq) after normalisation, not p. The estimator is then consistent for the wrong quantity.",
+   "experiment": {
+    "model": "exp-poisson",
+    "settings": {
+     "method": "rejection",
+     "failure": "envelope"
+    }
+   }
+  },
+  {
+   "id": "variance",
+   "title": "Monte Carlo error and the zero-hit bound",
+   "statement": "\\begin{gathered} \\operatorname{Var}\\hat\\theta_n = \\frac{\\sigma_g^2}{n} \\\\ 0 \\ \\text{hits in} \\ n \\ \\Rightarrow \\ p \\le 1 - \\alpha^{1/n} \\ \\text{at confidence} \\ 1 - \\alpha, \\quad 1 - 0.05^{1/n} \\approx \\frac{3}{n} \\end{gathered}",
+   "assumptions": [
+    "The replicates are independent.",
+    "σ_g² = Var g(X) is finite for Var θ̂_n = σ_g²/n.",
+    "For the zero-hit bound, each replicate shows the event independently with the same probability p."
+   ],
+   "proof": "The variance of a sum of independent terms is the sum of their variances, so Var θ̂_n = σ_g²/n for any dimension of X. For the bound: P(0 hits) = (1 − p)^n, which is at most α if and only if p ≥ 1 − α^(1/n). Thus a test at level α rejects every p above the bound.",
+   "reference": "S. Asmussen and P. W. Glynn, Stochastic Simulation, 2007, chapter III. J. A. Hanley and A. Lippman-Hand, If nothing goes wrong, is everything all right? JAMA 249 (1983) 1743–1745.",
+   "counterexample": "If replicates reuse 16 streams, the draws repeat and are not independent. The formula s/√n then understates the error by a factor near √(n/16), and the intervals cover the reference less often.",
+   "experiment": {
+    "model": "binomial-overbooking",
+    "settings": {
+     "failure": "stream_reuse"
+    }
+   }
+  }
+ ],
+ "glossary": [
+  {
+   "term": "law",
+   "definition": "The probability law of a random variable X: it gives P(X ∈ A) for each set A."
+  },
+  {
+   "term": "support",
+   "definition": "The set of values with positive probability, for a discrete law."
+  },
+  {
+   "term": "PMF",
+   "definition": "Probability mass function: p(k) = P(X = k)."
+  },
+  {
+   "term": "CDF",
+   "definition": "Cumulative distribution function: F(x) = P(X ≤ x)."
+  },
+  {
+   "term": "survival function",
+   "definition": "S(x) = P(X > x) = 1 − F(x)."
+  },
+  {
+   "term": "quantile function",
+   "definition": "F⁻¹(u) = min{x : F(x) ≥ u} for 0 < u < 1."
+  },
+  {
+   "term": "moment",
+   "definition": "E[X^r] for an order r. The moment exists when E|X|^r < ∞."
+  },
+  {
+   "term": "PGF",
+   "definition": "Probability generating function: G(z) = E[z^X]."
+  },
+  {
+   "term": "MGF",
+   "definition": "Moment generating function: M(t) = E[e^(tX)], where it is finite. It need not exist for any t ≠ 0."
+  },
+  {
+   "term": "CF",
+   "definition": "Characteristic function: φ(t) = E[e^(itX)]. It exists for every law."
+  },
+  {
+   "term": "PDF",
+   "definition": "Probability density function: the density f of a continuous law, with P(X ∈ A) = ∫_A f(x) dx."
+  },
+  {
+   "term": "i.i.d.",
+   "definition": "Independent and identically distributed: the variables are independent and have the same law."
+  },
+  {
+   "term": "estimand",
+   "definition": "The quantity that a run estimates, such as θ = E[g(X)] or θ = P(A)."
+  },
+  {
+   "term": "estimator",
+   "definition": "A function of the draws that approximates the estimand, such as the sample mean."
+  },
+  {
+   "term": "replicate",
+   "definition": "One joint sample of all variables of a model, with the quantities computed from it."
+  },
+  {
+   "term": "Monte Carlo error",
+   "definition": "The difference θ̂_n − θ that comes from the finite number of replicates."
+  },
+  {
+   "term": "confidence interval",
+   "definition": "An interval computed from the replicates. Its nominal coverage is the probability, as the method claims it, that the interval holds the estimand."
+  },
+  {
+   "term": "coverage",
+   "definition": "The probability that an interval method holds the estimand. A nominal coverage is the value the method claims."
+  },
+  {
+   "term": "CLT interval",
+   "definition": "The interval θ̂ ± 1.96 s/√n. Its coverage tends to 0.95 as n → ∞ when the variance is finite."
+  },
+  {
+   "term": "Wilson interval",
+   "definition": "The score interval for a binomial proportion. It keeps its coverage better than the CLT interval near 0 and 1."
+  },
+  {
+   "term": "Clopper–Pearson interval",
+   "definition": "The exact binomial interval from the beta quantiles. Its coverage is at least the nominal value."
+  },
+  {
+   "term": "zero-hit bound",
+   "definition": "After 0 hits in n independent trials, the exact upper bound 1 − α^(1/n) for the probability. For α = 0.05 it is about 3/n."
+  },
+  {
+   "term": "delta method",
+   "definition": "An approximation of the variance of a smooth function of means by its linear part. The page uses it for a ratio of means."
+  },
+  {
+   "term": "ratio estimator",
+   "definition": "The estimator of E[A]/E[B] by the ratio of the 2 sample means."
+  },
+  {
+   "term": "paired difference",
+   "definition": "The difference of a quantity between 2 alternatives in the same replicate, with the same streams."
+  },
+  {
+   "term": "common random numbers",
+   "definition": "The same streams for each alternative. The differences between alternatives then usually have a smaller variance than with independent streams."
+  },
+  {
+   "term": "seed",
+   "definition": "The integer that selects the key of the generator. The same seed and settings give the same run."
+  },
+  {
+   "term": "stream",
+   "definition": "A named sequence of random numbers. The page derives each stream from the seed, the stream name, the replicate and the variable."
+  },
+  {
+   "term": "counter-based generator",
+   "definition": "A generator whose output is a function of a key and a counter, so the page can compute any draw directly. Philox4x32-10 is one."
+  },
+  {
+   "term": "block",
+   "definition": "1,024 consecutive replicates: the unit of work that one worker computes."
+  },
+  {
+   "term": "worker",
+   "definition": "A background thread of the browser. Workers compute blocks, so the page stays responsive."
+  },
+  {
+   "term": "inverse transform",
+   "definition": "A sampler that returns the quantile function at a uniform value."
+  },
+  {
+   "term": "rejection sampling",
+   "definition": "A sampler that draws from a proposal law and accepts each proposal with probability p/(Mq)."
+  },
+  {
+   "term": "proposal law",
+   "definition": "The law q from which the rejection method takes its candidates."
+  },
+  {
+   "term": "envelope constant",
+   "definition": "The number M with p ≤ Mq. The acceptance probability is 1/M."
+  },
+  {
+   "term": "alias method",
+   "definition": "A sampler for a finite law that uses one table lookup and one uniform for each draw (Walker, Vose)."
+  },
+  {
+   "term": "reference value",
+   "definition": "The value of a quantity from enumeration or a closed form, not from the simulation."
+  },
+  {
+   "term": "enumeration",
+   "definition": "A sum over every point of the joint support, weighted by its probability."
+  },
+  {
+   "term": "neglected mass",
+   "definition": "The probability of the support points that an enumeration leaves out."
+  },
+  {
+   "term": "theorem",
+   "definition": "A claim tag: the statement follows from a theorem under the stated assumptions."
+  },
+  {
+   "term": "numerical approximation",
+   "definition": "A claim tag: a computed value with a stated error source, such as round-off or neglected mass."
+  },
+  {
+   "term": "finite-run observation",
+   "definition": "A claim tag: a value that one finite run showed. It is not a guarantee about the law."
+  },
+  {
+   "term": "heavy tail",
+   "definition": "A tail that decays as a power of k, so that some moments are infinite."
+  },
+  {
+   "term": "regularly varying tail",
+   "definition": "A tail P(X > x) = x^(−α) L(x) with a slowly varying function L."
+  },
+  {
+   "term": "overdispersion",
+   "definition": "A count variance larger than the count mean."
+  },
+  {
+   "term": "memorylessness",
+   "definition": "P(X ≥ s + t | X ≥ s) = P(X ≥ t) for all s and t. The geometric law has this property."
+  },
+  {
+   "term": "finite population correction",
+   "definition": "The factor (N − n)/(N − 1) by which draws without replacement reduce the variance."
+  },
+  {
+   "term": "dependency graph",
+   "definition": "A graph with an arrow from each name to each name that reads it."
+  },
+  {
+   "term": "decision alternative",
+   "definition": "One choice of the parameter values that a decision can make."
+  },
+  {
+   "term": "objective",
+   "definition": "The quantity that a decision makes as small or as large as possible."
+  },
+  {
+   "term": "constraint",
+   "definition": "A limit that a quantity must meet, such as P(stockout) ≤ 0.05."
+  },
+  {
+   "term": "MLE",
+   "definition": "Maximum likelihood estimate: the parameter value that makes the observed data most probable."
+  },
+  {
+   "term": "chi-square test",
+   "definition": "A test that compares observed counts with expected counts through Σ (O − E)²/E."
+  },
+  {
+   "term": "LLN",
+   "definition": "Law of large numbers: for i.i.d. variables with E|X| < ∞, the sample mean converges to E[X] almost surely."
+  },
+  {
+   "term": "CLT",
+   "definition": "Central limit theorem: for i.i.d. variables with 0 < σ² < ∞, the normalised sample mean converges in law to the standard normal law."
+  },
+  {
+   "term": "block coverage",
+   "definition": "The fraction of blocks whose own interval holds the reference value. It checks the interval method on this run."
+  },
+  {
+   "term": "assumption-failure experiment",
+   "definition": "A choice that breaks one assumption of a method on purpose, to show the effect on the result."
+  },
+  {
+   "term": "Hurwitz zeta function",
+   "definition": "ζ(s, a) = Σ_{k ≥ 0} (a + k)^(−s) for s > 1. The zeta law has P(X > k) = ζ(s, k + 1)/ζ(s)."
+  },
+  {
+   "term": "ASD-STE100",
+   "definition": "Simplified Technical English, a controlled language for technical text."
+  },
+  {
+   "term": "draw",
+   "definition": "One random value of one variable."
+  },
+  {
+   "term": "trial",
+   "definition": "One Bernoulli or categorical experiment, such as one throw of a die."
+  },
+  {
+   "term": "focus variable",
+   "definition": "The variable whose law the distribution plot shows."
+  },
+  {
+   "term": "independent sampling",
+   "definition": "The method that draws each value with the reference sampler of its law. All 3 methods of this group give independent replicates."
+  },
+  {
+   "term": "reference sampler",
+   "definition": "The exact sampler that a law uses for independent sampling, such as the alias method for the categorical law."
+  },
+  {
+   "term": "urn simulation",
+   "definition": "A draw of n items one at a time without replacement, as from an urn."
+  },
+  {
+   "term": "not separable",
+   "definition": "A verdict of the decision report. The interval of a quantity or of a paired difference still includes the limit or 0, so the run cannot decide yet."
+  },
+  {
+   "term": "parametric bootstrap",
+   "definition": "A test or an interval from replicates of a fitted model, with the estimate in place of the unknown parameter."
+  },
+  {
+   "term": "stable law",
+   "definition": "A law that keeps its form under sums of i.i.d. copies, up to location and scale. The normal law is the stable law with index 2."
+  },
+  {
+   "term": "renewal–reward theorem",
+   "definition": "For i.i.d. cycles, the long-run reward for each unit of time is E[reward of a cycle]/E[length of a cycle]."
+  },
+  {
+   "term": "beta-factor model",
+   "definition": "A reliability model in which a fraction of the faults are common causes that stop all redundant units at once."
+  },
+  {
+   "term": "design effect",
+   "definition": "The ratio of the variance of an estimate under a complex survey design to its variance under a simple random sample."
+  },
+  {
+   "term": "slowly varying function",
+   "definition": "A function L with L(tx)/L(x) → 1 as x → ∞ for every t > 0, such as a constant or log x."
+  }
+ ],
+ "datasets": [
+  {
+   "id": "horse-kicks",
+   "title": "Deaths by horse kick in the Prussian army",
+   "unit": "deaths in one corps in one year",
+   "values": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ],
+   "counts": [
+    109,
+    65,
+    22,
+    3,
+    1
+   ],
+   "source": "L. von Bortkiewicz, Das Gesetz der kleinen Zahlen, B. G. Teubner, Leipzig, 1898. The 200 corps-years of 10 corps, 1875 to 1894, in the aggregation that later texts use.",
+   "date": "1898",
+   "licence": "Public domain: published in 1898.",
+   "law": "poisson",
+   "param": "lambda"
+  },
+  {
+   "id": "rutherford-geiger",
+   "title": "Alpha particles in intervals of 7.5 s",
+   "unit": "particles in one interval of 7.5 s",
+   "values": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14
+   ],
+   "counts": [
+    57,
+    203,
+    383,
+    525,
+    532,
+    408,
+    273,
+    139,
+    45,
+    27,
+    10,
+    4,
+    0,
+    1,
+    1
+   ],
+   "source": "E. Rutherford and H. Geiger, The probability variations in the distribution of α particles, Philosophical Magazine, series 6, 20 (1910) 698–707.",
+   "date": "1910",
+   "licence": "Public domain: published in 1910.",
+   "law": "poisson",
+   "param": "lambda"
+  },
+  {
+   "id": "weldon",
+   "title": "Weldon's dice: 12 dice thrown 26,306 times",
+   "unit": "dice that show 5 or 6 in one throw of 12 dice",
+   "values": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12
+   ],
+   "counts": [
+    185,
+    1149,
+    3265,
+    5475,
+    6114,
+    5194,
+    3067,
+    1331,
+    403,
+    105,
+    14,
+    4,
+    0
+   ],
+   "source": "K. Pearson, On the criterion that a given system of deviations from the probable … has arisen from random sampling, Philosophical Magazine, series 5, 50 (1900) 157–175. The throws are by W. F. R. Weldon.",
+   "date": "1900",
+   "licence": "Public domain: published in 1900.",
+   "law": "binomial",
+   "param": "p",
+   "trials": 12
+  }
+ ],
+ "groups": [
+  {
+   "piece": 1,
+   "id": "discrete",
+   "title": "Core and discrete laws",
+   "status": "here",
+   "content": "The 3 panels, the generator and the workers, the expression language and the model record. The expert editor and the examples. The 10 discrete laws, 3 methods to draw samples, the core diagnostics and the exports."
+  },
+  {
+   "piece": 2,
+   "id": "continuous",
+   "title": "Continuous laws and variance reduction",
+   "status": "to come",
+   "content": "Uniform, normal, multivariate normal, exponential, gamma, Erlang, beta, Dirichlet, chi-square, Student's t, F, logistic and Laplace. Stratification, antithetic variables, control variates and common random numbers."
+  },
+  {
+   "piece": 3,
+   "id": "tails",
+   "title": "Positive, heavy-tailed and extreme-value laws",
+   "status": "to come",
+   "content": "Lognormal, Weibull, inverse Gaussian, Gompertz, log-logistic, Pareto I and II, Burr XII, Fréchet, Cauchy, Lévy and stable laws. The generalised extreme value (GEV), generalised Pareto (GPD), Gumbel and reverse Weibull laws. Censored observations, tail plots and the theory of extremes."
+  },
+  {
+   "piece": 4,
+   "id": "constructed",
+   "title": "Constructed laws and custom inputs",
+   "status": "to come",
+   "content": "Finite mixtures, compound Poisson, empirical and kernel density models, truncated laws, and custom PDF, PMF, CDF, quantile, MGF and characteristic function inputs with their checks."
+  },
+  {
+   "piece": 5,
+   "id": "dependence",
+   "title": "Dependence and processes",
+   "status": "to come",
+   "content": "Conditional models, and the Gaussian, Student-t, Clayton, Gumbel and Frank copulas. Finite-state Markov chains, Brownian motion, Ornstein–Uhlenbeck (OU), Poisson, Hawkes, branching and Lévy processes. Multilevel Monte Carlo."
+  },
+  {
+   "piece": 6,
+   "id": "interview",
+   "title": "The guided interview",
+   "status": "to come",
+   "content": "A rule graph that asks about the problem and proposes candidate models, with reasons, other explanations and rejection tests."
+  },
+  {
+   "piece": 7,
+   "id": "rare",
+   "title": "Rare events and ruin",
+   "status": "to come",
+   "content": "Valid exponential tilting, splitting, subset simulation, adaptive importance sampling, the cross-entropy method, and the catastrophe and ruin test."
+  },
+  {
+   "piece": 8,
+   "id": "mcmc",
+   "title": "Markov chains, sequential and quasi-Monte Carlo",
+   "status": "to come",
+   "content": "Metropolis–Hastings, Gibbs, Hamiltonian Monte Carlo, sequential Monte Carlo, particle filters and randomised quasi-Monte Carlo."
+  },
+  {
+   "piece": 9,
+   "id": "physics",
+   "title": "Critical behaviour",
+   "status": "to come",
+   "content": "An energy landscape, annealing and tempering, a sandpile, finite-size scaling and coarse-graining."
+  },
+  {
+   "piece": 10,
+   "id": "data",
+   "title": "Local data and the acceptance gate",
+   "status": "to come",
+   "content": "CSV and JSON import, estimation, bootstrap methods, tail-threshold selection and the final acceptance gate."
+  }
+ ],
+ "limits": {
+  "measured": {
+   "maxSize": 22,
+   "alternatives": 4,
+   "repeatDraws": 5000,
+   "seconds": 120,
+   "how": "The page's Measure speed button gave these rates on 5 October 2026 in headless Chromium: about 1.9 million replicates a second with 4 workers for the Poisson experiment, and about 62,000 for the survey workflow with 1,000 draws in each replicate. With the main thread 4 times slower, as on an ordinary laptop, the main thread alone gives 211,000 and 4,300. Thus a run of 2^22 replicates of a light model takes about 10 s on an ordinary laptop, and the time limit pauses a longer run.",
+   "date": "2026-10-05",
+   "rates": [
+    {
+     "model": "exp-poisson",
+     "workers": 1927529,
+     "mainThread": 671475,
+     "mainThreadSlowed4": 211134
+    },
+    {
+     "model": "binomial-overbooking",
+     "workers": 2685902,
+     "mainThread": 1555443,
+     "mainThreadSlowed4": 469008
+    },
+    {
+     "model": "zipf-cascade",
+     "workers": 2664065,
+     "mainThread": 2275556,
+     "mainThreadSlowed4": 502577
+    },
+    {
+     "model": "uniform-birthday-ids",
+     "workers": 117112,
+     "mainThread": 32456,
+     "mainThreadSlowed4": 8350
+    },
+    {
+     "model": "zipf-dictionary",
+     "workers": 116737,
+     "mainThread": 31826,
+     "mainThreadSlowed4": 7632
+    },
+    {
+     "model": "uniform-randomised-response",
+     "workers": 62352,
+     "mainThread": 17502,
+     "mainThreadSlowed4": 4275
+    }
+   ]
+  }
+ }
+}
