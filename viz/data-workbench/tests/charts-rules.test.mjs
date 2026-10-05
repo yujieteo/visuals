@@ -178,6 +178,11 @@ test("edits: each change is recorded; a field's axis label follows the field unl
   assert.deepEqual(titled.layout, { width: 120, height: 90, unit: "mm", facet: { field: "grp", columns: 3 } });
   assert.match(titled.edits[0], /title: "Mass against b"; x label: "Mass"; width 120 mm; height 90 mm; facets by grp/);
   assert.equal(ChartSpec.validate(titled, ctx).ok, true);
+  assert.equal(ChartSpec.edit(ChartSpec.make(cand("histogram", ["a"]), ctx), { x: "b" }, ctx).annotation.title, "Distribution of b", "a generated title follows the field");
+  assert.equal(swapped.annotation.title, "a against b", "and the swap");
+  assert.equal(ChartSpec.edit(titled, { x: "b", swap: true }, ctx).annotation.title, "Mass against b", "a title the person wrote stays");
+  const additive = { ...ctx, fields: { ...ctx.fields, a: { ...ctx.fields.a, additive: true } } };
+  assert.equal(ChartSpec.edit(ChartSpec.make(cand("mean-bar", ["grp", "a"]), additive), { fn: "sum" }, additive).annotation.title, "Sum of a by grp");
   const heat = ChartSpec.edit(ChartSpec.edit(ChartSpec.make(cand("count-heatmap", ["grp", "many"]), ctx), { top: 3 }, ctx), { swap: true }, ctx);
   assert.deepEqual([heat.encoding.x.field, heat.transform.find((t) => t.id === "top:x").n, heat.transform.find((t) => t.id === "top:y").n], ["many", 12, 3], "levels kept move with their field");
   const hist = ChartSpec.edit(ChartSpec.make(cand("histogram", ["b"]), ctx), { bins: 12 }, ctx);
@@ -225,6 +230,8 @@ test("time periods: the coarsest giving at least 20, at most 500; values too coa
   assert.deepEqual([decades.unit, decades.asked, decades.periods.length], ["decade", "year", 91], "901 years would be more than 500 periods: by decade");
   assert.equal(Charts.choosePeriod({ ...long, lo: Render.utc(-3000) }, "day").unit, "century");
   assert.equal(Render.utc(50) < Render.utc(1950), true, "the year 50 is not 1950");
+  assert.equal(Charts.floorPeriod(Date.UTC(1965, 0, 3) / 1000, "week"), Date.UTC(1964, 11, 28) / 1000, "a Sunday before 1970 belongs to the Monday before it");
+  assert.equal(Charts.floorPeriod(Date.UTC(1969, 11, 29) / 1000, "week"), Date.UTC(1969, 11, 29) / 1000);
   assert.equal(Render.timeLabel(Render.utc(1850), "decade"), "1850–1859");
 });
 

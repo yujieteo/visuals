@@ -143,8 +143,9 @@
       case "quarter": return utc(y, m - (m % 3));
       case "month": return utc(y, m);
       case "week": {
+        // 1970-01-01 was a Thursday; the remainder is kept at 0 to 6 for days before 1970 too.
         const day = Math.floor(t / DAY);
-        return (day - ((day + 3) % 7)) * DAY;
+        return (day - ((((day + 3) % 7) + 7) % 7)) * DAY;
       }
       case "day": return Math.floor(t / DAY) * DAY;
       default: return Math.floor(t / 3600) * 3600;

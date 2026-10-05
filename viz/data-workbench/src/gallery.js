@@ -35,6 +35,8 @@
     const viewer = { table: "", id: "", page: 1, zoom: "fit", error: "", busy: false };
     /** @type {Set<string>} pictures being drawn again, so a redraw does not ask twice */
     const drawing = new Set();
+    /** @type {string[]} picture URLs no longer current, released once the gallery no longer shows them */
+    const stale = [];
     let kept = 0;
     /** The SVG to keep with a candidate, within the limits. */
     const keep = (svg) => {
@@ -140,7 +142,7 @@
       if (cand.svg) { kept -= cand.svg.length; cand.svg = null; }
       const key = `${cand.id}@${cand.version}`;
       const url = pictures.get(key);
-      if (url) { URL.revokeObjectURL(url); pictures.delete(key); }
+      if (url) { stale.push(url); pictures.delete(key); }
     }
 
     /** Forget a removed table's charts. */
@@ -181,6 +183,12 @@
     const OUTCOMES = [["valid", "Valid"], ["excluded", "Excluded"], ["failed", "Failed"], ["incomplete", "Incomplete"], ["all", "All outcomes"]];
 
     function draw() {
+      drawGallery();
+      // The cards shown now use current pictures only, so the old ones can go.
+      for (const url of stale.splice(0)) URL.revokeObjectURL(url);
+    }
+
+    function drawGallery() {
       const view = byId("charts-view");
       const table = store.tables.find((t) => t.name === store.selected);
       byId("charts-empty").hidden = !!table;
@@ -450,39 +458,54 @@
 
     async function apply(st, cand, form) {
       const data = new FormData(form);
-      // Marking a field additive is a fact about the field, kept for every chart of the table.
-      const agg = cand.spec.transform.find((/** @type {any} */ t) => t.id === "aggregate");
-      if (agg && agg.fn !== "count") {
-        const yName = cand.spec.encoding.y.field;
-        const key = `${st.ctx.table}\u0000${yName}`;
-        const want = !!data.get("additive");
-        if (want !== !!store.additive[key]) {
-          if (want) store.additive[key] = true; else delete store.additive[key];
-          st.ctx.fields[yName].additive = want;
-          app.note({ kind: "changed", table: st.ctx.table, column: yName, text: `You marked ${st.ctx.table}.${yName} as ${want ? "additive: a sum of its values means something" : "not additive"}.` });
-        }
-      }
       // A change that does not hold is refused with its reasons, and the form keeps what the person chose.
       const refuse = (text) => { viewer.error = text; byId("viewer-error").textContent = text; };
+      // Marking a field additive is a fact about the field, for every chart of the table; the rules read it as the
+      // person now marks it, and it holds only when this chart still holds with it.
+      const agg = cand.spec.transform.find((/** @type {any} */ t) => t.id === "aggregate");
+      let mark = null;
+      if (agg && agg.fn !== "count") {
+        const yName = cand.spec.encoding.y.field, want = !!data.get("additive");
+        if (want !== !!store.additive[`${st.ctx.table}\u0000${yName}`]) mark = { yName, want };
+      }
+      const ctx = mark ? { ...st.ctx, fields: { ...st.ctx.fields, [mark.yName]: { ...st.ctx.fields[mark.yName], additive: mark.want } } } : st.ctx;
+      const commitMark = () => {
+        if (!mark) return;
+        const key = `${st.ctx.table}\u0000${mark.yName}`;
+        if (mark.want) store.additive[key] = true; else delete store.additive[key];
+        st.ctx.fields[mark.yName].additive = mark.want;
+        app.note({ kind: "changed", table: st.ctx.table, column: mark.yName, text: `You marked ${st.ctx.table}.${mark.yName} as ${mark.want ? "additive: a sum of its values means something" : "not additive"}.` });
+        // Another chart may show a sum of this field: bring every chart of the table up to date.
+        const table = store.tables.find((t) => t.name === st.ctx.table);
+        if (!mark.want && table) generate(table);
+      };
       let next;
       try {
-        next = ChartSpec.edit(cand.spec, changeOf(cand.spec, form), st.ctx);
+        next = ChartSpec.edit(cand.spec, changeOf(cand.spec, form), ctx);
       } catch (error) {
         return refuse(`Not applied: ${app.message(error)}`);
       }
-      if (next.edits.length === cand.spec.edits.length) return refuse("Nothing changed.");
-      const v = ChartSpec.validate(next, st.ctx);
+      const changed = next.edits.length !== cand.spec.edits.length;
+      if (!changed && !mark) return refuse("Nothing changed.");
+      const v = ChartSpec.validate(next, ctx);
       if (!v.ok) return refuse(`Not applied: ${v.errors.join("; ")}`);
+      if (!changed) {
+        commitMark();
+        viewer.error = "";
+        app.refresh();
+        return drawViewer();
+      }
       viewer.busy = true;
       viewer.error = "";
       let applied = false;
       try {
         const api = await app.ensureEngine();
         const out = await app.exclusive(async () => {
-          const d = await Charts.compute(api.query, next, st.ctx);
+          const d = await Charts.compute(api.query, next, ctx);
           return d.excluded ? { excluded: d.excluded } : { data: d, drawn: Render.render(next, d) };
         });
         if (out.excluded) { refuse(`Not applied: ${out.excluded}`); return; }
+        commitMark();
         forget(cand);
         Object.assign(cand, { spec: next, edited: true, desc: out.drawn.desc, facts: out.data.facts, pages: out.data.page?.pages ?? 1, svg: keep(out.drawn.svg), version: cand.version + 1 });
         viewer.page = 1;

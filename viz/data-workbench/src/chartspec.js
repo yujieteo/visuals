@@ -160,6 +160,13 @@
     "interval-timeline": (f) => `${f[2]} from ${f[0]} to ${f[1]}`,
   };
 
+  /** The generated title of a chart of these fields: a sum is titled as one. */
+  function autoTitle(kind, fields, fn) {
+    if (fn === "sum" && kind === "mean-bar") return `Sum of ${fields[1]} by ${fields[0]}`;
+    if (fn === "sum" && kind === "mean-series") return `Sum of ${fields[1]} over ${fields[0]}`;
+    return TITLES[/** @type {keyof typeof TITLES} */ (kind)](fields);
+  }
+
   /** The label of a field's axis: its name, with its unit only when the source or the person gave one. */
   const axisLabel = (info) => (info.unit ? `${info.name} (${info.unit})` : info.name);
 
@@ -290,6 +297,10 @@
     const next = clone(spec);
     const said = [];
     const kind = Grammar.KIND[next.kind];
+    const fieldsNow = () => kind.channels.map((c) => next.encoding[c].field);
+    const fnNow = () => step(next, "aggregate")?.fn;
+    // A title the workbench wrote follows the fields and the aggregate; a title the person wrote stays.
+    const generatedTitle = next.annotation.title === autoTitle(next.kind, fieldsNow(), fnNow());
     for (const channel of kind.channels) {
       const name = change[channel];
       if (name === undefined || name === next.encoding[channel]?.field) continue;
@@ -344,9 +355,8 @@
       agg.interval = change.fn === "mean" ? "t95" : "none";
       next.encoding.y.aggregate = change.fn;
       said.push(`aggregate: ${change.fn}`);
-      if (next.annotation.title.startsWith("Mean ") && change.fn === "sum") next.annotation.title = next.annotation.title.replace(/^Mean /, "Sum of ").replace(", with 95% confidence intervals", "");
-      else if (next.annotation.title.startsWith("Sum of ") && change.fn === "mean") next.annotation.title = next.annotation.title.replace(/^Sum of /, "Mean ") + (next.kind === "mean-bar" ? ", with 95% confidence intervals" : "");
     }
+    if (generatedTitle) next.annotation.title = autoTitle(next.kind, fieldsNow(), fnNow());
     for (const [key, channel] of [["xScale", "x"], ["yScale", "y"]]) {
       const sc = next.scale[channel];
       const want = change[key];
@@ -457,5 +467,5 @@
     return { ok: errors.length === 0, errors };
   }
 
-  return { SPEC_VERSION, SEED, PERIODS, LIMITS, SCHEMA, validateSchema, make, edit, validate, axisLabel };
+  return { SPEC_VERSION, SEED, PERIODS, LIMITS, SCHEMA, validateSchema, make, edit, validate, axisLabel, autoTitle };
 });
