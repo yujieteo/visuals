@@ -43,7 +43,7 @@ test("lockdown: no URL, no extension, no file outside the registered ones, no se
   await refused("SELECT * FROM read_csv('/etc/hosts')", /disabled by configuration/);
   await refused("SET enable_external_access = true", /locked/);
   await refused("SET autoload_known_extensions = true", /locked/);
-  assert.deepEqual(await e.query("SELECT count(*)::DOUBLE AS n FROM read_csv('" + messy.path + "', all_varchar = true, store_rejects = true)"), [{ n: 28 }], "registered files still read");
+  assert.deepEqual(await e.query("SELECT count(*)::DOUBLE AS n FROM read_csv('" + messy.path + "', all_varchar = true, ignore_errors = true)"), [{ n: 28 }], "registered files still read");
 });
 
 test("data integrity: the CSV dialect, a byte-order mark and a quoted line break are read; rows the reader cannot read are listed", () => {
@@ -56,6 +56,10 @@ test("data integrity: the CSV dialect, a byte-order mark and a quoted line break
     [19, "MISSING COLUMNS", "00034,Ray Low"],
     [20, "TOO MANY COLUMNS", "00035,Sue Pan,\"8,080\",20,2026-01-22,30/01/2026,06/08/2026,23/01/2026,ok,30.1,no,3,27,extra"],
   ]);
+});
+
+test("the reader's tables of rejected lines are read into the import's result and dropped", async () => {
+  assert.deepEqual(await e.query("SELECT table_name FROM duckdb_tables() WHERE table_name LIKE '%rejects%' OR table_name LIKE '%scans%'"), []);
 });
 
 test("data integrity: source values are kept as written; conversions read them without changing the table", async () => {

@@ -143,6 +143,9 @@
     `SELECT sum(total_uncompressed_size)::DOUBLE AS uncompressed, count(DISTINCT row_group_id)::DOUBLE AS row_groups FROM parquet_metadata(${literal(path)})`;
   const parquetRows = (path) => `SELECT num_rows::DOUBLE AS rows FROM parquet_file_metadata(${literal(path)})`;
 
+  /** Drop a temporary table of the reader's, if it exists. */
+  const dropTemp = (name) => `DROP TABLE IF EXISTS ${ident(name)}`;
+
   /** A table's columns in order, with DuckDB's type names. */
   const describeTable = (table) => `SELECT column_name, column_type FROM (DESCRIBE ${ident(table)})`;
   const rowCount = (table) => `SELECT count(*)::DOUBLE AS n FROM ${ident(table)}`;
@@ -413,7 +416,7 @@ SELECT (SELECT coalesce(sum(n - 1), 0) FROM c WHERE n > 1)::DOUBLE AS repeats, v
   return {
     FOLDER, MARKERS, BOOLEAN_TRUE, BOOLEAN_FALSE, PATTERN, DATE_FORMATS, SENTINELS,
     ident, literal, setup, filePath, describeFile, importFile, csvDialect, csvRejects, csvRejectCount,
-    parquetSchema, parquetSize, parquetRows, describeTable, rowCount, readingType, parse, typed, formatOf,
+    parquetSchema, parquetSize, parquetRows, dropTemp, describeTable, rowCount, readingType, parse, typed, formatOf,
     textStats, textDateStats, NO_DATES, typedStats, distinctCount, markerValues, readingCounts, failureExamples, impossibleDates, stageNumbers, dropNumbers, numericSummary, numericBins,
     robustOutliers, sentinelCounts, timeSummary, timeBins, topValues, duplicates, firstValues,
   };

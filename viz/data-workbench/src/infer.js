@@ -63,7 +63,7 @@
    */
   function readText(s) {
     const valued = s.rows - s.nulls - s.blanks - s.markers;
-    const base = { valued, notes: /** @type {string[]} */ ([]), ambiguous: /** @type {string[]} */ ([]), mixed: /** @type {string | null} */ (null), near: /** @type {any} */ (null) };
+    const base = { valued, notes: /** @type {string[]} */ ([]), ambiguous: /** @type {string[]} */ ([]), mixed: /** @type {string[]} */ ([]), near: /** @type {any[]} */ ([]) };
     if (valued <= 0) return { ...base, type: "empty", reading: { kind: "text" }, share: 0, fits: 0 };
     const share = (n) => n / valued;
     /** @param {string} type @param {any} reading @param {number} fits */
@@ -108,17 +108,19 @@
     const text = textType(s, valued, base);
     if (layouts.length > 1) text.ambiguous = layouts.map((f) => f.id);
     else {
-      const mix = DATE_FORMATS.map((f) => ({ ...f, n: s[`f_${f.id}`] ?? 0 }))
+      // Every layout that fits beside ISO dates is offered: when day and month order both fit, the choice is the person's.
+      text.mixed = DATE_FORMATS.map((f) => ({ ...f, n: s[`f_${f.id}`] ?? 0 }))
         .filter((f) => s.date_iso >= 0.05 * valued && f.n >= 0.05 * valued && share(s.date_iso + f.n) >= THRESHOLD)
-        .sort((a, b) => b.n - a.n)[0];
-      if (mix) text.mixed = mix.id;
-      else {
+        .sort((a, b) => b.n - a.n).map((f) => f.id);
+      if (!text.mixed.length) {
         const numeric = Math.max(s.dec_plain + s.dec_sep, s.int_plain + s.int_sep);
         const best = DATE_FORMATS.map((f) => s[`f_${f.id}`] ?? 0).concat([s.date_iso]).reduce((a, b) => Math.max(a, b), 0);
-        if (share(numeric) >= NEAR) text.near = { kind: s.int_plain + s.int_sep >= numeric ? (s.int_sep ? "integer-sep" : "integer") : (s.dec_sep ? "decimal-sep" : "decimal"), fits: numeric };
+        if (share(numeric) >= NEAR) text.near = [{ kind: s.int_plain + s.int_sep >= numeric ? (s.int_sep ? "integer-sep" : "integer") : (s.dec_sep ? "decimal-sep" : "decimal"), fits: numeric }];
         else if (share(best) >= NEAR) {
-          const f = DATE_FORMATS.find((d) => (s[`f_${d.id}`] ?? 0) === best);
-          text.near = best === s.date_iso || !f ? { kind: "date", fits: best } : { kind: "date-format", format: f.id, fits: best };
+          text.near = [
+            ...(s.date_iso === best ? [{ kind: "date", fits: best }] : []),
+            ...DATE_FORMATS.filter((d) => (s[`f_${d.id}`] ?? 0) === best).map((d) => ({ kind: "date-format", format: d.id, fits: best })),
+          ];
         }
       }
     }
@@ -135,7 +137,7 @@
   function readSource(type, s) {
     const kind = sourceKind(type);
     const valued = s.rows - s.nulls;
-    const base = { valued, notes: [], ambiguous: [], mixed: null, near: null, reading: { kind: "source" }, share: 1, fits: valued };
+    const base = { valued, notes: [], ambiguous: [], mixed: [], near: [], reading: { kind: "source" }, share: 1, fits: valued };
     if (kind === "unsupported") return { ...base, type: "unsupported", notes: [`${type} is a nested or binary type, which v1 does not analyse.`] };
     if (valued <= 0) return { ...base, type: "empty", share: 0 };
     if (kind === "text") return { ...textType(s, valued, base), reading: { kind: "source" } };
@@ -247,17 +249,19 @@
         out.push({ id: id("layout", f), kind: "date-layout", text: `Read ${col.name} as dates in the layout ${layout?.label}. More than one layout fits every value, so the order of day and month is your choice.`,
           change: { type: "date", reading: { ...r, kind: "date-format", format: f } } });
       }
-      if (col.mixed) {
-        const layout = DATE_FORMATS.find((d) => d.id === col.mixed);
-        out.push({ id: id("layouts", col.mixed), kind: "date-layouts", text: `Read ${col.name} as dates written in two layouts: YYYY-MM-DD and ${layout?.label}.`,
-          change: { type: "date", reading: { ...r, kind: "date-formats", format: col.mixed } } });
+      const choice = (list) => (list.length > 1 ? " Another layout fits as well, so the order of day and month is your choice." : "");
+      for (const f of col.mixed ?? []) {
+        const layout = DATE_FORMATS.find((d) => d.id === f);
+        out.push({ id: id("layouts", f), kind: "date-layouts", text: `Read ${col.name} as dates written in two layouts: YYYY-MM-DD and ${layout?.label}.${choice(col.mixed)}`,
+          change: { type: "date", reading: { ...r, kind: "date-formats", format: f } } });
       }
-      if (col.near) {
-        const kind = col.near.kind;
+      for (const near of col.near ?? []) {
+        const kind = near.kind;
         const type = kind.startsWith("integer") ? "integer" : kind.startsWith("decimal") ? "decimal" : "date";
-        const left = col.valued - col.near.fits;
-        out.push({ id: id("type", kind), kind: "type", text: `Read ${col.name} as ${TYPE_LABEL[type]}s: ${pct(col.near.fits / col.valued)} of the values fit, and the other ${left} would become values that do not read.`,
-          change: { type, reading: { ...r, kind, ...(col.near.format ? { format: col.near.format } : {}) } } });
+        const left = col.valued - near.fits;
+        const layout = near.format ? ` in the layout ${DATE_FORMATS.find((d) => d.id === near.format)?.label}` : "";
+        out.push({ id: id("type", near.format ? `${kind}::${near.format}` : kind), kind: "type", text: `Read ${col.name} as ${TYPE_LABEL[type]}s${layout}: ${pct(near.fits / col.valued)} of the values fit, and the other ${left} would become values that do not read.${choice(col.near)}`,
+          change: { type, reading: { ...r, kind, ...(near.format ? { format: near.format } : {}) } } });
       }
     }
     if (col.possibleTime && col.role !== "time") {

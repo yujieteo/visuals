@@ -153,7 +153,11 @@
       const api = await ensureEngine();
       item.path = await api.register(item.file);
       const probe = { table: `__probe_rejects_q${item.id}`, scan: `__probe_scans_q${item.id}` };
-      item.columns = (await api.query(Sql.describeFile(item.kind, item.path, probe))).map((c) => c.column_name);
+      try {
+        item.columns = (await api.query(Sql.describeFile(item.kind, item.path, probe))).map((c) => c.column_name);
+      } finally {
+        for (const t of [probe.table, probe.scan]) await api.query(Sql.dropTemp(t)).catch(() => {});
+      }
       if (item.kind === "csv") {
         const head = await item.file.slice(0, 2 ** 20).text();
         const lines = (head.match(/\n/g) ?? []).length + (head.endsWith("\n") ? 0 : 1);
@@ -180,6 +184,18 @@
   /** A queued file is imported once it is checked, has a choice that imports it and a usable name. */
   const importable = (q) => q.status === "ready" && !!q.choice && q.choice !== "skip" && !nameIssue(q);
 
+  /**
+   * Check a queued file again just before its import, against what the tables imported so far left: a choice made
+   * earlier may no longer fit. A sample shrinks to fit; anything else waits for a new choice.
+   */
+  function stillFits(item) {
+    const r = Preflight.recheck({ choice: item.choice, estimate: item.estimate, rows: item.rows, columns: item.columns.length, kept: item.keep.length, sample: item.decision.sample }, budget(), used());
+    item.decision = { ...item.decision, ...r.decision };
+    item.problem = r.problem;
+    if (!r.ok) item.choice = "";
+    return r.ok;
+  }
+
   /** Import every queued file that has a choice, one after another, then profile each. */
   function importQueue() {
     const items = store.queue.filter(importable);
@@ -187,7 +203,7 @@
     return busy("Importing", async () => {
       for (const item of items) {
         if (store.stop) break;
-        await importOne(item);
+        if (stillFits(item)) await importOne(item);
       }
       for (const item of items) if (store.stop && item.status === "ready") item.problem = "Not imported: you cancelled before this file.";
     });

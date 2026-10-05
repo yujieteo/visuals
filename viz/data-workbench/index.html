@@ -1504,6 +1504,9 @@ Z.makeVector=Tg;Z.tableFromArrays=function(a){const b={};a=Object.entries(a);for
     `SELECT sum(total_uncompressed_size)::DOUBLE AS uncompressed, count(DISTINCT row_group_id)::DOUBLE AS row_groups FROM parquet_metadata(${literal(path)})`;
   const parquetRows = (path) => `SELECT num_rows::DOUBLE AS rows FROM parquet_file_metadata(${literal(path)})`;
 
+  /** Drop a temporary table of the reader's, if it exists. */
+  const dropTemp = (name) => `DROP TABLE IF EXISTS ${ident(name)}`;
+
   /** A table's columns in order, with DuckDB's type names. */
   const describeTable = (table) => `SELECT column_name, column_type FROM (DESCRIBE ${ident(table)})`;
   const rowCount = (table) => `SELECT count(*)::DOUBLE AS n FROM ${ident(table)}`;
@@ -1774,7 +1777,7 @@ SELECT (SELECT coalesce(sum(n - 1), 0) FROM c WHERE n > 1)::DOUBLE AS repeats, v
   return {
     FOLDER, MARKERS, BOOLEAN_TRUE, BOOLEAN_FALSE, PATTERN, DATE_FORMATS, SENTINELS,
     ident, literal, setup, filePath, describeFile, importFile, csvDialect, csvRejects, csvRejectCount,
-    parquetSchema, parquetSize, parquetRows, describeTable, rowCount, readingType, parse, typed, formatOf,
+    parquetSchema, parquetSize, parquetRows, dropTemp, describeTable, rowCount, readingType, parse, typed, formatOf,
     textStats, textDateStats, NO_DATES, typedStats, distinctCount, markerValues, readingCounts, failureExamples, impossibleDates, stageNumbers, dropNumbers, numericSummary, numericBins,
     robustOutliers, sentinelCounts, timeSummary, timeBins, topValues, duplicates, firstValues,
   };
@@ -1846,7 +1849,7 @@ SELECT (SELECT coalesce(sum(n - 1), 0) FROM c WHERE n > 1)::DOUBLE AS repeats, v
    */
   function readText(s) {
     const valued = s.rows - s.nulls - s.blanks - s.markers;
-    const base = { valued, notes: /** @type {string[]} */ ([]), ambiguous: /** @type {string[]} */ ([]), mixed: /** @type {string | null} */ (null), near: /** @type {any} */ (null) };
+    const base = { valued, notes: /** @type {string[]} */ ([]), ambiguous: /** @type {string[]} */ ([]), mixed: /** @type {string[]} */ ([]), near: /** @type {any[]} */ ([]) };
     if (valued <= 0) return { ...base, type: "empty", reading: { kind: "text" }, share: 0, fits: 0 };
     const share = (n) => n / valued;
     /** @param {string} type @param {any} reading @param {number} fits */
@@ -1891,17 +1894,19 @@ SELECT (SELECT coalesce(sum(n - 1), 0) FROM c WHERE n > 1)::DOUBLE AS repeats, v
     const text = textType(s, valued, base);
     if (layouts.length > 1) text.ambiguous = layouts.map((f) => f.id);
     else {
-      const mix = DATE_FORMATS.map((f) => ({ ...f, n: s[`f_${f.id}`] ?? 0 }))
+      // Every layout that fits beside ISO dates is offered: when day and month order both fit, the choice is the person's.
+      text.mixed = DATE_FORMATS.map((f) => ({ ...f, n: s[`f_${f.id}`] ?? 0 }))
         .filter((f) => s.date_iso >= 0.05 * valued && f.n >= 0.05 * valued && share(s.date_iso + f.n) >= THRESHOLD)
-        .sort((a, b) => b.n - a.n)[0];
-      if (mix) text.mixed = mix.id;
-      else {
+        .sort((a, b) => b.n - a.n).map((f) => f.id);
+      if (!text.mixed.length) {
         const numeric = Math.max(s.dec_plain + s.dec_sep, s.int_plain + s.int_sep);
         const best = DATE_FORMATS.map((f) => s[`f_${f.id}`] ?? 0).concat([s.date_iso]).reduce((a, b) => Math.max(a, b), 0);
-        if (share(numeric) >= NEAR) text.near = { kind: s.int_plain + s.int_sep >= numeric ? (s.int_sep ? "integer-sep" : "integer") : (s.dec_sep ? "decimal-sep" : "decimal"), fits: numeric };
+        if (share(numeric) >= NEAR) text.near = [{ kind: s.int_plain + s.int_sep >= numeric ? (s.int_sep ? "integer-sep" : "integer") : (s.dec_sep ? "decimal-sep" : "decimal"), fits: numeric }];
         else if (share(best) >= NEAR) {
-          const f = DATE_FORMATS.find((d) => (s[`f_${d.id}`] ?? 0) === best);
-          text.near = best === s.date_iso || !f ? { kind: "date", fits: best } : { kind: "date-format", format: f.id, fits: best };
+          text.near = [
+            ...(s.date_iso === best ? [{ kind: "date", fits: best }] : []),
+            ...DATE_FORMATS.filter((d) => (s[`f_${d.id}`] ?? 0) === best).map((d) => ({ kind: "date-format", format: d.id, fits: best })),
+          ];
         }
       }
     }
@@ -1918,7 +1923,7 @@ SELECT (SELECT coalesce(sum(n - 1), 0) FROM c WHERE n > 1)::DOUBLE AS repeats, v
   function readSource(type, s) {
     const kind = sourceKind(type);
     const valued = s.rows - s.nulls;
-    const base = { valued, notes: [], ambiguous: [], mixed: null, near: null, reading: { kind: "source" }, share: 1, fits: valued };
+    const base = { valued, notes: [], ambiguous: [], mixed: [], near: [], reading: { kind: "source" }, share: 1, fits: valued };
     if (kind === "unsupported") return { ...base, type: "unsupported", notes: [`${type} is a nested or binary type, which v1 does not analyse.`] };
     if (valued <= 0) return { ...base, type: "empty", share: 0 };
     if (kind === "text") return { ...textType(s, valued, base), reading: { kind: "source" } };
@@ -2030,17 +2035,19 @@ SELECT (SELECT coalesce(sum(n - 1), 0) FROM c WHERE n > 1)::DOUBLE AS repeats, v
         out.push({ id: id("layout", f), kind: "date-layout", text: `Read ${col.name} as dates in the layout ${layout?.label}. More than one layout fits every value, so the order of day and month is your choice.`,
           change: { type: "date", reading: { ...r, kind: "date-format", format: f } } });
       }
-      if (col.mixed) {
-        const layout = DATE_FORMATS.find((d) => d.id === col.mixed);
-        out.push({ id: id("layouts", col.mixed), kind: "date-layouts", text: `Read ${col.name} as dates written in two layouts: YYYY-MM-DD and ${layout?.label}.`,
-          change: { type: "date", reading: { ...r, kind: "date-formats", format: col.mixed } } });
+      const choice = (list) => (list.length > 1 ? " Another layout fits as well, so the order of day and month is your choice." : "");
+      for (const f of col.mixed ?? []) {
+        const layout = DATE_FORMATS.find((d) => d.id === f);
+        out.push({ id: id("layouts", f), kind: "date-layouts", text: `Read ${col.name} as dates written in two layouts: YYYY-MM-DD and ${layout?.label}.${choice(col.mixed)}`,
+          change: { type: "date", reading: { ...r, kind: "date-formats", format: f } } });
       }
-      if (col.near) {
-        const kind = col.near.kind;
+      for (const near of col.near ?? []) {
+        const kind = near.kind;
         const type = kind.startsWith("integer") ? "integer" : kind.startsWith("decimal") ? "decimal" : "date";
-        const left = col.valued - col.near.fits;
-        out.push({ id: id("type", kind), kind: "type", text: `Read ${col.name} as ${TYPE_LABEL[type]}s: ${pct(col.near.fits / col.valued)} of the values fit, and the other ${left} would become values that do not read.`,
-          change: { type, reading: { ...r, kind, ...(col.near.format ? { format: col.near.format } : {}) } } });
+        const left = col.valued - near.fits;
+        const layout = near.format ? ` in the layout ${DATE_FORMATS.find((d) => d.id === near.format)?.label}` : "";
+        out.push({ id: id("type", near.format ? `${kind}::${near.format}` : kind), kind: "type", text: `Read ${col.name} as ${TYPE_LABEL[type]}s${layout}: ${pct(near.fits / col.valued)} of the values fit, and the other ${left} would become values that do not read.${choice(col.near)}`,
+          change: { type, reading: { ...r, kind, ...(near.format ? { format: near.format } : {}) } } });
       }
     }
     if (col.possibleTime && col.role !== "time") {
@@ -2130,6 +2137,26 @@ SELECT (SELECT coalesce(sum(n - 1), 0) FROM c WHERE n > 1)::DOUBLE AS repeats, v
     };
   }
 
+  /**
+   * A queued file's choice checked again just before its import, against what the tables imported since left: a
+   * sample shrinks to fit; a choice that no longer fits waits for a new one, with the reason.
+   * @param {{ choice: string, estimate: number, rows: number, columns: number, kept: number, sample?: { rows: number, seed: number } | null }} q
+   * @param {number} budget @param {number} used
+   */
+  function recheck(q, budget, used) {
+    const d = decide({ estimate: q.estimate, rows: q.rows, columns: q.columns, budget, used });
+    const wait = (problem) => ({ ok: false, decision: d, problem });
+    if (q.choice === "full" && !d.fits) return wait("Not imported: the tables imported before it used the room it needed. Choose a sample, fewer columns or skip.");
+    if (q.choice === "sample" && !d.fits) {
+      if (!d.sample) return wait("Not imported: no sample of this file fits what the budget has left.");
+      return { ok: true, decision: { sample: q.sample && q.sample.rows <= d.sample.rows ? q.sample : d.sample }, problem: "" };
+    }
+    if (q.choice === "columns" && withColumns(q.estimate, q.kept, q.columns) > d.left) {
+      return wait(`Not imported: ${q.kept} column${q.kept === 1 ? "" : "s"} no longer fit what the budget has left. Keep fewer, take a sample or skip.`);
+    }
+    return { ok: true, decision: {}, problem: "" };
+  }
+
   /** The estimate of a file read with only some of its columns: proportional to the number of columns kept. */
   const withColumns = (estimateBytes, kept, total) => (total > 0 ? estimateBytes * (kept / total) : estimateBytes);
 
@@ -2142,7 +2169,7 @@ SELECT (SELECT coalesce(sum(n - 1), 0) FROM c WHERE n > 1)::DOUBLE AS repeats, v
     return `${n} B`;
   }
 
-  return { MiB, GiB, CSV_FACTOR, VALUE_BYTES, STORAGE_SHARE, BUDGETS, CHOICES, SAMPLE_SEED, MIN_SAMPLE, device, estimate, csvRows, decide, withColumns, bytes };
+  return { MiB, GiB, CSV_FACTOR, VALUE_BYTES, STORAGE_SHARE, BUDGETS, CHOICES, SAMPLE_SEED, MIN_SAMPLE, device, estimate, csvRows, decide, recheck, withColumns, bytes };
 });
 </script>
 <script id="sha256">
@@ -2420,7 +2447,7 @@ SELECT (SELECT coalesce(sum(n - 1), 0) FROM c WHERE n > 1)::DOUBLE AS repeats, v
     }
     const r = Infer.role({ name, type, valued: col.valued, distinct: col.distinct, zeroPadded: stats.zero_padded, uuid: stats.uuid,
       lenMin: textSource ? stats.len_min : undefined, lenMax: textSource ? stats.len_max : undefined, numeric,
-      datesPending: reading.kind === "text" && (read.ambiguous.length > 0 || !!read.mixed) });
+      datesPending: reading.kind === "text" && (read.ambiguous.length > 0 || read.mixed.length > 0) });
     col.role = ov.role ?? r.role;
     col.inferredRole = r.role;
     col.certainty = ov.role ? "set by you" : r.certainty;
@@ -2477,7 +2504,8 @@ SELECT (SELECT coalesce(sum(n - 1), 0) FROM c WHERE n > 1)::DOUBLE AS repeats, v
    */
   function pairRoles(columns) {
     const live = columns.filter((c) => !c.failed);
-    const paired = Infer.pairIntervals(live.map((c) => ({ name: c.name, role: c.inferredRole })));
+    // A role the person set counts as it is: an end they set pairs with an inferred start, and the reverse.
+    const paired = Infer.pairIntervals(live.map((c) => ({ name: c.name, role: c.overridden.includes("role") ? c.role : c.inferredRole })));
     live.forEach((c, i) => {
       if (c.overridden.includes("role")) return;
       c.role = paired[i].role;
@@ -2544,10 +2572,20 @@ SELECT (SELECT coalesce(sum(n - 1), 0) FROM c WHERE n > 1)::DOUBLE AS repeats, v
     const stop = () => {
       if (o.stopped?.()) throw new Error("Import canceled before the table was created.");
     };
-    stop();
-    const names = (await query(Sql.describeFile(o.kind, o.path, { table: `__probe_rejects_${o.n}`, scan: `__probe_scans_${o.n}` }))).map((c) => c.column_name);
-    const row = rowColumn(names);
+    const probe = { table: `__probe_rejects_${o.n}`, scan: `__probe_scans_${o.n}` };
     const rejects = { table: `__rejects_${o.n}`, scan: `__scans_${o.n}` };
+    try {
+      stop();
+      const names = (await query(Sql.describeFile(o.kind, o.path, probe))).map((c) => c.column_name);
+      return await importInto(query, o, names, rejects, stop);
+    } finally {
+      // The reader's tables of rejected lines are read into the result; none stays in the engine.
+      for (const t of [rejects.table, rejects.scan, probe.table, probe.scan]) await query(Sql.dropTemp(t)).catch(() => {});
+    }
+  }
+
+  async function importInto(query, o, names, rejects, stop) {
+    const row = rowColumn(names);
     stop();
     await query(Sql.importFile({ kind: o.kind, path: o.path, table: o.table, rowColumn: row, rejects, columns: o.columns, sample: o.sample }));
     const rows = (await one(query, Sql.rowCount(o.table))).n;
@@ -2902,7 +2940,11 @@ SELECT (SELECT coalesce(sum(n - 1), 0) FROM c WHERE n > 1)::DOUBLE AS repeats, v
       const api = await ensureEngine();
       item.path = await api.register(item.file);
       const probe = { table: `__probe_rejects_q${item.id}`, scan: `__probe_scans_q${item.id}` };
-      item.columns = (await api.query(Sql.describeFile(item.kind, item.path, probe))).map((c) => c.column_name);
+      try {
+        item.columns = (await api.query(Sql.describeFile(item.kind, item.path, probe))).map((c) => c.column_name);
+      } finally {
+        for (const t of [probe.table, probe.scan]) await api.query(Sql.dropTemp(t)).catch(() => {});
+      }
       if (item.kind === "csv") {
         const head = await item.file.slice(0, 2 ** 20).text();
         const lines = (head.match(/\n/g) ?? []).length + (head.endsWith("\n") ? 0 : 1);
@@ -2929,6 +2971,18 @@ SELECT (SELECT coalesce(sum(n - 1), 0) FROM c WHERE n > 1)::DOUBLE AS repeats, v
   /** A queued file is imported once it is checked, has a choice that imports it and a usable name. */
   const importable = (q) => q.status === "ready" && !!q.choice && q.choice !== "skip" && !nameIssue(q);
 
+  /**
+   * Check a queued file again just before its import, against what the tables imported so far left: a choice made
+   * earlier may no longer fit. A sample shrinks to fit; anything else waits for a new choice.
+   */
+  function stillFits(item) {
+    const r = Preflight.recheck({ choice: item.choice, estimate: item.estimate, rows: item.rows, columns: item.columns.length, kept: item.keep.length, sample: item.decision.sample }, budget(), used());
+    item.decision = { ...item.decision, ...r.decision };
+    item.problem = r.problem;
+    if (!r.ok) item.choice = "";
+    return r.ok;
+  }
+
   /** Import every queued file that has a choice, one after another, then profile each. */
   function importQueue() {
     const items = store.queue.filter(importable);
@@ -2936,7 +2990,7 @@ SELECT (SELECT coalesce(sum(n - 1), 0) FROM c WHERE n > 1)::DOUBLE AS repeats, v
     return busy("Importing", async () => {
       for (const item of items) {
         if (store.stop) break;
-        await importOne(item);
+        if (stillFits(item)) await importOne(item);
       }
       for (const item of items) if (store.stop && item.status === "ready") item.problem = "Not imported: you cancelled before this file.";
     });

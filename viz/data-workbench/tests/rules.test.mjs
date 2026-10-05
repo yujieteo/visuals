@@ -56,7 +56,12 @@ test("dates: one layout reads on its own; two layouts that both fit, or two layo
   assert.deepEqual(both.ambiguous, ["dmy-slash", "mdy-slash"]);
   const mixed = Infer.readText(counts(30, { date_iso: 15, date_shape: 15, "f_dmy-slash": 15 }));
   assert.equal(mixed.type, "text");
-  assert.equal(mixed.mixed, "dmy-slash");
+  assert.deepEqual(mixed.mixed, ["dmy-slash"]);
+  const tie = Infer.readText(counts(30, { date_iso: 15, date_shape: 15, "f_dmy-slash": 15, "f_mdy-slash": 15, distinct_values: 30 }));
+  assert.deepEqual(tie.mixed, ["dmy-slash", "mdy-slash"], "both day-month orders are offered when both fit");
+  const offers = Infer.suggestions({ name: "d", type: "text", role: "unknown", valued: 30, reading: { kind: "text" }, missing: { markerValues: [] }, sentinels: [], ambiguous: [], mixed: tie.mixed, near: [], possibleTime: false });
+  assert.deepEqual(offers.map((x) => x.id), ["d::layouts::dmy-slash", "d::layouts::mdy-slash"]);
+  assert.match(offers[0].text, /your choice/);
 });
 
 test("text: categorical up to 1,000 levels with fewer than half distinct, else text; near-numbers become a suggestion", () => {
@@ -65,7 +70,7 @@ test("text: categorical up to 1,000 levels with fewer than half distinct, else t
   assert.equal(Infer.readText(counts(100, { distinct_values: 60 })).type, "text");
   const near = Infer.readText(counts(100, { int_plain: 70, dec_plain: 70, distinct_values: 60 }));
   assert.equal(near.type, "text");
-  assert.deepEqual(near.near, { kind: "integer", fits: 70 });
+  assert.deepEqual(near.near, [{ kind: "integer", fits: 70 }]);
 });
 
 test("typed Parquet columns keep their type; nested and binary types are not analysed", () => {
@@ -110,7 +115,7 @@ test("sentinels: negative stand-ins in an otherwise non-negative field, 999-like
 
 test("suggestions change a reading or a role only through their change, and each has a stable id", () => {
   const col = { name: "visits", type: "integer", role: "measure", valued: 28, reading: { kind: "integer" }, missing: { markerValues: [{ value: "NA", n: 2 }] },
-    sentinels: [{ value: -999, n: 2 }], ambiguous: [], mixed: null, near: null, possibleTime: false };
+    sentinels: [{ value: -999, n: 2 }], ambiguous: [], mixed: [], near: [], possibleTime: false };
   const s = Infer.suggestions(col);
   assert.deepEqual(s.map((x) => x.id), ["visits::markers", "visits::sentinel::-999"]);
   assert.deepEqual(s[0].change.reading.missingText, ["na"]);
@@ -137,6 +142,31 @@ test("preflight: a file that does not fit is refused before import, with a seede
   const full = Preflight.decide({ estimate: GiB, rows: 1e6, columns: 50, budget: 2 * GiB, used: GiB });
   assert.deepEqual([full.fits, full.sample, full.maxColumns], [false, null, 0], "nothing fits once tables fill half the budget");
   assert.equal(Preflight.csvRows(1000, 100, 11), 109, "rows estimated from the first bytes, less the header");
+});
+
+test("preflight again at import: a choice made before earlier imports is checked against what they left", () => {
+  const { GiB } = Preflight;
+  const file = { estimate: 0.8 * GiB, rows: 1e6, columns: 10, kept: 10, sample: null };
+  assert.equal(Preflight.recheck({ ...file, choice: "full" }, 2 * GiB, 0).ok, true, "still fits");
+  const full = Preflight.recheck({ ...file, choice: "full" }, 2 * GiB, 0.5 * GiB);
+  assert.deepEqual([full.ok, full.decision.fits], [false, false], "an earlier import took the room: a new choice is needed");
+  assert.match(full.problem, /used the room it needed/);
+  const shrunk = Preflight.recheck({ ...file, choice: "sample", sample: { rows: 900000, seed: 1 } }, 2 * GiB, 0.5 * GiB);
+  assert.equal(shrunk.ok, true);
+  assert.equal(shrunk.decision.sample.rows, 562500, "the sample shrinks to fit what is left");
+  const kept = Preflight.recheck({ ...file, choice: "columns", kept: 9 }, 2 * GiB, 0.5 * GiB);
+  assert.equal(kept.ok, false, "nine of ten columns no longer fit half a GiB");
+  assert.equal(Preflight.recheck({ ...file, choice: "columns", kept: 5 }, 2 * GiB, 0.5 * GiB).ok, true);
+});
+
+test("interval roles: a role the person set pairs with an inferred one", () => {
+  const col = (name, inferredRole, role = inferredRole, overridden = []) => ({ name, inferredRole, role, overridden, roleReasons: [] });
+  const opened = col("opened", "interval start", "time"), due = col("due", "time", "interval end", ["role"]);
+  Profile.pairRoles([opened, due]);
+  assert.deepEqual([opened.role, due.role], ["interval start", "interval end"], "an end the person set pairs with the inferred start");
+  const alone = col("opened", "interval start"), changed = col("closed", "interval end", "measure", ["role"]);
+  Profile.pairRoles([alone, changed]);
+  assert.deepEqual([alone.role, changed.role], ["time", "measure"], "a start whose end the person changed is plain time");
 });
 
 test("names: tables get safe unique names; the row column never collides with a source column", () => {

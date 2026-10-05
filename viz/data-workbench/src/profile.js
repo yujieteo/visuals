@@ -94,7 +94,7 @@
     }
     const r = Infer.role({ name, type, valued: col.valued, distinct: col.distinct, zeroPadded: stats.zero_padded, uuid: stats.uuid,
       lenMin: textSource ? stats.len_min : undefined, lenMax: textSource ? stats.len_max : undefined, numeric,
-      datesPending: reading.kind === "text" && (read.ambiguous.length > 0 || !!read.mixed) });
+      datesPending: reading.kind === "text" && (read.ambiguous.length > 0 || read.mixed.length > 0) });
     col.role = ov.role ?? r.role;
     col.inferredRole = r.role;
     col.certainty = ov.role ? "set by you" : r.certainty;
@@ -151,7 +151,8 @@
    */
   function pairRoles(columns) {
     const live = columns.filter((c) => !c.failed);
-    const paired = Infer.pairIntervals(live.map((c) => ({ name: c.name, role: c.inferredRole })));
+    // A role the person set counts as it is: an end they set pairs with an inferred start, and the reverse.
+    const paired = Infer.pairIntervals(live.map((c) => ({ name: c.name, role: c.overridden.includes("role") ? c.role : c.inferredRole })));
     live.forEach((c, i) => {
       if (c.overridden.includes("role")) return;
       c.role = paired[i].role;
@@ -218,10 +219,20 @@
     const stop = () => {
       if (o.stopped?.()) throw new Error("Import canceled before the table was created.");
     };
-    stop();
-    const names = (await query(Sql.describeFile(o.kind, o.path, { table: `__probe_rejects_${o.n}`, scan: `__probe_scans_${o.n}` }))).map((c) => c.column_name);
-    const row = rowColumn(names);
+    const probe = { table: `__probe_rejects_${o.n}`, scan: `__probe_scans_${o.n}` };
     const rejects = { table: `__rejects_${o.n}`, scan: `__scans_${o.n}` };
+    try {
+      stop();
+      const names = (await query(Sql.describeFile(o.kind, o.path, probe))).map((c) => c.column_name);
+      return await importInto(query, o, names, rejects, stop);
+    } finally {
+      // The reader's tables of rejected lines are read into the result; none stays in the engine.
+      for (const t of [rejects.table, rejects.scan, probe.table, probe.scan]) await query(Sql.dropTemp(t)).catch(() => {});
+    }
+  }
+
+  async function importInto(query, o, names, rejects, stop) {
+    const row = rowColumn(names);
     stop();
     await query(Sql.importFile({ kind: o.kind, path: o.path, table: o.table, rowColumn: row, rejects, columns: o.columns, sample: o.sample }));
     const rows = (await one(query, Sql.rowCount(o.table))).n;
